@@ -1,0 +1,56 @@
+# Copyright (c) 2026 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VIDEO_HTPA_CAM
+	bool "Heimann HTPA IR camera"
+	depends on DT_HAS_HEIMANN_HTPA_160X120_CAMERA_ENABLED || \
+		DT_HAS_HEIMANN_HTPA_120X84_CAMERA_ENABLED
+	select SPI
+	select FLASH
+	select CACHE_MANAGEMENT if DCACHE
+	default y
+	help
+	  Enable the driver for Heimann HTPA thermopile infrared array sensors with
+	  integrated flash memory that holds temperature calibration and compensation data.
+
+if VIDEO_HTPA_CAM
+
+config VIDEO_HTPA_CAM_MAX_FPS
+	int "HTPA maximum acquisition frame rate"
+	range 1 1000
+	default 7
+	help
+	  Limit the frame acquisition rate and advertise this rate to video
+	  clients. The actual rate depends on sensor conversion, readout,
+	  processing and buffer availability.
+
+config VIDEO_HTPA_CAM_OFFSET_INTERVAL
+	int "HTPA electrical offset acquisition interval"
+	range 1 65535
+	default 1
+	help
+	  Acquire electrical offsets for the first frame and every N successful
+	  frames thereafter. Reuse the last offsets for intermediate frames.
+	  Set to 1 to acquire offsets for every frame.
+
+config VIDEO_HTPA_CAM_BLOCK_MARKERS
+	bool "Show HTPA block acquisition markers"
+	help
+	  Replace pixels at the left and right edges of each block with its block
+	  number and a frame counter, respectively, encoded as eight bits. The
+	  counter advances once per frame acquisition and wraps at 256. This is
+	  intended for debugging and changes the raw pixel data.
+
+config VIDEO_HTPA_CAM_WORKER_STACK_SIZE
+	int "HTPA worker thread stack size"
+	default 1024
+	help
+	  Stack size for the background worker that acquires frames.
+
+config VIDEO_HTPA_CAM_WORKER_THREAD_PRIORITY
+	int "HTPA worker thread priority"
+	default 3
+	help
+	  Priority for the background worker thread.
+
+endif # VIDEO_HTPA_CAM

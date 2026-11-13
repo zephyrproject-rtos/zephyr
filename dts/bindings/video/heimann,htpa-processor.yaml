@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  HTPA electrical offset correction and pixel ordering video device. The processor
+  provides signed 16-bit samples and 8-bit grayscale output. Grayscale values are
+  scaled per frame using histogram percentile clipping.
+
+compatible: "heimann,htpa-processor"
+
+include: base.yaml
+
+properties:
+  source:
+    type: phandle
+    required: true
+    description: Video device providing HTPA raw frames

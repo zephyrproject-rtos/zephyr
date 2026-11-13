@@ -1,0 +1,42 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	htpa_test_source: htpa-test-source {
+		compatible = "zephyr,htpa-test-source";
+	};
+
+	htpa_test_processor: htpa-test-processor {
+		compatible = "heimann,htpa-processor";
+		source = <&htpa_test_source>;
+	};
+
+	htpa_120_source: htpa-120-source {
+		compatible = "zephyr,htpa-test-source";
+	};
+
+	htpa_120_processor: htpa-120-processor {
+		compatible = "heimann,htpa-processor";
+		source = <&htpa_120_source>;
+	};
+
+	htpa_small_source: htpa-small-source {
+		compatible = "zephyr,htpa-test-source";
+	};
+
+	htpa_small_processor: htpa-small-processor {
+		compatible = "heimann,htpa-processor";
+		source = <&htpa_small_source>;
+	};
+
+	htpa_bad_source: htpa-bad-source {
+		compatible = "zephyr,htpa-test-source";
+	};
+
+	htpa_bad_processor: htpa-bad-processor {
+		compatible = "heimann,htpa-processor";
+		source = <&htpa_bad_source>;
+	};
+};
