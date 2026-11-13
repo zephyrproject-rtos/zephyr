@@ -7,6 +7,13 @@
 
 / {
 	soc {
+		slcd: display-controller@40002400 {
+			compatible = "st,slcd";
+			reg = <0x40002400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 9)>;
+			status = "disabled";
+		};
+
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
 				reg = <0x08000000 DT_SIZE_K(1024)>;
