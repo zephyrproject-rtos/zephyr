@@ -58,11 +58,16 @@ void ifx_pse84_cm55_startup(void)
 	cy_ppc0_init();
 	cy_ppc1_init();
 
+	/* Set DeepSleep configuration */
+	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+	__DSB();
+
 #ifdef CONFIG_CORTEX_M_SYSTICK
 	sys_clock_disable();
 #endif
 
 	for (;;) {
+		__WFI();
 	}
 }
 #endif
