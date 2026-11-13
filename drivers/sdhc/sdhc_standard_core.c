@@ -222,6 +222,8 @@ void sdhc_standard_capabilities_init(const struct device *dev)
 		(val & SDHC_REG_CAPABILITIES_CM_MASK) >> SDHC_REG_CAPABILITIES_CM_SHIFT;
 	caps->adma3_support = 0; /* Not supported in SDHC Specification v3.00 */
 	caps->vdd2_180_support = 0; /* Not supported in SDHC Specification v3.00 */
+
+	sdhc_common_dt_caps_restrict(caps, &DEV_CFG(dev)->common);
 }
 
 void sdhc_standard_host_init(const struct device *dev)
