@@ -51,6 +51,22 @@ Connections and IOs
 
 The `SAMA7G54-EK User Guide`_ has detailed information about board connections.
 
+Camera connector
+================
+
+The Raspberry Pi camera connector (J17) is wired to the MIPI CSI-2 capture
+pipeline of the SoC and is used through a camera shield, such as
+:ref:`raspberry_pi_camera_module_2`:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/video/capture
+   :board: sama7g54_ek
+   :shield: raspberry_pi_camera_module_2
+   :goals: build
+
+The camera module is clocked by a 24 MHz oscillator on the board, as the ISC_MCK
+output of the SoC is not routed to the connector.
+
 Programming
 ***********
 

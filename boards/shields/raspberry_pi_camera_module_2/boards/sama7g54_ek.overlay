@@ -1,0 +1,31 @@
+/*
+ * Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The IMX219 output PLL runs its lanes at 400 Mbps, below the link frequency it
+ * reports, so tune the D-PHY receiver for the rate actually sent.
+ */
+&csi2host {
+	microchip,dphy-frequency = <400000>;
+};
+
+/*
+ * The CSI-2 host receiving the sensor feeds the CSI-2 demultiplexer, which feeds
+ * the image sensor controller, so the rest of the pipeline is enabled with it.
+ */
+&csi2dc {
+	status = "okay";
+};
+
+&isc {
+	status = "okay";
+};
+
+/* Release XCLR of the camera module to enable the sensor */
+&csi_gpio0_hog {
+	output-high;
+	status = "okay";
+};
