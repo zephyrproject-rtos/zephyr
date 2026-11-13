@@ -99,6 +99,23 @@ test_quectel_bg95: quectel_bg95 {
 
 	mdm-power-gpios = <&test_gpio 0 0>;
 	mdm-reset-gpios = <&test_gpio 0 0>;
+
+	sim-slots {
+		compatible = "modem-sims";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sim-slot@0 {
+			reg = <0>;
+			mux-states = <&test_sim_mux 0>;
+		};
+
+		sim-slot@1 {
+			reg = <1>;
+			mux-states = <&test_sim_mux 1>;
+			default-sim;
+		};
+	};
 };
 
 test_quectel_bc660k: bc660k {

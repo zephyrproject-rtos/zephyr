@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - modem
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.modem.cellular.sim_slots: {}
+  drivers.modem.cellular.sim_slots.shell:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_SHELL_BACKEND_SERIAL=n
+      - CONFIG_MODEM_CELLULAR_SHELL=y
