@@ -196,6 +196,11 @@ void z_mem_manage_init(void);
  */
 void z_mem_manage_boot_finish(void);
 
+#if Z_MUTEX_PI_ENABLED
+/* Set a thread's base priority while preserving mutex priority inheritance. */
+bool z_mutex_thread_priority_set(struct k_thread *thread, int prio);
+#endif /* Z_MUTEX_PI_ENABLED */
+
 
 bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
 
