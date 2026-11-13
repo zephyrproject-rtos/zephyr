@@ -424,16 +424,18 @@ static int adxl367_decode_12b_stream(const uint8_t *buffer, struct sensor_chan_s
 				uint32_t *fit, uint16_t max_count, void *data_out,
 				const struct adxl367_fifo_data *enc_data, uint64_t base_ts)
 {
-	const uint8_t *buffer_end =
-		buffer + sizeof(struct adxl367_fifo_data) + enc_data->fifo_byte_count;
+	/* *fit is the buffer offset past the last decoded sample */
+	uint32_t offset = sizeof(struct adxl367_fifo_data);
+	const uint32_t buffer_end = offset + enc_data->fifo_byte_count;
 	uint8_t packet_size = enc_data->packet_size;
 	uint64_t period_ns = accel_period_ns[enc_data->accel_odr];
 	uint8_t sample_num = 0;
 	int count = 0;
 	uint8_t packet_alignment = ADXL367_12B_PACKET_ALIGNED;
 
-	while (count < max_count && buffer < buffer_end) {
-		const uint8_t *sample_end = buffer;
+	while (count < max_count && offset < buffer_end) {
+		uint32_t sample_end = offset;
+		const uint8_t *sample = buffer + offset;
 
 		/* For ADXL367_12B mode packet_size is number of samples in one
 		 * packet. If packet size is not aligned, sample_end will be on
@@ -445,10 +447,10 @@ static int adxl367_decode_12b_stream(const uint8_t *buffer, struct sensor_chan_s
 			sample_end += (packet_size * 12) / 8 + 1;
 		}
 
-		/* If fit is larger than buffer this frame was already decoded,
+		/* If fit is larger than offset this frame was already decoded,
 		 * move on to the next frame.
 		 */
-		if ((uintptr_t)buffer < *fit) {
+		if (offset < *fit) {
 			/* If number of samples in one packet is odd number,
 			 * alignment changes for each packet.
 			 */
@@ -460,7 +462,7 @@ static int adxl367_decode_12b_stream(const uint8_t *buffer, struct sensor_chan_s
 				}
 			}
 
-			buffer = sample_end;
+			offset = sample_end;
 
 			sample_num++;
 			continue;
@@ -477,7 +479,7 @@ static int adxl367_decode_12b_stream(const uint8_t *buffer, struct sensor_chan_s
 			data->readings[count].timestamp_delta =
 					period_ns * sample_num;
 
-			adxl367_get_12b_temp(enc_data, data, buffer, count, packet_size);
+			adxl367_get_12b_temp(enc_data, data, sample, count, packet_size);
 		} else {
 			struct sensor_three_axis_data *data =
 				(struct sensor_three_axis_data *)data_out;
@@ -487,7 +489,7 @@ static int adxl367_decode_12b_stream(const uint8_t *buffer, struct sensor_chan_s
 			data->header.reading_count = 1;
 			data->shift = range_to_shift[enc_data->range];
 
-			int ret = adxl367_get_12b_accel(enc_data, data, buffer, count, packet_size,
+			int ret = adxl367_get_12b_accel(enc_data, data, sample, count, packet_size,
 				chan_spec, packet_alignment, period_ns, sample_num);
 
 			if (ret != 0) {
@@ -495,8 +497,8 @@ static int adxl367_decode_12b_stream(const uint8_t *buffer, struct sensor_chan_s
 			}
 		}
 
-		buffer = sample_end;
-		*fit = (uintptr_t)sample_end;
+		offset = sample_end;
+		*fit = sample_end;
 		count++;
 	}
 
@@ -507,16 +509,15 @@ static int adxl367_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 				uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	const struct adxl367_fifo_data *enc_data = (const struct adxl367_fifo_data *)buffer;
-	const uint8_t *buffer_end =
-		buffer + sizeof(struct adxl367_fifo_data) + enc_data->fifo_byte_count;
+	/* *fit is the buffer offset past the last decoded sample */
+	uint32_t offset = sizeof(struct adxl367_fifo_data);
+	const uint32_t buffer_end = offset + enc_data->fifo_byte_count;
 	int count = 0;
 	uint8_t sample_num = 0;
 
-	if ((uintptr_t)buffer_end <= *fit || chan_spec.chan_idx != 0) {
+	if (buffer_end <= *fit || chan_spec.chan_idx != 0) {
 		return 0;
 	}
-
-	buffer += sizeof(struct adxl367_fifo_data);
 
 	uint8_t packet_size = enc_data->packet_size;
 
@@ -540,18 +541,17 @@ static int adxl367_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 			data_out, enc_data, base_ts);
 	} else {
 		/* Calculate which sample is decoded. */
-		if (*fit >= (uintptr_t)buffer) {
-			sample_num = (*fit - (uintptr_t)buffer) / packet_size;
+		if (*fit >= offset) {
+			sample_num = (*fit - offset) / packet_size;
 		}
 
-		while (count < max_count && buffer < buffer_end) {
-			const uint8_t *sample_end = buffer;
+		while (count < max_count && offset < buffer_end) {
+			const uint32_t sample_end = offset + packet_size;
+			const uint8_t *sample = buffer + offset;
 
-			sample_end += packet_size;
-
-			if ((uintptr_t)buffer < *fit) {
+			if (offset < *fit) {
 				/* This frame was already decoded, move on to the next frame */
-				buffer = sample_end;
+				offset = sample_end;
 				continue;
 			}
 
@@ -567,10 +567,10 @@ static int adxl367_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 						period_ns * sample_num;
 
 				if (enc_data->has_tmp) {
-					uint8_t offset = (packet_size - 1) * sample_size;
+					uint8_t tmp_offset = (packet_size - 1) * sample_size;
 
 					adxl367_temp_convert_q31(&data->readings[count].temperature,
-						(buffer + offset), enc_data->fifo_read_mode, 1);
+						(sample + tmp_offset), enc_data->fifo_read_mode, 1);
 				}
 			} else {
 				struct sensor_three_axis_data *data =
@@ -581,7 +581,7 @@ static int adxl367_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 				data->header.reading_count = 1;
 				data->shift = range_to_shift[enc_data->range];
 
-				int ret = adxl367_get_accel(enc_data, data, buffer, count,
+				int ret = adxl367_get_accel(enc_data, data, sample, count,
 							sample_size, chan_spec,
 							period_ns, sample_num);
 
@@ -590,8 +590,8 @@ static int adxl367_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 				}
 			}
 
-			buffer = sample_end;
-			*fit = (uintptr_t)sample_end;
+			offset = sample_end;
+			*fit = sample_end;
 			count++;
 		}
 	}
