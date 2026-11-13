@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/sys/util.h>
+#include <string.h>
 #include <ksched.h>
 
 /* The basic exception frame, popped by the hardware during return */
@@ -187,6 +188,9 @@ void *arm_m_lto_refs[2];
 /* Bitmask to determine if the XPSR indicates the exception frame was padded */
 #define XPSR_STACK_ALIGN BIT(9)
 
+/* Bitmask of the ICI/IT state of an interrupted instruction in the XPSR */
+#define XPSR_ICI_IT 0x0600fc00U
+
 /* RETPSR.SFPA: exception return to Secure state loads CONTROL_S.SFPA
  * from this bit.  If it is clear, the first FP instruction afterwards
  * resets FPSCR from FPDSCR.
@@ -361,7 +365,7 @@ __attribute__((naked)) void arm_m_iciit_stub(void)
 static void iciit_fixup(struct k_thread *th, struct hw_frame_base *hw, uint32_t xpsr)
 {
 #ifdef CONFIG_MULTITHREADING
-	if ((xpsr & 0x0600fc00) != 0) {
+	if ((xpsr & XPSR_ICI_IT) != 0) {
 		/* Stash original return address, replace with hook */
 		th->arch.iciit_pc = hw->pc;
 		th->arch.iciit_apsr = hw->apsr;
@@ -484,6 +488,20 @@ static void fpu_cs_copy(struct hw_frame_fpu *src, struct z_frame_fpu *dst)
 	}
 }
 
+/* The final pop {pc} of arm_m_switch_restore() */
+extern char arm_m_switch_pop_pc[];
+
+/* Takes r4-r11 from arm_m_exc_exit when the frame handed back has them */
+static uint32_t cs_discard[8];
+
+/* Reports if pc, as pushed by an exception, is in arm_m_switch_restore() */
+static bool in_switch_restore(uint32_t pc)
+{
+	uint32_t start = (uint32_t)arm_m_switch_restore & ~1U;
+
+	return (pc - start) <= ((uint32_t)arm_m_switch_pop_pc - start);
+}
+
 /* Converts, in-place, a CPU-spilled ("hardware") exception entry
  * frame to our ("zephyr") switch handle format such that the thread
  * can be suspended
@@ -493,6 +511,8 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 	union frame *f = NULL;
 	struct hw_frame_base *base = sp;
 	bool padded = (base->apsr & XPSR_STACK_ALIGN);
+	size_t hw_sz = (IS_ENABLED(CONFIG_FPU) && fpu) ? sizeof(struct hw_frame_fpu)
+						       : sizeof(struct hw_frame_base);
 	uint32_t fpscr = 0;
 	uint32_t vpr = 0;
 
@@ -518,6 +538,42 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 		__set_CONTROL(control.w);
 	}
 #endif
+
+	if (unlikely(in_switch_restore(base->pc))) {
+		/* What is left of the frame being restored, above the
+		 * exception frame
+		 */
+		char *left = (char *)sp + hw_sz + (padded ? 4 : 0);
+
+		/* Interrupted in arm_m_switch_restore() with that frame
+		 * still whole: hand it back instead of nesting a new one
+		 * under it.  What the restore had loaded so far is in it
+		 * too, so r4-r11 are dropped.  The FPU block of the frame
+		 * lies below its base, where the exception frame was pushed,
+		 * so it is stored again.
+		 */
+		if (!pc_match(base->pc, arm_m_switch_pop_pc)) {
+			f = CONTAINER_OF((void *)left, union frame, z.u.sw);
+			if (IS_ENABLED(CONFIG_FPU) && fpu) {
+				fpscr = ((struct hw_frame_fpu *)sp)->fpscr;
+				vpr = ((struct hw_frame_fpu *)sp)->vpr;
+				fpu_cs_copy(sp, &f->zfp);
+			}
+			arm_m_cs_ptrs.out = cs_discard;
+			goto handle;
+		}
+
+		/* Interrupted on its final pop {pc}: only the PC is left.
+		 * Complete the pop and drop its ICI state, so that the frame
+		 * built below ends where SP would have been and takes the
+		 * place of the old one.
+		 */
+		base->pc = *(uint32_t *)left;
+		base->apsr &= ~(XPSR_STACK_ALIGN | XPSR_ICI_IT);
+		sp = memmove(left + sizeof(uint32_t) - hw_sz, sp, hw_sz);
+		base = sp;
+		padded = false;
+	}
 
 	/* Detects interrupted ICI/IT instructions and rigs up thread
 	 * to trap the next time it runs
@@ -561,6 +617,7 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 	/* Mark the callee-saved pointer for the fixup assembly */
 	arm_m_cs_ptrs.out = &f->z.u.sw.r4;
 
+handle:
 #ifdef CONFIG_FPU
 	/* s16-s31 are stored by arm_m_exc_exit, see arm_m_switch_to_cpu() */
 	if (fpu) {
@@ -734,6 +791,53 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 	z_arm_tls_ptr = _current->tls;
 #endif
 	return true;
+}
+
+/* Tail of arm_m_switch(): SP and r4 are at the base of the incoming frame
+ * and the outgoing handle is published.  The frame is only read, through
+ * r4 and with SP left where it is, until all but the PC is loaded: a thread
+ * interrupted before that still has its frame whole, and one interrupted on
+ * the final pop has only the PC left on its stack.  arm_m_cpu_to_switch()
+ * relies on both to save such a thread without nesting a frame under this
+ * one.
+ */
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+BUILD_ASSERT(offsetof(struct switch_frame, psplim) == 0);
+BUILD_ASSERT(offsetof(struct switch_frame, apsr) == 4);
+BUILD_ASSERT(offsetof(struct switch_frame, r0) == 8);
+BUILD_ASSERT(offsetof(struct switch_frame, pc) == 64);
+#else
+BUILD_ASSERT(offsetof(struct switch_frame, apsr) == 0);
+BUILD_ASSERT(offsetof(struct switch_frame, r0) == 4);
+BUILD_ASSERT(offsetof(struct switch_frame, pc) == 60);
+#endif
+
+__used __attribute__((naked)) void arm_m_switch_restore(void)
+{
+	__asm__("  msr basepri, r0;"
+#ifdef CONFIG_USERSPACE
+		"  msr control, r8;" /* Now we can drop privilege */
+#endif
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+		"  ldrd r1, r2, [r4], #8;"
+		"  msr psplim, r1;"
+#else
+		"  ldr r2, [r4], #4;"
+#endif
+#ifdef _ARM_M_SWITCH_HAVE_DSP
+		"  msr apsr_nzcvqg, r2;"
+#else
+		"  msr apsr_nzcvq, r2;"
+#endif
+		"  ldm r4, {r0-r12, lr};"
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+		"  add sp, #64;"
+#else
+		"  add sp, #60;"
+#endif
+		".global arm_m_switch_pop_pc;"
+		"arm_m_switch_pop_pc:;"
+		"  pop {pc};");
 }
 
 /* This is handled an inline now for C code, but there are a few spots
