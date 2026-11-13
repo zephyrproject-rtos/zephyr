@@ -3,6 +3,7 @@
 # Copyright (c) 2018 Marvell
 # Copyright (c) 2018 Lexmark International, Inc.
 # Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -315,6 +316,15 @@ configdefault ICACHE_LINE_SIZE
 	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
 
 endif # CPU_AARCH32_CORTEX_R
+
+if CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R
+
+# Interrupt exit runs the switch-based scheduler on the interrupted thread's
+# stack. Allow room for its timer calls and compiler runtime helpers.
+config IDLE_STACK_SIZE
+	default 512 if USE_SWITCH && !COVERAGE_GCOV
+
+endif # CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R
 
 config TEST_EXTRA_STACK_SIZE
 	default 1024 if SMP
