@@ -124,6 +124,11 @@ static int test_fs_external(void)
  *@{
  */
 
+/**
+ * @brief Register and unregister file system implementations
+ *
+ * @verifies ZEP-SRS-17-20
+ */
 ZTEST(fs_api_register_mount, test_fs_register)
 {
 	zassert_true(test_fs_init() == 0, "Failed to register filesystems");
