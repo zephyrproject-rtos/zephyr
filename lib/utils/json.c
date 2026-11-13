@@ -1663,7 +1663,9 @@ static int print_double(char *str, size_t size, const char *fmt, double num)
 
 static int float_encode(const float *num, json_append_bytes_t append_bytes, void *data)
 {
-	char buf[sizeof("-3.40282347e+38")];
+	char buf[sizeof("-3.40282347e+38") +
+		 COND_CODE_1(CONFIG_JSON_LIBRARY_FP_SUPPORT,
+		(MAX(CONFIG_JSON_FLOAT_PRECISION, 9) - 9), (0))];
 	int ret;
 
 	ret = print_double(buf, sizeof(buf),
@@ -1681,7 +1683,9 @@ static int float_encode(const float *num, json_append_bytes_t append_bytes, void
 
 static int double_encode(const double *num, json_append_bytes_t append_bytes, void *data)
 {
-	char buf[sizeof("-1.797693134862316e+308")];
+	char buf[sizeof("-1.797693134862316e+308") +
+		 COND_CODE_1(CONFIG_JSON_LIBRARY_FP_SUPPORT,
+		(MAX(CONFIG_JSON_DOUBLE_PRECISION, 16) - 16), (0))];
 	int ret;
 
 	ret = print_double(buf, sizeof(buf),
