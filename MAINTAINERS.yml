@@ -744,7 +744,6 @@ Bluetooth HCI:
     - sjanc
     - HoZHel
     - cvinayak
-    - HaavardRei
     - MerinMGeorge
   files:
     - include/zephyr/drivers/bluetooth/
