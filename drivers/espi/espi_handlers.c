@@ -35,12 +35,12 @@ static inline int z_vrfy_espi_read_lpc_request(const struct device *dev,
 					       uint32_t *data)
 {
 	int ret;
-	uint32_t data_copy;
+	uint32_t data_copy = 0U;
 
 	K_OOPS(K_SYSCALL_DRIVER_ESPI(dev, read_lpc_request));
 
 	ret = z_impl_espi_read_lpc_request(dev, op, &data_copy);
-	K_OOPS(k_usermode_to_copy(data, &data_copy, sizeof(uint8_t)));
+	K_OOPS(k_usermode_to_copy(data, &data_copy, sizeof(*data)));
 
 	return ret;
 }
