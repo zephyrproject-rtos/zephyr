@@ -312,12 +312,71 @@ uint32_t fxas21002_get_transition_time(enum fxas21002_power start,
 	return transition_time;
 }
 
+static int fxas21002_configure_bus_pins(const struct fxas21002_config *config)
+{
+	int ret;
+
+	if (config->bus_mode.port != NULL) {
+		gpio_flags_t flags = GPIO_OUTPUT_INACTIVE;
+
+		if (config->inst_on_bus == FXAS21002_BUS_I2C) {
+			flags = GPIO_OUTPUT_ACTIVE;
+		}
+
+		if (!gpio_is_ready_dt(&config->bus_mode)) {
+			LOG_ERR_DEVICE_NOT_READY(config->bus_mode.port);
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&config->bus_mode, flags);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* SPI_CS_B stays high in I2C mode. The SPI controller owns it otherwise. */
+	if ((config->inst_on_bus == FXAS21002_BUS_I2C) && (config->spi_cs.port != NULL)) {
+		if (!gpio_is_ready_dt(&config->spi_cs)) {
+			LOG_ERR_DEVICE_NOT_READY(config->spi_cs.port);
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&config->spi_cs, GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* RST_B is active low. Hold it inactive so an undriven pin cannot reset the part. */
+	if ((config->inst_on_bus == FXAS21002_BUS_I2C) && (config->reset_gpio.port != NULL)) {
+		if (!gpio_is_ready_dt(&config->reset_gpio)) {
+			LOG_ERR_DEVICE_NOT_READY(config->reset_gpio.port);
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+		/* Chip NACKs until the same 50 ms boot time as POR. */
+		k_msleep(FXAS21002_BOOT_TIME_MS);
+	}
+
+	return 0;
+}
+
 static int fxas21002_init(const struct device *dev)
 {
 	const struct fxas21002_config *config = dev->config;
 	struct fxas21002_data *data = dev->data;
 	uint32_t transition_time;
 	uint8_t whoami;
+	int ret;
+
+	ret = fxas21002_configure_bus_pins(config);
+	if (ret < 0) {
+		return ret;
+	}
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	uint8_t ctrlreg1;
@@ -355,7 +414,7 @@ static int fxas21002_init(const struct device *dev)
 			 */
 			k_busy_wait(USEC_PER_MSEC);
 			gpio_pin_set_dt(&config->reset_gpio, 0);
-			k_busy_wait(USEC_PER_MSEC);
+			k_msleep(FXAS21002_BOOT_TIME_MS);
 		}
 	}
 #endif
@@ -455,6 +514,7 @@ static DEVICE_API(sensor, fxas21002_driver_api) = {
 		.bus_cfg = { .i2c = I2C_DT_SPEC_INST_GET(inst) },				\
 		.ops = &fxas21002_i2c_ops,							\
 		.inst_on_bus = FXAS21002_BUS_I2C,						\
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, { 0 }),		\
 
 #define FXAS21002_CONFIG_SPI(inst)								\
 		.bus_cfg = {.spi = SPI_DT_SPEC_INST_GET(inst,					\
@@ -473,6 +533,8 @@ static DEVICE_API(sensor, fxas21002_driver_api) = {
 		.whoami = CONFIG_FXAS21002_WHOAMI,						\
 		.range = CONFIG_FXAS21002_RANGE,						\
 		.dr = CONFIG_FXAS21002_DR,							\
+		.bus_mode = GPIO_DT_SPEC_INST_GET_OR(inst, bus_mode_gpios, { 0 }),		\
+		.spi_cs = GPIO_DT_SPEC_INST_GET_OR(inst, spi_cs_gpios, { 0 }),			\
 		IF_ENABLED(CONFIG_FXAS21002_TRIGGER,						\
 			   (COND_CODE_1(CONFIG_FXAS21002_DRDY_INT1,				\
 					(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios,	\

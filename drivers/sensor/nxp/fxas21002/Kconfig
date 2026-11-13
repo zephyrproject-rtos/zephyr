@@ -9,6 +9,9 @@ menuconfig FXAS21002
 	depends on DT_HAS_NXP_FXAS21002_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXAS21002),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXAS21002),spi)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_FXAS21002),bus-mode-gpios) || \
+	$(dt_compat_any_has_prop,$(DT_COMPAT_NXP_FXAS21002),spi-cs-gpios) || \
+	$(dt_compat_any_has_prop,$(DT_COMPAT_NXP_FXAS21002),reset-gpios)
 	help
 	  Enable driver for the FXAS21002 gyroscope
 

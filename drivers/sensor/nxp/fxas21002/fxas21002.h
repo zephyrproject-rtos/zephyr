@@ -98,6 +98,8 @@ struct fxas21002_config {
 	struct gpio_dt_spec int_gpio;
 #endif
 	struct gpio_dt_spec reset_gpio;
+	struct gpio_dt_spec bus_mode;
+	struct gpio_dt_spec spi_cs;
 	uint8_t whoami;
 	enum fxas21002_range range;
 	uint8_t dr;

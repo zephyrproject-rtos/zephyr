@@ -29,3 +29,18 @@ properties:
       This pin defaults to active low when produced by the sensor.
       The property value should ensure the flags properly describe
       the signal that is presented to the driver.
+
+  bus-mode-gpios:
+    type: phandle-array
+    description: |
+      I2C_B/SPI pin. Active low selects I2C, so GPIO_ACTIVE_LOW is the
+      flag to use. The driver holds the pin for the life of the device.
+      In I2C mode it is driven active. In SPI mode it is driven inactive.
+
+  spi-cs-gpios:
+    type: phandle-array
+    description: |
+      SPI_CS_B pin. Active low, so GPIO_ACTIVE_LOW is the flag to use.
+      When the device is on I2C the driver holds this pin inactive.
+      When the device is on SPI the controller owns the chip select
+      and this property is ignored.
