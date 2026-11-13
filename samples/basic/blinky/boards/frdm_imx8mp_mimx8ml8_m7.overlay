@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-FileCopyrightText: Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com> */
+
+&i2c1 {
+	status = "okay";
+};
+
+&gpio_exp_a {
+	status = "okay";
+};
+
+&status_led {
+	status = "okay";
+};
