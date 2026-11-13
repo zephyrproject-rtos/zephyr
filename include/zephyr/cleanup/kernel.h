@@ -25,6 +25,11 @@
  * @brief Guard for k_mutex.
  * Usage: @code{.c} scope_guard(k_mutex)(&lock); @endcode
  */
+/**
+ * Guards for kernel synchronization objects.
+ *
+ * @satisfies ZEP-SRS-42-2
+ */
 SCOPE_GUARD_DEFINE(k_mutex, struct k_mutex *, (void)k_mutex_lock(_T, K_FOREVER),
 		   (void)k_mutex_unlock(_T));
 /**

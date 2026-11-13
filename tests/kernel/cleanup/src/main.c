@@ -6,6 +6,12 @@
 #include <zephyr/ztest.h>
 #include <zephyr/cleanup/kernel.h>
 
+/**
+ * @brief Scoped Cleanup Tests
+ * @defgroup cleanup_tests Scoped Cleanup
+ * @ingroup all_tests
+ */
+
 extern struct k_heap _system_heap;
 static size_t free_bytes;
 
@@ -31,6 +37,13 @@ static void cleanup_after(void *fixture)
 	zassert_equal(free_bytes, stats.free_bytes, "Memory leaked in a test");
 }
 
+/**
+ * @brief Verify a mutex guard locks on scope entry and unlocks on exit.
+ *
+ * @ingroup cleanup_tests
+ * @verifies ZEP-SRS-42-1
+ * @verifies ZEP-SRS-42-2
+ */
 ZTEST(cleanup_api, test_guard_k_mutex)
 {
 	struct k_mutex lock;
@@ -66,6 +79,12 @@ ZTEST(cleanup_api, test_defer_k_mutex_unlock)
 	zexpect_equal(lock.lock_count, 0);
 }
 
+/**
+ * @brief Verify a semaphore guard takes on scope entry and gives on exit.
+ *
+ * @ingroup cleanup_tests
+ * @verifies ZEP-SRS-42-2
+ */
 ZTEST(cleanup_api, test_guard_k_sem)
 {
 	struct k_sem lock;
@@ -133,6 +152,12 @@ ZTEST(cleanup_api, test_scoped_guard_k_sem)
 	zexpect_equal(lock.count, 1);
 }
 
+/**
+ * @brief Verify an early exit from a scoped guard still releases the resource.
+ *
+ * @ingroup cleanup_tests
+ * @verifies ZEP-SRS-42-5
+ */
 ZTEST(cleanup_api, test_scoped_guard_break)
 {
 	struct k_mutex lock;
@@ -150,6 +175,12 @@ ZTEST(cleanup_api, test_scoped_guard_break)
 	zexpect_equal(lock.lock_count, 0);  /* break released the guard */
 }
 
+/**
+ * @brief Verify a conditional guard reports acquisition and releases on exit.
+ *
+ * @ingroup cleanup_tests
+ * @verifies ZEP-SRS-42-3
+ */
 ZTEST(cleanup_api, test_scoped_cond_guard_acquired)
 {
 	struct k_sem lock;
@@ -166,6 +197,12 @@ ZTEST(cleanup_api, test_scoped_cond_guard_acquired)
 	zexpect_equal(lock.count, 1);
 }
 
+/**
+ * @brief Verify a conditional guard reports failure and releases nothing.
+ *
+ * @ingroup cleanup_tests
+ * @verifies ZEP-SRS-42-3
+ */
 ZTEST(cleanup_api, test_scoped_cond_guard_busy)
 {
 	struct k_sem lock;
@@ -204,6 +241,12 @@ ZTEST(cleanup_api, test_scoped_guard_cond_busy_skips)
 	zexpect_equal(lock.count, 0);
 }
 
+/**
+ * @brief Verify a deferred function call runs when the scope is exited.
+ *
+ * @ingroup cleanup_tests
+ * @verifies ZEP-SRS-42-4
+ */
 ZTEST(cleanup_api, test_defer_k_free)
 {
 	void *my_ptr = k_malloc(10);
@@ -283,6 +326,12 @@ static inline void foo_destructor(struct foo f)
 
 SCOPE_VAR_DEFINE(foo, struct foo, foo_destructor(_T), foo_constructor(len), size_t len);
 
+/**
+ * @brief Verify an application-defined cleanup helper type works.
+ *
+ * @ingroup cleanup_tests
+ * @verifies ZEP-SRS-42-6
+ */
 ZTEST(cleanup_api, test_custom_cleanup_helper)
 {
 	scope_var(foo, f)(42);

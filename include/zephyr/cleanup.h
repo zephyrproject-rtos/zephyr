@@ -114,6 +114,9 @@
  *                    (void)k_mutex_lock(_T, K_FOREVER),
  *                    (void)k_mutex_unlock(_T));
  * @endcode
+ *
+ * @satisfies ZEP-SRS-42-1
+ * @satisfies ZEP-SRS-42-6
  */
 #define SCOPE_GUARD_DEFINE(_name, _type, _lock, _unlock)                                           \
 	SCOPE_VAR_DEFINE(                                                                          \
@@ -146,6 +149,8 @@
  *                         k_mutex_lock(_T, K_NO_WAIT) == 0,
  *                         (void)k_mutex_unlock(_T));
  * @endcode
+ *
+ * @satisfies ZEP-SRS-42-3
  */
 #define SCOPE_COND_GUARD_DEFINE(_name, _type, _try_lock, _unlock)                                  \
 	SCOPE_VAR_DEFINE(guard_##_name, _type, if (_T != NULL) { _unlock; },                       \
@@ -188,6 +193,9 @@
  * @code{.c}
  * SCOPE_DEFER_DEFINE(k_free, void *);
  * @endcode
+ *
+ * @satisfies ZEP-SRS-42-4
+ * @satisfies ZEP-SRS-42-6
  */
 #define SCOPE_DEFER_DEFINE(_func, ...)                                                             \
 	COND_CODE_0(NUM_VA_ARGS(__VA_ARGS__),                                                      \
@@ -321,6 +329,8 @@
  * }
  * // lock released here
  * @endcode
+ *
+ * @satisfies ZEP-SRS-42-5
  */
 #define scoped_guard(_name, ...)                                                                   \
 	Z_SCOPED_GUARD(_name, Z_UNIQUE_ID(scoped_g), Z_UNIQUE_ID(scoped_done), __VA_ARGS__)
