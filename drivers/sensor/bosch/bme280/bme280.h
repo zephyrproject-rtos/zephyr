@@ -173,7 +173,7 @@ extern const struct bme280_bus_io bme280_bus_io_i2c;
  * Need to divide by 1000 to convert to kPa
  */
 #define BME280_PRESS_CONV_KPA 1000
-#define BME280_PRESS_SHIFT    23
+#define BME280_PRESS_SHIFT    7
 /* Treat UQ22.10 as Q21.10 */
 #define BME280_HUM_SHIFT      21
 
