@@ -6517,6 +6517,15 @@ TI MSPM Platforms:
   labels:
     - "platform: TI MSPM"
 
+TI Sensors:
+  status: odd fixes
+  collaborators:
+    - glneo
+  files:
+    - drivers/sensor/ti/
+  tests:
+    - drivers.sensor
+
 TI SimpleLink Platforms:
   status: maintained
   maintainers:
