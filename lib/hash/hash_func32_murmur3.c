@@ -41,9 +41,9 @@ uint32_t sys_hash32_murmur3(const void *data, size_t n)
 		_LOOP(UNALIGNED_GET((const uint32_t *)str));
 	}
 
-	for (k = 0; n != 0; --n, ++str) {
+	for (k = 0; n != 0; --n) {
 		k <<= 8;
-		k |= *str;
+		k |= (uint8_t)str[n - 1];
 	}
 
 	h ^= murmur_32_scramble(k);
