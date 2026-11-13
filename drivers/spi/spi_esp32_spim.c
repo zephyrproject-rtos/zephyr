@@ -92,6 +92,12 @@ static inline void spi_esp32_complete(const struct device *dev,
 	spi_ll_clear_int_stat(spi);
 #endif
 
+	if (status != 0) {
+		spi_ll_master_keep_cs(spi, 0);
+		spi_ll_master_select_cs(spi, -1);
+		spi_ll_apply_config(spi);
+	}
+
 	spi_context_cs_control(&data->ctx, false);
 
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
@@ -210,11 +216,11 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	spi_hal_context_t *hal = &data->hal;
 	spi_hal_dev_config_t *hal_dev = &data->dev_config;
 	spi_hal_trans_config_t *hal_trans = &data->trans_config;
-	size_t chunk_len_bytes = spi_context_max_continuous_chunk(&data->ctx) * data->dfs;
 	size_t max_buf_sz =
 		cfg->dma_enabled ? SPI_DMA_MAX_BUFFER_SIZE : SOC_SPI_MAXIMUM_BUFFER_SIZE;
-	size_t transfer_len_bytes = MIN(chunk_len_bytes, max_buf_sz);
-	size_t transfer_len_frames = transfer_len_bytes / data->dfs;
+	size_t transfer_len_frames =
+		MIN(spi_context_max_continuous_chunk(&data->ctx), max_buf_sz / data->dfs);
+	size_t transfer_len_bytes = transfer_len_frames * data->dfs;
 	size_t bit_len = transfer_len_bytes << 3;
 	uint8_t *rx_temp = NULL;
 	uint8_t *tx_temp = NULL;
@@ -223,9 +229,10 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	bool prepare_data = true;
 	int err = 0;
 
+	/* bit_len needs to be at least one byte long */
+	bit_len = !bit_len ? 8 : bit_len;
+
 	if (cfg->dma_enabled) {
-		/* bit_len needs to be at least one byte long when using DMA */
-		bit_len = !bit_len ? 8 : bit_len;
 		if (ctx->tx_buf && !esp_ptr_dma_capable((uint32_t *)&ctx->tx_buf[0])) {
 			LOG_DBG("Tx buffer not DMA capable");
 			tx_temp = k_malloc(dma_len_tx);
@@ -293,8 +300,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	}
 
 	hal_trans->cs_keep_active =
-		(UTIL_OR(IS_ENABLED(DT_SPI_CTX_HAS_NO_CS_GPIOS), (ctx->num_cs_gpios == 0)) &&
-		 (tx_remaining > 0 || rx_remaining > 0));
+		!spi_cs_is_gpio(ctx->config) && (tx_remaining > 0 || rx_remaining > 0);
 
 	/* configure SPI */
 	spi_hal_setup_trans(hal, hal_dev, hal_trans);
@@ -336,6 +342,9 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 		err = spi_esp32_gdma_start(dev, SPI_DMA_TX);
 		if (err) {
+			if (hal_trans->rcv_buffer) {
+				dma_stop(cfg->dma_dev, cfg->dma_rx_ch);
+			}
 			goto free;
 		}
 	}
@@ -390,6 +399,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	}
 
 	/* send data */
+	spi_ll_master_select_cs(hal->hw, hal_dev->cs_pin_id);
 	spi_hal_user_start(hal);
 	spi_context_update_tx(&data->ctx, data->dfs, transfer_len_frames);
 
@@ -547,6 +557,7 @@ static void IRAM_ATTR spi_esp32_isr(void *arg)
 	const struct device *dev = (const struct device *)arg;
 	const struct spi_esp32_config *cfg = dev->config;
 	struct spi_esp32_data *data = dev->data;
+	int ret;
 
 #ifdef CONFIG_ESP32_SPI_TARGET
 	if (data->target_mode) {
@@ -567,10 +578,10 @@ static void IRAM_ATTR spi_esp32_isr(void *arg)
 #endif /* CONFIG_ESP32_SPI_TARGET */
 
 	do {
-		spi_esp32_transfer(dev);
-	} while (spi_esp32_transfer_ongoing(data));
+		ret = spi_esp32_transfer(dev);
+	} while (ret == 0 && spi_esp32_transfer_ongoing(data));
 
-	spi_esp32_complete(dev, data, cfg->spi, 0);
+	spi_esp32_complete(dev, data, cfg->spi, ret);
 
 #if CONFIG_PM
 	spi_esp32_pm_policy_state_lock_put(dev);
@@ -796,7 +807,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return 0;
 	}
 
-	ctx->config = spi_cfg;
+	ctx->config = NULL;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
@@ -844,6 +855,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		spi_ll_clear_int_stat(cfg->spi);
 
 		irq_unlock(key);
+		ctx->config = spi_cfg;
 		return 0;
 #else
 		LOG_ERR("Target mode requires CONFIG_ESP32_SPI_TARGET");
@@ -855,6 +867,25 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		LOG_ERR("Loopback mode is not supported");
 		return -ENOTSUP;
 	}
+
+#ifdef CONFIG_ESP32_SPI_TARGET
+	if (data->target_mode) {
+		unsigned int key = irq_lock();
+
+		data->target_mode = false;
+		spi_ll_reset_register(cfg->dma_host + 1);
+		spi_hal_init(hal, cfg->dma_host + 1);
+		spi_ll_enable_clock(cfg->dma_host + 1, true);
+		spi_ll_set_clk_source(cfg->spi, cfg->clock_source);
+#ifndef SOC_GDMA_SUPPORTED
+		hal->dma_enabled = cfg->dma_enabled;
+#endif
+		spi_ll_disable_int(cfg->spi);
+		spi_ll_clear_int_stat(cfg->spi);
+
+		irq_unlock(key);
+	}
+#endif /* CONFIG_ESP32_SPI_TARGET */
 
 	/*
 	 * CS handling:
@@ -868,7 +899,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	if (spi_cs_is_gpio(spi_cfg)) {
 		hal_dev->cs_pin_id = -1;
 	} else {
-		hal_dev->cs_pin_id = ctx->config->peripheral;
+		hal_dev->cs_pin_id = spi_cfg->peripheral;
 	}
 
 	uint32_t clk_src_hz = data->clock_source_hz;
@@ -897,8 +928,6 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		LOG_ERR("Frequency %u Hz not supported in full-duplex mode, set half-duplex or "
 			"dummy-comp in devicetree or lower the frequency",
 			spi_cfg->frequency);
-		/* Force a full reconfiguration at the next transfer */
-		ctx->config = NULL;
 		return -ENOTSUP;
 	}
 
@@ -959,13 +988,14 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	}
 #endif
 
-	/*
-	 * Workaround: dummy transaction needed to sync CLK and software
-	 * controlled CS when SPI is in mode 3. Not needed on ESP32/ESP32-S2.
+	ctx->config = spi_cfg;
+
+	/* Workaround: dummy transaction needed to sync CLK and software
+	 * controlled CS when CPOL is set. Not needed on ESP32/ESP32-S2.
 	 */
 #if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32S2) &&                    \
 	!defined(DT_SPI_CTX_HAS_NO_CS_GPIOS)
-	if ((ctx->num_cs_gpios != 0) && (hal_dev->mode & (SPI_MODE_CPOL | SPI_MODE_CPHA))) {
+	if (spi_cs_is_gpio(spi_cfg) && (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)) {
 		spi_esp32_transfer(dev);
 	}
 #endif
@@ -1006,11 +1036,7 @@ static int transceive(const struct device *dev,
 
 	data->dfs = spi_esp32_get_frame_size(spi_cfg);
 
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
-
-	if (data->ctx.tx_buf == NULL && data->ctx.rx_buf == NULL) {
-		goto done;
-	}
+	spi_context_buffers_setup(&data->ctx, NULL, NULL, data->dfs);
 
 #if CONFIG_PM
 	spi_esp32_pm_policy_state_lock_get(dev);
@@ -1018,6 +1044,15 @@ static int transceive(const struct device *dev,
 
 	ret = spi_esp32_configure(dev, spi_cfg);
 	if (ret) {
+		goto done;
+	}
+
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
+
+	if (data->ctx.tx_buf == NULL && data->ctx.rx_buf == NULL) {
+		if (asynchronous) {
+			spi_context_complete(&data->ctx, dev, 0);
+		}
 		goto done;
 	}
 
@@ -1049,7 +1084,7 @@ static int transceive(const struct device *dev,
 
 	if (!asynchronous) {
 		ret = spi_context_wait_for_completion(&data->ctx);
-		if (ret != 0) {
+		if (ret == -ETIMEDOUT) {
 			/* A late ISR completion must not signal the context of
 			 * the next transfer
 			 */
