@@ -870,6 +870,7 @@ class KconfigCheck(ComplianceTest):
         self.check_disallowed_defconfigs(kconf)
         self.check_no_parser_warnings(kconf)
         self.check_hardening_data(kconf)
+        self.check_prompt_lengths(kconf)
 
     def check_no_parser_warnings(self, kconf):
         """
@@ -1407,6 +1408,25 @@ Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
 {reason}
 """,
                     )
+
+    def check_prompt_lengths(self, kconf):
+        """
+        Checks that the length of Kconfig prompts are not too long
+        """
+
+        # Assume overhead of a line is 14 characters based on an int type
+        kconfig_excess_length = (100 - 14)
+
+        for node in kconf.node_iter():
+            # 'kconfiglib' is global
+            # pylint: disable=undefined-variable
+            if node.prompt is not None:
+                for prompt in node.prompt:
+                    if isinstance(prompt, str) and len(prompt) > kconfig_excess_length:
+                        self.failure(f"""
+Kconfig node '{node.item.name}' prompt text is too long in {node.filename}.
+Whole line must be 100 chars or less.
+""")
 
     def get_defined_syms(self, kconf):
         # Returns a set() with the names of all defined Kconfig symbols (with no
