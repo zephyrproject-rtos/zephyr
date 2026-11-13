@@ -2015,6 +2015,15 @@ static int extract_raw_json_data(struct json_obj *obj, struct json_token *value,
 	}
 
 	char *end_pos = obj->lex.pos;
+
+	/* The value is terminated in place, which needs a byte of input
+	 * after it. A value that ends the input also leaves the array
+	 * unclosed.
+	 */
+	if (end_pos >= obj->lex.end) {
+		return -EINVAL;
+	}
+
 	*end_pos = '\0';
 	*field_ptr = start_pos;
 
