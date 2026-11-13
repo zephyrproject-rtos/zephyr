@@ -237,7 +237,7 @@ int uuid_to_base64(const struct uuid *data, char out[UUID_BASE64_LEN])
 
 	size_t olen = 0;
 
-	base64_encode(out, UUID_BASE64_LEN, &olen, data->val, UUID_SIZE);
+	base64_encode((uint8_t *)out, UUID_BASE64_LEN, &olen, data->val, UUID_SIZE);
 	return 0;
 }
 
@@ -249,7 +249,7 @@ int uuid_to_base64url(const struct uuid *data, char out[UUID_BASE64URL_LEN])
 
 	/* Convert UUID to RFC 3548/4648 base 64 notation */
 	size_t olen = 0;
-	char uuid_base64[UUID_BASE64_LEN] = {0};
+	uint8_t uuid_base64[UUID_BASE64_LEN] = {0};
 
 	base64_encode(uuid_base64, UUID_BASE64_LEN, &olen, data->val, UUID_SIZE);
 	/* Convert UUID to RFC 4648 sec. 5 URL and filename safe base 64 notation */
