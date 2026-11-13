@@ -115,6 +115,52 @@ Console
 The Zephyr on BeagleY-AI Cortex-R5F uses UART 1 (HAT pins 8-TX, 10-RX)
 as console.
 
+Debugging
+*********
+
+OpenOCD can debug the R5F cores either with the on-board Linux self-hosted
+``dmem`` adapter, or with an external JTAG adapter (for example TUMPA or
+Bus Pirate). The board runner selects the core GDB port and OpenOCD target
+handle; the probe is chosen at build time with ``OPENOCD_INTERFACE``.
+
+Self-hosted (default)
+---------------------
+
+OpenOCD runs on Linux on the board and uses the TI K3 ``dmem`` adapter.
+Access to ``/dev/mem`` requires superuser privilege, so launch OpenOCD
+separately:
+
+.. code-block:: console
+
+   sudo openocd -f board/ti/j722s-self-hosted.cfg
+
+Then attach with the ``debug`` build target:
+
+.. zephyr-app-commands::
+   :app: <my_app>
+   :board: beagley_ai/j722s/main_r5f0_0
+   :maybe-skip-config:
+   :goals: debug
+
+For the MCU domain R5F, use ``beagley_ai/j722s/mcu_r5f0_0`` instead.
+
+External JTAG adapter
+---------------------
+
+Select any OpenOCD interface script stem with ``OPENOCD_INTERFACE``
+(cached by CMake). The value is the path under OpenOCD's ``interface/``
+directory, without the ``.cfg`` suffix, for example ``ftdi/tumpa`` or
+``buspirate``:
+
+.. code-block:: console
+
+   west build -b beagley_ai/j722s/main_r5f0_0 -- -DOPENOCD_INTERFACE=ftdi/tumpa
+   west debug
+
+.. hint::
+   Use an OpenOCD build with TI K3 J722S support. Older package-manager
+   versions may not include the required scripts.
+
 References
 **********
 * `BeagleY-AI Homepage <https://beagley.ai>`_
