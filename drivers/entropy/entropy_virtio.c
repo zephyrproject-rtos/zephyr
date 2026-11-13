@@ -22,6 +22,7 @@ struct entropy_virtio_config {
 #define ENTROPY_BUFFER_MAX_LEN 256
 
 struct entropy_virtio_data {
+	struct virtq vq;
 	struct k_sem sem;
 	uint32_t received_len;
 	struct k_mutex buf_mutex;
@@ -36,26 +37,12 @@ static void entropy_virtio_virtq_recv_cb(void *priv, uint32_t len)
 	k_sem_give(&data->sem);
 }
 
-static uint16_t entropy_virtio_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *unused)
-{
-	if (q_index == VIRTIO_ENTROPY_QUEUE_IDX) {
-		return MIN(1, q_size_max);
-	}
-
-	return 0;
-}
-
 static int entropy_virtio_get_entropy(const struct device *dev, uint8_t *buffer, uint16_t length)
 {
 	const struct entropy_virtio_config *cfg = dev->config;
 	struct entropy_virtio_data *data = dev->data;
-	struct virtq *vq = virtio_get_virtqueue(cfg->vdev, VIRTIO_ENTROPY_QUEUE_IDX);
+	struct virtq *vq = &data->vq;
 	int ret;
-
-	if (!vq) {
-		LOG_ERR("failed to get virtqueue %d", VIRTIO_ENTROPY_QUEUE_IDX);
-		return -ENODEV;
-	}
 
 	while (length > 0) {
 		struct virtq_buf buf[] = {
@@ -106,7 +93,7 @@ static int entropy_virtio_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = virtio_init_virtqueues(cfg->vdev, 1, entropy_virtio_enum_queues_cb, NULL);
+	ret = virtio_init_virtqueues(cfg->vdev, &data->vq, 1);
 	if (ret) {
 		LOG_ERR("virtio_init_virtqueues failed: %d", ret);
 		return ret;
@@ -122,7 +109,10 @@ static int entropy_virtio_init(const struct device *dev)
 }
 
 #define ENTROPY_VIRTIO_INST(n)                                                                     \
-	static struct entropy_virtio_data entropy_virtio_data_##n;                                 \
+	VIRTQ_STORAGE_DEFINE(entropy_virtio_vq_##n, 1);                                            \
+	static struct entropy_virtio_data entropy_virtio_data_##n = {                              \
+		.vq = VIRTQ_INITIALIZER(entropy_virtio_vq_##n, 1),                                 \
+	};                                                                                         \
 	static const struct entropy_virtio_config entropy_virtio_config_##n = {                    \
 		.vdev = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(n))),                                  \
 	};                                                                                         \

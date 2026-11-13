@@ -83,16 +83,9 @@ static void virtio_mmio_isr(const struct device *dev)
 	const uint32_t isr_status = virtio_mmio_read32(dev, VIRTIO_MMIO_INTERRUPT_STATUS);
 
 	virtio_mmio_write32(dev, VIRTIO_MMIO_INTERRUPT_ACK, isr_status);
-	virtio_isr(dev, isr_status, data->virtqueue_count);
+	virtio_isr(dev, isr_status, data->virtqueues, data->virtqueue_count);
 
 	k_spin_unlock(&data->isr_lock, key);
-}
-
-struct virtq *virtio_mmio_get_virtqueue(const struct device *dev, uint16_t queue_idx)
-{
-	struct virtio_mmio_data *data = dev->data;
-
-	return queue_idx < data->virtqueue_count ? &data->virtqueues[queue_idx] : NULL;
 }
 
 static void virtio_mmio_notify_queue(const struct device *dev, uint16_t queue_idx)
@@ -191,20 +184,10 @@ static void virtio_mmio_reset(const struct device *dev)
 	}
 }
 
-static int virtio_mmio_set_virtqueue(const struct device *dev, uint16_t virtqueue_n,
-				     struct virtq *virtqueue)
+static void virtio_mmio_set_virtqueue(const struct device *dev, uint16_t virtqueue_n,
+				      struct virtq *virtqueue)
 {
 	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_SEL, virtqueue_n);
-
-	uint16_t max_queue_size = virtio_mmio_read32(dev, VIRTIO_MMIO_QUEUE_SIZE_MAX);
-
-	if (max_queue_size < virtqueue->num) {
-		LOG_ERR("%s doesn't support queue %d bigger than %d, tried to set "
-			"one with size %d",
-			dev->name, virtqueue_n, max_queue_size, virtqueue->num);
-		return -EINVAL;
-	}
-
 	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_SIZE, virtqueue->num);
 	virtio_mmio_write_addr64(dev, VIRTIO_MMIO_QUEUE_DESC_LOW, VIRTIO_MMIO_QUEUE_DESC_HIGH,
 				 virtqueue->desc);
@@ -214,42 +197,29 @@ static int virtio_mmio_set_virtqueue(const struct device *dev, uint16_t virtqueu
 				 virtqueue->used);
 
 	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_READY, 1);
-
-	return 0;
 }
 
-static int virtio_mmio_set_virtqueues(const struct device *dev, uint16_t queue_count,
-				      virtio_enumerate_queues cb, void *opaque)
+static int virtio_mmio_set_virtqueues(const struct device *dev, struct virtq *virtqueues,
+				      uint16_t queue_count)
 {
 	struct virtio_mmio_data *data = dev->data;
 
-	data->virtqueues = k_malloc(queue_count * sizeof(struct virtq));
-	if (!data->virtqueues) {
-		LOG_ERR("failed to allocate virtqueue array");
-		return -ENOMEM;
-	}
+	data->virtqueues = virtqueues;
 	data->virtqueue_count = queue_count;
 
 	int ret = 0;
-	int created_queues = 0;
 	int activated_queues = 0;
 
 	for (int i = 0; i < queue_count; i++) {
 		virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_SEL, i);
 
-		const uint16_t queue_size =
-			cb(i, virtio_mmio_read32(dev, VIRTIO_MMIO_QUEUE_SIZE_MAX), opaque);
-
-		ret = virtq_create(&data->virtqueues[i], queue_size);
+		ret = virtq_create(&data->virtqueues[i],
+				   virtio_mmio_read32(dev, VIRTIO_MMIO_QUEUE_SIZE_MAX));
 		if (ret != 0) {
 			goto fail;
 		}
-		created_queues++;
 
-		ret = virtio_mmio_set_virtqueue(dev, i, &data->virtqueues[i]);
-		if (ret != 0) {
-			goto fail;
-		}
+		virtio_mmio_set_virtqueue(dev, i, &data->virtqueues[i]);
 		activated_queues++;
 	}
 
@@ -260,19 +230,16 @@ fail:
 		virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_SEL, j);
 		virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_READY, 0);
 	}
-	for (int j = 0; j < created_queues; j++) {
-		virtq_free(&data->virtqueues[j]);
-	}
-	k_free(data->virtqueues);
 	data->virtqueue_count = 0;
+	data->virtqueues = NULL;
 
 	return ret;
 }
 
-static int virtio_mmio_init_virtqueues(const struct device *dev, uint16_t num_queues,
-				       virtio_enumerate_queues cb, void *opaque)
+static int virtio_mmio_init_virtqueues(const struct device *dev, struct virtq *virtqueues,
+				       uint16_t num_queues)
 {
-	return virtio_mmio_set_virtqueues(dev, num_queues, cb, opaque);
+	return virtio_mmio_set_virtqueues(dev, virtqueues, num_queues);
 }
 
 static void virtio_mmio_finalize_init(const struct device *dev)
@@ -281,7 +248,6 @@ static void virtio_mmio_finalize_init(const struct device *dev)
 }
 
 static DEVICE_API(virtio, virtio_mmio_driver_api) = {
-	.get_virtqueue = virtio_mmio_get_virtqueue,
 	.notify_virtqueue = virtio_mmio_notify_queue,
 	.get_device_specific_config = virtio_mmio_get_device_specific_config,
 	.read_device_feature_bit = virtio_mmio_read_device_feature_bit,
