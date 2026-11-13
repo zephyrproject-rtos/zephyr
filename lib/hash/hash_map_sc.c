@@ -241,6 +241,9 @@ static int sys_hashmap_sc_insert(struct sys_hashmap *map, uint64_t key, uint64_t
 
 	entry = map->alloc_func(NULL, sizeof(*entry));
 	if (entry == NULL) {
+		if (map->data->size == 0) {
+			sys_hashmap_sc_clear(map, NULL, NULL);
+		}
 		return -ENOMEM;
 	}
 
