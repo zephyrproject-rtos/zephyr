@@ -12,6 +12,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/timeutil.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
@@ -359,6 +360,83 @@ ZTEST(posix_semaphores, test_named_semaphore)
 	sem_unlink("nsem");
 	sem_close(sem1);
 	zassert_equal(nsem_get_list_len(), 0);
+}
+
+ZTEST(posix_semaphores, test_sem_post_overflow)
+{
+	sem_t sem;
+	int val;
+
+	zassert_ok(sem_init(&sem, 0, CONFIG_POSIX_SEM_VALUE_MAX));
+
+	/* posting a semaphore at SEM_VALUE_MAX must fail and change nothing */
+	errno = 0;
+	zassert_equal(sem_post(&sem), -1);
+	zassert_equal(errno, EOVERFLOW);
+	zassert_ok(sem_getvalue(&sem, &val));
+	zassert_equal(val, CONFIG_POSIX_SEM_VALUE_MAX);
+
+	/* once there is room again, sem_post() succeeds */
+	zassert_ok(sem_wait(&sem));
+	zassert_ok(sem_post(&sem));
+	zassert_ok(sem_getvalue(&sem, &val));
+	zassert_equal(val, CONFIG_POSIX_SEM_VALUE_MAX);
+
+	zassert_ok(sem_destroy(&sem));
+}
+
+#define N_POSTERS 3
+
+static sem_t race_sem;
+static atomic_t race_go;
+static atomic_t race_ok;
+static atomic_t race_overflow;
+
+static void *race_post(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	while (!atomic_get(&race_go)) {
+		k_yield();
+	}
+
+	if (sem_post(&race_sem) == 0) {
+		atomic_inc(&race_ok);
+	} else if (errno == EOVERFLOW) {
+		atomic_inc(&race_overflow);
+	}
+
+	return NULL;
+}
+
+ZTEST(posix_semaphores, test_sem_post_overflow_concurrent)
+{
+	pthread_t th[N_POSTERS - 1];
+	int val;
+
+	/* one free slot below SEM_VALUE_MAX: exactly one of the posts may succeed */
+	zassert_ok(sem_init(&race_sem, 0, CONFIG_POSIX_SEM_VALUE_MAX - 1));
+	atomic_clear(&race_go);
+	atomic_clear(&race_ok);
+	atomic_clear(&race_overflow);
+
+	for (size_t i = 0; i < ARRAY_SIZE(th); i++) {
+		zassert_ok(pthread_create(&th[i], NULL, race_post, NULL));
+	}
+
+	atomic_set(&race_go, 1);
+	(void)race_post(NULL);
+
+	for (size_t i = 0; i < ARRAY_SIZE(th); i++) {
+		zassert_ok(pthread_join(th[i], NULL));
+	}
+
+	zassert_equal(atomic_get(&race_ok), 1, "successful posts: %ld", (long)atomic_get(&race_ok));
+	zassert_equal(atomic_get(&race_overflow), N_POSTERS - 1);
+	zassert_ok(sem_getvalue(&race_sem, &val));
+	zassert_equal(val, CONFIG_POSIX_SEM_VALUE_MAX);
+
+	zassert_ok(sem_destroy(&race_sem));
 }
 
 ZTEST_SUITE(posix_semaphores, NULL, NULL, NULL, NULL, NULL);
