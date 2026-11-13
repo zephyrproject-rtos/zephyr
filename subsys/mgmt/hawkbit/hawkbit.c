@@ -885,8 +885,8 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 
 			if ((hb_context.dl.downloaded_size + body_len + 1) >
 			    response_buffer_size) {
-				response_buffer_size <<= 1;
-				rsp_tmp = realloc(hb_context.response_data, response_buffer_size);
+				rsp_tmp = realloc(hb_context.response_data,
+						  response_buffer_size << 1);
 				if (rsp_tmp == NULL) {
 					LOG_ERR("Failed to realloc memory");
 					hb_context.code_status = HAWKBIT_METADATA_ERROR;
@@ -894,6 +894,7 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 				}
 
 				hb_context.response_data = rsp_tmp;
+				response_buffer_size <<= 1;
 			}
 			memcpy(&hb_context.response_data[hb_context.dl.downloaded_size], body_data,
 			       body_len);
@@ -937,8 +938,8 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 
 			if ((hb_context.dl.downloaded_size + body_len + 1) >
 			    response_buffer_size) {
-				response_buffer_size <<= 1;
-				rsp_tmp = realloc(hb_context.response_data, response_buffer_size);
+				rsp_tmp = realloc(hb_context.response_data,
+						  response_buffer_size << 1);
 				if (rsp_tmp == NULL) {
 					LOG_ERR("Failed to realloc memory");
 					hb_context.code_status = HAWKBIT_METADATA_ERROR;
@@ -946,6 +947,7 @@ static void response_cb(struct http_response *rsp, enum http_final_call final_da
 				}
 
 				hb_context.response_data = rsp_tmp;
+				response_buffer_size <<= 1;
 			}
 			memcpy(&hb_context.response_data[hb_context.dl.downloaded_size], body_data,
 			       body_len);
