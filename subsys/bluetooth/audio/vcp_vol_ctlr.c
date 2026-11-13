@@ -361,6 +361,23 @@ static void vcp_vol_ctlr_write_vcs_cp_cb(struct bt_conn *conn, uint8_t err,
 }
 
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS) || defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
+static int vcs_discover_next_include(struct bt_vcp_vol_ctlr *vol_ctlr)
+{
+	const struct bt_gatt_discover_params *params = &vol_ctlr->discover_params;
+
+	/* The start handle is the one after the include: past the end of the service when the
+	 * include is its last attribute, and 0 when that is the last handle.
+	 */
+	if (params->start_handle == 0U || params->start_handle > params->end_handle) {
+		vcp_vol_ctlr_discover_complete(vol_ctlr, 0);
+
+		return 0;
+	}
+
+	/* Continue discovery of included services */
+	return bt_gatt_discover(vol_ctlr->conn, &vol_ctlr->discover_params);
+}
+
 static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 					 const struct bt_gatt_attr *attr,
 					 struct bt_gatt_discover_params *params)
@@ -563,6 +580,13 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 		LOG_DBG("Primary discover complete");
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
 
+		if (attr->handle == prim_service->end_handle) {
+			LOG_WRN("VCS without characteristics");
+			vcp_vol_ctlr_discover_complete(vol_ctlr, -ENODATA);
+
+			return BT_GATT_ITER_STOP;
+		}
+
 		vol_ctlr->start_handle = attr->handle + 1;
 		vol_ctlr->end_handle = prim_service->end_handle;
 
@@ -713,8 +737,7 @@ static void vcp_vol_ctlr_aics_discover_cb(struct bt_aics *inst, int err)
 	}
 
 	if (err == 0) {
-		/* Continue discovery of included services */
-		err = bt_gatt_discover(vol_ctlr->conn, &vol_ctlr->discover_params);
+		err = vcs_discover_next_include(vol_ctlr);
 	}
 
 	if (err != 0) {
@@ -845,8 +868,7 @@ static void vcp_vol_ctlr_vocs_discover_cb(struct bt_vocs *inst, int err)
 	}
 
 	if (err == 0) {
-		/* Continue discovery of included services */
-		err = bt_gatt_discover(vol_ctlr->conn, &vol_ctlr->discover_params);
+		err = vcs_discover_next_include(vol_ctlr);
 	}
 
 	if (err != 0) {

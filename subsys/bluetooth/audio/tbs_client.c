@@ -1564,6 +1564,14 @@ static void tbs_client_disc_read_ccid(struct bt_conn *conn)
 	struct bt_tbs_instance *inst = srv_inst->current_inst;
 	int err;
 
+	/* The CCID is mandatory, so a server without one is invalid */
+	if (inst->ccid_handle == 0U) {
+		LOG_WRN("No CCID in instance %u", tbs_index(conn, inst));
+		tbs_client_discover_complete(conn, -EBADMSG);
+
+		return;
+	}
+
 	err = tbs_client_gatt_read(conn, inst, inst->ccid_handle, disc_read_ccid_cb);
 	if (err != 0) {
 		tbs_client_discover_complete(conn, err);
@@ -1834,6 +1842,12 @@ static uint8_t primary_discover_tbs_cb(struct bt_conn *conn, const struct bt_gat
 
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
 
+		if (attr->handle == prim_service->end_handle) {
+			LOG_WRN("TBS without characteristics");
+
+			return BT_GATT_ITER_CONTINUE;
+		}
+
 		srv_inst->current_inst = &srv_inst->tbs_insts[srv_inst->inst_cnt];
 		srv_inst->inst_cnt++;
 		srv_inst->current_inst->start_handle = attr->handle + 1;
@@ -1887,9 +1901,13 @@ static uint8_t primary_discover_gtbs_cb(struct bt_conn *conn, const struct bt_ga
 
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
 
-		srv_inst->current_inst = &srv_inst->gtbs_inst;
-		srv_inst->current_inst->start_handle = attr->handle + 1;
-		srv_inst->current_inst->end_handle = prim_service->end_handle;
+		if (attr->handle == prim_service->end_handle) {
+			LOG_WRN("GTBS without characteristics");
+		} else {
+			srv_inst->current_inst = &srv_inst->gtbs_inst;
+			srv_inst->current_inst->start_handle = attr->handle + 1;
+			srv_inst->current_inst->end_handle = prim_service->end_handle;
+		}
 	}
 
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
@@ -1983,6 +2001,11 @@ int bt_tbs_client_originate_call(struct bt_conn *conn, uint8_t inst_index,
 
 	inst = tbs_inst_by_index(conn, inst_index);
 	if (inst == NULL) {
+		return -EINVAL;
+	}
+
+	if (inst->call_cp_sub_params.value_handle == 0U) {
+		LOG_DBG("Handle not set");
 		return -EINVAL;
 	}
 

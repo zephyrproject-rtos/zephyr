@@ -268,8 +268,17 @@ static void micp_mic_ctlr_aics_discover_cb(struct bt_aics *inst, int err)
 	}
 
 	if (err == 0) {
-		/* Continue discovery of included services */
-		err = bt_gatt_discover(mic_ctlr->conn, &mic_ctlr->discover_params);
+		const struct bt_gatt_discover_params *params = &mic_ctlr->discover_params;
+
+		/* The start handle is the one after the include: past the end of the service when
+		 * the include is its last attribute, and 0 when that is the last handle.
+		 */
+		if (params->start_handle == 0U || params->start_handle > params->end_handle) {
+			micp_mic_ctlr_discover_complete(mic_ctlr, 0);
+		} else {
+			/* Continue discovery of included services */
+			err = bt_gatt_discover(mic_ctlr->conn, &mic_ctlr->discover_params);
+		}
 	}
 
 	if (err != 0) {
@@ -488,6 +497,14 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 		int err;
 
 		LOG_DBG("Primary discover complete");
+
+		if (attr->handle == prim_service->end_handle) {
+			LOG_WRN("MICS without characteristics");
+			micp_mic_ctlr_discover_complete(mic_ctlr, -ENODATA);
+
+			return BT_GATT_ITER_STOP;
+		}
+
 		mic_ctlr->start_handle = attr->handle + 1;
 		mic_ctlr->end_handle = prim_service->end_handle;
 
