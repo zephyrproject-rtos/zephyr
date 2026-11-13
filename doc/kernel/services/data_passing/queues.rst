@@ -33,3 +33,10 @@ API Reference
 *************
 
 .. doxygengroup:: queue_apis
+
+Safety
+******
+
+The safety relevance of the queue, the systematic capability it inherits, the
+interfaces it shares with the hardware and the design decisions that follow
+from them are documented in :ref:`queue_safety`.
