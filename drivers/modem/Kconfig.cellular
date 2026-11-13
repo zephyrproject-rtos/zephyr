@@ -68,11 +68,6 @@ config MODEM_CELLULAR_ON_DEMAND_CONNECT
 	  Selects MODEM_DEDICATED_WORKQUEUE, which the hang-up path requires (see
 	  modem_cellular.c for why).
 
-	  Only for modems whose vendor configuration provides no network chat
-	  script; enabling it for one that does makes the driver fail to
-	  initialize (-ENOTSUP), as such a modem dials on registration regardless
-	  of the PPP interface admin state.
-
 config MODEM_CELLULAR_INIT_PRIORITY
 	int "Cellular modem driver initialization priority"
 	default 91
