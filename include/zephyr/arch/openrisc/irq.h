@@ -54,6 +54,19 @@ extern int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 				     const void *parameter, uint32_t flags);
 #endif
 
+#elif defined(CONFIG_OPENRISC_SOC_IRQ_DISPATCH)
+
+#define CONFIG_NUM_IRQS CONFIG_OPENRISC_SOC_NUM_IRQS
+
+void z_soc_irq_enable(unsigned int irq);
+void z_soc_irq_disable(unsigned int irq);
+int z_soc_irq_is_enabled(unsigned int irq);
+
+#define arch_irq_enable(irq)	z_soc_irq_enable(irq)
+#define arch_irq_disable(irq)	z_soc_irq_disable(irq)
+
+#define arch_irq_is_enabled(irq)	z_soc_irq_is_enabled(irq)
+
 #else
 
 #define CONFIG_NUM_IRQS OR1K_PIC_NUM_INTERRUPTS
@@ -92,6 +105,16 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 }
 
 /**
+ * @brief Dispatch pending SoC interrupts.
+ *
+ * Called from the external interrupt exception when
+ * CONFIG_OPENRISC_SOC_IRQ_DISPATCH is enabled. The SoC calls
+ * z_openrisc_enter_irq() for each pending line.
+ */
+void z_soc_irq_dispatch(void);
+
+#ifndef CONFIG_OPENRISC_SOC_IRQ_DISPATCH
+/**
  * @brief Enable interrupt on OpenRISC core.
  *
  * @param irq Interrupt to be enabled.
@@ -121,5 +144,6 @@ static ALWAYS_INLINE int arch_irq_is_enabled(unsigned int irq)
 {
 	return (openrisc_read_spr(SPR_PICMR) & BIT(irq)) != 0;
 }
+#endif /* !CONFIG_OPENRISC_SOC_IRQ_DISPATCH */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_OPENRISC_IRQ_H_ */
