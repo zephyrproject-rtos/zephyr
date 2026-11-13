@@ -93,6 +93,8 @@ BUILD_ASSERT(ARRAY_SIZE(GMAC->GMAC_TBQBAPQ) + 1 == GMAC_QUEUE_NUM,
 
 #define GMAC_DMA_QUEUE_FLAGS (0)
 
+#define TIMEOUT_REG_SYNC 1000
+
 enum queue_idx {
 	GMAC_QUE_0, /* Main queue */
 };
@@ -153,6 +155,10 @@ struct gmac_dev_config {
 	const struct device *phy_dev;
 	clock_control_subsys_t mclk_apb_sys;
 	clock_control_subsys_t mclk_ahb_sys;
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC
+	clock_control_subsys_t gclk_tx_sys;
+	clock_control_subsys_t gclk_tsu_sys;
+#endif
 	const struct net_eth_mac_config mcfg;
 };
 
@@ -380,9 +386,32 @@ static void gmac_rx_error_handler(gmac_registers_t *gmac, struct gmac_queue *que
 static int gmac_set_phy_connection_type(gmac_registers_t *gmac)
 {
 #ifdef GMAC_PHY_CONN_TYPE_MII_ENABLED
+
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC
+	gmac->GMAC_CTRLB &= ~GMAC_CTRLB_GBITCLKREQ_Msk;
+	gmac->GMAC_CTRLB |= GMAC_CTRLB_GMIIEN(1);
+	if (WAIT_FOR((gmac->GMAC_SYNCB == 0), TIMEOUT_REG_SYNC, NULL) == false) {
+		LOG_ERR("SYNCBUSY timeout");
+		return -ETIMEDOUT;
+	}
+	gmac->GMAC_NCFGR &= ~GMAC_NCFGR_GIGE_Msk;
+#else
 	gmac->GMAC_UR = 0x1;
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC */
+
 #elif defined(GMAC_PHY_CONN_TYPE_RMII_ENABLED)
+
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC
+	gmac->GMAC_CTRLB &= ~(GMAC_CTRLB_GMIIEN_Msk | GMAC_CTRLB_GBITCLKREQ_Msk);
+	if (WAIT_FOR((gmac->GMAC_SYNCB == 0), TIMEOUT_REG_SYNC, NULL) == false) {
+		LOG_ERR("SYNCBUSY timeout");
+		return -ETIMEDOUT;
+	}
+	gmac->GMAC_NCFGR &= ~GMAC_NCFGR_GIGE_Msk;
+#else
 	gmac->GMAC_UR = 0x0;
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC */
+
 #endif /* GMAC_PHY_CONN_TYPE_MII_ENABLED */
 
 	return 0;
@@ -420,15 +449,30 @@ static int gmac_init(const struct device *dev, gmac_registers_t *gmac)
 	uint32_t mck_divisor;
 	const struct gmac_dev_config *const cfg = dev->config;
 
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC
+	gmac->GMAC_CTRLA = GMAC_CTRLA_ENABLE(1);
+	if (WAIT_FOR((gmac->GMAC_SYNCB == 0), TIMEOUT_REG_SYNC, NULL) == false) {
+		LOG_ERR("SYNCBUSY timeout");
+		return -ETIMEDOUT;
+	}
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC */
+
 	gmac->GMAC_NCFGR |= GMAC_NCFGR_MTIHEN_Msk | GMAC_NCFGR_LFERD_Msk | GMAC_NCFGR_RFCS_Msk |
 #ifdef CONFIG_NET_VLAN
 			    GMAC_NCFGR_MAXFS_Msk |
+#endif
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC
+			    GMAC_NCFGR_DBW(1) |
 #endif
 			    GMAC_NCFGR_RXCOEN_Msk;
 
 	gmac->GMAC_NCR = GMAC_NCR_CLRSTAT_Msk | GMAC_NCR_MPE_Msk;
 	gmac->GMAC_IDR = UINT32_MAX;
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC
+	gmac->GMAC_ISR = gmac->GMAC_ISR & GMAC_ISR_Msk;
+#else
 	(void)gmac->GMAC_ISR;
+#endif
 	gmac->GMAC_HRB = UINT32_MAX;
 	gmac->GMAC_HRT = UINT32_MAX;
 	gmac->GMAC_RSR = GMAC_RSR_RESETVALUE;
@@ -768,6 +812,8 @@ static int eth_mchp_send(const struct device *dev, struct net_pkt *pkt)
 		pkt_buff_cnt--;
 	}
 
+	__ISB();
+	__DSB();
 	gmac_regs->GMAC_NCR |= GMAC_NCR_TSTART_Msk;
 
 	return 0;
@@ -782,7 +828,13 @@ static void eth_mchp_queue0_isr(const struct device *dev)
 	struct gmac_desc_list *rx_desc_list = &queue->rx_desc_list;
 	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
 	struct gmac_desc *tail_desc;
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC
+	uint32_t isr = gmac_regs->GMAC_ISR & GMAC_ISR_Msk;
+
+	gmac_regs->GMAC_ISR = isr;
+#else
 	uint32_t isr = gmac_regs->GMAC_ISR;
+#endif
 
 	LOG_DBG("GMAC_ISR=0x%08x", isr);
 
@@ -839,6 +891,23 @@ static int eth_mchp_initialize(const struct device *dev)
 
 		return retval;
 	}
+
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC
+	retval = clock_control_on(DEVICE_DT_GET(DT_NODELABEL(clock)), cfg->gclk_tx_sys);
+	if ((retval != 0) && (retval != -EALREADY)) {
+		LOG_ERR("Failed to enable GCLK TX for Ethernet: %d", retval);
+
+		return retval;
+	}
+
+	retval = clock_control_on(DEVICE_DT_GET(DT_NODELABEL(clock)), cfg->gclk_tsu_sys);
+	if ((retval != 0) && (retval != -EALREADY)) {
+		LOG_ERR("Failed to enable GCLK TSU for Ethernet: %d", retval);
+
+		return retval;
+	}
+
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC */
 
 	retval = pinctrl_apply_state(cfg->pinctrl_cfg, PINCTRL_STATE_DEFAULT);
 	if (retval != 0) {
@@ -1080,6 +1149,10 @@ static const struct gmac_dev_config eth_config = {
 	.mcfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0),
 	.mclk_apb_sys = (void *)DT_INST_CLOCKS_CELL_BY_NAME(0, mclk_apb, subsystem),
 	.mclk_ahb_sys = (void *)DT_INST_CLOCKS_CELL_BY_NAME(0, mclk_ahb, subsystem),
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC
+	.gclk_tx_sys = (void *)DT_INST_CLOCKS_CELL_BY_NAME(0, gclk_tx, subsystem),
+	.gclk_tsu_sys = (void *)DT_INST_CLOCKS_CELL_BY_NAME(0, gclk_tsu, subsystem),
+#endif
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle))};
 
 static struct gmac_dev_data eth_data;
