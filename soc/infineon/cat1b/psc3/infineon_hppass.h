@@ -58,6 +58,14 @@ extern "C" {
 #define IFX_HPPASS_TRIG_5_MSK    (1 << 5)
 #define IFX_HPPASS_TRIG_6_MSK    (1 << 6)
 #define IFX_HPPASS_TRIG_7_MSK    (1 << 7)
+#define IFX_HPPASS_TRIG_8_MSK    (1 << 8)  /**< HPPASS v3 only */
+#define IFX_HPPASS_TRIG_9_MSK    (1 << 9)  /**< HPPASS v3 only */
+#define IFX_HPPASS_TRIG_10_MSK   (1 << 10) /**< HPPASS v3 only */
+#define IFX_HPPASS_TRIG_11_MSK   (1 << 11) /**< HPPASS v3 only */
+#define IFX_HPPASS_TRIG_12_MSK   (1 << 12) /**< HPPASS v3 only */
+#define IFX_HPPASS_TRIG_13_MSK   (1 << 13) /**< HPPASS v3 only */
+#define IFX_HPPASS_TRIG_14_MSK   (1 << 14) /**< HPPASS v3 only */
+#define IFX_HPPASS_TRIG_15_MSK   (1 << 15) /**< HPPASS v3 only */
 /** @} */
 
 /**
@@ -384,8 +392,7 @@ bool ifx_hppass_is_vdda_ok(const struct device *dev);
  * @param dev  HPPASS MFD device
  * @param mask Trigger mask (bitwise OR of IFX_HPPASS_TRIG_n_MSK)
  */
-void ifx_hppass_ac_set_fw_trigger_pulse(const struct device *dev,
-					uint8_t mask);
+void ifx_hppass_ac_set_fw_trigger_pulse(const struct device *dev, uint16_t mask);
 
 /**
  * @brief Assert a firmware level trigger
@@ -398,8 +405,7 @@ void ifx_hppass_ac_set_fw_trigger_pulse(const struct device *dev,
  * @param dev  HPPASS MFD device
  * @param mask Trigger mask (bitwise OR of IFX_HPPASS_TRIG_n_MSK)
  */
-void ifx_hppass_ac_set_fw_trigger_level(const struct device *dev,
-					uint8_t mask);
+void ifx_hppass_ac_set_fw_trigger_level(const struct device *dev, uint16_t mask);
 
 /**
  * @brief De-assert a firmware level trigger
@@ -409,8 +415,7 @@ void ifx_hppass_ac_set_fw_trigger_level(const struct device *dev,
  * @param dev  HPPASS MFD device
  * @param mask Trigger mask (bitwise OR of IFX_HPPASS_TRIG_n_MSK)
  */
-void ifx_hppass_ac_clear_fw_trigger_level(const struct device *dev,
-					  uint8_t mask);
+void ifx_hppass_ac_clear_fw_trigger_level(const struct device *dev, uint16_t mask);
 
 /* Interrupt callback management */
 
