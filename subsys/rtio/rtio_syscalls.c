@@ -102,30 +102,29 @@ static inline int z_vrfy_rtio_sqe_copy_in_get_handles(struct rtio *r, const stru
 	if (handles != NULL) {
 		K_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(handles, sqe_count, sizeof(*handles)));
 	}
-	struct rtio_sqe *sqe;
-	uint32_t acquirable = rtio_sqe_acquirable(r);
 
-	if (acquirable < sqe_count) {
-		return -ENOMEM;
+	struct rtio_iodev_sqe *head;
+	int err = rtio_sqe_list_copy_in(r, sqes, handles, sqe_count, &head);
+
+	if (err != 0) {
+		return err;
 	}
 
-
-	for (int i = 0; i < sqe_count; i++) {
-		sqe = rtio_sqe_acquire(r);
-		__ASSERT_NO_MSG(sqe != NULL);
-		if (handles != NULL) {
-			handles[i] = rtio_sqe_handle(r, sqe);
-		}
-		*sqe = sqes[i];
-
-		if (!rtio_vrfy_sqe(sqe)) {
-			rtio_sqe_drop_all(r);
+	/* Verify the copies rather than the caller's memory, which the caller could
+	 * change after the check. Queue only once the whole set passes, so a
+	 * rejected entry costs only what this call acquired.
+	 */
+	for (struct rtio_iodev_sqe *iodev_sqe = head; iodev_sqe != NULL;
+	     iodev_sqe = iodev_sqe->next) {
+		if (!rtio_vrfy_sqe(&iodev_sqe->sqe)) {
+			rtio_sqe_list_free(r, head);
 			K_OOPS(true);
 		}
 	}
 
-	/* Already copied *and* verified, no need to redo */
-	return z_impl_rtio_sqe_copy_in_get_handles(r, NULL, NULL, 0);
+	rtio_sqe_list_queue(r, head);
+
+	return 0;
 }
 #include <zephyr/syscalls/rtio_sqe_copy_in_get_handles_mrsh.c>
 

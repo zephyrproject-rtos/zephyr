@@ -343,18 +343,6 @@ extern struct k_mem_partition rtio_partition;
 /* clang-format on */
 
 /**
- * @brief Count of acquirable submission queue events
- *
- * @param r RTIO context
- *
- * @return Count of acquirable submission queue events
- */
-static inline uint32_t rtio_sqe_acquirable(struct rtio *r)
-{
-	return r->sqe_pool->pool_free;
-}
-
-/**
  * @brief Acquire a single submission queue event if available
  *
  * @param r RTIO context
@@ -980,7 +968,8 @@ static inline struct rtio_iodev_sqe *rtio_iodev_sqe_from_handle(struct rtio *r,
 	struct rtio_iodev_sqe *iodev_sqe = &r->sqe_pool->pool[blk_index];
 	atomic_val_t status = atomic_get(&iodev_sqe->status);
 
-	if ((status & RTIO_SQE_ALLOCD) == 0 || (uint32_t)(status & RTIO_SQE_GEN_MASK) != gen) {
+	if (!rtio_sqe_status_is_allocated(status) ||
+	    (uint32_t)(status & RTIO_SQE_GEN_MASK) != gen) {
 		return NULL;
 	}
 
@@ -1043,7 +1032,7 @@ static inline int z_impl_rtio_sqe_cancel(struct rtio *r, rtio_sqe_handle_t handl
 	while (true) {
 		atomic_val_t status = atomic_get(&iodev_sqe->status);
 
-		if ((status & RTIO_SQE_ALLOCD) == 0 ||
+		if (!rtio_sqe_status_is_allocated(status) ||
 		    (uint16_t)(status & RTIO_SQE_GEN_MASK) != gen) {
 			return 0;
 		}
@@ -1067,7 +1056,8 @@ static inline int z_impl_rtio_sqe_cancel(struct rtio *r, rtio_sqe_handle_t handl
 	const struct rtio_iodev *iodev = iodev_sqe->sqe.iodev;
 	atomic_val_t status = atomic_get(&iodev_sqe->status);
 
-	if ((status & RTIO_SQE_ALLOCD) == 0 || (uint16_t)(status & RTIO_SQE_GEN_MASK) != gen) {
+	if (!rtio_sqe_status_is_allocated(status) ||
+	    (uint16_t)(status & RTIO_SQE_GEN_MASK) != gen) {
 		return 0;
 	}
 
@@ -1078,6 +1068,85 @@ static inline int z_impl_rtio_sqe_cancel(struct rtio *r, rtio_sqe_handle_t handl
 	return 0;
 }
 
+/** @cond INTERNAL_HIDDEN */
+
+/* Return acquired but not yet queued entries, linked through next, to the pool */
+static inline void rtio_sqe_list_free(struct rtio *r, struct rtio_iodev_sqe *head)
+{
+	while (head != NULL) {
+		struct rtio_iodev_sqe *next = head->next;
+
+		rtio_sqe_pool_free(r->sqe_pool, head);
+		head = next;
+	}
+}
+
+/* Queue acquired entries front to back, since chains rely on queue order. The
+ * entries move to RTIO_SQE_STATE_ALLOCATED as they go, which is what makes their
+ * handles resolve: rtio_sqe_list_copy_in() leaves them pre-allocated, so nothing
+ * can reach one while it holds a submission nobody has checked yet.
+ */
+static inline void rtio_sqe_list_queue(struct rtio *r, struct rtio_iodev_sqe *head)
+{
+	while (head != NULL) {
+		struct rtio_iodev_sqe *next = head->next;
+
+		head->next = NULL;
+		rtio_sqe_set_state(head, RTIO_SQE_STATE_ALLOCATED);
+		mpsc_push(&r->sq, &head->q);
+		head = next;
+	}
+}
+
+/* Acquire an entry per sqe and copy the sqes into them, returning the set as a
+ * list through next with nothing queued yet. Acquire the whole set before
+ * queueing any of it, as chains need all of it, and give back what was taken if
+ * the pool runs out. The caller queues the list with rtio_sqe_list_queue() or
+ * gives it up with rtio_sqe_list_free().
+ *
+ * The entries are left in RTIO_SQE_STATE_PRE_ALLOCATED, so no handle resolves to
+ * one until the caller queues it. A caller copying in from untrusted memory can
+ * check what it copied first and give the set back with nothing having been able
+ * to reach it.
+ */
+static inline int rtio_sqe_list_copy_in(struct rtio *r, const struct rtio_sqe *sqes,
+					rtio_sqe_handle_t *handles, size_t sqe_count,
+					struct rtio_iodev_sqe **head_out)
+{
+	struct rtio_iodev_sqe *head = NULL;
+	struct rtio_iodev_sqe *tail = NULL;
+
+	for (size_t i = 0; i < sqe_count; i++) {
+		struct rtio_iodev_sqe *iodev_sqe = rtio_sqe_pool_prealloc(r->sqe_pool);
+
+		if (iodev_sqe == NULL) {
+			rtio_sqe_list_free(r, head);
+			*head_out = NULL;
+			return -ENOMEM;
+		}
+
+		iodev_sqe->sqe = sqes[i];
+		iodev_sqe->next = NULL;
+
+		if (tail == NULL) {
+			head = iodev_sqe;
+		} else {
+			tail->next = iodev_sqe;
+		}
+		tail = iodev_sqe;
+
+		if (handles != NULL) {
+			handles[i] = rtio_sqe_handle(r, &iodev_sqe->sqe);
+		}
+	}
+
+	*head_out = head;
+
+	return 0;
+}
+
+/** @endcond */
+
 /**
  * @brief Copy an array of SQEs into the queue and get resulting handles back
  *
@@ -1087,6 +1156,10 @@ static inline int z_impl_rtio_sqe_cancel(struct rtio *r, rtio_sqe_handle_t handl
  * One handle is written per copied SQE, so @p handles holds @p sqe_count of them. Cancellation
  * only marks the submission it is given, so a caller that wants to cancel a chain or a
  * transaction keeps all of them and cancels each.
+ *
+ * @warning The @p handles array is in an undefined state if the return value is -ENOMEM. Nothing
+ * is queued in that case, and any handle already written names an entry that has been given back
+ * to the pool.
  *
  * @param[in]  r RTIO context
  * @param[in]  sqes Pointer to an array of SQEs
@@ -1104,21 +1177,14 @@ static inline int z_impl_rtio_sqe_copy_in_get_handles(struct rtio *r, const stru
 						      rtio_sqe_handle_t *handles,
 						      size_t sqe_count)
 {
-	struct rtio_sqe *sqe;
-	uint32_t acquirable = rtio_sqe_acquirable(r);
+	struct rtio_iodev_sqe *head;
+	int err = rtio_sqe_list_copy_in(r, sqes, handles, sqe_count, &head);
 
-	if (acquirable < sqe_count) {
-		return -ENOMEM;
+	if (err != 0) {
+		return err;
 	}
 
-	for (unsigned long i = 0; i < sqe_count; i++) {
-		sqe = rtio_sqe_acquire(r);
-		__ASSERT_NO_MSG(sqe != NULL);
-		if (handles != NULL) {
-			handles[i] = rtio_sqe_handle(r, sqe);
-		}
-		*sqe = sqes[i];
-	}
+	rtio_sqe_list_queue(r, head);
 
 	return 0;
 }
