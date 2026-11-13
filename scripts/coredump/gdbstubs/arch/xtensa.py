@@ -87,9 +87,14 @@ class ExceptionCodes(Enum):
     LOAD_STORE_PRIVILEGE = 26
     LOAD_PROHIBITED = 28
     STORE_PROHIBITED = 29
-    # Coprocessor disabled spans 32 - 39
-    COPROCESSOR_DISABLED_START = 32
-    COPROCESSOR_DISABLED_END = 39
+    COPROCESSOR0_DISABLED = 32
+    COPROCESSOR1_DISABLED = 33
+    COPROCESSOR2_DISABLED = 34
+    COPROCESSOR3_DISABLED = 35
+    COPROCESSOR4_DISABLED = 36
+    COPROCESSOR5_DISABLED = 37
+    COPROCESSOR6_DISABLED = 38
+    COPROCESSOR7_DISABLED = 39
     Z_EXCEPT_REASON = 63
     # Others (reserved / unknown) map to default signal
 
@@ -144,6 +149,14 @@ class GdbStub_Xtensa(GdbStub):
         ExceptionCodes.LOAD_STORE_PRIVILEGE: 11,
         ExceptionCodes.LOAD_PROHIBITED: 11,
         ExceptionCodes.STORE_PROHIBITED: 11,
+        ExceptionCodes.COPROCESSOR0_DISABLED: 8,
+        ExceptionCodes.COPROCESSOR1_DISABLED: 8,
+        ExceptionCodes.COPROCESSOR2_DISABLED: 8,
+        ExceptionCodes.COPROCESSOR3_DISABLED: 8,
+        ExceptionCodes.COPROCESSOR4_DISABLED: 8,
+        ExceptionCodes.COPROCESSOR5_DISABLED: 8,
+        ExceptionCodes.COPROCESSOR6_DISABLED: 8,
+        ExceptionCodes.COPROCESSOR7_DISABLED: 8,
         ExceptionCodes.Z_EXCEPT_REASON: 6,
     }
 
@@ -239,12 +252,6 @@ class GdbStub_Xtensa(GdbStub):
 
         if code in self.GDB_SIGNAL_MAPPING:
             sig = self.GDB_SIGNAL_MAPPING[code]
-        elif (
-            ExceptionCodes.COPROCESSOR_DISABLED_START.value
-            <= code
-            <= ExceptionCodes.COPROCESSOR_DISABLED_END.value
-        ):
-            sig = 8
 
         self.gdb_signal = sig
 
