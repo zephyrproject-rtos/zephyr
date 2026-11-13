@@ -14,8 +14,11 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 
-static K_KERNEL_STACK_DEFINE(sys_work_q_stack,
-			     CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
+#ifndef K_SYSTEM_WORKQUEUE_STACK_SIZE
+#define K_SYSTEM_WORKQUEUE_STACK_SIZE CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE
+#endif
+
+static K_KERNEL_STACK_DEFINE(sys_work_q_stack, K_SYSTEM_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q k_sys_work_q;
 

@@ -110,6 +110,63 @@ else()
     kernel_sources(nothread.c)
   endif() # CONFIG_MULTITHREADING
 
+  if(CONFIG_MULTITHREADING)
+    if(CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN)
+      set(final_workq_stack_size ${CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE})
+    else()
+      # Import all minimum system workqueue stack size requirements from subsystems/drivers
+      import_kconfig(CONFIG_SYSTEM_WORKQUEUE_MIN_STACK_SIZE_ ${DOTCONFIG} min_stack_size_keys)
+
+      set(max_req_stack_size ${CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE})
+      set(max_req_symbol "")
+      foreach(min_stack_key ${min_stack_size_keys})
+        if(${min_stack_key} GREATER max_req_stack_size)
+          set(max_req_stack_size ${${min_stack_key}})
+          set(max_req_symbol ${min_stack_key})
+        endif()
+      endforeach()
+
+      if(CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE LESS "${max_req_stack_size}")
+        set(user_configured_workq_stack_size FALSE)
+        if(DEFINED CLI_CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE)
+          set(user_configured_workq_stack_size TRUE)
+        endif()
+
+        set(user_kconfig_files ${CONF_FILE_AS_LIST} ${EXTRA_CONF_FILE_AS_LIST} ${EXTRA_KCONFIG_OPTIONS_FILE} ${config_files})
+        foreach(f ${user_kconfig_files})
+          if(NOT IS_ABSOLUTE "${f}")
+            if(DEFINED APPLICATION_CONFIG_DIR AND EXISTS "${APPLICATION_CONFIG_DIR}/${f}")
+              set(f "${APPLICATION_CONFIG_DIR}/${f}")
+            elseif(DEFINED APPLICATION_SOURCE_DIR AND EXISTS "${APPLICATION_SOURCE_DIR}/${f}")
+              set(f "${APPLICATION_SOURCE_DIR}/${f}")
+            endif()
+          endif()
+          if(EXISTS "${f}")
+            file(STRINGS "${f}" has_workq_size REGEX "^[ \t]*CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE[ \t]*=")
+            if(has_workq_size)
+              set(user_configured_workq_stack_size TRUE)
+              break()
+            endif()
+          endif()
+        endforeach()
+
+        if(user_configured_workq_stack_size)
+          message(WARNING "
+          CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE (${CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE}) is less than requested minimum:
+            ${CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE} < ${max_req_stack_size}
+          Setting system workqueue stack size to ${max_req_stack_size} (required by ${max_req_symbol}).
+          To bypass subsystem minimums, enable CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN=y.")
+        else()
+          message(STATUS "Adjusting system workqueue stack size to ${max_req_stack_size} (required by ${max_req_symbol})")
+        endif()
+      endif()
+
+      set(final_workq_stack_size ${max_req_stack_size})
+    endif()
+
+    zephyr_compile_definitions(K_SYSTEM_WORKQUEUE_STACK_SIZE=${final_workq_stack_size})
+  endif()
+
 
   kernel_sources_ifdef(CONFIG_TIMESLICING timeslicing.c)
   kernel_sources_ifdef(CONFIG_SCHED_DEADLINE deadline.c)

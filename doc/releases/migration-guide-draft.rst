@@ -34,6 +34,13 @@ Build System
 Kernel
 ******
 
+* An explicit :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` below a subsystem minimum
+  requirement is now automatically raised to meet the required size, and the value in ``.config``
+  is no longer the built stack size. If an explicitly configured stack size is raised, a build
+  warning is emitted. To force the configured :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`
+  to be used without adjustment, enable
+  :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN`. (:github:`124231`)
+
 Boards
 ******
 
