@@ -1983,21 +1983,6 @@ static int esp32_wifi_ap_enable(const struct device *dev __unused, struct net_if
 		return -EAGAIN;
 	}
 
-	/*
-	 * Update interface link address to AP MAC.
-	 * In AP-only mode (without CONFIG_ESP32_WIFI_AP_STA_MODE), the interface
-	 * is initialized with STA MAC but operates with AP MAC. Some clients
-	 * correctly address frames to AP MAC, which would be dropped without
-	 * this update. See: https://github.com/zephyrproject-rtos/zephyr/issues/101761
-	 */
-#if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
-	esp_read_mac(esp32_data.mac_addr, ESP_MAC_WIFI_SOFTAP);
-	net_if_carrier_off(esp32_wifi_iface);
-	net_if_set_link_addr(esp32_wifi_iface, esp32_data.mac_addr, NET_ETH_ADDR_LEN,
-			     NET_LINK_ETHERNET);
-	net_if_carrier_on(esp32_wifi_iface);
-#endif
-
 	return 0;
 };
 
@@ -2025,15 +2010,6 @@ static int esp32_wifi_ap_disable(const struct device *dev __unused, struct net_i
 		LOG_ERR("Failed to disable Wi-Fi AP mode: (%d)", err);
 		return -EAGAIN;
 	}
-
-	/* Restore interface link address to STA MAC when AP mode is disabled */
-#if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
-	esp_read_mac(esp32_data.mac_addr, ESP_MAC_WIFI_STA);
-	net_if_carrier_off(esp32_wifi_iface);
-	net_if_set_link_addr(esp32_wifi_iface, esp32_data.mac_addr, NET_ETH_ADDR_LEN,
-			     NET_LINK_ETHERNET);
-	net_if_carrier_on(esp32_wifi_iface);
-#endif
 
 	return 0;
 };
@@ -2250,7 +2226,16 @@ static void esp32_wifi_init(struct net_if *iface)
 		esp32_data.state = ESP32_STA_STOPPED;
 		mac_addr = esp32_data.mac_addr;
 
-		esp_read_mac(mac_addr, ESP_MAC_WIFI_STA);
+		/* Without AP/STA co-existence the single interface operates with
+		 * the SoftAP MAC address when used as an access point, and clients
+		 * address their frames to it.
+		 */
+		if (!IS_ENABLED(CONFIG_ESP32_WIFI_AP_STA_MODE) &&
+		    IS_ENABLED(CONFIG_WIFI_USAGE_MODE_AP)) {
+			esp_read_mac(mac_addr, ESP_MAC_WIFI_SOFTAP);
+		} else {
+			esp_read_mac(mac_addr, ESP_MAC_WIFI_STA);
+		}
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 		wifi_nm_register_mgd_type_iface(nm, WIFI_TYPE_STA, esp32_wifi_iface);
