@@ -2001,8 +2001,6 @@ static int disable_subscription(struct bt_conn *conn, uint16_t ccc_handle)
 		return -EBUSY;
 	}
 
-	(void)memset(subscription, 0, sizeof(*subscription));
-
 	return 0;
 }
 
