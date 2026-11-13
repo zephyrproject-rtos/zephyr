@@ -31,6 +31,7 @@
 		accel0 = &mma8652fc;
 		watchdog0 = &wwdt0;
 		rtc = &rtc;
+		dmic0 = &dmic0;
 	};
 
 	/*
@@ -121,6 +122,14 @@ zephyr_udc0: &usbhs {
 	pinctrl-names = "default";
 	status = "okay";
 
+	audio_codec: wm8904@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&syscon MCUX_AUDIO_MCLK>;
+		clock-names = "mclk";
+	};
+
 	/*
 	 * NXP MMA8652FC 3-axis accelerometer. INT1 is wired to P3_4 and INT2 is
 	 * unconnected. The pin interrupt engine can only select pins on ports 0
@@ -132,6 +141,26 @@ zephyr_udc0: &usbhs {
 		reg = <0x1d>;
 		int1-gpios = <&gpio3 4 GPIO_ACTIVE_LOW>;
 	};
+};
+
+/* I2S transmit channel to the WM8904 codec; its pin group also routes MCLK. */
+i2s_tx: &flexcomm6 {
+	compatible = "nxp,lpc-i2s";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm6_i2s>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* I2S receive channel from the WM8904 codec. */
+i2s_rx: &flexcomm7 {
+	compatible = "nxp,lpc-i2s";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm7_i2s>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ctimer0 {
@@ -171,5 +200,26 @@ zephyr_udc0: &usbhs {
 };
 
 &crc {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+/*
+ * On-board Knowles SPH0641LM4H MEMS microphone on DMIC hardware channel 1,
+ * which the DMIC API addresses as the right channel of controller 0. Channel 0
+ * reaches the expansion connectors only through solder jumpers JS33 and JS36,
+ * which take the pins away from LCD data lines 14 and 15, so it stays disabled.
+ */
+&dmic0 {
+	pinctrl-0 = <&pinmux_dmic>;
+	pinctrl-names = "default";
+	use2fs;
+	status = "okay";
+};
+
+&pdmc1 {
 	status = "okay";
 };

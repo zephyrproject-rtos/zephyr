@@ -71,11 +71,41 @@
 		};
 	};
 
-	/* FlexComm2 I2C: the on-board accelerometer (external pull-ups). */
+	/* FlexComm2 I2C: the on-board accelerometer and audio codec (external pull-ups). */
 	pinmux_flexcomm2_i2c: pinmux_flexcomm2_i2c {
 		group0 {
 			pinmux = <FC2_CTS_SDA_SSEL0_PIO3_23>,
 				 <FC2_RTS_SCL_SSEL1_PIO3_24>;
+			slew-rate = "standard";
+		};
+	};
+
+	/* On-board digital microphone: DMIC channel 1 clock/data (P1_2/P1_3). */
+	pinmux_dmic: pinmux_dmic {
+		group0 {
+			pinmux = <DMIC0_CLK1_PIO1_2>,
+				 <DMIC0_DATA1_PIO1_3>;
+			slew-rate = "standard";
+		};
+	};
+
+	/* FlexComm6 I2S transmit (SCK/DATA/WS) and the codec MCLK on P3_11. */
+	pinmux_flexcomm6_i2s: pinmux_flexcomm6_i2s {
+		group0 {
+			pinmux = <FC6_SCK_PIO4_1>,
+				 <FC6_RXD_SDA_MOSI_DATA_PIO4_2>,
+				 <FC6_TXD_SCL_MISO_WS_PIO4_3>,
+				 <MCLK_PIO3_11>;
+			slew-rate = "standard";
+		};
+	};
+
+	/* FlexComm7 I2S receive (SCK/DATA/WS). */
+	pinmux_flexcomm7_i2s: pinmux_flexcomm7_i2s {
+		group0 {
+			pinmux = <FC7_SCK_PIO2_18>,
+				 <FC7_RXD_SDA_MOSI_DATA_PIO2_19>,
+				 <FC7_TXD_SCL_MISO_WS_PIO2_20>;
 			slew-rate = "standard";
 		};
 	};

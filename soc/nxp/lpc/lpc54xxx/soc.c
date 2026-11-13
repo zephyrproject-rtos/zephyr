@@ -202,6 +202,53 @@ __weak void clock_init(void)
 			(CPU_FREQ / FSL_FEATURE_SDIF_MAX_SOURCE_CLOCK) + 1U, true);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay)
+	/*
+	 * The DMIC functional clock is the PDM bit clock: 12 MHz FRO divided by
+	 * 5 gives 2.4 MHz. Boards using 2FS output then get an exact
+	 * oversampling ratio at 16 kHz, so the achieved PCM rate is the
+	 * requested one.
+	 */
+	CLOCK_AttachClk(kFRO12M_to_DMIC);
+	CLOCK_SetClkDiv(kCLOCK_DivDmicClk, 5U, false);
+#endif
+
+#if defined(CONFIG_I2S_MCUX_FLEXCOMM) && \
+	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay) || \
+	 DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2s, okay))
+	/*
+	 * I2S audio: clock the FlexComm I2S channels and MCLK from the audio
+	 * PLL, fed by the 12 MHz crystal rather than its FRO default for an
+	 * accurate sample rate. 24.576 MHz is 512 * 48 kHz. The encoded
+	 * dividers are N = 25, M = 512 and P = 10, so the 480 kHz reference
+	 * stays above the 100 kHz below which the lock indicator is not
+	 * dependable.
+	 */
+	pll_setup_t audio_pll_setup = {
+		.pllctrl = SYSCON_AUDPLLCTRL_SELI(8U) | SYSCON_AUDPLLCTRL_SELP(31U) |
+			   SYSCON_AUDPLLCTRL_SELR(0U),
+		.pllmdec = SYSCON_AUDPLLMDEC_MDEC(0x34d3U),
+		.pllndec = SYSCON_AUDPLLNDEC_NDEC(0x3fU),
+		.pllpdec = SYSCON_AUDPLLPDEC_PDEC(0xeU),
+		.pllRate = 24576000U,
+	};
+
+	CLOCK_AttachClk(kEXT_CLK_to_AUDIO_PLL);
+	CLOCK_SetupAudioPLLPrec(&audio_pll_setup, PLL_SETUPFLAG_POWERUP | PLL_SETUPFLAG_WAITLOCK);
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay)
+	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM6);
+#endif
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2s, okay)
+	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM7);
+#endif
+
+	/* Drive MCLK from the audio PLL (no divider) out on the MCLK pin. */
+	CLOCK_AttachClk(kAUDIO_PLL_to_MCLK);
+	SYSCON->MCLKDIV = SYSCON_MCLKDIV_DIV(0U);
+	SYSCON->MCLKIO = 1U;
+#endif
+
 	/*
 	 * The M_CAN functional clock is the core clock divided by CANnCLKDIV,
 	 * which is halted out of reset. Divide by 11 -> 20 MHz at a 220 MHz
