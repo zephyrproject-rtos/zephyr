@@ -1071,6 +1071,15 @@ static bool chan_has_credits(struct bt_l2cap_le_chan *lechan)
 #endif
 }
 
+static bool chan_is_disconnecting(const struct bt_l2cap_le_chan *lechan)
+{
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	return lechan->state == BT_L2CAP_DISCONNECTING;
+#else
+	return false;
+#endif
+}
+
 __weak void bt_test_l2cap_data_pull_spy(struct bt_conn *conn,
 					struct bt_l2cap_le_chan *lechan,
 					size_t amount,
@@ -1117,6 +1126,16 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 
 	if (bt_buf_has_view(fifo_pdu)) {
 		LOG_ERR("already have view on %p", fifo_pdu);
+		return NULL;
+	}
+
+	if (lechan->_pdu_remaining == 0 && chan_is_disconnecting(lechan)) {
+		/* Nothing new after a Disconnection Request: what is left goes
+		 * with the channel. Another channel may have data to send.
+		 */
+		LOG_DBG("no new K-frame on disconnecting %p", lechan);
+		lower_data_ready(lechan);
+		bt_tx_irq_raise();
 		return NULL;
 	}
 

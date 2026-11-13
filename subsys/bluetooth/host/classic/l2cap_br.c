@@ -1969,6 +1969,16 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *
 
 	br_chan = CONTAINER_OF(pdu_ready, struct bt_l2cap_br_chan, _pdu_ready);
 
+	if (br_chan->state == BT_L2CAP_DISCONNECTING && !conn->next_is_frag) {
+		/* Nothing new after a Disconnection Request: what is left goes
+		 * with the channel. Another channel may have data to send.
+		 */
+		LOG_DBG("no new PDU on disconnecting %p", br_chan);
+		lower_data_ready(br_chan);
+		bt_tx_irq_raise();
+		return NULL;
+	}
+
 	/* Fragments of different PDUs are not interleaved, so this holds until
 	 * the PDU returned here has been sent.
 	 */
@@ -5436,8 +5446,9 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 	/* Set the ident for the signaling request */
 	br_chan->ident = hdr->ident;
 
-	l2cap_br_chan_send_req(br_chan, buf, L2CAP_BR_DISCONN_TIMEOUT);
+	/* Set state ahead of the request, as no new PDU is to follow it */
 	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
+	l2cap_br_chan_send_req(br_chan, buf, L2CAP_BR_DISCONN_TIMEOUT);
 
 	return 0;
 }
