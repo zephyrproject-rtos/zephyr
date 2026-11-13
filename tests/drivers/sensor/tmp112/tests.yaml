@@ -1,0 +1,14 @@
+# Copyright (c) 2026, Iomico
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.tmp112.one_shot:
+    tags:
+      - drivers
+      - sensor
+      - emul
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
