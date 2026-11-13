@@ -236,9 +236,9 @@
 				};
 
 #ifndef USE_NON_SECURE_ADDRESS_MAP
-				cpuapp_sram_app: memory@60 {
+				cpuapp_sram_app: memory@5060 {
 					compatible = "mmio-sram";
-					reg = <0x60 (DT_SIZE_K(1016) - 0x320 - 0x60)>;
+					reg = <0x5060 (DT_SIZE_K(1016) - 0x320 - 0x5060)>;
 				};
 #endif
 			};

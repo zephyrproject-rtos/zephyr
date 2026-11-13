@@ -11,10 +11,10 @@
 };
 
 &cpuapp_sram_app {
-	/* Start after the KMU push area, ranges of cpuapp_sram is kept so that ram03_sram still
-	 * translates to 0x200e0000.
+	/* Start after the KMU push area and the Wi-Fi IPC shared memory, ranges of cpuapp_sram
+	 * is kept so that ram03_sram still translates to 0x200e0000.
 	 */
-	reg = <0x60 (DT_SIZE_K(896) - 0x60)>;
+	reg = <0x5060 (DT_SIZE_K(896) - 0x5060)>;
 };
 
 &mram_controller {
