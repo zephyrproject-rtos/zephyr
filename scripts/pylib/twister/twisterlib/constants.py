@@ -21,6 +21,7 @@ SUPPORTED_SIMS = [
     "nsim",
     "renode",
     "qemu",
+    "espressif_qemu",
     "tsim",
     "armfvp",
     "xt-sim",
@@ -42,6 +43,7 @@ SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native', 'sim
 SIM_PROGRAM_CMAKE_VARS = {
     'armfvp': 'ARMFVP',
     'whisper': 'WHISPER_BIN',
+    'espressif_qemu': 'ESPRESSIF_QEMU_EXECUTABLE',
 }
 
 # Failure reason reported when the console output contains an unexpected

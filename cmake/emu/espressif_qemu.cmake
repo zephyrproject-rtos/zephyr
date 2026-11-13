@@ -9,9 +9,11 @@
 #
 # Flash layout properties are published by soc/espressif/common/CMakeLists.txt.
 
-# Per-SoC QEMU binary, machine type and extra flags
+# Per-SoC QEMU binary names (SDK namespaced first), machine type and extra flags.
+# qemu-system-espressif-* is shipped by sdk-ng host tools; qemu-system-xtensa /
+# qemu-system-riscv32 remain fallbacks for a local Espressif QEMU fork.
 if(CONFIG_SOC_SERIES_ESP32)
-  set(ESPRESSIF_QEMU_BIN_NAME qemu-system-xtensa)
+  set(ESPRESSIF_QEMU_BIN_NAMES qemu-system-espressif-xtensa qemu-system-xtensa)
   set(ESPRESSIF_QEMU_MACHINE esp32)
   set(ESPRESSIF_QEMU_EFUSE_DRIVER nvram.esp32.efuse)
   # Default QEMU efuses report ESP32 rev 0; Zephyr aborts below ECO3 unless
@@ -20,24 +22,25 @@ if(CONFIG_SOC_SERIES_ESP32)
   # https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32/README.md#emulating-esp32-eco3
   set(ESPRESSIF_QEMU_EXTRA_FLAGS "")
 elseif(CONFIG_SOC_SERIES_ESP32S3)
-  set(ESPRESSIF_QEMU_BIN_NAME qemu-system-xtensa)
+  set(ESPRESSIF_QEMU_BIN_NAMES qemu-system-espressif-xtensa qemu-system-xtensa)
   set(ESPRESSIF_QEMU_MACHINE esp32s3)
   set(ESPRESSIF_QEMU_EFUSE_DRIVER nvram.esp32s3.efuse)
   set(ESPRESSIF_QEMU_EXTRA_FLAGS "")
 elseif(CONFIG_SOC_SERIES_ESP32C3)
-  set(ESPRESSIF_QEMU_BIN_NAME qemu-system-riscv32)
+  set(ESPRESSIF_QEMU_BIN_NAMES qemu-system-espressif-riscv32 qemu-system-riscv32)
   set(ESPRESSIF_QEMU_MACHINE esp32c3)
   set(ESPRESSIF_QEMU_EFUSE_DRIVER nvram.esp32c3.efuse)
   # Free-running mode is not supported; 1<<3 = 8 ns/insn, about 125 MHz
   set(ESPRESSIF_QEMU_EXTRA_FLAGS "-icount;3")
 elseif(CONFIG_SOC_SERIES_ESP32C6)
-  set(ESPRESSIF_QEMU_BIN_NAME qemu-system-riscv32)
+  set(ESPRESSIF_QEMU_BIN_NAMES qemu-system-espressif-riscv32 qemu-system-riscv32)
   set(ESPRESSIF_QEMU_MACHINE esp32c6)
   set(ESPRESSIF_QEMU_EFUSE_DRIVER nvram.esp32c6.efuse)
   set(ESPRESSIF_QEMU_EXTRA_FLAGS "-icount;3")
 else()
   message(FATAL_ERROR "Espressif QEMU: unsupported SoC series")
 endif()
+list(GET ESPRESSIF_QEMU_BIN_NAMES 0 ESPRESSIF_QEMU_BIN_NAME)
 
 # PSRAM: derive QEMU -m from CONFIG_ESP_SPIRAM_SIZE (board DT psram0 → Kconfig).
 if(CONFIG_ESP_SPIRAM)
@@ -81,11 +84,32 @@ include(${CMAKE_CURRENT_LIST_DIR}/espressif_qemu/efuse.cmake)
 
 # Locate a QEMU that actually implements the target machine.
 #
-# find_program() alone is not enough: the Zephyr SDK ships its own
-# qemu-system-xtensa / qemu-system-riscv32 in hosttools and those take
-# precedence in CMake's search path, but they are upstream builds without the
-# Espressif machines. Probe each candidate with '-machine help' and accept the
-# first one that lists ${ESPRESSIF_QEMU_MACHINE}.
+# Stock Zephyr SDK qemu-system-xtensa / qemu-system-riscv32 do not advertise
+# Espressif machines. sdk-ng host tools add qemu-system-espressif-* instead.
+# Probe each candidate with '-machine help' and accept the first one that
+# lists ${ESPRESSIF_QEMU_MACHINE}.
+function(espressif_qemu_probe_candidate cand)
+  if(ESPRESSIF_QEMU_EXECUTABLE OR NOT EXISTS "${cand}")
+    return()
+  endif()
+  execute_process(
+    COMMAND "${cand}" -machine help
+    OUTPUT_VARIABLE _cand_machines
+    ERROR_VARIABLE _cand_stderr
+    RESULT_VARIABLE _cand_result
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    TIMEOUT 10
+  )
+  if(NOT _cand_result EQUAL 0)
+    return()
+  endif()
+  if(_cand_machines MATCHES "(^|\n)${ESPRESSIF_QEMU_MACHINE}[ \t]")
+    set(ESPRESSIF_QEMU_EXECUTABLE "${cand}" PARENT_SCOPE)
+  else()
+    set(_esp_qemu_rejected "${_esp_qemu_rejected};${cand}" PARENT_SCOPE)
+  endif()
+endfunction()
+
 set(_esp_qemu_dirs "")
 if(DEFINED ENV{ESPRESSIF_QEMU_PATH})
   file(TO_CMAKE_PATH "$ENV{ESPRESSIF_QEMU_PATH}" _esp_qemu_explicit_dirs)
@@ -94,6 +118,14 @@ endif()
 if(DEFINED ENV{QEMU_BIN_PATH})
   file(TO_CMAKE_PATH "$ENV{QEMU_BIN_PATH}" _esp_qemu_bin_dirs)
   list(APPEND _esp_qemu_dirs ${_esp_qemu_bin_dirs})
+endif()
+if(DEFINED ZEPHYR_SDK_INSTALL_DIR AND ZEPHYR_SDK_INSTALL_DIR)
+  if(DEFINED HOST_TOOLS_HOME AND HOST_TOOLS_HOME)
+    list(APPEND _esp_qemu_dirs "${HOST_TOOLS_HOME}/usr/bin")
+    list(APPEND _esp_qemu_dirs "${HOST_TOOLS_HOME}/qemu-espressif")
+  endif()
+  list(APPEND _esp_qemu_dirs
+    "${ZEPHYR_SDK_INSTALL_DIR}/hosttools/sysroots/${TOOLCHAIN_ARCH}-pokysdk-linux/usr/bin")
 endif()
 if(DEFINED ENV{PATH})
   file(TO_CMAKE_PATH "$ENV{PATH}" _esp_qemu_path_dirs)
@@ -104,29 +136,30 @@ list(REMOVE_DUPLICATES _esp_qemu_dirs)
 set(ESPRESSIF_QEMU_EXECUTABLE "")
 set(_esp_qemu_rejected "")
 foreach(_dir IN LISTS _esp_qemu_dirs)
-  set(_cand "${_dir}/${ESPRESSIF_QEMU_BIN_NAME}${CMAKE_HOST_EXECUTABLE_SUFFIX}")
-  if(NOT EXISTS "${_cand}")
-    continue()
-  endif()
-
-  execute_process(
-    COMMAND "${_cand}" -machine help
-    OUTPUT_VARIABLE _cand_machines
-    ERROR_VARIABLE _cand_stderr
-    RESULT_VARIABLE _cand_result
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    TIMEOUT 10
-  )
-  if(NOT _cand_result EQUAL 0)
-    continue()
-  endif()
-
-  if(_cand_machines MATCHES "(^|\n)${ESPRESSIF_QEMU_MACHINE}[ \t]")
-    set(ESPRESSIF_QEMU_EXECUTABLE "${_cand}")
+  foreach(_name IN LISTS ESPRESSIF_QEMU_BIN_NAMES)
+    espressif_qemu_probe_candidate(
+      "${_dir}/${_name}${CMAKE_HOST_EXECUTABLE_SUFFIX}")
+    if(ESPRESSIF_QEMU_EXECUTABLE)
+      break()
+    endif()
+  endforeach()
+  if(ESPRESSIF_QEMU_EXECUTABLE)
     break()
   endif()
-  list(APPEND _esp_qemu_rejected "${_cand}")
 endforeach()
+
+if(NOT ESPRESSIF_QEMU_EXECUTABLE)
+  foreach(_name IN LISTS ESPRESSIF_QEMU_BIN_NAMES)
+    unset(_esp_qemu_fp CACHE)
+    find_program(_esp_qemu_fp NAMES ${_name})
+    if(_esp_qemu_fp)
+      espressif_qemu_probe_candidate("${_esp_qemu_fp}")
+    endif()
+    if(ESPRESSIF_QEMU_EXECUTABLE)
+      break()
+    endif()
+  endforeach()
+endif()
 
 if(ESPRESSIF_QEMU_EXECUTABLE)
   message(STATUS
@@ -136,19 +169,32 @@ else()
   if(_esp_qemu_rejected)
     string(REPLACE ";" "\n  " _esp_qemu_rejected_list "${_esp_qemu_rejected}")
     string(CONCAT _esp_qemu_hint
-      "Found ${ESPRESSIF_QEMU_BIN_NAME} without "
-      "'${ESPRESSIF_QEMU_MACHINE}' support at:\n"
+      "Found QEMU without '${ESPRESSIF_QEMU_MACHINE}' support at:\n"
       "  ${_esp_qemu_rejected_list}\n")
   endif()
   message(WARNING
-    "Espressif QEMU: no ${ESPRESSIF_QEMU_BIN_NAME} supporting "
-    "'-machine ${ESPRESSIF_QEMU_MACHINE}' was found.\n"
+    "Espressif QEMU: no binary supporting "
+    "'-machine ${ESPRESSIF_QEMU_MACHINE}' was found "
+    "(tried ${ESPRESSIF_QEMU_BIN_NAMES}).\n"
     "${_esp_qemu_hint}"
-    "Install Espressif's fork (https://github.com/espressif/qemu/releases) and "
-    "set ESPRESSIF_QEMU_PATH to its bin directory, or put it earlier on PATH.\n"
+    "Install Zephyr SDK host tools with Espressif QEMU, or Espressif's fork "
+    "(https://github.com/espressif/qemu) and set ESPRESSIF_QEMU_PATH to its "
+    "bin directory, or put qemu-system-espressif-* earlier on PATH.\n"
     "'west build -t run' will report this error instead of running."
   )
 endif()
+
+# Publish the resolved binary so Twister can tell "emulator not installed" from
+# a runnable build, the same contract Arm FVP uses via SIM_PROGRAM_CMAKE_VARS.
+# The -NOTFOUND sentinel is what marks the test as not runnable; an empty value
+# would be read as a valid path.
+if(ESPRESSIF_QEMU_EXECUTABLE)
+  set(_esp_qemu_cache_value "${ESPRESSIF_QEMU_EXECUTABLE}")
+else()
+  set(_esp_qemu_cache_value "ESPRESSIF_QEMU_EXECUTABLE-NOTFOUND")
+endif()
+set(ESPRESSIF_QEMU_EXECUTABLE "${_esp_qemu_cache_value}"
+  CACHE FILEPATH "Espressif QEMU executable selected for this build" FORCE)
 
 set(ESPRESSIF_FLASH_IMAGE ${CMAKE_BINARY_DIR}/zephyr/flash_image.bin)
 
