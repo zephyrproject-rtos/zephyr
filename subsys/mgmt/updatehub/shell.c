@@ -14,12 +14,6 @@ LOG_MODULE_DECLARE(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #include "updatehub_device.h"
 #include "updatehub_storage.h"
 
-#if defined(CONFIG_UPDATEHUB_CE)
-#define UPDATEHUB_SERVER CONFIG_UPDATEHUB_SERVER
-#else
-#define UPDATEHUB_SERVER "coap.updatehub.io"
-#endif
-
 static int cmd_run(const struct shell *sh, size_t argc,
 		   char **argv)
 {
@@ -80,8 +74,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char **argv)
 		      firmware_version);
 	shell_fprintf(sh, SHELL_NORMAL, "Product uid: %s\n",
 		      CONFIG_UPDATEHUB_PRODUCT_UID);
-	shell_fprintf(sh, SHELL_NORMAL, "UpdateHub Server: %s\n",
-		      UPDATEHUB_SERVER);
+	shell_fprintf(sh, SHELL_NORMAL, "UpdateHub Server: %s\n", CONFIG_UPDATEHUB_SERVER);
 
 updatehub_shell_error:
 	if (device_id) {

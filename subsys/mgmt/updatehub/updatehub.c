@@ -42,12 +42,6 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #define MAX_DOWNLOAD_DATA (MAX_PAYLOAD_SIZE + 32)
 #define MAX_IP_SIZE 30
 
-#if defined(CONFIG_UPDATEHUB_CE)
-#define UPDATEHUB_SERVER CONFIG_UPDATEHUB_SERVER
-#else
-#define UPDATEHUB_SERVER "coap.updatehub.io"
-#endif
-
 #ifdef CONFIG_UPDATEHUB_DOWNLOAD_SHA256_VERIFICATION
 #define _DOWNLOAD_SHA256_VERIFICATION
 #elif defined(CONFIG_UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION)
@@ -203,7 +197,7 @@ static bool start_coap_client(void)
 #endif
 
 	while (resolve_attempts--) {
-		ret = zsock_getaddrinfo(UPDATEHUB_SERVER, port, &hints, &addr);
+		ret = zsock_getaddrinfo(CONFIG_UPDATEHUB_SERVER, port, &hints, &addr);
 		if (ret == 0) {
 			break;
 		}
@@ -233,8 +227,8 @@ static bool start_coap_client(void)
 		goto error;
 	}
 
-	if (zsock_setsockopt(ctx.sock, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, UPDATEHUB_SERVER,
-			     sizeof(UPDATEHUB_SERVER)) < 0) {
+	if (zsock_setsockopt(ctx.sock, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, CONFIG_UPDATEHUB_SERVER,
+			     sizeof(CONFIG_UPDATEHUB_SERVER)) < 0) {
 		LOG_ERR("Failed to set TLS_HOSTNAME option");
 		goto error;
 	}
