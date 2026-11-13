@@ -1092,7 +1092,7 @@
 		};
 	};
 
-	swj_port: swj_port {
+	swj_port: swj-port {
 		compatible = "swj-connector";
 		pinctrl-0 = <&debug_jtms_swdio_pa13 &debug_jtck_swclk_pa14
 			     &debug_jtdi_pa15 &debug_jtdo_swo_pb3
