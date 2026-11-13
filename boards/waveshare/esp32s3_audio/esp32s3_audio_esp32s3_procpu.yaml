@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: esp32s3_audio/esp32s3/procpu
+name: ESP32-S3-AUDIO-Board PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - i2s
+  - input
+  - led_strip
+  - netif:wifi
+  - nvs
+  - pulse_io
+  - rtc
+  - sdhc
+  - spi
+  - uart
+  - watchdog
+vendor: waveshare

@@ -1,0 +1,66 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SCL_GPIO10>, <I2C0_SDA_GPIO11>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_MCLK_GPIO12>,
+				 <I2S0_O_BCK_GPIO13>,
+				 <I2S0_O_WS_GPIO14>,
+				 <I2S0_I_SD_GPIO15>,
+				 <I2S0_O_SD_GPIO16>;
+		};
+	};
+
+	rmt_default: rmt_default {
+		group1 {
+			pinmux = <RMT_OUT0_GPIO38>;
+		};
+	};
+
+	sdhc0_default: sdhc0_default {
+		group1 {
+			pinmux = <SDHC0_CLKOUT_GPIO40>,
+				 <SDHC0_DATA0_GPIO41>,
+				 <SDHC0_CMD_GPIO42>;
+			bias-pull-up;
+			output-high;
+		};
+	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_SCLK_GPIO4>, <SPIM2_MISO_GPIO8>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO9>;
+			output-low;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+};
