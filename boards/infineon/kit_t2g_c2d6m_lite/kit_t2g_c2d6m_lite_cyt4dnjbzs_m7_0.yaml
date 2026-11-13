@@ -17,6 +17,7 @@ supported:
   - adc
   - gpio
   - i2c
+  - i2s
   - pwm
   - uart
 vendor: infineon
