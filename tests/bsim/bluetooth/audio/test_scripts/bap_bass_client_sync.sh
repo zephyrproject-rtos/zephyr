@@ -16,12 +16,12 @@ printf "\n\n======== Running BASS Client Sync =========\n\n"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=bap_scan_delegator_client_sync \
-  -RealEncryption=1 -rs=24 -D=3
+  -RealEncryption=1 -rs=24 -D=3 -start_offset=2e3
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 \
   -testid=bap_broadcast_assistant_client_sync -RealEncryption=1 -rs=46 -D=3 \
-  -start_offset=2e3
+  -start_offset=4e3
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=bass_broadcaster \
