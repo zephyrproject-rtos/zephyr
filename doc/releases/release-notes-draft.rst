@@ -64,6 +64,11 @@ Libraries / Subsystems
   * Added a PSA Protected Storage backend, enabled with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`.
 
+* File System
+
+  * :c:func:`fs_getattr` and :c:struct:`fs_attr` to query file and directory attributes. Only
+    the modification time (:c:macro:`FS_ATTR_MTIME`) is available, and only on FAT file systems.
+
 * LoRaWAN
 
   * The native backend now supports the AS923 region

@@ -303,6 +303,20 @@ static int temp_statvfs(struct fs_mount_t *mountp,
 	return 0;
 }
 
+#if defined(CONFIG_FILE_SYSTEM_GETATTR)
+static int temp_getattr(struct fs_mount_t *mountp, const char *path, struct fs_attr *attr)
+{
+	if (mountp == NULL || path == NULL || attr == NULL) {
+		return -EINVAL;
+	}
+
+	attr->mask = FS_ATTR_MTIME;
+	attr->mtime = TEST_MTIME;
+
+	return 0;
+}
+#endif /* CONFIG_FILE_SYSTEM_GETATTR */
+
 static int temp_mount(struct fs_mount_t *mountp)
 {
 	if (mountp == NULL) {
@@ -351,4 +365,7 @@ struct fs_file_system_t temp_fs = {
 	.mkdir = temp_mkdir,
 	.stat = temp_stat,
 	.statvfs = temp_statvfs,
+#if defined(CONFIG_FILE_SYSTEM_GETATTR)
+	.getattr = temp_getattr,
+#endif
 };
