@@ -71,6 +71,9 @@ int shared_multi_heap_add(struct shared_multi_heap_region *region, void *user_da
 	h = &smh_data[attr].heap_pool[slot];
 
 	sys_heap_init(h, (void *) region->addr, region->size);
+	if (h->heap == NULL) {
+		return -EINVAL;
+	}
 
 	K_SPINLOCK(&smh_lock) {
 		sys_multi_heap_add_heap(&shared_multi_heap, h, user_data);
