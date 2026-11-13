@@ -7,6 +7,15 @@
 #include <nxp/imxrt/imxrt11xx/pinctrl/mimxrt1152xhm8b-pinctrl.dtsi>
 
 &pinctrl {
+	pinmux_flexcan2: pinmux_flexcan2 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_01_can2_rx>,
+				 <&iomuxc_gpio_ad_00_can2_tx>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_lpuart1: pinmux_lpuart1 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_25_lpuart1_rx>,
