@@ -107,6 +107,14 @@ enum bt_aics_notify {
 	AICS_NOTIFY_NUM,
 };
 
+/* Server callbacks that report a changeable value and therefore need to be called in order */
+enum bt_aics_srv_cb {
+	AICS_CB_STATE,
+	AICS_CB_DESCRIPTION,
+	AICS_CB_STATUS,
+	AICS_CB_NUM,
+};
+
 struct bt_aics_server {
 	struct bt_aics_state state;
 	struct bt_aics_gain_settings gain_settings;
@@ -121,6 +129,11 @@ struct bt_aics_server {
 
 	ATOMIC_DEFINE(notify, AICS_NOTIFY_NUM);
 	struct k_work_delayable notify_work;
+
+	/* Set while a thread owns delivery of the server callbacks for this instance */
+	atomic_t cb_busy;
+	/* Callbacks deferred to the owner of cb_busy. Only modified while holding aics_mutex */
+	ATOMIC_DEFINE(cb_deferred, AICS_CB_NUM);
 };
 
 /* Struct used as a common type for the api */

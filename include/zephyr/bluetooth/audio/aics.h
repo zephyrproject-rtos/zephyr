@@ -349,6 +349,13 @@ typedef void (*bt_aics_discover_cb)(struct bt_aics *inst, int err);
  * @brief Struct to hold callbacks for the Audio Input Control Service.
  *
  * Used by both clients and servers
+ *
+ * For server instances, the callbacks of an instance are never called concurrently, and they
+ * are called in the same order as the values they report were changed. While a callback of a
+ * server instance is being called, local operations on that instance that call a callback
+ * return -EBUSY. If a remote client changes a value in that time, the callback for the change is
+ * called by the same thread after the current callback has returned, and multiple such changes
+ * may be reported once with the latest value.
  */
 struct bt_aics_cb {
 	/** The audio input state has changed */
@@ -403,6 +410,9 @@ int bt_aics_discover(struct bt_conn *conn, struct bt_aics *inst,
  * @param inst         The instance pointer.
  *
  * @return 0 if success, errno on failure.
+ * @retval -EBUSY @p inst is a server instance and a server callback for it has not returned yet,
+ *                e.g. if called from a callback. The operation was not performed and may be
+ *                retried later, but the caller shall wait between retries.
  */
 int bt_aics_deactivate(struct bt_aics *inst);
 
@@ -416,6 +426,9 @@ int bt_aics_deactivate(struct bt_aics *inst);
  * @param inst         The instance pointer.
  *
  * @return 0 if success, errno on failure.
+ * @retval -EBUSY @p inst is a server instance and a server callback for it has not returned yet,
+ *                e.g. if called from a callback. The operation was not performed and may be
+ *                retried later, but the caller shall wait between retries.
  */
 int bt_aics_activate(struct bt_aics *inst);
 
@@ -425,6 +438,9 @@ int bt_aics_activate(struct bt_aics *inst);
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
+ * @retval -EBUSY @p inst is a server instance and a server callback for it has not returned yet,
+ *                e.g. if called from a callback. The operation was not performed and may be
+ *                retried later, but the caller shall wait between retries.
  */
 int bt_aics_state_get(struct bt_aics *inst);
 
@@ -452,6 +468,9 @@ int bt_aics_type_get(struct bt_aics *inst);
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
+ * @retval -EBUSY @p inst is a server instance and a server callback for it has not returned yet,
+ *                e.g. if called from a callback. The operation was not performed and may be
+ *                retried later, but the caller shall wait between retries.
  */
 int bt_aics_status_get(struct bt_aics *inst);
 
@@ -473,6 +492,9 @@ int bt_aics_disable_mute(struct bt_aics *inst);
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
+ * @retval -EBUSY @p inst is a server instance and a server callback for it has not returned yet,
+ *                e.g. if called from a callback. The operation was not performed and may be
+ *                retried later, but the caller shall wait between retries.
  */
 int bt_aics_unmute(struct bt_aics *inst);
 
@@ -482,6 +504,9 @@ int bt_aics_unmute(struct bt_aics *inst);
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
+ * @retval -EBUSY @p inst is a server instance and a server callback for it has not returned yet,
+ *                e.g. if called from a callback. The operation was not performed and may be
+ *                retried later, but the caller shall wait between retries.
  */
 int bt_aics_mute(struct bt_aics *inst);
 
@@ -512,6 +537,9 @@ int bt_aics_gain_set_auto_only(struct bt_aics *inst);
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
+ * @retval -EBUSY @p inst is a server instance and a server callback for it has not returned yet,
+ *                e.g. if called from a callback. The operation was not performed and may be
+ *                retried later, but the caller shall wait between retries.
  */
 int bt_aics_manual_gain_set(struct bt_aics *inst);
 
@@ -521,6 +549,9 @@ int bt_aics_manual_gain_set(struct bt_aics *inst);
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
+ * @retval -EBUSY @p inst is a server instance and a server callback for it has not returned yet,
+ *                e.g. if called from a callback. The operation was not performed and may be
+ *                retried later, but the caller shall wait between retries.
  */
 int bt_aics_automatic_gain_set(struct bt_aics *inst);
 
@@ -532,6 +563,9 @@ int bt_aics_automatic_gain_set(struct bt_aics *inst);
  *                      (see @ref bt_aics_gain_setting_cb).
  *
  * @return 0 on success, GATT error value on fail.
+ * @retval -EBUSY @p inst is a server instance and a server callback for it has not returned yet,
+ *                e.g. if called from a callback. The operation was not performed and may be
+ *                retried later, but the caller shall wait between retries.
  */
 int bt_aics_gain_set(struct bt_aics *inst, int8_t gain);
 
@@ -541,6 +575,9 @@ int bt_aics_gain_set(struct bt_aics *inst, int8_t gain);
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
+ * @retval -EBUSY @p inst is a server instance and a server callback for it has not returned yet,
+ *                e.g. if called from a callback. The operation was not performed and may be
+ *                retried later, but the caller shall wait between retries.
  */
 int bt_aics_description_get(struct bt_aics *inst);
 
@@ -551,6 +588,9 @@ int bt_aics_description_get(struct bt_aics *inst);
  * @param description   The description as an UTF-8 encoded string.
  *
  * @return 0 on success, GATT error value on fail.
+ * @retval -EBUSY @p inst is a server instance and a server callback for it has not returned yet,
+ *                e.g. if called from a callback. The operation was not performed and may be
+ *                retried later, but the caller shall wait between retries.
  */
 int bt_aics_description_set(struct bt_aics *inst, const char *description);
 

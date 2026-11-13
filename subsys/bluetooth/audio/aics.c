@@ -480,16 +480,148 @@ static ssize_t aics_control_write(struct bt_aics *inst, const void *buf, uint16_
 	return len;
 }
 
+/* Snapshot of the values reported by a set of server callbacks, taken while holding aics_mutex
+ * so that the callbacks can be called without holding it
+ */
+struct aics_cb_snapshot {
+	bt_aics_state_cb state_cb;
+	bt_aics_description_cb description_cb;
+	bt_aics_status_cb status_cb;
+	int8_t gain;
+	uint8_t mute;
+	uint8_t gain_mode;
+	bool active;
+	char description[BT_AICS_DESC_BUF_SIZE];
+};
+
+/* Claims ownership of the delivery of server callbacks for @p inst.
+ *
+ * Only one thread can call the server callbacks of an instance at a time, which ensures that the
+ * callbacks are called in the same order as the values are changed. A successful claim shall be
+ * followed by a call to aics_cb_release() once the callbacks have been called.
+ */
+static bool aics_cb_claim(struct bt_aics *inst)
+{
+	return atomic_cas(&inst->srv.cb_busy, 0, 1);
+}
+
+static void aics_cb_snapshot_take(struct bt_aics *inst, enum bt_aics_srv_cb cb,
+				  struct aics_cb_snapshot *snapshot)
+{
+	BT_AUDIO_LOCK_ASSERT(&aics_mutex);
+
+	if (inst->srv.cb == NULL) {
+		LOG_DBG("Callback not registered for instance %p", inst);
+		return;
+	}
+
+	switch (cb) {
+	case AICS_CB_STATE:
+		if (inst->srv.cb->state != NULL) {
+			snapshot->state_cb = inst->srv.cb->state;
+			snapshot->gain = inst->srv.state.gain;
+			snapshot->mute = inst->srv.state.mute;
+			snapshot->gain_mode = inst->srv.state.gain_mode;
+		}
+		break;
+	case AICS_CB_DESCRIPTION:
+		if (inst->srv.cb->description != NULL) {
+			snapshot->description_cb = inst->srv.cb->description;
+			(void)strcpy(snapshot->description, inst->srv.description);
+		}
+		break;
+	case AICS_CB_STATUS:
+		if (inst->srv.cb->status != NULL) {
+			snapshot->status_cb = inst->srv.cb->status;
+			snapshot->active = inst->srv.status == BT_AICS_STATUS_ACTIVE;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+static void aics_cb_snapshot_deliver(struct bt_aics *inst, struct aics_cb_snapshot *snapshot)
+{
+	if (snapshot->state_cb != NULL) {
+		snapshot->state_cb(inst, 0, snapshot->gain, snapshot->mute, snapshot->gain_mode);
+	}
+
+	if (snapshot->description_cb != NULL) {
+		snapshot->description_cb(inst, 0, snapshot->description);
+	}
+
+	if (snapshot->status_cb != NULL) {
+		snapshot->status_cb(inst, 0, snapshot->active);
+	}
+}
+
+#if defined(CONFIG_BT_AICS)
+/* Used for remote writes, which shall not be rejected because a callback is pending.
+ *
+ * If no other thread is calling the server callbacks of @p inst, ownership is claimed and the
+ * snapshot is taken, and the caller shall deliver it and call aics_cb_release(). Otherwise the
+ * callback is deferred to the owner, which will call it with the latest value before releasing
+ * ownership.
+ */
+static bool aics_cb_claim_or_defer(struct bt_aics *inst, enum bt_aics_srv_cb cb,
+				   struct aics_cb_snapshot *snapshot)
+{
+	BT_AUDIO_LOCK_ASSERT(&aics_mutex);
+
+	if (aics_cb_claim(inst)) {
+		aics_cb_snapshot_take(inst, cb, snapshot);
+
+		return true;
+	}
+
+	LOG_DBG("Callback %d deferred for instance %p", cb, inst);
+	atomic_set_bit(inst->srv.cb_deferred, cb);
+
+	return false;
+}
+#endif /* CONFIG_BT_AICS */
+
+/* Calls any callbacks deferred while owning delivery, and then releases the ownership */
+static void aics_cb_release(struct bt_aics *inst)
+{
+	while (true) {
+		struct aics_cb_snapshot snapshot = {0};
+		bool deferred = false;
+
+		bt_audio_mutex_lock_forever(&aics_mutex);
+
+		for (int cb = 0; cb < AICS_CB_NUM; cb++) {
+			if (atomic_test_and_clear_bit(inst->srv.cb_deferred, cb)) {
+				aics_cb_snapshot_take(inst, (enum bt_aics_srv_cb)cb, &snapshot);
+				deferred = true;
+			}
+		}
+
+		if (!deferred) {
+			/* Released while holding the mutex so that a concurrent remote write either
+			 * defers its callback before this check, or claims ownership after it
+			 */
+			(void)atomic_clear(&inst->srv.cb_busy);
+			bt_audio_mutex_unlock(&aics_mutex);
+
+			return;
+		}
+
+		bt_audio_mutex_unlock(&aics_mutex);
+
+		aics_cb_snapshot_deliver(inst, &snapshot);
+	}
+}
+
 #if defined(CONFIG_BT_AICS)
 static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				  const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
-	bt_aics_state_cb state_cb = NULL;
+	struct aics_cb_snapshot snapshot = {0};
 	bool state_change = false;
-	uint8_t gain_mode = 0U;
-	uint8_t mute = 0U;
-	int8_t gain = 0;
+	bool deliver = false;
 	ssize_t ret;
 
 	ARG_UNUSED(conn);
@@ -499,17 +631,15 @@ static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_att
 
 	ret = aics_control_write(inst, buf, len, offset, &state_change);
 
-	if (state_change && inst->srv.cb != NULL && inst->srv.cb->state != NULL) {
-		state_cb = inst->srv.cb->state;
-		gain = inst->srv.state.gain;
-		mute = inst->srv.state.mute;
-		gain_mode = inst->srv.state.gain_mode;
+	if (state_change) {
+		deliver = aics_cb_claim_or_defer(inst, AICS_CB_STATE, &snapshot);
 	}
 
 	bt_audio_mutex_unlock(&aics_mutex);
 
-	if (state_cb != NULL) {
-		state_cb(inst, 0, gain, mute, gain_mode);
+	if (deliver) {
+		aics_cb_snapshot_deliver(inst, &snapshot);
+		aics_cb_release(inst);
 	}
 
 	return ret;
@@ -561,9 +691,9 @@ static ssize_t write_description(struct bt_conn *conn,
 				 uint8_t flags)
 {
 	struct bt_aics *inst = BT_AUDIO_CHRC_USER_DATA(attr);
-	bt_aics_description_cb description_cb = NULL;
-	char description[BT_AICS_DESC_BUF_SIZE];
+	struct aics_cb_snapshot snapshot = {0};
 	bool state_change = false;
+	bool deliver = false;
 	ssize_t ret;
 
 	ARG_UNUSED(conn);
@@ -573,15 +703,15 @@ static ssize_t write_description(struct bt_conn *conn,
 
 	ret = aics_description_write(inst, buf, len, offset, &state_change);
 
-	if (state_change && inst->srv.cb != NULL && inst->srv.cb->description != NULL) {
-		description_cb = inst->srv.cb->description;
-		(void)strcpy(description, inst->srv.description);
+	if (state_change) {
+		deliver = aics_cb_claim_or_defer(inst, AICS_CB_DESCRIPTION, &snapshot);
 	}
 
 	bt_audio_mutex_unlock(&aics_mutex);
 
-	if (description_cb != NULL) {
-		description_cb(inst, 0, description);
+	if (deliver) {
+		aics_cb_snapshot_deliver(inst, &snapshot);
+		aics_cb_release(inst);
 	}
 
 	return ret;
@@ -591,30 +721,28 @@ static ssize_t write_description(struct bt_conn *conn,
 static int aics_local_control_write(struct bt_aics *inst, struct bt_aics_gain_control *cp,
 				    uint16_t len)
 {
-	bt_aics_state_cb state_cb = NULL;
+	struct aics_cb_snapshot snapshot = {0};
 	bool state_change = false;
-	uint8_t gain_mode = 0U;
-	uint8_t mute = 0U;
-	int8_t gain = 0;
 	ssize_t ret;
+
+	if (!aics_cb_claim(inst)) {
+		LOG_DBG("Callback pending for instance %p", inst);
+		return -EBUSY;
+	}
 
 	bt_audio_mutex_lock_forever(&aics_mutex);
 
 	cp->cp.counter = inst->srv.state.change_counter;
 	ret = aics_control_write(inst, cp, len, 0U, &state_change);
 
-	if (state_change && inst->srv.cb != NULL && inst->srv.cb->state != NULL) {
-		state_cb = inst->srv.cb->state;
-		gain = inst->srv.state.gain;
-		mute = inst->srv.state.mute;
-		gain_mode = inst->srv.state.gain_mode;
+	if (state_change) {
+		aics_cb_snapshot_take(inst, AICS_CB_STATE, &snapshot);
 	}
 
 	bt_audio_mutex_unlock(&aics_mutex);
 
-	if (state_cb != NULL) {
-		state_cb(inst, 0, gain, mute, gain_mode);
-	}
+	aics_cb_snapshot_deliver(inst, &snapshot);
+	aics_cb_release(inst);
 
 	if (ret < 0) {
 		return (int)ret;
@@ -745,6 +873,8 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 	aics->srv.cb = param->cb;
 
 	atomic_clear(aics->srv.notify);
+	atomic_clear(aics->srv.cb_deferred);
+	(void)atomic_clear(&aics->srv.cb_busy);
 	k_work_init_delayable(&aics->srv.notify_work, notify_work_handler);
 
 	if (param->description) {
@@ -815,7 +945,7 @@ struct bt_aics *bt_aics_free_instance_get(void)
 
 int bt_aics_deactivate(struct bt_aics *inst)
 {
-	bt_aics_status_cb status_cb = NULL;
+	struct aics_cb_snapshot snapshot = {0};
 
 	if (!inst) {
 		LOG_DBG("NULL instance");
@@ -824,6 +954,11 @@ int bt_aics_deactivate(struct bt_aics *inst)
 
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return -ENOTSUP;
+	}
+
+	if (!aics_cb_claim(inst)) {
+		LOG_DBG("Callback pending for instance %p", inst);
+		return -EBUSY;
 	}
 
 	bt_audio_mutex_lock_forever(&aics_mutex);
@@ -834,25 +969,20 @@ int bt_aics_deactivate(struct bt_aics *inst)
 
 		value_changed(inst, AICS_NOTIFY_STATUS);
 
-		if (inst->srv.cb && inst->srv.cb->status) {
-			status_cb = inst->srv.cb->status;
-		} else {
-			LOG_DBG("Callback not registered for instance %p", inst);
-		}
+		aics_cb_snapshot_take(inst, AICS_CB_STATUS, &snapshot);
 	}
 
 	bt_audio_mutex_unlock(&aics_mutex);
 
-	if (status_cb != NULL) {
-		status_cb(inst, 0, false);
-	}
+	aics_cb_snapshot_deliver(inst, &snapshot);
+	aics_cb_release(inst);
 
 	return 0;
 }
 
 int bt_aics_activate(struct bt_aics *inst)
 {
-	bt_aics_status_cb status_cb = NULL;
+	struct aics_cb_snapshot snapshot = {0};
 
 	if (!inst) {
 		LOG_DBG("NULL instance");
@@ -863,6 +993,11 @@ int bt_aics_activate(struct bt_aics *inst)
 		return -ENOTSUP;
 	}
 
+	if (!aics_cb_claim(inst)) {
+		LOG_DBG("Callback pending for instance %p", inst);
+		return -EBUSY;
+	}
+
 	bt_audio_mutex_lock_forever(&aics_mutex);
 
 	if (inst->srv.status == BT_AICS_STATUS_INACTIVE) {
@@ -871,18 +1006,13 @@ int bt_aics_activate(struct bt_aics *inst)
 
 		value_changed(inst, AICS_NOTIFY_STATUS);
 
-		if (inst->srv.cb && inst->srv.cb->status) {
-			status_cb = inst->srv.cb->status;
-		} else {
-			LOG_DBG("Callback not registered for instance %p", inst);
-		}
+		aics_cb_snapshot_take(inst, AICS_CB_STATUS, &snapshot);
 	}
 
 	bt_audio_mutex_unlock(&aics_mutex);
 
-	if (status_cb != NULL) {
-		status_cb(inst, 0, true);
-	}
+	aics_cb_snapshot_deliver(inst, &snapshot);
+	aics_cb_release(inst);
 
 	return 0;
 }
@@ -933,27 +1063,19 @@ int bt_aics_state_get(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_state_get(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		bt_aics_state_cb state_cb = NULL;
-		uint8_t gain_mode = 0U;
-		uint8_t mute = 0U;
-		int8_t gain = 0;
+		struct aics_cb_snapshot snapshot = {0};
+
+		if (!aics_cb_claim(inst)) {
+			LOG_DBG("Callback pending for instance %p", inst);
+			return -EBUSY;
+		}
 
 		bt_audio_mutex_lock_forever(&aics_mutex);
-
-		if (inst->srv.cb && inst->srv.cb->state) {
-			state_cb = inst->srv.cb->state;
-			gain = inst->srv.state.gain;
-			mute = inst->srv.state.mute;
-			gain_mode = inst->srv.state.gain_mode;
-		} else {
-			LOG_DBG("Callback not registered for instance %p", inst);
-		}
-
+		aics_cb_snapshot_take(inst, AICS_CB_STATE, &snapshot);
 		bt_audio_mutex_unlock(&aics_mutex);
 
-		if (state_cb != NULL) {
-			state_cb(inst, 0, gain, mute, gain_mode);
-		}
+		aics_cb_snapshot_deliver(inst, &snapshot);
+		aics_cb_release(inst);
 
 		return 0;
 	}
@@ -1043,23 +1165,19 @@ int bt_aics_status_get(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_status_get(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		bt_aics_status_cb status_cb = NULL;
-		bool active = false;
+		struct aics_cb_snapshot snapshot = {0};
+
+		if (!aics_cb_claim(inst)) {
+			LOG_DBG("Callback pending for instance %p", inst);
+			return -EBUSY;
+		}
 
 		bt_audio_mutex_lock_forever(&aics_mutex);
-
-		if (inst->srv.cb && inst->srv.cb->status) {
-			status_cb = inst->srv.cb->status;
-			active = inst->srv.status == BT_AICS_STATUS_ACTIVE;
-		} else {
-			LOG_DBG("Callback not registered for instance %p", inst);
-		}
-
+		aics_cb_snapshot_take(inst, AICS_CB_STATUS, &snapshot);
 		bt_audio_mutex_unlock(&aics_mutex);
 
-		if (status_cb != NULL) {
-			status_cb(inst, 0, active);
-		}
+		aics_cb_snapshot_deliver(inst, &snapshot);
+		aics_cb_release(inst);
 
 		return 0;
 	}
@@ -1195,23 +1313,19 @@ int bt_aics_description_get(struct bt_aics *inst)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_description_get(inst);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		bt_aics_description_cb description_cb = NULL;
-		char description[BT_AICS_DESC_BUF_SIZE];
+		struct aics_cb_snapshot snapshot = {0};
+
+		if (!aics_cb_claim(inst)) {
+			LOG_DBG("Callback pending for instance %p", inst);
+			return -EBUSY;
+		}
 
 		bt_audio_mutex_lock_forever(&aics_mutex);
-
-		if (inst->srv.cb && inst->srv.cb->description) {
-			description_cb = inst->srv.cb->description;
-			(void)strcpy(description, inst->srv.description);
-		} else {
-			LOG_DBG("Callback not registered for instance %p", inst);
-		}
-
+		aics_cb_snapshot_take(inst, AICS_CB_DESCRIPTION, &snapshot);
 		bt_audio_mutex_unlock(&aics_mutex);
 
-		if (description_cb != NULL) {
-			description_cb(inst, 0, description);
-		}
+		aics_cb_snapshot_deliver(inst, &snapshot);
+		aics_cb_release(inst);
 
 		return 0;
 	}
@@ -1234,26 +1348,28 @@ int bt_aics_description_set(struct bt_aics *inst, const char *description)
 	if (IS_ENABLED(CONFIG_BT_AICS_CLIENT) && inst->client_instance) {
 		return bt_aics_client_description_set(inst, description);
 	} else if (IS_ENABLED(CONFIG_BT_AICS) && !inst->client_instance) {
-		bt_aics_description_cb description_cb = NULL;
-		char desc[BT_AICS_DESC_BUF_SIZE];
+		struct aics_cb_snapshot snapshot = {0};
 		bool state_change = false;
 		ssize_t ret;
+
+		if (!aics_cb_claim(inst)) {
+			LOG_DBG("Callback pending for instance %p", inst);
+			return -EBUSY;
+		}
 
 		bt_audio_mutex_lock_forever(&aics_mutex);
 
 		ret = aics_description_write(inst, description, strlen(description), 0U,
 					     &state_change);
 
-		if (state_change && inst->srv.cb != NULL && inst->srv.cb->description != NULL) {
-			description_cb = inst->srv.cb->description;
-			(void)strcpy(desc, inst->srv.description);
+		if (state_change) {
+			aics_cb_snapshot_take(inst, AICS_CB_DESCRIPTION, &snapshot);
 		}
 
 		bt_audio_mutex_unlock(&aics_mutex);
 
-		if (description_cb != NULL) {
-			description_cb(inst, 0, desc);
-		}
+		aics_cb_snapshot_deliver(inst, &snapshot);
+		aics_cb_release(inst);
 
 		return ret < 0 ? (int)ret : 0;
 	}

@@ -339,6 +339,16 @@ Bluetooth Audio
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* AICS
+
+  * The local server operations of AICS that call a server callback, such as
+    :c:func:`bt_aics_gain_set`, :c:func:`bt_aics_mute` and :c:func:`bt_aics_state_get`, now
+    return ``-EBUSY`` if a server callback of the same instance has not yet returned, including
+    when called from such a callback. This keeps the callbacks in the same order as the changes
+    they report. Callers should handle ``-EBUSY`` and wait before retrying. Writes from a remote
+    client are never rejected; if a callback is pending, their callback is called by the thread
+    owning the pending callback once it returns.
+
 * MCP
 
   * The media proxy API has been removed and users will need to use the ``bt_mcs``, ``bt_mcc`` or
