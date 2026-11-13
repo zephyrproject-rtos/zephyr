@@ -191,6 +191,24 @@
 				reg = <0>;
 				status = "disabled";
 			};
+
+			mrt0_channel1: mrt_channel@1 {
+				compatible = "nxp,mrt-channel";
+				reg = <1>;
+				status = "disabled";
+			};
+
+			mrt0_channel2: mrt_channel@2 {
+				compatible = "nxp,mrt-channel";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			mrt0_channel3: mrt_channel@3 {
+				compatible = "nxp,mrt-channel";
+				reg = <3>;
+				status = "disabled";
+			};
 		};
 
 		ctimer2: ctimer@40028000 {

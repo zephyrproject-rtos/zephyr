@@ -31,6 +31,7 @@
 		accel0 = &mma8652fc;
 		watchdog0 = &wwdt0;
 		rtc = &rtc;
+		sdhc0 = &sdif;
 	};
 
 	/*
