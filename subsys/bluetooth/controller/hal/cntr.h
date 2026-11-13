@@ -8,6 +8,7 @@
 #include "hal/cntr_vendor_hal.h"
 
 void cntr_init(void);
+void cntr_deinit(void);
 uint32_t cntr_start(void);
 uint32_t cntr_stop(void);
 uint32_t cntr_cnt_get(void);
