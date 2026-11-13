@@ -40,16 +40,14 @@ const void *usbh_desc_get_next(const void *const desc);
 const void *usbh_desc_get_iface(const struct usb_device *const udev, const uint8_t iface);
 
 /**
- * @brief Search an endpoint descriptor matching the endpoint number wanted.
- *
- * The descriptors following it can be browsed using @ref usbh_desc_get_next
+ * @brief Get the endpoint of a USB device matching the endpoint address wanted.
  *
  * @param[in] udev USB device that contains the list of endpoints
- * @param[in] ep The endpoint number to search
+ * @param[in] ep The endpoint address to search
  *
- * @return A pointer to the descriptor
+ * @return A pointer to the endpoint, NULL if it is not enabled
  */
-const void *usbh_desc_get_endpoint(const struct usb_device *const udev, const uint8_t ep);
+struct usb_host_ep *usbh_desc_get_endpoint(struct usb_device *const udev, const uint8_t ep);
 
 /**
  * @brief Search an interface association descriptor matching the interface number wanted.

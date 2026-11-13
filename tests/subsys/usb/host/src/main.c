@@ -218,6 +218,7 @@ ZTEST(usbh_test, test_get_next_desc)
 ZTEST(usbh_test, test_get_types)
 {
 	const struct usb_desc_header *desc;
+	struct usb_host_ep *host_ep;
 	struct usb_device *udev;
 	int err;
 
@@ -234,16 +235,14 @@ ZTEST(usbh_test, test_get_types)
 	zassert_ok(err, "Failed to set interface alternate");
 
 	/* if0_out_ep */
-	desc = usbh_desc_get_endpoint(udev, 0x01);
-	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
-	zassert_equal(((struct usb_ep_descriptor *)desc)->bEndpointAddress, 0x01);
+	host_ep = usbh_desc_get_endpoint(udev, 0x01);
+	zassert_not_null(host_ep);
+	zassert_equal(host_ep->addr, 0x01);
 
 	/* if0_in_ep */
-	desc = usbh_desc_get_endpoint(udev, 0x81);
-	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
-	zassert_equal(((struct usb_ep_descriptor *)desc)->bEndpointAddress, 0x81);
+	host_ep = usbh_desc_get_endpoint(udev, 0x81);
+	zassert_not_null(host_ep);
+	zassert_equal(host_ep->addr, 0x81);
 }
 
 ZTEST(usbh_test, test_get_next_function)

@@ -111,17 +111,17 @@ static int vrt_xfer_control(const struct device *dev,
 	}
 
 	if (buf != NULL && xfer->stage == UHC_CONTROL_STAGE_DATA) {
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
-			length = MIN(net_buf_tailroom(buf), xfer->mps);
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
+			length = MIN(net_buf_tailroom(buf), xfer->ep->mps);
 			data = net_buf_tail(buf);
 		} else {
-			length = MIN(buf->len, xfer->mps);
+			length = MIN(buf->len, xfer->ep->mps);
 			data = buf->data;
 		}
 
 		LOG_DBG("Handle DATA stage");
 		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA,
-					xfer->udev->addr, xfer->ep,
+					xfer->udev->addr, xfer->ep->addr,
 					data, length);
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
@@ -137,7 +137,7 @@ static int vrt_xfer_control(const struct device *dev,
 		uint8_t ep;
 
 		LOG_DBG("Handle STATUS stage");
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 			ep = USB_CONTROL_EP_OUT;
 		} else {
 			ep = USB_CONTROL_EP_IN;
@@ -168,15 +168,15 @@ static int vrt_xfer_bulk(const struct device *dev,
 	uint8_t *data;
 	size_t length;
 
-	if (USB_EP_DIR_IS_IN(xfer->ep)) {
-		length = MIN(net_buf_tailroom(buf), xfer->mps);
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
+		length = MIN(net_buf_tailroom(buf), xfer->ep->mps);
 		data = net_buf_tail(buf);
 	} else {
-		length = MIN(buf->len, xfer->mps);
+		length = MIN(buf->len, xfer->ep->mps);
 		data = buf->data;
 	}
 
-	uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA, xfer->udev->addr, xfer->ep,
+	uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_DATA, xfer->udev->addr, xfer->ep->addr,
 				data, length);
 	if (uvb_pkt == NULL) {
 		LOG_ERR("Failed to allocate UVB packet");
@@ -215,7 +215,7 @@ static void vrt_assemble_frame(const struct device *dev)
 
 	/* TODO: add periodic transfers up to 90% */
 	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		uint8_t idx = get_xfer_ep_idx(tmp->ep);
+		uint8_t idx = get_xfer_ep_idx(tmp->ep->addr);
 
 		/* There could be multiple transfers queued for the same
 		 * endpoint, for now we only allow one to be scheduled per frame.
@@ -273,7 +273,7 @@ static int vrt_schedule_frame(const struct device *dev)
 			(void *)priv->last_xfer, frame->count);
 	}
 
-	if (USB_EP_GET_IDX(priv->last_xfer->ep) == 0) {
+	if (USB_EP_GET_IDX(priv->last_xfer->ep->addr) == 0) {
 		return vrt_xfer_control(dev, priv->last_xfer);
 	}
 
@@ -310,7 +310,7 @@ static void vrt_hrslt_success(const struct device *dev,
 		}
 
 		if (USB_EP_DIR_IS_OUT(pkt->ep)) {
-			length = MIN(buf->len, xfer->mps);
+			length = MIN(buf->len, xfer->ep->mps);
 			net_buf_pull(buf, length);
 			LOG_DBG("OUT chunk %zu out of %u", length, buf->len);
 			if (buf->len == 0) {
@@ -323,13 +323,13 @@ static void vrt_hrslt_success(const struct device *dev,
 		} else {
 			length = MIN(net_buf_tailroom(buf), pkt->length);
 			net_buf_add(buf, length);
-			if (pkt->length > xfer->mps) {
+			if (pkt->length > xfer->ep->mps) {
 				LOG_ERR("Ambiguous packet with the length %zu",
 					pkt->length);
 			}
 
 			LOG_DBG("IN chunk %zu out of %zu", length, net_buf_tailroom(buf));
-			if (pkt->length < xfer->mps || !net_buf_tailroom(buf)) {
+			if (pkt->length < xfer->ep->mps || !net_buf_tailroom(buf)) {
 				if (pkt->ep == USB_CONTROL_EP_IN && !xfer->no_status) {
 					xfer->stage = UHC_CONTROL_STAGE_STATUS;
 				} else {
@@ -376,7 +376,7 @@ static int vrt_handle_reply(const struct device *dev,
 		/* Move the transfer back to the list. */
 		sys_dlist_append(&frame->list, frame->ptr);
 		priv->last_xfer = NULL;
-		LOG_DBG("NACK 0x%02x count %u", xfer->ep, frame->count);
+		LOG_DBG("NACK 0x%02x count %u", xfer->ep->addr, frame->count);
 		break;
 	case UVB_REPLY_STALL:
 		vrt_xfer_drop_active(dev, -EPIPE);
