@@ -910,6 +910,40 @@ struct http_resource_detail_dynamic response_writes_detail = {
 HTTP_RESOURCE_DEFINE(response_writes_resource, test_http_service, "/response_writes",
 		     &response_writes_detail);
 
+/* Larger than the largest HTTP/2 frame payload a client accepts by default */
+#define TEST_LARGE_BODY_FRAME_SIZE 16384
+#define TEST_LARGE_BODY_SIZE       (TEST_LARGE_BODY_FRAME_SIZE + 100)
+
+static uint8_t large_body[TEST_LARGE_BODY_SIZE];
+
+/* Respond with the whole body in a single callback */
+static int large_body_cb(struct http_client_ctx *client, enum http_transaction_status status,
+			 const struct http_request_ctx *request_ctx,
+			 struct http_response_ctx *response_ctx, void *user_data)
+{
+	if (status != HTTP_SERVER_REQUEST_DATA_FINAL) {
+		return 0;
+	}
+
+	response_ctx->body = large_body;
+	response_ctx->body_len = sizeof(large_body);
+	response_ctx->final_chunk = true;
+
+	return 0;
+}
+
+struct http_resource_detail_dynamic large_body_detail = {
+	.common = {
+		.type = HTTP_RESOURCE_TYPE_DYNAMIC,
+		.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+		.content_type = "text/plain",
+	},
+	.cb = large_body_cb,
+	.user_data = NULL
+};
+
+HTTP_RESOURCE_DEFINE(large_body_resource, test_http_service, "/large_body", &large_body_detail);
+
 static int client_fd = -1;
 static uint8_t buf[BUFFER_SIZE];
 
@@ -1086,6 +1120,45 @@ static void expect_http2_data_frame(size_t *offset, int stream_id,
 				  "Unexpected data payload");
 	}
 	test_consume_data(offset, frame.length);
+}
+
+/* Content of the responses that do not fit the receive buffer */
+static uint8_t test_pattern_byte(size_t pos)
+{
+	return '0' + pos % 10;
+}
+
+/* Expect a data frame of exactly "payload_len" bytes, which may be more than
+ * the receive buffer holds, with the content of test_pattern_byte() from
+ * "*pos" on.
+ */
+static void expect_http2_data_frame_pattern(size_t *offset, int stream_id, size_t payload_len,
+					    uint8_t flags, size_t *pos)
+{
+	struct http2_frame frame;
+	size_t remaining;
+
+	test_get_frame_header(offset, &frame);
+
+	zassert_equal(frame.type, HTTP2_DATA_FRAME, "Expected data frame");
+	zassert_equal(frame.stream_identifier, stream_id, "Invalid data frame stream ID");
+	zassert_equal(frame.flags, flags, "Unexpected flags received");
+	zassert_equal(frame.length, payload_len, "Unexpected data frame length (%u)", frame.length);
+
+	remaining = frame.length;
+	while (remaining > 0) {
+		size_t len = MIN(remaining, sizeof(buf));
+
+		test_read_data(offset, len);
+		for (size_t i = 0; i < len; i++) {
+			zassert_equal(buf[i], test_pattern_byte(*pos + i),
+				      "Unexpected data payload at %zu", *pos + i);
+		}
+		test_consume_data(offset, len);
+
+		*pos += len;
+		remaining -= len;
+	}
 }
 
 static void expect_http2_window_update_frame(size_t *offset, int stream_id)
@@ -1619,6 +1692,46 @@ static void common_verify_http2_dynamic_get_request(const uint8_t *request,
 	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_DYNAMIC_GET_PAYLOAD,
 				strlen(TEST_DYNAMIC_GET_PAYLOAD), HTTP2_FLAG_END_STREAM);
 	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+/* HPACK-encoded "GET /large_body" request */
+#define TEST_HTTP2_HEADERS_GET_LARGE_BODY_STREAM_1 \
+	0x00, 0x00, 0x0f, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x82, 0x86, 0x04, 0x0b, 0x2f, 0x6c, 0x61, 0x72, 0x67, 0x65, 0x5f, 0x62, \
+	0x6f, 0x64, 0x79
+
+/* A body larger than the largest frame the client accepts has to be sent in
+ * several data frames, the last of them ending the stream.
+ */
+ZTEST(server_function_tests, test_http2_dynamic_get_large_body)
+{
+	static const uint8_t request_get_large_body[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_LARGE_BODY_STREAM_1,
+	};
+	size_t offset = 0;
+	size_t pos = 0;
+	int ret;
+
+	for (size_t i = 0; i < sizeof(large_body); i++) {
+		large_body[i] = test_pattern_byte(i);
+	}
+
+	ret = zsock_send(client_fd, request_get_large_body, sizeof(request_get_large_body), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame_pattern(&offset, TEST_STREAM_ID_1, TEST_LARGE_BODY_FRAME_SIZE, 0,
+					&pos);
+	expect_http2_data_frame_pattern(&offset, TEST_STREAM_ID_1,
+					TEST_LARGE_BODY_SIZE - TEST_LARGE_BODY_FRAME_SIZE,
+					HTTP2_FLAG_END_STREAM, &pos);
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_get)
