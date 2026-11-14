@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config RENESAS_RH850_INTC
+	bool "Renesas RH850 interrupt controller"
+	default y
+	depends on DT_HAS_RENESAS_RH850_INTC_ENABLED
+	help
+	  Driver for the INTC1 and INTC2 interrupt controllers of Renesas
+	  RH850 SoCs, used by the architecture interrupt code.

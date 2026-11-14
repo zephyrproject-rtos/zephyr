@@ -339,6 +339,14 @@ static inline void trigger_irq(int irq)
 	intc_aurix_ir_irq_raise(irq);
 }
 
+#elif defined(CONFIG_RH850)
+#include <zephyr/drivers/interrupt_controller/intc_renesas_rh850.h>
+
+static inline void trigger_irq(int irq)
+{
+	intc_rh850_irq_raise(irq);
+}
+
 #else
 #define NO_TRIGGER_FROM_SW
 #endif

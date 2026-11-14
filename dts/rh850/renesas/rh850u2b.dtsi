@@ -1,0 +1,83 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/g4mh.dtsi>
+
+/ {
+	soc {
+		rlin30: serial@ffc7c000 {
+			compatible = "renesas,rh850-rlin3-uart";
+			reg = <0xffc7c000 0x40>;
+			interrupts = <620 15>, <621 15>, <622 15>, <623 15>;
+			interrupt-names = "lin", "tx", "rx", "err";
+			status = "disabled";
+		};
+	};
+};
+
+/* PCLK = CLKC_HSB */
+&ostm0 {
+	interrupts = <360 1>;
+	clock-frequency = <DT_FREQ_M(80)>;
+};
+
+/* RAM of the U2B24, the largest U2B */
+
+/* Local RAM CPU0, U2B HW UM Table 4.1 p615 */
+&lram0 {
+	reg = <0xfdc00000 DT_SIZE_K(64)>;
+};
+
+/ {
+	/* Local RAM CPU1, U2B HW UM Table 4.1 p615 */
+	lram1: memory@fda00000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfda00000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "LRAM1";
+	};
+
+	/* Local RAM CPU2, U2B HW UM Table 4.1 p615 */
+	lram2: memory@fd800000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfd800000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "LRAM2";
+	};
+
+	/* Local RAM CPU3, U2B HW UM Table 4.1 p615 */
+	lram3: memory@fd600000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfd600000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "LRAM3";
+	};
+
+	/* Local RAM CPU4, U2B HW UM Table 4.1 p615 */
+	lram4: memory@fd400000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfd400000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "LRAM4";
+	};
+
+	/* Local RAM CPU5 (performance config), U2B HW UM Table 4.1 p615 */
+	lram5: memory@fd200000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfd200000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "LRAM5";
+	};
+
+	/* Cluster RAM clusters 0-2, the last 128 KiB retention RAM, U2B HW UM Table 4.1 p615 */
+	cram0: memory@fe000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfe000000 DT_SIZE_K(1536)>;
+		zephyr,memory-region = "CRAM0";
+	};
+
+	/* Extended cluster RAM area, U2B HW UM Table 4.1 p615 */
+	ecram0: memory@fe800000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfe800000 0x220000>;
+		zephyr,memory-region = "ECRAM0";
+	};
+};

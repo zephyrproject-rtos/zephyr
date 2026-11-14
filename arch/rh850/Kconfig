@@ -1,0 +1,62 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "RH850 Architecture Options"
+	depends on RH850
+
+config ARCH
+	string
+	default "rh850"
+
+config CPU_G4KH
+	bool
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	help
+	  RH850 G4KH CPU core (RH850/U2C).
+
+config CPU_G4MH
+	bool
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	help
+	  RH850 G4MH CPU core (RH850/U2A, RH850/U2B).
+
+config CPU_HAS_FXU
+	bool
+	depends on CPU_G4MH
+	help
+	  The CPU has the extended floating-point unit (FXU).
+
+config FXU
+	bool "Extended floating-point unit (FXU)"
+	depends on FPU && CPU_HAS_FXU
+	default y
+	help
+	  Build with -mfxu. A thread gets FXU access with its first FXU
+	  instruction; from then on its wr0-wr31, FXSR and FXXC are saved and
+	  restored at context switches. FXU use in interrupt context is a
+	  fatal error.
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config NUM_IRQ_PRIO_LEVELS
+	int
+	range 1 64
+	default 64 if CPU_G4MH
+	default 16
+	help
+	  Number of interrupt priority levels. With more than 16 the CPU runs
+	  with the priority level extension (INTCFG.EPL = 1).
+
+config RH850_MPU_ENTRIES
+	int
+	range 1 32
+	help
+	  Number of MPU entries of the CPU (MPCFG.NMPUE + 1). The reset code
+	  initializes all of them.
+
+endmenu

@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RH850U2C
+
+config NUM_IRQS
+	default 630
+
+# U2C HW UM R01UH1018EJ0100 3.8.11 Table 3.199 (24 entries), Table 3.65 MPCFG
+config RH850_MPU_ENTRIES
+	default 24
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,ostm0,clock-frequency)
+
+endif # SOC_SERIES_RH850U2C

@@ -18,6 +18,7 @@ The Zephyr kernel supports multiple architectures, including:
  - Intel x86 (32- and 64-bit)
  - MIPS (MIPS32 Release 1 specification)
  - OpenRISC (32-bit)
+ - Renesas RH850 (G4KH)
  - Renesas RX
  - RISC-V (32- and 64-bit)
  - SPARC V8

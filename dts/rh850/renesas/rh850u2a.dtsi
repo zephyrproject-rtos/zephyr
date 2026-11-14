@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/g4mh.dtsi>
+
+/ {
+	soc {
+		rlin30: serial@ffd28000 {
+			compatible = "renesas,rh850-rlin3-uart";
+			reg = <0xffd28000 0x40>;
+			interrupts = <416 15>, <417 15>, <418 15>, <419 15>;
+			interrupt-names = "lin", "tx", "rx", "err";
+			status = "disabled";
+		};
+	};
+};
+
+/* PCLK = CLK_HSB */
+&ostm0 {
+	interrupts = <199 1>;
+	clock-frequency = <DT_FREQ_M(80)>;
+};
+
+/* Local RAM CPU0, U2A HW UM Table 4.1 p534 */
+&lram0 {
+	reg = <0xfdc00000 DT_SIZE_K(64)>;
+};

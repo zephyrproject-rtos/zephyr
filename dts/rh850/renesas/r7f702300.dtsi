@@ -1,0 +1,68 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/rh850u2a.dtsi>
+
+/ {
+	soc {
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(16)>;
+			ranges = <0x0 0x0 DT_SIZE_M(16)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	/* Local RAM CPU1, U2A HW UM Table 4.1 p534 */
+	lram1: memory@fda00000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfda00000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "LRAM1";
+	};
+
+	/* Local RAM CPU2, U2A HW UM Table 4.1 p534 */
+	lram2: memory@fd800000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfd800000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "LRAM2";
+	};
+
+	/* Local RAM CPU3, U2A HW UM Table 4.1 p534 */
+	lram3: memory@fd600000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfd600000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "LRAM3";
+	};
+
+	/* Cluster RAM cluster 0, U2A HW UM Table 4.1 p534 */
+	cram0: memory@fe000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfe000000 DT_SIZE_K(512)>;
+		zephyr,memory-region = "CRAM0";
+	};
+
+	/* Cluster RAM cluster 1, U2A HW UM Table 4.1 p534 */
+	cram1: memory@fe100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfe100000 DT_SIZE_K(512)>;
+		zephyr,memory-region = "CRAM1";
+	};
+
+	/* Cluster RAM cluster 2, U2A HW UM Table 4.1 p534 */
+	cram2: memory@fe400000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfe400000 DT_SIZE_M(2)>;
+		zephyr,memory-region = "CRAM2";
+	};
+
+	/* Cluster RAM cluster 3 (retention RAM), U2A HW UM Table 4.1 p534 */
+	cram3: memory@fe800000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xfe800000 DT_SIZE_K(256)>;
+		zephyr,memory-region = "CRAM3";
+	};
+};

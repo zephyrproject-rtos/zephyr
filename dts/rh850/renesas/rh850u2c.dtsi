@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/g4kh.dtsi>
+
+&ostm0 {
+	interrupts = <63 1>;
+	clock-frequency = <DT_FREQ_M(20)>;
+};
+
+/* Local RAM CPU0, U2C HW UM Table 4.1 p480 */
+&lram0 {
+	reg = <0xfdc00000 DT_SIZE_K(128)>;
+};
+
+/ {
+	/* Retention RAM, U2C HW UM Table 4.1 p480 */
+	rram0: memory@12000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x12000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "RRAM0";
+	};
+};
