@@ -670,6 +670,20 @@ static void lower_data_ready(struct bt_l2cap_br_chan *br_chan)
 	__ASSERT_NO_MSG(old);
 }
 
+/* Host lock held */
+static struct net_buf *take_partly_sent_pdu(struct bt_l2cap_br_chan *br_chan)
+{
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	if (br_chan->tx.mode != BT_L2CAP_BR_LINK_MODE_BASIC) {
+		br_chan->_pdu_remaining = 0U;
+
+		return net_buf_take(&br_chan->_pdu_buf);
+	}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+
+	return CONTAINER_OF(sys_slist_get(&br_chan->_pdu_tx_queue), struct net_buf, node);
+}
+
 static void cancel_data_ready(struct bt_l2cap_br_chan *br_chan)
 {
 	struct bt_conn *conn = br_chan->chan.conn;
@@ -679,6 +693,10 @@ static void cancel_data_ready(struct bt_l2cap_br_chan *br_chan)
 	 * while we are removing the channel from it (see raise_data_ready()).
 	 */
 	bt_dev_lock();
+
+	if (bt_conn_tx_in_pdu(conn, &br_chan->_pdu_ready)) {
+		bt_conn_tx_orphan_pdu(conn, take_partly_sent_pdu(br_chan));
+	}
 
 	sys_slist_find_and_remove(&conn->l2cap_data_ready,
 				  &br_chan->_pdu_ready);
@@ -1932,6 +1950,16 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *
 
 	br_chan = CONTAINER_OF(pdu_ready, struct bt_l2cap_br_chan, _pdu_ready);
 
+	if (br_chan->state == BT_L2CAP_DISCONNECTING && !conn->next_is_frag) {
+		/* Nothing new after a Disconnection Request: what is left goes
+		 * with the channel. Another channel may have data to send.
+		 */
+		LOG_DBG("no new PDU on disconnecting %p", br_chan);
+		lower_data_ready(br_chan);
+		bt_tx_irq_raise();
+		return NULL;
+	}
+
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (br_chan->tx.mode != BT_L2CAP_BR_LINK_MODE_BASIC) {
 		struct net_buf *buf;
@@ -2995,6 +3023,12 @@ void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan)
 
 		net_buf_unref(buf);
 	}
+
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	/* A frame in transmission when the link went down */
+	net_buf_drop(&br_chan->_pdu_buf);
+	br_chan->_pdu_remaining = 0U;
+#endif /* CONFIG_BT_L2CAP_RET_FC */
 
 	if (ops->disconnected) {
 		ops->disconnected(chan);
@@ -5239,8 +5273,9 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 	/* Set the ident for the signaling request */
 	br_chan->ident = hdr->ident;
 
-	l2cap_br_chan_send_req(br_chan, buf, L2CAP_BR_DISCONN_TIMEOUT);
+	/* Set state ahead of the request, as no new PDU is to follow it */
 	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
+	l2cap_br_chan_send_req(br_chan, buf, L2CAP_BR_DISCONN_TIMEOUT);
 
 	return 0;
 }

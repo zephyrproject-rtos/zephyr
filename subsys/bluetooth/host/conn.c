@@ -827,7 +827,82 @@ void bt_conn_cleanup_all(void)
 /* Returns true if L2CAP has data to send on this conn */
 static bool acl_has_data(struct bt_conn *conn)
 {
-	return sys_slist_peek_head(&conn->l2cap_data_ready) != NULL;
+	BT_DEV_LOCK_ASSERT();
+
+	return conn->orphan_pdu != NULL || sys_slist_peek_head(&conn->l2cap_data_ready) != NULL;
+}
+
+bool bt_conn_tx_in_pdu(const struct bt_conn *conn, const sys_snode_t *chan_node)
+{
+	BT_DEV_LOCK_ASSERT();
+
+	/* A channel stays at the head of the list until the last fragment of
+	 * its PDU has been sent.
+	 */
+	return conn->next_is_frag && conn->orphan_pdu == NULL &&
+	       sys_slist_peek_head(&conn->l2cap_data_ready) == chan_node;
+}
+
+void bt_conn_tx_orphan_pdu(struct bt_conn *conn, struct net_buf *pdu)
+{
+	BT_DEV_LOCK_ASSERT();
+
+	__ASSERT_NO_MSG(pdu != NULL);
+	__ASSERT_NO_MSG(conn->orphan_pdu == NULL);
+
+	/* What a TX callback reports to may be gone with the channel */
+	make_closure(pdu->user_data, NULL, NULL);
+
+	conn->orphan_pdu = net_buf_take(&pdu);
+	bt_conn_data_ready(conn);
+}
+
+static void orphan_pdu_drop(struct bt_conn *conn)
+{
+	struct net_buf *pdu;
+
+	/* Freed after unlocking: a destroy callback may wait on the TX processor */
+	bt_dev_lock();
+	pdu = net_buf_take(&conn->orphan_pdu);
+	bt_dev_unlock();
+
+	net_buf_drop(&pdu);
+}
+
+/* As for tx_data_pull */
+static struct net_buf *orphan_pdu_pull(struct bt_conn *conn, size_t amount, size_t *length)
+{
+	BT_DEV_LOCK_ASSERT();
+
+	if (bt_buf_has_view(conn->orphan_pdu)) {
+		/* Destroying the view triggers the TX processor */
+		LOG_DBG("already have view on %p", conn->orphan_pdu);
+		return NULL;
+	}
+
+	*length = conn->orphan_pdu->len;
+
+	if (amount >= conn->orphan_pdu->len) {
+		return net_buf_take(&conn->orphan_pdu);
+	}
+
+	return net_buf_ref(conn->orphan_pdu);
+}
+
+/* The tx_data_pull of ACL connections: the rest of a PDU whose channel was
+ * disconnected or shut down goes ahead of what L2CAP has
+ */
+static struct net_buf *acl_data_pull(struct bt_conn *conn, size_t amount, size_t *length)
+{
+	if (conn->orphan_pdu != NULL) {
+		return orphan_pdu_pull(conn, amount, length);
+	}
+
+	if (bt_conn_is_br(conn)) {
+		return l2cap_br_data_pull(conn, amount, length);
+	}
+
+	return l2cap_data_pull(conn, amount, length);
 }
 #endif	/* defined(CONFIG_BT_CONN) */
 
@@ -2580,6 +2655,7 @@ static void deferred_work(struct k_work *work)
 		}
 #endif /* CONFIG_BT_CLASSIC */
 		bt_l2cap_disconnected(conn);
+		orphan_pdu_drop(conn);
 		notify_disconnected(conn);
 
 		/* Release the reference we took for the very first
@@ -2765,7 +2841,7 @@ struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
 
 	bt_addr_copy(&conn->br.dst, peer);
 	conn->type = BT_CONN_TYPE_BR;
-	conn->tx_data_pull = l2cap_br_data_pull;
+	conn->tx_data_pull = acl_data_pull;
 	conn->get_and_clear_cb = acl_get_and_clear_cb;
 	conn->has_data = acl_has_data;
 
@@ -3068,7 +3144,7 @@ struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer)
 	conn->required_sec_level = BT_SECURITY_L1;
 #endif /* CONFIG_BT_SMP */
 	conn->type = BT_CONN_TYPE_LE;
-	conn->tx_data_pull = l2cap_data_pull;
+	conn->tx_data_pull = acl_data_pull;
 	conn->get_and_clear_cb = acl_get_and_clear_cb;
 	conn->has_data = acl_has_data;
 	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;
