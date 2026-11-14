@@ -79,9 +79,8 @@ static int settings_mgmt_read(struct smp_streamer *ctxt)
 	data = (uint8_t *)k_malloc(max_size);
 
 	if (data == NULL || key_name == NULL) {
-		if (key_name != NULL) {
-			k_free(key_name);
-		}
+		k_free(key_name);
+		k_free(data);
 
 		return MGMT_ERR_ENOMEM;
 	}
