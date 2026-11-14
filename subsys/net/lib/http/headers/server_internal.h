@@ -25,6 +25,7 @@ int handle_http_frame_rst_stream(struct http_client_ctx *client);
 int handle_http_frame_goaway(struct http_client_ctx *client);
 int handle_http_frame_settings(struct http_client_ctx *client);
 int handle_http_frame_priority(struct http_client_ctx *client);
+int handle_http_frame_ping(struct http_client_ctx *client);
 int handle_http_frame_continuation(struct http_client_ctx *client);
 int handle_http_frame_window_update(struct http_client_ctx *client);
 int handle_http_frame_header(struct http_client_ctx *client);
