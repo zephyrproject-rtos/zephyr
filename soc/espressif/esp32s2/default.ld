@@ -366,6 +366,8 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     /* Input sections named with zephyr_linker_sources(RAMFUNC_SECTION ...) */
     #include <snippets-ramfunc-section.ld>
+    #include <esp_code_relocate_check.ld.inc>
+    #include <esp_code_relocate_text.ld.inc>
     *libesp32.a:panic.*(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
     *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
@@ -656,6 +658,7 @@ SECTIONS
     . = ALIGN (8);
     _data_start = ABSOLUTE(.);
     __data_start = ABSOLUTE(.);
+    #include <esp_code_relocate_data.ld.inc>
 
     /*  bluetooth library requires this symbol to be defined */
     _btdm_data_start = ABSOLUTE(.);
@@ -849,39 +852,13 @@ SECTIONS
     _dram_data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-  /* .bss */
-  .dram0.bss (NOLOAD) :
-  {
-    . = ALIGN (8);
-    __bss_start = ABSOLUTE(.);
-    _bss_start = ABSOLUTE(.);
-
-    *(.dynsbss)
-    *(.sbss)
-    *(.sbss.*)
-    *(.gnu.linkonce.sb.*)
-    *(.scommon)
-    *(.sbss2)
-    *(.sbss2.*)
-    *(.gnu.linkonce.sb2.*)
-    *(.dynbss)
-
-#include <esp_spiram_relocate_bss.ld.inc>
-
-    *(.share.mem)
-    *(.gnu.linkonce.b.*)
-    *(COMMON)
-    . = ALIGN (8);
-    __bss_end = ABSOLUTE(.);
-    _bss_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(RAMABLE_REGION)
-
 #ifdef CONFIG_ESP_SPIRAM
   /* This section holds .ext_ram.bss data, and will be put in PSRAM */
   .ext_ram (NOLOAD):
   {
     _ext_ram_start = ABSOLUTE(.);
     _ext_ram_noinit_start = ABSOLUTE(.);
+#include <esp_code_relocate_extmem.ld.inc>
 
 #ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
     *libdrivers__wifi.a:(.noinit .noinit.*)
@@ -923,9 +900,38 @@ SECTIONS
   } GROUP_LINK_IN(ext_ram_seg)
 #endif /* CONFIG_ESP_SPIRAM */
 
+  /* .bss */
+  .dram0.bss (NOLOAD) :
+  {
+    . = ALIGN (8);
+    __bss_start = ABSOLUTE(.);
+    #include <esp_code_relocate_bss.ld.inc>
+    _bss_start = ABSOLUTE(.);
+
+    *(.dynsbss)
+    *(.sbss)
+    *(.sbss.*)
+    *(.gnu.linkonce.sb.*)
+    *(.scommon)
+    *(.sbss2)
+    *(.sbss2.*)
+    *(.gnu.linkonce.sb2.*)
+    *(.dynbss)
+
+#include <esp_spiram_relocate_bss.ld.inc>
+
+    *(.share.mem)
+    *(.gnu.linkonce.b.*)
+    *(COMMON)
+    . = ALIGN (8);
+    __bss_end = ABSOLUTE(.);
+    _bss_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(RAMABLE_REGION)
+
   .dram0.noinit (NOLOAD) :
   {
     . = ALIGN(4);
+    #include <esp_code_relocate_noinit.ld.inc>
     *(.noinit)
     *(.noinit.*)
 #if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)

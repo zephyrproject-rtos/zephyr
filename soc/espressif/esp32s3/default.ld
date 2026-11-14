@@ -386,6 +386,8 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     /* Input sections named with zephyr_linker_sources(RAMFUNC_SECTION ...) */
     #include <snippets-ramfunc-section.ld>
+    #include <esp_code_relocate_check.ld.inc>
+    #include <esp_code_relocate_text.ld.inc>
     *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
     *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
@@ -680,6 +682,7 @@ SECTIONS
     . = ALIGN (8);
     _data_start = ABSOLUTE(.);
     __data_start = ABSOLUTE(.);
+    #include <esp_code_relocate_data.ld.inc>
 
     /*  bluetooth library requires this symbol to be defined */
     _btdm_data_start = ABSOLUTE(.);
@@ -878,10 +881,72 @@ SECTIONS
     _data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+  /* --- START OF SPIRAM --- */
+
+#if defined(CONFIG_ESP_SPIRAM)
+  /* This section is required to skip flash rodata sections, because SPIRAM
+   * and `drom0_0_seg` are on the same bus */
+  .ext_ram.dummy (NOLOAD):
+  {
+    . = _ext_ram_dummy_size;
+    . = ALIGN (CACHE_ALIGN);
+  } GROUP_LINK_IN(EXT_DRAM_REGION)
+
+  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
+  .ext_ram.data (NOLOAD) :
+  {
+    _ext_ram_start = ABSOLUTE(.);
+    _ext_ram_noinit_start = ABSOLUTE(.);
+#include <esp_code_relocate_extmem.ld.inc>
+
+#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
+    *libdrivers__wifi.a:(.noinit .noinit.*)
+    *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
+    *libsubsys__net__lib__config.a:(.noinit .noinit.*)
+    *libsubsys__net__ip.a:(.noinit .noinit.*)
+    *libsubsys__net.a:(.noinit .noinit.*)
+#endif
+    . = ALIGN(16);
+    *(.ext_ram_noinit.*)
+    . = ALIGN(16);
+    _ext_ram_noinit_end = ABSOLUTE(.);
+
+    _ext_ram_bss_start = ABSOLUTE(.);
+    *(.ext_ram.bss*)
+    . = ALIGN(16);
+
+#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
+    . = ALIGN(16);
+
+    /* Custom modules sections list */
+    KEEP(*(.lvgl_buf*))
+    . = ALIGN(16);
+    KEEP(*(.lvgl_heap*))
+    . = ALIGN(16);
+    KEEP(*(.mbedtls_heap*))
+    . = ALIGN(16);
+    KEEP(*(.ot_msg_pool*))
+    . = ALIGN(16);
+
+    _ext_ram_bss_end = ABSOLUTE(.);
+
+    /* Used by Shared Multi Heap */
+    _ext_ram_heap_start = ABSOLUTE(.);
+    . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
+    . = ALIGN(16);
+    _ext_ram_heap_end = ABSOLUTE(.);
+
+    _ext_ram_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(EXT_DRAM_REGION)
+#endif /* CONFIG_ESP_SPIRAM */
+
+  /* --- END OF SPIRAM --- */
+
   .dram0.noinit (NOLOAD):
   {
     . = ALIGN(4);
     __dram_noinit_start = ABSOLUTE(.);
+    #include <esp_code_relocate_noinit.ld.inc>
 #ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
     *(EXCLUDE_FILE(
       *libdrivers__wifi.a:*
@@ -913,6 +978,7 @@ SECTIONS
     . = ALIGN (8);
     _bss_start = ABSOLUTE(.); /* required by bluetooth library */
     __bss_start = ABSOLUTE(.);
+    #include <esp_code_relocate_bss.ld.inc>
 
     /*  bluetooth library requires this symbol to be defined */
     _btdm_bss_start = ABSOLUTE(.);
@@ -1136,67 +1202,11 @@ SECTIONS
     __rodata_region_end = .;
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
-  /* --- END OF DROM --- */
-
-  /* --- START OF SPIRAM --- */
-
 #if defined(CONFIG_ESP_SPIRAM)
-  /* This section is required to skip flash rodata sections, because SPIRAM
-   * and `drom0_0_seg` are on the same bus */
-  .ext_ram.dummy (NOLOAD):
-  {
-    . = ADDR(.flash.rodata_end) - ORIGIN(ext_dram_seg);
-    . = ALIGN (CACHE_ALIGN);
-  } GROUP_LINK_IN(EXT_DRAM_REGION)
-
-  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
-  .ext_ram.data (NOLOAD) :
-  {
-    _ext_ram_start = ABSOLUTE(.);
-    _ext_ram_noinit_start = ABSOLUTE(.);
-
-#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
-    *libdrivers__wifi.a:(.noinit .noinit.*)
-    *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
-    *libsubsys__net__lib__config.a:(.noinit .noinit.*)
-    *libsubsys__net__ip.a:(.noinit .noinit.*)
-    *libsubsys__net.a:(.noinit .noinit.*)
+  _ext_ram_dummy_size = ADDR(.flash.rodata_end) - ORIGIN(ext_dram_seg);
 #endif
-    . = ALIGN(16);
-    *(.ext_ram_noinit.*)
-    . = ALIGN(16);
-    _ext_ram_noinit_end = ABSOLUTE(.);
 
-    _ext_ram_bss_start = ABSOLUTE(.);
-    *(.ext_ram.bss*)
-    . = ALIGN(16);
-
-#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
-    . = ALIGN(16);
-
-    /* Custom modules sections list */
-    KEEP(*(.lvgl_buf*))
-    . = ALIGN(16);
-    KEEP(*(.lvgl_heap*))
-    . = ALIGN(16);
-    KEEP(*(.mbedtls_heap*))
-    . = ALIGN(16);
-    KEEP(*(.ot_msg_pool*))
-    . = ALIGN(16);
-
-    _ext_ram_bss_end = ABSOLUTE(.);
-
-    /* Used by Shared Multi Heap */
-    _ext_ram_heap_start = ABSOLUTE(.);
-    . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
-    . = ALIGN(16);
-    _ext_ram_heap_end = ABSOLUTE(.);
-
-    _ext_ram_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(EXT_DRAM_REGION)
-#endif /* CONFIG_ESP_SPIRAM */
-
-  /* --- END OF SPIRAM --- */
+  /* --- END OF DROM --- */
 
   /* --- XTENSA GLUE AND DEBUG BEGIN --- */
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -1252,4 +1262,6 @@ ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
 #if defined(CONFIG_ESP_SPIRAM)
 ASSERT(((_ext_ram_end - _ext_ram_start) <= CONFIG_ESP_SPIRAM_SIZE),
           "External SPIRAM overflowed.")
+ASSERT(((_ext_ram_start - ORIGIN(ext_dram_seg)) >= _ext_ram_dummy_size),
+          "External SPIRAM overlaps the flash rodata mapping.")
 #endif

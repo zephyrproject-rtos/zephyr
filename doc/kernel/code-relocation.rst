@@ -93,6 +93,11 @@ This section shows additional configuration options that can be set in
      zephyr_code_relocate(FILES src/file1.c LOCATION SRAM2_DATA)
      zephyr_code_relocate(FILES src/file2.c LOCATION SRAM2_TEXT)
 
+  On Xtensa, relocating the ``_TEXT`` sections of a file also relocates its
+  ``.literal`` sections, since ``L32R`` loads only reach literals placed before
+  the code using them. A ``FILTER`` must match both names, for example
+  ``"\\.func1$"`` selects ``.text.func1`` and ``.literal.func1``.
+
 * Multiple regions can also be appended together such as:
   ``SRAM2_DATA_BSS_NOINIT``. This will place all data: value-initialized,
   zero-initialized and uninitialized inside ``SRAM2``.
@@ -168,6 +173,28 @@ snippet will relocate serial drivers to SRAM2:
 
     zephyr_code_relocate(LIBRARY drivers__serial LOCATION SRAM2)
 
+Placement by the linker script
+==============================
+
+Some SoCs are loaded by a bootloader that only copies fixed address ranges of
+the image, so the relocated sections must land inside existing output
+sections instead of new ones. A linker script that defines
+``LINKER_RELOCATE_SELECTIVE`` before including ``linker_relocate.ld`` gets no
+output sections from it. It includes the file inside its own output sections
+instead, with ``LINKER_RELOCATE_<REGION>_<KIND>`` defined to place the input
+sections of that region and kind there, for example ``LINKER_RELOCATE_RAM_TEXT``
+inside its RAM code section. It also includes the file once with
+``LINKER_RELOCATE_CHECK`` defined: the build then fails for every relocated
+region and kind without a matching ``LINKER_RELOCATE_SUPPORTS_<REGION>_<KIND>``.
+
+Espressif SoCs use this mode. ``RAM`` places code and literals in IRAM, rodata
+and data in the initialized DRAM section, and bss and noinit in their DRAM
+sections. With :kconfig:option:`CONFIG_ESP_SPIRAM`, ``EXTMEM_NOINIT`` places
+noinit objects in PSRAM. No other region or kind is supported.
+
+With :kconfig:option:`CONFIG_USERSPACE`, ``RAM`` does not take rodata, since user threads
+cannot read it from DRAM. Use ``RAM_TEXT_DATA_BSS`` for files that have read-only data.
+
 Tips
 ====
 
@@ -189,3 +216,6 @@ This test will place .text, .data, .bss from 3 files to various parts in the SRA
 using a custom linker file derived from ``include/zephyr/arch/arm/cortex_m/scripts/linker.ld``
 
 A sample showcasing the NOCOPY flag is provided here: :zephyr:code-sample:`code_relocation_nocopy`.
+
+The placement by the linker script on Espressif SoCs is tested by
+``$ZEPHYR_BASE/tests/boards/espressif/code_relocation``.

@@ -372,6 +372,8 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     /* Input sections named with zephyr_linker_sources(RAMFUNC_SECTION ...) */
     #include <snippets-ramfunc-section.ld>
+    #include <esp_code_relocate_check.ld.inc>
+    #include <esp_code_relocate_text.ld.inc>
     *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
     *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
@@ -660,6 +662,7 @@ SECTIONS
   {
     _dram_data_start = ABSOLUTE(.);
     _data_start = ABSOLUTE(.);
+    #include <esp_code_relocate_data.ld.inc>
 
     _btdm_data_start = ABSOLUTE(.);
     *libbtdm_app.a:(.data .data.*)
@@ -844,87 +847,15 @@ SECTIONS
     _data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-  /* Shared RAM */
-  .dram0.bss (NOLOAD) :
-  {
-    . = ALIGN (8);
-    _bss_start = ABSOLUTE(.); /* required by bluetooth library */
-    __bss_start = ABSOLUTE(.);
-
-    _btdm_bss_start = ABSOLUTE(.);
-    *libbtdm_app.a:(.bss .bss.* COMMON)
-    . = ALIGN (4);
-    _btdm_bss_end = ABSOLUTE(.);
-
-    /* Buffer for system heap should be placed in dram0_0_seg */
-    *libkernel.a:mempool.*(.noinit.kheap_buf__system_heap .noinit.*.kheap_buf__system_heap)
-
-    *(.dynsbss)
-    *(.sbss)
-    *(.sbss.*)
-    *(.gnu.linkonce.sb.*)
-    *(.scommon)
-    *(.sbss2)
-    *(.sbss2.*)
-    *(.gnu.linkonce.sb2.*)
-    *(.dynbss)
-
-#include <esp_spiram_relocate_bss.ld.inc>
-
-    *(.share.mem)
-    *(.gnu.linkonce.b.*)
-    *(COMMON)
-    . = ALIGN (8);
-    __bss_end = ABSOLUTE(.);
-    _bss_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(RAMABLE_REGION)
-
-  .dram0.noinit (NOLOAD) :
-  {
-    . = ALIGN (4);
-    __dram_noinit_start = ABSOLUTE(.);
-#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
-    *(EXCLUDE_FILE(
-      *libdrivers__wifi.a:*
-      *libsubsys__net__l2__ethernet.a:*
-      *libsubsys__net__lib__config.a:*
-      *libsubsys__net__ip.a:*
-      *libsubsys__net.a:* ) .noinit)
-    *(EXCLUDE_FILE(
-      *libdrivers__wifi.a:*
-      *libsubsys__net__l2__ethernet.a:*
-      *libsubsys__net__lib__config.a:*
-      *libsubsys__net__ip.a:*
-      *libsubsys__net.a:* ) .noinit.*)
-#else
-    *(.noinit)
-    *(.noinit.*)
-#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
-#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
-    *(.llext_metadata_heap)
-    *(.llext_data_heap)
-#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
-    __dram_noinit_end = ABSOLUTE(.);
-    . = ALIGN (4);
-  } GROUP_LINK_IN(RAMABLE_REGION_2)
-
-  /* Provide total SRAM usage, including IRAM and DRAM */
-  _image_ram_start = _dram_data_start;
-  #include <zephyr/linker/ram-end.ld>
-  _image_ram_size += _iram_end - _init_start;
-
-  ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM data does not fit.")
-
-  /* --- DRAM END --- */
-
   /* --- SPIRAM BEGIN --- */
 
-  /* The SPIRAM section needs to be spilled before the dram0.noinit */
+  /* The SPIRAM section needs to be spilled before the dram0.bss and dram0.noinit */
 #ifdef CONFIG_ESP_SPIRAM
   .ext_ram (NOLOAD):
   {
     _ext_ram_start = ABSOLUTE(.);
     _ext_ram_noinit_start = ABSOLUTE(.);
+#include <esp_code_relocate_extmem.ld.inc>
 
 #ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
     *libdrivers__wifi.a:(.noinit .noinit.*)
@@ -967,6 +898,81 @@ SECTIONS
 #endif /* CONFIG_ESP_SPIRAM */
 
   /* --- SPIRAM END --- */
+
+  /* Shared RAM */
+  .dram0.bss (NOLOAD) :
+  {
+    . = ALIGN (8);
+    _bss_start = ABSOLUTE(.); /* required by bluetooth library */
+    __bss_start = ABSOLUTE(.);
+    #include <esp_code_relocate_bss.ld.inc>
+
+    _btdm_bss_start = ABSOLUTE(.);
+    *libbtdm_app.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _btdm_bss_end = ABSOLUTE(.);
+
+    /* Buffer for system heap should be placed in dram0_0_seg */
+    *libkernel.a:mempool.*(.noinit.kheap_buf__system_heap .noinit.*.kheap_buf__system_heap)
+
+    *(.dynsbss)
+    *(.sbss)
+    *(.sbss.*)
+    *(.gnu.linkonce.sb.*)
+    *(.scommon)
+    *(.sbss2)
+    *(.sbss2.*)
+    *(.gnu.linkonce.sb2.*)
+    *(.dynbss)
+
+#include <esp_spiram_relocate_bss.ld.inc>
+
+    *(.share.mem)
+    *(.gnu.linkonce.b.*)
+    *(COMMON)
+    . = ALIGN (8);
+    __bss_end = ABSOLUTE(.);
+    _bss_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(RAMABLE_REGION)
+
+  .dram0.noinit (NOLOAD) :
+  {
+    . = ALIGN (4);
+    __dram_noinit_start = ABSOLUTE(.);
+    #include <esp_code_relocate_noinit.ld.inc>
+#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
+    *(EXCLUDE_FILE(
+      *libdrivers__wifi.a:*
+      *libsubsys__net__l2__ethernet.a:*
+      *libsubsys__net__lib__config.a:*
+      *libsubsys__net__ip.a:*
+      *libsubsys__net.a:* ) .noinit)
+    *(EXCLUDE_FILE(
+      *libdrivers__wifi.a:*
+      *libsubsys__net__l2__ethernet.a:*
+      *libsubsys__net__lib__config.a:*
+      *libsubsys__net__ip.a:*
+      *libsubsys__net.a:* ) .noinit.*)
+#else
+    *(.noinit)
+    *(.noinit.*)
+#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
+    *(.llext_metadata_heap)
+    *(.llext_data_heap)
+#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
+    __dram_noinit_end = ABSOLUTE(.);
+    . = ALIGN (4);
+  } GROUP_LINK_IN(RAMABLE_REGION_2)
+
+  /* Provide total SRAM usage, including IRAM and DRAM */
+  _image_ram_start = _dram_data_start;
+  #include <zephyr/linker/ram-end.ld>
+  _image_ram_size += _iram_end - _init_start;
+
+  ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM data does not fit.")
+
+  /* --- DRAM END --- */
 
   /* --- RODATA BEGIN --- */
 

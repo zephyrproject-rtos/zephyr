@@ -101,6 +101,33 @@ ZTEST(code_relocation, test_function_in_sram2)
 	k_sem_give(&test);
 }
 
+ZTEST(code_relocation, test_small_data_in_sram2)
+{
+	extern uintptr_t __sram2_data_reloc_start;
+	extern uintptr_t __sram2_data_reloc_end;
+	extern uintptr_t __sram2_bss_reloc_start;
+	extern uintptr_t __sram2_bss_reloc_end;
+	extern uintptr_t __sram2_rodata_reloc_start;
+	extern uintptr_t __sram2_rodata_reloc_end;
+	static uint32_t var_sram2_small_data = 20U;
+	static uint32_t var_sram2_small_bss;
+	static const uint32_t var_sram2_small_rodata = 30U;
+
+	zassert_between_inclusive(
+		(uintptr_t)&var_sram2_small_data, (uintptr_t)&__sram2_data_reloc_start,
+		(uintptr_t)&__sram2_data_reloc_end, "var_sram2_small_data not in sram2 region");
+	zassert_between_inclusive(
+		(uintptr_t)&var_sram2_small_bss, (uintptr_t)&__sram2_bss_reloc_start,
+		(uintptr_t)&__sram2_bss_reloc_end, "var_sram2_small_bss not in sram2_bss region");
+	zassert_equal(var_sram2_small_data, 20U);
+	zassert_equal(var_sram2_small_bss, 0U);
+	zassert_between_inclusive((uintptr_t)&var_sram2_small_rodata,
+				  (uintptr_t)&__sram2_rodata_reloc_start,
+				  (uintptr_t)&__sram2_rodata_reloc_end,
+				  "var_sram2_small_rodata not in sram2_rodata region");
+	zassert_equal(var_sram2_small_rodata, 30U);
+}
+
 __in_section(custom_section, static, fun) void function_in_custom_section(void)
 {
 }

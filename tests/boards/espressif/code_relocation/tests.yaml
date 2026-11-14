@@ -1,0 +1,47 @@
+common:
+  tags:
+    - linker
+    - code_relocation
+  harness: ztest
+tests:
+  boards.espressif.code_relocation:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp8684_devkitm
+      - esp32c3_devkitm
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32c61_devkitc
+      - esp32h2_devkitm
+      - esp32p4_function_ev_board/esp32p4/hpcore
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c6_devkitc/esp32c6/hpcore
+  boards.espressif.code_relocation.psram:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c61_devkitc
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+    extra_conf_files:
+      - prj.conf
+      - psram.conf
+    extra_dtc_overlay_files:
+      - psram.overlay
+    extra_configs:
+      - platform:esp32s3_devkitc/esp32s3/procpu:CONFIG_SPIRAM_MODE_OCT=y
+  boards.espressif.code_relocation.mcuboot:
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c6_devkitc/esp32c6/hpcore
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+    sysbuild: true
+    extra_args:
+      - SB_CONFIG_BOOTLOADER_MCUBOOT=y

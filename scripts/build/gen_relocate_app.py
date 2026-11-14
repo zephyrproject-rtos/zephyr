@@ -37,6 +37,13 @@ Configuration that needs to be sent to the python script.
 - NOKEEP will suppress the default behavior of marking every relocated symbol
   with KEEP() in the generated linker script.
 
+A linker script that defines LINKER_RELOCATE_SELECTIVE before including the
+generated linker file gets no output sections from it. It includes the file
+inside its own output sections instead, with LINKER_RELOCATE_<REGION>_<KIND>
+defined to place the input sections of that region and kind there, and once
+more with LINKER_RELOCATE_CHECK defined, which fails the build for every
+region and kind present without a matching LINKER_RELOCATE_SUPPORTS_<REGION>_<KIND>.
+
 Multiple regions can be appended together like SRAM2_DATA_BSS
 this will place data and bss inside SRAM2.
 """
@@ -89,11 +96,11 @@ class SectionKind(Enum):
         """
         if ".text." in name:
             return cls.TEXT
-        elif ".rodata." in name:
+        elif ".rodata." in name or ".srodata." in name:
             return cls.RODATA
-        elif ".data." in name:
+        elif ".data." in name or ".sdata." in name:
             return cls.DATA
-        elif ".bss." in name:
+        elif ".bss." in name or ".sbss." in name:
             return cls.BSS
         elif ".noinit." in name or name in LLEXT_HEAP_SECTIONS:
             return cls.NOINIT
@@ -181,6 +188,31 @@ LINKER_SECTION_SEQ_MPU = """
                 __{mem}_{kind}_reloc_end = .;
 	}} {load_address}
         __{mem}_{kind}_reloc_size = __{mem}_{kind}_reloc_end - __{mem}_{kind}_reloc_start;
+"""
+
+SELECTIVE_KIND_ORDER = (
+    SectionKind.LITERAL,
+    SectionKind.TEXT,
+    SectionKind.RODATA,
+    SectionKind.DATA,
+    SectionKind.BSS,
+    SectionKind.NOINIT,
+)
+
+SELECTIVE_CHECK_TEMPLATE = """
+#if !defined(LINKER_RELOCATE_SUPPORTS_{macro})
+#error "Code relocation to {macro} is not supported by this linker script"
+#endif
+"""
+
+SELECTIVE_PLACE_TEMPLATE = """
+#if defined(LINKER_RELOCATE_{macro})
+        __{mem}_{kind}_reloc_start = .;
+{linker_sections}
+        __{mem}_{kind}_reloc_end = .;
+        __{mem}_{kind}_reloc_size = __{mem}_{kind}_reloc_end - __{mem}_{kind}_reloc_start;
+        __{mem}_{kind}_rom_start = __{mem}_{kind}_reloc_start;
+#endif
 """
 
 SOURCE_CODE_INCLUDES = """
@@ -338,6 +370,8 @@ def section_kinds_from_memory_region(memory_region: str) -> 'tuple[set[SectionKi
     if not out:
         # No listed kinds implies all of the kinds
         out = set(SectionKind)
+    if SectionKind.TEXT in out:
+        out.add(SectionKind.LITERAL)
     return (out, memory_region)
 
 
@@ -417,6 +451,42 @@ def string_create_helper(
     return linker_string
 
 
+def generate_selective_linker_script(
+    complete_list_of_sections: 'dict[MemoryRegion, dict[SectionKind, list[OutputSection]]]',
+) -> str:
+    sections_by_region: dict[str, dict[SectionKind, list[OutputSection]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
+    for memory_type, full_list_of_sections in complete_list_of_sections.items():
+        region = memory_type.split("|", 1)[0]
+        for kind, sections in full_list_of_sections.items():
+            sections_by_region[region][kind].extend(sections)
+
+    check_string = ''
+    place_string = ''
+    for region, full_list_of_sections in sorted(sections_by_region.items()):
+        for kind in SELECTIVE_KIND_ORDER:
+            if not full_list_of_sections[kind]:
+                continue
+            fields = {
+                "macro": f"{region.upper()}_{kind.name}",
+                "mem": region.lower(),
+                "kind": kind.value,
+            }
+            check_string += SELECTIVE_CHECK_TEMPLATE.format(**fields)
+            place_string += SELECTIVE_PLACE_TEMPLATE.format(
+                linker_sections=print_linker_sections(full_list_of_sections[kind]), **fields
+            )
+
+    return (
+        "#if defined(LINKER_RELOCATE_CHECK)\n"
+        + check_string
+        + "#else\n"
+        + place_string
+        + "#endif\n"
+    )
+
+
 def generate_linker_script(
     linker_file, sram_data_linker_file, sram_bss_linker_file, complete_list_of_sections, phdrs
 ):
@@ -485,7 +555,11 @@ def generate_linker_script(
 
     # finally writing to the linker file
     with open(linker_file, "w") as file_desc:
+        file_desc.write("#if defined(LINKER_RELOCATE_SELECTIVE)\n")
+        file_desc.write(generate_selective_linker_script(complete_list_of_sections))
+        file_desc.write("#else\n")
         file_desc.write(gen_string)
+        file_desc.write("#endif\n")
 
     with open(sram_data_linker_file, "w") as file_desc:
         file_desc.write(gen_string_sram_data)
@@ -499,7 +573,7 @@ def generate_memcpy_code(memory_type, full_list_of_sections, code_generation):
 
     # Non-BSS sections get copied to the destination memory, except data in
     # main memory which gets copied automatically.
-    for kind in (SectionKind.TEXT, SectionKind.RODATA, SectionKind.DATA):
+    for kind in (SectionKind.LITERAL, SectionKind.TEXT, SectionKind.RODATA, SectionKind.DATA):
         if region_is_default_ram(memory_type) and kind is SectionKind.DATA:
             continue
 

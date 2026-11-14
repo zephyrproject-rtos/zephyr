@@ -368,6 +368,8 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     /* Input sections named with zephyr_linker_sources(RAMFUNC_SECTION ...) */
     #include <snippets-ramfunc-section.ld>
+    #include <esp_code_relocate_check.ld.inc>
+    #include <esp_code_relocate_text.ld.inc>
     *(.tcm.text .tcm.text.*)
     *(.spm.text .spm.text.*)
     *libzephyr.a:panic.*(.literal .text .literal.* .text.*)
@@ -602,6 +604,7 @@ SECTIONS
     . = ALIGN(4);
     _data_start = ABSOLUTE(.);
     __data_start = ABSOLUTE(.);
+    #include <esp_code_relocate_data.ld.inc>
 
     *(.data)
     *(.data.*)
@@ -825,9 +828,51 @@ SECTIONS
     __data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+  /* --- START OF SPIRAM --- */
+
+#if defined(CONFIG_ESP_SPIRAM)
+  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
+  .ext_ram.data (NOLOAD) :
+  {
+    _ext_ram_start = ABSOLUTE(.);
+    _ext_ram_noinit_start = ABSOLUTE(.);
+#include <esp_code_relocate_extmem.ld.inc>
+    . = ALIGN(16);
+    *(.ext_ram_noinit.*)
+    . = ALIGN(16);
+    _ext_ram_noinit_end = ABSOLUTE(.);
+
+    _ext_ram_bss_start = ABSOLUTE(.);
+    *(.ext_ram.bss*)
+    . = ALIGN(16);
+
+#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
+    . = ALIGN(16);
+
+    KEEP(*(.lvgl_buf*))
+    . = ALIGN(16);
+    KEEP(*(.lvgl_heap*))
+    . = ALIGN(16);
+    KEEP(*(.mbedtls_heap*))
+    . = ALIGN(16);
+
+    _ext_ram_bss_end = ABSOLUTE(.);
+
+    _ext_ram_heap_start = ABSOLUTE(.);
+    . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
+    . = ALIGN(16);
+    _ext_ram_heap_end = ABSOLUTE(.);
+
+    _ext_ram_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(EXT_DRAM_REGION)
+#endif /* CONFIG_ESP_SPIRAM */
+
+  /* --- END OF SPIRAM --- */
+
   .dram0.noinit (NOLOAD):
   {
     . = ALIGN(4);
+    #include <esp_code_relocate_noinit.ld.inc>
     *(.noinit)
     *(.noinit.*)
 #ifdef CONFIG_USERSPACE
@@ -849,6 +894,7 @@ SECTIONS
     MPU_MIN_SIZE_ALIGN
     . = ALIGN (8);
     __bss_start = ABSOLUTE(.);
+    #include <esp_code_relocate_bss.ld.inc>
     _bss_start = ABSOLUTE(.);
 
     *(.dynsbss)
@@ -1039,46 +1085,6 @@ SECTIONS
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   /* --- END OF .rodata --- */
-
-  /* --- START OF SPIRAM --- */
-
-#if defined(CONFIG_ESP_SPIRAM)
-  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
-  .ext_ram.data (NOLOAD) :
-  {
-    _ext_ram_start = ABSOLUTE(.);
-    _ext_ram_noinit_start = ABSOLUTE(.);
-    . = ALIGN(16);
-    *(.ext_ram_noinit.*)
-    . = ALIGN(16);
-    _ext_ram_noinit_end = ABSOLUTE(.);
-
-    _ext_ram_bss_start = ABSOLUTE(.);
-    *(.ext_ram.bss*)
-    . = ALIGN(16);
-
-#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
-    . = ALIGN(16);
-
-    KEEP(*(.lvgl_buf*))
-    . = ALIGN(16);
-    KEEP(*(.lvgl_heap*))
-    . = ALIGN(16);
-    KEEP(*(.mbedtls_heap*))
-    . = ALIGN(16);
-
-    _ext_ram_bss_end = ABSOLUTE(.);
-
-    _ext_ram_heap_start = ABSOLUTE(.);
-    . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
-    . = ALIGN(16);
-    _ext_ram_heap_end = ABSOLUTE(.);
-
-    _ext_ram_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(EXT_DRAM_REGION)
-#endif /* CONFIG_ESP_SPIRAM */
-
-  /* --- END OF SPIRAM --- */
 
 #ifdef CONFIG_GEN_ISR_TABLES
   #include <zephyr/linker/intlist.ld>
