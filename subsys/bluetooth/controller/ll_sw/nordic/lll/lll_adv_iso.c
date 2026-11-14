@@ -69,6 +69,8 @@ static uint16_t se_resume_get(const struct lll_adv_iso *lll, void *next);
 static bool is_deadline_reached(const struct lll_adv_iso *lll, void *next);
 static bool is_payload_pending(const struct lll_adv_iso *lll);
 static bool is_next_forced(void *next);
+static bool is_next_deadline(void *next);
+static bool is_next_scan(void *next);
 static void resume_deadline_enqueue(struct lll_adv_iso *lll, void *next);
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
@@ -1001,6 +1003,25 @@ static bool is_next_forced(void *next)
 	return false;
 }
 
+/* Check if the next event is a role with a deadline, i.e. a connection, a periodic sync
+ * or another BIG event.
+ */
+static bool is_next_deadline(void *next)
+{
+	return (IS_ENABLED(CONFIG_BT_CONN) && (ull_conn_lll_is_valid_get(next) != NULL)) ||
+	       (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) &&
+		(ull_sync_lll_is_valid_get(next) != NULL)) ||
+	       (ull_adv_iso_lll_is_valid_get(next) != NULL);
+}
+
+/* Check if the next event is a scan or an auxiliary scan event. */
+static bool is_next_scan(void *next)
+{
+	return IS_ENABLED(CONFIG_BT_OBSERVER) &&
+	       ((ull_scan_lll_is_valid_get(next) != NULL) ||
+		(ull_scan_aux_lll_is_valid_get(next) != NULL));
+}
+
 /* Prepare the resume of the current event to preempt at the end of the reserved radio use of
  * the next event. A resume is otherwise dequeued only when there is no other prepare in the
  * pipeline, which can be after the last repetition of a BIS.
@@ -1056,10 +1077,20 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	if (next != curr) {
 		const bool is_sequential = (lll->bis_spacing >= (lll->sub_interval * lll->nse));
 
-		/* Do not abort current BIG event as next event is a scan event, a continuous
-		 * scan event is deferred and resumed after the current event.
+		/* Do not abort current BIG event as next event is a scan or an advertising
+		 * event, i.e. not a connection, a periodic sync or another BIG event. A
+		 * continuous scan event is deferred and resumed after the current event, an
+		 * advertising event has no deadline and is skipped.
+		 *
+		 * In sequential packing, the repetitions of a BIS after its reserved repetition
+		 * are in the slot window and are not reserved, slot window advertising events
+		 * are placed in them. Yield to an advertising event, unless a BIS that has no
+		 * repetition transmitted yet would miss its last repetition, otherwise the
+		 * advertising event is skipped in every BIG event it is placed in.
 		 */
-		if (IS_ENABLED(CONFIG_BT_OBSERVER) && (ull_scan_lll_is_valid_get(next) != NULL)) {
+		if (!is_next_deadline(next) &&
+		    (is_next_scan(next) || !is_sequential ||
+		     is_deadline_reached(lll, next))) {
 			return -EBUSY;
 		}
 

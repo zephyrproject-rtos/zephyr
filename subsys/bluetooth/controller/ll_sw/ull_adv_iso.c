@@ -326,6 +326,21 @@ struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle)
 	return adv_iso_get(handle);
 }
 
+struct lll_adv_iso *ull_adv_iso_lll_is_valid_get(struct lll_adv_iso *lll)
+{
+	struct ll_adv_iso_set *adv_iso;
+
+	adv_iso = HDR_LLL2ULL(lll);
+	if (((uint8_t *)adv_iso < (uint8_t *)ll_adv_iso) ||
+	    ((uint8_t *)adv_iso > ((uint8_t *)ll_adv_iso +
+				   (sizeof(struct ll_adv_iso_set) *
+				    (CONFIG_BT_CTLR_ADV_ISO_SET - 1U))))) {
+		return NULL;
+	}
+
+	return &adv_iso->lll;
+}
+
 uint8_t ull_adv_iso_chm_update(void)
 {
 	uint8_t handle;
