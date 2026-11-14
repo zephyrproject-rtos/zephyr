@@ -13,4 +13,7 @@ supported:
   - can
   - counter
   - spi
+  - gpio
+  - dma
+  - uart
 vendor: st
