@@ -242,6 +242,29 @@ ZTEST(timer_api, test_timer_init_runtime)
 }
 
 /**
+ * @brief Verify k_timer_stop() return value when timer is inactive.
+ *
+ * @ingroup kernel_timer_tests
+ *
+ * @see k_timer_stop()
+ */
+ZTEST(timer_api, test_timer_stop_inactive)
+{
+	static struct k_timer inactive_timer;
+
+	k_timer_init(&inactive_timer, NULL, NULL);
+
+	zassert_equal(k_timer_stop(&inactive_timer), -EALREADY);
+	zassert_equal(k_timer_status_get(&inactive_timer), 0);
+	zassert_equal(k_timer_remaining_get(&inactive_timer), 0);
+
+	k_timer_start(&inactive_timer, K_MSEC(DURATION), K_NO_WAIT);
+	zassert_equal(k_timer_stop(&inactive_timer), 0);
+	zassert_equal(k_timer_status_get(&inactive_timer), 0);
+	zassert_equal(k_timer_remaining_get(&inactive_timer), 0);
+}
+
+/**
  *
  * @brief Test restart the timer
  *
