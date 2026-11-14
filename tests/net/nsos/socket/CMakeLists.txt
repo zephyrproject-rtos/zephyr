@@ -5,3 +5,4 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(test_nsos_socket)
 
 target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_NET_SOCKETS_SOCKOPT_TLS app PRIVATE src/tls.c)

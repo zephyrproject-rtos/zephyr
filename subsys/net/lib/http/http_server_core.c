@@ -148,6 +148,16 @@ static int setup_h1_h2_socket(const struct http_service_desc *svc, int af,
 			return -errno;
 		}
 
+		/* Run the TLS handshake in the server loop rather than in
+		 * accept(), so that a client slow to complete it does not
+		 * hold up the other clients. Sockets that do not support it
+		 * keep the handshake in accept().
+		 */
+		if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_HANDSHAKE_ON_ACCEPT, &(int){0},
+				     sizeof(int)) < 0) {
+			LOG_DBG("%s: setsockopt(%s): %d", "h1/2", "TLS_HANDSHAKE_ON_ACCEPT", errno);
+		}
+
 #if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
 #if defined(CONFIG_HTTP_SERVER_VERSION_1) || defined(CONFIG_HTTP_SERVER_VERSION_2)
 		if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,

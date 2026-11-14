@@ -43,9 +43,8 @@ static const sec_tag_t server_tag_list_verify[] = {
 };
 
 static uint16_t test_http_service_port = SERVER_PORT;
-HTTPS_SERVICE_DEFINE(test_http_service, MY_IPV4_ADDR, &test_http_service_port,
-		     1, 10, NULL, NULL, NULL, server_tag_list_verify,
-		     sizeof(server_tag_list_verify));
+HTTPS_SERVICE_DEFINE(test_http_service, MY_IPV4_ADDR, &test_http_service_port, 2, 10, NULL, NULL,
+		     NULL, server_tag_list_verify, sizeof(server_tag_list_verify));
 
 static const unsigned char ca[] = {
 #include "ca.inc"
@@ -125,7 +124,7 @@ struct http_resource_detail_static index_html_gz_resource_detail = {
 HTTP_RESOURCE_DEFINE(index_html_gz_resource, test_http_service, "/",
 		     &index_html_gz_resource_detail);
 
-static void test_tls(void)
+static void https_get_index(void)
 {
 	int ret, recv_len;
 	int client_fd;
@@ -146,8 +145,6 @@ static void test_tls(void)
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS)) {
 		proto = NET_IPPROTO_TLS_1_2;
 	}
-
-	zassert_ok(http_server_start(), "Failed to start the server");
 
 	ret = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, proto);
 	zassert_not_equal(ret, -1, "failed to create client socket (%d)", errno);
@@ -219,13 +216,51 @@ static void test_tls(void)
 
 	ret = zsock_close(client_fd);
 	zassert_not_equal(ret, -1, "close() failed on the client fd (%d)", errno);
-
-	zassert_ok(http_server_stop(), "Failed to stop the server");
 }
 
 ZTEST(framework_tests_tls, test_tls)
 {
-	test_tls();
+	zassert_ok(http_server_start(), "Failed to start the server");
+
+	https_get_index();
+
+	zassert_ok(http_server_stop(), "Failed to stop the server");
+}
+
+ZTEST(framework_tests_tls, test_tls_silent_client)
+{
+	struct net_sockaddr_in sa = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(SERVER_PORT),
+	};
+	int64_t start;
+	int silent_fd;
+	int ret;
+
+	zassert_ok(http_server_start(), "Failed to start the server");
+
+	ret = zsock_inet_pton(NET_AF_INET, MY_IPV4_ADDR, &sa.sin_addr.s_addr);
+	zassert_equal(ret, 1, "inet_pton() failed to convert %s", MY_IPV4_ADDR);
+
+	/* A client that opens a TCP connection and never sends a ClientHello. */
+	silent_fd = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_not_equal(silent_fd, -1, "failed to create silent socket (%d)", errno);
+
+	ret = zsock_connect(silent_fd, (struct net_sockaddr *)&sa, sizeof(sa));
+	zassert_not_equal(ret, -1, "failed to connect (%d)", errno);
+
+	/* Let the server accept it before the next client connects. */
+	k_msleep(100);
+
+	start = k_uptime_get();
+	https_get_index();
+	zassert_true(k_uptime_get() - start < CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT / 2,
+		     "The silent client held up the server");
+
+	ret = zsock_close(silent_fd);
+	zassert_not_equal(ret, -1, "close() failed on the silent fd (%d)", errno);
+
+	zassert_ok(http_server_stop(), "Failed to stop the server");
 }
 
 static void *setup(void)

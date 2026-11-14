@@ -49,7 +49,7 @@ uint32_t ztls_get_session_count(void);
 K_THREAD_STACK_DEFINE(tls_test_work_queue_stack, TLS_TEST_WORK_QUEUE_STACK_SIZE);
 static struct k_work_q tls_test_work_queue;
 
-int c_sock = -1, c_sock_2 = -1, s_sock = -1, new_sock = -1;
+int c_sock = -1, c_sock_2 = -1, s_sock = -1, new_sock = -1, new_sock_2 = -1;
 
 static void test_work_reschedule(struct k_work_delayable *dwork,
 				 k_timeout_t delay)
@@ -198,6 +198,11 @@ static void test_sockets_close(void)
 		test_close(new_sock);
 		new_sock = -1;
 	}
+
+	if (new_sock_2 >= 0) {
+		test_close(new_sock_2);
+		new_sock_2 = -1;
+	}
 }
 
 static void close_and_invalidate(int *sock)
@@ -333,7 +338,7 @@ static void client_connect_work_handler(struct k_work *work)
 	}
 }
 
-static void dtls_client_connect_send_work_handler(struct k_work *work)
+static void client_connect_send_work_handler(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct connect_data *data =
@@ -450,7 +455,7 @@ static void test_prepare_dtls_connection(net_sa_family_t family)
 	test_data.sock = c_sock;
 	test_data.peer_sock = &s_sock;
 	test_data.addr = &s_saddr;
-	k_work_init_delayable(&test_data.work, dtls_client_connect_send_work_handler);
+	k_work_init_delayable(&test_data.work, client_connect_send_work_handler);
 	test_work_reschedule(&test_data.work, K_NO_WAIT);
 
 	/* DTLS has no separate call like accept() to know when the handshake
@@ -1271,6 +1276,410 @@ ZTEST(net_socket_tls, test_accept_invalid_handshake_data)
 	new_sock = zsock_accept(s_sock, NULL, NULL);
 	zassert_equal(new_sock, -1, "zsock_accept() did not return error");
 	zassert_equal(errno, ECONNABORTED, "Unexpected errno value: %d", errno);
+
+	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+static void test_prepare_deferred_handshake_server(struct net_sockaddr_in6 *s_saddr)
+{
+	int optval = 0;
+
+	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &s_sock, s_saddr, NET_IPPROTO_TLS_1_2);
+	test_config_psk(s_sock, -1);
+	zassert_ok(zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_HANDSHAKE_ON_ACCEPT, &optval,
+				    sizeof(optval)),
+		   "setsockopt() failed (%d)", errno);
+	test_bind(s_sock, (struct net_sockaddr *)s_saddr, sizeof(*s_saddr));
+	test_listen(s_sock);
+}
+
+static void test_start_deferred_handshake_client(struct connect_data *data,
+						 struct net_sockaddr_in6 *s_saddr)
+{
+	struct net_sockaddr_in6 c_saddr;
+
+	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr, NET_IPPROTO_TLS_1_2);
+	test_config_psk(-1, c_sock);
+
+	/* Connect and send one byte once the handshake is complete. */
+	data->sock = c_sock;
+	data->peer_sock = &s_sock;
+	data->addr = (struct net_sockaddr *)s_saddr;
+	k_work_init_delayable(&data->work, client_connect_send_work_handler);
+	test_work_reschedule(&data->work, K_NO_WAIT);
+}
+
+ZTEST(net_socket_tls, test_handshake_on_accept_sockopt)
+{
+	struct net_sockaddr_in6 saddr;
+	net_socklen_t optlen = sizeof(int);
+	int optval;
+
+	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &s_sock, &saddr, NET_IPPROTO_TLS_1_2);
+	prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &saddr, NET_IPPROTO_DTLS_1_2);
+
+	zassert_ok(zsock_getsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_HANDSHAKE_ON_ACCEPT, &optval,
+				    &optlen));
+	zassert_equal(optval, 1, "Handshake on accept should be the default");
+
+	optval = 0;
+	zassert_ok(zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_HANDSHAKE_ON_ACCEPT, &optval,
+				    sizeof(optval)));
+	optval = 1;
+	zassert_ok(zsock_getsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_HANDSHAKE_ON_ACCEPT, &optval,
+				    &optlen));
+	zassert_equal(optval, 0, "Option was not cleared");
+
+	zassert_equal(zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_HANDSHAKE_ON_ACCEPT,
+				       &optval, sizeof(optval) - 1),
+		      -1);
+	zassert_equal(errno, EINVAL, "Unexpected errno value: %d", errno);
+
+	zassert_equal(zsock_setsockopt(c_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_HANDSHAKE_ON_ACCEPT,
+				       &optval, sizeof(optval)),
+		      -1);
+	zassert_equal(errno, ENOPROTOOPT, "Unexpected errno value: %d", errno);
+
+	test_sockets_close();
+}
+
+ZTEST(net_socket_tls, test_accept_deferred_handshake)
+{
+	struct net_sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 c_saddr;
+	net_socklen_t optlen = sizeof(int);
+	struct zsock_pollfd fds[1];
+	uint32_t timestamp;
+	uint8_t rx_buf;
+	int optval;
+	int ret;
+
+	test_prepare_deferred_handshake_server(&s_saddr);
+
+	/* A client that connects at TCP level and sends nothing. */
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	test_connect(c_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	timestamp = k_uptime_get_32();
+	test_accept(s_sock, &new_sock, NULL, NULL);
+	zassert_true(k_uptime_get_32() - timestamp <= 100, "accept() waited for the handshake");
+
+	zassert_ok(zsock_getsockopt(new_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_HANDSHAKE_ON_ACCEPT, &optval,
+				    &optlen));
+	zassert_equal(optval, 0, "Accepted socket did not inherit the option");
+
+	ret = zsock_recv(new_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, -1, "zsock_recv() should've failed");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+
+	ret = zsock_send(new_sock, TEST_STR_SMALL, sizeof(TEST_STR_SMALL), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, -1, "zsock_send() should've failed");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+
+	/* Neither readable nor writable while the handshake is in progress. */
+	fds[0].fd = new_sock;
+	fds[0].events = ZSOCK_POLLIN | ZSOCK_POLLOUT;
+	ret = zsock_poll(fds, 1, 0);
+	zassert_equal(ret, 0, "Unexpected poll() event");
+
+	k_msleep(CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT);
+
+	ret = zsock_poll(fds, 1, 0);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_true(fds[0].revents & ZSOCK_POLLERR, "No POLLERR event");
+
+	ret = zsock_recv(new_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, -1, "zsock_recv() should've failed");
+	zassert_equal(errno, ETIMEDOUT, "Unexpected errno value: %d", errno);
+
+	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_deferred_handshake_poll)
+{
+	struct net_sockaddr_in6 s_saddr;
+	struct connect_data test_data;
+	struct zsock_pollfd fds[1];
+	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1];
+	int ret;
+
+	test_prepare_deferred_handshake_server(&s_saddr);
+	test_start_deferred_handshake_client(&test_data, &s_saddr);
+
+	test_accept(s_sock, &new_sock, NULL, NULL);
+
+	/* POLLOUT is reported once poll() has completed the handshake. */
+	fds[0].fd = new_sock;
+	fds[0].events = ZSOCK_POLLOUT;
+	ret = zsock_poll(fds, 1, 1000);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_equal(fds[0].revents, ZSOCK_POLLOUT, "No POLLOUT event");
+
+	/* POLLIN is reported once the client's data is available. */
+	fds[0].events = ZSOCK_POLLIN;
+	ret = zsock_poll(fds, 1, 1000);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_equal(fds[0].revents, ZSOCK_POLLIN, "No POLLIN event");
+
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, 1, "zsock_recv() failed");
+
+	test_work_wait(&test_data.work);
+
+	test_send(new_sock, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0);
+	ret = zsock_recv(c_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_WAITALL);
+	zassert_equal(ret, sizeof(TEST_STR_SMALL) - 1, "zsock_recv() failed");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, ret, "Invalid data received");
+
+	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_deferred_handshake_poll_small_window)
+{
+	struct net_sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 c_saddr;
+	struct connect_data test_data;
+	struct zsock_pollfd fds[1];
+	int rcvbuf = 32;
+	int ret;
+
+	test_prepare_deferred_handshake_server(&s_saddr);
+
+	/* A receive window smaller than the server's first flight makes the
+	 * server's handshake stop on WANT_WRITE, with the client waiting for the
+	 * rest of the flight and sending nothing.
+	 */
+	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr, NET_IPPROTO_TLS_1_2);
+	test_config_psk(-1, c_sock);
+	zassert_ok(zsock_setsockopt(c_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &rcvbuf,
+				    sizeof(rcvbuf)),
+		   "setsockopt() failed (%d)", errno);
+
+	test_data.sock = c_sock;
+	test_data.peer_sock = &s_sock;
+	test_data.addr = (struct net_sockaddr *)&s_saddr;
+	k_work_init_delayable(&test_data.work, client_connect_send_work_handler);
+	test_work_reschedule(&test_data.work, K_NO_WAIT);
+
+	test_accept(s_sock, &new_sock, NULL, NULL);
+
+	/* poll() has to wait for the window to open, not for the client. */
+	fds[0].fd = new_sock;
+	fds[0].events = ZSOCK_POLLOUT;
+	ret = zsock_poll(fds, 1, 1000);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_equal(fds[0].revents, ZSOCK_POLLOUT, "No POLLOUT event (revents 0x%x)",
+		      fds[0].revents);
+
+	test_work_wait(&test_data.work);
+
+	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_deferred_handshake_poll_small_window_no_data)
+{
+	struct net_sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 c_saddr;
+	struct connect_data test_data;
+	struct zsock_pollfd fds[1];
+	uint32_t timestamp;
+	int rcvbuf = 32;
+	int ret;
+
+	test_prepare_deferred_handshake_server(&s_saddr);
+
+	/* The server's last handshake step stops on WANT_WRITE, see above, and
+	 * the client sends no data once the handshake has completed.
+	 */
+	prepare_sock_tls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr, NET_IPPROTO_TLS_1_2);
+	test_config_psk(-1, c_sock);
+	zassert_ok(zsock_setsockopt(c_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &rcvbuf,
+				    sizeof(rcvbuf)),
+		   "setsockopt() failed (%d)", errno);
+
+	test_data.sock = c_sock;
+	test_data.peer_sock = &s_sock;
+	test_data.addr = (struct net_sockaddr *)&s_saddr;
+	k_work_init_delayable(&test_data.work, client_connect_work_handler);
+	test_work_reschedule(&test_data.work, K_NO_WAIT);
+
+	test_accept(s_sock, &new_sock, NULL, NULL);
+
+	/* poll() completes the handshake and then sleeps until its timeout,
+	 * it must not keep waking up on the writable socket.
+	 */
+	timestamp = k_uptime_get_32();
+	fds[0].fd = new_sock;
+	fds[0].events = ZSOCK_POLLIN;
+	ret = zsock_poll(fds, 1, 100);
+	zassert_equal(ret, 0, "poll() should've timed out (revents 0x%x)", fds[0].revents);
+	zassert_true(k_uptime_get_32() - timestamp >= 100, "poll() returned too early");
+
+	test_work_wait(&test_data.work);
+
+	fds[0].events = ZSOCK_POLLOUT;
+	ret = zsock_poll(fds, 1, 0);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_equal(fds[0].revents, ZSOCK_POLLOUT, "No POLLOUT event (revents 0x%x)",
+		      fds[0].revents);
+
+	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_deferred_handshake_silent_client)
+{
+	struct net_sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 c_saddr;
+	struct connect_data test_data;
+	struct zsock_pollfd fds[2];
+	uint32_t timestamp;
+	uint8_t rx_buf;
+	int ret;
+
+	test_prepare_deferred_handshake_server(&s_saddr);
+
+	/* A client that connects at TCP level and sends nothing. */
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock_2, &c_saddr);
+	test_connect(c_sock_2, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_accept(s_sock, &new_sock, NULL, NULL);
+
+	timestamp = k_uptime_get_32();
+
+	test_start_deferred_handshake_client(&test_data, &s_saddr);
+	test_accept(s_sock, &new_sock_2, NULL, NULL);
+
+	fds[0].fd = new_sock;
+	fds[0].events = ZSOCK_POLLIN;
+	fds[1].fd = new_sock_2;
+	fds[1].events = ZSOCK_POLLIN;
+	ret = zsock_poll(fds, 2, 1000);
+	zassert_equal(ret, 1, "poll() should've report one event");
+	zassert_equal(fds[0].revents, 0, "Unexpected event on the silent client");
+	zassert_equal(fds[1].revents, ZSOCK_POLLIN, "No POLLIN event");
+	zassert_true(k_uptime_get_32() - timestamp < CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT,
+		     "The silent client delayed the second one");
+
+	ret = zsock_recv(new_sock_2, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, 1, "zsock_recv() failed");
+
+	test_work_wait(&test_data.work);
+
+	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_deferred_handshake_invalid_handshake_data)
+{
+	struct net_sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 c_saddr;
+	net_socklen_t optlen = sizeof(int);
+	struct zsock_pollfd fds[1];
+	uint8_t rx_buf;
+	int optval;
+	int ret;
+
+	test_prepare_deferred_handshake_server(&s_saddr);
+
+	/* Connect at TCP level and send some unexpected data. */
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	test_connect(c_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_send(c_sock, TEST_STR_SMALL, sizeof(TEST_STR_SMALL), 0);
+
+	/* accept() succeeds, the failure is reported on the new socket. */
+	test_accept(s_sock, &new_sock, NULL, NULL);
+
+	fds[0].fd = new_sock;
+	fds[0].events = ZSOCK_POLLIN;
+	ret = zsock_poll(fds, 1, 1000);
+	zassert_equal(ret, 1, "poll() should've report event");
+	zassert_true(fds[0].revents & ZSOCK_POLLERR, "No POLLERR event");
+
+	zassert_ok(zsock_getsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_ERROR, &optval, &optlen));
+	zassert_equal(optval, ECONNABORTED, "Unexpected error %d", optval);
+
+	ret = zsock_recv(new_sock, &rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, -1, "zsock_recv() did not report error");
+	zassert_equal(errno, ECONNABORTED, "Unexpected errno value: %d", errno);
+
+	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_deferred_handshake_recv_block)
+{
+	struct net_sockaddr_in6 s_saddr;
+	struct connect_data test_data;
+	uint8_t rx_buf;
+	int ret;
+
+	test_prepare_deferred_handshake_server(&s_saddr);
+	test_start_deferred_handshake_client(&test_data, &s_saddr);
+
+	test_accept(s_sock, &new_sock, NULL, NULL);
+
+	/* A blocking recv() completes the handshake, then returns the data. */
+	ret = zsock_recv(new_sock, &rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, 1, "zsock_recv() failed");
+
+	test_work_wait(&test_data.work);
+
+	test_sockets_close();
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+static int deferred_recv_ret;
+static int deferred_recv_errno;
+
+static void deferred_recv_work_handler(struct k_work *work)
+{
+	uint8_t rx_buf;
+
+	ARG_UNUSED(work);
+
+	deferred_recv_ret = zsock_recv(new_sock, &rx_buf, sizeof(rx_buf), 0);
+	deferred_recv_errno = errno;
+}
+
+ZTEST(net_socket_tls, test_deferred_handshake_recv_block_unlocked)
+{
+	struct net_sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 c_saddr;
+	struct k_work_delayable recv_work;
+	struct zsock_pollfd fds[1];
+	uint32_t timestamp;
+	int ret;
+
+	test_prepare_deferred_handshake_server(&s_saddr);
+
+	/* A client that connects at TCP level and sends nothing. */
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	test_connect(c_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_accept(s_sock, &new_sock, NULL, NULL);
+
+	/* A blocking recv() waits for the handshake in another thread. */
+	k_work_init_delayable(&recv_work, deferred_recv_work_handler);
+	test_work_reschedule(&recv_work, K_NO_WAIT);
+	k_msleep(20);
+
+	/* poll() on the same socket does not wait for that recv() to return. */
+	timestamp = k_uptime_get_32();
+	fds[0].fd = new_sock;
+	fds[0].events = ZSOCK_POLLIN;
+	ret = zsock_poll(fds, 1, 10);
+	zassert_equal(ret, 0, "poll() should've timed out");
+	zassert_true(k_uptime_get_32() - timestamp < CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT / 2,
+		     "poll() waited for the blocked recv()");
+
+	/* The recv() gives up at the handshake deadline. */
+	test_work_wait(&recv_work);
+	zassert_equal(deferred_recv_ret, -1, "zsock_recv() should've failed");
+	zassert_equal(deferred_recv_errno, ETIMEDOUT, "Unexpected errno value: %d",
+		      deferred_recv_errno);
 
 	test_sockets_close();
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
@@ -2555,7 +2964,7 @@ static void test_dtls_server_multi_client_hs_in_poll(net_sa_family_t family)
 	test_data.sock = c_sock;
 	test_data.peer_sock = &s_sock;
 	test_data.addr = &s_saddr;
-	k_work_init_delayable(&test_data.work, dtls_client_connect_send_work_handler);
+	k_work_init_delayable(&test_data.work, client_connect_send_work_handler);
 	test_work_reschedule(&test_data.work, K_NO_WAIT);
 
 	/* DTLS has no separate call like accept() to know when the handshake
@@ -2708,7 +3117,7 @@ static void test_dtls_server_multi_client_hs_in_recvfrom(net_sa_family_t family)
 	test_data.sock = c_sock;
 	test_data.peer_sock = &s_sock;
 	test_data.addr = &s_saddr;
-	k_work_init_delayable(&test_data.work, dtls_client_connect_send_work_handler);
+	k_work_init_delayable(&test_data.work, client_connect_send_work_handler);
 	test_work_reschedule(&test_data.work, K_NO_WAIT);
 
 	/* Block in recv for the handshake to complete. */
@@ -2825,7 +3234,7 @@ static void test_dtls_server_multi_client_prepare_two_connections(
 	test_data.sock = c_sock;
 	test_data.peer_sock = &s_sock;
 	test_data.addr = s_saddr;
-	k_work_init_delayable(&test_data.work, dtls_client_connect_send_work_handler);
+	k_work_init_delayable(&test_data.work, client_connect_send_work_handler);
 	test_work_reschedule(&test_data.work, K_NO_WAIT);
 
 	/* Block in recv for the handshake to complete. */
@@ -2981,7 +3390,7 @@ static void test_dtls_server_cid_matching_on_addr_change(net_sa_family_t family)
 	test_data.sock = c_sock;
 	test_data.peer_sock = &s_sock;
 	test_data.addr = &s_saddr;
-	k_work_init_delayable(&test_data.work, dtls_client_connect_send_work_handler);
+	k_work_init_delayable(&test_data.work, client_connect_send_work_handler);
 	test_work_reschedule(&test_data.work, K_NO_WAIT);
 
 	/* Block in recv for the handshake to complete. */
@@ -3036,7 +3445,7 @@ static void test_dtls_server_cid_matching_on_addr_change(net_sa_family_t family)
 	test_data.sock = c_sock_2;
 	test_data.peer_sock = &s_sock;
 	test_data.addr = &s_saddr;
-	k_work_init_delayable(&test_data.work, dtls_client_connect_send_work_handler);
+	k_work_init_delayable(&test_data.work, client_connect_send_work_handler);
 	test_work_reschedule(&test_data.work, K_NO_WAIT);
 
 	/* Block in recv for the handshake to complete. */

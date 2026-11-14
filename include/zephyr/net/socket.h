@@ -286,6 +286,30 @@ extern "C" {
  *  Requires CONFIG_NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH.
  */
 #define ZSOCK_TLS_MAX_FRAGMENT_LENGTH 21
+/** Socket option to configure TLS server socket behavior on accept().
+ *  Set on a listening TLS socket, inherited by the sockets accept() returns.
+ *  Accepts a pointer to an int, 1 or 0.
+ *  If set, accept() executes the whole TLS handshake with the new client before
+ *  it returns, and reports a failed handshake as an error of accept() itself.
+ *  This is the default behavior.
+ *  Otherwise, accept() returns the new socket right after the TCP connection is
+ *  accepted, and the handshake advances in consecutive recv(), send() and
+ *  poll() calls on that socket. A non-blocking recv() or send() fails with
+ *  EAGAIN while the handshake is in progress, a blocking one waits for it.
+ *  poll() reports POLLIN only once the handshake has completed and application
+ *  data is available, and POLLOUT only once the handshake has completed.
+ *  A handshake that fails, or does not complete within
+ *  CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT of accept(), puts the socket in error
+ *  state: recv() and send() fail with ECONNABORTED or ETIMEDOUT and poll()
+ *  reports POLLERR. The timeout is checked whenever the socket is used, so an
+ *  application that polls the socket without a timeout should keep its own
+ *  timer. Socket options describing the session, such as
+ *  TLS_CIPHERSUITE_USED or TLS_CERT_VERIFY_RESULT, are valid only once the
+ *  handshake has completed.
+ *  Clearing it lets a server serve other clients while one client is slow to
+ *  complete its handshake.
+ */
+#define ZSOCK_TLS_HANDSHAKE_ON_ACCEPT 22
 
 /* Valid values for @ref ZSOCK_TLS_MAX_FRAGMENT_LENGTH option */
 #define ZSOCK_TLS_MFL_DEFAULT -1 /**< Use the global Kconfig-derived MFL. */
