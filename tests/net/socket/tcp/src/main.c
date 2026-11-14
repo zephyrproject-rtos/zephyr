@@ -2343,6 +2343,39 @@ static void test_msg_waitall_tx_work_handler(struct k_work *work)
 	}
 }
 
+/* recvmsg() with MSG_WAITALL fills each iovec in several reads, one byte each */
+static void test_msg_waitall_recvmsg(int c_sock, int new_sock)
+{
+	static const char data[] = "0123456789";
+	struct test_msg_waitall_data test_data = {
+		.sock = c_sock,
+		.data = (const uint8_t *)data,
+		.offset = 0,
+		.retries = sizeof(data) - 1,
+	};
+	uint8_t rx_buf[sizeof(data) - 1] = { 0 };
+	struct net_iovec iov[2] = {
+		{ .iov_base = rx_buf, .iov_len = sizeof(rx_buf) / 2 },
+		{ .iov_base = rx_buf + sizeof(rx_buf) / 2,
+		  .iov_len = sizeof(rx_buf) - sizeof(rx_buf) / 2 },
+	};
+	struct net_msghdr msg = {
+		.msg_iov = iov,
+		.msg_iovlen = ARRAY_SIZE(iov),
+	};
+	struct k_work_sync sync;
+	ssize_t ret;
+
+	k_work_init_delayable(&test_data.tx_work, test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+	ret = zsock_recvmsg(new_sock, &msg, ZSOCK_MSG_WAITALL);
+	(void)k_work_cancel_delayable_sync(&test_data.tx_work, &sync);
+
+	zexpect_equal(ret, sizeof(rx_buf), "Invalid length received (%zd)", ret);
+	zexpect_mem_equal(rx_buf, data, sizeof(rx_buf), "Invalid data received");
+}
+
 ZTEST(net_socket_tcp, test_v4_msg_waitall)
 {
 	struct test_msg_waitall_data test_data = {
@@ -2389,6 +2422,8 @@ ZTEST(net_socket_tcp, test_v4_msg_waitall)
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf),
 			  "Invalid data received");
 	k_work_cancel_delayable(&test_data.tx_work);
+
+	test_msg_waitall_recvmsg(c_sock, new_sock);
 
 	/* MSG_WAITALL + SO_RCVTIMEO - make sure recv returns the amount of data
 	 * received so far
@@ -2478,6 +2513,8 @@ ZTEST(net_socket_tcp, test_v6_msg_waitall)
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf),
 			  "Invalid data received");
 	k_work_cancel_delayable(&test_data.tx_work);
+
+	test_msg_waitall_recvmsg(c_sock, new_sock);
 
 	/* MSG_WAITALL + SO_RCVTIMEO - make sure recv returns the amount of data
 	 * received so far
