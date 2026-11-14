@@ -1,0 +1,77 @@
+#
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  ADI MAX96717 GMSL2 serializer.
+
+  The serializer sits on the I2C gate of the deserializer's link, which carries
+  it. port@0 is its CSI-2 input, from the sensor; port@1 is its GMSL2 output,
+  to the deserializer. Its camera-side I2C bus is an adi,max96717-i2c-gate
+  child, which carries the sensor, and its MFP pins an adi,max96717-gpio child,
+  which a sensor's reset or enable GPIO can point at.
+
+  Example:
+
+    max96717: max96717@40 {
+        compatible = "adi,max96717";
+        reg = <0x40>;
+
+        ports {
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            /* CSI-2 input */
+            port@0 {
+                reg = <0>;
+
+                ser_csi_in: endpoint {
+                    remote-endpoint-label = "imx219_ep_out";
+                    bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+                    data-lanes = <1 2>;
+                };
+            };
+
+            /* GMSL2 output */
+            port@1 {
+                reg = <1>;
+
+                ser_gmsl_out: endpoint {
+                    remote-endpoint-label = "des_gmsl_in";
+                };
+            };
+        };
+
+        ser_i2c: i2c-gate {
+            compatible = "adi,max96717-i2c-gate";
+            #address-cells = <1>;
+            #size-cells = <0>;
+        };
+
+        ser_gpio: gpio {
+            compatible = "adi,max96717-gpio";
+            gpio-controller;
+            #gpio-cells = <2>;
+            ngpios = <11>;
+        };
+    };
+
+compatible: "adi,max96717"
+
+include: i2c-device.yaml
+
+child-binding:
+  child-binding:
+    description: |
+      A port: port@0 is the CSI-2 input from the sensor, port@1 the GMSL2
+      output to the deserializer.
+
+    properties:
+      reg:
+        type: int
+        required: true
+        enum: [0, 1]
+
+    child-binding:
+      include: video-interfaces.yaml

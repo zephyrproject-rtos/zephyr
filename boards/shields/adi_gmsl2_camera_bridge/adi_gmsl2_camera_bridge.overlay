@@ -1,0 +1,105 @@
+/*
+ * Copyright (c) 2026 Charles Dias
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * ADI GMSL2 Camera Bridge: MAX96724 (deserializer) + 1x MAX96717 (serializer).
+ *
+ * This shield is camera-agnostic. Combine with a camera sensor shield and a
+ * sample overlay that wires the sensor to the MAX96717 serializer input.
+ *
+ */
+
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/* Redirect CSI host input from camera to MAX96724 deserializer output */
+&csi_ep_in {
+	remote-endpoint-label = "des_csi_out";
+	bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+	data-lanes = <1 2>;
+};
+
+&csi_i2c {
+	max96724: max96724@27 {
+		compatible = "adi,max96724";
+		reg = <0x27>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/* GMSL input of link A: ports 0 to 3 are links A to D. */
+			des_gmsl_port: port@0 {
+				reg = <0>;
+
+				des_gmsl_in: endpoint {
+					remote-endpoint-label = "ser_gmsl_out";
+				};
+			};
+
+			/* CSI-2 output of PHY 2: ports 4 to 7 are PHYs 0 to 3. */
+			des_csi_port: port@6 {
+				reg = <6>;
+
+				des_csi_out: endpoint {
+					remote-endpoint-label = "csi_ep_in";
+					bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+					data-lanes = <1 2>;
+					/* D-PHY clock: the lanes run at twice this, 1.5 Gbps. */
+					link-frequencies = <750000000>;
+				};
+			};
+		};
+
+		/*
+		 * I2C behind GMSL link A: the deserializer forwards transactions to the
+		 * serializer and, through it, to the camera bus.
+		 */
+		des_i2c: i2c-gate@0 {
+			compatible = "adi,max96724-i2c-gate";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			max96717: max96717@40 {
+				compatible = "adi,max96717";
+				reg = <0x40>;
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					port@1 {
+						reg = <1>;
+
+						ser_gmsl_out: endpoint {
+							remote-endpoint-label = "des_gmsl_in";
+						};
+					};
+				};
+
+				/* Camera-side I2C bus of the serializer; the sensor goes here. */
+				ser_i2c: i2c-gate {
+					compatible = "adi,max96717-i2c-gate";
+					#address-cells = <1>;
+					#size-cells = <0>;
+				};
+
+				/*
+				 * MFP pins. On the camera connector MFP0 is pin 11 (IO0) and MFP3
+				 * is pin 12 (IO1); MFP9 and MFP10 carry the camera I2C bus.
+				 */
+				ser_gpio: gpio {
+					compatible = "adi,max96717-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <11>;
+					gpio-reserved-ranges = <9 2>;
+				};
+			};
+		};
+	};
+};
