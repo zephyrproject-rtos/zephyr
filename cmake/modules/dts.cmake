@@ -311,6 +311,7 @@ function(dts_edt_pickle)
     # Zephyr tree with a 'zephyr/' prefix.
     set(gen_edt_workspace_dir ${ZEPHYR_BASE}/..)
   endif()
+  set(DTS_WORKSPACE_DIR ${gen_edt_workspace_dir} PARENT_SCOPE)
 
   string(REPLACE ";" " " EXTRA_DTC_FLAGS_RAW "${EXTRA_DTC_FLAGS}")
   set(cmd_gen_edt ${PYTHON_EXECUTABLE} ${GEN_EDT_SCRIPT}
@@ -345,6 +346,7 @@ function(dts_gen_defines)
     --deps-out ${DEVICETREE_BINDINGS_USED}
     --edt-pickle ${EDT_PICKLE}
     --zephyr-base ${ZEPHYR_BASE}
+    --workspace-dir ${DTS_WORKSPACE_DIR}
     ${EXTRA_GEN_DEFINES_ARGS}
   )
 
