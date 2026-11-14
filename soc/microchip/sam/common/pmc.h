@@ -179,6 +179,16 @@ int clk_register_system(pmc_registers_t *const pmc, const char *name,
 			const struct device *parent,
 			uint8_t id, struct device **clk);
 
+int clk_register_plla(pmc_registers_t *const pmc, const char *name, const struct device *parent,
+		      struct device **clk);
+
+int clk_register_master_mckr_pres(pmc_registers_t *const pmc, const char *name,
+				  const struct device **parents, uint8_t num_parents,
+				  struct device **clk);
+
+int clk_register_master_mckr_div(pmc_registers_t *const pmc, const char *name,
+				 const struct device *parent, struct device **clk);
+
 int clk_register_utmi(pmc_registers_t *const pmc, const char *name,
 		      const struct device *parent, struct device **clk);
 
