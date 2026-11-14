@@ -19,6 +19,7 @@
 #include <zephyr/arch/common/init.h>
 #include <zephyr/arch/riscv/arch.h>
 #include <hal/interrupt_clic_ll.h>
+#include <hal/ldo_ll.h>
 #include <riscv/interrupt.h>
 #include <riscv/csr.h>
 #include <soc/interrupts.h>
@@ -91,6 +92,37 @@ void nocache_region_init(void)
 }
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#if defined(CONFIG_ESP_SPIRAM)
+#define PSRAM_LDO_NODE DT_NODELABEL(ldo2)
+#define PSRAM_LDO_MV   (DT_PROP_OR(PSRAM_LDO_NODE, regulator_init_microvolt, 0) / 1000)
+
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_PARENT(PSRAM_LDO_NODE)) &&
+		     DT_NODE_HAS_PROP(PSRAM_LDO_NODE, regulator_init_microvolt) &&
+		     DT_PROP(PSRAM_LDO_NODE, regulator_always_on),
+	     "PSRAM needs the ldo node enabled and ldo2 with regulator-init-microvolt "
+	     "and regulator-always-on");
+BUILD_ASSERT(PSRAM_LDO_MV >= LDO_LL_RECOMMEND_MIN_VOLTAGE_MV &&
+		     PSRAM_LDO_MV <= LDO_LL_RAIL_VOLTAGE_MV,
+	     "ldo2 regulator-init-microvolt is out of range");
+
+/* The regulator driver applies the same settings again at PRE_KERNEL_1. */
+static void psram_ldo_init(void)
+{
+	int unit = LDO_ID2UNIT(DT_REG_ADDR(PSRAM_LDO_NODE));
+	uint8_t dref = 0U;
+	uint8_t mul = 0U;
+	bool use_rail = false;
+
+	ldo_ll_enable_current_limit(unit, true);
+	ldo_ll_voltage_to_dref_mul(unit, PSRAM_LDO_MV, &dref, &mul, &use_rail);
+	ldo_ll_adjust_voltage(unit, dref, mul, use_rail);
+	ldo_ll_set_owner(unit, LDO_LL_UNIT_OWNER_SW);
+	ldo_ll_enable_ripple_suppression(unit, true);
+	ldo_ll_enable(unit, true);
+	ldo_ll_enable_current_limit(unit, false);
+}
+#endif
+
 static void core_intr_matrix_clear(void)
 {
 	for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
@@ -124,6 +156,17 @@ void IRAM_ATTR __esp_platform_app_start(void)
 	esp_flash_config();
 
 	esp_efuse_init_virtual();
+
+#if defined(CONFIG_ESP_SPIRAM)
+	psram_ldo_init();
+	esp_init_psram();
+
+#if defined(CONFIG_SHARED_MULTI_HEAP)
+	if (esp_psram_smh_init() != 0) {
+		printk("Failed to initialize PSRAM shared multi heap\n");
+	}
+#endif
+#endif
 
 #if defined(CONFIG_NOCACHE_MEMORY)
 	nocache_region_init();
