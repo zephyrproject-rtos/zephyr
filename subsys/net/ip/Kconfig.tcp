@@ -68,6 +68,28 @@ config NET_TCP_INIT_RETRANSMISSION_TIMEOUT
 	help
 	  This value affects the timeout between initial retransmission
 	  of TCP data packets. The value is in milliseconds.
+	  The RTO of a connection is derived from its round trip time
+	  (RFC 6298); this value, raised to NET_TCP_MIN_RTO if it is lower,
+	  is used until the first round trip time sample has been taken.
+
+config NET_TCP_MIN_RTO
+	int "Minimum Retransmission Timeout (RTO) (in milliseconds)"
+	default NET_TCP_INIT_RETRANSMISSION_TIMEOUT
+	range 10 60000
+	help
+	  Lower limit of the RTO derived from the round trip time of a
+	  connection. RFC 6298 recommends 1 second, Linux uses 200 ms.
+	  A lower value recovers faster from a loss on a short path, at the
+	  risk of retransmitting data that was only delayed.
+
+config NET_TCP_MAX_RTO
+	int "Maximum Retransmission Timeout (RTO) (in milliseconds)"
+	default 60000
+	range 60000 120000
+	help
+	  Upper limit of the RTO of a connection, including the exponential
+	  backoff of the retransmissions. RFC 6298 requires at least 60
+	  seconds.
 
 config NET_TCP_RANDOMIZED_RTO
 	bool "Use a randomized retransmission time"

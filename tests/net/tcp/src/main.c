@@ -132,6 +132,8 @@ static enum test_case_no {
 	TEST_SERVER_BUF_INHERIT = 31,
 	TEST_SERVER_WIN_SCALE = 32,
 	TEST_CLIENT_PEER_CLOSE_ON_CONNECT = 33,
+	TEST_CLIENT_RTT = 34,
+	TEST_SERVER_RTT = 35,
 } test_case_no;
 
 static enum test_state t_state;
@@ -147,6 +149,8 @@ static void handle_syn_resend(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_syn_ack_resend(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_win_scale_client(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_server_handshake(struct net_pkt *pkt, struct tcphdr *th);
+static void handle_rtt_client(struct net_pkt *pkt, struct tcphdr *th);
+static void handle_server_rtt(struct tcphdr *th);
 static void handle_advertised_recv_window(struct tcphdr *th);
 static void handle_syn_rst_ack(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_peer_close_on_connect(net_sa_family_t af, struct tcphdr *th);
@@ -757,6 +761,12 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	case TEST_SERVER_BUF_INHERIT:
 	case TEST_SERVER_WIN_SCALE:
 		handle_server_handshake(pkt, &th);
+		break;
+	case TEST_CLIENT_RTT:
+		handle_rtt_client(pkt, &th);
+		break;
+	case TEST_SERVER_RTT:
+		handle_server_rtt(&th);
 		break;
 	case TEST_ADVERTISED_RECV_WINDOW:
 		handle_advertised_recv_window(&th);
@@ -2175,6 +2185,611 @@ ZTEST(net_tcp, test_server_win_scale)
 		      "ACK window %u for a window of %u", srv_ack_win, srv_ack_recv_win);
 
 	server_close(ctx);
+}
+
+/* State of the RTT tests. The tester answers each segment after
+ * rtt_delay_ms, and drops the next segment when rtt_drop_next is set.
+ */
+static struct net_pkt *rtt_reply;
+static bool rtt_reply_give_sem;
+static uint32_t rtt_delay_ms;
+static bool rtt_drop_next;
+static uint16_t rtt_port;
+static bool rtt_seen_data;
+static uint32_t rtt_last_seq;
+static uint32_t rtt_last_time;
+static uint32_t rtt_rexmit;
+static uint32_t rtt_rexmit_interval;
+/* The tester answers no data while set; the test sends the ACKs itself */
+static bool rtt_hold;
+static uint32_t rtt_segments;
+
+static void rtt_reply_send(struct k_work *work)
+{
+	struct net_pkt *reply = rtt_reply;
+
+	ARG_UNUSED(work);
+
+	rtt_reply = NULL;
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send reply");
+
+	if (rtt_reply_give_sem) {
+		test_sem_give();
+	}
+}
+
+static K_WORK_DELAYABLE_DEFINE(rtt_reply_work, rtt_reply_send);
+
+/* Send the reply after rtt_delay_ms, and release the semaphore after it
+ * when give_sem is set.
+ */
+static void rtt_reply_after(struct net_pkt *reply, bool give_sem)
+{
+	zassert_not_null(reply, "Failed to prepare reply");
+	zassert_is_null(rtt_reply, "Reply already pending");
+
+	rtt_reply = reply;
+	rtt_reply_give_sem = give_sem;
+	k_work_reschedule(&rtt_reply_work, K_MSEC(rtt_delay_ms));
+}
+
+static void handle_rtt_client(struct net_pkt *pkt, struct tcphdr *th)
+{
+	uint32_t th_seq = net_ntohl(th->th_seq);
+	uint32_t now = k_uptime_get_32();
+	size_t len;
+
+	switch (t_state) {
+	case T_SYN:
+		test_verify_flags(th, SYN);
+		if (rtt_drop_next) {
+			rtt_drop_next = false;
+			return;
+		}
+		seq = 0U;
+		ack = th_seq + 1U;
+		rtt_port = th->th_sport;
+		t_state = T_SYN_ACK;
+		rtt_reply_after(prepare_syn_ack_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port),
+				false);
+		return;
+	case T_SYN_ACK:
+		test_verify_flags(th, ACK);
+		seq++;
+		t_state = T_DATA;
+		test_sem_give();
+		return;
+	case T_DATA:
+		len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) - net_pkt_ip_opts_len(pkt) -
+		      th->th_off * 4U;
+		if (len == 0U) {
+			return;
+		}
+
+		if (rtt_seen_data && (th_seq == rtt_last_seq)) {
+			rtt_rexmit++;
+			rtt_rexmit_interval = now - rtt_last_time;
+		}
+		rtt_seen_data = true;
+		rtt_last_seq = th_seq;
+		rtt_last_time = now;
+
+		rtt_segments++;
+		if (rtt_hold) {
+			return;
+		}
+
+		/* A retransmission before the pending ACK is sent */
+		if (rtt_reply != NULL) {
+			return;
+		}
+
+		if (rtt_drop_next) {
+			rtt_drop_next = false;
+			return;
+		}
+
+		ack = th_seq + (uint32_t)len;
+		rtt_reply_after(prepare_ack_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port),
+				true);
+		return;
+	default:
+		return;
+	}
+}
+
+static void handle_server_rtt(struct tcphdr *th)
+{
+	if (t_state != T_SYN) {
+		return;
+	}
+
+	test_verify_flags(th, SYN | ACK);
+	seq++;
+	ack = net_ntohl(th->th_seq) + 1U;
+	t_state = T_DATA;
+
+	/* test_tcp_accept_cb releases the semaphore */
+	rtt_reply_after(prepare_ack_packet(NET_AF_INET, net_htons(MY_PORT), net_htons(PEER_PORT)),
+			false);
+}
+
+/* Connect to the tester, which answers the SYN after delay_ms, or only the
+ * retransmitted SYN when drop_syn is set.
+ */
+static struct net_context *rtt_connect(uint32_t delay_ms, bool drop_syn)
+{
+	struct net_context *ctx;
+	int no_delay = 1;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = TEST_CLIENT_RTT;
+	seq = ack = 0;
+	rtt_delay_ms = delay_ms;
+	rtt_drop_next = drop_syn;
+	rtt_hold = false;
+	rtt_seen_data = false;
+	rtt_rexmit = 0U;
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx);
+	zassert_equal(ret, 0, "Failed to get net_context");
+
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct net_sockaddr *)&peer_addr_s,
+				  sizeof(struct net_sockaddr_in), NULL, K_MSEC(1000), NULL);
+	zassert_equal(ret, 0, "Failed to connect to peer");
+
+	/* The tester releases the semaphore on the ACK of the handshake */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	zassert_ok(net_tcp_set_option(ctx, TCP_OPT_NODELAY, &no_delay, sizeof(no_delay)),
+		   "Failed to disable Nagle");
+
+	return ctx;
+}
+
+/* Send one byte and wait until the tester has acknowledged it after
+ * delay_ms.
+ */
+static void rtt_exchange(struct net_context *ctx, uint32_t delay_ms)
+{
+	int ret;
+
+	rtt_delay_ms = delay_ms;
+
+	ret = net_context_send(ctx, "A", 1U, NULL, K_NO_WAIT, NULL);
+	zassert_equal(ret, 1, "Failed to send data (%d)", ret);
+
+	test_sem_take(K_MSEC(delay_ms + 1000U), __LINE__);
+
+	/* Let the stack process the ACK */
+	k_msleep(10);
+}
+
+static void rtt_close(struct net_context *ctx)
+{
+	struct net_pkt *reply;
+
+	(void)k_work_cancel_delayable(&rtt_reply_work);
+	if (rtt_reply != NULL) {
+		net_pkt_unref(rtt_reply);
+		rtt_reply = NULL;
+	}
+
+	reply = prepare_rst_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port);
+	zassert_not_null(reply, "Failed to prepare RST");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send RST");
+
+	k_msleep(10);
+
+	net_context_put(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send SYN,
+ *   expect SYN ACK after 60 ms,
+ *   expect the first RTT sample from the handshake: SRTT of 60 ms,
+ *   RTTVAR of 30 ms and an RTO of SRTT + 4 * RTTVAR (RFC 6298, rule 2.2).
+ */
+ZTEST(net_tcp, test_client_rtt_handshake)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t srtt;
+
+	ctx = rtt_connect(60U, false);
+	conn = ctx->tcp;
+	srtt = conn->srtt >> 3;
+
+	zexpect_true(conn->rtt_sampled, "No RTT sample from the handshake");
+	/* One tick of the uptime clock on top of the delay */
+	zexpect_true((srtt >= 60U) && (srtt <= 70U), "SRTT %u for a 60 ms RTT", srtt);
+	zexpect_equal(conn->rttvar >> 2, srtt / 2U, "RTTVAR %u for SRTT %u", conn->rttvar >> 2,
+		      srtt);
+	zexpect_equal(conn->rto, 3U * srtt, "RTO %u for SRTT %u", conn->rto, srtt);
+
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   receive SYN,
+ *   send SYN ACK,
+ *   expect ACK after 60 ms,
+ *   expect the first RTT sample of the accepted connection from the handshake.
+ */
+ZTEST(net_tcp, test_server_rtt_handshake)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t srtt;
+
+	rtt_delay_ms = 60U;
+	ctx = server_accept(TEST_SERVER_RTT, 0, 0);
+	conn = accepted_ctx->tcp;
+	srtt = conn->srtt >> 3;
+
+	zexpect_true(conn->rtt_sampled, "No RTT sample from the handshake");
+	zexpect_true((srtt >= 60U) && (srtt <= 70U), "SRTT %u for a 60 ms RTT", srtt);
+	zexpect_equal(conn->rto, 3U * srtt, "RTO %u for SRTT %u", conn->rto, srtt);
+
+	server_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send SYN,
+ *   peer doesn't reply,
+ *   send SYN again, the peer replies SYN ACK,
+ *   expect no RTT sample and an RTO of 3 seconds for the data
+ *   (RFC 6298, rule 5.7),
+ *   expect the first sample from the data to replace it.
+ */
+ZTEST(net_tcp, test_client_rtt_syn_retransmitted)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+
+	ctx = rtt_connect(0U, true);
+	conn = ctx->tcp;
+
+	zexpect_false(conn->rtt_sampled, "RTT sample from a retransmitted SYN");
+	zexpect_equal(conn->rto, MAX(3000U, CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT),
+		      "RTO %u after a retransmitted SYN", conn->rto);
+	zexpect_equal(conn->rto_backoff, 0U, "Backoff %u kept after the handshake",
+		      conn->rto_backoff);
+
+	rtt_exchange(ctx, 0U);
+
+	zexpect_true(conn->rtt_sampled, "No RTT sample from the data");
+	zexpect_equal(conn->rto, CONFIG_NET_TCP_MIN_RTO, "RTO %u after an RTT of 0 ms",
+		      conn->rto);
+
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect,
+ *   send data, the peer acknowledges it after a delay that grows to three
+ *   times the initial RTO,
+ *   expect the RTO to stay above the delay, so nothing is retransmitted,
+ *   send data, the peer acknowledges it at once,
+ *   expect the RTO to fall back to the minimum.
+ */
+ZTEST(net_tcp, test_client_rtt_follows_delay)
+{
+	/* Each delay stays below the RTO derived from the ones before it */
+	static const uint32_t delays[] = { 50U, 70U, 90U, 120U, 160U, 220U, 300U };
+	struct net_context *ctx;
+	struct tcp *conn;
+
+	BUILD_ASSERT(CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT == 100,
+		     "The delays are chosen for an initial RTO of 100 ms");
+
+	ctx = rtt_connect(0U, false);
+	conn = ctx->tcp;
+
+	ARRAY_FOR_EACH(delays, i) {
+		rtt_exchange(ctx, delays[i]);
+		zexpect_equal(rtt_rexmit, 0U, "Retransmission with an RTT of %u ms, RTO %u",
+			      delays[i], conn->rto);
+	}
+
+	zexpect_true(conn->rto > delays[ARRAY_SIZE(delays) - 1U], "RTO %u below the RTT",
+		     conn->rto);
+
+	for (int i = 0; i < 30; i++) {
+		rtt_exchange(ctx, 0U);
+	}
+
+	zexpect_equal(conn->rto, CONFIG_NET_TCP_MIN_RTO, "RTO %u after an RTT of 0 ms",
+		      conn->rto);
+	zexpect_equal(rtt_rexmit, 0U, "%u retransmissions", rtt_rexmit);
+
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect,
+ *   send data, the peer drops it and acknowledges the retransmission,
+ *   expect no RTT sample from it (Karn's algorithm) and the backoff kept,
+ *   send data, the peer drops it again,
+ *   expect the retransmission after the backed off RTO,
+ *   send data, the peer acknowledges it,
+ *   expect the sample to end the backoff.
+ */
+ZTEST(net_tcp, test_client_rtt_karn)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t srtt;
+	uint32_t rttvar;
+	uint32_t backed_off;
+
+	BUILD_ASSERT(CONFIG_NET_TCP_RETRY_COUNT >= 2, "Two retransmissions are needed");
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_TCP_RANDOMIZED_RTO);
+
+	ctx = rtt_connect(0U, false);
+	conn = ctx->tcp;
+	srtt = conn->srtt;
+	rttvar = conn->rttvar;
+
+	rtt_drop_next = true;
+	rtt_exchange(ctx, 0U);
+
+	zexpect_equal(rtt_rexmit, 1U, "%u retransmissions", rtt_rexmit);
+	zexpect_equal(conn->srtt, srtt, "SRTT changed by a retransmitted segment");
+	zexpect_equal(conn->rttvar, rttvar, "RTTVAR changed by a retransmitted segment");
+	zexpect_equal(conn->rto_backoff, 1U, "Backoff %u after the ACK of a retransmission",
+		      conn->rto_backoff);
+
+	rtt_drop_next = true;
+	rtt_exchange(ctx, 0U);
+
+	/* Less one tick, as the send time is read after the timer was set */
+	backed_off = conn->rto + (conn->rto >> 1) - k_ticks_to_ms_ceil32(1U);
+	zexpect_equal(rtt_rexmit, 2U, "%u retransmissions", rtt_rexmit);
+	zexpect_true(rtt_rexmit_interval >= backed_off,
+		     "Retransmission after %u ms, backed off RTO %u", rtt_rexmit_interval,
+		     backed_off);
+
+	rtt_exchange(ctx, 0U);
+
+	zexpect_equal(rtt_rexmit, 2U, "%u retransmissions", rtt_rexmit);
+	zexpect_equal(conn->rto_backoff, 0U, "Backoff %u after an RTT sample",
+		      conn->rto_backoff);
+
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect,
+ *   raise the RTO close to the maximum and back it off,
+ *   send data, the peer drops it,
+ *   expect the retransmission timer limited to CONFIG_NET_TCP_MAX_RTO.
+ */
+ZTEST(net_tcp, test_client_rtt_max_rto)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t remaining;
+	int ret;
+
+	ctx = rtt_connect(0U, false);
+	conn = ctx->tcp;
+
+	conn->rto = CONFIG_NET_TCP_MAX_RTO - 1000U;
+	conn->rto_backoff = 2U;
+
+	rtt_drop_next = true;
+	ret = net_context_send(ctx, "A", 1U, NULL, K_NO_WAIT, NULL);
+	zassert_equal(ret, 1, "Failed to send data (%d)", ret);
+
+	/* The kernel adds one tick to a relative timeout */
+	remaining = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&conn->send_data_timer) -
+					  1);
+	zexpect_true(remaining <= CONFIG_NET_TCP_MAX_RTO, "RTO %u above the maximum", remaining);
+	zexpect_true(remaining > CONFIG_NET_TCP_MAX_RTO - 1000U, "RTO %u not backed off",
+		     remaining);
+
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect with a retransmitted SYN, so the RTO is 3 seconds,
+ *   close the connection,
+ *   expect the FIN timer to outlast the retransmissions of the FIN.
+ */
+ZTEST(net_tcp, test_client_rtt_fin_timeout)
+{
+	struct net_context *ctx;
+	struct net_pkt *reply;
+	struct tcp *conn;
+	uint32_t last_rexmit = 0U;
+	uint32_t remaining;
+	uint32_t rto;
+
+	ctx = rtt_connect(0U, true);
+	conn = ctx->tcp;
+	zassert_true(conn->rto > CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT,
+		     "RTO %u not raised", conn->rto);
+
+	/* Time from the FIN to its last retransmission */
+	rto = conn->rto;
+	for (int i = 0; i < CONFIG_NET_TCP_RETRY_COUNT; i++) {
+		last_rexmit += rto;
+		rto += rto >> 1;
+	}
+
+	net_context_put(ctx);
+
+	remaining = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&conn->fin_timer));
+	zexpect_true(remaining > last_rexmit,
+		     "FIN timer %u ms, last FIN retransmission after %u ms", remaining,
+		     last_rexmit);
+
+	reply = prepare_rst_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port);
+	zassert_not_null(reply, "Failed to prepare RST");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send RST");
+
+	k_msleep(10);
+}
+
+/* Test case scenario IPv4
+ *   connect,
+ *   raise the RTO to the maximum, as a peer that delays its ACKs can,
+ *   close the connection,
+ *   expect the FIN timer limited to CONFIG_NET_TCP_MAX_RTO, not the time of
+ *   all the FIN retransmissions at that RTO.
+ */
+ZTEST(net_tcp, test_client_rtt_fin_timeout_limit)
+{
+	struct net_context *ctx;
+	struct net_pkt *reply;
+	struct tcp *conn;
+	uint32_t remaining;
+
+	ctx = rtt_connect(0U, false);
+	conn = ctx->tcp;
+
+	conn->rto = CONFIG_NET_TCP_MAX_RTO;
+
+	net_context_put(ctx);
+
+	/* The kernel adds one tick to a relative timeout */
+	remaining = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&conn->fin_timer) - 1);
+	zexpect_true(remaining <= CONFIG_NET_TCP_MAX_RTO, "FIN timer %u ms above the maximum RTO",
+		     remaining);
+	zexpect_true(remaining > CONFIG_NET_TCP_MAX_RTO - 1000U,
+		     "FIN timer %u ms does not follow the RTO", remaining);
+
+	reply = prepare_rst_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port);
+	zassert_not_null(reply, "Failed to prepare RST");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send RST");
+
+	k_msleep(10);
+}
+
+/* Send an ACK of ack_seq to the stack */
+static void rtt_inject_ack(uint32_t ack_seq)
+{
+	struct net_pkt *reply;
+
+	ack = ack_seq;
+	reply = prepare_ack_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port);
+	zassert_not_null(reply, "Failed to prepare ACK");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send ACK");
+
+	/* Let the stack process the ACK */
+	k_msleep(5);
+}
+
+/* Test case scenario IPv4
+ *   connect,
+ *   send three segments, the peer answers none,
+ *   expect the first one again after the RTO,
+ *   the peer acknowledges the first one only,
+ *   expect the stack to send the rest again without timing it,
+ *   the peer acknowledges the rest,
+ *   expect no RTT sample (Karn's algorithm) and the backoff kept,
+ *   send new data, expect the sample to end the backoff.
+ */
+ZTEST(net_tcp, test_client_rtt_karn_go_back_n)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+	uint32_t srtt;
+	uint32_t rttvar;
+	int ret;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_TCP_RANDOMIZED_RTO);
+
+	ctx = rtt_connect(0U, false);
+	conn = ctx->tcp;
+	base = conn->seq;
+	srtt = conn->srtt;
+	rttvar = conn->rttvar;
+
+	rtt_hold = true;
+	for (int i = 0; i < 3; i++) {
+		ret = net_context_send(ctx, "A", 1U, NULL, K_NO_WAIT, NULL);
+		zassert_equal(ret, 1, "Failed to send data (%d)", ret);
+	}
+
+	zexpect_true(conn->rtt_pending, "First segment not timed");
+	zexpect_equal(conn->rtt_seq, base + 1U, "Timed segment ends at %u, not %u",
+		      conn->rtt_seq, base + 1U);
+
+	/* The RTO fires and the first segment is sent again */
+	k_msleep(conn->rto + 20U);
+	zexpect_false(conn->rtt_pending, "Sample kept across the RTO");
+	zexpect_equal(conn->rto_backoff, 1U, "Backoff %u after the RTO", conn->rto_backoff);
+
+	/* The ACK of the first segment makes the stack go back to the rest */
+	rtt_inject_ack(base + 1U);
+	zexpect_false(conn->rtt_pending, "Retransmitted data is being timed");
+
+	rtt_inject_ack(base + 3U);
+	zexpect_equal(conn->srtt, srtt, "SRTT changed by retransmitted data");
+	zexpect_equal(conn->rttvar, rttvar, "RTTVAR changed by retransmitted data");
+	zexpect_equal(conn->rto_backoff, 1U, "Backoff %u after the ACK of retransmitted data",
+		      conn->rto_backoff);
+
+	rtt_hold = false;
+	rtt_exchange(ctx, 0U);
+	zexpect_equal(conn->rto_backoff, 0U, "Backoff %u after an RTT sample",
+		      conn->rto_backoff);
+
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect,
+ *   send two segments, the peer answers three duplicate ACKs,
+ *   expect the fast retransmit to cancel the running RTT sample,
+ *   the peer acknowledges everything,
+ *   expect no RTT sample, as the timed segment was sent twice.
+ */
+ZTEST(net_tcp, test_client_rtt_fast_retransmit)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+	uint32_t srtt;
+	uint32_t rttvar;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_TCP_FAST_RETRANSMIT);
+
+	ctx = rtt_connect(0U, false);
+	conn = ctx->tcp;
+	base = conn->seq;
+	srtt = conn->srtt;
+	rttvar = conn->rttvar;
+
+	rtt_hold = true;
+	for (int i = 0; i < 2; i++) {
+		ret = net_context_send(ctx, "A", 1U, NULL, K_NO_WAIT, NULL);
+		zassert_equal(ret, 1, "Failed to send data (%d)", ret);
+	}
+
+	zexpect_true(conn->rtt_pending, "First segment not timed");
+	rtt_segments = 0U;
+
+	for (int i = 0; i < 3; i++) {
+		rtt_inject_ack(base);
+	}
+
+	zexpect_equal(rtt_segments, 1U, "%u segments after three duplicate ACKs", rtt_segments);
+	zexpect_false(conn->rtt_pending, "Sample kept across a fast retransmit");
+
+	rtt_inject_ack(base + 2U);
+	zexpect_equal(conn->srtt, srtt, "SRTT changed by a retransmitted segment");
+	zexpect_equal(conn->rttvar, rttvar, "RTTVAR changed by a retransmitted segment");
+
+	rtt_hold = false;
+	rtt_close(ctx);
 }
 
 static void handle_advertised_recv_window(struct tcphdr *th)

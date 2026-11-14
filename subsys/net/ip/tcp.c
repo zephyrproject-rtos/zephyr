@@ -29,18 +29,12 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include "tcp_internal.h"
 #include "pmtu.h"
 
-#define ACK_TIMEOUT_MS tcp_max_timeout_ms
-#define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
-#define LAST_ACK_TIMEOUT_MS tcp_max_timeout_ms
-#define LAST_ACK_TIMEOUT K_MSEC(LAST_ACK_TIMEOUT_MS)
-#define FIN_TIMEOUT K_MSEC(tcp_max_timeout_ms)
 #define ACK_DELAY K_MSEC(CONFIG_NET_TCP_ACK_DELAY)
 #define ZWP_MAX_DELAY_MS 120000
 #define DUPLICATE_ACK_RETRANSMIT_TRHESHOLD 3
+#define TCP_RTO_SYN_FALLBACK_MS 3000U
 
-static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
-static int tcp_max_timeout_ms;
 static uint32_t tcp_rx_window =
 #if (CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE != 0)
 	CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE;
@@ -62,11 +56,6 @@ static uint32_t tcp_tx_window =
 #else
 	MIN((uint32_t)(CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE / 3), NET_TCP_MAX_WINDOW);
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
-#endif
-#ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
-#define TCP_RTO_MS (conn->rto)
-#else
-#define TCP_RTO_MS (tcp_rto)
 #endif
 
 /* Define the number of MSS sections the congestion window is initialized at */
@@ -534,23 +523,176 @@ out:
 static void tcp_derive_rto(struct tcp *conn)
 {
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
-	/* Compute a randomized rto 1 and 1.5 times tcp_rto */
-	uint32_t gain;
+	/* Pick a gain between 1 and 1.5 for the RTO */
 	uint8_t gain8;
-	uint32_t rto;
 
 	/* Getting random is computational expensive, so only use 8 bits */
 	sys_rand_get(&gain8, sizeof(uint8_t));
 
-	gain = (uint32_t)gain8;
-	gain += 1 << 9;
-
-	rto = (uint32_t)tcp_rto;
-	rto = (gain * rto) >> 9;
-	conn->rto = (uint16_t)rto;
+	conn->rto_gain = (uint16_t)gain8 + (1U << 9);
 #else
 	ARG_UNUSED(conn);
 #endif
+}
+
+/* RTO before the first RTT sample */
+#define TCP_INIT_RTO_MS \
+	((uint32_t)MAX(CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT, CONFIG_NET_TCP_MIN_RTO))
+
+/* Back off an RTO by a factor 1.5 per retransmission, up to the maximum RTO. */
+static uint32_t tcp_rto_backoff(uint32_t rto, uint32_t backoff)
+{
+	uint32_t val = rto;
+
+	for (uint32_t i = 0U; (i < backoff) && (val < CONFIG_NET_TCP_MAX_RTO); i++) {
+		val += val >> 1;
+	}
+
+	return MIN(val, (uint32_t)CONFIG_NET_TCP_MAX_RTO);
+}
+
+/* RTO of the connection with its randomization, backed off the given
+ * number of times.
+ */
+static uint32_t tcp_rto_ms(const struct tcp *conn, uint32_t backoff)
+{
+	uint32_t rto = conn->rto;
+
+#ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
+	rto = (rto * conn->rto_gain) >> 9;
+#endif
+
+	return tcp_rto_backoff(rto, backoff);
+}
+
+/* Current RTO of the connection */
+static uint32_t tcp_cur_rto_ms(const struct tcp *conn)
+{
+	return tcp_rto_ms(conn, conn->rto_backoff);
+}
+
+/* Longest time the retransmissions of a segment can take before the
+ * connection is closed, starting from an RTO and its backoff.
+ */
+static uint32_t tcp_retries_timeout_ms(uint32_t rto, uint32_t backoff)
+{
+	/* The last retransmission waits for one RTO without backoff */
+	uint32_t timeout = rto;
+
+	for (int i = 0; i < tcp_retries; i++) {
+		timeout += tcp_rto_backoff(rto, backoff + (uint32_t)i);
+	}
+
+	/* The randomized RTO is up to 1.5 times larger */
+	if (IS_ENABLED(CONFIG_NET_TCP_RANDOMIZED_RTO)) {
+		timeout += timeout >> 1;
+	}
+
+	return timeout;
+}
+
+/* Longest time the retransmissions of a segment can take before the
+ * connection is closed, starting from the current RTO.
+ */
+static uint32_t tcp_max_timeout_ms(const struct tcp *conn)
+{
+	return tcp_retries_timeout_ms(conn->rto, conn->rto_backoff);
+}
+
+/* Time a connection the application has closed waits for the peer in
+ * FIN_WAIT_1, FIN_WAIT_2 and LAST_ACK. A peer that delays its ACKs can raise
+ * the RTO up to the maximum, so the time is limited to the longer of the
+ * maximum RTO and the time from the initial RTO.
+ */
+static uint32_t tcp_close_timeout_ms(const struct tcp *conn)
+{
+	uint32_t timeout = tcp_max_timeout_ms(conn);
+	uint32_t limit = tcp_retries_timeout_ms(TCP_INIT_RTO_MS, 0U);
+
+	limit = MAX(limit, (uint32_t)CONFIG_NET_TCP_MAX_RTO);
+
+	return MIN(timeout, limit);
+}
+
+/* Update SRTT, RTTVAR and the RTO from an RTT sample (RFC 6298, section 2) */
+static void tcp_rtt_update(struct tcp *conn, uint32_t sample)
+{
+	uint32_t rtt = MIN(sample, (uint32_t)CONFIG_NET_TCP_MAX_RTO);
+	/* Clock granularity G: one kernel tick */
+	uint32_t granularity = k_ticks_to_ms_ceil32(1U);
+	uint32_t rto;
+
+	granularity = MAX(granularity, 1U);
+
+	if (!conn->rtt_sampled) {
+		/* SRTT <- R, RTTVAR <- R/2 */
+		conn->srtt = rtt << 3;
+		conn->rttvar = rtt << 1;
+		conn->rtt_sampled = true;
+	} else {
+		/* RTTVAR <- 3/4 * RTTVAR + 1/4 * |SRTT - R'|, with the SRTT
+		 * before this sample, then SRTT <- 7/8 * SRTT + 1/8 * R'.
+		 */
+		uint32_t srtt = conn->srtt >> 3;
+		uint32_t delta = (rtt > srtt) ? (rtt - srtt) : (srtt - rtt);
+
+		conn->rttvar = conn->rttvar - (conn->rttvar >> 2) + delta;
+		conn->srtt = conn->srtt - (conn->srtt >> 3) + rtt;
+	}
+
+	/* RTO <- SRTT + max(G, 4 * RTTVAR). A valid sample ends the backoff
+	 * (RFC 6298, section 5).
+	 */
+	rto = (conn->srtt >> 3) + MAX(granularity, conn->rttvar);
+	conn->rto = CLAMP(rto, (uint32_t)CONFIG_NET_TCP_MIN_RTO, (uint32_t)CONFIG_NET_TCP_MAX_RTO);
+	conn->rto_backoff = 0U;
+
+	NET_DBG("[%p] rtt=%u srtt=%u rttvar=%u rto=%u", conn, rtt, conn->srtt >> 3,
+		conn->rttvar >> 2, conn->rto);
+}
+
+/* Time a segment ending at end_seq, unless one is being timed already */
+static void tcp_rtt_start(struct tcp *conn, uint32_t end_seq)
+{
+	if (!conn->rtt_pending) {
+		conn->rtt_seq = end_seq;
+		conn->rtt_time = k_uptime_get_32();
+		conn->rtt_pending = true;
+	}
+}
+
+/* Take the RTT sample when the ACK covers the segment being timed */
+static void tcp_rtt_ack(struct tcp *conn, uint32_t ack)
+{
+	if (conn->rtt_pending && (net_tcp_seq_cmp(ack, conn->rtt_seq) >= 0)) {
+		conn->rtt_pending = false;
+		tcp_rtt_update(conn, k_uptime_get_32() - conn->rtt_time);
+	}
+}
+
+/* Karn's algorithm: an ACK received after a retransmission gives no RTT
+ * sample (RFC 6298, section 3).
+ */
+static void tcp_rtt_cancel(struct tcp *conn)
+{
+	conn->rtt_pending = false;
+}
+
+/* Take the RTT sample of the handshake when the ACK of the SYN or SYN-ACK
+ * arrives. If the SYN or SYN-ACK was retransmitted there is no sample, and
+ * the data starts with an RTO of at least 3 seconds (RFC 6298, rule 5.7).
+ */
+static void tcp_rtt_handshake_ack(struct tcp *conn, uint32_t ack)
+{
+	tcp_rtt_ack(conn, ack);
+
+	if ((conn->send_data_retries > 0U) && !conn->rtt_sampled) {
+		uint32_t rto = tcp_rto_backoff(conn->rto, conn->rto_backoff);
+
+		/* A backoff beyond 3 seconds is kept */
+		conn->rto = MAX(rto, TCP_RTO_SYN_FALLBACK_MS);
+		conn->rto_backoff = 0U;
+	}
 }
 
 #ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
@@ -2151,12 +2293,14 @@ static int tcp_unsent_len(struct tcp *conn)
 static void tcp_setup_retransmission(struct tcp *conn)
 {
 	conn->send_data_retries = 0;
-	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer, K_MSEC(TCP_RTO_MS));
+	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer,
+				    K_MSEC(tcp_cur_rto_ms(conn)));
 }
 
 static int tcp_send_data(struct tcp *conn)
 {
 	int ret = 0;
+	uint32_t seq;
 	int len;
 
 	len = MIN(tcp_unsent_len(conn), conn_mss(conn) - tcp_send_options_len(conn));
@@ -2170,9 +2314,22 @@ static int tcp_send_data(struct tcp *conn)
 		goto out;
 	}
 
-	ret = tcp_out_ext(conn, PSH | ACK, (size_t)len, conn->seq + conn->unacked_len);
+	seq = conn->seq + (uint32_t)conn->unacked_len;
+	ret = tcp_out_ext(conn, PSH | ACK, (size_t)len, seq);
 	if (ret == 0) {
+		uint32_t end_seq = seq + (uint32_t)len;
+
 		conn->unacked_len += len;
+
+		/* Time one segment of new data at a time. Data below send_max
+		 * was sent before, so it is never timed (Karn's algorithm).
+		 */
+		if (net_tcp_seq_cmp(seq, conn->send_max) >= 0) {
+			tcp_rtt_start(conn, end_seq);
+		}
+		if (net_tcp_seq_cmp(end_seq, conn->send_max) > 0) {
+			conn->send_max = end_seq;
+		}
 
 		if (conn->data_mode == TCP_DATA_MODE_RESEND) {
 			net_stats_update_tcp_resent(conn->iface, len);
@@ -2261,8 +2418,8 @@ static void tcp_resend_data(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, send_data_timer);
 	bool conn_unref = false;
+	uint32_t timeout;
 	int ret;
-	int exp_tcp_rto;
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
@@ -2274,6 +2431,8 @@ static void tcp_resend_data(struct k_work *work)
 		conn_unref = true;
 		goto out;
 	}
+
+	tcp_rtt_cancel(conn);
 
 	switch (conn->state) {
 	case TCP_SYN_SENT:
@@ -2315,17 +2474,21 @@ static void tcp_resend_data(struct k_work *work)
 
 	conn->send_data_retries++;
 
-	exp_tcp_rto = TCP_RTO_MS;
 	/* The last retransmit does not need to wait that long */
 	if (conn->send_data_retries < tcp_retries) {
-		/* Every retransmit, the retransmission timeout increases by a factor 1.5 */
-		for (int i = 0; i < conn->send_data_retries; i++) {
-			exp_tcp_rto += exp_tcp_rto >> 1;
+		/* Every retransmit backs off the RTO. The backoff is kept until
+		 * the next RTT sample, so an ACK of the retransmitted data does
+		 * not bring the RTO back down.
+		 */
+		if (conn->rto_backoff < UINT8_MAX) {
+			conn->rto_backoff++;
 		}
+		timeout = tcp_cur_rto_ms(conn);
+	} else {
+		timeout = tcp_rto_ms(conn, 0U);
 	}
 
-	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer,
-				    K_MSEC(exp_tcp_rto));
+	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer, K_MSEC(timeout));
 
  out:
 	k_mutex_unlock(&conn->lock);
@@ -2348,7 +2511,7 @@ static void tcp_timewait_timeout(struct k_work *work)
 
 static void tcp_establish_timeout(struct tcp *conn)
 {
-	NET_DBG("[%p] Did not receive %s in %dms", conn, "ACK", ACK_TIMEOUT_MS);
+	NET_DBG("[%p] Did not receive %s in time", conn, "ACK");
 	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
@@ -2365,7 +2528,7 @@ static void tcp_fin_timeout(struct k_work *work)
 		return;
 	}
 
-	NET_DBG("[%p] Did not receive %s in %dms", conn, "FIN", tcp_max_timeout_ms);
+	NET_DBG("[%p] Did not receive %s in time", conn, "FIN");
 	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
@@ -2398,7 +2561,7 @@ static void tcp_last_ack_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, fin_timer);
 
-	NET_DBG("[%p] Did not receive %s in %dms", conn, "last ACK", LAST_ACK_TIMEOUT_MS);
+	NET_DBG("[%p] Did not receive %s in time", conn, "last ACK");
 	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
@@ -2406,6 +2569,8 @@ static void tcp_last_ack_timeout(struct k_work *work)
 
 static void tcp_setup_last_ack_timer(struct tcp *conn)
 {
+	uint32_t timeout = tcp_close_timeout_ms(conn);
+
 	/* Just in case the last ack is lost, install a timer that will
 	 * close the connection in that case. Use the fin_timer for that
 	 * as the fin handling cannot be done in this passive close state.
@@ -2414,12 +2579,12 @@ static void tcp_setup_last_ack_timer(struct tcp *conn)
 	 */
 	k_work_init_delayable(&conn->fin_timer, tcp_last_ack_timeout);
 
-	NET_DBG("[%p] TCP connection in %s close, not disposing yet (waiting %dms)",
-		conn, "passive", LAST_ACK_TIMEOUT_MS);
+	NET_DBG("[%p] TCP connection in %s close, not disposing yet (waiting %ums)",
+		conn, "passive", timeout);
 
 	k_work_reschedule_for_queue(&tcp_work_q,
 				    &conn->fin_timer,
-				    LAST_ACK_TIMEOUT);
+				    K_MSEC(timeout));
 }
 
 static void tcp_cancel_last_ack_timer(struct tcp *conn)
@@ -2473,7 +2638,7 @@ static void tcp_send_zwp(struct k_work *work)
 	tcp_derive_rto(conn);
 
 	if (conn->send_win == 0) {
-		uint64_t timeout = TCP_RTO_MS;
+		uint64_t timeout = tcp_cur_rto_ms(conn);
 
 		/* Make sure the bitwise shift does not result in undefined behaviour */
 		if (conn->zwp_retries < 63) {
@@ -2541,6 +2706,8 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->send_win = conn->send_win_max;
 	conn->tcp_nodelay = false;
 	conn->addr_ref_done = false;
+	conn->rto = TCP_INIT_RTO_MS;
+	tcp_derive_rto(conn);
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 	conn->dup_ack_cnt = 0;
 #endif
@@ -3507,7 +3674,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		if (!k_work_delayable_is_pending(&conn->persist_timer)) {
 			conn->zwp_retries = 0;
 			(void)k_work_reschedule_for_queue(&tcp_work_q, &conn->persist_timer,
-							  K_MSEC(TCP_RTO_MS));
+							  K_MSEC(tcp_cur_rto_ms(conn)));
 		}
 	} else {
 		(void)k_work_cancel_delayable(&conn->persist_timer);
@@ -3538,6 +3705,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			tcp_win_scale_negotiate(conn);
 			(void)tcp_out_syn(conn, SYN | ACK, conn->seq);
 			conn_seq(conn, + 1);
+			tcp_rtt_start(conn, conn->seq);
 			next = TCP_SYN_RECEIVED;
 
 			tcp_setup_retransmission(conn);
@@ -3546,7 +3714,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			 */
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->establish_timer,
-						    ACK_TIMEOUT);
+						    K_MSEC(tcp_max_timeout_ms(conn)));
 			verdict = NET_OK;
 		} else {
 			k_mutex_unlock(&conn->lock);
@@ -3566,6 +3734,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 
 			k_work_cancel_delayable(&conn->establish_timer);
 			k_work_cancel_delayable(&conn->send_data_timer);
+			tcp_rtt_handshake_ack(conn, th_ack(th));
 			tcp_conn_ref(conn);
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
@@ -3632,6 +3801,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				  0, context->user_data);
 
 			next = TCP_ESTABLISHED;
+			conn->send_max = conn->seq;
 
 			tcp_ca_init(conn);
 
@@ -3661,6 +3831,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		 */
 		if (FL(&fl, &, SYN | ACK, th && th_ack(th) == conn->seq)) {
 			k_work_cancel_delayable(&conn->send_data_timer);
+			tcp_rtt_handshake_ack(conn, th_ack(th));
 			/* We offered SACK in the SYN; the peer agreed if it
 			 * came back in the SYN-ACK.
 			 */
@@ -3682,6 +3853,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			}
 
 			next = TCP_ESTABLISHED;
+			conn->send_max = conn->seq;
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
 			tcp_ca_init(conn);
@@ -3738,6 +3910,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				conn->unacked_len = 0;
 
 				(void)tcp_send_data(conn);
+				tcp_rtt_cancel(conn);
 
 				/* Restore the current transmission */
 				conn->unacked_len = temp_unacked_len;
@@ -3776,6 +3949,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			/* New segment, reset duplicate ack counter */
 			conn->dup_ack_cnt = 0;
 #endif
+			tcp_rtt_ack(conn, th_ack(th));
 			tcp_ca_pkts_acked(conn, len_acked);
 
 			conn->send_data_total -= len_acked;
@@ -3822,9 +3996,9 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				} else {
 					/* Otherwise, wait for FIN in TCP_FIN_WAIT_1 */
 					next = TCP_FIN_WAIT_1;
-					k_work_reschedule_for_queue(&tcp_work_q,
-								    &conn->fin_timer,
-								    FIN_TIMEOUT);
+					k_work_reschedule_for_queue(
+						&tcp_work_q, &conn->fin_timer,
+						K_MSEC(tcp_close_timeout_ms(conn)));
 				}
 
 				tcp_out(conn, FIN | ACK);
@@ -4241,15 +4415,17 @@ int net_tcp_put(struct net_context *context, bool force_close)
 			/* How long to wait until all the data has been sent? */
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->send_data_timer,
-						    K_MSEC(TCP_RTO_MS));
+						    K_MSEC(tcp_cur_rto_ms(conn)));
 
 		} else {
+			uint32_t timeout = tcp_close_timeout_ms(conn);
+
 			NET_DBG("[%p] TCP connection in %s close, "
-				"not disposing yet (waiting %dms)",
-				conn, "active", tcp_max_timeout_ms);
+				"not disposing yet (waiting %ums)",
+				conn, "active", timeout);
 			k_work_reschedule_for_queue(&tcp_work_q,
 							&conn->fin_timer,
-							FIN_TIMEOUT);
+							K_MSEC(timeout));
 
 			tcp_out(conn, FIN | ACK);
 			conn_seq(conn, + 1);
@@ -4437,6 +4613,7 @@ static int tcp_start_handshake(struct tcp *conn)
 	tcp_setup_retransmission(conn);
 
 	conn_seq(conn, + 1);
+	tcp_rtt_start(conn, conn->seq);
 	conn_state(conn, TCP_SYN_SENT);
 	tcp_conn_ref(conn);
 	k_mutex_unlock(&conn->lock);
@@ -4860,6 +5037,11 @@ static uint16_t get_ipv4_destination_mtu(struct net_if *iface,
 #endif /* CONFIG_NET_IPV4_PMTU */
 }
 
+uint32_t net_tcp_get_rto(const struct tcp *conn)
+{
+	return tcp_cur_rto_ms(conn);
+}
+
 uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 {
 	net_sa_family_t family = net_context_get_family(conn->context);
@@ -5134,9 +5316,6 @@ void net_tcp_close_all_for_iface(struct net_if *iface)
 
 void net_tcp_init(void)
 {
-	int i;
-	int rto;
-
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NET_TCP_WORKER_PRIO)
 #else
@@ -5148,21 +5327,6 @@ void net_tcp_init(void)
 	k_work_queue_start(&tcp_work_q, work_q_stack,
 			   K_KERNEL_STACK_SIZEOF(work_q_stack), THREAD_PRIORITY,
 			   NULL);
-
-	/* Compute the largest possible retransmission timeout */
-	tcp_max_timeout_ms = 0;
-	rto = tcp_rto;
-	for (i = 0; i < tcp_retries; i++) {
-		tcp_max_timeout_ms += rto;
-		rto += rto >> 1;
-	}
-	/* At the last timeout cycle */
-	tcp_max_timeout_ms += tcp_rto;
-
-	/* When CONFIG_NET_TCP_RANDOMIZED_RTO is active in can be worse case 1.5 times larger */
-	if (IS_ENABLED(CONFIG_NET_TCP_RANDOMIZED_RTO)) {
-		tcp_max_timeout_ms += tcp_max_timeout_ms >> 1;
-	}
 
 	k_thread_name_set(tcp_work_q.thread_id, "tcp_work");
 	NET_DBG("Workq started. Thread ID: %p", tcp_work_q.thread_id);
