@@ -6,3 +6,14 @@ tests:
     filter: dt_alias_exists("dmic0")
     integration_platforms:
       - mimxrt595_evk/mimxrt595s/cm33
+
+  drivers.audio.dmic_api.nrf_clock_control_legacy:
+    depends_on: dmic
+    tags: dmic
+    harness: ztest
+    filter: dt_alias_exists("dmic0") and dt_compat_enabled("nordic,nrf-clock")
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_WARN_DEPRECATED=n
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
