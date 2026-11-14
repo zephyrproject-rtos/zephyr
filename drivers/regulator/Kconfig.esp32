@@ -15,4 +15,4 @@ config REGULATOR_ESP32_INIT_PRIORITY
 	depends on REGULATOR_ESP32
 	help
 	  Init priority for the Espressif regulator driver.
-	  Must be lower than consumers such as PSRAM/MEMC drivers.
+	  Must be lower than the init priority of its consumers.
