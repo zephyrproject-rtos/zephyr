@@ -17,3 +17,14 @@ tests:
   net.stun.no_ipv6:
     extra_configs:
       - CONFIG_NET_IPV6=n
+  net.stun.no_client:
+    extra_configs:
+      - CONFIG_STUN_CLIENT=n
+  net.stun.binding_single_transmit:
+    extra_configs:
+      - CONFIG_STUN_BINDING_MAX_TRANSMITS=1
+  net.stun.binding_short_schedule:
+    extra_configs:
+      - CONFIG_STUN_BINDING_RTO_MS=1000
+      - CONFIG_STUN_BINDING_MAX_TRANSMITS=3
+      - CONFIG_STUN_BINDING_FINAL_WAIT_RTO=5
