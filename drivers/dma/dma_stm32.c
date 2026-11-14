@@ -396,38 +396,6 @@ static void dma_stm32_clear_stream_irq(const struct device *dev, uint32_t id)
 	stm32_dma_clear_stream_irq(dma, id);
 }
 
-static void dma_stm32_enable_stream_irq(const struct device *dev, uint32_t id)
-{
-	const struct dma_stm32_config *config = dev->config;
-	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-	struct dma_stm32_stream *stream = &config->streams[id];
-	uint32_t stream_nr = dma_stm32_id_to_stream(id);
-
-	/* Always enable the transfer error interrupt */
-	LL_DMA_EnableIT_TE(dma, stream_nr);
-
-	/* Enable transfer complete ISR if in non-cyclic mode or a callback is requested */
-	if (!stream->cyclic || stream->dma_callback != NULL) {
-		LL_DMA_EnableIT_TC(dma, stream_nr);
-	}
-
-	/* Enable Half-Transfer irq if circular mode is enabled and a callback is requested */
-	if (stream->cyclic && stream->dma_callback != NULL) {
-		LL_DMA_EnableIT_HT(dma, stream_nr);
-	}
-}
-
-static void dma_stm32_disable_stream_irq(const struct device *dev, uint32_t id)
-{
-	const struct dma_stm32_config *config = dev->config;
-	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-	uint32_t stream_nr = dma_stm32_id_to_stream(id);
-
-	LL_DMA_DisableIT_TE(dma, stream_nr);
-	LL_DMA_DisableIT_TC(dma, stream_nr);
-	LL_DMA_DisableIT_HT(dma, stream_nr);
-}
-
 static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
@@ -944,6 +912,7 @@ static int dma_stm32_start(const struct device *dev, uint32_t id)
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
+	uint32_t irqs;
 
 	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
@@ -962,9 +931,21 @@ static int dma_stm32_start(const struct device *dev, uint32_t id)
 	stream = &config->streams[id];
 	stream->busy = true;
 
+	/* Always enable the transfer error interrupt */
+	irqs = STM32_DMA_CR_TEIE;
+
+	/* Enable transfer complete ISR if in non-cyclic mode or a callback is requested */
+	if (!stream->cyclic || stream->dma_callback != NULL) {
+		irqs |= STM32_DMA_CR_TCIE;
+	}
+
+	/* Enable Half-Transfer irq if circular mode is enabled and a callback is requested */
+	if (stream->cyclic && stream->dma_callback != NULL) {
+		irqs |= STM32_DMA_CR_HTIE;
+	}
+
 	dma_stm32_clear_stream_irq(dev, id);
-	dma_stm32_enable_stream_irq(dev, id);
-	stm32_dma_enable_stream(dma, id);
+	stm32_dma_enable_stream(dma, id, irqs);
 
 	return 0;
 }
@@ -989,13 +970,9 @@ static int dma_stm32_stop(const struct device *dev, uint32_t id)
 		return 0;
 	}
 
-	dma_stm32_disable_stream_irq(dev, id);
+	/* Masks the interrupts in the same write that disables the stream */
+	dma_stm32_disable_stream(dma, id);
 	dma_stm32_clear_stream_irq(dev, id);
-
-	/* The stream may have disabled itself already when its transfer completed */
-	if (stm32_dma_is_enabled_stream(dma, id)) {
-		dma_stm32_disable_stream(dma, id);
-	}
 
 	/* Finally, flag stream as free */
 	stream->busy = false;

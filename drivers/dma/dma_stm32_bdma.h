@@ -70,7 +70,7 @@ bool stm32_bdma_is_tc_irq_active(BDMA_TypeDef *ma, uint32_t id);
 void stm32_bdma_dump_channel_irq(BDMA_TypeDef *dma, uint32_t id);
 void stm32_bdma_clear_channel_irq(BDMA_TypeDef *dma, uint32_t id);
 bool stm32_bdma_is_irq_happened(BDMA_TypeDef *dma, uint32_t id);
-void stm32_bdma_enable_channel(BDMA_TypeDef *dma, uint32_t id);
+void stm32_bdma_enable_channel(BDMA_TypeDef *dma, uint32_t id, uint32_t irqs);
 int stm32_bdma_disable_channel(BDMA_TypeDef *dma, uint32_t id);
 
 #endif /* BDMA_STM32_H_*/

@@ -86,6 +86,22 @@ bool dma_stm32_is_gi_active(DMA_TypeDef *DMAx, uint32_t id);
 void dma_stm32_clear_gi(DMA_TypeDef *DMAx, uint32_t id);
 #endif
 
+#if defined(CONFIG_DMA_STM32_V1)
+#define STM32_DMA_CR_EN   DMA_SxCR_EN
+#define STM32_DMA_CR_TCIE DMA_SxCR_TCIE
+#define STM32_DMA_CR_HTIE DMA_SxCR_HTIE
+#define STM32_DMA_CR_TEIE DMA_SxCR_TEIE
+#elif defined(CONFIG_DMA_STM32_V2)
+#define STM32_DMA_CR_EN   DMA_CCR_EN
+#define STM32_DMA_CR_TCIE DMA_CCR_TCIE
+#define STM32_DMA_CR_HTIE DMA_CCR_HTIE
+#define STM32_DMA_CR_TEIE DMA_CCR_TEIE
+#endif
+
+#if defined(CONFIG_DMA_STM32_V1) || defined(CONFIG_DMA_STM32_V2)
+#define STM32_DMA_CR_IRQ_MASK (STM32_DMA_CR_TCIE | STM32_DMA_CR_HTIE | STM32_DMA_CR_TEIE)
+#endif
+
 bool stm32_dma_is_irq_active(DMA_TypeDef *dma, uint32_t id);
 bool stm32_dma_is_ht_irq_active(DMA_TypeDef *dma, uint32_t id);
 bool stm32_dma_is_tc_irq_active(DMA_TypeDef *dma, uint32_t id);
@@ -94,7 +110,7 @@ void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, uint32_t id);
 void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, uint32_t id);
 bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, uint32_t id);
 bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, uint32_t id);
-void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id);
+void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id, uint32_t irqs);
 bool stm32_dma_is_enabled_stream(DMA_TypeDef *dma, uint32_t id);
 int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id);
 

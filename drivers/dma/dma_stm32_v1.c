@@ -314,9 +314,16 @@ bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, uint32_t id)
 	return false;
 }
 
-void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id)
+static inline DMA_Stream_TypeDef *stm32_dma_get_stream(DMA_TypeDef *dma, uint32_t id)
 {
-	LL_DMA_EnableStream(dma, dma_stm32_id_to_stream(id));
+	return (DMA_Stream_TypeDef *)((uintptr_t)dma + (DMA1_Stream0_BASE - DMA1_BASE) +
+				      id * (DMA1_Stream1_BASE - DMA1_Stream0_BASE));
+}
+
+void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id, uint32_t irqs)
+{
+	MODIFY_REG(stm32_dma_get_stream(dma, id)->CR, STM32_DMA_CR_IRQ_MASK,
+		   irqs | STM32_DMA_CR_EN);
 }
 
 bool stm32_dma_is_enabled_stream(DMA_TypeDef *dma, uint32_t id)
@@ -329,7 +336,7 @@ bool stm32_dma_is_enabled_stream(DMA_TypeDef *dma, uint32_t id)
 
 int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id)
 {
-	LL_DMA_DisableStream(dma, dma_stm32_id_to_stream(id));
+	CLEAR_BIT(stm32_dma_get_stream(dma, id)->CR, STM32_DMA_CR_IRQ_MASK | STM32_DMA_CR_EN);
 
 	while (stm32_dma_is_enabled_stream(dma, id)) {
 	}
