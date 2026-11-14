@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_GYRO_2_CLICK_I2C
+	def_bool $(shields_list_contains,mikroe_gyro_2_click_i2c)
+
+config SHIELD_MIKROE_GYRO_2_CLICK_SPI
+	def_bool $(shields_list_contains,mikroe_gyro_2_click_spi)

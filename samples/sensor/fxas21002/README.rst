@@ -14,12 +14,22 @@ Building and Running
 ********************
 
 This project outputs sensor data to the console. It requires an fxas21002
-sensor, which is present on the :zephyr:board:`hexiwear` board. It does not
-work on QEMU.
+sensor. The driver selects the bus from devicetree. It does not work on QEMU.
+
+The sensor is on I2C on the :zephyr:board:`hexiwear` board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxas21002
    :board: hexiwear/mk64f12
+   :goals: build
+   :compact:
+
+On a board with a mikroBUS socket, use :ref:`mikroe_gyro_2_click_shield`:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/fxas21002
+   :board: balletto_b1_dk/ab1c1f4m51820ph0
+   :shield: mikroe_gyro_2_click_i2c
    :goals: build
    :compact:
 

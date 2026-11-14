@@ -98,6 +98,8 @@ struct fxas21002_config {
 	struct gpio_dt_spec int_gpio;
 #endif
 	struct gpio_dt_spec reset_gpio;
+	struct gpio_dt_spec bus_mode;
+	struct gpio_dt_spec spi_cs;
 	uint8_t whoami;
 	enum fxas21002_range range;
 	uint8_t dr;
@@ -125,6 +127,8 @@ struct fxas21002_data {
 
 int fxas21002_get_power(const struct device *dev, enum fxas21002_power *power);
 int fxas21002_set_power(const struct device *dev, enum fxas21002_power power);
+
+uint32_t fxas21002_get_sample_period(uint8_t dr);
 
 uint32_t fxas21002_get_transition_time(enum fxas21002_power start,
 				       enum fxas21002_power end,

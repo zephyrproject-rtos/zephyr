@@ -1,0 +1,12 @@
+shields:
+  - name: mikroe_gyro_2_click_i2c
+    full_name: Gyro 2 Click (I2C)
+    vendor: mikroe
+    supported_features:
+      - sensor
+
+  - name: mikroe_gyro_2_click_spi
+    full_name: Gyro 2 Click (SPI)
+    vendor: mikroe
+    supported_features:
+      - sensor
