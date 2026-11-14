@@ -35,3 +35,14 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_u575zi_q
+  drivers.dma.stm32_bdma_only.loop_transfer:
+    depends_on: dma
+    tags:
+      - drivers
+      - dma
+    filter: dt_nodelabel_enabled("tst_dma0")
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/stm32h7_bdma_only.overlay"
+      - EXTRA_CONF_FILE="boards/stm32h7_bdma_only.conf"
+    platform_allow:
+      - nucleo_h743zi
