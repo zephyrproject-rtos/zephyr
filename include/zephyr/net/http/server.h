@@ -92,8 +92,14 @@ struct http_resource_detail {
 	/** Resource type. */
 	enum http_resource_type type;
 
-	/** Length of the URL path. */
-	int path_len;
+	/**
+	 * Length of the URL path.
+	 *
+	 * @deprecated No longer written or read by the server. Dynamic resource
+	 * handlers get the request parameters in the data of the
+	 * struct http_request_ctx passed to their first callback.
+	 */
+	int path_len __deprecated;
 
 	/** Content encoding of the resource. */
 	const char *content_encoding;

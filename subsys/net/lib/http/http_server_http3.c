@@ -1293,7 +1293,6 @@ static int h3_handle_static_fs_resource(
 		.bitmask_of_supported_http_methods =
 			static_fs_detail->common.bitmask_of_supported_http_methods,
 		.content_type = content_type,
-		.path_len = static_fs_detail->common.path_len,
 		.type = static_fs_detail->common.type,
 	};
 	size_t file_size;
@@ -1470,14 +1469,8 @@ static int h3_dynamic_get_del_opts(
 	struct http_header_capture_ctx *request_headers_ctx = NULL;
 	bool *headers_sent;
 
-	if (dynamic_detail->common.path_len >= sizeof(client->url_buffer) ||
-	    dynamic_detail->common.path_len < 0) {
-		LOG_DBG("[%p] H3: path length %d out of limits", client,
-			dynamic_detail->common.path_len);
-		return -EINVAL;
-	}
-
-	ptr = (char *)&client->url_buffer[dynamic_detail->common.path_len];
+	ptr = (char *)&client->url_buffer[http_server_path_len_without_query(
+		(const char *)client->url_buffer)];
 	len = strlen(ptr);
 	status = HTTP_SERVER_REQUEST_DATA_FINAL;
 	stream = h3_stream_ctx(client);
