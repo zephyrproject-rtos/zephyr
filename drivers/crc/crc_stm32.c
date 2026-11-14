@@ -207,8 +207,11 @@ static int crc_stm32_update(const struct device *dev, struct crc_ctx *ctx, const
 
 		ret = dma_reload(config->dmac, config->dma_channel,
 			(uintptr_t)buffer, (uintptr_t)&config->base->DR, bufsize);
+		if (ret == 0) {
+			ret = dma_start(config->dmac, config->dma_channel);
+		}
 		if (ret != 0) {
-			LOG_ERR("dma_reload() failed: %d", ret);
+			LOG_ERR("DMA transfer start failed: %d", ret);
 			return ret;
 		}
 
@@ -283,7 +286,7 @@ static int crc_stm32_init(const struct device *dev)
 	/*
 	 * source/destination address parameters are
 	 * irrelevant as they will be overwritten when
-	 * we call dma_reload() to start the transfer
+	 * we call dma_reload() before starting the transfer
 	 *
 	 * On the other hand, adjustment options are
 	 * loaded upon config() and must be valid.
