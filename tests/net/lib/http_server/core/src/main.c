@@ -68,6 +68,17 @@ BUILD_ASSERT(sizeof(long_payload) - 1 > CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE,
 	0x00, 0x03, 0x00, 0x00, 0x00, 0x64, 0x00, 0x04, 0x00, 0x00, 0xff, 0xff
 #define TEST_HTTP2_SETTINGS_ACK \
 	0x00, 0x00, 0x00, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00
+#define TEST_HTTP2_PING_PAYLOAD \
+	0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08
+#define TEST_HTTP2_PING \
+	0x00, 0x00, 0x08, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, \
+	TEST_HTTP2_PING_PAYLOAD
+#define TEST_HTTP2_PING_ACK \
+	0x00, 0x00, 0x08, 0x06, 0x01, 0x00, 0x00, 0x00, 0x00, \
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+#define TEST_HTTP2_PING_SHORT \
+	0x00, 0x00, 0x04, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, \
+	0x01, 0x02, 0x03, 0x04
 #define TEST_HTTP2_GOAWAY \
 	0x00, 0x00, 0x08, 0x07, 0x00, 0x00, 0x00, 0x00, \
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -1107,6 +1118,81 @@ static void expect_http2_window_update_frame(size_t *offset, int stream_id)
 	/* Consume window update payload */
 	test_read_data(offset, frame.length);
 	test_consume_data(offset, frame.length);
+}
+
+static void expect_http2_ping_ack_frame(size_t *offset, const uint8_t *payload)
+{
+	struct http2_frame frame;
+
+	test_get_frame_header(offset, &frame);
+
+	zassert_equal(frame.type, HTTP2_PING_FRAME, "Expected ping frame");
+	zassert_equal(frame.stream_identifier, 0, "Ping frame stream ID must be 0");
+	zassert_equal(frame.flags, HTTP2_FLAG_PING_ACK, "Expected ping ACK flag");
+	zassert_equal(frame.length, HTTP2_PING_FRAME_LEN, "Invalid ping frame length");
+
+	test_read_data(offset, frame.length);
+	zassert_mem_equal(buf, payload, frame.length, "Unexpected ping payload");
+	test_consume_data(offset, frame.length);
+}
+
+ZTEST(server_function_tests, test_http2_ping)
+{
+	/* A PING is acknowledged with its own payload, an acknowledgment is
+	 * not answered, and the connection goes on with the next request.
+	 */
+	static const uint8_t request_ping_get[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_PING,
+		TEST_HTTP2_PING_ACK,
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	static const uint8_t ping_payload[] = {
+		TEST_HTTP2_PING_PAYLOAD,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_ping_get, sizeof(request_ping_get), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_ping_ack_frame(&offset, ping_payload);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_PAYLOAD,
+				strlen(TEST_STATIC_PAYLOAD), HTTP2_FLAG_END_STREAM);
+}
+
+ZTEST(server_function_tests, test_http2_ping_invalid_length)
+{
+	/* A PING whose payload is not 8 bytes long is a connection error. */
+	static const uint8_t request_ping_short[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_PING_SHORT,
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_ping_short, sizeof(request_ping_short), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+
+	/* Nothing is answered, the connection is closed. */
+	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+	zassert_equal(ret, 0, "Connection should've been closed (%d)", ret);
 }
 
 ZTEST(server_function_tests, test_http2_get_concurrent_streams)
