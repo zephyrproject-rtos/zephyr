@@ -1270,6 +1270,17 @@ static struct lll_event *is_yield_to_pending(struct lll_sync_iso *lll)
  * events that have no subevent remaining, these complete without radio use and generate
  * their done events.
  */
+/* Check if a prepare in the pipeline expires after another, refer to lll_prepare_resolve() */
+static bool is_expire_after(const struct lll_event *e, const struct lll_event *e_other)
+{
+	uint32_t ticks_diff;
+
+	ticks_diff = ticker_ticks_diff_get(e->prepare_param.ticks_at_expire,
+					   e_other->prepare_param.ticks_at_expire);
+
+	return (ticks_diff != 0U) && ((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U);
+}
+
 static void yield_dequeue_first_set(struct lll_event *e)
 {
 	struct lll_event *iter;
@@ -1278,12 +1289,16 @@ static void yield_dequeue_first_set(struct lll_event *e)
 
 	ull_prepare_dequeue_first_set(e);
 
-	/* Iterator is at the next prepare, hence the prepare iterated can be moved */
+	/* Iterator is at the next prepare, hence the prepare iterated can be moved. A prepare
+	 * expiring after the one yielded to is not moved, lll_prepare_resolve() would enqueue it
+	 * back behind the earlier ready prepare, and a deferred prepare would then not be
+	 * dispatched until the next prepare or done.
+	 */
 	idx = NULL;
 	ticks_now = ticker_ticks_now_get();
 	while ((iter = ull_prepare_dequeue_iter(&idx)) != NULL) {
 		if ((iter != e) && (iter->is_aborted == 0U) && (iter->is_resume == 0U) &&
-		    is_pending_done(iter, ticks_now)) {
+		    !is_expire_after(iter, e) && is_pending_done(iter, ticks_now)) {
 			ull_prepare_dequeue_first_set(iter);
 		}
 
