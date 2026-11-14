@@ -71,6 +71,8 @@ Libraries / Subsystems
 
 * Networking
 
+  * Applications can listen for :c:macro:`NET_EVENT_IF_ATTACHMENT_CHANGED` to
+    detect a change of network attachment while a link remains usable.
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client
     automatically from the M and O flags of received Router Advertisements, in
     stateful mode with the M flag and in stateless mode (Information-request
