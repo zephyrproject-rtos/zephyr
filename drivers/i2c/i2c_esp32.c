@@ -459,6 +459,9 @@ static int IRAM_ATTR i2c_esp32_transmit(const struct device *dev)
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	int ret = 0;
 
+	/* Drop a give left by an ISR that fired after an earlier timeout */
+	k_sem_reset(&data->cmd_sem);
+
 	/* Start transmission*/
 	i2c_ll_update(data->hal.dev);
 	i2c_ll_start_trans(data->hal.dev);
