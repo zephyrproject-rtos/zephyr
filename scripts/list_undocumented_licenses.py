@@ -82,7 +82,7 @@ def documented_exceptions(project: Project) -> list[AnnotationsItem]:
     An annotation is a documented exception when it has an explicitly set ``Zephyr-Description``
     and ``SPDX-FileComment`` justification..
     """
-    toml = ReuseTOML.from_file(project.root / "REUSE.toml")
+    toml = ReuseTOML.from_file(project.root / "REUSE.toml", project.root)
     return [item for item in toml.annotations if MARKER_KEY in item.custom_properties]
 
 
