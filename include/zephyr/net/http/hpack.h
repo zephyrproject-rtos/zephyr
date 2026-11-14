@@ -99,6 +99,24 @@ enum http_hpack_static_key {
 /* TODO Kconfig */
 #define HTTP2_HEADER_FIELD_MAX_LEN 256
 
+/* Last index of the static table, the first index of the dynamic table is one above it. */
+#define HTTP_HPACK_STATIC_TABLE_LAST_INDEX HTTP_SERVER_HPACK_WWW_AUTHENTICATE
+
+/* Dynamic table size, in bytes, a decoder has to accept until its own
+ * SETTINGS_HEADER_TABLE_SIZE is acknowledged (RFC 7541, Section 4.2 and
+ * RFC 9113, Section 6.5.2).
+ */
+#define HTTP_HPACK_DYNAMIC_TABLE_SIZE 4096U
+
+/* Size of a dynamic table entry on top of its name and value (RFC 7541, Section 4.1). */
+#define HTTP_HPACK_DYNAMIC_TABLE_ENTRY_OVERHEAD 32U
+
+#if defined(CONFIG_HTTP_SERVER_HPACK_DYNAMIC_TABLE_COUNT)
+#define HTTP_HPACK_DYNAMIC_TABLE_COUNT CONFIG_HTTP_SERVER_HPACK_DYNAMIC_TABLE_COUNT
+#else
+#define HTTP_HPACK_DYNAMIC_TABLE_COUNT 0
+#endif
+
 #if defined(CONFIG_HTTP_SERVER)
 #define HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE CONFIG_HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE
 #else
@@ -128,6 +146,12 @@ struct http_hpack_header_buf {
 	 */
 	bool oversized;
 
+	/** Whether the field referred to a dynamic table entry while the
+	 *  decoder has no dynamic table. The entry is consumed, but the field
+	 *  is not usable.
+	 */
+	bool unresolved;
+
 	/** A pointer to the decoded header field name. */
 	const char *name;
 
@@ -149,12 +173,42 @@ struct http_hpack_header_buf {
 
 /** @cond INTERNAL_HIDDEN */
 
+/** HPACK decoder dynamic table (RFC 7541, Section 2.3.2). */
+struct http_hpack_dynamic_table {
+	/** Entries, oldest first. Each one is its name length and value
+	 *  length as two little-endian 16-bit values, then the name and
+	 *  the value.
+	 */
+	uint8_t data[HTTP_HPACK_DYNAMIC_TABLE_SIZE];
+	/** Bytes of data in use. */
+	uint16_t data_len;
+	/** Number of entries. */
+	uint16_t count;
+	/** Size of the entries as RFC 7541, Section 4.1 counts it. */
+	uint32_t size;
+	/** Current maximum size, set by dynamic table size updates. */
+	uint32_t max_size;
+	/** Whether the table is taken from the pool. */
+	bool in_use;
+};
+
 int http_hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 			      uint8_t *buf, size_t buflen);
 int http_hpack_huffman_encode(const uint8_t *str, size_t str_len,
 			      uint8_t *buf, size_t buflen);
+/* Decodes one entry. table may be NULL, then a field referring to the
+ * dynamic table is consumed and reported as unresolved and a field to be
+ * added to the table is not stored.
+ */
 int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
-			     struct http_hpack_header_buf *header);
+			     struct http_hpack_header_buf *header,
+			     struct http_hpack_dynamic_table *table);
+/* Whether the entry starting at buf adds a field to the dynamic table. */
+bool http_hpack_entry_adds_to_table(const uint8_t *buf, size_t datalen);
+/* Takes a table from the pool, NULL when none is free. */
+struct http_hpack_dynamic_table *http_hpack_dynamic_table_alloc(void);
+/* Returns a table to the pool. NULL is accepted. */
+void http_hpack_dynamic_table_free(struct http_hpack_dynamic_table *table);
 int http_hpack_encode_header(uint8_t *buf, size_t buflen,
 			     struct http_hpack_header_buf *header);
 int http_hpack_encode_field(uint8_t *buf, size_t buflen, struct http_hpack_header_buf *header,
