@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <math.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
@@ -511,6 +513,44 @@ ZTEST(net_content_oma_tlv, test_put_float)
 	}
 }
 
+ZTEST(net_content_oma_tlv, test_put_float_special)
+{
+	int ret;
+	int i;
+	uint16_t offset = 0;
+	double readback_value;
+	double value[] = { (double)INFINITY, -(double)INFINITY, 1e300, 1e-300, -0x1p70 };
+	uint8_t expected_value[][8] = {
+		{ 0x7F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+		{ 0xFF, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+		{ 0x7E, 0x37, 0xE4, 0x3C, 0x88, 0x00, 0x75, 0x9C },
+		{ 0x01, 0xA5, 0x6E, 0x1F, 0xC2, 0xF8, 0xF3, 0x59 },
+		{ 0xC4, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	};
+	double nan_value = (double)NAN;
+
+	for (i = 0; i < ARRAY_SIZE(value); i++) {
+		ret = oma_tlv_writer.put_float(&test_out, &test_path, &value[i]);
+		zassert_equal(ret, 11, "Invalid length returned");
+		offset += ret;
+		zassert_mem_equal(test_out.out_cpkt->data + offset - 8, expected_value[i], 8,
+				  "Invalid payload format");
+
+		(void)lwm2m_b64_to_float(test_out.out_cpkt->data + offset - 8, 8,
+					 &readback_value);
+		zassert_equal(readback_value, value[i], "Invalid value encoded");
+	}
+
+	ret = oma_tlv_writer.put_float(&test_out, &test_path, &nan_value);
+	zassert_equal(ret, 11, "Invalid length returned");
+	offset += ret;
+	zassert_equal(test_out.out_cpkt->data[offset - 8] & 0x7F, 0x7F, "Invalid exponent");
+	zassert_equal(test_out.out_cpkt->data[offset - 7] & 0xF0, 0xF0, "Invalid exponent");
+
+	(void)lwm2m_b64_to_float(test_out.out_cpkt->data + offset - 8, 8, &readback_value);
+	zassert_true(isnan(readback_value), "NaN not encoded");
+}
+
 ZTEST(net_content_oma_tlv_nomem, test_put_float_nomem)
 {
 	int ret;
@@ -979,6 +1019,83 @@ ZTEST(net_content_oma_tlv, test_get_float)
 			     "Invalid value parsed");
 		zassert_equal(test_in.offset, payload[i].len + 1,
 			      "Invalid packet offset");
+	}
+}
+
+ZTEST(net_content_oma_tlv, test_get_float_special)
+{
+	int ret;
+	int i;
+	struct test_payload_buffer payload[] = {
+		{
+			.data = {
+				TEST_TLV_RES_TYPE_ID_0_LEN_1,
+				TEST_RESOURCE_ID_SHORT,
+				8,
+				0x7F, 0xF0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+			},
+			.len = 11
+		},
+		{
+			.data = {
+				TEST_TLV_RES_TYPE_ID_0_LEN_1,
+				TEST_RESOURCE_ID_SHORT,
+				8,
+				0x7E, 0x37, 0xE4, 0x3C, 0x88, 0x00, 0x75, 0x9C
+			},
+			.len = 11
+		},
+		{
+			.data = {
+				TEST_TLV_RES_TYPE_ID_0_LEN_1,
+				TEST_RESOURCE_ID_SHORT,
+				4,
+				0x3F, 0xC0, 0x00, 0x00
+			},
+			.len = 7
+		},
+		{
+			.data = {
+				TEST_TLV_RES_TYPE_ID_0_LEN_1,
+				TEST_RESOURCE_ID_SHORT,
+				4,
+				0xFF, 0x80, 0x00, 0x00
+			},
+			.len = 7
+		},
+		{
+			.data = {
+				TEST_TLV_RES_TYPE_ID_0_LEN_1,
+				TEST_RESOURCE_ID_SHORT,
+				8,
+				0x7F, 0xF8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+			},
+			.len = 11
+		},
+		{
+			.data = {
+				TEST_TLV_RES_TYPE_ID_0_LEN_1,
+				TEST_RESOURCE_ID_SHORT,
+				4,
+				0x7F, 0xC0, 0x00, 0x00
+			},
+			.len = 7
+		},
+	};
+	double expected_value[] = { (double)INFINITY, 1e300, 1.5, -(double)INFINITY };
+	double value;
+
+	for (i = 0; i < ARRAY_SIZE(payload); i++) {
+		context_reset();
+		test_payload_set(payload[i].data, payload[i].len);
+
+		ret = oma_tlv_reader.get_float(&test_in, &value);
+		zassert_equal(ret, payload[i].len, "Invalid length returned");
+		if (i < ARRAY_SIZE(expected_value)) {
+			zassert_equal(value, expected_value[i], "Invalid value parsed");
+		} else {
+			zassert_true(isnan(value), "NaN not parsed");
+		}
 	}
 }
 
