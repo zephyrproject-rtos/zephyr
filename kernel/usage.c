@@ -71,6 +71,25 @@ static void sched_thread_update_usage(struct k_thread *thread, uint32_t cycles)
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 }
 
+/*
+ * Add the cycles from usage0 to now to the current thread and CPU of @a cpu,
+ * unless the accounting is halted. Call with usage_lock held.
+ */
+static void sched_usage_update(struct _cpu *cpu, uint32_t now)
+{
+	uint32_t u0 = cpu->usage0;
+
+	if (u0 != 0U) {
+		uint32_t cycles = now - u0;
+
+		if (cpu->current->base.usage.track_usage) {
+			sched_thread_update_usage(cpu->current, cycles);
+		}
+
+		sched_cpu_update_usage(cpu, cycles);
+	}
+}
+
 void z_sched_usage_start(struct k_thread *thread)
 {
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
@@ -107,19 +126,24 @@ void z_sched_usage_stop(void)
 
 	k_spinlock_key_t k = k_spin_lock(&usage_lock);
 
-	uint32_t u0 = cpu->usage0;
-
-	if (u0 != 0) {
-		uint32_t cycles = usage_now() - u0;
-
-		if (cpu->current->base.usage.track_usage) {
-			sched_thread_update_usage(cpu->current, cycles);
-		}
-
-		sched_cpu_update_usage(cpu, cycles);
-	}
-
+	sched_usage_update(cpu, usage_now());
 	cpu->usage0 = 0;
+	k_spin_unlock(&usage_lock, k);
+}
+
+void z_sched_usage_resume(void)
+{
+	struct _cpu *cpu = _current_cpu;
+	k_spinlock_key_t k = k_spin_lock(&usage_lock);
+	uint32_t now = usage_now();
+
+	/*
+	 * Add the cycles since the last update, as z_sched_usage_stop() does,
+	 * so that the 32-bit cycle count cannot wrap while the same thread
+	 * keeps running, but leave the execution window open.
+	 */
+	sched_usage_update(cpu, now);
+	cpu->usage0 = now;
 	k_spin_unlock(&usage_lock, k);
 }
 
