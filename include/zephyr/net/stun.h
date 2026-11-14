@@ -528,8 +528,8 @@ int stun_add_attr(struct stun_builder *builder, uint16_t attr_type, const uint8_
  *        UTF-8 characters.
  *
  * @retval 0 Success.
- * @retval -EINVAL @p builder or @p sw is NULL, or @p sw has a UTF-8 sequence with a bad lead
- *         or continuation byte or is longer than @ref STUN_TEXT_MAX_CHARS characters.
+ * @retval -EINVAL @p builder or @p sw is NULL, or @p sw is not well-formed UTF-8
+ *         (@rfc{3629,section-4}) or is longer than @ref STUN_TEXT_MAX_CHARS characters.
  * @retval -EPERM A closing attribute has been added already.
  * @retval -EMSGSIZE The attribute does not fit, or an earlier call ran out of room.
  * @retval -EIO An earlier HMAC failed in the PSA backend.
@@ -544,8 +544,8 @@ int stun_add_software(struct stun_builder *builder, const char *sw);
  *        processed with the OpaqueString profile (@rfc{8265}).
  *
  * @retval 0 Success.
- * @retval -EINVAL @p builder or @p username is NULL, or @p username is longer than
- *         @ref STUN_USERNAME_MAX_LEN bytes.
+ * @retval -EINVAL @p builder or @p username is NULL, or @p username is not well-formed UTF-8
+ *         (@rfc{3629,section-4}) or is longer than @ref STUN_USERNAME_MAX_LEN bytes.
  * @retval -EPERM A closing attribute has been added already.
  * @retval -EMSGSIZE The attribute does not fit, or an earlier call ran out of room.
  * @retval -EIO An earlier HMAC failed in the PSA backend.
@@ -623,8 +623,8 @@ int stun_add_use_candidate(struct stun_builder *builder);
  *        characters; NULL for none.
  *
  * @retval 0 Success.
- * @retval -EINVAL @p builder is NULL, @p code is outside 300 to 699, or @p reason has a UTF-8
- *         sequence with a bad lead or continuation byte or is longer than
+ * @retval -EINVAL @p builder is NULL, @p code is outside 300 to 699, or @p reason is not
+ *         well-formed UTF-8 (@rfc{3629,section-4}) or is longer than
  *         @ref STUN_TEXT_MAX_CHARS characters.
  * @retval -EPERM A closing attribute has been added already.
  * @retval -EMSGSIZE The attribute does not fit, or an earlier call ran out of room.
