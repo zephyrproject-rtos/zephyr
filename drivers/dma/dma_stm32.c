@@ -480,6 +480,9 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 			stm32_dma_clear_stream_irq(dma, id);
 		}
 		status = -EIO;
+	} else if (!stream->hal_override && !stm32_dma_is_irq_active(dma, id)) {
+		/* Nothing is pending: stale interrupt of a transfer that was stopped */
+		return;
 	} else {
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {

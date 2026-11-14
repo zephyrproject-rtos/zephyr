@@ -383,6 +383,9 @@ static void bdma_stm32_irq_handler(const struct device *dev, uint32_t id)
 			bdma_stm32_clear_tc(dma, id);
 		}
 		status = 0;
+	} else if (!bdma_stm32_is_te_active(dma, id)) {
+		/* Nothing is pending: stale interrupt of a transfer that was stopped */
+		return;
 	} else {
 		LOG_ERR("Transfer Error.");
 		channel->busy = false;
