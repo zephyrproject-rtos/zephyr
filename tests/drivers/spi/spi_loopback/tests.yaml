@@ -98,6 +98,7 @@ tests:
       - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_l152re
+      - nucleo_l432kc
       - nucleo_wl55jc
       - nucleo_h743zi
       - nucleo_h753zi
@@ -159,6 +160,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
+      - nucleo_l432kc
       - nucleo_u385rg_q
       - nucleo_wba55cg
       - nucleo_wb55rg
@@ -186,6 +188,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
+      - nucleo_l432kc
       - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_wl55jc
@@ -211,6 +214,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
+      - nucleo_l432kc
       - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_wl55jc
