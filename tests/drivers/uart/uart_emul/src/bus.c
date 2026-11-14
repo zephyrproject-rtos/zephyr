@@ -238,6 +238,30 @@ ZTEST_F(uart_emul, test_irq_tx)
 	zassert_equal(tx_len, 0, "TX buffer should be empty");
 }
 
+/* A writer held back by a full TX FIFO is resumed when the FIFO is flushed */
+ZTEST_F(uart_emul, test_irq_tx_flush)
+{
+	size_t tx_len;
+
+	for (size_t i = 0; i < EMUL_UART_TX_FIFO_SIZE; i++) {
+		uart_poll_out(fixture->dev, 'p');
+	}
+
+	uart_irq_callback_user_data_set(fixture->dev, uart_emul_isr, fixture);
+	/* No room in the TX FIFO, so this does not call the callback */
+	uart_irq_tx_enable(fixture->dev);
+	zassert_equal(k_sem_take(&fixture->tx_done_sem, K_MSEC(100)), -EAGAIN,
+		      "ISR ran with a full TX FIFO");
+
+	zassert_equal(uart_emul_flush_tx_data(fixture->dev), EMUL_UART_TX_FIFO_SIZE);
+	zassert_equal(k_sem_take(&fixture->tx_done_sem, K_SECONDS(1)), 0,
+		      "Timeout waiting for UART ISR");
+
+	tx_len = uart_emul_get_tx_data(fixture->dev, fixture->tx_content, SAMPLE_DATA_SIZE);
+	zassert_equal(tx_len, SAMPLE_DATA_SIZE, "TX buffer length does not match");
+	zassert_mem_equal(fixture->tx_content, fixture->sample_data, SAMPLE_DATA_SIZE);
+}
+
 ZTEST_F(uart_emul, test_irq_rx)
 {
 	int rc;
