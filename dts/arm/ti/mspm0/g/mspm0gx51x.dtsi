@@ -93,6 +93,17 @@
 			status = "disabled";
 		};
 
+		i2c2: i2c@400f4000 {
+			compatible = "ti,mspm0-i2c";
+			reg = <0x400f4000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <26 0>;
+			status = "disabled";
+		};
+
 		aes: aes@40442000 {
 			compatible = "ti,mspm0-aes";
 			reg = <0x40442000 0x2000>;
