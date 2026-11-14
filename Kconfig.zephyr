@@ -516,6 +516,24 @@ config LTO_SINGLE_THREADED
 	  LTO. See the following issue for more info:
 	  https://github.com/zephyrproject-rtos/sdk-ng/issues/1038
 
+config POSITION_INDEPENDENT
+	bool "Generate a position-independent executable"
+	depends on RISCV
+	depends on !XIP
+	depends on !USERSPACE
+	depends on !GEN_SW_ISR_TABLE_SWITCH
+	depends on !ISR_TABLES_LOCAL_DECLARATION
+	help
+	  Build Zephyr as a position-independent executable (PIE): compile all
+	  sources with -fPIC, link with -pie, and apply the dynamic relocations
+	  at early boot so the image can run from an address other than its
+	  link address.
+
+	  The linker must support -pie. LLD does while GNU ld shipped with the
+	  bare-metal GCC toolchains in the Zephyr SDK does not. To build with GCC
+	  a version of the GNU ld that accepts -pie is required.
+
+
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help

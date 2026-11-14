@@ -130,13 +130,16 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 SECTIONS
     {
 
+#ifndef CONFIG_POSITION_INDEPENDENT
 #include <zephyr/linker/rel-sections.ld>
+#endif
 #include <zephyr/linker/llext-sections.ld>
 
     /*
      * The .plt and .iplt are here according to
      * 'riscv32-zephyr-elf-ld --verbose', before text section.
      */
+#ifndef CONFIG_POSITION_INDEPENDENT
     SECTION_PROLOGUE(.plt,,)
 	{
 		*(.plt)
@@ -146,12 +149,27 @@ SECTIONS
 	{
 		*(.iplt)
 	}
+#endif
 
     GROUP_START(ROMABLE_REGION)
+#ifndef CONFIG_POSITION_INDEPENDENT
     __rom_region_start = ROM_BASE;
+#endif
 
+#if CONFIG_RISCV_ROM_START_ALIGNMENT > 0
+    SECTION_PROLOGUE(rom_start,, ALIGN(CONFIG_RISCV_ROM_START_ALIGNMENT))
+#else
     SECTION_PROLOGUE(rom_start,,)
+#endif
     {
+#ifdef CONFIG_POSITION_INDEPENDENT
+        /*
+         * Define the symbol relative to a section: the linker emits no
+         * relocation for absolute symbols, so it would not move with the
+         * load address.
+         */
+        __rom_region_start = .;
+#endif
 		. = ALIGN(16);
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...).
@@ -217,6 +235,21 @@ SECTIONS
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <zephyr/linker/cplusplus-rom.ld>
+
+#ifdef CONFIG_POSITION_INDEPENDENT
+	/*
+	 * Filled in by the early self-relocation, which runs before the PMP
+	 * ROM region is locked. Keep it inside the ROM region so it is
+	 * read-only afterwards.
+	 */
+	SECTION_PROLOGUE(.got,, ALIGN(8))
+	{
+		__got_start = .;
+		*(.got.plt) *(.got)
+		__got_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
 	__rodata_region_end = .;
 
 	/* For non-XIP system, __rom_region_end symbol should be set to
@@ -319,6 +352,65 @@ SECTIONS
 
     __data_region_end = .;
 
+#ifdef CONFIG_POSITION_INDEPENDENT
+    /*
+     * Relocation metadata, only read by the early self-relocation in
+     * soc/common/riscv-privileged/vector.S. It stays resident between the
+     * data sections and bss, outside the ROM region.
+     */
+    SECTION_PROLOGUE(.dynsym,, ALIGN(8))
+    {
+        *(.dynsym)
+    }
+
+    SECTION_PROLOGUE(.dynstr,,)
+    {
+        *(.dynstr)
+    }
+
+    SECTION_PROLOGUE(.hash,,)
+    {
+        *(.hash)
+    }
+
+    SECTION_PROLOGUE(.gnu.hash,,)
+    {
+        *(.gnu.hash)
+    }
+
+    SECTION_PROLOGUE(.rela.plt,,)
+    {
+        *(.rela.plt*)
+    }
+
+    /*
+     * A static PIE has no dynamic linker and no PLT stubs, so this section
+     * is expected to be empty. The explicit rule only keeps the linker from
+     * warning about an orphan .plt section.
+     */
+    SECTION_PROLOGUE(.plt,,)
+    {
+        *(.plt)
+    }
+
+    SECTION_PROLOGUE(.rela.dyn,, ALIGN(8))
+    {
+        __rel_dyn_start = .;
+        KEEP(*(.rela*))
+    }
+    /*
+     * Keep outside the section: .rela.dyn is synthesized by the linker, so
+     * "." inside the block does not include its contents.
+     */
+    __rel_dyn_end = .;
+
+    /*
+     * A static PIE has no dynamic linker, so the symbol versioning and
+     * copy relocation sections that GNU ld creates for it are empty.
+     */
+    /DISCARD/ : { *(.dynamic*) *(.gnu.version*) *(.dynbss) }
+#endif
+
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
 		MPU_MIN_SIZE_ALIGN
@@ -348,7 +440,12 @@ SECTIONS
 		  * As memory is cleared in words only, it is simpler to ensure the BSS
 		  * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
 		  */
-		  __bss_end = ALIGN(4);
+		  . = ALIGN(4);
+		  /*
+		   * Assign from the location counter: LLD makes a symbol absolute
+		   * unless it is, so it would not move with the load address.
+		   */
+		  __bss_end = .;
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 #include <zephyr/linker/common-noinit.ld>

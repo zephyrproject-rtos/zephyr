@@ -137,6 +137,7 @@ config QEMU_EXTRA_FLAGS
 config QEMU_DEVICE_LOADER
 	bool "QEMU device loader"
 	depends on QEMU_TARGET
+	default y if RISCV && POSITION_INDEPENDENT && !RISCV_S_MODE_EXTERNAL_SBI
 	help
 	  When enabled, QEMU will use the device loader functionality to load
 	  the ELF file instead of the "-kernel" option. On certain architectures,

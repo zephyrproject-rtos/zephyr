@@ -39,12 +39,22 @@
 	PROVIDE(__tdata_start = ADDR(tdata));
 	PROVIDE(__tdata_align = ALIGNOF(tdata));
 	PROVIDE(__tdata_size = (SIZEOF(tdata) + __tdata_align - 1) & ~(__tdata_align - 1));
-	PROVIDE(__tdata_end = __tdata_start + __tdata_size);
+	/*
+	 * Define the end symbols from ADDR()/LOADADDR() and SIZEOF() directly.
+	 * GNU ld makes an expression that references another script symbol,
+	 * such as __tdata_start + __tdata_size, absolute, so a position
+	 * independent image would relocate the start but not the end.
+	 */
+#ifdef CONFIG_XIP
+	PROVIDE(__tdata_end = LOADADDR(tdata) + ALIGN(SIZEOF(tdata), ALIGNOF(tdata)));
+#else
+	PROVIDE(__tdata_end = ADDR(tdata) + ALIGN(SIZEOF(tdata), ALIGNOF(tdata)));
+#endif
 
 	PROVIDE(__tbss_align = ALIGNOF(tbss));
 	PROVIDE(__tbss_start = ADDR(tbss));
 	PROVIDE(__tbss_size = (SIZEOF(tbss) + __tbss_align - 1) & ~(__tbss_align - 1));
-	PROVIDE(__tbss_end = __tbss_start + __tbss_size);
+	PROVIDE(__tbss_end = ADDR(tbss) + ALIGN(SIZEOF(tbss), ALIGNOF(tbss)));
 
 #if defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
 	PROVIDE(__tls_start = __stack_chk_start);

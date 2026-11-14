@@ -78,7 +78,10 @@ void __irq_vector_table __attribute__((naked)) _irq_vector_table(void) {
 #else
 
 /* The IRQ vector table is an array of vector addresses */
-const uintptr_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
+#ifndef CONFIG_POSITION_INDEPENDENT
+const
+#endif
+uintptr_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
 	[0 ...(IRQ_TABLE_SIZE - 1)] = (uintptr_t)&IRQ_VECTOR_TABLE_DEFAULT_ISR,
 };
 #endif /* CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE */
@@ -88,7 +91,7 @@ const uintptr_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
  * type and bypass the _sw_isr_table, then do not generate one.
  */
 #if defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
-#ifndef CONFIG_DYNAMIC_INTERRUPTS
+#if !defined(CONFIG_DYNAMIC_INTERRUPTS) && !defined(CONFIG_POSITION_INDEPENDENT)
 const
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 	struct _isr_table_entry __sw_isr_table _sw_isr_table[IRQ_TABLE_SIZE] = {
@@ -103,9 +106,31 @@ void __sw_isr_table get_isr_entry(int irq_number, struct _isr_table_entry *entry
 #endif /* CONFIG_GEN_SW_ISR_TABLE_ARRAY */
 
 #ifdef CONFIG_SHARED_INTERRUPTS
-#ifndef CONFIG_DYNAMIC_INTERRUPTS
+#if !defined(CONFIG_DYNAMIC_INTERRUPTS) && !defined(CONFIG_POSITION_INDEPENDENT)
 const
 #endif
 struct z_shared_isr_table_entry __shared_sw_isr_table z_shared_sw_isr_table[IRQ_TABLE_SIZE] = {
 };
 #endif
+
+#ifdef CONFIG_POSITION_INDEPENDENT
+/*
+ * Fallbacks for the zephyr_pre0.elf link, read by z_adjust_isr_tables(). The
+ * generated isr_tables.c of the final link overrides them with the table
+ * addresses in zephyr_pre0.elf and the parameters that need relocation.
+ *
+ * These must be variables, not .equ absolute symbols: in a PIE image an
+ * absolute symbol gets a GOT entry without relocation, so its address would
+ * read 0 at runtime and produce a wrong relocation delta.
+ */
+#ifdef CONFIG_GEN_SW_ISR_TABLE
+__weak uintptr_t z_sw_isr_table_pre0_addr;
+__weak struct _isr_reloc_param_info reloc_param_list[] = {
+	{-1, -1},
+};
+#endif /* CONFIG_GEN_SW_ISR_TABLE */
+
+#if defined(CONFIG_GEN_IRQ_VECTOR_TABLE) && defined(CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS)
+__weak uintptr_t z_irq_vector_table_pre0_addr;
+#endif
+#endif /* CONFIG_POSITION_INDEPENDENT */

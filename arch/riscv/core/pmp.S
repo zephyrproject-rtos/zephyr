@@ -33,7 +33,7 @@
 GTEXT(z_riscv_write_pmp_entries)
 SECTION_FUNC(TEXT, z_riscv_write_pmp_entries)
 
-	la t0, pmpaddr_store
+	lla t0, pmpaddr_store
 	slli t1, a0, 4  /* 16-byte instruction blocks */
 	add t0, t0, t1
 	jr t0
@@ -59,7 +59,7 @@ pmpaddr_done:
 	 * a0 = a0 / RV_REGSIZE
 	 * a1 = (a1 + RV_REGSIZE - 1) / RV_REGSIZE
 	 */
-	la t0, pmpcfg_store
+	lla t0, pmpcfg_store
 	srli a0, a0, RV_REGSHIFT
 	slli t1, a0, 4  /* 16-byte instruction blocks */
 	add t0, t0, t1
@@ -85,7 +85,7 @@ pmpcfg_done:
 
 	beqz a2, done
 
-	la t0, pmpcfg_zerotail
+	lla t0, pmpcfg_zerotail
 	slli a0, a0, 2  /* 4-byte instruction blocks */
 	add t0, t0, a0
 	jr t0
