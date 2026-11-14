@@ -47,6 +47,7 @@ enum http2_frame_type {
 /** @cond INTERNAL_HIDDEN */
 
 #define HTTP2_FLAG_SETTINGS_ACK 0x01
+#define HTTP2_FLAG_PING_ACK     0x01
 #define HTTP2_FLAG_END_HEADERS  0x04
 #define HTTP2_FLAG_END_STREAM   0x01
 #define HTTP2_FLAG_PADDED       0x08
@@ -62,6 +63,7 @@ enum http2_frame_type {
 #define HTTP2_HEADERS_FRAME_PRIORITY_LEN 5
 #define HTTP2_PRIORITY_FRAME_LEN 5
 #define HTTP2_RST_STREAM_FRAME_LEN 4
+#define HTTP2_PING_FRAME_LEN 8
 
 /** @endcond */
 
