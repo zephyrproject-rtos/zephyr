@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Anders Frandsen <anfran@anfran.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timers2 {
+	st,prescaler = <79>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&timers16 {
+	st,prescaler = <79>;
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
