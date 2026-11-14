@@ -1,0 +1,6 @@
+board:
+  name: weact_mspm0g3507_core
+  full_name: MSPM0G3507 Core Board
+  vendor: weact
+  socs:
+    - name: mspm0g3507
