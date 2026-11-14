@@ -121,7 +121,8 @@ Libraries / Subsystems
     preference of IPv4, see the :ref:`migration guide <migration_4.6>`.
   * Added the :ref:`STUN <stun_interface>` library, a codec for the messages of
     :rfc:`8489` with the attributes of ICE (:rfc:`8445`): parsing, building,
-    MESSAGE-INTEGRITY, FINGERPRINT and the address attributes.
+    MESSAGE-INTEGRITY, FINGERPRINT and the address attributes. A device finds out
+    its public address with the Binding transaction or the blocking socket client.
 
   * Ethernet bridge
 
