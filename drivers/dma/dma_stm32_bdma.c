@@ -916,8 +916,6 @@ static int bdma_stm32_configure(const struct device *dev,
 	return ret;
 }
 
-static int bdma_stm32_start(const struct device *dev, uint32_t id);
-
 static int bdma_stm32_reload(const struct device *dev, uint32_t id,
 			     uint32_t src, uint32_t dst,
 			     size_t size)
@@ -958,8 +956,7 @@ static int bdma_stm32_reload(const struct device *dev, uint32_t id,
 				     size / channel->dst_size);
 	}
 
-	/* STM32-specific historical quirk: reload() implies start() */
-	return bdma_stm32_start(dev, id);
+	return 0;
 }
 
 static int bdma_stm32_start(const struct device *dev, uint32_t id)
