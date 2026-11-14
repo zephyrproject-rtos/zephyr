@@ -438,6 +438,22 @@ Networking
   ``DEVICE_API(wifi_offload, name)`` otherwise. ``struct net_wifi_mgmt_offload`` remains available
   to refer to the selected type. (:github:`124334`)
 
+* The extra config files of the samples in :zephyr_file:`samples/net`,
+  :zephyr_file:`samples/subsys/mgmt/hawkbit`, :zephyr_file:`samples/subsys/mgmt/updatehub` and
+  :zephyr_file:`samples/drivers/modem/hello_hl78xx`, and of the network tests, no longer start with
+  ``overlay-`` or ``overlay_``, as that name is reserved for devicetree overlays. Drop the prefix
+  from the names passed in ``EXTRA_CONF_FILE``, for example ``-DEXTRA_CONF_FILE=tls.conf`` instead
+  of ``-DEXTRA_CONF_FILE=overlay-tls.conf``. These files use new names instead:
+
+  * :zephyr_file:`samples/net/mqtt_publisher/testing.conf` replaces ``overlay-sample.conf``.
+  * :zephyr_file:`samples/net/dhcpv6_pd/pd-server.conf` and
+    :zephyr_file:`samples/net/dhcpv6_pd/pd-server.overlay` replace ``overlay-server.conf`` and
+    ``overlay-server.overlay``.
+  * :zephyr_file:`samples/net/ethernet/gptp/multiport.overlay` replaces
+    ``overlay-multiport.overlay``.
+  * :zephyr_file:`samples/subsys/mgmt/updatehub/local.conf.example` replaces
+    ``overlay-prj.conf.example``.
+
 Other subsystems
 ****************
 

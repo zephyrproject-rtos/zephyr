@@ -26,9 +26,9 @@ return $result
 echo "HTTPS client test"
 
 if [ -n "$zephyr_overlay" ]; then
-	overlay="${zephyr_overlay};overlay-tls.conf"
+	overlay="${zephyr_overlay};tls.conf"
 else
-	overlay="-DEXTRA_CONF_FILE=overlay-tls.conf"
+	overlay="-DEXTRA_CONF_FILE=tls.conf"
 fi
 
 start_configuration "--ip=192.0.2.2 --ip6=2001:db8::2" || return $?

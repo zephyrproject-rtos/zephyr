@@ -20,11 +20,12 @@ There are configuration files for different boards and setups in the shell direc
 - :file:`prj.conf`
   Generic config file.
 
-- :file:`overlay-ot-rcp-host-wifi-nxp.conf`
-  This overlay config enables support of OpenThread RCP host running on NXP chips over IMU interface. It also has Wi-Fi support enabled.
+- :file:`ot-rcp-host-wifi-nxp.conf`
+  This extra config file enables support of OpenThread RCP host running on NXP chips over IMU
+  interface. It also has Wi-Fi support enabled.
 
-- :file:`overlay-webserver.conf`
-  This overlay config enables the HTTP web server (REST APIs).
+- :file:`webserver.conf`
+  This extra config file enables the HTTP web server (REST APIs).
 
 Build OpenThread Border Router application like this:
 
@@ -40,7 +41,7 @@ Example building for NXP's RW612 FRDM (RCP host).
 .. zephyr-app-commands::
    :zephyr-app: samples/net/openthread/border_router
    :board: frdm_rw612
-   :conf: "prj.conf overlay-ot-rcp-host-wifi-nxp.conf"
+   :conf: "prj.conf ot-rcp-host-wifi-nxp.conf"
    :goals: build
    :compact:
 
@@ -49,14 +50,14 @@ Example building with Web Server enabled for NXP's RW612 FRDM (RCP host).
 .. zephyr-app-commands::
    :zephyr-app: samples/net/openthread/border_router
    :board: frdm_rw612
-   :conf: "prj.conf overlay-ot-rcp-host-wifi-nxp.conf overlay-webserver.conf"
+   :conf: "prj.conf ot-rcp-host-wifi-nxp.conf webserver.conf"
    :goals: build
    :compact:
 
 Web Server
 **********
 
-When built with ``overlay-webserver.conf``, the application includes an HTTP web server providing:
+When built with ``webserver.conf``, the application includes an HTTP web server providing:
 
 - **Web Interface**: Accessible at ``http://<device-ip>:8080`` or ``http://zephyr-otbr:8080`` (via mDNS)
 - **REST API**: JSON-based endpoints for Thread network management

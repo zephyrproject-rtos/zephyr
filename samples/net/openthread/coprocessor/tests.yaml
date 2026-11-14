@@ -29,7 +29,7 @@ tests:
       - nrf52840dk/nrf52840
     tags: ci_build
     extra_args:
-      - EXTRA_CONF_FILE=overlay-usb-nrf-br.conf
+      - EXTRA_CONF_FILE=usb-nrf-br.conf
       - DTC_OVERLAY_FILE="usb.overlay"
   sample.net.openthread.coprocessor.rcp:
     build_only: true
@@ -41,7 +41,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
     extra_args:
-      - EXTRA_CONF_FILE=overlay-rcp.conf
+      - EXTRA_CONF_FILE=rcp.conf
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
   sample.net.openthread.coprocessor.rcp.thread_1_4:
     build_only: true
@@ -53,7 +53,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
     extra_args:
-      - EXTRA_CONF_FILE=overlay-rcp.conf
+      - EXTRA_CONF_FILE=rcp.conf
       - CONFIG_OPENTHREAD_THREAD_VERSION_1_4=y
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
   sample.net.openthread.coprocessor.debug:

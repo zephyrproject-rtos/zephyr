@@ -80,7 +80,7 @@ assignments are identical for both modules.
 
 The OpenThread Border Router is a Wi-Fi + Thread application. It combines the
 Wi-Fi/Bluetooth M.2 shield (``nxp_m2_2ll_wifi_bt``) with this 802.15.4 RCP
-shield (``nxp_m2_2el_2ll_ieee802154``), and requires the RCP host overlay plus
+shield (``nxp_m2_2el_2ll_ieee802154``), and requires the RCP host extra config file plus
 the board-specific and module-specific configuration fragments.
 
 To build for the MIMXRT1060-EVK Rev-C with an IW612 (Murata 2EL) module:
@@ -91,7 +91,7 @@ To build for the MIMXRT1060-EVK Rev-C with an IW612 (Murata 2EL) module:
        -d build_mimxrt1060_evk/border_router_iw612 \
        --shield "nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154" \
        zephyr/samples/net/openthread/border_router \
-       -- -DEXTRA_CONF_FILE="overlay-ot-rcp-host-wifi-nxp.conf \
+       -- -DEXTRA_CONF_FILE="ot-rcp-host-wifi-nxp.conf \
        boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf \
        boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evkc_iw612.conf"
 
@@ -104,13 +104,13 @@ IW610 module fragment instead:
        -d build_mimxrt1060_evk/border_router_iw610 \
        --shield "nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154" \
        zephyr/samples/net/openthread/border_router \
-       -- -DEXTRA_CONF_FILE="overlay-ot-rcp-host-wifi-nxp.conf \
+       -- -DEXTRA_CONF_FILE="ot-rcp-host-wifi-nxp.conf \
        boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf \
        boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evkc_iw610.conf"
 
 The configuration fragments passed via ``EXTRA_CONF_FILE`` are applied in order:
 
-- ``overlay-ot-rcp-host-wifi-nxp.conf``: base OpenThread RCP host + NXP Wi-Fi
+- ``ot-rcp-host-wifi-nxp.conf``: base OpenThread RCP host + NXP Wi-Fi
   configuration (originally tuned for RW610).
 - ``boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf``:
   RT1060 EVKC overrides for the M.2 IW612/IW610 RCP setup (disables RW610

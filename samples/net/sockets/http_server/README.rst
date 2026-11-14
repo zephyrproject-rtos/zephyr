@@ -34,16 +34,16 @@ There are configuration files for various setups in the
       - This is the standard default config.
 
     * - :zephyr_file:`ieee802154-overlay.conf <samples/net/sockets/http_server/ieee802154-overlay.conf>`
-      - This overlay config can be added for IEEE 802.15.4 support.
+      - This extra config file can be added for IEEE 802.15.4 support.
 
-    * - :zephyr_file:`overlay-usbd.conf <samples/net/sockets/http_server/overlay-usbd.conf>`
-      - This overlay config can be added for connecting via network USB.
+    * - :zephyr_file:`usbd.conf <samples/net/sockets/http_server/usbd.conf>`
+      - This extra config file can be added for connecting via network USB.
 
-    * - :zephyr_file:`overlay-tls.conf <samples/net/sockets/http_server/overlay-tls.conf>`
-      - This overlay config can be added to build the HTTPS variant.
+    * - :zephyr_file:`tls.conf <samples/net/sockets/http_server/tls.conf>`
+      - This extra config file can be added to build the HTTPS variant.
 
-    * - :zephyr_file:`overlay-dhcpv4.conf <samples/net/sockets/http_server/overlay-dhcpv4.conf>`
-      - This overlay enables DHCPv4 client feature.
+    * - :zephyr_file:`dhcpv4.conf <samples/net/sockets/http_server/dhcpv4.conf>`
+      - This extra config file enables DHCPv4 client feature.
 
 To build and run the HTTP server application:
 
@@ -168,7 +168,8 @@ First of all build the sample enabling HTTPS service and flash the board:
          :zephyr-app: samples/net/sockets/http_server/
          :board: nrf52840dk/nrf52840
          :goals: build
-         :gen-args: -DCONFIG_NET_SAMPLE_HTTPS_SERVICE=y -DEXTRA_CONF_FILE=overlay-netusb.conf
+         :gen-args: -DEXTRA_CONF_FILE="tls.conf;usbd.conf" \
+                    -DEXTRA_DTC_OVERLAY_FILE=usbd_cdc_ncm.overlay
 
 Then connect the USB cable to the host PC and issue:
 

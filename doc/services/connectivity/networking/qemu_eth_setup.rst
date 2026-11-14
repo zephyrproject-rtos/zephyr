@@ -49,7 +49,8 @@ driver for QEMU connectivity:
 * For ``qemu_cortex_a53``, ``Intel(R) PRO/1000 Gigabit Ethernet driver``
   Ethernet driver is selected by default.
 * Additionally, the :zephyr:code-sample:`sockets-echo-server` sample contains
-  overlay files for the VIRTIO Network device on ``qemu_x86_64``.
+  the :file:`virtnet.conf` extra config file and the :file:`virtnet.overlay`
+  devicetree overlay for the VIRTIO Network device on ``qemu_x86_64``.
 
 Step 1 - Create Ethernet interface
 ==================================
@@ -83,7 +84,7 @@ In terminal #2, type:
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: qemu_x86
-   :gen-args: -DEXTRA_CONF_FILE=overlay-e1000.conf
+   :gen-args: -DEXTRA_CONF_FILE=e1000.conf
    :goals: run
    :compact:
 
@@ -93,7 +94,7 @@ Alternatively, if you decided to use the VIRTIO Network device on qemu_x86_64:
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: qemu_x86_64
-   :gen-args: -DDTC_OVERLAY_FILE=virtnet.overlay -DEXTRA_CONF_FILE=overlay-virtnet.conf
+   :gen-args: -DDTC_OVERLAY_FILE=virtnet.overlay -DEXTRA_CONF_FILE=virtnet.conf
    :goals: run
    :compact:
 

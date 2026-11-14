@@ -14,4 +14,4 @@ common:
 tests:
   sample.net.pkt_filter: {}
   sample.net.pkt_filter_priorities:
-    extra_args: EXTRA_CONF_FILE="overlay-priority.conf"
+    extra_args: EXTRA_CONF_FILE="priority.conf"

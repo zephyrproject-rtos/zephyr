@@ -12,5 +12,5 @@ tests:
   sample.net.dhcpv6_pd.client: {}
   sample.net.dhcpv6_pd.server:
     extra_args:
-      - EXTRA_CONF_FILE=overlay-server.conf
-      - EXTRA_DTC_OVERLAY_FILE=overlay-server.overlay
+      - EXTRA_CONF_FILE=pd-server.conf
+      - EXTRA_DTC_OVERLAY_FILE=pd-server.overlay

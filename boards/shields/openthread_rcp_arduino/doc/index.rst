@@ -112,7 +112,7 @@ when you invoke ``west build`` for projects utilizing this shield. For example:
          :zephyr-app: samples/net/sockets/echo_client
          :board: stm32h573i_dk/stm32h573xx
          :shield: openthread_rcp_arduino_serial
-         :conf: "prj.conf overlay-ot-rcp-host-uart.conf"
+         :conf: "prj.conf ot-rcp-host-uart.conf"
          :goals: build
 
    .. group-tab:: SPI
@@ -121,7 +121,7 @@ when you invoke ``west build`` for projects utilizing this shield. For example:
          :zephyr-app: samples/net/sockets/echo_client
          :board: stm32h573i_dk/stm32h573xx
          :shield: openthread_rcp_aduino_spi
-         :conf: "prj.conf overlay-ot-rcp-host-uart.conf"
+         :conf: "prj.conf ot-rcp-host-uart.conf"
          :goals: build
 
 References

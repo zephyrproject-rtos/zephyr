@@ -40,26 +40,28 @@ samples/net/lwm2m_client directory:
     * - :file:`prj.conf`
       - This is the standard default config.
 
-    * - :file:`overlay-bootstrap.conf`
-      - This overlay config can be added to enable LwM2M Bootstrap support.
+    * - :file:`bootstrap.conf`
+      - This extra config file can be added to enable LwM2M Bootstrap support.
 
-    * - :file:`overlay-ot.conf`
-      - This overlay config can be added for OpenThread support.
+    * - :file:`ot.conf`
+      - This extra config file can be added for OpenThread support.
 
-    * - :file:`overlay-dtls.conf`
-      - This overlay config can be added for DTLS support via MBEDTLS.
+    * - :file:`dtls.conf`
+      - This extra config file can be added for DTLS support via MBEDTLS.
 
-    * - :file:`overlay-dtls-cert.conf`
-      - This overlay config can be added for DTLS with certificates support via MBEDTLS.
+    * - :file:`dtls-cert.conf`
+      - This extra config file can be added for DTLS with certificates support via MBEDTLS.
 
-    * - :file:`overlay-queue.conf`
-      - This overlay config can be added to enable LwM2M Queue Mode support.
+    * - :file:`queue.conf`
+      - This extra config file can be added to enable LwM2M Queue Mode support.
 
-    * - :file:`overlay-send-scheduler.conf`
-      - This overlay config enables LwM2M send scheduler support and activate caching for the temperature and humidity IPSO objects.
+    * - :file:`send-scheduler.conf`
+      - This extra config file enables LwM2M send scheduler support and activate caching for the
+        temperature and humidity IPSO objects.
 
-    * - :file:`overlay-tickless.conf`
-      - This overlay config can be used to stop LwM2M engine for periodically interrupting socket polls. It can have significant effect on power usage on certain devices.
+    * - :file:`tickless.conf`
+      - This extra config file can be used to stop LwM2M engine for periodically interrupting socket
+        polls. It can have significant effect on power usage on certain devices.
 
 Build the lwm2m-client sample application like this:
 
@@ -111,7 +113,7 @@ To build the lwm2m-client sample for QEMU with DTLS support do the following:
    :zephyr-app: samples/net/lwm2m_client
    :host-os: unix
    :board: qemu_x86
-   :conf: "prj.conf overlay-dtls.conf"
+   :conf: "prj.conf dtls.conf"
    :goals: run
    :compact:
 
@@ -167,7 +169,7 @@ following:
    :zephyr-app: samples/net/lwm2m_client
    :host-os: unix
    :board: qemu_x86
-   :conf: "prj.conf overlay-bootstrap.conf"
+   :conf: "prj.conf bootstrap.conf"
    :goals: run
    :compact:
 
@@ -176,9 +178,9 @@ Server to obtain the LwM2M Server information. After that, the sample will
 automatically connect to the Leshan Demo Sever, as it was indicated in the
 Bootstrap Server configuration.
 
-It is possible to combine overlay files, to enable DTLS and Bootstrap for
+It is possible to combine extra config files, to enable DTLS and Bootstrap for
 instance. In that case, the user should make sure to update the port number in
-the overlay file for Bootstrap over DTLS (5784 in case of Leshan Demo Bootstrap
+the extra config file for Bootstrap over DTLS (5784 in case of Leshan Demo Bootstrap
 Server) and to configure correct security mode in the ``LwM2M Bootstrap Server``
 tab in the web UI (Pre-shared Key).
 
@@ -192,7 +194,7 @@ networking do the following:
    :zephyr-app: samples/net/lwm2m_client
    :host-os: unix
    :board: <board to use>
-   :conf: "prj.conf overlay-ot.conf"
+   :conf: "prj.conf ot.conf"
    :goals: build
    :compact:
 
@@ -230,7 +232,7 @@ To build the lwm2m-client sample with LwM2M Queue Mode support do the following:
    :zephyr-app: samples/net/lwm2m_client
    :host-os: unix
    :board: <board to use>
-   :conf: "prj.conf overlay-queue.conf"
+   :conf: "prj.conf queue.conf"
    :goals: build
    :compact:
 
@@ -250,7 +252,7 @@ shield do the following:
    :zephyr-app: samples/net/lwm2m_client
    :host-os: unix
    :board: <board to use>
-   :conf: "prj.conf overlay-wncm14a2a.conf"
+   :shield: wnc_m14a2a
    :goals: build
    :compact:
 
