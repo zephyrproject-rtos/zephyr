@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - shell
+    - ipc
+  platform_allow:
+    - mps2/an385
+    - native_sim/native/64
+  integration_platforms:
+    - mps2/an385
+    - native_sim/native/64
+tests:
+  shell.remote.help: {}
+  shell.remote.help.small_buffer:
+    extra_configs:
+      - CONFIG_SHELL_REMOTE_CLI_BUF_SIZE=128
+  shell.remote.help.thread:
+    extra_configs:
+      - CONFIG_SHELL_REMOTE_CLI_KWORK=n
