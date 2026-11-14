@@ -293,6 +293,58 @@ ZTEST_F(zms, test_zms_mount_invalid_external_data_ranges)
 		      fixture->fs.data_wra);
 }
 
+/*
+ * Garbage collection writes the first entry that it copies to the first ATE
+ * of the new write sector. When no other entry with data follows it, this ATE
+ * alone gives the data write address of the sector after a reboot. Verify
+ * that recovery reads it, otherwise the next write lands on the data of the
+ * entry.
+ */
+ZTEST_F(zms, test_zms_mount_first_ate_with_data)
+{
+	uint8_t data[32];
+	uint8_t rd_buf[32];
+	uint64_t data_wra;
+	uint64_t ate_wra;
+	ssize_t len;
+	int err;
+
+	err = zms_mount(&fixture->fs);
+	zassert_ok(err, "zms_mount failed: %d", err);
+
+	memset(data, 0xaa, sizeof(data));
+	len = zms_write(&fixture->fs, TEST_DATA_ID, data, sizeof(data));
+	zassert_equal(len, sizeof(data), "zms_write failed: %zd", len);
+
+	/* The last sector change garbage collects the sector of the entry. It is
+	 * the only entry to copy.
+	 */
+	for (uint32_t i = 0; i < fixture->fs.sector_count - 1; i++) {
+		err = zms_sector_use_next(&fixture->fs);
+		zassert_ok(err, "zms_sector_use_next failed: %d", err);
+	}
+	data_wra = fixture->fs.data_wra;
+	ate_wra = fixture->fs.ate_wra;
+
+	/* Simulate a reboot so recovery, rather than the live cursors, is used. */
+	memset(&fixture->fs, 0, sizeof(fixture->fs));
+	(void)setup();
+	err = zms_mount(&fixture->fs);
+	zassert_ok(err, "zms_mount after reboot failed: %d", err);
+	zassert_equal(fixture->fs.data_wra, data_wra, "wrong data_wra after reboot: %llx",
+		      fixture->fs.data_wra);
+	zassert_equal(fixture->fs.ate_wra, ate_wra, "wrong ate_wra after reboot: %llx",
+		      fixture->fs.ate_wra);
+
+	memset(rd_buf, 0x55, sizeof(rd_buf));
+	len = zms_write(&fixture->fs, TEST_DATA_ID + 1, rd_buf, sizeof(rd_buf));
+	zassert_equal(len, sizeof(rd_buf), "zms_write after reboot failed: %zd", len);
+
+	len = zms_read(&fixture->fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
+	zassert_equal(len, sizeof(rd_buf), "zms_read failed: %zd", len);
+	zassert_mem_equal(rd_buf, data, sizeof(data), "data of the first ATE was overwritten");
+}
+
 #ifdef CONFIG_TEST_ZMS_SIMULATOR
 static int flash_sim_write_calls_find(struct stats_hdr *hdr, void *arg, const char *name,
 				      uint16_t off)
