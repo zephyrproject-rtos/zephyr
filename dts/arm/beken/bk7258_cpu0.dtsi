@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2026 Embracecactus
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/clock/beken_bk7258_clock.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			device_type = "cpu";
+			clock-frequency = <26000000>;
+		};
+	};
+
+	/* Exclude the first 64 KB SRAM window reserved for SoC spinlocks. */
+	sram0: memory@28010000 {
+		compatible = "mmio-sram";
+		reg = <0x28010000 0x00020000>;
+	};
+
+	pinctrl: pin-controller {
+		compatible = "beken,bk7258-pinctrl";
+	};
+
+	soc {
+		flash_controller: flash-controller@44030000 {
+			compatible = "beken,bk7258-flash-controller";
+			reg = <0x44030000 0x58>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* CRC packing and sector erases stop before physical offset 0x3f0000. */
+			flash0: flash@2000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x02000000 0x003b4000>;
+			};
+		};
+
+		clk: clock-controller@44010020 {
+			compatible = "beken,bk7258-clock-controller";
+			reg = <0x44010020 0x4>, <0x44010030 0x4>;
+			reg-names = "select", "enable";
+			#clock-cells = <1>;
+		};
+
+		uart1: serial@45830000 {
+			compatible = "beken,bk7258-uart";
+			reg = <0x45830000 0x100>;
+			current-speed = <115200>;
+			clocks = <&clk BK7258_CLK_UART1>;
+			interrupts = <15 3>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

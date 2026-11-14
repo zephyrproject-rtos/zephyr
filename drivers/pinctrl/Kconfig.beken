@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Embracecactus
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_BEKEN_BK7258
+	bool "Beken BK7258 pin controller driver"
+	default y
+	depends on DT_HAS_BEKEN_BK7258_PINCTRL_ENABLED
+	help
+	  Enable pin controller driver for Beken BK7258.
