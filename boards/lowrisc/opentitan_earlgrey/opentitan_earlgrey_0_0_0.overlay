@@ -14,3 +14,16 @@
 &plic {
 	riscv,ndev = <185>;
 };
+
+/* The I2C driver supports only the I2C 2.0.0 IP, and this revision has I2C 1.0. */
+&i2c0 {
+	status = "disabled";
+};
+
+&i2c1 {
+	status = "disabled";
+};
+
+&i2c2 {
+	status = "disabled";
+};
