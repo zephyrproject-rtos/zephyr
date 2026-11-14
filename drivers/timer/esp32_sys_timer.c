@@ -35,23 +35,43 @@ static bool timeout_idle;
 /* Systimer HAL layer object */
 static systimer_hal_context_t systimer_hal;
 
-static void set_systimer_alarm(uint64_t time)
+/* The alarm stays enabled from init on: loading a new target replaces the
+ * armed one, and a target the counter has already passed fires at once.
+ * Only the target registers of this alarm are written, so the configuration
+ * register shared with the esp_timer alarm is left untouched.
+ */
+static ALWAYS_INLINE void set_systimer_alarm(uint64_t time)
 {
-	systimer_hal_select_alarm_mode(&systimer_hal,
-		SYSTIMER_ALARM_OS_TICK_CORE0, SYSTIMER_ALARM_MODE_ONESHOT);
-
-	systimer_counter_value_t alarm = {.val = time};
-
-	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, false);
-	systimer_ll_set_alarm_target(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, alarm.val);
+	systimer_ll_set_alarm_target(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, time);
 	systimer_ll_apply_alarm_value(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
-	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, true);
-	systimer_ll_enable_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, true);
 }
 
-static uint64_t get_systimer_alarm(void)
+static ALWAYS_INLINE void systimer_snapshot(void)
 {
-	return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
+	systimer_ll_counter_snapshot(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK);
+	while (!systimer_ll_is_counter_value_valid(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK)) {
+	}
+}
+
+/* Another snapshot may land between the low and high reads, so the low
+ * word is read again until it is stable.
+ */
+static ALWAYS_INLINE uint64_t get_systimer_alarm(void)
+{
+	uint32_t lo;
+	uint32_t hi;
+	uint32_t lo_start;
+
+	systimer_snapshot();
+	lo_start = systimer_ll_get_counter_value_low(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK);
+	do {
+		lo = lo_start;
+		hi = systimer_ll_get_counter_value_high(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK);
+		lo_start = systimer_ll_get_counter_value_low(systimer_hal.dev,
+							     SYSTIMER_COUNTER_OS_TICK);
+	} while (lo_start != lo);
+
+	return ((uint64_t)hi << 32) | lo;
 }
 
 /* Counter value sampled by sys_clock_disable(), reported by the read below
@@ -94,7 +114,21 @@ static void timer_driver_set_compare(uint64_t cycles)
 	set_systimer_alarm(cycles);
 }
 
+#define TIMER_CORE_HAVE_CYCLE_GET_32
+
 #include "system_timer_generic.h"
+
+/* Only the low word is latched and read: a snapshot taken by someone else
+ * in between just returns a later count.
+ */
+uint32_t sys_clock_cycle_get_32(void)
+{
+	if (systimer_hal.dev == NULL) {
+		return (uint32_t)stopped_cycles;
+	}
+	systimer_snapshot();
+	return systimer_ll_get_counter_value_low(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK);
+}
 
 static void IRAM_ATTR sys_timer_isr(void *arg)
 {
@@ -149,9 +183,7 @@ void sys_clock_idle_exit(void)
 		missed_cycles = expected_cycles - systimer_diff;
 	}
 
-	uint64_t new_value =
-		systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_OS_TICK) +
-		missed_cycles;
+	uint64_t new_value = get_systimer_alarm() + missed_cycles;
 
 	/* Compensate systimer missed cycles while in sleep */
 	systimer_ll_set_counter_value(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK, new_value);
@@ -182,8 +214,13 @@ static int sys_clock_driver_init(void)
 	systimer_hal_init(&systimer_hal);
 	systimer_hal_connect_alarm_counter(&systimer_hal,
 		SYSTIMER_ALARM_OS_TICK_CORE0, SYSTIMER_COUNTER_OS_TICK);
+	systimer_hal_select_alarm_mode(&systimer_hal, SYSTIMER_ALARM_OS_TICK_CORE0,
+				       SYSTIMER_ALARM_MODE_ONESHOT);
+	systimer_ll_enable_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, true);
 
 	systimer_hal_enable_counter(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
+	set_systimer_alarm(get_systimer_alarm() + BIT64(50));
+	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, true);
 	systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_OS_TICK, 0, true);
 #if defined(CONFIG_SMP)
 	systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_OS_TICK, 1, true);
