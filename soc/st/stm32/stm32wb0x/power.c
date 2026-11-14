@@ -51,12 +51,11 @@ static uint32_t rcc_apb1enr_vr, rcc_ahbenr_vr;
 /* Callback for arch_pm_s2ram_suspend */
 static int suspend_system_to_deepstop(void)
 {
+	unsigned int key;
 	/* Enable SLEEPDEEP to allow entry in Deepstop */
 	LL_LPM_EnableDeepSleep();
 
-	/* Complete all memory transactions */
-	__DSB();
-
+	key = arch_pm_state_set_prepare();
 
 	/* Attempt entry in Deepstop */
 	__WFI();
@@ -67,6 +66,8 @@ static int suspend_system_to_deepstop(void)
 	 */
 	__NOP();
 	__NOP();
+
+	arch_pm_state_set_finish(key);
 
 	/* This code is reached only if the device did not
 	 * enter Deepstop mode (e.g., because an interrupt
@@ -202,7 +203,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	 * The only thing we may have to do is release GPIO retention,
 	 * which we have not done yet because we wanted the driver to
 	 * restore all configuration first.
-	 * We also need to enable IRQs to fulfill the API contract.
 	 */
 #if HAS_GPIO_RETENTION
 	LL_PWR_DisableGPIORET();
@@ -214,5 +214,4 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		while (LL_RCC_HSE_IsReady() == 0U) {
 		}
 	}
-	__enable_irq();
 }
