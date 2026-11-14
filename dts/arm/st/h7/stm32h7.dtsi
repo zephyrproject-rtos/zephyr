@@ -1365,6 +1365,7 @@
 		nvmem-cells = <&ts_cal1_otp>, <&ts_cal2_otp>;
 		nvmem-cell-names = "TS_CAL1", "TS_CAL2";
 		ts-cal1-temp = <30>;
+		/* STM32H742/H743/H750/H753: the driver takes it from the silicon revision */
 		ts-cal2-temp = <110>;
 		ts-cal-vrefanalog = <3300>;
 		ts-cal-resolution = <16>;
