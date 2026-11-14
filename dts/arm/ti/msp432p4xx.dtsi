@@ -39,6 +39,13 @@
 			status = "disabled";
 		};
 
+		rtc0: rtc@40004400 {
+			compatible = "ti,msp432p4xx-rtc";
+			reg = <0x40004400 0x20>;
+			interrupts = <29 0>;
+			status = "disabled";
+		};
+
 		adc0: adc@40012000 {
 			compatible = "ti,msp432p4xx-adc";
 			reg = <0x40012000 0x1000>;

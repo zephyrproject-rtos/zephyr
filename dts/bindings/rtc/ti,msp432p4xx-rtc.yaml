@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Gail Rojas
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSP432P4XX RTC_C real-time clock
+
+compatible: "ti,msp432p4xx-rtc"
+
+include: rtc-device.yaml
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true
