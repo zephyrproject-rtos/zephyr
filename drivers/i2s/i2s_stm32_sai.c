@@ -291,15 +291,16 @@ static int sai_sub_dma_reload(const struct device *dev)
 	struct stm32_sai_sub_data *sub_data = dev->data;
 	struct stream *stream = &sub_data->stream;
 	uint32_t src, dst;
+	int ret;
 
 	sai_sub_dma_addr_get(dev, &src, &dst);
 
-	/*
-	 * dma_reload() also restarts the channel, so no dma_start() follows it: with a
-	 * short block, dma_start() could find the transfer already complete, clear its
-	 * pending interrupt and re-enable the channel with nothing left to transfer.
-	 */
-	return dma_reload(stream->dma_dev, stream->dma_channel, src, dst, stream->mem_block_len);
+	ret = dma_reload(stream->dma_dev, stream->dma_channel, src, dst, stream->mem_block_len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return dma_start(stream->dma_dev, stream->dma_channel);
 }
 
 static void sai_sub_dma_stop(const struct device *dev)
