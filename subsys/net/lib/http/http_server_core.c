@@ -821,6 +821,20 @@ int enter_http_done_state(struct http_client_ctx *client)
 	return -EAGAIN;
 }
 
+/* An HTTP/2 DATA or SETTINGS frame without payload leaves nothing in the
+ * buffer once its header is parsed. It still has to be processed now: it may
+ * end the request, and the client may send nothing more until it is answered.
+ */
+static bool http2_empty_frame_pending(const struct http_client_ctx *client)
+{
+	if (!IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) || client->current_frame.length != 0) {
+		return false;
+	}
+
+	return client->server_state == HTTP_SERVER_FRAME_DATA_STATE ||
+	       client->server_state == HTTP_SERVER_FRAME_SETTINGS_STATE;
+}
+
 static int handle_http_request(struct http_client_ctx *client)
 {
 	int ret = -EINVAL;
@@ -883,7 +897,7 @@ static int handle_http_request(struct http_client_ctx *client)
 			ret = handle_http_done(client);
 			break;
 		}
-	} while (ret >= 0 && client->data_len > 0);
+	} while (ret >= 0 && (client->data_len > 0 || http2_empty_frame_pending(client)));
 
 	if (ret < 0 && ret != -EAGAIN) {
 		return ret;
