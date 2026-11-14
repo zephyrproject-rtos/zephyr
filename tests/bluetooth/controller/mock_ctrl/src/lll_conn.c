@@ -31,7 +31,7 @@
 #include "lll_conn.h"
 
 #include "lll/lll_internal.h"
-#include "lll/lll_tim_internal.h"
+#include "lll_tim_internal.h"
 #include "lll/lll_prof_internal.h"
 
 void lll_conn_flush(uint16_t handle, struct lll_conn *lll)

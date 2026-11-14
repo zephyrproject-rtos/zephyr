@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_SUBSYS_BLUETOOTH_CONTROLLER_LL_SW_NATIVE_HAL_SWI_VENDOR_HAL_H_
+#define ZEPHYR_SUBSYS_BLUETOOTH_CONTROLLER_LL_SW_NATIVE_HAL_SWI_VENDOR_HAL_H_
+
+#include "hal/bsim/swi.h"
+
+#endif /* ZEPHYR_SUBSYS_BLUETOOTH_CONTROLLER_LL_SW_NATIVE_HAL_SWI_VENDOR_HAL_H_ */
