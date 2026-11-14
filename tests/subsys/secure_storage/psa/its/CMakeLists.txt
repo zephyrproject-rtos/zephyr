@@ -12,3 +12,6 @@ zephyr_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM
 
 zephyr_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM
   src/custom_store.c)
+
+zephyr_sources_ifdef(CONFIG_SETTINGS_CUSTOM
+  src/settings_backend.c)
