@@ -113,6 +113,7 @@ tests:
       - nucleo_l152re
       - nucleo_u083rc
       - nucleo_u385rg_q
+      - nucleo_u3c5zi_q
       - nucleo_wb55rg
       - nucleo_wba55cg
       - nucleo_wl55jc
@@ -173,6 +174,7 @@ tests:
       - nucleo_l432kc
       - nucleo_u083rc
       - nucleo_u385rg_q
+      - nucleo_u3c5zi_q
       - nucleo_wb55rg
       - nucleo_wba55cg
       - nucleo_wl55jc
@@ -202,6 +204,7 @@ tests:
       - nucleo_l152re
       - nucleo_l432kc
       - nucleo_u083rc
+      - nucleo_u3c5zi_q
       - nucleo_wb55rg
       - nucleo_wba55cg
       - nucleo_wl55jc
@@ -229,6 +232,7 @@ tests:
       - nucleo_l152re
       - nucleo_l432kc
       - nucleo_u083rc
+      - nucleo_u3c5zi_q
       - nucleo_wb55rg
       - nucleo_wba55cg
       - nucleo_wl55jc
