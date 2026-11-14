@@ -5,3 +5,13 @@ tests:
     tags: json
     integration_platforms:
       - native_sim
+  libraries.encoding.json.asan:
+    filter: not CONFIG_NEWLIB_LIBC
+    tags: json
+    extra_configs:
+      - CONFIG_ASAN=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim

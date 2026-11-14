@@ -1921,6 +1921,107 @@ ZTEST(lib_json_test, test_json_invalid_number)
 	parse_harness(encoded, ARRAY_SIZE(encoded));
 }
 
+#define INPUT_AT_END_BUF_SIZE 64
+
+/*
+ * Copy the input to the end of buf, so that the byte after the input is
+ * outside buf and AddressSanitizer reports any access to it.
+ */
+static char *input_at_end(char *buf, const char *input)
+{
+	size_t len = strlen(input);
+
+	zassert_true(len <= INPUT_AT_END_BUF_SIZE);
+
+	return memcpy(buf + INPUT_AT_END_BUF_SIZE - len, input, len);
+}
+
+ZTEST(lib_json_test, test_json_number_ends_input)
+{
+	static const char *const inputs[] = {
+		"{\"some_int\":1",
+		"{\"some_int16\":-1",
+		"{\"some_int64\":123",
+		"{\"some_uint64\":123",
+		"{\"some_array\":[1",
+		"{\"some_array\":[1,2",
+		"{\"some_nested_struct\":{\"nested_int\":1",
+		"{\"some_nested_struct\":{\"nested_uint8\":1",
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(inputs); i++) {
+		char buf[INPUT_AT_END_BUF_SIZE];
+		struct test_struct ts = {0};
+		size_t len = strlen(inputs[i]);
+		char *input = input_at_end(buf, inputs[i]);
+		int64_t ret;
+
+		ret = json_obj_parse(input, len, test_descr, ARRAY_SIZE(test_descr), &ts);
+		zassert_equal(ret, -EINVAL, "'%s' must fail, got %lld", inputs[i], (long long)ret);
+	}
+}
+
+ZTEST(lib_json_test, test_json_fp_ends_input)
+{
+	static const char *const float_inputs[] = {
+		"{\"some_float\":1.5",
+		"{\"some_float\":NaN",
+		"{\"some_float\":Infinity",
+		"{\"some_float\":-Infinity",
+		"{\"some_array\":[1.5,NaN",
+	};
+	static const char *const double_inputs[] = {
+		"{\"some_double\":1.5",
+		"{\"some_double\":NaN",
+		"{\"some_double\":-Infinity",
+		"{\"some_array\":[1.5,Infinity",
+	};
+	char buf[INPUT_AT_END_BUF_SIZE];
+	char *input;
+	int64_t ret;
+
+	for (size_t i = 0; i < ARRAY_SIZE(float_inputs); i++) {
+		struct test_float tf = {0};
+
+		input = input_at_end(buf, float_inputs[i]);
+		ret = json_obj_parse(input, strlen(float_inputs[i]), obj_float_descr,
+				     ARRAY_SIZE(obj_float_descr), &tf);
+		zassert_equal(ret, -EINVAL, "'%s' must fail, got %lld", float_inputs[i],
+			      (long long)ret);
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(double_inputs); i++) {
+		struct test_double td = {0};
+
+		input = input_at_end(buf, double_inputs[i]);
+		ret = json_obj_parse(input, strlen(double_inputs[i]), obj_double_descr,
+				     ARRAY_SIZE(obj_double_descr), &td);
+		zassert_equal(ret, -EINVAL, "'%s' must fail, got %lld", double_inputs[i],
+			      (long long)ret);
+	}
+}
+
+ZTEST(lib_json_test, test_json_mixed_arr_number_ends_input)
+{
+	static const char *const inputs[] = {
+		"[\"msg\",1",
+		"[\"msg\",1,{\"nested_int\":1",
+		"[\"msg\",1,{},[10,20",
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(inputs); i++) {
+		char buf[INPUT_AT_END_BUF_SIZE];
+		struct test_mixed_arr arr = {0};
+		size_t len = strlen(inputs[i]);
+		char *input = input_at_end(buf, inputs[i]);
+		int ret;
+
+		ret = json_mixed_arr_parse(input, len, test_mixed_arr_descr,
+					   ARRAY_SIZE(test_mixed_arr_descr), &arr);
+		zassert_true(ret < 0, "'%s' must fail, got %d", inputs[i], ret);
+	}
+}
+
 ZTEST(lib_json_test, test_json_missing_quote)
 {
 	struct test_struct ts;
