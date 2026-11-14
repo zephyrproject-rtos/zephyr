@@ -2,5 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_QEMU_RH850_U2C
+config BOARD_QEMU_RH850
+	bool
+	default y
 	select QEMU_TARGET
