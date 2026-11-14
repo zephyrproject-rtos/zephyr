@@ -402,6 +402,8 @@ enum {
 	NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED_VAL,
 	NET_EVENT_WIFI_CMD_NAN_RECEIVE_VAL,
 
+	NET_EVENT_WIFI_CMD_STA_ROAMED_VAL,
+
 	NET_EVENT_WIFI_CMD_MAX,
 };
 
@@ -462,6 +464,8 @@ enum net_event_wifi_cmd {
 	/** Supplicant specific event */
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_RECEIVE),
 #endif
+	/** Station completed a roam */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_STA_ROAMED),
 };
 
 /** Event emitted for Wi-Fi scan result */
@@ -503,6 +507,15 @@ enum net_event_wifi_cmd {
 /** Event signal change of connected AP */
 #define NET_EVENT_WIFI_SIGNAL_CHANGE				\
 	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_SIGNAL_CHANGE)
+
+/** @brief Station completed a roam. Event info is a @ref wifi_sta_roam_info. */
+#define NET_EVENT_WIFI_STA_ROAMED (NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_STA_ROAMED)
+
+/** @brief Information about a completed station roam. */
+struct wifi_sta_roam_info {
+	/** BSSID of the new access point. */
+	uint8_t bssid[WIFI_MAC_ADDR_LEN];
+};
 
 /** Event Neighbor Report Completed */
 #define NET_EVENT_WIFI_NEIGHBOR_REP_COMP			\
@@ -2542,6 +2555,17 @@ BUILD_ASSERT(!(IS_ENABLED(CONFIG_WIFI_USE_NATIVE_NETWORKING) && IS_ENABLED(CONFI
  * @param status Connect result status
  */
 void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status);
+
+/**
+ * @brief Report a completed station roam and a change of network attachment.
+ *
+ * Call this when the new access point is authorized and the station can carry
+ * traffic. The caller determines whether the station roamed within its SSID.
+ *
+ * @param iface Station interface.
+ * @param bssid BSSID of the new access point, WIFI_MAC_ADDR_LEN bytes.
+ */
+void wifi_mgmt_sta_roamed(struct net_if *iface, const uint8_t *bssid);
 
 /** Wi-Fi management connect result event with the IEEE 802.11 codes
  *
