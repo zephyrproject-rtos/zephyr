@@ -27,6 +27,20 @@ config LORAWAN_NATIVE_ENGINE_PRIORITY
 	help
 	  Priority for the native LoRaWAN engine thread.
 
+config LORAWAN_NATIVE_RX_SETUP_MARGIN_MS
+	int "Receive window setup margin in milliseconds"
+	default 400 if LORA_RUI3
+	default 50
+	range 1 1000
+	help
+	  How long before a receive window the stack wakes to put the radio
+	  into reception, which has to cover the time the driver needs to
+	  apply the window's parameters. A radio on SPI is ready in well
+	  under a millisecond; one reached over an AT command interface
+	  spends a command exchange on each setting it has to change, and
+	  the RUI3 modem was measured at 118 ms for a window. The upper
+	  bound is the shortest receive delay a device negotiates, 1 s.
+
 config LORAWAN_NATIVE_PUBLIC_NETWORK
 	bool "LoRaWAN Public Network"
 	default y

@@ -40,10 +40,11 @@ config LORA_MODULE_BACKEND_NATIVE
 	depends on DT_HAS_SEMTECH_SX1261_ENABLED || DT_HAS_SEMTECH_SX1262_ENABLED \
 		|| DT_HAS_ST_STM32WL_SUBGHZ_RADIO_ENABLED || DT_HAS_SEMTECH_LR1121_ENABLED \
 		|| DT_HAS_ZEPHYR_FAKE_LORA_ENABLED || DT_HAS_SEMTECH_SX1268_ENABLED \
-		|| DT_HAS_SEMTECH_LLCC68_ENABLED
+		|| DT_HAS_SEMTECH_LLCC68_ENABLED || DT_HAS_RAKWIRELESS_RUI3_ENABLED
 	help
 	  Use Zephyr's built-in LoRa drivers without external modules.
-	  Currently supports SX1261, SX1262, SX1268, LLCC68, STM32WL, LR1121 and fake radios.
+	  Currently supports SX1261, SX1262, SX1268, LLCC68, STM32WL, LR1121,
+	  RUI3 and fake radios.
 
 endchoice
 
@@ -68,6 +69,14 @@ config LORA_HAS_RSSI
 	help
 	  Selected by a driver that implements lora_rssi(), and with it the
 	  lora_energy_detect() the common code builds on that read.
+
+config LORA_HAS_LBT
+	bool
+	help
+	  Selected by a driver that implements lora_lbt(), because the device
+	  senses the channel itself. A driver that leaves the operation out
+	  can still reach the same measurement through LORA_HAS_GFSK_MODEM
+	  and LORA_HAS_RSSI, which the caller combines.
 
 config LORA_SHELL
 	bool "LoRa Shell"
@@ -101,6 +110,7 @@ config LORA_INIT_PRIORITY
 	  System initialization priority for LoRa drivers.
 
 rsource "Kconfig.sx12xx"
+rsource "Kconfig.rui3"
 rsource "Kconfig.rylrxxx"
 rsource "lora-basics-modem/Kconfig"
 rsource "native/Kconfig"

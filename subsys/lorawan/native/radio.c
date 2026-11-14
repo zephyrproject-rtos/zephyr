@@ -92,9 +92,31 @@ int radio_tx(const uint8_t *data, size_t len,
 	return 0;
 }
 
-#ifdef CONFIG_LORA_GFSK
 int radio_lbt(uint32_t freq, uint32_t bandwidth_hz, int16_t threshold_dbm, uint32_t scan_time_ms)
 {
+	int ret;
+
+	/*
+	 * A device that senses the channel itself answers in one call. Ask it
+	 * first, and fall back to measuring here for the radios the host
+	 * drives directly.
+	 */
+	ret = lora_lbt(radio_dev, freq, bandwidth_hz, threshold_dbm, K_MSEC(scan_time_ms));
+	if (ret != -ENOSYS) {
+		if (ret < 0) {
+			LOG_ERR("LBT failed: %d", ret);
+			return ret;
+		}
+
+		if (ret == 1) {
+			LOG_DBG("LBT: %u Hz busy", freq);
+			return -EBUSY;
+		}
+
+		return 0;
+	}
+
+#ifdef CONFIG_LORA_GFSK
 	/*
 	 * Nothing is demodulated, so the receiver only has to be wide enough:
 	 * the GFSK modem takes its bandwidth in Hz, where the LoRa one is
@@ -110,7 +132,6 @@ int radio_lbt(uint32_t freq, uint32_t bandwidth_hz, int16_t threshold_dbm, uint3
 		.bandwidth = bandwidth_hz,
 		.pulse_shape = LORA_GFSK_PULSE_SHAPE_BT_1_0,
 	};
-	int ret;
 
 	ret = lora_config_gfsk(radio_dev, &lbt_config);
 	if (ret != 0) {
@@ -130,20 +151,12 @@ int radio_lbt(uint32_t freq, uint32_t bandwidth_hz, int16_t threshold_dbm, uint3
 	}
 
 	return 0;
-}
 #else
-int radio_lbt(uint32_t freq, uint32_t bandwidth_hz, int16_t threshold_dbm, uint32_t scan_time_ms)
-{
-	ARG_UNUSED(freq);
-	ARG_UNUSED(bandwidth_hz);
-	ARG_UNUSED(threshold_dbm);
-	ARG_UNUSED(scan_time_ms);
-
-	LOG_ERR("LBT: requested without CONFIG_LORA_GFSK");
+	LOG_ERR("LBT: the radio cannot sense a channel and CONFIG_LORA_GFSK is off");
 
 	return -ENOTSUP;
-}
 #endif /* CONFIG_LORA_GFSK */
+}
 
 uint32_t radio_airtime(uint32_t data_len)
 {

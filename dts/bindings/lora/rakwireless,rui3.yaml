@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RAKwireless module running the RUI3 firmware, driven over its AT command
+  interface in LoRa P2P mode.
+
+  RUI3 is the firmware RAKwireless ships on its WisDuo modules, among them the
+  RAK3172, RAK4630 and RAK11720. It answers AT commands on a UART and works
+  either as a LoRaWAN end device or as a raw LoRa transceiver. This driver uses
+  the latter and switches the module to P2P with AT+NWM=0 when it is not
+  already there.
+
+  The module keeps part of its configuration in flash, so the driver sends a
+  command only for a value that differs from the one it last applied, and a
+  change of network work mode costs a reboot.
+
+  The RUI3 version the driver expects is a Kconfig option, not a devicetree
+  property: the firmware runs on the module and is flashed independently, so
+  the driver queries it at init.
+
+compatible: "rakwireless,rui3"
+
+include: uart-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset line of the module, active low. Modules whose reset pin is not
+      wired to the host leave this out, and the driver then resets the module
+      with ATZ instead.
