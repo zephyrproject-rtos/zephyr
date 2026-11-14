@@ -79,6 +79,159 @@
 /** @} */
 
 /**
+ * @name Present State Register Bits
+ * @{
+ */
+#define SDHC_PRESENT_STATE_CMD_INHIBIT  BIT(0)
+#define SDHC_PRESENT_STATE_DAT_INHIBIT  BIT(1)
+#define SDHC_PRESENT_STATE_WRITE_ENABLE BIT(10)
+#define SDHC_PRESENT_STATE_READ_ENABLE  BIT(11)
+#define SDHC_PRESENT_STATE_DAT0         BIT(20)
+/** @} */
+
+/**
+ * @name Host Control 1 Register Bits
+ *
+ * DMA selection encodings below use the SDHCI v3 addressing model. In v4
+ * mode, address width is selected separately in Host Control 2.
+ * @{
+ */
+#define SDHC_HOST_CTRL1_WIDTH4       BIT(1)
+#define SDHC_HOST_CTRL1_HIGH_SPEED   BIT(2)
+#define SDHC_HOST_CTRL1_DMA_MASK     GENMASK(4, 3)
+#define SDHC_HOST_CTRL1_DMA_ADMA2    BIT(4)
+#define SDHC_HOST_CTRL1_DMA_ADMA2_64 GENMASK(4, 3)
+#define SDHC_HOST_CTRL1_WIDTH8       BIT(5)
+/** @} */
+
+/**
+ * @name Power Control Register Bits
+ * @{
+ */
+#define SDHC_POWER_CTRL_BUS_POWER   BIT(0)
+#define SDHC_POWER_CTRL_VOLTAGE_330 (7U << 1)
+/** @} */
+
+/**
+ * @name Clock Control Register Bits
+ * @{
+ */
+#define SDHC_CLOCK_CONTROL_INTERNAL BIT(0)
+#define SDHC_CLOCK_CONTROL_STABLE   BIT(1)
+#define SDHC_CLOCK_CONTROL_CARD     BIT(2)
+#define SDHC_CLOCK_CONTROL_DIV_MASK GENMASK(15, 6)
+/** @} */
+
+/** Maximum Timeout Control value, excluding the reserved value 0xf. */
+#define SDHC_TIMEOUT_CTRL_MAX 0x0eU
+
+/**
+ * @name Software Reset Register Bits
+ * @{
+ */
+#define SDHC_SW_RESET_ALL  BIT(0)
+#define SDHC_SW_RESET_CMD  BIT(1)
+#define SDHC_SW_RESET_DATA BIT(2)
+/** @} */
+
+/**
+ * @name Normal Interrupt Status Register Bits
+ * @{
+ */
+#define SDHC_NORMAL_INT_STAT_CMD_COMPLETE      BIT(0)
+#define SDHC_NORMAL_INT_STAT_TRANSFER_COMPLETE BIT(1)
+#define SDHC_NORMAL_INT_STAT_BUF_WRITE_READY   BIT(4)
+#define SDHC_NORMAL_INT_STAT_BUF_READ_READY    BIT(5)
+#define SDHC_NORMAL_INT_STAT_CARD              BIT(8)
+#define SDHC_NORMAL_INT_STAT_RETUNING_EVENT    BIT(12)
+#define SDHC_NORMAL_INT_STAT_ERROR             BIT(15)
+/** @} */
+
+/**
+ * @name Error Interrupt Status Register Bits
+ * @{
+ */
+#define SDHC_ERROR_INT_STAT_CMD_TIMEOUT  BIT(0)
+#define SDHC_ERROR_INT_STAT_CMD_CRC      BIT(1)
+#define SDHC_ERROR_INT_STAT_DATA_TIMEOUT BIT(4)
+#define SDHC_ERROR_INT_STAT_DATA_CRC     BIT(5)
+#define SDHC_ERROR_INT_STAT_AUTO_CMD     BIT(8)
+#define SDHC_ERROR_INT_STAT_MASK         GENMASK(15, 0)
+/** @} */
+
+/**
+ * @name Transfer Mode Register Bits
+ * @{
+ */
+#define SDHC_TRANSFER_MODE_DMA_EN     BIT(0)
+#define SDHC_TRANSFER_MODE_COUNT      BIT(1)
+#define SDHC_TRANSFER_MODE_AUTO_CMD12 BIT(2)
+#define SDHC_TRANSFER_MODE_AUTO_CMD23 BIT(3)
+#define SDHC_TRANSFER_MODE_READ       BIT(4)
+#define SDHC_TRANSFER_MODE_MULTI      BIT(5)
+/** @} */
+
+/**
+ * @name Command Register Bits
+ * @{
+ */
+#define SDHC_COMMAND_CRC   BIT(3)
+#define SDHC_COMMAND_INDEX BIT(4)
+#define SDHC_COMMAND_DATA  BIT(5)
+#define SDHC_COMMAND_ABORT (3U << 6)
+/** @} */
+
+/**
+ * @name Host Control 2 Register Bits
+ * @{
+ */
+#define SDHC_HOST_CTRL2_UHS_MASK    GENMASK(2, 0)
+#define SDHC_HOST_CTRL2_UHS_SDR25   BIT(0)
+#define SDHC_HOST_CTRL2_UHS_SDR50   BIT(1)
+#define SDHC_HOST_CTRL2_UHS_SDR104  GENMASK(1, 0)
+#define SDHC_HOST_CTRL2_V18         BIT(3)
+#define SDHC_HOST_CTRL2_EXEC_TUNING BIT(6)
+#define SDHC_HOST_CTRL2_TUNED       BIT(7)
+#define SDHC_HOST_CTRL2_PRESET      BIT(15)
+/** @} */
+
+/**
+ * @name ADMA2 Descriptor Fields (16-bit Length Mode)
+ *
+ * SD Host Controller Simplified Specification v4.20, sections 1.13.2 and
+ * 1.13.3.1. A zero 16-bit length encodes 64 KiB; v4.10 also defines a
+ * separate 26-bit length mode.
+ * @{
+ */
+#define SDHC_ADMA2_MAX_LENGTH_16BIT 65536U
+#define SDHC_ADMA2_ATTR_VALID       BIT(0)
+#define SDHC_ADMA2_ATTR_END         BIT(1)
+#define SDHC_ADMA2_ATTR_TRAN        BIT(5)
+/** @} */
+
+/** @brief SDHCI v3-compatible 32-bit ADMA2 descriptor. */
+struct sdhc_adma2_desc {
+	uint16_t attribute; /**< Descriptor attributes. */
+	uint16_t length;    /**< Transfer length; zero encodes 64 KiB. */
+	uint32_t address;   /**< Data address. */
+} __packed;
+
+/**
+ * @brief SDHCI v3-compatible 64-bit ADMA2 descriptor (12-byte format).
+ *
+ * Host Version 4 Enable must be clear; v4 mode uses a 16-byte descriptor.
+ */
+struct sdhc_adma2_desc64 {
+	uint16_t attribute;    /**< Descriptor attributes. */
+	uint16_t length;       /**< Transfer length; zero encodes 64 KiB. */
+	uint32_t address_low;  /**< Low 32 bits of the data address. */
+	uint32_t address_high; /**< High 32 bits of the data address. */
+} __packed;
+
+BUILD_ASSERT(sizeof(struct sdhc_adma2_desc) == 8U);
+BUILD_ASSERT(sizeof(struct sdhc_adma2_desc64) == 12U);
+
+/**
  * @name Capabilities Register Bits
  * @{
  */
