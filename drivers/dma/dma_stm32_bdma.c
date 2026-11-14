@@ -305,6 +305,38 @@ static void bdma_stm32_clear_channel_irq(const struct device *dev, uint32_t id)
 	stm32_bdma_clear_channel_irq(dma, id);
 }
 
+static void bdma_stm32_enable_channel_irq(const struct device *dev, uint32_t id)
+{
+	const struct bdma_stm32_config *config = dev->config;
+	BDMA_TypeDef *bdma = (BDMA_TypeDef *)(config->base);
+	struct bdma_stm32_channel *channel = &config->channels[id];
+	uint32_t ch = bdma_stm32_id_to_channel(id);
+
+	/* Always enable the transfer error interrupt */
+	LL_BDMA_EnableIT_TE(bdma, ch);
+
+	/* Enable transfer complete ISR if in non-cyclic mode or a callback is requested */
+	if (!channel->cyclic || channel->bdma_callback != NULL) {
+		LL_BDMA_EnableIT_TC(bdma, ch);
+	}
+
+	/* Enable Half-Transfer irq if circular mode is enabled and a callback is requested */
+	if (channel->cyclic && channel->bdma_callback != NULL) {
+		LL_BDMA_EnableIT_HT(bdma, ch);
+	}
+}
+
+static void bdma_stm32_disable_channel_irq(const struct device *dev, uint32_t id)
+{
+	const struct bdma_stm32_config *config = dev->config;
+	BDMA_TypeDef *bdma = (BDMA_TypeDef *)(config->base);
+	uint32_t ch = bdma_stm32_id_to_channel(id);
+
+	LL_BDMA_DisableIT_TE(bdma, ch);
+	LL_BDMA_DisableIT_TC(bdma, ch);
+	LL_BDMA_DisableIT_HT(bdma, ch);
+}
+
 static void bdma_stm32_irq_handler(const struct device *dev, uint32_t id)
 {
 	const struct bdma_stm32_config *config = dev->config;
@@ -901,15 +933,10 @@ static int bdma_stm32_configure(const struct device *dev,
 #endif
 	LL_BDMA_Init(bdma, bdma_stm32_id_to_channel(id), &BDMA_InitStruct);
 
-	LL_BDMA_EnableIT_TC(bdma, bdma_stm32_id_to_channel(id));
-
-	/* Enable Half-Transfer irq if circular mode is enabled */
-	if (channel->cyclic) {
-		LL_BDMA_EnableIT_HT(bdma, bdma_stm32_id_to_channel(id));
-	}
-
 	return ret;
 }
+
+static int bdma_stm32_start(const struct device *dev, uint32_t id);
 
 static int bdma_stm32_reload(const struct device *dev, uint32_t id,
 			     uint32_t src, uint32_t dst,
@@ -951,12 +978,8 @@ static int bdma_stm32_reload(const struct device *dev, uint32_t id,
 				     size / channel->dst_size);
 	}
 
-	/* When reloading the dma, the channel is busy again before enabling */
-	channel->busy = true;
-
-	stm32_bdma_enable_channel(bdma, id);
-
-	return 0;
+	/* STM32-specific historical quirk: reload() implies start() */
+	return bdma_stm32_start(dev, id);
 }
 
 static int bdma_stm32_start(const struct device *dev, uint32_t id)
@@ -980,6 +1003,7 @@ static int bdma_stm32_start(const struct device *dev, uint32_t id)
 	channel->busy = true;
 
 	bdma_stm32_clear_channel_irq(dev, id);
+	bdma_stm32_enable_channel_irq(dev, id);
 	stm32_bdma_enable_channel(bdma, id);
 
 	return 0;
@@ -1000,18 +1024,12 @@ static int bdma_stm32_stop(const struct device *dev, uint32_t id)
 		return 0;
 	}
 
-	/* Repeated stop : return now if channel is already stopped */
-	if (!stm32_bdma_is_enabled_channel(bdma, id)) {
-		/* A channel configured but never started is released too */
-		channel->busy = false;
-		return 0;
+	bdma_stm32_disable_channel_irq(dev, id);
+
+	/* The channel is already disabled after a transfer error or a repeated stop */
+	if (stm32_bdma_is_enabled_channel(bdma, id)) {
+		bdma_stm32_disable_channel(bdma, id);
 	}
-
-	/* in bdma_stm32_configure, enabling is done regardless of defines */
-	LL_BDMA_DisableIT_TC(bdma, bdma_stm32_id_to_channel(id));
-	LL_BDMA_DisableIT_HT(bdma, bdma_stm32_id_to_channel(id));
-
-	bdma_stm32_disable_channel(bdma, id);
 	bdma_stm32_clear_channel_irq(dev, id);
 
 	/* Finally, flag channel as free */
