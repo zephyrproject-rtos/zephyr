@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Short PC1 (LPUART1_TX, CN7 pin 36) and PC0 (LPUART1_RX, CN7 pin 38) */
+dut: &lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pc1 &lpuart1_rx_pc0>;
+	dmas = <&gpdma1 0 35 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 1 34 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+};
