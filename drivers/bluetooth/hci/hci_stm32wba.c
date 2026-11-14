@@ -602,9 +602,15 @@ static int bt_hci_stm32wba_open(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static int radio_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	static const struct stm32_pclken radio_clk[] =
+		STM32_DT_CLOCKS(DT_PARENT(DT_DRV_INST(0)));
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
+		if (clock_control_on(clk, (clock_control_subsys_t) &radio_clk[0]) != 0) {
+			LOG_ERR("clock op failed");
+			return -EIO;
+		}
 #if defined(CONFIG_PM_S2RAM)
 		if (standby_entered) {
 			/* Restore NVIC configuration for radio */
