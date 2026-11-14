@@ -5,4 +5,22 @@ tests:
     harness: ztest
     filter: dt_alias_exists("dmic0")
     integration_platforms:
-      - mimxrt595_evk/mimxrt595s/cm33
+      - ek_ra8p1/r7ka8p1kflcac/cm85         # Renesas RA PDM driver
+      - kit_pse84_eval/pse846gps2dbzc4a/m33 # Infineon PDM driver
+      - mimxrt1170_evk@B/mimxrt1176/cm7     # NXP MICFIL driver
+      - mimxrt595_evk/mimxrt595s/cm33       # NXP DMIC driver
+      - native_sim                          # native_sim DMIC driver
+      - nrf5340dk/nrf5340/cpuapp            # nRF PDM driver
+      - stm32f769i_disco                    # STM32 DFSDM driver
+      - stm32n6570_dk/stm32n657xx/sb        # STM32 MDF driver
+
+  drivers.audio.dmic_api.nrf_clock_control_legacy:
+    depends_on: dmic
+    tags: dmic
+    harness: ztest
+    filter: dt_alias_exists("dmic0") and dt_compat_enabled("nordic,nrf-clock")
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_WARN_DEPRECATED=n
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp            # nRF PDM driver
