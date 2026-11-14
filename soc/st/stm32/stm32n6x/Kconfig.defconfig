@@ -17,9 +17,11 @@ config FLASH_SIZE
 	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,kb) \
 		if $(DT_FLASH_HAS_SIZE_PROP) && XIP
 
-# For STM32N6, override the value defined in STM32 Kconfig to use CPU clock frequency
+# Default the Zephyr cycle rate to the selected system timer.
+# SysTick uses cpusw; LPTIM uses its LSE/LSI clock source.
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default "$(DT_STM32_CPU_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,cpusw)"
+	default STM32_LPTIM_CLOCK if STM32_LPTIM_TIMER
+	default "$(DT_STM32_CPU_CLOCK_FREQ)" if CORTEX_M_SYSTICK && "$(dt_nodelabel_enabled,cpusw)"
 
 config STM32_LTDC_FB_SMH_ALIGN
 	default 256 if MEMC_STM32_XSPI_PSRAM && SHARED_MULTI_HEAP && \
