@@ -53,8 +53,13 @@ LOG_MODULE_REGISTER(ifx_sar_adc, CONFIG_ADC_LOG_LEVEL);
 
 #define IFX_SAR_MAX_PIN_NUM        64U /* Board total pins 0-63 */
 #define IFX_SAR_GPIO_PINS_PER_PORT 8U  /* 8 pins per port */
-#define IFX_SAR_SARMUX_PIN_MAX     7U  /* SARMUX port 2, pins 0-7 */
+#define IFX_SAR_SARMUX_PIN_MAX     7U  /* SARMUX pads 0-7 */
+#ifdef PASS0_SARMUX_PADS0_PORT
+/* The SARMUX port depends on the device, e.g. port 5 on PSOC4 HVMS */
+#define IFX_SAR_SARMUX_GPIO_PORT   PASS0_SARMUX_PADS0_PORT
+#else
 #define IFX_SAR_SARMUX_GPIO_PORT   2U  /* SARMUX dedicated GPIO port */
+#endif
 
 /* SARBUS routing addresses (CTB OpAmp outputs)
  *
@@ -83,6 +88,36 @@ LOG_MODULE_REGISTER(ifx_sar_adc, CONFIG_ADC_LOG_LEVEL);
 	 ((((pin) >> IFX_SAR_SARBUS_CTB_SHIFT) & IFX_SAR_SARBUS_OA_MASK) <= \
 	 IFX_SAR_SARBUS_CTB_MAX))
 
+/*
+ * SAR v4 (e.g. PSOC4 HVMS) provides additional analog inputs which are routed to the SAR
+ * through the MUX_SWITCH2 and MUX_SWITCH_HW_CTRL2 registers:
+ *   - DIAGMUX: internal supply and reference voltages (single-ended, positive input only)
+ *   - EXPMUX: expansion GPIO inputs (only on devices that have it, positive and negative input)
+ *
+ * Address format: upper nibble = mux type (0x5 EXPMUX, 0x6 DIAGMUX), lower 3 bits = input index
+ * Addresses defined in cy_sar.h: CY_SAR_ADDR_EXPMUX_x, CY_SAR_ADDR_DIAG_xxx
+ */
+#if defined(CY_IP_M0S8PASS4A_SAR_VERSION) && (4U <= CY_IP_M0S8PASS4A_SAR_VERSION)
+#define IFX_SAR_HAS_DIAGMUX 1
+#if defined(PASS0_SAR_EXPMUX_PRESENT) && (1U == PASS0_SAR_EXPMUX_PRESENT)
+#define IFX_SAR_HAS_EXPMUX  1
+/* EXPMUX pad n is pin n of this port, e.g. port 3 on PSOC4 HVMS */
+#define IFX_SAR_EXPMUX_GPIO_PORT PASS0_EXPMUX_PADS0_PORT
+#endif
+#endif
+
+#define IFX_SAR_MUX2_GROUP_MASK    0xF8U /* Mux type and reserved bits of the address */
+#define IFX_SAR_MUX2_INDEX_MASK    0x07U /* Input index within the mux */
+#define IFX_SAR_EXPMUX_ADDR_BASE   0x50U
+#define IFX_SAR_DIAGMUX_ADDR_BASE  0x60U
+#define IFX_SAR_DIAGMUX_HW_CTRL_SHIFT 16U /* DIAGMUX input 0 bit in MUX_SWITCH_HW_CTRL2 */
+
+#define IFX_SAR_IS_DIAGMUX_ADDR(pin) \
+	(((pin) & IFX_SAR_MUX2_GROUP_MASK) == IFX_SAR_DIAGMUX_ADDR_BASE)
+
+#define IFX_SAR_IS_EXPMUX_ADDR(pin) \
+	(((pin) & IFX_SAR_MUX2_GROUP_MASK) == IFX_SAR_EXPMUX_ADDR_BASE)
+
 enum ifx_sar_vref_src {
 	IFX_SAR_VREF_INTERNAL = 0,
 	IFX_SAR_VREF_VDDA = 1,
@@ -101,6 +136,8 @@ struct ifx_sar_config {
 enum ifx_sar_pin_routing {
 	IFX_SAR_ROUTE_SARMUX,
 	IFX_SAR_ROUTE_SARBUS,  /* CTB OpAmp outputs */
+	IFX_SAR_ROUTE_DIAGMUX, /* Internal supply and reference voltages (SAR v4) */
+	IFX_SAR_ROUTE_EXPMUX,  /* Expansion GPIO inputs (SAR v4) */
 };
 
 struct ifx_sar_channel_cfg {
@@ -112,6 +149,9 @@ struct ifx_sar_channel_cfg {
 	enum ifx_sar_pin_routing vplus_routing;
 	enum ifx_sar_pin_routing vminus_routing;
 	uint32_t sw_mask;
+#ifdef IFX_SAR_HAS_DIAGMUX
+	uint32_t sw_mask2;   /* MUX_SWITCH2 (DIAGMUX/EXPMUX) switches */
+#endif
 };
 
 struct ifx_sar_data {
@@ -125,6 +165,10 @@ struct ifx_sar_data {
 	uint32_t configured_sequence_mask;  /* Track which sequence is currently configured */
 	uint32_t configured_switch0;        /* Configured MUX_SWITCH0 value */
 	uint32_t configured_hw_ctrl;        /* Configured MUX_SWITCH_HW_CTRL value */
+#ifdef IFX_SAR_HAS_DIAGMUX
+	uint32_t configured_switch2;        /* Configured MUX_SWITCH2 value */
+	uint32_t configured_hw_ctrl2;       /* Configured MUX_SWITCH_HW_CTRL2 value */
+#endif
 	uint8_t resolution[CY_SAR_SEQ_NUM_CHANNELS];
 	struct ifx_sar_channel_cfg channel_cfg[CY_SAR_SEQ_NUM_CHANNELS];
 	uint32_t sample_times[IFX_SAR_NUM_SAMPLE_TIMES];
@@ -192,6 +236,18 @@ static int ifx_sar_determine_routing(uint8_t pin, enum ifx_sar_pin_routing *rout
 		*routing = IFX_SAR_ROUTE_SARBUS;
 		return 0;
 	}
+#ifdef IFX_SAR_HAS_DIAGMUX
+	if (IFX_SAR_IS_DIAGMUX_ADDR(pin)) {
+		*routing = IFX_SAR_ROUTE_DIAGMUX;
+		return 0;
+	}
+#endif
+#ifdef IFX_SAR_HAS_EXPMUX
+	if (IFX_SAR_IS_EXPMUX_ADDR(pin)) {
+		*routing = IFX_SAR_ROUTE_EXPMUX;
+		return 0;
+	}
+#endif
 
 	LOG_ERR("Invalid pin number %u for routing determination", pin);
 	return -EINVAL;
@@ -200,11 +256,27 @@ static int ifx_sar_determine_routing(uint8_t pin, enum ifx_sar_pin_routing *rout
 /* Get GPIO port number based on pin number and routing method */
 static uint32_t ifx_sar_get_gpio_port(uint8_t pin, enum ifx_sar_pin_routing routing)
 {
-	/* SARMUX pins are on port 2 */
+	/* SARMUX pins are on the dedicated SARMUX port of the device */
 	ARG_UNUSED(pin);
 	ARG_UNUSED(routing);
 	return IFX_SAR_SARMUX_GPIO_PORT;
 }
+
+#ifdef IFX_SAR_HAS_EXPMUX
+/* Configure the GPIO pad of an EXPMUX input as analog */
+static int ifx_sar_expmux_set_analog(uint8_t idx)
+{
+	GPIO_PRT_Type *port_base = Cy_GPIO_PortToAddr(IFX_SAR_EXPMUX_GPIO_PORT);
+
+	if (port_base == NULL) {
+		return -EINVAL;
+	}
+
+	Cy_GPIO_SetDrivemode(port_base, idx, CY_GPIO_DM_ANALOG);
+
+	return 0;
+}
+#endif /* IFX_SAR_HAS_EXPMUX */
 
 /* Convert Zephyr ADC acquisition time to hardware clock ticks */
 static int ifx_sar_calculate_acq_ticks(const struct device *dev,
@@ -282,6 +354,9 @@ static int ifx_sar_channel_setup(const struct device *dev,
 	const struct ifx_sar_config *cfg = dev->config;
 	uint8_t ch = channel_cfg->channel_id;
 	uint32_t sw_mask = 0;
+#ifdef IFX_SAR_HAS_DIAGMUX
+	uint32_t sw_mask2 = 0;
+#endif
 
 	/* Channel validation */
 	if (ch >= CY_SAR_SEQ_NUM_CHANNELS) {
@@ -449,6 +524,86 @@ static int ifx_sar_channel_setup(const struct device *dev,
 
 		sw_mask |= CY_SAR_MUX_FW_SARBUS0_VPLUS;
 
+#ifdef IFX_SAR_HAS_DIAGMUX
+	} else if (data->channel_cfg[ch].vplus_routing == IFX_SAR_ROUTE_DIAGMUX) {
+		/*
+		 * DIAGMUX routing - internal supply and reference voltages.
+		 * The negative input is VSSA, so only single-ended mode is supported.
+		 * VBAT/24 additionally requires the VBAT divider (HVDIV) to be enabled by the
+		 * application.
+		 */
+		if (channel_cfg->differential) {
+			LOG_ERR("Channel %u: DIAGMUX input 0x%02x supports single-ended mode only",
+				ch, channel_cfg->input_positive);
+			return -EINVAL;
+		}
+
+		switch (channel_cfg->input_positive) {
+		case CY_SAR_ADDR_DIAG_GND:
+			sw_mask2 |= CY_SAR_DIAGMUX_FW_VD0_VPLUS;
+			break;
+		case CY_SAR_ADDR_DIAG_SRSS_BGR:
+			sw_mask2 |= CY_SAR_DIAGMUX_FW_VD1_VPLUS;
+			break;
+		case CY_SAR_ADDR_DIAG_VBAT_DIV_24:
+			sw_mask2 |= CY_SAR_DIAGMUX_FW_VD3_VPLUS;
+			break;
+		case CY_SAR_ADDR_DIAG_VCC_DIV_2:
+			sw_mask2 |= CY_SAR_DIAGMUX_FW_VD6_VPLUS;
+			break;
+		case CY_SAR_ADDR_DIAG_VDD_DIV_6:
+			sw_mask2 |= CY_SAR_DIAGMUX_FW_VD7_VPLUS;
+			break;
+		default:
+			LOG_ERR("Channel %u: Invalid DIAGMUX input 0x%02x", ch,
+				channel_cfg->input_positive);
+			return -EINVAL;
+		}
+#endif
+
+#ifdef IFX_SAR_HAS_EXPMUX
+	} else if (data->channel_cfg[ch].vplus_routing == IFX_SAR_ROUTE_EXPMUX) {
+		/* EXPMUX routing - expansion GPIO input */
+		uint8_t idx = channel_cfg->input_positive & IFX_SAR_MUX2_INDEX_MASK;
+
+		ret = ifx_sar_expmux_set_analog(idx);
+		if (ret < 0) {
+			LOG_ERR("Channel %u: EXPMUX input %u is not available", ch, idx);
+			return ret;
+		}
+
+		/* PDL EXPMUX switch macros are unusable (undefined guard), use register masks */
+		switch (idx) {
+		case 0:
+			sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P0_VPLUS_Msk;
+			break;
+		case 1:
+			sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P1_VPLUS_Msk;
+			break;
+		case 2:
+			sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P2_VPLUS_Msk;
+			break;
+		case 3:
+			sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P3_VPLUS_Msk;
+			break;
+		case 4:
+			sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P4_VPLUS_Msk;
+			break;
+		case 5:
+			sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P5_VPLUS_Msk;
+			break;
+		case 6:
+			sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P6_VPLUS_Msk;
+			break;
+		case 7:
+			sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P7_VPLUS_Msk;
+			break;
+		default:
+			LOG_ERR("Channel %u: Invalid EXPMUX input %u", ch, idx);
+			return -EINVAL;
+		}
+#endif
+
 	} else {
 		LOG_ERR("Channel %u: Unknown routing type for positive input pin %u", ch,
 			channel_cfg->input_positive);
@@ -565,16 +720,70 @@ static int ifx_sar_channel_setup(const struct device *dev,
 			}
 
 			sw_mask |= CY_SAR_MUX_FW_SARBUS1_VMINUS;
+
+#ifdef IFX_SAR_HAS_EXPMUX
+		} else if (data->channel_cfg[ch].vminus_routing == IFX_SAR_ROUTE_EXPMUX) {
+
+			uint8_t idx = channel_cfg->input_negative & IFX_SAR_MUX2_INDEX_MASK;
+
+			ret = ifx_sar_expmux_set_analog(idx);
+			if (ret < 0) {
+				LOG_ERR("Channel %u: EXPMUX input %u is not available", ch, idx);
+				return ret;
+			}
+
+			switch (idx) {
+			case 0:
+				sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P0_VMINUS_Msk;
+				break;
+			case 1:
+				sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P1_VMINUS_Msk;
+				break;
+			case 2:
+				sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P2_VMINUS_Msk;
+				break;
+			case 3:
+				sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P3_VMINUS_Msk;
+				break;
+			case 4:
+				sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P4_VMINUS_Msk;
+				break;
+			case 5:
+				sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P5_VMINUS_Msk;
+				break;
+			case 6:
+				sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P6_VMINUS_Msk;
+				break;
+			case 7:
+				sw_mask2 |= SAR_MUX_SWITCH2_MUX_FW_EXP_P7_VMINUS_Msk;
+				break;
+			default:
+				LOG_ERR("Channel %u: Invalid EXPMUX negative input %u", ch, idx);
+				return -EINVAL;
+			}
+#endif
+
+		} else {
+			LOG_ERR("Channel %u: Unsupported routing for negative input 0x%02x", ch,
+				channel_cfg->input_negative);
+			return -EINVAL;
 		}
 	}
 
 	/* Check if any switches were configured */
+#ifdef IFX_SAR_HAS_DIAGMUX
+	if (sw_mask == 0 && sw_mask2 == 0) {
+#else
 	if (sw_mask == 0) {
+#endif
 		LOG_ERR("Channel %u: No SAR switches configured", ch);
 		return -EINVAL;
 	}
 
 	data->channel_cfg[ch].sw_mask = sw_mask;
+#ifdef IFX_SAR_HAS_DIAGMUX
+	data->channel_cfg[ch].sw_mask2 = sw_mask2;
+#endif
 	data->channel_cfg[ch].reference = channel_cfg->reference;
 
 	/* Configure acquisition time using hardware sample time registers */
@@ -766,6 +975,12 @@ static int ifx_sar_configure_pdl(struct ifx_sar_data *data,
 		} else if (ch_cfg->vplus_routing == IFX_SAR_ROUTE_SARBUS) {
 			/* SARBUS - use CTB OpAmp address directly */
 			vplus_addr = (cy_en_sar_chan_config_port_pin_addr_t)ch_cfg->vplus;
+#ifdef IFX_SAR_HAS_DIAGMUX
+		} else if (ch_cfg->vplus_routing == IFX_SAR_ROUTE_DIAGMUX ||
+			   ch_cfg->vplus_routing == IFX_SAR_ROUTE_EXPMUX) {
+			/* DIAGMUX/EXPMUX - the input value is the SAR address */
+			vplus_addr = (cy_en_sar_chan_config_port_pin_addr_t)ch_cfg->vplus;
+#endif
 		} else {
 			LOG_ERR("Unsupported positive input routing type: %d",
 				ch_cfg->vplus_routing);
@@ -788,6 +1003,13 @@ static int ifx_sar_configure_pdl(struct ifx_sar_data *data,
 
 				vminus_addr = (cy_en_sar_chan_config_neg_port_pin_addr_t)temp_addr;
 				vminus_addr_en = true;
+#ifdef IFX_SAR_HAS_EXPMUX
+			} else if (ch_cfg->vminus_routing == IFX_SAR_ROUTE_EXPMUX) {
+				/* EXPMUX - the input value is the SAR address */
+				vminus_addr =
+					(cy_en_sar_chan_config_neg_port_pin_addr_t)ch_cfg->vminus;
+				vminus_addr_en = true;
+#endif
 			} else {
 				LOG_ERR("Unsupported negative input routing type: %d",
 					ch_cfg->vminus_routing);
@@ -861,12 +1083,18 @@ static void ifx_sar_set_switches(struct ifx_sar_data *data, const struct adc_seq
 
 	uint32_t combined_switch_mask = 0;
 	uint32_t combined_hw_ctrl_mask = 0;
+#ifdef IFX_SAR_HAS_DIAGMUX
+	uint32_t combined_switch2_mask = 0;
+	uint32_t combined_hw_ctrl2_mask = 0;
+#endif
 
 	/* Accumulate switch masks from ALL configured channels */
 	for (int ch = 0; ch < CY_SAR_SEQ_NUM_CHANNELS; ch++) {
 		if (all_channels_mask & BIT(ch)) {
 			combined_switch_mask |= data->channel_cfg[ch].sw_mask;
-
+#ifdef IFX_SAR_HAS_DIAGMUX
+			combined_switch2_mask |= data->channel_cfg[ch].sw_mask2;
+#endif
 			/* Add hardware control for this channel's switches */
 			if (data->channel_cfg[ch].vplus_routing == IFX_SAR_ROUTE_SARMUX) {
 				/* Enable hardware control for SARMUX pin */
@@ -892,6 +1120,32 @@ static void ifx_sar_set_switches(struct ifx_sar_data *data, const struct adc_seq
 					combined_hw_ctrl_mask |=
 						SAR_MUX_SWITCH_HW_CTRL_MUX_HW_CTRL_SARBUS1_Msk;
 				}
+#ifdef IFX_SAR_HAS_DIAGMUX
+			} else if (data->channel_cfg[ch].vplus_routing ==
+				   IFX_SAR_ROUTE_DIAGMUX) {
+				/* Enable hardware control for DIAGMUX input */
+				uint32_t idx = data->channel_cfg[ch].vplus &
+					       IFX_SAR_MUX2_INDEX_MASK;
+
+				combined_hw_ctrl2_mask |= BIT(IFX_SAR_DIAGMUX_HW_CTRL_SHIFT + idx);
+#endif
+#ifdef IFX_SAR_HAS_EXPMUX
+			} else if (data->channel_cfg[ch].vplus_routing ==
+				   IFX_SAR_ROUTE_EXPMUX) {
+				/* Enable hardware control for EXPMUX pin */
+				uint32_t pin = data->channel_cfg[ch].vplus &
+					       IFX_SAR_MUX2_INDEX_MASK;
+
+				combined_hw_ctrl2_mask |= BIT(pin);
+
+				/* If differential, also enable hardware control for vminus */
+				if (data->channel_cfg[ch].differential) {
+					uint32_t vminus_pin = data->channel_cfg[ch].vminus &
+						IFX_SAR_MUX2_INDEX_MASK;
+
+					combined_hw_ctrl2_mask |= BIT(vminus_pin);
+				}
+#endif
 			}
 		}
 	}
@@ -903,11 +1157,22 @@ static void ifx_sar_set_switches(struct ifx_sar_data *data, const struct adc_seq
 	/* Apply computed switch configuration */
 	cfg->base->MUX_SWITCH0 = combined_switch_mask;
 	cfg->base->MUX_SWITCH_HW_CTRL = combined_hw_ctrl_mask;
+#ifdef IFX_SAR_HAS_DIAGMUX
+	/* DIAGMUX/EXPMUX switches are only touched when a channel uses them */
+	if (combined_switch2_mask != 0U) {
+		cfg->base->MUX_SWITCH2 = combined_switch2_mask;
+		cfg->base->MUX_SWITCH_HW_CTRL2 = combined_hw_ctrl2_mask;
+	}
+#endif
 
 	/* Cache the configuration (using all_channels_mask, not sequence->channels) */
 	data->configured_sequence_mask = all_channels_mask;
 	data->configured_switch0 = combined_switch_mask;
 	data->configured_hw_ctrl = combined_hw_ctrl_mask;
+#ifdef IFX_SAR_HAS_DIAGMUX
+	data->configured_switch2 = combined_switch2_mask;
+	data->configured_hw_ctrl2 = combined_hw_ctrl2_mask;
+#endif
 }
 
 static int start_read(const struct device *dev, const struct adc_sequence *sequence)
@@ -1044,10 +1309,9 @@ static void ifx_sar_isr(const struct device *dev)
 								? IFX_SAR_10BIT_MASK
 								: IFX_SAR_8BIT_MASK;
 					result = (uint16_t)raw & mask;
-#if (defined(CY_IP_M0S8PASS4A_SAR_VERSION) && \
-	 ((CY_IP_M0S8PASS4A_SAR_VERSION == 2U) || (CY_IP_M0S8PASS4A_SAR_VERSION == 3U)))
+#if defined(CY_IP_M0S8PASS4A_SAR_VERSION) && (2U <= CY_IP_M0S8PASS4A_SAR_VERSION)
 					/*
-					 * SAR v2/v3 hardware limitation: single-ended channels
+					 * SAR v2-v4 hardware limitation: single-ended channels
 					 * always output signed 12-bit values (max 2047) regardless
 					 * of the SINGLE_ENDED_SIGNED register bit setting. When
 					 * configured for unsigned mode, compensate by doubling
