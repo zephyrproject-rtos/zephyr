@@ -8,6 +8,8 @@ set(QEMU_BINARY_SUFFIX rh850)
 
 if(CONFIG_BOARD_QEMU_RH850_U2A)
   set(QEMU_MACHINE rh850-u2a)
+elseif(CONFIG_BOARD_QEMU_RH850_U2B)
+  set(QEMU_MACHINE rh850-u2b)
 else()
   set(QEMU_MACHINE rh850-u2c)
 endif()
