@@ -1,0 +1,14 @@
+common:
+  tags:
+    - drivers
+    - uart
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.uart.emul_bridge: {}
+  drivers.uart.emul_bridge.async:
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
