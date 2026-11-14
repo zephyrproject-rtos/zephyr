@@ -11,3 +11,4 @@ toolchain:
 supported:
   - gpio
   - i2c
+  - spi

@@ -34,4 +34,38 @@
 			bias-pull-up;
 		};
 	};
+
+	spi1_default: spi1_default {
+		group0 {
+			pinmux = <PIN_P3_4__SPI1_MISO_A>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P3_5__SPI1_MOSI_A>,
+				 <PIN_P3_6__SPI1_SCLK_A>;
+		};
+	};
+
+	gpio0_default: gpio0_default {
+		group0 {
+			/* mikroBUS AN on P0_2, CS on P0_3 */
+			pinmux = <PIN_P0_2__GPIO>,
+				 <PIN_P0_3__GPIO>;
+		};
+	};
+
+	gpio3_default: gpio3_default {
+		group0 {
+			/* mikroBUS RST on P3_0 */
+			pinmux = <PIN_P3_0__GPIO>;
+		};
+
+		group1 {
+			/* mikroBUS INT on P3_1 */
+			pinmux = <PIN_P3_1__GPIO>;
+			input-enable;
+			bias-pull-up;
+		};
+	};
 };
