@@ -58,7 +58,7 @@ extern "C" {
 /**
  * @defgroup shell_api Shell
  * @since 1.14
- * @version 1.0.0
+ * @version 1.0.1
  * @ingroup os_services
  * @{
  */
