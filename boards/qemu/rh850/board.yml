@@ -9,6 +9,12 @@ boards:
     socs:
       - name: r7f702300
 
+  - name: qemu_rh850_u2b
+    full_name: QEMU Emulation for Renesas RH850/U2B
+    vendor: renesas
+    socs:
+      - name: rh850u2b
+
   - name: qemu_rh850_u2c
     full_name: QEMU Emulation for Renesas RH850/U2C
     vendor: renesas
