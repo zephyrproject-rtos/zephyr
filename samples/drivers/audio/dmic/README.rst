@@ -15,11 +15,10 @@ and two channels) but does not in any way process the received audio data.
 Requirements
 ************
 
-The device to be used by the sample is specified by defining a devicetree node
-label named ``dmic_dev``.
-The sample has been tested on :zephyr:board:`nrf52840dk` (nrf52840dk/nrf52840)
-and :zephyr:board:`nrf5340dk` (nrf5340dk/nrf5340/cpuapp), and provides overlay
-files for both of these boards.
+The device to be used by the sample is specified by the ``dmic0`` devicetree alias.
+The sample provides an overlay file for :zephyr:board:`xiao_ble` (xiao_ble/nrf52840/sense),
+which has an on-board PDM microphone. To exercise a driver on a board without a microphone,
+use the :zephyr_file:`tests/drivers/audio/dmic_api` test instead.
 
 Building and Running
 ********************
@@ -30,6 +29,6 @@ To build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/audio/dmic
-   :board: nrf52840dk/nrf52840
+   :board: xiao_ble/nrf52840/sense
    :goals: build flash
    :compact:
