@@ -136,7 +136,7 @@ config QEMU_EXTRA_FLAGS
 
 config QEMU_DEVICE_LOADER
 	bool "QEMU device loader"
-	depends on QEMU_TARGET
+	depends on QEMU_TARGET && !RISCV_S_MODE_EXTERNAL_SBI
 	help
 	  When enabled, QEMU will use the device loader functionality to load
 	  the ELF file instead of the "-kernel" option. On certain architectures,
@@ -144,6 +144,11 @@ config QEMU_DEVICE_LOADER
 	  the ELF rather than the entry point within the ELF. This option is
 	  used to enable logic at the board.cmake level that uses "-device,loader"
 	  rather than "-kernel" for loading
+
+	  This option cannot be combined with RISCV_S_MODE_EXTERNAL_SBI. The
+	  loader sets the program counter directly, so external SBI firmware
+	  such as OpenSBI does not run and the image would be entered in
+	  machine mode with no SBI to service its calls.
 
 config QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE
 	int "QEMU virtio-blk logical block size"
