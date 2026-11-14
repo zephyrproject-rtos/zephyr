@@ -10,6 +10,7 @@
 
 #include <time.h>
 
+#include <zephyr/sys/base64.h>
 #include <zephyr/sys/clock.h>
 
 LOG_MODULE_REGISTER(ocpp, CONFIG_OCPP_LOG_LEVEL);
@@ -121,6 +122,84 @@ static int ocpp_ws_connect_cb(int ws_sock, struct http_request *req,
 	return 0;
 }
 
+#if defined(CONFIG_OCPP_BASIC_AUTH)
+/* RFC 7617 section 2: no control characters (0x00 to 0x1f and 0x7f) */
+static bool ocpp_basic_auth_text_valid(const char *text, size_t len)
+{
+	for (size_t i = 0U; i < len; i++) {
+		uint8_t c = (uint8_t)text[i];
+
+		if ((c < 0x20U) || (c == 0x7fU)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/* Build the "Authorization: Basic <base64(username:password)>" header line
+ * (RFC 7617) in hdr, or an empty string without a username.
+ */
+int ocpp_basic_auth_hdr(const struct ocpp_basic_auth *auth, char *hdr, size_t hdr_len)
+{
+	const size_t prefix_len = sizeof(OCPP_AUTH_HDR_PREFIX) - 1U;
+	uint8_t cred[OCPP_AUTH_CRED_MAX_LEN];
+	size_t user_len;
+	size_t cred_len;
+	size_t b64_len;
+	int ret;
+
+	if (hdr_len == 0U) {
+		return -ENOMEM;
+	}
+
+	hdr[0] = '\0';
+
+	if (auth->username == NULL) {
+		return 0;
+	}
+
+	user_len = strlen(auth->username);
+	if ((user_len == 0U) || (user_len > OCPP_AUTH_USERNAME_MAX_LEN) ||
+	    (strchr(auth->username, ':') != NULL) ||
+	    !ocpp_basic_auth_text_valid(auth->username, user_len)) {
+		return -EINVAL;
+	}
+
+	/* At least 16 bytes (A00.FR.205 of the OCPP 1.6 security whitepaper).
+	 * Any byte is accepted: OCPP-J 1.6 (6.2.2) sends the key as it is.
+	 */
+	if ((auth->password == NULL) || (auth->password_len < OCPP_AUTH_PASSWORD_MIN_LEN) ||
+	    (auth->password_len > OCPP_AUTH_PASSWORD_MAX_LEN)) {
+		return -EINVAL;
+	}
+
+	cred_len = user_len + 1U + auth->password_len;
+	b64_len = 4U * ((cred_len + 2U) / 3U);
+	if (hdr_len < (prefix_len + b64_len + sizeof(OCPP_AUTH_HDR_SUFFIX))) {
+		return -ENOMEM;
+	}
+
+	(void)memcpy(cred, (const uint8_t *)auth->username, user_len);
+	cred[user_len] = (uint8_t)':';
+	(void)memcpy(&cred[user_len + 1U], auth->password, auth->password_len);
+
+	(void)memcpy(hdr, OCPP_AUTH_HDR_PREFIX, prefix_len);
+	ret = base64_encode((uint8_t *)&hdr[prefix_len], b64_len + 1U, &b64_len,
+			    cred, cred_len);
+	(void)memset(cred, 0, sizeof(cred));
+	if (ret < 0) {
+		hdr[0] = '\0';
+		return ret;
+	}
+
+	(void)memcpy(&hdr[prefix_len + b64_len], OCPP_AUTH_HDR_SUFFIX,
+		     sizeof(OCPP_AUTH_HDR_SUFFIX));
+
+	return 0;
+}
+#endif /* CONFIG_OCPP_BASIC_AUTH */
+
 static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 {
 	int ret;
@@ -206,8 +285,14 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 		char buf[128];
 		char const *optional_hdr[] = {
 					"Sec-WebSocket-Protocol: ocpp1.6\r\n",
+					NULL,
 					NULL };
 
+#if defined(CONFIG_OCPP_BASIC_AUTH)
+		if (ui->auth_hdr[0] != '\0') {
+			optional_hdr[1] = ui->auth_hdr;
+		}
+#endif
 		snprintk(buf, sizeof(buf), "%s:%u", ui->csi.cs_ip, ui->csi.port);
 		config.url = ui->csi.ws_url;
 		config.host = buf;
@@ -627,8 +712,23 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 int ocpp_upstream_init(struct ocpp_info *ctx, struct ocpp_cs_info *csi)
 {
 	struct ocpp_upstream_info *ui = &ctx->ui;
+#if defined(CONFIG_OCPP_BASIC_AUTH)
+	int ret;
+#endif
 
 	LOG_INF("upstream init");
+
+#if defined(CONFIG_OCPP_BASIC_AUTH)
+	ret = ocpp_basic_auth_hdr(&csi->auth, ui->auth_hdr, sizeof(ui->auth_hdr));
+	if (ret < 0) {
+		LOG_ERR("Failed to set the basic authentication: %d", ret);
+		return ret;
+	}
+#else
+	if (csi->auth.username != NULL) {
+		return -ENOTSUP;
+	}
+#endif
 
 	ui->csi.ws_url = strdup(csi->ws_url);
 	ui->csi.cs_ip = strdup(csi->cs_ip);

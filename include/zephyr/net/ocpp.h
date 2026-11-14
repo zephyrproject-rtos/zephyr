@@ -34,6 +34,11 @@ extern "C" {
 /** Max length of string literals e.g idtag */
 #define CISTR50	50
 
+/** Minimum size in bytes of the HTTP Basic authentication password, set by
+ *  the OCPP 1.6 security whitepaper (A00.FR.205)
+ */
+#define OCPP_BASIC_AUTH_PASSWORD_MIN_LEN 16
+
 /**
  * @brief OCPP IdTag authorization status in result to ocpp request
  *        authorization
@@ -150,6 +155,31 @@ struct ocpp_tls_credentials {
 	size_t tls_hostname_size; /**< Size of TLS Hostname */
 };
 
+/**
+ * @brief HTTP Basic authentication credentials of the charge point (CP)
+ *
+ * Sent to the central system (CS) in the websocket handshake when
+ * @kconfig{CONFIG_OCPP_BASIC_AUTH} is enabled, as OCPP-J 1.6 (6.2.2) and the
+ * security profiles 1 and 2 of the OCPP 1.6 security whitepaper define.
+ * Leave @ref username as NULL to connect without authentication.
+ */
+struct ocpp_basic_auth {
+	/** CP identity as used in the websocket URL (A00.FR.204), without
+	 *  colon or control characters, at most
+	 *  @kconfig{CONFIG_OCPP_BASIC_AUTH_USERNAME_MAX_LEN} characters
+	 */
+	const char *username;
+	/** Authorization key (A00.FR.205), sent as it is: its bytes, not
+	 *  their hexadecimal digits
+	 */
+	const uint8_t *password;
+	/** Size of the password in bytes, from
+	 *  @ref OCPP_BASIC_AUTH_PASSWORD_MIN_LEN to
+	 *  @kconfig{CONFIG_OCPP_BASIC_AUTH_PASSWORD_MAX_LEN}
+	 */
+	size_t password_len;
+};
+
 /** @brief Parameters for ocpp_init information about central system (CS) */
 struct ocpp_cs_info {
 	char *cs_ip;	/**< Central system IP address */
@@ -159,6 +189,7 @@ struct ocpp_cs_info {
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	struct ocpp_tls_credentials creds; /**< Central system TLS Credentials */
 #endif
+	struct ocpp_basic_auth auth; /**< HTTP Basic authentication credentials */
 };
 
 /** @brief Parameters opaque session handle for ocpp_* API */

@@ -71,6 +71,9 @@ A filled CP, CS structure and user callback needs to be passed in ocpp_init.
 
    ret = ocpp_init(&cpi, &csi, user_notify_cb, NULL);
 
+A central system may require the charge point to authenticate itself, see
+:ref:`ocpp_basic_auth`.
+
 A unique session must open for each physical connector before any ocpp
 transaction API call.
 
@@ -103,6 +106,52 @@ is notified to CS with meter reading and connector id using ocpp_start_transacti
 
 Once the start transaction is success, user callback is invoked to get meter
 readings from the library. callback should be not be hold for longer time.
+
+.. _ocpp_basic_auth:
+
+HTTP Basic authentication
+*************************
+
+A central system can require the charge point to authenticate with HTTP Basic
+authentication (:rfc:`7617`) in the websocket handshake, as OCPP-J 1.6
+(section 6.2.2) and the security profiles 1 and 2 of the
+`OCPP 1.6 security whitepaper <https://openchargealliance.org/whitepapers/>`_
+define. Enable :kconfig:option:`CONFIG_OCPP_BASIC_AUTH` and fill the
+credentials before calling ocpp_init:
+
+.. code-block:: c
+
+   /* authorization key 0001020304050607FFFFFFFFFFFFFFFFFFFFFFFF */
+   static const uint8_t key[] = {
+           0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0xff, 0xff,
+           0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+   };
+
+   csi.ws_url = "/steve/websocket/CentralSystemService/zephyr";
+   csi.auth.username = "zephyr"; /* charge point identity */
+   csi.auth.password = key;
+   csi.auth.password_len = sizeof(key);
+
+* The username has to be the charge point identity, the last element of the
+  websocket URL (A00.FR.204). A central system rejects the handshake
+  otherwise.
+* The password is the authorization key (A00.FR.205), of 16 to
+  :kconfig:option:`CONFIG_OCPP_BASIC_AUTH_PASSWORD_MAX_LEN` bytes. Its bytes
+  are sent as they are, as in the example of OCPP-J 1.6, and not their
+  hexadecimal digits. Pass the digits, or another text, only to a central
+  system that compares the password as text.
+* The ``AuthorizationKey`` configuration key is not implemented, so the
+  central system cannot change the password.
+
+.. warning::
+
+   Without TLS (security profile 1) the credentials are readable by anyone on
+   the path. The whitepaper allows this in trusted networks only (A00.FR.201)
+   and recommends a connection secured by other means, such as a VPN
+   (A00.FR.206).
+
+With :kconfig:option:`CONFIG_NET_SOCKETS_SOCKOPT_TLS` and the TLS credentials
+in ``csi.creds``, the same credentials are sent over TLS (security profile 2).
 
 API Reference
 *************

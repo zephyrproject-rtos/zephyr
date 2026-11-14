@@ -22,6 +22,20 @@
 #define INVALID_CONN_ID ((uint8_t) -1)
 #define INVALID_TXN_ID ((int) -1)
 
+#if defined(CONFIG_OCPP_BASIC_AUTH)
+#define OCPP_AUTH_HDR_PREFIX "Authorization: Basic "
+#define OCPP_AUTH_HDR_SUFFIX "\r\n"
+#define OCPP_AUTH_USERNAME_MAX_LEN ((size_t)CONFIG_OCPP_BASIC_AUTH_USERNAME_MAX_LEN)
+#define OCPP_AUTH_PASSWORD_MIN_LEN ((size_t)OCPP_BASIC_AUTH_PASSWORD_MIN_LEN)
+#define OCPP_AUTH_PASSWORD_MAX_LEN ((size_t)CONFIG_OCPP_BASIC_AUTH_PASSWORD_MAX_LEN)
+/* username:password */
+#define OCPP_AUTH_CRED_MAX_LEN (OCPP_AUTH_USERNAME_MAX_LEN + 1U + OCPP_AUTH_PASSWORD_MAX_LEN)
+/* header line with the base64 encoded credentials and the terminator */
+#define OCPP_AUTH_HDR_SIZE                                                     \
+	((sizeof(OCPP_AUTH_HDR_PREFIX) - 1U) +                                 \
+	 (4U * ((OCPP_AUTH_CRED_MAX_LEN + 2U) / 3U)) + sizeof(OCPP_AUTH_HDR_SUFFIX))
+#endif
+
 #define to_session(ptr) CONTAINER_OF(ptr, struct ocpp_session, node)
 
 enum ocpp_pdu_msg {
@@ -134,6 +148,9 @@ struct ocpp_upstream_info {
 	struct k_thread tinfo;
 	char recv_buf[CONFIG_OCPP_RECV_BUFFER_SIZE];
 	char wsrecv_buf[CONFIG_OCPP_RECV_BUFFER_SIZE * 2];
+#if defined(CONFIG_OCPP_BASIC_AUTH)
+	char auth_hdr[OCPP_AUTH_HDR_SIZE]; /* handshake header, empty if unused */
+#endif
 
 	struct ocpp_cs_info csi;
 };
@@ -191,6 +208,7 @@ struct internal_msg {
 };
 
 void ocpp_parser_init(ocpp_msg_fp_t **cfn, ocpp_msg_fp_t **pfn);
+int ocpp_basic_auth_hdr(const struct ocpp_basic_auth *auth, char *hdr, size_t hdr_len);
 int parse_rpc_msg(char *msg, int msglen, char *uid, int uidlen,
 		  int *pdu, bool *is_rsp);
 int ocpp_send_to_server(struct ocpp_wamp_rpc_msg *snd, k_timeout_t timeout);

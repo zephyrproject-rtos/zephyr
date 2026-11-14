@@ -50,6 +50,42 @@ config OCPP_MSG_JSON
 	   If enabled y, then the Charge Point and Central System PDU message
 	   format as JSON
 
+config OCPP_BASIC_AUTH
+	bool "HTTP Basic authentication"
+	select BASE64
+	help
+	  Send the charge point credentials passed to ocpp_init() to the
+	  central system in the Authorization header of the websocket
+	  handshake (RFC 7617). This is the charge point authentication of
+	  the security profiles 1 and 2 of the OCPP 1.6 security whitepaper.
+
+	  Without TLS (security profile 1) the credentials are readable on
+	  the network: use it in trusted networks only (A00.FR.201).
+
+	  The AuthorizationKey configuration key is not implemented.
+
+if OCPP_BASIC_AUTH
+
+config OCPP_BASIC_AUTH_USERNAME_MAX_LEN
+	int "Maximum length of the basic authentication username"
+	default 48
+	range 1 255
+	help
+	  Longest charge point identity, in characters, that ocpp_init()
+	  accepts as username.
+
+config OCPP_BASIC_AUTH_PASSWORD_MAX_LEN
+	int "Maximum length of the basic authentication password"
+	default 40
+	range 16 255
+	help
+	  Longest password, in bytes, that ocpp_init() accepts. The shortest
+	  is fixed to the 16 bytes of the OCPP 1.6 security whitepaper
+	  (A00.FR.205). Its keys have 20 bytes at most; the default also fits
+	  their 40 hexadecimal digits for a central system that expects text.
+
+endif # OCPP_BASIC_AUTH
+
 config OCPP_PROFILE_SMART_CHARGE
 	bool "OCPP profile smart charging"
 	help

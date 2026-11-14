@@ -21,6 +21,23 @@ config NET_SAMPLE_OCPP_WS_PATH
 	  WebSocket URL path (excluding IP address and port) for OCPP connection to the central
 	  system server.
 
+config NET_SAMPLE_OCPP_AUTH_USERNAME
+	string "OCPP basic authentication username"
+	depends on OCPP_BASIC_AUTH
+	default "zephyr"
+	help
+	  Username of the HTTP Basic authentication. It must be equal to the
+	  charge point identity, the last element of NET_SAMPLE_OCPP_WS_PATH
+	  (A00.FR.204 of the OCPP 1.6 security whitepaper).
+
+config NET_SAMPLE_OCPP_AUTH_PASSWORD
+	string "OCPP basic authentication password"
+	depends on OCPP_BASIC_AUTH
+	help
+	  Password of the HTTP Basic authentication, sent as it is. The
+	  build fails unless it has 16 to OCPP_BASIC_AUTH_PASSWORD_MAX_LEN
+	  characters.
+
 config NET_SAMPLE_SNTP_SERVER
 	string "SNTP server ip"
 	help
