@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * SPI chip select is mikroBUS AN. mikroBUS CS stays high to select SPI.
+ */
+
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
+&mikrobus_spi {
+	cs-gpios = <&mikrobus_header MIKROBUS_AN GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	fxas21002: fxas21002@0 {
+		compatible = "nxp,fxas21002";
+		reg = <0>;
+		spi-max-frequency = <2000000>;
+		bus-mode-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
+		reset-gpios = <&mikrobus_header MIKROBUS_RST GPIO_ACTIVE_LOW>;
+		int1-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_LOW>;
+	};
+};
