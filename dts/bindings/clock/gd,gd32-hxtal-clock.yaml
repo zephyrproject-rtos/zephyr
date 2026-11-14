@@ -1,0 +1,23 @@
+# Copyright (c) 2026 GigaDevice Semiconductor Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: GigaDevice GD32 HXTAL External Crystal Clock
+
+description: |
+  GigaDevice GD32 external high-speed crystal oscillator (HXTAL).
+
+  This node models the HXTAL as a fixed-rate clock source. It is referenced
+  by the main PLL node through its "clocks" property to select HXTAL as the
+  PLL input source.
+
+compatible: "gd,gd32-hxtal-clock"
+
+# fixed-clock provides clock-frequency and "#clock-cells" definitions.
+include: [fixed-clock.yaml]
+
+properties:
+  hxtal-bypass:
+    type: boolean
+    description: |
+      Enable HXTAL bypass mode. Set when an external clock signal is fed
+      to the HXTAL pin instead of a crystal oscillator.

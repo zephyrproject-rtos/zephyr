@@ -1,0 +1,25 @@
+# Copyright (c) 2026 GigaDevice Semiconductor Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GD32 flash memory.
+
+  This binding is for the flash memory itself, not the flash controller
+  peripheral. For that, see the "gd,gd32-flash-controller" binding and the
+  series bindings such as "gd,gd32m53x-flash-controller" and
+  "gd,gd32f527-flash-controller".
+
+include: soc-nv-flash.yaml
+
+compatible: "gd,gd32-nv-flash"
+
+properties:
+  max-erase-time-ms:
+    type: int
+    required: true
+    description: Max erase time(millisecond) of a flash page or sector
+
+  page-size:
+    type: int
+    required: true
+    description: Flash memory page size, for a bank of equal pages

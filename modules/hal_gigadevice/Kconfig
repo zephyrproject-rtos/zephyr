@@ -96,6 +96,11 @@ config USE_GD32_CAN
 	help
 	  Enable GD32 Controller Area Network (CAN) HAL module driver
 
+config USE_GD32_CAU
+	bool
+	help
+	  Enable GD32 Cryptographic Accelerator Unit (CAU) HAL module driver
+
 config USE_GD32_CEC
 	bool
 	help
@@ -169,6 +174,11 @@ config USE_GD32_GPIO
 	  Enable GD32 General-purpose and Alternate-Function I/Os
 	  (GPIO and AFIO) HAL module driver
 
+config USE_GD32_HAU
+	bool
+	help
+	  Enable GD32 Hash Accelerator Unit (HAU) HAL module driver
+
 config USE_GD32_I2C
 	bool
 	help
@@ -189,6 +199,11 @@ config USE_GD32_MISC
 	help
 	  Enable GD32 System Utilities (MISC) HAL module driver
 
+config USE_GD32_PKCAU
+	bool
+	help
+	  Enable GD32 Public Key Cryptographic Accelerator Unit (PKCAU) HAL module driver
+
 config USE_GD32_PMU
 	bool
 	help
@@ -204,6 +219,11 @@ config USE_GD32_RTC
 	bool
 	help
 	  Enable GD32 Real-Time Clock (RTC) HAL module driver
+
+config USE_GD32_SAI
+	bool
+	help
+	  Enable GD32 Serial Audio Interface (SAI) HAL module driver
 
 config USE_GD32_SDIO
 	bool
