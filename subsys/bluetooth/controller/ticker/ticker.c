@@ -1175,6 +1175,19 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes, struct ticker
 				}
 
 #if defined(CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD)
+				/* Current node with slot window, without deadline and not
+				 * forced, that could not be placed outside the colliding
+				 * deadline reservation yields to it, earliest deadline first.
+				 * Its age does not displace the deadline reservation.
+				 */
+				if (TICKER_HAS_SLOT_WINDOW(ticker) &&
+				    (ticker->ext_data->is_deadline_in_window == 0U) &&
+				    (ticker->force == 0U) &&
+				    (ticker_next->ext_data != NULL) &&
+				    (ticker_next->ext_data->is_deadline_in_window != 0U)) {
+					return 1U;
+				}
+
 				/* Current node without slot window and not forced does not
 				 * displace a deadline reservation in its slot window. Peer
 				 * devices reserve different time for the same event, hence
