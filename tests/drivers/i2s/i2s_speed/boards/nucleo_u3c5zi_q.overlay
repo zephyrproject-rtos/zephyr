@@ -1,0 +1,49 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * SAI1 block A transmits, block B receives in synchronous mode, so it uses the bit
+ * and frame clocks of block A internally. Only the data lines need a wire: short
+ * SD_A (PC3, CN7 pin 37) and SD_B (PF6, CN7 pin 9). Block A only generates its
+ * clocks with its SCK and FS pins configured (PA8 and PE4, left unconnected).
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &sai1_b;
+		i2s-node1 = &sai1_a;
+	};
+};
+
+&clk_msik {
+	status = "okay";
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&sai1 {
+	status = "okay";
+};
+
+&sai1_a {
+	pinctrl-0 = <&sai1_sd_a_pc3 &sai1_sck_a_pa8 &sai1_fs_a_pe4>;
+	pinctrl-names = "default";
+	mclk-divider = "div-256";
+	fifo-threshold = "empty";
+	dma-names = "tx";
+	status = "okay";
+};
+
+&sai1_b {
+	pinctrl-0 = <&sai1_sd_b_pf6>;
+	pinctrl-names = "default";
+	mclk-divider = "div-256";
+	fifo-threshold = "empty";
+	synchronous;
+	dma-names = "rx";
+	status = "okay";
+};
