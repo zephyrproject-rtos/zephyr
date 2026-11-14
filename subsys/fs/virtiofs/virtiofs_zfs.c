@@ -10,6 +10,7 @@
 #include <zephyr/fs/virtiofs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/posix/fcntl.h>
+#include <zephyr/sys/util.h>
 #include "../fs_impl.h"
 #include <string.h>
 #include "virtiofs.h"
@@ -33,6 +34,12 @@ struct virtiofs_dir {
 	uint64_t fh;
 	uint64_t nodeid;
 	uint64_t offset;
+#if CONFIG_VIRTIOFS_READDIR_BUFFERS > 0
+	/* Buffered READDIR response: buf[0..buf_len) valid, buf_pos consumed. */
+	uint8_t *buf;
+	uint32_t buf_len;
+	uint32_t buf_pos;
+#endif
 };
 
 K_MEM_SLAB_DEFINE_STATIC_TYPE(
@@ -41,6 +48,12 @@ K_MEM_SLAB_DEFINE_STATIC_TYPE(
 K_MEM_SLAB_DEFINE_STATIC_TYPE(
 	dir_struct_slab, struct virtiofs_dir, CONFIG_VIRTIOFS_MAX_FILES
 );
+#if CONFIG_VIRTIOFS_READDIR_BUFFERS > 0
+BUILD_ASSERT((CONFIG_VIRTIOFS_READDIR_BUFSIZE % 8) == 0,
+	     "VIRTIOFS_READDIR_BUFSIZE must be a multiple of 8");
+K_MEM_SLAB_DEFINE_STATIC(readdir_buf_slab, CONFIG_VIRTIOFS_READDIR_BUFSIZE,
+			 CONFIG_VIRTIOFS_READDIR_BUFFERS, 8);
+#endif
 
 static int zephyr_mode_to_posix(int m)
 {
@@ -424,6 +437,14 @@ static int virtiofs_zfs_opendir(struct fs_dir_t *dirp, const char *fs_path)
 			dir->fh = open_ret.fh;
 			dir->nodeid = lookup_ret.nodeid;
 			dir->offset = 0;
+#if CONFIG_VIRTIOFS_READDIR_BUFFERS > 0
+			if (k_mem_slab_alloc(&readdir_buf_slab, (void **)&dir->buf, K_NO_WAIT) !=
+			    0) {
+				dir->buf = NULL;
+			}
+			dir->buf_len = 0;
+			dir->buf_pos = 0;
+#endif
 			dirp->dirp = dir;
 		} else {
 			virtiofs_forget(dirp->mp->storage_dev, lookup_ret.nodeid, 1);
@@ -433,39 +454,13 @@ static int virtiofs_zfs_opendir(struct fs_dir_t *dirp, const char *fs_path)
 	return ret;
 }
 
-static int virtiofs_zfs_readdir(struct fs_dir_t *dirp, struct fs_dirent *entry)
+static int virtiofs_zfs_fill_entry(struct fs_dir_t *dirp, struct virtiofs_dir *dir,
+				   struct fs_dirent *entry, uint32_t type)
 {
-	struct virtiofs_dir *dir = dirp->dirp;
-	struct fuse_dirent de;
-
-	int read_c = virtiofs_readdir(
-		dirp->mp->storage_dev, dir->nodeid, dir->fh, dir->offset,
-		(uint8_t *)&de, sizeof(de), (uint8_t *)&entry->name, sizeof(entry->name)
-	);
-
-	/* end of dir */
-	if (read_c == 0) {
-		entry->name[0] = '\0';
-		return 0;
-	}
-
-	if (read_c < sizeof(de) || de.namelen >= sizeof(entry->name) - 1) {
-		return -EIO;
-	}
-
-	/*
-	 * usually name is already null terminated, but sometimes name of the last entry
-	 * in directory is not (maybe also in other cases), so we null terminate it here
-	 */
-	entry->name[de.namelen] = '\0';
-
-	dir->offset = de.off;
-
-	if (de.type == DT_REG) {
+	if (type == DT_REG) {
 		struct fuse_entry_out lookup_ret;
-		int ret = virtiofs_lookup(
-			dirp->mp->storage_dev, dir->nodeid, entry->name, &lookup_ret, NULL
-		);
+		int ret = virtiofs_lookup(dirp->mp->storage_dev, dir->nodeid, entry->name,
+					  &lookup_ret, NULL);
 
 		if (ret != 0) {
 			return ret;
@@ -475,7 +470,7 @@ static int virtiofs_zfs_readdir(struct fs_dir_t *dirp, struct fs_dirent *entry)
 
 		entry->type = FS_DIR_ENTRY_FILE;
 		entry->size = lookup_ret.attr.size;
-	} else if (de.type == DT_DIR) {
+	} else if (type == DT_DIR) {
 		entry->type = FS_DIR_ENTRY_DIR;
 		entry->size = 0;
 	} else {
@@ -485,6 +480,132 @@ static int virtiofs_zfs_readdir(struct fs_dir_t *dirp, struct fs_dirent *entry)
 	return 0;
 }
 
+#if CONFIG_VIRTIOFS_READDIR_BUFFERS > 0
+static int virtiofs_zfs_readdir_buffered(struct fs_dir_t *dirp, struct virtiofs_dir *dir,
+					 struct fs_dirent *entry, uint32_t *type)
+{
+	const struct device *dev = dirp->mp->storage_dev;
+	const struct fuse_dirent *de;
+	uint32_t rec_len;
+	int read_c;
+
+	for (;;) {
+		if (dir->buf_len - dir->buf_pos < sizeof(struct fuse_dirent)) {
+			read_c = virtiofs_readdir(dev, dir->nodeid, dir->fh, dir->offset, dir->buf,
+						  CONFIG_VIRTIOFS_READDIR_BUFSIZE);
+
+			if (read_c < 0) {
+				return read_c;
+			}
+			if (read_c == 0) {
+				entry->name[0] = '\0';
+				return 0;
+			}
+			if (read_c < sizeof(struct fuse_dirent)) {
+				return -EIO;
+			}
+
+			dir->buf_len = (uint32_t)read_c;
+			dir->buf_pos = 0;
+		}
+
+		de = (const struct fuse_dirent *)(dir->buf + dir->buf_pos);
+
+		if (de->namelen >= sizeof(entry->name)) {
+			return -ENAMETOOLONG;
+		}
+
+		rec_len = ROUND_UP((uint32_t)sizeof(*de) + de->namelen, 8U);
+		if (rec_len > dir->buf_len - dir->buf_pos) {
+			/*
+			 * The daemon must return whole records. Drop a truncated
+			 * tail and refetch from the last consumed offset; if the
+			 * first record does not fit, the response is unusable.
+			 */
+			if (dir->buf_pos == 0) {
+				return -EIO;
+			}
+			dir->buf_len = 0;
+			dir->buf_pos = 0;
+			continue;
+		}
+
+		memcpy(entry->name, de->name, de->namelen);
+		entry->name[de->namelen] = '\0';
+		dir->offset = de->off;
+		dir->buf_pos += rec_len;
+		*type = de->type;
+
+		return 0;
+	}
+}
+#endif /* CONFIG_VIRTIOFS_READDIR_BUFFERS > 0 */
+
+static int virtiofs_zfs_readdir_legacy(struct fs_dir_t *dirp, struct virtiofs_dir *dir,
+				       struct fs_dirent *entry, uint32_t *type)
+{
+	uint8_t buf[sizeof(struct fuse_dirent) + sizeof(entry->name)] __aligned(8);
+	const struct fuse_dirent *de = (const struct fuse_dirent *)buf;
+	int read_c = virtiofs_readdir(dirp->mp->storage_dev, dir->nodeid, dir->fh, dir->offset, buf,
+				      (uint32_t)sizeof(buf));
+
+	if (read_c < 0) {
+		return read_c;
+	}
+
+	if (read_c == 0) {
+		entry->name[0] = '\0';
+		return 0;
+	}
+
+	if (read_c < sizeof(struct fuse_dirent)) {
+		return -EIO;
+	}
+
+	if (de->namelen >= sizeof(entry->name)) {
+		return -ENAMETOOLONG;
+	}
+
+	if ((uint32_t)sizeof(*de) + de->namelen > (uint32_t)read_c) {
+		return -EIO;
+	}
+
+	memcpy(entry->name, de->name, de->namelen);
+	entry->name[de->namelen] = '\0';
+	dir->offset = de->off;
+	*type = de->type;
+
+	return 0;
+}
+
+static int virtiofs_zfs_readdir(struct fs_dir_t *dirp, struct fs_dirent *entry)
+{
+	struct virtiofs_dir *dir = dirp->dirp;
+	uint32_t type = 0U;
+	int ret;
+
+#if CONFIG_VIRTIOFS_READDIR_BUFFERS > 0
+	if (dir->buf != NULL) {
+		ret = virtiofs_zfs_readdir_buffered(dirp, dir, entry, &type);
+	} else {
+		ret = virtiofs_zfs_readdir_legacy(dirp, dir, entry, &type);
+	}
+#else
+	ret = virtiofs_zfs_readdir_legacy(dirp, dir, entry, &type);
+#endif
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* End of directory. */
+	if (entry->name[0] == '\0') {
+		return 0;
+	}
+
+	return virtiofs_zfs_fill_entry(dirp, dir, entry, type);
+}
+
 static int virtiofs_zfs_closedir(struct fs_dir_t *dirp)
 {
 	struct virtiofs_dir *dir = dirp->dirp;
@@ -492,6 +613,11 @@ static int virtiofs_zfs_closedir(struct fs_dir_t *dirp)
 	int ret = virtiofs_release(dirp->mp->storage_dev, dir->nodeid, dir->fh, FUSE_DIR);
 
 	if (ret == 0) {
+#if CONFIG_VIRTIOFS_READDIR_BUFFERS > 0
+		if (dir->buf != NULL) {
+			k_mem_slab_free(&readdir_buf_slab, dir->buf);
+		}
+#endif
 		k_mem_slab_free(&dir_struct_slab, dir);
 	} else {
 		return ret;
