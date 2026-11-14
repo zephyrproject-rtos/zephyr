@@ -216,8 +216,12 @@ static void airoc_wifi_supp_scan2_cb(whd_scan_result_t **result_ptr, void *user_
 			info->external_scan = 0;
 			info->nl_scan_event = 1;
 
-			airoc_wifi_data.airoc_wifi_wpa_supp_dev_callbk_fns.scan_done(
-				data->supp_if_ctx, &event);
+			k_mutex_lock(&data->supp_if_ctx_lock, K_FOREVER);
+			if (data->supp_if_ctx != NULL) {
+				data->airoc_wifi_wpa_supp_dev_callbk_fns.scan_done(
+					data->supp_if_ctx, &event);
+			}
+			k_mutex_unlock(&data->supp_if_ctx_lock);
 		}
 	} else {
 		/* Do nothing for this case now */
@@ -655,8 +659,12 @@ static void airoc_event_handler(whd_event_data_t *event_data)
 						data->assoc_info.resp_ies_len;
 				}
 			}
-			data->airoc_wifi_wpa_supp_dev_callbk_fns.assoc_resp(
-				data->supp_if_ctx, &event, WLAN_STATUS_SUCCESS);
+			k_mutex_lock(&data->supp_if_ctx_lock, K_FOREVER);
+			if (data->supp_if_ctx != NULL) {
+				data->airoc_wifi_wpa_supp_dev_callbk_fns.assoc_resp(
+					data->supp_if_ctx, &event, WLAN_STATUS_SUCCESS);
+			}
+			k_mutex_unlock(&data->supp_if_ctx_lock);
 		} else {
 			LOG_DBG("WLC_E_ASSOC - STA might be already connected");
 		}
@@ -684,8 +692,12 @@ static void airoc_event_handler(whd_event_data_t *event_data)
 						data->assoc_info.resp_ies_len;
 				}
 			}
-			data->airoc_wifi_wpa_supp_dev_callbk_fns.assoc_resp(
-				data->supp_if_ctx, &event, WLAN_STATUS_SUCCESS);
+			k_mutex_lock(&data->supp_if_ctx_lock, K_FOREVER);
+			if (data->supp_if_ctx != NULL) {
+				data->airoc_wifi_wpa_supp_dev_callbk_fns.assoc_resp(
+					data->supp_if_ctx, &event, WLAN_STATUS_SUCCESS);
+			}
+			k_mutex_unlock(&data->supp_if_ctx_lock);
 		} else {
 			LOG_DBG("WLC_E_EAPOL_MSG - STA already associated\n");
 		}
@@ -708,15 +720,25 @@ static void airoc_event_handler(whd_event_data_t *event_data)
 		event.external_auth.key_mgmt_suite = 0x8ac0f00;
 		event.external_auth.mld_addr = NULL;
 
-		data->airoc_wifi_wpa_supp_dev_callbk_fns.ext_auth_req(data->supp_if_ctx, &event);
+		k_mutex_lock(&data->supp_if_ctx_lock, K_FOREVER);
+		if (data->supp_if_ctx != NULL) {
+			data->airoc_wifi_wpa_supp_dev_callbk_fns.ext_auth_req(data->supp_if_ctx,
+									      &event);
+		}
+		k_mutex_unlock(&data->supp_if_ctx_lock);
 		break;
 	case WLC_E_EXT_AUTH_FRAME_RX: {
 		uint16_t frame_len = event_header->datalen - sizeof(wl_rx_mgmt_data_t);
 		int freq = whd_channel2freq((uint)(data->scan_bss_info.ctl_ch));
 
-		data->airoc_wifi_wpa_supp_dev_callbk_fns.mgmt_rx(
-			data->supp_if_ctx, &event_data->event_data[sizeof(wl_rx_mgmt_data_t)],
-			frame_len, freq, data->scan_bss_info.RSSI);
+		k_mutex_lock(&data->supp_if_ctx_lock, K_FOREVER);
+		if (data->supp_if_ctx != NULL) {
+			data->airoc_wifi_wpa_supp_dev_callbk_fns.mgmt_rx(
+				data->supp_if_ctx,
+				&event_data->event_data[sizeof(wl_rx_mgmt_data_t)], frame_len, freq,
+				data->scan_bss_info.RSSI);
+		}
+		k_mutex_unlock(&data->supp_if_ctx_lock);
 		break;
 	}
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT */
@@ -755,10 +777,13 @@ static void airoc_ap_event_handler(whd_event_data_t *event_data)
 			/* For AP mode in wpa_supplicant, we still need to use assoc_resp callback
 			 * but we need to ensure the correct MAC address is passed
 			 */
-			if (data->airoc_wifi_wpa_supp_dev_callbk_fns.assoc_resp) {
+			k_mutex_lock(&data->supp_if_ctx_lock, K_FOREVER);
+			if ((data->supp_if_ctx != NULL) &&
+			    (data->airoc_wifi_wpa_supp_dev_callbk_fns.assoc_resp != NULL)) {
 				data->airoc_wifi_wpa_supp_dev_callbk_fns.assoc_resp(
 					data->supp_if_ctx, &event, WLAN_STATUS_SUCCESS);
 			}
+			k_mutex_unlock(&data->supp_if_ctx_lock);
 			whd_mem_free(sta_mac);
 		}
 		break;
@@ -1306,6 +1331,14 @@ static int airoc_init(const struct device *dev)
 	cy_rslt_t whd_ret;
 	struct airoc_wifi_data *data = dev->data;
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
+	ret = k_mutex_init(&data->supp_if_ctx_lock);
+	if (ret != 0) {
+		LOG_ERR("k_mutex_init(supp_if_ctx_lock) failure");
+		return ret;
+	}
+#endif
+
 	k_tid_t tid = k_thread_create(
 		&airoc_wifi_event_thread, airoc_wifi_event_stack,
 		CONFIG_AIROC_WIFI_EVENT_TASK_STACK_SIZE, (k_thread_entry_t)airoc_event_task, NULL,
@@ -1383,11 +1416,27 @@ void *airoc_wifi_wpa_supp_dev_init(void *supp_drv_if_ctx, const char *iface_name
 	struct airoc_wifi_data *data = (struct airoc_wifi_data *)dev->data;
 
 	whd_wifi_read_fw_capabilities(airoc_sta_if);
-	data->supp_if_ctx = supp_drv_if_ctx;
 	whd_mem_memset(&data->capa, 0, sizeof(struct wpa_driver_capa));
+
+	k_mutex_lock(&data->supp_if_ctx_lock, K_FOREVER);
 	memcpy(&data->airoc_wifi_wpa_supp_dev_callbk_fns, callbk_fns,
 	       sizeof(data->airoc_wifi_wpa_supp_dev_callbk_fns));
+	data->supp_if_ctx = supp_drv_if_ctx;
+	k_mutex_unlock(&data->supp_if_ctx_lock);
+
 	return data;
+}
+
+static void airoc_wifi_wpa_supp_dev_deinit(void *if_priv)
+{
+	struct airoc_wifi_data *data = if_priv;
+
+	/* The supplicant frees the context when this returns. Taking the lock
+	 * waits for an event callback that is still using it.
+	 */
+	k_mutex_lock(&data->supp_if_ctx_lock, K_FOREVER);
+	data->supp_if_ctx = NULL;
+	k_mutex_unlock(&data->supp_if_ctx_lock);
 }
 
 int airoc_wifi_wpa_supp_get_capa(void *if_priv, struct wpa_driver_capa *capa)
@@ -2505,6 +2554,7 @@ out:
 
 static const struct zep_wpa_supp_dev_ops airoc_wifi_wpa_drv_ops = {
 	.init = airoc_wifi_wpa_supp_dev_init,
+	.deinit = airoc_wifi_wpa_supp_dev_deinit,
 	.scan2 = airoc_wifi_wpa_supp_scan2,
 	.scan_abort = airoc_wifi_wpa_supp_scan_abort,
 	.get_scan_results2 = airoc_wifi_wpa_supp_get_scan_results2,
