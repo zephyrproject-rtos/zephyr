@@ -2912,6 +2912,54 @@ ZTEST(net_socket_tcp, test_tcp_quickack_on_sends_ack_v6)
 	test_tcp_quickack_on_sends_ack_common(NET_AF_INET6);
 }
 
+/* A reply that carries a delayed ACK cancels it: no redundant ACK goes out
+ * when the delay ends. Only IPv4 statistics are enabled in this test suite.
+ */
+ZTEST(net_socket_tcp, test_tcp_no_redundant_delayed_ack_v4)
+{
+	enum fde {
+		SERVER,
+		CLIENT,
+		ACCEPT,
+	};
+	int fd[] = {-1, -1, -1};
+	struct net_stats before;
+	struct net_stats after;
+	int optval = 0;
+	char c;
+
+	test_ioctl_fionread_setup(NET_AF_INET, fd);
+
+	zassert_ok(zsock_setsockopt(fd[SERVER], NET_IPPROTO_TCP, ZSOCK_TCP_QUICKACK, &optval,
+				    sizeof(optval)));
+
+	/* The ACK of "a" is delayed, and the reply carries it */
+	zassert_equal(1, zsock_send(fd[CLIENT], "a", 1, 0));
+	k_msleep(CONFIG_NET_TCP_ACK_DELAY / 4);
+	zassert_equal(1, zsock_recv(fd[SERVER], &c, 1, 0));
+	zassert_equal(1, zsock_send(fd[SERVER], "r", 1, 0));
+
+	/* Let the client ACK the reply, then count what is sent until well
+	 * after the delayed ACK of "a" would have expired.
+	 */
+	k_msleep(CONFIG_NET_TCP_ACK_DELAY / 4);
+	net_mgmt(NET_REQUEST_STATS_GET_ALL, NULL, &before, sizeof(before));
+	k_msleep(CONFIG_NET_TCP_ACK_DELAY);
+	net_mgmt(NET_REQUEST_STATS_GET_ALL, NULL, &after, sizeof(after));
+
+	zassert_equal(before.ipv4.sent, after.ipv4.sent, "Redundant ACK sent (%u packets)",
+		      after.ipv4.sent - before.ipv4.sent);
+
+	zassert_equal(1, zsock_recv(fd[CLIENT], &c, 1, 0));
+	zassert_equal('r', c);
+
+	zsock_close(fd[SERVER]);
+	zsock_close(fd[CLIENT]);
+	zsock_close(fd[ACCEPT]);
+
+	test_context_cleanup();
+}
+
 static void test_ioctl_fionwrite_wait_until_empty(int sock)
 {
 	int avail = -1;
