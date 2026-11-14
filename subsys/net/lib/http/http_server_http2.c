@@ -29,6 +29,12 @@ LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
 #include "headers/server_internal.h"
 
+/* Largest frame payload every peer accepts, the initial value of
+ * SETTINGS_MAX_FRAME_SIZE (RFC 9113, 6.5.2). A larger value advertised by the
+ * peer is not used.
+ */
+#define HTTP2_DEFAULT_MAX_FRAME_SIZE 16384U
+
 static const char content_404[] = {
 #ifdef INCLUDE_HTML_CONTENT
 #include "not_found_page.html.gz.inc"
@@ -240,22 +246,37 @@ static int send_data_frame(struct http_client_ctx *client, const char *payload,
 	uint8_t frame_header[HTTP2_FRAME_HEADER_SIZE];
 	int ret;
 
-	encode_frame_header(frame_header, length, HTTP2_DATA_FRAME,
-			    is_header_flag_set(flags, HTTP2_FLAG_END_STREAM) ?
-			    HTTP2_FLAG_END_STREAM : 0,
-			    stream_id);
+	if (payload == NULL) {
+		length = 0;
+	}
 
-	ret = http_server_sendall(client, frame_header, sizeof(frame_header));
-	if (ret < 0) {
-		LOG_DBG("Cannot write to socket (%d)", ret);
-	} else {
-		if (payload != NULL && length > 0) {
-			ret = http_server_sendall(client, payload, length);
+	/* An empty payload is still sent as one frame, it may carry END_STREAM */
+	do {
+		size_t frame_len = MIN(length, HTTP2_DEFAULT_MAX_FRAME_SIZE);
+		bool last = (frame_len == length);
+
+		encode_frame_header(frame_header, frame_len, HTTP2_DATA_FRAME,
+				    (last && is_header_flag_set(flags, HTTP2_FLAG_END_STREAM)) ?
+				    HTTP2_FLAG_END_STREAM : 0,
+				    stream_id);
+
+		ret = http_server_sendall(client, frame_header, sizeof(frame_header));
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+			break;
+		}
+
+		if (frame_len > 0) {
+			ret = http_server_sendall(client, payload, frame_len);
 			if (ret < 0) {
 				LOG_DBG("Cannot write to socket (%d)", ret);
+				break;
 			}
+
+			payload += frame_len;
+			length -= frame_len;
 		}
-	}
+	} while (length > 0);
 
 	return ret;
 }
