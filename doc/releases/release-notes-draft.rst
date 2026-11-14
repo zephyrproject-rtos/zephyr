@@ -70,6 +70,12 @@ Libraries / Subsystems
     :c:member:`i3c_config_controller.tcas_ps` and the ``tcas-ps`` controller
     Devicetree property.
 
+* Input
+
+  * Input event callbacks can now be registered at runtime with
+    :c:func:`input_add_callback`, and callbacks registered at runtime
+    can be removed at runtime with :c:func:`input_remove_callback`.
+
 * LoRaWAN
 
   * The native backend now supports the AS923 region

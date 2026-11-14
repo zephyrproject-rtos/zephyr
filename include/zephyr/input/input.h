@@ -130,19 +130,39 @@ static inline int input_report_abs(const struct device *dev,
 bool input_queue_empty(void);
 
 /**
- * @brief Input callback structure.
+ * @brief Define the application callback handler function signature
+ *
+ * @param evt Input event that triggers the callback handler
+ * @param user_data User data associated with the callback
  */
+typedef void (*input_callback_handler_t)(struct input_event *evt, void *user_data);
+
+/**
+ * @brief Input callback structure.
+ *
+ * Used to register a callback, either at compile time with
+ * INPUT_CALLBACK_DEFINE or INPUT_CALLBACK_DEFINE_NAMED,
+ * or at runtime with input_add_callback().
+ * For runtime callback registration, each registered callback must use a
+ * unique struct input_callback that should not be allocated on the stack.
+ */
+
 struct input_callback {
+	/** For use in the driver - the user should not
+	 * mess with it (see drivers/input/input.c)
+	 */
+	sys_snode_t node;
 	/** @ref device pointer or NULL. */
 	const struct device *dev;
 	/** The callback function. */
-	void (*callback)(struct input_event *evt, void *user_data);
+	input_callback_handler_t callback;
 	/** User data pointer. */
 	void *user_data;
 };
 
 /**
- * @brief Register a callback structure for input events with a custom name.
+ * @brief Register a callback structure for input events
+ * with a custom name at compile time.
  *
  * Same as @ref INPUT_CALLBACK_DEFINE but allows specifying a custom name
  * for the callback structure. Useful if multiple callbacks are used for the
@@ -157,7 +177,7 @@ struct input_callback {
 	}
 
 /**
- * @brief Register a callback structure for input events.
+ * @brief Register a callback structure for input events at compile time.
  *
  * The @p _dev field can be used to only invoke callback for events generated
  * by a specific device. Setting dev to NULL causes callback to be invoked for
@@ -169,6 +189,32 @@ struct input_callback {
  */
 #define INPUT_CALLBACK_DEFINE(_dev, _callback, _user_data)                     \
 	INPUT_CALLBACK_DEFINE_NAMED(_dev, _callback, _user_data, _callback)
+
+/**
+ * @brief Register a callback structure for input events at runtime.
+ *
+ * The @p _dev field can be used to only invoke callback for events generated
+ * by a specific device. Setting dev to NULL causes callback to be invoked for
+ * every event.
+ *
+ * @param callback A valid callback structure pointer.
+ * @param dev @ref device pointer or NULL.
+ * @param handler The callback function.
+ * @param user_data Pointer to user specified data.
+ */
+void input_add_callback(struct input_callback *callback, const struct device *dev,
+			input_callback_handler_t handler, void *user_data);
+
+/**
+ * @brief Remove a callback structure for input events at runtime.
+ *
+ * Note that only callbacks added at runtime can be removed at runtime.
+ *
+ * @param callback A pointer to the callback structure to remove
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int input_remove_callback(struct input_callback *callback);
 
 /** @cond INTERNAL_HIDDEN */
 K_DEDICATED_WORK_QUEUE_DECLARE(input, INPUT);
