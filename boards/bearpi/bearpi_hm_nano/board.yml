@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: bearpi_hm_nano
+  full_name: BearPi-HM Nano
+  vendor: bearpi
+  socs:
+    - name: hi3861

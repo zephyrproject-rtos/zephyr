@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: bearpi_hm_nano
+name: BearPi-HM Nano
+type: mcu
+arch: riscv
+ram: 63
+# Code and data share the ROM-loader RAM window; this is not physical flash capacity.
+flash: 63
+toolchain:
+  - zephyr
+supported:
+  - uart
+  - serial
+vendor: bearpi

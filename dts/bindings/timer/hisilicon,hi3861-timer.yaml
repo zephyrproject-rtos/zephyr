@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Hi3861 APB timer pair with reload counters and software-triggered
+  snapshots of the current counter values.
+
+compatible: "hisilicon,hi3861-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
