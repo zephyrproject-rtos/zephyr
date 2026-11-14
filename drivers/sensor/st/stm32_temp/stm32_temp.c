@@ -110,6 +110,19 @@ __maybe_unused static void stm32_temp_disable_tempsensor_channel(ADC_TypeDef *ad
 					path & ~LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 }
 
+#if defined(HAS_DUAL_CALIBRATION)
+static int stm32_temp_ts_cal2_temp(const struct stm32_temp_config *cfg)
+{
+#if defined(STM32H742xx) || defined(STM32H743xx) || defined(STM32H750xx) || defined(STM32H753xx)
+	/* TS_CAL2 is acquired at 110 °C on revision Y and at 130 °C on revision V (DS12110) */
+	ARG_UNUSED(cfg);
+	return TEMPSENSOR_CAL2_TEMP;
+#else
+	return cfg->ts_cal2_temp;
+#endif
+}
+#endif /* HAS_DUAL_CALIBRATION */
+
 static float convert_adc_sample_to_temperature(const struct device *dev)
 {
 	struct stm32_temp_data *data = dev->data;
@@ -182,7 +195,7 @@ static float convert_adc_sample_to_temperature(const struct device *dev)
 	 *  where Slope =  -----------------------------
 	 *                      (TS_CAL2 - TS_CAL1)
 	 */
-	const float slope = ((float)(cfg->ts_cal2_temp - cfg->ts_cal1_temp))
+	const float slope = ((float)(stm32_temp_ts_cal2_temp(cfg) - cfg->ts_cal1_temp))
 					/ ((cd->ts_cal2 - cd->ts_cal1) >> cfg->calib_data_shift);
 
 	temperature = (slope * (sense_data - (cd->ts_cal1 >> cfg->calib_data_shift)))
