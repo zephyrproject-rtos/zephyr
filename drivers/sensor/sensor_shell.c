@@ -5,6 +5,7 @@
  */
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -373,6 +374,12 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 	int rc;
 
 	ARG_UNUSED(buf_len);
+
+	if (result == -ECANCELED) {
+		/* The stream was stopped, which is not a failure to read */
+		shell_print(ctx->sh, "Stream stopped");
+		return;
+	}
 
 	if (result < 0) {
 		shell_error(ctx->sh, "Read failed");
