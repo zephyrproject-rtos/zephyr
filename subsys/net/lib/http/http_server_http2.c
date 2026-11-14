@@ -1043,6 +1043,25 @@ static int enter_http_frame_priority_state(struct http_client_ctx *client)
 	return 0;
 }
 
+static int enter_http_frame_ping_state(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+
+	if (frame->stream_identifier != 0) {
+		LOG_DBG("PING frame on stream %u", frame->stream_identifier);
+		return -EBADMSG;
+	}
+
+	if (frame->length != HTTP2_PING_FRAME_LEN) {
+		LOG_DBG("Invalid PING frame length %u", frame->length);
+		return -EBADMSG;
+	}
+
+	client->server_state = HTTP_SERVER_FRAME_PING_STATE;
+
+	return 0;
+}
+
 static int enter_http_frame_rst_stream_state(struct http_client_ctx *client)
 {
 	client->server_state = HTTP_SERVER_FRAME_RST_STREAM_STATE;
@@ -1105,6 +1124,8 @@ int handle_http_frame_header(struct http_client_ctx *client)
 		return enter_http_frame_goaway_state(client);
 	case HTTP2_PRIORITY_FRAME:
 		return enter_http_frame_priority_state(client);
+	case HTTP2_PING_FRAME:
+		return enter_http_frame_ping_state(client);
 	default:
 		return enter_http_done_state(client);
 	}
@@ -1822,6 +1843,41 @@ int handle_http_frame_priority(struct http_client_ctx *client)
 	 */
 	client->data_len -= HTTP2_PRIORITY_FRAME_LEN;
 	client->cursor += HTTP2_PRIORITY_FRAME_LEN;
+
+	client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
+
+	return 0;
+}
+
+int handle_http_frame_ping(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+	uint8_t ping_ack[HTTP2_FRAME_HEADER_SIZE + HTTP2_PING_FRAME_LEN];
+	int ret;
+
+	LOG_DBG("HTTP_SERVER_FRAME_PING_STATE");
+
+	if (client->data_len < HTTP2_PING_FRAME_LEN) {
+		return -EAGAIN;
+	}
+
+	/* A PING is answered with the same payload, an acknowledgment is not
+	 * answered (RFC 9113, Section 6.7).
+	 */
+	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_PING_ACK)) {
+		encode_frame_header(ping_ack, HTTP2_PING_FRAME_LEN, HTTP2_PING_FRAME,
+				    HTTP2_FLAG_PING_ACK, 0);
+		memcpy(&ping_ack[HTTP2_FRAME_HEADER_SIZE], client->cursor, HTTP2_PING_FRAME_LEN);
+
+		ret = http_server_sendall(client, ping_ack, sizeof(ping_ack));
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+			return ret;
+		}
+	}
+
+	client->data_len -= HTTP2_PING_FRAME_LEN;
+	client->cursor += HTTP2_PING_FRAME_LEN;
 
 	client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 
