@@ -3869,10 +3869,9 @@ static bool use_public_address(bool prefer_public, bool is_temporary,
 }
 
 static struct net_in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
-						   const struct net_in6_addr *dst,
-						   uint8_t prefix_len,
-						   uint8_t *best_so_far,
-						   int flags)
+						       const struct net_in6_addr *dst,
+						       uint8_t prefix_len, uint8_t *best_so_far,
+						       int flags, bool vpn_subnet_only)
 {
 	enum net_addr_state addr_state = NET_ADDR_ANY_STATE;
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
@@ -3899,16 +3898,11 @@ static struct net_in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 			continue;
 		}
 
-		if (!IS_ENABLED(CONFIG_NET_IPV6_ROUTE) && IS_ENABLED(CONFIG_NET_VPN)) {
-			/* If the IPv6 routing is disabled, then do some extra checks which
-			 * try to route the packet to correct network interface. Preferably
-			 * the IP routing should direct the packet to correct interface so this
-			 * extra check is not needed. Without this the IPv6 packets might go
-			 * to VPN interface for subnets that are not on the same subnet as the
-			 * VPN interface which typically is not desired.
-			 *
-			 * For the VPN interface, we need to check if
-			 * address matches exactly the address of the interface.
+		if (IS_ENABLED(CONFIG_NET_VPN) && vpn_subnet_only) {
+			/* An address of a VPN interface is used only for destinations in
+			 * its own subnet. Without this, the longest prefix match can pick
+			 * the tunnel address for a destination on another network, the
+			 * VPN peer endpoint included, which typically is not desired.
 			 */
 #if defined(CONFIG_NET_NATIVE_IPV6)
 			if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
@@ -4104,20 +4098,20 @@ const struct net_in6_addr *net_if_ipv6_select_src_addr_hint(struct net_if *dst_i
 		}
 #endif /* CONFIG_NET_NATIVE_IPV6 */
 
-		/* If caller has supplied interface, then use that */
+		/* If caller has supplied interface, then use that. Otherwise,
+		 * as neither the caller nor the route table picked an
+		 * interface, a VPN interface address is no candidate outside
+		 * its own subnet.
+		 */
 		if (dst_iface) {
-			src = net_if_ipv6_get_best_match(dst_iface, dst,
-							 prefix_len,
-							 &best_match,
-							 flags);
+			src = net_if_ipv6_get_best_match(dst_iface, dst, prefix_len, &best_match,
+							 flags, !IS_ENABLED(CONFIG_NET_IPV6_ROUTE));
 		} else {
 			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct net_in6_addr *addr;
 
-				addr = net_if_ipv6_get_best_match(iface, dst,
-								  prefix_len,
-								  &best_match,
-								  flags);
+				addr = net_if_ipv6_get_best_match(iface, dst, prefix_len,
+								  &best_match, flags, true);
 				if (addr) {
 					src = addr;
 				}
@@ -4770,7 +4764,7 @@ static inline bool is_proper_ipv4_address(struct net_if_addr *addr)
 static struct net_in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 						      const struct net_in_addr *dst,
 						      uint8_t *best_so_far, bool ll,
-						      bool allow_loopback)
+						      bool allow_loopback, bool vpn_subnet_only)
 {
 	struct net_if_ipv4 *ipv4;
 	struct net_in_addr *src = NULL;
@@ -4803,16 +4797,11 @@ static struct net_in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 			continue;
 		}
 
-		if (!IS_ENABLED(CONFIG_NET_IPV4_ROUTE) && IS_ENABLED(CONFIG_NET_VPN)) {
-			/* If the IPv4 routing is disabled, then do some extra checks which
-			 * try to route the packet to correct network interface. Preferably
-			 * the IP routing should direct the packet to correct interface so this
-			 * extra check is not needed. Without this the IPv4 packets might go
-			 * to VPN interface for subnets that are not on the same subnet as the
-			 * VPN interface which typically is not desired.
-			 *
-			 * For the VPN interface, we need to check if the IPv4
-			 * address matches exactly the address of the interface.
+		if (IS_ENABLED(CONFIG_NET_VPN) && vpn_subnet_only) {
+			/* An address of a VPN interface is used only for destinations in
+			 * its own subnet. Without this, the longest prefix match can pick
+			 * the tunnel address for a destination on another network, the
+			 * VPN peer endpoint included, which typically is not desired.
 			 */
 			if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
 			    (net_virtual_get_iface_capabilities(iface) &
@@ -4929,16 +4918,21 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 
 	if (!net_ipv4_is_ll_addr(dst)) {
 
-		/* If caller has supplied interface, then use that */
+		/* If caller has supplied interface, then use that. Otherwise,
+		 * as neither the caller nor the route table picked an
+		 * interface, a VPN interface address is no candidate outside
+		 * its own subnet.
+		 */
 		if (dst_iface) {
 			src = net_if_ipv4_get_best_match(dst_iface, dst, &best_match, false,
-							 allow_loopback);
+							 allow_loopback,
+							 !IS_ENABLED(CONFIG_NET_IPV4_ROUTE));
 		} else {
 			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct net_in_addr *addr;
 
 				addr = net_if_ipv4_get_best_match(iface, dst, &best_match, false,
-								  allow_loopback);
+								  allow_loopback, true);
 				if (addr) {
 					src = addr;
 				}
@@ -4953,7 +4947,7 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 
 			STRUCT_SECTION_FOREACH(net_if, iface) {
 				addr = net_if_ipv4_get_best_match(iface, dst, &best_match, true,
-								  allow_loopback);
+								  allow_loopback, true);
 				if (addr) {
 					src = addr;
 				}
@@ -4964,7 +4958,7 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 			 * no better match on any other interface.
 			 */
 			addr = net_if_ipv4_get_best_match(net_if_get_default(), dst, &best_match,
-							  true, allow_loopback);
+							  true, allow_loopback, true);
 			if (addr) {
 				src = addr;
 			}
