@@ -1088,6 +1088,45 @@ static void expect_http2_data_frame(size_t *offset, int stream_id,
 	test_consume_data(offset, frame.length);
 }
 
+/* Content of the responses that do not fit the receive buffer */
+static uint8_t test_pattern_byte(size_t pos)
+{
+	return '0' + pos % 10;
+}
+
+/* Expect a data frame of exactly "payload_len" bytes, which may be more than
+ * the receive buffer holds, with the content of test_pattern_byte() from
+ * "*pos" on.
+ */
+static void expect_http2_data_frame_pattern(size_t *offset, int stream_id, size_t payload_len,
+					    uint8_t flags, size_t *pos)
+{
+	struct http2_frame frame;
+	size_t remaining;
+
+	test_get_frame_header(offset, &frame);
+
+	zassert_equal(frame.type, HTTP2_DATA_FRAME, "Expected data frame");
+	zassert_equal(frame.stream_identifier, stream_id, "Invalid data frame stream ID");
+	zassert_equal(frame.flags, flags, "Unexpected flags received");
+	zassert_equal(frame.length, payload_len, "Unexpected data frame length (%u)", frame.length);
+
+	remaining = frame.length;
+	while (remaining > 0) {
+		size_t len = MIN(remaining, sizeof(buf));
+
+		test_read_data(offset, len);
+		for (size_t i = 0; i < len; i++) {
+			zassert_equal(buf[i], test_pattern_byte(*pos + i),
+				      "Unexpected data payload at %zu", *pos + i);
+		}
+		test_consume_data(offset, len);
+
+		*pos += len;
+		remaining -= len;
+	}
+}
+
 static void expect_http2_window_update_frame(size_t *offset, int stream_id)
 {
 	struct http2_frame frame;
@@ -4663,8 +4702,9 @@ ZTEST(server_function_tests, test_http1_static_fs_overlap)
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
 
-/* A file system holding one file whose content does not match the size stat
- * reports: reads deliver the first mock_fs_content_len bytes of MOCK_FS_CONTENT
+/* A file system holding one file whose content may not match the size stat
+ * reports: stat reports mock_fs_file_size, reads deliver the first
+ * mock_fs_content_len bytes of MOCK_FS_CONTENT, repeated as often as needed,
  * and then return mock_fs_read_result, a negative error or 0 for end of file.
  */
 #define MOCK_FS_TYPE		FS_TYPE_EXTERNAL_BASE
@@ -4677,6 +4717,7 @@ ZTEST(server_function_tests, test_http1_static_fs_overlap)
 				MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 \
 				MOCK_FS_CONTENT_10
 
+static size_t mock_fs_file_size;
 static size_t mock_fs_content_len;
 static ssize_t mock_fs_read_result;
 static size_t mock_fs_pos;
@@ -4697,7 +4738,7 @@ static int mock_fs_stat(struct fs_mount_t *mountp, const char *path, struct fs_d
 	}
 
 	entry->type = FS_DIR_ENTRY_FILE;
-	entry->size = MOCK_FS_FILE_SIZE;
+	entry->size = mock_fs_file_size;
 
 	return 0;
 }
@@ -4727,7 +4768,9 @@ static ssize_t mock_fs_read(struct fs_file_t *filp, void *dest, size_t nbytes)
 	}
 
 	len = MIN(nbytes, mock_fs_content_len - mock_fs_pos);
-	memcpy(dest, &MOCK_FS_CONTENT[mock_fs_pos], len);
+	for (size_t i = 0; i < len; i++) {
+		((uint8_t *)dest)[i] = MOCK_FS_CONTENT[(mock_fs_pos + i) % strlen(MOCK_FS_CONTENT)];
+	}
 	mock_fs_pos += len;
 
 	return len;
@@ -4760,7 +4803,7 @@ static struct http_resource_detail_static_fs mock_fs_resource_detail = {
 HTTP_RESOURCE_DEFINE(mock_fs_resource, test_http_service, MOCK_FS_FILE,
 		     &mock_fs_resource_detail);
 
-static void setup_mock_fs(size_t content_len, ssize_t read_result)
+static void setup_mock_fs_file(size_t file_size, size_t content_len, ssize_t read_result)
 {
 	static struct fs_mount_t mock_fs_mnt = {
 		.type = MOCK_FS_TYPE,
@@ -4777,9 +4820,14 @@ static void setup_mock_fs(size_t content_len, ssize_t read_result)
 		mounted = true;
 	}
 
-	zassert_true(content_len < sizeof(MOCK_FS_CONTENT), "Mock fs content too short");
+	mock_fs_file_size = file_size;
 	mock_fs_content_len = content_len;
 	mock_fs_read_result = read_result;
+}
+
+static void setup_mock_fs(size_t content_len, ssize_t read_result)
+{
+	setup_mock_fs_file(MOCK_FS_FILE_SIZE, content_len, read_result);
 }
 
 static void test_http1_static_fs_short_read(ssize_t read_result)
@@ -4926,6 +4974,49 @@ ZTEST(server_function_tests, test_http2_static_fs_read_error)
 ZTEST(server_function_tests, test_http2_static_fs_read_eof)
 {
 	test_http2_static_fs_short_read(0);
+}
+
+/* File data the server sends per data frame */
+#define TEST_HTTP2_STATIC_FS_CHUNK_SIZE                                                            \
+	COND_CODE_0(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE, (64),                              \
+		    (MIN(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE, 16384)))
+
+/* A file is sent in data frames of the configured chunk size, the rest of it
+ * in the last one, which ends the stream.
+ */
+ZTEST(server_function_tests, test_http2_static_fs_frame_size)
+{
+	static const uint8_t request_get_mock_fs[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_MOCK_FS(TEST_STREAM_ID_1),
+	};
+	/* Less than the smallest chunk size */
+	const size_t rest_len = 30;
+	const size_t file_size = 2 * TEST_HTTP2_STATIC_FS_CHUNK_SIZE + rest_len;
+	size_t offset = 0;
+	size_t pos = 0;
+	int ret;
+
+	/* More content than the size stat reports, none of it may be sent */
+	setup_mock_fs_file(file_size, file_size + 20U, 0);
+
+	ret = zsock_send(client_fd, request_get_mock_fs, sizeof(request_get_mock_fs), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame_pattern(&offset, TEST_STREAM_ID_1, TEST_HTTP2_STATIC_FS_CHUNK_SIZE,
+					0, &pos);
+	expect_http2_data_frame_pattern(&offset, TEST_STREAM_ID_1, TEST_HTTP2_STATIC_FS_CHUNK_SIZE,
+					0, &pos);
+	expect_http2_data_frame_pattern(&offset, TEST_STREAM_ID_1, rest_len, HTTP2_FLAG_END_STREAM,
+					&pos);
+	zassert_equal(offset, 0, "Unexpected data after the last frame");
 }
 
 #endif /* CONFIG_FILE_SYSTEM */
