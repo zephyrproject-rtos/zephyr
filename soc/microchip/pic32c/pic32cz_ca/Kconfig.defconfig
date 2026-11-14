@@ -4,9 +4,13 @@
 if SOC_FAMILY_MICROCHIP_PIC32CZ_CA
 
 config NUM_IRQS
+	default 74 if SOC_SERIES_PIC32CZ_CA70
 	default 240
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+configdefault CLOCK_CONTROL_FIXED_RATE_CLOCK
+	default y if SOC_SERIES_PIC32CZ_CA70
 
 endif # SOC_FAMILY_MICROCHIP_PIC32CZ_CA

@@ -4,6 +4,11 @@
 family:
 - name: microchip_pic32cz_ca
   series:
+  - name: pic32cz_ca70
+    socs:
+    - name: pic32cz2051ca70064
+    - name: pic32cz2051ca70100
+    - name: pic32cz2051ca70144
   - name: pic32cz_ca80
     socs:
     - name: pic32cz2051ca80100
