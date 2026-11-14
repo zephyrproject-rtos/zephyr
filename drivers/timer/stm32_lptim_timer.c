@@ -751,7 +751,7 @@ void sys_clock_idle_exit(void)
 		accumulated_lptim_cnt += missed_lptim_cnt;
 
 		/* Announce the passed ticks to the kernel */
-		dticks = (missed_lptim_cnt * CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+		dticks = ((uint64_t)missed_lptim_cnt * CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 				/ lptim_clock_freq;
 		sys_clock_announce(dticks);
 
