@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: pic32cz_ca70_cult
+name: PIC32CZ CA70 Curiosity Ultra
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+flash: 2048
+ram: 512
+supported:
+  - clock_control
+  - gpio
+  - pinctrl
+  - uart
+vendor: microchip

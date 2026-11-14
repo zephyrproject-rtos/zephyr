@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	/* UART1 to the on-board debugger virtual COM port */
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <PA5C_UART1_URXD1>,
+				 <PA6C_UART1_UTXD1>;
+			bias-pull-up;
+		};
+	};
+};
