@@ -104,6 +104,12 @@
 				vdd-amp-supply = <&test_regulator>;
 				status = "okay";
 			};
+
+			test_i2c_es8311: es8311@a {
+				compatible = "everest,es8311";
+				reg = <0xa>;
+				status = "okay";
+			};
 		};
 
 		test_gpio: gpio@deadbeef {
