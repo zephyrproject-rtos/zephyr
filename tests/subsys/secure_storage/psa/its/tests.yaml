@@ -54,6 +54,19 @@ tests:
     extra_configs:
       - CONFIG_SECURE_STORAGE_64_BIT_UID=y
 
+  secure_storage.psa.its.secure_storage.store.settings.zms:
+    # The only settings backend that reads a single entry without walking the others.
+    platform_allow: *zms_platform_allow
+    extra_args: "EXTRA_CONF_FILE=\
+      overlay-secure_storage.conf;overlay-transform_default.conf;overlay-store_settings_zms.conf"
+
+  secure_storage.psa.its.secure_storage.store.settings.load_one:
+    # A settings backend in the test counts how the store implementation loads an entry.
+    filter: CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
+    extra_args: "EXTRA_CONF_FILE=\
+      overlay-secure_storage.conf;overlay-transform_default.conf;\
+      overlay-store_settings_custom_backend.conf"
+
   secure_storage.psa.its.secure_storage.custom.aead_crypt:
     filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
     extra_args: "EXTRA_CONF_FILE=\
