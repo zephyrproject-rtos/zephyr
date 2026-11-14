@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 NUCODE Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54l15_cpuapp.dtsi>
+#include "nucode_nu54_cpuapp_common.dtsi"
+
+/ {
+	model = "NUCODE NU54V DK nRF54L15 Application MCU";
+	compatible = "nucode,nucode-nu54-nrf54l15-cpuapp";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+#include <vendor/nordic/nrf54l15_cpuapp_partition.dtsi>
