@@ -153,11 +153,17 @@ static void clear_flash_caches(void)
 static void clear_flash_caches(void)
 {
 	volatile uint32_t *const nvm_ctrl = (volatile uint32_t *)0x40000400;
-	/* this bit clears the flash cache */
+	/* CLR_FLASH_CACHE (bit 5) is level-sensitive; strobe 1 then clear to 0 */
 	*nvm_ctrl |= BIT(5);
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+	*nvm_ctrl &= ~BIT(5);
 	volatile uint32_t *const lpcac_ctrl = (volatile uint32_t *)0x40000824;
-	/* this bit clears the code cache */
+	/* CLR_LPCAC (bit 1) is level-sensitive; strobe 1 then clear to 0 */
 	*lpcac_ctrl |= BIT(1);
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+	*lpcac_ctrl &= ~BIT(1);
 }
 #elif CONFIG_SOC_FAMILY_MCXA
 static void clear_flash_caches(void)
