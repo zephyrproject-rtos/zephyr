@@ -300,6 +300,7 @@ static int coap_server_process(int sock_fd)
 
 	struct net_sockaddr_storage client_addr = { 0 };
 	struct net_sockaddr_storage local_addr = { 0 };
+	int local_ifindex = 0;
 	net_socklen_t client_addr_len;
 	struct net_iovec io_vec;
 	struct net_msghdr msg;
@@ -378,8 +379,9 @@ static int coap_server_process(int sock_fd)
 	 * address family this build supports, so casting it to a disabled
 	 * family's type would write out of bounds. IS_ENABLED() prevents that:
 	 * the compiler sees a disabled family's branch as dead code and drops it.
-	 * A multicast address is left unset, since replying "from" a multicast
-	 * address makes no sense - we let the OS pick a normal one instead.
+	 * For a multicast address, only the family and the interface are kept:
+	 * replying "from" a multicast address makes no sense, so the address stays
+	 * unspecified and the OS picks one that the interface owns.
 	 */
 	for (cmsg = (have_pktinfo ? NET_CMSG_FIRSTHDR(&msg) : NULL); cmsg != NULL;
 	     cmsg = NET_CMSG_NXTHDR(&msg, cmsg)) {
@@ -390,11 +392,12 @@ static int coap_server_process(int sock_fd)
 				(struct net_in6_pktinfo *)NET_CMSG_DATA(cmsg);
 			struct net_sockaddr_in6 *addr6 = (struct net_sockaddr_in6 *)&local_addr;
 
+			addr6->sin6_family = NET_AF_INET6;
 			if (!net_ipv6_is_addr_mcast(&info->ipi6_addr)) {
-				addr6->sin6_family = NET_AF_INET6;
 				memcpy(&addr6->sin6_addr, &info->ipi6_addr,
 				       sizeof(addr6->sin6_addr));
 			}
+			local_ifindex = (int)info->ipi6_ifindex;
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) && cmsg->cmsg_level == NET_IPPROTO_IP &&
 			   cmsg->cmsg_type == ZSOCK_IP_PKTINFO &&
 			   cmsg->cmsg_len == NET_CMSG_LEN(sizeof(struct net_in_pktinfo))) {
@@ -402,10 +405,11 @@ static int coap_server_process(int sock_fd)
 				(struct net_in_pktinfo *)NET_CMSG_DATA(cmsg);
 			struct net_sockaddr_in *addr4 = (struct net_sockaddr_in *)&local_addr;
 
+			addr4->sin_family = NET_AF_INET;
 			if (!net_ipv4_is_addr_mcast(&info->ipi_addr)) {
-				addr4->sin_family = NET_AF_INET;
 				memcpy(&addr4->sin_addr, &info->ipi_addr, sizeof(addr4->sin_addr));
 			}
+			local_ifindex = (int)info->ipi_ifindex;
 		}
 	}
 
@@ -501,6 +505,7 @@ static int coap_server_process(int sock_fd)
 	}
 
 	service->data->current_local_addr = local_addr;
+	service->data->current_local_ifindex = local_ifindex;
 
 	type = coap_header_get_type(&request);
 #if defined(CONFIG_COAP_OSCORE)
@@ -741,6 +746,7 @@ unlock:
 	if (service != NULL) {
 		/* Reset this so a later unrelated send doesn't reuse it by mistake. */
 		service->data->current_local_addr.ss_family = NET_AF_UNSPEC;
+		service->data->current_local_ifindex = 0;
 	}
 
 	(void)k_mutex_unlock(&lock);
@@ -748,9 +754,12 @@ unlock:
 	return ret;
 }
 
-/* Send from local_addr via sendmsg()+PKTINFO on sock_fd, or plain sendto() if unset. */
+/* Send from local_addr on interface ifindex (0 if unknown) via sendmsg()+PKTINFO
+ * on sock_fd, or plain sendto() if local_addr is unset. An unspecified address
+ * with a non-zero ifindex picks only the interface.
+ */
 static int coap_server_sendto(int sock_fd, const struct net_sockaddr_storage *local_addr,
-			      const void *data, size_t len,
+			      int ifindex, const void *data, size_t len,
 			      const struct net_sockaddr *dst_addr, net_socklen_t dst_addr_len)
 {
 	union {
@@ -780,6 +789,7 @@ static int coap_server_sendto(int sock_fd, const struct net_sockaddr_storage *lo
 	if (IS_ENABLED(CONFIG_NET_IPV6) && local_addr->ss_family == NET_AF_INET6) {
 		struct net_in6_pktinfo info = {
 			.ipi6_addr = ((const struct net_sockaddr_in6 *)local_addr)->sin6_addr,
+			.ipi6_ifindex = (unsigned int)ifindex,
 		};
 
 		cmsg->cmsg_level = NET_IPPROTO_IPV6;
@@ -789,6 +799,7 @@ static int coap_server_sendto(int sock_fd, const struct net_sockaddr_storage *lo
 		msg.msg_controllen = NET_CMSG_SPACE(sizeof(info));
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && local_addr->ss_family == NET_AF_INET) {
 		struct net_in_pktinfo info = {
+			.ipi_ifindex = (unsigned int)ifindex,
 			.ipi_spec_dst = ((const struct net_sockaddr_in *)local_addr)->sin_addr,
 		};
 
@@ -834,8 +845,9 @@ static void coap_server_retransmit(void)
 			struct net_sockaddr_storage *local_addr =
 				secure ? NULL : &service->data->pending_local_addr[idx];
 
-			ret = coap_server_sendto(service->data->sock_fd, local_addr, pending->data,
-						 pending->len, &pending->addr,
+			ret = coap_server_sendto(service->data->sock_fd, local_addr,
+						 service->data->pending_local_ifindex[idx],
+						 pending->data, pending->len, &pending->addr,
 						 ADDRLEN(&pending->addr));
 			if (ret < 0) {
 				LOG_ERR("Failed to send pending retransmission for %s (%d)",
@@ -1155,6 +1167,7 @@ static int coap_service_send_internal(const struct coap_service *service,
 {
 	int ret;
 	struct net_sockaddr_storage local_addr;
+	int local_ifindex;
 
 	const uint8_t *send_data = cpkt->data;
 	size_t send_len = cpkt->offset;
@@ -1292,6 +1305,8 @@ static int coap_service_send_internal(const struct coap_service *service,
 		/* Save the local address to use if this message needs to be resent. */
 		service->data->pending_local_addr[pending - service->data->pending] =
 			service->data->current_local_addr;
+		service->data->pending_local_ifindex[pending - service->data->pending] =
+			service->data->current_local_ifindex;
 
 		coap_pending_cycle(pending);
 
@@ -1314,6 +1329,7 @@ static int coap_service_send_internal(const struct coap_service *service,
 
 send:
 	local_addr = service->data->current_local_addr;
+	local_ifindex = service->data->current_local_ifindex;
 
 	if (service->data->secure) {
 		local_addr.ss_family = NET_AF_UNSPEC;
@@ -1321,8 +1337,8 @@ send:
 
 	(void)k_mutex_unlock(&lock);
 
-	ret = coap_server_sendto(service->data->sock_fd, &local_addr, send_data, send_len, addr,
-				 addr_len);
+	ret = coap_server_sendto(service->data->sock_fd, &local_addr, local_ifindex, send_data,
+				 send_len, addr, addr_len);
 #if defined(CONFIG_COAP_OSCORE)
 	if (oscore_buf != NULL) {
 		k_mem_slab_free(&coap_oscore_send_buffer, oscore_buf);
