@@ -2,18 +2,23 @@
 ..
 .. SPDX-License-Identifier: Apache-2.0
 
+.. zephyr:board:: qemu_rh850_u2a
 .. zephyr:board:: qemu_rh850_u2c
 
 Overview
 ********
 
-Emulate the Renesas RH850/U2C8 (R7F702600, G4KH core) under QEMU. Zephyr
-runs on CPU0 only.
+Emulate Renesas RH850 microcontrollers under QEMU. Zephyr runs on CPU0 only.
 
-The board provides the OSTM0 system timer (tickless), an RLIN3 UART console
-on RLIN311 and the RH850 interrupt controller with nested interrupts. The
-G4KH FPU (single and double precision) is used with ``CONFIG_FPU`` and shared between
-threads with ``CONFIG_FPU_SHARING``.
+* ``qemu_rh850_u2a``: RH850/U2A16 (R7F702300, G4MH core), QEMU machine
+  ``rh850-u2a``, RLIN30 console.
+* ``qemu_rh850_u2c``: RH850/U2C8 (R7F702600, G4KH core), QEMU machine
+  ``rh850-u2c``, RLIN311 console.
+
+Each board provides the OSTM0 system timer (tickless), an RLIN3 UART console
+and the RH850 interrupt controller with nested interrupts (16 priority levels
+on G4KH, 64 on G4MH). The FPU (single and double precision) is used with
+``CONFIG_FPU`` and shared between threads with ``CONFIG_FPU_SHARING``.
 
 Hardware
 ********
@@ -80,7 +85,8 @@ https://github.com/linumiz/rh850-gcc-toolchain/releases/tag/v1.0.0, and set:
 Running
 =======
 
-Build and run the :zephyr:code-sample:`hello_world` sample:
+Build and run the :zephyr:code-sample:`hello_world` sample (replace
+``qemu_rh850_u2c`` by ``qemu_rh850_u2a`` for the other board):
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
