@@ -269,7 +269,8 @@ static void bearer_list_current_calls(struct bt_conn *conn, const struct bt_tbs_
 				      struct net_buf_simple *buf)
 {
 	struct bt_tbs_client_call calls[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
-	char remote_uris[CONFIG_BT_TBS_CLIENT_MAX_CALLS][CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
+	char remote_uris[CONFIG_BT_TBS_CLIENT_MAX_CALLS]
+			[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof((char)'\0')];
 	uint8_t cnt = 0U;
 	int err;
 

@@ -212,7 +212,7 @@ struct bt_tbs_call {
 	uint8_t index;
 	uint8_t state;
 	uint8_t flags;
-	char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
+	char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof((char)'\0')];
 } __packed;
 
 struct bt_tbs_call_state {
@@ -286,12 +286,12 @@ struct bt_tbs_current_call_item {
 
 struct bt_tbs_in_uri {
 	uint8_t call_index;
-	char uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
+	char uri[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof((char)'\0')];
 } __packed;
 
 struct bt_tbs_friendly_name {
 	uint8_t call_index;
-	char name[CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH + 1];
+	char name[CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH + sizeof((char)'\0')];
 } __packed;
 
 #if defined(CONFIG_BT_TBS_CLIENT)

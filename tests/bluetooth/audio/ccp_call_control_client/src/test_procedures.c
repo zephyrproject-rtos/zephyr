@@ -34,9 +34,9 @@ struct ccp_call_control_client_procedures_test_suite_fixture {
 	/* Callback values */
 	struct bt_ccp_call_control_client_bearer
 		*bearers[CONFIG_BT_CCP_CALL_CONTROL_CLIENT_BEARER_COUNT];
-	char bearer_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
+	char bearer_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH + sizeof((char)'\0')];
 	char bearer_uci[BT_TBS_MAX_UCI_SIZE];
-	char bearer_uri_schemes[BT_ATT_MAX_ATTRIBUTE_LEN + 1 /* NULL terminator*/];
+	char bearer_uri_schemes[BT_ATT_MAX_ATTRIBUTE_LEN + sizeof((char)'\0')];
 	enum bt_bearer_tech tech;
 };
 
@@ -75,9 +75,9 @@ static void bearer_provider_name_cb(struct bt_ccp_call_control_client_bearer *be
 	zassert_equal(err, 0);
 	zassert_not_null(name);
 	zassert_not_null(user_data);
-	zassert_true(strlen(name) < CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH);
+	zassert_true(strlen(name) <= CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH);
 	zassert_true(strlen(fixture->bearer_name) == 0U); /* expect only a single call */
-	utf8_lcpy(fixture->bearer_name, name, CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH);
+	utf8_lcpy(fixture->bearer_name, name, sizeof(fixture->bearer_name));
 }
 
 static void bearer_uci_cb(struct bt_ccp_call_control_client_bearer *bearer, int err,
