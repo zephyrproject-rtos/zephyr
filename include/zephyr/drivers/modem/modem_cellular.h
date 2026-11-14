@@ -162,6 +162,8 @@ struct modem_cellular_data {
 	enum cellular_registration_status registration_status_gprs;
 	enum cellular_registration_status registration_status_lte;
 	enum cellular_registration_status registration_status_5g;
+	/* The data context is active per +CGEV, which may stand in for registration */
+	bool pdn_active;
 	enum cellular_access_technology access_tech;
 	uint8_t rssi;
 	uint8_t rsrp;
@@ -217,6 +219,10 @@ struct modem_cellular_data {
 	 * the modem already powered; the init script then confirms it responds.
 	 */
 	bool power_on_skipped;
+	/** Set when suspended during the init script, which leaves the modem powered at the
+	 * UART's current baudrate; a resume that finds it still powered keeps that baudrate.
+	 */
+	bool baudrate_kept;
 	/** Set when a suspend arrives while CMUX is connecting; acted on once it settles. */
 	bool suspend_pending;
 	/** Set when the CMUX connect attempt has failed; a suspend is then acted on at once. */
@@ -353,6 +359,35 @@ struct modem_cellular_config {
  * Called from the DEVICE_DT_INST_DEFINE macro for cellular modem drivers.
  */
 int modem_cellular_init(const struct device *dev);
+
+#if defined(CONFIG_ZTEST) && !defined(CONFIG_MODEM_BACKEND_UART)
+/**
+ * @brief Halt a cellular modem instance between tests.
+ *
+ * Stops the instance where it is, without running the shutdown sequence, so that a
+ * following modem_cellular_init() boots it as if from reset. On return:
+ *
+ * - No timer, work item or event of the instance is pending or running.
+ * - The chat, CMUX and PPP instances and every UART, DLCI and user pipe are released.
+ * - The net_mgmt and ring GPIO callbacks registered by modem_cellular_init() are removed.
+ * - State that would otherwise outlive a power cycle is cleared: the registration status,
+ *   APN, recovery and script failure counters, original baudrate and periodic script pause.
+ * - The PPP network interface is dormant, as after its initialisation.
+ *
+ * The callback set with cellular_set_callback() is kept. GPIOs are not driven and the UART
+ * configuration is left untouched, so the next boot treats the baudrate it finds as the one
+ * the modem powers up at.
+ *
+ * Calling it on an instance that is already halted has no effect. The caller ensures no
+ * other thread calls into the instance while it runs.
+ *
+ * Only available with substitute pipe backends. The pipes are released, not closed, which
+ * would leave a real UART backend receiving into the reinitialized instance.
+ *
+ * @param dev Cellular modem instance.
+ */
+void modem_cellular_ztest_halt(const struct device *dev);
+#endif
 
 int modem_cellular_pm_action(const struct device *dev, enum pm_device_action action);
 
