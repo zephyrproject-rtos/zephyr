@@ -895,6 +895,11 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 	return type1 == type2;
 }
 
+static bool number_ends_input(const struct json_obj *obj, const struct json_token *value)
+{
+	return (value->type == JSON_TOK_NUMBER) && (value->end >= obj->lex.end);
+}
+
 static int64_t obj_parse(struct json_obj *obj,
 			 const struct json_obj_descr *descr, size_t descr_len,
 			 void *val);
@@ -910,6 +915,10 @@ static int64_t decode_value(struct json_obj *obj,
 {
 
 	if (!equivalent_types(value->type, descr->type)) {
+		return -EINVAL;
+	}
+
+	if (number_ends_input(obj, value)) {
 		return -EINVAL;
 	}
 
@@ -2037,6 +2046,10 @@ static int64_t decode_mixed_value(struct json_obj *obj,
 				  void *field, void *val)
 {
 	if (!equivalent_types(value->type, elem->type)) {
+		return -EINVAL;
+	}
+
+	if (number_ends_input(obj, value)) {
 		return -EINVAL;
 	}
 
