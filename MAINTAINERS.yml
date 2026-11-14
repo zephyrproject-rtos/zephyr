@@ -1571,6 +1571,7 @@ Documentation Infrastructure:
     - doc/requirements.in
     - doc/requirements.txt
     - doc/zephyr.doxyfile.in
+    - scripts/tests/doc_scripts/
   labels:
     - "area: Documentation Infrastructure"
 

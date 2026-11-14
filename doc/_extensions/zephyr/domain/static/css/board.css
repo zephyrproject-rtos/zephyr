@@ -166,12 +166,14 @@
             font-size: 0.9em;
         }
 
-        code.literal {
-            display: inline-block;
-            width:190px;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
+        code.literal,
+        code.literal .pre {
+            white-space: normal;
+            overflow-wrap: break-word;
+        }
+
+        p.secondary code {
+            font-size: 0.8em;
         }
     }
 }
