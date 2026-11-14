@@ -29,8 +29,12 @@
  * @param buf      output array receiving the routing-table entries.
  * @param buf_size size of @p buf in bytes.
  * @param count    output set to the number of entries written.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL on a NULL argument.
+ * @retval -EIO on a mesh stack error.
  */
-void esp_wifi_mesh_read_routing_table(mesh_addr_t *buf, size_t buf_size, int *count);
+int esp_wifi_mesh_read_routing_table(mesh_addr_t *buf, size_t buf_size, int *count);
 
 /**
  * @brief Query whether the mesh stack is currently active.
