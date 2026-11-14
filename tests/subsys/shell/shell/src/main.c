@@ -104,6 +104,49 @@ ZTEST(shell_1cpu, test_cmd_help)
 	test_shell_execute_cmd("help dummy dummy", -EINVAL);
 }
 
+SHELL_STATIC_SUBCMD_SET_CREATE(percent_subcmds,
+			       SHELL_CMD(plain, NULL, "Two percent signs: %%", NULL),
+			       SHELL_CMD(structured, NULL,
+					 SHELL_HELP("Two percent signs: %%", "<arg> %%"), NULL),
+			       SHELL_SUBCMD_SET_END);
+SHELL_CMD_REGISTER(percent, &percent_subcmds, "Two percent signs: %%", NULL);
+
+ZTEST(sh, test_help_literal_percent)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	const char *const commands[] = {
+		"percent --help",
+		"percent plain --help",
+		"percent structured --help",
+	};
+	const uint16_t widths[] = {80U, 32U};
+	const size_t expected_counts[] = {4U, 1U, 2U};
+	uint16_t saved_width = sh->ctx->vt100_ctx.cons.terminal_wid;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(widths); i++) {
+		for (size_t j = 0U; j < ARRAY_SIZE(commands); j++) {
+			size_t len;
+			int ret;
+			const char *output;
+
+			shell_backend_dummy_clear_output(sh);
+			sh->ctx->vt100_ctx.cons.terminal_wid = widths[i];
+			ret = shell_execute_cmd(sh, commands[j]);
+			sh->ctx->vt100_ctx.cons.terminal_wid = saved_width;
+			zassert_equal(ret, 1);
+			output = shell_backend_dummy_get_output(sh, &len);
+			size_t count = 0U;
+
+			while ((output = strstr(output, "%%")) != NULL) {
+				count++;
+				output += 2;
+			}
+			zassert_equal(count, expected_counts[j], "Percent signs changed in %s",
+				      commands[j]);
+		}
+	}
+}
+
 ZTEST(sh, test_cmd_clear)
 {
 	test_shell_execute_cmd("clear", 0);
