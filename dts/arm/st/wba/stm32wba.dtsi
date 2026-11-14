@@ -596,6 +596,8 @@
 		radio: radio@48020000 {
 			compatible = "st,stm32wba-radio";
 			reg = <0x48020000 DT_SIZE_K(4)>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 0)>;
+			resets = <&rctl STM32_RESET(AHB5, 0)>;
 
 			interrupt-names = "radio";
 
