@@ -1,0 +1,31 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* BDMA without DMA1/DMA2, so that the BDMA driver provides the DMA HAL helpers */
+
+&dma1 {
+	status = "disabled";
+};
+
+&dma2 {
+	status = "disabled";
+};
+
+&dmamux1 {
+	status = "disabled";
+};
+
+/* The BDMA driver expects the SRAM4 region to be non-cachable. */
+&sram4 {
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+};
+
+&bdma1 {
+	status = "okay";
+};
+
+tst_dma0: &dmamux2 {
+	status = "okay";
+};
