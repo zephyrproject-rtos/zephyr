@@ -377,6 +377,10 @@ void start_riscv(void)
 {
 	arch_bss_zero();
 
+#if defined(CONFIG_USERSPACE)
+	csr_write(mscratch, &_kernel.cpus[0]);
+#endif
+
 	boot_start();
 }
 
