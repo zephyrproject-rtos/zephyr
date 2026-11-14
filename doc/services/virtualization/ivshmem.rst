@@ -38,6 +38,23 @@ vectors that will be needed.
 Note that a tiny shell module can be exposed to test the ivshmem feature by
 enabling :kconfig:option:`CONFIG_IVSHMEM_SHELL`.
 
+ivshmem-flat
+************
+
+QEMU ivshmem-flat provides shared memory and doorbell notifications for machines without PCI. 
+Enable :kconfig:option:`CONFIG_IVSHMEM_FLAT` and provide a
+:dtcompatible:`qemu,ivshmem-flat` node describing the register region, shared memory region,
+and optional receive IRQ. These resources must match the local QEMU machine wiring, and
+the shared memory size must match the ivshmem server configuration.
+
+Doorbell notifications require :kconfig:option:`CONFIG_IVSHMEM_DOORBELL`. Only vector 0 is supported; configure the server with ``-n 1``. 
+Without a receive IRQ, shared memory access
+and sending doorbells remain available, while ``ivshmem_register_handler()`` returns
+``-ENOSYS``. With an IRQ, the driver raises the registered ``k_poll_signal`` from its ISR.
+The flat driver does not support :kconfig:option:`CONFIG_IVSHMEM_V2`.
+
+See :zephyr:code-sample:`ivshmem-flat` for the local QEMU wiring patch and a two-VM ping-pong example.
+
 ivshmem-v2
 **********
 
