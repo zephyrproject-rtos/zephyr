@@ -399,6 +399,13 @@ static inline timer_core_ticks_t timer_core_delta_ticks(void)
 	}
 #endif
 
+#if (TIMER_CORE_COUNTER_WIDTH > 32) && (__SIZEOF_LONG__ < 8)
+	/* A 64-bit division is a library call on a 32-bit CPU. */
+	if (delta <= UINT32_MAX) {
+		return (uint32_t)delta / (uint32_t)TIMER_CORE_CYC_PER_TICK;
+	}
+#endif
+
 	return delta / TIMER_CORE_CYC_PER_TICK;
 }
 
