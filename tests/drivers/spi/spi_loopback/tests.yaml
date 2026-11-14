@@ -107,6 +107,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_h7s3l8/stm32h7s3xx/ext_flash_app
       - nucleo_u385rg_q
+      - nucleo_u3c5zi_q
       - stm32h573i_dk
       - stm32n6570_dk/stm32n657xx/sb
       - stm32u083c_dk
@@ -162,6 +163,7 @@ tests:
       - nucleo_l152re
       - nucleo_l432kc
       - nucleo_u385rg_q
+      - nucleo_u3c5zi_q
       - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_wl55jc
@@ -189,6 +191,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
       - nucleo_l432kc
+      - nucleo_u3c5zi_q
       - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_wl55jc
@@ -215,6 +218,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
       - nucleo_l432kc
+      - nucleo_u3c5zi_q
       - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_wl55jc
