@@ -857,8 +857,6 @@ static int dma_stm32_configure(const struct device *dev,
 	return ret;
 }
 
-static int dma_stm32_start(const struct device *dev, uint32_t id);
-
 static int dma_stm32_reload(const struct device *dev, uint32_t id,
 			    uint32_t src, uint32_t dst,
 			    size_t size)
@@ -902,8 +900,6 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 				     size / stream->dst_size);
 	}
 
-	/* STM32-specific historical quirk: reload() implies start() */
-	dma_stm32_start(dev, id + STM32_DMA_STREAM_OFFSET);
 	return 0;
 }
 
