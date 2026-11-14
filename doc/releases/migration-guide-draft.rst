@@ -237,6 +237,15 @@ I2S
   :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_PATH`, which also accept ALSA devices. Without the
   ALSA backend the old options still provide their default. (:github:`123474`)
 
+MFD
+===
+
+* nPM13xx event callbacks now use :c:struct:`mfd_npm13xx_event_callback` instead of
+  :c:struct:`gpio_callback`. Set its ``handler`` and ``event_mask`` fields directly instead of
+  calling ``gpio_init_callback()``. The handler takes a pointer to the new callback structure
+  and an ``npm13xx_event_t`` event mask; existing ``BIT(NPM13XX_EVENT_*)`` masks are unchanged.
+  (:github:`123060`)
+
 Modem
 =====
 
