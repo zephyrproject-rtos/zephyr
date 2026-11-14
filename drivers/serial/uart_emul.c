@@ -948,10 +948,22 @@ uint32_t uart_emul_get_tx_data(const struct device *dev, uint8_t *data, size_t s
 	struct uart_emul_data *drv_data = dev->data;
 	k_spinlock_key_t key;
 	uint32_t count;
+	__unused bool irq = false;
 
 	key = k_spin_lock(&drv_data->tx_lock);
+	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (
+		irq = drv_data->tx_irq_en && (ring_buf_space_get(drv_data->tx_rb) == 0U);
+	))
 	count = ring_buf_get(drv_data->tx_rb, data, size);
 	k_spin_unlock(&drv_data->tx_lock, key);
+
+	/* A full FIFO has room again: the TX interrupt is pending */
+	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (
+		if (irq && (count > 0U)) {
+			(void)k_work_submit_to_queue(&uart_emul_work_q, &drv_data->irq_work);
+		}
+	))
+
 	return count;
 }
 
