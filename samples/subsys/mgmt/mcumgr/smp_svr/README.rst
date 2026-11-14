@@ -17,6 +17,7 @@ This sample application supports the following MCUmgr transports by default:
     * Shell
     * Bluetooth
     * UDP
+    * Raw Ethernet
 
 ``smp_svr`` enables support for the following command groups:
 
@@ -175,6 +176,31 @@ included. The ``smp_svr`` sample comes in different flavours.
          :goals: build
          :west-args: --sysbuild
          :gen-args: -DEXTRA_CONF_FILE="udp-dtls.conf"
+         :compact:
+
+   .. group-tab:: Raw Ethernet
+
+      The experimental raw Ethernet transport carries each SMP packet in a single
+      Ethernet frame without IP encapsulation. Replies are unicast to the requester
+      from the receiving interface's MAC address. Broadcast and multicast requests
+      are dropped.
+
+      The sample explicitly selects EtherType ``0x88B5`` (IEEE Local Experimental
+      EtherType 1). Use it only on a controlled experimental network, never in
+      shipped products. Configure the host client to use the same EtherType.
+      Any host on the segment can send requests; the transport provides no
+      authentication. See :ref:`mcumgr_smp_transport_ethernet` for framing,
+      configuration, and access considerations.
+
+      To build the raw Ethernet sample:
+
+      .. zephyr-app-commands::
+         :tool: west
+         :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
+         :board: nucleo_h743zi
+         :goals: build
+         :west-args: --sysbuild
+         :gen-args: -DEXTRA_CONF_FILE="ethernet.conf" -DSB_CONFIG_MCUBOOT_MODE_OVERWRITE_ONLY=y
          :compact:
 
 Flashing the sample image
