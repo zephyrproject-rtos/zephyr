@@ -140,9 +140,11 @@ config QEMU_DEVICE_LOADER
 	  When enabled, QEMU will use the device loader functionality to load
 	  the ELF file instead of the "-kernel" option. On certain architectures,
 	  such as RISC-V, QEMU is designed to load the lowest address of
-	  the ELF rather than the entry point within the ELF. This option is
-	  used to enable logic at the board.cmake level that uses "-device,loader"
-	  rather than "-kernel" for loading
+	  the ELF rather than the entry point (e_entry) within the ELF. This option
+	  is used to enable logic at the board.cmake level that uses QEMU's generic
+	  loader to load the ELF into memory and set each CPU's PC to e_entry.
+	  See https://www.qemu.org/docs/master/system/generic-loader.html for details
+	  on QEMU's generic loader functionality.
 
 config QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE
 	int "QEMU virtio-blk logical block size"
