@@ -952,23 +952,23 @@ static void flash_mchp_page_layout(const struct device *dev,
 
 #ifdef CONFIG_FLASH_EX_OP_ENABLED
 /**
- * @brief Determines if a given address is outside the user row range in NVMCTRL.
+ * @brief Determines if a given range is outside the user row in NVMCTRL.
  *
- * This function checks whether the specified address falls outside the
- * defined user row range in the NVMCTRL memory. If the address is outside
- * the range, it returns a failure code; otherwise, it returns a success code.
+ * This function checks whether the range [address, address + len) falls
+ * outside the defined user row range in the NVMCTRL memory.
  *
- * @param address The address to be checked.
- * @return Returns FLASH_MCHP_SUCCESS if the address is within the user row range,
- *         otherwise returns -EINVAL if the address is outside the range.
+ * @param address Start address of the range.
+ * @param len Length of the range in bytes.
+ * @retval FLASH_MCHP_SUCCESS The range is within the user row.
+ * @retval -EINVAL The range is outside the user row.
  */
-static int flash_check_offset_user_range(uint32_t address)
+static int flash_check_offset_user_range(uint32_t address, size_t len)
 {
 	int ret = FLASH_MCHP_SUCCESS;
 
-	/* Check if the address is outside the user row range */
-	if ((address < SOC_NV_USERROW_BASE_ADDR) ||
-	    (address > (SOC_NV_USERROW_BASE_ADDR + SOC_NV_USERROW_SIZE))) {
+	/* Check if the range is outside the user row range */
+	if ((address < SOC_NV_USERROW_BASE_ADDR) || (len > SOC_NV_USERROW_SIZE) ||
+	    ((address - SOC_NV_USERROW_BASE_ADDR) > (SOC_NV_USERROW_SIZE - len))) {
 		ret = -EINVAL;
 	}
 
@@ -1010,8 +1010,9 @@ static int flash_user_row_erase(const struct device *dev, uint32_t address)
  * This function writes a buffer of data to the user row section of flash memory,
  * starting at the specified offset. The address and data length must be aligned
  * to the user row write block size. The function checks for valid address range
- * and alignment before performing the write operation. Data is written in
- * quad-word (typically 16-byte) blocks.
+ * and alignment before performing the write operation. Data is written with
+ * quad-word writes where a full aligned quad word is available, and with
+ * double-word (ADW) writes otherwise.
  *
  * @param dev Pointer to the device structure representing the flash controller.
  * @param in  Pointer to a flash_mchp_ex_op_userrow_data_t structure containing
@@ -1047,23 +1048,32 @@ static int flash_ex_op_user_row_write(const struct device *dev, const uintptr_t 
 		return ret;
 	}
 
-	ret = flash_check_offset_user_range(address);
+	ret = flash_check_offset_user_range(address, len);
 	if (ret != FLASH_MCHP_SUCCESS) {
 		return ret;
 	}
 
-	uint32_t num_quad_words = (len / SOC_NV_USERROW_WRITE_BLOCK_SIZE);
-
 	k_mutex_lock(&mchp_flash_data->flash_data_lock, K_MSEC(10));
 
-	for (uint32_t write_count = 0U; write_count < num_quad_words; write_count++) {
-		ret = flash_quadword_write(dev, buffer, address);
+	while (len > 0U) {
+		size_t chunk;
+
+		if ((len >= FLASH_MCHP_QUAD_WORD_SIZE) &&
+		    (flash_aligned(address, FLASH_MCHP_QUAD_WORD_SIZE) == FLASH_MCHP_SUCCESS)) {
+			ret = flash_quadword_write(dev, buffer, address);
+			chunk = FLASH_MCHP_QUAD_WORD_SIZE;
+		} else {
+			ret = flash_doubleword_write(dev, buffer, address);
+			chunk = FLASH_MCHP_DOUBLE_WORD_SIZE;
+		}
+
 		if (ret != FLASH_MCHP_SUCCESS) {
 			break;
 		}
 
-		buffer += SOC_NV_USERROW_WRITE_BLOCK_SIZE;
-		address += SOC_NV_USERROW_WRITE_BLOCK_SIZE;
+		buffer += chunk;
+		address += chunk;
+		len -= chunk;
 	}
 
 	k_mutex_unlock(&mchp_flash_data->flash_data_lock);

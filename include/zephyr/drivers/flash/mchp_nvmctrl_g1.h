@@ -43,7 +43,9 @@ typedef enum {
 	 *
 	 * This operation writes data to the user row section of flash memory.
 	 * The offset and data length must be aligned to the user row write block
-	 * size (quad-word, typically 16 bytes).
+	 * size (the write-block-size of the user row devicetree node, 8 bytes),
+	 * and the data must fit within the user row. Flash bits can only be
+	 * programmed from 1 to 0: erase the user row before rewriting a location.
 	 *
 	 * @param in  Pointer to a @ref flash_mchp_ex_op_userrow_data_t structure
 	 *            specifying the target offset, source data buffer, and length.
