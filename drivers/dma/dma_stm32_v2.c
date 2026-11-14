@@ -304,9 +304,16 @@ bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, uint32_t id)
 	return false;
 }
 
-void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id)
+static inline DMA_Channel_TypeDef *stm32_dma_get_channel(DMA_TypeDef *dma, uint32_t id)
 {
-	LL_DMA_EnableChannel(dma, dma_stm32_id_to_stream(id));
+	return (DMA_Channel_TypeDef *)((uintptr_t)dma + (DMA1_Channel1_BASE - DMA1_BASE) +
+				       id * (DMA1_Channel2_BASE - DMA1_Channel1_BASE));
+}
+
+void stm32_dma_enable_stream(DMA_TypeDef *dma, uint32_t id, uint32_t irqs)
+{
+	MODIFY_REG(stm32_dma_get_channel(dma, id)->CCR, STM32_DMA_CR_IRQ_MASK,
+		   irqs | STM32_DMA_CR_EN);
 }
 
 bool stm32_dma_is_enabled_stream(DMA_TypeDef *dma, uint32_t id)
@@ -319,7 +326,7 @@ bool stm32_dma_is_enabled_stream(DMA_TypeDef *dma, uint32_t id)
 
 int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id)
 {
-	LL_DMA_DisableChannel(dma, dma_stm32_id_to_stream(id));
+	CLEAR_BIT(stm32_dma_get_channel(dma, id)->CCR, STM32_DMA_CR_IRQ_MASK | STM32_DMA_CR_EN);
 
 	if (!LL_DMA_IsEnabledChannel(dma, dma_stm32_id_to_stream(id))) {
 		return 0;
