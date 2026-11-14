@@ -35,6 +35,7 @@ tests:
       - stm32l496g_disco
       - stm32h7s78_dk
       - nucleo_h7s3l8
+      - yd_stm32h750vb
     integration_platforms:
       - apollo3p_evb
       - apollo510_evb
