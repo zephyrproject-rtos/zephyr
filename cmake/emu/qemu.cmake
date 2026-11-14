@@ -6,7 +6,7 @@
 # cmake/emu/qemu/flags.cmake rather than by appending to variables by name. The
 # pieces are concatenated in this order when the run targets are created below:
 #
-#   QEMU_UEFI_OPTION     boot through uefi-run instead of -kernel
+#   QEMU_UEFI_OPTION     boot through uefi-run instead of -kernel (x86_64)
 #   QEMU_BOARD_FLAGS     machine and CPU selection, set by the board
 #   FLAGS_DEVICE slot    emulated devices and host plumbing
 #   FLAGS_EXTRA slot     late additions, after every device
@@ -125,9 +125,26 @@ endif()
 # file to pass to qemu; whatever target generates that file must be registered
 # with qemu_add_target_depends(). Alternatively they can set QEMU_KERNEL_OPTION
 # if they want to replace the "-kernel ..." option entirely.
-if(CONFIG_QEMU_UEFI_BOOT)
+if(CONFIG_QEMU_UEFI_BOOT AND CONFIG_X86_64)
   set(QEMU_UEFI_OPTION  ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.efi)
   list(APPEND QEMU_UEFI_OPTION --)
+elseif(CONFIG_QEMU_UEFI_BOOT AND CONFIG_ARM64)
+  # The firmware boots \EFI\BOOT\BOOTAA64.EFI from a FAT drive QEMU makes out
+  # of the efi-esp directory.
+  set(qemu_esp ${PROJECT_BINARY_DIR}/efi-esp)
+  qemu_get_run_targets(qemu_targets)
+  foreach(target ${qemu_targets})
+    qemu_add_pre_commands(${target}
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${qemu_esp}/EFI/BOOT
+      COMMAND ${CMAKE_COMMAND} -E copy
+        ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.efi
+        ${qemu_esp}/EFI/BOOT/BOOTAA64.EFI
+    )
+  endforeach()
+  set(QEMU_KERNEL_OPTION
+    -bios ${QEMU_EFI_FD_PATH}
+    -drive if=virtio,format=raw,readonly=on,file=fat:${qemu_esp}
+  )
 elseif(DEFINED QEMU_KERNEL_FILE)
   set(QEMU_KERNEL_OPTION "-kernel;${QEMU_KERNEL_FILE}")
 elseif(NOT DEFINED QEMU_KERNEL_OPTION)

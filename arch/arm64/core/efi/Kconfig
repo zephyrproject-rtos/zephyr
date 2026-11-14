@@ -1,0 +1,11 @@
+# Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config ARM64_EFI_MEMMAP_SIZE
+	int "Size of the UEFI memory map buffer"
+	depends on BUILD_OUTPUT_EFI
+	default 8192
+	help
+	  The EFI stub stores the UEFI memory map in a buffer of this size
+	  before calling ExitBootServices(). arm64_efi_boot_info_get() returns
+	  it. The stub returns to UEFI with an error if the map does not fit.

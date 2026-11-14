@@ -90,6 +90,7 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
 endif()
 
 add_subdirectory_ifdef(CONFIG_XEN xen)
+add_subdirectory_ifdef(CONFIG_BUILD_OUTPUT_EFI efi)
 
 if(CONFIG_GEN_SW_ISR_TABLE)
   if(CONFIG_DYNAMIC_INTERRUPTS)

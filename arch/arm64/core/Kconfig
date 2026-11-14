@@ -180,6 +180,21 @@ config AARCH64_IMAGE_HEADER
 	  This option enables standard ARM64 boot image header used by Linux
 	  and understood by loaders such as u-boot on Xen xl tool.
 
+DT_CHOSEN_Z_SRAM := zephyr,sram
+
+config AARCH64_IMAGE_DRAM_BASE
+	hex "Start of DRAM for the image header"
+	depends on AARCH64_IMAGE_HEADER && !XIP
+	default $(sub_hex,$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM)),$(mod,$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM)),0x200000))
+	help
+	  Loaders such as U-Boot booti put the image at the start of DRAM
+	  rounded up to 2 MiB, plus the text offset from the image header.
+	  The text offset is computed from this value, so Zephyr only lands at
+	  its link address if this is where the loader sees DRAM start.
+
+	  The default is the zephyr,sram base rounded down to 2 MiB. Set it
+	  when zephyr,sram is not within the first 2 MiB of DRAM.
+
 config KOBJECT_TEXT_AREA
 	default 1024 if UBSAN
 	default 512 if TEST
@@ -278,6 +293,7 @@ config ARMV9_A
 	  performance, and machine learning capabilities while maintaining
 	  backward compatibility with ARMv8-A software.
 
+rsource "efi/Kconfig"
 rsource "xen/Kconfig"
 
 endif # CPU_CORTEX_A

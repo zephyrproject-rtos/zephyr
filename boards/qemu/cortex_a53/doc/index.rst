@@ -72,6 +72,26 @@ QEMU, and display the following console output:
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
 
+UEFI Boot
+=========
+
+With :kconfig:option:`CONFIG_BUILD_OUTPUT_EFI`, ``zephyr.bin`` is also an EFI
+application, copied to ``zephyr.efi``. :kconfig:option:`CONFIG_QEMU_UEFI_BOOT`
+runs it under the EDK2 firmware for the QEMU ``virt`` machine. The firmware is
+taken from the ``QEMU_EFI_FD_PATH`` environment variable if set. Otherwise it is
+searched for next to QEMU, which finds the copy in the Zephyr SDK, and in the
+locations used by distribution packages such as ``qemu-efi-aarch64``.
+
+The :zephyr_file:`tests/boot/uefi` test shows the configuration needed: no
+secure world, enough RAM for the firmware, and Zephyr's RAM moved away from
+what QEMU and EDK2 use:
+
+.. zephyr-app-commands::
+   :zephyr-app: tests/boot/uefi
+   :host-os: unix
+   :board: qemu_cortex_a53
+   :goals: run
+
 Debugging
 =========
 
