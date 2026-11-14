@@ -28,3 +28,15 @@ __aligned(DMA_DATA_ALIGNMENT) char tx_data[TEST_BUF_SIZE] =
 	"It is harder to be kind than to be wise........";
 __aligned(DMA_DATA_ALIGNMENT) char rx_data[TEST_BUF_SIZE + GUARD_BUF_SIZE] = {0};
 #endif
+
+#if CONFIG_DMA_TRANSFER_LONG_BLOCK_SIZE > 0
+#if CONFIG_NOCACHE_MEMORY
+__aligned(DMA_DATA_ALIGNMENT) uint8_t long_tx_data[LONG_BUF_SIZE] __used
+	__attribute__((__section__(".nocache")));
+__aligned(DMA_DATA_ALIGNMENT) uint8_t long_rx_data[LONG_BUF_SIZE + GUARD_BUF_SIZE] __used
+	__attribute__((__section__(".nocache.dma")));
+#else
+__aligned(DMA_DATA_ALIGNMENT) uint8_t long_tx_data[LONG_BUF_SIZE];
+__aligned(DMA_DATA_ALIGNMENT) uint8_t long_rx_data[LONG_BUF_SIZE + GUARD_BUF_SIZE];
+#endif
+#endif
