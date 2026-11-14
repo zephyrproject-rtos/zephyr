@@ -10,16 +10,16 @@ set -ue
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
-app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay.conf compile
-app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_first.conf compile
-app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-legacy_adv.conf compile
-app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-legacy_adv_acl_first.conf compile
-app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_group.conf compile
-app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_group_acl_first.conf compile
-app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-peripheral_cis.conf compile
-app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_first_ft_per_skip_2_se.conf compile
-app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_first_ft_per_skip_4_se.conf compile
-app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_first_ft_cen_skip_2_se.conf compile
-app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_first_ft_cen_skip_4_se.conf compile
+app=tests/bsim/bluetooth/ll/cis extra_conf_file=extra.conf compile
+app=tests/bsim/bluetooth/ll/cis extra_conf_file=extra-acl_first.conf compile
+app=tests/bsim/bluetooth/ll/cis extra_conf_file=extra-legacy_adv.conf compile
+app=tests/bsim/bluetooth/ll/cis extra_conf_file=extra-legacy_adv_acl_first.conf compile
+app=tests/bsim/bluetooth/ll/cis extra_conf_file=extra-acl_group.conf compile
+app=tests/bsim/bluetooth/ll/cis extra_conf_file=extra-acl_group_acl_first.conf compile
+app=tests/bsim/bluetooth/ll/cis extra_conf_file=extra-peripheral_cis.conf compile
+app=tests/bsim/bluetooth/ll/cis extra_conf_file=extra-acl_first_ft_per_skip_2_se.conf compile
+app=tests/bsim/bluetooth/ll/cis extra_conf_file=extra-acl_first_ft_per_skip_4_se.conf compile
+app=tests/bsim/bluetooth/ll/cis extra_conf_file=extra-acl_first_ft_cen_skip_2_se.conf compile
+app=tests/bsim/bluetooth/ll/cis extra_conf_file=extra-acl_first_ft_cen_skip_4_se.conf compile
 
 wait_for_background_jobs

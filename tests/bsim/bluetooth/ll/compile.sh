@@ -12,8 +12,8 @@ source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 app=tests/bsim/bluetooth/ll/advx compile
 app=tests/bsim/bluetooth/ll/advx \
-  conf_overlay=overlay-ticker_expire_info.conf compile
-app=tests/bsim/bluetooth/ll/advx conf_overlay=overlay-scan_aux_use_chains.conf compile
+  extra_conf_file=extra-ticker_expire_info.conf compile
+app=tests/bsim/bluetooth/ll/advx extra_conf_file=extra-scan_aux_use_chains.conf compile
 
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_1ms.conf compile
@@ -22,11 +22,11 @@ app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_low_lat.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_single_timer.conf compile
 
-app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-sequential.conf compile
-app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-interleaved.conf  compile
-app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ll_interface.conf compile
-app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ticker_expire_info.conf compile
-app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-scan_aux_use_chains.conf compile
+app=tests/bsim/bluetooth/ll/bis extra_conf_file=extra-sequential.conf compile
+app=tests/bsim/bluetooth/ll/bis extra_conf_file=extra-interleaved.conf  compile
+app=tests/bsim/bluetooth/ll/bis extra_conf_file=extra-ll_interface.conf compile
+app=tests/bsim/bluetooth/ll/bis extra_conf_file=extra-ticker_expire_info.conf compile
+app=tests/bsim/bluetooth/ll/bis extra_conf_file=extra-scan_aux_use_chains.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_file=prj_vs_dp.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_file=prj_past.conf compile
 
@@ -42,8 +42,8 @@ app=tests/bsim/bluetooth/ll/edtt/gatt_test_app \
 app=tests/bsim/bluetooth/ll/multiple_id compile
 
 app=tests/bsim/bluetooth/ll/throughput compile
-app=tests/bsim/bluetooth/ll/throughput conf_overlay=overlay-no_phy_update.conf compile
-app=tests/bsim/bluetooth/ll/throughput conf_overlay=overlay-notify.conf compile
-app=tests/bsim/bluetooth/ll/throughput conf_overlay=overlay-notify_simplex.conf compile
+app=tests/bsim/bluetooth/ll/throughput extra_conf_file=extra-no_phy_update.conf compile
+app=tests/bsim/bluetooth/ll/throughput extra_conf_file=extra-notify.conf compile
+app=tests/bsim/bluetooth/ll/throughput extra_conf_file=extra-notify_simplex.conf compile
 
 wait_for_background_jobs

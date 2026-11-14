@@ -24,12 +24,12 @@ else
   app=tests/bsim/bluetooth/audio_samples/ccp/call_control_server \
     sample=${ZEPHYR_BASE}/samples/bluetooth/audio/ccp_call_control_server \
     conf_file=${sample}/prj.conf \
-    conf_overlay=${sample}/overlay-bt_ll_sw_split.conf \
+    extra_conf_file=${sample}/extra-bt_ll_sw_split.conf \
     exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
   app=tests/bsim/bluetooth/audio_samples/ccp/call_control_client \
     sample=${ZEPHYR_BASE}/samples/bluetooth/audio/ccp_call_control_client \
     conf_file=${sample}/prj.conf \
-    conf_overlay=${sample}/overlay-bt_ll_sw_split.conf \
+    extra_conf_file=${sample}/extra-bt_ll_sw_split.conf \
     exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
 fi
 

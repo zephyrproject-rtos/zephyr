@@ -18,7 +18,7 @@ tests:
 
   bluetooth.audio.bsim:
     extra_args:
-      - EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
+      - EXTRA_CONF_FILE=extra-bt_ll_sw_split.conf
       - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE=""
       # Note the last provided EXTRA_CONF_FILE definition will be used by cmake
     harness_config:

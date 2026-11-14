@@ -20,7 +20,7 @@ tests:
     harness_config:
       bsim_exe_name: tests_bluetooth_tester_prj_conf
     extra_args:
-      - platform:nrf52_bsim/native:EXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf"
+      - platform:nrf52_bsim/native:EXTRA_CONF_FILE="extra-bt_ll_sw_split.conf"
   bluetooth.general.tester.nxp:
     # Disabling monolithic since CI environment doesn't use blobs
     build_only: true
@@ -52,7 +52,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340_audio_dk/nrf5340/cpuapp
     extra_args:
-      - EXTRA_CONF_FILE="overlay-le-audio.conf"
+      - EXTRA_CONF_FILE="extra-le-audio.conf"
     tags: bluetooth
     harness: bluetooth
     sysbuild: true
@@ -63,8 +63,8 @@ tests:
       - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpuapp
     extra_args:
-      - platform:nrf52_bsim/native:EXTRA_CONF_FILE="overlay-le-audio.conf;overlay-bt_ll_sw_split.conf"
-      - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE="overlay-le-audio.conf"
+      - platform:nrf52_bsim/native:EXTRA_CONF_FILE="extra-le-audio.conf;extra-bt_ll_sw_split.conf"
+      - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE="extra-le-audio.conf"
     harness: bsim
     harness_config:
       bsim_exe_name: tests_bluetooth_tester_le_audio_prj_conf
@@ -74,7 +74,7 @@ tests:
       - qemu_x86
       - native_sim
       - nrf52840dk/nrf52840
-    extra_args: EXTRA_CONF_FILE="overlay-mesh.conf"
+    extra_args: EXTRA_CONF_FILE="extra-mesh.conf"
     tags: bluetooth
     harness: bluetooth
   bluetooth.general.tester.legacy_adv:
