@@ -100,4 +100,6 @@ rsource "Kconfig.udp"
 
 rsource "Kconfig.spi"
 
+rsource "Kconfig.i2c"
+
 rsource "Kconfig.common"

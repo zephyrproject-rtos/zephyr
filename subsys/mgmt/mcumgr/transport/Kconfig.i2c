@@ -1,0 +1,76 @@
+#
+# Copyright (c) 2026 Aerlync Labs Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig MCUMGR_TRANSPORT_I2C
+	bool "I2C MCUmgr SMP transport"
+	depends on MULTITHREADING && I2C && I2C_TARGET && DT_HAS_ZEPHYR_SMP_I2C_ENABLED
+	select MCUMGR_TRANSPORT_REASSEMBLY
+	help
+	  Enable MCUmgr SMP transport over I2C. The device operates as an I2C
+	  target and exchanges raw SMP packets. The packet length is taken from
+	  the SMP header. A request can be split over several I2C writes, which
+	  are chained together up to MCUMGR_TRANSPORT_NETBUF_SIZE. An optional
+	  data-ready GPIO (data-ready-gpios in DTS) signals the controller when
+	  a response is available.
+
+	  The GPIO is optional. If data-ready-gpios is omitted the controller
+	  polls by reading the SMP header until it is non-empty.
+
+	  A response is read back in a single I2C transaction, so in buffer mode
+	  the I2C target driver's own buffer must be large enough for the
+	  largest response. The sizing note is in
+	  doc/services/device_mgmt/smp_transport.rst.
+
+if MCUMGR_TRANSPORT_I2C
+
+config MCUMGR_TRANSPORT_I2C_REASSEMBLY_TIMEOUT_MS
+	int "I2C incomplete request timeout (ms)"
+	range 100 60000
+	default 1000
+	help
+	  A request that is split over several I2C writes is dropped if the rest
+	  of it does not arrive within this time, for example because the
+	  controller rebooted or the data was corrupt. Without this, the stale
+	  data would stay in the buffer and the next request would be appended
+	  to it.
+
+endif # MCUMGR_TRANSPORT_I2C
+
+menuconfig MCUMGR_TRANSPORT_I2C_CLIENT
+	bool "I2C controller MCUmgr SMP transport"
+	depends on MULTITHREADING && I2C && SMP_CLIENT && DT_HAS_ZEPHYR_SMP_I2C_CLIENT_ENABLED
+	help
+	  Enable MCUmgr SMP transport over I2C in controller mode. The device
+	  operates as an I2C controller and communicates with a remote target
+	  running zephyr,smp-i2c.
+
+if MCUMGR_TRANSPORT_I2C_CLIENT
+
+config MCUMGR_TRANSPORT_I2C_CLIENT_POLL_MS
+	int "I2C client poll interval (ms)"
+	depends on $(dt_compat_any_not_has_prop,$(DT_COMPAT_ZEPHYR_SMP_I2C_CLIENT),data-ready-gpios)
+	default 5
+	help
+	  Interval between SMP header polling reads. Only used when the node has
+	  no data-ready GPIO.
+
+config MCUMGR_TRANSPORT_I2C_CLIENT_POLL_RETRIES
+	int "I2C client poll retries"
+	depends on $(dt_compat_any_not_has_prop,$(DT_COMPAT_ZEPHYR_SMP_I2C_CLIENT),data-ready-gpios)
+	default 1000
+	help
+	  Maximum polling attempts before timing out (e.g. during target flash erase).
+	  Only used when the node has no data-ready GPIO.
+
+config MCUMGR_TRANSPORT_I2C_CLIENT_DRDY_TIMEOUT_MS
+	int "I2C client DRDY timeout (ms)"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ZEPHYR_SMP_I2C_CLIENT),data-ready-gpios)
+	default 5000
+	help
+	  Maximum wait time in milliseconds for the DRDY GPIO interrupt. Only used
+	  when the node has a data-ready GPIO.
+
+endif # MCUMGR_TRANSPORT_I2C_CLIENT
