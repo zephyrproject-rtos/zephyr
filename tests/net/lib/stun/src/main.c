@@ -3567,3 +3567,926 @@ ZTEST(stun, test_integrity_sha256_rfc8489_vector)
 	zassert_equal(unknown[0], TEST_ATTR_USERHASH, "USERHASH");
 	zassert_equal(unknown[1], TEST_ATTR_PASSWORD_ALGORITHM, "PASSWORD-ALGORITHM");
 }
+
+/*---------------------------------- TEST BINDING TRANSACTION ----------------------------------- */
+
+/* The Binding transaction (RFC 8489 section 6): the request, the retransmission
+ * schedule, which datagrams are believed, and how the server's answer ends it.
+ * No sockets and no clock: the test plays both.
+ */
+#if defined(CONFIG_STUN_CLIENT)
+
+/* When the tests start their transactions, on the caller's clock. */
+#define T0 1000U
+
+/* The RTO, Rc and Rm of RFC 8489 section 6.2.1. */
+#define RFC_RTO_MS 500U
+#define RFC_RC     7U
+#define RFC_RM     16U
+
+/* The RTO, Rc and Rm the transaction is built with. */
+#define BINDING_RTO_MS ((uint32_t)CONFIG_STUN_BINDING_RTO_MS)
+#define BINDING_RC     ((uint32_t)CONFIG_STUN_BINDING_MAX_TRANSMITS)
+#define BINDING_RM     ((uint32_t)CONFIG_STUN_BINDING_FINAL_WAIT_RTO)
+
+/* How long an unanswered transaction lasts: transmission Rc is made
+ * (2^(Rc - 1) - 1) RTO after the first, and Rm RTO follow it.
+ */
+#define BINDING_SCHEDULE_MS (BINDING_RTO_MS * ((1U << (BINDING_RC - 1U)) - 1U + BINDING_RM))
+
+/* A time past the end of the schedule: a minute after it. */
+#define BINDING_LONG_AFTER (BINDING_SCHEDULE_MS + 60000U)
+
+/* Room for the SOFTWARE value in the request of a transaction: the request
+ * buffer less the header, the attribute header and FINGERPRINT.
+ */
+#define BINDING_SOFTWARE_ROOM                                                                      \
+	(STUN_BINDING_REQUEST_SIZE - STUN_HEADER_SIZE - RAW_ATTR_HEADER_SIZE - RAW_FINGERPRINT_SIZE)
+
+/* The value of an address attribute (RFC 8489 section 14.2): a reserved byte,
+ * the family (1 for IPv4, 2 for IPv6), the port, then the address.
+ */
+#define RAW_ADDR_FAMILY_OFFSET 1U
+#define RAW_ADDR_PORT_OFFSET   2U
+#define RAW_ADDR_IP_OFFSET     4U
+#define RAW_ADDR_FAMILY_IPV4   0x01U
+#define RAW_ADDR_FAMILY_IPV6   0x02U
+
+/* The port of the address the server reports. */
+#define BINDING_MAPPED_PORT 40000U
+
+struct binding_fixture {
+	struct stun_binding b;
+	struct net_sockaddr_storage server;
+	uint8_t txid[STUN_TXID_SIZE];
+	struct stun_txn_step step;
+};
+
+/* The server of the tests: 203.0.113.1 (TEST-NET-3) on the default port. */
+static void set_server_ipv4(struct net_sockaddr *server)
+{
+	addr_set_ipv4(server, 203, 0, 113, 1, TEST_STUN_PORT);
+}
+
+/* A fixture with the server and a transaction id, not started. */
+static void binding_prepare(struct binding_fixture *f, uint8_t txid_first)
+{
+	memset(f, 0, sizeof(*f));
+	set_server_ipv4(net_sad(&f->server));
+	fill_txid(f->txid, txid_first);
+}
+
+/* A transaction in flight to the server, started at T0. */
+static void start_ipv4(struct binding_fixture *f, uint8_t txid_first)
+{
+	binding_prepare(f, txid_first);
+	zassert_ok(stun_binding_start(&f->b, net_sad(&f->server), f->txid, NULL, T0, &f->step));
+	zassert_equal(f->b.state, STUN_BINDING_IN_FLIGHT);
+}
+
+/* A response of `type` to the transaction `txid`. */
+static void response_to(struct raw_msg *r, const uint8_t txid[STUN_TXID_SIZE], uint16_t type)
+{
+	raw_init(r, type, TEST_TXID_FILL);
+	memcpy(r->buf + RAW_TXID_OFFSET, txid, STUN_TXID_SIZE);
+}
+
+/* XOR-MAPPED-ADDRESS as the server would encode it: the port XORed with the top
+ * half of the magic cookie, the address with the header bytes that follow the
+ * type and Length, the cookie and then the transaction id.
+ */
+static void add_xor_mapped(struct raw_msg *r, uint8_t family, const uint8_t *ip, size_t ip_len,
+			   uint16_t port)
+{
+	uint8_t value[RAW_ADDR_IP_OFFSET + NET_IPV6_ADDR_SIZE] = {0};
+	uint16_t cookie_top = sys_get_be16(r->buf + RAW_COOKIE_OFFSET);
+
+	value[RAW_ADDR_FAMILY_OFFSET] = family;
+	sys_put_be16((uint16_t)(port ^ cookie_top), value + RAW_ADDR_PORT_OFFSET);
+	for (size_t i = 0; i < ip_len; i++) {
+		value[RAW_ADDR_IP_OFFSET + i] = (uint8_t)(ip[i] ^ r->buf[RAW_COOKIE_OFFSET + i]);
+	}
+	raw_attr(r, STUN_ATTR_XOR_MAPPED_ADDRESS, RAW_ADDR_IP_OFFSET + ip_len, value,
+		 RAW_ADDR_IP_OFFSET + ip_len);
+}
+
+/* XOR-MAPPED-ADDRESS 198.51.100.7 (TEST-NET-2), the address the server reports. */
+static void add_mapped(struct raw_msg *r)
+{
+	static const uint8_t ip[NET_IPV4_ADDR_SIZE] = {198, 51, 100, 7};
+
+	add_xor_mapped(r, RAW_ADDR_FAMILY_IPV4, ip, sizeof(ip), BINDING_MAPPED_PORT);
+}
+
+/* Is the address the one add_mapped() reports? */
+static bool is_mapped(const struct net_sockaddr *addr)
+{
+	return addr_is_ipv4(addr, 198, 51, 100, 7, BINDING_MAPPED_PORT);
+}
+
+/* ERROR-CODE with `code` and no reason phrase: two reserved bytes, the class
+ * (the hundreds of the code) and the number (RFC 8489 section 14.8).
+ */
+static void add_error(struct raw_msg *r, uint16_t code)
+{
+	const uint8_t value[RAW_ERROR_REASON_OFFSET] = {0x00U, 0x00U, (uint8_t)(code / 100U),
+							(uint8_t)(code % 100U)};
+
+	raw_attr(r, STUN_ATTR_ERROR_CODE, sizeof(value), value, sizeof(value));
+}
+
+/* An answer that ends the transaction: on_datagram takes it, whatever the outcome. */
+static void deliver(struct binding_fixture *f, const struct raw_msg *r)
+{
+	zassert_true(stun_binding_is_response(&f->b, r->buf, r->len));
+	zassert_ok(stun_binding_on_datagram(&f->b, net_sad(&f->server), r->buf, r->len));
+}
+
+/* ============================ the request ============================ */
+
+/* The first step is a plain Binding request with FINGERPRINT; a success
+ * response to it ends the transaction with the mapped address, and it stays
+ * done.
+ */
+ZTEST(stun, test_binding_success_ipv4)
+{
+	struct binding_fixture f = {0};
+	struct raw_msg r = {0};
+	struct stun_msg m = {0};
+
+	start_ipv4(&f, TEST_TXID_FIRST);
+
+	/* The first step is the request: a plain Binding request with our
+	 * transaction id and FINGERPRINT, nothing that needs a credential.
+	 */
+	zassert_equal(f.step.action, STUN_TXN_SEND);
+	zassert_ok(stun_parse(f.step.tx, f.step.tx_len, &m));
+	zassert_equal(m.type, STUN_BINDING_REQUEST);
+	zassert_mem_equal(m.txid, f.txid, STUN_TXID_SIZE);
+	zassert_true(m.has_fingerprint);
+	zassert_ok(stun_verify_fingerprint(&m));
+	zassert_false(m.has_integrity);
+	zassert_is_null(m.username);
+	zassert_equal(f.step.tx_len, STUN_HEADER_SIZE + RAW_FINGERPRINT_SIZE);
+
+	response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+	add_mapped(&r);
+	deliver(&f, &r);
+	zassert_equal(f.b.state, STUN_BINDING_DONE);
+	zassert_equal(f.b.fail, STUN_BINDING_FAIL_NONE);
+	zassert_true(is_mapped(net_sad(&f.b.mapped)));
+
+	/* Done stays done. */
+	zassert_ok(stun_binding_next_step(&f.b, T0 + BINDING_LONG_AFTER, &f.step));
+	zassert_equal(f.step.action, STUN_TXN_DONE);
+	zassert_ok(stun_binding_next_step(&f.b, T0 + 2U * BINDING_LONG_AFTER, &f.step));
+	zassert_equal(f.step.action, STUN_TXN_DONE);
+}
+
+/* With the IPv6 stack an IPv6 server and an IPv6 mapped address are taken;
+ * without it the server is refused and such an answer fails the transaction.
+ */
+ZTEST(stun, test_binding_ipv6)
+{
+	/* 2001:db8::1:2, the address the server reports. */
+	static const uint8_t mapped_ipv6[NET_IPV6_ADDR_SIZE] = {
+		0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x02,
+	};
+	struct binding_fixture f = {0};
+	struct raw_msg r = {0};
+
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		/* 2001:db8::3478, the server. */
+		static const uint8_t server_ipv6[NET_IPV6_ADDR_SIZE] = {
+			0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x34, 0x78,
+		};
+
+		/* An IPv6 server telling an IPv6 address. */
+		memset(&f, 0, sizeof(f));
+		addr_set_ipv6(net_sad(&f.server), server_ipv6, TEST_STUN_PORT);
+		fill_txid(f.txid, TEST_TXID_FIRST);
+		zassert_ok(stun_binding_start(&f.b, net_sad(&f.server), f.txid, NULL, T0, &f.step));
+		response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+		add_xor_mapped(&r, RAW_ADDR_FAMILY_IPV6, mapped_ipv6, sizeof(mapped_ipv6),
+			       BINDING_MAPPED_PORT);
+		deliver(&f, &r);
+		zassert_equal(f.b.state, STUN_BINDING_DONE);
+		zassert_true(addr_is_ipv6(net_sad(&f.b.mapped), mapped_ipv6, BINDING_MAPPED_PORT));
+
+		/* RFC 8489 section 6.3.3: an unexpected but supported family may be used. */
+		start_ipv4(&f, TEST_TXID_FIRST);
+		response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+		add_xor_mapped(&r, RAW_ADDR_FAMILY_IPV6, mapped_ipv6, sizeof(mapped_ipv6),
+			       BINDING_MAPPED_PORT);
+		deliver(&f, &r);
+		zassert_equal(f.b.state, STUN_BINDING_DONE);
+		zassert_true(addr_is_ipv6(net_sad(&f.b.mapped), mapped_ipv6, BINDING_MAPPED_PORT));
+	} else {
+		struct net_sockaddr_in6 server6 = {.sin6_family = NET_AF_INET6,
+						   .sin6_port = net_htons(TEST_STUN_PORT)};
+
+		/* Without the IPv6 stack there is no IPv6 server to talk to... */
+		memset(&f, 0, sizeof(f));
+		fill_txid(f.txid, TEST_TXID_FIRST);
+		zassert_equal(stun_binding_start(&f.b, (struct net_sockaddr *)&server6, f.txid,
+						 NULL, T0, &f.step),
+			      -EAFNOSUPPORT);
+		zassert_equal(f.b.state, STUN_BINDING_IDLE);
+
+		/* ...and an IPv6 address in the answer is one this build cannot hold. */
+		start_ipv4(&f, TEST_TXID_FIRST);
+		response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+		add_xor_mapped(&r, RAW_ADDR_FAMILY_IPV6, mapped_ipv6, sizeof(mapped_ipv6),
+			       BINDING_MAPPED_PORT);
+		deliver(&f, &r);
+		zassert_equal(f.b.state, STUN_BINDING_FAILED);
+		zassert_equal(f.b.fail, STUN_BINDING_FAIL_BAD_RESPONSE);
+	}
+}
+
+/* SOFTWARE is in the request when given, up to the room of the request buffer;
+ * a longer one is refused and the transaction is not started.
+ */
+ZTEST(stun, test_binding_software)
+{
+	static const char software[] = "zephyr test";
+	/* Exactly as long as the request has room for, one byte longer, and one
+	 * character more than the SOFTWARE attribute may carry.
+	 */
+	static char fits[BINDING_SOFTWARE_ROOM + 1U];
+	static char too_long[BINDING_SOFTWARE_ROOM + 2U];
+	static char too_many_chars[STUN_TEXT_MAX_CHARS + 2U];
+	struct binding_fixture f = {0};
+	struct stun_msg m = {0};
+	const uint8_t *value = NULL;
+	uint16_t value_len = 0U;
+
+	/* RFC 8489 section 6.1: a request should carry SOFTWARE. */
+	binding_prepare(&f, TEST_TXID_FIRST);
+	zassert_ok(stun_binding_start(&f.b, net_sad(&f.server), f.txid, software, T0, &f.step));
+	zassert_ok(stun_parse(f.step.tx, f.step.tx_len, &m));
+	zassert_ok(stun_find_attr(&m, STUN_ATTR_SOFTWARE, &value, &value_len));
+	zassert_equal(value_len, strlen(software));
+	zassert_mem_equal(value, software, value_len);
+	zassert_true(m.has_fingerprint);
+	zassert_ok(stun_verify_fingerprint(&m));
+
+	/* None when not asked for. */
+	start_ipv4(&f, TEST_TXID_FIRST);
+	zassert_ok(stun_parse(f.step.tx, f.step.tx_len, &m));
+	zassert_equal(stun_find_attr(&m, STUN_ATTR_SOFTWARE, &value, &value_len), -ENOENT);
+
+	/* The longest one that fits fills the request buffer. */
+	binding_prepare(&f, TEST_TXID_FIRST);
+	memset(fits, 's', sizeof(fits) - 1U);
+	zassert_ok(stun_binding_start(&f.b, net_sad(&f.server), f.txid, fits, T0, &f.step));
+	zassert_equal(f.step.tx_len, STUN_BINDING_REQUEST_SIZE);
+
+	/* One the request buffer has no room for, and one no SOFTWARE attribute
+	 * may carry: refused, and the transaction is not started.
+	 */
+	binding_prepare(&f, TEST_TXID_FIRST);
+	memset(too_long, 's', sizeof(too_long) - 1U);
+	zassert_equal(stun_binding_start(&f.b, net_sad(&f.server), f.txid, too_long, T0, &f.step),
+		      -EMSGSIZE);
+	zassert_equal(f.b.state, STUN_BINDING_IDLE);
+	zassert_equal(f.step.action, STUN_TXN_NONE);
+
+	memset(too_many_chars, 's', sizeof(too_many_chars) - 1U);
+	zassert_equal(
+		stun_binding_start(&f.b, net_sad(&f.server), f.txid, too_many_chars, T0, &f.step),
+		-EINVAL);
+	zassert_equal(f.b.state, STUN_BINDING_IDLE);
+}
+
+/* ====================== the retransmission schedule ====================== */
+
+/* Ask for the step at `at` and expect a retransmission of the very same request. */
+static void expect_send(struct binding_fixture *f, uint32_t at, const uint8_t *first,
+			size_t first_len)
+{
+	zassert_ok(stun_binding_next_step(&f->b, at, &f->step));
+	zassert_equal(f->step.action, STUN_TXN_SEND, "a transmission is due at +%u", at - T0);
+	zassert_equal_ptr(f->step.tx, first);
+	zassert_equal(f->step.tx_len, first_len);
+}
+
+/* Ask for the step at `at` and expect an order to wait until `until`. */
+static void expect_wait(struct binding_fixture *f, uint32_t at, uint32_t until)
+{
+	zassert_ok(stun_binding_next_step(&f->b, at, &f->step));
+	zassert_equal(f->step.action, STUN_TXN_WAIT, "nothing is due at +%u", at - T0);
+	zassert_equal(f->step.wait_until_ms, until);
+}
+
+/* When transmission number n of a transaction that is asked in time is made,
+ * counted from the first: every interval is twice the one before it, so
+ * (2^(n - 1) - 1) RTO.
+ */
+static uint32_t binding_send_at(uint32_t n)
+{
+	return BINDING_RTO_MS * ((1U << (n - 1U)) - 1U);
+}
+
+/* The wait after transmission number n: the interval to the next one, or
+ * Rm RTO after the last.
+ */
+static uint32_t binding_wait_after(uint32_t n)
+{
+	if (n >= BINDING_RC) {
+		return BINDING_RM * BINDING_RTO_MS;
+	}
+	return binding_send_at(n + 1U) - binding_send_at(n);
+}
+
+/* Ask for the step at `at`, where the wait after transmission number n ends,
+ * and expect the next transmission, or the failure if n was the last.
+ */
+static void expect_due(struct binding_fixture *f, uint32_t at, uint32_t n, const uint8_t *first,
+		       size_t first_len)
+{
+	if (n < BINDING_RC) {
+		expect_send(f, at, first, first_len);
+		return;
+	}
+	zassert_ok(stun_binding_next_step(&f->b, at, &f->step));
+	zassert_equal(f->step.action, STUN_TXN_FAILED, "the failure is due at +%u", at - T0);
+	zassert_equal(f->b.state, STUN_BINDING_FAILED);
+	zassert_equal(f->b.fail, STUN_BINDING_FAIL_TIMEOUT);
+}
+
+/* An unanswered transaction sends the same request Rc times, at the times
+ * the configured RTO gives, and fails Rm RTO after the last.
+ */
+ZTEST(stun, test_binding_schedule)
+{
+	const uint32_t fail_at = T0 + BINDING_SCHEDULE_MS;
+	const uint8_t *first = NULL;
+	size_t first_len = 0U;
+	struct binding_fixture f = {0};
+
+	start_ipv4(&f, TEST_TXID_FIRST);
+	first = f.step.tx;
+	first_len = f.step.tx_len;
+
+	for (uint32_t n = 2U; n <= BINDING_RC; n++) {
+		const uint32_t at = T0 + binding_send_at(n);
+
+		expect_wait(&f, at - 1U, at);
+		expect_send(&f, at, first, first_len);
+	}
+
+	expect_wait(&f, T0 + binding_send_at(BINDING_RC), fail_at);
+	expect_wait(&f, fail_at - 1U, fail_at);
+	zassert_equal(f.b.state, STUN_BINDING_IN_FLIGHT);
+	expect_due(&f, fail_at, BINDING_RC, first, first_len);
+
+	/* Failed stays failed. */
+	zassert_ok(stun_binding_next_step(&f.b, T0 + BINDING_LONG_AFTER, &f.step));
+	zassert_equal(f.step.action, STUN_TXN_FAILED);
+	zassert_equal(f.b.fail, STUN_BINDING_FAIL_TIMEOUT);
+}
+
+/* With the RTO, Rc and Rm of RFC 8489 section 6.2.1 an unanswered transaction
+ * sends the same request at the times the RFC lists and fails 39.5 seconds
+ * after the first.
+ */
+ZTEST(stun, test_binding_default_schedule)
+{
+	/* RFC 8489 section 6.2.1 with RTO 500 ms, Rc 7, Rm 16: requests at these
+	 * times after the first, and the transaction fails 39500 ms after it.
+	 */
+	static const uint32_t send_at[] = {500U, 1500U, 3500U, 7500U, 15500U, 31500U};
+	static const uint32_t fail_at = 39500U;
+	const uint8_t *first = NULL;
+	size_t first_len = 0U;
+	struct binding_fixture f = {0};
+
+	if (BINDING_RTO_MS != RFC_RTO_MS || BINDING_RC != RFC_RC || BINDING_RM != RFC_RM) {
+		ztest_test_skip();
+	}
+
+	/* The times the other tests compute are those of the RFC. */
+	for (size_t i = 0; i < ARRAY_SIZE(send_at); i++) {
+		zassert_equal(binding_send_at((uint32_t)i + 2U), send_at[i]);
+	}
+	zassert_equal(BINDING_SCHEDULE_MS, fail_at);
+
+	start_ipv4(&f, TEST_TXID_FIRST);
+	first = f.step.tx;
+	first_len = f.step.tx_len;
+
+	for (size_t i = 0; i < ARRAY_SIZE(send_at); i++) {
+		expect_wait(&f, T0 + send_at[i] - 1U, T0 + send_at[i]);
+		expect_send(&f, T0 + send_at[i], first, first_len);
+	}
+
+	expect_wait(&f, T0 + send_at[ARRAY_SIZE(send_at) - 1U], T0 + fail_at);
+	expect_wait(&f, T0 + fail_at - 1U, T0 + fail_at);
+	zassert_equal(f.b.state, STUN_BINDING_IN_FLIGHT);
+
+	zassert_ok(stun_binding_next_step(&f.b, T0 + fail_at, &f.step));
+	zassert_equal(f.step.action, STUN_TXN_FAILED);
+	zassert_equal(f.b.state, STUN_BINDING_FAILED);
+	zassert_equal(f.b.fail, STUN_BINDING_FAIL_TIMEOUT);
+
+	/* Failed stays failed. */
+	zassert_ok(stun_binding_next_step(&f.b, T0 + BINDING_LONG_AFTER, &f.step));
+	zassert_equal(f.step.action, STUN_TXN_FAILED);
+	zassert_equal(f.b.fail, STUN_BINDING_FAIL_TIMEOUT);
+}
+
+/* The deadlines hold when the 32-bit clock wraps, and a caller that comes late
+ * has the next interval counted from its transmission.
+ */
+ZTEST(stun, test_binding_clock)
+{
+	/* 256 ms before the 32-bit millisecond clock wraps. */
+	const uint32_t start = 0xFFFFFF00U;
+	/* 100 ms after the start, before the wrap. */
+	const uint32_t before_wrap = start + 100U;
+	/* 200 ms after the first retransmission was due. */
+	const uint32_t late = T0 + BINDING_RTO_MS + 200U;
+	/* The wait after the first transmission, and after one made at `late`. */
+	const uint32_t first_wait = binding_wait_after(1U);
+	const uint32_t second_wait = binding_wait_after(2U);
+	const uint8_t *first = NULL;
+	size_t first_len = 0U;
+	struct binding_fixture f = {0};
+
+	/* The clock wraps between the request and the end of the wait after it. */
+	binding_prepare(&f, TEST_TXID_FIRST);
+	zassert_ok(stun_binding_start(&f.b, net_sad(&f.server), f.txid, NULL, start, &f.step));
+	first = f.step.tx;
+	first_len = f.step.tx_len;
+	/* The deadline is the smaller number of the two and is still ahead. */
+	zassert_ok(stun_binding_next_step(&f.b, before_wrap, &f.step));
+	zassert_equal(f.step.action, STUN_TXN_WAIT);
+	zassert_equal(f.step.wait_until_ms, start + first_wait);
+	zassert_ok(stun_binding_next_step(&f.b, start + first_wait - 1U, &f.step));
+	zassert_equal(f.step.action, STUN_TXN_WAIT);
+	zassert_equal(f.step.wait_until_ms, start + first_wait, "a time after the wrap");
+	zassert_true(f.step.wait_until_ms < start);
+	expect_due(&f, start + first_wait, 1U, first, first_len);
+
+	/* A caller that comes late moves the schedule with it: the next wait
+	 * is counted from the transmission it made. A transaction that sends
+	 * once has no transmission to be late for.
+	 */
+	if (BINDING_RC > 1U) {
+		start_ipv4(&f, TEST_TXID_FIRST);
+		first = f.step.tx;
+		first_len = f.step.tx_len;
+		expect_send(&f, late, first, first_len);
+		expect_wait(&f, late + second_wait - 1U, late + second_wait);
+		expect_due(&f, late + second_wait, 2U, first, first_len);
+	}
+}
+
+/* RFC 8489 section 6.2.1: the client retransmits "starting with an interval
+ * of RTO, doubling after each retransmission", and after the last request it
+ * waits Rm * RTO. The intervals are between transmissions. A caller that
+ * comes late therefore moves the rest of the schedule: it does not get to
+ * send twice in a row to catch up, and the final wait follows the last
+ * transmission that was actually made.
+ */
+ZTEST(stun, test_binding_late_caller_keeps_the_intervals)
+{
+	/* 1.1 s after the first retransmission was due. */
+	const uint32_t late = T0 + BINDING_RTO_MS + 1100U;
+	/* When the wait after the transmission made at `late` ends. */
+	const uint32_t next = late + binding_wait_after(2U);
+	const uint8_t *first = NULL;
+	size_t first_len = 0U;
+	struct binding_fixture f = {0};
+
+	/* A transaction that sends once has no transmission to be late for. */
+	if (BINDING_RC < 2U) {
+		ztest_test_skip();
+	}
+
+	start_ipv4(&f, TEST_TXID_FIRST);
+	first = f.step.tx;
+	first_len = f.step.tx_len;
+
+	expect_send(&f, late, first, first_len);
+	/* The next wait is counted from that transmission, not from the time
+	 * it was due: nothing to send right now.
+	 */
+	expect_wait(&f, late, next);
+	expect_wait(&f, next - 1U, next);
+	expect_due(&f, next, 2U, first, first_len);
+	/* Then the wait after the third transmission. */
+	if (BINDING_RC > 2U) {
+		expect_wait(&f, next, next + binding_wait_after(3U));
+	}
+}
+
+/* A caller that returns after the whole schedule gets one transmission and a
+ * wait, not a failure.
+ */
+ZTEST(stun, test_binding_stall_does_not_end_the_transaction_at_once)
+{
+	const uint8_t *first = NULL;
+	size_t first_len = 0U;
+	struct binding_fixture f = {0};
+	/* Half a second after the whole schedule would have ended. */
+	uint32_t at = T0 + BINDING_SCHEDULE_MS + 500U;
+
+	/* A transaction that sends once has nothing left to send by then. */
+	if (BINDING_RC < 2U) {
+		ztest_test_skip();
+	}
+
+	/* The caller was away longer than the whole schedule. On its return
+	 * the transaction sends once and waits; all the transmissions in a
+	 * row and an immediate failure would give the server no chance to
+	 * answer the request that was just sent.
+	 */
+	start_ipv4(&f, TEST_TXID_FIRST);
+	first = f.step.tx;
+	first_len = f.step.tx_len;
+
+	/* Every transmission that is left is followed by its own wait; after
+	 * the last one that is Rm * RTO, not less.
+	 */
+	for (uint32_t n = 2U; n <= BINDING_RC; n++) {
+		expect_send(&f, at, first, first_len);
+		expect_wait(&f, at, at + binding_wait_after(n));
+		at += binding_wait_after(n);
+	}
+	expect_wait(&f, at - 1U, at);
+	expect_due(&f, at, BINDING_RC, first, first_len);
+}
+
+/* ==================== which datagrams are believed ==================== */
+
+/* Datagrams that are not the answer of the server are refused and leave the
+ * transaction in flight; the answer after them is taken.
+ */
+ZTEST(stun, test_binding_rejects_what_is_not_the_answer)
+{
+	/* 24 bytes that start with the two top bits set, as RTP does: not STUN. */
+	static const uint8_t not_stun[24] = {0x80U, 0x60U, 0x12U, 0x34U};
+	/* The Allocate method of TURN (RFC 8656 section 17). */
+	static const uint16_t turn_allocate = 0x003U;
+	/* The last byte of the mapped address: after the header, the attribute
+	 * header and the reserved byte, family and port of the value.
+	 */
+	static const size_t mapped_last_offset = STUN_HEADER_SIZE + RAW_ATTR_HEADER_SIZE +
+						 RAW_ADDR_IP_OFFSET + NET_IPV4_ADDR_SIZE - 1U;
+	struct net_sockaddr_storage other = {0};
+	struct binding_fixture f = {0};
+	struct raw_msg r = {0};
+
+	start_ipv4(&f, TEST_TXID_FIRST);
+
+	/* Another transaction's response. */
+	response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+	r.buf[RAW_TXID_OFFSET] ^= TEST_LOW_BIT;
+	add_mapped(&r);
+	zassert_false(stun_binding_is_response(&f.b, r.buf, r.len));
+	zassert_equal(stun_binding_on_datagram(&f.b, net_sad(&f.server), r.buf, r.len), -ENOENT);
+
+	/* The right response from another address, and from another port: an
+	 * off-path sender must not be able to plant an address.
+	 */
+	response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+	add_mapped(&r);
+	other = f.server;
+	net_sin(net_sad(&other))->sin_addr.s4_addr[NET_IPV4_ADDR_SIZE - 1U] ^= TEST_LOW_BIT;
+	zassert_equal(stun_binding_on_datagram(&f.b, net_sad(&other), r.buf, r.len), -EACCES);
+	other = f.server;
+	net_sin(net_sad(&other))->sin_port = net_htons(TEST_STUN_PORT + 1U);
+	zassert_equal(stun_binding_on_datagram(&f.b, net_sad(&other), r.buf, r.len), -EACCES);
+
+	/* Not STUN at all. */
+	zassert_false(stun_binding_is_response(&f.b, not_stun, sizeof(not_stun)));
+	zassert_equal(
+		stun_binding_on_datagram(&f.b, net_sad(&f.server), not_stun, sizeof(not_stun)),
+		-ENOENT);
+
+	/* A request with our transaction id is not a response to it. */
+	response_to(&r, f.txid, STUN_BINDING_REQUEST);
+	zassert_false(stun_binding_is_response(&f.b, r.buf, r.len));
+	zassert_equal(stun_binding_on_datagram(&f.b, net_sad(&f.server), r.buf, r.len), -ENOENT);
+
+	/* A response of another method. */
+	response_to(&r, f.txid, stun_msg_type_compose(turn_allocate, STUN_CLASS_SUCCESS));
+	add_mapped(&r);
+	zassert_false(stun_binding_is_response(&f.b, r.buf, r.len));
+	zassert_equal(stun_binding_on_datagram(&f.b, net_sad(&f.server), r.buf, r.len), -ENOENT);
+
+	/* Ours, from the server, but damaged on the way: FINGERPRINT fails. */
+	response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+	add_mapped(&r);
+	raw_fingerprint(&r);
+	r.buf[mapped_last_offset] ^= TEST_LOW_BIT;
+	zassert_equal(stun_binding_on_datagram(&f.b, net_sad(&f.server), r.buf, r.len), -EBADMSG);
+
+	/* Ours, from the server, but malformed: a PRIORITY one byte short. */
+	response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+	raw_u32(&r, STUN_ATTR_PRIORITY, sizeof(uint32_t) - 1U, TEST_PRIORITY);
+	zassert_equal(stun_binding_on_datagram(&f.b, net_sad(&f.server), r.buf, r.len), -EBADMSG);
+
+	/* None of that ended the transaction or left an address behind. */
+	zassert_equal(f.b.state, STUN_BINDING_IN_FLIGHT);
+	zassert_equal(f.b.fail, STUN_BINDING_FAIL_NONE);
+	zassert_ok(stun_binding_next_step(&f.b, T0 + 1U, &f.step));
+	zassert_equal(f.step.action, STUN_TXN_WAIT);
+
+	/* The real answer still gets through. */
+	response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+	add_mapped(&r);
+	raw_fingerprint(&r);
+	deliver(&f, &r);
+	zassert_equal(f.b.state, STUN_BINDING_DONE);
+	zassert_true(is_mapped(net_sad(&f.b.mapped)));
+}
+
+/* ================== how the server's answer ends it ================== */
+
+/* Expect a failed transaction with this reason and this error code. */
+static void expect_failed(const struct binding_fixture *f, enum stun_binding_fail why,
+			  uint16_t code)
+{
+	zassert_equal(f->b.state, STUN_BINDING_FAILED);
+	zassert_equal(f->b.fail, why);
+	zassert_equal(f->b.error_code, code);
+}
+
+/* A response with an unknown comprehension-required attribute, or a success
+ * response without XOR-MAPPED-ADDRESS, fails the transaction as a bad response.
+ */
+ZTEST(stun, test_binding_unusable_response)
+{
+	/* MAPPED-ADDRESS 192.0.2.1 port 32853. */
+	static const uint8_t mapped_address[] = {0x00U, 0x01U, 0x80U, 0x55U,
+						 0xc0U, 0x00U, 0x02U, 0x01U};
+	static const char software[] = "test";
+	struct binding_fixture f = {0};
+	struct raw_msg r = {0};
+
+	/* RFC 8489 section 6.3.3: an unknown comprehension-required attribute in
+	 * a success response: discarded, and the transaction has failed.
+	 */
+	start_ipv4(&f, TEST_TXID_FIRST);
+	response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+	add_mapped(&r);
+	raw_u32(&r, TEST_ATTR_UNASSIGNED, sizeof(uint32_t), 0U);
+	deliver(&f, &r);
+	expect_failed(&f, STUN_BINDING_FAIL_BAD_RESPONSE, 0);
+	zassert_ok(stun_binding_next_step(&f.b, T0 + 1U, &f.step));
+	zassert_equal(f.step.action, STUN_TXN_FAILED);
+
+	/* RFC 8489 section 6.3.4: the same in an error response. */
+	start_ipv4(&f, TEST_TXID_FIRST);
+	response_to(&r, f.txid, STUN_BINDING_ERROR_RESPONSE);
+	add_error(&r, TEST_ERROR_BAD_REQUEST);
+	raw_u32(&r, TEST_ATTR_UNASSIGNED, sizeof(uint32_t), 0U);
+	deliver(&f, &r);
+	expect_failed(&f, STUN_BINDING_FAIL_BAD_RESPONSE, 0);
+
+	/* RFC 8489 section 6.3.3: a success response without XOR-MAPPED-ADDRESS. */
+	start_ipv4(&f, TEST_TXID_FIRST);
+	response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+	raw_attr(&r, STUN_ATTR_SOFTWARE, strlen(software), software, strlen(software));
+	deliver(&f, &r);
+	expect_failed(&f, STUN_BINDING_FAIL_BAD_RESPONSE, 0);
+
+	/* The legacy MAPPED-ADDRESS alone is not it. */
+	start_ipv4(&f, TEST_TXID_FIRST);
+	response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+	raw_attr(&r, STUN_ATTR_MAPPED_ADDRESS, sizeof(mapped_address), mapped_address,
+		 sizeof(mapped_address));
+	deliver(&f, &r);
+	expect_failed(&f, STUN_BINDING_FAIL_BAD_RESPONSE, 0);
+}
+
+/* An error response fails the transaction and its code is kept, 0 when it has
+ * no ERROR-CODE.
+ */
+ZTEST(stun, test_binding_error_response)
+{
+	/* The lowest code, 401 Unauthorized, 420 Unknown Attribute, 500 Server
+	 * Error and the highest code (RFC 8489 section 14.8).
+	 */
+	static const uint16_t codes[] = {300U, 401U, 420U, 500U, 699U};
+	struct binding_fixture f = {0};
+	struct raw_msg r = {0};
+
+	for (size_t i = 0; i < ARRAY_SIZE(codes); i++) {
+		start_ipv4(&f, TEST_TXID_FIRST);
+		response_to(&r, f.txid, STUN_BINDING_ERROR_RESPONSE);
+		add_error(&r, codes[i]);
+		deliver(&f, &r);
+		expect_failed(&f, STUN_BINDING_FAIL_ERROR_RESPONSE, codes[i]);
+		zassert_ok(stun_binding_next_step(&f.b, T0 + 1U, &f.step));
+		zassert_equal(f.step.action, STUN_TXN_FAILED);
+	}
+
+	/* RFC 8489 section 6.3.4: an error response without ERROR-CODE. */
+	start_ipv4(&f, TEST_TXID_FIRST);
+	response_to(&r, f.txid, STUN_BINDING_ERROR_RESPONSE);
+	deliver(&f, &r);
+	expect_failed(&f, STUN_BINDING_FAIL_ERROR_RESPONSE, 0);
+}
+
+/* The sets of attributes of test_success_response_shapes, as answers to a
+ * transaction.
+ */
+ZTEST(stun, test_binding_success_response_shapes)
+{
+	/* Which attributes follow XOR-MAPPED-ADDRESS in each set. */
+	struct response_shape {
+		bool mapped_address;
+		bool response_origin;
+		bool other_address;
+		bool software;
+		bool fingerprint;
+	};
+	static const struct response_shape shapes[] = {
+		{false, false, false, false, false},
+		{true, false, false, true, false},
+		{true, true, true, false, false},
+		{true, true, true, true, false},
+		{true, true, false, true, true},
+	};
+	/* MAPPED-ADDRESS 192.0.2.1 port 32853. */
+	static const uint8_t mapped_address[] = {0x00U, 0x01U, 0x80U, 0x55U,
+						 0xc0U, 0x00U, 0x02U, 0x01U};
+	static const char software[] = "example STUN server";
+	struct binding_fixture f = {0};
+	struct raw_msg r = {0};
+
+	for (size_t i = 0; i < ARRAY_SIZE(shapes); i++) {
+		start_ipv4(&f, TEST_TXID_FIRST);
+		response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+		add_mapped(&r);
+		if (shapes[i].mapped_address) {
+			raw_attr(&r, STUN_ATTR_MAPPED_ADDRESS, sizeof(mapped_address),
+				 mapped_address, sizeof(mapped_address));
+		}
+		if (shapes[i].response_origin) {
+			raw_attr(&r, TEST_ATTR_RESPONSE_ORIGIN, sizeof(mapped_address),
+				 mapped_address, sizeof(mapped_address));
+		}
+		if (shapes[i].other_address) {
+			raw_attr(&r, TEST_ATTR_OTHER_ADDRESS, sizeof(mapped_address),
+				 mapped_address, sizeof(mapped_address));
+		}
+		if (shapes[i].software) {
+			raw_attr(&r, STUN_ATTR_SOFTWARE, strlen(software), software,
+				 strlen(software));
+		}
+		if (shapes[i].fingerprint) {
+			raw_fingerprint(&r);
+		}
+		deliver(&f, &r);
+		zassert_equal(f.b.state, STUN_BINDING_DONE, "set %zu", i);
+		zassert_true(is_mapped(net_sad(&f.b.mapped)), "set %zu", i);
+	}
+}
+
+/* ========================== restart, misuse ========================== */
+
+/* A start is refused while a transaction is in flight; after it has ended a new
+ * one starts clean, and the answer to the old request is refused.
+ */
+ZTEST(stun, test_binding_restart)
+{
+	/* 10 ms, then 5 s after the first transaction started. */
+	const uint32_t too_soon = T0 + 10U;
+	const uint32_t restart_at = T0 + 5000U;
+	uint8_t first_txid[STUN_TXID_SIZE] = {0};
+	uint8_t other_txid[STUN_TXID_SIZE] = {0};
+	struct stun_txn_step step = {0};
+	struct binding_fixture f = {0};
+	struct raw_msg r = {0};
+	struct stun_msg m = {0};
+
+	/* Not while one is in flight: the transaction and its request stay. */
+	start_ipv4(&f, TEST_TXID_FIRST);
+	memcpy(first_txid, f.txid, sizeof(first_txid));
+	fill_txid(other_txid, TEST_TXID_FIRST + 1U);
+	zassert_equal(
+		stun_binding_start(&f.b, net_sad(&f.server), other_txid, NULL, too_soon, &step),
+		-EALREADY);
+	zassert_equal(step.action, STUN_TXN_NONE);
+	zassert_equal(f.b.state, STUN_BINDING_IN_FLIGHT);
+	zassert_ok(stun_parse(f.step.tx, f.step.tx_len, &m));
+	zassert_mem_equal(m.txid, first_txid, STUN_TXID_SIZE);
+
+	/* After it has ended, a new one starts clean. */
+	response_to(&r, f.txid, STUN_BINDING_ERROR_RESPONSE);
+	add_error(&r, TEST_ERROR_BAD_REQUEST);
+	deliver(&f, &r);
+	zassert_equal(f.b.state, STUN_BINDING_FAILED);
+
+	memcpy(f.txid, other_txid, sizeof(f.txid));
+	zassert_ok(stun_binding_start(&f.b, net_sad(&f.server), f.txid, NULL, restart_at, &f.step));
+	zassert_equal(f.b.state, STUN_BINDING_IN_FLIGHT);
+	zassert_equal(f.b.fail, STUN_BINDING_FAIL_NONE);
+	zassert_equal(f.b.error_code, 0);
+	zassert_ok(stun_parse(f.step.tx, f.step.tx_len, &m));
+	zassert_mem_equal(m.txid, other_txid, STUN_TXID_SIZE);
+	expect_wait(&f, restart_at + binding_wait_after(1U) - 1U,
+		    restart_at + binding_wait_after(1U));
+
+	/* The answer to the first request is no longer ours. */
+	response_to(&r, first_txid, STUN_BINDING_SUCCESS_RESPONSE);
+	add_mapped(&r);
+	zassert_equal(stun_binding_on_datagram(&f.b, net_sad(&f.server), r.buf, r.len), -ENOENT);
+}
+
+/* A refused restart of a finished transaction leaves its result and its request
+ * as they were.
+ */
+ZTEST(stun, test_binding_refused_restart_changes_nothing)
+{
+	static char too_many_chars[STUN_TEXT_MAX_CHARS + 2U];
+	uint8_t other_txid[STUN_TXID_SIZE] = {0};
+	struct stun_txn_step step = {0};
+	struct binding_fixture f = {0};
+	struct raw_msg r = {0};
+
+	/* A finished transaction, then a restart that is refused: the result
+	 * stays, and so does the request it belongs to.
+	 */
+	start_ipv4(&f, TEST_TXID_FIRST);
+	response_to(&r, f.txid, STUN_BINDING_SUCCESS_RESPONSE);
+	add_mapped(&r);
+	deliver(&f, &r);
+
+	fill_txid(other_txid, TEST_TXID_FIRST + 1U);
+	memset(too_many_chars, 's', sizeof(too_many_chars) - 1U);
+	zassert_equal(
+		stun_binding_start(&f.b, net_sad(&f.server), other_txid, too_many_chars, T0, &step),
+		-EINVAL);
+	zassert_equal(f.b.state, STUN_BINDING_DONE);
+	zassert_true(is_mapped(net_sad(&f.b.mapped)));
+	zassert_true(stun_binding_is_response(&f.b, r.buf, r.len),
+		     "still the first request's answer");
+
+	response_to(&r, other_txid, STUN_BINDING_SUCCESS_RESPONSE);
+	zassert_false(stun_binding_is_response(&f.b, r.buf, r.len),
+		      "the refused request never existed");
+}
+
+/* NULL arguments, a server without a port, without an address or of no known
+ * family, and calls on a transaction never started are refused.
+ */
+ZTEST(stun, test_binding_bad_arguments)
+{
+	struct net_sockaddr_storage server = {0};
+	struct stun_txn_step step = {0};
+	struct stun_binding b = {0};
+	uint8_t txid[STUN_TXID_SIZE] = {0};
+	uint8_t buf[STUN_HEADER_SIZE] = {0};
+
+	set_server_ipv4(net_sad(&server));
+	fill_txid(txid, TEST_TXID_FIRST);
+
+	zassert_equal(stun_binding_start(NULL, net_sad(&server), txid, NULL, T0, &step), -EINVAL);
+	zassert_equal(stun_binding_start(&b, NULL, txid, NULL, T0, &step), -EINVAL);
+	zassert_equal(stun_binding_start(&b, net_sad(&server), NULL, NULL, T0, &step), -EINVAL);
+	zassert_equal(stun_binding_start(&b, net_sad(&server), txid, NULL, T0, NULL), -EINVAL);
+
+	/* A server without a port, one without an address, and one of no known
+	 * family.
+	 */
+	net_sin(net_sad(&server))->sin_port = 0U;
+	zassert_equal(stun_binding_start(&b, net_sad(&server), txid, NULL, T0, &step), -EINVAL);
+	addr_set_ipv4(net_sad(&server), 0, 0, 0, 0, TEST_STUN_PORT);
+	zassert_equal(stun_binding_start(&b, net_sad(&server), txid, NULL, T0, &step), -EINVAL);
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		struct net_sockaddr_in6 unspecified = {.sin6_family = NET_AF_INET6,
+						       .sin6_port = net_htons(TEST_STUN_PORT)};
+
+		zassert_equal(stun_binding_start(&b, (struct net_sockaddr *)&unspecified, txid,
+						 NULL, T0, &step),
+			      -EINVAL);
+	}
+	set_server_ipv4(net_sad(&server));
+	net_sin(net_sad(&server))->sin_family = NET_AF_UNSPEC;
+	zassert_equal(stun_binding_start(&b, net_sad(&server), txid, NULL, T0, &step),
+		      -EAFNOSUPPORT);
+	zassert_equal(b.state, STUN_BINDING_IDLE);
+
+	/* Never started. */
+	zassert_equal(stun_binding_next_step(&b, T0, &step), -EPERM);
+	zassert_equal(step.action, STUN_TXN_NONE);
+	zassert_equal(stun_binding_on_datagram(&b, net_sad(&server), buf, sizeof(buf)), -EALREADY);
+	zassert_false(stun_binding_is_response(&b, buf, sizeof(buf)));
+
+	zassert_equal(stun_binding_next_step(NULL, T0, &step), -EINVAL);
+	zassert_equal(stun_binding_next_step(&b, T0, NULL), -EINVAL);
+	zassert_equal(stun_binding_on_datagram(NULL, net_sad(&server), buf, sizeof(buf)), -EINVAL);
+	zassert_equal(stun_binding_on_datagram(&b, NULL, buf, sizeof(buf)), -EINVAL);
+	zassert_equal(stun_binding_on_datagram(&b, net_sad(&server), NULL, sizeof(buf)), -EINVAL);
+	zassert_false(stun_binding_is_response(NULL, buf, sizeof(buf)));
+	zassert_false(stun_binding_is_response(&b, NULL, sizeof(buf)));
+}
+#endif /* CONFIG_STUN_CLIENT */
