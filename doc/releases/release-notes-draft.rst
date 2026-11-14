@@ -72,7 +72,9 @@ Libraries / Subsystems
 * Networking
 
   * Applications can listen for :c:macro:`NET_EVENT_IF_ATTACHMENT_CHANGED` to
-    detect a change of network attachment while a link remains usable.
+    detect a change of network attachment while a link remains usable. The
+    ESP32 Wi-Fi driver reports this event after a successful roam to a different
+    access point.
   * Wi-Fi drivers, including out-of-tree drivers, can call
     :c:func:`wifi_mgmt_sta_roamed` to report a completed station roam. Applications
     can listen for :c:macro:`NET_EVENT_WIFI_STA_ROAMED` to obtain the new BSSID.
