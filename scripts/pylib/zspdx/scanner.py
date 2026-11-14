@@ -127,8 +127,12 @@ def make_reuse_project(base_dir, file_paths):
     # letting Project.from_directory() search all of base_dir.
     root = Path(base_dir)
     dirs = {d for f in file_paths for d in Path(f).parents if d.is_relative_to(root)}
-    tomls = [ReuseTOML.from_file(d / "REUSE.toml") for d in dirs if (d / "REUSE.toml").is_file()]
-    global_licensing = NestedReuseTOML(reuse_tomls=tomls, source=str(root)) if tomls else None
+    tomls = [
+        ReuseTOML.from_file(d / "REUSE.toml", root) for d in dirs if (d / "REUSE.toml").is_file()
+    ]
+    global_licensing = (
+        NestedReuseTOML(reuse_tomls=tomls, source=str(root), root=root) if tomls else None
+    )
     return Project(
         root,
         vcs_strategy=Project._detect_vcs_strategy(root),

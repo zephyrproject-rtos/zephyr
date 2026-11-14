@@ -24,7 +24,7 @@ pyserial
 requests>=2.33.0
 semver
 tqdm>=4.67.1
-reuse>=6.0.0
+reuse>=6.3.0
 spdx-python-model>=0.0.5
 
 # for ram/rom reports
