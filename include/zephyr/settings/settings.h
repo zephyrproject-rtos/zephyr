@@ -305,8 +305,8 @@ int settings_load_subtree(const char *subtree);
  * @param[in]  name    Name/key of the settings item.
  * @param[out] buf     Pointer to the buffer where the data is going to be loaded
  * @param[in]  buf_len Length of the allocated buffer.
- * @return     actual size of value that corresponds to name on success, negative
- *             value on failure.
+ * @return     actual size of value that corresponds to name on success, 0 if the Key/Value doesn't
+ *             exist, negative value on failure.
  */
 ssize_t settings_load_one(const char *name, void *buf, size_t buf_len);
 
@@ -516,8 +516,8 @@ struct settings_store_itf {
 	 * @param[in] buf Buffer where data should be copied.
 	 * @param[in] buf_len Length of buf.
 	 *
-	 * @return Actual size of value that corresponds to name on success, negative value on
-	 * failure
+	 * @return Actual size of value that corresponds to name on success, 0 if the Key/Value
+	 * doesn't exist, negative value on failure
 	 */
 	ssize_t (*csi_load_one)(struct settings_store *cs, const char *name, char *buf,
 				size_t buf_len);
