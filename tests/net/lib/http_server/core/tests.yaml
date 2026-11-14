@@ -18,6 +18,13 @@ tests:
     platform_allow:
       - native_sim
       - qemu_x86
+  net.http.server.static.fs.min_response_size:
+    # The smallest chunks the static fs handlers send a file in.
+    platform_allow:
+      - native_sim
+      - qemu_x86
+    extra_configs:
+      - CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE=0
   net.http.server.websocket:
     # Without NET_TEST, other QEMU boards connect to a host network that the
     # test does not have.

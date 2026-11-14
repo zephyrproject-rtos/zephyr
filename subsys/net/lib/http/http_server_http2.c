@@ -29,6 +29,12 @@ LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
 #include "headers/server_internal.h"
 
+/* Largest frame payload every peer accepts, the initial value of
+ * SETTINGS_MAX_FRAME_SIZE (RFC 9113, 6.5.2). A larger value advertised by the
+ * peer is not used.
+ */
+#define HTTP2_DEFAULT_MAX_FRAME_SIZE 16384U
+
 static const char content_404[] = {
 #ifdef INCLUDE_HTML_CONTENT
 #include "not_found_page.html.gz.inc"
@@ -478,6 +484,14 @@ out:
 }
 
 #if defined(CONFIG_FILE_SYSTEM)
+/* File data sent per DATA frame, the chunk size of the HTTP/1 handler */
+#if CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE > 0
+#define HTTP2_STATIC_FS_CHUNK_SIZE                                                                 \
+	MIN(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE, HTTP2_DEFAULT_MAX_FRAME_SIZE)
+#else
+#define HTTP2_STATIC_FS_CHUNK_SIZE 64
+#endif
+
 static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
 					   struct http2_frame *frame,
 					   struct http_client_ctx *client)
@@ -497,7 +511,8 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	int len;
 	int remaining;
 	size_t file_size;
-	char tmp[64];
+	/* Frame header and file data, sent together */
+	uint8_t tmp[HTTP2_FRAME_HEADER_SIZE + HTTP2_STATIC_FS_CHUNK_SIZE];
 
 	if (client->method != HTTP_GET) {
 		return send_http2_405(client, frame);
@@ -561,7 +576,8 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	/* read and send file */
 	remaining = file_size;
 	while (remaining > 0) {
-		len = fs_read(&file, tmp, sizeof(tmp));
+		len = fs_read(&file, tmp + HTTP2_FRAME_HEADER_SIZE,
+			      MIN(remaining, HTTP2_STATIC_FS_CHUNK_SIZE));
 		if (len < 0) {
 			LOG_ERR("Filesystem read error (%d)", len);
 			ret = len;
@@ -575,8 +591,10 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 		}
 
 		remaining -= len;
-		ret = send_data_frame(client, tmp, len, frame->stream_identifier,
-				      (remaining > 0) ? 0 : HTTP2_FLAG_END_STREAM);
+		encode_frame_header(tmp, len, HTTP2_DATA_FRAME,
+				    (remaining > 0) ? 0 : HTTP2_FLAG_END_STREAM,
+				    frame->stream_identifier);
+		ret = http_server_sendall(client, tmp, HTTP2_FRAME_HEADER_SIZE + len);
 		if (ret < 0) {
 			LOG_DBG("Cannot write to socket (%d)", ret);
 			goto out;
