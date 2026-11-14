@@ -162,7 +162,10 @@ int icmsg_close(const struct icmsg_config_t *conf,
  *  @retval -EBUSY when the instance has not finished handshake with the remote
  *                 instance.
  *  @retval -ENODATA when the requested data to send is empty.
- *  @retval -EBADMSG when the requested data to send is too big.
+ *  @retval -EMSGSIZE when the message exceeds the TX packet buffer capacity or
+ *                    the packet length field.
+ *  @retval -ENOMEM when the TX packet buffer has insufficient free space.
+ *  @retval -EBADMSG when the packet buffer writes an incomplete message.
  *  @retval -ENOBUFS when there are no TX buffers available.
  *  @retval other errno codes from dependent modules.
  */

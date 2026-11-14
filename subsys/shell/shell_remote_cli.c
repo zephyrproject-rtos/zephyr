@@ -7,21 +7,33 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_remote_common.h>
 #include <zephyr/ipc/ipc_service.h>
+#include <zephyr/ipc/ipc_service_backend.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/printk.h>
 #include "shell_utils.h"
 #include <stdlib.h>
 LOG_MODULE_REGISTER(shremote_cli);
 
 #define TIMEOUT_MS 1000
 
+#ifdef CONFIG_MULTITHREADING
+enum shell_remote_context_state {
+	SHELL_REMOTE_CONTEXT_INIT,
+	SHELL_REMOTE_CONTEXT_PENDING,
+	SHELL_REMOTE_CONTEXT_READY,
+};
+#endif
+
 struct shell_remote_cli {
 	struct ipc_ept ept;
 	atomic_t msg_len;
 #ifdef CONFIG_MULTITHREADING
+	atomic_t context_state;
 #ifdef CONFIG_SHELL_REMOTE_CLI_KWORK
 	struct k_work work;
 #else
 	struct k_thread thread;
+	struct k_sem cmd_sem;
 #endif
 	struct k_sem sem;
 #else
@@ -148,13 +160,20 @@ void shell_remote_cli_cbpprintf(const struct shell *sh, enum shell_vt100_color c
 static void cmd_get(struct shell_remote_cli *sh_remote, const struct shell_remote_msg_cmd_get *msg,
 		    size_t len)
 {
-	struct shell_remote_msg_cmd *rsp;
+	/* A timed-out host may send a new request while this reply is pending. */
+	static uint8_t reply_buf[CONFIG_SHELL_REMOTE_CLI_BUF_SIZE] __aligned(8);
+	struct shell_remote_msg_cmd *rsp = (void *)reply_buf;
+	const struct ipc_service_backend *backend = sh_remote->ept.instance->api;
 	const struct shell_static_entry *entry;
+	const char *help;
+	const char *usage = NULL;
+	size_t reply_size = sizeof(reply_buf);
+	bool capacity_known = false;
 	size_t syntax_len;
-	size_t help_len;
+	size_t min_msg_len;
+	size_t help_size;
 	size_t msg_len;
 	int err;
-	void *rsp_buf;
 	char *strings;
 
 	entry = z_shell_cmd_get(msg->parent, msg->idx, &sh_remote->loc);
@@ -173,33 +192,78 @@ static void cmd_get(struct shell_remote_cli *sh_remote, const struct shell_remot
 		return;
 	}
 
-	syntax_len = strlen(entry->syntax);
-	help_len = z_shell_strlen(entry->help);
-	msg_len = offsetof(struct shell_remote_msg_cmd, data) + syntax_len + help_len + 2;
-	LOG_DBG("Command get parent:%s, syntax:%s len:%d, help_len:%d, syntax_len:%d",
-		msg->parent ? msg->parent->syntax : "NULL", entry->syntax, msg_len, help_len,
-		syntax_len);
-	rsp_buf = __builtin_alloca_with_align(msg_len, 64);
+	if (backend->get_tx_buffer_size != NULL) {
+		err = ipc_service_get_tx_buffer_size(&sh_remote->ept);
 
-	rsp = rsp_buf;
-	strings = rsp->data;
+		if (err >= 0) {
+			reply_size = MIN(reply_size, (size_t)err);
+			capacity_known = true;
+		}
+	}
+
+	syntax_len = strlen(entry->syntax);
+	min_msg_len = offsetof(struct shell_remote_msg_cmd, data) + syntax_len + 2U;
+	if (min_msg_len > reply_size) {
+		cmd_result(&sh_remote->ept, -ENOEXEC);
+		return;
+	}
+
+	help = entry->help;
+	if (shell_help_is_structured(help)) {
+		const struct shell_cmd_help *structured = (const struct shell_cmd_help *)help;
+
+		help = structured->description;
+		usage = structured->usage;
+	}
+
 	rsp->id = SHELL_REMOTE_MSG_CMD;
 	rsp->subcmd = entry->subcmd;
 	rsp->entry = entry;
 	rsp->handler = entry->handler;
 	rsp->args.mandatory = entry->args.mandatory;
 	rsp->args.optional = entry->args.optional;
+
+	strings = rsp->data;
 	memcpy(strings, entry->syntax, syntax_len);
 	strings += syntax_len;
-	*strings = '\0';
-	strings++;
-	memcpy(strings, entry->help, help_len);
-	strings += help_len;
-	*strings = '\0';
+	*strings++ = '\0';
 
-	err = ipc_service_send(&sh_remote->ept, rsp_buf, msg_len);
+	help_size = reply_size - min_msg_len + 1U;
+	if (usage != NULL) {
+		err = snprintk(strings, help_size, "%s%sUsage: %s %s", help != NULL ? help : "",
+			       help != NULL && help[0] != '\0' ? "\n" : "", entry->syntax, usage);
+	} else {
+		err = snprintk(strings, help_size, "%s", help != NULL ? help : "");
+	}
+
 	if (err < 0) {
-		LOG_ERR("Failed to send command");
+		cmd_result(&sh_remote->ept, -ENOEXEC);
+		return;
+	}
+
+	msg_len = min_msg_len + MIN((size_t)err, help_size - 1U);
+	LOG_DBG("Command get syntax:%s len:%zu", entry->syntax, msg_len);
+
+	while (true) {
+		err = ipc_service_send(&sh_remote->ept, rsp, msg_len);
+
+		/* Buffer exhaustion is transient, even when capacity is unknown. */
+		if (err != -EMSGSIZE && (err != -EBADMSG || capacity_known)) {
+			break;
+		}
+
+		if (msg_len == min_msg_len) {
+			cmd_result(&sh_remote->ept, -ENOEXEC);
+			return;
+		}
+
+		/* Some backends cannot report their capacity. Retry with less help. */
+		msg_len = min_msg_len + (msg_len - min_msg_len) / 2U;
+		reply_buf[msg_len - 1U] = '\0';
+	}
+
+	if (err < 0 || (err > 0 && (size_t)err != msg_len)) {
+		LOG_ERR("Failed to send complete command: %d/%zu", err, msg_len);
 	}
 }
 
@@ -306,10 +370,7 @@ static void cmd_from_thread(struct shell_remote_cli *sh_remote)
 	}
 
 	msg.generic = (struct shell_remote_msg_generic *)sh_remote->buffer;
-	/* Clear the message length so that the buffer can be reused for
-	 * shell printing functions. We can assume that new command will not
-	 * be received before the current command is processed.
-	 */
+	/* Allow another request to be queued while this command is executing. */
 	sh_remote->msg_len = 0;
 
 	switch (msg.generic->id) {
@@ -327,10 +388,17 @@ static void cmd_from_thread(struct shell_remote_cli *sh_remote)
 #ifdef CONFIG_MULTITHREADING
 static void trigger_thread_context(struct shell_remote_cli *sh_remote)
 {
+	/* Defer callbacks until registration has finalized the endpoint token. */
+	if (atomic_cas(&sh_remote->context_state, SHELL_REMOTE_CONTEXT_INIT,
+		       SHELL_REMOTE_CONTEXT_PENDING) ||
+	    atomic_get(&sh_remote->context_state) != SHELL_REMOTE_CONTEXT_READY) {
+		return;
+	}
+
 #ifdef CONFIG_SHELL_REMOTE_CLI_KWORK
 	k_work_submit(&sh_remote->work);
 #else
-	k_wakeup(&sh_remote->thread);
+	k_sem_give(&sh_remote->cmd_sem);
 #endif
 }
 
@@ -349,10 +417,11 @@ static void thread_func(void *arg0, void *arg1, void *arg2)
 {
 	struct shell_remote_cli *sh_remote = arg0;
 
-	do {
-		k_sleep(K_FOREVER);
-		cmd_from_thread(sh_remote);
-	} while (1);
+	while (true) {
+		if (k_sem_take(&sh_remote->cmd_sem, K_FOREVER) == 0) {
+			cmd_from_thread(sh_remote);
+		}
+	}
 }
 
 #endif /* CONFIG_SHELL_REMOTE_CLI_KWORK */
@@ -363,8 +432,10 @@ static void thread_context_init(struct shell_remote_cli *sh_remote)
 #ifdef CONFIG_SHELL_REMOTE_CLI_KWORK
 	k_work_init(&sh_remote->work, cmd_process);
 #else
+	k_sem_init(&sh_remote->cmd_sem, 0, 1);
+
 	k_thread_create(&sh_remote->thread, stack, K_KERNEL_STACK_SIZEOF(stack), thread_func,
-			sh_remote, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+			sh_remote, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_FOREVER);
 	k_thread_name_set(&sh_remote->thread, "shell_remote_cli");
 #endif
 }
@@ -426,6 +497,10 @@ static int shell_remote_cli_init(void)
 		return ret;
 	}
 
+#ifdef CONFIG_MULTITHREADING
+	thread_context_init(&shell_remote);
+#endif
+
 	ret = ipc_service_register_endpoint(ipc_instance, &shell_remote.ept, &ep_cfg);
 	if (ret < 0) {
 		LOG_ERR("ipc_service_register_endpoint() failure");
@@ -433,7 +508,14 @@ static int shell_remote_cli_init(void)
 	}
 
 #ifdef CONFIG_MULTITHREADING
-	thread_context_init(&shell_remote);
+#ifndef CONFIG_SHELL_REMOTE_CLI_KWORK
+	k_thread_start(&shell_remote.thread);
+#endif
+
+	if (atomic_set(&shell_remote.context_state, SHELL_REMOTE_CONTEXT_READY) ==
+	    SHELL_REMOTE_CONTEXT_PENDING) {
+		trigger_thread_context(&shell_remote);
+	}
 #endif
 
 	return 0;
