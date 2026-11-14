@@ -1798,7 +1798,6 @@ again:
 			}
 
 			msg->msg_iov[iovec].iov_len += res;
-			buf = (uint8_t *)(msg->msg_iov[iovec].iov_base) + res;
 			max_len -= res;
 
 			if (available_len == 0) {
