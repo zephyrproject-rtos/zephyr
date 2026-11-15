@@ -698,6 +698,9 @@ static int nvs_sector_close(struct nvs_fs *fs)
 {
 	struct nvs_ate close_ate;
 	size_t ate_size;
+	uint32_t ate_wra_prev;
+	uint32_t close_ate_addr;
+	int rc;
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 
@@ -706,18 +709,29 @@ static int nvs_sector_close(struct nvs_fs *fs)
 	close_ate.offset = (uint16_t)((fs->ate_wra + ate_size) & ADDR_OFFS_MASK);
 	close_ate.part = 0xff;
 
+	ate_wra_prev = fs->ate_wra;
+
 	fs->ate_wra &= ADDR_SECT_MASK;
 	fs->ate_wra += (fs->sector_size - ate_size);
+	close_ate_addr = fs->ate_wra;
 
 	nvs_ate_crc8_update(&close_ate);
 
-	(void)nvs_flash_ate_wrt(fs, &close_ate);
+	rc = nvs_flash_ate_wrt(fs, &close_ate);
+	if (rc) {
+		if (nvs_flash_cmp_const(fs, close_ate_addr,
+					fs->flash_parameters->erase_value,
+					sizeof(struct nvs_ate)) == 0) {
+			fs->ate_wra = ate_wra_prev;
+			return rc;
+		}
+	}
 
 	nvs_sector_advance(fs, &fs->ate_wra);
 
 	fs->data_wra = fs->ate_wra & ADDR_SECT_MASK;
 
-	return 0;
+	return rc;
 }
 
 static int nvs_add_gc_done_ate(struct nvs_fs *fs)
