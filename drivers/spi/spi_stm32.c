@@ -2227,6 +2227,10 @@ static int transceive_dma(const struct device *dev,
 			ret = spi_dma_move_rx_buffers(dev, data->rx_len);
 		}
 
+		if (ret != 0) {
+			break;
+		}
+
 #ifdef CONFIG_SPI_ASYNC
 		if (data->ctx.asynchronous) {
 			return spi_context_wait_for_completion(&data->ctx);
