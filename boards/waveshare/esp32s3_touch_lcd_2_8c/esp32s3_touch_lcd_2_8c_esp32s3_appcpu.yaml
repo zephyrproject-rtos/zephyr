@@ -1,0 +1,26 @@
+identifier: esp32s3_touch_lcd_2_8c/esp32s3/appcpu
+name: ESP32-S3-Touch-LCD-2.8C APPCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - flash
+    - cpp
+    - posix
+    - watchdog
+    - logging
+    - kernel
+    - pm
+    - gpio
+    - crypto
+    - eeprom
+    - heap
+    - cmsis_rtos
+    - jwt
+    - zdsp
+    - psa.secure_storage
+vendor: waveshare
