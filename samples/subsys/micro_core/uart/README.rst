@@ -1,8 +1,14 @@
 .. SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 .. SPDX-License-Identifier: Apache-2.0
 
-Micro Core UART sample
-######################
+.. zephyr:code-sample:: micro-core-uart
+   :name: Micro Core UART communication
+   :relevant-api: micro_core
+
+   Exchange payloads between two boards using Micro Core communication over UART.
+
+Overview
+********
 
 This two-board sample exchanges a payload and an empty payload through the in-tree
 :c:func:`mc_comm_send` and :c:func:`mc_comm_recv` API. It demonstrates caller-owned, aligned
