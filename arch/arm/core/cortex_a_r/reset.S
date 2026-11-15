@@ -34,6 +34,9 @@ GDATA(z_arm_undef_stack)
 #if defined(CONFIG_SOC_RESET_HOOK)
 GTEXT(soc_reset_hook)
 #endif
+#if defined(CONFIG_SOC_EARLY_RESET_HOOK)
+GTEXT(soc_early_reset_hook)
+#endif
 
 /**
  *
@@ -65,6 +68,10 @@ __start:
 #else
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, z_arm_reset)
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
+#endif
+#if defined(CONFIG_SOC_EARLY_RESET_HOOK)
+    /* Runs in the reset mode, without a stack and before any RAM access. */
+    bl soc_early_reset_hook
 #endif
 #if defined(CONFIG_AARCH32_ARMV8_A_MONITOR_INIT)
     /*
