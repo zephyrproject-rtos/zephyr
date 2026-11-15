@@ -7,7 +7,12 @@
 #include <stm32_ll_gpio.h>
 #include "stm32_hsem.h"
 
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+/* The cycle rate follows the system timer here, so it is not the CPU clock. */
+#define CPU_CLOCK SystemCoreClock
+#else
 #define CPU_CLOCK CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#endif
 #define FAST_BITBANG_HW_SUPPORT 1
 
 static ALWAYS_INLINE void swdp_ll_pin_input(void *const base, uint8_t pin)
