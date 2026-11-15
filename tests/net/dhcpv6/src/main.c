@@ -1621,6 +1621,35 @@ ZTEST(dhcpv6_tests, test_confirm_timeout_preserves_valid_lease)
 			  "Confirm timeout sent an unexpected packet");
 }
 
+ZTEST(dhcpv6_tests, test_rebind_recovery_timeout_preserves_prefix_lease)
+{
+	struct net_if *iface = test_ctx.iface;
+	struct net_if_dhcpv6 *dhcpv6 = &iface->config.dhcpv6;
+	uint64_t now = k_uptime_get();
+	uint64_t lease_expire = now + 4 * DHCPV6_CNF_MAX_RD;
+	uint64_t recovery_deadline;
+
+	dhcpv6->state = NET_DHCPV6_INIT;
+	dhcpv6->prefix = test_prefix;
+	dhcpv6->prefix_len = test_prefix_len;
+	dhcpv6->t1 = now + 2 * DHCPV6_CNF_MAX_RD;
+	dhcpv6->t2 = now + 3 * DHCPV6_CNF_MAX_RD;
+	dhcpv6->expire = lease_expire;
+
+	dhcpv6_manage_timers(iface, now);
+	zassert_ok(k_sem_take(&test_ctx.tx_sem, K_SECONDS(1)), "Recovery Rebind was not sent");
+	zassert_equal(dhcpv6->state, NET_DHCPV6_REBINDING, "Expected recovery Rebind");
+	zassert_equal(dhcpv6->expire, lease_expire, "Recovery Rebind changed lease expiration");
+	recovery_deadline = dhcpv6->exchange_start + DHCPV6_CNF_MAX_RD;
+	zassert_true(dhcpv6->timeout < recovery_deadline, "Expected a Confirm-timed retry");
+
+	dhcpv6_manage_timers(iface, recovery_deadline);
+	zassert_equal(dhcpv6->state, NET_DHCPV6_BOUND, "Valid lease was not retained");
+	zassert_equal(dhcpv6->timeout, dhcpv6->t1, "Renew not scheduled at T1");
+	zassert_equal(dhcpv6->expire, lease_expire, "Recovery timeout changed lease expiration");
+	zassert_equal(dhcpv6->prefix_len, test_prefix_len, "Delegated prefix was lost");
+}
+
 static void test_rebind_expect_rebind_send_reply(struct net_if *iface,
 						 struct net_pkt *pkt)
 {
