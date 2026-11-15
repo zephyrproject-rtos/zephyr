@@ -201,8 +201,7 @@ static struct esp_wifi_mesh_config runtime_cfg = {
  * mode. The mesh softAP only ever needs to be open or PSK/SAE-secured, so
  * this covers that practical subset rather than every wifi_security_type.
  */
-static int mesh_authmode_from_security(enum wifi_security_type security,
-					wifi_auth_mode_t *authmode)
+static int mesh_authmode_from_security(enum wifi_security_type security, wifi_auth_mode_t *authmode)
 {
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
@@ -396,7 +395,7 @@ static void mesh_event_handler(void *arg, esp_event_base_t base, int32_t event_i
 		mesh_event_layer_change_t *layer_change = event_data;
 
 		notify_app_with_layer(ESP_WIFI_MESH_EVENT_LAYER_CHANGE, 0,
-				  layer_change != NULL ? layer_change->new_layer : -1);
+				      layer_change != NULL ? layer_change->new_layer : -1);
 		break;
 	}
 	case MESH_EVENT_TODS_STATE: {
@@ -419,7 +418,21 @@ static void mesh_event_handler(void *arg, esp_event_base_t base, int32_t event_i
 
 int esp_wifi_mesh_start(void)
 {
+	int ret;
+	wifi_mode_t prev_mode;
 	mesh_cfg_t cfg = MESH_INIT_CONFIG_DEFAULT();
+
+	if (esp_wifi_mesh_is_active()) {
+		return -EALREADY;
+	}
+
+	/*
+	 * Save the prev mode to restore back in case of failure.
+	 * Fallback to default NULL mode if the get_mode fails.
+	 */
+	if (esp_wifi_get_mode(&prev_mode) != ESP_OK) {
+		prev_mode = ESP32_WIFI_MODE_NULL;
+	}
 
 	/*
 	 * Self-organized election is driven by router reachability, so the auto
@@ -436,13 +449,15 @@ int esp_wifi_mesh_start(void)
 
 	if (esp_mesh_init() != ESP_OK) {
 		LOG_ERR("esp_mesh_init failed");
-		return -EIO;
+		ret = -EIO;
+		goto err_restore;
 	}
 
 	if (esp_event_handler_register(MESH_EVENT, ESP_EVENT_ANY_ID, mesh_event_handler, NULL) !=
 	    ESP_OK) {
 		LOG_ERR("mesh event register failed");
-		return -EIO;
+		ret = -EIO;
+		goto err_deinit;
 	}
 
 	esp_mesh_set_topology(MESH_TOPO_TREE);
@@ -489,7 +504,8 @@ int esp_wifi_mesh_start(void)
 
 	if (esp_mesh_set_ap_authmode(mesh_authmode) != ESP_OK) {
 		LOG_ERR("failed to set authmode for AP");
-		return -EIO;
+		ret = -EIO;
+		goto err_unregister;
 	}
 
 	cfg.mesh_ap.max_connection = runtime_cfg.max_connections;
@@ -500,7 +516,8 @@ int esp_wifi_mesh_start(void)
 
 	if (cfg_ret != ESP_OK) {
 		LOG_ERR("esp_mesh_set_config failed (0x%x)", cfg_ret);
-		return -EIO;
+		ret = -EIO;
+		goto err_unregister;
 	}
 
 	/*
@@ -520,7 +537,8 @@ int esp_wifi_mesh_start(void)
 
 	if (esp_mesh_start() != ESP_OK) {
 		LOG_ERR("esp_mesh_start failed");
-		return -EIO;
+		ret = -EIO;
+		goto err_unregister;
 	}
 
 	/*
@@ -571,6 +589,23 @@ int esp_wifi_mesh_start(void)
 	esp_wifi_mesh_dispatch_event(WIFI_EVENT, WIFI_EVENT_STA_START, NULL);
 
 	return 0;
+
+err_unregister:
+	if (esp_event_handler_unregister(MESH_EVENT, ESP_EVENT_ANY_ID, mesh_event_handler) !=
+	    ESP_OK) {
+		LOG_ERR("mesh event unregister failed");
+	}
+
+err_deinit:
+	if (esp_mesh_deinit() != ESP_OK) {
+		LOG_ERR("esp_mesh_deinit failed");
+	}
+	esp_wifi_mesh_set_active(false);
+
+err_restore:
+	(void)esp_wifi_set_mode(prev_mode);
+
+	return ret;
 }
 
 #if !defined(CONFIG_WIFI_ESP32_MESH_IP)
