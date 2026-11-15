@@ -164,6 +164,7 @@ struct modem_cmux_dlci {
 	bool flow_control : 1;
 	bool rx_full : 1;
 	bool msc_sent : 1;
+	bool msc_pending : 1;
 };
 
 struct modem_cmux_frame {

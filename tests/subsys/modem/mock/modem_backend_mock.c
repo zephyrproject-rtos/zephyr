@@ -26,6 +26,20 @@ static int modem_backend_mock_open(void *data)
 	return 0;
 }
 
+static bool modem_backend_mock_transmit_paused(struct modem_backend_mock *mock)
+{
+	if (mock->transmit_paused) {
+		return true;
+	}
+
+	if (mock->transmit_pause_after > 0) {
+		mock->transmit_pause_after--;
+		mock->transmit_paused = (mock->transmit_pause_after == 0);
+	}
+
+	return false;
+}
+
 static bool modem_backend_mock_update(struct modem_backend_mock *mock, const uint8_t *buf,
 				      size_t size)
 {
@@ -68,6 +82,10 @@ static int modem_backend_mock_transmit_chain(void *data,
 	int frag_remaining;
 	int written = 0;
 	int ret;
+
+	if (modem_backend_mock_transmit_paused(mock)) {
+		return 0;
+	}
 
 	if (mock->bridge) {
 		struct modem_backend_mock *t_mock = mock->bridge;
@@ -117,6 +135,10 @@ static int modem_backend_mock_transmit(void *data, const uint8_t *buf, size_t si
 {
 	struct modem_backend_mock *mock = (struct modem_backend_mock *)data;
 	int ret;
+
+	if (modem_backend_mock_transmit_paused(mock)) {
+		return 0;
+	}
 
 	size = (mock->limit < size) ? mock->limit : size;
 
