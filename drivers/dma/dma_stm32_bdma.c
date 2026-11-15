@@ -1000,6 +1000,8 @@ static int bdma_stm32_stop(const struct device *dev, uint32_t id)
 
 	/* Repeated stop : return now if channel is already stopped */
 	if (!stm32_bdma_is_enabled_channel(bdma, id)) {
+		/* A channel configured but never started is released too */
+		channel->busy = false;
 		return 0;
 	}
 

@@ -987,6 +987,8 @@ static int dma_stm32_stop(const struct device *dev, uint32_t id)
 
 	/* Repeated stop : return now if channel is already stopped */
 	if (!stm32_dma_is_enabled_stream(dma, id)) {
+		/* A stream configured but never started is released too */
+		stream->busy = false;
 		return 0;
 	}
 
