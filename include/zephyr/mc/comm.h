@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Micro Core communication API.
+ * @ingroup micro_core
+ */
+
 #ifndef ZEPHYR_INCLUDE_MC_COMM_H_
 #define ZEPHYR_INCLUDE_MC_COMM_H_
 
