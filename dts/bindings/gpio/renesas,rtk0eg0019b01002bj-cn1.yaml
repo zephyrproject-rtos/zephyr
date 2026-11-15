@@ -1,0 +1,20 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO nexus mapping for Application Header 1 (CN1) of the
+  RTK0EG0019B01002BJ Capacitive Touch Application Shield, as wired on
+  the host board. The GPIO specifier index is the CN1 pin number:
+
+        4   LED_COL0        11  LED_ROW2
+        5   LED_COL1        12  LED_ROW3
+        6   LED_COL2        13  LED_ROW0
+        7   LED_COL3        14  LED_ROW1
+
+  Pins 1, 2, 3, 8, 9 and 10 are not connected, 15 is VCC and 16 is GND.
+
+  Use RTK0EG0019B01002BJ_CN1_* constants in
+  <include/zephyr/dt-bindings/gpio/renesas-rtk0eg0019b01002bj.h>
+  to refer to specific pins using convenient constant names.
+
+include: [gpio-nexus.yaml, base.yaml]
