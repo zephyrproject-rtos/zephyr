@@ -17,6 +17,13 @@
 #include <zephyr/net/http/frame.h>
 
 #define INVALID_SOCK -1
+
+/* Largest SETTINGS_MAX_FRAME_SIZE value (RFC 9113, Section 6.5.2) */
+#define HTTP2_MAX_FRAME_SIZE_LIMIT 16777215U
+
+/* Initial and largest flow-control window (RFC 9113, Section 6.9) */
+#define HTTP2_INITIAL_WINDOW_SIZE 65535
+#define HTTP2_MAX_WINDOW_SIZE     0x7fffffff
 /* Stream helper consumed or intentionally ignored the fd. */
 #define H3_STREAM_IGNORED 1
 

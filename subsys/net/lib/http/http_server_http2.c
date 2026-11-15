@@ -962,6 +962,25 @@ int enter_http2_request(struct http_client_ctx *client)
 
 static int enter_http_frame_settings_state(struct http_client_ctx *client)
 {
+	struct http2_frame *frame = &client->current_frame;
+
+	if (frame->stream_identifier != 0U) {
+		LOG_DBG("SETTINGS frame on stream %u", frame->stream_identifier);
+		return -EBADMSG;
+	}
+
+	if (is_header_flag_set(frame->flags, HTTP2_FLAG_SETTINGS_ACK)) {
+		if (frame->length != 0U) {
+			LOG_DBG("SETTINGS ACK with a payload of %u bytes", frame->length);
+			return -EBADMSG;
+		}
+	} else {
+		if ((frame->length % sizeof(struct http2_settings_field)) != 0U) {
+			LOG_DBG("SETTINGS frame length %u", frame->length);
+			return -EBADMSG;
+		}
+	}
+
 	client->server_state = HTTP_SERVER_FRAME_SETTINGS_STATE;
 
 	return 0;
@@ -1066,6 +1085,13 @@ static int enter_http_frame_continuation_state(struct http_client_ctx *client)
 
 static int enter_http_frame_window_update_state(struct http_client_ctx *client)
 {
+	struct http2_frame *frame = &client->current_frame;
+
+	if (frame->length != HTTP2_WINDOW_UPDATE_FRAME_LEN) {
+		LOG_DBG("WINDOW_UPDATE frame length %u", frame->length);
+		return -EBADMSG;
+	}
+
 	client->server_state = HTTP_SERVER_FRAME_WINDOW_UPDATE_STATE;
 
 	return 0;
@@ -2059,6 +2085,44 @@ int handle_http_frame_rst_stream(struct http_client_ctx *client)
 	return 0;
 }
 
+static int apply_peer_setting(struct http_client_ctx *client, uint16_t id, uint32_t value)
+{
+	switch (id) {
+	case HTTP2_SETTINGS_ENABLE_PUSH:
+		if (value > 1U) {
+			LOG_DBG("SETTINGS_ENABLE_PUSH %u", value);
+			return -EBADMSG;
+		}
+
+		break;
+	case HTTP2_SETTINGS_INITIAL_WINDOW_SIZE:
+		if (value > HTTP2_MAX_WINDOW_SIZE) {
+			LOG_DBG("SETTINGS_INITIAL_WINDOW_SIZE %u", value);
+			return -EBADMSG;
+		}
+
+		break;
+	case HTTP2_SETTINGS_MAX_FRAME_SIZE:
+		/* The value is only checked: no frame is sent larger than the
+		 * default, which every peer accepts.
+		 */
+		if (value < HTTP2_DEFAULT_MAX_FRAME_SIZE || value > HTTP2_MAX_FRAME_SIZE_LIMIT) {
+			LOG_DBG("SETTINGS_MAX_FRAME_SIZE %u", value);
+			return -EBADMSG;
+		}
+
+		break;
+	default:
+		/* The other settings do not change what the server sends: it
+		 * never pushes and never adds to the peer's HPACK dynamic table.
+		 * Unknown settings are ignored.
+		 */
+		break;
+	}
+
+	return 0;
+}
+
 int handle_http_frame_settings(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
@@ -2068,6 +2132,20 @@ int handle_http_frame_settings(struct http_client_ctx *client)
 
 	if (client->data_len < frame->length) {
 		return -EAGAIN;
+	}
+
+	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_SETTINGS_ACK)) {
+		for (size_t pos = 0; pos < frame->length;
+		     pos += sizeof(struct http2_settings_field)) {
+			int ret;
+
+			ret = apply_peer_setting(client, sys_get_be16(client->cursor + pos),
+						 sys_get_be32(client->cursor + pos +
+							      sizeof(uint16_t)));
+			if (ret < 0) {
+				return ret;
+			}
+		}
 	}
 
 	bytes_consumed = client->current_frame.length;
@@ -2120,19 +2198,36 @@ int handle_http_frame_goaway(struct http_client_ctx *client)
 int handle_http_frame_window_update(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
+	uint32_t increment;
 	int bytes_consumed;
 
 	LOG_DBG("HTTP_SERVER_FRAME_WINDOW_UPDATE");
-
-	/* TODO Implement flow control, for now just ignore. */
 
 	if (client->data_len < frame->length) {
 		return -EAGAIN;
 	}
 
+	increment = sys_get_be32(client->cursor) & HTTP2_FRAME_STREAM_ID_MASK;
+
 	bytes_consumed = client->current_frame.length;
 	client->data_len -= bytes_consumed;
 	client->cursor += bytes_consumed;
+
+	if (frame->stream_identifier != 0U &&
+	    find_http_stream_context(client, frame->stream_identifier) == NULL) {
+		/* A WINDOW_UPDATE on a closed stream is not an error. An idle
+		 * stream cannot be told apart from a closed one and is treated
+		 * the same.
+		 */
+		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
+		return 0;
+	}
+
+	/* Errors on a stream are treated as connection errors too */
+	if (increment == 0U) {
+		LOG_DBG("WINDOW_UPDATE of 0 on stream %u", frame->stream_identifier);
+		return -EBADMSG;
+	}
 
 	client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 
