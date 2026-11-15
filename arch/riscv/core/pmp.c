@@ -980,20 +980,22 @@ static inline unsigned int z_riscv_pmp_thread_init(enum pmp_mode mode,
  * will stop evaluating when hitting the first configured region that
  * matches the address, even if it does not apply because it is not
  * locked and it is running in M mode.
+ *
+ * The blocker always uses the second to last slot. Its CSR numbers are
+ * macros: csr_*_imm() pass them as asm immediates, which GCC cannot
+ * derive from const variables when optimizations are off.
  */
+#define PMP_BLOCKER_SLOT     (CONFIG_PMP_SLOTS - 2)
+/* PMPADDR CSR for this slot */
+#define PMP_BLOCKER_ADDR_CSR (CSR_PMPADDR_BASE + PMP_BLOCKER_SLOT)
+/* PMPCFG CSR containing this slot */
+#define PMP_BLOCKER_CFG_CSR                                                                        \
+	(CSR_PMPCFG_BASE + (RV_REGSIZE / 4) * (PMP_BLOCKER_SLOT / PMPCFG_STRIDE))
+
 static void set_userspace_blocker(bool set)
 {
-	/* We always target second to last index
-	 * Since this is constant, we can use the computed values in csr_*_imm
-	 */
-	const unsigned int index = CONFIG_PMP_SLOTS - 2;
-	/* PMPADDR CSR for this index */
-	const unsigned long pmp_addr_csr = CSR_PMPADDR_BASE + index;
-	/* PMPCFG CSR containing this index */
-	const unsigned long pmp_cfg_csr =
-		CSR_PMPCFG_BASE + (RV_REGSIZE / 4) * (index / PMPCFG_STRIDE);
 	/* Shift position of our index within PMPCFG CSR */
-	const unsigned long pmp_cfg_csr_byte_shift = (index % PMPCFG_STRIDE) * 8;
+	const unsigned long pmp_cfg_csr_byte_shift = (PMP_BLOCKER_SLOT % PMPCFG_STRIDE) * 8;
 	unsigned long pmp_addr;
 	unsigned long pmp_cfg;
 	uint8_t pmp_cfg_byte;
@@ -1007,14 +1009,14 @@ static void set_userspace_blocker(bool set)
 	}
 
 	/* Write PMPADDR CSR */
-	csr_write_imm(pmp_addr_csr, pmp_addr);
+	csr_write_imm(PMP_BLOCKER_ADDR_CSR, pmp_addr);
 	/* Read PMPCFG CSR, clear byte position of our index, add new value at the
 	 * position, and write everything back
 	 */
-	pmp_cfg = csr_read_imm(pmp_cfg_csr);
+	pmp_cfg = csr_read_imm(PMP_BLOCKER_CFG_CSR);
 	pmp_cfg &= ~(0xFFUL << pmp_cfg_csr_byte_shift);
 	pmp_cfg |= ((unsigned long)pmp_cfg_byte << pmp_cfg_csr_byte_shift);
-	csr_write_imm(pmp_cfg_csr, pmp_cfg);
+	csr_write_imm(PMP_BLOCKER_CFG_CSR, pmp_cfg);
 }
 #endif /* CONFIG_USERSPACE && CONFIG_PMP_DATA_EXECUTION_PREVENTION */
 
