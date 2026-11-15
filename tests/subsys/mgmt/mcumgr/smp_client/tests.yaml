@@ -7,8 +7,12 @@ tests:
   mgmt.mcumgr.smp.client:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     integration_platforms:
       - native_sim
+    extra_configs:
+      - CONFIG_ASAN=y
+      - CONFIG_ASAN_RECOVER=n
     tags:
       - mcumgr
       - smp_client
