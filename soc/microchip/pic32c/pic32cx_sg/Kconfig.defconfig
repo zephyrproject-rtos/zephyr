@@ -13,4 +13,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config CAN_SAM0_MRAM_SECTION
 	default y if CAN_SAM0
 
+# The IDLE sleep mode stops the AHB clock that the CAN controller needs to
+# access its message RAM. PM lets the CAN driver keep the CPU out of it.
+config PM
+	default y if CAN
+
 endif # SOC_FAMILY_MICROCHIP_PIC32CX_SG
