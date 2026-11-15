@@ -15,6 +15,8 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/sys/atomic.h>
 #include <soc.h>
 
 LOG_MODULE_REGISTER(can_sam0, CONFIG_CAN_LOG_LEVEL);
@@ -40,6 +42,15 @@ struct can_sam0_config {
 	clock_control_subsys_t gclk_sys;
 #endif /* CONFIG_SOC_FAMILY_ATMEL_SAM0 */
 };
+
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+/* Bit in can_sam0_data.flags: this controller holds its power state locks. */
+#define CAN_SAM0_PM_LOCK_HELD 0
+
+struct can_sam0_data {
+	atomic_t flags;
+};
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 
 static int can_sam0_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
 {
@@ -202,10 +213,52 @@ static int can_sam0_init(const struct device *dev)
 	return ret;
 }
 
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+/*
+ * The M_CAN reads and writes its message RAM as an AHB bus master. Keep the power states listed
+ * in zephyr,disabling-power-states, such as one that stops the AHB clock, locked while the
+ * controller is started.
+ *
+ * The flag makes each controller hold its locks at most once, whatever the sequence of start and
+ * stop calls, including concurrent ones. The idle thread cannot run between a successful start
+ * and taking the locks, as the calling thread is still runnable.
+ */
+static int can_sam0_start(const struct device *dev)
+{
+	const struct can_mcan_data *mcan_data = dev->data;
+	struct can_sam0_data *data = mcan_data->custom;
+	int ret = can_mcan_start(dev);
+
+	if ((ret == 0) && !atomic_test_and_set_bit(&data->flags, CAN_SAM0_PM_LOCK_HELD)) {
+		pm_policy_device_power_lock_get(dev);
+	}
+
+	return ret;
+}
+
+static int can_sam0_stop(const struct device *dev)
+{
+	const struct can_mcan_data *mcan_data = dev->data;
+	struct can_sam0_data *data = mcan_data->custom;
+	int ret = can_mcan_stop(dev);
+
+	if ((ret == 0) && atomic_test_and_clear_bit(&data->flags, CAN_SAM0_PM_LOCK_HELD)) {
+		pm_policy_device_power_lock_put(dev);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
+
 static DEVICE_API(can, can_sam0_driver_api) = {
 	.get_capabilities = can_mcan_get_capabilities,
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+	.start = can_sam0_start,
+	.stop = can_sam0_stop,
+#else
 	.start = can_mcan_start,
 	.stop = can_mcan_stop,
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 	.set_mode = can_mcan_set_mode,
 	.set_timing = can_mcan_set_timing,
 	.send = can_mcan_send,
@@ -291,7 +344,17 @@ static void config_can_##inst##_irq(void)						\
 		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_sam0_cfg_##inst, &can_sam0_ops,  \
 					    &can_sam0_cbs_##inst);
 
-#define CAN_SAM0_DATA_INST(inst) CAN_MCAN_DATA_DEFINE(can_mcan_data_##inst, NULL);
+#ifdef CONFIG_PM_POLICY_DEVICE_CONSTRAINTS
+#define CAN_SAM0_DATA_DEFINE(inst) static struct can_sam0_data can_sam0_data_##inst;
+#define CAN_SAM0_DATA_PTR(inst) (&can_sam0_data_##inst)
+#else
+#define CAN_SAM0_DATA_DEFINE(inst)
+#define CAN_SAM0_DATA_PTR(inst) NULL
+#endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
+
+#define CAN_SAM0_DATA_INST(inst)							\
+	CAN_SAM0_DATA_DEFINE(inst)							\
+	CAN_MCAN_DATA_DEFINE(can_mcan_data_##inst, CAN_SAM0_DATA_PTR(inst));
 
 #define CAN_SAM0_DEVICE_INST(inst)							\
 	CAN_DEVICE_DT_INST_DEFINE(inst, can_sam0_init, NULL,				\

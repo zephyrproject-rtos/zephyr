@@ -8,6 +8,7 @@ config CAN_SAM0
 	depends on DT_HAS_ATMEL_SAM0_CAN_ENABLED
 	select CAN_MCAN
 	select PINCTRL
+	select PM_POLICY_DEVICE_CONSTRAINTS if PM
 
 config CAN_SAM0_MRAM_SECTION
 	bool
