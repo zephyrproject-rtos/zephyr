@@ -87,7 +87,8 @@ enum {
 	BT_CONN_PERIPHERAL_PARAM_L2CAP,       /* If should force L2CAP for CPUP */
 	BT_CONN_FORCE_PAIR,                   /* Pairing even with existing keys. */
 #if defined(CONFIG_BT_GATT_CLIENT)
-	BT_CONN_ATT_MTU_EXCHANGED,            /* If ATT MTU has been exchanged. */
+	BT_CONN_ATT_MTU_REQ_SENT,             /* If the local ATT MTU request is queued */
+	BT_CONN_ATT_MTU_REQ_RECEIVED,         /* If the peer has exchanged ATT MTU */
 #endif /* CONFIG_BT_GATT_CLIENT */
 
 	BT_CONN_LE_FEATURES_EXCHANGED,        /* bt_conn.le.features is valid */
