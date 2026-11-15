@@ -54,6 +54,23 @@ LOG_MODULE_DECLARE(mpu);
  */
 static uint8_t static_regions_num;
 
+/*
+ * Number of regions programmed by z_arm_mpu_init(), where the static
+ * regions start. Secondary CPUs repeat the MPU setup while other CPUs may
+ * already program dynamic regions from static_regions_num, so
+ * z_arm_mpu_init() only raises static_regions_num, and the static region
+ * configuration sets it to its final value.
+ */
+static uint8_t mpu_init_regions_num;
+
+static void set_init_regions_num(uint8_t num)
+{
+	mpu_init_regions_num = num;
+	if (static_regions_num < num) {
+		static_regions_num = num;
+	}
+}
+
 #if defined(CONFIG_ARM_MPU_CM7_UNMAPPED_REGION)
 /* Lowest-priority catch-all region covering the entire 4GB address space:
  * Strongly-ordered, no access, Execute-Never. It removes all unmapped holes
@@ -458,6 +475,7 @@ void z_arm_restore_mpu_context(const struct z_mpu_context_retained *ctx)
 int z_arm_mpu_init(void)
 {
 	uint32_t r_index;
+	uint8_t num;
 
 	if (mpu_config.num_regions + MPU_UNMAPPED_REGIONS_NUM > get_num_regions()) {
 		/* Attempt to configure more MPU regions than
@@ -480,7 +498,7 @@ int z_arm_mpu_init(void)
 	 * the MPU enabled.
 	 */
 	if ((__get_SCTLR() & SCTLR_M_Msk) != 0U) {
-		static_regions_num = mpu_config.num_regions;
+		set_init_regions_num(mpu_config.num_regions);
 		return 0;
 	}
 #endif
@@ -529,16 +547,17 @@ int z_arm_mpu_init(void)
 	}
 
 	/* Update the number of programmed MPU regions. */
-	static_regions_num = mpu_config.num_regions + MPU_UNMAPPED_REGIONS_NUM;
+	num = mpu_config.num_regions + MPU_UNMAPPED_REGIONS_NUM;
 #ifdef CONFIG_MEM_ATTR
 	/* DT-defined MPU regions. */
-	if (mpu_configure_regions_from_dt(&static_regions_num) == -EINVAL) {
+	if (mpu_configure_regions_from_dt(&num) == -EINVAL) {
 		__ASSERT(0, "Failed to allocate MPU regions from DT\n");
+		set_init_regions_num(num);
 		return -EINVAL;
 	}
 #endif /* CONFIG_MEM_ATTR */
 	/* Clear all regions before enabling MPU */
-	for (int i = static_regions_num; i < get_num_regions(); i++) {
+	for (int i = num; i < get_num_regions(); i++) {
 		mpu_clear_region(i);
 	}
 
@@ -589,17 +608,20 @@ int z_arm_mpu_init(void)
 		}
 #endif
 
-	if (mpu_configure_region(static_regions_num, &unmap_region) == -EINVAL) {
+	if (mpu_configure_region(num, &unmap_region) == -EINVAL) {
 
 		__ASSERT(0,
 			"Programming null-pointer detection region failed\n");
+		set_init_regions_num(num);
 		return -EINVAL;
 	}
 
-	static_regions_num++;
+	num++;
 
 #endif
 #endif /* CONFIG_NULL_POINTER_EXCEPTION_DETECTION_MPU */
+
+	set_init_regions_num(num);
 
 	/* Coherence check for number of regions in Cortex-M0+, M3, and M4. */
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \

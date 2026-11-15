@@ -226,7 +226,7 @@ static int mpu_configure_static_mpu_regions(const struct z_arm_mpu_partition
 	const uint32_t background_area_base,
 	const uint32_t background_area_end)
 {
-	int mpu_reg_index = static_regions_num;
+	int mpu_reg_index = mpu_init_regions_num;
 
 	/* In ARMv7-M architecture the static regions are
 	 * programmed on top of SRAM region configuration.
