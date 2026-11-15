@@ -773,6 +773,8 @@ static void init_client_ctx(struct http_client_ctx *client, const struct http_se
 	client->window_size = HTTP_SERVER_INITIAL_WINDOW_SIZE;
 	client->hpack_table = NULL;
 	client->hpack_table_missed = false;
+	client->send_window_size = HTTP2_INITIAL_WINDOW_SIZE;
+	client->peer_initial_window_size = HTTP2_INITIAL_WINDOW_SIZE;
 
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
 		client->is_h3 = false;

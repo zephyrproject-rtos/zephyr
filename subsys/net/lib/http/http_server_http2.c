@@ -92,6 +92,8 @@ static struct http2_stream_ctx *allocate_http_stream_context(
 			client->streams[i].stream_state = HTTP2_STREAM_OPEN;
 			client->streams[i].window_size =
 				HTTP_SERVER_INITIAL_WINDOW_SIZE;
+			client->streams[i].send_window_size =
+				client->peer_initial_window_size;
 			client->streams[i].headers_sent = false;
 			client->streams[i].end_stream_sent = false;
 			return &client->streams[i];
@@ -235,6 +237,19 @@ static int send_headers_frame(struct http_client_ctx *client, enum http_status s
 	return 0;
 }
 
+/* Take a sent DATA frame payload off the windows the peer advertised */
+static void consume_send_window(struct http_client_ctx *client, uint32_t stream_id, size_t length)
+{
+	struct http2_stream_ctx *stream;
+
+	client->send_window_size -= (int64_t)length;
+
+	stream = find_http_stream_context(client, stream_id);
+	if (stream != NULL) {
+		stream->send_window_size -= (int64_t)length;
+	}
+}
+
 static int send_data_frame(struct http_client_ctx *client, const char *payload,
 			   size_t length, uint32_t stream_id, uint8_t flags)
 {
@@ -268,6 +283,7 @@ static int send_data_frame(struct http_client_ctx *client, const char *payload,
 				break;
 			}
 
+			consume_send_window(client, stream_id, frame_len);
 			payload += frame_len;
 			length -= frame_len;
 		}
@@ -615,6 +631,8 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 			LOG_DBG("Cannot write to socket (%d)", ret);
 			goto out;
 		}
+
+		consume_send_window(client, frame->stream_identifier, len);
 	}
 
 	client->current_stream->end_stream_sent = true;
@@ -2085,6 +2103,38 @@ int handle_http_frame_rst_stream(struct http_client_ctx *client)
 	return 0;
 }
 
+static int set_peer_initial_window_size(struct http_client_ctx *client, uint32_t value)
+{
+	int64_t delta;
+
+	if (value > HTTP2_MAX_WINDOW_SIZE) {
+		LOG_DBG("SETTINGS_INITIAL_WINDOW_SIZE %u", value);
+		return -EBADMSG;
+	}
+
+	/* The change applies to the windows of the streams already open */
+	delta = (int64_t)value - client->peer_initial_window_size;
+
+	ARRAY_FOR_EACH(client->streams, i) {
+		struct http2_stream_ctx *stream = &client->streams[i];
+
+		if (stream->stream_state == HTTP2_STREAM_IDLE) {
+			continue;
+		}
+
+		if (stream->send_window_size + delta > HTTP2_MAX_WINDOW_SIZE) {
+			LOG_DBG("Stream %d window overflow", stream->stream_id);
+			return -EBADMSG;
+		}
+
+		stream->send_window_size += delta;
+	}
+
+	client->peer_initial_window_size = value;
+
+	return 0;
+}
+
 static int apply_peer_setting(struct http_client_ctx *client, uint16_t id, uint32_t value)
 {
 	switch (id) {
@@ -2096,12 +2146,7 @@ static int apply_peer_setting(struct http_client_ctx *client, uint16_t id, uint3
 
 		break;
 	case HTTP2_SETTINGS_INITIAL_WINDOW_SIZE:
-		if (value > HTTP2_MAX_WINDOW_SIZE) {
-			LOG_DBG("SETTINGS_INITIAL_WINDOW_SIZE %u", value);
-			return -EBADMSG;
-		}
-
-		break;
+		return set_peer_initial_window_size(client, value);
 	case HTTP2_SETTINGS_MAX_FRAME_SIZE:
 		/* The value is only checked: no frame is sent larger than the
 		 * default, which every peer accepts.
@@ -2198,6 +2243,8 @@ int handle_http_frame_goaway(struct http_client_ctx *client)
 int handle_http_frame_window_update(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
+	struct http2_stream_ctx *stream;
+	int64_t *window;
 	uint32_t increment;
 	int bytes_consumed;
 
@@ -2213,14 +2260,20 @@ int handle_http_frame_window_update(struct http_client_ctx *client)
 	client->data_len -= bytes_consumed;
 	client->cursor += bytes_consumed;
 
-	if (frame->stream_identifier != 0U &&
-	    find_http_stream_context(client, frame->stream_identifier) == NULL) {
-		/* A WINDOW_UPDATE on a closed stream is not an error. An idle
-		 * stream cannot be told apart from a closed one and is treated
-		 * the same.
-		 */
-		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
-		return 0;
+	if (frame->stream_identifier == 0U) {
+		window = &client->send_window_size;
+	} else {
+		stream = find_http_stream_context(client, frame->stream_identifier);
+		if (stream == NULL) {
+			/* A WINDOW_UPDATE on a closed stream is not an error.
+			 * Idle streams are not detected yet and are treated
+			 * as closed ones.
+			 */
+			client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
+			return 0;
+		}
+
+		window = &stream->send_window_size;
 	}
 
 	/* Errors on a stream are treated as connection errors too */
@@ -2228,6 +2281,14 @@ int handle_http_frame_window_update(struct http_client_ctx *client)
 		LOG_DBG("WINDOW_UPDATE of 0 on stream %u", frame->stream_identifier);
 		return -EBADMSG;
 	}
+
+	if (*window + increment > HTTP2_MAX_WINDOW_SIZE) {
+		LOG_DBG("WINDOW_UPDATE overflows the window of stream %u",
+			frame->stream_identifier);
+		return -EBADMSG;
+	}
+
+	*window += increment;
 
 	client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 
