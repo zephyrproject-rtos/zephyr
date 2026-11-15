@@ -61,7 +61,8 @@ struct arch_esf {
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	struct __extra_esf_info extra_info;
 #endif
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && !defined(CONFIG_USE_SWITCH)
+	/* With CONFIG_USE_SWITCH, the FP context is saved in the thread */
 	struct __fpu_sf fpu;
 #endif
 	struct __basic_sf {

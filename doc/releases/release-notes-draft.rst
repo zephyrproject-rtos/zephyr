@@ -212,6 +212,8 @@ Other notable changes
     interrupts use the interrupt stack, which fixes return address corruption by a nested IRQ
     (:github:`122601`).
 
+  * ARM Cortex-A/R: :ref:`FPU sharing <float_v2>` is supported on SMP systems.
+
 * Bluetooth
 
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,

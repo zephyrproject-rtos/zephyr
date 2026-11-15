@@ -47,7 +47,7 @@
         and \rreg0, #TPIDRURO_CURR_CPU
 .endm
 
-.macro z_arm_cortex_ar_enter_exc
+.macro z_arm_cortex_ar_enter_exc fpu_off=1
 #if defined(CONFIG_USERSPACE)
 	/*
 	 * USR and SYS modes share SP.  On an exception from user mode,
@@ -86,6 +86,14 @@
 	ldrb r1, [r2, #_cpu_offset_to_exc_depth]
 	add r1, r1, #1
 	strb r1, [r2, #_cpu_offset_to_exc_depth]
+
+#if defined(CONFIG_FPU_SHARING)
+.if \fpu_off
+	/* Exception handlers run with the FPU disabled */
+	mov r1, #0
+	vmsr fpexc, r1
+.endif
+#endif
 .endm
 
 /*

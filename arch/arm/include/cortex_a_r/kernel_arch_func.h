@@ -84,6 +84,12 @@ extern void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 /* Give this CPU access to the FPU, done by each CPU at boot */
 void z_arm_floating_point_init(void);
 
+/* Save the FPU owner's context and release the FPU, with IRQs disabled */
+void arch_flush_local_fpu(void);
+
+/* Drop the FP context of _current when it enters user mode */
+void z_arm_fpu_user_mode_enter(void);
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
