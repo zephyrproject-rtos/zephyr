@@ -1,0 +1,12 @@
+identifier: esp32s3_touch_lcd_2_8c/esp32s3/procpu
+name: ESP32-S3-Touch-LCD-2.8C PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - entropy
+  - gpio
+  - uart
+  - watchdog
+vendor: waveshare
