@@ -1,0 +1,206 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rockchip-rk3588.h>
+
+&pinctrl {
+	status = "okay";
+
+	uart2_default: uart2-default {
+		group1 {
+			pinmux = <RK3588_PIN_UART2_TX_M0>;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <RK3588_PIN_UART2_RX_M0>;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+
+	uart3_default: uart3-default {
+		group1 {
+			pinmux = <RK3588_PIN_UART3_TX_M1>;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <RK3588_PIN_UART3_RX_M1>;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+
+	uart4_default: uart4-default {
+		group1 {
+			pinmux = <RK3588_PIN_UART4_TX_M2>;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <RK3588_PIN_UART4_RX_M2>;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+
+	uart7_default: uart7-default {
+		group1 {
+			pinmux = <RK3588_PIN_UART7_TX_M2>;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <RK3588_PIN_UART7_RX_M2>;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ i2c0_default: i2c0-default {
+		group1 {
+			pinmux = <RK3588_PIN_I2C0_SCL_M1>,
+				 <RK3588_PIN_I2C0_SDA_M1>;
+			bias-disable;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	/omit-if-no-ref/ i2c6_default: i2c6-default {
+		group1 {
+			pinmux = <RK3588_PIN_I2C6_SCL_M0>,
+				 <RK3588_PIN_I2C6_SDA_M0>;
+			bias-disable;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	/omit-if-no-ref/ spi0_default: spi0-default {
+		group1 {
+			pinmux = <RK3588_PIN_SPI0_CLK_M2>,
+				 <RK3588_PIN_SPI0_MOSI_M2>,
+				 <RK3588_PIN_SPI0_CS0_M2>,
+				 <RK3588_PIN_SPI0_CS1_M2>;
+			bias-pull-up;
+			rockchip,drive-strength-ohms = <33>;
+		};
+
+		group2 {
+			pinmux = <RK3588_PIN_SPI0_MISO_M2>;
+			bias-pull-up;
+			input-enable;
+			input-schmitt-enable;
+			rockchip,drive-strength-ohms = <33>;
+		};
+	};
+
+	/omit-if-no-ref/ spi1_default: spi1-default {
+		group1 {
+			pinmux = <RK3588_PIN_SPI1_CLK_M1>,
+				 <RK3588_PIN_SPI1_MOSI_M1>,
+				 <RK3588_PIN_SPI1_CS0_M1>,
+				 <RK3588_PIN_SPI1_CS1_M1>;
+			bias-pull-up;
+			rockchip,drive-strength-ohms = <33>;
+		};
+
+		group2 {
+			pinmux = <RK3588_PIN_SPI1_MISO_M1>;
+			bias-pull-up;
+			input-enable;
+			input-schmitt-enable;
+			rockchip,drive-strength-ohms = <33>;
+		};
+	};
+
+	/omit-if-no-ref/ spi3_default: spi3-default {
+		group1 {
+			pinmux = <RK3588_PIN_SPI3_CLK_M0>,
+				 <RK3588_PIN_SPI3_MOSI_M0>;
+			bias-pull-up;
+			rockchip,drive-strength-ohms = <33>;
+		};
+
+		group2 {
+			pinmux = <RK3588_PIN_SPI3_MISO_M0>;
+			bias-pull-up;
+			input-enable;
+			input-schmitt-enable;
+			rockchip,drive-strength-ohms = <33>;
+		};
+	};
+
+	/omit-if-no-ref/ pwm2_default: pwm2-default {
+		group1 {
+			pinmux = <RK3588_PIN_PWM2_M1>;
+			bias-disable;
+		};
+	};
+
+	/omit-if-no-ref/ pwm5_default: pwm5-default {
+		group1 {
+			pinmux = <RK3588_PIN_PWM5_M2>;
+			bias-disable;
+		};
+	};
+
+	/omit-if-no-ref/ pwm6_default: pwm6-default {
+		group1 {
+			pinmux = <RK3588_PIN_PWM6_M2>;
+			bias-disable;
+		};
+	};
+
+	/omit-if-no-ref/ pwm7_default: pwm7-default {
+		group1 {
+			pinmux = <RK3588_PIN_PWM7_IR_M3>;
+			bias-disable;
+		};
+	};
+
+	/omit-if-no-ref/ pwm8_default: pwm8-default {
+		group1 {
+			pinmux = <RK3588_PIN_PWM8_M0>;
+			bias-disable;
+		};
+	};
+
+	/omit-if-no-ref/ pwm12_default: pwm12-default {
+		group1 {
+			pinmux = <RK3588_PIN_PWM12_M0>;
+			bias-disable;
+		};
+	};
+
+	/omit-if-no-ref/ pwm13_default: pwm13-default {
+		group1 {
+			pinmux = <RK3588_PIN_PWM13_M0>;
+			bias-disable;
+		};
+	};
+};
+
+&uart2 {
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+};
+
+&uart3 {
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-names = "default";
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7_default>;
+	pinctrl-names = "default";
+};
