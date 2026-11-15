@@ -157,7 +157,6 @@ static int stm32_ipcc_mailbox_ipm_send(const struct device *dev, int wait,
 	struct stm32_ipcc_mbx_data *data = dev->data;
 	const struct stm32_ipcc_mailbox_config *cfg = dev->config;
 
-	ARG_UNUSED(wait);
 	ARG_UNUSED(buff);
 
 	/* No data transmission, only doorbell */
@@ -172,8 +171,11 @@ static int stm32_ipcc_mailbox_ipm_send(const struct device *dev, int wait,
 
 	LOG_DBG("Send msg on channel %d\r\n", id);
 
-	/* Check that the channel is free (otherwise wait) */
+	/* Check that the channel is free */
 	if (IPCC_IsActiveFlag_CHx(cfg->ipcc, id)) {
+		if (wait == 0) {
+			return -EBUSY;
+		}
 		LOG_DBG("Waiting for channel to be freed\r\n");
 		while (IPCC_IsActiveFlag_CHx(cfg->ipcc, id)) {
 			;
