@@ -262,12 +262,12 @@ static void config_can_##inst##_irq(void)						\
 #endif /* CONFIG_SOC_FAMILY_ATMEL_SAM0 */
 
 /*
- * On devices with more than 64 KB SRAM, place the MCAN Message RAM buffers
+ * On SoCs with more than 64 KB SRAM, place the MCAN Message RAM buffers
  * in a dedicated section to ensure they are located in the first 64 KB of
  * SRAM, as required by section 39.9.1 of the SAM D5x/E5x Family Data Sheet
  * (DS60001507N).
  */
-#if CONFIG_SRAM_SIZE > 64
+#ifdef CONFIG_CAN_SAM0_MRAM_SECTION
 #define CAN_SAM0_DT_INST_MRAM_DEFINE(inst, _name)                                       \
 	CAN_MCAN_DT_INST_MRAM_DEFINE_SECTION(inst, _name, ".can_message_ram")
 

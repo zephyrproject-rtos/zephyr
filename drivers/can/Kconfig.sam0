@@ -8,3 +8,11 @@ config CAN_SAM0
 	depends on DT_HAS_ATMEL_SAM0_CAN_ENABLED
 	select CAN_MCAN
 	select PINCTRL
+
+config CAN_SAM0_MRAM_SECTION
+	bool
+	depends on CAN_SAM0
+	help
+	  Place the M_CAN message RAM in the .can_message_ram section. A SoC whose M_CAN core can
+	  only address the first 64 KB of SRAM, but which has more SRAM than that, enables this
+	  option and links the section at the start of SRAM.
