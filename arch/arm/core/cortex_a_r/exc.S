@@ -256,6 +256,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 	 * Restore r0-r3, r12, lr, lr_und and spsr_und from the exception stack
 	 * and return to the current thread.
 	 */
+	add sp, sp, #EXC_BASIC_OFFSET
 	pop {r0-r3, r12, lr}
 	userspace_exc_exit
 	rfeia sp!
@@ -271,6 +272,7 @@ z_arm_fpu_trap_exit:
 	sub r1, r1, #1
 	strb r1, [r2, #_cpu_offset_to_exc_depth]
 
+	add sp, sp, #EXC_BASIC_OFFSET
 	pop {r0-r3, r12, lr}
 	userspace_exc_exit
 	rfeia sp!
@@ -301,8 +303,8 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	bl z_arm_fpu_trap
 	cmp r0, #0
 	bne z_arm_fpu_trap_exit
-	mov r0, sp
 #endif
+	z_arm_cortex_ar_save_extra
 	bl z_arm_fault_undef_instruction
 	b z_arm_cortex_ar_exit_exc
 
@@ -319,6 +321,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
 	 */
 	sub lr, #4
 	z_arm_cortex_ar_enter_exc
+	z_arm_cortex_ar_save_extra
 	bl z_arm_fault_prefetch
 	b z_arm_cortex_ar_exit_exc
 
@@ -333,6 +336,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	sub lr, #8
 
 	z_arm_cortex_ar_enter_exc
+	z_arm_cortex_ar_save_extra
 	bl z_arm_fault_data
 	b z_arm_cortex_ar_exit_exc
 

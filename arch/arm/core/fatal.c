@@ -161,7 +161,9 @@ void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs, 
 
 #endif /* CONFIG_USERSPACE */
 
-#if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
+#if !defined(CONFIG_EXTRA_EXCEPTION_INFO) ||                                                       \
+	(!defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_USE_SWITCH))
+	/* On Cortex-A/R, z_arm_cortex_ar_save_extra has filled the extra info */
 	z_arm_fatal_error(reason, esf);
 #else
 	struct arch_esf esf_copy;

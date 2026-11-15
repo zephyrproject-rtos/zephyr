@@ -64,6 +64,57 @@ static inline void irq_controller_clear_pending(unsigned int irq)
 static volatile int test_flag;
 static volatile int expected_reason = -1;
 
+#if defined(CONFIG_ARMV7_R) && defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_USE_SWITCH)
+/* Used to validate the callee-saved registers collected during a fault */
+static volatile int run_callee_validation;
+static volatile int callee_validation_rv;
+static K_THREAD_STACK_DEFINE(callee_collection_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread callee_collection_thread;
+
+/* Loads r4-r11 with their register numbers and r12 with SP, then faults */
+static void set_callee_regs_with_known_pattern(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	__asm__ volatile("mov r4, #4\n"
+			 "mov r5, #5\n"
+			 "mov r6, #6\n"
+			 "mov r7, #7\n"
+			 "mov r8, #8\n"
+			 "mov r9, #9\n"
+			 "mov r10, #10\n"
+			 "mov r11, #11\n"
+			 "mov r12, sp\n"
+			 "udf #90\n");
+}
+
+static int check_callee_regs_match_expectations(const struct arch_esf *pEsf)
+{
+	const struct _callee_saved *callee_regs = pEsf->extra_info.callee;
+
+	if (callee_regs == NULL) {
+		printk("No _callee_saved_t in ESF\n");
+		return -1;
+	}
+
+	if ((callee_regs->v1 != 4) || (callee_regs->v2 != 5) || (callee_regs->v3 != 6) ||
+	    (callee_regs->v4 != 7) || (callee_regs->v5 != 8) || (callee_regs->v6 != 9) ||
+	    (callee_regs->v7 != 10) || (callee_regs->v8 != 11)) {
+		printk("_callee_saved_t member of ESF is incorrect\n");
+		return -1;
+	}
+
+	if (callee_regs->psp != pEsf->basic.r12) {
+		printk("SP is 0x%08x but should be 0x%08x\n", callee_regs->psp, pEsf->basic.r12);
+		return -1;
+	}
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 /* Used to validate ESF collection during a fault */
 static volatile int run_esf_validation;
@@ -341,6 +392,15 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 	}
 #endif
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE || CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
+
+#if defined(CONFIG_ARMV7_R) && defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_USE_SWITCH)
+	if (run_callee_validation) {
+		if (check_callee_regs_match_expectations(pEsf) == 0) {
+			callee_validation_rv = TC_PASS;
+		}
+		run_callee_validation = 0;
+	}
+#endif
 
 	expected_reason = -1;
 }
@@ -641,14 +701,51 @@ void arm_isr_handler(const void *args)
 	}
 }
 
+#if defined(CONFIG_ARMV7_R) && defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_USE_SWITCH)
+static void run_callee_collection(uint32_t options)
+{
+	callee_validation_rv = TC_FAIL;
+	run_callee_validation = 1;
+	expected_reason = K_ERR_CPU_EXCEPTION;
+
+	k_thread_create(&callee_collection_thread, callee_collection_stack,
+			K_THREAD_STACK_SIZEOF(callee_collection_stack),
+			set_callee_regs_with_known_pattern, NULL, NULL, NULL, K_PRIO_PREEMPT(0),
+			options, K_NO_WAIT);
+	k_thread_join(&callee_collection_thread, K_FOREVER);
+
+	zassert_equal(callee_validation_rv, TC_PASS, "callee-saved register collection failed");
+}
+
+/**
+ * @brief Test the callee-saved registers collected on a fault
+ * @ingroup kernel_fatal_tests
+ */
+ZTEST(arm_interrupt, test_arm_callee_collection)
+{
+	run_callee_collection(0);
+}
+
+#if defined(CONFIG_USERSPACE)
+/**
+ * @brief Test the callee-saved registers collected on a fault in user mode
+ * @ingroup kernel_fatal_tests
+ */
+ZTEST(arm_interrupt, test_arm_user_callee_collection)
+{
+	run_callee_collection(K_USER);
+}
+#endif
+#endif
+
 /**
  * @brief Test ARM Interrupt handling
  * @ingroup kernel_arch_interrupt_tests
  */
 ZTEST(arm_interrupt, test_arm_interrupt)
 {
-#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_ARMV7_R)
-	/* EXTRA_EXCEPTION_INFO is not fully implemented for Cortex-R */
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_ARMV7_R) && !defined(CONFIG_USE_SWITCH)
+	/* EXTRA_EXCEPTION_INFO is not fully implemented for the legacy Cortex-R code */
 	ztest_test_skip();
 #endif
 
