@@ -700,6 +700,20 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			}
 
 			aux->is_started = 1;
+		} else if (IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK)) {
+			struct pdu_adv *pdu_scan;
+			struct pdu_adv *sec_pdu;
+
+			/* Update auxiliary channel event time reservation
+			 * using the auxiliary PDU and its chain PDU that are
+			 * to be enqueued
+			 */
+			sec_pdu = (void *)adv->lll.aux->data.pdu[sec_idx];
+			pdu_scan = lll_adv_scan_rsp_peek(&adv->lll);
+			err = aux_time_update(aux, sec_pdu, pdu_scan);
+			if (err) {
+				return err;
+			}
 		}
 
 		/* Update primary channel reservation */
@@ -2053,8 +2067,13 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 					EVENT_B2B_MAFS_US);
 #endif /* CONFIG_BT_CTLR_ADV_AUX_PDU_LINK */
 
-	/* Update auxiliary channel event time reservation */
-	if (aux->is_started) {
+	/* Update auxiliary channel event time reservation. When AD data
+	 * can be fragmented into chain PDUs, the caller updates it after the
+	 * chain PDUs have been populated.
+	 */
+	if (aux->is_started &&
+		!(IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_PDU_LINK) &&
+		((sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) != 0U))) {
 		struct pdu_adv *pdu_scan;
 		uint8_t err;
 
