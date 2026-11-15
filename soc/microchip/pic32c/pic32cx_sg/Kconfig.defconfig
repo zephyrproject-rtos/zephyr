@@ -9,4 +9,8 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
 
+# The M_CAN message RAM must be in the first 64 KB of SRAM.
+config CAN_SAM0_MRAM_SECTION
+	default y if CAN_SAM0
+
 endif # SOC_FAMILY_MICROCHIP_PIC32CX_SG
