@@ -96,6 +96,7 @@ tests:
       - rzg3s_smarc/r9a08g045s33gbg/cm33
   drivers.can.build_all.sam0:
     platform_allow:
+      - pic32cx_sg41_cult
       - samc21n_xpro
   drivers.can.build_all.sam:
     platform_allow:

@@ -54,6 +54,18 @@ Connections and IOs
 
 The `PIC32CX SG41 Curiosity Ultra User Guide`_ has detailed information about board connections.
 
+CAN
+---
+
+CAN0 is connected to the on-board transceiver on PA22 (TX) and PA23 (RX). CAN1 shares PB14 and PB15
+with TC5 and is disabled; place shunts on J402 and J403 to use it.
+
+The CAN controller reads and writes its message RAM as an AHB bus master, but the IDLE sleep mode
+stops the AHB clock on this SoC. While a CAN controller is started (between ``can_start()`` and
+``can_stop()``), the CAN driver locks this power state, so the CPU does not sleep and keeps running
+at full speed when idle. Stop the controller to allow the CPU to sleep again. This relies on
+:kconfig:option:`CONFIG_PM`, enabled by default with the CAN driver on this SoC.
+
 Programming & Debugging
 ***********************
 
