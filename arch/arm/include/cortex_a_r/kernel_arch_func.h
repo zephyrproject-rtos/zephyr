@@ -81,6 +81,11 @@ extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 
 extern void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
+#if defined(CONFIG_CPU_HAS_FPU)
+/* Give this CPU access to the FPU, done by each CPU at boot */
+void z_arm_floating_point_init(void);
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
