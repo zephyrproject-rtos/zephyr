@@ -180,8 +180,10 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
     /*
      * set stack to user stack.  We are in SYSTEM state, so r13 and r14 are
-     * shared with USER state
+     * shared with USER state.  Interrupts stay masked until the switch to
+     * user mode below.
      */
+    cpsid i
     mov sp, r0
 #else
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
@@ -587,7 +589,11 @@ z_syscall_exit_race2:
     mov ip, r8
     orrs ip, ip, #1
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_R)
-    /* Restore user stack pointer */
+    /*
+     * Restore user stack pointer.  Interrupts stay masked until the switch
+     * to user mode below.
+     */
+    cpsid i
     ldr ip, [sp,#12]
     mov sp, ip
 
@@ -600,10 +606,10 @@ z_syscall_exit_race2:
     mov r3, #0
 
     /*
-     * return back to original function that called SVC
+     * return back to original function that called SVC, and re-enable IRQs
      */
     mov ip, r8
-    cps #MODE_USR
+    cpsie i, #MODE_USR
 #endif
 
     bx ip
