@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
 #include "../../ip/net_private.h"
 #include "headers/server_internal.h"
+#include "headers/http2_internal.h"
 
 BUILD_ASSERT(CONFIG_HTTP_SERVER_VERSION > 0,
 	     "HTTP server requires at least HTTP/1.x, HTTP/2 or HTTP/3 support");
@@ -773,6 +774,8 @@ static void init_client_ctx(struct http_client_ctx *client, const struct http_se
 	client->window_size = HTTP_SERVER_INITIAL_WINDOW_SIZE;
 	client->hpack_table = NULL;
 	client->hpack_table_missed = false;
+	client->send_window_size = HTTP2_INITIAL_WINDOW_SIZE;
+	client->peer_initial_window_size = HTTP2_INITIAL_WINDOW_SIZE;
 
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
 		client->is_h3 = false;

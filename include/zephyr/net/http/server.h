@@ -378,6 +378,11 @@ struct http2_stream_ctx {
 	enum http2_stream_state stream_state; /**< Stream state. */
 	int window_size; /**< Stream-level window size. */
 
+	/** Stream-level window for sending, as advertised by the peer. It can be
+	 *  negative (@rfc{9113,section-6.9.2}).
+	 */
+	int64_t send_window_size;
+
 	/** Currently processed resource detail. */
 	struct http_resource_detail *current_detail;
 
@@ -467,6 +472,12 @@ struct http_client_ctx {
 
 	/** Connection-level window size. */
 	int window_size;
+
+	/** Connection-level window for sending, as advertised by the peer. */
+	int64_t send_window_size;
+
+	/** Initial stream-level window for sending, the peer's SETTINGS_INITIAL_WINDOW_SIZE. */
+	uint32_t peer_initial_window_size;
 
 	/** Server state for the associated client. */
 	enum http_server_state server_state;
