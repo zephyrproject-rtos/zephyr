@@ -15,6 +15,7 @@ menuconfig WIFI_BFLB
 	select WIFI_NM_WPA_SUPPLICANT
 	select BFLB_PHYRF
 	select NET_SOCKETS
+	select WIFI_HAS_2_4_GHZ
 	help
 	  Enable Bouffalo Lab WiFi driver using the MACSW blob.
 

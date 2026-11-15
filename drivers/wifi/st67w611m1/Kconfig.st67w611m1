@@ -17,6 +17,7 @@ menuconfig WIFI_ST67W611M1
 	select NET_L2_ETHERNET # Wifi driver is defined as an Ethernet interface
 	select NET_L2_WIFI_MGMT
 	select WIFI_USE_NATIVE_NETWORKING # Set the Wi-Fi driver API as an ethernet_driver_api
+	select WIFI_HAS_2_4_GHZ
 
 if WIFI_ST67W611M1
 

@@ -12,6 +12,8 @@ menuconfig WIFI_SIMPLELINK
 	select ZVFS_FDTABLE
 	select POSIX_SEMAPHORES
 	select DEPRECATED
+	select WIFI_HAS_2_4_GHZ
+	select WIFI_HAS_5_GHZ if SOC_CC3235SF
 	help
 	  This offloaded wifi driver is deprecated and will be removed
 	  in a future release. It is currently scheduled to be removed in
