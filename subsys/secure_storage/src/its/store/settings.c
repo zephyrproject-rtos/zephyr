@@ -60,6 +60,11 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
 
 	secure_storage_its_store_settings_get_name(uid, name);
 
+	/* The ITS may be used before the initialization function above has run. */
+	if (init_settings_subsys() != 0) {
+		return PSA_ERROR_STORAGE_FAILURE;
+	}
+
 	ret = settings_save_one(name, data, data_length);
 	LOG_DBG("%s %s with %zu bytes. (%d)",
 		(ret == 0) ? "Saved" : "Failed to save", name, data_length, ret);
@@ -100,6 +105,11 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 
 	secure_storage_its_store_settings_get_name(uid, name);
 
+	/* The ITS may be used before the initialization function above has run. */
+	if (init_settings_subsys() != 0) {
+		return PSA_ERROR_STORAGE_FAILURE;
+	}
+
 	settings_load_subtree_direct(name, load_direct_setting, &load_params);
 	if (load_params.ret > 0) {
 		*data_length = load_params.ret;
@@ -120,6 +130,11 @@ psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
 	char name[SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE];
 
 	secure_storage_its_store_settings_get_name(uid, name);
+
+	/* The ITS may be used before the initialization function above has run. */
+	if (init_settings_subsys() != 0) {
+		return PSA_ERROR_STORAGE_FAILURE;
+	}
 
 	ret = settings_delete(name);
 	LOG_DBG("%s %s. (%d)", ret ? "Failed to delete" : "Deleted", name, ret);
