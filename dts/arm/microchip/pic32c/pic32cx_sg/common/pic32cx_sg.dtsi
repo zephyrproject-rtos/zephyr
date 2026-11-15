@@ -364,6 +364,32 @@
 			status = "disabled";
 		};
 
+		can0: can@42000000 {
+			compatible = "atmel,sam0-can";
+			reg = <0x42000000 0x400>;
+			interrupts = <78 0>, <78 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_CAN0>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_CAN0>;
+			clock-names = "GCLK", "MCLK";
+			bosch,mram-cfg = <0x0 128 64 64 64 0 32 32>;
+			zephyr,disabling-power-states = <&idle>;
+			status = "disabled";
+		};
+
+		can1: can@42000400 {
+			compatible = "atmel,sam0-can";
+			reg = <0x42000400 0x400>;
+			interrupts = <79 0>, <79 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_CAN1>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_CAN1>;
+			clock-names = "GCLK", "MCLK";
+			bosch,mram-cfg = <0x0 128 64 64 64 0 32 32>;
+			zephyr,disabling-power-states = <&idle>;
+			status = "disabled";
+		};
+
 		gmac: ethernet@42000800 {
 			compatible = "microchip,gmac-g1-eth";
 			reg = <0x42000800 0x400>;
