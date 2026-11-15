@@ -116,6 +116,36 @@ static inline void ws2812_reset_delay(uint16_t delay)
 	k_usleep(delay);
 }
 
+/*
+ * Send the bitstream serialized into the SPI buffer up to px_buf and
+ * bit_mask, and latch it.
+ */
+static int ws2812_spi_write(const struct ws2812_spi_cfg *cfg,
+			    uint8_t *px_buf, uint8_t bit_mask)
+{
+	struct spi_buf buf = {
+		.buf = cfg->px_buf,
+		.len = px_buf - cfg->px_buf,
+	};
+	const struct spi_buf_set tx = {
+		.buffers = &buf,
+		.count = 1
+	};
+	int rc;
+
+	/* Clear unused padding bits in the final SPI byte. */
+	if (bit_mask != BIT(SPI_FRAME_BITS - 1)) {
+		*px_buf &= ~((bit_mask << 1) - 1);
+		buf.len++;
+	}
+
+	/* Display the pixel data. */
+	rc = spi_write_dt(&cfg->bus, &tx);
+	ws2812_reset_delay(cfg->reset_delay);
+
+	return rc;
+}
+
 static int ws2812_strip_update_rgb(const struct device *dev,
 				   struct led_rgb *pixels,
 				   size_t num_pixels)
@@ -123,21 +153,9 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	const struct ws2812_spi_cfg *cfg = dev_cfg(dev);
 	const uint8_t one = cfg->one_frame, zero = cfg->zero_frame;
 	const uint8_t bits_per_symbol = cfg->bits_per_symbol;
-	const size_t total_bits = num_pixels * cfg->num_colors *
-				  BITS_PER_COLOR_CHANNEL * bits_per_symbol;
-	const size_t buf_len = DIV_ROUND_UP(total_bits, SPI_FRAME_BITS);
-	struct spi_buf buf = {
-		.buf = cfg->px_buf,
-		.len = buf_len,
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &buf,
-		.count = 1
-	};
 	uint8_t *px_buf = cfg->px_buf;
 	uint8_t bit_mask = BIT(SPI_FRAME_BITS - 1);
 	size_t i;
-	int rc;
 
 	/*
 	 * Convert pixel data into an SPI bitstream. The bitstream contains
@@ -173,18 +191,34 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 		}
 	}
 
-	/* Clear unused padding bits in the final SPI byte. */
-	if (bit_mask != BIT(SPI_FRAME_BITS - 1)) {
-		*px_buf &= ~((bit_mask << 1) - 1);
+	return ws2812_spi_write(cfg, px_buf, bit_mask);
+}
+
+static int ws2812_strip_update_channels(const struct device *dev,
+					uint8_t *channels,
+					size_t num_channels)
+{
+	const struct ws2812_spi_cfg *cfg = dev_cfg(dev);
+	const uint8_t one = cfg->one_frame, zero = cfg->zero_frame;
+	const uint8_t bits_per_symbol = cfg->bits_per_symbol;
+	uint8_t *px_buf = cfg->px_buf;
+	uint8_t bit_mask = BIT(SPI_FRAME_BITS - 1);
+	size_t i;
+
+	if (num_channels > cfg->length * cfg->num_colors) {
+		return -ERANGE;
 	}
 
 	/*
-	 * Display the pixel data.
+	 * Convert channel data into an SPI bitstream. The channels are
+	 * already in on-wire order, so the color mapping is not consulted.
 	 */
-	rc = spi_write_dt(&cfg->bus, &tx);
-	ws2812_reset_delay(cfg->reset_delay);
+	for (i = 0; i < num_channels; i++) {
+		ws2812_spi_ser(channels[i], one, zero, bits_per_symbol,
+			       &px_buf, &bit_mask);
+	}
 
-	return rc;
+	return ws2812_spi_write(cfg, px_buf, bit_mask);
 }
 
 static size_t ws2812_strip_length(const struct device *dev)
@@ -224,6 +258,7 @@ static int ws2812_spi_init(const struct device *dev)
 
 static DEVICE_API(led_strip, ws2812_spi_api) = {
 	.update_rgb = ws2812_strip_update_rgb,
+	.update_channels = ws2812_strip_update_channels,
 	.length = ws2812_strip_length,
 };
 
