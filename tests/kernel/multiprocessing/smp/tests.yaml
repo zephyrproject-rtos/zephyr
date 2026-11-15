@@ -31,3 +31,16 @@ tests:
       - qemu_riscv32/qemu_virt_riscv32/aia-direct/smp # no custom ROM offset
     extra_configs:
       - CONFIG_ROM_START_OFFSET=0x400
+
+  kernel.multiprocessing.smp.xip:
+    tags:
+      - smp
+    ignore_faults: true
+    platform_allow:
+      - fvp_baser_aemv8r/fvp_aemv8r_aarch32/smp
+    integration_platforms:
+      - fvp_baser_aemv8r/fvp_aemv8r_aarch32/smp
+    extra_configs:
+      - CONFIG_XIP=y
+    extra_args:
+      - FILE_SUFFIX=xip

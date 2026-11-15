@@ -21,6 +21,13 @@ install it on your host PC.
 
 The current minimum required version of "Armv8-R AEM FVP" is 11.16.16.
 
+AArch32 images executing in place (:kconfig:option:`CONFIG_XIP`) must be linked
+below 0x80000000. The MPU is disabled at reset, and the Armv8-R default memory
+map treats higher addresses, including the flash at 0x88000000, as Device
+memory, from which instructions cannot be fetched. The
+``kernel.multiprocessing.smp.xip`` test scenario uses an overlay that executes
+the image in place from a 1 MiB region at the reset address.
+
 Hardware
 ********
 
