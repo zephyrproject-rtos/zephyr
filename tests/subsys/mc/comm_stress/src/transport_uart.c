@@ -44,14 +44,14 @@ static uint32_t next_random(void)
 	return random_state;
 }
 
-static void uart_rx_callback(const struct device *device, void *user_data)
+static void uart_rx_callback(const struct device *dev, void *user_data)
 {
 	uint8_t bytes[64];
 
 	ARG_UNUSED(user_data);
-	uart_irq_update(device);
-	while (uart_irq_rx_ready(device)) {
-		int length = uart_fifo_read(device, bytes, sizeof(bytes));
+	uart_irq_update(dev);
+	while (uart_irq_rx_ready(dev)) {
+		int length = uart_fifo_read(dev, bytes, sizeof(bytes));
 
 		if (length <= 0) {
 			break;
