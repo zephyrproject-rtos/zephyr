@@ -639,6 +639,14 @@ Wi-Fi
   ``atmel,winc1500`` devicetree binding and the ``adafruit_winc1500`` shield. It was deprecated
   in Zephyr 4.4 for lack of a maintainer and has no in-tree replacement.
 
+* Wi-Fi drivers now advertise the frequency bands their hardware supports by selecting
+  :kconfig:option:`CONFIG_WIFI_HAS_SUB_1_GHZ`, :kconfig:option:`CONFIG_WIFI_HAS_2_4_GHZ`,
+  :kconfig:option:`CONFIG_WIFI_HAS_5_GHZ` and :kconfig:option:`CONFIG_WIFI_HAS_6_GHZ`.
+  :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_NO_6GHZ` now defaults to ``y`` unless
+  :kconfig:option:`CONFIG_WIFI_HAS_6_GHZ` is enabled, so out-of-tree drivers that do not select
+  it lose 6 GHz scanning and association. Out-of-tree Wi-Fi drivers must select the
+  ``CONFIG_WIFI_HAS_*`` symbols for every band their hardware supports.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
