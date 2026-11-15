@@ -242,7 +242,8 @@ Other notable changes
     interrupts use the interrupt stack, which fixes return address corruption by a nested IRQ
     (:github:`122601`).
 
-  * ARM Cortex-A/R: :ref:`FPU sharing <float_v2>` is supported on SMP systems.
+  * ARM Cortex-A/R: :ref:`FPU sharing <float_v2>` is supported on SMP systems, and userspace
+    on SMP Cortex-R systems.
 
 * Bluetooth
 
