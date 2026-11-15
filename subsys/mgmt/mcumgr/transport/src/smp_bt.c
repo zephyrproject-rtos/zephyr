@@ -90,7 +90,8 @@ LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
 static ssize_t smp_bt_chr_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				const void *buf, uint16_t len, uint16_t offset, uint8_t flags);
 
-static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value);
+static ssize_t smp_bt_ccc_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				uint16_t value);
 
 #define SMP_BT_ATTRS									\
 	BT_GATT_PRIMARY_SERVICE(SMP_BT_SVC_UUID),					\
@@ -99,8 +100,7 @@ static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value);
 			       BT_GATT_CHRC_NOTIFY,					\
 			       SMP_GATT_PERM & SMP_GATT_PERM_WRITE_MASK,		\
 			       NULL, smp_bt_chr_write, NULL),				\
-	BT_GATT_CCC(smp_bt_ccc_changed,							\
-		    SMP_GATT_PERM),
+	BT_GATT_CCC_WITH_WRITE_CB(NULL, smp_bt_ccc_write, SMP_GATT_PERM),
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
 /* Verification of SMP Connection Parameters configuration that is not possible in the Kconfig. */
@@ -171,6 +171,11 @@ struct conn_param_data {
 static uint8_t next_id;
 static struct smp_transport smp_bt_transport;
 static struct conn_param_data conn_data[CONFIG_BT_MAX_CONN];
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY
+static K_MUTEX_DEFINE(smp_bt_reassembly_mutex);
+static bool reassembly_is_request;
+#endif
 
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
@@ -325,78 +330,103 @@ static void conn_param_smp_enable(struct bt_conn *conn)
 }
 #endif
 
-/**
- * Write handler for the SMP characteristic; processes an incoming SMP request.
- */
-static ssize_t smp_bt_chr_write(struct bt_conn *conn,
-				const struct bt_gatt_attr *attr,
-				const void *buf, uint16_t len, uint16_t offset,
-				uint8_t flags)
-{
-	struct conn_param_data *cpd = conn_param_data_get(conn);
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY
-	int ret;
-	bool started;
+/* The reassembly mutex must be held while inspecting or dropping the packet. */
+static void smp_bt_reassembly_drop(struct bt_conn *conn, bool request_only)
+{
+	struct smp_bt_user_data *ud = smp_reassembly_get_ud(&smp_bt_transport);
 
-	if (cpd == NULL) {
-		LOG_ERR("NULL cpd object for connection %p", (void *)conn);
-		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	if ((ud != NULL) && (ud->conn == conn) && (!request_only || reassembly_is_request)) {
+		ud->conn = NULL;
+		ud->id = 0;
+		(void)smp_reassembly_drop(&smp_bt_transport);
+	}
+}
+
+static int smp_bt_reassemble(struct bt_conn *conn, const void *buf, uint16_t len, bool request)
+{
+	struct conn_param_data *cpd;
+	struct smp_bt_user_data *ud;
+	int ret = k_mutex_lock(&smp_bt_reassembly_mutex, K_FOREVER);
+
+	if (ret != 0) {
+		return ret;
 	}
 
-	started = (smp_reassembly_expected(&smp_bt_transport) >= 0);
+	cpd = conn_param_data_get(conn);
+	if ((cpd == NULL) || (cpd->id == 0)) {
+		ret = -ENOTCONN;
+		goto out;
+	}
 
-	LOG_DBG("started = %s, buf len = %d", started ? "true" : "false", len);
-	LOG_HEXDUMP_DBG(buf, len, "buf = ");
+	ud = smp_reassembly_get_ud(&smp_bt_transport);
+	if ((ud != NULL) &&
+	    ((ud->conn != conn) || (ud->id != cpd->id) || (reassembly_is_request != request))) {
+		ret = -EBUSY;
+		goto out;
+	}
 
 	ret = smp_reassembly_collect(&smp_bt_transport, buf, len);
-	LOG_DBG("collect = %d", ret);
-
 	/*
 	 * Collection can fail only due to failing to allocate memory or by receiving
 	 * more data than expected.
 	 */
-	if (ret == -ENOMEM) {
-		/* Failed to collect the buffer */
-		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
-	} else if (ret < 0) {
-		/* Failed operation on already allocated buffer, drop the packet and report
-		 * error.
-		 */
-		struct smp_bt_user_data *ud =
-			(struct smp_bt_user_data *)smp_reassembly_get_ud(&smp_bt_transport);
-
-		if (ud != NULL) {
-			ud->conn = NULL;
-			ud->id = 0;
+	if (ret < 0) {
+		if (ret != -ENOMEM) {
+			/* Failed operation on already allocated buffer, drop the packet and
+			 * report error.
+			 */
+			smp_bt_reassembly_drop(conn, false);
 		}
-
-		smp_reassembly_drop(&smp_bt_transport);
-		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		goto out;
 	}
 
-	if (!started) {
+	if (ud == NULL) {
 		/*
 		 * Transport context is attached to the buffer after first fragment
 		 * has been collected.
 		 */
-		struct smp_bt_user_data *ud = smp_reassembly_get_ud(&smp_bt_transport);
-
-#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
-		conn_param_smp_enable(conn);
-#endif
-
+		ud = smp_reassembly_get_ud(&smp_bt_transport);
 		ud->conn = conn;
 		ud->id = cpd->id;
+		reassembly_is_request = request;
+
+#if defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
+		if (request) {
+			conn_param_smp_enable(conn);
+		}
+#endif
 	}
 
 	/* No more bytes are expected for this packet */
 	if (ret == 0) {
-		smp_reassembly_complete(&smp_bt_transport, false);
+		ret = smp_reassembly_complete(&smp_bt_transport, false);
 	}
 
-	/* BT expects entire len to be consumed */
+out:
+	(void)k_mutex_unlock(&smp_bt_reassembly_mutex);
+	return ret;
+}
+#endif
+
+/**
+ * Write handler for the SMP characteristic; processes an incoming SMP request.
+ */
+static ssize_t smp_bt_chr_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY
+	int ret = smp_bt_reassemble(conn, buf, len, true);
+
+	if ((ret == -ENOMEM) || (ret == -EBUSY) || (ret == -ENOTCONN)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	} else if (ret < 0) {
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	}
+
 	return len;
 #else
+	struct conn_param_data *cpd = conn_param_data_get(conn);
 	struct smp_bt_user_data *ud;
 	struct net_buf *nb;
 
@@ -434,18 +464,20 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 #endif
 }
 
-static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static ssize_t smp_bt_ccc_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				uint16_t value)
 {
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY
-	if (smp_reassembly_expected(&smp_bt_transport) >= 0 && value == 0) {
-		struct smp_bt_user_data *ud = smp_reassembly_get_ud(&smp_bt_transport);
+	if ((value & BT_GATT_CCC_NOTIFY) == 0) {
+		if (k_mutex_lock(&smp_bt_reassembly_mutex, K_FOREVER) != 0) {
+			return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+		}
 
-		ud->conn = NULL;
-		ud->id = 0;
-
-		smp_reassembly_drop(&smp_bt_transport);
+		smp_bt_reassembly_drop(conn, true);
+		(void)k_mutex_unlock(&smp_bt_reassembly_mutex);
 	}
 #endif
+	return sizeof(value);
 }
 
 int smp_bt_notify(struct bt_conn *conn, const void *data, uint16_t len)
@@ -613,72 +645,25 @@ int smp_bt_unregister(void)
 static uint8_t smp_bt_bridge_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
 				    const void *data, uint16_t len)
 {
-	struct conn_param_data *cpd = conn_param_data_get(conn);
-
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY
-	int ret;
-	bool started;
-	const uint8_t *buf = (uint8_t *)data;
-
-	if (!data) {
+	if (data == NULL) {
 		LOG_INF("Outgoing CCC changed to 0");
+		if (k_mutex_lock(&smp_bt_reassembly_mutex, K_FOREVER) == 0) {
+			if (!reassembly_is_request) {
+				smp_bt_reassembly_drop(conn, false);
+			}
+			(void)k_mutex_unlock(&smp_bt_reassembly_mutex);
+		}
 		params->value_handle = 0U;
 		(void)bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		return BT_GATT_ITER_STOP;
 	}
 
-	if (cpd == NULL) {
-		LOG_ERR("NULL cpd object for connection %p", conn);
+	if (smp_bt_reassemble(conn, data, len, false) == -ENOTCONN) {
 		return BT_GATT_ITER_STOP;
 	}
-
-	started = (smp_reassembly_expected(&smp_bt_transport) >= 0);
-
-	LOG_DBG("started = %s, buf len = %d", started ? "true" : "false", len);
-	LOG_HEXDUMP_DBG(buf, len, "buf = ");
-
-	ret = smp_reassembly_collect(&smp_bt_transport, buf, len);
-	LOG_DBG("collect = %d", ret);
-
-	/*
-	 * Collection can fail only due to failing to allocate memory or by receiving
-	 * more data than expected.
-	 */
-	if (ret == -ENOMEM) {
-		/* Failed to collect the buffer */
-		return BT_GATT_ITER_CONTINUE;
-	} else if (ret < 0) {
-		/* Failed operation on already allocated buffer, drop the packet and report
-		 * error.
-		 */
-		struct smp_bt_user_data *ud =
-			(struct smp_bt_user_data *)smp_reassembly_get_ud(&smp_bt_transport);
-
-		if (ud != NULL) {
-			ud->conn = NULL;
-			ud->id = 0;
-		}
-
-		smp_reassembly_drop(&smp_bt_transport);
-		return BT_GATT_ITER_CONTINUE;
-	}
-
-	if (!started) {
-		/*
-		 * Transport context is attached to the buffer after first fragment
-		 * has been collected.
-		 */
-		struct smp_bt_user_data *ud = smp_reassembly_get_ud(&smp_bt_transport);
-
-		ud->conn = conn;
-		ud->id = cpd->id;
-	}
-
-	/* No more bytes are expected for this packet */
-	if (ret == 0) {
-		smp_reassembly_complete(&smp_bt_transport, false);
-	}
 #else
+	struct conn_param_data *cpd = conn_param_data_get(conn);
 	struct smp_bt_user_data *ud;
 	struct net_buf *nb;
 
@@ -851,7 +836,15 @@ static void connected(struct bt_conn *conn, uint8_t err)
 /* BT disconnected callback. */
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct conn_param_data *cpd = conn_param_data_get(conn);
+	struct conn_param_data *cpd;
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY
+	if (k_mutex_lock(&smp_bt_reassembly_mutex, K_FOREVER) != 0) {
+		LOG_ERR("Failed to lock Bluetooth SMP reassembly");
+		return;
+	}
+#endif
+	cpd = conn_param_data_get(conn);
 
 	/* Invalidate the session ID before sweeping the queue so that pending
 	 * requests of this connection are dropped; cpd->conn must stay set until
@@ -860,6 +853,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	if (cpd != NULL) {
 		cpd->id = 0;
 	}
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY
+	smp_bt_reassembly_drop(conn, false);
+	(void)k_mutex_unlock(&smp_bt_reassembly_mutex);
+#endif
 
 	/* Remove all pending requests from this device which have yet to be processed from the
 	 * FIFO (for this specific connection).
@@ -1118,11 +1116,22 @@ static void smp_bt_bridge_disconnect(struct smp_transport_bridge *bridge, bool o
 			int rc = bt_conn_disconnect(cpd->conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 			if (rc != 0) {
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY
+				if (k_mutex_lock(&smp_bt_reassembly_mutex, K_FOREVER) != 0) {
+					LOG_ERR("Failed to lock Bluetooth SMP reassembly");
+					return;
+				}
+				smp_bt_reassembly_drop(cpd->conn, false);
+#endif
+
 				/* Clear cpd. */
 				bt_conn_drop(&cpd->conn);
 				cpd->id = 0;
 				cpd->conn = NULL;
 				cpd->state = 0;
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY
+				(void)k_mutex_unlock(&smp_bt_reassembly_mutex);
+#endif
 				k_sem_give(&cpd->smp_notify_sem);
 				LOG_ERR("Failed to disconnect BT MCUmgr outgoing bridge: %d", rc);
 			}
