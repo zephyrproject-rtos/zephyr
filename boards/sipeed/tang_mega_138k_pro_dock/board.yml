@@ -6,3 +6,4 @@ board:
     - name: ae350_a25
       variants:
         - name: demo
+        - name: litex
