@@ -1535,6 +1535,9 @@ ZTEST(dhcpv6_tests, test_confirm_exchange_after_iface_down)
 		.request_prefix = false,
 	};
 	struct net_if_addr *addr;
+	uint64_t lease_expire;
+	uint64_t lease_t1;
+	uint64_t lease_t2;
 	int ret;
 
 	test_ctx.reset_dhcpv6 = true;
@@ -1542,6 +1545,9 @@ ZTEST(dhcpv6_tests, test_confirm_exchange_after_iface_down)
 	       sizeof(test_ctx.iface->config.dhcpv6));
 
 	test_dhcpv6_start_and_enter_bound(&params);
+	lease_expire = test_ctx.iface->config.dhcpv6.expire;
+	lease_t1 = test_ctx.iface->config.dhcpv6.t1;
+	lease_t2 = test_ctx.iface->config.dhcpv6.t2;
 	set_dhcpv6_test_fn(test_confirm_expect_confirm_send_reply);
 
 	net_if_down(test_ctx.iface);
@@ -1552,6 +1558,67 @@ ZTEST(dhcpv6_tests, test_confirm_exchange_after_iface_down)
 
 	addr = net_if_ipv6_addr_lookup_by_iface(test_ctx.iface, &test_addr);
 	zassert_not_null(addr, "Address not configured on the interface");
+	zassert_equal(test_ctx.iface->config.dhcpv6.expire, lease_expire,
+		      "Confirm changed the lease expiration");
+	zassert_equal(test_ctx.iface->config.dhcpv6.t1, lease_t1, "Confirm changed T1");
+	zassert_equal(test_ctx.iface->config.dhcpv6.t2, lease_t2, "Confirm changed T2");
+	zassert_equal(test_ctx.iface->config.dhcpv6.timeout, lease_t1, "Renew not scheduled at T1");
+}
+
+static void check_confirm_timeout_at_lease_expiration(uint64_t delay)
+{
+	struct net_if *iface = test_ctx.iface;
+	struct net_if_dhcpv6 *dhcpv6 = &iface->config.dhcpv6;
+
+	set_test_addr_on_iface(iface);
+	dhcpv6->params.request_prefix = false;
+	dhcpv6->expire = k_uptime_get() + DHCPV6_CNF_TIMEOUT / 2;
+	dhcpv6_enter_state(iface, NET_DHCPV6_CONFIRMING);
+	zassert_ok(k_sem_take(&test_ctx.tx_sem, K_SECONDS(1)), "Confirm was not sent");
+	zassert_equal(dhcpv6->timeout, dhcpv6->expire, "Confirm timer exceeded lease");
+
+	dhcpv6_manage_timers(iface, dhcpv6->expire + delay);
+	zassert_ok(k_sem_take(&test_ctx.tx_sem, K_SECONDS(1)), "Solicit was not sent");
+	zassert_equal(dhcpv6->state, NET_DHCPV6_SOLICITING, "Expired lease did not restart");
+}
+
+ZTEST(dhcpv6_tests, test_confirm_timeout_at_lease_expiration)
+{
+	check_confirm_timeout_at_lease_expiration(0);
+}
+
+ZTEST(dhcpv6_tests, test_confirm_timeout_after_lease_expiration)
+{
+	check_confirm_timeout_at_lease_expiration(1);
+}
+
+ZTEST(dhcpv6_tests, test_confirm_timeout_preserves_valid_lease)
+{
+	struct net_if *iface = test_ctx.iface;
+	struct net_if_dhcpv6 *dhcpv6 = &iface->config.dhcpv6;
+	uint64_t now = k_uptime_get();
+	uint64_t expire = now + 4 * DHCPV6_CNF_MAX_RD;
+	uint64_t t1 = now + 2 * DHCPV6_CNF_MAX_RD;
+	uint64_t t2 = now + 3 * DHCPV6_CNF_MAX_RD;
+
+	dhcpv6->addr = test_addr;
+	zassert_not_null(net_if_ipv6_addr_add(iface, &test_addr, NET_ADDR_DHCP, 60));
+	dhcpv6->params.request_addr = true;
+	dhcpv6->params.request_prefix = false;
+	dhcpv6->expire = expire;
+	dhcpv6->t1 = t1;
+	dhcpv6->t2 = t2;
+	dhcpv6_enter_state(iface, NET_DHCPV6_CONFIRMING);
+	zassert_ok(k_sem_take(&test_ctx.tx_sem, K_SECONDS(1)), "Confirm was not sent");
+	dhcpv6_manage_timers(iface, dhcpv6->exchange_start + DHCPV6_CNF_MAX_RD);
+	zassert_equal(dhcpv6->state, NET_DHCPV6_BOUND, "Valid lease was not retained");
+	zassert_equal(dhcpv6->expire, expire, "Confirm changed lease expiration");
+	zassert_equal(dhcpv6->t1, t1, "Confirm changed T1");
+	zassert_equal(dhcpv6->t2, t2, "Confirm changed T2");
+	zassert_equal(dhcpv6->timeout, t1, "Renew not scheduled at T1");
+	zassert_not_null(net_if_ipv6_addr_lookup_by_iface(iface, &test_addr));
+	zassert_not_equal(k_sem_take(&test_ctx.tx_sem, K_NO_WAIT), 0,
+			  "Confirm timeout sent an unexpected packet");
 }
 
 static void test_rebind_expect_rebind_send_reply(struct net_if *iface,
