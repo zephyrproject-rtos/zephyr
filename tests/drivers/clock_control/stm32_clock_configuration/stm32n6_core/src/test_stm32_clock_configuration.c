@@ -13,9 +13,9 @@ ZTEST(stm32n6_clock_core_config, test_cpuclk_freq)
 {
 	uint32_t cpuclk_freq = HAL_RCC_GetCpuClockFreq();
 
-	zassert_equal(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, cpuclk_freq,
+	zassert_equal(SystemCoreClock, cpuclk_freq,
 		      "Expected cpuclk_freq: %d. Actual cupclk_freq: %d",
-		      CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, cpuclk_freq);
+		      SystemCoreClock, cpuclk_freq);
 }
 
 ZTEST(stm32n6_clock_core_config, test_cpuclk_src)
