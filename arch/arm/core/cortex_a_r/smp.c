@@ -10,6 +10,7 @@
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <ipi.h>
+#include <kernel_arch_func.h>
 #include "boot.h"
 #include <zephyr/toolchain/gcc.h>
 #include <zephyr/platform/hooks.h>
@@ -207,6 +208,10 @@ void arch_secondary_cpu_init(void)
 
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidruro((uintptr_t)&_kernel.cpus[cpu_num]);
+
+#if defined(CONFIG_CPU_HAS_FPU)
+	z_arm_floating_point_init();
+#endif
 
 #ifdef CONFIG_ARM_MPU
 
