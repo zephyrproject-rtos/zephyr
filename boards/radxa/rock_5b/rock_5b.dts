@@ -7,6 +7,7 @@
 
 #include <arm64/rockchip/rk3588.dtsi>
 #include "../common/rk3588_rock_5b_common.dtsi"
+#include "rock_5b-pinctrl.dtsi"
 
 / {
 	compatible = "radxa,rock-5b", "rockchip,rk3588";
