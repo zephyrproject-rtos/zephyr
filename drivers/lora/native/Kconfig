@@ -2,5 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 rsource "Kconfig.fake"
+rsource "common/Kconfig"
 rsource "lr11xx/Kconfig"
 rsource "sx126x/Kconfig"

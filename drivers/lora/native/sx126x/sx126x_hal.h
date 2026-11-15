@@ -10,6 +10,8 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
 
+#include "lora_radio.h"
+
 /* STM32WL PA output selection */
 #define SX126X_PA_OUTPUT_RFO_LP 0
 #define SX126X_PA_OUTPUT_RFO_HP 1
@@ -25,6 +27,9 @@ enum sx126x_variants {
 };
 
 struct sx126x_hal_config {
+	/* Must be first */
+	struct lora_radio_config common;
+
 	struct spi_dt_spec spi;
 #ifdef CONFIG_LORA_SX126X_NATIVE_STANDALONE
 	struct gpio_dt_spec reset;

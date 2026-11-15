@@ -3,6 +3,8 @@
 
 zephyr_library()
 
+zephyr_library_include_directories(../common)
+
 zephyr_library_sources_ifdef(CONFIG_LORA_SX126X_NATIVE
   sx126x.c
   sx126x_hal_common.c

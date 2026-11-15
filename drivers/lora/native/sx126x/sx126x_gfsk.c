@@ -238,7 +238,7 @@ int sx126x_lora_config_gfsk(const struct device *dev, const struct lora_modem_co
 		return ret;
 	}
 
-	ret = sx126x_config_begin(dev);
+	ret = lora_radio_config_begin(dev);
 	if (ret < 0) {
 		return ret;
 	}
@@ -271,6 +271,6 @@ int sx126x_lora_config_gfsk(const struct device *dev, const struct lora_modem_co
 		gfsk->bitrate, gfsk->freq_deviation, gfsk->bandwidth, gfsk->tx_power);
 
 out:
-	sx126x_config_end(dev, ret);
+	lora_radio_config_end(dev, ret);
 	return ret;
 }
