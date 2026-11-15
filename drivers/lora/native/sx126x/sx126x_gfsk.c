@@ -267,11 +267,10 @@ int sx126x_lora_config_gfsk(const struct device *dev, const struct lora_modem_co
 	}
 
 	data->gfsk = true;
-	data->config_valid = true;
 	LOG_DBG("Config: GFSK freq=%u, br=%u, fdev=%u, bw=%u, power=%d", gfsk->frequency,
 		gfsk->bitrate, gfsk->freq_deviation, gfsk->bandwidth, gfsk->tx_power);
 
 out:
-	sx126x_config_end(dev);
+	sx126x_config_end(dev, ret);
 	return ret;
 }
