@@ -212,4 +212,7 @@
 		reg-shift = <2>;
 		status = "disabled";
 	};
+
 };
+
+#include "rk3588-pinctrl.dtsi"
