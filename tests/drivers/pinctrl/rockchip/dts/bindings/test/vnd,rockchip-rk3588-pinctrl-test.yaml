@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+description: RK3588 pinctrl state expansion test consumer
+
+compatible: "vnd,rockchip-rk3588-pinctrl-test"
+
+include: pinctrl-device.yaml

@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_ROCKCHIP
+	bool "Rockchip RK3588 pin controller"
+	default y
+	depends on DT_HAS_ROCKCHIP_RK3588_PINCTRL_ENABLED
+	depends on SOC_RK3588
+	help
+	  Enable the Rockchip RK3588 IOC pin controller.
