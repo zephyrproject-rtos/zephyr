@@ -770,6 +770,94 @@ static int spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
 }
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+/*
+ * Full-duplex controller polling: true when no RX data is to be stored for the
+ * next frame (RX buffers exhausted or a NULL RX buffer).
+ */
+static inline bool spi_stm32_tx_only(struct spi_stm32_data *data)
+{
+	return data->tx_len != 0U && !spi_context_rx_buf_on(&data->ctx);
+}
+
+/*
+ * Full-duplex controller polling: number of frames up to the end of the current
+ * RX buffer, or all remaining frames when the RX buffers are exhausted.
+ */
+static inline uint32_t spi_stm32_segment_frames(struct spi_stm32_data *data)
+{
+	struct spi_context *ctx = &data->ctx;
+
+	return spi_context_rx_on(ctx) ? MIN((uint32_t)ctx->rx_len, data->tx_len) : data->tx_len;
+}
+
+/*
+ * Drop the frames received during a TX-only segment once the bus is idle and
+ * clear the resulting overrun.
+ */
+static void spi_stm32_drop_rx_frames(SPI_TypeDef *spi, struct spi_stm32_data *data,
+				     uint32_t frames)
+{
+	/* The last frame is still being shifted: wait for it to be received */
+	while (ll_tx_is_not_full(spi) == 0U) {
+		/* NOP */
+	}
+#ifdef CONFIG_SPI_STM32_ERRATA_BUSY
+	(void)WAIT_FOR(ll_spi_is_busy(spi) == 0U, CONFIG_SPI_STM32_BUSY_FLAG_TIMEOUT, NULL);
+#else
+	while (ll_spi_is_busy(spi) != 0U) {
+		/* NOP */
+	}
+#endif /* CONFIG_SPI_STM32_ERRATA_BUSY */
+
+	while (ll_rx_is_not_empty(spi) != 0U) {
+		(void)LL_SPI_ReceiveData8(spi);
+	}
+	LL_SPI_ClearFlag_OVR(spi);
+
+	spi_context_update_rx(&data->ctx, bits2bytes(data->ctx.config->operation), frames);
+	data->rx_len -= frames;
+}
+
+/*
+ * Full-duplex controller polling: shift the frames up to the next RX buffer
+ * back to back, without waiting for each received frame.
+ * assumes no fifo and bits reset before starting transfer.
+ */
+static void spi_stm32_shift_m_tx_only(SPI_TypeDef *spi, struct spi_stm32_data *data)
+{
+	const uint32_t frames = spi_stm32_segment_frames(data);
+
+	for (uint32_t i = 0U; i < frames; i++) {
+		data->tx_len -= spi_stm32_send_next_frame(spi, data, 0U);
+		while (ll_tx_is_not_full(spi) == 0U) {
+			/* NOP */
+		}
+	}
+
+	spi_stm32_drop_rx_frames(spi, data, frames);
+}
+
+/*
+ * Full-duplex controller polling: shift the frames up to the end of the current
+ * RX buffer, reading each received frame before sending the next one.
+ * assumes no fifo and bits reset before starting transfer.
+ */
+static void spi_stm32_shift_m_tx_rx(SPI_TypeDef *spi, struct spi_stm32_data *data)
+{
+	const uint32_t frames = spi_stm32_segment_frames(data);
+
+	for (uint32_t i = 0U; i < frames; i++) {
+		data->tx_len -= spi_stm32_send_next_frame(spi, data, 0U);
+
+		while (ll_rx_is_not_empty(spi) == 0U) {
+			/* NOP */
+		}
+		data->rx_len -= spi_stm32_read_next_frame(spi, data, 0U);
+	}
+}
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 /* Shift a SPI frame as controller. */
 static int spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
@@ -817,6 +905,17 @@ static int spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 		}
 	} else { /* CONFIG_SPI_STM32_INTERRUPT */
 		/* Polling case */
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+		if (dir == STM32_SPI_FULL_DUPLEX) {
+			if (spi_stm32_tx_only(data)) {
+				spi_stm32_shift_m_tx_only(spi, data);
+			} else {
+				spi_stm32_shift_m_tx_rx(spi, data);
+			}
+			return 0;
+		}
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 		if (dir != STM32_SPI_HALF_DUPLEX_RX && data->tx_len != 0U) {
 			while (!ll_tx_is_not_full(spi)) {
 				/* NOP */
