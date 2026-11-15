@@ -8,7 +8,8 @@
 #include <cmsis_core.h>
 #include <soc.h>
 
-#define DWT_CYCLES_PER_MS (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000U)
+/* The DWT cycle counter runs at the CPU clock, not at the system timer rate. */
+#define DWT_CYCLES_PER_MS (SystemCoreClock / 1000U)
 
 static uint32_t dwt_last;
 static uint32_t elapsed_ms;
