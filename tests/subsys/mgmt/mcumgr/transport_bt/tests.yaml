@@ -4,11 +4,22 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  tags:
+    - mcumgr
+    - bluetooth
 tests:
-  mgmt.mcumgr.transport.bt:
-    platform_allow:
-      - native_sim
-      - native_sim/native/64
-    tags:
-      - mcumgr
-      - bluetooth
+  mgmt.mcumgr.transport.bt: {}
+  mgmt.mcumgr.transport.bt.reassembly:
+    extra_configs:
+      - CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY=y
+  mgmt.mcumgr.transport.bt.client_reassembly:
+    extra_configs:
+      - CONFIG_BT_CENTRAL=y
+      - CONFIG_BT_GATT_CLIENT=y
+      - CONFIG_MCUMGR_GRP_TRANSPORT=y
+      - CONFIG_MCUMGR_TRANSPORT_BT_CLIENT=y
+      - CONFIG_MCUMGR_TRANSPORT_BT_REASSEMBLY=y
