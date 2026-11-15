@@ -50,6 +50,19 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 	ldrb r3, [r0, #_thread_offset_to_exception_depth]
 	strb r3, [r2, #_cpu_offset_to_exc_depth]
 
+#if defined(CONFIG_FPU_SHARING)
+	/*
+	 * Do this after the exception depth of the next thread is set, and
+	 * before the switch handle of the old one is stored: on SMP, this
+	 * saves the old thread's FP context, which another CPU may load as
+	 * soon as it sees that switch handle. lr is already saved.
+	 */
+	push {r0, r1}
+	mov r0, r1
+	bl z_arm_fpu_thread_context_switch
+	pop {r0, r1}
+#endif
+
 	/* save old thread into switch handle which is required by
 	 * z_sched_switch_spin().
 	 *
