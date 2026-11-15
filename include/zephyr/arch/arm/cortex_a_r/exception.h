@@ -43,8 +43,9 @@ struct __fpu_sf {
 /* Additional register state that is not stacked by hardware on exception
  * entry.
  *
- * These fields are ONLY valid in the ESF copy passed into z_arm_fatal_error().
- * When information for a member is unavailable, the field is set to zero.
+ * The fault paths fill these fields in the exception frame before calling
+ * z_arm_fatal_error(). They are not valid in other exception frames. msp
+ * and exc_return are always zero on Cortex-A/R.
  */
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 struct __extra_esf_info {

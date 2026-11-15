@@ -46,6 +46,16 @@ static ALWAYS_INLINE bool arch_is_in_nested_exception(const struct arch_esf *esf
 	return (_current_cpu->arch.exc_depth > 1U) ? (true) : (false);
 }
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+/*
+ * Stack space below the exception frame for the callee-saved registers
+ * and the extra exception info, which sits right below the frame as part
+ * of struct arch_esf.  Rounded up to keep the stack 8-byte aligned.
+ */
+#define Z_ARM_EXC_EXTRA_SIZE                                                                       \
+	ROUND_UP(sizeof(struct _callee_saved) + sizeof(struct __extra_esf_info), 8)
+#endif
+
 /**
  * @brief No current implementation where core dump is not supported
  *
