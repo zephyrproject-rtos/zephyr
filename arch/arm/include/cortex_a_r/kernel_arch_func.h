@@ -86,6 +86,13 @@ extern void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 void z_arm_floating_point_init(void);
 #endif
 
+extern void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread);
+
+#if defined(CONFIG_SMP) && defined(CONFIG_USERSPACE)
+/* Make the CPUs in cpu_bitmap reprogram the MPU for their current thread */
+void z_arm_mem_cfg_ipi(uint32_t cpu_bitmap);
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

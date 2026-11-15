@@ -11,6 +11,7 @@
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <ipi.h>
 #include <kernel_arch_func.h>
+#include <kuser.h>
 #include "boot.h"
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/toolchain/gcc.h>
@@ -229,6 +230,9 @@ void arch_secondary_cpu_init(void)
 	arm_gic_secondary_init();
 
 	irq_enable(SGI_SCHED_IPI);
+#ifdef CONFIG_USERSPACE
+	irq_enable(SGI_MMCFG_IPI);
+#endif
 
 	/*! TODO: FPU irq
 	 *  \todo FPU irq
@@ -299,6 +303,27 @@ void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 	send_ipi(SGI_SCHED_IPI, cpu_bitmap);
 }
 
+#ifdef CONFIG_USERSPACE
+static void mem_cfg_ipi_handler(const void *unused)
+{
+	ARG_UNUSED(unused);
+
+	/*
+	 * The sender holds z_mem_domain_lock and may not be done with the
+	 * change yet. Taking the lock makes the MPU reflect the final state.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
+
+	z_arm_configure_dynamic_mpu_regions(_current);
+	k_spin_unlock(&z_mem_domain_lock, key);
+}
+
+void z_arm_mem_cfg_ipi(uint32_t cpu_bitmap)
+{
+	send_ipi(SGI_MMCFG_IPI, cpu_bitmap);
+}
+#endif
+
 int arch_smp_init(void)
 {
 	cpu_map[0] = MPIDR_TO_CORE(GET_MPIDR());
@@ -309,6 +334,10 @@ int arch_smp_init(void)
 	 */
 	IRQ_CONNECT(SGI_SCHED_IPI, IRQ_DEFAULT_PRIORITY, sched_ipi_handler, NULL, 0);
 	irq_enable(SGI_SCHED_IPI);
+#ifdef CONFIG_USERSPACE
+	IRQ_CONNECT(SGI_MMCFG_IPI, IRQ_DEFAULT_PRIORITY, mem_cfg_ipi_handler, NULL, 0);
+	irq_enable(SGI_MMCFG_IPI);
+#endif
 
 	return 0;
 }

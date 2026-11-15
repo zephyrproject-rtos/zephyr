@@ -210,6 +210,7 @@ Other notable changes
 * Arm Cortex-A/R
 
   * FPU sharing is supported on SMP Cortex-A/R systems.
+  * Userspace is supported on SMP Cortex-R systems.
 
 * Bluetooth
 

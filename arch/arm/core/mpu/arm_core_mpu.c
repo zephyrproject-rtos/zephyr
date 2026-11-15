@@ -10,6 +10,11 @@
 #include <zephyr/kernel.h>
 
 #include "arm_core_mpu_dev.h"
+#if defined(CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API)
+#include <ipi.h>
+#include <kernel_arch_func.h>
+#include <zephyr/sys/barrier.h>
+#endif
 #include <zephyr/linker/linker-defs.h>
 
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
@@ -222,9 +227,20 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 	 * thread, the stack guard will be defined in front of the
 	 * thread->stack_info.start. On a K_USER thread, the guard is defined
 	 * in front of the privilege mode stack, thread->arch.priv_stack_start.
+	 *
+	 * With SMP, each CPU gets its own array, as several CPUs may switch
+	 * threads at the same time. The caller must have interrupts masked
+	 * so it stays on the CPU whose array it uses.
 	 */
+#if defined(CONFIG_SMP)
+	static struct z_arm_mpu_partition
+			cpu_dynamic_regions[CONFIG_MP_MAX_NUM_CPUS][_MAX_DYNAMIC_MPU_REGIONS_NUM];
+	struct z_arm_mpu_partition *dynamic_regions =
+			cpu_dynamic_regions[arch_curr_cpu()->id];
+#else
 	static struct z_arm_mpu_partition
 			dynamic_regions[_MAX_DYNAMIC_MPU_REGIONS_NUM];
+#endif
 
 	uint8_t region_num = 0U;
 
@@ -364,5 +380,74 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	return arm_core_mpu_buffer_validate(addr, size, write);
 }
+
+#if defined(CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API)
+/*
+ * With SMP, a thread affected by a memory domain change may run on
+ * another CPU, whose MPU was programmed when that thread was switched
+ * in. These functions make the other CPUs reprogram their MPU for their
+ * current thread. The current CPU picks up the change on its next
+ * context switch, as on uniprocessor builds.
+ *
+ * The kernel calls them with z_mem_domain_lock held, which the IPI
+ * handler takes, so the other CPUs see the domain once the change is
+ * complete. arch_mem_domain_partition_remove() is called before the
+ * partition is cleared, and any CPU may switch in a member thread
+ * meanwhile, hence the partition functions interrupt every other CPU.
+ */
+int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partition_id)
+{
+	ARG_UNUSED(domain);
+	ARG_UNUSED(partition_id);
+
+	z_arm_mem_cfg_ipi(IPI_ALL_CPUS_MASK);
+	return 0;
+}
+
+int arch_mem_domain_partition_remove(struct k_mem_domain *domain, uint32_t partition_id)
+{
+	ARG_UNUSED(domain);
+	ARG_UNUSED(partition_id);
+
+	z_arm_mem_cfg_ipi(IPI_ALL_CPUS_MASK);
+	return 0;
+}
+
+int arch_mem_domain_thread_add(struct k_thread *thread)
+{
+	uint32_t cpu_bitmap = 0U;
+
+	/*
+	 * The thread's domain is already set: a CPU switching it in from
+	 * now on programs the new domain. Only a CPU running it now needs
+	 * an update. The barrier orders the domain store before reading
+	 * the current threads, as the context switch sets the current
+	 * thread before reading its domain.
+	 */
+	barrier_dmem_fence_full();
+	for (unsigned int i = 0U; i < arch_num_cpus(); i++) {
+		if (_kernel.cpus[i].current == thread) {
+			cpu_bitmap |= BIT(i);
+		}
+	}
+
+	if (cpu_bitmap != 0U) {
+		z_arm_mem_cfg_ipi(cpu_bitmap);
+	}
+
+	return 0;
+}
+
+int arch_mem_domain_thread_remove(struct k_thread *thread)
+{
+	/*
+	 * The kernel either adds the thread to another domain right after,
+	 * which calls arch_mem_domain_thread_add(), or the thread is exiting.
+	 */
+	ARG_UNUSED(thread);
+
+	return 0;
+}
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 
 #endif /* CONFIG_USERSPACE */
