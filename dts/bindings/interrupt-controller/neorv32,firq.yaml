@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NEORV32 fast interrupt request (FIRQ) nexus. Maps FIRQ channels 0-15
+  to RISC-V CPU interrupt lines 16-31.
+
+compatible: "neorv32,firq"
+
+include: [interrupt-nexus.yaml, base.yaml]
