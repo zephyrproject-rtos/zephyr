@@ -31,6 +31,18 @@ config WIFI_OFFLOAD
 	help
 	  Enable support for Full-MAC Wi-Fi devices.
 
+config WIFI_HAS_SUB_1_GHZ
+	bool "Wi-Fi device supports sub-1GHz band operation"
+
+config WIFI_HAS_2_4_GHZ
+	bool "Wi-Fi device supports 2.4GHz band operation"
+
+config WIFI_HAS_5_GHZ
+	bool "Wi-Fi device supports 5GHz band operation"
+
+config WIFI_HAS_6_GHZ
+	bool "Wi-Fi device supports 6GHz band operation"
+
 config WIFI_USE_NATIVE_NETWORKING
 	bool
 	help

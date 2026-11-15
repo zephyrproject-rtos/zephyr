@@ -11,6 +11,7 @@ menuconfig WIFI_ESWIFI
 	select WIFI_OFFLOAD
 	select NET_OFFLOAD
 	select NET_SOCKETS
+	select WIFI_HAS_2_4_GHZ
 	imply NET_SOCKETS_OFFLOAD
 	select GPIO
 

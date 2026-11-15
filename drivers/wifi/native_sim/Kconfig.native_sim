@@ -16,6 +16,9 @@ menuconfig WIFI_NATIVE_SIM
 	select WIFI_USE_NATIVE_NETWORKING
 	select NET_INTERFACE_NAME
 	select NATIVE_SIMULATOR_PREFER_REAL_TIME
+	select WIFI_HAS_2_4_GHZ
+	select WIFI_HAS_5_GHZ
+	select WIFI_HAS_6_GHZ
 	help
 	  Enable native-sim WiFi support. This is currently only usable
 	  for simple verification of the hostap APIs etc.

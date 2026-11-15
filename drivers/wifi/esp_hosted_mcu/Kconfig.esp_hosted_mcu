@@ -12,6 +12,8 @@ menuconfig WIFI_ESP_HOSTED_MCU
 	select NET_L2_ETHERNET
 	select NET_L2_WIFI_MGMT
 	select WIFI_USE_NATIVE_NETWORKING
+	select WIFI_HAS_2_4_GHZ
+	imply WIFI_HAS_5_GHZ
 	help
 	  Host driver for an Espressif SoC (for example ESP32-C6) running
 	  esp-hosted-mcu coprocessor firmware as a Wi-Fi co-processor. Communicates

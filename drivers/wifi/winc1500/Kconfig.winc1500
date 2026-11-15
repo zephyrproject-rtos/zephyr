@@ -12,6 +12,7 @@ menuconfig WIFI_WINC1500
 	select WIFI_OFFLOAD
 	select NET_L2_WIFI_MGMT
 	select DEPRECATED
+	select WIFI_HAS_2_4_GHZ
 	help
 	  This offloaded wifi driver is deprecated and will be removed
 	  in a future release. It is currently scheduled to be removed in
