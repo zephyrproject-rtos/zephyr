@@ -1,7 +1,19 @@
 # Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: Specialization of Bosch m_can CAN FD controller for Atmel SAM0
+description: |
+  Specialization of Bosch m_can CAN FD controller for Atmel SAM0 and
+  Microchip PIC32CX SG.
+
+  On Atmel SAM0 SoCs, the clocks are the "GCLK" channel and the "MCLK" bus
+  clock, and atmel,assigned-clocks, atmel,assigned-clock-names and divider
+  select the GCLK generator feeding the controller; all three are required.
+
+  On Microchip PIC32CX SG SoCs, the clocks are the "GCLK" peripheral channel
+  and the "MCLK" bus clock of the Microchip clock controller. The GCLK
+  generator is set by the clock controller node, and
+  atmel,assigned-clocks, atmel,assigned-clock-names and divider are not
+  used.
 
 compatible: "atmel,sam0-can"
 
@@ -26,13 +38,8 @@ properties:
   clock-names:
     required: true
 
-  atmel,assigned-clocks:
-    required: true
-
-  atmel,assigned-clock-names:
-    required: true
-
   divider:
     type: int
-    required: true
-    description: Clock divider of GLCK7 used by CAN as clock source
+    description: |
+      Clock divider of the GCLK generator used by CAN as clock source.
+      Required on Atmel SAM0 SoCs.
