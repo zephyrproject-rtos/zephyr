@@ -17,6 +17,70 @@
 			reg = <0x20000000 DT_SIZE_K(4)>;
 		};
 
+		timg0: timg0@40084000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40084000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <16 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+
+			counterg0: counterg0 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		timg1: timg1@40086000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40086000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <2 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+
+			counterg1: counterg1 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		timg2: timg2@40088000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40088000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <18 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+
+			counterg2: counterg2 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		timg4: timg4@4008c000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x4008c000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <20 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+
+			counterg4: counterg4 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
 		uart1: uart@40100000 {
 			compatible = "ti,mspm0-uart";
 			reg = <0x40100000 0x2000>;
