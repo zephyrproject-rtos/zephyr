@@ -14,7 +14,7 @@ tests:
       bsim_exe_name: tests_bsim_bluetooth_ll_advx_prj_conf
       tests_scripts:
         - tests_scripts/basic_advx.sh
-        - tests_scripts/adv_aux_time.sh
+        - tests_scripts/adv_aux_time_con.sh
         - tests_scripts/scan_req_tgta.sh
         - tests_scripts/anonymous.sh
         - tests_scripts/anonymous_other.sh
@@ -38,3 +38,12 @@ tests:
       bsim_exe_name: tests_bsim_bluetooth_ll_advx_prj_conf_overlay-scan_aux_use_chains_conf
       tests_scripts:
         - tests_scripts/basic_advx_scan_aux_use_chains.sh
+
+  bluetooth.controller.advx.chained:
+    extra_overlay_confs:
+      - overlay-chained.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_advx_prj_conf_overlay-chained_conf
+      tests_scripts:
+        - tests_scripts/adv_aux_time_chained.sh
