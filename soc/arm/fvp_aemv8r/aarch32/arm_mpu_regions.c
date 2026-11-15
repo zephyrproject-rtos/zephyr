@@ -28,7 +28,11 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 	/* Region 3 zephyr data */
 	MPU_REGION_ENTRY("SRAM_2",
+#if defined(CONFIG_XIP)
+			 (uintptr_t)_image_ram_start,
+#else
 			 (uintptr_t)__rom_region_end,
+#endif
 			 REGION_RAM_ATTR((uintptr_t)__kernel_ram_end)),
 
 	/* Region 4 device region */
