@@ -200,7 +200,7 @@ endif
 
 config WIFI_NM_WPA_SUPPLICANT_NO_6GHZ
 	bool "Disable 6 GHz band support"
-	default y if WIFI_NRF70 || WIFI_NXP || WIFI_BFLB
+	default y if !WIFI_HAS_6_GHZ
 	help
 	  Disable support for operating in the 6 GHz band, for radios that
 	  only support the 2.4 GHz and 5 GHz bands.
