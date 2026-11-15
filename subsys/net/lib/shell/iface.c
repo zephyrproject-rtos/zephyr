@@ -622,8 +622,6 @@ skip_ipv4:
 			   net_sprint_ipv4_addr(&iface->config.dhcpv4.server_id));
 			PR("DHCPv4 requested  : %s\n",
 			   net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
-			PR("DHCPv4 state      : %s\n",
-			   net_dhcpv4_state_name(iface->config.dhcpv4.state));
 			PR("DHCPv4 attempts   : %d\n",
 			   iface->config.dhcpv4.attempts);
 		}
