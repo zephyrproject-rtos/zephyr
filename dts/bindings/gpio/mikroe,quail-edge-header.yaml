@@ -1,0 +1,29 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO nexus mapping for the screw terminals on the edges of the MikroE
+  Quail for STM32 board. Each GPIO specifier index maps to the
+  microcontroller pin as follows:
+
+        0   PC5        15  PC11 (SPI3)
+        1   PB0        16  PC12 (SPI3)
+        2   PE7        17  PD10 (SPI3)
+        3   PE8        18  PA15
+        4   PE11       19  PC13
+        5   PC4        20  PE6
+        6   PE13       21  PE5
+        7   PE14       22  PD2
+        8   PB10       23  PD3
+        9   PB11       24  PD4
+        10  PB12       25  PD7
+        11  PB13       26  PE2
+        12  PB6 (I2C1) 27  PE3
+        13  PB7 (I2C1) 28  PE4
+        14  PC10 (SPI3)
+
+  See the Quail for STM32 User Manual for the terminal layout.
+
+compatible: "mikroe,quail-edge-header"
+
+include: [gpio-nexus.yaml, base.yaml]
