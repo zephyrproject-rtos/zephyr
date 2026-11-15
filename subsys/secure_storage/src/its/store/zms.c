@@ -23,6 +23,10 @@ static int init_zms(void)
 {
 	int ret;
 
+	if (s_zms.ready) {
+		return 0;
+	}
+
 	s_zms.sector_count = PARTITION_NODE_SIZE(PARTITION_DT_NODE) / s_zms.sector_size;
 
 	ret = zms_mount(&s_zms);
@@ -88,6 +92,11 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
+	/* The ITS may be used before the initialization function above has run. */
+	if (init_zms() != 0) {
+		return PSA_ERROR_STORAGE_FAILURE;
+	}
+
 	zms_ret = zms_write(&s_zms, zms_id, data, data_length);
 	if (zms_ret == data_length) {
 		psa_ret = PSA_SUCCESS;
@@ -112,6 +121,11 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
+	/* The ITS may be used before the initialization function above has run. */
+	if (init_zms() != 0) {
+		return PSA_ERROR_STORAGE_FAILURE;
+	}
+
 	zms_ret = zms_read(&s_zms, zms_id, data, data_size);
 	if (zms_ret > 0) {
 		*data_length = zms_ret;
@@ -134,6 +148,11 @@ psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
 
 	if (zms_id == 0) {
 		return PSA_ERROR_INVALID_ARGUMENT;
+	}
+
+	/* The ITS may be used before the initialization function above has run. */
+	if (init_zms() != 0) {
+		return PSA_ERROR_STORAGE_FAILURE;
 	}
 
 	ret = zms_delete(&s_zms, zms_id);
