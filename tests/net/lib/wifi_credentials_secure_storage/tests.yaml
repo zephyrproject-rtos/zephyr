@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - net
+    - wifi
+    - psa.secure_storage
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  net.wifi_credentials.secure_storage: {}
+  net.wifi_credentials.secure_storage.store.zms:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=zms.overlay
+    extra_configs:
+      - CONFIG_SETTINGS=n
+      - CONFIG_NVS=n
+      - CONFIG_ZMS=y
+      - CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS=y

@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,secure-storage-its-partition = &storage_partition;
+	};
+};
