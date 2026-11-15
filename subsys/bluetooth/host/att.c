@@ -1073,7 +1073,7 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 	 * Core 5.3 | Vol 3, Part F 3.4.2.2:
 	 * If MTU is exchanged in one direction, that is sufficient for both directions.
 	 */
-	atomic_set_bit(chan->att->conn->flags, BT_CONN_ATT_MTU_EXCHANGED);
+	atomic_set_bit(chan->att->conn->flags, BT_CONN_ATT_MTU_REQ_RECEIVED);
 #endif /* CONFIG_BT_GATT_CLIENT */
 
 	att_chan_mtu_updated(chan);
