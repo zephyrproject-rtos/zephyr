@@ -236,6 +236,22 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 	sub r1, r1, #1
 	strb r1, [r2, #_cpu_offset_to_exc_depth]
 
+#if defined(CONFIG_FPU_SHARING)
+	/*
+	 * Thread code runs with the FPU enabled only if it owns the FPU.
+	 * Exception handlers run with it disabled, see z_arm_fpu_trap().
+	 */
+	mov r3, #0
+	cmp r1, #0
+	bne 1f
+	ldr r0, [r2, #_cpu_offset_to_fpu_owner]
+	ldr r1, [r2, #___cpu_t_current_OFFSET]
+	cmp r0, r1
+	moveq r3, #FPEXC_EN
+1:
+	vmsr fpexc, r3
+#endif
+
 	/*
 	 * Restore r0-r3, r12, lr, lr_und and spsr_und from the exception stack
 	 * and return to the current thread.
@@ -243,6 +259,22 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 	pop {r0-r3, r12, lr}
 	userspace_exc_exit
 	rfeia sp!
+
+#if defined(CONFIG_FPU_SHARING)
+/*
+ * Exit from z_arm_fpu_trap(), which leaves the FPU enabled for the
+ * faulting instruction to be retried.
+ */
+z_arm_fpu_trap_exit:
+	get_cpu r2
+	ldrb r1, [r2, #_cpu_offset_to_exc_depth]
+	sub r1, r1, #1
+	strb r1, [r2, #_cpu_offset_to_exc_depth]
+
+	pop {r0-r3, r12, lr}
+	userspace_exc_exit
+	rfeia sp!
+#endif
 
 /**
  * @brief Undefined instruction exception handler
@@ -263,7 +295,14 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	subne lr, #2	/* Thumb (T_BIT) */
 	pop {r0}
 
-	z_arm_cortex_ar_enter_exc
+	z_arm_cortex_ar_enter_exc 0
+#if defined(CONFIG_FPU_SHARING)
+	/* A VFP instruction with the FPU disabled: lazy FPU switch */
+	bl z_arm_fpu_trap
+	cmp r0, #0
+	bne z_arm_fpu_trap_exit
+	mov r0, sp
+#endif
 	bl z_arm_fault_undef_instruction
 	b z_arm_cortex_ar_exit_exc
 

@@ -31,6 +31,9 @@
 #define _cpu_offset_to_exc_depth \
 	(___cpu_t_arch_OFFSET + ___cpu_arch_t_exc_depth_OFFSET)
 
+#define _cpu_offset_to_fpu_owner \
+	(___cpu_t_arch_OFFSET + ___cpu_arch_t_fpu_owner_OFFSET)
+
 #if defined(CONFIG_ARM_TRACK_ACTIVE_IRQ)
 #define _cpu_offset_to_active_irq \
 	(___cpu_t_arch_OFFSET + ___cpu_arch_t_active_irq_OFFSET)

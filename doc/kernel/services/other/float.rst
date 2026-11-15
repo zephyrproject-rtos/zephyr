@@ -9,11 +9,12 @@ configurations that support these registers.
 .. note::
     Floating point services are currently available only for boards
     based on ARM Cortex-M SoCs supporting the Floating Point Extension,
-    the Intel x86 architecture, the SPARC architecture and ARCv2 SoCs
-    supporting the Floating Point Extension. The services provided
-    are architecture specific.
+    the Intel x86 architecture, the SPARC architecture, ARCv2 SoCs
+    supporting the Floating Point Extension and ARM Cortex-A/R SoCs with a
+    VFP. The services provided are architecture specific.
 
-    The kernel does not support the use of floating point registers by ISRs.
+    Only on ARM64, ARM Cortex-A/R and RISC-V does the kernel support the use
+    of floating point registers by ISRs.
 
 .. contents::
     :local:
@@ -166,6 +167,18 @@ either, hence the IRQ disabling.
 
 Each thread object becomes 512 bytes larger when Shared FP registers mode
 is enabled.
+
+ARM Cortex-A/R architecture
+---------------------------
+
+On the ARM Cortex-A and Cortex-R architectures, the Shared FP registers mode
+uses the same "lazy save" algorithm as on ARM64, and handles FPU register usage
+by ISRs the same way. Threads don't need to be tagged. With SMP, a thread that
+owns the FPU gets its FP context saved when it is switched out, as it may resume
+on another CPU.
+
+Each thread object becomes about 136 bytes larger when Shared FP registers mode
+is enabled, or 264 bytes with :kconfig:option:`CONFIG_VFP_FEATURE_REGS_S64_D32`.
 
 ARCv2 architecture
 ------------------

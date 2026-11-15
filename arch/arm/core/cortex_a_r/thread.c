@@ -158,9 +158,13 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_COMPILER_ISA_THUMB2 */
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_USE_SWITCH)
+	memset(&thread->arch.saved_fp_context, 0, sizeof(thread->arch.saved_fp_context));
+#else
 	iframe = (struct __basic_sf *)
 		((uintptr_t)iframe - sizeof(struct __fpu_sf));
 	memset(iframe, 0, sizeof(struct __fpu_sf));
+#endif
 #endif
 
 	thread->callee_saved.psp = (uint32_t)iframe;
@@ -412,7 +416,7 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 }
 #endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && !defined(CONFIG_USE_SWITCH)
 int arch_float_disable(struct k_thread *thread)
 {
 	if (thread != _current) {
@@ -452,8 +456,9 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 	/* This is not supported in Cortex-A and Cortex-R */
 	return -ENOTSUP;
 }
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING && !CONFIG_USE_SWITCH */
 
+#if !(defined(CONFIG_FPU_SHARING) && defined(CONFIG_USE_SWITCH))
 int arch_coprocessors_disable(struct k_thread *thread)
 {
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
@@ -462,3 +467,4 @@ int arch_coprocessors_disable(struct k_thread *thread)
 	return -ENOTSUP;
 #endif
 }
+#endif
