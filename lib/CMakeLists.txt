@@ -4,6 +4,7 @@
 add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
 
 add_subdirectory(libc)
+add_subdirectory_ifdef(CONFIG_CALL_OFFLOADER call_offloader)
 add_subdirectory_ifdef(CONFIG_CPP                  cpp)
 add_subdirectory(hash)
 add_subdirectory(heap)
