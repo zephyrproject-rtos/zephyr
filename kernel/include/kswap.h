@@ -36,7 +36,15 @@ extern void z_check_stack_sentinel(void);
  * release_global_lock tells z_swap_switch() to release the SMP global
  * irq_lock() of the outgoing thread.
  */
+#ifdef CONFIG_SMP
 int z_swap_switch(unsigned int key, bool release_global_lock);
+#else
+/* Uniprocessor builds have no global lock to release. Dropping the
+ * argument saves each caller from setting it up.
+ */
+int z_swap_switch_up(unsigned int key);
+#define z_swap_switch(key, release_global_lock) z_swap_switch_up(key)
+#endif
 
 static ALWAYS_INLINE int do_swap(unsigned int key,
 				 struct k_spinlock *lock,
