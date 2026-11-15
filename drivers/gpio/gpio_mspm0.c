@@ -190,6 +190,11 @@ static int gpio_mspm0_port_toggle_bits(const struct device *port,
 	return 0;
 }
 
+static inline bool gpio_mspm0_input_enabled(const struct gpio_mspm0_config *config, gpio_pin_t pin)
+{
+	return (IOMUX->SECCFG.PINCM[config->pincm_lut[pin]] & IOMUX_PINCM_INENA_ENABLE) != 0U;
+}
+
 static int gpio_mspm0_pin_configure(const struct device *port,
 				    gpio_pin_t pin,
 				    gpio_flags_t flags)
@@ -234,6 +239,7 @@ static int gpio_mspm0_pin_configure(const struct device *port,
 		DL_GPIO_disableOutput(config->base, BIT(pin));
 		break;
 	case GPIO_OUTPUT:
+	case GPIO_INPUT | GPIO_OUTPUT:
 		DL_GPIO_initDigitalOutputFeatures(config->pincm_lut[pin],
 						  DL_GPIO_INVERSION_DISABLE,
 						  pull_res,
@@ -241,6 +247,11 @@ static int gpio_mspm0_pin_configure(const struct device *port,
 						  (flags & GPIO_OPEN_DRAIN) ?
 						  DL_GPIO_HIZ_ENABLE :
 						  DL_GPIO_HIZ_DISABLE);
+
+		/* The input buffer is off for outputs: enable it to read the pin back */
+		if ((flags & GPIO_INPUT) != 0U) {
+			IOMUX->SECCFG.PINCM[config->pincm_lut[pin]] |= IOMUX_PINCM_INENA_ENABLE;
+		}
 
 		/* Set initial state */
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
@@ -385,6 +396,9 @@ static int gpio_mspm0_pin_get_config(const struct device *port, gpio_pin_t pin,
 	if (BIT(pin) & config->base->DOE31_0) {
 		*out_flags = BIT(pin) & config->base->DOUT31_0 ?
 			GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW;
+		if (gpio_mspm0_input_enabled(config, pin)) {
+			*out_flags |= GPIO_INPUT;
+		}
 	} else {
 		*out_flags = GPIO_INPUT;
 	}
@@ -404,6 +418,13 @@ static int gpio_mspm0_port_get_direction(const struct device *port,
 	map &= config->common.port_pin_mask;
 	*inputs = map & ~config->base->DOE31_0;
 	*outputs = map & config->base->DOE31_0;
+
+	/* Outputs with the input buffer on are inputs too */
+	for (gpio_pin_t pin = 0; pin < NUM_BITS(*outputs); pin++) {
+		if (((*outputs & BIT(pin)) != 0U) && gpio_mspm0_input_enabled(config, pin)) {
+			*inputs |= BIT(pin);
+		}
+	}
 
 	return 0;
 }
