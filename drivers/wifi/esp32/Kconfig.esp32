@@ -19,6 +19,8 @@ menuconfig WIFI_ESP32
 	select THREAD_STACK_INFO
 	select DYNAMIC_THREAD
 	select DYNAMIC_THREAD_ALLOC
+	select WIFI_HAS_2_4_GHZ
+	select WIFI_HAS_5_GHZ if SOC_FAMILY_ESPRESSIF_WIFI_SUPPORT_5G
 	help
 	  Enable ESP32 SoC WiFi support. Only supported in single
 	  core mode because the network stack is not aware of SMP

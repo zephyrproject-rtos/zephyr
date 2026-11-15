@@ -9,6 +9,8 @@ config WIFI_AMEBA
 	select WIFI_USE_NATIVE_NETWORKING
 	select NET_L2_ETHERNET
 	select WIFI_NM
+	select WIFI_HAS_2_4_GHZ
+	select WIFI_HAS_5_GHZ
 
 if WIFI_AMEBA
 

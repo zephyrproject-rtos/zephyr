@@ -12,6 +12,9 @@ menuconfig WIFI_AIROC
 	select GPIO
 	select WIFI_USE_NATIVE_NETWORKING
 	select USE_INFINEON_ABSTRACTION_RTOS
+	select WIFI_HAS_2_4_GHZ
+	select WIFI_HAS_5_GHZ if CYW4373 || CYW43012 || CYW43022 || CYW55500 || CYW55572
+	select WIFI_HAS_6_GHZ if CYW55500 || CYW55572
 	help
 	  Enable Infineon AIROC SoC Wi-Fi support.
 
