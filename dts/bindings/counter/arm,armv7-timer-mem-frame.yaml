@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  One timer frame (CNTBaseN) of an arm,armv7-timer-mem-block.
+
+  The frame is one physical compare on the shared system counter.
+  Its interrupt is the physical timer. The compatible is Zephyr-only.
+
+compatible: "arm,armv7-timer-mem-frame"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  frame-number:
+    type: int
+    required: true
+    max: 7
+    description: |
+      Frame index n. CNTACRn in CNTCTLBase is the access-control
+      register for this frame. The block has frames 0 through 7.

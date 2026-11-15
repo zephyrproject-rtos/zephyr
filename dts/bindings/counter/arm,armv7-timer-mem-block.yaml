@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: Copyright Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ARM memory-mapped system counter and its timer frames.
+
+  CNTCTLBase ("ctl") is the timer-control frame. CNTControlBase
+  ("control") is the counter-control frame, present when this image
+  can access it. CNTControlBase is usually Secure-only.
+  The count is read from a timer frame. CNTReadBase is omitted.
+
+  Linux arm,armv7-timer-mem is CNTCTLBase alone, and its frames have
+  no compatible. This compatible is the block, so each frame is its
+  own node. The frame compatible is Zephyr-only. A frame interrupt
+  is the physical timer.
+
+compatible: "arm,armv7-timer-mem-block"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+    description: |
+      "ctl" is CNTCTLBase. "control" is CNTControlBase. Present only
+      when this image can access it; it is usually Secure-only.
+
+  clocks:
+    description: |
+      Clock that drives the system counter. The clock cell is named
+      clkid.
+
+  ranges:
+    required: true
+
+  "#address-cells":
+    required: true
+    enum:
+      - 1
+      - 2
+
+  "#size-cells":
+    required: true
+    enum:
+      - 1
+      - 2
