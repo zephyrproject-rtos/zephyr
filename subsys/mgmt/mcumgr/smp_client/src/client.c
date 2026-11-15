@@ -310,10 +310,12 @@ int smp_client_send_cmd(struct smp_client_object *smp_client, struct net_buf *nb
 		timeout_in_sec = CONFIG_SMP_CMD_DEFAULT_LIFE_TIME;
 	}
 
-	smp_read_hdr(nb, &smp_header);
 	if (nb->len < sizeof(smp_header)) {
 		return MGMT_ERR_EINVAL;
 	}
+
+	smp_read_hdr(nb, &smp_header);
+
 	/* Update Length */
 	smp_header.nh_len = sys_cpu_to_be16(nb->len - sizeof(smp_header));
 	smp_header.nh_group = sys_cpu_to_be16(smp_header.nh_group),
