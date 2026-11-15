@@ -1,0 +1,12 @@
+common:
+  # The test thread runs Thumb-2 IT blocks, which Baseline cores lack.
+  filter: CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+  tags:
+    - arm
+  arch_allow: arm
+tests:
+  arch.arm.it_preempt: {}
+  arch.arm.it_preempt.use_switch:
+    filter: CONFIG_USE_SWITCH_SUPPORTED
+    extra_configs:
+      - CONFIG_USE_SWITCH=y
