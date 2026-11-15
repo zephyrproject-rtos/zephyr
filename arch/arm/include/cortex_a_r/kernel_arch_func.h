@@ -90,6 +90,11 @@ void arch_flush_local_fpu(void);
 /* Drop the FP context of _current when it enters user mode */
 void z_arm_fpu_user_mode_enter(void);
 
+extern void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread);
+
+/* Make the CPUs in cpu_bitmap reprogram the MPU for their current thread */
+void z_arm_mem_cfg_ipi(uint32_t cpu_bitmap);
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
