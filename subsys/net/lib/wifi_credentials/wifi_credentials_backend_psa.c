@@ -16,6 +16,15 @@ LOG_MODULE_REGISTER(wifi_credentials_backend, CONFIG_WIFI_CREDENTIALS_LOG_LEVEL)
 BUILD_ASSERT(CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES <= ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_SIZE,
 	     "Wi-Fi credentials management PSA key ID range exceeds officially allocated range.");
 
+#ifdef CONFIG_SECURE_STORAGE
+/* Size of the header that Mbed TLS stores a persistent key with */
+#define PERSISTENT_KEY_HEADER_LEN 36U
+
+BUILD_ASSERT(CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE >= ENTRY_MAX_LEN + PERSISTENT_KEY_HEADER_LEN,
+	     "CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE is too small for a Wi-Fi credentials entry "
+	     "and the header that a persistent key is stored with.");
+#endif
+
 int wifi_credentials_backend_init(void)
 {
 	psa_status_t ret;

@@ -31,7 +31,16 @@ config WIFI_CREDENTIALS_BACKEND_SETTINGS
 
 config WIFI_CREDENTIALS_BACKEND_PSA
 	bool "PSA Protected Storage"
-	depends on BUILD_WITH_TFM
+	depends on BUILD_WITH_TFM || (SECURE_STORAGE && PSA_CRYPTO && !MBEDTLS_PSA_STATIC_KEY_SLOTS)
+	help
+	  Store each entry as a persistent PSA key, which is kept by TF-M or,
+	  on a target without it, by the secure storage subsystem.
+
+	  With the secure storage subsystem, an entry has to fit a key slot,
+	  which it does not when the slots are static buffers
+	  (CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS), and an ITS entry
+	  (CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE) has to hold it together
+	  with the header that a persistent key is stored with.
 
 config WIFI_CREDENTIALS_BACKEND_NONE
 	bool "No credentials storage"
