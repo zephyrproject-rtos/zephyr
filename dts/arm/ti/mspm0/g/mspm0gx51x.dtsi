@@ -7,6 +7,15 @@
 #include <ti/mspm0/g/mspm0g.dtsi>
 
 / {
+	die_temp: dietemp {
+		compatible = "ti,mspm0-temp";
+		io-channels = <&adc0 11>;
+		ts-trim-temp = <30>;
+		ts-trim-vref = <3300>;
+		ts-coefficient = <(-1800)>;
+		status = "disabled";
+	};
+
 	soc {
 		comp0: comp@40008000 {
 			compatible = "ti,mspm0-comparator";
