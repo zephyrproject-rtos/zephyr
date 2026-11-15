@@ -105,6 +105,10 @@ Libraries / Subsystems
   * Added the :ref:`STUN <stun_interface>` library, a codec for the messages of
     :rfc:`8489` with the attributes of ICE (:rfc:`8445`): parsing, building,
     MESSAGE-INTEGRITY, FINGERPRINT and the address attributes.
+  * The PSA backend of the :ref:`Wi-Fi credentials library <lib_wifi_credentials>`
+    (:kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA`) can be used on targets without TF-M,
+    where the :ref:`secure storage subsystem <secure_storage>` keeps the entries. Until now such
+    targets could only store the credentials in the settings, in the clear.
 
   * Ethernet bridge
 

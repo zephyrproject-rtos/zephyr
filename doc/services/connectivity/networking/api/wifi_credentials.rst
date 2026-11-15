@@ -25,6 +25,17 @@ You can pick the backend using the following options:
 * :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA` - Default option for non-secure targets, which includes a TF-M partition (non-minimal TF-M profile type).
 * :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_SETTINGS` - Default option for secure targets.
 
+On a target without TF-M, the PSA backend can be selected with the
+:ref:`secure storage subsystem <secure_storage>`, which then keeps the entries.
+The settings backend remains the default there.
+The PSA backend then requires:
+
+* A PSA Crypto provider (:kconfig:option:`CONFIG_PSA_CRYPTO`).
+* Key slots that are not static buffers (:kconfig:option:`CONFIG_MBEDTLS_PSA_STATIC_KEY_SLOTS`
+  disabled), as an entry does not fit one.
+* A :kconfig:option:`CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE` that holds an entry and the header
+  that a persistent key is stored with.
+
 To configure the maximum number of networks, use the :kconfig:option:`CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES` Kconfig option.
 
 The IEEE 802.11 standard does not specify the maximum length of SAE passwords.
