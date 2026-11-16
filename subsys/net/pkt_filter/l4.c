@@ -79,3 +79,24 @@ bool npf_dst_port_match(struct npf_test *test, struct net_pkt *pkt)
 {
 	return port_match(test, pkt, offsetof(struct net_udp_hdr, dst_port));
 }
+
+bool npf_tcp_flags_match(struct npf_test *test, struct net_pkt *pkt)
+{
+	struct npf_test_tcp_flags *test_flags = CONTAINER_OF(test, struct npf_test_tcp_flags, test);
+	size_t offset;
+	uint8_t proto;
+	uint8_t flags;
+
+	if (!l4_hdr_get(pkt, &proto, &offset) || proto != NET_IPPROTO_TCP) {
+		return false;
+	}
+
+	offset += offsetof(struct net_tcp_hdr, flags);
+	if (!l4_hdr_read(pkt, offset, &flags, sizeof(flags))) {
+		return false;
+	}
+
+	NET_DBG("mask 0x%02x flags 0x%02x pkt 0x%02x", test_flags->mask, test_flags->flags, flags);
+
+	return (flags & test_flags->mask) == test_flags->flags;
+}
