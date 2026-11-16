@@ -30,6 +30,9 @@
 #include "hostapd.h"
 #include "hapd_api.h"
 #include "wpa_supplicant/bss.h"
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+#include "wpa_supplicant/wnm_sta.h"
+#endif
 
 extern struct k_sem wpa_supplicant_ready_sem;
 extern struct wpa_global *global;
@@ -2446,6 +2449,43 @@ int supplicant_btm_query(const struct device *dev __unused, struct net_if *iface
 	}
 
 	if (!wpa_cli_cmd_v("wnm_bss_query %d", reason)) {
+		goto out;
+	}
+
+	ret = 0;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return ret;
+}
+
+int supplicant_wnm_sleep(const struct device *dev __unused, struct net_if *iface,
+			 struct wifi_wnm_sleep_params *params)
+{
+	struct wpa_supplicant *wpa_s;
+	u8 action = params->oper == WIFI_WNM_SLEEP_OPER_ENTER ?
+		    WNM_SLEEP_MODE_ENTER : WNM_SLEEP_MODE_EXIT;
+	int ret;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(iface);
+	if (!wpa_s) {
+		ret = -ENOENT;
+		goto out;
+	}
+
+	if (wpa_s->wpa_state != WPA_COMPLETED) {
+		wpa_printf(MSG_INFO, "WNM-Sleep: not connected");
+		ret = -ENOTCONN;
+		goto out;
+	}
+
+	if (ieee802_11_send_wnmsleep_req(wpa_s, action,
+					 action == WNM_SLEEP_MODE_ENTER ? params->interval : 0,
+					 NULL)) {
+		ret = -EIO;
 		goto out;
 	}
 

@@ -153,6 +153,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_BGSCAN,
 	/** Wi-Fi Direct (P2P) operations*/
 	NET_REQUEST_WIFI_CMD_P2P_OPER,
+	/** WNM-Sleep Mode request */
+	NET_REQUEST_WIFI_CMD_WNM_SLEEP,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
@@ -375,6 +377,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_P2P_OPER);
 
+/** Request to enter or exit WNM-Sleep Mode */
+#define NET_REQUEST_WIFI_WNM_SLEEP					\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_WNM_SLEEP)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WNM_SLEEP);
+
 /** @cond INTERNAL_HIDDEN */
 
 enum {
@@ -401,6 +409,7 @@ enum {
 	NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED_VAL,
 	NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED_VAL,
 	NET_EVENT_WIFI_CMD_NAN_RECEIVE_VAL,
+	NET_EVENT_WIFI_CMD_WNM_SLEEP_VAL,
 
 	NET_EVENT_WIFI_CMD_MAX,
 };
@@ -462,6 +471,8 @@ enum net_event_wifi_cmd {
 	/** Supplicant specific event */
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_RECEIVE),
 #endif
+	/** WNM-Sleep Mode request outcome */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_WNM_SLEEP),
 };
 
 /** Event emitted for Wi-Fi scan result */
@@ -527,6 +538,10 @@ enum net_event_wifi_cmd {
 /** Event emitted for P2P device found event */
 #define NET_EVENT_WIFI_P2P_DEVICE_FOUND				\
 	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_P2P_DEVICE_FOUND)
+
+/** Event emitted when the AP answers a WNM-Sleep Mode request */
+#define NET_EVENT_WIFI_WNM_SLEEP				\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_WNM_SLEEP)
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 /** Maximum length for P2P device name */
@@ -1243,6 +1258,47 @@ enum wifi_twt_sleep_state {
 	WIFI_TWT_STATE_SLEEP = 0,
 	/** TWT sleep state: awake */
 	WIFI_TWT_STATE_AWAKE = 1,
+};
+
+/** @brief WNM-Sleep Mode operation */
+enum wifi_wnm_sleep_oper {
+	/** Ask the AP to enter WNM-Sleep */
+	WIFI_WNM_SLEEP_OPER_ENTER,
+	/** Ask the AP to exit WNM-Sleep */
+	WIFI_WNM_SLEEP_OPER_EXIT,
+};
+
+/** @brief Wi-Fi WNM-Sleep Mode request parameters */
+struct wifi_wnm_sleep_params {
+	/** Enter or exit WNM-Sleep */
+	enum wifi_wnm_sleep_oper oper;
+	/** WNM Sleep Interval to request, in DTIM intervals. Only used with
+	 *  WIFI_WNM_SLEEP_OPER_ENTER. 0 leaves the interval unspecified.
+	 */
+	uint16_t interval;
+};
+
+/** @brief Outcome of a WNM-Sleep Mode request */
+enum wifi_wnm_sleep_result {
+	/** The AP accepted a request to enter WNM-Sleep */
+	WIFI_WNM_SLEEP_ENTER_CONFIRM,
+	/** The AP rejected a request to enter WNM-Sleep */
+	WIFI_WNM_SLEEP_ENTER_FAIL,
+	/** The AP accepted a request to exit WNM-Sleep */
+	WIFI_WNM_SLEEP_EXIT_CONFIRM,
+	/** The AP rejected a request to exit WNM-Sleep */
+	WIFI_WNM_SLEEP_EXIT_FAIL,
+};
+
+/** @brief Wi-Fi WNM-Sleep Mode event information */
+struct wifi_wnm_sleep_info {
+	/** Outcome of the request */
+	enum wifi_wnm_sleep_result result;
+	/** WNM Sleep Interval granted by the AP, in DTIM intervals. Only valid
+	 *  for WIFI_WNM_SLEEP_ENTER_CONFIRM, 0 otherwise. 0 there means the AP
+	 *  did not specify an interval.
+	 */
+	uint16_t interval;
 };
 
 #if defined(CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS) || defined(__DOXYGEN__)
@@ -2477,6 +2533,23 @@ struct wifi_mgmt_ops {
 	 * Return 0 to let the caller use the default.
 	 */
 	 uint32_t (*get_iface_caps)(const struct device *dev, struct net_if *iface);
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM) || defined(__DOXYGEN__)
+	/** Send a WNM-Sleep Mode Request
+	 *
+	 * The outcome is reported with NET_EVENT_WIFI_WNM_SLEEP.
+	 *
+	 * @kconfig_dep{CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM}
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the WNM-Sleep operation
+	 * @param params Enter or exit, and the WNM Sleep Interval to request
+	 *
+	 * @return 0 if the request was sent, < 0 if error
+	 */
+	int (*wnm_sleep)(const struct device *dev,
+			 struct net_if *iface,
+			 struct wifi_wnm_sleep_params *params);
+#endif
 };
 
 /** Wi-Fi driver API for devices using the native network stack */
@@ -2594,6 +2667,16 @@ void wifi_mgmt_raise_twt_event(struct net_if *iface,
  * @param twt_sleep_state TWT sleep state
  */
 void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface, int twt_sleep_state);
+
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM) || defined(__DOXYGEN__)
+/** Wi-Fi management WNM-Sleep Mode event
+ *
+ * @param iface Network interface
+ * @param info Outcome of the WNM-Sleep Mode request
+ */
+void wifi_mgmt_raise_wnm_sleep_event(struct net_if *iface,
+				     struct wifi_wnm_sleep_info *info);
+#endif
 
 #if defined(CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS) || defined(__DOXYGEN__)
 /** Wi-Fi management raw scan result event

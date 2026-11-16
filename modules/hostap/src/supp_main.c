@@ -92,6 +92,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.legacy_roam = supplicant_legacy_roam,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 	.btm_query = supplicant_btm_query,
+	.wnm_sleep = supplicant_wnm_sleep,
 #endif
 	.get_conn_params = supplicant_get_wifi_conn_params,
 	.wps_config = supplicant_wps_config,
