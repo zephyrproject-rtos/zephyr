@@ -915,16 +915,20 @@ static size_t put_ipv6_pkt(uint8_t *data, uint8_t proto, bool ext_hdrs, const ui
 #define TEST_SRC_PORT 49152
 #define TEST_DST_PORT 4242
 
-/* Write a UDP or TCP header without data for a packet of the given family */
+/* Write a UDP or TCP header for a packet of the given family, followed by
+ * data_len bytes of data. The TCP header and the data hold tcp_flags, so that
+ * a UDP datagram can have them where the TCP header has its flags.
+ */
 static size_t put_port_hdr(uint8_t *data, net_sa_family_t family, uint8_t proto, uint16_t src_port,
-			   uint16_t dst_port)
+			   uint16_t dst_port, uint8_t tcp_flags, size_t data_len)
 {
 	const uint8_t ipv4_addrs[] = {TEST_IPV4_PEER_ADDR, TEST_IPV4_ADDR};
 	const uint8_t ipv6_addrs[] = {TEST_IPV6_PEER_ADDR, TEST_IPV6_ADDR};
-	size_t len = (proto == NET_IPPROTO_UDP) ? sizeof(struct net_udp_hdr)
-						: sizeof(struct net_tcp_hdr);
+	size_t hdr_len = (proto == NET_IPPROTO_UDP) ? sizeof(struct net_udp_hdr)
+						    : sizeof(struct net_tcp_hdr);
 	size_t chksum_offset = (proto == NET_IPPROTO_UDP) ? offsetof(struct net_udp_hdr, chksum)
 							  : offsetof(struct net_tcp_hdr, chksum);
+	size_t len = hdr_len + data_len;
 	/* The pseudo header adds the protocol, the length and the addresses */
 	uint32_t sum = proto + len;
 
@@ -934,19 +938,50 @@ static size_t put_port_hdr(uint8_t *data, net_sa_family_t family, uint8_t proto,
 		sum = test_chksum_add(sum, ipv6_addrs, sizeof(ipv6_addrs));
 	}
 
-	memset(data, 0, len);
+	memset(data, 0, hdr_len);
+	memset(&data[hdr_len], tcp_flags, data_len);
 	sys_put_be16(src_port, &data[0]);
 	sys_put_be16(dst_port, &data[2]);
 
 	if (proto == NET_IPPROTO_UDP) {
 		sys_put_be16(len, &data[offsetof(struct net_udp_hdr, len)]);
 	} else {
-		/* a SYN without options */
-		data[offsetof(struct net_tcp_hdr, offset)] = (len / 4U) << 4;
-		data[offsetof(struct net_tcp_hdr, flags)] = 0x02;
+		data[offsetof(struct net_tcp_hdr, offset)] = (hdr_len / 4U) << 4;
+		data[offsetof(struct net_tcp_hdr, flags)] = tcp_flags;
 	}
 
 	test_chksum_put(test_chksum_add(sum, data, len), &data[chksum_offset]);
+
+	return len;
+}
+
+/* Write a UDP or TCP packet from TEST_SRC_PORT to TEST_DST_PORT. With ip_opts,
+ * IP options or extension headers precede the UDP or TCP header. The offset
+ * of that header is stored in hdr_offset.
+ */
+static size_t put_port_pkt(uint8_t *data, net_sa_family_t family, uint8_t proto, bool ip_opts,
+			   uint8_t tcp_flags, size_t data_len, size_t *hdr_offset)
+{
+	uint8_t payload[sizeof(struct net_tcp_hdr)];
+	size_t payload_len;
+	size_t len;
+
+	zassert_true(((proto == NET_IPPROTO_UDP) ? sizeof(struct net_udp_hdr)
+						 : sizeof(struct net_tcp_hdr)) +
+			     data_len <=
+		     sizeof(payload));
+
+	payload_len = put_port_hdr(payload, family, proto, TEST_SRC_PORT, TEST_DST_PORT, tcp_flags,
+				   data_len);
+
+	if (family == NET_AF_INET) {
+		len = put_ipv4_pkt(data, proto, ip_opts ? TEST_IP_OPTS_LEN : 0, payload,
+				   payload_len);
+	} else {
+		len = put_ipv6_pkt(data, proto, ip_opts, payload, payload_len);
+	}
+
+	*hdr_offset = len - payload_len;
 
 	return len;
 }
@@ -981,21 +1016,13 @@ static void port_test_pkt(net_sa_family_t family, uint8_t proto, bool ip_opts, b
 		{&tcp_src_other.test, NET_IPPROTO_TCP, false},
 		{&tcp_dst_other.test, NET_IPPROTO_TCP, false},
 	};
-	uint8_t hdr[sizeof(struct net_tcp_hdr)];
 	uint8_t data[TEST_IP_PKT_MAX_LEN];
-	size_t hdr_len;
+	size_t hdr_offset;
 	size_t split;
 	size_t len;
 
-	hdr_len = put_port_hdr(hdr, family, proto, TEST_SRC_PORT, TEST_DST_PORT);
-
-	if (family == NET_AF_INET) {
-		len = put_ipv4_pkt(data, proto, ip_opts ? TEST_IP_OPTS_LEN : 0, hdr, hdr_len);
-	} else {
-		len = put_ipv6_pkt(data, proto, ip_opts, hdr, hdr_len);
-	}
-
-	split = split_hdr ? (len - hdr_len + 1) : len;
+	len = put_port_pkt(data, family, proto, ip_opts, NPF_TCP_FLAG_SYN, 0, &hdr_offset);
+	split = split_hdr ? (hdr_offset + 1) : len;
 
 	ARRAY_FOR_EACH(conds, i) {
 		struct local_in_test_result result;
@@ -1029,6 +1056,79 @@ ZTEST(net_pkt_filter_test_suite, test_npf_udp_port)
 ZTEST(net_pkt_filter_test_suite, test_npf_tcp_port)
 {
 	port_test_proto(NET_IPPROTO_TCP);
+}
+
+/*
+ * TCP flags filtering
+ */
+
+/* Data of the UDP datagram, which has to reach as far as the TCP flags */
+#define TEST_UDP_DATA_LEN 8
+
+ZTEST(net_pkt_filter_test_suite, test_npf_tcp_flags)
+{
+	static NPF_TCP_FLAGS_MATCH(syn, NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_ACK, NPF_TCP_FLAG_SYN);
+	static NPF_TCP_FLAGS_MATCH(syn_ack, NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_ACK,
+				   NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_ACK);
+	static NPF_TCP_FLAGS_MATCH(no_syn, NPF_TCP_FLAG_SYN, 0);
+	static NPF_TCP_FLAGS_MATCH(any, 0, 0);
+	struct npf_test *const conds[] = {&syn.test, &syn_ack.test, &no_syn.test, &any.test};
+	const struct {
+		uint8_t proto;
+		uint8_t flags;
+		/* Whether the conditions are true, in the order of conds */
+		bool match[ARRAY_SIZE(conds)];
+	} pkts[] = {
+		{NET_IPPROTO_TCP, NPF_TCP_FLAG_SYN, {true, false, false, true}},
+		{NET_IPPROTO_TCP, NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_ACK, {false, true, false, true}},
+		{NET_IPPROTO_TCP, NPF_TCP_FLAG_ACK, {false, false, true, true}},
+		{NET_IPPROTO_TCP, NPF_TCP_FLAG_RST, {false, false, true, true}},
+		/* A flag that is not in the mask does not matter */
+		{NET_IPPROTO_TCP, NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_PSH, {true, false, false, true}},
+		/* The flags are in the data of the UDP datagram */
+		{NET_IPPROTO_UDP, NPF_TCP_FLAG_SYN, {false, false, false, false}},
+	};
+	const net_sa_family_t families[] = {NET_AF_INET, NET_AF_INET6};
+	const bool ip_opts[] = {false, true};
+	const bool split_hdr[] = {false, true};
+
+	ARRAY_FOR_EACH(families, f) {
+		ARRAY_FOR_EACH(ip_opts, o) {
+			ARRAY_FOR_EACH(split_hdr, s) {
+				ARRAY_FOR_EACH(pkts, p) {
+					uint8_t data[TEST_IP_PKT_MAX_LEN];
+					size_t data_len = (pkts[p].proto == NET_IPPROTO_UDP)
+								  ? TEST_UDP_DATA_LEN
+								  : 0;
+					size_t hdr_offset;
+					size_t split;
+					size_t len;
+
+					len = put_port_pkt(data, families[f], pkts[p].proto,
+							   ip_opts[o], pkts[p].flags, data_len,
+							   &hdr_offset);
+					/* The flags are in the second buffer */
+					split = split_hdr[s] ? (hdr_offset + 1) : len;
+
+					ARRAY_FOR_EACH(conds, c) {
+						struct local_in_test_result result;
+						bool match = pkts[p].match[c];
+
+						result = local_in_test_pkt_split(
+							conds[c], families[f], data, len, split);
+						zassert_true(
+							result.matched == (match ? 1U : 0U) &&
+								result.unmatched ==
+									(match ? 0U : 1U),
+							"family %zu opts %zu split %zu packet %zu "
+							"condition %zu: matched %u unmatched %u",
+							f, o, s, p, c, result.matched,
+							result.unmatched);
+					}
+				}
+			}
+		}
+	}
 }
 
 ZTEST_SUITE(net_pkt_filter_test_suite, NULL, test_npf_iface, NULL, NULL, NULL);
