@@ -223,6 +223,36 @@ BUILD_ASSERT(sizeof(long_payload) - 1 > CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE,
 	0x00, 0x00, 0x0e, 0x09, 0x04, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
 	0x5f, 0x87, 0x49, 0x7c, 0xa5, 0x8a, 0xe8, 0x19, 0xaa, 0x0f, 0x0d, 0x02, \
 	0x31, 0x37
+/* The two CONTINUATION frames above with every flag set that the frame type
+ * does not define: END_STREAM (0x01), PADDED (0x08) and PRIORITY (0x20).
+ */
+#define TEST_HTTP2_CONTINUATION_POST_DYNAMIC_STREAM_1_EXTRA_FLAGS \
+	0x00, 0x00, 0x10, 0x09, 0x2d, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x2f, 0x2a, 0x5f, 0x87, 0x49, 0x7c, 0xa5, 0x8a, 0xe8, 0x19, 0xaa, 0x0f, \
+	0x0d, 0x02, 0x31, 0x37
+#define TEST_HTTP2_CONTINUATION_POST_DYNAMIC_STREAM_1_ALIGNED_EXTRA_FLAGS \
+	0x00, 0x00, 0x0e, 0x09, 0x2d, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x5f, 0x87, 0x49, 0x7c, 0xa5, 0x8a, 0xe8, 0x19, 0xaa, 0x0f, 0x0d, 0x02, \
+	0x31, 0x37
+/* The first frame of the POST above with END_STREAM set: a request without a
+ * body whose header block ends in a CONTINUATION frame.
+ */
+#define TEST_HTTP2_PARTIAL_HEADERS_POST_DYNAMIC_STREAM_1_ALIGNED_END_STREAM \
+	0x00, 0x00, 0x22, 0x01, 0x01, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x83, 0x86, 0x41, 0x87, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xff, 0x04, \
+	0x86, 0x62, 0x4f, 0x55, 0x0e, 0x93, 0x13, 0x7a, 0x88, 0x25, 0xb6, 0x50, \
+	0xc3, 0xcb, 0xbc, 0xb8, 0x3f, 0x53, 0x03, 0x2a, 0x2f, 0x2a
+/* GET / with END_STREAM on the HEADERS frame and the rest of the header block
+ * in a CONTINUATION frame.
+ */
+#define TEST_HTTP2_PARTIAL_HEADERS_GET_ROOT_END_STREAM(stream_id) \
+	0x00, 0x00, 0x03, 0x01, 0x01, 0x00, 0x00, 0x00, stream_id, \
+	0x82, 0x84, 0x86
+#define TEST_HTTP2_CONTINUATION_GET_ROOT(stream_id) \
+	0x00, 0x00, 0x1e, 0x09, 0x04, 0x00, 0x00, 0x00, stream_id, \
+	0x41, 0x8a, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xdc, 0x78, 0x0f, 0x03, \
+	0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x90, 0x7a, 0x8a, 0xaa, 0x69, 0xd2, 0x9a, \
+	0xc4, 0xc0, 0x57, 0x68, 0x0b, 0x83
 #define TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1 \
 	0x00, 0x00, 0x11, 0x00, 0x01, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
 	0x54, 0x65, 0x73, 0x74, 0x20, 0x64, 0x79, 0x6e, 0x61, 0x6d, 0x69, 0x63, \
@@ -3495,6 +3525,116 @@ ZTEST(server_function_tests, test_http2_post_headers_with_continuation)
 
 	common_verify_http2_dynamic_post_request(request_post_dynamic,
 						 sizeof(request_post_dynamic));
+}
+
+ZTEST(server_function_tests, test_http2_post_continuation_undefined_flags)
+{
+	/* Flags that a CONTINUATION frame does not define are ignored: the
+	 * payload is not read as padding or priority, and the request does
+	 * not end before its DATA frame.
+	 */
+	static const uint8_t request_post_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_PARTIAL_HEADERS_POST_DYNAMIC_STREAM_1_ALIGNED,
+		TEST_HTTP2_CONTINUATION_POST_DYNAMIC_STREAM_1_ALIGNED_EXTRA_FLAGS,
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_post_request(request_post_dynamic,
+						 sizeof(request_post_dynamic));
+}
+
+ZTEST(server_function_tests, test_http2_post_continuation_undefined_flags_split_field)
+{
+	/* The same with a header field split between the two frames. */
+	static const uint8_t request_post_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_PARTIAL_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_CONTINUATION_POST_DYNAMIC_STREAM_1_EXTRA_FLAGS,
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_post_request(request_post_dynamic,
+						 sizeof(request_post_dynamic));
+}
+
+ZTEST(server_function_tests, test_http2_get_end_stream_before_continuation)
+{
+	/* END_STREAM on a HEADERS frame ends the stream once the header block
+	 * is complete, also when a CONTINUATION frame completes it. More such
+	 * requests than the server has stream contexts are all answered.
+	 */
+	static const uint8_t preface[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+	};
+	uint8_t request_get[] = {
+		TEST_HTTP2_PARTIAL_HEADERS_GET_ROOT_END_STREAM(TEST_STREAM_ID_1),
+		TEST_HTTP2_CONTINUATION_GET_ROOT(TEST_STREAM_ID_1),
+	};
+	const size_t headers_id_pos = HTTP2_FRAME_HEADER_SIZE - 1;
+	const size_t continuation_id_pos = 2 * HTTP2_FRAME_HEADER_SIZE + 3 - 1;
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, preface, sizeof(preface), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+
+	for (int i = 0; i <= CONFIG_HTTP_SERVER_MAX_STREAMS; i++) {
+		uint8_t stream_id = TEST_STREAM_ID_1 + 2 * i;
+
+		request_get[headers_id_pos] = stream_id;
+		request_get[continuation_id_pos] = stream_id;
+
+		ret = zsock_send(client_fd, request_get, sizeof(request_get), 0);
+		zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+		expect_http2_headers_frame(&offset, stream_id, HTTP2_FLAG_END_HEADERS, NULL, 0);
+		expect_http2_data_frame(&offset, stream_id, TEST_STATIC_PAYLOAD,
+					strlen(TEST_STATIC_PAYLOAD), HTTP2_FLAG_END_STREAM);
+	}
+}
+
+ZTEST(server_function_tests, test_http2_post_end_stream_before_continuation)
+{
+	/* A POST without a body, with END_STREAM on the HEADERS frame and the
+	 * rest of the header block in a CONTINUATION frame, is completed when
+	 * the header block ends.
+	 */
+	static const uint8_t request_post_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_PARTIAL_HEADERS_POST_DYNAMIC_STREAM_1_ALIGNED_END_STREAM,
+		TEST_HTTP2_CONTINUATION_POST_DYNAMIC_STREAM_1_ALIGNED,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_post_dynamic, sizeof(request_post_dynamic), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+
+	zassert_equal(dynamic_payload_len, 0, "Wrong dynamic resource length");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http2_post_missing_continuation)
