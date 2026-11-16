@@ -5,4 +5,5 @@ cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(esp_interrupt_test)
 
-target_sources(app PRIVATE src/main.c)
+target_sources(app PRIVATE src/main.c src/noniram.c src/mli_encoding.c src/mli_dispatch.c)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/arch/common/include)

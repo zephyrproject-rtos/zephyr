@@ -5,11 +5,10 @@
  */
 
 /*
- * Only enable the timers; their interrupt wiring is inherited from
- * esp32s2_common.dtsi, which routes each one through its own INTMUX node with a
- * single interrupt cell. Do not override "interrupts" here: the pre-INTMUX
- * <cpu_line source priority flags> form parses as four separate interrupts
- * against a 1-cell intmux and makes gen_isr_tables.py reject the build.
+ * The nested-ISR suite needs the three timers at three Xtensa interrupt
+ * levels. timer0 keeps the shared level-1 line of the timer groups from the
+ * SoC devicetree; timer1 and timer2 become dedicated consumers of intc on a
+ * level-2 and a level-3 CPU line, which no other devicetree node uses.
  */
 
 &timer0 {
@@ -21,6 +20,8 @@
 };
 
 &timer1 {
+	interrupt-parent = <&intc>;
+	interrupts = <ESP_CPU_IRQ_L2_LVL_21 TG0_T1_LEVEL_INTR_SOURCE 0>;
 	status = "okay";
 
 	counter {
@@ -29,6 +30,8 @@
 };
 
 &timer2 {
+	interrupt-parent = <&intc>;
+	interrupts = <ESP_CPU_IRQ_L3_LVL_27 TG1_T0_LEVEL_INTR_SOURCE 0>;
 	status = "okay";
 
 	counter {
