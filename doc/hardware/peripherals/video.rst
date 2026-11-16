@@ -42,6 +42,12 @@ controls available which can be generic, related to a device class or vendor
 specific. The set/get control functions provide a generic scalable interface
 to handle and create controls.
 
+.. toctree::
+   :maxdepth: 1
+
+   video_mcux
+   video_stm32
+
 Configuration Options
 *********************
 
