@@ -23,6 +23,7 @@ import json
 import os
 import subprocess
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 import pytest
@@ -373,6 +374,236 @@ def test_attribute_charges_a_whole_block_to_the_function_it_starts_in():
 
     assert list(funcs) == ["net_pkt_alloc"]
     assert total == 8
+
+
+#
+# Functions that share a name: SymbolTable.key(), decl_file() and attribute()
+#
+
+# Two statics called out_func in different files, and two out-of-line copies
+# of one static inline, both sized, plus a function whose name is unique.
+SHARED = [
+    ("out_func", 0x1000, 0x10, "STT_FUNC", "STB_LOCAL"),
+    ("out_func", 0x1100, 0x10, "STT_FUNC", "STB_LOCAL"),
+    ("flag_is_set", 0x1200, 0x10, "STT_FUNC", "STB_LOCAL"),
+    ("flag_is_set", 0x1300, 0x10, "STT_FUNC", "STB_LOCAL"),
+    ("unique", 0x1400, 0x10, "STT_FUNC", "STB_GLOBAL"),
+]
+SHARED_DECL = {
+    0x1000: "/ws/zephyr/subsys/logging/log_output.c",
+    0x1100: "/ws/zephyr/subsys/shell/shell_fprintf.c",
+    0x1200: "/ws/zephyr/include/zephyr/net/net_if.h",
+    0x1300: "/ws/zephyr/include/zephyr/net/net_if.h",
+}
+
+
+def _shared_table(decl=SHARED_DECL):
+    table = _table(SHARED, [(0x1000, 0x2000)])
+    table.decl_file = mock.Mock(side_effect=decl.get)
+    return table
+
+
+def test_lookup_start_gives_the_entry_point():
+    table = _table()
+
+    assert table.lookup_start(0x1010) == ("net_pkt_alloc", "exact", 0x1000)
+    assert table.lookup_start(0x2004) == ("arch_swap", "inferred", 0x2000)
+    assert table.lookup_start(0x0500) == (zperf_profile.FIRMWARE, "bucket", None)
+    assert table.lookup(0x1010) == ("net_pkt_alloc", "exact")
+
+
+def test_key_tells_same_named_functions_in_different_files_apart():
+    table = _shared_table()
+
+    assert table.key("out_func", 0x1000) == ("out_func (log_output.c)", False)
+    assert table.key("out_func", 0x1100) == ("out_func (shell_fprintf.c)", False)
+
+
+def test_key_keeps_the_copies_of_one_static_inline_together():
+    table = _shared_table()
+
+    assert table.key("flag_is_set", 0x1200) == ("flag_is_set", False)
+    assert table.key("flag_is_set", 0x1300) == ("flag_is_set", False)
+
+
+def test_key_does_not_look_up_a_unique_name():
+    table = _shared_table()
+
+    assert table.key("unique", 0x1400) == ("unique", False)
+    table.decl_file.assert_not_called()
+
+
+def test_key_resolves_each_shared_name_once():
+    table = _shared_table()
+    table.key("out_func", 0x1000)
+    table.key("out_func", 0x1100)
+    table.key("out_func", 0x1000)
+
+    assert table.decl_file.call_count == 2
+
+
+def test_key_merges_copies_whose_file_is_unknown():
+    """Without the declaring file of every copy, two statics and two copies
+    of an inline look the same, so the bare name is kept and flagged."""
+    table = _shared_table({0x1000: "/ws/a.c"})
+
+    assert table.key("out_func", 0x1000) == ("out_func", True)
+    assert table.key("out_func", 0x1100) == ("out_func", True)
+
+
+def test_key_without_dwarf_merges():
+    table = _table(SHARED, [(0x1000, 0x2000)])
+
+    assert table.decl_file(0x1000) is None
+    assert table.key("out_func", 0x1000) == ("out_func", True)
+
+
+@pytest.mark.parametrize(
+    ("paths", "expected"),
+    [
+        ({"/z/a/x.c", "/z/b/y.c"}, {"/z/a/x.c": "x.c", "/z/b/y.c": "y.c"}),
+        (
+            {"/z/ip/utils.c", "/z/l2/utils.c"},
+            {"/z/ip/utils.c": "ip/utils.c", "/z/l2/utils.c": "l2/utils.c"},
+        ),
+        (
+            {"/z/a/utils.c", "/z/b/utils.c", "/z/b/x.c"},
+            {"/z/a/utils.c": "a/utils.c", "/z/b/utils.c": "b/utils.c", "/z/b/x.c": "x.c"},
+        ),
+        # One path is the tail of the other: the shorter one needs all of it.
+        ({"/a/b.c", "/x/a/b.c"}, {"/a/b.c": "/a/b.c", "/x/a/b.c": "x/a/b.c"}),
+    ],
+)
+def test_unique_suffixes(paths, expected):
+    assert zperf_profile._unique_suffixes(paths) == expected
+
+
+def test_attribute_splits_same_named_functions_and_sums_inline_copies():
+    blocks = {(0x1000, 2): 1, (0x1100, 3): 1, (0x1200, 5): 1, (0x1300, 7): 1}
+    funcs, total, _kinds = zperf_profile.attribute(blocks, _shared_table(), "/z", "/")
+
+    assert {name: info["insns"] for name, info in funcs.items()} == {
+        "out_func (log_output.c)": 2,
+        "out_func (shell_fprintf.c)": 3,
+        "flag_is_set": 12,
+    }
+    assert total == 17
+    assert not any("merged" in info for info in funcs.values())
+
+
+def test_attribute_flags_a_name_it_could_not_split():
+    blocks = {(0x1000, 2): 1, (0x1100, 3): 1}
+    funcs, _total, _kinds = zperf_profile.attribute(blocks, _shared_table({}), "/z", "/")
+
+    assert funcs == {"out_func": {"insns": 5, "file": None, "group": "other", "merged": True}}
+
+
+def test_render_lists_merged_rows(capsys):
+    profile = {
+        "label": "udp4",
+        "total_insns": 10,
+        "bytes": 10,
+        "functions": {
+            "out_func": {"insns": 6, "file": None, "group": "other", "merged": True},
+            "unique": {"insns": 4, "file": None, "group": "other"},
+        },
+    }
+    zperf_profile.render(profile, 5)
+
+    out = capsys.readouterr().out
+    assert "merged: out_func:" in out
+    assert "unique:" not in out
+
+
+def _line_program(version, files, dirs):
+    return SimpleNamespace(
+        header={
+            "version": version,
+            "file_entry": [SimpleNamespace(name=n.encode(), dir_index=d) for n, d in files],
+            "include_directory": [d.encode() for d in dirs],
+        }
+    )
+
+
+def _cu(comp_dir="/build"):
+    attrs = {"DW_AT_comp_dir": SimpleNamespace(value=comp_dir.encode())}
+    return SimpleNamespace(get_top_DIE=lambda: SimpleNamespace(attributes=attrs))
+
+
+@pytest.mark.parametrize(
+    ("version", "files", "dirs", "index"),
+    [
+        # DWARF 5: files and directories from 0, directory 0 is the unit's.
+        (5, [("main.c", 0), ("net_if.h", 1)], ["/build", "/z/include/zephyr/net"], 1),
+        # DWARF 4: files from 1, directory 0 is the compilation directory and
+        # include_directory starts at directory 1.
+        (4, [("main.c", 0), ("net_if.h", 1)], ["/z/include/zephyr/net"], 2),
+    ],
+)
+def test_dwarf_file_numbering(version, files, dirs, index):
+    dwarf = SimpleNamespace(line_program_for_CU=lambda cu: _line_program(version, files, dirs))
+
+    assert zperf_profile._dwarf_file(dwarf, _cu(), index) == "/z/include/zephyr/net/net_if.h"
+
+
+def test_dwarf_file_resolves_a_relative_name_against_the_compilation_directory():
+    dwarf = SimpleNamespace(
+        line_program_for_CU=lambda cu: _line_program(4, [("../src/a.c", 0)], [])
+    )
+
+    assert zperf_profile._dwarf_file(dwarf, _cu("/build/app"), 1) == "/build/src/a.c"
+
+
+@pytest.mark.parametrize("index", [0, 9])
+def test_dwarf_file_out_of_range(index):
+    dwarf = SimpleNamespace(line_program_for_CU=lambda cu: _line_program(4, [("a.c", 0)], []))
+
+    assert zperf_profile._dwarf_file(dwarf, _cu(), index) is None
+
+
+def _die(tag, attributes, cu, origin=None):
+    die = SimpleNamespace(tag=tag, attributes=attributes, cu=cu)
+    die.get_DIE_from_attribute = lambda name: origin
+    return die
+
+
+def _attr(value):
+    return SimpleNamespace(value=value)
+
+
+def _dwarf_table(dies, cu):
+    table = _table(SHARED, [(0x1000, 0x2000)])
+    table._aranges = SimpleNamespace(cu_offset_at_addr=lambda addr: 0)
+    cu.iter_DIEs = lambda: iter(dies)
+    table._dwarf = SimpleNamespace(
+        get_CU_at=lambda offset: cu,
+        line_program_for_CU=lambda cu: _line_program(
+            5, [("a.c", 0), ("b.c", 0), ("net_if.h", 1)], ["/z/src", "/z/include"]
+        ),
+    )
+    return table
+
+
+def test_decl_file_follows_the_abstract_origin_of_an_inline_copy():
+    cu = _cu()
+    abstract = _die("DW_TAG_subprogram", {"DW_AT_decl_file": _attr(2)}, cu)
+    concrete = _die(
+        "DW_TAG_subprogram",
+        {"DW_AT_low_pc": _attr(0x1200), "DW_AT_abstract_origin": _attr(0)},
+        cu,
+        origin=abstract,
+    )
+    table = _dwarf_table([abstract, concrete], cu)
+
+    assert table.decl_file(0x1200) == "/z/include/net_if.h"
+
+
+def test_decl_file_ignores_entries_that_are_not_subprograms():
+    cu = _cu()
+    label = _die("DW_TAG_label", {"DW_AT_low_pc": _attr(0x1000), "DW_AT_decl_file": _attr(0)}, cu)
+    table = _dwarf_table([label], cu)
+
+    assert table.decl_file(0x1000) is None
 
 
 #
@@ -805,6 +1036,37 @@ def test_check_transfer_looks_only_at_its_own_label(tmp_path):
         zperf_profile.check_transfer(path, "tcp4_nodelay")
 
     assert "error(-5)" in str(exc.value)
+
+
+#
+# Row names
+#
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("memcpy", "memcpy"),
+        ("net_pkt_cursor_operate (net_pkt.c)", "net_pkt_cursor_operat (net_pkt.c)"),
+        ("a_function_name_much_longer_than_the_column", "a_function_name_much_longer_than_"),
+        (
+            "f (a_file_name_far_too_long_to_fit_in_the_column.c)",
+            "f (a_file_name_far_too_long_to_fi",
+        ),
+    ],
+    ids=["fits", "keeps-suffix", "no-suffix", "suffix-too-long"],
+)
+def test_fit_name(name, expected):
+    assert zperf_profile._fit_name(name, 33) == expected
+
+
+def test_fit_name_keeps_same_named_rows_apart():
+    names = [
+        "net_pkt_cursor_operate (subsys/net/ip/net_pkt.c)",
+        "net_pkt_cursor_operate (tests/net/net_pkt.c)",
+    ]
+
+    assert len({zperf_profile._fit_name(n, 33) for n in names}) == 2
 
 
 #

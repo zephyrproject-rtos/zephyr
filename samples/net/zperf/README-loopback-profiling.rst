@@ -181,6 +181,14 @@ Before subtraction it is dominated by the BIOS the guest boots through.
 
 Then follows the per-function table, and a roll-up by subsystem group.
 
+Rows are named after the function symbol. Static functions in different files can share a name,
+and each of them gets its own row, named with the shortest part of its file path that tells it
+apart, such as ``out_func (log_output.c)`` and ``out_func (shell_fprintf.c)``. The out-of-line
+copies that one static inline gets in each file using it are declared in the same header and stay
+in one row. Telling the two cases apart needs the DWARF debug information, including
+``.debug_aranges``. Where that is missing, functions that share a name stay in one row, and the
+report lists those rows after the group roll-up.
+
 Two limitations are worth keeping in mind when reading the table:
 
 * The sample is built with :kconfig:option:`CONFIG_SPEED_OPTIMIZATIONS`, so
