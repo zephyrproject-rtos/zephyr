@@ -116,6 +116,14 @@
 
 #define APPCPU_SRAM_SIZE (APPCPU_IRAM_SIZE + APPCPU_DRAM_SIZE)
 
+/* APPCPU regions: default_appcpu.ld places the APPCPU image in them and
+ * default.ld keeps them out of the PROCPU image.
+ */
+#define APPCPU_IRAM_END   (USER_IRAM_END - APPCPU_DRAM_SIZE)
+#define APPCPU_IRAM_START (APPCPU_IRAM_END - APPCPU_IRAM_SIZE)
+#define APPCPU_DRAM_START SRAM1_DRAM_USER_START
+#define APPCPU_DRAM_END   (APPCPU_DRAM_START + APPCPU_DRAM_SIZE)
+
 /* Cached memories */
 #define ICACHE0_START DT_REG_ADDR(DT_NODELABEL(icache0))
 #define ICACHE0_SIZE  DT_REG_SIZE(DT_NODELABEL(icache0))

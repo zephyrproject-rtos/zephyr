@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
@@ -18,6 +20,7 @@
 #include <esp_mcuboot_image.h>
 #include <esp_memory_utils.h>
 #include <hw_init.h>
+#include <memory.h>
 
 #define TAG "amp"
 
@@ -51,7 +54,7 @@ static int load_segment(uint32_t src_addr, uint32_t src_len, uint32_t dst_addr)
 
 	if (!data) {
 		ESP_EARLY_LOGE(TAG, "%s: mmap failed", __func__);
-		return -1;
+		return -EIO;
 	}
 
 	volatile uint32_t *dst = (volatile uint32_t *)dst_addr;
@@ -65,6 +68,14 @@ static int load_segment(uint32_t src_addr, uint32_t src_len, uint32_t dst_addr)
 	return 0;
 }
 
+/* A segment that is not fully inside its APPCPU region would overwrite the
+ * PROCPU sections.
+ */
+static bool IRAM_ATTR segment_in_region(uint32_t addr, uint32_t size, uint32_t start, uint32_t end)
+{
+	return (addr >= start) && (addr <= end) && (size <= end - addr);
+}
+
 int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry_addr)
 {
 	const uint32_t fa_offset = PARTITION_OFFSET(slot0_appcpu_partition);
@@ -72,15 +83,19 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 	const uint8_t fa_id = PARTITION_ID(slot0_appcpu_partition);
 
 	if (entry_addr == NULL) {
-		ESP_EARLY_LOGE(TAG, "Can't return the entry address. Aborting!");
-		abort();
-		return -1;
+		ESP_EARLY_LOGE(TAG, "Can't return the entry address: APPCPU not started");
+		return -EINVAL;
 	}
 
 	uint32_t mcuboot_header[8] = {0};
 	esp_image_load_header_t image_header = {0};
 
 	const uint32_t *data = (const uint32_t *)sys_mmap(fa_offset, 0x80);
+
+	if (data == NULL) {
+		ESP_EARLY_LOGE(TAG, "Can't map the load header: APPCPU not started");
+		return -EIO;
+	}
 
 	memcpy((void *)&mcuboot_header, data, sizeof(mcuboot_header));
 	memcpy((void *)&image_header, data + (hdr_offset / sizeof(uint32_t)),
@@ -94,43 +109,64 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 			fa_id, fa_offset, hdr_offset, fa_size / 1024);
 	} else if ((image_header.header_magic & 0xff) == 0xE9) {
 		ESP_EARLY_LOGE(TAG, "ESP image format is not supported");
-		abort();
+		return -ENOEXEC;
 	} else {
-		ESP_EARLY_LOGE(TAG, "Unknown or empty image detected. Aborting!");
-		abort();
+		ESP_EARLY_LOGE(TAG, "Unknown or empty image detected: APPCPU not started");
+		return -ENOEXEC;
 	}
 
-	if (!esp_ptr_in_iram((void *)image_header.iram_dest_addr) ||
-	    !esp_ptr_in_iram((void *)(image_header.iram_dest_addr + image_header.iram_size))) {
-		ESP_EARLY_LOGE(TAG, "IRAM region in load header is not valid. Aborting");
-		abort();
+	if (!segment_in_region(image_header.iram_dest_addr, image_header.iram_size,
+			       APPCPU_IRAM_START, APPCPU_IRAM_END)) {
+		ESP_EARLY_LOGE(TAG, "IRAM region in load header is not valid: APPCPU not started");
+		return -ENOEXEC;
 	}
 
-	if (!esp_ptr_in_dram((void *)image_header.dram_dest_addr) ||
-	    !esp_ptr_in_dram((void *)(image_header.dram_dest_addr + image_header.dram_size))) {
-		ESP_EARLY_LOGE(TAG, "DRAM region in load header is not valid. Aborting");
-		abort();
+	if (!segment_in_region(image_header.dram_dest_addr, image_header.dram_size,
+			       APPCPU_DRAM_START, APPCPU_DRAM_END)) {
+		ESP_EARLY_LOGE(TAG, "DRAM region in load header is not valid: APPCPU not started");
+		return -ENOEXEC;
 	}
 
-	if (!esp_ptr_in_iram((void *)image_header.entry_addr)) {
-		ESP_EARLY_LOGE(TAG, "Application entry point (%xh) is not in IRAM. Aborting",
-			   image_header.entry_addr);
-		abort();
+	if ((image_header.entry_addr < APPCPU_IRAM_START) ||
+	    (image_header.entry_addr >= APPCPU_IRAM_END)) {
+		ESP_EARLY_LOGE(TAG,
+			       "Application entry point (%xh) is not in IRAM: APPCPU not started",
+			       image_header.entry_addr);
+		return -ENOEXEC;
+	}
+
+	if (image_header.iram_flash_offset > fa_size ||
+	    image_header.iram_size > fa_size - image_header.iram_flash_offset ||
+	    image_header.dram_flash_offset > fa_size ||
+	    image_header.dram_size > fa_size - image_header.dram_flash_offset ||
+	    image_header.irom_flash_offset > fa_size ||
+	    image_header.irom_size > fa_size - image_header.irom_flash_offset ||
+	    image_header.drom_flash_offset > fa_size ||
+	    image_header.drom_size > fa_size - image_header.drom_flash_offset) {
+		ESP_EARLY_LOGE(TAG,
+			       "Load header segments exceed the partition: APPCPU not started");
+		return -ENOEXEC;
 	}
 
 	ESP_EARLY_LOGI(TAG, "IRAM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) load",
 		   (fa_offset + image_header.iram_flash_offset), image_header.iram_dest_addr,
 		   image_header.iram_size, image_header.iram_size);
 
-	load_segment(fa_offset + image_header.iram_flash_offset, image_header.iram_size,
-		     image_header.iram_dest_addr);
+	if (load_segment(fa_offset + image_header.iram_flash_offset, image_header.iram_size,
+			 image_header.iram_dest_addr) != 0) {
+		ESP_EARLY_LOGE(TAG, "IRAM segment not loaded: APPCPU not started");
+		return -EIO;
+	}
 
 	ESP_EARLY_LOGI(TAG, "DRAM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) load",
 		   (fa_offset + image_header.dram_flash_offset), image_header.dram_dest_addr,
 		   image_header.dram_size, image_header.dram_size);
 
-	load_segment(fa_offset + image_header.dram_flash_offset, image_header.dram_size,
-		     image_header.dram_dest_addr);
+	if (load_segment(fa_offset + image_header.dram_flash_offset, image_header.dram_size,
+			 image_header.dram_dest_addr) != 0) {
+		ESP_EARLY_LOGE(TAG, "DRAM segment not loaded: APPCPU not started");
+		return -EIO;
+	}
 
 	ESP_EARLY_LOGI(TAG, "IROM segment: paddr=%08xh, vaddr=%08xh, size=%05xh (%6d) map",
 		   (fa_offset + image_header.irom_flash_offset), image_header.irom_map_addr,
@@ -141,12 +177,12 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 		   image_header.drom_size, image_header.drom_size);
 
 	struct rom_segments rom = {
-		image_header.drom_map_addr,
-		image_header.drom_flash_offset + fa_offset,
-		image_header.drom_size,
-		image_header.irom_map_addr,
-		image_header.irom_flash_offset + fa_offset,
-		image_header.irom_size,
+		.irom_map_addr = image_header.irom_map_addr,
+		.irom_flash_offset = image_header.irom_flash_offset + fa_offset,
+		.irom_size = image_header.irom_size,
+		.drom_map_addr = image_header.drom_map_addr,
+		.drom_flash_offset = image_header.drom_flash_offset + fa_offset,
+		.drom_size = image_header.drom_size,
 	};
 
 	map_rom_segments(1, &rom);
@@ -176,7 +212,9 @@ void esp_appcpu_image_start(unsigned int hdr_offset)
 	}
 
 	/* Input image meta header, output appcpu entry point */
-	esp_appcpu_image_load(hdr_offset, &entry_addr);
+	if (esp_appcpu_image_load(hdr_offset, &entry_addr) != 0) {
+		return;
+	}
 
 	esp_appcpu_start((void *)entry_addr);
 }

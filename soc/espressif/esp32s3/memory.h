@@ -130,6 +130,15 @@
 #endif
 #define USER_IRAM_END (USER_DRAM_END + IRAM_DRAM_OFFSET)
 
+/* APPCPU regions: default_appcpu.ld places the APPCPU image in them and
+ * default.ld keeps them out of the PROCPU image. Both are views of the same
+ * APPCPU_SRAM_SIZE bytes at the end of the user SRAM.
+ */
+#define APPCPU_IRAM_END   USER_IRAM_END
+#define APPCPU_IRAM_START (APPCPU_IRAM_END - APPCPU_SRAM_SIZE)
+#define APPCPU_DRAM_END   USER_DRAM_END
+#define APPCPU_DRAM_START (APPCPU_DRAM_END - APPCPU_SRAM_SIZE)
+
 /* Cached memory */
 #define ICACHE0_START DT_REG_ADDR(DT_NODELABEL(icache0))
 #define ICACHE0_SIZE  DT_REG_SIZE(DT_NODELABEL(icache0))
