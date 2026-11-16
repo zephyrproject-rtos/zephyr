@@ -3429,7 +3429,7 @@ static uint8_t att_req_retry(struct bt_att_chan *att_chan)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	if (req->encode(buf, req->len, req->user_data)) {
+	if (req->encode(att_chan->att->conn, buf, req->len, req->user_data)) {
 		net_buf_unref(buf);
 		return BT_ATT_ERR_UNLIKELY;
 	}
