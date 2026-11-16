@@ -963,7 +963,6 @@ static void dai_ssp_empty_tx_fifo(struct dai_intel_ssp *dp)
 #if SSP_IP_VER > SSP_IP_VER_2_0
 static void ssp_empty_rx_fifo_on_start(struct dai_intel_ssp *dp)
 {
-	uint32_t retry = DAI_INTEL_SSP_RX_FLUSH_RETRY_MAX;
 	uint32_t i, sssr;
 
 	sssr = sys_read32(dai_base(dp) + SSSR);
@@ -983,9 +982,13 @@ static void ssp_empty_rx_fifo_on_start(struct dai_intel_ssp *dp)
 	}
 
 	for (uint32_t idx = 0; idx < I2SIPCMC; ++idx) {
-		while ((sys_read32(dai_base(dp) + SSMIDyCS(idx)) & SSMIDyCS_RNE) && retry--) {
+		uint32_t retry = DAI_INTEL_SSP_RX_FLUSH_RETRY_MAX;
+
+		while (retry && (sys_read32(dai_base(dp) + SSMIDyCS(idx)) & SSMIDyCS_RNE)) {
 			uint32_t entries = SSMIDyCS_RFL_VAL(sys_read32(dai_base(dp) +
 				SSMIDyCS(idx)));
+
+			retry--;
 
 			/* Empty the RX FIFO (the DMA is not running at this point) */
 			for (i = 0; i < entries + 1; i++) {
