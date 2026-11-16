@@ -1,4 +1,5 @@
 # Copyright (c) 2022 Analog Devices Inc.
+# Copyright (c) 2026 Daniel Kampert
 # SPDX-License-Identifier: Apache-2.0
 
 include: sensor-device.yaml
@@ -90,6 +91,22 @@ properties:
       Specify the FIFO watermark level in frame count.
     min: 0
     max: 512
+
+  op-mode:
+    type: int
+    default: 3
+    description: |
+          Operating mode set at init. Also changeable at runtime via
+          SENSOR_ATTR_CONFIGURATION.
+            0 # ADXL372_OP_MODE_STANDBY
+            1 # ADXL372_OP_MODE_WAKE_UP
+            2 # ADXL372_OP_MODE_INSTANT_ON
+            3 # ADXL372_OP_MODE_FULL_BW_MEASUREMENT
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
 
 examples:
   - |
