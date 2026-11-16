@@ -339,6 +339,20 @@ Bluetooth Audio
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
+* BAP
+
+  * :c:member:`bt_bap_unicast_client_cb.start` and :c:member:`bt_bap_unicast_client_cb.stop` are
+    only available if :kconfig:option:`CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT` is non-zero, as
+    the receiver start ready and receiver stop ready operations are only valid for
+    :c:enumerator:`BT_AUDIO_DIR_SOURCE` endpoints. Applications that support Unicast Client
+    configurations without any source ASEs shall guard the assignment of these callbacks.
+  * :c:func:`bt_bap_unicast_client_discover` now returns ``-ENOTSUP`` if the requested direction is
+    not supported by the device, rather than starting a discovery procedure that would always fail.
+    Discovering :c:enumerator:`BT_AUDIO_DIR_SINK` requires
+    :kconfig:option:`CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT` to be non-zero and discovering
+    :c:enumerator:`BT_AUDIO_DIR_SOURCE` requires
+    :kconfig:option:`CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT` to be non-zero.
+
 * MCP
 
   * The media proxy API has been removed and users will need to use the ``bt_mcs``, ``bt_mcc`` or
