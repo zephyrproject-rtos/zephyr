@@ -12,7 +12,6 @@
 #include <common/code_utils.hpp>
 #include <platform-zephyr.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/ethernet.h>
 #include <zephyr/net/icmp.h>
 #include <zephyr/net/mld.h>
 #include <zephyr/net/net_if.h>
@@ -44,7 +43,6 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length);
 
 static struct zsock_pollfd sockfd_raw[MAX_SERVICES];
 static void raw_receive_handler(struct net_socket_service_event *evt);
-static void remove_checksums_for_eth_offloading(uint8_t *buf, uint16_t len);
 static bool infra_if_nat64_try_consume_packet(struct npf_test *test, struct net_pkt *pkt);
 static int raw_infra_if_sock = -1;
 
@@ -408,61 +406,11 @@ otError infra_if_send_raw_message(uint8_t *buf, uint16_t len)
 {
 	otError error = OT_ERROR_NONE;
 
-	remove_checksums_for_eth_offloading(buf, len);
-
 	VerifyOrExit(zsock_send(raw_infra_if_sock, buf, len, 0) > 0,
 		     error = OT_ERROR_FAILED);
 
 exit:
 	return error;
-}
-
-static void remove_checksums_for_eth_offloading(uint8_t *buf, uint16_t len)
-{
-	struct net_ipv4_hdr *ipv4_hdr = (struct net_ipv4_hdr *)buf;
-	uint8_t *pkt_cursor = NULL;
-	struct ethernet_config config;
-
-	if ((net_eth_get_hw_capabilities(ail_iface_ptr) & ETHERNET_HW_TX_CHKSUM_OFFLOAD) == 0) {
-		return; /* No checksum offload capabilities*/
-	}
-
-	if (net_eth_get_hw_config(ail_iface_ptr, ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT,
-				  &config) != 0) {
-		return; /* No TX checksum capabilities*/
-	}
-
-	pkt_cursor = buf + (ipv4_hdr->vhl & 0x0F) * 4;
-
-	if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_HEADER) != 0) {
-		ipv4_hdr->chksum = 0;
-	}
-
-	switch (ipv4_hdr->proto) {
-	case NET_IPPROTO_ICMP:
-		if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_ICMP) != 0) {
-			struct net_icmp_hdr *icmp_hdr = (struct net_icmp_hdr *)pkt_cursor;
-
-			icmp_hdr->chksum = 0;
-		}
-	break;
-	case NET_IPPROTO_UDP:
-		if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_UDP) != 0) {
-			struct net_udp_hdr *udp_hdr = (struct net_udp_hdr *)pkt_cursor;
-
-			udp_hdr->chksum = 0;
-		}
-	break;
-	case NET_IPPROTO_TCP:
-		if ((config.chksum_support & NET_IF_CHECKSUM_IPV4_TCP) != 0) {
-			struct net_tcp_hdr *tcp_hdr = (struct net_tcp_hdr *)pkt_cursor;
-
-			tcp_hdr->chksum = 0;
-		}
-	break;
-	default:
-		break;
-	}
 }
 
 static bool infra_if_nat64_try_consume_packet(struct npf_test *test, struct net_pkt *pkt)
