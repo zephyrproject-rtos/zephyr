@@ -768,6 +768,7 @@ class Pytest(ReportHarness):
 
         # Platform flash_before is intended for boards with USB reset issues during flashing
         self.pytest_params.flash_before = self.instance.platform.flash_before
+        self.pytest_params.post_connect_reset = self.instance.platform.post_connect_reset
 
     def _get_run_env(self) -> dict[str, str] | None:
         """Add the plugin source dir to PYTHONPATH."""
