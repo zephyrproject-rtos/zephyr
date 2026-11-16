@@ -146,6 +146,11 @@ struct bt_conn_le {
 #if defined(CONFIG_BT_SUBRATING)
 	struct bt_conn_le_subrating_info subrate;
 #endif
+
+#if defined(CONFIG_BT_GATT_CLIENT)
+	/* Local MTU sent in the ATT MTU request, see BT_CONN_ATT_MTU_REQ_SENT */
+	uint16_t att_mtu_req;
+#endif
 };
 
 /* For now reserve space for 2 pages of LMP remote features */

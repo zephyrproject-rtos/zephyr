@@ -3960,7 +3960,8 @@ static int gatt_exchange_mtu_encode(struct bt_conn *conn, struct net_buf *buf, s
 	struct bt_att_exchange_mtu_req *req;
 	uint16_t mtu;
 
-	mtu = BT_LOCAL_ATT_MTU_UATT;
+	/* Local MTU of the connection, see `bt_gatt_exchange_mtu` */
+	mtu = conn->le.att_mtu_req;
 
 	LOG_DBG("Client MTU %u", mtu);
 
@@ -3994,6 +3995,11 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 	if (atomic_test_and_set_bit(conn->flags, BT_CONN_ATT_MTU_REQ_SENT)) {
 		return -EALREADY;
 	}
+
+	/* Requested once and stored on the connection, as the request encoder
+	 * and the response handler both need the value that is sent.
+	 */
+	conn->le.att_mtu_req = bt_gatt_local_uatt_mtu(conn);
 
 	err = gatt_req_send(conn, gatt_mtu_rsp, params,
 			    gatt_exchange_mtu_encode, BT_ATT_OP_MTU_REQ,
@@ -6255,6 +6261,27 @@ void bt_gatt_execute_write_ended(struct bt_conn *conn,
 			cb->execute_write_ended(conn, outcome, att_err);
 		}
 	}
+}
+
+uint16_t bt_gatt_local_uatt_mtu(struct bt_conn *conn)
+{
+	struct bt_gatt_cb *cb, *tmp;
+	uint16_t mtu = BT_LOCAL_ATT_MTU_UATT;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&callback_list, cb, tmp, node) {
+		uint16_t limit;
+
+		if (cb->att_mtu_limit == NULL) {
+			continue;
+		}
+
+		limit = cb->att_mtu_limit(conn);
+		if (limit != 0U) {
+			mtu = MIN(mtu, MAX(limit, BT_ATT_DEFAULT_LE_MTU));
+		}
+	}
+
+	return mtu;
 }
 
 /* Central Address Resolution characteristic value (Core 6.3, Vol 3, Part C,

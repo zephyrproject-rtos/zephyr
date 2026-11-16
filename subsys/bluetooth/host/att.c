@@ -1049,7 +1049,7 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	mtu_server = BT_LOCAL_ATT_MTU_UATT;
+	mtu_server = bt_gatt_local_uatt_mtu(chan->att->conn);
 
 	LOG_DBG("Server MTU %u", mtu_server);
 
@@ -1178,9 +1178,12 @@ static uint8_t att_mtu_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	}
 
 	/* The following must equal the value we sent in the req. We assume this
-	 * is a rsp to `gatt_exchange_mtu_encode`.
+	 * is a rsp to `gatt_exchange_mtu_encode`. The value is zero if no
+	 * request has been sent, and the RX MTU is then left unchanged.
 	 */
-	att_chan_set_rx_mtu(chan, BT_LOCAL_ATT_MTU_UATT);
+	if (chan->att->conn->le.att_mtu_req != 0U) {
+		att_chan_set_rx_mtu(chan, chan->att->conn->le.att_mtu_req);
+	}
 	/* The ATT_EXCHANGE_MTU_REQ/RSP is just an alternative way of
 	 * communicating the L2CAP MTU.
 	 */

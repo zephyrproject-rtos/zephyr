@@ -65,6 +65,8 @@ Libraries / Subsystems
   * The ``bt_mcp_media_control_server_`` API controls the local media player and
     replaces the removed ``media_proxy_`` API, see the :ref:`migration guide
     <migration_4.6>`.
+  * The :c:member:`bt_gatt_cb.att_mtu_limit` callback limits the local ATT MTU of a single
+    connection, for example when its data is forwarded over a link with a smaller MTU.
 
 * Display
 
