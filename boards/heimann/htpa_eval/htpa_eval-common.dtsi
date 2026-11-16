@@ -32,15 +32,20 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,camera = &htpa_processed;
+		zephyr,camera = &htpa_colorized;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
 
-	htpa_processed: htpa-compensator {
+	htpa_compensated: htpa-compensator {
 		compatible = "heimann,htpa-compensator";
 		source = <&htpa_cam0>;
+	};
+
+	htpa_colorized: htpa-colorizer {
+		compatible = "heimann,htpa-colorizer";
+		source = <&htpa_compensated>;
 	};
 
 	leds {
