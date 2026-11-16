@@ -1,0 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Test the whole on-board SDRAM. */
+ram0: &sdram0 {};
