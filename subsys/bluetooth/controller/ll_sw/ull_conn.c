@@ -2853,23 +2853,27 @@ uint8_t ull_fsu_update_eff(struct ll_conn *conn)
 	uint8_t phy_tx;
 	uint8_t phy_rx;
 
-#if defined(CONFIG_BT_PHY_UPDATE)
+#if defined(CONFIG_BT_CTLR_PHY)
 	phy_tx = conn->lll.phy_tx;
 	phy_rx = conn->lll.phy_rx;
 #else
 	phy_tx = PHY_1M;
 	phy_rx = PHY_1M;
-#endif /* CONFIG_BT_PHY_UPDATE */
+#endif /* CONFIG_BT_CTLR_PHY */
 
 	fsu_changed = ull_fsu_update_eff_from_local(conn);
 
-	if (fsu_changed) {
-		/* TODO: confirm that we do not need to do something here? */
+	/* Copy the requested masks into the effective state before they are
+	 * cleared below, the RSP and the notification are encoded from eff.
+	 */
+	if (conn->lll.fsu.local.phys || conn->lll.fsu.local.spacing_type) {
+		conn->lll.fsu.eff.phys = conn->lll.fsu.local.phys;
+		conn->lll.fsu.eff.spacing_type = conn->lll.fsu.local.spacing_type;
 	}
 
 	if ((conn->lll.fsu.local.spacing_type & T_IFS_CIS) == T_IFS_CIS) {
 
-		if (conn->lll.tifs_cis_us == conn->lll.fsu.eff.fsu_min) {
+		if (conn->lll.tifs_cis_us != conn->lll.fsu.eff.fsu_min) {
 			fsu_changed = 1;
 		}
 		conn->lll.tifs_cis_us = conn->lll.fsu.eff.fsu_min;
@@ -2878,7 +2882,7 @@ uint8_t ull_fsu_update_eff(struct ll_conn *conn)
 	if ((conn->lll.fsu.local.spacing_type & T_IFS_ACL_CP) == T_IFS_ACL_CP) {
 		if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
 			if (conn->lll.fsu.local.phys & phy_tx) {
-				if (conn->lll.tifs_tx_us ==
+				if (conn->lll.tifs_tx_us !=
 				    conn->lll.fsu.eff.fsu_min) {
 					fsu_changed = 1;
 				}
@@ -2886,11 +2890,19 @@ uint8_t ull_fsu_update_eff(struct ll_conn *conn)
 			}
 		} else {
 			if (conn->lll.fsu.local.phys & phy_rx) {
-				if (conn->lll.tifs_rx_us ==
+				if (conn->lll.tifs_rx_us !=
 				    conn->lll.fsu.eff.fsu_min) {
 					fsu_changed = 1;
 				}
 				conn->lll.tifs_rx_us = conn->lll.fsu.eff.fsu_min;
+				/* Transitional receive window: radio Rx is
+				 * enabled at the new spacing while the header
+				 * timeout still covers the default spacing, so
+				 * a peer that has not yet adopted is heard.
+				 */
+				conn->lll.tifs_hcto_us =
+					MAX(EVENT_IFS_DEFAULT_US,
+					    conn->lll.fsu.eff.fsu_min);
 			}
 		}
 	}
@@ -2898,15 +2910,19 @@ uint8_t ull_fsu_update_eff(struct ll_conn *conn)
 	if ((conn->lll.fsu.local.spacing_type & T_IFS_ACL_PC) == T_IFS_ACL_PC) {
 		if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
 			if (conn->lll.fsu.local.phys & phy_rx) {
-				if (conn->lll.tifs_rx_us ==
+				if (conn->lll.tifs_rx_us !=
 				    conn->lll.fsu.eff.fsu_min) {
 					fsu_changed = 1;
 				}
 				conn->lll.tifs_rx_us = conn->lll.fsu.eff.fsu_min;
+				/* Transitional window: see comment above. */
+				conn->lll.tifs_hcto_us =
+					MAX(EVENT_IFS_DEFAULT_US,
+					    conn->lll.fsu.eff.fsu_min);
 			}
 		} else {
 			if (conn->lll.fsu.local.phys & phy_tx) {
-				if (conn->lll.tifs_tx_us ==
+				if (conn->lll.tifs_tx_us !=
 				    conn->lll.fsu.eff.fsu_min) {
 					fsu_changed = 1;
 				}
@@ -2962,6 +2978,8 @@ uint8_t ull_fsu_init(struct ll_conn *conn)
 	conn->lll.fsu.local.fsu_max = EVENT_IFS_MAX_US;
 	conn->lll.fsu.eff.fsu_min = EVENT_IFS_US;
 	conn->lll.fsu.eff.fsu_max = EVENT_IFS_US;
+	conn->lll.fsu.eff.phys = 0x07;
+	conn->lll.fsu.eff.spacing_type = T_IFS_ACL_PC | T_IFS_ACL_CP;
 	for (size_t i = 0; i < 3; i++) {
 		conn->lll.fsu.perphy[i].fsu_min = EVENT_IFS_US;
 		conn->lll.fsu.perphy[i].fsu_max = EVENT_IFS_US;

@@ -754,10 +754,9 @@ void llcp_pdu_encode_fsu_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP;
 	p = &pdu->llctrl.fsu_rsp;
 
-	p->fsu = sys_cpu_to_le16(conn->lll.fsu.local.fsu_min);
-	p->phys = conn->lll.fsu.local.phys;
-	p->spacing_type = sys_cpu_to_le16(conn->lll.fsu.local.spacing_type);
-	printk("%s: fsu %u\n", __func__, p->fsu);
+	p->fsu = sys_cpu_to_le16(conn->lll.fsu.eff.fsu_min);
+	p->phys = conn->lll.fsu.eff.phys;
+	p->spacing_type = sys_cpu_to_le16(conn->lll.fsu.eff.spacing_type);
 }
 
 void llcp_ntf_encode_fsu_change(struct ll_conn *conn, struct pdu_data *pdu)
@@ -770,7 +769,7 @@ void llcp_ntf_encode_fsu_change(struct ll_conn *conn, struct pdu_data *pdu)
 	p = &pdu->llctrl.fsu_rsp;
 
 	p->fsu = sys_cpu_to_le16(conn->lll.fsu.eff.fsu_min);
-	p->phys = conn->lll.fsu.local.phys;
+	p->phys = conn->lll.fsu.eff.phys;
 	p->spacing_type = sys_cpu_to_le16(conn->lll.fsu.eff.spacing_type);
 }
 

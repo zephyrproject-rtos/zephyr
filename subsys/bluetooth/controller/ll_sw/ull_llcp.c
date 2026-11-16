@@ -948,8 +948,13 @@ uint8_t ull_cp_fsu(struct ll_conn *conn, uint16_t fsu_min, uint16_t fsu_max,
 {
 	struct proc_ctx *ctx;
 
+	/* Frame space range is 0 to 10000 us, and min shall not exceed max */
+	if ((fsu_min > fsu_max) || (fsu_max > 10000U)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
 	if (!feature_fsu(conn)) {
-		return BT_HCI_ERR_SUCCESS;
+		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
 	ctx = llcp_create_local_procedure(PROC_FRAME_SPACE);
@@ -958,6 +963,14 @@ uint8_t ull_cp_fsu(struct ll_conn *conn, uint16_t fsu_min, uint16_t fsu_max,
 	}
 
 	ull_fsu_local_tx_update(conn, fsu_min, fsu_max, phys, spacing_type);
+
+	/* Transitional receive window: the responder adopts the new spacing
+	 * before it transmits the RSP, enable radio Rx early at the requested
+	 * minimum while the header timeout keeps covering the old spacing.
+	 */
+	if (fsu_min < conn->lll.tifs_rx_us) {
+		conn->lll.tifs_rx_us = fsu_min;
+	}
 
 	llcp_lr_enqueue(conn, ctx);
 

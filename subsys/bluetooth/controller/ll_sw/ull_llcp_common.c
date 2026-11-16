@@ -1080,7 +1080,10 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ:
 		/* receive req from remote */
 		llcp_pdu_decode_fsu_req(conn, pdu);
-		ull_fsu_update_eff(conn);
+		/* Responder applies the new spacing before transmitting the RSP,
+		 * remember whether it changed to notify the Host on RSP ack.
+		 */
+		ctx->data.fsu.ntf_fsu = ull_fsu_update_eff(conn);
 
 		llcp_rx_node_retain(ctx);
 		break;
@@ -1231,7 +1234,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t gene
 	/* And release memory if no NTF to be generated */
 	ntf->hdr.type = NODE_RX_TYPE_RELEASE;
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) || defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 
 	if (generate_ntf) {
 		struct pdu_data *pdu;
@@ -1239,10 +1242,23 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t gene
 		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 		ntf->hdr.handle = conn->lll.handle;
 		pdu = (struct pdu_data *)ntf->pdu;
-		LL_ASSERT_DBG(ctx->proc == PROC_DATA_LENGTH_UPDATE);
-		llcp_ntf_encode_length_change(conn, pdu);
-	}
+		switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		case PROC_DATA_LENGTH_UPDATE:
+			llcp_ntf_encode_length_change(conn, pdu);
+			break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+		case PROC_FRAME_SPACE:
+			llcp_ntf_encode_fsu_change(conn, pdu);
+			break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+		default:
+			LL_ASSERT_DBG(0);
+			break;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH || CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 	/* Enqueue notification towards LL - releases mem if no ntf */
 	ll_rx_put_sched(ntf->hdr.link, ntf);
