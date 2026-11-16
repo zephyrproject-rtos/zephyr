@@ -1045,6 +1045,12 @@ out:
 		llext_free_metadata(ext->exp_tab.syms);
 		ext->exp_tab.sym_cnt = 0;
 		ext->exp_tab.syms = NULL;
+
+		if (ext->sect_hdrs_on_heap) {
+			llext_free_metadata(ext->sect_hdrs);
+		}
+		ext->sect_hdrs = NULL;
+		ext->sect_hdrs_on_heap = false;
 	} else {
 		LOG_DBG("Loaded llext: %zu bytes in heap, .text at %p, .rodata at %p",
 			ext->alloc_size, ext->mem[LLEXT_MEM_TEXT], ext->mem[LLEXT_MEM_RODATA]);
