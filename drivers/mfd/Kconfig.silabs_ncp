@@ -1,0 +1,116 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MFD_SILABS_NCP
+	bool "Silicon Labs network co-processor (CPC primary)"
+	default y
+	depends on DT_HAS_SILABS_NCP_ENABLED
+	select SILABS_CPC
+	select EXPERIMENTAL
+	help
+	  Enable the driver for Silicon Labs network co-processors. The host
+	  runs the CPC (Co-Processor Communication) protocol in the primary
+	  role. Child nodes expose the radio protocols offered by the
+	  co-processor.
+
+if MFD_SILABS_NCP
+
+config MFD_SILABS_NCP_BUS_SPI
+	bool "Silicon Labs NCP over SPI"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_SILABS_NCP),spi)
+	depends on SPI
+	depends on GPIO
+	select SPI_ASYNC
+
+config MFD_SILABS_NCP_BUS_SDIO
+	bool "Silicon Labs NCP over SDIO"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_SILABS_NCP),sd)
+	depends on SDHC
+	depends on SDIO_STACK
+
+config MFD_SILABS_NCP_SDIO_POLL_INTERVAL_MS
+	int "Polling interval when the host controller has no card interrupt"
+	depends on MFD_SILABS_NCP_BUS_SDIO
+	default 10
+
+config MFD_SILABS_NCP_BUS_UART
+	bool "Silicon Labs NCP over UART"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_SILABS_NCP),uart)
+	depends on SERIAL
+	depends on GPIO
+	depends on UART_ASYNC_API
+	select CRC
+
+config MFD_SILABS_NCP_UART_RX_BUF_SIZE
+	int "Size of each of the two UART reception buffers"
+	depends on MFD_SILABS_NCP_BUS_UART
+	default 256
+	help
+	  The UART DMA fills these two buffers alternately, and the UART driver
+	  hands over what it received at the latest when a buffer is full.
+	  This is the largest chunk the UART callback copies at once.
+
+config MFD_SILABS_NCP_UART_RX_RING_BUF_SIZE
+	int "Size of the UART reception ring buffer"
+	depends on MFD_SILABS_NCP_BUS_UART
+	default 2048
+	help
+	  The UART callback copies the received bytes into this ring buffer,
+	  the transport parses the frames from it on its work queue. It must
+	  hold what the co-processor can send before the transport runs and
+	  acknowledges, which the CPC flow control bounds: for every endpoint,
+	  its receive window (the number of receive buffers of the child
+	  driver) times its largest frame, plus a few 11-byte control frames.
+	  With the HCI driver alone, 4 buffers of about 270 bytes need less
+	  than 1.5 KiB. It must also hold at least one UART reception buffer.
+	  An overrun is logged and the frame is recovered by retransmission.
+
+config MFD_SILABS_NCP_INIT_PRIORITY
+	int "Initialization priority"
+	default 86
+	help
+	  Priority of the silabs,ncp devices. Must be greater than the
+	  priority of the bus they sit on (SPI_INIT_PRIORITY,
+	  SDHC_INIT_PRIORITY, SERIAL_INIT_PRIORITY) and lower than the priority of the child
+	  drivers that open CPC endpoints.
+
+config MFD_SILABS_NCP_WQ_STACK_SIZE
+	int "Stack size of the work queue of a silabs,ncp device"
+	default 2048
+	help
+	  Each silabs,ncp device runs its transport on its own work queue. The
+	  child drivers also use it for the work they defer from the thread of
+	  the CPC core, like the HCI driver handing the packets to the host, so
+	  the stack must hold that path too.
+
+config MFD_SILABS_NCP_WQ_PRIORITY
+	int "Cooperative priority of the work queue of a silabs,ncp device"
+	default 6
+	help
+	  The work queue must run while the users of the co-processor wait for
+	  a reply, possibly from the system work queue. It must not depend on
+	  the system work queue, like the RX thread of the other HCI drivers.
+	  The value is passed to K_PRIO_COOP().
+
+config MFD_SILABS_NCP_RX_FRAME_POOL_COUNT
+	int "Number of RX frames of a CPC bus"
+	default 20
+	help
+	  A frame is the CPC header and its bookkeeping, 52 bytes, the
+	  payload lives in the buffers of the child drivers. The transport
+	  takes the whole pool to receive ahead of the core, so this is the
+	  number of frames the co-processor can have in flight. The pool is
+	  allocated from the libc heap.
+
+config MFD_SILABS_NCP_TX_FRAME_POOL_COUNT
+	int "Number of TX frames of a CPC bus"
+	default 20
+	help
+	  Frames the core can have in flight towards the co-processor,
+	  including its own acknowledgments. Same size and allocation as the
+	  RX frames.
+
+endif # MFD_SILABS_NCP
