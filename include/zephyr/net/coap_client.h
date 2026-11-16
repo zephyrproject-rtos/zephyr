@@ -202,6 +202,10 @@ struct coap_client_internal_request {
 	uint8_t recv_etag_len;
 	struct coap_block_context send_blk_ctx;
 	struct coap_pending pending;
+	/* Message ID of the separate response whose Echo option the request was
+	 * last retried with, < 0 if none
+	 */
+	int32_t echo_challenge_id;
 	struct coap_client_request coap_request;
 	struct coap_packet request;
 	uint8_t request_tag[COAP_TOKEN_MAX_LEN];
