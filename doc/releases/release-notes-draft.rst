@@ -189,6 +189,13 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Kernel
+
+  * Threads can be created pinned to CPU 0 by default instead of being allowed on all CPUs, with
+    :kconfig:option:`CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU`. A thread's mask can be widened with
+    :c:func:`k_thread_cpu_mask_enable` while it is not runnable (before it is started, or while
+    it is blocked or suspended).
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?
