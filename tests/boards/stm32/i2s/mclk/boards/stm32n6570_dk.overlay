@@ -1,0 +1,6 @@
+/ {
+	aliases {
+		i2s = &sai1_a;
+		i2s-mclk = &sai1_a_mclk;
+	};
+};
