@@ -102,7 +102,21 @@ provides an API, controlled by the :kconfig:option:`CONFIG_SCHED_CPU_MASK`
 kconfig variable, which can associate a specific set of CPUs with each
 thread, indicating on which CPUs it can run.
 
-By default, new threads can run on any CPU.  Calling
+By default, new threads can run on any CPU. If
+:kconfig:option:`CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU` is enabled, new
+threads instead start with only a single CPU enabled in their mask and run on
+other CPUs only after :c:func:`k_thread_cpu_mask_enable` or
+:c:func:`k_thread_cpu_mask_enable_all`, or :c:func:`k_thread_cpu_pin` is called
+on them while they are prevented from running (before being started, or while
+blocked or suspended). Kernel threads that start before application code runs,
+such as the system workqueue, remain on a single CPU; the idle threads are not
+affected. Combined with :kconfig:option:`CONFIG_IPI_OPTIMIZE`, this avoids
+unnecessary scheduling IPIs to secondary cores unless a thread has been
+explicitly allowed to run on them.  This option cannot be combined with
+:kconfig:option:`CONFIG_SCHED_CPU_MASK_PIN_ONLY`, which already pins
+threads to a single CPU.
+
+Calling
 :c:func:`k_thread_cpu_mask_disable` with a particular CPU ID will prevent
 that thread from running on that CPU in the future.  Likewise
 :c:func:`k_thread_cpu_mask_enable` will re-enable execution.  There are also
