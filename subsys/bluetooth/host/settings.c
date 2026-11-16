@@ -5,6 +5,7 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -26,6 +27,9 @@
 #include "common/bt_str.h"
 #include "classic/br.h"
 #include "hci_core.h"
+#if defined(CONFIG_BT_PRIVACY)
+#include "keys_psa.h"
+#endif
 #include "settings.h"
 #include "sys/types.h"
 
@@ -191,6 +195,122 @@ int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 	return 0;
 }
 
+#if defined(CONFIG_BT_PRIVACY)
+struct irk_psa_record {
+	psa_key_id_t ids[CONFIG_BT_ID_MAX];
+};
+
+/* The PSA keys that hold the IRKs in `bt_dev.irk`, as of the last load or store */
+static psa_key_id_t irk_psa_ids[CONFIG_BT_ID_MAX];
+
+static int irk_psa_load(size_t len_rd, settings_read_cb read_cb, void *cb_arg)
+{
+	struct irk_psa_record rec;
+	ssize_t len;
+	int err;
+
+	if (len_rd != sizeof(rec)) {
+		LOG_ERR("Invalid length IRK in storage");
+		return -EINVAL;
+	}
+
+	len = read_cb(cb_arg, &rec, sizeof(rec));
+	if (len < 0) {
+		return len;
+	}
+
+	if (len != sizeof(rec)) {
+		LOG_ERR("Invalid IRK record in storage");
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(rec.ids); i++) {
+		irk_psa_ids[i] = PSA_KEY_ID_NULL;
+
+		if (rec.ids[i] == PSA_KEY_ID_NULL) {
+			(void)memset(bt_dev.irk[i], 0, sizeof(bt_dev.irk[i]));
+			continue;
+		}
+
+		err = bt_keys_psa_get(rec.ids[i], bt_dev.irk[i]);
+		if (err != 0) {
+			for (size_t j = 0; j < i; j++) {
+				bt_keys_psa_del(irk_psa_ids[j]);
+				irk_psa_ids[j] = PSA_KEY_ID_NULL;
+			}
+
+			return err;
+		}
+
+		irk_psa_ids[i] = rec.ids[i];
+	}
+
+	return 0;
+}
+
+/* Stage the IRK of the identity `id` in PSA storage and set its key ID in `new_id`.
+ *
+ * A changed IRK is stored in a new PSA key. `new_id` is left as the null ID for an unset IRK.
+ */
+static int irk_psa_stage(size_t id, psa_key_id_t *new_id)
+{
+	static const uint8_t zero_irk[sizeof(bt_dev.irk[0])];
+
+	if (util_memeq(bt_dev.irk[id], zero_irk, sizeof(zero_irk))) {
+		return 0;
+	}
+
+	*new_id = irk_psa_ids[id];
+	if ((*new_id == PSA_KEY_ID_NULL) || !bt_keys_psa_matches(*new_id, bt_dev.irk[id])) {
+		return bt_keys_psa_put(bt_dev.irk[id], new_id);
+	}
+
+	return 0;
+}
+
+/* Destroy the PSA key of the identity `id` that is no longer needed and keep the other one.
+ *
+ * If the record was `committed`, the replaced key is obsolete, otherwise `new_id` is.
+ */
+static void irk_psa_finalize(size_t id, psa_key_id_t new_id, bool committed)
+{
+	const psa_key_id_t obsolete = committed ? irk_psa_ids[id] : new_id;
+	const psa_key_id_t kept = committed ? new_id : irk_psa_ids[id];
+
+	if (obsolete != kept) {
+		bt_keys_psa_del(obsolete);
+	}
+
+	irk_psa_ids[id] = kept;
+}
+
+/* Store the IRKs of the identities in new PSA keys if they changed. The replaced PSA keys are only
+ * destroyed after the record is written, so a failure leaves the previous record usable.
+ */
+static int irk_psa_store(void)
+{
+	struct irk_psa_record rec = { 0 };
+	int err = 0;
+
+	for (size_t i = 0; i < bt_dev.id_count; i++) {
+		err = irk_psa_stage(i, &rec.ids[i]);
+		if (err != 0) {
+			break;
+		}
+	}
+
+	if (err == 0) {
+		err = bt_settings_store("irk", 0, NULL, &rec, sizeof(rec));
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(rec.ids); i++) {
+		irk_psa_finalize(i, rec.ids[i], err == 0);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_PRIVACY */
+
 static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb,
 	       void *cb_arg)
 {
@@ -278,22 +398,11 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 
 #if defined(CONFIG_BT_PRIVACY)
 	if ((len == 3) && (memcmp(name, "irk", len) == 0)) {
-		len = read_cb(cb_arg, bt_dev.irk, sizeof(bt_dev.irk));
-		if (len < sizeof(bt_dev.irk[0])) {
-			if (len < 0) {
-				LOG_ERR("Failed to read IRK from storage"
-				       " (err %zd)", len);
-			} else {
-				LOG_ERR("Invalid length IRK in storage");
-				(void)memset(bt_dev.irk, 0, sizeof(bt_dev.irk));
-			}
-		} else {
-			int i, count;
+		int err = irk_psa_load(len_rd, read_cb, cb_arg);
 
-			count = len / sizeof(bt_dev.irk[0]);
-			for (i = 0; i < count; i++) {
-				LOG_DBG("IRK[%d] %s", i, bt_hex(bt_dev.irk[i], 16));
-			}
+		if (err != 0) {
+			LOG_ERR("Failed to load IRK from PSA storage (err %d)", err);
+			(void)memset(bt_dev.irk, 0, sizeof(bt_dev.irk));
 		}
 
 		return 0;
@@ -550,8 +659,7 @@ int bt_settings_delete_id(void)
 static void do_store_irk(struct k_work *work)
 {
 #if defined(CONFIG_BT_PRIVACY)
-	int err = bt_settings_store("irk", 0, NULL, bt_dev.irk, ID_DATA_LEN(bt_dev.irk));
-
+	int err = irk_psa_store();
 	if (err) {
 		LOG_ERR("Failed to save IRK (err %d)", err);
 	}
@@ -570,7 +678,18 @@ int bt_settings_store_irk(void)
 
 int bt_settings_delete_irk(void)
 {
-	return bt_settings_delete("irk", 0, NULL);
+	int err = bt_settings_delete("irk", 0, NULL);
+
+#if defined(CONFIG_BT_PRIVACY)
+	if (err == 0) {
+		for (size_t i = 0; i < ARRAY_SIZE(irk_psa_ids); i++) {
+			bt_keys_psa_del(irk_psa_ids[i]);
+			irk_psa_ids[i] = PSA_KEY_ID_NULL;
+		}
+	}
+#endif
+
+	return err;
 }
 
 void bt_settings_flush(void)

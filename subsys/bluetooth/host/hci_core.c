@@ -61,6 +61,7 @@
 #include "id.h"
 #include "iso_internal.h"
 #include "keys.h"
+#include "keys_psa.h"
 #include "l2cap_internal.h"
 #include "monitor.h"
 #include "scan.h"
@@ -3903,6 +3904,12 @@ static int common_init(void)
 		if (err) {
 			return err;
 		}
+	}
+
+	/* Not covered by the host crypto, which the Controller may provide instead */
+	err = bt_keys_psa_init();
+	if (err) {
+		return err;
 	}
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
