@@ -46,8 +46,9 @@ int iso_tx_register(struct bt_iso_chan *iso_chan);
  * @param iso_chan The channel to unregister
  *
  * @retval 0 on success
- * @retval -EINVAL @p iso_chan is NULL
- * @retval -EINVAL @p iso_chan is not configured for TX
+ * @retval -EINVAL
+ *     - @p iso_chan is NULL
+ *     - @p iso_chan is not configured for TX
  * @retval -ENODATA @p iso_chan is currently not registered
  */
 int iso_tx_unregister(struct bt_iso_chan *iso_chan);
