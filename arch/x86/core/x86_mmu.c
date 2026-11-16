@@ -1558,6 +1558,34 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	return apply_region(ptn->start, ptn->size, ptn->attr);
 }
 
+/* A domain that is de-initialized while still applied to the common page
+ * tables has its regions reset and is dropped from the cache, as the next
+ * context switch could no longer reset them through its partition table.
+ */
+int arch_mem_domain_deinit(struct k_mem_domain *domain)
+{
+	int ret;
+
+	if (domain != current_domain) {
+		return 0;
+	}
+
+	for (int i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
+		struct k_mem_partition *ptn = &domain->partitions[i];
+
+		if (ptn->size == 0) {
+			continue;
+		}
+		ret = reset_region(ptn->start, ptn->size);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+	current_domain = NULL;
+
+	return 0;
+}
+
 /* Rest of the APIs don't need to do anything */
 int arch_mem_domain_thread_add(struct k_thread *thread)
 {
