@@ -404,6 +404,11 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	case WLAN_REASON_FW_RESET:
 		LOG_DBG("WLAN: FW hang");
 		break;
+#ifdef CONFIG_NXP_WIFI_BG_SCAN
+	case WLAN_REASON_BGSCAN_NETWORK_NOT_FOUND:
+		LOG_WRN("WLAN: could not find the network in background scan");
+		break;
+#endif
 	default:
 		LOG_WRN("WLAN: Unknown Event: %d", reason);
 	}
