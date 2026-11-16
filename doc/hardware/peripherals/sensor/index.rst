@@ -45,6 +45,7 @@ be device or channel specific.
    device_tree.rst
    fetch_and_get.rst
    read_and_decode.rst
+   emulators.rst
 
 
 .. _sensor-implementing:

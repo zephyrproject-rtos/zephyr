@@ -194,6 +194,12 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Sensors
+
+  * I2C sensor drivers can be tested on :zephyr:board:`native_sim` against an emulator
+    described by register and channel tables taken from the datasheet. See
+    :ref:`sensor-emulators`.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?
