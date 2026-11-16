@@ -254,7 +254,7 @@ int eic_mchp_disable_interrupt(struct eic_config_params *eic_pin_config)
 	if ((eic_data->line_busy & BIT(eic_line)) != 0) {
 		disable_interrupt_line(eic_cfg->regs, eic_line);
 	} else {
-		LOG_ERR("EIC Line is already free");
+		LOG_DBG("EIC Line is already free");
 		return 0;
 	}
 
@@ -322,6 +322,7 @@ uint32_t eic_mchp_interrupt_pending(uint8_t port_id)
  * This function configures the EIC interrupt for the specified pin, including setting up
  * the trigger type, enabling input, configuring debounce if required,
  * and updating the internal data structures to reflect the new assignment of pin to an eic line.
+ * A pin that already owns its EIC line can call it again to reconfigure the line.
  */
 int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 {
@@ -335,8 +336,8 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	eic_data->gpio_data[eic_pin_config->port_id] = eic_pin_config->gpio_data;
 	eic_data->eic_line_callback = eic_pin_config->eic_line_callback;
 
-	/* Find the eic line of a given pin of the given port. If no eic line associated or
-	 * eic line is busy, return failure
+	/* Find the eic line of a given pin of the given port. If no eic line is associated
+	 * or the eic line is owned by another pin, return failure
 	 */
 	eic_line = find_eic_line_from_pin(eic_pin_config->port_id, pin);
 	LOG_DBG("eic line of port %d pin %d = %d", eic_pin_config->port_id, pin, eic_line);
@@ -347,7 +348,10 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	}
 
 	eic_data->lock = irq_lock();
-	if ((eic_data->line_busy & BIT(eic_line)) != 0) {
+	/* A busy line can only be reconfigured by the pin that owns it */
+	if (((eic_data->line_busy & BIT(eic_line)) != 0) &&
+	    ((eic_data->lines[eic_line].port != eic_pin_config->port_id) ||
+	     (eic_data->lines[eic_line].pin != pin))) {
 		irq_unlock(eic_data->lock);
 		LOG_ERR("EIC Line for port %d : %d is busy", eic_pin_config->port_id, pin);
 		return -EBUSY;
@@ -389,9 +393,11 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 
 #endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG || CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
-	/* Set the debouncing feature of the eic line if required */
+	/* Set or clear the debouncing feature of the eic line, as the line may be reconfigured */
 	if (eic_pin_config->debounce != 0) {
 		eic_cfg->regs->EIC_DEBOUNCEN |= BIT(eic_line);
+	} else {
+		eic_cfg->regs->EIC_DEBOUNCEN &= ~BIT(eic_line);
 	}
 	LOG_DBG("%s", eic_pin_config->debounce ? "debouncing enabled" : "debouncing disabled");
 
