@@ -410,6 +410,7 @@
 			       <&dmamux1 1 39 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			interrupts = <36 0>;
+			st,full-duplex;
 			status = "disabled";
 		};
 
@@ -438,6 +439,7 @@
 			       <&dmamux1 1 61 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			interrupts = <51 0>;
+			st,full-duplex;
 			status = "disabled";
 		};
 
@@ -662,6 +664,7 @@
 			       <&dmamux1 1 37 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			interrupts = <35 0>;
+			st,full-duplex;
 			status = "disabled";
 		};
 
