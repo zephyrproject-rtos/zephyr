@@ -604,6 +604,10 @@ Networking
   * :zephyr_file:`samples/subsys/mgmt/updatehub/local.conf.example` replaces
     ``overlay-prj.conf.example``.
 
+* :c:macro:`NET_REQUEST_WIFI_CONNECT_STORED` now returns the error from the last connect request
+  if it fails for all stored networks, instead of ``0`` (or ``-ENOEXEC`` for static credentials).
+  Update applications that call this request to handle this error.
+
 OpenThread
 ==========
 
