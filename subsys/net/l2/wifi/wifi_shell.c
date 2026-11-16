@@ -835,6 +835,34 @@ static void handle_wifi_nan_receive(struct net_mgmt_event_callback *cb)
 }
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+static void handle_wifi_wnm_sleep_event(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_wnm_sleep_info *info =
+		(const struct wifi_wnm_sleep_info *)cb->info;
+	const struct shell *sh = context.sh;
+
+	switch (info->result) {
+	case WIFI_WNM_SLEEP_ENTER_CONFIRM:
+		if (info->interval) {
+			PR_INFO("WNM-Sleep entered, interval %u DTIMs\n", info->interval);
+		} else {
+			PR_INFO("WNM-Sleep entered\n");
+		}
+		break;
+	case WIFI_WNM_SLEEP_ENTER_FAIL:
+		PR_WARNING("WNM-Sleep enter rejected by AP\n");
+		break;
+	case WIFI_WNM_SLEEP_EXIT_CONFIRM:
+		PR_INFO("WNM-Sleep exited\n");
+		break;
+	case WIFI_WNM_SLEEP_EXIT_FAIL:
+		PR_WARNING("WNM-Sleep exit rejected by AP\n");
+		break;
+	}
+}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM */
+
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint64_t mgmt_event, struct net_if *iface)
 {
@@ -860,6 +888,11 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 	case NET_EVENT_WIFI_AP_STA_DISCONNECTED:
 		handle_wifi_ap_sta_disconnected(cb);
 		break;
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+	case NET_EVENT_WIFI_WNM_SLEEP:
+		handle_wifi_wnm_sleep_event(cb);
+		break;
+#endif
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 	case NET_EVENT_WIFI_SIGNAL_CHANGE:
 		handle_wifi_signal_change(cb, iface);
@@ -2829,6 +2862,53 @@ static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+static int cmd_wifi_wnm_sleep(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_wnm_sleep_params params = {0};
+	long tmp = 0;
+
+	context.sh = sh;
+
+	if (iface == NULL) {
+		PR_ERROR("No Wi-Fi STA interface\n");
+		return -ENOEXEC;
+	}
+
+	if (strcmp(argv[1], "enter") == 0) {
+		params.oper = WIFI_WNM_SLEEP_OPER_ENTER;
+	} else if (strcmp(argv[1], "exit") == 0) {
+		params.oper = WIFI_WNM_SLEEP_OPER_EXIT;
+	} else {
+		PR_ERROR("Invalid operation %s, use enter or exit\n", argv[1]);
+		return -EINVAL;
+	}
+
+	if (argc > 2) {
+		if (params.oper != WIFI_WNM_SLEEP_OPER_ENTER) {
+			PR_ERROR("The interval is only valid with enter\n");
+			return -EINVAL;
+		}
+
+		if (!parse_number(sh, &tmp, argv[2], NULL, 0, UINT16_MAX)) {
+			return -EINVAL;
+		}
+
+		params.interval = tmp;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_WNM_SLEEP, iface, &params, sizeof(params))) {
+		PR_WARNING("WNM-Sleep %s request failed\n", argv[1]);
+		return -ENOEXEC;
+	}
+
+	PR("WNM-Sleep %s requested\n", argv[1]);
+
+	return 0;
+}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM */
 
 static int cmd_wifi_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -5539,6 +5619,14 @@ SHELL_SUBCMD_ADD((wifi), 11v_btm_query, NULL,
 		 cmd_wifi_btm_query,
 		 2, 2);
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+SHELL_SUBCMD_ADD((wifi), wnm_sleep, NULL,
+		 SHELL_HELP("Request to enter or exit WNM-Sleep Mode",
+			    "<enter|exit> [<WNM Sleep Interval, in DTIM intervals>]"),
+		 cmd_wifi_wnm_sleep,
+		 2, 1);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_cmd_ap,
 	SHELL_CMD_ARG(disable, NULL,
@@ -6274,7 +6362,9 @@ static int wifi_shell_init(void)
 				     wifi_mgmt_event_handler,
 				     WIFI_SHELL_MGMT_EVENTS
 				     IF_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN,
-						(|WIFI_SHELL_NAN_EVENTS)));
+						(|WIFI_SHELL_NAN_EVENTS))
+				     IF_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM,
+						(|NET_EVENT_WIFI_WNM_SLEEP)));
 
 	net_mgmt_add_event_callback(&wifi_shell_mgmt_cb);
 
