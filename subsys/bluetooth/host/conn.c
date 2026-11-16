@@ -2042,6 +2042,55 @@ static int do_phy_update(struct bt_conn *conn)
 	return bt_le_set_phy(conn, 0U, pref, pref, BT_HCI_LE_PHY_CODED_ANY);
 }
 
+/* Default T_IFS; any value up to it is acceptable. */
+#define AUTO_FRAME_SPACE_MAX_US 150U
+
+static int do_frame_space_update(struct bt_conn *conn)
+{
+	struct bt_conn_le_frame_space_update_param param = {
+		.spacing_types = BT_CONN_LE_FRAME_SPACE_TYPES_MASK_ACL_IFS,
+		.frame_space_min = 0U,
+		.frame_space_max = AUTO_FRAME_SPACE_MAX_US,
+	};
+	/* Peer features may not be exchanged yet when the auto procedures run. */
+	const bool peer_known = atomic_test_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED);
+
+	if ((conn->role == BT_HCI_ROLE_CENTRAL &&
+	     !IS_ENABLED(CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_CENTRAL)) ||
+	    (conn->role == BT_HCI_ROLE_PERIPHERAL &&
+	     !IS_ENABLED(CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_PERIPHERAL))) {
+		return 0;
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_FRAME_SPACE_UPDATE) ||
+	    !BT_FEAT_LE_FRAME_SPACE_UPDATE_SET(bt_dev.le.features)) {
+		LOG_WRN("Frame Space Update not supported");
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_1M)) {
+		param.phys |= BT_HCI_LE_FRAME_SPACE_UPDATE_PHY_1M_MASK;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_2M) &&
+	    BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
+	    (!peer_known || BT_FEAT_LE_PHY_2M(conn->le.features))) {
+		param.phys |= BT_HCI_LE_FRAME_SPACE_UPDATE_PHY_2M_MASK;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_CODED) &&
+	    BT_FEAT_LE_PHY_CODED(bt_dev.le.features) &&
+	    (!peer_known || BT_FEAT_LE_PHY_CODED(conn->le.features))) {
+		param.phys |= BT_HCI_LE_FRAME_SPACE_UPDATE_PHY_CODED_MASK;
+	}
+
+	if (param.phys == 0U) {
+		return 0;
+	}
+
+	return bt_conn_le_frame_space_update(conn, &param);
+}
+
 static bool can_initiate_feature_exchange(struct bt_conn *conn)
 {
 	/* Spec says both central and peripheral can send the command. However,
@@ -2119,6 +2168,18 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_BT_AUTO_FRAME_SPACE_UPDATE)) {
+		err = do_frame_space_update(conn);
+		if (err != 0) {
+			/* Expected if the peer does not support Frame Space Update. */
+			LOG_WRN("Failed LE Frame Space Update (%d)", err);
+		}
+
+		if (conn->state != BT_CONN_CONNECTED) {
+			return;
+		}
+	}
+
 	/* Data length should be automatically updated to the maximum by the
 	 * controller. Not updating it is a quirk and this is the workaround.
 	 */
@@ -2142,6 +2203,7 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
  * - read remote features
  * - read remote version
  * - update PHY
+ * - update frame space
  * - update data length
  */
 static void auto_initiated_procedures(struct k_work *unused)
