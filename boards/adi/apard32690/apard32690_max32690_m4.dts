@@ -337,7 +337,7 @@ zephyr_udc0: &usbhs {
 
 	esp_wifi: esp-wifi {
 		compatible = "espressif,esp-at";
-		status = "okay";
 		reset-gpios = <&gpio3 9 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };

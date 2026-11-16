@@ -26,11 +26,11 @@
 	status = "okay";
 
 	pwm0_1 {
-		clocks = <&peri_clk_div1>;
 		compatible = "infineon,tcpwm-pwm";
-		status = "okay";
+		clocks = <&peri_clk_div1>;
 		pinctrl-0 = <&p1_0_pwm0_1>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -40,6 +40,6 @@
 
 /* PWM counter is 16-bit (max 65535); clock-div must satisfy src_clk_hz / clock-div <= 65535 */
 &peri_clk_div1 {
-	status = "okay";
 	clock-div = <4000>;
+	status = "okay";
 };

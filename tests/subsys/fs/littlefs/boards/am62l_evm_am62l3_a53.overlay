@@ -11,18 +11,18 @@
 		#size-cells = <1>;
 
 		small_partition: partition@0 {
-			label = "small";
 			reg = <0x00000000 DT_SIZE_M(4)>;
+			label = "small";
 		};
 
 		medium_partition: partition@400000 {
-			label = "medium";
 			reg = <0x00400000 DT_SIZE_M(6)>;
+			label = "medium";
 		};
 
 		large_partition: partition@800000 {
-			label = "large";
 			reg = <0x00800000 DT_SIZE_M(8)>;
+			label = "large";
 		};
 	};
 };

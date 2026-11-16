@@ -28,8 +28,8 @@
 		#size-cells = <1>;
 
 		lfs1_partition: partition@1000000 {
-			label = "storage";
 			reg = <0x00000000 DT_SIZE_M(64)>;
+			label = "storage";
 		};
 	};
 };

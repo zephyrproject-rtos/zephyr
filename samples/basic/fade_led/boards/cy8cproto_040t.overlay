@@ -26,11 +26,11 @@
 	status = "okay";
 
 	pwm0_1 {
-		clocks = <&peri_clk_div1>;
 		compatible = "infineon,tcpwm-pwm";
-		status = "okay";
+		clocks = <&peri_clk_div1>;
 		pinctrl-0 = <&p1_0_pwm0_1>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -40,6 +40,6 @@
 
 /* Divide the 48MHz clk_hf down so a 1-second period fits the 16-bit PWM counter */
 &peri_clk_div1 {
-	status = "okay";
 	clock-div = <4000>;
+	status = "okay";
 };

@@ -40,7 +40,6 @@
 
 &gpspi1 {
 	compatible = "microchip,xec-gpspi-v2-controller";
-	status = "okay";
 
 	dmas = <&dmac 14 DMA_MCHP_XEC_TRIG_SRC_GPSPI1_TX>,
 	       <&dmac 15 DMA_MCHP_XEC_TRIG_SRC_GPSPI1_RX>;
@@ -56,6 +55,7 @@
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
 	duplex = "MSPI_HALF_DUPLEX";
 	software-multiperipheral; /* REQUIRED */
+	status = "okay";
 
 	/* 25Q128JVSM +3.3V
 	 * This SPI flash implements single, dual, and quad reads.

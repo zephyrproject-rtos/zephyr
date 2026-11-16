@@ -476,11 +476,11 @@
 			interrupt-names = "wifi", "wifi-ipc";
 			interrupt-parent = <&clic>;
 			clocks = <&clocks BL808_CLKID_CLK_WIFIPLL>;
-			status = "disabled";
 
 			pwr-table-11b = <17 17 17 17>;
 			pwr-table-11g = <15 15 15 15 15 15 15 15>;
 			pwr-table-11n = <14 14 14 14 14 14 14 14>;
+			status = "disabled";
 		};
 
 		psram_uhs_ctrl: psram-uhs@3000f000 {

@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/led/led.h>
 
 / {
-	model = "FlextechAKT T1S to USB Board";
 	compatible = "flextechakt,t1susb";
+	model = "FlextechAKT T1S to USB Board";
 
 	chosen {
 		zephyr,code-partition = &code_partition;
@@ -190,10 +190,10 @@
 	pinctrl-0 = <&spi0b_mosi_p2_28 &spi0b_miso_p2_27
 		     &spi0b_sck_p2_29 &spi0b_ss1_p2_26>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	dmas = <&dma0 1 MAX32_DMA_SLOT_SPI0_TX>, <&dma0 2 MAX32_DMA_SLOT_SPI0_RX>;
 	dma-names = "tx", "rx";
+	status = "okay";
 
 	adin1140: adin1140@1 {
 		compatible = "adi,adin1140";
@@ -211,8 +211,8 @@
 			#size-cells = <0>;
 
 			adin1140_phy: ethernet-phy@0 {
-				reg = <0x0>;
 				compatible = "adi,adin1140-phy";
+				reg = <0x0>;
 				plca-enable;
 				plca-node-id = <0>;
 				plca-node-count = <5>;
@@ -233,9 +233,9 @@
 };
 
 qwiic_i2c: &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0a_sda_p2_7 &i2c0a_scl_p2_8>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eeprom: eeprom@50 {
 		compatible = "microchip,24lc256", "atmel,at24";
@@ -267,20 +267,20 @@ zephyr_udc0: &usbhs {
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-m4";
 			reg = <0x0 DT_SIZE_K(3008)>;
+			label = "image-m4";
 		};
 
 		storage_partition: partition@2f0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x2f0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

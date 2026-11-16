@@ -50,10 +50,10 @@
 
 dut_twim: &i2c20 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c20_default_alt>;
 	pinctrl-1 = <&i2c20_sleep_alt>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	sensor: sensor@54 {
 		reg = <0x54>;
@@ -62,8 +62,8 @@ dut_twim: &i2c20 {
 
 &i2c21 {
 	compatible = "nordic,nrf-twis";
-	status = "okay";
 	pinctrl-0 = <&i2c21_default_alt>;
 	pinctrl-1 = <&i2c21_sleep_alt>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };

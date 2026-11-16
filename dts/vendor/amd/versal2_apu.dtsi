@@ -115,10 +115,10 @@
 			reg = <0x0 0xf1e60000 0x0 0x1000>;
 			timer-width = <32>;
 			clock-frequency = <147915192>;
-			status = "disabled";
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 
 			ttc0_timer0: counter@0 {
 				compatible = "xlnx,ttc-counter";

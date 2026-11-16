@@ -11,8 +11,8 @@
 #include "nrf54lm20_a_cpuflpr_common.dtsi"
 
 / {
-	model = "OPHELIA5 DK nRF54LM20A FLPR MCU";
 	compatible = "we,ophelia5dk_nrf54lm20a-cpuflpr";
+	model = "OPHELIA5 DK nRF54LM20A FLPR MCU";
 
 	chosen {
 		zephyr,console = &uart30;

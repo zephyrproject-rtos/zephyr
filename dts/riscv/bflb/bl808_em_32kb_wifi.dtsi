@@ -19,9 +19,9 @@
 		wifi_ram: memory@2203b000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x2203b000 DT_SIZE_K(84)>;
+			ranges = <0x0 0x2203b000 DT_SIZE_K(84)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x2203b000 DT_SIZE_K(84)>;
 			zephyr,memory-region = "WIFI_RAM";
 		};
 	};

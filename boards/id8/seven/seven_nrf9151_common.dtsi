@@ -133,10 +133,10 @@ mikrobus_2_i2c: &i2c3 {};
 mikrobus_2_spi: &spi3 {};
 
 &adc {
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	/* mikroBUS 1 AN: P0.20 / AIN7 */
 	channel@0 {
@@ -169,10 +169,10 @@ mikrobus_2_spi: &spi3 {};
 
 &spi1 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	pinctrl-0 = <&system_led_spi_default>;
 	pinctrl-1 = <&system_led_spi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	system_led: ws2812@0 {
 		compatible = "worldsemi,ws2812-spi";
@@ -189,55 +189,55 @@ mikrobus_2_spi: &spi3 {};
 };
 
 &pwm1 {
-	status = "okay";
 	pinctrl-0 = <&pwm1_default>;
 	pinctrl-1 = <&pwm1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart2 {
-	status = "disabled";
 	pinctrl-0 = <&mikrobus_1_uart_default>;
 	pinctrl-1 = <&mikrobus_1_uart_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
 
 &uart3 {
-	status = "disabled";
 	pinctrl-0 = <&mikrobus_2_uart_default>;
 	pinctrl-1 = <&mikrobus_2_uart_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
 
 &i2c2 {
-	status = "disabled";
 	pinctrl-0 = <&mikrobus_1_i2c_default>;
 	pinctrl-1 = <&mikrobus_1_i2c_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
 
 &i2c3 {
-	status = "disabled";
 	pinctrl-0 = <&mikrobus_2_i2c_default>;
 	pinctrl-1 = <&mikrobus_2_i2c_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
 
 &i2c1 {
 	compatible = "nordic,nrf-twim";
-	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&pmic_i2c_default>;
 	pinctrl-1 = <&pmic_i2c_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 
 	npm1300: pmic@6b {
 		compatible = "nordic,npm1300";
@@ -262,16 +262,16 @@ mikrobus_2_spi: &spi3 {};
 
 &spi2 {
 	compatible = "nordic,nrf-spim";
-	status = "disabled";
 	pinctrl-0 = <&mikrobus_1_spi_default>;
 	pinctrl-1 = <&mikrobus_1_spi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
 
 &spi3 {
 	compatible = "nordic,nrf-spim";
-	status = "disabled";
 	pinctrl-0 = <&mikrobus_2_spi_default>;
 	pinctrl-1 = <&mikrobus_2_spi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };

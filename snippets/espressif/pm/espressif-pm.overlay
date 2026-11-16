@@ -5,6 +5,6 @@
  */
 
 &rtc_timer {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };

@@ -8,6 +8,6 @@
 };
 
 &coresight {
-	status = "okay";
 	mode = "stm-etr";
+	status = "okay";
 };

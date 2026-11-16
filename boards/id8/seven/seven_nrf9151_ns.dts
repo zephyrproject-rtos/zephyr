@@ -9,8 +9,8 @@
 #include "seven_nrf9151_common.dtsi"
 
 / {
-	model = "Seven nRF9151 Non-Secure";
 	compatible = "id8,seven-nrf9151-ns";
+	model = "Seven nRF9151 Non-Secure";
 
 	chosen {
 		zephyr,flash = &flash0;
