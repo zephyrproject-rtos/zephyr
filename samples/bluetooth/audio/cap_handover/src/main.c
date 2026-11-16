@@ -22,6 +22,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
@@ -33,6 +34,7 @@
 #include <zephyr/logging/log_core.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -61,7 +63,8 @@ static struct bt_cap_unicast_group *unicast_group;
 static struct bt_le_ext_adv *ext_adv;
 static uint32_t broadcast_id;
 
-uint64_t total_tx_iso_packet_count; /* This value is exposed to test code */
+uint64_t total_unicast_tx_iso_packet_count;   /* This value is exposed to test code */
+uint64_t total_broadcast_tx_iso_packet_count; /* This value is exposed to test code */
 
 /* Store the parameters globally so we can reuse the parameters when switching between unicast and
  * broadcast
@@ -171,11 +174,17 @@ static void stream_sent_cb(struct bt_bap_stream *stream)
 
 	/* Triggered every time we have sent an HCI data packet to the controller */
 
-	if ((total_tx_iso_packet_count % 100U) == 0U) {
-		LOG_INF("Sent %llu HCI ISO data packets", total_tx_iso_packet_count);
-	}
+	if (stream->conn != NULL) { /* only unicast streams have an ACL connection reference */
+		LOG_INF_RATELIMIT("Sent %llu unicast HCI ISO data packets",
+				  total_unicast_tx_iso_packet_count);
 
-	total_tx_iso_packet_count++;
+		total_unicast_tx_iso_packet_count++;
+	} else {
+		LOG_INF_RATELIMIT("Sent %llu broadcast HCI ISO data packets",
+				  total_broadcast_tx_iso_packet_count);
+
+		total_broadcast_tx_iso_packet_count++;
+	}
 }
 
 static void
@@ -458,6 +467,29 @@ static int discover_cas(void)
 	return 0;
 }
 
+static void unicast_to_broadcast_created_cb(struct bt_cap_broadcast_source *source)
+{
+	struct bt_data per_ad;
+	int err;
+
+	NET_BUF_SIMPLE_DEFINE(base_buf, BT_BASE_MAX_SIZE);
+
+	err = bt_cap_initiator_broadcast_get_base(source, &base_buf);
+	if (err != 0) {
+		LOG_ERR("Failed to get encoded BASE: %d\n", err);
+		return;
+	}
+
+	per_ad.type = BT_DATA_SVC_DATA16;
+	per_ad.data_len = base_buf.len;
+	per_ad.data = base_buf.data;
+	err = bt_le_per_adv_set_data(ext_adv, &per_ad, 1);
+	if (err != 0) {
+		LOG_ERR("Failed to set periodic advertising data: %d\n", err);
+		return;
+	}
+}
+
 static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 					     struct bt_cap_unicast_group *group,
 					     struct bt_cap_broadcast_source *source)
@@ -465,9 +497,11 @@ static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 	if (err != 0) {
 		LOG_ERR("Failed to handover unicast to broadcast (failing conn %p): %d", conn, err);
 
-		err = bt_conn_disconnect(peer.conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-		if (err != 0) {
-			LOG_ERR("Failed to disconnect connection: %d", err);
+		if (peer.conn != NULL) {
+			err = bt_conn_disconnect(peer.conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+			if (err != 0) {
+				LOG_ERR("Failed to disconnect connection: %d", err);
+			}
 		}
 	} else {
 		LOG_DBG("Unicast to broadcast handover completed with new source %p", source);
@@ -822,31 +856,6 @@ static int setup_broadcast_adv(void)
 	return 0;
 }
 
-static int set_base_data(void)
-{
-	struct bt_data per_ad;
-	int err;
-
-	NET_BUF_SIMPLE_DEFINE(base_buf, BT_BASE_MAX_SIZE);
-
-	err = bt_cap_initiator_broadcast_get_base(broadcast_source, &base_buf);
-	if (err != 0) {
-		LOG_ERR("Failed to get encoded BASE: %d", err);
-		return err;
-	}
-
-	per_ad.type = BT_DATA_SVC_DATA16;
-	per_ad.data_len = base_buf.len;
-	per_ad.data = base_buf.data;
-	err = bt_le_per_adv_set_data(ext_adv, &per_ad, 1);
-	if (err != 0) {
-		LOG_ERR("Failed to set periodic advertising data: %d", err);
-		return err;
-	}
-
-	return 0;
-}
-
 static int handover_unicast_to_broadcast(void)
 {
 	static struct bt_cap_initiator_broadcast_stream_param stream_params[CAP_STREAM_TX_MAX];
@@ -907,6 +916,17 @@ static int handover_unicast_to_broadcast(void)
 
 	LOG_INF("Handing over %u streams from unicast to broadcast", stream_cnt);
 
+	/* Enable Periodic Advertising -
+	 * Extended advertising is started by bt_cap_handover_unicast_to_broadcast
+	 * This shall be done either during or before the handover to broadcast, so that the
+	 * receivers can scan for a sync to the BIG as part of the procedure
+	 */
+	err = bt_le_per_adv_start(ext_adv);
+	if (err != 0) {
+		LOG_ERR("Failed to enable periodic advertising: %d", err);
+		return err;
+	}
+
 	err = bt_cap_handover_unicast_to_broadcast(&param);
 	if (err != 0) {
 		LOG_ERR("Failed to handover unicast audio to broadcast: %d", err);
@@ -922,22 +942,6 @@ static int handover_unicast_to_broadcast(void)
 	if (broadcast_source == NULL) {
 		/* Handover failed */
 		return -EBADMSG;
-	}
-
-	/* Enable Periodic Advertising -
-	 * Extended advertising is started by bt_cap_handover_unicast_to_broadcast
-	 */
-	err = bt_le_per_adv_start(ext_adv);
-	if (err != 0) {
-		LOG_ERR("Failed to enable periodic advertising: %d", err);
-		return err;
-	}
-
-	/* Update the Periodic Advertising data with the BASE from the new broadcast source */
-	err = set_base_data();
-	if (err != 0) {
-		LOG_ERR("Failed to set BASE data: %d", err);
-		return err;
 	}
 
 	LOG_INF("Waiting for remote device to synchronize to the PA and BIG");
@@ -1061,6 +1065,7 @@ static int init_cap_handover(void)
 		.broadcast_stopped = broadcast_stopped_cb,
 	};
 	static struct bt_cap_handover_cb cap_handover_cb = {
+		.unicast_to_broadcast_created = unicast_to_broadcast_created_cb,
 		.unicast_to_broadcast_complete = unicast_to_broadcast_complete_cb,
 		.broadcast_to_unicast_complete = broadcast_to_unicast_complete_cb,
 	};
@@ -1212,6 +1217,29 @@ static int reset_cap_handover(void)
 		broadcast_source = NULL;
 	}
 
+	if (ext_adv != NULL) {
+		struct bt_le_ext_adv_info adv_info;
+
+		err = bt_le_ext_adv_get_info(ext_adv, &adv_info);
+		__ASSERT(err == 0, "Failed to get adv info: %d", err);
+
+		if (adv_info.per_adv_state == BT_LE_PER_ADV_STATE_ENABLED) {
+			err = bt_le_per_adv_stop(ext_adv);
+			if (err != 0) {
+				LOG_ERR("Could not stop periodic advertising: %d", err);
+				return err;
+			}
+		}
+
+		if (adv_info.ext_adv_state == BT_LE_EXT_ADV_STATE_ENABLED) {
+			err = bt_le_ext_adv_stop(ext_adv);
+			if (err != 0) {
+				LOG_ERR("Could not stop extended advertising: %d", err);
+				return err;
+			}
+		}
+	}
+
 	k_sem_reset(&sem_proc);
 	k_sem_reset(&sem_state_change);
 	k_sem_reset(&sem_mtu_exchanged);
@@ -1224,7 +1252,8 @@ static int reset_cap_handover(void)
 	 */
 	k_sem_give(&sem_broadcast_stopped);
 
-	total_tx_iso_packet_count = 0U;
+	total_unicast_tx_iso_packet_count = 0U;
+	total_broadcast_tx_iso_packet_count = 0U;
 
 	return 0;
 }

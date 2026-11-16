@@ -55,12 +55,19 @@ configdefault BT_ASCS_MAX_ASE_SNK_COUNT
 configdefault BT_ASCS_MAX_ASE_SRC_COUNT
 	default 1
 
-configdefault BT_ISO_MAX_CHAN
-	default 2
-
 # Mandatory to support at least 1 for ASCS
 configdefault BT_ATT_PREPARE_COUNT
 	default 1
+
+endif
+
+if SAMPLE_BROADCAST
+
+configdefault BT_BAP_BROADCAST_SNK_COUNT
+	default 1
+
+configdefault BT_BAP_BROADCAST_SNK_STREAM_COUNT
+	default 2
 
 endif
 
