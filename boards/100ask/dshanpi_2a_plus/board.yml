@@ -1,0 +1,9 @@
+board:
+  name: dshanpi_2a_plus
+  full_name: DShanPi 2A+
+  vendor: 100ask
+  socs:
+    - name: rk3506
+      variants:
+        - name: smp
+          cpucluster: a7
