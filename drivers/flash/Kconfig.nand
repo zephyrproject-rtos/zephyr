@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+DT_SPI_NAND_HAS_WP := $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_SPI_NAND),wp-gpios)
+DT_SPI_NAND_HAS_HOLD := $(dt_compat_any_has_prop,$(DT_COMPAT_JEDEC_SPI_NAND),hold-gpios)
+
 menuconfig SPI_NAND
 	bool "SPI NAND Flash"
 	default y
@@ -12,6 +15,7 @@ menuconfig SPI_NAND
 	select FLASH_HAS_EX_OP
 	select SPI
 	select CRC
+	select GPIO if $(DT_SPI_NAND_HAS_WP) || $(DT_SPI_NAND_HAS_HOLD)
 
 if SPI_NAND
 

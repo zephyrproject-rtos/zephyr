@@ -27,6 +27,10 @@
 struct spi_nand_config {
 	/* Devicetree SPI configuration */
 	struct spi_dt_spec spi;
+	/* Optional WP# pin, held inactive */
+	struct gpio_dt_spec wp;
+	/* Optional HOLD# pin, held inactive */
+	struct gpio_dt_spec hold;
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	/* Flash page layout can be determined from devicetree. */
 	struct flash_pages_layout layout;
@@ -1097,6 +1101,20 @@ static int spi_nand_pm_control(const struct device *dev, enum pm_device_action a
 	return rc;
 }
 
+/* Drive an optional control pin of the device to its inactive level */
+static int spi_nand_gpio_deassert(const struct gpio_dt_spec *gpio)
+{
+	if (gpio->port == NULL) {
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(gpio)) {
+		return -ENODEV;
+	}
+
+	return gpio_pin_configure_dt(gpio, GPIO_OUTPUT_INACTIVE);
+}
+
 /**
  * @brief Initialize and configure the flash
  *
@@ -1105,9 +1123,25 @@ static int spi_nand_pm_control(const struct device *dev, enum pm_device_action a
  */
 static int spi_nand_init(const struct device *dev)
 {
+	const struct spi_nand_config *config = dev->config;
 	struct spi_nand_data *const data = dev->data;
+	int ret;
 
 	k_sem_init(&data->sem, 1, K_SEM_MAX_LIMIT);
+
+	/* An active HOLD# pauses the communication with the device, an active WP# can
+	 * lock its block protection bits
+	 */
+	ret = spi_nand_gpio_deassert(&config->wp);
+	if (ret != 0) {
+		LOG_ERR("WP# GPIO configuration failed (%d)", ret);
+		return ret;
+	}
+	ret = spi_nand_gpio_deassert(&config->hold);
+	if (ret != 0) {
+		LOG_ERR("HOLD# GPIO configuration failed (%d)", ret);
+		return ret;
+	}
 
 	return pm_device_driver_init(dev, spi_nand_pm_control);
 }
@@ -1167,6 +1201,8 @@ static DEVICE_API(flash, spi_nand_api) = {
                                                                                                    \
 	static const struct spi_nand_config spi_nand_##idx##_config = {                            \
 		.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8)),                                 \
+		.wp = GPIO_DT_SPEC_INST_GET_OR(idx, wp_gpios, {0}),                                \
+		.hold = GPIO_DT_SPEC_INST_GET_OR(idx, hold_gpios, {0}),                            \
 		.parameters = &spi_nand_##idx##_parameters,                                        \
 		.flash_size = DT_INST_PROP(idx, size_bytes),                                       \
 		.block_size = DT_INST_PROP(idx, erase_block_size),                                 \

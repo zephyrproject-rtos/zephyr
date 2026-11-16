@@ -10,6 +10,14 @@ compatible: "jedec,spi-nand"
 include: [spi-device.yaml]
 
 properties:
+  wp-gpios:
+    type: phandle-array
+    description: WPn pin
+
+  hold-gpios:
+    type: phandle-array
+    description: HOLDn pin
+
   jedec-id:
     type: uint8-array
     required: true
