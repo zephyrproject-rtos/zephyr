@@ -1249,6 +1249,10 @@ static void hci_disconn_complete(struct net_buf *buf)
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
 		LOG_ERR("Unable to look up conn with handle %u", handle);
+		/* Connection Complete has already been processed without a connection.
+		 * Discard the marker stored by the priority disconnect handler.
+		 */
+		(void)conn_handle_is_disconnected(handle);
 		return;
 	}
 
