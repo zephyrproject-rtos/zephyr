@@ -5,7 +5,7 @@ description: Atmel SAM family RTC device
 
 compatible: "atmel,sam-rtc"
 
-include: rtc-device.yaml
+include: [rtc-device.yaml, wuc-device.yaml]
 
 properties:
   reg:

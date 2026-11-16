@@ -7,12 +7,22 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_POWER_ATMEL_SAM_SUPC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_POWER_ATMEL_SAM_SUPC_H_
 
+#include <zephyr/toolchain.h>
+
 #define SAM_DT_SUPC_CONTROLLER DEVICE_DT_GET(DT_NODELABEL(supc))
 
-#define SAM_DT_SUPC_WAKEUP_SOURCE_ID(node_id) \
-	DT_PHA(node_id, wakeup_source_id, wakeup_source_id)
+/**
+ * @deprecated Use DT_WUC_ID() from <zephyr/devicetree/wuc.h> with the
+ *             "wakeup-ctrls" property instead.
+ */
+#define SAM_DT_SUPC_WAKEUP_SOURCE_ID(node_id)                                                      \
+	DT_PHA(node_id, wakeup_source_id, wakeup_source_id) __DEPRECATED_MACRO
 
-#define SAM_DT_INST_SUPC_WAKEUP_SOURCE_ID(inst) \
-	SAM_DT_SUPC_WAKEUP_SOURCE_ID(DT_DRV_INST(inst))
+/**
+ * @deprecated Use DT_INST_WUC_ID() from <zephyr/devicetree/wuc.h> with the
+ *             "wakeup-ctrls" property instead.
+ */
+#define SAM_DT_INST_SUPC_WAKEUP_SOURCE_ID(inst)                                                    \
+	DT_PHA(DT_DRV_INST(inst), wakeup_source_id, wakeup_source_id) __DEPRECATED_MACRO
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_POWER_ATMEL_SAM_SUPC_H_ */
