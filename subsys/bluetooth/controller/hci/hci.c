@@ -9196,6 +9196,40 @@ static void le_data_len_change(struct pdu_data *pdu_data, uint16_t handle,
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+static void le_frame_space_update_complete(struct pdu_data *pdu_data, uint16_t handle,
+					   struct net_buf *buf)
+{
+	struct bt_hci_evt_le_frame_space_update_complete *sep;
+
+	if (((event_mask & BT_EVT_MASK_LE_META_EVENT) == 0U) ||
+	    ((le_event_mask & BT_EVT_MASK_LE_FRAME_SPACE_UPDATE_COMPLETE) == 0U)) {
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_FRAME_SPACE_UPDATE_COMPLETE, sizeof(*sep));
+
+	sep->status = BT_HCI_ERR_SUCCESS;
+	sep->handle = sys_cpu_to_le16(handle);
+
+	/* PDU fields are little-endian. A peer initiated procedure is notified as
+	 * LL_FRAME_SPACE_REQ with the selected frame space, a locally initiated procedure as
+	 * LL_FRAME_SPACE_RSP.
+	 */
+	if (pdu_data->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ) {
+		sep->initiator = BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_PEER;
+		sep->frame_space = pdu_data->llctrl.fsu_req.fsu_min;
+		sep->phys = pdu_data->llctrl.fsu_req.phys;
+		sep->spacing_types = pdu_data->llctrl.fsu_req.spacing_type;
+	} else {
+		sep->initiator = BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_HOST;
+		sep->frame_space = pdu_data->llctrl.fsu_rsp.fsu;
+		sep->phys = pdu_data->llctrl.fsu_rsp.phys;
+		sep->spacing_types = pdu_data->llctrl.fsu_rsp.spacing_type;
+	}
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_REMOTE_VERSION)
 static void remote_version_info_encode(struct pdu_data *pdu_data,
 				       uint16_t handle, struct net_buf *buf)
@@ -9265,6 +9299,13 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 		le_data_len_change(pdu_data, handle, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ:
+	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP:
+		le_frame_space_update_complete(pdu_data, handle, buf);
+		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CTE_RSP:

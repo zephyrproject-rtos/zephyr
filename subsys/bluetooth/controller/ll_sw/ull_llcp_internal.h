@@ -226,9 +226,18 @@ struct proc_ctx {
 			uint8_t ntf_dle;
 		} dle;
 #endif
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+		/* Frame Space Update */
 		struct {
-			uint8_t ntf_fsu;
+			uint16_t fsu_min;
+			uint16_t fsu_max;
+			uint16_t fsu;
+			uint16_t spacing_type;
+			uint8_t phys;
+			uint8_t error;
+			bool ntf_fsu;
 		} fsu;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 		/* Connection Update & Connection Parameter Request */
 		struct {
@@ -744,14 +753,22 @@ void llcp_ntf_encode_length_change(struct ll_conn *conn,
 
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 /*
- * Frame Space  Procedure Helper
+ * Frame Space Update Procedure Helper
  */
-void llcp_pdu_encode_fsu_req(struct ll_conn *conn, struct pdu_data *pdu);
-void llcp_pdu_encode_fsu_rsp(struct ll_conn *conn, struct pdu_data *pdu);
-void llcp_pdu_decode_fsu_req(struct ll_conn *conn, struct pdu_data *pdu);
-void llcp_pdu_decode_fsu_rsp(struct ll_conn *conn, struct pdu_data *pdu);
-void llcp_ntf_encode_fsu_change(struct ll_conn *conn, struct pdu_data *pdu);
+#define LLCP_FSU_PHYS_SUPPORTED (PHY_1M | PHY_2M)
+#define LLCP_FSU_SPACING_TYPE_SUPPORTED \
+	(T_IFS_ACL_CP | T_IFS_ACL_PC | (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO) ? T_IFS_CIS : 0U))
+
+uint8_t llcp_fsu_validate(uint16_t fsu_min, uint16_t fsu_max, uint8_t phys,
+			  uint16_t spacing_type);
+void llcp_pdu_encode_fsu_req(const struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_encode_fsu_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_fsu_req(struct proc_ctx *ctx, const struct pdu_data *pdu);
+void llcp_pdu_decode_fsu_rsp(struct proc_ctx *ctx, const struct pdu_data *pdu);
+void llcp_ntf_encode_fsu_change(const struct proc_ctx *ctx, struct pdu_data *pdu);
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 /*
