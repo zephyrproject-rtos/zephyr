@@ -30,8 +30,9 @@ function _compile(){
   local ninja_args="${ninja_args:-""}"
   local cc_flags="${cc_flags:-""}"
 
-  if [ "${conf_overlay}" ]; then
-    overlay_basename="${conf_overlay##*/}"
+  local name_conf="${conf_overlay:-${extra_conf_file}}"
+  if [ "${name_conf}" ]; then
+    overlay_basename="${name_conf##*/}"
     overlay_file="${overlay_basename//;/_}"
     local exe_basename="${exe_name:-bs_${BOARD}_${app}_${conf_file}_${overlay_file}}"
   else

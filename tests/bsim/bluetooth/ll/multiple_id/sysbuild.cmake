@@ -12,7 +12,7 @@ if(NOT("${SB_CONFIG_NET_CORE_BOARD}" STREQUAL ""))
   )
 
   set(${NET_APP}_EXTRA_CONF_FILE
-   ${APP_DIR}/overlay-nrf5340_cpunet-bt_ll_sw_split.conf
+   ${APP_DIR}/extra-nrf5340_cpunet-bt_ll_sw_split.conf
    CACHE INTERNAL ""
   )
 

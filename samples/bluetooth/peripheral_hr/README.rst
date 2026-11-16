@@ -37,4 +37,4 @@ Building a minimal variant for bbc_microbit
    :zephyr-app: samples/bluetooth/peripheral_hr
    :board: bbc_microbit
    :goals: build
-   :gen-args: -DCONF_FILE=prj_minimal.conf -DEXTRA_CONF_FILE=overlay-bt_ll_sw_split-minimal.conf
+   :gen-args: -DCONF_FILE=prj_minimal.conf -DEXTRA_CONF_FILE=extra-bt_ll_sw_split-minimal.conf

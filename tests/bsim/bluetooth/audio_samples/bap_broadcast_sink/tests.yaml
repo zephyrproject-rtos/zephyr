@@ -11,7 +11,7 @@ tests:
     sysbuild: true
     extra_args:
       - CONF_FILE=${ZEPHYR_BASE}/samples/bluetooth/audio/bap_broadcast_sink/prj.conf
-      - EXTRA_CONF_FILE="${ZEPHYR_BASE}/samples/bluetooth/audio/bap_broadcast_sink/overlay-bt_ll_sw_split.conf"
+      - EXTRA_CONF_FILE="${ZEPHYR_BASE}/samples/bluetooth/audio/bap_broadcast_sink/extra-bt_ll_sw_split.conf"
       - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE=""
     harness: bsim
     harness_config:

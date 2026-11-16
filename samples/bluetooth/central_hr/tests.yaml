@@ -23,7 +23,7 @@ tests:
       - nrf52_bsim
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
-    extra_args: EXTRA_CONF_FILE=overlay-extended.conf
+    extra_args: EXTRA_CONF_FILE=extra-extended.conf
     tags: bluetooth
   sample.bluetooth.central_hr.multicore.bt_ll_sw_split.extended:
     harness: bluetooth
@@ -47,7 +47,7 @@ tests:
       - nrf52_bsim
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
-    extra_args: EXTRA_CONF_FILE=overlay-phy_coded.conf
+    extra_args: EXTRA_CONF_FILE=extra-phy_coded.conf
     tags: bluetooth
   sample.bluetooth.central_hr.multicore.bt_ll_sw_split.phy_coded:
     harness: bluetooth

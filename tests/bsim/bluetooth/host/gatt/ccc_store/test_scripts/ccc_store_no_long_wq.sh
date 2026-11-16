@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-test_exe="bs_${BOARD_TS}_$(guess_test_long_name)_overlay-no_long_wq_conf"
+test_exe="bs_${BOARD_TS}_$(guess_test_long_name)_extra-no_long_wq_conf"
 simulation_id="${BOARD_TS}_ccc_store_no_long_wq"
 verbosity_level=2
 EXECUTE_TIMEOUT=60

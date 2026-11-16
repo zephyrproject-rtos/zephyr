@@ -13,7 +13,7 @@ tests:
       - qemu_cortex_m3
   sample.bluetooth.broadcaster_multiple.bt_ll_sw_split:
     extra_args:
-      - EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
+      - EXTRA_CONF_FILE=extra-bt_ll_sw_split.conf
     platform_allow:
       - nrf51dk/nrf51822
       - nrf52_bsim

@@ -8,7 +8,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 simulation_id="${BOARD_TS}_settings_privacy"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
-test_priv_exe="./bs_${BOARD_TS}_$(guess_test_long_name)_overlay-privacy_conf"
+test_priv_exe="./bs_${BOARD_TS}_$(guess_test_long_name)_extra-privacy_conf"
 
 cd ${BSIM_OUT_PATH}/bin
 

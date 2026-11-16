@@ -18,33 +18,40 @@ app=samples/bluetooth/peripheral_hr \
 app=tests/bsim/bluetooth/samples/central_hr_peripheral_hr \
   sysbuild=1 \
   extra_conf_file=${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf \
+  exe_name=bs_${BOARD_TS}_${app}_prj_conf \
   compile
 app=samples/bluetooth/peripheral_hr \
   sysbuild=1 \
-  conf_overlay=overlay-extended.conf \
+  extra_conf_file=extra-extended.conf \
+  exe_name=bs_${BOARD_TS}_${app}_prj_conf_extra-extended_conf \
   compile
 app=tests/bsim/bluetooth/samples/central_hr_peripheral_hr \
   sysbuild=1 \
-  extra_conf_file=${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf \
-  conf_overlay=${ZEPHYR_BASE}/samples/bluetooth/central_hr/overlay-extended.conf \
+  sample=${ZEPHYR_BASE}/samples/bluetooth/central_hr \
+  extra_conf_file="${sample}/prj.conf;${sample}/extra-extended.conf" \
+  exe_name=bs_${BOARD_TS}_${app}_prj_conf_extra-extended_conf \
   compile
 app=samples/bluetooth/peripheral_hr \
   sysbuild=1 \
-  conf_overlay=overlay-phy_coded.conf \
+  extra_conf_file=extra-phy_coded.conf \
+  exe_name=bs_${BOARD_TS}_${app}_prj_conf_extra-phy_coded_conf \
   compile
 app=tests/bsim/bluetooth/samples/central_hr_peripheral_hr \
   sysbuild=1 \
-  extra_conf_file=${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf \
-  conf_overlay=${ZEPHYR_BASE}/samples/bluetooth/central_hr/overlay-phy_coded.conf \
+  sample=${ZEPHYR_BASE}/samples/bluetooth/central_hr \
+  extra_conf_file="${sample}/prj.conf;${sample}/extra-phy_coded.conf" \
+  exe_name=bs_${BOARD_TS}_${app}_prj_conf_extra-phy_coded_conf \
   compile
 app=samples/bluetooth/peripheral_hr \
   sysbuild=1 \
-  conf_overlay=overlay-static_callbacks.conf \
+  extra_conf_file=extra-static_callbacks.conf \
+  exe_name=bs_${BOARD_TS}_${app}_prj_conf_extra-static_callbacks_conf \
   compile
 app=tests/bsim/bluetooth/samples/central_hr_peripheral_hr \
   sysbuild=1 \
-  extra_conf_file=${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf \
-  conf_overlay=${ZEPHYR_BASE}/samples/bluetooth/central_hr/overlay-static_callbacks.conf \
+  sample=${ZEPHYR_BASE}/samples/bluetooth/central_hr \
+  extra_conf_file="${sample}/prj.conf;${sample}/extra-static_callbacks.conf" \
+  exe_name=bs_${BOARD_TS}_${app}_prj_conf_extra-static_callbacks_conf \
   compile
 if [ ${BOARD} == "nrf52_bsim/native" ]; then
   app=tests/bsim/bluetooth/samples/battery_service \

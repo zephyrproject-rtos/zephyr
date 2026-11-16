@@ -9,7 +9,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-test_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_gatt_sc_indicate_overlay-privacy_conf"
+test_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_gatt_sc_indicate_extra-privacy_conf"
 simulation_id="${BOARD_TS}_sc_indicate_reboot_privacy"
 verbosity_level=2
 EXECUTE_TIMEOUT=120

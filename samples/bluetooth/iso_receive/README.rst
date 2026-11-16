@@ -29,7 +29,7 @@ Building and Running
 
 After flashing, the sample starts scanning for an Isochronous Broadcaster automatically.
 
-Use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable
+Use ``-DEXTRA_CONF_FILE=extra-bt_ll_sw_split.conf`` to enable
 required ISO feature support in Zephyr Bluetooth Controller on supported boards.
 
 Use the :zephyr:code-sample:`bluetooth_isochronous_broadcaster` sample on

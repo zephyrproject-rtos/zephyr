@@ -17,10 +17,10 @@ tests:
         - test_scripts/sc_indicate_reserved_bit.sh
   bluetooth.host.gatt.sc_indicate_privacy:
     extra_args:
-      - EXTRA_CONF_FILE=overlay-privacy.conf
+      - EXTRA_CONF_FILE=extra-privacy.conf
     harness_config:
       fixture: bsim_multi_test
-      bsim_exe_name: tests_bsim_bluetooth_host_gatt_sc_indicate_overlay-privacy_conf
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_sc_indicate_extra-privacy_conf
       tests_scripts:
         - test_scripts/sc_indicate_privacy.sh
         - test_scripts/sc_indicate_reboot_privacy.sh

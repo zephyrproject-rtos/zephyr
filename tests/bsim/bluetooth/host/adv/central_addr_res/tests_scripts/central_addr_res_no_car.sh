@@ -8,7 +8,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-test_exe="bs_${BOARD_TS}_$(guess_test_long_name)_overlay-no_privacy_conf"
+test_exe="bs_${BOARD_TS}_$(guess_test_long_name)_extra-no_privacy_conf"
 simulation_id="${BOARD_TS}_adv_central_addr_res_no_car"
 verbosity_level=2
 

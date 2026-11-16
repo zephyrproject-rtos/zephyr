@@ -14,7 +14,7 @@ simulation_id="${BOARD_TS}_${test_name}_oversubscribed"
 verbosity_level=2
 sim_length_us=$((5 * 1000 * 1000))
 
-test_exe="./bs_${BOARD_TS}_${test_name}_overlay-oversubscribed_conf"
+test_exe="./bs_${BOARD_TS}_${test_name}_extra-oversubscribed_conf"
 
 cd ${BSIM_OUT_PATH}/bin
 

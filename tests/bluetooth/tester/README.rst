@@ -128,7 +128,7 @@ For example
 
 .. code-block::
 
-    west build -b nrf5340_audio_dk/nrf5340/cpunet -d ${ZEPHYR_BASE}/build/nrf5340_audio_dk_nrf5340_cpunet ${ZEPHYR_BASE}/samples/bluetooth/hci_ipc/ -- -DEXTRA_CONF_FILE=${ZEPHYR_BASE}/tests/bluetooth/tester/overlay-bt_ll_sw_split.conf
+    west build -b nrf5340_audio_dk/nrf5340/cpunet -d ${ZEPHYR_BASE}/build/nrf5340_audio_dk_nrf5340_cpunet ${ZEPHYR_BASE}/samples/bluetooth/hci_ipc/ -- -DEXTRA_CONF_FILE=${ZEPHYR_BASE}/tests/bluetooth/tester/extra-bt_ll_sw_split.conf
     west flash -d ${ZEPHYR_BASE}/build/nrf5340_audio_dk_nrf5340_cpunet
     west build -b nrf5340_audio_dk/nrf5340/cpuapp -d ${ZEPHYR_BASE}/build/nrf5340_audio_dk_nrf5340_cpuapp ${ZEPHYR_BASE}/samples/bluetooth/hci_uart/
     west flash -d ${ZEPHYR_BASE}/build/nrf5340_audio_dk_nrf5340_cpuapp
@@ -139,7 +139,7 @@ For single core boards like the nRF52840 DK it is a bit simpler and can be done 
 
 .. code-block::
 
-    west build -b nrf52840dk/nrf52840 ${ZEPHYR_BASE}/samples/bluetooth/hci_uart/ -- -DEXTRA_CONF_FILE=${ZEPHYR_BASE}/tests/bluetooth/tester/overlay-bt_ll_sw_split.conf
+    west build -b nrf52840dk/nrf52840 ${ZEPHYR_BASE}/samples/bluetooth/hci_uart/ -- -DEXTRA_CONF_FILE=${ZEPHYR_BASE}/tests/bluetooth/tester/extra-bt_ll_sw_split.conf
     west flash
 
 The `bluetooth_hci_usb <https://docs.zephyrproject.org/latest/samples/bluetooth/hci_usb/README.html>`__ sample can also be used,
@@ -149,12 +149,12 @@ Building for LE Audio
 *********************
 
 The tester application can be built with support for BT LE Audio by applying the
-the ``overlay-le-audio.conf`` and ``hci_ipc.conf`` with ``--sysbuild`` for the supported boards,
+the ``extra-le-audio.conf`` and ``hci_ipc.conf`` with ``--sysbuild`` for the supported boards,
 e.g.:
 
 .. code-block::
 
-    west build -b nrf5340dk/nrf5340/cpuapp --sysbuild -- -DEXTRA_CONF_FILE=overlay-le-audio.conf;hci_ipc.conf
+    west build -b nrf5340dk/nrf5340/cpuapp --sysbuild -- -DEXTRA_CONF_FILE=extra-le-audio.conf;hci_ipc.conf
 
 Building with support for BTSnoop and RTT logs
 **********************************************

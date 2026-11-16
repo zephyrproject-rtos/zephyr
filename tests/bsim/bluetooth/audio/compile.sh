@@ -14,7 +14,7 @@ if [ "${BOARD_TS}" == "nrf5340bsim_nrf5340_cpuapp" ]; then
     app=tests/bsim/bluetooth/audio exe_name=bs_${BOARD_TS}_${app}_prj_conf \
       sysbuild=1 compile
 else
-    app=tests/bsim/bluetooth/audio conf_overlay=overlay-bt_ll_sw_split.conf \
+    app=tests/bsim/bluetooth/audio extra_conf_file=extra-bt_ll_sw_split.conf \
       exe_name=bs_${BOARD_TS}_${app}_prj_conf \
       sysbuild=1 compile
 fi

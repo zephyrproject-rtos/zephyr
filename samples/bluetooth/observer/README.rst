@@ -42,7 +42,7 @@ Building with Extended Scanning support (Zephyr Controller)
    :zephyr-app: samples/bluetooth/observer
    :board: nrf52840dk/nrf52840
    :goals: build flash
-   :gen-args: -DCONF_FILE=prj_extended.conf -DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
+   :gen-args: -DCONF_FILE=prj_extended.conf -DEXTRA_CONF_FILE=extra-bt_ll_sw_split.conf
    :compact:
 
 Building with Extended Scanning support for BBC Micro Bit
@@ -52,7 +52,7 @@ Building with Extended Scanning support for BBC Micro Bit
    :zephyr-app: samples/bluetooth/observer
    :board: bbc_microbit
    :goals: build flash
-   :gen-args: -DCONF_FILE=prj_extended.conf -DEXTRA_CONF_FILE=overlay_bbc_microbit-bt_ll_sw_split.conf
+   :gen-args: -DCONF_FILE=prj_extended.conf -DEXTRA_CONF_FILE=extra-bbc_microbit-bt_ll_sw_split.conf
    :compact:
 
 Thread Analysis for BBC Micro Bit board
@@ -65,5 +65,5 @@ RAM usage and identify the thread stack sizes required to successfully build and
    :zephyr-app: samples/bluetooth/observer
    :board: bbc_microbit
    :goals: build flash
-   :gen-args: -DCONF_FILE=prj_extended.conf "-DEXTRA_CONF_FILE=debug.conf;overlay_bbc_microbit-bt_ll_sw_split.conf"
+   :gen-args: -DCONF_FILE=prj_extended.conf "-DEXTRA_CONF_FILE=debug.conf;extra-bbc_microbit-bt_ll_sw_split.conf"
    :compact:

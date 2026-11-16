@@ -43,6 +43,6 @@ Building with local time mode
    :zephyr-app: samples/bluetooth/peripheral_ets
    :board: <board>
    :goals: build flash
-   :gen-args: -DEXTRA_CONF_FILE=overlay-local-time.conf
+   :gen-args: -DEXTRA_CONF_FILE=extra-local-time.conf
 
 See :zephyr:code-sample-category:`bluetooth` samples for details.

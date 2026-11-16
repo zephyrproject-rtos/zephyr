@@ -11,7 +11,7 @@ EXECUTE_TIMEOUT=200
 cd ${BSIM_OUT_PATH}/bin
 
 Execute \
-  ./bs_${BOARD_TS}_samples_bluetooth_audio_bap_broadcast_source_prj_conf_overlay-sequential_conf \
+  ./bs_${BOARD_TS}_samples_bluetooth_audio_bap_broadcast_source_prj_conf_extra-sequential_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -RealEncryption=1
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_samples_bap_broadcast_sink_prj_conf \
