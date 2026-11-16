@@ -45,6 +45,9 @@ LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 #define CDC_ACM_IRQ_RX_ENABLED		2
 #define CDC_ACM_IRQ_TX_ENABLED		3
 
+BUILD_ASSERT(CONFIG_USBD_CDC_ACM_TX_BUF_SIZE % USBD_MAX_BULK_MPS == 0,
+	     "USBD_CDC_ACM_TX_BUF_SIZE must be a multiple of the bulk endpoint MPS");
+
 struct cdc_acm_rx_uart_fifo {
 	struct k_fifo *bufs;
 	struct net_buf_pool *pool;
@@ -274,7 +277,7 @@ static uint32_t cdc_acm_tx_fifo_space_get(struct cdc_acm_uart_data *const data)
 		/* Use available - 1 to prevent sudden drop of available
 		 * size when a partially filled buffer is enqueued.
 		 */
-		space = USBD_MAX_BULK_MPS * (available - 1);
+		space = CONFIG_USBD_CDC_ACM_TX_BUF_SIZE * (available - 1);
 	}
 
 	k_spin_unlock(&data->lock, key);
@@ -1486,7 +1489,7 @@ const static struct usb_desc_header *const cdc_acm_hs_desc_##n[] = {		\
 	DIV_ROUND_UP(DT_INST_PROP(n, rx_fifo_size), USBD_MAX_BULK_MPS)
 
 #define CDC_ACM_TX_BUF_COUNT(n)							\
-	DIV_ROUND_UP(DT_INST_PROP(n, tx_fifo_size), USBD_MAX_BULK_MPS)
+	DIV_ROUND_UP(DT_INST_PROP(n, tx_fifo_size), CONFIG_USBD_CDC_ACM_TX_BUF_SIZE)
 
 #define USBD_CDC_ACM_DT_DEVICE_DEFINE(n)					\
 	BUILD_ASSERT(DT_INST_ON_BUS(n, usb),					\
@@ -1509,9 +1512,10 @@ const static struct usb_desc_header *const cdc_acm_hs_desc_##n[] = {		\
 	))									\
 										\
 	BUILD_ASSERT(CDC_ACM_TX_BUF_COUNT(n) >= 2,				\
-		     "tx-fifo-size must be greater than the bulk endpoint MPS");\
+		     "tx-fifo-size must hold at least two TX buffers");	\
 	UDC_BUF_POOL_DEFINE(cdc_acm_tx_pool_##n,				\
-			    CDC_ACM_TX_BUF_COUNT(n), USBD_MAX_BULK_MPS,		\
+			    CDC_ACM_TX_BUF_COUNT(n),				\
+			    CONFIG_USBD_CDC_ACM_TX_BUF_SIZE,			\
 			    sizeof(struct udc_buf_info), NULL);			\
 	UDC_BUF_POOL_DEFINE(cdc_acm_rx_pool_##n,				\
 			    CDC_ACM_RX_BUF_COUNT(n), USBD_MAX_BULK_MPS,		\

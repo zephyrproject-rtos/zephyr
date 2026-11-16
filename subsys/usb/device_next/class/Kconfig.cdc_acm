@@ -37,6 +37,19 @@ config USBD_CDC_ACM_WORKQUEUE_PRIORITY
 	  that of the threads writing to the port lets their writes accumulate
 	  into fewer, larger USB transfers.
 
+config USBD_CDC_ACM_TX_BUF_SIZE
+	int "Size of one TX FIFO buffer"
+	default 512 if USBD_MAX_SPEED_HIGH
+	default 64
+	help
+	  Size in bytes of one buffer of the TX FIFO. Each buffer is sent in
+	  one bulk IN transfer. The default is the bulk endpoint maximum packet
+	  size. A larger buffer lets the device controller driver send several
+	  packets in one transfer, which reduces the processing time per byte,
+	  mostly on full-speed devices. The value must be a multiple of the
+	  bulk endpoint maximum packet size. The tx-fifo-size property must
+	  hold at least two buffers.
+
 config USBD_CDC_ACM_TX_DELAY_MS
 	int
 	default 100
