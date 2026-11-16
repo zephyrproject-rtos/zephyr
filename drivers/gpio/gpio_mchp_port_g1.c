@@ -81,7 +81,9 @@ static inline void gpio_port_get_val(port_group_registers_t *regs, uint32_t *por
 static inline void gpio_port_outset_masked(port_group_registers_t *regs, uint32_t mask,
 					   uint32_t value)
 {
-	regs->PORT_OUT = (regs->PORT_OUT & ~(mask)) | (value & mask);
+	/* Change only the masked pins, without a read-modify-write of PORT_OUT */
+	regs->PORT_OUTSET = mask & value;
+	regs->PORT_OUTCLR = mask & ~value;
 }
 
 /**
