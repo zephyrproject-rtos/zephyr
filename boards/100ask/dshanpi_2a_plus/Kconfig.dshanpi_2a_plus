@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Jiaming Zhao
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_DSHANPI_2A_PLUS
+	select SOC_RK3506_A7

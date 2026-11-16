@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2026 Jiaming Zhao
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <rockchip/rk3506.dtsi>
+
+/ {
+	compatible = "dshanpi,2a-plus", "rockchip,rk3506";
+	model = "DShanPi 2A+";
+
+	chosen {
+		zephyr,sram = &ddr;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	ddr: memory@108000 {
+		compatible = "mmio-sram";
+		reg = <0x00108000 0x002f8000>;
+		device_type = "memory";
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(1200)>;
+};
+
+&cpu1 {
+	clock-frequency = <DT_FREQ_M(1200)>;
+};
+
+&cpu2 {
+	clock-frequency = <DT_FREQ_M(1200)>;
+};
+
+&uart0 {
+	current-speed = <1500000>;
+	status = "okay";
+};
