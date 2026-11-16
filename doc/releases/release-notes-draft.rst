@@ -73,8 +73,8 @@ Libraries / Subsystems
 
   * Heimann HTPA 120x84 and 160x120 thermal array sensors can provide raw frames
     containing pixel data and electrical offsets for image processing.
-  * A virtual video device corrects electrical offsets and reorders HTPA raw frames
-    to produce signed 16-bit samples.
+  * HTPA video devices correct and reorder raw frames, then provide signed samples,
+    histogram-scaled grayscale, or false-color RGB565 output.
 
 * Networking
 

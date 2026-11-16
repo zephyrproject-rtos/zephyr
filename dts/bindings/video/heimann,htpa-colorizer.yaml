@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: HTPA signed sample to grayscale and false color video device
+
+compatible: "heimann,htpa-colorizer"
+
+include: base.yaml
+
+properties:
+  source:
+    type: phandle
+    required: true
+    description: Video device providing HTPA signed frames

@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VIDEO_HTPA_COLORIZER
+	bool "HTPA frame colorization video device"
+	depends on DT_HAS_HEIMANN_HTPA_COLORIZER_ENABLED
+	default y
+	help
+	  Convert signed HTPA samples from a video source to grayscale or false color.
+
+if VIDEO_HTPA_COLORIZER
+
+config VIDEO_HTPA_COLORIZER_MIN_GREY_RANGE
+	int "Minimum HTPA grayscale input range"
+	default 256
+	range 1 65535
+	help
+	  Minimum span between the grayscale scaling bounds, in corrected
+	  sensor levels. Smaller spans are expanded around their midpoint.
+
+config VIDEO_HTPA_COLORIZER_INIT_PRIORITY
+	int "HTPA colorizer initialization priority"
+	default 62
+	help
+	  Initialization priority after the source video device.
+
+config VIDEO_HTPA_COLORIZER_STACK_SIZE
+	int "HTPA colorizer worker stack size"
+	default 1024
+	help
+	  Stack size of the frame colorization worker.
+
+config VIDEO_HTPA_COLORIZER_THREAD_PRIORITY
+	int "HTPA colorizer worker priority"
+	default 5
+	help
+	  Scheduling priority of the frame colorization worker.
+
+endif # VIDEO_HTPA_COLORIZER
