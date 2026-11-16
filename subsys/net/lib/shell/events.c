@@ -167,6 +167,10 @@ static char *get_l2_desc(struct event_msg *msg,
 		*desc = "interface";
 		*desc2 = "up";
 		break;
+	case NET_EVENT_IF_ATTACHMENT_CHANGED:
+		*desc = "interface";
+		*desc2 = "attachment changed";
+		break;
 	case NET_EVENT_IF_ADMIN_UP:
 		*desc = "interface";
 		*desc2 = "admin up";

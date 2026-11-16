@@ -1780,6 +1780,125 @@ static void check_bound_again(struct net_if *iface, const char *what, k_timeout_
 			  "Gateway not set by the new lease");
 }
 
+static struct net_if *bind_for_attachment_change(void)
+{
+	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	uint32_t evt;
+
+	zassert_not_null(iface);
+	net_dhcpv4_start(iface);
+	evt = k_event_wait_all(&events, EVT_DHCP_BOUND | EVT_ADDR_ADD, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_BOUND | EVT_ADDR_ADD);
+	k_event_set(&events, 0U);
+
+	return iface;
+}
+
+ZTEST(dhcpv4_tests, test_attachment_change_ack_keeps_address)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
+
+	iface = bind_for_attachment_change();
+	net_if_attachment_changed(iface);
+
+	evt = k_event_wait_all(&events, EVT_DHCP_ACK | EVT_DHCP_BOUND, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_ACK | EVT_DHCP_BOUND);
+	zassert_true(init_reboot_request_seen, "Expected an INIT-REBOOT request");
+	zassert_equal(k_event_test(&events, EVT_ADDR_DEL | EVT_ADDR_ADD | EVT_DHCP_OFFER), 0U);
+	zassert_not_null(net_if_ipv4_addr_lookup_by_iface(iface, &leased_addr));
+
+	net_dhcpv4_stop(iface);
+}
+
+ZTEST(dhcpv4_tests, test_attachment_change_nak_discovers_again)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
+
+	iface = bind_for_attachment_change();
+	reject_init_reboot = true;
+	net_if_attachment_changed(iface);
+
+	evt = k_event_wait_all(&events, EVT_DHCP_NAK | EVT_ADDR_DEL, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_NAK | EVT_ADDR_DEL);
+	check_bound_again(iface, "attachment change NAK", WAIT_TIME);
+
+	net_dhcpv4_stop(iface);
+}
+
+ZTEST(dhcpv4_tests, test_attachment_change_silence_discovers_again)
+{
+	const k_timeout_t fallback_wait = K_SECONDS(
+		4 * (BIT(DHCPV4_INIT_REBOOT_MAX_ATTEMPTS) - 1) +
+		DHCPV4_INIT_REBOOT_MAX_ATTEMPTS + 5);
+	struct net_if *iface;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
+
+	iface = bind_for_attachment_change();
+	drop_init_reboot = true;
+	net_if_attachment_changed(iface);
+
+	k_sleep(K_SECONDS(1));
+	zassert_true(init_reboot_request_seen);
+	zassert_not_null(net_if_ipv4_addr_lookup_by_iface(iface, &leased_addr));
+	zassert_equal(k_event_test(&events, EVT_ADDR_DEL), 0U);
+
+	check_bound_again(iface, "unanswered attachment change", fallback_wait);
+	zassert_equal(init_reboot_request_count, DHCPV4_INIT_REBOOT_MAX_ATTEMPTS);
+	zassert_equal(k_event_test(&events, EVT_ADDR_DEL), EVT_ADDR_DEL);
+
+	net_dhcpv4_stop(iface);
+}
+
+ZTEST(dhcpv4_tests, test_attachment_change_does_not_extend_lease)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
+
+	iface = bind_for_attachment_change();
+	drop_init_reboot = true;
+
+	/* At most two seconds remain on the original lease. The first
+	 * retransmission would normally wait at least three seconds.
+	 */
+	iface->config.dhcpv4.timer_start = k_uptime_get() -
+		((int64_t)iface->config.dhcpv4.lease_time - 2) * MSEC_PER_SEC;
+	net_if_attachment_changed(iface);
+
+	evt = k_event_wait(&events, EVT_ADDR_DEL, false, K_MSEC(2500));
+	zassert_equal(evt, EVT_ADDR_DEL, "Retained lease outlived its expiration");
+	zassert_equal(init_reboot_request_count, 1U);
+	check_bound_again(iface, "expiration during confirmation", WAIT_TIME);
+
+	net_dhcpv4_stop(iface);
+}
+
+ZTEST(dhcpv4_tests, test_attachment_change_without_init_reboot)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
+
+	iface = bind_for_attachment_change();
+	net_if_attachment_changed(iface);
+
+	evt = k_event_wait(&events, EVT_ADDR_DEL, false, WAIT_TIME);
+	zassert_equal(evt, EVT_ADDR_DEL);
+	check_bound_again(iface, "attachment change without INIT-REBOOT", WAIT_TIME);
+	zassert_false(init_reboot_request_seen);
+
+	net_dhcpv4_stop(iface);
+}
+
 /* Restarting from REBINDING takes the leased address off the interface, so
  * the fresh start can bind again, here on a network that refuses the
  * remembered address, the way a move between subnets does.

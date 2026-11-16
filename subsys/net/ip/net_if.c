@@ -33,8 +33,10 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/minmax.h>
 
 #include "net_private.h"
+#include "dhcpv4/dhcpv4_internal.h"
 #include "../l2/ethernet/arp.h"
 #include "ipv4.h"
 #include "ipv6.h"
@@ -61,6 +63,8 @@ extern struct net_if _net_if_list_start[];
 extern struct net_if _net_if_list_end[];
 
 static struct net_if *default_iface;
+
+static void attachment_work_handler(struct k_work *work);
 
 #if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
 static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
@@ -481,6 +485,7 @@ static inline void init_iface(struct net_if *iface)
 
 	k_mutex_init(&iface->lock);
 	k_mutex_init(&iface->tx_lock);
+	k_work_init_delayable(&iface->attachment_work, attachment_work_handler);
 
 	api->init(iface);
 
@@ -6859,6 +6864,8 @@ static void notify_iface_up(struct net_if *iface)
 static void notify_iface_down(struct net_if *iface)
 {
 	net_if_flag_clear(iface, NET_IF_RUNNING);
+	iface->attachment_pending = false;
+	(void)k_work_cancel_delayable(&iface->attachment_work);
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
 
 	/* As in notify_iface_up(), drop net_if_lock() around the parts that
@@ -7122,6 +7129,66 @@ void net_if_dormant_off(struct net_if *iface)
 
 	if (net_if_flag_test_and_clear(iface, NET_IF_DORMANT)) {
 		update_operational_state(iface);
+	}
+
+	net_if_unlock(iface);
+}
+
+static uint32_t attachment_delay(struct net_if *iface, uint32_t now)
+{
+	uint32_t elapsed = now - iface->attachment_last_notify;
+
+	return iface->attachment_notified ?
+		MSEC_PER_SEC - min(elapsed, (uint32_t)MSEC_PER_SEC) : 0U;
+}
+
+static void attachment_work_handler(struct k_work *work)
+{
+	struct net_if *iface = CONTAINER_OF(k_work_delayable_from_work(work),
+					   struct net_if, attachment_work);
+	uint32_t now;
+	uint32_t delay;
+
+	net_if_lock(iface);
+
+	if (!iface->attachment_pending || !net_if_is_up(iface)) {
+		net_if_unlock(iface);
+		return;
+	}
+
+	now = k_uptime_get_32();
+	delay = attachment_delay(iface, now);
+	if (delay > 0U) {
+		(void)k_work_reschedule(&iface->attachment_work, K_MSEC(delay));
+		net_if_unlock(iface);
+		return;
+	}
+
+	iface->attachment_pending = false;
+	iface->attachment_notified = true;
+	iface->attachment_last_notify = now;
+#if defined(CONFIG_NET_MGMT_EVENT)
+	net_mgmt_event_notify(NET_EVENT_IF_ATTACHMENT_CHANGED, iface);
+#endif
+	net_if_unlock(iface);
+
+	/* DHCP acquires its own lock; do not nest it under the interface lock. */
+	net_dhcpv4_attachment_changed(iface);
+}
+
+void net_if_attachment_changed(struct net_if *iface)
+{
+	if (iface == NULL) {
+		return;
+	}
+
+	net_if_lock(iface);
+
+	if (net_if_is_up(iface) && !iface->attachment_pending) {
+		uint32_t delay = attachment_delay(iface, k_uptime_get_32());
+
+		iface->attachment_pending = true;
+		(void)k_work_reschedule(&iface->attachment_work, K_MSEC(delay));
 	}
 
 	net_if_unlock(iface);
