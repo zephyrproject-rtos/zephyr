@@ -26,6 +26,7 @@
 		zephyr,console = &uart7;
 		zephyr,shell-uart = &uart7;
 		zephyr,canbus = &can0;
+		zephyr,flash-controller = &flash_controller;
 	};
 
 	transceiver0: can-phy0 {
@@ -95,5 +96,9 @@ can0: &can0_1 {
 	pinctrl-0 = <&p5_3_can0_1_rx &p5_2_can0_1_tx>;
 	pinctrl-names = "default";
 	phys = <&transceiver0>;
+	status = "okay";
+};
+
+&flash_controller {
 	status = "okay";
 };

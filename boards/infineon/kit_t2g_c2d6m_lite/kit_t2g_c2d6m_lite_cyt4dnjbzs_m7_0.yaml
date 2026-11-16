@@ -16,6 +16,7 @@ toolchain:
 supported:
   - adc
   - can
+  - flash
   - gpio
   - i2c
   - pwm
