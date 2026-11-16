@@ -48,6 +48,12 @@
 				test_tle927x_hwinfo: hwinfo {
 					compatible = "infineon,tle927x-hwinfo";
 				};
+
+				test_tle927x_can: can-transceiver {
+					compatible = "infineon,tle927x-can";
+					max-bitrate = <5000000>;
+					#phy-cells = <0>;
+				};
 			};
 		};
 
