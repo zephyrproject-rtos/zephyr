@@ -1,42 +1,38 @@
 .. _interrupt_test:
 
-Espressif's Xtensa interrupt test
-#################################
+Espressif interrupt test
+########################
 
 Overview
 ********
 
-Test objective is to verify that the ESP32, ESP32-S2 and ESP32-S3 platforms correctly support nested interrupts, where higher-priority interrupts can preempt lower-priority ones.
+The nested-ISR suite (``esp_interrupt``) checks that an interrupt on a higher Xtensa level
+preempts the handler of a lower one on ESP32, ESP32-S2 and ESP32-S3.
 
-Three independent hardware timers are configured.
-
-Each timer is assigned an ISR (Interrupt Service Routine) with a priority one level higher than the previous timer.
-
-* Timer 1: lowest priority ISR
-* Timer 2: medium priority ISR
-* Timer 3: highest priority ISR
+Three timer group counters are used. ``timer0`` keeps the shared level-1 CPU line of the timer
+groups from the SoC devicetree. The overlays in ``socs/`` make ``timer1`` and ``timer2`` dedicated
+consumers of ``intc`` on CPU line 21 (level 2) and CPU line 27 (level 3), lines no other node uses.
 
 Execution Flow
 --------------
 
-* Timer 1 ISR triggers first. - It simulates work (waits briefly).
-* Before completing, it triggers Timer 2 interrupt.
-* Timer 2 ISR preempts Timer 1 ISR (because of higher priority). - It also simulates work.
-* It triggers Timer 3 interrupt.
-* Timer 3 ISR preempts Timer 2 ISR (highest priority). - It performs its work and completes execution.
-* After Timer 3 ISR completes, control returns to Timer 2 ISR, which then completes.
-* Finally, execution resumes and completes Timer 1 ISR.
+* The three alarms are set 1 ms apart and every handler busy-waits 3 ms.
+* The ``timer0`` alarm fires first and its handler starts waiting.
+* The ``timer1`` alarm fires while that handler runs; its line is level 2, so it preempts.
+* The ``timer2`` alarm fires while both run; its line is level 3, so it preempts again.
+* The handlers finish in reverse order.
 
 Success Criteria
 ----------------
 
-Each ISR execution is verified by setting a unique "magic value". The test is successful if:
+Every handler counts the handlers already running. A handler takes its token only when the
+handlers of the lower levels are still in progress and their tokens are set:
 
-* Timer 1 ISR sets its magic value.
-* Timer 2 ISR sets its magic value.
-* Timer 3 ISR sets its magic value.
+* ``timer0`` at depth 0, ``timer1`` at depth 1 with the first token set, ``timer2`` at depth 2
+  with the first two tokens set.
 
-This confirms that ISR priorities are respected and preemption works correctly.
+A cycle passes when all three tokens were taken; the test runs 1000 cycles and expects no
+failure. Without nesting the handlers run one after another and ``timer1`` finds depth 0.
 
 Supported Boards
 ****************
@@ -44,6 +40,42 @@ Supported Boards
 - esp32_devkitc/esp32/procpu
 - esp32s2_devkitc
 - esp32s3_devkitc/esp32s3/procpu
+- esp32c6_devkitc/esp32c6/hpcore
+- esp32h2_devkitm
+
+The nested-ISR suite needs three timer group counters and runs on ESP32, ESP32-S2 and ESP32-S3
+only.
+
+Non-IRAM pause tests (``esp_noniram`` suite)
+============================================
+
+``esp_intr_noniram_disable()`` masks every CPU line not marked ``ESP_INTR_FLAG_IRAM`` in the
+devicetree, as the flash driver does while the cache is off. The suite uses the
+first enabled timer group counter, whose alarm interrupt is level-triggered:
+
+* An alarm raised while paused does not fire, the IRQ still reads as enabled, and the alarm
+  fires once on ``esp_intr_noniram_enable()``.
+* ``irq_disable()`` during the pause is kept after the resume.
+* ``irq_enable()`` during the pause waits for the resume.
+
+Multi-level encoding tests (``mli_encoding`` suite)
+===================================================
+
+* A shared consumer is a level-2 IRQ: the level-2 field is its interrupt matrix source and the
+  level-1 field is the intmux key line.
+* ``uart0`` lacks ``ESP_INTR_FLAG_IRAM`` and ``systimer0`` has it.
+* A level-3 consumer carries its input index, the source of its aggregator and the key line
+  (``rtc_timer`` on ``rtc_l3_intc``; on ESP32-H2 ``gpio0`` on the catch-all input of
+  ``gpio0_l3_intc`` and ``ana_cmpr0`` on input 0).
+
+Multi-level dispatch tests (``mli_dispatch`` suite)
+===================================================
+
+* A level-2 IRQ uses table slot ``CONFIG_2ND_LVL_ISR_TBL_OFFSET`` plus its source.
+* The counter ISR sits in its slot, and ``irq_enable()``, ``irq_disable()`` and
+  ``irq_is_enabled()`` agree.
+* On ESP32-H2 the GPIO ISR sits in the catch-all slot of the ``gpio0_l3_intc`` window and the
+  aggregator ISR in its level-2 slot.
 
 Building and Running
 ********************

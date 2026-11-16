@@ -11,13 +11,16 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/sys/printk.h>
 
-/* Test sets the three timer units, each with different interrupt priority level.
- * Each timer/counter is set to respond to three separate alarms.
- * The alarm times are set so each would trigger one after another separated by
- * the `ALARM_DIFF_US` time.
- * Each ISR sets its corresponding token into its token slots and wait for the
- * subsequent alarm ISR to be called.
- * After the last alarm ISR finishes the main loop checks if the ISR were called.
+#define COUNTER_INST_COUNT DT_NUM_INST_STATUS_OKAY(espressif_esp32_counter)
+
+#if COUNTER_INST_COUNT >= 3
+
+/* The three timers sit on CPU lines of Xtensa level 1, 2 and 3 (see the
+ * overlays in socs/). Their alarms are set ALARM_DIFF_US apart and every ISR
+ * busy-waits longer than that, so each alarm fires while the previous ISR is
+ * still running. An ISR takes its token only when the ISRs of the lower levels
+ * are still in progress (depth), which fails if the levels do not nest. After
+ * the last alarm the main loop checks that all three tokens were taken.
  */
 
 #define TOKEN_A 0xBEEFBABE
@@ -43,35 +46,43 @@ static struct counter_alarm_cfg alarm_c;
 static int token[3];
 static int success_cnt;
 static int error_cnt;
+static volatile uint8_t depth;
 
 static void alarm_handler_c(const struct device *dev, uint8_t chan_id, uint32_t counter,
 			    void *user_data)
 {
-	if (dev == timer2 && token[0] == TOKEN_A && token[1] == TOKEN_B && token[2] == 0) {
+	if (dev == timer2 && depth == 2 && token[0] == TOKEN_A && token[1] == TOKEN_B &&
+	    token[2] == 0) {
 		token[2] = TOKEN_C;
 	}
 
+	depth++;
 	k_busy_wait(ISR_DELAY_US);
+	depth--;
 }
 
 static void alarm_handler_b(const struct device *dev, uint8_t chan_id, uint32_t counter,
 			    void *user_data)
 {
-	if (dev == timer1 && token[0] == TOKEN_A && token[1] == 0 && token[2] == 0) {
+	if (dev == timer1 && depth == 1 && token[0] == TOKEN_A && token[1] == 0 && token[2] == 0) {
 		token[1] = TOKEN_B;
 	}
 
+	depth++;
 	k_busy_wait(ISR_DELAY_US);
+	depth--;
 }
 
 static void alarm_handler_a(const struct device *dev, uint8_t chan_id, uint32_t counter,
 			    void *user_data)
 {
-	if (dev == timer0 && token[0] == 0 && token[1] == 0 && token[2] == 0) {
+	if (dev == timer0 && depth == 0 && token[0] == 0 && token[1] == 0 && token[2] == 0) {
 		token[0] = TOKEN_A;
 	}
 
+	depth++;
 	k_busy_wait(ISR_DELAY_US);
+	depth--;
 }
 
 static void *esp_interrupt_suite_setup(void)
@@ -135,3 +146,5 @@ ZTEST(esp_interrupt, test_nested_isr)
 }
 
 ZTEST_SUITE(esp_interrupt, NULL, esp_interrupt_suite_setup, NULL, NULL, NULL);
+
+#endif /* COUNTER_INST_COUNT >= 3 */
