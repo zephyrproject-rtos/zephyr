@@ -38,7 +38,6 @@
 LOG_MODULE_REGISTER(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
 
 #define RX_SETUP_MARGIN_MS	50
-#define RX2_DELAY_OFFSET_MS	1000
 #define RX_TIMEOUT_MARGIN_MS	100
 
 /* PHY frame overhead: MHDR(1) + FHDR(7) + FPort(1) + MIC(4) */
@@ -246,7 +245,8 @@ static void mac_do_set_channels_mask(struct lwan_ctx *ctx,
 
 	for (size_t i = 0; i < ctx->channel_count; i++) {
 		uint16_t word = mask_req->channels_mask[i / 16];
-		bool enabled = (word & BIT(i % 16)) != 0;
+		bool enabled = ctx->channels[i].frequency != 0 &&
+			       (word & BIT(i % 16)) != 0;
 
 		ctx->channels[i].enabled = enabled;
 	}

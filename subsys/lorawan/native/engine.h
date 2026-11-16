@@ -91,6 +91,10 @@ struct lwan_req {
 void engine_init(struct lwan_ctx *ctx);
 int engine_post_req_wait(struct lwan_req *req);
 
+#if defined(CONFIG_ZTEST)
+void engine_stop(void);
+#endif /* CONFIG_ZTEST */
+
 /* Called by MAC handlers to unblock the waiting caller. */
 void engine_signal_result(const struct lwan_req *req, int result);
 
