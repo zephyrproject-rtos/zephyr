@@ -1969,7 +1969,8 @@ void coap_client_cancel_request(struct coap_client *client, struct coap_client_r
  * same for both.
  */
 static int coap_client_observe_resend(struct coap_client *client, struct coap_client_request *req,
-				      bool deregister)
+				      bool deregister, bool own_etag, const uint8_t *etag,
+				      size_t etag_len)
 {
 	bool matched = false;
 	int ret = 0;
@@ -2019,18 +2020,24 @@ static int coap_client_observe_resend(struct coap_client *client, struct coap_cl
 		}
 
 		/* RFC 7641 3.3.1 and 3.6: all options of a re-registration or deregister must
-		 * be identical to those of the registration request. Re-add the application's
-		 * options except Observe, which is set below.
+		 * be identical to those of the registration request, except for the ETag
+		 * options. Re-add the application's options except Observe, which is set
+		 * below, and the ETags when this refresh brings its own set.
 		 */
 		for (int j = 0; err == 0 && j < internal_req->coap_request.num_options; j++) {
 			const struct coap_client_option *opt =
 				&internal_req->coap_request.options[j];
 
-			if (opt->code == COAP_OPTION_OBSERVE) {
+			if (opt->code == COAP_OPTION_OBSERVE ||
+			    (own_etag && opt->code == COAP_OPTION_ETAG)) {
 				continue;
 			}
 
 			err = coap_packet_append_option(&pkt, opt->code, opt->value, opt->len);
+		}
+
+		if (err == 0 && own_etag && etag_len > 0) {
+			err = coap_packet_append_option(&pkt, COAP_OPTION_ETAG, etag, etag_len);
 		}
 
 		if (err == 0) {
@@ -2125,12 +2132,22 @@ static int coap_client_observe_resend(struct coap_client *client, struct coap_cl
 
 int coap_client_deregister_observe(struct coap_client *client, struct coap_client_request *req)
 {
-	return coap_client_observe_resend(client, req, true);
+	return coap_client_observe_resend(client, req, true, false, NULL, 0);
 }
 
 int coap_client_reregister_observe(struct coap_client *client, struct coap_client_request *req)
 {
-	return coap_client_observe_resend(client, req, false);
+	return coap_client_observe_resend(client, req, false, false, NULL, 0);
+}
+
+int coap_client_reregister_observe_etag(struct coap_client *client, struct coap_client_request *req,
+					const uint8_t *etag, size_t etag_len)
+{
+	if (etag_len > COAP_ETAG_MAX_LEN || (etag_len > 0 && etag == NULL)) {
+		return -EINVAL;
+	}
+
+	return coap_client_observe_resend(client, req, false, true, etag, etag_len);
 }
 
 void coap_client_recv(void *coap_cl, void *a, void *b)
