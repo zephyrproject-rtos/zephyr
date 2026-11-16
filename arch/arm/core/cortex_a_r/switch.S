@@ -63,13 +63,12 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 	pop {r0, r1}
 #endif
 
-	/* save old thread into switch handle which is required by
-	 * z_sched_switch_spin().
-	 *
-	 * Note that this step must be done after all relevant state is
-	 * saved.
+#ifdef CONFIG_SMP
+	/* Make the saved state visible to other CPUs before the switch
+	 * handle that z_sched_switch_spin() waits for.
 	 */
-	dsb
+	dmb
+#endif
 	str r1, [r1, #___thread_t_switch_handle_OFFSET]
 
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)
