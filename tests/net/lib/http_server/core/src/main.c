@@ -66,6 +66,8 @@ BUILD_ASSERT(sizeof(long_payload) - 1 > CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE,
 #define TEST_HTTP2_SETTINGS \
 	0x00, 0x00, 0x0c, 0x04, 0x00, 0x00, 0x00, 0x00,	0x00, \
 	0x00, 0x03, 0x00, 0x00, 0x00, 0x64, 0x00, 0x04, 0x00, 0x00, 0xff, 0xff
+#define TEST_HTTP2_SETTINGS_EMPTY \
+	0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00
 #define TEST_HTTP2_SETTINGS_ACK \
 	0x00, 0x00, 0x00, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00
 #define TEST_HTTP2_GOAWAY \
@@ -226,8 +228,17 @@ BUILD_ASSERT(sizeof(long_payload) - 1 > CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE,
 	0x69, 0xd2, 0x9a, 0xc4, 0xc0, 0x57, 0x68, 0x0b, 0x83
 #define TEST_HTTP2_HEADERS_PRIORITY_SHORT_STREAM_1 \
 	0x00, 0x00, 0x03, 0x01, 0x24, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, 0x00, 0x00, 0x00
+#define TEST_HTTP2_HEADERS_GET_ROOT_NO_END_HEADERS_STREAM_1 \
+	0x00, 0x00, 0x21, 0x01, 0x01, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x82, 0x84, 0x86, 0x41, 0x8a, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xdc, \
+	0x78, 0x0f, 0x03, 0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x90, 0x7a, 0x8a, 0xaa, \
+	0x69, 0xd2, 0x9a, 0xc4, 0xc0, 0x57, 0x68, 0x0b, 0x83
+#define TEST_HTTP2_CONTINUATION_EMPTY_STREAM_1 \
+	0x00, 0x00, 0x00, 0x09, 0x04, 0x00, 0x00, 0x00, TEST_STREAM_ID_1
 #define TEST_HTTP2_DATA_EMPTY_STREAM_1 \
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, TEST_STREAM_ID_1
+#define TEST_HTTP2_DATA_EMPTY_END_STREAM_STREAM_1 \
+	0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, TEST_STREAM_ID_1
 #define TEST_HTTP2_DATA_PADDING_ONLY_STREAM_1 \
 	0x00, 0x00, 0x05, 0x00, 0x08, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, 0x04, \
 	0x00, 0x00, 0x00, 0x00
@@ -2383,6 +2394,90 @@ ZTEST(server_function_tests, test_http2_post_data_empty)
 	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
 			  dynamic_payload_len, "Wrong dynamic resource data");
 	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+ZTEST(server_function_tests, test_http2_post_data_empty_end_stream_last)
+{
+	/* The request ends with an empty DATA frame that carries END_STREAM,
+	 * and the client sends nothing after it. The request has to be
+	 * answered without waiting for more bytes.
+	 */
+	static const uint8_t request_post_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1_NO_END_STREAM,
+		TEST_HTTP2_DATA_EMPTY_END_STREAM_STREAM_1,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_post_dynamic, sizeof(request_post_dynamic), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_window_update_frame(&offset, TEST_STREAM_ID_1);
+	expect_http2_window_update_frame(&offset, 0);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+
+	zassert_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+ZTEST(server_function_tests, test_http2_settings_empty_last)
+{
+	/* A SETTINGS frame without parameters is acknowledged although no
+	 * bytes follow its header.
+	 */
+	static const uint8_t request_settings[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS_EMPTY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_settings, sizeof(request_settings), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+}
+
+ZTEST(server_function_tests, test_http2_continuation_empty_last)
+{
+	/* The header block ends with an empty CONTINUATION frame that carries
+	 * END_HEADERS, and the client sends nothing after it.
+	 */
+	static const uint8_t request_get[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_ROOT_NO_END_HEADERS_STREAM_1,
+		TEST_HTTP2_CONTINUATION_EMPTY_STREAM_1,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_get, sizeof(request_get), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_PAYLOAD,
+				strlen(TEST_STATIC_PAYLOAD), HTTP2_FLAG_END_STREAM);
 }
 
 ZTEST(server_function_tests, test_http2_post_headers_with_priority)
