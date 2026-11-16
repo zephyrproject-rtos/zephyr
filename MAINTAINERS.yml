@@ -6135,7 +6135,10 @@ Sensry Platforms:
   maintainers:
     - tswaehn
   files:
+    - boards/racyics/
     - boards/sensry/
+    - dts/arm/racyics/
+    - soc/racyics/
   files-regex:
     - .*sy1xx.*
   labels:
