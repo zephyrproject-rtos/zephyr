@@ -59,6 +59,13 @@ Libraries / Subsystems
   * PACS exposes the audio locations through :c:func:`bt_pacs_get_location` and
     reports changes to a registered :c:struct:`bt_pacs_cb`.
   * :c:func:`bt_l2cap_server_unregister` removes a registered L2CAP server.
+  * The host can request the lowest ACL frame space on connection establishment, for any
+    combination of the 1M, 2M and Coded PHYs
+    (:kconfig:option:`CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_1M`,
+    :kconfig:option:`CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_2M`,
+    :kconfig:option:`CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_CODED`), selectable per role
+    (:kconfig:option:`CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_CENTRAL`,
+    :kconfig:option:`CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_PERIPHERAL`).
   * :c:member:`bt_gatt_cb.execute_write_ended` tells the application how an Execute
     Write Request ended: whether the client's prepared values were written, cancelled,
     or discarded after a write failed.
