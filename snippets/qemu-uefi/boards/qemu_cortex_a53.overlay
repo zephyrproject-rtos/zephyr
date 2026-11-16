@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 BayLibre SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * QEMU puts the devicetree at the start of RAM (0x40000000) and EDK2 keeps
+ * its stack and other data just below 0x48000000.
+ */
+/delete-node/ &sram0;
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+	};
+
+	soc {
+		sram0: memory@48000000 {
+			compatible = "mmio-sram";
+			reg = <0x0 0x48000000 0x0 DT_SIZE_M(64)>;
+		};
+	};
+};

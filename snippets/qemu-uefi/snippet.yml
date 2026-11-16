@@ -1,0 +1,13 @@
+# Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+name: qemu-uefi
+boards:
+  qemu_cortex_a53/qemu_cortex_a53:
+    append:
+      EXTRA_CONF_FILE: boards/qemu_cortex_a53.conf
+      EXTRA_DTC_OVERLAY_FILE: boards/qemu_cortex_a53.overlay
+  qemu_cortex_a53/qemu_cortex_a53/smp:
+    append:
+      EXTRA_CONF_FILE: boards/qemu_cortex_a53.conf
+      EXTRA_DTC_OVERLAY_FILE: boards/qemu_cortex_a53.overlay
