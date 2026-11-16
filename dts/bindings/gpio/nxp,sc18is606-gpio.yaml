@@ -1,11 +1,16 @@
-# Copyright (c), 2025 tinyvision.ai
+#
+# SPDX-FileCopyrightText: Copyright tinyvision.ai
+#
 # SPDX-License-Identifier: Apache-2.0
-
-
-description: GPIO Controller part for the SC18IS606 bridge.
-             Any compatible node shall be a child of "nxp,sc18is606" compatible node.
+#
+description: |
+  GPIO Controller part for the SC18IS606 bridge.
+  Any compatible node shall be a child of an nxp,sc18is60x family node.
+  Deprecated in favor of nxp,sc18is60x-gpio.
 
 compatible: "nxp,sc18is606-gpio"
+
+on-bus: nxp,sc18is60x
 
 include: gpio-controller.yaml
 
