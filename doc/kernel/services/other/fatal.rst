@@ -123,7 +123,80 @@ If the implementation returns, the faulting thread will be aborted and
 the system will otherwise continue to function. See the documentation for
 this function for additional details and constraints.
 
+.. _fatal_thread_restart:
+
+Restarting the Faulting Thread
+==============================
+
+With :kconfig:option:`CONFIG_THREAD_RESTART_ON_FATAL_ERROR` enabled, a custom
+:c:func:`k_sys_fatal_error_handler()` can call :c:func:`k_thread_restart_schedule()` to have the
+faulting thread re-created after it has been aborted. The thread is described by a
+:c:struct:`k_thread_restart` descriptor, which holds the :c:func:`k_thread_create()` parameters and
+the optional restart limit. The system workqueue uses the descriptor after the faulting thread has
+been aborted, so it must be a global or ``static`` variable, never one on a stack.
+
+:c:func:`k_thread_restart_schedule()` schedules a delayable work item on the system workqueue.
+Once the handler has returned and the thread has been aborted, the work item waits for the thread
+to exit, polling at an interval that starts at
+:kconfig:option:`CONFIG_THREAD_RESTART_ON_FATAL_ERROR_POLL_MIN_MS` and doubles up to
+:kconfig:option:`CONFIG_THREAD_RESTART_ON_FATAL_ERROR_POLL_MAX_MS`, then re-creates and starts
+the thread. :c:func:`k_thread_restart_poll_set()` overrides the poll intervals of a descriptor.
+
+The handler decides whether the fault is recoverable. Some CPU exceptions are reported with
+``K_ERR_KERNEL_PANIC``, so a restart may be requested for it. It should not be requested for a
+fault taken in interrupt context: in an interrupt, :c:func:`k_current_get()` returns the
+interrupted thread, and recovery is not supported. There is no portable way for the handler to
+detect interrupt context, so restrict restarts to the reasons and threads the handler knows to
+be recoverable, such as ``K_ERR_KERNEL_OOPS`` raised by the thread itself. If the thread is never
+aborted, the work item keeps polling for it to exit.
+
+:c:func:`k_thread_restart_schedule()` records the resource pool of the faulting thread and, with
+:kconfig:option:`CONFIG_USERSPACE`, its memory domain. The system workqueue thread re-creates the
+thread with a ``K_FOREVER`` start delay, assigns it the recorded resource pool, adds it to the
+recorded memory domain and runs the callback of the descriptor, if any, then starts it. The callback
+can complete the setup of the thread, such as pinning it to a CPU, or veto the restart by returning
+a non-zero value, in which case the thread is aborted without being started. Other changes made to
+the thread after its creation, such as CPU affinity, are not restored, and resources held by the
+faulting thread, such as mutexes or heap allocations, are not released. The recorded resource pool
+and memory domain must stay initialized until the thread has been restarted. User mode threads,
+essential threads and the system workqueue thread cannot be restarted, and the descriptor options
+must not contain ``K_INHERIT_PERMS``, which would grant the thread the workqueue thread's kernel
+object permissions.
+
+.. code-block:: c
+
+   #include <zephyr/kernel.h>
+   #include <zephyr/kernel/thread_restart.h>
+
+   static void worker_entry(void *p1, void *p2, void *p3)
+   {
+           /* ... */
+   }
+
+   static K_THREAD_STACK_DEFINE(worker_stack, 1024);
+   static struct k_thread worker_thread;
+
+   static K_THREAD_RESTART_DEFINE(worker_restart, &worker_thread, worker_stack,
+                                  K_THREAD_STACK_SIZEOF(worker_stack), worker_entry,
+                                  NULL, NULL, NULL, K_PRIO_PREEMPT(5), 0, "worker",
+                                  3, NULL);
+
+   void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
+   {
+           ARG_UNUSED(esf);
+
+           /* Only errors raised by the worker thread itself */
+           if ((reason == K_ERR_KERNEL_OOPS) && (k_current_get() == &worker_thread) &&
+               (k_thread_restart_schedule(&worker_restart) == 0)) {
+                   return;
+           }
+
+           k_fatal_halt(reason);
+   }
+
 API Reference
 *************
 
 .. doxygengroup:: fatal_apis
+
+.. doxygengroup:: thread_restart_apis
