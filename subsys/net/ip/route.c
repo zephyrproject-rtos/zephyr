@@ -43,6 +43,7 @@ LOG_MODULE_DECLARE(net_route, ROUTE_LOG_LEVEL);
 
 #include <zephyr/net/virtual.h>
 
+#include "net_private.h"
 #include "route.h"
 #include "route_ipv4.h"
 #include "route_ipv6.h"
@@ -246,7 +247,7 @@ static void route_update_lifetime_locked(struct net_route_table *table,
 					&route->lifetime.node);
 	sys_slist_append(&table->active_route_lifetime_timers,
 			 &route->lifetime.node);
-	k_work_reschedule(&table->route_lifetime_timer, K_NO_WAIT);
+	net_work_reschedule(&table->route_lifetime_timer, K_NO_WAIT);
 }
 
 static int route_delete_locked(struct net_route_table *table,
@@ -302,7 +303,7 @@ static void route_lifetime_timeout(struct k_work *work)
 	}
 
 	if (next_update != UINT32_MAX) {
-		k_work_reschedule(&table->route_lifetime_timer, K_MSEC(next_update));
+		net_work_reschedule(&table->route_lifetime_timer, K_MSEC(next_update));
 	}
 
 	k_mutex_unlock(&table->lock);

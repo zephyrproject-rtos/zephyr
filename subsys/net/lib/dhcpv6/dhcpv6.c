@@ -166,7 +166,7 @@ static void dhcpv6_set_timeout(struct net_if *iface, uint64_t timeout)
 
 static void dhcpv6_reschedule(void)
 {
-	k_work_reschedule(&dhcpv6_timeout_work, K_NO_WAIT);
+	net_work_reschedule(&dhcpv6_timeout_work, K_NO_WAIT);
 }
 
 static int randomize_timeout(int multiplier, int timeout)
@@ -2806,7 +2806,7 @@ static void dhcpv6_timeout(struct k_work *work)
 		}
 
 		NET_DBG("Waiting for %llums", timeout_update);
-		k_work_reschedule(&dhcpv6_timeout_work, K_MSEC(timeout_update));
+		net_work_reschedule(&dhcpv6_timeout_work, K_MSEC(timeout_update));
 	}
 }
 

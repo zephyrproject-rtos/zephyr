@@ -1610,8 +1610,8 @@ static struct k_mutex *nbr_rm_sender_waits_on(void)
 
 /* Earlier tests take the interface down and up, which restarts duplicate
  * address detection. When it succeeds, dad_timeout() removes the neighbor
- * entry for the address on the system work queue, and the neighbor lock it
- * takes for that would be handed over ahead of the sender. Once no address
+ * entry for the address on the work queue running the stack's timers, and the
+ * neighbor lock it takes for that would be handed over ahead of the sender. Once no address
  * is tentative, that work has run.
  */
 static bool wait_for_dad_done(struct net_if *iface, int32_t timeout_ms)
@@ -1772,6 +1772,37 @@ ZTEST(net_ipv6, test_prefix_timeout)
 	prefix = net_if_ipv6_prefix_lookup(TEST_NET_IF, &addr, len);
 	zassert_is_null(prefix, "Prefix %s/%d should have expired",
 			net_sprint_ipv6_addr(&addr), len);
+}
+
+/* A prefix that expires after IPv6 was turned off on the interface must not
+ * leave the interface locked.
+ */
+ZTEST(net_ipv6, test_prefix_timeout_ipv6_off)
+{
+	struct net_if_ipv6_prefix *prefix;
+	struct net_in6_addr addr = { { { 0x20, 1, 0x0d, 0xb8, 44, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct net_if *iface = TEST_NET_IF;
+	uint32_t lifetime = 1U;
+	int len = 64;
+	int ret;
+
+	prefix = net_if_ipv6_prefix_add(iface, &addr, len, lifetime);
+	zassert_not_null(prefix, "Cannot get prefix");
+
+	net_if_ipv6_prefix_set_lf(prefix, false);
+	net_if_ipv6_prefix_set_timer(prefix, lifetime);
+
+	net_if_flag_clear(iface, NET_IF_IPV6);
+	k_sleep(K_SECONDS(lifetime * 2U));
+	net_if_flag_set(iface, NET_IF_IPV6);
+
+	ret = k_mutex_lock(&iface->lock, K_MSEC(100));
+	zassert_ok(ret, "Interface left locked after the prefix expired");
+	k_mutex_unlock(&iface->lock);
+
+	zexpect_is_null(net_if_ipv6_prefix_lookup(iface, &addr, len),
+			"Prefix %s/%d should have expired", net_sprint_ipv6_addr(&addr), len);
 }
 
 ZTEST(net_ipv6, test_prefix_timeout_long)
@@ -2057,6 +2088,51 @@ ZTEST(net_ipv6, test_rs_after_iface_up_carrier_delayed)
 ZTEST(net_ipv6, test_rs_after_carrier_toggle)
 {
 	verify_rs_on_iface_event(test_iface_carrier_off_on);
+}
+
+static bool rs_retry_tx(struct net_pkt *pkt, void *user_data)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(user_data);
+
+	/* No router answers the solicitations. */
+	return true;
+}
+
+/* Router Solicitations started on two interfaces at the same time expire in
+ * the same timer run, and both interfaces must solicit again.
+ */
+ZTEST(net_ipv6, test_rs_retry_on_every_expired_iface)
+{
+	static struct test_tx_handler handler = {
+		.fn = rs_retry_tx,
+	};
+	struct net_if *ifaces[] = {
+		TEST_NET_IF,
+		net_if_lookup_by_dev(DEVICE_GET(eth_ipv6_net_dummy)),
+	};
+
+	tx_handler = &handler;
+
+	ARRAY_FOR_EACH(ifaces, i) {
+		zassert_not_null(ifaces[i], "Interface %zu not found", i);
+		zassert_not_null(ifaces[i]->config.ip.ipv6, "Interface %zu has no IPv6", i);
+
+		net_if_stop_rs(ifaces[i]);
+		ifaces[i]->config.ip.ipv6->rs_count = 0U;
+	}
+
+	ARRAY_FOR_EACH(ifaces, i) {
+		net_if_start_rs(ifaces[i]);
+	}
+
+	k_sleep(K_MSEC(CONFIG_NET_IPV6_RS_TIMEOUT * MSEC_PER_SEC + 100));
+
+	ARRAY_FOR_EACH(ifaces, i) {
+		zexpect_equal(ifaces[i]->config.ip.ipv6->rs_count, 1U,
+			      "Interface %zu did not solicit again", i);
+		net_if_stop_rs(ifaces[i]);
+	}
 }
 
 /**

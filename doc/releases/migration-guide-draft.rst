@@ -438,6 +438,18 @@ Networking
   ``DEVICE_API(wifi_offload, name)`` otherwise. ``struct net_wifi_mgmt_offload`` remains available
   to refer to the selected type. (:github:`124334`)
 
+* The native network stack runs its timers and deferred work on a dedicated work queue,
+  :kconfig:option:`CONFIG_NET_DEDICATED_WORKQUEUE`, which is enabled by default. Code called from
+  that work now runs in the ``net_workq`` thread instead of the system work queue: the DNS resolve
+  callback of a query that timed out, and network management event callbacks with
+  :kconfig:option:`CONFIG_NET_MGMT_EVENT_DIRECT` for the events that work raises. Such code no
+  longer runs serialized with the application's own system work queue items, and must not wait for
+  work that needs the networking work queue. Applications that increased
+  :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` for the network stack's work should increase
+  :kconfig:option:`CONFIG_NET_DEDICATED_WORKQUEUE_STACK_SIZE` instead. Disabling
+  :kconfig:option:`CONFIG_NET_DEDICATED_WORKQUEUE` restores the previous behavior and saves the
+  thread and its stack.
+
 Other subsystems
 ****************
 

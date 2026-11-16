@@ -26,4 +26,20 @@ config NET_RX_STACK_SIZE
 	  This value is a baseline and the actual RX stack size might
 	  be bigger depending on what features are enabled.
 
+config NET_DEDICATED_WORKQUEUE
+	bool
+	default y if NET_NATIVE
+	depends on MULTITHREADING
+
+config NET_DEDICATED_WORKQUEUE_STACK_SIZE
+	int
+	default 2048 if COVERAGE_GCOV
+	default 1536 if 64BIT
+	default 1280
+	depends on NET_DEDICATED_WORKQUEUE
+
+module = NET
+module-str = networking
+source "kernel/Kconfig.template.workqueue"
+
 endmenu

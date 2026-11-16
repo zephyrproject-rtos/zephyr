@@ -2387,8 +2387,8 @@ static int dns_write(struct dns_resolve_context *ctx,
 		server_addr_len = sizeof(struct net_sockaddr_in6);
 	}
 
-	ret = k_work_reschedule(&ctx->queries[query_idx].timer,
-				timeout);
+	ret = net_work_reschedule(&ctx->queries[query_idx].timer,
+				  timeout);
 	if (ret < 0) {
 		NET_DBG("[%u] cannot submit work to server idx %d for id %u "
 			"ret %d", query_idx, server_idx, dns_id, ret);
@@ -2549,7 +2549,7 @@ static void query_timeout(struct k_work *work)
 	int ret;
 
 	/* We have to take the lock as we're inspecting protected content
-	 * associated with the query.  But don't block the system work queue:
+	 * associated with the query.  But don't block the work queue:
 	 * if the lock can't be taken immediately, reschedule the work item to
 	 * be run again after everything else has had a chance.
 	 *
@@ -2569,7 +2569,7 @@ static void query_timeout(struct k_work *work)
 		 * Timeout value was arbitrarily chosen and can be updated in
 		 * future if needed.
 		 */
-		k_work_reschedule(dwork2, K_MSEC(10));
+		net_work_reschedule(dwork2, K_MSEC(10));
 		return;
 	}
 
