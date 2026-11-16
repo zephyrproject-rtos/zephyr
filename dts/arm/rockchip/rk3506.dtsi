@@ -1,0 +1,108 @@
+/*
+ * Copyright (c) 2026 Jiaming Zhao
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+
+#include <arm/armv7-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	interrupt-parent = <&gic>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@f00 {
+			compatible = "arm,cortex-a7";
+			reg = <0xf00>;
+			device_type = "cpu";
+		};
+
+		cpu1: cpu@f01 {
+			compatible = "arm,cortex-a7";
+			reg = <0xf01>;
+			device_type = "cpu";
+		};
+
+		cpu2: cpu@f02 {
+			compatible = "arm,cortex-a7";
+			reg = <0xf02>;
+			device_type = "cpu";
+		};
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <DT_FREQ_M(24)>;
+		status = "okay";
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	soc: soc {
+		compatible = "rockchip,rk3506", "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		gic: interrupt-controller@ff581000 {
+			compatible = "arm,gic-400", "arm,gic-v2", "arm,gic";
+			reg = <0xff581000 0x1000>,
+			      <0xff582000 0x2000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			#address-cells = <0>;
+			status = "okay";
+		};
+
+		uart0: uart@ff0a0000 {
+			compatible = "ns16550", "snps,dw-apb-uart";
+			reg = <0xff0a0000 0x100>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart1: uart@ff0b0000 {
+			compatible = "ns16550", "snps,dw-apb-uart";
+			reg = <0xff0b0000 0x100>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart2: uart@ff0c0000 {
+			compatible = "ns16550", "snps,dw-apb-uart";
+			reg = <0xff0c0000 0x100>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart3: uart@ff0d0000 {
+			compatible = "ns16550", "snps,dw-apb-uart";
+			reg = <0xff0d0000 0x100>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+	};
+};
