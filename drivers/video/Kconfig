@@ -68,7 +68,7 @@ config VIDEO_I2C_RETRY_NUM
 
 config VIDEO_GMSL_RAW10_DOUBLE
 	bool "Carry RAW10 as 20-bit double pixels over the GMSL2 link"
-	depends on VIDEO_MAX96724
+	depends on VIDEO_MAX96717 || VIDEO_MAX96724
 	default y
 	help
 	  Pack two RAW10 pixels per 20-bit word on the GMSL2 link, halving the
@@ -91,6 +91,7 @@ source "drivers/video/Kconfig.hm01b0"
 source "drivers/video/Kconfig.hm0360"
 source "drivers/video/Kconfig.imx219"
 source "drivers/video/Kconfig.imx335"
+source "drivers/video/Kconfig.max96717"
 source "drivers/video/Kconfig.max96724"
 source "drivers/video/Kconfig.mcux_csi"
 source "drivers/video/Kconfig.mcux_flexio"
