@@ -286,6 +286,20 @@ class SymbolTable:
         if not self._ranges and not self._bounds:
             sys.exit(f"{source} contains no function symbols.")
 
+        # Names that more than one function carries, with every start
+        # address. Two kinds share a name: static functions that happen to be
+        # called the same in different files, and the out-of-line copies of
+        # one static inline that each calling file gets. key() tells them
+        # apart.
+        starts: dict[str, set[int]] = defaultdict(set)
+        for addr, _size, name in self._ranges:
+            starts[name].add(addr)
+        for addr, name in self._bounds:
+            if name != UNKNOWN:
+                starts[name].add(addr)
+        self._shared = {name: sorted(addrs) for name, addrs in starts.items() if len(addrs) > 1}
+        self._keys: dict[str, dict[int, str] | None] = {}
+
         # Loadable ranges, used to tell "not a Zephyr function" apart from
         # "not Zephyr at all" (the BIOS the guest boots through).
         self._load = list(load)
@@ -296,7 +310,8 @@ class SymbolTable:
         self._dwarf = None
         self._aranges = None
         self._file_cache: dict[str, str | None] = {}
-        self._sym_cache: dict[int, tuple[str, str]] = {}
+        self._sym_cache: dict[int, tuple[str, str, int | None]] = {}
+        self._subprogram_cache: dict[int, dict[int, object]] = {}
 
     @classmethod
     def from_elf(cls, elf_path: str) -> "SymbolTable":
@@ -360,6 +375,11 @@ class SymbolTable:
 
     def lookup(self, pc: int) -> tuple[str, str]:
         """Return (function name, kind) where kind is exact/inferred/bucket."""
+        name, kind, _start = self.lookup_start(pc)
+        return name, kind
+
+    def lookup_start(self, pc: int) -> tuple[str, str, int | None]:
+        """Like lookup(), plus the function's start address (None for a bucket)."""
         hit = self._sym_cache.get(pc)
         if hit is not None:
             return hit
@@ -368,25 +388,115 @@ class SymbolTable:
         self._sym_cache[pc] = result
         return result
 
-    def _lookup_uncached(self, pc: int) -> tuple[str, str]:
+    def _lookup_uncached(self, pc: int) -> tuple[str, str, int | None]:
         if not self.in_image(pc):
-            return FIRMWARE, "bucket"
+            return FIRMWARE, "bucket", None
 
         # A sized function wins outright.
         idx = bisect.bisect_right(self._range_starts, pc) - 1
         if idx >= 0:
             addr, size, name = self._ranges[idx]
             if pc < addr + size:
-                return name, "exact"
+                return name, "exact", addr
 
         # Otherwise fall back to the nearest preceding entry point.
         idx = bisect.bisect_right(self._bound_starts, pc) - 1
         if idx >= 0:
-            name = self._bounds[idx][1]
+            addr, name = self._bounds[idx]
             if name != UNKNOWN:
-                return name, "inferred"
+                return name, "inferred", addr
 
-        return UNKNOWN, "bucket"
+        return UNKNOWN, "bucket", None
+
+    def key(self, name: str, start: int | None) -> tuple[str, bool]:
+        """Return (attribution key, merged) for function *name* at *start*.
+
+        A name carried by one function is its own key. Copies of one static
+        inline are declared in the same file and also keep the bare name, so
+        their costs add up. Functions declared in different files get the
+        name followed by the shortest path suffix that tells their files
+        apart, such as "out_func (log_output.c)". The keys depend on the
+        image and not on which copies ran, so they line up in a diff, until
+        a change adds or removes a function of the same name. When the
+        declaring file of any copy is unknown, the copies cannot be told
+        apart: the bare name is used and *merged* is True.
+        """
+        addrs = self._shared.get(name)
+        if addrs is None or start is None:
+            return name, False
+
+        if name not in self._keys:
+            self._keys[name] = self._split(name, addrs)
+        keys = self._keys[name]
+        if keys is None:
+            return name, True
+        return keys.get(start, name), False
+
+    def _split(self, name: str, addrs: list[int]) -> dict[int, str] | None:
+        files = {addr: self.decl_file(addr) for addr in addrs}
+        if None in files.values():
+            return None
+
+        distinct = set(files.values())
+        if len(distinct) == 1:
+            return dict.fromkeys(addrs, name)
+
+        suffix = _unique_suffixes(distinct)
+        return {addr: f"{name} ({suffix[path]})" for addr, path in files.items()}
+
+    def decl_file(self, addr: int) -> str | None:
+        """File declaring the function that starts at *addr*, from DWARF.
+
+        This is the file the function is written in, unlike source_file(),
+        which gives the translation unit: for an out-of-line copy of a static
+        inline it is the header, the same for every copy. The function's
+        own DW_TAG_subprogram is found by its low_pc in the unit covering
+        *addr*, and DW_AT_abstract_origin or DW_AT_specification is followed
+        to the entry carrying DW_AT_decl_file.
+        """
+        if self._aranges is None:
+            return None
+
+        try:
+            cu_offset = self._aranges.cu_offset_at_addr(addr)
+            if cu_offset is None:
+                return None
+            die = self._subprograms(cu_offset).get(addr)
+            # Real chains are one or two links long; the bound only stops a
+            # loop in broken DWARF.
+            for _ in range(8):
+                if die is None:
+                    return None
+                decl = die.attributes.get("DW_AT_decl_file")
+                if decl is not None:
+                    return _dwarf_file(self._dwarf, die.cu, decl.value)
+                origin = next(
+                    (
+                        attr
+                        for attr in ("DW_AT_abstract_origin", "DW_AT_specification")
+                        if attr in die.attributes
+                    ),
+                    None,
+                )
+                die = die.get_DIE_from_attribute(origin) if origin is not None else None
+        except Exception:  # noqa: BLE001 - DWARF is best effort
+            return None
+        return None
+
+    def _subprograms(self, cu_offset: int) -> dict[int, object]:
+        """Every DW_TAG_subprogram with a low_pc in one unit, by address."""
+        found = self._subprogram_cache.get(cu_offset)
+        if found is None:
+            found = {}
+            cu = self._dwarf.get_CU_at(cu_offset)
+            for die in cu.iter_DIEs():
+                # pyelftools already resolves the .debug_addr index of a
+                # DW_FORM_addrx low_pc, as clang emits for DWARF 5.
+                low = die.attributes.get("DW_AT_low_pc") if die.tag == "DW_TAG_subprogram" else None
+                if low is not None:
+                    found[low.value] = die
+            self._subprogram_cache[cu_offset] = found
+        return found
 
     def source_file(self, pc: int, zephyr_base: str, topdir: str) -> str | None:
         """Best-effort source file for *pc*, relative to the west topdir."""
@@ -415,6 +525,65 @@ def _relativise(path: str, zephyr_base: str, topdir: str) -> str:
         if root and path.startswith(root.rstrip("/") + "/"):
             return path[len(root.rstrip("/")) + 1 :]
     return path
+
+
+def _dwarf_file(dwarf, cu, index: int) -> str | None:
+    """Absolute path of file *index* in *cu*'s line program file table.
+
+    DWARF 5 numbers files and directories from 0, with entry 0 the unit
+    itself; DWARF 4 and earlier number files from 1 and use directory 0 for
+    the compilation directory.
+    """
+    program = dwarf.line_program_for_CU(cu)
+    if program is None:
+        return None
+
+    version = program.header["version"]
+    files = program.header["file_entry"]
+    dirs = program.header["include_directory"]
+    idx = index if version >= 5 else index - 1
+    if not 0 <= idx < len(files):
+        return None
+
+    entry = files[idx]
+    path = entry.name.decode()
+    dir_idx = entry.dir_index if version >= 5 else entry.dir_index - 1
+    if not os.path.isabs(path) and 0 <= dir_idx < len(dirs):
+        path = os.path.join(dirs[dir_idx].decode(), path)
+    if not os.path.isabs(path):
+        comp_dir = cu.get_top_DIE().attributes.get("DW_AT_comp_dir")
+        if comp_dir is not None:
+            path = os.path.join(comp_dir.value.decode(), path)
+    return os.path.normpath(path)
+
+
+def _fit_name(name: str, width: int) -> str:
+    """Shorten a row name to *width*, keeping a "(file)" suffix whole.
+
+    The suffix is what tells same-named functions apart, so cutting it off would
+    print two different rows under one name.
+    """
+    if len(name) <= width:
+        return name
+
+    func, sep, suffix = name.rpartition(" (")
+    if sep and suffix.endswith(")") and len(sep) + len(suffix) < width:
+        return func[: width - len(sep) - len(suffix)] + sep + suffix
+
+    return name[:width]
+
+
+def _unique_suffixes(paths: set[str]) -> dict[str, str]:
+    """Shortest trailing part of each path that no other path ends in."""
+    split = {path: path.split("/") for path in paths}
+    out = {}
+    for path, parts in split.items():
+        for count in range(1, len(parts) + 1):
+            tail = parts[-count:]
+            if not any(other[-count:] == tail for p, other in split.items() if p != path):
+                break
+        out[path] = "/".join(tail)
+    return out
 
 
 def classify(func: str, source: str | None) -> str:
@@ -521,11 +690,10 @@ def attribute(
 ) -> tuple[dict[str, dict], int, dict[str, int]]:
     """Fold blocks into per-function instruction totals.
 
-    Functions are keyed by name. The out-of-line copies that several
-    translation units make of one static inline therefore add up to a
-    single entry, but so do distinct static functions that share a name,
-    such as the shell's and the logger's out_func(). An entry's file is the
-    translation unit of the first block met.
+    Functions are keyed by SymbolTable.key(): by name, with the declaring
+    file added where functions in different files share a name. An entry
+    whose copies could not be told apart is marked "merged". An entry's
+    file is the translation unit of the first block met.
     """
     funcs: dict[str, dict] = {}
     total = 0
@@ -534,14 +702,17 @@ def attribute(
     for (pc, insns), ecount in blocks.items():
         cost = insns * ecount
         total += cost
-        name, kind = table.lookup(pc)
+        name, kind, start = table.lookup_start(pc)
         kinds[kind] += cost
 
-        entry = funcs.get(name)
+        key, merged = table.key(name, start)
+        entry = funcs.get(key)
         if entry is None:
             source = table.source_file(pc, zephyr_base, topdir) if kind != "bucket" else None
             entry = {"insns": 0, "file": source, "group": classify(name, source)}
-            funcs[name] = entry
+            if merged:
+                entry["merged"] = True
+            funcs[key] = entry
         entry["insns"] += cost
 
     return funcs, total, dict(kinds)
@@ -648,7 +819,7 @@ def render(profile: dict, top: int) -> None:
         # What the throughput would become if this function cost nothing.
         gain = _mbps_gain(ipb, f_ipb, shift)
         print(
-            f"{rank:>3}  {name[:33]:<34}{info['group']:<10}{insns:>14,}"
+            f"{rank:>3}  {_fit_name(name, 33):<34}{info['group']:<10}{insns:>14,}"
             f"{f_ipb:>8.3f}{share:>6.2f}%{_pct(cum, total):>6.1f}%"
             f"{gain:>+8.2f}  {info['file'] or ''}"
         )
@@ -661,6 +832,14 @@ def render(profile: dict, top: int) -> None:
     )
     for group, insns in ordered:
         print(f"{group:<12}{insns:>14,}{_ipb(insns, byts):>9.3f}{_pct(insns, total):>7.2f}%")
+
+    merged = sorted(name for name, info in funcs.items() if info.get("merged"))
+    if merged:
+        print(
+            f"\nmerged: {', '.join(merged)}: each of these rows may add up functions "
+            f"in different files that share a name, which the ELF has no debug info "
+            f"to tell apart."
+        )
 
 
 def render_diff(baseline: dict, current: dict, tolerance_pct: float, top: int) -> bool:
@@ -714,7 +893,7 @@ def render_diff(baseline: dict, current: dict, tolerance_pct: float, top: int) -
                     note = "NEW"
                 elif name not in cur["functions"]:
                     note = "GONE"
-                print(f"  {name[:35]:<36}{delta:>+14,}  {note}")
+                print(f"  {_fit_name(name, 35):<36}{delta:>+14,}  {note}")
 
     return ok
 
