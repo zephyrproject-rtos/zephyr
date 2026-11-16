@@ -25,6 +25,7 @@
 	};
 
 	test {
+		ranges;
 		#address-cells = <0x1>;
 		#size-cells = <0x1>;
 		interrupt-parent = <&test_intc>;
@@ -72,25 +73,25 @@
 			 * There should only be one vnd,phandle-holder in the entire DTS.
 			 */
 			compatible = "vnd,phandle-holder";
+			bar = <&test_gpio_1 200>, <&test_gpio_2 210>;
+			baz-names = "john", "doe";
+			counter-capture-names = "alpha", "beta";
+			counter-captures = <&test_counter1 2 4>, <&test_counter2 7 9>;
+			foo-names = "A", "b-c";
+			foos = <&test_gpio_1 100>, <&test_gpio_2 110>;
+			gpios = <&test_gpio_1 10 20>, <&test_gpio_2 30 40>;
 			/*
 			 * At least one of these phandles must refer to
 			 * test_gpio_1, or dependency ordinal tests may fail.
 			 */
 			ph = <&test_gpio_1>;
-			phs = <&test_i2c &test_spi>;
 			ph-conn = <&test_connector>;
-			phs-or = <&test_enum_default_0 &test_enum_default_1>;
-			gpios = <&test_gpio_1 10 20>, <&test_gpio_2 30 40>;
 			pha-gpios = <&test_gpio_1 50 60>, <0>, <&test_gpio_3 70>,
 				    <&test_gpio_2 80 90>;
-			foos = <&test_gpio_1 100>, <&test_gpio_2 110>;
-			foo-names = "A", "b-c";
-			pwms = <&test_pwm1 8 200 3>, <&test_pwm2 5 100 1>;
+			phs = <&test_i2c &test_spi>;
+			phs-or = <&test_enum_default_0 &test_enum_default_1>;
 			pwm-names = "red", "green";
-			counter-captures = <&test_counter1 2 4>, <&test_counter2 7 9>;
-			counter-capture-names = "alpha", "beta";
-			bar = <&test_gpio_1 200>, <&test_gpio_2 210>;
-			baz-names = "john", "doe";
+			pwms = <&test_pwm1 8 200 3>, <&test_pwm2 5 100 1>;
 		};
 
 		test_enum_0: enum-0 {
@@ -159,17 +160,17 @@
 		disabled_gpio: gpio@0 {
 			compatible = "vnd,gpio-device";
 			reg = <0x0 0x1000>;
+			#gpio-cells = <0x2>;
 			gpio-controller;
 			interrupts = <3 1>;
-			#gpio-cells = <0x2>;
 			status = "disabled";
 		};
 
 		test_no_status: intc_no_status@0 {
 			compatible = "vnd,intc";
 			reg = <0x0 0x1000>;
-			interrupt-controller;
 			#interrupt-cells = <2>;
+			interrupt-controller;
 		};
 
 		test_i2c_no_reg: i2c {
@@ -200,27 +201,27 @@
 		/* there should only be one of these */
 		test_temp_sensor: temperature-sensor {
 			compatible = "vnd,adc-temp-sensor";
-			io-channels = <&test_adc_1 10>, <&test_adc_2 20>;
-			io-channel-names = "ch1", "ch2";
-			dmas = <&test_dma1 1 2>, <&test_dma2 3 4>;
-			dma-names = "tx", "rx";
-			clocks = <&test_clk 3 7>, <&test_fixed_clk>, <&test_clk 8 2>;
 			clock-names = "clk-a", "clk-fixed", "clk-b";
-			resets = <&test_reset 10>, <&test_reset 20>;
-			reset-names = "reset-a", "reset-b";
+			clocks = <&test_clk 3 7>, <&test_fixed_clk>, <&test_clk 8 2>;
+			dma-names = "tx", "rx";
+			dmas = <&test_dma1 1 2>, <&test_dma2 3 4>;
+			io-channel-names = "ch1", "ch2";
+			io-channels = <&test_adc_1 10>, <&test_adc_2 20>;
+			mbox-names = "tx", "rx", "zero";
+			mboxes = <&test_mbox 1>, <&test_mbox 2>, <&test_mbox_zero_cell>;
 			pinctrl-0 = <&test_pincfg_a &test_pincfg_b>;
 			pinctrl-1 = <&test_pincfg_c &test_pincfg_d>;
 			pinctrl-2 = <&test_pincfg_d>;
 			pinctrl-names = "default", "sleep", "f.o.o2";
-			mboxes = <&test_mbox 1>, <&test_mbox 2>, <&test_mbox_zero_cell>;
-			mbox-names = "tx", "rx", "zero";
+			reset-names = "reset-a", "reset-b";
+			resets = <&test_reset 10>, <&test_reset 20>;
 		};
 
 		/* there should only be one of these */
 		test_dac_outputs: dac-outputs {
 			compatible = "vnd,dac-outputs";
-			io-channels = <&test_dac_1 10>, <&test_dac_2 20>;
 			io-channel-names = "ch1", "ch2";
+			io-channels = <&test_dac_1 10>, <&test_dac_2 20>;
 		};
 
 		test_vendor: vendor {
@@ -231,26 +232,26 @@
 		/* there should only be one of these */
 		test_irq: interrupt-holder {
 			compatible = "vnd,interrupt-holder";
-			interrupts = <30 3 40 5 60 7>;
-			interrupt-parent = <&test_intc>;
 			interrupt-names = "err", "stat", "done";
+			interrupt-parent = <&test_intc>;
+			interrupts = <30 3 40 5 60 7>;
 			status = "okay";
 		};
 
 		/* there should only be one of these */
 		test_irq_extended: interrupt-holder-extended {
 			compatible = "vnd,interrupt-holder-extended";
+			interrupt-names = "int1", "int2", "int3";
 			interrupts-extended = <&test_intc 70 7>,
 					      <&test_intc2 30 3>,
 					      <&test_intc2 42 7>;
-			interrupt-names = "int1", "int2", "int3";
 			status = "okay";
 		};
 
 		test_fixed_clk: test-fixed-clock {
 			compatible = "fixed-clock";
-			clock-frequency = <25000000>;
 			#clock-cells = <0>;
+			clock-frequency = <25000000>;
 		};
 
 		test_clk: test-clock {
@@ -261,8 +262,8 @@
 		test_transceiver0: can-phy0 {
 			compatible = "vnd,can-transceiver";
 			#phy-cells = <0>;
-			min-bitrate = <10000>;
 			max-bitrate = <5000000>;
+			min-bitrate = <10000>;
 			status = "okay";
 		};
 
@@ -404,17 +405,17 @@
 
 		device-with-props-0 {
 			compatible = "vnd,device-with-props";
-			foo = <1>;
 			bar = <2>;
-			bool-foo;
 			bool-bar;
+			bool-foo;
+			foo = <1>;
 			status = "okay";
 		};
 
 		device-with-props-1 {
 			compatible = "vnd,device-with-props";
-			foo = <2>;
 			bool-foo;
+			foo = <2>;
 			status = "okay";
 		};
 
@@ -538,8 +539,8 @@
 
 		test_nvmem_consumer: test-nvmem-consumer {
 			compatible = "vnd,nvmem-consumer";
-			nvmem-cells = <&cell0>, <&cell10>;
 			nvmem-cell-names = "cell0", "cell10";
+			nvmem-cells = <&cell0>, <&cell10>;
 		};
 
 		test-nvmem-provider {
@@ -555,8 +556,8 @@
 
 				cell10: cell@10 {
 					reg = <0x10 0x10>;
-					read-only;
 					#nvmem-cell-cells = <0>;
+					read-only;
 				};
 			};
 		};
@@ -564,17 +565,17 @@
 		reserved_gpio: gpio@1 {
 			compatible = "vnd,gpio-device";
 			reg = <0x1 0x1000>;
+			#gpio-cells = <0x2>;
 			gpio-controller;
 			interrupts = <3 1>;
-			#gpio-cells = <0x2>;
 			status = "reserved";
 		};
 
 		test_gpio_3: gpio@1234 {
 			compatible = "vnd,gpio-one-cell";
 			reg = <0x1234 0x500>;
-			gpio-controller;
 			#gpio-cells = <0x1>;
+			gpio-controller;
 			status = "okay";
 		};
 
@@ -677,8 +678,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clock-frequency = <100000>;
-			interrupts = <6 2 7 1>;
 			interrupt-names = "status", "error";
+			interrupts = <6 2 7 1>;
 			status = "okay";
 
 			test-i2c-dev@10 {
@@ -689,8 +690,8 @@
 			gpio@11 {
 				compatible = "vnd,gpio-expander";
 				reg = <0x11>;
-				gpio-controller;
 				#gpio-cells = <2>;
+				gpio-controller;
 			};
 
 			test_i2c_mux: i2c-mux@12 {
@@ -745,12 +746,12 @@
 			reg = <0x33334444 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <8 3 9 0 10 1>;
 			clock-frequency = <2000000>;
 
 			cs-gpios = <&test_gpio_1 0x10 0x20>,
 				   <&test_gpio_2 0x30 0x40>,
 				   <&test_gpio_2 0x50 0x60>;
+			interrupts = <8 3 9 0 10 1>;
 			status = "okay";
 
 			test-spi-dev@0 {
@@ -768,8 +769,8 @@
 			gpio@2 {
 				compatible = "vnd,gpio-expander";
 				reg = <2>;
-				gpio-controller;
 				#gpio-cells = <2>;
+				gpio-controller;
 				spi-max-frequency = <(1 * 1000 * 1000)>;
 			};
 
@@ -833,8 +834,8 @@
 			status = "okay";
 
 			can-transceiver {
-				min-bitrate = <50000>;
 				max-bitrate = <2000000>;
+				min-bitrate = <50000>;
 			};
 		};
 
@@ -880,8 +881,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clock-frequency = <100000>;
-			interrupts = <11 3 12 2>;
 			interrupt-names = "status", "error";
+			interrupts = <11 3 12 2>;
 			status = "okay";
 		};
 
@@ -907,8 +908,8 @@
 		test_reg: reg-holder@9999aaaa {
 			compatible = "vnd,reg-holder";
 			reg = <0x9999aaaa 0x1000 0xbbbbcccc 0x3f>;
-			reg-names = "first", "second";
 			misc-prop = <1234>;
+			reg-names = "first", "second";
 			status = "okay";
 		};
 
@@ -936,13 +937,13 @@
 		test_gpio_2: gpio@abcd1234 {
 			compatible = "vnd,gpio-device";
 			reg = <0xabcd1234 0x500 0x98765432 0xff>;
-			gpio-controller;
-			reg-names = "one", "two";
-			#gpio-cells = <0x2>;
-			#foo-cells = <0x1>;
 			#baz-cells = <0x1>;
+			#foo-cells = <0x1>;
+			#gpio-cells = <0x2>;
+			gpio-controller;
 			interrupts = <5 2>;
 			ngpios = <200>;
+			reg-names = "one", "two";
 			status = "okay";
 
 			test_gpio_hog_3 {
@@ -956,17 +957,17 @@
 		test_reset: test-reset@abcd1234 {
 			compatible = "vnd,reset";
 			reg = <0xabcd1234 0x100>;
-			reg-width = <4>;
 			#reset-cells = <1>;
+			reg-width = <4>;
 		};
 
 		test_intc: interrupt-controller@bbbbcccc {
 			compatible = "vnd,intc";
 			reg = <0xbbbbcccc 0x1000>;
-			interrupt-controller;
 			#interrupt-cells = <2>;
-			interrupts = <11 0>;
+			interrupt-controller;
 			interrupt-parent = <&test_cpu_intc>;
+			interrupts = <11 0>;
 		};
 
 		/* same as `test_intc` but extends a different L1 interrupt.
@@ -976,10 +977,10 @@
 		test_intc2: interrupt-controller@bbbbdccc {
 			compatible = "vnd,intc";
 			reg = <0xbbbbdccc 0x1000>;
-			interrupt-controller;
 			#interrupt-cells = <2>;
-			interrupts = <12 0>;
+			interrupt-controller;
 			interrupt-parent = <&test_cpu_intc>;
+			interrupts = <12 0>;
 		};
 
 		test_children_on_bus: controller@ccccdddd {
@@ -1077,10 +1078,10 @@
 		test_nodelabel: TEST_NODELABEL_ALLCAPS: test_gpio_1: gpio@deadbeef {
 			compatible = "vnd,gpio-device";
 			reg = <0xdeadbeef 0x1000>;
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			#foo-cells = <0x1>;
 			#baz-cells = <0x1>;
+			#foo-cells = <0x1>;
+			#gpio-cells = <0x2>;
+			gpio-controller;
 			interrupts = <4 3>;
 			ngpios = <100>;
 			status = "okay";
@@ -1162,9 +1163,9 @@
 						compatible = "fixed-subpartitions";
 						reg = <0x00000100 0x100>;
 						ranges = <0x0 0x100 0x100>;
-						label = "test-subpartitions";
 						#address-cells = <1>;
 						#size-cells = <1>;
+						label = "test-subpartitions";
 
 						partition@0 {
 							reg = <0x00000000 0x40>;
@@ -1210,8 +1211,8 @@
 
 		parent {
 			compatible = "gpio-dst";
-			gpio-controller;
 			#gpio-cells = <1>;
+			gpio-controller;
 		};
 	};
 
@@ -1292,17 +1293,17 @@
 					compatible = "zephyr,mapped-partition";
 					reg = <0x000f8000 0x00008000>;
 					ranges = <0x0 0x000f8000 0x00008000>;
-					label = "mapped-partition-4";
 					#address-cells = <1>;
 					#size-cells = <1>;
+					label = "mapped-partition-4";
 
 					partition@0 {
 						compatible = "zephyr,mapped-partition";
 						reg = <0x00000000 0x00003000>;
 						ranges = <0x0 0x00000000 0x00003000>;
-						label = "mapped-partition-5";
 						#address-cells = <1>;
 						#size-cells = <1>;
+						label = "mapped-partition-5";
 
 						partition@1000 {
 							compatible = "zephyr,mapped-partition";

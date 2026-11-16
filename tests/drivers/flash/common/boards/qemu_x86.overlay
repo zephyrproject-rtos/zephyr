@@ -24,6 +24,7 @@
 	pflash: pflash@ffbc0000 {
 		compatible = "intel,pflash-cfi01";
 		reg = <0xffbc0000 DT_SIZE_M(4)>;
+		ranges = <0x0 0xffbc0000 DT_SIZE_M(4)>;
 		bank-width = <1>;
 		#address-cells = <1>;
 		#size-cells = <1>;

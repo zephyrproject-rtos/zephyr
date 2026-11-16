@@ -12,32 +12,32 @@
 		test_gpio_0: gpio@1000 {
 			compatible = "vnd,gpio";
 			reg = <0x1000 0x1000>;
-			gpio-controller;
 			#gpio-cells = <2>;
+			gpio-controller;
 			status = "okay";
 		};
 
 		test_gpio_1: gpio@2000 {
 			compatible = "vnd,gpio";
 			reg = <0x2000 0x1000>;
-			gpio-controller;
 			#gpio-cells = <2>;
+			gpio-controller;
 			status = "okay";
 		};
 
 		test_gpio_2: gpio@3000 {
 			compatible = "vnd,gpio";
 			reg = <0x3000 0x1000>;
-			gpio-controller;
 			#gpio-cells = <2>;
+			gpio-controller;
 			status = "okay";
 		};
 
 		test_gpio_3: gpio@4000 {
 			compatible = "vnd,gpio";
 			reg = <0x4000 0x1000>;
-			gpio-controller;
 			#gpio-cells = <2>;
+			gpio-controller;
 			status = "okay";
 		};
 
@@ -61,6 +61,7 @@
 	};
 
 	test_dt_partition_mtd {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
