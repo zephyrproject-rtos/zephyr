@@ -35,6 +35,7 @@ struct i2s_stm32_cfg {
 	void (*irq_config)(const struct device *dev);
 	bool master_clk_sel: 1;
 	bool ioswp: 1;
+	bool full_duplex: 1;
 };
 
 struct i2s_stm32_stream {
@@ -54,6 +55,8 @@ struct i2s_stm32_stream {
 	void *mem_block;
 	bool last_block;
 	bool master;
+	/* Full duplex only: the direction is enabled in the shared peripheral */
+	bool hw_active;
 	int (*stream_start)(struct i2s_stm32_stream *stream, const struct device *dev);
 	void (*stream_disable)(struct i2s_stm32_stream *stream, const struct device *dev);
 };
@@ -62,7 +65,16 @@ struct i2s_stm32_stream {
 struct i2s_stm32_data {
 	struct i2s_stm32_stream rx;
 	struct i2s_stm32_stream tx;
+	/* Both directions were configured together with I2S_DIR_BOTH */
+	bool fd_configured;
+	/* The peripheral runs in full duplex mode, shared by both streams */
+	bool fd_active;
 };
+
+/* Full duplex needs the SPI peripheral of the H7 family and its LL API */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s) && !defined(CONFIG_STM32_HAL2)
+#define I2S_STM32_HAS_FULL_DUPLEX 1
+#endif
 
 static inline uint32_t ll_i2s_is_enabled(SPI_TypeDef *i2s)
 {
