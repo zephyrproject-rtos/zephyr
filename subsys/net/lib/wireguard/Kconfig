@@ -52,7 +52,6 @@ config WIREGUARD_SHELL
 	depends on NET_SHELL
 	select GETOPT_LONG
 	select SHELL_GETOPT
-	select POSIX_C_LIB_EXT
 	default y
 
 config WIREGUARD_BUF_COUNT

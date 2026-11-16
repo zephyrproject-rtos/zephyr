@@ -145,7 +145,6 @@ config SSH_SHELL
 	depends on SHELL_BACKEND_SSH
 	select GETOPT_LONG
 	select SHELL_GETOPT
-	select POSIX_C_LIB_EXT
 	default y
 
 endif
