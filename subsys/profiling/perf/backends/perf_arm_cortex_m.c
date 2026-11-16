@@ -11,7 +11,6 @@
 #include <cortex_m/exception.h>
 #include <cortex_m/stack.h>
 
-#define PERF_CORTEX_M_XPSR_STACK_ALIGN_Msk BIT(9)
 #define PERF_CORTEX_M_XPSR_T_Msk BIT(24)
 
 struct perf_cortex_m_sample {
@@ -171,7 +170,7 @@ static bool valid_sample_stack(const struct arch_esf *esf, uint32_t exc_return)
 	/* Account for the alignment word inserted by exception entry and any
 	 * extended floating-point state described by EXC_RETURN.
 	 */
-	if ((xpsr & PERF_CORTEX_M_XPSR_STACK_ALIGN_Msk) != 0U) {
+	if ((xpsr & XPSR_SPREALIGN_Msk) != 0U) {
 		frame_size += sizeof(uint32_t);
 	}
 
