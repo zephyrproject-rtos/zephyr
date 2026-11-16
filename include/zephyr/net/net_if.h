@@ -896,6 +896,18 @@ struct net_if {
 	int tx_pending;
 #endif
 
+	/** Uptime in milliseconds of the last attachment notification. */
+	uint32_t attachment_last_notify;
+
+	/** Whether attachment_last_notify records a previous notification. */
+	bool attachment_notified;
+
+	/** Whether an attachment report is waiting to be processed. */
+	bool attachment_pending;
+
+	/** Work that delivers the latest pending attachment change. */
+	struct k_work_delayable attachment_work;
+
 	/** Mutex protecting this network interface instance */
 	struct k_mutex lock;
 
@@ -3515,6 +3527,21 @@ void net_if_dormant_on(struct net_if *iface);
  * @param iface Pointer to network interface
  */
 void net_if_dormant_off(struct net_if *iface);
+
+/**
+ * @brief Report a change in the network attachment of an operational interface.
+ *
+ * The link layer calls this after it can send and receive traffic at the new
+ * point of attachment, such as after completing a Wi-Fi roam to a different
+ * access point. Reports are processed at most once per second and combined
+ * into one deferred notification during that interval. When network management
+ * events are enabled, processing emits @ref NET_EVENT_IF_ATTACHMENT_CHANGED.
+ *
+ * This function must be called from thread context.
+ *
+ * @param iface Network interface that changed its attachment.
+ */
+void net_if_attachment_changed(struct net_if *iface);
 
 /**
  * @brief Check if the interface is dormant.

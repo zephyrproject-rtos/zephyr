@@ -40,6 +40,7 @@ enum {
 	NET_EVENT_IF_CMD_UP_VAL,
 	NET_EVENT_IF_CMD_ADMIN_DOWN_VAL,
 	NET_EVENT_IF_CMD_ADMIN_UP_VAL,
+	NET_EVENT_IF_CMD_ATTACHMENT_CHANGED_VAL,
 
 	NET_EVENT_IF_CMD_MAX
 };
@@ -52,6 +53,7 @@ enum net_event_if_cmd {
 	NET_MGMT_CMD(NET_EVENT_IF_CMD_UP),
 	NET_MGMT_CMD(NET_EVENT_IF_CMD_ADMIN_DOWN),
 	NET_MGMT_CMD(NET_EVENT_IF_CMD_ADMIN_UP),
+	NET_MGMT_CMD(NET_EVENT_IF_CMD_ATTACHMENT_CHANGED),
 };
 
 /* Packet socket (L2) events */
@@ -275,6 +277,10 @@ enum net_event_l4_cmd {
 /** Event emitted when the network interface goes up manually. */
 #define NET_EVENT_IF_ADMIN_UP					\
 	(NET_EVENT_IF_BASE | NET_EVENT_IF_CMD_ADMIN_UP)
+
+/** Event emitted when an operational interface changes its network attachment. */
+#define NET_EVENT_IF_ATTACHMENT_CHANGED				\
+	(NET_EVENT_IF_BASE | NET_EVENT_IF_CMD_ATTACHMENT_CHANGED)
 
 /** Event emitted when a packet socket multicast group membership is added. */
 #define NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD				\

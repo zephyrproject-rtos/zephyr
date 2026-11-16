@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 #include <zephyr/linker/sections.h>
 
 #include <zephyr/net/dummy.h>
+#include <zephyr/net/net_event.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/ztest.h>
@@ -474,6 +475,55 @@ ZTEST(mgmt_fn_test_suite, test_mgmt_duplicate_handler)
 	zassert_equal(ret, 0, "Event is not processed");
 
 	net_mgmt_del_event_callback(&cb);
+}
+
+static K_SEM_DEFINE(attachment_event_sem, 0, 2);
+static struct net_if *attachment_event_iface;
+
+static void attachment_event_handler(uint64_t event, struct net_if *iface, void *info,
+				     size_t info_length, void *user_data)
+{
+	ARG_UNUSED(event);
+	ARG_UNUSED(info);
+	ARG_UNUSED(info_length);
+	ARG_UNUSED(user_data);
+
+	attachment_event_iface = iface;
+	k_sem_give(&attachment_event_sem);
+}
+
+NET_MGMT_REGISTER_EVENT_HANDLER(attachment_event, NET_EVENT_IF_ATTACHMENT_CHANGED,
+				attachment_event_handler, NULL);
+
+ZTEST(mgmt_fn_test_suite, test_attachment_changed)
+{
+	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+
+	zassert_not_null(iface);
+	zassert_true(net_if_is_up(iface));
+
+	net_if_dormant_on(iface);
+	net_if_attachment_changed(iface);
+	net_if_dormant_off(iface);
+	zassert_equal(k_sem_take(&attachment_event_sem, K_MSEC(50)), -EAGAIN);
+
+	net_if_attachment_changed(iface);
+	zassert_ok(k_sem_take(&attachment_event_sem, K_MSEC(100)));
+	net_if_attachment_changed(iface);
+	net_if_attachment_changed(iface);
+	zassert_equal_ptr(attachment_event_iface, iface);
+	zassert_true(net_if_is_up(iface));
+	zassert_equal(k_sem_take(&attachment_event_sem, K_MSEC(50)), -EAGAIN);
+
+	zassert_ok(k_sem_take(&attachment_event_sem, K_MSEC(1100)),
+		   "The latest report must be delivered after the rate limit");
+	zassert_equal_ptr(attachment_event_iface, iface);
+
+	net_if_attachment_changed(iface);
+	net_if_dormant_on(iface);
+	net_if_dormant_off(iface);
+	zassert_equal(k_sem_take(&attachment_event_sem, K_MSEC(1100)), -EAGAIN,
+		      "A report from before link loss must not be delivered");
 }
 
 ZTEST_SUITE(mgmt_fn_test_suite, NULL, NULL, NULL, NULL, NULL);

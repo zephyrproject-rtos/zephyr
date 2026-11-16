@@ -126,6 +126,10 @@ struct esp32_wifi_runtime {
 #endif
 #if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
 	struct k_work_delayable roam_timeout_work;
+	uint8_t sta_bssid[WIFI_MAC_ADDR_LEN];
+	uint8_t sta_ssid[WIFI_SSID_MAX_LEN];
+	uint8_t sta_ssid_len;
+	bool sta_bssid_valid;
 #endif
 };
 
@@ -703,15 +707,39 @@ static void esp32_wifi_handle_roam_timeout(void)
 }
 #endif /* CONFIG_ESP32_WIFI_WNM_SUPPORT */
 
-static void esp_wifi_handle_sta_connect_event(void *event_data)
+static void esp_wifi_handle_sta_connect_event(const void *event_data, size_t event_data_size)
 {
-	ARG_UNUSED(event_data);
 #if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
 	bool roamed = (esp32_data.state == ESP32_STA_ROAMING);
+	bool link_stayed_up = roamed && net_if_is_up(esp32_wifi_iface);
+	bool attachment_changed = false;
+
+	if (event_data != NULL && event_data_size >= sizeof(wifi_event_sta_connected_t)) {
+		wifi_event_sta_connected_t event;
+
+		memcpy(&event, event_data, sizeof(event));
+		if (event.ssid_len <= sizeof(esp32_data.sta_ssid)) {
+			attachment_changed = roamed && esp32_data.sta_bssid_valid &&
+				esp32_data.sta_ssid_len == event.ssid_len &&
+				memcmp(esp32_data.sta_ssid, event.ssid, event.ssid_len) == 0 &&
+				memcmp(esp32_data.sta_bssid, event.bssid, WIFI_MAC_ADDR_LEN) != 0;
+			memcpy(esp32_data.sta_bssid, event.bssid, WIFI_MAC_ADDR_LEN);
+			memcpy(esp32_data.sta_ssid, event.ssid, event.ssid_len);
+			esp32_data.sta_ssid_len = event.ssid_len;
+			esp32_data.sta_bssid_valid = true;
+		} else {
+			esp32_data.sta_bssid_valid = false;
+		}
+	} else {
+		esp32_data.sta_bssid_valid = false;
+	}
 
 	if (roamed) {
 		(void)k_work_cancel_delayable(&esp32_data.roam_timeout_work);
 	}
+#else
+	ARG_UNUSED(event_data);
+	ARG_UNUSED(event_data_size);
 #endif
 
 	esp32_data.state = ESP32_STA_CONNECTED;
@@ -722,13 +750,20 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 #endif
 
 #if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
-	/* The application was never told the link went down, so renewing the
-	 * address here is exactly what keeping it was meant to avoid.
+	/* Report an attachment change only when the link survived the roam.
+	 * Otherwise IF_DOWN and IF_UP already describe the transition.
 	 */
 	if (roamed) {
 		LOG_DBG("Roaming complete");
 
+		if (attachment_changed && link_stayed_up) {
+			wifi_mgmt_sta_roamed(esp32_wifi_iface, esp32_data.sta_bssid);
+		}
+
 		if (IS_ENABLED(CONFIG_ESP32_WIFI_SKIP_DHCP_ON_ROAMING)) {
+			/* The application was not notified of a link-down transition.
+			 * Restarting DHCP would discard the address retained during roaming.
+			 */
 			return;
 		}
 	}
@@ -1346,7 +1381,7 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 		net_if_dormant_on(esp32_wifi_iface);
 		break;
 	case WIFI_EVENT_STA_CONNECTED:
-		esp_wifi_handle_sta_connect_event(event_data);
+		esp_wifi_handle_sta_connect_event(event_data, event_data_size);
 		break;
 	case WIFI_EVENT_STA_DISCONNECTED:
 		esp_wifi_handle_sta_disconnect_event(event_data);
