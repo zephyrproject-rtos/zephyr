@@ -75,6 +75,14 @@ properties:
       maximum values for sample Macronix (500 us) and Micron (1250 us)
       devices.
 
+  parameter-page-address:
+    type: int
+    default: 1
+    description: |
+      Page address of the ONFI parameter page in the OTP area. The standard
+      address is 1. Set this property for devices that keep the parameter
+      page at a different address.
+
   has-program-plane-select:
     type: boolean
     description: |

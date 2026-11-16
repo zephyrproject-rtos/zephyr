@@ -61,6 +61,8 @@ struct spi_nand_config {
 	uint8_t addr_block_shift;
 	/* Number of bits used for plane selection */
 	uint8_t plane_addr_bits;
+	/* Page address of the ONFI parameter page in the OTP area */
+	uint8_t parameter_page;
 	/* Expected JEDEC ID, from jedec-id property */
 	const uint8_t *jedec_id;
 	/* Length of the JEDEC ID */
@@ -936,7 +938,7 @@ static int onfi_parameters_load(const struct device *dev)
 	}
 
 	/* Load parameter info into cache (ignoring ECC errors) */
-	ret = spi_nand_page_read_to_cache(dev, 1);
+	ret = spi_nand_page_read_to_cache(dev, config->parameter_page);
 	if ((ret != 0) && (ret != -EBADMSG)) {
 		return ret;
 	}
@@ -1215,6 +1217,7 @@ static DEVICE_API(flash, spi_nand_api) = {
 		.addr_block_shift = LOG2(DT_INST_PROP(idx, erase_block_size)),                     \
 		.plane_addr_bits =                                                                 \
 			LOG2(DT_INST_PROP(idx, size_bytes) / DT_INST_PROP(idx, plane_bytes)),      \
+		.parameter_page = DT_INST_PROP(idx, parameter_page_address),                       \
 		.jedec_id = spi_nand_##idx##_jedec_id,                                             \
 		.jedec_id_len = ARRAY_SIZE(spi_nand_##idx##_jedec_id),                             \
 		.has_program_plane_select = DT_INST_PROP(idx, has_program_plane_select),           \
