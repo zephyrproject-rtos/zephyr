@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  I2C gate of an ADI MAX96724 GMSL2 deserializer: the I2C bus behind one of its
+  GMSL links.
+
+  The node is a child of the deserializer. Every device the host reaches through
+  the deserializer's I2C forwarding on that link is a child of this node: the
+  serializer, and through the serializer's own gate the devices on its camera
+  bus. Transfers are forwarded unchanged to the bus the deserializer sits on.
+
+  Example:
+
+    max96724: max96724@27 {
+        compatible = "adi,max96724";
+        reg = <0x27>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        des_i2c: i2c-gate@0 {
+            compatible = "adi,max96724-i2c-gate";
+            reg = <0>;
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            max96717: max96717@40 {
+                compatible = "adi,max96717";
+                reg = <0x40>;
+            };
+        };
+    };
+
+compatible: "adi,max96724-i2c-gate"
+
+include: i2c-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Index of the GMSL link this gate forwards to, 0 to 3 for links A to D,
+      the number of the deserializer's input port for that link.

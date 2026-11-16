@@ -1,0 +1,100 @@
+#
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  ADI MAX96724 quad GMSL2 deserializer.
+
+  The ports follow the Linux binding: port@0 to port@3 are the GMSL inputs of
+  links A to D, port@4 to port@7 the CSI-2 outputs of PHYs 0 to 3. The driver
+  uses one GMSL input and one CSI-2 output. On the CSI-2 output endpoint,
+  link-frequencies is the D-PHY clock; each lane runs at twice that bit rate.
+  It must be 100 to 1250 MHz in steps of 50 MHz, which runs the lanes at
+  200 Mbps to 2.5 Gbps in steps of 100 Mbps.
+
+  The I2C path to the serializer behind a link is an adi,max96724-i2c-gate
+  child node, addressed by the link index.
+
+  Example:
+
+    max96724: max96724@27 {
+        compatible = "adi,max96724";
+        reg = <0x27>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        ports {
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            /* GMSL input of link A */
+            port@0 {
+                reg = <0>;
+
+                des_gmsl_in: endpoint {
+                    remote-endpoint-label = "ser_gmsl_out";
+                };
+            };
+
+            /* CSI-2 output of PHY 2 */
+            port@6 {
+                reg = <6>;
+
+                des_csi_out: endpoint {
+                    remote-endpoint-label = "csi_ep_in";
+                    bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+                    data-lanes = <1 2>;
+                    link-frequencies = <750000000>;
+                };
+            };
+        };
+
+        i2c-gate@0 {
+            compatible = "adi,max96724-i2c-gate";
+            reg = <0>;
+            #address-cells = <1>;
+            #size-cells = <0>;
+        };
+    };
+
+compatible: "adi,max96724"
+
+include: i2c-device.yaml
+
+properties:
+  "#address-cells":
+    type: int
+    description: |
+      Set to 1 together with "#size-cells" = 0 when the deserializer carries
+      adi,max96724-i2c-gate children, addressed by GMSL link index.
+
+  "#size-cells":
+    type: int
+
+child-binding:
+  child-binding:
+    description: |
+      A port: port@0 to port@3 are the GMSL inputs of links A to D, port@4 to
+      port@7 the CSI-2 outputs of PHYs 0 to 3.
+
+    properties:
+      reg:
+        type: int
+        required: true
+        enum: [0, 1, 2, 3, 4, 5, 6, 7]
+
+      link-rate-mbps:
+        type: int
+        enum:
+          - 3000
+          - 6000
+        default: 6000
+        description: |
+          GMSL2 forward link rate of the serializer on a GMSL input port. The
+          MAX96717 runs at 3000 or 6000, the MAX96717F at 3000 only. The
+          deserializer's rate for the link is written at init when it differs,
+          followed by a one-shot reset of the link.
+
+    child-binding:
+      include: video-interfaces.yaml
