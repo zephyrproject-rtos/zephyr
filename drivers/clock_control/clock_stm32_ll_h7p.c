@@ -812,10 +812,13 @@ static int set_up_plls(void)
  * Variable argument = list of outputs to enable
  *
  * Note that the VCOH bounds are divided by two because the limits given
- * in the Reference Manual are before a built-in /2 divider, whereas the
- * VCO output frequency we compute is after this divider. The effect of
- * this divider is compensated by another piece of hardware, so the
- * behavior in VCOL and VCOH mode is otherwise identical.
+ * in the Reference Manual are before a built-in /2 divider which resides
+ * on the feedback path of the PLL. This makes the PLL act as if the value
+ * of DIVN was double of what we program, hence the PLL outputs' frequency
+ * remain identical in VCOL and VCOH mode for a given value of DIVN; however,
+ * the VCO frequency in VCOH mode is twice of what it would be in VCOL mode.
+ * To avoid a VCOH special-case in the FVCO computation, use the same formula
+ * in VCOH and VCOL mode but apply a /2 factor on VCOH bounds to compensate.
  */
 #define CONFIGURE_PLL(num, numsfx, ...)							\
 	do {										\
