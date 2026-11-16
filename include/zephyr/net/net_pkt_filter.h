@@ -61,6 +61,10 @@ enum npf_test_type {
 	NPF_TEST_TYPE_ETH_VLAN_TYPE_MATCH,
 	NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH,
 	NPF_TEST_TYPE_LOCAL_IN_MATCH,
+	NPF_TEST_TYPE_UDP_SRC_PORT_MATCH,
+	NPF_TEST_TYPE_UDP_DST_PORT_MATCH,
+	NPF_TEST_TYPE_TCP_SRC_PORT_MATCH,
+	NPF_TEST_TYPE_TCP_DST_PORT_MATCH,
 };
 
 #if defined(CONFIG_NET_PKT_FILTER_LOG_LEVEL_DBG) || \
@@ -766,6 +770,121 @@ void npf_rules_foreach(npf_rule_cb_t cb, void *user_data);
 const char *npf_test_get_str(struct npf_test *test, char *buf,
 			     size_t len);
 /** @endcond */
+
+/** @} */
+
+/**
+ * @defgroup npf_udp_cond UDP Filter Conditions
+ * @ingroup net_pkt_filter
+ * @since 4.6
+ * @version 0.1.0
+ *
+ * These conditions are for the rules of @ref npf_local_in_recv_rules. They
+ * rely on what the IP input stores in a packet while it processes the IP
+ * headers, so their result is not defined in the other rule lists.
+ *
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
+struct npf_test_port {
+	struct npf_test test;
+	uint16_t port; /* port in network order */
+	uint8_t proto;
+};
+
+extern npf_test_fn_t npf_src_port_match;
+extern npf_test_fn_t npf_dst_port_match;
+
+/** @endcond */
+
+/**
+ * @brief Statically define a "UDP source port match" packet filter condition
+ *
+ * This tests if the packet is a UDP datagram with the given source port.
+ *
+ * @param _name Name of the condition
+ * @param _port Source port to match
+ */
+#define NPF_UDP_SRC_PORT_MATCH(_name, _port)                                                       \
+	struct npf_test_port _name = {                                                             \
+		.proto = NET_IPPROTO_UDP,                                                          \
+		.port = net_htons(_port),                                                          \
+		.test.fn = npf_src_port_match,                                                     \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,                                                   \
+			   (.test.name = "udp src port",                                           \
+			    .test.type = NPF_TEST_TYPE_UDP_SRC_PORT_MATCH,))                       \
+	}
+
+/**
+ * @brief Statically define a "UDP destination port match" packet filter condition
+ *
+ * This tests if the packet is a UDP datagram with the given destination port.
+ *
+ * @param _name Name of the condition
+ * @param _port Destination port to match
+ */
+#define NPF_UDP_DST_PORT_MATCH(_name, _port)                                                       \
+	struct npf_test_port _name = {                                                             \
+		.proto = NET_IPPROTO_UDP,                                                          \
+		.port = net_htons(_port),                                                          \
+		.test.fn = npf_dst_port_match,                                                     \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,                                                   \
+			   (.test.name = "udp dst port",                                           \
+			    .test.type = NPF_TEST_TYPE_UDP_DST_PORT_MATCH,))                       \
+	}
+
+/** @} */
+
+/**
+ * @defgroup npf_tcp_cond TCP Filter Conditions
+ * @ingroup net_pkt_filter
+ * @since 4.6
+ * @version 0.1.0
+ *
+ * These conditions are for the rules of @ref npf_local_in_recv_rules. They
+ * rely on what the IP input stores in a packet while it processes the IP
+ * headers, so their result is not defined in the other rule lists.
+ *
+ * @{
+ */
+
+/**
+ * @brief Statically define a "TCP source port match" packet filter condition
+ *
+ * This tests if the packet is a TCP segment with the given source port.
+ *
+ * @param _name Name of the condition
+ * @param _port Source port to match
+ */
+#define NPF_TCP_SRC_PORT_MATCH(_name, _port)                                                       \
+	struct npf_test_port _name = {                                                             \
+		.proto = NET_IPPROTO_TCP,                                                          \
+		.port = net_htons(_port),                                                          \
+		.test.fn = npf_src_port_match,                                                     \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,                                                   \
+			   (.test.name = "tcp src port",                                           \
+			    .test.type = NPF_TEST_TYPE_TCP_SRC_PORT_MATCH,))                       \
+	}
+
+/**
+ * @brief Statically define a "TCP destination port match" packet filter condition
+ *
+ * This tests if the packet is a TCP segment with the given destination port.
+ *
+ * @param _name Name of the condition
+ * @param _port Destination port to match
+ */
+#define NPF_TCP_DST_PORT_MATCH(_name, _port)                                                       \
+	struct npf_test_port _name = {                                                             \
+		.proto = NET_IPPROTO_TCP,                                                          \
+		.port = net_htons(_port),                                                          \
+		.test.fn = npf_dst_port_match,                                                     \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,                                                   \
+			   (.test.name = "tcp dst port",                                           \
+			    .test.type = NPF_TEST_TYPE_TCP_DST_PORT_MATCH,))                       \
+	}
 
 /** @} */
 
