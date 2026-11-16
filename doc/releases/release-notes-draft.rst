@@ -145,6 +145,13 @@ Libraries / Subsystems
       :c:enumerator:`ETHERNET_HW_STP_PORT_STATE` capability and takes the port state and FDB
       flushes from the protocol.
 
+  * The ``local_in`` packet filter rules can match UDP and TCP packets by source or destination
+    port with :c:macro:`NPF_UDP_SRC_PORT_MATCH`, :c:macro:`NPF_UDP_DST_PORT_MATCH`,
+    :c:macro:`NPF_TCP_SRC_PORT_MATCH` and :c:macro:`NPF_TCP_DST_PORT_MATCH`, and TCP segments by
+    the flags of their header with :c:macro:`NPF_TCP_FLAGS_MATCH`, see
+    :ref:`net_pkt_filter_interface`. A rule list can thus, for example, drop the TCP connection
+    requests to all but some ports.
+
   * TCP can scale its window (RFC 7323) when :kconfig:option:`CONFIG_NET_TCP_WINDOW_SCALE` is
     enabled, so a connection can use send and receive windows above 64 KB. The window size
     options, ``SO_RCVBUF`` and ``SO_SNDBUF`` then accept values up to 65535 << 14.
