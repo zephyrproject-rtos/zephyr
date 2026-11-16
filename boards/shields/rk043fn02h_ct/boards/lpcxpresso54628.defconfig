@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LPCXPRESSO54628
+
+if LVGL
+
+# The shield selects full-refresh rendering, so the LVGL buffers are
+# full-screen and do not fit in the 160 KB internal SRAM: link them into the
+# external SDRAM.
+config LV_Z_VDB_ZEPHYR_REGION
+	default y
+
+config LV_Z_VDB_ZEPHYR_REGION_NAME
+	default "SDRAM"
+
+# A full-screen software render takes longer than one frame on this board,
+# so the LVGL thread stays busy during animations. Deliver touch events
+# synchronously on the system workqueue that polls the controller rather than
+# through the preemptible input thread, which the render loop would starve.
+choice INPUT_MODE
+	default INPUT_MODE_SYNCHRONOUS
+endchoice
+
+endif # LVGL
+
+endif # BOARD_LPCXPRESSO54628
