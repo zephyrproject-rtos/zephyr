@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2026 Carl Zeiss Meditec AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tls2522_mikroe_ambient_25_click {
+	measurement-time-steps = <1024>;
+	number-of-samples = <128>;
+	modulator-gain = "modulator-gain-8X";
+};

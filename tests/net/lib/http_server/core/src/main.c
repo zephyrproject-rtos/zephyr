@@ -12,6 +12,7 @@
 
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/websocket.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/ztest.h>
 
@@ -464,6 +465,12 @@ enum dynamic_response_headers_variant {
 	/* Send a 422 response code */
 	DYNAMIC_RESPONSE_HEADERS_VARIANT_422,
 
+	/* Send a 204 response code with body data, which the server drops */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_204,
+
+	/* Send a 304 response code with body data, which the server drops */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_304,
+
 	/* Send an extra header on top of server defaults */
 	DYNAMIC_RESPONSE_HEADERS_VARIANT_EXTRA_HEADER,
 
@@ -487,10 +494,23 @@ enum dynamic_response_headers_variant {
 
 	/* Send body data before all request data is received, nothing on final data */
 	DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_EARLY,
+
+	/* Send connection_specific_header_name along with an end-to-end header */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_CONNECTION_SPECIFIC,
+
+	/* Send a 204 response code before all request data is received, nothing on final data */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY,
+
+	/* Send a 204 response code before all request data is received, body data on final
+	 * data, which the server drops
+	 */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY_BODY,
 };
 
 static uint8_t dynamic_response_headers_variant;
+static const char *connection_specific_header_name;
 static uint8_t dynamic_response_headers_buffer[sizeof(long_payload)];
+static K_SEM_DEFINE(dynamic_response_headers_done, 0, 1);
 
 static int dynamic_response_headers_cb(struct http_client_ctx *client,
 				       enum http_transaction_status status,
@@ -518,16 +538,24 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 		{.name = "Test-Header2", .value = "test_data2"},
 	};
 
+	static struct http_header connection_specific_headers[] = {
+		{.name = NULL, .value = "1"},
+		{.name = "test-header", .value = "test_data"},
+	};
+
 	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
 	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
 		offset = 0;
+		k_sem_give(&dynamic_response_headers_done);
 		return 0;
 	}
 
 	if (status != HTTP_SERVER_REQUEST_DATA_FINAL &&
 	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG &&
-	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_EARLY) {
-		/* Long body and early body variants are the only ones which need to take some
+	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_EARLY &&
+	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY &&
+	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY_BODY) {
+		/* Long body and early variants are the only ones which need to take some
 		 * action before final data has been received from server
 		 */
 		return 0;
@@ -539,6 +567,20 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 
 	case DYNAMIC_RESPONSE_HEADERS_VARIANT_422:
 		response_ctx->status = 422;
+		response_ctx->final_chunk = true;
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_204:
+		response_ctx->status = HTTP_204_NO_CONTENT;
+		response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
+		response_ctx->body_len = strlen(response_ctx->body);
+		response_ctx->final_chunk = true;
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_304:
+		response_ctx->status = HTTP_304_NOT_MODIFIED;
+		response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
+		response_ctx->body_len = strlen(response_ctx->body);
 		response_ctx->final_chunk = true;
 		break;
 
@@ -626,6 +668,29 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 		if (status == HTTP_SERVER_REQUEST_DATA_MORE) {
 			response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
 			response_ctx->body_len = strlen(response_ctx->body);
+		}
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_CONNECTION_SPECIFIC:
+		connection_specific_headers[0].name = connection_specific_header_name;
+		response_ctx->headers = connection_specific_headers;
+		response_ctx->header_count = ARRAY_SIZE(connection_specific_headers);
+		response_ctx->final_chunk = true;
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY:
+		if (status == HTTP_SERVER_REQUEST_DATA_MORE) {
+			response_ctx->status = HTTP_204_NO_CONTENT;
+		}
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY_BODY:
+		if (status == HTTP_SERVER_REQUEST_DATA_MORE) {
+			response_ctx->status = HTTP_204_NO_CONTENT;
+		} else {
+			response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
+			response_ctx->body_len = strlen(response_ctx->body);
+			response_ctx->final_chunk = true;
 		}
 		break;
 	}
@@ -940,7 +1005,8 @@ static void expect_contains_header(const uint8_t *buffer, size_t len,
 		zassert_true(ret >= 0, "Failed to decode header");
 		zassert_true(consumed + ret <= len, "Frame length exceeded");
 
-		if (strncasecmp(header_buf.name, header->name, header_buf.name_len) == 0 &&
+		/* HTTP/2 field names are lowercase, so the name has to match exactly */
+		if (strncmp(header_buf.name, header->name, header_buf.name_len) == 0 &&
 		    strncasecmp(header_buf.value, header->value, header_buf.value_len) == 0) {
 			found = true;
 			break;
@@ -950,6 +1016,25 @@ static void expect_contains_header(const uint8_t *buffer, size_t len,
 	}
 
 	zassert_true(found, "Header '%s: %s' not found", header->name, header->value);
+}
+
+static void expect_lacks_header(const uint8_t *buffer, size_t len, const char *name)
+{
+	struct http_hpack_header_buf header_buf;
+	size_t consumed = 0;
+	int ret;
+
+	while (consumed < len) {
+		ret = http_hpack_decode_header(buffer + consumed, len - consumed, &header_buf);
+		zassert_true(ret > 0, "Failed to decode header");
+		zassert_true(consumed + ret <= len, "Frame length exceeded");
+
+		zexpect_false(header_buf.name_len == strlen(name) &&
+				      strncasecmp(header_buf.name, name, header_buf.name_len) == 0,
+			      "Header '%s' sent", name);
+
+		consumed += ret;
+	}
 }
 
 static void expect_http2_headers_frame(size_t *offset, int stream_id, uint8_t flags,
@@ -1111,6 +1196,140 @@ ZTEST(server_function_tests, test_http1_static_upgrade_get)
 				HTTP2_FLAG_END_STREAM);
 }
 
+/* Send a request whose Upgrade the server ignores, followed by a GET for the
+ * static resource. The server must answer both requests over HTTP/1.1, with
+ * one response each.
+ */
+static void test_http1_upgrade_ignored(const char *request, const char *expected_response)
+{
+	static const char followup_request[] = "GET / HTTP/1.1\r\n"
+					       "Host: 127.0.0.1:8080\r\n"
+					       "\r\n";
+	static const char followup_response[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/html\r\n"
+						"Content-Length: 13\r\n"
+						"\r\n"
+						TEST_STATIC_PAYLOAD;
+	const size_t expected_len = strlen(expected_response);
+	const size_t total_len = expected_len + sizeof(followup_response) - 1;
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request, strlen(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	ret = zsock_send(client_fd, followup_request, sizeof(followup_request) - 1, 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, total_len);
+	zassert_mem_equal(buf, expected_response, expected_len,
+			  "Received data doesn't match expected response");
+	zassert_mem_equal(buf + expected_len, followup_response, sizeof(followup_response) - 1,
+			  "Received data doesn't match follow-up response");
+
+	/* Give any further response time to arrive */
+	k_msleep(100);
+
+	ret = zsock_recv(client_fd, buf + offset, sizeof(buf) - offset, ZSOCK_MSG_DONTWAIT);
+	zassert_true(offset == total_len && ret < 0 && errno == EAGAIN,
+		     "Unexpected data after the responses");
+}
+
+ZTEST(server_function_tests, test_http1_upgrade_unknown_get)
+{
+	static const char expected_response[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/html\r\n"
+						"Content-Length: 13\r\n"
+						"\r\n"
+						TEST_STATIC_PAYLOAD;
+
+	test_http1_upgrade_ignored("GET / HTTP/1.1\r\n"
+				   "Host: 127.0.0.1:8080\r\n"
+				   "Connection: Upgrade\r\n"
+				   "Upgrade: foo/1.0\r\n"
+				   "\r\n",
+				   expected_response);
+}
+
+ZTEST(server_function_tests, test_http1_upgrade_websocket_disabled_get)
+{
+	static const char expected_response[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/html\r\n"
+						"Content-Length: 13\r\n"
+						"\r\n"
+						TEST_STATIC_PAYLOAD;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_HTTP_SERVER_WEBSOCKET);
+
+	test_http1_upgrade_ignored("GET / HTTP/1.1\r\n"
+				   "Host: 127.0.0.1:8080\r\n"
+				   "Connection: Upgrade\r\n"
+				   "Upgrade: websocket\r\n"
+				   "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+				   "Sec-WebSocket-Version: 13\r\n"
+				   "\r\n",
+				   expected_response);
+}
+
+ZTEST(server_function_tests, test_http1_upgrade_unknown_post)
+{
+	static const char expected_response[] = "HTTP/1.1 200\r\n"
+						"Transfer-Encoding: chunked\r\n"
+						"Content-Type: text/plain\r\n"
+						"\r\n"
+						"0\r\n\r\n";
+
+	test_http1_upgrade_ignored("POST /dynamic HTTP/1.1\r\n"
+				   "Host: 127.0.0.1:8080\r\n"
+				   "Connection: Upgrade\r\n"
+				   "Upgrade: foo/1.0\r\n"
+				   "Content-Length: 17\r\n"
+				   "\r\n"
+				   TEST_DYNAMIC_POST_PAYLOAD,
+				   expected_response);
+
+	zexpect_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zexpect_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  strlen(TEST_DYNAMIC_POST_PAYLOAD), "Wrong dynamic resource data");
+	zexpect_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+ZTEST(server_function_tests, test_http1_0_upgrade_ignored)
+{
+	static const char http1_request[] = "GET / HTTP/1.0\r\n"
+					    "Host: 127.0.0.1:8080\r\n"
+					    "Connection: Upgrade, HTTP2-Settings\r\n"
+					    "Upgrade: h2c\r\n"
+					    "HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+					    "\r\n";
+	static const char expected_response[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/html\r\n"
+						"Content-Length: 13\r\n"
+						"\r\n"
+						TEST_STATIC_PAYLOAD;
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	/* The server closes the connection after the response to HTTP/1.0 */
+	do {
+		ret = zsock_recv(client_fd, buf + offset, sizeof(buf) - 1 - offset, 0);
+		zassert_true(ret >= 0, "recv() failed (%d)", errno);
+		offset += (size_t)ret;
+	} while (ret > 0 && offset < sizeof(buf) - 1);
+
+	zassert_equal(offset, sizeof(expected_response) - 1, "Unexpected response length");
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+}
+
 ZTEST(server_function_tests, test_http1_static_get)
 {
 	static const char http1_request[] =
@@ -1264,6 +1483,120 @@ static void common_verify_http1_dynamic_post(const uint8_t *method)
 ZTEST(server_function_tests, test_http1_dynamic_post)
 {
 	common_verify_http1_dynamic_post("POST");
+}
+
+/* Send a chunked POST in the given parts and verify the application gets only the chunk data */
+static void verify_http1_dynamic_post_chunked(const char *const parts[], size_t part_count)
+{
+	static const char expected_response[] = "HTTP/1.1 200\r\n"
+						"Transfer-Encoding: chunked\r\n"
+						"Content-Type: text/plain\r\n"
+						"\r\n"
+						"0\r\n\r\n";
+	size_t offset = 0;
+	int ret;
+
+	for (size_t i = 0; i < part_count; i++) {
+		if (i > 0) {
+			/* Let the server process the previous part on its own */
+			k_msleep(100);
+		}
+
+		ret = zsock_send(client_fd, parts[i], strlen(parts[i]), 0);
+		zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+	}
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+
+	zassert_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_chunked)
+{
+	static const char *const parts[] = {
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Transfer-Encoding: chunked\r\n"
+		"\r\n"
+		"5\r\nTest \r\n"
+		"c\r\ndynamic POST\r\n"
+		"0\r\n\r\n",
+	};
+
+	verify_http1_dynamic_post_chunked(parts, ARRAY_SIZE(parts));
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_chunked_fragmented)
+{
+	static const char *const parts[] = {
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Transfer-Encoding: chunked\r\n"
+		"\r\n"
+		"5\r\nTest \r\n"
+		"c\r\ndyna",
+		"mic POST\r\n"
+		"0\r\n\r\n",
+	};
+
+	verify_http1_dynamic_post_chunked(parts, ARRAY_SIZE(parts));
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_chunked_framing_only)
+{
+	static const char *const parts[] = {
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Transfer-Encoding: chunked\r\n"
+		"\r\n"
+		"5\r\nTest ",
+		"\r\nc\r\n",
+		"dynamic POST",
+		"\r\n0\r\n\r\n",
+	};
+
+	verify_http1_dynamic_post_chunked(parts, ARRAY_SIZE(parts));
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_post_chunked)
+{
+	static const char http1_request[] =
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Transfer-Encoding: chunked\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n"
+		"5\r\nTest \r\n"
+		"c\r\ndynamic POST\r\n"
+		"0\r\n\r\n";
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http1_switching_protocols(&offset);
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+
+	zassert_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 static void common_verify_http2_dynamic_get_request(const uint8_t *request,
@@ -1470,6 +1803,288 @@ ZTEST(server_function_tests, test_http1_dynamic_upgrade_delete)
 				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM,
 				   NULL, 0);
 }
+
+/* Send the headers of a request and then its body in pieces. The server
+ * processes each part before the next one arrives.
+ */
+static void send_request_in_pieces(const char *const pieces[], size_t count)
+{
+	int ret;
+
+	for (size_t i = 0; i < count; i++) {
+		ret = zsock_send(client_fd, pieces[i], strlen(pieces[i]), 0);
+		zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+		k_msleep(100);
+	}
+}
+
+/* Client connection preface, sent after the response to an upgrade request */
+static const uint8_t upgrade_client_preface[] = {
+	TEST_HTTP2_MAGIC,
+	TEST_HTTP2_SETTINGS,
+};
+
+/* The server acknowledges the client settings and sends nothing else. */
+static void expect_http2_settings_ack_only(size_t *offset)
+{
+	int ret;
+
+	expect_http2_settings_frame(offset, true);
+	zexpect_equal(*offset, 0, "%zu bytes received after the settings ACK", *offset);
+
+	k_msleep(100);
+
+	ret = zsock_recv(client_fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+	zexpect_true(ret < 0 && errno == EAGAIN, "Unexpected data or close (%d)", ret);
+}
+
+/* After the response to the upgrade request, send the client connection
+ * preface.
+ */
+static void expect_http2_after_upgrade_response(size_t *offset)
+{
+	int ret;
+
+	ret = zsock_send(client_fd, upgrade_client_preface, sizeof(upgrade_client_preface), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_settings_ack_only(offset);
+}
+
+ZTEST(server_function_tests, test_http1_static_upgrade_get_body_in_pieces)
+{
+	static const char *const request[] = {
+		"GET / HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Content-Length: 8\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n",
+		"abcd",
+		"efgh",
+	};
+	size_t offset = 0;
+
+	memset(buf, 0, sizeof(buf));
+
+	send_request_in_pieces(request, ARRAY_SIZE(request));
+
+	expect_http1_switching_protocols(&offset);
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, UPGRADE_STREAM_ID, TEST_STATIC_PAYLOAD,
+				strlen(TEST_STATIC_PAYLOAD), HTTP2_FLAG_END_STREAM);
+	expect_http2_after_upgrade_response(&offset);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_get_body_in_pieces)
+{
+	static const char *const request[] = {
+		"GET /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Content-Length: 8\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n",
+		"abcd",
+		"efgh",
+	};
+	size_t offset = 0;
+
+	dynamic_payload_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
+	memcpy(dynamic_payload, TEST_DYNAMIC_GET_PAYLOAD, dynamic_payload_len);
+	memset(buf, 0, sizeof(buf));
+
+	send_request_in_pieces(request, ARRAY_SIZE(request));
+
+	expect_http1_switching_protocols(&offset);
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, UPGRADE_STREAM_ID, TEST_DYNAMIC_GET_PAYLOAD,
+				strlen(TEST_DYNAMIC_GET_PAYLOAD), HTTP2_FLAG_END_STREAM);
+	expect_http2_after_upgrade_response(&offset);
+	zexpect_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_post_body_in_pieces)
+{
+	static const char *const request[] = {
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Content-Length: 17\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n",
+		"Test dyn",
+		"amic POST",
+	};
+	size_t offset = 0;
+
+	memset(buf, 0, sizeof(buf));
+
+	send_request_in_pieces(request, ARRAY_SIZE(request));
+
+	expect_http1_switching_protocols(&offset);
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+	expect_http2_after_upgrade_response(&offset);
+
+	zexpect_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zexpect_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  strlen(TEST_DYNAMIC_POST_PAYLOAD), "Wrong dynamic resource data");
+	zexpect_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+/* The client sends the connection preface as soon as it has sent the body,
+ * so the last piece of the body and the preface can arrive together.
+ */
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_post_body_with_preface)
+{
+	static const char *const request[] = {
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Content-Length: 17\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n",
+		"Test dyn",
+	};
+	static const char body_end[] = "amic POST";
+	uint8_t data[sizeof(body_end) - 1 + sizeof(upgrade_client_preface)];
+	size_t offset = 0;
+	int ret;
+
+	memcpy(data, body_end, sizeof(body_end) - 1);
+	memcpy(data + sizeof(body_end) - 1, upgrade_client_preface,
+	       sizeof(upgrade_client_preface));
+	memset(buf, 0, sizeof(buf));
+
+	send_request_in_pieces(request, ARRAY_SIZE(request));
+
+	expect_http1_switching_protocols(&offset);
+	expect_http2_settings_frame(&offset, false);
+
+	ret = zsock_send(client_fd, data, sizeof(data), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+	expect_http2_settings_ack_only(&offset);
+
+	zexpect_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zexpect_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  strlen(TEST_DYNAMIC_POST_PAYLOAD), "Wrong dynamic resource data");
+	zexpect_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+#if defined(CONFIG_HTTP_SERVER_WEBSOCKET)
+static K_SEM_DEFINE(ws_connected, 0, 1);
+static int ws_sock = -1;
+static size_t ws_connect_count;
+
+static int ws_cb(int ws_socket, struct http_request_ctx *request_ctx, void *user_data)
+{
+	ARG_UNUSED(request_ctx);
+	ARG_UNUSED(user_data);
+
+	ws_sock = ws_socket;
+	ws_connect_count++;
+	k_sem_give(&ws_connected);
+
+	return 0;
+}
+
+static uint8_t ws_buffer[64];
+
+static struct http_resource_detail_websocket ws_detail = {
+	.common = {
+		.type = HTTP_RESOURCE_TYPE_WEBSOCKET,
+		.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+	},
+	.cb = ws_cb,
+	.data_buffer = ws_buffer,
+	.data_buffer_len = sizeof(ws_buffer),
+};
+
+HTTP_RESOURCE_DEFINE(ws_resource, test_http_service, "/ws", &ws_detail);
+
+ZTEST(server_function_tests, test_http1_websocket_upgrade_body_in_pieces)
+{
+	static const char *const request[] = {
+		"GET /ws HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Upgrade: websocket\r\n"
+		"Connection: Upgrade\r\n"
+		"Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+		"Sec-WebSocket-Version: 13\r\n"
+		"Content-Length: 8\r\n"
+		"\r\n",
+		"abcd",
+		"efgh",
+	};
+	static const char switching_protocols[] = "HTTP/1.1 101 Switching Protocols\r\n";
+	/* Accept value for the key above, RFC 6455 section 1.3 */
+	static const char accept[] = "Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n";
+	/* Masked text frame carrying "Hello", RFC 6455 section 5.7 */
+	static const uint8_t ws_hello[] = {
+		0x81, 0x85, 0x37, 0xfa, 0x21, 0x3d, 0x7f, 0x9f, 0x4d, 0x51, 0x58,
+	};
+	uint8_t msg[sizeof("Hello")];
+	uint32_t message_type = 0;
+	uint64_t remaining = 0;
+	size_t offset = 0;
+	char *end;
+	int ret;
+
+	ws_sock = -1;
+	ws_connect_count = 0;
+	k_sem_reset(&ws_connected);
+	memset(buf, 0, sizeof(buf));
+
+	send_request_in_pieces(request, ARRAY_SIZE(request));
+
+	do {
+		ret = zsock_recv(client_fd, buf + offset, sizeof(buf) - 1 - offset, 0);
+		zassert_true(ret > 0, "recv() failed (%d)", errno);
+		offset += ret;
+		end = strstr((char *)buf, "\r\n\r\n");
+	} while (end == NULL);
+
+	zexpect_mem_equal(buf, switching_protocols, strlen(switching_protocols),
+			  "Unexpected response:\n%s", (char *)buf);
+	zexpect_not_null(strstr((char *)buf, accept), "No valid Sec-WebSocket-Accept");
+	zexpect_equal(offset, (size_t)(end + 4 - (char *)buf), "Data after the 101 response:\n%s",
+		      (char *)buf);
+
+	zassert_ok(k_sem_take(&ws_connected, K_SECONDS(1)), "WebSocket callback not called");
+
+	/* The client sends WebSocket data on the switched connection */
+	ret = zsock_send(client_fd, ws_hello, sizeof(ws_hello), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	ret = websocket_recv_msg(ws_sock, msg, sizeof(msg), &message_type, &remaining,
+				 MSEC_PER_SEC);
+	zexpect_equal(ret, strlen("Hello"), "Wrong WebSocket message length (%d)", ret);
+	zexpect_mem_equal(msg, "Hello", strlen("Hello"), "Wrong WebSocket message");
+	zexpect_true((message_type & WEBSOCKET_FLAG_TEXT) != 0, "Not a text message");
+
+	k_msleep(100);
+
+	ret = zsock_recv(client_fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+	zexpect_true(ret < 0 && errno == EAGAIN, "Unexpected data or close (%d)", ret);
+	zexpect_equal(ws_connect_count, 1, "WebSocket callback called %zu times", ws_connect_count);
+
+	(void)websocket_unregister(ws_sock);
+}
+#endif /* CONFIG_HTTP_SERVER_WEBSOCKET */
 
 ZTEST(server_function_tests, test_http1_dynamic_delete)
 {
@@ -2273,7 +2888,8 @@ ZTEST(server_function_tests, test_http2_header_concurrent)
 	zassert_equal(0, ret, "Header strings did not match");
 }
 
-static void test_http1_dynamic_response_headers(const char *request, const char *expected_response)
+static size_t test_http1_dynamic_response_headers(const char *request,
+						  const char *expected_response)
 {
 	int ret;
 	size_t offset = 0;
@@ -2283,9 +2899,11 @@ static void test_http1_dynamic_response_headers(const char *request, const char 
 
 	test_read_data(&offset, strlen(expected_response));
 	zassert_mem_equal(buf, expected_response, strlen(expected_response));
+
+	return offset;
 }
 
-static void test_http1_dynamic_response_headers_default(const char *expected_response, bool post)
+static size_t test_http1_dynamic_response_headers_default(const char *expected_response, bool post)
 {
 	static const char http1_get_response_headers_request[] =
 		"GET /response_headers HTTP/1.1\r\n"
@@ -2299,7 +2917,7 @@ static void test_http1_dynamic_response_headers_default(const char *expected_res
 	const char *request =
 		post ? http1_post_response_headers_request : http1_get_response_headers_request;
 
-	test_http1_dynamic_response_headers(request, expected_response);
+	return test_http1_dynamic_response_headers(request, expected_response);
 }
 
 static void test_http2_dynamic_response_headers(const uint8_t *request, size_t request_len,
@@ -2418,6 +3036,80 @@ ZTEST(server_function_tests, test_http1_dynamic_post_response_header_422)
 	test_http1_dynamic_response_header_422(true);
 }
 
+/* Wait for the transaction on /response_headers to complete, then check that the
+ * response to the next request on the connection starts where the previous
+ * response ended.
+ */
+static void test_http1_next_response_in_sync(void)
+{
+	static const char request[] = "GET / HTTP/1.1\r\n"
+				      "Host: 127.0.0.1:8080\r\n"
+				      "\r\n";
+	static const char response[] = "HTTP/1.1 200 OK\r\n"
+				       "Content-Type: text/html\r\n"
+				       "Content-Length: 13\r\n"
+				       "\r\n" TEST_STATIC_PAYLOAD;
+	size_t offset = 0;
+	int ret;
+
+	ret = k_sem_take(&dynamic_response_headers_done, K_SECONDS(TIMEOUT_S));
+	zassert_ok(ret, "Transaction not completed");
+
+	ret = zsock_send(client_fd, request, strlen(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	test_read_data(&offset, strlen(response));
+	zassert_mem_equal(buf, response, strlen(response), "Connection out of sync");
+}
+
+/* A 204 or 304 response ends with the header section, so it must be neither
+ * chunked nor followed by body data or a terminating chunk, see RFC 9112,
+ * section 6.3.
+ */
+static void test_http1_dynamic_response_header_no_body(uint8_t variant, const char *response,
+						       bool post)
+{
+	size_t offset;
+
+	dynamic_response_headers_variant = variant;
+	k_sem_reset(&dynamic_response_headers_done);
+
+	offset = test_http1_dynamic_response_headers_default(response, post);
+	zassert_equal(offset, strlen(response), "Unexpected data after the headers");
+
+	test_http1_next_response_in_sync();
+}
+
+static void test_http1_dynamic_response_header_204(bool post)
+{
+	static const char response[] = "HTTP/1.1 204\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n";
+
+	test_http1_dynamic_response_header_no_body(DYNAMIC_RESPONSE_HEADERS_VARIANT_204, response,
+						   post);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_response_header_204)
+{
+	test_http1_dynamic_response_header_204(false);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_header_204)
+{
+	test_http1_dynamic_response_header_204(true);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_response_header_304)
+{
+	static const char response[] = "HTTP/1.1 304\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n";
+
+	test_http1_dynamic_response_header_no_body(DYNAMIC_RESPONSE_HEADERS_VARIANT_304, response,
+						   false);
+}
+
 static void test_http2_dynamic_response_header_422(bool post)
 {
 	size_t offset = 0;
@@ -2489,6 +3181,66 @@ ZTEST(server_function_tests, test_http2_dynamic_get_response_header_extra)
 ZTEST(server_function_tests, test_http2_dynamic_post_response_header_extra)
 {
 	test_http2_dynamic_response_header_extra(true);
+}
+
+/* HTTP/2 forbids connection-specific header fields (RFC 9113, Section 8.2.2) */
+static void test_http2_dynamic_response_header_connection_specific(const char *name)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_RESPONSE_HEADERS_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	static const struct http_header kept = {.name = "test-header", .value = "test_data"};
+	struct http2_frame frame;
+	size_t offset = 0;
+	int ret;
+
+	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_CONNECTION_SPECIFIC;
+	connection_specific_header_name = name;
+
+	ret = zsock_send(client_fd, request, sizeof(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+
+	test_get_frame_header(&offset, &frame);
+	zassert_equal(frame.type, HTTP2_HEADERS_FRAME, "Expected headers frame, got frame type %u",
+		      frame.type);
+	test_read_data(&offset, frame.length);
+
+	expect_lacks_header(buf, frame.length, name);
+	expect_contains_header(buf, frame.length, &kept);
+
+	test_consume_data(&offset, frame.length);
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_response_header_connection)
+{
+	test_http2_dynamic_response_header_connection_specific("Connection");
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_response_header_keep_alive)
+{
+	test_http2_dynamic_response_header_connection_specific("keep-alive");
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_response_header_proxy_connection)
+{
+	test_http2_dynamic_response_header_connection_specific("proxy-connection");
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_response_header_transfer_encoding)
+{
+	test_http2_dynamic_response_header_connection_specific("transfer-encoding");
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_response_header_upgrade)
+{
+	test_http2_dynamic_response_header_connection_specific("upgrade");
 }
 
 static void test_http1_dynamic_response_header_override(bool post)
@@ -2987,6 +3739,51 @@ ZTEST(server_function_tests, test_http1_dynamic_post_response_early_body)
 
 	ret = zsock_recv(client_fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
 	zassert_true(offset == 0 && ret < 0 && errno == EAGAIN, "Unexpected trailing data");
+}
+
+/* A 204 response is sent while request data is still arriving, so the server
+ * must remember not to send body data or a terminating chunk once the request
+ * is complete.
+ */
+static void test_http1_dynamic_post_response_early_no_body(uint8_t variant)
+{
+	static const char request_part1[] = "POST /response_headers HTTP/1.1\r\n"
+					    "Accept: */*\r\n"
+					    "Content-Length: 17\r\n"
+					    "\r\n"
+					    "Test dyn";
+	static const char request_part2[] = "amic POST";
+	static const char response[] = "HTTP/1.1 204\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n";
+	size_t offset = 0;
+	int ret;
+
+	dynamic_response_headers_variant = variant;
+	k_sem_reset(&dynamic_response_headers_done);
+
+	ret = zsock_send(client_fd, request_part1, strlen(request_part1), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	test_read_data(&offset, strlen(response));
+	zassert_mem_equal(buf, response, strlen(response));
+	zassert_equal(offset, strlen(response), "Unexpected data after the headers");
+
+	ret = zsock_send(client_fd, request_part2, strlen(request_part2), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	test_http1_next_response_in_sync();
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_early_204)
+{
+	test_http1_dynamic_post_response_early_no_body(DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_early_204_body)
+{
+	test_http1_dynamic_post_response_early_no_body(
+		DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY_BODY);
 }
 
 ZTEST(server_function_tests, test_http1_409_method_not_allowed)
@@ -3860,6 +4657,278 @@ ZTEST(server_function_tests, test_http1_static_fs_overlap)
 }
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(zephyr_ram_disk) */
+
+#if defined(CONFIG_FILE_SYSTEM)
+
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/fs_sys.h>
+
+/* A file system holding one file whose content does not match the size stat
+ * reports: reads deliver the first mock_fs_content_len bytes of MOCK_FS_CONTENT
+ * and then return mock_fs_read_result, a negative error or 0 for end of file.
+ */
+#define MOCK_FS_TYPE		FS_TYPE_EXTERNAL_BASE
+#define MOCK_FS_MNTP		"/mockfs"
+#define MOCK_FS_FILE		"/mismatch.html"
+#define MOCK_FS_FILE_SIZE	64U
+#define MOCK_FS_CONTENT_10	"0123456789"
+#define MOCK_FS_CONTENT		MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 \
+				MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 \
+				MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 \
+				MOCK_FS_CONTENT_10
+
+static size_t mock_fs_content_len;
+static ssize_t mock_fs_read_result;
+static size_t mock_fs_pos;
+
+static int mock_fs_mount(struct fs_mount_t *mountp)
+{
+	ARG_UNUSED(mountp);
+
+	return 0;
+}
+
+static int mock_fs_stat(struct fs_mount_t *mountp, const char *path, struct fs_dirent *entry)
+{
+	ARG_UNUSED(mountp);
+
+	if (strcmp(path, MOCK_FS_MNTP MOCK_FS_FILE) != 0) {
+		return -ENOENT;
+	}
+
+	entry->type = FS_DIR_ENTRY_FILE;
+	entry->size = MOCK_FS_FILE_SIZE;
+
+	return 0;
+}
+
+static int mock_fs_open(struct fs_file_t *filp, const char *path, fs_mode_t flags)
+{
+	ARG_UNUSED(filp);
+	ARG_UNUSED(flags);
+
+	if (strcmp(path, MOCK_FS_MNTP MOCK_FS_FILE) != 0) {
+		return -ENOENT;
+	}
+
+	mock_fs_pos = 0U;
+
+	return 0;
+}
+
+static ssize_t mock_fs_read(struct fs_file_t *filp, void *dest, size_t nbytes)
+{
+	size_t len;
+
+	ARG_UNUSED(filp);
+
+	if (mock_fs_pos >= mock_fs_content_len) {
+		return mock_fs_read_result;
+	}
+
+	len = MIN(nbytes, mock_fs_content_len - mock_fs_pos);
+	memcpy(dest, &MOCK_FS_CONTENT[mock_fs_pos], len);
+	mock_fs_pos += len;
+
+	return len;
+}
+
+static int mock_fs_close(struct fs_file_t *filp)
+{
+	ARG_UNUSED(filp);
+
+	return 0;
+}
+
+static const struct fs_file_system_t mock_fs = {
+	.mount = mock_fs_mount,
+	.stat = mock_fs_stat,
+	.open = mock_fs_open,
+	.read = mock_fs_read,
+	.close = mock_fs_close,
+};
+
+static struct http_resource_detail_static_fs mock_fs_resource_detail = {
+	.common = {
+			.type = HTTP_RESOURCE_TYPE_STATIC_FS,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+			.content_type = "text/html",
+		},
+	.fs_path = MOCK_FS_MNTP,
+};
+
+HTTP_RESOURCE_DEFINE(mock_fs_resource, test_http_service, MOCK_FS_FILE,
+		     &mock_fs_resource_detail);
+
+static void setup_mock_fs(size_t content_len, ssize_t read_result)
+{
+	static struct fs_mount_t mock_fs_mnt = {
+		.type = MOCK_FS_TYPE,
+		.mnt_point = MOCK_FS_MNTP,
+	};
+	static bool mounted;
+	int ret;
+
+	if (!mounted) {
+		ret = fs_register(MOCK_FS_TYPE, &mock_fs);
+		zassert_ok(ret, "Failed to register mock fs (%d)", ret);
+		ret = fs_mount(&mock_fs_mnt);
+		zassert_ok(ret, "Failed to mount mock fs (%d)", ret);
+		mounted = true;
+	}
+
+	zassert_true(content_len < sizeof(MOCK_FS_CONTENT), "Mock fs content too short");
+	mock_fs_content_len = content_len;
+	mock_fs_read_result = read_result;
+}
+
+static void test_http1_static_fs_short_read(ssize_t read_result)
+{
+	static const char http1_request[] =
+		"GET " MOCK_FS_FILE " HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char expected_response[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Length: 64\r\n"
+		"Content-Type: text/html\r\n"
+		"\r\n"
+		MOCK_FS_CONTENT_10;
+	size_t offset = 0;
+	int ret;
+
+	setup_mock_fs(strlen(MOCK_FS_CONTENT_10), read_result);
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+	test_consume_data(&offset, sizeof(expected_response) - 1);
+	zassert_equal(offset, 0, "Unexpected data after the partial body");
+
+	/* The body is shorter than the announced Content-Length, so the server
+	 * must close the connection rather than wait for another request.
+	 */
+	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+	zassert_equal(ret, 0, "Connection not closed after a short body (%d, errno %d)", ret,
+		      errno);
+}
+
+ZTEST(server_function_tests, test_http1_static_fs_read_error)
+{
+	test_http1_static_fs_short_read(-EIO);
+}
+
+ZTEST(server_function_tests, test_http1_static_fs_read_eof)
+{
+	test_http1_static_fs_short_read(0);
+}
+
+ZTEST(server_function_tests, test_http1_static_fs_grown_file)
+{
+	static const char http1_request[] =
+		"GET " MOCK_FS_FILE " HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"Connection: close\r\n"
+		"\r\n";
+	static const char expected_headers[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Length: 64\r\n"
+		"Content-Type: text/html\r\n"
+		"\r\n";
+	const size_t headers_len = sizeof(expected_headers) - 1;
+	size_t offset = 0;
+	int ret;
+
+	/* The file holds more data than the size reported by stat, as if it
+	 * had grown after the server looked it up.
+	 */
+	setup_mock_fs(MOCK_FS_FILE_SIZE + 20U, 0);
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, headers_len + MOCK_FS_FILE_SIZE);
+	zassert_mem_equal(buf, expected_headers, headers_len,
+			  "Received headers don't match expected response");
+	zassert_mem_equal(buf + headers_len, MOCK_FS_CONTENT, MOCK_FS_FILE_SIZE,
+			  "Received body doesn't match the file content");
+	test_consume_data(&offset, headers_len + MOCK_FS_FILE_SIZE);
+
+	/* Collect everything up to the close: the body must end at the
+	 * announced Content-Length.
+	 */
+	do {
+		ret = zsock_recv(client_fd, buf + offset, sizeof(buf) - offset, 0);
+		zassert_not_equal(ret, -1, "recv() failed (%d)", errno);
+		offset += ret;
+	} while (ret > 0);
+
+	zassert_equal(offset, 0, "%zu bytes sent past Content-Length", offset);
+}
+
+/* HPACK-encoded "GET /mismatch.html" request, encoded as
+ * TEST_HTTP2_HEADERS_GET_STATIC_FS.
+ */
+#define TEST_HTTP2_HEADERS_GET_MOCK_FS(_stream_id) \
+	0x00, 0x00, 0x12, 0x01, 0x05, 0x00, 0x00, 0x00, _stream_id, \
+	0x82, 0x86, 0x04, 0x0e, 0x2f, 0x6d, 0x69, 0x73, 0x6d, 0x61, 0x74, 0x63, \
+	0x68, 0x2e, 0x68, 0x74, 0x6d, 0x6c
+
+static void test_http2_static_fs_short_read(ssize_t read_result)
+{
+	static const uint8_t request_get_mock_fs[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_MOCK_FS(TEST_STREAM_ID_1),
+	};
+	size_t offset = 0;
+	int ret;
+
+	setup_mock_fs(strlen(MOCK_FS_CONTENT_10), read_result);
+
+	ret = zsock_send(client_fd, request_get_mock_fs, sizeof(request_get_mock_fs), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, MOCK_FS_CONTENT_10,
+				strlen(MOCK_FS_CONTENT_10), 0);
+	zassert_equal(offset, 0, "Unexpected data after the partial body");
+
+	/* The stream cannot be completed, so the server must close the
+	 * connection rather than leave the stream open.
+	 */
+	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+	zassert_equal(ret, 0, "Connection not closed after a short body (%d, errno %d)", ret,
+		      errno);
+}
+
+ZTEST(server_function_tests, test_http2_static_fs_read_error)
+{
+	test_http2_static_fs_short_read(-EIO);
+}
+
+ZTEST(server_function_tests, test_http2_static_fs_read_eof)
+{
+	test_http2_static_fs_short_read(0);
+}
+
+#endif /* CONFIG_FILE_SYSTEM */
 
 static void http_server_tests_before(void *fixture)
 {

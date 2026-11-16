@@ -43,13 +43,6 @@ extern "C" {
  * @{
  */
 
-/**
- * @brief Maximum number of logical event counters this API can describe.
- *
- * A given backend may implement fewer active hardware counters.
- */
-#define PMU_MAX_COUNTERS 8
-
 /** PMU counter configuration entry */
 struct pmu_counter_config {
 	/** Event (e.g. @c PMU_EVT_* enumerators when @c CONFIG_ARM64). */

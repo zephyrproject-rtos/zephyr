@@ -604,7 +604,7 @@ static const struct device *w6300_get_phy(const struct device *dev,
 	return config->phy_dev;
 }
 
-static const struct ethernet_api w6300_api_funcs = {
+static DEVICE_API(ethernet, w6300_api_funcs) = {
 	.iface_api.init = w6300_iface_init,
 	.get_capabilities = w6300_get_capabilities,
 	.set_config = w6300_set_config,

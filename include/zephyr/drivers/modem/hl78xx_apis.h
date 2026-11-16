@@ -712,7 +712,10 @@ enum hl78xx_evt_type {
 	HL78XX_GNSS_EVENT_STOP,
 	/** GNSS position fix obtained. @kconfig_dep{CONFIG_HL78XX_GNSS} */
 	HL78XX_GNSS_EVENT_POSITION,
-	/** GNSS start failed because LTE is active (shared RF path)
+	/** GNSS request dropped because LTE holds the shared RF path: either the
+	 * GNSS start failed while LTE was active, or a queued GNSS mode request
+	 * was discarded when the driver entered the carrier-on state. The driver
+	 * does not retry; the application must request GNSS again.
 	 * @kconfig_dep{CONFIG_HL78XX_GNSS}
 	 */
 	HL78XX_GNSS_EVENT_START_BLOCKED,
@@ -1953,6 +1956,18 @@ int hl78xx_at_monitor_register(struct hl78xx_at_monitor_entry *mon);
 int hl78xx_at_monitor_unregister(struct hl78xx_at_monitor_entry *mon);
 
 /**
+ * @brief Number of deferred AT notifications dropped since boot.
+ *
+ * A parsed notification for the deferred (system workqueue) AT monitors is
+ * dropped, and logged at error level, when the copy heap of
+ * CONFIG_HL78XX_AT_MONITOR_HEAP_SIZE bytes cannot hold it. Direct monitors
+ * are never affected. The counter only grows; report deltas in telemetry.
+ *
+ * @return Number of dropped deferred AT notifications.
+ */
+uint32_t hl78xx_at_monitor_dropped_count(void);
+
+/**
  * @brief Set the event notification handler for HL78xx modem events.
  *
  * Registers a callback handler to receive asynchronous event notifications
@@ -2007,6 +2022,31 @@ int hl78xx_evt_monitor_register(struct hl78xx_evt_monitor_entry *mon);
  * @return -ENOENT if @p mon is not registered.
  */
 int hl78xx_evt_monitor_unregister(struct hl78xx_evt_monitor_entry *mon);
+
+/**
+ * @brief Number of deferred notifications dropped since boot.
+ *
+ * A notification for the deferred (system workqueue) monitors is dropped,
+ * and logged at error level, when the notification queue of
+ * CONFIG_HL78XX_EVT_MONITOR_QUEUE_DEPTH entries is full. Direct monitors are
+ * never affected. The counter only grows; report deltas in telemetry.
+ *
+ * @return Number of dropped deferred notifications.
+ */
+uint32_t hl78xx_evt_monitor_dropped_count(void);
+
+/**
+ * @brief Dispatch a notification to every registered event monitor.
+ *
+ * The event monitor library installs this function as the driver's event
+ * dispatcher at init. Direct monitors run in the caller's context; the
+ * notification is copied and queued for the deferred monitors, which run in
+ * the system workqueue. Public so that tests can drive the monitor library
+ * without the driver.
+ *
+ * @param notif Notification to dispatch. Copied for deferred delivery.
+ */
+void hl78xx_evt_monitor_dispatch(struct hl78xx_evt *notif);
 
 /**
  * @brief Convert HL78xx RAT mode to standard cellular API
@@ -2141,7 +2181,7 @@ int hl78xx_edrx_get_time_to_sleep(const struct device *dev);
  * on the modem's current power state:
  *
  * **Without low-power mode (default / airplane mode path):**
- * 1. Carrier off (notify app, close sockets)
+ * 1. Carrier off (notify app, remove the addresses and DNS state)
  * 2. Put modem in airplane mode (AT+CFUN=4)
  * 3. Initialize GNSS engine
  * 4. Fire HL78XX_GNSS_ENGINE_READY event when complete
@@ -2157,6 +2197,16 @@ int hl78xx_edrx_get_time_to_sleep(const struct device *dev);
  * the LTE modem is unavailable and the shared RF Rx path is free.
  *
  * After entering GNSS mode, call hl78xx_queue_gnss_search() to start fix acquisition.
+ *
+ * A request made while the modem is not registered, still registering or
+ * searching again after a registration loss, is not served: it stays pending
+ * until the modem registers, is then dropped at the carrier-on, reported with
+ * HL78XX_GNSS_EVENT_START_BLOCKED, and must be made again. An application
+ * that needs a fix during the outage leaves GNSS to its next cycle. A power
+ * down carries a pending request into the next session: a boot in airplane
+ * mode serves it, a boot in fully functional mode drops it at the carrier-on.
+ * A low-power build whose modem sleeps before the carrier comes up serves it
+ * from sleep instead.
  *
  * @kconfig_dep{CONFIG_HL78XX_GNSS}
  *
@@ -2337,8 +2387,9 @@ int hl78xx_power_down_cancel(const struct device *dev);
  * @param timeout_s New grace period in seconds when @p response is
  *        HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE. Ignored otherwise.
  *
- * @return 0 on success, -EINVAL for invalid arguments, or -ENOENT if no
- *         application-controlled shutdown is pending.
+ * @return 0 on success, -EINVAL for invalid arguments, -ENOENT if no
+ *         application-controlled shutdown is pending, or -EBUSY if the
+ *         shutdown is already running and can no longer be answered.
  */
 int hl78xx_power_down_respond(const struct device *dev, enum hl78xx_power_down_response response,
 			      uint32_t timeout_s);

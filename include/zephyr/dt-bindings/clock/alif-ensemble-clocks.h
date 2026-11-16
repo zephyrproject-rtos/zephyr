@@ -100,6 +100,16 @@
 /** @} */
 
 /**
+ * @name SPI peripheral clocks
+ * @{
+ */
+
+/** SPI0 to SPI3 clock sourced from system HCLK */
+#define ALIF_SPI_SYST_HCLK          ALIF_CLK_CFG_FIXED(ALIF_PARENT_CLK_SYST_HCLK)
+
+/** @} */
+
+/**
  * @name LPTIMER peripheral clocks
  *
  * The channels have no clock enable bit; only the source selection is

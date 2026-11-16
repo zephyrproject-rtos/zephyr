@@ -196,6 +196,16 @@ static void verify_tx_error(enum ec_host_cmd_status error)
 }
 
 #define EC_CMD_HELLO 0x0001
+static uint32_t hello_v0_resp(uint32_t in_data)
+{
+	return in_data + 0x01020304;
+}
+
+static uint32_t hello_v1_resp(uint32_t in_data)
+{
+	return in_data + 0x02040608;
+}
+
 static enum ec_host_cmd_status
 ec_host_cmd_add(struct ec_host_cmd_handler_args *args)
 {
@@ -203,9 +213,9 @@ ec_host_cmd_add(struct ec_host_cmd_handler_args *args)
 	struct ec_response_add *const response = args->output_buf;
 
 	if (args->version == 0) {
-		response->out_data = request->in_data + 0x01020304;
+		response->out_data = hello_v0_resp(request->in_data);
 	} else if (args->version == 1) {
-		response->out_data = request->in_data + 0x02040608;
+		response->out_data = hello_v1_resp(request->in_data);
 	} else if (args->version == 2) {
 		return EC_HOST_CMD_OVERFLOW;
 	} else {
@@ -234,7 +244,8 @@ ZTEST(ec_host_cmd, test_add)
 	expected_dut_to_host->header.reserved = 0;
 	expected_dut_to_host->header.data_len =
 		sizeof(expected_dut_to_host->add);
-	expected_dut_to_host->add.out_data = 0x11223344;
+	expected_dut_to_host->add.out_data =
+		hello_v0_resp(host_to_dut->add.in_data);
 
 	verify_tx_data();
 }
@@ -255,7 +266,8 @@ ZTEST(ec_host_cmd, test_add_version_2)
 	expected_dut_to_host->header.reserved = 0;
 	expected_dut_to_host->header.data_len =
 		sizeof(expected_dut_to_host->add);
-	expected_dut_to_host->add.out_data = 0x12243648;
+	expected_dut_to_host->add.out_data =
+		hello_v1_resp(host_to_dut->add.in_data);
 
 	verify_tx_data();
 }
@@ -384,6 +396,22 @@ ZTEST(ec_host_cmd, test_add_rx_size_too_small)
 	/* Ensure Send was called so we can verify outputs */
 	rv = k_sem_take(&send_called, K_SECONDS(1));
 	zassert_equal(rv, 0, "Send was not called");
+
+	verify_tx_error(EC_HOST_CMD_REQUEST_TRUNCATED);
+}
+
+ZTEST(ec_host_cmd, test_add_rqt_size_too_small)
+{
+	*host_to_dut = (struct rx_structure){
+		.header = {
+				.prtcl_ver = 3,
+				.cmd_id = EC_CMD_HELLO,
+				.data_len = sizeof(host_to_dut->add) - 1,
+			},
+		.add.in_data = 0x10203040,
+	};
+
+	simulate_rx_data();
 
 	verify_tx_error(EC_HOST_CMD_REQUEST_TRUNCATED);
 }
@@ -542,6 +570,10 @@ ec_host_cmd_unbounded(struct ec_host_cmd_handler_args *args)
 	}
 
 	/* Version 0 (and 2) write request bytes if it can fit */
+	if (request->bytes_to_write == 0) {
+		return EC_HOST_CMD_SUCCESS;
+	}
+
 	if (request->bytes_to_write > args->output_buf_max) {
 		return EC_HOST_CMD_OVERFLOW;
 	}
@@ -556,6 +588,54 @@ ec_host_cmd_unbounded(struct ec_host_cmd_handler_args *args)
 }
 EC_HOST_CMD_HANDLER_UNBOUND(EC_CMD_UNBOUNDED, ec_host_cmd_unbounded,
 			    BIT(0) | BIT(1) | BIT(2));
+
+ZTEST(ec_host_cmd, test_unbounded_output_cleared)
+{
+	const struct tx_structure *const tx = (void *)sent->buf;
+
+	/*
+	 * First call writes hello_v0_resp(in_data) to tx->add.out_data and sets
+	 * output_buf_size = 4.
+	 */
+	*host_to_dut = (struct rx_structure){
+		.header = {
+				.prtcl_ver = 3,
+				.cmd_id = EC_CMD_HELLO,
+				.data_len = sizeof(host_to_dut->add),
+			},
+		.add.in_data = 0x10203040,
+	};
+	*expected_dut_to_host = (struct tx_structure){
+		.header = {
+				.prtcl_ver = 3,
+				.data_len = sizeof(expected_dut_to_host->add),
+			},
+		.add.out_data = hello_v0_resp(host_to_dut->add.in_data),
+	};
+	simulate_rx_data();
+	verify_tx_data();
+	zassert_equal(tx->add.out_data,
+		      hello_v0_resp(host_to_dut->add.in_data));
+
+	/*
+	 * With bytes_to_write == 0, the handler returns without modifying
+	 * output_buf or output_buf_size, verifying that both were reset to 0
+	 * before the handler was called.
+	 */
+	*host_to_dut = (struct rx_structure){
+		.header = {
+				.prtcl_ver = 3,
+				.cmd_id = EC_CMD_UNBOUNDED,
+				.data_len = sizeof(host_to_dut->unbounded),
+			},
+		.unbounded.bytes_to_write = 0,
+	};
+	simulate_rx_data();
+
+	expected_dut_to_host->header.data_len = 0;
+	verify_tx_data();
+	zassert_equal(tx->add.out_data, 0);
+}
 
 ZTEST(ec_host_cmd, test_unbounded_handler_error_return)
 {

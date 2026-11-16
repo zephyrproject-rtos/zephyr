@@ -8,6 +8,7 @@
 #include "kernel_shell.h"
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/div64.h>
 
 #define MINUTES_FACTOR (MSEC_PER_SEC * SEC_PER_MIN)
 #define HOURS_FACTOR   (MINUTES_FACTOR * MIN_PER_HOUR)
@@ -20,6 +21,7 @@ static int cmd_kernel_uptime(const struct shell *sh, size_t argc, char **argv)
 	int64_t hours;
 	int64_t minutes;
 	int64_t seconds;
+	uint32_t ms_of_day;
 
 	if (argc == 1) {
 		shell_print(sh, "Uptime: %llu ms", milliseconds);
@@ -32,14 +34,14 @@ static int cmd_kernel_uptime(const struct shell *sh, size_t argc, char **argv)
 		return -EIO;
 	}
 
-	days = milliseconds / DAYS_FACTOR;
-	milliseconds %= DAYS_FACTOR;
-	hours = milliseconds / HOURS_FACTOR;
-	milliseconds %= HOURS_FACTOR;
-	minutes = milliseconds / MINUTES_FACTOR;
-	milliseconds %= MINUTES_FACTOR;
-	seconds = milliseconds / MSEC_PER_SEC;
-	milliseconds = milliseconds % MSEC_PER_SEC;
+	days = sys_div64_u32_const(milliseconds, DAYS_FACTOR);
+	ms_of_day = sys_mod64_u32_const(milliseconds, DAYS_FACTOR);
+	hours = ms_of_day / HOURS_FACTOR;
+	ms_of_day %= HOURS_FACTOR;
+	minutes = ms_of_day / MINUTES_FACTOR;
+	ms_of_day %= MINUTES_FACTOR;
+	seconds = ms_of_day / MSEC_PER_SEC;
+	milliseconds = ms_of_day % MSEC_PER_SEC;
 
 	shell_print(sh,
 		    "uptime: %llu days, %llu hours, %llu minutes, %llu seconds, %llu milliseconds",

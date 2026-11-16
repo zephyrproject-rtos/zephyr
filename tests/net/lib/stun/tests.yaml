@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+# SPDX-License-Identifier: Apache-2.0
+common:
+  tags:
+    - net
+    - stun
+  min_ram: 128
+  min_flash: 192
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  net.stun: {}
+  net.stun.no_ipv6:
+    extra_configs:
+      - CONFIG_NET_IPV6=n

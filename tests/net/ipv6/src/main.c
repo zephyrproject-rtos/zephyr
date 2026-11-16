@@ -544,7 +544,7 @@ out:
 /* Ethernet interface (interface under test) */
 struct net_test_ipv6 net_test_data;
 
-static const struct ethernet_api net_test_if_api = {
+static DEVICE_API(ethernet, net_test_if_api) = {
 	.iface_api.init = net_test_iface_init,
 	.send = tester_send,
 };
@@ -593,7 +593,7 @@ static int dummy_send(const struct device *dev, struct net_pkt *pkt)
 
 struct net_test_ipv6 net_dummy_data;
 
-static const struct dummy_api net_dummy_if_api = {
+static DEVICE_API(dummy, net_dummy_if_api) = {
 		.iface_api.init = net_test_iface_init,
 		.send = dummy_send,
 };

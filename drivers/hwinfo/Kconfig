@@ -55,6 +55,7 @@ rsource "Kconfig.sam_rstc"
 rsource "Kconfig.silabs"
 rsource "Kconfig.smartbond"
 rsource "Kconfig.stm32"
+rsource "Kconfig.tle927x"
 rsource "Kconfig.wch"
 # zephyr-keep-sorted-stop
 

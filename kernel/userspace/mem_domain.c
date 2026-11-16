@@ -348,13 +348,17 @@ static int remove_thread_locked(struct k_thread *thread)
 }
 
 /* Called from thread object initialization */
-void z_mem_domain_init_thread(struct k_thread *thread)
+void z_mem_domain_init_thread(struct k_thread *thread, struct k_thread *parent)
 {
 	int ret;
 	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
 
-	/* New threads inherit memory domain configuration from parent */
-	ret = add_thread_locked(_current->mem_domain_info.mem_domain, thread);
+	/* New threads inherit memory domain configuration from parent. The
+	 * parent's domain is read with the lock held: read any earlier, the
+	 * parent could be moved to another domain and the one it was in
+	 * de-initialized before the new thread is added to it.
+	 */
+	ret = add_thread_locked(parent->mem_domain_info.mem_domain, thread);
 	__ASSERT_NO_MSG(ret == 0);
 	ARG_UNUSED(ret);
 

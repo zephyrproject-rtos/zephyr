@@ -374,9 +374,6 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif
-#if defined(CONFIG_NET_LLDP)
-		| ETHERNET_LLDP
-#endif
 		;
 }
 
@@ -598,7 +595,7 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct ethernet_api eth_api = {
+static DEVICE_API(ethernet, eth_api) = {
 	.iface_api.init = eth_iface_init,
 	.get_capabilities = eth_stm32_hal_get_capabilities,
 	.get_phy = eth_stm32_hal_get_phy,

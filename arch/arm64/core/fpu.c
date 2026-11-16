@@ -134,7 +134,7 @@ static void convert_Vx_to_Zx(struct z_arm64_fp_context *context)
 
 /*
  * Flush FPU content and disable access.
- * This is called locally and also from flush_fpu_ipi_handler().
+ * This is called locally and also from z_arm64_flush_fpu_ipi_handler().
  */
 void arch_flush_local_fpu(void)
 {

@@ -208,7 +208,7 @@ static struct modem_ppp ppp = {
 /*************************************************************************************************/
 /*                                     Modem PPP net device                                      */
 /*************************************************************************************************/
-extern const struct ppp_api modem_ppp_ppp_api;
+extern const struct ppp_driver_api modem_ppp_ppp_api;
 static const struct device ppp_net_dev = {.data = &ppp};
 static int test_net_send(struct net_pkt *pkt)
 {

@@ -1726,7 +1726,7 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 			break;
 		case WINDOW:
 			window = shell_strtoul(state->optarg, 0, &err);
-			if (interval > UINT16_MAX) {
+			if (window > UINT16_MAX) {
 				shell_error(sh, "Window value too large");
 				return -EINVAL;
 			}
@@ -2827,7 +2827,7 @@ static int cmd_per_adv_param(const struct shell *sh, size_t argc,
 
 	if (argc > 3) {
 		if (!strcmp(argv[3], "tx-power")) {
-			param.options = BT_LE_ADV_OPT_USE_TX_POWER;
+			param.options = BT_LE_PER_ADV_OPT_USE_TX_POWER;
 		} else {
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
@@ -5468,7 +5468,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(scan, NULL,
 		      "[--timeout <timeout>] [--filter-dups] [--fal] [--coded] [--no-1m] "
 		      "[--ext-filter-policy] "
-		      "[--interval <n * 0.625 ms] [--window <n * 0.625 ms>] "
+		      "[--interval <n * 0.625 ms>] [--window <n * 0.625 ms>] "
 		      "<value: on, passive, off>",
 		      cmd_scan, 2, 12),
 	SHELL_CMD(scan-filter-set, &bt_scan_filter_set_cmds,

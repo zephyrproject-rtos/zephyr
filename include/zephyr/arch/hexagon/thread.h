@@ -15,9 +15,33 @@
 /* Hexagon requires 8-byte stack alignment. */
 #define ARCH_STACK_PTR_ALIGN 8
 
+#ifdef CONFIG_HW_STACK_PROTECTION
+/*
+ * FRAMELIMIT sits at the start of a thread's stack buffer. The event
+ * frame pushed for the stack-limit exception itself lands in this area
+ * below it, so the thread keeps all of the stack size it asked for.
+ */
+#define ARCH_KERNEL_STACK_RESERVED 128
+#define ARCH_THREAD_STACK_RESERVED 128
+#endif
+
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 #include <zephyr/arch/arch_interface.h>
+#include <hexagon_vm.h>
+
+#ifdef CONFIG_USERSPACE
+/*
+ * Per-partition entry budget for the greedy largest-aligned-size-class
+ * decomposition hexagon_mem_domain_rebuild() uses to turn an arbitrary
+ * [start, start+size) range into VM_TRANS_TYPE_LINEAR entries. A
+ * well-aligned region (the common case) needs exactly one entry. The
+ * budget also covers oddly-aligned or sized regions. Running out
+ * mid-region is logged and stops early rather than treating it as
+ * fatal.
+ */
+#define HEXAGON_MEM_DOMAIN_PARTITION_ENTRIES 4
+#endif
 
 /**
  * @brief Callee-saved register context for cooperative context switching.
@@ -73,8 +97,16 @@ struct _thread_arch {
 	uint8_t flags;
 
 #ifdef CONFIG_HW_STACK_PROTECTION
-	/* Stack protection FRAMELIMIT value */
+	/*
+	 * FRAMELIMIT while this thread runs in guest (kernel) mode: set
+	 * just above its stack's lowest address, or priv_stack's once it
+	 * has entered user mode.
+	 */
 	uint32_t framelimit;
+#ifdef CONFIG_USERSPACE
+	/* FRAMELIMIT while this thread runs in user mode */
+	uint32_t user_framelimit;
+#endif
 #endif
 
 #ifdef CONFIG_USERSPACE
@@ -100,6 +132,15 @@ struct _thread_arch {
 	void *user_p1;
 	void *user_p2;
 	void *user_p3;
+
+	/*
+	 * Linear map installed while this thread runs in user mode: its own
+	 * stack, then a chain entry to its memory domain's list. map_stale
+	 * is set whenever either changes, so the next install invalidates
+	 * this map's H2 ASID.
+	 */
+	uint8_t map_stale;
+	struct hexagon_linear_entry map[CONFIG_HEXAGON_USER_STACK_ENTRIES + 1] __aligned(8);
 
 	/*
 	 * Dedicated kernel-mode stack used while executing in kernel mode

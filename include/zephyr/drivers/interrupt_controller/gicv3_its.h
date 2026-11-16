@@ -16,45 +16,162 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GICV3_ITS_H_
 #define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GICV3_ITS_H_
 
+/**
+ * @brief Callback type for allocating an INTID.
+ *
+ * @param dev ITS device instance.
+ *
+ * @return The allocated INTID.
+ */
 typedef unsigned int (*its_api_alloc_intid_t)(const struct device *dev);
+
+/**
+ * @brief Callback type for setting up a device ID.
+ *
+ * @param dev ITS device instance.
+ * @param device_id Device ID of the endpoint.
+ * @param nites Number of ITEs to allocate for the device.
+ *
+ * @retval 0 Device ID set up.
+ * @retval -EINVAL Device ID does not fit in the indirect device table.
+ * @retval -ENOMEM Memory allocation failed.
+ * @retval -EBUSY ITS command queue is full.
+ * @retval -ETIMEDOUT ITS command processing timed out.
+ */
 typedef int (*its_api_setup_deviceid_t)(const struct device *dev, uint32_t device_id,
 					unsigned int nites);
+
+/**
+ * @brief Callback type for mapping an EventID to an INTID.
+ *
+ * @param dev ITS device instance.
+ * @param device_id Device ID of the endpoint.
+ * @param event_id Event ID to map.
+ * @param intid INTID the EventID is mapped to.
+ *
+ * @retval 0 EventID mapped to INTID.
+ * @retval -EINVAL INTID is less than 8192.
+ * @retval -EBUSY ITS command queue is full.
+ * @retval -ETIMEDOUT ITS command processing timed out.
+ */
 typedef int (*its_api_map_intid_t)(const struct device *dev, uint32_t device_id,
 				   uint32_t event_id, unsigned int intid);
-typedef int (*its_api_send_int_t)(const struct device *dev, uint32_t device_id, uint32_t event_id);
-typedef uint32_t (*its_api_get_msi_addr_t)(const struct device *dev);
 
+/**
+ * @brief Callback type for sending an interrupt.
+ *
+ * @param dev ITS device instance.
+ * @param device_id Device ID of the endpoint.
+ * @param event_id Event ID to trigger.
+ *
+ * @retval 0 Interrupt command completed.
+ * @retval -EBUSY ITS command queue is full.
+ * @retval -ETIMEDOUT ITS command processing timed out.
+ */
+typedef int (*its_api_send_int_t)(const struct device *dev, uint32_t device_id, uint32_t event_id);
+
+/**
+ * @brief Callback type for retrieving the physical MSI target address.
+ *
+ * @param dev ITS device instance.
+ *
+ * @return The physical MSI target address.
+ */
+typedef uint64_t (*its_api_get_msi_addr_t)(const struct device *dev);
+
+/**
+ * @brief ITS driver API.
+ */
 __subsystem struct its_driver_api {
+	/** @brief Allocate an INTID. */
 	its_api_alloc_intid_t alloc_intid;
+	/** @brief Set up a device ID. */
 	its_api_setup_deviceid_t setup_deviceid;
+	/** @brief Map an EventID to an INTID. */
 	its_api_map_intid_t map_intid;
+	/** @brief Send an interrupt. */
 	its_api_send_int_t send_int;
+	/** @brief Get the physical MSI target address. */
 	its_api_get_msi_addr_t get_msi_addr;
 };
 
+/**
+ * @brief Allocate an INTID for an ITS device.
+ *
+ * @param dev ITS device instance.
+ *
+ * @return The allocated INTID.
+ */
 static inline int its_alloc_intid(const struct device *dev)
 {
 	return DEVICE_API_GET(its, dev)->alloc_intid(dev);
 }
 
+/**
+ * @brief Set up a device ID for an ITS device.
+ *
+ * @param dev ITS device instance.
+ * @param device_id Device ID of the endpoint.
+ * @param nites Number of ITEs to allocate for the device.
+ *
+ * @retval 0 Device ID set up.
+ * @retval -EINVAL Device ID does not fit in the indirect device table.
+ * @retval -ENOMEM Memory allocation failed.
+ * @retval -EBUSY ITS command queue is full.
+ * @retval -ETIMEDOUT ITS command processing timed out.
+ */
 static inline int its_setup_deviceid(const struct device *dev, uint32_t device_id,
 				     unsigned int nites)
 {
 	return DEVICE_API_GET(its, dev)->setup_deviceid(dev, device_id, nites);
 }
 
+/**
+ * @brief Map an EventID to an INTID.
+ *
+ * @param dev ITS device instance.
+ * @param device_id Device ID of the endpoint.
+ * @param event_id Event ID to map.
+ * @param intid INTID the EventID is mapped to.
+ *
+ * @retval 0 EventID mapped to INTID.
+ * @retval -EINVAL INTID is less than 8192.
+ * @retval -EBUSY ITS command queue is full.
+ * @retval -ETIMEDOUT ITS command processing timed out.
+ */
 static inline int its_map_intid(const struct device *dev, uint32_t device_id,
 				uint32_t event_id, unsigned int intid)
 {
 	return DEVICE_API_GET(its, dev)->map_intid(dev, device_id, event_id, intid);
 }
 
+/**
+ * @brief Send an interrupt for an EventID.
+ *
+ * @param dev ITS device instance.
+ * @param device_id Device ID of the endpoint.
+ * @param event_id Event ID to trigger.
+ *
+ * @retval 0 Interrupt command completed.
+ * @retval -EBUSY ITS command queue is full.
+ * @retval -ETIMEDOUT ITS command processing timed out.
+ */
 static inline int its_send_int(const struct device *dev, uint32_t device_id, uint32_t event_id)
 {
 	return DEVICE_API_GET(its, dev)->send_int(dev, device_id, event_id);
 }
 
-static inline uint32_t its_get_msi_addr(const struct device *dev)
+/**
+ * @brief Get the physical MSI target address for an ITS device.
+ *
+ * The return type is 64 bits wide on all targets. The address value may
+ * still be limited by the provider's underlying address width.
+ *
+ * @param dev ITS device instance.
+ *
+ * @return The physical MSI target address.
+ */
+static inline uint64_t its_get_msi_addr(const struct device *dev)
 {
 	return DEVICE_API_GET(its, dev)->get_msi_addr(dev);
 }

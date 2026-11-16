@@ -434,8 +434,9 @@ static int http1_add_headers(struct http_client_ctx *client, struct http1_header
 		return -EINVAL;
 	}
 
-	header_template = is_client_http10(client) ? RESPONSE_TEMPLATE_DYNAMIC_HTTP_10_COMPATIBLE
-						   : RESPONSE_TEMPLATE_DYNAMIC_PART1;
+	header_template = is_client_http10(client) || client->http1_no_body
+				  ? RESPONSE_TEMPLATE_DYNAMIC_HTTP_10_COMPATIBLE
+				  : RESPONSE_TEMPLATE_DYNAMIC_PART1;
 
 	/* Response code and transfer encoding, the buffer is still empty here */
 	snprintk(buf->data, sizeof(buf->data), header_template, status,
@@ -516,6 +517,10 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 			rsp->status = 200;
 		}
 
+		/* These responses end with the header section, see RFC 9112, section 6.3 */
+		client->http1_no_body = rsp->status == HTTP_204_NO_CONTENT ||
+					rsp->status == HTTP_304_NOT_MODIFIED;
+
 		ret = http1_add_headers(client, &header_buf, rsp->status, rsp->headers,
 					rsp->header_count, dynamic_detail);
 		if (ret < 0) {
@@ -534,8 +539,12 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 			(struct net_iovec){.iov_base = header_buf.data, .iov_len = header_buf.len};
 	}
 
+	if (client->http1_no_body && rsp->body != NULL && rsp->body_len > 0) {
+		LOG_WRN("Response status does not allow a body, dropping body data");
+	}
+
 	/* Send body data if provided */
-	if (rsp->body != NULL && rsp->body_len > 0) {
+	if (rsp->body != NULL && rsp->body_len > 0 && !client->http1_no_body) {
 
 		/* Check if the client expects HTTP/1.0 compatible response */
 		if (!is_client_http10(client)) {
@@ -553,8 +562,9 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 		}
 	}
 
-	/* HTTP/1.0 client does not expect the terminating chunk */
-	if (http_response_is_final(rsp, status) && !is_client_http10(client)) {
+	/* HTTP/1.0 client and a response without body do not expect the terminating chunk */
+	if (http_response_is_final(rsp, status) && !is_client_http10(client) &&
+	    !client->http1_no_body) {
 		iov[iovlen++] = (struct net_iovec){.iov_base = (void *)final_chunk,
 						   .iov_len = sizeof(final_chunk) - 1};
 	}
@@ -803,9 +813,20 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 	/* read and send file */
 	remaining = file_size;
 	while (remaining > 0) {
-		len = fs_read(&file, http_response, sizeof(http_response));
+		/* Never send more than the announced Content-Length, even if
+		 * the file has grown since fs_stat().
+		 */
+		len = fs_read(&file, http_response,
+			      MIN((size_t)remaining, sizeof(http_response)));
 		if (len < 0) {
 			LOG_ERR("Filesystem read error (%d)", len);
+			ret = len;
+			goto close;
+		}
+
+		if (len == 0) {
+			LOG_ERR("File shorter than announced size (%d bytes left)", remaining);
+			ret = -EIO;
 			goto close;
 		}
 
@@ -1151,8 +1172,19 @@ static int on_body(struct http_parser *parser, const char *at, size_t length)
 	struct http_client_ctx *ctx = CONTAINER_OF(parser,
 						   struct http_client_ctx,
 						   parser);
+	size_t offset = (const unsigned char *)at - ctx->cursor;
 
 	ctx->parser_state = HTTP1_RECEIVING_DATA_STATE;
+
+	/* Chunked encoding puts framing between the chunks; gather their data in
+	 * one block. The bytes overwritten have already been parsed.
+	 */
+	if (ctx->http1_frag_data_len == 0) {
+		ctx->http1_frag_data_offset = offset;
+	} else {
+		memmove(ctx->cursor + ctx->http1_frag_data_offset + ctx->http1_frag_data_len,
+			ctx->cursor + offset, length);
+	}
 
 	ctx->http1_frag_data_len += length;
 
@@ -1185,6 +1217,7 @@ int enter_http1_request(struct http_client_ctx *client)
 	client->parser_settings.on_message_complete = on_message_complete;
 	client->parser_state = HTTP1_INIT_HEADER_STATE;
 	client->http1_headers_sent = false;
+	client->http1_no_body = false;
 
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
 		client->header_capture_ctx.store_next_value = false;
@@ -1201,6 +1234,7 @@ int handle_http1_request(struct http_client_ctx *client)
 	int ret, path_len = 0;
 	struct http_resource_detail *detail;
 	bool skip_headers = (client->parser_state < HTTP1_RECEIVING_DATA_STATE);
+	size_t frag_skip_len;
 	size_t parsed;
 
 	LOG_DBG("HTTP_SERVER_REQUEST");
@@ -1234,30 +1268,32 @@ int handle_http1_request(struct http_client_ctx *client)
 
 	if (skip_headers) {
 		LOG_DBG("Requested URL: %s", client->url_buffer);
-
-		size_t frag_headers_len;
-
-		if (parsed < client->http1_frag_data_len) {
-			ret = -EBADMSG;
-			goto error;
-		}
-
-		frag_headers_len = parsed - client->http1_frag_data_len;
-		parsed -= frag_headers_len;
-
-		client->cursor += frag_headers_len;
-		client->data_len -= frag_headers_len;
 	}
 
-	if (client->has_upgrade_header) {
-		static const char upgrade_required[] =
-			"HTTP/1.1 426 Upgrade required\r\n"
-			"Upgrade: ";
-		static const char upgrade_msg[] =
-			"Content-Length: 13\r\n\r\n"
-			"Wrong upgrade";
-		const char *needed_upgrade = "h2c\r\n";
+	if (parsed < client->http1_frag_data_len) {
+		ret = -EBADMSG;
+		goto error;
+	}
 
+	/* Move the payload to the end of the parsed bytes and skip what precedes
+	 * it: headers, chunk framing, or both.
+	 */
+	if (client->http1_frag_data_len > 0) {
+		memmove(client->cursor + parsed - client->http1_frag_data_len,
+			client->cursor + client->http1_frag_data_offset,
+			client->http1_frag_data_len);
+	}
+
+	frag_skip_len = parsed - client->http1_frag_data_len;
+	parsed -= frag_skip_len;
+
+	client->cursor += frag_skip_len;
+	client->data_len -= frag_skip_len;
+
+	/* An upgrade to a protocol that is not supported, and any Upgrade in an
+	 * HTTP/1.0 request, is ignored, and the request is served over HTTP/1.
+	 */
+	if (client->has_upgrade_header && !is_client_http10(client)) {
 		if (client->websocket_upgrade) {
 			if (IS_ENABLED(CONFIG_HTTP_SERVER_WEBSOCKET)) {
 				detail = get_resource_detail(client->service, client->url_buffer,
@@ -1276,8 +1312,6 @@ int handle_http1_request(struct http_client_ctx *client)
 
 				return 0;
 			}
-
-			goto upgrade_not_found;
 		}
 
 		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) && client->http2_upgrade) {
@@ -1287,30 +1321,6 @@ int handle_http1_request(struct http_client_ctx *client)
 			}
 
 			return 0;
-		}
-
-upgrade_not_found:
-		ret = http_server_sendall(client, upgrade_required,
-					  sizeof(upgrade_required) - 1);
-		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
-			goto error;
-		}
-
-		client->http1_headers_sent = true;
-
-		ret = http_server_sendall(client, needed_upgrade,
-					  strlen(needed_upgrade));
-		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
-			goto error;
-		}
-
-		ret = http_server_sendall(client, upgrade_msg,
-					  sizeof(upgrade_msg) - 1);
-		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
-			goto error;
 		}
 	}
 

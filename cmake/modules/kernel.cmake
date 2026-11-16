@@ -47,7 +47,11 @@ Targets
 
 .. cmake:variable:: code_data_relocation_target
 
-   Custom target for code data relocation.
+   Custom target for code data relocation. Its ``INTERFACE_LINK_OPTIONS`` property
+   stores newline-separated directives from ``zephyr_code_relocate()`` for the
+   linker backend, using CMake's native recursive generator-expression evaluation.
+   This metadata-only target must not be linked to other targets: its property
+   contains relocation directives, not linker command-line options.
 
 
 .. cmake:variable:: app

@@ -6,6 +6,9 @@ if SOC_ESP32P4_HPCORE
 config FPU
 	default y
 
+configdefault RISCV_IMPRECISE_FPU_STATE_TRACKING
+	default y
+
 config NUM_IRQS
 	# 32 CPU interrupt lines plus RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET.
 	default 48

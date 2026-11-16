@@ -535,7 +535,7 @@ static const struct bt_mesh_prov prov = {
 #else
 	.output_size = 0,
 	.output_actions = 0,
-	.output_number = 0,
+	.output_numeric = NULL,
 #endif
 	.complete = prov_complete,
 	.reset = prov_reset,

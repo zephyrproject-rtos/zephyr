@@ -21,6 +21,15 @@ tests:
       - native_sim
       - native_sim/native/64
 
+  drivers.audio.build.i2s.alsa:
+    extra_args: DTC_OVERLAY_FILE="i2s_devices.overlay"
+    extra_configs:
+      - CONFIG_I2S=y
+      - CONFIG_I2S_NATIVE_SIM_ALSA=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+
   drivers.audio.build.spi:
     extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
     extra_configs:
@@ -31,4 +40,5 @@ tests:
 
   drivers.audio.build.dmic:
     platform_allow:
+      - nucleo_f413zh
       - stm32u5g9j_dk2/stm32u5g9xx

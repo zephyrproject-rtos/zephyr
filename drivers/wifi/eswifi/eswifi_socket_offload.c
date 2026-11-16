@@ -622,31 +622,41 @@ int eswifi_socket_create(int family, int type, int proto)
 	return fd;
 }
 
+static int eswifi_socket_poll_prepare(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(pfd);
+	ARG_UNUSED(pev);
+	ARG_UNUSED(pev_end);
+
+	return -EXDEV;
+}
+
+static int eswifi_socket_poll_update(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(pfd);
+	ARG_UNUSED(pev);
+
+	return -EOPNOTSUPP;
+}
+
+static int eswifi_socket_poll_offload(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+
+	return eswifi_socket_poll(fds, nfds, timeout);
+}
+
 static int eswifi_socket_ioctl(void *obj, unsigned int request, va_list args)
 {
-	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE:
-		return -EXDEV;
+	ARG_UNUSED(obj);
+	ARG_UNUSED(request);
+	ARG_UNUSED(args);
 
-	case ZFD_IOCTL_POLL_UPDATE:
-		return -EOPNOTSUPP;
-
-	case ZFD_IOCTL_POLL_OFFLOAD: {
-		struct zsock_pollfd *fds;
-		int nfds;
-		int timeout;
-
-		fds = va_arg(args, struct zsock_pollfd *);
-		nfds = va_arg(args, int);
-		timeout = va_arg(args, int);
-
-		return eswifi_socket_poll(fds, nfds, timeout);
-	}
-
-	default:
-		errno = EINVAL;
-		return -1;
-	}
+	errno = EINVAL;
+	return -1;
 }
 
 static ssize_t eswifi_socket_read(void *obj, void *buffer, size_t count)
@@ -666,6 +676,9 @@ static const struct socket_op_vtable eswifi_socket_fd_op_vtable = {
 		.write = eswifi_socket_write,
 		.close = eswifi_socket_close,
 		.ioctl = eswifi_socket_ioctl,
+		.poll_prepare = eswifi_socket_poll_prepare,
+		.poll_update = eswifi_socket_poll_update,
+		.poll_offload = eswifi_socket_poll_offload,
 	},
 	.bind = eswifi_socket_bind,
 	.connect = eswifi_socket_connect,

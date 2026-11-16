@@ -13,7 +13,6 @@ config INPUT_BEE_KEYSCAN
 
 config BEE_INPUT_KEYSCAN_AUTOSCAN_MODE
 	bool "Config scanmode for bee keyscan"
-	default n
 	depends on INPUT_BEE_KEYSCAN
 	help
 	  In auto mode, scanning is triggered by hardware, resulting in shorter and more precise intervals.

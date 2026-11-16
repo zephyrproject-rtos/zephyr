@@ -189,7 +189,6 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
-    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
 ]
 "./scripts/dts/python-devicetree/tests/test_edtlib.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
@@ -254,7 +253,6 @@
 ]
 "./scripts/kconfig/guiconfig.py" = [
     "B006",     # https://docs.astral.sh/ruff/rules/mutable-argument-default
-    "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F403",     # https://docs.astral.sh/ruff/rules/undefined-local-with-import-star
     "F405",     # https://docs.astral.sh/ruff/rules/undefined-local-with-import-star-usage
@@ -270,7 +268,6 @@
 "./scripts/kconfig/kconfiglib.py" = [
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "F841",     # https://docs.astral.sh/ruff/rules/unused-variable
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
@@ -293,7 +290,6 @@
     "UP010",    # https://docs.astral.sh/ruff/rules/unnecessary-future-import
     "UP024",    # https://docs.astral.sh/ruff/rules/os-error-alias
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
-    "UP036",    # https://docs.astral.sh/ruff/rules/outdated-version-block
 ]
 "./scripts/net/enumerate_http_status.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -518,7 +514,6 @@
     "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
-    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
 ]
 "./scripts/west_commands/fetchers/__init__.py" = [
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
@@ -535,7 +530,6 @@
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM114",   # https://docs.astral.sh/ruff/rules/if-with-same-arms
@@ -593,7 +587,6 @@
 ]
 "./scripts/west_commands/tests/test_nrf.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
 ]
 "./scripts/west_commands/tests/test_nxp_s32dbg.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
@@ -683,10 +676,6 @@
 "./soc/silabs/silabs_sim3/sim3u/gen_crossbar_config.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
 ]
-"./tests/boot/with_mcumgr/pytest/west_sign_wrapper.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
-]
 "./tests/kernel/timer/timer_behavior/pytest/saleae_logic2.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -736,10 +725,6 @@
     "E402",     # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-]
-"./tests/ztest/ztest_param/pytest/test_parameters.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
 
@@ -837,7 +822,6 @@ exclude = [
     "./scripts/pylib/twister/twisterlib/testsuite.py",
     "./scripts/pylint/checkers/argparse-checker.py",
     "./scripts/release/bug_bash.py",
-    "./scripts/release/list_backports.py",
     "./scripts/release/list_devicetree_bindings_changes.py",
     "./scripts/snippets.py",
     "./scripts/tests/twister/conftest.py",
@@ -921,7 +905,6 @@ exclude = [
     "./scripts/west_commands/runners/teensy.py",
     "./scripts/west_commands/runners/trace32.py",
     "./scripts/west_commands/runners/uf2.py",
-    "./scripts/west_commands/runners/xsdb.py",
     "./scripts/west_commands/runners/xtensa.py",
     "./scripts/west_commands/sdk.py",
     "./scripts/west_commands/shields.py",
@@ -959,9 +942,7 @@ exclude = [
     "./soc/silabs/silabs_sim3/sim3u/gen_crossbar_config.py",
     "./tests/bluetooth/classic/gap_s/pytest/test_gap_s.py",
     "./tests/bluetooth/classic/sdp_s/pytest/test_sdp.py",
-    "./tests/boot/with_mcumgr/pytest/test_downgrade_prevention.py",
     "./tests/boot/with_mcumgr/pytest/test_upgrade.py",
-    "./tests/boot/with_mcumgr/pytest/west_sign_wrapper.py",
     "./tests/kernel/timer/timer_behavior/pytest/saleae_logic2.py",
     "./tests/kernel/timer/timer_behavior/pytest/test_timer.py",
     "./tests/lib/devicetree/memory_region_flags/pytest/test_memory_region_flags.py",
@@ -975,5 +956,4 @@ exclude = [
     "./tests/net/socket/tls_configurations/pytest/test_app_vs_openssl.py",
     "./tests/net/socket/udp/generate-c-string.py",
     "./tests/subsys/debug/gdbstub/pytest/test_gdbstub.py",
-    "./tests/ztest/ztest_param/pytest/test_parameters.py",
 ]

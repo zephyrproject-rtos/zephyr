@@ -266,7 +266,7 @@ static int eth_vlan_set_config(const struct device *dev __unused,
 	return 0;
 }
 
-static const struct ethernet_api api_funcs = {
+static DEVICE_API(ethernet, api_funcs) = {
 	.iface_api.init = eth_vlan_iface_init,
 
 	.get_capabilities = eth_vlan_capabilities,
@@ -333,7 +333,7 @@ static enum ethernet_hw_caps eth_vlan_embed_ll_hdr_capabilities(const struct dev
 	return ETHERNET_HW_VLAN;
 }
 
-static const struct ethernet_api api_vlan_embed_ll_hdr_funcs = {
+static DEVICE_API(ethernet, api_vlan_embed_ll_hdr_funcs) = {
 	.iface_api.init = eth_vlan_iface_init,
 
 	.get_capabilities = eth_vlan_embed_ll_hdr_capabilities,
@@ -384,7 +384,7 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 struct net_if_test net_iface1_data;
 struct net_if_test net_iface2_data;
 
-static const struct dummy_api net_iface_api = {
+static DEVICE_API(dummy, net_iface_api) = {
 	.iface_api.init = net_iface_init,
 	.send = sender_iface,
 };

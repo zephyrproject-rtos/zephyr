@@ -19,6 +19,7 @@
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -28,6 +29,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -129,5 +131,13 @@
 };
 
 &trng {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
+&wdt0 {
 	status = "okay";
 };

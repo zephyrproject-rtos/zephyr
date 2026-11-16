@@ -299,6 +299,7 @@ static const struct stm32_dcmipp_input_fmt {
 	INPUT_FMT(SGRBG14P, RAW14, 14, RAW14), INPUT_FMT(SRGGB14P, RAW14, 14, RAW14),
 	INPUT_FMT(RGB565, RGB565, 8, RGB565),
 	INPUT_FMT(YUYV, YUV422, 8, YUV422_8),
+	INPUT_FMT(RGB24, RGB888, 8, RGB888),
 };
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
@@ -438,6 +439,8 @@ static int stm32_dcmipp_conf_csi(const struct device *dev, uint32_t dcmipp_csi_b
 	}
 
 	phy_bitrate /= MHZ(1);
+	/* CSI use DDR hence each lane bitrate is twice the frequency */
+	phy_bitrate *= 2;
 
 	for (i = 0; i < ARRAY_SIZE(stm32_dcmipp_bitrate); i++) {
 		if (stm32_dcmipp_bitrate[i].rate >= phy_bitrate) {

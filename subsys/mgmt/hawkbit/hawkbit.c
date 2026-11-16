@@ -919,12 +919,17 @@ int hawkbit_init(void)
 	return ret;
 }
 
-static void response_json_cb(struct http_response *rsp, enum http_final_call final_data,
-			     struct hawkbit_context *hb_context)
+static int response_json_cb(struct http_response *rsp, enum http_final_call final_data,
+			    struct hawkbit_context *hb_context)
 {
 	size_t body_len;
+	size_t new_size;
 	int ret;
 	uint8_t *body_data = NULL, *rsp_tmp = NULL;
+
+	if (hb_context->code_status == HAWKBIT_ALLOC_ERROR) {
+		return -ENOMEM;
+	}
 
 	if (hb_context->dl.http_content_size == 0) {
 		hb_context->dl.http_content_size = rsp->content_length;
@@ -934,19 +939,17 @@ static void response_json_cb(struct http_response *rsp, enum http_final_call fin
 		body_data = rsp->body_frag_start;
 		body_len = rsp->body_frag_len;
 
-		if ((hb_context->dl.downloaded_size + body_len + 1) >
-		    hb_context->response_data_size) {
-			hb_context->response_data_size =
-				hb_context->dl.downloaded_size + body_len + 1;
-			rsp_tmp = k_realloc(hb_context->response_data,
-					    hb_context->response_data_size);
+		new_size = hb_context->dl.downloaded_size + body_len + 1;
+		if (new_size > hb_context->response_data_size) {
+			rsp_tmp = k_realloc(hb_context->response_data, new_size);
 			if (rsp_tmp == NULL) {
 				LOG_ERR("Failed to realloc memory");
 				hb_context->code_status = HAWKBIT_ALLOC_ERROR;
-				return;
+				return -ENOMEM;
 			}
 
 			hb_context->response_data = rsp_tmp;
+			hb_context->response_data_size = new_size;
 		}
 		memcpy(&hb_context->response_data[hb_context->dl.downloaded_size], body_data,
 		       body_len);
@@ -958,7 +961,7 @@ static void response_json_cb(struct http_response *rsp, enum http_final_call fin
 			LOG_ERR("HTTP response len mismatch, expected %d, got %d",
 				hb_context->dl.http_content_size, hb_context->dl.downloaded_size);
 			hb_context->code_status = HAWKBIT_METADATA_ERROR;
-			return;
+			return 0;
 		}
 
 		hb_context->response_data[hb_context->dl.downloaded_size] = '\0';
@@ -983,6 +986,8 @@ static void response_json_cb(struct http_response *rsp, enum http_final_call fin
 			}
 		}
 	}
+
+	return 0;
 }
 
 static void response_download_cb(struct http_response *rsp, enum http_final_call final_data,
@@ -1059,8 +1064,7 @@ static int response_cb(struct http_response *rsp, enum http_final_call final_dat
 	switch (hb_context->type) {
 	case HAWKBIT_PROBE:
 	case HAWKBIT_PROBE_DEPLOYMENT_BASE:
-		response_json_cb(rsp, final_data, hb_context);
-		break;
+		return response_json_cb(rsp, final_data, hb_context);
 
 	case HAWKBIT_DOWNLOAD:
 		response_download_cb(rsp, final_data, hb_context);
@@ -1181,7 +1185,9 @@ static bool send_request(struct hawkbit_context *hb_context, enum hawkbit_http_r
 	ret = http_client_req(hb_context->sock, &http_req, HAWKBIT_RECV_TIMEOUT, hb_context);
 	if (ret < 0) {
 		LOG_ERR("Failed to send request: %d", ret);
-		hb_context->code_status = HAWKBIT_NETWORKING_ERROR;
+		if (hb_context->code_status != HAWKBIT_ALLOC_ERROR) {
+			hb_context->code_status = HAWKBIT_NETWORKING_ERROR;
+		}
 		return false;
 	}
 

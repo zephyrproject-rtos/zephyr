@@ -261,6 +261,7 @@ facebook	Facebook (deprecated, use meta)
 fairphone	Fairphone B.V.
 fanke	FANKE Technology Co., Ltd.
 faraday	Faraday Technology Corporation
+fastbit	Fastbit Embedded Technologies
 fastrax	Fastrax Oy
 fcs	Fairchild Semiconductor
 feixin	Shenzhen Feixin Photoelectic Co., Ltd
@@ -511,6 +512,7 @@ netsol	Netsol, CO., LTD
 netxeon	Shenzhen Netxeon Technology CO., LTD
 neweast	Guangdong Neweast Optoelectronics CO., LTD
 newhaven	Newhaven Display International
+newvision	New Vision Display (Shenzhen) Co., Ltd.
 nexbox	Nexbox
 nextthing	Next Thing Co.
 ni	National Instruments

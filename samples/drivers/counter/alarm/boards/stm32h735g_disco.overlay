@@ -5,6 +5,7 @@
 
 &timers2 {
 	st,prescaler = <83>;
+	status = "okay";
 
 	counter {
 		status = "okay";

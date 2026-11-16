@@ -16,6 +16,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flash_controller;
+		zephyr,crc = &crc;
 	};
 };
 
@@ -52,4 +53,8 @@
 &lfxt {
 	clock-frequency = <32768>;
 	ti,xtal-startup-delay-us = <640000>;
+};
+
+&crc {
+	status = "okay";
 };

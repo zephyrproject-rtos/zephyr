@@ -273,9 +273,10 @@ __weak void clock_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Flexio0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(flexio0), ip_source));
 #endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet_ptp_clock))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet_mac)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet_ptp_clock))
 	CLOCK_SetIpSrc(kCLOCK_Enet,
-		       DT_CLOCKS_CELL(DT_NODELABEL(enet_ptp_clock), ip_source));
+		       DT_CLOCKS_CELL(DT_NODELABEL(enet), ip_source));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
 	/* Set RTC clock source to LPO32K_CLK */

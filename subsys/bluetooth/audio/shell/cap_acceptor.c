@@ -197,6 +197,11 @@ static int cmd_cap_acceptor_lock(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
+	if (cap_csip_svc_inst == NULL) {
+		shell_error(sh, "CAP acceptor not registered");
+		return -ENOEXEC;
+	}
+
 	err = bt_csip_set_member_lock(cap_csip_svc_inst, true, false);
 	if (err != 0) {
 		shell_error(sh, "Failed to set lock: %d", err);
@@ -223,6 +228,11 @@ static int cmd_cap_acceptor_release(const struct shell *sh, size_t argc,
 
 			return -ENOEXEC;
 		}
+	}
+
+	if (cap_csip_svc_inst == NULL) {
+		shell_error(sh, "CAP acceptor not registered");
+		return -ENOEXEC;
 	}
 
 	err = bt_csip_set_member_lock(cap_csip_svc_inst, false, force);
@@ -328,9 +338,11 @@ static int cmd_cap_acceptor_sirk_rsp(const struct shell *sh, size_t argc, char *
 
 static int cmd_cap_acceptor(const struct shell *sh, size_t argc, char **argv)
 {
-	ARG_UNUSED(argc);
-
-	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
+	if (argc > 1) {
+		shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
+	} else {
+		shell_error(sh, "%s Missing subcommand", argv[0]);
+	}
 
 	return -ENOEXEC;
 }

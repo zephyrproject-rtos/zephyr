@@ -8,4 +8,4 @@ config MEMC_SMARTBOND
 	depends on DT_HAS_RENESAS_SMARTBOND_NOR_PSRAM_ENABLED
 	default y
 	help
-		Enable Smartbond NOR/PSRAM memory controller.
+	  Enable Smartbond NOR/PSRAM memory controller.

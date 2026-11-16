@@ -156,8 +156,8 @@ static int ptp_clock_nxp_enet_correction(uint32_t clock_rate, double ratio, int 
 		ENET_ATCOR_COR_MASK >> ENET_ATCOR_COR_SHIFT, inc_corr, cor);
 }
 
-static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
-					double ratio)
+static int ptp_clock_nxp_enet_adjust_rate(const struct device *dev,
+					int64_t scaled_ppm)
 {
 	const struct ptp_clock_nxp_enet_config *config = dev->config;
 	struct ptp_clock_nxp_enet_data *data = dev->data;
@@ -165,6 +165,7 @@ static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 	uint32_t cor;
 	uint32_t inc;
 	unsigned int key;
+	double ratio;
 	int inc_corr;
 	int ret;
 
@@ -172,12 +173,9 @@ static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 		return -ENODEV;
 	}
 
-	/*
-	 * Do not let a servo that went out of control reach the timer. Written so that a ratio
-	 * that is not a number is rejected too.
-	 */
-	if (!((ratio <= 1.0 + CONFIG_PTP_CLOCK_NXP_ENET_MAX_RATIO_PPM * 1.0e-6) &&
-	      (ratio >= 1.0 - CONFIG_PTP_CLOCK_NXP_ENET_MAX_RATIO_PPM * 1.0e-6))) {
+	/* Do not let a servo that went out of control reach the timer. */
+	if ((scaled_ppm > CONFIG_PTP_CLOCK_NXP_ENET_MAX_RATIO_PPM * PTP_CLOCK_SCALED_PPM_ONE) ||
+	    (scaled_ppm < -CONFIG_PTP_CLOCK_NXP_ENET_MAX_RATIO_PPM * PTP_CLOCK_SCALED_PPM_ONE)) {
 		return -EINVAL;
 	}
 
@@ -201,6 +199,8 @@ static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 				  enet_ref_pll_rate, inc);
 		return -EIO;
 	}
+
+	ratio = 1.0 + (double)scaled_ppm / (1000000.0 * PTP_CLOCK_SCALED_PPM_ONE);
 
 	/* There is no early return for a ratio of 1.0, the fractional tick still needs a value */
 	if (ptp_clock_nxp_enet_correction(enet_ref_pll_rate, ratio, &inc_corr, &cor) != 0) {
@@ -324,7 +324,7 @@ static DEVICE_API(ptp_clock, ptp_clock_nxp_enet_api) = {
 	.set = ptp_clock_nxp_enet_set,
 	.get = ptp_clock_nxp_enet_get,
 	.adjust = ptp_clock_nxp_enet_adjust,
-	.rate_adjust = ptp_clock_nxp_enet_rate_adjust,
+	.adjust_rate = ptp_clock_nxp_enet_adjust_rate,
 };
 
 #define PTP_CLOCK_NXP_ENET_INIT(n)						\

@@ -8,10 +8,13 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/fs/virtiofs.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/posix/fcntl.h>
 #include "../fs_impl.h"
 #include <string.h>
 #include "virtiofs.h"
+
+LOG_MODULE_DECLARE(virtiofs, CONFIG_VIRTIOFS_LOG_LEVEL);
 
 #define MODE_FTYPE_MASK 0170000
 #define MODE_FTYPE_DIR 040000
@@ -172,6 +175,9 @@ static int virtiofs_zfs_open(struct fs_file_t *filp, const char *fs_path, fs_mod
 	);
 	if (ret == 0) {
 		ret = virtiofs_zfs_open_existing(filp, lookup_ret, flags & ~FS_O_CREATE);
+		if (ret != 0) {
+			virtiofs_forget(filp->mp->storage_dev, lookup_ret.nodeid, 1);
+		}
 	} else if ((flags & FS_O_CREATE) && parent_inode != 0) {
 		ret = virtiofs_zfs_open_create(filp, flags, path, parent_inode);
 	} else {
@@ -183,10 +189,6 @@ static int virtiofs_zfs_open(struct fs_file_t *filp, const char *fs_path, fs_mod
 
 	if (parent_inode != 0) {
 		virtiofs_forget(filp->mp->storage_dev, parent_inode, 1);
-	}
-
-	if (ret != 0) {
-		virtiofs_forget(filp->mp->storage_dev, lookup_ret.nodeid, 1);
 	}
 
 	return ret;
@@ -284,6 +286,14 @@ static ssize_t virtio_zfs_write(struct fs_file_t *filp, const void *src, size_t 
 	struct virtiofs_fs_data *fs_data = filp->mp->fs_data;
 	const uint8_t *curr_addr = src;
 	int write_c = 0;
+
+	if (nbytes == 0U) {
+		return 0;
+	}
+
+	if (fs_data->max_write == 0U) {
+		return -ENOTSUP;
+	}
 
 	while (nbytes > 0) {
 		/*
@@ -385,13 +395,19 @@ static int virtiofs_zfs_opendir(struct fs_dir_t *dirp, const char *fs_path)
 	struct virtiofs_dir *dir;
 	struct fuse_entry_out lookup_ret;
 	const char *path = virtiofs_strip_prefix(fs_path, dirp->mp);
+	uint64_t parent_inode = FUSE_ROOT_INODE;
 
 	if (path[0] == '\0') {
 		/* looking up for "" or "/" yields nothing, so we have to use "." for root dir */
 		path = ".";
 	}
 
-	ret = virtiofs_lookup(dirp->mp->storage_dev, FUSE_ROOT_INODE, path, &lookup_ret, NULL);
+	ret = virtiofs_lookup(dirp->mp->storage_dev, FUSE_ROOT_INODE, path, &lookup_ret,
+			      &parent_inode);
+	if (parent_inode != 0) {
+		virtiofs_forget(dirp->mp->storage_dev, parent_inode, 1);
+	}
+
 	if (ret == 0) {
 		struct fuse_open_out open_ret;
 
@@ -409,9 +425,9 @@ static int virtiofs_zfs_opendir(struct fs_dir_t *dirp, const char *fs_path)
 			dir->nodeid = lookup_ret.nodeid;
 			dir->offset = 0;
 			dirp->dirp = dir;
+		} else {
+			virtiofs_forget(dirp->mp->storage_dev, lookup_ret.nodeid, 1);
 		}
-	} else {
-		virtiofs_forget(dirp->mp->storage_dev, lookup_ret.nodeid, 1);
 	}
 
 	return ret;
@@ -493,6 +509,10 @@ static int virtiofs_zfs_mount(struct fs_mount_t *mountp)
 
 	if (ret == 0) {
 		struct virtiofs_fs_data *fs_data = mountp->fs_data;
+
+		if (out.max_write == 0U) {
+			LOG_WRN("device reported max_write = 0; writes will be rejected");
+		}
 
 		fs_data->max_write = out.max_write;
 	}
@@ -585,6 +605,7 @@ static int virtiofs_zfs_rename(struct fs_mount_t *mountp, const char *from, cons
 	uint64_t new_dir = FUSE_ROOT_INODE;
 	struct fuse_entry_out old_lookup_ret;
 	struct fuse_entry_out new_lookup_ret;
+	bool new_lookup_succeeded;
 	int ret;
 
 	ret = virtiofs_lookup(
@@ -601,10 +622,12 @@ static int virtiofs_zfs_rename(struct fs_mount_t *mountp, const char *from, cons
 	ret = virtiofs_lookup(
 		mountp->storage_dev, FUSE_ROOT_INODE, new_path, &new_lookup_ret, &new_dir
 	);
+	new_lookup_succeeded = (ret == 0);
 
 	/* there is no immediate parent of object's new path */
 	if (ret != 0 && new_dir == 0) {
 		virtiofs_forget(mountp->storage_dev, old_lookup_ret.nodeid, 1);
+		virtiofs_forget(mountp->storage_dev, old_dir, 1);
 		return ret;
 	}
 
@@ -615,7 +638,9 @@ static int virtiofs_zfs_rename(struct fs_mount_t *mountp, const char *from, cons
 	);
 
 	virtiofs_forget(mountp->storage_dev, old_lookup_ret.nodeid, 1);
-	virtiofs_forget(mountp->storage_dev, new_lookup_ret.nodeid, 1);
+	if (new_lookup_succeeded) {
+		virtiofs_forget(mountp->storage_dev, new_lookup_ret.nodeid, 1);
+	}
 	virtiofs_forget(mountp->storage_dev, old_dir, 1);
 	virtiofs_forget(mountp->storage_dev, new_dir, 1);
 

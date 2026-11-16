@@ -467,7 +467,7 @@ const struct device *lan865x_get_phy(const struct device *dev, struct net_if *if
 	return cfg->phy;
 }
 
-static const struct ethernet_api lan865x_api_func = {
+static DEVICE_API(ethernet, lan865x_api_func) = {
 	.iface_api.init = lan865x_iface_init,
 	.get_capabilities = lan865x_port_get_capabilities,
 	.set_config = lan865x_set_config,

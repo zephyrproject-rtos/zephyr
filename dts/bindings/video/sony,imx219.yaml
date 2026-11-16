@@ -4,6 +4,15 @@ compatible: "sony,imx219"
 
 include: i2c-device.yaml
 
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      XCLR pin of the sensor, which holds it in hardware standby while low.
+      Describe it as GPIO_ACTIVE_LOW. The sensor neither answers on I2C nor
+      streams until it is released, so the driver asserts it briefly and then
+      releases it before the first register access.
+
 child-binding:
   child-binding:
     include: video-interfaces.yaml

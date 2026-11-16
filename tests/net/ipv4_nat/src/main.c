@@ -88,7 +88,7 @@ static int dummy_iface_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static const struct ethernet_api dummy_iface_api = {
+static DEVICE_API(ethernet, dummy_iface_api) = {
 	.iface_api.init = dummy_iface_init,
 	.send = dummy_iface_send,
 };

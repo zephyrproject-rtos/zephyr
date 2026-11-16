@@ -2250,7 +2250,7 @@ static const struct wifi_mgmt_ops st67_mgmt_ops = {
 	.reg_domain = st67_reg_domain,
 };
 
-static const struct net_wifi_mgmt_offload st67_api = {
+static DEVICE_API(wifi_native, st67_api) = {
 	.wifi_iface.iface_api.init = st67_iface_init,
 	.wifi_iface.send = st67_send,
 	.wifi_mgmt_api = &st67_mgmt_ops,

@@ -1269,6 +1269,13 @@ __net_socket struct quic_context {
 	/** Streams connected to this context */
 	sys_slist_t streams;
 
+	/** Nothing is accepted on the context any more, neither connections
+	 * nor streams: the application closed the socket, or the connection
+	 * was never accepted. Written under contexts_lock, where connections
+	 * and streams are queued, so not a bit field.
+	 */
+	bool accept_closed;
+
 	/** Information whether this context is the listening one */
 	bool is_listening : 1;
 };
@@ -1581,6 +1588,8 @@ int process_long_header(struct quic_endpoint *ep,
 struct quic_stream *quic_find_stream(struct quic_context *ctx,
 				     struct quic_endpoint *ep,
 				     uint64_t stream_id);
+void quic_stream_unref_deferred(struct quic_stream *stream);
+extern struct k_work quic_stream_release_work;
 
 /* Server session-ticket cache helpers (single-use / freshness). */
 struct quic_server_ticket_entry;
@@ -1594,5 +1603,11 @@ bool tls_server_ticket_cache_lookup(const uint8_t *ticket, size_t ticket_len,
 void tls_server_ticket_cache_consume(const uint8_t *ticket, size_t ticket_len);
 bool tls_ticket_age_acceptable(uint64_t issued_at_ms, uint32_t ticket_age_add,
 			       uint32_t obfuscated_ticket_age, uint64_t now_ms);
+void quic_test_context_unref(struct quic_context *ctx);
+void quic_test_stream_unref(struct quic_stream *stream);
+void quic_test_streams_lock(bool lock);
+void quic_connection_accept_enqueue(struct quic_endpoint *child_ep);
+struct quic_stream *quic_get_stream(struct quic_context *conn);
+bool quic_ctx_queue_incoming_stream(struct quic_context *ctx, struct quic_stream *stream);
 
 #endif /* CONFIG_NET_TEST */

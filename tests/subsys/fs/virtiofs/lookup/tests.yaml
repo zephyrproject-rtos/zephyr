@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  filesystem.virtiofs.lookup:
+    tags:
+      - filesystem
+      - virtio
+    platform_allow:
+      - native_sim/native/64
+      - qemu_x86_64
+    integration_platforms:
+      - native_sim/native/64
+      - qemu_x86_64

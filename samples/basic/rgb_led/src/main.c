@@ -20,12 +20,16 @@ static const struct pwm_dt_spec green_pwm_led =
 static const struct pwm_dt_spec blue_pwm_led =
 	PWM_DT_SPEC_GET(DT_ALIAS(blue_pwm_led));
 
-#define STEP_SIZE PWM_USEC(2000)
+#define NUM_STEPS 8U
 
 int main(void)
 {
 	uint32_t pulse_red, pulse_green, pulse_blue; /* pulse widths */
 	int ret;
+
+	const uint32_t step_red = red_pwm_led.period / NUM_STEPS;
+	const uint32_t step_green = green_pwm_led.period / NUM_STEPS;
+	const uint32_t step_blue = blue_pwm_led.period / NUM_STEPS;
 
 	printk("PWM-based RGB LED control\n");
 
@@ -37,17 +41,15 @@ int main(void)
 	}
 
 	while (1) {
-		for (pulse_red = 0U; pulse_red <= red_pwm_led.period;
-		     pulse_red += STEP_SIZE) {
+		for (pulse_red = 0U; pulse_red <= red_pwm_led.period; pulse_red += step_red) {
 			ret = pwm_set_pulse_dt(&red_pwm_led, pulse_red);
 			if (ret != 0) {
 				printk("Error %d: red write failed\n", ret);
 				return 0;
 			}
 
-			for (pulse_green = 0U;
-			     pulse_green <= green_pwm_led.period;
-			     pulse_green += STEP_SIZE) {
+			for (pulse_green = 0U; pulse_green <= green_pwm_led.period;
+			     pulse_green += step_green) {
 				ret = pwm_set_pulse_dt(&green_pwm_led,
 						       pulse_green);
 				if (ret != 0) {
@@ -56,9 +58,8 @@ int main(void)
 					return 0;
 				}
 
-				for (pulse_blue = 0U;
-				     pulse_blue <= blue_pwm_led.period;
-				     pulse_blue += STEP_SIZE) {
+				for (pulse_blue = 0U; pulse_blue <= blue_pwm_led.period;
+				     pulse_blue += step_blue) {
 					ret = pwm_set_pulse_dt(&blue_pwm_led,
 							       pulse_blue);
 					if (ret != 0) {

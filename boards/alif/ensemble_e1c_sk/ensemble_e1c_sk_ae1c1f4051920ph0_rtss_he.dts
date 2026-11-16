@@ -7,6 +7,8 @@
 
 #include <alif/ensemble/ae1c1f4051920ph0.dtsi>
 #include <alif/ensemble/ae1c1f4051920ph0_nvic_irq.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "ensemble_e1c_sk-pinctrl.dtsi"
 
 / {
@@ -18,10 +20,64 @@
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 	};
+
+	aliases {
+		led0 = &led_red;
+		led1 = &led_green;
+		led2 = &led_blue;
+		sw0 = &user_button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_red: led_0 {
+			gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>;
+			label = "LED0_R";
+		};
+
+		led_green: led_1 {
+			gpios = <&gpio4 5 GPIO_ACTIVE_HIGH>;
+			label = "LED0_G";
+		};
+
+		led_blue: led_2 {
+			gpios = <&gpio4 3 GPIO_ACTIVE_HIGH>;
+			label = "LED0_B";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		/*
+		 * The DesignWare GPIO driver does not implement both
+		 * edge triggering, which the interrupt driven mode of
+		 * the GPIO keys driver needs.
+		 */
+		polling-mode;
+
+		user_button: user_button {
+			gpios = <&lpgpio 0 GPIO_ACTIVE_LOW>;
+			label = "User SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
 };
 
 &uart2 {
 	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio4 {
+	pinctrl-0 = <&gpio4_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpgpio {
+	pinctrl-0 = <&lpgpio_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };

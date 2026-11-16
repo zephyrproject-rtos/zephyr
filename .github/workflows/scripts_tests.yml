@@ -13,6 +13,7 @@ on:
       - 'scripts/checkpatch.pl'
       - 'scripts/checkpatch/**'
       - 'scripts/cmake/**'
+      - 'scripts/coredump/**'
       - 'scripts/kconfig/**'
       - 'scripts/schemas/hardening-schema.yaml'
       - 'scripts/tests/hardenconfig/**'
@@ -26,6 +27,7 @@ on:
       - 'scripts/checkpatch.pl'
       - 'scripts/checkpatch/**'
       - 'scripts/cmake/**'
+      - 'scripts/coredump/**'
       - 'scripts/kconfig/**'
       - 'scripts/schemas/hardening-schema.yaml'
       - 'scripts/tests/hardenconfig/**'
@@ -85,4 +87,4 @@ jobs:
           ZEPHYR_BASE: ./
         run: |
           echo "Run script tests"
-          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/kconfig ./scripts/tests/hardenconfig
+          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/coredump/tests ./scripts/kconfig ./scripts/tests/hardenconfig

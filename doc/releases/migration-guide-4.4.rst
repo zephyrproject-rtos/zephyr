@@ -1106,7 +1106,7 @@ Timer
   companion interface through the compatibility macros ``z_cms_lptim_hook_on_lpm_entry``
   and ``z_cms_lptim_hook_on_lpm_exit`` should migrate to :c:func:`z_sys_clock_lpm_enter`
   and :c:func:`z_sys_clock_lpm_exit` from :zephyr_file:`include/zephyr/drivers/timer/system_timer_lpm.h`.
-  The compatibility shim in :zephyr_file:`drivers/timer/cortex_m_systick.h` is deprecated
+  The compatibility shim in ``drivers/timer/cortex_m_systick.h`` is deprecated
   in Zephyr 4.4.0 and is currently scheduled for removal in Zephyr 4.6.0.
   The legacy Kconfig options:
   :kconfig:option:`CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE`,

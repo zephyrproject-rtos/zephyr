@@ -114,6 +114,11 @@
 	interrupts = <GIC_SPI 124 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 };
 
+&spi3 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
 &lptimer2 {
 	interrupt-parent = <&gic>;
 	interrupts = <GIC_SPI 337 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;

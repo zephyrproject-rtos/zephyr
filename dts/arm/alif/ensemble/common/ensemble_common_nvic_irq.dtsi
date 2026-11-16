@@ -162,6 +162,21 @@
 	interrupts = <133 0>;
 };
 
+&spi0 {
+	interrupt-parent = <&nvic>;
+	interrupts = <137 0>;
+};
+
+&spi1 {
+	interrupt-parent = <&nvic>;
+	interrupts = <138 0>;
+};
+
+&spi2 {
+	interrupt-parent = <&nvic>;
+	interrupts = <139 0>;
+};
+
 /*
  * The LPTIMER interrupts reach the RTSS NVICs twice: directly on inputs
  * 60 and 61, and through the IRQRTR on inputs 346 and 347. The direct

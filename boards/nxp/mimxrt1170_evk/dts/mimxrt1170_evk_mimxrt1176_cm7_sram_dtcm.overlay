@@ -1,0 +1,47 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * ZEP-6529: Optional memory-layout overlay for MIMXRT1170-EVK (CM7), mirroring
+ * the RT1180 frdm_imxrt1186 cm33_sram_dtcm.overlay pattern.
+ *
+ * The board default places general .data/.bss/heap/stacks in external SDRAM
+ * (zephyr,sram = &sdram0) - the slowest memory on the part. This overlay
+ * re-homes the general system RAM into the CM7 DTCM (single-cycle tightly-
+ * coupled RAM) for a latency win on CPU-owned data.
+ *
+ * DTCM is only 256K. Use this overlay ONLY for applications whose TOTAL data
+ * footprint (.data/.bss/stacks/heap AND any net_buf pools) fits in 256K.
+ * Deep-pool networking apps (e.g. zperf with large NET_BUF pools + a big
+ * zero-copy slab) MUST NOT use this overlay - keep their bulk data in SDRAM.
+ *
+ * IMPORTANT (ERR050396, Class A - NO software workaround): ENET_1G DMA
+ * descriptors and DMA buffers must NEVER live in TCM on Cortex-M7. This
+ * overlay only re-homes GENERAL CPU-owned data. The ENET_1G DMA region stays
+ * cache-coherent in OCRAM/SDRAM (CONFIG_ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER=n,
+ * its CM7 default). Do NOT set that option to y together with this overlay.
+ */
+
+/* Drop the zephyr,memory-region = "DTCM" reservation so the region can be
+ * re-declared as plain system RAM below.
+ */
+/delete-node/ &dtcm;
+
+/ {
+	chosen {
+		/* Repurpose the DTCM as general system RAM. Drop the
+		 * zephyr,dtcm hook so the DTCM-specific linker sections
+		 * (.dtcm_bss/.dtcm_noinit/.dtcm_data) that target the now
+		 * removed DTCM memory region are not generated.
+		 */
+		/delete-property/ zephyr,dtcm;
+		zephyr,sram = &dtcm;
+	};
+
+	soc {
+		dtcm: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+	};
+};

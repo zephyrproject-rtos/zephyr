@@ -99,7 +99,7 @@ static struct net_buf *tx_payload;
 
 static const struct device *const radio_dev =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154));
-static struct ieee802154_radio_api *radio_api;
+static struct ieee802154_radio_driver_api *radio_api;
 
 /* Get the default tx output power from Kconfig */
 static int8_t tx_power = CONFIG_OPENTHREAD_DEFAULT_TX_POWER;
@@ -363,10 +363,7 @@ void platformRadioInit(void)
 
 	__ASSERT_NO_MSG(device_is_ready(radio_dev));
 
-	radio_api = (struct ieee802154_radio_api *)radio_dev->api;
-	if (!radio_api) {
-		return;
-	}
+	radio_api = (struct ieee802154_radio_driver_api *)radio_dev->api;
 
 	k_work_queue_start(&ot_work_q, ot_task_stack,
 			   K_KERNEL_STACK_SIZEOF(ot_task_stack),

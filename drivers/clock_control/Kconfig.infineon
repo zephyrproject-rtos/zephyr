@@ -22,8 +22,8 @@ config CLOCK_CONTROL_IFX_FIXED_CLOCK
 
 config INFINEON_SYSCLK_LOCK_NONE
 	bool
-	default n if SOC_SERIES_PSOC4000T
-	default y if SOC_FAMILY_INFINEON_PSOC4
+	default y if SOC_FAMILY_INFINEON_PSOC4 && !SOC_SERIES_PSOC4000T && \
+		!SOC_SERIES_PSOC4HVMS64K && !SOC_SERIES_PSOC4HVMS128K
 	help
 	  Hidden option enabled for SoC series whose IMO clock must be explicitly
 	  unlocked from the WCO (Cy_SysClk_ImoLock(CY_SYSCLK_IMO_LOCK_NONE)) after

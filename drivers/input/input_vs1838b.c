@@ -329,7 +329,7 @@ static void vs1838b_input_callback(struct device const *dev, struct gpio_callbac
 		 * If nothing gets in during the grace period
 		 * it *should* be an entire command.
 		 */
-		k_work_schedule(&data->decode_work, K_MSEC(NEC_TIMEOUT_REPEAT_CODE_MSEC));
+		input_work_schedule(&data->decode_work, K_MSEC(NEC_TIMEOUT_REPEAT_CODE_MSEC));
 	}
 	k_sem_give(&data->decode_sem);
 }

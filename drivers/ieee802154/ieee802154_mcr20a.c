@@ -1464,7 +1464,7 @@ static const struct mcr20a_config mcr20a_config = {
 
 static struct mcr20a_context mcr20a_context_data;
 
-static const struct ieee802154_radio_api mcr20a_radio_api = {
+static DEVICE_API(ieee802154_radio, mcr20a_radio_api) = {
 	.iface_api.init	= mcr20a_iface_init,
 
 	.get_capabilities	= mcr20a_get_capabilities,

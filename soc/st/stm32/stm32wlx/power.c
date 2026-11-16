@@ -30,6 +30,8 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 /* Invoke Low Power/System Off specific Tasks */
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
+	unsigned int key;
+
 	switch (state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
 		LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
@@ -49,7 +51,14 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			return;
 		}
 		LL_LPM_EnableDeepSleep();
-		k_cpu_idle();
+
+		/*
+		 * Keep wake-source ISRs pending until clocks and system-managed
+		 * devices have been restored by the PM core.
+		 */
+		key = arch_pm_state_set_prepare();
+		__WFI();
+		arch_pm_state_set_finish(key);
 		break;
 	default:
 		LOG_DBG("Unsupported power state %u", state);
@@ -73,13 +82,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		LOG_DBG("Unsupported power substate-id %u", state);
 		break;
 	}
-
-	/*
-	 * System is now in active mode.
-	 * Reenable interrupts which were disabled
-	 * when OS started idling code.
-	 */
-	irq_unlock(0);
 }
 
 /* Initialize STM32 Power */

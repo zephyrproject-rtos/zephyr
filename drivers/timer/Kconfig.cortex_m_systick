@@ -75,39 +75,3 @@ config CORTEX_M_SYSTICK_INTERRUPT_PRIORITY
 	  larger zephyr,min-timeout-cycles on the systick node so that the
 	  minimum timeout (and thus the wrap period) covers the worst-case
 	  hold-off.
-
-
-if CORTEX_M_SYSTICK
-
-# Deprecated SysTick-specific Kconfig symbols.
-# Retained with prompts so that existing prj.conf assignments keep working
-# during the migration period.  The new generic symbols are selected via
-# "default ... if ..." rules in Kconfig.system_timer_lpm.
-# Scheduled for removal in Zephyr 4.6.0.
-
-config CORTEX_M_SYSTICK_LPM_TIMER_NONE
-	bool "SysTick LPM timer: none [DEPRECATED]"
-	select DEPRECATED
-	help
-	  Deprecated. Use CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE instead.
-
-config CORTEX_M_SYSTICK_LPM_TIMER_COUNTER
-	bool "SysTick LPM timer: counter [DEPRECATED]"
-	select DEPRECATED
-	help
-	  Deprecated. Use CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER instead.
-
-config CORTEX_M_SYSTICK_LPM_TIMER_HOOKS
-	bool "SysTick LPM timer: hooks [DEPRECATED]"
-	select DEPRECATED
-	help
-	  Deprecated. Use CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS instead.
-
-config CORTEX_M_SYSTICK_RESET_BY_LPM
-	bool "SysTick reset by LPM [DEPRECATED]"
-	select DEPRECATED
-	select SYSTEM_TIMER_RESET_BY_LPM
-	help
-	  Deprecated. Use CONFIG_SYSTEM_TIMER_RESET_BY_LPM instead.
-
-endif # CORTEX_M_SYSTICK

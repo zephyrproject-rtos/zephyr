@@ -319,7 +319,11 @@ static inline uint32_t ifx_uart_divider(uint32_t freq, uint32_t baud, uint32_t o
 
 static inline uint32_t ifx_uart_mem_width(uint32_t data_width)
 {
-#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#if defined(CONFIG_UART_INFINEON_PDL_BYTE_WIDTH_ONLY)
+	/* SCB v2 (M0S8) has no MEM_WIDTH field, byte-width only */
+	ARG_UNUSED(data_width);
+	return 0U;
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 	return (data_width <= CY_SCB_BYTE_WIDTH) ? CY_SCB_CTRL_MEM_WIDTH_BYTE
 						 : CY_SCB_CTRL_MEM_WIDTH_HALFWORD;
 #else
@@ -1010,8 +1014,8 @@ static int ifx_cat1_uart_async_tx(const struct device *dev, const uint8_t *tx_da
 		goto exit;
 	}
 
-	/* Configure timeout */
-	if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
+	/* Configure timeout - per Zephyr API, valid only if flow control is enabled */
+	if (data->cfg.flow_ctrl && (timeout != SYS_FOREVER_US) && (timeout != 0)) {
 		k_work_reschedule(&dma_tx->timeout_work, K_USEC(timeout));
 	}
 
@@ -1033,12 +1037,21 @@ static int ifx_cat1_uart_async_tx_abort(const struct device *dev)
 	struct dma_status stat;
 	int err = 0;
 
+	if (dma_tx->dma_dev == NULL) {
+		return -ENODEV;
+	}
+
 	unsigned int key = irq_lock();
+
+	if (dma_tx->buf == NULL) {
+		err = -EFAULT;
+		goto unlock;
+	}
 
 	k_work_cancel_delayable(&dma_tx->timeout_work);
 
 	err = dma_stop(dma_tx->dma_dev, dma_tx->dma_channel);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Error stopping Tx DMA (%d)", err);
 		irq_unlock(key);
 		/* Not stopped; keep the ref, the DMA completion path releases it. */
@@ -1046,14 +1059,20 @@ static int ifx_cat1_uart_async_tx_abort(const struct device *dev)
 	}
 
 	err = dma_get_status(dma_tx->dma_dev, dma_tx->dma_channel, &stat);
-	if (err) {
-		LOG_ERR("Error stopping Tx DMA (%d)", err);
-		goto unlock;
+	if (err != 0) {
+		LOG_WRN("Error getting Tx DMA status (%d), assuming 0 bytes sent", err);
+		evt.data.tx.len = 0;
+		err = 0;
+	} else {
+		if (dma_tx->buf_len >= stat.pending_length) {
+			evt.data.tx.len = dma_tx->buf_len - stat.pending_length;
+		} else {
+			evt.data.tx.len = 0;
+		}
 	}
 
 	evt.type = UART_TX_ABORTED;
 	evt.data.tx.buf = dma_tx->buf;
-	evt.data.tx.len = 0;
 
 	if (async->cb) {
 		async->cb(dev, &evt, async->user_data);
@@ -1079,6 +1098,11 @@ static void dma_callback_tx_done(const struct device *dma_dev, void *arg, uint32
 	struct ifx_cat1_dma_stream_tx *const dma_tx = &async->dma_tx;
 
 	unsigned int key = irq_lock();
+
+	if (dma_tx->buf == NULL) {
+		irq_unlock(key);
+		return;
+	}
 
 	if (status == 0) {
 
@@ -1611,6 +1635,11 @@ static void ifx_cat1_uart_dma_trigmux_connect(const struct device *dev)
 			PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->hw_resource.block_num,
 			PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + dma_rx->dma_channel, false,
 			TRIGGER_TYPE_LEVEL);
+#elif defined(CONFIG_SOC_DIE_PSC3M6)
+		/* PSC3M6 trigger mux has 6 entries per SCB, so stride is 6. */
+		Cy_TrigMux_Connect(TRIG_IN_MUX_0_SCB_RX0 + (6 * data->hw_resource.block_num),
+				   TRIG_OUT_MUX_0_PDMA0_TR_IN0 + dma_rx->dma_channel,
+				   false, TRIGGER_TYPE_LEVEL);
 #else
 		Cy_TrigMux_Connect(TRIG_IN_MUX_0_SCB_RX0 + (3 * data->hw_resource.block_num),
 				   TRIG_OUT_MUX_0_PDMA0_TR_IN0 + dma_rx->dma_channel,
@@ -1624,6 +1653,10 @@ static void ifx_cat1_uart_dma_trigmux_connect(const struct device *dev)
 			PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->hw_resource.block_num,
 			PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + dma_tx->dma_channel, false,
 			TRIGGER_TYPE_EDGE);
+#elif defined(CONFIG_SOC_DIE_PSC3M6)
+		Cy_TrigMux_Connect(TRIG_IN_MUX_0_SCB_TX0 + (6 * data->hw_resource.block_num),
+				   TRIG_OUT_MUX_0_PDMA0_TR_IN0 + dma_tx->dma_channel,
+				   false, TRIGGER_TYPE_EDGE);
 #else
 		Cy_TrigMux_Connect(TRIG_IN_MUX_0_SCB_TX0 + (3 * data->hw_resource.block_num),
 				   TRIG_OUT_MUX_0_PDMA0_TR_IN0 + dma_tx->dma_channel,
@@ -1662,7 +1695,10 @@ static int ifx_cat1_uart_init(const struct device *dev)
 #endif
 
 #if defined(CONFIG_INFINEON_INTC_SYSINTC)
-	irq_enable(config->irq_num);
+	/* Only interrupt-driven instances install a handler */
+	if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
+		irq_enable(config->irq_num);
+	}
 #endif /* CONFIG_INFINEON_INTC_SYSINTC */
 
 #if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
@@ -1676,7 +1712,10 @@ static int ifx_cat1_uart_init(const struct device *dev)
 					     &(data->context));
 
 	if (result == CY_RSLT_SUCCESS) {
-		irq_enable(config->irq_num);
+		/* Only interrupt-driven instances install a handler */
+		if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
+			irq_enable(config->irq_num);
+		}
 
 		Cy_SCB_UART_Enable(config->reg_addr);
 	} else {
@@ -1812,7 +1851,10 @@ static int ifx_cat1_uart_pm_action(const struct device *dev, enum pm_device_acti
 		ifx_cat1_uart_dma_trigmux_connect(dev);
 #endif
 
-		irq_enable(config->irq_num);
+		/* Only interrupt-driven instances install a handler */
+		if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
+			irq_enable(config->irq_num);
+		}
 		break;
 	}
 #endif /* CONFIG_PM_S2RAM || CONFIG_PM_DEVICE_POWER_DOMAIN */

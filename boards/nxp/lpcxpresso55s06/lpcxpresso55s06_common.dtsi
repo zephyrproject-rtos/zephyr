@@ -178,6 +178,10 @@
 	};
 };
 
+&adc0 {
+	status = "okay";
+};
+
 &gint0 {
 	status = "okay";
 };

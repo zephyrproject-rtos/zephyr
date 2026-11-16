@@ -7,11 +7,12 @@ Overview
 ********
 
 The phyBOARD-Pollux is based upon the phyCORE-i.MX8M Plus SoM which is based on
-the NXP i.MX8M Plus SoC. The SoC includes four Coretex-A53 cores and one
-Coretex-M7 core for real time applications like Zephyr. The phyBOARD-Pollux
-can be used for various applications like SmartHome, Industry 4.0, IoT etc.
-It features a lot of interfaces and computing capacity. It can be used as
-a reference, to develop or in the final product too.
+the NXP i.MX8M Plus SoC. The SoC includes four Coretex-A53 cores, one
+Coretex-M7 core for real time applications like Zephyr and one Cadence
+Tensilica HiFi 4 audio DSP. Zephyr supports both the M7 core and the audio DSP.
+The phyBOARD-Pollux can be used for various applications like SmartHome,
+Industry 4.0, IoT etc. It features a lot of interfaces and computing capacity.
+It can be used as a reference, to develop or in the final product too.
 
 
 Board features:
@@ -55,7 +56,8 @@ Supported Features
 .. zephyr:board-supported-hw::
 
 .. note::
-   It's recommended to disable peripherals used by the M7-Core on the Linux host.
+   It's recommended to disable peripherals used by the M7-Core or the audio DSP
+   on the Linux host.
 
 Connections and IOs
 ===================
@@ -73,6 +75,7 @@ UART
 | Wo WiFi Module  | UART3    | UART to WiFi/BLE Module    |
 +-----------------+----------+----------------------------+
 | Debug USB (M7)  | UART4    | UART Debug Console via USB |
+| / (Audio DSP)   |          |                            |
 +-----------------+----------+----------------------------+
 
 .. note::
@@ -254,6 +257,48 @@ Typically OpenAMP / RPMsg is used for that.
 You can find more Information about how to use OpenAMP with the PHYTEC BSP here:
 `Coprocessor Documentation`_
 
+Audio DSP
+=========
+
+The ``phyboard_pollux/mimx8ml8/adsp`` target runs on the HiFi 4 audio DSP. It is
+used by `Sound Open Firmware`_, which builds Zephyr as part of its firmware
+image. The firmware is loaded and started by the Linux SOF driver. The board
+devicetree enables only the debug console on UART4, so the M7-Core and the audio
+DSP cannot use their console at the same time. SAI2 is routed to the expansion
+connector. The board devicetree describes its pins but keeps it disabled, and
+the application enables it, for example by a devicetree overlay in Sound Open
+Firmware, depending on the audio hardware attached. The clocks of the audio
+interfaces are configured by Linux.
+
+Other applications can be built for the audio DSP as well, for example the
+:zephyr:code-sample:`hello_world` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: phyboard_pollux/mimx8ml8/adsp
+   :goals: build
+
+Linux loads and starts ``zephyr/zephyr.elf`` from the build directory with
+the ``imx_dsp_rproc`` remoteproc driver. This needs the ``dsp`` node of the
+Linux devicetree enabled with its default ``fsl,imx8mp-hifi4`` compatible and
+the DSP reserved memory (``dsp_reserved``) as its memory region, instead of the
+Sound Open Firmware setup. The driver's ``no_mailboxes`` parameter is needed,
+as the samples do not answer its ready message:
+
+.. code-block:: console
+
+   # modprobe imx_dsp_rproc no_mailboxes=1
+   # cp zephyr.elf /lib/firmware/
+   # echo zephyr.elf > /sys/class/remoteproc/remoteprocN/firmware
+   # echo start > /sys/class/remoteproc/remoteprocN/state
+
+``remoteprocN`` is the instance whose ``name`` is the DSP. The console on
+UART4 then shows:
+
+.. code-block:: console
+
+   Hello World! phyboard_pollux/mimx8ml8/adsp
+
 References
 ==========
 
@@ -268,6 +313,9 @@ References
 
 .. _JLink Software:
    https://www.segger.com/downloads/jlink/
+
+.. _Sound Open Firmware:
+   https://thesofproject.github.io/latest/index.html
 
 .. _phyCORE-i.MX 8M Plus BSP Manual:
    https://phytec.github.io/doc-bsp-yocto/bsp/imx8/imx8mp/head.html#running-mcore-examples

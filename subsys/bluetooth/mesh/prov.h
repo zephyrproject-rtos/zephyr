@@ -68,11 +68,7 @@
 
 #define PROV_ALG_P256          0x00
 
-#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
-#define PROV_IO_OOB_SIZE_MAX   8  /* in bytes */
-#else
 #define PROV_IO_OOB_SIZE_MAX   32  /* in bytes */
-#endif
 
 #define PRIV_KEY_SIZE 32
 #define PUB_KEY_SIZE  PDU_LEN_PUB_KEY

@@ -147,7 +147,8 @@ tests:
       - arduino_spi
       - arduino_gpio
   sample.net.zperf.nxp_enet1g:
-    extra_args: EXTRA_DTC_OVERLAY_FILE="nxp,enet1g.overlay"
+    extra_args:
+      EXTRA_DTC_OVERLAY_FILE="nxp,enet1g.overlay;mimxrt1170_evk_mimxrt1176_cm7_sram_dtcm.overlay"
     tags:
       - net
       - zperf

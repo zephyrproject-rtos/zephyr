@@ -132,7 +132,7 @@ Applications that need to set MAC addresses dynamically (for example to adopt an
 from a management interface) need to enable the networking management API with
 :kconfig:option:`CONFIG_NET_MGMT` and use :c:macro:`net_mgmt` with
 :c:macro:`NET_REQUEST_ETHERNET_SET_MAC_ADDRESS`.
-The request internally calls the driver's :c:func:`ethernet_api.set_config` implementation.
+The request internally calls the driver's :c:func:`ethernet_driver_api.set_config` implementation.
 
 .. code-block:: c
 

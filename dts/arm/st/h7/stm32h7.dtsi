@@ -773,7 +773,7 @@
 
 			sai1_a: sai1a@40015804 {
 				reg = <0x40015804 0x20>;
-				dmas = <&dma1 2 87 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+				dmas = <&dmamux1 0 87 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -781,7 +781,7 @@
 
 			sai1_b: sai1b@40015824 {
 				reg = <0x40015824 0x20>;
-				dmas = <&dma1 3 88 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+				dmas = <&dmamux1 1 88 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -940,6 +940,20 @@
 			ptp_clock: ptp-clock {
 				compatible = "snps,dwmac-ptp-clock";
 			};
+		};
+
+		usbotg_hs: usb@40040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x40040000 0x40000>;
+			interrupts = <74 0>, <75 0>, <76 0>, <77 0>;
+			interrupt-names = "ep1_out", "ep1_in", "wkup", "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <DT_SIZE_K(4)>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK(AHB1, 25)>,
+				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+			phys = <&otghs_fs_phy>;
+			status = "disabled";
 		};
 
 		dcmi: dcmi@48020000 {
@@ -1339,6 +1353,11 @@
 				status = "disabled";
 			};
 		};
+	};
+
+	otghs_fs_phy: otghs_fs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 
 	die_temp: dietemp {

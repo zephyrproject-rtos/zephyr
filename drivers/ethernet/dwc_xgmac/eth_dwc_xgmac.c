@@ -1622,7 +1622,7 @@ static struct net_stats_eth *eth_dwc_xgmac_stats(const struct device *dev,
 }
 #endif
 
-static const struct ethernet_api eth_dwc_xgmac_apis = {
+static DEVICE_API(ethernet, eth_dwc_xgmac_apis) = {
 	.iface_api.init = eth_dwc_xgmac_iface_init,
 	.send = eth_dwc_xgmac_send,
 	.start = eth_dwc_xgmac_start_device,

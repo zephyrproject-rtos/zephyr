@@ -5,6 +5,9 @@
 
 #include "region.h"
 
+#ifdef CONFIG_LORAWAN_REGION_AS923
+extern const struct lwan_region_ops as923_ops;
+#endif
 #ifdef CONFIG_LORAWAN_REGION_EU868
 extern const struct lwan_region_ops eu868_ops;
 #endif
@@ -16,6 +19,10 @@ extern const struct lwan_region_ops kr920_ops;
 const struct lwan_region_ops *lwan_region_get(enum lorawan_region region)
 {
 	switch (region) {
+#ifdef CONFIG_LORAWAN_REGION_AS923
+	case LORAWAN_REGION_AS923:
+		return &as923_ops;
+#endif
 #ifdef CONFIG_LORAWAN_REGION_EU868
 	case LORAWAN_REGION_EU868:
 		return &eu868_ops;

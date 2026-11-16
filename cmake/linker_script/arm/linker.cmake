@@ -252,6 +252,8 @@ if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
   else()
     pow2round(VECTOR_ALIGN)
   endif()
+elseif(CONFIG_CPU_AARCH32_CORTEX_A OR CONFIG_CPU_AARCH32_CORTEX_R)
+  set(VECTOR_ALIGN 32)
 endif()
 
 zephyr_linker_section_configure(

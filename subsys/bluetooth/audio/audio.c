@@ -24,13 +24,34 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/zassert.h>
 #include <zephyr/toolchain.h>
 
 #include "audio_internal.h"
 
 LOG_MODULE_REGISTER(bt_audio, CONFIG_BT_AUDIO_LOG_LEVEL);
+
+ZASSERT_MODULE(DEFAULT);
+
+void bt_audio_mutex_lock_forever(struct k_mutex *mutex)
+{
+	__maybe_unused int err = k_mutex_lock(mutex, K_FOREVER);
+
+	ZASSERT(err == 0, "Failed to lock audio mutex %p (err %d)", mutex, err);
+}
+
+void bt_audio_mutex_unlock(struct k_mutex *mutex)
+{
+	__maybe_unused int err;
+
+	BT_AUDIO_LOCK_ASSERT(mutex);
+
+	err = k_mutex_unlock(mutex);
+	ZASSERT(err == 0, "Failed to unlock audio mutex %p (err %d)", mutex, err);
+}
 
 int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 			bool (*func)(struct bt_data *data, void *user_data), void *user_data)

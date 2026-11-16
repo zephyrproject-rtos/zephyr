@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Andes Technology AndesCore N45 RISC-V core
+
+compatible: "andestech,n45"
+
+include: riscv-common.yaml

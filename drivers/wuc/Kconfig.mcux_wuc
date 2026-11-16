@@ -22,4 +22,4 @@ config WUC_MCUX_WUU
 	default y
 	depends on DT_HAS_NXP_WUC_WUU_ENABLED
 	help
-		Enable support for NXP WUU (Wakeup Unit) wakeup controller driver.
+	  Enable support for NXP WUU (Wakeup Unit) wakeup controller driver.

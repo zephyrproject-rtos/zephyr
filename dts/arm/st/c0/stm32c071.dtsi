@@ -33,14 +33,14 @@
 				 <&rcc STM32_SRC_HSE USB_SEL(1)>;
 			status = "disabled";
 		};
+
+		exti: interrupt-controller@40021800 {
+			num-lines = <36>;
+		};
 	};
 
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
 	};
-};
-
-&exti {
-	num-lines = <36>;
 };

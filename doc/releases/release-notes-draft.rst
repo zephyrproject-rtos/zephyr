@@ -64,6 +64,17 @@ Libraries / Subsystems
   * Added a PSA Protected Storage backend, enabled with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`.
 
+* I3C
+
+  * The requested tCAS (clock after START) is configurable through
+    :c:member:`i3c_config_controller.tcas_ps` and the ``tcas-ps`` controller
+    Devicetree property.
+
+* LoRaWAN
+
+  * The native backend now supports the AS923 region
+    (:kconfig:option:`CONFIG_LORAWAN_REGION_AS923`).
+
 * Networking
 
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client
@@ -78,8 +89,22 @@ Libraries / Subsystems
   * The connection manager tracks name resolution readiness, see
     :ref:`conn_mgr_monitoring_dns`: :c:macro:`NET_EVENT_L4_DNS_READY`,
     :c:macro:`NET_EVENT_L4_DNS_LOST` and :c:func:`conn_mgr_dns_is_ready`.
+  * Threads can block until the network is ready with :c:func:`conn_mgr_wait_ready`,
+    instead of tracking connection manager events, see :ref:`conn_mgr_monitoring_waiting`.
+    With a ``last_seen`` value, it also paces retries after a failed connection attempt.
+  * :c:func:`conn_mgr_get_ready_addr_family` gives the ``ai_family`` to pass to
+    :c:func:`zsock_getaddrinfo` so that hostnames resolve only to addresses of a ready
+    address family, see :ref:`conn_mgr_monitoring_addr_family`.
   * :c:func:`dns_resolve_get_server_families` reports the address families of the
     available unicast DNS servers.
+  * :c:func:`zsock_getaddrinfo` orders ``AF_UNSPEC`` results as per a subset of
+    :rfc:`6724`: reachable destinations first, then IPv6 before IPv4. Dual-stack
+    applications that use the first result now connect over IPv6 when it is
+    usable. :kconfig:option:`CONFIG_NET_SOCKETS_DNS_PREFER_IPV4` restores the
+    preference of IPv4, see the :ref:`migration guide <migration_4.6>`.
+  * Added the :ref:`STUN <stun_interface>` library, a codec for the messages of
+    :rfc:`8489` with the attributes of ICE (:rfc:`8445`): parsing, building,
+    MESSAGE-INTEGRITY, FINGERPRINT and the address attributes.
 
   * Ethernet bridge
 
@@ -103,6 +128,32 @@ Libraries / Subsystems
       :c:enumerator:`ETHERNET_HW_STP_PORT_STATE` capability and takes the port state and FDB
       flushes from the protocol.
 
+  * TCP can scale its window (RFC 7323) when :kconfig:option:`CONFIG_NET_TCP_WINDOW_SCALE` is
+    enabled, so a connection can use send and receive windows above 64 KB. The window size
+    options, ``SO_RCVBUF`` and ``SO_SNDBUF`` then accept values up to 65535 << 14.
+
+* PTP Clock
+
+  * :c:func:`ptp_clock_adjust_rate` adjusts the clock rate by an offset in scaled parts per
+    million, as used by gPTP and IEEE 1588, instead of a floating-point ratio, so rate
+    corrections no longer need floating-point arithmetic.
+
+  * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
+    (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
+
+* Utilities
+
+  * :c:func:`utf8_is_valid` checks a given number of bytes for well-formed UTF-8
+    as defined in :rfc:`3629`; overlong sequences, UTF-16 surrogates and code
+    points above U+10FFFF are refused.
+
+* Shell
+
+  * With :kconfig:option:`CONFIG_SHELL_WILDCARD` enabled, an argument containing ``*`` or ``?``
+    that matches no subcommand is now passed to the command handler unchanged. Previously the
+    command was run without that argument and its remaining arguments, which usually failed
+    with a wrong argument count.
+
 Devicetree
 **********
 
@@ -115,6 +166,20 @@ Devicetree
 
 * :dtcompatible:`zephyr,charger-gpio` supports charging and charge-complete status inputs,
   including chargers without a software-controlled enable pin.
+
+* Networking
+
+  * Added on-device generation of TLS private keys and Certificate Signing Requests (CSRs),
+    so that the private key never leaves the device. See
+    :c:func:`tls_credential_keygen_generate` and :c:func:`tls_credential_keygen_delete`.
+    Enable it with :kconfig:option:`CONFIG_TLS_CREDENTIALS_KEYGEN`.
+    The :ref:`TLS credentials shell <tls_credentials_shell>` has the new ``cred keygen``,
+    ``cred keydel``, ``cred csr`` and ``cred pubkey`` commands, and the
+    :zephyr:code-sample:`tls-keygen` sample shows the full flow.
+
+* ESP32 SDHC slots support GPIO-based card detection, including GPIOs on external expanders.
+  Configure the optional ``cd-gpios`` property in :dtcompatible:`espressif,esp32-sdhc-slot`.
+  An optional sleep pinctrl state controls the signal pins while card power is off.
 
 Other notable changes
 *********************

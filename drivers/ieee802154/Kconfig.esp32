@@ -111,7 +111,6 @@ menuconfig IEEE802154_ESP32_DEBUG
 config IEEE802154_ESP32_ASSERT
 	bool "Enrich the assert information with IEEE802154 state and event"
 	depends on IEEE802154_ESP32_DEBUG
-	default n
 	help
 	  Enabling this option to add some probe codes in the driver, and this information
 	  will be printed when assert.

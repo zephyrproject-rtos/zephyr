@@ -20,6 +20,7 @@
 	aliases {
 		led0 = &led0;
 		pwm-led0 = &pwm_led0;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -30,6 +31,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,canbus = &canfd0;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -168,5 +170,13 @@
 };
 
 &trng {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
+&wdt0 {
 	status = "okay";
 };

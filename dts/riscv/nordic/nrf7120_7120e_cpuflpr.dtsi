@@ -33,18 +33,21 @@ clic: &cpuflpr_clic {};
 		ranges;
 		interrupt-parent = <&cpuflpr_clic>;
 
-		/* RAM02/03 is single cycle access for FLPR core while RAM00/01 is 2 cycle access */
+		/* RAM02/03 is single cycle access for FLPR core while RAM00/01 is 2 cycle access.
+		 * The last 0x20 bytes of RAM03 are the VTF region shared with the Wi-Fi domain
+		 * (vtf_region_default), so they are not part of the FLPR SRAM.
+		 */
 		cpuflpr_sram: memory@200e0000 {
 			compatible = "mmio-sram";
-			reg = <0x200e0000 DT_SIZE_K(120)>;
-			ranges = <0x0 0x200e0000 DT_SIZE_K(120)>;
+			reg = <0x200e0000 (DT_SIZE_K(120) - 0x20)>;
+			ranges = <0x0 0x200e0000 (DT_SIZE_K(120) - 0x20)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			ram03_sram: memory@0 {
 				compatible = "mmio-sram";
-				reg = <0x0 DT_SIZE_K(120)>;
-				ranges = <0x0 0x0 DT_SIZE_K(120)>;
+				reg = <0x0 (DT_SIZE_K(120) - 0x20)>;
+				ranges = <0x0 0x0 (DT_SIZE_K(120) - 0x20)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
@@ -71,6 +74,8 @@ clic: &cpuflpr_clic {};
 };
 
 &cpuflpr_vpr {
+	status = "okay";
+
 	cpuflpr_vevif_tx: mailbox {
 		compatible = "nordic,nrf-vevif-event-tx";
 		#mbox-cells = <1>;

@@ -18,7 +18,6 @@ if DHT20
 
 config DHT20_CRC
 	bool "Use CRC error detection"
-	default n
 	select CRC
 	help
 	  Verify CRC byte in RX data

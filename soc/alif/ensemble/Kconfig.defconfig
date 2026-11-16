@@ -18,4 +18,8 @@ configdefault CACHE_MANAGEMENT
 configdefault I2C_DW_IC_CLK_FREQ_OPTIMIZATION
 	default y
 
+# The SPI instances are DWC_ssi, which lays out CTRLR0 differently
+configdefault SPI_DW_HSSI
+	default y
+
 endif # SOC_FAMILY_ENSEMBLE

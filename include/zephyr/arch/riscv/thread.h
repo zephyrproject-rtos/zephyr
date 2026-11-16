@@ -100,7 +100,15 @@ typedef struct _thread_arch _thread_arch_t;
 /* Exported accessor for the per-thread user-mode flag, used by
  * arch_is_user_context() so loadable extensions can resolve it.
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern bool z_riscv_thread_is_user_mode(void);
+
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 #endif /* _ASMLANGUAGE */

@@ -36,7 +36,10 @@
 #define REG_LP_CONFIG            (REG_BANK0_OFFSET | 0x05)
 #define REG_PWR_MGMT_1           (REG_BANK0_OFFSET | 0x06)
 #define REG_PWR_MGMT_2           (REG_BANK0_OFFSET | 0x07)
+#define REG_INT_PIN_CFG          (REG_BANK0_OFFSET | 0x0F)
+#define REG_INT_ENABLE_1         (REG_BANK0_OFFSET | 0x11)
 #define REG_I2C_MST_STATUS       (REG_BANK0_OFFSET | 0x17)
+#define REG_INT_STATUS_1         (REG_BANK0_OFFSET | 0x1A)
 #define REG_ACCEL_XOUT_H         (REG_BANK0_OFFSET | 0x2D)
 #define REG_GYRO_XOUT_H          (REG_BANK0_OFFSET | 0x33)
 #define REG_TEMP_OUT_H           (REG_BANK0_OFFSET | 0x39)
@@ -69,6 +72,12 @@
 
 /* LP_CONFIG */
 #define BIT_I2C_MST_CYCLE BIT(6)
+
+/* INT_ENABLE_1 */
+#define BIT_RAW_DATA_0_RDY_EN BIT(0)
+
+/* INT_STATUS_1 */
+#define BIT_RAW_DATA_0_RDY_INT BIT(0)
 
 /* PWR_MGMT_1 */
 #define BIT_DEVICE_RESET BIT(7)

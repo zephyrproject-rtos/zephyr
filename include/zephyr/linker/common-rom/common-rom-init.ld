@@ -12,7 +12,13 @@
 		PLACE_SYMBOL_HERE(__zephyr_init_array_start);
 		KEEP (*(SORT_BY_INIT_PRIORITY(.init_array.*)
 			SORT_BY_INIT_PRIORITY(.ctors.*)))
+#ifdef CONFIG_TOOLCHAIN_HAS_CRT_CTOR_MARKERS
+		/* CRT .ctors contain list markers, not function pointers. */
+		KEEP (*(.init_array))
+		KEEP (*(EXCLUDE_FILE(*crtbegin.o *crtend.o) .ctors))
+#else
 		KEEP (*(.init_array .ctors))
+#endif
 		PLACE_SYMBOL_HERE(__zephyr_init_array_end);
 
 #ifdef CONFIG_NATIVE_LIBC

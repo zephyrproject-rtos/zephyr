@@ -248,17 +248,17 @@ struct net_route_mcast_iface_cfg net_route_data_if1;
 struct net_route_mcast_iface_cfg net_route_data_if2;
 struct net_route_mcast_iface_cfg net_route_data_if3;
 
-static const struct dummy_api net_route_mcast_if_api_1 = {
+static DEVICE_API(dummy, net_route_mcast_if_api_1) = {
 	.iface_api.init = net_route_mcast_iface_init1,
 	.send = iface_send,
 };
 
-static const struct dummy_api net_route_mcast_if_api_2 = {
+static DEVICE_API(dummy, net_route_mcast_if_api_2) = {
 	.iface_api.init = net_route_mcast_iface_init2,
 	.send = iface_send,
 };
 
-static const struct dummy_api net_route_mcast_if_api_3 = {
+static DEVICE_API(dummy, net_route_mcast_if_api_3) = {
 	.iface_api.init = net_route_mcast_iface_init3,
 	.send = iface_send,
 };

@@ -348,7 +348,7 @@ use_random_mac:
 #if !defined(CONFIG_SLIP_TAP)
 static struct slip_context slip_context_data;
 
-static const struct dummy_api slip_if_api = {
+static DEVICE_API(dummy, slip_if_api) = {
 	.iface_api.init = slip_iface_init,
 
 	.send = slip_send,

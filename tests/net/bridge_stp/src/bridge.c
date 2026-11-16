@@ -223,7 +223,7 @@ static int fake_set_config(const struct device *dev, struct net_if *iface,
 	}
 }
 
-static const struct ethernet_api fake_api = {
+static DEVICE_API(ethernet, fake_api) = {
 	.iface_api.init = fake_iface_init,
 	.get_capabilities = fake_get_capabilities,
 	.set_config = fake_set_config,

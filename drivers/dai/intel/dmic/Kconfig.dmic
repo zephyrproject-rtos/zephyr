@@ -43,14 +43,12 @@ endchoice
 
 config DAI_DMIC_HAS_OWNERSHIP
 	bool "Use DMIC ownership claim/release"
-	default n
 	help
 	 a feature introduced in ACE1.5 hardware
 	 dmic ownership must be claimed before use of dmic
 
 config DAI_DMIC_HAS_MULTIPLE_LINE_SYNC
 	bool "Use DMIC sync for multiple lines"
-	default n
 	help
 	 a feature introduced in ACE1.5 hardware
 	 dmic sync registers must be set before use of dmic

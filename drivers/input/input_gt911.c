@@ -12,6 +12,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/input/input.h>
 #include <zephyr/input/input_touch.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/minmax.h>
 #include <zephyr/pm/pm.h>
@@ -91,6 +92,7 @@ struct gt911_data {
 #endif
 #ifdef CONFIG_PM
 	struct pm_notifier pm_notifier_handle;
+	atomic_t restore_gpio;
 #endif
 };
 
@@ -214,9 +216,47 @@ static int gt911_process(const struct device *dev)
 	return 0;
 }
 
+#if CONFIG_PM
+static int gt911_restore_gpio(const struct device *dev)
+{
+	const struct gt911_config *config = dev->config;
+	int r;
+
+	if (config->int_gpio.port == NULL) {
+		return 0;
+	}
+
+	/* The interrupt pin may lose its configuration in standby. */
+	r = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
+	if (r < 0) {
+		LOG_ERR("Could not configure interrupt GPIO pin");
+		return r;
+	}
+
+#ifdef CONFIG_INPUT_GT911_INTERRUPT
+	r = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	if (r < 0) {
+		LOG_ERR("Could not configure interrupt GPIO interrupt.");
+		return r;
+	}
+#endif
+
+	return 0;
+}
+#endif
+
 static void gt911_work_handler(struct k_work *work)
 {
 	struct gt911_data *data = CONTAINER_OF(work, struct gt911_data, work);
+
+#ifdef CONFIG_PM
+	if (atomic_cas(&data->restore_gpio, 1, 0)) {
+		if (gt911_restore_gpio(data->dev) != 0) {
+			atomic_set(&data->restore_gpio, 1);
+			return;
+		}
+	}
+#endif
 
 	gt911_process(data->dev);
 }
@@ -226,14 +266,14 @@ static void gt911_isr_handler(const struct device *dev, struct gpio_callback *cb
 {
 	struct gt911_data *data = CONTAINER_OF(cb, struct gt911_data, int_gpio_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #else
 static void gt911_timer_handler(struct k_timer *timer)
 {
 	struct gt911_data *data = CONTAINER_OF(timer, struct gt911_data, timer);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #endif
 
@@ -259,34 +299,14 @@ static bool gt911_verify_firmware(const uint8_t *firmware)
 #if CONFIG_PM
 static void gt911_pm_state_exit(const struct device *dev, enum pm_state state)
 {
-	switch (state) {
-	case PM_STATE_STANDBY:
-		/* Reconfigure the GPIO interrupt pin on exit from
-		 * certain low power states as we might lose the GPIO state.
-		 */
-		const struct gt911_config *config = dev->config;
-		int r;
+	struct gt911_data *data = dev->data;
 
-		if (config->int_gpio.port == NULL) {
-			break;
-		}
-
-		r = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
-		if (r < 0) {
-			LOG_ERR("Could not configure interrupt GPIO pin");
-			return;
-		}
-
+	if (state == PM_STATE_STANDBY) {
+		/* GPIO expanders may sleep; defer access until the work queue runs. */
+		atomic_set(&data->restore_gpio, 1);
 #ifdef CONFIG_INPUT_GT911_INTERRUPT
-		r = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
-		if (r < 0) {
-			LOG_ERR("Could not configure interrupt GPIO interrupt.");
-			return;
-		}
-#endif /* CONFIG_INPUT_GT911_INTERRUPT */
-		break;
-	default:
-		break;
+		k_work_submit(&data->work);
+#endif
 	}
 }
 #endif /* CONFIG_PM */

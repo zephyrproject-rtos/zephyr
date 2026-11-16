@@ -136,7 +136,7 @@ int z_net_canbus_init(const struct device *dev)
 	return 0;
 }
 
-const struct canbus_api z_net_canbus_api = {
+DEVICE_API(canbus, z_net_canbus_api) = {
 	.iface_api.init = net_canbus_iface_init,
 	.send = net_canbus_send,
 	.close = net_canbus_close,

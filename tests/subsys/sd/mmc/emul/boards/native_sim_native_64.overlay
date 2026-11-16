@@ -1,0 +1,7 @@
+/*
+ * Copyright 2026 Alif Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "native_sim.overlay"

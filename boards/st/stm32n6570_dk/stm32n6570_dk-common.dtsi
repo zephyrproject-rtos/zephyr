@@ -18,6 +18,7 @@
 	chosen {
 		spi-flash0 = &mx66uw1g45g;
 		zephyr,console = &usart1;
+		zephyr,dtcm = &dtcm;
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &axisram2;
 		zephyr,canbus = &fdcan1;

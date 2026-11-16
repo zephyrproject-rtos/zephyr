@@ -347,6 +347,49 @@ static int wg_send_keepalive(struct wg_iface_context *ctx,
 	struct net_pkt *pkt;
 	int ret;
 
+	/* Without a session there is nothing to keep alive: start the
+	 * handshake instead. Before the first handshake no endpoint is learnt
+	 * yet, so initiate to the configured one, as the first data packet to
+	 * the peer does.
+	 */
+	if (!peer->session.keypair.current.is_valid) {
+		if (peer->endpoint.ss_family == NET_AF_UNSPEC) {
+			memcpy(&peer->endpoint, &peer->cfg_endpoint, sizeof(peer->endpoint));
+		}
+
+		if (peer->endpoint.ss_family == NET_AF_UNSPEC) {
+			/* The peer has to contact us first */
+			return -EDESTADDRREQ;
+		}
+
+		/* The periodic timer resends an initiation left unanswered while
+		 * there is no session. Setting send_handshake here would outlive
+		 * the handshake and start another one after the rekey timeout.
+		 */
+		if (!can_send_init(peer)) {
+			return 0;
+		}
+
+		/* Cleared once the initiation is sent, else the periodic timer
+		 * retries it.
+		 */
+		peer->send_handshake = true;
+
+		ret = start_handshake(ctx, peer);
+		if (ret < 0) {
+			(void)k_work_schedule(&ctx->wg_ctx->wg_periodic_timer,
+					      K_MSEC(WG_TIMER_PERIOD));
+			return ret;
+		}
+
+		/* As the first data packet does, so that it does not start
+		 * another handshake.
+		 */
+		peer->last_tx = sys_clock_tick_get_32();
+
+		return 0;
+	}
+
 	ret = select_target_iface(peer, addr, &peer->endpoint, &target_iface);
 	if (ret < 0) {
 		NET_DBG("Unknown address family %d", peer->endpoint.ss_family);
@@ -775,7 +818,7 @@ static struct wg_peer *peer_lookup_by_iface(struct net_if *iface)
 static struct wg_peer *peer_lookup_by_virtual_iface(struct net_if *iface)
 {
 	struct virtual_interface_context *ctx, *tmp;
-	const struct virtual_interface_api *api;
+	const struct virtual_interface_driver_api *api;
 	struct wg_peer *peer, *next;
 	sys_slist_t *interfaces;
 
@@ -787,7 +830,7 @@ static struct wg_peer *peer_lookup_by_virtual_iface(struct net_if *iface)
 		}
 
 		api = net_if_get_device(ctx->virtual_iface)->api;
-		if (api == NULL || api->recv == NULL) {
+		if (api->recv == NULL) {
 			continue;
 		}
 
@@ -951,7 +994,7 @@ drop:
 
 static int wg_ctrl_send(const struct device *dev, struct net_pkt *pkt)
 {
-	struct wg_context *ctx = dev->data;
+	__maybe_unused struct wg_context *ctx = dev->data;
 
 	net_stats_update_bytes_sent(ctx->iface, net_pkt_get_len(pkt));
 
@@ -1006,7 +1049,7 @@ static int wg_ctrl_stop(const struct device *dev)
 	return 0;
 }
 
-static const struct dummy_api wg_api = {
+static DEVICE_API(dummy, wg_api) = {
 	.iface_api.init = wg_ctrl_iface_init,
 	.recv = wg_ctrl_recv,
 	.send = wg_ctrl_send,
@@ -1161,7 +1204,7 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 	struct net_pkt *pkt_encrypted;
 	struct net_if *target_iface;
 	struct net_buf *buf;
-	const struct dummy_api *api;
+	const struct dummy_driver_api *api;
 	struct wg_keypair *keypair;
 	struct wg_peer *peer;
 	size_t pkt_len, copied, padded_len;
@@ -1492,7 +1535,7 @@ static int interface_get_config(struct net_if *iface,
 	return -ENOTSUP;
 }
 
-static const struct virtual_interface_api wg_iface_api = {
+static DEVICE_API(virtual_interface, wg_iface_api) = {
 	.iface_api.init = iface_init,
 
 	.get_capabilities = get_capabilities,
@@ -1669,7 +1712,7 @@ out:
  */
 static int send_data(struct wg_iface_context *ctx, struct net_pkt *pkt)
 {
-	const struct dummy_api *api = net_if_get_device(ctx->attached_to)->api;
+	const struct dummy_driver_api *api = net_if_get_device(ctx->attached_to)->api;
 
 	return net_l2_send(api->send, net_if_get_device(ctx->attached_to),
 			   ctx->attached_to, pkt);

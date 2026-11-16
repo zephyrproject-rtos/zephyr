@@ -663,7 +663,11 @@ static const struct wifi_mgmt_ops siwx91x_mgmt = {
 	.reg_domain		= siwx91x_wifi_reg_domain,
 };
 
-static const struct net_wifi_mgmt_offload siwx91x_api = {
+#ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE
+static DEVICE_API(wifi_native, siwx91x_api) = {
+#else
+static DEVICE_API(wifi_offload, siwx91x_api) = {
+#endif
 	.wifi_iface.iface_api.init = siwx91x_iface_init,
 #ifdef CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE
 	.wifi_iface.send = siwx91x_send,

@@ -1102,7 +1102,7 @@ static int kw41z_attr_get(const struct device *dev, enum ieee802154_attr attr,
 		&drv_attr.phy_supported_channels, value);
 }
 
-static const struct ieee802154_radio_api kw41z_radio_api = {
+static DEVICE_API(ieee802154_radio, kw41z_radio_api) = {
 	.iface_api.init	= kw41z_iface_init,
 
 	.get_capabilities	= kw41z_get_capabilities,

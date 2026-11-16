@@ -4,10 +4,17 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBNL libnl-3.0 libnl-genl-3.0)
 
 if(NOT LIBNL_FOUND)
-  message(FATAL_ERROR
-    "native_sim Wi-Fi: libnl-3.0/libnl-genl-3.0 not found. If building for the "
-    "32-bit native_sim, install the i386 libnl dev packages and set "
-    "PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig to build the driver.")
+  if(CONFIG_64BIT)
+    message(FATAL_ERROR
+      "native_sim Wi-Fi: libnl-3.0/libnl-genl-3.0 not found. For the 64-bit "
+      "native_sim, install the host libnl-3 and libnl-genl-3 development "
+      "packages (libnl-3-dev and libnl-genl-3-dev on Debian/Ubuntu).")
+  else()
+    message(FATAL_ERROR
+      "native_sim Wi-Fi: libnl-3.0/libnl-genl-3.0 not found. For the 32-bit "
+      "native_sim, install the i386 libnl-3 and libnl-genl-3 development "
+      "packages and set PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig.")
+  endif()
 endif()
 
 zephyr_library_sources(wifi_drv.c

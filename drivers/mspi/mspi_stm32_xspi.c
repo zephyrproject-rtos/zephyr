@@ -373,7 +373,7 @@ static int mspi_hal_init(const struct mspi_stm32_conf *dev_cfg, struct mspi_stm3
 						    : HAL_XSPI_SAMPLE_SHIFT_NONE;
 	hal_cfg.timing.hold = HAL_XSPI_DELAY_HOLD_NONE;
 	hal_cfg.timing.cs_high_time_cycle = 1U;
-	hal_cfg.timing.cs_refresh_time_cycle = 0U;
+	hal_cfg.timing.cs_refresh_time_cycle = dev_cfg->refresh;
 	hal_cfg.timing.dlyb_state = HAL_XSPI_DLYB_ON;
 
 	if (HAL_XSPI_SetConfig(&dev_data->hmspi.xspi, &hal_cfg) != HAL_OK) {
@@ -739,6 +739,9 @@ static int mspi_hal_init(const struct mspi_stm32_conf *dev_cfg, struct mspi_stm3
 	hxspi->Init.ChipSelectHighTimeCycle = 1;
 	hxspi->Init.ClockMode = HAL_XSPI_CLOCK_MODE_0;
 	hxspi->Init.ChipSelectBoundary = dev_cfg->cs_boundary;
+#if defined(XSPI_DCR4_REFRESH)
+	hxspi->Init.Refresh = dev_cfg->refresh;
+#endif /* XSPI_DCR4_REFRESH */
 	hxspi->Init.MemoryMode = HAL_XSPI_SINGLE_MEM;
 	hxspi->Init.MemorySize = dev_cfg->mem_size;
 	hxspi->Init.MemoryType = dev_cfg->mem_type;
@@ -815,6 +818,30 @@ static int mspi_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 		return ret;
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/*
+	 * Assume the DMA is HPDMA because GPDMA does not have request line from XSPI.
+	 * Allocate source/destination port based on transfer direction:
+	 *  - XSPI is only accessible by HPDMA port 1
+	 *  - SRAM is only accessible by HPDMA port 0
+	 */
+	if (mspi_stm32_table_direction[dma_stream->cfg.channel_direction]
+			== DMA_PERIPH_TO_MEMORY) {
+		hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT1 |
+			DMA_DEST_ALLOCATED_PORT0;
+	} else if (mspi_stm32_table_direction[dma_stream->cfg.channel_direction]
+			== DMA_MEMORY_TO_PERIPH) {
+		hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 |
+			DMA_DEST_ALLOCATED_PORT1;
+	} else {
+		LOG_ERR("DMA direction %d is not valid",
+			mspi_stm32_table_direction[dma_stream->cfg.channel_direction]);
+		return -EINVAL;
+	}
+#else /* CONFIG_SOC_SERIES_STM32H7RSX */
+	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 |
+		DMA_DEST_ALLOCATED_PORT0;
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 	/*
 	 * HAL expects a valid DMA channel.
 	 * The channel is from 0 to 7 because of the STM32_DMA_STREAM_OFFSET
@@ -1133,6 +1160,10 @@ static int mspi_stm32_xspi_access(const struct device *dev, const struct mspi_xf
 {
 	int ret;
 	struct mspi_stm32_data *dev_data = dev->data;
+
+	if (access_mode == MSPI_ACCESS_MEMMAP) {
+		return read_write_in_memory_map_mode(dev, packet);
+	}
 
 	if (dev_data->memmap_cfg.enable) {
 		if ((packet->cmd == MSPI_NOR_CMD_WREN) || (packet->cmd == MSPI_NOR_OCMD_WREN) ||
@@ -1670,6 +1701,36 @@ static int mspi_stm32_xspi_get_channel_status(const struct device *controller, u
 	return 0;
 }
 
+/**
+ * Check that a MSPI_MEMMAP transfer can be serviced through the memory
+ * mapped region with the current configuration.
+ */
+static bool mspi_stm32_xspi_memmap_xfer_possible(const struct device *controller,
+						 const struct mspi_xfer *xfer)
+{
+	const struct mspi_stm32_data *dev_data = controller->data;
+
+	/* The memory mapped access completes synchronously, no callback is raised */
+	if (!dev_data->memmap_cfg.enable || xfer->async) {
+		return false;
+	}
+
+	/* Same restriction as mspi_stm32_xspi_memmap_on() */
+	if ((dev_data->dev_cfg.io_mode == MSPI_IO_MODE_SINGLE) &&
+	    (dev_data->dev_cfg.addr_length != 4U)) {
+		return false;
+	}
+
+	for (uint32_t i = 0U; i < xfer->num_packet; i++) {
+		if ((xfer->packets[i].dir == MSPI_TX) &&
+		    (dev_data->memmap_cfg.permission != MSPI_MEMMAP_READ_WRITE)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static int mspi_stm32_xspi_pio_dma_transceive(const struct device *controller,
 					      const struct mspi_xfer *xfer)
 {
@@ -1694,21 +1755,25 @@ static int mspi_stm32_xspi_pio_dma_transceive(const struct device *controller,
 	while (ctx->packets_left > 0) {
 		packet_idx = ctx->xfer.num_packet - ctx->packets_left;
 		packet = &ctx->xfer.packets[packet_idx];
-#ifdef CONFIG_MSPI_DMA
-		const struct mspi_stm32_conf *dev_cfg = controller->config;
-
-		if (dev_cfg->dma_specified) {
-			ret = mspi_stm32_xspi_access(controller, packet, MSPI_ACCESS_DMA);
+		if (ctx->xfer.xfer_mode == MSPI_MEMMAP) {
+			ret = mspi_stm32_xspi_access(controller, packet, MSPI_ACCESS_MEMMAP);
 		} else {
-			LOG_ERR("DMA configuration is missing from the device tree");
-			ret = -EIO;
-			goto end;
-		}
+#ifdef CONFIG_MSPI_DMA
+			const struct mspi_stm32_conf *dev_cfg = controller->config;
+
+			if (dev_cfg->dma_specified) {
+				ret = mspi_stm32_xspi_access(controller, packet, MSPI_ACCESS_DMA);
+			} else {
+				LOG_ERR("DMA configuration is missing from the device tree");
+				ret = -EIO;
+				goto end;
+			}
 #else
-		ret = mspi_stm32_xspi_access(controller, packet,
-					     ctx->xfer.async ? MSPI_ACCESS_ASYNC :
-							       MSPI_ACCESS_SYNC);
+			ret = mspi_stm32_xspi_access(controller, packet,
+						     ctx->xfer.async ? MSPI_ACCESS_ASYNC
+								     : MSPI_ACCESS_SYNC);
 #endif
+		}
 
 		ctx->packets_left--;
 		if (ret != 0) {
@@ -1742,6 +1807,12 @@ static int mspi_stm32_xspi_transceive(const struct device *controller,
 	if (dev_id != dev_data->dev_id) {
 		LOG_ERR("transceive : dev_id don't match");
 		return -ESTALE;
+	}
+
+	if ((xfer->xfer_mode == MSPI_MEMMAP) &&
+	    !mspi_stm32_xspi_memmap_xfer_possible(controller, xfer)) {
+		LOG_DBG("transceive : memory mapped transfer not possible");
+		return -ENOTSUP;
 	}
 
 	/* Need to map the xfer to the data context */
@@ -2080,6 +2151,7 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 		.mspicfg.num_ce_gpios = ARRAY_SIZE(ce_gpios##index),                              \
 		.dma_specified = DT_INST_NODE_HAS_PROP(index, dmas),                              \
 		.cs_boundary = DT_INST_PROP(index, st_csbound),                                   \
+		.refresh = DT_INST_PROP(index, st_refresh),                                       \
 		.ssht_enable = DT_INST_PROP(index, st_ssht_enable),                               \
 		.mem_size = MSPI_STM32_INST_MEM_ADDR_BITS(index, 26) - 1,                         \
 		.mem_type = MSPI_STM32_HAL_MEMTYPE(index),                                        \

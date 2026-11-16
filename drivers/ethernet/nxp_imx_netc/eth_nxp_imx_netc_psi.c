@@ -143,7 +143,7 @@ static struct net_stats_eth *netc_eth_psi_get_stats(const struct device *dev, st
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
-static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_iface_init,
+static DEVICE_API(ethernet, netc_eth_api) = {.iface_api.init = netc_eth_iface_init,
 						 .get_capabilities = netc_eth_get_capabilities,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 						 .get_stats = netc_eth_psi_get_stats,

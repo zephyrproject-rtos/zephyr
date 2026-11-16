@@ -520,6 +520,11 @@ struct http_client_ctx {
 	 */
 	int http1_frag_data_len;
 
+	/** Offset of the payload from the cursor in the currently processed
+	 * request fragment (HTTP/1 only).
+	 */
+	size_t http1_frag_data_offset;
+
 	/** Client inactivity timer. The client connection is closed by the
 	 *  server when it expires.
 	 */
@@ -585,6 +590,9 @@ struct http_client_ctx {
 
 	/** Flag indicating that HTTP1 headers were sent. */
 	bool http1_headers_sent : 1;
+
+	/** Flag indicating that the HTTP1 response status does not allow a body. */
+	bool http1_no_body : 1;
 
 	/** Flag indicating that upgrade header was present in the request. */
 	bool has_upgrade_header : 1;

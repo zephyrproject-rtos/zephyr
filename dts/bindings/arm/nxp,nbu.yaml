@@ -3,11 +3,19 @@
 
 description: NXP NBU interruption information
 
-include: [base.yaml, pinctrl-device.yaml, wuc-device.yaml]
+include: [base.yaml, pinctrl-device.yaml, wuc-device.yaml, nvmem-consumer.yaml]
 
 compatible: "nxp,nbu"
 
 properties:
+  nvmem-cells:
+    description: |
+      Optional single NVMEM cell holding the factory 32 MHz crystal trim
+      (one byte). Bit 7 flags the trim as valid and bits 5:0 hold the CDAC
+      value (0 to 63), so a CDAC of 0x3F is stored as 0xBF. Once the NVMEM
+      provider is available, a valid trim is applied. A blank cell (0xFF), a
+      byte with bit 7 clear, an out of range value or a read failure keeps
+      rfmc-xo-cdac, which is always used as the early boot default.
   interrupts:
     required: true
   nbu-name:

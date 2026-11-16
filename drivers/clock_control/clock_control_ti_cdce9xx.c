@@ -1351,7 +1351,7 @@ static DEVICE_API(clock_control, cdce9xx_clock_driver_api) = {
 				DT_INST_PROP(inst, input_frequency)) /	\
 				DT_PROP(pll_node, clock_div) <= CDCE9XX_VCO_MAX_HZ,	\
 		"pll config invalid: fvco from input_frequency, m, n "	\
-		"is outside 80 MHz ... 230 MHz")
+		"is outside 80 MHz ... 230 MHz");
 
 #define CHECK_PLL_CONFIG(inst) DT_INST_FOREACH_CHILD_VARGS(inst, CHECK_PLL_PARAMETER, inst)
 

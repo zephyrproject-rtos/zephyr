@@ -111,6 +111,8 @@ struct video_ctrl {
 	uint8_t cluster_sz;
 	/** Internal use for auto control handling */
 	bool is_auto;
+	/** Internal use: value of the primary control that selects manual mode */
+	int32_t manual_val;
 	/** Internal use for volatile control handling */
 	bool has_volatiles;
 

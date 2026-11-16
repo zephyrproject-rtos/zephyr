@@ -668,6 +668,9 @@ struct net_if_dhcpv4 {
 	/** Number of attempts made for REQUEST and RENEWAL messages */
 	uint8_t attempts;
 
+	/** Network events received and not yet acted on */
+	uint8_t pending_events;
+
 	/** Gateway the client installed, unspecified if it installed none */
 	struct net_in_addr gw;
 
@@ -3792,7 +3795,7 @@ int net_if_set_name(struct net_if *iface, const char *buf);
 int net_if_get_by_name(const char *name);
 
 /** @cond INTERNAL_HIDDEN */
-struct net_if_api {
+__subsystem struct net_if_driver_api {
 	void (*init)(struct net_if *iface);
 };
 

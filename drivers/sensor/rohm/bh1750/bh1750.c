@@ -195,6 +195,7 @@ static DEVICE_API(sensor, bh1750_driver_api) = {
 static int bh1750_init(const struct device *dev)
 {
 	const struct bh1750_dev_config *cfg = dev->config;
+	int rc;
 
 	if (!device_is_ready(cfg->bus.bus)) {
 		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
@@ -202,7 +203,10 @@ static int bh1750_init(const struct device *dev)
 	}
 
 	if (cfg->mtreg != BH1750_DEFAULT_MTREG) {
-		bh1750_mtreg_write(dev, cfg->mtreg);
+		rc = bh1750_mtreg_write(dev, cfg->mtreg);
+		if (rc < 0) {
+			return rc;
+		}
 	}
 
 	return 0;

@@ -228,6 +228,7 @@ static int reconfig_mock_close(void *obj)
 	return 0;
 }
 
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
 static int reconfig_mock_ioctl(void *obj, unsigned int request, va_list args)
 {
 	struct reconfig_mock_fd *mock = obj;
@@ -272,6 +273,7 @@ static int reconfig_mock_ioctl(void *obj, unsigned int request, va_list args)
 		return -EOPNOTSUPP;
 	}
 }
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
 
 static const struct fd_op_vtable reconfig_mock_vtable = {
 	.close = reconfig_mock_close,

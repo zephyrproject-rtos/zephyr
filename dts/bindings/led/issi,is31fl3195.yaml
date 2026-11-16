@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  IS31FL3195 4-channel LED driver with programmable pattern sequencing
+
+compatible: "issi,is31fl3195"
+
+include: ["i2c-device.yaml", "led-controller.yaml"]
+
+child-binding:
+  properties:
+    label:
+      required: true
+
+    color-mapping:
+      required: true
+
+    current-limit:
+      type: int
+      enum:
+        - 10
+        - 20
+        - 30
+        - 40
+      required: true
+      description: |
+        The current limit for the LED in mA.
+
+examples:
+  - |
+    /* Single RGB LED */
+    is31fl3195@54 {
+      compatible = "issi,is31fl3195";
+      reg = <0x54>;
+
+      led_0 {
+        label = "RGB LED";
+        color-mapping =
+          <LED_COLOR_ID_RED>,
+          <LED_COLOR_ID_GREEN>,
+          <LED_COLOR_ID_BLUE>;
+        current-limit = <20>;
+      };
+    };

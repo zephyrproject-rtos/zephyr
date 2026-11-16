@@ -287,6 +287,14 @@ int settings_line_entry_copy(void *dst_ctx, off_t dst_off, void *src_ctx,
 			break;
 		}
 
+		if (chunk_size == 0) {
+			/* The source ended before the entry did, e.g. a truncated entry. Without
+			 * this check the loop would never end, as len would not decrease.
+			 */
+			rc = -EIO;
+			break;
+		}
+
 		size_t write_size = chunk_size;
 
 		if (chunk_size % settings_io_cb.rwbs) {

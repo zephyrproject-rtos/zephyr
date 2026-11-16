@@ -229,6 +229,7 @@ ADI Platforms:
     - boards/shields/mikroe_accel_click/
     - boards/shields/mikroe_accel22_click/
     - boards/shields/mikroe_adac_click/
+    - boards/shields/mikroe_surface_temp_2_click/
     - boards/shields/pmod_acl/
     - drivers/*/*max*
     - drivers/*/*max*/
@@ -366,12 +367,20 @@ ARM64 arch:
     - kernel
 
 ASPEED Platforms:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - billy-tsai
   files:
+    - boards/aspeed/
     - soc/aspeed/
     - dts/arm/aspeed/
+    - dts/riscv/aspeed/
+    - dts/bindings/*/aspeed,*
     - drivers/*/*_ast10x0.c
+    - drivers/*/*_ast27xx*.c
+    - drivers/*/*ast2700*.c
     - drivers/*/Kconfig.aspeed
+    - include/zephyr/dt-bindings/*/ast27xx*
   labels:
     - "platform: ASPEED"
 
@@ -400,9 +409,11 @@ Alif Semiconductor Platforms:
   files:
     - boards/alif/
     - drivers/*/*alif*
+    - drivers/*/*/*alif*
     - dts/arm/alif/
     - dts/bindings/*/alif,*
     - include/zephyr/dt-bindings/*/alif*.h
+    - scripts/west_commands/runners/alif_flash.py
     - soc/alif/
   labels:
     - "platform: Alif Semiconductor"
@@ -1493,6 +1504,19 @@ Display controllers:
     - drivers.display
     - sample.display
 
+Division by Reciprocal:
+  status: maintained
+  maintainers:
+    - npitre
+  files:
+    - doc/kernel/div64.rst
+    - include/zephyr/sys/div64.h
+    - lib/os/div64.c
+    - tests/lib/div64/
+    - tests/unit/time_units/reciprocal.c
+  tests:
+    - libraries.div64
+
 Documentation:
   status: maintained
   meta: true
@@ -2543,6 +2567,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - ithinuel
+    - TomasGalbickaNXP
   files:
     - include/zephyr/drivers/mbox.h
     - drivers/mbox/
@@ -2808,7 +2833,9 @@ Documentation Infrastructure:
     - drivers.regulator
 
 "Drivers: Reset":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - andrei-edward-popa
   files:
     - drivers/reset/
     - include/zephyr/drivers/reset.h
@@ -3065,6 +3092,7 @@ Documentation Infrastructure:
     - tgorochowik
   collaborators:
     - kgugala
+    - hongquan-prog
   files:
     - drivers/virtio/
     - dts/bindings/virtio/
@@ -3365,6 +3393,17 @@ Ezurio platforms:
   labels:
     - "platform: Ezurio"
 
+Fastbit Platforms:
+  status: maintained
+  maintainers:
+    - kiran-fastbit
+    - shreyas-fastbit
+  files:
+    - boards/fastbit/
+    - dts/bindings/gpio/fastbit,nano-header.yaml
+  labels:
+    - "platform: Fastbit"
+
 Filesystems:
   status: maintained
   maintainers:
@@ -3533,6 +3572,7 @@ IPC:
     - anangl
   collaborators:
     - arnopo
+    - TomasGalbickaNXP
   files:
     - include/zephyr/ipc/
     - samples/subsys/ipc/
@@ -4707,6 +4747,9 @@ NXP Platforms (MPU):
     - tests/arch/arm64/arm64_gicv3_its/boards/imx*.conf
   files-regex:
     - boards/nxp/.*m?imx[^(rt)].*/
+  files-exclude:
+    - drivers/video/imx*
+    - drivers/video/Kconfig.imx*
   labels:
     - "platform: NXP MPU"
     - "platform: NXP"
@@ -5094,6 +5137,7 @@ Networking:
   files:
     - doc/services/connectivity/networking/api/ieee802154.rst
     - include/zephyr/net/ieee802154*.h
+    - samples/net/ieee802154/
     - subsys/net/l2/ieee802154/
     - subsys/net/lib/config/ieee802154*
     - tests/net/ieee802154/
@@ -5609,6 +5653,17 @@ RX arch:
     - arch
     - kernel
 
+Radxa ROCK 5B Platforms:
+  status: maintained
+  maintainers:
+    - zevorn
+  files:
+    - boards/radxa/rock_5b/
+    - boards/radxa/rock_5b_plus/
+    - boards/radxa/common/rk3588_rock_5b_common.dtsi
+  labels:
+    - "platform: Rockchip"
+
 Random:
   status: maintained
   maintainers:
@@ -5889,6 +5944,20 @@ Rockchip Platforms:
     - include/zephyr/dt-bindings/*/*rk35*
   labels:
     - "platform: Rockchip"
+
+Rust:
+  status: maintained
+  maintainers:
+    - d3zd3z
+  collaborators:
+    - felipebalbi
+    - kurtjd
+    - jerrysxie
+  files:
+    - doc/develop/languages/rust/
+    - modules/Kconfig.rust
+  labels:
+    - "area: Rust"
 
 SPARC arch:
   status: odd fixes
@@ -6406,6 +6475,7 @@ TI K3 Platforms:
     - natto1784
     - Kronosblaster
     - soumya-TI
+    - Sunil-Hegde
   files:
     - boards/ti/*am2*/
     - boards/ti/*am6*/
@@ -6437,6 +6507,7 @@ TI MSPM Platforms:
     - Girinandha-M
     - santhosh-c-c
     - soumya-TI
+    - Sunil-Hegde
   files:
     - soc/ti/mspm/
     - boards/ti/*mspm*/
@@ -6930,6 +7001,15 @@ WCH Platforms:
   labels:
     - "platform: WinChipHead"
 
+Waveshare Platforms:
+  status: maintained
+  maintainers:
+    - hongquan-prog
+  files:
+    - boards/waveshare/
+  labels:
+    - "platform: Waveshare"
+
 West:
   status: maintained
   maintainers:
@@ -7102,6 +7182,8 @@ West:
     - modules/dhara/
   labels:
     - "area: Disk Access"
+  tests:
+    - drivers.disk.ftl
 
 "West project: edtt":
   status: maintained
@@ -7612,6 +7694,7 @@ West:
   collaborators:
     - pdgendt
     - uLipe
+    - AndreCostaaa
   files:
     - modules/lvgl/
     - tests/lib/gui/lvgl/
@@ -7932,18 +8015,6 @@ West:
     - modules/zcbor/
   labels:
     - "area: CBOR"
-
-"West project: zephyr-lang-rust":
-  status: maintained
-  maintainers:
-    - d3zd3z
-  collaborators:
-    - felipebalbi
-    - kurtjd
-    - jerrysxie
-  files: []
-  labels:
-    - "area: Rust"
 
 "West project: zephyr-xenlib":
   status: maintained

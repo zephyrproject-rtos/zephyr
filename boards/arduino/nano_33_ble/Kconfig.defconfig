@@ -3,7 +3,7 @@
 
 if BOARD_ARDUINO_NANO_33_BLE
 
-config REGULATOR
+configdefault REGULATOR
 	default y if SENSOR
 
 endif # BOARD_ARDUINO_NANO_33_BLE

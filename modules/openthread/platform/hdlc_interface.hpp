@@ -174,7 +174,7 @@ private:
 
     /* Spinel HDLC interface */
     const struct device *radio_dev;
-    struct hdlc_api     *hdlc_api;
+    struct hdlc_driver_api     *hdlc_api;
 
     struct k_event  spinel_hdlc_event;
     struct k_mutex  spinel_hdlc_wr_lock;

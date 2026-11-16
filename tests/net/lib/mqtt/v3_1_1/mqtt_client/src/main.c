@@ -9,7 +9,14 @@
 #include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/mqtt.h>
+#include <zephyr/net/tls_credentials.h>
 #include <zephyr/random/random.h>
+
+#if defined(CONFIG_MQTT_LIB_TLS)
+#include <mbedtls/ssl.h>
+
+int ztls_get_cached_session(int fd, struct mbedtls_ssl_session *session);
+#endif
 
 #include "mqtt_internal.h"
 
@@ -32,8 +39,29 @@ int s_sock = -1, c_sock = -1;
 static struct zsock_pollfd client_fds[1];
 static int client_nfds;
 
+#if defined(CONFIG_MQTT_LIB_TLS)
+#define PSK_TAG 1
+
+static const sec_tag_t sec_tag_list[] = { PSK_TAG };
+static const int cipher_list[] = { MBEDTLS_TLS_PSK_WITH_AES_256_CBC_SHA384 };
+
+/* mqtt_connect() runs on this queue, so that the broker can accept the
+ * TLS handshake concurrently.
+ */
+K_THREAD_STACK_DEFINE(tls_connect_stack, 4096);
+static struct k_work_q tls_connect_work_q;
+static struct tls_connect_work {
+	struct k_work work;
+	int result;
+} tls_connect;
+#endif /* CONFIG_MQTT_LIB_TLS */
+
 static struct mqtt_test_ctx {
 	bool connected;
+	int connack_count;
+	uint8_t disconnect_reason;
+	const uint8_t *reply_before_connack;
+	size_t reply_before_connack_len;
 	bool ping_resp_handled;
 	bool publish_handled;
 	bool puback_handled;
@@ -50,6 +78,11 @@ static const uint8_t payload_long[] = LOREM_IPSUM;
 
 static const uint8_t connect_ack_reply[] = {
 	MQTT_PKT_TYPE_CONNACK, 0x02, 0, 0,
+};
+
+/* MQTT 5.0 CONNACK: flags, reason code and an empty property list. */
+static const uint8_t connect_ack_reply_5_0[] = {
+	MQTT_PKT_TYPE_CONNACK, 0x03, 0, 0, 0,
 };
 
 static const uint8_t ping_resp_reply[] = {
@@ -81,9 +114,18 @@ static const char *get_mqtt_topic(void)
 	return "sensors";
 }
 
+static int client_sock(struct mqtt_client *client)
+{
+#if defined(CONFIG_MQTT_LIB_TLS)
+	return client->transport.tls.sock;
+#else
+	return client->transport.tcp.sock;
+#endif
+}
+
 static void prepare_client_fds(struct mqtt_client *client)
 {
-	client_fds[0].fd = client->transport.tcp.sock;
+	client_fds[0].fd = client_sock(client);
 	client_fds[0].events = ZSOCK_POLLIN;
 	client_nfds = 1;
 }
@@ -106,6 +148,32 @@ static void client_wait(bool timeout_allowed)
 	}
 }
 
+static void broker_tls_init(void)
+{
+#if defined(CONFIG_MQTT_LIB_TLS)
+	int cache = ZSOCK_TLS_SESSION_CACHE_ENABLED;
+	int ret;
+
+	ret = zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
+			       sec_tag_list, sizeof(sec_tag_list));
+	if (ret < 0) {
+		printk("Failed to set sec tags on server socket, %d\n", errno);
+	}
+
+	ret = zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_CIPHERSUITE_LIST,
+			       cipher_list, sizeof(cipher_list));
+	if (ret < 0) {
+		printk("Failed to set ciphersuites on server socket, %d\n", errno);
+	}
+
+	ret = zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SESSION_CACHE,
+			       &cache, sizeof(cache));
+	if (ret < 0) {
+		printk("Failed to enable session cache on server socket, %d\n", errno);
+	}
+#endif
+}
+
 static void broker_init(void)
 {
 	struct net_sockaddr_in6 *broker6 = net_sin6(&broker);
@@ -124,7 +192,9 @@ static void broker_init(void)
 	memset(broker_topic, 0, sizeof(broker_topic));
 	broker_offset = 0;
 
-	s_sock = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	s_sock = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM,
+			      IS_ENABLED(CONFIG_MQTT_LIB_TLS) ? NET_IPPROTO_TLS_1_2 :
+							       NET_IPPROTO_TCP);
 	if (s_sock < 0) {
 		printk("Failed to create server socket\n");
 	}
@@ -134,6 +204,8 @@ static void broker_init(void)
 	if (ret < 0) {
 		printk("Failed to set SO_REUSEADDR on server socket, %d\n", errno);
 	}
+
+	broker_tls_init();
 
 	ret = zsock_bind(s_sock, (struct net_sockaddr *)&bind_addr, sizeof(bind_addr));
 	if (ret < 0) {
@@ -146,6 +218,14 @@ static void broker_init(void)
 	}
 }
 
+static void broker_client_close(void)
+{
+	if (c_sock >= 0) {
+		zsock_close(c_sock);
+		c_sock = -1;
+	}
+}
+
 static void broker_destroy(void)
 {
 	if (s_sock >= 0) {
@@ -153,10 +233,7 @@ static void broker_destroy(void)
 		s_sock = -1;
 	}
 
-	if (c_sock >= 0) {
-		zsock_close(c_sock);
-		c_sock = -1;
-	}
+	broker_client_close();
 }
 
 #define LISTEN_SOCK_ID 0
@@ -200,7 +277,16 @@ static void broker_validate_packet(uint8_t *buf, size_t length, uint8_t type,
 {
 	switch (type) {
 	case MQTT_PKT_TYPE_CONNECT: {
-		test_send_reply(connect_ack_reply, sizeof(connect_ack_reply));
+		if (test_ctx.reply_before_connack != NULL) {
+			test_send_reply(test_ctx.reply_before_connack,
+					test_ctx.reply_before_connack_len);
+		}
+
+		if (client_ctx.protocol_version == MQTT_VERSION_5_0) {
+			test_send_reply(connect_ack_reply_5_0, sizeof(connect_ack_reply_5_0));
+		} else {
+			test_send_reply(connect_ack_reply, sizeof(connect_ack_reply));
+		}
 		break;
 	}
 	case MQTT_PKT_TYPE_PUBLISH: {
@@ -310,6 +396,8 @@ static void broker_validate_packet(uint8_t *buf, size_t length, uint8_t type,
 		break;
 	}
 	case MQTT_PKT_TYPE_DISCONNECT: {
+		/* MQTT 5.0 carries a reason code; an empty one means Normal. */
+		test_ctx.disconnect_reason = (length > 0) ? buf[0] : 0U;
 		zsock_close(c_sock);
 		c_sock = -1;
 		break;
@@ -463,6 +551,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client,
 	switch (evt->type) {
 	case MQTT_EVT_CONNACK:
 		zassert_ok(evt->result, "MQTT connect failed %d", evt->result);
+		test_ctx.connack_count++;
 		test_ctx.connected = true;
 		break;
 
@@ -565,8 +654,18 @@ static void client_init(struct mqtt_client *client)
 	client->password = NULL;
 	client->user_name = NULL;
 	client->protocol_version = MQTT_VERSION_3_1_1;
-	client->transport.type = MQTT_TRANSPORT_NON_SECURE;
 	client->clean_session = true;
+
+#if defined(CONFIG_MQTT_LIB_TLS)
+	client->transport.type = MQTT_TRANSPORT_SECURE;
+	client->transport.tls.config.peer_verify = ZSOCK_TLS_PEER_VERIFY_NONE;
+	client->transport.tls.config.cipher_list = cipher_list;
+	client->transport.tls.config.cipher_count = ARRAY_SIZE(cipher_list);
+	client->transport.tls.config.sec_tag_list = sec_tag_list;
+	client->transport.tls.config.sec_tag_count = ARRAY_SIZE(sec_tag_list);
+#else
+	client->transport.type = MQTT_TRANSPORT_NON_SECURE;
+#endif
 
 	client->rx_buf = rx_buffer;
 	client->rx_buf_size = sizeof(rx_buffer);
@@ -574,13 +673,101 @@ static void client_init(struct mqtt_client *client)
 	client->tx_buf_size = sizeof(tx_buffer);
 }
 
+#if defined(CONFIG_MQTT_LIB_TLS)
+static void tls_connect_handler(struct k_work *work)
+{
+	struct tls_connect_work *ctx = CONTAINER_OF(work, struct tls_connect_work, work);
+
+	ctx->result = mqtt_connect(&client_ctx);
+}
+#endif
+
+static int client_connect(void)
+{
+#if defined(CONFIG_MQTT_LIB_TLS)
+	struct zsock_pollfd listen_fd = { .fd = s_sock, .events = ZSOCK_POLLIN };
+	struct k_work_sync sync;
+	int ret;
+
+	ret = k_work_submit_to_queue(&tls_connect_work_q, &tls_connect.work);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = 0;
+
+	/* Serve the handshake only once the client reached the broker, so that
+	 * an early mqtt_connect() failure is reported as such.
+	 */
+	while (k_work_is_pending(&tls_connect.work)) {
+		ret = zsock_poll(&listen_fd, 1, 10);
+		if (ret != 0) {
+			break;
+		}
+	}
+
+	/* The after hook closes the broker, which unblocks the client. */
+	zassert_true(ret >= 0, "Broker poll failed (%d)", -errno);
+
+	if (ret > 0) {
+		broker_process(MQTT_PKT_TYPE_CONNECT);
+	}
+
+	k_work_flush(&tls_connect.work, &sync);
+
+	return tls_connect.result;
+#else
+	int ret;
+
+	ret = mqtt_connect(&client_ctx);
+	if (ret < 0) {
+		return ret;
+	}
+
+	broker_process(MQTT_PKT_TYPE_CONNECT);
+
+	return 0;
+#endif
+}
+
+static void tls_session_cache_disabled_check(void)
+{
+#if defined(CONFIG_MQTT_LIB_TLS)
+	int cache = -1;
+	net_socklen_t len = sizeof(cache);
+	int ret;
+
+	ret = zsock_getsockopt(client_ctx.transport.tls.sock, ZSOCK_SOL_TLS,
+			       ZSOCK_TLS_SESSION_CACHE, &cache, &len);
+	zassert_ok(ret, "Failed to read TLS_SESSION_CACHE (%d)", -errno);
+	zassert_equal(cache, ZSOCK_TLS_SESSION_CACHE_DISABLED,
+		      "TLS session cache should be disabled by default (%d)", cache);
+#endif
+}
+
+#if defined(CONFIG_MQTT_LIB_TLS)
+static void tls_cached_session_id(uint8_t *id, size_t *id_len)
+{
+	mbedtls_ssl_session session;
+	int ret;
+
+	mbedtls_ssl_session_init(&session);
+	ret = ztls_get_cached_session(client_ctx.transport.tls.sock, &session);
+	*id_len = mbedtls_ssl_session_get_id_len(&session);
+	memcpy(id, *mbedtls_ssl_session_get_id(&session), *id_len);
+	mbedtls_ssl_session_free(&session);
+
+	zassert_ok(ret, "No TLS session cached (%d)", ret);
+	zassert_true(*id_len > 0, "Cached TLS session has no ID");
+}
+#endif
+
 static void test_connect(void)
 {
 	int ret;
 
-	ret = mqtt_connect(&client_ctx);
+	ret = client_connect();
 	zassert_ok(ret, "MQTT client failed to connect (%d)", ret);
-	broker_process(MQTT_PKT_TYPE_CONNECT);
 	prepare_client_fds(&client_ctx);
 
 	client_wait(false);
@@ -706,8 +893,42 @@ ZTEST(mqtt_client, test_mqtt_connect)
 {
 	test_connect();
 	zassert_true(test_ctx.connected, "MQTT client should be connected");
+	tls_session_cache_disabled_check();
 	test_disconnect();
 	zassert_false(test_ctx.connected, "MQTT client should be disconnected");
+}
+
+ZTEST(mqtt_client, test_mqtt_connect_tls_session_cache)
+{
+	if (!IS_ENABLED(CONFIG_MQTT_LIB_TLS)) {
+		ztest_test_skip();
+	}
+
+#if defined(CONFIG_MQTT_LIB_TLS)
+	uint8_t session_id[32];
+	uint8_t resumed_id[32];
+	size_t session_id_len;
+	size_t resumed_id_len;
+
+	client_ctx.transport.tls.config.session_cache = ZSOCK_TLS_SESSION_CACHE_ENABLED;
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected");
+	tls_cached_session_id(session_id, &session_id_len);
+	test_disconnect();
+	zassert_false(test_ctx.connected, "MQTT client should be disconnected");
+
+	broker_client_close();
+
+	/* The broker keeps the session ID only when it resumes the session. */
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should reconnect");
+	tls_cached_session_id(resumed_id, &resumed_id_len);
+	zassert_equal(resumed_id_len, session_id_len, "TLS session not resumed");
+	zassert_mem_equal(resumed_id, session_id, session_id_len, "TLS session not resumed");
+	test_disconnect();
+	zassert_false(test_ctx.connected, "MQTT client should be disconnected");
+#endif
 }
 
 ZTEST(mqtt_client, test_mqtt_connect_with_binding)
@@ -818,6 +1039,67 @@ ZTEST(mqtt_client, test_mqtt_pubsub_long)
 	zassert_true(test_ctx.puback_handled, "MQTT client should receive puback");
 }
 
+static void test_second_connack(const uint8_t *connack, size_t connack_len)
+{
+	int ret;
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected");
+
+	test_send_reply(connack, connack_len);
+
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -EBADMSG, "Second CONNACK should be a protocol error (%d)", ret);
+	zexpect_equal(test_ctx.connack_count, 1, "Second CONNACK reported to the application");
+	zexpect_false(test_ctx.connected, "MQTT client should have closed the connection");
+
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -ENOTCONN, "MQTT client should no longer be connected (%d)", ret);
+}
+
+ZTEST(mqtt_client, test_mqtt_second_connack)
+{
+	test_second_connack(connect_ack_reply, sizeof(connect_ack_reply));
+}
+
+ZTEST(mqtt_client, test_mqtt_second_connack_5_0)
+{
+	if (!IS_ENABLED(CONFIG_MQTT_VERSION_5_0)) {
+		ztest_test_skip();
+	}
+
+	client_ctx.protocol_version = MQTT_VERSION_5_0;
+
+	test_second_connack(connect_ack_reply_5_0, sizeof(connect_ack_reply_5_0));
+
+	/* MQTT 5.0 4.13.1: the client says why before closing the connection. */
+	broker_process(MQTT_PKT_TYPE_DISCONNECT);
+	zexpect_equal(test_ctx.disconnect_reason, MQTT_DISCONNECT_PROTOCOL_ERROR,
+		      "Unexpected DISCONNECT reason code 0x%02x", test_ctx.disconnect_reason);
+}
+
+ZTEST(mqtt_client, test_mqtt_packet_before_connack)
+{
+	int ret;
+
+	test_ctx.reply_before_connack = ping_resp_reply;
+	test_ctx.reply_before_connack_len = sizeof(ping_resp_reply);
+
+	ret = client_connect();
+	zassert_ok(ret, "MQTT client failed to connect (%d)", ret);
+	prepare_client_fds(&client_ctx);
+
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -EBADMSG, "Packet before CONNACK should be a protocol error (%d)", ret);
+	zexpect_false(test_ctx.ping_resp_handled,
+		      "Packet before CONNACK reported to the application");
+
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -ENOTCONN, "MQTT client should no longer be connected (%d)", ret);
+}
+
 static void mqtt_tests_before(void *fixture)
 {
 	ARG_UNUSED(fixture);
@@ -829,13 +1111,47 @@ static void mqtt_tests_before(void *fixture)
 
 static void mqtt_tests_after(void *fixture)
 {
+#if defined(CONFIG_MQTT_LIB_TLS)
+	struct k_work_sync sync;
+#endif
+
 	ARG_UNUSED(fixture);
 
 	broker_destroy();
+#if defined(CONFIG_MQTT_LIB_TLS)
+	/* A failed test may leave mqtt_connect() running on the work queue. */
+	k_work_flush(&tls_connect.work, &sync);
+#endif
 	mqtt_abort(&client_ctx);
 	clear_client_fds();
 	/* Let the TCP workqueue release TCP contexts. */
 	k_msleep(10);
 }
 
-ZTEST_SUITE(mqtt_client, NULL, NULL, mqtt_tests_before, mqtt_tests_after, NULL);
+static void *mqtt_tests_setup(void)
+{
+#if defined(CONFIG_MQTT_LIB_TLS)
+	static const unsigned char psk[] = {
+		0x01, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+	};
+	static const char psk_id[] = "test_identity";
+	int ret;
+
+	ret = tls_credential_add(PSK_TAG, TLS_CREDENTIAL_PSK, psk, sizeof(psk));
+	zassert_ok(ret, "Failed to register PSK (%d)", ret);
+
+	ret = tls_credential_add(PSK_TAG, TLS_CREDENTIAL_PSK_ID, psk_id, strlen(psk_id));
+	zassert_ok(ret, "Failed to register PSK ID (%d)", ret);
+
+	k_work_init(&tls_connect.work, tls_connect_handler);
+	k_work_queue_init(&tls_connect_work_q);
+	k_work_queue_start(&tls_connect_work_q, tls_connect_stack,
+			   K_THREAD_STACK_SIZEOF(tls_connect_stack),
+			   K_LOWEST_APPLICATION_THREAD_PRIO, NULL);
+#endif
+
+	return NULL;
+}
+
+ZTEST_SUITE(mqtt_client, NULL, mqtt_tests_setup, mqtt_tests_before, mqtt_tests_after, NULL);

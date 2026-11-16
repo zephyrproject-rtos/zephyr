@@ -2745,7 +2745,7 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
 #endif
 };
 
-static const struct net_wifi_mgmt_offload esp32_api = {
+static DEVICE_API(wifi_native, esp32_api) = {
 	.wifi_iface.iface_api.init = esp32_wifi_init,
 	.wifi_iface.set_config = esp32_wifi_set_config,
 	.wifi_iface.send = esp32_wifi_send,

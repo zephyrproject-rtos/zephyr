@@ -98,7 +98,7 @@ static int hdlc_deinit(void)
 	return ret;
 }
 
-static const struct hdlc_api nxp_hdlc_api = {
+static DEVICE_API(hdlc, nxp_hdlc_api) = {
 	.iface_api.init = hdlc_iface_init,
 	.register_rx_cb = hdlc_register_rx_cb,
 	.send = hdlc_send,

@@ -68,3 +68,32 @@ tests:
       - rpi_pico2/rp2350a/hazard3_0
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=overlays/mipi_dbi_rpi_pico_pio2_4_splits.overlay
+  drivers.mipi_dbi.bitbang.2port_split:
+    platform_allow:
+      - native_sim
+    extra_dtc_overlay_files:
+      - overlays/mipi_dbi_bitbang_native_sim_2port_split.overlay
+  drivers.mipi_dbi.bitbang.2port_split.lut_limit_1:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_MIPI_DBI_BITBANG_MAX_LUT_PORTS=1
+    extra_dtc_overlay_files:
+      - overlays/mipi_dbi_bitbang_native_sim_2port_split.overlay
+  drivers.mipi_dbi.bitbang.2port_split.active_low:
+    platform_allow:
+      - native_sim
+    extra_dtc_overlay_files:
+      - overlays/mipi_dbi_bitbang_native_sim_2port_split_active_low.overlay
+  drivers.mipi_dbi.bitbang.4port_interleaved:
+    platform_allow:
+      - native_sim
+    extra_dtc_overlay_files:
+      - overlays/mipi_dbi_bitbang_native_sim_4port_interleaved.overlay
+  drivers.mipi_dbi.bitbang.4port_interleaved.lut_limit_3:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_MIPI_DBI_BITBANG_MAX_LUT_PORTS=3
+    extra_dtc_overlay_files:
+      - overlays/mipi_dbi_bitbang_native_sim_4port_interleaved.overlay

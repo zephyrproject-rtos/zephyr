@@ -78,6 +78,16 @@ ZTEST_F(net_block_transfer, test_init_message_use_big_buffer)
 	zassert_equal(msg->cpkt.data, msg->body_encode_buffer.data,
 			  "Full body buffer should be in use");
 
+#if defined(CONFIG_LWM2M_COAP_ENCODE_BUFFER_CUSTOM_SECTION)
+	/* The linker gives the bounds of a section named like a C identifier. */
+	extern uint8_t __start_lwm2m_encode_buffer[];
+	extern uint8_t __stop_lwm2m_encode_buffer[];
+
+	zassert_true(msg->body_encode_buffer.data >= __start_lwm2m_encode_buffer &&
+			     msg->body_encode_buffer.data < __stop_lwm2m_encode_buffer,
+		     "Full body buffer should be in the custom section");
+#endif
+
 	zassert_equal(EXPECTED_LWM2M_COAP_FULL_BUFFER_SIZE, msg->cpkt.max_len,
 		      "Max length for the package is wrong");
 

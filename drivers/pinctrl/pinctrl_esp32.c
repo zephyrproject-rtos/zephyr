@@ -110,6 +110,9 @@ static int esp32_pin_apply_config(uint32_t pin, uint32_t flags)
 	} else if (flags & ESP32_PULL_DOWN_FLAG) {
 		gpio_ll_pullup_dis(&GPIO, pin);
 		gpio_ll_pulldown_en(&GPIO, pin);
+	} else if (flags & ESP32_NO_PULL_FLAG) {
+		gpio_ll_pullup_dis(&GPIO, pin);
+		gpio_ll_pulldown_dis(&GPIO, pin);
 	}
 
 	if (flags & ESP32_DIR_OUT_FLAG) {
@@ -170,6 +173,9 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 	}
 
 	switch (ESP32_PIN_BIAS(pin_cfg)) {
+	case ESP32_NO_PULL:
+		flags |= ESP32_NO_PULL_FLAG;
+		break;
 	case ESP32_PULL_UP:
 		flags |= ESP32_PULL_UP_FLAG;
 		break;

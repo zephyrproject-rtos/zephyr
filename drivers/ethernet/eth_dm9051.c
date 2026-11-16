@@ -794,7 +794,7 @@ static const struct device *eth_dm9051_get_phy(const struct device *dev,
 	return config->phy_dev;
 }
 
-static const struct ethernet_api eth_dm9051_api = {
+static DEVICE_API(ethernet, eth_dm9051_api) = {
 	.iface_api.init = eth_dm9051_iface_init,
 	.get_capabilities = eth_dm9051_get_capabilities,
 	.set_config = eth_dm9051_set_config,

@@ -269,18 +269,6 @@ static struct conn_param_data *outgoing_conn_param_data_get(void)
 }
 #endif
 
-/* SMP Bluetooth notification sent callback */
-static void smp_notify_finished(struct bt_conn *conn, void *user_data)
-{
-	struct conn_param_data *cpd = conn_param_data_get(conn);
-
-	__ASSERT(cpd != NULL, "Invalid CPD for connection: %p", conn);
-
-	if (cpd != NULL) {
-		k_sem_give(&cpd->smp_notify_sem);
-	}
-}
-
 #if defined(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL)
 /* Sets connection parameters for a given conn. */
 static void conn_param_set(struct bt_conn *conn, struct bt_le_conn_param *param)
@@ -462,8 +450,17 @@ static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 
 int smp_bt_notify(struct bt_conn *conn, const void *data, uint16_t len)
 {
-	return bt_gatt_notify(conn, (attr_smp_bt_svc + BT_CHARACTERISTIC_ATTRIBUTE_SIZE), data,
-			      len);
+	struct bt_gatt_notify_params params = {
+		.attr = (attr_smp_bt_svc + BT_CHARACTERISTIC_ATTRIBUTE_SIZE),
+		.data = data,
+		.len = len,
+#if defined(CONFIG_BT_EATT)
+		/* Fragments must arrive in order, which only a single bearer guarantees */
+		.chan_opt = BT_ATT_CHAN_OPT_UNENHANCED_ONLY,
+#endif
+	};
+
+	return bt_gatt_notify_cb(conn, &params);
 }
 
 /**
@@ -486,8 +483,14 @@ static struct bt_conn *smp_bt_conn_from_pkt(const struct net_buf *nb)
  */
 static uint16_t smp_bt_conn_get_mtu(struct bt_conn *conn)
 {
+	uint16_t mtu = bt_gatt_get_uatt_mtu(conn);
+
+	if (mtu == 0U) {
+		return 0;
+	}
+
 	/* Account for the three-byte notification header. */
-	return bt_gatt_get_mtu(conn) - BT_GATT_MESSAGE_OVERHEAD;
+	return mtu - BT_GATT_MESSAGE_OVERHEAD;
 }
 
 static uint16_t smp_bt_nb_get_mtu(const struct net_buf *nb)
@@ -534,33 +537,11 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 	int rc = MGMT_ERR_EOK;
 	uint16_t off = 0;
 	uint16_t mtu_size;
-	struct bt_gatt_notify_params notify_param = {
-		.attr = (attr_smp_bt_svc + BT_CHARACTERISTIC_ATTRIBUTE_SIZE),
-		.func = smp_notify_finished,
-		.data = nb->data,
-	};
-	bool sent = false;
-	struct bt_conn_info info;
 	struct conn_param_data *cpd;
 	struct smp_bt_user_data *ud;
 
 	conn = smp_bt_conn_from_pkt(nb);
 	if (conn == NULL) {
-		rc = MGMT_ERR_ENOENT;
-		goto cleanup;
-	}
-
-	/* Verify that the device is connected, the necessity for this check is that the remote
-	 * device might have sent a command and disconnected before the command has been processed
-	 * completely, if this happens then the connection details will still be valid due to
-	 * the incremented connection reference count, but the connection has actually been
-	 * dropped, this avoids waiting for a semaphore that will never be given which would
-	 * otherwise cause a deadlock.
-	 */
-	rc = bt_conn_get_info(conn, &info);
-
-	if (rc != 0 || info.state != BT_CONN_STATE_CONNECTED) {
-		/* Remote device has disconnected */
 		rc = MGMT_ERR_ENOENT;
 		goto cleanup;
 	}
@@ -585,8 +566,6 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 		goto cleanup;
 	}
 
-	k_sem_reset(&cpd->smp_notify_sem);
-
 	while (off < nb->len) {
 		if (cpd->id == 0 || cpd->id != ud->id) {
 			/* The device that sent this packet has disconnected or is not the same
@@ -601,46 +580,14 @@ static int smp_bt_tx_pkt(struct net_buf *nb)
 			mtu_size = nb->len - off;
 		}
 
-		notify_param.len = mtu_size;
-		rc = bt_gatt_notify_cb(conn, &notify_param);
-
-		if (rc == -ENOMEM) {
-			if (sent == false) {
-				/* Failed to send a packet thus far, try reducing the MTU size
-				 * as perhaps the buffer size is limited to a value which is
-				 * less than the MTU or there is a configuration error in the
-				 * project
-				 */
-				if (mtu_size < SMP_BT_MINIMUM_MTU_SEND_FAILURE) {
-					/* If unable to send a 20 byte message, something is
-					 * amiss, no point in continuing
-					 */
-					rc = MGMT_ERR_ENOMEM;
-					break;
-				}
-
-				mtu_size /= 2;
-			}
-
-			/* No buffers available, wait until the next loop for them to become
-			 * available
-			 */
-			rc = MGMT_ERR_EOK;
-			k_yield();
-		} else if (rc == 0) {
-			off += mtu_size;
-			notify_param.data = &nb->data[off];
-			sent = true;
-
-			/* Wait for the completion (or disconnect) semaphore before
-			 * continuing, allowing other parts of the system to run.
-			 */
-			k_sem_take(&cpd->smp_notify_sem, K_FOREVER);
-		} else {
-			/* No connection, cannot continue */
-			rc = MGMT_ERR_EUNKNOWN;
+		rc = smp_bt_notify(conn, &nb->data[off], mtu_size);
+		if (rc != 0) {
+			LOG_WRN("SMP notification failed (err %d), dropping response", rc);
+			rc = (rc == -ENOTCONN) ? MGMT_ERR_ENOENT : MGMT_ERR_EUNKNOWN;
 			break;
 		}
+
+		off += mtu_size;
 	}
 
 cleanup:
@@ -906,6 +853,14 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct conn_param_data *cpd = conn_param_data_get(conn);
 
+	/* Invalidate the session ID before sweeping the queue so that pending
+	 * requests of this connection are dropped; cpd->conn must stay set until
+	 * after the sweep because the validity check finds the session through it.
+	 */
+	if (cpd != NULL) {
+		cpd->id = 0;
+	}
+
 	/* Remove all pending requests from this device which have yet to be processed from the
 	 * FIFO (for this specific connection).
 	 */
@@ -916,19 +871,21 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	 * callback will not be called and this is needed to prevent a deadlock.
 	 */
 	if (cpd != NULL) {
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
+		/* Copy of the state for use after the semaphore has been given, see below */
+		uint8_t state = cpd->state;
+#endif
+
 		/* Clear cpd. */
-		cpd->id = 0;
 		cpd->conn = NULL;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
-		if ((cpd->state & OUTGOING_CONNECTION) != 0) {
-			if ((cpd->state & CONNECTED) == 0) {
+		if ((state & OUTGOING_CONNECTION) != 0) {
+			if ((state & CONNECTED) == 0) {
 				return;
 			}
 
 			bt_conn_drop(&conn);
-
-			(void)transport_mgmt_disconnect_transport(&smp_bt_transport, false, true);
 		} else {
 #endif
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
@@ -938,11 +895,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
-			if ((cpd->state & INCOMING_CONNECTION) != 0) {
+			if ((state & INCOMING_CONNECTION) != 0) {
 				incoming_bridge_data.conn = NULL;
 				incoming_bridge_data.id = 0;
-				(void)transport_mgmt_disconnect_transport(&smp_bt_transport, true,
-									  false);
 			}
 		}
 #endif
@@ -953,6 +908,18 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 #endif
 
 		k_sem_give(&cpd->smp_notify_sem);
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
+		/* The semaphore must be given before taking the transport_mgmt lock: a bridge
+		 * connect or bridge output may be waiting on it while holding that lock. The
+		 * woken thread may clean up and reuse cpd, so it must not be accessed here.
+		 */
+		if ((state & OUTGOING_CONNECTION) != 0) {
+			(void)transport_mgmt_disconnect_transport(&smp_bt_transport, false, true);
+		} else if ((state & INCOMING_CONNECTION) != 0) {
+			(void)transport_mgmt_disconnect_transport(&smp_bt_transport, true, false);
+		}
+#endif
 	} else {
 		LOG_ERR("NULL cpd object for connection %p", (void *)conn);
 	}

@@ -44,8 +44,9 @@ What is covered
 That the connect names the protocol, its level, the client and a keep alive;
 that nothing is sent until the broker has accepted the connection; that a
 publish carries the topic, the quality of service and an identifier to
-acknowledge; that an idle connection is kept alive with a ping; and that a
-refused connection is not used.
+acknowledge; that an idle connection is kept alive with a ping; that a refused
+connection is not used; and that the client closes the connection when the
+broker sends a second connack, or a publish ahead of the connack.
 
 Packet identifiers and re-sending are not covered. Zephyr's client leaves both
 to the application: :c:func:`mqtt_publish` sends the identifier and the

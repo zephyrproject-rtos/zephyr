@@ -418,6 +418,27 @@ config LWM2M_COAP_ENCODE_BUFFER_SIZE
 	  Size of buffers for serializing big LwM2M CoAP messages that need to be
 	  split into blocks for sending.
 
+config LWM2M_COAP_ENCODE_BUFFER_SECTION_NAME
+	string "Linker section of the encode buffers"
+	help
+	  Name of the linker section the LWM2M_NUM_OUTPUT_BLOCK_CONTEXT + 1
+	  buffers of LWM2M_COAP_ENCODE_BUFFER_SIZE bytes are placed in, for
+	  instance to move them to external RAM. If empty, they are in .noinit.
+	  A section the SoC linker script already maps can be used directly
+	  (".ext_ram.bss.lwm2m_encode_buffer" places them in the PSRAM of an
+	  Espressif SoC); any other name needs a linker script rule. The
+	  compiler emits a section whose name does not start with .bss or
+	  .noinit as PROGBITS, so that rule should mark the output section
+	  NOLOAD, or the buffers end up in the image. The memory slab is then
+	  initialized when the LwM2M engine starts, at the APPLICATION init
+	  level, so the section must be usable by then and must not be cleared
+	  afterwards.
+
+config LWM2M_COAP_ENCODE_BUFFER_CUSTOM_SECTION
+	def_bool LWM2M_COAP_ENCODE_BUFFER_SECTION_NAME != ""
+	help
+	  The encode buffers are in LWM2M_COAP_ENCODE_BUFFER_SECTION_NAME.
+
 config LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
 	int "Maximum # of LwM2M block contexts used for outgoing messages"
 	default 3

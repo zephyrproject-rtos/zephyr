@@ -448,7 +448,7 @@ void net_if_stats_reset_all(void)
 static inline void init_iface(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct net_if_api *api;
+	const struct net_if_driver_api *api;
 
 	NET_ASSERT(dev != NULL);
 
@@ -457,12 +457,9 @@ static inline void init_iface(struct net_if *iface)
 		return;
 	}
 
-	api = dev->api;
+	api = DEVICE_API_GET(net_if, dev);
 
-	if (!api || !api->init) {
-		NET_ERR("Iface %p driver API init NULL", iface);
-		return;
-	}
+	NET_ASSERT(api->init != NULL, "Iface %p driver API init NULL", iface);
 
 	/* By default IPv4 and IPv6 are enabled for a given network interface.
 	 * These can be turned off later if needed.

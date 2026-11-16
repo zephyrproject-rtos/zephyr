@@ -1,0 +1,6 @@
+board:
+  name: npck6m9k_evb
+  full_name: NPCK6M9K_EVB
+  vendor: nuvoton
+  socs:
+  - name: npck6m9k

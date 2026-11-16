@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	uart1_lp_uart_echo: uart1_lp_uart_echo {
+		group1 {
+			pinmux = <UART1_TX_GPIO15>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART1_RX_GPIO14>;
+			bias-pull-up;
+		};
+	};
+};
+
+&lp_uart {
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_lp_uart_echo>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&gpio1 {
+	c6_reset_hog {
+		gpio-hog;
+		gpios = <22 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+};
+
+&sdhc1 {
+	status = "disabled";
+};

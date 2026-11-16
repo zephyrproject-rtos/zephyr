@@ -14,7 +14,7 @@ config GNSS_U_BLOX_M10
 	select GNSS_U_BLOX_PROTOCOL
 	select UART_USE_RUNTIME_CONFIGURE
 	help
-		Enable U-BLOX M10 GNSS modem driver.
+	  Enable U-BLOX M10 GNSS modem driver.
 
 if GNSS_U_BLOX_M10
 

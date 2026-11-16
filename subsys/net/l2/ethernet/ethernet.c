@@ -159,21 +159,29 @@ static inline void ethernet_update_length(struct net_if *iface,
 	}
 }
 
-
-static void ethernet_update_rx_stats(struct net_if *iface, size_t length,
-				     bool dst_broadcast, bool dst_eth_multicast)
+static void ethernet_update_rx_stats(struct net_if *iface __maybe_unused,
+				     size_t length __maybe_unused,
+				     bool dst_broadcast __maybe_unused,
+				     bool dst_eth_multicast __maybe_unused)
 {
-	if (!IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
+
+	if (stats == NULL) {
 		return;
 	}
 
-	eth_stats_update_bytes_rx(iface, length);
-	eth_stats_update_pkts_rx(iface);
+	stats->bytes.received += length;
+	stats->pkts.rx++;
+
 	if (dst_broadcast) {
-		eth_stats_update_broadcast_rx(iface);
+		stats->broadcast.rx++;
 	} else if (dst_eth_multicast) {
-		eth_stats_update_multicast_rx(iface);
+		stats->multicast.rx++;
+	} else {
+		/* Unicast frame */
 	}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 }
 
 static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
@@ -239,7 +247,7 @@ static int ethernet_mcast_filter_set(struct net_if *iface,
 		},
 	};
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 
 	NET_ASSERT(dev != NULL);
 
@@ -254,7 +262,7 @@ static int ethernet_mcast_filter_set(struct net_if *iface,
 		return -ENOTSUP;
 	}
 
-	if (!api || !api->set_config) {
+	if (api->set_config == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -960,28 +968,34 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	return hdr_frag;
 }
 
-static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
+static void ethernet_update_tx_stats(struct net_if *iface __maybe_unused,
+				     struct net_pkt *pkt __maybe_unused)
 {
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+	struct net_stats_eth *stats = eth_stats_get_common(iface);
 
-	if (!IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
+	if (stats == NULL) {
 		return;
 	}
 
-	eth_stats_update_bytes_tx(iface, net_pkt_get_len(pkt));
-	eth_stats_update_pkts_tx(iface);
+	stats->bytes.sent += net_pkt_get_len(pkt);
+	stats->pkts.tx++;
 
 	if (net_eth_is_addr_broadcast(&hdr->dst)) {
-		eth_stats_update_broadcast_tx(iface);
+		stats->broadcast.tx++;
 	} else if (net_eth_is_addr_multicast(&hdr->dst)) {
-		eth_stats_update_multicast_tx(iface);
+		stats->multicast.tx++;
+	} else {
+		/* Unicast frame */
 	}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 }
 
 static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	uint16_t ptype = net_htons(net_pkt_ll_proto_type(pkt));
 	struct net_pkt *orig_pkt = pkt;
@@ -1123,7 +1137,7 @@ arp_error:
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *eth;
+	const struct ethernet_driver_api *eth;
 	struct net_linkaddr *mac_addr;
 	int ret;
 
@@ -1246,7 +1260,7 @@ void net_eth_carrier_set(struct net_if *iface, bool carrier_up)
 const struct device *net_eth_get_phy(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 
 	NET_ASSERT(dev != NULL);
 
@@ -1269,7 +1283,7 @@ const struct device *net_eth_get_phy(struct net_if *iface)
 const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 
 	NET_ASSERT(dev != NULL);
 
@@ -1399,9 +1413,7 @@ void ethernet_init(struct net_if *iface)
 	dsa_eth_init(iface);
 #endif
 
-	if ((caps & ETHERNET_LLDP) != 0) {
-		net_lldp_set_lldpdu(iface);
-	}
+	net_lldp_set_lldpdu(iface);
 
 	ctx->is_init = true;
 }

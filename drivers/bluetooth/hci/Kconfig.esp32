@@ -11,8 +11,11 @@ config HEAP_MEM_POOL_ADD_SIZE_ESP_BT
 	help
 	  Additional heap size reserved for Bluetooth driver usage.
 
+configdefault BT_BUF_ACL_RX_SIZE
+	default 255 if BT_CONN && !BT_CLASSIC
+
 configdefault BT_HCI_ACL_FLOW_CONTROL
-	default y
+	default y if BT_BUF_ACL_RX_SIZE >= 255 && !BT_CLASSIC
 
 choice ESP_BT_HEAP
 	prompt "Bluetooth heap type"
@@ -249,6 +252,16 @@ config ESP32_BT_CTLR_CHECK_CONNECT_IND_ACCESS_ADDRESS
 	bool "CONNECT_IND access address verification"
 	help
 	  Perform strict validation of Access Address in CONNECT_IND PDUs to improve security.
+
+config ESP32_BT_CTLR_LE_MIN_CONN_INTERVAL
+	bool "Allow connection intervals below 7.5 ms"
+	depends on SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32S3
+	imply BT_CONN_PARAM_ANY
+	help
+	  Allow the controller to accept connection intervals down to
+	  3.75 ms, below the 7.5 ms minimum of the Bluetooth Core
+	  specification. Short intervals leave little time per connection
+	  event, so avoid large payloads when such an interval is in use.
 
 choice ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM
 	prompt "Coexistence PHY coded TX/RX time limit"

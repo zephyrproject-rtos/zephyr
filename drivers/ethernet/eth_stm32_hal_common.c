@@ -249,9 +249,6 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	       | ETHERNET_PROMISC_MODE
 #endif
-#if defined(CONFIG_NET_LLDP)
-	       | ETHERNET_LLDP
-#endif
 #if defined(CONFIG_ETH_STM32_HW_CHECKSUM)
 	       | ETHERNET_HW_RX_CHKSUM_OFFLOAD | ETHERNET_HW_TX_CHKSUM_OFFLOAD
 #endif
@@ -279,7 +276,7 @@ static struct net_stats_eth *eth_stm32_hal_get_stats(const struct device *dev,
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
-static const struct ethernet_api eth_api = {
+static DEVICE_API(ethernet, eth_api) = {
 	.iface_api.init = eth_iface_init,
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	.get_ptp_clock = eth_stm32_get_ptp_clock,

@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(net_samples_common, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(net_samples_vlan, LOG_LEVEL_DBG);
 
 #include <stdlib.h>
 #include <zephyr/kernel.h>

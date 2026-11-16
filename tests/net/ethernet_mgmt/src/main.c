@@ -460,7 +460,7 @@ static struct net_stats_eth *eth_fake_get_stats(const struct device *dev __unuse
 	return &eth_fake_stats;
 }
 
-static const struct ethernet_api eth_fake_api_funcs = {
+static DEVICE_API(ethernet, eth_fake_api_funcs) = {
 	.iface_api.init = eth_fake_iface_init,
 
 	.get_capabilities = eth_fake_get_capabilities,

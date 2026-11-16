@@ -660,7 +660,7 @@ static const struct wifi_mgmt_ops ameba_wifi_mgmt = {
 #endif
 };
 
-static const struct net_wifi_mgmt_offload rtk_api = {
+static DEVICE_API(wifi_native, rtk_api) = {
 	.wifi_iface.iface_api.init = ameba_wifi_init,
 	.wifi_iface.send = ameba_wifi_send,
 	.wifi_mgmt_api = &ameba_wifi_mgmt,

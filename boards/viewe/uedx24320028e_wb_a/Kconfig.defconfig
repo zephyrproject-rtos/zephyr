@@ -4,7 +4,7 @@
 if BOARD_UEDX24320028E_WB_A_ESP32S3_PROCPU
 
 config ESP_SPIRAM
-	default y
+	default y if !MCUBOOT
 
 choice SPIRAM_MODE
 	default SPIRAM_MODE_OCT

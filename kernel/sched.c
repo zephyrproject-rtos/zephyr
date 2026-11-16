@@ -402,6 +402,7 @@ void z_unpend_thread(struct k_thread *thread)
 	}
 	while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
 		z_sched_spinlock_unlock(key);
+		z_wait_thread_timeout_inflight(thread);
 		key = z_sched_spinlock_lock();
 	}
 	z_sched_spinlock_unlock(key);
@@ -537,10 +538,6 @@ static inline void unpend_all(_wait_q_t *wait_q)
 
 void z_sched_unpend_all_locked(_wait_q_t *wait_q) ALIAS_OF(unpend_all);
 
-#ifdef CONFIG_THREAD_ABORT_HOOK
-extern void thread_abort_hook(struct k_thread *thread);
-#endif /* CONFIG_THREAD_ABORT_HOOK */
-
 /**
  * @brief Dequeues the specified thread
  *
@@ -586,11 +583,24 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_k
 			 * remaining in-flight window before the caller of
 			 * z_thread_halt() returns.
 			 */
-			if (key != NULL) {
-				while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
-					z_sched_spinlock_unlock(*key);
-					*key = z_sched_spinlock_lock();
-				}
+			if ((key != NULL) &&
+			    (z_try_abort_thread_timeout(thread) == -EAGAIN)) {
+				/* The wait drops the lock with the thread
+				 * already dead (only possible on SMP). Flag
+				 * the halt as still in progress, so
+				 * k_thread_join() waits on join_queue instead
+				 * of returning early or spinning on the lock
+				 * (clear_halting() below drops the flag), and
+				 * keep interrupts masked: a dead _current that
+				 * an interrupt switches away never comes back
+				 * to finish the halt.
+				 */
+				thread->base.thread_state |= _THREAD_ABORTING;
+				do {
+					z_sched_spinlock_release();
+					z_wait_thread_timeout_inflight(thread);
+					(void)z_sched_spinlock_lock();
+				} while (z_try_abort_thread_timeout(thread) == -EAGAIN);
 			}
 			unpend_all(&thread->join_queue);
 
@@ -616,28 +626,7 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_k
 
 		SYS_PORT_TRACING_FUNC(k_thread, sched_abort, thread);
 
-		z_thread_monitor_exit(thread);
-#ifdef CONFIG_THREAD_ABORT_HOOK
-		thread_abort_hook(thread);
-#endif /* CONFIG_THREAD_ABORT_HOOK */
-
-#ifdef CONFIG_OBJ_CORE_THREAD
-#ifdef CONFIG_OBJ_CORE_STATS_THREAD
-		k_obj_core_stats_deregister(K_OBJ_CORE(thread));
-#endif /* CONFIG_OBJ_CORE_STATS_THREAD */
-		k_obj_core_unlink(K_OBJ_CORE(thread));
-#endif /* CONFIG_OBJ_CORE_THREAD */
-
-#ifdef CONFIG_USERSPACE
-		z_mem_domain_exit_thread(thread);
-		k_thread_perms_all_clear(thread);
-		k_object_uninit(thread->stack_obj);
-		k_object_uninit(thread);
-#endif /* CONFIG_USERSPACE */
-
-#ifdef CONFIG_THREAD_ABORT_NEED_CLEANUP
-		k_thread_abort_cleanup(thread);
-#endif /* CONFIG_THREAD_ABORT_NEED_CLEANUP */
+		z_thread_release(thread);
 
 		/* Do this "set _current to dummy" step last so that
 		 * subsystems above can rely on _current being

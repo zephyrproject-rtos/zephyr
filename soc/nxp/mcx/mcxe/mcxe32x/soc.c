@@ -12,6 +12,7 @@
 
 #if defined(CONFIG_SOC_MCXE32B_CPU0)
 #include <fsl_power.h>
+#include <fsl_clock.h>
 #endif
 
 void soc_early_init_hook(void)
@@ -22,6 +23,13 @@ void soc_early_init_hook(void)
 	/* Enable I/DCache */
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
+	/*
+	 * SEMA42 has no clocks property; its MC_ME gate is owned by cpu0, which
+	 * enables it for both cores.
+	 */
+	if (IS_ENABLED(CONFIG_HWSPINLOCK_NXP_SEMA42)) {
+		(void)CLOCK_EnableClock(kCLOCK_Sema42);
+	}
 #endif
 }
 

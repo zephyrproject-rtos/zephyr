@@ -187,6 +187,7 @@ FUNC_NORETURN void arch_secondary_cpu_init(void)
 #endif
 
 #ifdef CONFIG_SMP
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	arm_gic_secondary_init();
 
 	irq_enable(SGI_SCHED_IPI);
@@ -199,6 +200,14 @@ FUNC_NORETURN void arch_secondary_cpu_init(void)
 #ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
 	irq_enable(SGI_COREDUMP_FREEZE_IPI);
 #endif
+#else
+	/*
+	 * No GIC (e.g. BCM2710/BCM2836 ARM-local intc). Per-core IPI setup
+	 * is done by the SoC in soc_per_core_init_hook() below and the
+	 * per-core timer by smp_timer_init(); the scheduler IPI is raised
+	 * via the SoC mailbox path in send_ipi().
+	 */
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 #endif
 
 	soc_per_core_init_hook();
@@ -223,6 +232,17 @@ FUNC_NORETURN void arch_secondary_cpu_init(void)
 
 #ifdef CONFIG_SMP
 
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+/*
+ * The mem-cfg IPI has no custom-intc transport: delivering it as a
+ * scheduler IPI would leave the other cores' page tables stale, so
+ * refuse the combination outright rather than misbehave at runtime.
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_USERSPACE),
+	     "CONFIG_USERSPACE needs the mem-cfg IPI, which has no "
+	     "custom interrupt controller transport yet");
+#endif
+
 static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 {
 	uint64_t mpidr = MPIDR_TO_CORE(GET_MPIDR());
@@ -245,11 +265,22 @@ static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 		}
 
 		aff0 = MPIDR_AFFLVL(target_mpidr, 0);
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 		gic_raise_sgi(ipi, target_mpidr, 1 << aff0);
+#else
+		ARG_UNUSED(aff0);
+		/*
+		 * Only the scheduler IPI is routed through the SoC hook.
+		 * CONFIG_USERSPACE's mem-cfg IPI has no custom-intc
+		 * transport yet.
+		 */
+		__ASSERT(ipi == SGI_SCHED_IPI, "unsupported IPI %u", ipi);
+		soc_sched_ipi(target_mpidr);
+#endif
 	}
 }
 
-void sched_ipi_handler(const void *unused)
+void z_arm64_sched_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -294,7 +325,7 @@ struct fpu_flush_request {
 
 static struct fpu_flush_request fpu_flush_requests[CONFIG_MP_MAX_NUM_CPUS];
 
-void flush_fpu_ipi_handler(const void *unused)
+void z_arm64_flush_fpu_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -317,7 +348,12 @@ void arch_flush_fpu_ipi(unsigned int cpu)
 	aff0 = MPIDR_AFFLVL(mpidr, 0);
 	/* Publish before the SGI, including when the target has IRQs masked. */
 	atomic_set(&fpu_flush_requests[cpu].pending, 1);
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << aff0);
+#else
+	ARG_UNUSED(aff0);
+	soc_flush_fpu_ipi(mpidr);
+#endif
 }
 
 /*
@@ -598,7 +634,8 @@ int arch_smp_init(void)
 	 * SGI0 is use for sched ipi, this might be changed to use Kconfig
 	 * option
 	 */
-	IRQ_CONNECT(SGI_SCHED_IPI, IRQ_DEFAULT_PRIORITY, sched_ipi_handler, NULL, 0);
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	IRQ_CONNECT(SGI_SCHED_IPI, IRQ_DEFAULT_PRIORITY, z_arm64_sched_ipi_handler, NULL, 0);
 	irq_enable(SGI_SCHED_IPI);
 
 #ifdef CONFIG_USERSPACE
@@ -607,7 +644,7 @@ int arch_smp_init(void)
 	irq_enable(SGI_MMCFG_IPI);
 #endif
 #ifdef CONFIG_FPU_SHARING
-	IRQ_CONNECT(SGI_FPU_IPI, IRQ_DEFAULT_PRIORITY, flush_fpu_ipi_handler, NULL, 0);
+	IRQ_CONNECT(SGI_FPU_IPI, IRQ_DEFAULT_PRIORITY, z_arm64_flush_fpu_ipi_handler, NULL, 0);
 	irq_enable(SGI_FPU_IPI);
 #endif
 #ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
@@ -615,6 +652,9 @@ int arch_smp_init(void)
 			coredump_freeze_ipi_handler, NULL, 0);
 	irq_enable(SGI_COREDUMP_FREEZE_IPI);
 #endif
+#else
+	/* No GIC: the SoC connects its mailbox IPI to z_arm64_sched_ipi_handler. */
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 	return 0;
 }

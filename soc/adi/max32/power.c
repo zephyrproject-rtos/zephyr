@@ -5,6 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/timer/system_timer_lpm.h>
 #include <zephyr/init.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/pm/pm.h>
@@ -34,8 +35,6 @@ struct {
 #undef DT_DRV_COMPAT
 
 #endif /* CONFIG_PM_S2RAM */
-
-#define SYS_TIMER_COMPANION DT_CHOSEN(zephyr_system_timer_companion)
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -102,7 +101,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_SUSPEND_TO_RAM:
 #ifdef CONFIG_PM_S2RAM
 		max32xx_system_init();
-#if DT_NODE_HAS_COMPAT(SYS_TIMER_COMPANION, adi_max32_wut)
+#if DT_NODE_HAS_COMPAT(SYSTEM_TIMER_COMPANION_NODE, adi_max32_wut)
 		MXC_LP_EnableWUTAlarmWakeup();
 #endif
 		/* Check if GPIO pins caused wakeup and manually trigger interrupts */
@@ -122,7 +121,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 #endif /* CONFIG_PM_S2RAM */
 		break;
 	case PM_STATE_STANDBY:
-#if DT_NODE_HAS_COMPAT(SYS_TIMER_COMPANION, adi_max32_rtc_counter)
+#if DT_NODE_HAS_COMPAT(SYSTEM_TIMER_COMPANION_NODE, adi_max32_rtc_counter)
 		/* For this state wait a little until RTC register being ready
 		 * otherwise seems previous RTC value being read
 		 */

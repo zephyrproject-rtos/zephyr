@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Federico Borgo
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.fuel_gauge.ltc3337:
+    tags:
+      - fuel_gauge
+    filter: dt_compat_enabled("adi,ltc3337")
+    platform_allow:
+      - native_sim

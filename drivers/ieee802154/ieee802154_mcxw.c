@@ -587,23 +587,35 @@ static int handle_ack(struct mcxw_context *mcxw_radio)
 {
 	uint8_t len;
 	uint8_t alloc_len;
+	bool is_stripped_imm_ack;
 	struct net_pkt *pkt;
 	int err = 0;
 
 	len = mcxw_radio->rx_ack_frame.length;
 
-	/* NBU firmware strips FCS on Imm-ACKs after hardware verification,
-	 * but Enh-ACKs are delivered with FCS included.
-	 * OpenThread expects the PSDU to always include FCS.
-	 * Append 2 dummy FCS bytes for Imm-ACKs only.
+	/* NBU firmware strips the FCS on Imm-ACKs after hardware verification,
+	 * whereas Enh-ACKs are delivered with their FCS included. OpenThread
+	 * expects the PSDU to always include the FCS. A stripped Imm-ACK has an
+	 * exact length of FC(2) + seq(1) = 3 bytes (IEEE802154_IMM_ACK_LENGTH -
+	 * IEEE802154_FCS_LENGTH). Matching both this exact length and the ACK
+	 * frame type (lowest 3 bits of the first Frame Control octet) before
+	 * appending the 2 dummy FCS bytes makes the intent explicit and avoids
+	 * altering any other short frame that happens to have the same length
+	 * but a different frame type.
 	 */
+	is_stripped_imm_ack =
+		(len == (IEEE802154_IMM_ACK_LENGTH - IEEE802154_FCS_LENGTH)) &&
+		((mcxw_radio->rx_ack_frame.psdu[0] & IEEE802154_FRM_TYPE_MASK) ==
+		 IEEE802154_FRM_TYPE_ACK);
+
 	alloc_len = len;
-	if (len > 0 && len < IEEE802154_IMM_ACK_LENGTH) {
+	if (is_stripped_imm_ack) {
 		alloc_len = len + IEEE802154_FCS_LENGTH;
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(mcxw_radio->iface, alloc_len,
 					   NET_AF_UNSPEC, 0, K_NO_WAIT);
+
 	if (!pkt) {
 		LOG_ERR("No free packet available.");
 		err = -ENOMEM;
@@ -616,7 +628,7 @@ static int handle_ack(struct mcxw_context *mcxw_radio)
 		goto free_ack;
 	}
 
-	if (len > 0 && len < IEEE802154_IMM_ACK_LENGTH) {
+	if (is_stripped_imm_ack) {
 		static const uint8_t dummy_fcs[IEEE802154_FCS_LENGTH] = {0};
 
 		if (net_pkt_write(pkt, dummy_fcs, IEEE802154_FCS_LENGTH) < 0) {
@@ -677,7 +689,10 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	}
 
 	mcxw_radio->tx_frame.length = payload_len + IEEE802154_FCS_LENGTH;
-	memcpy(mcxw_radio->tx_frame.psdu, payload, payload_len);
+	/* Work on the caller's frame so that the header updates (CSL IE, Frame
+	 * Counter reported by the NBU) are visible to the upper layer.
+	 */
+	mcxw_radio->tx_frame.psdu = payload;
 
 	mcxw_radio->tx_frame.sec_processed = net_pkt_ieee802154_frame_secured(pkt);
 	mcxw_radio->tx_frame.hdr_updated = net_pkt_ieee802154_mac_hdr_rdy(pkt);
@@ -703,10 +718,8 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	msg->msgData.dataReq.CCABeforeTx = gPhyNoCCABeforeTx_c;
 	msg->msgData.dataReq.startTime = gPhySeqStartAsap_c;
 
-	/* tx_frame.psdu will point to tx_frame.tx_data data buffer after macToPdDataMessage_t
-	 * structure
-	 */
-	msg->msgData.dataReq.pPsdu = mcxw_radio->tx_frame.psdu;
+	/* The PHY transport requires the PSDU right after the request header */
+	msg->msgData.dataReq.pPsdu = mcxw_radio->tx_data + sizeof(macToPdDataMessage_t);
 
 	if (ieee802154_is_ar_flag_set(frag)) {
 		msg->msgData.dataReq.ackRequired = gPhyRxAckRqd_c;
@@ -803,6 +816,8 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 
 #endif
 
+	memcpy(msg->msgData.dataReq.pPsdu, payload, payload_len);
+
 	k_sem_reset(&mcxw_radio->tx_wait);
 
 	mcxw_radio_state tmp_state = mcxw_radio->state;
@@ -814,10 +829,16 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 		mcxw_tx_started(dev, pkt, frag);
 	} else {
 		mcxw_radio->state = tmp_state;
+		mcxw_radio->tx_frame.psdu = NULL;
+		mcxw_radio->tx_frame.length = 0;
 		return -EIO;
 	}
 
 	k_sem_take(&mcxw_radio->tx_wait, K_FOREVER);
+
+	/* The caller's frame is no longer owned by the driver */
+	mcxw_radio->tx_frame.psdu = NULL;
+	mcxw_radio->tx_frame.length = 0;
 
 	/* Propagate the security flags back to the net_pkt so that the
 	 * OT platform layer (radio.c) can report the correct values to
@@ -1573,7 +1594,8 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 	case gPlmeAbortInd_c:
 		/* TX Packet was loaded into TX Packet RAM but the TX/TR seq did not ended ok */
 #if OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
-		if (is_keyid_mode_1(mcxw_ctx.tx_frame.psdu, mcxw_ctx.tx_frame.length) &&
+		if (RADIO_STATE_TRANSMIT == mcxw_ctx.state &&
+		    is_keyid_mode_1(mcxw_ctx.tx_frame.psdu, mcxw_ctx.tx_frame.length) &&
 		    !mcxw_ctx.tx_frame.sec_processed && !mcxw_ctx.tx_frame.hdr_updated) {
 			set_frame_counter(mcxw_ctx.tx_frame.psdu, mcxw_ctx.tx_frame.length,
 					  plme_msg->fc);
@@ -1769,8 +1791,6 @@ static int mcxw_init(const struct device *dev)
 	rf_set_channel(DEFAULT_CHANNEL);
 
 	mcxw_radio->tx_frame.length = 0;
-	/* Make the psdu point to the space after macToPdDataMessage_t in the data buffer */
-	mcxw_radio->tx_frame.psdu = mcxw_radio->tx_data + sizeof(macToPdDataMessage_t);
 
 	/* Use the board-provided dedicated counter for radio timestamps. */
 	mcxw_radio->counter = DEVICE_DT_GET(MCXW_TIMESTAMP_COUNTER_NODE);
@@ -1854,7 +1874,7 @@ static void set_rx_state(void)
 	}
 }
 
-static const struct ieee802154_radio_api mcxw71_radio_api = {
+static DEVICE_API(ieee802154_radio, mcxw71_radio_api) = {
 	.iface_api.init = mcxw_iface_init,
 
 	.get_capabilities = mcxw_get_capabilities,

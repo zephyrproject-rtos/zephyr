@@ -9,6 +9,20 @@ tests:
       - native_sim
       - native_sim/native/64
     filter: dt_nodelabel_enabled("tst_dma0") or dt_node_has_prop("/zephyr,user", "dma-test-devs")
+  drivers.dma.chan_blen_transfer.mcux_edma_long_block:
+    tags:
+      - dma
+    depends_on:
+      - dma
+    filter: dt_nodelabel_enabled("tst_dma0") and CONFIG_DMA_MCUX_EDMA
+    platform_allow:
+      - mimxrt1170_evk@A/mimxrt1176/cm7
+    extra_configs:
+      # Two descriptors of 0x7FFF loops fill the default pool of two.
+      - CONFIG_DMA_TCD_QUEUE_SIZE=2
+      - CONFIG_DMA_TRANSFER_LONG_BLOCK_SIZE=65534
+      - CONFIG_DMA_TRANSFER_LONG_BLOCK_RELOAD=y
+      - CONFIG_DMA_TRANSFER_OVERSIZE_BLOCK_SIZE=65535
   drivers.dma.chan_blen_transfer.low_footprint:
     tags:
       - dma
@@ -36,3 +50,17 @@ tests:
       - kit_pse84_ai/pse846gps2dbzc4a/m55
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m55
+  drivers.dma.stm32_lpdma.chan_blen_transfer:
+    tags:
+      - dma
+    depends_on:
+      - dma
+    filter: dt_node_has_prop("/zephyr,user", "dma-test-devs")
+    extra_args:
+      - platform:b_u585i_iot02a/stm32u585xx:DTC_OVERLAY_FILE="boards/stm32u5_lpdma.overlay"
+      - platform:b_u585i_iot02a/stm32u585xx:EXTRA_CONF_FILE="boards/stm32u5_lpdma.conf"
+      - platform:nucleo_u575zi_q/stm32u575xx:DTC_OVERLAY_FILE="boards/stm32u5_lpdma.overlay"
+      - platform:nucleo_u575zi_q/stm32u575xx:EXTRA_CONF_FILE="boards/stm32u5_lpdma.conf"
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_u575zi_q

@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <string.h>
 #include <zephyr/ztest.h>
 #include <zephyr/fs/fs.h>
+#include <zephyr/fs/virtiofs.h>
 #include "test_virtiofs.h"
 
 #define PATH(name) VIRTIOFS_MNT "/" name
@@ -33,6 +35,34 @@ ZTEST(virtiofs, test_create_write_read)
 	zassert_ok(fs_close(&file), "close after read failed");
 
 	zassert_mem_equal(buf, payload, sizeof(payload), "read back mismatch");
+}
+
+/* A device that reports max_write == 0 must still be mountable: zero-length
+ * writes are no-ops, while non-empty writes are rejected.
+ */
+ZTEST(virtiofs, test_zero_max_write)
+{
+	struct virtiofs_fs_data *fs_data = testfs_mnt.fs_data;
+	const char byte = 'x';
+	struct fs_file_t file;
+	uint32_t saved;
+	ssize_t zero_ret;
+	ssize_t write_ret;
+
+	fs_file_t_init(&file);
+	zassert_ok(fs_open(&file, PATH("zero_max_write"), FS_O_CREATE | FS_O_RDWR), "open failed");
+
+	saved = fs_data->max_write;
+	fs_data->max_write = 0U;
+
+	zero_ret = fs_write(&file, &byte, 0U);
+	write_ret = fs_write(&file, &byte, 1U);
+
+	fs_data->max_write = saved;
+	zassert_ok(fs_close(&file), "close failed");
+
+	zassert_equal(zero_ret, 0, "zero-length write failed");
+	zassert_equal(write_ret, -ENOTSUP, "write with max_write == 0 was not rejected");
 }
 
 /* stat a freshly written file and confirm type and size. */

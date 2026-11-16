@@ -186,6 +186,7 @@ config XTENSA
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
 	select THREAD_STACK_INFO
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
 	select ARCH_HAS_USERSPACE if XTENSA_MMU || XTENSA_MPU
@@ -242,6 +243,12 @@ config HEXAGON
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_HAS_STACK_PROTECTION
 	select ARCH_HAS_USERSPACE if HEXAGON_MMU
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	select ARCH_MEM_DOMAIN_SUPPORTS_DEINIT if USERSPACE
+	select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS if USERSPACE
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select MEM_DOMAIN_HAS_THREAD_LIST if USERSPACE
+	select THREAD_LOCAL_STORAGE if USERSPACE
 	select CPU_HAS_MMU
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
@@ -303,7 +310,6 @@ config SRAM_DEPRECATED_KCONFIG_SET
 	bool
 	default y if SRAM_SIZE != $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 	default y if SRAM_BASE_ADDRESS != $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
-	default n
 	select DEPRECATED
 	help
 	  Indicates that either `CONFIG_SRAM_SIZE` or `CONFIG_SRAM_BASE_ADDRESS` have been
@@ -1101,6 +1107,16 @@ config ARCH_HAS_PMU
 	  counters usable by the Zephyr PMU API (<zephyr/arch/pmu.h>). For AArch64,
 	  Cortex-A profiles select this option; enable CONFIG_ARM64_PMUV3 to build
 	  the ARMv8-A PMUv3 driver backend.
+
+config PMU_MAX_COUNTERS
+	int "Maximum number of PMU event counters"
+	depends on ARCH_HAS_PMU
+	default 8
+	range 1 32
+	help
+	  Upper bound on the number of logical event counters the PMU API
+	  can describe, used to size per-counter configuration arrays. A
+	  backend may implement fewer hardware counters.
 
 #
 # Hidden CPU family configs

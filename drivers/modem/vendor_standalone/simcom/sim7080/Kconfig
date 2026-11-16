@@ -27,7 +27,7 @@ config MODEM_SIMCOM_SIM7080_RX_WORKQ_STACK_SIZE
 	int "Stack size for the simcom sim7080 modem driver work queue"
 	default 2048
 	help
-		This stack is used by the work queue.
+	  This stack is used by the work queue.
 
 config MODEM_SIMCOM_SIM7080_INIT_PRIORITY
 	int "simcom sim7080 driver init priority"
@@ -39,15 +39,15 @@ config MODEM_SIMCOM_SIM7080_LTE_BANDS_M1
 	hex "Default LTE bands for CAT-M1"
 	default 0x8820
 	help
-		Bitmap of channels the modem can use for CAT-M1.
-		Refer to enum sim7080_lte_chan.
+	  Bitmap of channels the modem can use for CAT-M1.
+	  Refer to enum sim7080_lte_chan.
 
 config MODEM_SIMCOM_SIM7080_LTE_BANDS_NB1
 	hex "Default LTE bands for NB-IoT"
 	default 0x8820
 	help
-		Bitmap of channels the modem can use for NB-IoT.
-		Refer to enum sim7080_lte_chan.
+	  Bitmap of channels the modem can use for NB-IoT.
+	  Refer to enum sim7080_lte_chan.
 
 config MODEM_SIMCOM_SIM7080_APN
 	string "APN for establishing a network connection"
@@ -61,23 +61,23 @@ config MODEM_SIMCOM_SIM7080_BAUDRATE
 	int "Baudrate for modem UART"
 	default 115200
 	help
-		Set this to the baudrate the uart is using. On first startup
-		the modem is configured to use autobaud. The driver will then
-		configure the modem to use a fixed baudrate for faster startups.
+	  Set this to the baudrate the uart is using. On first startup
+	  the modem is configured to use autobaud. The driver will then
+	  configure the modem to use a fixed baudrate for faster startups.
 
 config MODEM_SIMCOM_SIM7080_DNS_DEFAULT_RECOUNT
 	int "Retry count for a DNS query"
 	range 0 10
 	default 10
 	help
-		The number of retries for a DNS lookup
+	  The number of retries for a DNS lookup
 
 config MODEM_SIMCOM_SIM7080_DNS_DEFAULT_TIMEOUT
 	int "Timeout for a DNS query"
 	range 0 60000
 	default 20000
 	help
-		The timeout for DNS queries in milliseconds
+	  The timeout for DNS queries in milliseconds
 
 config MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS
 	bool "TLS for sockets"
@@ -97,17 +97,17 @@ choice MODEM_SIMCOM_SIM7080_RAT
 config MODEM_SIMCOM_SIM7080_RAT_NB1
 	bool "NB-IoT"
 	help
-		Enable LTE NB-IoT mode.
+	  Enable LTE NB-IoT mode.
 
 config MODEM_SIMCOM_SIM7080_RAT_M1
 	bool "Cat-M1"
 	help
-		Enable Cat-M1 mode.
+	  Enable Cat-M1 mode.
 
 config MODEM_SIMCOM_SIM7080_RAT_LTE_AUTO
 	bool "Automatic selection of NB-IoT or Cat-M1"
 	help
-		Enable automatic LTE technology selection.
+	  Enable automatic LTE technology selection.
 
 config MODEM_SIMCOM_SIM7080_RAT_GSM
 	bool "GSM"
@@ -123,12 +123,12 @@ choice
 config MODEM_SIMCOM_SIM7080_BOOT_TYPE_NORMAL
 	bool "Normal boot"
 	help
-		Boot the modem and attach to network
+	  Boot the modem and attach to network
 
 config MODEM_SIMCOM_SIM7080_BOOT_TYPE_CONSTRAINED
 	bool "Constrained boot"
 	help
-		Check if the modem is operational and then power off
+	  Check if the modem is operational and then power off
 
 endchoice
 

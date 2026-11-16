@@ -24,7 +24,7 @@ static void test_iface_init(struct net_if *iface)
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 }
 
-static const struct dummy_api test_iface_api = {
+static DEVICE_API(dummy, test_iface_api) = {
 	.iface_api.init = test_iface_init,
 };
 

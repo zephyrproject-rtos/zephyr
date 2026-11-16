@@ -79,3 +79,8 @@
 	prescaler = <1>;
 	status = "okay";
 };
+
+&sema42 {
+	domain-id = <1>;
+	status = "okay";
+};

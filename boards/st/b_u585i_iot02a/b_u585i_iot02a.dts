@@ -78,9 +78,10 @@
 	};
 };
 
-&mx25lm51245 {
+&ext_flash {
 	partitions {
 		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 

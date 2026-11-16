@@ -54,7 +54,7 @@ static struct k_thread tx_thread_data;
 static uint8_t slip_buf[1 + 2 * CONFIG_NET_BUF_DATA_SIZE];
 
 /* ieee802.15.4 device */
-static struct ieee802154_radio_api *radio_api;
+static struct ieee802154_radio_driver_api *radio_api;
 static const struct device *const ieee802154_dev =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154));
 uint8_t mac_addr[8]; /* in little endian */
@@ -469,7 +469,7 @@ static bool init_ieee802154(void)
 		return false;
 	}
 
-	radio_api = (struct ieee802154_radio_api *)ieee802154_dev->api;
+	radio_api = (struct ieee802154_radio_driver_api *)ieee802154_dev->api;
 
 	/**
 	 * Do actual initialization of the chip

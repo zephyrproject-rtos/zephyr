@@ -57,10 +57,7 @@ def openocd_cmd(command, check_call, popen_ignore_int):
 @pytest.fixture
 def openocd(runner_config):
     def _factory(enabled_configs):
-        # The shared fixture leaves a non-None cfg.file (an artifact of its
-        # positional construction); force it to None so the OpenOCD runner,
-        # which builds a Path() from it, constructs cleanly.
-        runner = OpenOcdBinaryRunner(runner_config._replace(file=None))
+        runner = OpenOcdBinaryRunner(runner_config)
         # Inject a fake build configuration so no real build dir is read.
         # CONFIG_DEBUG_THREAD_INFO gates whether thread info is requested at
         # all; the architecture symbols gate whether the arch supports it.
@@ -118,10 +115,7 @@ def create_from_args(runner_config, argv):
     parser = argparse.ArgumentParser(allow_abbrev=False)
     OpenOcdBinaryRunner.add_parser(parser)
     args = parser.parse_args(argv)
-    # The shared fixture leaves a non-None cfg.file (an artifact of its
-    # positional construction); force it to None so the runner, which builds
-    # a Path() from it, constructs cleanly.
-    return OpenOcdBinaryRunner.create(runner_config._replace(file=None), args)
+    return OpenOcdBinaryRunner.create(runner_config, args)
 
 
 @pytest.mark.parametrize(

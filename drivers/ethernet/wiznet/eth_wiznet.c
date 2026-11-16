@@ -516,7 +516,7 @@ int wiznet_init(const struct device *dev)
 	return 0;
 }
 
-const struct ethernet_api wiznet_api = {
+DEVICE_API(ethernet, wiznet_api) = {
 	.iface_api.init = wiznet_iface_init,
 	.get_capabilities = wiznet_get_capabilities,
 	.set_config = wiznet_set_config,

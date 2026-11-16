@@ -89,6 +89,9 @@ with open(Path(__file__).parents[1] / 'bindings_properties_allowlist.yaml') as f
 
 logger = None
 
+# Git root empty tree sha1 (represents a tree with no files)
+EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
+
 
 def git(*args, cwd=None, ignore_non_zero=False):
     # Helper for running a Git command. Returns the rstrip()ed stdout output.
@@ -243,9 +246,14 @@ class ComplianceTest:
       magic strings below:
       - "<zephyr-base>" can be used to refer to the environment variable
         ZEPHYR_BASE or, when missing, the calculated base of the zephyr tree.
+
+    needs_commits:
+      True for tests that check commits (messages or per-commit diffs) rather
+      than files. They are skipped with --all-files, which has no commits.
     """
 
     path_hint = "<git-top>"
+    needs_commits = False
 
     def __init__(self):
         self.case = TestCase(type(self).name, "Guidelines")
@@ -342,7 +350,9 @@ class CheckPatch(ComplianceTest):
 
         cmd.extend(['--mailback', '--no-tree', '-'])
         with subprocess.Popen(
-            ('git', 'diff', '--no-ext-diff', COMMIT_RANGE), stdout=subprocess.PIPE, cwd=GIT_TOP
+            ('git', 'diff', '--no-ext-diff', COMMIT_RANGE, '--', ':!*.diff', ':!*.patch'),
+            stdout=subprocess.PIPE,
+            cwd=GIT_TOP,
         ) as diff:
             try:
                 subprocess.run(
@@ -481,30 +491,6 @@ class ClangFormatCheck(ComplianceTest):
                     if patch.is_removed_file:
                         continue
                     self._process_patch_error(file, patch)
-
-
-class FileNameCheck(ComplianceTest):
-    """
-    Check if Kconfig files have wrongly be named overlays
-    """
-
-    name = "FileName"
-    doc = zephyr_doc_detail_builder("/develop/application/index.html#application-configuration")
-
-    def run(self):
-        for file in get_files(filter="d"):
-            file_path = Path(file)
-            if file_path.suffix != '.conf':
-                continue
-
-            if file_path.name.lower().startswith('overlay'):
-                self.fmtd_failure(
-                    "error",
-                    "FileNameDisallowed",
-                    file_path,
-                    0,
-                    desc='Kconfig fragment files are not overlay files',
-                )
 
 
 class StyleCheckMixin:
@@ -737,23 +723,30 @@ class DevicetreeLintingCheck(ComplianceTest):
 
     def _parse_json_output(self, cmd, cwd=None):
         """Run command and parse single JSON output with issues array"""
+        # The JSON is written to stdout only. Keep stderr separate, as Node.js
+        # and npm print warnings and notices there.
         result = subprocess.run(
             cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
+            capture_output=True,
             check=False,
             text=True,
             cwd=cwd or GIT_TOP,
         )
 
-        if not result.stdout.strip():
-            return None
-
+        # dts-linter exits with status 1 when it reports issues, so the exit
+        # status does not tell whether it ran; the JSON output does.
         try:
             json_data = json.loads(result.stdout)
-            return json_data
         except json.JSONDecodeError as e:
-            raise RuntimeError(f"Failed to parse dts-linter JSON output: {e}") from e
+            raise RuntimeError(
+                f"Failed to parse dts-linter JSON output (exit status {result.returncode}): {e}\n"
+                f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+            ) from e
+
+        if result.stderr.strip():
+            logging.warning(f"dts-linter stderr:\n{result.stderr.rstrip()}")
+
+        return json_data
 
     def _process_json_output(self, json_output: dict):
         if "issues" not in json_output:
@@ -827,17 +820,11 @@ class DevicetreeLintingCheck(ComplianceTest):
                 if json_output:
                     self._process_json_output(json_output)
 
-            except subprocess.CalledProcessError as ex:
-                stderr_output = ex.stderr if ex.stderr else ""
-                if stderr_output.strip():
-                    self.failure(f"dts-linter found issues:\n{stderr_output}")
-                else:
-                    err = "dts-linter failed with no output. "
-                    err += "Make sure you install Node.js and then run "
-                    err += "[npm --prefix ./scripts/ci ci] inside ZEPHYR_BASE"
-                    self.failure(err)
             except RuntimeError as ex:
                 self.failure(f"{ex}")
+
+        # dts-linter does not write the patch file when it fails
+        temp_patch_files = [patch for patch in temp_patch_files if os.path.exists(patch)]
 
         # merge all temp patch files into one
         with open("dts_linter.patch", "wb") as final_patch:
@@ -2113,6 +2100,7 @@ class GitDiffCheck(ComplianceTest):
 
     name = "GitDiffCheck"
     doc = "Git conflict markers and whitespace errors are not allowed in added changes"
+    needs_commits = True
 
     def run(self):
         offending_lines = []
@@ -2239,6 +2227,7 @@ class GitLint(ComplianceTest):
 
     name = "Gitlint"
     doc = zephyr_doc_detail_builder("/contribute/guidelines.html#commit-guidelines")
+    needs_commits = True
 
     def run(self):
         # By default gitlint looks for .gitlint configuration only in
@@ -2344,7 +2333,11 @@ def filter_py(root, fnames):
         for fname in fnames
         if (
             fname.endswith(".py")
-            or magic.from_file(os.path.join(root, fname), mime=True) == "text/x-python"
+            or (
+                not Path(fname).suffix
+                and magic.from_file(os.path.join(root, fname), mime=True)
+                in ("text/x-python", "text/x-script.python")
+            )
         )
     ]
 
@@ -2745,13 +2738,20 @@ class Ruff(ComplianceTest):
     def run(self):
         if (ruff := shutil.which("ruff")) is None:
             raise FileNotFoundError("ruff is not installed")
+
+        files = get_files(filter="d")
+        py_files = filter_py(GIT_TOP, files)
+        script_files = filter_py(
+            GIT_TOP,
+            [file for file in git("ls-files").splitlines() if not Path(file).suffix],
+        )
+
         try:
             subprocess.run(
-                f"{ruff} check --output-format=json",
+                [ruff, "check", "--output-format=json", ".", *script_files],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
-                shell=True,
                 cwd=GIT_TOP,
             )
         except subprocess.CalledProcessError as ex:
@@ -2780,15 +2780,11 @@ class Ruff(ComplianceTest):
                     desc=m.get("message"),
                 )
 
-        for file in get_files(filter="d"):
-            if not file.endswith((".py", ".pyi")):
-                continue
-
+        for file in [*py_files, *(file for file in files if file.endswith(".pyi"))]:
             try:
                 subprocess.run(
-                    f"{ruff} format --force-exclude --diff {file}",
+                    [ruff, "format", "--force-exclude", "--diff", file],
                     check=True,
-                    shell=True,
                     cwd=GIT_TOP,
                 )
             except subprocess.CalledProcessError:
@@ -2808,7 +2804,7 @@ class PythonCompatCheck(ComplianceTest):
     MAX_VERSION_STR = f"{MAX_VERSION[0]}.{MAX_VERSION[1]}"
 
     def run(self):
-        py_files = [f for f in get_files(filter="d") if f.endswith(".py")]
+        py_files = filter_py(GIT_TOP, get_files(filter="d"))
         if not py_files:
             return
         cmd = [
@@ -3218,6 +3214,8 @@ def _run_test(testcase):
     # and 'fmtd_failures' attributes hold the results.
     test = testcase()
     try:
+        if test.needs_commits and COMMIT_RANGE == EMPTY_TREE:
+            test.skip("No commits to check with --all-files")
         test.run()
     except EndTest:
         pass
@@ -3363,8 +3361,6 @@ def _run_tests_parallel(testcases, jobs, loglevel):
 
 def parse_args(argv):
     default_range = 'HEAD~1..HEAD'
-    # Git root empty tree sha1 (represents a tree with no files)
-    empty_tree = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
     parser = argparse.ArgumentParser(
         description="Check for coding style and documentation warnings.", allow_abbrev=False
     )
@@ -3380,10 +3376,19 @@ def parse_args(argv):
         '--all-commits',
         action='store_const',
         dest='commits',
-        const=f'{empty_tree}..HEAD',
+        const=f'{EMPTY_TREE}..HEAD',
         help="""The full history commit range. Useful for testing purposes.
                 WARNING: Should not be set for checks that perform per-commit actions, such as
                 GitDiffCheck/GitLint.""",
+    )
+    group.add_argument(
+        '--all-files',
+        action='store_const',
+        dest='commits',
+        const=EMPTY_TREE,
+        help="""Check all tracked files in the working tree, including uncommitted changes,
+                by comparing them against the empty tree. Checks that need commits, such as
+                GitDiffCheck/GitLint, are skipped. Useful for testing purposes.""",
     )
     parser.add_argument(
         '-o',

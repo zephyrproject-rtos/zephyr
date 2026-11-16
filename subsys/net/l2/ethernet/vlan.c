@@ -53,7 +53,7 @@ struct vlan_context {
 	bool is_used;   /* Is there active config on this context */
 };
 
-static const struct virtual_interface_api vlan_iface_api = {
+static DEVICE_API(virtual_interface, vlan_iface_api) = {
 	.iface_api.init = vlan_iface_init,
 
 	.get_capabilities = vlan_get_capabilities,
@@ -357,7 +357,7 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *eth;
+	const struct ethernet_driver_api *eth;
 	struct vlan_context *vlan;
 	int ret;
 
@@ -365,10 +365,6 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 	NET_ASSERT(dev != NULL);
 
 	eth = dev->api;
-
-	if (!eth) {
-		return -ENOENT;
-	}
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return -EINVAL;
@@ -443,7 +439,7 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 
 int net_eth_vlan_disable(struct net_if *iface, uint16_t tag)
 {
-	const struct ethernet_api *eth;
+	const struct ethernet_driver_api *eth;
 	const struct device *dev;
 	struct vlan_context *vlan;
 

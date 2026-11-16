@@ -77,7 +77,6 @@ config CLOCK_CONTROL_MCHP_CONFIG_RUNTIME
 
 config CLOCK_CONTROL_MCHP_ASYNC_ON
 	bool "Async clock on"
-	default n
 	help
 	  This option enables async on API.
 
@@ -90,7 +89,6 @@ config CLOCK_CONTROL_MCHP_GET_RATE
 
 config CLOCK_CONTROL_MCHP_SET_RATE
 	bool "Set clock rate"
-	default n
 	depends on CLOCK_CONTROL_MCHP_GET_RATE
 	help
 	  This option enables set rate API. This may increase
@@ -98,7 +96,6 @@ config CLOCK_CONTROL_MCHP_SET_RATE
 
 config CLOCK_CONTROL_MCHP_GCLK_PINOUT
 	bool "Output the clock on  GCLK IO Pin"
-	default n
 	help
 	  This option enables the feature of outputting the clock on the gclk io pin.
 	  This may increase code size, depending on the depth of clock source hierarchy.

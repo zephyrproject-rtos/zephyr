@@ -257,7 +257,7 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static const struct dummy_api net_iface_api = {
+static DEVICE_API(dummy, net_iface_api) = {
 	.iface_api.init = net_iface_init,
 	.send = sender_iface,
 };
@@ -302,7 +302,7 @@ static void net_iface_init2(struct net_if *iface)
 	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
 }
 
-static const struct dummy_api net_iface_api2 = {
+static DEVICE_API(dummy, net_iface_api2) = {
 	.iface_api.init = net_iface_init2,
 	.send = sender_iface,
 };

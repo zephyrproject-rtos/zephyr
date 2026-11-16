@@ -75,8 +75,15 @@ struct dma_mcux_channel_transfer_edma_settings {
 	volatile uint8_t write_idx;
 	/* How many TCDs in TCD pool is empty(can be used to write transfer parameters) */
 	volatile uint8_t empty_tcds;
+	/* Set while a single block is out as several descriptors. */
+	bool split;
+	/* Length of that block and where its memory side starts. */
+	uint32_t split_size;
+	uintptr_t split_start;
 };
 
+/* CITER/BITER without channel linking. */
+#define EDMA_MAX_MAJOR_LOOP 0x7FFFU
 
 struct call_back {
 	edma_transfer_config_t transferConfig;
@@ -203,6 +210,12 @@ static bool data_size_valid(const size_t data_size)
 	return IS_POWER_OF_TWO(data_size) &&
 	       (data_size <= CONFIG_DMA_MCUX_MAX_DATA_SIZE);
 }
+
+#if defined(CONFIG_DMA_MCUX_EDMA_V3)
+#define EDMA_SPLIT_INTMAJOR DMA_TCD_CSR_INTMAJOR_MASK
+#else
+#define EDMA_SPLIT_INTMAJOR DMA_CSR_INTMAJOR_MASK
+#endif
 
 static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferDone,
 			      uint32_t tcds)
@@ -503,19 +516,120 @@ static int dma_mcux_edma_configure_basic(const struct device *dev,
 
 	/* block_count shall be 1 */
 	LOG_DBG("block size is: %d", block_config->block_size);
-	EDMA_PrepareTransfer(&(data->transferConfig),
-			     (void *)(uintptr_t)block_config->source_address,
-			     config->source_data_size,
-			     (void *)(uintptr_t)block_config->dest_address,
-			     config->dest_data_size,
-			     xfer_settings->source_burst_length,
-			     block_config->block_size, transfer_type);
 
-	const status_t submit_status = EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
+	/* A block too long for one descriptor goes out as several. */
+	uint32_t burst = MAX(xfer_settings->source_burst_length, 1U);
+	/* 64 bits: an m2m block collapsed into one burst overflows 32. */
+	uint64_t span = (uint64_t)EDMA_MAX_MAJOR_LOOP * burst;
+	uint32_t left = block_config->block_size;
+	uintptr_t src = block_config->source_address;
+	uintptr_t dst = block_config->dest_address;
+	uint32_t pieces = (uint32_t)DIV_ROUND_UP((uint64_t)left, span);
+	bool src_walks =
+		transfer_type == kEDMA_MemoryToMemory || transfer_type == kEDMA_MemoryToPeripheral;
+	bool dst_walks =
+		transfer_type == kEDMA_MemoryToMemory || transfer_type == kEDMA_PeripheralToMemory;
 
-	if (submit_status != kStatus_Success) {
-		LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
-		ret = -EFAULT;
+	if (pieces > 1U) {
+		/*
+		 * The memory side tells how far a split block has got, and the
+		 * channel link set later is written to the channel registers
+		 * only, so it would act on the first piece alone.
+		 */
+		if (!src_walks && !dst_walks) {
+			LOG_ERR("block of %u bytes needs %u descriptors, not split "
+				"between two peripherals",
+				block_config->block_size, pieces);
+			return -EINVAL;
+		}
+		if (config->source_chaining_en || config->dest_chaining_en) {
+			LOG_ERR("block of %u bytes needs %u descriptors, not split "
+				"with channel linking",
+				block_config->block_size, pieces);
+			return -EINVAL;
+		}
+		if (config->cyclic) {
+			LOG_ERR("block of %u bytes needs %u descriptors, not split "
+				"for a cyclic transfer",
+				block_config->block_size, pieces);
+			return -EINVAL;
+		}
+		/*
+		 * One slot per piece. The last piece has scatter/gather off,
+		 * so the slot its link field names is never loaded, even when
+		 * the pool wraps around to the first one.
+		 */
+		if (pieces > CONFIG_DMA_TCD_QUEUE_SIZE) {
+			LOG_ERR("block of %u bytes needs %u descriptors, the pool holds %u",
+				block_config->block_size, pieces,
+				(uint32_t)CONFIG_DMA_TCD_QUEUE_SIZE);
+			return -EINVAL;
+		}
+
+		EDMA_InstallTCDMemory(p_handle, DEV_CFG(dev)->tcdpool[channel],
+				      CONFIG_DMA_TCD_QUEUE_SIZE);
+
+		xfer_settings->split = true;
+		xfer_settings->split_size = left;
+		xfer_settings->split_start = EDMA_MMAP_ADDR(src_walks ? src : dst);
+	}
+
+	while (left > 0U) {
+		uint32_t this_len = (uint32_t)MIN((uint64_t)left, span);
+
+		EDMA_PrepareTransfer(&(data->transferConfig), (void *)src, config->source_data_size,
+				     (void *)dst, config->dest_data_size, burst, this_len,
+				     transfer_type);
+
+		const status_t submit_status =
+			EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
+
+		if (submit_status != kStatus_Success) {
+			LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
+			return -EFAULT;
+		}
+
+		/* Only the side that walks memory advances between pieces. */
+		if (src_walks) {
+			src += this_len;
+		}
+		if (dst_walks) {
+			dst += this_len;
+		}
+		left -= this_len;
+	}
+
+	/*
+	 * Interrupt on the last piece only. The SDK gives every queued
+	 * descriptor INTMAJOR, and the handler takes CSR.DONE as the end of
+	 * the transfer. After an inner piece DONE stays set until the channel
+	 * has loaded the next descriptor, so an interrupt serviced inside
+	 * that window reports the whole block done with pieces still to go,
+	 * and the caller stops the peripheral before they run. Nothing has
+	 * started yet (the request is enabled by dma_start()), so the channel
+	 * registers, which hold the first piece, can be edited here too.
+	 */
+	if (pieces > 1U) {
+		EDMA_HW_TCD_CSR(dev, hw_channel) &= ~(uint16_t)EDMA_SPLIT_INTMAJOR;
+		for (uint32_t i = 0U; i + 1U < pieces; i++) {
+			EDMA_TCD_CSR(&DEV_CFG(dev)->tcdpool[channel][i],
+				     EDMA_TCD_TYPE((void *)DEV_BASE(dev))) &=
+				~(uint16_t)EDMA_SPLIT_INTMAJOR;
+		}
+
+		/*
+		 * With the inner interrupts gone, the SDK handler would see
+		 * one interrupt advance its queue by all the inner pieces. It
+		 * then clears DONE as if a further descriptor were running,
+		 * which leaves the finished last piece in the channel to run
+		 * again on the next start. Mark the inner pieces retired now,
+		 * so the handler meets the queue as it would after their
+		 * interrupts, ends it as one finished descriptor and keeps
+		 * DONE. Nothing else is queued while the block runs: a reload
+		 * is refused until it completes.
+		 */
+		p_handle->header = (int8_t)(pieces - 1U);
+		p_handle->tcdUsed = 1;
 	}
 
 	LOG_DBG("DMA TCD CSR 0x%x", EDMA_HW_TCD_CSR(dev, hw_channel));
@@ -531,6 +645,7 @@ static int dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t c
 	struct dma_block_config *block_config = config->head_block;
 	bool sg_mode = block_config->source_gather_en || block_config->dest_scatter_en;
 	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
+	int ret;
 
 	dma_mcux_edma_configure_muxes(dev, channel, config);
 
@@ -541,11 +656,14 @@ static int dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t c
 	}
 
 	if (sg_mode && config->cyclic) {
-		dma_mcux_edma_configure_sg_loop(dev, channel, config, transfer_type);
+		ret = dma_mcux_edma_configure_sg_loop(dev, channel, config, transfer_type);
 	} else if (sg_mode) {
-		dma_mcux_edma_configure_sg_dynamic(dev, channel, config, transfer_type);
+		ret = dma_mcux_edma_configure_sg_dynamic(dev, channel, config, transfer_type);
 	} else {
-		dma_mcux_edma_configure_basic(dev, channel, config, transfer_type);
+		ret = dma_mcux_edma_configure_basic(dev, channel, config, transfer_type);
+	}
+	if (ret != 0) {
+		return ret;
 	}
 
 	if (config->dest_chaining_en) {
@@ -588,6 +706,22 @@ static inline int dma_mcux_edma_validate_cfg(const struct device *dev,
 		return -EINVAL;
 	}
 	LOG_DBG("channel is %d", channel);
+
+	/* A single block is split below; a chain of them is not. */
+	if (config->block_count > 1U) {
+		uint32_t burst = MAX(config->source_burst_length, 1U);
+
+		for (struct dma_block_config *blk = block_config; blk != NULL;
+		     blk = blk->next_block) {
+			if (DIV_ROUND_UP(blk->block_size, burst) > EDMA_MAX_MAJOR_LOOP) {
+				LOG_ERR("block of %u bytes needs %u major loops, %u is the "
+					"most a descriptor holds",
+					blk->block_size, DIV_ROUND_UP(blk->block_size, burst),
+					EDMA_MAX_MAJOR_LOOP);
+				return -EINVAL;
+			}
+		}
+	}
 
 	data->transfer_settings.valid = false;
 
@@ -637,6 +771,7 @@ static inline void dma_mcux_edma_set_xfer_settings(const struct device *dev, uin
 	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
 
 	xfer_settings->source_burst_length = config->source_burst_length;
+	xfer_settings->split = false;
 	/* Collapse the minor loop into the whole block for m2m transfers that
 	 * are NOT paced by an external always-on DMAMUX (nxp,a-on). When
 	 * always-on is available the DMAMUX keeps triggering each minor loop,
@@ -705,6 +840,10 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 
 	ret = dma_mcux_edma_configure_hardware(dev, channel, config);
 	if (ret) {
+		/* The channel was reset above and holds no usable transfer. */
+		DEV_CHANNEL_DATA(dev, channel)->transfer_settings.valid = false;
+		DEV_CHANNEL_DATA(dev, channel)->busy = false;
+		irq_unlock(key);
 		return ret;
 	}
 
@@ -968,6 +1107,35 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 		goto cleanup;
 	}
 
+	/*
+	 * A reload goes out as one descriptor; refuse what CITER cannot hold.
+	 * The looped path counts in destination units, the dynamic one in
+	 * bursts.
+	 */
+	uint32_t unit = data->transfer_settings.cyclic
+				? MAX(data->transfer_settings.dest_data_size, 1U)
+				: MAX(data->transfer_settings.source_burst_length, 1U);
+	size_t loops = size / unit + ((size % unit) != 0U);
+
+	if (loops > EDMA_MAX_MAJOR_LOOP) {
+		LOG_ERR("reload of %zu bytes needs %zu major loops, %u is the most "
+			"a descriptor holds",
+			size, loops, EDMA_MAX_MAJOR_LOOP);
+		ret = -EINVAL;
+		goto cleanup;
+	}
+
+	/* A split block keeps its pieces in the pool until the last one ends. */
+	if (data->transfer_settings.split) {
+		if (data->busy) {
+			LOG_ERR("EDMA busy with a split block. Wait until it completes "
+				"before reloading.");
+			ret = -EBUSY;
+			goto cleanup;
+		}
+		data->transfer_settings.split = false;
+	}
+
 	if (data->transfer_settings.cyclic) {
 		ret = edma_reload_loop(dev, channel, src, dst, size);
 	} else {
@@ -984,14 +1152,26 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 {
 	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 
-	if (DEV_CHANNEL_DATA(dev, channel)->busy) {
+	struct dma_mcux_channel_transfer_edma_settings *xfer_settings =
+		&DEV_CHANNEL_DATA(dev, channel)->transfer_settings;
+
+	if (DEV_CHANNEL_DATA(dev, channel)->busy && xfer_settings->split) {
+		/* The channel holds one piece; count from the memory side. */
+		uintptr_t now = xfer_settings->transfer_type == kEDMA_PeripheralToMemory
+					? EDMA_HW_TCD_DADDR(dev, hw_channel)
+					: EDMA_HW_TCD_SADDR(dev, hw_channel);
+		uint32_t done = MIN(now - xfer_settings->split_start, xfer_settings->split_size);
+
+		status->busy = true;
+		status->pending_length = xfer_settings->split_size - done;
+	} else if (DEV_CHANNEL_DATA(dev, channel)->busy) {
 		status->busy = true;
 		/* pending_length is in bytes.  Multiply remaining major loop
 		 * count by NBYTES for each minor loop
 		 */
 		status->pending_length =
 			EDMA_GetRemainingMajorLoopCount(DEV_BASE(dev), hw_channel) *
-			DEV_CHANNEL_DATA(dev, channel)->transfer_settings.source_data_size;
+			xfer_settings->source_data_size;
 	} else {
 		status->busy = false;
 		status->pending_length = 0;

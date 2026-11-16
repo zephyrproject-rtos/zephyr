@@ -480,7 +480,7 @@ static void bcmgenet_iface_init(struct net_if *iface)
 	k_thread_name_set(&data->rx_thread, "eth_bcmgenet");
 }
 
-static const struct ethernet_api bcmgenet_api = {
+static DEVICE_API(ethernet, bcmgenet_api) = {
 	.iface_api.init = bcmgenet_iface_init,
 	.get_phy = bcmgenet_get_phy,
 	.get_capabilities = bcmgenet_get_caps,

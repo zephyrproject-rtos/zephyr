@@ -64,7 +64,10 @@ class BumbleSidecar(Sidecar):
     in :meth:`teardown` the sidecar reads the Ztest results each peer printed
     and reports the cases it ran. A peer that fails, ends without a verdict
     or does not finish fails the test even if the guest side passed, since
-    both sides must complete the exchange.
+    both sides must complete the exchange; when no case shows the failure,
+    the cases that passed take it. An exception in the controllers,
+    or controllers that exit before the test ends, make it and the cases that
+    passed an error, whatever the devices reported.
 
     Bumble must be importable by the interpreter running twister, which also
     runs ``controllers.py``; without it the test is built but not run.
@@ -82,6 +85,11 @@ class BumbleSidecar(Sidecar):
     PEER_GRACE = 10.0
     #: Lines that only a Ztest run prints, besides those that carry a result.
     ZTEST_MARKS = (Test.test_suite_end_pattern, Test.test_suite_summary_pattern)
+    #: What a Python exception leaves in the controllers' log. asyncio logs an
+    #: exception in a callback or task and runs on, so the exit status of the
+    #: controllers does not show it, and a future's exception may come without
+    #: a traceback.
+    EXCEPTION_MARKS = ('Traceback (most recent call last):', 'exception was never retrieved')
 
     @dataclass
     class Config:
@@ -98,6 +106,7 @@ class BumbleSidecar(Sidecar):
         self.ports: list[int] = []
         self._proc = None
         self._log = None
+        self._log_path = None
         self._peers: list[Peer] = []
         self._deadline = 0.0
 
@@ -126,6 +135,17 @@ class BumbleSidecar(Sidecar):
         self.instance.add_missing_case_status(TwisterStatus.ERROR, reason)
         logger.error(f"SIDECAR:{self.__class__.__name__}: {reason}")
 
+    def _fail_passed_cases(self, status: TwisterStatus, reason: str) -> None:
+        """Give the cases that passed a result of the whole test.
+
+        Reports that list the cases alone, such as the full XUnit reports,
+        show it through them.
+        """
+        for case in self.instance.testcases:
+            if case.status == TwisterStatus.PASS:
+                case.status = status
+                case.reason = reason
+
     def setup(self) -> bool:
         if not self.host_ready():
             self._skip("Bumble or the Bluetooth Classic simulation framework not found")
@@ -146,6 +166,7 @@ class BumbleSidecar(Sidecar):
         log_path = os.path.join(self.instance.build_dir, 'bumble-controllers.log')
         # The controllers outlive setup(); the handle is closed in teardown().
         self._log = open(log_path, 'w')  # noqa: SIM115
+        self._log_path = log_path
         self._proc = subprocess.Popen(
             [sys.executable, self.script, *transport_args],
             cwd=os.path.dirname(self.script),
@@ -253,8 +274,11 @@ class BumbleSidecar(Sidecar):
             peer.log.close()
         return reasons
 
-    def _stop_controllers(self) -> None:
+    def _stop_controllers(self) -> int | None:
+        """Stop the controllers; returns their exit status if they had exited already."""
+        exited = None
         if self._proc is not None:
+            exited = self._proc.poll()
             terminate_process(self._proc)
             try:
                 self._proc.wait(timeout=10)
@@ -266,6 +290,16 @@ class BumbleSidecar(Sidecar):
         if self._log is not None:
             self._log.close()
             self._log = None
+        return exited
+
+    def _controllers_failure(self, exited: int | None) -> str | None:
+        """Why the controllers failed during the test, if they did."""
+        with open(self._log_path, errors='replace') as log:
+            if any(mark in line for line in log for mark in self.EXCEPTION_MARKS):
+                return f"Bumble controllers raised an exception (see {self._log_path})"
+        if exited is not None:
+            return f"Bumble controllers exited early with {exited} (see {self._log_path})"
+        return None
 
     @staticmethod
     def _peer_results(log_path: str) -> tuple[dict[str, tuple[TwisterStatus, float]], bool | None]:
@@ -349,7 +383,7 @@ class BumbleSidecar(Sidecar):
         # left running whatever the results turn out to be.
         peers, self._peers = self._peers, []
         ended = self._reap_peers(peers)
-        self._stop_controllers()
+        exited = self._stop_controllers()
 
         # A peer failing fails the test even if this guest passed, since both
         # sides must complete the exchange.
@@ -360,3 +394,21 @@ class BumbleSidecar(Sidecar):
                 self.instance.reason = reason
                 # The handler's log is the guest's; point at the peer's.
                 logger.error(f"SIDECAR:{self.__class__.__name__}: {reason}, see {peer.log_path}")
+                # A peer that exited with an error, gave no verdict or failed
+                # outside its cases leaves every case passing.
+                if all(case.status != TwisterStatus.FAIL for case in self.instance.testcases):
+                    self._fail_passed_cases(TwisterStatus.FAIL, reason)
+
+        # A broken simulation can let the devices pass, skip or stall into a
+        # timeout, so it decides the result over what they reported, and a
+        # case that passed over it has no result either. setup() has
+        # reported controllers that did not start.
+        if self._log_path is not None and self.instance.status in (
+            TwisterStatus.PASS,
+            TwisterStatus.FAIL,
+            TwisterStatus.SKIP,
+        ):
+            reason = self._controllers_failure(exited)
+            if reason is not None:
+                self._error(reason)
+                self._fail_passed_cases(TwisterStatus.ERROR, reason)

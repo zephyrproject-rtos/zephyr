@@ -37,7 +37,7 @@ manifest:
       remote: babblesim
       repo-path: base
       path: tools/bsim/components
-      revision: 68baf150660213d67c29acb14bf9fccecf4612eb
+      revision: b40fdb2f98409a3c3b596f1595e50e39b78491d9
       groups:
         - babblesim
     - name: babblesim_ext_2G4_channel_NtNcable
@@ -79,7 +79,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_libPhyComv1
       path: tools/bsim/components/ext_2G4_libPhyComv1
-      revision: 27eb408f952182a646eac1abb7dc12b7b565655b
+      revision: c8e8089a0a67c4da4bfc74ab348d6888fac81962
       groups:
         - babblesim
     - name: babblesim_ext_2G4_modem_BLE_simple
@@ -112,7 +112,7 @@ manifest:
         - babblesim
     - name: bsim
       repo-path: babblesim-manifest
-      revision: 0673623452f0a3cb50b7563c32ac7683304cb6fc
+      revision: 5793402979b984dd81dc699780ae314f0e728ca0
       path: tools/bsim
       groups:
         - babblesim
@@ -134,7 +134,7 @@ manifest:
       groups:
         - hal
     - name: dhara
-      revision: 6f163ca05e174b168b4d148160b50eeaeeb561fc
+      revision: 0e083ded62b911dc1eca1ee99176342541af95c5
       path: modules/lib/dhara
     - name: edtt
       revision: c282625e694f0b53ea53e13231ea6d2f49411768
@@ -172,7 +172,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: a67d46545def251403ad1aac4239776633c6afe7
+      revision: f1839b5c79116cb5225baa2e610ef7920ff1ea34
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 75d7594f4bfb00cdec5c5501387cbb4c5b9fed0a
+      revision: a94077e8d5765f84a9aa0615af16565d30aa9a36
       path: modules/hal/nordic
       groups:
         - hal
@@ -235,7 +235,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 0c0beea010e78899c8ffbfd995cbfe50d3e6595e
+      revision: 445939f67cd06271db07efe1daa3fff8135e161c
       groups:
         - hal
     - name: hal_rpi_pico
@@ -254,7 +254,7 @@ manifest:
       groups:
         - hal
     - name: hal_st
-      revision: ce795a9b0de623022c17d2ff394587c024aec850
+      revision: 066d2f481ce6c35a94730a3bc4bd05e9fb0e767c
       path: modules/hal/st
       groups:
         - hal
@@ -274,7 +274,7 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: 53c80140dd69905cc5e034f637eff9c66b2f9654
+      revision: 73657146a795990aec43e8b464619c5dc18db602
       path: modules/hal/ti
       groups:
         - hal
@@ -295,7 +295,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 1ce844ea5a9d8860d8690a125925fcc7274461df
+      revision: bd0cf9d3a4cd6214829873d835ea6ffef82a91e0
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -303,7 +303,7 @@ manifest:
       revision: b6be45dfc5c67c43c3a5e12589ae3845ea00ab5e
       path: modules/lib/libmctp
     - name: libmetal
-      revision: 77237e9748212796a8f93a33689ce935fb9c81c2
+      revision: e425e3bc3670aada8801886f0ad7c87956aecdee
       path: modules/hal/libmetal
       groups:
         - hal
@@ -348,21 +348,21 @@ manifest:
       revision: 0f6d088e777a33dd7b54297f137ef10d745c5da8
       path: modules/lib/nanopb
     - name: net-tools
-      revision: dbb08b8233d74219fcea896850e73b30a0961aa6
+      revision: b3eae79a7546b369b3b8475323b6653c14c89ba8
       path: tools/net-tools
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 50187f3879ffaafc171d364490bead27557f5192
+      revision: 0569cfac3d8dd9c69f959dbc877f386139ebffcf
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 45cb18fd563d7212d2a828da94d1a16455ec80e5
       path: modules/lib/nrf_wifi
     - name: open-amp
-      revision: 01032a8a7bdfdd541686f5dfa3671e602b9fcbff
+      revision: 6833b0d2cd8dcb0fa51908a5c2e3732e2a82048f
       path: modules/lib/open-amp
     - name: openthread
-      revision: 4a8d33459567cc611bf9d4d810c2201a24a64d84
+      revision: 123c5b2022d04122e9fbb42fce4999b5f73b540e
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
@@ -408,7 +408,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 83c504a35d9a599e4bd71942dd2c0c8193901608
+      revision: 4e46beb1511b8dad77cd4b95aca3428ae25a7b44
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

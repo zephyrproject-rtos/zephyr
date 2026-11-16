@@ -31,3 +31,9 @@ properties:
 
       This setting, once applied, can only be unset by erasing the UICR
       registers.  Refer to the nRF7120 Product Specification for details.
+
+  xtalcomp-offset:
+    type: int
+    description: |
+      Measured XTAL frequency error in ppm at room temperature.
+      The value is dependent on the crystal device.

@@ -1115,7 +1115,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 struct net_dhcpv4_context net_dhcpv4_context_data;
 
-static const struct dummy_api net_dhcpv4_if_api = {
+static DEVICE_API(dummy, net_dhcpv4_if_api) = {
 	.iface_api.init = net_dhcpv4_iface_init,
 	.send = tester_send,
 };
@@ -2481,6 +2481,147 @@ ZTEST(dhcpv4_tests, test_renewal_keeps_the_lease)
 			 "A renewal took the address off the interface");
 	zassert_not_equal(net_if_ipv4_get_gw(iface).s_addr, NET_INADDR_ANY,
 			  "A renewal took the gateway away");
+
+	net_dhcpv4_stop(iface);
+}
+
+static K_SEM_DEFINE(if_down_entered, 0, 1);
+static K_SEM_DEFINE(if_down_release, 0, 1);
+static bool hold_if_down;
+
+/* Holds the thread raising the interface down event inside the event
+ * delivery, after the network stack has taken its locks for it.
+ */
+static void if_down_hold_cb(uint64_t mgmt_event, struct net_if *iface, void *info,
+			    size_t info_length, void *user_data)
+{
+	ARG_UNUSED(mgmt_event);
+	ARG_UNUSED(iface);
+	ARG_UNUSED(info);
+	ARG_UNUSED(info_length);
+	ARG_UNUSED(user_data);
+
+	if (!hold_if_down) {
+		return;
+	}
+
+	hold_if_down = false;
+	k_sem_give(&if_down_entered);
+	(void)k_sem_take(&if_down_release, K_SECONDS(5));
+}
+
+/* Sorted ahead of the client's own handler. */
+NET_MGMT_REGISTER_EVENT_HANDLER(a_if_down_hold, NET_EVENT_IF_DOWN, if_down_hold_cb, NULL);
+
+#define LOCK_ORDER_STACK_SIZE 2048
+
+static K_THREAD_STACK_DEFINE(if_down_stack, LOCK_ORDER_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(dhcp_stop_stack, LOCK_ORDER_STACK_SIZE);
+static struct k_thread if_down_thread;
+static struct k_thread dhcp_stop_thread;
+
+static void if_down_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	(void)net_if_down(p1);
+}
+
+static void dhcp_stop_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	net_dhcpv4_stop(p1);
+}
+
+/* An interface down event delivered in the thread raising it while another
+ * thread stops the client, which raises events of its own, must not leave
+ * the two threads waiting for each other.
+ */
+ZTEST(dhcpv4_tests, test_if_down_while_stopping_does_not_deadlock)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	if (!IS_ENABLED(CONFIG_NET_MGMT_EVENT_DIRECT)) {
+		ztest_test_skip();
+	}
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait_all(&events, EVT_DHCP_BOUND | EVT_ADDR_ADD, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_BOUND | EVT_ADDR_ADD, "Missing DHCP bound %08x", evt);
+
+	hold_if_down = true;
+
+	k_thread_create(&if_down_thread, if_down_stack, K_THREAD_STACK_SIZEOF(if_down_stack),
+			if_down_entry, iface, NULL, NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	zassert_ok(k_sem_take(&if_down_entered, K_SECONDS(1)),
+		   "Interface down event not delivered");
+
+	k_thread_create(&dhcp_stop_thread, dhcp_stop_stack, K_THREAD_STACK_SIZEOF(dhcp_stop_stack),
+			dhcp_stop_entry, iface, NULL, NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+
+	/* Let the stop run as far as it gets. */
+	k_sleep(K_MSEC(100));
+	k_sem_give(&if_down_release);
+
+	zassert_ok(k_thread_join(&dhcp_stop_thread, K_SECONDS(2)),
+		   "Stopping the client did not complete");
+	zassert_ok(k_thread_join(&if_down_thread, K_SECONDS(2)),
+		   "Bringing the interface down did not complete");
+
+	zexpect_equal(iface->config.dhcpv4.state, NET_DHCPV4_DISABLED,
+		      "Client in state %s after stop",
+		      net_dhcpv4_state_name(iface->config.dhcpv4.state));
+	zexpect_is_null(net_if_ipv4_addr_lookup_by_iface(iface, &leased_addr),
+			"Leased address still on the interface");
+}
+
+/* A conflict on the leased address makes the client give the lease up and
+ * start over; a conflict on any other address is not the client's.
+ */
+ZTEST(dhcpv4_tests, test_acd_conflict_on_the_lease_starts_over)
+{
+	const struct net_in_addr other_addr = { { { 10, 237, 72, 159 } } };
+	struct net_if *iface;
+	uint32_t evt;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_ACD)) {
+		ztest_test_skip();
+	}
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait_all(&events, EVT_DHCP_BOUND | EVT_ADDR_ADD, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_BOUND | EVT_ADDR_ADD, "Missing DHCP bound %08x", evt);
+
+	k_event_set(&events, 0U);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ACD_CONFLICT, iface, &other_addr,
+					sizeof(other_addr));
+
+	evt = k_event_wait(&events, EVT_ADDR_DEL, false, K_SECONDS(2));
+	zexpect_equal(evt, 0U, "A conflict on another address gave the lease up");
+	zexpect_equal(iface->config.dhcpv4.state, NET_DHCPV4_BOUND,
+		      "Client in state %s after a conflict on another address",
+		      net_dhcpv4_state_name(iface->config.dhcpv4.state));
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ACD_CONFLICT, iface, &leased_addr,
+					sizeof(leased_addr));
+
+	evt = k_event_wait(&events, EVT_ADDR_DEL, false, K_SECONDS(2));
+	zexpect_equal(evt, EVT_ADDR_DEL, "A conflict on the lease left it on the interface");
+	zexpect_not_equal(iface->config.dhcpv4.state, NET_DHCPV4_BOUND,
+			  "Client still bound after a conflict on the lease");
 
 	net_dhcpv4_stop(iface);
 }

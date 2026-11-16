@@ -68,22 +68,6 @@ static void test_send(int sock, const void *buf, size_t len, int flags)
 		      "send failed");
 }
 
-static void test_send_all(int sock, const void *buf, size_t len, int flags,
-			  k_timeout_t timeout, size_t *sent_bytes)
-{
-	zassert_equal(zsock_send_all(sock, buf, len, flags, timeout, sent_bytes),
-		      0,
-		      "send_all failed");
-}
-
-static void test_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
-			     k_timeout_t timeout, size_t *sent_bytes)
-{
-	zassert_equal(zsock_sendmsg_all(sock, msg, flags, timeout, sent_bytes),
-		      0,
-		      "sendmsg_all failed");
-}
-
 static void test_sendto(int sock, const void *buf, size_t len, int flags,
 			const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
@@ -1899,6 +1883,10 @@ ZTEST(net_socket_tcp, test_so_protocol)
 	test_context_cleanup();
 }
 
+/* Largest SO_RCVBUF and SO_SNDBUF, the largest window TCP can use */
+#define TEST_MAX_TCP_WINDOW							\
+	(IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE) ? (UINT16_MAX << 14) : UINT16_MAX)
+
 ZTEST(net_socket_tcp, test_so_rcvbuf)
 {
 	struct net_sockaddr_in bind_addr4;
@@ -1929,7 +1917,7 @@ ZTEST(net_socket_tcp, test_so_rcvbuf)
 	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &optval, sizeof(optval));
 	zassert_equal(rv, -1, "setsockopt failed (%d)", rv);
 
-	optval = UINT16_MAX + 1;
+	optval = TEST_MAX_TCP_WINDOW + 1;
 	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &optval, sizeof(optval));
 	zassert_equal(rv, -1, "setsockopt failed (%d)", rv);
 
@@ -2018,8 +2006,8 @@ ZTEST(net_socket_tcp, test_so_sndbuf)
 	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDBUF, &optval, sizeof(optval));
 	zassert_equal(rv, -1, "setsockopt failed (%d)", rv);
 
-	optval = UINT16_MAX + 1;
-	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &optval, sizeof(optval));
+	optval = TEST_MAX_TCP_WINDOW + 1;
+	rv = zsock_setsockopt(sock2, ZSOCK_SOL_SOCKET, ZSOCK_SO_SNDBUF, &optval, sizeof(optval));
 	zassert_equal(rv, -1, "setsockopt failed (%d)", rv);
 
 	test_close(sock1);
@@ -3359,8 +3347,47 @@ enum {
 	SEND_DATA_USING_SENDMSG_ALL,
 };
 
+#define SENDALL_MAX_BUF_LEN 2048
+#define SENDALL_STACK_SIZE (2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
+
+struct send_all_ctx {
+	int sock;
+	int method;
+	char *buf;
+	size_t len;
+	int ret;
+	size_t sent_len;
+};
+
+static void send_all_thread(void *p1, void *p2, void *p3)
+{
+	struct send_all_ctx *ctx = p1;
+	struct net_iovec io_vector;
+	struct net_msghdr msg;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	if (ctx->method == SEND_DATA_USING_SEND_ALL) {
+		ctx->ret = zsock_send_all(ctx->sock, ctx->buf, ctx->len, 0, K_MSEC(1000),
+					  &ctx->sent_len);
+		return;
+	}
+
+	io_vector.iov_base = ctx->buf;
+	io_vector.iov_len = ctx->len;
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = &io_vector;
+	msg.msg_iovlen = 1;
+
+	ctx->ret = zsock_sendmsg_all(ctx->sock, &msg, 0, K_MSEC(1000), &ctx->sent_len);
+}
+
 static void test_zsock_send_all_data(int method)
 {
+	static K_THREAD_STACK_DEFINE(send_stack, SENDALL_STACK_SIZE);
+	static struct k_thread send_thread;
 	int c_sock;
 	int s_sock;
 	int new_sock;
@@ -3368,20 +3395,24 @@ static void test_zsock_send_all_data(int method)
 	struct net_sockaddr_in s_saddr;
 	struct net_sockaddr addr;
 	net_socklen_t addrlen = sizeof(addr);
-#define SENDALL_MAX_BUF_LEN 2048
 	static char send_buf[SENDALL_MAX_BUF_LEN];
 	static char recv_buf[SENDALL_MAX_BUF_LEN];
-	struct net_iovec io_vector[3];
+	struct net_iovec io_vector;
 	struct net_msghdr msg;
+	struct send_all_ctx ctx = { 0 };
+	struct zsock_timeval tv = { .tv_sec = 2 };
+	size_t received = 0;
 	ssize_t recved;
-	int i, send_len, recv_len, remaining, split_point;
-	size_t sent_len = 0;
+	int i;
+
+	zassert_true((method == SEND_DATA_USING_SEND_ALL) ||
+		     (method == SEND_DATA_USING_SENDMSG_ALL), "invalid send method");
 
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
 
-	/* Set smaller receive buffer to force TCP to split the data
-	 * into multiple segments.
+	/* Set a receive buffer smaller than the data so that the sender has
+	 * to wait for the receiver to open the window.
 	 */
 	zsock_setsockopt(s_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF,
 			 &(int){ SENDALL_MAX_BUF_LEN / 2 }, sizeof(int));
@@ -3395,68 +3426,58 @@ static void test_zsock_send_all_data(int method)
 		send_buf[i] = TEST_STR_LONG[i % (sizeof(TEST_STR_LONG) - 1)];
 	}
 
-	if (method == SEND_DATA_USING_SEND_ALL) {
-		test_send_all(c_sock, send_buf, sizeof(send_buf), 0,
-			      K_MSEC(1000), &sent_len);
-	} else if (method == SEND_DATA_USING_SENDMSG_ALL) {
-		/* Send data using sendmsg_all */
-		io_vector[0].iov_base = send_buf;
-		io_vector[0].iov_len = sizeof(send_buf);
-
-		memset(&msg, 0, sizeof(msg));
-		msg.msg_iov = io_vector;
-		msg.msg_iovlen = 1;
-
-		test_sendmsg_all(c_sock, &msg, 0, K_MSEC(1000), &sent_len);
-	} else {
-		zassert_true(false, "invalid send method");
-	}
-
-	zassert_equal(sent_len, sizeof(send_buf), "invalid length sent");
-
 	test_accept(s_sock, &new_sock, &addr, &addrlen);
 	zassert_equal(addrlen, sizeof(struct net_sockaddr_in), "wrong addrlen");
 
-	/* Read data in two chunks */
-	io_vector[0].iov_base = recv_buf;
-	io_vector[0].iov_len = sizeof(recv_buf) / 2;
+	/* Ends the read loop below if the sender fails */
+	zassert_equal(zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &tv,
+				       sizeof(tv)),
+		      0, "setsockopt failed (%d)", errno);
 
-	split_point = io_vector[0].iov_len;
+	/* The data does not fit in the receive window, so send it from another
+	 * thread while this one reads it.
+	 */
+	ctx.sock = c_sock;
+	ctx.method = method;
+	ctx.buf = send_buf;
+	ctx.len = sizeof(send_buf);
 
+	(void)k_thread_create(&send_thread, send_stack, K_THREAD_STACK_SIZEOF(send_stack),
+			      send_all_thread, &ctx, NULL, NULL,
+			      k_thread_priority_get(k_current_get()), 0, K_NO_WAIT);
+
+	/* A read can return less than asked for, so read until all data has
+	 * arrived.
+	 */
 	memset(&msg, 0, sizeof(msg));
-	msg.msg_iov = io_vector;
+	msg.msg_iov = &io_vector;
 	msg.msg_iovlen = 1;
-	msg.msg_name = &addr;
-	msg.msg_namelen = addrlen;
 
-	for (i = 0, send_len = 0; i < msg.msg_iovlen; i++) {
-		send_len += msg.msg_iov[i].iov_len;
-	}
+	while (received < sizeof(recv_buf)) {
+		io_vector.iov_base = recv_buf + received;
+		io_vector.iov_len = sizeof(recv_buf) - received;
 
-	remaining = send_len;
-	while (remaining > 0) {
 		recved = zsock_recvmsg(new_sock, &msg, 0);
-		if (recved < 0) {
+		if (recved <= 0) {
 			break;
 		}
 
-		if (recved > 0) {
-			remaining -= recved;
-		}
-
-		/* There should be two rounds of recv. Adjust the iov_base pointer
-		 * so that the recv_buf is filled correctly.
-		 */
-		io_vector[0].iov_base = recv_buf + split_point;
-		io_vector[0].iov_len = sizeof(recv_buf) - split_point;
+		received += recved;
 	}
 
-	for (i = 0, recv_len = 0; i < msg.msg_iovlen; i++) {
-		recv_len += msg.msg_iov[i].iov_len;
+	/* The sender uses ctx, which is on this stack, and the next call
+	 * reuses send_thread, so stop the sender before failing.
+	 */
+	if (k_thread_join(&send_thread, K_SECONDS(2)) != 0) {
+		k_thread_abort(&send_thread);
+		zassert_unreachable("send thread did not finish");
 	}
 
-	zassert_equal(send_len, recv_len, "invalid length received");
-	zassert_mem_equal(recv_buf, send_buf, recv_len, "invalid data received");
+	zassert_equal(ctx.ret, 0, "send_all failed (%d)", ctx.ret);
+	zassert_equal(ctx.sent_len, sizeof(send_buf), "invalid length sent");
+
+	zassert_equal(received, sizeof(recv_buf), "invalid length received");
+	zassert_mem_equal(recv_buf, send_buf, sizeof(recv_buf), "invalid data received");
 
 	test_close(new_sock);
 	test_close(s_sock);

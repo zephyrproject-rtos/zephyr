@@ -108,7 +108,7 @@ struct flash_mspi_nor_cmd_info {
 	bool    sfdp_dummy_20   : 1;
 	/* - Read Status Register command address bytes: 4 (true) or 0 */
 	bool    rdsr_addr_4     : 1;
-	/* - Read Status Register command dummy cycles: 0, 4, or 8 */
+	/* - Read Status Register command dummy cycles */
 	uint8_t rdsr_dummy      : 4;
 	/* - Read JEDEC ID command parameters; not sure where to get their
 	 *   values from, but since for many flash chips they are the same
@@ -195,6 +195,9 @@ struct flash_mspi_nor_data {
 	struct flash_pages_layout layout;
 #endif
 	bool chip_initialized;
+#if defined(CONFIG_MSPI_MEMMAP)
+	bool no_memmap_write;
+#endif
 	const struct mspi_dev_cfg *read_cfg;
 	struct mspi_dev_cfg mspi_dev_read_cfg;
 	const struct mspi_dev_cfg *write_cfg;

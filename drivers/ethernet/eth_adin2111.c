@@ -1227,9 +1227,6 @@ static enum ethernet_hw_caps adin2111_port_get_capabilities(const struct device 
 
 	caps = ETHERNET_LINK_10BASE |
 		ETHERNET_HW_FILTERING
-#if defined(CONFIG_NET_LLDP)
-		| ETHERNET_LLDP
-#endif
 		| ETHERNET_PROMISC_MODE;
 
 	/* The two ports forward frames with an unknown destination to each
@@ -1521,7 +1518,7 @@ static int adin2111_init(const struct device *dev)
 	return ret;
 }
 
-static const struct ethernet_api adin2111_port_api = {
+static DEVICE_API(ethernet, adin2111_port_api) = {
 	.iface_api.init = adin2111_port_iface_init,
 	.get_capabilities = adin2111_port_get_capabilities,
 	.set_config = adin2111_port_set_config,

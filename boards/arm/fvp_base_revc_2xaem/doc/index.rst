@@ -36,6 +36,7 @@ The following board targets are available:
 * ``fvp_base_revc_2xaem/v9a/smp`` - ARMv9-A SMP (4 cores)
 * ``fvp_base_revc_2xaem/v9a/smp/ns`` - ARMv9-A SMP Non-Secure
 * ``fvp_base_revc_2xaem/a320`` - ARMv9.2-A with Cortex-A320 configuration
+* ``fvp_base_revc_2xaem/a520`` - ARMv9.2-A with Cortex-A520 configuration
 * ``fvp_base_revc_2xaem/v8a_aarch32`` - ARMv8-A AArch32 with Cortex-A32 cores
 * ``fvp_base_revc_2xaem/v8a_aarch32/smp`` - ARMv8-A AArch32 SMP (4 cores)
 
@@ -50,6 +51,13 @@ configuration with:
 * QARMA3 Pointer Authentication
 * Optimized cache configuration for Cortex-A320
 * Performance monitoring unit with SVE-specific events
+
+**Cortex-A520 Variant:**
+
+The ``fvp_base_revc_2xaem/a520`` variant builds Zephyr for the Cortex-A520 and
+configures the AEM FVP as an ARMv9.2-A CPU with the Cortex-A520 ``MIDR``,
+MTE3, BF16, I8MM and a 128-bit SVE2 vector length. The AEM does not model the
+Cortex-A520 microarchitecture, caches or timing.
 
 Devices
 ========
@@ -110,6 +118,14 @@ For Cortex-A320 variants:
    :zephyr-app: samples/hello_world
    :host-os: unix
    :board: fvp_base_revc_2xaem/a320
+   :goals: build
+
+For Cortex-A520 variants:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: fvp_base_revc_2xaem/a520
    :goals: build
 
 For the ARMv8-A AArch32 variant:

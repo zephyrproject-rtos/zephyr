@@ -1578,7 +1578,7 @@ static const struct wifi_mgmt_ops esp_mgmt_ops = {
 	.iface_status	   = esp_mgmt_iface_status,
 };
 
-static const struct net_wifi_mgmt_offload esp_api = {
+static DEVICE_API(wifi_offload, esp_api) = {
 	.wifi_iface.iface_api.init = esp_iface_init,
 	.wifi_iface.get_type = esp_offload_get_type,
 	.wifi_mgmt_api = &esp_mgmt_ops,

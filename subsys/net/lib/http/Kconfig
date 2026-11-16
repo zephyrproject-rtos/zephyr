@@ -209,6 +209,9 @@ config HTTP_SERVER_HTTP2_MAX_HEADER_FRAME_LEN
 	  value is sufficient for the standard headers included with a response,
 	  and only needs to be increased if the application wishes to send
 	  additional response headers.
+	  Two buffers of this size are allocated on the stack of the HTTP
+	  server thread, so CONFIG_HTTP_SERVER_STACK_SIZE has to be
+	  sufficiently large when raising this value.
 
 config HTTP_SERVER_CAPTURE_HEADERS
 	bool "Allow capturing HTTP headers for application use"

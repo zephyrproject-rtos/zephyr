@@ -175,10 +175,10 @@ TESTDATA_3 = [
         ['Running in sequential mode (-j1)'],
         None,
         [None, 1],
-        {'internal_jobs': 1, 'makeflags': '-j1'}
+        {'internal_jobs': 1, 'makeflags': '-j1', 'fifo': None}
     ),
     (
-        {'MAKEFLAGS': 'n--jobserver-auth=0,1'},
+        {'MAKEFLAGS': 'n --jobserver-auth=0,1'},
         1,
         (True, True),
         [
@@ -196,7 +196,7 @@ TESTDATA_3 = [
         ['using GNU make jobserver'],
         None,
         [[0, 1], 0],
-        {'internal_jobs': 1, 'makeflags': '--jobserver-auth=0,1'}
+        {'internal_jobs': 1, 'makeflags': '--jobserver-auth=0,1', 'fifo': None}
     ),
     (
         {'MAKEFLAGS': '--jobserver-auth=123,321'},
@@ -205,7 +205,7 @@ TESTDATA_3 = [
         ['No file descriptors; ignoring GNU make jobserver'],
         None,
         [None, 0],
-        {'internal_jobs': 1, 'makeflags': '--jobserver-auth=123,321'}
+        {'internal_jobs': 1, 'makeflags': '--jobserver-auth=123,321', 'fifo': None}
     ),
     (
         {'MAKEFLAGS': '--jobserver-auth=0,1'},
@@ -214,7 +214,7 @@ TESTDATA_3 = [
         [f'FD 0 is not readable (flags=2); ignoring GNU make jobserver'],
         None,
         [None, 0],
-        {'internal_jobs': 1, 'makeflags': '--jobserver-auth=0,1'}
+        {'internal_jobs': 1, 'makeflags': '--jobserver-auth=0,1', 'fifo': None}
     ),
     (
         {'MAKEFLAGS': '--jobserver-auth=0,1'},
@@ -223,7 +223,74 @@ TESTDATA_3 = [
         [f'FD 1 is not writable (flags=2); ignoring GNU make jobserver'],
         None,
         [None, 0],
-        {'internal_jobs': 1, 'makeflags': '--jobserver-auth=0,1'}
+        {'internal_jobs': 1, 'makeflags': '--jobserver-auth=0,1', 'fifo': None}
+    ),
+    (
+        {'MAKEFLAGS': ' -I/src/inc-j2 -- V=-j1 SAVED=--jobserver-auth=0,1'},
+        0,
+        (True, True),
+        [],
+        None,
+        [None, 0],
+        {
+            'internal_jobs': 1,
+            'makeflags': ' -I/src/inc-j2 -- V=-j1 SAVED=--jobserver-auth=0,1',
+            'fifo': None
+        }
+    ),
+    (
+        {'MAKEFLAGS': ' --eval=X\\ -j7\\ --jobserver-auth=0,1 -j3'},
+        0,
+        (True, True),
+        [],
+        None,
+        [None, 3],
+        {
+            'internal_jobs': 1,
+            'makeflags': ' --eval=X\\ -j7\\ --jobserver-auth=0,1 -j3',
+            'fifo': None
+        }
+    ),
+    (
+        {'MAKEFLAGS': '--jobserver-auth=fifo:/nonexistent/fifo --jobserver-auth=0,1'
+                      ' -- SAVED=--jobserver-auth=-2,-2'},
+        0,
+        (True, True),
+        ['using GNU make jobserver'],
+        None,
+        [[0, 1], 0],
+        {
+            'internal_jobs': 1,
+            'makeflags': '--jobserver-auth=fifo:/nonexistent/fifo --jobserver-auth=0,1'
+                         ' -- SAVED=--jobserver-auth=-2,-2',
+            'fifo': None
+        }
+    ),
+    (
+        {'MAKEFLAGS': '--jobserver-auth=fifo:/nonexistent/fifo'},
+        4,
+        (False, False),
+        ['-jN forced on command line; ignoring GNU make jobserver'],
+        None,
+        [None, 4],
+        {
+            'internal_jobs': 1,
+            'makeflags': '--jobserver-auth=fifo:/nonexistent/fifo',
+            'fifo': '/nonexistent/fifo'
+        }
+    ),
+    (
+        {'MAKEFLAGS': '--jobserver-auth=fifo:/nonexistent/fifo'},
+        0,
+        (False, False),
+        ['Cannot open /nonexistent/fifo'],
+        None,
+        [None, 0],
+        {
+            'internal_jobs': 1,
+            'makeflags': '--jobserver-auth=fifo:/nonexistent/fifo',
+            'fifo': '/nonexistent/fifo'
+        }
     ),
     (None, 0, (False, False), [], None, None, None),
 ]
@@ -234,7 +301,9 @@ TESTDATA_3 = [
     TESTDATA_3,
     ids=['env, no jobserver-auth', 'env, jobs, dry run', 'env, no jobs',
          'env, no jobs, oserror', 'env, no jobs, wrong read pipe',
-         'env, no jobs, wrong write pipe', 'environ, no makeflags']
+         'env, no jobs, wrong write pipe', 'env, variables', 'env, escaped blanks',
+         'env, last jobserver-auth', 'env, jobs, fifo', 'env, no jobs, missing fifo',
+         'environ, no makeflags']
 )
 def test_gnumakejobclient_from_environ(
     caplog,
@@ -289,6 +358,29 @@ def test_gnumakejobclient_from_environ(
         gmjc_init_mock.assert_called_once_with(*expected_args,
                                                **expected_kwargs)
 
+
+def test_gnumakejobclient_from_environ_fifo(tmp_path, caplog):
+    path = tmp_path / 'fifo'
+    os.mkfifo(path)
+    makeflags = f' -j4 --jobserver-auth=3,4 --jobserver-auth=fifo:{path}'
+
+    client = GNUMakeJobClient.from_environ(env={'MAKEFLAGS': makeflags})
+
+    assert 'using GNU make jobserver' in caplog.text
+    assert client.jobs == 4
+    assert client.env() == {'MAKEFLAGS': makeflags}
+    assert client.pass_fds() == []
+    read_fd, write_fd = client._inheritable_pipe
+    assert os.path.samestat(os.fstat(read_fd), os.stat(path))
+    assert os.path.samestat(os.fstat(write_fd), os.stat(path))
+
+    # The second job takes the token that the job server put into the named pipe
+    server_fd = os.open(path, os.O_RDWR | os.O_NONBLOCK)
+    os.write(server_fd, b'x')
+    with client.get_job(), client.get_job(), pytest.raises(BlockingIOError):
+        os.read(server_fd, 1)
+    assert os.read(server_fd, 2) == b'x'
+    os.close(server_fd)
 
 
 def test_gnumakejobclient_get_job():

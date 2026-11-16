@@ -103,8 +103,49 @@ struct tc_sm_t {
 #ifdef CONFIG_USBC_CSM_DRP
 	/** tDRP toggle timer */
 	struct usbc_timer_t tc_t_drp_toggle;
+	/** Source advertisement window */
+	uint32_t drp_src_window_ms;
+	/** Sink advertisement window */
+	uint32_t drp_snk_window_ms;
+	/** PRNG state for toggle jitter */
+	uint32_t drp_rng_state;
 #endif
 };
+#ifdef CONFIG_USBC_CSM_DRP
+
+/**
+ * @brief Draw DRP toggle timing from PRNG xorshift to meet specs jitter
+ * requirements
+ *
+ * @param tc Type-C state machine context
+ */
+static inline void tc_drp_cycle_draw(struct tc_sm_t *tc)
+{
+	uint32_t period_span = MIN(CONFIG_USBC_DRP_PERIOD_MS - TC_T_DRP_MIN_MS,
+				   TC_T_DRP_MAX_MS - CONFIG_USBC_DRP_PERIOD_MS);
+	uint32_t duty_span = MIN(CONFIG_USBC_DRP_DUTY_CYCLE - 30, 70 - CONFIG_USBC_DRP_DUTY_CYCLE);
+	uint32_t period;
+	uint32_t duty;
+	uint32_t x;
+
+	if (tc->drp_rng_state == 0) {
+		tc->drp_rng_state = (k_cycle_get_32() ^ (uint32_t)(uintptr_t)tc->dev) | 1;
+	}
+
+	x = tc->drp_rng_state;
+
+	x ^= x << 13;
+	x ^= x >> 17;
+	x ^= x << 5;
+	tc->drp_rng_state = x;
+
+	period = CONFIG_USBC_DRP_PERIOD_MS + x % (2 * period_span + 1) - period_span;
+	duty = CONFIG_USBC_DRP_DUTY_CYCLE + (x >> 8) % (2 * duty_span + 1) - duty_span;
+
+	tc->drp_src_window_ms = (period * duty) / 100;
+	tc->drp_snk_window_ms = period - tc->drp_src_window_ms;
+}
+#endif /* CONFIG_USBC_CSM_DRP */
 
 /**
  * @brief Sets a Type-C State

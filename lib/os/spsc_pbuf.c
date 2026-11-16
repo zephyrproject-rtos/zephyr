@@ -195,7 +195,7 @@ int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf)
 	}
 
 	len = min(len, max(free_space - (int32_t)LEN_SZ, 0));
-	*buf = &data_loc[wr_idx + LEN_SZ];
+	*buf = (char *)&data_loc[wr_idx + LEN_SZ];
 
 	return len;
 }
@@ -313,7 +313,7 @@ uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf)
 	__ASSERT_NO_MSG(bytes_stored >= (len + LEN_SZ));
 
 	cache_inv(&data_loc[rd_idx + LEN_SZ], len, flags);
-	*buf = &data_loc[rd_idx + LEN_SZ];
+	*buf = (char *)&data_loc[rd_idx + LEN_SZ];
 
 	return len;
 }

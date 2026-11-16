@@ -1770,7 +1770,7 @@ static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static const struct ethernet_api eth_fake_api_funcs = {
+static DEVICE_API(ethernet, eth_fake_api_funcs) = {
 	.iface_api.init = eth_fake_iface_init,
 	.send = eth_fake_send,
 };
@@ -4589,6 +4589,59 @@ ZTEST(net_socket_udp, test_ipv4_mapped_to_ipv6_sendmsg)
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_MAPPING_TO_IPV6);
 
 	test_ipv4_mapped_to_ipv6_send_common(IPV4_MAPPED_TO_IPV6_SENDMSG);
+}
+
+/* A dual-stack socket bound to an IPv6 address other than the unspecified one
+ * has no IPv4 address to send from, so a send to an IPv4-mapped address fails.
+ */
+ZTEST(net_socket_udp, test_ipv4_mapped_to_ipv6_send_from_bound_v6)
+{
+	int off = 0;
+	int ret;
+	int err;
+	int sock_s, sock_c;
+	net_socklen_t addrlen;
+	struct net_sockaddr_in addr_s4 = { 0 };
+	struct net_sockaddr_in addr_recv = { 0 };
+	struct net_sockaddr_in6 addr_c6 = { 0 };
+	struct net_sockaddr_in6 addr_dst = { 0 };
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_MAPPING_TO_IPV6);
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &sock_s, &addr_s4);
+	ret = zsock_bind(sock_s, (struct net_sockaddr *)&addr_s4, sizeof(addr_s4));
+	zassert_ok(ret, "bind failed, %d", errno);
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR_ETH, CLIENT_PORT, &sock_c, &addr_c6);
+	ret = zsock_setsockopt(sock_c, NET_IPPROTO_IPV6, ZSOCK_IPV6_V6ONLY, &off, sizeof(off));
+	zassert_ok(ret, "setsockopt failed, %d", errno);
+	ret = zsock_bind(sock_c, (struct net_sockaddr *)&addr_c6, sizeof(addr_c6));
+	zassert_ok(ret, "bind failed, %d", errno);
+
+	addr_dst.sin6_family = NET_AF_INET6;
+	addr_dst.sin6_port = net_htons(SERVER_PORT);
+	ret = zsock_inet_pton(NET_AF_INET6, MY_IPV4_MAPPED_ADDR, &addr_dst.sin6_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	ret = zsock_sendto(sock_c, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0,
+			   (struct net_sockaddr *)&addr_dst, sizeof(addr_dst));
+	err = errno;
+	zexpect_equal(ret, -1, "sendto should fail (was %d)", ret);
+	zexpect_equal(err, EINVAL, "unexpected errno (%d)", err);
+
+	/* Give a datagram sent by mistake a chance to go through the net stack */
+	k_msleep(10);
+
+	addrlen = sizeof(addr_recv);
+	ret = zsock_recvfrom(sock_s, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT,
+			     (struct net_sockaddr *)&addr_recv, &addrlen);
+	zexpect_equal(ret, -1, "server received %d bytes from 0x%08x", ret,
+		      net_ntohl(addr_recv.sin_addr.s_addr));
+
+	ret = zsock_close(sock_c);
+	zassert_ok(ret, "close failed, %d", errno);
+	ret = zsock_close(sock_s);
+	zassert_ok(ret, "close failed, %d", errno);
 }
 
 static void test_rebinding_common(net_sa_family_t family)

@@ -66,7 +66,7 @@ static struct k_spinlock nsos_polls_lock;
 
 static int nsos_socket_offload_init(const struct device *arg);
 
-static const struct offloaded_if_api nsos_iface_offload_api;
+static DEVICE_API(offloaded_if, nsos_iface_offload_api);
 
 NET_DEVICE_OFFLOAD_INIT(nsos_socket, "nsos_socket",
 			nsos_socket_offload_init,
@@ -402,36 +402,26 @@ static int nsos_poll_update(struct nsos_socket *sock, struct zsock_pollfd *pfd,
 	return 0;
 }
 
+static int nsos_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+				   struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	struct nsos_socket *sock = obj;
+
+	return nsos_poll_prepare(sock, pfd, pev, pev_end, &sock->poll);
+}
+
+static int nsos_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev)
+{
+	struct nsos_socket *sock = obj;
+
+	return nsos_poll_update(sock, pfd, pev, &sock->poll);
+}
+
 static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 {
 	struct nsos_socket *sock = obj;
 
 	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-		struct k_poll_event *pev_end;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
-
-		return nsos_poll_prepare(obj, pfd, pev, pev_end, &sock->poll);
-	}
-
-	case ZFD_IOCTL_POLL_UPDATE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-
-		return nsos_poll_update(obj, pfd, pev, &sock->poll);
-	}
-
-	case ZFD_IOCTL_POLL_OFFLOAD:
-		return -EOPNOTSUPP;
-
 	case ZVFS_F_GETFL: {
 		int flags;
 
@@ -1649,6 +1639,8 @@ static const struct socket_op_vtable nsos_socket_fd_op_vtable = {
 		.write = nsos_write,
 		.close = nsos_close,
 		.ioctl = nsos_ioctl,
+		.poll_prepare = nsos_poll_prepare_vmeth,
+		.poll_update = nsos_poll_update_vmeth,
 	},
 	.bind = nsos_bind,
 	.connect = nsos_connect,
@@ -2006,7 +1998,7 @@ static int nsos_iface_enable(const struct net_if *iface, bool enabled)
 	return 0;
 }
 
-static const struct offloaded_if_api nsos_iface_offload_api = {
+static DEVICE_API(offloaded_if, nsos_iface_offload_api) = {
 	.iface_api.init = nsos_iface_api_init,
 	.enable = nsos_iface_enable,
 };

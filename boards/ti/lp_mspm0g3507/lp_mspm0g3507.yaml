@@ -12,8 +12,10 @@ supported:
   - uart
   - gpio
   - can
+  - counter
   - dac
   - spi
   - vref
   - trng
+  - watchdog
 vendor: ti

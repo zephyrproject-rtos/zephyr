@@ -24,7 +24,6 @@ config SOC_FLASH_BFLB_SFDP
 
 config SOC_FLASH_BFLB_DIRECT_ACCESS
 	bool "Bouffalolab flash driver read mode"
-	default n
 	help
 	  Enables direct access to flash via controller instead of via cache and XIP
 

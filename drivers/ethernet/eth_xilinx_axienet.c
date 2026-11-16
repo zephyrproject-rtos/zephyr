@@ -721,7 +721,7 @@ static int xilinx_axienet_start(const struct device *dev, struct net_if *iface _
 }
 
 /* TODO PTP, VLAN not supported yet */
-static const struct ethernet_api xilinx_axienet_api = {
+static DEVICE_API(ethernet, xilinx_axienet_api) = {
 	.iface_api.init = xilinx_axienet_iface_init,
 	.start            = xilinx_axienet_start,
 	.stop             = xilinx_axienet_stop,

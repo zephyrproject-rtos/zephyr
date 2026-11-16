@@ -2140,15 +2140,22 @@ static void le_phy_update_complete(struct net_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
+	if (evt->status != BT_HCI_ERR_SUCCESS) {
+		/* The procedure failed, so the controller did not change the PHYs.
+		 * TX_PHY and RX_PHY are only meaningful on success.
+		 */
+		LOG_WRN("status 0x%02x %s handle %u", evt->status,
+			bt_hci_err_to_str(evt->status), handle);
+		return;
+	}
+
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unable to lookup conn for handle %u", handle);
 		return;
 	}
 
-	LOG_DBG("PHY updated: status: 0x%02x %s, tx: %u, rx: %u",
-		evt->status, bt_hci_err_to_str(evt->status), evt->tx_phy,
-		evt->rx_phy);
+	LOG_DBG("PHY updated: tx: %u, rx: %u", evt->tx_phy, evt->rx_phy);
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	conn->le.phy.tx_phy = bt_get_phy(evt->tx_phy);
@@ -4422,7 +4429,7 @@ const char *bt_hci_get_ver_str(uint8_t core_version)
 {
 	static const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
-		"5.0", "5.1", "5.2", "5.3", "5.4", "6.0", "6.1", "6.2", "6.3"
+		"5.0", "5.1", "5.2", "5.3", "5.4", "6.0", "6.1", "6.2", "6.3", "7.0",
 	};
 
 	if (core_version < ARRAY_SIZE(str)) {
@@ -4493,7 +4500,7 @@ static const char *vs_hw_variant(uint16_t platform, uint16_t variant)
 {
 #if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 	static const char * const nordic_str[] = {
-		"reserved", "nRF51x", "nRF52x", "nRF53x", "nRF54Hx", "nRF54Lx"
+		"reserved", "nRF51x", "nRF52x", "nRF53x", "nRF54Hx", "nRF54Lx", "nRF71x"
 	};
 
 	if (platform == BT_HCI_VS_HW_PLAT_NORDIC && variant < ARRAY_SIZE(nordic_str)) {

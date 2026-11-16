@@ -22,16 +22,40 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 			      uint32_t var_length,
 			      struct buf_ctx *buf)
 {
+	uint8_t type = type_and_flags & 0xF0;
 	int err_code = 0;
 	bool notify_event = true;
 	struct mqtt_evt evt = { 0 };
 
+	/* Until it has accepted the connection, a server sends nothing but
+	 * CONNACK, and with MQTT 5.0 AUTH (MQTT 3.1.1 and MQTT 5.0
+	 * section 3.2). Anything else is a protocol error.
+	 */
+	if ((MQTT_HAS_STATE(client, MQTT_STATE_CONNECTED) == 0U) &&
+	    (type != MQTT_PKT_TYPE_CONNACK) &&
+	    ((mqtt_is_version_5_0(client) == 0) || (type != MQTT_PKT_TYPE_AUTH))) {
+		NET_ERR("[CID %p]: Unexpected packet 0x%02x before CONNACK", client, type);
+		return -EBADMSG;
+	}
+
 	/* Success by default, overwritten in special cases. */
 	evt.result = 0;
 
-	switch (type_and_flags & 0xF0) {
+	switch (type) {
 	case MQTT_PKT_TYPE_CONNACK:
 		NET_DBG("[CID %p]: Received MQTT_PKT_TYPE_CONNACK!", client);
+
+		/* A server sends one CONNACK per connection (MQTT 5.0
+		 * section 3.2), so another one is a protocol error and the
+		 * connection is closed (MQTT 3.1.1 section 4.8, MQTT 5.0
+		 * section 4.13.1).
+		 */
+		if (MQTT_HAS_STATE(client, MQTT_STATE_CONNECTED) != 0U) {
+			NET_ERR("[CID %p]: Unexpected CONNACK", client);
+			err_code = -EBADMSG;
+			notify_event = false;
+			break;
+		}
 
 		evt.type = MQTT_EVT_CONNACK;
 		err_code = connect_ack_decode(client, buf, &evt.param.connack);

@@ -52,6 +52,12 @@ set(bl54l15u_dvk/nrf54l15/cpuflpr_DEPRECATED
 set(elemrv/elemrv_n_DEPRECATED
     elemrv_flask_n
 )
+set(rak3172/stm32wle5xx_DEPRECATED
+    rak3272s/stm32wle5xx
+)
+set(rak3172_DEPRECATED
+    rak3272s
+)
 set(adafruit_metro_rp2350/rp2350b/m33_DEPRECATED
     adafruit_metro_rp2350/rp2350b/m33_0
 )
@@ -126,4 +132,16 @@ set(kit_psc3m6_evk_DEPRECATED
 )
 set(kit_psc3m6_evk/psc3m6ges3ahq1_DEPRECATED
     kit_psc3m6_eval/psc3m6ges3ahq1
+)
+set(tang_mega_138k_pro_dock/ae350_DEPRECATED
+    tang_mega_138k_pro_dock/ae350_a25
+)
+set(tang_mega_138k_pro_dock/ae350/demo_DEPRECATED
+    tang_mega_138k_pro_dock/ae350_a25/demo
+)
+set(adp_xc7k/ae350_DEPRECATED
+    adp_xc7k/ae350_a25
+)
+set(adp_xc7k/ae350/clic_DEPRECATED
+    adp_xc7k/ae350_d23/clic
 )

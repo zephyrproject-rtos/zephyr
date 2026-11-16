@@ -189,4 +189,9 @@ config BUILD_WITH_TFM
 
 rsource "Kconfig.sync_rtc"
 
+config HEAP_MEM_POOL_ADD_SIZE_SOC
+	def_int 4096
+	depends on (SOC_NRF5340_CPUAPP_QKAA && NRF_802154_SER_HOST) || \
+		(SOC_NRF5340_CPUNET_QKAA && NRF_802154_SER_RADIO)
+
 endif # SOC_SERIES_NRF53

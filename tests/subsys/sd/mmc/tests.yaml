@@ -11,3 +11,10 @@ tests:
     min_ram: 32
     integration_platforms:
       - mimxrt595_evk/mimxrt595s/cm33
+  sd.mmc.emul:
+    depends_on: []
+    harness: ztest
+    filter: dt_compat_enabled("zephyr,mmc-disk")
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

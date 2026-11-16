@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_irtc
 
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/irq.h>
 #include "rtc_utils.h"
@@ -14,6 +15,11 @@
 struct nxp_irtc_config {
 	RTC_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	/* Bus clock gate. NULL when the instance has no 'clocks' property. */
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
+#endif
 	bool is_output_clock_enabled;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clock_src)
 	uint8_t clock_src;
@@ -164,15 +170,34 @@ static int nxp_irtc_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	const struct nxp_irtc_config *config = dev->config;
 	struct nxp_irtc_data *data = dev->data;
 	RTC_Type *irtc_reg = config->base;
+	uint8_t alm_match;
 
 	if (id != 0 || (mask && (timeptr == 0)) ||
 	    (timeptr && !rtc_utils_validate_rtc_time(timeptr, mask))) {
 		return -EINVAL;
 	}
 
-	data->alarm_pending = false;
+	/* Reject a day/month/year combination before any register is touched. */
+	switch ((mask & (BIT(3) | BIT(4) | BIT(5))) >> 3) {
+	case 0x00:
+		alm_match = 0x0;
+		break;
+	case 0x01:
+		alm_match = 0x1;
+		break;
+	case 0x03:
+		alm_match = 0x2;
+		break;
+	case 0x07:
+		alm_match = 0x3;
+		break;
+	default:
+		return -EINVAL;
+	}
 
 	uint32_t key = irq_lock();
+
+	data->alarm_pending = false;
 
 	nxp_irtc_unlock_registers(irtc_reg);
 
@@ -203,28 +228,19 @@ static int nxp_irtc_alarm_set_time(const struct device *dev, uint16_t id, uint16
 
 	/* Clearing out the ALARM Flag Field then setting the correct value */
 	irtc_reg->CTRL &= ~((uint16_t)RTC_CTRL_ALM_MATCH_MASK);
-	uint8_t year_month_day_mask = (mask & (BIT(3) | BIT(4) | BIT(5))) >> 3;
+	irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(alm_match);
 
-	switch (year_month_day_mask) {
-	case 0x00:
-		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x0);
-		break;
-	case 0x01:
-		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x1);
-		break;
-	case 0x03:
-		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x2);
-		break;
-	case 0x07:
-		irtc_reg->CTRL |= RTC_CTRL_ALM_MATCH(0x3);
-		break;
-	default:
-		irq_unlock(key);
-		return -EINVAL;
+	if (mask == 0U) {
+		/* A zero mask disables the alarm. */
+		irtc_reg->IER &= ~(uint16_t)RTC_IER_ALM_IE_MASK;
+	} else {
+		/*
+		 * Every match sets ALM_IS, enabled or not, so drop a stale flag
+		 * before enabling; only a match after this call may fire.
+		 */
+		irtc_reg->ISR = RTC_ISR_ALM_IS_MASK;
+		irtc_reg->IER |= RTC_IER_ALM_IE_MASK;
 	}
-
-	/* Enabling Alarm Interrupts */
-	irtc_reg->IER |= RTC_ISR_ALM_IS_MASK;
 	data->alarm_mask = mask;
 
 	irq_unlock(key);
@@ -296,10 +312,12 @@ static int nxp_irtc_alarm_is_pending(const struct device *dev, uint16_t id)
 		return -EINVAL;
 	}
 
-	__disable_irq();
+	/* irq_lock() nests; __enable_irq() would unmask unconditionally. */
+	uint32_t key = irq_lock();
+
 	ret = data->alarm_pending ? 1 : 0;
 	data->alarm_pending = false;
-	__enable_irq();
+	irq_unlock(key);
 
 	return ret;
 }
@@ -469,16 +487,32 @@ static int nxp_irtc_init(const struct device *dev)
 	struct nxp_irtc_data *data = dev->data;
 #endif
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	/* The register interface needs its bus clock before the first access. */
+	if (config->clock_dev != NULL) {
+		int ret;
+
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#endif
+
 	nxp_irtc_unlock_registers(irtc_reg);
 
 	reg = irtc_reg->CTRL;
+	/* Some IRTC revisions (e.g. RT2660) have no CLKO_DIS bit. */
+#if defined(RTC_CTRL_CLKO_DIS_MASK)
 	reg &= ~(uint16_t)RTC_CTRL_CLKO_DIS_MASK;
+	reg |= RTC_CTRL_CLKO_DIS(!config->is_output_clock_enabled);
+#endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clock_src)
 	reg &= ~(uint16_t)RTC_CTRL_CLK_SEL_MASK;
-#endif
-
-	reg |= RTC_CTRL_CLKO_DIS(!config->is_output_clock_enabled);
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clock_src)
 	reg |= RTC_CTRL_CLK_SEL(config->clock_src);
 #endif
 
@@ -503,15 +537,21 @@ static void nxp_irtc_isr(const struct device *dev)
 	RTC_Type *irtc_reg = config->base;
 	struct nxp_irtc_data *data = dev->data;
 	uint32_t key = irq_lock();
+	uint16_t status;
 
 	nxp_irtc_unlock_registers(irtc_reg);
 	/* Clearing ISR Register since w1c */
-	irtc_reg->ISR = irtc_reg->ISR;
-	if (data->alarm_callback) {
-		data->alarm_callback(dev, 0, data->alarm_user_data);
-		data->alarm_pending = false;
-	} else {
-		data->alarm_pending = true;
+	status = irtc_reg->ISR;
+	irtc_reg->ISR = status;
+	/* ISR flags are set whether or not their interrupt is enabled. */
+	status &= irtc_reg->IER;
+	if ((status & RTC_ISR_ALM_IS_MASK) != 0U) {
+		if (data->alarm_callback) {
+			data->alarm_callback(dev, 0, data->alarm_user_data);
+			data->alarm_pending = false;
+		} else {
+			data->alarm_pending = true;
+		}
 	}
 	irq_unlock(key);
 #endif /* CONFIG_RTC_ALARM */
@@ -570,13 +610,23 @@ static DEVICE_API(rtc, rtc_nxp_irtc_driver_api) = {
 #define NXP_IRTC_CLOCK_FREQUENCY_INIT(n)
 #endif
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+#define NXP_IRTC_CLOCK_GATE_INIT(n)                                                                \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),                                        \
+		    (.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                     \
+		     .clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),), \
+		    ())
+#else
+#define NXP_IRTC_CLOCK_GATE_INIT(n)
+#endif
+
 #define RTC_NXP_IRTC_DEVICE_INIT(n)                                                                \
 	NXP_IRTC_CONFIG_FUNC(n)                                                                    \
 	static const struct nxp_irtc_config nxp_irtc_config_##n = {                                \
 		.base = (RTC_Type *)DT_INST_REG_ADDR(n),                                           \
-		NXP_IRTC_CLOCK_SELECTION_INIT(n)                                \
-		NXP_IRTC_CLOCK_FREQUENCY_INIT(n)                                \
-		.share_counter = DT_INST_PROP(n, share_counter),                \
+		NXP_IRTC_CLOCK_GATE_INIT(n) NXP_IRTC_CLOCK_SELECTION_INIT(n)                       \
+			NXP_IRTC_CLOCK_FREQUENCY_INIT(n)                                           \
+				.share_counter = DT_INST_PROP(n, share_counter),                   \
 		.is_output_clock_enabled = DT_INST_PROP(n, output_clk_en),                         \
 		.irq_config_func = nxp_irtc_config_func_##n,                                       \
 	};                                                                                         \

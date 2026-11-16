@@ -47,8 +47,8 @@ jobs:
       options: '--entrypoint /bin/bash'
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
-      BSIM_OUT_PATH: /opt/bsim/
-      BSIM_COMPONENTS_PATH: /opt/bsim/components
+      BSIM_OUT_PATH: /opt/bsim_west/bsim/
+      BSIM_COMPONENTS_PATH: /opt/bsim_west/bsim/components
       EDTT_PATH: ../tools/edtt
       CCACHE_DIR: /node-cache/ccache-zephyr
       CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
@@ -208,6 +208,14 @@ jobs:
         run: |
           junitparser merge --glob "./twister-out*/twister.xml" junit.xml
           junit2html junit.xml junit.html
+
+      - name: Test Results Summary
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@7622c5bf3d112a72ab4fa3951c2aa5723d8ab92d # v2.25.0
+        with:
+          files: "junit.xml"
+          check_run: false
+          comment_mode: off
 
       - name: Upload Bsim Test Results
         if: always()

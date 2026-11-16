@@ -63,10 +63,7 @@ static struct bt_gmap_client {
 
 static void gmap_reset(struct bt_gmap_client *gmap_cli)
 {
-	if (gmap_cli->conn != NULL) {
-		bt_conn_unref(gmap_cli->conn);
-		gmap_cli->conn = NULL;
-	}
+	bt_conn_drop(&gmap_cli->conn);
 
 	gmap_cli->role = 0;
 	(void)memset(&gmap_cli->feat, 0, sizeof(gmap_cli->feat));
@@ -691,13 +688,12 @@ int bt_gmap_discover(struct bt_conn *conn)
 	gmap_cli->params.discover.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	gmap_cli->params.discover.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
-	gmap_cli->conn = ref;
+	gmap_cli->conn = bt_conn_take(&ref);
 
 	err = bt_gatt_discover(conn, &gmap_cli->params.discover);
 	if (err != 0) {
 		LOG_DBG("Failed to initiate discovery: %d", err);
-		bt_conn_unref(ref);
-		gmap_cli->conn = NULL;
+		bt_conn_drop(&gmap_cli->conn);
 		err = -ENOEXEC;
 		goto cleanup;
 	}

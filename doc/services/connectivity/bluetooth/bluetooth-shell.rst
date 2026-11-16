@@ -28,6 +28,7 @@ For specific Bluetooth functionality see also the following shell documentation
    shell/classic/hfp.rst
    shell/classic/l2cap.rst
    shell/classic/map.rst
+   shell/classic/opp.rst
    shell/classic/pbap.rst
    shell/classic/spp.rst
    shell/host/gap.rst
