@@ -304,13 +304,13 @@ int lr11xx_hal_write_cmd(const struct device *dev, uint16_t opcode, const uint8_
 		return ret;
 	}
 
-	ret = lr11xx_hal_wait_busy(dev, LR11XX_BUSY_DEFAULT_TIMEOUT);
+	ret = lr11xx_hal_read_status(dev, hdr, NULL);
+	if (ret < 0) {
+		return ret;
+	}
 
-	lr11xx_hal_read_status(dev, hdr, NULL);
-
-	if (LR11XX_STAT1_CMD_GET(hdr[0]) != LR11XX_STAT1_CMD_OK
-	    && LR11XX_STAT1_CMD_GET(hdr[0]) != LR11XX_STAT1_CMD_DAT
-	    && ret == 0) {
+	if (LR11XX_STAT1_CMD_GET(hdr[0]) != LR11XX_STAT1_CMD_OK &&
+	    LR11XX_STAT1_CMD_GET(hdr[0]) != LR11XX_STAT1_CMD_DAT) {
 		ret = LR11XX_NOT_API_ERR(LR11XX_STAT1_CMD_GET(hdr[0]));
 	}
 

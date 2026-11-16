@@ -488,11 +488,18 @@ __subsystem struct lora_driver_api {
  * @param dev     LoRa device
  * @param config  Data structure containing the intended configuration for the
 		  modem
- * @return 0 on success, negative on error
+ * @retval 0 Configuration applied successfully.
+ * @retval -EINVAL Invalid modem configuration.
+ * @return Other negative error codes from the driver.
  */
 static inline int lora_config(const struct device *dev,
 			      const struct lora_modem_config *config)
 {
+	if (config->datarate < SF_5 || config->datarate > SF_12 ||
+	    config->coding_rate < CR_4_5 || config->coding_rate > CR_4_8) {
+		return -EINVAL;
+	}
+
 	return DEVICE_API_GET(lora, dev)->config(dev, config);
 }
 

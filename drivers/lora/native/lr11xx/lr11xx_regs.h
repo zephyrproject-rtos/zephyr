@@ -267,6 +267,9 @@
 /* No time out */
 #define LR11XX_TX_TIMEOUT_NONE			0x000000
 
+/* Largest whole-millisecond timeout that fits the 24-bit timer. */
+#define LR11XX_MAX_TIMEOUT_MS (0xFFFFFEULL * 1000U / LR11XX_LF_FREQ)
+
 /* Convert milliseconds to timeout ticks, the maximum value is 512s (24-bit value)
  * Clamped to 0xfffffe to avoid the possibility of accidentally selecting a special timeout.
  */

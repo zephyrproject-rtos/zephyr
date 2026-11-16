@@ -297,6 +297,9 @@
 #define SX126X_RX_TIMEOUT_CONTINUOUS        0xFFFFFF
 #define SX126X_TX_TIMEOUT_NONE              0x000000
 
+/* Largest whole-millisecond timeout that fits the 24-bit timer. */
+#define SX126X_MAX_TIMEOUT_MS (0xFFFFFEU / 64U)
+
 /* Convert milliseconds to timeout ticks */
 #define SX126X_MS_TO_TIMEOUT(ms)            ((uint32_t)((ms) * 64))
 
