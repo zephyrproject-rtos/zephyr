@@ -195,8 +195,8 @@ static int i2s_stm32_configure_hw(const struct device *dev, const struct i2s_con
 		/*
 		 * Compensate for the master clock dividers.
 		 * MCK = N * CK, where N:
-		 * 8 when the channel frame is 16-bit wide
-		 * 4 when the channel frame is 32-bit wide
+		 * 8 when the channel frame is 16-bit is_32bit
+		 * 4 when the channel frame is 32-bit is_32bit
 		 */
 		bit_clk_freq *= channel_length == 16U ? 4U * 2U : 4U;
 	}
@@ -1079,50 +1079,97 @@ static uint32_t i2s_stm32_fd_words_to_frame_end(const struct i2s_stm32_stream *s
 }
 
 /*
- * Drop what the receiver collected while the direction was idle, so that a
- * late start begins with fresh data.
+ * The H7 I2S has no flag that tells which channel a word belongs to, so the
+ * driver has to count words to know where a frame begins. While one direction
+ * streams and the other is idle, the idle one keeps moving words through its
+ * DMA: TX sends a zero word, RX reads into a discard word. Nothing is lost to
+ * an RX overrun, and TX never underruns, which in PCM format would resume on
+ * an arbitrary slot. The block is one frame long and circular: it runs for as
+ * long as the direction stays idle without any interrupt, and its pending
+ * length always gives the position in the current frame. The next start of
+ * the direction reads it to begin on a frame boundary.
  */
-static void i2s_stm32_fd_flush_rx(const struct i2s_stm32_cfg *cfg,
-				  const struct i2s_stm32_stream *stream)
+static void i2s_stm32_fd_idle_dma_start(const struct device *dev,
+					 struct i2s_stm32_stream *stream, bool is_tx)
 {
-	uint32_t count = 0U;
+	const struct i2s_stm32_cfg *cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+	struct dma_config dcfg = stream->dma_cfg;
+	struct dma_block_config blk = {
+		.source_address = is_tx ? (uint32_t)&dev_data->tx_idle_word :
+					  (uint32_t)LL_SPI_DMA_GetRxRegAddr(cfg->i2s),
+		.dest_address = is_tx ? (uint32_t)LL_SPI_DMA_GetTxRegAddr(cfg->i2s) :
+					(uint32_t)&dev_data->rx_idle_word,
+		.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+		.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+		.source_reload_en = 1U,
+		.dest_reload_en = 1U,
+		.fifo_mode_control = stream->fifo_threshold,
+	};
 
-	while ((LL_SPI_IsActiveFlag_RXP(cfg->i2s) != 0U) && (count < 32U)) {
-		if (stream->cfg.word_size <= 16U) {
-			(void)LL_SPI_ReceiveData16(cfg->i2s);
-		} else {
-			(void)LL_SPI_ReceiveData32(cfg->i2s);
-		}
-		count++;
+	if (stream->cfg.frame_clk_freq == 0U) {
+		return;
 	}
 
-	LL_I2S_ClearFlag_OVR(cfg->i2s);
+	blk.block_size = stream->dma_cfg.source_data_size * i2s_stm32_words_per_frame(&stream->cfg);
+	dcfg.head_block = &blk;
+	dcfg.dma_callback = NULL;
+
+	if ((dma_config(stream->dev_dma, stream->dma_channel, &dcfg) < 0) ||
+	    (dma_start(stream->dev_dma, stream->dma_channel) < 0)) {
+		LOG_ERR("Failed to start the %s idle DMA", is_tx ? "TX" : "RX");
+		return;
+	}
+
+	if (is_tx) {
+		LL_I2S_EnableDMAReq_TX(cfg->i2s);
+	} else {
+		LL_I2S_EnableDMAReq_RX(cfg->i2s);
+	}
+}
+
+static void i2s_stm32_fd_idle_dma_stop(const struct i2s_stm32_cfg *cfg,
+				       const struct i2s_stm32_stream *stream, bool is_tx)
+{
+	if (is_tx) {
+		LL_I2S_DisableDMAReq_TX(cfg->i2s);
+	} else {
+		LL_I2S_DisableDMAReq_RX(cfg->i2s);
+	}
+
+	dma_stop(stream->dev_dma, stream->dma_channel);
 }
 
 /*
- * Queue one frame of zeros in the transmitter. A master that runs out of
- * transmit data repeats the last word, so this makes an idle transmitter send
- * zeros. It also gives the master data to start the clock with.
+ * Skip words without the DMA: send zeros on TX, read and discard on RX. A
+ * master that runs out of transmit data repeats the last word, so zeros also
+ * make a stopped transmitter silent.
  */
-static void i2s_stm32_fd_tx_zeros(const struct i2s_stm32_cfg *cfg,
-				  const struct i2s_stm32_stream *stream, uint32_t words)
+static void i2s_stm32_fd_skip_words(const struct i2s_stm32_cfg *cfg,
+			     const struct i2s_stm32_stream *stream, bool is_tx, uint32_t words)
 {
-	uint32_t written = 0U;
+	const bool is_32bit = (stream->cfg.word_size > 16U);
+	uint32_t count = 0U;
 	uint32_t wait_us = 0U;
 
-	while ((written < words) && (wait_us < 1000U)) {
-		if (LL_SPI_IsActiveFlag_TXP(cfg->i2s) == 0U) {
+	while ((count < words) && (wait_us < 1000U)) {
+		if ((is_tx ? LL_SPI_IsActiveFlag_TXP(cfg->i2s) :
+			     LL_SPI_IsActiveFlag_RXP(cfg->i2s)) == 0U) {
 			k_busy_wait(1);
 			wait_us++;
 			continue;
 		}
 
-		if (stream->cfg.word_size <= 16U) {
-			LL_SPI_TransmitData16(cfg->i2s, 0U);
-		} else {
+		if (is_tx && is_32bit) {
 			LL_SPI_TransmitData32(cfg->i2s, 0U);
+		} else if (is_tx) {
+			LL_SPI_TransmitData16(cfg->i2s, 0U);
+		} else if (is_32bit) {
+			(void)LL_SPI_ReceiveData32(cfg->i2s);
+		} else {
+			(void)LL_SPI_ReceiveData16(cfg->i2s);
 		}
-		written++;
+		count++;
 	}
 }
 
@@ -1136,6 +1183,7 @@ static int i2s_stm32_fd_stream_start(struct i2s_stm32_stream *stream, const stru
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
 	const bool is_tx = (stream == &dev_data->tx);
+	struct i2s_stm32_stream *other = is_tx ? &dev_data->rx : &dev_data->tx;
 	size_t mem_block_size = 0;
 	unsigned int key;
 	bool first;
@@ -1173,10 +1221,17 @@ static int i2s_stm32_fd_stream_start(struct i2s_stm32_stream *stream, const stru
 		LL_SPI_SetUDRConfiguration(cfg->i2s, LL_SPI_UDR_CONFIG_REGISTER_PATTERN);
 		LL_I2S_ClearFlag_OVR(cfg->i2s);
 		LL_I2S_ClearFlag_UDR(cfg->i2s);
-	} else if (is_tx) {
-		LL_I2S_ClearFlag_UDR(cfg->i2s);
 	} else {
-		i2s_stm32_fd_flush_rx(cfg, stream);
+		const uint32_t frame_bytes = stream->dma_cfg.source_data_size *
+					     i2s_stm32_words_per_frame(&stream->cfg);
+
+		/* Stop the idle DMA and skip the words up to the next frame start */
+		i2s_stm32_fd_idle_dma_stop(cfg, stream, is_tx);
+		i2s_stm32_fd_skip_words(cfg, stream, is_tx,
+					i2s_stm32_fd_words_to_frame_end(stream, frame_bytes));
+		if (is_tx) {
+			LL_I2S_ClearFlag_UDR(cfg->i2s);
+		}
 	}
 
 	if (is_tx) {
@@ -1213,15 +1268,13 @@ static int i2s_stm32_fd_stream_start(struct i2s_stm32_stream *stream, const stru
 	dev_data->fd_active = true;
 
 	if (first) {
+		/*
+		 * Track the frame phase of the other direction from the first
+		 * word. The TX idle DMA also gives a master that only receives
+		 * the transmit data it needs to start the clock.
+		 */
+		i2s_stm32_fd_idle_dma_start(dev, other, !is_tx);
 		LL_I2S_Enable(cfg->i2s);
-		if (!is_tx && stream->master) {
-			/*
-			 * The master starts the clock only when the transmitter
-			 * has data. Without it a receiver that is started alone
-			 * never gets a clock.
-			 */
-			i2s_stm32_fd_tx_zeros(cfg, stream, 2U);
-		}
 		LL_SPI_StartMasterTransfer(cfg->i2s);
 	}
 
@@ -1240,6 +1293,7 @@ static void i2s_stm32_fd_stream_disable(struct i2s_stm32_stream *stream, const s
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
 	const bool is_tx = (stream == &dev_data->tx);
+	struct i2s_stm32_stream *other = is_tx ? &dev_data->rx : &dev_data->tx;
 	unsigned int key = irq_lock();
 
 	if (stream->hw_active) {
@@ -1254,13 +1308,15 @@ static void i2s_stm32_fd_stream_disable(struct i2s_stm32_stream *stream, const s
 		dma_stop(stream->dev_dma, stream->dma_channel);
 		stream->hw_active = false;
 
-		if (is_tx) {
-			/* DMA stopped mid-frame: finish that frame so the next start is aligned */
-			i2s_stm32_fd_tx_zeros(cfg, stream,
-					      i2s_stm32_fd_words_to_frame_end(stream, stream->cfg.block_size));
-		}
+		/* DMA stopped mid-frame: finish that frame so the next start is aligned */
+		i2s_stm32_fd_skip_words(cfg, stream, is_tx,
+					i2s_stm32_fd_words_to_frame_end(stream,
+									stream->cfg.block_size));
 
-		if (i2s_stm32_fd_users(dev_data) == 0U) {
+		if (other->hw_active) {
+			i2s_stm32_fd_idle_dma_start(dev, stream, is_tx);
+		} else {
+			i2s_stm32_fd_idle_dma_stop(cfg, other, !is_tx);
 			LL_I2S_DisableIT_FRE(cfg->i2s);
 
 			if ((stream->cfg.options & I2S_OPT_BIT_CLK_GATED) != 0) {
@@ -1270,11 +1326,11 @@ static void i2s_stm32_fd_stream_disable(struct i2s_stm32_stream *stream, const s
 				LL_I2S_Disable(cfg->i2s);
 			}
 
-			dev_data->fd_active = false;
-		}
+			if (is_tx && (ll_i2s_is_enabled(cfg->i2s) != 0U)) {
+				i2s_stm32_fd_skip_words(cfg, stream, true, 2U);
+			}
 
-		if (is_tx && (ll_i2s_is_enabled(cfg->i2s) != 0U)) {
-			i2s_stm32_fd_tx_zeros(cfg, stream, 2U);
+			dev_data->fd_active = false;
 		}
 	}
 

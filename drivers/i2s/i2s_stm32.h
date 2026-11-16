@@ -69,6 +69,9 @@ struct i2s_stm32_data {
 	bool fd_configured;
 	/* The peripheral runs in full duplex mode, shared by both streams */
 	bool fd_active;
+	/* DMA source and target of an idle direction, see i2s_stm32_fd_idle_dma_start() */
+	uint32_t tx_idle_word;
+	uint32_t rx_idle_word;
 };
 
 /* Full duplex needs the SPI peripheral of the H7 family and its LL API */
