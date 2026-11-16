@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - wifi
+    - net
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  net.wifi.connect_stored: {}
+  net.wifi.connect_stored.static:
+    extra_configs:
+      - CONFIG_WIFI_CREDENTIALS_STATIC=y
+      - CONFIG_WIFI_CREDENTIALS_STATIC_SSID="ssid_static"
+      - CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD="password123"
