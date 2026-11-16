@@ -489,6 +489,14 @@ const char *npf_test_get_str(struct npf_test *test, char *buf, size_t len)
 
 		snprintk(buf, len, "[fn=%p, data=%p]",
 			 test_local_in->fn, test_local_in->user_data);
+
+	} else if (test->type == NPF_TEST_TYPE_UDP_SRC_PORT_MATCH ||
+		   test->type == NPF_TEST_TYPE_UDP_DST_PORT_MATCH ||
+		   test->type == NPF_TEST_TYPE_TCP_SRC_PORT_MATCH ||
+		   test->type == NPF_TEST_TYPE_TCP_DST_PORT_MATCH) {
+		struct npf_test_port *test_port = CONTAINER_OF(test, struct npf_test_port, test);
+
+		snprintk(buf, len, "[%u]", net_ntohs(test_port->port));
 	}
 
 out:
