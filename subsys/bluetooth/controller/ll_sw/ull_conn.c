@@ -2173,6 +2173,7 @@ static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx)
 static uint8_t force_md_cnt_calc(struct lll_conn *lll_connection, uint32_t tx_rate)
 {
 	uint32_t time_incoming, time_outgoing;
+	uint32_t tifs_us;
 	uint8_t force_md_cnt;
 	uint8_t phy_flags;
 	uint8_t mic_size;
@@ -2192,12 +2193,17 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_connection, uint32_t tx_ra
 	mic_size = 0U;
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 
+	/* Use the frame spaces of the connection, these can be updated by the Frame Space
+	 * Update procedure.
+	 */
+	tifs_us = lll_connection->tifs_tx_us + lll_connection->tifs_rx_us;
+
 	time_incoming = (LL_LENGTH_OCTETS_TX_MAX << 3) *
 			1000000UL / tx_rate;
 	time_outgoing = PDU_DC_US(LL_LENGTH_OCTETS_TX_MAX, mic_size, phy,
 				  phy_flags) +
 			PDU_DC_US(0U, 0U, phy, PHY_FLAGS_S8) +
-			(EVENT_IFS_US << 1);
+			tifs_us;
 
 	force_md_cnt = 0U;
 	if (time_incoming > time_outgoing) {
@@ -2205,8 +2211,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_connection, uint32_t tx_ra
 		uint32_t time_keep_alive;
 
 		delta = (time_incoming << 1) - time_outgoing;
-		time_keep_alive = (PDU_DC_US(0U, 0U, phy, PHY_FLAGS_S8) +
-				   EVENT_IFS_US) << 1;
+		time_keep_alive = (PDU_DC_US(0U, 0U, phy, PHY_FLAGS_S8) << 1) + tifs_us;
 		force_md_cnt = (delta + (time_keep_alive - 1)) /
 			       time_keep_alive;
 		LOG_DBG("Time: incoming= %u, expected outgoing= %u, delta= %u, "
