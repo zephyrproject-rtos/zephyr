@@ -13,7 +13,11 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
+#if defined(CONFIG_SOC_FAMILY_KINETIS)
+#include <fsl_tsi_v5.h>
+#else
 #include <fsl_tsi_v6.h>
+#endif
 
 LOG_MODULE_REGISTER(input_mcux_tsi, CONFIG_INPUT_LOG_LEVEL);
 
@@ -334,7 +338,7 @@ static int mcux_tsi_init(const struct device *dev)
 	config->irq_config_func(dev);
 
 	/* Enable TSI interrupts */
-	TSI_EnableInterrupts(base, kTSI_EndOfScanInterruptEnable);
+	TSI_EnableInterrupts(base, kTSI_GlobalInterruptEnable | kTSI_EndOfScanInterruptEnable);
 
 	/* Start scanning */
 	mcux_tsi_start_scan(dev);
