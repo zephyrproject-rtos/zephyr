@@ -10,18 +10,18 @@
  *
  * Used by the unified @c pmu application (kernel, cache, branch).
  * Event encodings are Arm architectural
- * (PMUv3 @c pmu_evt_t). Other architectures should supply their own header.
+ * (PMUv3 @c perf_counter_evt_t). Other architectures should supply their own header.
  */
 
 #ifndef PMU_ARM64_CONFIGS_H_
 #define PMU_ARM64_CONFIGS_H_
 
-#include <zephyr/arch/pmu.h>
+#include <zephyr/arch/perf_counter.h>
 
 #if defined(CONFIG_ARM64)
 
 /** Context switch: instruction flow + cache pressure from stack switching. */
-static const struct pmu_counter_config pmu_bench_ctx_switch_counters[] = {
+static const struct perf_counter_config pmu_bench_ctx_switch_counters[] = {
 	{.event = PMU_EVT_INST_RETIRED, .enabled = true},
 	{.event = PMU_EVT_EXC_TAKEN, .enabled = true},
 	{.event = PMU_EVT_L1D_CACHE_REFILL, .enabled = true},
@@ -29,7 +29,7 @@ static const struct pmu_counter_config pmu_bench_ctx_switch_counters[] = {
 };
 
 /** irq_offload: exception entry/return path. */
-static const struct pmu_counter_config pmu_bench_irq_offload_counters[] = {
+static const struct perf_counter_config pmu_bench_irq_offload_counters[] = {
 	{.event = PMU_EVT_INST_RETIRED, .enabled = true},
 	{.event = PMU_EVT_EXC_TAKEN, .enabled = true},
 	{.event = PMU_EVT_EXC_RETURN, .enabled = true},
@@ -37,7 +37,7 @@ static const struct pmu_counter_config pmu_bench_irq_offload_counters[] = {
 };
 
 /** Kernel API calls (supervisor-mode fast path; not user-mode syscall trap). */
-static const struct pmu_counter_config pmu_bench_kernel_api_counters[] = {
+static const struct perf_counter_config pmu_bench_kernel_api_counters[] = {
 	{.event = PMU_EVT_INST_RETIRED, .enabled = true},
 	{.event = PMU_EVT_EXC_TAKEN, .enabled = true},
 	{.event = PMU_EVT_EXC_RETURN, .enabled = true},
@@ -45,7 +45,7 @@ static const struct pmu_counter_config pmu_bench_kernel_api_counters[] = {
 };
 
 /** L1/L2 cache behaviour. */
-static const struct pmu_counter_config pmu_perf_cache_counters[] = {
+static const struct perf_counter_config pmu_perf_cache_counters[] = {
 	{.event = PMU_EVT_L1D_CACHE, .enabled = true},
 	{.event = PMU_EVT_L1D_CACHE_REFILL, .enabled = true},
 	{.event = PMU_EVT_L2D_CACHE, .enabled = true},
@@ -53,7 +53,7 @@ static const struct pmu_counter_config pmu_perf_cache_counters[] = {
 };
 
 /** Branch prediction. */
-static const struct pmu_counter_config pmu_perf_branch_counters[] = {
+static const struct perf_counter_config pmu_perf_branch_counters[] = {
 	{.event = PMU_EVT_BR_PRED, .enabled = true},
 	{.event = PMU_EVT_BR_MIS_PRED, .enabled = true},
 	{.event = PMU_EVT_INST_RETIRED, .enabled = true},

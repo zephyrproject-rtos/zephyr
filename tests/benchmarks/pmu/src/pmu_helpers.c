@@ -27,42 +27,42 @@ bool pmu_pmuv3_bootstrap(int pmu_init_ret)
 		return false;
 	}
 
-	if (pmu_num_counters() == 0U) {
+	if (perf_counter_num_counters() == 0U) {
 		LOG_INF("PMU unavailable (no counters); benchmarks skipped");
 		return false;
 	}
 
-	pmu_counter_disable_all();
+	perf_counter_disable_all();
 
-	if (pmu_counter_config(0, PMU_EVT_INST_RETIRED) != 0) {
+	if (perf_counter_config(0, PMU_EVT_INST_RETIRED) != 0) {
 		LOG_INF("PMU unavailable (counter config failed); benchmarks skipped");
 		return false;
 	}
 
-	pmu_counter_enable(0);
-	pmu_counter_reset_all();
-	pmu_cycle_reset();
-	pmu_start();
+	perf_counter_enable(0);
+	perf_counter_reset_all();
+	perf_counter_cycle_reset();
+	perf_counter_start();
 
 	for (volatile int i = 0; i < 500000; i++) {
 	}
 
-	pmu_stop();
+	perf_counter_stop();
 
-	if (pmu_cycle_count() == 0ULL || pmu_counter_read(0) == 0ULL) {
-		pmu_counter_disable_all();
+	if (perf_counter_cycle_count() == 0ULL || perf_counter_read(0) == 0ULL) {
+		perf_counter_disable_all();
 		LOG_INF("PMU counters did not advance; benchmarks skipped");
 		return false;
 	}
 
-	pmu_counter_disable_all();
+	perf_counter_disable_all();
 
 	pmu_test_ready = true;
 	LOG_INF("PMU counters verified: cycle and event counters advance");
 	return true;
 }
 
-int pmu_configure_counters(const struct pmu_counter_config *configs, uint32_t num_configs)
+int pmu_configure_counters(const struct perf_counter_config *configs, uint32_t num_configs)
 {
 	uint32_t i;
 	int ret;
@@ -72,7 +72,7 @@ int pmu_configure_counters(const struct pmu_counter_config *configs, uint32_t nu
 		return -EINVAL;
 	}
 
-	n = pmu_num_counters();
+	n = perf_counter_num_counters();
 	if (n == 0U) {
 		return -ENODEV;
 	}
@@ -82,16 +82,16 @@ int pmu_configure_counters(const struct pmu_counter_config *configs, uint32_t nu
 		return -EINVAL;
 	}
 
-	pmu_counter_disable_all();
+	perf_counter_disable_all();
 
 	for (i = 0; i < num_configs; i++) {
-		ret = pmu_counter_config(i, configs[i].event);
+		ret = perf_counter_config(i, configs[i].event);
 		if (ret < 0) {
 			return ret;
 		}
 
 		if (configs[i].enabled) {
-			pmu_counter_enable(i);
+			perf_counter_enable(i);
 		}
 	}
 
