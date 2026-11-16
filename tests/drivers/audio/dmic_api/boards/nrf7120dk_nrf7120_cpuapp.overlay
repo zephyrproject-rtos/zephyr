@@ -4,10 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Test requires loopbacks:
- * - between P1.12 and P1.07,
- * For best performance, PDM_CLK shall be on 'Clock pin'.
- */
+/* For best performance, PDM_CLK shall be on 'Clock pin'. */
 
 / {
 	aliases {
