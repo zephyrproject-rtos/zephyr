@@ -522,6 +522,13 @@ Tools
 * The stm32flash runner now defaults to 115200 baud instead of 57600 when no ``--baud-rate`` is
   given. Pass ``--baud-rate=57600`` to keep the previous speed.
 
+* Twister no longer pulses the DTR/RTS lines of boards flashed with the esp32 runner when
+  ``flash_before`` is active. Boards declare this with the ``post_connect_reset`` key in their
+  :ref:`testing section <twister_board_post_connect_reset>`, which the boards in
+  ``boards/espressif`` do. Other boards using the esp32 runner, in or out of the tree, need the
+  key in their board files or in the hardware map to keep the previous behavior. Twister passes
+  ``--no-reset`` to ``west flash`` when the key is set.
+
 Modules
 *******
 

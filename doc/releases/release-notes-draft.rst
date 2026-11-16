@@ -189,6 +189,14 @@ Devicetree
 Other notable changes
 *********************
 
+* Twister
+
+  * Boards and hardware map entries can declare ``post_connect_reset``, so Twister flashes the
+    device without resetting it, attaches the console and then starts the device through its
+    serial lines or ``west reset``. Both the console harnesses and the pytest harness
+    use it, so early boot output is no longer lost. See
+    :ref:`post_connect_reset <twister_board_post_connect_reset>`.
+
 * Bluetooth
 
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
