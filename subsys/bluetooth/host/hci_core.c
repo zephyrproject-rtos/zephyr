@@ -1652,7 +1652,7 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt,
 	__ASSERT_NO_MSG(evt->status == BT_HCI_ERR_SUCCESS);
 
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
-	uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
+	uint8_t disconnect_reason;
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
 	uint8_t id;
@@ -1774,6 +1774,10 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt,
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
+	/* A priority disconnect can arrive while LE Read PHY is pending. Check
+	 * after the connection becomes visible to the priority handler.
+	 */
+	disconnect_reason = conn_handle_is_disconnected(handle);
 	if (disconnect_reason) {
 		/* Mark the connection as already disconnected before calling
 		 * the connected callback, so that the application cannot
@@ -1805,7 +1809,7 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 	__ASSERT_NO_MSG(evt->status == BT_HCI_ERR_SUCCESS);
 
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
-	uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
+	uint8_t disconnect_reason;
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
 
@@ -1863,6 +1867,7 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
+	disconnect_reason = conn_handle_is_disconnected(handle);
 	if (disconnect_reason) {
 		/* Mark the connection as already disconnected before calling
 		 * the connected callback, so that the application cannot
