@@ -937,6 +937,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 	}
 
 	net_pkt_set_ipv6_ext_len(pkt, ext_len);
+	net_pkt_set_ipv6_next_hdr(pkt, current_hdr);
 
 	ip.ipv6 = hdr;
 
