@@ -19,12 +19,28 @@
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
+/*
+ * The Atmel headers name the PIO register block Pio; the Microchip headers
+ * (PIC32CZ CA70) use pio_registers_t.
+ */
+#ifdef PIOA_REGS
+typedef pio_registers_t sam_pio_regs_t;
+#else
+typedef Pio sam_pio_regs_t;
+#endif
+
+/* PIO with pull-down (PIO_PPDxR) and slow clock debounce (PIO_IFSCxR) registers */
+#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAM4E) ||                        \
+	defined(CONFIG_SOC_SERIES_SAMX7X) || defined(CONFIG_SOC_SERIES_PIC32CZ_CA70)
+#define GPIO_SAM_HAS_PPD_IFSC 1
+#endif
+
 typedef void (*config_func_t)(const struct device *dev);
 
 struct gpio_sam_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
-	Pio *regs;
+	sam_pio_regs_t *regs;
 	config_func_t config_func;
 
 	const struct atmel_sam_pmc_config clock_cfg;
@@ -42,7 +58,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 				   gpio_flags_t flags)
 {
 	const struct gpio_sam_config * const cfg = dev->config;
-	Pio * const pio = cfg->regs;
+	sam_pio_regs_t *const pio = cfg->regs;
 
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		if ((flags & GPIO_LINE_OPEN_DRAIN) != 0) {
@@ -64,9 +80,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 		pio->PIO_IDR = mask;
 		/* Disable pull-up. */
 		pio->PIO_PUDR = mask;
-#if defined(CONFIG_SOC_SERIES_SAM4S) || \
-	defined(CONFIG_SOC_SERIES_SAM4E) || \
-	defined(CONFIG_SOC_SERIES_SAMX7X)
+#ifdef GPIO_SAM_HAS_PPD_IFSC
 		/* Disable pull-down. */
 		pio->PIO_PPDDR = mask;
 #endif
@@ -105,17 +119,13 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 	 * Clear both pulls, then enable the one we need.
 	 */
 	pio->PIO_PUDR = mask;
-#if defined(CONFIG_SOC_SERIES_SAM4S) || \
-	defined(CONFIG_SOC_SERIES_SAM4E) || \
-	defined(CONFIG_SOC_SERIES_SAMX7X)
+#ifdef GPIO_SAM_HAS_PPD_IFSC
 	pio->PIO_PPDDR = mask;
 #endif
 	if (flags & GPIO_PULL_UP) {
 		/* Enable pull-up. */
 		pio->PIO_PUER = mask;
-#if defined(CONFIG_SOC_SERIES_SAM4S) || \
-	defined(CONFIG_SOC_SERIES_SAM4E) || \
-	defined(CONFIG_SOC_SERIES_SAMX7X)
+#ifdef GPIO_SAM_HAS_PPD_IFSC
 
 	/* Setup Pull-down resistor. */
 	} else if (flags & GPIO_PULL_DOWN) {
@@ -131,9 +141,7 @@ static int gpio_sam_port_configure(const struct device *dev, uint32_t mask,
 	} else {
 		pio->PIO_SCIFSR = mask;
 	}
-#elif defined(CONFIG_SOC_SERIES_SAM4S) || \
-	defined(CONFIG_SOC_SERIES_SAM4E) || \
-	defined(CONFIG_SOC_SERIES_SAMX7X)
+#elif defined(GPIO_SAM_HAS_PPD_IFSC)
 
 	/* Setup debounce. */
 	if (flags & SAM_GPIO_DEBOUNCE) {
@@ -158,7 +166,7 @@ static int gpio_sam_config(const struct device *dev, gpio_pin_t pin,
 static int gpio_sam_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	const struct gpio_sam_config * const cfg = dev->config;
-	Pio * const pio = cfg->regs;
+	sam_pio_regs_t *const pio = cfg->regs;
 
 	*value = pio->PIO_PDSR;
 
@@ -170,7 +178,7 @@ static int gpio_sam_port_set_masked_raw(const struct device *dev,
 					uint32_t value)
 {
 	const struct gpio_sam_config * const cfg = dev->config;
-	Pio * const pio = cfg->regs;
+	sam_pio_regs_t *const pio = cfg->regs;
 
 	pio->PIO_ODSR = (pio->PIO_ODSR & ~mask) | (mask & value);
 
@@ -180,7 +188,7 @@ static int gpio_sam_port_set_masked_raw(const struct device *dev,
 static int gpio_sam_port_set_bits_raw(const struct device *dev, uint32_t mask)
 {
 	const struct gpio_sam_config * const cfg = dev->config;
-	Pio * const pio = cfg->regs;
+	sam_pio_regs_t *const pio = cfg->regs;
 
 	/* Set pins. */
 	pio->PIO_SODR = mask;
@@ -192,7 +200,7 @@ static int gpio_sam_port_clear_bits_raw(const struct device *dev,
 					uint32_t mask)
 {
 	const struct gpio_sam_config * const cfg = dev->config;
-	Pio * const pio = cfg->regs;
+	sam_pio_regs_t *const pio = cfg->regs;
 
 	/* Clear pins. */
 	pio->PIO_CODR = mask;
@@ -203,7 +211,7 @@ static int gpio_sam_port_clear_bits_raw(const struct device *dev,
 static int gpio_sam_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
 	const struct gpio_sam_config * const cfg = dev->config;
-	Pio * const pio = cfg->regs;
+	sam_pio_regs_t *const pio = cfg->regs;
 
 	/* Toggle pins. */
 	pio->PIO_ODSR ^= mask;
@@ -217,7 +225,7 @@ static int gpio_sam_port_interrupt_configure(const struct device *dev,
 					     enum gpio_int_trig trig)
 {
 	const struct gpio_sam_config * const cfg = dev->config;
-	Pio * const pio = cfg->regs;
+	sam_pio_regs_t *const pio = cfg->regs;
 
 	/* Disable the interrupt. */
 	pio->PIO_IDR = mask;
@@ -271,7 +279,7 @@ static int gpio_sam_pin_interrupt_configure(const struct device *dev,
 static void gpio_sam_isr(const struct device *dev)
 {
 	const struct gpio_sam_config * const cfg = dev->config;
-	Pio * const pio = cfg->regs;
+	sam_pio_regs_t *const pio = cfg->regs;
 	struct gpio_sam_runtime *context = dev->data;
 	uint32_t int_stat;
 
@@ -323,7 +331,7 @@ int gpio_sam_init(const struct device *dev)
 									\
 	static const struct gpio_sam_config port_##n##_sam_config = {	\
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		\
-		.regs = (Pio *)DT_INST_REG_ADDR(n),			\
+		.regs = (sam_pio_regs_t *)DT_INST_REG_ADDR(n),		\
 		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),		\
 		.config_func = port_##n##_sam_config_func,		\
 	};								\
