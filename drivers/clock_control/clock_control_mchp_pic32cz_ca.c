@@ -188,6 +188,15 @@ struct clock_mchp_config {
 
 	/* Timeout in milliseconds to wait for clock to turn on */
 	uint32_t on_timeout_ms;
+
+	/* Automatic wait state enable for a flash read operation */
+	uint8_t flash_auto_wait_state_en;
+
+	/* Number of wait states for a flash read operation */
+	uint8_t flash_wait_states;
+
+	/* Address wait state enable for a flash read operation */
+	uint8_t flash_address_wait_state_en;
 };
 
 /* clock driver data structure. */
@@ -1938,6 +1947,19 @@ static int clock_mchp_init(const struct device *dev)
 	const struct clock_mchp_config *config = dev->config;
 	struct clock_mchp_data *data = dev->data;
 
+	uint32_t val32;
+
+	/* Program flash wait states, before configuring clock frequencies */
+	val32 = FCR_REGS->FCR_CTRLA;
+	val32 &= ~FCR_CTRLA_ADRWS_Msk;
+	val32 |= FCR_CTRLA_ADRWS(config->flash_address_wait_state_en);
+	if (config->flash_auto_wait_state_en == 0) {
+		/* Automatic wait states are enabled at reset, use FWS instead */
+		val32 &= ~(FCR_CTRLA_AUTOWS_Msk | FCR_CTRLA_FWS_Msk);
+		val32 |= FCR_CTRLA_FWS(config->flash_wait_states);
+	}
+	FCR_REGS->FCR_CTRLA = val32;
+
 	DT_FOREACH_CHILD(DT_NODELABEL(mclkdomain), CLOCK_MCHP_ITERATE_MCLKDOMAIN);
 
 	/* iteration-1 */
@@ -1986,6 +2008,10 @@ static DEVICE_API(clock_control, clock_mchp_driver_api) = {
 #define CLOCK_MCHP_CONFIG_DEFN()                                                                   \
 	static const struct clock_mchp_config clock_config = {                                     \
 		.on_timeout_ms = DT_PROP_OR(CLOCK_NODE, on_timeout_ms, 5),                         \
+		.flash_auto_wait_state_en = DT_PROP_OR(CLOCK_NODE, flash_auto_wait_state_en, 1),   \
+		.flash_wait_states = DT_PROP_OR(CLOCK_NODE, flash_wait_states, 0),                 \
+		.flash_address_wait_state_en =                                                     \
+			DT_PROP_OR(CLOCK_NODE, flash_address_wait_state_en, 0),                    \
 		.mclk_regs = (mclk_registers_t *)DT_REG_ADDR_BY_NAME(CLOCK_NODE, mclk),            \
 		.oscctrl_regs = (oscctrl_registers_t *)DT_REG_ADDR_BY_NAME(CLOCK_NODE, oscctrl),   \
 		.osc32kctrl_regs =                                                                 \
