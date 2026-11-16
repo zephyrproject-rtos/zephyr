@@ -1062,6 +1062,20 @@ static int enter_http_frame_ping_state(struct http_client_ctx *client)
 	return 0;
 }
 
+static int enter_http_frame_unknown_state(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+
+	LOG_DBG("Ignoring frame of unknown type 0x%02x", frame->type);
+
+	/* Without a payload the frame is over with its header. */
+	if (frame->length > 0) {
+		client->server_state = HTTP_SERVER_FRAME_UNKNOWN_STATE;
+	}
+
+	return 0;
+}
+
 static int enter_http_frame_rst_stream_state(struct http_client_ctx *client)
 {
 	client->server_state = HTTP_SERVER_FRAME_RST_STREAM_STATE;
@@ -1126,8 +1140,16 @@ int handle_http_frame_header(struct http_client_ctx *client)
 		return enter_http_frame_priority_state(client);
 	case HTTP2_PING_FRAME:
 		return enter_http_frame_ping_state(client);
-	default:
+	case HTTP2_PUSH_PROMISE_FRAME:
+		/* A client cannot push, this is a connection error (RFC 9113,
+		 * Section 8.4).
+		 */
 		return enter_http_done_state(client);
+	default:
+		/* Frames of unknown types are ignored and discarded (RFC 9113,
+		 * Section 4.1).
+		 */
+		return enter_http_frame_unknown_state(client);
 	}
 
 	return 0;
@@ -1880,6 +1902,30 @@ int handle_http_frame_ping(struct http_client_ctx *client)
 	client->cursor += HTTP2_PING_FRAME_LEN;
 
 	client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
+
+	return 0;
+}
+
+int handle_http_frame_unknown(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+	size_t bytes_consumed;
+
+	LOG_DBG("HTTP_SERVER_FRAME_UNKNOWN_STATE");
+
+	if (client->data_len == 0) {
+		return -EAGAIN;
+	}
+
+	/* The payload may arrive in several reads. */
+	bytes_consumed = MIN(client->data_len, (size_t)frame->length);
+	client->data_len -= bytes_consumed;
+	client->cursor += bytes_consumed;
+	frame->length -= (uint32_t)bytes_consumed;
+
+	if (frame->length == 0) {
+		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
+	}
 
 	return 0;
 }
