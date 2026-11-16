@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
  * Copyright (c) 2022 T-Mobile USA, Inc.
+ * Copyright (c) 2026 Antmicro <antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,7 +40,7 @@
 	 .CONF_RST = 0x0080,                                                                       \
 	 .TEMP_MULT = 15625,                                                                       \
 	 .TEMP_DIV = 2,                                                                            \
-	 IF_ENABLED(CONFIG_TMP108_ALERT_INTERRUPTS, (.CONF_POL = 0x0400))}
+	 IF_ENABLED(CONFIG_TMP108_TRIGGER, (.CONF_POL = 0x0400))}
 
 #define AMS_AS6221_CONF AMS_AS6212_CONF
 
@@ -49,10 +50,10 @@
 	 .CONF_TM = 0x0400,                                                                        \
 	 .CONF_CR0 = 0x2000,                                                                       \
 	 .CONF_CR1 = 0x4000,                                                                       \
-	 .CONF_RST = 0x0022,                                                                       \
+	 .CONF_RST = 0x2210,                                                                       \
 	 .TEMP_MULT = 15625,                                                                       \
 	 .TEMP_DIV = 4,                                                                            \
-	 IF_ENABLED(CONFIG_TMP108_ALERT_INTERRUPTS,                                                \
+	 IF_ENABLED(CONFIG_TMP108_TRIGGER,                                                         \
 		    (.CONF_HYS0 = 0x0010, .CONF_HYS1 = 0x0020, .CONF_POL = 0x0080))}
 
 #define TI_TMP108_MODE_SHUTDOWN(x) 0
@@ -107,7 +108,7 @@ struct tmp_108_reg_def {
 	int32_t TEMP_MULT;   /** Temperature multiplier */
 	int32_t TEMP_DIV;    /** Temperature divisor */
 	uint16_t CONF_RST;   /** default reset values on init */
-#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+#ifdef CONFIG_TMP108_TRIGGER
 	uint16_t CONF_POL;  /** Alert pin Polarity configuration bit */
 	uint16_t CONF_HYS1; /** Temperature hysteresis config 1 bit  */
 	uint16_t CONF_HYS0; /** Temperature hysteresis config 2 bit */
@@ -119,9 +120,9 @@ struct tmp_108_reg_def {
 struct tmp108_config {
 	const struct i2c_dt_spec i2c_spec;
 	struct tmp_108_reg_def reg_def;
-#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+#ifdef CONFIG_TMP108_TRIGGER
 	const struct gpio_dt_spec alert_gpio;
-#endif /* CONFIG_TMP108_ALERT_INTERRUPTS */
+#endif /* CONFIG_TMP108_TRIGGER */
 };
 
 struct tmp108_data {
@@ -129,14 +130,22 @@ struct tmp108_data {
 
 	bool one_shot_mode;
 
-#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+#ifdef CONFIG_TMP108_TRIGGER
 	const struct device *tmp108_dev;
 
 	const struct sensor_trigger *temp_alert_trigger;
 	sensor_trigger_handler_t temp_alert_handler;
 
 	struct gpio_callback temp_alert_gpio_cb;
-#endif /* CONFIG_TMP108_ALERT_INTERRUPTS */
+#if defined(CONFIG_TMP108_TRIGGER_OWN_THREAD)
+	struct k_sem trigger_sem;
+	struct k_thread trigger_thread;
+
+	K_KERNEL_STACK_MEMBER(trigger_thread_stack, CONFIG_TMP108_THREAD_STACK_SIZE);
+#elif defined(CONFIG_TMP108_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+#endif
+#endif /* CONFIG_TMP108_TRIGGER */
 };
 
 int tmp_108_trigger_set(const struct device *dev,
@@ -146,9 +155,8 @@ int tmp_108_trigger_set(const struct device *dev,
 int tmp108_reg_read(const struct device *dev, uint8_t reg, uint16_t *val);
 
 int ti_tmp108_read_temp(const struct device *dev);
-void tmp108_trigger_handle_one_shot(struct k_work *work);
-void tmp108_trigger_handle_alert(const struct device *port,
-				 struct gpio_callback *cb,
-				 gpio_port_pins_t pins);
+
+int tmp108_setup_trigger(const struct device *dev);
+void tmp108_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
 
 #endif /*  ZEPHYR_DRIVERS_SENSOR_TMP108_TMP108_H_ */
