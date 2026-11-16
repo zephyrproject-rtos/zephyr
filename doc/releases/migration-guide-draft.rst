@@ -478,6 +478,29 @@ MFD
   and an ``npm13xx_event_t`` event mask; existing ``BIT(NPM13XX_EVENT_*)`` masks are unchanged.
   (:github:`123060`)
 
+* ``CONFIG_MFD_SC18IS606``, ``CONFIG_SPI_SC18IS606``, ``CONFIG_SPI_SC18IS606_INIT_PRIORITY``,
+  ``CONFIG_GPIO_SC18IS606``, and ``CONFIG_GPIO_SC18IS606_INIT_PRIORITY`` have been removed. The
+  SC18IS602, SC18IS602B, and SC18IS606 bridges share one driver, and each part is enabled when its
+  devicetree node is present, so an old ``=y`` assignment can be deleted. To disable a part, or to
+  override an init priority, set :kconfig:option:`CONFIG_MFD_SC18IS60X`,
+  :kconfig:option:`CONFIG_SPI_SC18IS60X`, :kconfig:option:`CONFIG_SPI_SC18IS60X_INIT_PRIORITY`,
+  :kconfig:option:`CONFIG_GPIO_SC18IS60X`, or :kconfig:option:`CONFIG_GPIO_SC18IS60X_INIT_PRIORITY`.
+  :dtcompatible:`nxp,sc18is606` and :dtcompatible:`nxp,sc18is602` stay on the I2C node and select
+  the chip limits. Replace a child ``nxp,sc18is606-spi`` node with
+  :dtcompatible:`nxp,sc18is60x-spi`, and a child ``nxp,sc18is606-gpio`` node with
+  :dtcompatible:`nxp,sc18is60x-gpio`.
+
+  :kconfig:option:`CONFIG_SPI_SC18IS60X_INIT_PRIORITY` and
+  :kconfig:option:`CONFIG_GPIO_SC18IS60X_INIT_PRIORITY` now default to
+  :kconfig:option:`CONFIG_MFD_INIT_PRIORITY`. The SPI controller previously defaulted to 99. The
+  same priority as the parent bridge is enough: both initialize at ``POST_KERNEL``, and the parent
+  is initialized first. (:github:`117750`)
+
+* ``frequency`` and ``spi-mode`` were removed with the ``nxp,sc18is606-spi`` binding. Set the
+  clock with ``spi-max-frequency`` on the SPI peripheral, in Hz. The old ``frequency`` values were
+  kHz, so 1875, 455, 115, and 58 become 1875000, 455000, 115000, and 58000. Replace ``spi-mode``
+  with ``spi-cpha`` for mode 1, ``spi-cpol`` for mode 2, or both for mode 3. (:github:`117750`)
+
 Modem
 =====
 
