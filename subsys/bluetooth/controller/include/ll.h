@@ -162,7 +162,7 @@ uint8_t ll_cis_parameters_test_set(uint8_t cis_id, uint8_t nse,
 				   uint8_t c_bn, uint8_t p_bn);
 uint8_t ll_cig_remove(uint8_t cig_id);
 uint8_t ll_cis_create_check(uint16_t cis_handle, uint16_t acl_handle);
-void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle);
+void ll_cis_create(uint16_t cis_handle, uint16_t acl_handle, void **node_rx_list);
 uint8_t ll_cis_accept(uint16_t handle);
 uint8_t ll_cis_reject(uint16_t handle, uint8_t reason);
 uint8_t ll_conn_iso_accept_timeout_get(uint16_t *timeout);

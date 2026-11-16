@@ -180,7 +180,7 @@ uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
 
 	/* Setup the periodic sync to establish ISO sync */
 	node_rx->hdr.link = link_sync_estab;
-	sync->iso.node_rx_estab = node_rx;
+	sync->iso.node_rx_terminate = node_rx;
 	sync_iso->node_rx_lost.rx.hdr.link = link_sync_lost;
 
 	/* Initialize sync LLL context */
@@ -266,7 +266,7 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 		}
 		sync->iso.sync_iso = NULL;
 
-		node_rx = sync->iso.node_rx_estab;
+		node_rx = sync->iso.node_rx_terminate;
 		link_sync_estab = node_rx->hdr.link;
 		link_sync_lost = sync_iso->node_rx_lost.rx.hdr.link;
 
@@ -275,6 +275,8 @@ uint8_t ll_big_sync_terminate(uint8_t big_handle, void **rx)
 		ll_rx_release(node_rx);
 
 		node_rx = (void *)&sync_iso->node_rx_lost;
+		/* hdr.next aliases hdr.link; terminate the single-node list */
+		node_rx->hdr.next = NULL;
 		node_rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
 		node_rx->hdr.handle = big_handle;
 
@@ -723,7 +725,7 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 		sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
 
 		/* Prepare BIG Sync Established */
-		rx = (void *)sync_iso->sync->iso.node_rx_estab;
+		rx = (void *)sync_iso->sync->iso.node_rx_terminate;
 		rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
 		rx->hdr.handle = sync_iso_handle_get(sync_iso);
 		rx->rx_ftr.param = sync_iso;

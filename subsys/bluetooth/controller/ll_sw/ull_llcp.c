@@ -1510,6 +1510,11 @@ bool ull_lp_cc_is_enqueued(struct ll_conn *conn, const struct ll_conn_iso_stream
 
 	return (ctx != NULL);
 }
+
+bool ull_lp_cc_is_pending(struct ll_conn *conn, const struct ll_conn_iso_stream *cis)
+{
+	return llcp_lr_peek_cc(conn, cis->lll.handle) != NULL;
+}
 #endif /* defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
 
 #if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
