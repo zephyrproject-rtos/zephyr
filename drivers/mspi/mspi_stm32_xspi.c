@@ -825,17 +825,14 @@ static int mspi_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 	 *  - XSPI is only accessible by HPDMA port 1
 	 *  - SRAM is only accessible by HPDMA port 0
 	 */
-	if (mspi_stm32_table_direction[dma_stream->cfg.channel_direction]
-			== DMA_PERIPH_TO_MEMORY) {
+	if (dma_stream->cfg.channel_direction == PERIPHERAL_TO_MEMORY) {
 		hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT1 |
-			DMA_DEST_ALLOCATED_PORT0;
-	} else if (mspi_stm32_table_direction[dma_stream->cfg.channel_direction]
-			== DMA_MEMORY_TO_PERIPH) {
+						   DMA_DEST_ALLOCATED_PORT0;
+	} else if (dma_stream->cfg.channel_direction == MEMORY_TO_PERIPHERAL) {
 		hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 |
-			DMA_DEST_ALLOCATED_PORT1;
+						   DMA_DEST_ALLOCATED_PORT1;
 	} else {
-		LOG_ERR("DMA direction %d is not valid",
-			mspi_stm32_table_direction[dma_stream->cfg.channel_direction]);
+		LOG_ERR("DMA direction %d is not valid", dma_stream->cfg.channel_direction);
 		return -EINVAL;
 	}
 #else /* CONFIG_SOC_SERIES_STM32H7RSX */
