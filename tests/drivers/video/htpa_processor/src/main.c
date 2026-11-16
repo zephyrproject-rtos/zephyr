@@ -6,6 +6,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/video/htpa_sensor.h>
+#include <zephyr/drivers/video/htpa_colorizer.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/video/video.h>
 #include <zephyr/ztest.h>
@@ -95,7 +96,7 @@ static int source_format(const struct device *dev, struct video_format *fmt)
 {
 	const struct source_config *cfg = dev->config;
 
-	*fmt = (struct video_format) {
+	*fmt = (struct video_format){
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = VIDEO_PIX_FMT_HTPA_RAW,
 		.width = cfg->caps[0].width_min,
@@ -114,26 +115,24 @@ static void source_fill(const struct device *dev, struct video_buffer *buf)
 	memset(buf->buffer, 0, cfg->raw_size);
 	for (uint32_t half = 0U; half < 2U; half++) {
 		for (uint32_t i = 0U; i < layout->samples_per_block; i++) {
-			uint16_t offset = data->extreme_frame ?
-				(i % 2U == 0U ? 0U : UINT16_MAX) :
-				(uint16_t)(30000U + i % 31U + 20U);
+			uint16_t offset = data->extreme_frame ? (i % 2U == 0U ? 0U : UINT16_MAX)
+							      : (uint16_t)(30000U + i % 31U + 20U);
 
 			if (data->extreme_frame && i < 2U) {
 				offset = i == 0U ? 32760U : 32780U;
 			}
 
-			sys_put_be16(offset,
-				     buf->buffer + half * layout->block_length +
-					     layout->data_offset + 2U * i);
+			sys_put_be16(offset, buf->buffer + half * layout->block_length +
+						     layout->data_offset + 2U * i);
 			for (uint32_t block = 0U; block < layout->block_count; block++) {
-				int16_t value = (int16_t)(block * layout->samples_per_block +
-							  i - 4000);
+				int16_t value =
+					(int16_t)(block * layout->samples_per_block + i - 4000);
 
 				if (data->narrow_frame) {
 					value = (int16_t)(i % 2U == 0U ? 0 : 100);
 				}
 				uint16_t sample = (uint16_t)((data->constant_frame ? 42 : value) +
-							    (int32_t)offset);
+							     (int32_t)offset);
 
 				if (data->extreme_frame) {
 					sample = i % 2U == 0U ? UINT16_MAX : 0U;
@@ -141,10 +140,11 @@ static void source_fill(const struct device *dev, struct video_buffer *buf)
 						sample = i == 0U ? 32780U : 32760U;
 					}
 				}
-				sys_put_be16(sample, buf->buffer +
-					     (2U + half * layout->block_count + block) *
-						     layout->block_length +
-					     layout->data_offset + 2U * i);
+				sys_put_be16(sample,
+					     buf->buffer +
+						     (2U + half * layout->block_count + block) *
+							     layout->block_length +
+						     layout->data_offset + 2U * i);
 			}
 		}
 	}
@@ -245,8 +245,7 @@ static int source_get_frmival(const struct device *dev, struct video_frmival *fr
 
 static int source_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
-	if (frmival->denominator == 0U ||
-	    video_frmival_nsec(frmival) < NSEC_PER_SEC / 7U - 100U ||
+	if (frmival->denominator == 0U || video_frmival_nsec(frmival) < NSEC_PER_SEC / 7U - 100U ||
 	    video_frmival_nsec(frmival) > NSEC_PER_SEC / 7U + 100U) {
 		return -ENOTSUP;
 	}
@@ -275,7 +274,9 @@ static DEVICE_API(video, source_api) = {
 };
 static struct source_data source_state;
 static const struct source_config source_cfg = {
-	.caps = source_caps, .layout = &source_layout, .raw_size = RAW_SIZE,
+	.caps = source_caps,
+	.layout = &source_layout,
+	.raw_size = RAW_SIZE,
 };
 DEVICE_DT_DEFINE(DT_NODELABEL(htpa_test_source), source_init, NULL, &source_state, &source_cfg,
 		 POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &source_api);
@@ -305,7 +306,7 @@ ZTEST(htpa_processor, test_frame_interval)
 	struct video_frmival interval = {.numerator = 1428571U, .denominator = 10000000U};
 
 	zassert_ok(video_get_format(processor, &fmt));
-	fmt.pixelformat = VIDEO_PIX_FMT_HTPA_S16;
+	fmt.pixelformat = VIDEO_PIX_FMT_GREY;
 	zassert_ok(video_enum_frmival(processor, &fie));
 	zassert_equal(fie.type, VIDEO_FRMIVAL_TYPE_DISCRETE);
 	zassert_equal(fie.discrete.numerator, 1U);
@@ -360,8 +361,8 @@ ZTEST(htpa_processor, test_120x84_frame)
 			int16_t actual;
 
 			memcpy(&actual, out->buffer + 2U * (y * fmt.width + x), sizeof(actual));
-			zassert_equal(actual, (int16_t)(row * fmt.width + x - 4000),
-				      "x=%u y=%u", x, y);
+			zassert_equal(actual, (int16_t)(row * fmt.width + x - 4000), "x=%u y=%u", x,
+				      y);
 		}
 	}
 	zassert_ok(video_stream_stop(dev, VIDEO_BUF_TYPE_OUTPUT));
@@ -383,8 +384,8 @@ ZTEST(htpa_processor, test_frame_and_format)
 	zassert_ok(video_get_caps(processor, &caps));
 	zassert_equal(caps.format_caps[0].width_min, fmt.width);
 	zassert_equal(caps.format_caps[0].height_min, fmt.height);
-	zassert_equal(caps.format_caps[0].pixelformat, VIDEO_PIX_FMT_HTPA_S16);
-	zassert_equal(caps.format_caps[1].pixelformat, 0U);
+	zassert_equal(caps.format_caps[0].pixelformat, VIDEO_PIX_FMT_GREY);
+	zassert_equal(caps.format_caps[1].pixelformat, VIDEO_PIX_FMT_HTPA_S16);
 	zassert_ok(video_set_format(processor, &fmt));
 	zassert_equal(fmt.pitch, fmt.width * sizeof(int16_t));
 	buf = video_buffer_alloc(fmt.size, K_NO_WAIT);
@@ -440,6 +441,63 @@ ZTEST(htpa_processor, test_compensation_saturates)
 	zassert_ok(video_buffer_release(buf));
 }
 
+ZTEST(htpa_processor, test_grey_histogram)
+{
+	struct video_format fmt = {.type = VIDEO_BUF_TYPE_OUTPUT};
+	struct video_caps caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
+	struct video_buffer *out = NULL;
+	struct video_buffer *buf;
+
+	zassert_ok(video_get_format(processor, &fmt));
+	zassert_ok(video_get_caps(processor, &caps));
+	zassert_equal(caps.format_caps[0].pixelformat, VIDEO_PIX_FMT_GREY);
+	fmt.pixelformat = VIDEO_PIX_FMT_GREY;
+	zassert_ok(video_set_format(processor, &fmt));
+	zassert_equal(fmt.pitch, fmt.width);
+	zassert_ok(video_get_format(processor, &fmt));
+	zassert_equal(fmt.pitch, fmt.width);
+	zassert_equal(fmt.size, RAW_SIZE);
+	buf = video_buffer_alloc(fmt.size, K_NO_WAIT);
+	zassert_not_null(buf);
+	buf->type = VIDEO_BUF_TYPE_OUTPUT;
+	zassert_ok(video_enqueue(processor, buf));
+	zassert_ok(video_stream_start(processor, VIDEO_BUF_TYPE_OUTPUT));
+	zassert_equal(video_set_format(processor, &fmt), -EBUSY);
+	zassert_ok(video_dequeue(processor, &out, K_SECONDS(3)));
+	zassert_equal(out->bytesused, fmt.pitch * fmt.height);
+	zassert_equal(out->timestamp, 123U);
+	/* The retained range is samples 76 through 9523 after percentile clipping. */
+	zassert_equal(out->buffer[0], 0U);
+	zassert_equal(out->buffer[159], 2U);
+	zassert_equal(out->buffer[30U * 160U], 127U);
+	zassert_equal(out->buffer[59U * 160U + 159U], 255U);
+	zassert_equal(out->buffer[119U * 160U + 159U], 2U);
+
+	zassert_ok(video_stream_stop(processor, VIDEO_BUF_TYPE_OUTPUT));
+	source_state.constant_frame = true;
+	zassert_ok(video_enqueue(processor, buf));
+	zassert_ok(video_stream_start(processor, VIDEO_BUF_TYPE_OUTPUT));
+	zassert_ok(video_dequeue(processor, &out, K_SECONDS(3)));
+	for (uint32_t i = 0U; i < fmt.pitch * fmt.height; i++) {
+		zassert_equal(out->buffer[i], 127U);
+	}
+	source_state.constant_frame = false;
+	zassert_ok(video_stream_stop(processor, VIDEO_BUF_TYPE_OUTPUT));
+	source_state.narrow_frame = true;
+	zassert_ok(video_enqueue(processor, buf));
+	zassert_ok(video_stream_start(processor, VIDEO_BUF_TYPE_OUTPUT));
+	zassert_ok(video_dequeue(processor, &out, K_SECONDS(3)));
+	zassert_equal(out->buffer[0],
+		      (uint8_t)(127.5f - 12750.0f / CONFIG_VIDEO_HTPA_COLORIZER_MIN_GREY_RANGE));
+	zassert_equal(out->buffer[1],
+		      (uint8_t)(127.5f + 12750.0f / CONFIG_VIDEO_HTPA_COLORIZER_MIN_GREY_RANGE));
+	source_state.narrow_frame = false;
+	zassert_ok(video_stream_stop(processor, VIDEO_BUF_TYPE_OUTPUT));
+	zassert_ok(video_buffer_release(buf));
+	fmt.pixelformat = VIDEO_PIX_FMT_HTPA_S16;
+	zassert_ok(video_set_format(processor, &fmt));
+}
+
 ZTEST(htpa_processor, test_continuous_source)
 {
 	struct video_buffer *buf = video_buffer_alloc(RAW_SIZE, K_NO_WAIT);
@@ -462,8 +520,7 @@ ZTEST(htpa_processor, test_continuous_source)
 	}
 	zassert_equal(source_state.start_count, starts + 1U);
 	zassert_equal(source_state.stop_count, stops);
-	zassert_true(source_state.fill_count >=
-		     fills + 3U);
+	zassert_true(source_state.fill_count >= fills + 3U);
 	zassert_ok(video_stream_stop(processor, VIDEO_BUF_TYPE_OUTPUT));
 	zassert_equal(source_state.stop_count, stops + 1U);
 	zassert_true(k_fifo_is_empty(&source_state.pending));
@@ -641,6 +698,46 @@ ZTEST(htpa_processor, test_flush_and_start_failure)
 	zassert_ok(video_stream_stop(processor, VIDEO_BUF_TYPE_OUTPUT));
 	zassert_ok(video_buffer_release(first));
 	zassert_ok(video_buffer_release(second));
+}
+
+ZTEST(htpa_processor, test_palette_and_rgb565)
+{
+	struct video_format fmt = {.type = VIDEO_BUF_TYPE_OUTPUT};
+	struct video_control ctrl = {.id = VIDEO_CID_HTPA_PALETTE};
+	struct video_ctrl_query query = {.dev = processor, .id = VIDEO_CID_HTPA_PALETTE};
+	struct video_buffer *out = NULL;
+	struct video_buffer *buf;
+	uint16_t colors[3];
+
+	zassert_ok(video_query_ctrl(&query));
+	zassert_equal(query.range.min, VIDEO_HTPA_PALETTE_IRONBOW);
+	zassert_equal(query.range.max, VIDEO_HTPA_PALETTE_INFERNO);
+	ctrl.val = 3;
+	zassert_equal(video_set_ctrl(processor, &ctrl), -ERANGE);
+	zassert_ok(video_get_format(processor, &fmt));
+	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
+	zassert_ok(video_set_format(processor, &fmt));
+	buf = video_buffer_alloc(fmt.size, K_NO_WAIT);
+	zassert_not_null(buf);
+	buf->type = VIDEO_BUF_TYPE_OUTPUT;
+	zassert_ok(video_stream_start(processor, VIDEO_BUF_TYPE_OUTPUT));
+	for (int32_t palette = VIDEO_HTPA_PALETTE_IRONBOW; palette <= VIDEO_HTPA_PALETTE_INFERNO;
+	     palette++) {
+		ctrl.val = palette;
+		zassert_ok(video_set_ctrl(processor, &ctrl));
+		ctrl.val = -1;
+		zassert_ok(video_get_ctrl(processor, &ctrl));
+		zassert_equal(ctrl.val, palette);
+		zassert_ok(video_enqueue(processor, buf));
+		zassert_ok(video_dequeue(processor, &out, K_SECONDS(3)));
+		zassert_equal_ptr(out, buf);
+		zassert_equal(out->bytesused, OUT_SIZE);
+		colors[palette] = sys_get_le16(out->buffer + 10000U);
+	}
+	zassert_not_equal(colors[0], colors[1]);
+	zassert_not_equal(colors[1], colors[2]);
+	zassert_ok(video_stream_stop(processor, VIDEO_BUF_TYPE_OUTPUT));
+	zassert_ok(video_buffer_release(buf));
 }
 
 ZTEST_SUITE(htpa_processor, NULL, NULL, NULL, NULL, NULL);

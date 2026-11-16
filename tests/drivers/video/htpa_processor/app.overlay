@@ -8,9 +8,14 @@
 		compatible = "zephyr,htpa-test-source";
 	};
 
-	htpa_test_processor: htpa-test-processor {
+	htpa_test_compensator: htpa-test-compensator {
 		compatible = "heimann,htpa-compensator";
 		source = <&htpa_test_source>;
+	};
+
+	htpa_test_processor: htpa-test-processor {
+		compatible = "heimann,htpa-colorizer";
+		source = <&htpa_test_compensator>;
 	};
 
 	htpa_120_source: htpa-120-source {
