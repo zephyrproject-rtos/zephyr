@@ -41,6 +41,7 @@ struct modem_backend_fake {
 	size_t receive_buffer_size;
 
 	uint8_t synchronous: 1;
+	uint8_t stalled: 1;
 	uint8_t open_called: 1;
 	uint8_t transmit_called: 1;
 	uint8_t transmit_chain_called: 1;
@@ -91,6 +92,11 @@ static int modem_backend_fake_transmit_chain(void *data,
 	int total_size = 0;
 
 	backend->transmit_chain_called = true;
+
+	if (backend->stalled) {
+		return 0;
+	}
+
 	/* Store the first fragment explicitly so the `transmit` API tests pass */
 	backend->transmit_buffer = frags[0].data;
 	backend->transmit_buffer_size = frags[0].size;
@@ -118,6 +124,11 @@ static int modem_backend_fake_transmit(void *data, const uint8_t *buf, size_t si
 	struct modem_backend_fake *backend = data;
 
 	backend->transmit_called = true;
+
+	if (backend->stalled) {
+		return 0;
+	}
+
 	backend->transmit_buffer = buf;
 	backend->transmit_buffer_size = size;
 
@@ -200,6 +211,7 @@ static void modem_backend_fake_reset(struct modem_backend_fake *backend)
 	backend->transmit_called = false;
 	backend->receive_called = false;
 	backend->close_called = false;
+	backend->stalled = false;
 }
 
 static void modem_backend_fake_set_sync(struct modem_backend_fake *backend, bool sync)
@@ -539,6 +551,32 @@ ZTEST(modem_pipe, test_receive_closed)
 	test_pipe_close();
 	/* Test reading from a closed pipe should return 0 */
 	test_pipe_receive_closed();
+}
+
+ZTEST(modem_pipe, test_transmit_blocking)
+{
+	test_pipe_open();
+	test_reset();
+	zassert_ok(modem_pipe_transmit_blocking(test_pipe, test_buffer, test_buffer_size,
+						TEST_MODEM_PIPE_WAIT_TIMEOUT));
+	zassert_equal(test_backend.transmit_buffer, test_buffer, "Incorrect buffer");
+}
+
+ZTEST(modem_pipe, test_transmit_blocking_closed)
+{
+	zassert_equal(modem_pipe_transmit_blocking(test_pipe, test_buffer, test_buffer_size,
+						   TEST_MODEM_PIPE_WAIT_TIMEOUT),
+		      -EPIPE);
+}
+
+ZTEST(modem_pipe, test_transmit_blocking_timeout)
+{
+	test_pipe_open();
+	test_reset();
+	test_backend.stalled = true;
+	zassert_equal(modem_pipe_transmit_blocking(test_pipe, test_buffer, test_buffer_size,
+						   TEST_MODEM_PIPE_WAIT_TIMEOUT),
+		      -EAGAIN);
 }
 
 ZTEST_SUITE(modem_pipe, NULL, modem_backend_fake_setup, modem_backend_fake_before,

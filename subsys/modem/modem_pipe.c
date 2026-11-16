@@ -150,6 +150,39 @@ int modem_pipe_transmit_chain(struct modem_pipe *pipe, const struct modem_pipe_d
 	return pipe_call_transmit_chain(pipe, frags, num_frags);
 }
 
+int modem_pipe_transmit_blocking(struct modem_pipe *pipe, const uint8_t *buf, size_t size,
+				 k_timeout_t timeout)
+{
+	const k_timepoint_t timepoint = sys_timepoint_calc(timeout);
+	int ret;
+
+	while (size > 0) {
+		ret = modem_pipe_transmit(pipe, buf, size);
+		if (ret < 0) {
+			return ret;
+		}
+
+		buf += ret;
+		size -= ret;
+
+		if ((size == 0) || (ret > 0)) {
+			continue;
+		}
+
+		/* Nothing accepted: pipe is closed or full */
+		if (!pipe_test_events(pipe, PIPE_EVENT_OPENED_BIT)) {
+			return -EPIPE;
+		}
+
+		if (pipe_await_events(pipe, PIPE_EVENT_TRANSMIT_IDLE_BIT,
+				      sys_timepoint_timeout(timepoint)) == 0) {
+			return -EAGAIN;
+		}
+	}
+
+	return 0;
+}
+
 int modem_pipe_receive(struct modem_pipe *pipe, uint8_t *buf, size_t size)
 {
 	if (!pipe_test_events(pipe, PIPE_EVENT_OPENED_BIT)) {
