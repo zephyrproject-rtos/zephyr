@@ -123,9 +123,10 @@ static int gpio_sam0_port_set_masked_raw(const struct device *dev,
 					 gpio_port_value_t value)
 {
 	const struct gpio_sam0_config *config = dev->config;
-	uint32_t out = config->regs->OUT.reg;
 
-	config->regs->OUT.reg = (out & ~mask) | (value & mask);
+	/* Change only the masked pins, without a read-modify-write of OUT */
+	config->regs->OUTSET.reg = mask & value;
+	config->regs->OUTCLR.reg = mask & ~value;
 
 	return 0;
 }
