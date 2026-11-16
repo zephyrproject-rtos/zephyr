@@ -183,6 +183,19 @@ z_arm_cortex_ar_irq_done:
 	mov sp, r0
 
 	ldr r1, [r2, #___cpu_t_current_OFFSET]
+#if !defined(CONFIG_SMP) && !defined(CONFIG_SCHED_THREAD_USAGE)
+	/*
+	 * The ready queue cache names the current thread when no switch is
+	 * needed. z_get_next_switch_handle() would then return NULL. Its
+	 * other work is the stack sentinel check done below, and clearing
+	 * the switch handle of the current thread, which is written again
+	 * when that thread is switched out. r2 is &_kernel.cpus[0], which is
+	 * &_kernel.
+	 */
+	ldr r0, [r2, #_kernel_offset_to_ready_q_cache]
+	cmp r0, r1
+	beq __EXIT_INT
+#endif
 	push {r1, r2}
 	mov r0, #0
 	bl z_get_next_switch_handle
