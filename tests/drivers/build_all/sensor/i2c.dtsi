@@ -1754,3 +1754,9 @@ test_i2c_stc31: stc31@e3 {
 	reg = <0xe3>;
 	binary-gas = <0x0001>;
 };
+
+test_i2c_max40109: max40109@e4 {
+	compatible = "adi,max40109";
+	reg = <0xe4>;
+	interrupt-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+};
