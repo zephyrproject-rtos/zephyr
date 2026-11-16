@@ -17,7 +17,7 @@
  *          information, see @ref bt_gatt_client and @ref bt_gatt_server.
  * @defgroup bt_gatt Generic Attribute Profile (GATT)
  * @since 1.0
- * @version 1.0.2
+ * @version 1.1.0
  * @ingroup bluetooth
  * @{
  */
@@ -415,6 +415,37 @@ struct bt_gatt_cb {
 	 *  @param rx Updated RX ATT MTU.
 	 */
 	void (*att_mtu_updated)(struct bt_conn *conn, uint16_t tx, uint16_t rx);
+
+	/** @brief Limit the local ATT MTU of a connection.
+	 *
+	 *  Called when the ATT MTU exchange on the unenhanced ATT bearer of a
+	 *  connection starts, whether the local device or the peer initiates
+	 *  it, to get the MTU that the local device uses in the exchange. The
+	 *  exchange sets the ATT MTU of the bearer to the smaller of the values
+	 *  of the two devices, so this limits the size of the ATT PDUs that
+	 *  both devices can send on that bearer, for example when the data is
+	 *  forwarded over another link with a smaller MTU.
+	 *
+	 *  Enhanced ATT bearers are not affected by the limit, so with
+	 *  @kconfig{CONFIG_BT_EATT} the peer can still send larger PDUs on
+	 *  them, and @ref bt_gatt_get_mtu can report a larger MTU than the
+	 *  limit.
+	 *
+	 *  The callback can be called more than once for a connection, if both
+	 *  devices initiate the exchange, and should then return the same
+	 *  value. When several callbacks are registered, the smallest non-zero
+	 *  value is used.
+	 *
+	 *  The callback runs in a thread context, never in an ISR; see
+	 *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
+	 *
+	 *  @param conn Connection object.
+	 *
+	 *  @return MTU limit, or 0 to use the default MTU. Values below the
+	 *  minimum LE ATT MTU (23) are raised to it, and values above the
+	 *  maximum possible size the buffers can hold are lowered to it.
+	 */
+	uint16_t (*att_mtu_limit)(struct bt_conn *conn);
 
 	/** @cond INTERNAL_HIDDEN
 	 *  Field used for list handling.
@@ -1764,7 +1795,8 @@ struct bt_gatt_exchange_params {
 /** @brief Exchange MTU
  *
  *  Once per connection, this client procedure can be used to set the MTU to
- *  the maximum possible size the buffers can hold.
+ *  the maximum possible size the buffers can hold, or to the limit returned by
+ *  @ref bt_gatt_cb.att_mtu_limit.
  *
  *  As the response comes in callback @p params->func, for example
  *  @ref bt_gatt_get_mtu can be invoked in the mtu_exchange-callback to read
