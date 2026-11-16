@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright 2026 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: riev_fpga_dev_board
+  full_name: Racyics edgeVision FPGA Development Board
+  vendor: racyics
+  socs:
+    - name: edgevision
+      variants:
+        - name: m85
+          cpucluster: m85
