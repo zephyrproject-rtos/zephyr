@@ -2611,6 +2611,82 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_reregister_echo(int sock, void 
 	return ret;
 }
 
+/* The ETag a refresh validates with (RFC 7641 section 3.3.1 lets it differ from
+ * the registration's options), and whether the last observe GET sent carried it.
+ */
+static const uint8_t test_etag[] = {0x12, 0x34, 0x56};
+static bool sent_observe_etag;
+
+static void verify_observe_etag(void *buf, size_t len)
+{
+	struct coap_packet pkt = {0};
+	struct coap_option etag_opts[2] = {0};
+	int ret;
+
+	zassert_ok(coap_packet_parse(&pkt, buf, len, NULL, 0), "Failed to parse observe packet");
+	ret = coap_find_options(&pkt, COAP_OPTION_ETAG, etag_opts, ARRAY_SIZE(etag_opts));
+	sent_observe_etag = ret == 1;
+	if (ret > 0) {
+		zassert_equal(ret, 1, "Only the refresh's ETag is expected");
+		zassert_equal(etag_opts[0].len, sizeof(test_etag), "Unexpected ETag length");
+		zassert_mem_equal(etag_opts[0].value, test_etag, sizeof(test_etag),
+				  "Unexpected ETag value");
+	}
+}
+
+static ssize_t
+z_impl_zsock_sendto_custom_fake_observe_subscribe_etag(int sock, void *buf, size_t len, int flags,
+						       const struct net_sockaddr *dest_addr,
+						       net_socklen_t addrlen)
+{
+	verify_observe_etag(buf, len);
+	return z_impl_zsock_sendto_custom_fake_observe_subscribe(sock, buf, len, flags, dest_addr,
+								 addrlen);
+}
+
+static ssize_t
+z_impl_zsock_sendto_custom_fake_reregister_con_etag(int sock, void *buf, size_t len, int flags,
+						    const struct net_sockaddr *dest_addr,
+						    net_socklen_t addrlen)
+{
+	verify_observe_etag(buf, len);
+	verify_observe_resend_packet(buf, len, COAP_TYPE_CON, 0);
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t
+z_impl_zsock_sendto_custom_fake_deregister_con_etag(int sock, void *buf, size_t len, int flags,
+						    const struct net_sockaddr *dest_addr,
+						    net_socklen_t addrlen)
+{
+	verify_observe_etag(buf, len);
+	verify_observe_resend_packet(buf, len, COAP_TYPE_CON, 1);
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t
+z_impl_zsock_sendto_custom_fake_reregister_echo_etag(int sock, void *buf, size_t len, int flags,
+						     const struct net_sockaddr *dest_addr,
+						     net_socklen_t addrlen)
+{
+	verify_observe_etag(buf, len);
+	return z_impl_zsock_sendto_custom_fake_reregister_echo(sock, buf, len, flags, dest_addr,
+							       addrlen);
+}
+
+static ssize_t z_impl_zsock_recvfrom_custom_fake_reregister_echo_etag(
+	int sock, void *buf, size_t max_len, int flags, struct net_sockaddr *src_addr,
+	net_socklen_t *addrlen)
+{
+	ssize_t ret = z_impl_zsock_recvfrom_custom_fake_reregister_echo(sock, buf, max_len, flags,
+									src_addr, addrlen);
+
+	z_impl_zsock_sendto_fake.custom_fake =
+		z_impl_zsock_sendto_custom_fake_reregister_echo_etag;
+
+	return ret;
+}
+
 static int observe_seq_idx;
 static const int observe_seq_values[] = {2, 5, 3, 6};
 static int observe_notifications_delivered;
@@ -3596,6 +3672,236 @@ ZTEST(coap_client, test_echo_option_block1_first_block)
 		      "The retry must resend the challenged block");
 	zassert_true(GET_MORE(sent_block1_opts[0]), "The retried block is not the last");
 	zassert_equal(GET_BLOCK_NUM(sent_block1_opts[1]), 1, "The upload must go on");
+}
+
+/* A refresh may validate with an ETag (RFC 7641 section 3.3.1): the ETag
+ * refresh carries it with the registration's other options, for that refresh
+ * only. A plain refresh and the deregister do not repeat it.
+ */
+ZTEST(coap_client, test_observe_reregister_etag)
+{
+	static const uint8_t long_etag[COAP_ETAG_MAX_LEN + 1];
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake =
+		z_impl_zsock_sendto_custom_fake_observe_subscribe_etag;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_false(sent_observe_etag, "Registration must not carry an ETag");
+
+	/* An ETag longer than allowed is refused and sends nothing */
+	wait_callbacks_done();
+	zassert_equal(coap_client_reregister_observe_etag(&client, &req, long_etag,
+							  sizeof(long_etag)),
+		      -EINVAL);
+	zassert_equal(z_impl_zsock_sendto_fake.call_count, 1, "Refused refresh must not send");
+
+	/* The ETag refresh carries it, with the registration's other options */
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_con_etag;
+	zassert_ok(coap_client_reregister_observe_etag(&client, &req, test_etag,
+						       sizeof(test_etag)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_true(sent_observe_etag, "Refresh must carry the ETag");
+
+	/* Its retry after an Echo challenge carries the ETag too */
+	wait_callbacks_done();
+	sent_observe_etag = false;
+	z_impl_zsock_recvfrom_fake.custom_fake =
+		z_impl_zsock_recvfrom_custom_fake_reregister_echo_etag;
+	zassert_ok(coap_client_reregister_observe_etag(&client, &req, test_etag,
+						       sizeof(test_etag)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_true(sent_observe_etag, "Echo retry must carry the ETag");
+
+	/* A plain refresh does not repeat it */
+	wait_callbacks_done();
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_con_etag;
+	zassert_ok(coap_client_reregister_observe(&client, &req));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_false(sent_observe_etag, "Plain refresh must not carry the ETag");
+
+	/* Neither does the deregister after another ETag refresh */
+	wait_callbacks_done();
+	zassert_ok(coap_client_reregister_observe_etag(&client, &req, test_etag,
+						       sizeof(test_etag)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_true(sent_observe_etag, "Refresh must carry the ETag");
+	wait_callbacks_done();
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_deregister_con_etag;
+	zassert_ok(coap_client_deregister_observe(&client, &req));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_false(sent_observe_etag, "Deregister must not carry the ETag");
+}
+
+/* Piggybacked 2.03 (Valid) naming test_etag, with Observe option 1 and no payload */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_valid(int sock, void *buf, size_t max_len,
+						       int flags, struct net_sockaddr *src_addr,
+						       net_socklen_t *addrlen)
+{
+	uint8_t ack_data[] = {0x68, 0x43, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			      0x00, 0x00, 0x43, 0x12, 0x34, 0x56, 0x21, 0x01};
+	uint16_t last_message_id = get_next_pending_message_id();
+
+	ack_data[2] = (uint8_t)(last_message_id >> 8);
+	ack_data[3] = (uint8_t)last_message_id;
+	restore_token(ack_data);
+
+	memcpy(buf, ack_data, sizeof(ack_data));
+	fill_recv_src_addr(src_addr, addrlen);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return sizeof(ack_data);
+}
+
+static void coap_callback_valid(const struct coap_client_response_data *data, void *user_data)
+{
+	if (data->result_code == COAP_RESPONSE_CODE_VALID) {
+		struct coap_option etag = {0};
+
+		zassert_equal(data->payload_len, 0, "2.03 must not carry a payload");
+		zassert_equal(coap_find_options(data->packet, COAP_OPTION_ETAG, &etag, 1), 1);
+		zassert_equal(etag.len, sizeof(test_etag));
+		zassert_mem_equal(etag.value, test_etag, sizeof(test_etag));
+	}
+
+	coap_callback(data, user_data);
+}
+
+/* The server answers an ETag refresh with 2.03 (Valid) when the application
+ * holds the current representation (RFC 7641 section 3.2): the application
+ * gets it, with the ETag and without payload, and the observation goes on.
+ */
+ZTEST(coap_client, test_observe_reregister_etag_valid)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback_valid,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake =
+		z_impl_zsock_sendto_custom_fake_observe_subscribe_etag;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	wait_callbacks_done();
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_con_etag;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_valid;
+	zassert_ok(coap_client_reregister_observe_etag(&client, &req, test_etag,
+						       sizeof(test_etag)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_VALID);
+
+	/* The observation is still there to refresh */
+	wait_callbacks_done();
+	zassert_ok(coap_client_reregister_observe(&client, &req));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+}
+
+/* The ETag of a refresh replaces the ETag the observation was registered with,
+ * for that refresh; a refresh without one drops the registered ETag as well.
+ */
+ZTEST(coap_client, test_observe_reregister_etag_replaces_registered)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+			{
+				.code = COAP_OPTION_ETAG,
+				.value = {0xaa, 0xbb},
+				.len = 2,
+			},
+		},
+		.num_options = 3,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* Only the refresh's ETag is sent, not the registered one next to it */
+	wait_callbacks_done();
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_con_etag;
+	zassert_ok(coap_client_reregister_observe_etag(&client, &req, test_etag,
+						       sizeof(test_etag)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_true(sent_observe_etag, "Refresh must carry its ETag");
+
+	wait_callbacks_done();
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_con_etag;
+	zassert_ok(coap_client_reregister_observe_etag(&client, &req, NULL, 0));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_false(sent_observe_etag, "Refresh without an ETag must carry none");
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
 }
 
 ZTEST(coap_client, test_observe_reregister_non)
