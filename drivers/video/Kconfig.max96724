@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MAX96724
+	bool "ADI MAX96724 GMSL2 deserializer"
+	select I2C
+	depends on DT_HAS_ADI_MAX96724_ENABLED
+	default y
+	help
+	  Enable driver for the ADI MAX96724 quad GMSL2 deserializer.
+	  The MAX96724 receives video data over a GMSL2 coaxial link
+	  and outputs it via MIPI CSI-2 D-PHY.
+
+if VIDEO_MAX96724
+
+config VIDEO_MAX96724_INIT_PRIORITY
+	int "MAX96724 init priority"
+	default 56
+	help
+	  Initialization priority for the MAX96724 deserializer. Must run
+	  after the host I2C controller (typically priority 50) and before
+	  the MAX96717 serializer (default 58), so that the deserializer's
+	  I2C proxy is live when the serializer is initialized through it.
+	  Slot 57 belongs to the deserializer's I2C gate.
+
+endif

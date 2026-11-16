@@ -66,6 +66,15 @@ config VIDEO_I2C_RETRY_NUM
 	  The default is to not retry. Board configuration files or user project can then
 	  use the number of retries that matches their situation.
 
+config VIDEO_GMSL_RAW10_DOUBLE
+	bool "Carry RAW10 as 20-bit double pixels over the GMSL2 link"
+	depends on VIDEO_MAX96724
+	default y
+	help
+	  Pack two RAW10 pixels per 20-bit word on the GMSL2 link, halving the
+	  pixel clock and the link overhead. Both drivers follow this option,
+	  so a link is doubled at both ends or at neither.
+
 config VIDEO_ENCODER_H264
 	bool "H264 video encoder support"
 
@@ -82,6 +91,7 @@ source "drivers/video/Kconfig.hm01b0"
 source "drivers/video/Kconfig.hm0360"
 source "drivers/video/Kconfig.imx219"
 source "drivers/video/Kconfig.imx335"
+source "drivers/video/Kconfig.max96724"
 source "drivers/video/Kconfig.mcux_csi"
 source "drivers/video/Kconfig.mcux_flexio"
 source "drivers/video/Kconfig.mcux_jpegdec"
