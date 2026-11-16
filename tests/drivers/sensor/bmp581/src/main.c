@@ -6,6 +6,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/bmp581_user.h>
 #include <zephyr/ztest.h>
 
 #include "bmp581_emul.h"
@@ -62,17 +63,26 @@ static void check_fetch_temp(const struct device *dev, const struct emul *target
 
 static void check_fetch_press(const struct device *dev, const struct emul *target)
 {
-	/* raw 6400000 -> (6400000 >> 6) / 1000 = 100.0 kPa */
-	const uint32_t raw_press = 6400000;
+	static const uint32_t test_pressures[] = {
+		6400000, /* 0/64 Pa fraction   (100.0 kPa) */
+		6400001, /* 1/64 Pa threshold  (100.000015 kPa) */
+		6400032, /* 32/64 Pa midpoint  (100.0005 kPa) */
+		6400063, /* 63/64 Pa max bound (~100.000984 kPa) */
+	};
 	struct sensor_value val;
 
-	bmp581_emul_set_press_raw(target, raw_press);
+	for (size_t i = 0; i < ARRAY_SIZE(test_pressures); i++) {
+		uint32_t raw_press = test_pressures[i];
 
-	zassert_ok(sensor_sample_fetch(dev));
-	zassert_ok(sensor_channel_get(dev, SENSOR_CHAN_PRESS, &val));
+		bmp581_emul_set_press_raw(target, raw_press);
 
-	zassert_within(sensor_value_to_double(&val), (double)(raw_press >> 6) / 1000.0, 0.01,
-		       "pressure mismatch: %d.%06d", val.val1, val.val2);
+		zassert_ok(sensor_sample_fetch(dev));
+		zassert_ok(sensor_channel_get(dev, SENSOR_CHAN_PRESS, &val));
+
+		zassert_within(sensor_value_to_double(&val), (double)raw_press / 64000.0, 0.00001,
+			       "pressure mismatch at raw %u: %d.%06d", (unsigned int)raw_press,
+			       val.val1, val.val2);
+	}
 }
 
 /* The drivers must have initialised against the emulated chips (soft-reset, chip-id, NVM). */
@@ -112,4 +122,43 @@ ZTEST_F(bmp581, test_spi_fetch_temp)
 ZTEST_F(bmp581, test_spi_fetch_press)
 {
 	check_fetch_press(fixture->spi_dev, fixture->spi_target);
+}
+
+static void check_attr_set_power_mode(const struct device *dev)
+{
+	struct sensor_value val = {0};
+
+	val.val1 = BMP5_POWERMODE_NORMAL;
+	zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ALL,
+				   (enum sensor_attribute)BMP5_ATTR_POWER_MODE, &val));
+
+	val.val1 = BMP5_POWERMODE_FORCED;
+	zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ALL,
+				   (enum sensor_attribute)BMP5_ATTR_POWER_MODE, &val));
+
+	val.val1 = BMP5_POWERMODE_STANDBY;
+	zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ALL,
+				   (enum sensor_attribute)BMP5_ATTR_POWER_MODE, &val));
+
+	/* Setting DEEP_STANDBY via attribute is not supported */
+	val.val1 = BMP5_POWERMODE_DEEP_STANDBY;
+	zassert_equal(sensor_attr_set(dev, SENSOR_CHAN_ALL,
+				      (enum sensor_attribute)BMP5_ATTR_POWER_MODE, &val),
+		      -ENOTSUP);
+
+	/* Out-of-bounds enum value must return -EINVAL */
+	val.val1 = -1;
+	zassert_equal(sensor_attr_set(dev, SENSOR_CHAN_ALL,
+				      (enum sensor_attribute)BMP5_ATTR_POWER_MODE, &val),
+		      -EINVAL);
+}
+
+ZTEST_F(bmp581, test_i2c_attr_set_power_mode)
+{
+	check_attr_set_power_mode(fixture->i2c_dev);
+}
+
+ZTEST_F(bmp581, test_spi_attr_set_power_mode)
+{
+	check_attr_set_power_mode(fixture->spi_dev);
 }
