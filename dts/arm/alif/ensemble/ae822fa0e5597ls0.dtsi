@@ -19,10 +19,4 @@
 		reg = <0x2400000 DT_SIZE_M(4)>;
 		zephyr,memory-region = "SRAM1";
 	};
-
-	mram: flash@80000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x80000000 DT_SIZE_K(5632)>;
-		zephyr,memory-region = "MRAM";
-	};
 };
