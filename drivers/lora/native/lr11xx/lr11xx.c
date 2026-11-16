@@ -285,30 +285,15 @@ static int lr11xx_set_tx(const struct device *dev, uint32_t timeout_ms)
 	return lr11xx_hal_write_cmd(dev, LR11XX_CMD_SET_TX, buf, 3);
 }
 
-static int lr11xx_set_stop_timer_on_preamble(const struct device *dev,
-					    bool enable)
-{
-	uint8_t val = enable;
-
-	return lr11xx_hal_write_cmd(dev, LR11XX_CMD_STOP_TIMEOUT_ON_PREAMBLE,
-				    &val, 1);
-}
-
 static int lr11xx_set_rx_duty_cycle(const struct device *dev,
 				    uint32_t rx_period, uint32_t sleep_period)
 {
 	uint8_t buf[7];
-	int ret;
 
 	sys_put_be24(rx_period, &buf[0]);
 	sys_put_be24(sleep_period, &buf[3]);
 	/* Mode = RX mode, not CAD mode */
 	buf[6] = 0;
-
-	ret = lr11xx_set_stop_timer_on_preamble(dev, true);
-	if (ret < 0) {
-		return ret;
-	}
 
 	return lr11xx_hal_write_cmd(dev, LR11XX_CMD_SET_RX_DUTY_CYCLE, buf, 7);
 }
@@ -566,30 +551,75 @@ static int lr11xx_set_sleep(const struct device *dev)
 	uint8_t cfg[5] = { LR11XX_SLEEP_WARM_START, 0x00, 0x00, 0x00, 0x00};
 	int ret;
 
+	if (atomic_get(&data->state) == LR11XX_STATE_SLEEP) {
+		return 0;
+	}
+
+	/*
+	 * During duty cycle the BUSY pin stays asserted even in the
+	 * sleep phase. Wake the radio via a raw NSS edge (bypasses
+	 * BUSY check) so the standby command can go through
+	 * immediately.
+	 */
+	if (atomic_get(&data->state) == LR11XX_STATE_RX_DUTY_CYCLE && lr11xx_hal_is_busy(dev)) {
+		ret = lr11xx_hal_wakeup(dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to wake radio for standby: %d", ret);
+			return ret;
+		}
+	}
+
+	/* Continuous RX remains active after RX_DONE; stop it before sleeping. */
+	ret = lr11xx_set_standby(dev, LR11XX_STANDBY_RC);
+	if (ret < 0) {
+		LOG_ERR("Failed to enter standby: %d", ret);
+		return ret;
+	}
+
+	/*
+	 * The radio raises no IRQ in standby. Drop any raised while the
+	 * operation was being stopped, so the IRQ line is low for the next
+	 * operation and no interrupt work is left queued for it.
+	 */
+	ret = lr11xx_clear_irq_status(dev, LR11XX_IRQ_ALL);
+	if (ret < 0) {
+		LOG_ERR("Failed to clear IRQs: %d", ret);
+		return ret;
+	}
+	(void)k_work_cancel(&data->irq_work);
+
 	if (!IS_ENABLED(CONFIG_LORA_LR11XX_NATIVE_SLEEP)) {
 		atomic_set(&data->state, LR11XX_STATE_IDLE);
 		return 0;
 	}
 
-	if (atomic_get(&data->state) == LR11XX_STATE_SLEEP) {
-		return 0;
+	ret = lr11xx_hal_set_irq_callback(dev, NULL);
+	if (ret < 0) {
+		LOG_ERR("Failed to disable interrupt: %d", ret);
+		return ret;
 	}
-
-	lr11xx_hal_set_irq_callback(dev, NULL);
 
 	/* No timeout, 32k is disabled so prevent waiting on XTAL */
 	ret = lr11xx_set_lf_clk(dev, LR11XX_LF_CLOCK_RC);
-	if (ret != 0) {
-		LOG_ERR("Failed to set LF clock for sleep");
+	if (ret < 0) {
+		LOG_ERR("Failed to set LF clock for sleep: %d", ret);
 		return ret;
 	}
 
 	ret = lr11xx_hal_write_cmd(dev, LR11XX_CMD_SET_SLEEP, cfg, sizeof(cfg));
-	if (ret == 0) {
-		atomic_set(&data->state, LR11XX_STATE_SLEEP);
+	if (ret < 0) {
+		LOG_ERR("Failed to enter sleep: %d", ret);
+		return ret;
 	}
+	atomic_set(&data->state, LR11XX_STATE_SLEEP);
+	return 0;
+}
 
-	return ret;
+static int lr11xx_finish(const struct device *dev, int status)
+{
+	int ret = lr11xx_set_sleep(dev);
+
+	return status < 0 || ret == 0 ? status : ret;
 }
 
 static int lr11xx_ensure_ready(const struct device *dev)
@@ -621,19 +651,24 @@ static int lr11xx_ensure_ready(const struct device *dev)
 	return ret;
 }
 
-static void lr11xx_handle_irq_tx_done(const struct device *dev)
+static void lr11xx_complete_tx(const struct device *dev, int status)
 {
 	struct lr11xx_data *data = dev->data;
-	struct lr11xx_tx_result result = { .status = 0 };
-
-	LOG_DBG("TX done");
-	lr11xx_set_sleep(dev);
+	struct lr11xx_tx_result result = { .status = status };
 
 	if (data->tx_async_signal != NULL) {
-		k_poll_signal_raise(data->tx_async_signal, 0);
+		k_poll_signal_raise(data->tx_async_signal, status);
 		data->tx_async_signal = NULL;
 	}
 	k_msgq_put(&data->tx_msgq, &result, K_NO_WAIT);
+}
+
+static void lr11xx_handle_irq_tx_done(const struct device *dev)
+{
+	int ret = lr11xx_finish(dev, 0);
+
+	LOG_DBG("TX done");
+	lr11xx_complete_tx(dev, ret);
 }
 
 static void lr11xx_rx_restart(const struct device *dev)
@@ -649,7 +684,6 @@ static void lr11xx_rx_restart(const struct device *dev)
 		if (ret < 0) {
 			data->rx_cb = NULL;
 			data->rx_cb_user_data = NULL;
-			atomic_set(&data->state, LR11XX_REST_STATE);
 			lr11xx_set_sleep(dev);
 		}
 	} else {
@@ -694,7 +728,7 @@ static void lr11xx_handle_irq_rx_done(const struct device *dev, uint32_t irq_sta
 
 out:
 	if (data->rx_cb == NULL) {
-		lr11xx_set_sleep(dev);
+		result.status = lr11xx_finish(dev, result.status);
 		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
 		return;
 	}
@@ -715,10 +749,12 @@ out:
 static void lr11xx_handle_irq_timeout(const struct device *dev)
 {
 	struct lr11xx_data *data = dev->data;
+	enum lr11xx_state state = atomic_get(&data->state);
+	int ret;
 
 	LOG_DBG("Timeout");
 
-	if (atomic_get(&data->state) == LR11XX_STATE_RX_DUTY_CYCLE) {
+	if (state == LR11XX_STATE_RX_DUTY_CYCLE) {
 		/*
 		 * Preamble was detected but full packet reception failed.
 		 * The radio fell back to STDBY_RC — restart the duty cycle.
@@ -727,17 +763,14 @@ static void lr11xx_handle_irq_timeout(const struct device *dev)
 		return;
 	}
 
-	lr11xx_set_sleep(dev);
+	/* Report cleanup failures instead of the timeout. */
+	ret = lr11xx_set_sleep(dev);
 
-	if (data->tx_async_signal != NULL) {
-		struct lr11xx_tx_result result = { .status = -ETIMEDOUT };
-
-		k_poll_signal_raise(data->tx_async_signal, -ETIMEDOUT);
-		data->tx_async_signal = NULL;
-		k_msgq_put(&data->tx_msgq, &result, K_NO_WAIT);
+	if (state == LR11XX_STATE_TX) {
+		lr11xx_complete_tx(dev, ret < 0 ? ret : -ETIMEDOUT);
 	} else if (data->rx_cb == NULL) {
 		/* Sync RX timeout */
-		struct lr11xx_rx_result result = { .status = -EAGAIN };
+		struct lr11xx_rx_result result = { .status = ret < 0 ? ret : -EAGAIN };
 
 		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
 	}
@@ -750,10 +783,26 @@ static void lr11xx_irq_work_handler(struct k_work *work)
 	uint32_t irq_status = 0;
 	int ret;
 
+	/*
+	 * Serialise with the API, which may be stopping the operation this
+	 * IRQ belongs to: talking to the radio while it is put to sleep
+	 * would wait on BUSY until the timeout.
+	 */
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	/*
+	 * Work already running when the operation was stopped finds the radio
+	 * at rest, its IRQs cleared. The radio holds BUSY high while asleep, so
+	 * reading the status would stall the workqueue.
+	 */
+	if (atomic_get(&data->state) == LR11XX_REST_STATE) {
+		goto out;
+	}
+
 	ret = lr11xx_hal_read_status(dev, NULL, &irq_status);
 	if (ret < 0) {
 		LOG_ERR("Failed to get IRQ status");
-		return;
+		goto out;
 	}
 
 	LOG_DBG("IRQ status: 0x%08x", irq_status);
@@ -777,6 +826,9 @@ static void lr11xx_irq_work_handler(struct k_work *work)
 	if (atomic_get(&data->state) != LR11XX_REST_STATE) {
 		lr11xx_hal_irq_enable(dev);
 	}
+
+out:
+	k_mutex_unlock(&data->lock);
 }
 
 static int lr11xx_configure_tx_params(const struct device *dev, int8_t power,
@@ -913,7 +965,7 @@ static int lr11xx_lora_config(const struct device *dev,
 		config->coding_rate, config->tx_power);
 
 out:
-	lr11xx_set_sleep(dev);
+	ret = lr11xx_finish(dev, ret);
 	k_mutex_unlock(&data->lock);
 	return ret;
 }
@@ -1011,8 +1063,9 @@ static int lr11xx_lora_send(const struct device *dev,
 	if (ret < 0) {
 		LOG_ERR("TX timeout");
 		/* Chip is still transmitting, abort first */
-		lr11xx_set_standby(dev, LR11XX_STANDBY_RC);
+		k_mutex_lock(&data->lock, K_FOREVER);
 		lr11xx_set_sleep(dev);
+		k_mutex_unlock(&data->lock);
 		return -ETIMEDOUT;
 	}
 
@@ -1084,8 +1137,9 @@ static int lr11xx_lora_recv(const struct device *dev, uint8_t *data_buf,
 	if (ret < 0) {
 		LOG_DBG("RX timeout");
 		/* Chip is still receiving, abort first */
-		lr11xx_set_standby(dev, LR11XX_STANDBY_RC);
+		k_mutex_lock(&data->lock, K_FOREVER);
 		lr11xx_set_sleep(dev);
+		k_mutex_unlock(&data->lock);
 		return -EAGAIN;
 	}
 
@@ -1116,14 +1170,15 @@ static int lr11xx_lora_recv_async(const struct device *dev,
 
 	if (cb == NULL) {
 		/* Stop async reception */
+		if (atomic_get(&data->state) != LR11XX_STATE_RX) {
+			k_mutex_unlock(&data->lock);
+			return 0;
+		}
 		data->rx_cb = NULL;
 		data->rx_cb_user_data = NULL;
-		if (atomic_cas(&data->state, LR11XX_STATE_RX, LR11XX_STATE_IDLE)) {
-			lr11xx_set_standby(dev, LR11XX_STANDBY_RC);
-			lr11xx_set_sleep(dev);
-		}
+		ret = lr11xx_set_sleep(dev);
 		k_mutex_unlock(&data->lock);
-		return 0;
+		return ret;
 	}
 
 	if (!data->config_valid) {
@@ -1179,21 +1234,6 @@ static int lr11xx_lora_recv_async(const struct device *dev,
 	return 0;
 }
 
-static void lr11xx_duty_cycle_stop(const struct device *dev)
-{
-	/*
-	 * During duty cycle the BUSY pin stays asserted even in the
-	 * sleep phase. Wake the radio via a raw NSS edge (bypasses
-	 * BUSY check) so the standby command can go through
-	 * immediately.
-	 */
-	if (lr11xx_hal_is_busy(dev)) {
-		lr11xx_hal_wakeup(dev);
-	}
-	lr11xx_set_standby(dev, LR11XX_STANDBY_RC);
-	lr11xx_set_sleep(dev);
-}
-
 static int lr11xx_duty_cycle_start(const struct device *dev,
 				   k_timeout_t rx_period,
 				   k_timeout_t sleep_period)
@@ -1232,7 +1272,6 @@ static int lr11xx_duty_cycle_start(const struct device *dev,
 
 out_error:
 	data->rx_cb = NULL;
-	atomic_set(&data->state, LR11XX_REST_STATE);
 	lr11xx_set_sleep(dev);
 	k_mutex_unlock(&data->lock);
 	return ret;
@@ -1297,12 +1336,13 @@ static int lr11xx_lora_recv_duty_cycle(const struct device *dev,
 	ret = k_msgq_get(&data->rx_msgq, &result, timeout);
 	if (ret < 0) {
 		LOG_DBG("RX duty cycle timeout");
-		lr11xx_duty_cycle_stop(dev);
+		k_mutex_lock(&data->lock, K_FOREVER);
+		lr11xx_set_sleep(dev);
+		k_mutex_unlock(&data->lock);
 		return -EAGAIN;
 	}
 
-	lr11xx_duty_cycle_stop(dev);
-
+	/* The IRQ handler has already stopped reception. */
 	if (result.status > 0) {
 		int copy_len = MIN(result.status, size);
 
@@ -1329,14 +1369,15 @@ static int lr11xx_lora_recv_duty_cycle_async(const struct device *dev,
 
 	if (cb == NULL) {
 		k_mutex_lock(&data->lock, K_FOREVER);
+		if (atomic_get(&data->state) != LR11XX_STATE_RX_DUTY_CYCLE) {
+			k_mutex_unlock(&data->lock);
+			return 0;
+		}
 		data->rx_cb = NULL;
 		data->rx_cb_user_data = NULL;
-		if (atomic_cas(&data->state, LR11XX_STATE_RX_DUTY_CYCLE,
-			       LR11XX_STATE_IDLE)) {
-			lr11xx_duty_cycle_stop(dev);
-		}
+		ret = lr11xx_set_sleep(dev);
 		k_mutex_unlock(&data->lock);
-		return 0;
+		return ret;
 	}
 
 	ret = lr11xx_duty_cycle_enter(dev, cb, user_data);
@@ -1434,10 +1475,9 @@ static int lr11xx_lora_test_cw(const struct device *dev, uint32_t frequency,
 
 	/* Stop CW */
 	k_mutex_lock(&data->lock, K_FOREVER);
-	lr11xx_set_standby(dev, LR11XX_STANDBY_RC);
 
 out_sleep:
-	lr11xx_set_sleep(dev);
+	ret = lr11xx_finish(dev, ret);
 out_unlock:
 	k_mutex_unlock(&data->lock);
 	atomic_set(&data->state, LR11XX_REST_STATE);

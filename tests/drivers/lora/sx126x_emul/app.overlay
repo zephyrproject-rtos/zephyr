@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Embeint Inc
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/lora/sx126x.h>
+
+/ {
+	aliases {
+		lora0 = &lora;
+	};
+};
+
+&spi0 {
+	lora: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		tx-enable-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		rx-enable-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
+		rx-boosted;
+		status = "okay";
+	};
+};

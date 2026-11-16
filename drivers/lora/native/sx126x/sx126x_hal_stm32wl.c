@@ -170,7 +170,7 @@ int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
 		if (ret < 0) {
 			return ret;
 		}
-		reg_val |= (0x0F << 1);
+		reg_val |= SX126X_TX_CLAMP_CFG_MASK;
 		ret = sx126x_hal_write_regs(dev, SX126X_REG_TX_CLAMP_CFG, &reg_val, 1);
 		if (ret < 0) {
 			return ret;

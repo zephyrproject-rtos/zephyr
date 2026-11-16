@@ -220,7 +220,23 @@ int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
 		}
 		tx_power = CLAMP(power, SX1261_MIN_POWER, SX1261_MAX_POWER_TX_PARAM);
 	} else {
-		/* SX1262, SX1268, LLCC68: High power PA, up to +22 dBm */
+		uint8_t clamp;
+
+		/*
+		 * SX1262, SX1268, LLCC68: High power PA, up to +22 dBm.
+		 * Raise the PA clamping threshold so a mismatched antenna does
+		 * not cost several dB of output power (datasheet 15.2).
+		 */
+		ret = sx126x_hal_read_regs(dev, SX126X_REG_TX_CLAMP_CFG, &clamp, 1);
+		if (ret < 0) {
+			return ret;
+		}
+		clamp |= SX126X_TX_CLAMP_CFG_MASK;
+		ret = sx126x_hal_write_regs(dev, SX126X_REG_TX_CLAMP_CFG, &clamp, 1);
+		if (ret < 0) {
+			return ret;
+		}
+
 		ret = sx126x_hal_set_pa_config(dev, SX1262_PA_DUTY_CYCLE,
 					       SX1262_HP_MAX,
 					       SX126X_DEVICE_SEL_SX1262,

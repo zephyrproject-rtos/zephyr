@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - drivers
+    - lora
+    - emulation
+tests:
+  drivers.lora.sx126x_emul.sx1262: {}
+  drivers.lora.sx126x_emul.sx1262.no_sleep:
+    extra_configs:
+      - CONFIG_LORA_SX126X_NATIVE_SLEEP=n
+  drivers.lora.sx126x_emul.sx1262.no_gfsk:
+    extra_configs:
+      - CONFIG_LORA_GFSK=n
+  drivers.lora.sx126x_emul.sx1261:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=sx1261.overlay
+  drivers.lora.sx126x_emul.llcc68:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=llcc68.overlay
