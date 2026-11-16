@@ -21,6 +21,7 @@ properties:
 
   phys:
     type: phandle
+    dependency-mode: child-ignore
     description: PHY provider specifier
 
   clocks:
