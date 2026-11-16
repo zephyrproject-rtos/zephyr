@@ -298,6 +298,94 @@ def test_ranges():
         edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x2a0000002b0000002c, parent_bus_cells=0x2, parent_bus_addr=0x2d0000002e, length_cells=0x2, length=0x2f00000210)
     ]
 
+@pytest.mark.parametrize(
+    ("bus_ranges", "soc_ranges", "reg", "should_fail"),
+    [
+        (
+            "ranges = <0x0 0x1000 0x1000>;",
+            "ranges = <0x1000 0x20000000 0x10000>;",
+            "reg = <0x100 0x10>;",
+            False,
+        ),
+        (
+            "ranges;",
+            "ranges = <0x0 0x20000000 0x10000>;",
+            "reg = <0x100 0x10>;",
+            False,
+        ),
+        ("ranges;", None, "reg = <0x100 0x10>;", True),
+        (None, "ranges = <0x1000 0x20000000 0x10000>;", "reg = <0x100 0x10>;", True),
+        (
+            "ranges = <0x0 0x1000 0x100>;",
+            "ranges = <0x1000 0x20000000 0x10000>;",
+            "reg = <0x100 0x10>;",
+            True,
+        ),
+        (
+            "ranges = <0x200 0x1000 0x100>;",
+            "ranges;",
+            "reg = <0x100 0x10>;",
+            True,
+        ),
+        ("ranges = <0x0 0x1000 0x1000>;", None, "reg = <0x100 0x10>;", True),
+        (
+            "ranges = <0x100 0x1000 0x10>;",
+            "ranges = <0x1000 0x20000000 0x10000>;",
+            "reg = <0x200 0x10 0x100 0x10>;",
+            False,
+        ),
+    ],
+)
+def test_cpu_mapped(tmp_path, bus_ranges, soc_ranges, reg, should_fail):
+    binding_dir = tmp_path / "bindings"
+    binding_dir.mkdir()
+    binding = textwrap.dedent("""\
+        compatible: "test,cpu-mapped"
+        description: Test CPU address mapping
+        cpu-mapped: true
+        properties:
+          reg:
+            type: array
+            required: true
+        """)
+    (binding_dir / "cpu-mapped.yaml").write_text(binding, encoding="utf-8")
+
+    bus_ranges_prop = f"{bus_ranges}\n" if bus_ranges else ""
+    soc_ranges_prop = f"{soc_ranges}\n" if soc_ranges else ""
+    dts_file = tmp_path / "cpu-mapped.dts"
+    dts = textwrap.dedent(f"""\
+        /dts-v1/;
+
+        / {{
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            soc {{
+                #address-cells = <1>;
+                #size-cells = <1>;
+                {soc_ranges_prop}
+
+                bus {{
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+                    {bus_ranges_prop}
+
+                    device@100 {{
+                        compatible = "test,cpu-mapped";
+                        {reg}
+                    }};
+                }};
+            }};
+        }};
+        """)
+    dts_file.write_text(dts, encoding="utf-8")
+
+    if should_fail:
+        with pytest.raises(edtlib.EDTError, match="CPU-mapped"):
+            edtlib.EDT(str(dts_file), [str(binding_dir)])
+    else:
+        edtlib.EDT(str(dts_file), [str(binding_dir)])
+
 def test_dma_ranges_undeclared(tmp_path):
     '''dma-ranges, like ranges, need not be declared in the binding'''
     # 'defaults' declares properties, but not dma-ranges
