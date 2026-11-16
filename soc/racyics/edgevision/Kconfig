@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright 2026 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_EDGEVISION_M4
+	select CPU_CORTEX_M4
+	select SOC_RESET_HOOK
+	select ARM
+
+config SOC_EDGEVISION_M85
+	select CPU_CORTEX_M85
+	select SOC_RESET_HOOK
+	select ARM
