@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Analog Devices, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+menu "ADALM-LSMSPG curve tracer"
+
+config SAMPLE_NPN_CURVE_TRACER_RSENSE_MOHM
+	int "NPN collector sense resistor (milliohm)"
+	default 49900
+	help
+	  Rsense_npn on the ADALM-LSMSPG schematic is 49.9 ohm. The no-OS
+	  example uses 47 ohm (47000).
+
+config SAMPLE_NPN_CURVE_TRACER_RBASE_OHM
+	int "NPN base resistor (ohm)"
+	default 49900
+	help
+	  Rbase_npn on the ADALM-LSMSPG schematic is 49.9 kohm. The no-OS
+	  example uses 47 kohm (47000).
+
+config SAMPLE_PNP_CURVE_TRACER_RSENSE_MOHM
+	int "PNP collector sense resistor (milliohm)"
+	default 49900
+	help
+	  Rsense_pnp on the ADALM-LSMSPG schematic is 49.9 ohm. The no-OS
+	  example uses 47 ohm (47000).
+
+config SAMPLE_PNP_CURVE_TRACER_RBASE_OHM
+	int "PNP base resistor (ohm)"
+	default 49900
+	help
+	  Rbase_pnp on the ADALM-LSMSPG schematic is 49.9 kohm. The no-OS
+	  example uses 47 kohm (47000).
+
+config SAMPLE_PNP_CURVE_TRACER_EMITTER_MV
+	int "PNP emitter drive voltage (mV)"
+	default 2499
+	help
+	  Voltage set on the AD5593R CH3 DAC, which drives the emitter through
+	  jumper P7. The collector drive is swept down from this voltage.
+
+endmenu
+
+source "Kconfig.zephyr"
