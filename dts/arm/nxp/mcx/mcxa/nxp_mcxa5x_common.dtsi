@@ -332,8 +332,15 @@
 		compatible = "nxp,lpc-wwdt";
 		reg = <0xc000 0x1000>;
 		clocks = <&syscon MCUX_WWDT0_CLK>;
+		power-domains = <&core_domain>;
 		interrupts = <60 0>;
 		clk-divider = <1>;
+		/*
+		 * Low-power counting requires a clock retained in the selected state.
+		 * The default restrictions remain until the board verifies that path.
+		 * Deep Power Down removes power from the register block.
+		 */
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		status = "disabled";
 	};
 
@@ -341,8 +348,10 @@
 		compatible = "nxp,lpc-wwdt";
 		reg = <0xd000 0x1000>;
 		clocks = <&syscon MCUX_WWDT1_CLK>;
+		power-domains = <&core_domain>;
 		interrupts = <61 0>;
 		clk-divider = <1>;
+		zephyr,disabling-power-states = <&deepsleep &powerdown &deeppowerdown>;
 		status = "disabled";
 	};
 
