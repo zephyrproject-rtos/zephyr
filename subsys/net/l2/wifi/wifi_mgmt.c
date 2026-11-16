@@ -1811,25 +1811,6 @@ static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
 }
 TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_CAST_QUAL)
 
-static inline const char *wpa_supp_security_txt(enum wifi_security_type security)
-{
-	switch (security) {
-	case WIFI_SECURITY_TYPE_NONE:
-		return "NONE";
-	case WIFI_SECURITY_TYPE_OWE:
-		return "OWE";
-	case WIFI_SECURITY_TYPE_PSK:
-		return "WPA-PSK";
-	case WIFI_SECURITY_TYPE_PSK_SHA256:
-		return "WPA-PSK-SHA256";
-	case WIFI_SECURITY_TYPE_SAE:
-		return "SAE";
-	case WIFI_SECURITY_TYPE_UNKNOWN:
-	default:
-		return "UNKNOWN";
-	}
-}
-
 static int add_network_from_credentials_struct_personal(struct wifi_credentials_personal *creds,
 							struct net_if *iface)
 {
