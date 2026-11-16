@@ -125,6 +125,17 @@ You can debug an application in the usual way. Here is an example for the
    :maybe-skip-config:
    :goals: debug
 
+HTPA video pipeline
+*******************
+
+The HTPA camera, compensator, and colorizer are connected by explicit devicetree
+``source`` properties. Each stage requires exclusive ownership of its upstream
+video device. Applications use the colorizer and must not access its upstream
+stages concurrently. The stages require a source whose minimum buffer count is one.
+This fixed arrangement is not a generic video pipeline;
+future mpipe integration may enable more flexible composition.
+
+
 References
 **********
 

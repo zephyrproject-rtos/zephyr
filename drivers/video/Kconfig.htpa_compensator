@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VIDEO_HTPA_COMPENSATOR
+	bool "HTPA frame compensation video device"
+	depends on DT_HAS_HEIMANN_HTPA_COMPENSATOR_ENABLED
+	default y
+	help
+	  Capture raw HTPA frames from a video source and correct electrical
+	  offsets and pixel ordering.
+
+if VIDEO_HTPA_COMPENSATOR
+
+config VIDEO_HTPA_COMPENSATOR_INIT_PRIORITY
+	int "HTPA compensator initialization priority"
+	default 61
+	help
+	  Initialization priority after the source video device.
+
+config VIDEO_HTPA_COMPENSATOR_STACK_SIZE
+	int "HTPA compensator worker stack size"
+	default 1024
+	help
+	  Stack size of the frame compensation worker.
+
+config VIDEO_HTPA_COMPENSATOR_THREAD_PRIORITY
+	int "HTPA compensator worker priority"
+	default 5
+	help
+	  Scheduling priority of the frame compensation worker.
+
+endif # VIDEO_HTPA_COMPENSATOR

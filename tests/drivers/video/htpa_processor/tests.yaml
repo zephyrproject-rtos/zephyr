@@ -1,0 +1,15 @@
+tests:
+  drivers.video.htpa_processor:
+    tags:
+      - drivers
+      - video
+    platform_allow:
+      - native_sim/native/64
+  drivers.video.htpa_processor.two_buffers:
+    tags:
+      - drivers
+      - video
+    platform_allow:
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_VIDEO_HTPA_COLORIZER_MIN_GREY_RANGE=512
