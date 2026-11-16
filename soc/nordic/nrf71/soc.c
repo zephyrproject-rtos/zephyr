@@ -45,6 +45,25 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #define LFXO_NODE DT_NODELABEL(lfxo)
 
+#if defined(__ZEPHYR__) && DT_HAS_CHOSEN(zephyr_sram)
+#define NRF71_APP_SRAM      DT_CHOSEN(zephyr_sram)
+#define NRF71_REG_END(node) (DT_REG_ADDR(node) + DT_REG_SIZE(node))
+#define NRF71_NO_OVERLAP(a, b)                                                                     \
+	((DT_REG_ADDR(a) >= NRF71_REG_END(b)) || (NRF71_REG_END(a) <= DT_REG_ADDR(b)))
+
+/* Reserved RAM regions must stay outside zephyr,sram */
+#define NRF71_OUTSIDE_APP_SRAM(label)                                                              \
+	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(label)),                                           \
+		    (NRF71_NO_OVERLAP(DT_NODELABEL(label), NRF71_APP_SRAM)), (1))
+
+BUILD_ASSERT(NRF71_OUTSIDE_APP_SRAM(kmu_push_area), "zephyr,sram overlaps the KMU push area");
+BUILD_ASSERT(NRF71_OUTSIDE_APP_SRAM(ipc_shm_area_cpuapp_cpuuma),
+	     "zephyr,sram overlaps the Wi-Fi IPC shared memory");
+BUILD_ASSERT(NRF71_OUTSIDE_APP_SRAM(radio_dma_region_default),
+	     "zephyr,sram overlaps the radio DMA region");
+BUILD_ASSERT(NRF71_OUTSIDE_APP_SRAM(vtf_region_default), "zephyr,sram overlaps the VTF region");
+#endif
+
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #if !defined(CONFIG_SOC_SERIES_NRF71_SKIP_PREV_IMAGE_INIT)
 
