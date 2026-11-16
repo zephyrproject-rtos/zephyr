@@ -1,7 +1,7 @@
 # Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP TSI V6 Touch Sensing Input Device
+description: NXP TSI Touch Sensing Input Device
 
 compatible: "nxp,tsi-input"
 
@@ -30,6 +30,7 @@ properties:
 
   input-codes:
     type: array
+    required: true
     description: |
       Array of input codes corresponding to each enabled channels.
       Use INPUT_KEY_* or INPUT_BTN_* codes from dt-bindings/input/input-event-codes.h
