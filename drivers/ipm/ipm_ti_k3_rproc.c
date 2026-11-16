@@ -16,6 +16,9 @@
  * the mailbox. It answers the request and halts the core, and passes every
  * other message through, so the application uses it as its IPM device and
  * needs no TI-specific code.
+ *
+ * With CONFIG_IPM_TI_K3_RPROC_HOST_REBOOT it also provides sys_arch_reboot(),
+ * which asks the host to restart this core with RP_MBOX_CRASH.
  */
 
 #define DT_DRV_COMPAT ti_k3_rproc_ipm
@@ -25,10 +28,12 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
 
 LOG_MODULE_REGISTER(ipm_ti_k3_rproc, CONFIG_IPM_LOG_LEVEL);
 
 /* From TI's omap_remoteproc.h, which its K3 remoteproc drivers share. */
+#define RP_MBOX_CRASH        0xFFFFFF02U
 #define RP_MBOX_SHUTDOWN     0xFFFFFF14U
 #define RP_MBOX_SHUTDOWN_ACK 0xFFFFFF15U
 
@@ -110,11 +115,69 @@ static uint32_t ipm_ti_k3_rproc_max_id_val_get(const struct device *dev)
 	return ipm_max_id_val_get(config->parent);
 }
 
+#ifdef CONFIG_IPM_TI_K3_RPROC_HOST_REBOOT
+
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
+	     "only one host can be asked to reboot this core");
+
+/*
+ * The IPM device the reboot request goes out on. It is set only while the
+ * application has the mailbox enabled through this driver, so the request is
+ * never sent on a device that is not ready or not set up.
+ */
+static const struct device *host_reboot_ipm;
+
+/*
+ * The reset request that the architecture's sys_arch_reboot() makes does not
+ * reset a K3 remote core, so the host is asked to do it. The mailbox FIFO can
+ * be briefly full of vring kicks, so the send is retried for up to 10 ms. If
+ * the request cannot be sent, the core still halts.
+ */
+void sys_arch_reboot(int type)
+{
+	const struct device *ipm = host_reboot_ipm;
+	uint32_t crash = RP_MBOX_CRASH;
+	int ret = -ENODEV;
+
+	ARG_UNUSED(type);
+
+	LOG_PANIC();
+
+	if (ipm != NULL) {
+		for (int i = 0; i < 100; i++) {
+			ret = ipm_send(ipm, 0, 0, &crash, sizeof(crash));
+			if (ret != -EBUSY) {
+				break;
+			}
+			k_busy_wait(100);
+		}
+	}
+
+	if (ret == 0) {
+		LOG_ERR("asked the host to reboot this core");
+	} else {
+		LOG_ERR("could not ask the host to reboot this core (%d)", ret);
+	}
+
+	halt_for_host_reset();
+}
+
+#endif /* CONFIG_IPM_TI_K3_RPROC_HOST_REBOOT */
+
 static int ipm_ti_k3_rproc_set_enabled(const struct device *dev, int enable)
 {
 	const struct ipm_ti_k3_rproc_config *config = dev->config;
+	int ret;
 
-	return ipm_set_enabled(config->parent, enable);
+	ret = ipm_set_enabled(config->parent, enable);
+
+#ifdef CONFIG_IPM_TI_K3_RPROC_HOST_REBOOT
+	if (ret == 0) {
+		host_reboot_ipm = enable ? config->parent : NULL;
+	}
+#endif
+
+	return ret;
 }
 
 static int ipm_ti_k3_rproc_init(const struct device *dev)
