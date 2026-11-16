@@ -9,6 +9,8 @@
 
 static struct modem_cellular_data test_data;
 static uint32_t network_status_events;
+static uint32_t registration_events;
+static enum cellular_registration_status registration_last;
 
 static void test_event_dispatch_handler(struct k_work *item)
 {
@@ -19,11 +21,14 @@ static void test_event_cb(const struct device *dev, enum cellular_event event, c
 			  void *user_data)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(payload);
 	ARG_UNUSED(user_data);
 
 	if (event == CELLULAR_EVENT_NETWORK_STATUS_CHANGED) {
 		network_status_events++;
+	} else if (event == CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED) {
+		registration_events++;
+		registration_last =
+			((const struct cellular_evt_registration_status *)payload)->status;
 	}
 }
 
@@ -46,7 +51,8 @@ static void *test_suite_setup(void)
 		    sizeof(test_data.event_buf[0]), ARRAY_SIZE(test_data.event_buf));
 
 	test_data.cb.fn = test_event_cb;
-	test_data.cb.mask = CELLULAR_EVENT_NETWORK_STATUS_CHANGED;
+	test_data.cb.mask =
+		CELLULAR_EVENT_NETWORK_STATUS_CHANGED | CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED;
 
 	return NULL;
 }
@@ -60,6 +66,7 @@ static void test_before(void *fixture)
 	test_data.registration_status_lte = CELLULAR_REGISTRATION_NOT_REGISTERED;
 	test_data.registration_status_5g = CELLULAR_REGISTRATION_NOT_REGISTERED;
 	network_status_events = 0;
+	registration_events = 0;
 }
 
 /* +C5GREG must not be filed as an LTE registration status */
@@ -94,6 +101,46 @@ ZTEST(modem_cellular, test_cereg_does_not_clear_5g_registration)
 	zassert_equal(network_status_events, 0, "Modem deregistered while still registered on 5G");
 	zassert_equal(test_data.registration_status_5g, CELLULAR_REGISTRATION_REGISTERED_HOME,
 		      "+CEREG cleared the 5G registration status");
+}
+
+/* A periodic +CEREG? read that repeats the status must not report a change */
+ZTEST(modem_cellular, test_cereg_repeated_status_not_reported)
+{
+	test_feed_cxreg("+CEREG: ", "1");
+	zassert_equal(registration_events, 1, "Registration was not reported");
+	zassert_equal(registration_last, CELLULAR_REGISTRATION_REGISTERED_HOME,
+		      "Wrong registration status reported");
+
+	test_feed_cxreg("+CEREG: ", "1");
+	test_feed_cxreg("+CEREG: ", "1");
+	zassert_equal(registration_events, 1, "Unchanged registration reported as a change");
+
+	test_feed_cxreg("+CEREG: ", "5");
+	zassert_equal(registration_events, 2, "Change to roaming was not reported");
+	zassert_equal(registration_last, CELLULAR_REGISTRATION_REGISTERED_ROAMING,
+		      "Wrong registration status reported");
+}
+
+/* The event carries no access technology: it reports one status for all of them */
+ZTEST(modem_cellular, test_registration_reported_across_technologies)
+{
+	test_feed_cxreg("+CREG: ", "1");
+	test_feed_cxreg("+CEREG: ", "1");
+	zassert_equal(registration_events, 1, "Registration was not reported once");
+
+	test_feed_cxreg("+CREG: ", "0");
+	test_feed_cxreg("+CEREG: ", "1");
+	zassert_equal(registration_events, 1, "Reported a change while still registered on LTE");
+
+	test_feed_cxreg("+CEREG: ", "2");
+	zassert_equal(registration_events, 2, "Deregistration was not reported");
+	zassert_equal(registration_last, CELLULAR_REGISTRATION_SEARCHING,
+		      "Wrong registration status reported");
+
+	test_feed_cxreg("+CGREG: ", "5");
+	zassert_equal(registration_events, 3, "Registration on GPRS was not reported");
+	zassert_equal(registration_last, CELLULAR_REGISTRATION_REGISTERED_ROAMING,
+		      "Wrong registration status reported");
 }
 
 ZTEST_SUITE(modem_cellular, NULL, test_suite_setup, test_before, NULL, NULL);

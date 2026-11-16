@@ -35,6 +35,9 @@ LOG_MODULE_REGISTER(modem_cellular, CONFIG_MODEM_LOG_LEVEL);
 #define MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT \
 	K_MSEC(CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS)
 
+/* Retry delay while waiting for a running chat script to complete */
+#define MODEM_CELLULAR_CHAT_BUSY_RETRY_TIMEOUT K_MSEC(100)
+
 /* Magic constants */
 #define CSQ_RSSI_UNKNOWN		     (99)
 #define CESQ_RSRP_UNKNOWN		     (255)
@@ -593,12 +596,53 @@ static bool modem_cellular_is_registered(struct modem_cellular_data *data)
 		(data->registration_status_5g == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
 }
 
+/*
+ * The registration event carries no access technology, so it reports one status for
+ * all of them: a registered one (home before roaming), otherwise the first status other
+ * than NOT_REGISTERED from the newest technology on. A technology the vendor never reads
+ * keeps NOT_REGISTERED, so that is reported only when every technology has it.
+ */
+static enum cellular_registration_status
+modem_cellular_registration_status(const struct modem_cellular_data *data)
+{
+	const enum cellular_registration_status statuses[] = {
+		data->registration_status_5g,
+		data->registration_status_lte,
+		data->registration_status_gprs,
+		data->registration_status_gsm,
+	};
+	enum cellular_registration_status status = CELLULAR_REGISTRATION_NOT_REGISTERED;
+
+	ARRAY_FOR_EACH(statuses, i) {
+		if (statuses[i] == CELLULAR_REGISTRATION_REGISTERED_HOME) {
+			return statuses[i];
+		}
+		if ((status == CELLULAR_REGISTRATION_NOT_REGISTERED) ||
+		    ((statuses[i] == CELLULAR_REGISTRATION_REGISTERED_ROAMING) &&
+		     (status != CELLULAR_REGISTRATION_REGISTERED_ROAMING))) {
+			status = statuses[i];
+		}
+	}
+
+	return status;
+}
+
 static void modem_cellular_clear_registration_status(struct modem_cellular_data *data)
 {
+	enum cellular_registration_status reported = modem_cellular_registration_status(data);
+
 	data->registration_status_gsm = CELLULAR_REGISTRATION_NOT_REGISTERED;
 	data->registration_status_gprs = CELLULAR_REGISTRATION_NOT_REGISTERED;
 	data->registration_status_lte = CELLULAR_REGISTRATION_NOT_REGISTERED;
 	data->registration_status_5g = CELLULAR_REGISTRATION_NOT_REGISTERED;
+
+	/* The serving cell went with the registration; drop it before subscribers hear */
+	modem_cellular_invalidate_network_status(data);
+
+	/* Only changes are reported, so a later +C*REG answer of 0 would not report this */
+	if (reported != CELLULAR_REGISTRATION_NOT_REGISTERED) {
+		modem_cellular_emit_reg_state(data, CELLULAR_REGISTRATION_NOT_REGISTERED);
+	}
 }
 
 #if defined(CONFIG_MODEM_CELLULAR_STATS)
@@ -631,6 +675,8 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 	enum cellular_registration_status registration_status = CELLULAR_REGISTRATION_UNKNOWN;
 	enum cellular_registration_status registration_prev;
+	enum cellular_registration_status reported_prev;
+	enum cellular_registration_status reported;
 	uint8_t num_args;
 	uint8_t base;
 
@@ -661,6 +707,7 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 
 	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS,
 		   (const bool was_registered = modem_cellular_is_registered(data)));
+	reported_prev = modem_cellular_registration_status(data);
 
 	if (strcmp(argv[0], "+CREG: ") == 0) {
 		registration_prev = data->registration_status_gsm;
@@ -704,7 +751,12 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 			modem_cellular_emit_network_status(data, &evt);
 		}
 	}
-	modem_cellular_emit_reg_state(data, registration_status);
+
+	/* Periodic scripts read +C*REG? every few seconds: report changes only */
+	reported = modem_cellular_registration_status(data);
+	if (reported != reported_prev) {
+		modem_cellular_emit_reg_state(data, reported);
+	}
 }
 
 void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -967,9 +1019,10 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 		gpio_pin_set_dt(&config->reset_gpio, 1);
 	}
 
-	modem_cellular_clear_registration_status(data);
 	modem_cellular_notify_user_pipes_disconnected(data);
 	modem_chat_release(&data->chat);
+	/* After the release, so that no +C*REG or serving cell report races the clear */
+	modem_cellular_clear_registration_status(data);
 	modem_ppp_release(config->ppp);
 	modem_cmux_release(&data->cmux);
 	modem_pipe_close_async(data->uart_pipe);
@@ -1836,6 +1889,28 @@ static int modem_cellular_on_await_dial_state_enter(struct modem_cellular_data *
 	return 0;
 }
 
+/*
+ * Dial once the PPP interface is admin up. The dial state attaches the chat to DLCI2, so
+ * wait until no script runs on DLCI1, as in the await registered state.
+ */
+static bool modem_cellular_await_dial_try_dial(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	if (!net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
+		return false;
+	}
+
+	if (modem_chat_is_running(&data->chat)) {
+		/* Replace a pending periodic deadline, which can be seconds away */
+		modem_cellular_update_timer(data, MODEM_CELLULAR_CHAT_BUSY_RETRY_TIMEOUT);
+	} else {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+	}
+
+	return true;
+}
+
 static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *data,
 						    enum modem_cellular_event evt)
 {
@@ -1844,12 +1919,17 @@ static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_DIAL:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		/* Entering the state with the interface up skipped the periodic timer */
+		if (!modem_cellular_await_dial_try_dial(data)) {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 		modem_cellular_script_success(data);
-		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		if (!modem_cellular_await_dial_try_dial(data)) {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
@@ -1857,12 +1937,15 @@ static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *
 		if (modem_cellular_is_script_retry_exceeded(data)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
 			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
-		} else {
+		} else if (!modem_cellular_await_dial_try_dial(data)) {
 			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if (modem_cellular_await_dial_try_dial(data)) {
+			break;
+		}
 		if (config->vendor->scripts.periodic == NULL) {
 			break;
 		}
@@ -1999,6 +2082,38 @@ static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_
 	return 0;
 }
 
+static void modem_cellular_await_registered_next(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	if (modem_cellular_has_network_script(config)) {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+	} else {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
+	}
+}
+
+/*
+ * Move on once the modem is registered. The dial state attaches the chat to DLCI2, so
+ * wait until no script runs on DLCI1: neither the periodic script nor a script run by
+ * an API call such as cellular_get_signal(), whose result the state machine never sees.
+ */
+static bool modem_cellular_await_registered_try_next(struct modem_cellular_data *data)
+{
+	if (!modem_cellular_is_registered(data)) {
+		return false;
+	}
+
+	if (modem_chat_is_running(&data->chat)) {
+		/* Replace a pending periodic deadline, which can be seconds away */
+		modem_cellular_update_timer(data, MODEM_CELLULAR_CHAT_BUSY_RETRY_TIMEOUT);
+	} else {
+		modem_cellular_await_registered_next(data);
+	}
+
+	return true;
+}
+
 static void modem_cellular_await_registered_event_handler(struct modem_cellular_data *data,
 							  enum modem_cellular_event evt)
 {
@@ -2008,7 +2123,9 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 		modem_cellular_script_success(data);
-		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		if (!modem_cellular_await_registered_try_next(data)) {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
@@ -2016,12 +2133,15 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 		if (modem_cellular_is_script_retry_exceeded(data)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
 			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
-		} else {
+		} else if (!modem_cellular_await_registered_try_next(data)) {
 			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if (modem_cellular_await_registered_try_next(data)) {
+			break;
+		}
 		if (config->vendor->scripts.periodic == NULL) {
 			break;
 		}
@@ -2053,11 +2173,7 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 		break;
 
 	case MODEM_CELLULAR_EVENT_REGISTERED:
-		if (modem_cellular_has_network_script(config)) {
-			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
-		} else {
-			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
-		}
+		modem_cellular_await_registered_try_next(data);
 		break;
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
 		if (net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
@@ -2789,7 +2905,9 @@ static int modem_cellular_get_signal(const struct device *dev,
 	int ret = -ENOTSUP;
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
 
-	if ((data->state != MODEM_CELLULAR_STATE_AWAIT_REGISTERED) &&
+	/* States in which the chat is attached to DLCI1, the AT channel */
+	if ((data->state != MODEM_CELLULAR_STATE_AWAIT_DIAL) &&
+	    (data->state != MODEM_CELLULAR_STATE_AWAIT_REGISTERED) &&
 	    (data->state != MODEM_CELLULAR_STATE_REGISTERED)) {
 		return -ENODATA;
 	}

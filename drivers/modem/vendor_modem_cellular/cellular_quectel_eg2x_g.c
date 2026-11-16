@@ -137,7 +137,8 @@ static void quectel_eg2x_g_on_qeng(struct modem_chat *chat, char **argv, uint16_
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 	struct cellular_evt_network_status evt = {
 		.status = data->registration_status_lte,
-		.access_tech = data->access_tech,
+		/* Only LTE reports pass the guard below; AT+CEREG=1 reports no AcT */
+		.access_tech = CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN,
 	};
 
 	/*
