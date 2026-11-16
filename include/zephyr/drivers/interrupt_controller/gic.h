@@ -338,6 +338,12 @@
  * @brief Enable interrupt
  *
  * @param irq interrupt ID
+ *
+ * @note On builds where affinity routing is enabled (CONFIG_ARMV8_A_NS,
+ * CONFIG_ARMV7_A_NS or CONFIG_GIC_SINGLE_SECURITY_STATE) this also targets
+ * an SPI or extended SPI at the core calling it, because that is the core
+ * which will take the interrupt.  Call arm_gic_irq_set_affinity() afterwards
+ * to aim it at a different core.
  */
 void arm_gic_irq_enable(unsigned int irq);
 
@@ -381,9 +387,18 @@ void arm_gic_irq_clear_pending(unsigned int irq);
 /**
  * @brief Set interrupt priority
  *
+ * Programs the priority of @p irq and, for interrupts whose trigger type is
+ * software configurable, that trigger type as well.
+ *
  * @param irq interrupt ID
- * @param prio interrupt priority
- * @param flags interrupt flags
+ * @param prio interrupt priority; only the low 8 bits are used
+ * @param flags interrupt flags; only IRQ_TYPE_EDGE is honoured
+ *
+ * @note @p flags carries the trigger type and nothing else.  It is ignored
+ * for SGIs, which are always edge-triggered and whose configuration register
+ * is read-only, and for LPIs (interrupt IDs of 8192 and above when
+ * @kconfig{CONFIG_GIC_V3_ITS} is enabled), for which only the priority is
+ * programmed.
  */
 void arm_gic_irq_set_priority(unsigned int irq, unsigned int prio, unsigned int flags);
 
