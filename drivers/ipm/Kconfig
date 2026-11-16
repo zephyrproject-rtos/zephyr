@@ -90,6 +90,19 @@ config IPM_TI_K3_RPROC_INIT_PRIORITY
 	  Must be after the IPM device it sits in front of, which is
 	  initialized at KERNEL_INIT_PRIORITY_DEVICE.
 
+config IPM_TI_K3_RPROC_HOST_REBOOT
+	bool "Reboot this core through the host"
+	depends on IPM_TI_K3_RPROC
+	help
+	  Provide sys_arch_reboot(), which sends RP_MBOX_CRASH to the host
+	  and halts the core in WFI. A K3 remote core cannot reset itself, so
+	  without this sys_reboot() does not restart it. A host kernel that
+	  passes the message to remoteproc recovery restarts this core alone.
+	  Other kernels log it. With RESET_ON_FATAL_ERROR, a fatal error
+	  reboots the core this way; without it, the core halts and waits for
+	  a debugger. The message is sent only while the application has the
+	  IPM device enabled, so the mailbox is known to be ready.
+
 # zephyr-keep-sorted-start
 source "drivers/ipm/Kconfig.imx"
 source "drivers/ipm/Kconfig.ivshmem"
