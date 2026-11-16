@@ -336,6 +336,17 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+Sensor
+======
+
+* The :dtcompatible:`bosch,bmp581` driver now interprets
+  :c:enumerator:`SENSOR_ATTR_SAMPLING_FREQUENCY` values as frequencies in hertz, including the
+  fractional part in :c:member:`sensor_value.val2`, instead of raw ODR register encodings.
+  Applications passing register encodings must pass the desired frequency instead. For example,
+  replace ``{ .val1 = 0x0f, .val2 = 0 }`` with ``{ .val1 = 50, .val2 = 0 }`` for 50 Hz.
+  Positive requests are rounded up to the next supported rate; zero, negative frequencies, and
+  requests above 240 Hz return ``-EINVAL``.
+
 Timers
 ======
 
