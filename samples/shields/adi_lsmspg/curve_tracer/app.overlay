@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&ad5592_dac 0>, <&ad5592_dac 2>,
+			      <&ad5592_adc 1>, <&ad5592_adc 2>,
+			      <&ad5593_dac 3>, <&ad5593_dac 0>, <&ad5593_dac 2>,
+			      <&ad5593_adc 1>, <&ad5593_adc 2>;
+		io-channel-names = "npn_vb_drive", "npn_vc_drive",
+				   "npn_vc_sense", "npn_vc_drive_meas",
+				   "pnp_ve_drive", "pnp_vb_drive", "pnp_vc_drive",
+				   "pnp_vc_sense", "pnp_vc_drive_meas";
+	};
+};
