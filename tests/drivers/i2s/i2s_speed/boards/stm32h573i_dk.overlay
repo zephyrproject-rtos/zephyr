@@ -23,3 +23,8 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+/* The board enables spi2 on the peripheral of i2s2 */
+&spi2 {
+	status = "disabled";
+};
