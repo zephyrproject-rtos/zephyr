@@ -378,6 +378,27 @@ Relevant devicetree node labels:
 
 - ``zephyr_i2c``
 
+zephyr_i2s
+----------
+
+These are the I2S pins of a board without a standard connector for I2S, wired to a breakout such
+as an I2S amplifier or microphone. The I2S signals are the bit clock, the word select and the
+serial data in one or both directions.
+
+As no connector gives the interface a name, it is labeled "zephyr_i2s". The board gives the I2S
+controller this label and the pin configuration of these pins.
+
+.. figure::  ../../../boards/shields/adafruit_max98357a/doc/adafruit_max98357a.webp
+   :align: center
+   :width: 200px
+   :alt: Adafruit MAX98357A Shield
+
+   Adafruit MAX98357A, an example of a zephyr_i2s shield (Credit: Adafruit)
+
+Relevant devicetree node labels:
+
+- ``zephyr_i2s``
+
 ST M.2 serial memory connector
 ------------------------------
 
