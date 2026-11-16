@@ -24,7 +24,8 @@ config I2S_TEST_USE_I2S_DIR_BOTH
 
 config I2S_TEST_USE_GPIO_LOOPBACK
 	bool "Use GPIO loopback"
-	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED || DT_HAS_NORDIC_NRF_TDM_ENABLED
+	default y if DT_HAS_NORDIC_NRF_I2S_ENABLED || DT_HAS_NORDIC_NRF_TDM_ENABLED || \
+		DT_HAS_ST_STM32_I2S_ENABLED || DT_HAS_ST_STM32_SAI_ENABLED
 	help
 	  Use wiring between the data-out and data-in pins for looping back
 	  data. This option is intended to be used for devices that do not
