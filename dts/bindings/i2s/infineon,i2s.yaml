@@ -32,5 +32,16 @@ properties:
 
   clk-dst:
     type: int
-    required: true
-    description: Peripheral clock destination ID for this I2S instance
+    description: |
+      Peripheral clock destination ID for this I2S instance must be select
+      other than traveo family devices
+
+  clksel:
+    type: int
+    enum: [0, 1, 2, 3, 4]
+    description: |
+      TDM interface clock source select must be select (TRAVEO only; ignored on
+      other Infineon families).
+        0..3 - clk_if_srss[0..3]
+        4    - tdm_tx/rx_mclk_in (external MCLK pin)
+      SRSS source must be driven by the clk_hf in 'clocks'.

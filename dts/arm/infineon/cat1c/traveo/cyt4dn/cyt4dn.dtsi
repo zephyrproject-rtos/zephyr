@@ -1890,6 +1890,50 @@
 			status = "disabled";
 		};
 
+		i2s0: tdm@40818000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,i2s";
+			reg = <0x40818000 0x200>;
+			interrupt-parent = <&intmux_ch3>;
+			interrupts = <753 0>, <752 0>;
+			interrupt-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		i2s1: tdm@40818200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,i2s";
+			reg = <0x40818200 0x200>;
+			interrupt-parent = <&intmux_ch3>;
+			interrupts = <755 0>, <754 0>;
+			interrupt-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		i2s2: tdm@40818400 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,i2s";
+			reg = <0x40818400 0x200>;
+			interrupt-parent = <&intmux_ch3>;
+			interrupts = <757 0>, <756 0>;
+			interrupt-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		i2s3: tdm@40818600 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,i2s";
+			reg = <0x40818600 0x200>;
+			interrupt-parent = <&intmux_ch3>;
+			interrupts = <759 0>, <758 0>;
+			interrupt-names = "rx", "tx";
+			status = "disabled";
+		};
+
 		adc0: adc@40900000 {
 			compatible = "infineon,sar-v2";
 			reg = <0x40900000 0x100000>;
