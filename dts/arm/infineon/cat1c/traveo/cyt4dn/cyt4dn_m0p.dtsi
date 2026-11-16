@@ -20,3 +20,22 @@
 &nvic {
 	arm,num-irq-priority-bits = <2>;
 };
+
+/ {
+	soc {
+		interrupt-controller@40200000 {
+			/* NvicMux0-2 are reserved for the SROM handlers and the trampoline */
+			interrupt-controller@0 {
+				status = "disabled";
+			};
+
+			interrupt-controller@1 {
+				status = "disabled";
+			};
+
+			interrupt-controller@2 {
+				status = "disabled";
+			};
+		};
+	};
+};
