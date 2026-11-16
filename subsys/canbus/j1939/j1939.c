@@ -561,15 +561,17 @@ int j1939_init(void)
 	return 0;
 
 remove_filters:
-	STRUCT_SECTION_FOREACH(j1939_node_cfg, node) {
-		if (node->rx_filter_id >= 0) {
-			can_remove_rx_filter(node->can_dev, node->rx_filter_id);
-			node->rx_filter_id = -1;
+	{
+		STRUCT_SECTION_FOREACH(j1939_node_cfg, node) {
+			if (node->rx_filter_id >= 0) {
+				can_remove_rx_filter(node->can_dev, node->rx_filter_id);
+				node->rx_filter_id = -1;
+			}
 		}
+		k_msgq_purge(&j1939_can_msgq);
+		CriticalSection_Unlock();
+		return err;
 	}
-	k_msgq_purge(&j1939_can_msgq);
-	CriticalSection_Unlock();
-	return err;
 }
 
 /**************************************************************************************************/
