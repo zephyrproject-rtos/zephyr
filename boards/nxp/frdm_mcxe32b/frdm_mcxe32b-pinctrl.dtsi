@@ -25,4 +25,28 @@
 			input-enable;
 		};
 	};
+
+	pinmux_sai_0: pinmux_sai_0 {
+		group1 {
+			pinmux = <NXP_SIUL2_PINMUX(0, 0, 34, 6, 316, 1)>,
+				 <NXP_SIUL2_PINMUX(0, 0, 76, 7, 315, 1)>,
+				 <NXP_SIUL2_PINMUX(0, 0, 77, 7, 321, 1)>;
+			output-enable;
+			input-enable;
+		};
+	};
+
+	pinmux_flexio_pwm: pinmux_flexio_pwm {
+		group1 {
+			pinmux = <PTE15_FXIO_D2_O>;
+			output-enable;
+		};
+	};
+
+	pinmux_emios0_pwm: pinmux_emios0_pwm {
+		group1 {
+			pinmux = <PTC22_EMIOS_0_CH8_X_O>;
+			output-enable;
+		};
+	};
 };

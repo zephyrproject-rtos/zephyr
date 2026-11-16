@@ -24,6 +24,8 @@ tests:
       - platform:frdm_mcxa577:DTC_OVERLAY_FILE="boards/frdm_mcxa577_flexio_pwm.overlay"
       - platform:frdm_mcxe247/mcxe247:DTC_OVERLAY_FILE="boards/frdm_mcxe247_flexio_pwm.overlay"
       - platform:frdm_mcxe31b/mcxe31b:DTC_OVERLAY_FILE="boards/frdm_mcxe31b_flexio_pwm.overlay"
+      - platform:frdm_mcxe32b/mcxe32b/cpu0:DTC_OVERLAY_FILE="boards/frdm_mcxe32b_mcxe32b_cpu0_flexio_pwm.overlay"
+      - platform:frdm_mcxe32b/mcxe32b/cpu0:EXTRA_CONF_FILE="boards/frdm_mcxe32b_mcxe32b_cpu0_flexio_pwm.conf"
       - platform:frdm_imxrt1186/mimxrt1186/cm33:DTC_OVERLAY_FILE="boards/frdm_imxrt1186_flexio_pwm.overlay"
       - platform:frdm_imxrt1186/mimxrt1186/cm7:DTC_OVERLAY_FILE="boards/frdm_imxrt1186_flexio_pwm.overlay"
     platform_allow:
@@ -38,6 +40,7 @@ tests:
       - frdm_mcxa577
       - frdm_mcxe247
       - frdm_mcxe31b
+      - frdm_mcxe32b/mcxe32b/cpu0
       - frdm_imxrt1186/mimxrt1186/cm33
       - frdm_imxrt1186/mimxrt1186/cm7
     filter: dt_alias_exists("pwm-test") and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED
@@ -208,5 +211,6 @@ tests:
       - platform:frdm_mcxe31b:DTC_OVERLAY_FILE="boards/frdm_mcxe31b.overlay"
     platform_allow:
       - frdm_mcxe31b
+      - frdm_mcxe32b/mcxe32b/cpu0
     filter: dt_alias_exists("pwm-test")
     depends_on: pwm
