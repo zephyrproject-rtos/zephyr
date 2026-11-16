@@ -149,6 +149,54 @@ ZTEST_F(bmp581, test_spi_attr_odr_reg)
 	check_attr_odr(fixture->spi_dev, fixture->spi_target);
 }
 
+static void check_power_mode_odr(const struct device *dev, const struct emul *target)
+{
+	const struct sensor_value odr = {.val1 = 0x0AU};
+	const enum bmp5_powermode modes[] = {
+		BMP5_POWERMODE_NORMAL,
+		BMP5_POWERMODE_FORCED,
+		BMP5_POWERMODE_CONTINUOUS,
+	};
+	struct sensor_value mode;
+	uint8_t original = get_reg(target, BMP5_REG_ODR_CONFIG);
+	uint8_t reg;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(modes); i++) {
+		mode = (struct sensor_value){.val1 = BMP5_POWERMODE_STANDBY};
+		zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ALL, BMP5_ATTR_POWER_MODE, &mode));
+		zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ALL,
+					  SENSOR_ATTR_SAMPLING_FREQUENCY, &odr));
+
+		reg = get_reg(target, BMP5_REG_ODR_CONFIG);
+		zassert_equal(BMP5_GET_BITS_POS_0(reg, BMP5_POWERMODE), BMP5_POWERMODE_STANDBY);
+		zassert_equal(BMP5_GET_BITSLICE(reg, BMP5_ODR), odr.val1);
+
+		mode.val1 = modes[i];
+		zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ALL, BMP5_ATTR_POWER_MODE, &mode));
+
+		reg = get_reg(target, BMP5_REG_ODR_CONFIG);
+		zassert_equal(BMP5_GET_BITS_POS_0(reg, BMP5_POWERMODE), modes[i]);
+		zassert_equal(BMP5_GET_BITSLICE(reg, BMP5_ODR), odr.val1,
+			      "Power mode %u cleared the configured ODR", (unsigned int)modes[i]);
+	}
+
+	/* Restore the configured mode and ODR for subsequent tests. */
+	mode.val1 = BMP5_GET_BITS_POS_0(original, BMP5_POWERMODE);
+	zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ALL, BMP5_ATTR_POWER_MODE, &mode));
+	mode.val1 = BMP5_GET_BITSLICE(original, BMP5_ODR);
+	zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &mode));
+}
+
+ZTEST_F(bmp581, test_i2c_power_mode_preserves_odr)
+{
+	check_power_mode_odr(fixture->i2c_dev, fixture->i2c_target);
+}
+
+ZTEST_F(bmp581, test_spi_power_mode_preserves_odr)
+{
+	check_power_mode_odr(fixture->spi_dev, fixture->spi_target);
+}
+
 ZTEST_F(bmp581, test_emul_get_reg_invalid)
 {
 	uint8_t val;
