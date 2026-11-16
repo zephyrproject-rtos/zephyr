@@ -112,12 +112,15 @@ slide switch ``SW4``:
 Flashing
 ========
 
-Alif Ensemble E8 AI/ML AppKit can be programmed using the Alif Security
-Toolkit (SETOOLS). Refer to the `Alif Software & Tools`_ page for the SETOOLS
-download and detailed instructions on using it to program the board.
+Alif Ensemble E8 AI/ML AppKit is programmed with ``west flash`` through the
+Alif Security Toolkit (SETOOLS), using the :ref:`alif_flash runner
+<runner_alif_flash>`. Set up SETOOLS as described there, move SW4 to the SE-UART
+position and connect the PRG USB connector to your host computer. Pass the
+SE-UART device with ``--port`` if it differs from the SETOOLS configuration.
+Move SW4 back to the console position after flashing.
 
-Alternatively, the board can be flashed with ``west flash`` using the on-board
-J-Link debugger. Connect a USB cable from your host computer to the
+Alternatively, the board can be flashed using a SEGGER J-Link debug probe with
+``west flash -r jlink``. Connect a USB cable from your host computer to the
 ``PRG USB`` connector. The sample application :zephyr:code-sample:`hello_world`
 is used for this example.
 
@@ -158,14 +161,19 @@ Building for the Application Processor (APSS):
    and is currently maintained in Alif's public repository:
    `Alif Trusted Firmware-A`_.
 
-   The resulting image is programmed and launched using the Alif Security
-   Toolkit (SETOOLS); the ``west flash`` and ``west debug`` runners are not
-   supported for the APSS target.
+   The ``alif_flash`` runner programs the TF-A BL32 image together with the
+   Zephyr image; pass the BL32 image with ``--bl32-bin``. ``--bl32-base``
+   may also need to  be set if the default value differs from the
+   base address your BL32 image was built for, IE ``bl32-base=0x80100000``
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: ensemble_e8_ak/ae822fa0e5597bs0/apss
    :goals: build
+
+.. code-block:: console
+
+   west flash --bl32-bin=<path to bl32.bin> --bl32-base=<link address of bl32>
 
 Debugging
 =========
