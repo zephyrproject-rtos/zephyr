@@ -613,6 +613,9 @@ struct http_client_ctx {
 	/** Flag indicating accept encoding is being processed. */
 	IF_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION, (bool accept_encoding_next: 1));
 
+	/** The HEADERS frame of the current header block had END_STREAM set. */
+	bool headers_end_stream : 1;
+
 	/** The next frame on the stream is expected to be a continuation frame. */
 	bool expect_continuation : 1;
 /** @endcond */

@@ -990,6 +990,8 @@ static int enter_http_frame_headers_state(struct http_client_ctx *client)
 		client->expect_continuation = false;
 	}
 
+	client->headers_end_stream = is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM);
+
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
 		/* Reset header capture state for new headers frame */
 		client->header_capture_ctx.count = 0;
@@ -1016,6 +1018,16 @@ static int enter_http_frame_continuation_state(struct http_client_ctx *client)
 		LOG_DBG("Unexpected CONTINUATION frame for stream ID %d",
 			frame->stream_identifier);
 		return -ENOENT;
+	}
+
+	/* The frame is processed by the HEADERS handler. END_HEADERS is the
+	 * only flag defined for a CONTINUATION frame, the others are ignored
+	 * (RFC 9113, Section 4.1), and END_STREAM is the one of the HEADERS
+	 * frame that started the header block.
+	 */
+	frame->flags &= HTTP2_FLAG_END_HEADERS;
+	if (client->headers_end_stream) {
+		frame->flags |= HTTP2_FLAG_END_STREAM;
 	}
 
 	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_END_HEADERS)) {
