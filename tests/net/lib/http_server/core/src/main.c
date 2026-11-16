@@ -79,6 +79,18 @@ BUILD_ASSERT(sizeof(long_payload) - 1 > CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE,
 #define TEST_HTTP2_PING_SHORT \
 	0x00, 0x00, 0x04, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	0x01, 0x02, 0x03, 0x04
+/* Frame type 0x20 is not defined, 0xfb neither. */
+#define TEST_HTTP2_UNKNOWN_FRAME_HEADER \
+	0x00, 0x00, 0x05, 0x20, 0xff, 0x00, 0x00, 0x00, TEST_STREAM_ID_1
+#define TEST_HTTP2_UNKNOWN_FRAME_PAYLOAD_START \
+	0x01, 0x02
+#define TEST_HTTP2_UNKNOWN_FRAME_PAYLOAD_END \
+	0x03, 0x04, 0x05
+#define TEST_HTTP2_UNKNOWN_FRAME_EMPTY \
+	0x00, 0x00, 0x00, 0xfb, 0x00, 0x00, 0x00, 0x00, 0x00
+#define TEST_HTTP2_PUSH_PROMISE \
+	0x00, 0x00, 0x04, 0x05, 0x04, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x00, 0x00, 0x00, 0x02
 #define TEST_HTTP2_GOAWAY \
 	0x00, 0x00, 0x08, 0x07, 0x00, 0x00, 0x00, 0x00, \
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -1183,6 +1195,70 @@ ZTEST(server_function_tests, test_http2_ping_invalid_length)
 	int ret;
 
 	ret = zsock_send(client_fd, request_ping_short, sizeof(request_ping_short), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+
+	/* Nothing is answered, the connection is closed. */
+	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+	zassert_equal(ret, 0, "Connection should've been closed (%d)", ret);
+}
+
+ZTEST(server_function_tests, test_http2_unknown_frame)
+{
+	/* Frames of unknown types are discarded, with a payload that arrives
+	 * in two parts and without one, and the connection goes on with the
+	 * next request.
+	 */
+	static const uint8_t request_unknown_start[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_UNKNOWN_FRAME_HEADER,
+		TEST_HTTP2_UNKNOWN_FRAME_PAYLOAD_START,
+	};
+	static const uint8_t request_unknown_end_get[] = {
+		TEST_HTTP2_UNKNOWN_FRAME_PAYLOAD_END,
+		TEST_HTTP2_UNKNOWN_FRAME_EMPTY,
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_unknown_start, sizeof(request_unknown_start), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+
+	ret = zsock_send(client_fd, request_unknown_end_get, sizeof(request_unknown_end_get), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_PAYLOAD,
+				strlen(TEST_STATIC_PAYLOAD), HTTP2_FLAG_END_STREAM);
+}
+
+ZTEST(server_function_tests, test_http2_push_promise)
+{
+	/* A PUSH_PROMISE from a client is a connection error. */
+	static const uint8_t request_push_promise[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_PUSH_PROMISE,
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_push_promise, sizeof(request_push_promise), 0);
 	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
 
 	memset(buf, 0, sizeof(buf));
