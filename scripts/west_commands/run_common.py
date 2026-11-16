@@ -501,7 +501,7 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
     except ValueError as ve:
         command.err(str(ve), fatal=True)
         dump_traceback()
-        raise CommandError(1)
+        raise CommandError(1) from ve
     except MissingProgram as e:
         command.die('required program', e.filename,
                     'not found; install it or add its location to PATH')
@@ -877,7 +877,7 @@ def dump_all_runner_context(command, runners_yaml, board, build_dir):
     command.inf(f'{INDENT}{default_runner}')
     command.inf('common runner configuration:', colorize=True)
     runner_config = get_runner_config(build_dir, yaml_path, runners_yaml)
-    for field, value in zip(runner_config._fields, runner_config):
+    for field, value in zip(runner_config._fields, runner_config, strict=True):
         command.inf(f'{INDENT}- {field}: {value}')
     command.inf('runner-specific context:', colorize=True)
     for cls in available_cls.values():

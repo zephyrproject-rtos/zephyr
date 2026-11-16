@@ -610,8 +610,6 @@
     "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
 "./scripts/west_commands/run_common.py" = [
-    "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
-    "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
     "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
