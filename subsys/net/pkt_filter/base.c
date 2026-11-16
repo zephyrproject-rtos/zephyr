@@ -497,6 +497,12 @@ const char *npf_test_get_str(struct npf_test *test, char *buf, size_t len)
 		struct npf_test_port *test_port = CONTAINER_OF(test, struct npf_test_port, test);
 
 		snprintk(buf, len, "[%u]", net_ntohs(test_port->port));
+
+	} else if (test->type == NPF_TEST_TYPE_TCP_FLAGS_MATCH) {
+		struct npf_test_tcp_flags *test_flags =
+			CONTAINER_OF(test, struct npf_test_tcp_flags, test);
+
+		snprintk(buf, len, "[0x%02x/0x%02x]", test_flags->flags, test_flags->mask);
 	}
 
 out:

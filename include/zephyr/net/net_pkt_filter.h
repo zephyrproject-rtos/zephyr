@@ -65,6 +65,7 @@ enum npf_test_type {
 	NPF_TEST_TYPE_UDP_DST_PORT_MATCH,
 	NPF_TEST_TYPE_TCP_SRC_PORT_MATCH,
 	NPF_TEST_TYPE_TCP_DST_PORT_MATCH,
+	NPF_TEST_TYPE_TCP_FLAGS_MATCH,
 };
 
 #if defined(CONFIG_NET_PKT_FILTER_LOG_LEVEL_DBG) || \
@@ -850,6 +851,18 @@ extern npf_test_fn_t npf_dst_port_match;
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+
+struct npf_test_tcp_flags {
+	struct npf_test test;
+	uint8_t mask;
+	uint8_t flags;
+};
+
+extern npf_test_fn_t npf_tcp_flags_match;
+
+/** @endcond */
+
 /**
  * @brief Statically define a "TCP source port match" packet filter condition
  *
@@ -884,6 +897,49 @@ extern npf_test_fn_t npf_dst_port_match;
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,                                                   \
 			   (.test.name = "tcp dst port",                                           \
 			    .test.type = NPF_TEST_TYPE_TCP_DST_PORT_MATCH,))                       \
+	}
+
+/**
+ * @name TCP header flags
+ *
+ * Flags for the mask and the flags of NPF_TCP_FLAGS_MATCH().
+ *
+ * @{
+ */
+#define NPF_TCP_FLAG_FIN BIT(0) /**< No more data from the sender */
+#define NPF_TCP_FLAG_SYN BIT(1) /**< Synchronize the sequence numbers */
+#define NPF_TCP_FLAG_RST BIT(2) /**< Reset the connection */
+#define NPF_TCP_FLAG_PSH BIT(3) /**< Push the data to the application */
+#define NPF_TCP_FLAG_ACK BIT(4) /**< The acknowledgment number is valid */
+#define NPF_TCP_FLAG_URG BIT(5) /**< The urgent pointer is valid */
+#define NPF_TCP_FLAG_ECE BIT(6) /**< Explicit congestion notification echo */
+#define NPF_TCP_FLAG_CWR BIT(7) /**< Congestion window reduced */
+/** @} */
+
+/**
+ * @brief Statically define a "TCP flags match" packet filter condition
+ *
+ * This tests if the packet is a TCP segment in which, of the flags in
+ * @p _mask, exactly the ones in @p _flags are set. The flags that are not in
+ * @p _mask are not tested.
+ *
+ * For example, the mask <tt>NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_ACK</tt> with the
+ * flags <tt>NPF_TCP_FLAG_SYN</tt> matches the segment that requests a
+ * connection, but neither the answer to it nor any later segment.
+ *
+ * @param _name Name of the condition
+ * @param _mask Flags to test, a combination of the NPF_TCP_FLAG values
+ * @param _flags Flags that have to be set, the other flags of @p _mask have
+ *               to be clear. A flag that is not in @p _mask is a build error.
+ */
+#define NPF_TCP_FLAGS_MATCH(_name, _mask, _flags)                                                  \
+	struct npf_test_tcp_flags _name = {                                                        \
+		.mask = (_mask),                                                                   \
+		.flags = (_flags) + ZERO_OR_COMPILE_ERROR(((_flags) & ~(_mask)) == 0),             \
+		.test.fn = npf_tcp_flags_match,                                                    \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,                                                   \
+			   (.test.name = "tcp flags",                                              \
+			    .test.type = NPF_TEST_TYPE_TCP_FLAGS_MATCH,))                          \
 	}
 
 /** @} */
