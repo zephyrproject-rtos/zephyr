@@ -1067,6 +1067,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	ret = i2c_parsing_return_value(dev);
 
 done:
+	/* Discard completion tokens before allowing the next transfer. */
+	k_sem_reset(&data->device_sync_sem);
 	/* Permit to enter power policy. */
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	/* Unlock mutex of i2c controller */
