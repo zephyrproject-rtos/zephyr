@@ -78,6 +78,10 @@ tests:
       - mimxrt595_evk/mimxrt595s/cm33
       - rza3m_ek
       - mimxrt2660_evk/mimxrt2663/cm85
+      - stm32h757i_eval/stm32h757xx/m7
+      - aik_ra8d1/r7fa8d1bhecbd
+      - mimxrt1040_evk/mimxrt1042
+      - nucleo_u575zi_q/stm32u575xx
     extra_args:
       - platform:lpcxpresso55s69/lpc55s69/cpu0:SHIELD=adafruit_2_8_tft_touch_v2
       - platform:nrf52840dk/nrf52840:SHIELD=ssd1306_128x32
@@ -94,13 +98,13 @@ tests:
       - platform:stm32h757i_eval/stm32h757xx/m7:SHIELD=st_b_lcd40_dsi1_mb1166
       - platform:mimxrt1064_evk/mimxrt1064:SHIELD=rk043fn66hs_ctg
       - platform:frdm_rw612/rw612:SHIELD=lcd_par_s035_spi
-      - platform:ek_ra8d1:SHIELD=rtkmipilcdb00000be
+      - platform:aik_ra8d1/r7fa8d1bhecbd:SHIELD=rtkmipilcdb00000be
       - platform:ek_ra8d1:SHIELD="rtk7eka6m3b00001bu;ek_ra8d1_rtk7eka6m3b00001bu"
       - platform:nucleo_g071rb/stm32g071xx:SHIELD=x_nucleo_gfx01m2
       - platform:m5stack_atoms3/esp32s3/procpu:SHIELD=m5stack_unit_minioled
       - platform:mimxrt595_evk/mimxrt595s/cm33:SHIELD=g1120b0mipi
       - platform:stm32h747i_disco/stm32h747xx/m7:SHIELD=st_b_lcd40_dsi1_mb1166_a09
-      - platform:mimxrt1040_evk/mimxrt1064:SHIELD=rk043fn02h_ct
+      - platform:mimxrt1040_evk/mimxrt1042:SHIELD=rk043fn02h_ct
       - platform:nucleo_u575zi_q/stm32u575xx:SHIELD=x_nucleo_gfx02z1_az2
       - platform:rza3m_ek:SHIELD=rtkapplcdms02001be
       - platform:mimxrt2660_evk/mimxrt2663/cm85:SHIELD=lcd_par_s035_8080
