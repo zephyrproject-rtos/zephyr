@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	can_phy_gpio: can-phy-gpio {
+		compatible = "can-transceiver-gpio";
+		enable-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		standby-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		#phy-cells = <0>;
+		max-bitrate = <8000000>;
+	};
+
+	vndcan0: vndcan0 {
+		compatible = "vnd,can-controller";
+		phys = <&can_phy_gpio>;
+	};
+};
