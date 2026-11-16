@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_SAM_QSPI
+	bool "Atmel SAM QSPI controller in SPI mode"
+	default y
+	depends on DT_HAS_ATMEL_SAM_QSPI_ENABLED
+	select PINCTRL
+	help
+	  Use the QSPI controller of the SAM E70/S70/V70/V71 and PIC32CZ CA70/MC70
+	  as a single-line SPI controller, for example for a serial NOR flash
+	  through the jedec,spi-nor driver.
