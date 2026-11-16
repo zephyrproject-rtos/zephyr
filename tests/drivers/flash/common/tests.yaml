@@ -333,6 +333,15 @@ tests:
       - SHIELD=mikroe_flash_5_click
       - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
       - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
+  drivers.flash.common.spi_nand.mikroe_flash_8_click:
+    harness_config:
+      fixture: mikroe_flash_8_click
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+    extra_args:
+      - SHIELD=mikroe_flash_8_click
+      - DTC_OVERLAY_FILE="./boards/mikroe_flash_8_click.overlay"
+      - EXTRA_CONF_FILE="./boards/mikroe_flash_8_click.conf"
   drivers.flash.common.spi_nand.w25n01gv:
     harness_config:
       fixture: w25n01gv
