@@ -374,6 +374,42 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
 int coap_client_reregister_observe(struct coap_client *client, struct coap_client_request *req);
 
 /**
+ * @brief Refresh an ongoing CoAP observation, validating with an ETag.
+ *
+ * As coap_client_reregister_observe(), except that this refresh carries
+ * @p etag as its ETag Option in place of the registration's ETag Options,
+ * which a re-registration may change (@rfc{7641,section-3.3.1}). An
+ * application that holds the representation tagged @p etag then gets a
+ * 2.03 (Valid) without payload instead of the body when the resource did
+ * not change.
+ *
+ * The client does not keep the ETag: later refreshes and the deregister do
+ * not repeat it, and the client never sets one by itself, as only the
+ * application knows which representation it holds. The server does keep
+ * it, until the next refresh: when the resource changes back to the tagged
+ * representation it may notify with a 2.03 (Valid) naming this ETag in
+ * place of the body (@rfc{7641,section-3.3.2}). An application that no
+ * longer holds that representation by then refreshes without an ETag
+ * (@p etag_len 0) to get the body.
+ *
+ * @param client Pointer to the client instance.
+ * @param req Pointer identifying the observation, as for
+ *            coap_client_reregister_observe().
+ * @param etag ETag of the representation the application holds; may be NULL
+ *             when @p etag_len is 0.
+ * @param etag_len Length of @p etag, at most @ref COAP_ETAG_MAX_LEN. With 0
+ *                 the refresh carries no ETag Option, not those of the
+ *                 registration either.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p etag_len is longer than an ETag, or @p etag is NULL
+ *                 with a length.
+ * @retval <0 Any other error of coap_client_reregister_observe().
+ */
+int coap_client_reregister_observe_etag(struct coap_client *client, struct coap_client_request *req,
+					const uint8_t *etag, size_t etag_len);
+
+/**
  * @brief Initialise a Block2 option to be added to a request
  *
  * If the application expects a request to require a blockwise transfer, it may preemptively
