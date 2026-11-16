@@ -29,11 +29,12 @@ from typing import TYPE_CHECKING
 
 import psutil
 from domains import Domains
-from twisterlib import ZEPHYR_BASE
+from twisterlib import ZEPHYR_BASE, post_connect_reset
 from twisterlib.constants import FAULT_REASON
 from twisterlib.environment import strip_ansi_sequences
 from twisterlib.hardwaredata import CompoundHardwareData
 from twisterlib.platform import Platform
+from twisterlib.post_connect_reset import PostConnectResetError
 from twisterlib.runmonitor import console_ui_active
 from twisterlib.statuses import TwisterStatus
 
@@ -97,6 +98,7 @@ class Handler:
         TIMEOUT = "Timeout"
         CRASH = "Crash"
         FLASH = "Flash Error"
+        RESET = "Post-connect Reset Error"
         NONE = "None"
     def __init__(self, instance: TestInstance, type_str: str, options: argparse.Namespace,
                  generator_cmd: str | None = None, suite_name_check: bool = True):
@@ -228,6 +230,8 @@ class Handler:
                 self.instance.reason = "Timeout"
             elif failure_type == self.FailureType.FLASH:
                 self.instance.reason = "Timeout during flashing"
+            elif failure_type == self.FailureType.RESET:
+                self.instance.reason = "Post-connect reset failed"
 
             # In case none of the above applies, we set a generic error
             if not self.instance.reason and self.returncode != 0:
@@ -494,7 +498,7 @@ class DeviceHandler(Handler):
             timeout += 120
         return timeout
 
-    def monitor_serial(self, ser, halt_event, harness):
+    def monitor_serial(self, ser, halt_event, harness, ready_event=None):
         if self.options.enable_coverage:
             # Set capture_coverage to True to indicate that right after
             # test results we should get coverage data, otherwise we exit
@@ -507,6 +511,8 @@ class DeviceHandler(Handler):
 
         # Clear serial leftover.
         ser.reset_input_buffer()
+        if ready_event is not None:
+            ready_event.set()
 
         with open(self.log, "w", encoding="utf-8") as log_out_fp:
             while ser.isOpen():
@@ -582,8 +588,8 @@ class DeviceHandler(Handler):
 
         return command
 
-    def _create_command(self, runner, hardware):
-        if self.options.flash_command:
+    def _create_command(self, runner, hardware, west_cmd=None, no_reset=False):
+        if self.options.flash_command and west_cmd is None:
             return self._create_flash_command(hardware)
 
         command = ["west"]
@@ -591,7 +597,9 @@ class DeviceHandler(Handler):
         if self.options.verbose > 2:
             command.append(f"-{'v' * (self.options.verbose - 2)}")
 
-        west_flash_cmd = self.options.west_flash_cmd or hardware.west_flash_cmd or "flash"
+        west_flash_cmd = (
+            west_cmd or self.options.west_flash_cmd or hardware.west_flash_cmd or "flash"
+        )
         if west_flash_cmd == "debug":
             command_extra_args.append('--batch')
         command.extend([west_flash_cmd, "--no-rebuild", "-d", self.build_dir])
@@ -603,8 +611,11 @@ class DeviceHandler(Handler):
         #    This results in options.west_flash == "--board-id=42"
         # 3) Multiple values: --west-flash="--board-id=42,--erase"
         #    This results in options.west_flash == "--board-id=42 --erase"
-        if self.options.west_flash and self.options.west_flash != []:
+        if west_cmd is None and self.options.west_flash and self.options.west_flash != []:
             command_extra_args.extend(next(csv.reader([self.options.west_flash])))
+
+        if no_reset and west_flash_cmd == "flash" and "--no-reset" not in command_extra_args:
+            command_extra_args.append("--no-reset")
 
         if runner:
             command.append("--runner")
@@ -670,10 +681,11 @@ class DeviceHandler(Handler):
     #
 
     def _create_serial_connection(self, serial_device, hardware_baud,
-                                  flash_timeout, serial_pty, ser_pty_process):
+                                  flash_timeout, serial_pty, ser_pty_process,
+                                  open_state=None):
         try:
             ser = serial.Serial(
-                serial_device,
+                None,
                 baudrate=hardware_baud,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
@@ -681,6 +693,10 @@ class DeviceHandler(Handler):
                 # the worst case of no serial input
                 timeout=max(flash_timeout, self.get_test_timeout())
             )
+            post_connect_reset.apply_serial_lines(ser, open_state)
+            if serial_device:
+                ser.port = serial_device
+                ser.open()
         except serial.SerialException as e:
             self._handle_serial_exception(e, serial_pty, ser_pty_process)
             raise
@@ -809,6 +825,24 @@ class DeviceHandler(Handler):
 
         runner = hardware.runner or self.options.west_runner
         serial_pty = hardware.serial_pty
+        reset_config = None
+        if not robot_test:
+            reset_config = post_connect_reset.resolve(
+                hardware.post_connect_reset,
+                self.instance.platform.post_connect_reset,
+                serial_pty=bool(serial_pty),
+            )
+        open_state = None
+        if post_connect_reset.is_serial(reset_config):
+            open_state = reset_config.get('open_state')
+        if reset_config and (
+            self.options.flash_command
+            or (self.options.west_flash_cmd or hardware.west_flash_cmd or "flash") != "flash"
+        ):
+            logger.warning(
+                "The flash command does not keep the device stopped, so it boots before the "
+                "post-connect reset"
+            )
 
         if not serial_pty:
             serial_device = hardware.serial
@@ -818,7 +852,7 @@ class DeviceHandler(Handler):
 
         logger.debug(f"Using serial device {serial_device} @ {hardware.serial_baud} baud")
 
-        command = self._create_command(runner, hardware)
+        command = self._create_command(runner, hardware, no_reset=reset_config is not None)
 
         post_flash_script = hardware.post_flash_script
         post_script = hardware.post_script
@@ -849,15 +883,17 @@ class DeviceHandler(Handler):
                 hardware.serial_baud,
                 flash_timeout,
                 serial_pty,
-                ser_pty_process
+                ser_pty_process,
+                open_state
             )
         except serial.SerialException:
             return
 
         halt_monitor_evt = threading.Event()
+        monitor_ready_evt = threading.Event()
 
         t = threading.Thread(target=self.monitor_serial, daemon=True,
-                             args=(ser, halt_monitor_evt, harness))
+                             args=(ser, halt_monitor_evt, harness, monitor_ready_evt))
         start_time = time.time()
         t.start()
 
@@ -911,23 +947,6 @@ class DeviceHandler(Handler):
                 if serial_pty:
                     ser_pty_process = self._start_serial_pty(serial_pty, ser_pty_master)
                     ser.open()
-                elif runner == "esp32":
-                    # Apply ESP32-specific RTS/DTR reset logic
-                    logger.debug("Applying ESP32 RTS/DTR reset sequence")
-
-                    # Prepare: IO0=HIGH (DTR=True), EN=HIGH (RTS=False)
-                    ser.dtr = True
-                    ser.rts = False
-
-                    ser.open()
-
-                    # Reset pulse: IO0=LOW (DTR=False), EN=LOW (RTS=True)
-                    ser.dtr = False
-                    ser.rts = True
-                    time.sleep(0.1)
-
-                    # Return to normal boot
-                    ser.rts = False
                 else:
                     # Wait for serial port to appear after flashing
                     # To keep dependency between flash_timeout proposed 20% of this value
@@ -939,13 +958,31 @@ class DeviceHandler(Handler):
                         time.sleep(0.1)
                         if time.time() - flash_start_time > serial_wait_timeout:
                             break
+                    post_connect_reset.apply_serial_lines(ser, open_state)
                     self._open_serial_with_retry(ser, flash_start_time, serial_wait_timeout)
 
             except serial.SerialException as e:
                 self._handle_serial_exception(e, serial_pty, ser_pty_process)
                 return
 
-        if failure_type != Handler.FailureType.FLASH:
+        if reset_config and failure_type != Handler.FailureType.FLASH:
+            west_reset_command = None
+            if reset_config.get('method') == 'west':
+                west_reset_command = self._create_command(runner, hardware, west_cmd="reset")
+            if not monitor_ready_evt.wait(timeout=1):
+                logger.warning("Serial monitor not ready, early output may be lost")
+            try:
+                post_connect_reset.run(
+                    reset_config,
+                    ser=None if serial_pty else ser,
+                    west_reset_command=west_reset_command,
+                )
+            except PostConnectResetError as e:
+                logger.error(f"Post-connect reset failed: {e}")
+                halt_monitor_evt.set()
+                failure_type = Handler.FailureType.RESET
+
+        if failure_type not in (Handler.FailureType.FLASH, Handler.FailureType.RESET):
             # Always wait at most the test timeout here after flashing.
             t.join(self.get_test_timeout())
         else:

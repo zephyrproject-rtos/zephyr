@@ -29,6 +29,7 @@ from twisterlib.handlers import (
     QEMUHandler,
     SimulationHandler,
 )
+from twisterlib.post_connect_reset import PostConnectResetError
 from twisterlib.statuses import TwisterStatus
 
 from . import ZEPHYR_BASE
@@ -734,6 +735,24 @@ def test_devicehandler_monitor_serial_splitlines(mocked_instance):
     assert harness.handle.call_count == 2
 
 
+def test_devicehandler_monitor_serial_signals_ready_after_flush(mocked_instance):
+    halt_event = mock.Mock(is_set=mock.Mock(return_value=False))
+    calls = mock.Mock()
+    ser = mock.Mock(
+        isOpen=mock.Mock(side_effect=[True, False]),
+        reset_input_buffer=calls.flush,
+    )
+    ready_event = mock.Mock(set=calls.ready)
+    harness = mock.Mock(status=TwisterStatus.PASS)
+
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock(enable_coverage=False))
+
+    with mock.patch('builtins.open', mock.mock_open(read_data='')):
+        handler.monitor_serial(ser, halt_event, harness, ready_event)
+
+    assert calls.mock_calls[:2] == [mock.call.flush(), mock.call.ready()]
+
+
 TESTDATA_11 = [
     (mock.Mock(pid=0, returncode=0), False),
     (mock.Mock(pid=0, returncode=1), False),
@@ -962,6 +981,60 @@ def test_devicehandler_create_command(
     assert command == expected
 
 
+TESTDATA_13_3 = [
+    (None, None, False, None,
+     ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
+      '--runner', 'pyocd', '--', '--dev-id', 12345]),
+    (None, None, True, None,
+     ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
+      '--runner', 'pyocd', '--', '--no-reset', '--dev-id', 12345]),
+    ('--no-reset', None, True, None,
+     ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
+      '--runner', 'pyocd', '--', '--no-reset', '--dev-id', 12345]),
+    ('--erase', 'reset', False, None,
+     ['west', 'reset', '--no-rebuild', '-d', '$build_dir',
+      '--runner', 'pyocd', '--', '--dev-id', 12345]),
+    ('--erase', 'reset', False, 'flash_command',
+     ['west', 'reset', '--no-rebuild', '-d', '$build_dir',
+      '--runner', 'pyocd', '--', '--dev-id', 12345]),
+]
+
+@pytest.mark.parametrize(
+    'self_west_flash, west_cmd, no_reset, flash_command, expected',
+    TESTDATA_13_3,
+    ids=['flash', 'flash no reset', 'no reset given once', 'reset command',
+         'reset command with flash command']
+)
+def test_devicehandler_create_command_post_connect_reset(
+    mocked_instance,
+    self_west_flash,
+    west_cmd,
+    no_reset,
+    flash_command,
+    expected
+):
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
+    handler.options = mock.Mock(west_flash=self_west_flash,
+                                west_flash_cmd=None,
+                                flash_command=flash_command, verbose=0)
+
+    expected = [handler.build_dir if val == '$build_dir' else \
+                val for val in expected]
+
+    hardware = mock.Mock(
+        product='product',
+        probe_id=12345,
+        base_params=None,
+        runner_params=None,
+        west_flash_cmd=None
+    )
+
+    command = handler._create_command('pyocd', hardware, west_cmd=west_cmd,
+                                      no_reset=no_reset)
+
+    assert command == expected
+
+
 TESTDATA_13_4 = [
     (True, [], True),
     (False, [SimpleNamespace(device='/dev/ttyUSB0', name='ttyUSB0')], True),
@@ -1015,13 +1088,15 @@ TESTDATA_14 = [
         'Unknown Error', True),
     (TwisterStatus.NONE, True, Handler.FailureType.TIMEOUT, TwisterStatus.FAIL,
         'Fault detected while running test', True),
+    (TwisterStatus.NONE, False, Handler.FailureType.RESET, TwisterStatus.FAIL,
+        'Post-connect reset failed', True),
 ]
 
 @pytest.mark.parametrize(
     'harness_status, harness_fault, failure_type,' \
     ' expected_status, expected_reason, do_add_missing',
     TESTDATA_14,
-    ids=['custom success', 'failed', 'error', 'no status', 'crash']
+    ids=['custom success', 'failed', 'error', 'no status', 'crash', 'post-connect reset']
 )
 def test_devicehandler_update_instance_info(
         mocked_instance,
@@ -1085,7 +1160,7 @@ def test_devicehandler_create_serial_connection(
     def mock_serial(*args, **kwargs):
         if expected_exception:
             raise expected_exception('')
-        return expected_result
+        return mock.Mock(name='dummy serial')
 
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
     missing_mock = mock.Mock()
@@ -1236,11 +1311,13 @@ def test_devicehandler_handle(
         post_script='dummy post script',
         post_flash_script='dummy post flash script',
         flash_timeout=60,
-        flash_with_test=True
+        flash_with_test=True,
+        post_connect_reset=None
     )
 
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
     handler.instance.reserved_duts = [hardware]
+    handler.instance.platform.post_connect_reset = None
     handler.options = mock.Mock(
         timeout_multiplier=1,
         west_flash=None,
@@ -1301,6 +1378,126 @@ def test_devicehandler_handle(
         assert handler.instance.reason == expected_reason
     if expected_status:
         assert handler.instance.status == expected_status
+
+
+SERIAL_RESET = {'method': 'serial', 'sequence': []}
+
+TESTDATA_17_2 = [
+    (SERIAL_RESET, None, 'pyocd', None, False, False, False, None, SERIAL_RESET),
+    ({'method': 'west'}, SERIAL_RESET, 'pyocd', None, True, False, False, None,
+     {'method': 'west'}),
+    (None, {'method': 'west'}, 'pyocd', None, True, False, False, None, {'method': 'west'}),
+    (SERIAL_RESET, None, 'pyocd', None, False, False, True, None, SERIAL_RESET),
+    (SERIAL_RESET, None, 'pyocd', None, False, True, False, None, None),
+    (SERIAL_RESET, None, 'pyocd', 'Serial PTY', False, False, False, None, None),
+    (None, None, 'esp32', None, False, False, False, None, None),
+    ({'method': 'none'}, SERIAL_RESET, 'pyocd', None, False, False, False, None, None),
+    (SERIAL_RESET, None, 'pyocd', None, False, False, False, 'custom_flash', SERIAL_RESET),
+    ({'method': 'west'}, None, 'pyocd', None, True, False, False, 'custom_flash',
+     {'method': 'west'}),
+]
+
+@pytest.mark.parametrize(
+    'dut_config, platform_config, runner, serial_pty, west_reset, robot_test, reset_fails,'
+    ' flash_command, expected_config',
+    TESTDATA_17_2,
+    ids=['hardware map serial', 'hardware map over platform', 'platform west',
+         'reset failure', 'robot test', 'serial pty', 'esp32 without config', 'method none',
+         'flash command does not stop the device', 'flash command with west reset']
+)
+def test_devicehandler_handle_post_connect_reset(
+    mocked_instance,
+    dut_config,
+    platform_config,
+    runner,
+    serial_pty,
+    west_reset,
+    robot_test,
+    reset_fails,
+    flash_command,
+    expected_config,
+    caplog
+):
+    def mock_popen(command, *args, **kwargs):
+        mock_process = mock.Mock(
+            pid=1,
+            returncode=0,
+            communicate=mock.Mock(return_value=(mock.Mock(), mock.Mock()))
+        )
+        return mock.Mock(
+            __enter__=mock.Mock(return_value=mock_process),
+            __exit__=mock.Mock(return_value=None)
+        )
+
+    def mock_run(config, ser=None, west_reset_command=None):
+        if reset_fails:
+            raise PostConnectResetError('dummy failure')
+
+    hardware = mock.Mock(
+        runner=runner,
+        serial_pty=serial_pty,
+        serial='/dev/ttyUSB0',
+        pre_script=None,
+        post_script=None,
+        post_flash_script=None,
+        flash_timeout=60,
+        flash_with_test=False,
+        flash_before=True,
+        post_connect_reset=dut_config
+    )
+
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
+    handler.instance.reserved_duts = [hardware]
+    handler.instance.platform.post_connect_reset = platform_config
+    handler.options = mock.Mock(
+        timeout_multiplier=1,
+        west_flash=None,
+        west_runner=None,
+        west_flash_cmd=None,
+        flash_command=flash_command,
+        verbose=0
+    )
+    hardware.west_flash_cmd = None
+    handler._create_command = mock.Mock(return_value=['dummy', 'command'])
+    handler.run_custom_script = mock.Mock()
+    ser = mock.Mock(name='dummy serial')
+    handler._create_serial_connection = mock.Mock(return_value=ser)
+    handler._is_serial_port_present = mock.Mock(return_value=True)
+    handler._start_serial_pty = mock.Mock()
+    handler._terminate_pty = mock.Mock()
+    handler.monitor_serial = mock.Mock()
+    handler._update_instance_info = mock.Mock()
+    handler._final_handle_actions = mock.Mock()
+    handler._handle_robot_test = mock.Mock()
+    run_mock = mock.Mock(side_effect=mock_run)
+    harness = mock.Mock(is_robot_test=robot_test)
+
+    with mock.patch('builtins.open', mock.mock_open(read_data='')), \
+         mock.patch('subprocess.Popen', side_effect=mock_popen), \
+         mock.patch('threading.Event', mock.Mock()), \
+         mock.patch('threading.Thread', mock.Mock()), \
+         mock.patch('pty.openpty', mock.Mock(return_value=('master', 'slave'))), \
+         mock.patch('os.ttyname', mock.Mock(return_value='/dev/pts/9')), \
+         mock.patch('twisterlib.post_connect_reset.run', run_mock):
+        handler.handle(harness)
+
+    if expected_config is None:
+        handler._create_command.assert_called_once_with(runner, hardware, no_reset=False)
+        run_mock.assert_not_called()
+        return
+
+    handler._create_command.assert_any_call(runner, hardware, no_reset=True)
+    assert ('does not keep the device stopped' in caplog.text) == bool(flash_command)
+    if west_reset:
+        handler._create_command.assert_any_call(runner, hardware, west_cmd='reset')
+        expected_west = ['dummy', 'command']
+    else:
+        expected_west = None
+    run_mock.assert_called_once_with(expected_config, ser=ser, west_reset_command=expected_west)
+    handler._update_instance_info.assert_called_once()
+    call = handler._update_instance_info.call_args
+    assert call.args == (harness,)
+    assert call.kwargs['failure_type'].name == ('RESET' if reset_fails else 'NONE')
 
 
 TESTDATA_18 = [
