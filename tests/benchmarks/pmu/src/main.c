@@ -16,7 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/benchmark.h>
-#include <zephyr/arch/pmu.h>
+#include <zephyr/arch/perf_counter.h>
 #include <pmu_helpers.h>
 #include <pmu_arm64_configs.h>
 #include <zephyr/irq_offload.h>
@@ -48,21 +48,21 @@ static int bench_cpu;
 static uint64_t __aligned(CACHE_LINE_SIZE) test_array[ARRAY_ELEMENTS];
 static uint32_t __aligned(CACHE_LINE_SIZE) random_indices[MEMORY_ITERATIONS];
 
-static struct pmu_counter_config counter_configs[CONFIG_PMU_MAX_COUNTERS];
+static struct perf_counter_config counter_configs[CONFIG_PMU_MAX_COUNTERS];
 
 #define MEASURE_START()                                                                            \
-	pmu_counter_reset_all();                                                                   \
-	pmu_cycle_reset();                                                                         \
-	pmu_start()
+	perf_counter_reset_all();                                                                  \
+	perf_counter_cycle_reset();                                                                \
+	perf_counter_start()
 
-#define MEASURE_STOP() pmu_stop()
+#define MEASURE_STOP() perf_counter_stop()
 
 struct pmu_bench_ctx {
 	bool active;
 	const char *name;
 };
 
-static void print_pm_result(const char *test_name, const struct pmu_counter_config *cfgs,
+static void print_pm_result(const char *test_name, const struct perf_counter_config *cfgs,
 			    uint64_t cycles, uint64_t e0, uint64_t e1, uint64_t e2, uint64_t e3)
 {
 	printk("%-30s: %10llu cycles", test_name, (unsigned long long)cycles);
@@ -93,7 +93,7 @@ static void pmu_require_measurement(const char *tag, uint64_t cycles, uint64_t c
 }
 
 static bool pmu_bench_begin(struct pmu_bench_ctx *ctx, const char *name,
-			    const struct pmu_counter_config *cfgs, size_t n)
+			    const struct perf_counter_config *cfgs, size_t n)
 {
 	ctx->active = false;
 	ctx->name = name;
@@ -130,11 +130,11 @@ static void pmu_bench_end(struct pmu_bench_ctx *ctx)
 
 	MEASURE_STOP();
 
-	cycles = pmu_cycle_count();
-	c0 = pmu_counter_read(0);
-	c1 = pmu_counter_read(1);
-	c2 = pmu_counter_read(2);
-	c3 = pmu_counter_read(3);
+	cycles = perf_counter_cycle_count();
+	c0 = perf_counter_read(0);
+	c1 = perf_counter_read(1);
+	c2 = perf_counter_read(2);
+	c3 = perf_counter_read(3);
 
 	pmu_require_measurement(ctx->name, cycles, c0, c1, c2, c3);
 	print_pm_result(ctx->name, counter_configs, cycles, c0, c1, c2, c3);
@@ -144,7 +144,7 @@ static void pmu_bench_end(struct pmu_bench_ctx *ctx)
 
 static void pmu_bench_suite_setup(void)
 {
-	pmu_info_t pmu_id;
+	perf_counter_info_t pmu_id;
 	int ret;
 	size_t i;
 
@@ -157,7 +157,7 @@ static void pmu_bench_suite_setup(void)
 	 */
 #endif
 
-	ret = pmu_init();
+	ret = perf_counter_init();
 
 	printk("\n");
 	printk("=================================================================\n");
@@ -170,9 +170,9 @@ static void pmu_bench_suite_setup(void)
 		return;
 	}
 
-	printk("PMU initialized: %u counters available\n", pmu_num_counters());
+	printk("PMU initialized: %u counters available\n", perf_counter_num_counters());
 
-	pmu_get_info(&pmu_id);
+	perf_counter_get_info(&pmu_id);
 	printk("CPU Implementer: 0x%02x, ID Code: 0x%02x\n", pmu_id.implementer, pmu_id.idcode);
 	printk("CPU Frequency: %u MHz (runtime calibrated)\n", pmu_cpu_freq_mhz());
 
