@@ -698,6 +698,10 @@ Networking
   by field must zero-initialize it, or set ``auth.username`` to ``NULL`` to connect without
   authentication. (:github:`125718`)
 
+* :c:macro:`NET_REQUEST_WIFI_CONNECT_STORED` now returns the error from the last connect request
+  if it fails for all stored networks, instead of ``0`` (or ``-ENOEXEC`` for static credentials).
+  Update applications that call this request to handle this error.
+
 Ethernet
 ========
 
