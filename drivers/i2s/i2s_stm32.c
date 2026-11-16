@@ -1070,4 +1070,18 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 		irq_enable(DT_INST_IRQN(index));				\
 	}
 
+/*
+ * The I2S and the SPI nodes of a peripheral describe the same hardware, so only
+ * one of them can be enabled.
+ */
+#define I2S_STM32_SPI_MODE_ENABLED(spi_node, i2s_addr)				\
+	BUILD_ASSERT(DT_REG_ADDR(spi_node) != (i2s_addr),			\
+		     "Node " DT_NODE_PATH(spi_node) " enabled both SPI and I2S mode");
+
+#define I2S_STM32_CHECK_SPI(index)						\
+	DT_FOREACH_STATUS_OKAY_VARGS(st_stm32_spi, I2S_STM32_SPI_MODE_ENABLED,	\
+				     DT_INST_REG_ADDR(index))
+
+DT_INST_FOREACH_STATUS_OKAY(I2S_STM32_CHECK_SPI)
+
 DT_INST_FOREACH_STATUS_OKAY(I2S_STM32_INIT)
