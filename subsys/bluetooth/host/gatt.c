@@ -2777,7 +2777,7 @@ static int gatt_req_send(struct bt_conn *conn, bt_att_func_t func, void *params,
 
 	req->buf = buf;
 
-	err = encode(buf, len, params);
+	err = encode(conn, buf, len, params);
 	if (err) {
 		bt_att_req_free(req);
 		return err;
@@ -3954,7 +3954,7 @@ static void gatt_mtu_rsp(struct bt_conn *conn, int err, const void *pdu,
 	params->func(conn, att_err_from_int(err), params);
 }
 
-static int gatt_exchange_mtu_encode(struct net_buf *buf, size_t len,
+static int gatt_exchange_mtu_encode(struct bt_conn *conn, struct net_buf *buf, size_t len,
 				    void *user_data)
 {
 	struct bt_att_exchange_mtu_req *req;
@@ -4093,7 +4093,7 @@ done:
 	params->func(conn, NULL, params);
 }
 
-static int gatt_find_type_encode(struct net_buf *buf, size_t len,
+static int gatt_find_type_encode(struct bt_conn *conn, struct net_buf *buf, size_t len,
 				 void *user_data)
 {
 	struct bt_gatt_discover_params *params = user_data;
@@ -4201,7 +4201,7 @@ next:
 	return;
 }
 
-static int read_included_uuid_encode(struct net_buf *buf, size_t len,
+static int read_included_uuid_encode(struct bt_conn *conn, struct net_buf *buf, size_t len,
 				     void *user_data)
 {
 	struct bt_gatt_discover_params *params = user_data;
@@ -4559,7 +4559,7 @@ static void gatt_read_type_rsp(struct bt_conn *conn, int err,
 	gatt_discover_next(conn, handle, params);
 }
 
-static int gatt_read_type_encode(struct net_buf *buf, size_t len,
+static int gatt_read_type_encode(struct bt_conn *conn, struct net_buf *buf, size_t len,
 				 void *user_data)
 {
 	struct bt_gatt_discover_params *params = user_data;
@@ -4709,7 +4709,7 @@ static void gatt_read_group_rsp(struct bt_conn *conn, int err,
 	gatt_discover_next(conn, handle, params);
 }
 
-static int gatt_read_group_encode(struct net_buf *buf, size_t len,
+static int gatt_read_group_encode(struct bt_conn *conn, struct net_buf *buf, size_t len,
 				  void *user_data)
 {
 	struct bt_gatt_discover_params *params = user_data;
@@ -4862,7 +4862,7 @@ done:
 	params->func(conn, NULL, params);
 }
 
-static int gatt_find_info_encode(struct net_buf *buf, size_t len,
+static int gatt_find_info_encode(struct bt_conn *conn, struct net_buf *buf, size_t len,
 				 void *user_data)
 {
 	struct bt_gatt_discover_params *params = user_data;
@@ -5054,7 +5054,7 @@ static void gatt_read_rsp(struct bt_conn *conn, int err, const void *pdu,
 	}
 }
 
-static int gatt_read_blob_encode(struct net_buf *buf, size_t len,
+static int gatt_read_blob_encode(struct bt_conn *conn, struct net_buf *buf, size_t len,
 				 void *user_data)
 {
 	struct bt_gatt_read_params *params = user_data;
@@ -5078,7 +5078,7 @@ static int gatt_read_blob(struct bt_conn *conn,
 			     BT_ATT_CHAN_OPT(params));
 }
 
-static int gatt_read_uuid_encode(struct net_buf *buf, size_t len,
+static int gatt_read_uuid_encode(struct bt_conn *conn, struct net_buf *buf, size_t len,
 				 void *user_data)
 {
 	struct bt_gatt_read_params *params = user_data;
@@ -5128,7 +5128,7 @@ static void gatt_read_mult_rsp(struct bt_conn *conn, int err, const void *pdu,
 	params->func(conn, 0, params, NULL, 0);
 }
 
-static int gatt_read_mult_encode(struct net_buf *buf, size_t len,
+static int gatt_read_mult_encode(struct bt_conn *conn, struct net_buf *buf, size_t len,
 				 void *user_data)
 {
 	struct bt_gatt_read_params *params = user_data;
@@ -5201,7 +5201,7 @@ static void gatt_read_mult_vl_rsp(struct bt_conn *conn, int err,
 	params->func(conn, 0, params, NULL, 0);
 }
 
-static int gatt_read_mult_vl_encode(struct net_buf *buf, size_t len,
+static int gatt_read_mult_vl_encode(struct bt_conn *conn, struct net_buf *buf, size_t len,
 				    void *user_data)
 {
 	struct bt_gatt_read_params *params = user_data;
@@ -5234,7 +5234,7 @@ static int gatt_read_mult_vl(struct bt_conn *conn,
 }
 #endif /* CONFIG_BT_GATT_READ_MULT_VAR_LEN */
 
-static int gatt_read_encode(struct net_buf *buf, size_t len, void *user_data)
+static int gatt_read_encode(struct bt_conn *conn, struct net_buf *buf, size_t len, void *user_data)
 {
 	struct bt_gatt_read_params *params = user_data;
 	struct bt_att_read_req *req;
@@ -5334,7 +5334,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 	return bt_att_send(conn, buf);
 }
 
-static int gatt_exec_encode(struct net_buf *buf, size_t len, void *user_data)
+static int gatt_exec_encode(struct bt_conn *conn, struct net_buf *buf, size_t len, void *user_data)
 {
 	struct bt_att_exec_write_req *req;
 
@@ -5355,7 +5355,8 @@ static int gatt_exec_write(struct bt_conn *conn,
 			     BT_ATT_CHAN_OPT(params));
 }
 
-static int gatt_cancel_encode(struct net_buf *buf, size_t len, void *user_data)
+static int gatt_cancel_encode(struct bt_conn *conn, struct net_buf *buf, size_t len,
+			      void *user_data)
 {
 	struct bt_att_exec_write_req *req;
 
@@ -5456,7 +5457,7 @@ fail:
 	params->func(conn, BT_ATT_ERR_UNLIKELY, params);
 }
 
-static int gatt_prepare_write_encode(struct net_buf *buf, size_t len,
+static int gatt_prepare_write_encode(struct bt_conn *conn, struct net_buf *buf, size_t len,
 				     void *user_data)
 {
 	struct bt_gatt_write_params *params = user_data;
@@ -5502,7 +5503,7 @@ static int gatt_prepare_write(struct bt_conn *conn,
 			     BT_ATT_CHAN_OPT(params));
 }
 
-static int gatt_write_encode(struct net_buf *buf, size_t len, void *user_data)
+static int gatt_write_encode(struct bt_conn *conn, struct net_buf *buf, size_t len, void *user_data)
 {
 	struct bt_gatt_write_params *params = user_data;
 	struct bt_att_write_req *req;
@@ -5594,7 +5595,8 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 }
 
 
-static int gatt_write_ccc_buf(struct net_buf *buf, size_t len, void *user_data)
+static int gatt_write_ccc_buf(struct bt_conn *conn, struct net_buf *buf, size_t len,
+			      void *user_data)
 {
 	struct bt_gatt_subscribe_params *params = user_data;
 	struct bt_att_write_req *write_req;
