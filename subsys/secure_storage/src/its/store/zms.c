@@ -21,14 +21,22 @@ static struct zms_fs s_zms = {
 			CONFIG_SECURE_STORAGE_ITS_STORE_ZMS_SECTOR_SIZE,
 };
 
+/* Serializes the mount, as the entries may be used for the first time by several threads. */
+static K_MUTEX_DEFINE(s_init_mutex);
+
 static int init_zms(void)
 {
-	int ret;
+	int ret = 0;
 
-	ret = zms_mount(&s_zms);
-	if (ret) {
-		LOG_DBG("Failed. (%d)", ret);
+	k_mutex_lock(&s_init_mutex, K_FOREVER);
+	if (!s_zms.ready) {
+		ret = zms_mount(&s_zms);
+		if (ret) {
+			LOG_DBG("Failed. (%d)", ret);
+		}
 	}
+	k_mutex_unlock(&s_init_mutex);
+
 	return ret;
 }
 SYS_INIT(init_zms, APPLICATION, CONFIG_SECURE_STORAGE_INIT_PRIORITY);
@@ -88,6 +96,11 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
+	/* The ITS may be used before the initialization function above has run. */
+	if (init_zms() != 0) {
+		return PSA_ERROR_STORAGE_FAILURE;
+	}
+
 	zms_ret = zms_write(&s_zms, zms_id, data, data_length);
 	if (zms_ret == data_length) {
 		psa_ret = PSA_SUCCESS;
@@ -110,6 +123,11 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 
 	if (zms_id == 0) {
 		return PSA_ERROR_INVALID_ARGUMENT;
+	}
+
+	/* The ITS may be used before the initialization function above has run. */
+	if (init_zms() != 0) {
+		return PSA_ERROR_STORAGE_FAILURE;
 	}
 
 	zms_ret = zms_read_hist(&s_zms, zms_id, data, data_size, 0);
@@ -136,6 +154,11 @@ psa_status_t secure_storage_its_store_remove(secure_storage_its_uid_t uid)
 
 	if (zms_id == 0) {
 		return PSA_ERROR_INVALID_ARGUMENT;
+	}
+
+	/* The ITS may be used before the initialization function above has run. */
+	if (init_zms() != 0) {
+		return PSA_ERROR_STORAGE_FAILURE;
 	}
 
 	ret = zms_delete(&s_zms, zms_id);
