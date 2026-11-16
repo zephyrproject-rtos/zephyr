@@ -82,6 +82,11 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 13)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(0)>;
 			status = "disabled";
+
+			usb_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		fdcan1: can@40006400 {
@@ -173,11 +178,6 @@
 				clocks = <&rcc STM32_CLOCK(IOP, 4)>;
 			};
 		};
-	};
-
-	usb_fs_phy: usbphy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	smbus3: smbus3 {

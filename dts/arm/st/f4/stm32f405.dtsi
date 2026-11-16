@@ -274,6 +274,11 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 29)>,
 				 <&rcc STM32_SRC_PLL_Q NO_SEL>;
 			status = "disabled";
+
+			otghs_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		rng: rng@50060800 {
@@ -283,10 +288,5 @@
 			clocks = <&rcc STM32_CLOCK(AHB2, 6)>;
 			status = "disabled";
 		};
-	};
-
-	otghs_fs_phy: otghs_fs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 };

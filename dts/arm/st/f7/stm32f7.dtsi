@@ -947,6 +947,11 @@
 				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
+
+			otghs_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		usbotg_fs: usb@50000000 {
@@ -961,6 +966,11 @@
 			clocks = <&rcc STM32_CLOCK(AHB2, 7)>,
 				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			status = "disabled";
+
+			otgfs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		rng: rng@50060800 {
@@ -1021,16 +1031,6 @@
 		ratio = <4>;
 		io-channels = <&adc1 18>;
 		status = "disabled";
-	};
-
-	otghs_fs_phy: otghs_fs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
-	};
-
-	otgfs_phy: otgfs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	smbus1: smbus1 {

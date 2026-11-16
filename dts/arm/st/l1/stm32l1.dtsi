@@ -331,6 +331,11 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
 			phys = <&usb_fs_phy>;
 			status = "disabled";
+
+			usb_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		pwr: power@40007000 {
@@ -637,11 +642,6 @@
 			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>, <17 0>;
 			status = "disabled";
 		};
-	};
-
-	usb_fs_phy: usbphy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	die_temp: dietemp {
