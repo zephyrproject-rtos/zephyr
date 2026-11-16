@@ -245,6 +245,11 @@ config NXP_IEEE802154_MAC
 	   If enabled, the NBU firmware used by the device will be use the 802.15.4
 	   MAC interface.
 
+config NXP_IEEE802154_SMAC
+	bool "Include 802.15.4 SMAC module"
+	help
+	   If enabled, the 802.15.4 SMAC module will be included.
+
 config NXP_SNPS_BLE_CTRL
 	bool "Include NXP SNPS BLE Controller"
 	depends on BT
