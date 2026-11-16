@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright 2026 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_EDGEVISION
+	bool
+
+config SOC_EDGEVISION_M4
+	bool
+	select SOC_EDGEVISION
+	help
+	  Enable the Edgevision Cortex-M4 core.
+
+config SOC_EDGEVISION_M85
+	bool
+	select SOC_EDGEVISION
+	help
+	  Enable the Edgevision Cortex-M85 core.
+
+config SOC
+	default "edgevision" if SOC_EDGEVISION
