@@ -119,8 +119,8 @@ static void esp_hosted_mcu_handle_event(const Rpc *rpc, void *user_data)
 	/*
 	 * A station event may arrive before the netif is registered (the
 	 * coprocessor can reconnect on its own after a warm reboot). Drop it
-	 * rather than dereference a NULL interface; net_dhcpv4_start() and the
-	 * mgmt raise helpers do not tolerate a NULL iface.
+	 * rather than dereference a NULL interface; the management event helpers
+	 * do not tolerate a NULL iface.
 	 */
 	if (sta == NULL && (rpc->msg_id == RpcId_Event_StaConnected ||
 			    rpc->msg_id == RpcId_Event_StaDisconnected)) {
@@ -135,9 +135,6 @@ static void esp_hosted_mcu_handle_event(const Rpc *rpc, void *user_data)
 		data->state[ESP_HOSTED_MCU_IFACE_STA] = WIFI_STATE_COMPLETED;
 		net_if_dormant_off(sta);
 		wifi_mgmt_raise_connect_result_event(sta, 0);
-		if (IS_ENABLED(CONFIG_WIFI_STA_AUTO_DHCPV4)) {
-			net_dhcpv4_start(sta);
-		}
 		break;
 	case RpcId_Event_StaDisconnected:
 		LOG_DBG("StaDisconnected reason=%u",
@@ -153,9 +150,6 @@ static void esp_hosted_mcu_handle_event(const Rpc *rpc, void *user_data)
 			wifi_mgmt_raise_connect_result_event(sta, WIFI_STATUS_CONN_FAIL);
 		} else {
 			data->state[ESP_HOSTED_MCU_IFACE_STA] = WIFI_STATE_DISCONNECTED;
-			if (IS_ENABLED(CONFIG_WIFI_STA_AUTO_DHCPV4)) {
-				net_dhcpv4_stop(sta);
-			}
 			net_if_dormant_on(sta);
 			wifi_mgmt_raise_disconnect_result_event(sta, 0);
 		}

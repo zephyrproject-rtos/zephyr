@@ -155,10 +155,13 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		LOG_DBG("WLAN: authenticated to nxp_wlan_network");
 		break;
 	case WLAN_REASON_ASSOC_SUCCESS:
+		LOG_DBG("WLAN: associated to nxp_wlan_network");
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
+		/* EAPOL uses the regular L2 path on NXP; it cannot be sent while the
+		 * interface is dormant.
+		 */
 		net_if_dormant_off(g_mlan.netif);
 #endif
-		LOG_DBG("WLAN: associated to nxp_wlan_network");
 #ifdef CONFIG_NET_STATISTICS_WIFI
 		g_mlan.stats.sta_mgmt.beacons_rx = 0;
 		g_mlan.stats.sta_mgmt.beacons_miss = 0;

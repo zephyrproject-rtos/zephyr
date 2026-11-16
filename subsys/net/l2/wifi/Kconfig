@@ -168,9 +168,10 @@ config WIFI_STA_AUTO_DHCPV4
 	depends on NET_DHCPV4
 	default y
 	help
-	  When enabled, the DHCPv4 client is automatically started
-	  by the Wi-Fi driver or supplicant after the STA connection
-	  is established.
+	  When enabled, the Wi-Fi management layer automatically starts
+	  the DHCPv4 client after a successful STA connection is reported.
+	  Drivers only report link state and connection results; they do not
+	  own the DHCPv4 client lifecycle.
 	  If this option is disabled, the application layer is
 	  responsible for either manually starting the DHCPv4 client
 	  or configuring a static IPv4 address.

@@ -33,7 +33,6 @@ struct ameba_wifi_runtime {
 	scan_result_cb_t scan_cb;
 	uint8_t if_idx;
 	uint8_t state;
-	uint8_t dhcp_init;
 };
 
 enum ameba_system_event_id {

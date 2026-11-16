@@ -2554,6 +2554,13 @@ void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status);
 void wifi_mgmt_raise_connect_result_status_event(struct net_if *iface,
 						 const struct wifi_status *status);
 
+/** Handle DHCPv4 after the supplicant authorizes the port on a roam.
+ *
+ * @param iface Network interface that roamed
+ * @param keep_lease Whether to keep the existing lease for an intra-subnet roam
+ */
+void wifi_mgmt_handle_sta_roam(struct net_if *iface, bool keep_lease);
+
 /** Wi-Fi management disconnect result event
  *
  * @param iface Network interface

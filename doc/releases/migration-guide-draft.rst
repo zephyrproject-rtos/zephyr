@@ -329,6 +329,16 @@ Timers
   ``z_cms_lptim_hook_on_lpm_entry`` and ``z_cms_lptim_hook_on_lpm_exit`` with
   :c:func:`z_sys_clock_lpm_enter` and :c:func:`z_sys_clock_lpm_exit`, respectively. (:github:`124238`).
 
+Wi-Fi
+=====
+
+* The ``CONFIG_RTK_WIFI_STA_AUTO_DHCPV4`` option has been removed. Use the common
+  :kconfig:option:`CONFIG_WIFI_STA_AUTO_DHCPV4` option to enable automatic DHCPv4 startup.
+
+* ``NET_EVENT_WIFI_CONNECT_RESULT`` now reports the Wi-Fi connection result before DHCPv4 has
+  acquired an address on ESP32 and Ameba. Applications that use an IPv4 address after this event
+  must also wait for ``NET_EVENT_IPV4_DHCP_BOUND`` or an IPv4 address notification.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth

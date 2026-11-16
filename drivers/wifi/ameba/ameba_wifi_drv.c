@@ -35,9 +35,6 @@ K_MSGQ_DEFINE_STATIC_TYPE(ameba_wifi_msgq, struct ameba_system_event, 10);
 K_THREAD_STACK_DEFINE(ameba_wifi_event_stack, CONFIG_AMEBA_WIFI_EVENT_STACK_SIZE);
 
 static struct k_thread ameba_wifi_event_thread;
-/* for add dhcp callback in mgmt_thread in net_mgmt */
-static struct net_mgmt_event_callback ameba_dhcp_cb;
-
 static int dev_init_done;
 static unsigned char if_init_idx;
 
@@ -56,15 +53,6 @@ static void ameba_wifi_internal_reg_rxcb(uint32_t idx, void *cb)
 	tx_read_pkt_ptr = skb_read_pkt;
 }
 #endif
-
-/* called in mgmt_thread in net_mgmt */
-static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
-			       struct net_if *iface)
-{
-	if (mgmt_event == NET_EVENT_IPV4_DHCP_BOUND) {
-		wifi_mgmt_raise_connect_result_event(iface, 0);
-	}
-}
 
 /* for sema give to rtk_wifi_event_task */
 int ameba_event_send_internal(int32_t event_id, void *event_data, size_t event_data_size,
@@ -275,32 +263,20 @@ report:
 static void ameba_wifi_handle_connect_event(void)
 {
 	net_eth_carrier_on(ameba_wifi_iface[STA_WLAN_INDEX]);
+	net_if_dormant_off(ameba_wifi_iface[STA_WLAN_INDEX]);
 
-	if (IS_ENABLED(CONFIG_RTK_WIFI_STA_AUTO_DHCPV4)) {
-		if (ameba_data[STA_WLAN_INDEX].dhcp_init == 0) {
-			net_dhcpv4_start(ameba_wifi_iface[STA_WLAN_INDEX]);
-			ameba_data[STA_WLAN_INDEX].dhcp_init = 1;
-		} else {
-			net_dhcpv4_restart(ameba_wifi_iface[STA_WLAN_INDEX]);
-		}
-
-	} else {
-		wifi_mgmt_raise_connect_result_event(ameba_wifi_iface[STA_WLAN_INDEX], 0);
-	}
+	wifi_mgmt_raise_connect_result_event(ameba_wifi_iface[STA_WLAN_INDEX], 0);
 
 	ameba_data[STA_WLAN_INDEX].state = RTK_STA_CONNECTED;
 }
 
 static void ameba_wifi_handle_disconnect_event(void)
 {
+	net_if_dormant_on(ameba_wifi_iface[STA_WLAN_INDEX]);
+
 	if (ameba_data[STA_WLAN_INDEX].state != RTK_STA_CONNECTED) {
 		wifi_mgmt_raise_disconnect_result_event(ameba_wifi_iface[STA_WLAN_INDEX], -1);
 		return;
-	}
-
-	if (IS_ENABLED(CONFIG_RTK_WIFI_STA_AUTO_DHCPV4)) {
-		net_dhcpv4_stop(ameba_wifi_iface[STA_WLAN_INDEX]);
-		ameba_data[STA_WLAN_INDEX].dhcp_init = 0;
 	}
 
 	wifi_mgmt_raise_disconnect_result_event(ameba_wifi_iface[STA_WLAN_INDEX], 0);
@@ -354,7 +330,6 @@ static int ameba_wifi_disconnect(const struct device *dev, struct net_if *iface)
 	ARG_UNUSED(iface);
 
 	ret = wifi_disconnect();
-	net_dhcpv4_stop(ameba_wifi_iface[STA_WLAN_INDEX]);
 
 	data->state = RTK_STA_STOPPED;
 	return ret;
@@ -606,6 +581,13 @@ static void ameba_wifi_init(struct net_if *iface)
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
 
+	if (if_init_idx == STA_WLAN_INDEX) {
+		/* Carrier may be enabled before association. Keep the STA dormant
+		 * until the connected event reports that the link is usable.
+		 */
+		net_if_dormant_on(iface);
+	}
+
 #ifndef CONFIG_SINGLE_CORE_WIFI
 	ameba_wifi_internal_reg_rxcb(0, eth_rtk_rx);
 #endif
@@ -633,12 +615,6 @@ static int ameba_wifi_dev_init(const struct device *dev)
 				NULL, NULL, NULL, 14, K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_thread_name_set(tid, dev->name);
-
-	/* add event call back in net_mgmt */
-	if (IS_ENABLED(CONFIG_RTK_WIFI_STA_AUTO_DHCPV4)) {
-		net_mgmt_init_event_callback(&ameba_dhcp_cb, wifi_event_handler, DHCPV4_MASK);
-		net_mgmt_add_event_callback(&ameba_dhcp_cb);
-	}
 
 #if defined(CONFIG_BT_COEXIST)
 	coex_ipc_entry();
