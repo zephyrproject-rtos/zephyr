@@ -17,3 +17,8 @@
 	irq-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_LOW>;
 	alt-addr = <0x14>;
 };
+
+&zephyr_lcdif {
+	/* Secondary RAM space for large frame buffer(s). */
+	ext-ram = <&psram>;
+};
