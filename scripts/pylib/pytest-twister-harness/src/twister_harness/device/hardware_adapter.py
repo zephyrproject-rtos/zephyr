@@ -10,8 +10,10 @@ import time
 from pathlib import Path
 
 from serial import SerialException
+from twisterlib import post_connect_reset
 
 from twister_harness.device.device_adapter import DeviceAdapter
+from twister_harness.device.device_connection import SerialConnection
 from twister_harness.device.utils import log_command, terminate_process
 from twister_harness.exceptions import (
     TwisterHarnessException,
@@ -52,19 +54,30 @@ class HardwareAdapter(DeviceAdapter):
             self._generate_flash_command(build_dir)
             return
 
+        self.command = self._build_west_command(
+            self.device_config.west_flash_cmd or 'flash', build_dir
+        )
+
+    def _build_west_command(self, west_cmd: str, build_dir: Path) -> list[str]:
         command = [
             self.west,
-            self.device_config.west_flash_cmd or 'flash',
+            west_cmd,
             '--no-rebuild',
             '--build-dir',
             str(build_dir),
         ]
 
         command_extra_args = []
-        if self.device_config.west_flash_cmd == 'debug':
+        if west_cmd == 'debug':
             command_extra_args.append('--batch')
-        if self.device_config.west_flash_extra_args:
+        if west_cmd != 'reset' and self.device_config.west_flash_extra_args:
             command_extra_args.extend(self.device_config.west_flash_extra_args)
+        if (
+            west_cmd == 'flash'
+            and self.device_config.post_connect_reset
+            and '--no-reset' not in command_extra_args
+        ):
+            command_extra_args.append('--no-reset')
 
         if self.device_config.runner:
             runner_base_args, runner_extra_args = self._prepare_runner_args()
@@ -74,7 +87,7 @@ class HardwareAdapter(DeviceAdapter):
         if command_extra_args:
             command.append('--')
             command.extend(command_extra_args)
-        self.command = command
+        return command
 
     def _prepare_runner_args(self) -> tuple[list[str], list[str]]:
         base_args: list[str] = []
@@ -124,6 +137,9 @@ class HardwareAdapter(DeviceAdapter):
 
     def _device_launch(self) -> None:
         """Flash and run application on a device and connect with serial port."""
+        for connection in self.connections:
+            if isinstance(connection, SerialConnection):
+                connection.reconnect_state = None
         if self.device_config.flash_before:
             # For hardware devices with shared USB or software USB, connect after flashing.
             # Retry for up to 10 seconds for USB-CDC based devices to enumerate.
@@ -144,6 +160,33 @@ class HardwareAdapter(DeviceAdapter):
             # from target can be lost.
             self.connect()
             self._flash_and_run()
+
+        if self.device_config.post_connect_reset:
+            self._run_post_connect_reset(self.device_config.post_connect_reset)
+
+    def _run_post_connect_reset(self, config: dict) -> None:
+        """Start the device after it is flashed and its console is connected."""
+        if (
+            self.device_config.flash_command
+            or (self.device_config.west_flash_cmd or 'flash') != 'flash'
+        ):
+            logger.warning(
+                'The flash command does not keep the device stopped, so it boots before the '
+                'post-connect reset'
+            )
+        try:
+            if post_connect_reset.is_serial(config):
+                self.connections[0].run_post_connect_reset(config)
+                return
+            west_reset_command = None
+            if config.get('method') == 'west':
+                build_dir = self.device_config.current_build_dir or self.device_config.build_dir
+                west_reset_command = self._build_west_command('reset', build_dir)
+            post_connect_reset.run(config, west_reset_command=west_reset_command)
+        except post_connect_reset.PostConnectResetError as exc:
+            msg = f'Post-connect reset failed: {exc}'
+            logger.error(msg)
+            raise TwisterHarnessException(msg) from exc
 
     def _flash_and_run(self) -> None:
         """Flash application on a device."""
