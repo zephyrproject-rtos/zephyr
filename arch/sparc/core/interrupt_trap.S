@@ -169,7 +169,6 @@ __sparc_trap_interrupt:
 	 * %sp: irq stack - 96. An ABI frame
 	 */
 
-#ifdef CONFIG_PREEMPT_ENABLED
 	/* allocate stack for calling C function and for its output value */
 	sub	%fp, (96+8), %sp
 	/*
@@ -252,7 +251,6 @@ __sparc_trap_interrupt:
 	call	z_sparc_context_switch
 	 nop
 .Lno_reschedule:
-#endif /* CONFIG_PREEMPT_ENABLED */
 
 	/* Restore the interrupted context. */
 	ld	[%fp + ISF_Y_OFFSET], %g1
