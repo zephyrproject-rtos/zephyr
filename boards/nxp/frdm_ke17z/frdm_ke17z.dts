@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,7 @@
 		pwm-led1 = &green_pwm_led;
 		pwm-led2 = &blue_pwm_led;
 		mcuboot-button0 = &user_button_0;
+		die-temp0 = &temp0;
 	};
 
 	chosen {
@@ -148,6 +149,10 @@
 	vref-mv = <3300>;
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&temp0 {
 	status = "okay";
 };
 

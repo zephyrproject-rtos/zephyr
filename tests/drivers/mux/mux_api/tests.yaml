@@ -16,6 +16,7 @@ tests:
   drivers.mux.trgmux:
     filter: dt_compat_enabled("nxp,trgmux")
     platform_allow:
+      - frdm_ke17z
       - frdm_mcxe247
       - frdm_mcxe31b
     integration_platforms:

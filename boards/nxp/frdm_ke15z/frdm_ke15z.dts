@@ -26,6 +26,7 @@
 		pwm-led0 = &green_pwm_led;
 		pwm-led1 = &blue_pwm_led;
 		pwm-led2 = &red_pwm_led;
+		die-temp0 = &temp0;
 	};
 
 	chosen {
@@ -143,6 +144,10 @@
 	status = "okay";
 };
 
+&temp0 {
+	status = "okay";
+};
+
 &gpiob {
 	status = "okay";
 };
@@ -152,6 +157,11 @@
 };
 
 &wdog {
+	status = "okay";
+};
+
+&rtc {
+	clock-source = "LPO";
 	status = "okay";
 };
 

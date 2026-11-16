@@ -64,6 +64,17 @@
 		};
 	};
 
+	temp0: temp0 {
+		compatible = "nxp,kinetis-temperature";
+		io-channels = <&adc0 26>, <&adc0 27>;
+		io-channel-names = "SENSOR", "BANDGAP";
+		bandgap-voltage = <1000000>;
+		vtemp25 = <740500>;
+		sensor-slope-cold = <1564>;
+		sensor-slope-hot = <1564>;
+		status = "disabled";
+	};
+
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
 	};
@@ -336,6 +347,22 @@
 			reg = <0x40061000 0x6>;
 			interrupts = <28 0>;
 			clk-divider = <0x0>;
+			status = "disabled";
+		};
+
+		trgmux0: trgmux@40062000 {
+			compatible = "nxp,trgmux";
+			reg = <0x40062000 0x1000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
+		};
+
+		trgmux1: trgmux@40063000 {
+			compatible = "nxp,trgmux";
+			reg = <0x40063000 0x1000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
 			status = "disabled";
 		};
 
