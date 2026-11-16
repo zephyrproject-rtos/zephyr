@@ -277,6 +277,9 @@ static ssize_t z_impl_zsock_sendto_custom_fake_no_reply(int sock, void *buf, siz
 	return 1;
 }
 
+/* Token of the request the server last challenged with an Echo option */
+static uint8_t echo_challenged_token[COAP_TOKEN_MAX_LEN];
+
 static ssize_t z_impl_zsock_sendto_custom_fake_echo(int sock, void *buf, size_t len, int flags,
 						    const struct net_sockaddr *dest_addr,
 						    net_socklen_t addrlen)
@@ -287,6 +290,9 @@ static ssize_t z_impl_zsock_sendto_custom_fake_echo(int sock, void *buf, size_t 
 
 	last_message_id |= ((uint8_t *)buf)[2] << 8;
 	last_message_id |= ((uint8_t *)buf)[3];
+	zassert_true(memcmp((uint8_t *)buf + TOKEN_OFFSET, echo_challenged_token,
+			    COAP_TOKEN_MAX_LEN) != 0,
+		     "Echo retry of a plain request must use a new token");
 	store_token(buf);
 
 	set_next_pending_message_id(last_message_id);
@@ -652,6 +658,7 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_echo(int sock, void *buf, size_
 	ack_data[2] = (uint8_t)(last_message_id >> 8);
 	ack_data[3] = (uint8_t)last_message_id;
 	restore_token(ack_data);
+	memcpy(echo_challenged_token, ack_data + TOKEN_OFFSET, COAP_TOKEN_MAX_LEN);
 
 	memcpy(buf, ack_data, sizeof(ack_data));
 
@@ -1642,6 +1649,27 @@ ZTEST(coap_client, test_echo_option)
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
 }
 
+/* A request without payload is retried like one with a payload: as it was
+ * sent, yet under a new token, since only an observation is bound to its token.
+ */
+ZTEST(coap_client, test_echo_option_no_payload)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_echo;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+}
+
 ZTEST(coap_client, test_echo_option_next_req)
 {
 	struct coap_client_request req = short_request;
@@ -2536,6 +2564,53 @@ static ssize_t z_impl_zsock_sendto_custom_fake_reregister_non(int sock, void *bu
 	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
 }
 
+/* How many times in a row the server challenges an observe refresh */
+static int reregister_echo_challenges = 1;
+
+/* The retry of an observe refresh the server challenged with an Echo option: the
+ * refresh as it was sent, on the registration token, plus one Echo option.
+ */
+static ssize_t z_impl_zsock_sendto_custom_fake_reregister_echo(int sock, void *buf, size_t len,
+							       int flags,
+							       const struct net_sockaddr *dest_addr,
+							       net_socklen_t addrlen)
+{
+	struct coap_packet pkt = {0};
+	struct coap_option options[2] = {0};
+
+	verify_observe_resend_packet(buf, len, COAP_TYPE_CON, 0);
+	zassert_ok(coap_packet_parse(&pkt, buf, len, NULL, 0), "Failed to parse observe packet");
+	zassert_equal(coap_find_options(&pkt, COAP_OPTION_ECHO, options, ARRAY_SIZE(options)), 1,
+		      "Expected one Echo option");
+	zassert_mem_equal(options[0].value, "echo_value", options[0].len, "Incorrect echo data");
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake;
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+/* Answer 4.01 with an Echo option, then expect the refresh to be retried; the
+ * retry is challenged again while reregister_echo_challenges says so.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_reregister_echo(int sock, void *buf,
+								 size_t max_len, int flags,
+								 struct net_sockaddr *src_addr,
+								 net_socklen_t *addrlen)
+{
+	ssize_t ret = z_impl_zsock_recvfrom_custom_fake_echo(sock, buf, max_len, flags, src_addr,
+							     addrlen);
+
+	if (reregister_echo_challenges > 1) {
+		reregister_echo_challenges--;
+		z_impl_zsock_recvfrom_fake.custom_fake =
+			z_impl_zsock_recvfrom_custom_fake_reregister_echo;
+	} else {
+		z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+	}
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_reregister_echo;
+
+	return ret;
+}
+
 static int observe_seq_idx;
 static const int observe_seq_values[] = {2, 5, 3, 6};
 static int observe_notifications_delivered;
@@ -2982,6 +3057,545 @@ ZTEST(coap_client, test_observe_reregister_con)
 	zassert_equal(coap_client_reregister_observe(&client, &req), -ENOENT);
 
 	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+/* A refresh the server challenges with an Echo option is retried as it was sent,
+ * on the registration token, so it stays a re-registration, also when the retry
+ * is challenged in turn.
+ */
+ZTEST(coap_client, test_observe_reregister_echo)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	wait_callbacks_done();
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_reregister_echo;
+	zassert_ok(coap_client_reregister_observe(&client, &req));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_equal(z_impl_zsock_sendto_fake.call_count, 3, "Refresh must be retried once");
+
+	wait_callbacks_done();
+	reregister_echo_challenges = 2;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_reregister_echo;
+	zassert_ok(coap_client_reregister_observe(&client, &req));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_equal(z_impl_zsock_sendto_fake.call_count, 6, "Refresh must be retried twice");
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
+}
+
+static void verify_one_echo(void *buf, size_t len)
+{
+	struct coap_packet pkt = {0};
+	struct coap_option options[2] = {0};
+
+	zassert_ok(coap_packet_parse(&pkt, buf, len, NULL, 0), "Failed to parse packet");
+	zassert_equal(coap_find_options(&pkt, COAP_OPTION_ECHO, options, ARRAY_SIZE(options)), 1,
+		      "Expected one Echo option");
+}
+
+/* The retry of a deregister the server challenged with an Echo option: still a
+ * deregister on the registration token.
+ */
+static ssize_t z_impl_zsock_sendto_custom_fake_deregister_echo(int sock, void *buf, size_t len,
+							       int flags,
+							       const struct net_sockaddr *dest_addr,
+							       net_socklen_t addrlen)
+{
+	verify_observe_resend_packet(buf, len, COAP_TYPE_CON, 1);
+	verify_one_echo(buf, len);
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake;
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t z_impl_zsock_recvfrom_custom_fake_deregister_echo(int sock, void *buf,
+								 size_t max_len, int flags,
+								 struct net_sockaddr *src_addr,
+								 net_socklen_t *addrlen)
+{
+	ssize_t ret = z_impl_zsock_recvfrom_custom_fake_echo(sock, buf, max_len, flags, src_addr,
+							     addrlen);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_deregister_echo;
+
+	return ret;
+}
+
+/* A deregister the server challenges with an Echo option is retried as a
+ * deregister, and ends the observation.
+ */
+ZTEST(coap_client, test_observe_deregister_echo)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	wait_callbacks_done();
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_deregister_con;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_deregister_echo;
+	zassert_ok(coap_client_deregister_observe(&client, &req));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_equal(z_impl_zsock_sendto_fake.call_count, 3, "Deregister must be retried once");
+
+	/* The observation is gone: a refresh finds nothing */
+	wait_callbacks_done();
+	zassert_equal(coap_client_reregister_observe(&client, &req), -ENOENT);
+}
+
+/* The retry of a registration the server challenged with an Echo option: the
+ * registration again, on the token it was challenged on.
+ */
+static ssize_t z_impl_zsock_sendto_custom_fake_register_echo(int sock, void *buf, size_t len,
+							     int flags,
+							     const struct net_sockaddr *dest_addr,
+							     net_socklen_t addrlen)
+{
+	verify_observe_resend_packet(buf, len, COAP_TYPE_CON, 0);
+	verify_one_echo(buf, len);
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake;
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t z_impl_zsock_recvfrom_custom_fake_register_echo(int sock, void *buf, size_t max_len,
+							       int flags,
+							       struct net_sockaddr *src_addr,
+							       net_socklen_t *addrlen)
+{
+	ssize_t ret = z_impl_zsock_recvfrom_custom_fake_echo(sock, buf, max_len, flags, src_addr,
+							     addrlen);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_register_echo;
+
+	return ret;
+}
+
+/* A registration the server challenges with an Echo option is retried on the
+ * token of the challenged request, like every other request of an observation.
+ */
+ZTEST(coap_client, test_observe_register_echo)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+			{
+				.code = COAP_OPTION_URI_QUERY,
+				.value = TEST_QUERY,
+				.len = sizeof(TEST_QUERY) - 1,
+			},
+		},
+		.num_options = 2,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_register_echo;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_equal(z_impl_zsock_sendto_fake.call_count, 2, "Registration must be retried once");
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
+}
+
+#define SEPARATE_ECHO_MID 0x7200
+/* Message ID of a second, different challenge */
+#define SEPARATE_ECHO_MID_2 0x7202
+
+static int separate_echo_gets;
+static int separate_echo_acks;
+static int separate_echo_step;
+static int separate_echo_response_step;
+static uint8_t separate_echo_response_type;
+static uint16_t separate_echo_request_mid;
+
+/* Count the requests and the Acknowledgments of the challenge */
+static ssize_t z_impl_zsock_sendto_custom_fake_separate_echo(int sock, void *buf, size_t len,
+							     int flags,
+							     const struct net_sockaddr *dest_addr,
+							     net_socklen_t addrlen)
+{
+	struct coap_packet pkt = {0};
+
+	zassert_ok(coap_packet_parse(&pkt, buf, len, NULL, 0), "Failed to parse packet");
+
+	if (coap_header_get_code(&pkt) == COAP_METHOD_GET) {
+		separate_echo_gets++;
+		separate_echo_request_mid = coap_header_get_id(&pkt);
+		memcpy(saved_observe_token, (uint8_t *)buf + TOKEN_OFFSET, COAP_TOKEN_MAX_LEN);
+		set_socket_events(sock, ZSOCK_POLLIN);
+	} else {
+		zassert_equal(coap_header_get_type(&pkt), COAP_TYPE_ACK, "Unexpected message");
+		zassert_true(coap_header_get_id(&pkt) == SEPARATE_ECHO_MID ||
+			     coap_header_get_id(&pkt) == SEPARATE_ECHO_MID_2,
+			     "Unexpected ACK");
+		separate_echo_acks++;
+	}
+
+	return 1;
+}
+
+/* Three messages: the challenge as a separate Confirmable response, twice as
+ * the server does not get the Acknowledgment, and at separate_echo_response_step
+ * the response to the last request: piggybacked on the Acknowledgment for an
+ * observation, or else of its own type.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_separate_echo(int sock, void *buf, size_t max_len,
+							       int flags,
+							       struct net_sockaddr *src_addr,
+							       net_socklen_t *addrlen)
+{
+	static const char echo_value[] = "echo_value";
+	struct coap_packet response;
+
+	if (separate_echo_step != separate_echo_response_step) {
+		zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_CON,
+					    COAP_TOKEN_MAX_LEN, saved_observe_token,
+					    COAP_RESPONSE_CODE_UNAUTHORIZED, SEPARATE_ECHO_MID));
+		zassert_ok(coap_packet_append_option(&response, COAP_OPTION_ECHO, echo_value,
+						     sizeof(echo_value) - 1));
+	} else {
+		bool piggybacked = separate_echo_response_type == COAP_TYPE_ACK;
+
+		zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1,
+					    separate_echo_response_type, COAP_TOKEN_MAX_LEN,
+					    saved_observe_token, COAP_RESPONSE_CODE_CONTENT,
+					    piggybacked ? separate_echo_request_mid
+							: SEPARATE_ECHO_MID + 1));
+		if (piggybacked) {
+			zassert_ok(coap_append_option_int(&response, COAP_OPTION_OBSERVE, 1));
+		}
+	}
+
+	if (separate_echo_step == 2) {
+		clear_socket_events(sock, ZSOCK_POLLIN);
+	}
+
+	separate_echo_step++;
+	fill_recv_src_addr(src_addr, addrlen);
+
+	return response.offset;
+}
+
+/* Two different challenges, the first of which the server sends again after
+ * the second, then the piggybacked response to the last request.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_two_challenges(int sock, void *buf,
+								size_t max_len, int flags,
+								struct net_sockaddr *src_addr,
+								net_socklen_t *addrlen)
+{
+	static const char echo_value[] = "echo_value";
+	struct coap_packet response;
+
+	if (separate_echo_step < 3) {
+		zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_CON,
+					    COAP_TOKEN_MAX_LEN, saved_observe_token,
+					    COAP_RESPONSE_CODE_UNAUTHORIZED,
+					    separate_echo_step == 1 ? SEPARATE_ECHO_MID_2
+								    : SEPARATE_ECHO_MID));
+		zassert_ok(coap_packet_append_option(&response, COAP_OPTION_ECHO, echo_value,
+						     sizeof(echo_value) - 1));
+	} else {
+		zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_ACK,
+					    COAP_TOKEN_MAX_LEN, saved_observe_token,
+					    COAP_RESPONSE_CODE_CONTENT, separate_echo_request_mid));
+		zassert_ok(coap_append_option_int(&response, COAP_OPTION_OBSERVE, 1));
+		clear_socket_events(sock, ZSOCK_POLLIN);
+	}
+
+	separate_echo_step++;
+	fill_recv_src_addr(src_addr, addrlen);
+
+	return response.offset;
+}
+
+static void separate_echo_start(int response_step, uint8_t response_type)
+{
+	separate_echo_gets = 0;
+	separate_echo_acks = 0;
+	separate_echo_step = 0;
+	separate_echo_response_step = response_step;
+	separate_echo_response_type = response_type;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_separate_echo;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_separate_echo;
+}
+
+/* A challenge that comes as a separate Confirmable response is acknowledged,
+ * and its retransmission is acknowledged as well but does not have the request
+ * retried again, although the retry of an observation keeps the token the
+ * retransmission matches.
+ */
+ZTEST(coap_client, test_observe_register_echo_separate_retransmitted)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+		},
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	separate_echo_start(2, COAP_TYPE_ACK);
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_equal(separate_echo_gets, 2, "Registration must be retried once, sent %d",
+		      separate_echo_gets);
+	zassert_equal(separate_echo_acks, 2, "Both copies of the challenge must be acknowledged");
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
+}
+
+/* A registration challenged twice is retried twice. The first challenge sent
+ * again after the second is still recognized: it is acknowledged, and not
+ * answered with a third retry.
+ */
+ZTEST(coap_client, test_observe_register_echo_older_challenge_retransmitted)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+		},
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	separate_echo_start(3, COAP_TYPE_ACK);
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_two_challenges;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zassert_equal(separate_echo_gets, 3, "Registration must be retried twice, sent %d",
+		      separate_echo_gets);
+	zassert_equal(separate_echo_acks, 3, "Every challenge must be acknowledged");
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
+}
+
+/* The same when the retransmission comes after the response to the retry: the
+ * observation neither registers once more nor ends on the 4.01.
+ */
+ZTEST(coap_client, test_observe_register_echo_separate_retransmitted_late)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+		},
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	separate_echo_start(1, COAP_TYPE_ACK);
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	zassert_equal(k_sem_take(&sem1, K_MSEC(MORE_THAN_ACK_TIMEOUT_MS)), -EAGAIN,
+		      "The retransmitted challenge must not reach the application");
+	zassert_equal(separate_echo_step, 3, "The retransmitted challenge was not received");
+	zassert_equal(separate_echo_gets, 2, "Registration must be retried once, sent %d",
+		      separate_echo_gets);
+	zassert_equal(separate_echo_acks, 2, "Both copies of the challenge must be acknowledged");
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
+}
+
+/* A challenged deregister whose challenge is retransmitted after the separate
+ * response to the retry is not sent again from the request it has released.
+ */
+ZTEST(coap_client, test_observe_deregister_echo_separate_retransmitted_late)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {
+			{
+				.code = COAP_OPTION_OBSERVE,
+				.value[0] = 0,
+				.len = 1,
+			},
+		},
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	wait_callbacks_done();
+	separate_echo_start(1, COAP_TYPE_NON_CON);
+	zassert_ok(coap_client_deregister_observe(&client, &req));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	zassert_equal(k_sem_take(&sem1, K_MSEC(MORE_THAN_ACK_TIMEOUT_MS)), -EAGAIN,
+		      "The retransmitted challenge must not reach the application");
+	zassert_equal(separate_echo_step, 3, "The retransmitted challenge was not received");
+	zassert_equal(separate_echo_gets, 2, "Deregister must be retried once, sent %d",
+		      separate_echo_gets);
+	zassert_equal(separate_echo_acks, 2, "Both copies of the challenge must be acknowledged");
+}
+
+/* The retry of a Block1 request the server challenged with an Echo option */
+static ssize_t z_impl_zsock_sendto_custom_fake_upload_echo(int sock, void *buf, size_t len,
+							   int flags,
+							   const struct net_sockaddr *dest_addr,
+							   net_socklen_t addrlen)
+{
+	verify_one_echo(buf, len);
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_record_blocks;
+	return z_impl_zsock_sendto_custom_fake_record_blocks(sock, buf, len, flags, dest_addr,
+							      addrlen);
+}
+
+static ssize_t z_impl_zsock_recvfrom_custom_fake_upload_echo(int sock, void *buf, size_t max_len,
+							     int flags,
+							     struct net_sockaddr *src_addr,
+							     net_socklen_t *addrlen)
+{
+	ssize_t ret = z_impl_zsock_recvfrom_custom_fake_echo(sock, buf, max_len, flags, src_addr,
+							     addrlen);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_upload_echo;
+
+	return ret;
+}
+
+/* A Block1 upload challenged with an Echo option on its first block resends
+ * that block, with the Echo option, before it goes on to the next.
+ */
+ZTEST(coap_client, test_echo_option_block1_first_block)
+{
+	if (sizeof(long_payload) - 1 <= CONFIG_COAP_CLIENT_MESSAGE_SIZE) {
+		ztest_test_skip();
+	}
+
+	sent_upload_cnt = 0;
+	memset(sent_block1_opts, 0xff, sizeof(sent_block1_opts));
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_upload_echo;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &long_request, NULL));
+	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
+
+	zassert_true(sent_upload_cnt > 1, "Payload must span several block1 requests");
+	zassert_equal(GET_BLOCK_NUM(sent_block1_opts[0]), 0,
+		      "The retry must resend the challenged block");
+	zassert_true(GET_MORE(sent_block1_opts[0]), "The retried block is not the last");
+	zassert_equal(GET_BLOCK_NUM(sent_block1_opts[1]), 1, "The upload must go on");
 }
 
 ZTEST(coap_client, test_observe_reregister_non)
