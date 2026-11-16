@@ -114,15 +114,39 @@
 		};
 
 		flash_controller: flash-controller@40240000 {
+			compatible = "infineon,ect-flash-controller";
 			reg = <0x40240000 0x10000>;
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "disabled";
 
 			code_flash0: flash@10000000 {
 				compatible = "soc-nv-flash";
 				reg = <0x10000000 DT_SIZE_K(6336)>;
 				ranges = <0x0 0x10000000 DT_SIZE_K(6336)>;
+				write-block-size = <512>;
+				erase-block-size = <32768>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			work_flash0: flash@14000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x14000000 DT_SIZE_K(96)>;
+				ranges = <0x0 0x14000000 DT_SIZE_K(96)>;
+				write-block-size = <64>;
+				erase-block-size = <2048>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			work_flash1: flash@14018000 {
+				compatible = "soc-nv-flash";
+				reg = <0x14018000 DT_SIZE_K(32)>;
+				ranges = <0x0 0x14018000 DT_SIZE_K(32)>;
+				write-block-size = <64>;
+				erase-block-size = <128>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
