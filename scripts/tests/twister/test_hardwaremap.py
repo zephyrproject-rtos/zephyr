@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from unittest import mock
 
+import jsonschema
 import pytest
 from twisterlib.hardwaremap import DUT, HardwareMap
 
@@ -277,6 +278,16 @@ def test_hardwaremap_load():
   run_with_fixture_only: true
   connected: True
   serial: 'dummy'
+  post_connect_reset:
+    method: serial
+    open_state:
+      dtr: true
+      rts: false
+    sequence:
+      - dtr: false
+        rts: true
+      - delay_ms: 100
+      - rts: false
 - id: id1
   platform: p1
   product: pr1
@@ -319,6 +330,11 @@ def test_hardwaremap_load():
             'connected': True,
             'serial': 'dummy',
             'serial_pty': None,
+            'post_connect_reset': {
+                'method': 'serial',
+                'open_state': {'dtr': True, 'rts': False},
+                'sequence': [{'dtr': False, 'rts': True}, {'delay_ms': 100}, {'rts': False}],
+            },
         },
         'id1': {
             'probe_id': None,
@@ -332,12 +348,51 @@ def test_hardwaremap_load():
             'run_with_fixture_only': False,
             'connected': True,
             'serial_pty': 'dummy',
+            'post_connect_reset': None,
         },
     }
 
     for dut in hm.duts:
         assert dut.id in expected
         assert all([getattr(dut, k) == v for k, v in expected[dut.id].items()])
+
+
+@pytest.mark.parametrize(
+    'post_connect_reset',
+    [
+        '{method: serial}',
+        '{method: script}',
+        '{method: power}',
+        '{method: serial, sequence: [{dsr: true}]}',
+        '{method: serial, open_state: {delay_ms: 100}, sequence: []}',
+    ],
+    ids=['serial without sequence', 'script method', 'unknown method', 'unknown line',
+         'delay in open state']
+)
+def test_hardwaremap_load_invalid_post_connect_reset(post_connect_reset):
+    map_file = f"""
+- id: id0
+  platform: p0
+  product: pr0
+  runner: r0
+  connected: True
+  serial: 'dummy'
+  post_connect_reset: {post_connect_reset}
+"""
+    map_filename = 'map-file.yaml'
+
+    builtin_open = open
+
+    def mock_open(*args, **kwargs):
+        if args[0] == map_filename:
+            return mock.mock_open(read_data=map_file)(*args, **kwargs)
+        return builtin_open(*args, **kwargs)
+
+    hm = HardwareMap(options=mock.Mock())
+
+    with mock.patch('builtins.open', mock_open), \
+         pytest.raises(jsonschema.exceptions.ValidationError):
+        hm.load(map_filename)
 
 
 TESTDATA_4 = [

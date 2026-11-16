@@ -1,4 +1,53 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
+$defs:
+  line_state:
+    type: object
+    properties:
+      dtr:
+        type: boolean
+      rts:
+        type: boolean
+    additionalProperties: false
+  serial_lines:
+    type: object
+    properties:
+      dtr:
+        type: boolean
+      rts:
+        type: boolean
+      delay_ms:
+        type: integer
+        minimum: 0
+    additionalProperties: false
+  post_connect_reset:
+    type: object
+    properties:
+      method:
+        type: string
+        enum:
+          - serial
+          - west
+          - none
+      open_state:
+        $ref: "#/$defs/line_state"
+      sequence:
+        type: array
+        items:
+          $ref: "#/$defs/serial_lines"
+      timeout:
+        type: integer
+        minimum: 1
+    required:
+      - method
+    allOf:
+      - if:
+          properties:
+            method:
+              const: serial
+        then:
+          required:
+            - sequence
+    additionalProperties: false
 type: array
 items:
   type: object
@@ -52,6 +101,8 @@ items:
       type: boolean
     flash_before:
       type: boolean
+    post_connect_reset:
+      $ref: "#/$defs/post_connect_reset"
     script_param:
       type: object
       properties:
