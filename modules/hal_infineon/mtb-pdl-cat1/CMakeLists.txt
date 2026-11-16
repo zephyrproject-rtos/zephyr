@@ -17,6 +17,10 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_FAMILY_INFINEON_CAT1 $<UPPER_CASE:${
 # Generate PDL specific define (w. *_device) for SOC module (e.g: CYBLE_416045_02)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_CYBLE_416045_02 CYBLE_416045_02_device)
 
+# The PDL SROM call path cleans and invalidates the CM7 D-cache using ProgramRow
+# arguments for every syscall. CYT4DN keeps the shared data in non-cacheable memory.
+zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_CYT4DN CY_DISABLE_XMC7000_DATA_CACHE)
+
 # Add mtb-pdl-cat1
 zephyr_include_directories(${pdl_drv_dir}/include)
 
