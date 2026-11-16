@@ -5,6 +5,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/emul.h>
+#include <zephyr/drivers/i2c_emul.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/ztest.h>
 #include "bmp581_emul.h"
@@ -147,6 +148,75 @@ ZTEST_F(bmp581, test_i2c_attr_odr_reg)
 ZTEST_F(bmp581, test_spi_attr_odr_reg)
 {
 	check_attr_odr(fixture->spi_dev, fixture->spi_target);
+}
+
+static bool iir_standby_failure_injected;
+static uint32_t iir_dsp_accesses;
+
+static int fail_iir_standby_write(const struct emul *target, struct i2c_msg *msgs,
+				int num_msgs, int addr)
+{
+	ARG_UNUSED(target);
+	ARG_UNUSED(addr);
+
+	if (num_msgs < 1 || msgs[0].len < 1U) {
+		return -ENOSYS;
+	}
+
+	uint8_t reg = msgs[0].buf[0];
+	bool is_write = msgs[0].len > 1U ||
+			(num_msgs > 1 && (msgs[1].flags & I2C_MSG_READ) == 0U);
+
+	if (reg == BMP5_REG_ODR_CONFIG && is_write && !iir_standby_failure_injected) {
+		iir_standby_failure_injected = true;
+		return -EIO;
+	}
+	if (reg == BMP5_REG_DSP_CONFIG || reg == BMP5_REG_DSP_IIR) {
+		iir_dsp_accesses++;
+	}
+
+	return -ENOSYS;
+}
+
+ZTEST_F(bmp581, test_i2c_iir_standby_error)
+{
+	struct i2c_emul_api mock_api = {.transfer = fail_iir_standby_write};
+	const struct sensor_value mode = {.val1 = BMP5_POWERMODE_NORMAL};
+	const struct sensor_value standby = {.val1 = BMP5_POWERMODE_STANDBY};
+	const struct sensor_value iir = {
+		.val1 = BMP581_DT_IIR_FILTER_COEFF_3,
+		.val2 = BMP581_DT_IIR_FILTER_COEFF_7,
+	};
+	uint8_t odr_before;
+	uint8_t dsp_before;
+	uint8_t iir_before;
+	int standby_ret;
+	int ret;
+
+	zassert_ok(sensor_attr_set(fixture->i2c_dev, SENSOR_CHAN_ALL, BMP5_ATTR_POWER_MODE,
+				   &mode));
+	odr_before = get_reg(fixture->i2c_target, BMP5_REG_ODR_CONFIG);
+	dsp_before = get_reg(fixture->i2c_target, BMP5_REG_DSP_CONFIG);
+	iir_before = get_reg(fixture->i2c_target, BMP5_REG_DSP_IIR);
+	iir_standby_failure_injected = false;
+	fixture->i2c_target->bus.i2c->mock_api = &mock_api;
+	standby_ret = sensor_attr_set(fixture->i2c_dev, SENSOR_CHAN_ALL, BMP5_ATTR_POWER_MODE,
+				      &standby);
+
+	/* Compare against the error produced by the same transition through RTIO. */
+	iir_standby_failure_injected = false;
+	iir_dsp_accesses = 0U;
+
+	ret = sensor_attr_set(fixture->i2c_dev, SENSOR_CHAN_ALL, BMP5_ATTR_IIR_CONFIG, &iir);
+
+	fixture->i2c_target->bus.i2c->mock_api = NULL;
+	zassert_true(standby_ret < 0, "Standby failure injection did not return an error");
+	zassert_true(iir_standby_failure_injected);
+	zassert_equal(ret, standby_ret, "Standby error was not propagated: %d", ret);
+	zassert_equal(iir_dsp_accesses, 0U, "DSP registers accessed after standby failure");
+	zassert_equal(get_reg(fixture->i2c_target, BMP5_REG_ODR_CONFIG), odr_before);
+	zassert_equal(get_reg(fixture->i2c_target, BMP5_REG_DSP_CONFIG), dsp_before);
+	zassert_equal(get_reg(fixture->i2c_target, BMP5_REG_DSP_IIR), iir_before);
 }
 
 ZTEST_F(bmp581, test_emul_get_reg_invalid)
