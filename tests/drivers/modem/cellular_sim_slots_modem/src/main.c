@@ -3,16 +3,25 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SIM slot selection by the modem, for a SIMCom A76xx with two SIM interfaces.
- * The tests play the modem (DCE) side over an emulated UART: the raw init AT
- * script first, then a modem_cmux peer bridged through the modem backend mock
- * once the driver switches to CMUX, as in tests/drivers/modem/
- * cellular_on_demand_connect. The emulated modem keeps the selected SIM
- * interface as if in its non-volatile memory, and counts the commands that
- * read and write it.
+ * SIM slot selection and switch of the modem_cellular driver against an
+ * emulated modem. The tests play the modem (DCE) side over an emulated UART:
+ * the raw init AT script first, then a modem_cmux peer bridged through the
+ * modem backend mock once the driver switches to CMUX, as in tests/drivers/
+ * modem/cellular_on_demand_connect.
  *
- * No APN is configured, so the driver parks in WAIT_FOR_APN right after the
- * SIM slot selection.
+ * Two scenarios share this file:
+ *
+ *   - a SIMCom A76xx with two SIM interfaces, which it selects with
+ *     AT*SELECTSIMSLOT and keeps across power cycles, as in non-volatile memory.
+ *     No APN is configured, so the driver parks in WAIT_FOR_APN until a test
+ *     sets one;
+ *   - a Quectel BG95 whose single SIM interface is switched between two SIM
+ *     slots by a gpio-mux, with an APN, so the driver dials at boot.
+ *
+ * The emulated modem logs every command it receives in CMUX mode, and the
+ * level of the SIM switch GPIO when it deactivates and activates the SIM
+ * interface. The tests run in order, each one from the state the previous one
+ * left.
  */
 
 #include <stdio.h>
@@ -23,6 +32,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/cellular.h>
+#include <zephyr/drivers/gpio/gpio_emul.h>
 #include <zephyr/drivers/serial/uart_emul.h>
 #include <zephyr/drivers/modem/modem_cellular.h>
 #include <zephyr/modem/cmux.h>
@@ -32,21 +42,53 @@
 
 #include <modem_backend_mock.h>
 
+#define SIM_BY_MUX DT_NODE_EXISTS(DT_NODELABEL(sim_mux))
+
+#if SIM_BY_MUX
+#define SIM_MUX_GPIO_NODE DT_GPIO_CTLR(DT_NODELABEL(sim_mux), mux_gpios)
+#define SIM_MUX_GPIO_PIN  DT_GPIO_PIN(DT_NODELABEL(sim_mux), mux_gpios)
+#define DEACTIVATE_CMD    "AT+CFUN=0"
+#define ACTIVATE_CMD      "AT+CFUN=4"
+#else
+#define DEACTIVATE_CMD "AT+CFUN=4"
+#endif
+
 #define SELECT_CMD "AT*SELECTSIMSLOT="
 #define QUERY_CMD  "AT*SELECTSIMSLOT?"
+#define DETACH_CMD "AT+CGATT=0"
 
 static const struct device *const modem = DEVICE_DT_GET(DT_NODELABEL(modem));
 static const struct device *const modem_uart = DEVICE_DT_GET(DT_NODELABEL(modem_uart));
 
-/* State of the emulated modem: the selected SIM interface, kept across power cycles */
+/* SIM interface the A76xx has selected, kept across power cycles */
 static atomic_t emu_slot;
 static atomic_t emu_queries;
 static atomic_t emu_writes;
 static char emu_last_write[32];
+static char emu_last_apn[64];
+static atomic_t emu_cmux_connects;
+static atomic_t emu_dials;
 
-/* Knobs the tests flip to make the emulated modem refuse a command */
-static atomic_t emu_fail_query;
-static atomic_t emu_fail_select;
+#if SIM_BY_MUX
+/* SIM switch GPIO level when the SIM interface was deactivated and activated */
+static atomic_t emu_mux_at_deactivate;
+static atomic_t emu_mux_at_activate;
+
+/* As on a BG95: once reactivated, the SIM is ready some time after AT+CFUN=4 answers,
+ * which +CPIN: READY reports, and AT+CPIN?, AT+CIMI and AT+QCCID answer ERROR until
+ * then. A SIM that was not deactivated stays ready, without a new +CPIN: READY.
+ */
+static atomic_t emu_sim_not_ready;
+static struct k_work_delayable emu_cpin_work;
+#endif
+
+/* Commands received in CMUX mode, one per line */
+static char emu_log[2048];
+static size_t emu_log_len;
+static struct k_spinlock emu_log_lock;
+
+/* Prefix of the command the emulated modem refuses, empty for none */
+static char emu_fail_prefix[32];
 
 /* ------------------------------------------------------------------------- */
 /* Modem (DCE) emulator                                                      */
@@ -89,6 +131,74 @@ static size_t dlci1_line_len;
 static uint8_t dlci2_line[256];
 static size_t dlci2_line_len;
 
+/* SIM slot the modem is routed to */
+static int emu_current_slot(void)
+{
+#if SIM_BY_MUX
+	return gpio_emul_output_get(DEVICE_DT_GET(SIM_MUX_GPIO_NODE), SIM_MUX_GPIO_PIN);
+#else
+	return (int)atomic_get(&emu_slot);
+#endif
+}
+
+static void emu_log_add(const char *line)
+{
+	k_spinlock_key_t key = k_spin_lock(&emu_log_lock);
+	size_t len = strlen(line);
+
+	if (emu_log_len + len + 2 < sizeof(emu_log)) {
+		memcpy(&emu_log[emu_log_len], line, len);
+		emu_log_len += len;
+		emu_log[emu_log_len++] = '\n';
+		emu_log[emu_log_len] = '\0';
+	}
+
+	k_spin_unlock(&emu_log_lock, key);
+}
+
+static void emu_log_reset(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&emu_log_lock);
+
+	emu_log_len = 0;
+	emu_log[0] = '\0';
+	k_spin_unlock(&emu_log_lock, key);
+}
+
+/* Number of times a command was received */
+static __maybe_unused int emu_log_count(const char *cmd)
+{
+	char needle[48];
+	const char *p = emu_log;
+	int count = 0;
+
+	snprintf(needle, sizeof(needle), "%s\n", cmd);
+	while ((p = strstr(p, needle)) != NULL) {
+		count++;
+		p += strlen(needle);
+	}
+
+	return count;
+}
+
+/* Position of a command in the log, -1 if it was not received */
+static int emu_log_pos(const char *cmd)
+{
+	char needle[48];
+	const char *p;
+
+	snprintf(needle, sizeof(needle), "%s\n", cmd);
+	p = strstr(emu_log, needle);
+
+	return (p == NULL) ? -1 : (int)(p - emu_log);
+}
+
+static bool emu_fails(const char *line)
+{
+	return (emu_fail_prefix[0] != '\0') &&
+	       (strncmp(line, emu_fail_prefix, strlen(emu_fail_prefix)) == 0);
+}
+
 static void to_driver(const char *resp)
 {
 	uart_emul_put_rx_data(modem_uart, (const uint8_t *)resp, strlen(resp));
@@ -99,60 +209,124 @@ static void dce_send(struct modem_pipe *pipe, const char *resp)
 	modem_pipe_transmit(pipe, (const uint8_t *)resp, strlen(resp));
 }
 
+/* Answer the identity queries, the same on the raw UART and in CMUX mode */
+static bool identity_respond(const char *line, char *resp, size_t size)
+{
+	if (strcmp(line, "AT+CGSN") == 0) {
+		snprintf(resp, size, "359123456789012\r\nOK\r\n");
+	} else if (strcmp(line, "AT+CGMM") == 0) {
+		snprintf(resp, size, "MODEM\r\nOK\r\n");
+	} else if (strcmp(line, "AT+CIMI") == 0) {
+		snprintf(resp, size, "72400000000000%d\r\nOK\r\n", emu_current_slot());
+	} else if (strcmp(line, "AT+QCCID") == 0) {
+		snprintf(resp, size, "+QCCID: 895500000000000000%d\r\nOK\r\n", emu_current_slot());
+	} else {
+		return false;
+	}
+
+	return true;
+}
+
 /* Answer one raw init script line, or switch to CMUX */
 static void at_phase_respond(const char *line)
 {
+	char resp[64];
+
 	if (strncmp(line, "AT+CMUX", 7) == 0) {
 		/* No reply expected: the driver brings up CMUX */
+		atomic_inc(&emu_cmux_connects);
 		emu_phase = EMU_PHASE_CMUX;
-	} else if (strcmp(line, "AT+CGSN") == 0) {
-		to_driver("359123456789012\r\nOK\r\n");
-	} else if (strcmp(line, "AT+CGMM") == 0) {
-		to_driver("A7663E\r\nOK\r\n");
+	} else if (identity_respond(line, resp, sizeof(resp))) {
+		to_driver(resp);
 	} else if (line[0] != '\0') {
 		to_driver("OK\r\n");
 	}
 }
 
-/* Answer the SIM slot query and selection, and any other command, on DLCI1 */
+/* Answer the commands on DLCI1: SIM slot, SIM interface, APN and registration */
 static void dlci1_respond(const char *line)
 {
-	char resp[48];
+	char resp[64];
+
+	emu_log_add(line);
+
+	if (emu_fails(line)) {
+		dce_send(dce_dlci1_pipe, "ERROR\r\n");
+		return;
+	}
+
+#if SIM_BY_MUX
+	if (atomic_get(&emu_sim_not_ready) &&
+	    ((strcmp(line, "AT+CPIN?") == 0) || (strcmp(line, "AT+CIMI") == 0) ||
+	     (strcmp(line, "AT+QCCID") == 0))) {
+		/* SIM busy */
+		dce_send(dce_dlci1_pipe, "+CME ERROR: 14\r\n");
+		return;
+	}
+#endif
 
 	if (strcmp(line, QUERY_CMD) == 0) {
 		atomic_inc(&emu_queries);
-		if (atomic_get(&emu_fail_query)) {
-			dce_send(dce_dlci1_pipe, "ERROR\r\n");
-			return;
-		}
-
 		snprintf(resp, sizeof(resp), "*SELECTUSIM: %d\r\nOK\r\n",
 			 (int)atomic_get(&emu_slot));
 		dce_send(dce_dlci1_pipe, resp);
 	} else if (strncmp(line, SELECT_CMD, strlen(SELECT_CMD)) == 0) {
 		atomic_inc(&emu_writes);
 		strncpy(emu_last_write, line, sizeof(emu_last_write) - 1);
-		if (atomic_get(&emu_fail_select)) {
-			dce_send(dce_dlci1_pipe, "ERROR\r\n");
-			return;
-		}
-
 		atomic_set(&emu_slot, atoi(line + strlen(SELECT_CMD)));
 		dce_send(dce_dlci1_pipe, "OK\r\n");
+	} else if (strncmp(line, "AT+CGDCONT", 10) == 0) {
+		strncpy(emu_last_apn, line, sizeof(emu_last_apn) - 1);
+		dce_send(dce_dlci1_pipe, "OK\r\n");
+	} else if (strcmp(line, "AT+CPIN?") == 0) {
+		dce_send(dce_dlci1_pipe, "+CPIN: READY\r\nOK\r\n");
+	} else if (strcmp(line, "AT+CEREG?") == 0) {
+		/* Registered on the home network */
+		dce_send(dce_dlci1_pipe, "+CEREG: 1,1\r\nOK\r\n");
+	} else if (identity_respond(line, resp, sizeof(resp))) {
+		dce_send(dce_dlci1_pipe, resp);
 	} else {
+#if SIM_BY_MUX
+		if (strcmp(line, DEACTIVATE_CMD) == 0) {
+			atomic_set(&emu_mux_at_deactivate, emu_current_slot());
+			atomic_set(&emu_sim_not_ready, 1);
+		} else if ((strcmp(line, ACTIVATE_CMD) == 0) && atomic_get(&emu_sim_not_ready)) {
+			atomic_set(&emu_mux_at_activate, emu_current_slot());
+			k_work_schedule(&emu_cpin_work, K_MSEC(300));
+		}
+#endif
 		dce_send(dce_dlci1_pipe, "OK\r\n");
 	}
 }
 
-/* Answer the commands on DLCI2, the shutdown script among them */
+#if SIM_BY_MUX
+static void emu_cpin_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	atomic_set(&emu_sim_not_ready, 0);
+	dce_send(dce_dlci1_pipe, "+CPIN: READY\r\n");
+}
+#endif
+
+/* Answer the dial and shutdown scripts on DLCI2 */
 static void dlci2_respond(const char *line)
 {
-	ARG_UNUSED(line);
+	emu_log_add(line);
 
-	dce_send(dce_dlci2_pipe, "OK\r\n");
+	if (strncmp(line, "ATD", 3) == 0) {
+		atomic_inc(&emu_dials);
+		dce_send(dce_dlci2_pipe, "CONNECT\r\n");
+	} else if (strcmp(line, "AT+QPOWD=1") == 0) {
+		dce_send(dce_dlci2_pipe, "OK\r\n\r\nPOWERED DOWN\r\n");
+	} else {
+		dce_send(dce_dlci2_pipe, "OK\r\n");
+	}
 }
 
-/* Assemble '\r'-delimited lines starting with "AT", dropping '\n' */
+/* Assemble '\r'-delimited lines starting with "AT", dropping '\n'. Lines not
+ * starting with "AT" are dropped, which keeps the PPP frames on DLCI2 out.
+ */
 static void feed_lines(const uint8_t *buf, size_t size, uint8_t *line, size_t *len, size_t cap,
 		       void (*respond)(const char *cmd))
 {
@@ -320,7 +494,7 @@ static void emulator_init(void)
 }
 
 /* Rewind the emulator for the next power-up; only while the driver is idle */
-static void emulator_rewind(void)
+static __maybe_unused void emulator_rewind(void)
 {
 	modem_cmux_release(&dce_cmux);
 	modem_backend_mock_reset(&wire_mock);
@@ -347,25 +521,19 @@ static enum modem_cellular_state modem_state(void)
 	return data->state;
 }
 
-/* native_sim runs on virtual time, so the wait costs no wall-clock time */
-static void wait_for_apn_state(void)
+static bool modem_switching(void)
 {
-	zassert_true(WAIT_FOR(modem_state() == MODEM_CELLULAR_STATE_WAIT_FOR_APN, 60000000,
-			      k_msleep(20)),
-		     "Modem did not park in WAIT_FOR_APN, state is %d", modem_state());
+	const struct modem_cellular_data *data = modem->data;
+
+	return data->sim_switching || (data->sim_slot_requested != NULL);
 }
 
-static void modem_suspend(void)
+/* native_sim runs on virtual time, so the waits cost no wall-clock time */
+static void wait_for_state(enum modem_cellular_state state)
 {
-	zassert_ok(pm_device_action_run(modem, PM_DEVICE_ACTION_SUSPEND), "Suspend failed");
-	zassert_equal(modem_state(), MODEM_CELLULAR_STATE_IDLE, "Modem not idle once suspended");
-	emulator_rewind();
-}
-
-static void modem_resume(void)
-{
-	zassert_ok(pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME), "Resume failed");
-	wait_for_apn_state();
+	zassert_true(
+		WAIT_FOR((modem_state() == state) && !modem_switching(), 60000000, k_msleep(20)),
+		"Modem did not reach state %d, state is %d", state, modem_state());
 }
 
 static uint8_t active_sim_slot(void)
@@ -379,13 +547,71 @@ static uint8_t active_sim_slot(void)
 	return active;
 }
 
+/* Request a switch of the running modem, and wait for it to connect again */
+static void switch_while_running(uint8_t slot, enum modem_cellular_state state)
+{
+	zassert_ok(cellular_select_sim(modem, slot), "SIM slot switch refused");
+	wait_for_state(state);
+}
+
+static void assert_in_order(const char *first, const char *second)
+{
+	int pos_first = emu_log_pos(first);
+	int pos_second = emu_log_pos(second);
+
+	zassert_true(pos_first >= 0, "%s not received", first);
+	zassert_true(pos_second >= 0, "%s not received", second);
+	zassert_true(pos_first < pos_second, "%s received after %s", first, second);
+}
+
+static void *test_setup(void)
+{
+	k_mutex_init(&pump_lock);
+#if SIM_BY_MUX
+	k_work_init_delayable(&emu_cpin_work, emu_cpin_handler);
+#endif
+
+	zassert_true(device_is_ready(modem), "Modem not ready");
+	zassert_true(device_is_ready(modem_uart), "Emulated UART not ready");
+
+	/* The driver started at boot; answer it from now on, from SIM interface 0 */
+	atomic_set(&emu_slot, 0);
+	emulator_init();
+	emu_pump();
+
+	return NULL;
+}
+
+static void test_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	emu_fail_prefix[0] = '\0';
+	emu_log_reset();
+}
+
+#if !SIM_BY_MUX
+
 /* ------------------------------------------------------------------------- */
-/* Tests, run in order: each one starts from the state the previous one left */
+/* SIMCom A76xx: SIM interfaces of the modem                                 */
 /* ------------------------------------------------------------------------- */
+
+static void modem_suspend(void)
+{
+	zassert_ok(pm_device_action_run(modem, PM_DEVICE_ACTION_SUSPEND), "Suspend failed");
+	zassert_equal(modem_state(), MODEM_CELLULAR_STATE_IDLE, "Modem not idle once suspended");
+	emulator_rewind();
+}
+
+static void modem_resume(void)
+{
+	zassert_ok(pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME), "Resume failed");
+	wait_for_state(MODEM_CELLULAR_STATE_WAIT_FOR_APN);
+}
 
 ZTEST(cellular_sim_slots_modem, test_01_boot_selects_default_slot)
 {
-	wait_for_apn_state();
+	wait_for_state(MODEM_CELLULAR_STATE_WAIT_FOR_APN);
 
 	zassert_true(atomic_get(&emu_queries) > 0, "Selected SIM interface not queried");
 	zassert_equal(atomic_get(&emu_writes), 1, "Unexpected number of SIM selections");
@@ -397,68 +623,76 @@ ZTEST(cellular_sim_slots_modem, test_01_boot_selects_default_slot)
 ZTEST(cellular_sim_slots_modem, test_02_selected_slot_not_written_again)
 {
 	atomic_val_t queries = atomic_get(&emu_queries);
+	atomic_val_t writes = atomic_get(&emu_writes);
 
 	modem_suspend();
 	modem_resume();
 
 	zassert_true(atomic_get(&emu_queries) > queries, "Selected SIM interface not queried");
-	zassert_equal(atomic_get(&emu_writes), 1, "Slot the modem had selected written again");
+	zassert_equal(atomic_get(&emu_writes), writes, "Slot the modem had selected written");
 	zassert_equal(active_sim_slot(), 1, "Active SIM slot changed");
 }
 
-ZTEST(cellular_sim_slots_modem, test_03_select_rejected_while_running)
+ZTEST(cellular_sim_slots_modem, test_03_switch_while_running)
 {
-	zassert_equal(cellular_select_sim(modem, 0), -EBUSY,
-		      "SIM slot switched while the modem is running");
-	zassert_equal(active_sim_slot(), 1, "Active SIM slot changed");
+	atomic_val_t connects = atomic_get(&emu_cmux_connects);
+
+	switch_while_running(0, MODEM_CELLULAR_STATE_WAIT_FOR_APN);
+
+	assert_in_order(DETACH_CMD, DEACTIVATE_CMD);
+	assert_in_order(DEACTIVATE_CMD, "AT*SELECTSIMSLOT=0,0");
+	zassert_equal(atomic_get(&emu_slot), 0, "Modem not on SIM slot 0");
+	zassert_equal(active_sim_slot(), 0, "SIM slot 0 not active");
+	zassert_equal(atomic_get(&emu_cmux_connects), connects, "Modem restarted for the switch");
 }
 
 ZTEST(cellular_sim_slots_modem, test_04_select_applied_on_power_up)
 {
+	atomic_val_t writes = atomic_get(&emu_writes);
+
 	modem_suspend();
 
-	zassert_ok(cellular_select_sim(modem, 0));
-	zassert_equal(active_sim_slot(), 0, "SIM slot 0 not active");
-	zassert_equal(atomic_get(&emu_writes), 1, "Powered off modem received a command");
+	zassert_ok(cellular_select_sim(modem, 1));
+	zassert_equal(active_sim_slot(), 1, "SIM slot 1 not active");
+	zassert_equal(atomic_get(&emu_writes), writes, "Powered off modem received a command");
 
 	modem_resume();
 
-	zassert_equal(atomic_get(&emu_writes), 2, "SIM slot not selected on power-up");
-	zassert_str_equal(emu_last_write, "AT*SELECTSIMSLOT=0,0", "Unexpected select command");
-	zassert_equal(atomic_get(&emu_slot), 0, "Modem not on SIM slot 0");
+	zassert_equal(atomic_get(&emu_writes), writes + 1, "SIM slot not selected on power-up");
+	zassert_str_equal(emu_last_write, "AT*SELECTSIMSLOT=1,0", "Unexpected select command");
+	zassert_equal(atomic_get(&emu_slot), 1, "Modem not on SIM slot 1");
 }
 
 ZTEST(cellular_sim_slots_modem, test_05_failed_select_keeps_modem_slot)
 {
 	modem_suspend();
-	zassert_ok(cellular_select_sim(modem, 1));
+	zassert_ok(cellular_select_sim(modem, 0));
 
-	atomic_set(&emu_fail_select, 1);
+	strcpy(emu_fail_prefix, SELECT_CMD);
 	modem_resume();
-	atomic_set(&emu_fail_select, 0);
 
-	zassert_equal(atomic_get(&emu_writes), 3, "SIM slot selection not attempted");
-	zassert_equal(atomic_get(&emu_slot), 0, "Modem changed SIM interface");
-	zassert_equal(active_sim_slot(), 0, "Active SIM slot not the one the modem kept");
+	zassert_true(emu_log_pos("AT*SELECTSIMSLOT=0,0") >= 0, "SIM slot selection not tried");
+	zassert_equal(atomic_get(&emu_slot), 1, "Modem changed SIM interface");
+	zassert_equal(active_sim_slot(), 1, "Active SIM slot not the one the modem kept");
 }
 
 ZTEST(cellular_sim_slots_modem, test_06_failed_query_selects_anyway)
 {
 	modem_suspend();
-	zassert_ok(cellular_select_sim(modem, 1));
+	zassert_ok(cellular_select_sim(modem, 0));
 
-	atomic_set(&emu_fail_query, 1);
+	strcpy(emu_fail_prefix, QUERY_CMD);
 	modem_resume();
-	atomic_set(&emu_fail_query, 0);
 
-	zassert_equal(atomic_get(&emu_writes), 4, "SIM slot not selected without a query");
-	zassert_equal(atomic_get(&emu_slot), 1, "Modem not on SIM slot 1");
-	zassert_equal(active_sim_slot(), 1, "SIM slot 1 not active");
+	zassert_true(emu_log_pos("AT*SELECTSIMSLOT=0,0") >= 0, "SIM slot not selected");
+	zassert_equal(atomic_get(&emu_slot), 0, "Modem not on SIM slot 0");
+	zassert_equal(active_sim_slot(), 0, "SIM slot 0 not active");
 }
 
 ZTEST(cellular_sim_slots_modem, test_07_invalid_query_response_ignored)
 {
 	struct modem_cellular_data *data = modem->data;
+	int16_t saved = data->sim_slot_modem;
 	char *argv[2] = {"*SELECTUSIM: ", NULL};
 
 	data->sim_slot_modem = -1;
@@ -474,21 +708,180 @@ ZTEST(cellular_sim_slots_modem, test_07_invalid_query_response_ignored)
 	argv[1] = "1";
 	modem_cellular_chat_on_sim_slot(NULL, argv, ARRAY_SIZE(argv), data);
 	zassert_equal(data->sim_slot_modem, 1, "Valid slot not accepted");
+
+	data->sim_slot_modem = saved;
 }
 
-static void *test_setup(void)
+ZTEST(cellular_sim_slots_modem, test_08_switch_with_data_call)
 {
-	k_mutex_init(&pump_lock);
+	atomic_val_t connects;
+	atomic_val_t dials;
 
-	zassert_true(device_is_ready(modem), "Modem not ready");
-	zassert_true(device_is_ready(modem_uart), "Emulated UART not ready");
+	/* Set an APN, so that the modem dials */
+	zassert_ok(cellular_set_apn(modem, "internet"));
+	wait_for_state(MODEM_CELLULAR_STATE_REGISTERED);
 
-	/* The driver started at boot; answer it from now on, from SIM interface 0 */
-	atomic_set(&emu_slot, 0);
-	emulator_init();
-	emu_pump();
+	connects = atomic_get(&emu_cmux_connects);
+	dials = atomic_get(&emu_dials);
+	emu_log_reset();
 
-	return NULL;
+	/* The new SIM gets its own APN, set along with the switch */
+	zassert_ok(cellular_select_sim(modem, 1));
+	zassert_ok(cellular_set_apn(modem, "apn.sim1"), "APN refused along with the switch");
+	wait_for_state(MODEM_CELLULAR_STATE_REGISTERED);
+
+	assert_in_order(DETACH_CMD, DEACTIVATE_CMD);
+	assert_in_order(DEACTIVATE_CMD, "AT*SELECTSIMSLOT=1,0");
+	assert_in_order("AT*SELECTSIMSLOT=1,0", "AT+CGDCONT=1,\"IP\",\"apn.sim1\"");
+	zassert_equal(atomic_get(&emu_slot), 1, "Modem not on SIM slot 1");
+	zassert_equal(active_sim_slot(), 1, "SIM slot 1 not active");
+	zassert_equal(atomic_get(&emu_dials), dials + 1, "Data call not dialed again");
+	zassert_equal(atomic_get(&emu_cmux_connects), connects, "Modem restarted for the switch");
 }
 
-ZTEST_SUITE(cellular_sim_slots_modem, NULL, test_setup, NULL, NULL, NULL);
+ZTEST(cellular_sim_slots_modem, test_09_failed_deactivate_keeps_slot)
+{
+	atomic_val_t dials = atomic_get(&emu_dials);
+
+	strcpy(emu_fail_prefix, DEACTIVATE_CMD);
+	switch_while_running(0, MODEM_CELLULAR_STATE_REGISTERED);
+
+	zassert_true(emu_log_pos(DEACTIVATE_CMD) >= 0, "SIM interface not deactivated");
+	zassert_equal(emu_log_pos("AT*SELECTSIMSLOT=0,0"), -1, "SIM slot selected anyway");
+	zassert_equal(atomic_get(&emu_slot), 1, "Modem changed SIM interface");
+	zassert_equal(active_sim_slot(), 1, "Active SIM slot not kept");
+	zassert_equal(atomic_get(&emu_dials), dials + 1, "Data call not dialed again");
+}
+
+ZTEST(cellular_sim_slots_modem, test_10_refused_select_keeps_previous_slot)
+{
+	/* The modem refuses the query and the selection, without telling its slot */
+	strcpy(emu_fail_prefix, "AT*SELECTSIMSLOT");
+	switch_while_running(0, MODEM_CELLULAR_STATE_REGISTERED);
+
+	zassert_true(emu_log_pos("AT*SELECTSIMSLOT=0,0") >= 0, "SIM slot selection not tried");
+	zassert_equal(atomic_get(&emu_slot), 1, "Modem changed SIM interface");
+	zassert_equal(active_sim_slot(), 1, "Active SIM slot not the previous one");
+
+	/* The slot can be requested again */
+	emu_fail_prefix[0] = '\0';
+	switch_while_running(0, MODEM_CELLULAR_STATE_REGISTERED);
+	zassert_equal(atomic_get(&emu_slot), 0, "Modem not on SIM slot 0");
+	zassert_equal(active_sim_slot(), 0, "SIM slot 0 not active");
+}
+
+ZTEST(cellular_sim_slots_modem, test_11_request_dropped_with_full_event_queue)
+{
+	struct modem_cellular_data *data = modem->data;
+	const struct modem_cellular_sim_slot *requested = NULL;
+	const struct modem_cellular_sim_slot *kept;
+	uint8_t slot = 1;
+	int ret = 0;
+
+	/* Without the state machine running, each request queues an event until the queue
+	 * is full
+	 */
+	k_sched_lock();
+	for (int i = 0; (i < 32) && (ret == 0); i++) {
+		requested = data->sim_slot_requested;
+		ret = cellular_select_sim(modem, slot);
+		slot = (slot == 1U) ? 0U : 1U;
+	}
+	kept = data->sim_slot_requested;
+	k_sched_unlock();
+
+	zassert_equal(ret, -EAGAIN, "Request accepted with a full event queue (%d)", ret);
+	zassert_equal_ptr(kept, requested, "Request without its event kept");
+	zassert_not_null(kept, "No request queued");
+
+	/* The requests that were queued are run */
+	wait_for_state(MODEM_CELLULAR_STATE_REGISTERED);
+	zassert_equal(active_sim_slot(), kept->index, "Last queued request not run");
+	zassert_equal(atomic_get(&emu_slot), kept->index, "Modem not on the requested slot");
+}
+
+#else /* SIM_BY_MUX */
+
+/* ------------------------------------------------------------------------- */
+/* Quectel BG95: SIM slots behind a gpio-mux                                 */
+/* ------------------------------------------------------------------------- */
+
+static void assert_iccid(int slot)
+{
+	char iccid[MODEM_CELLULAR_DATA_ICCID_LEN];
+	char expected[MODEM_CELLULAR_DATA_ICCID_LEN];
+
+	snprintf(expected, sizeof(expected), "895500000000000000%d", slot);
+	zassert_ok(cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_SIM_ICCID, iccid,
+					   sizeof(iccid)));
+	zassert_str_equal(iccid, expected, "ICCID not read from SIM slot %d", slot);
+}
+
+ZTEST(cellular_sim_slots_modem, test_01_boot_on_default_slot)
+{
+	wait_for_state(MODEM_CELLULAR_STATE_REGISTERED);
+
+	zassert_equal(emu_current_slot(), 1, "SIM switch not routed to the default-sim slot");
+	zassert_equal(active_sim_slot(), 1, "default-sim slot not active");
+	assert_iccid(1);
+}
+
+ZTEST(cellular_sim_slots_modem, test_02_switch_with_data_call)
+{
+	atomic_val_t connects = atomic_get(&emu_cmux_connects);
+	atomic_val_t dials = atomic_get(&emu_dials);
+
+	switch_while_running(0, MODEM_CELLULAR_STATE_REGISTERED);
+
+	assert_in_order(DETACH_CMD, DEACTIVATE_CMD);
+	assert_in_order(DEACTIVATE_CMD, ACTIVATE_CMD);
+	assert_in_order(ACTIVATE_CMD, "AT+QCCID");
+	zassert_true(emu_log_count("AT+CPIN?") > 1, "SIM not polled until ready");
+	zassert_equal(emu_log_pos("AT+CIMI") >= 0, true, "IMSI not read again");
+	zassert_equal(atomic_get(&emu_mux_at_deactivate), 1,
+		      "SIM switch moved before the SIM interface was deactivated");
+	zassert_equal(atomic_get(&emu_mux_at_activate), 0,
+		      "SIM switch not moved before the SIM interface was activated");
+	zassert_equal(active_sim_slot(), 0, "SIM slot 0 not active");
+	assert_iccid(0);
+	zassert_equal(atomic_get(&emu_dials), dials + 1, "Data call not dialed again");
+	zassert_equal(atomic_get(&emu_cmux_connects), connects, "Modem restarted for the switch");
+}
+
+ZTEST(cellular_sim_slots_modem, test_03_apn_set_along_with_switch)
+{
+	zassert_ok(cellular_select_sim(modem, 1));
+	zassert_ok(cellular_set_apn(modem, "apn.sim1"), "APN refused along with the switch");
+	wait_for_state(MODEM_CELLULAR_STATE_REGISTERED);
+
+	assert_in_order(ACTIVATE_CMD, "AT+CGDCONT=1,\"IP\",\"apn.sim1\"");
+	zassert_equal(emu_current_slot(), 1, "SIM switch not routed to slot 1");
+	zassert_equal(active_sim_slot(), 1, "SIM slot 1 not active");
+}
+
+ZTEST(cellular_sim_slots_modem, test_04_failed_deactivate_keeps_slot)
+{
+	atomic_val_t dials = atomic_get(&emu_dials);
+
+	strcpy(emu_fail_prefix, DEACTIVATE_CMD);
+	switch_while_running(0, MODEM_CELLULAR_STATE_REGISTERED);
+
+	zassert_equal(emu_current_slot(), 1, "SIM switch moved with the SIM interface active");
+	zassert_equal(active_sim_slot(), 1, "Active SIM slot not kept");
+	assert_in_order(DEACTIVATE_CMD, ACTIVATE_CMD);
+
+	/* The SIM stayed ready, without a new +CPIN: READY: its identity is read again */
+	assert_in_order(ACTIVATE_CMD, "AT+QCCID");
+	assert_iccid(1);
+	zassert_equal(atomic_get(&emu_dials), dials + 1, "Data call not dialed again");
+}
+
+ZTEST(cellular_sim_slots_modem, test_05_select_active_slot)
+{
+	zassert_equal(cellular_select_sim(modem, 1), -EALREADY, "Active SIM slot selected again");
+	zassert_equal(cellular_select_sim(modem, 2), -EINVAL, "Unknown SIM slot accepted");
+}
+
+#endif /* SIM_BY_MUX */
+
+ZTEST_SUITE(cellular_sim_slots_modem, NULL, test_setup, test_before, NULL, NULL);

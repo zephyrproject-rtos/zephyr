@@ -12,3 +12,7 @@ common:
     - native_sim
 tests:
   drivers.modem.cellular.sim_slots_modem: {}
+  drivers.modem.cellular.sim_slots_modem.mux:
+    extra_args: DTC_OVERLAY_FILE=bg95.overlay
+    extra_configs:
+      - CONFIG_MODEM_CELLULAR_APN="internet"

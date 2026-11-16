@@ -58,6 +58,30 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_shutdown_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_shutdown_chat_script, quectel_bg9x_shutdown_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 5);
 
+/* AT+CFUN=4 keeps the SIM interface active, AT+CFUN=0 deactivates it */
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_sim_deactivate_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=0", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_sim_deactivate_chat_script,
+			 quectel_bg9x_sim_deactivate_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 15);
+
+/* The SIM is initialized some time after AT+CFUN=4 answers; AT+CPIN? and AT+CIMI answer
+ * ERROR until then, which fails the script, and the driver runs it again.
+ */
+MODEM_CHAT_MATCH_DEFINE(quectel_bg9x_cpin_ready_match, "+CPIN: READY", "", NULL);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_sim_activate_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPIN?", quectel_bg9x_cpin_ready_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+QCCID", qccid_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_sim_activate_chat_script,
+			 quectel_bg9x_sim_activate_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 15);
+
 static const struct modem_cellular_vendor_config quectel_bg9x_vendor = {
 	/* clang-format off */
 	.scripts = {
@@ -66,6 +90,8 @@ static const struct modem_cellular_vendor_config quectel_bg9x_vendor = {
 		.network = &quectel_bg9x_network_chat_script,
 		.dial = &quectel_bg9x_dial_chat_script,
 		.shutdown = &quectel_bg9x_shutdown_chat_script,
+		.sim_deactivate = &quectel_bg9x_sim_deactivate_chat_script,
+		.sim_activate = &quectel_bg9x_sim_activate_chat_script,
 	},
 	.unsol_matches = {
 		.matches = quectel_bg9x_unsol,
