@@ -962,6 +962,50 @@ def test_devicehandler_create_command(
     assert command == expected
 
 
+TESTDATA_13_4 = [
+    (True, [], True),
+    (False, [SimpleNamespace(device='/dev/ttyUSB0', name='ttyUSB0')], True),
+    (False, [SimpleNamespace(device='COM3', name='COM3')], False),
+    (False, [], False),
+]
+
+@pytest.mark.parametrize(
+    'path_exists, ports, expected',
+    TESTDATA_13_4,
+    ids=['path exists', 'listed by device', 'not listed', 'no ports']
+)
+def test_devicehandler_is_serial_port_present(path_exists, ports, expected):
+    lp_mock = SimpleNamespace(comports=mock.Mock(return_value=ports))
+
+    with mock.patch('os.path.exists', return_value=path_exists), \
+         mock.patch('twisterlib.handlers.list_ports', lp_mock, create=True):
+        assert DeviceHandler._is_serial_port_present('/dev/ttyUSB0') == expected
+
+
+
+@pytest.mark.parametrize(
+    'failures, elapsed, expect_raise',
+    [(0, 0, False), (3, 0, False), (1, 100, True)],
+    ids=['first try', 'retried', 'timeout']
+)
+def test_devicehandler_open_serial_with_retry(failures, elapsed, expect_raise):
+    attempts = []
+
+    def mock_open():
+        attempts.append(1)
+        if len(attempts) <= failures:
+            raise SerialException('busy')
+
+    ser = mock.Mock(open=mock.Mock(side_effect=mock_open))
+
+    with mock.patch('time.sleep'), \
+         mock.patch('time.time', return_value=elapsed), \
+         pytest.raises(SerialException) if expect_raise else nullcontext():
+        DeviceHandler._open_serial_with_retry(ser, 0, 10)
+
+    if not expect_raise:
+        assert len(attempts) == failures + 1
+
 TESTDATA_14 = [
     ('success', False, Handler.FailureType.NONE, 'success', None, False),
     (TwisterStatus.FAIL, False, Handler.FailureType.NONE, TwisterStatus.FAIL,
@@ -1223,8 +1267,8 @@ def test_devicehandler_handle(
 
     lp_mock = SimpleNamespace(
         comports=mock.Mock(return_value=[
-            SimpleNamespace(name='dummy serial'),
-            SimpleNamespace(name='slave name'),
+            SimpleNamespace(device='/dev/dummy serial', name='dummy serial'),
+            SimpleNamespace(device='/dev/slave name', name='slave name'),
         ])
     )
 

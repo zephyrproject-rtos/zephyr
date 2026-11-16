@@ -687,6 +687,23 @@ class DeviceHandler(Handler):
 
         return ser
 
+    @staticmethod
+    def _open_serial_with_retry(ser, start_time, timeout):
+        while True:
+            try:
+                ser.open()
+                return
+            except serial.SerialException:
+                if time.time() - start_time > timeout:
+                    raise
+                time.sleep(0.1)
+
+    @staticmethod
+    def _is_serial_port_present(port):
+        if os.path.exists(port):
+            return True
+        return any(port in (p.device, p.name) for p in list_ports.comports())
+
     def _handle_serial_exception(self, exception, serial_pty, ser_pty_process):
         self.instance.status = TwisterStatus.FAIL
         self.instance.reason = "Serial Device Error"
@@ -918,11 +935,11 @@ class DeviceHandler(Handler):
                     # declare new start time instead of using existing one start_time.
                     serial_wait_timeout = max(10, int(flash_timeout * 0.2))
                     flash_start_time = time.time()
-                    while ser.port not in (p.name for p in list_ports.comports()):
+                    while not self._is_serial_port_present(ser.port):
                         time.sleep(0.1)
                         if time.time() - flash_start_time > serial_wait_timeout:
                             break
-                    ser.open()
+                    self._open_serial_with_retry(ser, flash_start_time, serial_wait_timeout)
 
             except serial.SerialException as e:
                 self._handle_serial_exception(e, serial_pty, ser_pty_process)
