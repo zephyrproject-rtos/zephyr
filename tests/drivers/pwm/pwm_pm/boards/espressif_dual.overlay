@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/*
+ * Output and capture use different MCPWM groups, so capture setup does not
+ * rewrite the output group's clock after wake. Keep the group clocks fast and
+ * place the output divider in timer 0.
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&mcpwm0 0 0 PWM_POLARITY_NORMAL>,
+		       <&mcpwm1 6 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	mcpwm0_default: mcpwm0_default {
+		group1 {
+			pinmux = <MCPWM0_OUT0A_GPIO2>;
+			input-enable;
+		};
+	};
+
+	mcpwm1_default: mcpwm1_default {
+		group1 {
+			pinmux = <MCPWM1_CAP0_GPIO2>;
+			output-enable;
+		};
+	};
+};
+
+&mcpwm0 {
+	pinctrl-0 = <&mcpwm0_default>;
+	pinctrl-names = "default";
+	prescale = <0>;
+	prescale-timer0 = <255>;
+	status = "okay";
+};
+
+&mcpwm1 {
+	pinctrl-0 = <&mcpwm1_default>;
+	pinctrl-names = "default";
+	prescale = <0>;
+	status = "okay";
+};

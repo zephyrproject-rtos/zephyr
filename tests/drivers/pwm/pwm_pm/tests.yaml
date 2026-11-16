@@ -8,13 +8,17 @@ common:
   harness: ztest
   harness_config:
     fixture: pwm_loopback
-  platform_allow:
-    - frdm_mcxe247
-  integration_platforms:
-    - frdm_mcxe247
 tests:
-  drivers.pwm.pm: {}
+  drivers.pwm.pm:
+    platform_allow:
+      - frdm_mcxe247
+    integration_platforms:
+      - frdm_mcxe247
   drivers.pwm.pm.policy:
+    platform_allow:
+      - frdm_mcxe247
+    integration_platforms:
+      - frdm_mcxe247
     # Device-managed PM only: with the system-managed sweep enabled, every
     # entry into a low power state would suspend the capture instance behind
     # the test's back.
@@ -28,6 +32,10 @@ tests:
     extra_args:
       - platform:frdm_mcxe247:EXTRA_DTC_OVERLAY_FILE="boards/frdm_mcxe247_lptmr.overlay"
   drivers.pwm.pm.sysmanaged:
+    platform_allow:
+      - frdm_mcxe247
+    integration_platforms:
+      - frdm_mcxe247
     # The sweep that suspends devices before a low power state, with the
     # policy locks that are supposed to keep it away from a driving output.
     extra_configs:
@@ -39,3 +47,59 @@ tests:
       - platform:frdm_mcxe247:CONFIG_IDLE_STACK_SIZE=1024
     extra_args:
       - platform:frdm_mcxe247:EXTRA_DTC_OVERLAY_FILE="boards/frdm_mcxe247_lptmr.overlay"
+  drivers.pwm.pm.esp:
+    extra_dtc_overlay_files:
+      - boards/espressif.overlay
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+    extra_configs:
+      - CONFIG_TEST_PWM_PM_LOW_POWER=y
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS=y
+  drivers.pwm.pm.esp.dual:
+    extra_dtc_overlay_files:
+      - boards/espressif_dual.overlay
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    extra_configs:
+      - CONFIG_TEST_PWM_PM_LOW_POWER=y
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS=y
+  drivers.pwm.pm.esp.periph_pd:
+    extra_dtc_overlay_files:
+      - boards/espressif.overlay
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+    extra_configs:
+      - CONFIG_TEST_PWM_PM_LOW_POWER=y
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS=y
+  drivers.pwm.pm.esp.periph_pd.dual:
+    extra_dtc_overlay_files:
+      - boards/espressif_dual.overlay
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    extra_configs:
+      - CONFIG_TEST_PWM_PM_LOW_POWER=y
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS=y

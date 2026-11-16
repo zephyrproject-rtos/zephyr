@@ -10,10 +10,13 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(pwm_pm)
 
 target_sources(app PRIVATE src/main.c)
+target_sources_ifndef(CONFIG_TEST_PWM_PM_LOW_POWER app PRIVATE src/device.c)
 target_sources_ifdef(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS app PRIVATE src/policy.c)
 
-# PM_DEVICE_SYSTEM_MANAGED defaults on with PM_DEVICE alone; the sweep only
-# exists with system PM.
-if(CONFIG_PM AND CONFIG_PM_DEVICE_SYSTEM_MANAGED)
+if(CONFIG_TEST_PWM_PM_LOW_POWER)
+  target_sources(app PRIVATE src/low_power.c)
+elseif(CONFIG_PM AND CONFIG_PM_DEVICE_SYSTEM_MANAGED)
+  # PM_DEVICE_SYSTEM_MANAGED defaults on with PM_DEVICE alone; the sweep only
+  # exists with system PM.
   target_sources(app PRIVATE src/sysmanaged.c)
 endif()

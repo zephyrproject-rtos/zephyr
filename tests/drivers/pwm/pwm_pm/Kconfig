@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "PWM PM test"
+
+config TEST_PWM_PM_LOW_POWER
+	bool "Enter each low power state and check the captured waveform"
+	depends on PM
+
+source "Kconfig.zephyr"
