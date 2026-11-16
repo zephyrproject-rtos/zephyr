@@ -114,6 +114,14 @@ EXTRA_REGISTERS = (
     "EPS6",
     "EPS7",
     "EXCSAVE1",
+    "INTERRUPT",
+    "INTENABLE",
+    "INTERRUPT1",
+    "INTENABLE1",
+    "INTERRUPT2",
+    "INTENABLE2",
+    "INTERRUPT3",
+    "INTENABLE3",
 )
 
 
@@ -311,6 +319,8 @@ class GdbRegDef_Sample_Controller:
         EPS6 = 63
         EPS7 = 64
         EXCSAVE1 = 65
+        INTERRUPT = 72
+        INTENABLE = 75
 
     class RegNum(Enum):
         PC = 0
@@ -363,6 +373,8 @@ class GdbRegDef_ESP32:
         EPS6 = 128
         EPS7 = 129
         EXCSAVE1 = 130
+        INTERRUPT = 138
+        INTENABLE = 141
 
     class RegNum(Enum):
         PC = 0
@@ -416,6 +428,8 @@ class GdbRegDef_ESP32S2:
         EPS6 = 94
         EPS7 = 95
         EXCSAVE1 = 96
+        INTERRUPT = 104
+        INTENABLE = 107
 
     class RegNum(Enum):
         PC = 0
@@ -465,6 +479,8 @@ class GdbRegDef_ESP32S3:
         EPS6 = 151
         EPS7 = 152
         EXCSAVE1 = 153
+        INTERRUPT = 161
+        INTENABLE = 164
 
     class RegNum(Enum):
         PC = 0
@@ -525,6 +541,8 @@ class GdbRegDef_Intel_Adsp_CAVS_Zephyr:
         EPS6 = 133
         EPS7 = 134
         EXCSAVE1 = 135
+        INTERRUPT = 143
+        INTENABLE = 146
 
     # Audio registers occupy more than four bytes in the GDB g packet.
     GDB_G_PKT_OFFSETS = {
@@ -543,6 +561,8 @@ class GdbRegDef_Intel_Adsp_CAVS_Zephyr:
         133: 612,
         134: 616,
         135: 620,
+        143: 652,
+        146: 664,
         148: 672,
         154: 696,
         158: 712,
@@ -620,6 +640,8 @@ class GdbRegDef_Intel_Adsp_CAVS_XCC:
         EPS6 = 0x2C6
         EPS7 = 0x2C7
         EXCSAVE1 = 0x2D1
+        INTERRUPT = 0x2E2
+        INTENABLE = 0x2E4
 
     class RegNum(Enum):
         PC = 32
@@ -675,6 +697,8 @@ class GdbRegDef_DC233C:
         EPS6 = 78
         EPS7 = 79
         EXCSAVE1 = 80
+        INTERRUPT = 88
+        INTENABLE = 91
 
     class RegNum(Enum):
         PC = 0
