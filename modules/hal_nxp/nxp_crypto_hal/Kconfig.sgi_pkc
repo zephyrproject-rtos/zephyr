@@ -193,10 +193,17 @@ config SGI_PKC_ECC
 	  ECC (Elliptic Curve Cryptography) component.
 
 config SGI_PKC_RSA
-	bool
+	bool "SGI PKC RSA component"
 	default y
 	help
 	  RSA cryptographic component.
+
+	  This component is only required by protocols that use RSA keys. Thread
+	  uses only ECC (P-256) for ECDSA and EC-JPAKE and never RSA, so it can be
+	  turned off on Thread-only builds to save Flash. It is given a prompt (and
+	  hence is overridable from a board/application .conf) specifically so that
+	  it can be disabled; the other SGI PKC components remain promptless because
+	  they are needed by the Thread crypto path.
 
 config SGI_PKC_FFDH
 	bool
@@ -258,10 +265,10 @@ config SGI_PKC_TRNG
 config SGI_PKC_KDF_MODES
 	bool
 	default y
-	depends on SGI_PKC_PLATFORM_MCXA5
+	depends on SGI_PKC_PLATFORM_MCXA5 || SGI_PKC_PLATFORM_MCXW
 	help
 	  KDF modes (HKDF, SP800-108, SP800-56C, PBKDF2) component.
-	  Only available on MCXA5xx platforms.
+	  Available on MCXA5xx and MCXW7xx (W70) platforms.
 
 config SGI_PKC_XOF
 	bool
@@ -288,7 +295,10 @@ config SGI_PKC_CRC
 config SGI_PKC_GLIKEY
 	bool
 	default y
+	depends on !SGI_PKC_PLATFORM_MCXW
 	help
 	  Glikey component for key management.
+	  Not available on MCXW7xx (W70): the mcxw platform has no GLIKEY_Type
+	  (MCUXCL_FEATURE_GLIKEY is not defined for this platform).
 
 endif # SGI_PKC
