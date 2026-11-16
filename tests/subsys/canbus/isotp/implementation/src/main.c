@@ -408,6 +408,120 @@ ZTEST(isotp_implementation, test_buffer_allocation_wait)
 	isotp_unbind(&recv_ctx);
 }
 
+static void send_raw_frame(uint32_t id, uint8_t pci, uint8_t length)
+{
+	struct can_frame frame = {
+		.id = id,
+		.dlc = 8U,
+		.data = {pci, length},
+	};
+	int ret;
+
+	ret = can_send(can_dev, &frame, K_MSEC(1000), NULL, NULL);
+	zassert_equal(ret, 0, "Sending frame failed (%d)", ret);
+}
+
+static void send_frame_expect_fc(const struct isotp_recv_ctx *ctx, uint8_t pci, uint8_t length,
+				 uint8_t expected_fc)
+{
+	struct can_filter filter = {
+		.id = ctx->tx_addr.std_id,
+		.mask = CAN_STD_ID_MASK,
+	};
+	struct can_frame frame;
+	struct k_msgq msgq;
+	char msgq_buffer[sizeof(frame)];
+	int filter_id;
+	int ret;
+
+	k_msgq_init(&msgq, msgq_buffer, sizeof(frame), 1U);
+	filter_id = can_add_rx_filter_msgq(can_dev, &msgq, &filter);
+	zassert_true(filter_id >= 0, "Adding FC filter failed (%d)", filter_id);
+
+	send_raw_frame(ctx->rx_addr.std_id, pci, length);
+	ret = k_msgq_get(&msgq, &frame, K_MSEC(1000));
+	can_remove_rx_filter(can_dev, filter_id);
+	zassert_equal(ret, 0, "No FC received (%d)", ret);
+	zassert_equal(frame.data[0], expected_fc, "Unexpected flow control status");
+}
+
+ZTEST(isotp_implementation, test_ff_handoff_unbind)
+{
+	static struct isotp_recv_ctx contexts[3];
+	const struct isotp_msg_id holder_rx = {.std_id = 0x20U};
+	const struct isotp_msg_id holder_tx = {.std_id = 0x21U};
+	const struct isotp_msg_id other_rx = {.std_id = 0x30U};
+	const struct isotp_msg_id other_tx = {.std_id = 0x31U};
+	const struct isotp_fc_opts opts = {.bs = 1U};
+	struct k_work_sync sync;
+	struct net_buf *buf;
+	int ret;
+
+	ret = can_get_max_filters(can_dev, false);
+	if (ret == -ENOSYS || (ret >= 0 && ret < 3)) {
+		ztest_test_skip();
+	}
+	zassert_true(ret >= 3, "Querying RX filter capacity failed (%d)", ret);
+
+	memset(contexts, 0, sizeof(contexts));
+
+	/* An incomplete unblocked transfer holds both RX data buffers. */
+	ret = isotp_bind(&contexts[0], can_dev, &holder_rx, &holder_tx, &fc_opts_single,
+			 K_NO_WAIT);
+	zassert_equal(ret, 0, "Binding holder failed (%d)", ret);
+	send_frame_expect_fc(&contexts[0], 0x10U, 100U, 0x30U);
+	send_raw_frame(holder_rx.std_id, 0x21U, 0U);
+
+	ret = isotp_bind(&contexts[1], can_dev, &rx_addr, &tx_addr, &opts, K_NO_WAIT);
+	zassert_equal(ret, 0, "Binding receiver failed (%d)", ret);
+	send_raw_frame(rx_addr.std_id, 0x10U, 100U);
+	ret = isotp_recv_net(&contexts[1], &buf, K_MSEC(1000));
+	zassert_equal(ret, 94, "Unexpected remaining length (%d)", ret);
+	(void)k_work_flush(&contexts[1].work, &sync);
+
+	/* The next binding reuses the FF buffer released by the reader. */
+	net_buf_unref(buf);
+	ret = isotp_bind(&contexts[2], can_dev, &other_rx, &other_tx, &opts, K_NO_WAIT);
+	zassert_equal(ret, 0, "Binding new owner failed (%d)", ret);
+	isotp_unbind(&contexts[1]);
+	zassert_equal(contexts[2].buf->ref, 1U, "Unbind released another context's buffer");
+
+	isotp_unbind(&contexts[2]);
+	isotp_unbind(&contexts[0]);
+}
+
+ZTEST(isotp_implementation, test_cf_handoff_unbind)
+{
+	static struct isotp_recv_ctx ctx;
+	const struct isotp_fc_opts opts = {.bs = 1U};
+	struct k_work_sync sync;
+	struct net_buf *ff;
+	struct net_buf *blocks[2];
+	int ret;
+
+	memset(&ctx, 0, sizeof(ctx));
+	ret = isotp_bind(&ctx, can_dev, &rx_addr, &tx_addr, &opts, K_NO_WAIT);
+	zassert_equal(ret, 0, "Binding receiver failed (%d)", ret);
+	send_frame_expect_fc(&ctx, 0x10U, 100U, 0x30U);
+	ret = isotp_recv_net(&ctx, &ff, K_MSEC(1000));
+	zassert_equal(ret, 94, "Unexpected remaining length (%d)", ret);
+	net_buf_unref(ff);
+
+	/* Retain both blocks so allocating the next block fails. */
+	ARRAY_FOR_EACH(blocks, i) {
+		send_frame_expect_fc(&ctx, 0x21U + i, 0U, i == 0U ? 0x30U : 0x31U);
+		ret = isotp_recv_net(&ctx, &blocks[i], K_MSEC(1000));
+		zassert_equal(ret, 94 - 7 * (i + 1), "Unexpected remaining length (%d)", ret);
+		(void)k_work_flush(&ctx.work, &sync);
+	}
+
+	isotp_unbind(&ctx);
+	ARRAY_FOR_EACH(blocks, i) {
+		zassert_equal(blocks[i]->ref, 1U, "Unbind released a reader-owned block");
+		net_buf_unref(blocks[i]);
+	}
+}
+
 void *isotp_implementation_setup(void)
 {
 	int ret;
