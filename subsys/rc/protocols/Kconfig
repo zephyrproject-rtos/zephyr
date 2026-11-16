@@ -22,4 +22,10 @@ config RC_PROTOCOL_RC6
 	  Decoder and encoder for Philips RC6 mode 0, mode 6A with 20, 24 and
 	  32 bits, and the MCE variant of 6A 32 bit.
 
+config RC_PROTOCOL_SONY
+	bool "Sony protocol"
+	default y
+	help
+	  Decoder and encoder for Sony SIRC with 12, 15 and 20 bits.
+
 endmenu

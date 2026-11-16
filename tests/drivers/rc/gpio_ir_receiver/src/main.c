@@ -21,8 +21,6 @@
 #define QUIET_MS         50
 /* Edges are timed in simulated time: only conversion rounding remains */
 #define TOL_US           2U
-/* Longest enabled min_timeout_us (NEC) plus the core margin of 10 ms */
-#define AUTO_TIMEOUT_US  (5625U + 10000U)
 
 struct ir_rx {
 	const struct device *dev;
@@ -87,6 +85,20 @@ static void evt_cb(const struct device *dev, const struct rc_event *evt, void *u
 RC_CALLBACK_DEFINE(DEVICE_DT_GET(DT_NODELABEL(rc_rx_high)), evt_cb, NULL);
 
 static rtio_sqe_handle_t stream;
+
+/* Longest min_timeout_us of the built decoders plus the core margin of 10 ms */
+static uint32_t auto_timeout_us(void)
+{
+	uint32_t us = 0U;
+
+	STRUCT_SECTION_FOREACH(rc_protocol, p) {
+		if (p->decode != NULL) {
+			us = MAX(us, p->min_timeout_us);
+		}
+	}
+
+	return us + 10000U;
+}
 
 static void level(const struct ir_rx *rx, bool active)
 {
@@ -169,7 +181,7 @@ static void check_durations(const struct ir_rx *rx)
 	level(rx, true);
 	k_busy_wait(560);
 	level(rx, false);
-	k_msleep(2 * AUTO_TIMEOUT_US / USEC_PER_MSEC);
+	k_msleep(2 * auto_timeout_us() / USEC_PER_MSEC);
 
 	n = collect(words, ARRAY_SIZE(words));
 	stop(rx);
@@ -180,7 +192,7 @@ static void check_durations(const struct ir_rx *rx)
 	expect_word(words[2], true, 560);
 	zassert_true((words[3] & RC_RAW_TIMEOUT) != 0U, "word 0x%08x", words[3]);
 	zassert_false(rc_raw_is_pulse(words[3]));
-	zassert_true(rc_raw_duration_us(words[3]) >= AUTO_TIMEOUT_US, "timeout %u us",
+	zassert_true(rc_raw_duration_us(words[3]) >= auto_timeout_us(), "timeout %u us",
 		     rc_raw_duration_us(words[3]));
 }
 
@@ -231,7 +243,7 @@ ZTEST(rc_gpio_ir, test_nec)
 	zassert_equal(evt.proto, RC_PROTO_NEC);
 	zassert_equal(evt.scancode, 0x1234U, "scancode 0x%x", evt.scancode);
 	zassert_equal(evt.flags, 0U);
-	k_msleep(2 * AUTO_TIMEOUT_US / USEC_PER_MSEC);
+	k_msleep(2 * auto_timeout_us() / USEC_PER_MSEC);
 	(void)collect(words, ARRAY_SIZE(words));
 	stop(&rx_high);
 }
@@ -247,7 +259,7 @@ ZTEST(rc_gpio_ir, test_rx_disabled)
 		k_busy_wait(500);
 	}
 	level(&rx_high, false);
-	k_msleep(2 * AUTO_TIMEOUT_US / USEC_PER_MSEC);
+	k_msleep(2 * auto_timeout_us() / USEC_PER_MSEC);
 
 	zassert_equal(collect(words, ARRAY_SIZE(words)), 0U);
 	stop(&rx_high);
@@ -272,7 +284,7 @@ ZTEST(rc_gpio_ir, test_overflow)
 	level(&rx_high, true);
 	k_busy_wait(300);
 	level(&rx_high, false);
-	k_msleep(2 * AUTO_TIMEOUT_US / USEC_PER_MSEC);
+	k_msleep(2 * auto_timeout_us() / USEC_PER_MSEC);
 
 	n = collect(words, ARRAY_SIZE(words));
 	stop(&rx_high);
