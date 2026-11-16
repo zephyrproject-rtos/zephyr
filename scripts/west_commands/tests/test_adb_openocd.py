@@ -1,5 +1,4 @@
-# Copyright (c) 2026 The Zephyr Project Contributors
-#
+# SPDX-FileCopyrightText: Copyright (c) 2026 Canonical Limited
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
