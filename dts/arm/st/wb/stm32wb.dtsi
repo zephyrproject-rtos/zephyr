@@ -236,6 +236,11 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 26)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			status = "disabled";
+
+			usb_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		lptim1: timers@40007c00 {
@@ -676,11 +681,6 @@
 		ratio = <3>;
 		io-channels = <&adc1 18>;
 		status = "disabled";
-	};
-
-	usb_fs_phy: usbphy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	ble_rf: ble_rf {

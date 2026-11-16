@@ -20,11 +20,11 @@
 				 <&rcc STM32_SRC_HSI48 ICKLK_SEL(0)>;
 			phys = <&usb_fs_phy>;
 			status = "disabled";
-		};
-	};
 
-	usb_fs_phy: usb_fs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
+			usb_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
+		};
 	};
 };

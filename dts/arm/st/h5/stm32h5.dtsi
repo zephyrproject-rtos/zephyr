@@ -470,6 +470,11 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 24)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			status = "disabled";
+
+			usb_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		gpdma1: dma@40020000 {
@@ -847,11 +852,6 @@
 		compatible = "st,stm32-vddcore";
 		io-channels = <&adc1 6>;
 		status = "disabled";
-	};
-
-	usb_fs_phy: usbphy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	smbus1: smbus1 {

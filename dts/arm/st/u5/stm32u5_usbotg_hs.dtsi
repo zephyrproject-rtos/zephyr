@@ -20,14 +20,14 @@
 			clocks = <&rcc STM32_CLOCK(AHB2, 14)>;
 			phys = <&otghs_phy>;
 			status = "disabled";
-		};
-	};
 
-	otghs_phy: otghs_phy {
-		compatible = "st,stm32u5-otghs-phy";
-		clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
-			 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
-		#phy-cells = <0>;
-		status = "disabled";
+			otghs_phy: usb-phy {
+				compatible = "st,stm32u5-otghs-phy";
+				clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
+					 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
+				#phy-cells = <0>;
+				status = "disabled";
+			};
+		};
 	};
 };

@@ -190,6 +190,11 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 29)>,
 				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			status = "disabled";
+
+			otghs_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		usbotg_fs: usb@50000000 {
@@ -232,10 +237,5 @@
 
 	die_temp: dietemp {
 		io-channels = <&adc1 18>;
-	};
-
-	otghs_fs_phy: otghs_fs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 };

@@ -198,6 +198,11 @@
 			phys = <&usb_fs_phy>;
 			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
 			status = "disabled";
+
+			usb_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		can1: can@40006400 {
@@ -477,11 +482,6 @@
 		ratio = <2>;
 		io-channels = <&adc1 17>;
 		status = "disabled";
-	};
-
-	usb_fs_phy: usbphy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	smbus1: smbus1 {

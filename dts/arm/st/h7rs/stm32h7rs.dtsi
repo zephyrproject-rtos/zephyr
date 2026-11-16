@@ -647,6 +647,16 @@
 			phys = <&usbphyc>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 25)>;
 			status = "disabled";
+
+			usbphyc: usb-phy {
+				compatible = "st,stm32-usbphyc";
+				#phy-cells = <0>;
+				clocks = <&rcc STM32_CLOCK(AHB1, 26)>,
+					 <&rcc STM32_SRC_HSE USBPHYC_SEL(0)>,
+					 <&rcc STM32_SRC_HSE USBREFCK_SEL(10)>;
+				clock-names = "gate", "mux", "fsel";
+				status = "disabled";
+			};
 		};
 
 		usbotg_fs: usb@40080000 {
@@ -661,6 +671,11 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 27)>,
 				 <&rcc STM32_SRC_HSI48 OTGFS_SEL(0)>;
 			status = "disabled";
+
+			otgfs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		timers1: timers@42000000 {
@@ -1320,21 +1335,6 @@
 		vddxspi2 {
 			domain = <STM32_DT_IOCELL_XSPI2>;
 		};
-	};
-
-	otgfs_phy: otgfs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
-	};
-
-	usbphyc: usbphyc {
-		compatible = "st,stm32-usbphyc";
-		#phy-cells = <0>;
-		clocks = <&rcc STM32_CLOCK(AHB1, 26)>,
-			 <&rcc STM32_SRC_HSE USBPHYC_SEL(0)>,
-			 <&rcc STM32_SRC_HSE USBREFCK_SEL(10)>;
-		clock-names = "gate", "mux", "fsel";
-		status = "disabled";
 	};
 
 	die_temp: dietemp {

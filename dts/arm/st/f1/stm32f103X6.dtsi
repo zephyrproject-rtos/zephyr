@@ -20,6 +20,11 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
 			phys = <&usb_fs_phy>;
 			status = "disabled";
+
+			usb_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		can1: can@40006400 {
@@ -38,11 +43,6 @@
 				erase-block-size = <DT_SIZE_K(1)>;
 			};
 		};
-	};
-
-	usb_fs_phy: usbphy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	sram0: memory@20000000 {

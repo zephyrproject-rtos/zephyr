@@ -540,6 +540,11 @@
 				 <&rcc STM32_SRC_HSI48 ICLK_SEL(0)>;
 			phys = <&usb_fs_phy>;
 			status = "disabled";
+
+			usb_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		i3c2: i3c@40016c00 {
@@ -929,11 +934,6 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-	};
-
-	usb_fs_phy: usb_fs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	sram0: memory@20000000 {

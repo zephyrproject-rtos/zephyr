@@ -674,6 +674,11 @@
 			clocks = <&rcc STM32_CLOCK(AHB2, 7)>,
 				 <&rcc STM32_SRC_PLL_Q NO_SEL>;
 			status = "disabled";
+
+			otgfs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 	};
 
@@ -701,11 +706,6 @@
 		ratio = <4>;
 		io-channels = <&adc1 18>;
 		status = "disabled";
-	};
-
-	otgfs_phy: otgfs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	smbus1: smbus1 {

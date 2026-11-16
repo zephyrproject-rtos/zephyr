@@ -458,6 +458,11 @@
 				 <&rcc STM32_SRC_CK48 NO_SEL>;
 			phys = <&usb_fs_phy>;
 			status = "disabled";
+
+			usb_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		lpdma1: dma@40020000 {
@@ -816,11 +821,6 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-	};
-
-	usb_fs_phy: usb_fs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	die_temp: dietemp {

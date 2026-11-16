@@ -180,6 +180,11 @@
 				 <&rcc STM32_SRC_HSI48 OTGFS_SEL(0)>;
 			phys = <&otgfs_phy>;
 			status = "disabled";
+
+			otgfs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		dma2d: dma@5002a000 {
@@ -204,12 +209,5 @@
 
 	vref: vref {
 		io-channels = <&adc3 17>;
-	};
-
-	/delete-node/ usbphy;
-
-	otgfs_phy: otgfs-phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 };

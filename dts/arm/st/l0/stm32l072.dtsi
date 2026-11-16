@@ -35,6 +35,11 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 23)>,
 				 <&rcc STM32_SRC_HSI48 HSI48_SEL(1)>;
 			status = "disabled";
+
+			otgfs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		rng: rng@40025000 {
@@ -44,11 +49,6 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 20)>;
 			status = "disabled";
 		};
-	};
-
-	otgfs_phy: otgfs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	dac1: dac@40007400 {

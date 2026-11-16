@@ -31,6 +31,11 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 23)>,
 				 <&rcc STM32_SRC_PLLCLK USB_SEL(1)>;
 			status = "disabled";
+
+			usb_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		timers15: timers@40014000 {
@@ -55,10 +60,5 @@
 				status = "disabled";
 			};
 		};
-	};
-
-	usb_fs_phy: usbphy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 };

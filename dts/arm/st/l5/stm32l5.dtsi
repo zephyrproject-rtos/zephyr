@@ -403,6 +403,11 @@
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			phys = <&usb_fs_phy>;
 			status = "disabled";
+
+			usb_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		ucpd1: ucpd@4000dc00 {
@@ -985,11 +990,6 @@
 		ratio = <3>;
 		io-channels = <&adc1 18>;
 		status = "disabled";
-	};
-
-	usb_fs_phy: usbphy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	smbus1: smbus1 {

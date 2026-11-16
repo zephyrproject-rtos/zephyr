@@ -794,6 +794,11 @@
 				 <&rcc STM32_SRC_PLL_Q NO_SEL>;
 			phys = <&otgfs_phy>;
 			status = "disabled";
+
+			otgfs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		rng: rng@50060800 {
@@ -811,11 +816,6 @@
 		avgslope = "2.5";
 		v25 = <760>;
 		status = "disabled";
-	};
-
-	otgfs_phy: otgfs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	smbus1: smbus1 {
