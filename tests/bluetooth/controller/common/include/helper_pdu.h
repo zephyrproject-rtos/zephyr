@@ -47,6 +47,8 @@ void helper_pdu_encode_channel_map_update_ind(struct pdu_data *pdu, void *param)
 
 void helper_pdu_encode_length_req(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_length_rsp(struct pdu_data *pdu, void *param);
+void helper_pdu_encode_fsu_req(struct pdu_data *pdu, void *param);
+void helper_pdu_encode_fsu_rsp(struct pdu_data *pdu, void *param);
 
 void helper_pdu_encode_cte_req(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_cte_rsp(struct pdu_data *pdu, void *param);
@@ -136,6 +138,10 @@ void helper_pdu_verify_length_req(const char *file, uint32_t line, struct pdu_da
 				  void *param);
 void helper_pdu_verify_length_rsp(const char *file, uint32_t line, struct pdu_data *pdu,
 				  void *param);
+void helper_pdu_verify_fsu_req(const char *file, uint32_t line, struct pdu_data *pdu,
+			       void *param);
+void helper_pdu_verify_fsu_rsp(const char *file, uint32_t line, struct pdu_data *pdu,
+			       void *param);
 
 void helper_pdu_verify_cte_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 void helper_pdu_verify_cte_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
@@ -199,6 +205,8 @@ enum helper_pdu_opcode {
 	LL_CIS_IND,
 	LL_CIS_TERMINATE_IND,
 	LL_PERIODIC_SYNC_IND,
+	LL_FRAME_SPACE_REQ,
+	LL_FRAME_SPACE_RSP,
 	LL_ZERO,
 };
 
