@@ -25,27 +25,27 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
-			device_type = "cpu";
 			cpu-power-states = <&idle &suspend>;
+			device_type = "cpu";
 		};
 
 		power-states {
 			/* Sleep Mode */
 			idle: idle {
 				compatible = "zephyr,power-state";
-				power-state-name = "runtime-idle";
-				min-residency-us = <50>;
 				/* Typical value is 0.847us as per of Datasheet */
 				exit-latency-us = <1>;
+				min-residency-us = <50>;
+				power-state-name = "runtime-idle";
 			};
 
 			/* Deep-sleep Mode */
 			suspend: suspend {
 				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				min-residency-us = <200>;
 				/* Typical value is 12.4us as per of Datasheet */
 				exit-latency-us = <25>;
+				min-residency-us = <200>;
+				power-state-name = "suspend-to-idle";
 			};
 		};
 
@@ -53,9 +53,9 @@
 			compatible = "adi,max32-rv32", "riscv";
 			reg = <1>;
 			device_type = "cpu";
+			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "c", "zicsr";
 			riscv,isa-omissions = "fence";
-			riscv,isa-base = "rv32i";
 			status = "disabled";
 		};
 	};
@@ -105,6 +105,7 @@
 	};
 
 	soc {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -120,8 +121,8 @@
 		wdt0: watchdog@40003000 {
 			compatible = "adi,max32-watchdog";
 			reg = <0x40003000 0x400>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 27>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 27>;
 			status = "disabled";
 		};
 
@@ -140,18 +141,18 @@
 			gpio0: gpio@40008000 {
 				compatible = "adi,max32-gpio";
 				reg = <0x40008000 0x1000>;
-				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&gcr ADI_MAX32_CLOCK_BUS0 0>;
+				gpio-controller;
 				status = "disabled";
 			};
 
 			gpio1: gpio@40009000 {
 				compatible = "adi,max32-gpio";
 				reg = <0x40009000 0x1000>;
-				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&gcr ADI_MAX32_CLOCK_BUS0 1>;
+				gpio-controller;
 				status = "disabled";
 			};
 		};
@@ -159,8 +160,8 @@
 		timer0: timer@40010000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40010000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 15>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 15>;
 			prescaler = <1>;
 			status = "disabled";
 
@@ -179,8 +180,8 @@
 		timer1: timer@40011000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40011000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 16>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 16>;
 			prescaler = <1>;
 			status = "disabled";
 
@@ -199,8 +200,8 @@
 		timer2: timer@40012000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40012000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 17>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 17>;
 			prescaler = <1>;
 			status = "disabled";
 
@@ -219,8 +220,8 @@
 		timer3: timer@40013000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40013000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 18>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 18>;
 			prescaler = <1>;
 			status = "disabled";
 
@@ -269,6 +270,7 @@
 		flc0: flash_controller@40029000 {
 			compatible = "adi,max32-flash-controller";
 			reg = <0x40029000 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -280,17 +282,17 @@
 				ranges = <0x0 0x10000000 DT_SIZE_K(512)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				write-block-size = <16>;
 				erase-block-size = <8192>;
+				write-block-size = <16>;
 			};
 		};
 
 		adc: adc@40034000 {
 			compatible = "adi,max32-adc-10b", "adi,max32-adc";
 			reg = <0x40034000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 23>;
-			channel-count = <17>;
 			#io-channel-cells = <1>;
+			channel-count = <17>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 23>;
 			resolution = <10>;
 			vref-mv = <1220>;
 			status = "disabled";
@@ -299,32 +301,32 @@
 		mbox: mbox@4003e000 {
 			compatible = "adi,mbox-max32-sema";
 			reg = <0x4003e000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 9>;
 			#mbox-cells = <1>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 9>;
 			status = "disabled";
 		};
 
 		uart0: serial@40042000 {
 			compatible = "adi,max32-uart";
 			reg = <0x40042000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 9>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 9>;
 			status = "disabled";
 		};
 
 		uart1: serial@40043000 {
 			compatible = "adi,max32-uart";
 			reg = <0x40043000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 10>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 10>;
 			status = "disabled";
 		};
 
 		uart2: serial@40044000 {
 			compatible = "adi,max32-uart";
 			reg = <0x40044000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 1>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 1>;
 			status = "disabled";
 		};
 
