@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
 
 / {
-	model = "Seeed Studio XIAO nRF52840 Sense Plus";
 	compatible = "seeed,xiao-nrf52840-plus", "seeed,xiao-nrf52840-sense-plus";
+	model = "Seeed Studio XIAO nRF52840 Sense Plus";
 
 	msm261d3526hicpm-c-en {
 		compatible = "regulator-fixed";
@@ -33,12 +33,12 @@
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
-	/* Cannot be used together with spi0. */
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	/* Cannot be used together with spi0. */
+	status = "okay";
 
 	lsm6ds3tr_c: lsm6ds3tr-c@6a {
 		compatible = "st,lsm6dsl";

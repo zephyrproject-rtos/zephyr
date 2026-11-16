@@ -37,7 +37,6 @@
 &acmp0 {
 	pinctrl-0 = <&acmp0_default>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	positive-mux-input = "IN1"; /* INA_3V[1] = PIO3_4 */
 	negative-mux-input = "IN7"; /* DAC output */
@@ -48,4 +47,5 @@
 	dac-vref-source = "VIN1"; /* VDDA_1V8_DATACONV */
 	dac-value = <127>;
 	dac-enable;
+	status = "okay";
 };

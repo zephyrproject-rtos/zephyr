@@ -11,8 +11,8 @@
 #include "fastbit_stm32_nano_connector.dtsi"
 
 / {
-	model = "Fastbit STM32 Nano board";
 	compatible = "fastbit,stm32-nano";
+	model = "Fastbit STM32 Nano board";
 
 	chosen {
 		zephyr,console = &usart1;
