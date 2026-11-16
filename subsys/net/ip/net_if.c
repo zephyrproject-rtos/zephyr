@@ -452,6 +452,12 @@ static inline void init_iface(struct net_if *iface)
 
 	NET_ASSERT(dev != NULL);
 
+	/* The interface stays in the list when its device is not ready, and
+	 * code that walks all interfaces still takes these locks.
+	 */
+	k_mutex_init(&iface->lock);
+	k_mutex_init(&iface->tx_lock);
+
 	if (!device_is_ready(dev)) {
 		NET_ERR("Iface %p device not ready", iface);
 		return;
@@ -478,9 +484,6 @@ static inline void init_iface(struct net_if *iface)
 #ifdef CONFIG_USERSPACE
 	k_object_init(iface);
 #endif
-
-	k_mutex_init(&iface->lock);
-	k_mutex_init(&iface->tx_lock);
 
 	api->init(iface);
 
