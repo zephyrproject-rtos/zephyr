@@ -887,10 +887,20 @@
 		};
 
 		otpc: efuse@e8c00000 {
-			compatible = "microchip,sama7g5-otpc";
+			compatible = "microchip,otpc-g1-otp";
 			reg = <0xe8c00000 0x100>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			otp-memory-size = <DT_SIZE_K(11)>;
+			emul-sram-size = <DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "disabled";
+
+			/* Temp calib data packet TAG */
+			temperature_calib: calib@41435354 {
+				reg = <0x41435354 0x48>;
+			};
 		};
 
 		hwinfo: device_id@e8c00060 {
