@@ -780,16 +780,20 @@ static inline void init_thread_name(struct k_thread *thread, const char *name)
 }
 
 /* Set the thread's initial SMP CPU affinity mask. */
-static inline void init_thread_cpu_mask(struct k_thread *thread)
+static inline void init_thread_cpu_mask(struct k_thread *thread, k_thread_entry_t entry)
 {
 #ifdef CONFIG_SCHED_CPU_MASK
 	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
 		thread->base.cpu_mask = 1; /* must specify only one cpu */
+	} else if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU) &&
+		   !z_is_idle_thread_entry(entry)) {
+		thread->base.cpu_mask = BIT(0); /* default to logical cpu 0 */
 	} else {
 		thread->base.cpu_mask = -1; /* allow all cpus */
 	}
 #else
 	ARG_UNUSED(thread);
+	ARG_UNUSED(entry);
 #endif /* CONFIG_SCHED_CPU_MASK */
 }
 
@@ -902,7 +906,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	init_thread_custom_data(new_thread);
 	add_thread_to_monitor(new_thread, entry, p1, p2, p3);
 	init_thread_name(new_thread, name);
-	init_thread_cpu_mask(new_thread);
+	init_thread_cpu_mask(new_thread, entry);
 	init_thread_from_parent(new_thread, _current, options);
 
 	/* _current may be NULL if the dummy thread is not used */
