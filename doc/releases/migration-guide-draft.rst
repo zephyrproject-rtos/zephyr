@@ -329,6 +329,18 @@ Timers
   ``z_cms_lptim_hook_on_lpm_entry`` and ``z_cms_lptim_hook_on_lpm_exit`` with
   :c:func:`z_sys_clock_lpm_enter` and :c:func:`z_sys_clock_lpm_exit`, respectively. (:github:`124238`).
 
+USB
+===
+
+* The USB MIDI 2.0 device class API version is now 0.2.0.
+  :c:member:`usbd_midi_ops.ready_cb` has been replaced by
+  :c:member:`usbd_midi_ops.status_changed_cb`, which reports
+  :c:enum:`usbd_midi_status` instead of a boolean. Treat
+  ``USBD_MIDI_STATUS_DISABLED`` as the previous ``ready == false`` case, and
+  ``USBD_MIDI_STATUS_MIDI1`` / ``USBD_MIDI_STATUS_MIDI2`` as the interface being
+  enabled on the corresponding alternate. Use :c:func:`usbd_midi_get_status` to
+  query the current status. (:github:`99522`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth

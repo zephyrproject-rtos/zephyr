@@ -24,7 +24,7 @@ extern "C" {
  * @defgroup midi_ump MIDI2 Universal MIDI Packet definitions
  * @ingroup audio_interface
  * @since 4.1
- * @version 0.1.0
+ * @version 0.2.0
  * @{
  */
 
@@ -141,6 +141,22 @@ struct midi_ump {
  */
 #define UMP_MIDI1_P2(ump) \
 	((ump).data[0] & 0x7F)
+
+/**
+ * @brief      Status nibble of a 64-bit Data (SysEx) UMP
+ * @param[in]  ump    Universal MIDI Packet (containing a Data 64 message)
+ * @see ump112: 7.7 System Exclusive (7-Bit) Messages
+ */
+#define UMP_DATA64_STATUS(ump) \
+	(((ump).data[0] >> 20) & 0xF)
+
+/**
+ * @brief      Number of valid payload bytes in a 64-bit Data (SysEx) UMP
+ * @param[in]  ump    Universal MIDI Packet (containing a Data 64 message)
+ * @see ump112: 7.7 System Exclusive (7-Bit) Messages
+ */
+#define UMP_DATA64_LEN(ump) \
+	(((ump).data[0] >> 16) & 0xF)
 
 /**
  * @brief      Initialize a UMP with a MIDI1 channel voice message
