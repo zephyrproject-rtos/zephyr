@@ -278,7 +278,7 @@ static void receive_state_machine(struct isotp_recv_ctx *rctx)
 		ud_rem_len = net_buf_user_data(rctx->buf);
 		*ud_rem_len = 0;
 		LOG_DBG("SM process SF of length %d", rctx->length);
-		k_fifo_put(&rctx->fifo, rctx->buf);
+		k_fifo_put(&rctx->fifo, net_buf_take(&rctx->buf));
 		rctx->state = ISOTP_RX_STATE_RECYCLE;
 		receive_state_machine(rctx);
 		break;
@@ -300,7 +300,7 @@ static void receive_state_machine(struct isotp_recv_ctx *rctx)
 			rctx->bs = rctx->opts.bs;
 			ud_rem_len = net_buf_user_data(rctx->buf);
 			*ud_rem_len = rctx->length;
-			k_fifo_put(&rctx->fifo, rctx->buf);
+			k_fifo_put(&rctx->fifo, net_buf_take(&rctx->buf));
 		}
 
 		rctx->wft = ISOTP_WFT_FIRST;
@@ -551,7 +551,7 @@ static void process_cf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 	if (rctx->length == 0) {
 		rctx->state = ISOTP_RX_STATE_RECYCLE;
 		*ud_rem_len = 0;
-		k_fifo_put(&rctx->fifo, rctx->buf);
+		k_fifo_put(&rctx->fifo, net_buf_take(&rctx->buf));
 		return;
 	}
 
@@ -559,7 +559,7 @@ static void process_cf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 		LOG_DBG("Block is complete. Allocate new buffer");
 		rctx->bs = rctx->opts.bs;
 		*ud_rem_len = rctx->length;
-		k_fifo_put(&rctx->fifo, rctx->buf);
+		k_fifo_put(&rctx->fifo, net_buf_take(&rctx->buf));
 		rctx->state = ISOTP_RX_STATE_TRY_ALLOC;
 	}
 }
