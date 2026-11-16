@@ -84,7 +84,7 @@
 
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		reg = <0>;
+		reg = <0x0 0x0>;
 		ranges = <0x0 0x28000000 DT_SIZE_M(128)>;
 		size = <DT_SIZE_M(1024)>;
 		spi-max-frequency = <DT_FREQ_M(200)>;

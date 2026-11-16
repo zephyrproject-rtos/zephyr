@@ -159,7 +159,7 @@ arduino_i2c: &flexcomm2 {
 
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		reg = <0>;
+		reg = <0x0 0x0>;
 		ranges = <0x0 0x18000000 DT_SIZE_M(64)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
 		/* MX25UM51245G is 64MB, 512MBit flash part */
@@ -218,7 +218,7 @@ arduino_i2c: &flexcomm2 {
 
 	is66wvq8m4: is66wvq8m4@2 {
 		compatible = "nxp,imx-flexspi-is66wvq8m4";
-		reg = <2>;
+		reg = <0x2 0x0>;
 		/* IS66WVQ8M4 is 4MB, 32MBit pSRAM */
 		size = <DT_SIZE_M(32)>;
 		spi-max-frequency = <DT_FREQ_M(256)>;

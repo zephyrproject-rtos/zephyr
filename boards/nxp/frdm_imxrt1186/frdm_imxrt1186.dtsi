@@ -193,8 +193,8 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		reg = <0>;
-		ranges = <0x0 0x04000000 DT_SIZE_M(16)>;
+		reg = <0x0 0x0>;
+		ranges = <0x0 0x4000000 DT_SIZE_M(16)>;
 		size = <DT_SIZE_M(16*8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
 		jedec-id = [ef 40 18];

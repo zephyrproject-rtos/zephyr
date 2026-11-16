@@ -1292,6 +1292,9 @@ class Node:
 
     is_pci_device:
       True if the node is a PCI device.
+
+    is_spi_device:
+      True if the node is a SPI or OSPI device.
     """
 
     def __init__(
@@ -1697,6 +1700,11 @@ class Node:
     def is_pci_device(self) -> bool:
         "See the class docstring"
         return 'pcie' in self.on_buses
+
+    @property
+    def is_spi_device(self) -> bool:
+        "See the class docstring"
+        return 'spi' in self.on_buses or 'ospi' in self.on_buses or 'mspi' in self.on_buses
 
     def __repr__(self) -> str:
         if self.binding_path:
@@ -2280,8 +2288,8 @@ class Node:
                 size = None
             else:
                 size = to_num(raw_reg[4*address_cells:])
-            # Size zero is ok for PCI devices
-            if size_cells != 0 and size == 0 and not self.is_pci_device:
+            # Size zero is ok for PCI and SPI devices
+            if size_cells != 0 and size == 0 and not self.is_pci_device and not self.is_spi_device:
                 _err(f"zero-sized 'reg' in {self._node!r} seems meaningless "
                      "(maybe you want a size of one or #size-cells = 0 "
                      "instead)")

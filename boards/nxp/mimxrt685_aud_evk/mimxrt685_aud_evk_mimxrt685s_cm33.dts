@@ -96,7 +96,7 @@
 
 	mx25u51245g: flash-controller@2 {
 		compatible = "nxp,imx-flexspi-nor";
-		reg = <2>;
+		reg = <0x2 0x0>;
 		ranges = <0x0 0x18000000 DT_SIZE_M(64)>;
 		size = <DT_SIZE_M(64 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(96)>;

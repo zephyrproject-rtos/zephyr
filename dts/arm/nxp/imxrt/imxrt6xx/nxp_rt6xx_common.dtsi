@@ -639,6 +639,7 @@
 
 	flexspi: spi@134000 {
 		reg = <0x134000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
+		ranges = <0x18000000 0x18000000 DT_SIZE_M(128)>;
 		reg-names = "reg_base", "ahb";
 	};
 
@@ -741,7 +742,7 @@
 	compatible = "nxp,imx-flexspi";
 	interrupts = <42 0>;
 	#address-cells = <1>;
-	#size-cells = <0>;
+	#size-cells = <1>;
 	clocks = <&clkctl1 MCUX_FLEXSPI_CLK>;
 	status = "disabled";
 };

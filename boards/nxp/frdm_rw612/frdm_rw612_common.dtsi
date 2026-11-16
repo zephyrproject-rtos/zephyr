@@ -160,7 +160,7 @@ mikrobus_serial: &flexcomm0 {};
 	/* Winbond external flash */
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		reg = <0>;
+		reg = <0x0 0x0>;
 		ranges = <0x0 0x18000000 DT_SIZE_M(64)>;
 		size = <DT_SIZE_M(64 * 8)>;
 		power-domains = <&peripheral_domain>;
@@ -219,7 +219,7 @@ mikrobus_serial: &flexcomm0 {};
 
 	aps6404l: aps6404l@2 {
 		compatible = "nxp,imx-flexspi-aps6404l";
-		reg = <2>;
+		reg = <0x2 0x0>;
 		/* APS6404L is 8MB, 64MBit pSRAM */
 		size = <DT_SIZE_M(8 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(109)>;
@@ -244,7 +244,7 @@ mikrobus_serial: &flexcomm0 {};
 	 */
 	w25n01gv: w25n01gv@2 {
 		compatible = "nxp,imx-flexspi-nand";
-		reg = <2>; /* PortB1 */
+		reg = <0x2 0x0>; /* PortB1 */
 
 		/* W25N01GVZEIG: 1 Gbit = 128 MiB; DT size is in bits */
 		size = <DT_SIZE_M(128 * 8)>;

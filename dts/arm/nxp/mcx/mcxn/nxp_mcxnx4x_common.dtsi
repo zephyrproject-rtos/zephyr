@@ -1549,7 +1549,7 @@
 	compatible = "nxp,imx-flexspi";
 	interrupts = <58 0>;
 	#address-cells = <1>;
-	#size-cells = <0>;
+	#size-cells = <1>;
 	clocks = <&syscon MCUX_FLEXSPI_CLK>;
 	status = "disabled";
 };

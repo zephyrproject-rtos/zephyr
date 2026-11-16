@@ -1755,7 +1755,7 @@
 	compatible = "nxp,imx-flexspi";
 	interrupts = <55 0>;
 	#address-cells = <1>;
-	#size-cells = <0>;
+	#size-cells = <1>;
 	clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0>;
 	status = "disabled";
 };
@@ -1764,7 +1764,7 @@
 	compatible = "nxp,imx-flexspi";
 	interrupts = <56 0>;
 	#address-cells = <1>;
-	#size-cells = <0>;
+	#size-cells = <1>;
 	clocks = <&ccm IMX_CCM_FLEXSPI2_CLK 0x0 0>;
 	status = "disabled";
 };
