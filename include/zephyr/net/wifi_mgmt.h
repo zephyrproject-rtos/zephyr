@@ -340,6 +340,23 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_CONFIG);
 #ifdef CONFIG_WIFI_CREDENTIALS_CONNECT_STORED
+/**
+ * Request a Wi-Fi connect using the stored credentials.
+ *
+ * The stored networks are tried first, then the statically configured network, if any.
+ * It stops at the first network for which NET_REQUEST_WIFI_CONNECT returns 0.
+ * The connection result is reported later with NET_EVENT_WIFI_CONNECT_RESULT.
+ *
+ * When a network manager is used, call this only after it manages the interface.
+ * For example, after the interface goes admin-up, wait for NET_EVENT_SUPPLICANT_IFACE_ADDED.
+ * Otherwise, the request fails with -ENOTSUP.
+ *
+ * @ref net_mgmt() returns:
+ * - 0 - A connect request was sent, or no credentials are stored. Some drivers
+ *   also return 0 when they are already connected or connecting.
+ * - Negative error code - NET_REQUEST_WIFI_CONNECT failed for all networks tried.
+ *   This is the code from errno.h returned for the last network tried, such as -ENOTSUP.
+ */
 #define NET_REQUEST_WIFI_CONNECT_STORED (NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CONNECT_STORED)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT_STORED);
