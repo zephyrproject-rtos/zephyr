@@ -19,7 +19,7 @@ tests:
       - CONFIG_TEST=y
     harness_config:
       pytest_dut_scope: session
-      fixture: fixture_display_g1120b0mipi
+      fixture: fixture_display_capture
       display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
   drivers.display.check.st_b_lcd40_dsi1_mb1166:
     filter: dt_compat_enabled("orisetech,otm8009a")
@@ -29,7 +29,7 @@ tests:
       - stm32f769i_disco
     extra_args: SHIELD=st_b_lcd40_dsi1_mb1166
     harness_config:
-      fixture: fixture_display
+      fixture: fixture_display_capture
       pytest_dut_scope: session
       display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
   drivers.display.check.st_b_lcd40_dsi1_mb1166_a09:
@@ -37,7 +37,7 @@ tests:
     platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args: SHIELD=st_b_lcd40_dsi1_mb1166_a09
     harness_config:
-      fixture: fixture_display
+      fixture: fixture_display_capture
       pytest_dut_scope: session
       display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
   drivers.display.check.rk043fn02h_ct:
@@ -52,14 +52,14 @@ tests:
       - mimxrt1040_evk
     extra_args: SHIELD=rk043fn02h_ct
     harness_config:
-      fixture: fixture_display
+      fixture: fixture_display_capture
       pytest_dut_scope: session
       display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
   drivers.display.check.st_b_dsi_mb1314:
     platform_allow: stm32l4r9i_disco
     extra_args: SHIELD=st_b_dsi_mb1314
     harness_config:
-      fixture: fixture_display
+      fixture: fixture_display_capture
       pytest_dut_scope: session
       display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
   drivers.display.check.shield:
@@ -71,7 +71,7 @@ tests:
     filter: dt_chosen_enabled("zephyr,display")
     timeout: 120
     harness_config:
-      fixture: fixture_display
+      fixture: fixture_display_capture
       pytest_dut_scope: session
       display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
     extra_args:

@@ -24,6 +24,9 @@ The display capture harness requires:
 - PC host with camera connection for capturing display output
 - DUT connected to the same PC for flashing and serial console access
 
+Test scenarios using this harness require the ``fixture_display_capture`` fixture, which should be
+listed in the hardware map only for DUTs with such a setup.
+
 Configuration
 =============
 
@@ -136,7 +139,7 @@ environment variable:
     harness: display_capture
     harness_config:
       pytest_dut_scope: session
-      fixture: fixture_display
+      fixture: fixture_display_capture
       display_capture_config: "${DISPLAY_TEST_DIR}/display_config.yaml"
 
 Workflow
