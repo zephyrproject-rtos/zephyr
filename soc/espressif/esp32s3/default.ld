@@ -1250,6 +1250,22 @@ ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
           "DRAM segment data does not fit.")
 
 #if defined(CONFIG_ESP_SPIRAM)
-ASSERT(((_ext_ram_end - _ext_ram_start) <= CONFIG_ESP_SPIRAM_SIZE),
+/* The flash .rodata and .text pages copied to the PSRAM take its first pages */
+#if defined(CONFIG_SPIRAM_RODATA)
+#define SPIRAM_RODATA_COPY_SIZE \
+  (ALIGN(_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE) - \
+   (_rodata_reserved_start & ~(CONFIG_MMU_PAGE_SIZE - 1)))
+#else
+#define SPIRAM_RODATA_COPY_SIZE 0
+#endif
+#if defined(CONFIG_SPIRAM_FETCH_INSTRUCTIONS)
+#define SPIRAM_TEXT_COPY_SIZE \
+  (ALIGN(_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE) - \
+   (_instruction_reserved_start & ~(CONFIG_MMU_PAGE_SIZE - 1)))
+#else
+#define SPIRAM_TEXT_COPY_SIZE 0
+#endif
+ASSERT(((_ext_ram_end - _ext_ram_start) + SPIRAM_RODATA_COPY_SIZE + SPIRAM_TEXT_COPY_SIZE
+          <= CONFIG_ESP_SPIRAM_SIZE),
           "External SPIRAM overflowed.")
 #endif
