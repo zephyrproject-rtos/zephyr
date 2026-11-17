@@ -65,8 +65,12 @@ struct i2s_stm32_stream {
 struct i2s_stm32_data {
 	struct i2s_stm32_stream rx;
 	struct i2s_stm32_stream tx;
-	/* Both directions were configured together with I2S_DIR_BOTH */
+	/* Both directions are configured with the same clock, format and role */
 	bool fd_configured;
+	/* Stop the RX when the TX drain is done (DRAIN on I2S_DIR_BOTH) */
+	bool rx_drain_with_tx;
+	/* The first direction of a joint start is armed, the peripheral is not enabled yet */
+	bool fd_arming;
 	/* The peripheral runs in full duplex mode, shared by both streams */
 	bool fd_active;
 	/* DMA source and target of an idle direction, see i2s_stm32_fd_idle_dma_start() */
