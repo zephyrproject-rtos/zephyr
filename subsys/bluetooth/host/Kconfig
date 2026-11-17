@@ -111,7 +111,7 @@ if BT_CONN_TX_NOTIFY_WQ
 
 config BT_CONN_TX_NOTIFY_WQ_STACK_SIZE
 	int "Stack size of workqueue for connection TX notify processing"
-	default SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
 
 config BT_CONN_TX_NOTIFY_WQ_PRIO
 	int "Cooperative priority of workqueue for connection TX notify processing"
