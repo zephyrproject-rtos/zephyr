@@ -98,6 +98,7 @@ class TestInstance(StatusMixin):
         self.sysbuild = testsuite.sysbuild or platform.sysbuild
 
         self.run = False
+        self.not_run_reason: str | None = None
         self.testcases: list[TestCase] = []
         self.init_cases()
         self.filters = []
@@ -252,8 +253,18 @@ class TestInstance(StatusMixin):
     # Global testsuite parameters
     def check_runnable(self,
                        options: TwisterEnv,
-                       hardware_map: HardwareMap):
+                       hardware_map: HardwareMap) -> bool:
+        """Check whether the instance can be run, not only built.
 
+        The reason it cannot is stored in ``not_run_reason``.
+        """
+        self.not_run_reason = self._not_runnable_reason(options, hardware_map)
+        return self.not_run_reason is None
+
+    def _not_runnable_reason(self,
+                             options: TwisterEnv,
+                             hardware_map: HardwareMap) -> str | None:
+        """Return why the instance cannot be run, or None if it can."""
         enable_slow = options.enable_slow
         filter = options.filter
         cli_fixtures = options.fixture
@@ -263,7 +274,7 @@ class TestInstance(StatusMixin):
         simulator = self.platform.simulator_by_name(simulation)
         if os.name == 'nt' and simulator and simulator.name not in ('na', 'qemu'):
             # running on simulators is currently supported only for QEMU on Windows
-            return False
+            return f"{simulator.name} simulator is not supported on Windows"
 
         # QEMU_BIN_PATH is optional and acts as an override.
         # Validate it only when explicitly provided.
@@ -271,16 +282,16 @@ class TestInstance(StatusMixin):
             qemu_bin_path = os.environ.get('QEMU_BIN_PATH')
 
             if qemu_bin_path is not None and not os.path.exists(qemu_bin_path):
-                return False
+                return f"QEMU_BIN_PATH {qemu_bin_path} does not exist"
 
         # we asked for build-only on the command line
         if self.testsuite.build_only:
-            return False
+            return "Test is build-only"
 
         # Do not run slow tests:
         skip_slow = self.testsuite.slow and not enable_slow
         if skip_slow:
-            return False
+            return "Slow test, run with --enable-slow"
 
         target_ready = bool(self.testsuite.type == "unit" or \
                             self.platform.type == "native" or \
@@ -288,11 +299,21 @@ class TestInstance(StatusMixin):
                             (simulator and simulator.name in SUPPORTED_SIMS and \
                              simulator.name not in self.testsuite.simulation_exclude) or \
                             device_testing)
+        if target_ready:
+            target_reason = None
+        elif simulator is None:
+            target_reason = "No simulator for this platform, run with --device-testing"
+        else:
+            target_reason = f"{simulator.name} simulator is excluded by the test"
 
         # check if test is runnable in pytest
         if self.testsuite.harness in PYTEST_HARNESSES:
             target_ready = bool(
                 filter == 'runnable' or simulator and simulator.name in SUPPORTED_SIMS_IN_PYTEST
+            )
+            target_reason = None if target_ready else (
+                f"{self.testsuite.harness} harness does not support"
+                f" {simulator.name if simulator else 'this platform'}"
             )
 
         if filter != 'runnable' and \
@@ -300,6 +321,7 @@ class TestInstance(StatusMixin):
                 simulator.name in SUPPORTED_SIMS_WITH_EXEC and \
                 not simulator.is_runnable():
             target_ready = False
+            target_reason = f"{simulator.name} simulator executable {simulator.exec} not found"
 
         # A sidecar provisions host-side resources around the run; when the
         # host lacks what it needs (for example no virtiofsd binary), build
@@ -315,17 +337,24 @@ class TestInstance(StatusMixin):
                 sidecar.configure(self)
                 if not sidecar.host_ready():
                     target_ready = False
+                    target_reason = f"Host requirements of the {self.sidecar} sidecar not met"
 
+        harness_reason = None
         if testsuite_runnable := self.testsuite.harness in SUPPORTED_HARNESSES:
             if device_testing:
                 testsuite_runnable = HardwareReservationManager(
                     hardware_map, self.platform.name, self.testsuite.harness_config
                 ).is_runnable()
+                if not testsuite_runnable:
+                    harness_reason = "No matching device in the hardware map"
 
             elif fixture := self.testsuite.harness_config.fixture:
                 # if we have a fixture that is also being supplied on the
                 # command-line, then we need to run the test, not just build it.
                 testsuite_runnable = all(f in set(cli_fixtures) for f in fixture)
+                if not testsuite_runnable:
+                    missing = [f for f in fixture if f not in set(cli_fixtures)]
+                    harness_reason = f"Fixture not provided: {', '.join(missing)}"
 
             elif self.testsuite.harness_config.required_devices:
                 # Multi-DUT also allowed for native_sim, but not allowed to use different platforms
@@ -334,11 +363,22 @@ class TestInstance(StatusMixin):
                     for req_dev in self.testsuite.harness_config.required_devices:
                         if req_dev.platform and req_dev.platform != self.platform.name:
                             testsuite_runnable = False
+                            harness_reason = (
+                                f"Required device platform {req_dev.platform}"
+                                " differs from the test platform"
+                            )
                             break
                 else:
                     testsuite_runnable = False
+                    harness_reason = "Required devices need --device-testing or native simulator"
+        else:
+            harness_reason = f"{self.testsuite.harness} harness is not supported"
 
-        return testsuite_runnable and target_ready
+        if not target_ready:
+            return target_reason
+        if not testsuite_runnable:
+            return harness_reason
+        return None
 
     @staticmethod
     def platform_supports_semihost(platform):
