@@ -394,6 +394,15 @@ static void mcux_adc16_isr(const struct device *dev)
 	uint32_t channel_group = 0U;
 	uint16_t result;
 
+	if (!data->channels) {
+		/* Spurious completion interrupt with no channel pending:
+		 * disable the converter channel and return without touching
+		 * the sample buffer or signalling completion.
+		 */
+		base->SC1[channel_group] = ADC_SC1_ADCH_MASK;
+		return;
+	}
+
 	result = ADC16_GetChannelConversionValue(base, channel_group);
 	LOG_DBG("Finished channel %d. Result is 0x%04x", data->channel_id,
 		result);
