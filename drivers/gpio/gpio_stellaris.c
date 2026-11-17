@@ -33,7 +33,7 @@ struct gpio_stellaris_runtime {
 	struct k_spinlock lock;
 };
 
-#define GPIO_REG_ADDR(base, offset) (base + offset)
+#define GPIO_REG_ADDR(base, offset) ((base) + (offset))
 
 #define GPIO_DATA_OFFSET 0x000U
 #define GPIO_DIR_OFFSET  0x400U
