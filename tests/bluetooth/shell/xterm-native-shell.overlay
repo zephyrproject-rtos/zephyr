@@ -15,6 +15,7 @@
 &uart1 {
 	compatible = "zephyr,native-pty-uart";
 	status = "disabled";
+	/delete-property/ current-speed-is-enum;
 	/delete-property/ pinctrl-0;
 	/delete-property/ pinctrl-1;
 	/delete-property/ pinctrl-names;
@@ -28,6 +29,7 @@
 &uart0 {
 	compatible = "zephyr,native-pty-uart";
 	status = "okay";
+	/delete-property/ current-speed-is-enum;
 	/delete-property/ pinctrl-0;
 	/delete-property/ pinctrl-1;
 	/delete-property/ pinctrl-names;
