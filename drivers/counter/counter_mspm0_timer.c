@@ -13,6 +13,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/logging/log.h>
 
@@ -490,6 +491,14 @@ static int counter_mspm0_init(const struct device *dev)
 	return 0;
 }
 
+static int counter_mspm0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(action);
+
+	return -ENOTSUP;
+}
+
 static DEVICE_API(counter, mspm0_counter_api) = {
 	.start = counter_mspm0_start,
 	.stop = counter_mspm0_stop,
@@ -566,6 +575,7 @@ static void counter_mspm0_isr(void *arg)
 	BUILD_ASSERT(DT_INST_PROP(n, channels) <= 4,					\
 		     "channels exceeds hardware maximum of 4");				\
 	static struct counter_mspm0_data counter_mspm0_data_ ## n;			\
+	PM_DEVICE_DT_INST_DEFINE(n, counter_mspm0_pm_action);				\
 	MSPM0_COUNTER_IRQ_REGISTER(n)							\
 											\
 	static const struct counter_mspm0_config counter_mspm0_config_ ## n = {		\
@@ -590,7 +600,7 @@ static void counter_mspm0_isr(void *arg)
 											\
 	DEVICE_DT_INST_DEFINE(n,							\
 			      counter_mspm0_init,					\
-			      NULL,							\
+			      PM_DEVICE_DT_INST_GET(n),					\
 			      &counter_mspm0_data_ ## n,				\
 			      &counter_mspm0_config_ ## n,				\
 			      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,		\
