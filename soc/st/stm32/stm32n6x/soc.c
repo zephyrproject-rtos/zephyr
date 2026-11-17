@@ -9,9 +9,11 @@
  * @brief System/hardware module for STM32N6 processor
  */
 
+#include <zephyr/arch/common/init.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/cache.h>
+#include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 
 #include <stm32_ll_bus.h>
@@ -71,6 +73,17 @@ void soc_reset_hook(void)
 		*p = 0;
 	}
 #endif
+
+#if !defined(CONFIG_XIP)
+	/* arch_data_copy() is a no-op on non-XIP builds: load TCM sections here */
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm))
+	arch_early_memcpy(__itcm_start, __itcm_load_start, (size_t)__itcm_size);
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+	arch_early_memcpy(__dtcm_data_start, __dtcm_data_load_start,
+			  (size_t)(__dtcm_data_end - __dtcm_data_start));
+#endif
+#endif /* !CONFIG_XIP */
 
 	/* This is provided by STM32Cube HAL */
 	SystemInit();
