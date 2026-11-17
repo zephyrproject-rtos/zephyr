@@ -1,0 +1,6 @@
+# Copyright (c) 2026 Deere & Company
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADXL382 three-axis SPI accelerometer (fixed +/-60 g, low-power mode)
+compatible: "adi,adxl382"
+include: [sensor-device.yaml, spi-device.yaml]

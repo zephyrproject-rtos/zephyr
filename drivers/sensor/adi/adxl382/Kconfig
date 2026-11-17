@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Deere & Company
+# SPDX-License-Identifier: Apache-2.0
+
+config ADXL382
+	bool "ADXL382 accelerometer sensor driver"
+	default y
+	depends on SENSOR && DT_HAS_ADI_ADXL382_ENABLED
+	select SPI
+	select RTIO_WORKQ if SENSOR_ASYNC_API
+	help
+	  Poll XYZ in low-power mode at a fixed +/-60 g range. Supports the
+	  sensor fetch/get channels and, with SENSOR_ASYNC_API, one-shot RTIO
+	  reads decoded to q31 m/s^2.
