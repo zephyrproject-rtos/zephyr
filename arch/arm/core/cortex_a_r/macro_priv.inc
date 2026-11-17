@@ -47,6 +47,10 @@
         and \rreg0, #TPIDRURO_CURR_CPU
 .endm
 
+/*
+ * Build the exception frame on the SYS mode stack and switch to SYS mode.
+ * Leaves r0 pointing to the struct arch_esf and r2 to the current CPU.
+ */
 .macro z_arm_cortex_ar_enter_exc fpu_off=1
 #if defined(CONFIG_USERSPACE)
 	/*
