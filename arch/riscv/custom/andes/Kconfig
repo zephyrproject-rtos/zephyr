@@ -1,6 +1,12 @@
 # Copyright (c) 2025 Andes Technology Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config TOOLCHAIN_SUPPORTS_ANDES_ISA_EXTENSIONS
+	bool
+	help
+	  Hidden option to signal that the toolchain supports the AndeStar V5
+	  ISA extensions.
+
 config CPU_HAS_ANDES_EXECIT
 	bool
 	help
@@ -10,7 +16,7 @@ config RISCV_CUSTOM_CSR_ANDES_EXECIT
 	bool "Andes V5 EXEC.IT extension"
 	depends on CPU_HAS_ANDES_EXECIT
 	depends on RISCV_ISA_EXT_C
-	depends on !RISCV_GENERIC_TOOLCHAIN
+	depends on TOOLCHAIN_SUPPORTS_ANDES_ISA_EXTENSIONS
 	depends on !LINKER_USE_NO_RELAX
 	help
 	  The EXEC.IT extension (Execution on Instruction Table) generate
@@ -32,7 +38,7 @@ config CPU_HAS_ANDES_HWDSP
 config RISCV_CUSTOM_CSR_ANDES_HWDSP
 	bool "AndeStar V5 DSP ISA"
 	depends on CPU_HAS_ANDES_HWDSP
-	depends on !RISCV_GENERIC_TOOLCHAIN
+	depends on TOOLCHAIN_SUPPORTS_ANDES_ISA_EXTENSIONS
 	help
 	  This option enables the AndeStar v5 hardware DSP, in order to
 	  support using the DSP instructions.
