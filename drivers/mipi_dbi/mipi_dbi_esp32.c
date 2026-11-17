@@ -22,7 +22,7 @@
 #include <hal/lcd_hal.h>
 #include <hal/lcd_ll.h>
 
-#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP) && \
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP) &&                \
 	defined(SOC_LCDCAM_LCD_SUPPORT_SLEEP_RETENTION)
 #define MIPI_DBI_ESP32_SLEEP_RETENTION_ENABLED 1
 #else
