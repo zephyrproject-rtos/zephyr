@@ -254,3 +254,80 @@ def test_dfu_util_detach_dfuse_leave(cc, req, gfa, find_device, runner_config, t
             ]
         )
     ]
+
+
+@pytest.mark.parametrize(
+    'reset_arg, modifiers, expected_opts',
+    [
+        # No --reset/--no-reset: unchanged, the default 'leave' starts the image.
+        (None, None, 'leave'),
+        ('--reset', None, 'leave'),
+        # --no-reset (all but the last image of a multi-image build) stays in DFU mode.
+        ('--no-reset', None, ''),
+        ('--no-reset', 'force:leave:mass-erase', 'force:mass-erase'),
+    ],
+)
+@patch('runners.dfu.DfuUtilBinaryRunner.find_device', side_effect=find_device_patch)
+@patch('runners.core.ZephyrBinaryRunner.get_flash_address', side_effect=get_flash_address_patch)
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+@patch('runners.core.ZephyrBinaryRunner.check_call')
+def test_dfu_util_dfuse_reset(
+    cc, req, gfa, find_device, reset_arg, modifiers, expected_opts, runner_config, tmpdir
+):
+    '''--no-reset drops the DfuSe 'leave' modifier, so the next image can be written.'''
+    args = ['--pid', TEST_PID, '--alt', TEST_ALT_INT, '--dfuse']
+    if modifiers is not None:
+        args.extend(['--dfuse-modifiers', modifiers])
+    if reset_arg is not None:
+        args.append(reset_arg)
+
+    (tmpdir / 'zephyr').mkdir()
+    with open(os.fspath(tmpdir / 'zephyr' / '.config'), 'w') as f:
+        f.write('\n')
+    runner_config = runner_config._replace(build_dir=os.fspath(tmpdir))
+
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    DfuUtilBinaryRunner.add_parser(parser)
+    arg_namespace = parser.parse_args(args)
+    runner = DfuUtilBinaryRunner.create(runner_config, arg_namespace)
+    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+        runner.run('flash')
+
+    assert cc.call_args_list == [
+        call(
+            [
+                DFU_UTIL,
+                TEST_PID_RES,
+                '-s',
+                f'{hex(TEST_DFUSE_ADDR)}:{expected_opts}',
+                '-a',
+                TEST_ALT_INT,
+                '-D',
+                RC_KERNEL_BIN,
+            ]
+        )
+    ]
+
+
+@patch('runners.dfu.DfuUtilBinaryRunner.find_device', side_effect=find_device_patch)
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+@patch('runners.core.ZephyrBinaryRunner.check_call')
+def test_dfu_util_no_reset_skips_detach(cc, req, find_device, runner_config, tmpdir):
+    '''--no-reset also skips the separate detach request.'''
+    args = ['--pid', TEST_PID, '--alt', TEST_ALT_INT, '--detach', '--no-reset']
+
+    (tmpdir / 'zephyr').mkdir()
+    with open(os.fspath(tmpdir / 'zephyr' / '.config'), 'w') as f:
+        f.write('\n')
+    runner_config = runner_config._replace(build_dir=os.fspath(tmpdir))
+
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    DfuUtilBinaryRunner.add_parser(parser)
+    arg_namespace = parser.parse_args(args)
+    runner = DfuUtilBinaryRunner.create(runner_config, arg_namespace)
+    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+        runner.run('flash')
+
+    assert cc.call_args_list == [
+        call(EXPECTED_COMMAND[(DFU_UTIL, TEST_ALT_INT, None, RC_KERNEL_BIN)]),
+    ]
