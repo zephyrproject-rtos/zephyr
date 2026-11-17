@@ -294,6 +294,11 @@ bool npf_ip_src_addr_match(struct npf_test *test, struct net_pkt *pkt)
 			CONTAINER_OF(test, struct npf_test_ip, test);
 	uint8_t pkt_family = net_pkt_family(pkt);
 
+	/* The list holds addresses of one family, no packet of another one is in it */
+	if (pkt_family != test_ip->addr_family) {
+		return false;
+	}
+
 	for (uint32_t ip_it = 0; ip_it < test_ip->ipaddr_num; ip_it++) {
 		if (IS_ENABLED(CONFIG_NET_IPV4) && pkt_family == NET_AF_INET) {
 			struct net_in_addr *addr = (struct net_in_addr *)NET_IPV4_HDR(pkt)->src;
