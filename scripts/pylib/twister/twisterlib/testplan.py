@@ -805,6 +805,8 @@ class TestPlan:
                     instance.metrics['used_rom']  = ts.get("used_rom",0)
                     instance.metrics['available_ram'] = ts.get('available_ram', 0)
                     instance.metrics['available_rom'] = ts.get('available_rom', 0)
+                    if 'artifacts' in ts:
+                        instance.metrics['artifacts'] = ts['artifacts']
 
                     status = TwisterStatus(ts.get('status'))
                     reason = ts.get("reason", "Unknown")

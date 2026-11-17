@@ -371,6 +371,8 @@ class JsonReport:
                 suite["available_ram"] = available_ram
             if available_rom:
                 suite["available_rom"] = available_rom
+            if instance.metrics.get("artifacts"):
+                suite["artifacts"] = instance.metrics["artifacts"]
             if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
                 suite['status'] = instance.status
                 # FIXME
