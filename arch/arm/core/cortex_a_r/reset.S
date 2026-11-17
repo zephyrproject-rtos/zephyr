@@ -334,7 +334,7 @@ _primary_core:
     ldr r4, =z_prep_c
     ldr r5, =(z_arm_fiq_stack + CONFIG_ARMV7_FIQ_STACK_SIZE)
     ldr r6, =(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE)
-    ldr r7, =(z_arm_abort_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE)
+    ldr r7, =(z_arm_abort_stack + CONFIG_ARMV7_ABORT_STACK_SIZE)
     ldr r8, =(z_arm_undef_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE)
     ldr r9, =(z_arm_svc_stack + CONFIG_ARMV7_SVC_STACK_SIZE)
     ldr r10, =(z_arm_sys_stack + CONFIG_ARMV7_SYS_STACK_SIZE)
