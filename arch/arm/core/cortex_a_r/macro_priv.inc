@@ -47,19 +47,6 @@
         and \rreg0, #TPIDRURO_CURR_CPU
 .endm
 
-/*
- * With CONFIG_EXTRA_EXCEPTION_INFO, the exception frame (struct arch_esf)
- * starts EXC_ESF_OFFSET bytes above SP after z_arm_cortex_ar_enter_exc,
- * and the basic frame EXC_BASIC_OFFSET bytes above it.
- */
-#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
-#define EXC_BASIC_OFFSET ___exc_extra_SIZEOF
-#define EXC_ESF_OFFSET (___exc_extra_SIZEOF - ___extra_esf_info_t_SIZEOF)
-#else
-#define EXC_BASIC_OFFSET 0
-#define EXC_ESF_OFFSET 0
-#endif
-
 .macro z_arm_cortex_ar_enter_exc fpu_off=1
 #if defined(CONFIG_USERSPACE)
 	/*
@@ -91,14 +78,28 @@
 	cps #MODE_SYS
 	push {r0-r3, r12, lr}
 
+	/*
+	 * The interrupted SP may be 4 modulo 8, and so the frame. Align SP to
+	 * 8 bytes for the C calls that follow, and store the frame address
+	 * at SP for z_arm_cortex_ar_exit_exc. r0 points to the struct
+	 * arch_esf.
+	 */
+	mov r0, sp
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	/*
 	 * Room for the callee-saved registers and the extra info below the
 	 * frame. Only the fault paths fill it, with z_arm_cortex_ar_save_extra.
 	 */
-	sub sp, sp, #___exc_extra_SIZEOF
+	sub r1, r0, #___exc_extra_SIZEOF
+	bic r1, r1, #7
+#else
+	bic r1, r0, #7
 #endif
-	add r0, sp, #EXC_ESF_OFFSET
+	sub sp, r1, #8
+	str r0, [sp]
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	sub r0, r0, #___extra_esf_info_t_SIZEOF
+#endif
 
 	/* increment exception depth */
 	get_cpu r2
@@ -120,32 +121,33 @@
  * built by z_arm_cortex_ar_enter_exc, and point r0 to that frame. SP must be
  * where z_arm_cortex_ar_enter_exc left it, and r4-r11 must still hold the
  * values of the interrupted context: only C functions, which preserve them,
- * may run in between. Clobbers r1.
+ * may run in between. Clobbers r1-r3.
  */
 .macro z_arm_cortex_ar_save_extra
+	ldr r0, [sp]
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
-	stm sp, {r4-r11}
+	sub r1, r0, #___exc_extra_SIZEOF
+	stm r1, {r4-r11}
 	/* The interrupted SP is above the exception frame... */
-	add r0, sp, #(___exc_extra_SIZEOF + ___esf_t_SIZEOF - ___extra_esf_info_t_SIZEOF)
+	add r2, r0, #(___esf_t_SIZEOF - ___extra_esf_info_t_SIZEOF)
 #if defined(CONFIG_USERSPACE)
 	/* ...or in the thread for an exception from user mode */
-	ldr r1, [sp, #(EXC_BASIC_OFFSET + ___basic_sf_t_xpsr_OFFSET)]
-	and r1, r1, #MODE_MASK
-	cmp r1, #MODE_USR
+	ldr r3, [r0, #___basic_sf_t_xpsr_OFFSET]
+	and r3, r3, #MODE_MASK
+	cmp r3, #MODE_USR
 	bne 1f
-	get_cpu r0
-	ldr r0, [r0, #___cpu_t_current_OFFSET]
-	ldr r0, [r0, #_thread_offset_to_sp_usr]
+	get_cpu r2
+	ldr r2, [r2, #___cpu_t_current_OFFSET]
+	ldr r2, [r2, #_thread_offset_to_sp_usr]
 1:
 #endif
-	str r0, [sp, #___callee_saved_t_psp_OFFSET]
-	mov r0, sp
-	str r0, [sp, #EXC_ESF_OFFSET]
+	str r2, [r1, #___callee_saved_t_psp_OFFSET]
+	sub r0, r0, #___extra_esf_info_t_SIZEOF
+	str r1, [r0]
 	mov r1, #0
-	str r1, [sp, #(EXC_ESF_OFFSET + 4)]
-	str r1, [sp, #(EXC_ESF_OFFSET + 8)]
+	str r1, [r0, #4]
+	str r1, [r0, #8]
 #endif
-	add r0, sp, #EXC_ESF_OFFSET
 .endm
 
 /*

@@ -177,7 +177,7 @@ _oops:
     /*
      * The exception return goes to z_arm_do_syscall in system mode,
      * which calls the handler and returns to the caller of the SVC.
-     * The exception stack frame (in SYS mode, EXC_BASIC_OFFSET above sp) is:
+     * The exception stack frame (in SYS mode, its address is at sp) is:
      * r0 - r1 - r2 - r3 - r12 - LR - PC - SPSR
      *
      * Registers look like:
@@ -186,10 +186,11 @@ _oops:
      * r8 - set here to the return address of the SVC
      */
 _do_syscall:
-    ldr r8, [sp, #(EXC_BASIC_OFFSET + ___basic_sf_t_pc_OFFSET)]
+    ldr r2, [sp]
+    ldr r8, [r2, #___basic_sf_t_pc_OFFSET]
 
     /* Make the exception return to system state */
-    ldr r1, [sp, #(EXC_BASIC_OFFSET + ___basic_sf_t_xpsr_OFFSET)]
+    ldr r1, [r2, #___basic_sf_t_xpsr_OFFSET]
 
     /* If leaving thumb mode, set the return address to thumb mode */
     tst r1, #T_BIT
@@ -197,10 +198,10 @@ _do_syscall:
 
     bic r1, #(MODE_MASK | T_BIT)
     orr r1, r1, #MODE_SYS
-    str r1, [sp, #(EXC_BASIC_OFFSET + ___basic_sf_t_xpsr_OFFSET)]
+    str r1, [r2, #___basic_sf_t_xpsr_OFFSET]
 
     ldr r1, =z_arm_do_syscall
-    str r1, [sp, #(EXC_BASIC_OFFSET + ___basic_sf_t_pc_OFFSET)]
+    str r1, [r2, #___basic_sf_t_pc_OFFSET]
 
     /* validate syscall limit, only set priv mode if valid */
     ldr ip, =K_SYSCALL_LIMIT
@@ -208,7 +209,7 @@ _do_syscall:
     blo valid_syscall_id
 
     /* bad syscall id.  Set arg0 to bad id and set call_id to SYSCALL_BAD */
-    str r6, [sp, #EXC_BASIC_OFFSET]
+    str r6, [r2]
     ldr r6, =K_SYSCALL_BAD
 
 valid_syscall_id:
