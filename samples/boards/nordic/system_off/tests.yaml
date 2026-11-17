@@ -6,6 +6,7 @@ tests:
   sample.boards.nrf.system_off:
     integration_platforms:
       - nrf52840dk/nrf52840
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
     platform_allow:
       - nrf51dk/nrf51822
       - nrf52840dk/nrf52840
@@ -15,7 +16,9 @@ tests:
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ite
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - nrf7120dk/nrf7120e/cpuapp
@@ -61,7 +64,9 @@ tests:
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ite
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - nrf7120dk/nrf7120e/cpuapp
@@ -107,7 +112,9 @@ tests:
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ite
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - nrf7120dk/nrf7120e/cpuapp

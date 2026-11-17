@@ -92,6 +92,7 @@ tests:
     filter: dt_nodelabel_enabled("xo24m")
     platform_allow:
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
     extra_args:
       - CONF_FILE="configs/nrfx_clock.conf"
       - DTC_OVERLAY_FILE="configs/nrfx_xo24m.overlay"

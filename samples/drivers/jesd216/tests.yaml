@@ -22,7 +22,9 @@ tests:
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1170_evk/mimxrt1176/cm4
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ite
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
     filter: dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,nor")
     depends_on: spi
   sample.drivers.jesd216.nrf52840dk_spi:
@@ -42,9 +44,12 @@ tests:
       - nrf54l15dk/nrf54l10/cpuapp
       - nrf54l15dk/nrf54l05/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ite
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
     integration_platforms:
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ite
     harness_config:
       fixture: external_flash
       type: multi_line

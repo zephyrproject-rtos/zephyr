@@ -19,4 +19,5 @@ supported:
   - spi
   - usbd
   - usbh
+  - watchdog
 vendor: nordic

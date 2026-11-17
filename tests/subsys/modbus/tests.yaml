@@ -4,6 +4,7 @@ tests:
     platform_allow:
       - frdm_k64f
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
     harness_config:
       # MODBUS test fixture for FRDM-K64F:
       # UART3(PTC16)-RX <-> UART2(PTD3)-TX
@@ -16,6 +17,7 @@ tests:
     platform_allow:
       - frdm_k64f
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
     harness_config:
       fixture: uart_loopback
   modbus.rtu.build_only:

@@ -73,7 +73,9 @@ tests:
       or dt_label_with_parent_compat_enabled("storage_partition", "nordic,owned-partitions")))
     platform_exclude:
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ite
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
       - nrf54h20dk/nrf54h20/cpuapp
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
@@ -121,7 +123,9 @@ tests:
   drivers.flash.common.nrf54lm20a:
     platform_allow:
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ite
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
     harness_config:
       fixture: external_flash
   drivers.flash.common.tfm_ns:
@@ -237,7 +241,9 @@ tests:
       - beagleconnect_freedom@C5/cc1352p
       - beagleconnect_freedom@C7/cc1352p7
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ite
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
       - kit_pse84_eval/pse846gps2dbzc4a/m55
@@ -250,7 +256,11 @@ tests:
   drivers.flash.common.test_storage_partition.nrf54lm20:
     platform_allow:
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp/ite
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
+    integration_platforms:
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
     harness_config:
       fixture: external_flash
     extra_args:

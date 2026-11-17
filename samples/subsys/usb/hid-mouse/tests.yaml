@@ -24,6 +24,7 @@ tests:
       - usbd
     integration_platforms:
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ite
     extra_configs:
       - CONFIG_USB_BC12=y
     tags: usb
