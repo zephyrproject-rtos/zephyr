@@ -21,6 +21,54 @@ tests:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="nv3031b-backlight.overlay"
 
+  # Build the other side of the Kconfig options which conditionally compile
+  # display and MIPI DBI driver code, relative to the default scenario.
+  drivers.display.build.alt_options:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_MIPI_DBI_SPI_3WIRE=y
+      - CONFIG_ILI9XXX_READ=y
+      - CONFIG_SSD1322_DEFAULT_GRAYSCALE=y
+      - CONFIG_ST730X_DEFAULT_PALETTED=y
+      - CONFIG_ST75256_DEFAULT_GREYSCALE=y
+      - CONFIG_ST7586S_DEFAULT_GRAYSCALE=n
+      - CONFIG_LT7680_TRANSMIT_DATA_AS_BURST=n
+      - CONFIG_LT7680_READ_DATA_AS_BURST=n
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=n
+      - CONFIG_SDL_DISPLAY_ROUNDED_MASK=y
+      - CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB565=n
+      - CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB888=y
+      - CONFIG_DISPLAY_COLOR_DITHER_ALGORITHM_FLOYD_STEINBERG=y
+
+  drivers.display.build.color_dither.none:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_DISPLAY_COLOR_DITHER_ALGORITHM_NONE=y
+
+  drivers.display.build.color_dither.bayer_4x4:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_DISPLAY_COLOR_DITHER_ALGORITHM_ORDERED_BAYER_4X4=y
+      - CONFIG_DISPLAY_COLOR_DITHER_DEFAULT_I4=y
+
+  drivers.display.build.color_dither.bayer_8x8:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_DISPLAY_COLOR_DITHER_ALGORITHM_ORDERED_BAYER_8X8=y
+      - CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB888=y
+
+  drivers.display.build.color_dither.disabled:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_DISPLAY_COLOR_DITHER=n
+
   drivers.display.build.bflb_dbi:
     platform_allow:
       - ai_m62_12f_kit
