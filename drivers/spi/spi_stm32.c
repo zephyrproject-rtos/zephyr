@@ -1860,45 +1860,63 @@ static inline uint32_t spi_stm32_frame_clocks(const struct device *dev,
 	return clocks;
 }
 
+BUILD_ASSERT(CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE >= 0);
+
+/* Longest time on the wire, in ms, whose timeout (plus the tolerance) still fits in K_MSEC() */
+#define SPI_STM32_DMA_WIRE_MS_MAX (INT32_MAX - CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE)
+
 /*
- * Count at half the frequency: the prescaler gives an SCK above half the requested one, unless
- * the request is above the fastest SCK
+ * Count at half the requested SCK: the prescaler gives an SCK above half of it, unless the
+ * requested SCK is above the fastest SCK. In 32 bits: the rate is rounded down to whole clocks
+ * per ms (or the period up to whole ms), which only lengthens the timeout.
  */
-static __noinline k_timeout_t spi_stm32_dma_timeout(const struct device *dev)
+static __noinline k_timeout_t spi_stm32_dma_timeout(const struct spi_config *config,
+						    uint32_t frames, uint32_t frame_clocks)
 {
-	struct spi_stm32_data *data = dev->data;
-	const struct spi_config *config = data->ctx.config;
-	uint64_t frames = MAX(data->tx_len, data->rx_len);
-	uint32_t frame_clocks = spi_stm32_frame_clocks(dev, config);
-	uint64_t timeout_ms = SPI_STM32_DMA_TIMEOUT_MIN_MS;
+	const uint32_t half_freq = config->frequency / 2U;
+	uint32_t wire_ms;
 
-	if (config->frequency >= 2U) {
-		uint64_t wire_ms =
-			DIV_ROUND_UP(frames * frame_clocks * MSEC_PER_SEC, config->frequency / 2U);
+	if (half_freq >= MSEC_PER_SEC) {
+		const uint32_t clocks_per_ms = half_freq / MSEC_PER_SEC;
+		/* ceil(frames * frame_clocks / clocks_per_ms) without a product that overflows */
+		const uint32_t whole = frames / clocks_per_ms;
+		const uint32_t part = frames % clocks_per_ms;
 
-		timeout_ms = MAX(timeout_ms, wire_ms + CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE);
+		/* part < clocks_per_ms, so wire_ms <= (whole + 1) * frame_clocks */
+		if (whole >= SPI_STM32_DMA_WIRE_MS_MAX / frame_clocks) {
+			return K_MSEC(INT32_MAX);
+		}
+		wire_ms = whole * frame_clocks + DIV_ROUND_UP(part * frame_clocks, clocks_per_ms);
+	} else {
+		const uint32_t ms_per_clock = DIV_ROUND_UP(MSEC_PER_SEC, MAX(half_freq, 1U));
+
+		if (frames > SPI_STM32_DMA_WIRE_MS_MAX / ms_per_clock / frame_clocks) {
+			return K_MSEC(INT32_MAX);
+		}
+		wire_ms = frames * frame_clocks * ms_per_clock;
 	}
 
-	return K_MSEC(MIN(timeout_ms, INT32_MAX));
+	return K_MSEC(MAX(wire_ms + CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE,
+			  SPI_STM32_DMA_TIMEOUT_MIN_MS));
 }
 
 /*
- * At most 0.5 s on the wire at half the frequency and at most 0.5 s of tolerance: the 1 s
+ * At most 0.5 s on the wire at half the requested SCK and at most 0.5 s of tolerance: the 1 s
  * minimum. spi_stm32_dma_timeout() stays out of line, off the path of short transfers.
  */
 static inline k_timeout_t spi_stm32_dma_wait_timeout(const struct device *dev)
 {
 	struct spi_stm32_data *data = dev->data;
 	const struct spi_config *config = data->ctx.config;
-	uint64_t clocks = (uint64_t)MAX(data->tx_len, data->rx_len) *
-			  spi_stm32_frame_clocks(dev, config);
+	const uint32_t frames = MAX(data->tx_len, data->rx_len);
+	const uint32_t frame_clocks = spi_stm32_frame_clocks(dev, config);
 
 	if ((CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE <= 500) &&
-	    (clocks <= (config->frequency / 4U))) {
+	    (frames <= (config->frequency / 4U) / frame_clocks)) {
 		return K_MSEC(SPI_STM32_DMA_TIMEOUT_MIN_MS);
 	}
 
-	return spi_stm32_dma_timeout(dev);
+	return spi_stm32_dma_timeout(config, frames, frame_clocks);
 }
 
 static int wait_dma_rx_tx_done(const struct device *dev)
