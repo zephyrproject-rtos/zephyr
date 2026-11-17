@@ -140,7 +140,7 @@ config ARMV7_SVC_STACK_SIZE
 	help
 	  This option specifies the size of the SVC mode stack. The SVC handler
 	  runs in system mode: this stack only holds a few registers saved on
-	  exception entry and, with CONFIG_USERSPACE, on exception exit.
+	  exception entry.
 
 config ARMV7_SYS_STACK_SIZE
 	int "SYS stack size (in bytes)"
@@ -307,7 +307,7 @@ config ARMV7_SVC_STACK_SIZE
 	help
 	  This option specifies the size of the SVC mode stack. The SVC handler
 	  runs in system mode: this stack only holds a few registers saved on
-	  exception entry and, with CONFIG_USERSPACE, on exception exit.
+	  exception entry.
 
 config ARMV7_SYS_STACK_SIZE
 	int "SYS stack size (in bytes)"
