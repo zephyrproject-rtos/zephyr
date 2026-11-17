@@ -52,22 +52,24 @@
 	/*
 	 * USR and SYS modes share SP.  On an exception from user mode,
 	 * save the user SP and switch to the thread's privileged stack
-	 * before pushing the exception frame.
+	 * before pushing the exception frame. The ^ forms of STM and LDM
+	 * access the user mode SP from the exception mode. USR is the only
+	 * mode with the low 4 bits clear.
 	 */
-	push {r0, r1}
+	push {r0}
 	mrs r0, spsr
-	and r0, #MODE_MASK
-	cmp r0, #MODE_USR
+	tst r0, #0xf
 	bne 1f
-	mrs r1, cpsr
 	get_cpu r0
 	ldr r0, [r0, #___cpu_t_current_OFFSET]
-	cps #MODE_SYS
-	str sp, [r0, #_thread_offset_to_sp_usr]
-	ldr sp, [r0, #_thread_offset_to_priv_stack_end]
-	msr cpsr_c, r1
+	add r0, r0, #_thread_offset_to_priv_stack_end
+.if _thread_offset_to_sp_usr != (_thread_offset_to_priv_stack_end + 4)
+.error "sp_usr must follow priv_stack_end"
+.endif
+	stmib r0, {sp}^
+	ldmia r0, {sp}^
 1:
-	pop {r0, r1}
+	pop {r0}
 #endif
 
 	/*
@@ -140,8 +142,7 @@
 #if defined(CONFIG_USERSPACE)
 	/* ...or in the thread for an exception from user mode */
 	ldr r3, [r0, #___basic_sf_t_xpsr_OFFSET]
-	and r3, r3, #MODE_MASK
-	cmp r3, #MODE_USR
+	tst r3, #0xf
 	bne 1f
 	get_cpu r2
 	ldr r2, [r2, #___cpu_t_current_OFFSET]
@@ -160,34 +161,29 @@
 /*
  * Return from the exception whose frame address z_arm_cortex_ar_enter_exc
  * stored at SP. Called in SYS mode. With CONFIG_USERSPACE, a return to user
- * mode restores the user SP, and RFE loads the return state from the SVC
- * mode stack, as the user stack cannot be trusted.
+ * mode restores the user SP, then restores the registers and returns from
+ * SVC mode, with SVC mode LR pointing to the frame: the user stack cannot
+ * be trusted. The ^ form of LDM loads the user mode LR.
  */
 .macro z_arm_cortex_ar_exc_return
 	ldr sp, [sp]
 #if defined(CONFIG_USERSPACE)
 	ldr r3, [sp, #___basic_sf_t_xpsr_OFFSET]
-	and r1, r3, #MODE_MASK
-	cmp r1, #MODE_USR
+	tst r3, #0xf
 	beq 1f
 #endif
 	pop {r0-r3, r12, lr}
 	rfeia sp!
 #if defined(CONFIG_USERSPACE)
 1:
-	ldr r2, [sp, #___basic_sf_t_pc_OFFSET]
 	get_cpu r0
 	ldr r0, [r0, #___cpu_t_current_OFFSET]
-	ldr r0, [r0, #_thread_offset_to_sp_usr]
-	/* PC is in r2 now: keep the user SP in its frame slot */
-	str r0, [sp, #___basic_sf_t_pc_OFFSET]
+	mov r1, sp
+	ldr sp, [r0, #_thread_offset_to_sp_usr]
 	cps #MODE_SVC
-	push {r2, r3}
-	cps #MODE_SYS
-	ldm sp, {r0-r3, r12, lr}
-	ldr sp, [sp, #___basic_sf_t_pc_OFFSET]
-	cps #MODE_SVC
-	rfeia sp!
+	add lr, r1, #___basic_sf_t_pc_OFFSET
+	ldmdb lr, {r0-r3, r12, lr}^
+	rfeia lr
 #endif
 .endm
 
@@ -208,7 +204,7 @@
 	cps #MODE_SYS
 	/*
 	 * Leave the top 8 bytes to z_arm_cortex_ar_enter_exc, which saves r0
-	 * and r1 there on interrupt entry with CONFIG_USERSPACE.
+	 * there on interrupt entry with CONFIG_USERSPACE.
 	 */
 	sub sp, r1, #8
 	/* r1 keeps the stack 8-byte aligned */
