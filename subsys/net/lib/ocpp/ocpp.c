@@ -222,7 +222,9 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 			LOG_ERR("Websocket connect fail %d", ret);
 			return ret;
 		}
+		k_mutex_lock(&ui->ws_txlock, K_FOREVER);
 		ui->wssock = ret;
+		k_mutex_unlock(&ui->ws_txlock);
 	}
 
 	LOG_DBG("WS connect success %d", ui->wssock);
@@ -606,9 +608,8 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 			}
 
 			if (msg_type & WEBSOCKET_FLAG_PING) {
-				websocket_send_msg(ctx->ui.wssock, NULL, 0,
-						   WEBSOCKET_OPCODE_PONG, true,
-						   true, 100);
+				ocpp_ws_send(ctx, NULL, 0,
+					     WEBSOCKET_OPCODE_PONG, 100);
 			} else if (msg_type & WEBSOCKET_FLAG_CLOSE) {
 				ctx->is_cs_offline = true;
 			} else {
@@ -643,6 +644,7 @@ int ocpp_upstream_init(struct ocpp_info *ctx, struct ocpp_cs_info *csi)
 	ui->tcpsock = -1;
 
 	k_mutex_init(&ui->ws_sndlock);
+	k_mutex_init(&ui->ws_txlock);
 	k_poll_signal_init(&ui->ws_rspsig);
 	ui->wssock = -1;
 
