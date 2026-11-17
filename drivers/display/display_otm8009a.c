@@ -32,7 +32,6 @@ struct otm8009a_data {
 	uint16_t xres;
 	uint16_t yres;
 	uint8_t dsi_pixel_format;
-	enum display_pixel_format pixel_format;
 	enum display_orientation orientation;
 };
 
@@ -593,8 +592,9 @@ static void otm8009a_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
-	capabilities->supported_pixel_formats = data->pixel_format;
-	capabilities->current_pixel_format = data->pixel_format;
+	capabilities->current_pixel_format = data->dsi_pixel_format == MIPI_DSI_PIXFMT_RGB565 ?
+					     PIXEL_FORMAT_RGB_565 : PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = capabilities->current_pixel_format;
 	capabilities->current_orientation = data->orientation;
 }
 
