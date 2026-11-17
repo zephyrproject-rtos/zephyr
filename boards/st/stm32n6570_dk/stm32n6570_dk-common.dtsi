@@ -462,7 +462,7 @@ zephyr_udc0: &usbotg_hs1 {
 
 	memc: aps256xxn_obr: memory@0 {
 		compatible = "st,stm32-xspi-psram";
-		reg = <0>;
+		reg = <0x0 0x0>;
 		size = <DT_SIZE_M(256)>; /* 256 Mbits */
 		max-frequency = <DT_FREQ_M(200)>;
 		fixed-latency;
@@ -486,7 +486,7 @@ zephyr_udc0: &usbotg_hs1 {
 
 	mx66uw1g45g: ospi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
-		reg = <0>;
+		reg = <0x0 0x0>;
 		ranges = <0x0 0x70000000 DT_SIZE_M(128)>;
 		size = <DT_SIZE_M(1024)>; /* 1Gbits */
 		ospi-max-frequency = <DT_FREQ_M(200)>;

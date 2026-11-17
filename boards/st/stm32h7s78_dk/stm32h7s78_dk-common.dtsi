@@ -369,7 +369,7 @@ st_cam_i2c: &i2c1 {
 
 	memc: aps256xxn-obr@0 {
 		compatible = "st,psram-device", "aps-z8";
-		reg = <0>;
+		reg = <0x0 0x0>;
 		size = <DT_SIZE_M(256)>; /* 256 Mbits */
 		mspi-max-frequency = <DT_FREQ_M(50)>;
 		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
@@ -413,7 +413,7 @@ st_cam_i2c: &i2c1 {
 
 	ext_flash_ctrl: nor-flash-controller@0 {
 		compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
-		reg = <0>;
+		reg = <0x0 0x0>;
 		ranges = <0x0 0x70000000 DT_SIZE_M(128)>;
 		size = <DT_SIZE_M(1024)>; /* 1 Gbits */
 		read-command = <0xee11>;
