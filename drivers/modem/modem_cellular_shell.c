@@ -85,7 +85,7 @@ static int cmd_modem_cellular_resume(const struct shell *sh, size_t argc, char *
  * @brief Show the SIM slots of a modem, or select its active SIM slot.
  *
  * Usage: @c sim @c <device> @c [slot]. Without a slot, prints the number of SIM slots
- * and the active one. With a slot, selects it; the modem must be suspended.
+ * and the active one. With a slot, selects it.
  *
  * @param sh Shell instance.
  * @param argc Number of arguments, 2 or 3.
@@ -130,7 +130,7 @@ static int cmd_modem_cellular_sim(const struct shell *sh, size_t argc, char **ar
 	ret = cellular_select_sim(dev, (uint8_t)slot);
 	if (ret == -EBUSY) {
 		shell_error(sh,
-			    "modem must be suspended to switch the SIM slot, "
+			    "modem only switches the SIM slot while suspended and powered off, "
 			    "for example with \"pm suspend %s\"",
 			    dev->name);
 		return ret;

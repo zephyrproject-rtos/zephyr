@@ -428,12 +428,11 @@ The ``reg`` of a slot is its index in :c:func:`cellular_get_sim_slots` and
 when it initializes, and routes the modem to the selected slot every time it powers the modem
 up.
 
-The SIM lines must only be switched while the SIM interface is inactive, so the driver switches
-the SIM slot only while the modem is suspended and the driver has powered it off: with its
-shutdown script, ``mdm-power-gpios``, or ``mdm-reset-gpios`` held through
-``zephyr,mdm-reset-behavior = "hold_on_suspend"``. Otherwise :c:func:`cellular_select_sim`
-returns ``-EBUSY``, for example after a suspend during the power-up, which leaves the modem
-powered. To switch the SIM slot of a running modem:
+The SIM lines must only be switched while the SIM interface is inactive. While the modem is
+suspended, and the driver has powered it off with its shutdown script, ``mdm-power-gpios``, or
+``mdm-reset-gpios`` held through ``zephyr,mdm-reset-behavior = "hold_on_suspend"``, the driver
+switches the SIM slot at once. A suspend during the power-up leaves the modem powered, and
+:c:func:`cellular_select_sim` then returns ``-EBUSY``:
 
 .. code-block:: c
 
@@ -442,10 +441,35 @@ powered. To switch the SIM slot of a running modem:
    cellular_set_apn(modem, "apn.of.the.second.operator");
    pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME);
 
+A modem driver that provides the ``sim_deactivate`` script of
+:c:struct:`modem_cellular_config_scripts` also switches the SIM slot of a running modem, without
+powering it off. :c:func:`cellular_select_sim` then requests the switch, which the driver runs
+as soon as the modem is waiting for an APN, waiting to dial, or registered:
+
+#. It detaches from the packet domain (``AT+CGATT=0``), which ends the data call, and waits for
+   PPP to end.
+#. It runs ``sim_deactivate``, for example ``AT+CFUN=0``. If this fails, the modem stays on
+   the previous slot.
+#. It switches the slot: it applies the MUX state, or has the modem select its SIM interface.
+   If the MUX fails, it routes the modem back to the previous slot, and powers the modem off if
+   that fails too. If the modem refuses the selection without reporting its SIM interface, the
+   modem stays on the previous slot.
+#. It runs the optional ``sim_activate`` script, for example ``AT+CFUN=4`` followed by reads
+   of the ICCID and IMSI. The script runs again, up to 10 times a second apart, while it fails,
+   for example while the SIM initializes.
+#. It configures the APN and connects again.
+
+The APN can be changed with :c:func:`cellular_set_apn` while the switch is requested or in
+progress:
+
+.. code-block:: c
+
+   cellular_select_sim(modem, 1);
+   cellular_set_apn(modem, "apn.of.the.second.operator");
+
 The ICCID and IMSI of the previous SIM are cleared by the switch, and read again from the new
-SIM, if the modem's init script reads them, when the modem powers up. If the MUX fails to route
-the modem to the active slot, the driver keeps the modem suspended rather than power it up on
-another SIM.
+SIM if the init or ``sim_activate`` script reads them. If the MUX fails to route the modem to
+the active slot, the driver keeps the modem suspended rather than power it up on another SIM.
 
 The MUX driver sets its initial state when it starts. When a reset of the MCU leaves the modem
 powered, the SIM lines then change while the SIM interface is active, before the driver routes

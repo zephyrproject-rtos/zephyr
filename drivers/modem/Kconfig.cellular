@@ -104,6 +104,15 @@ config MODEM_CELLULAR_PERIODIC_SCRIPT_MS
 	default 30000 if DT_HAS_NORDIC_NRF93M1_ENABLED
 	default 2000
 
+config MODEM_CELLULAR_DETACH_TIMEOUT
+	int "Packet domain detach timeout in seconds"
+	range 1 60
+	default 10
+	help
+	  Time the modem has to answer AT+CGATT=0, which detaches it from the
+	  packet domain before the SIM slot is switched with the modem running.
+	  The switch goes on when the detach times out.
+
 config MODEM_CELLULAR_UART_BUFFER_SIZES
 	int "The UART receive and transmit buffer sizes in bytes."
 	default 512

@@ -570,7 +570,8 @@ static inline int cellular_get_sim_slots(const struct device *dev, uint8_t *coun
  * @details The device switches the SIM only while the SIM interface of the modem is
  * inactive. A device may accept the request only in some states, for example while it is
  * suspended, and returns -EBUSY otherwise. A data connection on the previous SIM does not
- * survive the switch.
+ * survive the switch. The switch may complete after the function returns, and
+ * cellular_get_sim_slots() reports the new slot once the switch has started.
  *
  * The SIM identity read from the previous slot (@ref CELLULAR_MODEM_INFO_SIM_ICCID and
  * @ref CELLULAR_MODEM_INFO_SIM_IMSI) is cleared. The device emits
@@ -588,6 +589,7 @@ static inline int cellular_get_sim_slots(const struct device *dev, uint8_t *coun
  * @retval -EINVAL No SIM slot has this index.
  * @retval -EALREADY Slot is already the active one, nothing to do.
  * @retval -EBUSY SIM slot cannot be changed in the current device state.
+ * @retval -EAGAIN Device cannot take the request now, try again.
  * @retval -errno Other negative errno on failure to switch the SIM slot.
  */
 static inline int cellular_select_sim(const struct device *dev, uint8_t slot)

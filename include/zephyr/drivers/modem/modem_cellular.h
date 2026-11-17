@@ -71,6 +71,7 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_OPEN_DLCI1,
 	MODEM_CELLULAR_STATE_OPEN_DLCI2,
 	MODEM_CELLULAR_STATE_RUN_SIM_SELECT_SCRIPT,
+	MODEM_CELLULAR_STATE_RUN_SIM_SWITCH_SCRIPT,
 	MODEM_CELLULAR_STATE_RUN_BOARD_INIT_SCRIPT,
 	MODEM_CELLULAR_STATE_WAIT_FOR_APN,
 	MODEM_CELLULAR_STATE_RUN_APN_SCRIPT,
@@ -107,6 +108,7 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_PERIODIC_KICK,
 	MODEM_CELLULAR_EVENT_DIAL,
 	MODEM_CELLULAR_EVENT_HANGUP,
+	MODEM_CELLULAR_EVENT_SIM_SWITCH,
 } __packed;
 
 struct modem_cellular_event_cb {
@@ -232,6 +234,18 @@ struct modem_cellular_data {
 	int16_t sim_slot_modem;
 	/** Set once the select command, rather than the query, has been sent */
 	bool sim_select_sent;
+	/** SIM slot to switch to while the modem runs, NULL if none is pending */
+	const struct modem_cellular_sim_slot *sim_slot_requested;
+	/** Active SIM slot before the switch in progress, restored if it fails */
+	const struct modem_cellular_sim_slot *sim_slot_previous;
+	/** Step of the switch in progress */
+	uint8_t sim_switch_step;
+	/** Set while the SIM slot is switched with the modem running */
+	bool sim_switching;
+	/** Set when the switch in progress has a data call to end */
+	bool sim_switch_ppp;
+	/** Runs of the sim_activate script in the switch in progress */
+	uint8_t sim_activate_attempts;
 	struct modem_chat_script_chat sim_select_chat;
 	struct modem_chat_script sim_select_script;
 	char sim_select_buf[MODEM_CELLULAR_SIM_SELECT_BUF_SIZE];
@@ -312,6 +326,19 @@ struct modem_cellular_config_scripts {
 	const struct modem_chat_script *shutdown;
 	/** Optional script for configuring DLCI channels after opening */
 	const struct modem_chat_script *dlci_setup;
+	/**
+	 * Optional script that deactivates the SIM interface with the modem running, for
+	 * example with @c AT+CFUN=0. With it, the SIM slot can be switched without
+	 * suspending the modem: the driver detaches from the packet domain, runs this
+	 * script, switches the slot, runs @c sim_activate and connects again.
+	 */
+	const struct modem_chat_script *sim_deactivate;
+	/**
+	 * Optional script that activates the SIM interface again once the slot is switched,
+	 * and may read the identity of the new SIM, for example with @c AT+CFUN=4 and
+	 * @c AT+CIMI. It must leave the radio off; the network or dial script turns it on.
+	 */
+	const struct modem_chat_script *sim_activate;
 };
 
 /**
