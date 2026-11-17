@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
 / {
 	main_gpio0: main-gpio0 {
 		compatible = "ti,k3-gpio-nexus";
@@ -72,7 +74,7 @@
 			   <124 0 &main_gpio0_3 28 0>, <125 0 &main_gpio0_3 29 0>,
 			   <126 0 &main_gpio0_3 30 0>, <127 0 &main_gpio0_3 31 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio1: main-gpio1 {
@@ -97,7 +99,7 @@
 			   <32 0 &main_gpio1_1 0 0>, <33 0 &main_gpio1_1 1 0>,
 			   <34 0 &main_gpio1_1 2 0>, <35 0 &main_gpio1_1 3 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio2: main-gpio2 {
@@ -184,7 +186,7 @@
 			   <124 0 &main_gpio0_3 28 0>, <125 0 &main_gpio0_3 29 0>,
 			   <126 0 &main_gpio0_3 30 0>, <127 0 &main_gpio0_3 31 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio3: main-gpio3 {
@@ -209,7 +211,7 @@
 			   <32 0 &main_gpio3_1 0 0>, <33 0 &main_gpio3_1 1 0>,
 			   <34 0 &main_gpio3_1 2 0>, <35 0 &main_gpio3_1 3 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio4: main-gpio4 {
@@ -280,7 +282,7 @@
 			   <124 0 &main_gpio4_3 28 0>, <125 0 &main_gpio4_3 29 0>,
 			   <126 0 &main_gpio4_3 30 0>, <127 0 &main_gpio4_3 31 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio5: main-gpio5 {
@@ -305,7 +307,7 @@
 			   <32 0 &main_gpio5_1 0 0>, <33 0 &main_gpio5_1 1 0>,
 			   <34 0 &main_gpio5_1 2 0>, <35 0 &main_gpio5_1 3 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio6: main-gpio6 {
@@ -376,7 +378,7 @@
 			   <124 0 &main_gpio6_3 28 0>, <125 0 &main_gpio6_3 29 0>,
 			   <126 0 &main_gpio6_3 30 0>, <127 0 &main_gpio6_3 31 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio7: main-gpio7 {
@@ -401,7 +403,7 @@
 			   <32 0 &main_gpio7_1 0 0>, <33 0 &main_gpio7_1 1 0>,
 			   <34 0 &main_gpio7_1 2 0>, <35 0 &main_gpio7_1 3 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio0_0: gpio@600010 {

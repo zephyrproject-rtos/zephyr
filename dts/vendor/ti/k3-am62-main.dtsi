@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
 / {
 	main_gpio0: main-gpio0 {
 		compatible = "ti,k3-gpio-nexus";
@@ -57,7 +59,7 @@
 			   <88 0 &main_gpio0_2 24 0>, <89 0 &main_gpio0_2 25 0>,
 			   <90 0 &main_gpio0_2 26 0>, <91 0 &main_gpio0_2 27 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio1: main-gpio1 {
@@ -91,7 +93,7 @@
 			   <50 0 &main_gpio1_1 18 0>, <51 0 &main_gpio1_1 19 0>,
 			   <52 0 &main_gpio1_1 20 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio0_0: gpio@600010 {

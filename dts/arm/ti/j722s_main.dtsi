@@ -7,6 +7,7 @@
 
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
 
 / {
@@ -61,7 +62,7 @@
 			   <84 0 &main_gpio0_2 20 0>, <85 0 &main_gpio0_2 21 0>,
 			   <86 0 &main_gpio0_2 22 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio1: main-gpio1 {
@@ -105,7 +106,7 @@
 			   <70 0 &main_gpio1_2 6 0>, <71 0 &main_gpio1_2 7 0>,
 			   <72 0 &main_gpio1_2 8 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	pinctrl: pinctrl@f4000 {
