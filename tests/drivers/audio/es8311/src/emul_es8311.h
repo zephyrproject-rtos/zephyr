@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_AUDIO_EMUL_ES8311_H_
-#define ZEPHYR_DRIVERS_AUDIO_EMUL_ES8311_H_
+#ifndef ZEPHYR_TESTS_DRIVERS_AUDIO_ES8311_EMUL_ES8311_H_
+#define ZEPHYR_TESTS_DRIVERS_AUDIO_ES8311_EMUL_ES8311_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -51,4 +51,4 @@ void emul_es8311_release(const struct emul *target);
 /* Reset registers, fault injection and logging; driver state is unaffected. */
 void emul_es8311_reset(const struct emul *target);
 
-#endif /* ZEPHYR_DRIVERS_AUDIO_EMUL_ES8311_H_ */
+#endif /* ZEPHYR_TESTS_DRIVERS_AUDIO_ES8311_EMUL_ES8311_H_ */
