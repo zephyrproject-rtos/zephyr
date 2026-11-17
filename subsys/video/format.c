@@ -87,6 +87,24 @@ int video_estimate_fmt_size(struct video_format *fmt)
 	return 0;
 }
 
+uint32_t video_get_buffer_height(const struct video_buffer *vbuf, const struct video_format *fmt)
+{
+	unsigned int size_factor;
+
+	if (vbuf == NULL || fmt == NULL || fmt->pitch == 0U) {
+		LOG_ERR("Video buffer and format must be valid with a nonzero pitch");
+		return 0U;
+	}
+
+	size_factor = video_num_planes(fmt->pixelformat);
+	if (fmt->pixelformat == VIDEO_PIX_FMT_NV24 || fmt->pixelformat == VIDEO_PIX_FMT_NV42) {
+		/* The interleaved chroma plane has twice the luma pitch. */
+		size_factor = 3U;
+	}
+
+	return vbuf->bytesused / fmt->pitch / size_factor;
+}
+
 int video_set_compose_format(const struct device *dev, struct video_format *fmt)
 {
 	struct video_selection sel = {

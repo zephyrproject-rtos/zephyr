@@ -20,7 +20,7 @@
  * @defgroup video_api Video Subsystem
  * @ingroup multimedia
  * @since 4.4
- * @version 0.2.1
+ * @version 0.3.0
  * @{
  */
 
@@ -423,6 +423,28 @@ int video_closest_frmival(const struct device *dev, struct video_frmival_enum *m
  * @return 0 on success, otherwise a negative errno code
  */
 int video_estimate_fmt_size(struct video_format *fmt);
+
+/**
+ * @brief Calculate the number of image rows represented by a video buffer.
+ *
+ * The buffer must follow the plane-storage conventions of
+ * @ref video_estimate_fmt_size. The height is derived from @c bytesused, the
+ * first-plane @c pitch and @ref video_num_planes. NV24 and NV42 use a size
+ * factor of three because their chroma plane has twice the luma pitch.
+ *
+ * Partial-frame buffers are supported when their data follows the same storage
+ * conventions. Tightly packed subsampled layouts that differ from these
+ * conventions are not supported.
+ *
+ * @param vbuf Pointer to the video buffer.
+ * @param fmt Pointer to the video format describing the buffer.
+ *
+ * @return Number of complete image rows represented by the buffer.
+ * @retval 0 Buffer contains no complete image rows.
+ * @retval 0 Buffer or format pointer is NULL.
+ * @retval 0 Format pitch is zero.
+ */
+uint32_t video_get_buffer_height(const struct video_buffer *vbuf, const struct video_format *fmt);
 
 /**
  * @brief Set compose rectangle (if applicable) prior to setting format
