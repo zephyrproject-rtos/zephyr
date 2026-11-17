@@ -31,7 +31,7 @@ extern "C" {
 struct sensor_data_header {
 	/**
 	 * The closest timestamp for when the first frame was generated as attained by
-	 * :c:func:`k_uptime_ticks`.
+	 * k_uptime_ticks().
 	 */
 	uint64_t base_timestamp_ns;
 	/**
@@ -44,12 +44,12 @@ struct sensor_data_header {
 
 /**
  * Data for a sensor channel which reports on three axes. This is used by:
- * - :c:enum:`SENSOR_CHAN_ACCEL_XYZ`
- * - :c:enum:`SENSOR_CHAN_GYRO_XYZ`
- * - :c:enum:`SENSOR_CHAN_MAGN_XYZ`
- * - :c:enum:`SENSOR_CHAN_POS_DXYZ`
- * - :c:enum:`SENSOR_CHAN_GRAVITY_VECTOR`
- * - :c:enum:`SENSOR_CHAN_GBIAS_XYZ`
+ * - @ref SENSOR_CHAN_ACCEL_XYZ
+ * - @ref SENSOR_CHAN_GYRO_XYZ
+ * - @ref SENSOR_CHAN_MAGN_XYZ
+ * - @ref SENSOR_CHAN_POS_DXYZ
+ * - @ref SENSOR_CHAN_GRAVITY_VECTOR
+ * - @ref SENSOR_CHAN_GBIAS_XYZ
  */
 struct sensor_three_axis_data {
 	/** Base timestamp and number of readings. */
@@ -101,7 +101,7 @@ struct sensor_three_axis_data {
 
 /**
  * Data for a sensor channel which reports game rotation vector data. This is used by:
- * - :c:enum:`SENSOR_CHAN_GAME_ROTATION_VECTOR`
+ * - @ref SENSOR_CHAN_GAME_ROTATION_VECTOR
  */
 struct sensor_game_rotation_vector_data {
 	/** Base timestamp and number of readings. */
@@ -241,7 +241,7 @@ struct sensor_q31_data {
 
 /**
  * Data from a sensor that produces a byte of data. This is used by:
- * - :c:enum:`SENSOR_CHAN_PROX`
+ * - @ref SENSOR_CHAN_PROX
  */
 struct sensor_byte_data {
 	/** Base timestamp and number of readings. */
@@ -286,7 +286,7 @@ struct sensor_byte_data {
 
 /**
  * Data from a sensor that produces a count like value. This is used by:
- * - :c:enum:`SENSOR_CHAN_GAUGE_CYCLE_COUNT`
+ * - @ref SENSOR_CHAN_GAUGE_CYCLE_COUNT
  */
 struct sensor_uint64_data {
 	/** Base timestamp and number of readings. */
