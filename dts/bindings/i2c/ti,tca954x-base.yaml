@@ -1,7 +1,7 @@
 # Copyright (c) 2020, Innoseis BV
 # SPDX-License-Identifier: Apache-2.0
 
-# Common fields for TI TCA954X I2C mux family
+# Common fields for TI TCA954X I2C mux family and NXP PCA9547
 
 description: |
   TCA954x I2C switch

@@ -1,0 +1,8 @@
+# Copyright (c) 2026 ecom GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCA9547 8-channel I2C multiplexer
+
+compatible: "nxp,pca9547"
+
+include: ti,tca954x-base.yaml
