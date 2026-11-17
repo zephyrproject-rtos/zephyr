@@ -280,12 +280,16 @@ int mcux_snvs_rtc_set(const struct device *dev, uint32_t ticks)
 	/* Sync to our high power RTC */
 	SNVS_HP_RTC_TimeSynchronize(config->base);
 #else
+	bool running = (config->base->HPCR & SNVS_HPCR_RTC_EN_MASK) != 0U;
+
 	SNVS_HP_RTC_StopTimer(config->base);
 
 	config->base->HPRTCMR = (uint32_t)(ticks >> 17U);
 	config->base->HPRTCLR = (uint32_t)(ticks << 15U);
 
-	SNVS_HP_RTC_StartTimer(config->base);
+	if (running) {
+		SNVS_HP_RTC_StartTimer(config->base);
+	}
 #endif
 
 	return 0;
