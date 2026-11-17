@@ -40,6 +40,7 @@
 #include <zephyr/usb/usbd.h>
 
 #include "chan_map.h"
+#include "vs_fatal.h"
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
@@ -1414,6 +1415,11 @@ static bool vnd_evt_cb(struct net_buf_simple *buf)
 	net_buf_simple_save(buf, &state);
 
 	if (IS_ENABLED(CONFIG_CHAN_MAP_UPDATE) && chan_map_vnd_evt(buf)) {
+		return true;
+	}
+	net_buf_simple_restore(buf, &state);
+
+	if (IS_ENABLED(CONFIG_VS_FATAL_PRINT) && vs_fatal_vnd_evt(buf)) {
 		return true;
 	}
 	net_buf_simple_restore(buf, &state);
