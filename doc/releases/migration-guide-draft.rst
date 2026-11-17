@@ -436,6 +436,14 @@ Bluetooth HCI
 Bluetooth Host
 ==============
 
+* GATT notifications and indications with a ``NULL`` connection now attempt every eligible
+  subscriber even when a send fails. They return 0 when at least one send is accepted, the
+  first send error when all attempts fail, or ``-ENOTCONN`` when none is attempted. Success
+  does not imply delivery to every subscriber or confirmation of an indication. Applications
+  requiring retries for individual peers must send on each connection separately; retrying
+  a broadcast can duplicate values already accepted for another peer. The return values for
+  sends on a specific connection are unchanged.
+
 * The ATT prepare write buffers (:kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT`) are now shared
   equally between connections: a single connection holds at most
   :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN` of them, which defaults to

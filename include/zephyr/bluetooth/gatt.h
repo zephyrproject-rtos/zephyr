@@ -17,7 +17,7 @@
  *          information, see @ref bt_gatt_client and @ref bt_gatt_server.
  * @defgroup bt_gatt Generic Attribute Profile (GATT)
  * @since 1.0
- * @version 1.0.2
+ * @version 1.0.3
  * @ingroup bluetooth
  * @{
  */
@@ -1455,6 +1455,14 @@ struct bt_gatt_notify_params {
  *  parameters, when using this method the attribute if provided is used as the
  *  start range when looking up for possible matches.
  *
+ *  If @p conn is NULL, all eligible subscribers are attempted independently.
+ *  The return value is 0 if at least one notification is queued, the first
+ *  send error if every attempt fails, or -ENOTCONN if none is attempted.
+ *  A return value of 0 does not mean that every subscriber was notified.
+ *  Applications requiring per-peer error handling and retries must notify
+ *  each connection separately. Retrying a broadcast can duplicate values
+ *  already queued for other subscribers.
+ *
  *  @param conn Connection object.
  *  @param params Notification parameters.
  *
@@ -1524,6 +1532,8 @@ int bt_gatt_notify_multiple(struct bt_conn *conn,
  *  all peer that have notification enabled via CCC otherwise do a direct
  *  notification only the given connection.
  *
+ *  See @ref bt_gatt_notify_cb for broadcast return values and retry semantics.
+ *
  *  The attribute object on the parameters can be the so called Characteristic
  *  Declaration, which is usually declared with BT_GATT_CHARACTERISTIC followed
  *  by BT_GATT_CCC, or the Characteristic Value Declaration which is
@@ -1564,6 +1574,8 @@ static inline int bt_gatt_notify(struct bt_conn *conn,
  *  Send notification of attribute value change, if connection is NULL notify
  *  all peer that have notification enabled via CCC otherwise do a direct
  *  notification only on the given connection.
+ *
+ *  See @ref bt_gatt_notify_cb for broadcast return values and retry semantics.
  *
  *  The attribute object is the starting point for the search of the UUID.
  *
@@ -1680,6 +1692,15 @@ struct bt_gatt_indicate_params {
  *  @note This procedure is asynchronous therefore the parameters need to
  *        remains valid while it is active. The procedure is active until
  *        the destroy callback is run.
+ *
+ *  If @p conn is NULL, all eligible subscribers are attempted independently.
+ *  The return value is 0 if at least one indication is queued, the first
+ *  send error if every attempt fails, or -ENOTCONN if none is attempted.
+ *  A return value of 0 does not mean that every subscriber was indicated or
+ *  that any indication has been confirmed. Parameters must remain valid
+ *  until the destroy callback, including when only some sends succeed.
+ *  Applications requiring per-peer error handling and retries must indicate
+ *  each connection separately.
  *
  *  @param conn Connection object.
  *  @param params Indicate parameters.
