@@ -210,9 +210,9 @@ int pbuf_rx_init(struct pbuf *pb);
  * @param pb	A buffer to which to write.
  * @param buf	Pointer to the data to be written to the buffer.
  * @param len	Number of bytes to be written to the buffer. Must be positive.
- * @retval int	Number of bytes written, negative error code on fail.
- *		-EINVAL, if any of input parameter is incorrect.
- *		-ENOMEM, if len is bigger than the buffer can fit.
+ * @return Number of bytes written on success.
+ * @retval -EINVAL An input parameter is incorrect.
+ * @retval -ENOMEM @p len is bigger than the buffer can fit.
  */
 
 int pbuf_write(struct pbuf *pb, const char *buf, uint16_t len);
@@ -227,11 +227,10 @@ int pbuf_write(struct pbuf *pb, const char *buf, uint16_t len);
  * @param buf	Data pointer to which read data will be written.
  *		If NULL, len of stored message is returned.
  * @param len	Number of bytes to be read from the buffer.
- * @retval int	Bytes read, negative error code on fail.
- *		Bytes to be read, if buf == NULL.
- *		-EINVAL, if any of input parameter is incorrect.
- *		-ENOMEM, if message can not fit in provided buf.
- *		-EAGAIN, if not whole message is ready yet.
+ * @return Number of bytes read on success, or the message length if @p buf is NULL.
+ * @retval -EINVAL An input parameter is incorrect.
+ * @retval -ENOMEM The message does not fit in @p buf.
+ * @retval -EAGAIN The whole message is not ready yet.
  */
 int pbuf_read(struct pbuf *pb, char *buf, uint16_t len);
 
@@ -241,7 +240,7 @@ int pbuf_read(struct pbuf *pb, char *buf, uint16_t len);
  * The pb must be defined with "PBUF_DEFINE" with "use_handshake" set.
  *
  * @param pb		A buffer from which data will be read.
- * @retval uint32_t	The handshake word value.
+ * @return The handshake word value.
  */
 uint32_t pbuf_handshake_read(struct pbuf *pb);
 
@@ -264,8 +263,8 @@ void pbuf_handshake_write(struct pbuf *pb, uint32_t value);
  * @param pb		A buffer from which data will be read.
  * @param[out] buf	A pointer to output pointer to the date of the first buffer.
  * @param[out] len	A pointer to output length the first buffer.
- * @retval		0 on success.
- *			-EINVAL when there is no buffer at the beginning of queue.
+ * @retval 0 on success.
+ * @retval -EINVAL No buffer at the beginning of the queue.
  */
 int pbuf_get_initial_buf(struct pbuf *pb, volatile char **buf, uint16_t *len);
 

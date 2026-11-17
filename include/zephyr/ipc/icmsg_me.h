@@ -77,7 +77,7 @@ struct icmsg_me_data_t {
  *                     is active.
  *
  *  @retval 0 on success.
- *  @retval other errno codes from dependent modules.
+ *  @retval -errno Other negative errno code from dependent modules.
  */
 int icmsg_me_init(const struct icmsg_config_t *conf,
 		  struct icmsg_me_data_t *data);
@@ -105,7 +105,7 @@ int icmsg_me_init(const struct icmsg_config_t *conf,
  *
  *
  *  @retval 0 on success.
- *  @retval other errno codes from dependent modules.
+ *  @retval -errno Other negative errno code from dependent modules.
  */
 int icmsg_me_open(const struct icmsg_config_t *conf,
 		  struct icmsg_me_data_t *data,
@@ -261,7 +261,7 @@ void icmsg_me_reset_ept_cfg(struct icmsg_me_data_t *data, icmsg_me_ept_id_t id);
  *
  *  @retval 0 on success.
  *  @retval -EBADMSG when the requested data to send is too big.
- *  @retval other errno codes from dependent modules.
+ *  @retval -errno Other negative errno code from dependent modules.
  */
 int icmsg_me_send(const struct icmsg_config_t *conf,
 		  struct icmsg_me_data_t *data, icmsg_me_ept_id_t id,
