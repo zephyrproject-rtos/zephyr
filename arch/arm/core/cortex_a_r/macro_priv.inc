@@ -48,6 +48,28 @@
 .endm
 
 .macro z_arm_cortex_ar_enter_exc
+#if defined(CONFIG_USERSPACE)
+	/*
+	 * USR and SYS modes share SP.  On an exception from user mode,
+	 * save the user SP and switch to the thread's privileged stack
+	 * before pushing the exception frame.
+	 */
+	push {r0, r1}
+	mrs r0, spsr
+	and r0, #MODE_MASK
+	cmp r0, #MODE_USR
+	bne 1f
+	mrs r1, cpsr
+	get_cpu r0
+	ldr r0, [r0, #___cpu_t_current_OFFSET]
+	cps #MODE_SYS
+	str sp, [r0, #_thread_offset_to_sp_usr]
+	ldr sp, [r0, #_thread_offset_to_priv_stack_end]
+	msr cpsr_c, r1
+1:
+	pop {r0, r1}
+#endif
+
 	/*
 	 * Store r0-r3, r12, lr into the stack to construct an exception
 	 * stack frame.
@@ -67,6 +89,42 @@
 .endm
 
 /*
+ * Called in SYS mode with the return state (PC, SPSR) left on the SYS
+ * mode stack, before RFE.  With CONFIG_USERSPACE, the return state moves
+ * to the SVC mode stack, as the user stack cannot be trusted, and the
+ * user SP is restored when returning to user mode.  Ends in SVC mode in
+ * that case.
+ */
+.macro userspace_exc_exit
+#if defined(CONFIG_USERSPACE)
+	cps #MODE_SVC
+	sub sp, #8
+	push {r0-r1}
+
+	cps #MODE_SYS
+	pop {r0-r1}
+
+	cps #MODE_SVC
+	str r0, [sp, #8]
+	str r1, [sp, #12]
+
+	/* Only switch the stacks if returning to a user thread */
+	and r1, #MODE_MASK
+	cmp r1, #MODE_USR
+	bne system_thread_exit\@
+
+	/* Restore user stack pointer */
+	get_cpu r0
+	ldr r0, [r0, #___cpu_t_current_OFFSET]
+	cps #MODE_SYS
+	ldr sp, [r0, #_thread_offset_to_sp_usr] /* sp_usr */
+	cps #MODE_SVC
+system_thread_exit\@:
+	pop {r0-r1}
+#endif
+.endm
+
+/*
  * Move to the IRQ stack if \rnested, the interrupt nesting count after its
  * increment, is 1, and push the current SP there. ISRs and irq_offload
  * routines run in system mode on the IRQ stack: in IRQ mode, a nested
@@ -81,7 +139,11 @@
 	cps #MODE_IRQ
 	mov r1, sp
 	cps #MODE_SYS
-	mov sp, r1
+	/*
+	 * Leave the top 8 bytes to z_arm_cortex_ar_enter_exc, which saves r0
+	 * and r1 there on interrupt entry with CONFIG_USERSPACE.
+	 */
+	sub sp, r1, #8
 	/* r1 keeps the stack 8-byte aligned */
 	push {r0, r1}
 1:

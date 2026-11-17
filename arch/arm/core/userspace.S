@@ -34,7 +34,7 @@ GDATA(_kernel)
 /* Imports */
 GDATA(_k_syscall_table)
 
-#if defined(CONFIG_USE_SWITCH)
+#if defined(CONFIG_USE_SWITCH) && defined(CONFIG_CPU_CORTEX_M)
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 # define LOCK(reg)   mov reg, #_EXC_IRQ_DEFAULT_PRIO ; msr BASEPRI, reg
 # define UNLOCK(reg) mov reg, #0 ; msr BASEPRI, reg
@@ -533,8 +533,6 @@ dispatch_syscall:
 z_syscall_exit_race1:
     msr CONTROL, ip
 z_syscall_exit_race2:
-#else
-    UNLOCK(r0)
 #endif
 #endif
 
