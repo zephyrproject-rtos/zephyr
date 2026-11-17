@@ -45,10 +45,11 @@ LOG_MODULE_REGISTER(spi_mspm0, CONFIG_SPI_LOG_LEVEL);
 #define MSPM0_SPI_PWREN_ENABLE_MASK BIT(0)
 
 /* Control register-0 */
-#define MSPM0_SPI_CTL0_DSS_MASK GENMASK(4, 0)
-#define MSPM0_SPI_CTL0_FRF_MASK GENMASK(6, 5)
-#define MSPM0_SPI_CTL0_SPO_MASK BIT(8)
-#define MSPM0_SPI_CTL0_SPH_MASK BIT(9)
+#define MSPM0_SPI_CTL0_DSS_MASK   GENMASK(4, 0)
+#define MSPM0_SPI_CTL0_FRF_MASK   GENMASK(6, 5)
+#define MSPM0_SPI_CTL0_SPO_MASK   BIT(8)
+#define MSPM0_SPI_CTL0_SPH_MASK   BIT(9)
+#define MSPM0_SPI_CTL0_CSSEL_MASK GENMASK(13, 12)
 
 /* Frame format selection */
 #define MSPM0_SPI_CTL0_FRF_MOTOROLA_4WIRE FIELD_PREP(MSPM0_SPI_CTL0_FRF_MASK, 1)
@@ -94,7 +95,12 @@ LOG_MODULE_REGISTER(spi_mspm0, CONFIG_SPI_LOG_LEVEL);
 #define MSPM0_SPI_CTL1_DISABLE            FIELD_PREP(MSPM0_SPI_CTL1_ENABLE_MASK, 0)
 #define MSPM0_SPI_DSS_MIN                 4
 #define MSPM0_SPI_DSS_MAX                 16
+#define MSPM0_SPI_CS_LINE_MIN             0U
+#define MSPM0_SPI_CS_LINE_MAX             3U
 #define MSPM0_SPI_CONTROLLER_RX_FIFO_TRIG 2U
+
+/* pinctrl state holding only the hardware CS pin */
+#define PINCTRL_STATE_HW_CS PINCTRL_STATE_PRIV_START
 
 /* Computes the minimum number of bytes per word using word_size. */
 #define BYTES_PER_WORD(word_size) (((word_size) + 7) / 8)
@@ -237,6 +243,28 @@ static int spi_mspm0_configure(const struct device *dev, const struct spi_config
 		return -EINVAL;
 	}
 
+	if (spi_cs_is_gpio(config)) {
+		ret = spi_context_cs_configure_all(&data->spi_ctx);
+	} else {
+
+		if (!IN_RANGE(config->peripheral, MSPM0_SPI_CS_LINE_MIN, MSPM0_SPI_CS_LINE_MAX)) {
+			LOG_ERR("CS line out of range (0..%u)", MSPM0_SPI_CS_LINE_MAX);
+			return -EINVAL;
+		}
+
+		if (config->operation & (SPI_CS_ACTIVE_HIGH | SPI_HOLD_ON_CS)) {
+			LOG_ERR("CS does not support active-high/hold-on-cs");
+			return -ENOTSUP;
+		}
+
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_HW_CS);
+		ctl0 |= FIELD_PREP(MSPM0_SPI_CTL0_CSSEL_MASK, config->peripheral);
+	}
+
+	if (ret < 0) {
+		return ret;
+	}
+
 	if (config->operation & SPI_FRAME_FORMAT_TI) {
 		ctl0 |= MSPM0_SPI_CTL0_FRF_TI;
 	} else { /* CPOL/CPHA only supported in Motorola frame format */
@@ -256,7 +284,7 @@ static int spi_mspm0_configure(const struct device *dev, const struct spi_config
 
 	SPI_UPDATE_REG(cfg->base + MSPM0_SPI_CTL0, ctl0,
 		       MSPM0_SPI_CTL0_DSS_MASK | MSPM0_SPI_CTL0_FRF_MASK | MSPM0_SPI_CTL0_SPO_MASK |
-			       MSPM0_SPI_CTL0_SPH_MASK)
+			       MSPM0_SPI_CTL0_SPH_MASK | MSPM0_SPI_CTL0_CSSEL_MASK)
 
 	SPI_UPDATE_REG(cfg->base + MSPM0_SPI_CTL1, ctl1,
 		       MSPM0_SPI_CTL1_LBM_MASK | MSPM0_SPI_CTL1_CP_MASK | MSPM0_SPI_CTL1_MSB_MASK)
@@ -428,11 +456,6 @@ static int spi_mspm0_init(const struct device *dev)
 	msp_delay_peripheral_startup();
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = spi_context_cs_configure_all(&data->spi_ctx);
 	if (ret < 0) {
 		return ret;
 	}
