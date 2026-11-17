@@ -74,6 +74,8 @@ tests:
       - stm32l562e_dk
       - stm32u083c_dk
       - stm32wba65i_dk1
+      - ensemble_e8_dk/ae822fa0e5597ls0/rtss_he
+      - ensemble_e8_dk/ae822fa0e5597ls0/rtss_hp
     integration_platforms:
       - frdm_k64f
       - nrf52840dk/nrf52840
