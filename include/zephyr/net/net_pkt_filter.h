@@ -419,6 +419,9 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
  * This tests if the packet source ip address matches any of the ip
  * addresses contained in the provided set.
  *
+ * The set holds addresses of one address family. A packet of another address
+ * family matches none of them, so the condition is false for it.
+ *
  * @param _name Name of the condition
  * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
  * <tt>struct net_in6_addr</tt> items to test against
@@ -439,8 +442,11 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
 /**
  * @brief Statically define a "ip address blocklist" packet filter condition
  *
- * This tests if the packet source ip address matches any of the ip
+ * This tests if the packet source ip address matches none of the ip
  * addresses contained in the provided set.
+ *
+ * The set holds addresses of one address family. A packet of another address
+ * family matches none of them, so the condition is true for it.
  *
  * @param _name Name of the condition
  * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
