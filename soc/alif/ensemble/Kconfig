@@ -36,6 +36,20 @@ config SOC_FAMILY_ENSEMBLE_APSS
 	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
 	imply XIP
 
+config ENSEMBLE_APSS_SECURE
+	bool "APSS runs in Secure state, without TF-A"
+	depends on SOC_FAMILY_ENSEMBLE_APSS
+	select AARCH32_ARMV8_A_MONITOR_INIT
+	select CPU_CORTEX_A32_SMPEN
+	select SOC_PREP_HOOK
+	help
+	  Select when the Secure Enclave boots Zephyr directly on the APSS,
+	  in Secure state, instead of Zephyr running in Non-secure state
+	  behind TF-A. Zephyr then does the parts of TF-A's set-up it relies
+	  on: it sets CPUECTLR.SMPEN and zeroes the virtual counter offset
+	  (CNTVOFF) on each core, and enables the REFCLK system counter that
+	  drives the Generic Timer.
+
 rsource "*/Kconfig"
 
 endif # SOC_FAMILY_ENSEMBLE
