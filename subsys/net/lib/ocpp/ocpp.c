@@ -557,6 +557,8 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 	struct ocpp_info *ctx = p1;
 	struct ocpp_upstream_info *ui = &ctx->ui;
 	struct zsock_pollfd tcpfd;
+	union ocpp_keyval *val;
+	int64_t last_ping = 0;
 	int ret;
 	uint8_t retry_cnt = 0;
 
@@ -574,9 +576,26 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 				if (ret != 0) {
 					continue;
 				}
+				last_ping = k_uptime_get();
 			} else {
 				/* delay reconnection attempt */
 				k_msleep(200);
+				continue;
+			}
+		}
+
+		/* Keep the link alive with a websocket ping at the configured
+		 * interval. An idle connection can be dropped silently by a NAT
+		 * or the server, and poll() does not report that. A failed ping
+		 * tells us the link is gone so we can reconnect.
+		 */
+		val = ocpp_get_key_val(CFG_WEBSOCK_PING_INTERVAL);
+		if (val != NULL && val->ival > 0 &&
+		    (k_uptime_get() - last_ping) >= ((int64_t)val->ival * MSEC_PER_SEC)) {
+			ret = ocpp_ws_send(ctx, NULL, 0, WEBSOCKET_OPCODE_PING, 100);
+			last_ping = k_uptime_get();
+			if (ret < 0) {
+				ctx->is_cs_offline = true;
 				continue;
 			}
 		}
