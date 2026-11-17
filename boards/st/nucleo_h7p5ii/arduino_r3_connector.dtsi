@@ -40,4 +40,4 @@
 
 arduino_serial: &uart4 {};
 
-/* arduino_spi: &spi1 {}; */
+arduino_spi: &spi1 {};
