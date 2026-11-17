@@ -13,6 +13,10 @@
 	};
 };
 
+&dma1 {
+	status = "okay";
+};
+
 &spi0 {
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
