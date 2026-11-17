@@ -198,6 +198,27 @@ struct net_tcp;
 
 struct net_conn_handle;
 
+#if defined(CONFIG_SOCKS)
+/** @cond INTERNAL_HIDDEN */
+
+/* State of the SOCKS5 CONNECT reply parser, used by the socks library only.
+ * The reply is not guaranteed to arrive in one packet, and the packet that
+ * completes it may carry relayed data behind it, so the parser has to survive
+ * across callbacks and cannot simply drop whatever it did not read.
+ */
+struct net_socks5_cmd_rsp {
+	uint8_t prefix[5];		/* fixed part and domain name length */
+	uint8_t prefix_len;
+	uint8_t need;			/* prefix bytes still to read */
+	size_t skip;			/* bound address and port still to drop */
+	bool complete;
+	int status;
+	struct net_pkt *leftover;	/* holds data that came in behind the reply */
+};
+
+/** @endcond */
+#endif /* CONFIG_SOCKS */
+
 /**
  * Note that we do not store the actual source IP address in the context
  * because the address is already set in the network interface struct.
@@ -514,6 +535,17 @@ __net_socket struct net_context {
 #if defined(CONFIG_SOCKS)
 	/** Is socks proxy enabled */
 	bool proxy_enabled;
+
+	/** SOCKS5 handshake state. The receive callbacks that fill it in can
+	 *  still run after net_socks5_connect() has returned, so it is kept
+	 *  here and not on the stack of the connecting thread.
+	 */
+	struct {
+		/** Method selection reply: VER and METHOD */
+		uint8_t method_rsp[2];
+		/** CONNECT reply parser */
+		struct net_socks5_cmd_rsp cmd_rsp;
+	} socks5;
 #endif
 
 };

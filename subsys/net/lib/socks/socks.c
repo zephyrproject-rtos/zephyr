@@ -16,6 +16,9 @@ LOG_MODULE_REGISTER(net_socks, CONFIG_SOCKS_LOG_LEVEL);
 #include "socks.h"
 #include "socks_internal.h"
 
+BUILD_ASSERT(sizeof(struct socks5_method_response) ==
+	     SIZEOF_FIELD(struct net_context, socks5.method_rsp));
+
 static void socks5_method_rsp_cb(struct net_context *ctx,
 				 struct net_pkt *pkt,
 				 union net_ip_header *ip_hdr,
@@ -24,7 +27,9 @@ static void socks5_method_rsp_cb(struct net_context *ctx,
 				 void *user_data)
 {
 	struct socks5_method_response *method_rsp =
-			(struct socks5_method_response *)user_data;
+			(struct socks5_method_response *)ctx->socks5.method_rsp;
+
+	ARG_UNUSED(user_data);
 
 	if (!pkt || status) {
 		memset(method_rsp, 0, sizeof(struct socks5_method_response));
@@ -46,25 +51,13 @@ end:
 #define SOCKS5_RSP_HDR_LEN sizeof(struct socks5_command_response_common)
 #define SOCKS5_RSP_PREFIX_MAX (SOCKS5_RSP_HDR_LEN + 1)
 
-/* State of the CONNECT reply parser. The reply is not guaranteed to arrive in
- * one packet, and the packet that completes it may carry relayed data behind
- * it, so the parser has to survive across callbacks and cannot simply drop
- * whatever it did not read.
- */
-struct socks5_cmd_rsp {
-	uint8_t prefix[SOCKS5_RSP_PREFIX_MAX];
-	uint8_t prefix_len;
-	uint8_t need;			/* prefix bytes still to read */
-	size_t skip;			/* bound address and port still to drop */
-	bool complete;
-	int status;
-	struct net_pkt *leftover;	/* holds data that came in behind the reply */
-};
+BUILD_ASSERT(SIZEOF_FIELD(struct net_socks5_cmd_rsp, prefix) ==
+	     SOCKS5_RSP_PREFIX_MAX);
 
 /* Work out what is left of the reply now that its fixed part has been read.
  * The bound address is not needed for anything, so only its length matters.
  */
-static void socks5_cmd_rsp_next(struct socks5_cmd_rsp *rsp)
+static void socks5_cmd_rsp_next(struct net_socks5_cmd_rsp *rsp)
 {
 	switch (rsp->prefix[3]) {
 	case SOCKS5_ATYP_IPV4:
@@ -102,13 +95,13 @@ static void socks5_cmd_rsp_cb(struct net_context *ctx,
 			      int status,
 			      void *user_data)
 {
-	struct socks5_cmd_rsp *rsp = (struct socks5_cmd_rsp *)user_data;
+	struct net_socks5_cmd_rsp *rsp = &ctx->socks5.cmd_rsp;
 	size_t avail;
 	size_t take;
 
-	ARG_UNUSED(ctx);
 	ARG_UNUSED(ip_hdr);
 	ARG_UNUSED(proto_hdr);
+	ARG_UNUSED(user_data);
 
 	if (pkt == NULL || status != 0) {
 		rsp->status = (status != 0) ? status : -ECONNRESET;
@@ -157,9 +150,11 @@ static void socks5_cmd_rsp_cb(struct net_context *ctx,
 
 	/* Whatever is left is relayed data that the proxy sent in the same
 	 * segment as the reply. Hand the packet on instead of dropping it,
-	 * the caller passes it to the socket receive queue.
+	 * the caller passes it to the socket receive queue. Once the caller
+	 * has given up on the reply, or taken it, nobody looks here again.
 	 */
-	if (rsp->complete && net_pkt_remaining_data(pkt) > 0U) {
+	if (rsp->complete && rsp->status == 0 &&
+	    net_pkt_remaining_data(pkt) > 0U) {
 		rsp->leftover = pkt;
 		return;
 	}
@@ -228,13 +223,19 @@ static int socks5_tcp_connect(struct net_context *ctx,
 			      struct net_pkt **leftover)
 {
 	struct socks5_method_request method_req;
-	struct socks5_method_response method_rsp;
+	struct socks5_method_response *method_rsp =
+			(struct socks5_method_response *)ctx->socks5.method_rsp;
 	struct socks5_command_request cmd_req;
-	struct socks5_cmd_rsp cmd_rsp = {
-		.need = SOCKS5_RSP_HDR_LEN,
-	};
+	struct net_socks5_cmd_rsp *cmd_rsp = &ctx->socks5.cmd_rsp;
 	int size;
 	int ret;
+
+	/* A response callback of an earlier attempt may have parked a packet
+	 * here after that attempt returned.
+	 */
+	net_pkt_unref(cmd_rsp->leftover);
+	memset(&ctx->socks5, 0, sizeof(ctx->socks5));
+	cmd_rsp->need = SOCKS5_RSP_HDR_LEN;
 
 	/* Negotiate authentication method */
 	method_req.r.ver = SOCKS5_PKT_MAGIC;
@@ -256,19 +257,19 @@ static int socks5_tcp_connect(struct net_context *ctx,
 
 	ret = net_context_recv(ctx, socks5_method_rsp_cb,
 			       K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT),
-			       &method_rsp);
+			       NULL);
 	if (ret < 0) {
 		LOG_ERR("Could not receive negotiation response");
 		goto error;
 	}
 
-	if (method_rsp.ver != SOCKS5_PKT_MAGIC) {
+	if (method_rsp->ver != SOCKS5_PKT_MAGIC) {
 		LOG_ERR("Invalid negotiation response magic");
 		ret = -EINVAL;
 		goto error;
 	}
 
-	if (method_rsp.method != SOCKS5_AUTH_METHOD_NOAUTH) {
+	if (method_rsp->method != SOCKS5_AUTH_METHOD_NOAUTH) {
 		LOG_ERR("Invalid negotiation response");
 		ret = -ENOTSUP;
 		goto error;
@@ -300,15 +301,15 @@ static int socks5_tcp_connect(struct net_context *ctx,
 	 * needed, has been taken off the stream. Anything left behind would be
 	 * handed to the application as if it were relayed data.
 	 */
-	while (!cmd_rsp.complete && cmd_rsp.status == 0) {
+	while (!cmd_rsp->complete && cmd_rsp->status == 0) {
 		ret = net_context_recv(ctx, socks5_cmd_rsp_cb,
 				       K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT),
-				       &cmd_rsp);
+				       NULL);
 		if (ret < 0) {
 			/* The packet that finished the reply may have arrived
 			 * just as the wait was being armed.
 			 */
-			if (cmd_rsp.complete || cmd_rsp.status != 0) {
+			if (cmd_rsp->complete || cmd_rsp->status != 0) {
 				break;
 			}
 
@@ -317,40 +318,48 @@ static int socks5_tcp_connect(struct net_context *ctx,
 		}
 	}
 
-	if (cmd_rsp.status < 0) {
-		LOG_ERR("Malformed CONNECT response (%d)", cmd_rsp.status);
-		ret = cmd_rsp.status;
+	if (cmd_rsp->status < 0) {
+		LOG_ERR("Malformed CONNECT response (%d)", cmd_rsp->status);
+		ret = cmd_rsp->status;
 		goto error;
 	}
 
-	if (cmd_rsp.prefix[0] != SOCKS5_PKT_MAGIC) {
+	if (cmd_rsp->prefix[0] != SOCKS5_PKT_MAGIC) {
 		LOG_ERR("Invalid CONNECT response");
 		ret = -EINVAL;
 		goto error;
 	}
 
-	if (cmd_rsp.prefix[1] != SOCKS5_CMD_RESP_SUCCESS) {
+	if (cmd_rsp->prefix[1] != SOCKS5_CMD_RESP_SUCCESS) {
 		LOG_ERR("Unable to connect to destination");
 		ret = -EINVAL;
 		goto error;
 	}
 
-	*leftover = cmd_rsp.leftover;
+	/* The command callback stays installed until the caller replaces it.
+	 * Anything it gets from here on has nobody to read it, so make it
+	 * release the packet instead of parking it in the context.
+	 */
+	cmd_rsp->status = -ECANCELED;
+	*leftover = cmd_rsp->leftover;
+	cmd_rsp->leftover = NULL;
 
 	LOG_DBG("Connection through SOCKS5 proxy successful");
 
 	return 0;
 
 error:
-	/* The response callbacks above were handed pointers to this stack
-	 * frame and net_context_recv() leaves them installed. On success the
-	 * caller replaces them right away, but on error nothing does, so drop
-	 * them here. Otherwise closing the socket later makes the TCP stack
-	 * call back into a frame that is long gone.
+	/* net_context_recv() leaves the response callbacks installed. On
+	 * success the caller replaces them, but on error nothing does, so drop
+	 * them here. That only stops future calls: one that is already running
+	 * still finishes, which is why the state it writes is kept in the
+	 * context and not on this stack.
 	 */
 	(void)net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
 
-	net_pkt_unref(cmd_rsp.leftover);
+	cmd_rsp->status = -ECANCELED;
+	net_pkt_unref(cmd_rsp->leftover);
+	cmd_rsp->leftover = NULL;
 
 	return ret;
 }
