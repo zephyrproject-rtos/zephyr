@@ -570,7 +570,7 @@ static int stm32_ltdc_display_register_event_cb(const struct device *dev, displa
 	}
 	if (!in_isr) {
 		LOG_ERR("Registration failed: only ISR context is supported for this driver");
-		return -ENOSYS;
+		return -ENOTSUP;
 	}
 
 	k_sem_take(&data->cb_sem, K_FOREVER);
@@ -623,15 +623,10 @@ static int stm32_ltdc_display_unregister_event_cb(const struct device *dev, uint
 
 	k_sem_take(&data->cb_sem, K_FOREVER);
 
-	if (data->cb.dev != dev) {
-		LOG_ERR("Unregistration failed: device does not match");
+	if ((data->cb.dev != dev) || (reg_handle != data->cb.out_reg_handle)) {
+		LOG_ERR("Unregistration failed: not the owner, or already unregistered");
 		k_sem_give(&data->cb_sem);
-		return -EINVAL;
-	}
-	if (reg_handle != 1U) {
-		LOG_ERR("Unregistration failed: invalid registration handle");
-		k_sem_give(&data->cb_sem);
-		return -EINVAL;
+		return -EPERM;
 	}
 
 	memset(&data->cb, 0, sizeof(data->cb));
