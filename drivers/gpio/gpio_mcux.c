@@ -545,6 +545,14 @@ static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
+/*
+ * A port can raise interrupts if it has its own interrupt line, or if it shares one with other
+ * ports through an enabled nxp,gpio-cluster parent node.
+ */
+#define GPIO_MCUX_HAS_IRQ(n)                                                                       \
+	UTIL_OR(DT_INST_IRQ_HAS_IDX(n, 0),                                                         \
+		DT_NODE_HAS_COMPAT_STATUS(DT_INST_PARENT(n), nxp_gpio_cluster, okay))
+
 #define GPIO_MCUX_IRQ_INIT(n)                                                                      \
 	do {                                                                                       \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_mcux_port_isr,         \
@@ -574,8 +582,7 @@ static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 	static const struct gpio_mcux_config gpio_mcux_port##n##_config = {                        \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		GPIO_PERIPH_BASE_DEFINE(n)                                                         \
-		.flags = UTIL_AND(UTIL_OR(DT_INST_IRQ_HAS_IDX(n, 0), GPIO_HAS_SHARED_IRQ),         \
-				  GPIO_INT_ENABLE),                                                \
+		.flags = UTIL_AND(GPIO_MCUX_HAS_IRQ(n), GPIO_INT_ENABLE),                          \
 		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),                         \
 			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),                          \
 		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),                      \
