@@ -8,6 +8,7 @@
 #include <espressif/esp32/esp32.dtsi>
 #include "esp_wrover_kit-pinctrl.dtsi"
 #include <espressif/partitions_0x1000_amp.dtsi>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	compatible = "espressif,esp32";
@@ -90,7 +91,7 @@
 			compatible = "ilitek,ili9341";
 			reg = <0>;
 			mipi-max-frequency = <25000000>;
-			pixel-format = <0>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			rotation = <0>;
 			width = <240>;
 			height = <320>;
