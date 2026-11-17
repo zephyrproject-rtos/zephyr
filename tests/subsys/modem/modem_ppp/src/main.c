@@ -15,10 +15,12 @@
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ppp.h>
 #include <zephyr/sys/crc.h>
+#include <zephyr/sys/ring_buffer.h>
 #include <string.h>
 
 #include <zephyr/modem/ppp.h>
 #include <modem_backend_mock.h>
+#include <modem_workqueue.h>
 
 #define TEST_MODEM_PPP_BUF_SIZE		     (16)
 #define TEST_MODEM_PPP_TX_PKT_BUF_SIZE	     (5)
@@ -34,6 +36,8 @@
 /* Frame sizes used by the bulk-write (span) receive regression tests */
 #define TEST_MODEM_PPP_IP_FRAME_RECEIVE_CLEAN_N	 (2048)
 #define TEST_MODEM_PPP_IP_FRAME_RECEIVE_ESCAPE_N (600)
+/* Frame size used by the receive work drain regression test */
+#define TEST_MODEM_PPP_IP_FRAME_RECEIVE_DRAIN_N  (600)
 
 /*************************************************************************************************/
 /*                                          Mock pipe                                            */
@@ -1005,6 +1009,85 @@ ZTEST(modem_ppp, test_ip_frame_receive_escape_heavy)
 	test_modem_ppp_generate_escape_heavy_ppp_frame(buffer,
 						       TEST_MODEM_PPP_IP_FRAME_RECEIVE_ESCAPE_N);
 	put_frame_and_validate_content(buffer, TEST_MODEM_PPP_IP_FRAME_RECEIVE_ESCAPE_N);
+}
+
+/*
+ * Receive work drain regression test.
+ *
+ * When the pipe is a CMUX DLCI, the CMUX receive work on the same workqueue keeps adding
+ * frames to the DLCI ring buffer between two runs of the PPP receive work. The PPP receive
+ * work must empty the pipe in one run, or a burst larger than the ring buffer overruns it.
+ */
+struct test_modem_ppp_gate {
+	struct k_work work;
+	struct k_sem release;
+};
+
+struct test_modem_ppp_probe {
+	struct k_work work;
+	struct k_sem done;
+	uint32_t runs;
+	bool pipe_drained;
+};
+
+static void test_modem_ppp_gate_handler(struct k_work *item)
+{
+	struct test_modem_ppp_gate *gate = CONTAINER_OF(item, struct test_modem_ppp_gate, work);
+
+	/* Hold the workqueue until the test has queued everything behind this item */
+	(void)k_sem_take(&gate->release, K_FOREVER);
+}
+
+static void test_modem_ppp_probe_handler(struct k_work *item)
+{
+	struct test_modem_ppp_probe *probe = CONTAINER_OF(item, struct test_modem_ppp_probe, work);
+
+	/*
+	 * The first run follows the mock receive ready work, which has just queued the PPP
+	 * receive work behind this item: queue again to run right after its first run.
+	 */
+	probe->runs++;
+	if (probe->runs == 1U) {
+		modem_work_submit(&probe->work);
+		return;
+	}
+
+	probe->pipe_drained = ring_buf_is_empty(&mock.rx_rb);
+	k_sem_give(&probe->done);
+}
+
+ZTEST(modem_ppp, test_ip_frame_receive_drained_in_one_run)
+{
+	/* Static: the workqueue still accesses a work item after its handler returns */
+	static struct test_modem_ppp_gate gate;
+	static struct test_modem_ppp_probe probe;
+	size_t wrapped_size;
+
+	k_work_init(&gate.work, test_modem_ppp_gate_handler);
+	k_sem_init(&gate.release, 0, 1);
+	k_work_init(&probe.work, test_modem_ppp_probe_handler);
+	k_sem_init(&probe.done, 0, 1);
+	probe.runs = 0U;
+	probe.pipe_drained = false;
+
+	/* Many times the PPP receive buffer, as a large IP packet through a DMA UART */
+	test_modem_ppp_generate_ppp_frame(buffer, TEST_MODEM_PPP_IP_FRAME_RECEIVE_DRAIN_N);
+	wrapped_size = test_modem_ppp_wrap_ppp_frame(wrapped_buffer, buffer,
+						     TEST_MODEM_PPP_IP_FRAME_RECEIVE_DRAIN_N);
+
+	modem_work_submit(&gate.work);
+	modem_backend_mock_put(&mock, wrapped_buffer, wrapped_size);
+	modem_work_submit(&probe.work);
+	k_sem_give(&gate.release);
+
+	zassert_ok(k_sem_take(&probe.done, K_SECONDS(1)), "Timeout waiting for the probe");
+	zassert_true(probe.pipe_drained, "First receive work run left data in the pipe");
+
+	zassert_ok(k_sem_take(&rx_pkt_sem, K_SECONDS(1)), "Timeout waiting for received frame");
+	zassert_equal(received_packets_len, 1, "Expected to receive one network packet");
+	zassert_equal(net_pkt_get_len(received_packets[0]),
+		      TEST_MODEM_PPP_IP_FRAME_RECEIVE_DRAIN_N - TEST_MODEM_PPP_FCS_SIZE,
+		      "Incorrect length of net packet received");
 }
 
 ZTEST_SUITE(modem_ppp, NULL, test_modem_ppp_setup, test_modem_ppp_before, NULL, NULL);
