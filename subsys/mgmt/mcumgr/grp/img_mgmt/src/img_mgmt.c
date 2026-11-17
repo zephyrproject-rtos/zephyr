@@ -53,12 +53,18 @@
 	to be able to figure out application running slot.
 #endif
 
+#ifdef CONFIG_FLASH_BASE_ADDRESS
+#define IMG_MGMT_FLASH_BASE_ADDRESS CONFIG_FLASH_BASE_ADDRESS
+#else
+#define IMG_MGMT_FLASH_BASE_ADDRESS DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
+#endif
+
 #define PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
 	DT_SAME_NODE(PARTITION_NODE_MTD(DT_CHOSEN(zephyr_code_partition)),                   \
 		PARTITION_MTD(label)) && (PARTITION_ADDRESS(label) <=                  \
-			(CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET) &&                  \
+			(IMG_MGMT_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET) &&                \
 		PARTITION_ADDRESS(label) + PARTITION_SIZE(label) >                     \
-			(CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET))
+			(IMG_MGMT_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET))
 #endif
 
 BUILD_ASSERT(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
