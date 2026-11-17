@@ -119,10 +119,17 @@ class TestSPDX3Documents:
         assert imports, "no cross-document import to check"
 
     def test_document_declares_root_elements(self, graph, spdx3_documents):
+        """The document's only root is a build Sbom, which holds the root packages."""
         spdx, documents = spdx3_documents(graph)
         for name, objects in documents.items():
             document = next(o for o in objects.objects if isinstance(o, spdx.SpdxDocument))
-            assert list(document.rootElement), f"{name}: no root element declared"
+            roots = list(document.rootElement)
+            assert len(roots) == 1, f"{name}: expected one root, got {roots}"
+            sbom = roots[0]
+            assert isinstance(sbom, spdx.software_Sbom), f"{name}: root is {type(sbom)}"
+            assert sbom in objects.objects, f"{name}: root Sbom not defined in the document"
+            assert list(sbom.software_sbomType) == [spdx.software_SbomType.build], name
+            assert list(sbom.rootElement), f"{name}: Sbom declares no root element"
 
     def test_creators(self, graph, spdx3_documents):
         spdx, documents = spdx3_documents(graph)
