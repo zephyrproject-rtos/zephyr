@@ -151,38 +151,36 @@
 .endm
 
 /*
- * Called in SYS mode with the return state (PC, SPSR) left on the SYS
- * mode stack, before RFE.  With CONFIG_USERSPACE, the return state moves
- * to the SVC mode stack, as the user stack cannot be trusted, and the
- * user SP is restored when returning to user mode.  Ends in SVC mode in
- * that case.
+ * Return from the exception whose frame address z_arm_cortex_ar_enter_exc
+ * stored at SP. Called in SYS mode. With CONFIG_USERSPACE, a return to user
+ * mode restores the user SP, and RFE loads the return state from the SVC
+ * mode stack, as the user stack cannot be trusted.
  */
-.macro userspace_exc_exit
+.macro z_arm_cortex_ar_exc_return
+	ldr sp, [sp]
 #if defined(CONFIG_USERSPACE)
-	cps #MODE_SVC
-	sub sp, #8
-	push {r0-r1}
-
-	cps #MODE_SYS
-	pop {r0-r1}
-
-	cps #MODE_SVC
-	str r0, [sp, #8]
-	str r1, [sp, #12]
-
-	/* Only switch the stacks if returning to a user thread */
-	and r1, #MODE_MASK
+	ldr r3, [sp, #___basic_sf_t_xpsr_OFFSET]
+	and r1, r3, #MODE_MASK
 	cmp r1, #MODE_USR
-	bne system_thread_exit\@
-
-	/* Restore user stack pointer */
+	beq 1f
+#endif
+	pop {r0-r3, r12, lr}
+	rfeia sp!
+#if defined(CONFIG_USERSPACE)
+1:
+	ldr r2, [sp, #___basic_sf_t_pc_OFFSET]
 	get_cpu r0
 	ldr r0, [r0, #___cpu_t_current_OFFSET]
-	cps #MODE_SYS
-	ldr sp, [r0, #_thread_offset_to_sp_usr] /* sp_usr */
+	ldr r0, [r0, #_thread_offset_to_sp_usr]
+	/* PC is in r2 now: keep the user SP in its frame slot */
+	str r0, [sp, #___basic_sf_t_pc_OFFSET]
 	cps #MODE_SVC
-system_thread_exit\@:
-	pop {r0-r1}
+	push {r2, r3}
+	cps #MODE_SYS
+	ldm sp, {r0-r3, r12, lr}
+	ldr sp, [sp, #___basic_sf_t_pc_OFFSET]
+	cps #MODE_SVC
+	rfeia sp!
 #endif
 .endm
 
