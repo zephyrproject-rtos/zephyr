@@ -69,14 +69,12 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 	vmsr fpexc, r3
 #endif
 
+exc_return:
 	/*
 	 * Restore r0-r3, r12, lr, PC and CPSR from the exception stack frame
 	 * and return to the current thread.
 	 */
-	ldr sp, [sp]
-	pop {r0-r3, r12, lr}
-	userspace_exc_exit
-	rfeia sp!
+	z_arm_cortex_ar_exc_return
 
 #if defined(CONFIG_FPU_SHARING)
 /*
@@ -88,11 +86,7 @@ z_arm_fpu_trap_exit:
 	ldrb r1, [r2, #_cpu_offset_to_exc_depth]
 	sub r1, r1, #1
 	strb r1, [r2, #_cpu_offset_to_exc_depth]
-
-	ldr sp, [sp]
-	pop {r0-r3, r12, lr}
-	userspace_exc_exit
-	rfeia sp!
+	b exc_return
 #endif
 
 /**
