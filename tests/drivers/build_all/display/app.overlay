@@ -474,28 +474,6 @@
 				};
 			};
 
-			test_mipi_dbi_hx8353e: hx8353e@26 {
-				compatible = "himax,hx8353e";
-				reg = <0x26>;
-				mipi-max-frequency = <15000000>;
-				mipi-mode = "MIPI_DBI_MODE_8080_BUS_8_BIT";
-				width = <132>;
-				height = <128>;
-				rotation = <90>;
-				backlight-gpios = <&test_gpio 0 0>;
-			};
-
-			test_mipi_dbi_hx8353e_pwm: hx8353e@27 {
-				compatible = "himax,hx8353e";
-				reg = <0x27>;
-				mipi-max-frequency = <15000000>;
-				mipi-mode = "MIPI_DBI_MODE_8080_BUS_8_BIT";
-				width = <132>;
-				height = <128>;
-				rotation = <0>;
-				pwms = <&test_pwm 0 PWM_MSEC(20) 0>;
-			};
-
 			test_uc8253_waveshare_epaper_hat_sku22698: uc8253@28 {
 				compatible = "ultrachip,uc8253";
 				reg = <0x28>;
@@ -590,6 +568,44 @@
 				rotation = <270>;
 				width = <128>;
 				height = <160>;
+			};
+		};
+
+		test_mipi_dbi_bitbang {
+			compatible = "zephyr,mipi-dbi-bitbang";
+			dc-gpios = <&test_gpio 16 0>;
+			reset-gpios = <&test_gpio 17 0>;
+			cs-gpios = <&test_gpio 18 0>;
+			wr-gpios = <&test_gpio 19 0>;
+			rd-gpios = <&test_gpio 20 0>;
+			data-gpios = <&test_gpio 21 0>, <&test_gpio 22 0>,
+				     <&test_gpio 23 0>, <&test_gpio 24 0>,
+				     <&test_gpio 25 0>, <&test_gpio 26 0>,
+				     <&test_gpio 27 0>, <&test_gpio 28 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			test_mipi_dbi_hx8353e: hx8353e@0 {
+				compatible = "himax,hx8353e";
+				reg = <0x0>;
+				mipi-max-frequency = <15000000>;
+				mipi-mode = "MIPI_DBI_MODE_8080_BUS_8_BIT";
+				width = <132>;
+				height = <128>;
+				rotation = <90>;
+				backlight-gpios = <&test_gpio 15 0>;
+			};
+
+			test_mipi_dbi_hx8353e_pwm: hx8353e@1 {
+				compatible = "himax,hx8353e";
+				reg = <0x1>;
+				mipi-max-frequency = <15000000>;
+				mipi-mode = "MIPI_DBI_MODE_8080_BUS_8_BIT";
+				width = <132>;
+				height = <128>;
+				rotation = <0>;
+				pwms = <&test_pwm 0 PWM_MSEC(20) 0>;
 			};
 		};
 
