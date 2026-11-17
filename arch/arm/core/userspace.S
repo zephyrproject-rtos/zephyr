@@ -531,6 +531,7 @@ dispatch_syscall:
     isb
 #endif
 
+#if defined(CONFIG_CPU_CORTEX_M)
     push {r0, r1}
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     push {r2, r3}
@@ -549,8 +550,7 @@ dispatch_syscall:
 
     msr CONTROL, r2
     pop {r2, r3}
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
-    || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     load_current r0, ip
     ldr r1, [r0, #_thread_offset_to_mode]
     orrs r1, r1, #1
@@ -558,7 +558,6 @@ dispatch_syscall:
     str r1, [r0, #_thread_offset_to_mode]
     dsb
 
-#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     /* drop privileges by setting bit 0 in CONTROL */
     mrs ip, CONTROL
     orrs ip, ip, #1
@@ -569,7 +568,6 @@ z_syscall_exit_race1:
     msr CONTROL, ip
 z_syscall_exit_race2:
 #endif
-#endif
 
     /* ISB is not strictly necessary here (stack pointer is not being
      * touched), but it's recommended to avoid executing pre-fetched
@@ -577,6 +575,7 @@ z_syscall_exit_race2:
      */
     isb
     pop {r0, r1}
+#endif /* CONFIG_CPU_CORTEX_M */
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
   /* Zero out volatile (caller-saved) registers so as to not leak state from

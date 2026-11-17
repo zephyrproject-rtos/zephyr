@@ -121,6 +121,7 @@ struct _thread_arch {
 #endif
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE)
+#if defined(CONFIG_CPU_CORTEX_M)
 	/*
 	 * Status variable holding several thread status flags
 	 * as follows:
@@ -164,6 +165,7 @@ struct _thread_arch {
 		};
 #endif
 	};
+#endif /* CONFIG_CPU_CORTEX_M */
 
 #if defined(CONFIG_USERSPACE)
 	uint32_t priv_stack_start;
@@ -185,7 +187,7 @@ struct _thread_arch {
 #endif
 };
 
-#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_MPU_STACK_GUARD)
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_MPU_STACK_GUARD)
 #define Z_ARM_MODE_MPU_GUARD_FLOAT_Msk (1 << 3)
 #endif
 typedef struct _thread_arch _thread_arch_t;
