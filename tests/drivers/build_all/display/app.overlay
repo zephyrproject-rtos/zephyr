@@ -535,6 +535,41 @@
 				pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
 				te-mode = "MIPI_DBI_TE_RISING_EDGE";
 			};
+
+			test_mipi_dbi_ili9340: ili9340@2c {
+				compatible = "ilitek,ili9340";
+				reg = <0x2c>;
+				mipi-max-frequency = <25000000>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
+				rotation = <90>;
+				width = <320>;
+				height = <240>;
+				display-inversion;
+				red-blue-swap;
+			};
+
+			test_mipi_dbi_ili9341: ili9341@2d {
+				compatible = "ilitek,ili9341";
+				reg = <0x2d>;
+				mipi-max-frequency = <25000000>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+				rotation = <180>;
+				width = <240>;
+				height = <320>;
+			};
+
+			test_mipi_dbi_ili9488: ili9488@2e {
+				compatible = "ilitek,ili9488";
+				reg = <0x2e>;
+				mipi-max-frequency = <25000000>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+				rotation = <0>;
+				width = <320>;
+				height = <480>;
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
@@ -957,6 +992,29 @@
 				source-equalization = [01 04 03 03 00 12];
 				source-level = [00 70 00];
 				gate-equalization = [54];
+			};
+
+			test_lpm013m126: lpm013m126@b {
+				compatible = "jdi,lpm013m126";
+				reg = <0xb>;
+				spi-max-frequency = <2000000>;
+				width = <176>;
+				height = <176>;
+				disp-gpios = <&test_gpio 0 0>;
+				extcomin-gpios = <&test_gpio 0 0>;
+				extcomin-frequency = <60>;
+			};
+
+			test_hub12: hub12@c {
+				compatible = "zephyr,hub12";
+				reg = <0xc>;
+				spi-max-frequency = <2000000>;
+				width = <32>;
+				height = <16>;
+				pa-gpios = <&test_gpio 0 0>;
+				pb-gpios = <&test_gpio 0 0>;
+				pe-gpios = <&test_gpio 0 0>;
+				plat-gpios = <&test_gpio 0 0>;
 			};
 		};
 
