@@ -196,18 +196,29 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x20000000 0xfe000>;
 
-			/* 0x320 = 0x300 radio DMA + 0x20 VTF */
-			cpuapp_sram: memory@0 {
+#ifndef USE_NON_SECURE_ADDRESS_MAP
+			ipc_shm_area_cpuapp_cpuuma: memory@60 {
 				compatible = "mmio-sram";
-				reg = <0x0 (DT_SIZE_K(1016) - 0x320)>;
+				reg = <0x60 0x5000>;
+				ranges = <0x0 0x60 0x5000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x0 (DT_SIZE_K(1016) - 0x320)>;
+			};
 
-				ram00_sram: memory@0 {
+			/* 0x5060 = 0x60 KMU push area + 0x5000 Wi-Fi IPC,
+			 * 0x320 = 0x300 radio DMA + 0x20 VTF
+			 */
+			cpuapp_sram_app: memory@5060 {
+				compatible = "mmio-sram";
+				reg = <0x5060 (DT_SIZE_K(1016) - 0x320 - 0x5060)>;
+				ranges = <0x5060 0x5060 (DT_SIZE_K(1016) - 0x320 - 0x5060)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				ram00_sram: memory@5060 {
 					compatible = "mmio-sram";
-					reg = <0x0 DT_SIZE_K(512)>;
-					ranges = <0x0 0x0 DT_SIZE_K(512)>;
+					reg = <0x5060 (DT_SIZE_K(512) - 0x5060)>;
+					ranges = <0x0 0x5060 (DT_SIZE_K(512) - 0x5060)>;
 					#address-cells = <1>;
 					#size-cells = <1>;
 				};
@@ -228,6 +239,7 @@
 					#size-cells = <1>;
 				};
 
+				/* 0x320 = 0x300 radio DMA + 0x20 VTF */
 				ram03_sram: memory@e0000 {
 					compatible = "mmio-sram";
 					reg = <0xe0000 (DT_SIZE_K(120) - 0x320)>;
@@ -235,14 +247,8 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 				};
-
-#ifndef USE_NON_SECURE_ADDRESS_MAP
-				cpuapp_sram_app: memory@60 {
-					compatible = "mmio-sram";
-					reg = <0x60 (DT_SIZE_K(1016) - 0x320 - 0x60)>;
-				};
-#endif
 			};
+#endif
 
 			/* Separate RAM section reserved for short-range radio DMA buffers */
 			radio_dma_region_default: memory@fdce0 {
