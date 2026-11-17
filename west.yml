@@ -339,11 +339,6 @@ manifest:
       groups:
         - debug
       revision: 5a9d6055b62edc54566d6d0034d9daec91749b98
-    - name: mldsa-native
-      revision: 3fc19982839305d305071f0de0c540bc9c9bea8a
-      path: modules/crypto/mldsa-native
-      groups:
-        - crypto
     - name: nanopb
       revision: 0f6d088e777a33dd7b54297f137ef10d745c5da8
       path: modules/lib/nanopb

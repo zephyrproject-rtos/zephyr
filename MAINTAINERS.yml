@@ -7805,16 +7805,6 @@ West:
   labels:
     - "area: Tracing"
 
-"West project: mldsa-native":
-  status: maintained
-  maintainers:
-    - ceolin
-    - valeriosetti
-    - tomi-font
-  files: []
-  labels:
-    - "area: TF-PSA-Crypto"
-
 "West project: nanopb":
   status: maintained
   maintainers:
