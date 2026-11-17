@@ -27,41 +27,6 @@ GTEXT(z_arm_int_exit)
 GTEXT(z_arm_do_swap)
 GDATA(_kernel)
 
-.macro userspace_exc_exit
-#if defined(CONFIG_USERSPACE)
-	cps #MODE_SVC
-	sub sp, #8
-	push {r0-r1}
-
-	/*
-	 * Copy return state from sys/usr state onto the svc stack.
-	 * We have to put $sp_usr back into $sp since we switched to
-	 * the privileged stack on exception entry.  The return state
-	 * is on the privileged stack so it needs to be copied to the
-	 * svc stack since we cannot trust the usr stack.
-	 */
-	cps #MODE_SYS
-	pop {r0-r1}
-
-	cps #MODE_SVC
-	str r0, [sp, #8]
-	str r1, [sp, #12]
-
-	/* Only switch the stacks if returning to a user thread */
-	and r1, #MODE_MASK
-	cmp r1, #MODE_USR
-	bne system_thread_exit\@
-
-	/* Restore user stack pointer */
-	get_cpu r0
-	ldr r0, [r0, #___cpu_t_current_OFFSET]
-	cps #MODE_SYS
-	ldr sp, [r0, #_thread_offset_to_sp_usr] /* sp_usr */
-	cps #MODE_SVC
-system_thread_exit\@:
-	pop {r0-r1}
-#endif
-.endm
 
 .macro fpu_exc_exit
 #if defined(CONFIG_FPU_SHARING)

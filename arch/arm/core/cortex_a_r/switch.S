@@ -15,6 +15,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
 #include <offsets_short.h>
+#include <zephyr/syscall.h>
 #include <zephyr/kernel.h>
 #include "macro_priv.inc"
 
@@ -114,13 +115,17 @@ SECTION_FUNC(TEXT, z_arm_svc)
 
    /*
     * grab service call number:
-    * TODO 0: context switch
     * 1: irq_offload (if configured)
     * 2: kernel panic or oops (software generated fatal exception)
-    * TODO 3: system calls for memory protection
+    * 3: system calls for memory protection
     */
 demux:
     cps #MODE_SYS
+
+#if defined(CONFIG_USERSPACE)
+    cmp r1, #_SVC_CALL_SYSTEM_CALL
+    beq _do_syscall
+#endif
 
     cmp r1, #_SVC_CALL_RUNTIME_EXCEPT
     beq _oops
@@ -154,6 +159,57 @@ _oops:
      * return in test mode. Exit the exception in that case.
      */
     b z_arm_cortex_ar_exit_exc
+
+#if defined(CONFIG_USERSPACE)
+    /*
+     * The exception return goes to z_arm_do_syscall in system mode,
+     * which calls the handler and returns to the caller of the SVC.
+     * The exception stack frame (in SYS mode, at sp) is:
+     * r0 - r1 - r2 - r3 - r12 - LR - PC - SPSR
+     *
+     * Registers look like:
+     * r0-r5 - args
+     * r6 - call_id
+     * r8 - set here to the return address of the SVC
+     */
+_do_syscall:
+    ldr r8, [sp, #___basic_sf_t_pc_OFFSET]
+
+    /* Make the exception return to system state */
+    ldr r1, [sp, #___basic_sf_t_xpsr_OFFSET]
+
+    /* If leaving thumb mode, set the return address to thumb mode */
+    tst r1, #T_BIT
+    orrne r8, #1
+
+    bic r1, #(MODE_MASK | T_BIT)
+    orr r1, r1, #MODE_SYS
+    str r1, [sp, #___basic_sf_t_xpsr_OFFSET]
+
+    ldr r1, =z_arm_do_syscall
+    str r1, [sp, #___basic_sf_t_pc_OFFSET]
+
+    /* validate syscall limit, only set priv mode if valid */
+    ldr ip, =K_SYSCALL_LIMIT
+    cmp r6, ip
+    blo valid_syscall_id
+
+    /* bad syscall id.  Set arg0 to bad id and set call_id to SYSCALL_BAD */
+    str r6, [sp]
+    ldr r6, =K_SYSCALL_BAD
+
+valid_syscall_id:
+    get_cpu r0
+    ldr r0, [r0, #___cpu_t_current_OFFSET]
+    ldr r1, [r0, #_thread_offset_to_mode]
+    bic r1, #1
+    /* Store (privileged) mode in thread's mode state variable */
+    str r1, [r0, #_thread_offset_to_mode]
+    dsb
+    isb
+
+    b z_arm_cortex_ar_exit_exc
+#endif
 
 inv:
     mov r0, #0 /* K_ERR_CPU_EXCEPTION */

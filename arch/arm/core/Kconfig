@@ -50,7 +50,8 @@ config CPU_AARCH32_CORTEX_R
 	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	select HAS_FLASH_LOAD_OFFSET
 	select ARCH_HAS_BIT_REV
-	select ARCH_HAS_USERSPACE if ARM_MPU && !USE_SWITCH
+	# z_arm_do_syscall() and z_arm_userspace_enter() are not SMP-aware
+	select ARCH_HAS_USERSPACE if ARM_MPU && !SMP
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO if !USE_SWITCH
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	# Backed by the GIC distributor ICPENDR/ISPENDR registers.
