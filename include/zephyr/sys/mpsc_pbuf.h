@@ -153,8 +153,8 @@ void mpsc_pbuf_init(struct mpsc_pbuf_buffer *buffer,
  *
  * @param buffer Buffer.
  *
- * @return true if initialized.
- * @return false if not initialized.
+ * @retval true The buffer is initialized.
+ * @retval false The buffer is not initialized.
  */
 static inline bool mpsc_pbuf_is_init(struct mpsc_pbuf_buffer *buffer)
 {
@@ -203,7 +203,7 @@ void mpsc_pbuf_put_word(struct mpsc_pbuf_buffer *buffer,
 			const union mpsc_pbuf_generic word);
 
 /** @brief Put a packet consisting of a word and a pointer.
- *  *
+ *
  * Function is optimized for storing packet consisting of a word and a pointer.
  * Note that 2 bits of a first word is used by the buffer.
  *
@@ -253,8 +253,8 @@ void mpsc_pbuf_free(struct mpsc_pbuf_buffer *buffer,
  *
  * @param buffer Buffer.
  *
- * @retval true if pending.
- * @retval false if no message is pending.
+ * @retval true At least one packet is pending.
+ * @retval false No packet is pending.
  */
 bool mpsc_pbuf_is_pending(struct mpsc_pbuf_buffer *buffer);
 
@@ -272,8 +272,8 @@ void mpsc_pbuf_get_utilization(struct mpsc_pbuf_buffer *buffer,
  * @param[in, out] buffer Buffer.
  * @param[out]     max    Maximum buffer usage in bytes.
  *
- * retval 0 if utilization data collected successfully.
- * retval -ENOTSUP if Collecting utilization data is not supported.
+ * @retval 0 Utilization data collected successfully.
+ * @retval -ENOTSUP @ref MPSC_PBUF_MAX_UTILIZATION is not set.
  */
 int mpsc_pbuf_get_max_utilization(struct mpsc_pbuf_buffer *buffer, uint32_t *max);
 /**
