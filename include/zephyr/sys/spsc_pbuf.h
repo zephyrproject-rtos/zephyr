@@ -165,9 +165,9 @@ static inline uint32_t spsc_pbuf_capacity(struct spsc_pbuf *pb)
  *				bytes of data (one is reserved for written
  *				messages length).
  * @param flags			Option flags. See @ref SPSC_PBUF_FLAGS.
- * @return struct spsc_pbuf*	Pointer to the created buffer. The pointer
- *				points to the same address as buf.
- * @retval NULL			Invalid buffer alignment.
+ *
+ * @return Pointer to the created buffer, at the same address as @p buf.
+ * @retval NULL Invalid buffer alignment.
  */
 struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen, uint32_t flags);
 
@@ -180,9 +180,10 @@ struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen, uint32_t flags);
  * @param buf	Pointer to the data to be written to the buffer.
  * @param len	Number of bytes to be written to the buffer. Must be positive
  *		but less than @ref SPSC_PBUF_MAX_LEN.
- * @retval int	Number of bytes written, negative error code on fail.
- *		-EINVAL, if len == 0.
- *		-ENOMEM, if len is bigger than the buffer can fit.
+ *
+ * @return Number of bytes written.
+ * @retval -EINVAL @p len is 0 or not less than @ref SPSC_PBUF_MAX_LEN.
+ * @retval -ENOMEM Not enough free space for the packet.
  */
 int spsc_pbuf_write(struct spsc_pbuf *pb, const char *buf, uint16_t len);
 
@@ -211,8 +212,8 @@ int spsc_pbuf_write(struct spsc_pbuf *pb, const char *buf, uint16_t len);
  *			buffer without applying wrap padding is performed.
  * @param[out] buf	Location where buffer address is written on successful allocation.
  *
- * @return non-negative amount of space that got allocated. Can be equal or smaller than %p len.
- * @retval -EINVAL if @p len is forbidden.
+ * @return Amount of space allocated, which can be smaller than @p len.
+ * @retval -EINVAL @p len is 0 or greater than @ref SPSC_PBUF_MAX_LEN.
  */
 int spsc_pbuf_alloc(struct spsc_pbuf *pb, uint16_t len, char **buf);
 
@@ -231,7 +232,7 @@ void spsc_pbuf_commit(struct spsc_pbuf *pb, uint16_t len);
  * @brief Read specified amount of data from the packet buffer.
  *
  * Single read allows to read the message send by the single write.
- * The provided %p buf must be big enough to store the whole message.
+ * The provided @p buf must be big enough to store the whole message.
  *
  * It combines @ref spsc_pbuf_claim and @ref spsc_pbuf_free into a single call.
  *
@@ -239,10 +240,10 @@ void spsc_pbuf_commit(struct spsc_pbuf *pb, uint16_t len);
  * @param buf		Data pointer to which read data will be written.
  *			If NULL, len of stored message is returned.
  * @param len		Number of bytes to be read from the buffer.
- * @retval int		Bytes read, negative error code on fail.
- *			Bytes to be read, if buf == NULL.
- *			-ENOMEM, if message can not fit in provided buf.
- *			-EAGAIN, if not whole message is ready yet.
+ *
+ * @return Number of bytes read, or length of the pending message if @p buf is NULL.
+ * @retval 0 No complete message in the buffer.
+ * @retval -ENOMEM The message does not fit in @p buf.
  */
 int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len);
 
@@ -260,8 +261,8 @@ int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len);
  * @param[in,out] buf	A location where claimed packet address is written.
  *                      It is 32 bit word aligned and points to the continuous memory.
  *
+ * @return Length of the claimed packet.
  * @retval 0 No packets in the buffer.
- * @return positive packet length.
  */
 uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf);
 
@@ -283,8 +284,8 @@ void spsc_pbuf_free(struct spsc_pbuf *pb, uint16_t len);
  *
  * @param pb	A packet buffer.
  *
- * @retval -ENOTSUP	Feature not enabled.
- * @return non-negative	Maximum utilization.
+ * @return Maximum utilization in bytes.
+ * @retval -ENOTSUP Feature not enabled.
  */
 int spsc_pbuf_get_utilization(struct spsc_pbuf *pb);
 /**
