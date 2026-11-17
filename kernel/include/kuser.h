@@ -127,4 +127,55 @@ static inline bool z_stack_user_free(k_thread_stack_t *stack)
 
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_DYNAMIC_OBJECTS
+
+/* Keep a dynamically allocated object from being freed when the last
+ * permission on it goes, or by k_object_free(), until
+ * z_object_hold_release(). Several holds can be taken. Returns @p ko if a
+ * hold was taken, NULL for @p ko NULL or an object that is never freed.
+ */
+struct k_object *z_object_hold(struct k_object *ko);
+
+/* Drop a hold taken by z_object_hold(), and free the object if it was the
+ * last one and no thread has permission on the object anymore, or if
+ * k_object_free() was called on it meanwhile. @p ko is what z_object_hold()
+ * returned: once k_object_free() has been called, k_object_find() no longer
+ * finds the object.
+ */
+void z_object_hold_release(struct k_object *ko);
+
+/* The thread and stack objects that z_thread_user_init() keeps allocated
+ * for a thread until it has switched away from them for the last time.
+ */
+struct z_thread_user_hold {
+	struct k_thread *thread;
+	struct k_object *thread_obj;
+	struct k_object *stack_obj;
+};
+
+/* Move to @p hold the objects held for the dead @p thread, so that a
+ * further z_thread_user_hold_get() finds none. Called with the scheduler
+ * lock held from the abort path, while @p thread is intact.
+ */
+void z_thread_user_hold_get(struct k_thread *thread, struct z_thread_user_hold *hold);
+
+/* Release the objects recorded in @p hold, once the thread is off the CPU,
+ * which on SMP is waited for here.
+ */
+void z_thread_user_hold_put(struct z_thread_user_hold *hold);
+
+/* z_thread_user_hold_get() and z_thread_user_hold_put() at once, for a dead
+ * thread that is already off the CPU.
+ */
+void z_thread_user_release(struct k_thread *thread);
+
+#else /* !CONFIG_DYNAMIC_OBJECTS */
+
+static inline void z_thread_user_release(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+
 #endif /* ZEPHYR_KERNEL_INCLUDE_KUSER_H_ */
