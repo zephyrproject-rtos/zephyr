@@ -1367,6 +1367,23 @@
 			#pll-clock-cells = <3>;
 		};
 
+		snvs: snvs@40c90000 {
+			compatible = "nxp,imx-snvs";
+			reg = <0x40c90000 0x4000>;
+
+			snvs_rtc: rtc {
+				compatible = "nxp,imx-snvs-rtc";
+				interrupts = <66 0>;
+				status = "disabled";
+
+				counter_rtc: counter_rtc {
+					compatible = "zephyr,rtc-counter";
+					alarms-count = <2>;
+					status = "disabled";
+				};
+			};
+		};
+
 		gpio13: gpio@40ca0000 {
 			compatible = "nxp,imx-gpio";
 			reg = <0x40ca0000 0x4000>;
