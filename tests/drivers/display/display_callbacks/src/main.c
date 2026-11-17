@@ -18,7 +18,7 @@ static uint32_t cb_handle;
 static enum display_event_result display_cb_handler(const struct device *dev, uint32_t evt,
 	const struct display_event_data *data, void *user_data)
 {
-	return DISPLAY_EVENT_RESULT_HANDLED;
+	return DISPLAY_EVENT_RESULT_CONTINUE;
 }
 
 static void display_callbacks_before(void *text_fixture)
