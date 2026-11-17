@@ -18,26 +18,42 @@ copying application data on the transmit path.
 Link Layer
 ==========
 
-* Ethernet, IEEE 802.3
-* Wi-Fi, IEEE 802.11
-* IEEE 802.15.4 and Thread (samples: :zephyr:code-sample-category:`openthread`)
-* Cellular / PPP (:rfc:`1661`)
+* :ref:`Ethernet <ethernet_interface>`, IEEE 802.3
+* :ref:`Wi-Fi <wifi_mgmt>`, IEEE 802.11
+* :ref:`IEEE 802.15.4 <ieee802154_interface>` and
+  :ref:`Thread <thread_protocol_interface>`
+  (samples: :zephyr:code-sample-category:`openthread`)
+* Cellular / :ref:`PPP <ppp>` (:rfc:`1661`)
 * CAN bus for SocketCAN
 * SLIP (IP over serial line), used to connect QEMU targets to the host as an
   Ethernet interface so that host applications can exchange data with Zephyr.
+* Offloaded network devices, such as Wi-Fi and cellular modems that run their
+  own IP stack, through :ref:`network offloading <net_offload_interface>` or
+  :ref:`socket offloading <net_socket_offloading>`.
 
-Several technologies can be enabled at the same time. No automatic routing is
-done between them; applications send data to the interface they choose.
+Several technologies can be enabled at the same time. Each packet is sent on
+the interface that matches its destination, or on the default interface if
+none does, unless the socket is bound to an interface. Packets are forwarded
+between interfaces only when IPv4 or IPv6 forwarding or Ethernet bridging is
+enabled.
 
 Ethernet and TSN
 ================
 
 * :ref:`Virtual LANs <vlan_interface>` partition physical Ethernet networks
   into logical networks.
+* :ref:`Bridging <ethernet_bridge_interface>` of Ethernet interfaces, with a
+  forwarding database that learns addresses and the Rapid Spanning Tree
+  Protocol (RSTP). Sample: :zephyr:code-sample:`bridge`.
+* :ref:`Distributed Switch Architecture <dsa>` (DSA) for Ethernet switches.
+  Sample: :zephyr:code-sample:`dsa`.
+* :ref:`LLDP <lldp_interface>` (Link Layer Discovery Protocol).
+  Sample: :zephyr:code-sample:`lldp`.
 * :ref:`Traffic classification <traffic-class-support>` prioritizes sent and
   received packets.
 * Time Sensitive Networking with :ref:`gPTP <gptp_interface>` (generalized
-  Precision Time Protocol) and :ref:`PTP <ptp_interface>` (IEEE 1588).
+  Precision Time Protocol), :ref:`PTP <ptp_interface>` (IEEE 1588) and
+  configuration of :ref:`IEEE 802.1Qav <8021Qav>` credit-based shapers.
 
 Network Layer
 =============
@@ -48,13 +64,16 @@ Network Layer
   :rfc:`4862`), with a configurable number of addresses and prefixes.
 * Neighbor Discovery (:rfc:`4861`) with an optional neighbor cache, and
   Multicast Listener Discovery v2 (:rfc:`3810`).
-* 6LoWPAN header compression for IEEE 802.15.4 networks (:rfc:`4944`).
+* 6LoWPAN (:rfc:`4944`) for IEEE 802.15.4 networks, with IPHC header
+  compression (:rfc:`6282`) and fragmentation.
 * DHCPv6 (:rfc:`8415`) client and server, including prefix delegation.
   See :ref:`DHCPv6 <dhcpv6_interface>`.
 * DNS server addresses from Router Advertisements (RDNSS, :rfc:`8106`).
 * Privacy extensions (:rfc:`8981`).
 * Fragmentation and Path MTU Discovery (:rfc:`8201`).
-* Multicast routing and forwarding.
+* Route table, forwarding between interfaces with
+  :kconfig:option:`CONFIG_NET_IPV6_FORWARDING`, and multicast routing and
+  forwarding.
 
 **IPv4** (:rfc:`791`). Not available on IEEE 802.15.4, which is IPv6 only.
 
@@ -64,6 +83,8 @@ Network Layer
 * DHCPv4 (:rfc:`2131`) client and server. See :ref:`DHCPv4 <dhcpv4_interface>`.
 * IGMPv2 (:rfc:`2236`) and IGMPv3 (:rfc:`3376`).
 * Fragmentation and Path MTU Discovery (:rfc:`1191`).
+* Route table, and forwarding between interfaces with
+  :kconfig:option:`CONFIG_NET_IPV4_FORWARDING`.
 * NAT (Network Address Translation): source NAT (masquerading) of forwarded
   packets that match iptables-like rules, with connection tracking that
   translates the replies back.
@@ -76,6 +97,8 @@ IPv6 and IPv4 can be used at the same time (dual-stack).
   packets with rules.
 * WireGuard VPN (`WireGuard protocol`_).
   Sample: :zephyr:code-sample:`wireguard-vpn`.
+* IP-in-IP tunnels on virtual network interfaces.
+  Sample: :zephyr:code-sample:`virtual-network-interface`.
 
 Transport and Sockets
 =====================
@@ -86,7 +109,8 @@ Transport and Sockets
   See :ref:`DPLPMTUD <net_dplpmtud>`.
 * **TCP** (:rfc:`9293`), client and server, with a build-time configurable
   number of sockets. Selective acknowledgment (:rfc:`2018`) of received data
-  with :kconfig:option:`CONFIG_NET_TCP_SACK`.
+  with :kconfig:option:`CONFIG_NET_TCP_SACK`, and window scaling (:rfc:`7323`)
+  with :kconfig:option:`CONFIG_NET_TCP_WINDOW_SCALE`.
 * **QUIC** (:rfc:`9000`) with integrated TLS 1.3 (:rfc:`9001`).
   See :ref:`QUIC <quic_transport_interface>`. Samples:
   :zephyr:code-sample:`quic-client-echo`, :zephyr:code-sample:`quic-service-echo`.
@@ -94,7 +118,10 @@ Transport and Sockets
   blocking and non-blocking datagram (UDP), stream (TCP) and packet
   (``AF_PACKET``) sockets.
 * **TLS and DTLS** sockets backed by Mbed TLS.
-  See :ref:`secure sockets <secure_sockets_interface>`.
+  See :ref:`secure sockets <secure_sockets_interface>`. A device can generate
+  its own private key and certificate signing request, see
+  :ref:`TLS credentials <sockets_tls_credentials_subsys>`.
+  Sample: :zephyr:code-sample:`tls-keygen`.
 
 Application Protocols
 =====================
@@ -116,14 +143,14 @@ The protocol name links to its documentation, when there is one.
    * - :ref:`DNS <dns_resolve_interface>`
      - :rfc:`1035`
      - resolver
-     -
+     - :zephyr:code-sample:`dns-resolve`
    * - :ref:`mDNS, DNS-SD <dns_resolve_interface>`
      - :rfc:`6762`, :rfc:`6763`
      - resolver, responder
      - :zephyr:code-sample:`mdns-responder`
    * - :ref:`LLMNR <dns_resolve_interface>` (deprecated)
      - :rfc:`4795`
-     - resolver
+     - resolver, responder
      -
    * - :ref:`FTP <ftp_client_interface>`
      - :rfc:`959`
@@ -163,9 +190,9 @@ The protocol name links to its documentation, when there is one.
      -
      - metrics server
      - :zephyr:code-sample:`prometheus`
-   * - RTP (Real-time Transport Protocol)
-     - :rfc:`3550`
-     -
+   * - :ref:`RTP <rtp_interface>` (Real-time Transport Protocol), SRTP
+     - :rfc:`3550`, :rfc:`3711`
+     - source, sink
      - :zephyr:code-sample:`net-rtp`
    * - :ref:`SNTP <sntp_interface>`
      - :rfc:`5905`
@@ -179,6 +206,10 @@ The protocol name links to its documentation, when there is one.
      - SSH-2 (:rfc:`4251` to :rfc:`4254`)
      - client, server (shell, exec and subsystem channels), shell backend
      - :zephyr:code-sample:`ssh-server-client`
+   * - :ref:`STUN <stun_interface>`
+     - :rfc:`8489`
+     - message codec
+     -
    * - :ref:`TFTP <tftp_interface>`
      - :rfc:`1350`
      - client
@@ -203,6 +234,10 @@ Management
 * :ref:`Network management API <net_mgmt_interface>` to receive events from the
   network stack, for example when an IP address is added or an interface comes
   up.
+* :ref:`Connection Manager <conn_mgr_overview>` to monitor IP connectivity and
+  control network association through one API, whatever the network technology.
+* :ref:`Network configuration library <net_config_interface>` to set up network
+  interfaces at boot from Kconfig options.
 * :ref:`Wi-Fi management API <wifi_mgmt>` to scan for and connect to networks,
   and Wi-Fi network managers that register with the Wi-Fi stack to implement it.
 
@@ -215,6 +250,8 @@ Diagnostics
   server, compatible with iPerf v2 and iperf3. Sample: :zephyr:code-sample:`zperf`.
 * :ref:`Packet capture <net_capture_interface>` of network traffic to a remote
   host for analysis.
+* :ref:`Network statistics <net_stats_interface>`, collected for the whole
+  stack and per interface. Sample: :zephyr:code-sample:`net-stats`.
 
 Source Tree Layout
 ******************
