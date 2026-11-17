@@ -20,7 +20,7 @@
  * @defgroup video_api Video Subsystem
  * @ingroup multimedia
  * @since 4.4
- * @version 0.2.0
+ * @version 0.2.1
  * @{
  */
 
@@ -412,8 +412,9 @@ int video_closest_frmival(const struct device *dev, struct video_frmival_enum *m
  *
  * This helper should only be used by drivers that support the whole image frame.
  *
- * For uncompressed formats, it gives the actual size and pitch of the
- * whole raw image without any padding.
+ * For uncompressed formats, it gives the size of the whole raw image and the
+ * pitch of its first plane, for formats with luma and chroma dimensions it is
+ * the luma plane.
  *
  * For compressed formats, it gives a rough estimate size of a complete
  * compressed frame.

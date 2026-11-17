@@ -61,8 +61,18 @@ int video_estimate_fmt_size(struct video_format *fmt)
 		break;
 	case VIDEO_PIX_FMT_NV12:
 	case VIDEO_PIX_FMT_NV21:
+	case VIDEO_PIX_FMT_NV16:
+	case VIDEO_PIX_FMT_NV61:
 		fmt->pitch = fmt->width;
 		fmt->size = fmt->pitch * fmt->height * 2U;
+		break;
+	case VIDEO_PIX_FMT_NV24:
+	case VIDEO_PIX_FMT_NV42:
+	case VIDEO_PIX_FMT_RGB24PLANAR:
+	case VIDEO_PIX_FMT_YUV420:
+	case VIDEO_PIX_FMT_YVU420:
+		fmt->pitch = fmt->width;
+		fmt->size = fmt->pitch * fmt->height * 3U;
 		break;
 	default:
 		/* Uncompressed format */
