@@ -1129,9 +1129,10 @@ bool net_ipaddr_parse(const char *str, size_t str_len, struct net_sockaddr *addr
 const char *net_ipaddr_parse_mask(const char *str, size_t str_len,
 				  struct net_sockaddr *addr, uint8_t *mask_len)
 {
-	const char *next = NULL, *mask_ptr = NULL;
-	int parsed_mask_len = -1;
+	const char *next = NULL, *mask_ptr = NULL, *mask_end = NULL;
+	uint8_t max_mask_len;
 	bool ret = false;
+	size_t i;
 
 	if (str == NULL || str_len == 0 || addr == NULL || mask_len == NULL) {
 		return NULL;
@@ -1141,10 +1142,9 @@ const char *net_ipaddr_parse_mask(const char *str, size_t str_len,
 		return NULL;
 	}
 
-	for (int i = 0; i < str_len; i++) {
+	for (i = 0; i < str_len && str[i] != '\0'; i++) {
 		if (str[i] == ',' || str[i] == ' ') {
 			next = str + i + 1;
-			str_len = next - str - 1;
 			break;
 		}
 
@@ -1153,18 +1153,11 @@ const char *net_ipaddr_parse_mask(const char *str, size_t str_len,
 		}
 	}
 
+	str_len = i;
+
 	if (mask_ptr != NULL) {
-		char *endptr;
-
-		parsed_mask_len = strtoul(mask_ptr + 1, &endptr, 10);
-		if (*endptr != '\0') {
-			if (next == NULL) {
-				return NULL;
-			}
-		}
-
+		mask_end = str + str_len;
 		str_len = mask_ptr - str;
-		*mask_len = (uint8_t)parsed_mask_len;
 	}
 
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
@@ -1183,12 +1176,30 @@ const char *net_ipaddr_parse_mask(const char *str, size_t str_len,
 		return NULL;
 	}
 
-	if (parsed_mask_len < 0) {
-		if (addr->sa_family == NET_AF_INET) {
-			*mask_len = 32;
-		} else if (addr->sa_family == NET_AF_INET6) {
-			*mask_len = 128;
+	max_mask_len = (addr->sa_family == NET_AF_INET) ? 32U : 128U;
+
+	if (mask_ptr != NULL) {
+		const char *ptr = mask_ptr + 1;
+		unsigned int parsed_mask_len = 0U;
+
+		for (; ptr < mask_end; ptr++) {
+			if (isdigit((unsigned char)*ptr) == 0) {
+				return NULL;
+			}
+
+			parsed_mask_len = parsed_mask_len * 10U + (unsigned int)(*ptr - '0');
+			if (parsed_mask_len > max_mask_len) {
+				return NULL;
+			}
 		}
+
+		if (ptr == mask_ptr + 1) {
+			return NULL;
+		}
+
+		*mask_len = (uint8_t)parsed_mask_len;
+	} else {
+		*mask_len = max_mask_len;
 	}
 
 	if (next != NULL) {
