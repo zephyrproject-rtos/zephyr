@@ -11,14 +11,15 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "ABOV STK-A31C156-RLN-A Starter Kit";
 	compatible = "abov,stk-a31c156-rln-a";
+	model = "ABOV STK-A31C156-RLN-A Starter Kit";
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &usart10;
 		zephyr,shell-uart = &usart10;
+		zephyr,system-timer-companion = &frt0;
 	};
 
 	leds {
@@ -84,8 +85,12 @@
 };
 
 &usart10 {
-	status = "okay";
 	current-speed = <38400>;
 	pinctrl-0 = <&usart10_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&frt0 {
+	status = "okay";
 };
