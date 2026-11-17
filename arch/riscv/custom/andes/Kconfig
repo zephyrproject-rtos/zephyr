@@ -7,6 +7,20 @@ config TOOLCHAIN_SUPPORTS_ANDES_ISA_EXTENSIONS
 	  Hidden option to signal that the toolchain supports the AndeStar V5
 	  ISA extensions.
 
+config RISCV_ISA_EXT_XANDES
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),xandes)
+	depends on TOOLCHAIN_SUPPORTS_ANDES_ISA_EXTENSIONS
+	help
+	  (Xandes) - AndeStar V5 ISA Extensions
+
+	  The "Xandes" extensions are the AndeStar V5 ISA instruction
+	  extensions to the RISC-V base ISA.
+
+	  The _xandes -march suffix is not a standard RISC-V extension name
+	  and upstream GCC and LLVM do not support it, so it requires a
+	  toolchain that supports the Andes extensions.
+
 config CPU_HAS_ANDES_EXECIT
 	bool
 	help

@@ -190,6 +190,11 @@ if(CONFIG_RISCV_ISA_EXT_XTHEAD_VECTOR)
   string(APPEND riscv_march "_xtheadvector")
 endif()
 
+# Andes extensions
+if(CONFIG_RISCV_ISA_EXT_XANDES)
+  string(APPEND riscv_march "_xandes")
+endif()
+
 if(CONFIG_RISCV_ISA_EXT_SMAIA)
   string(APPEND riscv_march "_smaia")
 endif()
