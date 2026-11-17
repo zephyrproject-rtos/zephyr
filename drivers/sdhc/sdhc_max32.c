@@ -389,11 +389,16 @@ static int convert_freq_to_divider(int freq)
 		return 0;
 	}
 
-	int divider = 0;
-	/* note: this causes a bit different speed than exact number. */
-	divider = SDHC_CLOCK / (2 * freq);
+	/* A divider of 0 runs the SD clock at SDHC_CLOCK, N > 0 at SDHC_CLOCK / (2 * N) */
+	if (freq >= SDHC_CLOCK) {
+		return 0;
+	}
 
-	return divider;
+	/*
+	 * Round up so the SD clock never exceeds the requested frequency. Rounding
+	 * down turned a 25 MHz default speed request into an undivided 48 MHz clock.
+	 */
+	return MIN(DIV_ROUND_UP(SDHC_CLOCK, 2 * freq), SDHC_SDHC_MAX_DIV_VAL);
 }
 
 #define DEFINE_SDHC_MAX32(_num)                                                                    \
