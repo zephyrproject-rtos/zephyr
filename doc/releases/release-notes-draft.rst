@@ -109,6 +109,12 @@ Libraries / Subsystems
   * :kconfig:option:`CONFIG_MBEDTLS_SSL_CLI_C`
   * :kconfig:option:`CONFIG_MBEDTLS_SSL_SRV_C`
 
+  * Mbed TLS was updated to version 4.1.2. Release notes (including security fixes) can be found
+    `here <https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-4.1.2>`_.
+
+  * TF-PSA-Crypto was updated to version 1.1.2. Release notes (including security fixes) can be
+    found `here <https://github.com/Mbed-TLS/TF-PSA-Crypto/releases/tag/tf-psa-crypto-1.1.2>`_.
+
 * Networking
 
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client
