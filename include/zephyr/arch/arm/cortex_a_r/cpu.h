@@ -63,6 +63,9 @@
 #define IMP_CSCTLR(iway, dway)  ((iway << IMP_CSCTLR_IFLW_SHIFT) | \
 				((dway << IMP_CSCTLR_DFLW_SHIFT)))
 
+/* Cortex-A32 CPU Extended Control Register (64-bit, MRRC/MCRR p15, 1, c15) */
+#define CPUECTLR_SMPEN_BIT	BIT(6)
+
 /* Hyp System Control Register */
 #define HSCTLR_RES1		(BIT(29) | BIT(28) | BIT(23) | \
 				 BIT(22) | BIT(18) | BIT(16) | \

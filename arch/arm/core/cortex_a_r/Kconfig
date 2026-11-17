@@ -84,6 +84,20 @@ config AARCH32_ARMV8_A
 	  based on a Memory Management Unit (MMU) and supports the A32 and T32
 	  instruction sets.
 
+config CPU_CORTEX_A32_SMPEN
+	bool "Set Cortex-A32 CPUECTLR.SMPEN"
+	depends on CPU_CORTEX_A32
+	depends on ARM_AARCH32_MMU
+	help
+	  Set the SMPEN bit of the Cortex-A32 CPU Extended Control Register
+	  (CPUECTLR) on every core, before the MMU set-up enables its data
+	  cache, so that the cache takes part in the cluster's coherency. The
+	  Cortex-A32 TRM requires this even with a single core.
+
+	  Enable it when Zephyr is the first software to run on the core, in
+	  Secure state. Leave it disabled when firmware such as Trusted
+	  Firmware-A runs first and sets it.
+
 config AARCH32_ARMV8_A_MONITOR_INIT
 	bool "Perform Monitor mode initialization at reset"
 	depends on AARCH32_ARMV8_A
