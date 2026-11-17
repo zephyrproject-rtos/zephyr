@@ -146,10 +146,55 @@ static void conn_set_used(struct net_conn *conn)
 
 static void conn_set_unused(struct net_conn *conn)
 {
+	k_mutex_lock(&conn_lock, K_FOREVER);
 	(void)memset(conn, 0, sizeof(*conn));
+	sys_slist_prepend(&conn_unused, &conn->node);
+	k_mutex_unlock(&conn_lock);
+}
+
+/* Pin a connection selected under conn_lock so that its callback can run
+ * after conn_lock is released. The slot is not recycled and the owning
+ * context is not released until conn_dispatch_end() is called. Returns
+ * false if the owning context is already being released.
+ */
+static bool conn_dispatch_begin(struct net_conn *conn)
+{
+	struct net_context *context = conn->context;
+
+	if (IS_ENABLED(CONFIG_NET_CONTEXT) && context != NULL) {
+		atomic_val_t rc;
+
+		do {
+			rc = atomic_get(&context->refcount);
+			if (rc <= 0) {
+				return false;
+			}
+		} while (!atomic_cas(&context->refcount, rc, rc + 1));
+	}
+
+	conn->dispatch_count++;
+
+	return true;
+}
+
+static void conn_dispatch_end(struct net_conn *conn, struct net_context *context)
+{
+	/* Dropping the context reference can release the context, which
+	 * unregisters this connection. The slot is recycled below once no
+	 * other callback is running on it.
+	 */
+	if (IS_ENABLED(CONFIG_NET_CONTEXT) && context != NULL) {
+		(void)net_context_unref(context);
+	}
 
 	k_mutex_lock(&conn_lock, K_FOREVER);
-	sys_slist_prepend(&conn_unused, &conn->node);
+
+	conn->dispatch_count--;
+
+	if (conn->dispatch_count == 0U && (conn->flags & NET_CONN_IN_USE) == 0U) {
+		conn_set_unused(conn);
+	}
+
 	k_mutex_unlock(&conn_lock);
 }
 
@@ -455,17 +500,26 @@ int net_conn_unregister(struct net_conn_handle *handle)
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
+
 	if (!(conn->flags & NET_CONN_IN_USE)) {
+		k_mutex_unlock(&conn_lock);
 		return -ENOENT;
 	}
 
 	NET_DBG("Connection handler %p removed", conn);
 
-	k_mutex_lock(&conn_lock, K_FOREVER);
 	sys_slist_find_and_remove(&conn_used, &conn->node);
-	k_mutex_unlock(&conn_lock);
+	conn->flags &= ~NET_CONN_IN_USE;
 
-	conn_set_unused(conn);
+	/* A callback running on this connection recycles the slot when it
+	 * returns.
+	 */
+	if (conn->dispatch_count == 0U) {
+		conn_set_unused(conn);
+	}
+
+	k_mutex_unlock(&conn_lock);
 
 	return 0;
 }
@@ -788,6 +842,8 @@ enum net_verdict net_conn_can_input(struct net_pkt *pkt, uint8_t proto)
 	struct net_conn *conn;
 	net_conn_cb_t cb = NULL;
 	void *user_data = NULL;
+	struct net_context *context = NULL;
+	enum net_verdict verdict;
 
 	/* Only accept input with NET_AF_CAN family and NET_CAN_RAW protocol. */
 	if (net_pkt_family(pkt) != NET_AF_CAN || proto != NET_CAN_RAW) {
@@ -816,9 +872,10 @@ enum net_verdict net_conn_can_input(struct net_pkt *pkt, uint8_t proto)
 		best_match = conn;
 	}
 
-	if (best_match != NULL) {
+	if (best_match != NULL && best_match->cb != NULL && conn_dispatch_begin(best_match)) {
 		cb = best_match->cb;
 		user_data = best_match->user_data;
+		context = best_match->context;
 	}
 
 	k_mutex_unlock(&conn_lock);
@@ -827,7 +884,9 @@ enum net_verdict net_conn_can_input(struct net_pkt *pkt, uint8_t proto)
 		NET_DBG("[%p] match found cb %p ud %p rank 0x%02x", best_match, cb,
 			user_data, NET_CONN_RANK(best_match->flags));
 
-		if (cb(best_match, pkt, NULL, NULL, user_data) == NET_DROP) {
+		verdict = cb(best_match, pkt, NULL, NULL, user_data);
+		conn_dispatch_end(best_match, context);
+		if (verdict == NET_DROP) {
 			goto drop;
 		}
 
@@ -901,6 +960,8 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	struct net_conn *conn;
 	net_conn_cb_t cb = NULL;
 	void *user_data = NULL;
+	struct net_context *context = NULL;
+	enum net_verdict verdict;
 
 	/* If we receive a packet with multicast destination address, we might
 	 * need to deliver the packet to multiple recipients.
@@ -1035,9 +1096,10 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		}
 	} /* loop end */
 
-	if (best_match != NULL) {
+	if (best_match != NULL && best_match->cb != NULL && conn_dispatch_begin(best_match)) {
 		cb = best_match->cb;
 		user_data = best_match->user_data;
+		context = best_match->context;
 	}
 
 	k_mutex_unlock(&conn_lock);
@@ -1055,8 +1117,9 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		NET_DBG("[%p] match found cb %p ud %p rank 0x%02x", best_match, cb,
 			user_data, NET_CONN_RANK(best_match->flags));
 
-		if (cb(best_match, pkt, ip_hdr, proto_hdr, user_data)
-				== NET_DROP) {
+		verdict = cb(best_match, pkt, ip_hdr, proto_hdr, user_data);
+		conn_dispatch_end(best_match, context);
+		if (verdict == NET_DROP) {
 			goto drop;
 		}
 

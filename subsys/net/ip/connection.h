@@ -83,6 +83,11 @@ struct net_conn {
 	/** Flags for the connection */
 	uint8_t flags;
 
+	/** Number of callbacks running on this connection outside the
+	 *  connection lock. The slot is not recycled while this is non-zero.
+	 */
+	uint16_t dispatch_count;
+
 	/** Is v4-mapping-to-v6 enabled for this connection */
 	uint8_t v6only : 1;
 };

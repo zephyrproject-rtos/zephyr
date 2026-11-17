@@ -4104,10 +4104,18 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 	net_context_recv_cb_t recv_cb;
 	enum net_verdict verdict = NET_DROP;
 
-	NET_ASSERT(context);
 	NET_ASSERT(net_pkt_iface(pkt));
 
+	/* The connection can be unregistered by a concurrent close. */
+	if (context == NULL) {
+		return NET_DROP;
+	}
+
 	k_mutex_lock(&context->lock, K_FOREVER);
+
+	if (find_context(conn) != context) {
+		goto unlock;
+	}
 
 	net_context_set_iface(context, net_pkt_iface(pkt));
 	net_pkt_set_context(pkt, context);
@@ -4252,8 +4260,12 @@ static enum net_verdict net_context_raw_packet_received(
 {
 	struct net_context *context = find_context(conn);
 
-	NET_ASSERT(context);
 	NET_ASSERT(net_pkt_iface(pkt));
+
+	/* The connection can be unregistered by a concurrent close. */
+	if (context == NULL) {
+		return NET_DROP;
+	}
 
 	/* If there is no callback registered, then we can only drop
 	 * the packet.
