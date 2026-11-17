@@ -21,6 +21,7 @@ tests:
   drivers.opamp.build.stm32_opamp:
     platform_allow:
       - nucleo_g474re
+      - b_u585i_iot02a
   drivers.opamp.build.infineon_ctb:
     platform_allow:
       - kit_pse84_eval/pse846gps2dbzc4a/m55
