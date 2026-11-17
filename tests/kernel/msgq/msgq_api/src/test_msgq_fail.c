@@ -94,6 +94,40 @@ ZTEST_USER(msgq_api, test_msgq_user_put_fail)
 	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN));
 	put_fail(q);
 }
+
+/**
+ * @brief Verify k_msgq_alloc_init() rejects zero sizes.
+ *
+ * @details
+ * A queue with zero-sized messages has an empty ring buffer, and putting a
+ * message into it trips the write pointer checks in k_msgq_put(). A queue
+ * that holds no message cannot be used either. User mode must not be able
+ * to create such queues.
+ *
+ * The queue is initialized with valid sizes at the end, so that releasing
+ * it when the test thread exits cleans up an initialized queue.
+ *
+ * Test steps:
+ * - Allocate a queue as a user thread and alloc-init it with msg_size 0,
+ *   then with max_msgs 0.
+ * - Alloc-init the same queue with valid sizes.
+ *
+ * Expected result:
+ * - k_msgq_alloc_init() returns -EINVAL for the zero sizes, and succeeds
+ *   with valid sizes.
+ *
+ * @see k_msgq_alloc_init()
+ */
+ZTEST_USER(msgq_api, test_msgq_user_alloc_init_zero_size)
+{
+	struct k_msgq *q;
+
+	q = k_object_alloc(K_OBJ_MSGQ);
+	zassert_not_null(q, "couldn't alloc message queue");
+	zassert_equal(k_msgq_alloc_init(q, 0, MSGQ_LEN), -EINVAL);
+	zassert_equal(k_msgq_alloc_init(q, MSG_SIZE, 0), -EINVAL);
+	zassert_ok(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN));
+}
 #endif /* CONFIG_USERSPACE */
 
 /**
