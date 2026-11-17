@@ -1348,7 +1348,8 @@ static DEVICE_API(mspi, mspi_stm32_qspi_driver_api) = {
 						  : QSPI_SAMPLE_SHIFTING_NONE),                \
 				.FlashSize = MSPI_STM32_INST_MEM_ADDR_BITS(index, 26) - 1,     \
 				.ChipSelectHighTime =                                          \
-					DT_INST_PROP(index, st_cs_high_time) - 1,              \
+					(DT_INST_PROP(index, st_cs_high_time) - 1U) <<         \
+						QUADSPI_DCR_CSHT_Pos,                          \
 				.ClockMode = QSPI_CLOCK_MODE_0,                                \
 				.FlashID = QSPI_FLASH_ID_1,                                    \
 				.DualFlash = QSPI_DUALFLASH_DISABLE,                           \
