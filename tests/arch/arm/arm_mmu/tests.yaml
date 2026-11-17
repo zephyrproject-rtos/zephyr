@@ -1,0 +1,11 @@
+tests:
+  arch.arm.mmu.l2_table_lifetime:
+    arch_allow: arm
+    filter: CONFIG_ARM_AARCH32_MMU
+    platform_allow:
+      - qemu_cortex_a9
+    integration_platforms:
+      - qemu_cortex_a9
+    tags:
+      - arm
+      - mmu
