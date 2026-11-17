@@ -116,15 +116,16 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 		/* Set next interrupt in case the user has programmed a line event */
 		HAL_LTDC_ProgramLineEvent(&data->hltdc, data->cb.user_line_number);
 
-		k_sem_take(&data->cb_sem, K_NO_WAIT);
+		/* Skip the callback if it is being (un)registered */
+		if (k_sem_take(&data->cb_sem, K_NO_WAIT) == 0) {
+			if ((data->cb.dev != NULL) &&
+			    (data->cb.event_mask & DISPLAY_EVENT_VSYNC)) {
+				event_handled = data->cb.cb_fn(data->cb.dev, DISPLAY_EVENT_VSYNC,
+							       &event_data, data->cb.user_data);
+			}
 
-		if ((data->cb.dev != NULL) &&
-			(data->cb.event_mask & DISPLAY_EVENT_VSYNC)) {
-			event_handled = data->cb.cb_fn(data->cb.dev,
-				DISPLAY_EVENT_VSYNC, &event_data, data->cb.user_data);
+			k_sem_give(&data->cb_sem);
 		}
-
-		k_sem_give(&data->cb_sem);
 
 		if (!event_handled) {
 			if (data->front_buf != data->pend_buf) {
@@ -145,7 +146,11 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 		return;
 	}
 
-	k_sem_take(&data->cb_sem, K_NO_WAIT);
+	/* Skip the callback if it is being (un)registered */
+	if (k_sem_take(&data->cb_sem, K_NO_WAIT) != 0) {
+		__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
+		return;
+	}
 
 	if ((data->cb.dev != NULL) &&
 		(data->cb.event_mask & DISPLAY_EVENT_LINE_INT)) {
@@ -563,13 +568,17 @@ static int stm32_ltdc_display_register_event_cb(const struct device *dev, displa
 		LOG_ERR("Registration failed: output handle pointer is NULL");
 		return -EINVAL;
 	}
-	if (data->cb.dev != NULL) {
-		LOG_ERR("Registration failed: a callback is already registered");
-		return -EBUSY;
-	}
 	if (!in_isr) {
 		LOG_ERR("Registration failed: only ISR context is supported for this driver");
 		return -ENOSYS;
+	}
+
+	k_sem_take(&data->cb_sem, K_FOREVER);
+
+	if (data->cb.dev != NULL) {
+		LOG_ERR("Registration failed: a callback is already registered");
+		k_sem_give(&data->cb_sem);
+		return -EBUSY;
 	}
 
 	/* VSync can only be detected by LTDC line interrupt,
@@ -602,6 +611,8 @@ static int stm32_ltdc_display_register_event_cb(const struct device *dev, displa
 	if (data->cb.user_line_number > (data->hltdc.Instance->CPSR & 0xFFFF)) {
 		HAL_LTDC_ProgramLineEvent(&data->hltdc, data->cb.user_line_number);
 	}
+
+	k_sem_give(&data->cb_sem);
 
 	return 0;
 }
