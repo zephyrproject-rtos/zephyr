@@ -299,6 +299,11 @@ int mcux_snvs_rtc_set(const struct device *dev, uint32_t ticks)
 	return 0;
 }
 
+static int mcux_snvs_set_value(const struct device *dev, uint32_t ticks)
+{
+	return mcux_snvs_rtc_set(dev, ticks);
+}
+
 static int mcux_snvs_init(const struct device *dev)
 {
 	const struct mcux_snvs_config *config = dev->config;
@@ -340,6 +345,7 @@ static DEVICE_API(counter, mcux_snvs_driver_api) = {
 	.start = mcux_snvs_start,
 	.stop = mcux_snvs_stop,
 	.get_value = mcux_snvs_get_value,
+	.set_value = mcux_snvs_set_value,
 	.set_alarm = mcux_snvs_set_alarm,
 	.cancel_alarm = mcux_snvs_cancel_alarm,
 	.set_top_value = mcux_snvs_set_top_value,
