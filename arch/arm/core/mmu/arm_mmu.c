@@ -951,6 +951,16 @@ int z_arm_mmu_init(bool is_primary_core)
 
 	invalidate_tlb_all();
 
+#if defined(CONFIG_CPU_CORTEX_A32_SMPEN)
+	/*
+	 * Cortex-A32: take part in the cluster's data coherency. CPUECTLR.SMPEN
+	 * resets to 0 and must be set before the data cache is enabled, even
+	 * with a single core (Cortex-A32 TRM, B1.43).
+	 */
+	write_cpuectlr(read_cpuectlr() | CPUECTLR_SMPEN_BIT);
+	barrier_isync_fence_full();
+#endif
+
 	/* Enable the MMU and Cache in SCTLR */
 	reg_val  = __get_SCTLR();
 	reg_val |= ARM_MMU_SCTLR_AFE_BIT;
