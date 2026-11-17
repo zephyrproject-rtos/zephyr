@@ -989,14 +989,29 @@ static inline int z_impl_espi_write_lpc_request(const struct device *dev,
  * This routine provides a generic interface to send a virtual wire packet
  * from target to controller.
  *
+ * The call is synchronous: it returns once the eSPI controller has read the new level of the
+ * virtual wire. Consecutive calls, such as the two edges of a pulse, need no delay between
+ * them. If the eSPI controller does not read the virtual wire within the driver timeout, the
+ * call returns -ETIMEDOUT and the new level stays set until the eSPI controller reads it.
+ *
+ * The driver timeout bounds the wait, so the call never waits indefinitely for the eSPI
+ * controller. It is a time in microseconds, not a number of polls, defined by each driver as a
+ * constant or a vendor Kconfig option, with a default of 10 ms or less.
+ *
+ * The eSPI target does not signal the transmission with an interrupt, so the driver polls for
+ * it with a busy wait that does not sleep. The call can be made from ISR context, where the
+ * wait adds up to the driver timeout to the interrupt latency. When the wait runs with
+ * interrupts locked, by the caller or by the driver, other interrupts are delayed by the same
+ * amount.
+ *
  * @param dev Pointer to the device structure for the driver instance.
  * @param signal The signal to be sent to eSPI controller.
  * @param level The level of signal requested. LOW (0) or HIGH (1).
  *
- * @retval 0 on success.
+ * @retval 0 Virtual wire transmitted.
  * @retval -EIO General input / output error, failed to send over the bus.
  * @retval -EINVAL Invalid signal.
- * @retval -ETIMEDOUT Timeout waiting for eSPI controller to process the VW.
+ * @retval -ETIMEDOUT eSPI controller did not read the virtual wire within the driver timeout.
  */
 __syscall int espi_send_vwire(const struct device *dev,
 			      enum espi_vwire_signal signal,
