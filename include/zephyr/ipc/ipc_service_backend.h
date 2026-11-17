@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Interface implemented by IPC service backends.
+ * @ingroup ipc_service_backend
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_IPC_SERVICE_BACKEND_H_
 #define ZEPHYR_INCLUDE_IPC_IPC_SERVICE_BACKEND_H_
 

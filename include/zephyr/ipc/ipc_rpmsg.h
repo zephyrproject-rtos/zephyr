@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief OpenAMP RPMsg instance and endpoint helpers for IPC service backends.
+ * @ingroup ipc_service_rpmsg_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_IPC_RPMSG_H_
 #define ZEPHYR_INCLUDE_IPC_IPC_RPMSG_H_
 
