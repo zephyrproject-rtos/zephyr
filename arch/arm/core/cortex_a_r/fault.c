@@ -379,6 +379,33 @@ static bool memory_fault_recoverable(struct arch_esf *esf)
 }
 #endif
 
+#if defined(CONFIG_MPU_STACK_GUARD)
+/**
+ * @brief Stack overflow fault handler
+ *
+ * Called on a data abort taken while an exception entry pushed its frame
+ * into the MPU guard of the stack. esf is that of the data abort: its PC
+ * is the frame push in the exception entry and its CPSR the mode of that
+ * entry, while r0-r3, r12, lr and the callee-saved registers are those of
+ * the interrupted context. The SP it records is in the abort mode stack.
+ * DFAR is the address of the frame push, next to the interrupted SP.
+ *
+ * This runs on the abort mode stack of the CPU, which a second stack
+ * overflow on that CPU reuses from its top. The fatal error handler must
+ * therefore neither block nor enable IRQs.
+ *
+ * The interrupted context can't be resumed, as its stack is unusable:
+ * halt the system if the fatal error handling returns.
+ */
+FUNC_NORETURN void z_arm_fault_stack_overflow(struct arch_esf *esf)
+{
+	EXCEPTION_DUMP("***** STACK OVERFLOW *****");
+	EXCEPTION_DUMP("Frame push @ 0x%08x", __get_DFAR());
+	z_arm_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
+	k_fatal_halt(K_ERR_STACK_CHK_FAIL);
+}
+#endif
+
 /**
  * @brief Data abort fault handler
  *

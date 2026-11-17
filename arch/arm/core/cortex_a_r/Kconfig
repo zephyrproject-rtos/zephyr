@@ -271,6 +271,8 @@ config AARCH32_ARMV8_R
 
 config ARMV7_EXCEPTION_STACK_SIZE
 	int "Undefined Instruction and Abort stack size (in bytes)"
+	default 1536 if MPU_STACK_GUARD && (DEBUG_OPTIMIZATIONS || NO_OPTIMIZATIONS)
+	default 1024 if MPU_STACK_GUARD
 	default 256
 	help
 	  This option specifies the size of the stack used by the undefined

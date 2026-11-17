@@ -37,6 +37,7 @@ GTEXT(z_arm_fault_undef_instruction_fp)
 GTEXT(z_arm_fault_undef_instruction)
 GTEXT(z_arm_fault_prefetch)
 GTEXT(z_arm_fault_data)
+GTEXT(z_arm_fault_stack_overflow)
 
 GTEXT(z_arm_undef_instruction)
 GTEXT(z_arm_prefetch_abort)
@@ -335,9 +336,43 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	sub lr, #8
 
+#if defined(CONFIG_MPU_STACK_GUARD)
+	/*
+	 * Exception handlers run in SYS mode. A data abort taken in another
+	 * mode comes from an exception entry whose frame push hit the MPU
+	 * guard of the stack, unless it is an asynchronous abort.
+	 */
+	push {r0}
+	mrs r0, spsr
+	and r0, r0, #MODE_MASK
+	cmp r0, #MODE_SYS
+	cmpne r0, #MODE_USR
+	pop {r0}
+	bne stack_overflow
+#endif
+
 	z_arm_cortex_ar_enter_exc
 	z_arm_cortex_ar_save_extra
 	bl z_arm_fault_data
 	b z_arm_cortex_ar_exit_exc
+
+#if defined(CONFIG_MPU_STACK_GUARD)
+stack_overflow:
+	/*
+	 * The SYS mode stack is unusable: handle the fatal error on the abort
+	 * mode stack, which ISRs don't use, from 8 bytes below its top. The
+	 * entry of a nested data abort uses the top 4 bytes.
+	 * z_arm_fault_stack_overflow() does not return.
+	 */
+	push {r0}
+	sub r0, sp, #4
+	cps #MODE_SYS
+	mov sp, r0
+	cps #MODE_ABT
+	pop {r0}
+	z_arm_cortex_ar_enter_exc
+	z_arm_cortex_ar_save_extra
+	bl z_arm_fault_stack_overflow
+#endif
 
 #endif
