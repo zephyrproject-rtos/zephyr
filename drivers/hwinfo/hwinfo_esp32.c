@@ -66,7 +66,7 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 		      | RESET_BROWNOUT);
 
 #if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32H2) || \
-	defined(CONFIG_SOC_SERIES_ESP32P4)
+	defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32S31)
 	*supported |= RESET_SECURITY;
 #endif
 
