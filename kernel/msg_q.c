@@ -79,7 +79,7 @@ int z_impl_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, alloc_init, msgq);
 
-	if (size_mul_overflow(msg_size, max_msgs, &total_size)) {
+	if (size_mul_overflow(msg_size, max_msgs, &total_size) || (total_size == 0U)) {
 		ret = -EINVAL;
 	} else {
 		buffer = z_thread_malloc(total_size);
