@@ -2411,19 +2411,13 @@ static int uhc_dwc2_enqueue(const struct device *const dev, struct uhc_transfer 
 static int uhc_dwc2_dequeue(const struct device *const dev, struct uhc_transfer *const xfer)
 {
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	struct uhc_data *const data = dev->data;
-	struct uhc_transfer *tmp;
 
 	/*
 	 * Mark the queued transfer as cancelled. The dequeue process itself
 	 * will take place in the driver's thread.
 	 */
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		if (tmp == xfer) {
-			tmp->err = -ECONNRESET;
-			k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_DEQUEUE));
-			break;
-		}
+	if (uhc_xfer_dequeue(xfer) == 0) {
+		k_event_post(&priv->events, BIT(UHC_DWC2_EVENT_DEQUEUE));
 	}
 
 	return 0;

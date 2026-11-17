@@ -799,20 +799,7 @@ static int max3421e_enqueue(const struct device *dev,
 static int max3421e_dequeue(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
-	struct uhc_data *data = dev->data;
-	struct uhc_transfer *tmp;
-	unsigned int key;
-
-	key = irq_lock();
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		if (xfer == tmp) {
-			tmp->err = -ECONNRESET;
-		}
-	}
-
-	irq_unlock(key);
-
-	return 0;
+	return uhc_xfer_dequeue(xfer);
 }
 
 static int max3421e_reset(const struct device *dev)
