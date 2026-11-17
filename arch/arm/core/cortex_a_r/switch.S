@@ -113,16 +113,22 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
  */
 SECTION_FUNC(TEXT, z_arm_svc)
     z_arm_cortex_ar_enter_exc
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+    ldr r0, [sp]
+#endif
 
-   /* Get SVC number */
-    cps #MODE_SVC
-    mrs r0, spsr
-    tst r0, #0x20
-    ldreq r1, [lr, #-4]
+    /*
+     * Get the SVC number from the instruction before the return address.
+     * r0: exception stack frame, r2: SPSR, r3: return address
+     */
+    ldr r2, [r0, #___basic_sf_t_xpsr_OFFSET]
+    ldr r3, [r0, #___basic_sf_t_pc_OFFSET]
+    tst r2, #T_BIT
+    ldreq r1, [r3, #-4]
     biceq r1, #0xff000000
     beq demux
 
-    ldr r1, [lr, #-2]
+    ldr r1, [r3, #-2]
     and r1, #0xff
 
    /*
@@ -132,8 +138,6 @@ SECTION_FUNC(TEXT, z_arm_svc)
     * 3: system calls for memory protection
     */
 demux:
-    cps #MODE_SYS
-
 #if defined(CONFIG_USERSPACE)
     cmp r1, #_SVC_CALL_SYSTEM_CALL
     beq _do_syscall
@@ -176,50 +180,35 @@ _oops:
     /*
      * The exception return goes to z_arm_do_syscall in system mode,
      * which calls the handler and returns to the caller of the SVC.
-     * The exception stack frame (in SYS mode, its address is at sp) is:
+     * The exception stack frame, at r0, is:
      * r0 - r1 - r2 - r3 - r12 - LR - PC - SPSR
      *
      * Registers look like:
-     * r0-r5 - args
+     * r0-r3 - args, in the frame
+     * r4-r5 - args
      * r6 - call_id
      * r8 - set here to the return address of the SVC
      */
 _do_syscall:
-    ldr r2, [sp]
-    ldr r8, [r2, #___basic_sf_t_pc_OFFSET]
-
-    /* Make the exception return to system state */
-    ldr r1, [r2, #___basic_sf_t_xpsr_OFFSET]
+    mov r8, r3
 
     /* If leaving thumb mode, set the return address to thumb mode */
-    tst r1, #T_BIT
+    tst r2, #T_BIT
     orrne r8, #1
 
-    bic r1, #(MODE_MASK | T_BIT)
-    orr r1, r1, #MODE_SYS
-    str r1, [r2, #___basic_sf_t_xpsr_OFFSET]
+    /* Make the exception return to system state */
+    bic r2, #(MODE_MASK | T_BIT)
+    orr r2, r2, #MODE_SYS
+    str r2, [r0, #___basic_sf_t_xpsr_OFFSET]
 
     ldr r1, =z_arm_do_syscall
-    str r1, [r2, #___basic_sf_t_pc_OFFSET]
+    str r1, [r0, #___basic_sf_t_pc_OFFSET]
 
-    /* validate syscall limit, only set priv mode if valid */
+    /* On a bad syscall id, set arg0 to that id and call_id to K_SYSCALL_BAD */
     ldr ip, =K_SYSCALL_LIMIT
     cmp r6, ip
-    blo valid_syscall_id
-
-    /* bad syscall id.  Set arg0 to bad id and set call_id to SYSCALL_BAD */
-    str r6, [r2]
-    ldr r6, =K_SYSCALL_BAD
-
-valid_syscall_id:
-    get_cpu r0
-    ldr r0, [r0, #___cpu_t_current_OFFSET]
-    ldr r1, [r0, #_thread_offset_to_mode]
-    bic r1, #1
-    /* Store (privileged) mode in thread's mode state variable */
-    str r1, [r0, #_thread_offset_to_mode]
-    dsb
-    isb
+    strhs r6, [r0]
+    ldrhs r6, =K_SYSCALL_BAD
 
     b z_arm_cortex_ar_exit_exc
 #endif
