@@ -142,6 +142,13 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 
 #define DMA_DW_AXI_CFG_PRIORITY(x)               FIELD_PREP(GENMASK64(51, 47), x)
 
+/*
+ * Outstanding request limits (value + 1 requests). Same position in the
+ * CHx_CFG layouts for up to 8 and for more than 8 channels.
+ */
+#define DMA_DW_AXI_CFG_SRC_OSR_LMT(x)            FIELD_PREP(GENMASK64(58, 55), x)
+#define DMA_DW_AXI_CFG_DST_OSR_LMT(x)            FIELD_PREP(GENMASK64(62, 59), x)
+
 /* descriptor valid or not */
 #define DMA_DW_AXI_CTL_LLI_VALID                 BIT64(63)
 /* descriptor is last or not in a link */
@@ -298,6 +305,9 @@ struct dma_dw_axi_dev_cfg {
 	void (*irq_config)(void);
 	/* max number of channel supported by dma controller */
 	uint32_t max_channel;
+	/* source/destination outstanding request limits for all channels */
+	uint8_t src_osr_lmt;
+	uint8_t dst_osr_lmt;
 };
 
 /**
@@ -552,7 +562,8 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	msize_src = DMA_DW_AXI_GET_MSIZE(cfg->source_burst_length);
 	msize_dst = DMA_DW_AXI_GET_MSIZE(cfg->dest_burst_length);
 
-	chan_data->cfg = 0;
+	chan_data->cfg = DMA_DW_AXI_CFG_SRC_OSR_LMT(dw_dma_config->src_osr_lmt) |
+			 DMA_DW_AXI_CFG_DST_OSR_LMT(dw_dma_config->dst_osr_lmt);
 	chan_data->irq_unmask = 0;
 
 	chan_data->direction = cfg->channel_direction;
@@ -969,7 +980,12 @@ static DEVICE_API(dma, dma_dw_axi_driver_api) = {
 			(DW_AXI_DMA_RESET_SPEC_INIT(inst)))				\
 		.irq_config = dw_dma_irq_config_##inst,					\
 		.max_channel = DT_INST_PROP(inst, dma_channels), \
+		.src_osr_lmt = DT_INST_PROP(inst, snps_src_osr_limit),			\
+		.dst_osr_lmt = DT_INST_PROP(inst, snps_dst_osr_limit),			\
 	};										\
+	BUILD_ASSERT(DT_INST_PROP(inst, snps_src_osr_limit) <= 15 &&			\
+		     DT_INST_PROP(inst, snps_dst_osr_limit) <= 15,			\
+		     "outstanding request limits must be in the range 0-15");		\
 											\
 	DEVICE_DT_INST_DEFINE(inst,							\
 				dma_dw_axi_init,					\

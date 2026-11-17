@@ -20,6 +20,25 @@ properties:
   "#dma-cells":
     const: 1
 
+  snps,src-osr-limit:
+    type: int
+    default: 0
+    description: |
+      Source outstanding request limit programmed into CHx_CFG.SRC_OSR_LMT
+      of every channel. Each channel may have up to (value + 1) outstanding
+      AXI read requests. Valid range is 0-15; the default of 0 (one
+      outstanding request) matches the hardware reset value. Raising it
+      hides read latency on high-latency paths such as DRAM.
+
+  snps,dst-osr-limit:
+    type: int
+    default: 0
+    description: |
+      Destination outstanding request limit programmed into
+      CHx_CFG.DST_OSR_LMT of every channel. Each channel may have up to
+      (value + 1) outstanding AXI write requests. Valid range is 0-15; the
+      default of 0 matches the hardware reset value.
+
 # #dma-cells : Must be <1>.
 # The 1st cell specifies the hardware handshaking signal ID
 # Example of device-tree dma channel configuration:
