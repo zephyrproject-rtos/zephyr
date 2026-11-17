@@ -1631,6 +1631,10 @@ static inline int i2c_write_read(const struct device *dev, uint16_t addr,
 {
 	struct i2c_msg msg[2];
 
+	if ((size_t)(uint32_t)num_write != num_write || (size_t)(uint32_t)num_read != num_read) {
+		return -EINVAL;
+	}
+
 	msg[0].buf = (uint8_t *)write_buf;
 	msg[0].len = num_write;
 	msg[0].flags = I2C_MSG_WRITE;
