@@ -62,6 +62,8 @@
 
 	soc {
 		interrupt-parent = <&nvic>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		trng: trng {
 			compatible = "renesas,ra-rsip-e50d-trng";
@@ -504,6 +506,7 @@
 		mram_ctrl: mram-controller@4013c000 {
 			compatible = "renesas,ra-mram-controller";
 			reg = <0x4013c000 0x4000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
