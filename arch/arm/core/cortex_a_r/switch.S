@@ -107,9 +107,9 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
  * @brief Service call handler
  *
  * The service call (svc) is used in the following occasions:
- * - Cooperative context switching
  * - IRQ offloading
  * - Kernel run-time exceptions
+ * - System calls
  *
  */
 SECTION_FUNC(TEXT, z_arm_svc)

@@ -76,10 +76,6 @@ static ALWAYS_INLINE bool z_arm_preempted_thread_in_user_mode(const struct arch_
 }
 #endif
 
-#ifndef CONFIG_USE_SWITCH
-extern void z_arm_cortex_r_svc(void);
-#endif
-
 #ifdef __cplusplus
 }
 #endif

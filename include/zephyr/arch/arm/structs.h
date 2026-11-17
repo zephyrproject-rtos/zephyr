@@ -12,7 +12,8 @@
 /* Per CPU architecture specifics */
 struct _cpu_arch {
 	int8_t exc_depth;
-#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_USE_SWITCH)
+#if defined(CONFIG_FPU_SHARING) &&                                                                 \
+	(defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R))
 	/* Thread whose FP context is in the FPU registers, or NULL */
 	struct k_thread *fpu_owner;
 #endif

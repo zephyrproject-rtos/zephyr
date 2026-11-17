@@ -217,12 +217,13 @@ enum k_fatal_error_reason_arch {
  *        that is using the Floating Point services.
  *
  * For threads that are using the Floating Point services under Shared
- * Registers (CONFIG_FPU_SHARING=y) mode, the exception stack frame may
- * contain both the basic stack frame and the FP caller-saved context,
+ * Registers (CONFIG_FPU_SHARING=y) mode, the Cortex-M exception stack frame
+ * may contain both the basic stack frame and the FP caller-saved context,
  * upon exception entry. Therefore, a wide guard region is required to
  * guarantee that stack-overflow detection will always be successful.
+ * Cortex-A/R saves the FP context in the thread structure instead.
  */
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) \
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) \
 	&& defined(CONFIG_MPU_STACK_GUARD)
 #if CONFIG_MPU_STACK_GUARD_MIN_SIZE_FLOAT <= 0x20
 #define MPU_GUARD_ALIGN_AND_SIZE_FLOAT 0x40
