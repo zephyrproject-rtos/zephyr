@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "SDIO bus speed tests"
+
+source "Kconfig.zephyr"
+
+config SDIO_SPEED_TEST
+	bool
+	default y
+	select SDMMC_STACK
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select SDHC_SUPPORTS_UHS

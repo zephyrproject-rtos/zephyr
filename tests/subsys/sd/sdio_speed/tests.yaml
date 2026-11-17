@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native/64
+  tags:
+    - sd
+    - sdio
+  harness: ztest
+
+tests:
+  sd.sdio.speed.retry10:
+    extra_configs:
+      - CONFIG_SD_RETRY_COUNT=10
+  sd.sdio.speed.retry1:
+    extra_configs:
+      - CONFIG_SD_RETRY_COUNT=1
+  sd.sdio.speed.retry0:
+    extra_configs:
+      - CONFIG_SD_RETRY_COUNT=0
