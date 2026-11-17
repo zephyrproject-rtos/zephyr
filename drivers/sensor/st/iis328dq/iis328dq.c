@@ -182,14 +182,14 @@ static int iis328dq_set_threshold(const struct device *dev, bool is_lower,
 
 	if (is_lower) {
 		/* internal INT1 handles lower threshold */
-		err = iis328dq_int1_treshold_set(ctx, val_raw);
+		err = iis328dq_int1_threshold_set(ctx, val_raw);
 		if (err) {
 			LOG_ERR("Could not set INT1_THS to 0x%02X, error %d", val_raw, err);
 			return err;
 		}
 	} else {
 		/* internal INT2 handles lower threshold */
-		err = iis328dq_int2_treshold_set(ctx, val_raw);
+		err = iis328dq_int2_threshold_set(ctx, val_raw);
 		if (err) {
 			LOG_ERR("Could not set INT2_THS to 0x%02X, error %d", val_raw, err);
 			return err;
