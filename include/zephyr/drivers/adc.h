@@ -804,10 +804,11 @@ struct adc_sequence {
 	bool calibrate;
 };
 
+/** @brief Header common to decoded ADC data. */
 struct adc_data_header {
 	/**
 	 * The closest timestamp for when the first frame was generated as attained by
-	 * :c:func:`k_uptime_ticks`.
+	 * k_uptime_ticks().
 	 */
 	uint64_t base_timestamp_ns;
 	/**
@@ -822,14 +823,22 @@ struct adc_data_header {
  * Data for the adc channel.
  */
 struct adc_data {
+	/** Base timestamp and number of readings. */
 	struct adc_data_header header;
+	/**
+	 * Scaling of the q31 values in @c readings: a value @c v stands for
+	 * v * 2^(shift - 31) volts.
+	 */
 	int8_t shift;
+	/** Reading of an ADC channel. */
 	struct adc_sample_data {
+		/** Time of the reading relative to @c header.base_timestamp_ns, in nanoseconds. */
 		uint32_t timestamp_delta;
+		/** Value of the reading. */
 		union {
-			q31_t value;
+			q31_t value; /**< Voltage, scaled by @c shift. */
 		};
-	} readings[1];
+	} readings[1]; /**< Readings, @c header.reading_count of them. */
 };
 
 /**
@@ -874,8 +883,11 @@ enum adc_stream_data_opt {
 	ADC_STREAM_DATA_DROP = 2,
 };
 
+/** @brief Trigger of an ADC stream and handling of its associated data. */
 struct adc_stream_trigger {
+	/** Trigger that completes a stream read when it fires. */
 	enum adc_trigger_type trigger;
+	/** What to do with the data associated with the trigger. */
 	enum adc_stream_data_opt opt;
 };
 
@@ -891,19 +903,30 @@ struct adc_chan_spec {
 	uint8_t chan_resolution;  /**< A ADC channel resolution */
 };
 
-/*
- * Internal data structure used to store information about the IODevice for async reading and
- * streaming adc data.
+/**
+ * @brief Configuration of an I/O device streaming ADC data
+ *
+ * Defined by @ref ADC_DT_STREAM_IODEV as the data of the @ref rtio_iodev. Drivers get it from
+ * the submissions passed to their submit function.
  */
 struct adc_read_config {
+	/** ADC device to read from. */
 	const struct device *adc;
+	/** True to stream on @c triggers. */
 	const bool is_streaming;
+	/** Channels to sample, @c adc_spec_cnt of them. */
 	const struct adc_dt_spec *adc_spec;
+	/** Triggers to stream on, @c trigger_cnt of them. */
 	const struct adc_stream_trigger *triggers;
+	/** Sequence the driver starts for each read. Set by the application before streaming. */
 	struct adc_sequence *sequence;
+	/** FIFO watermark level, for drivers with a hardware FIFO. */
 	uint16_t fifo_watermark_lvl;
+	/** FIFO mode, driver specific. */
 	uint16_t fifo_mode;
+	/** Number of entries in @c adc_spec. */
 	size_t adc_spec_cnt;
+	/** Number of entries in @c triggers. */
 	size_t trigger_cnt;
 };
 
@@ -1616,6 +1639,8 @@ static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT), (), (static))			\
 	const STRUCT_SECTION_ITERABLE(adc_decoder_api, ADC_DECODER_NAME())
 
+/** @cond INTERNAL_HIDDEN */
+
 #define Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL_IDX(node_id, prop, idx)				\
 	extern const struct adc_decoder_api UTIL_CAT(						\
 		DT_STRING_TOKEN_BY_IDX(node_id, prop, idx), __adc_decoder_api);
@@ -1627,6 +1652,8 @@ static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
 						())
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_ADC_DECODER_DECLARE_INTERNAL)
+
+/** @endcond */
 
 /* The default adc iodev API */
 extern const struct rtio_iodev_api __adc_iodev_api;
