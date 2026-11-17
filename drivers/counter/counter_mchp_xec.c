@@ -321,9 +321,9 @@ static int counter_xec_init(const struct device *dev)
 		.config_func = counter_xec_irq_config_##inst,                                      \
 		.base_address = DT_INST_REG_ADDR(inst),                                            \
 		.prescaler = DT_INST_PROP(inst, prescaler),                                        \
-		.girq_id = DEV_CFG_GIRQ(0, 0),                                                     \
-		.girq_bit = DEV_CFG_GIRQ_POS(0, 0),                                                \
-		.enc_pcr = DT_INST_PROP(0, pcr_src),                                               \
+		.girq_id = DEV_CFG_GIRQ(inst, 0),                                                  \
+		.girq_bit = DEV_CFG_GIRQ_POS(inst, 0),                                             \
+		.enc_pcr = DT_INST_PROP(inst, pcr_src),                                            \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, counter_xec_init, NULL, &counter_xec_dev_data_##inst,          \
