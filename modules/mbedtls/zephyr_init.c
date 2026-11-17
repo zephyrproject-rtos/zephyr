@@ -19,6 +19,7 @@
 
 #include <mbedtls/build_info.h>
 #include <mbedtls/debug.h>
+#include <zephyr_mbedtls_priv.h>
 
 #if defined(MBEDTLS_SSL_TLS_C) && !defined(MBEDTLS_SSL_CLI_C) && !defined(MBEDTLS_SSL_SRV_C)
 #error "MBEDTLS_SSL_CLI_C or MBEDTLS_SSL_SRV_C must be enabled with MBEDTLS_SSL_TLS_C"
@@ -48,6 +49,14 @@ static void init_heap(void)
 
 static int _mbedtls_init(void)
 {
+#if defined(CONFIG_MBEDTLS_THREADING_ZEPHYR)
+	/*
+	 * Register threading callbacks and initialize global Mbed TLS mutexes
+	 * before init_heap() initializes the allocator mutex and before
+	 * psa_crypto_init() accesses PSA global state.
+	 */
+	zephyr_mbedtls_init_threading();
+#endif
 
 	init_heap();
 
