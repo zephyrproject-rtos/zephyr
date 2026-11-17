@@ -14,8 +14,8 @@ if(CONFIG_THREAD_LOCAL_STORAGE)
   zephyr_compile_options("$<TARGET_PROPERTY:compiler,thread_local_storage>")
 endif()
 
-zephyr_library_sources(
-  fatal.c
+zephyr_library_sources(fatal.c)
+zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M
   nmi.c
   nmi_on_reset.S
 )

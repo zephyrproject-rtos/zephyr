@@ -64,7 +64,7 @@ static inline void irq_controller_clear_pending(unsigned int irq)
 static volatile int test_flag;
 static volatile int expected_reason = -1;
 
-#if defined(CONFIG_ARMV7_R) && defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_USE_SWITCH)
+#if defined(CONFIG_ARMV7_R) && defined(CONFIG_EXTRA_EXCEPTION_INFO)
 /* Used to validate the callee-saved registers collected during a fault */
 static volatile int run_callee_validation;
 static volatile int callee_validation_rv;
@@ -393,7 +393,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 #endif
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE || CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 
-#if defined(CONFIG_ARMV7_R) && defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_USE_SWITCH)
+#if defined(CONFIG_ARMV7_R) && defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	if (run_callee_validation) {
 		if (check_callee_regs_match_expectations(pEsf) == 0) {
 			callee_validation_rv = TC_PASS;
@@ -701,7 +701,7 @@ void arm_isr_handler(const void *args)
 	}
 }
 
-#if defined(CONFIG_ARMV7_R) && defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_USE_SWITCH)
+#if defined(CONFIG_ARMV7_R) && defined(CONFIG_EXTRA_EXCEPTION_INFO)
 static void run_callee_collection(uint32_t options)
 {
 	callee_validation_rv = TC_FAIL;
@@ -744,11 +744,6 @@ ZTEST(arm_interrupt, test_arm_user_callee_collection)
  */
 ZTEST(arm_interrupt, test_arm_interrupt)
 {
-#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_ARMV7_R) && !defined(CONFIG_USE_SWITCH)
-	/* EXTRA_EXCEPTION_INFO is not fully implemented for the legacy Cortex-R code */
-	ztest_test_skip();
-#endif
-
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i;
 

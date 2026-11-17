@@ -743,3 +743,22 @@ Architectures
   :kconfig:option:`CONFIG_ISR_STACK_SIZE` for the outermost ISR frame alone may need a larger
   interrupt stack, and code or debuggers that inspect the processor mode inside an ISR see SYS
   mode. (:github:`123041`)
+
+* Arm Cortex-A/R always uses :kconfig:option:`CONFIG_USE_SWITCH`, which can no longer be
+  disabled. The FIQ exception no longer calls the NMI handler, so
+  :kconfig:option:`CONFIG_RUNTIME_NMI` and ``z_arm_nmi_set_handler()`` are only available on
+  Arm Cortex-M. :kconfig:option:`CONFIG_RUNTIME_NMI` selected :kconfig:option:`CONFIG_REBOOT`,
+  which applications calling ``sys_reboot()`` on Arm Cortex-A/R must now enable.
+
+  * ISRs run on the interrupt stack instead of the SVC mode stack, and the exception handlers
+    run on the stack of the interrupted context instead of the exception mode stacks.
+    :kconfig:option:`CONFIG_ISR_STACK_SIZE` and thread stack sizes may need to grow, and
+    :kconfig:option:`CONFIG_ARMV7_SVC_STACK_SIZE` and
+    :kconfig:option:`CONFIG_ARMV7_EXCEPTION_STACK_SIZE` may shrink.
+  * The abort mode stack size is set with :kconfig:option:`CONFIG_ARMV7_ABORT_STACK_SIZE`,
+    which defaults to :kconfig:option:`CONFIG_ARMV7_EXCEPTION_STACK_SIZE`. With
+    :kconfig:option:`CONFIG_MPU_STACK_GUARD` on Arm Cortex-R, the abort mode stack holds the
+    fatal error handling of stack overflows, and it defaults to 1024 bytes, or 1536 bytes with
+    :kconfig:option:`CONFIG_DEBUG_OPTIMIZATIONS` or :kconfig:option:`CONFIG_NO_OPTIMIZATIONS`.
+  * ``struct arch_esf`` no longer has an ``fpu`` member: the FP context is saved in the
+    thread instead.

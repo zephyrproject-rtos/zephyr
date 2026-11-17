@@ -5,13 +5,12 @@
  */
 
 /*
- * Lazy FPU context switching for Cortex-A/R with CONFIG_USE_SWITCH, as
- * done on ARM64.  The FPU is disabled (FPEXC.EN clear) on exception
- * entry, and on context switches unless the incoming thread owns it and
- * resumes in thread code.  The first VFP instruction then takes an
- * undefined instruction exception, where z_arm_fpu_trap() saves the
- * context of the thread that owns the FPU, if any, and loads the context
- * of the current thread.
+ * Lazy FPU context switching for Cortex-A/R, as done on ARM64.  The FPU
+ * is disabled (FPEXC.EN clear) on exception entry, and on context
+ * switches unless the incoming thread owns it and resumes in thread
+ * code.  The first VFP instruction then takes an undefined instruction
+ * exception, where z_arm_fpu_trap() saves the context of the thread that
+ * owns the FPU, if any, and loads the context of the current thread.
  */
 
 #include <zephyr/kernel.h>

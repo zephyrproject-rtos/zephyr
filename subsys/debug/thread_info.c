@@ -121,9 +121,8 @@ const size_t _kernel_thread_info_offsets[] = {
 	[THREAD_INFO_OFFSET_T_NAME] = offsetof(struct k_thread, name),
 	[THREAD_INFO_OFFSET_T_ARCH] = offsetof(struct k_thread, arch),
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) &&                                          \
-	(defined(CONFIG_ARM64) ||                                                                  \
-	 ((defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)) &&        \
-	  defined(CONFIG_USE_SWITCH)))
+	(defined(CONFIG_ARM64) || defined(CONFIG_CPU_AARCH32_CORTEX_A) ||                          \
+	 defined(CONFIG_CPU_AARCH32_CORTEX_R))
 	[THREAD_INFO_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
 							saved_fp_context),
 	[THREAD_INFO_OFFSET_T_COOP_FLOAT] = THREAD_INFO_UNIMPLEMENTED,
