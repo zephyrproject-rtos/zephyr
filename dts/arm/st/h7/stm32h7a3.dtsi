@@ -229,7 +229,6 @@
 
 	die_temp: dietemp {
 		io-channels = <&adc2 18>;
-		ts-cal2-temp = <130>;
 	};
 
 	vref: vref {
