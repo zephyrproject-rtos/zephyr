@@ -258,9 +258,13 @@ static void sdhc_set_transfermode(const struct device *dev, int opcode,
 		transfer_mode = (SDHC_TMR_DMAEN_ENABLE | SDHC_TMR_DTDSEL_Msk);
 		break;
 
+	/*
+	 * The SD subsystem does not issue CMD12 after multi-block transfers;
+	 * the host must, so let the controller send it via Auto CMD12.
+	 */
 	case SD_READ_MULTIPLE_BLOCK:
 		transfer_mode = (SDHC_TMR_DMAEN_ENABLE | SDHC_TMR_DTDSEL_Msk | SDHC_TMR_MSBSEL_Msk |
-				 SDHC_TMR_BCEN_Msk);
+				 SDHC_TMR_BCEN_Msk | SDHC_TMR_ACMDEN_CMD12);
 		break;
 
 	case SD_WRITE_SINGLE_BLOCK:
@@ -268,7 +272,8 @@ static void sdhc_set_transfermode(const struct device *dev, int opcode,
 		break;
 
 	case SD_WRITE_MULTIPLE_BLOCK:
-		transfer_mode = (SDHC_TMR_DMAEN_ENABLE | SDHC_TMR_MSBSEL_Msk | SDHC_TMR_BCEN_Msk);
+		transfer_mode = (SDHC_TMR_DMAEN_ENABLE | SDHC_TMR_MSBSEL_Msk | SDHC_TMR_BCEN_Msk |
+				 SDHC_TMR_ACMDEN_CMD12);
 		break;
 
 	case SDIO_RW_EXTENDED:
