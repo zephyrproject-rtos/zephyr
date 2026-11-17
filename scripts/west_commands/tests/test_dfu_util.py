@@ -5,6 +5,7 @@
 
 import argparse
 import os
+import subprocess
 from unittest.mock import patch, call
 
 import pytest
@@ -221,8 +222,9 @@ def test_dfu_util_detach(cc, req, find_device, runner_config, tmpdir):
 @patch('runners.dfu.DfuUtilBinaryRunner.find_device', side_effect=find_device_patch)
 @patch('runners.core.ZephyrBinaryRunner.get_flash_address', side_effect=get_flash_address_patch)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+@patch('runners.core.ZephyrBinaryRunner.check_output', return_value=b'')
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_dfu_util_detach_dfuse_leave(cc, req, gfa, find_device, runner_config, tmpdir):
+def test_dfu_util_detach_dfuse_leave(cc, co, req, gfa, find_device, runner_config, tmpdir):
     '''Do not detach separately when DfuSe leave already exits DFU mode.'''
     args = ['--pid', TEST_PID, '--alt', TEST_ALT_INT, '--dfuse', '--detach']
 
@@ -240,7 +242,8 @@ def test_dfu_util_detach_dfuse_leave(cc, req, gfa, find_device, runner_config, t
 
     assert find_device.called
     assert req.call_args_list == [call(DFU_UTIL)]
-    assert cc.call_args_list == [
+    assert cc.call_args_list == []
+    assert co.call_args_list == [
         call(
             [
                 DFU_UTIL,
@@ -251,7 +254,8 @@ def test_dfu_util_detach_dfuse_leave(cc, req, gfa, find_device, runner_config, t
                 TEST_ALT_INT,
                 '-D',
                 RC_KERNEL_BIN,
-            ]
+            ],
+            stderr=subprocess.STDOUT,
         )
     ]
 
@@ -270,9 +274,10 @@ def test_dfu_util_detach_dfuse_leave(cc, req, gfa, find_device, runner_config, t
 @patch('runners.dfu.DfuUtilBinaryRunner.find_device', side_effect=find_device_patch)
 @patch('runners.core.ZephyrBinaryRunner.get_flash_address', side_effect=get_flash_address_patch)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+@patch('runners.core.ZephyrBinaryRunner.check_output', return_value=b'')
 @patch('runners.core.ZephyrBinaryRunner.check_call')
 def test_dfu_util_dfuse_reset(
-    cc, req, gfa, find_device, reset_arg, modifiers, expected_opts, runner_config, tmpdir
+    cc, co, req, gfa, find_device, reset_arg, modifiers, expected_opts, runner_config, tmpdir
 ):
     '''--no-reset drops the DfuSe 'leave' modifier, so the next image can be written.'''
     args = ['--pid', TEST_PID, '--alt', TEST_ALT_INT, '--dfuse']
@@ -293,20 +298,22 @@ def test_dfu_util_dfuse_reset(
     with patch('os.path.isfile', side_effect=os_path_isfile_patch):
         runner.run('flash')
 
-    assert cc.call_args_list == [
-        call(
-            [
-                DFU_UTIL,
-                TEST_PID_RES,
-                '-s',
-                f'{hex(TEST_DFUSE_ADDR)}:{expected_opts}',
-                '-a',
-                TEST_ALT_INT,
-                '-D',
-                RC_KERNEL_BIN,
-            ]
-        )
+    expected = [
+        DFU_UTIL,
+        TEST_PID_RES,
+        '-s',
+        f'{hex(TEST_DFUSE_ADDR)}:{expected_opts}',
+        '-a',
+        TEST_ALT_INT,
+        '-D',
+        RC_KERNEL_BIN,
     ]
+    if 'leave' in expected_opts.split(':'):
+        assert cc.call_args_list == []
+        assert co.call_args_list == [call(expected, stderr=subprocess.STDOUT)]
+    else:
+        assert cc.call_args_list == [call(expected)]
+        assert co.call_args_list == []
 
 
 @patch('runners.dfu.DfuUtilBinaryRunner.find_device', side_effect=find_device_patch)
@@ -331,3 +338,48 @@ def test_dfu_util_no_reset_skips_detach(cc, req, find_device, runner_config, tmp
     assert cc.call_args_list == [
         call(EXPECTED_COMMAND[(DFU_UTIL, TEST_ALT_INT, None, RC_KERNEL_BIN)]),
     ]
+
+
+def _dfuse_leave_runner(runner_config, tmpdir):
+    (tmpdir / 'zephyr').mkdir()
+    with open(os.fspath(tmpdir / 'zephyr' / '.config'), 'w') as f:
+        f.write('\n')
+    runner_config = runner_config._replace(build_dir=os.fspath(tmpdir))
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    DfuUtilBinaryRunner.add_parser(parser)
+    arg_namespace = parser.parse_args(['--pid', TEST_PID, '--alt', TEST_ALT_INT, '--dfuse'])
+    return DfuUtilBinaryRunner.create(runner_config, arg_namespace)
+
+
+# dfu-util 0.11 on an STM32 ROM bootloader that restarts before answering
+LEAVE_FAILURE = (
+    b'Download done.\nFile downloaded successfully\nSubmitting leave request...\n'
+    b'dfu-util: Error during download get_status\n'
+)
+
+
+@pytest.mark.parametrize(
+    'output, fails',
+    [
+        # The download completed; only the status request after 'leave' failed.
+        (LEAVE_FAILURE, False),
+        # Any failure before the leave request is still an error.
+        (b'dfu-util: Error during download\n', True),
+    ],
+)
+@patch('runners.dfu.DfuUtilBinaryRunner.find_device', side_effect=find_device_patch)
+@patch('runners.core.ZephyrBinaryRunner.get_flash_address', side_effect=get_flash_address_patch)
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+@patch('runners.core.ZephyrBinaryRunner.check_output')
+def test_dfu_util_dfuse_leave_failure(
+    co, req, gfa, find_device, output, fails, runner_config, tmpdir
+):
+    '''A dfu-util failure after the DfuSe leave request does not fail the flash.'''
+    co.side_effect = subprocess.CalledProcessError(74, [DFU_UTIL], output=output)
+    runner = _dfuse_leave_runner(runner_config, tmpdir)
+    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+        if fails:
+            with pytest.raises(subprocess.CalledProcessError):
+                runner.run('flash')
+        else:
+            runner.run('flash')
