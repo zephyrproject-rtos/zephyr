@@ -21,13 +21,6 @@
 #include <stdbool.h>
 #include <cmsis_core.h>
 
-#if (MPU_GUARD_ALIGN_AND_SIZE_FLOAT > MPU_GUARD_ALIGN_AND_SIZE)
-#define FP_GUARD_EXTRA_SIZE	(MPU_GUARD_ALIGN_AND_SIZE_FLOAT - \
-				 MPU_GUARD_ALIGN_AND_SIZE)
-#else
-#define FP_GUARD_EXTRA_SIZE	0
-#endif
-
 #ifndef EXC_RETURN_FTYPE
 /* bit [4] allocate stack for floating-point context: 0=done 1=skipped  */
 #define EXC_RETURN_FTYPE           (0x00000010UL)
@@ -44,9 +37,9 @@ static void setup_priv_stack(struct k_thread *thread)
 	/* Set up privileged stack before entering user mode */
 	thread->arch.priv_stack_start = (uint32_t)z_priv_stack_find(thread->stack_obj);
 
-	/* CONFIG_PRIVILEGED_STACK_SIZE does not account for MPU_GUARD_ALIGN_AND_SIZE or
-	 * MPU_GUARD_ALIGN_AND_SIZE_FLOAT. Therefore, we must compute priv_stack_end here before
-	 * adjusting priv_stack_start for the mpu guard alignment
+	/* CONFIG_PRIVILEGED_STACK_SIZE does not account for MPU_GUARD_ALIGN_AND_SIZE.
+	 * Therefore, we must compute priv_stack_end here before adjusting priv_stack_start
+	 * for the mpu guard alignment
 	 */
 	thread->arch.priv_stack_end = thread->arch.priv_stack_start + CONFIG_PRIVILEGED_STACK_SIZE;
 
@@ -55,28 +48,15 @@ static void setup_priv_stack(struct k_thread *thread)
 	 * privileged stack. Adjust the available (writable) stack
 	 * buffer area accordingly.
 	 */
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	thread->arch.priv_stack_start +=
-		((thread->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) ?
-		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
-#else
 	thread->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 #endif /* CONFIG_MPU_STACK_GUARD */
 }
 #endif
 
-/* An initial context, to be "restored" by z_arm_pendsv(), is put at the other
- * end of the stack, and thus reusable by the stack when not needed anymore.
- *
- * The initial context is an exception stack frame (ESF) since exiting the
- * PendSV exception will want to pop an ESF. Interestingly, even if the lsb of
- * an instruction address to jump to must always be set since the CPU always
- * runs in thumb mode, the ESF expects the real address of the instruction,
- * with the lsb *not* set (instructions are always aligned on 16 bit
- * halfwords).  Since the compiler automatically sets the lsb of function
- * addresses, we have to unset it manually before storing it in the 'pc' field
- * of the ESF.
+/* An initial context is put at the other end of the stack, and thus reusable
+ * by the stack when not needed anymore. It is an exception stack frame (ESF):
+ * the first switch to the thread returns to z_arm_cortex_ar_exit_exc(), whose
+ * exception return pops it.
  */
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     char *stack_ptr, k_thread_entry_t entry,
@@ -104,28 +84,12 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		thread->stack_info.size -= MPU_GUARD_ALIGN_AND_SIZE;
 	}
 #endif /* CONFIG_USERSPACE */
-#if FP_GUARD_EXTRA_SIZE > 0
-	if ((thread->base.user_options & K_FP_REGS) != 0) {
-		/* Larger guard needed due to lazy stacking of FP regs may
-		 * overshoot the guard area without writing anything. We
-		 * carve it out of the stack buffer as-needed instead of
-		 * unconditionally reserving it.
-		 */
-		thread->stack_info.start += FP_GUARD_EXTRA_SIZE;
-		thread->stack_info.size -= FP_GUARD_EXTRA_SIZE;
-	}
-#endif /* FP_GUARD_EXTRA_SIZE */
 #endif /* CONFIG_MPU_STACK_GUARD */
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE)
 	thread->arch.mode = 0;
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
 	thread->arch.mode_exc_return = DEFAULT_EXC_RETURN;
-#endif
-#if FP_GUARD_EXTRA_SIZE > 0
-	if ((thread->base.user_options & K_FP_REGS) != 0) {
-		thread->arch.mode |= Z_ARM_MODE_MPU_GUARD_FLOAT_Msk;
-	}
 #endif
 #endif
 
@@ -158,16 +122,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_COMPILER_ISA_THUMB2 */
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-#if defined(CONFIG_USE_SWITCH)
 	memset(&thread->arch.saved_fp_context, 0, sizeof(thread->arch.saved_fp_context));
-#else
-	iframe = (struct __basic_sf *)
-		((uintptr_t)iframe - sizeof(struct __fpu_sf));
-	memset(iframe, 0, sizeof(struct __fpu_sf));
-#endif
 #endif
 
-#if defined(CONFIG_USE_SWITCH)
 	/*
 	 * The exception exit loads the frame address from SP, see
 	 * z_arm_cortex_ar_enter_exc(). iframe is 8-byte aligned.
@@ -179,76 +136,17 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 	*frame_addr = (uint32_t)iframe;
 	thread->callee_saved.psp = (uint32_t)frame_addr;
-#else
-	thread->callee_saved.psp = (uint32_t)iframe;
-#endif
-	thread->arch.basepri = 0;
 
 	/*
 	 * initial values in all other registers/thread entries are
 	 * irrelevant.
 	 */
-#if defined(CONFIG_USE_SWITCH)
 	extern void z_arm_cortex_ar_exit_exc(void);
 	thread->switch_handle = thread;
 	/* thread birth happens through the exception return path */
 	thread->arch.exception_depth = 1;
 	thread->callee_saved.lr = (uint32_t)z_arm_cortex_ar_exit_exc;
-#endif
 }
-
-#if defined(CONFIG_MPU_STACK_GUARD) && defined(CONFIG_FPU) \
-	&& defined(CONFIG_FPU_SHARING)
-
-static inline void z_arm_thread_stack_info_adjust(struct k_thread *thread,
-	bool use_large_guard)
-{
-	if (use_large_guard) {
-		/* Switch to use a large MPU guard if not already. */
-		if ((thread->arch.mode &
-			Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) == 0) {
-			/* Default guard size is used. Update required. */
-			thread->arch.mode |= Z_ARM_MODE_MPU_GUARD_FLOAT_Msk;
-#if defined(CONFIG_USERSPACE)
-			if (thread->arch.priv_stack_start) {
-				/* User thread */
-				thread->arch.priv_stack_start +=
-					FP_GUARD_EXTRA_SIZE;
-			} else
-#endif /* CONFIG_USERSPACE */
-			{
-				/* Privileged thread */
-				thread->stack_info.start +=
-					FP_GUARD_EXTRA_SIZE;
-				thread->stack_info.size -=
-					FP_GUARD_EXTRA_SIZE;
-			}
-		}
-	} else {
-		/* Switch to use the default MPU guard size if not already. */
-		if ((thread->arch.mode &
-			Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) {
-			/* Large guard size is used. Update required. */
-			thread->arch.mode &= ~Z_ARM_MODE_MPU_GUARD_FLOAT_Msk;
-#if defined(CONFIG_USERSPACE)
-			if (thread->arch.priv_stack_start) {
-				/* User thread */
-				thread->arch.priv_stack_start -=
-					FP_GUARD_EXTRA_SIZE;
-			} else
-#endif /* CONFIG_USERSPACE */
-			{
-				/* Privileged thread */
-				thread->stack_info.start -=
-					FP_GUARD_EXTRA_SIZE;
-				thread->stack_info.size +=
-					FP_GUARD_EXTRA_SIZE;
-			}
-		}
-	}
-}
-
-#endif
 
 #ifdef CONFIG_USERSPACE
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
@@ -263,19 +161,13 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	 * to catch stack overflows there. Un-do the calculations done
 	 * which accounted for memory borrowed from the thread stack.
 	 */
-#if FP_GUARD_EXTRA_SIZE > 0
-	if ((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) {
-		_current->stack_info.start -= FP_GUARD_EXTRA_SIZE;
-		_current->stack_info.size += FP_GUARD_EXTRA_SIZE;
-	}
-#endif /* FP_GUARD_EXTRA_SIZE */
 	_current->stack_info.start -= MPU_GUARD_ALIGN_AND_SIZE;
 	_current->stack_info.size += MPU_GUARD_ALIGN_AND_SIZE;
 #endif /* CONFIG_THREAD_STACK_INFO */
 #endif /* CONFIG_MPU_STACK_GUARD */
 
 	/* 2 ways how arch_user_mode_enter is called:
-	 * - called as part of context switch from z_arm_pendsv, in this case privileged stack is
+	 * - as the entry point of a thread created with K_USER, in this case privileged stack is
 	 *   already setup and stack pointer points to privileged stack.
 	 * - called directly from k_thread_user_mode_enter, in this case privileged stack is not
 	 *   setup and stack pointer points to user stack.
@@ -367,18 +259,11 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 	}
 #endif
 
-#if (defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)) && \
-	defined(CONFIG_MPU_STACK_GUARD)
-	uint32_t guard_len =
-		((_current->arch.mode & Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0) ?
-		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
-#else
 	/* If MPU_STACK_GUARD is not enabled, the guard length is
 	 * effectively zero. Stack overflows may be detected only
 	 * for user threads in nPRIV mode.
 	 */
 	uint32_t guard_len = MPU_GUARD_ALIGN_AND_SIZE;
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 #if defined(CONFIG_USERSPACE)
 	if (thread->arch.priv_stack_start) {
@@ -430,55 +315,11 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 }
 #endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && !defined(CONFIG_USE_SWITCH)
-int arch_float_disable(struct k_thread *thread)
-{
-	if (thread != _current) {
-		return -EINVAL;
-	}
-
-	if (arch_is_in_isr()) {
-		return -EINVAL;
-	}
-
-	/* Disable all floating point capabilities for the thread */
-
-	/* K_FP_REG flag is used in SWAP and stack check fail. Locking
-	 * interrupts here prevents a possible context-switch or MPU
-	 * fault to take an outdated thread user_options flag into
-	 * account.
-	 */
-	int key = arch_irq_lock();
-
-	thread->base.user_options &= ~K_FP_REGS;
-
-	__set_FPEXC(0);
-
-	/* No need to add an ISB barrier after setting the CONTROL
-	 * register; arch_irq_unlock() already adds one.
-	 */
-
-	arch_irq_unlock(key);
-
-	return 0;
-}
-
-int arch_float_enable(struct k_thread *thread, unsigned int options)
-{
-	ARG_UNUSED(thread);
-	ARG_UNUSED(options);
-	/* This is not supported in Cortex-A and Cortex-R */
-	return -ENOTSUP;
-}
-#endif /* CONFIG_FPU && CONFIG_FPU_SHARING && !CONFIG_USE_SWITCH */
-
-#if !(defined(CONFIG_FPU_SHARING) && defined(CONFIG_USE_SWITCH))
+#if !defined(CONFIG_FPU_SHARING)
 int arch_coprocessors_disable(struct k_thread *thread)
 {
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	return arch_float_disable(thread);
-#else
+	ARG_UNUSED(thread);
+
 	return -ENOTSUP;
-#endif
 }
 #endif

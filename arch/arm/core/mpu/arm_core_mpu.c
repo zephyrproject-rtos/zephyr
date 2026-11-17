@@ -54,7 +54,7 @@ LOG_MODULE_REGISTER(mpu);
 K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 #endif
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) \
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) \
 	&& defined(CONFIG_MPU_STACK_GUARD)
 uint32_t z_arm_mpu_stack_guard_and_fpu_adjust(struct k_thread *thread);
 #endif
@@ -310,7 +310,7 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 	uintptr_t guard_start;
 	size_t guard_size = MPU_GUARD_ALIGN_AND_SIZE;
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	guard_size = z_arm_mpu_stack_guard_and_fpu_adjust(thread);
 #endif
 

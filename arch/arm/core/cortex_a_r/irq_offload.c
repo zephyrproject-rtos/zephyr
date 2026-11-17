@@ -8,7 +8,7 @@
  * @brief Software interrupts utility code - ARM Cortex-A/R implementation
  *
  * On Cortex-A/R, irq_offload() is triggered via an svc that is dispatched by
- * z_arm_svc() (see switch.S / swap_helper.S), which invokes z_irq_do_offload()
+ * z_arm_svc() (see switch.S), which invokes z_irq_do_offload()
  * in interrupt context on the initiating CPU.
  */
 
@@ -51,17 +51,10 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 	offload[cpu_id].routine = routine;
 	offload[cpu_id].param = parameter;
 
-	/*
-	 * Clobber "lr": on the !CONFIG_USE_SWITCH path ISRs run in SVC mode, so
-	 * a nested irq_offload() (CONFIG_IRQ_OFFLOAD_NESTED) runs this function
-	 * in SVC mode with its return address in lr_svc, which the svc then
-	 * overwrites. Without the clobber the compiler assumes lr survived and
-	 * this leaf function returns into itself right after the svc, hanging.
-	 */
 	__asm__ volatile ("svc %[id]"
 			  :
 			  : [id] "i" (_SVC_CALL_IRQ_OFFLOAD)
-			  : "memory", "lr");
+			  : "memory");
 
 	arch_irq_unlock(key);
 }

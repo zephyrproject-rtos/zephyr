@@ -34,31 +34,6 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	soc_per_core_init_hook();
 }
 
-#ifndef CONFIG_USE_SWITCH
-
-static ALWAYS_INLINE int arch_swap(unsigned int key)
-{
-	/* store off key and return value */
-	_current->arch.basepri = key;
-	_current->arch.swap_return_value = -EAGAIN;
-
-	z_arm_cortex_r_svc();
-	irq_unlock(key);
-
-	/* Context switch is performed here. Returning implies the
-	 * thread has been context-switched-in again.
-	 */
-	return _current->arch.swap_return_value;
-}
-
-static ALWAYS_INLINE void
-arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
-{
-	thread->arch.swap_return_value = value;
-}
-
-#else
-
 static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
 {
 	extern void z_arm_context_switch(struct k_thread *new,
@@ -70,8 +45,6 @@ static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
 
 	z_arm_context_switch(new, old);
 }
-
-#endif
 
 extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,

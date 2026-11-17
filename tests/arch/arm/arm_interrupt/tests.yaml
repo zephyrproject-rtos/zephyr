@@ -28,7 +28,6 @@ tests:
   arch.arm.interrupt.extra_exception_info.cortex_r:
     filter: CONFIG_ARMV7_R
     extra_configs:
-      - CONFIG_USE_SWITCH=y
       - CONFIG_EXTRA_EXCEPTION_INFO=y
   arch.arm.interrupt.secure_fpu_extra_exception_info:
     platform_allow:

@@ -47,7 +47,7 @@ struct _callee_saved {
 
 typedef struct _callee_saved _callee_saved_t;
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_CPU_CORTEX_M)
 struct _preempt_float {
 #ifndef _ARM_M_SWITCH
 	float  s16;
@@ -71,7 +71,7 @@ struct _preempt_float {
 #endif
 
 #if (defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)) && \
-	defined(CONFIG_FPU_SHARING) && defined(CONFIG_USE_SWITCH)
+	defined(CONFIG_FPU_SHARING)
 /* FP context saved while another thread owns the FPU */
 struct z_arm_fp_context {
 #ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
@@ -94,7 +94,7 @@ struct pac_keys {
 
 struct _thread_arch {
 
-#ifndef _ARM_M_SWITCH
+#if defined(CONFIG_CPU_CORTEX_M) && !defined(CONFIG_USE_SWITCH)
 	/* interrupt locking key */
 	uint32_t basepri;
 
@@ -107,8 +107,7 @@ struct _thread_arch {
 	uint32_t iciit_apsr;
 #endif
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) &&                                          \
-	(defined(CONFIG_CPU_CORTEX_M) || !defined(CONFIG_USE_SWITCH))
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_CPU_CORTEX_M)
 	/*
 	 * No cooperative floating point register set structure exists for
 	 * the Cortex-M as it automatically saves the necessary registers
@@ -180,7 +179,7 @@ struct _thread_arch {
 #endif
 
 #if (defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)) && \
-	defined(CONFIG_FPU_SHARING) && defined(CONFIG_USE_SWITCH)
+	defined(CONFIG_FPU_SHARING)
 	/* Last, as it needs 8-byte alignment */
 	struct z_arm_fp_context saved_fp_context;
 #endif

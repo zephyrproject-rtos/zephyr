@@ -117,8 +117,9 @@ config ARMV7_EXCEPTION_STACK_SIZE
 	int "Undefined Instruction and Abort stack size (in bytes)"
 	default 256
 	help
-	  This option specifies the size of the stack used by the undefined
-	  instruction and data abort exception handlers.
+	  This option specifies the size of the undefined instruction and
+	  abort mode stacks. The exception handlers run in system mode: these
+	  stacks only hold a few registers saved on exception entry.
 
 config ARMV7_FIQ_STACK_SIZE
 	int "FIQ stack size (in bytes)"
@@ -130,16 +131,15 @@ config ARMV7_SVC_STACK_SIZE
 	int "SVC stack size (in bytes)"
 	default 512
 	help
-	  This option specifies the size of the stack used by the SVC handler.
+	  This option specifies the size of the SVC mode stack. The SVC handler
+	  runs in system mode: this stack only holds a few registers saved on
+	  exception entry and, with CONFIG_USERSPACE, on exception exit.
 
 config ARMV7_SYS_STACK_SIZE
 	int "SYS stack size (in bytes)"
 	default 1024
 	help
 	  This option specifies the size of the stack used by the system mode.
-
-config RUNTIME_NMI
-	default y
 
 config GEN_ISR_TABLES
 	default y
@@ -275,8 +275,11 @@ config ARMV7_EXCEPTION_STACK_SIZE
 	default 1024 if MPU_STACK_GUARD
 	default 256
 	help
-	  This option specifies the size of the stack used by the undefined
-	  instruction and data abort exception handlers.
+	  This option specifies the size of the undefined instruction and
+	  abort mode stacks. The exception handlers run in system mode: these
+	  stacks only hold a few registers saved on exception entry. With
+	  MPU_STACK_GUARD, the abort mode stack also holds the fatal error
+	  handling of a stack overflow.
 
 config ARMV7_FIQ_STACK_SIZE
 	int "FIQ stack size (in bytes)"
@@ -288,16 +291,15 @@ config ARMV7_SVC_STACK_SIZE
 	int "SVC stack size (in bytes)"
 	default 512
 	help
-	  This option specifies the size of the stack used by the SVC handler.
+	  This option specifies the size of the SVC mode stack. The SVC handler
+	  runs in system mode: this stack only holds a few registers saved on
+	  exception entry and, with CONFIG_USERSPACE, on exception exit.
 
 config ARMV7_SYS_STACK_SIZE
 	int "SYS stack size (in bytes)"
 	default 1024
 	help
 	  This option specifies the size of the stack used by the system mode.
-
-config RUNTIME_NMI
-	default y
 
 config GEN_ISR_TABLES
 	default y

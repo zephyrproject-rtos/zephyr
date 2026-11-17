@@ -211,6 +211,7 @@ Other notable changes
 
   * FPU sharing is supported on SMP Cortex-A/R systems.
   * Userspace is supported on SMP Cortex-R systems.
+  * Context switches are faster, and the context switch code is smaller.
 
 * Bluetooth
 
