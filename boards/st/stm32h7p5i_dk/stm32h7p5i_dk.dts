@@ -23,6 +23,7 @@
 
 	chosen {
 		zephyr,console = &usart2;
+		zephyr,display = &gjx_2864tswbg09;
 		zephyr,shell-uart = &usart2;
 	};
 
@@ -142,4 +143,40 @@
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
+};
+
+&spi5 {
+	/* Arduino D10 (NSS) / D11 (MOSI) / D12 (MISO) / D13 (SCK) */
+	pinctrl-0 = <&spi5_nss_ph9 &spi5_mosi_ph8 &spi5_miso_ph7 &spi5_sck_ph6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pg9 &spi1_mosi_pg5>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiog 4 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	/*
+	 * The on-board display (GJX-2864TSWBG09) uses an ST7315 driver IC
+	 * which behaves identically to an SSD1306, so use that as compatible.
+	 */
+	gjx_2864tswbg09: display@0 {
+		compatible = "solomon,ssd1306";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		width = <128>;
+		height = <64>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+
+		data-cmd-gpios = <&gpiog 6 0>;
+		reset-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+	};
 };
