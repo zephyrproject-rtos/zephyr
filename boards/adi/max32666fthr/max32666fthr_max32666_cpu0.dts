@@ -238,3 +238,11 @@ zephyr_udc0: &usbhs {
 		};
 	};
 };
+
+&sdhc0 {
+	status = "okay";
+
+	mmc {
+		status = "okay";
+	};
+};
