@@ -398,7 +398,7 @@ enum sensor_attribute {
 	 * outside the threshold for the trigger to fire.
 	 */
 	SENSOR_ATTR_SLOPE_DUR,
-	/* Hysteresis for trigger thresholds. */
+	/** Hysteresis for trigger thresholds. */
 	SENSOR_ATTR_HYSTERESIS,
 	/** Oversampling factor */
 	SENSOR_ATTR_OVERSAMPLING,
@@ -697,9 +697,13 @@ struct sensor_decoder_api {
  * @endcode
  */
 struct sensor_decode_context {
+	/** Decoder of the sensor that produced @c buffer. */
 	const struct sensor_decoder_api *decoder;
+	/** Encoded data, as returned by a sensor read. */
 	const uint8_t *buffer;
+	/** Channel to decode. */
 	struct sensor_chan_spec channel;
+	/** Frame iterator, advanced by each call to sensor_decode(). */
 	uint32_t fit;
 };
 
@@ -727,6 +731,19 @@ static inline int sensor_decode(struct sensor_decode_context *ctx, void *out, ui
 	return ctx->decoder->decode(ctx->buffer, ctx->channel, &ctx->fit, max_count, out);
 }
 
+/**
+ * @brief Get the decoded data sizes of a channel decoded into the standard data types
+ *
+ * Implementation of sensor_decoder_api::get_size_info for the channels decoded into the types
+ * defined in sensor_data_types.h. Decoders can call it for the channels they do not handle
+ * differently.
+ *
+ * @param[in]  channel    The channel to query
+ * @param[out] base_size  Size of the decoded data for the first frame, in bytes
+ * @param[out] frame_size Size of every additional frame, in bytes
+ * @retval 0 on success
+ * @retval -ENOTSUP The channel type is not a standard channel type
+ */
 int sensor_natively_supported_channel_size_info(struct sensor_chan_spec channel, size_t *base_size,
 						size_t *frame_size);
 
@@ -742,28 +759,48 @@ enum sensor_stream_data_opt {
 	SENSOR_STREAM_DATA_DROP = 2,
 };
 
+/**
+ * @brief Trigger of a sensor stream and handling of its associated data
+ */
 struct sensor_stream_trigger {
+	/** Trigger that completes a stream read when it fires. */
 	enum sensor_trigger_type trigger;
+	/** What to do with the data associated with the trigger. */
 	enum sensor_stream_data_opt opt;
 };
 
+/**
+ * @brief Initialize a sensor_stream_trigger
+ *
+ * @param _trigger Trigger type, see @ref sensor_trigger_type
+ * @param _opt Handling of the associated data, see @ref sensor_stream_data_opt
+ */
 #define SENSOR_STREAM_TRIGGER_PREP(_trigger, _opt)                                                 \
 	{                                                                                          \
 		.trigger = (_trigger), .opt = (_opt),                                              \
 	}
 
-/*
- * Internal data structure used to store information about the IODevice for async reading and
- * streaming sensor data.
+/**
+ * @brief Configuration of an I/O device reading or streaming sensor data
+ *
+ * Defined by @ref SENSOR_DT_READ_IODEV and @ref SENSOR_DT_STREAM_IODEV as the data of the
+ * @ref rtio_iodev. Drivers get it from the submissions passed to sensor_driver_api::submit.
  */
 struct sensor_read_config {
+	/** Sensor to read from. */
 	const struct device *sensor;
+	/** True to stream on @c triggers, false to read @c channels once. */
 	const bool is_streaming;
+	/** Channels or triggers, depending on @c is_streaming. */
 	union {
+		/** Channels to read, when not streaming. */
 		struct sensor_chan_spec *const channels;
+		/** Triggers to stream on, when streaming. */
 		struct sensor_stream_trigger *const triggers;
 	};
+	/** Number of entries in use in @c channels or @c triggers. */
 	size_t count;
+	/** Number of entries allocated for @c channels or @c triggers. */
 	const size_t max;
 };
 
@@ -1015,6 +1052,8 @@ static inline int z_impl_sensor_channel_get(const struct device *dev,
 
 #if defined(CONFIG_SENSOR_ASYNC_API) || defined(__DOXYGEN__)
 
+/** @cond INTERNAL_HIDDEN */
+
 /*
  * Generic data structure used for encoding the sample timestamp and number of channels sampled.
  */
@@ -1038,6 +1077,8 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
 	/** Channels present in the frame */
 	struct sensor_chan_spec channels[0];
 };
+
+/** @endcond */
 
 /**
  * @brief Get the sensor's decoder API
@@ -1105,6 +1146,20 @@ static inline int z_impl_sensor_reconfigure_read_iodev(const struct rtio_iodev *
 	return 0;
 }
 
+/**
+ * @brief Start streaming samples from a sensor
+ *
+ * Using @p iodev, submit a multishot read to the provided RTIO context @p ctx. Each time one of
+ * the stream triggers fires, a completion is generated with a buffer allocated from the RTIO's
+ * internal mempool. The stream runs until it is canceled with rtio_sqe_cancel().
+ *
+ * @param[in] iodev The iodev created by @ref SENSOR_DT_STREAM_IODEV
+ * @param[in] ctx The RTIO context to service the stream
+ * @param[in] userdata Optional userdata that will be available in every completion
+ * @param[out] handle Handle of the submission, used to cancel the stream. May be NULL.
+ * @retval 0 on success
+ * @retval -ENOMEM No submission queue entry is available in @p ctx
+ */
 static inline int sensor_stream(const struct rtio_iodev *iodev, struct rtio *ctx, void *userdata,
 				rtio_sqe_handle_t *handle)
 {
@@ -1531,6 +1586,8 @@ static inline int sensor_value_from_fixed_point(struct sensor_value *val, uint32
 	return 0;
 }
 
+/** @cond INTERNAL_HIDDEN */
+
 #ifdef CONFIG_SENSOR_INFO
 
 struct sensor_info {
@@ -1568,6 +1625,8 @@ struct sensor_info {
 #define SENSOR_INFO_DT_DEFINE(node_id)
 
 #endif /* CONFIG_SENSOR_INFO */
+
+/** @endcond */
 
 /**
  * @brief Like DEVICE_DT_DEFINE() with sensor specifics.
