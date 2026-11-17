@@ -6,26 +6,22 @@
  * Default memory partitioning for nRF7120 application CPU.
  */
 
-&ram00_sram {
-	status = "disabled";
-};
-
 /*
  * Default SRAM planning when building for nRF7120 with ARM TrustZone-M support
  * Lowest 96 kB allocated to Secure RAM (sram0_s).
  *   - 96 kB SRAM in RAM00 allocated to Secure RAM      (sram00_s).
- * Upper 920 kB allocated to Non-Secure RAM (sram0_ns).
- *   - 416 kB SRAM in RAM00 allocated to Non-Secure RAM (sram00_ns).
- *   - 256 kB SRAM in RAM01 allocated to Non-Secure RAM (sram01_ns).
- *   - 128 kB SRAM in RAM02 allocated to Non-Secure RAM (sram02_ns).
- *   - 120 kB SRAM in RAM03 allocated to Non-Secure RAM (sram03_ns).
+ * Upper 920 kB allocated to Non-Secure RAM (sram0_ns). It also covers the reserved
+ * regions that the non-secure image uses:
+ *   - 20 kB Wi-Fi IPC shared memory at the start (ipc_shm_area_cpuapp_cpuuma).
+ *   - The radio DMA and VTF regions at the end of RAM03.
+ * The rest is the application RAM (sram0_ns_app), used as zephyr,sram.
  *
- * cpuapp_sram has 1016 kB of volatile memory (SRAM).
+ * SRAM has 1016 kB of volatile memory.
  * This static layout needs to be the same with the upstream TF-M layout in the
  * header flash_layout.h of the relevant platform. Any updates in the layout
  * needs to happen both in the flash_layout.h and in this file at the same time.
  */
-&cpuapp_sram {
+&sram {
 	sram0_s: sram@0 {
 		/* Secure RAM */
 		reg = <0x0 DT_SIZE_K(96)>; /* 0x2000_0000 */
@@ -41,36 +37,54 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		sram00_ns: sram0_ns@0 {
-			/* Non-Secure RAM */
-			reg = <0x0 DT_SIZE_K(416)>; /* 0x2001_8000 */
-			ranges = <0x0 0x0 DT_SIZE_K(416)>;
+		ipc_shm_area_cpuapp_cpuuma: memory@0 {
+			compatible = "mmio-sram";
+			reg = <0x0 0x5000>;
+			ranges = <0x0 0x0 0x5000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};
 
-		sram01_ns: sram0_ns@68000 {
-			/* Non-Secure RAM */
-			reg = <0x68000 DT_SIZE_K(256)>; /* 0x2008_0000 */
-			ranges = <0x0 0x68000 DT_SIZE_K(256)>;
+		sram0_ns_app: sram0_ns@5000 {
+			/* Non-Secure application memory, after the 0x5000 Wi-Fi IPC shared memory
+			 * and up to the 0x320 (0x300 radio DMA + 0x20 VTF) at the end of RAM03
+			 */
+			reg = <0x5000 (DT_SIZE_K(920) - 0x5000 - 0x320)>;
+			ranges = <0x5000 0x5000 (DT_SIZE_K(920) - 0x5000 - 0x320)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-		};
 
-		sram02_ns: sram0_ns@a8000 {
-			/* Non-Secure RAM */
-			reg = <0xa8000 DT_SIZE_K(128)>; /* 0x200C_0000 */
-			ranges = <0x0 0xa8000 DT_SIZE_K(128)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-		};
+			sram00_ns: sram0_ns@5000 {
+				/* Non-Secure RAM */
+				reg = <0x5000 (DT_SIZE_K(416) - 0x5000)>; /* 0x2001_D000 */
+				ranges = <0x0 0x5000 (DT_SIZE_K(416) - 0x5000)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 
-		sram03_ns: sram0_ns@c8000 {
-			/* Non-Secure RAM */
-			reg = <0xc8000 DT_SIZE_K(120)>; /* 0x200E_0000 */
-			ranges = <0x0 0xc8000 DT_SIZE_K(120)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
+			sram01_ns: sram0_ns@68000 {
+				/* Non-Secure RAM */
+				reg = <0x68000 DT_SIZE_K(256)>; /* 0x2008_0000 */
+				ranges = <0x0 0x68000 DT_SIZE_K(256)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			sram02_ns: sram0_ns@a8000 {
+				/* Non-Secure RAM */
+				reg = <0xa8000 DT_SIZE_K(128)>; /* 0x200C_0000 */
+				ranges = <0x0 0xa8000 DT_SIZE_K(128)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			sram03_ns: sram0_ns@c8000 {
+				/* Non-Secure RAM */
+				reg = <0xc8000 (DT_SIZE_K(120) - 0x320)>; /* 0x200E_0000 */
+				ranges = <0x0 0xc8000 (DT_SIZE_K(120) - 0x320)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 	};
 };

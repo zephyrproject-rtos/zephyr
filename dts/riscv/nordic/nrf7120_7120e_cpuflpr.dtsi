@@ -12,7 +12,8 @@ clic: &cpuflpr_clic {};
 
 /delete-node/ &cpuapp;
 /delete-node/ &cpuapp_ppb;
-/delete-node/ &cpuapp_sram;
+/delete-node/ &ipc_shm_area_cpuapp_cpuuma;
+/delete-node/ &cpuapp_sram_app;
 /delete-node/ &cpuapp_mram;
 
 &mram_controller {

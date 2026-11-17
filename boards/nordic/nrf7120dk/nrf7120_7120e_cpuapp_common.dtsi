@@ -26,34 +26,6 @@
 		nordic,vtf-region = &vtf_region_default;
 	};
 
-	/* Single IPC channel: 4KB + 16KB shared memory for TX+RX */
-	reserved-memory {
-		ranges;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		ipc_shm_area_cpuapp_cpuuma: memory@200c0000 {
-			compatible = "mmio-sram";
-			reg = <0x200c0000 0x5000>;
-			ranges = <0x0 0x200c0000 0x5000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "okay";
-
-			ipc_shm_cpuapp_cpuuma_0: memory@0 {
-				reg = <0x0 0x800>;
-			};
-
-			ipc_shm_cpuuma_cpuapp_0: memory@800 {
-				reg = <0x800 0x800>;
-			};
-
-			ipc_shm_sparembox: memory@1000 {
-				reg = <0x1000 0x4000>;
-			};
-		};
-	};
-
 	ipc {
 		ipc0: ipc0 {
 			compatible = "zephyr,ipc-icmsg";
@@ -67,6 +39,21 @@
 	};
 };
 
+/* Single IPC channel: 4KB + 16KB shared memory for TX+RX */
+&ipc_shm_area_cpuapp_cpuuma {
+	ipc_shm_cpuapp_cpuuma_0: memory@0 {
+		reg = <0x0 0x800>;
+	};
+
+	ipc_shm_cpuuma_cpuapp_0: memory@800 {
+		reg = <0x800 0x800>;
+	};
+
+	ipc_shm_sparembox: memory@1000 {
+		reg = <0x1000 0x4000>;
+	};
+};
+
 &wicr {
 	data-vtfaddress = <&vtf_region_default>;
 	firmware-lmacinitpc = <&wifi_lmac_rom>;
@@ -76,10 +63,6 @@
 	ipcconfig-commandmbox = <&ipc_shm_cpuapp_cpuuma_0>;
 	ipcconfig-eventmbox = <&ipc_shm_cpuuma_cpuapp_0>;
 	ipcconfig-sparembox = <&ipc_shm_sparembox>;
-	status = "okay";
-};
-
-&cpuapp_sram {
 	status = "okay";
 };
 
