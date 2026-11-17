@@ -33,7 +33,7 @@ K_KERNEL_STACK_ARRAY_DECLARE(z_arm_fiq_stack,
 
 K_KERNEL_STACK_ARRAY_DECLARE(z_arm_abort_stack,
 			    CONFIG_MP_MAX_NUM_CPUS,
-			    CONFIG_ARMV7_EXCEPTION_STACK_SIZE);
+			    CONFIG_ARMV7_ABORT_STACK_SIZE);
 
 K_KERNEL_STACK_ARRAY_DECLARE(z_arm_undef_stack,
 			    CONFIG_MP_MAX_NUM_CPUS,
@@ -77,7 +77,7 @@ volatile struct boot_params arm_cpu_boot_params = {
 	.fiq_sp =
 		(char *)z_arm_fiq_stack[0] + K_KERNEL_STACK_RESERVED + CONFIG_ARMV7_FIQ_STACK_SIZE,
 	.abt_sp = (char *)z_arm_abort_stack[0] + K_KERNEL_STACK_RESERVED +
-		  CONFIG_ARMV7_EXCEPTION_STACK_SIZE,
+		  CONFIG_ARMV7_ABORT_STACK_SIZE,
 	.udf_sp = (char *)z_arm_undef_stack[0] + K_KERNEL_STACK_RESERVED +
 		  CONFIG_ARMV7_EXCEPTION_STACK_SIZE,
 	.svc_sp =
@@ -136,7 +136,7 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	arm_cpu_boot_params.fiq_sp = K_KERNEL_STACK_BUFFER(z_arm_fiq_stack[cpu_num])
 				     + CONFIG_ARMV7_FIQ_STACK_SIZE;
 	arm_cpu_boot_params.abt_sp = K_KERNEL_STACK_BUFFER(z_arm_abort_stack[cpu_num])
-				     + CONFIG_ARMV7_EXCEPTION_STACK_SIZE;
+				     + CONFIG_ARMV7_ABORT_STACK_SIZE;
 	arm_cpu_boot_params.udf_sp = K_KERNEL_STACK_BUFFER(z_arm_undef_stack[cpu_num])
 				     + CONFIG_ARMV7_EXCEPTION_STACK_SIZE;
 	arm_cpu_boot_params.svc_sp = K_KERNEL_STACK_BUFFER(z_arm_svc_stack[cpu_num])

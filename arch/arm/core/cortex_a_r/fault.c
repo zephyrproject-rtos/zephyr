@@ -10,6 +10,7 @@
 #include <zephyr/arch/exception.h>
 #include <kernel_internal.h>
 #include <zephyr/arch/common/exc_handle.h>
+#include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #if defined(CONFIG_GDBSTUB)
 #include <zephyr/arch/arm/gdbstub.h>
@@ -376,6 +377,113 @@ static bool memory_fault_recoverable(struct arch_esf *esf)
 	}
 
 	return false;
+}
+#endif
+
+#if defined(CONFIG_MPU_STACK_GUARD)
+/*
+ * Tell whether pc is the push {r0-r3, r12, lr} that follows the SRS and
+ * the CPS to SYS mode in z_arm_cortex_ar_enter_exc.
+ */
+static bool is_exc_entry_push(uint32_t pc)
+{
+	const uint32_t *insn = (const uint32_t *)pc;
+
+	if (((pc & 3U) != 0U) || (pc < (POINTER_TO_UINT(__text_region_start) + 8U)) ||
+	    (pc >= POINTER_TO_UINT(__text_region_end))) {
+		return false;
+	}
+
+	return (insn[-2] == 0xf96d051fU) && /* srsdb sp!, #MODE_SYS */
+	       (insn[-1] == 0xf102001fU) && /* cps #MODE_SYS */
+	       (insn[0] == 0xe92d500fU);    /* push {r0-r3, r12, lr} */
+}
+
+/*
+ * Tell whether pc is the store of the frame address that follows the frame
+ * push in z_arm_cortex_ar_enter_exc.
+ */
+static bool is_exc_entry_store(uint32_t pc)
+{
+	const uint32_t *insn = (const uint32_t *)pc;
+
+	if (((pc & 3U) != 0U) || (pc < POINTER_TO_UINT(__text_region_start)) ||
+	    (pc >= (POINTER_TO_UINT(__text_region_end) - 4U))) {
+		return false;
+	}
+
+	return (insn[0] == 0xe5010008U) && /* str r0, [r1, #-8] */
+	       (insn[1] == 0xe241d008U);   /* sub sp, r1, #8 */
+}
+
+/**
+ * @brief Stack overflow fault handler
+ *
+ * Called on a data abort taken while an exception entry pushed its frame
+ * into the MPU guard of the stack. esf is built on the abort mode stack,
+ * with the r0-r3, r12 and lr of the interrupted context. z_arm_data_abort
+ * stores the SP, PC and CPSR of that context right above esf, where a
+ * nested data abort would overwrite the PC and CPSR: read them first.
+ *
+ * If the guard hit is the push that follows the SRS of an exception entry,
+ * that SRS stored the PC and CPSR of the context the entry interrupted at
+ * SP. If it is the store of the frame address that follows, the whole
+ * frame of that context is at SP. That context may itself be an exception
+ * entry that hit the guard. If code that runs on the thread stack after a
+ * complete exception entry hits the guard, such as a fault handler or the
+ * context switch on interrupt exit, the PC is that of this code, as on
+ * ARM64 and RISC-V.
+ *
+ * This runs on the abort mode stack of the CPU, which a second stack
+ * overflow on that CPU reuses from its top. The fatal error handler must
+ * therefore neither block nor enable IRQs.
+ *
+ * The interrupted context can't be resumed, as its stack is unusable:
+ * halt the system if the fatal error handling returns.
+ */
+FUNC_NORETURN void z_arm_fault_stack_overflow(struct arch_esf *esf)
+{
+	const uint32_t *ctx = (const uint32_t *)(&esf->basic + 1);
+	uint32_t sp = ctx[0];
+	uint32_t pc = ctx[1];
+	uint32_t cpsr = ctx[2];
+	struct __basic_sf regs = esf->basic;
+
+	while ((cpsr & MODE_MASK) == MODE_SYS) {
+		if (is_exc_entry_push(pc)) {
+			const uint32_t *srs_frame = UINT_TO_POINTER(sp);
+
+			pc = srs_frame[0];
+			cpsr = srs_frame[1];
+			sp += 8U;
+		} else if (is_exc_entry_store(pc)) {
+			regs = *(const struct __basic_sf *)UINT_TO_POINTER(sp);
+			pc = regs.pc;
+			cpsr = regs.xpsr;
+			sp += sizeof(regs);
+		} else {
+			break;
+		}
+	}
+
+#if defined(CONFIG_USERSPACE)
+	/* The exception entry from user mode switched SP to the privileged stack */
+	if ((cpsr & MODE_MASK) == MODE_USR) {
+		sp = _current->arch.sp_usr;
+	}
+#endif
+
+	regs.pc = pc;
+	regs.xpsr = cpsr;
+	esf->basic = regs;
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	esf->extra_info.callee->psp = sp;
+#endif
+
+	EXCEPTION_DUMP("***** STACK OVERFLOW *****");
+	EXCEPTION_DUMP("Frame push @ 0x%08x, SP 0x%08x", __get_DFAR(), sp);
+	z_arm_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
+	k_fatal_halt(K_ERR_STACK_CHK_FAIL);
 }
 #endif
 

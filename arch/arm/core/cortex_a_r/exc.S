@@ -37,6 +37,7 @@ GTEXT(z_arm_fault_undef_instruction_fp)
 GTEXT(z_arm_fault_undef_instruction)
 GTEXT(z_arm_fault_prefetch)
 GTEXT(z_arm_fault_data)
+GTEXT(z_arm_fault_stack_overflow)
 
 GTEXT(z_arm_undef_instruction)
 GTEXT(z_arm_prefetch_abort)
@@ -320,6 +321,12 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
 	 * prefetch abort exceptions.
 	 */
 	sub lr, #4
+#if defined(CONFIG_MPU_STACK_GUARD)
+	/* Store LR and SPSR for the stack overflow path, see z_arm_data_abort */
+	sub sp, #4
+	srsdb sp, #MODE_ABT
+	add sp, #4
+#endif
 	z_arm_cortex_ar_enter_exc
 	z_arm_cortex_ar_save_extra
 	bl z_arm_fault_prefetch
@@ -335,9 +342,62 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	sub lr, #8
 
+#if defined(CONFIG_MPU_STACK_GUARD)
+	/*
+	 * Exception handlers run in SYS mode. A data abort taken in another
+	 * mode comes from an exception entry whose frame push hit the MPU
+	 * guard of the stack, unless it is an asynchronous abort.
+	 */
+	push {r0}
+	mrs r0, spsr
+	and r0, r0, #MODE_MASK
+	cmp r0, #MODE_SYS
+	cmpne r0, #MODE_USR
+	bne stack_overflow
+	/*
+	 * The frame push below may hit the guard, and the data abort it
+	 * takes overwrites LR and SPSR. Store them below r0 on the abort mode
+	 * stack, where the stack overflow path finds them.
+	 */
+	srsdb sp, #MODE_ABT
+	pop {r0}
+#endif
+
 	z_arm_cortex_ar_enter_exc
 	z_arm_cortex_ar_save_extra
 	bl z_arm_fault_data
 	b z_arm_cortex_ar_exit_exc
+
+#if defined(CONFIG_MPU_STACK_GUARD)
+stack_overflow:
+	/*
+	 * r0 holds the mode of the exception entry that hit the guard, and
+	 * its value is at the top of the abort mode stack. The PC and CPSR
+	 * of the context that entry interrupted go right below: a data or
+	 * prefetch abort entry stored them there already, and other modes
+	 * hold them in their LR and SPSR, which SRS stores from that mode.
+	 */
+	cmp r0, #MODE_ABT
+	beq 1f
+	orr r0, r0, #(I_BIT | F_BIT)
+	msr cpsr_c, r0
+	srsdb sp, #MODE_ABT
+	cps #MODE_ABT
+1:
+	/*
+	 * The SYS mode stack is unusable: handle the fatal error on the abort
+	 * mode stack, which ISRs don't use, with the SYS mode SP stored right
+	 * above the frame. z_arm_fault_stack_overflow() does not return.
+	 */
+	sub r0, sp, #12
+	cps #MODE_SYS
+	str sp, [r0]
+	mov sp, r0
+	cps #MODE_ABT
+	pop {r0}
+	z_arm_cortex_ar_enter_exc
+	z_arm_cortex_ar_save_extra
+	bl z_arm_fault_stack_overflow
+#endif
 
 #endif

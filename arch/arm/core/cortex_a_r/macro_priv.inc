@@ -95,8 +95,15 @@
 #else
 	bic r1, r0, #7
 #endif
+	/*
+	 * Store the frame address before moving SP: if the store hits the MPU
+	 * guard of the stack, SP is left at the frame, and the data abort
+	 * entry hits the guard as well. With CONFIG_EXTRA_EXCEPTION_INFO, SP
+	 * moves down by more than the 64 bytes of the guard.
+	 * z_arm_fault_stack_overflow() recognizes these two instructions.
+	 */
+	str r0, [r1, #-8]
 	sub sp, r1, #8
-	str r0, [sp]
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	sub r0, r0, #___extra_esf_info_t_SIZEOF
 #endif

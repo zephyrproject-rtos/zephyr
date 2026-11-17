@@ -114,11 +114,18 @@ config ARMV7_A_NS
 	  Zephyr is running in ARM TrustZone Non-Secure state on an ARMv7-A core.
 
 config ARMV7_EXCEPTION_STACK_SIZE
-	int "Undefined Instruction and Abort stack size (in bytes)"
+	int "Undefined Instruction stack size (in bytes)"
 	default 256
 	help
 	  This option specifies the size of the stack used by the undefined
-	  instruction and data abort exception handlers.
+	  instruction exception handler, and the default size of the abort
+	  mode stack.
+
+config ARMV7_ABORT_STACK_SIZE
+	int "Abort stack size (in bytes)"
+	default ARMV7_EXCEPTION_STACK_SIZE
+	help
+	  This option specifies the size of the abort mode stack.
 
 config ARMV7_FIQ_STACK_SIZE
 	int "FIQ stack size (in bytes)"
@@ -270,11 +277,22 @@ config AARCH32_ARMV8_R
 	  Unit (MPU). It supports the A32 and T32 instruction sets.
 
 config ARMV7_EXCEPTION_STACK_SIZE
-	int "Undefined Instruction and Abort stack size (in bytes)"
+	int "Undefined Instruction stack size (in bytes)"
 	default 256
 	help
 	  This option specifies the size of the stack used by the undefined
-	  instruction and data abort exception handlers.
+	  instruction exception handler, and the default size of the abort
+	  mode stack without MPU_STACK_GUARD.
+
+config ARMV7_ABORT_STACK_SIZE
+	int "Abort stack size (in bytes)"
+	default 1536 if MPU_STACK_GUARD && (DEBUG_OPTIMIZATIONS || NO_OPTIMIZATIONS)
+	default 1024 if MPU_STACK_GUARD
+	default ARMV7_EXCEPTION_STACK_SIZE
+	help
+	  This option specifies the size of the abort mode stack. With
+	  MPU_STACK_GUARD, it also holds the fatal error handling of a stack
+	  overflow.
 
 config ARMV7_FIQ_STACK_SIZE
 	int "FIQ stack size (in bytes)"
