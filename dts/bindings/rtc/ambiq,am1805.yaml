@@ -18,3 +18,9 @@ properties:
     type: phandle-array
     description: |
          GPIO connected to the AM1805 INT1 interrupt output. This signal is open-drain, active low.
+
+  power-switch:
+    type: boolean
+    description: |
+      Use the PSW/nIRQ2 pin as a power switch output
+      (sleep mode controlled through the SLP bit).
