@@ -1627,6 +1627,33 @@ static void zsock_recv_stream_consumed(struct net_context *ctx, size_t len, int 
 	}
 }
 
+/* Wait for the next packet, even if the queue already holds data */
+static int zsock_wait_more_data(struct net_context *ctx, k_timeout_t *timeout)
+{
+	int ret;
+
+	if (ctx->cond.lock == NULL) {
+		return -EINVAL;
+	}
+
+	ret = k_condvar_wait(&ctx->cond.recv, ctx->cond.lock, *timeout);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (sock_is_error(ctx)) {
+		return -sock_get_error(ctx);
+	}
+
+	return 0;
+}
+
+/* True when MSG_PEEK has already copied everything queued */
+static bool zsock_peeked_all(struct net_context *ctx, size_t peeked)
+{
+	return zsock_recv_stream_immediate(ctx, NULL, NULL, 0, 0) <= peeked;
+}
+
 static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct net_msghdr *msg,
 				       uint8_t *buf, size_t max_len,
 				       int flags, k_timeout_t timeout)
@@ -1635,6 +1662,7 @@ static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct net_msghd
 	k_timepoint_t end;
 	size_t recv_len = 0, iovec = 0, available_len;
 	const bool waitall = (flags & ZSOCK_MSG_WAITALL) == ZSOCK_MSG_WAITALL;
+	const bool peek = (flags & ZSOCK_MSG_PEEK) == ZSOCK_MSG_PEEK;
 
 	if (msg != NULL && buf == NULL) {
 		if (msg->msg_iovlen < 1) {
@@ -1646,6 +1674,23 @@ static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct net_msghd
 	}
 
 	for (end = sys_timepoint_calc(timeout); max_len > 0; timeout = sys_timepoint_timeout(end)) {
+
+		/* Peeked data stays queued, so only a new packet can add to it */
+		if (peek && waitall && recv_len > 0 && zsock_peeked_all(ctx, recv_len)) {
+			struct net_pkt *last = k_fifo_peek_tail(&ctx->recv_q);
+
+			if (sock_is_error(ctx) || sock_is_eof(ctx) ||
+			    (last != NULL && net_pkt_eof(last)) ||
+			    K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+				break;
+			}
+
+			if (zsock_wait_more_data(ctx, &timeout) < 0) {
+				break;
+			}
+
+			continue;
+		}
 
 		/* Drain any buffered data before reporting a pending error or
 		 * EOF. This ensures data received before the connection was
