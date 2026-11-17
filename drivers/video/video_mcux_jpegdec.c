@@ -5,6 +5,7 @@
  */
 
 #include <errno.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/irq.h>
@@ -177,6 +178,12 @@ static void mcux_jpegdec_decode_one_frame(const struct device *dev)
 			data->decoder_despt.config.outBufAddr0 +
 			data->m2m.out.fmt.pitch * data->m2m.out.fmt.height;
 	}
+
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+	sys_cache_data_flush_range(current_in->buffer, current_in->bytesused);
+	sys_cache_data_flush_range(&data->decoder_despt, sizeof(data->decoder_despt));
+	sys_cache_data_flush_and_invd_range(current_out->buffer, current_out->size);
+#endif
 
 	/* Start the decoding of next frame. */
 	JPEGDEC_EnableSlotNextDescpt((JPEG_DECODER_Type *)&config->base, 0);
@@ -567,6 +574,9 @@ static void mcux_jpegdec_isr(const struct device *dev)
 	/* Decode complete. */
 	if ((flag & kJPEGDEC_DecodeCompleteFlag) != 0U) {
 		current_out->bytesused = data->m2m.out.fmt.size;
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+		sys_cache_data_invd_range(current_out->buffer, current_out->size);
+#endif
 	}
 
 	/* Error occur, this output buffer is broken, no valid data can be used. */
