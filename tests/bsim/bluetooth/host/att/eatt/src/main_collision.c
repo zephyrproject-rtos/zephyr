@@ -2,9 +2,12 @@
 
 /*
  * Copyright (c) 2022 Nordic Semiconductor
+ * Copyright (c) 2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <zephyr/bluetooth/l2cap.h>
 
 #include "babblekit/testcase.h"
 #include "babblekit/sync.h"
@@ -12,6 +15,7 @@
 
 static void test_peripheral_main(void)
 {
+	struct bt_conn *conn;
 	int err;
 
 	TEST_ASSERT(bk_sync_init() == 0, "Failed to open backchannel");
@@ -36,7 +40,18 @@ static void test_peripheral_main(void)
 	/* Do not disconnect until the central also has connected all channels */
 	k_sleep(K_MSEC(1000));
 
+	/* The connection object outlives the connection */
+	conn = bt_conn_ref(default_conn);
+
 	disconnect();
+
+	err = bt_eatt_connect(conn, CONFIG_BT_EATT_MAX);
+	TEST_ASSERT(err == -ENOTCONN, "bt_eatt_connect() after disconnection: %d", err);
+	err = bt_eatt_disconnect_one(conn);
+	TEST_ASSERT(err == -ENOTCONN, "bt_eatt_disconnect_one() after disconnection: %d", err);
+	err = bt_eatt_reconfigure(conn, BT_L2CAP_ECRED_MIN_MTU);
+	TEST_ASSERT(err == -ENOTCONN, "bt_eatt_reconfigure() after disconnection: %d", err);
+	bt_conn_drop(&conn);
 
 	TEST_PASS("EATT Peripheral tests Passed");
 }
