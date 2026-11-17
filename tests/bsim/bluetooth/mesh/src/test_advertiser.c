@@ -513,7 +513,7 @@ static void cancel_adv_send_start(uint16_t duration, int err, void *cb_data)
 	if (cb_data != NULL) {
 		struct bt_mesh_adv *adv_cancel = (struct bt_mesh_adv *)cb_data;
 
-		adv_cancel->ctx.busy = 0;
+		atomic_clear_bit(adv_cancel->state, BT_MESH_ADV_STATE_BUSY);
 
 		bt_mesh_adv_unref(adv_cancel);
 

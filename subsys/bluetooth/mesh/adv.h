@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/clock.h>
 
@@ -45,13 +46,16 @@ enum bt_mesh_adv_tag_bit {
 	BT_MESH_ADV_TAG_BIT_PROV	= BIT(BT_MESH_ADV_TAG_PROV),
 };
 
+enum bt_mesh_adv_state {
+	BT_MESH_ADV_STATE_BUSY,
+	BT_MESH_ADV_STATE_STARTED,
+};
+
 struct bt_mesh_adv_ctx {
 	const struct bt_mesh_send_cb *cb;
 	void *cb_data;
 
 	uint8_t      type:2,
-		  started:1,
-		  busy:1,
 		  tag:4;
 
 	uint8_t      xmit;
@@ -68,7 +72,9 @@ struct bt_mesh_adv {
 
 	struct net_buf_simple b;
 
-	uint8_t __ref;
+	atomic_t ref;
+
+	ATOMIC_DEFINE(state, 2);
 
 	uint8_t __bufs[BT_MESH_ADV_DATA_SIZE];
 };

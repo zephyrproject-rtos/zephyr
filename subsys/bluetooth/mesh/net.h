@@ -226,7 +226,7 @@ enum {
 
 struct bt_mesh_net {
 	uint32_t iv_index; /* Current IV Index */
-	uint32_t seq;      /* Next outgoing sequence number (24 bits) */
+	atomic_t seq;      /* Next outgoing sequence number (24 bits) */
 
 	ATOMIC_DEFINE(flags, BT_MESH_FLAG_COUNT);
 
@@ -331,6 +331,8 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 void bt_mesh_net_loopback_clear(uint16_t net_idx);
 
 uint32_t bt_mesh_next_seq(void);
+uint32_t bt_mesh_seq_peek(void);
+void bt_mesh_seq_reset(void);
 void bt_mesh_net_seq_store(bool force);
 
 void bt_mesh_net_init(void);

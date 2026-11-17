@@ -474,11 +474,12 @@ static int unseg_app_sdu_prepare(struct bt_mesh_friend *frnd,
 	/* No need to reencrypt the message if the sequence number is
 	 * unchanged.
 	 */
-	if (meta.crypto.seq_num == bt_mesh.seq) {
+	if (meta.crypto.seq_num == bt_mesh_seq_peek()) {
 		return 0;
 	}
 
-	LOG_DBG("Re-encrypting friend pdu (SeqNum %06x -> %06x)", meta.crypto.seq_num, bt_mesh.seq);
+	LOG_DBG("Re-encrypting friend pdu (SeqNum %06x -> %06x)", meta.crypto.seq_num,
+		bt_mesh_seq_peek());
 
 	err = unseg_app_sdu_decrypt(frnd, buf, &meta);
 	if (err) {
@@ -486,7 +487,7 @@ static int unseg_app_sdu_prepare(struct bt_mesh_friend *frnd,
 		return err;
 	}
 
-	meta.crypto.seq_num = bt_mesh.seq;
+	meta.crypto.seq_num = bt_mesh_seq_peek();
 
 	err = unseg_app_sdu_encrypt(frnd, buf, &meta);
 	if (err) {
@@ -1532,7 +1533,7 @@ static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
 	info.ttl = tx->ctx->send_ttl;
 	info.ctl = (tx->ctx->app_idx == BT_MESH_KEY_UNUSED);
 
-	sys_put_be24(bt_mesh.seq, info.seq);
+	sys_put_be24(bt_mesh_seq_peek(), info.seq);
 
 	info.iv_index = BT_MESH_NET_IVI_TX;
 

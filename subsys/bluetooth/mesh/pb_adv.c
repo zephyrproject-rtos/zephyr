@@ -293,14 +293,14 @@ static void free_segments(void)
 		link.tx.adv[i] = NULL;
 
 		/* Terminate active adv */
-		if (adv->ctx.busy == 0U) {
+		if (!atomic_test_bit(adv->state, BT_MESH_ADV_STATE_BUSY)) {
 			err = bt_mesh_adv_terminate(adv);
 			if (err == 0) {
 				canceled = true;
 			}
 		} else {
 			/* Mark as canceled */
-			adv->ctx.busy = 0U;
+			atomic_clear_bit(adv->state, BT_MESH_ADV_STATE_BUSY);
 			canceled = true;
 		}
 

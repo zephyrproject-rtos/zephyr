@@ -522,7 +522,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	tx->seg_o = 0;
 	tx->len = sdu->len;
 	tx->nack_count = tx->seg_n + 1;
-	tx->seq_auth = SEQ_AUTH(BT_MESH_NET_IVI_TX, bt_mesh.seq);
+	tx->seq_auth = SEQ_AUTH(BT_MESH_NET_IVI_TX, bt_mesh_seq_peek());
 	tx->sub = net_tx->sub;
 	tx->cb = cb;
 	tx->cb_data = cb_data;
@@ -631,7 +631,7 @@ static int trans_encrypt(const struct bt_mesh_net_tx *tx, const struct bt_mesh_k
 		.aszmic = tx->aszmic,
 		.src = tx->src,
 		.dst = tx->ctx->addr,
-		.seq_num = bt_mesh.seq,
+		.seq_num = bt_mesh_seq_peek(),
 		.iv_index = BT_MESH_NET_IVI_TX,
 	};
 

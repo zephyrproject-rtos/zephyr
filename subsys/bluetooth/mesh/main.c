@@ -146,7 +146,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 
 	bt_mesh_net_settings_commit();
 
-	bt_mesh.seq = 0U;
+	bt_mesh_seq_reset();
 
 	bt_mesh_comp_provision(addr);
 
@@ -189,7 +189,7 @@ void bt_mesh_reprovision(uint16_t addr)
 		bt_hex(&bt_mesh.dev_key_cand, sizeof(struct bt_mesh_key)));
 
 	if (addr != bt_mesh_primary_addr()) {
-		bt_mesh.seq = 0U;
+		bt_mesh_seq_reset();
 
 		bt_mesh_comp_provision(addr);
 		bt_mesh_trans_reset();
@@ -349,7 +349,7 @@ void bt_mesh_reset(void)
 
 	bt_mesh.iv_index = 0U;
 	bt_mesh.ivu_duration = 0;
-	bt_mesh.seq = 0U;
+	bt_mesh_seq_reset();
 
 	memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));
 	atomic_set_bit(bt_mesh.flags, BT_MESH_INIT);

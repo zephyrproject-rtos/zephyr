@@ -183,16 +183,18 @@ static void adv_thread(void *p1, void *p2, void *p3)
 		}
 
 		/* busy == 0 means this was canceled */
-		if (adv->ctx.busy) {
-			adv->ctx.busy = 0U;
+		if (atomic_test_bit(adv->state, BT_MESH_ADV_STATE_BUSY)) {
+			atomic_clear_bit(adv->state, BT_MESH_ADV_STATE_BUSY);
 			adv_send(adv);
 		}
 
 		struct bt_mesh_adv_ctx ctx = adv->ctx;
+		bool started = atomic_test_and_clear_bit(adv->state, BT_MESH_ADV_STATE_STARTED);
 
-		adv->ctx.started = 0;
 		bt_mesh_adv_unref(adv);
-		bt_mesh_adv_send_end(0, &ctx);
+		if (started) {
+			bt_mesh_adv_send_end(0, &ctx);
+		}
 
 		/* Give other threads a chance to run */
 		k_yield();

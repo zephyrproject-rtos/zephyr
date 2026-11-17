@@ -271,7 +271,7 @@ static int adv_queue_send_process(struct bt_mesh_ext_adv *ext_adv)
 
 	while ((adv = bt_mesh_adv_get_by_tag(ext_adv->tags, K_NO_WAIT))) {
 		/* busy == 0 means this was canceled */
-		if (!adv->ctx.busy) {
+		if (!atomic_test_bit(adv->state, BT_MESH_ADV_STATE_BUSY)) {
 			bt_mesh_adv_unref(adv);
 			continue;
 		}
@@ -283,7 +283,7 @@ static int adv_queue_send_process(struct bt_mesh_ext_adv *ext_adv)
 			continue;
 		}
 
-		adv->ctx.busy = 0U;
+		atomic_clear_bit(adv->state, BT_MESH_ADV_STATE_BUSY);
 		err = adv_send(ext_adv, adv);
 
 		bt_mesh_adv_unref(adv);
@@ -361,10 +361,13 @@ static void send_pending_adv(struct k_work *work)
 
 		if (ext_adv->adv) {
 			struct bt_mesh_adv_ctx ctx = ext_adv->adv->ctx;
+			bool started = atomic_test_and_clear_bit(ext_adv->adv->state,
+								 BT_MESH_ADV_STATE_STARTED);
 
-			ext_adv->adv->ctx.started = 0;
 			bt_mesh_adv_unref(ext_adv->adv);
-			bt_mesh_adv_send_end(0, &ctx);
+			if (started) {
+				bt_mesh_adv_send_end(0, &ctx);
+			}
 
 			ext_adv->adv = NULL;
 		}
@@ -565,8 +568,9 @@ int bt_mesh_adv_disable(void)
 	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
 		atomic_set_bit(advs[i].flags, ADV_FLAG_SUSPENDING);
 
-		if (k_current_get() != k_work_queue_thread_get(MESH_WORKQ) ||
-		    (k_work_busy_get(&advs[i].work) & K_WORK_RUNNING) == 0) {
+		if (k_current_get() == k_work_queue_thread_get(MESH_WORKQ)) {
+			k_work_cancel(&advs[i].work);
+		} else {
 			k_work_flush(&advs[i].work, &sync);
 		}
 

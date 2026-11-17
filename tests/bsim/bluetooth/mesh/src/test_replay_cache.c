@@ -131,7 +131,7 @@ static void test_tx_immediate_replay_attack(void)
 
 	k_sem_init(&sem, 0, 1);
 
-	uint32_t seq = bt_mesh.seq;
+	uint32_t seq = bt_mesh_seq_peek();
 
 	for (int i = 0; i < 3; i++) {
 		is_tx_succeeded = false;
@@ -149,7 +149,7 @@ static void test_tx_immediate_replay_attack(void)
 		k_sleep(K_SECONDS(1));
 	}
 
-	bt_mesh.seq = seq;
+	atomic_set(&bt_mesh.seq, seq);
 
 	for (int i = 0; i < 3; i++) {
 		is_tx_succeeded = true;

@@ -84,11 +84,6 @@ static ssize_t gatt_recv(struct bt_conn *conn,
 {
 	const uint8_t *data = buf;
 
-	if (find_client(conn)->cli == NULL) {
-		LOG_WRN("No Proxy Client found");
-		return -ENOTCONN;
-	}
-
 	if (len < 1) {
 		LOG_WRN("Too small Proxy PDU");
 		return -EINVAL;
@@ -923,11 +918,6 @@ static ssize_t proxy_ccc_write(struct bt_conn *conn,
 	}
 
 	client = find_client(conn);
-	if (client->cli == NULL) {
-		LOG_WRN("No Proxy Client found");
-		return -ENOTCONN;
-	}
-
 	if (client->filter_type == NONE) {
 		client->filter_type = ACCEPT;
 		bt_mesh_wq_submit(&client->send_beacons);
@@ -1180,13 +1170,21 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
+	client = find_client(conn);
+
 	if (!service_registered && bt_mesh_is_provisioned()) {
-		(void)proxy_gatt_service_register();
+		if (client->cli) {
+			bt_mesh_proxy_role_cleanup(client->cli);
+			client->cli = NULL;
+		}
+
+		if (!atomic_test_bit(bt_mesh.flags, BT_MESH_SUSPENDED)) {
+			(void)proxy_gatt_service_register();
+		}
+
 		adv_restart_pending = true;
 		return;
 	}
-
-	client = find_client(conn);
 	if (client->cli) {
 		bt_mesh_proxy_role_cleanup(client->cli);
 		client->cli = NULL;

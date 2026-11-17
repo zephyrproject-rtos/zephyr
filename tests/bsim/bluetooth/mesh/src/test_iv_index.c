@@ -99,7 +99,7 @@ static void test_ivu_normal(void)
 {
 	bt_mesh_test_setup();
 	bt_mesh.iv_index = TEST_IV_IDX;
-	bt_mesh.seq = 100;
+	atomic_set(&bt_mesh.seq, 100);
 	atomic_set_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS);
 
 	/* update before minimum duration */
@@ -109,12 +109,12 @@ static void test_ivu_normal(void)
 	ASSERT_TRUE(bt_mesh_net_iv_update(TEST_IV_IDX, BCN_IV_IN_IDLE));
 	ASSERT_FALSE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_EQUAL(TEST_IV_IDX, bt_mesh.iv_index);
-	ASSERT_EQUAL(0, bt_mesh.seq);
+	ASSERT_EQUAL(0, bt_mesh_seq_peek());
 
 	/* Ignore same iv index but iv in progress */
 	ASSERT_FALSE(bt_mesh_net_iv_update(TEST_IV_IDX, BCN_IV_IN_PROGRESS));
 
-	bt_mesh.seq = 100;
+	atomic_set(&bt_mesh.seq, 100);
 	/* update before minimum duration */
 	ASSERT_FALSE(bt_mesh_net_iv_update(TEST_IV_IDX + 1, BCN_IV_IN_PROGRESS));
 	/* moving into the IV update mode */
@@ -122,7 +122,7 @@ static void test_ivu_normal(void)
 	ASSERT_TRUE(bt_mesh_net_iv_update(TEST_IV_IDX + 1, BCN_IV_IN_PROGRESS));
 	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
 	ASSERT_EQUAL(TEST_IV_IDX + 1, bt_mesh.iv_index);
-	ASSERT_EQUAL(100, bt_mesh.seq);
+	ASSERT_EQUAL(100, bt_mesh_seq_peek());
 
 	PASS();
 }

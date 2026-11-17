@@ -223,7 +223,7 @@ void bt_mesh_net_seq_store(bool force)
 {
 	if (!force &&
 	    CONFIG_BT_MESH_SEQ_STORE_RATE > 1 &&
-	    (bt_mesh.seq % CONFIG_BT_MESH_SEQ_STORE_RATE)) {
+	    (bt_mesh_seq_peek() % CONFIG_BT_MESH_SEQ_STORE_RATE)) {
 		return;
 	}
 
@@ -350,7 +350,7 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 		ivi_was_recovered = true;
 		bt_mesh_rpl_clear();
 		bt_mesh.iv_index = iv_index;
-		bt_mesh.seq = 0U;
+		bt_mesh_seq_reset();
 
 		goto do_update;
 	}
@@ -383,7 +383,7 @@ bool bt_mesh_net_iv_update(uint32_t iv_index, bool iv_update)
 		ivi_was_recovered = false;
 	} else {
 		LOG_DBG("Normal mode entered");
-		bt_mesh.seq = 0U;
+		bt_mesh_seq_reset();
 	}
 
 do_update:
@@ -416,16 +416,26 @@ do_update:
 	return true;
 }
 
+uint32_t bt_mesh_seq_peek(void)
+{
+	return (uint32_t)atomic_get(&bt_mesh.seq);
+}
+
+void bt_mesh_seq_reset(void)
+{
+	atomic_set(&bt_mesh.seq, 0);
+}
+
 uint32_t bt_mesh_next_seq(void)
 {
-	uint32_t seq = bt_mesh.seq++;
+	uint32_t seq = (uint32_t)atomic_inc(&bt_mesh.seq);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_net_seq_store(false);
 	}
 
 	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) &&
-	    bt_mesh.seq > IV_UPDATE_SEQ_LIMIT &&
+	    bt_mesh_seq_peek() > IV_UPDATE_SEQ_LIMIT &&
 	    bt_mesh_subnet_get(BT_MESH_KEY_PRIMARY)) {
 		bt_mesh_beacon_ivu_initiator(true);
 		bt_mesh_net_iv_update(bt_mesh.iv_index + 1, true);
@@ -498,7 +508,7 @@ static int net_header_encode(struct bt_mesh_net_tx *tx, uint8_t nid,
 	}
 
 	LOG_DBG("src 0x%04x dst 0x%04x ctl %u seq 0x%06x", tx->src, tx->ctx->addr, ctl,
-		bt_mesh.seq);
+		bt_mesh_seq_peek());
 
 	net_buf_simple_push_be16(buf, tx->ctx->addr);
 	net_buf_simple_push_be16(buf, tx->src);
@@ -577,7 +587,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct bt_mesh_adv *adv,
 	LOG_DBG("src 0x%04x dst 0x%04x len %u headroom %zu tailroom %zu", tx->src, tx->ctx->addr,
 		adv->b.len, net_buf_simple_headroom(&adv->b), net_buf_simple_tailroom(&adv->b));
 	LOG_DBG("Payload len %u: %s", adv->b.len, bt_hex(adv->b.data, adv->b.len));
-	LOG_DBG("Seq 0x%06x", bt_mesh.seq);
+	LOG_DBG("Seq 0x%06x", bt_mesh_seq_peek());
 
 	cred = net_tx_cred_get(tx);
 	err = net_header_encode(tx, cred->nid, &adv->b);
@@ -1136,7 +1146,7 @@ static int seq_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	if (len_rd == 0) {
 		LOG_DBG("val (null)");
 
-		bt_mesh.seq = 0U;
+		bt_mesh_seq_reset();
 		return 0;
 	}
 
@@ -1146,19 +1156,22 @@ static int seq_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		return err;
 	}
 
-	bt_mesh.seq = sys_get_le24(seq.val);
+	atomic_set(&bt_mesh.seq, sys_get_le24(seq.val));
 
 	if (CONFIG_BT_MESH_SEQ_STORE_RATE > 0) {
+		uint32_t val = bt_mesh_seq_peek();
+
 		/* Make sure we have a large enough sequence number. We
 		 * subtract 1 so that the first transmission causes a write
 		 * to the settings storage.
 		 */
-		bt_mesh.seq += (CONFIG_BT_MESH_SEQ_STORE_RATE -
-				(bt_mesh.seq % CONFIG_BT_MESH_SEQ_STORE_RATE));
-		bt_mesh.seq--;
+		val += (CONFIG_BT_MESH_SEQ_STORE_RATE -
+			(val % CONFIG_BT_MESH_SEQ_STORE_RATE));
+		val--;
+		atomic_set(&bt_mesh.seq, val);
 	}
 
-	LOG_DBG("Sequence Number 0x%06x", bt_mesh.seq);
+	LOG_DBG("Sequence Number 0x%06x", bt_mesh_seq_peek());
 
 	return 0;
 }
@@ -1306,7 +1319,7 @@ void bt_mesh_net_pending_seq_store(void)
 	int err;
 
 	if (atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
-		sys_put_le24(bt_mesh.seq, seq.val);
+		sys_put_le24(bt_mesh_seq_peek(), seq.val);
 
 		err = settings_save_one("bt/mesh/Seq", &seq, sizeof(seq));
 		if (err) {

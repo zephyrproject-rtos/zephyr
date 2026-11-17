@@ -61,8 +61,9 @@ K_MEM_SLAB_DEFINE_STATIC_TYPE(friend_adv_pool, struct bt_mesh_adv,
 
 void bt_mesh_adv_send_start(uint16_t duration, int err, struct bt_mesh_adv_ctx *ctx)
 {
-	if (!ctx->started) {
-		ctx->started = 1;
+	struct bt_mesh_adv *adv = CONTAINER_OF(ctx, struct bt_mesh_adv, ctx);
+
+	if (!atomic_test_and_set_bit(adv->state, BT_MESH_ADV_STATE_STARTED)) {
 
 		if (ctx->cb && ctx->cb->start) {
 			ctx->cb->start(duration, err, ctx->cb_data);
@@ -78,7 +79,7 @@ void bt_mesh_adv_send_start(uint16_t duration, int err, struct bt_mesh_adv_ctx *
 
 void bt_mesh_adv_send_end(int err, struct bt_mesh_adv_ctx const *ctx)
 {
-	if (ctx->started && ctx->cb && ctx->cb->end) {
+	if (ctx->cb && ctx->cb->end) {
 		ctx->cb->end(err, ctx->cb_data);
 	}
 }
@@ -102,7 +103,9 @@ static struct bt_mesh_adv *adv_create_from_pool(struct k_mem_slab *buf_pool,
 		return NULL;
 	}
 
-	adv->__ref = 1;
+	atomic_set(&adv->ref, 1);
+	atomic_clear_bit(adv->state, BT_MESH_ADV_STATE_BUSY);
+	atomic_clear_bit(adv->state, BT_MESH_ADV_STATE_STARTED);
 
 	net_buf_simple_init_with_data(&adv->b, adv->__bufs, BT_MESH_ADV_DATA_SIZE);
 	net_buf_simple_reset(&adv->b);
@@ -120,18 +123,18 @@ static struct bt_mesh_adv *adv_create_from_pool(struct k_mem_slab *buf_pool,
 
 struct bt_mesh_adv *bt_mesh_adv_ref(struct bt_mesh_adv *adv)
 {
-	__ASSERT_NO_MSG(adv->__ref < UINT8_MAX);
+	__ASSERT_NO_MSG(atomic_get(&adv->ref) < UINT8_MAX);
 
-	adv->__ref++;
+	atomic_inc(&adv->ref);
 
 	return adv;
 }
 
 void bt_mesh_adv_unref(struct bt_mesh_adv *adv)
 {
-	__ASSERT_NO_MSG(adv->__ref > 0);
+	__ASSERT_NO_MSG(atomic_get(&adv->ref) > 0);
 
-	if (--adv->__ref > 0) {
+	if (atomic_dec(&adv->ref) > 1) {
 		return;
 	}
 
@@ -268,7 +271,7 @@ void bt_mesh_adv_send(struct bt_mesh_adv *adv, const struct bt_mesh_send_cb *cb,
 
 	adv->ctx.cb = cb;
 	adv->ctx.cb_data = cb_data;
-	adv->ctx.busy = 1U;
+	atomic_set_bit(adv->state, BT_MESH_ADV_STATE_BUSY);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_STATISTIC)) {
 		bt_mesh_stat_planned_count(&adv->ctx);
