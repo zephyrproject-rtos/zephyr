@@ -64,10 +64,12 @@ static int vregusb_enable(const struct device *const dev)
 	struct vregusb_data *const data = dev->data;
 	NRF_VREGUSB_Type *const base = config->base;
 
-#if NRF_VREGUSB_HAS_SETTLED_3V3
+#if NRF_VREGUSB_HAS_PWRUP && NRF_VREGUSB_HAS_SETTLED_3V3
 	nrf_vregusb_pwrup_set(base, NRF_VREGUSB_PWRUP_TARGET_3V3,
 			      NRF_VREGUSB_PWRUP_MODE_AUTO);
 #endif
+
+	sys_write32(0, (mem_addr_t)base + 0x48C);
 
 	/* Clear stale events from a previous boot to prevent spurious ISR
 	 * firing with wrong or overwritten event type.
