@@ -1,0 +1,30 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Line numbering of a TI K3 GPIO module.
+
+  The GPIO modules of K3 SoCs use the DaVinci/Keystone GPIO IP and have up
+  to 144 lines, named GPIOn_m in the datasheet and technical reference
+  manual. Each module is described by one "ti,davinci-gpio" node per 32-line
+  register set, as a GPIO port holds at most 32 lines.
+
+  This nexus restores the numbering of the whole module: line m maps to
+  register set m / 32, pin m % 32. The first specifier cell is m, the second
+  one holds the GPIO flags. For example, on AM64x,
+  <&main_gpio0 42 GPIO_ACTIVE_LOW> refers to GPIO0_42 and resolves to
+  <&main_gpio0_1 10 GPIO_ACTIVE_LOW>.
+
+compatible: "ti,k3-gpio-nexus"
+
+include: [base.yaml, gpio-nexus.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

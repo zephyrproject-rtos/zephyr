@@ -242,6 +242,13 @@ Ethernet
   :c:enum:`ethernet_hw_caps` have been removed. Use :c:func:`net_eth_get_dsa_port_type` to get the
   DSA port type of an interface instead. (:github:`124790`)
 
+GPIO
+====
+
+* The ``ti,davinci-gpio-nexus`` compatible of the TI K3 GPIO nexus nodes has been renamed to
+  :dtcompatible:`ti,k3-gpio-nexus`. Out-of-tree devicetrees that set the old compatible must use
+  the new one.
+
 I2S
 ===
 

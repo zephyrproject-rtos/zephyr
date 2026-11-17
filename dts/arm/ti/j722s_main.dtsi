@@ -7,6 +7,7 @@
 
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
 
 / {
@@ -14,6 +15,7 @@
 	#size-cells = <1>;
 
 	main_gpio0: main-gpio0 {
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio0_0 0 0>, <1 0 &main_gpio0_0 1 0>,
 			   <2 0 &main_gpio0_0 2 0>, <3 0 &main_gpio0_0 3 0>,
@@ -60,10 +62,11 @@
 			   <84 0 &main_gpio0_2 20 0>, <85 0 &main_gpio0_2 21 0>,
 			   <86 0 &main_gpio0_2 22 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio1: main-gpio1 {
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio1_0 0 0>, <1 0 &main_gpio1_0 1 0>,
 			   <2 0 &main_gpio1_0 2 0>, <3 0 &main_gpio1_0 3 0>,
@@ -103,7 +106,7 @@
 			   <70 0 &main_gpio1_2 6 0>, <71 0 &main_gpio1_2 7 0>,
 			   <72 0 &main_gpio1_2 8 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	pinctrl: pinctrl@f4000 {

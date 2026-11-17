@@ -3,8 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
 / {
 	main_gpio0: main-gpio0 {
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio0_0 0 0>, <1 0 &main_gpio0_0 1 0>,
 			   <2 0 &main_gpio0_0 2 0>, <3 0 &main_gpio0_0 3 0>,
@@ -47,7 +50,7 @@
 			   <76 0 &main_gpio0_2 12 0>, <77 0 &main_gpio0_2 13 0>,
 			   <78 0 &main_gpio0_2 14 0>, <79 0 &main_gpio0_2 15 0>,
 			   <80 0 &main_gpio0_2 16 0>, <81 0 &main_gpio0_2 17 0>,
-			   <82 0 &main_gpio0_2 18 0>, <83 0 &main_gpio0_2 17 0>,
+			   <82 0 &main_gpio0_2 18 0>, <83 0 &main_gpio0_2 19 0>,
 			   <84 0 &main_gpio0_2 20 0>, <85 0 &main_gpio0_2 21 0>,
 			   <86 0 &main_gpio0_2 22 0>, <87 0 &main_gpio0_2 23 0>,
 			   <88 0 &main_gpio0_2 24 0>, <89 0 &main_gpio0_2 25 0>,
@@ -63,7 +66,7 @@
 			   <108 0 &main_gpio0_3 12 0>, <109 0 &main_gpio0_3 13 0>,
 			   <110 0 &main_gpio0_3 14 0>, <111 0 &main_gpio0_3 15 0>,
 			   <112 0 &main_gpio0_3 16 0>, <113 0 &main_gpio0_3 17 0>,
-			   <114 0 &main_gpio0_3 18 0>, <116 0 &main_gpio0_3 17 0>,
+			   <114 0 &main_gpio0_3 18 0>, <115 0 &main_gpio0_3 19 0>,
 			   <116 0 &main_gpio0_3 20 0>, <117 0 &main_gpio0_3 21 0>,
 			   <118 0 &main_gpio0_3 22 0>, <119 0 &main_gpio0_3 23 0>,
 			   <120 0 &main_gpio0_3 24 0>, <121 0 &main_gpio0_3 25 0>,
@@ -71,10 +74,11 @@
 			   <124 0 &main_gpio0_3 28 0>, <125 0 &main_gpio0_3 29 0>,
 			   <126 0 &main_gpio0_3 30 0>, <127 0 &main_gpio0_3 31 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio1: main-gpio1 {
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio1_0 0 0>, <1 0 &main_gpio1_0 1 0>,
 			   <2 0 &main_gpio1_0 2 0>, <3 0 &main_gpio1_0 3 0>,
@@ -95,10 +99,11 @@
 			   <32 0 &main_gpio1_1 0 0>, <33 0 &main_gpio1_1 1 0>,
 			   <34 0 &main_gpio1_1 2 0>, <35 0 &main_gpio1_1 3 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio2: main-gpio2 {
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio2_0 0 0>, <1 0 &main_gpio2_0 1 0>,
 			   <2 0 &main_gpio2_0 2 0>, <3 0 &main_gpio2_0 3 0>,
@@ -141,50 +146,35 @@
 			   <76 0 &main_gpio2_2 12 0>, <77 0 &main_gpio2_2 13 0>,
 			   <78 0 &main_gpio2_2 14 0>, <79 0 &main_gpio2_2 15 0>,
 			   <80 0 &main_gpio2_2 16 0>, <81 0 &main_gpio2_2 17 0>,
-			   <82 0 &main_gpio2_2 18 0>, <83 0 &main_gpio2_2 17 0>,
+			   <82 0 &main_gpio2_2 18 0>, <83 0 &main_gpio2_2 19 0>,
 			   <84 0 &main_gpio2_2 20 0>, <85 0 &main_gpio2_2 21 0>,
 			   <86 0 &main_gpio2_2 22 0>, <87 0 &main_gpio2_2 23 0>,
 			   <88 0 &main_gpio2_2 24 0>, <89 0 &main_gpio2_2 25 0>,
 			   <90 0 &main_gpio2_2 26 0>, <91 0 &main_gpio2_2 27 0>,
-			   <90 0 &main_gpio2_2 28 0>, <91 0 &main_gpio2_2 29 0>,
-			   <90 0 &main_gpio2_2 30 0>, <91 0 &main_gpio2_2 31 0>,
-			   <64 0 &main_gpio2_3 0 0>, <65 0 &main_gpio2_3 1 0>,
-			   <66 0 &main_gpio2_3 2 0>, <67 0 &main_gpio2_3 3 0>,
-			   <68 0 &main_gpio2_3 4 0>, <69 0 &main_gpio2_3 5 0>,
-			   <70 0 &main_gpio2_3 6 0>, <71 0 &main_gpio2_3 7 0>,
-			   <72 0 &main_gpio2_3 8 0>, <73 0 &main_gpio2_3 9 0>,
-			   <74 0 &main_gpio2_3 10 0>, <75 0 &main_gpio2_3 11 0>,
-			   <76 0 &main_gpio2_3 12 0>, <77 0 &main_gpio2_3 13 0>,
-			   <78 0 &main_gpio2_3 14 0>, <79 0 &main_gpio2_3 15 0>,
-			   <80 0 &main_gpio2_3 16 0>, <81 0 &main_gpio2_3 17 0>,
-			   <82 0 &main_gpio2_3 18 0>, <83 0 &main_gpio2_3 17 0>,
-			   <84 0 &main_gpio2_3 20 0>, <85 0 &main_gpio2_3 21 0>,
-			   <86 0 &main_gpio2_3 22 0>, <87 0 &main_gpio2_3 23 0>,
-			   <88 0 &main_gpio2_3 24 0>, <89 0 &main_gpio2_3 25 0>,
-			   <90 0 &main_gpio0_2 26 0>, <91 0 &main_gpio0_2 27 0>,
-			   <92 0 &main_gpio0_2 28 0>, <93 0 &main_gpio0_2 29 0>,
-			   <94 0 &main_gpio0_2 30 0>, <95 0 &main_gpio0_2 31 0>,
-			   <96 0 &main_gpio0_3 0 0>, <97 0 &main_gpio0_3 1 0>,
-			   <98 0 &main_gpio0_3 2 0>, <99 0 &main_gpio0_3 3 0>,
-			   <100 0 &main_gpio0_3 4 0>, <101 0 &main_gpio0_3 5 0>,
-			   <102 0 &main_gpio0_3 6 0>, <103 0 &main_gpio0_3 7 0>,
-			   <104 0 &main_gpio0_3 8 0>, <105 0 &main_gpio0_3 9 0>,
-			   <106 0 &main_gpio0_3 10 0>, <107 0 &main_gpio0_3 11 0>,
-			   <108 0 &main_gpio0_3 12 0>, <109 0 &main_gpio0_3 13 0>,
-			   <110 0 &main_gpio0_3 14 0>, <111 0 &main_gpio0_3 15 0>,
-			   <112 0 &main_gpio0_3 16 0>, <113 0 &main_gpio0_3 17 0>,
-			   <114 0 &main_gpio0_3 18 0>, <116 0 &main_gpio0_3 17 0>,
-			   <116 0 &main_gpio0_3 20 0>, <117 0 &main_gpio0_3 21 0>,
-			   <118 0 &main_gpio0_3 22 0>, <119 0 &main_gpio0_3 23 0>,
-			   <120 0 &main_gpio0_3 24 0>, <121 0 &main_gpio0_3 25 0>,
-			   <122 0 &main_gpio0_3 26 0>, <123 0 &main_gpio0_3 27 0>,
-			   <124 0 &main_gpio0_3 28 0>, <125 0 &main_gpio0_3 29 0>,
-			   <126 0 &main_gpio0_3 30 0>, <127 0 &main_gpio0_3 31 0>;
+			   <92 0 &main_gpio2_2 28 0>, <93 0 &main_gpio2_2 29 0>,
+			   <94 0 &main_gpio2_2 30 0>, <95 0 &main_gpio2_2 31 0>,
+			   <96 0 &main_gpio2_3 0 0>, <97 0 &main_gpio2_3 1 0>,
+			   <98 0 &main_gpio2_3 2 0>, <99 0 &main_gpio2_3 3 0>,
+			   <100 0 &main_gpio2_3 4 0>, <101 0 &main_gpio2_3 5 0>,
+			   <102 0 &main_gpio2_3 6 0>, <103 0 &main_gpio2_3 7 0>,
+			   <104 0 &main_gpio2_3 8 0>, <105 0 &main_gpio2_3 9 0>,
+			   <106 0 &main_gpio2_3 10 0>, <107 0 &main_gpio2_3 11 0>,
+			   <108 0 &main_gpio2_3 12 0>, <109 0 &main_gpio2_3 13 0>,
+			   <110 0 &main_gpio2_3 14 0>, <111 0 &main_gpio2_3 15 0>,
+			   <112 0 &main_gpio2_3 16 0>, <113 0 &main_gpio2_3 17 0>,
+			   <114 0 &main_gpio2_3 18 0>, <115 0 &main_gpio2_3 19 0>,
+			   <116 0 &main_gpio2_3 20 0>, <117 0 &main_gpio2_3 21 0>,
+			   <118 0 &main_gpio2_3 22 0>, <119 0 &main_gpio2_3 23 0>,
+			   <120 0 &main_gpio2_3 24 0>, <121 0 &main_gpio2_3 25 0>,
+			   <122 0 &main_gpio2_3 26 0>, <123 0 &main_gpio2_3 27 0>,
+			   <124 0 &main_gpio2_3 28 0>, <125 0 &main_gpio2_3 29 0>,
+			   <126 0 &main_gpio2_3 30 0>, <127 0 &main_gpio2_3 31 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio3: main-gpio3 {
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio3_0 0 0>, <1 0 &main_gpio3_0 1 0>,
 			   <2 0 &main_gpio3_0 2 0>, <3 0 &main_gpio3_0 3 0>,
@@ -205,10 +195,11 @@
 			   <32 0 &main_gpio3_1 0 0>, <33 0 &main_gpio3_1 1 0>,
 			   <34 0 &main_gpio3_1 2 0>, <35 0 &main_gpio3_1 3 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio4: main-gpio4 {
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio4_0 0 0>, <1 0 &main_gpio4_0 1 0>,
 			   <2 0 &main_gpio4_0 2 0>, <3 0 &main_gpio4_0 3 0>,
@@ -251,7 +242,7 @@
 			   <76 0 &main_gpio4_2 12 0>, <77 0 &main_gpio4_2 13 0>,
 			   <78 0 &main_gpio4_2 14 0>, <79 0 &main_gpio4_2 15 0>,
 			   <80 0 &main_gpio4_2 16 0>, <81 0 &main_gpio4_2 17 0>,
-			   <82 0 &main_gpio4_2 18 0>, <83 0 &main_gpio4_2 17 0>,
+			   <82 0 &main_gpio4_2 18 0>, <83 0 &main_gpio4_2 19 0>,
 			   <84 0 &main_gpio4_2 20 0>, <85 0 &main_gpio4_2 21 0>,
 			   <86 0 &main_gpio4_2 22 0>, <87 0 &main_gpio4_2 23 0>,
 			   <88 0 &main_gpio4_2 24 0>, <89 0 &main_gpio4_2 25 0>,
@@ -267,7 +258,7 @@
 			   <108 0 &main_gpio4_3 12 0>, <109 0 &main_gpio4_3 13 0>,
 			   <110 0 &main_gpio4_3 14 0>, <111 0 &main_gpio4_3 15 0>,
 			   <112 0 &main_gpio4_3 16 0>, <113 0 &main_gpio4_3 17 0>,
-			   <114 0 &main_gpio4_3 18 0>, <116 0 &main_gpio4_3 17 0>,
+			   <114 0 &main_gpio4_3 18 0>, <115 0 &main_gpio4_3 19 0>,
 			   <116 0 &main_gpio4_3 20 0>, <117 0 &main_gpio4_3 21 0>,
 			   <118 0 &main_gpio4_3 22 0>, <119 0 &main_gpio4_3 23 0>,
 			   <120 0 &main_gpio4_3 24 0>, <121 0 &main_gpio4_3 25 0>,
@@ -275,10 +266,11 @@
 			   <124 0 &main_gpio4_3 28 0>, <125 0 &main_gpio4_3 29 0>,
 			   <126 0 &main_gpio4_3 30 0>, <127 0 &main_gpio4_3 31 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio5: main-gpio5 {
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio5_0 0 0>, <1 0 &main_gpio5_0 1 0>,
 			   <2 0 &main_gpio5_0 2 0>, <3 0 &main_gpio5_0 3 0>,
@@ -299,10 +291,11 @@
 			   <32 0 &main_gpio5_1 0 0>, <33 0 &main_gpio5_1 1 0>,
 			   <34 0 &main_gpio5_1 2 0>, <35 0 &main_gpio5_1 3 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio6: main-gpio6 {
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio6_0 0 0>, <1 0 &main_gpio6_0 1 0>,
 			   <2 0 &main_gpio6_0 2 0>, <3 0 &main_gpio6_0 3 0>,
@@ -345,7 +338,7 @@
 			   <76 0 &main_gpio6_2 12 0>, <77 0 &main_gpio6_2 13 0>,
 			   <78 0 &main_gpio6_2 14 0>, <79 0 &main_gpio6_2 15 0>,
 			   <80 0 &main_gpio6_2 16 0>, <81 0 &main_gpio6_2 17 0>,
-			   <82 0 &main_gpio6_2 18 0>, <83 0 &main_gpio6_2 17 0>,
+			   <82 0 &main_gpio6_2 18 0>, <83 0 &main_gpio6_2 19 0>,
 			   <84 0 &main_gpio6_2 20 0>, <85 0 &main_gpio6_2 21 0>,
 			   <86 0 &main_gpio6_2 22 0>, <87 0 &main_gpio6_2 23 0>,
 			   <88 0 &main_gpio6_2 24 0>, <89 0 &main_gpio6_2 25 0>,
@@ -361,7 +354,7 @@
 			   <108 0 &main_gpio6_3 12 0>, <109 0 &main_gpio6_3 13 0>,
 			   <110 0 &main_gpio6_3 14 0>, <111 0 &main_gpio6_3 15 0>,
 			   <112 0 &main_gpio6_3 16 0>, <113 0 &main_gpio6_3 17 0>,
-			   <114 0 &main_gpio6_3 18 0>, <116 0 &main_gpio6_3 17 0>,
+			   <114 0 &main_gpio6_3 18 0>, <115 0 &main_gpio6_3 19 0>,
 			   <116 0 &main_gpio6_3 20 0>, <117 0 &main_gpio6_3 21 0>,
 			   <118 0 &main_gpio6_3 22 0>, <119 0 &main_gpio6_3 23 0>,
 			   <120 0 &main_gpio6_3 24 0>, <121 0 &main_gpio6_3 25 0>,
@@ -369,10 +362,11 @@
 			   <124 0 &main_gpio6_3 28 0>, <125 0 &main_gpio6_3 29 0>,
 			   <126 0 &main_gpio6_3 30 0>, <127 0 &main_gpio6_3 31 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio7: main-gpio7 {
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio7_0 0 0>, <1 0 &main_gpio7_0 1 0>,
 			   <2 0 &main_gpio7_0 2 0>, <3 0 &main_gpio7_0 3 0>,
@@ -393,7 +387,7 @@
 			   <32 0 &main_gpio7_1 0 0>, <33 0 &main_gpio7_1 1 0>,
 			   <34 0 &main_gpio7_1 2 0>, <35 0 &main_gpio7_1 3 0>;
 		gpio-map-mask = <0xffff 0x0>;
-		gpio-map-pass-thru = <0x0 0x1>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
 	};
 
 	main_gpio0_0: gpio@600010 {
