@@ -606,7 +606,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 			chan_data->cfg |= DMA_DW_AXI_CFG_TT_FC(M2P_DMAC);
 			lli_desc->ctl |= DMA_DW_AXI_CTL_SRC_MSIZE(msize_src) |
 					DMA_DW_AXI_CTL_DST_MSIZE(msize_dst);
-			WRITE_BIT(chan_data->cfg, DMA_DW_AXI_CFG_HW_HS_DST_BIT_POS, 0);
+			chan_data->cfg &= ~BIT64(DMA_DW_AXI_CFG_HW_HS_DST_BIT_POS);
 
 			/* assign a hardware handshake interface */
 			chan_data->cfg |= DMA_DW_AXI_CFG_DST_PER(cfg->dma_slot);
@@ -615,7 +615,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 			lli_desc->ctl |= DMA_DW_AXI_CTL_SRC_MSIZE(msize_src) |
 					DMA_DW_AXI_CTL_DST_MSIZE(msize_dst);
 			chan_data->cfg |= DMA_DW_AXI_CFG_TT_FC(P2M_DMAC);
-			WRITE_BIT(chan_data->cfg, DMA_DW_AXI_CFG_HW_HS_SRC_BIT_POS, 0);
+			chan_data->cfg &= ~BIT64(DMA_DW_AXI_CFG_HW_HS_SRC_BIT_POS);
 
 			/* assign a hardware handshake interface */
 			chan_data->cfg |= DMA_DW_AXI_CFG_SRC_PER(cfg->dma_slot);
@@ -639,7 +639,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 		lli_desc->ctl |= DMA_DW_AXI_CTL_AW_CACHE_WIDTH(DMA_DW_AXI_AXCACHE);
 
 		/* set pointer to the next descriptor */
-		lli_desc->llp = ((uint64_t)(lli_desc + 1));
+		lli_desc->llp = (uint64_t)(uintptr_t)(lli_desc + 1);
 
 #if defined(CONFIG_DMA_DW_AXI_LLI_SUPPORT)
 		/* configure multi block transfer size as linked list */
@@ -743,7 +743,7 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 	lli_desc = chan_data->lli_desc_current;
 
 #if defined(CONFIG_DMA_DW_AXI_LLI_SUPPORT)
-	sys_write64(((uint64_t)lli_desc), reg_base + DMA_DW_AXI_CH_LLP(channel));
+	sys_write64((uint64_t)(uintptr_t)lli_desc, reg_base + DMA_DW_AXI_CH_LLP(channel));
 #else
 	/* Program Source and Destination addresses */
 	sys_write64(lli_desc->sar, reg_base + DMA_DW_AXI_CH_SAR(channel));
