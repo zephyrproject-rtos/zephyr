@@ -781,7 +781,6 @@ static int bdma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	channel->busy		= true;
 	channel->bdma_callback	= config->dma_callback;
 	channel->direction	= config->channel_direction;
 	channel->user_data	= config->user_data;

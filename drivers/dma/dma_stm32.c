@@ -684,7 +684,6 @@ static int dma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	stream->busy		= true;
 	stream->dma_callback	= config->dma_callback;
 	stream->direction	= config->channel_direction;
 	stream->user_data       = config->user_data;
