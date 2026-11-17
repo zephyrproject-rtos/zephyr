@@ -1502,11 +1502,15 @@ fail:
 	return -1;
 }
 
+/* With MSG_PEEK, peek_offset bytes from the head of the queue are skipped: the
+ * caller already copied them in this call.
+ */
 static size_t zsock_recv_stream_immediate(struct net_context *ctx, uint8_t **buf, size_t *max_len,
-					  int flags)
+					  int flags, size_t peek_offset)
 {
 	size_t len;
 	size_t pkt_len;
+	size_t skip;
 	size_t recv_len = 0;
 	struct net_pkt *pkt;
 	struct net_pkt_cursor backup;
@@ -1529,13 +1533,16 @@ static size_t zsock_recv_stream_immediate(struct net_context *ctx, uint8_t **buf
 		}
 
 		pkt_len = net_pkt_remaining_data(pkt);
-		len = MIN(_max_len, pkt_len);
+		skip = peek ? MIN(peek_offset, pkt_len) : 0U;
+		peek_offset -= skip;
+		len = MIN(_max_len, pkt_len - skip);
 		recv_len += len;
 		_max_len -= len;
 
 		if (do_recv && len > 0) {
 			if (peek) {
 				net_pkt_cursor_backup(pkt, &backup);
+				net_pkt_skip(pkt, skip);
 			}
 
 			net_pkt_read(pkt, *buf, len);
@@ -1586,7 +1593,7 @@ static size_t zsock_recv_stream_immediate(struct net_context *ctx, uint8_t **buf
 
 static int zsock_fionread_ctx(struct net_context *ctx)
 {
-	size_t ret = zsock_recv_stream_immediate(ctx, NULL, NULL, 0);
+	size_t ret = zsock_recv_stream_immediate(ctx, NULL, NULL, 0, 0);
 
 	return MIN(ret, INT_MAX);
 }
@@ -1683,7 +1690,8 @@ static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct net_msghd
 
 		if (msg != NULL) {
 again:
-			res = zsock_recv_stream_immediate(ctx, &buf, &available_len, flags);
+			res = zsock_recv_stream_immediate(ctx, &buf, &available_len, flags,
+							  recv_len);
 			recv_len += res;
 			zsock_recv_stream_consumed(ctx, res, flags);
 
@@ -1717,7 +1725,7 @@ again:
 			}
 
 		} else {
-			res = zsock_recv_stream_immediate(ctx, &buf, &max_len, flags);
+			res = zsock_recv_stream_immediate(ctx, &buf, &max_len, flags, recv_len);
 			recv_len += res;
 			zsock_recv_stream_consumed(ctx, res, flags);
 
