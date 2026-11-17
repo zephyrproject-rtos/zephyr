@@ -87,9 +87,9 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 #define CH_ABORT(chan) (BIT64(40 + chan) | BIT64(32 + chan))
 
 /* channel susp/resume write enable pos */
-#define CH_RESUME_WE(chan) (BIT64(24) + (chan))
+#define CH_RESUME_WE(chan) (BIT64(24 + chan))
 /* channel resume bit pos */
-#define CH_RESUME(chan)    (BIT64(16) + (chan))
+#define CH_RESUME(chan)    (BIT64(16 + chan))
 
 #define DMA_DW_AXI_CHAN_OFFSET(chan)             (0x100 * chan)
 
