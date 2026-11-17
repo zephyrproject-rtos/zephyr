@@ -7,6 +7,8 @@ compatible: "renesas,ra-ospi-b-nor"
 
 include: [base.yaml, "jedec,jesd216.yaml"]
 
+on-bus: ospi
+
 properties:
   jedec-id:
     required: true
