@@ -1,0 +1,40 @@
+common:
+  tags:
+    - drivers
+    - i2s
+    - pm
+  depends_on:
+    - i2s
+    - gpio
+  harness: ztest
+  harness_config:
+    fixture: gpio_loopback
+  filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
+tests:
+  drivers.i2s.pm.esp:
+    extra_args:
+      - SNIPPET=espressif-pm
+      - platform:esp32c3_devkitc:EXTRA_DTC_OVERLAY_FILE="boards/espressif.overlay"
+      - platform:esp32c5_devkitc/esp32c5/hpcore:EXTRA_DTC_OVERLAY_FILE="boards/espressif.overlay"
+      - platform:esp32c6_devkitc/esp32c6/hpcore:EXTRA_DTC_OVERLAY_FILE="boards/espressif.overlay"
+    extra_conf_files:
+      - boards/espressif.conf
+    platform_allow:
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32s3_devkitc/esp32s3/procpu
+  drivers.i2s.pm.esp.periph_pd:
+    extra_args:
+      - SNIPPET=espressif-pm
+      - platform:esp32c5_devkitc/esp32c5/hpcore:EXTRA_DTC_OVERLAY_FILE="boards/espressif.overlay"
+      - platform:esp32c6_devkitc/esp32c6/hpcore:EXTRA_DTC_OVERLAY_FILE="boards/espressif.overlay"
+    extra_conf_files:
+      - boards/espressif.conf
+    extra_configs:
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
