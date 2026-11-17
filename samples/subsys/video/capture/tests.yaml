@@ -82,3 +82,16 @@ tests:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
     integration_platforms:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+
+  sample.video.capture.jpegdec:
+    tags:
+      - video
+      - samples
+      - shield
+    build_only: true
+    extra_args:
+      - platform:mimxrt2660_evk/mimxrt2663/cm85:SHIELD="rk055hdmipi4ma0"
+    platform_allow:
+      - mimxrt2660_evk/mimxrt2663/cm85
+    integration_platforms:
+      - mimxrt2660_evk/mimxrt2663/cm85
