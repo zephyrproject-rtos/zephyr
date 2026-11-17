@@ -146,3 +146,11 @@
 &wifi {
 	status = "okay";
 };
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
+
+zephyr_uhc0: &usb_otg {
+	status = "okay";
+};
