@@ -22,4 +22,20 @@ configdefault I2C_DW_IC_CLK_FREQ_OPTIMIZATION
 configdefault SPI_DW_HSSI
 	default y
 
+if SOC_FAMILY_ENSEMBLE_RTSS
+
+# Keep images without a code partition below the Device memory storage partition
+ALIF_CHOSEN_FLASH := zephyr,flash
+
+configdefault FLASH_SIZE
+	default $(sub,$(dt_nodelabel_reg_addr_int,storage_partition,0,K),$(dt_chosen_reg_addr_int,$(ALIF_CHOSEN_FLASH),0,K)) \
+		if $(dt_nodelabel_enabled,storage_partition)
+
+# Keep the application out of the Device memory sector holding its MCUboot trailer
+configdefault ROM_END_OFFSET
+	default $(dt_node_int_prop_hex,$(dt_chosen_path,$(ALIF_CHOSEN_FLASH)),erase-block-size) \
+		if BOOTLOADER_MCUBOOT
+
+endif # SOC_FAMILY_ENSEMBLE_RTSS
+
 endif # SOC_FAMILY_ENSEMBLE
