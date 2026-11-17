@@ -40,6 +40,7 @@ GTEXT(z_arm_prefetch_abort)
 GTEXT(z_arm_data_abort)
 
 GTEXT(z_arm_cortex_ar_exit_exc)
+GTEXT(z_arm_cortex_ar_exit_exc_cpu)
 SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 
 	/* Note:
@@ -47,10 +48,13 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 	 * processor mode set to MODE_SYS.
 	 */
 
-	/* decrement exception depth */
 	get_cpu r2
+
+	/* Entry with r2 already holding the CPU pointer */
+z_arm_cortex_ar_exit_exc_cpu:
+	/* decrement exception depth */
 	ldrb r1, [r2, #_cpu_offset_to_exc_depth]
-	sub r1, r1, #1
+	subs r1, r1, #1
 	strb r1, [r2, #_cpu_offset_to_exc_depth]
 
 #if defined(CONFIG_FPU_SHARING)
@@ -59,7 +63,6 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 	 * Exception handlers run with it disabled, see z_arm_fpu_trap().
 	 */
 	mov r3, #0
-	cmp r1, #0
 	bne 1f
 	ldr r0, [r2, #_cpu_offset_to_fpu_owner]
 	ldr r1, [r2, #___cpu_t_current_OFFSET]

@@ -46,8 +46,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	sub lr, #4
 	z_arm_cortex_ar_enter_exc
 
-	/* Increment interrupt nesting count */
-	get_cpu r2
+	/* Increment interrupt nesting count, r2 is the CPU pointer */
 	ldr r0, [r2, #___cpu_t_nested_OFFSET]
 	add r0, #1
 	str r0, [r2, #___cpu_t_nested_OFFSET]
@@ -172,15 +171,13 @@ z_arm_cortex_ar_irq_done:
 	/* Decrement interrupt nesting count */
 	get_cpu r2
 	ldr r0, [r2, #___cpu_t_nested_OFFSET]
-	sub r0, r0, #1
+	subs r0, r0, #1
 	str r0, [r2, #___cpu_t_nested_OFFSET]
 	/* Do not context switch if exiting a nested interrupt */
-	cmp r0, #0
-	bhi __EXIT_INT
+	bne __EXIT_INT
 
 	/* Leave the IRQ stack, see irq_stack_enter */
-	pop {r0, r1}
-	mov sp, r0
+	ldr sp, [sp]
 
 	ldr r1, [r2, #___cpu_t_current_OFFSET]
 #if !defined(CONFIG_SMP) && !defined(CONFIG_SCHED_THREAD_USAGE)
@@ -211,10 +208,16 @@ z_arm_cortex_ar_irq_done:
 	 */
 	bl z_arm_context_switch
 
+#ifndef CONFIG_STACK_SENTINEL
+	b z_arm_cortex_ar_exit_exc
+#endif
+
 __EXIT_INT:
 
 #ifdef CONFIG_STACK_SENTINEL
 	bl z_check_stack_sentinel
-#endif /* CONFIG_STACK_SENTINEL */
-
 	b z_arm_cortex_ar_exit_exc
+#else
+	/* r2 is still the CPU pointer */
+	b z_arm_cortex_ar_exit_exc_cpu
+#endif

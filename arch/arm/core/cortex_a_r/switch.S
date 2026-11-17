@@ -36,8 +36,7 @@ GTEXT(z_arm_do_syscall)
  */
 SECTION_FUNC(TEXT, z_arm_context_switch)
 
-	ldr r2, =_thread_offset_to_callee_saved
-	add r2, r1, r2
+	add r2, r1, #_thread_offset_to_callee_saved
 
 	stm r2, {r4-r11, sp, lr}
 
@@ -82,24 +81,24 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 	mcr p15, 0, r3, c13, c0, 2
 #endif
 
-	ldr r2, =_thread_offset_to_callee_saved
-	add r2, r0, r2
+	add r2, r0, #_thread_offset_to_callee_saved
 	ldm r2, {r4-r11, sp, lr}
 
+	/* The last call is a tail call: no caller uses r0 on return */
+#if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
 #if defined(CONFIG_ARM_MPU) && (defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD))
 	/* Re-program dynamic memory map */
 	push {r0, lr}
 	bl z_arm_configure_dynamic_mpu_regions
 	pop {r0, lr}
 #endif
-
-#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	push {r0, lr}
-	bl z_thread_mark_switched_in
-	pop {r0, lr}
-#endif
-
+	b z_thread_mark_switched_in
+#elif defined(CONFIG_ARM_MPU) && (defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD))
+	/* Re-program dynamic memory map */
+	b z_arm_configure_dynamic_mpu_regions
+#else
 	bx lr
+#endif
 
 /**
  *
@@ -119,11 +118,12 @@ SECTION_FUNC(TEXT, z_arm_svc)
 
     /*
      * Get the SVC number from the instruction before the return address.
-     * r0: exception stack frame, r2: SPSR, r3: return address
+     * r0: exception stack frame, r2: CPU pointer, r3: return address,
+     * ip: SPSR
      */
-    ldr r2, [r0, #___basic_sf_t_xpsr_OFFSET]
+    ldr ip, [r0, #___basic_sf_t_xpsr_OFFSET]
     ldr r3, [r0, #___basic_sf_t_pc_OFFSET]
-    tst r2, #T_BIT
+    tst ip, #T_BIT
     ldreq r1, [r3, #-4]
     biceq r1, #0xff000000
     beq demux
@@ -151,7 +151,6 @@ demux:
     beq offload
     b inv
 offload:
-    get_cpu r2
     ldr r3, [r2, #___cpu_t_nested_OFFSET]
     add r3, r3, #1
     str r3, [r2, #___cpu_t_nested_OFFSET]
@@ -193,13 +192,13 @@ _do_syscall:
     mov r8, r3
 
     /* If leaving thumb mode, set the return address to thumb mode */
-    tst r2, #T_BIT
+    tst ip, #T_BIT
     orrne r8, #1
 
     /* Make the exception return to system state */
-    bic r2, #(MODE_MASK | T_BIT)
-    orr r2, r2, #MODE_SYS
-    str r2, [r0, #___basic_sf_t_xpsr_OFFSET]
+    bic ip, #(MODE_MASK | T_BIT)
+    orr ip, ip, #MODE_SYS
+    str ip, [r0, #___basic_sf_t_xpsr_OFFSET]
 
     ldr r1, =z_arm_do_syscall
     str r1, [r0, #___basic_sf_t_pc_OFFSET]
@@ -210,7 +209,7 @@ _do_syscall:
     strhs r6, [r0]
     ldrhs r6, =K_SYSCALL_BAD
 
-    b z_arm_cortex_ar_exit_exc
+    b z_arm_cortex_ar_exit_exc_cpu
 #endif
 
 inv:
