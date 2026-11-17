@@ -88,3 +88,11 @@ tests:
       - CONFIG_DYNAMIC_THREAD_POOL_SIZE=2
       - CONFIG_DYNAMIC_THREAD_ALLOC=y
       - CONFIG_USERSPACE=y
+      # On RISC-V, power-of-two PMP regions with stack guards reserve the
+      # guard in user stack objects, for
+      # test_dynamic_thread_stack_priv_outside_obj. The sizes are the 32-bit
+      # defaults, so that 64-bit stacks fit in the heap.
+      - arch:riscv:CONFIG_PMP_POWER_OF_TWO_ALIGNMENT=y
+      - arch:riscv:CONFIG_HW_STACK_PROTECTION=y
+      - arch:riscv:CONFIG_DYNAMIC_THREAD_STACK_SIZE=1024
+      - arch:riscv:CONFIG_PMP_STACK_GUARD_MIN_SIZE=512
