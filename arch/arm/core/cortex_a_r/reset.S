@@ -264,6 +264,28 @@ EL1_Reset_Handler:
 
     ldr r0, =arm_cpu_boot_params
 
+#if CONFIG_MP_MAX_NUM_CPUS > 1 && DT_HAS_CHOSEN(zephyr_primary_cpu)
+    /*
+     * The CPU of the zephyr,primary-cpu chosen node is the primary core. Any
+     * other core waits for arch_cpu_start() to publish its MPID in
+     * arm_cpu_boot_params.mpid, which is in .noinit: set it to -1 before the
+     * first read, so that whatever the RAM holds is not taken as a start
+     * request. arch_cpu_start() keeps publishing until the core answers, in
+     * case this store lands after its own.
+     *
+     * The property replaces the voting lock below: every core branches out of
+     * this block, so none of them runs it.
+     */
+    get_cpu_id r1
+    ldr r3, =DT_REG_ADDR(DT_CHOSEN(zephyr_primary_cpu))
+    cmp r1, r3
+    beq _primary_core
+    mvn r3, #0
+    str r3, [r0, #BOOT_PARAM_MPID_OFFSET]
+    dsb
+    b _secondary_core
+#endif
+
 #if CONFIG_MP_MAX_NUM_CPUS > 1
     /*
      * This code uses voting locks, like arch/arm64/core/reset.S, to determine primary CPU.
