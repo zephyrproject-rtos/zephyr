@@ -352,8 +352,13 @@ void lv_mem_monitor_core(lv_mem_monitor_t *mon_p)
 
 #if CONFIG_LV_Z_MEM_POOL_SYS_HEAP
 	struct sys_memory_stats stats;
+	int ret;
 
-	lvgl_heap_stats(&stats);
+	ret = lvgl_heap_stats(&stats);
+	if (ret < 0) {
+		LOG_WRN("Failed to get lvgl heap stats (%d)", ret);
+		return;
+	}
 	mon_p->used_pct =
 		(stats.allocated_bytes * 100) / (stats.allocated_bytes + stats.free_bytes);
 	mon_p->max_used = stats.max_allocated_bytes;

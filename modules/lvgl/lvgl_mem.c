@@ -73,17 +73,23 @@ void lvgl_print_heap_info(bool dump_chunks)
 	k_spin_unlock(&lvgl_heap_lock, key);
 }
 
-void lvgl_heap_stats(struct sys_memory_stats *stats)
+int lvgl_heap_stats(struct sys_memory_stats *stats)
 {
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	int ret;
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&lvgl_heap_lock);
-	sys_heap_runtime_stats_get(&lvgl_heap, stats);
+	ret = sys_heap_runtime_stats_get(&lvgl_heap, stats);
 	k_spin_unlock(&lvgl_heap_lock, key);
+	return ret;
 #else
 	ARG_UNUSED(stats);
 	LOG_WRN_ONCE("Enable CONFIG_SYS_HEAP_RUNTIME_STATS to use the mem monitor feature");
+	return -ENOTSUP;
+#endif /* CONFIG_SYS_HEAP_RUNTIME_STATS */
+}
+
 #endif /* CONFIG_SYS_HEAP_RUNTIME_STATS */
 }
 
