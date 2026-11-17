@@ -5,6 +5,7 @@
 '''Runner for flashing with dfu-util.'''
 
 import argparse
+import subprocess
 import sys
 import time
 from collections import namedtuple
@@ -156,9 +157,12 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
             addr_opts = hex(dcfg.address) + ':' + dcfg.options
             cmd.extend(['-s', addr_opts])
         cmd.extend(['-a', self.alt, '-D', self.img])
-        self.check_call(cmd)
 
         leaves_dfuse = self.dfuse and 'leave' in dcfg.options.split(':')
+        if leaves_dfuse:
+            self._download_and_leave(cmd)
+        else:
+            self.check_call(cmd)
 
         if self.detach and not leaves_dfuse:
             self.check_call(list(self.cmd) + ['-a', self.alt, '-e'])
@@ -173,3 +177,23 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
             self.reset = False
         if self.reset and not self.stay_in_dfu:
             print('Now reset your board again to switch back to runtime mode.')
+
+    def _download_and_leave(self, cmd):
+        # The device restarts on the DfuSe leave request, often before it
+        # answers the status request that follows it. dfu-util then fails
+        # although the download completed.
+        try:
+            output = self.check_output(cmd, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as err:
+            output = err.output or b''
+            self._print_output(output)
+            if b'Submitting leave request' not in output:
+                raise
+            self.logger.warning('dfu-util failed after the leave request; the download completed')
+            return
+        self._print_output(output)
+
+    @staticmethod
+    def _print_output(output):
+        sys.stdout.write(output.decode(sys.getdefaultencoding(), errors='replace'))
+        sys.stdout.flush()
