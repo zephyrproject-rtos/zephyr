@@ -433,8 +433,8 @@ static int espi_xec_write_lpc_request(const struct device *dev,
 	return 0;
 }
 
-static int espi_xec_send_vwire(const struct device *dev,
-			       enum espi_vwire_signal signal, uint8_t level)
+static int espi_xec_vw_send(const struct device *dev, enum espi_vwire_signal signal,
+			    uint8_t level, uint32_t timeout_us)
 {
 	struct xec_signal signal_info = vw_tbl[signal];
 	uint8_t xec_id = signal_info.xec_reg_idx;
@@ -458,16 +458,32 @@ static int espi_xec_send_vwire(const struct device *dev,
 
 		*(p8 + (uintptr_t) src_id) = level;
 
+		if (timeout_us == 0U) {
+			return 0;
+		}
+
 		/* Ensure eSPI virtual wire packet is transmitted
 		 * There is no interrupt, so need to poll register
 		 */
-		if (!WAIT_FOR(reg->SRC_CHG == 0U, ESPI_XEC_VWIRE_SEND_TIMEOUT, k_busy_wait(1))) {
+		if (!WAIT_FOR(reg->SRC_CHG == 0U, timeout_us, k_busy_wait(1))) {
 			LOG_ERR("VW %d send timeout", signal);
 			return -ETIMEDOUT;
 		}
 	}
 
 	return 0;
+}
+
+static int espi_xec_send_vwire(const struct device *dev,
+			       enum espi_vwire_signal signal, uint8_t level)
+{
+	return espi_xec_vw_send(dev, signal, level, ESPI_XEC_VWIRE_SEND_TIMEOUT);
+}
+
+static int espi_xec_send_vwire_timeout(const struct device *dev, enum espi_vwire_signal signal,
+				       uint8_t level, k_timeout_t timeout)
+{
+	return espi_xec_vw_send(dev, signal, level, espi_timeout_to_us(timeout));
 }
 
 static int espi_xec_receive_vwire(const struct device *dev,
@@ -1433,6 +1449,7 @@ static DEVICE_API(espi, espi_xec_driver_api) = {
 	.config = espi_xec_configure,
 	.get_channel_status = espi_xec_channel_ready,
 	.send_vwire = espi_xec_send_vwire,
+	.send_vwire_timeout = espi_xec_send_vwire_timeout,
 	.receive_vwire = espi_xec_receive_vwire,
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 	.send_oob = espi_xec_send_oob,
