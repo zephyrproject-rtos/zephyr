@@ -35,7 +35,7 @@
  *
  * An SPSC queue may be declared on a stack or statically and work as intended so
  * long as its lifetime outlives any usage. Static declarations should be the
- * preferred method as stack . It is meant to be a shared object between two
+ * preferred method. It is meant to be a shared object between two
  * execution contexts (ISR and a thread for example)
  *
  * An SPSC queue is safe to produce or consume in an ISR with O(1) push/pull.
@@ -57,19 +57,19 @@
  * @warning Not to be manipulated without the macros!
  */
 struct spsc {
-	/* private value only the producer thread should mutate */
+	/** Elements acquired and not produced yet, only written by the producer. */
 	unsigned long acquire;
 
-	/* private value only the consumer thread should mutate */
+	/** Elements consumed and not released yet, only written by the consumer. */
 	unsigned long consume;
 
-	/* producer mutable, consumer readable */
+	/** Free-running count of produced elements, written by the producer. */
 	atomic_t in;
 
-	/* consumer mutable, producer readable */
+	/** Free-running count of released elements, written by the consumer. */
 	atomic_t out;
 
-	/* mask used to automatically wrap values */
+	/** Mask used to wrap the counts to the queue size. */
 	const unsigned long mask;
 };
 
