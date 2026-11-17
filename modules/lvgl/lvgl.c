@@ -352,6 +352,7 @@ void lv_mem_monitor_core(lv_mem_monitor_t *mon_p)
 
 #if CONFIG_LV_Z_MEM_POOL_SYS_HEAP
 	struct sys_memory_stats stats;
+	size_t biggest_free_block;
 	int ret;
 
 	ret = lvgl_heap_stats(&stats);
@@ -359,9 +360,18 @@ void lv_mem_monitor_core(lv_mem_monitor_t *mon_p)
 		LOG_WRN("Failed to get lvgl heap stats (%d)", ret);
 		return;
 	}
+	mon_p->total_size = stats.allocated_bytes + stats.free_bytes;
 	mon_p->used_pct =
 		(stats.allocated_bytes * 100) / (stats.allocated_bytes + stats.free_bytes);
 	mon_p->max_used = stats.max_allocated_bytes;
+	mon_p->free_size = stats.free_bytes;
+	ret = lvgl_heap_get_largest_free_block(&biggest_free_block);
+	if (ret == 0) {
+		mon_p->free_biggest_size = biggest_free_block;
+		mon_p->frag_pct = stats.free_bytes
+					  ? 100 - ((biggest_free_block * 100) / stats.free_bytes)
+					  : 0;
+	}
 #else
 	LOG_WRN_ONCE("Memory statistics only supported for CONFIG_LV_Z_MEM_POOL_SYS_HEAP");
 #endif /* CONFIG_LV_Z_MEM_POOL_SYS_HEAP */
