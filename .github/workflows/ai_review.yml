@@ -14,7 +14,12 @@ permissions:
   actions: read     # ci_failure_logs: failed job logs; rereview=delta: the earlier run's artifact
 
 concurrency:
-  group: ai-review-${{ github.event.pull_request.number }}
+  # An event that starts no review, a label other than ai-review (see the job's condition), gets a
+  # group of its own: in the review's group it would cancel a review that is running.
+  group: >-
+    ai-review-${{ github.event.pull_request.number }}-${{
+    github.event.action == 'labeled' && github.event.label.name != 'ai-review'
+    && 'other-label' || 'review' }}
   cancel-in-progress: true
 
 jobs:
