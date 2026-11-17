@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Full duplex on a single I2S node, used with FILE_SUFFIX=fd: I2S3 transmits
+ * and receives with I2S_DIR_BOTH. Wiring:
+ *   PC12 (I2S3_SDO) -> PC11 (I2S3_SDI)
+ * The clock and word select pins (PC10, PA15) only stay inside the loopback
+ * and can be left unconnected.
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s3;
+	};
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&i2s3 {
+	pinctrl-0 = <&i2s3_ck_pc10 &i2s3_ws_pa15 &i2s3_sdo_pc12 &i2s3_sdi_pc11>;
+	pinctrl-names = "default";
+	status = "okay";
+};
