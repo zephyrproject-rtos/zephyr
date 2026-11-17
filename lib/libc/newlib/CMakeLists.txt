@@ -49,3 +49,11 @@ if(CONFIG_NEWLIB_LIBC_NANO)
     -specs=nano.specs
     )
 endif()
+
+if(CONFIG_POSIX_DEVICE_IO)
+  zephyr_compile_definitions(-D_READ_WRITE_RETURN_TYPE=ssize_t)
+endif()
+
+if(CONFIG_POSIX_THREADS)
+  zephyr_compile_definitions(_UNIX98_THREAD_MUTEX_ATTRIBUTES)
+endif()

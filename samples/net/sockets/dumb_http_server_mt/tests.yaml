@@ -11,6 +11,4 @@ common:
     - socket
     - http
 tests:
-  sample.net.sockets.dumb_http_server_mt:
-    extra_configs:
-      - CONFIG_POSIX_API=y
+  sample.net.sockets.dumb_http_server_mt: {}

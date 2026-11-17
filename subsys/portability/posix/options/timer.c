@@ -16,7 +16,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/posix/pthread.h>
+#include <pthread.h>
 
 #define ACTIVE 1
 #define NOT_ACTIVE 0
@@ -29,7 +29,9 @@ struct timer_obj {
 	struct k_timer ztimer;
 	struct sigevent evp;
 	struct k_sem sem_cond;
+#ifdef _POSIX_THREADS
 	pthread_t thread;
+#endif
 	struct timespec interval;	/* Reload value */
 	uint32_t reload;			/* Reload value in ms */
 	uint32_t status;
@@ -63,6 +65,7 @@ static void zephyr_timer_wrapper(struct k_timer *ztimer)
 	(timer->evp.sigev_notify_function)(timer->evp.sigev_value);
 }
 
+#ifdef _POSIX_THREADS
 static void *zephyr_thread_wrapper(void *arg)
 {
 	int ret;
@@ -104,6 +107,7 @@ static void zephyr_timer_interrupt(struct k_timer *ztimer)
 	timer = (struct timer_obj *)ztimer;
 	k_sem_give(&timer->sem_cond);
 }
+#endif /* _POSIX_THREADS */
 
 /**
  * @brief Create a per-process timer.
@@ -116,7 +120,6 @@ static void zephyr_timer_interrupt(struct k_timer *ztimer)
 int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 {
 	int ret = 0;
-	int detachstate;
 	struct timer_obj *timer;
 	const k_timeout_t alloc_timeout = K_MSEC(CONFIG_TIMER_CREATE_WAIT);
 
@@ -144,7 +147,10 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 		k_timer_init(&timer->ztimer, zephyr_timer_wrapper, NULL);
 		break;
 	case SIGEV_THREAD:
+#ifdef _POSIX_THREADS
 		if (evp->sigev_notify_attributes != NULL) {
+			int detachstate;
+
 			ret = pthread_attr_getdetachstate(evp->sigev_notify_attributes,
 							  &detachstate);
 			if (ret != 0) {
@@ -185,6 +191,11 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 
 		k_timer_init(&timer->ztimer, zephyr_timer_interrupt, NULL);
 		break;
+#else
+		ret = -1;
+		errno = ENOTSUP;
+		goto free_timer;
+#endif /* _POSIX_THREADS */
 	default:
 		ret = -1;
 		errno = EINVAL;
@@ -329,9 +340,11 @@ int timer_delete(timer_t timerid)
 		k_timer_stop(&timer->ztimer);
 	}
 
+#ifdef _POSIX_THREADS
 	if (timer->evp.sigev_notify == SIGEV_THREAD) {
 		(void)pthread_cancel(timer->thread);
 	}
+#endif
 
 	k_mem_slab_free(&posix_timer_slab, (void *)timer);
 

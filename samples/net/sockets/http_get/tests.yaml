@@ -16,8 +16,6 @@ tests:
     platform_exclude:
       - cc3220sf_launchxl
       - cc3235sf_launchxl
-    extra_configs:
-      - CONFIG_POSIX_API=y
   sample.net.sockets.http_get.offload.simplelink:
     platform_allow: cc3220sf_launchxl
     harness: net
