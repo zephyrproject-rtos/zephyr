@@ -422,7 +422,11 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 #else
 		stack_data->priv = (uint8_t *)dyn->data;
 #endif /* CONFIG_ARM_MPU || CONFIG_ARC_MPU || CONFIG_RISCV_PMP */
-		stack_data->size = adjusted_size;
+		/* Like for static stacks, this is the size of the stack object
+		 * that user mode threads may use, not of the whole allocation,
+		 * which also holds the privileged stack and stack_data.
+		 */
+		stack_data->size = K_THREAD_STACK_LEN(size);
 		dyn->kobj.data.stack_data = stack_data;
 		dyn->kobj.name = dyn->data;
 #else
