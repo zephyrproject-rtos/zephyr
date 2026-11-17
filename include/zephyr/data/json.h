@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief JSON encoding and decoding.
+ * @ingroup json
+ */
+
 #ifndef ZEPHYR_INCLUDE_DATA_JSON_H_
 #define ZEPHYR_INCLUDE_DATA_JSON_H_
 
@@ -19,52 +25,114 @@ extern "C" {
 
 /**
  * @defgroup json JSON
+ * @brief Map C structures to JSON documents with static descriptors.
  * @since 1.10
  * @version 1.0.0
  * @ingroup utilities
  * @{
  */
 
+/**
+ * @brief JSON token types.
+ *
+ * Types of the tokens returned by the parser. In descriptors, the type also selects the C type
+ * of the struct member and how it maps to a JSON value.
+ */
 enum json_tokens {
 	/* Before changing this enum, ensure that its maximum
 	 * value is still within 7 bits. See comment next to the
 	 * declaration of `type` in struct json_obj_descr.
 	 */
 
+	/** No token. */
 	JSON_TOK_NONE = '_',
+	/** Start of an object. In descriptors: nested object, see JSON_OBJ_DESCR_OBJECT(). */
 	JSON_TOK_OBJECT_START = '{',
+	/** End of an object. */
 	JSON_TOK_OBJECT_END = '}',
+	/** Start of an array. In descriptors: array, see JSON_OBJ_DESCR_ARRAY(). */
 	JSON_TOK_ARRAY_START = '[',
+	/** End of an array. */
 	JSON_TOK_ARRAY_END = ']',
+	/**
+	 * String. In descriptors: @c char * member. Parsing points it to the string in the input
+	 * buffer, NUL-terminated in place, with escape sequences left undecoded.
+	 */
 	JSON_TOK_STRING = '"',
+	/**
+	 * String in a @c char array member. Parsing decodes escape sequences except
+	 * @c \\uXXXX, which is kept as written, and fails if the string as written in the input
+	 * and a NUL terminator do not fit.
+	 */
 	JSON_TOK_STRING_BUF = 's',
+	/** Name separator. */
 	JSON_TOK_COLON = ':',
+	/** Value separator. */
 	JSON_TOK_COMMA = ',',
+	/** Number. In descriptors: @c int32_t member. */
 	JSON_TOK_NUMBER = '0',
+	/** Number kept as text in a struct json_obj_token member, encoded verbatim. */
 	JSON_TOK_FLOAT = '1',
+	/**
+	 * String kept as text in a struct json_obj_token member, excluding the quotes. Encoded
+	 * between quotes, without escaping.
+	 */
 	JSON_TOK_OPAQUE = '2',
+	/**
+	 * Array of objects kept as text in a struct json_obj_token member, brackets included, to
+	 * be parsed later with json_arr_separate_object_parse_init().
+	 */
 	JSON_TOK_OBJ_ARRAY = '3',
+	/**
+	 * JSON text in a @c char * member, encoded verbatim. When parsing a mixed array, the
+	 * member points into the input buffer: to the text of an object or array value, or to
+	 * the contents of a string value without its quotes.
+	 */
 	JSON_TOK_ENCODED_OBJ = '4',
+	/** Number in an @c int64_t member. */
 	JSON_TOK_INT64 = '5',
+	/** Number in a @c uint64_t member. */
 	JSON_TOK_UINT64 = '6',
+	/** Number in a @c float member. */
 	JSON_TOK_FLOAT_FP = '7',
+	/** Number in a @c double member. */
 	JSON_TOK_DOUBLE_FP = '8',
+	/** Number in a signed integer member of 1, 2, 4 or 8 bytes. */
 	JSON_TOK_INT = 'i',
+	/** Number in an unsigned integer member of 1, 2, 4 or 8 bytes. */
 	JSON_TOK_UINT = 'u',
+	/** Literal @c true. In descriptors: @c bool member, same as @ref JSON_TOK_FALSE. */
 	JSON_TOK_TRUE = 't',
+	/** Literal @c false. In descriptors: @c bool member, same as @ref JSON_TOK_TRUE. */
 	JSON_TOK_FALSE = 'f',
+	/** Nested mixed array, see JSON_MIXED_ARR_DESCR_MIXED_ARRAY(). */
 	JSON_TOK_MIXED_ARRAY = 'm',
+	/**
+	 * Literal @c null. In descriptors: encoded as @c null, and parsing a mixed array zeroes
+	 * the member.
+	 */
 	JSON_TOK_NULL = 'n',
+	/** Malformed input. */
 	JSON_TOK_ERROR = '!',
+	/** End of input. */
 	JSON_TOK_EOF = '\0',
 };
 
+/**
+ * @brief Token returned by the parser.
+ *
+ * Points into the input buffer, which must stay valid while the token is used.
+ */
 struct json_token {
+	/** Token type. */
 	enum json_tokens type;
+	/** First character of the token. For a string, the character after the opening quote. */
 	char *start;
+	/** One past the last character of the token. For a string, the closing quote. */
 	char *end;
 };
 
+/** @cond INTERNAL_HIDDEN */
 struct json_lexer {
 	void *(*state)(struct json_lexer *lex);
 	char *start;
@@ -72,9 +140,18 @@ struct json_lexer {
 	char *end;
 	struct json_token tok;
 };
+/** @endcond */
 
+/**
+ * @brief Parser state.
+ *
+ * Storage for the parsers that process a document one element at a time, such as
+ * json_arr_separate_parse_object() and json_obj_next_key_value(). The members are internal.
+ */
 struct json_obj {
+	/** @cond INTERNAL_HIDDEN */
 	struct json_lexer lex;
+	/** @endcond */
 };
 
 /**
@@ -93,13 +170,26 @@ struct json_obj_key_value {
 	struct json_token value;
 };
 
+/**
+ * @brief Text of a JSON value.
+ *
+ * Member type for values described with @ref JSON_TOK_FLOAT, @ref JSON_TOK_OPAQUE or
+ * @ref JSON_TOK_OBJ_ARRAY.
+ */
 struct json_obj_token {
+	/** Start of the text, not NUL-terminated. Points into the input buffer when parsing. */
 	char *start;
+	/** Length of the text in bytes. */
 	size_t length;
 };
 
-
+/**
+ * @brief Descriptor of a struct member mapped to a JSON value.
+ *
+ * Declare descriptors with the JSON_OBJ_DESCR_* macros. The members are internal.
+ */
 struct json_obj_descr {
+	/** @cond INTERNAL_HIDDEN */
 	const char *field_name;
 
 	/* Alignment can be 1, 2, 4, or 8.  The macros to create
@@ -136,6 +226,7 @@ struct json_obj_descr {
 			size_t size;
 		} field;
 	};
+	/** @endcond */
 };
 
 /**
@@ -913,8 +1004,11 @@ int json_arr_encode(const struct json_obj_descr *descr, const void *val,
  *
  * @note This structure and its associated macros are intended for use with
  *       the mixed array parsing and encoding APIs (see json_mixed_arr_parse()).
+ *
+ * Declare descriptors with the JSON_MIXED_ARR_DESCR_* macros. The members are internal.
  */
 struct json_mixed_arr_descr {
+	/** @cond INTERNAL_HIDDEN */
 	uint32_t type : 7;
 	size_t count_offset;
 
@@ -942,6 +1036,7 @@ struct json_mixed_arr_descr {
 			size_t offset;
 		} mixed_array;
 	};
+	/** @endcond */
 };
 
 /**
