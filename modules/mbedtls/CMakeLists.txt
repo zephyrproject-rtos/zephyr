@@ -40,15 +40,13 @@ if(CONFIG_MBEDTLS)
     set(TF_PSA_CRYPTO_DIR ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR})
     set(TF_PSA_CRYPTO_DISPATCH_DIR ${CONFIG_TF_PSA_CRYPTO_DISPATCH_DIR})
 
-    set(MLDSA_NATIVE_DIR ${ZEPHYR_MLDSA_NATIVE_MODULE_DIR})
-
     # Add Mbed TLS (TF-PSA-Crypto is automatically included from there).
     # This creates 3 libraries: mbedtls, mbedx509 and tfpsacrypto.
     add_subdirectory(${ZEPHYR_MBEDTLS_MODULE_DIR} mbedtls)
 
     set(libs mbedtls mbedx509)
     if(CONFIG_TF_PSA_CRYPTO_BUILTIN)
-      list(APPEND libs tfpsacrypto builtin p256-m everest pqcp extras platform utilities)
+      list(APPEND libs tfpsacrypto builtin p256-m everest extras platform utilities)
     endif()
     foreach(lib ${libs})
       # Mbed TLS libraries are normal CMake libraries.
