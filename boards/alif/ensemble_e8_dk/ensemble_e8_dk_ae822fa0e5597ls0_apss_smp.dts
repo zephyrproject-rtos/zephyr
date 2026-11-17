@@ -1,0 +1,6 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "ensemble_e8_dk_ae822fa0e5597ls0_apss.dts"
