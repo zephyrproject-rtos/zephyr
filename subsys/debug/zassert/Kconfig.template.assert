@@ -18,7 +18,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-choice
+choice "ASSERT_MODULE_$(module)_LEVEL_CHOICE"
 	prompt "Assertion level for $(module-str)"
 	default ASSERT_MODULE_$(module)_LEVEL_VERBOSE
 	depends on ASSERT
