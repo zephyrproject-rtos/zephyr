@@ -37,6 +37,12 @@ class SBOMConfig:
     # should also add an SPDX document for the SDK?
     include_sdk: bool = False
 
+    # organization credited as the SBOM creator instead of The Zephyr Project,
+    # and its contact details
+    creator_name: str = ""
+    creator_email: str = ""
+    creator_url: str = ""
+
 
 # create Cmake file-based API directories and query file
 # Arguments:
@@ -91,6 +97,9 @@ def make_spdx(cfg):
     walker_cfg.build_dir = cfg.build_dir
     walker_cfg.analyze_includes = cfg.analyze_includes
     walker_cfg.include_sdk = cfg.include_sdk
+    walker_cfg.creator_name = cfg.creator_name
+    walker_cfg.creator_email = cfg.creator_email
+    walker_cfg.creator_url = cfg.creator_url
 
     # make and run the walker
     w = Walker(walker_cfg)

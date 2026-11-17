@@ -61,6 +61,12 @@ class ZephyrSpdx(WestCommand):
         parser.add_argument(
             '--include-sdk', action="store_true", help="also generate SPDX document for SDK"
         )
+        parser.add_argument(
+            '--creator-name',
+            help="organization credited as the SBOM creator (default: The Zephyr Project)",
+        )
+        parser.add_argument('--creator-email', help="contact e-mail address of the SBOM creator")
+        parser.add_argument('--creator-url', help="contact URL of the SBOM creator")
 
         return parser
 
@@ -136,6 +142,13 @@ class ZephyrSpdx(WestCommand):
             cfg.analyze_includes = True
         if args.include_sdk:
             cfg.include_sdk = True
+        if (args.creator_email or args.creator_url) and not args.creator_name:
+            self.die("--creator-email and --creator-url require --creator-name")
+        if args.creator_url and not args.creator_url.startswith(("http://", "https://")):
+            self.die(f"--creator-url must be an http(s) URL: {args.creator_url}")
+        cfg.creator_name = args.creator_name or ""
+        cfg.creator_email = args.creator_email or ""
+        cfg.creator_url = args.creator_url or ""
 
         # make sure SPDX directory exists, or create it if it doesn't
         if os.path.exists(cfg.spdx_dir):

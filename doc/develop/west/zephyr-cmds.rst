@@ -156,9 +156,11 @@ own prefix, which the default prefix guarantees. An element defined in one docum
 from another, such as a source file of the ``zephyr`` document used by the build, is imported
 through an ``ExternalMap`` rather than copied.
 
-Every document names The Zephyr Project as its author, and the generating tool together with the
-Zephyr version it comes from (``Creator`` lines in SPDX 2.x, ``createdBy`` and ``createdUsing`` in
-SPDX 3).
+Every document names its author, The Zephyr Project unless ``--creator-name`` says otherwise, and
+the generating tool together with the Zephyr version it comes from (``Creator`` lines in SPDX 2.x,
+``createdBy`` and ``createdUsing`` in SPDX 3). The author's contact details, given with
+``--creator-email`` and ``--creator-url``, are recorded as external identifiers of the author in
+SPDX 3; SPDX 2.x has room for the e-mail address only.
 
 Every file in the bill-of-materials is scanned so that its hashes (SHA512, SHA256 and SHA1) can be
 recorded, together with its license and copyright.
@@ -304,6 +306,12 @@ Command-line options
 - ``--include-sdk``: with ``--analyze-includes``, also create a fourth SPDX
   document, :file:`sdk.spdx` (or :file:`sdk.jsonld`), which lists header files
   included from the SDK.
+
+- ``--creator-name NAME``: the organization named as the author of the SBOM documents instead of
+  The Zephyr Project, typically the manufacturer of the product the build is part of.
+
+- ``--creator-email EMAIL`` and ``--creator-url URL``: contact details of that organization. Both
+  require ``--creator-name``.
 
 .. warning::
 
