@@ -624,7 +624,7 @@ static void uart_emul_async_tx_handler(struct k_work *work)
 
 	uart_emul_tx_data_ready(dev);
 
-	if ((config->loopback && written) || !written) {
+	if (config->loopback) {
 		/* When using the loopback fixture, just allow to drop all bytes in the ring buffer
 		 * not consumed by tx_data_ready_cb().
 		 */
@@ -632,25 +632,12 @@ static void uart_emul_async_tx_handler(struct k_work *work)
 		uint32_t flushed = uart_emul_flush_tx_data(dev);
 
 		if (flushed) {
-			if (written) {
-				LOG_DBG("Flushed %" PRIu32 " unused bytes from tx buffer", flushed);
-			} else {
-				LOG_WRN("Flushed %" PRIu32
-					" unused bytes from tx buffer to break out of infinite "
-					"loop! Consume or flush the bytes from the tx ring buffer "
-					"in your test case to prevent this!",
-					flushed);
-			}
+			LOG_DBG("Flushed %" PRIu32 " unused bytes from tx buffer", flushed);
 		}
 	}
 
 	if (!tx_done) {
-		/* We are not done yet, yield back into workqueue.
-		 *
-		 * This would basically be an infinite loop when tx_data_ready_cb() does not consume
-		 * the bytes in the tx ring buffer.
-		 */
-		k_work_submit_to_queue(&uart_emul_work_q, &data->tx_work);
+		/* Resumed when uart_emul_get_tx_data() or uart_emul_flush_tx_data() makes room */
 		return;
 	}
 
@@ -949,10 +936,14 @@ uint32_t uart_emul_get_tx_data(const struct device *dev, uint8_t *data, size_t s
 	k_spinlock_key_t key;
 	uint32_t count;
 	__unused bool irq = false;
+	__unused bool tx_pending = false;
 
 	key = k_spin_lock(&drv_data->tx_lock);
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (
 		irq = drv_data->tx_irq_en && (ring_buf_space_get(drv_data->tx_rb) == 0U);
+	))
+	IF_ENABLED(CONFIG_UART_ASYNC_API, (
+		tx_pending = drv_data->tx_buf != NULL;
 	))
 	count = ring_buf_get(drv_data->tx_rb, data, size);
 	k_spin_unlock(&drv_data->tx_lock, key);
@@ -961,6 +952,11 @@ uint32_t uart_emul_get_tx_data(const struct device *dev, uint8_t *data, size_t s
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (
 		if (irq && (count > 0U)) {
 			(void)k_work_submit_to_queue(&uart_emul_work_q, &drv_data->irq_work);
+		}
+	))
+	IF_ENABLED(CONFIG_UART_ASYNC_API, (
+		if (tx_pending && (count > 0U)) {
+			(void)k_work_submit_to_queue(&uart_emul_work_q, &drv_data->tx_work);
 		}
 	))
 
@@ -985,11 +981,16 @@ uint32_t uart_emul_flush_tx_data(const struct device *dev)
 	struct uart_emul_data *drv_data = dev->data;
 	k_spinlock_key_t key;
 	uint32_t count;
+
 	__unused bool irq = false;
+	__unused bool tx_pending = false;
 
 	key = k_spin_lock(&drv_data->tx_lock);
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (
 		irq = drv_data->tx_irq_en && (ring_buf_space_get(drv_data->tx_rb) == 0U);
+	))
+	IF_ENABLED(CONFIG_UART_ASYNC_API, (
+		tx_pending = drv_data->tx_buf != NULL;
 	))
 	count = ring_buf_size_get(drv_data->tx_rb);
 	ring_buf_reset(drv_data->tx_rb);
@@ -999,6 +1000,11 @@ uint32_t uart_emul_flush_tx_data(const struct device *dev)
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (
 		if (irq && (count > 0U)) {
 			(void)k_work_submit_to_queue(&uart_emul_work_q, &drv_data->irq_work);
+		}
+	))
+	IF_ENABLED(CONFIG_UART_ASYNC_API, (
+		if (tx_pending && (count > 0U)) {
+			(void)k_work_submit_to_queue(&uart_emul_work_q, &drv_data->tx_work);
 		}
 	))
 

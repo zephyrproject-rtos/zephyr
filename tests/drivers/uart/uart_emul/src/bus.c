@@ -372,6 +372,38 @@ static void uart_emul_callback_rx_timeout(const struct device *dev, struct uart_
 	k_event_post(&fixture->async_events, ((uint32_t)1 << evt->type));
 }
 
+static void uart_emul_callback_tx_done(const struct device *dev, struct uart_event *evt,
+				       void *user_data)
+{
+	ARG_UNUSED(dev);
+
+	if (evt->type == UART_TX_DONE) {
+		k_sem_give(user_data);
+	}
+}
+
+/* With loopback, a transfer completes even when polled output filled the TX FIFO */
+ZTEST(uart_emul, test_async_tx_loopback_fifo_full)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(euart_loopback));
+	static const uint8_t tx_data[32];
+	struct k_sem tx_done;
+
+	k_sem_init(&tx_done, 0, 1);
+
+	for (size_t i = 0; i < DT_PROP(DT_NODELABEL(euart_loopback), tx_fifo_size); i++) {
+		uart_poll_out(dev, 'p');
+	}
+
+	zassert_ok(uart_callback_set(dev, uart_emul_callback_tx_done, &tx_done));
+	zassert_ok(uart_tx(dev, tx_data, sizeof(tx_data), SYS_FOREVER_US));
+	zassert_ok(k_sem_take(&tx_done, K_SECONDS(1)), "UART_TX_DONE expected");
+
+	uart_emul_flush_rx_data(dev);
+	uart_emul_flush_tx_data(dev);
+	zassert_ok(uart_callback_set(dev, NULL, NULL));
+}
+
 ZTEST_F(uart_emul, test_async_rx_buffer_release)
 {
 	zassert_equal(uart_callback_set(fixture->dev, uart_emul_callback_rx_timeout, fixture), 0);

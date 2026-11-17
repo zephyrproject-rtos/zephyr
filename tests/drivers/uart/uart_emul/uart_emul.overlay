@@ -29,4 +29,11 @@
 			status = "okay";
 		};
 	};
+
+	euart_loopback: uart-emul-loopback {
+		compatible = "zephyr,uart-emul";
+		tx-fifo-size = <16>;
+		loopback;
+		status = "okay";
+	};
 };
