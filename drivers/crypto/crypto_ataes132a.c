@@ -39,6 +39,43 @@ static void ataes132a_init_states(void)
 	}
 }
 
+/*
+ * Read a response into the command buffer and check it. The first byte is
+ * the response length, which covers itself, the payload and the two CRC
+ * bytes, so it must lie within [3, sizeof(command_buffer)].
+ *
+ * Returns 0 on success, -EINVAL on an invalid length and -EAGAIN on a CRC
+ * mismatch.
+ */
+static int ataes132a_read_response(const struct device *dev, uint8_t *count)
+{
+	struct ataes132a_device_data *data = dev->data;
+	const struct ataes132a_device_config *cfg = dev->config;
+	uint8_t crc[2];
+
+	burst_read_i2c(&cfg->i2c, ATAES_COMMAND_MEM_ADDR, data->command_buffer,
+		       sizeof(data->command_buffer));
+
+	*count = data->command_buffer[0];
+	if (*count < 3U || *count > sizeof(data->command_buffer)) {
+		LOG_ERR("invalid packet received: count=%d", *count);
+		return -EINVAL;
+	}
+
+	ataes132a_atmel_crc(data->command_buffer, *count - 2U, crc);
+
+	LOG_DBG("COMMAND CRC %x%x", data->command_buffer[*count - 2U],
+		data->command_buffer[*count - 1U]);
+	LOG_DBG("CALCULATED CRC %x%x", crc[0], crc[1]);
+
+	if (crc[0] != data->command_buffer[*count - 2U] ||
+	    crc[1] != data->command_buffer[*count - 1U]) {
+		return -EAGAIN;
+	}
+
+	return 0;
+}
+
 static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 				  uint8_t mode, uint8_t *params,
 				  uint8_t nparams, uint8_t *response,
@@ -50,7 +87,7 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 	uint8_t count;
 	uint8_t status;
 	uint8_t crc[2];
-	int i, i2c_return;
+	int i, i2c_return, ret;
 
 	/*
 	 * CID 487763: Validate nparams against both the 8-bit overflow
@@ -111,52 +148,22 @@ static int ataes132a_send_command(const struct device *dev, uint8_t opcode,
 		return -EINVAL;
 	}
 
-	/* Read the response */
-	burst_read_i2c(&cfg->i2c, ATAES_COMMAND_MEM_ADDR, data->command_buffer, 64);
+	/* Read the response, re-reading it up to MAX_RETRIES times on a CRC error */
+	ret = ataes132a_read_response(dev, &count);
+	while (ret == -EAGAIN && retry_count < MAX_RETRIES) {
+		retry_count++;
+		LOG_DBG("COMMAND RETRY %d", retry_count);
+		ret = ataes132a_read_response(dev, &count);
+	}
 
-	count = data->command_buffer[0];
-	/* Validate count: must be at least 3 (1 for count, 2 for CRC)
-	 * AND must not exceed the actual buffer size to prevent memory corruption.
-	 */
-	if (count < 3 || count > sizeof(data->command_buffer)) {
-		LOG_ERR("invalid packet received: count=%d"
-			" , expects count>=3", count);
+	if (ret == -EAGAIN) {
+		LOG_ERR("response crc validation reached max retries");
 		return -EINVAL;
 	}
 
-	/* Calculate and validate response CRC */
-	ataes132a_atmel_crc(data->command_buffer, count - 2, crc);
-
-	LOG_DBG("COMMAND CRC %x%x", data->command_buffer[count - 2],
-		     data->command_buffer[count - 1]);
-	LOG_DBG("CALCULATED CRC %x%x", crc[0], crc[1]);
-
-	/* If CRC fails retry reading MAX RETRIES times */
-	while (crc[0] != data->command_buffer[count - 2] ||
-	       crc[1] != data->command_buffer[count - 1]) {
-		if (retry_count > MAX_RETRIES - 1) {
-			LOG_ERR("response crc validation rebase"
-				    " max retries");
-			return -EINVAL;
-		}
-
-		burst_read_i2c(&cfg->i2c, ATAES_COMMAND_MEM_ADDR, data->command_buffer, 64);
-
-		count = data->command_buffer[0];
-		if (count < 3) {
-			LOG_ERR("invalid packet received: count=%d"
-				" , expects count>=3", count);
-			return -EINVAL;
-		}
-		ataes132a_atmel_crc(data->command_buffer, count -  2, crc);
-		retry_count++;
-
-		LOG_DBG("COMMAND RETRY %d", retry_count);
-		LOG_DBG("COMMAND CRC %x%x",
-			    data->command_buffer[count - 2],
-			    data->command_buffer[count - 1]);
-		LOG_DBG("CALCULATED CRC %x%x", crc[0], crc[1]);
-		}
+	if (ret != 0) {
+		return ret;
+	}
 
 	if ((status & ATAES_STATUS_ERR) || data->command_buffer[1] != 0x00) {
 		LOG_ERR("command execution error %x",
