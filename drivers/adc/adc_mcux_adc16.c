@@ -404,6 +404,11 @@ static void mcux_adc16_isr(const struct device *dev)
 	if (data->channels) {
 		mcux_adc16_start_channel(dev);
 	} else {
+		/* Disable the channel before signalling completion so the
+		 * converter cannot start another conversion on the finished
+		 * frame (matches the adc_context_on_sampling_done contract).
+		 */
+		base->SC1[channel_group] = ADC_SC1_ADCH_MASK;
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 }
