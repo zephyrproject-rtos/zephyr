@@ -162,6 +162,15 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu);
  * Enhanced ATT channels. The peer may have limited resources and fewer channels
  * may be created.
  *
+ * Fewer channels are also requested when fewer can be allocated: a connection
+ * has at most @kconfig{CONFIG_BT_EATT_MAX} channels, counting those connected by
+ * either device and those still being connected. @ref bt_eatt_count gives the
+ * number of connected channels.
+ *
+ * Each request carries at most @ref BT_L2CAP_ECRED_CHAN_MAX_PER_REQ channels.
+ * If a request cannot be sent, the requests sent before it stay pending and
+ * their channels may still be connected.
+ *
  * @kconfig_dep{CONFIG_BT_EATT}
  *
  * @param conn The connection to send the request on
@@ -169,9 +178,10 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu);
  * Must be in the range 1 - @kconfig{CONFIG_BT_EATT_MAX}, inclusive.
  *
  * @return 0 in case of success or negative value in case of error.
- * @retval -EINVAL if @p num_channels is not in the allowed range or @p conn is NULL.
- * @retval -ENOMEM if less than @p num_channels are allocated.
- * @retval 0 in case of success
+ * @retval 0 Requests were sent for 1 to @p num_channels channels.
+ * @retval -EINVAL @p num_channels is not in the allowed range or @p conn is NULL.
+ * @retval -EPERM The security level of @p conn is below @ref BT_SECURITY_L2.
+ * @retval -ENOMEM No channel could be allocated, or no resources to send a request.
  */
 int bt_eatt_connect(struct bt_conn *conn, size_t num_channels);
 
