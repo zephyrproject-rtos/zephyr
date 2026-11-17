@@ -802,7 +802,8 @@ class Walker:
             # targets, not software components: they produce no build artifacts and
             # only add noise to the SBOM. Generated sources that end up in the
             # firmware are still captured via the artifact-producing targets that
-            # compile them, so nothing of value is lost by dropping them.
+            # compile them, and the sources of a UTILITY target via the targets
+            # that depend on it.
             if cfg_target.target.type == TargetType.UTILITY:
                 _logger.debug(f"  - skipping UTILITY target {cfg_target.name}")
                 continue
@@ -827,6 +828,7 @@ class Walker:
                 if bf:
                     self.collect_pending_source_files(cfg_target, component, bf)
                     self.collect_linked_libraries(cfg_target, component, bf)
+                    self.collect_utility_dependency_sources(cfg_targets, cfg_target, component, bf)
             else:
                 _logger.debug(f"  - target {cfg_target.name} has no build artifacts")
 
@@ -1064,6 +1066,43 @@ class Walker:
             _logger.debug(f"    - add pending linked library {lib_abspath}")
             self.pending_sources.append((lib_abspath, component))
             self.pending_relationships.append(("file", bf.path, "file", lib_abspath, "STATIC_LINK"))
+
+    # collect the non-generated source files of the UTILITY targets this target
+    # depends on, e.g. a blob embedded with generate_inc_file_for_target()
+    # call with:
+    #   1) all ConfigTargets from CodeModel
+    #   2) this particular ConfigTarget
+    #   3) Component for that target
+    #   4) build File for that target
+    def collect_utility_dependency_sources(self, cfg_targets, cfg_target, component, bf):
+        targets_by_id = {ct.id: ct for ct in cfg_targets}
+
+        for dep in cfg_target.target.dependencies:
+            dep_target = targets_by_id.get(dep.id)
+            if dep_target is None or dep_target.target.type != TargetType.UTILITY:
+                continue
+
+            for src in dep_target.target.sources:
+                # leave out generated files and the .rule files CMake attaches
+                # to custom commands
+                if src.is_generated or src.path.endswith(".rule"):
+                    continue
+
+                src_abspath = src.path
+                if not os.path.isabs(src_abspath):
+                    src_abspath = os.path.join(self.cm.paths_source, src_abspath)
+                src_abspath = os.path.normpath(src_abspath)
+
+                if self._is_within(src_abspath, self.cm.paths_build):
+                    continue
+                if not os.path.isfile(src_abspath):
+                    continue
+
+                _logger.debug(f"    - add pending source {src_abspath} of {dep_target.name}")
+                self.pending_sources.append((src_abspath, component))
+                self.pending_relationships.append(
+                    ("file", bf.path, "file", src_abspath, "GENERATED_FROM")
+                )
 
     # collect relationships for dependencies of this target Component
     # call with:
