@@ -303,3 +303,14 @@ family:
     - name: stm32wl30xx
     - name: stm32wl31xx
     - name: stm32wl33xx
+runners:
+  run_once:
+    # With dfu-util, only the last image of a multi-image build leaves DFU mode
+    # (DfuSe 'leave'), so that the other images can be written first.
+    '--reset':
+    - runners:
+      - dfu-util
+      run: last
+      groups:
+      - qualifiers:
+        - stm32.*
