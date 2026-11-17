@@ -69,6 +69,16 @@ static inline int z_vrfy_espi_send_vwire(const struct device *dev,
 }
 #include <zephyr/syscalls/espi_send_vwire_mrsh.c>
 
+static inline int z_vrfy_espi_send_vwire_timeout(const struct device *dev,
+						 enum espi_vwire_signal signal,
+						 uint8_t level, k_timeout_t timeout)
+{
+	K_OOPS(K_SYSCALL_DRIVER_ESPI(dev, send_vwire_timeout));
+
+	return z_impl_espi_send_vwire_timeout(dev, signal, level, timeout);
+}
+#include <zephyr/syscalls/espi_send_vwire_timeout_mrsh.c>
+
 static inline int z_vrfy_espi_receive_vwire(const struct device *dev,
 					    enum espi_vwire_signal signal,
 					    uint8_t *level)

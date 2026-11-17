@@ -18,6 +18,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
@@ -29,7 +30,7 @@ extern "C" {
  *        target hardware.
  * @defgroup espi_interface ESPI
  * @since 2.0
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -675,6 +676,14 @@ typedef int (*espi_api_send_vwire)(const struct device *dev,
 				   enum espi_vwire_signal vw,
 				   uint8_t level);
 /**
+ * @brief Send a virtual wire packet over eSPI with an explicit timeout.
+ * See espi_send_vwire_timeout() for argument description.
+ */
+typedef int (*espi_api_send_vwire_timeout)(const struct device *dev,
+					   enum espi_vwire_signal vw,
+					   uint8_t level,
+					   k_timeout_t timeout);
+/**
  * @brief Retrieve the level of a virtual wire signal.
  * See espi_receive_vwire() for argument description.
  */
@@ -766,6 +775,8 @@ __subsystem struct espi_driver_api {
 	espi_api_manage_callback manage_callback;
 	/** @driver_ops_optional @copybrief espi_interrupt_config */
 	espi_api_interrupt_configure interrupt_config;
+	/** @driver_ops_optional @copybrief espi_send_vwire_timeout */
+	espi_api_send_vwire_timeout send_vwire_timeout;
 };
 
 /** @} */
@@ -976,6 +987,8 @@ static inline int z_impl_espi_write_lpc_request(const struct device *dev,
  * This routine provides a generic interface to send a virtual wire packet
  * from target to controller.
  *
+ * To set the time the call waits for the transmission, use espi_send_vwire_timeout().
+ *
  * @param dev Pointer to the device structure for the driver instance.
  * @param signal The signal to be sent to eSPI controller.
  * @param level The level of signal requested. LOW (0) or HIGH (1).
@@ -994,6 +1007,54 @@ static inline int z_impl_espi_send_vwire(const struct device *dev,
 					 uint8_t level)
 {
 	return DEVICE_API_GET(espi, dev)->send_vwire(dev, signal, level);
+}
+
+/**
+ * @brief Sends a virtual wire packet with an explicit timeout for its transmission.
+ *
+ * Same as espi_send_vwire(), with a caller-defined bound on the time the call waits for the
+ * eSPI controller to read the virtual wire, instead of the driver default:
+ * - K_NO_WAIT: the driver updates the virtual wire and returns without waiting for the
+ *   transmission. Back-to-back updates of the same virtual wire, such as short pulses, may
+ *   not all be observed by the eSPI controller.
+ * - A finite timeout: the call returns once the virtual wire is transmitted, or with
+ *   -ETIMEDOUT when the timeout expires first. After a timeout, the new level stays set and
+ *   is transmitted when the eSPI controller reads it.
+ * - K_FOREVER is rejected, so the call never waits indefinitely for the eSPI controller.
+ *
+ * eSPI targets that do not signal the transmission with an interrupt poll for it. In ISR
+ * context the wait is a busy wait that adds to the interrupt latency.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param signal The signal to be sent to eSPI controller.
+ * @param level The level of signal requested. LOW (0) or HIGH (1).
+ * @param timeout Maximum time to wait for the transmission, or K_NO_WAIT to not wait.
+ *
+ * @retval 0 Virtual wire transmitted, or accepted when @p timeout is K_NO_WAIT.
+ * @retval -EINVAL Invalid signal, or @p timeout is K_FOREVER.
+ * @retval -ETIMEDOUT Timeout waiting for eSPI controller to process the VW.
+ * @retval -EIO General input / output error, failed to send over the bus.
+ * @retval -ENOTSUP The driver does not support an explicit timeout.
+ */
+__syscall int espi_send_vwire_timeout(const struct device *dev,
+				      enum espi_vwire_signal signal,
+				      uint8_t level, k_timeout_t timeout);
+
+static inline int z_impl_espi_send_vwire_timeout(const struct device *dev,
+						 enum espi_vwire_signal signal,
+						 uint8_t level, k_timeout_t timeout)
+{
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
+
+	if (api->send_vwire_timeout == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		return -EINVAL;
+	}
+
+	return api->send_vwire_timeout(dev, signal, level, timeout);
 }
 
 /**
