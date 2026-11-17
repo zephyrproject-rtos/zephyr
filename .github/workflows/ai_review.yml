@@ -28,7 +28,7 @@ jobs:
       - name: Check out the base branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.ref }}
+          ref: ${{ github.base_ref }}
           fetch-depth: 200
           persist-credentials: false
 
