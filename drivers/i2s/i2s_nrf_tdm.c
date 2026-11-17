@@ -361,6 +361,113 @@ static void free_rx_buffer(struct tdm_drv_data *drv_data, struct tdm_buf *buf)
 	LOG_DBG("Freed RX %p", buf->mem_block);
 }
 
+/*
+ * Duplex TX compensation, measured on nRF54H20. When TX finishes a block
+ * before RX does, the TDM transmits CONFIG.ORS on the TX slots left until the
+ * buffer switch and on the first TX slot after it, and the value of ORS when
+ * TX runs out is used for all of them.
+ *
+ * - TX starting with or before RX and ending before it: the first slot after
+ *   the switch carries ORS instead of the first sample, and with 32-bit
+ *   samples the rest of the block follows one slot late. Send the first
+ *   sample as ORS and, with 32-bit samples, start at the second sample.
+ * - TX starting after RX and ending with it: after the switch TX restarts
+ *   on the wrong slots unless it ran out before RX. End TX one word early
+ *   and send that word as ORS.
+ *
+ * Other layouts, such as TX within the RX channel range, are not compensated.
+ */
+/* A transfer shortened by one word must stay over the minimum size. */
+#define TX_ORS_CAN_SHORTEN(p_buffers) ((p_buffers)->tx_buffer_size >= 4U)
+
+enum tx_ors_mode {
+	TX_ORS_NONE,
+	TX_ORS_HEAD,
+	TX_ORS_TAIL,
+};
+
+static enum tx_ors_mode tx_ors_mode_get(const struct tdm_drv_data *drv_data,
+					tdm_buffers_t const *p_buffers)
+{
+	uint32_t tx_mask = FIELD_GET(NRFX_TDM_TX_CHANNELS_MASK, drv_data->tx.nrfx_cfg.channels);
+	uint32_t rx_mask = FIELD_GET(NRFX_TDM_RX_CHANNELS_MASK, drv_data->rx.nrfx_cfg.channels);
+
+	/* Skip single-direction transfers and the 1-word buffer supplied when
+	 * stopping.
+	 */
+	if (!IS_ENABLED(CONFIG_I2S_NRF_TDM_CHANNEL_MASK_WORKAROUND) ||
+	    p_buffers->p_tx_buffer == NULL || p_buffers->p_rx_buffer == NULL ||
+	    p_buffers->tx_buffer_size < 2U) {
+		return TX_ORS_NONE;
+	}
+	if (find_lsb_set(tx_mask) <= find_lsb_set(rx_mask)) {
+		return find_msb_set(tx_mask) < find_msb_set(rx_mask) ? TX_ORS_HEAD : TX_ORS_NONE;
+	}
+	return find_msb_set(tx_mask) == find_msb_set(rx_mask) ? TX_ORS_TAIL : TX_ORS_NONE;
+}
+
+/*
+ * Reject the duplex layouts that the compensation above cannot handle. When
+ * TX starts after RX, overlaps the RX channel range and does not end on the
+ * last RX channel, TX data moves to other slots from the first buffer switch
+ * on. With TX entirely after the RX channel range, no TX data was seen moving
+ * into RX slots, but the TX slots themselves could not be checked.
+ */
+static bool tx_layout_supported(uint32_t tx_mask, uint32_t rx_mask)
+{
+	unsigned int tx_first = find_lsb_set(tx_mask);
+	unsigned int tx_last = find_msb_set(tx_mask);
+	unsigned int rx_first = find_lsb_set(rx_mask);
+	unsigned int rx_last = find_msb_set(rx_mask);
+
+	if (tx_first <= rx_first || tx_last == rx_last) {
+		return true;
+	}
+	if (tx_first > rx_last) {
+		LOG_WRN("Duplex with TX channels 0x%x after RX channels 0x%x is unverified",
+			tx_mask, rx_mask);
+		return true;
+	}
+	LOG_ERR("Duplex with TX channels 0x%x starting within RX channels 0x%x is not supported",
+		tx_mask, rx_mask);
+	return false;
+}
+
+/* Send the first sample of the block being queued as ORS. */
+static void tx_ors_head_set(const struct tdm_drv_data *drv_data, tdm_buffers_t const *p_buffers,
+			    uint32_t const **tx_buffer, uint16_t *tx_size)
+{
+	NRF_TDM_Type *p_reg = drv_data->drv_cfg->p_reg;
+	uint32_t first = p_buffers->p_tx_buffer[0];
+
+	switch (drv_data->tx.nrfx_cfg.sample_width) {
+	case NRF_TDM_SWIDTH_16BIT:
+		first &= 0xFFFFU;
+		nrf_tdm_ors_set(p_reg, (first << 16) | first);
+		break;
+	case NRF_TDM_SWIDTH_32BIT:
+		nrf_tdm_ors_set(p_reg, first);
+		if (TX_ORS_CAN_SHORTEN(p_buffers)) {
+			*tx_buffer = &p_buffers->p_tx_buffer[1];
+			*tx_size = p_buffers->tx_buffer_size - 1U;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+/* Send the last word of a running block as ORS. Call it once the block has
+ * started and before it ends.
+ */
+static void tx_ors_tail_set(const struct tdm_drv_data *drv_data, tdm_buffers_t const *p_running)
+{
+	if (tx_ors_mode_get(drv_data, p_running) == TX_ORS_TAIL && TX_ORS_CAN_SHORTEN(p_running)) {
+		nrf_tdm_ors_set(drv_data->drv_cfg->p_reg,
+				p_running->p_tx_buffer[p_running->tx_buffer_size - 1U]);
+	}
+}
+
 static void tdm_start(struct tdm_drv_data *drv_data, tdm_buffers_t const *p_initial_buffers)
 {
 	NRF_TDM_Type *p_reg = drv_data->drv_cfg->p_reg;
@@ -380,6 +487,10 @@ static void tdm_start(struct tdm_drv_data *drv_data, tdm_buffers_t const *p_init
 	ctrl_data->next_buffers = *p_initial_buffers;
 	ctrl_data->current_buffers.p_rx_buffer = NULL;
 	ctrl_data->current_buffers.p_tx_buffer = NULL;
+	/* The first block starts on FSYNC, so only its tail can need ORS. Set it
+	 * while the peripheral is still disabled.
+	 */
+	tx_ors_tail_set(drv_data, p_initial_buffers);
 	nrf_tdm_enable(p_reg);
 
 	nrf_tdm_event_clear(p_reg, NRF_TDM_EVENT_RXPTRUPD);
@@ -396,7 +507,12 @@ static void tdm_start(struct tdm_drv_data *drv_data, tdm_buffers_t const *p_init
 
 	nrf_tdm_int_enable(p_reg,
 			   rxtx_mask | NRF_TDM_INT_STOPPED_MASK_MASK | NRF_TDM_INT_ABORTED_MASK);
-	nrf_tdm_tx_count_set(p_reg, p_initial_buffers->tx_buffer_size);
+	if (tx_ors_mode_get(drv_data, p_initial_buffers) == TX_ORS_TAIL &&
+	    TX_ORS_CAN_SHORTEN(p_initial_buffers)) {
+		nrf_tdm_tx_count_set(p_reg, p_initial_buffers->tx_buffer_size - 1U);
+	} else {
+		nrf_tdm_tx_count_set(p_reg, p_initial_buffers->tx_buffer_size);
+	}
 	nrf_tdm_tx_buffer_set(p_reg, p_initial_buffers->p_tx_buffer);
 	nrf_tdm_rx_count_set(p_reg, p_initial_buffers->rx_buffer_size);
 	nrf_tdm_rx_buffer_set(p_reg, p_initial_buffers->p_rx_buffer);
@@ -415,6 +531,8 @@ static bool next_buffers_set(struct tdm_drv_data *drv_data, tdm_buffers_t const 
 {
 	NRF_TDM_Type *p_reg = drv_data->drv_cfg->p_reg;
 	tdm_ctrl_t *ctrl_data = drv_data->drv_cfg->control_data;
+	uint32_t const *tx_buffer = p_buffers->p_tx_buffer;
+	uint16_t tx_size = p_buffers->tx_buffer_size;
 
 	__ASSERT_NO_MSG(p_buffers->p_rx_buffer != NULL || p_buffers->p_tx_buffer != NULL);
 
@@ -422,10 +540,29 @@ static bool next_buffers_set(struct tdm_drv_data *drv_data, tdm_buffers_t const 
 		return false;
 	}
 
-	nrf_tdm_tx_count_set(p_reg, p_buffers->tx_buffer_size);
+	/* Called after both TXPTRUPD and RXPTRUPD of the previous block, as it
+	 * starts. CONFIG.ORS is latched when TX runs out of data, after TXPTRUPD
+	 * but before RXPTRUPD, so writing it here leaves the value of the block
+	 * that has just ended intact.
+	 */
+	tx_ors_tail_set(drv_data, &ctrl_data->current_buffers);
+	switch (tx_ors_mode_get(drv_data, p_buffers)) {
+	case TX_ORS_HEAD:
+		tx_ors_head_set(drv_data, p_buffers, &tx_buffer, &tx_size);
+		break;
+	case TX_ORS_TAIL:
+		if (TX_ORS_CAN_SHORTEN(p_buffers)) {
+			tx_size = p_buffers->tx_buffer_size - 1U;
+		}
+		break;
+	default:
+		break;
+	}
+
+	nrf_tdm_tx_count_set(p_reg, tx_size);
 	nrf_tdm_rx_count_set(p_reg, p_buffers->rx_buffer_size);
 	nrf_tdm_rx_buffer_set(p_reg, p_buffers->p_rx_buffer);
-	nrf_tdm_tx_buffer_set(p_reg, p_buffers->p_tx_buffer);
+	nrf_tdm_tx_buffer_set(p_reg, tx_buffer);
 
 	ctrl_data->next_buffers = *p_buffers;
 	ctrl_data->buffers_needed = false;
@@ -662,6 +799,27 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 		LOG_ERR("Unsupported options: 0x%02x", tdm_cfg->options);
 		return -EINVAL;
 	}
+	if (IS_ENABLED(CONFIG_I2S_NRF_TDM_CHANNEL_MASK_WORKAROUND)) {
+		/* Check the layout against the other direction if it is configured. */
+		uint32_t tx_mask = chan_mask;
+		uint32_t rx_mask = chan_mask;
+
+		if (dir == I2S_DIR_RX) {
+			tx_mask = drv_data->tx_configured
+					  ? FIELD_GET(NRFX_TDM_TX_CHANNELS_MASK,
+						      drv_data->tx.nrfx_cfg.channels)
+					  : 0;
+		} else if (dir == I2S_DIR_TX) {
+			rx_mask = drv_data->rx_configured
+					  ? FIELD_GET(NRFX_TDM_RX_CHANNELS_MASK,
+						      drv_data->rx.nrfx_cfg.channels)
+					  : 0;
+		}
+		if (tx_mask != 0 && rx_mask != 0 && !tx_layout_supported(tx_mask, rx_mask)) {
+			return -EINVAL;
+		}
+	}
+
 	if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
 		nrfx_cfg.channels = FIELD_PREP(NRFX_TDM_TX_CHANNELS_MASK, chan_mask);
 		drv_data->tx.cfg = *tdm_cfg;
