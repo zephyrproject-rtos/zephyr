@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Single producer, single consumer packet buffer.
+ * @ingroup spsc_buf
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_SPSC_PBUF_H_
 #define ZEPHYR_INCLUDE_SYS_SPSC_PBUF_H_
 
@@ -40,6 +46,8 @@ extern "C" {
 
 /**@} */
 
+/** @cond INTERNAL_HIDDEN */
+
 #ifdef CONFIG_DCACHE_LINE_SIZE
 #define Z_SPSC_PBUF_LOCAL_DCACHE_LINE CONFIG_DCACHE_LINE_SIZE
 #else
@@ -53,6 +61,8 @@ extern "C" {
 #define Z_SPSC_PBUF_DCACHE_LINE \
 	MAX(CONFIG_SPSC_PBUF_REMOTE_DCACHE_LINE, Z_SPSC_PBUF_LOCAL_DCACHE_LINE)
 
+/** @endcond */
+
 /** @brief Maximum packet length. */
 #define SPSC_PBUF_MAX_LEN 0xFF00
 
@@ -64,9 +74,15 @@ extern "C" {
  * writer.
  */
 struct spsc_pbuf_common {
-	uint32_t len;		/* Length of data[] in bytes. */
-	uint32_t flags;		/* Flags. See @ref SPSC_PBUF_FLAGS */
-	uint32_t rd_idx;	/* Index of the first valid byte in data[] */
+	/** Length of the data area in bytes. */
+	uint32_t len;
+	/**
+	 * Flags, see @ref SPSC_PBUF_FLAGS. The bits from @ref SPSC_PBUF_UTILIZATION_OFFSET hold
+	 * the maximum utilization.
+	 */
+	uint32_t flags;
+	/** Index of the first valid byte in the data area. */
+	uint32_t rd_idx;
 };
 
 /* Padding to fill cache line. */
@@ -79,15 +95,20 @@ struct spsc_pbuf_common {
  * that it is in different cache line than the data changed by the reader.
  */
 struct spsc_pbuf_ext_cache {
+	/** Padding that places @c wr_idx on a different data cache line than the reader data. */
 	uint8_t reserved[Z_SPSC_PBUF_PADDING];
-	uint32_t wr_idx;	/* Index of the first free byte in data[] */
-	uint8_t data[];		/* Buffer data. */
+	/** Index of the first free byte in @c data. */
+	uint32_t wr_idx;
+	/** Data area. */
+	uint8_t data[];
 };
 
 /** @brief Remaining part of a packet buffer when cache is not used. */
 struct spsc_pbuf_ext_nocache {
-	uint32_t wr_idx;	/* Index of the first free byte in data[] */
-	uint8_t data[];		/* Buffer data. */
+	/** Index of the first free byte in @c data. */
+	uint32_t wr_idx;
+	/** Data area. */
+	uint8_t data[];
 };
 
 /**
@@ -103,9 +124,13 @@ struct spsc_pbuf_ext_nocache {
  *
  */
 struct spsc_pbuf {
+	/** Data set at initialization and data updated by the reader. */
 	struct spsc_pbuf_common common;
+	/** Data updated by the writer, followed by the data area. */
 	union {
+		/** Layout used with @ref SPSC_PBUF_CACHE. */
 		struct spsc_pbuf_ext_cache cache;
+		/** Layout used without @ref SPSC_PBUF_CACHE. */
 		struct spsc_pbuf_ext_nocache nocache;
 	} ext;
 };
