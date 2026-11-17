@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Packed buffer for single-writer, single-reader messaging over shared memory.
+ * @ingroup pbuf
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_PBUF_H_
 #define ZEPHYR_INCLUDE_IPC_PBUF_H_
 
@@ -35,35 +41,32 @@ extern "C" {
  */
 #define _PBUF_MIN_DATA_LEN ROUND_UP(PBUF_PACKET_LEN_SZ + 1 + _PBUF_IDX_SIZE, _PBUF_IDX_SIZE)
 
+/** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_ARCH_POSIX)
 /* For the native simulated boards we need to modify some pointers at init */
 #define PBUF_MAYBE_CONST
 #else
 #define PBUF_MAYBE_CONST const
 #endif
+/** @endcond */
 
 /** @brief Control block of packet buffer.
  *
  * The structure contains configuration data.
  */
 struct pbuf_cfg {
-	volatile uint32_t *rd_idx_loc;	 /* Address of the variable holding
-					  * index value of the first valid byte
-					  * in data[].
-					  */
-	volatile uint32_t *handshake_loc;/* Address of the variable holding
-					  * handshake information.
-					  */
-	volatile uint32_t *wr_idx_loc;	 /* Address of the variable holding
-					  * index value of the first free byte
-					  * in data[].
-					  */
-	uint32_t dcache_alignment;	 /* CPU data cache line size in bytes.
-					  * Used for validation - TODO: To be
-					  * replaced by flags.
-					  */
-	uint32_t len;			 /* Length of data[] in bytes. */
-	uint8_t *data_loc;		 /* Location of the data[]. */
+	/** Address of the shared variable holding the index of the first valid byte in data[]. */
+	volatile uint32_t *rd_idx_loc;
+	/** Address of the shared handshake word, or NULL if the buffer has none. */
+	volatile uint32_t *handshake_loc;
+	/** Address of the shared variable holding the index of the first free byte in data[]. */
+	volatile uint32_t *wr_idx_loc;
+	/** CPU data cache line size in bytes, used to validate the configuration. */
+	uint32_t dcache_alignment; /* TODO: To be replaced by flags. */
+	/** Length of data[] in bytes. */
+	uint32_t len;
+	/** Location of data[]. */
+	uint8_t *data_loc;
 };
 
 /**
@@ -73,19 +76,15 @@ struct pbuf_cfg {
  * reader respectively.
  */
 struct pbuf_data {
-	volatile uint32_t wr_idx;	/* Index of the first holding first
-					 * free byte in data[]. Used for
-					 * writing.
-					 */
-	volatile uint32_t rd_idx;	/* Index of the first holding first
-					 * valid byte in data[]. Used for
-					 * reading.
-					 */
+	/** Index of the first free byte in data[]. Used by the writer. */
+	volatile uint32_t wr_idx;
+	/** Index of the first valid byte in data[]. Used by the reader. */
+	volatile uint32_t rd_idx;
 };
 
 
 /**
- * @brief Scure packed buffer.
+ * @brief Secure packed buffer.
  *
  * The packet buffer implements lightweight unidirectional packet
  * buffer with read/write semantics on top of a memory region shared
@@ -97,12 +96,10 @@ struct pbuf_data {
  * written in a way to protect the data from being corrupted.
  */
 struct pbuf {
-	PBUF_MAYBE_CONST struct pbuf_cfg *const cfg; /* Configuration of the
-						      * buffer.
-						      */
-	struct pbuf_data data;			/* Data used to read and write
-						 * to the buffer
-						 */
+	/** Configuration of the buffer. */
+	PBUF_MAYBE_CONST struct pbuf_cfg *const cfg;
+	/** Local copies of the indexes used to read and write the buffer. */
+	struct pbuf_data data;
 };
 
 /**
@@ -151,6 +148,9 @@ struct pbuf {
  * @param dcache_align		Data cache line size.
  * @param use_handshake		Add handshake word inside shared memory that can be access with
  *				@ref pbuf_handshake_read and @ref pbuf_handshake_write.
+ * @param compatibility		Check at build time that @p dcache_align is at least 8, so that the
+ *				handshake word does not change the memory layout and the buffer can
+ *				be shared with a remote that does not use it.
  */
 #define PBUF_DEFINE(name, mem_addr, size, dcache_align, use_handshake, compatibility)	\
 	BUILD_ASSERT(dcache_align >= 0,							\
