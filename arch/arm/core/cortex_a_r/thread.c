@@ -21,16 +21,6 @@
 #include <stdbool.h>
 #include <cmsis_core.h>
 
-#ifndef EXC_RETURN_FTYPE
-/* bit [4] allocate stack for floating-point context: 0=done 1=skipped  */
-#define EXC_RETURN_FTYPE           (0x00000010UL)
-#endif
-
-/* Default last octet of EXC_RETURN, for threads that have not run yet.
- * The full EXC_RETURN value will be e.g. 0xFFFFFFBC.
- */
-#define DEFAULT_EXC_RETURN 0xFD;
-
 #ifdef CONFIG_USERSPACE
 static void setup_priv_stack(struct k_thread *thread)
 {
@@ -85,13 +75,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	}
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_MPU_STACK_GUARD */
-
-#if defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE)
-	thread->arch.mode = 0;
-#if defined(CONFIG_ARM_STORE_EXC_RETURN)
-	thread->arch.mode_exc_return = DEFAULT_EXC_RETURN;
-#endif
-#endif
 
 	iframe = Z_STACK_PTR_TO_FRAME(struct __basic_sf, stack_ptr);
 #if defined(CONFIG_USERSPACE)

@@ -40,7 +40,7 @@
 #endif
 #endif
 
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_CPU_CORTEX_M) && (defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING))
 #define _thread_offset_to_mode \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_mode_OFFSET)
 #endif

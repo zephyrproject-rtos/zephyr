@@ -50,7 +50,8 @@ GEN_OFFSET_SYM(_cpu_arch_t, active_irq);
 #endif
 #endif
 
-#if defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE)
+#if defined(CONFIG_CPU_CORTEX_M) && \
+	(defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE))
 GEN_OFFSET_SYM(_thread_arch_t, mode);
 #endif
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
