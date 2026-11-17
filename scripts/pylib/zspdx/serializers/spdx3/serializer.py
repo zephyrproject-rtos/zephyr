@@ -1090,6 +1090,7 @@ class SPDX3Serializer:
             self._create_files()
             self._create_relationships()
             self._create_contains_relationships()
+            self._create_distribution_artifact_relationships()
             self._create_build_relationships()
             self._create_license_relationships()
             self._create_documents()
@@ -1178,6 +1179,28 @@ class SPDX3Serializer:
         contains_rel.creationInfo = self.creation_info._id
         self.elements.append(contains_rel)
         self.relationship_elements.append(contains_rel)
+
+    def _create_distribution_artifact_relationships(self):
+        """Link each build target's package to the artifact it is distributed as.
+
+        The package already ``contains`` that file among others; ``hasDistributionArtifact``
+        singles it out as the deployable form, which carries the component's file name and hashes.
+        """
+        for component in self.sbom_data.components.values():
+            if not component.target_build_file:
+                continue
+            package = self.component_elements.get(component.name)
+            build_file = self.file_elements.get(component.target_build_file.path)
+            if not package or not build_file:
+                continue
+            rel = spdx.Relationship()
+            rel._id = self._generate_relationship_id(len(self.relationship_elements))
+            rel.relationshipType = spdx.RelationshipType.hasDistributionArtifact
+            rel.from_ = package._id
+            rel.to = [build_file._id]
+            rel.creationInfo = self.creation_info._id
+            self.elements.append(rel)
+            self.relationship_elements.append(rel)
 
     def _create_license_relationships(self):
         """Create concluded/declared license relationships for packages and files."""

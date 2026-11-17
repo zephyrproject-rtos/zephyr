@@ -250,7 +250,8 @@ The two specification families express build provenance differently:
 
 - In **SPDX 3.0**, that provenance is carried by the :ref:`Build profile <west-spdx-build-profile>`
   instead, using ``hasInput``/``hasOutput``/``usesTool`` relationships scoped to the ``build``
-  lifecycle.
+  lifecycle. Each build target's package also points at the artifact it produces, such as a
+  static library or the final image, with a ``hasDistributionArtifact`` relationship.
 
 .. _west-spdx-build-profile:
 
