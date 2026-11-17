@@ -260,13 +260,15 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  * Here's an example of use:
  *
- *     struct foo {
- *         int32_t some_int;
- *     };
+ * @code{.c}
+ * struct foo {
+ *     int32_t some_int;
+ * };
  *
- *     struct json_obj_descr foo[] = {
- *         JSON_OBJ_DESCR_PRIM(struct foo, some_int, JSON_TOK_NUMBER),
- *     };
+ * struct json_obj_descr foo[] = {
+ *     JSON_OBJ_DESCR_PRIM(struct foo, some_int, JSON_TOK_NUMBER),
+ * };
+ * @endcode
  */
 #define JSON_OBJ_DESCR_PRIM(struct_, field_name_, type_) \
 	{ \
@@ -289,20 +291,22 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  * Here's an example of use:
  *
- *      struct nested {
- *          int32_t foo;
- *          struct {
- *             int32_t baz;
- *          } bar;
- *      };
+ * @code{.c}
+ * struct nested {
+ *     int32_t foo;
+ *     struct {
+ *        int32_t baz;
+ *     } bar;
+ * };
  *
- *      struct json_obj_descr nested_bar[] = {
- *          { ... declare bar.baz descriptor ... },
- *      };
- *      struct json_obj_descr nested[] = {
- *          { ... declare foo descriptor ... },
- *          JSON_OBJ_DESCR_OBJECT(struct nested, bar, nested_bar),
- *      };
+ * struct json_obj_descr nested_bar[] = {
+ *     { ... declare bar.baz descriptor ... },
+ * };
+ * struct json_obj_descr nested[] = {
+ *     { ... declare foo descriptor ... },
+ *     JSON_OBJ_DESCR_OBJECT(struct nested, bar, nested_bar),
+ * };
+ * @endcode
  */
 #define JSON_OBJ_DESCR_OBJECT(struct_, field_name_, sub_descr_) \
 	{ \
@@ -388,15 +392,17 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  * Here's an example of use:
  *
- *      struct example {
- *          int32_t foo[10];
- *          size_t foo_len;
- *      };
+ * @code{.c}
+ * struct example {
+ *     int32_t foo[10];
+ *     size_t foo_len;
+ * };
  *
- *      struct json_obj_descr array[] = {
- *           JSON_OBJ_DESCR_ARRAY(struct example, foo, 10, foo_len,
- *                                JSON_TOK_NUMBER)
- *      };
+ * struct json_obj_descr array[] = {
+ *      JSON_OBJ_DESCR_ARRAY(struct example, foo, 10, foo_len,
+ *                           JSON_TOK_NUMBER)
+ * };
+ * @endcode
  */
 #define JSON_OBJ_DESCR_ARRAY(struct_, field_name_, max_len_, \
 			     len_field_, elem_type_) \
@@ -427,26 +433,28 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  * Here's an example of use:
  *
- *      struct person_height {
- *          const char *name;
- *          int32_t height;
- *      };
+ * @code{.c}
+ * struct person_height {
+ *     const char *name;
+ *     int32_t height;
+ * };
  *
- *      struct people_heights {
- *          struct person_height heights[10];
- *          size_t heights_len;
- *      };
+ * struct people_heights {
+ *     struct person_height heights[10];
+ *     size_t heights_len;
+ * };
  *
- *      struct json_obj_descr person_height_descr[] = {
- *           JSON_OBJ_DESCR_PRIM(struct person_height, name, JSON_TOK_STRING),
- *           JSON_OBJ_DESCR_PRIM(struct person_height, height, JSON_TOK_NUMBER),
- *      };
+ * struct json_obj_descr person_height_descr[] = {
+ *      JSON_OBJ_DESCR_PRIM(struct person_height, name, JSON_TOK_STRING),
+ *      JSON_OBJ_DESCR_PRIM(struct person_height, height, JSON_TOK_NUMBER),
+ * };
  *
- *      struct json_obj_descr array[] = {
- *           JSON_OBJ_DESCR_OBJ_ARRAY(struct people_heights, heights, 10,
- *                                    heights_len, person_height_descr,
- *                                    ARRAY_SIZE(person_height_descr)),
- *      };
+ * struct json_obj_descr array[] = {
+ *      JSON_OBJ_DESCR_OBJ_ARRAY(struct people_heights, heights, 10,
+ *                               heights_len, person_height_descr,
+ *                               ARRAY_SIZE(person_height_descr)),
+ * };
+ * @endcode
  */
 #define JSON_OBJ_DESCR_OBJ_ARRAY(struct_, field_name_, max_len_, \
 				 len_field_, elem_descr_, elem_descr_len_) \
@@ -477,35 +485,37 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  * Here's an example of use:
  *
- *      struct person_height {
- *          const char *name;
- *          int32_t height;
- *      };
+ * @code{.c}
+ * struct person_height {
+ *     const char *name;
+ *     int32_t height;
+ * };
  *
- *      struct person_heights_array {
- *          struct person_height heights;
- *      }
+ * struct person_heights_array {
+ *     struct person_height heights;
+ * };
  *
- *      struct people_heights {
- *          struct person_height_array heights[10];
- *          size_t heights_len;
- *      };
+ * struct people_heights {
+ *     struct person_heights_array heights[10];
+ *     size_t heights_len;
+ * };
  *
- *      struct json_obj_descr person_height_descr[] = {
- *          JSON_OBJ_DESCR_PRIM(struct person_height, name, JSON_TOK_STRING),
- *          JSON_OBJ_DESCR_PRIM(struct person_height, height, JSON_TOK_NUMBER),
- *      };
+ * struct json_obj_descr person_height_descr[] = {
+ *     JSON_OBJ_DESCR_PRIM(struct person_height, name, JSON_TOK_STRING),
+ *     JSON_OBJ_DESCR_PRIM(struct person_height, height, JSON_TOK_NUMBER),
+ * };
  *
- *      struct json_obj_descr person_height_array_descr[] = {
- *          JSON_OBJ_DESCR_OBJECT(struct person_heights_array,
- *                                heights, person_height_descr),
- *      };
+ * struct json_obj_descr person_height_array_descr[] = {
+ *     JSON_OBJ_DESCR_OBJECT(struct person_heights_array,
+ *                           heights, person_height_descr),
+ * };
  *
- *      struct json_obj_descr array_array[] = {
- *           JSON_OBJ_DESCR_ARRAY_ARRAY(struct people_heights, heights, 10,
- *                                      heights_len, person_height_array_descr,
- *                                      ARRAY_SIZE(person_height_array_descr)),
- *      };
+ * struct json_obj_descr array_array[] = {
+ *      JSON_OBJ_DESCR_ARRAY_ARRAY(struct people_heights, heights, 10,
+ *                                 heights_len, person_height_array_descr,
+ *                                 ARRAY_SIZE(person_height_array_descr)),
+ * };
+ * @endcode
  */
 #define JSON_OBJ_DESCR_ARRAY_ARRAY(struct_, field_name_, max_len_, len_field_, \
 				   elem_descr_, elem_descr_len_) \
@@ -664,28 +674,30 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *
  * Here's an example of use:
  *
- *      struct person_height {
- *          const char *name;
- *          int32_t height;
- *      };
+ * @code{.c}
+ * struct person_height {
+ *     const char *name;
+ *     int32_t height;
+ * };
  *
- *      struct people_heights {
- *          struct person_height heights[10];
- *          size_t heights_len;
- *      };
+ * struct people_heights {
+ *     struct person_height heights[10];
+ *     size_t heights_len;
+ * };
  *
- *      struct json_obj_descr person_height_descr[] = {
- *           JSON_OBJ_DESCR_PRIM(struct person_height, name, JSON_TOK_STRING),
- *           JSON_OBJ_DESCR_PRIM(struct person_height, height, JSON_TOK_NUMBER),
- *      };
+ * struct json_obj_descr person_height_descr[] = {
+ *      JSON_OBJ_DESCR_PRIM(struct person_height, name, JSON_TOK_STRING),
+ *      JSON_OBJ_DESCR_PRIM(struct person_height, height, JSON_TOK_NUMBER),
+ * };
  *
- *      struct json_obj_descr array[] = {
- *           JSON_OBJ_DESCR_OBJ_ARRAY_NAMED(struct people_heights,
- *                                          "people-heights", heights,
- *                                          10, heights_len,
- *                                          person_height_descr,
- *                                          ARRAY_SIZE(person_height_descr)),
- *      };
+ * struct json_obj_descr array[] = {
+ *      JSON_OBJ_DESCR_OBJ_ARRAY_NAMED(struct people_heights,
+ *                                     "people-heights", heights,
+ *                                     10, heights_len,
+ *                                     person_height_descr,
+ *                                     ARRAY_SIZE(person_height_descr)),
+ * };
+ * @endcode
  */
 #define JSON_OBJ_DESCR_OBJ_ARRAY_NAMED(struct_, json_field_name_, \
 				       struct_field_name_, max_len_, \
@@ -711,11 +723,13 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  * Values are stored in a struct pointed to by @a val.  Set up the
  * descriptor like this:
  *
- *    struct s { int32_t foo; char *bar; }
- *    struct json_obj_descr descr[] = {
- *       JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
- *       JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
- *    };
+ * @code{.c}
+ * struct s { int32_t foo; char *bar; };
+ * struct json_obj_descr descr[] = {
+ *    JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
+ *    JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
+ * };
+ * @endcode
  *
  * Since this parser is designed for machine-to-machine communications, some
  * liberties were taken to simplify the design:
@@ -768,16 +782,18 @@ int64_t json_obj_parse(char *json, size_t len,
  * Values are stored in a struct pointed to by @a val.  Set up the
  * descriptor like this:
  *
- *    struct s { int32_t foo; char *bar; }
- *    struct json_obj_descr descr[] = {
- *       JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
- *       JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
- *    };
- *    struct a { struct s baz[10]; size_t count; }
- *    struct json_obj_descr array[] = {
- *       JSON_OBJ_DESCR_OBJ_ARRAY(struct a, baz, 10, count,
- *                                descr, ARRAY_SIZE(descr)),
- *    };
+ * @code{.c}
+ * struct s { int32_t foo; char *bar; };
+ * struct json_obj_descr descr[] = {
+ *    JSON_OBJ_DESCR_PRIM(struct s, foo, JSON_TOK_NUMBER),
+ *    JSON_OBJ_DESCR_PRIM(struct s, bar, JSON_TOK_STRING),
+ * };
+ * struct a { struct s baz[10]; size_t count; };
+ * struct json_obj_descr array[] = {
+ *    JSON_OBJ_DESCR_OBJ_ARRAY(struct a, baz, 10, count,
+ *                             descr, ARRAY_SIZE(descr)),
+ * };
+ * @endcode
  *
  * Since this parser is designed for machine-to-machine communications, some
  * liberties were taken to simplify the design:
@@ -1000,7 +1016,9 @@ int json_arr_encode(const struct json_obj_descr *descr, const void *val,
  * Mixed arrays are useful for parsing and encoding JSON arrays that do not
  * have a homogeneous element type, such as:
  *
- *   [ "string", 42, { "foo": 1 }, [1,2,3], true ]
+ * @code{.json}
+ * [ "string", 42, { "foo": 1 }, [1,2,3], true ]
+ * @endcode
  *
  * @note This structure and its associated macros are intended for use with
  *       the mixed array parsing and encoding APIs (see json_mixed_arr_parse()).
@@ -1048,10 +1066,12 @@ struct json_mixed_arr_descr {
  * @param count_field_	Field name in the struct for the number of elements.
  *
  * Example:
- *	struct foo { int x; size_t x_count; };
- *	const struct json_mixed_arr_descr foo_descr[] = {
- *		JSON_MIXED_ARR_DESCR_PRIM(struct foo, x, JSON_TOK_NUMBER, x_count),
- *	};
+ * @code{.c}
+ * struct foo { int x; size_t x_count; };
+ * const struct json_mixed_arr_descr foo_descr[] = {
+ *     JSON_MIXED_ARR_DESCR_PRIM(struct foo, x, JSON_TOK_NUMBER, x_count),
+ * };
+ * @endcode
  */
 #define JSON_MIXED_ARR_DESCR_PRIM(struct_, field_name_, type_, count_field_) \
 { \
@@ -1072,12 +1092,14 @@ struct json_mixed_arr_descr {
  * @param count_field_	Field name in the struct for the number of elements.
  *
  * Example:
- *	struct bar { int y; };
- *	struct foo { struct bar b; size_t b_count; };
- *	const struct json_obj_descr bar_descr[] = { ... };
- *	const struct json_mixed_arr_descr foo_descr[] = {
- *		JSON_MIXED_ARR_DESCR_OBJECT(struct foo, b, bar_descr, b_count),
- *	};
+ * @code{.c}
+ * struct bar { int y; };
+ * struct foo { struct bar b; size_t b_count; };
+ * const struct json_obj_descr bar_descr[] = { ... };
+ * const struct json_mixed_arr_descr foo_descr[] = {
+ *     JSON_MIXED_ARR_DESCR_OBJECT(struct foo, b, bar_descr, b_count),
+ * };
+ * @endcode
  */
 #define JSON_MIXED_ARR_DESCR_OBJECT(struct_, field_name_, sub_descr_, count_field_) \
 { \
@@ -1100,16 +1122,18 @@ struct json_mixed_arr_descr {
  * @param count_field_	Field name in the struct for the number of elements.
  *
  * Example:
- *	struct foo {
- *		int arr[4];
- *		size_t arr_count;
- *	};
- *	const struct json_obj_descr arr_elem_descr[] = {
- *		JSON_OBJ_DESCR_ARRAY(struct foo, arr, 4, arr_count, JSON_TOK_NUMBER),
- *	};
- *	const struct json_mixed_arr_descr foo_descr[] = {
- *		JSON_MIXED_ARR_DESCR_ARRAY(struct foo, arr, 4, arr_elem_descr, arr_count),
- *	};
+ * @code{.c}
+ * struct foo {
+ *     int arr[4];
+ *     size_t arr_count;
+ * };
+ * const struct json_obj_descr arr_elem_descr[] = {
+ *     JSON_OBJ_DESCR_ARRAY(struct foo, arr, 4, arr_count, JSON_TOK_NUMBER),
+ * };
+ * const struct json_mixed_arr_descr foo_descr[] = {
+ *     JSON_MIXED_ARR_DESCR_ARRAY(struct foo, arr, 4, arr_elem_descr, arr_count),
+ * };
+ * @endcode
  */
 #define JSON_MIXED_ARR_DESCR_ARRAY(struct_, field_name_, max_len_, elem_descr_, count_field_) \
 { \
@@ -1131,11 +1155,13 @@ struct json_mixed_arr_descr {
  * @param count_field_	Field name in the struct for the number of elements.
  *
  * Example:
- *	struct foo { ...; size_t nested_count; };
- *	const struct json_mixed_arr_descr nested_descr[] = { ... };
- *	const struct json_mixed_arr_descr foo_descr[] = {
- *		JSON_MIXED_ARR_DESCR_MIXED_ARRAY(struct foo, nested, nested_descr, nested_count),
- *	};
+ * @code{.c}
+ * struct foo { ...; size_t nested_count; };
+ * const struct json_mixed_arr_descr nested_descr[] = { ... };
+ * const struct json_mixed_arr_descr foo_descr[] = {
+ *     JSON_MIXED_ARR_DESCR_MIXED_ARRAY(struct foo, nested, nested_descr, nested_count),
+ * };
+ * @endcode
  */
 #define JSON_MIXED_ARR_DESCR_MIXED_ARRAY(struct_, field_name_, sub_descr_, count_field_) \
 { \
