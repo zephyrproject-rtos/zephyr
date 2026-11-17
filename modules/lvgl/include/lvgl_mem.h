@@ -25,6 +25,8 @@ void lvgl_print_heap_info(bool dump_chunks);
 
 int lvgl_heap_stats(struct sys_memory_stats *stats);
 
+int lvgl_heap_get_largest_free_block(size_t *block_size);
+
 void lvgl_heap_init(void);
 
 #ifdef __cplusplus

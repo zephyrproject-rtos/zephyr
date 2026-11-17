@@ -90,6 +90,24 @@ int lvgl_heap_stats(struct sys_memory_stats *stats)
 #endif /* CONFIG_SYS_HEAP_RUNTIME_STATS */
 }
 
+int lvgl_heap_get_largest_free_block(size_t *block_size)
+{
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	int ret;
+	k_spinlock_key_t key;
+
+	if (!block_size) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&lvgl_heap_lock);
+	ret = sys_heap_get_largest_free_block(&lvgl_heap, block_size);
+	k_spin_unlock(&lvgl_heap_lock, key);
+	return ret;
+#else
+	ARG_UNUSED(block_size);
+	LOG_WRN_ONCE("Enable CONFIG_SYS_HEAP_RUNTIME_STATS to use the mem monitor feature");
+	return -ENOTSUP;
 #endif /* CONFIG_SYS_HEAP_RUNTIME_STATS */
 }
 
