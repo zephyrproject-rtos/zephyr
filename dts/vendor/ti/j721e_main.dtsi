@@ -5,7 +5,7 @@
 
 / {
 	main_gpio0: main-gpio0 {
-		compatible = "ti,davinci-gpio-nexus";
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio0_0 0 0>, <1 0 &main_gpio0_0 1 0>,
 			   <2 0 &main_gpio0_0 2 0>, <3 0 &main_gpio0_0 3 0>,
@@ -76,7 +76,7 @@
 	};
 
 	main_gpio1: main-gpio1 {
-		compatible = "ti,davinci-gpio-nexus";
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio1_0 0 0>, <1 0 &main_gpio1_0 1 0>,
 			   <2 0 &main_gpio1_0 2 0>, <3 0 &main_gpio1_0 3 0>,
@@ -101,7 +101,7 @@
 	};
 
 	main_gpio2: main-gpio2 {
-		compatible = "ti,davinci-gpio-nexus";
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio2_0 0 0>, <1 0 &main_gpio2_0 1 0>,
 			   <2 0 &main_gpio2_0 2 0>, <3 0 &main_gpio2_0 3 0>,
@@ -188,7 +188,7 @@
 	};
 
 	main_gpio3: main-gpio3 {
-		compatible = "ti,davinci-gpio-nexus";
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio3_0 0 0>, <1 0 &main_gpio3_0 1 0>,
 			   <2 0 &main_gpio3_0 2 0>, <3 0 &main_gpio3_0 3 0>,
@@ -213,7 +213,7 @@
 	};
 
 	main_gpio4: main-gpio4 {
-		compatible = "ti,davinci-gpio-nexus";
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio4_0 0 0>, <1 0 &main_gpio4_0 1 0>,
 			   <2 0 &main_gpio4_0 2 0>, <3 0 &main_gpio4_0 3 0>,
@@ -284,7 +284,7 @@
 	};
 
 	main_gpio5: main-gpio5 {
-		compatible = "ti,davinci-gpio-nexus";
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio5_0 0 0>, <1 0 &main_gpio5_0 1 0>,
 			   <2 0 &main_gpio5_0 2 0>, <3 0 &main_gpio5_0 3 0>,
@@ -309,7 +309,7 @@
 	};
 
 	main_gpio6: main-gpio6 {
-		compatible = "ti,davinci-gpio-nexus";
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio6_0 0 0>, <1 0 &main_gpio6_0 1 0>,
 			   <2 0 &main_gpio6_0 2 0>, <3 0 &main_gpio6_0 3 0>,
@@ -380,7 +380,7 @@
 	};
 
 	main_gpio7: main-gpio7 {
-		compatible = "ti,davinci-gpio-nexus";
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio7_0 0 0>, <1 0 &main_gpio7_0 1 0>,
 			   <2 0 &main_gpio7_0 2 0>, <3 0 &main_gpio7_0 3 0>,

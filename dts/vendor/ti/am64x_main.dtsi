@@ -13,7 +13,7 @@
 	#size-cells = <1>;
 
 	main_gpio0: gpio-main0 {
-		compatible = "ti,davinci-gpio-nexus";
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio0_0 0 0>, <1 0 &main_gpio0_0 1 0>,
 			   <2 0 &main_gpio0_0 2 0>, <3 0 &main_gpio0_0 3 0>,
@@ -64,7 +64,7 @@
 	};
 
 	main_gpio1: gpio-main1 {
-		compatible = "ti,davinci-gpio-nexus";
+		compatible = "ti,k3-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio1_0 0 0>, <1 0 &main_gpio1_0 1 0>,
 			   <2 0 &main_gpio1_0 2 0>, <3 0 &main_gpio1_0 3 0>,
