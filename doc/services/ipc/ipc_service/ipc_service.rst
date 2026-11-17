@@ -187,6 +187,52 @@ backend.
    backends/ipc_service_icmsg.rst
    backends/ipc_service_icbmsg.rst
 
+.. _ipc_service_static_vrings_mapping:
+
+Static vrings address translation
+*********************************
+
+The :dtcompatible:`zephyr,ipc-openamp-static-vrings` backend accepts a
+``memory-region`` phandle to an ordinary memory node with a ``reg`` property.
+This preserves the identity mapping used when both peers address shared memory
+identically. The region base must be aligned to
+:kconfig:option:`CONFIG_IPC_SERVICE_STATIC_VRINGS_MEM_ALIGNMENT`.
+
+When peers have different local addresses for the same memory, ``memory-region``
+can instead reference a :dtcompatible:`zephyr,metal-io` node:
+
+.. code-block:: devicetree
+
+   ipc_mapping: ipc-mapping {
+           compatible = "zephyr,metal-io";
+           region = <&shared_memory>;
+           physmap = <0x90000000>;
+   };
+
+   &ipc0 {
+           memory-region = <&ipc_mapping>;
+   };
+
+Here, ``shared_memory`` supplies the local base and size through ``reg``.
+``physmap`` supplies the addresses exchanged in vring descriptors, starting at
+the beginning of that region, **including the status header**. For example, a
+payload buffer 64 bytes after the region base has descriptor address
+``0x90000040``. Both peers must translate the same descriptor address to the same
+shared byte; it is not sufficient for each peer to specify the other's local
+base address.
+
+Each ``physmap`` entry is a 32-bit address stored in a persistent
+``metal_phys_addr_t`` array. Without ``page-shift``, one entry describes the
+whole contiguous region. With ``page-shift``, supply one aligned entry per page,
+including any final partial page. The backend rejects inconsistent page counts,
+invalid page shifts, unaligned page addresses and address overflow.
+
+``mem-flags`` is passed unchanged to libmetal and defaults to zero. The Zephyr
+libmetal port does not configure MMU, MPU or cache attributes from these flags;
+the region must already be locally accessible with suitable memory attributes.
+:kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET` clears only the
+host's local status header before backend initialization, with either mapping.
+
 API Reference
 =============
 

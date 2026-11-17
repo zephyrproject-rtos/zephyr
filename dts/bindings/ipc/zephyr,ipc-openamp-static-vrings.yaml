@@ -17,7 +17,11 @@ properties:
       - remote
 
   memory-region:
-    description: phandle to the shared memory region
+    description: |
+      Phandle to the shared memory region. This can point either to a standard
+      memory-region node (reg-based) or to a zephyr,metal-io node providing
+      libmetal address translation for the entire region, including the status
+      header. Both peers must use the same addresses in vring descriptors.
     required: true
     type: phandle
 

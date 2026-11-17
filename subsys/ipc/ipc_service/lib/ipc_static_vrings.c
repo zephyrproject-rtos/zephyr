@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,6 +115,43 @@ static void vq_teardown(struct ipc_static_vrings *vr, unsigned int role)
 	virtqueue_free(vr->vq[RPMSG_VQ_0]);
 }
 
+static bool io_mapping_valid(const struct metal_io_dt_spec *io)
+{
+	size_t page_size;
+	size_t pages;
+
+	if (io->phys_map == NULL || io->region_size == 0 ||
+	    io->region_size > UINTPTR_MAX - io->region_addr) {
+		return false;
+	}
+
+	if (io->page_shift == -1) {
+		return io->phys_map_size == 1 &&
+		       io->region_size - 1 < METAL_BAD_PHYS - io->phys_map[0];
+	}
+
+	if (io->page_shift < 0 || io->page_shift >= sizeof(metal_phys_addr_t) * CHAR_BIT) {
+		return false;
+	}
+
+	page_size = 1UL << io->page_shift;
+	pages = (io->region_size - 1) / page_size + 1;
+	if (io->phys_map_size != pages) {
+		return false;
+	}
+
+	for (size_t i = 0; i < pages; i++) {
+		size_t size = MIN(page_size, io->region_size - i * page_size);
+
+		if (!IS_ALIGNED(io->phys_map[i], page_size) ||
+		    size - 1 >= METAL_BAD_PHYS - io->phys_map[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 int ipc_static_vrings_init(struct ipc_static_vrings *vr, unsigned int role)
 {
 	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
@@ -122,16 +160,24 @@ int ipc_static_vrings_init(struct ipc_static_vrings *vr, unsigned int role)
 	if (!vr) {
 		return -EINVAL;
 	}
+	if (vr->io != NULL && !io_mapping_valid(vr->io)) {
+		return -EINVAL;
+	}
 
 	err = metal_init(&metal_params);
 	if (err != 0) {
 		return err;
 	}
 
-	vr->shm_physmap[0] = vr->shm_addr;
-
-	metal_io_init(&vr->shm_io, (void *)vr->shm_addr,
-		      vr->shm_physmap, vr->shm_size, -1, 0, NULL);
+	if (vr->io != NULL) {
+		/* Keep protocol offsets relative to the start of the backing region. */
+		metal_io_init(&vr->shm_io, (void *)vr->io->region_addr, vr->io->phys_map,
+			      vr->io->region_size, vr->io->page_shift, vr->io->mem_flags, NULL);
+	} else {
+		vr->shm_physmap[0] = vr->shm_addr;
+		metal_io_init(&vr->shm_io, (void *)vr->shm_addr, vr->shm_physmap, vr->shm_size, -1,
+			      0, NULL);
+	}
 
 	return vq_setup(vr, role);
 }

@@ -94,6 +94,12 @@ Libraries / Subsystems
     console, semihosting, the IPM console sender, WCH SDI, whisper and the
     Bluetooth monitor, is now LF-only, matching ``printk()``.
 
+* IPC
+
+  * The static vrings backend supports peers with different local addresses for
+    shared memory. Existing identity mappings remain supported; see
+    :ref:`ipc_service_static_vrings_mapping`.
+
 * LoRaWAN
 
   * The native backend now supports the KR920, AS923 and US915 regions
