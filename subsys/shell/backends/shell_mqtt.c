@@ -25,6 +25,11 @@ LOG_MODULE_REGISTER(shell_mqtt, CONFIG_SHELL_MQTT_LOG_LEVEL);
 #define MQTT_SEND_DELAY_MS K_MSEC(100)
 #define PROCESS_INTERVAL K_MSEC(CONFIG_SHELL_MQTT_WORK_DELAY_MS)
 #define SHELL_MQTT_WORKQ_STACK_SIZE 2048
+/* Limit RX backpressure so the MQTT work queue can service keepalive. */
+#define MQTT_RX_TIMEOUT_MS          1000U
+
+/* A reset changes both ring indices and must exclude the shell reader. */
+static struct k_spinlock rx_lock;
 
 struct shell_mqtt *sh_mqtt;
 K_KERNEL_STACK_DEFINE(sh_mqtt_workq_stack, SHELL_MQTT_WORKQ_STACK_SIZE);
@@ -51,6 +56,14 @@ static inline int sh_mqtt_context_lock(k_timeout_t timeout)
 static inline void sh_mqtt_context_unlock(void)
 {
 	(void)k_mutex_unlock(&sh_mqtt->lock);
+}
+
+static void sh_mqtt_rx_reset(struct shell_mqtt *sh)
+{
+	k_spinlock_key_t key = k_spin_lock(&rx_lock);
+
+	ring_buf_reset(&sh->rx_rb);
+	k_spin_unlock(&rx_lock, key);
 }
 
 bool __weak shell_mqtt_get_devid(char *id, int id_max_len)
@@ -553,6 +566,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 		break;
 
 	case MQTT_EVT_PUBLISH: {
+		static const uint8_t crlf[] = {'\r', '\n'};
 		const struct mqtt_publish_param *pub = &evt->param.publish;
 		uint32_t payload_left;
 		size_t size;
@@ -580,7 +594,7 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 
 			/* errno value, return */
 			if (rc < 0) {
-				ring_buf_reset(&sh->rx_rb);
+				sh_mqtt_rx_reset(sh);
 				return;
 			}
 
@@ -595,17 +609,21 @@ static void mqtt_evt_handler(struct mqtt_client *const client, const struct mqtt
 			(void)k_msleep(100);
 		}
 
-		/* Shell won't execute the cmds without \r\n */
-		while (true) {
-			/* Check if rb's free space is enough to fit in \r\n */
-			size = ring_buf_space_get(&sh->rx_rb);
-			if (size >= sizeof("\r\n")) {
-				(void)ring_buf_put(&sh->rx_rb, "\r\n", sizeof("\r\n"));
-				break;
+		k_timepoint_t end = sys_timepoint_calc(K_MSEC(MQTT_RX_TIMEOUT_MS));
+
+		/* Shell won't execute the cmds without \r\n. */
+		while (ring_buf_space_get(&sh->rx_rb) < sizeof(crlf)) {
+			if (sh->network_state != SHELL_MQTT_NETWORK_CONNECTED ||
+			    sh->transport_state != SHELL_MQTT_TRANSPORT_CONNECTED ||
+			    sys_timepoint_expired(end)) {
+				LOG_WRN("RX buffer full");
+				sh_mqtt_rx_reset(sh);
+				(void)mqtt_abort(client);
+				return;
 			}
-			/* Arbitrary sleep for the shell to do its thing */
 			(void)k_msleep(100);
 		}
+		(void)ring_buf_put(&sh->rx_rb, crlf, sizeof(crlf));
 
 		sh->shell_handler(SHELL_TRANSPORT_EVT_RX_RDY, sh->shell_context);
 		break;
@@ -783,6 +801,8 @@ static int read_data(const struct shell_transport *transport, void *data, size_t
 {
 	ARG_UNUSED(transport);
 	struct shell_mqtt *sh = sh_mqtt;
+	k_spinlock_key_t key;
+	bool pending;
 
 	/* Not initialized yet */
 	if (sh == NULL) {
@@ -795,10 +815,13 @@ static int read_data(const struct shell_transport *transport, void *data, size_t
 		return 0;
 	}
 
+	key = k_spin_lock(&rx_lock);
 	*cnt = ring_buf_get(&sh->rx_rb, data, length);
+	pending = ring_buf_size_get(&sh->rx_rb) > 0U;
+	k_spin_unlock(&rx_lock, key);
 
 	/* Inform the shell if there are still data in the rb */
-	if (ring_buf_size_get(&sh->rx_rb) > 0) {
+	if (pending) {
 		sh->shell_handler(SHELL_TRANSPORT_EVT_RX_RDY, sh->shell_context);
 	}
 
