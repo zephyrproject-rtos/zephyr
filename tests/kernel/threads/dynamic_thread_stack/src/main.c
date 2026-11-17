@@ -379,6 +379,91 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_permission)
 	zassert_ok(k_thread_stack_free(stack[1]));
 }
 
+static void oversize_func(void *arg1, void *arg2, void *arg3)
+{
+	k_thread_stack_t *stack = arg1;
+	struct k_thread *th = arg2;
+	size_t max_size = STACK_OBJ_SIZE - K_THREAD_STACK_RESERVED;
+	k_tid_t tid;
+
+	ARG_UNUSED(arg3);
+
+	/* The largest stack size the stack object can hold is accepted */
+	tid = k_thread_create(th, stack, max_size, func, &tflag[0], NULL, NULL, 0, K_USER,
+			      K_NO_WAIT);
+	zassert_ok(k_thread_join(tid, K_MSEC(TIMEOUT_MS)));
+	zassert_true(tflag[0]);
+
+	/* One byte more is not */
+	(void)k_thread_create(th, stack, max_size + 1U, func, &tflag[0], NULL, NULL, 0, K_USER,
+			      K_FOREVER);
+
+	zassert_unreachable("should not reach here");
+}
+
+/**
+ * @brief Verify that a user thread cannot use more than the requested size of
+ *        a dynamically allocated stack.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * A user stack from k_thread_stack_alloc() shares its allocation with the
+ * thread's privileged stack on some architectures. k_thread_create() from
+ * user mode must only accept a stack size the stack object was allocated
+ * for, otherwise the user stack region could cover the privileged stack.
+ * Skipped when heap allocation is not the preferred allocator.
+ *
+ * Test steps:
+ * - Allocate a user stack and a thread object.
+ * - From a user thread, create a thread on that stack with the largest
+ *   stack size the stack object can hold, and wait for it to finish.
+ * - From the same user thread, create a thread on that stack with a stack
+ *   size one byte larger.
+ *
+ * Expected result:
+ * - The thread with the largest stack size runs, and the oversized
+ *   k_thread_create() oopses the calling thread.
+ *
+ * @see k_thread_stack_alloc()
+ * @see k_thread_create()
+ */
+ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_user_oversize)
+{
+	static struct k_thread th;
+	k_thread_stack_t *stack[2];
+	struct k_thread *dyn_th;
+	k_tid_t tid;
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC) ||
+	    !IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC) ||
+	    !IS_ENABLED(CONFIG_USERSPACE)) {
+		ztest_test_skip();
+	}
+
+	stack[0] = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE, K_USER);
+	zassert_not_null(stack[0]);
+	stack[1] = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE, K_USER);
+	zassert_not_null(stack[1]);
+	dyn_th = k_object_alloc(K_OBJ_THREAD);
+	zassert_not_null(dyn_th);
+
+	tid = k_thread_create(&th, stack[0], CONFIG_DYNAMIC_THREAD_STACK_SIZE, oversize_func,
+			      stack[1], dyn_th, NULL, 0, K_USER, K_FOREVER);
+	k_thread_access_grant(tid, stack[1], dyn_th);
+
+	tflag[0] = false;
+	set_fault(K_ERR_KERNEL_OOPS);
+	k_thread_start(tid);
+	zassert_ok(k_thread_join(tid, K_MSEC(TIMEOUT_MS)));
+	/* func() only runs if the largest stack size was accepted */
+	zassert_true(tflag[0], "largest stack size was rejected");
+	zassert_false(expect_fault, "oversized stack was accepted");
+
+	zassert_ok(k_thread_stack_free(stack[0]));
+	zassert_ok(k_thread_stack_free(stack[1]));
+}
+
 static void *dynamic_thread_stack_setup(void)
 {
 	k_thread_heap_assign(k_current_get(), &stack_heap);
