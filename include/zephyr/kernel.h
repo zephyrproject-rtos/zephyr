@@ -5708,8 +5708,8 @@ void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
  * @param max_msgs Maximum number of messages that can be queued.
  *
  * @return 0 on success, -ENOMEM if there was insufficient memory in the
- *	thread's resource pool, or -EINVAL if the size parameters cause
- *	an integer overflow.
+ *	thread's resource pool, or -EINVAL if @p msg_size or @p max_msgs is
+ *	zero or the size parameters cause an integer overflow.
  */
 __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 				uint32_t max_msgs);
