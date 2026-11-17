@@ -230,7 +230,9 @@ enum espi_virtual_peripheral {
 /**
  * @brief eSPI interrupt flags.
  *
- * eSPI interrupt flags.
+ * Generic eSPI interrupt events selected with espi_interrupt_config().
+ * Vendor-specific interrupt events are selected with the separate vendor-specific bitmap.
+ * These are defined and documented by each eSPI driver vendor.
  */
 enum espi_interrupt_flags {
 	/** Enables eSPI bus reset interrupts and channel negotiation changes */
@@ -244,7 +246,13 @@ enum espi_interrupt_flags {
 
 	/** Enables UART interrupt if HW supports it */
 	ESPI_PERIPHERAL_UART_EVENTS = BIT(4),
-	/** Enables Port80 eSPI interrupt if HW supports it */
+	/**
+	 * Enables Port80 eSPI interrupt if HW supports it.
+	 *
+	 * The capture threshold that raises this interrupt could be set in devicetree, where the
+	 * hardware supports it. The API does not support changing it at runtime, including
+	 * through espi_interrupt_config().
+	 */
 	ESPI_PERIPHERAL_DEBUG_PORT80_EVENTS = BIT(5),
 	/** Enables 8042 interrupt if HW supports it */
 	ESPI_PERIPHERAL_8042_KBC_EVENTS = BIT(6),
@@ -594,6 +602,11 @@ struct espi_callback;
 
 /**
  * @brief Define the application callback handler function signature.
+ *
+ * The handler should return quickly. Processing that is not time critical can be deferred,
+ * for example to a work queue. Deferring adds scheduling latency, so events that need a
+ * prompt response, such as eSPI bus reset and virtual wire events, should be handled in the
+ * handler.
  *
  * @param dev Device struct for the eSPI device.
  * @param cb Original struct espi_callback owning this handler.
@@ -1292,12 +1305,33 @@ static inline int espi_remove_callback(const struct device *dev,
 /**
  * @brief Control eSPI interrupts.
  *
- * This routine provides a method for eSPI driver clients to enable/disable
- * eSPI driver blocks interrupts.
+ * This routine enables and disables the interrupt events of the eSPI driver: the eSPI bus and
+ * channel events, and the events of the eSPI peripheral channel hardware blocks.
  *
- * If the eSPI driver does not enable interrupts during driver initialization,
- * eSPI driver clients need to enable interrupts explicitly after eSPI configuration and
- * and after eSPI bus reset event.
+ * Each call sets the complete set of enabled events. In both bitmaps, a bit set to 1 enables
+ * the corresponding event and a bit set to 0 disables it; the new set replaces the previous
+ * one. To disable some events and keep the others enabled, pass the events to keep enabled.
+ *
+ * Default interrupt policy: during initialization, the driver enables the interrupts of the
+ * eSPI hardware blocks that are enabled in devicetree. Clients can change the enabled set at
+ * runtime with this routine.
+ *
+ * Enabling and disabling take effect when this routine returns:
+ * - An enabled event whose hardware status is already pending is delivered immediately,
+ *   without waiting for a new event.
+ * - Disabling an event stops its delivery. Hardware status that becomes pending while the
+ *   event is disabled is kept where the hardware latches it, and is delivered once the event
+ *   is enabled again.
+ * - Edge or level behavior is a property of each hardware source. A level source that stays
+ *   asserted is delivered again after it is enabled; an edge source is delivered once per
+ *   latched edge. Some sources stay asserted until serviced, for example the ACPI output
+ *   buffer empty event; how the driver avoids their repeated delivery is driver specific.
+ *
+ * This routine selects which events are delivered, not how they are reported: each callback
+ * receives a struct espi_event whose fields identify the source of the event.
+ *
+ * After an eSPI bus reset, a client that changed the enabled set at runtime applies it again
+ * from its @ref ESPI_BUS_RESET callback.
  *
  * @code
  * +---------+        +---------+     +------+          +---------+   +---------+
@@ -1333,10 +1367,9 @@ static inline int espi_remove_callback(const struct device *dev,
  * @endcode
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param espi_flags the bitmap to select generic eSPI interrupt events.
- * @param espi_vendor_flags the bitmap to select any vendor-specific eSPI interrupt events.
- *
- * Note: For both cases a 1 enables the corresponding interrupt event, and 0 disables it.
+ * @param espi_flags Bitmap of generic eSPI interrupt events, see @ref espi_interrupt_flags.
+ * @param espi_vendor_flags Bitmap of vendor-specific interrupt events, defined and documented
+ *        by the eSPI driver vendor. 0 selects no vendor-specific event.
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error, failed to configure device.
