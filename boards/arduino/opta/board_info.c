@@ -20,7 +20,7 @@
 static struct opta_board_info info;
 static char serial_number[OPTA_SERIAL_NUMBER_SIZE + 1];
 
-#if defined(CONFIG_FLASH_STM32_QSPI_GENERIC_READ)
+#if defined(CONFIG_FLASH_STM32_QSPI_GENERIC_READ) && defined(CONFIG_FLASH_EX_OP_ENABLED)
 
 const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(qspi_flash));
 
@@ -45,7 +45,7 @@ void board_late_init_hook(void)
 	(void)flash_ex_op(dev, FLASH_STM32_QSPI_EX_OP_GENERIC_READ, (uintptr_t)&cmd, &info);
 }
 
-#endif /* CONFIG_FLASH_STM32_QSPI_GENERIC_READ */
+#endif /* CONFIG_FLASH_STM32_QSPI_GENERIC_READ && CONFIG_FLASH_EX_OP_ENABLED */
 
 static void uint32tohex(char *dst, uint32_t value)
 {
