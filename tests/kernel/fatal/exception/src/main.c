@@ -92,6 +92,9 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_TRICORE)
 	/* Null pointer call triggers PSE trap (Class 4) */
 	((void (*)(void))0xF0000000)();
+#elif defined(CONFIG_RX)
+	/* Undefined instruction exception on RX. */
+	__asm__ volatile (".long 0xffffffff");
 #else
 	/* Triggers usage fault on ARM, illegal instruction on
 	 * xtensa, TLB exception (instruction fetch) on MIPS.
