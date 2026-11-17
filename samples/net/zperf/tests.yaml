@@ -27,6 +27,19 @@ tests:
       - net
     extra_args:
       - EXTRA_CONF_FILE="overlay-iperf3.conf"
+  sample.net.zperf.esp32_net_iram:
+    build_only: true
+    tags:
+      - net
+    platform_allow: esp32s3_eye/esp32s3/procpu
+    extra_configs:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - CONFIG_WIFI=y
+      - CONFIG_NET_L2_WIFI_MGMT=y
+      - CONFIG_ESP_SPIRAM=y
+      - CONFIG_SPIRAM_MODE_OCT=y
+      - CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM=y
+      - CONFIG_ESP32_WIFI_NET_IRAM_OPT=y
   sample.net.zperf.loopback_icount:
     harness: console
     platform_allow:
