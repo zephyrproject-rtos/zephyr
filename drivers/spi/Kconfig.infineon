@@ -46,6 +46,7 @@ config SPI_INFINEON_SCB
 config SPI_INFINEON_DMA
 	bool "Infineon SPI DMA Support"
 	depends on SPI_INFINEON_PDL || SPI_INFINEON_SCB
+	depends on MUX
 	select DMA
 	help
 	  Enable DMA during usage of SPI driver.

@@ -30,6 +30,7 @@
 
 #ifdef CONFIG_SPI_INFINEON_DMA
 #include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/mux.h>
 #endif
 
 #include <zephyr/logging/log.h>
@@ -122,6 +123,8 @@ LOG_MODULE_REGISTER(spi_infineon_scb, CONFIG_SPI_LOG_LEVEL);
 struct ifx_scb_spi_dma {
 	const struct device *dev;
 	uint32_t channel;
+	const struct device *trig_dev;
+	const struct mux_state *trig_state;
 };
 #endif
 
@@ -1192,6 +1195,32 @@ static DEVICE_API(spi, ifx_scb_spi_api) = {
 	.release = ifx_scb_spi_release,
 };
 
+#ifdef CONFIG_SPI_INFINEON_DMA
+static int ifx_scb_spi_dma_route(const struct device *dev)
+{
+	const struct ifx_scb_spi_config *config = dev->config;
+	const struct ifx_scb_spi_dma *streams[] = {&config->dma_tx, &config->dma_rx};
+	int ret;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+		if ((streams[i]->dev == NULL) || (streams[i]->trig_dev == NULL)) {
+			continue;
+		}
+
+		if (!device_is_ready(streams[i]->trig_dev)) {
+			return -ENODEV;
+		}
+
+		ret = mux_state_apply(streams[i]->trig_dev, streams[i]->trig_state);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+#endif
+
 static int ifx_scb_spi_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct ifx_scb_spi_config *config = dev->config;
@@ -1201,6 +1230,13 @@ static int ifx_scb_spi_pm_action(const struct device *dev, enum pm_device_action
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+#ifdef CONFIG_SPI_INFINEON_DMA
+		ret = ifx_scb_spi_dma_route(dev);
+		if (ret != 0) {
+			return ret;
+		}
+#endif
+
 		return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	case PM_DEVICE_ACTION_SUSPEND:
 		key = k_spin_lock(&data->lock);
@@ -1294,10 +1330,24 @@ static int ifx_scb_spi_deinit(const struct device *dev)
 #define IFX_SCB_SPI_DMA_CHANNEL(n, dir)                                                            \
 	.dma_##dir = {COND_CODE_1(DT_INST_DMAS_HAS_NAME(n, dir),                                   \
 				  (.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, dir)),        \
-				   .channel = DT_INST_DMAS_CELL_BY_NAME(n, dir, channel)),         \
+				   .channel = DT_INST_DMAS_CELL_BY_NAME(n, dir, channel),          \
+				   .trig_dev = COND_CODE_1(                                        \
+					   DT_INST_PROP_HAS_NAME(n, mux_states, dir),              \
+					   (DEVICE_DT_GET(DT_INST_PHANDLE_BY_NAME(n, mux_states,   \
+										  dir))),          \
+					   (NULL)),                                                \
+				   .trig_state = COND_CODE_1(                                      \
+					   DT_INST_PROP_HAS_NAME(n, mux_states, dir),              \
+					   (MUX_STATE_DT_GET_BY_NAME(DT_DRV_INST(n), dir)),        \
+					   (NULL))),                                               \
 				  (.dev = NULL))},
+#define IFX_SCB_SPI_DMA_TRIG_DEFINE(n, dir)                                                        \
+	IF_ENABLED(UTIL_AND(DT_INST_DMAS_HAS_NAME(n, dir),                                         \
+			    DT_INST_PROP_HAS_NAME(n, mux_states, dir)),                            \
+		   (MUX_STATE_DT_SPEC_DEFINE_BY_NAME(DT_DRV_INST(n), dir);))
 #else
 #define IFX_SCB_SPI_DMA_CHANNEL(n, dir)
+#define IFX_SCB_SPI_DMA_TRIG_DEFINE(n, dir)
 #endif
 
 #define IFX_SCB_SPI_CTRL_DT(n)                                                                     \
@@ -1310,6 +1360,8 @@ static int ifx_scb_spi_deinit(const struct device *dev)
 
 #define IFX_SCB_SPI_INIT(n)                                                                        \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	IFX_SCB_SPI_DMA_TRIG_DEFINE(n, tx)                                                         \
+	IFX_SCB_SPI_DMA_TRIG_DEFINE(n, rx)                                                         \
                                                                                                    \
 	static void ifx_scb_spi_irq_config_##n(void)                                               \
 	{                                                                                          \
