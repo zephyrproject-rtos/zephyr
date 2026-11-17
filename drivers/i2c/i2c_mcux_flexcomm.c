@@ -222,7 +222,14 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		}
 
 		/* Wait for the transfer to complete */
-		k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT_MSEC);
+		if (k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT_MSEC) != 0) {
+			/* Stop the transfer and disable its interrupts */
+			I2C_MasterTransferAbort(base, &data->handle);
+			/* Remove a give from a callback before the abort */
+			k_sem_reset(&data->device_sync_sem);
+			ret = -ETIMEDOUT;
+			break;
+		}
 
 		/* Return an error if the transfer didn't complete
 		 * successfully. e.g., nak, timeout, lost arbitration

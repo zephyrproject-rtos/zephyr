@@ -29,5 +29,7 @@ config I2C_NXP_TRANSFER_TIMEOUT
 	  Timeout in milliseconds used for each I2C transfer.
 	  0 means that the driver should use the K_FOREVER value,
 	  i.e. it should wait as long as necessary.
+	  When a message does not complete in this time, the driver
+	  stops the transfer and returns -ETIMEDOUT.
 	  In conjunction with this, FSL_FEATURE_I2C_TIMEOUT_RECOVERY
 	  must be enabled to allow the driver to fully recover.
