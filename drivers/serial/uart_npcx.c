@@ -119,8 +119,10 @@ static const struct uart_baudrate_cfg baudrate_mapping_table[] = {
 	/* Standard baudrate: 115200 */
 	{.baud_rate = 115200, .src_clk = MHZ(15), .UPSR = 0x38, .UBAUD = 0x01},
 	{.baud_rate = 115200, .src_clk = MHZ(20), .UPSR = 0x08, .UBAUD = 0x0a},
+	{.baud_rate = 115200, .src_clk = MHZ(24), .UPSR = 0x60, .UBAUD = 0x01},
 	{.baud_rate = 115200, .src_clk = MHZ(25), .UPSR = 0x10, .UBAUD = 0x08},
 	{.baud_rate = 115200, .src_clk = MHZ(30), .UPSR = 0x10, .UBAUD = 0x0a},
+	{.baud_rate = 115200, .src_clk = MHZ(33), .UPSR = 0x08, .UBAUD = 0x11},
 	{.baud_rate = 115200, .src_clk = MHZ(40), .UPSR = 0x08, .UBAUD = 0x15},
 	{.baud_rate = 115200, .src_clk = MHZ(48), .UPSR = 0x08, .UBAUD = 0x19},
 	{.baud_rate = 115200, .src_clk = MHZ(50), .UPSR = 0x08, .UBAUD = 0x1a},
