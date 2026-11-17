@@ -6,7 +6,8 @@
 
 /*
  * The top 64 KiB of MRAM hold the ATOC written by the Secure Enclave, the
- * 64 KiB below it are storage. Code runs from the MRAM base.
+ * 64 KiB below it are storage. MCUboot partitions start at the MRAM base for
+ * RTSS-HE and at 2 MiB for RTSS-HP. Images without MCUboot link at the base.
  */
 
 / {
@@ -28,6 +29,44 @@
 		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		rtss_he_boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(64)>;
+			label = "he-mcuboot";
+			read-only;
+		};
+
+		rtss_he_slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x10000 DT_SIZE_K(992)>;
+			label = "he-image-0";
+		};
+
+		rtss_he_slot1_partition: partition@108000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x108000 DT_SIZE_K(992)>;
+			label = "he-image-1";
+		};
+
+		rtss_hp_boot_partition: partition@200000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x200000 DT_SIZE_K(64)>;
+			label = "hp-mcuboot";
+			read-only;
+		};
+
+		rtss_hp_slot0_partition: partition@210000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x210000 DT_SIZE_K(1696)>;
+			label = "hp-image-0";
+		};
+
+		rtss_hp_slot1_partition: partition@3b8000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x3b8000 DT_SIZE_K(1696)>;
+			label = "hp-image-1";
+		};
 
 		storage_partition: partition@560000 {
 			compatible = "zephyr,mapped-partition";
