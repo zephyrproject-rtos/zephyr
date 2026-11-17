@@ -17,7 +17,17 @@ DfuSeConfig = namedtuple('DfuSeConfig', ['address', 'options'])
 class DfuUtilBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for dfu-util.'''
 
-    def __init__(self, cfg, dev_id, alt, img, exe='dfu-util', dfuse_config=None, detach=False):
+    def __init__(
+        self,
+        cfg,
+        dev_id,
+        alt,
+        img,
+        exe='dfu-util',
+        dfuse_config=None,
+        detach=False,
+        stay_in_dfu=False,
+    ):
         super().__init__(cfg)
         self.dev_id = dev_id  # Used only for error checking in do_run
         self.alt = alt
@@ -34,6 +44,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
             self.dfuse = True
         self.dfuse_config = dfuse_config
         self.detach = detach
+        self.stay_in_dfu = stay_in_dfu
         self.reset = False
 
     @classmethod
@@ -42,7 +53,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, dev_id=True, flash_addr=True)
+        return RunnerCaps(commands={'flash'}, dev_id=True, flash_addr=True, reset=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -87,12 +98,17 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         if args.img is None:
             args.img = cfg.bin_file
 
+        # --no-reset keeps the device in DFU mode, e.g. for the next image of a
+        # multi-image (sysbuild) build: no DfuSe 'leave' and no separate detach.
+        stay_in_dfu = args.reset is False
+
         if args.dfuse:
             args.dt_flash = True  # --dfuse implies --dt-flash.
             build_conf = BuildConfiguration(cfg.build_dir)
-            dcfg = DfuSeConfig(
-                address=cls.get_flash_address(args, build_conf), options=args.dfuse_modifiers
-            )
+            options = args.dfuse_modifiers
+            if stay_in_dfu:
+                options = ':'.join(opt for opt in options.split(':') if opt != 'leave')
+            dcfg = DfuSeConfig(address=cls.get_flash_address(args, build_conf), options=options)
         else:
             dcfg = None
 
@@ -103,7 +119,8 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
             args.img,
             exe=args.dfu_util,
             dfuse_config=dcfg,
-            detach=args.detach,
+            detach=args.detach and not stay_in_dfu,
+            stay_in_dfu=stay_in_dfu,
         )
         ret.ensure_device()
         return ret
@@ -154,5 +171,5 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
             # DfuSe targets do as well, except when 'leave' is given
             # as an option.
             self.reset = False
-        if self.reset:
+        if self.reset and not self.stay_in_dfu:
             print('Now reset your board again to switch back to runtime mode.')
