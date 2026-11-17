@@ -4,16 +4,33 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the threshold detection API of the NPCX ADC
+ * @ingroup adc_npcx_threshold_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_NPCX_THRESHOLD_H_
 #define ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_NPCX_THRESHOLD_H_
 
 #include <zephyr/device.h>
 
+/**
+ * @brief Nuvoton NPCX ADC threshold detection
+ * @defgroup adc_npcx_threshold_interface NPCX ADC threshold detection
+ * @ingroup adc_interface_ext
+ * @{
+ */
+
+/** @brief Condition that asserts a threshold detection. */
 enum adc_npcx_threshold_param_l_h {
+	/** Assert when the measured value is higher than the threshold. */
 	ADC_NPCX_THRESHOLD_PARAM_L_H_HIGHER,
+	/** Assert when the measured value is lower than the threshold. */
 	ADC_NPCX_THRESHOLD_PARAM_L_H_LOWER,
 };
 
+/** @brief Threshold control parameter types. */
 enum adc_npcx_threshold_param_type {
 	/** Selects ADC channel to be used for measurement */
 	ADC_NPCX_THRESHOLD_PARAM_CHNSEL,
@@ -28,6 +45,7 @@ enum adc_npcx_threshold_param_type {
 	/** @endcond */
 };
 
+/** @brief Threshold control parameter, see adc_npcx_threshold_ctrl_set_param(). */
 struct adc_npcx_threshold_param {
 	/** Threshold control parameter */
 	enum adc_npcx_threshold_param_type type;
@@ -87,5 +105,7 @@ int adc_npcx_threshold_ctrl_set_param(const struct device *dev,
  */
 int adc_npcx_threshold_ctrl_enable(const struct device *dev, uint8_t th_sel,
 				   const bool enable);
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_NPCX_THRESHOLD_H_ */

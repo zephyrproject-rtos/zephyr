@@ -4,10 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the voltage-to-temperature (V2T) API of the NPCX ADC
+ * @ingroup adc_npcx_v2t_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_NPCX_V2T_H_
 #define ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_NPCX_V2T_H_
 
 #include <zephyr/device.h>
+
+/**
+ * @brief Nuvoton NPCX ADC voltage-to-temperature (V2T) mode
+ * @defgroup adc_npcx_v2t_interface NPCX ADC V2T
+ * @ingroup adc_interface_ext
+ * @{
+ */
 
 /**
  * @brief Set ADC V2T channels
@@ -32,5 +45,7 @@ int adc_npcx_v2t_set_channels(const struct device *dev, uint32_t channels);
  *          0 for adc mode, 1 for v2t mode.
  */
 uint32_t adc_npcx_v2t_get_channels(const struct device *dev);
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_NPCX_V2T_H_ */
