@@ -281,17 +281,37 @@ EL1_Reset_Handler:
 
     ldr r0, =arm_cpu_boot_params
 
+#if CONFIG_MP_MAX_NUM_CPUS > 1 || defined(CONFIG_ARM_SMP_FIXED_BOOT_CPU)
+    /*
+     * Get the "logic" id defined by cpu_node_list statically to identify this core.
+     * It is worth noting that this is NOT the final logic id (arch_curr_cpu()->id).
+     * A core that is not one of the first CONFIG_MP_MAX_NUM_CPUS CPU nodes stays
+     * here. ARM_SMP_FIXED_BOOT_CPU relies on this with one CPU too, on SoCs that
+     * start every core at reset.
+     */
+    get_cpu_logic_id r1, r2, r3, r4 // r1: MPID, r2: logic id
+#endif
+
 #if CONFIG_MP_MAX_NUM_CPUS > 1
+#if defined(CONFIG_ARM_SMP_FIXED_BOOT_CPU)
+    /*
+     * The first CPU node is the primary core. Any other core waits for
+     * arch_cpu_start() to publish its MPID in arm_cpu_boot_params.mpid, which
+     * is in .noinit: set it to -1 before the first read, so that whatever the
+     * RAM holds is not taken as a start request.
+     * arch_cpu_start() keeps publishing until the core answers, in case
+     * this store lands after its own.
+     */
+    cmp r2, #0
+    beq _primary_core
+    mvn r3, #0
+    str r3, [r0, #BOOT_PARAM_MPID_OFFSET]
+    dsb
+    b _secondary_core
+#else
     /*
      * This code uses voting locks, like arch/arm64/core/reset.S, to determine primary CPU.
      */
-
-    /*
-     * Get the "logic" id defined by cpu_node_list statically for voting lock self-identify.
-     * It is worth noting that this is NOT the final logic id (arch_curr_cpu()->id)
-     */
-    get_cpu_logic_id r1, r2, r3, r4 // r1: MPID, r2: logic id
-
     add r4, r0, #BOOT_PARAM_VOTING_OFFSET
 
     /* signal our desire to vote */
@@ -327,6 +347,7 @@ EL1_Reset_Handler:
     cmp r3, r1
     beq _primary_core
     /* fallthrough secondary */
+#endif /* CONFIG_ARM_SMP_FIXED_BOOT_CPU */
 
     /* loop until our turn comes */
 _secondary_core:

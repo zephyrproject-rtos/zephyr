@@ -335,3 +335,19 @@ endif # CPU_AARCH32_CORTEX_R
 
 config TEST_EXTRA_STACK_SIZE
 	default 1024 if SMP
+
+config ARM_SMP_FIXED_BOOT_CPU
+	bool "Boot on the first CPU node, without a voting lock"
+	depends on CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R
+	help
+	  Make the core of the first CPU node in the devicetree the primary
+	  core, instead of electing one with a voting lock at reset. The other
+	  cores wait until the kernel starts them, so booting does not depend
+	  on .data being initialized before the cores leave reset.
+
+	  Enable it for XIP images on SoCs that start every core at the image
+	  entry, or that start the secondary cores with PM_CPU_OPS; on the
+	  latter, the core that boots must be the first CPU node. On SoCs that
+	  start every core at reset, it also lets an image built for fewer
+	  cores, such as one with MP_MAX_NUM_CPUS set to 1, run on the first
+	  MP_MAX_NUM_CPUS CPU nodes only: the other cores stay parked.

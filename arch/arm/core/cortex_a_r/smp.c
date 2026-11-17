@@ -45,7 +45,23 @@ K_KERNEL_STACK_ARRAY_DECLARE(z_arm_sys_stack,
 			    CONFIG_MP_MAX_NUM_CPUS,
 			    CONFIG_ARMV7_SVC_STACK_SIZE);
 
-struct boot_params {
+#ifdef CONFIG_ARM_SMP_FIXED_BOOT_CPU
+/*
+ * A waiting core writes mpid with its data cache off. Keep the boot parameters
+ * in cache lines of their own, so that no other data written by the primary
+ * core shares them and writes a stale copy back over them.
+ */
+#if defined(CONFIG_DCACHE_LINE_SIZE) && (CONFIG_DCACHE_LINE_SIZE > 0)
+#define BOOT_PARAMS_ALIGN CONFIG_DCACHE_LINE_SIZE
+#else
+#define BOOT_PARAMS_ALIGN 64
+#endif
+#define BOOT_PARAMS_ATTR __aligned(BOOT_PARAMS_ALIGN)
+#else
+#define BOOT_PARAMS_ATTR
+#endif
+
+struct BOOT_PARAMS_ATTR boot_params {
 	uint32_t mpid;
 	char *irq_sp;
 	char *fiq_sp;
@@ -69,6 +85,13 @@ BUILD_ASSERT(offsetof(struct boot_params, svc_sp) == BOOT_PARAM_SVC_SP_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, sys_sp) == BOOT_PARAM_SYS_SP_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, voting) == BOOT_PARAM_VOTING_OFFSET);
 
+#ifdef CONFIG_ARM_SMP_FIXED_BOOT_CPU
+/*
+ * Not initialized: a waiting core sets mpid to -1 itself (reset.S), and on an
+ * XIP image it is read before z_prep_c() could initialize it.
+ */
+volatile struct boot_params __noinit arm_cpu_boot_params;
+#else
 volatile struct boot_params arm_cpu_boot_params = {
 	.mpid = -1,
 	.irq_sp = (char *)z_interrupt_stacks[0] + K_KERNEL_STACK_RESERVED + CONFIG_ISR_STACK_SIZE,
@@ -83,6 +106,7 @@ volatile struct boot_params arm_cpu_boot_params = {
 	.sys_sp =
 		(char *)z_arm_sys_stack[0] + K_KERNEL_STACK_RESERVED + CONFIG_ARMV7_SYS_STACK_SIZE,
 };
+#endif
 
 const uint32_t cpu_node_list[] = {
 	DT_FOREACH_CPU_STATUS_OKAY_SEP(DT_REG_ADDR, (,))};
@@ -98,6 +122,36 @@ extern void z_arm_configure_static_mpu_regions(void);
 #elif defined(CONFIG_ARM_AARCH32_MMU)
 extern int z_arm_mmu_init(bool is_primary_core);
 #endif
+
+/*
+ * Publish the MPID of the core to start: the waiting core leaves reset.S once
+ * it reads its own MPID.
+ */
+static void publish_boot_mpid(uint32_t mpid)
+{
+	arm_cpu_boot_params.mpid = mpid;
+
+#ifdef CONFIG_DCACHE
+	/*
+	 * The secondary core starts with the MMU and the data cache disabled, so
+	 * the parameters have to reach the point of coherency before it is
+	 * released. CONFIG_DCACHE=n leaves the data cache off, so no maintenance
+	 * is needed.
+	 */
+	if (arch_dcache_flush_range((void *)&arm_cpu_boot_params, sizeof(arm_cpu_boot_params)) !=
+	    0) {
+		printk("Failed to clean the boot parameters to memory\n");
+		k_panic();
+	}
+#endif
+
+	/*
+	 * Guarantees completion of the cache flush above; with the data cache
+	 * disabled it is the only thing ordering the mpid store before the
+	 * secondary core is released.
+	 */
+	barrier_dsync_fence_full();
+}
 
 /* Called from Zephyr initialization */
 void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_t fn, void *arg)
@@ -152,28 +206,7 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	barrier_dsync_fence_full();
 
 	/* store mpid last as this is our synchronization point */
-	arm_cpu_boot_params.mpid = cpu_mpid;
-
-#ifdef CONFIG_DCACHE
-	/*
-	 * The secondary core starts with the MMU and the data cache disabled, so
-	 * the parameters have to reach the point of coherency before it is
-	 * released. CONFIG_DCACHE=n leaves the data cache off, so no maintenance
-	 * is needed.
-	 */
-	if (arch_dcache_flush_range((void *)&arm_cpu_boot_params, sizeof(arm_cpu_boot_params)) !=
-	    0) {
-		printk("Failed to clean the boot parameters to memory\n");
-		k_panic();
-	}
-#endif
-
-	/*
-	 * Guarantees completion of the cache flush above; with the data cache
-	 * disabled it is the only thing ordering the mpid store before the
-	 * secondary core is released.
-	 */
-	barrier_dsync_fence_full();
+	publish_boot_mpid(cpu_mpid);
 
 #ifdef CONFIG_PM_CPU_OPS
 	/*
@@ -189,7 +222,15 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 
 	/* Wait secondary cores up, see arch_secondary_cpu_init */
 	while (arm_cpu_boot_params.fn) {
+#ifdef CONFIG_ARM_SMP_FIXED_BOOT_CPU
+		/*
+		 * The core sets mpid to -1 when it starts, which may be after
+		 * the store above: publish again until it answers.
+		 */
+		publish_boot_mpid(cpu_mpid);
+#else
 		wfe();
+#endif
 	}
 
 	cpu_map[cpu_num] = cpu_mpid;
