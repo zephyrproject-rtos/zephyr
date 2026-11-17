@@ -213,7 +213,8 @@ struct net_socks5_cmd_rsp {
 	size_t skip;			/* bound address and port still to drop */
 	bool complete;
 	int status;
-	struct net_pkt *leftover;	/* holds data that came in behind the reply */
+	atomic_t state;			/* reply pending, accepted or given up */
+	struct k_sem done;		/* given once the reply is settled */
 };
 
 /** @endcond */
@@ -545,6 +546,10 @@ __net_socket struct net_context {
 		uint8_t method_rsp[2];
 		/** CONNECT reply parser */
 		struct net_socks5_cmd_rsp cmd_rsp;
+		/** Callback that gets the data relayed behind the reply */
+		net_context_recv_cb_t recv_cb;
+		/** User data for recv_cb */
+		void *recv_user_data;
 	} socks5;
 #endif
 
