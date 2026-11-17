@@ -1,0 +1,21 @@
+common:
+  build_only: true
+  arch_allow: arm
+  filter: (CONFIG_CPU_AARCH32_CORTEX_R or CONFIG_CPU_AARCH32_CORTEX_A) and
+    not CONFIG_USE_SWITCH
+  tags:
+    - arm
+tests:
+  arch.arm.armv7_exception_stack:
+    platform_allow:
+      - qemu_cortex_r5/zynqmp_rpu
+    integration_platforms:
+      - qemu_cortex_r5/zynqmp_rpu
+  arch.arm.armv7_exception_stack.extra_exception_info:
+    filter: ARCH_HAS_EXTRA_EXCEPTION_INFO
+    platform_allow:
+      - qemu_cortex_r5/zynqmp_rpu
+    integration_platforms:
+      - qemu_cortex_r5/zynqmp_rpu
+    extra_configs:
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
