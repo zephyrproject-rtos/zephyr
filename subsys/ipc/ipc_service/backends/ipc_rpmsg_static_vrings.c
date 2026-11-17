@@ -678,6 +678,10 @@ static int get_tx_buffer(const struct device *instance, void *token,
 {
 	struct backend_data_t *data = instance->data;
 	struct ipc_rpmsg_ept *rpmsg_ept;
+	k_timepoint_t end;
+	k_timeout_t remaining;
+	k_timeout_t slice;
+	uint32_t len = 0;
 	void *payload;
 
 	rpmsg_ept = (struct ipc_rpmsg_ept *) token;
@@ -691,11 +695,6 @@ static int get_tx_buffer(const struct device *instance, void *token,
 		return -EINVAL;
 	}
 
-	/* OpenAMP only supports a binary wait / no-wait */
-	if (!K_TIMEOUT_EQ(wait, K_FOREVER) && !K_TIMEOUT_EQ(wait, K_NO_WAIT)) {
-		return -ENOTSUP;
-	}
-
 	/* The user requested a specific size */
 	if ((*size) && (*size > data->tx_buffer_size)) {
 		/* Too big to fit */
@@ -703,20 +702,35 @@ static int get_tx_buffer(const struct device *instance, void *token,
 		return -ENOMEM;
 	}
 
-	/*
-	 * OpenAMP doesn't really have the concept of forever but instead it
-	 * gives up after 15 seconds.  In that case, just keep retrying.
-	 */
-	do {
-		payload = rpmsg_get_tx_payload_buffer(&rpmsg_ept->ep, size,
-						      K_TIMEOUT_EQ(wait, K_FOREVER));
-	} while ((!payload) && K_TIMEOUT_EQ(wait, K_FOREVER));
+	/* Deadline for the whole call, so retries do not extend the timeout */
+	end = sys_timepoint_calc(wait);
 
-	/* This should really only be valid for K_NO_WAIT */
-	if (!payload) {
-		return -ENOBUFS;
+	for (;;) {
+		payload = rpmsg_get_tx_payload_buffer(&rpmsg_ept->ep, &len, 0);
+		if (payload != NULL) {
+			break;
+		}
+
+		remaining = sys_timepoint_timeout(end);
+		if (K_TIMEOUT_EQ(remaining, K_NO_WAIT)) {
+			return -ENOBUFS;
+		}
+
+		/* Cannot sleep in ISR or pre-kernel. Sleeping on mbox_wq would stall RX. */
+		if (k_is_in_isr() || k_is_pre_kernel() ||
+		    (k_current_get() == k_work_queue_thread_get(&data->mbox_wq))) {
+			return -ENOTSUP;
+		}
+
+		slice = K_MSEC(CONFIG_IPC_SERVICE_BACKEND_RPMSG_TX_POLL_INTERVAL_MS);
+		if (!K_TIMEOUT_EQ(remaining, K_FOREVER) && (remaining.ticks < slice.ticks)) {
+			slice = remaining;
+		}
+
+		k_sleep(slice);
 	}
 
+	*size = len;
 	(*r_data) = payload;
 
 	return 0;
