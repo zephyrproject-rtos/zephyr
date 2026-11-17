@@ -908,4 +908,103 @@ ZTEST(udp_fn_tests, test_udp_opt_apc_passthrough)
 }
 #endif /* CONFIG_NET_UDP_OPTIONS */
 
+struct unregister_in_cb_data {
+	struct net_conn_handle *handle;
+	struct net_conn_handle *new_handle;
+	struct net_conn *conn;
+	int ret;
+	bool cb_intact;
+};
+
+static enum net_verdict test_unregister_in_cb(struct net_conn *conn,
+					      struct net_pkt *pkt,
+					      union net_ip_header *ip_hdr,
+					      union net_proto_header *proto_hdr,
+					      void *user_data)
+{
+	struct unregister_in_cb_data *data = user_data;
+	struct net_sockaddr_in local = {
+		.sin_family = NET_AF_INET,
+		.sin_addr = { { { 192, 0, 2, 1 } } },
+		.sin_port = net_htons(4245),
+	};
+
+	/* A socket close and rebind running while this callback executes */
+	data->ret = net_udp_unregister(data->handle);
+	if (data->ret == 0) {
+		data->ret = net_udp_register(NET_AF_INET, NULL, (struct net_sockaddr *)&local,
+					     0, 4245, NULL, test_ok, NULL, &data->new_handle);
+	}
+
+	data->conn = conn;
+	data->cb_intact = (conn->cb == test_unregister_in_cb);
+
+	net_pkt_unref(pkt);
+	k_sem_give(&recv_lock);
+
+	return NET_OK;
+}
+
+static void recv_ipv4_udp(struct net_if *iface, struct net_in_addr *src,
+			  struct net_in_addr *dst, uint16_t dst_port)
+{
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(iface, 0, NET_AF_INET, NET_IPPROTO_UDP, K_SECONDS(1));
+	zassert_not_null(pkt, "Out of mem");
+
+	zassert_ok(net_ipv4_create(pkt, src, dst), "Cannot create IPv4 header");
+	zassert_ok(net_udp_create(pkt, net_htons(12345), net_htons(dst_port)),
+		   "Cannot create UDP header");
+
+	net_pkt_cursor_init(pkt);
+	net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
+
+	zassert_ok(net_recv_data(iface, pkt), "Cannot receive packet");
+	zassert_ok(k_sem_take(&recv_lock, TIMEOUT), "Packet not delivered");
+}
+
+ZTEST(udp_fn_tests, test_udp_unregister_during_dispatch)
+{
+	struct net_in_addr my = { { { 192, 0, 2, 1 } } };
+	struct net_in_addr peer = { { { 192, 0, 2, 2 } } };
+	struct net_sockaddr_in local = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4244),
+	};
+	struct net_if *iface = net_if_get_default();
+	struct unregister_in_cb_data data = { 0 };
+	struct net_conn_handle *handle = NULL;
+	int ret;
+
+	net_ipaddr_copy(&local.sin_addr, &my);
+	(void)net_if_ipv4_addr_add(iface, &my, NET_ADDR_MANUAL, 0);
+
+	ret = net_udp_register(NET_AF_INET, NULL, (struct net_sockaddr *)&local, 0, 4244, NULL,
+			       test_unregister_in_cb, &data, &data.handle);
+	zassert_ok(ret, "register failed (%d)", ret);
+
+	recv_ipv4_udp(iface, &peer, &my, 4244);
+
+	zassert_ok(data.ret, "unregister or register in callback failed (%d)", data.ret);
+	zassert_true(data.cb_intact, "connection cleared while its callback was running");
+	zassert_not_equal((struct net_conn *)data.new_handle, data.conn,
+			  "connection reused while its callback was running");
+
+	/* Packets are dispatched in order, so once the rebound handler has
+	 * run, the first dispatch has completed and released the old slot.
+	 */
+	recv_ipv4_udp(iface, &peer, &my, 4245);
+
+	local.sin_port = net_htons(4246);
+	ret = net_udp_register(NET_AF_INET, NULL, (struct net_sockaddr *)&local, 0, 4246, NULL,
+			       test_fail, NULL, &handle);
+	zassert_ok(ret, "register failed (%d)", ret);
+	zassert_equal((struct net_conn *)handle, data.conn,
+		      "connection not recycled after its callback returned");
+
+	zassert_ok(net_udp_unregister(handle), "unregister failed");
+	zassert_ok(net_udp_unregister(data.new_handle), "unregister failed");
+}
+
 ZTEST_SUITE(udp_fn_tests, NULL, NULL, NULL, NULL, NULL);
