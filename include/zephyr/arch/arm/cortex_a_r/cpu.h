@@ -63,6 +63,9 @@
 #define IMP_CSCTLR(iway, dway)  ((iway << IMP_CSCTLR_IFLW_SHIFT) | \
 				((dway << IMP_CSCTLR_DFLW_SHIFT)))
 
+/* Secure Configuration Register */
+#define SCR_NS_BIT		BIT(0)
+
 /* Hyp System Control Register */
 #define HSCTLR_RES1		(BIT(29) | BIT(28) | BIT(23) | \
 				 BIT(22) | BIT(18) | BIT(16) | \

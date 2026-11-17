@@ -97,6 +97,23 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
     isb
 #endif /* CONFIG_GIC_V3 */
 
+    /*
+     * Zero the virtual offset, which resets to an UNKNOWN value on each core.
+     * Zephyr uses the virtual counter, and the timer code needs it to read
+     * the same on every core. CNTVOFF is only accessible from Hyp mode, or
+     * from Monitor mode with SCR.NS set.
+     */
+    mrc p15, 0, r0, c1, c1, 0      /* Read SCR */
+    orr r1, r0, #SCR_NS_BIT
+    mcr p15, 0, r1, c1, c1, 0
+    isb
+    mov r2, #0
+    mov r3, #0
+    mcrr p15, 4, r2, r3, c14       /* Write CNTVOFF */
+    isb
+    mcr p15, 0, r0, c1, c1, 0      /* Restore SCR */
+    isb
+
     /* Return to Secure SVC mode */
     cps #MODE_SVC
     isb
