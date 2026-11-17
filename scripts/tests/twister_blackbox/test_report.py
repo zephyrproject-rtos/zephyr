@@ -15,8 +15,12 @@ Covered options:
   --clobber-output (-c)    Move existing output before writing
   --no-clean (-k)          Keep stale files from a previous run
   --aggressive-no-clean    Keep every artifact from a previous run
+  --runtime-artifact-cleanup (-M)  Artifact hashes survive the cleanup
 """
 
+import glob
+import hashlib
+import json
 import os
 from unittest import mock
 
@@ -416,3 +420,49 @@ class TestArtifacts:
         result = twister_main(args)
         assert result == 0
         assert os.path.isfile(pkg_file), f'Package tarball {pkg_file!r} was not created'
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestArtifactDigests:
+    """Tests for the per-suite artifacts list in twister.json."""
+
+    @pytest.mark.build
+    @pytest.mark.parametrize(
+        'extra_flags, kept',
+        [([], True), (['-M', 'pass'], False)],
+        ids=['kept', 'cleaned'],
+    )
+    def test_artifacts_in_twister_json(self, out_path, extra_flags, kept):
+        """Each built suite lists its binaries with size and SHA-256."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '--build-only',
+            '-p',
+            'native_sim/native',
+        ] + extra_flags
+        twister_main(args)
+
+        with open(os.path.join(out_path, 'twister.json')) as fh:
+            report = json.load(fh)
+
+        built = [ts for ts in report['testsuites'] if ts.get('status') == 'not run']
+        assert built, 'Expected at least one built test suite'
+        for ts in built:
+            assert ts['artifacts'], f'No artifacts for {ts["name"]}'
+            build_dir = glob.glob(
+                os.path.join(out_path, 'native_sim_native', '*', ts['path'], ts['name'])
+            )
+            assert len(build_dir) == 1
+            for artifact in ts['artifacts']:
+                assert len(artifact['sha256']) == 64
+                assert artifact['size'] > 0
+                path = os.path.join(build_dir[0], artifact['file'])
+                assert os.path.isfile(path) == kept
+                if kept:
+                    with open(path, 'rb') as fh:
+                        assert hashlib.sha256(fh.read()).hexdigest() == artifact['sha256']
+                    assert os.path.getsize(path) == artifact['size']

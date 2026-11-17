@@ -246,3 +246,39 @@ def test_json_report_gives_no_reason_for_a_suite_not_run(tmp_path):
     suite = json.loads(report.read_text())['testsuites'][0]
     assert suite['status'] == TwisterStatus.NONE
     assert 'reason' not in suite
+
+
+def test_json_report_writes_artifacts(tmp_path):
+    env = mock.Mock(toolchain='zephyr', commit_date='today', run_date='today')
+    env.options.report_all_options = False
+    env.non_default_options = mock.Mock(return_value={})
+    env.options.footprint_report = None
+    artifacts = [{'file': 'zephyr/zephyr.elf', 'sha256': 'ab' * 32, 'size': 1024}]
+    instances = {}
+    for name, metrics in [('built', {'artifacts': artifacts}), ('cmake_only', {})]:
+        instance = mock.Mock(
+            status=TwisterStatus.NOTRUN,
+            reason='Test was built only',
+            run_id=None,
+            run=False,
+            metrics=metrics,
+            retries=0,
+            toolchain='zephyr',
+            hardware_id=None,
+            build_dir=str(tmp_path),
+            build_time=0,
+            testcases=[],
+            recording=None,
+        )
+        instance.testsuite.name = name
+        instance.testsuite.source_dir_rel = f'tests/{name}'
+        instance.platform.name = 'plat'
+        instance.platform.arch = 'arch'
+        instances[f'plat/{name}'] = instance
+    report = tmp_path / 'twister.json'
+
+    JsonReport(env, instances).create(report)
+
+    suites = {s['name']: s for s in json.loads(report.read_text())['testsuites']}
+    assert suites['built']['artifacts'] == artifacts
+    assert 'artifacts' not in suites['cmake_only']
