@@ -715,6 +715,15 @@ Modules
   :ref:`external module <external_module_rust>`; add it to the application manifest to keep using
   Rust. The ``manifest.project-filter +zephyr-lang-rust`` west setting no longer has an effect.
 
+Mbed TLS
+========
+
+* Mbed TLS was updated to version 4.1.2. Release notes (including security fixes) can be found
+  `here <https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-4.1.2>`_.
+
+* TF-PSA-Crypto was updated to version 1.1.2. Release notes (including security fixes) can be
+  found `here <https://github.com/Mbed-TLS/TF-PSA-Crypto/releases/tag/tf-psa-crypto-1.1.2>`_.
+
 Architectures
 *************
 
