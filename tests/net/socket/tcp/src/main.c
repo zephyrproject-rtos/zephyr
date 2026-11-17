@@ -1249,6 +1249,22 @@ ZTEST_USER(net_socket_tcp, test_v4_sendto_recvmsg)
 	zassert_equal(net_sin(&addr)->sin_port, net_htons(CLIENT_PORT), "Wrong port");
 	zassert_true(net_ipv4_is_addr_loopback(&net_sin(&addr)->sin_addr), "Wrong address");
 
+	/* Peek in two chunks, the second one continues where the first ends */
+	io_vector[0].iov_base = buf2;
+	io_vector[0].iov_len = sizeof(buf2);
+	io_vector[1].iov_base = buf3;
+	io_vector[1].iov_len = sizeof(buf3);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 2;
+
+	len = strlen(TEST_STR_SMALL);
+	test_recvmsg(new_sock, &msg, ZSOCK_MSG_PEEK, len, __LINE__);
+	zassert_mem_equal(buf2, TEST_STR_SMALL, sizeof(buf2), "wrong data in %s", "iov[0]");
+	zassert_mem_equal(buf3, &TEST_STR_SMALL[sizeof(buf2)], len - sizeof(buf2),
+			  "wrong data in %s", "iov[1]");
+
 	/* Then in two chunks */
 	io_vector[0].iov_base = buf2;
 	io_vector[0].iov_len = sizeof(buf2);
