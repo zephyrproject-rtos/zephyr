@@ -83,7 +83,7 @@ static int dfu_flash_read(void *const priv,
 	}
 
 	data->last_block = block;
-	data->uploaded += size;
+	data->uploaded += len;
 	LOG_DBG("uploaded %u block %u len %u", data->uploaded, block, len);
 
 	return len;
