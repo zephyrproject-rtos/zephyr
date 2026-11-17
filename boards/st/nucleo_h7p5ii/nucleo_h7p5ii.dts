@@ -19,6 +19,9 @@
 		led0 = &green_led;
 		led1 = &red_led;
 		led2 = &blue_led;
+		pwm-led0 = &green_pwm_led;
+		pwm-led1 = &red_pwm_led;
+		pwm-led2 = &blue_pwm_led;
 		sw0 = &user_button;
 	};
 
@@ -53,6 +56,22 @@
 		blue_led: led_2 {
 			gpios = <&gpiof 4 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		green_pwm_led: led_0_pwm {
+			pwms = <&pwm5 4 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		red_pwm_led: led_1_pwm {
+			pwms = <&pwm16 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		blue_pwm_led: led_2_pwm {
+			pwms = <&pwm10 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 };
@@ -149,4 +168,38 @@
 	pinctrl-0 = <&spi1_nss_pb7 &spi1_miso_pc11 &spi1_mosi_pb2 &spi1_sck_pg9>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+/* User LEDs PWMs */
+&timers5 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm5: pwm {
+		pinctrl-0 = <&tim5_ch4_pg9>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timers10 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm10: pwm {
+		pinctrl-0 = <&tim10_ch1_pf4>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timers16 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm16: pwm {
+		pinctrl-0 = <&tim16_ch1_pf1>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
 };
