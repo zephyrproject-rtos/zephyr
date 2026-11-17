@@ -256,7 +256,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 	 * Restore r0-r3, r12, lr, lr_und and spsr_und from the exception stack
 	 * and return to the current thread.
 	 */
-	add sp, sp, #EXC_BASIC_OFFSET
+	ldr sp, [sp]
 	pop {r0-r3, r12, lr}
 	userspace_exc_exit
 	rfeia sp!
@@ -272,7 +272,7 @@ z_arm_fpu_trap_exit:
 	sub r1, r1, #1
 	strb r1, [r2, #_cpu_offset_to_exc_depth]
 
-	add sp, sp, #EXC_BASIC_OFFSET
+	ldr sp, [sp]
 	pop {r0-r3, r12, lr}
 	userspace_exc_exit
 	rfeia sp!

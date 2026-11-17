@@ -167,9 +167,18 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 #endif
 
-#if defined(CONFIG_USE_SWITCH) && defined(CONFIG_EXTRA_EXCEPTION_INFO)
-	/* The exception exit skips this area below the frame */
-	thread->callee_saved.psp = (uint32_t)iframe - Z_ARM_EXC_EXTRA_SIZE;
+#if defined(CONFIG_USE_SWITCH)
+	/*
+	 * The exception exit loads the frame address from SP, see
+	 * z_arm_cortex_ar_enter_exc(). iframe is 8-byte aligned.
+	 */
+	uint32_t *frame_addr = (uint32_t *)iframe - 2;
+
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	frame_addr -= Z_ARM_EXC_EXTRA_SIZE / sizeof(uint32_t);
+#endif
+	*frame_addr = (uint32_t)iframe;
+	thread->callee_saved.psp = (uint32_t)frame_addr;
 #else
 	thread->callee_saved.psp = (uint32_t)iframe;
 #endif

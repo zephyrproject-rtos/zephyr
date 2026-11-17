@@ -1043,15 +1043,17 @@ ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 static volatile bool nested_outer_active;
 static volatile uint32_t nested_inner_count;
 static volatile uint32_t nested_outer_sp;
+static volatile uint32_t nested_inner_sp;
 
 /*
  * Raise an SGI through GICD_SGIR at addr, then return through lr, which a
  * leaf function does not save. The SGI is taken in the nops, before the
- * return.
+ * return, with SP 4 modulo 8 as a leaf function may leave it.
  */
 __attribute__((naked, noinline)) static void raise_sgi_in_leaf(uint32_t sgir, uint32_t addr)
 {
-	__asm__ volatile("str r0, [r1]\n"
+	__asm__ volatile("sub sp, sp, #4\n"
+			 "str r0, [r1]\n"
 			 "dsb\n"
 			 "isb\n"
 			 "nop\n"
@@ -1062,15 +1064,26 @@ __attribute__((naked, noinline)) static void raise_sgi_in_leaf(uint32_t sgir, ui
 			 "nop\n"
 			 "nop\n"
 			 "nop\n"
+			 "add sp, sp, #4\n"
 			 "bx lr\n");
 }
 
+static __noinline void nested_inner_count_inc(void)
+{
+	nested_inner_count++;
+}
+
+/* Not a leaf function: GCC keeps SP 8-byte aligned in its body */
 static void nested_inner_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
 	if (nested_outer_active) {
-		nested_inner_count++;
+		uint32_t sp;
+
+		__asm__ volatile("mov %0, sp" : "=r"(sp));
+		nested_inner_sp = sp;
+		nested_inner_count_inc();
 	}
 }
 
@@ -1096,6 +1109,7 @@ ZTEST(arm_interrupt, test_arm_nested_interrupt_in_leaf)
 {
 	nested_inner_count = 0U;
 	nested_outer_sp = 0U;
+	nested_inner_sp = 0U;
 
 	arch_irq_connect_dynamic(NESTED_OUTER_SGI, IRQ_DEFAULT_PRIORITY, nested_outer_isr, NULL, 0);
 	arch_irq_connect_dynamic(NESTED_INNER_SGI, 0, nested_inner_isr, NULL, 0);
@@ -1113,5 +1127,7 @@ ZTEST(arm_interrupt, test_arm_nested_interrupt_in_leaf)
 	zassert_not_equal(nested_outer_sp, 0U, "outer ISR did not run");
 	zassert_equal(nested_outer_sp & 7U, 0U, "SP 0x%08x in the ISR is not 8-byte aligned",
 		      nested_outer_sp);
+	zassert_equal(nested_inner_sp & 7U, 0U,
+		      "SP 0x%08x in the nested ISR is not 8-byte aligned", nested_inner_sp);
 }
 #endif
