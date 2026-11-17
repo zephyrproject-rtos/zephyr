@@ -25,13 +25,7 @@ struct otm8009a_config {
 	uint16_t width;
 	uint16_t height;
 	uint8_t channel;
-	uint16_t rotation;
-};
-
-struct otm8009a_data {
-	uint16_t xres;
-	uint16_t yres;
-	uint8_t dsi_pixel_format;
+	uint8_t pixel_format;
 	enum display_orientation orientation;
 };
 
@@ -92,7 +86,7 @@ static int otm8009a_check_id(const struct device *dev)
 
 static int otm8009a_configure(const struct device *dev)
 {
-	struct otm8009a_data *data = dev->data;
+	const struct otm8009a_config *cfg = dev->config;
 	uint8_t buf[4];
 	int ret;
 
@@ -455,7 +449,7 @@ static int otm8009a_configure(const struct device *dev)
 	k_msleep(OTM8009A_EXIT_SLEEP_MODE_WAIT_TIME);
 
 	/* set pixel color format */
-	switch (data->dsi_pixel_format) {
+	switch (cfg->pixel_format) {
 	case MIPI_DSI_PIXFMT_RGB565:
 		buf[0] = MIPI_DCS_PIXEL_FORMAT_16BIT;
 		break;
@@ -463,7 +457,7 @@ static int otm8009a_configure(const struct device *dev)
 		buf[0] = MIPI_DCS_PIXEL_FORMAT_24BIT;
 		break;
 	default:
-		LOG_ERR("Unsupported pixel format 0x%x!", data->dsi_pixel_format);
+		LOG_ERR("Unsupported pixel format 0x%x!", cfg->pixel_format);
 		return -ENOTSUP;
 	}
 
@@ -473,13 +467,13 @@ static int otm8009a_configure(const struct device *dev)
 	}
 
 	/* configure address mode */
-	if (data->orientation == DISPLAY_ORIENTATION_NORMAL) {
+	if (cfg->orientation == DISPLAY_ORIENTATION_NORMAL) {
 		buf[0] = 0x00;
-	} else if (data->orientation == DISPLAY_ORIENTATION_ROTATED_90) {
+	} else if (cfg->orientation == DISPLAY_ORIENTATION_ROTATED_90) {
 		buf[0] = MIPI_DCS_ADDRESS_MODE_MIRROR_X | MIPI_DCS_ADDRESS_MODE_SWAP_XY;
-	} else if (data->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+	} else if (cfg->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
 		buf[0] = MIPI_DCS_ADDRESS_MODE_MIRROR_X | MIPI_DCS_ADDRESS_MODE_MIRROR_Y;
-	} else if (data->orientation == DISPLAY_ORIENTATION_ROTATED_270) {
+	} else if (cfg->orientation == DISPLAY_ORIENTATION_ROTATED_270) {
 		buf[0] = MIPI_DCS_ADDRESS_MODE_MIRROR_Y | MIPI_DCS_ADDRESS_MODE_SWAP_XY;
 	}
 
@@ -490,7 +484,12 @@ static int otm8009a_configure(const struct device *dev)
 
 	buf[0] = 0x00;
 	buf[1] = 0x00;
-	sys_put_be16(data->xres, (uint8_t *)&buf[2]);
+	if (cfg->orientation == DISPLAY_ORIENTATION_NORMAL ||
+	    cfg->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		sys_put_be16(cfg->width, (uint8_t *)&buf[2]);
+	} else {
+		sys_put_be16(cfg->height, (uint8_t *)&buf[2]);
+	}
 	ret = otm8009a_dcs_write(dev, MIPI_DCS_SET_COLUMN_ADDRESS, buf, 4);
 	if (ret < 0) {
 		return ret;
@@ -498,7 +497,12 @@ static int otm8009a_configure(const struct device *dev)
 
 	buf[0] = 0x00;
 	buf[1] = 0x00;
-	sys_put_be16(data->yres, (uint8_t *)&buf[2]);
+	if (cfg->orientation == DISPLAY_ORIENTATION_NORMAL ||
+	    cfg->orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		sys_put_be16(cfg->height, (uint8_t *)&buf[2]);
+	} else {
+		sys_put_be16(cfg->width, (uint8_t *)&buf[2]);
+	}
 	ret = otm8009a_dcs_write(dev, MIPI_DCS_SET_PAGE_ADDRESS, buf, 4);
 	if (ret < 0) {
 		return ret;
@@ -588,14 +592,13 @@ static void otm8009a_get_capabilities(const struct device *dev,
 				      struct display_capabilities *capabilities)
 {
 	const struct otm8009a_config *cfg = dev->config;
-	struct otm8009a_data *data = dev->data;
 
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
-	capabilities->current_pixel_format = data->dsi_pixel_format == MIPI_DSI_PIXFMT_RGB565 ?
+	capabilities->current_pixel_format = cfg->pixel_format == MIPI_DSI_PIXFMT_RGB565 ?
 					     PIXEL_FORMAT_RGB_565 : PIXEL_FORMAT_RGB_888;
 	capabilities->supported_pixel_formats = capabilities->current_pixel_format;
-	capabilities->current_orientation = data->orientation;
+	capabilities->current_orientation = cfg->orientation;
 }
 
 static DEVICE_API(display, otm8009a_api) = {
@@ -608,8 +611,8 @@ static DEVICE_API(display, otm8009a_api) = {
 static int otm8009a_init(const struct device *dev)
 {
 	const struct otm8009a_config *cfg = dev->config;
-	struct otm8009a_data *data = dev->data;
 	struct mipi_dsi_device mdev;
+	uint16_t xres, yres;
 	int ret;
 
 	if (cfg->reset.port) {
@@ -632,34 +635,36 @@ static int otm8009a_init(const struct device *dev)
 	}
 
 	/* store x/y resolution & rotation */
-	if (cfg->rotation == 0) {
-		data->xres = cfg->width;
-		data->yres = cfg->height;
-		data->orientation = DISPLAY_ORIENTATION_NORMAL;
-	} else if (cfg->rotation == 90) {
-		data->xres = cfg->height;
-		data->yres = cfg->width;
-		data->orientation = DISPLAY_ORIENTATION_ROTATED_90;
-	} else if (cfg->rotation == 180) {
-		data->xres = cfg->width;
-		data->yres = cfg->height;
-		data->orientation = DISPLAY_ORIENTATION_ROTATED_180;
-	} else if (cfg->rotation == 270) {
-		data->xres = cfg->height;
-		data->yres = cfg->width;
-		data->orientation = DISPLAY_ORIENTATION_ROTATED_270;
+	switch (cfg->orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		xres = cfg->width;
+		yres = cfg->height;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		xres = cfg->height;
+		yres = cfg->width;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		xres = cfg->width;
+		yres = cfg->height;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_270:
+	default:
+		xres = cfg->height;
+		yres = cfg->width;
+		break;
 	}
 
 	/* attach to MIPI-DSI host */
 	mdev.data_lanes = cfg->data_lanes;
-	mdev.pixfmt = data->dsi_pixel_format;
+	mdev.pixfmt = cfg->pixel_format;
 	mdev.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST | MIPI_DSI_MODE_LPM;
 
-	mdev.timings.hactive = data->xres;
+	mdev.timings.hactive = xres;
 	mdev.timings.hbp = OTM8009A_HBP;
 	mdev.timings.hfp = OTM8009A_HFP;
 	mdev.timings.hsync = OTM8009A_HSYNC;
-	mdev.timings.vactive = data->yres;
+	mdev.timings.vactive = yres;
 	mdev.timings.vbp = OTM8009A_VBP;
 	mdev.timings.vfp = OTM8009A_VFP;
 	mdev.timings.vsync = OTM8009A_VSYNC;
@@ -700,13 +705,17 @@ static int otm8009a_init(const struct device *dev)
 		.width = DT_INST_PROP(inst, width),						\
 		.height = DT_INST_PROP(inst, height),						\
 		.channel = DT_INST_REG_ADDR(inst),						\
-		.rotation = DT_INST_PROP(inst, rotation),					\
+		.orientation = DT_INST_PROP(inst, rotation) == 0 ?                              \
+					    DISPLAY_ORIENTATION_NORMAL :                        \
+			       DT_INST_PROP(inst, rotation) == 90 ?                             \
+					    DISPLAY_ORIENTATION_ROTATED_90 :                    \
+			       DT_INST_PROP(inst, rotation) == 180 ?                            \
+					    DISPLAY_ORIENTATION_ROTATED_180 :                   \
+			       DISPLAY_ORIENTATION_ROTATED_270,                                 \
+		.pixel_format = DT_INST_PROP(inst, pixel_format),				\
 	};											\
-	static struct otm8009a_data otm8009a_data_##inst = {					\
-		.dsi_pixel_format = DT_INST_PROP(inst, pixel_format),				\
-	};											\
-	DEVICE_DT_INST_DEFINE(inst, &otm8009a_init, NULL, &otm8009a_data_##inst,		\
-			      &otm8009a_config_##inst, POST_KERNEL,				\
-			      CONFIG_DISPLAY_OTM8009A_INIT_PRIORITY, &otm8009a_api);		\
+	DEVICE_DT_INST_DEFINE(inst, &otm8009a_init, NULL, NULL, &otm8009a_config_##inst,        \
+			      POST_KERNEL, CONFIG_DISPLAY_OTM8009A_INIT_PRIORITY,               \
+			      &otm8009a_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OTM8009A_DEVICE)
