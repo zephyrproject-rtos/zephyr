@@ -21,18 +21,6 @@
 		};
 	};
 
-	soc {
-		snvs: snvs@40c90000 {
-			compatible = "nxp,imx-snvs";
-			reg = <0x40c90000 0x4000>;
-
-			snvs_rtc: rtc {
-				compatible = "nxp,imx-snvs-rtc";
-				interrupts = <66 0>;
-			};
-		};
-	};
-
 	sdram0: memory@80000000 {
 		reg = <0x80000000 DT_SIZE_M(64)>;
 		/* MT48LC16M16A2B4-7EIT */
@@ -153,4 +141,8 @@
 			};
 		};
 	};
+};
+
+&snvs_rtc {
+	status = "okay";
 };
