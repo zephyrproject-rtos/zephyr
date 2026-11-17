@@ -590,6 +590,70 @@ ZTEST(net_pkt_filter_test_suite, test_npf_ipv6_address_filtering)
 	net_pkt_unref(pkt_v4);
 }
 
+ZTEST(net_pkt_filter_test_suite, test_npf_ip_address_family)
+{
+	/* Lists of one address, so that reading the IPv4 list as an IPv6
+	 * address stays inside ipv4_address_list.
+	 */
+	static NPF_IP_SRC_ADDR_ALLOWLIST(allow_v4, (void *)ipv4_address_list, 1, NET_AF_INET);
+	static NPF_IP_SRC_ADDR_BLOCKLIST(block_v4, (void *)ipv4_address_list, 1, NET_AF_INET);
+	static NPF_IP_SRC_ADDR_ALLOWLIST(allow_v6, (void *)ipv6_address_list, 1, NET_AF_INET6);
+	static NPF_IP_SRC_ADDR_BLOCKLIST(block_v6, (void *)ipv6_address_list, 1, NET_AF_INET6);
+	static NPF_RULE(accept_v4, NET_OK, allow_v4);
+	static NPF_RULE(accept_v6, NET_OK, allow_v6);
+	static NPF_RULE(drop_others, NET_DROP, block_v4, block_v6);
+	struct net_pkt *pkt_v4 = build_test_ip_pkt(&ipv4_address_list[1], &ipv4_address_list[2],
+						   NET_AF_INET, dummy_iface_a);
+	struct net_pkt *pkt_v6 = build_test_ip_pkt(&ipv6_address_list[1], &ipv6_address_list[2],
+						   NET_AF_INET6, dummy_iface_a);
+
+	BUILD_ASSERT(sizeof(ipv4_address_list) == sizeof(struct net_in6_addr));
+
+	/* Give the packets the source address that a condition would find if
+	 * it read the list of the other family as addresses of the family of
+	 * the packet: the four IPv4 addresses as one IPv6 address, and the
+	 * start of the first IPv6 address as an IPv4 address. A packet is in
+	 * no list of the other family, so the allowlists are false and the
+	 * blocklists are true for these packets.
+	 */
+	memcpy(NET_IPV6_HDR(pkt_v6)->src, ipv4_address_list, sizeof(struct net_in6_addr));
+	memcpy(NET_IPV4_HDR(pkt_v4)->src, ipv6_address_list, sizeof(struct net_in_addr));
+	zassert_false(allow_v4.test.fn(&allow_v4.test, pkt_v6));
+	zassert_false(allow_v6.test.fn(&allow_v6.test, pkt_v4));
+	zassert_true(block_v4.test.fn(&block_v4.test, pkt_v6));
+	zassert_true(block_v6.test.fn(&block_v6.test, pkt_v4));
+
+	/* A rule per family accepts the addresses of both lists and no others */
+	npf_append_send_rule(&accept_v4);
+	npf_append_send_rule(&accept_v6);
+	zassert_false(net_pkt_filter_send_ok(pkt_v4));
+	zassert_false(net_pkt_filter_send_ok(pkt_v6));
+
+	memcpy(NET_IPV4_HDR(pkt_v4)->src, &ipv4_address_list[0], sizeof(struct net_in_addr));
+	memcpy(NET_IPV6_HDR(pkt_v6)->src, &ipv6_address_list[0], sizeof(struct net_in6_addr));
+	zassert_true(net_pkt_filter_send_ok(pkt_v4));
+	zassert_true(net_pkt_filter_send_ok(pkt_v6));
+
+	zassert_true(npf_remove_send_rule(&accept_v4));
+	zassert_true(npf_remove_send_rule(&accept_v6));
+
+	/* A rule with the blocklists of both families drops all other addresses */
+	npf_append_send_rule(&drop_others);
+	npf_append_send_rule(&npf_default_ok);
+	zassert_true(net_pkt_filter_send_ok(pkt_v4));
+	zassert_true(net_pkt_filter_send_ok(pkt_v6));
+
+	memcpy(NET_IPV4_HDR(pkt_v4)->src, &ipv4_address_list[1], sizeof(struct net_in_addr));
+	memcpy(NET_IPV6_HDR(pkt_v6)->src, &ipv6_address_list[1], sizeof(struct net_in6_addr));
+	zassert_false(net_pkt_filter_send_ok(pkt_v4));
+	zassert_false(net_pkt_filter_send_ok(pkt_v6));
+
+	zassert_true(npf_remove_send_rule(&drop_others));
+	zassert_true(npf_remove_send_rule(&npf_default_ok));
+	net_pkt_unref(pkt_v6);
+	net_pkt_unref(pkt_v4);
+}
+
 static NPF_ETH_VLAN_TYPE_MATCH(vlan_ip_packet, NET_ETH_PTYPE_IP);
 static NPF_RULE(vlan_small_ip_pkt, NET_OK, vlan_ip_packet, maxsize_200);
 
