@@ -786,9 +786,11 @@ static void perms_set_index(struct k_object *ko, int index)
 static void perms_clear_index(struct k_object *ko, int index)
 {
 	if (index != PERM_INDEX_NONE) {
-		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
-		/* unref_check() requires lists_lock so its dlist remove is
-		 * SMP-safe.
+		/* unref_check() clears the bit. It requires lists_lock so its
+		 * dlist remove is SMP-safe, and so that clearing the bit and
+		 * checking the bitmap are one step: clearing it before would
+		 * let another CPU dropping the last other permission free the
+		 * object while this one is about to look at it.
 		 */
 #ifdef CONFIG_DYNAMIC_OBJECTS
 		k_spinlock_key_t key = k_spin_lock(&lists_lock);
