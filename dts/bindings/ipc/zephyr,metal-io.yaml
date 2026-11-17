@@ -1,0 +1,43 @@
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  OpenAMP libmetal I/O mapping. The backing region describes locally accessible
+  memory; physmap describes the addresses exchanged with the peer. This binding
+  does not configure the MMU, MPU or cache attributes.
+
+compatible: "zephyr,metal-io"
+
+include: base.yaml
+
+properties:
+  region:
+    type: phandle
+    required: true
+    description: |
+      Backing memory region whose reg property gives its local base address and
+      size. The mapping starts at this base, including any protocol headers.
+
+  physmap:
+    type: array
+    required: true
+    description: |
+      Base address of each page in the address space used in vring descriptors,
+      starting with offset zero of region. Each entry is one 32-bit address,
+      converted to metal_phys_addr_t without sign extension. With page-shift
+      omitted, provide exactly one base address.
+      Otherwise provide one page-aligned address per page, including a final
+      partial page. Peers must agree on the address of each shared byte.
+
+  mem-flags:
+    type: int
+    description: |
+      Memory flags passed unchanged to libmetal, or zero when omitted. The
+      Zephyr libmetal port does not use these to configure memory attributes.
+
+  page-shift:
+    type: int
+    description: |
+      Log2 of the page size, less than the bit width of metal_phys_addr_t.
+      If omitted, the entire region is a single contiguous page (libmetal's
+      page_shift = -1 convention). This is not a system page-size default.
