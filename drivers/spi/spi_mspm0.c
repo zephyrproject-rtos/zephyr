@@ -137,7 +137,10 @@ static int spi_mspm0_configure(const struct device *dev, const struct spi_config
 	DL_SPI_Config dl_spi_cfg;
 
 	if (spi_context_configured(&data->spi_ctx, spi_cfg)) {
-		/* This configuration is already in use */
+		/* This configuration is already in use, the module was disabled after the last
+		 * transfer as a workaround for errata SPI_ERR_02.
+		 */
+		DL_SPI_enable(regs);
 		return 0;
 	}
 
@@ -297,6 +300,13 @@ static int spi_mspm0_transceive(const struct device *dev, const struct spi_confi
 	ret = spi_context_wait_for_completion(&data->spi_ctx);
 
 release:
+	/* The module must be disabled before entering a low power mode,
+	 * otherwise the first clock cycles and data bits are lost after
+	 * wake-up. The configuration is retained. Workaround for errata
+	 * SPI_ERR_02.
+	 */
+	DL_SPI_disable(spi_mspm0_regs(dev));
+
 	spi_context_release(&data->spi_ctx, ret);
 
 	(void)pm_device_runtime_put(dev);
