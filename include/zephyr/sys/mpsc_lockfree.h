@@ -52,10 +52,30 @@ extern "C" {
  */
 #if defined(CONFIG_SMP)
 
+/** @brief Pointer to a queue node, atomic on SMP builds. */
 typedef atomic_ptr_t mpsc_ptr_t;
 
+/**
+ * @brief Read a node pointer.
+ *
+ * @param ptr Node pointer of type @ref mpsc_ptr_t.
+ */
 #define mpsc_ptr_get(ptr)          atomic_ptr_get(&(ptr))
+
+/**
+ * @brief Write a node pointer.
+ *
+ * @param ptr Node pointer of type @ref mpsc_ptr_t.
+ * @param val Value to write.
+ */
 #define mpsc_ptr_set(ptr, val)     atomic_ptr_set(&(ptr), val)
+
+/**
+ * @brief Write a node pointer and return its previous value.
+ *
+ * @param ptr Node pointer of type @ref mpsc_ptr_t.
+ * @param val Value to write.
+ */
 #define mpsc_ptr_set_get(ptr, val) atomic_ptr_set(&(ptr), val)
 
 #else /* defined(CONFIG_SMP) */
@@ -77,6 +97,7 @@ typedef struct mpsc_node *mpsc_ptr_t;
  * @brief Queue member
  */
 struct mpsc_node {
+	/** Next node in the queue. */
 	mpsc_ptr_t next;
 };
 
@@ -84,15 +105,19 @@ struct mpsc_node {
  * @brief MPSC Queue
  */
 struct mpsc {
+	/** Last pushed node, updated by the producers. */
 	mpsc_ptr_t head;
+	/** Next node to pop, updated by the consumer. */
 	struct mpsc_node *tail;
+	/** Sentinel node, which the queue holds when it is empty. */
 	struct mpsc_node stub;
 };
 
 /**
  * @brief Static initializer for a mpsc queue
  *
- * Since the queue is
+ * The queue initially points to its own stub node, so the initializer takes the name of the
+ * queue.
  *
  * @param symbol name of the queue
  */
@@ -139,8 +164,10 @@ static ALWAYS_INLINE void mpsc_push(struct mpsc *q, struct mpsc_node *n)
 /**
  * @brief Pop a node off of the list
  *
+ * @param q Queue to pop the node from
+ *
+ * @return The popped node
  * @retval NULL When no node is available
- * @retval node When node is available
  */
 static inline struct mpsc_node *mpsc_pop(struct mpsc *q)
 {
