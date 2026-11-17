@@ -19,6 +19,21 @@ LOG_MODULE_REGISTER(net_socks, CONFIG_SOCKS_LOG_LEVEL);
 BUILD_ASSERT(sizeof(struct socks5_method_response) ==
 	     SIZEOF_FIELD(struct net_context, socks5.method_rsp));
 
+/* Where the handshake stands. The method callback moves it on to the CONNECT
+ * reply once the method selection reply is in, and the command callback moves
+ * it on from pending once the CONNECT reply is complete or broken. Both use a
+ * compare-and-swap, so a callback that runs after socks5_tcp_connect() has
+ * closed the handshake leaves it closed. If the wait for the CONNECT reply
+ * expires, socks5_tcp_connect() closes it with a compare-and-swap as well, so
+ * exactly one of them settles the reply and the other one goes along with it.
+ */
+enum {
+	SOCKS5_CMD_RSP_PENDING,		/* still reading the reply */
+	SOCKS5_CMD_RSP_RELAYING,	/* reply accepted, pass the rest on */
+	SOCKS5_CMD_RSP_CLOSED,		/* attempt failed, drop the rest */
+	SOCKS5_METHOD_RSP_PENDING,	/* waiting for the method selection */
+};
+
 static void socks5_method_rsp_cb(struct net_context *ctx,
 				 struct net_pkt *pkt,
 				 union net_ip_header *ip_hdr,
@@ -28,17 +43,30 @@ static void socks5_method_rsp_cb(struct net_context *ctx,
 {
 	struct socks5_method_response *method_rsp =
 			(struct socks5_method_response *)ctx->socks5.method_rsp;
+	atomic_t *state = &ctx->socks5.cmd_rsp.state;
 
 	ARG_UNUSED(user_data);
 
+	/* Only the first reply counts, and only while it is waited for */
+	if (atomic_get(state) != SOCKS5_METHOD_RSP_PENDING) {
+		goto end;
+	}
+
 	if (!pkt || status) {
 		memset(method_rsp, 0, sizeof(struct socks5_method_response));
-		goto end;
+		goto settle;
 	}
 
 	if (net_pkt_read(pkt, (uint8_t *)method_rsp,
 			 sizeof(struct socks5_method_response))) {
 		memset(method_rsp, 0, sizeof(struct socks5_method_response));
+	}
+
+settle:
+	/* socks5_tcp_connect() may have stopped waiting already */
+	if (atomic_cas(state, SOCKS5_METHOD_RSP_PENDING,
+		       SOCKS5_CMD_RSP_PENDING)) {
+		k_sem_give(&ctx->socks5.cmd_rsp.done);
 	}
 
 end:
@@ -53,17 +81,6 @@ end:
 
 BUILD_ASSERT(SIZEOF_FIELD(struct net_socks5_cmd_rsp, prefix) ==
 	     SOCKS5_RSP_PREFIX_MAX);
-
-/* Where the CONNECT reply stands. The command callback moves it on from
- * pending once the reply is complete or broken, and socks5_tcp_connect()
- * closes it if it stops waiting first. Both use a compare-and-swap, so exactly
- * one of them settles the reply and the other one goes along with it.
- */
-enum {
-	SOCKS5_CMD_RSP_PENDING,		/* still reading the reply */
-	SOCKS5_CMD_RSP_RELAYING,	/* reply accepted, pass the rest on */
-	SOCKS5_CMD_RSP_CLOSED,		/* attempt failed, drop the rest */
-};
 
 /* Work out what is left of the reply now that its fixed part has been read.
  * The bound address is not needed for anything, so only its length matters.
@@ -287,6 +304,7 @@ static int socks5_tcp_connect(struct net_context *ctx,
 	k_sem_init(&cmd_rsp->done, 0, 1);
 	ctx->socks5.recv_cb = cb;
 	ctx->socks5.recv_user_data = user_data;
+	atomic_set(&cmd_rsp->state, SOCKS5_METHOD_RSP_PENDING);
 
 	/* Negotiate authentication method */
 	method_req.r.ver = SOCKS5_PKT_MAGIC;
@@ -298,19 +316,28 @@ static int socks5_tcp_connect(struct net_context *ctx,
 	/* size + 1 because just one method is supported */
 	size = sizeof(struct socks5_method_request_common) + 1;
 
+	/* Each callback is installed before its request is sent. A reply that
+	 * arrives first would otherwise be dropped, or be taken by the
+	 * callback of the previous step, and the wait for it would time out.
+	 */
+	ret = net_context_recv(ctx, socks5_method_rsp_cb, K_NO_WAIT, NULL);
+	if (ret < 0) {
+		LOG_ERR("Could not receive negotiation response");
+		goto error;
+	}
+
 	ret = net_context_sendto(ctx, (uint8_t *)&method_req, size,
 				 proxy, proxy_len, NULL, K_NO_WAIT,
 				 ctx->user_data);
 	if (ret < 0) {
 		LOG_ERR("Could not send negotiation packet");
-		return ret;
+		goto error;
 	}
 
-	ret = net_context_recv(ctx, socks5_method_rsp_cb,
-			       K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT),
-			       NULL);
-	if (ret < 0) {
+	if (k_sem_take(&cmd_rsp->done,
+		       K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT)) < 0) {
 		LOG_ERR("Could not receive negotiation response");
+		ret = -ETIMEDOUT;
 		goto error;
 	}
 
@@ -339,6 +366,12 @@ static int socks5_tcp_connect(struct net_context *ctx,
 		goto error;
 	}
 
+	ret = net_context_recv(ctx, socks5_cmd_rsp_cb, K_NO_WAIT, NULL);
+	if (ret < 0) {
+		LOG_ERR("Could not receive CONNECT response");
+		goto error;
+	}
+
 	ret = net_context_sendto(ctx, (uint8_t *)&cmd_req, size,
 				 proxy, proxy_len, NULL, K_NO_WAIT,
 				 ctx->user_data);
@@ -355,12 +388,6 @@ static int socks5_tcp_connect(struct net_context *ctx,
 	 * on whatever follows it, which may block until this call returns, so
 	 * wait for the signal and not for the callback to return.
 	 */
-	ret = net_context_recv(ctx, socks5_cmd_rsp_cb, K_NO_WAIT, NULL);
-	if (ret < 0) {
-		LOG_ERR("Could not receive CONNECT response");
-		goto error;
-	}
-
 	if (k_sem_take(&cmd_rsp->done,
 		       K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT)) < 0 &&
 	    atomic_cas(&cmd_rsp->state, SOCKS5_CMD_RSP_PENDING,
@@ -402,9 +429,11 @@ error:
 	 * success the caller replaces them, but on error nothing does, so drop
 	 * them here. That only stops future calls: one that is already running
 	 * still finishes, which is why the state it writes is kept in the
-	 * context and not on this stack.
+	 * context and not on this stack. Close the handshake as well, so that
+	 * such a call drops what it gets instead of acting on it.
 	 */
 	(void)net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
+	atomic_set(&cmd_rsp->state, SOCKS5_CMD_RSP_CLOSED);
 
 	return ret;
 }
