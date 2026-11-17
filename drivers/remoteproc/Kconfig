@@ -1,0 +1,58 @@
+# Copyright (c) 2026 Simon Maurer <mail@maurer.systems>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig REMOTEPROC
+	bool "OpenAMP RemoteProc device driver"
+	help
+	  Enable support for the OpenAMP Remote Processor (RemoteProc)
+	  device driver.
+
+if REMOTEPROC
+
+config OPENAMP_RESOURCE_TABLE
+	bool "OpenAMP resource table support"
+	imply OPENAMP
+	default y
+	depends on DT_HAS_OPENAMP_RESOURCE_TABLE_ENABLED
+	help
+	  Include the OpenAMP resource table in the generated binary.
+
+	  The resource table is used by the Linux remoteproc framework
+	  and the OpenAMP library to describe shared resources such as
+	  memory regions and virtio devices.
+
+config OPENAMP_RPMSG_VDEV
+	bool "OpenAMP RPMsg VirtIO device"
+	imply OPENAMP
+	default y
+	depends on DT_HAS_OPENAMP_RPMSG_VIRTIO_DEVICE_ENABLED
+	help
+	  Enable the driver for the OpenAMP RPMsg VirtIO device.
+
+config RPMSG_VDEV_INIT_PRIORITY
+	int "RPMsg VirtIO device init priority"
+	default 40
+	depends on OPENAMP_RPMSG_VDEV
+	help
+	  Initialization priority of the RPMsg VirtIO device driver.
+
+config RPMSG_VDEV_THREAD_STACK_SIZE
+	int "RPMsg VirtIO thread stack size"
+	default 2048
+	depends on OPENAMP_RPMSG_VDEV
+	help
+	  Stack size (in bytes) used by the internal RPMsg VirtIO
+	  driver thread.
+
+config RPMSG_VDEV_THREAD_PRIORITY
+	int "RPMsg VirtIO thread priority"
+	default 8
+	depends on OPENAMP_RPMSG_VDEV
+	help
+	  Thread priority of the RPMsg VirtIO driver thread.
+
+module = RPROC
+module-str = rproc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # REMOTEPROC
