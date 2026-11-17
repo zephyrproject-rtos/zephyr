@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #define TIMEOUT_MS 500
 
@@ -377,6 +378,162 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_permission)
 	/* clean up stacks allocated from the heap */
 	zassert_ok(k_thread_stack_free(stack[0]));
 	zassert_ok(k_thread_stack_free(stack[1]));
+}
+
+static void oversize_func(void *arg1, void *arg2, void *arg3)
+{
+	k_thread_stack_t *stack = arg1;
+	struct k_thread *th = arg2;
+	size_t max_size = STACK_OBJ_SIZE - K_THREAD_STACK_RESERVED;
+	k_tid_t tid;
+
+	ARG_UNUSED(arg3);
+
+	/* The largest stack size the stack object can hold is accepted */
+	tid = k_thread_create(th, stack, max_size, func, &tflag[0], NULL, NULL, 0, K_USER,
+			      K_NO_WAIT);
+	zassert_ok(k_thread_join(tid, K_MSEC(TIMEOUT_MS)));
+	zassert_true(tflag[0]);
+
+	/* One byte more is not */
+	(void)k_thread_create(th, stack, max_size + 1U, func, &tflag[0], NULL, NULL, 0, K_USER,
+			      K_FOREVER);
+
+	zassert_unreachable("should not reach here");
+}
+
+/**
+ * @brief Verify that a user thread cannot use more than the requested size of
+ *        a dynamically allocated stack.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * A user stack from k_thread_stack_alloc() shares its allocation with the
+ * thread's privileged stack on some architectures. k_thread_create() from
+ * user mode must only accept a stack size the stack object was allocated
+ * for, otherwise the user stack region could cover the privileged stack.
+ * Skipped when heap allocation is not the preferred allocator.
+ *
+ * Test steps:
+ * - Allocate a user stack and a thread object.
+ * - From a user thread, create a thread on that stack with the largest
+ *   stack size the stack object can hold, and wait for it to finish.
+ * - From the same user thread, create a thread on that stack with a stack
+ *   size one byte larger.
+ *
+ * Expected result:
+ * - The thread with the largest stack size runs, and the oversized
+ *   k_thread_create() oopses the calling thread.
+ *
+ * @see k_thread_stack_alloc()
+ * @see k_thread_create()
+ */
+ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_user_oversize)
+{
+	static struct k_thread th;
+	k_thread_stack_t *stack[2];
+	struct k_thread *dyn_th;
+	k_tid_t tid;
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC) ||
+	    !IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC) ||
+	    !IS_ENABLED(CONFIG_USERSPACE)) {
+		ztest_test_skip();
+	}
+
+	stack[0] = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE, K_USER);
+	zassert_not_null(stack[0]);
+	stack[1] = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE, K_USER);
+	zassert_not_null(stack[1]);
+	dyn_th = k_object_alloc(K_OBJ_THREAD);
+	zassert_not_null(dyn_th);
+
+	tid = k_thread_create(&th, stack[0], CONFIG_DYNAMIC_THREAD_STACK_SIZE, oversize_func,
+			      stack[1], dyn_th, NULL, 0, K_USER, K_FOREVER);
+	k_thread_access_grant(tid, stack[1], dyn_th);
+
+	tflag[0] = false;
+	set_fault(K_ERR_KERNEL_OOPS);
+	k_thread_start(tid);
+	zassert_ok(k_thread_join(tid, K_MSEC(TIMEOUT_MS)));
+	/* func() only runs if the largest stack size was accepted */
+	zassert_true(tflag[0], "largest stack size was rejected");
+	zassert_false(expect_fault, "oversized stack was accepted");
+
+	zassert_ok(k_thread_stack_free(stack[0]));
+	zassert_ok(k_thread_stack_free(stack[1]));
+}
+
+/**
+ * @brief Verify that the privileged stack of a dynamically allocated stack
+ *        is outside the stack object.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * With CONFIG_GEN_PRIV_STACKS and an MPU or PMP, a user stack from
+ * k_thread_stack_alloc() shares its allocation with the thread's privileged
+ * stack. The privileged stack must not be part of the stack object, whose
+ * size bounds the stack size user mode threads may request. Stacks larger
+ * than CONFIG_DYNAMIC_THREAD_STACK_SIZE may be less aligned than the stack
+ * object alignment, so they are checked too. Skipped on other
+ * configurations.
+ *
+ * Test steps:
+ * - Allocate as many user stacks of CONFIG_DYNAMIC_THREAD_STACK_SIZE, and
+ *   then of one and a half times that size, as the heap holds, up to four.
+ * - Look up the privileged stack and the stack object size of each.
+ *
+ * Expected result:
+ * - Every privileged stack starts at or after the end of its stack object.
+ *
+ * @see k_thread_stack_alloc()
+ */
+ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_priv_outside_obj)
+{
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_GEN_PRIV_STACKS) &&                              \
+	(defined(CONFIG_ARM_MPU) || defined(CONFIG_ARC_MPU) || defined(CONFIG_RISCV_PMP))
+	const size_t sizes[] = {
+		CONFIG_DYNAMIC_THREAD_STACK_SIZE,
+		CONFIG_DYNAMIC_THREAD_STACK_SIZE + CONFIG_DYNAMIC_THREAD_STACK_SIZE / 2,
+	};
+	k_thread_stack_t *stack[4];
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC) ||
+	    !IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
+		ztest_test_skip();
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(sizes); i++) {
+		size_t n;
+
+		for (n = 0; n < ARRAY_SIZE(stack); n++) {
+			struct k_object *ko;
+			uintptr_t obj_end;
+
+			stack[n] = k_thread_stack_alloc(sizes[i], K_USER);
+			if (stack[n] == NULL) {
+				break;
+			}
+
+			ko = k_object_find(stack[n]);
+			zassert_not_null(ko);
+			obj_end = (uintptr_t)stack[n] + ko->data.stack_data->size;
+			zassert_true((uintptr_t)ko->data.stack_data->priv >= obj_end,
+				     "size %zu: privileged stack at %p, stack object %p-%p",
+				     sizes[i], ko->data.stack_data->priv, stack[n],
+				     (void *)obj_end);
+		}
+		zassert_true(n > 0, "couldn't allocate a stack of size %zu", sizes[i]);
+
+		while (n > 0) {
+			zassert_ok(k_thread_stack_free(stack[--n]));
+		}
+	}
+#else
+	ztest_test_skip();
+#endif
 }
 
 static void *dynamic_thread_stack_setup(void)
