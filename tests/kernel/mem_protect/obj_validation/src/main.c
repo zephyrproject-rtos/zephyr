@@ -227,6 +227,65 @@ ZTEST(object_validation, test_kobj_freed_when_unreferenced)
 	zassert_true(ret == -EBADF, "Dynamic kernel object not released");
 }
 
+/**
+ * @brief Verify that releasing an uninitialized message queue or stack
+ *        does not free memory it does not own.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * k_object_alloc() does not zero the object, so an allocated but never
+ * initialized k_msgq or k_stack holds whatever the heap chunk held before.
+ * When such an object loses its last reference, its cleanup must not take
+ * those stale contents for a buffer allocated by k_msgq_alloc_init() or
+ * k_stack_alloc_init() and free it.
+ *
+ * Test steps:
+ * - Allocate a buffer and a message queue (then a stack) object.
+ * - Make the never initialized object look like it owns the buffer, as
+ *   stale heap contents could.
+ * - Revoke the allocating thread's access, releasing the object.
+ * - Free the buffer.
+ *
+ * Expected result:
+ * - The object is released, and freeing the buffer is not a double free.
+ *
+ * @see k_object_alloc()
+ * @see k_object_access_revoke()
+ */
+ZTEST(object_validation, test_kobj_release_uninitialized)
+{
+	struct k_msgq *msgq;
+	struct k_stack *stack;
+	void *buf;
+
+	buf = k_malloc(16);
+	zassert_not_null(buf, "Can not allocate buffer");
+	msgq = k_object_alloc(K_OBJ_MSGQ);
+	zassert_not_null(msgq, "Can not allocate dynamic kernel object");
+
+	(void)memset(msgq, 0, sizeof(*msgq));
+	msgq->buffer_start = buf;
+	msgq->flags = K_MSGQ_FLAG_ALLOC;
+	k_object_access_revoke(msgq, _current);
+	zassert_equal(k_object_validate(k_object_find(msgq), K_OBJ_MSGQ, 0), -EBADF,
+		      "Dynamic kernel object not released");
+	k_free(buf);
+
+	buf = k_malloc(16);
+	zassert_not_null(buf, "Can not allocate buffer");
+	stack = k_object_alloc(K_OBJ_STACK);
+	zassert_not_null(stack, "Can not allocate dynamic kernel object");
+
+	(void)memset(stack, 0, sizeof(*stack));
+	stack->base = buf;
+	stack->flags = K_STACK_FLAG_ALLOC;
+	k_object_access_revoke(stack, _current);
+	zassert_equal(k_object_validate(k_object_find(stack), K_OBJ_STACK, 0), -EBADF,
+		      "Dynamic kernel object not released");
+	k_free(buf);
+}
+
 void *object_validation_setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());
