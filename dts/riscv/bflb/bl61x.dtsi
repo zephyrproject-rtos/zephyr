@@ -129,7 +129,8 @@
 			#size-cells = <1>;
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei",
-					       "xtheadba", "xtheadbb", "xtheadbs", "xtheadcmo";
+					       "xtheadba", "xtheadbb", "xtheadbs",
+					       "xtheadsync", "xtheadcmo";
 			status = "okay";
 
 			clic: clic@e0800000 {
