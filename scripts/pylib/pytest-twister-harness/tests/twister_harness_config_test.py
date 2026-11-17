@@ -94,3 +94,105 @@ def test_if_probe_id_overrides_id(tmp_path: Path):
     config.option.device_id = '1122334455'
     twister_harness_config = TwisterHarnessConfig.create(config)
     assert twister_harness_config.devices[0].id == '1122334455'
+
+
+@pytest.mark.parametrize(
+    'platform_reset, dut_reset, expected',
+    [
+        (None, None, None),
+        ('{method: west}', None, {'method': 'west'}),
+        (
+            '{method: west}',
+            '{method: serial, sequence: [{rts: true}]}',
+            {'method': 'serial', 'sequence': [{'rts': True}]},
+        ),
+    ],
+    ids=['none', 'platform default', 'hardware map wins'],
+)
+def test_post_connect_reset_resolution(tmp_path: Path, platform_reset, dut_reset, expected):
+    content = 'device_type: hardware\nplatform: sample/board/name\n'
+    if platform_reset:
+        content += f'post_connect_reset: {platform_reset}\n'
+    content += textwrap.dedent("""\
+        duts:
+        - connected: true
+          id: '0123456789'
+          platform: sample/board/name
+          serial: /dev/ttyACM1
+    """)
+    if dut_reset:
+        content += f'  post_connect_reset: {dut_reset}\n'
+    twister_config = tmp_path / 'twister_config.yaml'
+    twister_config.write_text(content)
+
+    config = create_mock_config_with_defaults()
+    config.option.twister_config = str(twister_config)
+    twister_harness_config = TwisterHarnessConfig.create(config)
+
+    assert twister_harness_config.devices[0].post_connect_reset == expected
+
+
+SERIAL_RESET = '{method: serial, sequence: [{rts: true}]}'
+
+
+def _create_from_yaml(tmp_path: Path, content: str) -> TwisterHarnessConfig:
+    twister_config = tmp_path / 'twister_config.yaml'
+    twister_config.write_text(content)
+    config = create_mock_config_with_defaults()
+    config.option.twister_config = str(twister_config)
+    return TwisterHarnessConfig.create(config)
+
+
+def test_post_connect_reset_skips_serial_with_serial_pty(tmp_path: Path):
+    content = textwrap.dedent(f"""\
+        device_type: hardware
+        platform: board_a
+        post_connect_reset: {SERIAL_RESET}
+        duts:
+        - connected: true
+          id: '1'
+          platform: board_a
+          serial_pty: 'script.py'
+    """)
+    assert _create_from_yaml(tmp_path, content).devices[0].post_connect_reset is None
+
+
+def test_post_connect_reset_esp32_runner_without_config(tmp_path: Path):
+    content = textwrap.dedent("""\
+        device_type: hardware
+        platform: board_a
+        flash_before: true
+        duts:
+        - connected: true
+          id: '1'
+          platform: board_a
+          runner: esp32
+          serial: /dev/ttyUSB0
+    """)
+    device = _create_from_yaml(tmp_path, content).devices[0]
+    assert device.post_connect_reset is None
+
+
+def test_post_connect_reset_board_default_only_for_main_platform(tmp_path: Path):
+    content = textwrap.dedent(f"""\
+        device_type: hardware
+        platform: board_a
+        post_connect_reset: {SERIAL_RESET}
+        duts:
+        - connected: true
+          id: '1'
+          platform: board_a
+          serial: /dev/ttyUSB0
+        - connected: true
+          id: '2'
+          platform: board_a
+          serial: /dev/ttyUSB1
+        - connected: true
+          id: '3'
+          platform: board_b
+          serial: /dev/ttyACM0
+    """)
+    devices = _create_from_yaml(tmp_path, content).devices
+    assert devices[0].post_connect_reset is not None
+    assert devices[1].post_connect_reset == devices[0].post_connect_reset
+    assert devices[2].post_connect_reset is None

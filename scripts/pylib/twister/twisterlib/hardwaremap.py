@@ -259,6 +259,7 @@ class HardwareMap:
             flash_before = dut.get('flash_before')
             if flash_before is None:
                 flash_before = self.options.flash_before and (not flash_with_test)
+            post_connect_reset = dut.get('post_connect_reset')
             platform = dut.get('platform')
             if isinstance(platform, str):
                 platforms = platform.split()
@@ -294,6 +295,7 @@ class HardwareMap:
                               connected=connected,
                               pre_script=pre_script,
                               flash_before=flash_before,
+                              post_connect_reset=post_connect_reset,
                               post_script=post_script,
                               post_flash_script=post_flash_script,
                               script_param=script_param,

@@ -29,6 +29,7 @@ class HarnessPytestConfig:
     west_flash_cmd: str = ''
     flash_command: str = ''
     flash_before: bool = False
+    post_connect_reset: dict[str, Any] | None = None
     twister_fixtures: list[str] = field(default_factory=list)
     required_builds: list[str] = field(default_factory=list)
     duts: list[CompoundHardwareData] = field(default_factory=list)

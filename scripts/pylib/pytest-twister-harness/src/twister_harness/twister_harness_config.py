@@ -13,6 +13,7 @@ from twister_harness.exceptions import TwisterHarnessException
 from twister_harness.helpers.domains_helper import get_default_domain_name
 from twisterlib.hardwaredata import HardwareData, CompoundHardwareData
 from twisterlib.harnessconfig import HarnessPytestConfig, TWISTER_PYTEST_CONFIG_FILE
+from twisterlib.post_connect_reset import resolve as resolve_post_connect_reset
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ class DeviceConfig:
     id: str = ''
     product: str = ''
     flash_before: bool = False
+    post_connect_reset: dict | None = None
     west_flash_extra_args: list[str] = field(default_factory=list, repr=False)
     flash_command: str = ''
     name: str = ''
@@ -137,6 +139,13 @@ class TwisterHarnessConfig:
                     )
                 )
 
+            runner = config.option.runner or test_params.runner or dut.runner
+            flash_before = config.option.flash_before or test_params.flash_before or dut.flash_before
+            # The board default only applies to devices of the main platform.
+            platform_reset = None
+            if dut_number == 0 or dut.platform == test_params.duts[0].platform:
+                platform_reset = test_params.post_connect_reset
+
             device = DeviceConfig(
                 dut_number=dut_number,
                 type=device_type,
@@ -146,12 +155,17 @@ class TwisterHarnessConfig:
                 flash_timeout=config.option.flash_timeout or dut.flash_timeout or 60.0,
                 platform=dut.platform or config.option.platform or test_params.platform,
                 serial_configs=serial_configs,
-                runner=config.option.runner or test_params.runner or dut.runner,
+                runner=runner,
                 base_params=base_params or dut.base_params,
                 runner_params=runner_params or dut.runner_params,
                 id=config.option.device_id or dut.probe_id or dut.id,
                 product=config.option.device_product or dut.product,
-                flash_before=config.option.flash_before or test_params.flash_before or dut.flash_before,
+                flash_before=flash_before,
+                post_connect_reset=resolve_post_connect_reset(
+                    dut.post_connect_reset,
+                    platform_reset,
+                    serial_pty=bool(serial_configs[0].serial_pty),
+                ),
                 west_flash_extra_args=west_flash_extra_args,
                 west_flash_cmd=config.option.west_flash_cmd or test_params.west_flash_cmd or dut.west_flash_cmd,
                 flash_command=flash_command,
