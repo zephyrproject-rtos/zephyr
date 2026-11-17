@@ -15,6 +15,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 #include "display_nt35510.h"
@@ -61,7 +62,7 @@ struct nt35510_config {
 };
 
 struct nt35510_data {
-	enum display_pixel_format pixel_format;
+	uint8_t pixel_format;
 	enum display_orientation orientation;
 	uint16_t xres;
 	uint16_t yres;
@@ -219,7 +220,7 @@ static int nt35510_config(const struct device *dev)
 
 	/* Set color mode */
 	ret = nt35510_write_reg_val(dev, NT35510_CMD_COLMOD,
-				    data->pixel_format == PIXEL_FORMAT_RGB_565
+				    data->pixel_format == MIPI_DSI_PIXFMT_RGB565
 					    ? NT35510_COLMOD_RGB565
 					    : NT35510_COLMOD_RGB888);
 	if (ret < 0) {
@@ -274,8 +275,9 @@ static void nt35510_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888;
-	capabilities->current_pixel_format = data->pixel_format;
+	capabilities->current_pixel_format = data->pixel_format == MIPI_DSI_PIXFMT_RGB565 ?
+					     PIXEL_FORMAT_RGB_565 : PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = capabilities->current_pixel_format;
 	capabilities->current_orientation = data->orientation;
 }
 
@@ -347,12 +349,7 @@ static int nt35510_init(const struct device *dev)
 	mdev.data_lanes = cfg->data_lanes;
 	mdev.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST | MIPI_DSI_MODE_LPM;
 
-	if (data->pixel_format == PIXEL_FORMAT_RGB_565) {
-		mdev.pixfmt = MIPI_DSI_PIXFMT_RGB565;
-	} else {
-		mdev.pixfmt = MIPI_DSI_PIXFMT_RGB888;
-	}
-
+	mdev.pixfmt = data->pixel_format;
 	mdev.timings.hactive = data->xres;
 	mdev.timings.hbp = NT35510_480X800_HBP;
 	mdev.timings.hfp = NT35510_480X800_HFP;
