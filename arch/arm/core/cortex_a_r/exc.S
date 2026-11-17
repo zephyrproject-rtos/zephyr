@@ -241,6 +241,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 	 * and return to the current thread.
 	 */
 	pop {r0-r3, r12, lr}
+	userspace_exc_exit
 	rfeia sp!
 
 /**
