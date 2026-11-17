@@ -247,7 +247,6 @@ sdhc: &sdmmc1 {
 	pwr-gpios = <&gpioj 1 GPIO_ACTIVE_HIGH>;
 	power-delay-ms = <50>;
 	interrupts = <49 0>;
-	interrupt-names = "event";
 	min-bus-freq = <DT_FREQ_K(400)>;
 	max-bus-freq = <DT_FREQ_M(208)>;
 	hw-flow-control;
