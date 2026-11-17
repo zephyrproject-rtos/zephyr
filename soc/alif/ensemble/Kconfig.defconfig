@@ -38,4 +38,13 @@ configdefault ROM_END_OFFSET
 
 endif # SOC_FAMILY_ENSEMBLE_RTSS
 
+if SOC_FAMILY_ENSEMBLE_APSS
+
+# In Secure state, the Secure Enclave starts both cores at the entry point of
+# the XIP image
+configdefault ARM_SMP_FIXED_BOOT_CPU
+	default y if ENSEMBLE_APSS_SECURE
+
+endif # SOC_FAMILY_ENSEMBLE_APSS
+
 endif # SOC_FAMILY_ENSEMBLE
