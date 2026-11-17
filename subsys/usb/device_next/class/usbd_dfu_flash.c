@@ -73,7 +73,10 @@ static int dfu_flash_read(void *const priv,
 		len = size;
 	}
 
-	ret = flash_area_read(fa, data->uploaded, buf, len);
+	if (len != 0) {
+		ret = flash_area_read(fa, data->uploaded, buf, len);
+	}
+
 	flash_area_close(fa);
 	if (ret) {
 		return ret;
