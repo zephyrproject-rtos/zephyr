@@ -1,0 +1,249 @@
+/*
+ * Copyright (c) 2024 HPMicro
+ * Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <freq.h>
+#include <zephyr/dt-bindings/clock/hpm5361-clocks.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "andestech,andescore-v5", "riscv";
+			reg = <0>;
+			device_type = "cpu";
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			/*
+			 * The HPM5300 family implements the F, D, Zba, Zbb, Zbc,
+			 * and Zbs extensions. Runtime FPU support remains opt-in
+			 * through CONFIG_FPU.
+			 */
+			riscv,isa-extensions = "i", "m", "a", "c", "f", "d",
+					       "zba", "zbb", "zbc", "zbs",
+					       "zicsr", "zifencei";
+			status = "okay";
+
+			cpu0_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ilm: memory@0 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0 DT_SIZE_K(128)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		plic: interrupt-controller@e4000000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0xe4000000 0x1000>,
+			      <0xe4002000 0x800>,
+			      <0xe4200000 0x10000>;
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "prio", "irq_en", "reg";
+			interrupts-extended = <&cpu0_intc 11>;
+			riscv,max-priority = <31>;
+			riscv,ndev = <127>;
+		};
+
+		mtimer: machine-timer@e6000000 {
+			compatible = "riscv,machine-timer";
+			reg = <0xe6000000 0x1>,
+			      <0xe6000008 0x1>;
+			reg-names = "mtime", "mtimecmp";
+			clock-frequency = <DT_FREQ_M(24)>;
+			interrupts-extended = <&cpu0_intc 7>;
+		};
+
+		plic_sw: interrupt-controller@e6400000 {
+			compatible = "andestech,plic_sw";
+			reg = <0xe6400000 0x400000>;
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&cpu0_intc 3>;
+		};
+
+		uart0: serial@f0040000 {
+			compatible = "hpmicro,hpm-uart";
+			reg = <0xf0040000 0x1000>;
+			interrupts = <13 1>;
+			interrupt-parent = <&plic>;
+			clocks = <&clk CLOCK_UART0 CLK_SRC_OSC24M 1>;
+			clock-names = "uart";
+			status = "disabled";
+		};
+
+		uart1: serial@f0044000 {
+			compatible = "hpmicro,hpm-uart";
+			reg = <0xf0044000 0x1000>;
+			interrupts = <14 1>;
+			interrupt-parent = <&plic>;
+			clocks = <&clk CLOCK_UART1 CLK_SRC_OSC24M 1>;
+			clock-names = "uart";
+			status = "disabled";
+		};
+
+		uart2: serial@f0048000 {
+			compatible = "hpmicro,hpm-uart";
+			reg = <0xf0048000 0x1000>;
+			interrupts = <15 1>;
+			interrupt-parent = <&plic>;
+			clocks = <&clk CLOCK_UART2 CLK_SRC_OSC24M 1>;
+			clock-names = "uart";
+			status = "disabled";
+		};
+
+		uart3: serial@f004c000 {
+			compatible = "hpmicro,hpm-uart";
+			reg = <0xf004c000 0x1000>;
+			interrupts = <16 1>;
+			interrupt-parent = <&plic>;
+			clocks = <&clk CLOCK_UART3 CLK_SRC_OSC24M 1>;
+			clock-names = "uart";
+			status = "disabled";
+		};
+
+		uart4: serial@f0050000 {
+			compatible = "hpmicro,hpm-uart";
+			reg = <0xf0050000 0x1000>;
+			interrupts = <17 1>;
+			interrupt-parent = <&plic>;
+			clocks = <&clk CLOCK_UART4 CLK_SRC_OSC24M 1>;
+			clock-names = "uart";
+			status = "disabled";
+		};
+
+		uart5: serial@f0054000 {
+			compatible = "hpmicro,hpm-uart";
+			reg = <0xf0054000 0x1000>;
+			interrupts = <18 1>;
+			interrupt-parent = <&plic>;
+			clocks = <&clk CLOCK_UART5 CLK_SRC_OSC24M 1>;
+			clock-names = "uart";
+			status = "disabled";
+		};
+
+		uart6: serial@f0058000 {
+			compatible = "hpmicro,hpm-uart";
+			reg = <0xf0058000 0x1000>;
+			interrupts = <19 1>;
+			interrupt-parent = <&plic>;
+			clocks = <&clk CLOCK_UART6 CLK_SRC_OSC24M 1>;
+			clock-names = "uart";
+			status = "disabled";
+		};
+
+		uart7: serial@f005c000 {
+			compatible = "hpmicro,hpm-uart";
+			reg = <0xf005c000 0x1000>;
+			interrupts = <20 1>;
+			interrupt-parent = <&plic>;
+			clocks = <&clk CLOCK_UART7 CLK_SRC_OSC24M 1>;
+			clock-names = "uart";
+			status = "disabled";
+		};
+
+		gpio0: gpio@f00d0000 {
+			reg = <0xf00d0000 DT_SIZE_K(16)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		xpi0: flash-controller@f3000000 {
+			compatible = "hpmicro,xpi";
+			reg = <0xf3000000 DT_SIZE_K(16)>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@f4040000 {
+			compatible = "hpmicro,hpm-pinctrl";
+			reg = <0xf4040000 0x4000>;
+			status = "okay";
+		};
+
+		clk: clock-controller@f40c0000 {
+			compatible = "hpmicro,hpm-pllv2";
+			reg = <0xf40c0000 0x4000>;
+			#clock-cells = <3>;
+			status = "okay";
+		};
+
+		pinctrl_pioc: pin-controller@f4118000 {
+			compatible = "hpmicro,hpm-pinctrl";
+			reg = <0xf4118000 0x4000>;
+			status = "okay";
+		};
+	};
+};
+
+&gpio0 {
+	gpioa: gpio@0 {
+		compatible = "hpmicro,hpm-gpio";
+		reg = <0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		interrupts = <1 1>;
+		interrupt-parent = <&plic>;
+	};
+
+	gpiob: gpio@1 {
+		compatible = "hpmicro,hpm-gpio";
+		reg = <1>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		interrupts = <2 1>;
+		interrupt-parent = <&plic>;
+	};
+
+	gpiox: gpio@d {
+		compatible = "hpmicro,hpm-gpio";
+		reg = <13>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		interrupts = <3 1>;
+		interrupt-parent = <&plic>;
+		status = "disabled";
+	};
+
+	gpioy: gpio@e {
+		compatible = "hpmicro,hpm-gpio";
+		reg = <14>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		interrupts = <4 1>;
+		interrupt-parent = <&plic>;
+		status = "disabled";
+	};
+};

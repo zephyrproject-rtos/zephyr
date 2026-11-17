@@ -1,0 +1,11 @@
+# Copyright (c) 2024 HPMicro
+# Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_HPMICRO
+	bool
+
+config SOC_FAMILY
+	default "hpmicro" if SOC_FAMILY_HPMICRO
+
+rsource "hpm5300/Kconfig.soc"
