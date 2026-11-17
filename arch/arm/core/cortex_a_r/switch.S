@@ -151,12 +151,20 @@ demux:
     beq offload
     b inv
 offload:
+#if defined(CONFIG_USERSPACE)
+    /* irq_offload() is for kernel code: reject it from user mode */
+    tst ip, #0xf
+    beq inv
+#endif
     ldr r3, [r2, #___cpu_t_nested_OFFSET]
     add r3, r3, #1
     str r3, [r2, #___cpu_t_nested_OFFSET]
 
+    /* The routine and its parameter are the saved r0 and r1 */
+    ldm r0, {r2, ip}
     irq_stack_enter r3
-    blx z_irq_do_offload
+    mov r0, ip
+    blx r2
     b z_arm_cortex_ar_irq_done
 #endif
     b inv
