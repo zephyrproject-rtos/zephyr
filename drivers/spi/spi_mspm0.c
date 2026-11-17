@@ -389,6 +389,7 @@ static int spi_mspm0_init(const struct device *dev)
 #endif
 }
 
+/* clang-format off */
 #define MSPM0_SPI_INIT(inst)                                                                       \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
                                                                                                    \
@@ -412,5 +413,6 @@ static int spi_mspm0_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(inst, spi_mspm0_init, PM_DEVICE_DT_INST_GET(inst),                   \
 			      &spi_mspm0_data_##inst, &spi_mspm0_config_##inst, POST_KERNEL,       \
 			      CONFIG_SPI_INIT_PRIORITY, &spi_mspm0_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(MSPM0_SPI_INIT)
