@@ -53,7 +53,6 @@ void soc_early_init_hook(void)
 
 	/* Power Configuration */
 	LL_PWR_ConfigSupply(SELECTED_POWER_SUPPLY);
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
 	}
 
