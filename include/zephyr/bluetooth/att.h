@@ -182,6 +182,7 @@ int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu);
  * @retval -EINVAL @p num_channels is not in the allowed range or @p conn is NULL.
  * @retval -EPERM The security level of @p conn is below @ref BT_SECURITY_L2.
  * @retval -ENOMEM No channel could be allocated, or no resources to send a request.
+ * @retval -ENOTCONN @p conn is not connected.
  */
 int bt_eatt_connect(struct bt_conn *conn, size_t num_channels);
 
