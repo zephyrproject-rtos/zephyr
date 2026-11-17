@@ -677,7 +677,7 @@ struct sensor_decoder_api {
  *
  * Example usage:
  *
- * @code(.c)
+ * @code{.c}
  *     struct sensor_decode_context ctx = SENSOR_DECODE_CONTEXT_INIT(
  *         decoder, buffer, SENSOR_CHAN_ACCEL_XYZ, 0);
  *
@@ -809,7 +809,7 @@ struct sensor_read_config {
  *
  * Use this macro to generate a @ref rtio_iodev for reading specific channels. Example:
  *
- * @code(.c)
+ * @code{.c}
  * SENSOR_DT_READ_IODEV(icm42688_accelgyro, DT_NODELABEL(icm42688),
  *     { SENSOR_CHAN_ACCEL_XYZ, 0 },
  *     { SENSOR_CHAN_GYRO_XYZ, 0 });
@@ -836,7 +836,7 @@ struct sensor_read_config {
  * Use this macro to generate a @ref rtio_iodev for starting a stream that's triggered by specific
  * interrupts. Example:
  *
- * @code(.c)
+ * @code{.c}
  * SENSOR_DT_STREAM_IODEV(imu_stream, DT_ALIAS(imu),
  *     {SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE},
  *     {SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_NOP});
