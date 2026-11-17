@@ -4147,13 +4147,16 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 					  net_pkt_remaining_data(pkt));
 	}
 
-#if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
-	k_sem_give(&context->recv_data_wait);
-#endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
-
 	k_mutex_unlock(&context->lock);
 
 	recv_cb(context, pkt, ip_hdr, proto_hdr, 0, user_data);
+
+	/* Wake up a synchronous net_context_recv() caller only after the
+	 * callback has run, so that it sees whatever the callback stored.
+	 */
+#if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
+	k_sem_give(&context->recv_data_wait);
+#endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
 	verdict = NET_OK;
 
