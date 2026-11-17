@@ -1366,7 +1366,7 @@
 		nvmem-cell-names = "TS_CAL1", "TS_CAL2";
 		ts-cal1-temp = <30>;
 		/* Note: actual value is determined at runtime on STM32H742/H743/H750/H753 */
-		ts-cal2-temp = <110>;
+		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3300>;
 		ts-cal-resolution = <16>;
 		io-channels = <&adc3 18>;
