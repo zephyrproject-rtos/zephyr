@@ -25,6 +25,7 @@ tests:
   drivers.disk.nvme:
     platform_allow:
       - qemu_x86_64
+      - qemu_cortex_a53
   drivers.disk.flash:
     extra_configs:
       - CONFIG_DISK_DRIVER_FLASH=y
