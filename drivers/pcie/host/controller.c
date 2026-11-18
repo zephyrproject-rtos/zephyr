@@ -15,6 +15,8 @@ LOG_MODULE_REGISTER(pcie_core, LOG_LEVEL_INF);
 #include <zephyr/drivers/pcie/msi.h>
 #endif
 
+#include "pcie_priv.h"
+
 /* arch agnostic PCIe API implementation */
 
 static void pcie_ctrl_set_cmd(const struct device *dev, pcie_bdf_t bdf, uint32_t bits, bool on)
@@ -32,30 +34,39 @@ static void pcie_ctrl_set_cmd(const struct device *dev, pcie_bdf_t bdf, uint32_t
 	pcie_ctrl_conf_write(dev, bdf, PCIE_CONF_CMDSTAT, cmdstat);
 }
 
-uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg)
+uint32_t pcie_conf_read(const struct pcie_endpoint *ep, unsigned int reg)
 {
 	const struct device *dev;
 
-	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
-	if (!dev) {
-		LOG_ERR("Failed to get PCIe root complex");
-		return 0xffffffff;
+	if (ep == NULL) {
+		return 0xffffffffU;
 	}
 
-	return pcie_ctrl_conf_read(dev, bdf, reg);
+	dev = z_pcie_resolve_ctrl(ep->ctrl);
+	if (dev == NULL || !device_is_ready(dev) || !DEVICE_API_IS(pcie_ctrl, dev)) {
+		LOG_ERR("Invalid PCIe root complex");
+
+		return 0xffffffffU;
+	}
+
+	return pcie_ctrl_conf_read(dev, ep->bdf, reg);
 }
 
-void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
+void pcie_conf_write(const struct pcie_endpoint *ep, unsigned int reg, uint32_t data)
 {
 	const struct device *dev;
 
-	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
-	if (!dev) {
-		LOG_ERR("Failed to get PCIe root complex");
+	if (ep == NULL) {
 		return;
 	}
 
-	pcie_ctrl_conf_write(dev, bdf, reg, data);
+	dev = z_pcie_resolve_ctrl(ep->ctrl);
+	if (dev == NULL || !device_is_ready(dev) || !DEVICE_API_IS(pcie_ctrl, dev)) {
+		LOG_ERR("Invalid PCIe root complex");
+		return;
+	}
+
+	pcie_ctrl_conf_write(dev, ep->bdf, reg, data);
 }
 
 uint32_t pcie_generic_ctrl_conf_read(mm_reg_t cfg_addr, pcie_bdf_t bdf, unsigned int reg)
@@ -484,10 +495,16 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 {
 	const struct device *dev;
 
-	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
-	if (!dev) {
-		LOG_ERR("Failed to get PCIe root complex");
-		return 0;
+	if (vectors == NULL || n_vector == 0U) {
+		return 0U;
+	}
+
+	dev = z_pcie_resolve_ctrl(vectors[0].ep.ctrl);
+	if (dev == NULL || !device_is_ready(dev) || !DEVICE_API_IS(pcie_ctrl, dev) ||
+	    DEVICE_API_GET(pcie_ctrl, dev)->msi_device_setup == NULL) {
+		LOG_ERR("PCIe root complex is not ready for MSI setup");
+
+		return 0U;
 	}
 
 	return pcie_ctrl_msi_device_setup(dev, priority, vectors, n_vector);

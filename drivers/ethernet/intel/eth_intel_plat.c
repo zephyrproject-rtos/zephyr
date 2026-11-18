@@ -33,11 +33,11 @@ struct intel_eth_plat_data {
 	mm_reg_t base;
 };
 
-uint32_t eth_intel_get_pcie_bdf(const struct device *dev)
+const struct pcie_endpoint *eth_intel_get_pcie_endpoint(const struct device *dev)
 {
 	const struct intel_eth_plat_cfg *cfg = dev->config;
 
-	return cfg->pcie->bdf;
+	return &cfg->pcie->ep;
 }
 
 static int eth_intel_validate_sku(const struct device *dev)
@@ -72,12 +72,12 @@ static int intel_eth_plat_init(const struct device *dev)
 		return ret;
 	}
 
-	if (cfg->pcie->bdf == PCIE_BDF_NONE || !pcie_probe_mbar(cfg->pcie->bdf, 0, &mbar)) {
+	if (cfg->pcie->ep.bdf == PCIE_BDF_NONE || !pcie_probe_mbar(&cfg->pcie->ep, 0, &mbar)) {
 		LOG_ERR("Cannot get mbar");
 		return -ENOENT;
 	}
 
-	pcie_set_cmd(cfg->pcie->bdf, PCIE_CONF_CMDSTAT_MEM | PCIE_CONF_CMDSTAT_MASTER, true);
+	pcie_set_cmd(&cfg->pcie->ep, PCIE_CONF_CMDSTAT_MEM | PCIE_CONF_CMDSTAT_MASTER, true);
 
 	device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
 

@@ -14,11 +14,11 @@
 #define ZEPHYR_DRIVERS_ETH_INTEL_PLAT_H__
 
 /**
- * @brief Retrieve the PCIe Bus/Device/Function of the device.
+ * @brief Retrieve the PCIe endpoint of the device.
  *
  * @param dev Pointer to the device structure.
- * @return PCIe BDF address as a uint32_t.
+ * @return PCIe endpoint combining controller and BDF.
  */
-extern uint32_t eth_intel_get_pcie_bdf(const struct device *dev);
+extern const struct pcie_endpoint *eth_intel_get_pcie_endpoint(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_ETH_INTEL_PLAT_H__ */

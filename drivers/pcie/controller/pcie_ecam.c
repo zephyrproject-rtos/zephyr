@@ -368,7 +368,7 @@ static uint8_t pcie_ecam_msi_device_setup(const struct device *dev, unsigned int
 	msix = vectors[0].msix;
 #endif
 
-	bdf = vectors[0].bdf;
+	bdf = vectors[0].ep.bdf;
 
 	/*
 	 * We do not support allocating vectors for multiple BDFs for now,
@@ -378,7 +378,7 @@ static uint8_t pcie_ecam_msi_device_setup(const struct device *dev, unsigned int
 	 * Simply bail-out if it's the case here.
 	 */
 	for (i = 1; i < n_vector; i++) {
-		if (vectors[i].bdf != bdf) {
+		if (vectors[i].ep.bdf != bdf) {
 			LOG_ERR("Multiple BDFs in a single MSI vector allocation isn't supported");
 			return 0;
 		}
@@ -451,22 +451,19 @@ static DEVICE_API(pcie_ctrl, pcie_ecam_api) = {
 #define DEVICE_DT_GET_MSI_PARENT(n)
 #endif
 
-#define PCIE_ECAM_INIT(n)							\
-	static struct pcie_ecam_data pcie_ecam_data##n;				\
-	static const struct pcie_ctrl_config pcie_ecam_config##n = {		\
-		DEVICE_DT_GET_MSI_PARENT(n)					\
-		.cfg_addr = DT_INST_REG_ADDR(n),				\
-		.cfg_size = DT_INST_REG_SIZE(n),				\
-		.ranges_count = DT_NUM_RANGES(DT_DRV_INST(n)),		\
-		.ranges = {							\
-			DT_FOREACH_RANGE(DT_DRV_INST(n), PCIE_RANGE_FORMAT)	\
-		},								\
-	};									\
-	DEVICE_DT_INST_DEFINE(n, &pcie_ecam_init, NULL,				\
-			      &pcie_ecam_data##n,				\
-			      &pcie_ecam_config##n,				\
-			      PRE_KERNEL_1,					\
-			      CONFIG_PCIE_INIT_PRIORITY,			\
-			      &pcie_ecam_api);
+/* clang-format off */
+#define PCIE_ECAM_INIT(n)                                                                          \
+	PCIE_CTRL_SCAN_BUSES_DEFINE(DT_DRV_INST(n))                                                \
+	static struct pcie_ecam_data pcie_ecam_data##n;                                            \
+	static const struct pcie_ctrl_config pcie_ecam_config##n = {                               \
+		DEVICE_DT_GET_MSI_PARENT(n)                                                        \
+		.cfg_addr = DT_INST_REG_ADDR(n),                                                   \
+		.cfg_size = DT_INST_REG_SIZE(n),                                                   \
+		.ranges_count = DT_NUM_RANGES(DT_DRV_INST(n)),                                     \
+		.ranges = {DT_FOREACH_RANGE(DT_DRV_INST(n), PCIE_RANGE_FORMAT)},                   \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(n, &pcie_ecam_init, NULL, &pcie_ecam_data##n, &pcie_ecam_config##n,  \
+			      PRE_KERNEL_1, CONFIG_PCIE_INIT_PRIORITY, &pcie_ecam_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(PCIE_ECAM_INIT)

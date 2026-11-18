@@ -1238,20 +1238,20 @@ static int emmc_init(const struct device *dev)
 	if (config->pcie) {
 		struct pcie_bar mbar;
 
-		if (config->pcie->bdf == PCIE_BDF_NONE) {
+		if (config->pcie->ep.bdf == PCIE_BDF_NONE) {
 			LOG_ERR("Cannot probe eMMC PCI device: %x", config->pcie->id);
 			return -ENODEV;
 		}
 
-		if (!pcie_probe_mbar(config->pcie->bdf, 0, &mbar)) {
+		if (!pcie_probe_mbar(&config->pcie->ep, 0, &mbar)) {
 			LOG_ERR("eMMC MBAR not found");
 			return -EINVAL;
 		}
 
-		pcie_get_mbar(config->pcie->bdf, 0, &mbar);
-		pcie_set_cmd(config->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
+		pcie_get_mbar(&config->pcie->ep, 0, &mbar);
+		pcie_set_cmd(&config->pcie->ep, PCIE_CONF_CMDSTAT_MEM, true);
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
-		pcie_set_cmd(config->pcie->bdf, PCIE_CONF_CMDSTAT_MASTER, true);
+		pcie_set_cmd(&config->pcie->ep, PCIE_CONF_CMDSTAT_MASTER, true);
 	} else
 #endif
 	{
@@ -1298,15 +1298,15 @@ static DEVICE_API(sdhc, emmc_api) = {
 		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,                                   \
 			     "Only runtime IRQ configuration is supported");                       \
 		const struct emmc_config *const dev_cfg = port->config;                            \
-		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);                             \
+		unsigned int irq = pcie_alloc_irq(&dev_cfg->pcie->ep);                             \
                                                                                                    \
 		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                              \
 			return;                                                                    \
 		}                                                                                  \
-		pcie_connect_dynamic_irq(dev_cfg->pcie->bdf, irq, DT_INST_IRQ(n, priority),        \
+		pcie_connect_dynamic_irq(&dev_cfg->pcie->ep, irq, DT_INST_IRQ(n, priority),        \
 					 (void (*)(const void *))emmc_isr, DEVICE_DT_INST_GET(n),  \
 					 EMMC_HOST_IRQ_FLAGS(n));                                  \
-		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                                          \
+		pcie_irq_enable(&dev_cfg->pcie->ep, irq);                                          \
 	}
 
 #define EMMC_HOST_IRQ_CONFIG(n) _CONCAT(EMMC_HOST_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)

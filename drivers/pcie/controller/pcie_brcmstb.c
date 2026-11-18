@@ -715,6 +715,7 @@ static int pcie_brcmstb_init(const struct device *dev)
 }
 
 #define PCIE_BRCMSTB_INIT(n)                                                                       \
+	PCIE_CTRL_SCAN_BUSES_DEFINE(DT_DRV_INST(n))                                                \
 	static struct pcie_brcmstb_data pcie_brcmstb_data_##n = {};                                \
                                                                                                    \
 	static const struct pcie_ctrl_config pcie_ctrl_cfg_##n = {                                 \

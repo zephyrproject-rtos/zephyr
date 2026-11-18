@@ -224,19 +224,19 @@ static int pch_smbus_init(const struct device *dev)
 	struct pcie_bar mbar;
 	uint32_t val;
 
-	if (config->pcie->bdf == PCIE_BDF_NONE) {
+	if (config->pcie->ep.bdf == PCIE_BDF_NONE) {
 		LOG_ERR("Cannot probe PCI device");
 		return -ENODEV;
 	}
 
-	val = pcie_conf_read(config->pcie->bdf, PCIE_CONF_CMDSTAT);
+	val = pcie_conf_read(&config->pcie->ep, PCIE_CONF_CMDSTAT);
 	if (val & PCIE_CONF_CMDSTAT_INTERRUPT) {
 		LOG_WRN("Pending interrupt, continuing");
 	}
 
 	if (IS_ENABLED(CONFIG_SMBUS_INTEL_PCH_ACCESS_MMIO)) {
-		pcie_probe_mbar(config->pcie->bdf, 0, &mbar);
-		pcie_set_cmd(config->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
+		pcie_probe_mbar(&config->pcie->ep, 0, &mbar);
+		pcie_set_cmd(&config->pcie->ep, PCIE_CONF_CMDSTAT_MEM, true);
 
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size,
 			   K_MEM_CACHE_NONE);
@@ -244,8 +244,8 @@ static int pch_smbus_init(const struct device *dev)
 		LOG_DBG("Mapped 0x%lx size 0x%lx to 0x%lx",
 			mbar.phys_addr, mbar.size, DEVICE_MMIO_GET(dev));
 	} else {
-		pcie_set_cmd(config->pcie->bdf, PCIE_CONF_CMDSTAT_IO, true);
-		val = pcie_conf_read(config->pcie->bdf, PCIE_CONF_BAR4);
+		pcie_set_cmd(&config->pcie->ep, PCIE_CONF_CMDSTAT_IO, true);
+		val = pcie_conf_read(&config->pcie->ep, PCIE_CONF_BAR4);
 		if (!PCIE_CONF_BAR_IO(val)) {
 			LOG_ERR("Cannot read IO BAR");
 			return -EINVAL;
@@ -256,7 +256,7 @@ static int pch_smbus_init(const struct device *dev)
 		LOG_DBG("Using I/O address 0x%x", data->sba);
 	}
 
-	val = pcie_conf_read(config->pcie->bdf, PCH_SMBUS_HCFG);
+	val = pcie_conf_read(&config->pcie->ep, PCH_SMBUS_HCFG);
 	if ((val & PCH_SMBUS_HCFG_HST_EN) == 0) {
 		LOG_ERR("SMBus Host Controller is disabled");
 		return -EINVAL;
@@ -917,7 +917,7 @@ static void smbus_isr(const struct device *dev)
 	uint32_t sts;
 	uint8_t status;
 
-	sts = pcie_conf_read(config->pcie->bdf, PCIE_CONF_CMDSTAT);
+	sts = pcie_conf_read(&config->pcie->ep, PCIE_CONF_CMDSTAT);
 	if (!(sts & PCIE_CONF_CMDSTAT_INTERRUPT)) {
 		LOG_ERR("Not our interrupt");
 		return;
@@ -984,30 +984,27 @@ static void smbus_isr(const struct device *dev)
 		    (DT_INST_IRQ(n, flags)),                                   \
 		    (0))
 
-#define SMBUS_IRQ_CONFIG(n)                                                    \
-	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                    \
-		     "SMBus PCIe requires dynamic interrupts");                \
-	static void pch_config_##n(const struct device *dev)                   \
-	{                                                                      \
-		const struct pch_config * const config = dev->config;          \
-		unsigned int irq;                                              \
-		if (DT_INST_IRQN(n) == PCIE_IRQ_DETECT) {                      \
-			irq = pcie_alloc_irq(config->pcie->bdf);               \
-			if (irq == PCIE_CONF_INTR_IRQ_NONE) {                  \
-				return;                                        \
-			}                                                      \
-		} else {                                                       \
-			irq = DT_INST_IRQN(n);                                 \
-			pcie_conf_write(config->pcie->bdf,                     \
-					PCIE_CONF_INTR, irq);                  \
-		}                                                              \
-		pcie_connect_dynamic_irq(config->pcie->bdf, irq,               \
-					 DT_INST_IRQ(n, priority),             \
-					 (void (*)(const void *))smbus_isr,    \
-					 DEVICE_DT_INST_GET(n),                \
-					 SMBUS_PCH_IRQ_FLAGS(n));              \
-		pcie_irq_enable(config->pcie->bdf, irq);                       \
-		LOG_DBG("Configure irq %d", irq);                              \
+#define SMBUS_IRQ_CONFIG(n)                                                                        \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                                        \
+		     "SMBus PCIe requires dynamic interrupts");                                    \
+	static void pch_config_##n(const struct device *dev)                                       \
+	{                                                                                          \
+		const struct pch_config *const config = dev->config;                               \
+		unsigned int irq;                                                                  \
+		if (DT_INST_IRQN(n) == PCIE_IRQ_DETECT) {                                          \
+			irq = pcie_alloc_irq(&config->pcie->ep);                                   \
+			if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                      \
+				return;                                                            \
+			}                                                                          \
+		} else {                                                                           \
+			irq = DT_INST_IRQN(n);                                                     \
+			pcie_conf_write(&config->pcie->ep, PCIE_CONF_INTR, irq);                   \
+		}                                                                                  \
+		pcie_connect_dynamic_irq(&config->pcie->ep, irq, DT_INST_IRQ(n, priority),         \
+					 (void (*)(const void *))smbus_isr, DEVICE_DT_INST_GET(n), \
+					 SMBUS_PCH_IRQ_FLAGS(n));                                  \
+		pcie_irq_enable(&config->pcie->ep, irq);                                           \
+		LOG_DBG("Configure irq %d", irq);                                                  \
 	}
 
 #define SMBUS_DEVICE_INIT(n)                                                   \

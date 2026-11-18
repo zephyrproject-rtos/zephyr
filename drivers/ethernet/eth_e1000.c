@@ -214,13 +214,12 @@ int e1000_probe(const struct device *ddev)
 	uint32_t ral, rah;
 	struct pcie_bar mbar;
 
-	if (dev->pcie->bdf == PCIE_BDF_NONE) {
+	if (dev->pcie->ep.bdf == PCIE_BDF_NONE) {
 		return -ENODEV;
 	}
 
-	pcie_probe_mbar(dev->pcie->bdf, 0, &mbar);
-	pcie_set_cmd(dev->pcie->bdf, PCIE_CONF_CMDSTAT_MEM |
-		     PCIE_CONF_CMDSTAT_MASTER, true);
+	pcie_probe_mbar(&dev->pcie->ep, 0, &mbar);
+	pcie_set_cmd(&dev->pcie->ep, PCIE_CONF_CMDSTAT_MEM | PCIE_CONF_CMDSTAT_MASTER, true);
 
 	device_map(&dev->address, mbar.phys_addr, mbar.size,
 		   K_MEM_CACHE_NONE);
