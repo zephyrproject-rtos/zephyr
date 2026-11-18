@@ -13,6 +13,7 @@ add_library(uut STATIC
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_conn.c
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ll_feat.c
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_conn_upd.c
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_subrate.c
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_cc.c
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_pdu.c
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_remote.c
