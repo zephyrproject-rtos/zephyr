@@ -1,0 +1,103 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,pcie-controller = &ctrl_a;
+	};
+
+	ctrl_a: pcie-ctrl-a {
+		compatible = "vnd,pcie-fake-ctrl";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		scan-buses = <3>;
+		status = "okay";
+
+		ep_a: ep-a {
+			compatible = "vnd,pcie-endpoint";
+			vendor-id = <0x1234>;
+			device-id = <0x5678>;
+			class-rev = <0x02000001>;
+			class-rev-mask = <0xffffffff>;
+			status = "okay";
+		};
+	};
+
+	ctrl_b: pcie-ctrl-b {
+		compatible = "vnd,pcie-fake-ctrl";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		scan-buses = <2 4>;
+		status = "okay";
+
+		ep_b: ep-b {
+			compatible = "vnd,pcie-endpoint";
+			vendor-id = <0x1234>;
+			device-id = <0x5678>;
+			class-rev = <0x02000002>;
+			class-rev-mask = <0xffffffff>;
+			status = "okay";
+		};
+
+		ep_b_only_on_a: ep-b-only-on-a {
+			compatible = "vnd,pcie-endpoint";
+			vendor-id = <0x1234>;
+			device-id = <0xbeef>;
+			status = "okay";
+		};
+
+		ep_b_bus2: ep-b-bus2 {
+			compatible = "vnd,pcie-endpoint";
+			vendor-id = <0x1234>;
+			device-id = <0xcafe>;
+			class-rev = <0x07000001>;
+			class-rev-mask = <0xffffffff>;
+			status = "okay";
+		};
+
+		ep_b_bus2_dup: ep-b-bus2-dup {
+			compatible = "vnd,pcie-endpoint";
+			vendor-id = <0x1234>;
+			device-id = <0xcafe>;
+			class-rev = <0x07000001>;
+			class-rev-mask = <0xffffffff>;
+			status = "okay";
+		};
+
+		ep_b_bus4: ep-b-bus4 {
+			compatible = "vnd,pcie-endpoint";
+			vendor-id = <0x1234>;
+			device-id = <0xd00d>;
+			class-rev = <0x09000001>;
+			class-rev-mask = <0xffffffff>;
+			status = "okay";
+		};
+	};
+
+	ctrl_no_msi: pcie-ctrl-no-msi {
+		compatible = "vnd,pcie-fake-ctrl";
+		#address-cells = <3>;
+		#size-cells = <2>;
+		device_type = "pci";
+		status = "okay";
+	};
+
+	ep_b_phandle: ep-b-phandle {
+		compatible = "vnd,pcie-endpoint";
+		pcie-controller = <&ctrl_b>;
+		vendor-id = <0x1234>;
+		device-id = <0x9abc>;
+		status = "okay";
+	};
+
+	ep_legacy: ep-legacy {
+		compatible = "vnd,pcie-endpoint";
+		vendor-id = <0x1234>;
+		device-id = <0xdef0>;
+		status = "okay";
+	};
+};
