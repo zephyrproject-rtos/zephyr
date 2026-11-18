@@ -169,6 +169,15 @@ void helper_pdu_verify_periodic_sync_ind(const char *file, uint32_t line, struct
 void helper_node_verify_peer_sca_update(const char *file, uint32_t line, struct node_rx_pdu *rx,
 				   void *param);
 
+void helper_pdu_encode_subrate_req(struct pdu_data *pdu, void *param);
+void helper_pdu_encode_subrate_ind(struct pdu_data *pdu, void *param);
+void helper_pdu_verify_subrate_req(const char *file, uint32_t line, struct pdu_data *pdu,
+				   void *param);
+void helper_pdu_verify_subrate_ind(const char *file, uint32_t line, struct pdu_data *pdu,
+				   void *param);
+void helper_node_verify_subrate_change(const char *file, uint32_t line, struct node_rx_pdu *rx,
+				       void *param);
+
 enum helper_pdu_opcode {
 	LL_VERSION_IND,
 	LL_LE_PING_REQ,
@@ -204,6 +213,8 @@ enum helper_pdu_opcode {
 	LL_CIS_RSP,
 	LL_CIS_IND,
 	LL_CIS_TERMINATE_IND,
+	LL_SUBRATE_REQ,
+	LL_SUBRATE_IND,
 	LL_PERIODIC_SYNC_IND,
 	LL_FRAME_SPACE_REQ,
 	LL_FRAME_SPACE_RSP,
@@ -218,6 +229,7 @@ enum helper_node_opcode {
 	NODE_CIS_REQUEST,
 	NODE_CIS_ESTABLISHED,
 	NODE_PEER_SCA_UPDATE,
+	NODE_SUBRATE_CHANGE,
 };
 
 typedef void(helper_pdu_encode_func_t)(struct pdu_data *data, void *param);

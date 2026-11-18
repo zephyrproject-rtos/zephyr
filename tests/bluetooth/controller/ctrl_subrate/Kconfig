@@ -1,0 +1,35 @@
+# Copyright (c) 2026 The ZMK Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Unit tests build with HAS_BT_CTLR=n, so the *_SUPPORT symbols normally
+# selected by the LLL vendor are off. Force the ones this test needs on,
+# mirroring tests/bluetooth/controller/ctrl_conn_update/Kconfig.
+
+config SOC_COMPATIBLE_NRF
+	default y
+
+config BT_CTLR_DATA_LEN_UPDATE_SUPPORT
+	default y
+
+config BT_CTLR_PHY_UPDATE_SUPPORT
+	default y
+
+config BT_CTLR_PHY_CODED_SUPPORT
+	default y
+
+config BT_CTLR_PHY_2M_SUPPORT
+	default y
+
+config BT_CTLR_SUBRATING_SUPPORT
+	default y
+
+config ENTROPY_NRF_FORCE_ALT
+	default n
+
+config ENTROPY_NRF5_RNG
+	default n
+
+source "tests/bluetooth/controller/common/Kconfig"
+
+# Include Zephyr's Kconfig
+source "Kconfig"
