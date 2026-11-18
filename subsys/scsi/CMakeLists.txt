@@ -6,6 +6,7 @@ if(CONFIG_SCSI)
 
   zephyr_library()
   zephyr_library_sources(
+    scsi_core.c
     scsi_cmd.c
     scsi_sense.c
   )
