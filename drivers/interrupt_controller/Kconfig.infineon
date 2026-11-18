@@ -9,6 +9,7 @@ config INFINEON_INTC_SYSINTC
 	depends on SOC_FAMILY_INFINEON_CAT1
 	select MULTI_LEVEL_INTERRUPTS
 	select 2ND_LEVEL_INTERRUPTS
+	select INTC_HAS_GEN_SW_ISR_TABLE_SWITCH
 	help
 	  Infineon CAT1 CPUSS interrupt multiplexer driver using
 	  Zephyr multi-level interrupt framework. System interrupts
