@@ -504,6 +504,106 @@ and UART8, below bcu (`bcu 1.1.113 download`_) configuration is needed to use UA
    bcu lsftdi
    bcu set_gpio fta_jtag_host_en 0 -board=imx943evk19b1 -id=1-1
 
+Inter-core communication
+************************
+
+The :zephyr:code-sample:`openamp-rsc-table` sample supports communication
+between Linux on Cortex-A55 and Zephyr on Cortex-M7 Core0, Cortex-M7 Core1,
+or Cortex-M33 Core1 (M33S). The ``m33`` board qualifier selects M33S, not
+the Cortex-M33 Core0 running System Manager.
+
+Building
+========
+
+Build the sample for the selected remote core:
+
+.. code-block:: console
+
+   west build -b imx943_evk/mimx94398/m7_0 -d build_m70 \
+       samples/subsys/ipc/openamp_rsc_table
+   west build -b imx943_evk/mimx94398/m7_1 -d build_m71 \
+       samples/subsys/ipc/openamp_rsc_table
+   west build -b imx943_evk/mimx94398/m33 -d build_m33s \
+       samples/subsys/ipc/openamp_rsc_table
+
+Follow the sample documentation to copy the ELF to Linux and start it
+through remoteproc. Match the target's sysfs device path to ``imx943-cm70``,
+``imx943-cm71``, or ``imx943-cm33s``; remoteproc instance numbers are not
+fixed. Linux and System Manager must grant the selected core access to
+its MU and shared memory.
+
+MU and memory layout
+====================
+
+The per-core SoC DTSI files define the MU interrupts. The board's
+``imx943_evk_a55_mcore_ipc.dtsi`` declares the shared-memory and
+resource-table regions matching the Linux remoteproc layout. These
+regions are disabled by default; the sample overlays enable only the
+selected core's regions, select them through ``chosen``, and use MU
+channel 1 for both transmit and receive. The SCMI mailbox is left
+unchanged.
+
+.. list-table:: i.MX943 IPC mappings (remote-core view)
+   :header-rows: 1
+
+   * - Core
+     - MU node label
+     - MU
+     - IRQ
+     - Shared-memory base / size
+     - Resource-table base / size
+   * - M7 Core0
+     - ``mu_a55_m70_for_m70``
+     - MU11_B, ``0x42740000``
+     - 126
+     - ``0x82000000`` / 32 MiB
+     - ``0x82220000`` / 4 KiB
+   * - M7 Core1
+     - ``mu_a55_m71_for_m71``
+     - MU13_A, ``0x42ad0000``
+     - 128
+     - ``0x84000000`` / 32 MiB
+     - ``0x84220000`` / 4 KiB
+   * - M33 Core1 (M33S)
+     - ``mu_a55_m33s_for_m33s``
+     - MU15_A, ``0x42b10000``
+     - 283
+     - ``0x20800000`` / 640 KiB
+     - ``0x208a0000`` / 4 KiB
+
+The SoC linker configuration retains the ``.resource_table`` section using
+the common i.MX linker snippet. The sample copies the initial table to
+the shared address selected by ``zephyr,ipc_rsc_table`` before initializing
+OpenAMP.
+
+M33S uses 644 KiB of OCRAM in total, including the resource table. Both
+M33S shared OCRAM regions are described as non-cacheable MPU memory. The
+Zephyr NXP XCache backend does not currently perform range maintenance
+for the ``0x20800000`` OCRAM window, so cache maintenance alone cannot
+make Linux updates visible there.
+
+Both M7 configurations enable D-cache and map their respective 32 MiB
+shared regions as non-cacheable MPU memory. Each mapping also covers its
+resource table without allocating a separate MPU region. These
+non-cacheable MPU regions are enabled only when the corresponding memory
+nodes are enabled. Other memory retains its normal MPU attributes.
+
+The M7 Core1 and M33S sample configurations enable INFO logs for received
+messages and blocking RPMsg Shell transmission.
+
+M33S boot address
+=================
+
+The mainline Linux ``imx_rproc`` driver derives the M33S reset-vector
+address, ``0x0ffc0000``, from the ELF entry point by masking off its lower
+16 bits. The vector-table section retains Zephyr's ``rom_start`` name;
+no section renaming is needed.
+
+Some NXP ``linux-imx`` kernels instead search for a section named
+``.interrupts`` and return address zero when it is absent. For these
+kernels, verify the boot-vector handling of the Linux and System Manager
+versions in use; a driver update may be needed.
+
 .. _bcu 1.1.113 download:
    https://github.com/nxp-imx/bcu/releases/tag/bcu_1.1.113
 

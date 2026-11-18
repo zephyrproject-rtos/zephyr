@@ -6,6 +6,10 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,warn
 
 zephyr_include_directories(.)
 
+if(CONFIG_CPU_CORTEX_M)
+  zephyr_linker_sources_ifdef(CONFIG_OPENAMP_RSC_TABLE SECTIONS ../../rsc_table.ld)
+endif()
+
 if(CONFIG_SOC_MIMX94398_A55)
   add_subdirectory(a55)
 elseif(CONFIG_SOC_MIMX94398_M33)

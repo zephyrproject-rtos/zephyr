@@ -180,6 +180,11 @@
 	status = "okay";
 };
 
+/* OS-neutral link name; "_for_m33s" identifies the accessing core. */
+mu_a55_m33s_for_m33s: &mu15_a {
+	interrupts = <283 0>;
+};
+
 &mu_m33s_secure_m71_for_m33s {
 	interrupts = <289 0>;
 	status = "okay";
