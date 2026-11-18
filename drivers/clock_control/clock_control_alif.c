@@ -425,11 +425,39 @@ static enum clock_control_status
 	return CLOCK_CONTROL_STATUS_OFF;
 }
 
+static int alif_clock_set_rate(const struct device *dev,
+			       clock_control_subsys_t sub_system,
+			       clock_control_subsys_rate_t rate)
+{
+	uint32_t clk_id = (uint32_t)sub_system;
+	uint32_t req_rate = (uint32_t)rate;
+	mem_addr_t reg_addr;
+	uint32_t input_clk, div_mask, div_off, clk_div, reg;
+
+	if (!alif_clock_control_get_div_info(clk_id, &div_mask, &div_off)) {
+		/* Clock does not have divider */
+		return -ENOTSUP;
+	}
+
+	reg_addr = alif_get_clk_reg_addr(dev, clk_id);
+	input_clk = alif_get_input_clock_freq(clk_id);
+
+	clk_div = DIV_ROUND_CLOSEST(input_clk, req_rate);
+	reg = sys_read32(reg_addr);
+	reg &= ~div_mask;
+	reg |= (clk_div << div_off) & div_mask;
+	sys_write32(reg, reg_addr);
+
+	return 0;
+}
+
+
 static DEVICE_API(clock_control, alif_clock_control_driver_api) = {
 	.on = alif_clock_control_on,
 	.off = alif_clock_control_off,
 	.get_rate = alif_clock_control_get_rate,
 	.get_status = alif_clock_control_get_status,
+	.set_rate = alif_clock_set_rate,
 };
 
 /**
