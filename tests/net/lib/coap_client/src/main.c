@@ -5302,6 +5302,79 @@ ZTEST(coap_client, test_mcast_response_from_member)
 }
 #endif /* CONFIG_COAP_CLIENT_MULTICAST */
 
+/* NON 4.01 with an Echo option from a group member's unicast address */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_mcast_echo(int sock, void *buf, size_t max_len,
+							    int flags,
+							    struct net_sockaddr *src_addr,
+							    net_socklen_t *addrlen)
+{
+	static const char echo_value[] = "echo_value";
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	struct coap_packet response;
+
+	zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_NON_CON,
+				    sizeof(token), token, COAP_RESPONSE_CODE_UNAUTHORIZED,
+				    get_next_pending_message_id()));
+	zassert_ok(coap_packet_append_option(&response, COAP_OPTION_ECHO, echo_value,
+					     sizeof(echo_value) - 1));
+	restore_token(buf);
+
+	fill_recv_src_addr(src_addr, addrlen);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return response.offset;
+}
+
+/* A server may challenge a multicast request with an Echo option (RFC 9175
+ * section 2.4). Its value is for that server, so the request is not sent to
+ * the group again: the application gets the 4.01, and the next unicast request
+ * to the server carries the value.
+ */
+ZTEST(coap_client, test_mcast_echo_challenge)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = false,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		IF_ENABLED(CONFIG_COAP_CLIENT_MULTICAST,
+			   (.multicast_timeout_ms = MULTICAST_TIMEOUT_MS,))
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_mcast_echo;
+
+	zassert_ok(coap_client_req(&client, 0, (const struct net_sockaddr *)&mcast_address, &req,
+				   NULL));
+	/* POLLIN delivers the response; POLLOUT enables timeout detection */
+	set_socket_events(client.fd, ZSOCK_POLLIN | ZSOCK_POLLOUT);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zexpect_equal(last_response_code, COAP_RESPONSE_CODE_UNAUTHORIZED);
+	zexpect_equal(z_impl_zsock_sendto_fake.call_count, 1,
+		      "The request must not be sent to the group again");
+
+	if (IS_ENABLED(CONFIG_COAP_CLIENT_MULTICAST)) {
+		/* The request ends when its time for responses is over */
+		zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	}
+
+	wait_callbacks_done();
+	clear_socket_events(client.fd, ZSOCK_POLLOUT);
+	req.confirmable = true;
+	IF_ENABLED(CONFIG_COAP_CLIENT_MULTICAST, (req.multicast_timeout_ms = 0;))
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_note_echo;
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zexpect_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+	zexpect_equal(echo_sent_len, strlen("echo_value"),
+		      "Echo option not sent to the server that challenged");
+	zexpect_mem_equal(echo_sent_value, "echo_value", strlen("echo_value"),
+			  "Incorrect echo data");
+}
+
 ZTEST(coap_client, test_non_confirmable)
 {
 	struct coap_client_request req = {
