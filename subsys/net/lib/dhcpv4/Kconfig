@@ -39,11 +39,14 @@ config NET_DHCPV4_MAX_REQUESTED_OPTIONS
 	int "Maximum number of requested options"
 	depends on NET_DHCPV4_OPTION_CALLBACKS
 	default 10
+	range 3 254 if NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED
 	range 3 $(UINT8_MAX)
 	help
 	  Maximum number of requested options that can be added to the
 	  DHCPv4 request message. The options are added using the
-	  net_dhcpv4_add_option_callback() API.
+	  net_dhcpv4_add_option_callback() API. The limit is one lower
+	  with NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED, which adds option 108
+	  to the list.
 
 config NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC
 	bool "Encapsulated vendor specific option callbacks"
@@ -138,6 +141,28 @@ config NET_DHCPV4_INIT_REBOOT_ATTEMPTS
 	  higher value tolerates lost packets on the same network at the cost of a
 	  slower fall-back. To disable INIT-REBOOT entirely, disable
 	  CONFIG_NET_DHCPV4_INIT_REBOOT instead.
+
+config NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED
+	bool "IPv6-Only Preferred option (RFC 8925)"
+	depends on NET_IPV6
+	select NET_MGMT_EVENT_INFO
+	help
+	  Ask for DHCP option 108 and stay off IPv4 when the server prefers
+	  the interface to run IPv6-only. The client then requests no IPv4
+	  address and starts again after the time the server gives, at least
+	  300 seconds and at most 4294967 seconds (about 49 days), or after the
+	  interface comes up again or the client is restarted, whichever happens
+	  first. The client raises NET_EVENT_IPV4_DHCP_V6ONLY when that happens.
+
+	  Enable this only if the device works with no IPv4 address at all,
+	  reaching IPv4-only destinations through the network's NAT64, if it
+	  needs them. Zephyr has no 464XLAT CLAT, so this is true when the
+	  applications use IPv6 only, for example a device that talks to an
+	  IPv6 enabled cloud service and nothing else.
+
+	  When enabled, every interface with IPv6 enabled is treated as IPv6-only
+	  capable. Use net_dhcpv4_set_ipv6_only_capable() to change that for an
+	  interface.
 
 config NET_DHCPV4_RESTART_ON_IF_UP
 	bool
