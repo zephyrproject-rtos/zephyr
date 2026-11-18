@@ -9,3 +9,15 @@ tests:
     tags:
       - drivers
       - interrupt
+  drivers.interrupt_controller.bcm2712_mip.routes:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args:
+      - TEST_BCM2712_MIP_ROUTES=ON
+      - DTC_OVERLAY_FILE=routes.overlay
+    extra_configs:
+      - CONFIG_BCM2712_MIP=n
+    tags:
+      - drivers
+      - interrupt
