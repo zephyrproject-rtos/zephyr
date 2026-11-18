@@ -6,7 +6,6 @@
 #include <mem.h>
 #include <freq.h>
 #include <arm/armv8-r.dtsi>
-#include <freq.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>

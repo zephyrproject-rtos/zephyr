@@ -12,7 +12,6 @@
 #include <zephyr/dt-bindings/power/nxp_rw_pmu.h>
 #include <zephyr/dt-bindings/adc/nxp,gau-adc.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	chosen {
