@@ -41,6 +41,7 @@
 #define SYSCTL_RSTCAUSE_OFFSET       0x1220 /**< Reset Cause */
 #define SYSCTL_RESETLEVEL_OFFSET     0x1300 /**< Reset level for app-triggered reset */
 #define SYSCTL_RESETCMD_OFFSET       0x1304 /**< Execute app-triggered reset */
+#define SYSCTL_BORTHRESHOLD_OFFSET   0x1308 /**< BOR threshold selection */
 #define SYSCTL_LFXTCTL_OFFSET        0x1314 /**< LFXT and LFCLK control */
 #define SYSCTL_EXLFCTL_OFFSET        0x1318 /**< LFCLK_IN control */
 
@@ -55,6 +56,9 @@
 #define SYSCTL_SYSOSCTRIMUSER_FREQ     GENMASK(1, 0)
 #define SYSCTL_SYSOSCTRIMUSER_FREQ_16M 0x1U
 #define SYSCTL_SYSOSCTRIMUSER_FREQ_24M 0x2U
+
+/* borthreshold bits */
+#define SYSCTL_BORTHRESHOLD_LEVEL_0 0x0U /* BOR0: violation triggers a BOR reset */
 
 /* lfclkcfg bits */
 #define SYSCTL_LFCLKCFG_LOWCAP   BIT(8)
