@@ -438,7 +438,9 @@ static void lp_cu_send_conn_update_ind_finalize(struct ll_conn *conn, struct pro
 static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				       void *param)
 {
-	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
+	    (ull_tx_q_peek(&conn->tx_q) != NULL) || !ull_conn_lll_tx_queue_is_empty(conn)) {
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		ctx->state = LP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
 		/* ensure alloc of TX node, before possibly waiting for NTF node */
@@ -448,6 +450,7 @@ static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ct
 			ctx->state = LP_CU_STATE_WAIT_NTF_AVAIL;
 		} else {
 			lp_cu_send_conn_update_ind_finalize(conn, ctx, evt, param);
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		}
 	}
 }
@@ -459,6 +462,7 @@ static void lp_cu_st_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx, 
 	case LP_CU_EVT_RUN:
 		if (llcp_ntf_alloc_is_available()) {
 			lp_cu_send_conn_update_ind_finalize(conn, ctx, evt, param);
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		}
 		break;
 	default:
@@ -618,12 +622,16 @@ static void lp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 		ctx->state = LP_CU_STATE_WAIT_INSTANT;
 		break;
 	case LP_CU_EVT_UNKNOWN:
+		/* CPR is over; release the collision state set when it was sent */
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		/* Unsupported in peer, so disable locally for this connection */
 		feature_unmask_features(conn, LL_FEAT_BIT_CONN_PARAM_REQ);
 		ctx->data.cu.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		lp_cu_ntf_complete(conn, ctx, evt, param);
 		break;
 	case LP_CU_EVT_REJECT:
+		/* CPR is over; release the collision state set when it was sent */
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.cu.error = pdu->llctrl.reject_ext_ind.error_code;
 		lp_cu_ntf_complete(conn, ctx, evt, param);
 		break;
@@ -637,7 +645,7 @@ static void lp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 static void lp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	uint16_t event_counter = ull_conn_event_counter(conn);
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
 
 	if (is_instant_reached_or_passed(ctx->data.cu.instant, event_counter)) {
 		bool notify;
@@ -785,6 +793,12 @@ void llcp_lp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		/* Invalid behaviour */
 		/* Invalid PDU received so terminate connection */
 		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+
+		/* Release any retained RX node before completing the procedure,
+		 * the node would otherwise be leaked
+		 */
+		llcp_rx_node_release(ctx);
+
 		lp_cu_complete(conn, ctx);
 		break;
 	}
@@ -915,7 +929,9 @@ static void rp_cu_send_conn_update_ind_finalize(struct ll_conn *conn, struct pro
 static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				       void *param)
 {
-	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
+	    (ull_tx_q_peek(&conn->tx_q) != NULL) || !ull_conn_lll_tx_queue_is_empty(conn)) {
+		llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		ctx->state = RP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
 		/* ensure alloc of TX node, before possibly waiting for NTF node */
@@ -925,6 +941,7 @@ static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ct
 			ctx->state = RP_CU_STATE_WAIT_NTF_AVAIL;
 		} else {
 			rp_cu_send_conn_update_ind_finalize(conn, ctx, evt, param);
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		}
 	}
 }
@@ -937,6 +954,7 @@ static void rp_cu_st_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx, 
 		if (llcp_ntf_alloc_is_available()) {
 			/* If NTF node is now avail, so pick it up and continue */
 			rp_cu_send_conn_update_ind_finalize(conn, ctx, evt, param);
+			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD);
 		}
 		break;
 	default:
@@ -1219,11 +1237,9 @@ static void rp_cu_st_wait_tx_conn_update_ind(struct ll_conn *conn, struct proc_c
 	}
 }
 
-static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
-				void *param)
+static void rp_cu_check_instant_by_counter(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+					   uint16_t event_counter, void *param)
 {
-	uint16_t event_counter = ull_conn_event_counter(conn);
-
 	if (is_instant_reached_or_passed(ctx->data.cu.instant, event_counter)) {
 		bool notify;
 
@@ -1252,6 +1268,22 @@ static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
+static void rp_cu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
+{
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
+
+	rp_cu_check_instant_by_counter(conn, ctx, evt, event_counter, param);
+}
+
+static void rp_cu_check_instant_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+						   uint8_t evt, void *param)
+{
+	uint16_t event_counter = ull_conn_event_counter(conn);
+
+	rp_cu_check_instant_by_counter(conn, ctx, evt, event_counter, param);
+}
+
 static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ctx,
 					     uint8_t evt, void *param)
 {
@@ -1267,15 +1299,17 @@ static void rp_cu_st_wait_rx_conn_update_ind(struct ll_conn *conn, struct proc_c
 
 			/* Valid PDU */
 			if (cu_check_conn_ind_parameters(conn, ctx)) {
-				if (is_instant_not_passed(ctx->data.cu.instant,
-							  ull_conn_event_counter(conn))) {
+				uint16_t event_counter = ull_conn_event_counter(conn);
+
+				if (is_instant_not_passed(ctx->data.cu.instant, event_counter)) {
 					/* Keep RX node to use for NTF */
 					llcp_rx_node_retain(ctx);
 
 					ctx->state = RP_CU_STATE_WAIT_INSTANT;
 
 					/* In case we only just received it in time */
-					rp_cu_check_instant(conn, ctx, evt, param);
+					rp_cu_check_instant_rx_conn_update_ind(conn, ctx, evt,
+									       param);
 					break;
 				}
 
@@ -1380,6 +1414,12 @@ void llcp_rp_cu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		/* Invalid behaviour */
 		/* Invalid PDU received so terminate connection */
 		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+
+		/* Release any retained RX node before completing the procedure,
+		 * the node would otherwise be leaked
+		 */
+		llcp_rx_node_release(ctx);
+
 		rp_cu_complete(conn, ctx);
 		break;
 	}

@@ -325,6 +325,9 @@ enum node_rx_type {
 	NODE_RX_TYPE_IQ_SAMPLE_REPORT_ULL_RELEASE,
 	NODE_RX_TYPE_IQ_SAMPLE_REPORT_LLL_RELEASE,
 	NODE_RX_TYPE_SYNC_TRANSFER_RECEIVED,
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	NODE_RX_TYPE_SUBRATE_CHANGE,
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 	/* Signals retention (ie non-release) of rx node */
 	NODE_RX_TYPE_RETAIN,
 
@@ -392,6 +395,10 @@ struct node_rx_ftr {
 	uint8_t  sync_rx_enabled:1;
 #if defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 	uint8_t  devmatch:1;
+	/* Advertising without AdvA may be reported, as decided when the ULL
+	 * handled the ADV_EXT_IND
+	 */
+	uint8_t  anon_allow:1;
 #endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 
@@ -526,6 +533,13 @@ struct event_done_extra {
 					uint16_t trx_cnt;
 					uint8_t  crc_valid:1;
 					uint8_t  is_aborted:1;
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+					/* A non-empty (Length>0) PDU was tx/rx'd
+					 * during the event; drives subrating
+					 * continuation events (Vol 6, B, 4.5.1).
+					 */
+					uint8_t  has_nonempty_pdu:1;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 					uint8_t  estab_failed:1;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
@@ -577,15 +591,6 @@ static inline void lll_hdr_init(void *lll, void *parent)
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 }
 
-/* If ISO vendor data path is not used, queue directly to ll_iso_rx */
-#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
-#define iso_rx_put(link, rx) ull_iso_rx_put(link, rx)
-#define iso_rx_sched() ull_iso_rx_sched()
-#else
-#define iso_rx_put(link, rx) ll_iso_rx_put(link, rx)
-#define iso_rx_sched() ll_rx_sched()
-#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
-
 struct node_tx_iso;
 
 void lll_done_score(void *param, uint8_t result);
@@ -608,6 +613,16 @@ int lll_csrand_isr_get(void *buf, size_t len);
 int lll_rand_get(void *buf, size_t len);
 int lll_rand_isr_get(void *buf, size_t len);
 
+int lll_prepare(lll_is_abort_cb_t is_abort_cb,
+		lll_abort_cb_t abort_cb,
+		lll_prepare_cb_t prepare_cb, int8_t event_prio,
+		struct lll_prepare_param *prepare_param);
+int lll_resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
+int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
+			lll_prepare_cb_t prepare_cb,
+			struct lll_prepare_param *prepare_param,
+			uint8_t is_resume, uint8_t is_dequeue);
+
 struct lll_event *ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 				      lll_abort_cb_t abort_cb,
 				      struct lll_prepare_param *prepare_param,
@@ -628,17 +643,20 @@ void ull_iso_rx_put(memq_link_t *link, void *rx);
 void ull_iso_rx_sched(void);
 void *ull_iso_tx_ack_dequeue(void);
 void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *tx);
+void ull_iso_lll_tx_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx);
 void ull_iso_lll_event_prepare(uint16_t handle, uint64_t event_count);
 struct event_done_extra *ull_event_done_extra_get(void);
 struct event_done_extra *ull_done_extra_type_set(uint8_t type);
 void *ull_event_done(void *param);
 
-int lll_prepare(lll_is_abort_cb_t is_abort_cb,
-		lll_abort_cb_t abort_cb,
-		lll_prepare_cb_t prepare_cb, int8_t event_prio,
-		struct lll_prepare_param *prepare_param);
-int lll_resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
-int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
-			lll_prepare_cb_t prepare_cb,
-			struct lll_prepare_param *prepare_param,
-			uint8_t is_resume, uint8_t is_dequeue);
+/* If ISO vendor data path is not used, queue directly to ll_iso_rx */
+#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
+#define iso_rx_put(link, rx) ull_iso_rx_put(link, rx)
+#define iso_rx_sched() ull_iso_rx_sched()
+#else
+void ll_iso_rx_sched(void);
+#define iso_rx_put(link, rx) ll_iso_rx_put(link, rx)
+#define iso_rx_sched() ll_iso_rx_sched()
+#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
+
+void ll_rx_sched(void);

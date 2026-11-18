@@ -1,8 +1,10 @@
 /*
  * Copyright (c) 2020 Demant
+ * Copyright (c) 2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdint.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
@@ -65,6 +67,7 @@ static struct ll_conn *ll_cis_get_acl_awaiting_reply(uint16_t handle, uint8_t *e
 	}
 
 	for (int h = 0; h < CONFIG_BT_MAX_CONN; h++) {
+		/* Handle h in valid range, hence conn will be non-NULL */
 		struct ll_conn *conn = ll_conn_get(h);
 		uint16_t cis_handle = ull_cp_cc_ongoing_handle(conn);
 
@@ -257,6 +260,11 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 				    req->p_max_sdu[0];
 
 	cis->lll.active = 0U;
+
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	cis->lll.prepared = 0U;
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
 	cis->lll.handle = LLL_HANDLE_INVALID;
 	cis->lll.acl_handle = acl->lll.handle;
 	cis->lll.sub_interval = sys_get_le24(req->sub_interval);
@@ -312,6 +320,7 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	}
 
 	conn = ll_conn_get(cis->lll.acl_handle);
+	LL_ASSERT(conn != NULL);
 
 	cis_offset = sys_get_le24(ind->cis_offset);
 
@@ -330,6 +339,46 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 	cis->sync_delay = sys_get_le24(ind->cis_sync_delay);
 	cis->offset = cis_offset;
 	memcpy(cis->lll.access_addr, ind->aa, sizeof(ind->aa));
+
+	/* Calculate and set cig->c_latency if not yet set */
+	if (cig->c_latency == 0U && cis->lll.rx.max_pdu != 0U) /* not yet set */ {
+		uint32_t iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+
+		if (iso_interval_us < ISO_INTERVAL_TO_US(BT_HCI_ISO_INTERVAL_MIN)) {
+			/* ISO_Interval is below minimum (5 ms) */
+			iso_interval_us = ISO_INTERVAL_TO_US(BT_HCI_ISO_INTERVAL_MIN);
+		}
+
+		if (cis->framed) {
+			/* Transport_Latency = CIG_Sync_Delay + FT x ISO_Interval + SDU_Interval */
+			cig->c_latency = cig->sync_delay + (cis->lll.rx.ft * iso_interval_us) +
+					 cig->c_sdu_interval;
+		} else {
+			/* Transport_Latency = CIG_Sync_Delay + FT x ISO_Interval - SDU_Interval */
+			cig->c_latency = cig->sync_delay + (cis->lll.rx.ft * iso_interval_us) -
+					 cig->c_sdu_interval;
+		}
+	}
+
+	/* Calculate and set cig->p_latency if not yet set */
+	if (cig->p_latency == 0U && cis->lll.tx.max_pdu != 0U) {
+		uint32_t iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+
+		if (iso_interval_us < ISO_INTERVAL_TO_US(BT_HCI_ISO_INTERVAL_MIN)) {
+			/* ISO_Interval is below minimum (5 ms) */
+			iso_interval_us = ISO_INTERVAL_TO_US(BT_HCI_ISO_INTERVAL_MIN);
+		}
+
+		if (cis->framed) {
+			/* Transport_Latency = CIG_Sync_Delay + FT x ISO_Interval + SDU_Interval */
+			cig->p_latency = cig->sync_delay + (cis->lll.tx.ft * iso_interval_us) +
+					 cig->p_sdu_interval;
+		} else {
+			/* Transport_Latency = CIG_Sync_Delay + FT x ISO_Interval - SDU_Interval */
+			cig->p_latency = cig->sync_delay + (cis->lll.tx.ft * iso_interval_us) -
+					 cig->p_sdu_interval;
+		}
+	}
 #if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)
 	cis->pkt_seq_num = 0U;
 #endif /* CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */

@@ -128,6 +128,15 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8
 uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max,
 			   uint16_t latency, uint16_t timeout, uint16_t *offsets);
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+/**
+ * @brief Initiate a Connection Subrate Update (Central) or Connection Subrate Request
+ *        (Peripheral) procedure.
+ */
+uint8_t ull_cp_subrate_req(struct ll_conn *conn, uint16_t subrate_min, uint16_t subrate_max,
+			   uint16_t max_latency, uint16_t continuation_number, uint16_t timeout);
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 /**
  * @brief Accept the remote device’s request to change connection parameters.
  */
@@ -142,6 +151,11 @@ void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn, uint8_t error_code);
  * @brief Check if a remote data length update is in the works.
  */
 uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn);
+
+/**
+ * @brief Check if a remote frame space update is pending
+ */
+bool ull_cp_remote_fsu_pending(struct ll_conn *conn);
 
 /**
  * @brief Check if a remote connection param reg is in the
@@ -202,7 +216,7 @@ bool ull_cp_cc_awaiting_established(struct ll_conn *conn);
 /**
  * @brief Cancel ongoing create cis procedure
  */
-bool ull_cp_cc_cancel(struct ll_conn *conn);
+bool ull_cp_cc_cancel(struct ll_conn *conn, const struct ll_conn_iso_stream *cis);
 
 /**
  * @brief Get handle of ongoing create cis procedure.
@@ -226,19 +240,36 @@ void ull_cp_cc_reject(struct ll_conn *conn, uint8_t error_code);
 void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code);
 
 /**
+ * @brief ACL disconnect.
+ */
+void ull_cp_cc_acl_disconnect(struct ll_conn *conn);
+
+/**
  * @brief CIS creation ongoing.
+ */
+bool ull_cp_cc_is_active(struct ll_conn *conn);
+
+/**
+ * @brief Local CIS creation ongoing.
  */
 bool ull_lp_cc_is_active(struct ll_conn *conn);
 
 /**
- * @brief CIS creation ongoing or enqueued.
+ * @brief CIS creation ongoing or enqueued. If cis is NULL, it will return true if
+ *        any CIS Create is enqueued, otherwise it will look for the cis specified
  */
-bool ull_lp_cc_is_enqueued(struct ll_conn *conn);
+bool ull_lp_cc_is_enqueued(struct ll_conn *conn, const struct ll_conn_iso_stream *cis);
 
 /**
  * @brief Initiate a Channel Map Update Procedure.
  */
 uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5]);
+
+/**
+ * @brief Initiate a Frame Space Update Procedure
+ */
+uint8_t ull_cp_fsu(struct ll_conn *conn, uint16_t fsu_min, uint16_t fsu_max, uint8_t phys,
+		   uint16_t spacing_type);
 
 /**
  * @brief Check if Channel Map Update Procedure is pending

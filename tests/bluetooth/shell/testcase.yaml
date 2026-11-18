@@ -34,6 +34,18 @@ tests:
       - CONFIG_BT_SUBRATING=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
+  bluetooth.shell.extended_feature_set:
+    extra_configs:
+      - CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE=10
+      - CONFIG_BT_LE_EXTENDED_FEAT_SET=y
+      - CONFIG_BT_LL_SW_SPLIT=n
+    build_only: true
+  bluetooth.shell.frame_space_update:
+    extra_configs:
+      - CONFIG_BT_FRAME_SPACE_UPDATE=y
+      - CONFIG_BT_LE_EXTENDED_FEAT_SET=y
+      - CONFIG_BT_LL_SW_SPLIT=n
+    build_only: true
   bluetooth.shell.channel_sounding:
     extra_configs:
       - CONFIG_BT_CHANNEL_SOUNDING=y
@@ -73,7 +85,7 @@ tests:
     build_only: true
     extra_args: CONF_FILE="log.conf"
     tags: bluetooth
-  bluetooth.shell.bt_ctrl_dtm:
+  bluetooth.shell.bt_ctlr_dtm:
     build_only: true
     extra_args:
       - CONFIG_BT_CTLR_DTM_HCI=y

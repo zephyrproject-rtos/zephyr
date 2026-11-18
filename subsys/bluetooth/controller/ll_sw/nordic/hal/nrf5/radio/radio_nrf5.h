@@ -40,6 +40,7 @@
 #include <hal/nrf_vreqctrl.h>
 #include "radio_nrf5340.h"
 #elif defined(CONFIG_SOC_SERIES_NRF54LX)
+#include <hal/nrf_ppib.h>
 #include "radio_nrf54lx.h"
 #elif defined(CONFIG_BOARD_NRF52_BSIM)
 #include "radio_sim_nrf52.h"
@@ -47,6 +48,7 @@
 #include <hal/nrf_vreqctrl.h>
 #include "radio_sim_nrf5340.h"
 #elif defined(CONFIG_BOARD_NRF54L15BSIM_NRF54L15_CPUAPP)
+#include <hal/nrf_ppib.h>
 #include "radio_sim_nrf54l.h"
 #else
 #error "Unsupported SoC."
@@ -54,7 +56,6 @@
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 #include <hal/nrf_grtc.h>
-#include <hal/nrf_ppib.h>
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 #include <hal/nrf_rtc.h>
 #endif /* !CONFIG_BT_CTLR_NRF_GRTC */
@@ -63,8 +64,11 @@
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 #include <hal/nrf_ccm.h>
-#include <hal/nrf_aar.h>
 #endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+#include <hal/nrf_aar.h>
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 /* Define to reset PPI registration.
  * This has to come before the ppi/dppi includes below.

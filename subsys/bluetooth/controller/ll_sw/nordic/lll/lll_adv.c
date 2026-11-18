@@ -80,9 +80,10 @@ static bool isr_rx_sr_adva_check(uint8_t tx_addr, uint8_t *addr,
 				 struct pdu_adv *sr);
 
 
-static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
-					uint8_t rx_addr, uint8_t *tgt_addr,
-					struct pdu_adv *ci, uint8_t rl_idx);
+static inline bool isr_rx_tgta_check(const struct lll_adv *lll,
+				     uint8_t rx_addr, const uint8_t *tgt_addr,
+				     uint8_t addr_type, const uint8_t *addr,
+				     uint8_t rl_idx);
 static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 					struct pdu_adv *ci);
 
@@ -689,8 +690,25 @@ void lll_adv_prepare(void *param)
 
 bool lll_adv_scan_req_check(struct lll_adv *lll, struct pdu_adv *sr,
 			    uint8_t tx_addr, uint8_t *addr,
+			    uint8_t rx_addr, const uint8_t *tgt_addr,
 			    uint8_t devmatch_ok, uint8_t *rl_idx)
 {
+	/* LL 4.3.2: filter policy shall be ignored for directed adv, which
+	 * only answers the device of its TargetA
+	 */
+	if (tgt_addr != NULL) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) &&
+		    !ull_filter_lll_rl_addr_allowed(sr->tx_addr,
+						    sr->scan_req.scan_addr,
+						    rl_idx)) {
+			return false;
+		}
+
+		return isr_rx_sr_adva_check(tx_addr, addr, sr) &&
+		       isr_rx_tgta_check(lll, rx_addr, tgt_addr, sr->tx_addr,
+					 sr->scan_req.scan_addr, *rl_idx);
+	}
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	return ((((lll->filter_policy & BT_LE_ADV_FP_FILTER_SCAN_REQ) == 0) &&
 		 ull_filter_lll_rl_addr_allowed(sr->tx_addr,
@@ -749,8 +767,8 @@ bool lll_adv_connect_ind_check(struct lll_adv *lll, struct pdu_adv *ci,
 		return (1) &&
 #endif
 		       isr_rx_ci_adva_check(tx_addr, addr, ci) &&
-		       isr_rx_ci_tgta_check(lll, rx_addr, tgt_addr, ci,
-					    *rl_idx);
+		       isr_rx_tgta_check(lll, rx_addr, tgt_addr, ci->tx_addr,
+					 ci->connect_ind.init_addr, *rl_idx);
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -1164,6 +1182,11 @@ static void isr_tx(void *param)
 		node_rx_prof = lll_prof_reserve();
 	}
 
+	/* Call to ensure packet/event timer accumulates the elapsed time
+	 * under single timer use.
+	 */
+	(void)radio_is_tx_done();
+
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
 
@@ -1177,7 +1200,12 @@ static void isr_tx(void *param)
 	radio_pkt_rx_set(node_rx->pdu);
 
 	/* assert if radio packet ptr is not set and radio started rx */
-	LL_ASSERT(!radio_is_ready());
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+			      lll_prof_latency_get());
+	} else {
+		LL_ASSERT(!radio_is_ready());
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
@@ -1197,9 +1225,12 @@ static void isr_tx(void *param)
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
-	hcto += radio_rx_chain_delay_get(phy_p, 0);
+	/* RX delay uses the worst-case S8 coded reception; TX delay uses
+	 * the selected advertising coding scheme.
+	 */
+	hcto += radio_rx_address_delay_get(phy_p, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_p);
-	hcto -= radio_tx_chain_delay_get(phy_p, 0);
+	hcto -= radio_tx_chain_delay_get(phy_p, phy_flags);
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of CONNECT_IND PDU, used for calculating first
@@ -1222,7 +1253,7 @@ static void isr_tx(void *param)
 
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
-				 radio_tx_chain_delay_get(phy_p, 0) -
+				 radio_tx_chain_delay_get(phy_p, phy_flags) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
@@ -1504,7 +1535,16 @@ static struct pdu_adv *chan_prepare(struct lll_adv *lll)
 		radio_switch_complete_and_rx(0);
 	} else {
 		radio_isr_set(isr_done, lll);
-		radio_switch_complete_and_disable();
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) &&
+		    IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
+			/* Required under single time tIFS switching, to accumulate the packet
+			 * timer value at the time of clear on radio end.
+			 */
+			radio_switch_complete_end_capture_and_disable();
+		} else {
+			radio_switch_complete_and_disable();
+		}
 	}
 
 	return pdu;
@@ -1550,14 +1590,19 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 	if ((pdu_rx->type == PDU_ADV_TYPE_SCAN_REQ) &&
 	    (pdu_rx->len == sizeof(struct pdu_adv_scan_req)) &&
 	    (tgt_addr == NULL) &&
-	    lll_adv_scan_req_check(lll, pdu_rx, tx_addr, addr, devmatch_ok,
-				    &rl_idx)) {
+	    lll_adv_scan_req_check(lll, pdu_rx, tx_addr, addr, rx_addr,
+				   tgt_addr, devmatch_ok, &rl_idx)) {
 		radio_isr_set(isr_done, lll);
 		radio_switch_complete_and_disable();
 		radio_pkt_tx_set(lll_adv_scan_rsp_curr_get(lll));
 
 		/* assert if radio packet ptr is not set and radio started tx */
-		LL_ASSERT(!radio_is_ready());
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+				      lll_prof_latency_get());
+		} else {
+			LL_ASSERT(!radio_is_ready());
+		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 			lll_prof_cputime_capture();
@@ -1628,7 +1673,12 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		radio_disable();
 
 		/* assert if radio started tx */
-		LL_ASSERT(!radio_is_ready());
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+				      lll_prof_latency_get());
+		} else {
+			LL_ASSERT(!radio_is_ready());
+		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 			lll_prof_cputime_capture();
@@ -1678,17 +1728,18 @@ static bool isr_rx_sr_adva_check(uint8_t tx_addr, uint8_t *addr,
 		!memcmp(addr, sr->scan_req.adv_addr, BDADDR_SIZE);
 }
 
-static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
-					uint8_t rx_addr, uint8_t *tgt_addr,
-					struct pdu_adv *ci, uint8_t rl_idx)
+static inline bool isr_rx_tgta_check(const struct lll_adv *lll,
+				     uint8_t rx_addr, const uint8_t *tgt_addr,
+				     uint8_t addr_type, const uint8_t *addr,
+				     uint8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (rl_idx != FILTER_IDX_NONE && lll->rl_idx != FILTER_IDX_NONE) {
 		return rl_idx == lll->rl_idx;
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-	return (rx_addr == ci->tx_addr) &&
-	       !memcmp(tgt_addr, ci->connect_ind.init_addr, BDADDR_SIZE);
+	return (rx_addr == addr_type) &&
+	       (memcmp(tgt_addr, addr, BDADDR_SIZE) == 0);
 }
 
 static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,

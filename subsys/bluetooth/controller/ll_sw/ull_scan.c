@@ -583,7 +583,6 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	}
 
 	ticks_anchor = ticker_ticks_now_get();
-	ticks_anchor += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 	if (!lll->conn) {
@@ -610,6 +609,9 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	ret_cb = TICKER_STATUS_BUSY;
 
 #if defined(CONFIG_BT_TICKER_EXT)
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	ll_scan_ticker_ext[handle].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 	ret = ticker_start_ext(
 #else
 	ret = ticker_start(
@@ -654,8 +656,11 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* Request Extended Scan stop */
 	scan->is_stop = 1U;
-	cpu_dmb();
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+	/* Flag LLL to stop */
+	scan->lll.is_stop = 1U;
+	cpu_dmb();
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_SCAN_BASE + handle,
 					scan, &scan->lll);
@@ -673,36 +678,9 @@ uint8_t ull_scan_disable(uint8_t handle, struct ll_scan_set *scan)
 	}
 #else /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 	/* Find and stop associated auxiliary scan contexts */
-	for (uint8_t aux_handle = 0; aux_handle < CONFIG_BT_CTLR_SCAN_AUX_SET;
-	     aux_handle++) {
-		struct lll_scan_aux *aux_scan_lll;
-		struct ll_scan_set *aux_scan;
-		struct ll_scan_aux_set *aux;
-
-		aux = ull_scan_aux_set_get(aux_handle);
-		aux_scan_lll = aux->parent;
-		if (!aux_scan_lll) {
-			continue;
-		}
-
-		aux_scan = HDR_LLL2ULL(aux_scan_lll);
-		if (aux_scan == scan) {
-			void *parent;
-
-			err = ull_scan_aux_stop(aux);
-			if (err && (err != -EALREADY)) {
-				return BT_HCI_ERR_CMD_DISALLOWED;
-			}
-
-			/* Use a local variable to assert on auxiliary context's
-			 * release.
-			 * Under race condition a released aux context can be
-			 * allocated for reception of chain PDU of a periodic
-			 * sync role.
-			 */
-			parent = aux->parent;
-			LL_ASSERT(!parent || (parent != aux_scan_lll));
-		}
+	err = ull_scan_aux_stop_by_parent(&scan->lll);
+	if (err != 0) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 #endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

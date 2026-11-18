@@ -228,6 +228,10 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	ull_dle_init(conn, PHY_1M);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	ull_fsu_init(conn, EVENT_IFS_DEFAULT_US);
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	conn_lll->rssi_latest = BT_HCI_LE_RSSI_NOT_AVAILABLE;
 #if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
@@ -370,6 +374,21 @@ conn_is_valid:
 	slot_us = max_tx_time + max_rx_time;
 	slot_us += conn_lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 	slot_us += ready_delay_us;
+
+#if !defined(CONFIG_BT_CTLR_CENTRAL_SPACING) || (CONFIG_BT_CTLR_CENTRAL_SPACING == 0U)
+	/* Let's be considerate of peripheral window widening and space multiple centrals
+	 * accordingly by including it in the time reservation.
+	 */
+	const uint8_t sca_acl_value_500_ppm = 0U; /* SCA value for 500 ppm, for ACL intervals */
+	uint32_t periph_window_widening_periodic_max_us =
+		DIV_ROUND_UP(((lll_clock_ppm_local_get() +
+			       lll_clock_ppm_get(sca_acl_value_500_ppm)) *
+			      ((uint32_t)interval * CONN_INT_UNIT_US)), USEC_PER_SEC);
+
+	slot_us += periph_window_widening_periodic_max_us << 1U;
+#endif /* !CONFIG_BT_CTLR_CENTRAL_SPACING || (CONFIG_BT_CTLR_CENTRAL_SPACING == 0U) */
+
+	/* Add event overheads */
 	slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
@@ -565,7 +584,7 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand_num,
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get_by_acl(conn, NULL);
 
-	if (cis || ull_lp_cc_is_enqueued(conn)) {
+	if (cis || ull_lp_cc_is_enqueued(conn, NULL)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */

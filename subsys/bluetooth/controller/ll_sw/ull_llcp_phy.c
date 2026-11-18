@@ -542,12 +542,11 @@ static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 static void lp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				      void *param)
 {
-	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
+	if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
+	    (ull_tx_q_peek(&conn->tx_q) != NULL) || !ull_conn_lll_tx_queue_is_empty(conn)) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		ctx->tx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
-
-		/* Allocate TX node */
 		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		lp_pu_tx(conn, ctx, evt, param);
 	}
@@ -770,13 +769,32 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	if (is_instant_reached_or_passed(ctx->data.pu.instant, ull_conn_event_counter(conn))) {
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
+
+	if (is_instant_reached_or_passed(ctx->data.pu.instant, event_counter)) {
 		const uint8_t phy_changed = pu_apply_phy_update(conn, ctx);
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		if (phy_changed) {
 			ctx->data.pu.ntf_dle = pu_update_eff_times(conn, ctx);
 		}
 #endif
+#if defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
+		/* A PHY change alters the event length reservation (ready
+		 * delay and Tx/Rx times depend on the PHY), so request an
+		 * update of ticks_slot even when Data Length Update is not
+		 * enabled.
+		 */
+		if (phy_changed) {
+			conn->lll.evt_len_upd = 1U;
+		}
+#endif /* CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+		if (phy_changed) {
+			/* Use the frame spaces of the new PHYs */
+			ull_fsu_tifs_set(conn);
+		}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		ctx->data.pu.ntf_pu = (phy_changed || ctx->data.pu.host_initiated);
@@ -895,6 +913,12 @@ void llcp_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		/* Invalid behaviour */
 		/* Invalid PDU received so terminate connection */
 		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+
+		/* Release any retained RX node before completing the procedure,
+		 * the node would otherwise be leaked
+		 */
+		llcp_rx_node_release(ctx);
+
 		llcp_lr_complete(conn);
 		ctx->state = LP_PU_STATE_IDLE;
 		break;
@@ -1009,14 +1033,13 @@ static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 {
 	if (llcp_rr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx) ||
 	    (llcp_rr_get_paused_cmd(conn) == PROC_PHY_UPDATE) ||
-	    !ull_is_lll_tx_queue_empty(conn)) {
+	    (ull_tx_q_peek(&conn->tx_q) != NULL) || !ull_conn_lll_tx_queue_is_empty(conn)) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		llcp_rr_set_paused_cmd(conn, PROC_CTE_REQ);
 		ctx->tx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
 		ctx->node_ref.tx = llcp_tx_alloc(conn, ctx);
 		rp_pu_tx(conn, ctx, evt, param);
-
 	}
 }
 #endif /* CONFIG_BT_CENTRAL */
@@ -1191,7 +1214,9 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 static void rp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
-	if (is_instant_reached_or_passed(ctx->data.pu.instant, ull_conn_event_counter(conn))) {
+	uint16_t event_counter = ull_conn_event_counter_at_prepare(conn);
+
+	if (is_instant_reached_or_passed(ctx->data.pu.instant, event_counter)) {
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		const uint8_t phy_changed = pu_apply_phy_update(conn, ctx);
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -1199,6 +1224,23 @@ static void rp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 			ctx->data.pu.ntf_dle = pu_update_eff_times(conn, ctx);
 		}
 #endif
+#if defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
+		/* A PHY change alters the event length reservation (ready
+		 * delay and Tx/Rx times depend on the PHY), so request an
+		 * update of ticks_slot even when Data Length Update is not
+		 * enabled.
+		 */
+		if (phy_changed) {
+			conn->lll.evt_len_upd = 1U;
+		}
+#endif /* CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+		if (phy_changed) {
+			/* Use the frame spaces of the new PHYs */
+			ull_fsu_tifs_set(conn);
+		}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 		/* if PHY settings changed we should generate NTF */
 		ctx->data.pu.ntf_pu = phy_changed;
 		rp_pu_complete(conn, ctx, evt, param);
@@ -1308,6 +1350,12 @@ void llcp_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		/* Invalid behaviour */
 		/* Invalid PDU received so terminate connection */
 		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+
+		/* Release any retained RX node before completing the procedure,
+		 * the node would otherwise be leaked
+		 */
+		llcp_rx_node_release(ctx);
+
 		llcp_rr_complete(conn);
 		ctx->state = RP_PU_STATE_IDLE;
 		break;

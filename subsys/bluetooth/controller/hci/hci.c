@@ -65,6 +65,7 @@
 #include "ll_sw/ull_internal.h"
 
 #include "ll_sw/ull_adv_internal.h"
+#include "ll_sw/ull_scan_internal.h"
 #include "ll_sw/ull_sync_internal.h"
 #include "ll_sw/ull_conn_internal.h"
 #include "ll_sw/ull_sync_iso_internal.h"
@@ -878,8 +879,12 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[27] |= BIT(0) | BIT(1);
 #endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
-	/* LE Encrypt, LE Rand */
-	rp->commands[27] |= BIT(6) | BIT(7);
+#if defined(CONFIG_BT_CTLR_CRYPTO)
+	/* LE Encrypt */
+	rp->commands[27] |= BIT(6);
+#endif /* CONFIG_BT_CTLR_CRYPTO */
+	/* LE Rand */
+	rp->commands[27] |= BIT(7);
 	/* LE Read Supported States */
 	rp->commands[28] |= BIT(3);
 
@@ -1012,6 +1017,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE Request Peer SCA */
 	rp->commands[43] |= BIT(2);
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	/* LE Frame Space Update */
+	rp->commands[48] |= BIT(1);
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_DTM_HCI)
@@ -2536,6 +2545,28 @@ static void le_req_peer_sca(struct net_buf *buf, struct net_buf **evt)
 }
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+static void le_frame_space_update(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_frame_space_update *cmd = (void *)buf->data;
+	uint16_t frame_space_min;
+	uint16_t frame_space_max;
+	uint16_t spacing_types;
+	uint16_t handle;
+	uint8_t status;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	frame_space_min = sys_le16_to_cpu(cmd->frame_space_min);
+	frame_space_max = sys_le16_to_cpu(cmd->frame_space_max);
+	spacing_types = sys_le16_to_cpu(cmd->spacing_types);
+
+	status = ll_fsu_req_send(handle, frame_space_min, frame_space_max, cmd->phys,
+				 spacing_types);
+
+	*evt = cmd_status(status);
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
 {
@@ -2589,6 +2620,40 @@ static void le_conn_update(struct net_buf *buf, struct net_buf **evt)
 
 	*evt = cmd_status(status);
 }
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+static void le_set_default_subrate(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_default_subrate *cmd = (void *)buf->data;
+	uint8_t *rp;
+
+	ll_subrate_defaults_set(sys_le16_to_cpu(cmd->subrate_min),
+				sys_le16_to_cpu(cmd->subrate_max),
+				sys_le16_to_cpu(cmd->max_latency),
+				sys_le16_to_cpu(cmd->continuation_number),
+				sys_le16_to_cpu(cmd->supervision_timeout));
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+	*rp = BT_HCI_ERR_SUCCESS;
+}
+
+static void le_subrate_request(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_subrate_request *cmd = (void *)buf->data;
+	uint16_t handle;
+	uint8_t status;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+
+	status = ll_subrate_req(handle, sys_le16_to_cpu(cmd->subrate_min),
+				sys_le16_to_cpu(cmd->subrate_max),
+				sys_le16_to_cpu(cmd->max_latency),
+				sys_le16_to_cpu(cmd->continuation_number),
+				sys_le16_to_cpu(cmd->supervision_timeout));
+
+	*evt = cmd_status(status);
+}
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void le_conn_param_req_reply(struct net_buf *buf, struct net_buf **evt)
@@ -4670,6 +4735,12 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		break;
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	case BT_OCF(BT_HCI_OP_LE_FRAME_SPACE_UPDATE):
+		le_frame_space_update(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_ISO)
 	case BT_OCF(BT_HCI_OP_LE_SETUP_ISO_PATH):
 		le_setup_iso_path(cmd, evt);
@@ -4735,6 +4806,16 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_conn_param_req_neg_reply(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	case BT_OCF(BT_HCI_OP_LE_SET_DEFAULT_SUBRATE):
+		le_set_default_subrate(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_SUBRATE_REQUEST):
+		le_subrate_request(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case BT_OCF(BT_HCI_OP_LE_SET_DATA_LEN):
@@ -5917,7 +5998,6 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_iso_sdu_hdr *iso_sdu_hdr;
 	struct isoal_sdu_tx sdu_frag_tx;
 	struct bt_hci_iso_hdr *iso_hdr;
-	uint32_t *time_stamp;
 	uint16_t handle;
 	uint8_t pb_flag;
 	uint8_t ts_flag;
@@ -5965,9 +6045,8 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 	sdu_frag_tx.cntr_time_stamp = HAL_TICKER_TICKS_TO_US(ticker_ticks_now_get());
 	if (ts_flag) {
 		/* Use HCI provided time stamp */
-		time_stamp = net_buf_pull_mem(buf, sizeof(*time_stamp));
-		len -= sizeof(*time_stamp);
-		sdu_frag_tx.time_stamp = sys_le32_to_cpu(*time_stamp);
+		sdu_frag_tx.time_stamp = net_buf_pull_le32(buf);
+		len -= sizeof(uint32_t);
 	} else {
 		/* Use controller's capture time */
 		sdu_frag_tx.time_stamp = sdu_frag_tx.cntr_time_stamp;
@@ -6007,6 +6086,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		struct ll_conn_iso_group *cig;
 		struct ll_iso_stream_hdr *hdr;
 		struct ll_iso_datapath *dp_in;
+		uint32_t sdu_interval;
 		uint8_t event_offset;
 
 		cis = ll_iso_stream_connected_get(handle);
@@ -6017,23 +6097,35 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		cig = cis->group;
 
 		/* We must ensure sufficient time for ISO-AL to fragment SDU and
-		 * deliver PDUs to the TX queue. By checking ull_ref_get, we
-		 * know if we are within the subevents of an ISO event. If so,
-		 * we can assume that we have enough time to deliver in the next
-		 * ISO event. If we're not active within the ISO event, we don't
-		 * know if there is enough time to deliver in the next event,
-		 * and for safety we set the target to current event + 2.
-		 *
-		 * For FT > 1, we have the opportunity to retransmit in later
+		 * deliver PDUs to the TX queue. We don't know if there is enough
+		 * time to deliver in the next event, and for safety we set the
+		 * target to current event + 2.
+		 */
+		event_offset = 2;
+
+		if (cig->lll.role) {
+			/* peripheral */
+			sdu_interval = cig->p_sdu_interval;
+		} else {
+			/* central */
+			sdu_interval = cig->c_sdu_interval;
+		}
+
+		/* By checking ull_ref_get, we know if we are within the subevents
+		 * of an ISO event. If so, we can assume that we have enough time
+		 * to deliver in the next ISO event, provided CIG sync delay is less
+		 * than an SDU interval
+		 */
+		if (ull_ref_get(&cig->ull) && cig->sync_delay < sdu_interval) {
+			event_offset -= 1;
+		}
+
+		/* For FT > 1, we have the opportunity to retransmit in later
 		 * event(s), in which case we have the option to target an
 		 * earlier event (this or next) because being late does not
 		 * instantly flush the payload.
 		 */
-
-		event_offset = ull_ref_get(&cig->ull) ? 1 : 2;
-
 		if (cis->lll.tx.ft > 1) {
-			/* FT > 1, target an earlier event */
 			event_offset -= 1;
 		}
 
@@ -6042,7 +6134,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 		uint64_t pkt_seq_num;
 
 		/* Catch up local pkt_seq_num with internal pkt_seq_num */
-		event_count = cis->lll.event_count + event_offset;
+		event_count = cis->lll.event_count_prepare + event_offset;
 		pkt_seq_num = event_count + 1U;
 
 		/* If pb_flag is BT_ISO_START (0b00) or BT_ISO_SINGLE (0b10)
@@ -6085,7 +6177,7 @@ int hci_iso_handle(struct net_buf *buf, struct net_buf **evt)
 						   ISO_INT_UNIT_US));
 
 #else /* !CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
-		sdu_frag_tx.target_event = cis->lll.event_count + event_offset;
+		sdu_frag_tx.target_event = cis->lll.event_count_prepare + event_offset;
 		sdu_frag_tx.grp_ref_point =
 			isoal_get_wrapped_time_us(cig->cig_ref_point,
 						  (event_offset *
@@ -6702,6 +6794,22 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static uint8_t legacy_adv_direct_addr_type(struct node_rx_pdu *node_rx, uint8_t rx_addr_type)
+{
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+	/* The directed address is a resolvable private address, but Controller
+	 * could not resolve it.
+	 */
+	if (node_rx->rx_ftr.direct != 0U) {
+		return BT_ADDR_LE_UNRESOLVED;
+	}
+#else /* !CONFIG_BT_CTLR_EXT_SCAN_FP */
+	ARG_UNUSED(node_rx);
+#endif /* !CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+	return rx_addr_type;
+}
+
 static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 				     struct node_rx_pdu *node_rx,
 				     struct net_buf *buf)
@@ -6805,7 +6913,7 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 	adv_info->interval = 0U;
 
 	if (adv->type == PDU_ADV_TYPE_DIRECT_IND) {
-		adv_info->direct_addr.type = adv->rx_addr;
+		adv_info->direct_addr.type = legacy_adv_direct_addr_type(node_rx, adv->rx_addr);
 		bt_addr_copy(&adv_info->direct_addr.a,
 			     (void *)adv->direct_ind.tgt_addr);
 	} else {
@@ -6884,6 +6992,11 @@ static uint8_t ext_adv_data_get(const struct node_rx_pdu *node_rx_data,
 		hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
 
 		goto no_ext_hdr;
+	}
+
+	/* The fields of an incomplete extended header can lie beyond the PDU */
+	if (!ull_scan_aux_ext_hdr_is_complete(adv)) {
+		return 0U;
 	}
 
 	ptr = h->data;
@@ -6988,7 +7101,7 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 		adv_info->addr.type = adv_addr_type;
 		(void)memcpy(adv_info->addr.a.val, adv_addr, sizeof(bt_addr_t));
 	} else {
-		adv_info->addr.type = 0U;
+		adv_info->addr.type = BT_ADDR_LE_ANONYMOUS;
 		(void)memset(adv_info->addr.a.val, 0, sizeof(bt_addr_t));
 	}
 
@@ -7009,7 +7122,9 @@ static void ext_adv_info_fill(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
 	}
 
 	adv_info->length = data_len;
-	(void)memcpy(adv_info->data, data, data_len);
+	if (data_len > 0U) {
+		(void)memcpy(adv_info->data, data, data_len);
+	}
 }
 
 static void ext_adv_pdu_frag(uint8_t evt_type, uint8_t phy, uint8_t sec_phy,
@@ -7133,6 +7248,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint8_t *adv_addr = NULL;
 	uint8_t data_status = 0U;
 	struct net_buf *evt_buf;
+	bool anon_allow = false;
 	bool devmatch = false;
 	uint8_t data_len = 0U;
 	uint8_t evt_type = 0U;
@@ -7212,6 +7328,14 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
 
 			goto no_ext_hdr;
+		}
+
+		/* The fields of an incomplete extended header can lie beyond
+		 * the PDU: nothing of this event is reported.
+		 */
+		if (!ull_scan_aux_ext_hdr_is_complete(adv)) {
+			node_rx_extra_list_release(node_rx->rx_ftr.extra);
+			return;
 		}
 
 		ptr = h->data;
@@ -7415,6 +7539,7 @@ no_ext_hdr:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && \
 	defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 			devmatch = devmatch_curr;
+			anon_allow = node_rx_curr->rx_ftr.anon_allow;
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 
 		} else {
@@ -7490,9 +7615,14 @@ no_ext_hdr:
 		adv = (void *)node_rx_curr->pdu;
 	} while (1);
 
+	/* A PDU received for a periodic sync that is being created is not
+	 * reported unless the scanner filter policy allows its AdvA. Anonymous
+	 * advertising has no AdvA to allow: the ULL recorded with the
+	 * ADV_EXT_IND whether the policy lets it through.
+	 */
 	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) &&
 	    IS_ENABLED(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST) &&
-	    !devmatch) {
+	    !devmatch && ((adv_addr != NULL) || !anon_allow)) {
 		node_rx_extra_list_release(node_rx->rx_ftr.extra);
 		return;
 	}
@@ -7755,9 +7885,20 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 
 	data_len_total = ftr->aux_data_len;
 
+	/* A PDU with an incomplete extended header ends the report as a failed
+	 * chain reception does, as it can follow a partial report of its chain.
+	 */
 	if ((le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT) &&
-	    (ftr->aux_failed || data_len_total > CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX)) {
+	    (ftr->aux_failed || data_len_total > CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX ||
+	     !ull_scan_aux_ext_hdr_is_complete(adv))) {
 		struct bt_hci_evt_le_per_advertising_report *sep;
+
+		/* Not even the end of a report is sent while reporting is
+		 * disabled
+		 */
+		if (sync->rx_enable == 0U) {
+			return;
+		}
 
 		sep = meta_evt(buf,
 			       BT_HCI_EVT_LE_PER_ADVERTISING_REPORT,
@@ -7788,6 +7929,11 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 		hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
 
 		goto no_ext_hdr;
+	}
+
+	/* The fields of an incomplete extended header can lie beyond the PDU */
+	if (!ull_scan_aux_ext_hdr_is_complete(adv)) {
+		return;
 	}
 
 	ptr = h->data;
@@ -7941,7 +8087,9 @@ no_ext_hdr:
 			sep->rssi = rssi;
 			sep->cte_type = cte_type;
 			sep->length = data_len_frag;
-			memcpy(&sep->data[0], data, data_len_frag);
+			if (data_len_frag > 0U) {
+				(void)memcpy(&sep->data[0], data, data_len_frag);
+			}
 
 			data += data_len_frag;
 			data_len -= data_len_frag;
@@ -8543,6 +8691,35 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, uint16_t handle,
 	sep->supv_timeout = sys_cpu_to_le16(cu->timeout);
 }
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+static void le_subrate_change_event(struct pdu_data *pdu_data, uint16_t handle,
+				    struct net_buf *buf)
+{
+	struct bt_hci_evt_le_subrate_change *sep;
+	struct node_rx_subrate_change *sr;
+	void *node;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_SUBRATE_CHANGE)) {
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_SUBRATE_CHANGE, sizeof(*sep));
+
+	/* Check for pdu field being aligned before accessing subrate change event. */
+	node = pdu_data;
+	LL_ASSERT(IS_PTR_ALIGNED(node, struct node_rx_subrate_change));
+
+	sr = node;
+	sep->status = sr->status;
+	sep->handle = sys_cpu_to_le16(handle);
+	sep->subrate_factor = sys_cpu_to_le16(sr->subrate_factor);
+	sep->peripheral_latency = sys_cpu_to_le16(sr->peripheral_latency);
+	sep->continuation_number = sys_cpu_to_le16(sr->continuation_number);
+	sep->supervision_timeout = sys_cpu_to_le16(sr->supervision_timeout);
+}
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 static void enc_refresh_complete(struct pdu_data *pdu_data, uint16_t handle,
 				 struct net_buf *buf)
@@ -8786,6 +8963,12 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		le_conn_update_complete(pdu_data, handle, buf);
 		break;
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	case NODE_RX_TYPE_SUBRATE_CHANGE:
+		le_subrate_change_event(pdu_data, handle, buf);
+		break;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	case NODE_RX_TYPE_ENC_REFRESH:
 		enc_refresh_complete(pdu_data, handle, buf);
@@ -8956,6 +9139,50 @@ static void le_remote_feat_complete(uint8_t status, struct pdu_data *pdu_data,
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+static void le_frame_space_update_complete(uint8_t status, struct pdu_data *pdu_data,
+					   uint16_t handle, struct net_buf *buf)
+{
+	struct bt_hci_evt_le_frame_space_update_complete *sep;
+
+	if (((event_mask & BT_EVT_MASK_LE_META_EVENT) == 0U) ||
+	    ((le_event_mask & BT_EVT_MASK_LE_FRAME_SPACE_UPDATE_COMPLETE) == 0U)) {
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_FRAME_SPACE_UPDATE_COMPLETE, sizeof(*sep));
+
+	sep->status = status;
+	sep->handle = sys_cpu_to_le16(handle);
+
+	/* Only the Host initiates a local procedure, a failed procedure has no frame space */
+	if (status != BT_HCI_ERR_SUCCESS) {
+		sep->initiator = BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_HOST;
+		sep->frame_space = 0U;
+		sep->phys = 0U;
+		sep->spacing_types = 0U;
+
+		return;
+	}
+
+	/* PDU fields are little-endian. A peer initiated procedure is notified as
+	 * LL_FRAME_SPACE_REQ with the selected frame space, a locally initiated procedure as
+	 * LL_FRAME_SPACE_RSP.
+	 */
+	if (pdu_data->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ) {
+		sep->initiator = BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_PEER;
+		sep->frame_space = pdu_data->llctrl.fsu_req.fsu_min;
+		sep->phys = pdu_data->llctrl.fsu_req.phys;
+		sep->spacing_types = pdu_data->llctrl.fsu_req.spacing_type;
+	} else {
+		sep->initiator = BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_HOST;
+		sep->frame_space = pdu_data->llctrl.fsu_rsp.fsu;
+		sep->phys = pdu_data->llctrl.fsu_rsp.phys;
+		sep->spacing_types = pdu_data->llctrl.fsu_rsp.spacing_type;
+	}
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 static void le_unknown_rsp(struct pdu_data *pdu_data, uint16_t handle,
 			   struct net_buf *buf)
 {
@@ -8970,6 +9197,12 @@ static void le_unknown_rsp(struct pdu_data *pdu_data, uint16_t handle,
 		le_df_cte_req_failed(BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, handle, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ:
+		le_frame_space_update_complete(BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, pdu_data, handle,
+					       buf);
+		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 	default:
 		LOG_WRN("type: 0x%02x",	pdu_data->llctrl.unknown_rsp.type);
 		break;
@@ -8984,6 +9217,12 @@ static void le_reject_ext_ind(struct pdu_data *pdu, uint16_t handle, struct net_
 		le_df_cte_req_failed(pdu->llctrl.reject_ext_ind.error_code, handle, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ:
+		le_frame_space_update_complete(pdu->llctrl.reject_ext_ind.error_code, pdu, handle,
+					       buf);
+		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 	default:
 		LOG_WRN("reject opcode: 0x%02x", pdu->llctrl.reject_ext_ind.reject_opcode);
 		break;
@@ -9104,6 +9343,13 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 		le_data_len_change(pdu_data, handle, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ:
+	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP:
+		le_frame_space_update_complete(BT_HCI_ERR_SUCCESS, pdu_data, handle, buf);
+		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CTE_RSP:
@@ -9306,6 +9552,10 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 
 		case NODE_RX_TYPE_TERMINATE:
 		case NODE_RX_TYPE_CONN_UPDATE:
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+		case NODE_RX_TYPE_SUBRATE_CHANGE:
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		case NODE_RX_TYPE_ENC_REFRESH:

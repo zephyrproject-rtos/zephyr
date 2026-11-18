@@ -37,6 +37,17 @@ struct data_pdu_length {
 };
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+/* Number of PHYs a frame space is maintained for: LE 1M, LE 2M and LE Coded */
+#define FSU_PHY_COUNT 3U
+
+/* Frame spaces in microseconds used on a PHY */
+struct lll_conn_fsu {
+	uint16_t ifs_acl_cp_us;
+	uint16_t ifs_acl_pc_us;
+};
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 struct lll_conn {
 	struct lll_hdr hdr;
 
@@ -117,6 +128,13 @@ struct lll_conn {
 		uint8_t update;
 	} dle;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	struct {
+		/* Indexed by the PHY bit position, PHY_1M at 0, PHY_2M at 1 and PHY_CODED at 2 */
+		struct lll_conn_fsu phy[FSU_PHY_COUNT];
+	} fsu;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	uint8_t phy_tx:3;

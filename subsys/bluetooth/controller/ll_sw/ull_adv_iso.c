@@ -66,6 +66,7 @@ static int init_reset(void);
 static struct ll_adv_iso_set *adv_iso_get(uint8_t handle);
 static struct stream *adv_iso_stream_acquire(void);
 static uint16_t adv_iso_stream_handle_get(struct lll_adv_iso_stream *stream);
+static bool is_multiple(uint32_t interval1_us, uint32_t interval2_us);
 static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
 			uint32_t event_spacing_max);
 static uint32_t adv_iso_time_get(const struct ll_adv_iso_set *adv_iso, bool max);
@@ -119,6 +120,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	uint32_t iso_interval_us;
 	uint32_t latency_packing;
 	uint32_t ticks_slot_sync;
+	uint32_t ticks_slot_adv;
 	uint32_t ticks_slot_aux;
 	memq_link_t *link_cmplt;
 	memq_link_t *link_term;
@@ -249,6 +251,14 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
+	/* Calculate overheads due to primary advertising. */
+	if (adv->is_enabled) {
+		ticks_slot_adv = adv->ull.ticks_slot;
+	} else {
+		/* TODO: Calculate/Get the primary channel ticks slot */
+		ticks_slot_adv = 0U;
+	}
+
 	/* Check if aux context allocated before we are creating ISO */
 	if (adv->lll.aux) {
 		aux = HDR_LLL2ULL(adv->lll.aux);
@@ -259,13 +269,6 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	/* Calculate overheads due to extended advertising. */
 	if (aux && aux->is_started) {
 		ticks_slot_aux = aux->ull.ticks_slot;
-		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-			ticks_slot_overhead =
-				MAX(aux->ull.ticks_active_to_start,
-				    aux->ull.ticks_prepare_to_start);
-		} else {
-			ticks_slot_overhead = 0U;
-		}
 	} else {
 		uint32_t time_us;
 
@@ -273,16 +276,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 				    adv->lll.phy_flags) +
 			  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 		ticks_slot_aux = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
-		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-			/* Assume primary overheads may be inherited by aux */
-			ticks_slot_overhead =
-				MAX(adv->ull.ticks_active_to_start,
-				    adv->ull.ticks_prepare_to_start);
-		} else {
-			ticks_slot_overhead = 0U;
-		}
 	}
-	ticks_slot_aux += ticks_slot_overhead;
 
 	/* Calculate overheads due to periodic advertising. */
 	sync = HDR_LLL2ULL(lll_adv_sync);
@@ -305,19 +299,43 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		ticks_slot_overhead = 0U;
 	}
 
+	/* Add ticker coarse timing jitter overhead */
+	ticks_slot_adv += ticks_slot_overhead;
+	ticks_slot_adv += HAL_TICKER_US_TO_TICKS_CEIL(EVENT_TICKER_RES_MARGIN_US << 1);
+	ticks_slot_aux += ticks_slot_overhead;
+	ticks_slot_aux += HAL_TICKER_US_TO_TICKS_CEIL(EVENT_TICKER_RES_MARGIN_US << 1);
 	ticks_slot_sync += ticks_slot_overhead;
+	ticks_slot_sync += HAL_TICKER_US_TO_TICKS_CEIL(EVENT_TICKER_RES_MARGIN_US << 1);
 
-	/* Calculate total overheads due to extended and periodic advertising */
+	/* Calculate total overheads due to extended advertising */
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT)) {
+		ticks_slot_overhead = MAX(ticks_slot_adv, ticks_slot_aux);
+	} else {
+		ticks_slot_overhead = ticks_slot_adv + ticks_slot_aux;
+	}
+
+	/* Calculate total overheads due to periodic advertising */
 	if (false) {
 
 #if defined(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET)
 	} else if (CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET > 0U) {
-		ticks_slot_overhead = MAX(ticks_slot_aux, ticks_slot_sync);
+		if (ticks_slot_sync > ticks_slot_overhead) {
+			ticks_slot_overhead = ticks_slot_sync;
+		}
 #endif /* CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET */
 
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT) && (aux != NULL) &&
+		   is_multiple(sdu_interval, (aux->interval * PERIODIC_INT_UNIT_US)) &&
+		   is_multiple(sdu_interval, (sync->interval * PERIODIC_INT_UNIT_US))) {
+		if (ticks_slot_sync > ticks_slot_overhead) {
+			ticks_slot_overhead = ticks_slot_sync;
+		}
 	} else {
-		ticks_slot_overhead = ticks_slot_aux + ticks_slot_sync;
+		ticks_slot_overhead += ticks_slot_sync;
 	}
+
+	/* Add ticker coarse timing jitter for the overhead */
+	ticks_slot_overhead += HAL_TICKER_US_TO_TICKS_CEIL(EVENT_TICKER_RES_MARGIN_US << 1);
 
 	/* Store parameters in LLL context */
 	/* TODO: Move parameters to ULL if only accessed by ULL */
@@ -432,8 +450,8 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 					lll_adv_iso->phy_flags);
 		latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse *
 					lll_adv_iso->num_bis;
-		event_spacing = latency_packing + ctrl_spacing +
-				EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+		event_spacing = latency_packing + ctrl_spacing;
+		event_spacing += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 		/* Check if ISO interval too small to fit the calculated BIG event
 		 * timing required for the supplied BIG create parameters.
@@ -487,7 +505,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		/* Interleaved Packing */
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
 		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
-					lll_adv_iso->nse;
+					    lll_adv_iso->num_bis;
 	} else {
 		/* Sequential Packing */
 		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval *
@@ -1169,6 +1187,23 @@ static uint16_t adv_iso_stream_handle_get(struct lll_adv_iso_stream *stream)
 	return mem_index_get(stream, stream_pool, sizeof(*stream));
 }
 
+static bool is_multiple(uint32_t interval1_us, uint32_t interval2_us)
+{
+	if (interval1_us > interval2_us) {
+		uint32_t swap;
+
+		swap = interval1_us;
+		interval1_us = interval2_us;
+		interval2_us = swap;
+	}
+
+	while (interval2_us >= interval1_us) {
+		interval2_us -= interval1_us;
+	}
+
+	return interval2_us == 0U;
+}
+
 static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
 			uint32_t event_spacing_max)
 {
@@ -1269,7 +1304,9 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	uint32_t ticks_slot_overhead;
 	uint32_t ticks_slot_offset;
 	volatile uint32_t ret_cb;
+	uint32_t ticks_slot_max;
 	uint32_t ticks_anchor;
+	uint32_t slot_max_us;
 	uint32_t ticks_slot;
 	uint32_t slot_us;
 	uint32_t ret;
@@ -1296,11 +1333,12 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	ticks_slot = adv_iso->ull.ticks_slot + ticks_slot_overhead;
 
 	/* Find the slot after Periodic Advertisings events */
-	ticks_anchor = ticker_ticks_now_get() +
-		       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
-	err = ull_sched_adv_aux_sync_free_anchor_get(ticks_slot, &ticks_anchor);
+	ticks_anchor = ticker_ticks_now_get();
+	slot_max_us = adv_iso_time_get(adv_iso, true);
+	ticks_slot_max = HAL_TICKER_US_TO_TICKS_CEIL(slot_max_us) + ticks_slot_overhead;
+	err = ull_sched_adv_aux_sync_free_anchor_get(ticks_slot_max, &ticks_anchor);
 	if (!err) {
-		ticks_anchor += HAL_TICKER_US_TO_TICKS(
+		ticks_anchor += HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +

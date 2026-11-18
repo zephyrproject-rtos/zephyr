@@ -19,6 +19,7 @@ struct lll_sync_iso {
 
 	uint16_t iso_interval;
 
+	uint16_t lazy_prepare;
 	uint16_t latency_prepare;
 	uint16_t latency_event;
 	uint16_t data_chan_prn_s;
@@ -59,6 +60,7 @@ struct lll_sync_iso {
 	uint8_t establish_events:3;
 
 	uint8_t next_chan_use;
+	uint8_t ctrl_chan_use;
 
 	/* Encryption */
 	uint8_t giv[8];
@@ -78,6 +80,13 @@ struct lll_sync_iso {
 				   [PDU_BIG_PAYLOAD_COUNT_MAX];
 	uint8_t payload_count_max;
 	uint8_t payload_tail;
+
+	/* Flag to stop events in LLL pipeline */
+	uint8_t is_lll_stop:1;
+
+	/* Last scheduled subevent and its access address sync */
+	uint32_t aa_se;
+	uint8_t se;
 
 	uint32_t window_widening_periodic_us;
 	uint32_t window_widening_max_us;

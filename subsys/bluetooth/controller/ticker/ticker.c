@@ -121,7 +121,9 @@ struct ticker_node {
 
 struct ticker_expire_info_internal {
 	uint32_t ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 	uint32_t remainder;
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 	uint16_t lazy;
 	uint8_t ticker_id;
 	uint8_t outdated:1;
@@ -327,6 +329,17 @@ struct ticker_instance {
 	uint32_t ticks_slot_previous;	/* Number of ticks previously reserved
 					 * by a ticker node (active air-time)
 					 */
+
+	uint8_t  ticker_id_slot_last;	/* Id of last slot reserving ticker
+					 * node, retained after its reservation
+					 * has elapsed
+					 */
+	uint32_t ticks_at_slot_last;	/* Absolute ticks at start of the last
+					 * slot reservation
+					 */
+	uint32_t ticks_slot_last;	/* Number of ticks reserved by the last
+					 * slot reserving ticker node
+					 */
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
@@ -361,8 +374,9 @@ static struct ticker_instance _instance[TICKER_INSTANCE_MAX];
 /*****************************************************************************
  * Static Functions
  ****************************************************************************/
-
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 static inline uint8_t ticker_add_to_remainder(uint32_t *remainder, uint32_t to_add);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 
 /**
  * @brief Update elapsed index
@@ -798,6 +812,51 @@ static uint32_t ticker_dequeue(struct ticker_instance *instance, uint8_t id)
 #if !defined(CONFIG_BT_TICKER_LOW_LAT) && \
 	!defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 /**
+ * @brief Check late ticker node collision with last slot reservation
+ *
+ * @details A ticker node started with its expiry in the past, or with
+ * negative drift, expires with ticks_to_expire_minus, i.e. its ticks_at_expire
+ * lies before the current ticks. Its reserved time may hence overlap the slot
+ * reservation of a ticker node that expired before it, even when that
+ * reservation has already elapsed and ticks_slot_previous does not cover it.
+ *
+ * @param instance      Pointer to ticker instance
+ * @param ticker        Pointer to ticker node expiring
+ * @param ticks_expired Expired ticks of the ticker node relative to
+ *                      ticks_current
+ *
+ * @return 0 if no collision was detected. 1 if ticker node overlaps the last
+ * slot reservation
+ * @internal
+ */
+static uint8_t ticker_late_collision(struct ticker_instance *instance,
+				     struct ticker_node *ticker,
+				     uint32_t ticks_expired)
+{
+	uint32_t ticks_at_expire;
+
+	if ((ticker->ticks_to_expire_minus == 0U) || (ticker->ticks_slot == 0U) ||
+	    (instance->ticks_slot_last == 0U) ||
+	    (instance->ticker_id_slot_last == (ticker - &instance->nodes[0]))) {
+		return 0U;
+	}
+
+	ticks_at_expire = (instance->ticks_current + ticks_expired -
+			   ticker->ticks_to_expire_minus) & HAL_TICKER_CNTR_MASK;
+
+	if ((ticks_at_expire - instance->ticks_at_slot_last) & BIT(HAL_TICKER_CNTR_MSBIT)) {
+		/* Starts before the last slot reservation */
+		return (ticker->ticks_slot >
+			ticker_ticks_diff_get(instance->ticks_at_slot_last, ticks_at_expire)) ?
+		       1U : 0U;
+	}
+
+	/* Starts at or after the start of the last slot reservation */
+	return (ticker_ticks_diff_get(ticks_at_expire, instance->ticks_at_slot_last) <
+		instance->ticks_slot_last) ? 1U : 0U;
+}
+
+/**
  * @brief Resolve ticker node collision
  *
  * @details Evaluates the provided ticker node against other queued nodes
@@ -836,14 +895,15 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 
 #endif /* !CONFIG_BT_TICKER_PRIORITY_SET */
 
-		uint16_t lazy_current = ticker->lazy_current;
 		uint32_t ticker_ticks_slot;
 
-		if (TICKER_HAS_SLOT_WINDOW(ticker) && !ticker->ticks_slot) {
+		if (TICKER_HAS_SLOT_WINDOW(ticker) && (ticker->ticks_slot == 0U)) {
 			ticker_ticks_slot = HAL_TICKER_RESCHEDULE_MARGIN;
 		} else {
 			ticker_ticks_slot = ticker->ticks_slot;
 		}
+
+		uint16_t lazy_current = ticker->lazy_current;
 
 		/* Check if this ticker node will starve next node which has
 		 * latency or higher priority
@@ -851,12 +911,13 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 		if (lazy_current >= ticker->lazy_periodic) {
 			lazy_current -= ticker->lazy_periodic;
 		}
-		uint8_t  id_head = ticker->next;
-		uint32_t acc_ticks_to_expire = 0U;
 
 		/* Age is time since last expiry */
 		uint32_t current_age = ticker->ticks_periodic +
 				    (lazy_current * ticker->ticks_periodic);
+
+		uint32_t acc_ticks_to_expire = 0U;
+		uint8_t  id_head = ticker->next;
 
 		while (id_head != TICKER_NULL) {
 			struct ticker_node *ticker_next = &nodes[id_head];
@@ -864,7 +925,9 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 
 			/* Accumulate ticks_to_expire for each node */
 			acc_ticks_to_expire += ticker_next->ticks_to_expire;
-			if (acc_ticks_to_expire > ticker_ticks_slot) {
+
+			/* No collision if ticker next is beyond the current ticks_slot */
+			if (acc_ticks_to_expire >= ticker_ticks_slot) {
 				break;
 			}
 
@@ -952,22 +1015,26 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 			 */
 			uint8_t next_not_ticks_slot_window =
 					!TICKER_HAS_SLOT_WINDOW(ticker_next) ||
-					(ticker_next->ext_data->is_drift_in_window &&
-					 TICKER_HAS_SLOT_WINDOW(ticker)) ||
+					(TICKER_HAS_SLOT_WINDOW(ticker) &&
+					 (ticker_next->ext_data->is_drift_in_window != 0U)) ||
 					((acc_ticks_to_expire +
 					  ticker_next->ext_data->ticks_slot_window -
-					  ticker_next->ticks_slot) <
-					 ticker->ticks_slot);
+					  ticker_next->ticks_slot) < ticker_ticks_slot);
 
 			/* Can the current ticker with ticks_slot_window be
-			 * scheduled after the colliding ticker?
+			 * scheduled after the colliding ticker? A ticker with
+			 * reserved time yields only if the colliding ticker
+			 * fits before the end of the remaining slot window.
 			 */
 			uint8_t curr_has_ticks_slot_window =
 					TICKER_HAS_SLOT_WINDOW(ticker) &&
-					((acc_ticks_to_expire +
-					  ticker_next->ticks_slot) <=
-					 (ticker->ext_data->ticks_slot_window -
-					  ticker->ticks_slot));
+					((ticker->ticks_slot == 0U) ||
+					 ((acc_ticks_to_expire < ticker->ticks_slot) &&
+					  (ticker->ext_data->ticks_slot_window >=
+					   (ticker->ext_data->ticks_drift + ticker->ticks_slot)) &&
+					  ((acc_ticks_to_expire + ticker_next->ticks_slot) <=
+					   (ticker->ext_data->ticks_slot_window -
+					    ticker->ext_data->ticks_drift - ticker->ticks_slot))));
 
 #else /* !CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD */
 #if defined(CONFIG_BT_TICKER_PRIORITY_SET)
@@ -977,7 +1044,9 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 				(lazy_current - ticker->priority);
 
 #endif /* CONFIG_BT_TICKER_PRIORITY_SET */
-			uint8_t next_not_ticks_slot_window = 1U;
+			uint8_t next_not_ticks_slot_window =
+					!TICKER_HAS_SLOT_WINDOW(ticker_next) ||
+					(ticker_next->ticks_slot != 0U);
 
 			/* Can the current ticker with ticks_slot_window be
 			 * scheduled after the colliding ticker?
@@ -987,10 +1056,8 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 			 */
 			uint8_t curr_has_ticks_slot_window =
 				(TICKER_HAS_SLOT_WINDOW(ticker) &&
-				 !ticker->ticks_slot &&
-				 ((acc_ticks_to_expire +
-				   ticker_next->ticks_slot) <=
-				  (ticker->ext_data->ticks_slot_window)));
+				 ((acc_ticks_to_expire + ticker_next->ticks_slot) <=
+				  (ticker->ext_data->ticks_slot_window - ticker->ticks_slot)));
 
 #endif /* !CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD */
 #else /* !CONFIG_BT_TICKER_EXT */
@@ -1101,7 +1168,9 @@ static void ticker_get_expire_info(struct ticker_instance *instance, uint8_t to_
 		}
 
 		expire_info->ticks_to_expire = to_ticks - from_ticks;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 		expire_info->remainder = to_remainder;
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 		expire_info->lazy = to_ticker->lazy_current;
 		expire_info->found = 1;
 	} else {
@@ -1352,6 +1421,7 @@ void ticker_worker(void *param)
 		if ((ticker_ticks_slot != 0U) &&
 		    (slot_reserved ||
 		     (instance->ticks_slot_previous > ticks_expired) ||
+		     (ticker_late_collision(instance, ticker, ticks_expired) != 0U) ||
 		     ticker_resolve_collision(node, ticker))) {
 #if defined(CONFIG_BT_TICKER_EXT)
 			struct ticker_ext *ext_data = ticker->ext_data;
@@ -1362,19 +1432,24 @@ void ticker_worker(void *param)
 			    TICKER_RESCHEDULE_STATE_NONE &&
 			   (ticker->lazy_periodic <= ticker->lazy_current)) {
 				/* Mark node for re-scheduling in ticker_job */
-				ext_data->reschedule_state =
-					TICKER_RESCHEDULE_STATE_PENDING;
-			} else if (ext_data) {
+				ext_data->reschedule_state = TICKER_RESCHEDULE_STATE_PENDING;
+			} else if ((ext_data != NULL) &&
+				   (ext_data->reschedule_state == TICKER_RESCHEDULE_STATE_DONE)) {
 				/* Mark node as not re-scheduling */
-				ext_data->reschedule_state =
-					TICKER_RESCHEDULE_STATE_NONE;
+				ext_data->reschedule_state = TICKER_RESCHEDULE_STATE_NONE;
+			} else {
+				LL_ASSERT((ext_data == NULL) ||
+					      (ext_data->reschedule_state ==
+					       TICKER_RESCHEDULE_STATE_NONE));
 			}
 #endif /* CONFIG_BT_TICKER_EXT */
+
 			/* Increment lazy_current to indicate skipped event. In case
 			 * of re-scheduled node, the lazy count will be decremented in
 			 * ticker_job_reschedule_in_window when completed.
 			 */
 			ticker->lazy_current++;
+			ticker->force = 0U;
 
 			if ((ticker->must_expire == 0U) ||
 			    (ticker->lazy_periodic >= ticker->lazy_current) ||
@@ -1394,10 +1469,8 @@ void ticker_worker(void *param)
 #if defined(CONFIG_BT_TICKER_EXT)
 		if (ticker->ext_data) {
 			ticks_drift = ticker->ext_data->ticks_drift;
-			ticker->ext_data->ticks_drift = 0U;
 			/* Mark node as not re-scheduling */
-			ticker->ext_data->reschedule_state =
-				TICKER_RESCHEDULE_STATE_NONE;
+			ticker->ext_data->reschedule_state = TICKER_RESCHEDULE_STATE_NONE;
 		} else {
 			ticks_drift = 0U;
 		}
@@ -1576,6 +1649,7 @@ static void ticks_to_expire_prep(struct ticker_node *ticker,
 	ticker->ticks_to_expire_minus = ticks_to_expire_minus;
 }
 
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 /**
  * @brief Add to remainder
  *
@@ -1605,7 +1679,6 @@ static inline uint8_t ticker_add_to_remainder(uint32_t *remainder, uint32_t to_a
 	return 0;
 }
 
-#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 /**
  * @brief Increment remainder
  *
@@ -1910,6 +1983,33 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 				instance->ticks_slot_previous = ticks_used;
 			}
 		}
+
+		/* If yield_abs/stop/stop_abs then also trim the last slot
+		 * reservation, which may already have elapsed.
+		 */
+		if (instance->ticker_id_slot_last == user_op->id) {
+			uint32_t ticks_at_yield;
+			uint32_t ticks_used;
+
+			if ((user_op->op == TICKER_USER_OP_TYPE_YIELD_ABS) ||
+			    (user_op->op == TICKER_USER_OP_TYPE_STOP_ABS)) {
+				ticks_at_yield = user_op->params.yield.ticks_at_yield;
+			} else {
+				ticks_at_yield = ticks_now;
+			}
+
+			if ((ticks_at_yield - instance->ticks_at_slot_last) &
+			    BIT(HAL_TICKER_CNTR_MSBIT)) {
+				ticks_used = 0U;
+			} else {
+				ticks_used = ticker_ticks_diff_get(ticks_at_yield,
+								   instance->ticks_at_slot_last);
+			}
+
+			if (instance->ticks_slot_last > ticks_used) {
+				instance->ticks_slot_last = ticks_used;
+			}
+		}
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 	}
@@ -2024,16 +2124,21 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 				continue;
 			}
 
-			/* Delete or yield node, if not expired */
+			/* Delete or yield node, if not expired.
+			 * Yield of an expired node shall be deferred, as the
+			 * bottom half assigns the slot reservation that the
+			 * yield is to reduce.
+			 */
 			if ((state == 1U) ||
-			    (user_op->op == TICKER_USER_OP_TYPE_YIELD_ABS)) {
+			    ((user_op->op == TICKER_USER_OP_TYPE_YIELD_ABS) &&
+			     (state != 2U))) {
 				ticker_job_node_manage(instance, ticker,
 						       user_op, ticks_now,
 						       ticks_elapsed,
 						       insert_head);
 			} else {
-				/* Update on expired node requested, deferring
-				 * update until bottom half finishes.
+				/* Update or yield on expired node requested,
+				 * deferring until bottom half finishes.
 				 */
 				/* sched job to run after worker bottom half.
 				 */
@@ -2139,6 +2244,17 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		    !TICKER_RESCHEDULE_PENDING(ticker)) {
 			instance->ticker_id_slot_previous = id_expired;
 			instance->ticks_slot_previous = ticker_ticks_slot;
+
+			/* Nodes with only a slot window margin do not reserve air time,
+			 * and shall not replace the last slot reservation checked by
+			 * late expiring nodes.
+			 */
+			if (ticker->ticks_slot != 0U) {
+				instance->ticker_id_slot_last = id_expired;
+				instance->ticks_at_slot_last = (ticks_previous + ticks_expired) &
+							       HAL_TICKER_CNTR_MASK;
+				instance->ticks_slot_last = ticker->ticks_slot;
+			}
 		}
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
@@ -2176,6 +2292,18 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 				/* If not skipped, apply lazy_periodic */
 				if (!ticker->lazy_current) {
 					lazy_periodic = ticker->lazy_periodic;
+
+#if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+					struct ticker_ext *ext_data = ticker->ext_data;
+
+					/* Expired without drift, reset flags */
+					if ((ext_data != NULL) && (ext_data->ticks_drift == 0U)) {
+						ext_data->has_drift_in_window = 0U;
+						ext_data->dir_drift_in_window = 0U;
+					} else if (ext_data != NULL) {
+						ext_data->ticks_drift = 0U;
+					}
+#endif /* CONFIG_BT_TICKER_EXT && !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 				} else {
 					lazy_periodic = 0U;
 
@@ -2184,6 +2312,17 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 					 * in the code.
 					 */
 					ticker->req = ticker->ack;
+
+#if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+					struct ticker_ext *ext_data = ticker->ext_data;
+
+					/* Drift direction change, reset accumulated ticks_drift */
+					if ((ext_data != NULL) &&
+					    (ext_data->is_drift_in_window != 0U) &&
+					    (ext_data->has_drift_in_window == 0U)) {
+						ext_data->ticks_drift = 0U;
+					}
+#endif /* CONFIG_BT_TICKER_EXT && !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 				}
 
 				/* Reload ticks_to_expire with at least one
@@ -2245,7 +2384,9 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			count = 1 + ticker->lazy_periodic;
 			while (count--) {
 				ticks_to_expire += ticker->ticks_periodic;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 				ticks_to_expire += ticker_remainder_inc(ticker);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 			}
 
 			/* Skip intervals that have elapsed w.r.t. current
@@ -2256,7 +2397,9 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			/* Schedule to a tick in the future */
 			while (ticks_to_expire < ticks_latency) {
 				ticks_to_expire += ticker->ticks_periodic;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 				ticks_to_expire += ticker_remainder_inc(ticker);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 				lazy++;
 			}
 
@@ -2318,7 +2461,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 #if defined(CONFIG_BT_TICKER_LOW_LAT)
 	/* Must expire is not supported in compatibility mode */
 	LL_ASSERT(start->lazy < TICKER_LAZY_MUST_EXPIRE_KEEP);
-#else
+#else /* !CONFIG_BT_TICKER_LOW_LAT */
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	if (start->lazy != TICKER_LAZY_MUST_EXPIRE_KEEP) {
 		/* Update the must_expire state */
@@ -2326,10 +2469,17 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 			(start->lazy == TICKER_LAZY_MUST_EXPIRE) ? 1U : 0U;
 	}
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
-#endif /* CONFIG_BT_TICKER_LOW_LAT */
 
 #if defined(CONFIG_BT_TICKER_EXT)
 	ticker->ext_data = start->ext_data;
+
+#if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+	if (ticker->ext_data) {
+		ticker->ext_data->ticks_drift = 0U;
+		ticker->ext_data->dir_drift_in_window = 0U;
+		ticker->ext_data->has_drift_in_window = 0U;
+	}
+#endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	if (ticker->ext_data) {
@@ -2351,6 +2501,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 #else /* !CONFIG_BT_TICKER_EXT */
 	ARG_UNUSED(instance);
 #endif /* !CONFIG_BT_TICKER_EXT */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 	ticker->ticks_periodic = start->ticks_periodic;
 
@@ -2446,7 +2597,7 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 	/* Do until all pending re-schedules handled */
 	rescheduling = 1U;
 	rescheduled = 0U;
-	while (rescheduling) {
+	while (rescheduling != 0U) {
 		struct ticker_node *ticker_resched;
 		uint32_t ticks_to_expire_offset;
 		uint8_t ticker_id_resched_prev;
@@ -2458,7 +2609,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 		uint32_t ticks_to_expire;
 		uint8_t ticker_id_prev;
 		uint8_t ticker_id_next;
-		uint32_t ticks_slot;
 
 		rescheduling = 0U;
 
@@ -2484,17 +2634,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 		/* Ensure that resched ticker is expired */
 		LL_ASSERT(ticker_resched->ticks_to_expire == 0U);
 
-		/* Use ticker's reserved time ticks_slot, else for unreserved
-		 * tickers use the reschedule margin as ticks_slot.
-		 */
-		if (ticker_resched->ticks_slot) {
-			ticks_slot = ticker_resched->ticks_slot;
-		} else {
-			LL_ASSERT(TICKER_HAS_SLOT_WINDOW(ticker_resched));
-
-			ticks_slot = HAL_TICKER_RESCHEDULE_MARGIN;
-		}
-
 		/* Window start after intersection with already active node */
 		window_start_ticks = instance->ticks_slot_previous +
 				     HAL_TICKER_RESCHEDULE_MARGIN;
@@ -2509,26 +2648,9 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 		 * and not be restricted to ticks_slot_window - ticks_drift.
 		 */
 		ext_data = ticker_resched->ext_data;
-		if (IS_ENABLED(CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD) &&
-		    ticker_resched->ticks_slot &&
-		    !ext_data->ticks_drift &&
-		    !ext_data->is_drift_in_window) {
-			/* Use slot window after intersection include required
-			 * ticks_slot, and we do not take the interval of the
-			 * colliding ticker provided every expiry increments the
-			 * interval by random amount of ticks.
-			 */
-			ticks_slot_window = window_start_ticks + ticks_slot;
-
-			/* Window available, proceed to calculate further
-			 * drift
-			 */
-			ticker_id_next = ticker_resched->next;
-
-		} else if (ext_data->ticks_drift < ext_data->ticks_slot_window) {
+		if (ext_data->ticks_drift < ext_data->ticks_slot_window) {
 			/* Use reduced slot window */
-			ticks_slot_window = ext_data->ticks_slot_window -
-					    ext_data->ticks_drift;
+			ticks_slot_window = ext_data->ticks_slot_window - ext_data->ticks_drift;
 
 			/* Window available, proceed to calculate further
 			 * drift
@@ -2548,81 +2670,97 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 		ticks_start_offset = 0U;
 		ticks_to_expire = 0U;
 		while ((ticker_id_next != TICKER_NULL) &&
-		       ((ticks_start_offset + ticks_slot) <=
-			ticks_slot_window)) {
+		       ((ticks_start_offset + ticker_resched->ticks_slot) <= ticks_slot_window)) {
 			struct ticker_node *ticker_next;
-			uint32_t window_end_ticks;
+			uint32_t ticks_to_expire_latest;
+			uint32_t window_end_ticks_min;
+			uint32_t window_end_ticks_max;
 
 			ticker_next = &nodes[ticker_id_next];
 			ticks_to_expire_offset += ticker_next->ticks_to_expire;
 
+			ticks_to_expire_latest = ticks_to_expire_offset;
+			if (!TICKER_RESCHEDULE_PENDING(ticker_next) &&
+			    TICKER_HAS_SLOT_WINDOW(ticker_next) &&
+			    (ticker_next->ext_data->ticks_slot_window >
+			     (ticker_next->ext_data->ticks_drift + ticker_next->ticks_slot))) {
+				ticks_to_expire_latest += ticker_next->ext_data->ticks_slot_window -
+							  ticker_next->ext_data->ticks_drift -
+							  ticker_next->ticks_slot;
+			}
+
 			/* Calculate end of window. Since window may be aligned
 			 * with expiry of next node, we add a margin
 			 */
-			if (ticks_to_expire_offset >
-			    HAL_TICKER_RESCHEDULE_MARGIN) {
-				window_end_ticks =
+			if (ticks_to_expire_offset >= HAL_TICKER_RESCHEDULE_MARGIN) {
+				window_end_ticks_min =
 					MIN(ticks_slot_window,
 					    ticks_start_offset +
 					    ticks_to_expire_offset -
 					    HAL_TICKER_RESCHEDULE_MARGIN);
+				window_end_ticks_max =
+					MIN(ticks_slot_window,
+					    ticks_start_offset +
+					    ticks_to_expire_latest -
+					    HAL_TICKER_RESCHEDULE_MARGIN);
+			} else if ((ticker_resched->ticks_slot == 0U) ||
+				   (ext_data->is_drift_in_window != 0U)) {
+				/* Next expiry is too close - hop over after
+				 * next node
+				 */
+				goto reschedule_in_window_hop_over;
+
 			} else {
 				/* Next expiry is too close - try the next
 				 * node
 				 */
-				window_end_ticks = 0U;
+				window_end_ticks_min = 0U;
+				window_end_ticks_max = 0U;
 			}
 
 			/* Calculate new ticks_to_expire as end of window minus
 			 * slot size.
 			 */
-			if (((window_start_ticks + ticks_slot) <=
-			     ticks_slot_window) &&
-			    (window_end_ticks >= (ticks_start_offset +
-						 ticks_slot))) {
-				if (!ticker_resched->ticks_slot ||
-				    ext_data->is_drift_in_window) {
+			if (((window_start_ticks + ticker_resched->ticks_slot) <=
+			     window_end_ticks_max) &&
+			    (window_end_ticks_min >= (ticks_start_offset +
+						      ticker_resched->ticks_slot))) {
+				if ((ticker_resched->ticks_slot == 0U) ||
+				    ((ext_data->is_drift_in_window != 0U) &&
+				     (ext_data->dir_drift_in_window == 0U))) {
 					/* Place at start of window */
 					ticks_to_expire = window_start_ticks;
+					break;
 				} else {
 					/* Place at end of window. This ensures
 					 * that ticker with slot window and that
 					 * uses ticks_slot does not take the
 					 * interval of the colliding ticker.
+					 * When it fits only before the latest
+					 * expiry of the next node in its slot
+					 * window, place it no earlier than the
+					 * start of the window and let the next
+					 * node yield.
 					 */
-					ticks_to_expire = window_end_ticks -
-							  ticks_slot;
+					ticks_to_expire = MAX(window_start_ticks,
+							      (window_end_ticks_min -
+							       ticker_resched->ticks_slot));
+					break;
 				}
 			} else {
 				/* No space in window - try the next node */
 				ticks_to_expire = 0U;
 			}
 
-			/* Decide if the re-scheduling ticker node fits in the
-			 * slot found - break if it fits
-			 */
-			if ((ticks_to_expire != 0U) &&
-			    (ticks_to_expire >= window_start_ticks) &&
-			    (ticks_to_expire <= (window_end_ticks -
-						 ticks_slot))) {
-				/* Re-scheduled node fits before this node */
-				break;
-			} else {
-				/* Not inside the window */
-				ticks_to_expire = 0U;
-			}
-
-			/* Skip other pending re-schedule nodes and
-			 * tickers with no reservation or not periodic
-			 */
+			/* Skip other pending re-schedule nodes and tickers with no reservation */
 			if (TICKER_RESCHEDULE_PENDING(ticker_next) ||
-			    !ticker_next->ticks_slot ||
-			    !ticker_next->ticks_periodic) {
+			    (ticker_next->ticks_slot == 0U)) {
 				ticker_id_next = ticker_next->next;
 
 				continue;
 			}
 
+reschedule_in_window_hop_over:
 			/* We din't find a valid slot for re-scheduling - try
 			 * the next node
 			 */
@@ -2632,11 +2770,12 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 					      HAL_TICKER_RESCHEDULE_MARGIN;
 			ticks_to_expire_offset = 0U;
 
-			if (!ticker_resched->ticks_slot ||
-			    ext_data->is_drift_in_window) {
-				if (!ticker_resched->ticks_slot ||
+			if ((ticker_resched->ticks_slot == 0U) ||
+			    ((ext_data->is_drift_in_window != 0U) &&
+			     (ext_data->dir_drift_in_window == 0U))) {
+				if ((ticker_resched->ticks_slot == 0U) ||
 				    (window_start_ticks <= (ticks_slot_window -
-							   ticks_slot))) {
+							    ticker_resched->ticks_slot))) {
 					/* Try at the end of the next node */
 					ticks_to_expire = window_start_ticks;
 				}
@@ -2646,14 +2785,36 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 				 * uses ticks_slot does not take the interval of
 				 * the colliding ticker.
 				 */
-				ticks_to_expire = ticks_slot_window -
-						  ticks_slot;
+				ticks_to_expire = ticks_slot_window - ticker_resched->ticks_slot;
 			}
 
 			ticker_id_next = ticker_next->next;
 		}
 
+		/* Accumulate the rescheduled drift */
 		ext_data->ticks_drift += ticks_to_expire;
+
+		/* Prevent repeated re-scheduling */
+		if (ticks_to_expire == 0U) {
+			/* No more reschedule possible, done with this interval have to move on to
+			 * next interval.
+			 */
+			ext_data->reschedule_state = TICKER_RESCHEDULE_STATE_DONE;
+		} else {
+			/* Rescheduled with a new drift, lets try to expire and check collision in
+			 * the worker callback.
+			 */
+			ext_data->reschedule_state = TICKER_RESCHEDULE_STATE_NONE;
+		}
+
+		/* Toggle drift direction flag */
+		if ((ext_data->is_drift_in_window != 0U) &&
+		    (ext_data->has_drift_in_window != 0U)) {
+			ext_data->has_drift_in_window = 0U;
+			ext_data->dir_drift_in_window ^= 1U;
+		} else {
+			ext_data->has_drift_in_window = 1U;
+		}
 
 		/* Place the ticker node sorted by expiration time and adjust
 		 * delta times
@@ -2697,10 +2858,6 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 
 		/* Remove latency added in ticker_worker */
 		ticker_resched->lazy_current--;
-
-		/* Prevent repeated re-scheduling */
-		ext_data->reschedule_state =
-			TICKER_RESCHEDULE_STATE_DONE;
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		ticker_mark_expire_info_outdated(instance, ticker_id_resched);
@@ -2792,8 +2949,10 @@ static inline uint8_t ticker_job_insert(struct ticker_instance *instance,
 
 		/* occupied, try next interval */
 		if (ticker->ticks_periodic != 0U) {
-			ticker->ticks_to_expire += ticker->ticks_periodic +
-						   ticker_remainder_inc(ticker);
+			ticker->ticks_to_expire += ticker->ticks_periodic;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
+			ticker->ticks_to_expire += ticker_remainder_inc(ticker);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 			ticker->lazy_current++;
 
 			/* No. of times ticker has skipped its interval */
@@ -2841,18 +3000,19 @@ static inline uint8_t ticker_job_insert(struct ticker_instance *instance,
  *                    handle user operation inserts
  * @internal
  */
-static inline void ticker_job_list_insert(struct ticker_instance *instance,
-					  uint8_t insert_head)
+static inline uint8_t ticker_job_list_insert(struct ticker_instance *instance, uint8_t insert_head)
 {
-	struct ticker_node *node;
 	struct ticker_user *users;
+	struct ticker_node *node;
 	uint8_t count_user;
+	uint8_t pending;
 
 	node = &instance->nodes[0];
 	users = &instance->users[0];
 	count_user = instance->count_user;
 
 	/* Iterate through all user ids */
+	pending = 0U;
 	while (count_user--) {
 		struct ticker_user_op *user_ops;
 		struct ticker_user *user;
@@ -2883,13 +3043,13 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 				 * via user operation TICKER_USER_OP_TYPE_START
 				 */
 				uint8_t first;
+				uint8_t state;
 
 				user_op = &user_ops[user_ops_first];
 				first = user_ops_first + 1;
 				if (first == user->count_user_op) {
 					first = 0U;
 				}
-				user_ops_first = first;
 
 				id_insert = user_op->id;
 				ticker = &node[id_insert];
@@ -2897,6 +3057,7 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 					/* User operation is not start - skip
 					 * to next operation
 					 */
+					user_ops_first = first;
 					continue;
 				}
 
@@ -2904,16 +3065,36 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 				ticker->start_pending = 0U;
 #endif /* CONFIG_BT_TICKER_PREFER_START_BEFORE_STOP */
 
-				if (((ticker->req -
-				      ticker->ack) & 0xff) != 0U) {
-					ticker_job_op_cb(user_op,
-							 TICKER_STATUS_FAILURE);
+				/* Determine the ticker state */
+				state = (ticker->req - ticker->ack) & 0xff;
+
+				if (state != 0U) {
+					/* Check if expired while here in ticker_job */
+					if (state == 2U) {
+						/* sched job to run after worker bottom half.
+						 */
+						instance->sched_cb(TICKER_CALL_ID_JOB,
+								   TICKER_CALL_ID_JOB, 1,
+								   instance);
+
+						pending = 1U;
+						break;
+					}
+
+					/* Already requested to start */
+					ticker_job_op_cb(user_op, TICKER_STATUS_FAILURE);
+
+					/* Continue to next operation */
+					user_ops_first = first;
 					continue;
 				}
 
 				/* Prepare ticker for start */
 				status = ticker_job_op_start(instance, ticker, user_op,
 						    instance->ticks_current);
+
+				/* Continue to next operation */
+				user_ops_first = first;
 			}
 
 			if (!status) {
@@ -2946,6 +3127,8 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 	*/
 
 	}
+
+	return pending;
 }
 
 #if defined(CONFIG_BT_TICKER_JOB_IDLE_GET) || \
@@ -3052,14 +3235,18 @@ static inline void ticker_job_list_inquire(struct ticker_instance *instance)
 
 	users = &instance->users[0];
 	count_user = instance->count_user;
-	/* Traverse user operation queue - first to last (with wrap) */
+	/* Traverse user operation queue - first to middle (with wrap).
+	 * Operations enqueued beyond middle, by a user context that preempted
+	 * the ticker job, have not been managed yet and will be handled in the
+	 * next ticker job.
+	 */
 	while (count_user--) {
 		struct ticker_user_op *user_op;
 		struct ticker_user *user;
 
 		user = &users[count_user];
 		user_op = &user->user_op[0];
-		while (user->first != user->last) {
+		while (user->first != user->middle) {
 			uint8_t first;
 
 			ticker_job_op_inquire(instance, &user_op[user->first]);
@@ -3105,6 +3292,8 @@ ticker_job_compare_update(struct ticker_instance *instance,
 		if (cntr_stop() == 0) {
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 			instance->ticks_slot_previous = 0U;
+			instance->ticker_id_slot_last = TICKER_NULL;
+			instance->ticks_slot_last = 0U;
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 #if !defined(CONFIG_BT_TICKER_CNTR_FREE_RUNNING)
@@ -3300,18 +3489,19 @@ void ticker_job(void *param)
 		}
 
 		/* Handle insertions */
-		ticker_job_list_insert(instance, insert_head);
+		pending |= ticker_job_list_insert(instance, insert_head);
 
 #if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC) &&\
 	!defined(CONFIG_BT_TICKER_LOW_LAT)
 		/* Re-schedule any pending nodes with slot_window */
 		if (ticker_job_reschedule_in_window(instance)) {
+			pending = 1U;
 			flag_compare_update = 1U;
 		}
 #endif /* CONFIG_BT_TICKER_EXT */
 	} else {
 		/* Handle insertions */
-		ticker_job_list_insert(instance, insert_head);
+		pending |= ticker_job_list_insert(instance, insert_head);
 	}
 
 	/* Detect change in head of the list */
@@ -3452,6 +3642,8 @@ uint8_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	instance->ticker_id_slot_previous = TICKER_NULL;
 	instance->ticks_slot_previous = 0U;
+	instance->ticker_id_slot_last = TICKER_NULL;
+	instance->ticks_slot_last = 0U;
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)

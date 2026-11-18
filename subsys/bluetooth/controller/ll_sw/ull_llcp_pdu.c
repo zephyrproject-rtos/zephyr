@@ -730,6 +730,82 @@ void llcp_pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+/*
+ * Frame Space Update Procedure Helper
+ */
+void llcp_pdu_encode_fsu_req(const struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_fsu_req *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = PDU_DATA_LLCTRL_LEN(fsu_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ;
+
+	p = &pdu->llctrl.fsu_req;
+	p->fsu_min = sys_cpu_to_le16(ctx->data.fsu.fsu_min);
+	p->fsu_max = sys_cpu_to_le16(ctx->data.fsu.fsu_max);
+	p->phys = ctx->data.fsu.phys;
+	p->spacing_type = sys_cpu_to_le16(ctx->data.fsu.spacing_type);
+}
+
+void llcp_pdu_encode_fsu_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_fsu_rsp *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = PDU_DATA_LLCTRL_LEN(fsu_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP;
+
+	p = &pdu->llctrl.fsu_rsp;
+	p->fsu = sys_cpu_to_le16(ctx->data.fsu.fsu);
+	p->phys = ctx->data.fsu.phys;
+	p->spacing_type = sys_cpu_to_le16(ctx->data.fsu.spacing_type);
+}
+
+void llcp_pdu_decode_fsu_req(struct proc_ctx *ctx, const struct pdu_data *pdu)
+{
+	const struct pdu_data_llctrl_fsu_req *p = &pdu->llctrl.fsu_req;
+
+	ctx->data.fsu.fsu_min = sys_le16_to_cpu(p->fsu_min);
+	ctx->data.fsu.fsu_max = sys_le16_to_cpu(p->fsu_max);
+	/* Ignore RFU bits */
+	ctx->data.fsu.phys = p->phys & FSU_PHYS_MASK;
+	ctx->data.fsu.spacing_type = sys_le16_to_cpu(p->spacing_type) & T_SPACING_TYPE_MASK;
+}
+
+void llcp_pdu_decode_fsu_rsp(struct proc_ctx *ctx, const struct pdu_data *pdu)
+{
+	const struct pdu_data_llctrl_fsu_rsp *p = &pdu->llctrl.fsu_rsp;
+
+	ctx->data.fsu.fsu = sys_le16_to_cpu(p->fsu);
+	/* Frame space applies only to the requested PHYs and spacing types */
+	ctx->data.fsu.phys &= p->phys;
+	ctx->data.fsu.spacing_type &= sys_le16_to_cpu(p->spacing_type);
+}
+
+void llcp_ntf_encode_fsu_change(const struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	if (ctx->tx_opcode == PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ) {
+		/* Locally initiated, notify as LL_FRAME_SPACE_RSP */
+		llcp_pdu_encode_fsu_rsp(ctx, pdu);
+	} else {
+		/* Peer initiated, notify as LL_FRAME_SPACE_REQ with the selected frame space */
+		struct pdu_data_llctrl_fsu_req *p;
+
+		pdu->ll_id = PDU_DATA_LLID_CTRL;
+		pdu->len = PDU_DATA_LLCTRL_LEN(fsu_req);
+		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ;
+
+		p = &pdu->llctrl.fsu_req;
+		p->fsu_min = sys_cpu_to_le16(ctx->data.fsu.fsu);
+		p->fsu_max = sys_cpu_to_le16(ctx->data.fsu.fsu);
+		p->phys = ctx->data.fsu.phys;
+		p->spacing_type = sys_cpu_to_le16(ctx->data.fsu.spacing_type);
+	}
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 /*
  * Constant Tone Request Procedure Helper
@@ -901,8 +977,15 @@ void llcp_pdu_decode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 		ctx->data.cis_create.cis_offset_max = cis_offset_max;
 	}
 
+	/* FIXME: We do not pick the instant from the response; if we do, then
+	 *        we need to calculate again a new offset because the ACL and
+	 *        ISO intervals can be dissimilar and hence will be a different
+	 *        CIS offset when sending the CIS_IND PDU at this instant.
+	 *
+
 	ctx->data.cis_create.conn_event_count =
 		sys_le16_to_cpu(pdu->llctrl.cis_rsp.conn_event_count);
+	 */
 }
 
 void llcp_pdu_encode_cis_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -1065,3 +1148,57 @@ void llcp_pdu_decode_periodic_sync_ind(struct proc_ctx *ctx, struct pdu_data *pd
 	ctx->data.periodic_sync.sync_conn_event_count = sys_le16_to_cpu(p->sync_conn_event_count);
 }
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+void llcp_pdu_encode_subrate_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_subrate_req *p = &pdu->llctrl.subrate_req;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = PDU_DATA_LLCTRL_LEN(subrate_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SUBRATE_REQ;
+
+	p->subrate_factor_min = sys_cpu_to_le16(ctx->data.subrate.subrate_factor_min);
+	p->subrate_factor_max = sys_cpu_to_le16(ctx->data.subrate.subrate_factor_max);
+	p->max_latency = sys_cpu_to_le16(ctx->data.subrate.max_latency);
+	p->continuation_number = sys_cpu_to_le16(ctx->data.subrate.continuation_number);
+	p->timeout = sys_cpu_to_le16(ctx->data.subrate.timeout);
+}
+
+void llcp_pdu_decode_subrate_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_subrate_req *p = &pdu->llctrl.subrate_req;
+
+	ctx->data.subrate.subrate_factor_min = sys_le16_to_cpu(p->subrate_factor_min);
+	ctx->data.subrate.subrate_factor_max = sys_le16_to_cpu(p->subrate_factor_max);
+	ctx->data.subrate.max_latency = sys_le16_to_cpu(p->max_latency);
+	ctx->data.subrate.continuation_number = sys_le16_to_cpu(p->continuation_number);
+	ctx->data.subrate.timeout = sys_le16_to_cpu(p->timeout);
+}
+
+void llcp_pdu_encode_subrate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_subrate_ind *p = &pdu->llctrl.subrate_ind;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = PDU_DATA_LLCTRL_LEN(subrate_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SUBRATE_IND;
+
+	p->subrate_factor = sys_cpu_to_le16(ctx->data.subrate.subrate_factor);
+	p->subrate_base_event = sys_cpu_to_le16(ctx->data.subrate.subrate_base_event);
+	p->latency = sys_cpu_to_le16(ctx->data.subrate.latency);
+	p->continuation_number = sys_cpu_to_le16(ctx->data.subrate.continuation_number);
+	p->timeout = sys_cpu_to_le16(ctx->data.subrate.timeout);
+}
+
+void llcp_pdu_decode_subrate_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_subrate_ind *p = &pdu->llctrl.subrate_ind;
+
+	ctx->data.subrate.subrate_factor = sys_le16_to_cpu(p->subrate_factor);
+	ctx->data.subrate.subrate_base_event = sys_le16_to_cpu(p->subrate_base_event);
+	ctx->data.subrate.latency = sys_le16_to_cpu(p->latency);
+	ctx->data.subrate.continuation_number = sys_le16_to_cpu(p->continuation_number);
+	ctx->data.subrate.timeout = sys_le16_to_cpu(p->timeout);
+}
+#endif /* CONFIG_BT_CTLR_SUBRATING */

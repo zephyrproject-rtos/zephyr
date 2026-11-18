@@ -30,6 +30,8 @@ enum llcp_proc {
 	PROC_CIS_TERMINATE,
 	PROC_SCA_UPDATE,
 	PROC_PERIODIC_SYNC,
+	PROC_FRAME_SPACE,
+	PROC_SUBRATE_UPDATE,
 	/* A helper enum entry, to use in pause procedure context */
 	PROC_NONE = 0x0,
 };
@@ -47,6 +49,7 @@ enum llcp_tx_q_pause_data_mask {
 	LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE = 0x02,
 	LLCP_TX_QUEUE_PAUSE_DATA_DATA_LENGTH = 0x04,
 	LLCP_TX_QUEUE_PAUSE_DATA_TERMINATE = 0x08,
+	LLCP_TX_QUEUE_PAUSE_DATA_CONN_UPD = 0x10,
 };
 
 #if ((CONFIG_BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM <\
@@ -224,6 +227,18 @@ struct proc_ctx {
 			uint8_t ntf_dle;
 		} dle;
 #endif
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+		/* Frame Space Update */
+		struct {
+			uint16_t fsu_min;
+			uint16_t fsu_max;
+			uint16_t fsu;
+			uint16_t spacing_type;
+			uint8_t phys;
+			uint8_t error;
+			bool ntf_fsu;
+		} fsu;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 		/* Connection Update & Connection Parameter Request */
 		struct {
@@ -343,6 +358,23 @@ struct proc_ctx {
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 		} periodic_sync;
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER || CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+		/* Connection Subrate Update / Request Procedure */
+		struct {
+			uint8_t  error;
+			/* Requested parameters (from LL_SUBRATE_REQ / HCI) */
+			uint16_t subrate_factor_min;
+			uint16_t subrate_factor_max;
+			uint16_t max_latency;
+			uint16_t continuation_number;
+			uint16_t timeout;
+			/* Negotiated parameters (sent/received in LL_SUBRATE_IND) */
+			uint16_t subrate_factor;
+			uint16_t subrate_base_event;
+			uint16_t latency;
+		} subrate;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 	} data;
 
 	struct {
@@ -564,6 +596,7 @@ void llcp_pdu_decode_terminate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
  */
 struct proc_ctx *llcp_lr_peek(struct ll_conn *conn);
 struct proc_ctx *llcp_lr_peek_proc(struct ll_conn *conn, uint8_t proc);
+struct proc_ctx *llcp_lr_peek_cc(struct ll_conn *conn, uint16_t cc_handle);
 bool llcp_lr_ispaused(struct ll_conn *conn);
 void llcp_lr_pause(struct ll_conn *conn);
 void llcp_lr_resume(struct ll_conn *conn);
@@ -715,6 +748,26 @@ void llcp_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+/*
+ * Connection Subrating Procedure Helper
+ */
+void llcp_pdu_encode_subrate_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_subrate_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_encode_subrate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_subrate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+void llcp_lp_subrate_init_proc(struct proc_ctx *ctx);
+void llcp_lp_subrate_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+void llcp_lp_subrate_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_lp_subrate_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+
+void llcp_rp_subrate_init_proc(struct proc_ctx *ctx);
+void llcp_rp_subrate_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+void llcp_rp_subrate_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_rp_subrate_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 /*
  * Remote Channel Map Update Procedure Helper
  */
@@ -737,6 +790,23 @@ void llcp_ntf_encode_length_change(struct ll_conn *conn,
 					struct pdu_data *pdu);
 
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+/*
+ * Frame Space Update Procedure Helper
+ */
+#define LLCP_FSU_PHYS_SUPPORTED (PHY_1M | PHY_2M)
+#define LLCP_FSU_SPACING_TYPE_SUPPORTED \
+	(T_IFS_ACL_CP | T_IFS_ACL_PC | (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO) ? T_IFS_CIS : 0U))
+
+uint8_t llcp_fsu_validate(uint16_t fsu_min, uint16_t fsu_max, uint8_t phys,
+			  uint16_t spacing_type);
+void llcp_pdu_encode_fsu_req(const struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_encode_fsu_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_fsu_req(struct proc_ctx *ctx, const struct pdu_data *pdu);
+void llcp_pdu_decode_fsu_rsp(struct proc_ctx *ctx, const struct pdu_data *pdu);
+void llcp_ntf_encode_fsu_change(const struct proc_ctx *ctx, struct pdu_data *pdu);
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 /*
@@ -773,17 +843,21 @@ void llcp_lp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 bool llcp_lp_cc_is_active(struct proc_ctx *ctx);
 bool llcp_lp_cc_awaiting_established(struct proc_ctx *ctx);
 void llcp_lp_cc_established(struct ll_conn *conn, struct proc_ctx *ctx);
+void llcp_lp_cc_acl_disconnect(struct ll_conn *conn, struct proc_ctx *ctx);
 bool llcp_lp_cc_cancel(struct ll_conn *conn, struct proc_ctx *ctx);
+void llcp_lp_cc_flush(struct ll_conn *conn, struct proc_ctx *ctx);
 
 void llcp_rp_cc_init_proc(struct proc_ctx *ctx);
 void llcp_rp_cc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 void llcp_rp_cc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+bool llcp_rp_cc_is_active(const struct proc_ctx *ctx);
 bool llcp_rp_cc_awaiting_reply(struct proc_ctx *ctx);
 bool llcp_rp_cc_awaiting_established(struct proc_ctx *ctx);
 void llcp_rp_cc_accept(struct ll_conn *conn, struct proc_ctx *ctx);
 void llcp_rp_cc_reject(struct ll_conn *conn, struct proc_ctx *ctx);
 bool llcp_rp_cc_awaiting_instant(struct proc_ctx *ctx);
 void llcp_rp_cc_established(struct ll_conn *conn, struct proc_ctx *ctx);
+void llcp_rp_cc_acl_disconnect(struct ll_conn *conn, struct proc_ctx *ctx);
 
 void llcp_pdu_decode_cis_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_cis_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);

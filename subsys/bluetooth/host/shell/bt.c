@@ -983,6 +983,69 @@ void subrate_changed(struct bt_conn *conn,
 }
 #endif
 
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+void read_all_remote_feat_complete(struct bt_conn *conn,
+				   const struct bt_conn_le_read_all_remote_feat_complete *params)
+{
+	if (params->status == BT_HCI_ERR_SUCCESS) {
+		uint8_t number_of_bytes = BT_HCI_LE_BYTES_PAGE_0_FEATURE_PAGE;
+
+		if (params->max_valid_page > 0) {
+			number_of_bytes +=
+				(params->max_valid_page * BT_HCI_LE_BYTES_PER_FEATURE_PAGE);
+		}
+
+		bt_shell_fprintf_print(
+			"Read all remote features complete, Max Remote Page %d, LE Features: 0x",
+			params->max_remote_page);
+
+		for (int i = number_of_bytes - 1; i >= 0; i--) {
+			uint8_t features = params->features[i];
+			char features_str[(2 * sizeof(uint8_t)) + 1];
+
+			bin2hex(&features, sizeof(features), features_str, sizeof(features_str));
+			bt_shell_fprintf_print("%s", features_str);
+		}
+		bt_shell_fprintf_print("\n");
+	} else {
+		bt_shell_print("Read all remote features failed (HCI status 0x%02x)",
+			       params->status);
+	}
+}
+#endif
+
+#if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
+static const char *frame_space_initiator_to_str(
+	enum bt_conn_le_frame_space_update_initiator initiator)
+{
+	switch (initiator) {
+	case BT_CONN_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_HOST:
+		return "Local Host";
+	case BT_CONN_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_CONTROLLER:
+		return "Local Controller";
+	case BT_CONN_LE_FRAME_SPACE_UPDATE_INITIATOR_PEER:
+		return "Peer";
+	default:
+		return "Unknown";
+	}
+}
+
+void frame_space_updated(struct bt_conn *conn,
+			 const struct bt_conn_le_frame_space_updated *params)
+{
+	if (params->status != BT_HCI_ERR_SUCCESS) {
+		bt_shell_print("Frame space update failed (HCI status 0x%02x)",
+			       params->status);
+		return;
+	}
+
+	bt_shell_print(
+		"Frame space updated: frame space %d us, PHYs 0x%04x, spacing types 0x%04x, initiator %s",
+		params->frame_space, params->phys, params->spacing_types,
+		frame_space_initiator_to_str(params->initiator));
+}
+#endif
+
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 void print_remote_cs_capabilities(struct bt_conn *conn, struct bt_conn_le_cs_capabilities *params)
 {
@@ -1140,6 +1203,12 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 #if defined(CONFIG_BT_SUBRATING)
 	.subrate_changed = subrate_changed,
+#endif
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+	.read_all_remote_feat_complete = read_all_remote_feat_complete,
+#endif
+#if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
+	.frame_space_updated = frame_space_updated,
 #endif
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
 	.le_cs_remote_capabilities_available = print_remote_cs_capabilities,
@@ -3234,6 +3303,83 @@ static int cmd_subrate_request(const struct shell *sh, size_t argc, char *argv[]
 }
 #endif
 
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+static int cmd_read_all_remote_features(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	uint8_t pages_requested = shell_strtoul(argv[1], 10, &err);
+
+	if (err != 0) {
+		shell_help(sh);
+		shell_error(sh, "Could not parse input for pages_requested");
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	err = bt_conn_le_read_all_remote_features(default_conn, pages_requested);
+	if (err != 0) {
+		shell_error(sh, "bt_conn_le_read_all_remote_features returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif
+
+#if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
+static int cmd_frame_space_update(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	struct bt_conn_le_frame_space_update_param params;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	params.frame_space_min = shell_strtoul(argv[1], 10, &err);
+	if (err) {
+		shell_help(sh);
+		shell_error(sh, "Could not parse frame_space_min input");
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	params.frame_space_max = shell_strtoul(argv[2], 10, &err);
+	if (err) {
+		shell_help(sh);
+		shell_error(sh, "Could not parse frame_space_max input");
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	params.phys = shell_strtoul(argv[3], 16, &err);
+	if (err) {
+		shell_help(sh);
+		shell_error(sh, "Could not parse phys input");
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	params.spacing_types = shell_strtoul(argv[4], 16, &err);
+	if (err) {
+		shell_help(sh);
+		shell_error(sh, "Could not parse spacing_types input");
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	err = bt_conn_le_frame_space_update(default_conn, &params);
+	if (err != 0) {
+		shell_error(sh, "bt_conn_le_frame_space_update returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
 static int bt_do_connect_le(int *ercd, size_t argc, char *argv[])
@@ -4972,6 +5118,16 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		"<min subrate factor> <max subrate factor> <max peripheral latency> "
 		"<min continuation number> <supervision timeout (seconds)>",
 		cmd_subrate_request, 6, 0),
+#endif
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+	SHELL_CMD_ARG(read-all-remote-features, NULL, "<pages_requested>",
+		cmd_read_all_remote_features, 2, 0),
+#endif
+#if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
+	SHELL_CMD_ARG(frame-space-update, NULL,
+		      "[frame_space_min <us>] [frame_space_max <us>] [phys <phy mask>] "
+		      "[spacing_types <spacing types mask>]",
+		      cmd_frame_space_update, 5, 0),
 #endif
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,

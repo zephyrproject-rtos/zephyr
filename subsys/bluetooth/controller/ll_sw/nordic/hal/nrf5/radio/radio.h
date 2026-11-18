@@ -77,6 +77,7 @@ void radio_pkt_tx_set(void *tx_packet);
 uint32_t radio_tx_ready_delay_get(uint8_t phy, uint8_t flags);
 uint32_t radio_tx_chain_delay_get(uint8_t phy, uint8_t flags);
 uint32_t radio_rx_ready_delay_get(uint8_t phy, uint8_t flags);
+uint32_t radio_rx_address_delay_get(uint8_t phy, uint8_t flags);
 uint32_t radio_rx_chain_delay_get(uint8_t phy, uint8_t flags);
 void radio_rx_enable(void);
 void radio_tx_enable(void);
@@ -111,6 +112,7 @@ void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
 void radio_switch_complete_and_b2b_tx_disable(void);
 void radio_switch_complete_and_b2b_rx_disable(void);
 void radio_switch_complete_and_disable(void);
+void radio_switch_complete_end_capture_and_disable(void);
 
 uint8_t radio_phy_flags_rx_get(void);
 
@@ -179,6 +181,7 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt);
 void *radio_ccm_iso_tx_pkt_set(struct ccm *ccm, uint8_t pdu_type, void *pkt);
 uint32_t radio_ccm_is_done(void);
 uint32_t radio_ccm_mic_is_valid(void);
+void radio_ccm_disable(void);
 
 void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags);
 uint32_t radio_ar_match_get(void);

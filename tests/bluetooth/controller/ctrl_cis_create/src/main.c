@@ -47,6 +47,10 @@ DEFINE_FFF_GLOBALS;
 #include "helper_pdu.h"
 #include "helper_util.h"
 
+#include <zephyr/bluetooth/iso.h>
+
+#define SUB_INTERVAL_MIN 400
+
 static struct ll_conn conn;
 
 static struct ll_conn_iso_group cig_mock = { 0 };
@@ -84,11 +88,11 @@ static struct pdu_data_llctrl_cis_req remote_cis_req = {
 	.p_ft             =   1,
 	.iso_interval     =   6,
 	.conn_event_count =   12,
-	.c_sdu_interval   =   { 0, 0, 0},
-	.p_sdu_interval   =   { 0, 0, 0},
-	.sub_interval     =   { 0, 0, 0},
-	.cis_offset_min   =   { 0, 0, 0},
-	.cis_offset_max   =   { 0, 0, 0}
+	.c_sdu_interval   =   { 0, 0x02, 0}, /* 512 us */
+	.p_sdu_interval   =   { 0, 0x02, 0}, /* 512 us */
+	.sub_interval     =   { 0x90, 0x01, 0x00}, /* 400 us */
+	.cis_offset_min   =   { 0, 0x02, 0}, /* 512 us */
+	.cis_offset_max   =   { 0, 0x02, 0}  /* 512 us */
 };
 
 static struct pdu_data_llctrl_cis_ind remote_cis_ind = {
@@ -127,7 +131,7 @@ static struct pdu_data_llctrl_cis_ind local_cis_ind = {
 	.cig_sync_delay = { 0, 0, 0},
 	.cis_offset = { 0, 0, 0},
 	.cis_sync_delay = { 0, 0, 0},
-	.conn_event_count = 13
+	.conn_event_count = 0
 };
 
 #define ERROR_CODE 0x17
@@ -169,8 +173,8 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept)
 		.cis_id = 0x02
 	};
 	struct pdu_data_llctrl_cis_rsp local_cis_rsp = {
-		.cis_offset_max = { 0, 0, 0},
-		.cis_offset_min = { 0, 0, 0},
+		.cis_offset_max = { 0, 0x02, 0},
+		.cis_offset_min = { 0, 0x02, 0},
 		.conn_event_count = 12
 	};
 	struct node_rx_conn_iso_estab cis_estab = {
@@ -525,6 +529,196 @@ ZTEST(cis_create, test_cc_create_periph_rem_invalid_phy)
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
+static void rx_remote_cis_req_invalid_param(struct pdu_data_llctrl_cis_req *req)
+{
+	struct node_tx *tx;
+	struct pdu_data_llctrl_reject_ext_ind local_reject = {
+		.error_code = BT_HCI_ERR_INVALID_LL_PARAM,
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CIS_REQ
+	};
+
+	test_setup(&conn);
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_CIS_REQ, &conn, req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &local_reject);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/*
+ * Central-initiated CIS Create procedure.
+ * Central requests CIS w. invalid param, peripheral Host rejects.
+ *
+ * +-----+          +-------+                       +-----+
+ * | UT  |          | LL_S  |                       | LT  |
+ * +-----+          +-------+                       +-----+
+ *    |                 |                               |
+ *    |                 |   LL_CIS_REQ  (invalid param) |
+ *    |                 |<------------------------------|
+ *    |                 |                               |
+ *    |                 |                               |
+ *    |                 |                               |
+ *    |                 |                               |
+ *    |                 |                               |
+ *    |                 |                               |
+ *    |                 | LL_REJECT_EXT_IND             |
+ *    |                 |------------------------------>|
+ *    |                 |                               |
+ */
+ZTEST(cis_create, test_cc_create_periph_rem_invalid_param)
+{
+	struct pdu_data_llctrl_cis_req remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with c_sdu_interval < 255 */
+	sys_put_le24(BT_HCI_ISO_SDU_INTERVAL_MIN-1, remote_cis_req_invalid_param.c_sdu_interval);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with p_sdu_interval < 255 */
+	sys_put_le24(BT_HCI_ISO_SDU_INTERVAL_MIN-1, remote_cis_req_invalid_param.p_sdu_interval);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with c_max_pdu > 251 */
+	remote_cis_req_invalid_param.c_max_pdu = sys_cpu_to_le16(BT_ISO_PDU_MAX + 1);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with p_max_pdu > 251 */
+	remote_cis_req_invalid_param.p_max_pdu = sys_cpu_to_le16(BT_ISO_PDU_MAX + 1);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with nse == 0 */
+	remote_cis_req_invalid_param.nse = 0;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with nse > 31 */
+	remote_cis_req_invalid_param.nse = BT_ISO_NSE_MAX + 1;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with sub_interval > 0 && nse == 1 */
+	remote_cis_req_invalid_param.nse = 1;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with sub_interval < 400 && nse > 1 */
+	sys_put_le24(SUB_INTERVAL_MIN - 1, remote_cis_req_invalid_param.sub_interval);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with sub_interval >= iso_interval */
+	sys_put_le24(sys_le16_to_cpu(remote_cis_req_invalid_param.iso_interval) * CONN_INT_UNIT_US,
+				     remote_cis_req_invalid_param.sub_interval);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+
+	/* Rx with c_bn == 0 && c_max_pdu > 0 */
+	remote_cis_req_invalid_param.c_bn = 0;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with p_bn == 0 && p_max_pdu > 0 */
+	remote_cis_req_invalid_param.p_bn = 0;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with c_ft == 0 */
+	remote_cis_req_invalid_param.c_ft = 0;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with p_ft == 0 */
+	remote_cis_req_invalid_param.p_ft = 0;
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with iso_interval < 4 */
+	remote_cis_req_invalid_param.iso_interval = sys_cpu_to_le16(BT_HCI_ISO_INTERVAL_MIN - 1);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with iso_interval > 3200 */
+	remote_cis_req_invalid_param.iso_interval = sys_cpu_to_le16(BT_HCI_ISO_INTERVAL_MAX + 1);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with cis_offset_min < 500 */
+	sys_put_le24(PDU_CIS_OFFSET_MIN_US - 1, remote_cis_req_invalid_param.cis_offset_min);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with cis_offset_max < cis_offset_min */
+	sys_put_le24(0x01FF, remote_cis_req_invalid_param.cis_offset_max);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+
+	/* Restore to valid params */
+	remote_cis_req_invalid_param = remote_cis_req;
+
+	/* Rx with cis_offset_max >= conn_interval */
+	sys_put_le24(conn.lll.interval * CONN_INT_UNIT_US,
+		     remote_cis_req_invalid_param.cis_offset_max);
+	rx_remote_cis_req_invalid_param(&remote_cis_req_invalid_param);
+}
+
 /*
  * Central-initiated CIS Create procedure.
  * Host requests CIS, LL replies with 'remote feature unsupported'
@@ -859,5 +1053,206 @@ ZTEST(cis_create, test_cc_create_central_rem_reject)
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
+
+/*
+ * Central-initiated CIS Create procedure.
+ * Peripheral has notified its Host of the CIS request, and thereby retains an
+ * RX node for the later CIS Established notification. Before the Host replies,
+ * and thus before the retained RX node is consumed, an unexpected LL Control
+ * PDU is received.
+ *
+ * The unexpected PDU is routed to the active remote procedure, which takes the
+ * invalid PDU path and completes the procedure. The retained RX node must be
+ * released, and the reference cleared, before the procedure is completed.
+ * Otherwise the retained node reference is leaked and llcp_rr_check_done()
+ * asserts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_S  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |   LL_CIS_REQ              |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |      LE CIS Request       |                           |
+ *    |<--------------------------|                           |
+ *    |                           |                           |
+ *    |                           |      LL_<UNEXPECTED_PDU>  |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~ TERMINATE CONNECTION ~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ */
+ZTEST(cis_create, test_cc_create_periph_rem_unexpected_pdu_awaiting_reply)
+{
+	struct node_rx_conn_iso_req cis_req = {
+		.cig_id = 0x01,
+		.cis_handle = 0x00,
+		.cis_id = 0x02
+	};
+	struct pdu_data_llctrl_version_ind remote_version_ind = {
+		.version_number = 0x55,
+		.company_id = 0xABCD,
+		.sub_version_number = 0x1234,
+	};
+	struct node_rx_pdu *ntf;
+
+	/* Prepare mocked call to ll_conn_iso_stream_get() */
+	ll_conn_iso_stream_get_fake.return_val = &cis_mock;
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx, the CIS request is passed on to the Host and an RX node is
+	 * retained for the later CIS Established notification
+	 */
+	lt_tx(LL_CIS_REQ, &conn, &remote_cis_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be exactly one host notification */
+	ut_rx_node(NODE_CIS_REQUEST, &ntf, &cis_req);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx, unexpected LL Control PDU while awaiting the Host reply and thus
+	 * before the retained RX node has been consumed
+	 */
+	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* All contexts should have been released */
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/*
+ * Central-initiated CIS Create procedure.
+ * The Central retains an RX node for the CIS Established notification while
+ * awaiting the LL_CIS_RSP. Before the response is received, and thus before the
+ * retained RX node is consumed, an unexpected LL Control PDU is received.
+ *
+ * The unexpected PDU is routed to the active local procedure, which takes the
+ * invalid PDU path and completes the procedure. The retained RX node must be
+ * released, and the reference cleared, before the procedure is completed.
+ * Otherwise the retained node reference is leaked and llcp_lr_check_done()
+ * asserts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_C  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    | LE CIS Create             |                           |
+ *    |-------------------------->|                           |
+ *    |                           |   LL_CIS_REQ              |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |      LL_<UNEXPECTED_PDU>  |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~ TERMINATE CONNECTION ~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ */
+ZTEST(cis_create, test_cc_create_central_unexpected_pdu_awaiting_rsp)
+{
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
+		.type = PDU_DATA_LLCTRL_TYPE_CIS_REQ
+	};
+	struct ll_conn_iso_stream *cis;
+	struct node_tx *tx;
+	uint8_t err;
+
+	/* Prepare mocked call to ll_conn_iso_stream_get() */
+	ll_conn_iso_stream_get_fake.return_val = &cis_mock;
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+	conn.llcp.fex.valid = 1;
+	conn.llcp.fex.features_peer |= BIT64(BT_LE_FEAT_BIT_CIS_PERIPHERAL);
+
+	/* Setup default CIS/CIG parameters */
+	cis = ll_conn_iso_stream_get(LL_CIS_HANDLE_BASE);
+	cis->lll.acl_handle = conn.lll.handle;
+	cis->group->cig_id = local_cis_req.cig_id;
+	cis->cis_id = local_cis_req.cis_id;
+	cis->lll.tx.phy = local_cis_req.c_phy;
+	cis->lll.rx.phy = local_cis_req.p_phy;
+	cis->group->c_sdu_interval = 0;
+	cis->group->p_sdu_interval = 0;
+	cis->lll.tx.max_pdu = MAX_xDU;
+	cis->lll.rx.max_pdu = MAX_xDU;
+	cis->c_max_sdu = MAX_xDU;
+	cis->p_max_sdu = MAX_xDU;
+	cis->group->iso_interval = local_cis_req.iso_interval;
+	cis->framed = 0;
+	cis->lll.nse = local_cis_req.nse;
+	cis->lll.sub_interval = 0;
+	cis->lll.tx.bn = local_cis_req.c_bn;
+	cis->lll.rx.bn = local_cis_req.p_bn;
+	cis->lll.tx.ft = local_cis_req.c_ft;
+	cis->lll.rx.ft = local_cis_req.p_ft;
+
+	err = ull_cp_cis_create(&conn, cis);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CIS_REQ, &conn, &tx, &local_cis_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx, unexpected LL Control PDU while awaiting the LL_CIS_RSP and thus
+	 * before the retained RX node has been consumed
+	 */
+	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* All contexts should have been released */
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
 
 ZTEST_SUITE(cis_create, NULL, NULL, cis_create_setup, NULL, NULL);

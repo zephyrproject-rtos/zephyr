@@ -1294,7 +1294,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 #if !defined(CONFIG_BT_HCI_MESH_EXT)
 	ticks_anchor = ticker_ticks_now_get();
-	ticks_anchor += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 #else /* CONFIG_BT_HCI_MESH_EXT */
 	if (!at_anchor) {
@@ -1392,6 +1391,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		if (lll->aux) {
 			struct lll_adv_aux *lll_aux = lll->aux;
 			uint32_t ticks_slot_overhead_aux;
+			const struct pdu_adv *sec_pdu;
 			uint32_t ticks_anchor_aux;
 			uint64_t interval_us;
 
@@ -1409,14 +1409,26 @@ uint8_t ll_adv_enable(uint8_t enable)
 			 */
 			ticks_anchor_aux =
 				ticks_anchor + ticks_slot +
-				HAL_TICKER_US_TO_TICKS(
+				HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 
+			/* Time reservation uses the auxiliary PDU that has
+			 * the SyncInfo added, it is enqueued only after the
+			 * auxiliary and periodic advertising events are
+			 * started.
+			 */
+			sec_pdu = lll_adv_aux_data_peek(lll_aux);
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			if (sync != NULL) {
+				sec_pdu = (void *)lll_aux->data.pdu[sec_idx];
+			}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
 			ticks_slot_overhead_aux =
-				ull_adv_aux_evt_init(aux, &ticks_anchor_aux);
+				ull_adv_aux_evt_init(aux, sec_pdu, &ticks_anchor_aux);
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 			/* Start periodic advertising if enabled and not already
@@ -1433,7 +1445,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 						PDU_AC_PAYLOAD_SIZE_MAX,
 						PDU_AC_PAYLOAD_SIZE_MAX);
 				ticks_slot_aux =
-					HAL_TICKER_US_TO_TICKS(us_slot) +
+					HAL_TICKER_US_TO_TICKS_CEIL(us_slot) +
 					ticks_slot_overhead_aux;
 #else
 				ticks_slot_aux = aux->ull.ticks_slot +
@@ -1454,7 +1466,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				 */
 				uint32_t ticks_anchor_sync = ticks_anchor_aux +
 					ticks_slot_aux +
-					HAL_TICKER_US_TO_TICKS(
+					HAL_TICKER_US_TO_TICKS_CEIL(
 						MAX(EVENT_MAFS_US,
 						    EVENT_OVERHEAD_START_US) -
 						EVENT_OVERHEAD_START_US +
@@ -1506,12 +1518,16 @@ uint8_t ll_adv_enable(uint8_t enable)
 				 * add ULL_ADV_RANDOM_DELAY and round up for a
 				 * aux interval equal or higher instead
 				 */
-				aux->interval = DIV_ROUND_UP(interval_us +
-						     HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY),
-						     PERIODIC_INT_UNIT_US);
+				aux->interval =	DIV_ROUND_UP(
+					ROUND_DOWN((interval_us +
+						    HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY)),
+						   HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY)),
+					PERIODIC_INT_UNIT_US);
 			} else {
-				aux->interval = (interval_us * (adv->max_skip + 1))
-						 / PERIODIC_INT_UNIT_US;
+				aux->interval =
+					ROUND_DOWN((interval_us * (adv->max_skip + 1)),
+						   HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY)) /
+					PERIODIC_INT_UNIT_US;
 			}
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
@@ -1958,12 +1974,15 @@ static uint32_t ticker_update_rand(struct ll_adv_set *adv, uint32_t ticks_delay_
 				   uint32_t ticks_adjust_minus,
 				   ticker_op_func fp_op_func)
 {
-	uint32_t random_delay;
+	uint32_t random_delay = 0U;
 	uint32_t ret;
 
 	/* Get pseudo-random number in the range [0..ticks_delay_window].
 	 * Please note that using modulo of 2^32 sample space has an uneven
 	 * distribution, slightly favoring smaller values.
+	 *
+	 * The pool that is read in interrupt context can have fewer bytes
+	 * than are asked for, which leaves the rest of the value as it was.
 	 */
 	lll_rand_isr_get(&random_delay, sizeof(random_delay));
 	random_delay %= ticks_delay_window;
@@ -2381,14 +2400,16 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		if (adv->lll.aux) {
 			uint32_t ticks_to_expire;
-			uint32_t other_remainder;
+			uint32_t other_remainder = 0U;
 
 			LL_ASSERT(context->other_expire_info);
 
 			/* Adjust ticks to expire based on remainder value */
 			ticks_to_expire = context->other_expire_info->ticks_to_expire;
+#if defined(CONFIG_BT_TICKER_REMAINDER_SUPPORT)
 			other_remainder = context->other_expire_info->remainder;
 			hal_ticker_remove_jitter(&ticks_to_expire, &other_remainder);
+#endif /* CONFIG_BT_TICKER_REMAINDER_SUPPORT */
 
 			/* Store the ticks and remainder offset for aux ptr population in LLL */
 			adv->lll.aux->ticks_pri_pdu_offset = ticks_to_expire;

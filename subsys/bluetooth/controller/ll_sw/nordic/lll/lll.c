@@ -71,7 +71,9 @@ static inline void done_inc(void);
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 static inline bool is_done_sync(void);
 static inline struct lll_event *prepare_dequeue_iter_ready_get(uint8_t *idx);
-static inline struct lll_event *resume_enqueue(lll_prepare_cb_t resume_cb);
+static inline struct lll_event *resume_enqueue(lll_is_abort_cb_t is_abort_cb,
+					       lll_abort_cb_t abort_cb, lll_prepare_cb_t resume_cb,
+					       void *param);
 static void isr_race(void *param);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
@@ -295,6 +297,9 @@ int lll_init(void)
 #endif
 #endif /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 
+	/* Enable Radio interrupt on radio state disabled; after tx or rx or explicitly disabled */
+	nrf_radio_int_enable(NRF_RADIO, HAL_RADIO_INTENSET_DISABLED_Msk);
+
 	/* Enable IRQs */
 	irq_enable(HAL_RADIO_IRQn);
 	irq_enable(HAL_RTC_IRQn);
@@ -437,6 +442,31 @@ int lll_reset(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_ZLI)
+static void mfy_ll_rx_sched(void *param)
+{
+	ARG_UNUSED(param);
+
+	ll_rx_sched();
+}
+
+void ll_iso_rx_sched(void)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mfy_ll_rx_sched};
+
+	/* Ignore mayfly_enqueue failure on repeated enqueue call */
+	(void)mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 0,
+			     &mfy);
+}
+
+#else /* !CONFIG_BT_CTLR_ZLI */
+void ll_iso_rx_sched(void)
+{
+	ll_rx_sched();
+}
+#endif /* !CONFIG_BT_CTLR_ZLI */
+
 void lll_disable(void *param)
 {
 	/* LLL disable of current event, done is generated */
@@ -513,10 +543,6 @@ int lll_done(void *param)
 		param = event.curr.param;
 		event.curr.param = NULL;
 
-#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
-		done_inc();
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
-
 		if (param) {
 			ull = HDR_LLL2ULL(param);
 		} else {
@@ -537,7 +563,9 @@ int lll_done(void *param)
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
 	ull_prepare_dequeue(TICKER_USER_ID_LLL);
-#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+#else /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+	done_inc();
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	struct event_done_extra *extra;
@@ -636,7 +664,8 @@ uint32_t lll_preempt_calc(struct ull_hdr *ull, uint8_t ticker_id,
 		return 0;
 	}
 
-	diff += HAL_TICKER_CNTR_CMP_OFFSET_MIN;
+	diff += HAL_TICKER_CNTR_CMP_OFFSET_MIN +
+		HAL_TICKER_US_TO_TICKS_CEIL(HAL_RADIO_ISR_LATENCY_MAX_US);
 	if (diff > HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US)) {
 		/* TODO: for Low Latency Feature with Advanced XTAL feature.
 		 * 1. Release retained HF clock.
@@ -804,6 +833,8 @@ void lll_isr_early_abort(void *param)
 {
 	int err;
 
+	radio_status_reset();
+
 	radio_isr_set(isr_race, param);
 	if (!radio_is_idle()) {
 		radio_disable();
@@ -932,7 +963,16 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			LL_ASSERT(err);
 
 			if (err == -EAGAIN) {
-				next = resume_enqueue(resume_cb);
+				void *curr_param;
+
+				/* Remove parameter assignment from currently active radio event so
+				 * that done event is not generated.
+				 */
+				curr_param = event.curr.param;
+				event.curr.param = NULL;
+
+				next = resume_enqueue(event.curr.is_abort_cb, event.curr.abort_cb,
+						      resume_cb, curr_param);
 				LL_ASSERT(next);
 			} else {
 				LL_ASSERT(err == -ECANCELED);
@@ -1015,19 +1055,15 @@ static inline struct lll_event *prepare_dequeue_iter_ready_get(uint8_t *idx)
 	return ready;
 }
 
-static inline struct lll_event *resume_enqueue(lll_prepare_cb_t resume_cb)
+static inline struct lll_event *resume_enqueue(lll_is_abort_cb_t is_abort_cb,
+					       lll_abort_cb_t abort_cb, lll_prepare_cb_t resume_cb,
+					       void *param)
 {
 	struct lll_prepare_param prepare_param = {0};
 
-	/* Enqueue into prepare pipeline as resume radio event, and remove
-	 * parameter assignment from currently active radio event so that
-	 * done event is not generated.
-	 */
-	prepare_param.param = event.curr.param;
-	event.curr.param = NULL;
+	prepare_param.param = param;
 
-	return ull_prepare_enqueue(event.curr.is_abort_cb, event.curr.abort_cb,
-				   &prepare_param, resume_cb, 1);
+	return ull_prepare_enqueue(is_abort_cb, abort_cb, &prepare_param, resume_cb, 1U);
 }
 
 static void isr_race(void *param)
@@ -1329,9 +1365,27 @@ preempt_find_preemptor:
 
 	/* Check if resume requested */
 	if (err == -EAGAIN) {
-		uint8_t is_resume_abort = 0U;
+		lll_is_abort_cb_t is_abort_cb;
+		lll_abort_cb_t abort_cb;
+		uint8_t is_resume_abort;
 		struct lll_event *iter;
 		uint8_t iter_idx;
+		void *curr_param;
+
+		/* Remove parameter assignment from currently active radio event so that done event
+		 * is not generated.
+		 */
+		curr_param = event.curr.param;
+		event.curr.param = NULL;
+
+		/* backup is_abort_cb and abort_cb */
+		is_abort_cb = event.curr.is_abort_cb;
+		abort_cb = event.curr.abort_cb;
+
+		/* Iterate twice to ensure preempt timeout is setup after all duplicate resume
+		 * events are aborted.
+		 */
+		is_resume_abort = 0U;
 
 preempt_abort_resume:
 		/* Abort any duplicate non-resume, that they get dequeued */
@@ -1340,7 +1394,7 @@ preempt_abort_resume:
 		while (iter) {
 			if (!iter->is_aborted &&
 			    (is_resume_abort || !iter->is_resume) &&
-			    event.curr.param == iter->prepare_param.param) {
+			    (curr_param == iter->prepare_param.param)) {
 				iter->is_aborted = 1;
 				iter->abort_cb(&iter->prepare_param,
 					       iter->prepare_param.param);
@@ -1364,7 +1418,7 @@ preempt_abort_resume:
 		}
 
 		/* Enqueue as resume event */
-		iter = resume_enqueue(resume_cb);
+		iter = resume_enqueue(is_abort_cb, abort_cb, resume_cb, curr_param);
 		LL_ASSERT(iter);
 	} else {
 		LL_ASSERT(err == -ECANCELED);

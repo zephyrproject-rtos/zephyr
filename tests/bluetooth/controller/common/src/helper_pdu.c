@@ -378,6 +378,35 @@ void helper_pdu_encode_length_rsp(struct pdu_data *pdu, void *param)
 	pdu->llctrl.length_req.max_rx_time = p->max_rx_time;
 	pdu->llctrl.length_req.max_tx_time = p->max_tx_time;
 }
+
+void helper_pdu_encode_fsu_req(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_fsu_req *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, fsu_req) +
+		   sizeof(struct pdu_data_llctrl_fsu_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ;
+
+	pdu->llctrl.fsu_req.fsu_min = sys_cpu_to_le16(p->fsu_min);
+	pdu->llctrl.fsu_req.fsu_max = sys_cpu_to_le16(p->fsu_max);
+	pdu->llctrl.fsu_req.phys = p->phys;
+	pdu->llctrl.fsu_req.spacing_type = sys_cpu_to_le16(p->spacing_type);
+}
+
+void helper_pdu_encode_fsu_rsp(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_fsu_rsp *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, fsu_rsp) +
+		   sizeof(struct pdu_data_llctrl_fsu_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP;
+
+	pdu->llctrl.fsu_rsp.fsu = sys_cpu_to_le16(p->fsu);
+	pdu->llctrl.fsu_rsp.phys = p->phys;
+	pdu->llctrl.fsu_rsp.spacing_type = sys_cpu_to_le16(p->spacing_type);
+}
 void helper_pdu_encode_cte_req(struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_cte_req *p = param;
@@ -963,6 +992,101 @@ void helper_node_verify_conn_update(const char *file, uint32_t line, struct node
 	zassert_equal(pdu->status, p->status, "Status mismatch.\nCalled at %s:%d\n", file, line);
 }
 
+void helper_pdu_encode_subrate_req(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_subrate_req *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, subrate_req) +
+		   sizeof(struct pdu_data_llctrl_subrate_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SUBRATE_REQ;
+	pdu->llctrl.subrate_req.subrate_factor_min = sys_cpu_to_le16(p->subrate_factor_min);
+	pdu->llctrl.subrate_req.subrate_factor_max = sys_cpu_to_le16(p->subrate_factor_max);
+	pdu->llctrl.subrate_req.max_latency = sys_cpu_to_le16(p->max_latency);
+	pdu->llctrl.subrate_req.continuation_number = sys_cpu_to_le16(p->continuation_number);
+	pdu->llctrl.subrate_req.timeout = sys_cpu_to_le16(p->timeout);
+}
+
+void helper_pdu_encode_subrate_ind(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_subrate_ind *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, subrate_ind) +
+		   sizeof(struct pdu_data_llctrl_subrate_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SUBRATE_IND;
+	pdu->llctrl.subrate_ind.subrate_factor = sys_cpu_to_le16(p->subrate_factor);
+	pdu->llctrl.subrate_ind.subrate_base_event = sys_cpu_to_le16(p->subrate_base_event);
+	pdu->llctrl.subrate_ind.latency = sys_cpu_to_le16(p->latency);
+	pdu->llctrl.subrate_ind.continuation_number = sys_cpu_to_le16(p->continuation_number);
+	pdu->llctrl.subrate_ind.timeout = sys_cpu_to_le16(p->timeout);
+}
+
+void helper_pdu_verify_subrate_req(const char *file, uint32_t line, struct pdu_data *pdu,
+				   void *param)
+{
+	struct pdu_data_llctrl_subrate_req *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
+		      line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_SUBRATE_REQ,
+		      "Not a LL_SUBRATE_REQ.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.subrate_req.subrate_factor_min,
+		      sys_cpu_to_le16(p->subrate_factor_min),
+		      "SubrateFactorMin mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.subrate_req.subrate_factor_max,
+		      sys_cpu_to_le16(p->subrate_factor_max),
+		      "SubrateFactorMax mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.subrate_req.max_latency, sys_cpu_to_le16(p->max_latency),
+		      "Max_Latency mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.subrate_req.continuation_number,
+		      sys_cpu_to_le16(p->continuation_number),
+		      "ContinuationNumber mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.subrate_req.timeout, sys_cpu_to_le16(p->timeout),
+		      "Timeout mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_subrate_ind(const char *file, uint32_t line, struct pdu_data *pdu,
+				   void *param)
+{
+	struct pdu_data_llctrl_subrate_ind *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
+		      line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_SUBRATE_IND,
+		      "Not a LL_SUBRATE_IND.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.subrate_ind.subrate_factor, sys_cpu_to_le16(p->subrate_factor),
+		      "SubrateFactor mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.subrate_ind.latency, sys_cpu_to_le16(p->latency),
+		      "Latency mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.subrate_ind.continuation_number,
+		      sys_cpu_to_le16(p->continuation_number),
+		      "ContinuationNumber mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.subrate_ind.timeout, sys_cpu_to_le16(p->timeout),
+		      "Timeout mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+void helper_node_verify_subrate_change(const char *file, uint32_t line, struct node_rx_pdu *rx,
+				       void *param)
+{
+	struct node_rx_subrate_change *pdu = (struct node_rx_subrate_change *)rx->pdu;
+	struct node_rx_subrate_change *p = param;
+
+	zassert_equal(rx->hdr.type, NODE_RX_TYPE_SUBRATE_CHANGE,
+		      "Not a SUBRATE_CHANGE node.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->status, p->status, "Status mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->subrate_factor, p->subrate_factor,
+		      "SubrateFactor mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->peripheral_latency, p->peripheral_latency,
+		      "PeripheralLatency mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->continuation_number, p->continuation_number,
+		      "ContinuationNumber mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->supervision_timeout, p->supervision_timeout,
+		      "SupervisionTimeout mismatch.\nCalled at %s:%d\n", file, line);
+}
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 void helper_pdu_verify_terminate_ind(const char *file, uint32_t line, struct pdu_data *pdu,
 				     void *param)
 {
@@ -1044,6 +1168,50 @@ void helper_pdu_verify_length_rsp(const char *file, uint32_t line, struct pdu_da
 		      "max_rx_time mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.length_rsp.max_tx_time, p->max_tx_time,
 		      "max_tx_time mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_fsu_req(const char *file, uint32_t line, struct pdu_data *pdu,
+			       void *param)
+{
+	struct pdu_data_llctrl_fsu_req *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
+		      line);
+	zassert_equal(pdu->len,
+		      offsetof(struct pdu_data_llctrl, fsu_req) +
+			      sizeof(struct pdu_data_llctrl_fsu_req),
+		      "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ,
+		      "Not a LL_FRAME_SPACE_REQ.\nCalled at %s:%d\n", file, line);
+	zassert_equal(sys_le16_to_cpu(pdu->llctrl.fsu_req.fsu_min), p->fsu_min,
+		      "fsu_min mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(sys_le16_to_cpu(pdu->llctrl.fsu_req.fsu_max), p->fsu_max,
+		      "fsu_max mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.fsu_req.phys, p->phys,
+		      "phys mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(sys_le16_to_cpu(pdu->llctrl.fsu_req.spacing_type), p->spacing_type,
+		      "spacing_type mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_fsu_rsp(const char *file, uint32_t line, struct pdu_data *pdu,
+			       void *param)
+{
+	struct pdu_data_llctrl_fsu_rsp *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
+		      line);
+	zassert_equal(pdu->len,
+		      offsetof(struct pdu_data_llctrl, fsu_rsp) +
+			      sizeof(struct pdu_data_llctrl_fsu_rsp),
+		      "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP,
+		      "Not a LL_FRAME_SPACE_RSP.\nCalled at %s:%d\n", file, line);
+	zassert_equal(sys_le16_to_cpu(pdu->llctrl.fsu_rsp.fsu), p->fsu,
+		      "fsu mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.fsu_rsp.phys, p->phys,
+		      "phys mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(sys_le16_to_cpu(pdu->llctrl.fsu_rsp.spacing_type), p->spacing_type,
+		      "spacing_type mismatch.\nCalled at %s:%d\n", file, line);
 }
 
 void helper_pdu_verify_cte_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)

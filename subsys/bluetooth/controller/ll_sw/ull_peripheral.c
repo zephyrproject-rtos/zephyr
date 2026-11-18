@@ -160,7 +160,7 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	if ((lll->data_chan_count < CHM_USED_COUNT_MIN) ||
 	    (lll->data_chan_hop < CHM_HOP_COUNT_MIN) ||
 	    (lll->data_chan_hop > CHM_HOP_COUNT_MAX) ||
-	    !lll->interval) {
+	    !IN_RANGE(lll->interval, BT_HCI_LE_INTERVAL_MIN, BT_HCI_LE_INTERVAL_MAX)) {
 		invalid_release(&adv->ull, lll, link, rx);
 
 		return;
@@ -380,6 +380,10 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	ull_fsu_init(conn, EVENT_IFS_DEFAULT_US);
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy_rx, PHY_FLAGS_S8);
 #else /* CONFIG_BT_CTLR_PHY */
@@ -395,6 +399,8 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	slot_us = max_rx_time + max_tx_time;
 	slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 	slot_us += ready_delay_us;
+	slot_us += lll->periph.window_widening_periodic_us << 1U;
+	slot_us += EVENT_JITTER_US << 1U;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
 		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
@@ -425,6 +431,19 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 	conn_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	conn_offset_us -= EVENT_JITTER_US;
 	conn_offset_us -= ready_delay_us;
+	/*
+	 * NOTE: Correct window widening for the first connection will be:
+	 *
+	 * conn_offset_us -=
+	 *         DIV_ROUND_UP(((lll_clock_ppm_local_get() +
+	 *                        lll_clock_ppm_get(conn->periph.sca)) *
+	 *                       (win_offset * CONN_INT_UNIT_US + win_delay_us)), USEC_PER_SEC);
+	 *
+	 * But, as currently in the implementation the drift compensation uses the
+	 * `lll->periph.window_widening_periodic_us` value, we may as well use that value here
+	 * as well. Adding another value for LLL to use seems overkill for this one case.
+	 */
+	conn_offset_us -= lll->periph.window_widening_periodic_us;
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* disable ticker job, in order to chain stop and start to avoid RTC

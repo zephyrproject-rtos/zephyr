@@ -46,7 +46,6 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static void prepare(void *param);
 static int create_prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx);
@@ -100,7 +99,9 @@ void lll_sync_create_prepare(void *param)
 {
 	int err;
 
-	prepare(param);
+	/* Request to start HF Clock */
+	err = lll_hfclock_on();
+	LL_ASSERT(err >= 0);
 
 	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(is_abort_cb, abort_cb, create_prepare_cb, 0, param);
@@ -111,35 +112,13 @@ void lll_sync_prepare(void *param)
 {
 	int err;
 
-	prepare(param);
-
-	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
-	LL_ASSERT(!err || err == -EINPROGRESS);
-}
-
-static void prepare(void *param)
-{
-	struct lll_prepare_param *p;
-	struct lll_sync *lll;
-	int err;
-
 	/* Request to start HF Clock */
 	err = lll_hfclock_on();
 	LL_ASSERT(err >= 0);
 
-	p = param;
-
-	lll = p->param;
-
-	lll->lazy_prepare = p->lazy;
-
-	/* Accumulate window widening */
-	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   (lll->lazy_prepare + 1U);
-	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
-		lll->window_widening_prepare_us = lll->window_widening_max_us;
-	}
+	/* Invoke common pipeline handling of prepare */
+	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, param);
+	LL_ASSERT(err == 0 || err == -EINPROGRESS);
 }
 
 void lll_sync_aux_prepare_cb(struct lll_sync *lll,
@@ -274,6 +253,7 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	lll = p->param;
 
 	/* Calculate the current event latency */
+	lll->lazy_prepare = p->lazy;
 	lll->skip_event = lll->skip_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
@@ -362,6 +342,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll = p->param;
 
 	/* Calculate the current event latency */
+	lll->lazy_prepare = p->lazy;
 	lll->skip_event = lll->skip_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
@@ -442,12 +423,20 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 
 	lll = p->param;
 
+	/* Accumulate window widening */
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us * lll->lazy_prepare;
+	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
+		lll->window_widening_prepare_us = lll->window_widening_max_us;
+	}
+
 	/* Current window widening */
 	lll->window_widening_event_us += lll->window_widening_prepare_us;
-	lll->window_widening_prepare_us = 0;
 	if (lll->window_widening_event_us > lll->window_widening_max_us) {
 		lll->window_widening_event_us =	lll->window_widening_max_us;
 	}
+
+	/* Pre-increment window widening */
+	lll->window_widening_prepare_us = lll->window_widening_periodic_us;
 
 	/* Reset chain PDU being scheduled by lll_sync context */
 	lll->is_aux_sched = 0U;
@@ -482,18 +471,17 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	remainder = p->remainder;
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
-	radio_tmr_aa_capture();
-
 	hcto = remainder_us +
 	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US + lll->window_widening_event_us)
 		<< 1) +
 	       lll->window_size_event_us;
 	hcto += radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy);
-	hcto += radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(lll->phy, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);
 
-	radio_tmr_end_capture();
+	/* capture aa to have aux_offset calculated for chain PDUs */
+	radio_tmr_aa_capture();
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
@@ -631,9 +619,19 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	err = lll_hfclock_off();
 	LL_ASSERT(err >= 0);
 
-	/* Accumulate the latency as event is aborted while being in pipeline */
+	/* Get reference to LLL connection context */
 	lll = prepare_param->param;
+
+	/* Accumulate the latency as event is aborted while being in pipeline */
+	lll->lazy_prepare = prepare_param->lazy;
 	lll->skip_prepare += (lll->lazy_prepare + 1U);
+
+	/* Accumulate window widening */
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
+					   (prepare_param->lazy + 1);
+	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
+		lll->window_widening_prepare_us = lll->window_widening_max_us;
+	}
 
 	/* Extra done event, to check sync lost */
 	e = ull_event_done_extra_get();
@@ -746,6 +744,9 @@ static void isr_aux_setup(void *param)
 	aux_start_us -= window_widening_us;
 	aux_start_us -= EVENT_JITTER_US;
 
+	/* +1 us radio_tmr_start_us compensation */
+	aux_start_us -= 1U;
+
 	start_us = radio_tmr_start_us(0, aux_start_us);
 	LL_ASSERT(start_us == (aux_start_us + 1U));
 
@@ -755,14 +756,12 @@ static void isr_aux_setup(void *param)
 	hcto += window_widening_us;
 	hcto += lll_radio_rx_ready_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += window_size_us;
-	hcto += radio_rx_chain_delay_get(phy_aux, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(phy_aux, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_aux);
 	radio_tmr_hcto_configure_abs(hcto);
 
-	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
-	 * channel chaining, create connection or to create periodic sync.
-	 */
-	radio_tmr_end_capture();
+	/* capture aa to have aux_offset calculated for chain PDUs */
+	radio_tmr_aa_capture();
 
 	/* scanner always measures RSSI */
 	radio_rssi_measure();
@@ -834,9 +833,17 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 			ftr->rssi = (rssi_ready) ? radio_rssi_get() :
 						   BT_HCI_LE_RSSI_NOT_AVAILABLE;
 			ftr->ticks_anchor = radio_tmr_start_get();
-			ftr->radio_end_us = radio_tmr_end_get() -
-					    radio_rx_chain_delay_get(lll->phy,
-								     phy_flags_rx);
+
+			uint32_t aa_delay_us;
+			uint32_t aa_us;
+
+			aa_us = radio_tmr_aa_get();
+			aa_delay_us = radio_rx_address_delay_get(lll->phy, phy_flags_rx);
+			aa_delay_us += addr_us_get(lll->phy);
+			LL_ASSERT_MSG(aa_us >= aa_delay_us, "aa_us %u < aa_delay_us %u", aa_us,
+				      aa_delay_us);
+
+			ftr->radio_end_us = aa_us - aa_delay_us;
 			ftr->phy_flags = phy_flags_rx;
 			ftr->sync_status = status;
 			ftr->sync_rx_enabled = lll->is_rx_enabled;

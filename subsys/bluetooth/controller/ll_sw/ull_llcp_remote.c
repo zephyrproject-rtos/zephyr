@@ -91,11 +91,13 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	case PROC_ENCRYPTION_PAUSE:
 	case PROC_TERMINATE:
 	case PROC_DATA_LENGTH_UPDATE:
+	case PROC_FRAME_SPACE:
 	case PROC_CTE_REQ:
 	case PROC_CIS_TERMINATE:
 	case PROC_CIS_CREATE:
 	case PROC_SCA_UPDATE:
 	case PROC_PERIODIC_SYNC:
+	case PROC_SUBRATE_UPDATE:
 		return 0U;
 	case PROC_PHY_UPDATE:
 	case PROC_CONN_UPDATE:
@@ -292,6 +294,11 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	case PROC_FRAME_SPACE:
+		llcp_rp_comm_rx(conn, ctx, rx);
+		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PROC_CTE_REQ:
 		llcp_rp_comm_rx(conn, ctx, rx);
@@ -317,6 +324,11 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 		llcp_rp_past_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	case PROC_SUBRATE_UPDATE:
+		llcp_rp_subrate_rx(conn, ctx, rx);
+		break;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -339,6 +351,11 @@ void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		llcp_rp_comm_tx_ack(conn, ctx, tx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	case PROC_FRAME_SPACE:
+		llcp_rp_comm_tx_ack(conn, ctx, tx);
+		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		llcp_rp_pu_tx_ack(conn, ctx, tx);
@@ -354,6 +371,11 @@ void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		llcp_rp_comm_tx_ack(conn, ctx, tx);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	case PROC_SUBRATE_UPDATE:
+		llcp_rp_subrate_tx_ack(conn, ctx, tx);
+		break;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 	default:
 		/* Ignore tx_ack */
 		break;
@@ -432,6 +454,11 @@ static void rr_act_run(struct ll_conn *conn)
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	case PROC_FRAME_SPACE:
+		llcp_rp_comm_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PROC_CTE_REQ:
 		llcp_rp_comm_run(conn, ctx, NULL);
@@ -457,6 +484,11 @@ static void rr_act_run(struct ll_conn *conn)
 		llcp_rp_past_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	case PROC_SUBRATE_UPDATE:
+		llcp_rp_subrate_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -878,6 +910,10 @@ static const struct proc_role new_proc_lut[] = {
 	[PDU_DATA_LLCTRL_TYPE_LENGTH_REQ] = { PROC_DATA_LENGTH_UPDATE, ACCEPT_ROLE_BOTH },
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	[PDU_DATA_LLCTRL_TYPE_LENGTH_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ] = { PROC_FRAME_SPACE, ACCEPT_ROLE_BOTH },
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
 #if defined(CONFIG_BT_CTLR_PHY)
 	[PDU_DATA_LLCTRL_TYPE_PHY_REQ] = { PROC_PHY_UPDATE, ACCEPT_ROLE_BOTH },
 #endif /* CONFIG_BT_CTLR_PHY */
@@ -910,6 +946,12 @@ static const struct proc_role new_proc_lut[] = {
 #if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
 	[PDU_DATA_LLCTRL_TYPE_PERIODIC_SYNC_IND] = { PROC_PERIODIC_SYNC, ACCEPT_ROLE_BOTH },
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	/* Peripheral requests subrating via LL_SUBRATE_REQ; only a Central accepts it (5.1.20) */
+	[PDU_DATA_LLCTRL_TYPE_SUBRATE_REQ] = { PROC_SUBRATE_UPDATE, ACCEPT_ROLE_CENTRAL },
+	/* Central updates subrating via LL_SUBRATE_IND; only a Peripheral accepts it (5.1.19) */
+	[PDU_DATA_LLCTRL_TYPE_SUBRATE_IND] = { PROC_SUBRATE_UPDATE, ACCEPT_ROLE_PERIPHERAL },
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 };
 
 void llcp_rr_new(struct ll_conn *conn, memq_link_t *link, struct node_rx_pdu *rx, bool valid_pdu)

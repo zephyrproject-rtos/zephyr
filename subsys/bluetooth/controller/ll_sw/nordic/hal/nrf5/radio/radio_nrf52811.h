@@ -207,13 +207,21 @@
 #define HAL_RADIO_NRF52811_TX_CHAIN_DELAY_S8_US  1 /* ceil(0.6) */
 #define HAL_RADIO_NRF52811_TX_CHAIN_DELAY_S8_NS  600 /* 0.6 */
 
+#define HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_1M_US  10 /* ceil(9.4) */
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_1M_US  10 /* ceil(9.4) */
+#define HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_1M_NS  9400 /* 9.4 */
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_1M_NS  9400 /* 9.4 */
+#define HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_2M_US  5 /* ceil(5.0) */
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_2M_US  5 /* ceil(5.0) */
+#define HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_2M_NS  5000 /* 5.0 */
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_2M_NS  5000 /* 5.0 */
+#define HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_S2_US  55
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_S2_US  25 /* ceil(24.6) */
+#define HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_S2_NS  54563
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_S2_NS  24600 /* 24.6 */
+#define HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_S8_US  55
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_S8_US  30 /* ceil(29.6) */
+#define HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_S8_NS  54563
 #define HAL_RADIO_NRF52811_RX_CHAIN_DELAY_S8_NS  29600 /* 29.6 */
 
 #if defined(CONFIG_BT_CTLR_RADIO_ENABLE_FAST)
@@ -444,51 +452,88 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 	return mode;
 }
 
-static inline uint32_t hal_radio_tx_power_min_get(void)
+static inline int8_t hal_radio_tx_power_min_get(void)
 {
-	return RADIO_TXPOWER_TXPOWER_Neg40dBm;
+	return -40; /* -40 dBm */
 }
 
-static inline uint32_t hal_radio_tx_power_max_get(void)
+static inline int8_t hal_radio_tx_power_max_get(void)
 {
-	return RADIO_TXPOWER_TXPOWER_Pos4dBm;
+	return 4; /* +4 dBm */
 }
 
-static inline uint32_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
+static inline int8_t hal_radio_tx_power_floor(int8_t tx_power_lvl)
 {
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos4dBm) {
-		return RADIO_TXPOWER_TXPOWER_Pos4dBm;
+	if (tx_power_lvl >= 4) {
+		return 4;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Pos3dBm) {
-		return RADIO_TXPOWER_TXPOWER_Pos3dBm;
+	if (tx_power_lvl >= 3) {
+		return 3;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_0dBm) {
-		return RADIO_TXPOWER_TXPOWER_0dBm;
+	if (tx_power_lvl >= 0) {
+		return 0;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg4dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg4dBm;
+	if (tx_power_lvl >= -4) {
+		return -4;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg8dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg8dBm;
+	if (tx_power_lvl >= -8) {
+		return -8;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg12dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg12dBm;
+	if (tx_power_lvl >= -12) {
+		return -12;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg16dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg16dBm;
+	if (tx_power_lvl >= -16) {
+		return -16;
 	}
 
-	if (tx_power_lvl >= (int8_t)RADIO_TXPOWER_TXPOWER_Neg20dBm) {
-		return RADIO_TXPOWER_TXPOWER_Neg20dBm;
+	if (tx_power_lvl >= -20) {
+		return -20;
 	}
 
 	/* Note: The -30 dBm power level is deprecated so ignore it! */
+	return -40;
+}
+
+static inline uint32_t hal_radio_tx_power_value(int8_t tx_power_lvl)
+{
+	if (tx_power_lvl >= 4) {
+		return RADIO_TXPOWER_TXPOWER_Pos4dBm;
+	}
+
+	if (tx_power_lvl >= 3) {
+		return RADIO_TXPOWER_TXPOWER_Pos3dBm;
+	}
+
+	if (tx_power_lvl >= 0) {
+		return RADIO_TXPOWER_TXPOWER_0dBm;
+	}
+
+	if (tx_power_lvl >= -4) {
+		return RADIO_TXPOWER_TXPOWER_Neg4dBm;
+	}
+
+	if (tx_power_lvl >= -8) {
+		return RADIO_TXPOWER_TXPOWER_Neg8dBm;
+	}
+
+	if (tx_power_lvl >= -12) {
+		return RADIO_TXPOWER_TXPOWER_Neg12dBm;
+	}
+
+	if (tx_power_lvl >= -16) {
+		return RADIO_TXPOWER_TXPOWER_Neg16dBm;
+	}
+
+	if (tx_power_lvl >= -20) {
+		return RADIO_TXPOWER_TXPOWER_Neg20dBm;
+	}
+
 	return RADIO_TXPOWER_TXPOWER_Neg40dBm;
 }
 
@@ -547,6 +592,26 @@ static inline uint32_t hal_radio_tx_chain_delay_us_get(uint8_t phy, uint8_t flag
 			return HAL_RADIO_NRF52811_TX_CHAIN_DELAY_S8_US;
 		} else {
 			return HAL_RADIO_NRF52811_TX_CHAIN_DELAY_S2_US;
+		}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+	}
+}
+
+static inline uint32_t hal_radio_rx_address_delay_us_get(uint8_t phy, uint8_t flags)
+{
+	switch (phy) {
+	default:
+	case BIT(0):
+		return HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_1M_US;
+	case BIT(1):
+		return HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_2M_US;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	case BIT(2):
+		if (flags & 0x01) {
+			return HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_S8_US;
+		} else {
+			return HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_S2_US;
 		}
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
@@ -627,6 +692,26 @@ static inline uint32_t hal_radio_tx_chain_delay_ns_get(uint8_t phy, uint8_t flag
 			return HAL_RADIO_NRF52811_TX_CHAIN_DELAY_S8_NS;
 		} else {
 			return HAL_RADIO_NRF52811_TX_CHAIN_DELAY_S2_NS;
+		}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+	}
+}
+
+static inline uint32_t hal_radio_rx_address_delay_ns_get(uint8_t phy, uint8_t flags)
+{
+	switch (phy) {
+	default:
+	case BIT(0):
+		return HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_1M_NS;
+	case BIT(1):
+		return HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_2M_NS;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	case BIT(2):
+		if (flags & 0x01) {
+			return HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_S8_NS;
+		} else {
+			return HAL_RADIO_NRF52811_RX_ADDRESS_DELAY_S2_NS;
 		}
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}

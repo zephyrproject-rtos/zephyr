@@ -19,12 +19,10 @@ config BT_LLL_VENDOR_NORDIC
 
 	select BT_HAS_HCI_VS
 	select BT_CTLR_CRYPTO_SUPPORT
-	select BT_CTLR_LE_ENC_SUPPORT if BT_CTLR_CRYPTO_SUPPORT && \
-					 !BT_CTLR_DATA_LENGTH_CLEAR && \
-					 !BT_CTLR_PHY_2M_NRF
-	select BT_CTLR_PRIVACY_SUPPORT if BT_CTLR_CRYPTO_SUPPORT && \
-					  !SOC_SERIES_NRF51X && \
-					  !SOC_COMPATIBLE_NRF54LX
+	select BT_CTLR_LE_ENC_SUPPORT if BT_CTLR_CRYPTO && !BT_CTLR_DATA_LENGTH_CLEAR && \
+		!BT_CTLR_PHY_2M_NRF
+	select BT_CTLR_PRIVACY_SUPPORT if BT_CTLR_CRYPTO && !SOC_SERIES_NRF51X && \
+		!SOC_COMPATIBLE_NRF54LX
 	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
 	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
@@ -51,10 +49,12 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_SCA_UPDATE_SUPPORT
+	select BT_CTLR_SUBRATING_SUPPORT
 	select BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT
 	select BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
 	select BT_CTLR_CONN_RSSI_SUPPORT
+	select BT_CTLR_FRAME_SPACE_UPDATE_SUPPORT
 
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
@@ -81,9 +81,8 @@ config BT_LLL_VENDOR_OPENISA
 	select BT_HAS_HCI_VS
 	select BT_CTLR_ENTROPY_SUPPORT
 	select BT_CTLR_CRYPTO_SUPPORT
-	select BT_CTLR_LE_ENC_SUPPORT if BT_CTLR_CRYPTO_SUPPORT && \
-					 !BT_CTLR_DATA_LENGTH_CLEAR
-	select BT_CTLR_PRIVACY_SUPPORT if BT_CTLR_CRYPTO_SUPPORT
+	select BT_CTLR_LE_ENC_SUPPORT if BT_CTLR_CRYPTO && !BT_CTLR_DATA_LENGTH_CLEAR
+	select BT_CTLR_PRIVACY_SUPPORT if BT_CTLR_CRYPTO
 	select BT_CTLR_PHY_UPDATE_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
 
@@ -119,11 +118,13 @@ config BT_CTLR_ULL_LLL_PRIO_SUPPORT
 config BT_CTLR_RX_PRIO_STACK_SIZE
 	# Hidden, Controller's Co-Operative high priority Rx thread stack size.
 	int
+	default 2048 if NO_OPTIMIZATIONS
 	default 448
 
 config BT_CTLR_RX_STACK_SIZE
 	# Hidden, Controller's Co-Operative Rx thread stack size.
 	int
+	default 2048 if NO_OPTIMIZATIONS
 	default 896
 
 config BT_CTLR_SETTINGS
@@ -507,10 +508,20 @@ config BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
 	  that is part of PDU data.
 
 config BT_CTRL_ADV_ADI_IN_SCAN_RSP
+	bool "Include ADI in AUX_SCAN_RSP PDU [DEPRECATED]"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	select BT_CTLR_ADV_ADI_IN_SCAN_RSP
+	select DEPRECATED
+	help
+	  DEPRECATED: Renamed as BT_CTLR_ADV_ADI_IN_SCAN_RSP.
+
+	  Enable ADI field in AUX_SCAN_RSP PDU.
+
+config BT_CTLR_ADV_ADI_IN_SCAN_RSP
 	bool "Include ADI in AUX_SCAN_RSP PDU"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
 	help
-	  Enable ADI field in AUX_SCAN_RSP PDU
+	  Enable ADI field in AUX_SCAN_RSP PDU.
 
 config BT_CTLR_SCAN_AUX_USE_CHAINS
 	bool "Use new chains based implementation for following advertising chains"
@@ -1109,7 +1120,7 @@ config BT_CTLR_FORCE_MD_AUTO
 
 config BT_CTLR_CONN_RANDOM_FORCE
 	bool "Random forced scheduling for peripheral on missed anchor point"
-	depends on BT_PERIPHERAL
+	depends on BT_PERIPHERAL && (BT_MAX_CONN > 1)
 	default y
 	help
 	  When enabled, controller will have legacy behavior and randomly force
@@ -1151,6 +1162,31 @@ config BT_CTLR_EVENT_IFS_LOW_LAT_US
 	default 150
 	help
 	  Set low latency tIFS value.
+
+config BT_CTLR_FRAME_SPACE_MIN_US
+	int "Minimum frame space in microseconds"
+	depends on BT_CTLR_FRAME_SPACE_UPDATE
+	range 52 150 if BT_CTLR_RADIO_ENABLE_FAST && !BT_CTLR_TIFS_HW
+	range 150 150
+	default 52 if BT_CTLR_RADIO_ENABLE_FAST && !BT_CTLR_TIFS_HW
+	default 150
+	help
+	  Minimum frame space the Controller accepts and selects in the Frame
+	  Space Update procedure. Software tIFS Trx switching with fast radio
+	  ramp-up supports frame space lower than the default 150
+	  microseconds.
+
+config BT_CTLR_FRAME_SPACE_MAX_US
+	int "Maximum frame space in microseconds"
+	depends on BT_CTLR_FRAME_SPACE_UPDATE
+	range BT_CTLR_FRAME_SPACE_MIN_US 1023 if BT_CTLR_TIFS_HW
+	range BT_CTLR_FRAME_SPACE_MIN_US 10000
+	default 1023 if BT_CTLR_TIFS_HW
+	default 10000
+	help
+	  Maximum frame space the Controller accepts in the Frame Space Update
+	  procedure. H/w accelerated tIFS Trx switching is limited by the
+	  10-bit Radio TIFS register.
 
 endif # BT_CONN
 
@@ -1242,7 +1278,6 @@ config BT_TICKER_REMAINDER_GET
 	depends on BT_TICKER_REMAINDER_SUPPORT
 	select BT_TICKER_NEXT_SLOT_GET
 	select BT_TICKER_NEXT_SLOT_GET_MATCH
-	default y
 	help
 	  This option enables ticker interface to iterate through active
 	  ticker nodes, returning tick to expire and remainder from a reference
@@ -1420,6 +1455,15 @@ config BT_CTLR_PROFILE_ISR
 	  controller event with these profiling data. The controller event
 	  contains current, minimum and maximum ISR entry latencies; and
 	  current, minimum and maximum ISR CPU use in micro-seconds.
+
+config BT_CTLR_TEST_CONN_EVENT_COUNT
+	bool "Count connection events for testing"
+	help
+	  Test-only instrumentation: count, per connection, the connection events
+	  the device was actually present for (radio active), exposed via the
+	  ll_test_conn_event_count[] array for bsim cadence assertions (e.g. that
+	  the subrate skip is honored and the link is not bursting to full rate).
+	  Not for production use.
 
 config BT_CTLR_DEBUG_PINS
 	bool "Bluetooth Controller Debug Pins"

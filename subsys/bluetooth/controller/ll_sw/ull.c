@@ -294,6 +294,9 @@ BUILD_ASSERT(TICKER_NODES <= UINT8_MAX);
 #define TICKER_USER_THREAD_OPS   (1 + TICKER_USER_THREAD_VENDOR_OPS + 1)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT */
 
+/* NOTE: As ticker job will execute as immediate function call in ULL_LOW
+ *       context, no need for extra ULL_LOW operation queue element.
+ */
 #define TICKER_USER_ULL_LOW_OPS  (1 + TICKER_USER_ULL_LOW_VENDOR_OPS + 1)
 
 /* NOTE: Extended Advertising needs one extra ticker operation being enqueued
@@ -304,16 +307,37 @@ BUILD_ASSERT(TICKER_NODES <= UINT8_MAX);
  *       scan window is stopping the two scan tickers, stopping one scan stop
  *       ticker and starting one new ticker for establishing an ACL connection.
  */
+#define TICKER_USER_ULL_HIGH_ADV_OPS BT_CTLR_ADV_SET
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#define TICKER_USER_ULL_HIGH_OPS (4 + TICKER_USER_ULL_HIGH_VENDOR_OPS + \
+#if !defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+#define TICKER_USER_ULL_HIGH_SCAN_AUX_OPS 1
+#else /* CONFIG_BT_OBSERVER && !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
+#define TICKER_USER_ULL_HIGH_SCAN_AUX_OPS CONFIG_BT_CTLR_SCAN_AUX_SET
+#endif /* CONFIG_BT_OBSERVER && !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
+#define TICKER_USER_ULL_HIGH_OPS (4 + \
+				  TICKER_USER_ULL_HIGH_ADV_OPS + \
+				  TICKER_USER_ULL_HIGH_SCAN_AUX_OPS + \
+				  TICKER_USER_ULL_HIGH_VENDOR_OPS + \
 				  TICKER_USER_ULL_HIGH_FLASH_OPS + 1)
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
-#define TICKER_USER_ULL_HIGH_OPS (3 + TICKER_USER_ULL_HIGH_VENDOR_OPS + \
+#define TICKER_USER_ULL_HIGH_OPS (3 + \
+				  TICKER_USER_ULL_HIGH_ADV_OPS + \
+				  TICKER_USER_ULL_HIGH_VENDOR_OPS + \
 				  TICKER_USER_ULL_HIGH_FLASH_OPS + 1)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
+#if defined(CONFIG_BT_CTLR_LOW_LAT)
 #define TICKER_USER_LLL_OPS      (3 + TICKER_USER_LLL_VENDOR_OPS + 1)
+#else /* !CONFIG_BT_CTLR_LOW_LAT */
+/* NOTE: The value below covers cases where the scanner has enqueued a stop
+ *       request, the preempt has a start request enqueued and the preemption
+ *       on a new ticker expiry will enqueue addition stop and a new start
+ *       request.
+ */
+#define TICKER_USER_LLL_OPS      (5 + TICKER_USER_LLL_VENDOR_OPS + 1)
+#endif /* !CONFIG_BT_CTLR_LOW_LAT */
 
+/* Total elements for all operation queues */
 #define TICKER_USER_OPS           (TICKER_USER_LLL_OPS + \
 				   TICKER_USER_ULL_HIGH_OPS + \
 				   TICKER_USER_ULL_LOW_OPS + \
@@ -428,8 +452,7 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define PDU_ADV_SIZE  MAX(PDU_AC_LL_SIZE_MAX, \
 			  (PDU_AC_LL_HEADER_SIZE + LL_EXT_OCTETS_RX_MAX))
 
-#define PDU_DATA_SIZE MAX((PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX), \
-			  (PDU_BIS_LL_HEADER_SIZE + LL_BIS_OCTETS_RX_MAX))
+#define PDU_DATA_SIZE (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
 #define PDU_CTRL_SIZE (PDU_DC_LL_HEADER_SIZE + PDU_DC_CTRL_RX_SIZE_MAX)
 
@@ -457,6 +480,12 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define BT_CTLR_SCAN_SYNC_ISO_SET CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET
 #else
 #define BT_CTLR_SCAN_SYNC_ISO_SET 0
+#endif
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
+#define BT_CTLR_CONN_ISO_STREAMS CONFIG_BT_CTLR_CONN_ISO_STREAMS
+#else
+#define BT_CTLR_CONN_ISO_STREAMS 0
 #endif
 
 #define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * \
@@ -508,7 +537,7 @@ static struct {
 	(sizeof(memq_link_t) *                                                 \
 	 (RX_CNT + 2 + BT_CTLR_MAX_CONN + BT_CTLR_ADV_SET +                    \
 	  (BT_CTLR_ADV_ISO_SET * 2) + (BT_CTLR_SCAN_SYNC_SET * 2) +            \
-	  (BT_CTLR_SCAN_SYNC_ISO_SET * 2) +                                    \
+	  (BT_CTLR_SCAN_SYNC_ISO_SET * 2) + BT_CTLR_CONN_ISO_STREAMS +         \
 	  (IQ_REPORT_CNT)))
 static struct {
 	uint16_t quota_pdu; /* Number of un-utilized buffers */
@@ -969,8 +998,8 @@ void ll_reset(void)
 uint8_t ll_rx_get(void **node_rx, uint16_t *handle)
 {
 	struct node_rx_pdu *rx;
-	memq_link_t *link;
 	uint8_t cmplt = 0U;
+	memq_link_t *link;
 
 #if defined(CONFIG_BT_CONN) || \
 	(defined(CONFIG_BT_OBSERVER) && defined(CONFIG_BT_CTLR_ADV_EXT)) || \
@@ -984,6 +1013,20 @@ ll_rx_get_again:
 	*/
 
 	*node_rx = NULL;
+
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
+	/* Save the tx_ack FIFO's last index to avoid the value being changed if there were no
+	 * Rx PDUs and we were pre-empted before calling `tx_cmplt_get()`, that may advance the
+	 * first index beyond ack_last value recorded in node_rx enqueued by `ll_rx_put()` call
+	 * when we are in the `else` clause below.
+	 */
+	uint8_t tx_ack_last = mfifo_fifo_tx_ack.l;
+
+	/* Ensure that the value is fetched before call to memq_peek, i.e. compiler shall not
+	 * reorder memory write before above read.
+	 */
+	cpu_dmb();
+#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 
 	link = memq_peek(memq_ll_rx.head, memq_ll_rx.tail, (void **)&rx);
 	if (link) {
@@ -1065,8 +1108,11 @@ ll_rx_get_again:
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
 		}
 	} else {
-		cmplt = tx_cmplt_get(handle, &mfifo_fifo_tx_ack.f,
-				     mfifo_fifo_tx_ack.l);
+		/* Use the saved ack last value, before call was done to memq_peek, to ensure we
+		 * do not advance the first index `f` beyond the value that was the last index `l`
+		 * when memq_peek was called.
+		 */
+		cmplt = tx_cmplt_get(handle, &mfifo_fifo_tx_ack.f, tx_ack_last);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 	}
 
@@ -1333,6 +1379,10 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_CONN_UPDATE:
 	case NODE_RX_TYPE_ENC_REFRESH:
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	case NODE_RX_TYPE_SUBRATE_CHANGE:
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case NODE_RX_TYPE_APTO:
 #endif /* CONFIG_BT_CTLR_LE_PING */
@@ -1532,6 +1582,10 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_CONN_UPDATE:
 		case NODE_RX_TYPE_ENC_REFRESH:
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+		case NODE_RX_TYPE_SUBRATE_CHANGE:
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 #if defined(CONFIG_BT_CTLR_LE_PING)
 		case NODE_RX_TYPE_APTO:
 #endif /* CONFIG_BT_CTLR_LE_PING */
@@ -1697,6 +1751,7 @@ void ll_rx_mem_release(void **node_rx)
 				memq_link_t *link;
 
 				conn = ll_conn_get(rx_free->hdr.handle);
+				LL_ASSERT(conn != NULL);
 
 				LL_ASSERT(!conn->lll.link_tx_free);
 				link = memq_deinit(&conn->lll.memq_tx.head,
@@ -1706,8 +1761,8 @@ void ll_rx_mem_release(void **node_rx)
 
 				ll_conn_release(conn);
 			} else if (IS_CIS_HANDLE(rx_free->hdr.handle)) {
-				ll_rx_link_quota_inc();
-				ll_rx_release(rx_free);
+				/* Notify ull_conn_iso */
+				ull_conn_iso_cis_terminate_done(rx_free);
 			}
 		}
 		break;
@@ -1902,11 +1957,21 @@ void ull_ticker_status_give(uint32_t status, void *param)
 uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb)
 {
 	if ((ret == TICKER_STATUS_BUSY) || (*ret_cb != TICKER_STATUS_BUSY)) {
+		/* lll_prepare_done() will disable ULL_LOW execution context when inside a Radio
+		 * event. Hence, force enable ULL_LOW execution context here so that ticker
+		 * operation be processed.
+		 */
+		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
+		    (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
+			mayfly_enable(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_LOW, 1U);
+		}
+
 		/* Operation is either pending of completed via callback
 		 * prior to this function call. Take the semaphore and wait,
 		 * or take it to balance take/give counting.
 		 */
 		k_sem_take(&sem_ticker_api_cb, K_FOREVER);
+
 		return *ret_cb;
 	}
 
@@ -2124,6 +2189,8 @@ void *ull_prepare_dequeue_iter(uint8_t *idx)
 
 void ull_prepare_dequeue(uint8_t caller_id)
 {
+	uint32_t param_normal_head_ticks = 0U;
+	uint32_t param_normal_next_ticks = 0U;
 	void *param_normal_head = NULL;
 	void *param_normal_next = NULL;
 	void *param_resume_head = NULL;
@@ -2160,6 +2227,7 @@ void ull_prepare_dequeue(uint8_t caller_id)
 
 	next = ull_prepare_dequeue_get();
 	while (next) {
+		uint32_t ticks = next->prepare_param.ticks_at_expire;
 		void *param = next->prepare_param.param;
 		uint8_t is_aborted = next->is_aborted;
 		uint8_t is_resume = next->is_resume;
@@ -2207,8 +2275,10 @@ void ull_prepare_dequeue(uint8_t caller_id)
 			if (!is_resume) {
 				if (!param_normal_head) {
 					param_normal_head = param;
+					param_normal_head_ticks = ticks;
 				} else if (!param_normal_next) {
 					param_normal_next = param;
+					param_normal_next_ticks = ticks;
 				}
 			} else {
 				if (!param_resume_head) {
@@ -2224,16 +2294,15 @@ void ull_prepare_dequeue(uint8_t caller_id)
 			 */
 			if (!next->is_aborted &&
 			    ((!next->is_resume &&
-			      ((next->prepare_param.param ==
-				param_normal_head) ||
-			       (next->prepare_param.param ==
-				param_normal_next))) ||
-			     (next->is_resume &&
-			      !param_normal_next &&
-			      ((next->prepare_param.param ==
-				param_resume_head) ||
-			       (next->prepare_param.param ==
-				param_resume_next))))) {
+			      (((next->prepare_param.param == param_normal_head) &&
+				(next->prepare_param.ticks_at_expire ==
+				 param_normal_head_ticks)) ||
+			       ((next->prepare_param.param == param_normal_next) &&
+				(next->prepare_param.ticks_at_expire ==
+				 param_normal_next_ticks)))) ||
+			     (next->is_resume && !param_normal_next &&
+			      ((next->prepare_param.param == param_resume_head) ||
+			       (next->prepare_param.param == param_resume_next))))) {
 				break;
 			}
 		}
@@ -2561,24 +2630,32 @@ static void rx_demux(void *param)
 	do {
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 		struct node_rx_hdr *rx;
-
-		link = memq_peek(memq_ull_rx.head, memq_ull_rx.tail,
-				 (void **)&rx);
-		if (link) {
 #if defined(CONFIG_BT_CONN)
-			struct node_tx *node_tx;
-			memq_link_t *link_tx;
-			uint16_t handle; /* Handle to Ack TX */
+		struct node_tx *tx;
+		memq_link_t *link_tx;
+		uint8_t ack_last;
+		uint16_t handle; /* Handle to Ack TX */
+
+		/* Save the ack_last, Tx Ack FIFO's last index to avoid the value being changed if
+		 * there were no Rx PDUs and we were pre-empted before calling
+		 * `rx_demux_conn_tx_ack()` in the `else` clause.
+		 */
+		link_tx = ull_conn_ack_peek(&ack_last, &handle, &tx);
+
+		/* Ensure that the value is fetched before call to memq_peek, i.e. compiler shall
+		 * not reorder memory write before above read.
+		 */
+		cpu_dmb();
 #endif /* CONFIG_BT_CONN */
 
+		link = memq_peek(memq_ull_rx.head, memq_ull_rx.tail, (void **)&rx);
+		if (link) {
 			LL_ASSERT(rx);
 
 #if defined(CONFIG_BT_CONN)
-			link_tx = ull_conn_ack_by_last_peek(rx->ack_last,
-							    &handle, &node_tx);
+			link_tx = ull_conn_ack_by_last_peek(rx->ack_last, &handle, &tx);
 			if (link_tx) {
-				rx_demux_conn_tx_ack(rx->ack_last, handle,
-						     link_tx, node_tx);
+				rx_demux_conn_tx_ack(rx->ack_last, handle, link_tx, tx);
 			} else
 #endif /* CONFIG_BT_CONN */
 			{
@@ -2590,21 +2667,14 @@ static void rx_demux(void *param)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 #if defined(CONFIG_BT_CONN)
-		} else {
-			struct node_tx *node_tx;
-			uint8_t ack_last;
-			uint16_t handle;
-
-			link = ull_conn_ack_peek(&ack_last, &handle, &node_tx);
-			if (link) {
-				rx_demux_conn_tx_ack(ack_last, handle,
-						      link, node_tx);
+		} else if (link_tx) {
+			rx_demux_conn_tx_ack(ack_last, handle, link_tx, tx);
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
-				rx_demux_yield();
-#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
-
-			}
+			rx_demux_yield();
+#else /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
+			link = link_tx;
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 #endif /* CONFIG_BT_CONN */
 		}
 
@@ -2879,6 +2949,8 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
 		conn = ll_conn_get(rx->handle);
+		LL_ASSERT(conn != NULL);
+
 		if (ull_cp_cc_awaiting_established(conn)) {
 			ull_cp_cc_established(conn, BT_HCI_ERR_SUCCESS);
 		}

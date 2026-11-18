@@ -399,29 +399,15 @@ static int aux_ptr_get(struct pdu_adv *pdu, struct pdu_adv_aux_ptr **aux_ptr)
 	*/
 
 #if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-static void isr_race(void *param)
-{
-	radio_status_reset();
-}
-
 static void isr_early_abort(void *param)
 {
 	struct event_done_extra *extra;
-	int err;
 
 	/* Generate auxiliary radio event done */
 	extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_ADV_AUX);
 	LL_ASSERT(extra);
 
-	radio_isr_set(isr_race, param);
-	if (!radio_is_idle()) {
-		radio_disable();
-	}
-
-	err = lll_hfclock_off();
-	LL_ASSERT(err >= 0);
-
-	lll_done(NULL);
+	lll_isr_early_abort(param);
 }
 #endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
@@ -452,6 +438,11 @@ static void isr_tx_chain(void *param)
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_latency_capture();
 	}
+
+	/* Call to ensure packet/event timer accumulates the elapsed time
+	 * under single timer use.
+	 */
+	(void)radio_is_tx_done();
 
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
@@ -488,7 +479,12 @@ static void isr_tx_chain(void *param)
 	radio_pkt_tx_set(pdu);
 
 	/* assert if radio packet ptr is not set and radio started rx */
-	LL_ASSERT(!radio_is_ready());
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+			      lll_prof_latency_get());
+	} else {
+		LL_ASSERT(!radio_is_ready());
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
@@ -594,7 +590,11 @@ static void isr_tx_rx(void *param)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
-	radio_switch_complete_and_tx(lll->phy_s, 0, lll->phy_s, lll->phy_flags);
+	/* The RX coding is determined by the radio; TX uses the selected
+	 * advertising coding scheme.
+	 */
+	radio_switch_complete_and_tx(lll->phy_s, PHY_FLAGS_UNUSED, lll->phy_s,
+				     lll->phy_flags);
 
 	/* setup Rx buffer */
 	node_rx = ull_pdu_rx_alloc_peek(1);
@@ -602,7 +602,12 @@ static void isr_tx_rx(void *param)
 	radio_pkt_rx_set(node_rx->pdu);
 
 	/* assert if radio packet ptr is not set and radio started rx */
-	LL_ASSERT(!radio_is_ready());
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+			      lll_prof_latency_get());
+	} else {
+		LL_ASSERT(!radio_is_ready());
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
@@ -622,7 +627,7 @@ static void isr_tx_rx(void *param)
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
-	hcto += radio_rx_chain_delay_get(lll->phy_s, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(lll->phy_s, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy_s);
 	hcto -= radio_tx_chain_delay_get(lll->phy_s, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);
@@ -775,8 +780,8 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux, uint8_t phy_flags_rx,
 
 	if ((pdu_rx->type == PDU_ADV_TYPE_AUX_SCAN_REQ) &&
 	    (pdu_rx->len == sizeof(struct pdu_adv_scan_req)) &&
-	    lll_adv_scan_req_check(lll, pdu_rx, tx_addr, addr, devmatch_ok,
-				   &rl_idx)) {
+	    lll_adv_scan_req_check(lll, pdu_rx, tx_addr, addr, rx_addr,
+				   tgt_addr, devmatch_ok, &rl_idx)) {
 		struct pdu_adv *sr_pdu;
 
 		sr_pdu = lll_adv_scan_rsp_curr_get(lll);
@@ -809,7 +814,12 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux, uint8_t phy_flags_rx,
 		radio_pkt_tx_set(sr_pdu);
 
 		/* assert if radio packet ptr is not set and radio started tx */
-		LL_ASSERT(!radio_is_ready());
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+				      lll_prof_latency_get());
+		} else {
+			LL_ASSERT(!radio_is_ready());
+		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 			lll_prof_cputime_capture();
@@ -881,7 +891,12 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux, uint8_t phy_flags_rx,
 		radio_pkt_tx_set(pdu_tx);
 
 		/* assert if radio packet ptr is not set and radio started tx */
-		LL_ASSERT(!radio_is_ready());
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
+				      lll_prof_latency_get());
+		} else {
+			LL_ASSERT(!radio_is_ready());
+		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 			lll_prof_cputime_capture();

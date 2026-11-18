@@ -406,6 +406,35 @@ void ull_cp_init(void)
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
 }
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+/* Controller default subrate parameters, set via HCI_LE_Set_Default_Subrate and applied
+ * to the acceptable parameters of subsequently established connections.
+ */
+static struct {
+	uint16_t subrate_min;
+	uint16_t subrate_max;
+	uint16_t max_latency;
+	uint16_t continuation_number;
+	uint16_t supervision_timeout;
+} subrate_defaults = {
+	.subrate_min = 0x0001U,
+	.subrate_max = 0x0001U,
+	.max_latency = 0x0000U,
+	.continuation_number = 0x0000U,
+	.supervision_timeout = 0x0C80U,
+};
+
+void ll_subrate_defaults_set(uint16_t subrate_min, uint16_t subrate_max, uint16_t max_latency,
+			     uint16_t continuation_number, uint16_t supervision_timeout)
+{
+	subrate_defaults.subrate_min = subrate_min;
+	subrate_defaults.subrate_max = subrate_max;
+	subrate_defaults.max_latency = max_latency;
+	subrate_defaults.continuation_number = continuation_number;
+	subrate_defaults.supervision_timeout = supervision_timeout;
+}
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 void ull_llcp_init(struct ll_conn *conn)
 {
 	/* Reset local request fsm */
@@ -422,6 +451,21 @@ void ull_llcp_init(struct ll_conn *conn)
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	conn->llcp.remote.paused_cmd = PROC_NONE;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	/* New connection starts non-subrated (factor 1); seed the Host-provided
+	 * acceptable parameters from the controller defaults.
+	 */
+	conn->subrate.factor = 1U;
+	conn->subrate.base_event = 0U;
+	conn->subrate.continuation_number = 0U;
+	conn->subrate.peripheral_latency = 0U;
+	conn->subrate.acc_factor_min = subrate_defaults.subrate_min;
+	conn->subrate.acc_factor_max = subrate_defaults.subrate_max;
+	conn->subrate.acc_max_latency = subrate_defaults.max_latency;
+	conn->subrate.acc_continuation_number = subrate_defaults.continuation_number;
+	conn->subrate.acc_supervision_timeout = subrate_defaults.supervision_timeout;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 
 	/* Reset the Procedure Response Timeout to be disabled,
 	 * 'ull_cp_prt_reload_set' must be called to setup this value.
@@ -926,6 +970,57 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+uint8_t llcp_fsu_validate(uint16_t fsu_min, uint16_t fsu_max, uint8_t phys,
+			  uint16_t spacing_type)
+{
+	if ((fsu_min > fsu_max) || (fsu_max > FSU_FRAME_SPACE_MAX_US) || (phys == 0U) ||
+	    ((phys & ~FSU_PHYS_MASK) != 0U) || (spacing_type == 0U) ||
+	    ((spacing_type & ~T_SPACING_TYPE_MASK) != 0U)) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
+	/* The range shall overlap the frame spaces supported by the radio */
+	if (((phys & ~LLCP_FSU_PHYS_SUPPORTED) != 0U) ||
+	    ((spacing_type & ~LLCP_FSU_SPACING_TYPE_SUPPORTED) != 0U) ||
+	    (MAX(fsu_min, CONFIG_BT_CTLR_FRAME_SPACE_MIN_US) >
+	     MIN(fsu_max, CONFIG_BT_CTLR_FRAME_SPACE_MAX_US))) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+uint8_t ull_cp_fsu(struct ll_conn *conn, uint16_t fsu_min, uint16_t fsu_max, uint8_t phys,
+		   uint16_t spacing_type)
+{
+	struct proc_ctx *ctx;
+	uint8_t err;
+
+	err = llcp_fsu_validate(fsu_min, fsu_max, phys, spacing_type);
+	if (err == BT_HCI_ERR_INVALID_LL_PARAM) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	} else if (err != BT_HCI_ERR_SUCCESS) {
+		return err;
+	}
+
+	ctx = llcp_create_local_procedure(PROC_FRAME_SPACE);
+	if (ctx == NULL) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Request only the frame spaces supported by the radio */
+	ctx->data.fsu.fsu_min = MAX(fsu_min, CONFIG_BT_CTLR_FRAME_SPACE_MIN_US);
+	ctx->data.fsu.fsu_max = MIN(fsu_max, CONFIG_BT_CTLR_FRAME_SPACE_MAX_US);
+	ctx->data.fsu.phys = phys;
+	ctx->data.fsu.spacing_type = spacing_type;
+
+	llcp_lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 uint8_t ull_cp_req_peer_sca(struct ll_conn *conn)
 {
@@ -1034,6 +1129,39 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 	return BT_HCI_ERR_SUCCESS;
 }
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+uint8_t ull_cp_subrate_req(struct ll_conn *conn, uint16_t subrate_min, uint16_t subrate_max,
+			   uint16_t max_latency, uint16_t continuation_number, uint16_t timeout)
+{
+	struct proc_ctx *ctx;
+
+	/* A Central shall not initiate the Connection Subrate Update procedure until it has
+	 * confirmed, via the Feature Exchange procedure, that the peer's Connection Subrating
+	 * (Host Support) bit is set (Core Spec Vol 6, Part B, Section 5.1.19).
+	 */
+	if ((conn->lll.role == BT_HCI_ROLE_CENTRAL) && !feature_peer_subrate_host(conn)) {
+		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+	}
+
+	ctx = llcp_create_local_procedure(PROC_SUBRATE_UPDATE);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Store requested parameters in the procedure context */
+	ctx->data.subrate.subrate_factor_min = subrate_min;
+	ctx->data.subrate.subrate_factor_max = subrate_max;
+	ctx->data.subrate.max_latency = max_latency;
+	ctx->data.subrate.continuation_number = continuation_number;
+	ctx->data.subrate.timeout = timeout;
+	ctx->data.subrate.error = BT_HCI_ERR_SUCCESS;
+
+	llcp_lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 #if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
 uint8_t ull_cp_periodic_sync(struct ll_conn *conn, struct ll_sync_set *sync,
 			     struct ll_adv_sync_set *adv_sync, uint16_t service_data)
@@ -1105,9 +1233,9 @@ uint8_t ull_cp_periodic_sync(struct ll_conn *conn, struct ll_sync_set *sync,
 		sid = adv->sid;
 
 		/* Pull AdvA from pdu */
-		adv_pdu = lll_adv_sync_data_curr_get(&adv_sync->lll);
+		/* Zephyr Controller by design always places BDADDR in the auxiliary channel PDU */
+		adv_pdu = lll_adv_aux_data_peek(adv->lll.aux);
 		addr_type = adv_pdu->tx_addr;
-		/* Note: AdvA is mandatory for AUX_SYNC_IND and at the start of the ext. header */
 		adva = adv_pdu->adv_ext_ind.ext_hdr.data;
 	}
 
@@ -1152,6 +1280,17 @@ uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn)
 	return (ctx && ctx->proc == PROC_DATA_LENGTH_UPDATE);
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+bool ull_cp_remote_fsu_pending(struct ll_conn *conn)
+{
+	const struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+
+	return (ctx != NULL) && (ctx->proc == PROC_FRAME_SPACE);
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 void ull_cp_conn_param_req_reply(struct ll_conn *conn)
@@ -1387,14 +1526,44 @@ bool ull_cp_cc_awaiting_established(struct ll_conn *conn)
 	return false;
 }
 
+bool ull_cp_cc_is_active(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO)) {
+		ctx = llcp_rr_peek(conn);
+		if (ctx != NULL && ctx->proc == PROC_CIS_CREATE) {
+			return llcp_rp_cc_is_active(ctx);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO)) {
+		ctx = llcp_lr_peek(conn);
+		if (ctx != NULL && ctx->proc == PROC_CIS_CREATE) {
+			return llcp_lp_cc_is_active(ctx);
+		}
+	}
+
+	return false;
+}
+
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
-bool ull_cp_cc_cancel(struct ll_conn *conn)
+bool ull_cp_cc_cancel(struct ll_conn *conn, const struct ll_conn_iso_stream *cis)
 {
 	struct proc_ctx *ctx;
 
 	ctx = llcp_lr_peek(conn);
-	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+	if (ctx != NULL && ctx->proc == PROC_CIS_CREATE &&
+	    ctx->data.cis_create.cis_handle == cis->lll.handle) {
 		return llcp_lp_cc_cancel(conn, ctx);
+	} else {
+		/* Look through queue */
+		ctx = llcp_lr_peek_cc(conn, cis->lll.handle);
+		if (ctx != NULL) {
+			/* Set error - LLCP statemachine will handle the rest later */
+			ctx->data.cis_create.error = BT_HCI_ERR_OP_CANCELLED_BY_HOST;
+			return true;
+		}
 	}
 
 	return false;
@@ -1423,6 +1592,29 @@ void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code)
 	}
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 }
+
+void ull_cp_cc_acl_disconnect(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO)) {
+		ctx = llcp_rr_peek(conn);
+		if (ctx != NULL && ctx->proc == PROC_CIS_CREATE) {
+			ctx->data.cis_create.error = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+			llcp_rp_cc_acl_disconnect(conn, ctx);
+			llcp_rr_check_done(conn, ctx);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO)) {
+		ctx = llcp_lr_peek(conn);
+		if (ctx != NULL && ctx->proc == PROC_CIS_CREATE) {
+			ctx->data.cis_create.error = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+			llcp_lp_cc_acl_disconnect(conn, ctx);
+			llcp_lr_check_done(conn, ctx);
+		}
+	}
+}
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO)
@@ -1437,11 +1629,23 @@ bool ull_lp_cc_is_active(struct ll_conn *conn)
 	return false;
 }
 
-bool ull_lp_cc_is_enqueued(struct ll_conn *conn)
+bool ull_lp_cc_is_enqueued(struct ll_conn *conn, const struct ll_conn_iso_stream *cis)
 {
 	struct proc_ctx *ctx;
+	uint16_t cis_handle;
 
-	ctx = llcp_lr_peek_proc(conn, PROC_CIS_CREATE);
+	if (cis) {
+		cis_handle = cis->lll.handle;
+	} else {
+		cis_handle = LLL_HANDLE_INVALID;
+	}
+
+	ctx = llcp_lr_peek_cc(conn, cis_handle);
+
+	if (ctx != NULL && cis != NULL && ctx->data.cis_create.error != BT_HCI_ERR_SUCCESS) {
+		/* Cis Create for this CIS enqueued, but has been cancelled */
+		ctx = NULL;
+	}
 
 	return (ctx != NULL);
 }
@@ -1487,20 +1691,19 @@ void ull_lp_past_offset_calc_reply(struct ll_conn *conn, uint32_t offset_us,
 
 			/* Update offset_us */
 			offset_us = offset_us - (conn_event_offset * conn_interval_us);
-
-			ctx->data.periodic_sync.conn_event_count = ull_conn_event_counter(conn) +
-								   conn_event_offset;
 		}
 
 		llcp_pdu_fill_sync_info_offset(&ctx->data.periodic_sync.sync_info, offset_us);
+
 #if defined(CONFIG_BT_PERIPHERAL)
 		/* Save the result for later use */
 		ctx->data.periodic_sync.offset_us = offset_us;
 #endif /* CONFIG_BT_PERIPHERAL */
 
-		ctx->data.periodic_sync.sync_conn_event_count = ull_conn_event_counter(conn);
-		ctx->data.periodic_sync.conn_event_count = ull_conn_event_counter(conn) +
-							   conn_event_offset;
+		ctx->data.periodic_sync.sync_conn_event_count =
+			ull_conn_event_counter_at_prepare(conn) - 1U;
+		ctx->data.periodic_sync.conn_event_count =
+			ull_conn_event_counter_at_prepare(conn) + conn_event_offset - 1U;
 
 		ctx->data.periodic_sync.sync_info.evt_cntr = pa_event_counter;
 
@@ -1705,6 +1908,18 @@ static bool pdu_validate_length_rsp(struct pdu_data *pdu)
 	return VALIDATE_PDU_LEN(pdu, length_rsp);
 }
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+static bool pdu_validate_fsu_req(struct pdu_data *pdu)
+{
+	return VALIDATE_PDU_LEN(pdu, fsu_req);
+}
+
+static bool pdu_validate_fsu_rsp(struct pdu_data *pdu)
+{
+	return VALIDATE_PDU_LEN(pdu, fsu_rsp);
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 static bool pdu_validate_phy_req(struct pdu_data *pdu)
 {
@@ -1762,6 +1977,18 @@ static bool pdu_validate_periodic_sync_ind(struct pdu_data *pdu)
 }
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+static bool pdu_validate_subrate_req(struct pdu_data *pdu)
+{
+	return VALIDATE_PDU_LEN(pdu, subrate_req);
+}
+
+static bool pdu_validate_subrate_ind(struct pdu_data *pdu)
+{
+	return VALIDATE_PDU_LEN(pdu, subrate_ind);
+}
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 typedef bool (*pdu_param_validate_t)(struct pdu_data *pdu);
 
 struct pdu_validate {
@@ -1816,6 +2043,10 @@ static const struct pdu_validate pdu_validate[] = {
 	[PDU_DATA_LLCTRL_TYPE_LENGTH_REQ] = { pdu_validate_length_req },
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	[PDU_DATA_LLCTRL_TYPE_LENGTH_RSP] = { pdu_validate_length_rsp },
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ] = { pdu_validate_fsu_req },
+	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP] = { pdu_validate_fsu_rsp },
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_PHY)
 	[PDU_DATA_LLCTRL_TYPE_PHY_REQ] = { pdu_validate_phy_req },
 #endif /* CONFIG_BT_CTLR_PHY */
@@ -1837,6 +2068,10 @@ static const struct pdu_validate pdu_validate[] = {
 #if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
 	[PDU_DATA_LLCTRL_TYPE_PERIODIC_SYNC_IND] = { pdu_validate_periodic_sync_ind },
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	[PDU_DATA_LLCTRL_TYPE_SUBRATE_REQ] = { pdu_validate_subrate_req },
+	[PDU_DATA_LLCTRL_TYPE_SUBRATE_IND] = { pdu_validate_subrate_ind },
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 };
 
 static bool pdu_is_valid(struct pdu_data *pdu)

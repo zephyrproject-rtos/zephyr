@@ -97,6 +97,10 @@ helper_pdu_encode_func_t *const helper_pdu_encode[] = {
 	[LL_CIS_IND] = helper_pdu_encode_cis_ind,
 	[LL_CIS_TERMINATE_IND] = helper_pdu_encode_cis_terminate_ind,
 	[LL_PERIODIC_SYNC_IND] = helper_pdu_encode_periodic_sync_ind,
+	[LL_FRAME_SPACE_REQ] = helper_pdu_encode_fsu_req,
+	[LL_FRAME_SPACE_RSP] = helper_pdu_encode_fsu_rsp,
+	[LL_SUBRATE_REQ] = helper_pdu_encode_subrate_req,
+	[LL_SUBRATE_IND] = helper_pdu_encode_subrate_ind,
 	[LL_ZERO] = helper_pdu_encode_zero,
 };
 
@@ -136,6 +140,10 @@ helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	[LL_CIS_IND] = helper_pdu_verify_cis_ind,
 	[LL_CIS_TERMINATE_IND] = helper_pdu_verify_cis_terminate_ind,
 	[LL_PERIODIC_SYNC_IND] = helper_pdu_verify_periodic_sync_ind,
+	[LL_FRAME_SPACE_REQ] = helper_pdu_verify_fsu_req,
+	[LL_FRAME_SPACE_RSP] = helper_pdu_verify_fsu_rsp,
+	[LL_SUBRATE_REQ] = helper_pdu_verify_subrate_req,
+	[LL_SUBRATE_IND] = helper_pdu_verify_subrate_ind,
 };
 
 helper_pdu_ntf_verify_func_t *const helper_pdu_ntf_verify[] = {
@@ -173,6 +181,8 @@ helper_pdu_ntf_verify_func_t *const helper_pdu_ntf_verify[] = {
 	[LL_CIS_IND] = NULL,
 	[LL_CIS_TERMINATE_IND] = NULL,
 	[LL_PERIODIC_SYNC_IND] = NULL,
+	[LL_FRAME_SPACE_REQ] = NULL,
+	[LL_FRAME_SPACE_RSP] = NULL,
 };
 
 helper_node_encode_func_t *const helper_node_encode[] = {
@@ -207,6 +217,8 @@ helper_node_encode_func_t *const helper_node_encode[] = {
 	[LL_CIS_IND] = NULL,
 	[LL_CIS_TERMINATE_IND] = NULL,
 	[LL_PERIODIC_SYNC_IND] = NULL,
+	[LL_FRAME_SPACE_REQ] = NULL,
+	[LL_FRAME_SPACE_RSP] = NULL,
 };
 
 helper_node_verify_func_t *const helper_node_verify[] = {
@@ -217,6 +229,9 @@ helper_node_verify_func_t *const helper_node_verify[] = {
 	[NODE_CIS_REQUEST] = helper_node_verify_cis_request,
 	[NODE_CIS_ESTABLISHED] = helper_node_verify_cis_established,
 	[NODE_PEER_SCA_UPDATE] = helper_node_verify_peer_sca_update,
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	[NODE_SUBRATE_CHANGE] = helper_node_verify_subrate_change,
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 };
 
 /*

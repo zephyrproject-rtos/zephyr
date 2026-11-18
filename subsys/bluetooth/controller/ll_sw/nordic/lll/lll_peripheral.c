@@ -154,23 +154,20 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 
 	/* Accumulate window widening */
-	lll->periph.window_widening_prepare_us +=
-	    lll->periph.window_widening_periodic_us * (lll->lazy_prepare + 1U);
-	if (lll->periph.window_widening_prepare_us >
-	    lll->periph.window_widening_max_us) {
-		lll->periph.window_widening_prepare_us =
-			lll->periph.window_widening_max_us;
+	lll->periph.window_widening_prepare_us += lll->periph.window_widening_periodic_us *
+						  lll->lazy_prepare;
+	if (lll->periph.window_widening_prepare_us > lll->periph.window_widening_max_us) {
+		lll->periph.window_widening_prepare_us = lll->periph.window_widening_max_us;
 	}
 
-	/* current window widening */
-	lll->periph.window_widening_event_us +=
-		lll->periph.window_widening_prepare_us;
-	lll->periph.window_widening_prepare_us = 0;
-	if (lll->periph.window_widening_event_us >
-	    lll->periph.window_widening_max_us) {
-		lll->periph.window_widening_event_us =
-			lll->periph.window_widening_max_us;
+	/* Current window widening */
+	lll->periph.window_widening_event_us += lll->periph.window_widening_prepare_us;
+	if (lll->periph.window_widening_event_us > lll->periph.window_widening_max_us) {
+		lll->periph.window_widening_event_us = lll->periph.window_widening_max_us;
 	}
+
+	/* Pre-increment window widening */
+	lll->periph.window_widening_prepare_us = lll->periph.window_widening_periodic_us;
 
 	/* current window size */
 	lll->periph.window_size_event_us +=
@@ -296,11 +293,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(lll->phy_rx, 1);
 	hcto += addr_us_get(lll->phy_rx);
-	hcto += radio_rx_chain_delay_get(lll->phy_rx, 1);
+	hcto += radio_rx_address_delay_get(lll->phy_rx, PHY_FLAGS_S8);
 #else /* !CONFIG_BT_CTLR_PHY */
 	hcto += radio_rx_ready_delay_get(0, 0);
 	hcto += addr_us_get(0);
-	hcto += radio_rx_chain_delay_get(0, 0);
+	hcto += radio_rx_address_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_tmr_hcto_configure(hcto);

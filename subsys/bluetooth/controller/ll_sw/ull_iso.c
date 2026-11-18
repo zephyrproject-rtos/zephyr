@@ -6,7 +6,6 @@
 
 #include <stddef.h>
 
-#include <soc.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -61,6 +60,7 @@
 #include "ull_sync_iso_internal.h"
 #include "ull_conn_iso_internal.h"
 
+#include "ll.h"
 #include "ll_feat.h"
 
 #include "hal/debug.h"
@@ -119,8 +119,15 @@ static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			     void *param);
 
 #define NODE_RX_HEADER_SIZE (offsetof(struct node_rx_pdu, pdu))
+#define ISO_RX_HEADER_SIZE  (offsetof(struct pdu_bis, payload))
+
+/* Ensure both BIS and CIS PDU headers are of equal size */
+BUILD_ASSERT(ISO_RX_HEADER_SIZE == offsetof(struct pdu_cis, payload));
+
 /* ISO LL conformance tests require a PDU size of maximum 251 bytes + header */
-#define ISO_RX_BUFFER_SIZE (2 + 251)
+#define ISO_RX_BUFFER_SIZE (ISO_RX_HEADER_SIZE + \
+			    MAX(MAX(LL_BIS_OCTETS_RX_MAX, LL_CIS_OCTETS_RX_MAX), \
+				LL_VND_OCTETS_RX_MIN))
 
 /* Declare the ISO rx node RXFIFO. This is a composite pool-backed MFIFO for
  * rx_nodes. The declaration constructs the following data structures:
@@ -144,9 +151,6 @@ static void iso_rx_demux(void *param);
 #define ISO_TEST_PACKET_COUNTER_SIZE 4U
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
-void ll_iso_link_tx_release(void *link);
-void ll_iso_tx_mem_release(void *node_tx);
-
 #define NODE_TX_BUFFER_SIZE MROUND(offsetof(struct node_tx_iso, pdu) + \
 				   offsetof(struct pdu_iso, payload) + \
 				   MAX(LL_BIS_OCTETS_TX_MAX, \
@@ -164,6 +168,10 @@ static struct {
 	uint8_t pool[sizeof(memq_link_t) * BT_CTLR_ISO_TX_PDU_BUFFERS];
 } mem_link_iso_tx;
 
+/* MFIFO for ISO TX acknowledgments from LLL to ULL */
+static MFIFO_DEFINE(iso_ack, sizeof(struct lll_tx), BT_CTLR_ISO_TX_PDU_BUFFERS);
+
+static void ull_iso_tx_ack_sched(void);
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 uint8_t ll_read_iso_tx_sync(uint16_t handle, uint16_t *seq,
@@ -1165,7 +1173,7 @@ void ll_iso_transmit_test_send_sdu(uint16_t handle, uint32_t ticks_at_expire)
 		sdu.grp_ref_point = isoal_get_wrapped_time_us(cig->cig_ref_point,
 						(event_offset * cig->iso_interval *
 							ISO_INT_UNIT_US));
-		sdu.target_event = cis->lll.event_count + event_offset;
+		sdu.target_event = cis->lll.event_count_prepare + event_offset;
 		sdu.iso_sdu_length = remaining_tx;
 
 		/* Send all SDU fragments */
@@ -1471,34 +1479,63 @@ void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 
 		if (dp) {
 			isoal_tx_pdu_release(dp->source_hdl, node_tx);
-		} else {
-#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
-			/* Possible race with Data Path remove - handle release in vendor
-			 * function.
-			 */
-			ll_data_path_tx_pdu_release(handle, node_tx);
-#else
-			/* FIXME: ll_tx_ack_put is not LLL callable as it is
-			 * used by ACL connections in ULL context to dispatch
-			 * ack.
-			 */
-			ll_tx_ack_put(handle, (void *)node_tx);
-			ll_rx_sched();
-#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
+			return;
 		}
+
+#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
+		/* Possible race with Data Path remove - handle release in vendor
+		 * function.
+		 */
+		ll_data_path_tx_pdu_release(handle, node_tx);
+		return;
+#else
+		/* No datapath and no vendor datapath - fall through to MFIFO */
+#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO) && IS_ADV_ISO_HANDLE(handle)) {
-		/* Process as TX ack. TODO: Can be unified with CIS and use
-		 * ISOAL.
-		 */
-		/* FIXME: ll_tx_ack_put is not LLL callable as it is
-		 * used by ACL connections in ULL context to dispatch
-		 * ack.
-		 */
-		ll_tx_ack_put(handle, (void *)node_tx);
-		ll_rx_sched();
+		struct lll_adv_iso_stream *stream;
+		struct ll_iso_datapath *dp;
+		uint16_t stream_handle;
+
+		stream_handle = LL_BIS_ADV_IDX_FROM_HANDLE(handle);
+		stream = ull_adv_iso_stream_get(stream_handle);
+		dp = stream->dp;
+
+		if (dp) {
+			isoal_tx_pdu_release(dp->source_hdl, node_tx);
+			return;
+		}
+
+#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
+		ll_data_path_tx_pdu_release(handle, node_tx);
+		return;
+#else
+		/* No datapath and no vendor datapath - fall through to MFIFO */
+#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
 	} else {
 		LL_ASSERT(0);
+		return;
 	}
+
+	/* Context-safe fallback: Enqueue to iso_ack MFIFO when no datapath.
+	 * This handles CIS/BIS without datapath and without vendor data path support.
+	 */
+	ull_iso_lll_tx_ack_enqueue(handle, node_tx);
+}
+
+void ull_iso_lll_tx_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
+{
+	struct lll_tx *tx_buf;
+	uint8_t idx;
+
+	idx = MFIFO_ENQUEUE_GET(iso_ack, (void **)&tx_buf);
+	LL_ASSERT(tx_buf);
+
+	tx_buf->handle = handle;
+	tx_buf->node = node_tx;
+
+	MFIFO_ENQUEUE(iso_ack, idx);
+
+	ull_iso_tx_ack_sched();
 }
 
 void ull_iso_lll_event_prepare(uint16_t handle, uint64_t event_count)
@@ -1595,7 +1632,7 @@ static void iso_rx_cig_ref_point_update(struct ll_conn_iso_group *cig,
 	cig_sync_delay = cig->sync_delay;
 	cis_sync_delay = cis->sync_delay;
 	burst_number = cis->lll.rx.bn;
-	event_count = cis->lll.event_count;
+	event_count = cis->lll.event_count_prepare;
 
 	if (role) {
 		/* Peripheral */
@@ -1909,12 +1946,10 @@ static isoal_status_t ll_iso_pdu_release(struct node_tx_iso *node_tx,
 		 * Call Path:
 		 *   ull_iso_lll_ack_enqueue() --> isoal_tx_pdu_release() -->
 		 *   pdu_release() == ll_iso_pdu_release() (this function).
+		 *
+		 * Use MFIFO to safely transition from LLL to ULL context.
 		 */
-		/* FIXME: ll_tx_ack_put is not LLL callable as it is used by
-		 * ACL connections in ULL context to dispatch ack.
-		 */
-		ll_tx_ack_put(handle, (void *)node_tx);
-		ll_rx_sched();
+		ull_iso_lll_tx_ack_enqueue(handle, node_tx);
 	} else {
 		/* Release back to memory pool, we are in Thread context
 		 * Callers:
@@ -1930,6 +1965,47 @@ static isoal_status_t ll_iso_pdu_release(struct node_tx_iso *node_tx,
 	return ISOAL_STATUS_OK;
 }
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+/**
+ * @brief Process ISO TX acknowledgments independently
+ * @details Processes iso_ack MFIFO without serialization with RX
+ */
+static void iso_tx_ack_demux(void *param)
+{
+	struct lll_tx *tx_buf;
+
+	/* Peek from iso_ack MFIFO */
+	tx_buf = MFIFO_DEQUEUE_GET(iso_ack);
+	if (tx_buf == NULL) {
+		return;
+	}
+
+	/* Process all pending ISO TX acks */
+	do {
+		MFIFO_DEQUEUE(iso_ack);
+
+		/* Now safely call ll_tx_ack_put in ULL context */
+		ll_tx_ack_put(tx_buf->handle, (void *)tx_buf->node);
+
+		/* Peek from iso_ack MFIFO */
+		tx_buf = MFIFO_DEQUEUE_GET(iso_ack);
+	} while (tx_buf != NULL);
+
+	/* Trigger thread to call ll_rx_get() */
+	ll_rx_sched();
+}
+
+/**
+ * @brief Schedule ISO TX ack processing
+ */
+static void ull_iso_tx_ack_sched(void)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, iso_tx_ack_demux};
+
+	/* Kick the ULL (using the mayfly, tailchain it) */
+	mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 1, &mfy);
+}
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 static int init_reset(void)
@@ -1966,6 +2042,9 @@ static int init_reset(void)
 	/* Initialize tx link pool. */
 	mem_init(mem_link_iso_tx.pool, sizeof(memq_link_t), BT_CTLR_ISO_TX_PDU_BUFFERS,
 		 &mem_link_iso_tx.free);
+
+	/* Initialize iso_ack MFIFO */
+	MFIFO_INIT(iso_ack);
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
 #if BT_CTLR_ISO_STREAMS
@@ -2023,7 +2102,10 @@ void ull_iso_resume_ticker_start(struct lll_event *resume_event,
 				struct ll_conn *conn;
 
 				cis = ll_conn_iso_stream_get(stream_handle);
+
 				conn = ll_conn_get(cis->lll.acl_handle);
+				LL_ASSERT(conn != NULL);
+
 				phy = conn->lll.phy_rx;
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)

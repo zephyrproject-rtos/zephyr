@@ -137,6 +137,35 @@ int ull_scan_aux_reset(void)
 	return 0;
 }
 
+bool ull_scan_aux_lll_ext_hdr_is_complete(const struct pdu_adv *pdu)
+{
+	const struct pdu_adv_com_ext_adv *com_hdr = &pdu->adv_ext_ind;
+	const struct pdu_adv_ext_hdr *hdr = &com_hdr->ext_hdr;
+	uint8_t len;
+
+	if (pdu->len < (PDU_AC_EXT_HEADER_SIZE_MIN + com_hdr->ext_hdr_len)) {
+		return false;
+	}
+
+	if (com_hdr->ext_hdr_len == 0U) {
+		return true;
+	}
+
+	len = sizeof(*hdr);
+	len += (hdr->adv_addr != 0U) ? ADVA_SIZE : 0U;
+	len += (hdr->tgt_addr != 0U) ? TARGETA_SIZE : 0U;
+	len += (hdr->cte_info != 0U) ? CTEINFO_SIZE : 0U;
+	len += (hdr->adi != 0U) ? sizeof(struct pdu_adv_adi) : 0U;
+	len += (hdr->aux_ptr != 0U) ? sizeof(struct pdu_adv_aux_ptr) : 0U;
+	len += (hdr->sync_info != 0U) ? sizeof(struct pdu_adv_sync_info) : 0U;
+	len += (hdr->tx_pwr != 0U) ? TXPOWER_SIZE : 0U;
+
+	return com_hdr->ext_hdr_len >= len;
+}
+
+bool ull_scan_aux_ext_hdr_is_complete(const struct pdu_adv *pdu)
+	ALIAS_OF(ull_scan_aux_lll_ext_hdr_is_complete);
+
 static void rx_release_put(struct node_rx_pdu *rx)
 {
 	rx->hdr.type = NODE_RX_TYPE_RELEASE;
@@ -164,6 +193,22 @@ static inline struct ll_sync_iso_set *
 #endif /* !CONFIG_BT_CTLR_SYNC_ISO */
 }
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+static void anon_allow_set(struct node_rx_ftr *ftr, const struct ll_scan_set *scan)
+{
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+	/* Whether the scanner filter policy lets anonymous advertising be
+	 * reported is recorded now, as the scan parameters can change before
+	 * the report is generated. The Filter Accept List does not hold the
+	 * anonymous entry, so a scanner that uses the list reports none.
+	 */
+	ftr->anon_allow = (scan != NULL) &&
+			  ((scan->lll.filter_policy & SCAN_FP_FILTER) == 0U);
+#else
+	ARG_UNUSED(ftr);
+	ARG_UNUSED(scan);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+}
 
 #if !defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
@@ -414,6 +459,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	ftr->aux_sched = 0U;
 
+	anon_allow_set(ftr, scan);
+
 	pdu = (void *)rx->pdu;
 	p = (void *)&pdu->adv_ext_ind;
 	if (!pdu->len || !p->ext_hdr_len) {
@@ -434,6 +481,34 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 			ftr->aux_data_len = aux->data_len;
 		} else {
 			ftr->aux_data_len = data_len;
+		}
+
+		goto ull_scan_aux_rx_flush;
+	}
+
+	/* The fields of an incomplete extended header can lie beyond the PDU:
+	 * walk none of them, schedule nothing and take no data from it.
+	 */
+	if (!ull_scan_aux_ext_hdr_is_complete(pdu)) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll) {
+			struct ll_sync_set *sync_set;
+
+			sync_set = HDR_LLL2ULL(sync_lll);
+			ftr->aux_data_len = sync_set->data_len;
+			sync_set->data_len = 0U;
+		} else if (aux) {
+			ftr->aux_data_len = aux->data_len;
+		} else {
+			ftr->aux_data_len = 0U;
+		}
+
+		if (is_scan_req) {
+			LL_ASSERT(aux && aux->rx_last);
+
+			aux->rx_last->rx_ftr.extra = rx;
+			aux->rx_last = rx;
+
+			return;
 		}
 
 		goto ull_scan_aux_rx_flush;
@@ -583,8 +658,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	 */
 	if (!aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) || is_scan_req ||
 	    (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) ||
-		(!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
-		  PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED)) {
+	    (!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+	     PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED) ||
+	    (aux_ptr->chan_idx >= CHM_USED_COUNT_MAX)) {
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll) {
 			struct ll_sync_set *sync_set;
 
@@ -641,7 +717,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	/* Calculate the aux offset from start of the scan window */
 	aux_offset_us += ftr->radio_end_us;
-	aux_offset_us -= pdu_us;
 	aux_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	aux_offset_us -= EVENT_JITTER_US;
 	aux_offset_us -= ready_delay_us;
@@ -656,19 +731,18 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		uint32_t ticks_now;
 		uint32_t diff;
 
-		/* CPU execution overhead to setup the radio for reception plus the
-		 * minimum prepare tick offset. And allow one additional event in
-		 * between as overhead (say, an advertising event in between got closed
-		 * when reception for auxiliary PDU is being setup).
+		/* CPU execution overhead to setup the radio for reception. And
+		 * allow one additional event in between as overhead (say, an
+		 * advertising event in between got closed when reception for
+		 * auxiliary PDU is being setup).
 		 */
-		overhead_us = (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US +
-			       HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN)) << 1;
+		overhead_us = (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US) << 1;
 
 		ticks_now = ticker_ticks_now_get();
-		ticks_at_expire = ftr->ticks_anchor + ticks_aux_offset -
-				  HAL_TICKER_US_TO_TICKS(overhead_us);
-		diff = ticker_ticks_diff_get(ticks_now, ticks_at_expire);
-		if ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+		ticks_at_expire = ftr->ticks_anchor + ticks_aux_offset;
+		diff = ticker_ticks_diff_get(ticks_at_expire, ticks_now);
+		if (((diff & BIT(HAL_TICKER_CNTR_MSBIT)) != 0U) ||
+		    (diff < HAL_TICKER_US_TO_TICKS(overhead_us))) {
 			goto ull_scan_aux_rx_flush;
 		}
 	}
@@ -845,6 +919,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		if (unlikely(scan->is_stop)) {
 			goto ull_scan_aux_rx_flush;
 		}
+
+		/* Remove auxiliary context association with scan context so
+		 * that LLL can differentiate it to being ULL scheduling.
+		 */
+		if ((lll != NULL) && (lll->lll_aux == lll_aux)) {
+			lll->lll_aux = NULL;
+		}
 	} else {
 		struct ll_sync_set *sync_set;
 
@@ -872,6 +953,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		aux->rx_head = rx;
 	}
 
+	/* Initialize the window size for the Auxiliary PDU reception. */
+	lll_aux->window_size_us = window_size_us;
+	lll_aux->window_size_us += ((EVENT_TICKER_RES_MARGIN_US + EVENT_JITTER_US +
+				     window_widening_us) << 1);
+
 	/* TODO: active_to_start feature port */
 	aux->ull.ticks_active_to_start = 0;
 	aux->ull.ticks_prepare_to_start =
@@ -879,7 +965,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	aux->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
-		EVENT_OVERHEAD_START_US + ready_delay_us +
+		EVENT_OVERHEAD_START_US + ready_delay_us + lll_aux->window_size_us +
 		PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll_aux->phy) +
 		EVENT_OVERHEAD_END_US);
 
@@ -891,11 +977,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		ticks_slot_overhead = 0U;
 	}
 	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
-
-	/* Initialize the window size for the Auxiliary PDU reception. */
-	lll_aux->window_size_us = window_size_us;
-	lll_aux->window_size_us += ((EVENT_TICKER_RES_MARGIN_US + EVENT_JITTER_US +
-				     window_widening_us) << 1);
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* disable ticker job, in order to chain yield and start to reduce
@@ -1311,6 +1392,35 @@ int ull_scan_aux_stop(struct ll_scan_aux_set *aux)
 	return 0;
 }
 
+int ull_scan_aux_stop_by_parent(const void *parent)
+{
+	LL_ASSERT(parent != NULL);
+
+	for (uint8_t handle = 0U; handle < CONFIG_BT_CTLR_SCAN_AUX_SET; handle++) {
+		struct ll_scan_aux_set *aux = &ll_scan_aux_pool[handle];
+		void *aux_parent;
+		int err;
+
+		if (aux->parent != parent) {
+			continue;
+		}
+
+		err = ull_scan_aux_stop(aux);
+		if (err != 0 && err != -EALREADY) {
+			return err;
+		}
+
+		/* Use a local variable to assert on auxiliary context's release.
+		 * Under race condition a released aux context can be allocated for
+		 * reception of chain PDU of a periodic sync role.
+		 */
+		aux_parent = aux->parent;
+		LL_ASSERT(!aux_parent || (aux_parent != parent));
+	}
+
+	return 0;
+}
+
 static int init_reset(void)
 {
 	/* Initialize adv aux pool. */
@@ -1385,6 +1495,10 @@ static void flush_safe(void *param)
 		LL_ASSERT(!hdr->disabled_cb);
 		hdr->disabled_param = aux;
 		hdr->disabled_cb = done_disabled_cb;
+
+		/* NOTE: we are not forcing a lll_disable, we will let window
+		 *       close at its duration or when preempted.
+		 */
 	}
 }
 
@@ -1428,6 +1542,11 @@ static void flush(void *param)
 	scan = HDR_LLL2ULL(lll);
 	scan = ull_scan_is_valid_get(scan);
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || scan) {
+		/* Remove auxiliary context association with scan context */
+		if (lll->lll_aux == &aux->lll) {
+			lll->lll_aux = NULL;
+		}
+
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		lll->scan_aux_score = aux->lll.hdr.score;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
@@ -1811,6 +1930,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	ftr->aux_sched = 0U;
 
+	anon_allow_set(ftr, scan);
+
 	if (chain) {
 		chain->aux_sched = 0U;
 
@@ -1837,6 +1958,28 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 			ftr->aux_data_len = chain->data_len;
 		} else {
 			ftr->aux_data_len = data_len;
+		}
+
+		goto ull_scan_aux_rx_flush;
+	}
+
+	/* The fields of an incomplete extended header can lie beyond the PDU:
+	 * walk none of them, schedule nothing and take no data from it.
+	 */
+	if (!ull_scan_aux_ext_hdr_is_complete(pdu)) {
+		if (chain) {
+			ftr->aux_data_len = chain->data_len;
+		} else {
+			ftr->aux_data_len = 0U;
+		}
+
+		if (is_scan_req) {
+			LL_ASSERT(chain && chain->rx_last);
+
+			chain->rx_last->rx_ftr.extra = rx;
+			chain->rx_last = rx;
+
+			return;
 		}
 
 		goto ull_scan_aux_rx_flush;
@@ -1994,9 +2137,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	 */
 	if (!aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) || is_scan_req ||
 	    (PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) > EXT_ADV_AUX_PHY_LE_CODED) ||
-		(!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
-		  PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED)) {
-
+	    (!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) &&
+	     PDU_ADV_AUX_PTR_PHY_GET(aux_ptr) == EXT_ADV_AUX_PHY_LE_CODED) ||
+	    (aux_ptr->chan_idx >= CHM_USED_COUNT_MAX)) {
 		if (is_scan_req) {
 			LL_ASSERT(chain && chain->rx_last);
 
@@ -2040,7 +2183,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	/* Calculate the aux offset from start of the scan window */
 	aux_offset_us += ftr->radio_end_us;
-	aux_offset_us -= pdu_us;
 	aux_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	aux_offset_us -= EVENT_JITTER_US;
 	aux_offset_us -= ready_delay_us;
@@ -2055,13 +2197,17 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		uint32_t ticks_now;
 		uint32_t diff;
 
-		/* CPU execution overhead to setup the radio for reception plus the
-		 * minimum prepare tick offset. And allow one additional event in
-		 * between as overhead (say, an advertising event in between got closed
-		 * when reception for auxiliary PDU is being setup).
+#if defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+		/* CPU execution overhead to setup the radio for reception */
+		overhead_us = EVENT_OVERHEAD_START_US;
+#else /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+		/* CPU execution overhead to setup the radio for reception. And
+		 * allow one additional event in between as overhead (say, an
+		 * advertising event in between got closed when reception for
+		 * auxiliary PDU is being setup).
 		 */
-		overhead_us = (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US +
-			       HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN)) << 1;
+		overhead_us = (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US) << 1;
+#endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 		ticks_now = ticker_ticks_now_get();
 		ticks_at_expire = ftr->ticks_anchor + ticks_aux_offset -
@@ -2608,10 +2754,13 @@ static void flush_safe(void *param)
 	/* If chain is active we need to flush from disabled callback */
 	if (chain_is_in_list(scan_aux_set.active_chains, chain) &&
 	    ull_ref_get(&scan_aux_set.ull)) {
-
 		chain->next = scan_aux_set.flushing_chains;
 		scan_aux_set.flushing_chains = chain;
 		scan_aux_set.ull.disabled_cb = done_disabled_cb;
+
+		/* NOTE: we are not forcing a lll_disable, we will let window
+		 *       close at its duration or when preempted.
+		 */
 	} else {
 		flush(chain);
 	}
@@ -2767,7 +2916,7 @@ static void chain_start_ticker(struct ll_scan_aux_chain *chain, bool replace)
 	scan_aux_set.ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	scan_aux_set.ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
-		EVENT_OVERHEAD_START_US + ready_delay_us +
+		EVENT_OVERHEAD_START_US + ready_delay_us + chain->lll.window_size_us +
 		PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, chain->lll.phy) +
 		EVENT_OVERHEAD_END_US);
 

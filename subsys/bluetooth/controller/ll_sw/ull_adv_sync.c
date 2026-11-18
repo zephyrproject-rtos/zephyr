@@ -278,7 +278,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	/* Check if periodic advertising is associated with advertising set */
 	lll_sync = adv->lll.sync;
 	if (!lll_sync) {
-		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	sync = HDR_LLL2ULL(lll_sync);
@@ -533,14 +533,32 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			 * in non-overlapping timeline when auxiliary and
 			 * Periodic Advertising have similar event interval.
 			 */
-			ticks_anchor_sync = ticker_ticks_now_get() +
-				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+			ticks_anchor_sync = ticker_ticks_now_get();
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 			err = ull_sched_adv_aux_sync_free_anchor_get(sync->ull.ticks_slot,
 								     &ticks_anchor_sync);
 			if (!err) {
-				ticks_anchor_sync += HAL_TICKER_US_TO_TICKS(
+				const struct ll_adv_aux_set *aux_set;
+				const struct pdu_adv *pdu;
+				uint32_t ticks_slot;
+				uint32_t ticks_diff;
+				uint32_t slot_us;
+				uint8_t pdu_len;
+
+				aux_set = HDR_LLL2ULL(lll_aux);
+
+				pdu = (const struct pdu_adv *)lll_aux->data.pdu[sec_idx];
+				pdu_len = pdu->len - pdu->adv_ext_ind.ext_hdr_len -
+					  PDU_AC_EXT_HEADER_SIZE_MIN + PDU_AC_EXT_HEADER_SIZE_MAX;
+				slot_us = ull_adv_aux_time_get(aux_set, pdu_len, 0U);
+
+				ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
+				ticks_diff = ticker_ticks_diff_get(ticks_slot,
+								   aux_set->ull.ticks_slot);
+
+				ticks_anchor_sync += ticks_diff;
+				ticks_anchor_sync += HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
@@ -554,16 +572,16 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			 */
 			lll_aux = adv->lll.aux;
 			aux = HDR_LLL2ULL(lll_aux);
-			ticks_anchor_aux = ticker_ticks_now_get() +
-				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+			ticks_anchor_aux = ticker_ticks_now_get();
 			ticks_slot_overhead_aux =
-				ull_adv_aux_evt_init(aux, &ticks_anchor_aux);
+				ull_adv_aux_evt_init(aux, (void *)lll_aux->data.pdu[sec_idx],
+						     &ticks_anchor_aux);
 
 #if !defined(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET) || \
 	(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET == 0)
 			ticks_anchor_sync = ticks_anchor_aux +
 				ticks_slot_overhead_aux + aux->ull.ticks_slot +
-				HAL_TICKER_US_TO_TICKS(
+				HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
@@ -594,10 +612,11 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			/* Keep aux interval equal or higher than primary PDU
 			 * interval.
 			 */
-			aux->interval = adv->interval +
-					(HAL_TICKER_TICKS_TO_US(
-						ULL_ADV_RANDOM_DELAY) /
-						ADV_INT_UNIT_US);
+			aux->interval =	DIV_ROUND_UP(
+				ROUND_DOWN((((uint64_t)adv->interval * ADV_INT_UNIT_US) +
+					    HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY)),
+					   HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY)),
+				PERIODIC_INT_UNIT_US);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
 						ticks_slot_overhead_aux);
@@ -1401,7 +1420,6 @@ static void ull_adv_sync_copy_pdu_header(struct pdu_adv *target_pdu,
 		memcpy(target_hdr, source_hdr, source_hdr->ext_hdr_len + 1U);
 	} else {
 		/* Copy field by field */
-
 		source_dptr = source_hdr->ext_hdr.data;
 		target_dptr = target_hdr->ext_hdr.data;
 
@@ -1412,7 +1430,7 @@ static void ull_adv_sync_copy_pdu_header(struct pdu_adv *target_pdu,
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 		if (source_hdr->ext_hdr.cte_info) {
-			if (!skip_fields->cte_info) {
+			if (!skip_fields || !skip_fields->cte_info) {
 				memcpy(target_dptr, source_dptr, sizeof(struct pdu_cte_info));
 				target_dptr += sizeof(struct pdu_cte_info);
 				target_hdr->ext_hdr.cte_info = 1U;
@@ -1423,7 +1441,7 @@ static void ull_adv_sync_copy_pdu_header(struct pdu_adv *target_pdu,
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT)
 		if (source_hdr->ext_hdr.adi) {
-			if (!skip_fields->adi) {
+			if (!skip_fields || !skip_fields->adi) {
 				memcpy(target_dptr, source_dptr, sizeof(struct pdu_adv_adi));
 				target_dptr += sizeof(struct pdu_adv_adi);
 				target_hdr->ext_hdr.adi = 1U;
@@ -1434,7 +1452,7 @@ static void ull_adv_sync_copy_pdu_header(struct pdu_adv *target_pdu,
 
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
 		if (source_hdr->ext_hdr.aux_ptr) {
-			if (!skip_fields->aux_ptr) {
+			if (!skip_fields || !skip_fields->aux_ptr) {
 				memcpy(target_dptr, source_dptr, sizeof(struct pdu_adv_aux_ptr));
 				target_dptr += sizeof(struct pdu_adv_aux_ptr);
 				target_hdr->ext_hdr.aux_ptr = 1U;
@@ -1446,7 +1464,7 @@ static void ull_adv_sync_copy_pdu_header(struct pdu_adv *target_pdu,
 		/* SyncInfo is RFU for periodic advertising */
 
 		if (source_hdr->ext_hdr.tx_pwr) {
-			if (!skip_fields->tx_pwr) {
+			if (!skip_fields || !skip_fields->tx_pwr) {
 				*target_dptr = *source_dptr;
 				target_dptr++;
 				target_hdr->ext_hdr.tx_pwr = 1U;
@@ -2690,7 +2708,7 @@ static void mfy_sync_offset_get(void *param)
 	uint32_t ticks_to_expire;
 	uint32_t ticks_current;
 	struct pdu_adv *pdu;
-	uint32_t remainder;
+	uint32_t remainder = 0U;
 	uint8_t chm_first;
 	uint8_t ticker_id;
 	uint16_t lazy;

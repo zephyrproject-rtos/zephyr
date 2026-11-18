@@ -68,6 +68,13 @@ static inline bool feature_dle(struct ll_conn *conn)
 #endif
 }
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+static inline bool feature_fsu(struct ll_conn *conn)
+{
+	return conn->llcp.fex.fsu_unsupported == 0U;
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 static inline bool feature_privacy(struct ll_conn *conn)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -188,6 +195,19 @@ static inline bool feature_peer_periodic_sync_recv(struct ll_conn *conn)
 {
 	return (conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_PAST_RECV)) != 0;
 }
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+static inline bool feature_subrate(struct ll_conn *conn)
+{
+	return (conn->llcp.fex.features_used & LL_FEAT_BIT_CONN_SUBRATING) != 0;
+}
+
+static inline bool feature_peer_subrate_host(struct ll_conn *conn)
+{
+	return (conn->llcp.fex.features_peer &
+		BIT64(BT_LE_FEAT_BIT_CONN_SUBRATING_HOST_SUPP)) != 0;
+}
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 
 /*
  * The following features are not yet defined in KConfig and do
