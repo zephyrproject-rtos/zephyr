@@ -12,7 +12,6 @@
 LOG_MODULE_REGISTER(modem_backend_uart_isr, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #include <string.h>
-#include <zephyr/drivers/gpio.h>
 
 static void modem_backend_uart_isr_flush(struct modem_backend_uart *backend)
 {

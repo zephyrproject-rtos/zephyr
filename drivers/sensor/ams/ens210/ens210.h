@@ -17,7 +17,6 @@
 #ifdef CONFIG_SENSOR_ASYNC_API
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/mpsc_lockfree.h>
-#include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #endif
 

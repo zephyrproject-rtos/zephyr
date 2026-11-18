@@ -43,10 +43,6 @@
 #include <zephyr/dt-bindings/sensor/ism6hg256x.h>
 #endif
 
-#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <zephyr/drivers/spi.h>
-#endif /* LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
-
 #if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #include <zephyr/drivers/i2c.h>
 #endif /* LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
