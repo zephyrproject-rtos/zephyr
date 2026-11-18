@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Realtek RTS5817 flash controller
+
+compatible: "realtek,rts5817-flash-controller"
+
+include: flash-controller.yaml
+
+properties:
+  reg:
+    description: |
+      Register blocks, in this order:
+      - qspi_ctrl: QSPI controller registers
+      - auto_ctrl: auto-mode SPI command register, which is outside of the
+        QSPI block and must be written directly
+
+  reg-names:
+    required: true
+    description: |
+      Names of the register blocks: "qspi_ctrl" and "auto_ctrl".
+
+  clocks:
+    required: true
+
+  bus-width:
+    type: int
+    description: |
+      Width of the QSPI data bus to the flash, which sets the read mode:
+      1 (1-1-1), 2 (1-1-2) or 4 (1-1-4). Defaults to 4, the quad read
+      mode the RTS5817 boot ROM configures.
+    enum:
+      - 1
+      - 2
+      - 4
+    default: 4
+
+  syscon-sys:
+    type: phandle
+    required: true
+    description: |
+      phandle of the dlink_sys node.
