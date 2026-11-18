@@ -15,6 +15,7 @@
 / {
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,entropy = &trng;
 	};
 
 	cpus {
@@ -240,6 +241,14 @@
 					read-only;
 				};
 			};
+		};
+
+		/* TRNG registers live in the OCOTP MMIO window */
+		trng: trng@401b0600 {
+			compatible = "realtek,rts5817-trng";
+			reg = <0x401b0600 0x80>;
+			ocotp = <&ocotp>;
+			status = "disabled";
 		};
 
 		dlink_ldo: dlink_ldo@401e1000 {
