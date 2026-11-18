@@ -1,0 +1,19 @@
+sample:
+  description: Optional UHC lifecycle hooks on virtual host controller
+  name: UHC lifecycle (virtual)
+common:
+  tags:
+    - usb
+    - drivers
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "UHC lifecycle OK"
+tests:
+  sample.subsys.usb.uhc_lifecycle:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim

@@ -219,6 +219,14 @@ int usbh_enable(struct usbh_context *uhs_ctx);
 int usbh_disable(struct usbh_context *uhs_ctx);
 
 /**
+ * @brief Test whether a USB device is still registered with the host stack.
+ *
+ * @param udev Device pointer obtained during enumeration.
+ * @return true if @a udev is still on the host device list.
+ */
+bool usbh_device_still_connected(const struct usb_device *udev);
+
+/**
  * @brief Shutdown the USB host support
  *
  * This function completely disables the USB host support.
