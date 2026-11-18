@@ -3581,6 +3581,16 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 		return -ENOMEM;
 	}
 
+	/* A disconnection while waiting for the buffer tears the channels down */
+	bt_dev_lock();
+
+	if (!l2cap_chans_attached(conn, chans, (size_t)i)) {
+		bt_dev_unlock();
+		net_buf_unref(buf);
+
+		return -ENOTCONN;
+	}
+
 	req = net_buf_add(buf, sizeof(*req));
 	req->mtu = sys_cpu_to_le16(mtu);
 
@@ -3605,6 +3615,8 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu)
 	 * supplied array, using the ident field to find them.
 	 */
 	l2cap_chan_send_req(chans[0], buf, L2CAP_CONN_TIMEOUT);
+
+	bt_dev_unlock();
 
 	return 0;
 }
@@ -3672,6 +3684,16 @@ int bt_l2cap_ecred_chan_reconfigure_explicit(struct bt_l2cap_chan **chans, size_
 		return -ENOMEM;
 	}
 
+	/* A disconnection while waiting for the buffer tears the channels down */
+	bt_dev_lock();
+
+	if (!l2cap_chans_attached(conn, chans, chan_count)) {
+		bt_dev_unlock();
+		net_buf_unref(buf);
+
+		return -ENOTCONN;
+	}
+
 	req = net_buf_add(buf, sizeof(*req));
 	req->mtu = sys_cpu_to_le16(mtu);
 	req->mps = sys_cpu_to_le16(mps);
@@ -3693,6 +3715,8 @@ int bt_l2cap_ecred_chan_reconfigure_explicit(struct bt_l2cap_chan **chans, size_
 	 * supplied array, using the ident field to find them.
 	 */
 	l2cap_chan_send_req(chans[0], buf, L2CAP_CONN_TIMEOUT);
+
+	bt_dev_unlock();
 
 	return 0;
 }
