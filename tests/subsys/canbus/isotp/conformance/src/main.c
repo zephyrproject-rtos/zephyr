@@ -1183,6 +1183,84 @@ ZTEST(isotp_conformance, test_receive_cf_too_short)
 	isotp_unbind(&recv_ctx);
 }
 
+ZTEST(isotp_conformance, test_receive_ff_dl_too_short)
+{
+	/* An FF declaring a length that fits in an SF is malformed and must be
+	 * silently discarded (ISO 15765-2, 9.6.3.2).
+	 */
+	struct frame_desired ff_frame, sf_frame;
+	struct can_frame dummy_frame;
+	int filter_id, ret;
+
+	/* FF with a declared length of one byte but six bytes of payload */
+	ff_frame.data[0] = FF_PCI_BYTE_1(1);
+	ff_frame.data[1] = FF_PCI_BYTE_2(1);
+	memcpy(&ff_frame.data[2], random_data, 6);
+	ff_frame.length = 8;
+
+	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
+	zassert_true((filter_id >= 0), "Negative filter number [%d]", filter_id);
+
+	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr, &fc_opts, K_NO_WAIT);
+	zassert_equal(ret, ISOTP_N_OK, "Binding failed [%d]", ret);
+
+	send_frame_series(&ff_frame, 1, rx_addr.std_id);
+
+	/* A discarded FF must not be answered with a flow-control frame */
+	ret = k_msgq_get(&frame_msgq, &dummy_frame, K_MSEC(200));
+	zassert_equal(ret, -EAGAIN, "Expected no flow-control frame, got %d", ret);
+
+	/* The reader must not see the FF */
+	get_sf_ignore();
+
+	/* The receiver must be ready for the next message */
+	prepare_sf_frame(&sf_frame, random_data);
+	send_frame_series(&sf_frame, 1, rx_addr.std_id);
+	get_sf(DATA_SIZE_SF);
+
+	can_remove_rx_filter(can_dev, filter_id);
+	isotp_unbind(&recv_ctx);
+}
+
+ZTEST(isotp_conformance, test_receive_ff_jumbo_below_escape_range)
+{
+	/* The 32-bit FF_DL format is only valid for lengths above 4095 */
+#if !IS_ENABLED(CONFIG_TEST_USE_CAN_FD_MODE)
+	ztest_test_skip();
+#else
+	struct frame_desired ff_frame;
+	struct can_frame dummy_frame;
+	int filter_id, ret;
+
+	/* FF with the 32-bit escape carrying 4095, which fits the 12-bit field */
+	ff_frame.data[0] = FF_PCI_BYTE_1(0);
+	ff_frame.data[1] = FF_PCI_BYTE_2(0);
+	ff_frame.data[2] = 0x00;
+	ff_frame.data[3] = 0x00;
+	ff_frame.data[4] = 0x0F;
+	ff_frame.data[5] = 0xFF;
+	memcpy(&ff_frame.data[6], random_data, 2);
+	ff_frame.length = 8;
+
+	filter_id = add_rx_msgq(tx_addr.std_id, CAN_STD_ID_MASK);
+	zassert_true((filter_id >= 0), "Negative filter number [%d]", filter_id);
+
+	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr, &fc_opts, K_NO_WAIT);
+	zassert_equal(ret, ISOTP_N_OK, "Binding failed [%d]", ret);
+
+	send_frame_series(&ff_frame, 1, rx_addr.std_id);
+
+	/* A discarded FF must not be answered with a flow-control frame */
+	ret = k_msgq_get(&frame_msgq, &dummy_frame, K_MSEC(200));
+	zassert_equal(ret, -EAGAIN, "Expected no flow-control frame, got %d", ret);
+
+	get_sf_ignore();
+
+	can_remove_rx_filter(can_dev, filter_id);
+	isotp_unbind(&recv_ctx);
+#endif
+}
+
 static bool canfd_predicate(const void *state)
 {
 	ARG_UNUSED(state);
