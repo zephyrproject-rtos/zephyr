@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2024-2025 NXP
 
-if(CONFIG_BOARD_IMX8MM_EVK_MIMX8MM6_M4)
+if(CONFIG_SOC_MIMX8MM6_M4)
   board_set_debugger_ifnset(jlink)
   board_set_flasher_ifnset(jlink)
 

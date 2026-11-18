@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+# Copyright (c) 2026 Testo SE & Co. KGaA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx8mm_evk/mimx8mm6/m4/ddr
+name: NXP i.MX8M Mini EVK (DDR)
+type: mcu
+arch: arm
+ram: 2048
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: nxp
