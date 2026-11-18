@@ -158,6 +158,12 @@ Libraries / Subsystems
   * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
     (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
 
+* USB host
+
+  * :ref:`uhc_api` optional HCD lifecycle hooks (enumeration, endpoint programming, and
+    disconnect cleanup) with public wrappers; see the migration guide for
+    :c:struct:`usb_device` field renames.
+
 * Utilities
 
   * :c:func:`utf8_is_valid` checks a given number of bytes for well-formed UTF-8
