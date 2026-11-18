@@ -327,7 +327,7 @@ class CheckPatch(ComplianceTest):
     """
 
     name = "Checkpatch"
-    doc = zephyr_doc_detail_builder("/contribute/guidelines.html#coding-style")
+    doc = zephyr_doc_detail_builder("/contribute/style/index.html#checkpatch")
 
     def run(self):
         checkpatch = ZEPHYR_BASE / 'scripts' / 'checkpatch.pl'
@@ -442,7 +442,7 @@ class ClangFormatCheck(ComplianceTest):
     """
 
     name = "ClangFormat"
-    doc = zephyr_doc_detail_builder("/contribute/guidelines.html#clang-format")
+    doc = zephyr_doc_detail_builder("/contribute/style/index.html#clang-format")
 
     def _process_patch_error(self, file: str, patch: unidiff.PatchedFile):
         for hunk in patch:
@@ -1988,7 +1988,7 @@ class Nits(ComplianceTest):
     """
 
     name = "Nits"
-    doc = zephyr_doc_detail_builder("/contribute/guidelines.html#coding-style")
+    doc = zephyr_doc_detail_builder("/contribute/style/index.html")
 
     def run(self):
         # Loop through added/modified files
