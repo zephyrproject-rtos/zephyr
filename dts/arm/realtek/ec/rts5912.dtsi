@@ -13,7 +13,6 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <freq.h>
-#include <zephyr/dt-bindings/gpio/realtek-gpio.h>
 
 / {
 	cpus {
