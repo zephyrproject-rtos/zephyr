@@ -767,10 +767,12 @@ static int i3c_stm32_config_ctrl_bus_char(const struct device *dev, enum i3c_con
 	I3C_TypeDef *i3c = config->i3c;
 	uint32_t i3c_clock = 0;
 	uint8_t aval = 0;
+	/* Set kern_clk_idx = 1, if independent kernel clock is used */
+	uint32_t kern_clk_idx = (config->pclk_len > 1U) ? 1U : 0U;
 
-	if (clock_control_get_rate(clk, (clock_control_subsys_t)&config->pclken[0], &i3c_clock) <
-	    0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
+	if (clock_control_get_rate(clk, (clock_control_subsys_t)&config->pclken[kern_clk_idx],
+				   &i3c_clock) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate(pclken[%u])", kern_clk_idx);
 		return -EIO;
 	}
 

@@ -10,19 +10,13 @@ description: |
   Resource Isolation Framework (RIF) configuration.
 
   To declare a peripheral "PERx" clock in the dtsi, you can follow the example
-  below:
-    PERx {
-      ...
-      clocks = <&rcc STM32_CLOCK(PERx, STM32_CLK)>;
-      ...
-    };
-
-  A clock source can also be referenced to query its rate through
-  clock_control_get_rate(). Example:
+  below, where the second entry is the clock crossbar (flexgen) channel that
+  feeds the peripheral kernel clock. Declaring it lets the clock controller
+  resolve the peripheral rate without any peripheral-specific code:
     PERx {
       ...
       clocks = <&rcc STM32_CLOCK(PERx, STM32_CLK)>,
-               <&rcc STM32_SRC_PCLK3 NO_SEL>;
+               <&rcc STM32_SRC_FLEXGEN(12) NO_SEL>;
       ...
     };
 
