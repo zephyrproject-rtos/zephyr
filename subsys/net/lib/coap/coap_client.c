@@ -1637,8 +1637,14 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	struct coap_option echo;
 
 	if (find_echo_option(response, &echo)) {
-		if (response_code != COAP_RESPONSE_CODE_UNAUTHORIZED) {
-			/* Send echo in next request to this endpoint */
+		if (response_code != COAP_RESPONSE_CODE_UNAUTHORIZED ||
+		    sent_to_group(internal_req)) {
+			/* Send echo in next request to this endpoint. That goes for the
+			 * challenge of a multicast request too: the value is for the
+			 * server it came from, not for the group (RFC 9175, sections
+			 * 2.3 and 2.4), so the request is not retried and the response
+			 * goes to the application.
+			 */
 			keep_echo(client, internal_req, addr, addrlen, &echo);
 		} else if (response_type != COAP_TYPE_ACK &&
 			   internal_req->echo_challenge_id == (int32_t)response_id) {
