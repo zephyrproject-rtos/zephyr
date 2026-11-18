@@ -51,6 +51,27 @@ void log_frontend_msg(const void *source,
 		      const struct log_msg_desc desc,
 		      uint8_t *package, const void *data);
 
+/** @brief Log generic message with externally provided timestamp.
+ *
+ * Same as @ref log_frontend_msg but the timestamp is provided by the caller. It is used when
+ * a message originating from a remote domain is passed to the frontend (see
+ * @kconfig{CONFIG_LOG_FRONTEND_EXT_TS_API}).
+ *
+ * @param source Pointer to a structure associated with given source.
+ *
+ * @param desc Message descriptor.
+ *
+ * @param package Cbprintf package containing logging formatted string. Length is in @p desc.
+ *
+ * @param data Hexdump data. Length is in @p desc.
+ *
+ * @param timestamp Message timestamp.
+ */
+void log_frontend_msg_with_timestamp(const void *source,
+				     const struct log_msg_desc desc,
+				     uint8_t *package, const void *data,
+				     log_timestamp_t timestamp);
+
 /** @brief Log message with 0 arguments.
  *
  * Optimized version for log message which does not have arguments (only string).

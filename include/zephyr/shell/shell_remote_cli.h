@@ -56,7 +56,8 @@ void shell_remote_cmd_process(void);
 			CBPRINTF_PACKAGE_ADD_RO_STR_POS | CBPRINTF_PACKAGE_ADD_RW_STR_POS;         \
 		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, SHELL_REMOTE_CLI_ALIGN, _options,          \
 					__VA_ARGS__);                                              \
-		_pkg = __builtin_alloca_with_align(_plen, 8);                                      \
+		long long _ll_buf[DIV_ROUND_UP(_plen, sizeof(long long))];                         \
+		_pkg = (void *)_ll_buf;                                                            \
 		CBPRINTF_STATIC_PACKAGE(_pkg, _plen, _plen, SHELL_REMOTE_CLI_ALIGN, _options,      \
 					__VA_ARGS__);                                              \
 		shell_remote_cli_cbpprintf(_sh, _color, _pkg, _plen);                              \
