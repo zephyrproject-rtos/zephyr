@@ -1051,7 +1051,8 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu);
  *
  *  @retval 0          Successfully pended operation.
  *  @retval -EINVAL    Bad arguments. See above requirements.
- *  @retval -ENOTCONN  Connection object is not in connected state.
+ *  @retval -ENOTCONN  Connection object is not in connected state, or a channel was
+ *                     disconnected while waiting for a buffer.
  *  @retval -EBUSY     Another outgoing reconfiguration is pending on the same
  *                     connection.
  *  @retval -ENOMEM    Host is out of buffers.
