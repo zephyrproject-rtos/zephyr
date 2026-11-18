@@ -29,6 +29,7 @@ struct gpio_stellaris_runtime {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 	sys_slist_t cb;
+	/* Serializes pin_configure, pin_interrupt_configure and port_toggle_bits */
 	struct k_spinlock lock;
 	/* Pins with an edge or level set up, the only ones GPIO_INT_MODE_ENABLE_ONLY unmasks */
 	gpio_port_pins_t sensed;
@@ -75,7 +76,9 @@ static int gpio_stellaris_configure(const struct device *dev,
 				    gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_stellaris_config *cfg = dev->config;
+	struct gpio_stellaris_runtime *context = dev->data;
 	uint32_t base = cfg->base;
+	k_spinlock_key_t key;
 
 	if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0) {
 		return -ENOTSUP;
@@ -89,6 +92,8 @@ static int gpio_stellaris_configure(const struct device *dev,
 	if (!gpio_port_pin_is_supported(cfg->common.port_pin_mask, pin)) {
 		return -EINVAL;
 	}
+
+	key = k_spin_lock(&context->lock);
 
 	if ((flags & GPIO_OUTPUT) != 0) {
 		mm_reg_t mask_addr;
@@ -114,6 +119,8 @@ static int gpio_stellaris_configure(const struct device *dev,
 		/* Pin digital disable */
 		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_DEN_OFFSET), pin);
 	}
+
+	k_spin_unlock(&context->lock, key);
 
 	return 0;
 }
@@ -253,7 +260,10 @@ static int gpio_stellaris_pin_interrupt_configure(const struct device *dev,
 	uint32_t base = cfg->base;
 	/* GPIO_INT_WAKEUP does not change how the pin is sensed */
 	uint32_t edges = (uint32_t)trig & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1);
+	k_spinlock_key_t key;
 	int ret = 0;
+
+	key = k_spin_lock(&context->lock);
 
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:
@@ -281,6 +291,8 @@ static int gpio_stellaris_pin_interrupt_configure(const struct device *dev,
 		ret = -ENOTSUP;
 		break;
 	}
+
+	k_spin_unlock(&context->lock, key);
 
 	return ret;
 }
