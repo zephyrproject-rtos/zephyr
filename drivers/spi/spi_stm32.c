@@ -516,6 +516,7 @@ static void spi_dma_enable_requests(SPI_TypeDef *spi)
 	}
 }
 
+#ifndef CONFIG_SPI_RTIO
 static void spi_stm32_dma_tx_done(const struct device *dev)
 {
 	const struct spi_stm32_config *cfg = dev->config;
@@ -526,6 +527,7 @@ static void spi_stm32_dma_tx_done(const struct device *dev)
 	}
 #endif /* SPI_SR_FTLVL */
 }
+#endif /* !CONFIG_SPI_RTIO */
 
 static void spi_stm32_dma_rx_done(const struct device *dev, const struct spi_config *config)
 {
@@ -1295,6 +1297,11 @@ static void spi_stm32_complete(const struct device *dev, int status)
 #endif /* compat st_stm32_spi_fifo*/
 
 	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+#ifdef SPI_SR_FTLVL
+		/* Disable procedure: the TX FIFO empties before BSY is checked */
+		while ((LL_SPI_GetTxFIFOLevel(spi) != 0U) && LL_SPI_IsEnabled(spi)) {
+		}
+#endif /* SPI_SR_FTLVL */
 		while (ll_spi_is_busy(spi) && LL_SPI_IsEnabled(spi)) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 			uint32_t width = SPI_WORD_SIZE_GET(data->ctx.config->operation);
@@ -2056,7 +2063,7 @@ static void dma_callback_async(const struct device *spi_dev, uint32_t channel, i
 			LOG_DBG("DMA Tx transfer is done");
 		}
 
-		spi_stm32_dma_tx_done(spi_dev);
+		/* Never wait for the TX FIFO here: SPE may still be clear */
 		data->status_flags |= SPI_STM32_DMA_TX_DONE_FLAG;
 	} else if (channel == data->dma_rx.channel) {
 		/* this part of the transfer ends */
