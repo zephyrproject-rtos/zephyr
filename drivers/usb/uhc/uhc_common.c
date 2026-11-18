@@ -422,94 +422,6 @@ out_commit:
 	return ret;
 }
 
-int uhc_add_endpoints(const struct device *dev, struct usb_device *udev)
-{
-	const struct uhc_driver_api *api;
-	int ret = 0;
-
-	if (dev == NULL || udev == NULL) {
-		return -EINVAL;
-	}
-
-	api = DEVICE_API_GET(uhc, dev);
-
-	api->lock(dev);
-
-	if (!uhc_is_initialized(dev)) {
-		ret = -EPERM;
-		goto out;
-	}
-
-	if (api->add_endpoints != NULL) {
-		ret = api->add_endpoints(dev, udev);
-	}
-
-out:
-	api->unlock(dev);
-
-	return ret;
-}
-
-int uhc_eps_verify_steady(const struct device *dev, struct usb_device *udev)
-{
-	const struct uhc_driver_api *api;
-	int ret;
-
-	if (dev == NULL || udev == NULL) {
-		return -EINVAL;
-	}
-
-	api = DEVICE_API_GET(uhc, dev);
-
-	if (api->eps_verify_steady == NULL) {
-		return 0;
-	}
-
-	api->lock(dev);
-
-	if (!uhc_is_initialized(dev)) {
-		ret = -EPERM;
-		goto out_verify;
-	}
-
-	ret = api->eps_verify_steady(dev, udev);
-
-out_verify:
-	api->unlock(dev);
-
-	return ret;
-}
-
-int uhc_ep_sync_after_clear_feature(const struct device *dev, struct usb_device *udev)
-{
-	const struct uhc_driver_api *api;
-	int ret;
-
-	if (dev == NULL || udev == NULL) {
-		return -EINVAL;
-	}
-
-	api = DEVICE_API_GET(uhc, dev);
-
-	if (api->ep_sync_after_clear_feature == NULL) {
-		return 0;
-	}
-
-	api->lock(dev);
-
-	if (!uhc_is_initialized(dev)) {
-		ret = -EPERM;
-		goto out_sync;
-	}
-
-	ret = api->ep_sync_after_clear_feature(dev, udev);
-
-out_sync:
-	api->unlock(dev);
-
-	return ret;
-}
-
 int uhc_endpoint_recover(const struct device *dev, struct usb_device *udev, uint8_t ep,
 			 enum uhc_ep_recovery_reason reason)
 {
@@ -545,34 +457,43 @@ out_recover:
 	return ret;
 }
 
-bool uhc_post_configure_steady(const struct device *dev, struct usb_device *udev)
+int uhc_root_default_state_reset(const struct device *dev, struct usb_device *udev)
 {
 	const struct uhc_driver_api *api;
-	bool steady;
+	int ret;
 
 	if (dev == NULL || udev == NULL) {
-		return false;
+		return -EINVAL;
+	}
+
+	if (udev->hub != NULL) {
+		return -EINVAL;
 	}
 
 	api = DEVICE_API_GET(uhc, dev);
 
-	if (api->post_configure_steady == NULL) {
-		return true;
-	}
-
 	api->lock(dev);
 
 	if (!uhc_is_initialized(dev)) {
-		steady = false;
-		goto out_steady;
+		ret = -EPERM;
+		goto out_default_state;
 	}
 
-	steady = api->post_configure_steady(dev, udev);
+	if (api->root_port_reset != NULL && api->device_prepare != NULL) {
+		ret = api->root_port_reset(dev, udev);
+		if (ret == 0) {
+			ret = api->device_prepare(dev, udev);
+		}
+	} else if (api->bus_reset != NULL) {
+		ret = api->bus_reset(dev);
+	} else {
+		ret = -ENOTSUP;
+	}
 
-out_steady:
+out_default_state:
 	api->unlock(dev);
 
-	return steady;
+	return ret;
 }
 
 int uhc_device_alloc(const struct device *dev, struct usb_device *udev)
