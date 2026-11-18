@@ -279,19 +279,6 @@ static void nt35510_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = data->orientation;
 }
 
-static int nt35510_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
-{
-	struct nt35510_data *data = dev->data;
-
-	if (pixel_format == PIXEL_FORMAT_RGB_565 || pixel_format == PIXEL_FORMAT_RGB_888) {
-		data->pixel_format = pixel_format;
-		return 0;
-	}
-	LOG_ERR("Pixel format not supported");
-	return -ENOTSUP;
-}
-
 static int nt35510_check_id(const struct device *dev)
 {
 	const struct nt35510_config *cfg = dev->config;
@@ -414,7 +401,6 @@ static DEVICE_API(display, nt35510_api) = {
 	.blanking_off = nt35510_blanking_off,
 	.set_brightness = nt35510_set_brightness,
 	.get_capabilities = nt35510_get_capabilities,
-	.set_pixel_format = nt35510_set_pixel_format,
 };
 
 #define NT35510_DEFINE(n)                                                                          \

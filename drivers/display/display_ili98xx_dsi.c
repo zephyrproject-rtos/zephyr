@@ -156,23 +156,9 @@ static void ili98xx_dsi_get_capabilities(const struct device *dev,
 	capabilities->current_pixel_format = cfg->pixel_format;
 }
 
-static int ili98xx_dsi_set_pixel_format(const struct device *dev,
-					const enum display_pixel_format pixel_format)
-{
-	const struct ili98xx_dsi_config *cfg = dev->config;
-
-	LOG_WRN("Pixel format change not implemented");
-	if (pixel_format == cfg->pixel_format) {
-		return 0;
-	}
-
-	return -ENOTSUP;
-}
-
 static DEVICE_API(display, ili98xx_dsi_api) = {
 	.blanking_on = ili98xx_dsi_blanking_on,
 	.blanking_off = ili98xx_dsi_blanking_off,
-	.set_pixel_format = ili98xx_dsi_set_pixel_format,
 	.get_capabilities = ili98xx_dsi_get_capabilities,
 };
 

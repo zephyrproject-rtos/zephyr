@@ -459,18 +459,6 @@ static int hx8394_blanking_on(const struct device *dev)
 	}
 }
 
-static int hx8394_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
-{
-	const struct hx8394_config *config = dev->config;
-
-	if (pixel_format == config->pixel_format) {
-		return 0;
-	}
-	LOG_WRN("Pixel format change not implemented");
-	return -ENOTSUP;
-}
-
 static int hx8394_set_orientation(const struct device *dev,
 				   const enum display_orientation orientation)
 {
@@ -518,7 +506,6 @@ static DEVICE_API(display, hx8394_api) = {
 	.blanking_on = hx8394_blanking_on,
 	.blanking_off = hx8394_blanking_off,
 	.get_capabilities = hx8394_get_capabilities,
-	.set_pixel_format = hx8394_set_pixel_format,
 	.set_orientation = hx8394_set_orientation,
 };
 

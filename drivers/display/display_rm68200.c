@@ -116,18 +116,6 @@ static int rm68200_blanking_on(const struct device *dev)
 	}
 }
 
-static int rm68200_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
-{
-	const struct rm68200_config *config = dev->config;
-
-	if (pixel_format == config->pixel_format) {
-		return 0;
-	}
-	LOG_ERR("Pixel format change not implemented");
-	return -ENOTSUP;
-}
-
 static int rm68200_set_orientation(const struct device *dev,
 				   const enum display_orientation orientation)
 {
@@ -154,7 +142,6 @@ static DEVICE_API(display, rm68200_api) = {
 	.blanking_on = rm68200_blanking_on,
 	.blanking_off = rm68200_blanking_off,
 	.get_capabilities = rm68200_get_capabilities,
-	.set_pixel_format = rm68200_set_pixel_format,
 	.set_orientation = rm68200_set_orientation,
 };
 
