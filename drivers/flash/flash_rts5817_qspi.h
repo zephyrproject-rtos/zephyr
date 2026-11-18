@@ -59,6 +59,8 @@ struct rts5817_spi_flash_params {
 	 * SPI_NOR_CMD_WREN instead.
 	 */
 	uint8_t volatile_status_reg_wren_cmd;
+	/* The flash returns a unique ID for the READ_UID command (0x4B). */
+	bool supports_uid;
 	/* Flash size in bytes. */
 	uint32_t flash_size;
 };

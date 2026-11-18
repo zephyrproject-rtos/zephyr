@@ -17,6 +17,9 @@
 #ifdef CONFIG_PM_DEVICE
 #include <zephyr/drivers/syscon.h>
 #endif
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+#include <zephyr/drivers/flash/rts5817_flash_api_extensions.h>
+#endif
 #include "flash_rts5817_qspi_reg.h"
 #include "flash_rts5817_qspi.h"
 #include "dlink_sys_reg.h"
@@ -27,6 +30,8 @@ LOG_MODULE_REGISTER(flash_rts5817_qspi, CONFIG_FLASH_LOG_LEVEL);
 
 /* JEDEC ID returned by the SPI_NOR_CMD_RDID command: manufacturer, memory type, capacity. */
 #define JEDEC_ID_LEN 3
+
+#define MAX_UID_LEN 16
 
 #define FLASH_PROTECT_ALL_BITS GENMASK(4, 2)
 
@@ -94,6 +99,7 @@ static const struct rts5817_spi_flash_params rts5817_flash_params_table[] = {
 		.dummy_cycles_reg = RTS5817_QSPI_DUMMY_CYCLES_8_REG,
 		.quad_enable_bit = RTS5817_QSPI_SR2_QE_BIT,
 		.volatile_status_reg_wren_cmd = RTS5817_FLASH_CMD_VOLATILE_SR_WREN,
+		.supports_uid = true,
 		.flash_size = MB(2),
 	},
 	{
@@ -102,6 +108,7 @@ static const struct rts5817_spi_flash_params rts5817_flash_params_table[] = {
 		.dummy_cycles_reg = RTS5817_QSPI_DUMMY_CYCLES_8_REG,
 		.quad_enable_bit = RTS5817_QSPI_SR2_QE_BIT,
 		.volatile_status_reg_wren_cmd = RTS5817_FLASH_CMD_VOLATILE_SR_WREN,
+		.supports_uid = true,
 		.flash_size = MB(2),
 	},
 	{
@@ -110,6 +117,7 @@ static const struct rts5817_spi_flash_params rts5817_flash_params_table[] = {
 		.dummy_cycles_reg = RTS5817_QSPI_DUMMY_CYCLES_8_REG,
 		.quad_enable_bit = RTS5817_QSPI_SR2_QE_BIT,
 		.volatile_status_reg_wren_cmd = RTS5817_FLASH_CMD_VOLATILE_SR_WREN,
+		.supports_uid = true,
 		.flash_size = MB(2),
 	},
 	{
@@ -118,6 +126,7 @@ static const struct rts5817_spi_flash_params rts5817_flash_params_table[] = {
 		.dummy_cycles_reg = RTS5817_QSPI_DUMMY_CYCLES_8_REG,
 		.quad_enable_bit = RTS5817_QSPI_SR2_QE_BIT,
 		.volatile_status_reg_wren_cmd = RTS5817_FLASH_CMD_VOLATILE_SR_WREN,
+		.supports_uid = true,
 		.flash_size = MB(2),
 	},
 };
@@ -251,6 +260,38 @@ static int rts_fp_read_jedec_id(const struct device *dev, uint32_t *id)
 	return 0;
 }
 
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+static int rts_fp_flash_read_uid(const struct device *dev, uint8_t *uid, size_t len)
+{
+	BUILD_ASSERT(CONFIG_DCACHE_LINE_SIZE >= MAX_UID_LEN,
+		     "DCACHE line size must be at least MAX_UID_LEN");
+	struct flash_rts5817_qspi_data *dev_data = dev->data;
+	uint8_t temp[CONFIG_DCACHE_LINE_SIZE] __aligned(CONFIG_DCACHE_LINE_SIZE);
+	int ret;
+
+	if (uid == NULL || len == 0 || len > MAX_UID_LEN) {
+		return -EINVAL;
+	}
+
+	if (!dev_data->flash->supports_uid) {
+		return -ENOTSUP;
+	}
+
+	/*
+	 * READ_UID needs 32 clocks between the opcode and the ID: the 3 address bytes of the
+	 * fast read (0x000000) and its 8 dummy cycles.
+	 */
+	ret = rts_fp_qspi_read_align(dev, RTS5817_QSPI_XFER_FAST_READ, RTS5817_FLASH_CMD_READ_UID,
+				     0, len, temp);
+
+	if (ret == 0) {
+		memcpy(uid, temp, len);
+	}
+
+	return ret;
+}
+#endif
+
 static int rts_fp_qspi_write_status(const struct device *dev, uint8_t cmd, uint8_t wren_cmd,
 				    uint8_t *value, uint8_t len)
 {
@@ -330,16 +371,11 @@ static int rts_fp_flash_write_status(const struct device *dev, uint8_t *value, b
 	}
 }
 
-/* Automatic protection around write and erase: a no-op when it is not enabled. */
-static int rts_fp_flash_soft_write_protect(const struct device *dev, bool enable)
+static int rts_fp_flash_set_soft_write_protect(const struct device *dev, bool enable)
 {
 	uint8_t status_reg[2] = {0, 0};
 	uint8_t target = enable ? FLASH_PROTECT_ALL_BITS : 0;
 	int ret;
-
-	if (!IS_ENABLED(CONFIG_FLASH_RTS5817_WRITE_PROTECTION_AUTO)) {
-		return 0;
-	}
 
 	ret = rts_fp_flash_read_status(dev, status_reg);
 	if (ret != 0) {
@@ -353,6 +389,16 @@ static int rts_fp_flash_soft_write_protect(const struct device *dev, bool enable
 	status_reg[0] = (status_reg[0] & ~FLASH_PROTECT_ALL_BITS) | target;
 
 	return rts_fp_flash_write_status(dev, status_reg, true);
+}
+
+/* Automatic protection around write and erase: a no-op when it is not enabled. */
+static int rts_fp_flash_soft_write_protect(const struct device *dev, bool enable)
+{
+	if (!IS_ENABLED(CONFIG_FLASH_RTS5817_WRITE_PROTECTION_AUTO)) {
+		return 0;
+	}
+
+	return rts_fp_flash_set_soft_write_protect(dev, enable);
 }
 
 static int rts_fp_flash_quad_cfg(const struct device *dev, bool enable)
@@ -675,11 +721,98 @@ static void flash_rts5817_qspi_pages_layout(const struct device *dev,
 }
 #endif
 
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+static int flash_rts5817_ex_op_write_status(const struct device *dev, const uint8_t *sr,
+					    bool is_volatile)
+{
+	struct flash_rts5817_qspi_data *dev_data = dev->data;
+	uint8_t status_reg[2] = {sr[0], sr[1]};
+	uint8_t reg_idx = dev_data->flash->quad_enable_bit / BITS_PER_BYTE;
+	uint8_t bit_pos = dev_data->flash->quad_enable_bit % BITS_PER_BYTE;
+
+	if (reg_idx >= ARRAY_SIZE(status_reg)) {
+		return -ENOTSUP;
+	}
+
+	/* Keep QE matched to the read mode: it is set only in quad mode. */
+	WRITE_BIT(status_reg[reg_idx], bit_pos,
+		  dev_data->read_mode == RTS5817_QSPI_XFER_FAST_READ_QUAD_OUT);
+
+	if (!is_volatile) {
+		uint8_t current[2] = {0};
+		int ret = rts_fp_flash_read_status(dev, current);
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		/* The non-volatile status register wears out, so do not rewrite the same value. */
+		if (current[0] == status_reg[0] && current[1] == status_reg[1]) {
+			return 0;
+		}
+	}
+
+	return rts_fp_flash_write_status(dev, status_reg, is_volatile);
+}
+
+static int flash_rts5817_ex_op(const struct device *dev, uint16_t opcode, const uintptr_t in,
+			       void *out)
+{
+	struct flash_rts5817_qspi_data *dev_data = dev->data;
+	int ret;
+
+	k_sem_take(&dev_data->sem, K_FOREVER);
+
+	switch (opcode) {
+	case FLASH_RTS5817_EX_OP_WR_SR:
+	case FLASH_RTS5817_EX_OP_WR_SR_NV:
+		if (in == 0) {
+			ret = -EINVAL;
+			break;
+		}
+		ret = flash_rts5817_ex_op_write_status(dev, (const uint8_t *)in,
+						       opcode == FLASH_RTS5817_EX_OP_WR_SR);
+		break;
+	case FLASH_RTS5817_EX_OP_RD_SR:
+		if (out == NULL) {
+			ret = -EINVAL;
+			break;
+		}
+		ret = rts_fp_flash_read_status(dev, (uint8_t *)out);
+		break;
+	case FLASH_RTS5817_EX_OP_RD_UID:
+		if (in == 0 || out == NULL) {
+			ret = -EINVAL;
+			break;
+		}
+		ret = rts_fp_flash_read_uid(dev, (uint8_t *)out, *(const uint8_t *)in);
+		break;
+	case FLASH_RTS5817_EX_OP_SOFT_PROTECT:
+		if (in == 0) {
+			ret = -EINVAL;
+			break;
+		}
+		ret = rts_fp_flash_set_soft_write_protect(dev, *(const uint8_t *)in != 0);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	k_sem_give(&dev_data->sem);
+
+	return ret;
+}
+#endif
+
 static DEVICE_API(flash, flash_rts5817_qspi_driver_api) = {
 	.read = flash_rts5817_qspi_read,
 	.write = flash_rts5817_qspi_write,
 	.erase = flash_rts5817_qspi_erase,
 	.get_parameters = flash_rts5817_qspi_get_parameters,
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+	.ex_op = flash_rts5817_ex_op,
+#endif
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_rts5817_qspi_pages_layout,
 #endif

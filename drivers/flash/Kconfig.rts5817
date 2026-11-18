@@ -10,6 +10,7 @@ config FLASH_RTS5817_QSPI
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_EX_OP
 	select SYSCON if PM_DEVICE
 	help
 	  Enable RTS5817 Flash driver.
@@ -21,6 +22,8 @@ config FLASH_RTS5817_WRITE_PROTECTION_AUTO
 	default y
 	help
 	  Disable the flash software write protection before writing or erasing,
-	  and enable it again afterwards.
+	  and enable it again afterwards. If n is selected, write protection
+	  must be controlled manually via flash_ex_op, which requires
+	  FLASH_EX_OP_ENABLED.
 
 endif
