@@ -350,18 +350,23 @@ static void recv_sig(struct net_buf *buf)
 	recv_pdu(buf, BT_L2CAP_CID_LE_SIG);
 }
 
-/* A connection request for a PSM without a server, which the Host refuses */
-static void recv_unknown_conn_req(uint8_t ident)
+static void recv_conn_req(uint8_t ident, uint16_t psm, uint16_t scid)
 {
 	struct net_buf *buf;
 
 	buf = sig_cmd(BT_L2CAP_LE_CONN_REQ, ident);
-	net_buf_add_le16(buf, UNKNOWN_PSM);
-	net_buf_add_le16(buf, PEER_CID + 1U);
+	net_buf_add_le16(buf, psm);
+	net_buf_add_le16(buf, scid);
 	net_buf_add_le16(buf, LE_MIN_MTU);
 	net_buf_add_le16(buf, LE_MIN_MTU);
 	net_buf_add_le16(buf, 1U);
 	recv_sig(buf);
+}
+
+/* A connection request for a PSM without a server, which the Host refuses */
+static void recv_unknown_conn_req(uint8_t ident)
+{
+	recv_conn_req(ident, UNKNOWN_PSM, PEER_CID + 1U);
 }
 
 static int chan_recv(struct bt_l2cap_chan *ch, struct net_buf *buf)
@@ -641,11 +646,11 @@ static void host_pdus_take(void)
 	}
 }
 
+/* Also gives the rest of the pool, after a test gave some of it back */
 static void host_pdus_give(void)
 {
 	ARRAY_FOR_EACH(host_pdus, i) {
-		net_buf_unref(host_pdus[i]);
-		host_pdus[i] = NULL;
+		net_buf_drop(&host_pdus[i]);
 	}
 }
 
@@ -742,6 +747,266 @@ static ZTEST(host_l2cap_le_tx, test_disconn_rsp_no_buf)
 	zassert_ok(k_sem_take(&released_sem, K_NO_WAIT), "The channel was not released");
 	zassert_equal(peer_chan.state, BT_L2CAP_DISCONNECTED);
 
+	host_pdus_give();
+	tx_none();
+}
+
+/* The SDU that chan_recv_hold() keeps for the application to complete */
+static struct net_buf *held_sdu;
+
+static int chan_recv_hold(struct bt_l2cap_chan *ch, struct net_buf *buf)
+{
+	held_sdu = buf;
+
+	return -EINPROGRESS;
+}
+
+/* A single K-frame, which takes the only credit of the peer */
+static void recv_held_sdu(const struct bt_l2cap_le_chan *ch)
+{
+	struct net_buf *buf;
+
+	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+	(void)net_buf_add(buf, sizeof(struct bt_hci_acl_hdr) + sizeof(struct bt_l2cap_hdr));
+	net_buf_add_le16(buf, strlen(DATA));
+	(void)net_buf_add_mem(buf, DATA, strlen(DATA));
+	recv_pdu(buf, ch->rx.cid);
+	zassert_not_null(held_sdu, "The SDU was not received");
+}
+
+/* As an application completes an SDU on a thread of its own */
+static void recv_complete_entry(void *p1, void *p2, void *p3)
+{
+	int *err = p3;
+
+	*err = bt_l2cap_chan_recv_complete(p1, p2);
+}
+
+/* Completes the held SDU on a thread of its own, which runs until it waits for
+ * a buffer for the credits, all of which the caller has taken. The thread runs
+ * above the priority of this one, so that the yield lets it run until then, and
+ * below the Bluetooth RX workqueue, which a free buffer goes to first.
+ */
+static struct k_thread *recv_complete_start(struct bt_l2cap_chan *ch, int *err)
+{
+	static K_THREAD_STACK_DEFINE(app_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
+	static struct k_thread app_thread;
+
+	(void)k_thread_create(&app_thread, app_stack, K_THREAD_STACK_SIZEOF(app_stack),
+			      recv_complete_entry, ch, net_buf_take(&held_sdu), err,
+			      K_PRIO_COOP(CONFIG_BT_RX_PRIO + 1), 0, K_NO_WAIT);
+	k_yield();
+
+	return &app_thread;
+}
+
+static K_SEM_DEFINE(shutdown_sem, 0, 1);
+
+static void chan_status_shutdown(struct bt_l2cap_chan *ch, atomic_t *status)
+{
+	if (atomic_test_bit(status, BT_L2CAP_STATUS_SHUTDOWN)) {
+		k_sem_give(&shutdown_sem);
+	}
+}
+
+/* A channel whose credits from an application thread find no buffer is
+ * disconnected, and its shutdown is reported
+ */
+static ZTEST(host_l2cap_le_tx, test_recv_complete_no_buf)
+{
+	static const struct bt_l2cap_chan_ops ops = {
+		.recv = chan_recv_hold,
+		.status = chan_status_shutdown,
+	};
+	static struct bt_l2cap_le_chan app_chan;
+	/* Not a CID of the other tests */
+	const uint16_t peer_cid = PEER_CID + 11U;
+	struct k_thread *app_thread;
+	int app_err = -EINPROGRESS;
+
+	chan_connect(&app_chan, &ops, peer_cid);
+	recv_held_sdu(&app_chan);
+	host_pdus_take();
+
+	app_thread = recv_complete_start(&app_chan.chan, &app_err);
+
+	/* After BT_L2CAP_RTX_TIMEOUT */
+	zassert_ok(k_thread_join(app_thread, K_FOREVER), "Joining the application thread failed");
+	zassert_ok(app_err, "bt_l2cap_chan_recv_complete() failed (err %d)", app_err);
+	zassert_ok(k_sem_take(&shutdown_sem, TX_TIMEOUT), "The shutdown was not reported");
+	zassert_equal(disconn_accept(), peer_cid);
+	zassert_equal(app_chan.state, BT_L2CAP_DISCONNECTED);
+
+	host_pdus_give();
+	tx_none();
+}
+
+/* The channel as chan_released() found it, and whether the status callback ran
+ * after that
+ */
+static struct bt_l2cap_le_chan released_chan;
+static bool chan_is_released;
+static bool status_after_release;
+
+static void chan_status_released(struct bt_l2cap_chan *ch, atomic_t *status)
+{
+	if (chan_is_released) {
+		status_after_release = true;
+	}
+}
+
+static void chan_released(struct bt_l2cap_chan *ch)
+{
+	released_chan = *BT_L2CAP_LE_CHAN(ch);
+	chan_is_released = true;
+}
+
+/* While an application thread waits in bt_l2cap_chan_recv_complete() for a
+ * buffer for the credits, the peer disconnects the channel. The Bluetooth RX
+ * workqueue gets the first buffer given back, for its Disconnection Response,
+ * and releases the channel. The application thread gets the second buffer, if
+ * one is given back, or none. Uses the identifiers ident and ident + 1.
+ */
+static void recv_complete_released(uint16_t peer_cid, uint8_t ident, size_t bufs_back)
+{
+	static const struct bt_l2cap_chan_ops ops = {
+		.recv = chan_recv_hold,
+		.status = chan_status_released,
+		.released = chan_released,
+	};
+	static struct bt_l2cap_le_chan app_chan;
+	struct k_thread *app_thread;
+	int app_err = -EINPROGRESS;
+	struct net_buf *buf;
+
+	(void)memset(&app_chan, 0, sizeof(app_chan));
+	chan_is_released = false;
+	status_after_release = false;
+	chan_connect(&app_chan, &ops, peer_cid);
+	recv_held_sdu(&app_chan);
+
+	/* A response takes the controller's buffer until release(): the
+	 * Disconnection Response then keeps its buffer in the Host
+	 */
+	hold = true;
+	recv_unknown_conn_req(ident);
+	zassert_equal(tx_sig(BT_L2CAP_LE_CONN_RSP), ident);
+
+	host_pdus_take();
+
+	app_thread = recv_complete_start(&app_chan.chan, &app_err);
+
+	buf = sig_cmd(BT_L2CAP_DISCONN_REQ, ident + 1U);
+	net_buf_add_le16(buf, app_chan.rx.cid);
+	net_buf_add_le16(buf, peer_cid);
+	recv_sig(buf);
+
+	for (size_t i = 0U; i < bufs_back; i++) {
+		net_buf_drop(&host_pdus[i]);
+	}
+
+	/* Without a buffer, after BT_L2CAP_RTX_TIMEOUT */
+	zassert_ok(k_thread_join(app_thread, K_FOREVER), "Joining the application thread failed");
+	zassert_true(chan_is_released, "The channel was not released");
+	zassert_ok(app_err, "bt_l2cap_chan_recv_complete() failed (err %d)", app_err);
+	zassert_false(status_after_release, "The status callback ran on the released channel");
+	zassert_mem_equal(&app_chan, &released_chan, sizeof(app_chan),
+			  "The released channel was written to");
+
+	release();
+	zassert_equal(tx_sig(BT_L2CAP_DISCONN_RSP), ident + 1U);
+
+	host_pdus_give();
+	tx_none();
+}
+
+/* Nothing is written into a channel released while its credits wait for a buffer */
+static ZTEST(host_l2cap_le_tx, test_recv_complete_released)
+{
+	/* Not a CID or identifiers of the other tests */
+	recv_complete_released(PEER_CID + 9U, PEER_IDENT + 6U, 2U);
+}
+
+/* A channel released while its credits wait in vain for a buffer is not shut down */
+static ZTEST(host_l2cap_le_tx, test_recv_complete_released_no_buf)
+{
+	/* Not a CID or identifiers of the other tests */
+	recv_complete_released(PEER_CID + 10U, PEER_IDENT + 8U, 1U);
+}
+
+/* The channel that reuse_accept() hands out */
+static struct bt_l2cap_le_chan reused_chan;
+
+static int reuse_accept(struct bt_conn *c, struct bt_l2cap_server *server,
+			struct bt_l2cap_chan **ch)
+{
+	*ch = &reused_chan.chan;
+
+	return 0;
+}
+
+/* A channel released while its credits wait for a buffer, and connected again
+ * at once to a server that hands out the same channel object, gets nothing from
+ * the earlier wait
+ */
+static ZTEST(host_l2cap_le_tx, test_recv_complete_reused)
+{
+	static const struct bt_l2cap_chan_ops ops = {
+		.recv = chan_recv_hold,
+	};
+	/* Not a PSM, CID or identifiers of the other tests */
+	static struct bt_l2cap_server server = {
+		.psm = PSM + 2U,
+		.accept = reuse_accept,
+	};
+	const uint16_t peer_cid = PEER_CID + 12U;
+	const uint8_t ident = PEER_IDENT + 10U;
+	struct k_thread *app_thread;
+	int app_err = -EINPROGRESS;
+	struct net_buf *buf;
+
+	zassert_ok(bt_l2cap_server_register(&server));
+	chan_connect(&reused_chan, &ops, peer_cid);
+	recv_held_sdu(&reused_chan);
+
+	/* A response takes the controller's buffer until release(): the
+	 * responses below then keep their buffers in the Host
+	 */
+	hold = true;
+	recv_unknown_conn_req(ident);
+	zassert_equal(tx_sig(BT_L2CAP_LE_CONN_RSP), ident);
+
+	host_pdus_take();
+
+	app_thread = recv_complete_start(&reused_chan.chan, &app_err);
+
+	buf = sig_cmd(BT_L2CAP_DISCONN_REQ, ident + 1U);
+	net_buf_add_le16(buf, reused_chan.rx.cid);
+	net_buf_add_le16(buf, peer_cid);
+	recv_sig(buf);
+	net_buf_drop(&host_pdus[0]);
+
+	recv_conn_req(ident + 2U, server.psm, peer_cid);
+
+	/* The Bluetooth RX workqueue takes the first for the Connection
+	 * Response and connects the channel before the application thread
+	 * runs with the second
+	 */
+	net_buf_drop(&host_pdus[1]);
+	net_buf_drop(&host_pdus[2]);
+
+	zassert_ok(k_thread_join(app_thread, K_FOREVER), "Joining the application thread failed");
+	zassert_ok(app_err, "bt_l2cap_chan_recv_complete() failed (err %d)", app_err);
+	zassert_equal(reused_chan.state, BT_L2CAP_CONNECTED);
+
+	release();
+	zassert_equal(tx_sig(BT_L2CAP_DISCONN_RSP), ident + 1U);
+	zassert_equal(tx_sig(BT_L2CAP_LE_CONN_RSP), ident + 2U);
+	tx_none();
+
+	zassert_ok(bt_l2cap_chan_disconnect(&reused_chan.chan));
+	zassert_equal(disconn_accept(), peer_cid);
+	zassert_ok(bt_l2cap_server_unregister(&server));
 	host_pdus_give();
 	tx_none();
 }
