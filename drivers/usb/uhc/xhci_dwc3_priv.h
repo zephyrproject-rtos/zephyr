@@ -68,6 +68,7 @@ struct xhci_dev_slot {
 	struct xhci_td ep0_td;
 	uint64_t ep0_expect_ioc_trb_phys;
 	atomic_t ep0_recover_in_flight;
+	atomic_t ep0_teardown_wait;
 	int xfer_result;
 	uint32_t xfer_length;
 	uint32_t xfer_comp_code;

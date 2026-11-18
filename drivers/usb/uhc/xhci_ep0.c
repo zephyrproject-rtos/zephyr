@@ -402,46 +402,78 @@ int xhci_evaluate_ep0_mps(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot
 }
 
 /*
+ * True when the slot is still bound and no EP0 URB is in flight. Used before
+ * and after xHCI commands so disconnect/teardown cannot race command issuance.
+ */
+static bool xhci_ep0_recover_slot_live(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot,
+				       uint8_t sid)
+{
+	if (priv == NULL || slot == NULL || sid == 0U || sid > XHCI_MAX_DEVSLOTS) {
+		return false;
+	}
+
+	if (atomic_get(&slot->ep0_teardown_wait) != 0 || xhci_slot_get(priv, sid) != slot ||
+	    !slot->active || slot->udev == NULL || slot->udev->slot_id != sid ||
+	    slot->ep0_active_xfer != NULL) {
+		return false;
+	}
+
+	return slot->ep0_ring.trbs != NULL;
+}
+
+/*
  * xHCI §4.9.2 / xhci_bulk_recover_ep(): after a failed or stopped EP0
  * transfer, align the SW ring to the HW dequeue, then Reset Endpoint
  * (Halted/Error) or Set TR Dequeue (Stopped / RUNNING mismatch) so the
  * next control TD can be queued. Does not retry the failed request.
+ *
+ * Runs from uhc_dwc3_ep0_enqueue() only (after the failed TD is retired from
+ * ep0_active_xfer) so recovery is not duplicated on the cancel/timeout path.
  */
 int xhci_ep0_recover_slot(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot)
 {
 	struct xhci_ring *ring;
 	uint32_t st;
 	uint64_t deq;
-	int ret;
+	int ret = 0;
 	const uint32_t ep_index = 0U;
 	const uint8_t dci = XHCI_DCI_DEFAULT_CONTROL;
+	uint8_t sid;
 
-	if (priv == NULL || slot == NULL || !slot->active || slot->udev == NULL ||
-	    slot->udev->slot_id == 0U) {
+	if (priv == NULL || slot == NULL) {
 		return 0;
 	}
 
-	ring = &slot->ep0_ring;
-	if (ring->trbs == NULL) {
-		return -EINVAL;
+	if (!xhci_ep0_recover_slot_live(priv, slot,
+					slot->udev != NULL ? slot->udev->slot_id : 0U)) {
+		return 0;
 	}
 
-	if (slot->ep0_active_xfer != NULL) {
-		return -EBUSY;
-	}
+	sid = slot->udev->slot_id;
+	ring = &slot->ep0_ring;
+
+	atomic_set(&slot->ep0_recover_in_flight, 1);
 
 	xhci_ep0_ring_sync_from_hw(priv, slot);
 	ring->dequeue = ring->enqueue;
 
+	if (!xhci_ep0_recover_slot_live(priv, slot, sid)) {
+		goto out;
+	}
+
 	st = uhc_dwc3_xhci_read_ep_state(priv, slot, dci);
 
 	if (st == XHCI_EP_CTX_EP_STATE_INVALID || st == XHCI_EP_CTX_EP_STATE_DISABLED) {
-		return 0;
+		goto out;
 	}
 
 	if (st == XHCI_EP_CTX_EP_STATE_RUNNING) {
 		if (xhci_ep0_ring_verify_dequeue_matches_sw(priv, slot)) {
-			return 0;
+			goto out;
+		}
+
+		if (!xhci_ep0_recover_slot_live(priv, slot, sid)) {
+			goto out;
 		}
 
 		deq = xhci_bulk_deq_operand(ring);
@@ -450,36 +482,48 @@ int xhci_ep0_recover_slot(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot
 
 		ret = xhci_cmd_set_tr_dequeue_deq(priv, slot, ep_index, deq);
 		if (ret != 0) {
-			LOG_ERR("EP0 Set TR Dequeue (RUNNING mismatch) failed: %d", ret);
-			return ret;
+			if (xhci_ep0_recover_slot_live(priv, slot, sid)) {
+				LOG_ERR("EP0 Set TR Dequeue (RUNNING mismatch) failed: %d", ret);
+			}
+			goto out;
 		}
 
 		xhci_ep0_ring_sync_from_hw(priv, slot);
 		ring->dequeue = ring->enqueue;
-		return 0;
+		goto out;
 	}
 
 	if (st != XHCI_EP_CTX_EP_STATE_HALTED && st != XHCI_EP_CTX_EP_STATE_ERROR &&
 	    st != XHCI_EP_CTX_EP_STATE_STOPPED) {
-		return 0;
+		goto out;
 	}
 
 	deq = xhci_bulk_deq_operand(ring);
 
 	if (st == XHCI_EP_CTX_EP_STATE_STOPPED) {
+		if (!xhci_ep0_recover_slot_live(priv, slot, sid)) {
+			goto out;
+		}
+
 		LOG_WRN("EP0 STOPPED — Set TR Dequeue deq=0x%016llx sw_idx=%u pcs=%u",
 			(unsigned long long)deq, (unsigned int)ring->dequeue,
 			(unsigned int)(ring->cycle_state & 1U));
 
 		ret = xhci_cmd_set_tr_dequeue_deq(priv, slot, ep_index, deq);
 		if (ret != 0) {
-			LOG_ERR("EP0 Set TR Dequeue (STOPPED) failed: %d", ret);
-			return ret;
+			if (xhci_ep0_recover_slot_live(priv, slot, sid)) {
+				LOG_ERR("EP0 Set TR Dequeue (STOPPED) failed: %d", ret);
+			}
+			goto out;
 		}
 
 		xhci_ep0_ring_sync_from_hw(priv, slot);
 		ring->dequeue = ring->enqueue;
-		return 0;
+		goto out;
+	}
+
+	if (!xhci_ep0_recover_slot_live(priv, slot, sid)) {
+		goto out;
 	}
 
 	LOG_WRN("EP0 STATE=%u — Reset EP + Set TR Dequeue deq=0x%016llx sw_idx=%u pcs=%u",
@@ -488,22 +532,35 @@ int xhci_ep0_recover_slot(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot
 
 	ret = uhc_dwc3_xhci_reset_ep(priv, slot, ep_index);
 	if (ret != 0) {
-		LOG_ERR("EP0 Reset Endpoint failed: %d", ret);
-		return ret;
+		if (xhci_ep0_recover_slot_live(priv, slot, sid)) {
+			LOG_ERR("EP0 Reset Endpoint failed: %d", ret);
+		}
+		goto out;
+	}
+
+	if (!xhci_ep0_recover_slot_live(priv, slot, sid)) {
+		goto out;
 	}
 
 	ret = xhci_cmd_set_tr_dequeue_deq(priv, slot, ep_index, deq);
 	if (ret != 0) {
-		LOG_ERR("EP0 Set TR Dequeue failed: %d", ret);
-		return ret;
+		if (xhci_ep0_recover_slot_live(priv, slot, sid)) {
+			LOG_ERR("EP0 Set TR Dequeue failed: %d", ret);
+		}
+		goto out;
 	}
 
 	xhci_ep0_ring_sync_from_hw(priv, slot);
 	ring->dequeue = ring->enqueue;
 
-	LOG_INF("EP0 recover OK Reset EP + Set TR Dequeue deq=0x%016llx sw_idx=%u pcs=%u",
-		(unsigned long long)deq, (unsigned int)ring->dequeue,
-		(unsigned int)(ring->cycle_state & 1U));
+	if (xhci_ep0_recover_slot_live(priv, slot, sid)) {
+		LOG_INF("EP0 recover OK Reset EP + Set TR Dequeue deq=0x%016llx sw_idx=%u pcs=%u",
+			(unsigned long long)deq, (unsigned int)ring->dequeue,
+			(unsigned int)(ring->cycle_state & 1U));
+	}
 
-	return 0;
+out:
+	atomic_set(&slot->ep0_recover_in_flight, 0);
+
+	return ret;
 }
