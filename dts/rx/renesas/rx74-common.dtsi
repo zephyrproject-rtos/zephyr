@@ -516,6 +516,43 @@
 			};
 		};
 
+		canfdg_global: canfdg_global@87480000 {
+			compatible = "renesas,rx-canfdg-global";
+			interrupts-extended = <&group_irq_al2 0 1>,
+					      <&group_irq_al2 1 1>;
+			interrupt-names = "rfri", "glei";
+			clocks = <&pclka 0 0>, <&pclke 0 0>;
+			clock-names = "opclk", "ramclk";
+			dll-min-freq = <0>;
+			dll-max-freq = <80000000>;
+			reg = <0x87480000 0x20>;
+			status = "disabled";
+
+			canfdg0: canfdg0 {
+				compatible = "renesas,rx-canfdg";
+				channel = <0>;
+				interrupts-extended = <&group_irq_al2 2 1>,
+						      <&group_irq_al2 3 1>,
+						      <&group_irq_al2 4 1>;
+				interrupt-names = "chti", "chei", "chri";
+				clocks = <&canfdclk MSTPC 27>;
+				clock-names = "dllclk";
+				status = "disabled";
+			};
+
+			canfdg1: canfdg1 {
+				compatible = "renesas,rx-canfdg";
+				channel = <1>;
+				interrupts-extended = <&group_irq_al2 5 1>,
+						      <&group_irq_al2 6 1>,
+						      <&group_irq_al2 7 1>;
+				interrupt-names = "chti", "chei", "chri";
+				clocks = <&canfdclk MSTPC 27>;
+				clock-names = "dllclk";
+				status = "disabled";
+			};
+		};
+
 		ioport0: gpio@87c00000 {
 			compatible = "renesas,rx-gpio-ioport";
 			reg = <0x87c00000 0x20>;
