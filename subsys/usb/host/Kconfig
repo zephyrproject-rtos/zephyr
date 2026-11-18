@@ -41,19 +41,66 @@ config USBH_INIT_PRIO
 	help
 	  USB host thread initialization priority level.
 
-config USBH_STACK_SIZE
-	int "USB host stack thread stack size"
-	default 1024
-	help
-	  USB host stack thread stack size in bytes.
-
 config USBH_MAX_UHC_MSG
 	int "Maximum number of UHC events"
 	default 10
 	help
-	  Maximum number of USB host controller events that can be queued.
+	  Maximum number of UHC events that can be queued.
 
 rsource "Kconfig.usbip"
 rsource "class/Kconfig"
+
+config USBH_STACK_SIZE
+	int "USB host stack thread stack size"
+	default 1024
+	help
+	  Stack size in bytes for the USB host worker threads (main and bus).
+
+config USBH_USB2_ENUM_SCHEME
+	bool "USB2 enumeration (64-byte GET_DESCRIPTOR before SET_ADDRESS)"
+	default n
+	help
+	  USB2 enumeration order in usbh_device_init() with optional xHCI
+	  uhc_assign_address instead of legacy SET_ADDRESS.
+
+config USBH_USB2_ENUM_SECOND_RESET
+	bool "Second bus reset after first GET_DESCRIPTOR"
+	default n
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_POST_SET_ADDRESS_MS
+	int "Milliseconds to delay after SET_ADDRESS"
+	default 10
+	range 0 500
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_GET_DESCRIPTOR_TRIES
+	int "GET_DESCRIPTOR retry count"
+	default 2
+	range 1 5
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_SET_ADDRESS_TRIES
+	int "SET_ADDRESS retry count"
+	default 2
+	range 1 5
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_ENUM_RETRY_DELAY_MS
+	int "Milliseconds between GET_DESCRIPTOR retries"
+	default 100
+	range 0 500
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_SET_ADDRESS_RETRY_DELAY_MS
+	int "Milliseconds between SET_ADDRESS retries"
+	default 200
+	range 0 500
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_POST_SET_CONFIGURATION_MS
+	int "Milliseconds to delay after SET_CONFIGURATION before full cfg read"
+	default 0
+	range 0 500
 
 endif # USB_HOST_STACK
