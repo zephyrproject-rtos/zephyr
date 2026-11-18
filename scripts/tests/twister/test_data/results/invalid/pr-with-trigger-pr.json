@@ -1,0 +1,13 @@
+{
+  "base": "ci-build.json",
+  "ops": [
+    [
+      "del",
+      [
+        "submission",
+        "context",
+        "pr"
+      ]
+    ]
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "base": "miss-lab-event.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "failure_class",
+        "reason"
+      ],
+      "flash"
+    ],
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "failure_class",
+        "detail"
+      ],
+      "flash job 209 failed"
+    ],
+    [
+      "del",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "failure_class",
+        "event"
+      ]
+    ]
+  ]
+}

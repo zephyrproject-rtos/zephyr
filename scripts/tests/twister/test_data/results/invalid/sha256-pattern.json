@@ -1,0 +1,17 @@
+{
+  "base": "lab-against-ci.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "artifact",
+        "sha256"
+      ],
+      "2FDAE7E83F6053FE0EE63F4182539BD69E24E4BDFCEB2B24A0F16F7E0EB6E459"
+    ]
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        3,
+        "misc",
+        "zephyr",
+        "artifact"
+      ],
+      {
+        "name": "zephyr.elf",
+        "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "size": 2253424,
+        "provenance": "local"
+      }
+    ]
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "submission",
+        "summary",
+        "testcases",
+        "PASS"
+      ],
+      1
+    ],
+    [
+      "set",
+      [
+        "submission",
+        "summary",
+        "testcases",
+        "FAIL"
+      ],
+      1
+    ],
+    [
+      "set",
+      [
+        "tests",
+        2,
+        "misc",
+        "zephyr",
+        "counts",
+        "PASS"
+      ],
+      1
+    ],
+    [
+      "set",
+      [
+        "tests",
+        2,
+        "misc",
+        "zephyr",
+        "counts",
+        "FAIL"
+      ],
+      1
+    ],
+    [
+      "set",
+      [
+        "tests",
+        3,
+        "status"
+      ],
+      "FAIL"
+    ],
+    [
+      "set",
+      [
+        "tests",
+        3,
+        "misc",
+        "zephyr",
+        "failure_class"
+      ],
+      {
+        "reason": "blocked",
+        "source": "twister"
+      }
+    ]
+  ]
+}

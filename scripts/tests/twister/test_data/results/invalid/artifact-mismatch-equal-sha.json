@@ -1,0 +1,17 @@
+{
+  "base": "miss-artifact-mismatch.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "artifact",
+        "flashed_sha256"
+      ],
+      "2fdae7e83f6053fe0ee63f4182539bd69e24e4bdfceb2b24a0f16f7e0eb6e459"
+    ]
+  ]
+}

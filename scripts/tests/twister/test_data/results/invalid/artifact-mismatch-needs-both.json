@@ -1,0 +1,16 @@
+{
+  "base": "miss-artifact-mismatch.json",
+  "ops": [
+    [
+      "del",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "artifact",
+        "flashed_sha256"
+      ]
+    ]
+  ]
+}

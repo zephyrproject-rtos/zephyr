@@ -1,0 +1,37 @@
+{
+  "base": "built-only-no-lab.json",
+  "ops": [
+    [
+      "set",
+      [
+        "submission",
+        "lab"
+      ],
+      "lab1"
+    ],
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "skip_reason",
+        "reason"
+      ],
+      "filtered"
+    ],
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "skip_reason",
+        "detail"
+      ],
+      "not in hardware map"
+    ]
+  ]
+}

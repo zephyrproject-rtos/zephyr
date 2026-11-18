@@ -1,0 +1,100 @@
+{
+  "format": "zephyr-results",
+  "version": {
+    "major": 0,
+    "minor": 1
+  },
+  "submission": {
+    "id": "examplelab:3080000001:zephyr_ci_hil",
+    "origin": "examplelab",
+    "lab": "lab1",
+    "submitter": "examplelab-ci",
+    "generated_by": {
+      "tool": "twister --report-ci",
+      "version": "v4.5.0-rc1-0-g0123456789ab"
+    },
+    "created": "2026-11-14T12:03:04Z",
+    "context": {
+      "trigger": "pr",
+      "pr": 123456,
+      "commit": "0123456789abcdef0123456789abcdef01234567",
+      "repository": "https://github.com/zephyrproject-rtos/zephyr.git",
+      "run_url": "https://ci.example/examplelab/zephyr/-/pipelines/3080000001"
+    },
+    "summary": {
+      "status": "MISS",
+      "suites": {
+        "MISS": 1
+      }
+    }
+  },
+  "tests": [
+    {
+      "id": "examplelab:3080000001:zephyr_ci_hil:cytvii_b_e_1m_100_cpu/cyt2b75cae/m4:sample.basic.helloworld@lab1",
+      "origin": "examplelab",
+      "build_id": "zephyr:gha-20000000000-1:hil-images:cytvii_b_e_1m_100_cpu/cyt2b75cae/m4:sample.basic.helloworld",
+      "path": "sample.basic.helloworld",
+      "status": "MISS",
+      "comment": "Serial Device Error",
+      "duration": 70.74,
+      "log_url": "https://results.example.invalid/examplelab/3080000001/zephyr_ci_hil/cytvii_b_e_1m_100_cpu_cyt2b75cae_m4/sample.basic.helloworld/handler.log",
+      "log_excerpt": "KIKJ\tiyZre pOhSy rb uOiSl db uvi4l.d5 .v07-.r0c.11--7t722g--gu5pdsdt9r6ebacm9 5*c*b*1\r \n**He*l\rl\no World! cytvii_b_e_1m_100_cpu/cyt2b75cae/m4\r\n",
+      "input_files": [
+        {
+          "name": "zephyr.elf",
+          "url": "https://artifacts.example.invalid/zephyr/gha-20000000000-1/cytvii_b_e_1m_100_cpu_cyt2b75cae_m4/sample.basic.helloworld/zephyr.elf"
+        }
+      ],
+      "environment": {
+        "comment": "cytvii_b_e_1m_100_cpu-000801029763 on lab1",
+        "compatible": [
+          "vnd,soc-board"
+        ],
+        "misc": {
+          "zephyr": {
+            "lab": "lab1",
+            "node": "node1",
+            "dut": {
+              "board_tag": "cytvii_b_e_1m_100_cpu-000801029763",
+              "probe": {
+                "serial": "000801029763"
+              }
+            }
+          }
+        }
+      },
+      "misc": {
+        "zephyr": {
+          "kind": "suite",
+          "original_id": "sample.basic.helloworld",
+          "failure_class": {
+            "reason": "console",
+            "detail": "Serial Device Error",
+            "source": "twister"
+          },
+          "artifact": {
+            "name": "zephyr.elf",
+            "sha256": "2fdae7e83f6053fe0ee63f4182539bd69e24e4bdfceb2b24a0f16f7e0eb6e459",
+            "size": 672592,
+            "provenance": "ci",
+            "flashed_sha256": "2fdae7e83f6053fe0ee63f4182539bd69e24e4bdfceb2b24a0f16f7e0eb6e459"
+          },
+          "retries": 0,
+          "tools": {
+            "harness": {
+              "name": "twister",
+              "version": "v4.5.0-rc1-0-g0123456789ab"
+            },
+            "lab_tool": {
+              "name": "labtool",
+              "version": "0.0.45"
+            }
+          },
+          "lab_job": {
+            "flash_job_id": 209
+          }
+        }
+      }
+    }
+  ]
+}

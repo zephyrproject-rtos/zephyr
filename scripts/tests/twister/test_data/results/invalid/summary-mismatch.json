@@ -1,0 +1,15 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "submission",
+        "summary",
+        "suites",
+        "PASS"
+      ],
+      3
+    ]
+  ]
+}

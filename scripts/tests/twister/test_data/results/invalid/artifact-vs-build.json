@@ -1,0 +1,17 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "artifact",
+        "size"
+      ],
+      1
+    ]
+  ]
+}

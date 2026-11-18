@@ -1,0 +1,13 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "del",
+      [
+        "tests",
+        0,
+        "environment"
+      ]
+    ]
+  ]
+}

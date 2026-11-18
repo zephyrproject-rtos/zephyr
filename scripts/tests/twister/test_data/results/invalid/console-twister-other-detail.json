@@ -1,0 +1,17 @@
+{
+  "base": "miss-serial-device-error.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "failure_class",
+        "detail"
+      ],
+      "Timeout"
+    ]
+  ]
+}

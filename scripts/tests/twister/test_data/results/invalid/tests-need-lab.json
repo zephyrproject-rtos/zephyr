@@ -1,0 +1,12 @@
+{
+  "base": "lab-against-ci.json",
+  "ops": [
+    [
+      "del",
+      [
+        "submission",
+        "lab"
+      ]
+    ]
+  ]
+}

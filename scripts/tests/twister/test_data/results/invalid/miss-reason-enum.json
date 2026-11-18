@@ -1,0 +1,17 @@
+{
+  "base": "miss-lab-event.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "failure_class",
+        "reason"
+      ],
+      "assertion"
+    ]
+  ]
+}
