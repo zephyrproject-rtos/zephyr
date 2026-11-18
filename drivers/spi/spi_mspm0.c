@@ -50,6 +50,7 @@ LOG_MODULE_REGISTER(spi_mspm0, CONFIG_SPI_LOG_LEVEL);
 #define MSPM0_SPI_CTL0_SPO_MASK   BIT(8)
 #define MSPM0_SPI_CTL0_SPH_MASK   BIT(9)
 #define MSPM0_SPI_CTL0_CSSEL_MASK GENMASK(13, 12)
+#define MSPM0_SPI_CTL0_CSCLR_MASK BIT(14)
 
 /* Frame format selection */
 #define MSPM0_SPI_CTL0_FRF_MOTOROLA_4WIRE FIELD_PREP(MSPM0_SPI_CTL0_FRF_MASK, 1)
@@ -59,6 +60,7 @@ LOG_MODULE_REGISTER(spi_mspm0, CONFIG_SPI_LOG_LEVEL);
 #define MSPM0_SPI_CTL1_ENABLE_MASK BIT(0)
 #define MSPM0_SPI_CTL1_LBM_MASK    BIT(1)
 #define MSPM0_SPI_CTL1_CP_MASK     BIT(2)
+#define MSPM0_SPI_CTL1_POD_MASK    BIT(3)
 #define MSPM0_SPI_CTL1_MSB_MASK    BIT(4)
 
 /* Clock control */
@@ -93,11 +95,13 @@ LOG_MODULE_REGISTER(spi_mspm0, CONFIG_SPI_LOG_LEVEL);
 #define MSPM0_SPI_ICLR_MASK               GENMASK(10, 0)
 #define MSPM0_SPI_CTL1_ENABLE             FIELD_PREP(MSPM0_SPI_CTL1_ENABLE_MASK, 1)
 #define MSPM0_SPI_CTL1_DISABLE            FIELD_PREP(MSPM0_SPI_CTL1_ENABLE_MASK, 0)
-#define MSPM0_SPI_DSS_MIN                 4
+#define MSPM0_SPI_CONTROLLER_DSS_MIN      4
+#define MSPM0_SPI_PERIPHERAL_DSS_MIN      7
 #define MSPM0_SPI_DSS_MAX                 16
 #define MSPM0_SPI_CS_LINE_MIN             0U
 #define MSPM0_SPI_CS_LINE_MAX             3U
 #define MSPM0_SPI_CONTROLLER_RX_FIFO_TRIG 2U
+#define MSPM0_SPI_PERIPHERAL_RX_FIFO_TRIG 7U
 
 /* pinctrl state holding only the hardware CS pin */
 #define PINCTRL_STATE_HW_CS PINCTRL_STATE_PRIV_START
@@ -106,9 +110,11 @@ LOG_MODULE_REGISTER(spi_mspm0, CONFIG_SPI_LOG_LEVEL);
 #define BYTES_PER_WORD(word_size) (((word_size) + 7) / 8)
 
 /* Interrupts enabled */
+#define MSPM0_SPI_IMASK_PERIPHERAL_ENABLE                                                          \
+	(MSPM0_SPI_INT_RX_MASK | MSPM0_SPI_INT_RXFULL_MASK | MSPM0_SPI_INT_RXFIFO_OVF_MASK)
+
 #define MSPM0_SPI_IMASK_CONTROLLER_ENABLE                                                          \
-	(MSPM0_SPI_INT_RX_MASK | MSPM0_SPI_INT_RXFULL_MASK | MSPM0_SPI_INT_RXFIFO_OVF_MASK |       \
-	 MSPM0_SPI_INT_END_OF_TRANSMIT_MASK)
+	(MSPM0_SPI_IMASK_PERIPHERAL_ENABLE | MSPM0_SPI_INT_END_OF_TRANSMIT_MASK)
 
 /* Helper macros */
 #define SPI_UPDATE_REG(reg_addr, value, mask)                                                      \
@@ -123,7 +129,7 @@ struct spi_mspm0_config {
 	const struct pinctrl_dev_config *pcfg;
 	const struct device *clk_dev;
 	struct mspm0_sys_clock clk_subsys;
-#ifdef CONFIG_SPI_ASYNC
+#if defined(CONFIG_SPI_ASYNC) || defined(CONFIG_SPI_PERIPHERAL)
 	void (*irq_config_func)(const struct device *dev);
 #endif
 };
@@ -163,11 +169,15 @@ static void spi_mspm0_rx_drain(uint32_t base, struct spi_mspm0_data *data)
 	       (!(sys_read32(base + MSPM0_SPI_STAT) & MSPM0_SPI_STAT_RFE_MASK))) {
 
 		rx_data = sys_read32(base + MSPM0_SPI_RXDATA);
+		data->words_in_fifo--;
+
+		if (!spi_context_rx_on(ctx)) {
+			continue; /* Drain excess frames without counting them in recv_frames */
+		}
 		if (spi_context_rx_buf_on(ctx)) {
 			memcpy(ctx->rx_buf, &rx_data, data->bytes_per_word);
 		}
 		spi_context_update_rx(ctx, data->bytes_per_word, 1);
-		data->words_in_fifo--;
 	}
 }
 
@@ -176,11 +186,12 @@ static void spi_mspm0_finish(const struct device *dev, int status)
 	const struct spi_mspm0_config *cfg = dev->config;
 	struct spi_mspm0_data *data = dev->data;
 
-	while (sys_read32(cfg->base + MSPM0_SPI_STAT) & MSPM0_SPI_STAT_BUSY_MASK) {
-		/* Wait until transfer is completed */
+	if (!spi_context_is_peripheral(&data->spi_ctx)) {
+		while (sys_read32(cfg->base + MSPM0_SPI_STAT) & MSPM0_SPI_STAT_BUSY_MASK) {
+			/* Wait until transfer is completed */
+		}
+		spi_context_cs_control(&data->spi_ctx, false);
 	}
-
-	spi_context_cs_control(&data->spi_ctx, false);
 	spi_context_complete(&data->spi_ctx, dev, status);
 }
 
@@ -201,17 +212,15 @@ static int spi_mspm0_configure(const struct device *dev, const struct spi_config
 	const struct spi_mspm0_config *cfg = dev->config;
 	struct spi_mspm0_data *data = dev->data;
 	uint32_t ctl0 = 0;
-	uint32_t ctl1 = MSPM0_SPI_CTL1_CP_MASK; /* controller mode */
+	uint32_t ctl1 = 0;
 	uint32_t clock_rate;
+	uint32_t dss_min;
 	uint32_t scr = 0;
+	bool peripheral = (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL);
 	int ret;
 
 	if (spi_context_configured(&data->spi_ctx, config)) {
 		return 0;
-	}
-
-	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_CONTROLLER) {
-		return -ENOTSUP; /* Only controller mode is supported */
 	}
 
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
@@ -223,30 +232,47 @@ static int spi_mspm0_configure(const struct device *dev, const struct spi_config
 		return -ENOTSUP; /* Does not support half-duplex mode */
 	}
 
-	if (!IN_RANGE(SPI_WORD_SIZE_GET(config->operation), MSPM0_SPI_DSS_MIN, MSPM0_SPI_DSS_MAX)) {
+	if (peripheral) {
+#if defined(CONFIG_SPI_PERIPHERAL)
+		ctl1 &= ~(MSPM0_SPI_CTL1_CP_MASK); /* peripheral mode */
+		dss_min = MSPM0_SPI_PERIPHERAL_DSS_MIN;
+		ctl0 |= MSPM0_SPI_CTL0_CSCLR_MASK;
+		ctl1 &= ~MSPM0_SPI_CTL1_POD_MASK;
+#else
+		LOG_ERR("peripheral mode needs CONFIG_SPI_PERIPHERAL");
+		return -ENOTSUP;
+#endif
+	} else {
+
+		ctl1 |= MSPM0_SPI_CTL1_CP_MASK; /* controller mode */
+		dss_min = MSPM0_SPI_CONTROLLER_DSS_MIN;
+		ret = clock_control_get_rate(cfg->clk_dev, (clock_control_subsys_t)&cfg->clk_subsys,
+					     &clock_rate);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (config->frequency == 0 || config->frequency > clock_rate / 2) {
+			return -EINVAL;
+		}
+
+		scr = DIV_ROUND_UP(clock_rate, 2 * config->frequency) - 1;
+
+		if (!IN_RANGE(scr, MSPM0_SPI_SCR_MIN, MSPM0_SPI_SCR_MAX)) {
+			return -EINVAL;
+		}
+	}
+
+	if (!IN_RANGE(SPI_WORD_SIZE_GET(config->operation), dss_min, MSPM0_SPI_DSS_MAX)) {
 		return -ENOTSUP;
 	}
 
-	ret = clock_control_get_rate(cfg->clk_dev, (clock_control_subsys_t)&cfg->clk_subsys,
-				     &clock_rate);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (config->frequency == 0 || config->frequency > clock_rate / 2) {
-		return -EINVAL;
-	}
-
-	scr = DIV_ROUND_UP(clock_rate, 2 * config->frequency) - 1;
-
-	if (!IN_RANGE(scr, MSPM0_SPI_SCR_MIN, MSPM0_SPI_SCR_MAX)) {
-		return -EINVAL;
-	}
-
-	if (spi_cs_is_gpio(config)) {
+	if (!peripheral && spi_cs_is_gpio(config)) {
 		ret = spi_context_cs_configure_all(&data->spi_ctx);
+		if (ret < 0) {
+			return ret;
+		}
 	} else {
-
 		if (!IN_RANGE(config->peripheral, MSPM0_SPI_CS_LINE_MIN, MSPM0_SPI_CS_LINE_MAX)) {
 			LOG_ERR("CS line out of range (0..%u)", MSPM0_SPI_CS_LINE_MAX);
 			return -EINVAL;
@@ -258,11 +284,10 @@ static int spi_mspm0_configure(const struct device *dev, const struct spi_config
 		}
 
 		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_HW_CS);
+		if (ret < 0) {
+			return ret;
+		}
 		ctl0 |= FIELD_PREP(MSPM0_SPI_CTL0_CSSEL_MASK, config->peripheral);
-	}
-
-	if (ret < 0) {
-		return ret;
 	}
 
 	if (config->operation & SPI_FRAME_FORMAT_TI) {
@@ -284,15 +309,21 @@ static int spi_mspm0_configure(const struct device *dev, const struct spi_config
 
 	SPI_UPDATE_REG(cfg->base + MSPM0_SPI_CTL0, ctl0,
 		       MSPM0_SPI_CTL0_DSS_MASK | MSPM0_SPI_CTL0_FRF_MASK | MSPM0_SPI_CTL0_SPO_MASK |
-			       MSPM0_SPI_CTL0_SPH_MASK | MSPM0_SPI_CTL0_CSSEL_MASK)
+			       MSPM0_SPI_CTL0_SPH_MASK | MSPM0_SPI_CTL0_CSSEL_MASK |
+			       MSPM0_SPI_CTL0_CSCLR_MASK)
 
 	SPI_UPDATE_REG(cfg->base + MSPM0_SPI_CTL1, ctl1,
-		       MSPM0_SPI_CTL1_LBM_MASK | MSPM0_SPI_CTL1_CP_MASK | MSPM0_SPI_CTL1_MSB_MASK)
-#ifdef CONFIG_SPI_ASYNC
+		       MSPM0_SPI_CTL1_POD_MASK | MSPM0_SPI_CTL1_LBM_MASK | MSPM0_SPI_CTL1_CP_MASK |
+			       MSPM0_SPI_CTL1_MSB_MASK)
+
+#if defined(CONFIG_SPI_ASYNC) || defined(CONFIG_SPI_PERIPHERAL)
 	SPI_UPDATE_REG(cfg->base + MSPM0_SPI_IFLS,
-		       FIELD_PREP(MSPM0_SPI_IFLS_RXIFLSEL_MASK, MSPM0_SPI_CONTROLLER_RX_FIFO_TRIG),
+		       FIELD_PREP(MSPM0_SPI_IFLS_RXIFLSEL_MASK,
+				  peripheral ? MSPM0_SPI_PERIPHERAL_RX_FIFO_TRIG
+					     : MSPM0_SPI_CONTROLLER_RX_FIFO_TRIG),
 		       MSPM0_SPI_IFLS_RXIFLSEL_MASK)
 #endif
+
 	SPI_UPDATE_REG(cfg->base + MSPM0_SPI_CLKCTL, FIELD_PREP(MSPM0_SPI_CLKCTL_SCR_MASK, scr),
 		       MSPM0_SPI_CLKCTL_SCR_MASK)
 
@@ -303,7 +334,7 @@ static int spi_mspm0_configure(const struct device *dev, const struct spi_config
 	return 0;
 }
 
-#ifdef CONFIG_SPI_ASYNC
+#if defined(CONFIG_SPI_ASYNC) || defined(CONFIG_SPI_PERIPHERAL)
 static void spi_mspm0_isr(const struct device *dev)
 {
 	const struct spi_mspm0_config *cfg = dev->config;
@@ -339,7 +370,7 @@ exit:
 	sys_write32(MSPM0_SPI_IMASK_DISABLE, base + MSPM0_SPI_IMASK);
 	spi_mspm0_finish(dev, isr_status);
 }
-#endif /* CONFIG_SPI_ASYNC */
+#endif /* CONFIG_SPI_ASYNC || CONFIG_SPI_PERIPHERAL */
 
 static void spi_mspm0_transceive_sync(const struct device *dev)
 {
@@ -388,13 +419,22 @@ static int spi_mspm0_transceive_common(const struct device *dev, const struct sp
 	}
 
 	spi_mspm0_pretransfer_clear(cfg->base, data);
-	spi_context_cs_control(ctx, true);
 
-	if (asynchronous) {
+	if (!spi_context_is_peripheral(ctx)) { /* controller mode */
+		spi_context_cs_control(ctx, true);
+
+		if (asynchronous) {
+			spi_mspm0_tx_fill(cfg->base, data);
+			sys_write32(MSPM0_SPI_IMASK_CONTROLLER_ENABLE, cfg->base + MSPM0_SPI_IMASK);
+		} else {
+			spi_mspm0_transceive_sync(dev);
+		}
+
+	} else { /* peripheral mode */
+#if defined(CONFIG_SPI_PERIPHERAL)
 		spi_mspm0_tx_fill(cfg->base, data);
-		sys_write32(MSPM0_SPI_IMASK_CONTROLLER_ENABLE, cfg->base + MSPM0_SPI_IMASK);
-	} else {
-		spi_mspm0_transceive_sync(dev);
+		sys_write32(MSPM0_SPI_IMASK_PERIPHERAL_ENABLE, cfg->base + MSPM0_SPI_IMASK);
+#endif
 	}
 
 	ret = spi_context_wait_for_completion(ctx);
@@ -463,7 +503,7 @@ static int spi_mspm0_init(const struct device *dev)
 	/* Select the functional clock source given by devicetree with no division */
 	sys_write32(MSPM0_SPI_CLKDIV_RATIO, cfg->base + MSPM0_SPI_CLKDIV);
 	sys_write32(MSPM0_CLOCK_PERIPH_REG_MASK(cfg->clk_subsys.clk), cfg->base + MSPM0_SPI_CLKSEL);
-#ifdef CONFIG_SPI_ASYNC
+#if defined(CONFIG_SPI_ASYNC) || defined(CONFIG_SPI_PERIPHERAL)
 	cfg->irq_config_func(dev);
 #endif
 
@@ -472,11 +512,12 @@ static int spi_mspm0_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_SPI_ASYNC
+#if defined(CONFIG_SPI_ASYNC) || defined(CONFIG_SPI_PERIPHERAL)
 
 #define MSPM0_SPI_IRQ_FUNC(inst)                                                                   \
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, interrupts),                                      \
-		     "CONFIG_SPI_ASYNC requires interrupts in the SPI node");                      \
+	BUILD_ASSERT(                                                                              \
+		DT_INST_NODE_HAS_PROP(inst, interrupts),                                           \
+		"CONFIG_SPI_ASYNC/CONFIG_SPI_PERIPHERAL requires interrupts in the SPI node");     \
 	static void spi_mspm0_irq_config_##inst(const struct device *dev)                          \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), spi_mspm0_isr,        \
@@ -491,7 +532,7 @@ static int spi_mspm0_init(const struct device *dev)
 #define MSPM0_SPI_IRQ_FUNC(inst)
 #define MSPM0_SPI_IRQ_CFG(inst)
 
-#endif /* CONFIG_SPI_ASYNC */
+#endif /* CONFIG_SPI_ASYNC || CONFIG_SPI_PERIPHERAL */
 
 #define MSPM0_SPI_INIT(inst)                                                                       \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
