@@ -218,11 +218,16 @@ static inline uint32_t timer_driver_cycle_get(void)
 
 static void timer_driver_set_reload(uint32_t cycles)
 {
+	__ASSERT_NO_MSG(cycles > 1U);
+
 	/* Disable event timer */
 	IT8XXX2_EXT_CTRLX(EVENT_TIMER) &= ~IT8XXX2_EXT_ETXEN;
 
-	/* Set event timer 24-bit count */
-	IT8XXX2_EXT_CNTX(EVENT_TIMER) = cycles;
+	/*
+	 * Set 24-bit event timer count. Subtract 1 because the hardware
+	 * counts down inclusive of 0, firing one cycle after reaching 0.
+	 */
+	IT8XXX2_EXT_CNTX(EVENT_TIMER) = cycles - 1U;
 
 	/* W/C event timer interrupt status */
 	ite_intc_isr_clear(EVENT_TIMER_IRQ);
