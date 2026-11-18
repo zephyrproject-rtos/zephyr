@@ -25,7 +25,6 @@
 #include <host/hci_core.h>
 #include <host/keys.h>
 #include <host/settings.h>
-#include <zephyr/sys/byteorder.h>
 
 #define DT_DRV_COMPAT zephyr_bt_hci_test
 
