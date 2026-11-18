@@ -395,6 +395,7 @@ struct uarte_nrfx_config {
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	/* None-zero in case of high speed instances. Baudrate is adjusted by that ratio. */
 	uint32_t clock_freq;
+	uint32_t max_baudrate;
 	bool use_baudrate_formula;
 #else
 #ifdef UARTE_HAS_FRAME_TIMEOUT
@@ -592,6 +593,10 @@ static int baudrate_set(const struct device *dev, uint32_t baudrate)
 {
 	const struct uarte_nrfx_config *config = dev->config;
 	nrf_uarte_baudrate_t nrf_baudrate;
+
+	if (baudrate > config->max_baudrate) {
+		return -ENOTSUP;
+	}
 
 	/* calculated baudrate divisor */
 	if (config->use_baudrate_formula) {
@@ -3542,12 +3547,16 @@ static int uarte_instance_deinit(const struct device *dev)
 		IF_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,	       \
 			    (.int_driven = &uarte##idx##_int_driven,))	       \
 	};								       \
-	COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE, (),		       \
+	COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,			       \
+		(BUILD_ASSERT(UARTE_PROP(idx, current_speed) <=		       \
+			      UARTE_PROP(idx, max_speed),		       \
+			      "current-speed exceeds max-speed");),	       \
 		(BUILD_ASSERT(UARTE_GET_BAUDRATE(idx) > 0,		       \
 			      "Unsupported baudrate");))		       \
 	static MAYBE_CONST struct uarte_nrfx_config uarte_##idx##z_config = {  \
 		COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,		       \
 			(.clock_freq = NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),   \
+			.max_baudrate = UARTE_PROP(idx, max_speed),	       \
 			.use_baudrate_formula = !UARTE_PROP(idx, current_speed_is_enum),),\
 		    (IF_ENABLED(UARTE_HAS_FRAME_TIMEOUT,		       \
 			(.baudrate = UARTE_PROP(idx, current_speed),))	       \
