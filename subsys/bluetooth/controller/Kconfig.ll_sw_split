@@ -1456,6 +1456,15 @@ config BT_CTLR_PROFILE_ISR
 	  contains current, minimum and maximum ISR entry latencies; and
 	  current, minimum and maximum ISR CPU use in micro-seconds.
 
+config BT_CTLR_TEST_CONN_EVENT_COUNT
+	bool "Count connection events for testing"
+	help
+	  Test-only instrumentation: count, per connection, the connection events
+	  the device was actually present for (radio active), exposed via the
+	  ll_test_conn_event_count[] array for bsim cadence assertions (e.g. that
+	  the subrate skip is honored and the link is not bursting to full rate).
+	  Not for production use.
+
 config BT_CTLR_DEBUG_PINS
 	bool "Bluetooth Controller Debug Pins"
 	depends on BOARD_NRF51DK_NRF51822 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF52833DK_NRF52833 || BOARD_NRF5340DK_NRF5340_CPUNET || BOARD_RV32M1_VEGA

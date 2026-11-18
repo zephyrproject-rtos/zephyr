@@ -82,6 +82,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_ctlr_ull_conn);
 
+#if defined(CONFIG_BT_CTLR_TEST_CONN_EVENT_COUNT)
+/* Test-only: per-connection count of events the device was actually present
+ * for (radio active). Used by bsim cadence assertions; see Kconfig.
+ */
+volatile uint32_t ll_test_conn_event_count[CONFIG_BT_MAX_CONN];
+#endif /* CONFIG_BT_CTLR_TEST_CONN_EVENT_COUNT */
+
 static int init_reset(void);
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 static void tx_demux_sched(struct ll_conn *conn);
@@ -1173,6 +1180,19 @@ void ull_conn_done(struct node_rx_event_done *done)
 	if (unlikely(lll->handle == LLL_HANDLE_INVALID)) {
 		return;
 	}
+
+#if defined(CONFIG_BT_CTLR_TEST_CONN_EVENT_COUNT)
+	/* Count every connection event the device woke for (radio active),
+	 * regardless of whether a packet was exchanged: a subrating Central is
+	 * present on every subrated event even when the Peripheral coasts on its
+	 * latency (those events carry no trx), and a broken skip bursts to ~every
+	 * event (also no trx). So this must be counted here, not in the trx_cnt
+	 * path, or the burst is invisible.
+	 */
+	if ((lll->role == BT_HCI_ROLE_CENTRAL) && (lll->handle < CONFIG_BT_MAX_CONN)) {
+		ll_test_conn_event_count[lll->handle]++;
+	}
+#endif /* CONFIG_BT_CTLR_TEST_CONN_EVENT_COUNT */
 
 	ull_cp_tx_ntf(conn);
 
