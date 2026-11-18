@@ -419,8 +419,9 @@ static inline timer_core_cycles_t timer_core_span_cycles(timer_core_ticks_t span
  */
 static inline timer_core_ticks_t timer_core_ticks_in(timer_core_cycles_t c)
 {
-	/* A counter that fits one register divides in one instruction. */
-	if (sizeof(timer_core_cycles_t) <= sizeof(uint32_t)) {
+	/* A span that fits one register divides in one instruction. */
+	if ((sizeof(timer_core_cycles_t) <= sizeof(uint32_t)) ||
+	    (!IS_ENABLED(CONFIG_64BIT) && (c <= UINT32_MAX))) {
 		return (timer_core_ticks_t)((uint32_t)c / (uint32_t)TIMER_CORE_CYC_PER_TICK);
 	}
 
