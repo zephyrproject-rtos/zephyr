@@ -3909,12 +3909,9 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 		}
 
 		err = bt_l2cap_ecred_chan_connect(conn, chan, BT_EATT_PSM);
-		if (err == -ENOTCONN) {
-			/* Left alone: a disconnection while L2CAP waited has released
-			 * them, which this error does not tell apart from one before
-			 * L2CAP attached them
-			 */
-			return err;
+		if (err == -ECONNRESET) {
+			/* L2CAP tore the bearers down, and bt_att_released() freed them */
+			return -ENOTCONN;
 		}
 
 		if (err < 0) {
