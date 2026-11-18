@@ -13,9 +13,10 @@
 LOG_MODULE_DECLARE(uhc_dwc3, CONFIG_UHC_DRIVER_LOG_LEVEL);
 
 int xhci_root_port_reset_preamble(struct uhc_dwc3_data *priv, const struct uhc_dwc3_config *cfg,
-				  uint8_t *reset_rp_out, uint32_t *port_off_out)
+				  uint8_t logical_port, uint8_t *reset_rp_out,
+				  uint32_t *port_off_out)
 {
-	uint8_t connect_rp = priv->root_port != 0U ? priv->root_port : 1U;
+	uint8_t connect_rp = dwc3_root_port_normalize(logical_port);
 	uint32_t port_off =
 		XHCI_OP_PORTSC_BASE + ((uint32_t)connect_rp - 1U) * XHCI_PORT_REGS_STRIDE;
 	uint32_t portsc;
@@ -57,6 +58,9 @@ int xhci_root_port_reset_preamble(struct uhc_dwc3_data *priv, const struct uhc_d
 	}
 
 	priv->root_port = reset_rp;
+	if (dwc3_root_port_valid(priv, connect_rp)) {
+		priv->root_ports[connect_rp].phys_port = reset_rp;
+	}
 
 	*reset_rp_out = reset_rp;
 	*port_off_out = port_off;
