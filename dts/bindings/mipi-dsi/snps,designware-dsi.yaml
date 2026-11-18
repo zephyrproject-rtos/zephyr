@@ -1,0 +1,100 @@
+# Copyright (C) 2024 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Designware MIPI DSI host controller with integrated Synopsys MIPI D-PHY.
+
+compatible: "snps,designware-dsi"
+
+include: mipi-dsi-host.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+    description: |
+      Must contain "dsi_regs" for the DSI host controller registers and
+      "clkctl_regs" for the SoC clock control block holding the D-PHY
+      control registers.
+
+  interrupts:
+    required: true
+
+  dpi-in:
+    type: phandle
+    dependency-mode: ignore
+    description: |
+      Reference to the DPI input. Required in video mode, the DPI timings will
+      be taken from the "display-timings" child node of this phandle.
+
+  eotp-lp-tx-en:
+    type: boolean
+    description:
+      Automatically insert an EoTp short packet at the end of LP transmission.
+
+  eotp-rx-en:
+    type: boolean
+    description:
+      Enable reception of an EoTp short packet at the end of LPDT reception
+      from peripheral.
+
+  ecc-recv-en:
+    type: boolean
+    description:
+      DSI controller should support ECC reception, error correction and
+      reporting.
+
+  crc-recv-en:
+    type: boolean
+    description:
+      DSI controller should support CRC reception and error reporting.
+
+  frame-ack-en:
+    type: boolean
+    description:
+      DSI controller should request Peripheral ACK at the end of frames.
+
+  dpi-colorm-active:
+    type: int
+    description:
+      Color-Mode command pulse polarity.
+      If dpicolorm is active low, use 0,
+      otherwise use 1.
+    enum:
+      - 0
+      - 1
+
+  dpi-shutdn-active:
+    type: int
+    required: true
+    description:
+      Shutdown command pulse polarity.
+      If dpishutdn is active low, use 0,
+      otherwise use 1.
+    enum:
+      - 0
+      - 1
+
+  vid-pkt-size:
+    type: int
+    required: true
+    description:
+      Video packet size in MIPI Video mode pixel stream in bytes. The product of
+      number of chunks and video packet size should be active line width.
+
+  dpi-video-pattern-gen:
+    type: string
+    enum:
+      - "vertical-color-bar"
+      - "horizontal-color-bar"
+      - "vertical-bit-error-rate"
+    description:
+      Video pattern generator for testing MIPI-DSI without DPI inputs.
+
+  max-bit-clk:
+    type: int
+    description:
+      The highest bit clock that a panel supports. All the calculations for DPHY
+      PLL should be limited to half of the above value for a panel.
