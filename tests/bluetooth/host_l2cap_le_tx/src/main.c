@@ -1051,3 +1051,47 @@ static ZTEST(host_l2cap_le_tx, test_reconfigure_lost)
 
 	zassert_equal(call_lost(reconfigure, &reconf_chan.chan, true), -ENOTCONN);
 }
+
+/* How many callbacks the channels of test_ecred_connect_after_lost got */
+static atomic_t after_lost_callbacks;
+
+static void after_lost_chan_callback(struct bt_l2cap_chan *ch)
+{
+	(void)atomic_inc(&after_lost_callbacks);
+}
+
+/* A connect on a connection that the Host has already torn down sends nothing
+ * and leaves its channels untouched, to be connected again
+ */
+static ZTEST(host_l2cap_le_tx, test_ecred_connect_after_lost)
+{
+	static const struct bt_l2cap_chan_ops ops = {
+		.recv = chan_recv,
+		.disconnected = after_lost_chan_callback,
+		.released = after_lost_chan_callback,
+	};
+	static struct bt_l2cap_le_chan ecred_chans[2];
+	struct bt_l2cap_chan *chans[] = { &ecred_chans[0].chan, &ecred_chans[1].chan, NULL };
+
+	ARRAY_FOR_EACH(ecred_chans, i) {
+		ecred_chans[i].chan.ops = &ops;
+	}
+
+	conn_lost();
+
+	zassert_equal(bt_l2cap_ecred_chan_connect(conn, chans, PSM), -ENOTCONN);
+	tx_none();
+	zassert_equal(atomic_get(&after_lost_callbacks), 0);
+
+	ARRAY_FOR_EACH(ecred_chans, i) {
+		zassert_is_null(ecred_chans[i].chan.conn);
+		zassert_equal(ecred_chans[i].state, BT_L2CAP_DISCONNECTED);
+	}
+
+	bt_conn_drop(&conn);
+	conn_up();
+
+	zassert_ok(bt_l2cap_ecred_chan_connect(conn, chans, PSM));
+	ecred_conn_refuse(ARRAY_SIZE(ecred_chans));
+	tx_none();
+}
