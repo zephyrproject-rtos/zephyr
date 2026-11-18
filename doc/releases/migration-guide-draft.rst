@@ -292,6 +292,10 @@ Ethernet
   :c:enum:`ethernet_hw_caps` have been removed. Use :c:func:`net_eth_get_dsa_port_type` to get the
   DSA port type of an interface instead. (:github:`124790`)
 
+* gPTP now drops received event messages (Sync, Pdelay_Req, Pdelay_Resp) for which the driver
+  has not called :c:func:`net_pkt_set_rx_timestamping`. Out-of-tree Ethernet drivers that
+  only populate ``pkt->timestamp`` must set the flag, or gPTP will not synchronize.
+
 Flash
 =====
 
