@@ -1,16 +1,37 @@
 # Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_ESPRESSIF && MCUBOOT
+if SOC_FAMILY_ESPRESSIF
 
 config SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION
-	bool "Espressif hardware flash encryption in MCUboot"
-	select ESP32_FLASH_ENCRYPTION
+	bool "Espressif hardware flash encryption"
+	depends on !SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT
 	help
-	  Enable hardware-assisted flash encryption in the MCUboot bootloader.
-	  Typically set via sysbuild (SB_CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION).
+	  Enable Espressif's hardware flash encryption.
+	  Requires hardware flash encryption to be enabled in the
+	  MCUboot bootloader (e.g. via sysbuild
+	  SB_CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION or building MCUboot
+	  with this option enabled).
 
-if SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION
+	  The chosen flash node's write-block-size must be 32. The build fails
+	  at configure time if it is not. Set it in both the application and
+	  MCUboot overlays. Swap upgrade modes then sign with 32-byte
+	  alignment from that write-block-size.
+
+	  Overwrite-only and other modes that force imgtool --align 1
+	  (CONFIG_MCUBOOT_IMGTOOL_OVERWRITE_ONLY) are unsupported with this
+	  option: padded/confirmed trailers would use 8-byte magic while
+	  MCUboot expects 32-byte magic.
+
+config ESP_FLASH_ENCRYPTION
+	bool "Hardware flash encryption compatibility [DEPRECATED]"
+	depends on !SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT && !MCUBOOT && BOOTLOADER_MCUBOOT
+	select DEPRECATED
+	imply SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION
+	help
+	  Deprecated. Use SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION instead.
+
+if SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION && MCUBOOT
 
 choice SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION_MODE
 	prompt "Flash encryption usage mode"

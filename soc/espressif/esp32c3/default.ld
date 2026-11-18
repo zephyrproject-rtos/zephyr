@@ -1018,7 +1018,7 @@ SECTIONS
 
   /* --- END OF .rodata --- */
 
-#if defined(CONFIG_BOOTLOADER_MCUBOOT) && defined(CONFIG_ESP32_FLASH_ENCRYPTION)
+#if defined(CONFIG_BOOTLOADER_MCUBOOT) && defined(CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION)
   /* Pad the image to the next CACHE_ALIGN boundary so MCUboot TLVs
    * start outside any IROM/DROM mapping window. Required for reliable
    * TLV reads with flash encryption.

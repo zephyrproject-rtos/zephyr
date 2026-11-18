@@ -10,12 +10,17 @@ config SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION
 	depends on SOC_FAMILY_ESPRESSIF
 	help
 	  Enable Espressif hardware-assisted flash encryption in the MCUboot
-	  bootloader. On first boot, after image validation, the bootloader
-	  encrypts flash contents in place and burns the required eFuses.
+	  bootloader and application. On first boot, after image validation,
+	  the bootloader encrypts flash contents in place and burns the
+	  required eFuses.
 
 	  This is distinct from MCUboot software image encryption (BOOT_ENCRYPTION).
 
 if SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION
+
+comment "Bootloader-associated secure options"
+
+# Options below are used by sysbuild to configure the bootloader image.
 
 choice SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION_MODE
 	prompt "Flash encryption usage mode"
@@ -59,20 +64,6 @@ config SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION_AES256
 	depends on SOC_FAMILY_ESPRESSIF_EFUSE_XTS_AES_KEY_256
 
 endchoice
-
-config SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL
-	bool "Simulate eFuses in RAM (testing only)"
-	select SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL_KEEP_IN_FLASH
-	help
-	  Redirect eFuse operations to RAM instead of hardware eFuses.
-	  FOR TESTING ONLY — provides no real security.
-
-config SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL_KEEP_IN_FLASH
-	bool "Keep virtual eFuses in flash across reboots"
-	depends on SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL
-	help
-	  Persist virtual eFuse state in the sys_partition flash region across
-	  reboots. Requires a sys_partition in the devicetree.
 
 config SOC_FAMILY_ESPRESSIF_SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
 	bool
@@ -305,6 +296,20 @@ config SOC_FAMILY_ESPRESSIF_SECURE_INSECURE_ALLOW_DL_MODE
 endchoice
 
 endif # SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION
+
+config SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL
+	bool "Simulate eFuses in RAM (testing only)"
+	select SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL_KEEP_IN_FLASH
+	help
+	  Redirect eFuse operations to RAM instead of hardware eFuses.
+	  FOR TESTING ONLY — provides no real security.
+
+config SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL_KEEP_IN_FLASH
+	bool "Keep virtual eFuses in flash across reboots"
+	depends on SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL
+	help
+	  Persist virtual eFuse state in the sys_partition flash region across
+	  reboots. Requires a sys_partition in the devicetree.
 
 endmenu
 
