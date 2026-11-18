@@ -107,7 +107,7 @@ struct uhc_dwc3_data {
 	/* Per-xHCI-slot device state (index = slot ID). */
 	struct xhci_dev_slot slots[XHCI_MAX_DEVSLOTS + 1];
 
-	/* Device being enumerated by bus_reset / prepare_enum. */
+	/* Root-tier udev bound before bus_reset (uhc_device_alloc). */
 	struct usb_device *connect_udev;
 
 	/* Command ring */

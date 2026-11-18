@@ -102,6 +102,37 @@ uint8_t xhci_udev_to_slot_speed(const struct usb_device *udev)
 	}
 }
 
+struct xhci_dev_slot *xhci_slot_from_udev(struct uhc_dwc3_data *priv, struct usb_device *udev)
+{
+	struct xhci_dev_slot *slot;
+
+	if (priv == NULL || udev == NULL) {
+		return NULL;
+	}
+
+	slot = xhci_slot_udev(priv, udev);
+	if (slot != NULL && slot->active && slot->udev == udev) {
+		return slot;
+	}
+
+	for (uint8_t sid = 1U; sid <= XHCI_MAX_DEVSLOTS; sid++) {
+		slot = xhci_slot_get(priv, sid);
+		if (slot == NULL || !slot->active || slot->udev != udev) {
+			continue;
+		}
+
+		if (udev->slot_id != 0U && udev->slot_id != sid) {
+			LOG_ERR("xHCI: udev slot_id %u disagrees with active slot %u",
+				(unsigned int)udev->slot_id, (unsigned int)sid);
+			return NULL;
+		}
+
+		return slot;
+	}
+
+	return NULL;
+}
+
 int xhci_enable_slot_for_udev(struct uhc_dwc3_data *priv, struct usb_device *udev)
 {
 	struct xhci_dev_slot *slot;
@@ -136,13 +167,13 @@ int xhci_enable_slot_for_udev(struct uhc_dwc3_data *priv, struct usb_device *ude
 	return 0;
 }
 
-void xhci_teardown_slot(struct uhc_dwc3_data *priv, uint8_t sid)
+int xhci_teardown_slot(struct uhc_dwc3_data *priv, uint8_t sid)
 {
 	struct xhci_dev_slot *slot = xhci_slot_get(priv, sid);
-	int ret;
+	int ret = 0;
 
 	if (slot == NULL || !slot->active) {
-		return;
+		return 0;
 	}
 
 	if (slot->ep0_active_xfer != NULL) {
@@ -171,6 +202,8 @@ void xhci_teardown_slot(struct uhc_dwc3_data *priv, uint8_t sid)
 	}
 
 	memset(slot, 0, sizeof(*slot));
+
+	return ret;
 }
 
 void xhci_teardown_all_slots(struct uhc_dwc3_data *priv)
