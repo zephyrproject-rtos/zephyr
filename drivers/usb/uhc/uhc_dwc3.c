@@ -342,26 +342,7 @@ static int uhc_dwc3_bus_reset(const struct device *dev)
 		return -EIO;
 	}
 
-	const bool cfg_ep_steady = (udev != NULL && udev->slot_id != 0U)
-					   ? priv->slots[udev->slot_id].steady_after_configure_ep
-					   : false;
-
-	if (cfg_ep_steady) {
-		LOG_WRN("bus_reset after Configure Endpoint (unexpected in steady state; "
-			"expect reset only on new enumeration or disconnect)");
-	}
-	if (udev != NULL && udev->slot_id != 0U) {
-		priv->slots[udev->slot_id].steady_after_configure_ep = false;
-	}
-
-	/*
-	 * Disconnect clears steady but may leave slot_id set; the next
-	 * bus_reset must Disable Slot and reset rings so ENABLE_SLOT runs again.
-	 * If this reset is the "unexpected during steady" path, keep the slot.
-	 */
-	if (udev != NULL && udev->slot_id != 0U && !cfg_ep_steady) {
-		xhci_teardown_slot(priv, udev->slot_id);
-	}
+	xhci_root_reconnect_slot_teardown(priv, udev);
 
 	ret = xhci_root_port_reset_preamble(priv, cfg, &reset_rp, &port_off);
 	if (ret != 0) {
