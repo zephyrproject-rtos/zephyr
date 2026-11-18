@@ -108,10 +108,20 @@ static struct flash_info ext_flash_infos[2] = {
 #define SMFI_M1KFLHCTRL4 (IT51XXX_M1K_REGS_BASE + 0x03)
 /* 0xaa: Manual Flash 1K Command Control 5 */
 #define SMFI_M1KFLHCTRL5 (IT51XXX_M1K_REGS_BASE + 0x04)
-#define M1K_READ_CMD(n)  FIELD_PREP(GENMASK(7, 6), n)
-#define M1K_READ         0x01
-#define M1K_FETCH        0x02
-#define M1K_SFDP         0x03
+
+#if defined(CONFIG_FLASH_IT51XXX_M1K_SHARED_REGS)
+#define M1K_READ_CMD_MASK GENMASK(7, 6)
+#define M1K_READ          0x01U
+#define M1K_FETCH         0x02U
+#define M1K_SFDP          0x03U
+#else
+#define M1K_READ_CMD_MASK GENMASK(7, 5)
+#define M1K_READ          0x02U
+#define M1K_FETCH         0x04U
+#define M1K_SFDP          0x06U
+#endif
+
+#define M1K_READ_CMD(n)  FIELD_PREP(M1K_READ_CMD_MASK, n)
 #define M1K_READ_BCNT(n) FIELD_PREP(GENMASK(1, 0), n)
 /* 0xab: Manual Flash 1K Command Control 6 */
 #define SMFI_M1KFLHCTRL6 (IT51XXX_M1K_REGS_BASE + 0x05)
@@ -137,16 +147,24 @@ enum m1ksts2 {
 	M1K_RESERVED,
 	M1K_PE_CYC,
 };
-/* 0xd0: M1K-PROG/M1K-ERASE Lower Bound Address Byte 0 */
-#define SMFI_M1K_PE_LBA0    (IT51XXX_M1K_REGS_BASE + 0x2a)
-/* 0xd1: M1K-PROG/M1K-ERASE Lower Bound Address Byte 1 */
-#define SMFI_M1K_PE_LBA1    (IT51XXX_M1K_REGS_BASE + 0x2b)
-/* 0xd2: M1K-PROG/M1K-ERASE Lower Bound Address Byte 2 */
-#define SMFI_M1K_PE_LBA2    (IT51XXX_M1K_REGS_BASE + 0x2c)
-/* 0xd3: M1K-PROG/M1K-ERASE Lower Bound Address Byte 3 */
-#define SMFI_M1K_PE_LBA3    (IT51XXX_M1K_REGS_BASE + 0x2d)
-#define M1K_PE_SEL_FSPI     BIT(7)
-#define M1K_PE_SEL_FSCE1    BIT(6)
+
+/* 0xc0: M1K-PROG DLM Base Address Byte 0 */
+#define SMFI_M1K_PROG_DLM_BA0 (IT51XXX_M1K_REGS_BASE + 0x1a)
+/* 0xc1: M1K-PROG DLM Base Address Byte 1 */
+#define SMFI_M1K_PROG_DLM_BA1 (IT51XXX_M1K_REGS_BASE + 0x1b)
+/* 0xc2: M1K-PROG DLM Base Address Byte 2 */
+#define SMFI_M1K_PROG_DLM_BA2 (IT51XXX_M1K_REGS_BASE + 0x1c)
+/* 0xd0: M1K-PROG Lower Bound Address Byte 0 */
+#define SMFI_M1K_PROG_LBA0    (IT51XXX_M1K_REGS_BASE + 0x2a)
+/* 0xd1: M1K-PROG Lower Bound Address Byte 1 */
+#define SMFI_M1K_PROG_LBA1    (IT51XXX_M1K_REGS_BASE + 0x2b)
+/* 0xd2: M1K-PROG Lower Bound Address Byte 2 */
+#define SMFI_M1K_PROG_LBA2    (IT51XXX_M1K_REGS_BASE + 0x2c)
+/* 0xd3: M1K-PROG Lower Bound Address Byte 3 */
+#define SMFI_M1K_PROG_LBA3    (IT51XXX_M1K_REGS_BASE + 0x2d)
+#define M1K_PROG_SEL_FSPI     BIT(7)
+#define M1K_PROG_SEL_FSCE1    BIT(6)
+
 /* 0xd5: M1K-ERASE Upper Bound Address Byte 1 */
 #define SMFI_M1K_ERASE_UBA1 (IT51XXX_M1K_REGS_BASE + 0x2f)
 #define M1K_ERASE_UBA(n)    FIELD_PREP(GENMASK(7, 2), n)
@@ -164,6 +182,15 @@ enum m1ksts2 {
 #define SMFI_M1K_READ_LBA3  (IT51XXX_M1K_REGS_BASE + 0x35)
 #define M1K_READ_SEL_FSPI   BIT(7)
 #define M1K_READ_SEL_FSCE1  BIT(6)
+
+/* 0xdd: M1K-ERASE Lower Bound Address Byte 1 */
+#define SMFI_M1K_ERASE_LBA1 (IT51XXX_M1K_REGS_BASE + 0x37)
+/* 0xde: M1K-ERASE Lower Bound Address Byte 2 */
+#define SMFI_M1K_ERASE_LBA2 (IT51XXX_M1K_REGS_BASE + 0x38)
+/* 0xdf: M1K-ERASE Lower Bound Address Byte 3 */
+#define SMFI_M1K_ERASE_LBA3 (IT51XXX_M1K_REGS_BASE + 0x39)
+#define M1K_ERASE_SEL_FSPI  BIT(7)
+#define M1K_ERASE_SEL_FSCE1 BIT(6)
 
 #define M1K_READ_BCNT_MASK GENMASK(9, 0)
 #define M1K_PROG_BCNT_MASK GENMASK(9, 0)
@@ -239,19 +266,38 @@ static void flash_set_m1k_read_lba(const struct device *dev, uint32_t lb_addr)
 	sys_write8(FIELD_GET(GENMASK(7, 0), lb_addr), SMFI_M1K_READ_LBA0);
 }
 
-static void flash_set_m1k_pe_lba(const struct device *dev, uint32_t lb_addr)
+static void flash_set_m1k_prog_lba(const struct device *dev, uint32_t lb_addr)
 {
-	uint8_t m1k_pe_lba3_value;
+	uint8_t m1k_prog_lba3_value;
 
-	m1k_pe_lba3_value = sys_read8(SMFI_M1K_PE_LBA3);
-	/* Start address of M1K-PROG / Lower bound address of M1K-ERASE[27:24] */
-	sys_write8(m1k_pe_lba3_value | FIELD_GET(GENMASK(27, 24), lb_addr), SMFI_M1K_PE_LBA3);
-	/* Start address of M1K-PROG / Lower bound address of M1K-ERASE[23:16] */
-	sys_write8(FIELD_GET(GENMASK(23, 16), lb_addr), SMFI_M1K_PE_LBA2);
-	/* Start address of M1K-PROG / Lower bound address of M1K-ERASE[15:8] */
-	sys_write8(FIELD_GET(GENMASK(15, 8), lb_addr), SMFI_M1K_PE_LBA1);
-	/* Start address of M1K-PROG / Lower bound address of M1K-ERASE[7:0] */
-	sys_write8(FIELD_GET(GENMASK(7, 0), lb_addr), SMFI_M1K_PE_LBA0);
+	m1k_prog_lba3_value = sys_read8(SMFI_M1K_PROG_LBA3) & ~GENMASK(3, 0);
+	/* Start address of M1K-PROG[27:24] */
+	sys_write8(m1k_prog_lba3_value | FIELD_GET(GENMASK(27, 24), lb_addr), SMFI_M1K_PROG_LBA3);
+	/* Start address of M1K-PROG[23:16] */
+	sys_write8(FIELD_GET(GENMASK(23, 16), lb_addr), SMFI_M1K_PROG_LBA2);
+	/* Start address of M1K-PROG[15:8] */
+	sys_write8(FIELD_GET(GENMASK(15, 8), lb_addr), SMFI_M1K_PROG_LBA1);
+	/* Start address of M1K-PROG[7:0] */
+	sys_write8(FIELD_GET(GENMASK(7, 0), lb_addr), SMFI_M1K_PROG_LBA0);
+}
+
+static void flash_set_m1k_erase_lba(const struct device *dev, uint32_t lb_addr)
+{
+	uint8_t m1k_erase_lba3_value;
+
+	if (IS_ENABLED(CONFIG_FLASH_IT51XXX_M1K_SHARED_REGS)) {
+		/* IT51526 shares the lower bound address between M1K-PROG and M1K-ERASE. */
+		flash_set_m1k_prog_lba(dev, lb_addr);
+		return;
+	}
+
+	m1k_erase_lba3_value = sys_read8(SMFI_M1K_ERASE_LBA3) & ~GENMASK(3, 0);
+	/* Lower bound address of M1K-ERASE[27:24], preserving flash selection. */
+	sys_write8(m1k_erase_lba3_value | FIELD_GET(GENMASK(27, 24), lb_addr), SMFI_M1K_ERASE_LBA3);
+	/* Lower bound address of M1K-ERASE[23:16] */
+	sys_write8(FIELD_GET(GENMASK(23, 16), lb_addr), SMFI_M1K_ERASE_LBA2);
+	/* Lower bound address of M1K-ERASE[15:8]; there is no byte 0 register. */
+	sys_write8(FIELD_GET(GENMASK(15, 8), lb_addr), SMFI_M1K_ERASE_LBA1);
 }
 
 static void flash_set_m1k_erase_uba(const struct device *dev, uint32_t ub_addr)
@@ -272,6 +318,22 @@ static void flash_set_m1k_dlm_ba(const struct device *dev, uint32_t dlm_addr)
 	sys_write8(FIELD_GET(GENMASK(15, 8), dlm_addr), SMFI_M1K_DLM_BA1);
 	/* M1K DLM base address[7:0] */
 	sys_write8(FIELD_GET(GENMASK(7, 0), dlm_addr), SMFI_M1K_DLM_BA0);
+}
+
+static void flash_set_m1k_prog_dlm_ba(const struct device *dev, uint32_t dlm_addr)
+{
+	if (IS_ENABLED(CONFIG_FLASH_IT51XXX_M1K_SHARED_REGS)) {
+		/* IT51526 uses the M1K DLM base address registers for M1K-PROG. */
+		flash_set_m1k_dlm_ba(dev, dlm_addr);
+		return;
+	}
+
+	/* M1K-PROG DLM base address[17:16] */
+	sys_write8(FIELD_GET(GENMASK(17, 16), dlm_addr), SMFI_M1K_PROG_DLM_BA2);
+	/* M1K-PROG DLM base address[15:8] */
+	sys_write8(FIELD_GET(GENMASK(15, 8), dlm_addr), SMFI_M1K_PROG_DLM_BA1);
+	/* M1K-PROG DLM base address[7:0] */
+	sys_write8(FIELD_GET(GENMASK(7, 0), dlm_addr), SMFI_M1K_PROG_DLM_BA0);
 }
 
 static int flash_wait_status(const struct device *dev, enum m1ksts2 state)
@@ -308,7 +370,7 @@ static int m1k_flash_read(const struct device *dev, off_t offset, const void *ds
 	/* M1K-READ byte count[7:0] */
 	sys_write8(FIELD_GET(GENMASK(7, 0), count), SMFI_M1KFLHCTRL4);
 
-	m1kflhctrl5_cmd = sys_read8(SMFI_M1KFLHCTRL5) & ~GENMASK(7, 6);
+	m1kflhctrl5_cmd = sys_read8(SMFI_M1KFLHCTRL5) & ~M1K_READ_CMD_MASK;
 	/* Read data from the flash to DLM */
 	sys_write8(m1kflhctrl5_cmd | M1K_READ_CMD(M1K_READ), SMFI_M1KFLHCTRL5);
 
@@ -330,10 +392,10 @@ static int m1k_flash_write(const struct device *dev, off_t offset, const void *s
 	uint8_t m1kflhctrl7_cmd;
 
 	/* It's the start address of M1K-PROG */
-	flash_set_m1k_pe_lba(dev, offset);
+	flash_set_m1k_prog_lba(dev, offset);
 
-	/* M1K DLM base address */
-	flash_set_m1k_dlm_ba(dev, (uint32_t)src_data);
+	/* M1K-PROG DLM base address */
+	flash_set_m1k_prog_dlm_ba(dev, (uint32_t)src_data);
 
 	/* M1k-PROG size (Maximum 1024 bytes) */
 	count = (len - 1) & M1K_PROG_BCNT_MASK;
@@ -367,7 +429,7 @@ static int m1k_flash_erase(const struct device *dev, off_t offset, size_t len)
 	uint8_t m1kflhctrl7_cmd;
 
 	/* It's the lower bound address of M1K-ERASE */
-	flash_set_m1k_pe_lba(dev, offset);
+	flash_set_m1k_erase_lba(dev, offset);
 
 	/* It's the upper bound address of M1K-ERASE */
 	/* UBA points to the last block of the erase region. */
@@ -402,8 +464,11 @@ static int m1k_flash_sel_access(const struct device *dev, enum flash_it51xxx_ex_
 
 		/* M1K-READ will access the SPI flash (FSPI) */
 		sys_write8(M1K_READ_SEL_FSPI, SMFI_M1K_READ_LBA3);
-		/* M1K-PROG/M1K-ERASE will access the SPI flash (FSPI) */
-		sys_write8(M1K_PE_SEL_FSPI, SMFI_M1K_PE_LBA3);
+		/* M1K-PROG will access the SPI flash (FSPI). IT51526 shares this with M1K-ERASE. */
+		sys_write8(M1K_PROG_SEL_FSPI, SMFI_M1K_PROG_LBA3);
+		if (!IS_ENABLED(CONFIG_FLASH_IT51XXX_M1K_SHARED_REGS)) {
+			sys_write8(M1K_ERASE_SEL_FSPI, SMFI_M1K_ERASE_LBA3);
+		}
 
 		/* Set the pin to FSPI alternate function. */
 		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -416,9 +481,13 @@ static int m1k_flash_sel_access(const struct device *dev, enum flash_it51xxx_ex_
 			/* M1K-READ will access the SPI flash on FSCE1# */
 			sys_write8(sys_read8(SMFI_M1K_READ_LBA3) | M1K_READ_SEL_FSCE1,
 				   SMFI_M1K_READ_LBA3);
-			/* M1K-PROG/M1K-ERASE will access the SPI flash on FSCE1# */
-			sys_write8(sys_read8(SMFI_M1K_PE_LBA3) | M1K_PE_SEL_FSCE1,
-				   SMFI_M1K_PE_LBA3);
+			/* M1K-PROG will access the SPI flash on FSCE1#. */
+			sys_write8(sys_read8(SMFI_M1K_PROG_LBA3) | M1K_PROG_SEL_FSCE1,
+				   SMFI_M1K_PROG_LBA3);
+			if (!IS_ENABLED(CONFIG_FLASH_IT51XXX_M1K_SHARED_REGS)) {
+				sys_write8(sys_read8(SMFI_M1K_ERASE_LBA3) | M1K_ERASE_SEL_FSCE1,
+					   SMFI_M1K_ERASE_LBA3);
+			}
 			/* Enable two-flash */
 			sys_write8(sys_read8(SMFI_FLHCTRL4R) | EN2FLH, SMFI_FLHCTRL4R);
 		}
@@ -428,8 +497,11 @@ static int m1k_flash_sel_access(const struct device *dev, enum flash_it51xxx_ex_
 
 		/* M1K-READ will access the e-flash */
 		sys_write8(0, SMFI_M1K_READ_LBA3);
-		/* M1K-PROG/M1K-ERASE will access the e-flash */
-		sys_write8(0, SMFI_M1K_PE_LBA3);
+		/* M1K-PROG will access the e-flash. */
+		sys_write8(0, SMFI_M1K_PROG_LBA3);
+		if (!IS_ENABLED(CONFIG_FLASH_IT51XXX_M1K_SHARED_REGS)) {
+			sys_write8(0, SMFI_M1K_ERASE_LBA3);
+		}
 	}
 
 	return 0;
