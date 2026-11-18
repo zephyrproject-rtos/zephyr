@@ -10,4 +10,5 @@ target_sources(app PRIVATE src/main.c src/mock_frontend.c
 if(CONFIG_CPP)
   # When testing for C++ force test file C++ compilation
   set_source_files_properties(src/main.c PROPERTIES LANGUAGE CXX)
+  target_sources(app PRIVATE src/log_template.cpp)
 endif()
