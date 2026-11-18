@@ -223,8 +223,7 @@ typedef struct s_isrList {
 
 #ifdef CONFIG_PCIE
 
-#define ARCH_PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
-			      isr_p, isr_param_p, flags_p)		\
+#define ARCH_PCIE_IRQ_CONNECT(ep_p, irq_p, priority_p, isr_p, isr_param_p, flags_p)                \
 	ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
 
 #endif /* CONFIG_PCIE */
