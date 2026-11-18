@@ -2,3 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 add_subdirectory_ifdef(CONFIG_UWB_TRANSPORT_EMUL emul)
+add_subdirectory_ifdef(CONFIG_NXP_UWB_DEVICE nxp)

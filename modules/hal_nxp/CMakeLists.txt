@@ -40,6 +40,10 @@ if(CONFIG_WIFI_NXP)
   add_subdirectory(wifi)
 endif()
 
+if(CONFIG_NXP_UWB_DEVICE)
+  add_subdirectory(uwb)
+endif()
+
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/zephyr/src hal_nxp)
 
 if(CONFIG_HAS_MCUX AND CONFIG_MBEDTLS_PSA_CRYPTO_C)

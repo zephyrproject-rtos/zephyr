@@ -4,5 +4,6 @@
 if UWB
 
 rsource "emul/Kconfig"
+rsource "nxp/Kconfig"
 
 endif
