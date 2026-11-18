@@ -253,6 +253,30 @@ void xhci_teardown_all_slots(struct uhc_dwc3_data *priv)
 	}
 }
 
+void xhci_root_reconnect_slot_teardown(struct uhc_dwc3_data *priv, struct usb_device *udev)
+{
+	const bool cfg_ep_steady = (udev != NULL && udev->slot_id != 0U)
+					   ? priv->slots[udev->slot_id].steady_after_configure_ep
+					   : false;
+
+	if (cfg_ep_steady) {
+		LOG_WRN("bus_reset after Configure Endpoint (unexpected in steady state; "
+			"expect reset only on new enumeration or disconnect)");
+	}
+	if (udev != NULL && udev->slot_id != 0U) {
+		priv->slots[udev->slot_id].steady_after_configure_ep = false;
+	}
+
+	/*
+	 * Disconnect clears steady but may leave slot_id set; the next
+	 * bus_reset must Disable Slot and reset rings so ENABLE_SLOT runs again.
+	 * If this reset is the "unexpected during steady" path, keep the slot.
+	 */
+	if (udev != NULL && udev->slot_id != 0U && !cfg_ep_steady) {
+		xhci_teardown_slot(priv, udev->slot_id);
+	}
+}
+
 int xhci_prepare_root_device(struct uhc_dwc3_data *priv, struct usb_device *udev, uint8_t reset_rp)
 {
 	struct xhci_dev_slot *slot;

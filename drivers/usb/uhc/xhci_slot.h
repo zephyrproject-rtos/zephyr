@@ -54,4 +54,6 @@ int xhci_address_device_initial_udev(struct uhc_dwc3_data *priv, struct xhci_dev
 
 int xhci_prepare_root_device(struct uhc_dwc3_data *priv, struct usb_device *udev, uint8_t reset_rp);
 
+void xhci_root_reconnect_slot_teardown(struct uhc_dwc3_data *priv, struct usb_device *udev);
+
 #endif /* ZEPHYR_USB_XHCI_SLOT_H */
