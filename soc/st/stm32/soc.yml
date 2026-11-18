@@ -115,6 +115,7 @@ family:
     socs:
     - name: stm32g431xx
     - name: stm32g441xx
+    - name: stm32g471xx
     - name: stm32g473xx
     - name: stm32g474xx
     - name: stm32g483xx
