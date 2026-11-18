@@ -546,6 +546,7 @@
 				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				max-speed = <4000000>;
 				status = "disabled";
 			};
 
