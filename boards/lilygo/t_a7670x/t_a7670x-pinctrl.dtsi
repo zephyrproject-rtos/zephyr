@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026 Pedro Ramos
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp32-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO1>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO3>;
+			bias-pull-up;
+		};
+	};
+
+	/* A7670X modem */
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_GPIO26>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART1_RX_GPIO27>;
+			bias-pull-up;
+		};
+	};
+
+	/* TF card slot */
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO2>,
+				 <SPIM2_SCLK_GPIO14>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO15>;
+			output-low;
+		};
+	};
+};

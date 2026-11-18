@@ -1,0 +1,19 @@
+identifier: t_a7670x/esp32/procpu
+name: LilyGo T-A7670X PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+ram: 8192
+supported:
+  - gpio
+  - input
+  - uart
+  - spi
+  - sdhc
+  - watchdog
+  - entropy
+  - nvs
+  - netif:wifi
+  - netif:modem
+vendor: lilygo

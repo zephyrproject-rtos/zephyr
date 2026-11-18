@@ -1,0 +1,131 @@
+/*
+ * Copyright (c) 2026 Pedro Ramos
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32/esp32.dtsi>
+#include <espressif/partitions_0x1000_amp.dtsi>
+#include "t_a7670x-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	compatible = "lilygo,t-a7670x";
+	model = "LilyGo T-A7670X PROCPU";
+
+	aliases {
+		uart-0 = &uart0;
+		sw0 = &button0;
+		sdhc0 = &sd0;
+		watchdog0 = &wdt0;
+		modem-uart = &uart1;
+		modem = &modem;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	modem: modem {
+		compatible = "simcom,a76xx";
+		mdm-power-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+		mdm-reset-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		mdm-dtr-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		mdm-ring-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};
+
+&gpio0 {
+	gpio-reserved-ranges = <6 6>, <16 2>, <20 1>, <24 1>, <28 4>;
+	status = "okay";
+
+	/*
+	 * Modem supply switch. GPIO12 is a strapping pin, so it is only
+	 * driven once the SoC has booted.
+	 */
+	modem_power_on {
+		gpio-hog;
+		gpios = <12 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "modem-power-on";
+	};
+};
+
+&gpio1 {
+	gpio-reserved-ranges = <5 2>;
+	status = "okay";
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	sd0: sd@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		spi-max-frequency = <20000000>;
+		status = "okay";
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
