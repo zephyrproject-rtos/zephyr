@@ -1,0 +1,32 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,ipc_shm = &a55_m71_shm;
+		zephyr,ipc_rsc_table = &a55_m71_rsc_table;
+		zephyr,ipc = &mailbox0;
+	};
+
+	mailbox0: mailbox {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mu_a55_m71_for_m71 1>, <&mu_a55_m71_for_m71 1>;
+		mbox-names = "tx", "rx";
+		status = "okay";
+	};
+};
+
+&mu_a55_m71_for_m71 {
+	status = "okay";
+};
+
+&a55_m71_shm {
+	status = "okay";
+};
+
+&a55_m71_rsc_table {
+	status = "okay";
+};

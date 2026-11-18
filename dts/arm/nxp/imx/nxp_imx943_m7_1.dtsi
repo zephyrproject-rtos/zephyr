@@ -242,6 +242,10 @@
 	status = "okay";
 };
 
+mu_a55_m71_for_m71: &mu13_a {
+	interrupts = <128 0>;
+};
+
 /* m70 and m71 */
 &mu_m70_m71_for_m71 {
 	interrupts = <129 0>;

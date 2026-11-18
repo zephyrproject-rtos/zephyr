@@ -8,6 +8,7 @@
 
 #include <nxp/imx/nxp_imx943_m7_0.dtsi>
 #include "imx943_evk-pinctrl.dtsi"
+#include "imx943_evk_a55_mcore_ipc.dtsi"
 
 / {
 	compatible = "nxp,imx943_evk";

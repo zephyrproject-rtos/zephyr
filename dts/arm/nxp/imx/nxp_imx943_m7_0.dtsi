@@ -242,6 +242,10 @@
 	status = "okay";
 };
 
+mu_a55_m70_for_m70: &mu11_b {
+	interrupts = <126 0>;
+};
+
 &mu_m70_m71_for_m70 {
 	interrupts = <130 0>;
 	status = "okay";
