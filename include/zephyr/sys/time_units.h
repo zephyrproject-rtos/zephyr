@@ -193,10 +193,10 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #define z_tmcvt_int_div_32(__dv, __t, __from_hz, __to_hz, __round_up, __round_off) \
 	((uint64_t) (__t) <= 0xffffffffU -				\
 	 z_tmcvt_off_div(__from_hz, __to_hz, __round_up, __round_off) ?	\
-	 ((uint32_t)(((__t) +						\
+	 ((uint32_t)((__t) +						\
 		     z_tmcvt_off_div(__from_hz, __to_hz,		\
 				     __round_up, __round_off)) /	\
-	  z_tmcvt_divisor(__from_hz, __to_hz)))				\
+	  (uint32_t)z_tmcvt_divisor(__from_hz, __to_hz))		\
 	 :								\
 	 (uint32_t) __dv##_div((uint64_t) (__t) +			\
 			       z_tmcvt_off_div(__from_hz, __to_hz,	\
