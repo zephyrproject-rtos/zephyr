@@ -29,10 +29,16 @@ typedef void (*fsm_state)(void);
 
 static int64_t last_mode_change;
 
+#if defined(CONFIG_VL53L0X)
+#define X_NUCLEO_53L0A1_SENSOR(node_id) DEVICE_DT_GET_OR_NULL(node_id)
+#else
+#define X_NUCLEO_53L0A1_SENSOR(node_id) NULL
+#endif
+
 static const struct device *const sensors[] = {
-	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_l_x_nucleo_53l0a1)),
-	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_c_x_nucleo_53l0a1)),
-	DEVICE_DT_GET(DT_NODELABEL(vl53l0x_r_x_nucleo_53l0a1)),
+	X_NUCLEO_53L0A1_SENSOR(DT_NODELABEL(vl53l0x_l_x_nucleo_53l0a1)),
+	X_NUCLEO_53L0A1_SENSOR(DT_NODELABEL(vl53l0x_c_x_nucleo_53l0a1)),
+	X_NUCLEO_53L0A1_SENSOR(DT_NODELABEL(vl53l0x_r_x_nucleo_53l0a1)),
 };
 
 static void mode_show_distance(void)
@@ -116,6 +122,7 @@ static void change_mode(const struct device *dev, struct gpio_callback *cb, uint
 
 int main(void)
 {
+	size_t i;
 	struct gpio_callback button_cb_data;
 	const uint8_t Hello[4] = { CHAR_H, CHAR_E, CHAR_PIPE | CHAR_1, CHAR_0 };
 	const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
@@ -127,6 +134,17 @@ int main(void)
 		printk("Error: button device %s is not ready\n",
 		       button.port->name);
 		return 0;
+	}
+
+	for (i = 0; i < N_SENSORS; i++) {
+		if (sensors[i] == NULL) {
+			printk("Error: sensor %u is not available\n", (unsigned int)i);
+			return 0;
+		}
+		if (!device_is_ready(sensors[i])) {
+			printk("Error: sensor device %s is not ready\n", sensors[i]->name);
+			return 0;
+		}
 	}
 
 	gpio_pin_configure_dt(&button, GPIO_INPUT);
