@@ -31,7 +31,7 @@ manifest:
   # zephyr-keep-sorted-start re(^\s+\- name:)
   projects:
     - name: acpica
-      revision: 8d24867bc9c9d81c81eeac59391cda59333affd4
+      revision: pull/7/head
       path: modules/lib/acpica
     - name: babblesim_base
       remote: babblesim
