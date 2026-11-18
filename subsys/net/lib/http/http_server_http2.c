@@ -19,6 +19,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/http/server.h>
+#include <zephyr/sys/base64.h>
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -2163,6 +2164,80 @@ static int apply_peer_setting(struct http_client_ctx *client, uint16_t id, uint3
 		 * Unknown settings are ignored.
 		 */
 		break;
+	}
+
+	return 0;
+}
+
+/* Apply the HTTP2-Settings header of an h2c upgrade request. The value is the
+ * payload of a SETTINGS frame, base64url encoded without padding
+ * (RFC 7540, Section 3.2.1). It is applied before any stream is open, and
+ * nothing is applied if the value is invalid.
+ */
+int http2_apply_upgrade_settings(struct http_client_ctx *client, const char *value, size_t len)
+{
+	uint8_t encoded[HTTP_SERVER_HTTP2_SETTINGS_MAX_LEN];
+	uint8_t payload[HTTP_SERVER_HTTP2_SETTINGS_MAX_LEN / 4U * 3U];
+	uint32_t initial_window_size = client->peer_initial_window_size;
+	size_t encoded_len;
+	size_t payload_len;
+	int ret;
+
+	BUILD_ASSERT((HTTP_SERVER_HTTP2_SETTINGS_MAX_LEN % 4U) == 0U);
+
+	/* A single character left over does not encode a byte */
+	if (len > sizeof(encoded) || (len % 4U) == 1U) {
+		LOG_DBG("HTTP2-Settings length %zu", len);
+		return -EBADMSG;
+	}
+
+	/* base64_decode() takes the standard alphabet, with padding */
+	for (encoded_len = 0; encoded_len < len; encoded_len++) {
+		char c = value[encoded_len];
+
+		switch (c) {
+		case '-':
+			c = '+';
+			break;
+		case '_':
+			c = '/';
+			break;
+		default:
+			/* The other characters are the same in both alphabets */
+			if (isalnum((unsigned char)c) == 0) {
+				LOG_DBG("HTTP2-Settings is not base64url");
+				return -EBADMSG;
+			}
+
+			break;
+		}
+
+		encoded[encoded_len] = (uint8_t)c;
+	}
+
+	while ((encoded_len % 4U) != 0U) {
+		encoded[encoded_len] = '=';
+		encoded_len++;
+	}
+
+	ret = base64_decode(payload, sizeof(payload), &payload_len, encoded, encoded_len);
+	if (ret < 0) {
+		LOG_DBG("HTTP2-Settings is not base64url (%d)", ret);
+		return -EBADMSG;
+	}
+
+	if ((payload_len % sizeof(struct http2_settings_field)) != 0U) {
+		LOG_DBG("HTTP2-Settings length %zu", payload_len);
+		return -EBADMSG;
+	}
+
+	for (size_t pos = 0; pos < payload_len; pos += sizeof(struct http2_settings_field)) {
+		ret = apply_peer_setting(client, sys_get_be16(&payload[pos]),
+					 sys_get_be32(&payload[pos + sizeof(uint16_t)]));
+		if (ret < 0) {
+			client->peer_initial_window_size = initial_window_size;
+			return ret;
+		}
 	}
 
 	return 0;

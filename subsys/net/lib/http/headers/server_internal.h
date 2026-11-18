@@ -42,6 +42,7 @@ int handle_http_frame_data(struct http_client_ctx *client);
 int handle_http_frame_padding(struct http_client_ctx *client);
 int handle_http1_request(struct http_client_ctx *client);
 int handle_http1_to_http2_upgrade(struct http_client_ctx *client);
+int http2_apply_upgrade_settings(struct http_client_ctx *client, const char *value, size_t len);
 int handle_http1_to_websocket_upgrade(struct http_client_ctx *client);
 void http_server_release_client(struct http_client_ctx *client);
 
