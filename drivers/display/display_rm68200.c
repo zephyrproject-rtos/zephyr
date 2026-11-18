@@ -94,14 +94,6 @@ static int rm68200_dcs_write(const struct device *dev, uint8_t cmd, uint8_t *buf
 	return mipi_dsi_dcs_write(config->mipi_dsi, config->channel, cmd, buf, len);
 }
 
-static int rm68200_write(const struct device *dev, const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
-{
-	return 0;
-}
-
 static int rm68200_blanking_off(const struct device *dev)
 {
 	const struct rm68200_config *config = dev->config;
@@ -161,7 +153,6 @@ static void rm68200_get_capabilities(const struct device *dev,
 static DEVICE_API(display, rm68200_api) = {
 	.blanking_on = rm68200_blanking_on,
 	.blanking_off = rm68200_blanking_off,
-	.write = rm68200_write,
 	.get_capabilities = rm68200_get_capabilities,
 	.set_pixel_format = rm68200_set_pixel_format,
 	.set_orientation = rm68200_set_orientation,

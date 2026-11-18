@@ -437,15 +437,6 @@ static ssize_t hx8394_mipi_tx(const struct device *mipi_dev, uint8_t channel,
 	return mipi_dsi_transfer(mipi_dev, channel, &msg);
 }
 
-static int hx8394_write(const struct device *dev, const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
-{
-	LOG_WRN("Write not supported, use LCD controller display driver");
-	return 0;
-}
-
 static int hx8394_blanking_off(const struct device *dev)
 {
 	const struct hx8394_config *config = dev->config;
@@ -526,7 +517,6 @@ static void hx8394_get_capabilities(const struct device *dev,
 static DEVICE_API(display, hx8394_api) = {
 	.blanking_on = hx8394_blanking_on,
 	.blanking_off = hx8394_blanking_off,
-	.write = hx8394_write,
 	.get_capabilities = hx8394_get_capabilities,
 	.set_pixel_format = hx8394_set_pixel_format,
 	.set_orientation = hx8394_set_orientation,

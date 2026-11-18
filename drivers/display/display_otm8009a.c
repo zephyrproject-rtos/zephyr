@@ -580,12 +580,6 @@ static int otm8009a_blanking_off(const struct device *dev)
 	return otm8009a_dcs_write(dev, MIPI_DCS_SET_DISPLAY_ON, NULL, 0);
 }
 
-static int otm8009a_write(const struct device *dev, uint16_t x, uint16_t y,
-			  const struct display_buffer_descriptor *desc, const void *buf)
-{
-	return -ENOTSUP;
-}
-
 static int otm8009a_set_brightness(const struct device *dev, uint8_t brightness)
 {
 	return otm8009a_dcs_write(dev, MIPI_DCS_SET_DISPLAY_BRIGHTNESS, &brightness, 1);
@@ -607,7 +601,6 @@ static void otm8009a_get_capabilities(const struct device *dev,
 static DEVICE_API(display, otm8009a_api) = {
 	.blanking_on = otm8009a_blanking_on,
 	.blanking_off = otm8009a_blanking_off,
-	.write = otm8009a_write,
 	.set_brightness = otm8009a_set_brightness,
 	.get_capabilities = otm8009a_get_capabilities,
 };
