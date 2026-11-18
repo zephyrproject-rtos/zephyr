@@ -189,15 +189,23 @@ static int dwc3_endpoint_recover_cb(const struct device *dev, struct usb_device 
 	struct uhc_dwc3_data *priv = uhc_get_private(dev);
 	struct xhci_dev_slot *slot;
 
-	ARG_UNUSED(ep);
+	ARG_UNUSED(reason);
 
-	if (udev == NULL || udev->cfg_desc == NULL) {
+	if (udev == NULL) {
 		return -EINVAL;
 	}
 
 	slot = xhci_slot_udev(priv, udev);
 	if (slot == NULL || !slot->active) {
 		return -ENODEV;
+	}
+
+	if (USB_EP_GET_IDX(ep) == 0U) {
+		return xhci_ep0_recover_slot(priv, slot);
+	}
+
+	if (udev->cfg_desc == NULL) {
+		return -EINVAL;
 	}
 
 	return dwc3_bulk_recover_after_usb_event(priv, udev, reason);
