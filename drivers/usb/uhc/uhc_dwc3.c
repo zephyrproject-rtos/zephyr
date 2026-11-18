@@ -623,6 +623,12 @@ static int uhc_dwc3_ep0_enqueue(const struct device *dev, struct uhc_transfer *c
 
 	UHC_DWC3_DBG("EP submit: ep=0x%02x ep_id=%u ring=ep0", xfer->ep,
 		     (unsigned int)XHCI_DCI_DEFAULT_CONTROL);
+
+	slot->ep0_td.start_trb = trb_setup;
+	slot->ep0_td.start_cycle = pcs_setup;
+	slot->ep0_td.trb_count = (trb_data != NULL) ? 3U : 2U;
+	slot->ep0_expect_ioc_trb_phys = xhci_bulk_td_ioc_phys(ring, &slot->ep0_td);
+
 	/*
 	 * xfer_sem is capped at 1. A completion that runs when no thread is
 	 * waiting only increments count if count < limit; a second completion
@@ -657,11 +663,7 @@ static int uhc_dwc3_ep0_enqueue(const struct device *dev, struct uhc_transfer *c
 		LOG_ERR("EP0 timeout: ep_info2=0x%08x tx_info=0x%08x", ep0_dbg->ep_info2,
 			ep0_dbg->tx_info);
 		(void)xhci_cancel_ep_xfer(priv, slot, XHCI_DCI_DEFAULT_CONTROL, xfer, -ETIMEDOUT);
-		if (slot->ep0_active_xfer == xfer) {
-			xfer->err = -ETIMEDOUT;
-		} else {
-			xfer->err = slot->xfer_result;
-		}
+		xfer->err = -ETIMEDOUT;
 	} else {
 		xfer->err = slot->xfer_result;
 		if (xfer->buf && dir_in && slot->xfer_result == 0) {
@@ -1236,8 +1238,9 @@ int xhci_cancel_ep_xfer(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot, 
 	if (dci == XHCI_DCI_DEFAULT_CONTROL) {
 		slot->xfer_result = err;
 		slot->ep0_active_xfer = NULL;
+		slot->ep0_expect_ioc_trb_phys = 0ULL;
+		memset(&slot->ep0_td, 0, sizeof(slot->ep0_td));
 		xhci_ep0_ring_sync_from_hw(priv, slot);
-		(void)xhci_ep0_recover_slot(priv, slot);
 		k_sem_give(&slot->xfer_sem);
 	} else {
 		slot->bulk_expect_ioc_trb_phys[dci] = 0ULL;
