@@ -378,9 +378,9 @@ static void receive_work_handler(struct k_work *item)
 
 static void process_ff_sf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 {
-	int index = 0;
-	uint8_t sf_len;
-	uint8_t payload_len;
+	uint32_t index = 0U;
+	uint32_t sf_len;
+	uint32_t payload_len;
 	uint32_t rx_sa;		/* ISO-TP fixed source address (if used) */
 	uint8_t can_dl = can_dlc_to_bytes(frame->dlc);
 
@@ -438,9 +438,9 @@ static void process_ff_sf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 				return;
 			}
 			sf_len = frame->data[index + 1];
-			payload_len = index + 2 + sf_len;
+			payload_len = index + 2U + sf_len;
 		} else {
-			payload_len = index + 1 + sf_len;
+			payload_len = index + 1U + sf_len;
 		}
 
 		if (payload_len > can_dl) {
