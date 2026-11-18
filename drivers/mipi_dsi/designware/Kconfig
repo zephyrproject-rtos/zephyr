@@ -7,3 +7,12 @@ config MIPI_DSI_DW
 	bool "MIPI-DSI Host Controller"
 	help
 	  Enable MIPI DSI Host controller driver
+
+config MIPI_DSI_DW_ALIF
+	bool "Alif MIPI-DSI Host Controller"
+	default y
+	select MIPI_DSI_DW
+	select REGULATOR
+	depends on DT_HAS_ALIF_MIPI_DSI_ENABLED
+	help
+	  Enable Alif-specific MIPI DSI Host controller glue code
