@@ -36,11 +36,7 @@ struct espi_taf_npcx_config {
 struct espi_taf_npcx_data {
 	sys_slist_t *callbacks;
 	const struct device *host_dev;
-	uint8_t taf_type;
-	uint8_t taf_tag;
-	uint32_t address;
-	uint16_t length;
-	uint32_t src[16];
+	struct espi_taf_pckt pckt;
 	struct k_work work;
 };
 
@@ -55,6 +51,15 @@ static struct espi_callback espi_taf_cb;
 	GET_FIELD(inst->FLASHBASE, NPCX_FLASHBASE_FLBASE_ADDR)		\
 	<< GET_FIELD_POS(NPCX_FLASHBASE_FLBASE_ADDR))
 
+/* Cycle types with data: 0x09, 0x0B, 0x0D, 0x0F (all odd and >= 0x09) */
+#define CYC_TYPE_HAS_DATA(type) \
+	(((type) >= CYC_SCS_CMP_WITH_DATA_MIDDLE) && ((type) & 0x01))
+
+/* Cycle types that are part of a multi-packet sequence (not last or only) */
+#define CYC_TYPE_IS_CONTINUATION(type) \
+	(((type) == CYC_SCS_CMP_WITH_DATA_FIRST) || \
+	 ((type) == CYC_SCS_CMP_WITH_DATA_MIDDLE))
+
 #define PRTR_BADDR(i) (							\
 	GET_FIELD(inst->FLASH_PRTR_BADDR[i], NPCX_FLASH_PRTR_BADDR)	\
 	<< GET_FIELD_POS(NPCX_FLASH_PRTR_BADDR))
@@ -63,21 +68,10 @@ static struct espi_callback espi_taf_cb;
 	GET_FIELD(inst->FLASH_PRTR_HADDR[i], NPCX_FLASH_PRTR_HADDR)	\
 	<< GET_FIELD_POS(NPCX_FLASH_PRTR_HADDR)) | 0xFFF;
 
-static void espi_taf_get_pckt(const struct device *dev, struct espi_taf_npcx_data *pckt,
+static void espi_taf_get_pckt(const struct device *dev, struct espi_taf_npcx_data *data,
 			      struct espi_event event)
 {
-	struct espi_taf_pckt *data_ptr;
-
-	data_ptr = (struct espi_taf_pckt *)event.evt_data;
-
-	pckt->taf_type = data_ptr->type;
-	pckt->length = data_ptr->len;
-	pckt->taf_tag = data_ptr->tag;
-	pckt->address = data_ptr->addr;
-
-	if (data_ptr->type == NPCX_ESPI_TAF_REQ_WRITE) {
-		memcpy(pckt->src, data_ptr->src, sizeof(pckt->src));
-	}
+	data->pckt = *(struct espi_taf_pckt *)event.evt_data;
 }
 
 #if defined(CONFIG_ESPI_TAF_MANUAL_MODE)
@@ -263,46 +257,49 @@ static void taf_release_flash_np_free(const struct device *dev)
 	inst->FLASHCTL = tmp;
 }
 
+BUILD_ASSERT(sizeof(struct npcx_taf_head) == sizeof(uint32_t),
+	     "struct npcx_taf_head size must be exactly 4 bytes");
+
 static int taf_npcx_completion_handler(const struct device *dev, uint8_t type, uint8_t tag,
 				       uint16_t len, uint32_t *buffer)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	struct npcx_taf_head taf_head;
-	uint16_t i, size;
-	uint32_t tx_buf[16];
+	uint32_t header;
 
 	taf_head.pkt_len = NPCX_TAF_CMP_HEADER_LEN + len;
 	taf_head.type = type;
-	taf_head.tag_hlen = (tag << 4) | ((len & 0xF00) >> 8);
+	taf_head.tag_hlen = (tag << 4) | ((len >> 8) & 0x0F);
 	taf_head.llen = len & 0xFF;
 
-	memcpy(&tx_buf[0], &taf_head, sizeof(struct npcx_taf_head));
-
-	if (type == CYC_SCS_CMP_WITH_DATA_ONLY || type == CYC_SCS_CMP_WITH_DATA_FIRST ||
-	    type == CYC_SCS_CMP_WITH_DATA_MIDDLE || type == CYC_SCS_CMP_WITH_DATA_LAST) {
-		memcpy(&tx_buf[1], buffer, (uint8_t)(len));
-	}
-
-	/* Check the Flash Access TX Queue is empty by polling
-	 * FLASH_TX_AVAIL.
-	 */
 	if (WAIT_FOR(!IS_BIT_SET(inst->FLASHCTL, NPCX_FLASHCTL_FLASH_TX_AVAIL),
 		     NPCX_FLASH_CHK_TIMEOUT, NULL) == false) {
 		LOG_ERR("Check TX Queue Is Empty Timeout");
 		return -EBUSY;
 	}
 
-	/* Write packet to FLASHTXBUF */
-	size = DIV_ROUND_UP((uint8_t)(tx_buf[0]) + 1, sizeof(uint32_t));
-	for (i = 0; i < size; i++) {
-		inst->FLASHTXBUF[i] = tx_buf[i];
+	memcpy(&header, &taf_head, sizeof(taf_head));
+	inst->FLASHTXBUF[0] = header;
+
+	if (CYC_TYPE_HAS_DATA(type) && len > 0) {
+		uint16_t words = DIV_ROUND_UP(len, sizeof(uint32_t));
+		uint16_t max_words =
+			ARRAY_SIZE(((struct espi_reg *)0)->FLASHTXBUF) - NPCX_ESPI_FLASH_HEADER_LEN;
+
+		if (words > max_words) {
+			LOG_ERR("FLASHTXBUF overflow len=%u words=%u avail=%u", len, words,
+				max_words);
+			return -EOVERFLOW;
+		}
+
+		for (uint16_t i = 0; i < words; i++) {
+			inst->FLASHTXBUF[i + NPCX_ESPI_FLASH_HEADER_LEN] = buffer[i];
+		}
 	}
 
-	/* Set the FLASHCTL.FLASH_TX_AVAIL bit to 1 to enqueue the packet */
 	taf_set_flash_c_avail(dev);
 
-	/* Release FLASH_NP_FREE here to ready get next TAF request */
-	if ((type != CYC_SCS_CMP_WITH_DATA_FIRST) && (type != CYC_SCS_CMP_WITH_DATA_MIDDLE)) {
+	if (!CYC_TYPE_IS_CONTINUATION(type)) {
 		taf_release_flash_np_free(dev);
 	}
 
@@ -310,15 +307,14 @@ static int taf_npcx_completion_handler(const struct device *dev, uint8_t type, u
 }
 
 #if defined(CONFIG_ESPI_TAF_MANUAL_MODE)
-static int espi_taf_npcx_flash_read(const struct device *dev, struct espi_saf_packet *pckt)
+static int espi_taf_npcx_flash_read(const struct device *dev, struct espi_taf_npcx_data *taf)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	struct espi_taf_npcx_config *config = ((struct espi_taf_npcx_config *)(dev)->config);
-	struct espi_taf_npcx_pckt *taf_data_ptr = (struct espi_taf_npcx_pckt *)pckt->buf;
 	uint8_t cycle_type = CYC_SCS_CMP_WITH_DATA_ONLY;
-	uint32_t total_len = pckt->len;
+	uint32_t total_len = taf->pckt.len;
 	uint32_t len = total_len;
-	uint32_t addr = pckt->flash_addr;
+	uint32_t addr = taf->pckt.addr;
 	uint8_t flash_req_size = GET_FIELD(inst->FLASHCFG, NPCX_FLASHCFG_FLASHREQSIZE);
 	uint8_t target_max_size = GET_FIELD(inst->FLASHCFG, NPCX_FLASHCFG_FLREQSUP);
 	uint16_t max_read_req = 32 << flash_req_size;
@@ -338,7 +334,7 @@ static int espi_taf_npcx_flash_read(const struct device *dev, struct espi_saf_pa
 		return -EINVAL;
 	}
 
-	if (espi_taf_check_read_protect(dev, addr, len, taf_data_ptr->tag)) {
+	if (espi_taf_check_read_protect(dev, addr, len, taf->pckt.tag)) {
 		LOG_ERR("Access protect region");
 		return -EINVAL;
 	}
@@ -358,7 +354,7 @@ static int espi_taf_npcx_flash_read(const struct device *dev, struct espi_saf_pa
 			return -EIO;
 		}
 
-		rc = taf_npcx_completion_handler(dev, cycle_type, taf_data_ptr->tag, len,
+		rc = taf_npcx_completion_handler(dev, cycle_type, taf->pckt.tag, len,
 						 (uint32_t *)&read_buf[0]);
 		if (rc) {
 			LOG_ERR("espi taf completion handler fail");
@@ -380,26 +376,25 @@ static int espi_taf_npcx_flash_read(const struct device *dev, struct espi_saf_pa
 }
 #endif
 
-static int espi_taf_npcx_flash_write(const struct device *dev, struct espi_saf_packet *pckt)
+static int espi_taf_npcx_flash_write(const struct device *dev, struct espi_taf_npcx_data *taf)
 {
-	struct espi_taf_npcx_pckt *taf_data_ptr = (struct espi_taf_npcx_pckt *)pckt->buf;
-	uint8_t *data_ptr = (uint8_t *)(taf_data_ptr->data);
+	uint8_t *data_ptr = (uint8_t *)taf->pckt.src;
+	uint32_t addr = taf->pckt.addr;
+	uint32_t len = taf->pckt.len;
 	int rc;
 
-	if (espi_taf_check_write_protect(dev, pckt->flash_addr,
-					 pckt->len, taf_data_ptr->tag)) {
+	if (espi_taf_check_write_protect(dev, addr, len, taf->pckt.tag)) {
 		LOG_ERR("Access protection region");
 		return -EINVAL;
 	}
 
-	rc = flash_write(spi_dev, pckt->flash_addr, data_ptr, pckt->len);
+	rc = flash_write(spi_dev, addr, data_ptr, len);
 	if (rc) {
 		LOG_ERR("flash write fail 0x%x", rc);
 		return -EIO;
 	}
 
-	rc = taf_npcx_completion_handler(dev, CYC_SCS_CMP_WITHOUT_DATA, taf_data_ptr->tag, 0x0,
-					 NULL);
+	rc = taf_npcx_completion_handler(dev, CYC_SCS_CMP_WITHOUT_DATA, taf->pckt.tag, 0x0, NULL);
 	if (rc) {
 		LOG_ERR("espi taf completion handler fail");
 		return rc;
@@ -408,22 +403,21 @@ static int espi_taf_npcx_flash_write(const struct device *dev, struct espi_saf_p
 	return 0;
 }
 
-static int espi_taf_npcx_flash_erase(const struct device *dev, struct espi_saf_packet *pckt)
+static int espi_taf_npcx_flash_erase(const struct device *dev, struct espi_taf_npcx_data *taf)
 {
 	int erase_blk[] = {KB(4), KB(32), KB(64), KB(128)};
-	struct espi_taf_npcx_pckt *taf_data_ptr = (struct espi_taf_npcx_pckt *)pckt->buf;
-	uint32_t addr = pckt->flash_addr;
+	uint32_t addr = taf->pckt.addr;
 	uint32_t len;
 	int rc;
 
-	if ((pckt->len < 0) || (pckt->len >= NPCX_ESPI_TAF_ERASE_LEN_MAX)) {
+	if ((taf->pckt.len < 0) || (taf->pckt.len >= NPCX_ESPI_TAF_ERASE_LEN_MAX)) {
 		LOG_ERR("Invalid erase block size");
 		return -EINVAL;
 	}
 
-	len = erase_blk[pckt->len];
+	len = erase_blk[taf->pckt.len];
 
-	if (espi_taf_check_write_protect(dev, addr, len, taf_data_ptr->tag)) {
+	if (espi_taf_check_write_protect(dev, addr, len, taf->pckt.tag)) {
 		LOG_ERR("Access protection region");
 		return -EINVAL;
 	}
@@ -434,8 +428,7 @@ static int espi_taf_npcx_flash_erase(const struct device *dev, struct espi_saf_p
 		return -EIO;
 	}
 
-	rc = taf_npcx_completion_handler(dev, CYC_SCS_CMP_WITHOUT_DATA, taf_data_ptr->tag, 0x0,
-					 NULL);
+	rc = taf_npcx_completion_handler(dev, CYC_SCS_CMP_WITHOUT_DATA, taf->pckt.tag, 0x0, NULL);
 	if (rc) {
 		LOG_ERR("espi taf completion handler fail");
 		return rc;
@@ -444,12 +437,11 @@ static int espi_taf_npcx_flash_erase(const struct device *dev, struct espi_saf_p
 	return 0;
 }
 
-static int espi_taf_npcx_flash_unsuccess(const struct device *dev, struct espi_saf_packet *pckt)
+static int espi_taf_npcx_flash_unsuccess(const struct device *dev, struct espi_taf_npcx_data *taf)
 {
-	struct espi_taf_npcx_pckt *taf_data_ptr = (struct espi_taf_npcx_pckt *)pckt->buf;
 	int rc;
 
-	rc = taf_npcx_completion_handler(dev, CYC_UNSCS_CMP_WITHOUT_DATA_ONLY, taf_data_ptr->tag,
+	rc = taf_npcx_completion_handler(dev, CYC_UNSCS_CMP_WITHOUT_DATA_ONLY, taf->pckt.tag,
 					 0x0, NULL);
 	if (rc) {
 		LOG_ERR("espi taf completion handler fail");
@@ -464,35 +456,34 @@ static void espi_taf_work(struct k_work *item)
 	struct espi_taf_npcx_data *info = CONTAINER_OF(item, struct espi_taf_npcx_data, work);
 	int ret = 0;
 
-	struct espi_taf_npcx_pckt taf_data;
-	struct espi_saf_packet pckt_taf;
+	if (info->pckt.invalid_flag == 1) {
+		LOG_ERR("Invalid TAF packet");
 
-	pckt_taf.flash_addr = info->address;
-	pckt_taf.len = info->length;
-	taf_data.tag = info->taf_tag;
-	if (info->taf_type == NPCX_ESPI_TAF_REQ_WRITE) {
-		taf_data.data = (uint8_t *)info->src;
-	} else {
-		taf_data.data = NULL;
+		ret = espi_taf_npcx_flash_unsuccess(info->host_dev, info);
+
+		return;
 	}
-	pckt_taf.buf = (uint8_t *)&taf_data;
 
-	switch (info->taf_type) {
+	switch (info->pckt.type) {
 #if defined(CONFIG_ESPI_TAF_MANUAL_MODE)
 	case NPCX_ESPI_TAF_REQ_READ:
-		ret = espi_taf_npcx_flash_read(info->host_dev, &pckt_taf);
+		ret = espi_taf_npcx_flash_read(info->host_dev, info);
 		break;
 #endif
 	case NPCX_ESPI_TAF_REQ_ERASE:
-		ret = espi_taf_npcx_flash_erase(info->host_dev, &pckt_taf);
+		ret = espi_taf_npcx_flash_erase(info->host_dev, info);
 		break;
 	case NPCX_ESPI_TAF_REQ_WRITE:
-		ret = espi_taf_npcx_flash_write(info->host_dev, &pckt_taf);
+		ret = espi_taf_npcx_flash_write(info->host_dev, info);
+		break;
+	default:
+		LOG_ERR("Unsupported TAF cycle type %u", info->pckt.type);
+		ret = -EINVAL;
 		break;
 	}
 
 	if (ret != 0) {
-		ret = espi_taf_npcx_flash_unsuccess(info->host_dev, &pckt_taf);
+		ret = espi_taf_npcx_flash_unsuccess(info->host_dev, info);
 	}
 }
 
