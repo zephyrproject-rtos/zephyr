@@ -3065,8 +3065,11 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 			l2cap_chan_send_credits(chan, credits);
 		}
 
-		/* A channel that could not give the credits has dropped the SDU */
-		if (bt_l2cap_chan_get_state(&chan->chan) != BT_L2CAP_CONNECTED) {
+		/* A channel that could not give the credits has dropped the SDU,
+		 * and is still connected if it could not be disconnected either
+		 */
+		if (bt_l2cap_chan_get_state(&chan->chan) != BT_L2CAP_CONNECTED ||
+		    chan->_sdu == NULL) {
 			return;
 		}
 
