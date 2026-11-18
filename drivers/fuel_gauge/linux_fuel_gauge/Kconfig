@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config NATIVE_LINUX_FUEL_GAUGE
-	bool "Native Linux fuel gauge"
+	bool "Native Linux fuel gauge driver"
 	default y
 	depends on DT_HAS_ZEPHYR_NATIVE_LINUX_FUEL_GAUGE_ENABLED
 	depends on ARCH_POSIX

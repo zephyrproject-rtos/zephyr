@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config FUEL_GAUGE_LTC3337
-	bool "LTC3337 fuel gauge"
+	bool "LTC3337 fuel gauge driver"
 	default y
 	depends on DT_HAS_ADI_LTC3337_ENABLED
 	select I2C

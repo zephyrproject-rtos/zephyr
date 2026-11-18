@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config FUEL_GAUGE_ADP5360
-	bool "ADP5360 Fuel Gauge"
+	bool "ADP5360 fuel gauge driver"
 	default y
 	depends on DT_HAS_ADI_ADP5360_FUEL_GAUGE_ENABLED
 	select MFD

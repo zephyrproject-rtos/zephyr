@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BQ40Z50
-	bool "BQ40Z50 Fuel Gauge"
+	bool "BQ40Z50 fuel gauge driver"
 	default y
 	depends on DT_HAS_TI_BQ40Z50_ENABLED
 	select I2C
