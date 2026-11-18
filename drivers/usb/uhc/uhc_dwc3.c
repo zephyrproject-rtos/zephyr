@@ -334,10 +334,8 @@ static int uhc_dwc3_bus_reset(const struct device *dev)
 	struct uhc_dwc3_data *priv = uhc_get_private(dev);
 	const struct uhc_dwc3_config *cfg = dev->config;
 	struct usb_device *udev = priv->connect_udev;
-	uint8_t connect_rp = priv->root_port != 0U ? priv->root_port : 1U;
-	uint32_t port_off =
-		XHCI_OP_PORTSC_BASE + ((uint32_t)connect_rp - 1U) * XHCI_PORT_REGS_STRIDE;
-	uint32_t portsc;
+	uint8_t reset_rp;
+	uint32_t port_off;
 	int ret;
 
 	if (priv->op_base == 0U) {
@@ -365,42 +363,10 @@ static int uhc_dwc3_bus_reset(const struct device *dev)
 		xhci_teardown_slot(priv, udev->slot_id);
 	}
 
-	UHC_DWC3_DBG("bus_reset: enter CSC port %u HC N_PORTS=%u %d", (unsigned int)connect_rp,
-		     (unsigned int)priv->max_ports, port_off);
-
-	portsc = xhci_readl(priv->op_base, port_off);
-	if (!(portsc & XHCI_PORTSC_PP)) {
-		portsc = xhci_port_state_to_neutral(portsc) | XHCI_PORTSC_PP;
-		xhci_writel(priv->op_base, port_off, portsc);
-		k_busy_wait(20000);
-		portsc = xhci_readl(priv->op_base, port_off);
+	ret = xhci_root_port_reset_preamble(priv, cfg, &reset_rp, &port_off);
+	if (ret != 0) {
+		return ret;
 	}
-
-	if (!(portsc & XHCI_PORTSC_CCS)) {
-		LOG_WRN("no device on root port %u", connect_rp);
-		return -ENODEV;
-	}
-
-	priv->port_speed = XHCI_PORTSC_SPEED(portsc);
-
-	/*
-	 * FS/HS enumeration uses the USB2 companion PORTSC when the HC exposes
-	 * two roots (SS=port1, USB2=port2). CSC/PSCE may still say "port 1" while
-	 * PR/PED advance on port 2 — polling port 1 then looks "stuck" at 0x…6f1.
-	 */
-	uint8_t reset_rp = connect_rp;
-
-	if (priv->max_ports >= 2U && priv->port_speed < XHCI_SPEED_SUPER) {
-		reset_rp = (uint8_t)dwc3_usb2_root_port(priv, cfg);
-		port_off = XHCI_OP_PORTSC_BASE + ((uint32_t)reset_rp - 1U) * XHCI_PORT_REGS_STRIDE;
-		if (reset_rp != connect_rp) {
-			UHC_DWC3_DBG("bus_reset: USB2 reset on port %u (CSC was %u)",
-				     (unsigned int)reset_rp, (unsigned int)connect_rp);
-			portsc = xhci_readl(priv->op_base, port_off);
-		}
-	}
-
-	priv->root_port = reset_rp;
 
 	ret = xhci_root_port_reset(priv, port_off);
 	if (ret != 0) {
