@@ -10,11 +10,27 @@ config SOC_SERIES_STM32G4X
 config SOC_SERIES
 	default "stm32g4x" if SOC_SERIES_STM32G4X
 
+config SOC_STM32G411XB
+	bool
+	select SOC_SERIES_STM32G4X
+
+config SOC_STM32G411XC
+	bool
+	select SOC_SERIES_STM32G4X
+
+config SOC_STM32G414XX
+	bool
+	select SOC_SERIES_STM32G4X
+
 config SOC_STM32G431XX
 	bool
 	select SOC_SERIES_STM32G4X
 
 config SOC_STM32G441XX
+	bool
+	select SOC_SERIES_STM32G4X
+
+config SOC_STM32G471XX
 	bool
 	select SOC_SERIES_STM32G4X
 
@@ -43,8 +59,12 @@ config SOC_STM32G4A1XX
 	select SOC_SERIES_STM32G4X
 
 config SOC
+	default "stm32g411xb" if SOC_STM32G411XB
+	default "stm32g411xc" if SOC_STM32G411XC
+	default "stm32g414xx" if SOC_STM32G414XX
 	default "stm32g431xx" if SOC_STM32G431XX
 	default "stm32g441xx" if SOC_STM32G441XX
+	default "stm32g471xx" if SOC_STM32G471XX
 	default "stm32g473xx" if SOC_STM32G473XX
 	default "stm32g474xx" if SOC_STM32G474XX
 	default "stm32g483xx" if SOC_STM32G483XX
