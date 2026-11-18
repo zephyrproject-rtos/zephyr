@@ -1,0 +1,9 @@
+# Alif MIPI-DSI driver configuration options
+
+# Copyright (C) 2024 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DSI_DW
+	bool "MIPI-DSI Host Controller"
+	help
+	  Enable MIPI DSI Host controller driver
