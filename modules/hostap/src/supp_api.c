@@ -109,7 +109,7 @@ static K_WORK_DELAYABLE_DEFINE(wpa_supp_status_work,
 
 static struct wpa_supplicant *get_wpa_s_handle(struct net_if *iface)
 {
-	char if_name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
+	char if_name[NET_IFNAMSIZ + 1];
 	struct wpa_supplicant *wpa_s;
 	int ret;
 
