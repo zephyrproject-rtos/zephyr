@@ -1,6 +1,5 @@
 /*
- * Copyright 2025 NXP
- *
+ * SPDX-FileCopyrightText: Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -162,6 +161,10 @@
 		mboxes = <&mu_m33s_m71_for_m33s 0>, <&mu_m33s_m71_for_m33s 1>;
 		mbox-names = "tx", "rx";
 	};
+};
+
+&netc {
+	interrupts = <294 0>;
 };
 
 &nvic {

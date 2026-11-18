@@ -1,6 +1,5 @@
 /*
- * Copyright 2025 NXP
- *
+ * SPDX-FileCopyrightText: Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -72,7 +71,6 @@
 		netc: ethernet {
 			compatible = "nxp,imx-netc";
 			ranges;
-			interrupts = <294 0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
