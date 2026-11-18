@@ -1,0 +1,11 @@
+# Copyright (c) 2026 NBuiLe
+# SPDX-License-Identifier: Apache-2.0
+
+config BMP280
+	bool "Bosch BMP280 pressure and temperature sensor"
+	default y
+	depends on DT_HAS_BOSCH_BMP280_ENABLED
+	depends on SENSOR
+	select I2C
+	help
+	  Enable driver for the Bosch BMP280 pressure and temperature sensor.

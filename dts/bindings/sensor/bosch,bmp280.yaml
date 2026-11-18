@@ -1,0 +1,73 @@
+# Copyright (c) 2026 NBuiLe
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Bosch BMP280 pressure and temperature sensor accessed through I2C bus
+
+compatible: "bosch,bmp280"
+
+include: [i2c-device.yaml, sensor-device.yaml]
+
+properties:
+  osrs-temp:
+    type: int
+    default: 1
+    description: |
+      Temperature oversampling rate:
+        0: Skipped
+        1: x1 (16-bit / 0.0050 °C)
+        2: x2 (17-bit / 0.0025 °C)
+        3: x4 (18-bit / 0.0012 °C)
+        4: x8 (19-bit / 0.0006 °C)
+        5: x16 (20-bit / 0.0003 °C)
+    enum: [0, 1, 2, 3, 4, 5]
+
+  osrs-press:
+    type: int
+    default: 3
+    description: |
+      Pressure oversampling rate:
+        0: Skipped
+        1: x1 (Ultra low power)
+        2: x2 (Low power)
+        3: x4 (Standard resolution)
+        4: x8 (High resolution)
+        5: x16 (Ultra high resolution)
+    enum: [0, 1, 2, 3, 4, 5]
+
+  mode:
+    type: int
+    default: 3
+    description: |
+      Sensor power mode:
+        0: Sleep mode
+        1: Forced mode
+        3: Normal mode
+    enum: [0, 1, 3]
+
+  t-sb:
+    type: int
+    default: 5
+    description: |
+      Standby duration in normal mode:
+        0: 0.5 ms
+        1: 62.5 ms
+        2: 125 ms
+        3: 250 ms
+        4: 500 ms
+        5: 1000 ms
+        6: 2000 ms
+        7: 4000 ms
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+
+  filter:
+    type: int
+    default: 0
+    description: |
+      IIR filter time constant coefficient:
+        0: Filter off
+        1: 2
+        2: 4
+        3: 8
+        4: 16
+    enum: [0, 1, 2, 3, 4]
