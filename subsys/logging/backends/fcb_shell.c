@@ -4,6 +4,7 @@
  * Provide some FCB logger shell commands that can be useful to applications.
  *
  * Copyright (c) 2026 Sentek Pty Ltd
+ * # SPDX-License-Identifier: MIT
  *
  */
 

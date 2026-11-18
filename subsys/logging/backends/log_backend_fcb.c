@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2026 Sentek Pty Ltd
- *
+ * # SPDX-License-Identifier: MIT
  */
 
 #include <zephyr/logging/log_backend.h>

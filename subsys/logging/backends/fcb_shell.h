@@ -1,4 +1,7 @@
 /**
+ * Copyright (c) 2026 Sentek Pty Ltd
+ * # SPDX-License-Identifier: MIT
+ *
  * @file fcb_shell.h
  * @brief Provides interface for fcb_shell
  *

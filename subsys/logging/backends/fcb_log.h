@@ -1,4 +1,6 @@
 /**
+ * Copyright (c) 2026 Sentek Pty Ltd
+ * # SPDX-License-Identifier: MIT
  * @file fcb_log.h
  * @brief This module enables FCB logging
  *

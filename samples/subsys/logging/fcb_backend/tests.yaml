@@ -8,7 +8,7 @@ tests:
       - flash
       - logging
       - shell
-    depends_on: gpio, external flash 
+    depends_on: gpio, external flash
     integration_platforms:
       - nrf52840dk
       - nrf9151dk
