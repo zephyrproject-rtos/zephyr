@@ -269,7 +269,7 @@ static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
 	/* For security reasons, ECB mode should not be used to encrypt
 	 * more than one block. Use CBC mode instead.
 	 */
-	if (pkt->in_len > 16) {
+	if (pkt->in_len > BLOCK_LEN_BYTES) {
 		LOG_ERR("Cannot encrypt more than 1 block");
 		return -EINVAL;
 	}
@@ -281,7 +281,7 @@ static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
 	k_sem_give(&data->device_sem);
 
 	if (ret == 0) {
-		pkt->out_len = 16;
+		pkt->out_len = BLOCK_LEN_BYTES;
 	}
 
 	return ret;
@@ -296,7 +296,7 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 	/* For security reasons, ECB mode should not be used to encrypt
 	 * more than one block. Use CBC mode instead.
 	 */
-	if (pkt->in_len > 16) {
+	if (pkt->in_len > BLOCK_LEN_BYTES) {
 		LOG_ERR("Cannot encrypt more than 1 block");
 		return -EINVAL;
 	}
@@ -308,7 +308,7 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 	k_sem_give(&data->device_sem);
 
 	if (ret == 0) {
-		pkt->out_len = 16;
+		pkt->out_len = BLOCK_LEN_BYTES;
 	}
 
 	return ret;
@@ -329,8 +329,8 @@ static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
 
 	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
 		/* Prefix IV to ciphertext unless CAP_NO_IV_PREFIX is set. */
-		memcpy(pkt->out_buf, iv, 16);
-		out_offset = 16;
+		memcpy(pkt->out_buf, iv, BLOCK_LEN_BYTES);
+		out_offset = BLOCK_LEN_BYTES;
 	}
 
 	k_sem_take(&data->device_sem, K_FOREVER);
@@ -360,7 +360,7 @@ static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 	set_iv_ctr(&session->config, vec, BLOCK_LEN_BYTES);
 
 	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
-		in_offset = 16;
+		in_offset = BLOCK_LEN_BYTES;
 	}
 
 	k_sem_take(&data->device_sem, K_FOREVER);
