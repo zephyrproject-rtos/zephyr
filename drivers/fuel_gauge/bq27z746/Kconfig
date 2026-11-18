@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BQ27Z746
-	bool "BQ27Z746 Fuel Gauge"
+	bool "BQ27Z746 fuel gauge driver"
 	default y
 	depends on DT_HAS_TI_BQ27Z746_ENABLED
 	select I2C

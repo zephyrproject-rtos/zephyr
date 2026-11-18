@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config LC709203F
-	bool "LC709203F Fuel Gauge"
+	bool "LC709203F fuel gauge driver"
 	default y
 	depends on DT_HAS_ONNN_LC709203F_ENABLED
 	select CRC

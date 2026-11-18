@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SBS_GAUGE_NEW_API
-	bool "Smart Battery Fuel Gauge"
+	bool "Smart Battery fuel gauge driver"
 	default y
 	depends on DT_HAS_SBS_SBS_GAUGE_NEW_API_ENABLED
 	select I2C

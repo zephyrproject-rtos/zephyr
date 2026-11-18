@@ -5,7 +5,7 @@
 
 
 config MAX17048
-	bool "MAX17048 Li-Po fuel gauge"
+	bool "MAX17048 fuel gauge driver"
 	default y
 	depends on DT_HAS_MAXIM_MAX17048_ENABLED
 	select I2C
