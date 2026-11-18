@@ -1465,6 +1465,18 @@ Boards
       Check out the :zephyr:board-catalog:`boards using this compatible <#compatibles=ti,hdc2080>`
       for more information.
 
+.. rst:role:: zephyr:board-count
+
+   This role shows the number of boards found in the tree when the documentation is built, rounded
+   down to a multiple of the number given as the role content. Use it instead of writing a number
+   that would go stale. For example::
+
+      Zephyr supports :zephyr:board-count:`100` boards (:zephyr:board-count:`1` to be exact).
+
+   Will render as:
+
+      Zephyr supports :zephyr:board-count:`100` boards (:zephyr:board-count:`1` to be exact).
+
 .. rst:directive:: .. zephyr:board-supported-hw::
 
    This directive is used to show supported hardware features for all the targets of the board
