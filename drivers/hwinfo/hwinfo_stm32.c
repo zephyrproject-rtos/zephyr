@@ -6,12 +6,13 @@
 
 #include <soc.h>
 #include <stm32_bitops.h>
-#include <stm32_ll_utils.h>
-#include <stm32_ll_rcc.h>
-#include <zephyr/cache.h>
 #include <stm32_ll_pwr.h>
-#include <zephyr/drivers/hwinfo.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_system.h>
+#include <stm32_ll_utils.h>
 #include <string.h>
+#include <zephyr/cache.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/sys/byteorder.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32MP13X) \
