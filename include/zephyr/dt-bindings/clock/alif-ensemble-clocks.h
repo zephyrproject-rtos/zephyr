@@ -25,8 +25,12 @@
 /** Clock enable register offset in CGU */
 #define ALIF_CLK_ENA_REG		0x14U
 
+/** CDC200 clock control register offset in CLKCTL_PER_MST */
+#define ALIF_CDC200_PIXCLK_CTRL_REG	0x04U
 /** Peripheral clock enable register offset in CLKCTL_PER_MST */
 #define ALIF_PERIPH_CLK_ENA_REG		0x0CU
+/** MIPI-DPHY clock enable register offset in CLKCTL_PER_MST */
+#define ALIF_MIPI_CKEN_REG		0x40U
 /** Ethernet control register offset in CLKCTL_PER_MST */
 #define ALIF_ETH_CTRL0_REG		0x80U
 
@@ -182,5 +186,52 @@
 	ALIF_CLK_CFG(CGU, CLK_ENA, 7U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_100M)
 
 /** @} */
+
+
+/**
+ * @name Display subsystem clocks
+ *
+ * The CDC200 Pixel clock, which is sourced from either the ACLK or 400M fixed
+ * clock, drives the pixel processing pipeline of the CDC200 and MIPI DSI.
+ *
+ * The DPI clock drives the CDC200 register logic.
+ * The DSI clock drives the MIPI DSI register logic.
+ * The TX-DPHY clock is used as the configure clock for the MIPI TX D-PHY
+ * The RX-DPHY clock is used as the configure clock for the MIPI RX D-PHY
+ * The PLL reference clock provides the reference for the MIPI PLL.
+ * The bypass clock is used to bypass the MIPI PLL.
+ * @{
+ */
+/** Pixel clock, sourced through ACLK */
+#define ALIF_CDC200_PIX_SYST_ACLK  \
+	ALIF_CLK_CFG(CLKCTL_PER_MST, CDC200_PIXCLK_CTRL, 0U, 1U, 0U, 1U, 4U, \
+		     ALIF_PARENT_CLK_SYST_ACLK)
+/** Pixel clock, sourced through 400M fixed clock */
+#define ALIF_CDC200_PIX_400M_CLK \
+	ALIF_CLK_CFG(CLKCTL_PER_MST, CDC200_PIXCLK_CTRL, 0U, 1U, 1U, 1U, 4U, ALIF_PARENT_CLK_400M)
+
+/** DPI clock */
+#define ALIF_DPI_CLK                \
+	ALIF_CLK_CFG(CLKCTL_PER_MST, PERIPH_CLK_ENA, 1U, 1U, 0U, 0U, 0U, ALIF_PARENT_GATE_ONLY)
+
+/** DSI clock */
+#define ALIF_DSI_CLK                \
+	ALIF_CLK_CFG(CLKCTL_PER_MST, PERIPH_CLK_ENA, 28U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_SYST_PCLK)
+
+/** MIPI TX D-PHY clock */
+#define ALIF_MIPI_TXDPHY_CLK        \
+	ALIF_CLK_CFG(CLKCTL_PER_MST, MIPI_CKEN, 0U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_25M)
+/** MIPI RX D-PHY clock */
+#define ALIF_MIPI_RXDPHY_CLK        \
+	ALIF_CLK_CFG(CLKCTL_PER_MST, MIPI_CKEN, 4U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_25M)
+/** MIPI PLL reference clock */
+#define ALIF_MIPI_PLLREF_CLK        \
+	ALIF_CLK_CFG(CLKCTL_PER_MST, MIPI_CKEN, 8U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_HFOSC)
+/** MIPI bypass clock (800MHz) */
+#define ALIF_MIPI_BYPASS_CLK        \
+	ALIF_CLK_CFG(CLKCTL_PER_MST, MIPI_CKEN, 12U, 1U, 0U, 0U, 0U, ALIF_PARENT_GATE_ONLY)
+
+/** @} */
+
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ALIF_ENSEMBLE_CLOCKS_H_ */

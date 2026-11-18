@@ -104,18 +104,29 @@
 
 /** System AXI clock (SYST_ACLK) */
 #define ALIF_PARENT_CLK_SYST_ACLK   0x0U
-/** System AHB clock (SYST_HCLK) */
-#define ALIF_PARENT_CLK_SYST_HCLK   0x1U
+/** System AHB clock (SYST_HCLK), gated by CLK_ENA[HCLK] */
+#define ALIF_PARENT_CLK_SYST_HCLK   26U
 /** System APB clock (SYST_PCLK) */
 #define ALIF_PARENT_CLK_SYST_PCLK   0x2U
 /** Always-on 32 kHz clock (S32K_CLK), sourced from the LFXO or LFRC oscillator */
 #define ALIF_PARENT_CLK_S32K        0x3U
 /** Always-on 128 kHz clock (128K_CLK), derived from the LFRC oscillator */
 #define ALIF_PARENT_CLK_128K        0x4U
-/** 50 MHz RMII reference clock, from the internal PLL output or the ETH_REFCLK pin */
-#define ALIF_PARENT_CLK_50M         0x5U
-/** 100 MHz clock (100M_CLK), the system PLL output divided by eight */
-#define ALIF_PARENT_CLK_100M        0x6U
+/**
+ * 50 MHz RMII reference clock, from the internal PLL output or the ETH_REFCLK pin,
+ * gated by CLK_ENA[CLK50M]
+ */
+#define ALIF_PARENT_CLK_50M         6U
+/** 100 MHz clock (100M_CLK), the system PLL output divided by eight, gated by CLK_ENA[CLK100M] */
+#define ALIF_PARENT_CLK_100M        7U
+/** 400 MHz clock (400M_CLK), the system PLL output divided by two, gated by CLK_ENA[CLK400M] */
+#define ALIF_PARENT_CLK_400M        15U
+/** HFOSC clock, gated by CLK_ENA[CLK38P4M] */
+#define ALIF_PARENT_CLK_HFOSC       23U
+/** 25 MHz clock (25M_CLK), sourced from 100M_CLK/4, gated by CLK_ENA[CLK25M] */
+#define ALIF_PARENT_CLK_25M         5U
+/** Gate only clock. Doesn't support parent query */
+#define ALIF_PARENT_GATE_ONLY       1U
 
 /** @} */
 
