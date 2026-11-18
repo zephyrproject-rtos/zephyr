@@ -61,7 +61,7 @@ static int iis328dq_enable_int(const struct device *dev, const struct sensor_tri
 			return -ENOTSUP;
 		}
 		return iis328dq_set_int_pad_state(dev, cfg->drdy_pad, enable);
-#ifdef CONFIG_IIS328DQ_THRESHOLD
+#if IIS328DQ_THRESHOLD_ENABLED
 	case SENSOR_TRIG_THRESHOLD: {
 		/* set up internal INT1 for lower thresholds */
 		int1_on_th_conf_t int1_conf = {0};
@@ -116,7 +116,7 @@ static int iis328dq_enable_int(const struct device *dev, const struct sensor_tri
 		}
 		return iis328dq_set_int_pad_state(dev, cfg->threshold_pad, enable);
 	}
-#endif /* CONFIG_IIS328DQ_THRESHOLD */
+#endif /* IIS328DQ_THRESHOLD_ENABLED */
 	default:
 		LOG_ERR("Unsupported trigger interrupt route %d", trig->type);
 		return -ENOTSUP;
@@ -151,12 +151,12 @@ int iis328dq_trigger_set(const struct device *dev, const struct sensor_trigger *
 			iis328dq_acceleration_raw_get(ctx, raw);
 		}
 		break;
-#ifdef CONFIG_IIS328DQ_THRESHOLD
+#if IIS328DQ_THRESHOLD_ENABLED
 	case SENSOR_TRIG_THRESHOLD:
 		iis328dq->threshold_handler = handler;
 		iis328dq->threshold_trig = trig;
 		break;
-#endif /* CONFIG_IIS328DQ_THRESHOLD */
+#endif /* IIS328DQ_THRESHOLD_ENABLED */
 	default:
 		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
@@ -175,7 +175,7 @@ static void iis328dq_handle_interrupt(const struct device *dev)
 	struct iis328dq_data *data = dev->data;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	iis328dq_status_reg_t status;
-#ifdef CONFIG_IIS328DQ_THRESHOLD
+#if IIS328DQ_THRESHOLD_ENABLED
 	iis328dq_int1_src_t sources1;
 	iis328dq_int2_src_t sources2;
 #endif
@@ -189,7 +189,7 @@ static void iis328dq_handle_interrupt(const struct device *dev)
 
 		iis328dq_set_int_pad_state(dev, cfg->drdy_pad, true);
 	}
-#ifdef CONFIG_IIS328DQ_THRESHOLD
+#if IIS328DQ_THRESHOLD_ENABLED
 	iis328dq_int1_src_get(ctx, &sources1);
 	iis328dq_int2_src_get(ctx, &sources2);
 	if (sources1.ia || sources2.ia) {
@@ -199,7 +199,7 @@ static void iis328dq_handle_interrupt(const struct device *dev)
 
 		iis328dq_set_int_pad_state(dev, cfg->threshold_pad, true);
 	}
-#endif /* CONFIG_IIS328DQ_THRESHOLD */
+#endif /* IIS328DQ_THRESHOLD_ENABLED */
 }
 
 static void iis328dq_int1_gpio_callback(const struct device *dev, struct gpio_callback *cb,
