@@ -194,7 +194,9 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 #endif
 
 	default:
-		/* Nothing to notify. */
+		/* Any other type is reserved or client-to-server only
+		 * (MQTT 3.1.1 section 2.2.1, MQTT 5.0 section 2.1.2).
+		 */
 		notify_event = false;
 		break;
 	}
@@ -349,6 +351,27 @@ static int mqtt_read_and_parse_fixed_header(struct mqtt_client *client,
 	return err_code;
 }
 
+static bool rx_type_valid(const struct mqtt_client *client, uint8_t type)
+{
+	switch (type) {
+	case MQTT_PKT_TYPE_CONNACK:
+	case MQTT_PKT_TYPE_PUBLISH:
+	case MQTT_PKT_TYPE_PUBACK:
+	case MQTT_PKT_TYPE_PUBREC:
+	case MQTT_PKT_TYPE_PUBREL:
+	case MQTT_PKT_TYPE_PUBCOMP:
+	case MQTT_PKT_TYPE_SUBACK:
+	case MQTT_PKT_TYPE_UNSUBACK:
+	case MQTT_PKT_TYPE_PINGRSP:
+		return true;
+	case MQTT_PKT_TYPE_DISCONNECT:
+	case MQTT_PKT_TYPE_AUTH:
+		return mqtt_is_version_5_0(client);
+	default:
+		return false;
+	}
+}
+
 int mqtt_handle_rx(struct mqtt_client *client)
 {
 	int err_code;
@@ -363,6 +386,12 @@ int mqtt_handle_rx(struct mqtt_client *client)
 						    &var_length, &buf);
 	if (err_code < 0) {
 		return (err_code == -EAGAIN) ? 0 : err_code;
+	}
+
+	if (!rx_type_valid(client, type_and_flags & 0xF0)) {
+		NET_ERR("[CID %p]: Unexpected packet type 0x%02x!",
+			client, type_and_flags);
+		return -EBADMSG;
 	}
 
 	if ((type_and_flags & 0xF0) == MQTT_PKT_TYPE_PUBLISH) {
