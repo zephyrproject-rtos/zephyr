@@ -2034,17 +2034,17 @@ __syscall void k_timer_start(struct k_timer *timer,
  * This routine stops a running timer prematurely. The timer's stop function,
  * if one exists, is invoked by the caller.
  *
- * Attempting to stop a timer that is not running is permitted, but has no
- * effect on the timer.
- *
  * @note The stop handler has to be callable from ISRs if @a k_timer_stop is to
  * be called from ISRs.
  *
  * @isr_ok
  *
- * @param timer     Address of timer.
+ * @param timer Address of timer.
+ *
+ * @retval 0 Timer was running and was stopped.
+ * @retval -EALREADY Timer was not running.
  */
-__syscall void k_timer_stop(struct k_timer *timer);
+__syscall int k_timer_stop(struct k_timer *timer);
 
 /**
  * @brief Read timer status.
