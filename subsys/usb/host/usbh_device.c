@@ -72,10 +72,6 @@ void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
 
 	usbh_class_remove_all(udev);
 
-	if (usbh_device_is_root(ctx, udev)) {
-		ctx->root = NULL;
-	}
-
 	if (sys_dnode_is_linked(&udev->node)) {
 		sys_dlist_remove(&udev->node);
 	}
@@ -83,6 +79,7 @@ void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
 	barrier_dmem_fence_full();
 	usbh_device_removed_notify(udev);
 	usbh_device_free(udev);
+	ctx->root = usbh_device_get_root(ctx);
 
 	LOG_DBG("Device removed");
 }
@@ -948,6 +945,39 @@ int usbh_device_set_address(struct usb_device *const udev, const uint8_t new_add
 	return 0;
 }
 
+static int usbh_device_still_attached(const struct usb_device *udev)
+{
+	if (udev == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_dnode_is_linked(&udev->node)) {
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+#if IS_ENABLED(CONFIG_USBH_USB2_ENUM_SCHEME)
+static int usbh_root_default_state_reset_if_attached(struct usb_device *const udev)
+{
+	struct usbh_context *const uhs_ctx = udev->ctx;
+	int err;
+
+	err = usbh_device_still_attached(udev);
+	if (err != 0) {
+		return err;
+	}
+
+	if (udev->hub != NULL) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("usbh: uhc_root_default_state_reset() (descriptor recovery)");
+	return uhc_root_default_state_reset(uhs_ctx->dev, udev);
+}
+#endif /* CONFIG_USBH_USB2_ENUM_SCHEME */
+
 static int usbh_device_init_attach(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
@@ -961,6 +991,10 @@ static int usbh_device_init_attach(struct usb_device *const udev)
 	}
 
 	if (udev->hub == NULL) {
+		err = usbh_device_still_attached(udev);
+		if (err != 0) {
+			return err;
+		}
 		LOG_DBG("usbh: about to uhc_root_default_state_reset()");
 		err = uhc_root_default_state_reset(uhs_ctx->dev, udev);
 		if (err) {
@@ -1033,9 +1067,19 @@ static int usbh_device_init_usb2(struct usb_device *const udev)
 		unsigned int gd;
 
 		for (gd = 0U; gd < gd_tries; gd++) {
-			if (gd > 0U && CONFIG_USBH_ENUM_RETRY_DELAY_MS > 0) {
-				usbh_enumeration_delay_ms(
-					(uint32_t)CONFIG_USBH_ENUM_RETRY_DELAY_MS);
+			if (gd > 0U) {
+#if IS_ENABLED(CONFIG_USBH_GET_DESCRIPTOR_ROOT_RESET)
+				if (udev->hub == NULL) {
+					err = usbh_root_default_state_reset_if_attached(udev);
+					if (err != 0) {
+						return err;
+					}
+				} else
+#endif
+					if (CONFIG_USBH_ENUM_RETRY_DELAY_MS > 0) {
+					usbh_enumeration_delay_ms(
+						(uint32_t)CONFIG_USBH_ENUM_RETRY_DELAY_MS);
+				}
 			}
 			err = usbh_first_get_descriptor_device(udev, &udev->dev_desc);
 			if (err == 0) {
@@ -1059,6 +1103,10 @@ static int usbh_device_init_usb2(struct usb_device *const udev)
 	if (udev->hub == NULL) {
 		struct usbh_context *const uhs_ctx = udev->ctx;
 
+		err = usbh_device_still_attached(udev);
+		if (err != 0) {
+			return err;
+		}
 		LOG_DBG("usbh: second uhc_root_default_state_reset()");
 		err = uhc_root_default_state_reset(uhs_ctx->dev, udev);
 		if (err) {
@@ -1101,6 +1149,17 @@ static int usbh_device_init_usb2(struct usb_device *const udev)
 
 	LOG_DBG("usbh: GET_DESCRIPTOR device full (after SET_ADDRESS)");
 	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
+#if IS_ENABLED(CONFIG_USBH_GET_DESCRIPTOR_ROOT_RESET)
+	if (err != 0 && udev->hub == NULL) {
+		int reset_err = usbh_root_default_state_reset_if_attached(udev);
+
+		if (reset_err == 0) {
+			err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
+		} else if (reset_err == -ENODEV) {
+			return reset_err;
+		}
+	}
+#endif
 	if (err) {
 		LOG_ERR("Failed to read full device descriptor");
 		return err;
@@ -1222,7 +1281,28 @@ error:
 
 struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
 {
-	return ctx->root;
+	struct usb_device *udev;
+	struct usb_device *best = NULL;
+	uint8_t best_port = 0U;
+
+	if (ctx == NULL) {
+		return NULL;
+	}
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&ctx->udevs, udev, node) {
+		if (udev->hub != NULL) {
+			continue;
+		}
+
+		if (best == NULL || udev->hub_port < best_port) {
+			best = udev;
+			best_port = udev->hub_port;
+		}
+	}
+
+	ctx->root = best;
+
+	return best;
 }
 
 struct usb_device *usbh_device_find_root_by_port(struct usbh_context *const ctx, uint8_t port)
@@ -1250,28 +1330,25 @@ int usbh_device_connect(struct usbh_context *const ctx, struct usb_device *const
 
 	udev->state = USB_STATE_DEFAULT;
 
-	if (udev->hub == NULL) {
-		if (udev->level == 0U) {
-			udev->level = 1;
-		}
-		if (ctx->root == NULL) {
-			ctx->root = udev;
-		}
+	if (udev->hub == NULL && udev->level == 0U) {
+		udev->level = 1;
 	}
 
 	err = usbh_device_init(udev);
 	if (err != 0) {
 		LOG_ERR("Failed to init new USB device");
-		if (usbh_device_is_root(ctx, udev)) {
-			ctx->root = NULL;
-		}
 
 		if (sys_dnode_is_linked(&udev->node)) {
 			sys_dlist_remove(&udev->node);
 		}
 
 		usbh_device_free(udev);
+		ctx->root = usbh_device_get_root(ctx);
 		return err;
+	}
+
+	if (udev->hub == NULL) {
+		ctx->root = udev;
 	}
 
 	return 0;
