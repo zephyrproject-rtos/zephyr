@@ -26,6 +26,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/classic/classic.h>
 
 #ifdef __cplusplus
@@ -47,6 +48,18 @@ extern "C" {
  * supported.
  */
 #define BT_ID_DEFAULT 0
+
+/**
+ * @brief Number of octets for local supported features
+ *
+ * The value of 8 correspond to page 0 in the LE Controller supported features.
+ * 24 bytes are required for all subsequent supported feature pages.
+ */
+#define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE                                                        \
+	(BT_HCI_LE_BYTES_PAGE_0_FEATURE_PAGE +                                                     \
+	 COND_CODE_1(CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE,                                \
+		CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE * BT_HCI_LE_BYTES_PER_FEATURE_PAGE,  \
+		(0U)))
 
 /** Opaque type representing an advertiser. */
 struct bt_le_ext_adv;
