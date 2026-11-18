@@ -85,6 +85,7 @@ struct virtio_pci_common_cfg {
 struct virtio_pci_data {
 	volatile struct virtio_pci_common_cfg *common_cfg;
 	void *device_specific_cfg;
+	size_t dev_cfg_len;
 	volatile uint8_t *isr_status;
 	volatile uint8_t *notify_cfg;
 	uint32_t notify_off_multiplier;
@@ -492,8 +493,11 @@ static int virtio_pci_init_common(const struct device *dev)
 				conf->pcie->bdf, &vpc, (void **)&data->device_specific_cfg)) {
 			return 1;
 		}
+
+		data->dev_cfg_len = vpc.length;
 	} else {
 		data->device_specific_cfg = NULL;
+		data->dev_cfg_len = 0;
 		LOG_INF(
 			"no VIRTIO_PCI_CAP_DEVICE_CFG for the device with id 0x%x and bdf 0x%x",
 			conf->pcie->id,
@@ -558,9 +562,13 @@ struct virtq *virtio_pci_get_virtqueue(const struct device *dev, uint16_t queue_
 	return queue_idx < data->virtqueue_count ? &data->virtqueues[queue_idx] : NULL;
 }
 
-void *virtio_pci_get_device_specific_config(const struct device *dev)
+void *virtio_pci_get_device_specific_config(const struct device *dev, size_t *len)
 {
 	struct virtio_pci_data *data = dev->data;
+
+	if (len != NULL) {
+		*len = data->dev_cfg_len;
+	}
 
 	return data->device_specific_cfg;
 }

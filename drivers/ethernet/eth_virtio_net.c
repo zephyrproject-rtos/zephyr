@@ -220,7 +220,7 @@ static int virtnet_dev_init(const struct device *dev)
 
 	(void)net_eth_mac_load(&config->mcfg, data->mac);
 
-	data->virtio_devcfg = virtio_get_device_specific_config(config->vdev);
+	data->virtio_devcfg = virtio_get_device_specific_config(config->vdev, NULL);
 	if (data->virtio_devcfg == NULL) {
 		LOG_ERR("could not get config struct");
 	}

@@ -514,12 +514,13 @@ static int virtconsole_init(const struct device *dev)
 		data->rx_cb_data[i].data = data;
 		data->rx_cb_data[i].port = i;
 	}
+	size_t devcfg_len;
 	size_t n_queues = 2;
 
 	__maybe_unused bool multiport =
 		virtio_read_device_feature_bit(config->vdev, VIRTIO_CONSOLE_F_MULTIPORT);
 
-	data->virtio_devcfg = virtio_get_device_specific_config(config->vdev);
+	data->virtio_devcfg = virtio_get_device_specific_config(config->vdev, &devcfg_len);
 
 	if (data->virtio_devcfg == NULL) {
 		LOG_WRN("could not get device-specific config");
@@ -529,6 +530,13 @@ static int virtconsole_init(const struct device *dev)
 #endif
 	}
 #ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
+	if (multiport &&
+	    devcfg_len < offsetof(struct _virtio_console_config, max_nr_ports) +
+			  sizeof(data->virtio_devcfg->max_nr_ports)) {
+		LOG_WRN("device-specific config too short for multiport");
+		multiport = false;
+	}
+
 	if (multiport) {
 		if (virtio_write_driver_feature_bit(config->vdev, VIRTIO_CONSOLE_F_MULTIPORT, 1)) {
 			multiport = false;
