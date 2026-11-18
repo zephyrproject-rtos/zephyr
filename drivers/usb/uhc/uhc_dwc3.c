@@ -329,11 +329,13 @@ static int uhc_dwc3_shutdown(const struct device *dev)
 	return uhc_dwc3_disable(dev);
 }
 
-static int uhc_dwc3_bus_reset(const struct device *dev)
+/*
+ * Root default-state transition (lock already held by uhc_bus_reset or composer).
+ */
+static int dwc3_root_port_reset_locked(const struct device *dev, struct usb_device *udev)
 {
 	struct uhc_dwc3_data *priv = uhc_get_private(dev);
 	const struct uhc_dwc3_config *cfg = dev->config;
-	struct usb_device *udev = priv->connect_udev;
 	uint8_t reset_rp;
 	uint32_t port_off;
 	int ret;
@@ -349,12 +351,39 @@ static int uhc_dwc3_bus_reset(const struct device *dev)
 		return ret;
 	}
 
-	ret = xhci_root_port_reset(priv, port_off);
+	return xhci_root_port_reset(priv, port_off);
+}
+
+static int dwc3_root_device_prepare_locked(const struct device *dev, struct usb_device *udev)
+{
+	struct uhc_dwc3_data *priv = uhc_get_private(dev);
+	uint8_t reset_rp = priv->root_port != 0U ? priv->root_port : 1U;
+
+	return xhci_prepare_root_device(priv, udev, reset_rp);
+}
+
+static int uhc_dwc3_root_port_reset(const struct device *dev, struct usb_device *udev)
+{
+	return dwc3_root_port_reset_locked(dev, udev);
+}
+
+static int uhc_dwc3_device_prepare(const struct device *dev, struct usb_device *udev)
+{
+	return dwc3_root_device_prepare_locked(dev, udev);
+}
+
+static int uhc_dwc3_bus_reset(const struct device *dev)
+{
+	struct uhc_dwc3_data *priv = uhc_get_private(dev);
+	struct usb_device *udev = priv->connect_udev;
+	int ret;
+
+	ret = dwc3_root_port_reset_locked(dev, udev);
 	if (ret != 0) {
 		return ret;
 	}
 
-	return xhci_prepare_root_device(priv, udev, reset_rp);
+	return dwc3_root_device_prepare_locked(dev, udev);
 }
 
 static int uhc_dwc3_sof_enable(const struct device *dev)
@@ -1380,6 +1409,8 @@ static DEVICE_API(uhc, uhc_dwc3_api) = {
 	.device_alloc = uhc_dwc3_device_alloc,
 	.device_address = uhc_dwc3_device_address,
 	.device_free = uhc_dwc3_device_free,
+	.root_port_reset = uhc_dwc3_root_port_reset,
+	.device_prepare = uhc_dwc3_device_prepare,
 };
 
 /* -------------------------------------------------------------------------- */
