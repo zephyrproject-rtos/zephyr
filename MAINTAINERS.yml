@@ -6025,13 +6025,13 @@ STM32 Platforms:
   maintainers:
     - erwango
   collaborators:
-    - FRASTM
     - gautierg-st
     - GeorgeCGV
     - mathieuchopstm
     - djiatsaf-st
     - etienne-lms
     - juickar
+    - rgallaispou
   files:
     - boards/st/
     - drivers/*/*stm32*.c
@@ -7569,7 +7569,6 @@ West:
   maintainers:
     - erwango
   collaborators:
-    - FRASTM
     - gautierg-st
     - etienne-lms
     - mathieuchopstm
@@ -7578,6 +7577,7 @@ West:
     - asm5878
     - HoZHel
     - vtardy-st
+    - rgallaispou
   files:
     - modules/Kconfig.stm32
   labels:
