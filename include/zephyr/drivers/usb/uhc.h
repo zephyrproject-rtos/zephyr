@@ -247,6 +247,11 @@ struct uhc_event {
 	};
 	/** Pointer to controller's device struct */
 	const struct device *dev;
+	/**
+	 * Root hub port (1-based) for connect/remove events on the controller
+	 * root. Zero when not applicable or unknown (treated as port 1).
+	 */
+	uint8_t port;
 };
 
 /**
