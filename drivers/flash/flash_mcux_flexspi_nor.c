@@ -1925,6 +1925,47 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		data->legacy_poll = true;
 		return 0;
 
+	case 0x1A20C2:
+		/*
+		 * MX25L51245G - Macronix 512Mbit (64MB) QSPI NOR.
+		 * Use the dedicated 4-byte address commands instead of
+		 * entering 4-byte mode (0xB7): until the final LUT is
+		 * installed, XIP still reads with the probe's 3-byte READ.
+		 */
+		flexspi_lut[READ][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_4READ_4B,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 32);
+		/*
+		 * 2 mode clocks and 4 dummy cycles (DC = 00, the default).
+		 * Mode byte 0x00 does not toggle P[7:4] against P[3:0], so the
+		 * flash stays out of performance enhance mode.
+		 */
+		flexspi_lut[READ][1] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_MODE8_SDR, kFLEXSPI_4PAD, 0x00,
+					kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 4);
+		flexspi_lut[READ][2] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		flexspi_lut[PAGE_PROGRAM][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_4B,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32);
+		flexspi_lut[PAGE_PROGRAM][1] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x4,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		flexspi_lut[ERASE_SECTOR][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE_4B,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32);
+		flexspi_lut[ERASE_BLOCK][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_BE_4B,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32);
+		/* Read instruction used for polling is 0x05 */
+		data->legacy_poll = true;
+		flexspi_lut[READ_STATUS_REG][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
+		/* Device uses bit 6 of status reg 1 for QE */
+		return flash_flexspi_nor_quad_enable(data, flexspi_lut, JESD216_DW15_QER_VAL_S1B6);
+
 	default:
 		return -ENOTSUP;
 	}
