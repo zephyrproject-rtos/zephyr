@@ -28,9 +28,15 @@
 #define SYSTICK ((SysTick_Type *)(DT_INST_REG_ADDR(0)))
 
 static volatile uint32_t ch32v00x_systick_count;
+#if !defined(CONFIG_SOC_SERIES_QINGKE_V3A)
+static uint32_t last_cycle;
+static uint32_t missed_ticks;
+#endif
 
 static void ch32v00x_systick_irq(const void *unused)
 {
+	uint32_t ticks = 1;
+
 	ARG_UNUSED(unused);
 
 #if defined(CONFIG_SOC_SERIES_QINGKE_V3A)
@@ -49,14 +55,44 @@ static void ch32v00x_systick_irq(const void *unused)
 	SYSTICK->CTLR = STK_STE; /* Restart timer. */
 #else
 	SYSTICK->SR = 0;
+	ticks += missed_ticks;
+	missed_ticks = 0;
 #endif
 	ch32v00x_systick_count += CYCLES_PER_TICK; /* Track cycles. */
-	sys_clock_announce(1);                     /* Poke the scheduler. */
+	sys_clock_announce(ticks);                 /* Poke the scheduler. */
 }
 
 uint32_t sys_clock_cycle_get_32(void)
 {
+#if defined(CONFIG_SOC_SERIES_QINGKE_V3A)
 	return ch32v00x_systick_count + SYSTICK->CNT;
+#else
+	unsigned int key = irq_lock();
+	uint32_t cnt = SYSTICK->CNT;
+	uint32_t cycles;
+
+	if ((SYSTICK->SR & STK_CNTIF) != 0) {
+		/*
+		 * CNT has reloaded but the ISR has not run yet. Read CNT
+		 * again in case it reloaded between the two reads above.
+		 */
+		cnt = SYSTICK->CNT;
+		cnt += CYCLES_PER_TICK;
+	}
+
+	cycles = ch32v00x_systick_count + cnt;
+	if ((int32_t)(cycles - last_cycle) < 0) {
+		/* CNT reloaded again while the ISR is still held off. */
+		ch32v00x_systick_count += CYCLES_PER_TICK;
+		missed_ticks++;
+		cycles += CYCLES_PER_TICK;
+	}
+	last_cycle = cycles;
+
+	irq_unlock(key);
+
+	return cycles;
+#endif
 }
 
 uint32_t sys_clock_elapsed(void)
