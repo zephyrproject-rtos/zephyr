@@ -183,6 +183,42 @@ static inline void copy_ll_addr(struct net_pkt *pkt)
 	memcpy(net_pkt_lladdr_dst(pkt), lladdr_if, sizeof(struct net_linkaddr));
 }
 
+/* Fail the send here rather than have the packet dropped later in L2, which
+ * the sender would never hear about. A packet with its link address or next
+ * hop already given needs no next hop looked up.
+ */
+static bool ipv4_pkt_has_next_hop(struct net_pkt *pkt)
+{
+	struct net_if *iface = net_pkt_iface(pkt);
+	struct net_in_addr src;
+	struct net_in_addr dst;
+
+	if (net_pkt_lladdr_dst(pkt)->len != 0U ||
+	    net_pkt_ipv4_ll_resolve_addr(pkt) != NULL) {
+		return true;
+	}
+
+	/* A VLAN interface passes its packets on to the Ethernet interface
+	 * it is attached to, through here again and with the VLAN tag set.
+	 * ARP resolves them on the VLAN interface, so look there.
+	 */
+	if (IS_ENABLED(CONFIG_NET_VLAN) &&
+	    net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC &&
+	    net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		iface = net_eth_get_vlan_iface(iface, net_pkt_vlan_tag(pkt));
+	}
+
+	net_ipv4_addr_copy_raw(src.s4_addr, NET_IPV4_HDR(pkt)->src);
+	net_ipv4_addr_copy_raw(dst.s4_addr, NET_IPV4_HDR(pkt)->dst);
+
+	if (!net_ipv4_has_next_hop(iface, &src, &dst)) {
+		NET_DBG("DROP: no next hop for %s", net_sprint_ipv4_addr(&dst));
+		return false;
+	}
+
+	return true;
+}
+
 /* Check if the IPv{4|6} addresses are proper. As this can be expensive,
  * make this optional. We still check the IPv4 TTL and IPv6 hop limit
  * if the corresponding protocol family is enabled.
@@ -279,6 +315,11 @@ static inline int check_ip(struct net_pkt *pkt)
 		}
 
 		if (!IS_ENABLED(CONFIG_NET_IP_ADDR_CHECK)) {
+			if (!ipv4_pkt_has_next_hop(pkt)) {
+				ret = -ENETUNREACH;
+				goto drop;
+			}
+
 			return 0;
 		}
 
@@ -327,6 +368,11 @@ static inline int check_ip(struct net_pkt *pkt)
 		if (net_ipv4_is_addr_loopback_raw(NET_IPV4_HDR(pkt)->src)) {
 			NET_DBG("DROP: IPv4 loopback src address");
 			ret = -EADDRNOTAVAIL;
+			goto drop;
+		}
+
+		if (!ipv4_pkt_has_next_hop(pkt)) {
+			ret = -ENETUNREACH;
 			goto drop;
 		}
 	}

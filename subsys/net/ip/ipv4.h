@@ -388,6 +388,36 @@ void net_ipv4_frag_foreach(net_ipv4_frag_cb_t cb, void *user_data);
  */
 enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt);
 
+/**
+ * @brief Check if an IPv4 packet has a next hop on the interface.
+ *
+ * An interface that resolves the next hop with ARP sends a packet off-link
+ * only through a route or the gateway, and drops it when it has neither.
+ * Other interfaces hand off-link packets to the link as is.
+ *
+ * @param iface Interface the packet is sent on
+ * @param src Source address of the packet, or NULL if not known yet
+ * @param dst Destination address of the packet
+ *
+ * @return False if the packet would be dropped for want of a next hop,
+ *         true otherwise.
+ */
+#if defined(CONFIG_NET_NATIVE_IPV4)
+bool net_ipv4_has_next_hop(struct net_if *iface, const struct net_in_addr *src,
+			   const struct net_in_addr *dst);
+#else
+static inline bool net_ipv4_has_next_hop(struct net_if *iface,
+					 const struct net_in_addr *src,
+					 const struct net_in_addr *dst)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(src);
+	ARG_UNUSED(dst);
+
+	return true;
+}
+#endif
+
 #if defined(CONFIG_NET_NATIVE_IPV4)
 /**
  * @brief Initialises IPv4

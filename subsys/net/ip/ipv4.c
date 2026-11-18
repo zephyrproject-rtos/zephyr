@@ -581,6 +581,51 @@ drop:
 	return NET_DROP;
 }
 
+bool net_ipv4_has_next_hop(struct net_if *iface, const struct net_in_addr *src,
+			   const struct net_in_addr *dst)
+{
+	struct net_route_entry *route;
+	struct net_in_addr *nexthop;
+	struct net_in_addr gw;
+
+	if (!IS_ENABLED(CONFIG_NET_ARP) || iface == NULL) {
+		return true;
+	}
+
+	if (!(IS_ENABLED(CONFIG_NET_L2_ETHERNET) &&
+	      net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) &&
+	    !net_eth_is_vlan_interface(iface)) {
+		return true;
+	}
+
+	/* The rest follows how net_arp_prepare() picks the address to resolve */
+	if (iface->config.ip.ipv4 == NULL) {
+		return true;
+	}
+
+	if (net_ipv4_is_addr_mcast(dst) || net_ipv4_is_addr_bcast(iface, dst)) {
+		return true;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_AUTO) &&
+	    ((src != NULL && net_ipv4_is_ll_addr(src)) || net_ipv4_is_ll_addr(dst))) {
+		return true;
+	}
+
+	if (net_if_ipv4_addr_mask_cmp(iface, dst)) {
+		return true;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_ROUTE) &&
+	    net_route_ipv4_get_info(iface, dst, &route, &nexthop)) {
+		return true;
+	}
+
+	gw = net_if_ipv4_get_gw(iface);
+
+	return !net_ipv4_is_addr_unspecified(&gw);
+}
+
 enum net_verdict net_ipv4_prepare_for_send(struct net_pkt *pkt)
 {
 	/* ARP packets share the AF_INET family but are not IPv4 datagrams, so
