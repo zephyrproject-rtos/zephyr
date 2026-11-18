@@ -620,7 +620,36 @@ static void l2cap_chan_send_req(struct bt_l2cap_chan *chan,
 	bt_work_reschedule(&(BT_L2CAP_LE_CHAN(chan)->rtx_work), timeout);
 }
 
-static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
+/* Tears down the channel of a failed connect, unless a disconnection did so
+ * while the connect waited, or is doing so: -ENOTCONN then.
+ */
+static int l2cap_le_conn_fail(struct bt_conn *conn, struct bt_l2cap_le_chan *ch, int err)
+{
+	bool attached = false;
+
+	bt_dev_lock();
+
+	/* A disconnection in progress may hold the channel in its walk over
+	 * conn->channels, and tears it down itself
+	 */
+	if (conn->state == BT_CONN_CONNECTED) {
+		/* Compares pointers only: a channel torn down meanwhile may be freed */
+		attached = sys_slist_find_and_remove(&conn->channels, &ch->chan.node);
+	}
+
+	bt_dev_unlock();
+
+	if (!attached) {
+		return -ENOTCONN;
+	}
+
+	l2cap_chan_del(&ch->chan);
+
+	return err;
+}
+
+/* Tears the channel down on an error, see l2cap_le_conn_fail() */
+static int l2cap_le_conn_req(struct bt_conn *conn, struct bt_l2cap_le_chan *ch)
 {
 	struct net_buf *buf;
 	struct bt_l2cap_le_conn_req *req;
@@ -629,8 +658,14 @@ static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
 	ident = get_ident();
 
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CONN_REQ, ident, sizeof(*req));
-	if (!buf) {
-		return -ENOMEM;
+
+	bt_dev_lock();
+
+	if (buf == NULL || !sys_slist_find(&conn->channels, &ch->chan.node, NULL)) {
+		bt_dev_unlock();
+		net_buf_drop(&buf);
+
+		return l2cap_le_conn_fail(conn, ch, -ENOMEM);
 	}
 
 	/* TODO Ident handling/setting should ideally be done in l2cap_chan_send_req after the
@@ -650,11 +685,32 @@ static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
 
 	l2cap_chan_send_req(&ch->chan, buf, L2CAP_CONN_TIMEOUT);
 
+	bt_dev_unlock();
+
 	return 0;
 }
 
 #if defined(CONFIG_BT_L2CAP_ECRED)
-static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
+/* Caller must hold the host lock. Compares pointers only: a channel that a
+ * disconnection took off the list may be freed.
+ */
+static bool l2cap_chans_attached(struct bt_conn *conn, struct bt_l2cap_chan **chans, size_t count)
+{
+	BT_DEV_LOCK_ASSERT();
+
+	for (size_t i = 0; i < count; i++) {
+		if (!sys_slist_find(&conn->channels, &chans[i]->node, NULL)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/* -ENOMEM: no buffer, or a channel left the connection while the request waited
+ * for one. The channels are left to the caller.
+ */
+static int l2cap_ecred_conn_req(struct bt_conn *conn, struct bt_l2cap_chan **chan, int channels)
 {
 	struct net_buf *buf;
 	struct bt_l2cap_ecred_conn_req *req;
@@ -674,7 +730,12 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 				      sizeof(*req) +
 				      (channels * sizeof(uint16_t)));
 
-	if (!buf) {
+	bt_dev_lock();
+
+	if (buf == NULL || !l2cap_chans_attached(conn, chan, (size_t)channels)) {
+		bt_dev_unlock();
+		net_buf_drop(&buf);
+
 		return -ENOMEM;
 	}
 
@@ -706,13 +767,14 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 
 	l2cap_chan_send_req(*chan, buf, L2CAP_CONN_TIMEOUT);
 
+	bt_dev_unlock();
+
 	return 0;
 }
 #endif /* defined(CONFIG_BT_L2CAP_ECRED) */
 
 static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, uint8_t status)
 {
-	int err;
 	struct bt_l2cap_le_chan *le = BT_L2CAP_LE_CHAN(chan);
 
 	/* Skip channels that are not pending waiting for encryption */
@@ -742,16 +804,13 @@ static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, uint8_t status)
 		}
 
 		/* Retry ecred connect */
-		l2cap_ecred_conn_req(echan, i);
+		(void)l2cap_ecred_conn_req(chan->conn, echan, i);
 		return;
 	}
 #endif /* defined(CONFIG_BT_L2CAP_ECRED) */
 
-	/* Retry to connect */
-	err = l2cap_le_conn_req(le);
-	if (err) {
-		goto fail;
-	}
+	/* Retry to connect, which tears the channel down on an error */
+	(void)l2cap_le_conn_req(chan->conn, le);
 
 	return;
 fail:
@@ -3268,6 +3327,7 @@ void bt_l2cap_init(void)
 static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 			    uint16_t psm)
 {
+	bt_security_t required;
 	int err;
 
 	if (psm < L2CAP_LE_PSM_FIXED_START || psm > L2CAP_LE_PSM_DYN_END) {
@@ -3277,35 +3337,48 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 	l2cap_chan_tx_init(ch);
 	l2cap_chan_rx_init(ch);
 
+	/* Set up under the host lock: a disconnection tears down an attached
+	 * channel
+	 */
+	bt_dev_lock();
+
 	if (!l2cap_chan_add(conn, &ch->chan, l2cap_chan_destroy)) {
+		bt_dev_unlock();
+
 		return -ENOMEM;
 	}
 
 	ch->psm = psm;
+	required = ch->required_sec_level;
 
-	if (conn->sec_level < ch->required_sec_level) {
-		err = bt_conn_set_security(conn, ch->required_sec_level);
+	bt_dev_unlock();
+
+	if (conn->sec_level < required) {
+		err = bt_conn_set_security(conn, required);
 		if (err) {
-			goto fail;
+			return l2cap_le_conn_fail(conn, ch, err);
+		}
+
+		/* bt_conn_set_security() can wait for a buffer, during which a
+		 * disconnection tears the channel down
+		 */
+		bt_dev_lock();
+
+		if (!sys_slist_find(&conn->channels, &ch->chan.node, NULL)) {
+			bt_dev_unlock();
+
+			return -ENOTCONN;
 		}
 
 		atomic_set_bit(ch->chan.status,
 			       BT_L2CAP_STATUS_ENCRYPT_PENDING);
 
+		bt_dev_unlock();
+
 		return 0;
 	}
 
-	err = l2cap_le_conn_req(ch);
-	if (err) {
-		goto fail;
-	}
-
-	return 0;
-
-fail:
-	bt_l2cap_chan_remove(conn, &ch->chan);
-	l2cap_chan_del(&ch->chan);
-	return err;
+	return l2cap_le_conn_req(conn, ch);
 }
 
 #if defined(CONFIG_BT_L2CAP_ECRED)
@@ -3331,6 +3404,58 @@ static int l2cap_ecred_init(struct bt_conn *conn,
 	return 0;
 }
 
+/* Channels taken off the connection go back to the caller unused */
+static void l2cap_ecred_chans_reset(struct bt_l2cap_chan **chans, size_t count)
+{
+	for (size_t i = 0; i < count; i++) {
+		chans[i]->conn = NULL;
+		l2cap_chan_set_state(chans[i], BT_L2CAP_DISCONNECTED);
+	}
+}
+
+/* Detaches the channels of a request that failed after its buffer wait. While
+ * all of them are attached, they go back to the caller unused and without
+ * callbacks: err. Once one of them is gone, every channel gets its callbacks:
+ * -ENOTCONN.
+ */
+static int l2cap_ecred_conn_fail(struct bt_conn *conn, struct bt_l2cap_chan **chans,
+				 size_t count, int err)
+{
+	struct bt_l2cap_chan *removed[BT_L2CAP_ECRED_CHAN_MAX_PER_REQ];
+	size_t n = 0U;
+	bool connected;
+	bool lost;
+
+	bt_dev_lock();
+
+	/* A disconnection in progress may hold one of the channels in its walk
+	 * over conn->channels, and tears down those still attached itself
+	 */
+	connected = (conn->state == BT_CONN_CONNECTED);
+	lost = !connected || !l2cap_chans_attached(conn, chans, count);
+
+	for (size_t i = 0; connected && (i < count); i++) {
+		if (sys_slist_find_and_remove(&conn->channels, &chans[i]->node)) {
+			removed[n] = chans[i];
+			n++;
+		}
+	}
+
+	bt_dev_unlock();
+
+	if (!lost) {
+		l2cap_ecred_chans_reset(chans, count);
+
+		return err;
+	}
+
+	for (size_t i = 0; i < n; i++) {
+		l2cap_chan_del(removed[i]);
+	}
+
+	return -ENOTCONN;
+}
+
 int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
 				struct bt_l2cap_chan **chan, uint16_t psm)
 {
@@ -3347,6 +3472,11 @@ int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
+	/* Set up under the host lock: a disconnection tears down attached
+	 * channels, and the channels of a failed channel ID go back unused
+	 */
+	bt_dev_lock();
+
 	/* Init non-null channels */
 	for (i = 0; i < BT_L2CAP_ECRED_CHAN_MAX_PER_REQ; i++) {
 		if (!chan[i]) {
@@ -3355,23 +3485,26 @@ int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
 
 		err = l2cap_ecred_init(conn, BT_L2CAP_LE_CHAN(chan[i]), psm);
 		if (err < 0) {
-			i--;
-			goto fail;
+			/* Added under this lock: no disconnection holds any of them */
+			for (int j = 0; j < i; j++) {
+				(void)sys_slist_find_and_remove(&conn->channels, &chan[j]->node);
+			}
+
+			bt_dev_unlock();
+			l2cap_ecred_chans_reset(chan, (size_t)i);
+
+			return err;
 		}
 	}
 
-	return l2cap_ecred_conn_req(chan, i);
-fail:
-	/* Remove channels added */
-	for (; i >= 0; i--) {
-		if (!chan[i]) {
-			continue;
-		}
+	bt_dev_unlock();
 
-		bt_l2cap_chan_remove(conn, chan[i]);
+	err = l2cap_ecred_conn_req(conn, chan, i);
+	if (err < 0) {
+		return l2cap_ecred_conn_fail(conn, chan, (size_t)i, err);
 	}
 
-	return err;
+	return 0;
 }
 
 static struct bt_l2cap_le_chan *l2cap_find_pending_reconf(struct bt_conn *conn)
