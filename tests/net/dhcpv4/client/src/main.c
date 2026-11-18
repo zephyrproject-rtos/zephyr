@@ -378,6 +378,10 @@ static const struct net_in_addr *nak_src_addr;
 static const struct net_in_addr *nak_server_id;
 static bool no_router_option;
 static bool zero_router_option;
+/* Whether the replies carry a subnet mask of 255.255.255.255, which leaves
+ * the client no other address on the link.
+ */
+static bool host_netmask;
 /* Whether the handler for the leased address going away starts or stops the
  * client, the way an application watching for it might.
  */
@@ -490,6 +494,7 @@ static void dhcp_test_reset_iface(struct net_if *iface)
 	nak_server_id = &server_id_addr;
 	no_router_option = false;
 	zero_router_option = false;
+	host_netmask = false;
 	renewal_reply = RENEWAL_ACK;
 }
 
@@ -663,6 +668,12 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 		goto fail;
 	}
 
+	if (host_netmask &&
+	    dhcp_patch_option_be32(pkt, offer, sizeof(offer), DHCPV4_OPTIONS_SUBNET_MASK,
+				   UINT32_MAX) != 0) {
+		goto fail;
+	}
+
 	net_pkt_cursor_init(pkt);
 
 	net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
@@ -716,6 +727,12 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, uint32_t xid, bool includ
 	if (zero_router_option &&
 	    dhcp_patch_option_be32(pkt, reply, reply_len, DHCPV4_OPTIONS_ROUTER,
 				   0U) != 0) {
+		goto fail;
+	}
+
+	if (host_netmask &&
+	    dhcp_patch_option_be32(pkt, reply, reply_len, DHCPV4_OPTIONS_SUBNET_MASK,
+				   UINT32_MAX) != 0) {
 		goto fail;
 	}
 
@@ -2166,6 +2183,48 @@ ZTEST(dhcpv4_tests, test_router_option_naming_no_router_keeps_the_gateway)
 
 	zassert_equal(net_if_ipv4_get_gw(iface).s_addr, static_gw.s_addr,
 		      "Stopping cleared a gateway the client never set");
+}
+
+/* A server that wants a host off IPv4 without leaving it to retry forever
+ * leases it an address with a 255.255.255.255 subnet mask and no router.
+ * The host then has no other address on the link and no way off it.
+ */
+ZTEST(dhcpv4_tests, test_host_netmask_without_router)
+{
+	const struct net_in_addr neighbor = { { { 10, 237, 72, 1 } } };
+	struct net_in_addr netmask;
+	struct net_if *iface;
+	uint32_t evt;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	host_netmask = true;
+	no_router_option = true;
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait_all(&events, EVT_DHCP_BOUND | EVT_ADDR_ADD, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_BOUND | EVT_ADDR_ADD, "Missing DHCP bound %08x", evt);
+
+	netmask = net_if_ipv4_get_netmask_by_addr(iface, &leased_addr);
+	zexpect_equal(netmask.s_addr, NET_INADDR_BROADCAST,
+		      "Lease netmask is %s, not 255.255.255.255",
+		      net_sprint_ipv4_addr(&netmask));
+	zexpect_equal(net_if_ipv4_get_gw(iface).s_addr, NET_INADDR_ANY,
+		      "A lease without a router installed a gateway");
+	zexpect_true(net_if_ipv4_addr_mask_cmp(iface, &leased_addr),
+		     "The leased address is not on its own subnet");
+	zexpect_false(net_if_ipv4_addr_mask_cmp(iface, &neighbor),
+		      "%s is on-link under a 255.255.255.255 netmask",
+		      net_sprint_ipv4_addr(&neighbor));
+	/* A /32 subnet has no broadcast address. Worked out as the address
+	 * OR ~netmask, it would be the leased address itself.
+	 */
+	zexpect_false(net_if_ipv4_is_addr_bcast(iface, &leased_addr),
+		      "The leased address is taken for a broadcast address");
+
+	net_dhcpv4_stop(iface);
 }
 
 /* A reply for the exchange the client was running when it was stopped
