@@ -35,17 +35,6 @@ static inline const struct device *usbh_hcd_dev(const struct usb_device *udev)
 }
 
 /**
- * @brief Resync HCD endpoint programming after CLEAR_FEATURE(ENDPOINT_HALT).
- *
- * @param udev USB device whose endpoints were cleared.
- *
- * @retval 0 Endpoint programming resynced.
- * @retval -EINVAL Invalid argument.
- * @retval -ENOTSUP HCD does not implement the hook.
- */
-int usbh_ep_sync_after_clear_feature(struct usb_device *udev);
-
-/**
  * @brief Recover an endpoint after a USB-level recovery event.
  *
  * @param udev USB device
@@ -57,28 +46,6 @@ int usbh_ep_sync_after_clear_feature(struct usb_device *udev);
  * @retval negative errno Recovery failed
  */
 int usbh_endpoint_recover(struct usb_device *udev, uint8_t ep, enum uhc_ep_recovery_reason reason);
-
-/**
- * @brief Ask the HCD whether configured endpoints appear steady.
- *
- * @param udev USB device to verify.
- *
- * @retval 0 Endpoints appear steady.
- * @retval -EINVAL Invalid argument.
- * @retval -EIO Endpoints not steady or HCD reported failure.
- * @retval -ENOTSUP HCD does not implement the hook.
- */
-int usbh_eps_verify_steady(struct usb_device *udev);
-
-/**
- * @brief Query whether endpoint programming is steady for @a udev.
- *
- * @param udev USB device that completed configuration.
- *
- * @retval true Steady, or the HCD has no hook (assumed steady).
- * @retval false Not steady, disconnected, or invalid argument.
- */
-bool usbh_post_configure_steady(const struct usb_device *udev);
 
 #ifdef __cplusplus
 }
