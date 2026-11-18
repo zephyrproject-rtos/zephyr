@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 
+#include <zephyr/kernel.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/logging/log.h>
 
@@ -15,6 +16,15 @@
 #include "xhci_dma.h"
 
 LOG_MODULE_DECLARE(uhc_dwc3, CONFIG_UHC_DRIVER_LOG_LEVEL);
+
+/*
+ * xhci_wait_cmd_sem() uses a 5 s deadline; EP0 recover may issue Reset EP +
+ * Set TR Dequeue (two commands) while holding ep0_recover_in_flight.
+ */
+#define XHCI_EP0_RECOVER_CMD_WAIT_MS 5000
+#define XHCI_EP0_RECOVER_MAX_CMDS    2U
+#define XHCI_EP0_RECOVER_TEARDOWN_MS                                                               \
+	(XHCI_EP0_RECOVER_CMD_WAIT_MS * XHCI_EP0_RECOVER_MAX_CMDS + 500)
 
 #define XHCI_SLOT_ROUTE(r)    ((uint32_t)(r) & 0xfffffU)
 #define XHCI_SLOT_DEV_HUB     BIT(26)
@@ -169,6 +179,30 @@ int xhci_enable_slot_for_udev(struct uhc_dwc3_data *priv, struct usb_device *ude
 	return 0;
 }
 
+/*
+ * Block Disable Slot until the enqueue-thread EP0 recover path drops
+ * ep0_recover_in_flight. ep0_teardown_wait tells xhci_ep0_recover_slot_live()
+ * to stop before further xHCI commands once the current command completes.
+ */
+static void xhci_teardown_wait_ep0_recover(struct xhci_dev_slot *slot)
+{
+	const int64_t deadline = k_uptime_get() + XHCI_EP0_RECOVER_TEARDOWN_MS;
+	bool warned = false;
+
+	atomic_set(&slot->ep0_teardown_wait, 1);
+
+	while (atomic_get(&slot->ep0_recover_in_flight) != 0) {
+		if (!warned && k_uptime_get() >= deadline) {
+			LOG_WRN("EP0 recover still in flight after %d ms (waiting for completion)",
+				XHCI_EP0_RECOVER_TEARDOWN_MS);
+			warned = true;
+		}
+		k_busy_wait(100);
+	}
+
+	atomic_set(&slot->ep0_teardown_wait, 0);
+}
+
 int xhci_teardown_slot(struct uhc_dwc3_data *priv, uint8_t sid)
 {
 	struct xhci_dev_slot *slot = xhci_slot_get(priv, sid);
@@ -190,9 +224,7 @@ int xhci_teardown_slot(struct uhc_dwc3_data *priv, uint8_t sid)
 		}
 	}
 
-	for (unsigned int w = 0U; w < 500U && atomic_get(&slot->ep0_recover_in_flight) != 0; w++) {
-		k_busy_wait(100);
-	}
+	xhci_teardown_wait_ep0_recover(slot);
 
 	LOG_DBG("Disable Slot %u", (unsigned int)sid);
 	ret = xhci_disable_slot_cmd(priv, sid);
