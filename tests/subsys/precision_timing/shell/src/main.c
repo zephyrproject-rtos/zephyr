@@ -22,6 +22,8 @@
 struct fake_clock {
 	struct precision_clock clock;
 	struct precision_clock_output_caps output_caps;
+	struct precision_clock_output_channel_caps output_channels[2];
+	uint32_t configured_channel;
 	struct precision_clock_output_status output_status;
 	struct precision_clock_output_waveform_config last_waveform_config;
 	precision_time_t time;
@@ -34,7 +36,6 @@ struct fake_clock {
 	int output_status_error;
 	precision_time_t read_advance_ns;
 	uint32_t last_output_channel;
-	uint32_t output_caps_calls;
 	uint32_t start_waveform_calls;
 	uint32_t output_stop_calls;
 	uint32_t output_status_calls;
@@ -63,13 +64,11 @@ static int fake_clock_read(const struct precision_clock *precision_clk, precisio
 	return 0;
 }
 
-static int fake_clock_get_output_caps(const struct precision_clock *precision_clk, uint32_t channel,
+static int fake_clock_get_output_caps(const struct precision_clock *precision_clk,
 				      struct precision_clock_output_caps *caps)
 {
 	struct fake_clock *fake = fake_clock_from_precision(precision_clk);
 
-	fake->output_caps_calls++;
-	fake->last_output_channel = channel;
 	if (fake->output_caps_error < 0) {
 		return fake->output_caps_error;
 	}
@@ -78,32 +77,39 @@ static int fake_clock_get_output_caps(const struct precision_clock *precision_cl
 	return 0;
 }
 
-static void fake_clock_mark_configured(struct fake_clock *fake,
-				       enum precision_clock_output_kind kind)
+static void fake_clock_mark_configured(struct fake_clock *fake, uint32_t channel)
 {
+	fake->configured_channel = channel;
 	fake->output_status.configured = true;
-	fake->output_status.kind = kind;
 	fake->output_status.hardware_active_valid =
-		(fake->output_caps.flags & PRECISION_CLOCK_OUTPUT_CAP_HARDWARE_ACTIVE) != 0U;
+		(fake->output_caps.channels[channel].flags &
+		 PRECISION_CLOCK_OUTPUT_CAP_HARDWARE_ACTIVE) != 0U;
 	fake->output_status.hardware_active = true;
 }
 
 static int
-fake_clock_output_start_waveform(const struct precision_clock *precision_clk, uint32_t channel,
-				 const struct precision_clock_output_waveform_config *config)
+fake_clock_output_start(const struct precision_clock *precision_clk, uint32_t channel,
+			const struct precision_clock_output_config *config)
 {
 	struct fake_clock *fake = fake_clock_from_precision(precision_clk);
 
+	if (channel >= fake->output_caps.channel_count) {
+		return -ENOTSUP;
+	}
+	if (config->kind != PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM) {
+		return -EINVAL;
+	}
+
 	fake->start_waveform_calls++;
 	fake->last_output_channel = channel;
-	fake->last_waveform_config = *config;
+	fake->last_waveform_config = config->waveform;
 	if (fake->start_waveform_error_once < 0) {
 		int error = fake->start_waveform_error_once;
 
 		fake->start_waveform_error_once = 0;
 		if (fake->retain_start_error_config) {
-			fake_clock_mark_configured(fake, PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM);
-			fake->output_status.config.waveform = *config;
+			fake_clock_mark_configured(fake, channel);
+			fake->output_status.config = *config;
 		}
 		return error;
 	}
@@ -114,8 +120,8 @@ fake_clock_output_start_waveform(const struct precision_clock *precision_clk, ui
 		return -EBUSY;
 	}
 
-	fake_clock_mark_configured(fake, PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM);
-	fake->output_status.config.waveform = *config;
+	fake_clock_mark_configured(fake, channel);
+	fake->output_status.config = *config;
 	return 0;
 }
 
@@ -133,7 +139,9 @@ static int fake_clock_output_stop(const struct precision_clock *precision_clk, u
 		return fake->output_stop_error;
 	}
 
-	fake->output_status.configured = false;
+	if (channel == fake->configured_channel) {
+		fake->output_status = (struct precision_clock_output_status){0};
+	}
 	return 0;
 }
 
@@ -145,20 +153,24 @@ static int fake_clock_get_output_status(const struct precision_clock *precision_
 
 	fake->output_status_calls++;
 	fake->last_output_channel = channel;
+	if (channel >= fake->output_caps.channel_count) {
+		return -ENOTSUP;
+	}
 	if (fake->output_status_error < 0) {
 		return fake->output_status_error;
 	}
 
-	*status = fake->output_status;
+	*status = channel == fake->configured_channel ? fake->output_status :
+		(struct precision_clock_output_status){0};
 	return 0;
 }
 
 static const struct precision_clock_api fake_clock_api = {
 	.read = fake_clock_read,
-	.get_output_caps = fake_clock_get_output_caps,
-	.output_start_waveform = fake_clock_output_start_waveform,
+	.output_get_caps = fake_clock_get_output_caps,
+	.output_start = fake_clock_output_start,
 	.output_stop = fake_clock_output_stop,
-	.get_output_status = fake_clock_get_output_status,
+	.output_get_status = fake_clock_get_output_status,
 };
 
 static void fake_clock_init(struct fake_clock *fake, precision_time_t tm)
@@ -172,17 +184,26 @@ static void fake_clock_init(struct fake_clock *fake, precision_time_t tm)
 #if defined(CONFIG_PRECISION_CLOCK_OUTPUT)
 static void fake_clock_enable_output(struct fake_clock *fake)
 {
-	fake->output_caps = (struct precision_clock_output_caps){
+	fake->output_channels[0] = (struct precision_clock_output_channel_caps){
 		.flags = PRECISION_CLOCK_OUTPUT_CAP_WAVEFORM |
 			 PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH |
 			 PRECISION_CLOCK_OUTPUT_CAP_HARDWARE_ACTIVE,
-		.channel_count = 2,
 		.resolution_ns = 10,
 		.min_lead_time_ns = NSEC_PER_MSEC,
 		.min_period_ns = 100,
 		.max_period_ns = 2 * (precision_time_t)NSEC_PER_SEC,
 		.min_pulse_width_ns = 10,
 		.max_pulse_width_ns = NSEC_PER_SEC - 10,
+	};
+	fake->output_channels[1] = fake->output_channels[0];
+	fake->output_channels[1].resolution_ns = 100;
+	fake->output_channels[1].min_period_ns = 1000;
+	fake->output_channels[1].max_period_ns = 3 * (precision_time_t)NSEC_PER_SEC;
+	fake->output_channels[1].min_pulse_width_ns = 100;
+	fake->output_channels[1].max_pulse_width_ns = NSEC_PER_SEC - 100;
+	fake->output_caps = (struct precision_clock_output_caps){
+		.channel_count = ARRAY_SIZE(fake->output_channels),
+		.channels = fake->output_channels,
 	};
 }
 #endif /* CONFIG_PRECISION_CLOCK_OUTPUT */
@@ -281,15 +302,19 @@ ZTEST(precision_timing_shell, test_output_caps_and_status_text)
 	clock_fake.time = NSEC_PER_SEC;
 	fake_clock_enable_output(&clock_fake);
 
-	zassert_ok(execute("precision_clock output caps clock 1"));
+	zassert_ok(execute("precision_clock output caps clock"));
 	output = output_get();
-	assert_output_contains(output,
-			       "waveform=yes programmable_width=yes channel_count=2");
+	assert_output_contains(output, "channel_count=2");
+	assert_output_contains(output, "channel=0 waveform=yes programmable_width=yes");
 	assert_output_contains(output, "hardware_active=yes");
 	assert_output_contains(output, "resolution_ns=10 min_lead_time_ns=1000000");
 	assert_output_contains(output, "min_period_ns=100 max_period_ns=2000000000");
 	assert_output_contains(output, "min_pulse_width_ns=10 max_pulse_width_ns=999999990");
-	zassert_equal(clock_fake.last_output_channel, 1);
+	output = strstr(output, "channel=1 waveform=yes programmable_width=yes");
+	zassert_not_null(output);
+	assert_output_contains(output, "resolution_ns=100 min_lead_time_ns=1000000");
+	assert_output_contains(output, "min_period_ns=1000 max_period_ns=3000000000");
+	assert_output_contains(output, "min_pulse_width_ns=100 max_pulse_width_ns=999999900");
 
 	zassert_ok(execute("precision_clock output get clock 0"));
 	output = output_get();
@@ -298,21 +323,31 @@ ZTEST(precision_timing_shell, test_output_caps_and_status_text)
 	assert_output_not_contains(output, "kind=");
 	assert_output_not_contains(output, "first_rising_time_ns=");
 
-	/* An out-of-range channel is rejected by the generic capability check. */
-	zassert_equal(execute("precision_clock output caps clock 2"), -ENOTSUP);
-	assert_output_contains(output_get(), "precision clock 'clock':");
-	zassert_equal(execute("precision_clock output caps clock 4294967296"), -ERANGE);
+	/* Discovery takes no channel; status providers reject unsupported channels. */
+	zassert_not_equal(execute("precision_clock output caps clock 0"), 0);
+	zassert_equal(execute("precision_clock pps start clock 2"), -ENOTSUP);
+	zassert_equal(execute("precision_clock output get clock 2"), -ENOTSUP);
+	zassert_equal(execute("precision_clock output get clock 4294967296"), -ERANGE);
 	assert_output_contains(output_get(), "invalid channel '4294967296': -34");
-	zassert_equal(execute("precision_clock output caps missing 0"), -ENOENT);
+	zassert_equal(execute("precision_clock output caps missing"), -ENOENT);
 	assert_output_contains(output_get(), "precision clock 'missing': -2");
 
 	clock_fake.output_caps_error = -EIO;
-	zassert_equal(execute("precision_clock output caps clock 0"), -EIO);
+	zassert_equal(execute("precision_clock output caps clock"), -EIO);
 	assert_output_contains(output_get(), "precision clock 'clock': -5");
+	zassert_ok(execute("precision_clock output get clock 0"));
+	assert_output_contains(output_get(), "configured=no");
 	clock_fake.output_caps_error = 0;
 	clock_fake.output_status_error = -ESTALE;
 	zassert_equal(execute("precision_clock output get clock 0"), -ESTALE);
 	assert_output_contains(output_get(), "precision clock 'clock': -116");
+
+	fake_clock_init(&clock_fake, NSEC_PER_SEC);
+	zassert_ok(execute("precision_clock output caps clock"));
+	output = output_get();
+	assert_output_contains(output, "channel_count=0");
+	assert_output_not_contains(output, "channel=");
+	zassert_equal(execute("precision_clock pps start clock 0"), -ENOTSUP);
 }
 
 ZTEST(precision_timing_shell, test_output_waveform_start_forwarding_and_errors)
@@ -435,24 +470,27 @@ ZTEST(precision_timing_shell, test_pps_helper_scheduling_width_and_errors)
 	zassert_ok(execute("precision_clock pps stop clock 1"));
 	clock_fake.read_advance_ns = 0;
 
-	clock_fake.output_caps.flags &= ~PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH;
+	/* Reinitialize before exposing a different immutable capability table. */
+	fake_clock_init(&clock_fake, 4 * (precision_time_t)NSEC_PER_SEC);
+	fake_clock_enable_output(&clock_fake);
+	clock_fake.output_channels[0].flags &= ~PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH;
 	zassert_ok(execute("precision_clock pps start clock 0"));
 	zassert_equal(clock_fake.last_waveform_config.width_policy,
 		      PRECISION_CLOCK_OUTPUT_WIDTH_PROVIDER_DEFAULT);
 	assert_output_contains(output_get(), "width_policy=provider_default");
 	zassert_ok(execute("precision_clock pps stop clock 0"));
 	zassert_equal(execute("precision_clock pps start clock 0 200000000"), -ENOTSUP);
-	clock_fake.output_caps.flags |= PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH;
 
-	clock_fake.output_caps.min_lead_time_ns = 3 * (precision_time_t)NSEC_PER_SEC;
-	clock_fake.time = 4 * (precision_time_t)NSEC_PER_SEC;
+	fake_clock_init(&clock_fake, 4 * (precision_time_t)NSEC_PER_SEC);
+	fake_clock_enable_output(&clock_fake);
+	clock_fake.output_channels[0].min_lead_time_ns = 3 * (precision_time_t)NSEC_PER_SEC;
 	clock_fake.read_advance_ns = NSEC_PER_MSEC;
 	zassert_ok(execute("precision_clock pps start clock 0"));
 	zassert_equal(clock_fake.last_waveform_config.first_rising_time, 9000000000LL);
 	zassert_ok(execute("precision_clock pps stop clock 0"));
-	clock_fake.output_caps.min_lead_time_ns = NSEC_PER_MSEC;
 
-	clock_fake.time = 3500000000LL;
+	fake_clock_init(&clock_fake, 3500000000LL);
+	fake_clock_enable_output(&clock_fake);
 	clock_fake.read_advance_ns = NSEC_PER_SEC;
 	clock_fake.start_waveform_error_once = -ETIME;
 	start_waveform_calls = clock_fake.start_waveform_calls;

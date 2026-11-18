@@ -83,7 +83,7 @@ static void counter_increment(uint32_t *counter)
  */
 static void pps_output_reset_runtime(struct precision_pps_output *pps)
 {
-	pps->caps = (struct precision_clock_output_caps){0};
+	pps->caps = NULL;
 	pps->state = (struct precision_pps_output_state){
 		.rearm_pending = true,
 	};
@@ -122,7 +122,7 @@ static int validate_config(const struct precision_pps_output_config *config)
 
 static int validate_caps(const struct precision_pps_output *pps)
 {
-	const struct precision_clock_output_caps *caps = &pps->caps;
+	const struct precision_clock_output_channel_caps *caps = pps->caps;
 	bool exact = pps->config.width_policy == PRECISION_CLOCK_OUTPUT_WIDTH_EXACT;
 
 	if ((caps->flags & PRECISION_CLOCK_OUTPUT_CAP_WAVEFORM) == 0U) {
@@ -132,10 +132,6 @@ static int validate_caps(const struct precision_pps_output *pps)
 		return -ENOTSUP;
 	}
 
-	if (caps->resolution_ns <= 0 || caps->min_lead_time_ns < 0 || caps->min_period_ns <= 0 ||
-	    caps->max_period_ns < caps->min_period_ns) {
-		return -ERANGE;
-	}
 	if (PPS_OUTPUT_PERIOD_NS < caps->min_period_ns ||
 	    PPS_OUTPUT_PERIOD_NS > caps->max_period_ns ||
 	    (PPS_OUTPUT_PERIOD_NS % caps->resolution_ns) != 0) {
@@ -143,10 +139,6 @@ static int validate_caps(const struct precision_pps_output *pps)
 	}
 
 	if (exact) {
-		if (caps->min_pulse_width_ns <= 0 ||
-		    caps->max_pulse_width_ns < caps->min_pulse_width_ns) {
-			return -ERANGE;
-		}
 		if (pps->effective_pulse_width_ns < caps->min_pulse_width_ns ||
 		    pps->effective_pulse_width_ns > caps->max_pulse_width_ns ||
 		    (pps->effective_pulse_width_ns % caps->resolution_ns) != 0) {
@@ -191,7 +183,7 @@ static bool waveform_config_matches(const struct precision_pps_output *pps,
 static bool waveform_status_ok(const struct precision_pps_output *pps,
 			       const struct precision_clock_output_status *status)
 {
-	if (!status->configured || status->kind != PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM) {
+	if (!status->configured || status->config.kind != PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM) {
 		return false;
 	}
 	if (!waveform_config_matches(pps, &status->config.waveform)) {
@@ -289,24 +281,28 @@ static int stop_for_rearm(struct precision_pps_output *pps, uint32_t *events)
 
 static int start_from_read(struct precision_pps_output *pps, precision_time_t now, uint32_t *events)
 {
-	struct precision_clock_output_waveform_config waveform = {
-		.period_ns = PPS_OUTPUT_PERIOD_NS,
-		.width_policy = pps->config.width_policy,
-		.pulse_width_ns = pps->effective_pulse_width_ns,
+	struct precision_clock_output_config config = {
+		.kind = PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM,
+		.waveform = {
+			.period_ns = PPS_OUTPUT_PERIOD_NS,
+			.width_policy = pps->config.width_policy,
+			.pulse_width_ns = pps->effective_pulse_width_ns,
+		},
 	};
 	precision_time_t lead_time_ns;
 	bool recovery = pps->ever_armed;
 	int ret;
 
-	ret = precision_time_add(pps->caps.min_lead_time_ns, pps->config.start_guard_ns,
+	ret = precision_time_add(pps->caps->min_lead_time_ns, pps->config.start_guard_ns,
 				 &lead_time_ns);
 	if (ret == 0) {
 		ret = precision_clock_output_next_start_time(
-			now, PPS_OUTPUT_PERIOD_NS, lead_time_ns, &waveform.first_rising_time);
+			now, PPS_OUTPUT_PERIOD_NS, lead_time_ns,
+			&config.waveform.first_rising_time);
 	}
 	if (ret == 0) {
-		ret = precision_clock_output_start_waveform(pps->precision_clk, pps->config.channel,
-							    &waveform);
+		ret = precision_clock_output_start(pps->precision_clk, pps->config.channel,
+						   &config);
 	}
 	if (ret < 0) {
 		pps->state.last_error = ret;
@@ -315,7 +311,7 @@ static int start_from_read(struct precision_pps_output *pps, precision_time_t no
 		return ret;
 	}
 
-	pps->state.config = waveform;
+	pps->state.config = config.waveform;
 	pps->state.active = true;
 	pps->state.rearm_pending = false;
 	pps->force_rearm = false;
@@ -546,6 +542,7 @@ int precision_pps_output_init(struct precision_pps_output *pps,
 
 int precision_pps_output_start(struct precision_pps_output *pps)
 {
+	struct precision_clock_output_caps caps;
 	int ret;
 
 	if (pps == NULL) {
@@ -562,9 +559,14 @@ int precision_pps_output_start(struct precision_pps_output *pps)
 
 	pps_output_reset_runtime(pps);
 
-	ret = precision_clock_output_get_caps(pps->precision_clk, pps->config.channel, &pps->caps);
+	ret = precision_clock_output_get_caps(pps->precision_clk, &caps);
 	if (ret == 0) {
-		ret = validate_caps(pps);
+		if (pps->config.channel >= caps.channel_count) {
+			ret = -ENOTSUP;
+		} else {
+			pps->caps = &caps.channels[pps->config.channel];
+			ret = validate_caps(pps);
+		}
 	}
 	if (ret != 0) {
 		k_mutex_unlock(&pps->lock);

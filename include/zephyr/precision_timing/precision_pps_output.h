@@ -208,8 +208,8 @@ struct precision_pps_output {
 	struct precision_pps_output_config config;
 	/** Effective exact pulse width, or 0 for the provider-default policy. */
 	precision_time_t effective_pulse_width_ns;
-	/** Cached output-channel capabilities queried at start. */
-	struct precision_clock_output_caps caps;
+	/** Provider-owned output-channel capabilities selected at start. */
+	const struct precision_clock_output_channel_caps *caps;
 	/** Published state snapshot. */
 	struct precision_pps_output_state state;
 	/** Registered clock time at the previous successful read. */
@@ -292,9 +292,9 @@ int precision_pps_output_init(struct precision_pps_output *pps,
  * @retval 0 on success.
  * @retval -EINVAL if @p pps is null.
  * @retval -EALREADY if the instance is already started.
- * @retval -ENOTSUP if the clock or its output channel lacks a required
- *	   capability, such as periodic waveforms or programmable width for the
- *	   exact width policy.
+ * @retval -ENOTSUP if the requested channel does not exist (including a clock
+ *	   with zero output channels), or lacks a required capability such as
+ *	   periodic waveforms or programmable width for the exact width policy.
  * @retval -ERANGE if the fixed period or exact pulse width is outside the
  *	   channel's reported limits or resolution.
  * @return A provider-specific negative error code if the initial capability

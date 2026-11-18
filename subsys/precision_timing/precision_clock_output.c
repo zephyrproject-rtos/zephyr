@@ -10,62 +10,27 @@
 
 #include <zephyr/precision_timing/precision_clock.h>
 
-int precision_clock_output_get_caps(const struct precision_clock *precision_clk, uint32_t channel,
+int precision_clock_output_get_caps(const struct precision_clock *precision_clk,
 				    struct precision_clock_output_caps *caps)
 {
-	int ret;
-
 	if (precision_clk == NULL || caps == NULL || precision_clk->api == NULL) {
 		return -EINVAL;
 	}
 
-	if (precision_clk->api->get_output_caps == NULL) {
+	if (precision_clk->api->output_get_caps == NULL) {
 		return -ENOTSUP;
 	}
 
-	ret = precision_clk->api->get_output_caps(precision_clk, channel, caps);
-	if (ret != 0) {
-		return ret;
-	}
-
-	if (channel >= caps->channel_count) {
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
-static int precision_clock_output_check_base_caps(const struct precision_clock_output_caps *caps)
-{
-	if (caps->resolution_ns <= 0 || caps->min_lead_time_ns < 0) {
-		return -ERANGE;
-	}
-
-	return 0;
-}
-
-static int precision_clock_output_check_period_caps(const struct precision_clock_output_caps *caps)
-{
-	if (caps->min_period_ns <= 0 || caps->max_period_ns < caps->min_period_ns) {
-		return -ERANGE;
-	}
-
-	return 0;
-}
-
-static int precision_clock_output_check_width_caps(const struct precision_clock_output_caps *caps)
-{
-	if (caps->min_pulse_width_ns <= 0 || caps->max_pulse_width_ns < caps->min_pulse_width_ns) {
-		return -ERANGE;
-	}
-
-	return 0;
+	return precision_clk->api->output_get_caps(precision_clk, caps);
 }
 
 static int precision_clock_output_check_waveform_config(
-	const struct precision_clock_output_caps *caps,
+	const struct precision_clock *precision_clk,
+	const struct precision_clock_output_channel_caps *caps,
 	const struct precision_clock_output_waveform_config *config)
 {
+	precision_time_t now;
+	precision_time_t earliest;
 	bool exact_width;
 	int ret;
 
@@ -94,54 +59,25 @@ static int precision_clock_output_check_waveform_config(
 		return -ENOTSUP;
 	}
 
-	ret = precision_clock_output_check_base_caps(caps);
-	if (ret != 0) {
-		return ret;
-	}
-
-	ret = precision_clock_output_check_period_caps(caps);
-	if (ret != 0) {
-		return ret;
-	}
-
 	if (config->period_ns < caps->min_period_ns || config->period_ns > caps->max_period_ns ||
 	    (config->period_ns % caps->resolution_ns) != 0 ||
 	    (config->first_rising_time % caps->resolution_ns) != 0) {
 		return -ERANGE;
 	}
 
-	if (!exact_width) {
-		return 0;
-	}
-
-	ret = precision_clock_output_check_width_caps(caps);
-	if (ret != 0) {
-		return ret;
-	}
-
-	if (config->pulse_width_ns < caps->min_pulse_width_ns ||
-	    config->pulse_width_ns > caps->max_pulse_width_ns ||
-	    (config->pulse_width_ns % caps->resolution_ns) != 0) {
+	if (exact_width &&
+	    (config->pulse_width_ns < caps->min_pulse_width_ns ||
+	     config->pulse_width_ns > caps->max_pulse_width_ns ||
+	     (config->pulse_width_ns % caps->resolution_ns) != 0)) {
 		return -ERANGE;
 	}
-
-	return 0;
-}
-
-static int precision_clock_output_check_target(const struct precision_clock *precision_clk,
-					       const struct precision_clock_output_caps *caps,
-					       precision_time_t target_ns)
-{
-	precision_time_t now;
-	precision_time_t earliest;
-	int ret;
 
 	ret = precision_clock_read(precision_clk, &now);
 	if (ret != 0) {
 		return ret;
 	}
 
-	if (target_ns < now) {
+	if (config->first_rising_time < now) {
 		return -ETIME;
 	}
 
@@ -150,37 +86,11 @@ static int precision_clock_output_check_target(const struct precision_clock *pre
 		return ret;
 	}
 
-	if (target_ns < earliest) {
+	if (config->first_rising_time < earliest) {
 		return -ETIME;
 	}
 
 	return 0;
-}
-
-static int precision_clock_output_check_status(const struct precision_clock *precision_clk,
-					       const struct precision_clock_output_caps *caps,
-					       const struct precision_clock_output_status *status)
-{
-	int ret;
-
-	if (status->hardware_active_valid &&
-	    (caps->flags & PRECISION_CLOCK_OUTPUT_CAP_HARDWARE_ACTIVE) == 0U) {
-		return -EINVAL;
-	}
-
-	if (!status->configured) {
-		return 0;
-	}
-
-	switch (status->kind) {
-	case PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM:
-		ret = precision_clock_output_check_waveform_config(caps, &status->config.waveform);
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	return ret == 0 ? 0 : -EINVAL;
 }
 
 int precision_clock_output_next_start_time(precision_time_t now, precision_time_t period_ns,
@@ -215,9 +125,8 @@ int precision_clock_output_next_start_time(precision_time_t now, precision_time_
 	return 0;
 }
 
-int precision_clock_output_start_waveform(
-	const struct precision_clock *precision_clk, uint32_t channel,
-	const struct precision_clock_output_waveform_config *config)
+int precision_clock_output_start(const struct precision_clock *precision_clk, uint32_t channel,
+				 const struct precision_clock_output_config *config)
 {
 	struct precision_clock_output_caps caps;
 	int ret;
@@ -226,26 +135,32 @@ int precision_clock_output_start_waveform(
 		return -EINVAL;
 	}
 
-	if (precision_clk->api->output_start_waveform == NULL) {
+	if (precision_clk->api->output_start == NULL) {
 		return -ENOTSUP;
 	}
 
-	ret = precision_clock_output_get_caps(precision_clk, channel, &caps);
+	ret = precision_clock_output_get_caps(precision_clk, &caps);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = precision_clock_output_check_waveform_config(&caps, config);
+	if (channel >= caps.channel_count) {
+		return -ENOTSUP;
+	}
+
+	switch (config->kind) {
+	case PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM:
+		ret = precision_clock_output_check_waveform_config(
+			precision_clk, &caps.channels[channel], &config->waveform);
+		break;
+	default:
+		return -EINVAL;
+	}
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = precision_clock_output_check_target(precision_clk, &caps, config->first_rising_time);
-	if (ret != 0) {
-		return ret;
-	}
-
-	return precision_clk->api->output_start_waveform(precision_clk, channel, config);
+	return precision_clk->api->output_start(precision_clk, channel, config);
 }
 
 int precision_clock_output_stop(const struct precision_clock *precision_clk, uint32_t channel)
@@ -264,26 +179,13 @@ int precision_clock_output_stop(const struct precision_clock *precision_clk, uin
 int precision_clock_output_get_status(const struct precision_clock *precision_clk, uint32_t channel,
 				      struct precision_clock_output_status *status)
 {
-	struct precision_clock_output_caps caps;
-	int ret;
-
 	if (precision_clk == NULL || status == NULL || precision_clk->api == NULL) {
 		return -EINVAL;
 	}
 
-	if (precision_clk->api->get_output_status == NULL) {
+	if (precision_clk->api->output_get_status == NULL) {
 		return -ENOTSUP;
 	}
 
-	ret = precision_clock_output_get_caps(precision_clk, channel, &caps);
-	if (ret != 0) {
-		return ret;
-	}
-
-	ret = precision_clk->api->get_output_status(precision_clk, channel, status);
-	if (ret != 0) {
-		return ret;
-	}
-
-	return precision_clock_output_check_status(precision_clk, &caps, status);
+	return precision_clk->api->output_get_status(precision_clk, channel, status);
 }

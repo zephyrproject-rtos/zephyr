@@ -100,8 +100,7 @@ precision_clock_ptp_output_provider(const struct precision_clock_ptp_adapter *ad
 	return api->output;
 }
 
-static int precision_clock_ptp_get_output_caps(const struct precision_clock *precision_clk,
-					       uint32_t channel,
+static int precision_clock_ptp_output_get_caps(const struct precision_clock *precision_clk,
 					       struct precision_clock_output_caps *caps)
 {
 	const struct precision_clock_ptp_adapter *adapter = precision_clk->data;
@@ -116,12 +115,12 @@ static int precision_clock_ptp_get_output_caps(const struct precision_clock *pre
 		return -ENOTSUP;
 	}
 
-	return provider->get_caps(adapter->dev, channel, caps);
+	return provider->get_caps(adapter->dev, caps);
 }
 
-static int precision_clock_ptp_output_start_waveform(
-	const struct precision_clock *precision_clk, uint32_t channel,
-	const struct precision_clock_output_waveform_config *config)
+static int precision_clock_ptp_output_start(const struct precision_clock *precision_clk,
+					   uint32_t channel,
+					   const struct precision_clock_output_config *config)
 {
 	const struct precision_clock_ptp_adapter *adapter = precision_clk->data;
 	const struct precision_clock_output_provider *provider;
@@ -131,11 +130,11 @@ static int precision_clock_ptp_output_start_waveform(
 	}
 
 	provider = precision_clock_ptp_output_provider(adapter);
-	if (provider == NULL || provider->start_waveform == NULL) {
+	if (provider == NULL || provider->start == NULL) {
 		return -ENOTSUP;
 	}
 
-	return provider->start_waveform(adapter->dev, channel, config);
+	return provider->start(adapter->dev, channel, config);
 }
 
 static int precision_clock_ptp_output_stop(const struct precision_clock *precision_clk,
@@ -156,7 +155,7 @@ static int precision_clock_ptp_output_stop(const struct precision_clock *precisi
 	return provider->stop(adapter->dev, channel);
 }
 
-static int precision_clock_ptp_get_output_status(const struct precision_clock *precision_clk,
+static int precision_clock_ptp_output_get_status(const struct precision_clock *precision_clk,
 						 uint32_t channel,
 						 struct precision_clock_output_status *status)
 {
@@ -182,10 +181,10 @@ static const struct precision_clock_api precision_clock_ptp_api = {
 	.adjust_phase = precision_clock_ptp_adjust_phase,
 	.adjust_rate = precision_clock_ptp_adjust_rate,
 #ifdef CONFIG_PRECISION_CLOCK_OUTPUT
-	.get_output_caps = precision_clock_ptp_get_output_caps,
-	.output_start_waveform = precision_clock_ptp_output_start_waveform,
+	.output_get_caps = precision_clock_ptp_output_get_caps,
+	.output_start = precision_clock_ptp_output_start,
 	.output_stop = precision_clock_ptp_output_stop,
-	.get_output_status = precision_clock_ptp_get_output_status,
+	.output_get_status = precision_clock_ptp_output_get_status,
 #endif /* CONFIG_PRECISION_CLOCK_OUTPUT */
 };
 

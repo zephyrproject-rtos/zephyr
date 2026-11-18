@@ -48,11 +48,11 @@ enum precision_clock_output_kind {
 /** Precision clock output capability flags. */
 enum precision_clock_output_caps_flags {
 	/** Channel can generate periodic output waveforms. */
-	PRECISION_CLOCK_OUTPUT_CAP_WAVEFORM = BIT(1),
+	PRECISION_CLOCK_OUTPUT_CAP_WAVEFORM = BIT(0),
 	/** Channel supports an exact programmable high-pulse width. */
-	PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH = BIT(2),
+	PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH = BIT(1),
 	/** Channel can observe whether its hardware output generator is armed or running. */
-	PRECISION_CLOCK_OUTPUT_CAP_HARDWARE_ACTIVE = BIT(5),
+	PRECISION_CLOCK_OUTPUT_CAP_HARDWARE_ACTIVE = BIT(2),
 };
 
 /**
@@ -60,13 +60,13 @@ enum precision_clock_output_caps_flags {
  *
  * The period limits are meaningful only when @ref PRECISION_CLOCK_OUTPUT_CAP_WAVEFORM
  * is advertised. The pulse-width limits are meaningful only when
- * @ref PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH is advertised.
+ * @ref PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH is advertised. Providers
+ * must report a positive resolution, non-negative lead time, and positive,
+ * ordered limits for the advertised capabilities.
  */
-struct precision_clock_output_caps {
+struct precision_clock_output_channel_caps {
 	/** Combination of @ref precision_clock_output_caps_flags. */
 	uint32_t flags;
-	/** Number of output channels exposed by the clock. */
-	uint32_t channel_count;
 	/** Smallest representable output time increment in nanoseconds. */
 	precision_time_t resolution_ns;
 	/** Minimum required delay from the current time to the first edge. */
@@ -79,6 +79,20 @@ struct precision_clock_output_caps {
 	precision_time_t min_pulse_width_ns;
 	/** Maximum supported programmable high-pulse width in nanoseconds. */
 	precision_time_t max_pulse_width_ns;
+};
+
+/**
+ * @brief Capabilities of all scheduled-output channels on a precision clock.
+ *
+ * The provider owns the channel table. Its address and contents remain valid
+ * and unchanged for the lifetime of the initialized clock. Callers must not
+ * modify or free it. Channel indices are provider-defined and zero-based.
+ */
+struct precision_clock_output_caps {
+	/** Number of entries in @ref channels; zero when no channels are exposed. */
+	uint32_t channel_count;
+	/** Read-only channel table; may be null only when @ref channel_count is zero. */
+	const struct precision_clock_output_channel_caps *channels;
 };
 
 /** Configuration of a periodic clock output waveform. */
@@ -96,20 +110,23 @@ struct precision_clock_output_waveform_config {
 	precision_time_t pulse_width_ns;
 };
 
-/** Accepted configuration held by a scheduled clock output channel. */
-union precision_clock_output_configured_config {
-	/** Valid when the configured kind is @ref PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM. */
-	struct precision_clock_output_waveform_config waveform;
+/** Requested or accepted configuration of a scheduled clock output channel. */
+struct precision_clock_output_config {
+	/** Kind of output selected by the configuration. */
+	enum precision_clock_output_kind kind;
+	/** Parameters for the selected output kind. */
+	union {
+		/** Valid when @ref kind is @ref PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM. */
+		struct precision_clock_output_waveform_config waveform;
+	};
 };
 
 /** Observable status of a precision clock output channel. */
 struct precision_clock_output_status {
 	/** Whether the provider currently holds a configuration for the channel. */
 	bool configured;
-	/** Configured output kind. Valid only when @ref configured is true. */
-	enum precision_clock_output_kind kind;
 	/** Accepted configuration. Valid only when @ref configured is true. */
-	union precision_clock_output_configured_config config;
+	struct precision_clock_output_config config;
 	/**
 	 * Whether @ref hardware_active reflects an observed hardware generator state.
 	 * False when that state cannot be observed; configuration remains the
@@ -151,16 +168,16 @@ struct precision_clock_api {
 	int (*adjust_phase)(const struct precision_clock *precision_clk, precision_time_t phase_ns);
 	/** Set the clock rate offset from its nominal frequency. */
 	int (*adjust_rate)(const struct precision_clock *precision_clk, int64_t scaled_ppm);
-	/** Query scheduled-output channel capabilities and limits. */
-	int (*get_output_caps)(const struct precision_clock *precision_clk, uint32_t channel,
+	/** Query capabilities of all scheduled-output channels. */
+	int (*output_get_caps)(const struct precision_clock *precision_clk,
 			       struct precision_clock_output_caps *caps);
-	/** Start a periodic output waveform on a channel. */
-	int (*output_start_waveform)(const struct precision_clock *precision_clk, uint32_t channel,
-				     const struct precision_clock_output_waveform_config *config);
+	/** Start a scheduled output on a channel. */
+	int (*output_start)(const struct precision_clock *precision_clk, uint32_t channel,
+			    const struct precision_clock_output_config *config);
 	/** Stop a scheduled-output channel and validate @p channel. */
 	int (*output_stop)(const struct precision_clock *precision_clk, uint32_t channel);
 	/** Query scheduled-output channel status and validate @p channel. */
-	int (*get_output_status)(const struct precision_clock *precision_clk, uint32_t channel,
+	int (*output_get_status)(const struct precision_clock *precision_clk, uint32_t channel,
 				 struct precision_clock_output_status *status);
 };
 
@@ -232,20 +249,23 @@ int precision_clock_ppb_to_scaled_ppm(double ppb, int64_t *scaled_ppm);
 int precision_clock_adjust_rate(const struct precision_clock *precision_clk, int64_t scaled_ppm);
 
 /**
- * @brief Query the capabilities and limits of a clock output channel.
+ * @brief Query capabilities of all scheduled-output channels.
+ *
+ * The returned channel table is provider-owned and remains valid and unchanged
+ * for the lifetime of the initialized clock. No caller allocation is required.
+ * The provider is responsible for returning valid capabilities.
  *
  * Call from thread context. The provider operation may block.
  *
- * @param precision_clk Clock whose output channel is queried.
- * @param channel Provider-defined, zero-based output channel index.
- * @param caps Destination for channel capabilities and limits.
+ * @param precision_clk Clock whose outputs are queried.
+ * @param caps Destination for the channel count and read-only channel table.
  *
  * @retval 0 on success.
  * @retval -EINVAL if an argument or clock API is invalid.
- * @retval -ENOTSUP if scheduled output or @p channel is unsupported.
+ * @retval -ENOTSUP if scheduled output is unsupported.
  * @return A provider-specific negative error code on failure.
  */
-int precision_clock_output_get_caps(const struct precision_clock *precision_clk, uint32_t channel,
+int precision_clock_output_get_caps(const struct precision_clock *precision_clk,
 				    struct precision_clock_output_caps *caps);
 
 /**
@@ -268,16 +288,17 @@ int precision_clock_output_next_start_time(precision_time_t now, precision_time_
 					   precision_time_t *start_time);
 
 /**
- * @brief Start a periodic clock output waveform.
+ * @brief Start a scheduled clock output.
  *
- * The first rising edge is generated at @p config first_rising_time and
- * subsequent rising edges are separated by @p config period_ns. The channel
- * must advertise @ref PRECISION_CLOCK_OUTPUT_CAP_WAVEFORM. When @p config
+ * Set @p config kind to @ref PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM to generate
+ * a periodic waveform described by @p config waveform. The first rising edge
+ * occurs at first_rising_time and subsequent edges are separated by period_ns.
+ * The channel must advertise @ref PRECISION_CLOCK_OUTPUT_CAP_WAVEFORM. When
  * width_policy is @ref PRECISION_CLOCK_OUTPUT_WIDTH_EXACT the channel must also
  * advertise @ref PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH and the pulse
  * width must be positive and shorter than the period; otherwise the provider
- * default width is used and @p config pulse_width_ns is ignored. Configuration
- * values must be exactly representable at the channel resolution. Starting an
+ * default width is used and pulse_width_ns is ignored. Configuration values
+ * must be exactly representable at the channel resolution. Starting an
  * already configured channel is rejected; stop the channel before
  * reconfiguring it.
  *
@@ -290,10 +311,10 @@ int precision_clock_output_next_start_time(precision_time_t now, precision_time_
  *
  * @param precision_clk Clock that owns the output channel.
  * @param channel Provider-defined, zero-based output channel index.
- * @param config First rising edge, period, and width policy.
+ * @param config Output kind and its configuration.
  *
  * @retval 0 on success.
- * @retval -EINVAL if an argument, width policy, or interval relationship is invalid.
+ * @retval -EINVAL if an argument, output kind, width policy, or interval relationship is invalid.
  * @retval -ENOTSUP if periodic waveforms, programmable width, or @p channel is unsupported.
  * @retval -ERANGE if a value is outside channel limits or not representable.
  * @retval -ETIME if the first rising edge does not meet the minimum lead time.
@@ -301,9 +322,8 @@ int precision_clock_output_next_start_time(precision_time_t now, precision_time_
  *                another device function, or is reserved by the driver.
  * @return A provider-specific negative error code on failure.
  */
-int precision_clock_output_start_waveform(
-	const struct precision_clock *precision_clk, uint32_t channel,
-	const struct precision_clock_output_waveform_config *config);
+int precision_clock_output_start(const struct precision_clock *precision_clk, uint32_t channel,
+				 const struct precision_clock_output_config *config);
 
 /**
  * @brief Stop a scheduled clock output.
@@ -329,9 +349,9 @@ int precision_clock_output_stop(const struct precision_clock *precision_clk, uin
  *
  * Reports whether the provider holds a configuration for the channel, the
  * configured kind and accepted configuration, and the physical output state
- * when observable. The generic layer queries the channel capabilities to
- * validate @p channel and to reject a status that is inconsistent with the
- * advertised capabilities.
+ * when observable. The provider validates @p channel and returns a consistent
+ * status. This operation does not query capabilities or revalidate the accepted
+ * configuration against the current time.
  *
  * Call from thread context. The provider operation may block.
  *
@@ -340,8 +360,7 @@ int precision_clock_output_stop(const struct precision_clock *precision_clk, uin
  * @param status Destination for the configuration and hardware-active state.
  *
  * @retval 0 on success.
- * @retval -EINVAL if an argument or clock API is invalid, or the provider reports
- *	   a status inconsistent with its capabilities.
+ * @retval -EINVAL if an argument or clock API is invalid.
  * @retval -ENOTSUP if status reporting or @p channel is unsupported.
  * @return A provider-specific negative error code on failure.
  */

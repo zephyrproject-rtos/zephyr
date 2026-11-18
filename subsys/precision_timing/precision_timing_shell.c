@@ -173,38 +173,46 @@ static int cmd_output_caps(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct precision_timing_shell_entry *entry;
 	struct precision_clock_output_caps caps;
-	uint32_t channel;
 	int ret;
 
 	ARG_UNUSED(argc);
-
-	ret = parse_u32(sh, "channel", argv[2], &channel);
-	if (ret < 0) {
-		return ret;
-	}
 
 	entry = shell_entry_find(argv[1]);
 	if (entry == NULL) {
 		return report_error(sh, argv[1], -ENOENT);
 	}
 
-	ret = precision_clock_output_get_caps(entry->clock, channel, &caps);
+	ret = precision_clock_output_get_caps(entry->clock, &caps);
 	if (ret < 0) {
 		return report_error(sh, argv[1], ret);
 	}
 
-	shell_print(sh, "waveform=%s programmable_width=%s channel_count=%u",
-		    yes_no((caps.flags & PRECISION_CLOCK_OUTPUT_CAP_WAVEFORM) != 0),
-		    yes_no((caps.flags & PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH) != 0),
-		    caps.channel_count);
-	shell_print(sh, "hardware_active=%s",
-		    yes_no((caps.flags & PRECISION_CLOCK_OUTPUT_CAP_HARDWARE_ACTIVE) != 0));
-	shell_print(sh, "resolution_ns=%lld min_lead_time_ns=%lld",
-		    (long long)caps.resolution_ns, (long long)caps.min_lead_time_ns);
-	shell_print(sh, "min_period_ns=%lld max_period_ns=%lld", (long long)caps.min_period_ns,
-		    (long long)caps.max_period_ns);
-	shell_print(sh, "min_pulse_width_ns=%lld max_pulse_width_ns=%lld",
-		    (long long)caps.min_pulse_width_ns, (long long)caps.max_pulse_width_ns);
+	shell_print(sh, "channel_count=%u", caps.channel_count);
+	if (caps.channel_count == 0U) {
+		shell_print(sh, "No output channels.");
+	}
+	for (uint32_t channel = 0; channel < caps.channel_count; channel++) {
+		const struct precision_clock_output_channel_caps *channel_caps =
+			&caps.channels[channel];
+
+		shell_print(sh, "channel=%u waveform=%s programmable_width=%s", channel,
+			    yes_no((channel_caps->flags &
+				    PRECISION_CLOCK_OUTPUT_CAP_WAVEFORM) != 0),
+			    yes_no((channel_caps->flags &
+				    PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH) != 0));
+		shell_print(sh, "hardware_active=%s",
+			    yes_no((channel_caps->flags &
+				    PRECISION_CLOCK_OUTPUT_CAP_HARDWARE_ACTIVE) != 0));
+		shell_print(sh, "resolution_ns=%lld min_lead_time_ns=%lld",
+			    (long long)channel_caps->resolution_ns,
+			    (long long)channel_caps->min_lead_time_ns);
+		shell_print(sh, "min_period_ns=%lld max_period_ns=%lld",
+			    (long long)channel_caps->min_period_ns,
+			    (long long)channel_caps->max_period_ns);
+		shell_print(sh, "min_pulse_width_ns=%lld max_pulse_width_ns=%lld",
+			    (long long)channel_caps->min_pulse_width_ns,
+			    (long long)channel_caps->max_pulse_width_ns);
+	}
 	return 0;
 }
 
@@ -214,7 +222,7 @@ static void print_output_status(const struct shell *sh,
 	const char *hardware_active;
 
 	shell_print(sh, "configured=%s", yes_no(status->configured));
-	if (status->configured && status->kind == PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM) {
+	if (status->configured && status->config.kind == PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM) {
 		const struct precision_clock_output_waveform_config *waveform =
 			&status->config.waveform;
 
@@ -272,22 +280,24 @@ static int cmd_output_get(const struct shell *sh, size_t argc, char **argv)
 static int cmd_output_waveform(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct precision_timing_shell_entry *entry;
-	struct precision_clock_output_waveform_config config = {
-		.width_policy = PRECISION_CLOCK_OUTPUT_WIDTH_PROVIDER_DEFAULT,
+	struct precision_clock_output_config output_config = {
+		.kind = PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM,
+		.waveform.width_policy = PRECISION_CLOCK_OUTPUT_WIDTH_PROVIDER_DEFAULT,
 	};
+	struct precision_clock_output_waveform_config *config = &output_config.waveform;
 	uint32_t channel;
 	int ret;
 
 	ret = parse_u32(sh, "channel", argv[2], &channel);
 	if (ret == 0) {
-		ret = parse_time(sh, "first rising time", argv[3], &config.first_rising_time);
+		ret = parse_time(sh, "first rising time", argv[3], &config->first_rising_time);
 	}
 	if (ret == 0) {
-		ret = parse_nonnegative_time(sh, "period", argv[4], &config.period_ns);
+		ret = parse_nonnegative_time(sh, "period", argv[4], &config->period_ns);
 	}
 	if (ret == 0 && argc == 6) {
-		config.width_policy = PRECISION_CLOCK_OUTPUT_WIDTH_EXACT;
-		ret = parse_nonnegative_time(sh, "pulse width", argv[5], &config.pulse_width_ns);
+		config->width_policy = PRECISION_CLOCK_OUTPUT_WIDTH_EXACT;
+		ret = parse_nonnegative_time(sh, "pulse width", argv[5], &config->pulse_width_ns);
 	}
 	if (ret < 0) {
 		return ret;
@@ -298,7 +308,7 @@ static int cmd_output_waveform(const struct shell *sh, size_t argc, char **argv)
 		return report_error(sh, argv[1], -ENOENT);
 	}
 
-	ret = precision_clock_output_start_waveform(entry->clock, channel, &config);
+	ret = precision_clock_output_start(entry->clock, channel, &output_config);
 	if (ret < 0) {
 		return report_error(sh, argv[1], ret);
 	}
@@ -339,13 +349,18 @@ static int cmd_output_stop(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_pps_start(const struct shell *sh, size_t argc, char **argv)
 {
-	struct precision_clock_output_waveform_config config = {
-		.period_ns = PRECISION_TIMING_PPS_PERIOD_NS,
-		.width_policy = PRECISION_CLOCK_OUTPUT_WIDTH_EXACT,
-		.pulse_width_ns = PRECISION_TIMING_PPS_DEFAULT_WIDTH_NS,
+	struct precision_clock_output_config output_config = {
+		.kind = PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM,
+		.waveform = {
+			.period_ns = PRECISION_TIMING_PPS_PERIOD_NS,
+			.width_policy = PRECISION_CLOCK_OUTPUT_WIDTH_EXACT,
+			.pulse_width_ns = PRECISION_TIMING_PPS_DEFAULT_WIDTH_NS,
+		},
 	};
+	struct precision_clock_output_waveform_config *config = &output_config.waveform;
 	const struct precision_timing_shell_entry *entry;
 	struct precision_clock_output_caps caps;
+	const struct precision_clock_output_channel_caps *channel_caps;
 	struct precision_clock_output_status status;
 	precision_time_t now;
 	precision_time_t lead_time_ns;
@@ -355,7 +370,7 @@ static int cmd_pps_start(const struct shell *sh, size_t argc, char **argv)
 
 	ret = parse_u32(sh, "channel", argv[2], &channel);
 	if (ret == 0 && argc == 4) {
-		ret = parse_nonnegative_time(sh, "pulse width", argv[3], &config.pulse_width_ns);
+		ret = parse_nonnegative_time(sh, "pulse width", argv[3], &config->pulse_width_ns);
 	}
 	if (ret < 0) {
 		return ret;
@@ -366,25 +381,24 @@ static int cmd_pps_start(const struct shell *sh, size_t argc, char **argv)
 		return report_error(sh, argv[1], -ENOENT);
 	}
 
-	ret = precision_clock_output_get_caps(entry->clock, channel, &caps);
-	if (ret == 0 && argc != 4 &&
-	    (((caps.flags & PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH) == 0U) ||
-	     PRECISION_TIMING_PPS_DEFAULT_WIDTH_NS < caps.min_pulse_width_ns ||
-	     PRECISION_TIMING_PPS_DEFAULT_WIDTH_NS > caps.max_pulse_width_ns ||
-	     caps.resolution_ns <= 0 ||
-	     (PRECISION_TIMING_PPS_DEFAULT_WIDTH_NS % caps.resolution_ns) != 0)) {
-		config.width_policy = PRECISION_CLOCK_OUTPUT_WIDTH_PROVIDER_DEFAULT;
-		config.pulse_width_ns = 0;
+	ret = precision_clock_output_get_caps(entry->clock, &caps);
+	if (ret < 0) {
+		return report_error(sh, argv[1], ret);
 	}
-	if (ret == 0) {
-		if (caps.min_lead_time_ns < 0) {
-			ret = -ERANGE;
-		} else {
-			ret = precision_time_add(caps.min_lead_time_ns,
-						 PRECISION_TIMING_PPS_SCHEDULING_GUARD_NS,
-						 &lead_time_ns);
-		}
+	if (channel >= caps.channel_count) {
+		return report_error(sh, argv[1], -ENOTSUP);
 	}
+	channel_caps = &caps.channels[channel];
+	if (argc != 4 &&
+	    (((channel_caps->flags & PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH) == 0U) ||
+	     PRECISION_TIMING_PPS_DEFAULT_WIDTH_NS < channel_caps->min_pulse_width_ns ||
+	     PRECISION_TIMING_PPS_DEFAULT_WIDTH_NS > channel_caps->max_pulse_width_ns ||
+	     (PRECISION_TIMING_PPS_DEFAULT_WIDTH_NS % channel_caps->resolution_ns) != 0)) {
+		config->width_policy = PRECISION_CLOCK_OUTPUT_WIDTH_PROVIDER_DEFAULT;
+		config->pulse_width_ns = 0;
+	}
+	ret = precision_time_add(channel_caps->min_lead_time_ns,
+				 PRECISION_TIMING_PPS_SCHEDULING_GUARD_NS, &lead_time_ns);
 	if (ret == 0) {
 		/* Retry cleanup must not stop a pre-existing configuration. */
 		ret = precision_clock_output_get_status(entry->clock, channel, &status);
@@ -398,14 +412,13 @@ static int cmd_pps_start(const struct shell *sh, size_t argc, char **argv)
 			ret = precision_clock_read(entry->clock, &now);
 			if (ret == 0) {
 				ret = precision_clock_output_next_start_time(
-					now, config.period_ns, lead_time_ns,
-					&config.first_rising_time);
+					now, config->period_ns, lead_time_ns,
+					&config->first_rising_time);
 			}
 			if (ret < 0) {
 				break;
 			}
-			ret = precision_clock_output_start_waveform(
-				entry->clock, channel, &config);
+			ret = precision_clock_output_start(entry->clock, channel, &output_config);
 			if (ret != -ETIME ||
 			    attempt + 1U == PRECISION_TIMING_PPS_START_ATTEMPTS) {
 				break;
@@ -420,17 +433,17 @@ static int cmd_pps_start(const struct shell *sh, size_t argc, char **argv)
 		return report_error(sh, argv[1], ret);
 	}
 
-	if (config.width_policy == PRECISION_CLOCK_OUTPUT_WIDTH_EXACT) {
+	if (config->width_policy == PRECISION_CLOCK_OUTPUT_WIDTH_EXACT) {
 		shell_print(sh,
 			    "first_rising_time_ns=%lld period_ns=%lld width_policy=exact "
 			    "pulse_width_ns=%lld",
-			    (long long)config.first_rising_time, (long long)config.period_ns,
-			    (long long)config.pulse_width_ns);
+			    (long long)config->first_rising_time, (long long)config->period_ns,
+			    (long long)config->pulse_width_ns);
 	} else {
 		shell_print(
 			sh,
 			"first_rising_time_ns=%lld period_ns=%lld width_policy=provider_default",
-			(long long)config.first_rising_time, (long long)config.period_ns);
+			(long long)config->first_rising_time, (long long)config->period_ns);
 	}
 	return 0;
 }
@@ -444,8 +457,8 @@ static int cmd_pps_stop(const struct shell *sh, size_t argc, char **argv)
 #if defined(CONFIG_PRECISION_CLOCK_OUTPUT)
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	precision_clock_output_commands,
-	SHELL_CMD_ARG(caps, NULL, "Show output capabilities. Usage: caps <name> <channel>",
-		      cmd_output_caps, 3, 0),
+	SHELL_CMD_ARG(caps, NULL, "Discover output channels and capabilities. Usage: caps <name>",
+		      cmd_output_caps, 2, 0),
 	SHELL_CMD_ARG(get, NULL, "Show output status. Usage: get <name> <channel>", cmd_output_get,
 		      3, 0),
 	SHELL_CMD_ARG(waveform, NULL,

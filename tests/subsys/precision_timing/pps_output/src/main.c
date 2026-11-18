@@ -21,7 +21,8 @@
 /* Fake protocol-neutral clock and output-channel provider, guarded by fake_lock. */
 struct fake_clock {
 	struct precision_clock clock;
-	struct precision_clock_output_caps caps;
+	struct precision_clock_output_channel_caps caps;
+	uint32_t channel_count;
 	struct precision_clock_output_status status;
 	precision_time_t offset_ns;
 	precision_time_t stop_advance_ns;
@@ -178,42 +179,44 @@ static int fake_read(const struct precision_clock *precision_clk, precision_time
 	return 0;
 }
 
-static int fake_get_output_caps(const struct precision_clock *precision_clk, uint32_t channel,
+static int fake_output_get_caps(const struct precision_clock *precision_clk,
 				struct precision_clock_output_caps *caps)
 {
 	struct fake_clock *f = precision_clk->data;
 	int error;
 
-	ARG_UNUSED(channel);
-
 	k_mutex_lock(&fake_lock, K_FOREVER);
 	f->caps_calls++;
 	error = f->caps_error;
-	*caps = f->caps;
+	*caps = (struct precision_clock_output_caps){
+		.channel_count = f->channel_count,
+		.channels = f->channel_count == 0U ? NULL : &f->caps,
+	};
 	k_mutex_unlock(&fake_lock);
 
 	return error;
 }
 
 static void fake_mark_active(struct fake_clock *f,
-			     const struct precision_clock_output_waveform_config *config)
+			     const struct precision_clock_output_config *config)
 {
 	f->provider_configured = true;
 	f->status.configured = true;
-	f->status.kind = PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM;
-	f->status.config.waveform = *config;
+	f->status.config = *config;
 	f->status.hardware_active_valid =
 		(f->caps.flags & PRECISION_CLOCK_OUTPUT_CAP_HARDWARE_ACTIVE) != 0U;
 	f->status.hardware_active = f->status.hardware_active_valid;
 }
 
-static int fake_output_start_waveform(const struct precision_clock *precision_clk, uint32_t channel,
-				      const struct precision_clock_output_waveform_config *config)
+static int fake_output_start(const struct precision_clock *precision_clk, uint32_t channel,
+			      const struct precision_clock_output_config *config)
 {
 	struct fake_clock *f = precision_clk->data;
 	int error;
 
-	ARG_UNUSED(channel);
+	if (channel >= f->channel_count) {
+		return -ENOTSUP;
+	}
 
 	k_mutex_lock(&fake_lock, K_FOREVER);
 	f->start_calls++;
@@ -234,7 +237,9 @@ static int fake_output_stop(const struct precision_clock *precision_clk, uint32_
 	struct fake_clock *f = precision_clk->data;
 	int error;
 
-	ARG_UNUSED(channel);
+	if (channel >= f->channel_count) {
+		return -ENOTSUP;
+	}
 
 	k_mutex_lock(&fake_lock, K_FOREVER);
 	f->stop_calls++;
@@ -255,13 +260,15 @@ static int fake_output_stop(const struct precision_clock *precision_clk, uint32_
 	return error;
 }
 
-static int fake_get_output_status(const struct precision_clock *precision_clk, uint32_t channel,
+static int fake_output_get_status(const struct precision_clock *precision_clk, uint32_t channel,
 				  struct precision_clock_output_status *status)
 {
 	struct fake_clock *f = precision_clk->data;
 	int error;
 
-	ARG_UNUSED(channel);
+	if (channel >= f->channel_count) {
+		return -ENOTSUP;
+	}
 
 	k_mutex_lock(&fake_lock, K_FOREVER);
 	f->status_calls++;
@@ -274,10 +281,10 @@ static int fake_get_output_status(const struct precision_clock *precision_clk, u
 
 static const struct precision_clock_api fake_api = {
 	.read = fake_read,
-	.get_output_caps = fake_get_output_caps,
-	.output_start_waveform = fake_output_start_waveform,
+	.output_get_caps = fake_output_get_caps,
+	.output_start = fake_output_start,
 	.output_stop = fake_output_stop,
-	.get_output_status = fake_get_output_status,
+	.output_get_status = fake_output_get_status,
 };
 
 static void fake_init(struct fake_clock *f)
@@ -286,10 +293,10 @@ static void fake_init(struct fake_clock *f)
 	memset(f, 0, sizeof(*f));
 	f->clock.api = &fake_api;
 	f->clock.data = f;
-	f->caps = (struct precision_clock_output_caps){
+	f->channel_count = 1;
+	f->caps = (struct precision_clock_output_channel_caps){
 		.flags = PRECISION_CLOCK_OUTPUT_CAP_WAVEFORM |
 			 PRECISION_CLOCK_OUTPUT_CAP_PROGRAMMABLE_WIDTH,
-		.channel_count = 1,
 		.resolution_ns = 1,
 		.min_lead_time_ns = NSEC_PER_MSEC,
 		.min_period_ns = NSEC_PER_MSEC,
@@ -675,6 +682,41 @@ ZTEST(precision_timing_pps_output, test_start_validates_caps_against_policy)
 	zassert_equal(precision_pps_output_state_get(&caps_error, &state), -EINVAL);
 }
 
+ZTEST(precision_timing_pps_output, test_start_rejects_unavailable_channel)
+{
+	struct precision_pps_output_config config = default_config();
+	struct precision_pps_output_state state;
+
+	TEST_PPS_INSTANCE(pps);
+
+	fake_init(&fake);
+	config.channel = 1;
+	zassert_ok(precision_pps_output_init(&pps, &fake.clock, &config, test_callback, &rec_a));
+	zassert_equal(precision_pps_output_start(&pps), -ENOTSUP);
+	zassert_equal(precision_pps_output_state_get(&pps, &state), -EINVAL);
+	zassert_equal(fake.start_calls, 0);
+	zassert_equal(fake.stop_calls, 0);
+	zassert_equal(fake.status_calls, 0);
+}
+
+ZTEST(precision_timing_pps_output, test_start_rejects_zero_output_channels)
+{
+	struct precision_pps_output_config config = default_config();
+	struct precision_pps_output_state state;
+
+	TEST_PPS_INSTANCE(pps);
+
+	fake_init(&fake);
+	fake.channel_count = 0;
+	zassert_ok(precision_pps_output_init(&pps, &fake.clock, &config, test_callback, &rec_a));
+	zassert_equal(precision_pps_output_start(&pps), -ENOTSUP);
+	zassert_equal(precision_pps_output_state_get(&pps, &state), -EINVAL);
+	zassert_equal(fake.caps_calls, 1);
+	zassert_equal(fake.start_calls, 0);
+	zassert_equal(fake.stop_calls, 0);
+	zassert_equal(fake.status_calls, 0);
+}
+
 ZTEST(precision_timing_pps_output, test_start_rejects_double_start)
 {
 	struct precision_pps_output_config config = default_config();
@@ -791,7 +833,7 @@ ZTEST(precision_timing_pps_output, test_adopts_already_active_matching_output)
 	fake_init(&fake);
 	fake.provider_configured = true;
 	fake.status.configured = true;
-	fake.status.kind = PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM;
+	fake.status.config.kind = PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM;
 	fake.status.config.waveform = (struct precision_clock_output_waveform_config){
 		.first_rising_time = 0,
 		.period_ns = NSEC_PER_SEC,

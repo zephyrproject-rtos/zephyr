@@ -98,10 +98,14 @@ Scheduled clock output
 **********************
 
 :kconfig:option:`CONFIG_PRECISION_CLOCK_OUTPUT` adds optional scheduled-output
-operations to :c:struct:`precision_clock`. Output capabilities are reported per
-channel with :c:func:`precision_clock_output_get_caps`; there is no generic
-capability query for the clock itself. Each missing output callback returns
-``-ENOTSUP`` independently.
+operations to :c:struct:`precision_clock`. The
+:c:func:`precision_clock_output_get_caps` query returns the channel count and a
+read-only table of :c:struct:`precision_clock_output_channel_caps`, so callers
+can discover outputs without first choosing a channel. Limits and supported
+features may differ between channels. The provider owns the table; its address
+and contents remain valid and unchanged for the initialized clock's lifetime.
+No caller allocation or copying of the table is required. Each missing output
+callback returns ``-ENOTSUP`` independently.
 
 Scheduled output and the autonomous PPS service are experimental features:
 :kconfig:option:`CONFIG_PRECISION_CLOCK_OUTPUT` and
@@ -111,9 +115,10 @@ Scheduled output and the autonomous PPS service are experimental features:
 gPTP without either output feature does not introduce an experimental-feature
 dependency.
 
-A channel supports periodic waveforms.
-:c:func:`precision_clock_output_start_waveform`
-accepts an absolute first rising edge, a period, and either a provider-default
+:c:func:`precision_clock_output_start` accepts a
+:c:struct:`precision_clock_output_config` containing the output kind and its
+configuration. The supported kind, ``PRECISION_CLOCK_OUTPUT_KIND_WAVEFORM``,
+describes an absolute first rising edge, a period, and either a provider-default
 or exact high-pulse width. All absolute times are :c:type:`precision_time_t`
 values interpreted in the owning clock's timescale. Periods and widths are
 nanoseconds and must meet the limits and resolution reported for the channel.
@@ -135,7 +140,10 @@ The driver arbitrates access to shared channels.
 :c:func:`precision_clock_output_next_start_time` finds the next period-aligned
 start that satisfies a requested lead time using checked arithmetic. Use
 :c:func:`precision_clock_output_get_status` to inspect an accepted
-configuration, and :c:func:`precision_clock_output_stop` to disable a channel.
+:c:struct:`precision_clock_output_config`, and
+:c:func:`precision_clock_output_stop` to disable a channel. Status queries
+delegate directly to the provider: a capability-query failure does not prevent
+status reporting, and an accepted first edge may already be in the past.
 ``configured`` describes provider ownership; ``hardware_active`` is meaningful
 only when ``hardware_active_valid`` is set. It reports whether the hardware
 output generator is armed or running for the accepted configuration, including
@@ -162,18 +170,23 @@ operations without probing it during adapter initialization.
 Provider operations are called only from thread context and may block.
 Providers may document additional, more restrictive context requirements.
 
-Generic validation checks the waveform against the advertised channel limits.
+Generic start validation checks the requested waveform against the selected
+channel's advertised limits and validates the first edge's lead time using
+checked arithmetic. Providers must return valid capabilities and consistent
+status; the subsystem does not revalidate provider-owned metadata. Providers
+also validate channel indices for stop and status operations.
+
 The provider remains responsible for hardware-specific constraints and channel
-ownership. It must also check that the first edge still meets its programming
-lead time: time can advance or the clock can be stepped after the subsystem's
-preliminary check.
+ownership. It must check that the first edge still meets its programming lead
+time: time can advance or the clock can be stepped after the subsystem's
+preliminary start check.
 
 The extension deliberately uses a protocol-neutral contract rather than adding
 a ``ptp_clock`` periodic-output call: non-PTP clocks can reuse the same provider
 interface and output data types. The PTP driver API only forward declares the
 provider, so drivers without output support do not need precision-timing headers
 or runtime support. Output providers use the public
-:c:struct:`precision_clock_output_waveform_config` and
+:c:struct:`precision_clock_output_config` and
 :c:struct:`precision_clock_output_status` directly; the PTP adapter needs neither
 duplicate structures nor member-by-member conversions.
 
@@ -269,16 +282,19 @@ The shell can list and read registered clocks:
    precision_clock list
    precision_clock get <name>
 
-When scheduled output is enabled, these commands operate on a channel:
+When scheduled output is enabled, discover channels and control their output:
 
 .. code-block:: console
 
-   precision_clock output caps <name> <channel>
+   precision_clock output caps <name>
    precision_clock output get <name> <channel>
    precision_clock output waveform <name> <channel> <first_rising_ns> <period_ns> [pulse_width_ns]
    precision_clock output stop <name> <channel>
    precision_clock pps start <name> <channel> [pulse_width_ns]
    precision_clock pps stop <name> <channel>
+
+The ``caps`` command lists the channel count and each channel's capabilities
+and limits. The other commands select a provider-defined channel index.
 
 The absolute time arguments are nanoseconds in the registered clock's timescale.
 The PPS convenience command chooses a whole-second start with an additional
