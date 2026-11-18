@@ -676,6 +676,15 @@ static int uhc_dwc3_ep0_enqueue(const struct device *dev, struct uhc_transfer *c
 
 	slot->ep0_active_xfer = NULL;
 
+	if (xfer->err != 0) {
+		int rec = xhci_ep0_recover_slot(priv, slot);
+
+		if (rec != 0) {
+			LOG_WRN("EP0 recover after failed xfer (err=%d) failed: %d", xfer->err,
+				rec);
+		}
+	}
+
 	if (xfer->err == 0) {
 		UHC_DWC3_DBG("EP0 xfer OK COMP=%u lenfield=%u", slot->xfer_comp_code,
 			     (unsigned int)(slot->xfer_length & 0xffffffU));
@@ -1228,6 +1237,7 @@ int xhci_cancel_ep_xfer(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot, 
 		slot->xfer_result = err;
 		slot->ep0_active_xfer = NULL;
 		xhci_ep0_ring_sync_from_hw(priv, slot);
+		(void)xhci_ep0_recover_slot(priv, slot);
 		k_sem_give(&slot->xfer_sem);
 	} else {
 		slot->bulk_expect_ioc_trb_phys[dci] = 0ULL;

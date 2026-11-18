@@ -168,6 +168,7 @@ int dwc3_xfer_sem_take_ep0(const struct device *dev, struct uhc_dwc3_data *priv,
 			   struct xhci_dev_slot *slot, k_timeout_t timeout);
 int xhci_address_device_set_address_bsr0(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot);
 int xhci_evaluate_ep0_mps(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot, uint16_t mps);
+int xhci_ep0_recover_slot(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot);
 
 /* xhci_event.c */
 uint32_t xhci_in_bytes_from_event(uint32_t buf_len, uint32_t lenfield, uint32_t cc);
