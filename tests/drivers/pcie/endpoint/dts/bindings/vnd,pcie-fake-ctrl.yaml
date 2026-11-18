@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fake PCIe controller for endpoint isolation testing
+
+compatible: "vnd,pcie-fake-ctrl"
+
+include: pcie-controller.yaml

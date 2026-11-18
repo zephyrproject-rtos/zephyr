@@ -255,6 +255,21 @@ ZTEST(pcie_msi, test_msix_allocator_maps_table)
 	}
 }
 
+ZTEST(pcie_msi, test_msix_allocator_rejects_table_outside_bar)
+{
+	const uint32_t offsets[] = {(uint32_t)sizeof(table) - 8U, (uint32_t)sizeof(table) + 8U};
+	const struct pcie_endpoint ep = {.bdf = TEST_BDF};
+	msi_vector_t vector = {0};
+
+	msix_present = true;
+	for (size_t i = 0U; i < ARRAY_SIZE(offsets); i++) {
+		config_space[MSIX_BASE + PCIE_MSIX_TR] = offsets[i];
+		zassert_equal(pcie_msi_vectors_allocate(&ep, TEST_PRIORITY, &vector, 1U), 0U);
+		zassert_is_null(vector.msix_vector);
+	}
+	zassert_equal(allocation_count, 0U);
+}
+
 ZTEST(pcie_msi, test_its_low_address)
 {
 	its_address = TEST_ADDRESS;
