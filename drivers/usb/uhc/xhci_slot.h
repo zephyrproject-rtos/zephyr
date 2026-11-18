@@ -52,4 +52,6 @@ uint8_t xhci_udev_to_slot_speed(const struct usb_device *udev);
 int xhci_address_device_initial_udev(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot,
 				     struct usb_device *udev, uint8_t port, uint8_t speed);
 
+int xhci_prepare_root_device(struct uhc_dwc3_data *priv, struct usb_device *udev, uint8_t reset_rp);
+
 #endif /* ZEPHYR_USB_XHCI_SLOT_H */
