@@ -99,6 +99,16 @@ config ZTEST_ASSERT_HOOK
 	  error test case. Remember to add ignore_fault tag in yaml file when
 	  using twister to run testing.
 
+config ZTEST_SEMIHOST_EXIT
+	bool "Report the test result to an attached debugger through semihosting"
+	depends on SEMIHOST
+	depends on !ZTEST_SHELL && !ZTEST_RETEST_IF_PASSED
+	imply SEMIHOST_EXIT_ON_FATAL_ERROR
+	help
+	  When the test run ends, call semihost_exit() with status 0 if all
+	  tests passed and 1 otherwise. Without a debugger attached, execution
+	  continues as usual.
+
 config ZTEST_NO_YIELD
 	bool "Do not yield to the idle thread after tests complete"
 	default n if (COVERAGE_DUMP || COVERAGE_SEMIHOST)

@@ -43,4 +43,9 @@ struct semihost_write_args {
 	long len;
 } __packed;
 
+struct semihost_exit_extended_args {
+	long reason;
+	long status;
+} __packed;
+
 #endif /* ZEPHYR_INCLUDE_ARCH_COMMON_SEMIHOST_TYPES_H_ */
