@@ -6,6 +6,8 @@
 
 #include "display_7seg.h"
 
+#include <errno.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
@@ -13,11 +15,17 @@
 const uint8_t DISPLAY_OFF[4] = { CHAR_OFF, CHAR_OFF, CHAR_OFF, CHAR_OFF };
 const uint8_t TEXT_Err[4] = { CHAR_E, CHAR_r, CHAR_r, CHAR_OFF };
 
+#if defined(CONFIG_GPIO_STMPE1600)
+#define X_NUCLEO_53L0A1_EXPANDER(node_id) DEVICE_DT_GET_OR_NULL(node_id)
+#else
+#define X_NUCLEO_53L0A1_EXPANDER(node_id) NULL
+#endif
+
 static bool initialized;
 static const struct device *const expander1 =
-				DEVICE_DT_GET(DT_NODELABEL(expander1_x_nucleo_53l0a1));
+				X_NUCLEO_53L0A1_EXPANDER(DT_NODELABEL(expander1_x_nucleo_53l0a1));
 static const struct device *const expander2 =
-				DEVICE_DT_GET(DT_NODELABEL(expander2_x_nucleo_53l0a1));
+				X_NUCLEO_53L0A1_EXPANDER(DT_NODELABEL(expander2_x_nucleo_53l0a1));
 static const uint8_t digits[16] = {
 	CHAR_0,
 	CHAR_1,
@@ -80,6 +88,16 @@ static const int max_negative_for_base[17] = {
 static int init_display(void)
 {
 	int ret;
+
+	if ((expander1 == NULL) || (expander2 == NULL)) {
+		printk("Error: display expander is not available\n");
+		return -ENODEV;
+	}
+
+	if (!device_is_ready(expander1) || !device_is_ready(expander2)) {
+		printk("Error: display expander is not ready\n");
+		return -ENODEV;
+	}
 
 	for (int i = 0; i < 14; i++) {
 		ret = gpio_pin_configure(expander1, i, GPIO_OUTPUT | GPIO_OUTPUT_INIT_HIGH);
