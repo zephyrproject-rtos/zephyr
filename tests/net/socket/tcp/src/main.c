@@ -2546,6 +2546,53 @@ static void test_msg_waitall_peek(int c_sock, int new_sock)
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf), "Invalid data received");
 }
 
+/* recvmsg() with MSG_PEEK | MSG_WAITALL fills the iovecs in order while data trickles in */
+static void test_msg_waitall_peek_recvmsg(int c_sock, int new_sock)
+{
+	static const char data[] = "0123456789";
+	struct test_msg_waitall_data test_data = {
+		.sock = c_sock,
+		.data = (const uint8_t *)data,
+		.offset = 0,
+		.retries = sizeof(data) - 1,
+	};
+	struct timeval timeo_optval = {
+		.tv_sec = 1,
+		.tv_usec = 0,
+	};
+	uint8_t rx_buf[sizeof(data) - 1] = { 0 };
+	struct net_iovec iov[2] = {
+		{ .iov_base = rx_buf, .iov_len = sizeof(rx_buf) / 2 },
+		{ .iov_base = rx_buf + sizeof(rx_buf) / 2,
+		  .iov_len = sizeof(rx_buf) - sizeof(rx_buf) / 2 },
+	};
+	struct net_msghdr msg = {
+		.msg_iov = iov,
+		.msg_iovlen = ARRAY_SIZE(iov),
+	};
+	struct k_work_sync sync;
+	ssize_t ret;
+
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeo_optval,
+			       sizeof(timeo_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	k_work_init_delayable(&test_data.tx_work, test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+	ret = zsock_recvmsg(new_sock, &msg, ZSOCK_MSG_PEEK | ZSOCK_MSG_WAITALL);
+	(void)k_work_cancel_delayable_sync(&test_data.tx_work, &sync);
+
+	zassert_equal(ret, sizeof(rx_buf), "Invalid length peeked (%zd)", ret);
+	zassert_mem_equal(rx_buf, data, sizeof(rx_buf), "Invalid data peeked");
+
+	/* The peeked data is still queued */
+	memset(rx_buf, 0, sizeof(rx_buf));
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(rx_buf), "Invalid length received (%zd)", ret);
+	zassert_mem_equal(rx_buf, data, sizeof(rx_buf), "Invalid data received");
+}
+
 ZTEST(net_socket_tcp, test_v4_msg_waitall)
 {
 	struct test_msg_waitall_data test_data = {
@@ -2632,6 +2679,7 @@ ZTEST(net_socket_tcp, test_v4_msg_waitall)
 			  "Invalid data received");
 
 	test_msg_waitall_peek(c_sock, new_sock);
+	test_msg_waitall_peek_recvmsg(c_sock, new_sock);
 
 	test_close(new_sock);
 	test_close(s_sock);
@@ -2722,6 +2770,7 @@ ZTEST(net_socket_tcp, test_v6_msg_waitall)
 			  "Invalid data received");
 
 	test_msg_waitall_peek(c_sock, new_sock);
+	test_msg_waitall_peek_recvmsg(c_sock, new_sock);
 
 	test_close(new_sock);
 	test_close(s_sock);
