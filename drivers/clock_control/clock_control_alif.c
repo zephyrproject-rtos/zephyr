@@ -256,7 +256,7 @@ static mem_addr_t alif_get_clk_reg_addr(const struct device *dev, uint32_t clk_i
  * @param clock_id Encoded clock ID from device tree
  * @return Clock frequency in Hz, or 0 if unknown
  */
-static uint32_t alif_get_clock_freq(uint32_t clock_id)
+static int alif_get_input_clock_freq(uint32_t clock_id)
 {
 	uint32_t parent_clk = ALIF_CLOCK_CFG_PARENT_CLK(clock_id);
 
@@ -428,6 +428,30 @@ static int alif_clock_control_off(const struct device *dev,
 	return 0;
 }
 
+/*
+ * Get a clock subsystem's divider mask and offset.
+ *
+ * @param clk_id Encoded clock ID from device tree
+ * @param div_mask Pointer to store the divider mask
+ * @param div_off Pointer to store the divider offset
+ * @return true if clock has divider, false otherwise
+ */
+static bool alif_clock_control_get_div_info(uint32_t clk_id,
+					    uint32_t *div_mask,
+					    uint32_t *div_off)
+{
+	switch (clk_id) {
+	case ALIF_CDC200_PIX_SYST_ACLK:
+	case ALIF_CDC200_PIX_400M_CLK:
+		*div_mask = GENMASK(24, 16);
+		*div_off = 16;
+		return true;
+	/* Add cases for specific clock IDs if needed */
+	default:
+		return false;
+	}
+}
+
 /**
  * @brief Get the clock rate for a peripheral clock
  *
@@ -443,11 +467,21 @@ static int alif_clock_control_get_rate(const struct device *dev,
 				uint32_t *rate)
 {
 	uint32_t clk_id = (uint32_t)sub_system;
+	int ret, clk_div = 1;
+	uint32_t div_mask, div_off;
 
-	ARG_UNUSED(dev);
+	ret = alif_get_input_clock_freq(clk_id);
+	if (ret < 0) {
+		return ret;
+	}
 
-	*rate = alif_get_clock_freq(clk_id);
-
+	if (alif_clock_control_get_div_info(clk_id, &div_mask, &div_off)) {
+		clk_div = (sys_read32(alif_get_clk_reg_addr(dev, clk_id)) & div_mask) >> div_off;
+	}
+	if (clk_div == 0) {
+		return -EINVAL;
+	}
+	*rate = ret / clk_div;
 	return 0;
 }
 
