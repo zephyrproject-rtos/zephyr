@@ -45,7 +45,12 @@ int usbh_device_interface_set(struct usb_device *const udev,
 /* Set USB device address */
 int usbh_device_set_address(struct usb_device *const udev, const uint8_t num);
 
-/* Get root USB device */
+/**
+ * Get a root-tier USB device (lowest hub_port), or NULL.
+ *
+ * @a ctx->root is a cache updated by connect/disconnect; use
+ * usbh_device_find_root_by_port() when the port number is known.
+ */
 struct usb_device *usbh_device_get_root(struct usbh_context *const ctx);
 
 /** Root-tier device on controller port @a port (1-based), or NULL. */
