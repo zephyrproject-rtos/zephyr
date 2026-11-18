@@ -31,6 +31,8 @@ struct gpio_stellaris_runtime {
 	struct gpio_driver_data common;
 	sys_slist_t cb;
 	struct k_spinlock lock;
+	/* Pins with an edge or level set up, the only ones GPIO_INT_MODE_ENABLE_ONLY unmasks */
+	gpio_port_pins_t sensed;
 };
 
 #define GPIO_REG_ADDR(base, offset) (base + offset)
@@ -249,24 +251,40 @@ static int gpio_stellaris_pin_interrupt_configure(const struct device *dev,
 						  enum gpio_int_trig trig)
 {
 	const struct gpio_stellaris_config *cfg = dev->config;
+	struct gpio_stellaris_runtime *context = dev->data;
 	uint32_t base = cfg->base;
 	/* GPIO_INT_WAKEUP does not change how the pin is sensed */
 	uint32_t edges = (uint32_t)trig & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1);
+	int ret = 0;
 
-	/* GPIO_INT_MODE_ENABLE_ONLY and GPIO_INT_MODE_DISABLE_ONLY are not handled */
-	if ((mode != GPIO_INT_MODE_DISABLED) && (mode != GPIO_INT_MODE_EDGE) &&
-	    (mode != GPIO_INT_MODE_LEVEL)) {
-		return -ENOTSUP;
-	}
-
-	if (mode == GPIO_INT_MODE_DISABLED) {
+	switch (mode) {
+	case GPIO_INT_MODE_DISABLED:
+		context->sensed &= ~(gpio_port_pins_t)BIT(pin);
 		/* A clear GPIOIM bit masks the pin's interrupt */
 		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
-	} else {
+		break;
+#ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
+	case GPIO_INT_MODE_DISABLE_ONLY:
+		/* Only the mask changes, so an interrupt latched meanwhile fires on ENABLE_ONLY */
+		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
+		break;
+	case GPIO_INT_MODE_ENABLE_ONLY:
+		if ((context->sensed & BIT(pin)) != 0U) {
+			sys_set_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
+		}
+		break;
+#endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
+	case GPIO_INT_MODE_EDGE:
+	case GPIO_INT_MODE_LEVEL:
 		gpio_stellaris_int_setup(base, pin, mode, edges);
+		context->sensed |= BIT(pin);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int gpio_stellaris_init(const struct device *dev)
