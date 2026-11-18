@@ -853,9 +853,9 @@ static int usbh_device_set_configuration_locked(struct usb_device *const udev, c
 	 */
 	LOG_INF("usbh: HCD commit endpoints - cfg=%u addr=%u speed=%u", num, udev->addr,
 		(unsigned int)udev->speed);
-	err = uhc_add_endpoints(((struct usbh_context *)udev->ctx)->dev, udev);
+	err = uhc_endpoints_commit(((struct usbh_context *)udev->ctx)->dev, udev);
 	if (err) {
-		LOG_ERR("HCD add_endpoints failed: %d", err);
+		LOG_ERR("HCD endpoints_commit failed: %d", err);
 		k_heap_free(&usb_device_heap, udev->cfg_desc);
 		udev->cfg_desc = NULL;
 		return err;
