@@ -7,14 +7,15 @@ if SOC_FAMILY_TI_MSPM
 
 rsource "*/Kconfig"
 
-# Per TRM Section 2.2.7 Peripheral Power Enable Control: wait at least 4 ULPCLK
+# MSPM0 TRM Section 2.2.7 Peripheral Power Enable Control: wait at least 4 ULPCLK
 # clock cycles before accessing the peripheral's memory-mapped registers.
-# ULPCLK will either be equivalent or half of the main MCLK and CPUCLK,
-# yielding the delay time of 8 cycles
+# ULPCLK can be as low as MCLK/4, yielding a worst-case delay of 16 CPUCLK cycles.
+# MSPM33 TRM Section 2.2.6 Peripheral Enable: wait at least 6 ULPCLK cycles.
+# ULPCLK can be as low as MCLK/4, yielding the delay time of 24 CPUCLK cycles.
 config MSPM0_PERIPH_STARTUP_DELAY
 	int
-	default 8
-	depends on SOC_SERIES_MSPM0G || SOC_SERIES_MSPM0L
+	default 24 if SOC_SERIES_MSPM33C
+	default 16
 
 config HWINFO
 	bool
