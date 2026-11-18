@@ -14,7 +14,6 @@
 #include <usbh_class_api.h>
 #include <usbh_desc.h>
 #include <usbh_device.h>
-#include <usbh_device.h>
 #include <usbh_host.h>
 
 #include <usbh_test_common.h>
