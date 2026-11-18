@@ -58,6 +58,7 @@ struct dma_mcux_edma_config {
 	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
 	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
+	bool no_error_irq;
 };
 
 struct dma_mcux_channel_transfer_edma_settings {
@@ -250,19 +251,16 @@ static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel
 		LOG_DBG("IRQ DONE");
 	}
 
-#if DT_INST_PROP(0, no_error_irq)
 	/* Channel shares the same irq for error and transfer complete */
-	else if (flag & kEDMA_ErrorFlag) {
+	else if (DEV_CFG(dev)->no_error_irq && (flag & kEDMA_ErrorFlag)) {
 		EDMA_ClearChannelStatusFlags(DEV_BASE(dev), channel, 0xFFFFFFFF);
 		EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, channel));
 		DEV_CHANNEL_DATA(dev, channel)->busy = false;
 		LOG_INF("channel %d error status is 0x%x", channel, flag);
 	}
-#endif
 }
 
-#if !DT_INST_PROP(0, no_error_irq)
-static void dma_mcux_edma_error_irq_handler(const struct device *dev)
+static void __unused dma_mcux_edma_error_irq_handler(const struct device *dev)
 {
 	int i = 0;
 	uint32_t hw_channel;
@@ -282,7 +280,6 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 	barrier_dsync_fence_full();
 #endif
 }
-#endif
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(channels_shared_irq_mask)
 static void dma_mcux_edma_multi_channels_irq_handler(const struct device *dev, uint32_t idx,
@@ -1294,11 +1291,10 @@ static int dma_mcux_edma_init(const struct device *dev)
 }
 
 /* The shared error interrupt (if have) must be declared as the last element in devicetree */
-#if !DT_INST_PROP(0, no_error_irq)
-#define NUM_IRQS_WITHOUT_ERROR_IRQ(n)	UTIL_DEC(DT_NUM_IRQS(DT_DRV_INST(n)))
-#else
-#define NUM_IRQS_WITHOUT_ERROR_IRQ(n)	DT_NUM_IRQS(DT_DRV_INST(n))
-#endif
+#define NUM_IRQS_WITHOUT_ERROR_IRQ(n)						\
+	COND_CODE_1(DT_INST_PROP(n, no_error_irq),				\
+		    (DT_NUM_IRQS(DT_DRV_INST(n))),				\
+		    (UTIL_DEC(DT_NUM_IRQS(DT_DRV_INST(n)))))
 
 #define IRQ_CONFIG(n, idx, fn)							\
 	{									\
@@ -1426,6 +1422,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 		CHANNELS_PER_MUX(n)						\
 		.irq_config_func = dma_imx_config_func_##n,			\
 		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),	\
+		.no_error_irq = DT_INST_PROP(n, no_error_irq),			\
 		DMA_MCUX_EDMA_CHANNEL_GAP(n)					\
 		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
 		.tcdpool = dma_tcdpool##n,					\
