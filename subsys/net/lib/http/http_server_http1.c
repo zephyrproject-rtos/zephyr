@@ -956,6 +956,9 @@ static int on_header_field(struct http_parser *parser, const char *at,
 						   parser);
 	size_t offset = strnlen(ctx->header_buffer, sizeof(ctx->header_buffer));
 
+	/* A header field ends the value of the previous header */
+	ctx->http2_settings_next = false;
+
 	if (offset + length > sizeof(ctx->header_buffer) - 1U) {
 		LOG_DBG("Header %s too long (by %zu bytes)", "field",
 			offset + length - sizeof(ctx->header_buffer) - 1U);
@@ -981,6 +984,14 @@ static int on_header_field(struct http_parser *parser, const char *at,
 			} else if (strcasecmp(ctx->header_buffer,
 					     "Sec-WebSocket-Protocol") == 0) {
 				ctx->websocket_sec_protocol_next = true;
+			} else if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) &&
+				   strcasecmp(ctx->header_buffer, "HTTP2-Settings") == 0) {
+				if (ctx->http2_settings_present) {
+					ctx->http2_settings_invalid = true;
+				}
+
+				ctx->http2_settings_present = true;
+				ctx->http2_settings_next = true;
 			}
 #ifdef CONFIG_HTTP_SERVER_COMPRESSION
 			else if (strcasecmp(ctx->header_buffer, "Accept-Encoding") == 0) {
@@ -1026,6 +1037,52 @@ static void populate_user_request_header(struct http_header_capture_ctx *ctx, co
 	ctx->count++;
 }
 
+/* The HTTP2-Settings value is kept apart from header_buffer, which can be too
+ * short for the settings a client sends.
+ */
+static void store_http2_settings(struct http_client_ctx *ctx, const char *at, size_t length)
+{
+#if defined(CONFIG_HTTP_SERVER_VERSION_2)
+	if (length > sizeof(ctx->http2_settings) - ctx->http2_settings_len) {
+		LOG_DBG("HTTP2-Settings too long");
+		ctx->http2_settings_invalid = true;
+		return;
+	}
+
+	memcpy(ctx->http2_settings + ctx->http2_settings_len, at, length);
+	ctx->http2_settings_len += (uint8_t)length;
+#else
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(at);
+	ARG_UNUSED(length);
+#endif
+}
+
+/* A server must not upgrade to HTTP/2 unless the request has exactly one
+ * HTTP2-Settings header (RFC 7540, Section 3.2.1). A request without a valid
+ * one is served over HTTP/1.1, as a server may ignore an Upgrade.
+ */
+static void check_http2_upgrade_settings(struct http_client_ctx *ctx)
+{
+#if defined(CONFIG_HTTP_SERVER_VERSION_2)
+	int ret;
+
+	if (!ctx->http2_settings_present || ctx->http2_settings_invalid) {
+		LOG_DBG("No valid HTTP2-Settings, %s", "HTTP/2 upgrade ignored");
+		ctx->http2_upgrade = false;
+		return;
+	}
+
+	ret = http2_apply_upgrade_settings(ctx, ctx->http2_settings, ctx->http2_settings_len);
+	if (ret < 0) {
+		LOG_DBG("Invalid HTTP2-Settings, %s", "HTTP/2 upgrade ignored");
+		ctx->http2_upgrade = false;
+	}
+#else
+	ARG_UNUSED(ctx);
+#endif
+}
+
 static int on_header_value(struct http_parser *parser,
 			   const char *at, size_t length)
 {
@@ -1033,6 +1090,10 @@ static int on_header_value(struct http_parser *parser,
 						   struct http_client_ctx,
 						   parser);
 	size_t offset = strnlen(ctx->header_buffer, sizeof(ctx->header_buffer));
+
+	if (ctx->http2_settings_next && !ctx->http2_settings_invalid) {
+		store_http2_settings(ctx, at, length);
+	}
 
 	if (offset + length > sizeof(ctx->header_buffer) - 1U) {
 		LOG_DBG("Header %s too long (by %zu bytes)", "value",
@@ -1134,6 +1195,16 @@ static int on_headers_complete(struct http_parser *parser)
 
 	http_server_remove_dot_segments(ctx->url_buffer);
 	ctx->parser_state = HTTP1_RECEIVED_HEADER_STATE;
+	ctx->http2_settings_next = false;
+
+	/* The settings apply only to an upgrade that is taken. Without
+	 * "Connection: Upgrade", or in an HTTP/1.0 request, the request is
+	 * served over HTTP/1 and its HTTP2-Settings are not applied.
+	 */
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) && ctx->http2_upgrade &&
+	    parser->upgrade != 0U && !is_client_http10(ctx)) {
+		check_http2_upgrade_settings(ctx);
+	}
 
 	return 0;
 }
@@ -1210,6 +1281,10 @@ int enter_http1_request(struct http_client_ctx *client)
 	client->parser_state = HTTP1_INIT_HEADER_STATE;
 	client->http1_headers_sent = false;
 	client->http1_no_body = false;
+	client->http2_settings_next = false;
+	client->http2_settings_present = false;
+	client->http2_settings_invalid = false;
+	client->http2_settings_len = 0;
 
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
 		client->header_capture_ctx.store_next_value = false;

@@ -248,6 +248,7 @@ config HTTP_SERVER_VERSION_2
 	bool "HTTP/2 support"
 	select NET_TCP if NET_NATIVE
 	select HTTP2_COMMON
+	select BASE64
 	default y
 	help
 	  Support HTTP/2 version.
