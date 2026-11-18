@@ -13,3 +13,14 @@ config SOC_FLASH_ITE_IT51XXX_M1K
 	  The flash M1K driver supports read (up to 1K), write (1K), and erase (4K)
 	  operations. Accessible flash regions include internal e-Flash or external
 	  SPI flash via FSCE# or FSCE1#
+
+if SOC_FLASH_ITE_IT51XXX_M1K
+
+config FLASH_IT51XXX_M1K_SHARED_REGS
+	bool
+	default y if SOC_IT51526AW || SOC_IT51526BW
+	help
+	  The M1K engine shares lower bound address registers between program and
+	  erase operations. These variants also use a two-bit read command field.
+
+endif # SOC_FLASH_ITE_IT51XXX_M1K
