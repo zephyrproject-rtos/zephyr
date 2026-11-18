@@ -182,10 +182,7 @@ int xhci_reset(struct uhc_dwc3_data *priv, mm_reg_t xhci_base)
 	LOG_DBG("xHCI: max_slots=%u max_ports=%u scratchpads=%u ctx_bytes=%u", priv->max_slots,
 		priv->max_ports, priv->max_scratchpad, priv->ctx_bytes);
 
-	/*
-	 * Full operational reset (xhci_reset): after DWC3 BURST HCRST,
-	 * repeat halt + HCRST + wait so USBCMD/CRCR/CNR match xHCI init.
-	 */
+	/* Single owner: halt, HCRST, wait CNR before xhci_setup(). */
 	ret = xhci_op_reset_full(priv->op_base);
 	if (ret != 0) {
 		return ret;

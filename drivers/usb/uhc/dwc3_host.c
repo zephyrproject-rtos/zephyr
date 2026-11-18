@@ -74,7 +74,6 @@ int dwc3_host_burst_init(const struct device *dev)
 	uint32_t reg;
 	uint8_t caplength;
 	mm_reg_t op_temp;
-	int timeout;
 
 	UHC_DWC3_DBG("DWC3: BURST host init, base 0x%lx", (unsigned long)base);
 
@@ -116,20 +115,7 @@ int dwc3_host_burst_init(const struct device *dev)
 
 	k_busy_wait(5000);
 
-	caplength = XHCI_CAPLENGTH(xhci_readl(base, XHCI_CAP_CAPBASE));
-	op_temp = base + caplength;
-
-	xhci_writel(op_temp, XHCI_OP_USBCMD, XHCI_USBCMD_HCRST);
-
-	timeout = 1000;
-	while ((xhci_readl(op_temp, XHCI_OP_USBCMD) & XHCI_USBCMD_HCRST) && timeout > 0) {
-		k_busy_wait(100);
-		timeout--;
-	}
-	if (timeout == 0) {
-		LOG_ERR("DWC3: HCRST timed out");
-		return -ETIMEDOUT;
-	}
+	/* xHCI HCRST is owned by xhci_op_reset_full() in xhci_reset(). */
 
 	reg = dwc3_readl(base, DWC3_OCTL);
 	reg &= ~DWC3_OCTL_PERIMODE;
