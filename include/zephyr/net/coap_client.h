@@ -243,8 +243,16 @@ struct coap_client {
 	struct coap_client_dedup_entry dedup_cache[CONFIG_COAP_CLIENT_DEDUP_CACHE_SIZE];
 	/* Entry of dedup_cache the next response replaces */
 	uint8_t dedup_next;
-	struct coap_option echo_option;
-	bool send_echo;
+	/* Echo option value kept for the next request to the endpoint it came from */
+	struct {
+		struct coap_option option;
+		/* Socket and address of that endpoint, no address on a connected socket */
+		int fd;
+		struct net_sockaddr_storage addr;
+		net_socklen_t addrlen;
+		/* Whether a value is kept */
+		bool pending;
+	} echo;
 	/** @endcond */
 };
 

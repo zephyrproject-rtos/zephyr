@@ -118,6 +118,46 @@ static void release_internal_request(struct coap_client_internal_request *reques
 	request->unreported_error = 0;
 }
 
+/* RFC 9175, section 2.3: an Echo option value is only sent to the endpoint it
+ * came from. The endpoint of a request is its socket and its address, or the
+ * socket alone for a request without address on a connected socket.
+ */
+static bool kept_echo_is_for(const struct coap_client *client, int sock,
+			     const struct coap_client_internal_request *internal_req)
+{
+	if (!client->echo.pending || client->echo.fd != sock ||
+	    client->echo.addrlen != internal_req->addrlen) {
+		return false;
+	}
+
+	return internal_req->addrlen == 0U ||
+	       net_sockaddr_cmp((const struct net_sockaddr *)&client->echo.addr,
+				(const struct net_sockaddr *)&internal_req->addr);
+}
+
+/* Add the Echo option value kept for the endpoint of this request, if there
+ * is one, to the request. The value is sent once.
+ */
+static int append_kept_echo(struct coap_client *client, int sock,
+			    struct coap_client_internal_request *internal_req)
+{
+	int ret;
+
+	if (!kept_echo_is_for(client, sock, internal_req)) {
+		return 0;
+	}
+
+	ret = coap_packet_append_option(&internal_req->request, COAP_OPTION_ECHO,
+					client->echo.option.value, client->echo.option.len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	client->echo.pending = false;
+
+	return 0;
+}
+
 /* Whether the request went to a multicast address, which does not take
  * CONFIG_COAP_CLIENT_MULTICAST.
  */
@@ -574,14 +614,10 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 		goto release;
 	}
 
-	if (client->send_echo) {
-		ret = coap_packet_append_option(&internal_req->request, COAP_OPTION_ECHO,
-						client->echo_option.value, client->echo_option.len);
-		if (ret < 0) {
-			LOG_ERR("Failed to append echo option");
-			goto release;
-		}
-		client->send_echo = false;
+	ret = append_kept_echo(client, sock, internal_req);
+	if (ret < 0) {
+		LOG_ERR("Failed to append echo option");
+		goto release;
 	}
 
 	coap_client_schedule_poll(client, sock, req, internal_req);
@@ -1181,6 +1217,33 @@ static struct coap_client_internal_request *get_request_with_mid(struct coap_cli
 	return NULL;
 }
 
+/* Keep the Echo option value of a response for the next request to the
+ * endpoint it came from. That is the destination of the request it answers,
+ * as a response from elsewhere does not match the request. Only a multicast
+ * request is answered from another address, the source of the response: a
+ * value without one names no single endpoint, is not kept and leaves an
+ * earlier one in place.
+ */
+static void keep_echo(struct coap_client *client,
+		      const struct coap_client_internal_request *internal_req,
+		      const struct net_sockaddr *from, net_socklen_t fromlen,
+		      const struct coap_option *echo)
+{
+	if (!sent_to_group(internal_req)) {
+		client->echo.addr = internal_req->addr;
+		client->echo.addrlen = internal_req->addrlen;
+	} else if (from->sa_family != NET_AF_UNSPEC) {
+		client->echo.addrlen = MIN(fromlen, sizeof(client->echo.addr));
+		memcpy(&client->echo.addr, from, client->echo.addrlen);
+	} else {
+		return;
+	}
+
+	client->echo.fd = client->fd;
+	client->echo.option = *echo;
+	client->echo.pending = true;
+}
+
 #if CONFIG_COAP_CLIENT_DEDUP_CACHE_SIZE > 0
 /* RFC 7252, section 4.5: whether this message was received before, going by
  * its source and message ID. An Acknowledgment carries a message ID of this
@@ -1575,9 +1638,8 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 
 	if (find_echo_option(response, &echo)) {
 		if (response_code != COAP_RESPONSE_CODE_UNAUTHORIZED) {
-			/* Send echo in next request */
-			client->echo_option = echo;
-			client->send_echo = true;
+			/* Send echo in next request to this endpoint */
+			keep_echo(client, internal_req, addr, addrlen, &echo);
 		} else if (response_type != COAP_TYPE_ACK &&
 			   internal_req->echo_challenge_id == (int32_t)response_id) {
 			/* The retry of an observation keeps its token, so a
@@ -1933,6 +1995,13 @@ void coap_client_cancel_requests(struct coap_client *client)
 	 */
 	cancel_requests_with(client, -ECANCELED);
 	coap_client_wait_for_recv_cycle();
+
+	/* The socket may be closed next and its descriptor reused for another
+	 * peer, which the Echo option value kept for this one is not for.
+	 */
+	k_mutex_lock(&client->lock, K_FOREVER);
+	client->echo.pending = false;
+	k_mutex_unlock(&client->lock);
 }
 
 static bool requests_match(struct coap_client_request *a, struct coap_client_request *b)
