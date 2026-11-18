@@ -222,6 +222,7 @@
 				clocks = <&hfpll>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				max-speed = <4000000>;
 				status = "disabled";
 			};
 

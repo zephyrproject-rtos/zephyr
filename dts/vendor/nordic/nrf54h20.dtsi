@@ -752,6 +752,7 @@
 				clocks = <&hsfll120>;
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				max-speed = <4000000>;
 				zephyr,pm-device-runtime-auto;
 				status = "disabled";
 			};
