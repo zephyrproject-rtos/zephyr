@@ -19,15 +19,15 @@ USB_BUF_POOL_VAR_DEFINE(uhc_ep_pool,
 			CONFIG_UHC_BUF_COUNT, CONFIG_UHC_BUF_POOL_SIZE,
 			0, NULL);
 
-int uhc_submit_event(const struct device *dev,
-		     const enum uhc_event_type type,
-		     const int status)
+int uhc_submit_event_port(const struct device *dev, const enum uhc_event_type type,
+			  const int status, uint8_t port)
 {
 	struct uhc_data *data = dev->data;
 	struct uhc_event drv_evt = {
 		.type = type,
 		.status = status,
 		.dev = dev,
+		.port = port,
 	};
 
 	if (!uhc_is_initialized(dev)) {
@@ -35,6 +35,11 @@ int uhc_submit_event(const struct device *dev,
 	}
 
 	return data->event_cb(dev, &drv_evt);
+}
+
+int uhc_submit_event(const struct device *dev, const enum uhc_event_type type, const int status)
+{
+	return uhc_submit_event_port(dev, type, status, 0);
 }
 
 void uhc_xfer_return(const struct device *dev,
