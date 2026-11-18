@@ -1,0 +1,11 @@
+# Murata SCL3300 3-axis inclinometer sensor driver
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SCL3300
+	bool "Murata SCL3300 sensor"
+	default y
+	depends on DT_HAS_MURATA_SCL3300_ENABLED
+	select SPI
+	help
+	  Enables the Murata SCL3300 3-axis inclinometer sensor driver.
