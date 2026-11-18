@@ -11,7 +11,6 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usbh.h>
-#include <zephyr/usb/usb_ch9.h>
 
 #include "usbh_device.h"
 #include "usbh_ch9.h"
@@ -791,119 +790,10 @@ static int cmd_device_address(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
-static const char *device_list_speed_str(enum usb_device_speed speed)
-{
-	switch (speed) {
-	case USB_SPEED_SPEED_LS:
-		return "LS";
-	case USB_SPEED_SPEED_FS:
-		return "FS";
-	case USB_SPEED_SPEED_HS:
-		return "HS";
-	case USB_SPEED_SPEED_SS:
-		return "SS";
-	default:
-		return "?";
-	}
-}
-
-static const char *device_list_state_str(enum usb_device_state state)
-{
-	switch (state) {
-	case USB_STATE_NOTCONNECTED:
-		return "disc";
-	case USB_STATE_DEFAULT:
-		return "def";
-	case USB_STATE_ADDRESSED:
-		return "addr";
-	case USB_STATE_CONFIGURED:
-		return "cfg";
-	default:
-		return "?";
-	}
-}
-
-static void device_list_class_str(const struct usb_device *udev, char *buf, size_t buflen)
-{
-	uint8_t cls = udev->dev_desc.bDeviceClass;
-
-	if (cls == USB_BCC_HUB) {
-		snprintk(buf, buflen, "hub");
-		return;
-	}
-
-	if (cls == USB_BCC_MASS_STORAGE) {
-		snprintk(buf, buflen, "msc");
-		return;
-	}
-
-	if (cls != 0) {
-		snprintk(buf, buflen, "0x%02x", cls);
-		return;
-	}
-
-	if (udev->cfg_desc != NULL) {
-		const struct usb_cfg_descriptor *cfg = udev->cfg_desc;
-		const void *desc_end = usbh_desc_cfg_end(cfg);
-		const struct usb_desc_header *dhp = (const struct usb_desc_header *)cfg;
-
-		dhp = usbh_desc_get_next(dhp, desc_end);
-		if (dhp != NULL && dhp->bDescriptorType == USB_DESC_INTERFACE) {
-			const struct usb_if_descriptor *ifd = (const struct usb_if_descriptor *)dhp;
-
-			if (ifd->bInterfaceClass == USB_BCC_HUB) {
-				snprintk(buf, buflen, "hub");
-				return;
-			}
-			if (ifd->bInterfaceClass == USB_BCC_MASS_STORAGE) {
-				snprintk(buf, buflen, "msc");
-				return;
-			}
-
-			snprintk(buf, buflen, "if0x%02x", ifd->bInterfaceClass);
-			return;
-		}
-	}
-
-	snprintk(buf, buflen, "dev");
-}
-
-static void device_list_topology_str(const struct usb_device *udev, char *buf, size_t buflen)
-{
-	if (udev->hub == NULL) {
-		snprintk(buf, buflen, "root:%u", udev->hub_port);
-	} else {
-		snprintk(buf, buflen, "hub%u:%u", udev->hub->addr, udev->hub_port);
-	}
-}
-
-static void device_list_driver_str(const struct usb_device *udev, const char *class_s, char *buf,
-				   size_t buflen)
-{
-	STRUCT_SECTION_FOREACH(usbh_class_node, c_node) {
-		const struct usbh_class_data *const c_data = c_node->c_data;
-
-		if (c_node->state == USBH_CLASS_STATE_BOUND && c_data->udev == udev) {
-			snprintk(buf, buflen, "%s", c_data->name);
-			return;
-		}
-	}
-
-	snprintk(buf, buflen, "-");
-}
-
-static void device_list_volume_str(struct usb_device *udev, char *buf, size_t buflen)
-{
-	ARG_UNUSED(udev);
-
-	snprintk(buf, buflen, "-");
-}
-
 static int cmd_device_list(const struct shell *sh, size_t argc, char **argv)
 {
 	struct usbh_context *uhs_ctx;
 	struct usb_device *udev;
-	bool first = true;
 
 	uhs_ctx = get_uhs_ctx_or_error(sh);
 	if (uhs_ctx == NULL) {
@@ -911,27 +801,7 @@ static int cmd_device_list(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&uhs_ctx->udevs, udev, node) {
-		char class_s[16];
-		char attach_s[16];
-		char driver_s[24];
-		char volume_s[16];
-
-		if (first) {
-			shell_print(
-				sh,
-				"addr vid:pid   class state spd attach   driver           volume");
-			first = false;
-		}
-
-		device_list_class_str(udev, class_s, sizeof(class_s));
-		device_list_topology_str(udev, attach_s, sizeof(attach_s));
-		device_list_driver_str(udev, class_s, driver_s, sizeof(driver_s));
-		device_list_volume_str(udev, volume_s, sizeof(volume_s));
-
-		shell_print(sh, "%4u %04x:%04x %5s %5s %3s %-10s %-16s %s", udev->addr,
-			    udev->dev_desc.idVendor, udev->dev_desc.idProduct, class_s,
-			    device_list_state_str(udev->state), device_list_speed_str(udev->speed),
-			    attach_s, driver_s, volume_s);
+		shell_print(sh, "%u", udev->addr);
 	}
 	return 0;
 }
@@ -959,14 +829,10 @@ static int cmd_device_info(const struct shell *sh, size_t argc, char **argv)
 	print_dev_desc_indent(sh, 0, &udev->dev_desc);
 
 	dhp = udev->cfg_desc;
-	if (dhp != NULL) {
-		const void *desc_end = usbh_desc_cfg_end(udev->cfg_desc);
-
-		while (dhp != NULL) {
-			/* Print every entry within wTotalLength */
-			print_desc(sh, dhp);
-			dhp = usbh_desc_get_next(dhp, desc_end);
-		}
+	while (dhp != NULL) {
+		/* Print every entry */
+		print_desc(sh, dhp);
+		dhp = usbh_desc_get_next(dhp);
 	}
 
 	return 0;

@@ -976,6 +976,18 @@ static int usbh_root_default_state_reset_if_attached(struct usb_device *const ud
 	LOG_DBG("usbh: uhc_root_default_state_reset() (descriptor recovery)");
 	return uhc_root_default_state_reset(uhs_ctx->dev, udev);
 }
+
+static bool usbh_first_descriptor_err_retryable(int err)
+{
+	switch (err) {
+	case -ETIMEDOUT:
+	case -EIO:
+	case -EPIPE:
+		return true;
+	default:
+		return false;
+	}
+}
 #endif /* CONFIG_USBH_USB2_ENUM_SCHEME */
 
 static int usbh_device_init_attach(struct usb_device *const udev)
@@ -1067,19 +1079,9 @@ static int usbh_device_init_usb2(struct usb_device *const udev)
 		unsigned int gd;
 
 		for (gd = 0U; gd < gd_tries; gd++) {
-			if (gd > 0U) {
-#if IS_ENABLED(CONFIG_USBH_GET_DESCRIPTOR_ROOT_RESET)
-				if (udev->hub == NULL) {
-					err = usbh_root_default_state_reset_if_attached(udev);
-					if (err != 0) {
-						return err;
-					}
-				} else
-#endif
-					if (CONFIG_USBH_ENUM_RETRY_DELAY_MS > 0) {
-					usbh_enumeration_delay_ms(
-						(uint32_t)CONFIG_USBH_ENUM_RETRY_DELAY_MS);
-				}
+			if (gd > 0U && CONFIG_USBH_ENUM_RETRY_DELAY_MS > 0) {
+				usbh_enumeration_delay_ms(
+					(uint32_t)CONFIG_USBH_ENUM_RETRY_DELAY_MS);
 			}
 			err = usbh_first_get_descriptor_device(udev, &udev->dev_desc);
 			if (err == 0) {
@@ -1087,7 +1089,23 @@ static int usbh_device_init_usb2(struct usb_device *const udev)
 			}
 			LOG_WRN("usbh: GET_DESCRIPTOR/64 try %u/%u failed err=%d", gd + 1U,
 				gd_tries, err);
+			if (!usbh_first_descriptor_err_retryable(err)) {
+				break;
+			}
 		}
+
+#if IS_ENABLED(CONFIG_USBH_GET_DESCRIPTOR_ROOT_RESET)
+		if (err != 0 && udev->hub == NULL && usbh_first_descriptor_err_retryable(err)) {
+			int reset_err = usbh_root_default_state_reset_if_attached(udev);
+
+			if (reset_err != 0) {
+				return reset_err;
+			}
+
+			usbh_ep0_mps0_guess_from_speed(udev);
+			err = usbh_first_get_descriptor_device(udev, &udev->dev_desc);
+		}
+#endif
 	}
 	if (err) {
 		LOG_ERR("Failed first GET_DESCRIPTOR (64), err=%d", err);
@@ -1149,17 +1167,6 @@ static int usbh_device_init_usb2(struct usb_device *const udev)
 
 	LOG_DBG("usbh: GET_DESCRIPTOR device full (after SET_ADDRESS)");
 	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
-#if IS_ENABLED(CONFIG_USBH_GET_DESCRIPTOR_ROOT_RESET)
-	if (err != 0 && udev->hub == NULL) {
-		int reset_err = usbh_root_default_state_reset_if_attached(udev);
-
-		if (reset_err == 0) {
-			err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
-		} else if (reset_err == -ENODEV) {
-			return reset_err;
-		}
-	}
-#endif
 	if (err) {
 		LOG_ERR("Failed to read full device descriptor");
 		return err;
