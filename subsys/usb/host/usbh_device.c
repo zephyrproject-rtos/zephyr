@@ -129,8 +129,8 @@ void usbh_device_free(struct usb_device *const udev)
 	if (udev->addr != 0U) {
 		sys_bitarray_clear_bit(uhs_ctx->addr_ba, udev->addr);
 	}
-	if (udev->slot_id != 0U) {
-		uhc_release_device(uhs_ctx->dev, udev);
+	if (uhc_device_free(uhs_ctx->dev, udev) != 0) {
+		LOG_WRN("HCD device_free failed for addr %u", udev->addr);
 	}
 	if (udev->cfg_desc != NULL) {
 		k_heap_free(&usb_device_heap, udev->cfg_desc);
@@ -369,7 +369,7 @@ static int usbh_assign_device_address(struct usb_device *const udev, uint8_t *co
 		return -EINVAL;
 	}
 
-	err = uhc_assign_address(hcd, udev, &addr);
+	err = uhc_device_address(hcd, udev, &addr);
 	if (err == -ENOTSUP) {
 		err = alloc_device_address(udev, &addr);
 		if (err != 0) {
@@ -851,9 +851,8 @@ static int usbh_device_set_configuration_locked(struct usb_device *const udev, c
 	 * endpoints (Configure Endpoint, bandwidth). Host stack has filled
 	 * udev->ifaces[] and ep_in/ep_out[] with alternate 0 endpoints.
 	 */
-	LOG_INF("usbh: HCD device_configured - cfg=%u addr=%u speed=%u (xHCI Configure Endpoint "
-		"next)",
-		num, udev->addr, (unsigned int)udev->speed);
+	LOG_INF("usbh: HCD commit endpoints - cfg=%u addr=%u speed=%u", num, udev->addr,
+		(unsigned int)udev->speed);
 	err = uhc_add_endpoints(((struct usbh_context *)udev->ctx)->dev, udev);
 	if (err) {
 		LOG_ERR("HCD add_endpoints failed: %d", err);
@@ -955,12 +954,13 @@ static int usbh_device_init_attach(struct usb_device *const udev)
 	int err;
 
 	/* Root-tier: full bus reset. Hub children: hub class resets the port. */
+	err = uhc_device_alloc(uhs_ctx->dev, udev);
+	if (err != 0) {
+		LOG_ERR("Failed to allocate HCD device state");
+		return err;
+	}
+
 	if (udev->hub == NULL) {
-		err = uhc_prepare_enum(uhs_ctx->dev, udev);
-		if (err != 0) {
-			LOG_ERR("Failed to prepare enumeration");
-			return err;
-		}
 		LOG_DBG("usbh: about to uhc_bus_reset()");
 		err = uhc_bus_reset(uhs_ctx->dev);
 		if (err) {
@@ -969,11 +969,6 @@ static int usbh_device_init_attach(struct usb_device *const udev)
 		}
 	} else {
 		LOG_DBG("usbh: hub child on port %u (skip uhc_bus_reset)", udev->hub_port);
-		err = uhc_attach_device(uhs_ctx->dev, udev);
-		if (err != 0) {
-			LOG_ERR("Failed to attach hub child device");
-			return err;
-		}
 	}
 
 	return 0;
@@ -1065,11 +1060,6 @@ static int usbh_device_init_usb2(struct usb_device *const udev)
 		struct usbh_context *const uhs_ctx = udev->ctx;
 
 		LOG_DBG("usbh: second uhc_bus_reset()");
-		err = uhc_prepare_enum(uhs_ctx->dev, udev);
-		if (err != 0) {
-			LOG_ERR("Failed to prepare second bus reset");
-			return err;
-		}
 		err = uhc_bus_reset(uhs_ctx->dev);
 		if (err) {
 			LOG_ERR("Second bus reset failed");
