@@ -562,6 +562,7 @@ static uint8_t _connect(const struct btp_l2cap_connect_v2_cmd *cp,
 		goto fail;
 	}
 
+	bt_conn_unref(conn);
 	return BTP_STATUS_SUCCESS;
 
 fail:
@@ -571,6 +572,7 @@ fail:
 			chan->in_use = false;
 		}
 	}
+	bt_conn_unref(conn);
 	return BTP_STATUS_FAILED;
 }
 
@@ -1235,6 +1237,7 @@ static uint8_t send_echo_req(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	data_len = sys_le16_to_cpu(cp->data_length);
 
 	if (data_len > DATA_MTU) {
+		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1280,6 +1283,7 @@ static uint8_t connless_send(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 
 	if (data_len > DATA_MTU) {
 		LOG_ERR("Data length exceeds MAX buffer len (%u > %u)", data_len, DATA_MTU);
+		bt_conn_unref(conn);
 		return BTP_STATUS_FAILED;
 	}
 
