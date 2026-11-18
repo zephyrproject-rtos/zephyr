@@ -1,6 +1,5 @@
 /*
- * Copyright 2025 NXP
- *
+ * SPDX-FileCopyrightText: Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -66,30 +65,6 @@
 	pinctrl-0 = <&lpuart8_default>;
 	pinctrl-names = "default";
 	status = "okay";
-};
-
-&switch_port0 {
-	pinctrl-0 = <&eth0_default>;
-	pinctrl-names = "default";
-	phy-handle = <&phy0>;
-	phy-connection-type = "mii";
-	zephyr,random-mac-address;
-	status = "disabled";
-};
-
-&switch_port1 {
-	pinctrl-0 = <&eth1_default>;
-	pinctrl-names = "default";
-	phy-handle = <&phy1>;
-	phy-connection-type = "mii";
-	zephyr,random-mac-address;
-	status = "disabled";
-};
-
-/* Internal port */
-&switch_port3 {
-	zephyr,random-mac-address;
-	status = "disabled";
 };
 
 &gpt_hw_timer1 {
