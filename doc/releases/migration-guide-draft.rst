@@ -598,6 +598,15 @@ Bluetooth Host
   :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX` it may be better to increase
   :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFERS` instead of
   :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE`.
+* :c:func:`bt_l2cap_chan_connect` on an LE connection no longer calls the ``disconnected`` and
+  ``released`` callbacks of the channel when it fails for want of a buffer or because the
+  security procedure could not be started. As for the other errors, the channel is unused and
+  can be connected again: applications that free or reuse the channel in ``released`` must do
+  so on the error return. Both :c:func:`bt_l2cap_chan_connect` and
+  :c:func:`bt_l2cap_ecred_chan_connect` now return ``-ECONNRESET`` when the connection is lost,
+  or a channel is disconnected, while they wait for a buffer. Only then are the callbacks called,
+  as on any disconnection and possibly after the return, and the channels must not be freed or
+  reused on the error return.
 
 Bluetooth Mesh
 ==============

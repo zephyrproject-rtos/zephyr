@@ -981,6 +981,9 @@ int bt_l2cap_br_server_unregister(struct bt_l2cap_server *server);
  *  each channel connected() callback will be called. If the connection is
  *  rejected disconnected() callback is called instead.
  *
+ *  A call that fails with an error other than -ECONNRESET calls no callback, and the channels
+ *  can be connected again.
+ *
  *  @warning It is the responsibility of the caller to zero out the
  *  parents of the chan objects.
  *
@@ -990,13 +993,11 @@ int bt_l2cap_br_server_unregister(struct bt_l2cap_server *server);
  *
  *  @return 0 in case of success or negative value in case of error.
  *  @retval -EINVAL @p conn is not an LE connection.
- *  @retval -ENOMEM No channel ID or no buffer for the request is available. No callback is
- *                  called, and the channels can be connected again.
- *  @retval -ENOTCONN @p conn is not connected. No callback is called, and the channels can be
- *                    connected again.
- *  @retval -ENOTCONN The connection was lost, or a channel was disconnected, while waiting for a
- *                    buffer for the request. Every channel gets its callbacks as on any
- *                    disconnection.
+ *  @retval -ENOMEM No channel ID or no buffer for the request is available.
+ *  @retval -ENOTCONN @p conn is not connected.
+ *  @retval -ECONNRESET The connection was lost, or a channel was disconnected, while waiting for
+ *                      a buffer for the request. Every channel gets its callbacks as on any
+ *                      disconnection, possibly after the call returns.
  */
 int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
 				struct bt_l2cap_chan **chans, uint16_t psm);
@@ -1079,6 +1080,9 @@ int bt_l2cap_ecred_chan_reconfigure_explicit(struct bt_l2cap_chan **chans, size_
  *  The return value 0 indicates that the connection process has been successfully initiated, not
  *  that the connection request PDU has been sent.
  *
+ *  On an LE connection, a call that fails with an error other than -ECONNRESET calls no
+ *  callback, and the channel can be connected again.
+ *
  *  @warning It is the responsibility of the caller to zero out the
  *  parent of the chan object.
  *
@@ -1089,8 +1093,10 @@ int bt_l2cap_ecred_chan_reconfigure_explicit(struct bt_l2cap_chan **chans, size_
  *  @return 0 in case of success or negative value in case of error.
  *  @retval -EINVAL @p conn is neither a BR/EDR nor an LE connection.
  *  @retval -ENOTCONN @p conn is not connected.
- *  @retval -ENOTCONN The LE connection was lost while waiting for a buffer. The channel gets its
- *                    callbacks as on any disconnection.
+ *  @retval -ENOMEM No channel ID is available, or on an LE connection no buffer for the request.
+ *  @retval -ECONNRESET The LE connection was lost, or the channel was disconnected, while waiting
+ *                      for a buffer. The channel gets its callbacks as on any disconnection,
+ *                      possibly after the call returns.
  */
 int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 			  uint16_t psm);
