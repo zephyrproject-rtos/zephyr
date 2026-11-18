@@ -1063,6 +1063,106 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire,
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+/* Subrated event skipping only in steady state: while a control procedure is pending
+ * or running, every connection event is used so that an instant is never skipped past,
+ * and the Central is present on the union of the old and new subrated events in subrate
+ * transition mode.
+ */
+static bool conn_subrate_is_steady(struct ll_conn *conn)
+{
+	return (conn->subrate.factor > 1U) && (llcp_lr_peek(conn) == NULL) &&
+	       (llcp_rr_peek(conn) == NULL);
+}
+
+/* Connection-event scheduler for subrating (Core Spec Vol 6, Part B, 4.5.1).
+ * Given the event that just completed, advance the rolling connSubrateBaseEvent
+ * / continuation countdown and return the number of events to skip (the LLL
+ * latency_event; the event counter advances by latency_event+1):
+ *   - present on subrated events, where (event - base) mod factor == 0;
+ *   - the Peripheral additionally skips connPeripheralLatency subrated events
+ *     when idle (the Central must stay present on every subrated event);
+ *   - after a non-empty PDU, stay present for connContinuationNumber events.
+ * Only called in steady state (no active LLCP procedure), so it never skips past a
+ * connection update instant.
+ */
+static uint16_t conn_subrate_latency_event(struct ll_conn *conn, uint8_t has_nonempty_pdu,
+					   bool have_tx)
+{
+	struct lll_conn *lll;
+	bool next_is_subrated;
+	uint16_t next_event;
+	int16_t event_diff;
+	uint16_t factor;
+	uint16_t phase;
+	uint16_t event;
+
+	lll = &conn->lll;
+	factor = conn->subrate.factor;
+
+	/* Event that just completed: the LLL prepare incremented event_counter to
+	 * the next value, and trx_cnt>0 guarantees it ran.
+	 */
+	event = lll->event_counter - 1U;
+
+	/* Position within the subrate cycle; phase 0 marks a subrated event. Only
+	 * (base_event mod factor) matters, so this stays consistent between Central
+	 * and Peripheral even though each applies the new parameters at a slightly
+	 * different event counter. Use the signed event distance so the phase is
+	 * correct even when base_event is still ahead of the counter (subrate_apply
+	 * seeds it a few events in the future) or the 16-bit counter has wrapped - a
+	 * plain unsigned (event - base) % factor is only right when factor divides
+	 * 65536 (i.e. powers of two).
+	 */
+	event_diff = (int16_t)(event - conn->subrate.base_event);
+	phase = (uint16_t)(((event_diff % (int16_t)factor) + (int16_t)factor) % (int16_t)factor);
+	next_is_subrated = true;
+
+	/* Re-anchor base_event to the current subrated event. Recomputing it from
+	 * the (shared) event counter and phase every event keeps the two sides in
+	 * step and stops it lagging during a continuation window - otherwise
+	 * base_event + factor could fall at or before the current event and the
+	 * returned skip count would underflow.
+	 */
+	conn->subrate.base_event = event - phase;
+
+	/* Reload the continuation countdown after data activity; clear it on a
+	 * subrated event with no activity so it does not leak across cycles.
+	 */
+	if (has_nonempty_pdu != 0U) {
+		conn->subrate.cont_num_left = conn->subrate.continuation_number;
+	} else if (phase == 0U) {
+		conn->subrate.cont_num_left = 0U;
+	}
+
+	if (conn->subrate.cont_num_left > 0U) {
+		conn->subrate.cont_num_left--;
+		next_is_subrated = false;
+	}
+
+	if (next_is_subrated) {
+		/* Next subrated event strictly after the current one. */
+		next_event = conn->subrate.base_event + factor;
+
+#if defined(CONFIG_BT_PERIPHERAL)
+		/* Peripheral latency stacks only on the Peripheral, when idle:
+		 * skip connPeripheralLatency additional subrated events. The
+		 * Central stays present on every subrated event so the Peripheral
+		 * can always reach it.
+		 */
+		if ((lll->role == BT_HCI_ROLE_PERIPHERAL) && !have_tx &&
+		    lll->periph.latency_enabled) {
+			next_event += factor * conn->subrate.peripheral_latency;
+		}
+#endif /* CONFIG_BT_PERIPHERAL */
+	} else {
+		next_event = event + 1U;
+	}
+
+	return (uint16_t)(next_event - event) - 1U;
+}
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 void ull_conn_done(struct node_rx_event_done *done)
 {
 	uint32_t ticks_drift_minus;
@@ -1163,6 +1263,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
 		} else if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+			bool have_tx;
+
 			if (!conn->periph.drift_skip) {
 				ull_drift_ticks_get(done, &ticks_drift_plus,
 						    &ticks_drift_minus);
@@ -1179,14 +1281,35 @@ void ull_conn_done(struct node_rx_event_done *done)
 				ull_conn_tx_demux(UINT8_MAX);
 			}
 
-			if (ull_tx_q_peek(&conn->tx_q) ||
-			    memq_peek(lll->memq_tx.head,
-				      lll->memq_tx.tail, NULL)) {
+			have_tx = ull_tx_q_peek(&conn->tx_q) ||
+				  memq_peek(lll->memq_tx.head,
+					    lll->memq_tx.tail, NULL);
+
+			if (0) {
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+			} else if (conn_subrate_is_steady(conn)) {
+				lll->latency_event = conn_subrate_latency_event(
+					conn, done->extra.has_nonempty_pdu, have_tx);
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+			} else if (have_tx) {
 				lll->latency_event = 0U;
 			} else if (lll->periph.latency_enabled) {
 				lll->latency_event = lll->latency;
 			}
 #endif /* CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SUBRATING)
+		} else if (lll->role == BT_HCI_ROLE_CENTRAL) {
+			/* The Central stays present on every subrated event (no
+			 * peripheral latency stacking for the Central role). When
+			 * not subrating, it is present on every event.
+			 */
+			if (conn_subrate_is_steady(conn)) {
+				lll->latency_event = conn_subrate_latency_event(
+					conn, done->extra.has_nonempty_pdu, false);
+			} else {
+				lll->latency_event = 0U;
+			}
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SUBRATING */
 		}
 
 		/* Reset connection failed to establish countdown */
@@ -1262,7 +1385,24 @@ void ull_conn_done(struct node_rx_event_done *done)
 			conn->supervision_expire -= elapsed_event;
 
 			/* break latency */
-			lll->latency_event = 0U;
+#if defined(CONFIG_BT_CTLR_SUBRATING) && defined(CONFIG_BT_CENTRAL)
+			/* While subrating, the Central is present on every subrated
+			 * event but the Peripheral may legitimately skip subrated
+			 * events (subrate peripheral latency). A missing packet at the
+			 * Central is therefore expected and must NOT break its subrate
+			 * skip - doing so collapses the Central to full rate until the
+			 * Peripheral reappears (one resync burst per subrate cycle).
+			 * The supervision counter still elapses (above) and the link is
+			 * dropped on true timeout below; only break latency to
+			 * re-acquire when genuinely close to that timeout.
+			 */
+			if (!((lll->role == BT_HCI_ROLE_CENTRAL) &&
+			      (conn->subrate.factor > 1U)) ||
+			    (conn->supervision_expire <= 6U))
+#endif /* CONFIG_BT_CTLR_SUBRATING && CONFIG_BT_CENTRAL */
+			{
+				lll->latency_event = 0U;
+			}
 
 			if (lll->interval >= BT_HCI_LE_INTERVAL_MIN) {
 				conn_interval_us = lll->interval *
