@@ -14,6 +14,7 @@
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define NUM_THREADS CONFIG_MP_MAX_NUM_CPUS
 #define DELAY_US    50000U
+#define IPI_DRAIN_US 20000U
 
 /**
  * @brief Tests for the per-thread CPU mask / CPU affinity scheduler APIs
@@ -39,6 +40,40 @@ static volatile int worker_ran[NUM_THREADS];
 static volatile int worker_cpu[NUM_THREADS];
 
 K_SEM_DEFINE(worker_sem, 0, NUM_THREADS);
+
+/* Scheduling IPIs received per CPU, counted by z_trace_sched_ipi() */
+static atomic_t ipi_count[CONFIG_MP_MAX_NUM_CPUS];
+
+void z_trace_sched_ipi(void);
+
+void z_trace_sched_ipi(void)
+{
+	(void)atomic_inc(&ipi_count[_current_cpu->id]);
+}
+
+/* Mask of CPUs other than CPU 0 that received a scheduling IPI */
+static uint32_t secondary_ipi_mask(void)
+{
+	unsigned int ncpus = arch_num_cpus();
+	uint32_t mask = 0U;
+
+	for (unsigned int i = 1U; i < ncpus; i++) {
+		if (atomic_get(&ipi_count[i]) != 0) {
+			mask |= BIT(i);
+		}
+	}
+
+	return mask;
+}
+
+static void clear_ipi_counts(void)
+{
+	unsigned int ncpus = arch_num_cpus();
+
+	for (unsigned int i = 0U; i < ncpus; i++) {
+		atomic_clear(&ipi_count[i]);
+	}
+}
 
 static int curr_cpu(void)
 {
@@ -280,6 +315,14 @@ ZTEST(cpu_mask, test_cpu_mask_disable_local_cpu)
 			      STACK_SIZE, worker_fn,
 			      INT_TO_POINTER(0), NULL, NULL,
 			      prio, 0, K_FOREVER);
+
+	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU)) {
+		/* New threads start with only CPU 0 enabled; widen the mask so
+		 * that disabling the local CPU leaves a non-empty mask.
+		 */
+		ret = k_thread_cpu_mask_enable_all(tid);
+		zassert_equal(ret, 0, "k_thread_cpu_mask_enable_all failed: %d", ret);
+	}
 
 	ret = k_thread_cpu_mask_disable(tid, local);
 	zassert_equal(ret, 0, "k_thread_cpu_mask_disable failed: %d", ret);
@@ -718,6 +761,271 @@ ZTEST(cpu_mask, test_cpu_mask_pin_persists_across_yield)
 	for (unsigned int i = 0U; i < ncpus; i++) {
 		k_thread_join(&worker_threads[i], K_FOREVER);
 	}
+}
+
+/**
+ * @brief Verify that new threads default to CPU 0 with DEFAULT_SINGLE_CPU.
+ *
+ * @ingroup kernel_cpu_mask_tests
+ *
+ * @details
+ * With CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU a newly created thread has only
+ * logical CPU 0 in its CPU mask and must run on CPU 0. Skipped when the
+ * option is disabled.
+ *
+ * Test steps:
+ * - Create a high-priority thread in the K_FOREVER state.
+ * - Inspect the thread's CPU mask.
+ * - Start the thread, wait for it to run, and read back its recorded CPU id.
+ *
+ * Expected result:
+ * - The CPU mask is BIT(0) and the thread runs on CPU 0.
+ *
+ * @see CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU
+ */
+ZTEST(cpu_mask, test_cpu_mask_default_single_cpu)
+{
+	if (!IS_ENABLED(CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU)) {
+		ztest_test_skip();
+	}
+
+	k_tid_t tid;
+	int prio = k_thread_priority_get(k_current_get()) - 1;
+	int ret;
+
+	reset_state();
+
+	tid = k_thread_create(&worker_threads[0], worker_stacks[0],
+			      STACK_SIZE, worker_fn,
+			      INT_TO_POINTER(0), NULL, NULL,
+			      prio, 0, K_FOREVER);
+
+	zassert_equal(tid->base.cpu_mask, BIT(0),
+		      "unexpected default CPU mask 0x%x", tid->base.cpu_mask);
+
+	k_thread_start(tid);
+
+	ret = k_sem_take(&worker_sem, K_MSEC(2000));
+	zassert_equal(ret, 0, "thread did not run");
+
+	zassert_equal(worker_cpu[0], 0,
+		      "thread ran on CPU %d, expected 0", worker_cpu[0]);
+
+	k_thread_join(tid, K_FOREVER);
+}
+
+/**
+ * @brief Verify that a default CPU 0 mask can be moved to another CPU.
+ *
+ * @ingroup kernel_cpu_mask_tests
+ *
+ * @details
+ * With CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU, enabling CPU 1 and disabling CPU 0
+ * before the thread starts must make it run on CPU 1. Skipped when the
+ * option is disabled.
+ *
+ * Test steps:
+ * - Create a high-priority thread in the K_FOREVER state.
+ * - Enable CPU 1 and disable CPU 0 in its mask.
+ * - Start the thread, wait for it to run, and read back its recorded CPU id.
+ *
+ * Expected result:
+ * - The thread runs on CPU 1.
+ *
+ * @see k_thread_cpu_mask_enable()
+ * @see k_thread_cpu_mask_disable()
+ */
+ZTEST(cpu_mask, test_cpu_mask_default_single_cpu_widen)
+{
+	if (!IS_ENABLED(CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU)) {
+		ztest_test_skip();
+	}
+
+	k_tid_t tid;
+	int prio = k_thread_priority_get(k_current_get()) - 1;
+	int ret;
+
+	reset_state();
+
+	tid = k_thread_create(&worker_threads[0], worker_stacks[0],
+			      STACK_SIZE, worker_fn,
+			      INT_TO_POINTER(0), NULL, NULL,
+			      prio, 0, K_FOREVER);
+
+	ret = k_thread_cpu_mask_enable(tid, 1);
+	zassert_equal(ret, 0, "k_thread_cpu_mask_enable failed: %d", ret);
+
+	ret = k_thread_cpu_mask_disable(tid, 0);
+	zassert_equal(ret, 0, "k_thread_cpu_mask_disable failed: %d", ret);
+
+	k_thread_start(tid);
+
+	ret = k_sem_take(&worker_sem, K_MSEC(2000));
+	zassert_equal(ret, 0, "thread did not run on CPU 1");
+
+	zassert_equal(worker_cpu[0], 1,
+		      "thread ran on CPU %d, expected 1", worker_cpu[0]);
+
+	k_thread_join(tid, K_FOREVER);
+}
+
+/**
+ * @brief Verify that early kernel threads stay on CPU 0 with DEFAULT_SINGLE_CPU.
+ *
+ * @ingroup kernel_cpu_mask_tests
+ *
+ * @details
+ * Threads created before application code runs, such as the system
+ * workqueue and the test thread, inherit the default CPU mask. Skipped when
+ * CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU is disabled.
+ *
+ * Test steps:
+ * - Read the CPU mask of the system workqueue thread.
+ * - Read the CPU mask of the calling (ztest) thread.
+ *
+ * Expected result:
+ * - Both masks are BIT(0).
+ *
+ * @see CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU
+ */
+ZTEST(cpu_mask, test_cpu_mask_default_single_cpu_early_threads)
+{
+	if (!IS_ENABLED(CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU)) {
+		ztest_test_skip();
+	}
+
+	k_tid_t self = k_current_get();
+	k_tid_t wq = k_work_queue_thread_get(&k_sys_work_q);
+
+	zassert_equal(wq->base.cpu_mask, BIT(0),
+		      "system workqueue CPU mask 0x%x", wq->base.cpu_mask);
+
+	zassert_equal(self->base.cpu_mask, BIT(0),
+		      "test thread CPU mask 0x%x", self->base.cpu_mask);
+}
+
+/**
+ * @brief Verify that idle threads keep an all-CPU mask with DEFAULT_SINGLE_CPU.
+ *
+ * @ingroup kernel_cpu_mask_tests
+ *
+ * @details
+ * Idle threads are exempt from the CPU 0 default; their mask must keep every
+ * bit set. Skipped when CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU is disabled.
+ *
+ * Test steps:
+ * - For each CPU, read the CPU mask of its idle thread.
+ *
+ * Expected result:
+ * - Every idle thread's mask has all bits set.
+ *
+ * @see CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU
+ */
+ZTEST(cpu_mask, test_cpu_mask_default_single_cpu_idle_exempt)
+{
+	if (!IS_ENABLED(CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU)) {
+		ztest_test_skip();
+	}
+
+	unsigned int ncpus = arch_num_cpus();
+
+	for (unsigned int i = 0U; i < ncpus; i++) {
+		struct k_thread *idle_thread = _kernel.cpus[i].idle_thread;
+
+		zassert_not_null(idle_thread, "no idle thread for CPU %u", i);
+		zassert_equal(idle_thread->base.cpu_mask, (uint32_t)-1,
+			      "idle thread %u CPU mask 0x%x", i,
+			      idle_thread->base.cpu_mask);
+	}
+}
+
+/**
+ * @brief Verify that threads defaulting to CPU 0 do not send scheduling IPIs.
+ *
+ * @ingroup kernel_cpu_mask_tests
+ *
+ * @details
+ * With CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU and CONFIG_IPI_OPTIMIZE, a
+ * thread made ready on CPU 0 with the default CPU 0 mask must not cause a
+ * scheduling IPI to any other CPU. A thread whose mask was widened to all CPUs
+ * must still cause one, which shows that the IPI counting hook works. Skipped
+ * unless both options and CONFIG_TRACE_SCHED_IPI are enabled.
+ *
+ * Test steps:
+ * - Let IPIs from earlier tests drain, then clear the per-CPU IPI counts.
+ * - Start a high-priority thread with the default CPU 0 mask and wait for it
+ *   to run.
+ * - Wait for any IPI to be delivered and read the counts.
+ * - Clear the counts, start a high-priority thread whose mask was widened with
+ *   k_thread_cpu_mask_enable_all() and wait for it to run.
+ * - Wait for an IPI to reach a CPU other than CPU 0.
+ *
+ * Expected result:
+ * - No CPU other than CPU 0 receives an IPI for the default-mask thread.
+ * - At least one CPU other than CPU 0 receives an IPI for the widened thread.
+ *
+ * @see CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU
+ * @see CONFIG_IPI_OPTIMIZE
+ */
+ZTEST(cpu_mask, test_cpu_mask_default_single_cpu_no_ipi)
+{
+	if (!IS_ENABLED(CONFIG_SCHED_CPU_MASK_DEFAULT_SINGLE_CPU) ||
+	    !IS_ENABLED(CONFIG_IPI_OPTIMIZE) ||
+	    !IS_ENABLED(CONFIG_TRACE_SCHED_IPI)) {
+		ztest_test_skip();
+	}
+
+	k_tid_t tid;
+	int prio = k_thread_priority_get(k_current_get()) - 1;
+	int ret;
+
+	zassert_equal(curr_cpu(), 0, "test thread not on CPU 0");
+
+	reset_state();
+
+	tid = k_thread_create(&worker_threads[0], worker_stacks[0],
+			      STACK_SIZE, worker_fn,
+			      INT_TO_POINTER(0), NULL, NULL,
+			      prio, 0, K_FOREVER);
+
+	k_busy_wait(IPI_DRAIN_US);
+	clear_ipi_counts();
+
+	k_thread_start(tid);
+
+	ret = k_sem_take(&worker_sem, K_MSEC(2000));
+	zassert_equal(ret, 0, "thread did not run");
+	zassert_equal(worker_cpu[0], 0,
+		      "thread ran on CPU %d, expected 0", worker_cpu[0]);
+
+	k_busy_wait(IPI_DRAIN_US);
+	zassert_equal(secondary_ipi_mask(), 0U,
+		      "CPU 0 thread sent IPIs to CPU mask 0x%x",
+		      secondary_ipi_mask());
+
+	k_thread_join(tid, K_FOREVER);
+
+	/* Control: a thread that may run on any CPU must still send an IPI */
+	tid = k_thread_create(&worker_threads[1], worker_stacks[1],
+			      STACK_SIZE, worker_fn,
+			      INT_TO_POINTER(1), NULL, NULL,
+			      prio, 0, K_FOREVER);
+
+	ret = k_thread_cpu_mask_enable_all(tid);
+	zassert_equal(ret, 0, "k_thread_cpu_mask_enable_all failed: %d", ret);
+
+	clear_ipi_counts();
+
+	k_thread_start(tid);
+
+	ret = k_sem_take(&worker_sem, K_MSEC(2000));
+	zassert_equal(ret, 0, "widened thread did not run");
+
+	zassert_true(WAIT_FOR(secondary_ipi_mask() != 0U, IPI_DRAIN_US,
+			      k_busy_wait(10)),
+		     "widened thread sent no IPI to another CPU");
+
+	k_thread_join(tid, K_FOREVER);
 }
 
 ZTEST_SUITE(cpu_mask, NULL, NULL, NULL, NULL, NULL);
