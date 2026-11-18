@@ -983,6 +983,101 @@ static ZTEST(host_l2cap_le_tx, test_le_connect_secure_lost)
 	le_connect_lost(BT_SECURITY_L2);
 }
 
+/* Refuse the LE Credit Based Connection Request that the Host sent */
+static void le_conn_refuse(void)
+{
+	struct net_buf *buf;
+
+	buf = sig_cmd(BT_L2CAP_LE_CONN_RSP, tx_sig(BT_L2CAP_LE_CONN_REQ));
+	net_buf_add_le16(buf, 0U);
+	net_buf_add_le16(buf, 0U);
+	net_buf_add_le16(buf, 0U);
+	net_buf_add_le16(buf, 0U);
+	net_buf_add_le16(buf, BT_L2CAP_LE_ERR_PSM_NOT_SUPP);
+	recv_sig(buf);
+}
+
+/* The channel of a connect that sent no request got no callback, is off the
+ * connection, and can be connected again
+ */
+static void le_connect_unused(struct bt_l2cap_le_chan *ch)
+{
+	zassert_equal(atomic_get(&lost_disconnected), 0);
+	zassert_equal(atomic_get(&lost_released), 0);
+	zassert_is_null(ch->chan.conn);
+	zassert_equal(ch->state, BT_L2CAP_DISCONNECTED);
+	zassert_is_null(bt_l2cap_le_lookup_rx_cid(conn, ch->rx.cid));
+
+	ch->required_sec_level = BT_SECURITY_L1;
+	zassert_ok(bt_l2cap_chan_connect(conn, &ch->chan, PSM));
+	le_conn_refuse();
+	tx_none();
+	zassert_equal(atomic_get(&lost_released), 1);
+}
+
+/* No buffer is left for the Connection Request */
+static ZTEST(host_l2cap_le_tx, test_le_connect_no_buf)
+{
+	static struct bt_l2cap_le_chan no_buf_chan;
+
+	(void)atomic_clear(&lost_disconnected);
+	(void)atomic_clear(&lost_released);
+	no_buf_chan.chan.ops = &lost_chan_ops;
+
+	host_pdus_take();
+	zassert_equal(bt_l2cap_chan_connect(conn, &no_buf_chan.chan, PSM), -ENOMEM);
+	host_pdus_give();
+	tx_none();
+
+	le_connect_unused(&no_buf_chan);
+}
+
+/* The security procedure cannot be started: without input and output
+ * capabilities, a peripheral cannot request MITM protection
+ */
+static ZTEST(host_l2cap_le_tx, test_le_connect_secure_fail)
+{
+	static struct bt_l2cap_le_chan secure_chan;
+	int err;
+
+	(void)atomic_clear(&lost_disconnected);
+	(void)atomic_clear(&lost_released);
+	secure_chan.chan.ops = &lost_chan_ops;
+	secure_chan.required_sec_level = BT_SECURITY_L3;
+
+	conn->role = BT_HCI_ROLE_PERIPHERAL;
+	err = bt_l2cap_chan_connect(conn, &secure_chan.chan, PSM);
+	conn->role = BT_HCI_ROLE_CENTRAL;
+	zassert_equal(err, -EINVAL);
+	tx_none();
+
+	le_connect_unused(&secure_chan);
+}
+
+/* A channel that its owner disconnects while the connect waits for a buffer
+ * belongs to that disconnection: no Connection Request is sent for it, and it
+ * is torn down once, by the Disconnection Response after the return
+ */
+static ZTEST(host_l2cap_le_tx, test_le_connect_disconnected)
+{
+	static struct bt_l2cap_le_chan disc_chan;
+
+	(void)atomic_clear(&lost_disconnected);
+	(void)atomic_clear(&lost_released);
+	disc_chan.chan.ops = &lost_chan_ops;
+
+	call_start(le_connect, &disc_chan.chan);
+	zassert_ok(bt_l2cap_chan_disconnect(&disc_chan.chan));
+
+	zassert_equal(call_end(true), -ECONNRESET);
+	zassert_equal(atomic_get(&lost_released), 0);
+
+	(void)disconn_accept();
+	tx_none();
+	zassert_equal(atomic_get(&lost_disconnected), 1);
+	zassert_equal(atomic_get(&lost_released), 1);
+}
+
 static int ecred_connect(void *arg)
 {
 	return bt_l2cap_ecred_chan_connect(conn, arg, PSM);
@@ -1010,6 +1105,34 @@ static ZTEST(host_l2cap_le_tx, test_ecred_connect_one_disconnected)
 	zassert_equal(atomic_get(&lost_released), 2);
 	zassert_is_null(ecred_chans[1].chan.conn);
 	tx_none();
+}
+
+/* A channel of a Credit Based Connection Request that its owner disconnects
+ * while the request waits for a buffer belongs to that disconnection: no
+ * request is sent, the other channel is torn down, and the disconnected one
+ * is torn down by its Disconnection Response after the return
+ */
+static ZTEST(host_l2cap_le_tx, test_ecred_connect_disconnected)
+{
+	static struct bt_l2cap_le_chan ecred_chans[2];
+	struct bt_l2cap_chan *chans[] = { &ecred_chans[0].chan, &ecred_chans[1].chan, NULL };
+
+	(void)atomic_clear(&lost_released);
+	ARRAY_FOR_EACH(ecred_chans, i) {
+		ecred_chans[i].chan.ops = &lost_chan_ops;
+	}
+
+	call_start(ecred_connect, chans);
+	zassert_ok(bt_l2cap_chan_disconnect(&ecred_chans[0].chan));
+
+	zassert_equal(call_end(true), -ECONNRESET);
+	zassert_equal(atomic_get(&lost_released), 1);
+	zassert_is_null(ecred_chans[1].chan.conn);
+
+	(void)disconn_accept();
+	tx_none();
+	zassert_equal(atomic_get(&lost_released), 2);
+	zassert_is_null(ecred_chans[0].chan.conn);
 }
 
 static int eatt_connect(void *arg)
