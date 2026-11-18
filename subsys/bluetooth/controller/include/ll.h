@@ -261,6 +261,8 @@ uint8_t ll_apto_get(uint16_t handle, uint16_t *const apto);
 uint8_t ll_apto_set(uint16_t handle, uint16_t apto);
 
 uint8_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_time);
+uint8_t ll_fsu_req_send(uint16_t handle, uint16_t fsu_min, uint16_t fsu_max, uint8_t phys,
+			uint16_t spacing_type);
 void ll_length_default_get(uint16_t *const max_tx_octets,
 			   uint16_t *const max_tx_time);
 uint8_t ll_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time);
