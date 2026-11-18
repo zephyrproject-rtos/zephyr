@@ -22,7 +22,6 @@ struct gpio_stellaris_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	uint32_t base;
-	uint32_t port_map;
 	config_func_t config_func;
 };
 
@@ -77,7 +76,6 @@ static int gpio_stellaris_configure(const struct device *dev,
 {
 	const struct gpio_stellaris_config *cfg = dev->config;
 	uint32_t base = cfg->base;
-	uint32_t port_map = cfg->port_map;
 
 	if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0) {
 		return -ENOTSUP;
@@ -88,7 +86,7 @@ static int gpio_stellaris_configure(const struct device *dev,
 	}
 
 	/* Check for pin availability */
-	if (!sys_test_bit((uint32_t)&port_map, pin)) {
+	if (!gpio_port_pin_is_supported(cfg->common.port_pin_mask, pin)) {
 		return -EINVAL;
 	}
 
@@ -328,7 +326,6 @@ static DEVICE_API(gpio, gpio_stellaris_driver_api) = {
 	static const struct gpio_stellaris_config gpio_stellaris_port_## n ##_config = {\
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),				\
 		.base = DT_INST_REG_ADDR(n),			\
-		.port_map = BIT_MASK(DT_INST_PROP(n, ngpios)),		\
 		.config_func = port_## n ##_stellaris_config_func,			\
 	};										\
 											\
