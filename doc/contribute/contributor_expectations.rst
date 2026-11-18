@@ -216,41 +216,71 @@ request that they create an :ref:`RFC proposal <rfcs>`.
 Workflow Suggestions That Help Reviewers
 ========================================
 
-- Describe in the PR what you tested and how: which boards or emulators, which twister scenarios
-  or samples, and what was not tested (for example, hardware you do not have). Reviewers cannot
-  tell the difference between "tested on hardware" and "compiles", so say which it is. For a bug
-  fix, say how the bug was reproduced and that the added test fails without the fix.
+A reviewer should be able to tell what changed, how it was tested, and what has
+changed since the previous review. Making this information easy to find saves
+reviewers time and helps your PR move forward without unnecessary back-and-forth.
 
-- Push follow-up changes as amendments to the commits they belong to (see the
-  :ref:`Contribution workflow`), not as extra "fix review comments" commits.
+Before requesting a review
+--------------------------
 
-- Make dependencies between PRs explicit. If a PR carries commits from another open PR, say
-  so at the top of the description ("Depends on #N; the first two commits belong to #N, review
-  them there") so reviewers do not review the same code twice or comment in the wrong PR. Where
-  possible, keep such a dependent PR as a draft until the PR it depends on has merged, or put
-  both changes in one PR.
+**Explain what you tested.** In the PR description, say how you verified your
+change. Distinguish between building the code, running automated tests, and
+testing on real hardware. Name the boards or emulators, Twister scenarios, or
+samples you used. Also mention anything you could not test, such as hardware
+you do not have access to. For a bug fix, explain how you reproduced the problem
+and, when adding a regression test, confirm that it fails without the fix.
 
-- Do not rebase the PR onto ``main`` while a review is in progress unless there is a merge
-  conflict or CI needs a change that is only on ``main``. GitHub does not implement
-  |git range-diff|_, so after a rebase the reviewer can no longer see what changed since the
-  last round and has to re-read the whole PR, and existing approvals are dismissed. Rebasing
-  after the PR has been approved is fine. If a rebase is unavoidable, push it as a separate
-  update with no other changes and add a comment saying so.
+**Identify dependencies between PRs.** If your PR depends on another open PR,
+make that clear at the beginning of its description. This is particularly
+important when the dependent PR includes commits from the other PR: reviewers
+need to know which changes to review here and which to review elsewhere. For
+example::
 
-- Reply to every review comment, either with the change you made or with why you did not make
-  it. Do not resolve and hide a comment yourself unless you applied the reviewer's
-  recommendation exactly; leave that to the reviewer who raised it. The Zephyr project does not
-  require all comments to be resolved before merge. Leaving some completed discussions open can
-  sometimes be useful to understand the greater picture.
+   Depends on #1234. The first two commits belong to that PR;
+   please review them there.
 
-- Respond to comments using the "Start Review" and "Add Review" green buttons in the "Files
-  changed" view. This allows responding to multiple comments and publishing the responses in
-  bulk. This reduces the number of emails sent to reviewers.
+When possible, keep the dependent PR in draft until its dependency is merged.
+Alternatively, consider combining the changes into one PR if that makes them
+easier to review.
 
-- After pushing changes that address review comments, click "Re-request review" next to each
-  reviewer who requested changes, so the PR shows up in their review queue again. If the push
-  also contains changes that no review comment asked for, such as a rebase or an unrelated fix,
-  say so in a PR comment.
+While a review is in progress
+-----------------------------
+
+**Keep changes focused and the history clean.** When addressing review feedback,
+amend the commits to which the changes belong rather than adding new commits
+such as "fix review comments". See :ref:`Contribution workflow` for guidance
+on updating commits.
+
+**Avoid rebasing onto ``main`` during review.** A rebase makes it harder for
+reviewers to identify what changed since the last round of feedback. GitHub
+does not provide an equivalent of |git range-diff|_ in its review interface,
+so reviewers may have to inspect the entire PR again, and existing approvals
+may be dismissed. Rebase during an active review only when necessary, such as
+to resolve a merge conflict or to pick up a change on ``main`` required by CI.
+If you must rebase, push the rebase separately from other changes and leave a
+comment explaining what you did. Rebasing after the PR has been approved is
+fine, subject to any resulting changes in approval status.
+
+After receiving review feedback
+-------------------------------
+
+**Respond to every comment.** Tell the reviewer what you changed, or explain
+why you chose a different approach. Do not resolve a discussion yourself unless
+you followed the reviewer's recommendation exactly; otherwise, let the
+reviewer who raised the concern decide when it is resolved. Zephyr does not
+require every discussion to be marked resolved before merging. Some completed
+discussions are useful to leave visible for future context.
+
+**Group your replies when practical.** In GitHub's **Files changed** view, use
+**Start a review** and **Add review comment** to prepare several responses,
+then submit them together. This lets reviewers read one coherent response
+instead of receiving a separate notification for every comment.
+
+**Let reviewers know when you're ready for another look.** After pushing
+changes that address their feedback, use **Re-request review** for each reviewer
+who requested changes. If your update includes anything beyond the requested
+fixes, such as unrelated changes or a rebase, call that out in a PR comment so
+reviewers know what else has changed.
 
 .. |git range-diff| replace:: ``git range-diff``
 .. _`git range-diff`: https://git-scm.com/docs/git-range-diff
