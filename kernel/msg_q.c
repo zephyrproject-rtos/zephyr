@@ -427,11 +427,14 @@ static int init_msgq_obj_core_list(void)
 	z_obj_type_init(&obj_type_msgq, K_OBJ_TYPE_MSGQ_ID,
 			offsetof(struct k_msgq, obj_core));
 
-	/* Initialize and link statically defined message queues */
+	/* Initialize statically defined message queues */
 
 	STRUCT_SECTION_FOREACH(k_msgq, msgq) {
-		k_obj_core_init_and_link(K_OBJ_CORE(msgq), &obj_type_msgq);
+		k_obj_core_init(K_OBJ_CORE(msgq), &obj_type_msgq);
 	}
+
+	k_obj_type_init_range(&obj_type_msgq, STRUCT_SECTION_START(k_msgq),
+			      STRUCT_SECTION_END(k_msgq), sizeof(struct k_msgq), false);
 
 	return 0;
 };

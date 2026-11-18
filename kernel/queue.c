@@ -450,11 +450,14 @@ static int init_fifo_obj_core_list(void)
 	z_obj_type_init(&_obj_type_fifo, K_OBJ_TYPE_FIFO_ID,
 			offsetof(struct k_fifo, obj_core));
 
-	/* Initialize and link statically defined fifos */
+	/* Initialize statically defined fifos */
 
 	STRUCT_SECTION_FOREACH(k_fifo, fifo) {
-		k_obj_core_init_and_link(K_OBJ_CORE(fifo), &_obj_type_fifo);
+		k_obj_core_init(K_OBJ_CORE(fifo), &_obj_type_fifo);
 	}
+
+	k_obj_type_init_range(&_obj_type_fifo, STRUCT_SECTION_START(k_fifo),
+			      STRUCT_SECTION_END(k_fifo), sizeof(struct k_fifo), false);
 
 	return 0;
 }
@@ -473,11 +476,14 @@ static int init_lifo_obj_core_list(void)
 	z_obj_type_init(&_obj_type_lifo, K_OBJ_TYPE_LIFO_ID,
 			offsetof(struct k_lifo, obj_core));
 
-	/* Initialize and link statically defined lifo */
+	/* Initialize statically defined lifo */
 
 	STRUCT_SECTION_FOREACH(k_lifo, lifo) {
-		k_obj_core_init_and_link(K_OBJ_CORE(lifo), &_obj_type_lifo);
+		k_obj_core_init(K_OBJ_CORE(lifo), &_obj_type_lifo);
 	}
+
+	k_obj_type_init_range(&_obj_type_lifo, STRUCT_SECTION_START(k_lifo),
+			      STRUCT_SECTION_END(k_lifo), sizeof(struct k_lifo), false);
 
 	return 0;
 }

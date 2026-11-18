@@ -143,12 +143,14 @@ static int init_condvar_obj_core_list(void)
 	z_obj_type_init(&obj_type_condvar, K_OBJ_TYPE_CONDVAR_ID,
 			offsetof(struct k_condvar, obj_core));
 
-	/* Initialize and link statically defined condvars */
+	/* Initialize statically defined condvars */
 
 	STRUCT_SECTION_FOREACH(k_condvar, condvar) {
-		k_obj_core_init_and_link(K_OBJ_CORE(condvar),
-					 &obj_type_condvar);
+		k_obj_core_init(K_OBJ_CORE(condvar), &obj_type_condvar);
 	}
+
+	k_obj_type_init_range(&obj_type_condvar, STRUCT_SECTION_START(k_condvar),
+			      STRUCT_SECTION_END(k_condvar), sizeof(struct k_condvar), false);
 
 	return 0;
 }
