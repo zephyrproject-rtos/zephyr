@@ -122,6 +122,7 @@ unsigned int dwc3_usb2_root_port(const struct uhc_dwc3_data *priv,
 void dwc3_build_port_poll_order(unsigned int *order, unsigned int *n_order, unsigned int maxp,
 				unsigned int usb2_first);
 int xhci_reset(struct uhc_dwc3_data *priv, mm_reg_t xhci_base);
+int xhci_root_port_reset(struct uhc_dwc3_data *priv, uint32_t port_off);
 int xhci_setup(struct uhc_dwc3_data *priv);
 int xhci_start(struct uhc_dwc3_data *priv);
 void xhci_post_start_interrupter0(struct uhc_dwc3_data *priv);
