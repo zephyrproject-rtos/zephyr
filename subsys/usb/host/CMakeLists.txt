@@ -11,7 +11,7 @@ zephyr_library_sources(
   usbh_api.c
   usbh_device.c
   usbh_desc.c
-  usbh_hcd.c
+  usbh_class.c
 )
 
 if(CONFIG_USBH_SHELL OR CONFIG_USBH_HUB_CLASS)

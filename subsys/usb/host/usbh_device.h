@@ -25,13 +25,6 @@ struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uin
 
 /* Allocate/free USB device */
 struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx);
-
-struct usb_device *usbh_device_alloc_port(struct usbh_context *const uhs_ctx,
-					  struct usb_device *hub, uint8_t hub_port);
-
-struct usb_device *usbh_device_find_by_port(struct usbh_context *const uhs_ctx,
-					    struct usb_device *hub, uint8_t hub_port);
-
 void usbh_device_free(struct usb_device *const udev);
 
 /* Reset and configure new USB device */
@@ -45,24 +38,14 @@ int usbh_device_interface_set(struct usb_device *const udev,
 /* Set USB device address */
 int usbh_device_set_address(struct usb_device *const udev, const uint8_t num);
 
-/**
- * Get a root-tier USB device (lowest hub_port), or NULL.
- *
- * @a ctx->root is a cache updated by connect/disconnect; use
- * usbh_device_find_root_by_port() when the port number is known.
- */
+/* Get root USB device */
 struct usb_device *usbh_device_get_root(struct usbh_context *const ctx);
 
-/** Root-tier device on controller port @a port (1-based), or NULL. */
-struct usb_device *usbh_device_find_root_by_port(struct usbh_context *const ctx, uint8_t port);
-
-/* Check if USB device is controller root-tier (not an external-hub child). */
-static inline bool usbh_device_is_root(const struct usbh_context *const ctx,
+/* Check if USB device is root */
+static inline bool usbh_device_is_root(struct usbh_context *const ctx,
 				       struct usb_device *const udev)
 {
-	ARG_UNUSED(ctx);
-
-	return udev != NULL && udev->hub == NULL;
+	return usbh_device_get_root(ctx) == udev;
 }
 
 /* Connect a new USB device */
@@ -70,16 +53,6 @@ int usbh_device_connect(struct usbh_context *const ctx, struct usb_device *const
 
 /* Disconnect USB device */
 void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev);
-
-void usbh_device_disconnect_by_port(struct usbh_context *const uhs_ctx,
-				    struct usb_device *const hub, uint8_t hub_port);
-
-int usbh_device_configuration_prefers(const struct usb_device *udev, const void *cfg_desc,
-				      uint16_t len);
-
-void usbh_device_configured_notify(struct usb_device *udev);
-
-void usbh_device_removed_notify(struct usb_device *udev);
 
 /* Wrappers around to avoid glue UHC calls. */
 static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
@@ -107,13 +80,6 @@ static inline struct net_buf *usbh_xfer_buf_alloc(struct usb_device *udev,
 	struct usbh_context *const ctx = udev->ctx;
 
 	return uhc_xfer_buf_alloc(ctx->dev, size);
-}
-
-static inline int usbh_xfer_free(const struct usb_device *udev, struct uhc_transfer *const xfer)
-{
-	struct usbh_context *const ctx = udev->ctx;
-
-	return uhc_xfer_free(ctx->dev, xfer);
 }
 
 static inline void usbh_xfer_buf_free(const struct usb_device *udev,
