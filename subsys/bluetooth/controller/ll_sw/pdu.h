@@ -289,11 +289,19 @@
 #define PHY_FLAGS_S2     0U
 #define PHY_FLAGS_S8     BIT(0)
 
-#define T_IFS_ACL_CP BIT(0)
-#define T_IFS_ACL_PC BIT(1)
-#define T_MCES       BIT(2)
-#define T_IFS_CIS    BIT(3)
-#define T_MSS_CIS    BIT(4)
+/* Frame Space Update, PHYs a frame space applies to */
+#define FSU_PHYS_MASK          (PHY_1M | PHY_2M | PHY_CODED)
+
+/* Frame Space Update, spacing types */
+#define T_IFS_ACL_CP           BIT(0U)
+#define T_IFS_ACL_PC           BIT(1U)
+#define T_MCES                 BIT(2U)
+#define T_IFS_CIS              BIT(3U)
+#define T_MSS_CIS              BIT(4U)
+#define T_SPACING_TYPE_MASK    (T_IFS_ACL_CP | T_IFS_ACL_PC | T_MCES | T_IFS_CIS | T_MSS_CIS)
+
+/* Frame Space Update, maximum frame space in microseconds */
+#define FSU_FRAME_SPACE_MAX_US 10000U
 
 /* Macros for getting/setting did/sid from pdu_adv_adi */
 #define PDU_ADV_ADI_DID_GET(adi) ((adi)->did_sid_packed[0] | \
@@ -635,7 +643,6 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND = 0x22,
 	PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ = 0x3B,
 	PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP = 0x3C,
-
 	PDU_DATA_LLCTRL_TYPE_UNUSED = 0xFF
 };
 

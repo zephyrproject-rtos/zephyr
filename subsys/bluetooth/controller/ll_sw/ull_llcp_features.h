@@ -68,10 +68,12 @@ static inline bool feature_dle(struct ll_conn *conn)
 #endif
 }
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 static inline bool feature_fsu(struct ll_conn *conn)
 {
-	return (conn->llcp.fex.features_used & LL_FEAT_BIT_FRAME_SPACE) != 0;
+	return conn->llcp.fex.fsu_unsupported == 0U;
 }
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 static inline bool feature_privacy(struct ll_conn *conn)
 {

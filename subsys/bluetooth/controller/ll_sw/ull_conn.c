@@ -2283,6 +2283,7 @@ static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx)
 static uint8_t force_md_cnt_calc(struct lll_conn *lll_connection, uint32_t tx_rate)
 {
 	uint32_t time_incoming, time_outgoing;
+	uint32_t tifs_us;
 	uint8_t force_md_cnt;
 	uint8_t phy_flags;
 	uint8_t mic_size;
@@ -2302,12 +2303,17 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_connection, uint32_t tx_ra
 	mic_size = 0U;
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 
+	/* Use the frame spaces of the connection, these can be updated by the Frame Space
+	 * Update procedure.
+	 */
+	tifs_us = lll_connection->tifs_tx_us + lll_connection->tifs_rx_us;
+
 	time_incoming = (LL_LENGTH_OCTETS_TX_MAX << 3) *
 			1000000UL / tx_rate;
 	time_outgoing = PDU_DC_US(LL_LENGTH_OCTETS_TX_MAX, mic_size, phy,
 				  phy_flags) +
 			PDU_DC_US(0U, 0U, phy, PHY_FLAGS_S8) +
-			(EVENT_IFS_US << 1);
+			tifs_us;
 
 	force_md_cnt = 0U;
 	if (time_incoming > time_outgoing) {
@@ -2315,8 +2321,7 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_connection, uint32_t tx_ra
 		uint32_t time_keep_alive;
 
 		delta = (time_incoming << 1) - time_outgoing;
-		time_keep_alive = (PDU_DC_US(0U, 0U, phy, PHY_FLAGS_S8) +
-				   EVENT_IFS_US) << 1;
+		time_keep_alive = (PDU_DC_US(0U, 0U, phy, PHY_FLAGS_S8) << 1) + tifs_us;
 		force_md_cnt = (delta + (time_keep_alive - 1)) /
 			       time_keep_alive;
 		LOG_DBG("Time: incoming= %u, expected outgoing= %u, delta= %u, "
@@ -2487,16 +2492,19 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 
 		conn_interval_new = interval;
 		conn_interval_unit_new = CONN_INT_UNIT_US;
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+		/* Frame spaces negotiated on the connection are kept, frame spaces used by a
+		 * low latency connection interval are reset to default.
+		 */
+		if (conn_interval_unit_old == CONN_LOW_LAT_INT_UNIT_US) {
+			ull_fsu_init(conn, EVENT_IFS_DEFAULT_US);
+		}
+		ull_fsu_tifs_set(conn);
+#else /* !CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 		lll->tifs_tx_us = EVENT_IFS_DEFAULT_US;
 		lll->tifs_rx_us = EVENT_IFS_DEFAULT_US;
 		lll->tifs_hcto_us = EVENT_IFS_DEFAULT_US;
-		for (size_t i = 0; i < 3; i++) {
-			conn->lll.fsu.perphy[i].fsu_min = EVENT_IFS_DEFAULT_US;
-			conn->lll.fsu.perphy[i].fsu_max = EVENT_IFS_DEFAULT_US;
-			conn->lll.fsu.perphy[i].phys = PHY_1M | PHY_2M | PHY_CODED;
-			conn->lll.fsu.perphy[i].spacing_type =
-				T_IFS_ACL_PC | T_IFS_ACL_CP | T_IFS_CIS;
-		}
+#endif /* !CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH) && \
 	defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
@@ -2564,14 +2572,9 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 		lll->tifs_tx_us = CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US;
 		lll->tifs_rx_us = CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US;
 		lll->tifs_hcto_us = CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US;
-		for (size_t i = 0; i < 3; i++) {
-			conn->lll.fsu.perphy[i].fsu_min =
-				CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US;
-			conn->lll.fsu.perphy[i].fsu_max = EVENT_IFS_US;
-			conn->lll.fsu.perphy[i].phys = PHY_1M | PHY_2M | PHY_CODED;
-			conn->lll.fsu.perphy[i].spacing_type =
-				T_IFS_ACL_PC | T_IFS_ACL_CP | T_IFS_CIS;
-		}
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+		ull_fsu_init(conn, CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US);
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 		/* Reserve only the processing overhead, on overlap the
 		 * is_abort_cb mechanism will ensure to continue the event so
 		 * as to not loose anchor point sync.
@@ -2992,131 +2995,153 @@ void ull_conn_default_tx_time_set(uint16_t tx_time)
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-uint8_t ull_fsu_update_eff(struct ll_conn *conn)
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+uint8_t ll_fsu_req_send(uint16_t handle, uint16_t fsu_min, uint16_t fsu_max, uint8_t phys,
+			uint16_t spacing_type)
 {
-	uint8_t fsu_changed = 0U;
+	struct ll_conn *conn;
+	uint8_t err;
+
+	conn = ll_connected_get(handle);
+	if (conn == NULL) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	if (!feature_fsu(conn)) {
+		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+	}
+
+	err = ull_cp_fsu(conn, fsu_min, fsu_max, phys, spacing_type);
+	if (err != BT_HCI_ERR_SUCCESS) {
+		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && (conn->lll.role == BT_HCI_ROLE_PERIPHERAL)) {
+		ull_periph_latency_cancel(conn, handle);
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+static uint8_t fsu_phy_idx(uint8_t phy)
+{
+	/* PHY_1M, PHY_2M and PHY_CODED map to 0, 1 and 2 */
+	return phy >> 1U;
+}
+
+static void fsu_tifs_get(const struct ll_conn *conn, uint16_t *tifs_tx_us, uint16_t *tifs_rx_us)
+{
+	const struct lll_conn_fsu *fsu_tx;
+	const struct lll_conn_fsu *fsu_rx;
 	uint8_t phy_tx;
 	uint8_t phy_rx;
 
-#if defined(CONFIG_BT_PHY_UPDATE)
+#if defined(CONFIG_BT_CTLR_PHY)
 	phy_tx = conn->lll.phy_tx;
 	phy_rx = conn->lll.phy_rx;
-#else
+#else /* !CONFIG_BT_CTLR_PHY */
 	phy_tx = PHY_1M;
 	phy_rx = PHY_1M;
-#endif /* CONFIG_BT_PHY_UPDATE */
+#endif /* !CONFIG_BT_CTLR_PHY */
 
-	fsu_changed = ull_fsu_update_eff_from_local(conn);
+	fsu_tx = &conn->lll.fsu.phy[fsu_phy_idx(phy_tx)];
+	fsu_rx = &conn->lll.fsu.phy[fsu_phy_idx(phy_rx)];
 
-	if (fsu_changed) {
-		/* TODO: confirm that we do not need to do something here? */
+	/* T_IFS_ACL_CP is the spacing from a Central packet to a Peripheral packet, i.e. the
+	 * Central receive and the Peripheral transmit spacing. T_IFS_ACL_PC is the spacing from a
+	 * Peripheral packet to a Central packet, i.e. the Central transmit and the Peripheral
+	 * receive spacing.
+	 */
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && (conn->lll.role == BT_HCI_ROLE_CENTRAL)) {
+		*tifs_tx_us = fsu_tx->ifs_acl_pc_us;
+		*tifs_rx_us = fsu_rx->ifs_acl_cp_us;
+	} else {
+		*tifs_tx_us = fsu_tx->ifs_acl_cp_us;
+		*tifs_rx_us = fsu_rx->ifs_acl_pc_us;
 	}
-
-	if ((conn->lll.fsu.local.spacing_type & T_IFS_CIS) == T_IFS_CIS) {
-
-		if (conn->lll.tifs_cis_us == conn->lll.fsu.eff.fsu_min) {
-			fsu_changed = 1;
-		}
-		conn->lll.tifs_cis_us = conn->lll.fsu.eff.fsu_min;
-	}
-
-	if ((conn->lll.fsu.local.spacing_type & T_IFS_ACL_CP) == T_IFS_ACL_CP) {
-		if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
-			if (conn->lll.fsu.local.phys & phy_tx) {
-				if (conn->lll.tifs_tx_us ==
-				    conn->lll.fsu.eff.fsu_min) {
-					fsu_changed = 1;
-				}
-				conn->lll.tifs_tx_us = conn->lll.fsu.eff.fsu_min;
-			}
-		} else {
-			if (conn->lll.fsu.local.phys & phy_rx) {
-				if (conn->lll.tifs_rx_us ==
-				    conn->lll.fsu.eff.fsu_min) {
-					fsu_changed = 1;
-				}
-				conn->lll.tifs_rx_us = conn->lll.fsu.eff.fsu_min;
-			}
-		}
-	}
-
-	if ((conn->lll.fsu.local.spacing_type & T_IFS_ACL_PC) == T_IFS_ACL_PC) {
-		if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL) {
-			if (conn->lll.fsu.local.phys & phy_rx) {
-				if (conn->lll.tifs_rx_us ==
-				    conn->lll.fsu.eff.fsu_min) {
-					fsu_changed = 1;
-				}
-				conn->lll.tifs_rx_us = conn->lll.fsu.eff.fsu_min;
-			}
-		} else {
-			if (conn->lll.fsu.local.phys & phy_tx) {
-				if (conn->lll.tifs_tx_us ==
-				    conn->lll.fsu.eff.fsu_min) {
-					fsu_changed = 1;
-				}
-				conn->lll.tifs_tx_us = conn->lll.fsu.eff.fsu_min;
-			}
-		}
-	}
-	if (fsu_changed == 1) {
-		conn->lll.fsu.local.phys = 0;
-		conn->lll.fsu.local.spacing_type = 0;
-	}
-
-	return fsu_changed;
 }
 
-uint8_t ull_fsu_update_eff_from_local(struct ll_conn *conn)
+void ull_fsu_init(struct ll_conn *conn, uint16_t ifs_us)
 {
-	uint8_t fsu_changed = 0U;
-	uint16_t fsu_min, fsu_max;
-
-	fsu_min = MAX(conn->lll.fsu.local.fsu_min, CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US);
-	fsu_max = MAX(conn->lll.fsu.local.fsu_max, CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US);
-
-	conn->lll.fsu.eff.fsu_min = fsu_min;
-	conn->lll.fsu.eff.fsu_max = fsu_max;
-	conn->lll.fsu.local.fsu_min = fsu_min;
-	conn->lll.fsu.local.fsu_max = fsu_max;
-
-	return fsu_changed;
+	for (uint8_t i = 0U; i < FSU_PHY_COUNT; i++) {
+		conn->lll.fsu.phy[i].ifs_acl_cp_us = ifs_us;
+		conn->lll.fsu.phy[i].ifs_acl_pc_us = ifs_us;
+	}
 }
 
-void ull_fsu_local_tx_update(struct ll_conn *conn, uint16_t fsu_min,
-				     uint16_t fsu_max, uint8_t phys, uint16_t spacing_type)
+void ull_fsu_tifs_set(struct ll_conn *conn)
 {
-	conn->lll.fsu.local.fsu_min = fsu_min;
-	if (conn->lll.tifs_rx_us > fsu_max) {
-		fsu_max = conn->lll.tifs_rx_us;
+	uint16_t tifs_tx_us;
+	uint16_t tifs_rx_us;
+
+	fsu_tifs_get(conn, &tifs_tx_us, &tifs_rx_us);
+
+#if defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE) && \
+	(defined(CONFIG_BT_CTLR_DATA_LENGTH) || defined(CONFIG_BT_CTLR_PHY))
+	/* Event time reservation includes the receive frame space */
+	if (conn->lll.tifs_rx_us != tifs_rx_us) {
+		conn->lll.evt_len_upd = 1U;
 	}
-	if (conn->lll.tifs_tx_us > fsu_max) {
-		fsu_max = conn->lll.tifs_tx_us;
-	}
-	conn->lll.fsu.local.fsu_max = fsu_max;
-	conn->lll.fsu.local.phys = phys;
-	conn->lll.fsu.local.spacing_type = spacing_type;
+#endif /* CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE &&
+	* (CONFIG_BT_CTLR_DATA_LENGTH || CONFIG_BT_CTLR_PHY)
+	*/
+
+	conn->lll.tifs_tx_us = tifs_tx_us;
+	conn->lll.tifs_rx_us = tifs_rx_us;
+	conn->lll.tifs_hcto_us = tifs_rx_us;
 }
 
-uint8_t ull_fsu_init(struct ll_conn *conn)
+bool ull_fsu_update_eff(struct ll_conn *conn, uint16_t fsu_us, uint8_t phys,
+			uint16_t spacing_type, bool transition)
 {
-	conn->lll.tifs_rx_us = EVENT_IFS_US;
-	conn->lll.tifs_tx_us = EVENT_IFS_US;
-	conn->lll.tifs_cis_us = EVENT_IFS_US;
-	conn->lll.fsu.local.fsu_min = CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US;
-	conn->lll.fsu.local.fsu_max = EVENT_IFS_MAX_US;
-	conn->lll.fsu.eff.fsu_min = EVENT_IFS_US;
-	conn->lll.fsu.eff.fsu_max = EVENT_IFS_US;
-	for (size_t i = 0; i < 3; i++) {
-		conn->lll.fsu.perphy[i].fsu_min = EVENT_IFS_US;
-		conn->lll.fsu.perphy[i].fsu_max = EVENT_IFS_US;
-		conn->lll.fsu.perphy[i].phys = PHY_1M | PHY_2M | PHY_CODED;
-		conn->lll.fsu.perphy[i].spacing_type =
-			T_IFS_ACL_PC | T_IFS_ACL_CP | T_IFS_CIS;
+	uint16_t tifs_tx_us;
+	uint16_t tifs_rx_us;
+	bool changed = false;
+
+	for (uint8_t i = 0U; i < FSU_PHY_COUNT; i++) {
+		struct lll_conn_fsu *fsu = &conn->lll.fsu.phy[i];
+
+		if ((phys & BIT(i)) == 0U) {
+			continue;
+		}
+
+		if (((spacing_type & T_IFS_ACL_CP) != 0U) && (fsu->ifs_acl_cp_us != fsu_us)) {
+			fsu->ifs_acl_cp_us = fsu_us;
+			changed = true;
+		}
+
+		if (((spacing_type & T_IFS_ACL_PC) != 0U) && (fsu->ifs_acl_pc_us != fsu_us)) {
+			fsu->ifs_acl_pc_us = fsu_us;
+			changed = true;
+		}
 	}
 
-	return 0;
+	/* CIS frame space is used by CISes established after this update */
+	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO) && ((spacing_type & T_IFS_CIS) != 0U) &&
+	    (conn->lll.tifs_cis_us != fsu_us)) {
+		conn->lll.tifs_cis_us = fsu_us;
+		changed = true;
+	}
+
+	if (!transition) {
+		ull_fsu_tifs_set(conn);
+
+		return changed;
+	}
+
+	/* The peer applies the new frame space after it receives the response, keep receiving
+	 * with a window that covers both the current and the new frame space until the response
+	 * has been acknowledged, see ull_fsu_tifs_set().
+	 */
+	fsu_tifs_get(conn, &tifs_tx_us, &tifs_rx_us);
+
+	conn->lll.tifs_tx_us = tifs_tx_us;
+	conn->lll.tifs_hcto_us = MAX(conn->lll.tifs_hcto_us, tifs_rx_us);
+	conn->lll.tifs_rx_us = MIN(conn->lll.tifs_rx_us, tifs_rx_us);
+
+	return changed;
 }
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
 static bool ticker_op_id_match_func(uint8_t ticker_id, uint32_t ticks_slot,
