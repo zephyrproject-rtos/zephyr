@@ -30,6 +30,8 @@ static inline struct xhci_dev_slot *xhci_slot_udev(struct uhc_dwc3_data *priv,
 	return xhci_slot_get(priv, udev->slot_id);
 }
 
+struct xhci_dev_slot *xhci_slot_from_udev(struct uhc_dwc3_data *priv, struct usb_device *udev);
+
 static inline struct xhci_ep_ctx *xhci_slot_output_ep_ctx(const struct xhci_dev_slot *slot,
 							  const struct uhc_dwc3_data *priv,
 							  unsigned int dci)
@@ -40,7 +42,7 @@ static inline struct xhci_ep_ctx *xhci_slot_output_ep_ctx(const struct xhci_dev_
 void xhci_slot_init_sw_rings(struct xhci_dev_slot *slot);
 void xhci_slot_reset_sw_rings(struct xhci_dev_slot *slot);
 int xhci_enable_slot_for_udev(struct uhc_dwc3_data *priv, struct usb_device *udev);
-void xhci_teardown_slot(struct uhc_dwc3_data *priv, uint8_t sid);
+int xhci_teardown_slot(struct uhc_dwc3_data *priv, uint8_t sid);
 void xhci_teardown_all_slots(struct uhc_dwc3_data *priv);
 
 uint32_t xhci_device_route(const struct usb_device *udev);
