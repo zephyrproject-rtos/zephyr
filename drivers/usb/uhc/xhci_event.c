@@ -413,6 +413,44 @@ void xhci_handle_event(struct uhc_dwc3_data *priv, struct xhci_trb *evt)
 		}
 
 		if (ep_id_evt == (uint32_t)XHCI_DCI_DEFAULT_CONTROL) {
+			uint64_t evt_trb_ptr =
+				(uint64_t)evt->param_lo | ((uint64_t)evt->param_hi << 32);
+			uint64_t expected_trb = slot->ep0_expect_ioc_trb_phys;
+
+			if (slot->ep0_active_xfer == NULL) {
+				UHC_DWC3_DBG("EP0 ignore stale xfer evt "
+					     "cc=%u p=0x%016llx (no active control URB)",
+					     (unsigned int)cc,
+					     (unsigned long long)(evt_trb_ptr & ~0xfULL));
+				break;
+			}
+
+			if (slot->udev != NULL && slot->ep0_active_xfer->udev != slot->udev) {
+				LOG_WRN("EP0 ignore xfer evt (udev stale, slot reuse?)");
+				break;
+			}
+
+			if (!xhci_bulk_event_belongs_to_td(&slot->ep0_ring, &slot->ep0_td,
+							   evt_trb_ptr)) {
+				UHC_DWC3_DBG("EP0 ignore stale xfer evt "
+					     "cc=%u p=0x%016llx (not in current control TD)",
+					     (unsigned int)cc,
+					     (unsigned long long)(evt_trb_ptr & ~0xfULL));
+				break;
+			}
+
+			if (xhci_bulk_event_is_interior(&slot->ep0_td, evt_trb_ptr, cc,
+							expected_trb)) {
+				UHC_DWC3_DBG("EP0 ignore interior xfer evt cc=%u p=0x%016llx "
+					     "want_IOC=0x%016llx",
+					     (unsigned int)cc,
+					     (unsigned long long)(evt_trb_ptr & ~0xfULL),
+					     (unsigned long long)expected_trb);
+				break;
+			}
+
+			slot->ep0_expect_ioc_trb_phys = 0ULL;
+
 			slot->xfer_comp_code = cc;
 			if (cc == XHCI_COMP_SUCCESS || cc == XHCI_COMP_SHORT_PACKET) {
 				slot->xfer_result = 0;

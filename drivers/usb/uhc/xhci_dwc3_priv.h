@@ -15,6 +15,7 @@
 #include <zephyr/drivers/usb/uhc.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/sys/device_mmio.h>
@@ -64,6 +65,9 @@ struct xhci_dev_slot {
 	struct xhci_ring ep_bulk_rings[32];
 	struct k_sem xfer_sem;
 	struct uhc_transfer *ep0_active_xfer;
+	struct xhci_td ep0_td;
+	uint64_t ep0_expect_ioc_trb_phys;
+	atomic_t ep0_recover_in_flight;
 	int xfer_result;
 	uint32_t xfer_length;
 	uint32_t xfer_comp_code;

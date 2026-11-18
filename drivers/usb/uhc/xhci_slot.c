@@ -38,6 +38,8 @@ void xhci_slot_reset_sw_rings(struct xhci_dev_slot *slot)
 	xhci_ring_init(&slot->ep0_ring, slot->ep0_trbs, XHCI_EP0_RING_SIZE, 0U);
 	dwc3_dma_flush(slot->ep0_trbs, sizeof(slot->ep0_trbs));
 	slot->ep0_active_xfer = NULL;
+	slot->ep0_expect_ioc_trb_phys = 0ULL;
+	memset(&slot->ep0_td, 0, sizeof(slot->ep0_td));
 	k_sem_reset(&slot->xfer_sem);
 
 	for (unsigned int dci = 2U; dci < 32U; dci++) {
@@ -186,6 +188,10 @@ int xhci_teardown_slot(struct uhc_dwc3_data *priv, uint8_t sid)
 			(void)xhci_cancel_ep_xfer(priv, slot, (uint8_t)dci,
 						  slot->bulk_active_xfer[dci], -ECONNRESET);
 		}
+	}
+
+	for (unsigned int w = 0U; w < 500U && atomic_get(&slot->ep0_recover_in_flight) != 0; w++) {
+		k_busy_wait(100);
 	}
 
 	LOG_DBG("Disable Slot %u", (unsigned int)sid);
