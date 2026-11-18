@@ -10,6 +10,7 @@ tests:
   sample.net.cellular_modem:
     platform_allow:
       - b_u585i_iot02a
+      - t_a7670x/esp32/procpu
     integration_platforms:
       - b_u585i_iot02a
   sample.net.cellular_modem.mikroe_lte_iot10_click:
