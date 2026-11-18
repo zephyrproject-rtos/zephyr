@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import os
 import selectors
 import shutil
 import socket
@@ -192,13 +193,43 @@ def _run_debugger(
     return _parse_words(result.stdout, address)
 
 
+def _find_zephyr_gdb(build_dir: Path) -> str | None:
+    """Find the ARM GDB shipped with the Twister-selected Zephyr SDK."""
+    # Use the SDK selected by the current Twister process.  This allows the
+    # test to run on a machine whose SDK path differs from the build cache.
+    sdk_dirs = []
+    sdk_dir = os.environ.get("ZEPHYR_SDK_INSTALL_DIR")
+    if sdk_dir:
+        sdk_dirs.append(Path(sdk_dir))
+
+    cache = build_dir / "CMakeCache.txt"
+    if cache.is_file():
+        for line in cache.read_text(encoding="utf-8").splitlines():
+            if line.startswith("ZEPHYR_SDK_INSTALL_DIR:PATH="):
+                cached_sdk_dir = line.split("=", 1)[1]
+                if cached_sdk_dir and not cached_sdk_dir.endswith("-NOTFOUND"):
+                    sdk_dirs.append(Path(cached_sdk_dir))
+                break
+
+    for sdk_dir in sdk_dirs:
+        for relative_path in (
+            Path("gnu") / "arm-zephyr-eabi" / "bin" / "arm-zephyr-eabi-gdb",
+            Path("arm-zephyr-eabi") / "bin" / "arm-zephyr-eabi-gdb",
+        ):
+            candidate = sdk_dir / relative_path
+            if candidate.is_file():
+                return str(candidate)
+
+    return shutil.which("arm-zephyr-eabi-gdb")
+
+
 def test_single_wire_uart(dut: DeviceAdapter) -> None:
     """Verify both directions of the single-wire UART connection."""
     build_dir = Path(dut.device_config.build_dir)
     elf = build_dir / "zephyr" / "zephyr.elf"
-    gdb = shutil.which("arm-zephyr-eabi-gdb") or shutil.which("gdb-multiarch")
+    gdb = _find_zephyr_gdb(build_dir) or shutil.which("gdb-multiarch")
     if gdb is None:
-        pytest.fail("A GDB client is required")
+        pytest.fail("A Zephyr SDK GDB client is required")
     if not elf.is_file():
         pytest.fail(f"Firmware ELF was not found: {elf}")
 
