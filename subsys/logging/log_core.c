@@ -13,7 +13,6 @@
 #include <zephyr/logging/log_link.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/clock.h>
-#include <zephyr/sys/clock.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>

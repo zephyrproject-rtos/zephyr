@@ -23,7 +23,6 @@ static inline __printf_like(1, 2) void arch_exception_dump_arg_check(const char 
 #if defined(CONFIG_EXCEPTION_DUMP_HOOK)
 
 #include <stdbool.h>
-#include <stdarg.h>
 
 /**
  * @typedef arch_exception_dump_hook_t

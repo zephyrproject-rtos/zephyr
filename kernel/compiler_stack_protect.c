@@ -19,7 +19,6 @@
 
 #include <zephyr/toolchain.h> /* compiler specific configurations */
 
-#include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/kernel.h>
 #include <zephyr/app_memory/app_memdomain.h>

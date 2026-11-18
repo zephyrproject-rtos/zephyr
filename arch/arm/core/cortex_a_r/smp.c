@@ -11,7 +11,6 @@
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <ipi.h>
 #include "boot.h"
-#include <zephyr/kernel/thread_stack.h>
 #include <zephyr/toolchain/gcc.h>
 #include <zephyr/platform/hooks.h>
 
