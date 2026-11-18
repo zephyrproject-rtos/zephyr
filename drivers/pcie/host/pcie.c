@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/sys/iterable_sections.h>
 
+#include "pcie_priv.h"
+
 #ifdef CONFIG_ACPI
 #include <zephyr/acpi/acpi.h>
 #endif
@@ -37,11 +39,15 @@ static bool prt_en;
 
 /* functions documented in drivers/pcie/pcie.h */
 
-void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on)
+void pcie_set_cmd(const struct pcie_endpoint *ep, uint32_t bits, bool on)
 {
 	uint32_t cmdstat;
 
-	cmdstat = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
+	if (ep == NULL) {
+		return;
+	}
+
+	cmdstat = pcie_conf_read(ep, PCIE_CONF_CMDSTAT);
 
 	if (on) {
 		cmdstat |= bits;
@@ -49,22 +55,26 @@ void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on)
 		cmdstat &= ~bits;
 	}
 
-	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmdstat);
+	pcie_conf_write(ep, PCIE_CONF_CMDSTAT, cmdstat);
 }
 
-uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
+uint32_t pcie_get_cap(const struct pcie_endpoint *ep, uint32_t cap_id)
 {
 	uint32_t reg = 0U;
 	uint32_t data;
 
-	data = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
+	if (ep == NULL) {
+		return 0U;
+	}
+
+	data = pcie_conf_read(ep, PCIE_CONF_CMDSTAT);
 	if ((data & PCIE_CONF_CMDSTAT_CAPS) != 0U) {
-		data = pcie_conf_read(bdf, PCIE_CONF_CAPPTR);
+		data = pcie_conf_read(ep, PCIE_CONF_CAPPTR);
 		reg = PCIE_CONF_CAPPTR_FIRST(data);
 	}
 
 	while (reg != 0U) {
-		data = pcie_conf_read(bdf, reg);
+		data = pcie_conf_read(ep, reg);
 
 		if (PCIE_CONF_CAP_ID(data) == cap_id) {
 			break;
@@ -76,13 +86,17 @@ uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
 	return reg;
 }
 
-uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
+uint32_t pcie_get_ext_cap(const struct pcie_endpoint *ep, uint32_t cap_id)
 {
 	unsigned int reg = PCIE_CONF_EXT_CAPPTR; /* Start at end of the PCI configuration space */
 	uint32_t data;
 
+	if (ep == NULL) {
+		return 0U;
+	}
+
 	while (reg != 0U) {
-		data = pcie_conf_read(bdf, reg);
+		data = pcie_conf_read(ep, reg);
 		if (!data || data == 0xffffffffU) {
 			return 0;
 		}
@@ -104,16 +118,14 @@ uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 /**
  * @brief Get the BAR at a specific BAR index
  *
- * @param bdf the PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint
  * @param bar_index 0-based BAR index
  * @param bar Pointer to struct pcie_bar
  * @param io true for I/O BARs, false otherwise
  * @return true if the BAR was found and is valid, false otherwise
  */
-static bool pcie_get_bar(pcie_bdf_t bdf,
-			 unsigned int bar_index,
-			 struct pcie_bar *bar,
-			 bool io)
+static bool pcie_get_bar(const struct pcie_endpoint *ep, unsigned int bar_index,
+			 struct pcie_bar *bar, bool io)
 {
 	uint32_t reg = bar_index + PCIE_CONF_BAR0;
 	uint32_t cmd_reg;
@@ -124,10 +136,14 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 	uintptr_t phys_addr;
 	size_t size;
 
+	if (ep == NULL) {
+		return false;
+	}
+
 #ifdef CONFIG_PCIE_CONTROLLER
-	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
-	if (!dev) {
-		LOG_ERR("Failed to get PCIe root complex");
+	dev = z_pcie_resolve_ctrl(ep->ctrl);
+	if (dev == NULL || !device_is_ready(dev) || !DEVICE_API_IS(pcie_ctrl, dev)) {
+		LOG_ERR("PCIe root complex is not ready");
 		return false;
 	}
 #endif
@@ -136,7 +152,7 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 		return false;
 	}
 
-	phys_addr = pcie_conf_read(bdf, reg);
+	phys_addr = pcie_conf_read(ep, reg);
 #ifndef CONFIG_PCIE_CONTROLLER
 	if ((PCIE_CONF_BAR_MEM(phys_addr) && io) || (PCIE_CONF_BAR_IO(phys_addr) && !io)) {
 		return false;
@@ -148,19 +164,19 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 		return false;
 	}
 
-	cmd_reg = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
+	cmd_reg = pcie_conf_read(ep, PCIE_CONF_CMDSTAT);
 
 	/* IO/memory decode should be disabled before sizing/update BAR. */
-	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT,
+	pcie_conf_write(ep, PCIE_CONF_CMDSTAT,
 			cmd_reg & (~(PCIE_CONF_CMDSTAT_IO | PCIE_CONF_CMDSTAT_MEM)));
 
-	pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
-	size = pcie_conf_read(bdf, reg);
-	pcie_conf_write(bdf, reg, (uint32_t)phys_addr);
+	pcie_conf_write(ep, reg, 0xFFFFFFFFU);
+	size = pcie_conf_read(ep, reg);
+	pcie_conf_write(ep, reg, (uint32_t)phys_addr);
 
 	if (IS_ENABLED(CONFIG_64BIT) && PCIE_CONF_BAR_64(phys_addr)) {
 		reg++;
-		phys_addr |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
+		phys_addr |= ((uint64_t)pcie_conf_read(ep, reg)) << 32;
 
 		if ((PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL64) ||
 		    (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE)) {
@@ -168,9 +184,9 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 			goto err_exit;
 		}
 
-		pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
-		size |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
-		pcie_conf_write(bdf, reg, (uint32_t)((uint64_t)phys_addr >> 32));
+		pcie_conf_write(ep, reg, 0xFFFFFFFFU);
+		size |= ((uint64_t)pcie_conf_read(ep, reg)) << 32;
+		pcie_conf_write(ep, reg, (uint32_t)((uint64_t)phys_addr >> 32));
 	} else if ((PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL) ||
 		   (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE)) {
 		/* Discard on invalid address */
@@ -193,12 +209,11 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 
 #ifdef CONFIG_PCIE_CONTROLLER
 	/* Translate to physical memory address from bus address */
-	if (!pcie_ctrl_region_translate(dev, bdf, PCIE_CONF_BAR_MEM(phys_addr),
-					PCIE_CONF_BAR_64(phys_addr),
-					PCIE_CONF_BAR_MEM(phys_addr) ?
-						PCIE_CONF_BAR_ADDR(phys_addr)
-						: PCIE_CONF_BAR_IO_ADDR(phys_addr),
-					&bar->phys_addr)) {
+	if (!pcie_ctrl_region_translate(
+		    dev, ep->bdf, PCIE_CONF_BAR_MEM(phys_addr), PCIE_CONF_BAR_64(phys_addr),
+		    PCIE_CONF_BAR_MEM(phys_addr) ? PCIE_CONF_BAR_ADDR(phys_addr)
+						 : PCIE_CONF_BAR_IO_ADDR(phys_addr),
+		    &bar->phys_addr)) {
 		goto err_exit;
 	}
 #else
@@ -208,7 +223,7 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 
 	ret = true;
 err_exit:
-	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmd_reg);
+	pcie_conf_write(ep, PCIE_CONF_CMDSTAT, cmd_reg);
 
 	return ret;
 }
@@ -222,22 +237,24 @@ err_exit:
  * are order-preserving with respect to the endpoint BARs: e.g., index 0
  * will return the lowest-numbered BAR on the endpoint.
  *
- * @param bdf the PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint
  * @param index (0-based) index
  * @param bar Pointer to struct pcie_bar
  * @param io true for I/O BARs, false otherwise
  * @return true if the BAR was found and is valid, false otherwise
  */
-static bool pcie_probe_bar(pcie_bdf_t bdf,
-			   unsigned int index,
-			   struct pcie_bar *bar,
+static bool pcie_probe_bar(const struct pcie_endpoint *ep, unsigned int index, struct pcie_bar *bar,
 			   bool io)
 {
 	uint32_t reg;
 
+	if (ep == NULL) {
+		return false;
+	}
+
 	for (reg = PCIE_CONF_BAR0;
 	     (index > 0) && (reg <= PCIE_CONF_BAR5); reg++, index--) {
-		uintptr_t addr = pcie_conf_read(bdf, reg);
+		uintptr_t addr = pcie_conf_read(ep, reg);
 
 		if (PCIE_CONF_BAR_MEM(addr) && PCIE_CONF_BAR_64(addr)) {
 			reg++;
@@ -248,45 +265,41 @@ static bool pcie_probe_bar(pcie_bdf_t bdf,
 		return false;
 	}
 
-	return pcie_get_bar(bdf, reg - PCIE_CONF_BAR0, bar, io);
+	return pcie_get_bar(ep, reg - PCIE_CONF_BAR0, bar, io);
 }
 
-bool pcie_get_mbar(pcie_bdf_t bdf,
-		   unsigned int bar_index,
-		   struct pcie_bar *mbar)
+bool pcie_get_mbar(const struct pcie_endpoint *ep, unsigned int bar_index, struct pcie_bar *mbar)
 {
-	return pcie_get_bar(bdf, bar_index, mbar, false);
+	return pcie_get_bar(ep, bar_index, mbar, false);
 }
 
-bool pcie_probe_mbar(pcie_bdf_t bdf,
-		     unsigned int index,
-		     struct pcie_bar *mbar)
+bool pcie_probe_mbar(const struct pcie_endpoint *ep, unsigned int index, struct pcie_bar *mbar)
 {
-	return pcie_probe_bar(bdf, index, mbar, false);
+	return pcie_probe_bar(ep, index, mbar, false);
 }
 
-bool pcie_get_iobar(pcie_bdf_t bdf,
-		    unsigned int bar_index,
-		    struct pcie_bar *iobar)
+bool pcie_get_iobar(const struct pcie_endpoint *ep, unsigned int bar_index, struct pcie_bar *iobar)
 {
-	return pcie_get_bar(bdf, bar_index, iobar, true);
+	return pcie_get_bar(ep, bar_index, iobar, true);
 }
 
-bool pcie_probe_iobar(pcie_bdf_t bdf,
-		      unsigned int index,
-		      struct pcie_bar *iobar)
+bool pcie_probe_iobar(const struct pcie_endpoint *ep, unsigned int index, struct pcie_bar *iobar)
 {
-	return pcie_probe_bar(bdf, index, iobar, true);
+	return pcie_probe_bar(ep, index, iobar, true);
 }
 
 #ifndef CONFIG_PCIE_CONTROLLER
 
-unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
+unsigned int pcie_alloc_irq(const struct pcie_endpoint *ep)
 {
 	unsigned int irq;
 	uint32_t data;
 
-	data = pcie_conf_read(bdf, PCIE_CONF_INTR);
+	if (ep == NULL) {
+		return PCIE_CONF_INTR_IRQ_NONE;
+	}
+
+	data = pcie_conf_read(ep, PCIE_CONF_INTR);
 	irq = PCIE_CONF_INTR_IRQ(data);
 
 	if ((irq == PCIE_CONF_INTR_IRQ_NONE) ||
@@ -299,7 +312,7 @@ unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 		 */
 #ifdef CONFIG_PCIE_PRT
 		if (prt_en) {
-			irq = acpi_legacy_irq_get(bdf);
+			irq = acpi_legacy_irq_get(ep->bdf);
 		} else {
 			irq = arch_irq_allocate();
 		}
@@ -313,7 +326,7 @@ unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 
 		data &= ~0xffU;
 		data |= irq;
-		pcie_conf_write(bdf, PCIE_CONF_INTR, data);
+		pcie_conf_write(ep, PCIE_CONF_INTR, data);
 	} else {
 		arch_irq_set_used(irq);
 	}
@@ -322,28 +335,33 @@ unsigned int pcie_alloc_irq(pcie_bdf_t bdf)
 }
 #endif /* CONFIG_PCIE_CONTROLLER */
 
-unsigned int pcie_get_irq(pcie_bdf_t bdf)
+unsigned int pcie_get_irq(const struct pcie_endpoint *ep)
 {
-	uint32_t data = pcie_conf_read(bdf, PCIE_CONF_INTR);
+	uint32_t data;
+
+	if (ep == NULL) {
+		return PCIE_CONF_INTR_IRQ_NONE;
+	}
+
+	data = pcie_conf_read(ep, PCIE_CONF_INTR);
 
 	return PCIE_CONF_INTR_IRQ(data);
 }
 
-bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
-			      unsigned int irq,
-			      unsigned int priority,
-			      void (*routine)(const void *parameter),
-			      const void *parameter,
-			      uint32_t flags)
+bool pcie_connect_dynamic_irq(const struct pcie_endpoint *ep, unsigned int irq,
+			      unsigned int priority, void (*routine)(const void *parameter),
+			      const void *parameter, uint32_t flags)
 {
+	if (ep == NULL) {
+		return false;
+	}
+
 #if defined(CONFIG_PCIE_MSI) && defined(CONFIG_PCIE_MSI_MULTI_VECTOR)
-	if (pcie_is_msi(bdf)) {
+	if (pcie_is_msi(ep)) {
 		msi_vector_t vector;
 
-		if ((pcie_msi_vectors_allocate(bdf, priority,
-					       &vector, 1) == 0) ||
-		    !pcie_msi_vector_connect(bdf, &vector,
-					     routine, parameter, flags)) {
+		if ((pcie_msi_vectors_allocate(ep, priority, &vector, 1U) == 0U) ||
+		    !pcie_msi_vector_connect(ep, &vector, routine, parameter, flags)) {
 			return false;
 		}
 	} else
@@ -358,15 +376,24 @@ bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 	return true;
 }
 
-void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
+void pcie_irq_enable(const struct pcie_endpoint *ep, unsigned int irq)
 {
+	if (ep == NULL) {
+		return;
+	}
+
 #if CONFIG_PCIE_MSI
-	if (pcie_msi_enable(bdf, NULL, 1, irq)) {
+	if (pcie_msi_enable(ep, NULL, 1U, irq)) {
 		return;
 	}
 #endif
 	irq_enable(irq);
 }
+
+struct scan_context {
+	const struct device *ctrl;
+	const struct pcie_scan_opt *opt;
+};
 
 static bool scan_flag(const struct pcie_scan_opt *opt, uint32_t flag)
 {
@@ -374,42 +401,46 @@ static bool scan_flag(const struct pcie_scan_opt *opt, uint32_t flag)
 }
 
 /* Forward declaration needed since scanning a device may reveal a bridge */
-static bool scan_bus(uint8_t bus, const struct pcie_scan_opt *opt);
+static bool scan_bus(uint8_t bus, struct scan_context *ctx);
 
-static inline bool should_skip_masked_bdf(pcie_bdf_t bdf, uint8_t func,
-					  const struct pcie_scan_opt *opt)
+static inline bool should_skip_masked_ep(const struct pcie_endpoint *ep, uint8_t func,
+					 const struct pcie_scan_opt *opt)
 {
 	ARG_UNUSED(func);
 
 	if (opt != NULL && opt->scan_masking_fn != NULL) {
-		return opt->scan_masking_fn(bdf);
+		return opt->scan_masking_fn(ep);
 	}
 
 	return false;
 }
 
-static bool scan_dev(uint8_t bus, uint8_t dev, const struct pcie_scan_opt *opt)
+static bool scan_dev(uint8_t bus, uint8_t dev, struct scan_context *ctx)
 {
+	const struct pcie_scan_opt *opt = ctx->opt;
 	uint8_t deferred_buses[PCIE_MAX_FUNC + 1];
 	uint8_t deferred_count = 0;
 	uint8_t secondary = 0;
 
 	for (uint8_t func = 0; func <= PCIE_MAX_FUNC; func++) {
-		pcie_bdf_t bdf = PCIE_BDF(bus, dev, func);
+		const struct pcie_endpoint ep = {
+			.ctrl = ctx->ctrl,
+			.bdf = PCIE_BDF(bus, dev, func),
+		};
 		uint32_t id, type;
 		bool do_cb;
 
-		/* Skip the scan loops if this BDF is registered in the mask */
-		if (should_skip_masked_bdf(bdf, func, opt)) {
+		/* Skip the scan loops if this endpoint is registered in the mask */
+		if (should_skip_masked_ep(&ep, func, opt)) {
 			continue;
 		}
 
-		id = pcie_conf_read(bdf, PCIE_CONF_ID);
+		id = pcie_conf_read(&ep, PCIE_CONF_ID);
 		if (!PCIE_ID_IS_VALID(id)) {
 			continue;
 		}
 
-		type = pcie_conf_read(bdf, PCIE_CONF_TYPE);
+		type = pcie_conf_read(&ep, PCIE_CONF_TYPE);
 		switch (PCIE_CONF_TYPE_GET(type)) {
 		case PCIE_CONF_TYPE_STANDARD:
 			do_cb = true;
@@ -422,13 +453,13 @@ static bool scan_dev(uint8_t bus, uint8_t dev, const struct pcie_scan_opt *opt)
 			break;
 		}
 
-		if (do_cb && !opt->cb(bdf, id, opt->cb_data)) {
+		if (do_cb && !opt->cb(&ep, id, opt->cb_data)) {
 			return false;
 		}
 
 		if (PCIE_CONF_TYPE_GET(type) == PCIE_CONF_TYPE_PCI_BRIDGE &&
 		    scan_flag(opt, PCIE_SCAN_RECURSIVE)) {
-			uint32_t num = pcie_conf_read(bdf, PCIE_BUS_NUMBER);
+			uint32_t num = pcie_conf_read(&ep, PCIE_BUS_NUMBER);
 
 			secondary = PCIE_BUS_SECONDARY_NUMBER(num);
 
@@ -444,7 +475,7 @@ static bool scan_dev(uint8_t bus, uint8_t dev, const struct pcie_scan_opt *opt)
 	}
 
 	for (uint8_t idx = 0; idx < deferred_count; idx++) {
-		if (!scan_bus(deferred_buses[idx], opt)) {
+		if (!scan_bus(deferred_buses[idx], ctx)) {
 			return false;
 		}
 	}
@@ -452,10 +483,10 @@ static bool scan_dev(uint8_t bus, uint8_t dev, const struct pcie_scan_opt *opt)
 	return true;
 }
 
-static bool scan_bus(uint8_t bus, const struct pcie_scan_opt *opt)
+static bool scan_bus(uint8_t bus, struct scan_context *ctx)
 {
 	for (uint8_t dev = 0; dev <= PCIE_MAX_DEV; dev++) {
-		if (!scan_dev(bus, dev, opt)) {
+		if (!scan_dev(bus, dev, ctx)) {
 			return false;
 		}
 	}
@@ -465,31 +496,49 @@ static bool scan_bus(uint8_t bus, const struct pcie_scan_opt *opt)
 
 int pcie_scan(const struct pcie_scan_opt *opt)
 {
+	struct scan_context ctx = {0};
 	uint32_t type;
 	bool multi;
 
-	CHECKIF(opt->cb == NULL) {
+	CHECKIF(opt == NULL || opt->cb == NULL) {
 		return -EINVAL;
 	}
 
-	type = pcie_conf_read(PCIE_HOST_CONTROLLER(0), PCIE_CONF_TYPE);
+	ctx.opt = opt;
+	ctx.ctrl = z_pcie_resolve_ctrl(opt->ctrl);
+
+	if (IS_ENABLED(CONFIG_PCIE_CONTROLLER)) {
+		if (ctx.ctrl == NULL || !device_is_ready(ctx.ctrl)) {
+			return -ENODEV;
+		}
+	}
+
+	const struct pcie_endpoint host_ep = {
+		.ctrl = ctx.ctrl,
+		.bdf = PCIE_HOST_CONTROLLER(0),
+	};
+
+	type = pcie_conf_read(&host_ep, PCIE_CONF_TYPE);
 	multi = PCIE_CONF_MULTIFUNCTION(type);
 	if (opt->bus == 0 && scan_flag(opt, PCIE_SCAN_RECURSIVE) && multi) {
-		/* Each function on the host controller represents a portential bus */
+		/* Each function on the host controller represents a potential bus */
 		for (uint8_t bus = 0; bus <= PCIE_MAX_FUNC; bus++) {
-			pcie_bdf_t bdf = PCIE_HOST_CONTROLLER(bus);
+			const struct pcie_endpoint bus_ep = {
+				.ctrl = ctx.ctrl,
+				.bdf = PCIE_HOST_CONTROLLER(bus),
+			};
 
-			if (pcie_conf_read(bdf, PCIE_CONF_ID) == PCIE_ID_NONE) {
+			if (pcie_conf_read(&bus_ep, PCIE_CONF_ID) == PCIE_ID_NONE) {
 				continue;
 			}
 
-			if (!scan_bus(bus, opt)) {
+			if (!scan_bus(bus, &ctx)) {
 				break;
 			}
 		}
 	} else {
 		/* Single PCI host controller */
-		scan_bus(opt->bus, opt);
+		scan_bus(opt->bus, &ctx);
 	}
 
 	return 0;
@@ -500,12 +549,24 @@ struct scan_data {
 	size_t max_dev;
 };
 
-static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
+static bool pcie_dev_cb(const struct pcie_endpoint *ep, pcie_id_t id, void *cb_data)
 {
 	struct scan_data *data = cb_data;
 
+	if (IS_ENABLED(CONFIG_PCIE_CONTROLLER)) {
+		STRUCT_SECTION_FOREACH(pcie_dev, dev) {
+			if (dev->bdf == ep->bdf && z_pcie_resolve_ctrl(dev->ctrl) == ep->ctrl) {
+				return (data->found != data->max_dev);
+			}
+		}
+	}
+
 	STRUCT_SECTION_FOREACH(pcie_dev, dev) {
 		if (dev->bdf != PCIE_BDF_NONE) {
+			continue;
+		}
+
+		if (z_pcie_resolve_ctrl(dev->ctrl) != z_pcie_resolve_ctrl(ep->ctrl)) {
 			continue;
 		}
 
@@ -513,10 +574,10 @@ static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 			continue;
 		}
 
-		uint32_t class_rev = pcie_conf_read(bdf, PCIE_CONF_CLASSREV);
+		uint32_t class_rev = pcie_conf_read(ep, PCIE_CONF_CLASSREV);
 
 		if (dev->class_rev == (class_rev & dev->class_rev_mask)) {
-			dev->bdf = bdf;
+			dev->bdf = ep->bdf;
 			dev->class_rev = class_rev;
 			data->found++;
 			break;
@@ -527,11 +588,15 @@ static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 	return (data->found != data->max_dev);
 }
 
+#ifdef CONFIG_PCIE_CONTROLLER
+Z_PCIE_SCAN_BUSES_DEFINE(DT_CHOSEN(zephyr_pcie_controller))
+#else
 #define PCIE_SCAN_EXTRA_BUS(node_id, prop, idx)                                \
 	if (data.found != data.max_dev) {                                          \
 		opt.bus = DT_PROP_BY_IDX(node_id, prop, idx);                     \
 		pcie_scan(&opt);                                                   \
 	}
+#endif
 
 static int pcie_init(void)
 {
@@ -566,12 +631,52 @@ static int pcie_init(void)
 
 	data.found = 0;
 
+#ifdef CONFIG_PCIE_CONTROLLER
+	STRUCT_SECTION_FOREACH(pcie_dev, dev) {
+		const struct device *ctrl = z_pcie_resolve_ctrl(dev->ctrl);
+		bool scanned = false;
+
+		if (ctrl == NULL || !device_is_ready(ctrl)) {
+			continue;
+		}
+
+		STRUCT_SECTION_FOREACH(pcie_dev, prior) {
+			if (prior == dev) {
+				break;
+			}
+			if (z_pcie_resolve_ctrl(prior->ctrl) == ctrl) {
+				scanned = true;
+				break;
+			}
+		}
+
+		if (scanned) {
+			continue;
+		}
+
+		opt.ctrl = ctrl;
+		opt.bus = 0U;
+		pcie_scan(&opt);
+
+		STRUCT_SECTION_FOREACH(pcie_scan_buses, list) {
+			if (list->ctrl != ctrl) {
+				continue;
+			}
+			for (size_t i = 0U; i < list->count && data.found < data.max_dev; i++) {
+				opt.bus = list->buses[i];
+				pcie_scan(&opt);
+			}
+			break;
+		}
+	}
+#else
 	/* Scan default bus 0 */
 	pcie_scan(&opt);
 
 	/* Scan additional buses defined in devicetree scan-buses property */
 #if DT_INST_NODE_HAS_PROP(0, scan_buses)
 	DT_INST_FOREACH_PROP_ELEM(0, scan_buses, PCIE_SCAN_EXTRA_BUS)
+#endif
 #endif
 
 	return 0;

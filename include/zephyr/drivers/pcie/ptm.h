@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 #include <zephyr/types.h>
+#include <zephyr/drivers/pcie/pcie.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,10 +31,10 @@ extern "C" {
 /**
  * @brief Enable PTM on endpoint
  *
- * @param bdf the PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint
  * @return true if that was successful, false otherwise
  */
-bool pcie_ptm_enable(pcie_bdf_t bdf);
+bool pcie_ptm_enable(const struct pcie_endpoint *ep);
 
 #ifdef __cplusplus
 }

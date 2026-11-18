@@ -423,6 +423,7 @@ static DEVICE_API(pcie_ctrl, pcie_ecam_api) = {
 #endif
 
 #define PCIE_ECAM_INIT(n)							\
+	PCIE_CTRL_SCAN_BUSES_DEFINE(DT_DRV_INST(n))				\
 	static struct pcie_ecam_data pcie_ecam_data##n;				\
 	static const struct pcie_ctrl_config pcie_ecam_config##n = {		\
 		DEVICE_DT_GET_MSI_PARENT(n)					\
