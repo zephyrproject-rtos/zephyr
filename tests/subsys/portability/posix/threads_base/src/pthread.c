@@ -559,6 +559,110 @@ ZTEST(pthread, test_pthread_setschedprio)
 	zassert_ok(pthread_join(th, NULL));
 }
 
+static int cleanup_order[3];
+static int cleanup_calls;
+
+static void cleanup_record(void *arg)
+{
+	if (cleanup_calls < (int)ARRAY_SIZE(cleanup_order)) {
+		cleanup_order[cleanup_calls] = POINTER_TO_INT(arg);
+	}
+	cleanup_calls++;
+}
+
+static void *cleanup_on_exit_fn(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	pthread_cleanup_push(cleanup_record, INT_TO_POINTER(1));
+	pthread_cleanup_push(cleanup_record, INT_TO_POINTER(2));
+	pthread_exit(NULL);
+	pthread_cleanup_pop(0);
+	pthread_cleanup_pop(0);
+
+	return NULL;
+}
+
+ZTEST(pthread, test_pthread_cleanup_on_exit)
+{
+	pthread_t th;
+
+	cleanup_calls = 0;
+	zassert_ok(pthread_create(&th, NULL, cleanup_on_exit_fn, NULL));
+	zassert_ok(pthread_join(th, NULL));
+
+	/* handlers still pushed at pthread_exit() run in reverse push order */
+	zassert_equal(cleanup_calls, 2);
+	zassert_equal(cleanup_order[0], 2);
+	zassert_equal(cleanup_order[1], 1);
+}
+
+static void *cleanup_pop_then_exit_fn(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	pthread_cleanup_push(cleanup_record, INT_TO_POINTER(1));
+	pthread_cleanup_push(cleanup_record, INT_TO_POINTER(2));
+	pthread_cleanup_pop(0);
+	pthread_cleanup_push(cleanup_record, INT_TO_POINTER(3));
+	pthread_exit(NULL);
+	pthread_cleanup_pop(0);
+	pthread_cleanup_pop(0);
+
+	return NULL;
+}
+
+ZTEST(pthread, test_pthread_cleanup_pop_then_exit)
+{
+	pthread_t th;
+
+	cleanup_calls = 0;
+	zassert_ok(pthread_create(&th, NULL, cleanup_pop_then_exit_fn, NULL));
+	zassert_ok(pthread_join(th, NULL));
+
+	/* a handler popped before pthread_exit() does not run again */
+	zassert_equal(cleanup_calls, 2);
+	zassert_equal(cleanup_order[0], 3);
+	zassert_equal(cleanup_order[1], 1);
+}
+
+static pthread_mutex_t cleanup_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void cleanup_unlock(void *arg)
+{
+	cleanup_record(arg);
+	zassert_ok(pthread_mutex_unlock(&cleanup_mutex));
+}
+
+static void *cleanup_on_cancel_fn(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	zassert_ok(pthread_mutex_lock(&cleanup_mutex));
+	pthread_cleanup_push(cleanup_unlock, INT_TO_POINTER(1));
+	zassert_ok(pthread_cancel(pthread_self()));
+	pthread_testcancel();
+	pthread_cleanup_pop(1);
+
+	return NULL;
+}
+
+ZTEST(pthread, test_pthread_cleanup_on_cancel)
+{
+	pthread_t th;
+	void *retval = NULL;
+
+	cleanup_calls = 0;
+	zassert_ok(pthread_create(&th, NULL, cleanup_on_cancel_fn, NULL));
+	zassert_ok(pthread_join(th, &retval));
+
+	/* the handler ran once on cancellation and could use the pthread mutex API */
+	zassert_equal(retval, PTHREAD_CANCELED);
+	zassert_equal(cleanup_calls, 1);
+	zassert_ok(pthread_mutex_trylock(&cleanup_mutex));
+	zassert_ok(pthread_mutex_unlock(&cleanup_mutex));
+}
+
 static void before(void *arg)
 {
 	ARG_UNUSED(arg);
