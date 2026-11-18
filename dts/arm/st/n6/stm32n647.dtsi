@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/n6/stm32n6.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32n647", "st,stm32n6", "simple-bus";
+
+		peripherals@40000000 {
+			npu_cache: cache-controller@580dfc00 {
+				compatible = "st,stm32-npu-cache";
+				reg = <0x580dfc00 DT_SIZE_K(1)>;
+				clocks = <&rcc STM32_CLOCK(AHB5, 30)>;
+				resets = <&rctl STM32_RESET(AHB5, 30)>;
+				status = "okay";
+			};
+
+			npu: npu@580e0000 {
+				compatible = "st,stm32-npu";
+				reg = <0x580e0000 DT_SIZE_K(128)>;
+				clocks = <&rcc STM32_CLOCK(AHB5, 31)>;
+				resets = <&rctl STM32_RESET(AHB5, 31)>;
+				status = "disabled";
+			};
+		};
+	};
+};
