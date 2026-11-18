@@ -19,6 +19,7 @@
 
 #include <stdbool.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/usb/uhc.h>
 #include <zephyr/usb/usbh.h>
 
 #ifdef __cplusplus
@@ -45,6 +46,19 @@ static inline const struct device *usbh_hcd_dev(const struct usb_device *udev)
 int usbh_ep_sync_after_clear_feature(struct usb_device *udev);
 
 /**
+ * @brief Recover an endpoint after a USB-level recovery event.
+ *
+ * @param udev USB device
+ * @param ep Endpoint address (0 where the HCD applies device-wide recovery)
+ * @param reason Recovery reason
+ *
+ * @retval 0 Endpoint ready for a new transfer
+ * @retval -ENODEV Device disconnected
+ * @retval negative errno Recovery failed
+ */
+int usbh_endpoint_recover(struct usb_device *udev, uint8_t ep, enum uhc_ep_recovery_reason reason);
+
+/**
  * @brief Ask the HCD whether configured endpoints appear steady.
  *
  * @param udev USB device to verify.
@@ -57,12 +71,12 @@ int usbh_ep_sync_after_clear_feature(struct usb_device *udev);
 int usbh_eps_verify_steady(struct usb_device *udev);
 
 /**
- * @brief Query HCD post-configure steady state.
+ * @brief Query whether endpoint programming is steady for @a udev.
  *
  * @param udev USB device that completed configuration.
  *
- * @retval true Post-configure steady state reached.
- * @retval false Not steady or hook not implemented.
+ * @retval true Steady, or the HCD has no hook (assumed steady).
+ * @retval false Not steady, disconnected, or invalid argument.
  */
 bool usbh_post_configure_steady(const struct usb_device *udev);
 
