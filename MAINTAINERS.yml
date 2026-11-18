@@ -1453,12 +1453,9 @@ Disk:
     - include/zephyr/storage/disk_access.h
     - include/zephyr/drivers/disk.h
     - include/zephyr/drivers/disk/
-    - include/zephyr/scsi/
     - drivers/disk/
     - subsys/disk/
-    - subsys/scsi/
     - subsys/sd/
-    - tests/subsys/scsi/
     - tests/subsys/sd/
     - tests/drivers/disk/
     - tests/drivers/build_all/disk/
@@ -1474,7 +1471,6 @@ Disk:
   tests:
     - drivers.disk
     - sd
-    - subsys.scsi
 
 Display controllers:
   status: maintained
