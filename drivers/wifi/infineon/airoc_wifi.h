@@ -22,11 +22,9 @@
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
 #include <driver.h>
 #include <driver_zephyr.h>
-#include <whd_chip_constants.h>
 #include <whd_utils.h>
 #include <whd_wlioctl.h>
 #include <zephyr/net/net_if.h>
-#include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_nm.h>
 #endif
 

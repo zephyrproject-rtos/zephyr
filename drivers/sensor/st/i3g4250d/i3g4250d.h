@@ -26,10 +26,6 @@
 (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(DT_DRV_COMPAT_I3G4250D, bus))
 
 
-#if I3G4250D_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <zephyr/drivers/spi.h>
-#endif /* I3G4250D_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
-
 struct i3g4250d_device_config {
 	stmdev_ctx_t ctx;
 	union {

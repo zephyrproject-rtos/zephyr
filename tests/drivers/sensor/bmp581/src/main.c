@@ -10,7 +10,6 @@
 #include "bmp581_emul.h"
 #include "bmp581.h"
 
-#include "bmp581_emul.h"
 
 struct bmp581_fixture {
 	const struct device *i2c_dev;
