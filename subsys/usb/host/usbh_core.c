@@ -45,8 +45,18 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 				  const struct uhc_event *const event)
 {
 	struct usb_device *udev;
+	uint8_t port = event->port;
 
-	udev = usbh_device_alloc(ctx);
+	if (port == 0U) {
+		port = 1U;
+	}
+
+	udev = usbh_device_find_root_by_port(ctx, port);
+	if (udev != NULL) {
+		usbh_device_disconnect(ctx, udev);
+	}
+
+	udev = usbh_device_alloc_port(ctx, NULL, port);
 
 	if (udev == NULL) {
 		LOG_ERR("Failed allocate new device");
@@ -71,15 +81,21 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 	usbh_device_connect(ctx, udev);
 }
 
-static void dev_removed_handler(struct usbh_context *const ctx)
+static void dev_removed_handler(struct usbh_context *const ctx, const struct uhc_event *const event)
 {
 	struct usb_device *udev = NULL;
+	uint8_t port = event->port;
 
-	udev = usbh_device_get_root(ctx);
+	if (port != 0U) {
+		udev = usbh_device_find_root_by_port(ctx, port);
+	} else {
+		udev = usbh_device_get_root(ctx);
+	}
+
 	if (udev != NULL) {
 		usbh_device_disconnect(ctx, udev);
 	} else {
-		LOG_DBG("Spurious device removed event");
+		LOG_DBG("Spurious device removed event (port %u)", port);
 	}
 }
 
@@ -110,7 +126,7 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
 		dev_connected_handler(ctx, event);
 		break;
 	case UHC_EVT_DEV_REMOVED:
-		dev_removed_handler(ctx);
+		dev_removed_handler(ctx, event);
 		break;
 	case UHC_EVT_RESETED:
 		LOG_DBG("Bus reset");
