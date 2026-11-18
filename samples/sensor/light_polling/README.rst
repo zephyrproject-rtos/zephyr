@@ -15,9 +15,9 @@ Requirements
 
 To use this sample, the following hardware is required:
 
-* A board with ADC support
-* One or more supported light sensors (e.g., `Grove Light Sensor`_), available as
-  ``light-sensor`` Devicetree alias or as ``light-sensor0`` to ``light-sensor9`` aliases.
+* One or more supported light sensors, available as ``light-sensor`` Devicetree alias
+  or as ``light-sensor0`` to ``light-sensor9`` aliases.
+* If using an analog light sensor (such as the `Grove Light Sensor`_), a board with ADC support.
 
 Wiring
 ******
