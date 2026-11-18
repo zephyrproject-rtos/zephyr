@@ -349,6 +349,7 @@ static int verify_nth16(struct cdc_ncm_eth_data *const data,
 {
 	const struct nth16 *nthdr16 = &ntb->nth;
 	const struct ndp16 *ndphdr16;
+	uint16_t blen;
 
 	if (len < sizeof(ntb->nth)) {
 		LOG_DBG("DROP: %s len %d", "", len);
@@ -381,15 +382,24 @@ static int verify_nth16(struct cdc_ncm_eth_data *const data,
 		return -EINVAL;
 	}
 
-	if (sys_le16_to_cpu(nthdr16->wBlockLength) != len) {
-		LOG_DBG("DROP: %s len %d", "block",
-			sys_le16_to_cpu(nthdr16->wBlockLength));
+	/* If wBlockLength is 0, the block is terminated by a short packet
+	 * (NCM 3.2.1, Table 3-1), so the NTB is the whole transfer.
+	 * Windows hosts append one zero byte to an NTB with a length that is
+	 * a multiple of the bulk MPS and do not count it in wBlockLength, so
+	 * accept one trailing byte.
+	 */
+	blen = sys_le16_to_cpu(nthdr16->wBlockLength);
+	if (blen == 0) {
+		blen = len;
+	}
+
+	if (blen > len || (len - blen) > 1) {
+		LOG_DBG("DROP: %s %u len %d", "block", blen, len);
 		return -EINVAL;
 	}
 
-	if (sys_le16_to_cpu(nthdr16->wBlockLength) > CDC_NCM_RECV_NTB_MAX_SIZE) {
-		LOG_DBG("DROP: %s len %d", "block max",
-			sys_le16_to_cpu(nthdr16->wBlockLength));
+	if (blen > CDC_NCM_RECV_NTB_MAX_SIZE) {
+		LOG_DBG("DROP: %s len %d", "block max", blen);
 		return -EINVAL;
 	}
 
