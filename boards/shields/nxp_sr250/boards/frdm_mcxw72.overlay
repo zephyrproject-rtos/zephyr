@@ -1,0 +1,16 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	pinmux_lpspi1: pinmux_lpspi1 {
+		group0 {
+			pinmux = <LPSPI1_SCK_PTB2>,
+				 <LPSPI1_SIN_PTB1>,
+				 <LPSPI1_SOUT_PTB3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+};
