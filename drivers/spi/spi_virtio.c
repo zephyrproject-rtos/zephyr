@@ -502,6 +502,7 @@ static int spi_virtio_init(const struct device *dev)
 	const struct spi_virtio_config *cfg = dev->config;
 	struct spi_virtio_data *data = dev->data;
 	volatile struct virtio_spi_config *devcfg;
+	size_t devcfg_len;
 	int ret;
 
 	if (!device_is_ready(cfg->vdev)) {
@@ -518,9 +519,15 @@ static int spi_virtio_init(const struct device *dev)
 		return ret;
 	}
 
-	devcfg = virtio_get_device_specific_config(cfg->vdev);
+	devcfg = virtio_get_device_specific_config(cfg->vdev, &devcfg_len);
 	if (devcfg == NULL) {
 		LOG_ERR("could not get device-specific config");
+		return -ENODEV;
+	}
+
+	if (devcfg_len < offsetof(struct virtio_spi_config, max_freq_hz) +
+			  sizeof(devcfg->max_freq_hz)) {
+		LOG_ERR("device-specific config too short");
 		return -ENODEV;
 	}
 

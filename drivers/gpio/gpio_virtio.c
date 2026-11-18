@@ -596,6 +596,7 @@ static int gpio_virtio_init(const struct device *dev)
 	const struct gpio_virtio_config *cfg = dev->config;
 	struct gpio_virtio_data *data = dev->data;
 	volatile struct virtio_gpio_config *devcfg;
+	size_t devcfg_len;
 	uint16_t ngpio;
 	int ret;
 
@@ -620,9 +621,14 @@ static int gpio_virtio_init(const struct device *dev)
 		return ret;
 	}
 
-	devcfg = virtio_get_device_specific_config(cfg->vdev);
+	devcfg = virtio_get_device_specific_config(cfg->vdev, &devcfg_len);
 	if (devcfg == NULL) {
 		LOG_ERR("could not get device-specific config");
+		return -ENODEV;
+	}
+
+	if (devcfg_len < sizeof(devcfg->ngpio)) {
+		LOG_ERR("device-specific config too short");
 		return -ENODEV;
 	}
 
