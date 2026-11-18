@@ -15,6 +15,6 @@ zephyr_library_sources_ifdef(CONFIG_UHC_NXP_OHCI uhc_mcux_common.c uhc_mcux_ohci
 zephyr_library_sources_ifdef(CONFIG_UHC_NXP_IP3516HS uhc_mcux_common.c uhc_mcux_ip3516hs.c)
 zephyr_library_sources_ifdef(CONFIG_UHC_RENESAS_RA uhc_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_UHC_DWC3
-  uhc_dwc3.c dwc3_host.c dwc3_xilinx.c xhci_hcd.c xhci_cmd.c xhci_ep0.c
+  uhc_dwc3.c dwc3_host.c dwc3_xilinx.c xhci_hcd.c xhci_port.c xhci_cmd.c xhci_ep0.c
   xhci_event.c xhci_ring.c xhci_bulk.c xhci_dwc3_bulk.c xhci_slot.c
 )
