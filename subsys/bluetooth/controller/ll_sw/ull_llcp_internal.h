@@ -31,6 +31,7 @@ enum llcp_proc {
 	PROC_SCA_UPDATE,
 	PROC_PERIODIC_SYNC,
 	PROC_FRAME_SPACE,
+	PROC_SUBRATE_UPDATE,
 	/* A helper enum entry, to use in pause procedure context */
 	PROC_NONE = 0x0,
 };
@@ -357,6 +358,23 @@ struct proc_ctx {
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 		} periodic_sync;
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER || CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+		/* Connection Subrate Update / Request Procedure */
+		struct {
+			uint8_t  error;
+			/* Requested parameters (from LL_SUBRATE_REQ / HCI) */
+			uint16_t subrate_factor_min;
+			uint16_t subrate_factor_max;
+			uint16_t max_latency;
+			uint16_t continuation_number;
+			uint16_t timeout;
+			/* Negotiated parameters (sent/received in LL_SUBRATE_IND) */
+			uint16_t subrate_factor;
+			uint16_t subrate_base_event;
+			uint16_t latency;
+		} subrate;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 	} data;
 
 	struct {
@@ -729,6 +747,26 @@ void llcp_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 void llcp_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+/*
+ * Connection Subrating Procedure Helper
+ */
+void llcp_pdu_encode_subrate_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_subrate_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_encode_subrate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_pdu_decode_subrate_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+void llcp_lp_subrate_init_proc(struct proc_ctx *ctx);
+void llcp_lp_subrate_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+void llcp_lp_subrate_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_lp_subrate_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+
+void llcp_rp_subrate_init_proc(struct proc_ctx *ctx);
+void llcp_rp_subrate_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+void llcp_rp_subrate_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
+void llcp_rp_subrate_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 
 /*
  * Remote Channel Map Update Procedure Helper

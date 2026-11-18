@@ -271,6 +271,29 @@ struct ll_conn {
 	/* Detect empty L2CAP start frame */
 	uint8_t  start_empty:1;
 #endif /* CONFIG_BT_CTLR_LLID_DATA_START_EMPTY */
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	struct {
+		/* Active subrate parameters (Core Spec Vol 6, Part B, 4.5.1) */
+		uint16_t factor;               /* connSubrateFactor */
+		uint16_t base_event;           /* connSubrateBaseEvent */
+		uint16_t continuation_number;  /* connContinuationNumber */
+		uint16_t peripheral_latency;   /* connPeripheralLatency, subrated events */
+		/* Continuation events still to be honoured after a non-empty
+		 * PDU (the connContinuationNumber countdown). Working state for
+		 * the LLL event scheduler, not negotiated.
+		 */
+		uint16_t cont_num_left;
+		/* Host-provided acceptable parameters for peripheral-initiated
+		 * requests, used by a Central to negotiate (5.1.20).
+		 */
+		uint16_t acc_factor_min;
+		uint16_t acc_factor_max;
+		uint16_t acc_max_latency;
+		uint16_t acc_continuation_number;
+		uint16_t acc_supervision_timeout;
+	} subrate;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 }; /* struct ll_conn */
 
 struct node_rx_cc {
@@ -309,3 +332,13 @@ struct node_rx_sca {
 	uint8_t status;
 	uint8_t sca;
 };
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+struct node_rx_subrate_change {
+	uint8_t  status;
+	uint16_t subrate_factor;
+	uint16_t peripheral_latency;
+	uint16_t continuation_number;
+	uint16_t supervision_timeout;
+};
+#endif /* CONFIG_BT_CTLR_SUBRATING */

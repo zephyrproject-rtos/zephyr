@@ -339,6 +339,56 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+uint8_t ll_subrate_req(uint16_t handle, uint16_t subrate_min, uint16_t subrate_max,
+		       uint16_t max_latency, uint16_t continuation_number,
+		       uint16_t supervision_timeout)
+{
+	struct ll_conn *conn;
+
+	conn = ll_connected_get(handle);
+	if (conn == NULL) {
+		return BT_HCI_ERR_UNKNOWN_CONN_ID;
+	}
+
+	/* Parameter range checks, Core Spec Vol 4, Part E, Section 7.8.124 */
+	if ((subrate_min < 0x0001U) || (subrate_min > 0x01F4U) ||
+	    (subrate_max < 0x0001U) || (subrate_max > 0x01F4U) ||
+	    (max_latency > 0x01F3U) || (continuation_number > 0x01F3U) ||
+	    (supervision_timeout < 0x000AU) || (supervision_timeout > 0x0C80U)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	if ((subrate_max < subrate_min) || (continuation_number >= subrate_max) ||
+	    ((uint32_t)subrate_max * (max_latency + 1U) > 500U)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	/* Supervision timeout shall exceed 2 x connInterval x Subrate_Max x
+	 * (Max_Latency + 1). connInterval is in 1.25 ms and the timeout in 10 ms
+	 * units, so the comparison is scaled by 4 (see ull_llcp_conn_upd.c).
+	 */
+	if (((uint32_t)conn->lll.interval * subrate_max * (max_latency + 1U)) >=
+	    ((uint32_t)supervision_timeout * 4U)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	/* On the Central, this command also sets the acceptable parameters for
+	 * subsequent Peripheral-initiated requests (Section 7.8.124).
+	 */
+	if (conn->lll.role == BT_HCI_ROLE_CENTRAL) {
+		conn->subrate.acc_factor_min = subrate_min;
+		conn->subrate.acc_factor_max = subrate_max;
+		conn->subrate.acc_max_latency = max_latency;
+		conn->subrate.acc_continuation_number = continuation_number;
+		conn->subrate.acc_supervision_timeout = supervision_timeout;
+	}
+
+	return ull_cp_subrate_req(conn, subrate_min, subrate_max, max_latency,
+				  continuation_number, supervision_timeout);
+}
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
 {
 	struct ll_conn *conn;
@@ -2616,6 +2666,20 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 		LL_ASSERT(0);
 		break;
 	}
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	/* A connection interval change invalidates the negotiated subrating: its
+	 * supervision-timeout/skip bound was validated against the old interval.
+	 * Reset to factor 1 (no subrating); the Host can re-negotiate.
+	 */
+	if (lll->interval != interval) {
+		conn->subrate.factor = 1U;
+		conn->subrate.base_event = 0U;
+		conn->subrate.continuation_number = 0U;
+		conn->subrate.peripheral_latency = 0U;
+		conn->subrate.cont_num_left = 0U;
+	}
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 
 	lll->interval = interval;
 	lll->latency = latency;
