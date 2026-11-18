@@ -533,6 +533,13 @@ struct event_done_extra {
 					uint16_t trx_cnt;
 					uint8_t  crc_valid:1;
 					uint8_t  is_aborted:1;
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+					/* A non-empty (Length>0) PDU was tx/rx'd
+					 * during the event; drives subrating
+					 * continuation events (Vol 6, B, 4.5.1).
+					 */
+					uint8_t  has_nonempty_pdu:1;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 					uint8_t  estab_failed:1;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
