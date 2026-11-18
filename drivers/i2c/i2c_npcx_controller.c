@@ -293,6 +293,23 @@ static void i2c_ctrl_config_bus_freq(const struct device *dev,
 	i2c_ctrl_bank_sel(dev, NPCX_I2C_BANK_FIFO);
 }
 
+/*
+ * SMBnCTL3 SCL_LVL/SDA_LVL locate in 'Normal' bank. Switch back to 'FIFO' bank
+ * when leaving in case the other utilities access the registers there.
+ */
+void i2c_ctrl_hold_bus(const struct device *dev, int stall)
+{
+	i2c_ctrl_bank_sel(dev, NPCX_I2C_BANK_NORMAL);
+
+	if (stall) {
+		i2c_ctrl_stall_scl(dev);
+	} else {
+		i2c_ctrl_free_scl(dev);
+	}
+
+	i2c_ctrl_bank_sel(dev, NPCX_I2C_BANK_FIFO);
+}
+
 /* I2C controller local functions */
 static int i2c_ctrl_wait_stop_completed(const struct device *dev, int timeout)
 {
@@ -318,6 +335,38 @@ static int i2c_ctrl_wait_stop_completed(const struct device *dev, int timeout)
 	} else {
 		return -ETIMEDOUT;
 	}
+}
+
+static bool i2c_ctrl_toggle_scls(const struct device *dev)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
+
+	/* Drive the clock high. */
+	i2c_ctrl_free_scl(dev);
+	k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
+	/*
+	 * Toggle SCL to generate 9 clocks. If the I2C target releases the SDA, we can stop
+	 * toggle the SCL and issue a STOP.
+	 */
+	for (int j = 0; j < 9; j++) {
+		if (IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SDA_LVL)) {
+			break;
+		}
+		i2c_ctrl_stall_scl(dev);
+		k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
+		i2c_ctrl_free_scl(dev);
+		k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
+	}
+	/* Drive the SDA line to issue STOP. */
+	i2c_ctrl_stall_sda(dev);
+	k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
+	i2c_ctrl_free_sda(dev);
+	k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
+	if (i2c_ctrl_is_scl_sda_both_high(dev)) {
+		return true;
+	}
+
+	return false;
 }
 
 static int i2c_ctrl_wait_idle_completed(const struct device *dev, int timeout)
@@ -353,7 +402,7 @@ static int i2c_ctrl_recovery(const struct device *dev)
 
 	/* Step 1: Make sure the bus is not stalled before exit in FIFO mode. */
 #if defined(CONFIG_I2C_NPCX_FIFO_DRIVEN)
-	i2c_ctrl_fifo_hold_bus(dev, 0);
+	i2c_ctrl_hold_bus(dev, 0);
 #endif
 
 	/*
@@ -486,7 +535,7 @@ static int i2c_ctrl_proc_read_msg(const struct device *dev, struct i2c_msg *msg)
 				(msg->flags & I2C_MSG_STOP) != 0);
 
 		/* Release bus */
-		i2c_ctrl_fifo_hold_bus(dev, 0);
+		i2c_ctrl_hold_bus(dev, 0);
 #endif
 		/* Enable i2c interrupt first */
 		i2c_ctrl_irq_enable(dev, 1);

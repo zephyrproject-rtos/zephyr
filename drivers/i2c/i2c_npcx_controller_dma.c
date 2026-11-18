@@ -124,34 +124,6 @@ void i2c_ctrl_stop(const struct device *dev)
 	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_STOP);
 }
 
-/* I2C controller recover function in `DMA` mode */
-bool i2c_ctrl_toggle_scls(const struct device *dev)
-{
-	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
-
-	/*
-	 * Toggle SCL to generate 9 clocks. If the I2C target releases the SDA, we can stop
-	 * toggle the SCL and issue a STOP.
-	 */
-	for (int j = 0; j < 9; j++) {
-		if (IS_BIT_SET(inst->SMBCTL3, NPCX_SMBCTL3_SDA_LVL)) {
-			break;
-		}
-
-		/* Toggle SCL line for one cycle. */
-		inst->SMBCST |= BIT(NPCX_SMBCST_TGSCL);
-		k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
-	}
-	/* Generate a STOP condition */
-	i2c_ctrl_stop(dev);
-	k_busy_wait(I2C_RECOVER_BUS_DELAY_US);
-	if (i2c_ctrl_is_scl_sda_both_high(dev)) {
-		return true;
-	}
-
-	return false;
-}
-
 /* I2C controller `DMA` interrupt functions */
 void i2c_ctrl_handle_write_int_event(const struct device *dev)
 {
