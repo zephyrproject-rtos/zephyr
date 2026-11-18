@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,system-timer-companion = &counterg0;
+	};
+
+	zephyr,user {
+		sleep-durations-ms = <6 9 12 1413 2590>;
+		expected-pm-states = <&run2 &stop2 &stdby1 &stdby1 &stdby1>;
+	};
+};
+
+&counterg0 {
+	wakeup-source;
+	status = "okay";
+};
+
+&timg0 {
+	clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+	wakeup-source;
+	ti,clk-prescaler = <0>;
+	status = "okay";
+};

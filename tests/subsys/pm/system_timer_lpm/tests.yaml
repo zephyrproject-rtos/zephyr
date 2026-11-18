@@ -19,3 +19,14 @@ tests:
       - kit_psc3m6_eval/psc3m6ges3ahq1
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m55
+  pm.system_timer_lpm.mspm0:
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    integration_platforms:
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    extra_args:
+      - EXTRA_CONF_FILE=boards/lp_mspm0.conf
+      - EXTRA_DTC_OVERLAY_FILE=boards/lp_mspm0.overlay
