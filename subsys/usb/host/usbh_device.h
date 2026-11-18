@@ -48,11 +48,16 @@ int usbh_device_set_address(struct usb_device *const udev, const uint8_t num);
 /* Get root USB device */
 struct usb_device *usbh_device_get_root(struct usbh_context *const ctx);
 
-/* Check if USB device is root */
-static inline bool usbh_device_is_root(struct usbh_context *const ctx,
+/** Root-tier device on controller port @a port (1-based), or NULL. */
+struct usb_device *usbh_device_find_root_by_port(struct usbh_context *const ctx, uint8_t port);
+
+/* Check if USB device is controller root-tier (not an external-hub child). */
+static inline bool usbh_device_is_root(const struct usbh_context *const ctx,
 				       struct usb_device *const udev)
 {
-	return usbh_device_get_root(ctx) == udev;
+	ARG_UNUSED(ctx);
+
+	return udev != NULL && udev->hub == NULL;
 }
 
 /* Connect a new USB device */

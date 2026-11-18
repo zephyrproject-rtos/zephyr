@@ -1225,6 +1225,23 @@ struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
 	return ctx->root;
 }
 
+struct usb_device *usbh_device_find_root_by_port(struct usbh_context *const ctx, uint8_t port)
+{
+	struct usb_device *udev;
+
+	if (ctx == NULL || port == 0U) {
+		return NULL;
+	}
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&ctx->udevs, udev, node) {
+		if (udev->hub == NULL && udev->hub_port == port) {
+			return udev;
+		}
+	}
+
+	return NULL;
+}
+
 int usbh_device_connect(struct usbh_context *const ctx, struct usb_device *const udev)
 {
 	int err;
@@ -1233,9 +1250,13 @@ int usbh_device_connect(struct usbh_context *const ctx, struct usb_device *const
 
 	udev->state = USB_STATE_DEFAULT;
 
-	if (ctx->root == NULL && udev->hub == NULL) {
-		ctx->root = udev;
-		udev->level = 1;
+	if (udev->hub == NULL) {
+		if (udev->level == 0U) {
+			udev->level = 1;
+		}
+		if (ctx->root == NULL) {
+			ctx->root = udev;
+		}
 	}
 
 	err = usbh_device_init(udev);
