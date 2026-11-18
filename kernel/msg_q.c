@@ -43,6 +43,8 @@ static inline bool msgq_handle_poll_events(struct k_msgq *msgq)
 void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 		 uint32_t max_msgs)
 {
+	__ASSERT(msg_size != 0U, "msg_size must not be zero");
+	__ASSERT(max_msgs != 0U, "max_msgs must not be zero");
 	__ASSERT_NO_MSG(!size_mul_overflow(max_msgs, msg_size, &(size_t){0}));
 	__ASSERT_NO_MSG(!size_add_overflow((size_t)(uintptr_t)buffer, max_msgs * msg_size,
 					&(size_t){0}));
