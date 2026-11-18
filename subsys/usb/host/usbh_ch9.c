@@ -8,7 +8,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/usb/usbh.h>
+#include <zephyr/usb/usbh_hcd.h>
 #include <zephyr/usb/usb_ch9.h>
+#include <zephyr/drivers/usb/uhc.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net_buf.h>
 
@@ -120,6 +122,14 @@ int usbh_req_setup(struct usb_device *const udev,
 	}
 
 	ret = xfer->err;
+
+	if (ret != 0 && ret != -ECONNRESET) {
+		enum uhc_ep_recovery_reason reason = (ret == -EPIPE)
+							     ? UHC_EP_RECOVERY_CLEAR_HALT
+							     : UHC_EP_RECOVERY_TRANSPORT_RESET;
+
+		(void)usbh_endpoint_recover(udev, ep, reason);
+	}
 
 buf_alloc_err:
 	(void)uhc_xfer_unref(xfer);
