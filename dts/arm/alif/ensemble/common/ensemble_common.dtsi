@@ -382,5 +382,22 @@
 			current-speed = <115200>;
 			status = "disabled";
 		};
+
+		mipi_dsi: mipi-dsi@49032000 {
+			compatible = "alif,mipi-dsi";
+			reg = <0x49032000 0x1000>,
+			      <0x4903f000 0x40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg-names = "dsi_regs", "clkctl_regs";
+			dpi-in = <&cdc200>;
+			clocks = <&clockctrl ALIF_DSI_CLK>, <&clockctrl ALIF_CDC200_PIX_SYST_ACLK>,
+				 <&clockctrl ALIF_MIPI_TXDPHY_CLK>,
+				 <&clockctrl ALIF_MIPI_PLLREF_CLK>,
+				 <&clockctrl ALIF_MIPI_BYPASS_CLK>;
+			clock-names = "pclk", "pixel-clk", "dphy-cfgclk",
+				      "dphy-clkin", "dphy-clkext";
+			status = "disabled";
+		};
 	};
 };

@@ -192,3 +192,8 @@
 	interrupt-parent = <&nvic>;
 	interrupts = <61 0>;
 };
+
+&mipi_dsi {
+	interrupt-parent = <&nvic>;
+	interrupts = <343 0>;
+};
