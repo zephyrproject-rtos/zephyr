@@ -1885,12 +1885,7 @@ static int add_static_network_config(struct net_if *iface)
 {
 #if defined(CONFIG_WIFI_CREDENTIALS_STATIC)
 
-	struct wifi_credentials_personal creds = {
-		.header = {
-			.ssid_len = strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID),
-		},
-		.password_len = strlen(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD),
-	};
+	struct wifi_credentials_personal creds;
 
 	int ret = wifi_credentials_get_by_ssid_personal_struct(
 		CONFIG_WIFI_CREDENTIALS_STATIC_SSID, strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID),
@@ -1900,6 +1895,14 @@ static int add_static_network_config(struct net_if *iface)
 		LOG_WRN("Statically configured WiFi network was overridden by storage.");
 		return 0;
 	}
+
+	/* A failed lookup may have loaded a corrupted entry, so use only the Kconfig values */
+	creds = (struct wifi_credentials_personal){
+		.header = {
+			.ssid_len = strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID),
+		},
+		.password_len = strlen(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD),
+	};
 
 #if defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN)
 	creds.header.type = WIFI_SECURITY_TYPE_NONE;
