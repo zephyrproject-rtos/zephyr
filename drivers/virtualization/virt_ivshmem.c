@@ -45,9 +45,8 @@ static bool ivshmem_configure_msi_x_interrupts(const struct device *dev)
 
 	key = irq_lock();
 
-	n_vectors = pcie_msi_vectors_allocate(data->pcie->bdf,
-					      CONFIG_IVSHMEM_INT_PRIORITY,
-					      data->vectors,
+	n_vectors = pcie_msi_vectors_allocate(PCIE_DEV_ENDPOINT(data->pcie),
+					      CONFIG_IVSHMEM_INT_PRIORITY, data->vectors,
 					      CONFIG_IVSHMEM_MSI_X_VECTORS);
 	if (n_vectors == 0) {
 		LOG_ERR("Could not allocate %u MSI-X vectors",
@@ -61,10 +60,8 @@ static bool ivshmem_configure_msi_x_interrupts(const struct device *dev)
 		data->params[i].dev = dev;
 		data->params[i].vector = i;
 
-		if (!pcie_msi_vector_connect(data->pcie->bdf,
-					     &data->vectors[i],
-					     ivshmem_doorbell,
-					     &data->params[i], 0)) {
+		if (!pcie_msi_vector_connect(PCIE_DEV_ENDPOINT(data->pcie), &data->vectors[i],
+					     ivshmem_doorbell, &data->params[i], 0)) {
 			LOG_ERR("Failed to connect MSI-X vector %u", i);
 			goto out;
 		}
@@ -72,7 +69,7 @@ static bool ivshmem_configure_msi_x_interrupts(const struct device *dev)
 
 	LOG_INF("%u MSI-X Vectors connected", n_vectors);
 
-	if (!pcie_msi_enable(data->pcie->bdf, data->vectors, n_vectors, 0)) {
+	if (!pcie_msi_enable(PCIE_DEV_ENDPOINT(data->pcie), data->vectors, n_vectors, 0)) {
 		LOG_ERR("Could not enable MSI-X");
 		goto out;
 	}
@@ -95,7 +92,7 @@ static bool ivshmem_configure_int_x_interrupts(const struct device *dev)
 {
 	struct ivshmem *data = dev->data;
 	const struct ivshmem_cfg *cfg = dev->config;
-	uint32_t cfg_int = pcie_conf_read(data->pcie->bdf, PCIE_CONF_INTR);
+	uint32_t cfg_int = pcie_conf_read(PCIE_DEV_ENDPOINT(data->pcie), PCIE_CONF_INTR);
 	uint32_t cfg_intx_pin = PCIE_CONF_INTR_PIN(cfg_int);
 
 	if (!IN_RANGE(cfg_intx_pin, PCIE_INTX_PIN_MIN, PCIE_INTX_PIN_MAX)) {
@@ -104,7 +101,7 @@ static bool ivshmem_configure_int_x_interrupts(const struct device *dev)
 	}
 
 	/* Ensure INTx is enabled */
-	pcie_set_cmd(data->pcie->bdf, PCIE_CONF_CMDSTAT_INTX_DISABLE, false);
+	pcie_set_cmd(PCIE_DEV_ENDPOINT(data->pcie), PCIE_CONF_CMDSTAT_INTX_DISABLE, false);
 
 	const struct intx_info *intx = &cfg->intx_info[cfg_intx_pin - 1];
 
@@ -113,16 +110,15 @@ static bool ivshmem_configure_int_x_interrupts(const struct device *dev)
 
 	LOG_INF("Enabling INTx IRQ %u (pin %u)", intx->irq, cfg_intx_pin);
 	if (intx->irq == INTX_IRQ_UNUSED ||
-		!pcie_connect_dynamic_irq(
-			data->pcie->bdf, intx->irq, intx->priority,
-			ivshmem_doorbell, &data->params[0], intx->flags)) {
+	    !pcie_connect_dynamic_irq(PCIE_DEV_ENDPOINT(data->pcie), intx->irq, intx->priority,
+				      ivshmem_doorbell, &data->params[0], intx->flags)) {
 		LOG_ERR("Failed to connect INTx ISR %u", cfg_intx_pin);
 		return false;
 	}
 
 	data->n_vectors = 1;
 
-	pcie_irq_enable(data->pcie->bdf, intx->irq);
+	pcie_irq_enable(PCIE_DEV_ENDPOINT(data->pcie), intx->irq);
 
 	return true;
 }
@@ -147,10 +143,10 @@ static void register_signal(const struct device *dev,
 
 static const struct ivshmem_reg no_reg;
 
-__maybe_unused static uint64_t pcie_conf_read_u64(pcie_bdf_t bdf, unsigned int reg)
+__maybe_unused static uint64_t pcie_conf_read_u64(const struct pcie_endpoint *ep, unsigned int reg)
 {
-	uint64_t lo = pcie_conf_read(bdf, reg);
-	uint64_t hi = pcie_conf_read(bdf, reg + 1);
+	uint64_t lo = pcie_conf_read(ep, reg);
+	uint64_t hi = pcie_conf_read(ep, reg + 1);
 
 	return hi << 32 | lo;
 }
@@ -160,7 +156,7 @@ static bool ivshmem_configure(const struct device *dev)
 	struct ivshmem *data = dev->data;
 	struct pcie_bar mbar_regs, mbar_msi_x, mbar_shmem;
 
-	if (!pcie_get_mbar(data->pcie->bdf, IVSHMEM_PCIE_REG_BAR_IDX, &mbar_regs)) {
+	if (!pcie_get_mbar(PCIE_DEV_ENDPOINT(data->pcie), IVSHMEM_PCIE_REG_BAR_IDX, &mbar_regs)) {
 		if (IS_ENABLED(CONFIG_IVSHMEM_DOORBELL)
 			IF_ENABLED(CONFIG_IVSHMEM_V2, (|| data->ivshmem_v2))) {
 			LOG_ERR("ivshmem regs bar not found");
@@ -170,17 +166,17 @@ static bool ivshmem_configure(const struct device *dev)
 		device_map(DEVICE_MMIO_RAM_PTR(dev), (uintptr_t)&no_reg,
 			   sizeof(struct ivshmem_reg), K_MEM_CACHE_NONE);
 	} else {
-		pcie_set_cmd(data->pcie->bdf, PCIE_CONF_CMDSTAT_MEM |
-			PCIE_CONF_CMDSTAT_MASTER, true);
+		pcie_set_cmd(PCIE_DEV_ENDPOINT(data->pcie),
+			     PCIE_CONF_CMDSTAT_MEM | PCIE_CONF_CMDSTAT_MASTER, true);
 
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar_regs.phys_addr,
 			   mbar_regs.size, K_MEM_CACHE_NONE);
 	}
 
-	bool msi_x_bar_present = pcie_get_mbar(
-		data->pcie->bdf, IVSHMEM_PCIE_MSI_X_BAR_IDX, &mbar_msi_x);
-	bool shmem_bar_present = pcie_get_mbar(
-		data->pcie->bdf, IVSHMEM_PCIE_SHMEM_BAR_IDX, &mbar_shmem);
+	bool msi_x_bar_present = pcie_get_mbar(PCIE_DEV_ENDPOINT(data->pcie),
+					       IVSHMEM_PCIE_MSI_X_BAR_IDX, &mbar_msi_x);
+	bool shmem_bar_present = pcie_get_mbar(PCIE_DEV_ENDPOINT(data->pcie),
+					       IVSHMEM_PCIE_SHMEM_BAR_IDX, &mbar_shmem);
 
 	LOG_INF("MSI-X bar present: %s", msi_x_bar_present ? "yes" : "no");
 	LOG_INF("SHMEM bar present: %s", shmem_bar_present ? "yes" : "no");
@@ -203,17 +199,18 @@ static bool ivshmem_configure(const struct device *dev)
 			return false;
 		}
 
-		uint32_t vendor_cap = pcie_get_cap(data->pcie->bdf, PCI_CAP_ID_VNDR);
+		uint32_t vendor_cap = pcie_get_cap(PCIE_DEV_ENDPOINT(data->pcie), PCI_CAP_ID_VNDR);
 		uint32_t cap_pos;
 
 		if (!shmem_bar_present) {
 			cap_pos = vendor_cap + IVSHMEM_CFG_ADDRESS / 4;
-			shmem_phys_addr = pcie_conf_read_u64(data->pcie->bdf, cap_pos);
+			shmem_phys_addr =
+				pcie_conf_read_u64(PCIE_DEV_ENDPOINT(data->pcie), cap_pos);
 		}
 
 		/* State table R/O */
 		cap_pos = vendor_cap + IVSHMEM_CFG_STATE_TAB_SZ / 4;
-		size_t state_table_size = pcie_conf_read(data->pcie->bdf, cap_pos);
+		size_t state_table_size = pcie_conf_read(PCIE_DEV_ENDPOINT(data->pcie), cap_pos);
 		LOG_INF("State table size 0x%zX", state_table_size);
 		if (state_table_size < sizeof(uint32_t) * data->max_peers) {
 			LOG_ERR("Invalid state table size %zu", state_table_size);
@@ -225,7 +222,7 @@ static bool ivshmem_configure(const struct device *dev)
 
 		/* R/W section (optional) */
 		cap_pos = vendor_cap + IVSHMEM_CFG_RW_SECTION_SZ / 4;
-		data->rw_section_size = pcie_conf_read_u64(data->pcie->bdf, cap_pos);
+		data->rw_section_size = pcie_conf_read_u64(PCIE_DEV_ENDPOINT(data->pcie), cap_pos);
 		size_t rw_section_offset = state_table_size;
 		LOG_INF("RW section size 0x%zX", data->rw_section_size);
 		if (data->rw_section_size > 0) {
@@ -237,7 +234,8 @@ static bool ivshmem_configure(const struct device *dev)
 
 		/* Output sections */
 		cap_pos = vendor_cap + IVSHMEM_CFG_OUTPUT_SECTION_SZ / 4;
-		data->output_section_size = pcie_conf_read_u64(data->pcie->bdf, cap_pos);
+		data->output_section_size =
+			pcie_conf_read_u64(PCIE_DEV_ENDPOINT(data->pcie), cap_pos);
 		size_t output_section_offset = rw_section_offset + data->rw_section_size;
 		LOG_INF("Output section size 0x%zX", data->output_section_size);
 		for (uint32_t i = 0; i < data->max_peers; i++) {
@@ -259,11 +257,11 @@ static bool ivshmem_configure(const struct device *dev)
 
 		/* Ensure one-shot ISR mode is disabled */
 		cap_pos = vendor_cap + IVSHMEM_CFG_PRIV_CNTL / 4;
-		uint32_t cfg_priv_cntl = pcie_conf_read(data->pcie->bdf, cap_pos);
+		uint32_t cfg_priv_cntl = pcie_conf_read(PCIE_DEV_ENDPOINT(data->pcie), cap_pos);
 
 		cfg_priv_cntl &= ~(IVSHMEM_PRIV_CNTL_ONESHOT_INT <<
 			((IVSHMEM_CFG_PRIV_CNTL % 4) * 8));
-		pcie_conf_write(data->pcie->bdf, cap_pos, cfg_priv_cntl);
+		pcie_conf_write(PCIE_DEV_ENDPOINT(data->pcie), cap_pos, cfg_priv_cntl);
 	} else
 #endif /* CONFIG_IVSHMEM_V2 */
 	{
