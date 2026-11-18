@@ -75,14 +75,14 @@ if(DEFINED dts_shell_uart AND dts_shell_uart)
   dt_prop(monitor_baud PATH ${dts_shell_uart} PROPERTY "current-speed")
 endif()
 
-# Flash encryption requires write-block-size to be a multiple of 32.
+# Flash encryption requires write-block-size to be 32.
 dt_prop(write_block_size PATH "${dts_flash}" PROPERTY "write-block-size")
-if(CONFIG_ESP32_FLASH_ENCRYPTION OR CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION)
+if(CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION)
   if(NOT write_block_size)
     message(FATAL_ERROR
       "Hardware flash encryption requires zephyr,flash write-block-size to be "
-      "set (must be a multiple of 32). Add it to both the application and "
-      "MCUboot overlays, e.g.:\n"
+      "set (must be 32). Add it to both the application and MCUboot overlays,"
+      " e.g.:\n"
       "  &flash0 {\n"
       "          write-block-size = <32>;\n"
       "  };")
@@ -171,17 +171,19 @@ if(CONFIG_MCUBOOT)
       --summary
   )
 
-  # Compare bootloader binary to DT boot_partition size.
-  dt_nodelabel(boot_part_path NODELABEL "boot_partition")
-  dt_reg_size(boot_part_size PATH ${boot_part_path})
-  math(EXPR boot_part_size_dec "${boot_part_size}" OUTPUT_FORMAT DECIMAL)
-  message(STATUS "boot_partition size: ${boot_part_size_dec} bytes")
-  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-    COMMAND ${CMAKE_COMMAND}
-    ARGS
-      -DBIN_FILE=${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
-      -DMAX_SIZE=${boot_part_size_dec}
-      -P ${CMAKE_CURRENT_LIST_DIR}/check_boot_partition_size.cmake)
+  if(CONFIG_BUILD_OUTPUT_BIN)
+    # Compare bootloader binary to DT boot_partition size.
+    dt_nodelabel(boot_part_path NODELABEL "boot_partition")
+    dt_reg_size(boot_part_size PATH ${boot_part_path})
+    math(EXPR boot_part_size_dec "${boot_part_size}" OUTPUT_FORMAT DECIMAL)
+    message(STATUS "boot_partition size: ${boot_part_size_dec} bytes")
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${CMAKE_COMMAND}
+      ARGS
+        -DBIN_FILE=${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
+        -DMAX_SIZE=${boot_part_size_dec}
+        -P ${CMAKE_CURRENT_LIST_DIR}/check_boot_partition_size.cmake)
+  endif()
 endif()
 
 if(CONFIG_MCUBOOT)
