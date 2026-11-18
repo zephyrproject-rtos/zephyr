@@ -42,11 +42,19 @@ LOG_MODULE_REGISTER(pf1550_charger, CONFIG_CHARGER_LOG_LEVEL);
 #define CHARGER_LED_CNFG          (0x80 + 0x1E)
 #define CHARGER_CHGR_KEY2         (0x80 + 0x1F)
 
+#define PF1550_SUP_IRQ      BIT(0)
+#define PF1550_BAT2SOC_IRQ  BIT(1)
 #define PF1550_BAT_IRQ      BIT(2)
 #define PF1550_CHG_IRQ      BIT(3)
 #define PF1550_VBUS_IRQ     BIT(5)
 #define PF1550_VBUS_DPM_IRQ BIT(6)
-#define CHG_INT_ENABLE_ALL  (0xFF)
+#define PF1550_THM_IRQ      BIT(7)
+/*
+ * The sources that can change the charger status or the VBUS state. CHG_I alone does not cover
+ * the status: it only follows CHG_OK, which stays 0 between done, thermistor suspend, a battery
+ * fault and an invalid input.
+ */
+#define CHG_INT_ENABLED     (PF1550_BAT_IRQ | PF1550_CHG_IRQ | PF1550_VBUS_IRQ | PF1550_THM_IRQ)
 
 #define LED_PWM_LED_EN          BIT(7)
 #define LED_PWM_FULL_ON         BIT(5)
@@ -328,8 +336,7 @@ static int pf1550_enable_interrupts(const struct device *dev)
 		return ret;
 	}
 
-	return i2c_reg_write_byte_dt(&config->bus, CHARGER_CHG_INT_MASK,
-				     (uint8_t)~CHG_INT_ENABLE_ALL);
+	return i2c_reg_write_byte_dt(&config->bus, CHARGER_CHG_INT_MASK, (uint8_t)~CHG_INT_ENABLED);
 }
 
 static int pf1550_led_config(const struct device *dev)
