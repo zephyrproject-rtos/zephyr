@@ -49,6 +49,12 @@
  * compared to other cores, causing the increased overhead.
  */
 #define MAXIMUM_SHORTEST_TICKS (IS_ENABLED(CONFIG_XIP) ? 8 : 4)
+#elif defined(CONFIG_ITE_IT8XXX2_TIMER)
+/*
+ * ITE IT8xxx2 event timer enforces a 150 us minimum reload floor plus
+ * up to 60 us to synchronize ETXRST into the timer clock domain.
+ */
+#define MAXIMUM_SHORTEST_TICKS k_us_to_ticks_ceil32(150 + 60)
 #else
 #define MAXIMUM_SHORTEST_TICKS 1
 #endif
