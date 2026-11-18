@@ -25,48 +25,45 @@ benefits:
   Draft PRs have no review expectation and PRs created as drafts from the start
   do not notify anyone by default.
 
-
 Defining Smaller PRs
 ********************
 
-- Smaller PRs should encompass one self-contained logical change.
+A PR should address one coherent change: a single bug fix, improvement, or
+useful increment of a larger feature. Reviewers should be able to understand
+its purpose and evaluate it without having to review unrelated work.
 
-- When adding a new large feature or API, the PR should address only one part of
-  the feature. In this case create an :ref:`RFC proposal <rfcs>` to describe the
-  additional parts of the feature for reviewers.
+A smaller PR does not necessarily mean fewer lines of code. The important
+thing is a clear scope. For example, a large feature might be introduced
+through a series of PRs: one for a core interface and an initial working
+implementation, followed by separate PRs for additional drivers or
+capabilities. Each PR should leave the codebase in a working state.
 
-- PRs should include tests or samples under the following conditions:
-
-  - Adding new features or functionality.
-
-  - Modifying a feature, especially for API behavior contract changes.
-
-  - Fixing a hardware agnostic bug. The test should fail without the bug fixed
-    and pass with the fix applied.
-
-- PRs must update any documentation affected by a functional code change.
-
-- If introducing a new API, the PR must include an example usage of the API.
-  This provides context to the reviewer and prevents submitting PRs with unused
-  APIs.
-
+Avoid splitting changes into tightly coupled PRs solely to make them smaller.
+If several parts must be reviewed and merged together to make sense, keeping
+them in one PR may be easier. For changes that need an overall design proposal,
+see the "Large Changes" section below. Testing and documentation obligations
+are covered under :ref:`pr_requirements`.
 
 Multiple Commits on a Single PR
 *******************************
 
-Contributors are further encouraged to break up PRs into multiple commits.  Keep
-in mind each commit in the PR must still build cleanly and pass all the CI
-tests.
+A PR can contain one commit or several. Use multiple commits when they make a
+cohesive change easier to understand, not simply to preserve the order in
+which the work was developed. Each commit should represent a meaningful step
+in the final implementation.
 
-For example, when introducing an extension to an API, contributors can break up
-the PR into multiple commits targeting these specific changes:
+For example, a PR extending a driver API might contain:
 
-#. Introduce the new APIs, including shared devicetree bindings
-#. Update driver implementation X, with driver specific devicetree bindings
-#. Update driver implementation Y
-#. Add tests for the new API
-#. Add a sample using the API
-#. Update the documentation
+#. Introduce the API and an initial implementation, with relevant tests.
+#. Extend support to another driver, with its corresponding tests.
+#. Add a usage sample and update the user documentation.
+
+This is only an example, not a required structure. A small fix may need just
+one commit. If parts of a larger change can be reviewed and merged
+independently, separate PRs may be a better choice.
+
+Requirements for commit history, buildability, testing, and documentation are
+listed under :ref:`pr_requirements`.
 
 Large Changes
 *************
