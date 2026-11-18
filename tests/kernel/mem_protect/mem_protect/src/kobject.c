@@ -1410,6 +1410,7 @@ ZTEST(mem_protect_kobj, test_thread_alloc_out_of_idx)
  */
 ZTEST(mem_protect_kobj, test_alloc_kobjects)
 {
+	static char msgq_buf[1];
 	struct k_thread *t;
 	struct k_msgq *m;
 	struct k_stack *s;
@@ -1434,7 +1435,7 @@ ZTEST(mem_protect_kobj, test_alloc_kobjects)
 	k_stack_init(s, NULL, 0);
 	m = k_object_alloc(K_OBJ_MSGQ);
 	zassert_not_null(m, "alloc obj (0x%lx)\n", (uintptr_t)m);
-	k_msgq_init(m, NULL, 0, 0);
+	k_msgq_init(m, msgq_buf, sizeof(msgq_buf), 1);
 	q = k_object_alloc(K_OBJ_QUEUE);
 	zassert_not_null(q, "alloc obj (0x%lx)\n", (uintptr_t)q);
 
