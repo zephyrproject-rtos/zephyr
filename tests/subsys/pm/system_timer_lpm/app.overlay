@@ -10,6 +10,11 @@
 		/* Default sleep durations (ms) for the timekeeping test.
 		 * Override per board with boards/<board>.overlay to cover the
 		 * durations that best exercise that platform's companion timer.
+		 *
+		 * A board overlay may also set "expected-pm-states", one
+		 * zephyr,power-state phandle per duration, to check the state
+		 * and substate entered by each sleep:
+		 *	expected-pm-states = <&stop2 &stdby1>;
 		 */
 		sleep-durations-ms = <50 250 1500 3000>;
 	};
