@@ -676,11 +676,11 @@ may be used directly:
 
 .. code-block:: C
 
-   void some_init_code(...)
+   void some_init_code(const struct pcie_endpoint *ep, ...)
    {
       ...
       struct pcie_bar mbar;
-      bool bar_found = pcie_get_mbar(bdf, index, &mbar);
+      bool bar_found = pcie_get_mbar(ep, index, &mbar);
 
       device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
       ...
