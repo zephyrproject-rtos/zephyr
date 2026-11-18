@@ -562,8 +562,19 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 
 		if (step != level_size) {
 			/* boundary falls in the middle of this pte */
-			__ASSERT(is_table_desc(src_table[i], level),
-				 "can't have partial block pte here");
+			if (!is_table_desc(src_table[i], level)) {
+				/*
+				 * The source maps this entry whole while the
+				 * range covers only part of it, which is what
+				 * a partition inside a larger kernel block
+				 * looks like. Split it so the walk can go
+				 * finer, the way set_mapping() splits a block
+				 * a new mapping lands inside of.
+				 */
+				if (!expand_to_table(&src_table[i], level)) {
+					return -ENOMEM;
+				}
+			}
 			if (!is_table_desc(dst_table[i], level)) {
 				/* we need more fine grained boundaries */
 				if (!expand_to_table(&dst_table[i], level)) {
@@ -953,6 +964,44 @@ static struct arm_mmu_ptables kernel_ptables;
 static sys_slist_t domain_list;
 #endif
 
+#ifdef CONFIG_TEST
+/*
+ * Walk @a ptables down to the leaf descriptor covering @a virt and report it
+ * with the level it was found at. Returns -ENOENT when nothing maps that
+ * address. Passing NULL for @a ptables walks the kernel tables.
+ *
+ * Test hook: the descriptors are what tell a domain-private mapping apart
+ * from the kernel entry it was built over, and nothing else in this file
+ * exposes them.
+ */
+int arm64_mmu_pte_get(struct arm_mmu_ptables *ptables, uintptr_t virt, uint64_t *desc,
+		      unsigned int *level)
+{
+	uint64_t *table;
+	unsigned int l = BASE_XLAT_LEVEL;
+
+	if (ptables == NULL) {
+		ptables = &kernel_ptables;
+	}
+	table = ptables->base_xlat_table;
+
+	for (;;) {
+		uint64_t pte = table[XLAT_TABLE_VA_IDX(virt, l)];
+
+		if (is_free_desc(pte)) {
+			return -ENOENT;
+		}
+		if (!is_table_desc(pte, l)) {
+			*desc = pte;
+			*level = l;
+			return 0;
+		}
+		table = pte_desc_table(pte);
+		l++;
+	}
+}
+#endif /* CONFIG_TEST */
+
 /*
  * @brief MMU default configuration
  *
@@ -1229,15 +1278,93 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	return 0;
 }
 
-static int private_map(struct arm_mmu_ptables *ptables, const char *name,
-		       uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
+/*
+ * Which bits of a descriptor the private mapping owns. Everything else
+ * belongs to the entry: descriptor type, output address, access flag,
+ * memory type and shareability.
+ */
+#define PTE_PRIVATE_ATTRS_MASK \
+	(PTE_BLOCK_DESC_AP_ELx | PTE_BLOCK_DESC_AP_RO | PTE_BLOCK_DESC_NG | \
+	 PTE_BLOCK_DESC_UXN | PTE_BLOCK_DESC_PXN)
+
+/*
+ * Apply new attributes to the entries covering the given range, leaving
+ * what they map alone. Entries with nothing mapped are left untouched:
+ * access can only be granted to memory that is actually mapped.
+ */
+static int remap_mapping(uint64_t *table, uintptr_t virt, size_t size,
+			 uint64_t attr_desc, unsigned int level)
 {
+	size_t step, level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
+	uint64_t *pte, *subtable;
 	int ret;
 
+	for ( ; size; virt += step, size -= step) {
+		step = level_size - (virt & (level_size - 1));
+		if (step > size) {
+			step = size;
+		}
+		pte = &table[XLAT_TABLE_VA_IDX(virt, level)];
+
+		if (is_free_desc(*pte)) {
+			continue;
+		}
+
+		if (step != level_size && is_block_desc(*pte)) {
+			/*
+			 * Need to split this block mapping. Without a table to
+			 * split it into, the attributes would land on the whole
+			 * block, granting access beyond the requested range.
+			 */
+			if (!expand_to_table(pte, level)) {
+				return -ENOMEM;
+			}
+		}
+
+		if (is_table_desc(*pte, level)) {
+			subtable = pte_desc_table(*pte);
+			ret = remap_mapping(subtable, virt, step, attr_desc, level + 1);
+			if (ret != 0) {
+				return ret;
+			}
+			continue;
+		}
+
+		*pte = (*pte & ~PTE_PRIVATE_ATTRS_MASK) |
+		       (attr_desc & PTE_PRIVATE_ATTRS_MASK);
+		debug_show_pte(pte, level);
+	}
+
+	return 0;
+}
+
+/*
+ * Give the given range domain private attributes. The range keeps whatever
+ * the kernel tables map it to: the virtual address is not necessarily the
+ * physical address.
+ */
+static int private_map(struct arm_mmu_ptables *ptables, const char *name,
+		       uintptr_t virt, size_t size, uint32_t attrs)
+{
+	uint64_t attr_desc = get_region_desc(attrs | MT_NG);
+	k_spinlock_key_t key;
+	int ret;
+
+	MMU_DEBUG("private map [%s]: virt %lx size %lx attr %llx\n",
+		  name, virt, size, attr_desc);
+	__ASSERT(((virt | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
+		 "address/size are not page aligned\n");
+
 	ret = privatize_page_range(ptables, &kernel_ptables, virt, size, name);
-	__ASSERT(ret == 0, "privatize_page_range() returned %d", ret);
-	ret = add_map(ptables, name, phys, virt, size, attrs | MT_NG);
-	__ASSERT(ret == 0, "add_map() returned %d", ret);
+	if (ret != 0) {
+		return ret;
+	}
+
+	key = k_spin_lock(&xlat_lock);
+	ret = remap_mapping(ptables->base_xlat_table, virt, size, attr_desc,
+			    BASE_XLAT_LEVEL);
+	k_spin_unlock(&xlat_lock, key);
+
 	invalidate_tlb_all();
 
 	inv_dcache_after_map_helper(UINT_TO_POINTER(virt), size, attrs);
@@ -1262,8 +1389,8 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
 	struct k_mem_partition *ptn = &domain->partitions[partition_id];
 
-	return private_map(domain_ptables, "partition", ptn->start, ptn->start,
-			   ptn->size, ptn->attr.attrs | MT_NORMAL);
+	return private_map(domain_ptables, "partition", ptn->start, ptn->size,
+			   ptn->attr.attrs | MT_NORMAL);
 }
 
 int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
@@ -1280,8 +1407,7 @@ static int map_thread_stack(struct k_thread *thread,
 			    struct arm_mmu_ptables *ptables)
 {
 	return private_map(ptables, "thread_stack", thread->stack_info.start,
-			    thread->stack_info.start, thread->stack_info.size,
-			    MT_P_RW_U_RW | MT_NORMAL);
+			   thread->stack_info.size, MT_P_RW_U_RW | MT_NORMAL);
 }
 
 int arch_mem_domain_thread_add(struct k_thread *thread)
@@ -1300,6 +1426,10 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 
 	if (is_migration) {
 		ret = map_thread_stack(thread, domain_ptables);
+		if (ret != 0) {
+			/* Stay on the old tables, where the stack is mapped */
+			return ret;
+		}
 	}
 
 	thread->arch.ptables = domain_ptables;
@@ -1313,11 +1443,23 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	}
 
 	if (is_migration) {
-		ret = reset_map(old_ptables, __func__, thread->stack_info.start,
-				thread->stack_info.size);
+		/*
+		 * The thread now runs on the new tables, so the move is done
+		 * even if this fails. The old domain then still maps the stack
+		 * for user access: revoke it in place, since the private
+		 * entries already cover the stack exactly and no table has to
+		 * be split.
+		 */
+		if (reset_map(old_ptables, __func__, thread->stack_info.start,
+			      thread->stack_info.size) != 0) {
+			(void)private_map(old_ptables, "thread_stack",
+					  thread->stack_info.start,
+					  thread->stack_info.size,
+					  MT_P_RW_U_NA | MT_NORMAL);
+		}
 	}
 
-	return ret;
+	return 0;
 }
 
 int arch_mem_domain_thread_remove(struct k_thread *thread)
