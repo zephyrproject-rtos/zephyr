@@ -1225,11 +1225,11 @@ static int uhc_dwc3_ep_enqueue(const struct device *dev, struct uhc_transfer *co
 }
 
 /*
- * Host stack: SET_CONFIGURATION, full configuration descriptor read, and
- * parse_configuration_descriptor() (interfaces + ep_in/ep_out) complete
- * before this runs. Issue xHCI Configure Endpoint and program per-DCI rings.
+ * Host stack: SET_CONFIGURATION (or updated interface/alternate state), full
+ * configuration descriptor read, and parse_configuration_descriptor()
+ * complete before this runs. Batch endpoint programming for @a udev.
  */
-static int uhc_dwc3_add_endpoints(const struct device *dev, struct usb_device *const udev)
+static int uhc_dwc3_endpoints_commit(const struct device *dev, struct usb_device *const udev)
 {
 	struct uhc_dwc3_data *priv = uhc_get_private(dev);
 	struct xhci_dev_slot *slot = xhci_slot_udev(priv, udev);
@@ -1296,11 +1296,21 @@ static int uhc_dwc3_add_endpoints(const struct device *dev, struct usb_device *c
 
 	err = xhci_dwc3_configure_non_ep0(priv, udev);
 	if (err) {
-		LOG_ERR("Configure Endpoint failed: %d", err);
+		LOG_ERR("endpoint commit failed: %d", err);
 		return err;
 	}
 
-	return 0;
+	err = xhci_dwc3_bulk_output_eps_steady(priv, udev);
+	if (err == -ENOENT) {
+		return 0;
+	}
+
+	return err;
+}
+
+static int uhc_dwc3_add_endpoints(const struct device *dev, struct usb_device *const udev)
+{
+	return uhc_dwc3_endpoints_commit(dev, udev);
 }
 
 static uint8_t xhci_xfer_ep_dci(const struct uhc_transfer *xfer)
@@ -1606,62 +1616,6 @@ int uhc_dwc3_xhci_set_tr_dequeue(struct uhc_dwc3_data *priv, struct xhci_dev_slo
 	return xhci_cmd_set_tr_dequeue_deq(priv, slot, ep_index, deq);
 }
 
-static int uhc_dwc3_assign_address(const struct device *dev, struct usb_device *udev,
-				   uint8_t *addr_out)
-{
-	return uhc_dwc3_device_address(dev, udev, addr_out);
-}
-
-static int uhc_dwc3_prepare_enum(const struct device *dev, struct usb_device *udev)
-{
-	struct uhc_dwc3_data *priv = uhc_get_private(dev);
-
-	if (udev == NULL) {
-		return -EINVAL;
-	}
-
-	if (udev->hub != NULL) {
-		return -EINVAL;
-	}
-
-	if (priv->connect_udev == udev) {
-		return 0;
-	}
-
-	if (priv->connect_udev != NULL) {
-		return -EBUSY;
-	}
-
-	priv->connect_udev = udev;
-
-	return 0;
-}
-
-static int uhc_dwc3_attach_device(const struct device *dev, struct usb_device *udev)
-{
-	if (udev == NULL || udev->hub == NULL) {
-		return -EINVAL;
-	}
-
-	return uhc_dwc3_device_alloc(dev, udev);
-}
-
-static void uhc_dwc3_release_device(const struct device *dev, struct usb_device *udev)
-{
-	(void)uhc_dwc3_device_free(dev, udev);
-}
-
-static void uhc_dwc3_free_dev(const struct device *dev)
-{
-	struct uhc_dwc3_data *priv = uhc_get_private(dev);
-
-	if (priv->op_base == 0U) {
-		return;
-	}
-
-	xhci_teardown_all_slots(priv);
-}
-
 static DEVICE_API(uhc, uhc_dwc3_api) = {
 	.lock = uhc_dwc3_lock,
 	.unlock = uhc_dwc3_unlock,
@@ -1675,6 +1629,7 @@ static DEVICE_API(uhc, uhc_dwc3_api) = {
 	.bus_resume = uhc_dwc3_bus_resume,
 	.ep_enqueue = uhc_dwc3_ep_enqueue,
 	.ep_dequeue = uhc_dwc3_ep_dequeue,
+	.endpoints_commit = uhc_dwc3_endpoints_commit,
 	.add_endpoints = uhc_dwc3_add_endpoints,
 	.eps_verify_steady = dwc3_eps_verify_steady_cb,
 	.ep_sync_after_clear_feature = dwc3_ep_sync_after_clear_feature_cb,
@@ -1682,11 +1637,6 @@ static DEVICE_API(uhc, uhc_dwc3_api) = {
 	.device_alloc = uhc_dwc3_device_alloc,
 	.device_address = uhc_dwc3_device_address,
 	.device_free = uhc_dwc3_device_free,
-	.assign_address = uhc_dwc3_assign_address,
-	.prepare_enum = uhc_dwc3_prepare_enum,
-	.attach_device = uhc_dwc3_attach_device,
-	.release_device = uhc_dwc3_release_device,
-	.free_dev = uhc_dwc3_free_dev,
 };
 
 /* -------------------------------------------------------------------------- */
