@@ -27,6 +27,7 @@ app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf compile
 app=tests/bsim/bluetooth/ll/frame_space compile
 app=tests/bsim/bluetooth/ll/frame_space conf_overlay=overlay-tifs_hw.conf compile
 app=tests/bsim/bluetooth/ll/frame_space conf_overlay=overlay-pllen.conf compile
+app=tests/bsim/bluetooth/ll/conn_subrate compile
 app=tests/bsim/bluetooth/ll/throughput compile
 app=tests/bsim/bluetooth/ll/throughput conf_overlay=overlay-no_phy_update.conf compile
 app=tests/bsim/bluetooth/ll/multiple_id compile

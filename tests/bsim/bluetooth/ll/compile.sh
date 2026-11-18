@@ -27,6 +27,8 @@ app=tests/bsim/bluetooth/ll/frame_space compile
 app=tests/bsim/bluetooth/ll/frame_space conf_overlay=overlay-tifs_hw.conf compile
 app=tests/bsim/bluetooth/ll/frame_space conf_overlay=overlay-pllen.conf compile
 
+app=tests/bsim/bluetooth/ll/conn_subrate compile
+
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-sequential.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-interleaved.conf  compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ll_interface.conf compile
