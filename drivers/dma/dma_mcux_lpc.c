@@ -829,11 +829,11 @@ static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
 	DMA_SetChannelPriority(p_handle->base, p_handle->channel, config->channel_priority);
 
 	data->busy = false;
+	data->dev = dev;
 	if (config->dma_callback) {
 		LOG_DBG("INSTALL call back on channel %d", channel);
 		data->user_data = config->user_data;
 		data->dma_callback = config->dma_callback;
-		data->dev = dev;
 	}
 
 	return 0;
@@ -845,6 +845,10 @@ static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 	int8_t virtual_channel = dev_data->channel_index[channel];
 	struct channel_data *data = DEV_CHANNEL_DATA(dev, virtual_channel);
 	dma_handle_t *p_handle = DEV_DMA_HANDLE(dev, virtual_channel);
+
+	if (data->busy) {
+		return 0;
+	}
 
 	LOG_DBG("START TRANSFER");
 	LOG_DBG("DMA CTRL 0x%x", DEV_BASE(dev)->CTRL);

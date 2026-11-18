@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* This constraint is not a CPU idle state; only its lock is tested. */
+	dma_test_state: dma-test-state {
+		compatible = "zephyr,power-state";
+		power-state-name = "runtime-idle";
+		substate-id = <239>;
+	};
+};
+
+tst_dma0: &dma0 {
+	zephyr,disabling-power-states = <&dma_test_state>;
+	status = "okay";
+};
