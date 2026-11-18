@@ -935,6 +935,18 @@ ZTEST(spi_loopback, test_spi_deinit)
 	zassert_ok(device_init(dev));
 }
 
+/* A transfer that fits in the TX FIFO, so its TX DMA can complete before the bus starts */
+ZTEST(spi_loopback, test_spi_transceive_short)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1, buffer_tx, 2);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1, buffer_rx, 2);
+
+	memset(buffer_rx, 0, BUF_SIZE);
+	spi_loopback_transceive(spec, &tx, &rx, 2);
+	spi_loopback_compare_bufs(buffer_tx, buffer_rx, 2, buffer_print_tx, buffer_print_rx);
+}
+
 #if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
@@ -1050,6 +1062,32 @@ ZTEST(spi_loopback, test_spi_transceive_cb)
 
 	/* Verify loopback data */
 	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE, buffer_print_tx, buffer_print_rx);
+}
+
+/* A transfer that fits in the TX FIFO, so its TX DMA can complete before the bus starts */
+ZTEST(spi_loopback, test_spi_transceive_cb_short)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	static K_SEM_DEFINE(short_cb_sem, 0, 1);
+
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1, buffer_tx, 2);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1, buffer_rx, 2);
+
+	memset(buffer_rx, 0, BUF_SIZE);
+
+	zassert_ok(pm_device_runtime_get(spec->bus));
+	int ret = spi_transceive_cb(spec->bus, &spec->config, &tx, &rx, spi_async_cb,
+				    &short_cb_sem);
+
+	if (ret == -ENOTSUP) {
+		zassert_ok(pm_device_runtime_put(spec->bus));
+		ztest_test_skip();
+		return;
+	}
+	zassert_ok(ret, "SPI transceive_cb failed, code %d", ret);
+	zassert_ok(k_sem_take(&short_cb_sem, K_MSEC(2000)), "SPI transceive_cb timeout");
+	zassert_ok(pm_device_runtime_put(spec->bus));
+	spi_loopback_compare_bufs(buffer_tx, buffer_rx, 2, buffer_print_tx, buffer_print_rx);
 }
 
 #if defined(CONFIG_SPI_LOOPBACK_TEST_BUSY_DEINIT)
