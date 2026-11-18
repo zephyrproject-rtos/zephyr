@@ -23,6 +23,10 @@ app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_tx_defer.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_low_lat.conf compile
 
+app=tests/bsim/bluetooth/ll/frame_space compile
+app=tests/bsim/bluetooth/ll/frame_space conf_overlay=overlay-tifs_hw.conf compile
+app=tests/bsim/bluetooth/ll/frame_space conf_overlay=overlay-pllen.conf compile
+
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-sequential.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-interleaved.conf  compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ll_interface.conf compile
