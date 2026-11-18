@@ -25,6 +25,13 @@ struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uin
 
 /* Allocate/free USB device */
 struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx);
+
+struct usb_device *usbh_device_alloc_port(struct usbh_context *const uhs_ctx,
+					  struct usb_device *hub, uint8_t hub_port);
+
+struct usb_device *usbh_device_find_by_port(struct usbh_context *const uhs_ctx,
+					    struct usb_device *hub, uint8_t hub_port);
+
 void usbh_device_free(struct usb_device *const udev);
 
 /* Reset and configure new USB device */
@@ -54,6 +61,16 @@ int usbh_device_connect(struct usbh_context *const ctx, struct usb_device *const
 /* Disconnect USB device */
 void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev);
 
+void usbh_device_disconnect_by_port(struct usbh_context *const uhs_ctx,
+				    struct usb_device *const hub, uint8_t hub_port);
+
+int usbh_device_configuration_prefers(const struct usb_device *udev, const void *cfg_desc,
+				      uint16_t len);
+
+void usbh_device_configured_notify(struct usb_device *udev);
+
+void usbh_device_removed_notify(struct usb_device *udev);
+
 /* Wrappers around to avoid glue UHC calls. */
 static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
 						   const uint8_t ep,
@@ -80,6 +97,13 @@ static inline struct net_buf *usbh_xfer_buf_alloc(struct usb_device *udev,
 	struct usbh_context *const ctx = udev->ctx;
 
 	return uhc_xfer_buf_alloc(ctx->dev, size);
+}
+
+static inline int usbh_xfer_free(const struct usb_device *udev, struct uhc_transfer *const xfer)
+{
+	struct usbh_context *const ctx = udev->ctx;
+
+	return uhc_xfer_free(ctx->dev, xfer);
 }
 
 static inline void usbh_xfer_buf_free(const struct usb_device *udev,
