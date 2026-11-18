@@ -31,6 +31,29 @@ BUILD_ASSERT(DT_NODE_HAS_PROP(SLEEP_DURATIONS_NODE, sleep_durations_ms),
 
 static const uint32_t sleep_durations_ms[] = DT_PROP(SLEEP_DURATIONS_NODE, sleep_durations_ms);
 
+/* Optional: expected PM state for each sleep duration, as phandles to the
+ * zephyr,power-state nodes in the "expected-pm-states" property.
+ */
+#if DT_NODE_HAS_PROP(SLEEP_DURATIONS_NODE, expected_pm_states)
+#define CHECK_PM_STATES 1
+
+BUILD_ASSERT(DT_PROP_LEN(SLEEP_DURATIONS_NODE, expected_pm_states) ==
+		     DT_PROP_LEN(SLEEP_DURATIONS_NODE, sleep_durations_ms),
+	     "expected-pm-states must have one entry per sleep duration");
+
+#define EXPECTED_PM_STATE_INIT(idx, node_id)                                                       \
+	{                                                                                          \
+		.state = PM_STATE_DT_INIT(DT_PHANDLE_BY_IDX(node_id, expected_pm_states, idx)),    \
+		.substate_id = DT_PROP_OR(DT_PHANDLE_BY_IDX(node_id, expected_pm_states, idx),     \
+					  substate_id, 0),                                         \
+	},
+
+static const struct pm_state_info expected_pm_states[] = {
+	LISTIFY(DT_PROP_LEN(SLEEP_DURATIONS_NODE, expected_pm_states), EXPECTED_PM_STATE_INIT, (),
+		SLEEP_DURATIONS_NODE)
+};
+#endif
+
 /* Allowed k_msleep() overshoot; derived from PM-state exit latencies at runtime. */
 static uint32_t overshoot_tolerance_ms;
 
@@ -91,6 +114,7 @@ ZTEST(system_timer_lpm, test_timekeeping_accuracy)
 	enum pm_state states[ARRAY_SIZE(sleep_durations_ms)];
 	uint8_t substates[ARRAY_SIZE(sleep_durations_ms)];
 	int32_t total_wakeups = 0;
+	bool state_mismatch = false;
 
 	for (size_t i = 0; i < count; i++) {
 		int64_t start;
@@ -156,8 +180,21 @@ ZTEST(system_timer_lpm, test_timekeeping_accuracy)
 				     requested, entries[i]);
 		}
 
+#ifdef CHECK_PM_STATES
+		if ((states[i] != expected_pm_states[i].state) ||
+		    (substates[i] != expected_pm_states[i].substate_id)) {
+			TC_PRINT("  entered %s substate %u, expected %s substate %u\n",
+				 pm_state_to_str(states[i]), substates[i],
+				 pm_state_to_str(expected_pm_states[i].state),
+				 expected_pm_states[i].substate_id);
+			state_mismatch = true;
+		}
+#endif
+
 		total_wakeups += entries[i];
 	}
+
+	zassert_false(state_mismatch, "unexpected power state entered, see log above");
 
 	if (total_wakeups == 0) {
 		TC_PRINT("companion never engaged (no sleep reached a low-power "
