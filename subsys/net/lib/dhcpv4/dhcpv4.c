@@ -168,22 +168,70 @@ static bool dhcpv4_add_msg_type(struct net_pkt *pkt, uint8_t type)
 					      1, &type);
 }
 
+#if defined(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED)
+/* RFC 8925 3.2: an interface asks for the IPv6-Only Preferred option only
+ * if it can do without IPv4.
+ */
+static bool dhcpv4_ipv6_only_capable(struct net_if *iface)
+{
+	return iface->config.dhcpv4.ipv6_only_capable &&
+	       net_if_flag_is_set(iface, NET_IF_IPV6);
+}
+
+/* List option 108 once if @p capable, and not at all otherwise, whoever else
+ * asked for it. Returns the new number of options in @p list, which has room
+ * for one more than @p count.
+ */
+static size_t dhcpv4_req_list_set_ipv6_only(uint8_t *list, size_t count, bool capable)
+{
+	size_t out = 0;
+
+	for (size_t i = 0; i < count; i++) {
+		if (list[i] != DHCPV4_OPTIONS_IPV6_ONLY_PREFERRED) {
+			list[out++] = list[i];
+		}
+	}
+
+	if (capable) {
+		list[out++] = DHCPV4_OPTIONS_IPV6_ONLY_PREFERRED;
+	}
+
+	return out;
+}
+#endif /* CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED */
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+#define DHCPV4_REQ_LIST_MAX CONFIG_NET_DHCPV4_MAX_REQUESTED_OPTIONS
+#else
+#define DHCPV4_REQ_LIST_MAX ARRAY_SIZE(min_req_options)
+#endif
+
 /* Add DHCPv4 minimum required options for server to reply.
  * Can be added more if needed.
  */
-static bool dhcpv4_add_req_options(struct net_pkt *pkt)
+static bool dhcpv4_add_req_options(struct net_pkt *pkt, struct net_if *iface)
 {
+	/* One more for the IPv6-Only Preferred option. */
+	uint8_t data[DHCPV4_REQ_LIST_MAX + 1];
+	size_t count;
+
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
-	uint8_t data[CONFIG_NET_DHCPV4_MAX_REQUESTED_OPTIONS];
-
 	dhcpv4_option_callback_get_unique_types(data);
-
-	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_REQ_LIST,
-		unique_types_in_callbacks + ARRAY_SIZE(min_req_options), data);
+	count = unique_types_in_callbacks + ARRAY_SIZE(min_req_options);
 #else
-	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_REQ_LIST,
-					      ARRAY_SIZE(min_req_options), min_req_options);
+	memcpy(data, min_req_options, sizeof(min_req_options));
+	count = ARRAY_SIZE(min_req_options);
 #endif
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED)
+	iface->config.dhcpv4.ipv6_only_requested = dhcpv4_ipv6_only_capable(iface);
+	count = dhcpv4_req_list_set_ipv6_only(data, count,
+					      iface->config.dhcpv4.ipv6_only_requested);
+#else
+	ARG_UNUSED(iface);
+#endif
+
+	return dhcpv4_add_option_length_value(pkt, DHCPV4_OPTIONS_REQ_LIST, count, data);
 }
 
 static bool dhcpv4_add_server_id(struct net_pkt *pkt,
@@ -289,6 +337,9 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 		size += unique_types_in_callbacks;
 #endif
+		if (IS_ENABLED(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED)) {
+			size += 1U;
+		}
 	}
 
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
@@ -359,7 +410,7 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 
 	if ((type == NET_DHCPV4_MSG_TYPE_DISCOVER ||
 	     type == NET_DHCPV4_MSG_TYPE_REQUEST) &&
-	    !dhcpv4_add_req_options(pkt)) {
+	    !dhcpv4_add_req_options(pkt, iface)) {
 		goto fail;
 	}
 
@@ -597,6 +648,7 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_BOUND:
 	case NET_DHCPV4_DECLINE:
+	case NET_DHCPV4_V6ONLY_WAIT:
 		/* Not possible */
 		NET_ASSERT(0, "Invalid state %s",
 			   net_dhcpv4_state_name(iface->config.dhcpv4.state));
@@ -784,6 +836,7 @@ static bool dhcpv4_has_bound_addr(struct net_if *iface)
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_REQUESTING:
 	case NET_DHCPV4_DECLINE:
+	case NET_DHCPV4_V6ONLY_WAIT:
 		break;
 	}
 
@@ -996,6 +1049,35 @@ static void dhcpv4_enter_rebinding(struct net_if *iface)
 		net_dhcpv4_state_name(iface->config.dhcpv4.state));
 }
 
+/* RFC 8925 3.2: the server prefers the interface to run IPv6-only, so give
+ * up on IPv4 for @p wait seconds. A new network attachment ends the wait
+ * earlier: an interface coming up again forces the timeout, and a restart
+ * starts the client over.
+ * Must be invoked with lock held.
+ */
+static void dhcpv4_enter_v6only_wait(struct net_if *iface, uint32_t wait)
+{
+	struct net_in_addr addr = iface->config.dhcpv4.requested_ip;
+
+	NET_INFO("IPv6-only preferred, IPv4 configuration stopped for %us", wait);
+
+	iface->config.dhcpv4.attempts = 0U;
+	dhcpv4_set_requested_ip(iface, net_ipv4_unspecified_address());
+
+	dhcpv4_leave_lease(iface, NET_DHCPV4_V6ONLY_WAIT, &addr);
+
+	/* A callback on what the teardown raised can have taken the client
+	 * elsewhere.
+	 */
+	if (iface->config.dhcpv4.state != NET_DHCPV4_V6ONLY_WAIT) {
+		return;
+	}
+
+	dhcpv4_set_timeout(&iface->config.dhcpv4, wait);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_DHCP_V6ONLY, iface, &wait, sizeof(wait));
+}
+
 static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 {
 	uint32_t timeleft = dhcpv4_request_timeleft(iface, now);
@@ -1082,6 +1164,8 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 		}
 
 		return dhcpv4_send_request(iface);
+	case NET_DHCPV4_V6ONLY_WAIT:
+		return dhcpv4_restart_with_discover(iface);
 	}
 
 	return UINT32_MAX;
@@ -1199,9 +1283,15 @@ static int dhcpv4_parse_option_vendor(struct net_pkt *pkt, struct net_if *iface,
  * options or invoking callbacks. Option 53 need not be the first option, so
  * inspect the complete option list. The server identifier is optional here;
  * server_id_found tells whether it was present.
+ *
+ * The IPv6-Only Preferred option is read here too, because a reply carrying
+ * it is one whose other options the client does not apply. v6only_wait is
+ * the time to wait, at least MIN_V6ONLY_WAIT and at most what the timers can
+ * count, or zero without a valid option.
  */
 static bool dhcpv4_get_msg_type(struct net_pkt *pkt, enum net_dhcpv4_msg_type *msg_type,
-				struct net_in_addr *server_id, bool *server_id_found)
+				struct net_in_addr *server_id, bool *server_id_found,
+				uint32_t *v6only_wait)
 {
 	struct net_pkt_cursor backup;
 	uint8_t cookie[sizeof(magic_cookie)];
@@ -1209,6 +1299,7 @@ static bool dhcpv4_get_msg_type(struct net_pkt *pkt, enum net_dhcpv4_msg_type *m
 	bool found = false;
 
 	*server_id_found = false;
+	*v6only_wait = 0U;
 
 	net_pkt_cursor_backup(pkt, &backup);
 
@@ -1244,6 +1335,18 @@ static bool dhcpv4_get_msg_type(struct net_pkt *pkt, enum net_dhcpv4_msg_type *m
 			}
 
 			*server_id_found = true;
+		} else if (IS_ENABLED(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED) &&
+			   type == DHCPV4_OPTIONS_IPV6_ONLY_PREFERRED && length == 4U) {
+			/* RFC 8925 3.1: any other length makes the option one
+			 * to ignore, which the skip below does.
+			 */
+			uint32_t wait;
+
+			if (net_pkt_read_be32(pkt, &wait) != 0) {
+				return false;
+			}
+
+			*v6only_wait = CLAMP(wait, DHCPV4_MIN_V6ONLY_WAIT, DHCPV4_MAX_V6ONLY_WAIT);
 		} else if (net_pkt_skip(pkt, length) != 0) {
 			return false;
 		}
@@ -1744,6 +1847,31 @@ end:
 	return true;
 }
 
+/* RFC 8925 3.2: an offer, or the answer to an INIT-REBOOT request, with the
+ * option the client asked for sends the client off IPv4. Any other reply with
+ * it leaves the client on the address it holds.
+ */
+static bool dhcpv4_ipv6_only_preferred(struct net_if *iface, enum net_dhcpv4_msg_type msg_type,
+				       uint32_t v6only_wait)
+{
+#if defined(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED)
+	enum net_dhcpv4_state state = iface->config.dhcpv4.state;
+
+	if (v6only_wait == 0U || !iface->config.dhcpv4.ipv6_only_requested) {
+		return false;
+	}
+
+	return (msg_type == NET_DHCPV4_MSG_TYPE_OFFER && state == NET_DHCPV4_SELECTING) ||
+	       (msg_type == NET_DHCPV4_MSG_TYPE_ACK && state == NET_DHCPV4_INIT_REBOOT);
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(msg_type);
+	ARG_UNUSED(v6only_wait);
+
+	return false;
+#endif
+}
+
 static inline void dhcpv4_handle_msg_offer(struct net_if *iface,
 					   struct dhcp_msg *msg)
 {
@@ -1756,6 +1884,7 @@ static inline void dhcpv4_handle_msg_offer(struct net_if *iface,
 	case NET_DHCPV4_REBINDING:
 	case NET_DHCPV4_BOUND:
 	case NET_DHCPV4_DECLINE:
+	case NET_DHCPV4_V6ONLY_WAIT:
 		break;
 	case NET_DHCPV4_SELECTING:
 		dhcpv4_enter_requesting(iface, msg);
@@ -1772,6 +1901,7 @@ static void dhcpv4_handle_msg_ack(struct net_if *iface)
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_BOUND:
 	case NET_DHCPV4_DECLINE:
+	case NET_DHCPV4_V6ONLY_WAIT:
 		break;
 	case NET_DHCPV4_INIT_REBOOT:
 	case NET_DHCPV4_REQUESTING: {
@@ -1851,6 +1981,8 @@ static void dhcpv4_handle_msg_nak(struct net_if *iface)
 	case NET_DHCPV4_DECLINE:
 	/* A stopped client has no exchange to restart. */
 	case NET_DHCPV4_DISABLED:
+	/* Nor has one waiting to start the next. */
+	case NET_DHCPV4_V6ONLY_WAIT:
 		break;
 	case NET_DHCPV4_RENEWING:
 	case NET_DHCPV4_REBINDING:
@@ -1913,7 +2045,8 @@ static bool dhcpv4_reply_is_expected(struct net_if *iface, enum net_dhcpv4_msg_t
 			return true;
 		}
 
-		if (state == NET_DHCPV4_BOUND || state == NET_DHCPV4_DECLINE) {
+		if (state == NET_DHCPV4_BOUND || state == NET_DHCPV4_DECLINE ||
+		    state == NET_DHCPV4_V6ONLY_WAIT) {
 			return false;
 		}
 
@@ -1940,6 +2073,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	enum net_dhcpv4_msg_type msg_type = 0;
 	struct net_in_addr server_id;
 	bool server_id_found;
+	uint32_t v6only_wait;
 	struct dhcp_msg *msg;
 	struct net_if *iface;
 	int ret;
@@ -2025,7 +2159,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		goto drop;
 	}
 
-	if (!dhcpv4_get_msg_type(pkt, &msg_type, &server_id, &server_id_found)) {
+	if (!dhcpv4_get_msg_type(pkt, &msg_type, &server_id, &server_id_found, &v6only_wait)) {
 		NET_DBG("Invalid DHCPv4 message type or option list");
 		goto drop;
 	}
@@ -2038,14 +2172,18 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		goto drop;
 	}
 
-	if (!dhcpv4_parse_options(pkt, iface, &msg_type)) {
-		goto drop;
-	}
+	if (dhcpv4_ipv6_only_preferred(iface, msg_type, v6only_wait)) {
+		dhcpv4_enter_v6only_wait(iface, v6only_wait);
+	} else {
+		if (!dhcpv4_parse_options(pkt, iface, &msg_type)) {
+			goto drop;
+		}
 
-	memcpy(&iface->config.dhcpv4.response_src_addr, ip_hdr->ipv4->src,
+		memcpy(&iface->config.dhcpv4.response_src_addr, ip_hdr->ipv4->src,
 		       sizeof(struct net_in_addr));
 
-	dhcpv4_handle_reply(iface, msg_type, msg);
+		dhcpv4_handle_reply(iface, msg_type, msg);
+	}
 
 	net_pkt_unref(pkt);
 
@@ -2226,6 +2364,7 @@ const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
 		"rebinding",
 		"bound",
 		"decline",
+		"v6only-wait",
 	};
 
 	__ASSERT_NO_MSG(state >= 0 && state < ARRAY_SIZE(name));
@@ -2322,6 +2461,7 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 	case NET_DHCPV4_REBINDING:
 	case NET_DHCPV4_BOUND:
 	case NET_DHCPV4_DECLINE:
+	case NET_DHCPV4_V6ONLY_WAIT:
 		break;
 	}
 
@@ -2416,6 +2556,7 @@ void net_dhcpv4_stop(struct net_if *iface)
 	case NET_DHCPV4_REBINDING:
 	case NET_DHCPV4_BOUND:
 	case NET_DHCPV4_DECLINE:
+	case NET_DHCPV4_V6ONLY_WAIT:
 		/* The node and the machinery shared with it go first, so that
 		 * a callback on the removals below that restarts the client
 		 * finds both the way a client starting from cold does.
@@ -2468,6 +2609,22 @@ int net_dhcpv4_set_reboot_hint(struct net_if *iface,
 	return ret;
 }
 
+int net_dhcpv4_set_ipv6_only_capable(struct net_if *iface, bool capable)
+{
+#if defined(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED)
+	k_mutex_lock(&lock, K_FOREVER);
+	iface->config.dhcpv4.ipv6_only_capable = capable;
+	k_mutex_unlock(&lock);
+
+	return 0;
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(capable);
+
+	return -ENOTSUP;
+#endif
+}
+
 int net_dhcpv4_init(void)
 {
 	struct net_sockaddr_storage local_addr_storage = { 0 };
@@ -2515,6 +2672,7 @@ bool net_dhcpv4_accept_unicast(struct net_pkt *pkt)
 	case NET_DHCPV4_INIT:
 	case NET_DHCPV4_BOUND:
 	case NET_DHCPV4_DECLINE:
+	case NET_DHCPV4_V6ONLY_WAIT:
 		return false;
 	case NET_DHCPV4_INIT_REBOOT:
 	case NET_DHCPV4_SELECTING:

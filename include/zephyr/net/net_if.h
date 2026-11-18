@@ -690,6 +690,14 @@ struct net_if_dhcpv4 {
 	/** NTP server address */
 	struct net_in_addr ntp_addr;
 #endif
+
+#ifdef CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED
+	/** The interface works with no IPv4 address (RFC 8925) */
+	bool ipv6_only_capable;
+
+	/** The last DHCPDISCOVER or DHCPREQUEST asked for option 108 */
+	bool ipv6_only_requested;
+#endif
 };
 #endif /* CONFIG_NET_DHCPV4 */
 
@@ -3805,7 +3813,9 @@ __subsystem struct net_if_driver_api {
 #define NET_IF_DHCPV4_INIT						\
 	IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_NET_DHCPV4),		\
 			    IS_ENABLED(CONFIG_NET_NATIVE_IPV4)),	\
-		   (.dhcpv4.state = NET_DHCPV4_DISABLED,))
+		   (.dhcpv4.state = NET_DHCPV4_DISABLED,		\
+		    IF_ENABLED(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED, \
+			       (.dhcpv4.ipv6_only_capable = true,))))
 
 #define NET_IF_DHCPV6_INIT						\
 	IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_NET_DHCPV6),		\
