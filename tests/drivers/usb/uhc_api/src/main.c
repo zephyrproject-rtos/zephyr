@@ -60,19 +60,34 @@ ZTEST(uhc_api, test_optional_wrappers_without_hcd_hooks)
 
 	memset(&udev, 0, sizeof(udev));
 
+	zassert_ok(uhc_endpoints_commit(uhc, &udev));
 	zassert_ok(uhc_add_endpoints(uhc, &udev));
 	zassert_ok(uhc_eps_verify_steady(uhc, &udev));
 	zassert_ok(uhc_ep_sync_after_clear_feature(uhc, &udev));
-	zassert_true(uhc_post_configure_steady(uhc));
-	zassert_ok(uhc_prepare_enum(uhc, &udev));
-	zassert_equal(uhc_attach_device(uhc, &udev), -ENOTSUP);
-	zassert_equal(uhc_assign_address(uhc, &udev, &addr), -ENOTSUP);
+	zassert_ok(uhc_endpoint_recover(uhc, &udev, 0x81, UHC_EP_RECOVERY_CLEAR_HALT));
+	zassert_ok(uhc_endpoint_recover(uhc, &udev, 0x81, UHC_EP_RECOVERY_TRANSPORT_RESET));
+	zassert_true(uhc_post_configure_steady(uhc, &udev));
+	zassert_ok(uhc_device_alloc(uhc, &udev));
+	zassert_equal(uhc_device_address(uhc, &udev, &addr), -ENOTSUP);
+	zassert_ok(uhc_device_free(uhc, &udev));
+	zassert_ok(uhc_device_free(uhc, &udev));
 
-	uhc_release_device(uhc, &udev);
-	uhc_free_dev(uhc);
+	zassert_equal(uhc_device_alloc(NULL, &udev), -EINVAL);
+	zassert_equal(uhc_device_alloc(uhc, NULL), -EINVAL);
+	zassert_equal(uhc_device_address(NULL, &udev, &addr), -EINVAL);
+	zassert_equal(uhc_device_address(uhc, NULL, &addr), -EINVAL);
+	zassert_equal(uhc_device_address(uhc, &udev, NULL), -EINVAL);
+	zassert_equal(uhc_device_free(NULL, &udev), -EINVAL);
+	zassert_equal(uhc_device_free(uhc, NULL), -EINVAL);
 
+	zassert_equal(uhc_endpoints_commit(NULL, &udev), -EINVAL);
+	zassert_equal(uhc_endpoints_commit(uhc, NULL), -EINVAL);
 	zassert_equal(uhc_add_endpoints(NULL, &udev), -EINVAL);
 	zassert_equal(uhc_add_endpoints(uhc, NULL), -EINVAL);
+	zassert_equal(uhc_endpoint_recover(NULL, &udev, 0x81, UHC_EP_RECOVERY_CLEAR_HALT), -EINVAL);
+	zassert_equal(uhc_endpoint_recover(uhc, NULL, 0x81, UHC_EP_RECOVERY_CLEAR_HALT), -EINVAL);
+	zassert_equal(uhc_endpoint_recover(uhc, &udev, 0x81, (enum uhc_ep_recovery_reason)99),
+		      -EINVAL);
 }
 
 ZTEST(uhc_api, test_xfer_return_ignores_duplicate_completion)
