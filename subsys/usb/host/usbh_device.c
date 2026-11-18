@@ -847,8 +847,8 @@ static int usbh_device_set_configuration_locked(struct usb_device *const udev, c
 	}
 
 	/*
-	 * After SET_CONFIGURATION and descriptor parse, the HCD programs
-	 * endpoints (Configure Endpoint, bandwidth). Host stack has filled
+	 * After SET_CONFIGURATION and descriptor parse, commit active endpoints
+	 * to the HCD. Host stack has filled
 	 * udev->ifaces[] and ep_in/ep_out[] with alternate 0 endpoints.
 	 */
 	LOG_INF("usbh: HCD commit endpoints - cfg=%u addr=%u speed=%u", num, udev->addr,
@@ -961,8 +961,8 @@ static int usbh_device_init_attach(struct usb_device *const udev)
 	}
 
 	if (udev->hub == NULL) {
-		LOG_DBG("usbh: about to uhc_bus_reset()");
-		err = uhc_bus_reset(uhs_ctx->dev);
+		LOG_DBG("usbh: about to uhc_root_default_state_reset()");
+		err = uhc_root_default_state_reset(uhs_ctx->dev, udev);
 		if (err) {
 			LOG_ERR("Failed to signal bus reset");
 			return err;
@@ -1059,8 +1059,8 @@ static int usbh_device_init_usb2(struct usb_device *const udev)
 	if (udev->hub == NULL) {
 		struct usbh_context *const uhs_ctx = udev->ctx;
 
-		LOG_DBG("usbh: second uhc_bus_reset()");
-		err = uhc_bus_reset(uhs_ctx->dev);
+		LOG_DBG("usbh: second uhc_root_default_state_reset()");
+		err = uhc_root_default_state_reset(uhs_ctx->dev, udev);
 		if (err) {
 			LOG_ERR("Second bus reset failed");
 			return err;
