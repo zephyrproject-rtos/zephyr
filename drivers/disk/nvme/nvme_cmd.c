@@ -508,9 +508,9 @@ int nvme_cmd_qpair_setup(struct nvme_cmd_qpair *qpair,
 	qpair->cq_hdbl_off = nvme_mmio_offsetof(doorbell) +
 		(qpair->id << (ctrlr->dstrd + 1)) + (1 << ctrlr->dstrd);
 
-	if (!pcie_msi_vector_connect(nvme_ctrlr_cfg->pcie->bdf,
-				     &ctrlr->vectors[qpair->vector],
-				     nvme_cmd_qpair_msi_handler, qpair, 0)) {
+	if (!pcie_msi_vector_connect(PCIE_DEV_ENDPOINT(nvme_ctrlr_cfg->pcie),
+				     &ctrlr->vectors[qpair->vector], nvme_cmd_qpair_msi_handler,
+				     qpair, 0)) {
 		LOG_ERR("Failed to connect MSI-X vector %u", qpair->id);
 		return -EIO;
 	}

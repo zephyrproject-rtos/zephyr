@@ -961,27 +961,24 @@ static int spi_pw_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		if (!pcie_probe_mbar(info->pcie->bdf, 0, &mbar)) {
+		if (!pcie_probe_mbar(PCIE_DEV_ENDPOINT(info->pcie), 0, &mbar)) {
 			LOG_ERR("MBAR not found");
 			return -EINVAL;
 		}
 
-		pcie_set_cmd(info->pcie->bdf, PCIE_CONF_CMDSTAT_MEM,
-			     true);
+		pcie_set_cmd(PCIE_DEV_ENDPOINT(info->pcie), PCIE_CONF_CMDSTAT_MEM, true);
 
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr,
 			   mbar.size, K_MEM_CACHE_NONE);
 
-		pcie_set_cmd(info->pcie->bdf,
-			     PCIE_CONF_CMDSTAT_MASTER,
-			     true);
+		pcie_set_cmd(PCIE_DEV_ENDPOINT(info->pcie), PCIE_CONF_CMDSTAT_MASTER, true);
 #if defined(CONFIG_SPI_PW_LPSS_DMA)
 		uintptr_t base;
 
 		base = DEVICE_MMIO_GET(dev) + DMA_INTEL_LPSS_OFFSET;
 		dma_intel_lpss_set_base(info->dma_dev, base);
 
-		pcie_set_cmd(info->pcie->bdf, PCIE_CONF_CMDSTAT_MASTER, true);
+		pcie_set_cmd(PCIE_DEV_ENDPOINT(info->pcie), PCIE_CONF_CMDSTAT_MASTER, true);
 		/* Assign physical & virtual address to dma instance */
 		spi->phy_addr = mbar.phys_addr;
 		spi->base_addr = (uint32_t)(DEVICE_MMIO_GET(dev) + PW_SPI_IDMA_OFFSET);
@@ -1056,28 +1053,26 @@ static int spi_pw_init(const struct device *dev)
 #define SPI_INTEL_IRQ_FLAGS(n) \
 	_CONCAT(SPI_INTEL_IRQ_FLAGS, DT_INST_IRQ_HAS_CELL(n, flags))(n)
 
-#define SPI_INTEL_IRQ_INIT(n)						     \
-	static void spi_##n##_irq_init(const struct device *dev)	     \
-	{								     \
-		const struct spi_pw_config *info = dev->config;		     \
-		unsigned int irq;					     \
-		if (DT_INST_IRQN(n) == PCIE_IRQ_DETECT) {		     \
-			irq = pcie_alloc_irq(info->pcie->bdf);		     \
-			if (irq == PCIE_CONF_INTR_IRQ_NONE) {		     \
-				return;					     \
-			}						     \
-		} else {						     \
-			irq = DT_INST_IRQN(n);				     \
-			pcie_conf_write(info->pcie->bdf,		     \
-					PCIE_CONF_INTR, irq);		     \
-		}							     \
-		pcie_connect_dynamic_irq(info->pcie->bdf, irq,		     \
-					 DT_INST_IRQ(n, priority),	     \
-					 (void (*)(const void *))spi_pw_isr, \
-					 DEVICE_DT_INST_GET(n),		     \
-					 SPI_INTEL_IRQ_FLAGS(n));	     \
-		pcie_irq_enable(info->pcie->bdf, irq);			     \
-		LOG_DBG("lpass spi Configure irq %d", irq);		     \
+#define SPI_INTEL_IRQ_INIT(n)                                                                      \
+	static void spi_##n##_irq_init(const struct device *dev)                                   \
+	{                                                                                          \
+		const struct spi_pw_config *info = dev->config;                                    \
+		unsigned int irq;                                                                  \
+		if (DT_INST_IRQN(n) == PCIE_IRQ_DETECT) {                                          \
+			irq = pcie_alloc_irq(PCIE_DEV_ENDPOINT(info->pcie));                       \
+			if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                      \
+				return;                                                            \
+			}                                                                          \
+		} else {                                                                           \
+			irq = DT_INST_IRQN(n);                                                     \
+			pcie_conf_write(PCIE_DEV_ENDPOINT(info->pcie), PCIE_CONF_INTR, irq);       \
+		}                                                                                  \
+		pcie_connect_dynamic_irq(PCIE_DEV_ENDPOINT(info->pcie), irq,                       \
+					 DT_INST_IRQ(n, priority),                                 \
+					 (void (*)(const void *))spi_pw_isr,                       \
+					 DEVICE_DT_INST_GET(n), SPI_INTEL_IRQ_FLAGS(n));           \
+		pcie_irq_enable(PCIE_DEV_ENDPOINT(info->pcie), irq);                               \
+		LOG_DBG("lpass spi Configure irq %d", irq);                                        \
 	}
 
 #define SPI_PW_DEV_INIT(n)					     \
