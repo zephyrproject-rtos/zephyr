@@ -28,6 +28,9 @@ struct renesas_ra_ipc_data {
 	void *user_cb_data[IPC_MAX_CHANNELS];
 	uint32_t enabled_channel_mask;
 	uint32_t received_data;
+	uint32_t pending_signals;
+	uint32_t pending_msg;
+	bool has_pending_msg;
 };
 
 struct renesas_ra_ipc_config {
@@ -43,6 +46,8 @@ static void mbox_renesas_ra_callback(ipc_callback_args_t *fsp_args)
 
 	if (fsp_args->event == IPC_EVENT_MESSAGE_RECEIVED) {
 		if (!(data->enabled_channel_mask & BIT(config->message_channel))) {
+			data->pending_msg = fsp_args->message;
+			data->has_pending_msg = true;
 			return;
 		}
 
@@ -67,6 +72,7 @@ static void mbox_renesas_ra_callback(ipc_callback_args_t *fsp_args)
 		uint8_t channel_id = __builtin_ctz(fsp_args->event);
 
 		if (!(data->enabled_channel_mask & (uint32_t)fsp_args->event)) {
+			data->pending_signals |= BIT(channel_id);
 			return;
 		}
 
@@ -74,6 +80,29 @@ static void mbox_renesas_ra_callback(ipc_callback_args_t *fsp_args)
 			data->user_cb[channel_id](dev, channel_id, data->user_cb_data[channel_id],
 						  NULL);
 		}
+	}
+}
+
+/* Feed events latched while disabled back through the callback. */
+static void ra_ipc_replay_pending(const struct device *dev)
+{
+	struct renesas_ra_ipc_data *data = dev->data;
+	ipc_callback_args_t args = {.p_context = (void *)dev};
+	uint32_t signals = data->pending_signals;
+
+	data->pending_signals = 0U;
+
+	if (data->has_pending_msg) {
+		data->has_pending_msg = false;
+		args.event = IPC_EVENT_MESSAGE_RECEIVED;
+		args.message = data->pending_msg;
+		mbox_renesas_ra_callback(&args);
+	}
+
+	while (signals != 0U) {
+		args.event = (ipc_event_t)LSB_GET(signals);
+		signals &= ~args.event;
+		mbox_renesas_ra_callback(&args);
 	}
 }
 
@@ -178,6 +207,7 @@ static int renesas_ra_ipc_set_enabled(const struct device *dev, mbox_channel_id_
 {
 	const struct renesas_ra_ipc_config *config = dev->config;
 	struct renesas_ra_ipc_data *data = dev->data;
+	unsigned int key;
 
 	if (channel_id >= IPC_MAX_CHANNELS) {
 		return -EINVAL;
@@ -188,11 +218,16 @@ static int renesas_ra_ipc_set_enabled(const struct device *dev, mbox_channel_id_
 		return -EINVAL;
 	}
 
+	key = irq_lock();
+
 	if (enabled) {
 		data->enabled_channel_mask |= BIT(channel_id);
+		ra_ipc_replay_pending(dev);
 	} else {
 		data->enabled_channel_mask &= ~BIT(channel_id);
 	}
+
+	irq_unlock(key);
 
 	return 0;
 }
