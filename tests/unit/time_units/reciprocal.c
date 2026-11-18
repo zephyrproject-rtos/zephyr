@@ -68,3 +68,29 @@ ZTEST(time_units, test_z_tmcvt_bool)
 	zassert_true((bool)z_tmcvt_32(t, 100U, 1000U, true, false, false));
 	zassert_true((bool)z_tmcvt_64(t, 100U, 1000U, true, false, false));
 }
+
+/* The 32-bit integer division path must give the exact result on both sides
+ * of the input range where it divides in 32 bits, and a 32-bit result even
+ * when the rates are 64-bit constants.
+ */
+ZTEST(time_units, test_z_tmcvt_int_div_32)
+{
+	static const uint64_t values[] = {
+		0U,          1U,          9U,          10U,         0xfffffff5U,
+		0xfffffff6U, 0xfffffff7U, 0xffffffffU, 0x100000000ULL, 0x9ffffffffULL,
+	};
+
+	BUILD_ASSERT(sizeof(z_tmcvt_int_div_32(z_tmcvt_c, 1U, 3000000000ULL, 1000ULL, false,
+					       false)) == sizeof(uint32_t));
+
+	ARRAY_FOR_EACH(values, i) {
+		uint64_t t = values[i];
+
+		zassert_equal(z_tmcvt_int_div_32(z_tmcvt_r, t, 10000U, 1000U, true, false),
+			      (uint32_t)((t + 9U) / 10U));
+		zassert_equal(z_tmcvt_int_div_32(z_tmcvt_r, t, 10000U, 1000U, false, false),
+			      (uint32_t)(t / 10U));
+		zassert_equal(z_tmcvt_int_div_32(z_tmcvt_r, t, 3000000000ULL, 1000ULL, true, false),
+			      (uint32_t)((t + 2999999U) / 3000000U));
+	}
+}
