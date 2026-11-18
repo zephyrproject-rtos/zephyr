@@ -253,9 +253,6 @@
 	* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
 	*/
 
-/* FIXME: Conditional Compilation for FSU feature, and handle feature bits > 64 bits */
-#define LL_FEAT_BIT_FRAME_SPACE 0U
-
 /* All defined feature bits */
 #define LL_FEAT_BIT_MASK         0xFFFFFFFFFFULL
 
@@ -299,9 +296,7 @@
 				  LL_FEAT_BIT_SYNC_RECEIVER | \
 				  LL_FEAT_BIT_PERIODIC_ADI_SUPPORT | \
 				  LL_FEAT_BIT_SYNC_TRANSFER_RECEIVER | \
-				  LL_FEAT_BIT_SYNC_TRANSFER_SENDER | \
-				  LL_FEAT_BIT_FRAME_SPACE | \
-				  0U)
+				  LL_FEAT_BIT_SYNC_TRANSFER_SENDER)
 
 /* Connected Isochronous Stream (Host Support) bit is controlled by host */
 #if defined(CONFIG_BT_CTLR_CONN_ISO)

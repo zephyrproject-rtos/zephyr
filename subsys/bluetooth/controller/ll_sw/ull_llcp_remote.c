@@ -293,9 +293,11 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 	case PROC_FRAME_SPACE:
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PROC_CTE_REQ:
 		llcp_rp_comm_rx(conn, ctx, rx);
@@ -343,9 +345,11 @@ void llcp_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		llcp_rp_comm_tx_ack(conn, ctx, tx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 	case PROC_FRAME_SPACE:
 		llcp_rp_comm_tx_ack(conn, ctx, tx);
 		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		llcp_rp_pu_tx_ack(conn, ctx, tx);
@@ -439,9 +443,11 @@ static void rr_act_run(struct ll_conn *conn)
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 	case PROC_FRAME_SPACE:
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PROC_CTE_REQ:
 		llcp_rp_comm_run(conn, ctx, NULL);
@@ -888,8 +894,10 @@ static const struct proc_role new_proc_lut[] = {
 	[PDU_DATA_LLCTRL_TYPE_LENGTH_REQ] = { PROC_DATA_LENGTH_UPDATE, ACCEPT_ROLE_BOTH },
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	[PDU_DATA_LLCTRL_TYPE_LENGTH_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ] = { PROC_FRAME_SPACE, ACCEPT_ROLE_BOTH },
-	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP] = { PROC_FRAME_SPACE, ACCEPT_ROLE_BOTH },
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP] = { PROC_UNKNOWN, ACCEPT_ROLE_NONE },
 #if defined(CONFIG_BT_CTLR_PHY)
 	[PDU_DATA_LLCTRL_TYPE_PHY_REQ] = { PROC_PHY_UPDATE, ACCEPT_ROLE_BOTH },
 #endif /* CONFIG_BT_CTLR_PHY */

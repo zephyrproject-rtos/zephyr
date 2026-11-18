@@ -152,6 +152,38 @@ static void llcp_cis_stop_by_id(uint8_t cig_id, uint8_t cis_id, uint8_t reason)
  * LLCP Local Procedure Common FSM
  */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+static void lp_comm_fsu_rx_window_open(struct ll_conn *conn, const struct proc_ctx *ctx)
+{
+	uint16_t spacing_type_rx;
+	uint8_t phy_rx;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	phy_rx = conn->lll.phy_rx;
+#else /* !CONFIG_BT_CTLR_PHY */
+	phy_rx = PHY_1M;
+#endif /* !CONFIG_BT_CTLR_PHY */
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && (conn->lll.role == BT_HCI_ROLE_CENTRAL)) {
+		spacing_type_rx = T_IFS_ACL_CP;
+	} else {
+		spacing_type_rx = T_IFS_ACL_PC;
+	}
+
+	if (((ctx->data.fsu.phys & phy_rx) == 0U) ||
+	    ((ctx->data.fsu.spacing_type & spacing_type_rx) == 0U)) {
+		return;
+	}
+
+	/* The peer applies the selected frame space before it transmits the response, receive
+	 * with a window that covers the current and any frame space the peer can select, until
+	 * the procedure completes, see ull_fsu_tifs_set().
+	 */
+	conn->lll.tifs_rx_us = MIN(conn->lll.tifs_rx_us, ctx->data.fsu.fsu_min);
+	conn->lll.tifs_hcto_us = MAX(conn->lll.tifs_hcto_us, ctx->data.fsu.fsu_max);
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	struct node_tx *tx;
@@ -204,10 +236,13 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 	case PROC_FRAME_SPACE:
-		llcp_pdu_encode_fsu_req(conn, pdu);
+		llcp_pdu_encode_fsu_req(ctx, pdu);
+		lp_comm_fsu_rx_window_open(conn, ctx);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP;
 		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
 		llcp_pdu_encode_cte_req(ctx, pdu);
@@ -283,12 +318,6 @@ static void lp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx
 	llcp_ntf_encode_length_change(conn, pdu);
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-
-static void lp_comm_ntf_fsu_change(struct ll_conn *conn, struct proc_ctx *ctx,
-					   struct pdu_data *pdu)
-{
-	llcp_ntf_encode_fsu_change(conn, pdu);
-}
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 
@@ -381,6 +410,27 @@ static void lp_comm_complete_cte_req(struct ll_conn *conn, struct proc_ctx *ctx)
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+static void lp_comm_ntf_fsu(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	switch (ctx->response_opcode) {
+	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP:
+		llcp_ntf_encode_fsu_change(ctx, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
+		llcp_ntf_encode_unknown_rsp(ctx, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
+		llcp_ntf_encode_reject_ext_ind(ctx, pdu);
+		break;
+	default:
+		/* Unexpected PDU, should not get through, so ASSERT */
+		LL_ASSERT(0);
+		break;
+	}
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 static void lp_comm_ntf_sca(struct node_rx_pdu *ntf, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
@@ -423,9 +473,11 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 		lp_comm_ntf_length_change(conn, ctx, pdu);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 	case PROC_FRAME_SPACE:
-		lp_comm_ntf_fsu_change(conn, ctx, pdu);
+		lp_comm_ntf_fsu(ctx, pdu);
 		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
 		lp_comm_ntf_cte_req(conn, ctx, pdu);
@@ -561,27 +613,63 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 	case PROC_FRAME_SPACE:
-		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP) {
-			uint8_t fsu_changed = ull_fsu_update_eff(conn);
+		/* Close the receive window opened when the request was transmitted */
+		ull_fsu_tifs_set(conn);
 
-			if (fsu_changed) {
-				lp_comm_ntf(conn, ctx);
+		switch (ctx->response_opcode) {
+		case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP:
+			if ((ctx->data.fsu.phys == 0U) || (ctx->data.fsu.spacing_type == 0U) ||
+			    (ctx->data.fsu.fsu < ctx->data.fsu.fsu_min) ||
+			    (ctx->data.fsu.fsu > ctx->data.fsu.fsu_max)) {
+				/* Selected frame space not in the requested range */
+				lp_comm_terminate_invalid_pdu(conn, ctx);
+				break;
 			}
-			llcp_lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
 
-		} else if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) {
-			/* unmask support for Frame Spacing */
+			/* Only the Host initiates the procedure locally, the Host is notified on
+			 * completion even when the frame spaces in use did not change.
+			 */
+			(void)ull_fsu_update_eff(conn, ctx->data.fsu.fsu, ctx->data.fsu.phys,
+						 ctx->data.fsu.spacing_type, false);
+			lp_comm_ntf(conn, ctx);
 			llcp_lr_complete(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
-		} else {
+			break;
+		case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
+			if (ctx->unknown_response.type != PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ) {
+				lp_comm_terminate_invalid_pdu(conn, ctx);
+				break;
+			}
+
+			/* Peer does not support Frame Space Update, do not initiate it again on
+			 * this connection.
+			 */
+			conn->llcp.fex.fsu_unsupported = 1U;
+			lp_comm_ntf(conn, ctx);
+			llcp_lr_complete(conn);
+			ctx->state = LP_COMMON_STATE_IDLE;
+			break;
+		case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
+			if (ctx->reject_ext_ind.reject_opcode !=
+			    PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ) {
+				lp_comm_terminate_invalid_pdu(conn, ctx);
+				break;
+			}
+
+			/* Peer does not accept the requested frame spaces */
+			lp_comm_ntf(conn, ctx);
+			llcp_lr_complete(conn);
+			ctx->state = LP_COMMON_STATE_IDLE;
+			break;
+		default:
 			/* Illegal response opcode */
 			lp_comm_terminate_invalid_pdu(conn, ctx);
 			break;
 		}
-
 		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
 		lp_comm_complete_cte_req(conn, ctx);
@@ -718,24 +806,14 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		}
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 	case PROC_FRAME_SPACE:
-		if (feature_fsu(conn) && !ull_cp_remote_fsu_pending(conn)) {
-			if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
-				ctx->state = LP_COMMON_STATE_WAIT_TX;
-			} else {
-				/* llcp_tx_pause_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_FRAME_SPACE);
-				 */
-				lp_comm_tx(conn, ctx);
-				ctx->state = LP_COMMON_STATE_WAIT_RX;
-			}
-		} else {
-			/* REQ was received from peer and RSP not yet sent, lets piggy-back on RSP
-			 * instead of sending REQ
-			 */
-			llcp_lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
-		}
+		/* Wait for a peer initiated procedure to complete, frame spaces are applied
+		 * on acknowledgment of its response
+		 */
+		lp_comm_tx_proxy(conn, ctx, ull_cp_remote_fsu_pending(conn));
 		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PROC_CTE_REQ:
 		if (conn->llcp.cte_req.is_enabled &&
@@ -878,9 +956,11 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		llcp_pdu_decode_length_rsp(conn, pdu);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP:
-		llcp_pdu_decode_fsu_rsp(conn, pdu);
+		llcp_pdu_decode_fsu_rsp(ctx, pdu);
 		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CTE_RSP:
 		llcp_pdu_decode_cte_rsp(ctx, pdu);
@@ -1077,13 +1157,34 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		llcp_rx_node_retain(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ:
-		/* receive req from remote */
-		llcp_pdu_decode_fsu_req(conn, pdu);
-		ull_fsu_update_eff(conn);
+		llcp_pdu_decode_fsu_req(ctx, pdu);
 
+		ctx->data.fsu.error = llcp_fsu_validate(ctx->data.fsu.fsu_min,
+							ctx->data.fsu.fsu_max,
+							ctx->data.fsu.phys,
+							ctx->data.fsu.spacing_type);
+		if (ctx->data.fsu.error == BT_HCI_ERR_SUCCESS) {
+			/* Select the smallest frame space in range supported by the radio */
+			ctx->data.fsu.fsu = MAX(ctx->data.fsu.fsu_min,
+						CONFIG_BT_CTLR_FRAME_SPACE_MIN_US);
+
+			/* Apply the selected frame space before transmitting the response, keep
+			 * receiving with the current frame space until the response is
+			 * acknowledged.
+			 */
+			ctx->data.fsu.ntf_fsu =
+				ull_fsu_update_eff(conn, ctx->data.fsu.fsu, ctx->data.fsu.phys,
+						   ctx->data.fsu.spacing_type, true);
+		} else {
+			ctx->data.fsu.ntf_fsu = false;
+		}
+
+		/* Mark RX pdu to be removed from RX queue, but NOT be released */
 		llcp_rx_node_retain(ctx);
 		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PDU_DATA_LLCTRL_TYPE_CTE_REQ:
 		llcp_pdu_decode_cte_req(ctx, pdu);
@@ -1134,21 +1235,18 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 	case PROC_FRAME_SPACE:
-		if ((conn->lll.fsu.local.phys & 0x04)) {
+		if (ctx->data.fsu.error != BT_HCI_ERR_SUCCESS) {
 			llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ,
-						       BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
-		} else if (!IS_ENABLED(CONFIG_BT_ISO) &&
-			   ((conn->lll.fsu.local.spacing_type & (T_IFS_CIS | T_MSS_CIS)))) {
-			llcp_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ,
-						       BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+						       ctx->data.fsu.error);
 		} else {
-			llcp_pdu_encode_fsu_rsp(conn, pdu);
+			llcp_pdu_encode_fsu_rsp(ctx, pdu);
 		}
 		ctx->node_ref.tx_ack = tx;
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
-
 		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PROC_CTE_REQ: {
 		uint8_t err_code = 0;
@@ -1216,7 +1314,8 @@ static void rp_comm_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t 
 	}
 }
 
-static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t generate_ntf)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH) || defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx, bool generate_ntf)
 {
 	struct node_rx_pdu *ntf;
 
@@ -1231,22 +1330,33 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t gene
 	/* And release memory if no NTF to be generated */
 	ntf->hdr.type = NODE_RX_TYPE_RELEASE;
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-
 	if (generate_ntf) {
 		struct pdu_data *pdu;
 
 		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 		ntf->hdr.handle = conn->lll.handle;
 		pdu = (struct pdu_data *)ntf->pdu;
-		LL_ASSERT(ctx->proc == PROC_DATA_LENGTH_UPDATE);
-		llcp_ntf_encode_length_change(conn, pdu);
-	}
+		switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		case PROC_DATA_LENGTH_UPDATE:
+			llcp_ntf_encode_length_change(conn, pdu);
+			break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+		case PROC_FRAME_SPACE:
+			llcp_ntf_encode_fsu_change(ctx, pdu);
+			break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+	}
 
 	/* Enqueue notification towards LL - releases mem if no ntf */
 	ll_rx_put_sched(ntf->hdr.link, ntf);
 }
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH || CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 static bool rp_comm_tx_proxy(struct ll_conn *conn, struct proc_ctx *ctx, const bool complete)
 {
@@ -1350,9 +1460,11 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		rp_comm_tx_proxy(conn, ctx, false);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
 	case PROC_FRAME_SPACE:
 		rp_comm_tx_proxy(conn, ctx, false);
 		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 	case PROC_CTE_REQ:
 		if (llcp_rr_ispaused(conn) ||
@@ -1437,23 +1549,22 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 			dle_changed |= ctx->data.dle.ntf_dle;
 			llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_DATA_LENGTH);
 
-			rp_comm_ntf(conn, ctx, dle_changed);
+			rp_comm_ntf(conn, ctx, (dle_changed != 0U));
 			llcp_rr_complete(conn);
 			ctx->state = RP_COMMON_STATE_IDLE;
 			break;
 		}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-		case PROC_FRAME_SPACE: {
-			uint8_t fsu_changed = ull_fsu_update_eff(conn);
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+		case PROC_FRAME_SPACE:
+			/* Peer has received the response, close the receive window */
+			ull_fsu_tifs_set(conn);
 
-			fsu_changed |= ctx->data.fsu.ntf_fsu;
-
-			rp_comm_ntf(conn, ctx, fsu_changed);
-
+			rp_comm_ntf(conn, ctx, ctx->data.fsu.ntf_fsu);
 			llcp_rr_complete(conn);
 			ctx->state = RP_COMMON_STATE_IDLE;
 			break;
-		}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
 		case PROC_CTE_REQ: {
 			/* add PHY update pause = false here */

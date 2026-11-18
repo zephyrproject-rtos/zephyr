@@ -109,14 +109,20 @@ uint8_t ull_dle_update_eff(struct ll_conn *conn);
 uint8_t ull_dle_update_eff_tx(struct ll_conn *conn);
 uint8_t ull_dle_update_eff_rx(struct ll_conn *conn);
 
-uint8_t ull_fsu_update_eff(struct ll_conn *conn);
-uint8_t ull_fsu_update_eff_from_local(struct ll_conn *conn);
-uint8_t ull_fsu_init(struct ll_conn *conn);
-
 void ull_dle_local_tx_update(struct ll_conn *conn, uint16_t tx_octets, uint16_t tx_time);
 
-void ull_fsu_local_tx_update(struct ll_conn *conn, uint16_t fsu_min,
-				     uint16_t fsu_max, uint8_t phys, uint16_t spacing_type);
+/* Set the frame spaces of all PHYs to ifs_us */
+void ull_fsu_init(struct ll_conn *conn, uint16_t ifs_us);
+
+/* Set the LLL frame spaces from the frame spaces of the current PHYs */
+void ull_fsu_tifs_set(struct ll_conn *conn);
+
+/* Update the frame spaces of the given PHYs and spacing types, and the LLL frame spaces. With
+ * transition, the receive window covers the current and the new frame space.
+ * Returns true if a frame space changed.
+ */
+bool ull_fsu_update_eff(struct ll_conn *conn, uint16_t fsu_us, uint8_t phys,
+			uint16_t spacing_type, bool transition);
 
 void ull_conn_default_phy_tx_set(uint8_t tx);
 

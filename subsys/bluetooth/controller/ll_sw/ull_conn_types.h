@@ -100,6 +100,14 @@ struct llcp_struct {
 		 * may be limited to features that are common.
 		 */
 		uint64_t features_used;
+
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+		/* Frame Space Update is feature bit 65, beyond the 64-bit feature set exchanged
+		 * by the Feature Exchange procedure. Set when the peer responds LL_UNKNOWN_RSP to
+		 * LL_FRAME_SPACE_REQ.
+		 */
+		uint8_t fsu_unsupported:1;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 	} fex;
 
 	/* Minimum used channels procedure state */
