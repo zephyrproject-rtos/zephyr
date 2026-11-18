@@ -68,6 +68,21 @@ tests:
     integration_platforms:
       - qemu_x86
       - mps2/an385
+  kernel.common.isr_table_switch:
+    # platform_key: arch would pick a RISC-V board at plan time, before the
+    # filter runs, and the CLIC targets that can select the switch table are
+    # the ones this suite does not fit on. cpuflpr/xip fits because its text
+    # stays in RRAM, so name both architectures explicitly instead.
+    platform_allow:
+      - mps2/an385
+      - nrf54l15dk/nrf54l15/cpuflpr/xip
+    filter: CONFIG_GEN_SW_ISR_TABLE_SWITCH
+    extra_configs:
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+    integration_platforms:
+      - mps2/an385
+      - nrf54l15dk/nrf54l15/cpuflpr/xip
   kernel.common.lto:
     platform_key:
       - arch
