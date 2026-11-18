@@ -1670,6 +1670,57 @@ ZTEST(coap_client, test_echo_option_no_payload)
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
 }
 
+/* 4.01 with an Echo option as long as RFC 9175 allows: 40 bytes */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_echo_long(int sock, void *buf, size_t max_len,
+							   int flags,
+							   struct net_sockaddr *src_addr,
+							   net_socklen_t *addrlen)
+{
+	static const uint8_t echo_value[40];
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	struct coap_packet response;
+
+	zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_ACK,
+				    sizeof(token), token, COAP_RESPONSE_CODE_UNAUTHORIZED,
+				    get_next_pending_message_id()));
+	zassert_ok(coap_packet_append_option(&response, COAP_OPTION_ECHO, echo_value,
+					     sizeof(echo_value)));
+	restore_token(buf);
+
+	fill_recv_src_addr(src_addr, addrlen);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return response.offset;
+}
+
+/* An Echo option the client cannot hold is not answered with whatever value
+ * it held before: the 4.01 goes to the application.
+ */
+ZTEST(coap_client, test_echo_option_too_long)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.user_data = &sem1,
+	};
+
+	if (sizeof(((struct coap_option *)NULL)->value) >= 40) {
+		ztest_test_skip();
+	}
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_echo_long;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zexpect_equal(last_response_code, COAP_RESPONSE_CODE_UNAUTHORIZED, "Unexpected response");
+	zexpect_equal(z_impl_zsock_sendto_fake.call_count, 1, "The request must not be retried");
+}
+
 ZTEST(coap_client, test_echo_option_next_req)
 {
 	struct coap_client_request req = short_request;
