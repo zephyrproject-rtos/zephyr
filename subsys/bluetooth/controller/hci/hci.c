@@ -1017,6 +1017,10 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	/* LE Request Peer SCA */
 	rp->commands[43] |= BIT(2);
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	/* LE Frame Space Update */
+	rp->commands[48] |= BIT(1);
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_DTM_HCI)
@@ -2540,6 +2544,28 @@ static void le_req_peer_sca(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status(status);
 }
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+static void le_frame_space_update(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_frame_space_update *cmd = (void *)buf->data;
+	uint16_t frame_space_min;
+	uint16_t frame_space_max;
+	uint16_t spacing_types;
+	uint16_t handle;
+	uint8_t status;
+
+	handle = sys_le16_to_cpu(cmd->handle);
+	frame_space_min = sys_le16_to_cpu(cmd->frame_space_min);
+	frame_space_max = sys_le16_to_cpu(cmd->frame_space_max);
+	spacing_types = sys_le16_to_cpu(cmd->spacing_types);
+
+	status = ll_fsu_req_send(handle, frame_space_min, frame_space_max, cmd->phys,
+				 spacing_types);
+
+	*evt = cmd_status(status);
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG)
 static void le_read_remote_features(struct net_buf *buf, struct net_buf **evt)
@@ -4674,6 +4700,12 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_req_peer_sca(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	case BT_OCF(BT_HCI_OP_LE_FRAME_SPACE_UPDATE):
+		le_frame_space_update(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_ISO)
 	case BT_OCF(BT_HCI_OP_LE_SETUP_ISO_PATH):
@@ -9028,6 +9060,50 @@ static void le_remote_feat_complete(uint8_t status, struct pdu_data *pdu_data,
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+static void le_frame_space_update_complete(uint8_t status, struct pdu_data *pdu_data,
+					   uint16_t handle, struct net_buf *buf)
+{
+	struct bt_hci_evt_le_frame_space_update_complete *sep;
+
+	if (((event_mask & BT_EVT_MASK_LE_META_EVENT) == 0U) ||
+	    ((le_event_mask & BT_EVT_MASK_LE_FRAME_SPACE_UPDATE_COMPLETE) == 0U)) {
+		return;
+	}
+
+	sep = meta_evt(buf, BT_HCI_EVT_LE_FRAME_SPACE_UPDATE_COMPLETE, sizeof(*sep));
+
+	sep->status = status;
+	sep->handle = sys_cpu_to_le16(handle);
+
+	/* Only the Host initiates a local procedure, a failed procedure has no frame space */
+	if (status != BT_HCI_ERR_SUCCESS) {
+		sep->initiator = BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_HOST;
+		sep->frame_space = 0U;
+		sep->phys = 0U;
+		sep->spacing_types = 0U;
+
+		return;
+	}
+
+	/* PDU fields are little-endian. A peer initiated procedure is notified as
+	 * LL_FRAME_SPACE_REQ with the selected frame space, a locally initiated procedure as
+	 * LL_FRAME_SPACE_RSP.
+	 */
+	if (pdu_data->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ) {
+		sep->initiator = BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_PEER;
+		sep->frame_space = pdu_data->llctrl.fsu_req.fsu_min;
+		sep->phys = pdu_data->llctrl.fsu_req.phys;
+		sep->spacing_types = pdu_data->llctrl.fsu_req.spacing_type;
+	} else {
+		sep->initiator = BT_HCI_LE_FRAME_SPACE_UPDATE_INITIATOR_LOCAL_HOST;
+		sep->frame_space = pdu_data->llctrl.fsu_rsp.fsu;
+		sep->phys = pdu_data->llctrl.fsu_rsp.phys;
+		sep->spacing_types = pdu_data->llctrl.fsu_rsp.spacing_type;
+	}
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 static void le_unknown_rsp(struct pdu_data *pdu_data, uint16_t handle,
 			   struct net_buf *buf)
 {
@@ -9042,6 +9118,12 @@ static void le_unknown_rsp(struct pdu_data *pdu_data, uint16_t handle,
 		le_df_cte_req_failed(BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, handle, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ:
+		le_frame_space_update_complete(BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, pdu_data, handle,
+					       buf);
+		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 	default:
 		LOG_WRN("type: 0x%02x",	pdu_data->llctrl.unknown_rsp.type);
 		break;
@@ -9056,6 +9138,12 @@ static void le_reject_ext_ind(struct pdu_data *pdu, uint16_t handle, struct net_
 		le_df_cte_req_failed(pdu->llctrl.reject_ext_ind.error_code, handle, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ:
+		le_frame_space_update_complete(pdu->llctrl.reject_ext_ind.error_code, pdu, handle,
+					       buf);
+		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 	default:
 		LOG_WRN("reject opcode: 0x%02x", pdu->llctrl.reject_ext_ind.reject_opcode);
 		break;
@@ -9176,6 +9264,13 @@ static void encode_data_ctrl(struct node_rx_pdu *node_rx,
 		le_data_len_change(pdu_data, handle, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ:
+	case PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP:
+		le_frame_space_update_complete(BT_HCI_ERR_SUCCESS, pdu_data, handle, buf);
+		break;
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CTE_RSP:
