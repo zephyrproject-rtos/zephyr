@@ -561,7 +561,8 @@ static uint8_t _connect(const struct btp_l2cap_connect_v2_cmd *cp,
 fail:
 	for (i = 0U; i < ARRAY_SIZE(allocated_channels); i++) {
 		if (allocated_channels[i]) {
-			channels[BT_L2CAP_LE_CHAN(allocated_channels[i])->ident].in_use = false;
+			chan = CONTAINER_OF(allocated_channels[i], struct channel, le.chan);
+			chan->in_use = false;
 		}
 	}
 	return BTP_STATUS_FAILED;
