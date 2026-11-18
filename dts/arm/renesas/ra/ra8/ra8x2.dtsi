@@ -1485,6 +1485,26 @@
 				channel = <1>;
 				status = "disabled";
 			};
+
+			gptp: gptp@403e0000 {
+				compatible = "renesas,ra-gptp";
+				reg = <0x403e0000 0x10c4>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				gptp_timer0: timer@0 {
+					compatible = "renesas,ra-gptp-timer";
+					reg = <0>;
+					status = "disabled";
+				};
+
+				gptp_timer1: timer@1 {
+					compatible = "renesas,ra-gptp-timer";
+					reg = <1>;
+					status = "disabled";
+				};
+			};
 		};
 
 		ioport0: gpio@40400000 {
