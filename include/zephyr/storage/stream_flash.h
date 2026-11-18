@@ -55,24 +55,23 @@ typedef int (*stream_flash_callback_t)(uint8_t *buf, size_t len, size_t offset);
  */
 struct stream_flash_ctx {
 	/** @cond INTERNAL_HIDDEN */
-	uint8_t *buf; /* Write buffer */
-	size_t buf_len; /* Length of write buffer */
-	size_t buf_bytes; /* Number of bytes currently stored in write buf */
+	uint8_t *buf;              /* Write buffer */
+	size_t buf_len;            /* Length of write buffer */
+	size_t buf_bytes;          /* Number of bytes currently stored in write buf */
 	const struct device *fdev; /* Flash device */
-	size_t bytes_written; /* Number of bytes written to flash */
-	size_t offset; /* Offset from base of flash device to write area */
-	size_t available; /* Available bytes in write area */
+	size_t bytes_written;      /* Number of bytes written to flash */
+	size_t offset;             /* Offset from base of flash device to write area */
+	size_t available;          /* Available bytes in write area */
 #ifdef CONFIG_STREAM_FLASH_POST_WRITE_CALLBACK
 	stream_flash_callback_t callback; /* Callback invoked after write op */
 #endif
-#ifdef CONFIG_STREAM_FLASH_ERASE
+	bool auto_erase;                /* Automatically erase flash pages when needed */
 	size_t erased_up_to;		/* First offset in continuous range,
 					 * relative to the stream_flash_ctx.offset,
 					 * that has not yet been erased while
 					 * preparing Stream Flash designated area
 					 * for write.
 					 */
-#endif
 	size_t write_block_size;	/* Offset/size device write alignment */
 	uint8_t erase_value;
 	/** @endcond */
@@ -88,15 +87,17 @@ struct stream_flash_ctx {
  *                Must be multiple of the flash device write-block-size.
  * @param offset Offset within flash device to start writing to
  * @param size Number of bytes available for performing buffered write.
+ * @param auto_erase Automatic erasure of flash pages is toggled when true
  * @param cb Callback to be invoked on completed flash write operations.
  *           Callback is supported when CONFIG_STREAM_FLASH_POST_WRITE_CALLBACK
  *           is enabled.
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
-		      uint8_t *buf, size_t buf_len, size_t offset, size_t size,
+int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev, uint8_t *buf,
+		      size_t buf_len, size_t offset, size_t size, bool auto_erase,
 		      stream_flash_callback_t cb);
+
 /**
  * @brief Read number of bytes written to the flash.
  *
@@ -138,8 +139,8 @@ size_t stream_flash_bytes_buffered(const struct stream_flash_ctx *ctx);
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *data,
-				size_t len, bool flush);
+int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *data, size_t len,
+				bool flush);
 
 /**
  * @brief Load persistent stream write progress stored with key
@@ -156,8 +157,7 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const uint8_t *dat
  * @return non-negative on success, -ERANGE in case when @p off is out
  * of area designated for stream or negative errno code on fail
  */
-int stream_flash_progress_load(struct stream_flash_ctx *ctx,
-			       const char *settings_key);
+int stream_flash_progress_load(struct stream_flash_ctx *ctx, const char *settings_key);
 
 /**
  * @brief Save persistent stream write progress using key @p settings_key .
@@ -168,8 +168,7 @@ int stream_flash_progress_load(struct stream_flash_ctx *ctx,
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_progress_save(const struct stream_flash_ctx *ctx,
-			       const char *settings_key);
+int stream_flash_progress_save(const struct stream_flash_ctx *ctx, const char *settings_key);
 
 /**
  * @brief Clear persistent stream write progress stored with key
@@ -180,8 +179,7 @@ int stream_flash_progress_save(const struct stream_flash_ctx *ctx,
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_progress_clear(const struct stream_flash_ctx *ctx,
-				const char *settings_key);
+int stream_flash_progress_clear(const struct stream_flash_ctx *ctx, const char *settings_key);
 
 #ifdef __cplusplus
 }

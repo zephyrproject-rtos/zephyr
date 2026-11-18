@@ -435,12 +435,10 @@ static void coredump_flash_backend_start(void)
 		header_size = ROUND_UP(sizeof(struct flash_hdr_t), FLASH_WRITE_SIZE);
 		offset = backend_ctx.flash_area->fa_off + header_size;
 
-		ret = stream_flash_init(&backend_ctx.stream_ctx, flash_dev,
-					stream_flash_buf,
-					sizeof(stream_flash_buf),
-					offset,
+		ret = stream_flash_init(&backend_ctx.stream_ctx, flash_dev, stream_flash_buf,
+					sizeof(stream_flash_buf), offset,
 					backend_ctx.flash_area->fa_size - header_size,
-					NULL);
+					IS_ENABLED(CONFIG_STREAM_FLASH_ERASE), NULL);
 	}
 
 	if (ret != 0) {
