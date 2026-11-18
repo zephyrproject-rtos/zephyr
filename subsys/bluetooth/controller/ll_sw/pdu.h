@@ -641,6 +641,8 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_CIS_RSP = 0x20,
 	PDU_DATA_LLCTRL_TYPE_CIS_IND = 0x21,
 	PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND = 0x22,
+	PDU_DATA_LLCTRL_TYPE_SUBRATE_REQ = 0x26,
+	PDU_DATA_LLCTRL_TYPE_SUBRATE_IND = 0x27,
 	PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ = 0x3B,
 	PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP = 0x3C,
 	PDU_DATA_LLCTRL_TYPE_UNUSED = 0xFF
@@ -924,6 +926,24 @@ struct pdu_data_llctrl_cis_terminate_ind {
 	uint8_t  error_code;
 } __packed;
 
+/* LL_SUBRATE_REQ, Core Spec v5.3+ Vol 6, Part B, Section 2.4.2.36 */
+struct pdu_data_llctrl_subrate_req {
+	uint16_t subrate_factor_min;
+	uint16_t subrate_factor_max;
+	uint16_t max_latency;
+	uint16_t continuation_number;
+	uint16_t timeout;
+} __packed;
+
+/* LL_SUBRATE_IND, Core Spec v5.3+ Vol 6, Part B, Section 2.4.2.37 */
+struct pdu_data_llctrl_subrate_ind {
+	uint16_t subrate_factor;
+	uint16_t subrate_base_event;
+	uint16_t latency;
+	uint16_t continuation_number;
+	uint16_t timeout;
+} __packed;
+
 struct pdu_data_llctrl_periodic_sync_ind {
 	uint16_t id;
 	struct pdu_adv_sync_info sync_info;
@@ -982,6 +1002,8 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_cis_rsp cis_rsp;
 		struct pdu_data_llctrl_cis_ind cis_ind;
 		struct pdu_data_llctrl_cis_terminate_ind cis_terminate_ind;
+		struct pdu_data_llctrl_subrate_req subrate_req;
+		struct pdu_data_llctrl_subrate_ind subrate_ind;
 		struct pdu_data_llctrl_periodic_sync_ind periodic_sync_ind;
 	} __packed;
 } __packed;

@@ -129,6 +129,13 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 			   uint16_t latency, uint16_t timeout, uint16_t *offsets);
 
 /**
+ * @brief Initiate a Connection Subrate Update (Central) or Connection Subrate Request
+ *        (Peripheral) procedure.
+ */
+uint8_t ull_cp_subrate_req(struct ll_conn *conn, uint16_t subrate_min, uint16_t subrate_max,
+			   uint16_t max_latency, uint16_t continuation_number, uint16_t timeout);
+
+/**
  * @brief Accept the remote device’s request to change connection parameters.
  */
 void ull_cp_conn_param_req_reply(struct ll_conn *conn);

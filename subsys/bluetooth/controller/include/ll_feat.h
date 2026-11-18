@@ -253,6 +253,12 @@
 	* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
 	*/
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+#define LL_FEAT_BIT_CONN_SUBRATING BIT64(BT_LE_FEAT_BIT_CONN_SUBRATING)
+#else /* !CONFIG_BT_CTLR_SUBRATING */
+#define LL_FEAT_BIT_CONN_SUBRATING 0U
+#endif /* !CONFIG_BT_CTLR_SUBRATING */
+
 /* All defined feature bits */
 #define LL_FEAT_BIT_MASK         0xFFFFFFFFFFULL
 
@@ -296,7 +302,8 @@
 				  LL_FEAT_BIT_SYNC_RECEIVER | \
 				  LL_FEAT_BIT_PERIODIC_ADI_SUPPORT | \
 				  LL_FEAT_BIT_SYNC_TRANSFER_RECEIVER | \
-				  LL_FEAT_BIT_SYNC_TRANSFER_SENDER)
+				  LL_FEAT_BIT_SYNC_TRANSFER_SENDER | \
+				  LL_FEAT_BIT_CONN_SUBRATING)
 
 /* Connected Isochronous Stream (Host Support) bit is controlled by host */
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
@@ -305,8 +312,12 @@
 #define LL_FEAT_HOST_BITS_ISO_CHANNELS 0U
 #endif /* !CONFIG_BT_CTLR_CONN_ISO */
 
-/* Connection subrating not supported and bit thus cannot be set by host */
+/* Connection Subrating (Host Support) bit is controlled by the host */
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+#define LL_FEAT_HOST_BITS_CONN_SUBRATING BIT64(BT_LE_FEAT_BIT_CONN_SUBRATING_HOST_SUPP)
+#else /* !CONFIG_BT_CTLR_SUBRATING */
 #define LL_FEAT_HOST_BITS_CONN_SUBRATING 0U
+#endif /* !CONFIG_BT_CTLR_SUBRATING */
 
 /* Mask for host controlled features */
 #define LL_FEAT_HOST_BIT_MASK  (LL_FEAT_HOST_BITS_ISO_CHANNELS |\

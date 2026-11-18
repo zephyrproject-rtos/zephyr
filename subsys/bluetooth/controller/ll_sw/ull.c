@@ -1469,6 +1469,10 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_CONN_UPDATE:
 	case NODE_RX_TYPE_ENC_REFRESH:
 
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	case NODE_RX_TYPE_SUBRATE_CHANGE:
+#endif /* CONFIG_BT_CTLR_SUBRATING */
+
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case NODE_RX_TYPE_APTO:
 #endif /* CONFIG_BT_CTLR_LE_PING */
@@ -1672,6 +1676,10 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CONN)
 		case NODE_RX_TYPE_CONN_UPDATE:
 		case NODE_RX_TYPE_ENC_REFRESH:
+
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+		case NODE_RX_TYPE_SUBRATE_CHANGE:
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 		case NODE_RX_TYPE_APTO:

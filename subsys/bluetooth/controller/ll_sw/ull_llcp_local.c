@@ -357,6 +357,11 @@ void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 		llcp_lp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	case PROC_SUBRATE_UPDATE:
+		llcp_lp_subrate_rx(conn, ctx, rx);
+		break;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT_DBG(0);
@@ -407,6 +412,11 @@ void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		llcp_lp_past_tx_ack(conn, ctx, tx);
 		break;
 #endif /* defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER) */
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	case PROC_SUBRATE_UPDATE:
+		llcp_lp_subrate_tx_ack(conn, ctx, tx);
+		break;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 	default:
 		break;
 		/* Ignore tx_ack */
@@ -516,6 +526,11 @@ static void lr_act_run(struct ll_conn *conn)
 		llcp_lp_past_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
+#if defined(CONFIG_BT_CTLR_SUBRATING)
+	case PROC_SUBRATE_UPDATE:
+		llcp_lp_subrate_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_CTLR_SUBRATING */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT_DBG(0);

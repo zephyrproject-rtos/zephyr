@@ -196,6 +196,17 @@ static inline bool feature_peer_periodic_sync_recv(struct ll_conn *conn)
 	return (conn->llcp.fex.features_peer & BIT64(BT_LE_FEAT_BIT_PAST_RECV)) != 0;
 }
 
+static inline bool feature_subrate(struct ll_conn *conn)
+{
+	return (conn->llcp.fex.features_used & LL_FEAT_BIT_CONN_SUBRATING) != 0;
+}
+
+static inline bool feature_peer_subrate_host(struct ll_conn *conn)
+{
+	return (conn->llcp.fex.features_peer &
+		BIT64(BT_LE_FEAT_BIT_CONN_SUBRATING_HOST_SUPP)) != 0;
+}
+
 /*
  * The following features are not yet defined in KConfig and do
  * not have a bitfield defined in ll_feat.h
