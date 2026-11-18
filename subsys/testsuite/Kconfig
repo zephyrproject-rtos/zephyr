@@ -9,7 +9,7 @@ config TEST
 	bool "Mark project as a test"
 	# For tests, store thread names in binary and dump them on crash to
 	# ease debugging.
-	select THREAD_NAME
+	imply THREAD_NAME
 	help
 	  Mark a project or an application as a test. This will enable a few
 	  test defaults.
