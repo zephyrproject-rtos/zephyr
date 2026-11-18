@@ -36,6 +36,16 @@
 #define XHCI_BULK_RING_SIZE  32
 #define XHCI_MAX_DEVSLOTS    8
 #define XHCI_MAX_SCRATCHPADS 8
+/** Maximum root hub ports tracked (index 1 … N). */
+#define XHCI_MAX_ROOT_PORTS  8
+
+/** Per root hub port: connect event bookkeeping and USB2 companion mapping. */
+struct xhci_root_port {
+	struct usb_device *udev;
+	bool connect_submitted;
+	/** xHCI PORTSC index used for PR (0 = same as logical port). */
+	uint8_t phys_port;
+};
 
 #define UHC_DWC3_BULK_IN_DATABUF_SZ   512U
 #define UHC_DWC3_BULK_XFER_TIMEOUT_MS 5000U
@@ -112,8 +122,9 @@ struct uhc_dwc3_data {
 	/* Per-xHCI-slot device state (index = slot ID). */
 	struct xhci_dev_slot slots[XHCI_MAX_DEVSLOTS + 1];
 
-	/* Root-tier udev bound before bus_reset (uhc_device_alloc). */
+	/* Root-tier udev bound before bus_reset (legacy single-root lookup). */
 	struct usb_device *connect_udev;
+	struct xhci_root_port root_ports[XHCI_MAX_ROOT_PORTS + 1];
 
 	/* Command ring */
 	struct xhci_trb cmd_trbs[XHCI_CMD_RING_SIZE] __aligned(64);
@@ -125,7 +136,6 @@ struct uhc_dwc3_data {
 	struct xhci_erst_entry erst[1] __aligned(64);
 
 	uint8_t port_speed;
-	bool root_connect_submitted;
 	uint8_t root_port;
 	bool write_64_hi_lo;
 

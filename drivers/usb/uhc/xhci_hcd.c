@@ -333,6 +333,7 @@ void xhci_poll_boot_connected_device(struct uhc_dwc3_data *priv, const struct de
 	unsigned int poll_order[32];
 	unsigned int poll_n;
 	bool found;
+	uint8_t boot_port;
 
 	if (priv->max_ports < 1U) {
 		return;
@@ -370,6 +371,7 @@ void xhci_poll_boot_connected_device(struct uhc_dwc3_data *priv, const struct de
 				   dwc3_usb2_root_port(priv, cfg));
 
 	found = false;
+	boot_port = 0U;
 
 	for (unsigned int i = 0U; i < poll_n; i++) {
 		unsigned int p = poll_order[i];
@@ -393,7 +395,8 @@ void xhci_poll_boot_connected_device(struct uhc_dwc3_data *priv, const struct de
 		}
 
 		if (found) {
-			priv->root_port = (uint8_t)p;
+			boot_port = (uint8_t)p;
+			priv->root_port = boot_port;
 			LOG_DBG("xHCI: boot poll CCS on root port %u", p);
 			break;
 		}
@@ -402,7 +405,8 @@ void xhci_poll_boot_connected_device(struct uhc_dwc3_data *priv, const struct de
 	cfg->irq_disable_func(dev);
 	xhci_process_events(priv);
 
-	if (priv->root_connect_submitted) {
+	if (boot_port != 0U && dwc3_root_port_valid(priv, boot_port) &&
+	    priv->root_ports[boot_port].connect_submitted) {
 		cfg->irq_enable_func(dev);
 		return;
 	}
@@ -456,8 +460,11 @@ void xhci_poll_boot_connected_device(struct uhc_dwc3_data *priv, const struct de
 	priv->port_speed = XHCI_PORTSC_SPEED(portsc);
 	LOG_INF("xHCI: boot-connected device (speed %u)", priv->port_speed);
 
-	priv->root_connect_submitted = true;
-	(void)uhc_submit_event(priv->dev, xhci_connect_event_capped(priv, priv->port_speed), 0);
+	if (boot_port != 0U && dwc3_root_port_valid(priv, boot_port)) {
+		priv->root_ports[boot_port].connect_submitted = true;
+	}
+	(void)uhc_submit_event_port(priv->dev, xhci_connect_event_capped(priv, priv->port_speed), 0,
+				    boot_port);
 
 	cfg->irq_enable_func(dev);
 }

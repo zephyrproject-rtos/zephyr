@@ -123,7 +123,33 @@ void dwc3_build_port_poll_order(unsigned int *order, unsigned int *n_order, unsi
 				unsigned int usb2_first);
 int xhci_reset(struct uhc_dwc3_data *priv, mm_reg_t xhci_base);
 int xhci_root_port_reset_preamble(struct uhc_dwc3_data *priv, const struct uhc_dwc3_config *cfg,
-				  uint8_t *reset_rp, uint32_t *port_off);
+				  uint8_t logical_port, uint8_t *reset_rp, uint32_t *port_off);
+
+static inline bool dwc3_root_port_valid(const struct uhc_dwc3_data *priv, uint8_t port)
+{
+	return (priv != NULL && port >= 1U && port <= priv->max_ports &&
+		port <= XHCI_MAX_ROOT_PORTS);
+}
+
+static inline uint8_t dwc3_root_port_normalize(uint8_t port)
+{
+	return (port != 0U) ? port : 1U;
+}
+
+static inline uint8_t dwc3_root_phys_port(const struct uhc_dwc3_data *priv, uint8_t logical_port)
+{
+	logical_port = dwc3_root_port_normalize(logical_port);
+
+	if (priv == NULL || !dwc3_root_port_valid(priv, logical_port)) {
+		return logical_port;
+	}
+
+	if (priv->root_ports[logical_port].phys_port != 0U) {
+		return priv->root_ports[logical_port].phys_port;
+	}
+
+	return logical_port;
+}
 int xhci_root_port_reset(struct uhc_dwc3_data *priv, uint32_t port_off);
 int xhci_setup(struct uhc_dwc3_data *priv);
 int xhci_start(struct uhc_dwc3_data *priv);

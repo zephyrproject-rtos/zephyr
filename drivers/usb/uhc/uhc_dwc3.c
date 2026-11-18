@@ -249,8 +249,8 @@ static int uhc_dwc3_init(const struct device *dev)
 
 	priv->connect_udev = NULL;
 	priv->port_speed = 0U;
-	priv->root_connect_submitted = false;
 	priv->root_port = 1U;
+	memset(priv->root_ports, 0, sizeof(priv->root_ports));
 	priv->write_64_hi_lo = xhci_plat_quirk(&cfg->xhci_plat, XHCI_QUIRK_WRITE_64_HI_LO);
 
 	LOG_DBG("MMIO and xHCI data structures initialized");
@@ -307,8 +307,9 @@ static int uhc_dwc3_disable(const struct device *dev)
 
 	xhci_teardown_all_slots(priv);
 
-	priv->root_connect_submitted = false;
+	priv->connect_udev = NULL;
 	priv->root_port = 1U;
+	memset(priv->root_ports, 0, sizeof(priv->root_ports));
 
 	cmd = xhci_readl(priv->op_base, XHCI_OP_USBCMD);
 	cmd &= ~(XHCI_USBCMD_RUN | XHCI_USBCMD_INTE | XHCI_USBCMD_HSEE);
@@ -344,9 +345,11 @@ static int dwc3_root_port_reset_locked(const struct device *dev, struct usb_devi
 		return -EIO;
 	}
 
+	uint8_t logical_port = dwc3_root_port_normalize(udev->hub_port);
+
 	xhci_root_reconnect_slot_teardown(priv, udev);
 
-	ret = xhci_root_port_reset_preamble(priv, cfg, &reset_rp, &port_off);
+	ret = xhci_root_port_reset_preamble(priv, cfg, logical_port, &reset_rp, &port_off);
 	if (ret != 0) {
 		return ret;
 	}
@@ -357,7 +360,7 @@ static int dwc3_root_port_reset_locked(const struct device *dev, struct usb_devi
 static int dwc3_root_device_prepare_locked(const struct device *dev, struct usb_device *udev)
 {
 	struct uhc_dwc3_data *priv = uhc_get_private(dev);
-	uint8_t reset_rp = priv->root_port != 0U ? priv->root_port : 1U;
+	uint8_t reset_rp = dwc3_root_phys_port(priv, udev->hub_port);
 
 	return xhci_prepare_root_device(priv, udev, reset_rp);
 }
@@ -372,11 +375,30 @@ static int uhc_dwc3_device_prepare(const struct device *dev, struct usb_device *
 	return dwc3_root_device_prepare_locked(dev, udev);
 }
 
+static struct usb_device *dwc3_root_bound_udev(struct uhc_dwc3_data *priv)
+{
+	if (priv->connect_udev != NULL) {
+		return priv->connect_udev;
+	}
+
+	for (uint8_t p = 1U; p <= priv->max_ports && p <= XHCI_MAX_ROOT_PORTS; p++) {
+		if (priv->root_ports[p].udev != NULL) {
+			return priv->root_ports[p].udev;
+		}
+	}
+
+	return NULL;
+}
+
 static int uhc_dwc3_bus_reset(const struct device *dev)
 {
 	struct uhc_dwc3_data *priv = uhc_get_private(dev);
-	struct usb_device *udev = priv->connect_udev;
+	struct usb_device *udev = dwc3_root_bound_udev(priv);
 	int ret;
+
+	if (udev == NULL) {
+		return -EINVAL;
+	}
 
 	ret = dwc3_root_port_reset_locked(dev, udev);
 	if (ret != 0) {
@@ -1205,15 +1227,23 @@ static int uhc_dwc3_device_alloc(const struct device *dev, struct usb_device *ud
 	}
 
 	if (udev->hub == NULL) {
-		if (priv->connect_udev == udev) {
+		uint8_t port = dwc3_root_port_normalize(udev->hub_port);
+
+		if (!dwc3_root_port_valid(priv, port)) {
+			LOG_ERR("device_alloc: invalid root port %u", port);
+			return -EINVAL;
+		}
+
+		if (priv->root_ports[port].udev == udev) {
 			return 0;
 		}
 
-		if (priv->connect_udev != NULL) {
-			LOG_ERR("device_alloc: root connect_udev already bound");
+		if (priv->root_ports[port].udev != NULL) {
+			LOG_ERR("device_alloc: root port %u already bound", port);
 			return -EBUSY;
 		}
 
+		priv->root_ports[port].udev = udev;
 		priv->connect_udev = udev;
 		return 0;
 	}
@@ -1262,8 +1292,18 @@ static int uhc_dwc3_device_free(const struct device *dev, struct usb_device *ude
 
 	slot = xhci_slot_from_udev(priv, udev);
 	if (slot == NULL) {
-		if (udev->hub == NULL && priv->connect_udev == udev) {
-			priv->connect_udev = NULL;
+		if (udev->hub == NULL) {
+			uint8_t port = dwc3_root_port_normalize(udev->hub_port);
+
+			if (dwc3_root_port_valid(priv, port) &&
+			    priv->root_ports[port].udev == udev) {
+				priv->root_ports[port].udev = NULL;
+				priv->root_ports[port].connect_submitted = false;
+				priv->root_ports[port].phys_port = 0U;
+			}
+			if (priv->connect_udev == udev) {
+				priv->connect_udev = NULL;
+			}
 		}
 		return 0;
 	}
@@ -1283,8 +1323,17 @@ static int uhc_dwc3_device_free(const struct device *dev, struct usb_device *ude
 		return -EIO;
 	}
 
-	if (udev->hub == NULL && priv->connect_udev == udev) {
-		priv->connect_udev = NULL;
+	if (udev->hub == NULL) {
+		uint8_t port = dwc3_root_port_normalize(udev->hub_port);
+
+		if (dwc3_root_port_valid(priv, port) && priv->root_ports[port].udev == udev) {
+			priv->root_ports[port].udev = NULL;
+			priv->root_ports[port].connect_submitted = false;
+			priv->root_ports[port].phys_port = 0U;
+		}
+		if (priv->connect_udev == udev) {
+			priv->connect_udev = NULL;
+		}
 	}
 
 	return xhci_teardown_slot(priv, sid);
