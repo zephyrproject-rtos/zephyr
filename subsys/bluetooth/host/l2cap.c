@@ -3342,6 +3342,15 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 	 */
 	bt_dev_lock();
 
+	/* A disconnection processed since the caller checked the state never
+	 * tears down a channel added after it
+	 */
+	if (conn->state != BT_CONN_CONNECTED) {
+		bt_dev_unlock();
+
+		return -ENOTCONN;
+	}
+
 	if (!l2cap_chan_add(conn, &ch->chan, l2cap_chan_destroy)) {
 		bt_dev_unlock();
 
@@ -3476,6 +3485,15 @@ int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
 	 * channels, and the channels of a failed channel ID go back unused
 	 */
 	bt_dev_lock();
+
+	/* A disconnection processed before the channels are added never tears
+	 * them down
+	 */
+	if (conn->state != BT_CONN_CONNECTED) {
+		bt_dev_unlock();
+
+		return -ENOTCONN;
+	}
 
 	/* Init non-null channels */
 	for (i = 0; i < BT_L2CAP_ECRED_CHAN_MAX_PER_REQ; i++) {

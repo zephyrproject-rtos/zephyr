@@ -992,6 +992,8 @@ int bt_l2cap_br_server_unregister(struct bt_l2cap_server *server);
  *  @retval -EINVAL @p conn is not an LE connection.
  *  @retval -ENOMEM No channel ID or no buffer for the request is available. No callback is
  *                  called, and the channels can be connected again.
+ *  @retval -ENOTCONN @p conn is not connected. No callback is called, and the channels can be
+ *                    connected again.
  *  @retval -ENOTCONN The connection was lost, or a channel was disconnected, while waiting for a
  *                    buffer for the request. Every channel gets its callbacks as on any
  *                    disconnection.
