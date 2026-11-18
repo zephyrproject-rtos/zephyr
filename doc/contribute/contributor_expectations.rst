@@ -92,124 +92,90 @@ PRs that are too large or complicated.
 PR Requirements
 ***************
 
+Before requesting a review, self-review your PR and make sure it meets the
+requirements below. A reviewer should be able to understand the change, follow
+the commit history, and see how the change was validated.
+
 .. important::
 
-   Pull requests that do not meet the quality expectations outlined below are less likely to receive
-   reviewer engagement, and reviewers may request changes on such pull requests without detailed
-   feedback.
+   PRs that do not meet these expectations may receive less reviewer attention,
+   and reviewers may request changes without providing detailed feedback.
 
-   Contributors are expected to self-review their changes and ensure all requirements are met before
-   requesting a review.
+   Draft PRs can still be used to request early feedback, even when CI is
+   failing.
 
-- Each commit in the PR must provide a commit message following the
-  :ref:`commit-guidelines`.
+Explain the change
+==================
 
-- No fixup or merge commits are allowed, see :ref:`Contribution workflow` for
-  more information.
+**Describe what changed and why.** The PR description must summarize the change
+and explain its rationale. Give reviewers enough context to understand the
+problem being solved and the approach you chose.
 
-- The PR description must include a summary of the changes and their rationales.
+Follow project standards
+========================
 
-- All files in the PR must comply with :ref:`Licensing
-  Requirements<licensing_requirements>`.
+**Use the required project conventions.** Each commit must follow the
+:ref:`commit-guidelines`. All files must comply with the
+:ref:`licensing_requirements`, and code must follow the :ref:`coding_style` and
+:ref:`coding_guidelines`.
 
-- The code must follow the Zephyr :ref:`coding_style` and :ref:`coding_guidelines`.
+**Keep the commit history useful.** Each commit should represent one logical,
+self-contained step. Do not combine unrelated work in the same commit. Every
+commit must build and pass the relevant tests so that the history remains
+useful for ``git bisect``.
 
-- The PR must pass all CI checks, as described in :ref:`merge_criteria`.
-  Contributors may mark a PR as draft and explicitly request reviewers to
-  provide early feedback, even with failing CI checks.
+Before requesting review, clean up temporary development history. Squash
+intermediate commits, remove debugging artifacts, and avoid repeated renames or
+rewrites that do not help explain the final change. Fixup and merge commits are
+not allowed in the final PR history. If necessary, use ``git rebase -i`` to
+reorganize the commits, while preserving correct authorship attribution. See
+:ref:`Contribution workflow` for more information.
 
-- Commits in a pull request should represent clear, logical units of change that are easy to review
-  and maintain bisectability. The following guidelines expand on this principle:
+Test the change
+===============
 
-  1. Distinct, Logical Units of Change
+**Include tests and examples for changes in behavior.** Major new
+functionality must be covered by automated tests. Other new features and
+changes to existing behavior should include appropriate tests or samples,
+especially when an API's behavior contract changes. Hardware-independent bug
+fixes should include a regression test that fails without the fix and passes
+with it. Any new API must include an example showing how it is used. API
+tests should check individual functions and their behavior contracts, not
+just whether the code builds. Maintainers and reviewers determine whether
+this coverage is sufficient.
 
-     Each commit should correspond to a self-contained, meaningful change. For example, adding a
-     feature, fixing a bug, or refactoring existing code should be separate commits. Avoid mixing
-     different types of changes (e.g., feature implementation and unrelated refactoring) in the same
-     commit.
+For examples, see the :zephyr_file:`kernel timer tests <tests/kernel/timer/timer_behavior>`
+and the :zephyr_file:`fuel gauge tests <tests/drivers/fuel_gauge/sbs_gauge>`,
+which use a :zephyr_file:`smart battery emulator <drivers/fuel_gauge/sbs_gauge/emul_sbs_gauge.c>`
+to test driver behavior. Project-wide coverage reports are available on
+`Codecov <https://app.codecov.io/gh/zephyrproject-rtos/zephyr>`_.
 
-  2. Retain Bisectability
+**Check CI results.** The PR must pass all required CI checks as described in
+the :ref:`merge_criteria`. If you need feedback before CI passes, use a draft PR
+and explicitly request early review.
 
-     Every commit in the pull request must build successfully and pass all relevant tests. This
-     ensures that git bisect can be used effectively to identify the specific commit that introduced
-     a bug or issue.
+Update documentation for users
+==============================
 
-  3. Squash Intermediary or Non-Final Development History
+**Keep documentation in sync with the code.** Add or update documentation for
+any behavior or functionality changed by the PR. Use terminology consistent
+with existing documentation, write in American English, and follow the
+:ref:`doc_guidelines`, including the :ref:`doc_images` rules for images.
 
-     During development, commits may include intermediary changes (e.g., partial implementations,
-     temporary files, or debugging code). These should be squashed or rewritten before submitting the
-     pull request. Remove non-final artifacts, such as:
+**Explain changes that affect existing applications.** Changes that require
+users to adapt their applications must be described in the migration guide for
+the next release. New capabilities with a user-visible impact belong in the
+release notes, following :ref:`release_documentation`. Experimental APIs are
+excluded from these release documentation requirements. Do not manually add
+lists of new, deprecated, or removed APIs and options; these are generated
+automatically.
 
-     * Temporary renaming of files that are later renamed again.
-     * Code that was rewritten or significantly changed in later commits.
+**Account for API versioning.** Changes to APIs must increment the API version
+number according to the API version rules.
 
-  4. Ensure Clean History Before Submission
-
-     Use interactive rebasing (git rebase -i) to clean up the commit history before submitting the
-     pull request. This helps in:
-
-     * Squashing small, incomplete commits into a single cohesive commit.
-     * Ensuring that each commit remains bisectable.
-     * Maintaining proper attribution of authorship while improving clarity.
-
-  5. Renaming and Code Rewrites
-
-     If files or code are renamed or rewritten in later commits during development, squash or rewrite
-     earlier commits to reflect the final structure. This ensures that:
-
-     * The history remains clean and easy to follow.
-     * Bisectability is preserved by eliminating redundant renaming or partial rewrites.
-
-  6. Attribution of Authorship
-
-     While cleaning up the commit history, ensure that authorship attribution remains accurate.
-
-  7. Readable and Reviewable History
-
-     The final commit history should be easy to understand for future maintainers. Logical units of
-     change should be grouped into commits that tell a clear, coherent story of the work done.
-
-- When major new functionality is added, tests for the new functionality shall
-  be added to the automated test suite. All API functions should have test cases
-  and there should be tests for the behavior contracts of the API. Maintainers
-  and reviewers have the discretion to determine if the provided tests are
-  sufficient. The examples below demonstrate best practices on how to test APIs
-  effectively.
-
-    - :zephyr_file:`Kernel timer tests <tests/kernel/timer/timer_behavior>`
-      provide around 85% test coverage for the
-      :zephyr_file:`kernel timer <kernel/timer.c>`, measured by lines of code.
-    - Emulators for off-chip peripherals are an effective way to test driver
-      APIs. The :zephyr_file:`fuel gauge tests <tests/drivers/fuel_gauge/sbs_gauge>`
-      use the :zephyr_file:`smart battery emulator <drivers/fuel_gauge/sbs_gauge/emul_sbs_gauge.c>`,
-      providing test coverage for the
-      :zephyr_file:`fuel gauge API <include/zephyr/drivers/fuel_gauge.h>`
-      and the :zephyr_file:`smart battery driver <drivers/fuel_gauge/sbs_gauge/sbs_gauge.c>`.
-    - Code coverage reports for the Zephyr project are available on `Codecov`_.
-
-- Changes that require users to adapt their application must be described in
-  the migration guide for the next release, and new capabilities with a
-  user-visible impact in the release notes, following
-  :ref:`release_documentation`. APIs marked as experimental are excluded
-  from this requirement.
-  Bare lists of new, deprecated or removed APIs and options should not be
-  added by hand: they are part of the auto-generated change inventory.
-
-- Changes to APIs must increment the API version number according to the API
-  version rules.
-
-- Documentation must be added and/or updated to reflect the changes in the code
-  introduced by the PR. The documentation changes must use the proper
-  terminology as present in the existing pages, and must be written in American
-  English. If you include images as part of the documentation, those must follow
-  the rules in :ref:`doc_images`. Please refer to :ref:`doc_guidelines` for
-  additional information.
-
-- PRs must also satisfy all :ref:`merge_criteria` before a member of the release
-  engineering team merges the PR into the zephyr tree.
-
-Maintainers may request that contributors break up a PR into smaller PRs and may
-request that they create an :ref:`RFC proposal <rfcs>`.
+Every PR must satisfy all :ref:`merge_criteria` before merging. Maintainers
+may also ask for a large PR to be divided into smaller changes or supported
+by an :ref:`RFC proposal <rfcs>`.
 
 .. _`Codecov`: https://app.codecov.io/gh/zephyrproject-rtos/zephyr
 
