@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
@@ -397,23 +398,33 @@ static void chan_connect(struct bt_l2cap_le_chan *ch, const struct bt_l2cap_chan
 	zassert_equal(atomic_get(&ch->tx.credits), 0);
 }
 
-static void *setup(void)
+/* As on Connection Complete. With a single ATT context, a connection after a
+ * lost one gets it only if the lost connection freed it.
+ */
+static void conn_up(void)
 {
 	static const bt_addr_le_t addr = {
 		.type = BT_ADDR_LE_PUBLIC,
 		.a = { .val = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 } },
 	};
 
-	zassert_ok(bt_enable(NULL));
+	BUILD_ASSERT(CONFIG_BT_MAX_CONN == 1);
 
-	/* As on Connection Complete */
 	conn = bt_conn_add_le(BT_ID_DEFAULT, &addr);
 	zassert_not_null(conn);
 	conn->handle = HANDLE;
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 	bt_l2cap_connected(conn);
+	zassert_not_null(bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_ATT), "No ATT context");
 
 	chan_connect(&chan, &chan_ops, PEER_CID);
+}
+
+static void *setup(void)
+{
+	zassert_ok(bt_enable(NULL));
+
+	conn_up();
 
 	return NULL;
 }
@@ -744,4 +755,299 @@ static ZTEST(host_l2cap_le_tx, test_disconn_rsp_no_buf)
 
 	host_pdus_give();
 	tx_none();
+}
+
+/* Refuse the Credit Based Connection Request for count channels that the Host sent */
+static void ecred_conn_refuse(size_t count)
+{
+	struct net_buf *buf;
+	uint8_t ident;
+
+	buf = tx(BT_L2CAP_CID_LE_SIG);
+	zassert_equal(buf->data[0], BT_L2CAP_ECRED_CONN_REQ, "code 0x%02x", buf->data[0]);
+	ident = buf->data[1];
+	zassert_equal(buf->len, sizeof(struct bt_l2cap_sig_hdr) +
+					sizeof(struct bt_l2cap_ecred_conn_req) +
+					count * sizeof(uint16_t));
+	net_buf_unref(buf);
+
+	buf = sig_cmd(BT_L2CAP_ECRED_CONN_RSP, ident);
+	net_buf_add_le16(buf, 0U);
+	net_buf_add_le16(buf, 0U);
+	net_buf_add_le16(buf, 0U);
+	net_buf_add_le16(buf, BT_L2CAP_LE_ERR_PSM_NOT_SUPP);
+	for (size_t i = 0U; i < count; i++) {
+		net_buf_add_le16(buf, 0U);
+	}
+	recv_sig(buf);
+}
+
+/* A channel whose Credit Based Connection Request cannot be sent is not left on
+ * the connection, is disconnected, and can be connected again
+ */
+static ZTEST(host_l2cap_le_tx, test_ecred_connect_no_buf)
+{
+	static struct bt_l2cap_le_chan ecred_chan;
+	struct bt_l2cap_chan *chans[] = { &ecred_chan.chan, NULL };
+
+	ecred_chan.chan.ops = &chan_ops;
+
+	host_pdus_take();
+	zassert_equal(bt_l2cap_ecred_chan_connect(conn, chans, PSM), -ENOMEM);
+	host_pdus_give();
+	tx_none();
+	zassert_is_null(bt_l2cap_le_lookup_rx_cid(conn, ecred_chan.rx.cid));
+	zassert_is_null(ecred_chan.chan.conn);
+	zassert_equal(ecred_chan.state, BT_L2CAP_DISCONNECTED);
+
+	zassert_ok(bt_l2cap_ecred_chan_connect(conn, chans, PSM));
+	ecred_conn_refuse(1U);
+	tx_none();
+	zassert_equal(ecred_chan.state, BT_L2CAP_DISCONNECTED);
+}
+
+/* Enhanced ATT bearers whose connection cannot be requested are freed */
+static ZTEST(host_l2cap_le_tx, test_eatt_connect_no_buf)
+{
+	BUILD_ASSERT(CONFIG_BT_EATT_MAX > BT_L2CAP_ECRED_CHAN_MAX_PER_REQ);
+
+	/* As on an Encryption Change */
+	conn->sec_level = BT_SECURITY_L2;
+
+	/* No buffer is left for the first Credit Based Connection Request */
+	host_pdus_take();
+	zassert_equal(bt_eatt_connect(conn, CONFIG_BT_EATT_MAX), -ENOMEM);
+	host_pdus_give();
+	tx_none();
+
+	/* Every bearer is available again */
+	zassert_ok(bt_eatt_connect(conn, CONFIG_BT_EATT_MAX));
+	ecred_conn_refuse(BT_L2CAP_ECRED_CHAN_MAX_PER_REQ);
+	ecred_conn_refuse(CONFIG_BT_EATT_MAX - BT_L2CAP_ECRED_CHAN_MAX_PER_REQ);
+	tx_none();
+
+	conn->sec_level = BT_SECURITY_L1;
+}
+
+static K_SEM_DEFINE(disconnected_sem, 0, 1);
+
+static void disconnected(struct bt_conn *c, uint8_t reason)
+{
+	ARGS_UNUSED(c, reason);
+
+	k_sem_give(&disconnected_sem);
+}
+
+BT_CONN_CB_DEFINE(conn_cb) = {
+	.disconnected = disconnected,
+};
+
+/* As on Disconnection Complete, which the Host handles on another thread.
+ * Returns once the Host has torn the connection down.
+ */
+static void conn_lost(void)
+{
+	struct bt_hci_evt_disconn_complete *ev;
+	struct net_buf *evt;
+
+	evt = bt_buf_get_evt(BT_HCI_EVT_DISCONN_COMPLETE, false, K_FOREVER);
+	evt_create(evt, BT_HCI_EVT_DISCONN_COMPLETE, sizeof(*ev));
+	ev = net_buf_add(evt, sizeof(*ev));
+	ev->status = BT_HCI_ERR_SUCCESS;
+	ev->handle = sys_cpu_to_le16(HANDLE);
+	ev->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
+
+	bt_hci_recv(DEVICE_DT_GET(DT_DRV_INST(0)), evt);
+	zassert_ok(k_sem_take(&disconnected_sem, K_SECONDS(1)), "The connection was not lost");
+}
+
+/* The call that a test makes on a thread of its own, as an application does */
+static struct {
+	struct k_thread thread;
+	int (*func)(void *arg);
+	void *arg;
+	int err;
+} waiting;
+
+static void waiting_entry(void *p1, void *p2, void *p3)
+{
+	ARGS_UNUSED(p1, p2, p3);
+
+	waiting.err = waiting.func(waiting.arg);
+}
+
+/* Make the call while the test holds every buffer of the Host's PDU pool.
+ * Returns once the call waits for one.
+ */
+static void call_start(int (*func)(void *arg), void *arg)
+{
+	static K_THREAD_STACK_DEFINE(stack, 2048);
+
+	waiting.func = func;
+	waiting.arg = arg;
+
+	host_pdus_take();
+
+	/* Above the test thread, so that k_yield() runs the call until it waits */
+	(void)k_thread_create(&waiting.thread, stack, K_THREAD_STACK_SIZEOF(stack),
+			      waiting_entry, NULL, NULL, NULL, CONFIG_ZTEST_THREAD_PRIORITY - 1,
+			      0, K_NO_WAIT);
+	k_yield();
+}
+
+/* With give, the buffers come back before the call goes on; otherwise its wait
+ * times out. Returns what the call returned.
+ */
+static int call_end(bool give)
+{
+	if (give) {
+		host_pdus_give();
+	}
+
+	zassert_ok(k_thread_join(&waiting.thread, K_FOREVER));
+
+	if (!give) {
+		host_pdus_give();
+	}
+
+	return waiting.err;
+}
+
+/* Lose the connection while the call waits. A new connection follows. */
+static int call_lost(int (*func)(void *arg), void *arg, bool give)
+{
+	int err;
+
+	call_start(func, arg);
+	conn_lost();
+	err = call_end(give);
+
+	bt_conn_drop(&conn);
+	conn_up();
+
+	return err;
+}
+
+/* How often the channels of a test got each callback */
+static atomic_t lost_disconnected;
+static atomic_t lost_released;
+
+static void lost_chan_disconnected(struct bt_l2cap_chan *ch)
+{
+	(void)atomic_inc(&lost_disconnected);
+}
+
+static void lost_chan_released(struct bt_l2cap_chan *ch)
+{
+	(void)atomic_inc(&lost_released);
+}
+
+static const struct bt_l2cap_chan_ops lost_chan_ops = {
+	.recv = chan_recv,
+	.disconnected = lost_chan_disconnected,
+	.released = lost_chan_released,
+};
+
+static int le_connect(void *arg)
+{
+	return bt_l2cap_chan_connect(conn, arg, PSM);
+}
+
+/* A channel whose connect waits for a buffer when the connection is lost is torn
+ * down once
+ */
+static void le_connect_lost(bt_security_t required)
+{
+	static struct bt_l2cap_le_chan lost_chan;
+
+	(void)atomic_clear(&lost_disconnected);
+	(void)atomic_clear(&lost_released);
+	lost_chan.chan.ops = &lost_chan_ops;
+	lost_chan.required_sec_level = required;
+
+	zassert_equal(call_lost(le_connect, &lost_chan.chan, false), -ECONNRESET);
+	zassert_equal(atomic_get(&lost_disconnected), 1);
+	zassert_equal(atomic_get(&lost_released), 1);
+}
+
+/* The Connection Request waits */
+static ZTEST(host_l2cap_le_tx, test_le_connect_lost)
+{
+	le_connect_lost(BT_SECURITY_L1);
+}
+
+/* The Security Request that a peripheral sends first waits */
+static ZTEST(host_l2cap_le_tx, test_le_connect_secure_lost)
+{
+	conn->role = BT_HCI_ROLE_PERIPHERAL;
+	le_connect_lost(BT_SECURITY_L2);
+}
+
+static int ecred_connect(void *arg)
+{
+	return bt_l2cap_ecred_chan_connect(conn, arg, PSM);
+}
+
+/* When one channel of a Credit Based Connection Request that waits for a buffer
+ * is disconnected, the other one is torn down as well
+ */
+static ZTEST(host_l2cap_le_tx, test_ecred_connect_one_disconnected)
+{
+	static struct bt_l2cap_le_chan ecred_chans[2];
+	struct bt_l2cap_chan *chans[] = { &ecred_chans[0].chan, &ecred_chans[1].chan, NULL };
+
+	(void)atomic_clear(&lost_released);
+	ARRAY_FOR_EACH(ecred_chans, i) {
+		ecred_chans[i].chan.ops = &lost_chan_ops;
+	}
+
+	call_start(ecred_connect, chans);
+
+	zassert_ok(bt_l2cap_chan_disconnect(&ecred_chans[0].chan));
+	(void)disconn_accept();
+
+	zassert_equal(call_end(true), -ECONNRESET);
+	zassert_equal(atomic_get(&lost_released), 2);
+	zassert_is_null(ecred_chans[1].chan.conn);
+	tx_none();
+}
+
+static int eatt_connect(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	/* As on an Encryption Change */
+	conn->sec_level = BT_SECURITY_L2;
+
+	return bt_eatt_connect(conn, CONFIG_BT_EATT_MAX);
+}
+
+/* Enhanced ATT bearers whose request waits for a buffer when the connection is
+ * lost are released with the connection, which frees its ATT context
+ */
+static ZTEST(host_l2cap_le_tx, test_eatt_connect_lost)
+{
+	BUILD_ASSERT(CONFIG_BT_EATT_MAX > BT_L2CAP_ECRED_CHAN_MAX_PER_REQ);
+
+	zassert_equal(call_lost(eatt_connect, NULL, false), -ENOTCONN);
+}
+
+static int reconfigure(void *arg)
+{
+	struct bt_l2cap_chan *chans[] = { arg, NULL };
+
+	return bt_l2cap_ecred_chan_reconfigure(chans, LE_MIN_MTU);
+}
+
+/* A reconfiguration that gets its buffer after the connection is lost is not
+ * requested
+ */
+static ZTEST(host_l2cap_le_tx, test_reconfigure_lost)
+{
+	static struct bt_l2cap_le_chan reconf_chan;
+
+	/* Not a CID of the other tests */
+	chan_connect(&reconf_chan, &chan_ops, PEER_CID + 9U);
+
+	zassert_equal(call_lost(reconfigure, &reconf_chan.chan, true), -ENOTCONN);
 }
