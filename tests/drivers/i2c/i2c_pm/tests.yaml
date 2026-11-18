@@ -1,0 +1,33 @@
+common:
+  tags:
+    - drivers
+    - i2c
+    - pm
+  depends_on: i2c
+  harness: ztest
+  harness_config:
+    fixture: i2c_bus_short
+tests:
+  drivers.i2c.pm.esp:
+    extra_args:
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS=y
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32h2_devkitm
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+  drivers.i2c.pm.esp.periph_pd:
+    extra_args:
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_SLEEP_POWER_DOWN_FLASH=y
+    platform_allow:
+      - esp32h2_devkitm
+      - esp32p4x_function_ev_board/esp32p4/hpcore
