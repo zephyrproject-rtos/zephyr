@@ -64,9 +64,12 @@ struct npcx_clk_cfg {
  * Maximum OFMCLK in npcx4 series is 120MHz,
  *
  * Suggestion for npcx series:
- * - OFMCLK   > MAX_OFMCLK/2, XF_RANGE should be 1, else 0.
- * - CORE_CLK > MAX_OFMCLK/2, AHB6DIV should be 1, else 0.
- * - CORE_CLK > MAX_OFMCLK/2, FIUDIV should be 1, else 0.
+ * - if OFMCLK <= MAX_FMCLK,       XF_RANGE should be 0.
+ * - else OFMCLK <= MAX_FMCLK * 2, XF_RANGE should be 1.
+ * - else OFMCLK <= MAX_FMCLK * 4, XF4_RANGE should be 1, ignore XF_RANGE.
+ * - CORE_CLK > MAX_AHB6CLK,  AHB6DIV should be 1, else 0.
+ * - CORE_CLK > MAX_FIUCLK,   FIUDIV should be 1, else 0.
+ * - CORE_CLK > MAX_FIU1CLK,  FIU1DIV should be 1, else 0.
  */
 /* Core domain clock */
 #define CORE_CLK (OFMCLK / DT_PROP(DT_NODELABEL(pcc), core_prescaler))

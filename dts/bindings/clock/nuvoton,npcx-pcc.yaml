@@ -32,6 +32,8 @@ properties:
     description: |
       Default frequency in Hz for HFCG output clock (OFMCLK). Currently,
       only the following values are allowed:
+        160000000, 160 MHz
+        132000000, 132 MHz
         120000000, 120 MHz
         100000000, 100 MHz
         96000000, 96 MHz
@@ -41,6 +43,8 @@ properties:
         50000000, 50 MHz
         48000000, 48 MHz
     enum:
+      - 160000000
+      - 132000000
       - 120000000
       - 100000000
       - 96000000
@@ -215,6 +219,33 @@ properties:
       Each bit in RAM_PDn can power down the relevant RAM block by setting
       itself to 1 for better power consumption and this valid bit-depth
       varies in different NPCX series.
+
+  hfcg-m-hval:
+    type: int
+    description: |
+      HFCG M high byte value definitions according to the requested OFMCLK. This
+      property must be specified together with hfcg-m-lval and hfcg-n-val. If
+      any of the three properties is omitted, all specified values are ignored
+      and the clock driver calculates the M/N values from clock-frequency.
+      These properties are evaluated only for NPCKN.
+
+  hfcg-m-lval:
+    type: int
+    description: |
+      HFCG M low byte value definitions according to the requested OFMCLK. This
+      property must be specified together with hfcg-m-hval and hfcg-n-val. If
+      any of the three properties is omitted, all specified values are ignored
+      and the clock driver calculates the M/N values from clock-frequency.
+      These properties are evaluated only for NPCKN.
+
+  hfcg-n-val:
+    type: int
+    description: |
+      HFCG N value definitions according to the requested OFMCLK. This property
+      must be specified together with hfcg-m-hval and hfcg-m-lval. If any of the
+      three properties is omitted, all specified values are ignored and the clock
+      driver calculates the M/N values from clock-frequency. These properties
+      are evaluated only for NPCKN.
 
   pwdwn-ctl-val:
     type: array
