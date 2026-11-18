@@ -1253,7 +1253,10 @@ static void dedup_cache_add(struct coap_client *client, const struct net_sockadd
 
 static bool find_echo_option(const struct coap_packet *response, struct coap_option *option)
 {
-	return coap_find_options(response, COAP_OPTION_ECHO, option, 1);
+	/* An error is not an Echo option: one too long for a struct coap_option
+	 * was not copied.
+	 */
+	return coap_find_options(response, COAP_OPTION_ECHO, option, 1) > 0;
 }
 
 /* Resolve the destination for an ACK / RST reply: use the received packet's

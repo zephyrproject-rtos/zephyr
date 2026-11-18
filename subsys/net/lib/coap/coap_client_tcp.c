@@ -829,7 +829,10 @@ static struct coap_client_tcp_internal_request *get_request_with_token_tcp(
 
 static bool find_echo_option(const struct coap_packet *response, struct coap_option *option)
 {
-	return coap_find_options(response, COAP_OPTION_ECHO, option, 1);
+	/* An error is not an Echo option: one too long for a struct coap_option
+	 * was not copied.
+	 */
+	return coap_find_options(response, COAP_OPTION_ECHO, option, 1) > 0;
 }
 
 static int send_pong(struct coap_client_tcp *client)
