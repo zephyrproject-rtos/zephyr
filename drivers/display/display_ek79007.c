@@ -96,20 +96,10 @@ static void ek79007_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static int ek79007_set_orientation(const struct device *dev,
-				   const enum display_orientation orientation)
-{
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		return 0;
-	}
-	return -ENOTSUP;
-}
-
 static DEVICE_API(display, ek79007_api) = {
 	.blanking_on = ek79007_blanking_on,
 	.blanking_off = ek79007_blanking_off,
 	.get_capabilities = ek79007_get_capabilities,
-	.set_orientation = ek79007_set_orientation,
 };
 
 static int ek79007_init(const struct device *dev)

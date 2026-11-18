@@ -116,16 +116,6 @@ static int rm68200_blanking_on(const struct device *dev)
 	}
 }
 
-static int rm68200_set_orientation(const struct device *dev,
-				   const enum display_orientation orientation)
-{
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		return 0;
-	}
-	LOG_ERR("Changing display orientation not implemented");
-	return -ENOTSUP;
-}
-
 static void rm68200_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
@@ -142,7 +132,6 @@ static DEVICE_API(display, rm68200_api) = {
 	.blanking_on = rm68200_blanking_on,
 	.blanking_off = rm68200_blanking_off,
 	.get_capabilities = rm68200_get_capabilities,
-	.set_orientation = rm68200_set_orientation,
 };
 
 static int rm68200_init(const struct device *dev)

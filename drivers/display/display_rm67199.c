@@ -297,17 +297,6 @@ static int rm67199_set_pixel_format(const struct device *dev,
 	return 0;
 }
 
-static int rm67199_set_orientation(const struct device *dev,
-				   const enum display_orientation orientation)
-{
-	ARG_UNUSED(dev);
-
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		return 0;
-	}
-	LOG_ERR("Changing display orientation not implemented");
-	return -ENOTSUP;
-}
 static int rm67199_init(const struct device *dev)
 {
 	const struct rm67199_config *config = dev->config;
@@ -450,7 +439,6 @@ static DEVICE_API(display, rm67199_api) = {
 	.blanking_on = rm67199_blanking_on,
 	.blanking_off = rm67199_blanking_off,
 	.set_pixel_format = rm67199_set_pixel_format,
-	.set_orientation = rm67199_set_orientation,
 };
 
 #define RM67199_CONTROLLER(id)                                                                     \
