@@ -15,6 +15,7 @@ source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 app=tests/bsim/bluetooth/ll/frame_space compile
 app=tests/bsim/bluetooth/ll/frame_space conf_overlay=overlay-tifs_hw.conf compile
+app=tests/bsim/bluetooth/ll/conn_subrate compile
 app=tests/bsim/bluetooth/ll/throughput compile
 app=tests/bsim/bluetooth/ll/multiple_id compile
 
