@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_RTS5817_QSPI
+	bool "RTS5817 flash driver"
+	depends on DT_HAS_REALTEK_RTS5817_FLASH_CONTROLLER_ENABLED
+	depends on DCACHE
+	depends on ICACHE
+	default y
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select SYSCON if PM_DEVICE
+	help
+	  Enable RTS5817 Flash driver.
+
+if FLASH_RTS5817_QSPI
+
+config FLASH_RTS5817_WRITE_PROTECTION_AUTO
+	bool "Flash write protection auto control"
+	default y
+	help
+	  Disable the flash software write protection before writing or erasing,
+	  and enable it again afterwards.
+
+endif
