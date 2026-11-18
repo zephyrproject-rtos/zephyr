@@ -42,27 +42,36 @@ static uint32_t lpm_threshold_ms;
 static atomic_t lpm_entries;
 static atomic_t lpm_exits;
 
-static void lpm_state_entry(enum pm_state state)
+/* Last PM state and substate entered; PM_STATE_ACTIVE if none. */
+static atomic_t lpm_last_state;
+static atomic_t lpm_last_substate;
+
+static void lpm_state_entry(enum pm_state state, uint8_t substate_id)
 {
-	ARG_UNUSED(state);
+	atomic_set(&lpm_last_state, state);
+	atomic_set(&lpm_last_substate, substate_id);
 	atomic_inc(&lpm_entries);
 }
 
-static void lpm_state_exit(enum pm_state state)
+static void lpm_state_exit(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
 	atomic_inc(&lpm_exits);
 }
 
 static struct pm_notifier lpm_notifier = {
-	.state_entry = lpm_state_entry,
-	.state_exit = lpm_state_exit,
+	.substate_entry = lpm_state_entry,
+	.substate_exit = lpm_state_exit,
+	.report_substate = true,
 };
 
 static void reset_counters(void)
 {
 	atomic_clear(&lpm_entries);
 	atomic_clear(&lpm_exits);
+	atomic_set(&lpm_last_state, PM_STATE_ACTIVE);
+	atomic_set(&lpm_last_substate, 0);
 }
 
 /*
@@ -79,6 +88,8 @@ ZTEST(system_timer_lpm, test_timekeeping_accuracy)
 	int64_t elapsed[ARRAY_SIZE(sleep_durations_ms)];
 	int32_t entries[ARRAY_SIZE(sleep_durations_ms)];
 	int32_t exits[ARRAY_SIZE(sleep_durations_ms)];
+	enum pm_state states[ARRAY_SIZE(sleep_durations_ms)];
+	uint8_t substates[ARRAY_SIZE(sleep_durations_ms)];
 	int32_t total_wakeups = 0;
 
 	for (size_t i = 0; i < count; i++) {
@@ -90,6 +101,8 @@ ZTEST(system_timer_lpm, test_timekeeping_accuracy)
 		elapsed[i] = k_uptime_get() - start;
 		entries[i] = (int32_t)atomic_get(&lpm_entries);
 		exits[i] = (int32_t)atomic_get(&lpm_exits);
+		states[i] = (enum pm_state)atomic_get(&lpm_last_state);
+		substates[i] = (uint8_t)atomic_get(&lpm_last_substate);
 	}
 
 	for (size_t i = 0; i < count; i++) {
@@ -99,17 +112,20 @@ ZTEST(system_timer_lpm, test_timekeeping_accuracy)
 		bool above = (requested >= lpm_threshold_ms + guard_ms);
 
 		if (below) {
-			TC_PRINT("requested %u ms, elapsed %lld ms, wakeups %d "
-				 "(expected 0)\n",
-				 requested, elapsed[i], entries[i]);
+			TC_PRINT("requested %u ms, elapsed %lld ms, state %s (substate %u), "
+				 "wakeups %d (expected 0)\n",
+				 requested, elapsed[i], pm_state_to_str(states[i]), substates[i],
+				 entries[i]);
 		} else if (above) {
-			TC_PRINT("requested %u ms, elapsed %lld ms, wakeups %d "
-				 "(expected >= 1)\n",
-				 requested, elapsed[i], entries[i]);
+			TC_PRINT("requested %u ms, elapsed %lld ms, state %s (substate %u), "
+				 "wakeups %d (expected >= 1)\n",
+				 requested, elapsed[i], pm_state_to_str(states[i]), substates[i],
+				 entries[i]);
 		} else {
-			TC_PRINT("requested %u ms, elapsed %lld ms, wakeups %d "
-				 "(near %u ms threshold)\n",
-				 requested, elapsed[i], entries[i], lpm_threshold_ms);
+			TC_PRINT("requested %u ms, elapsed %lld ms, state %s (substate %u), "
+				 "wakeups %d (near %u ms threshold)\n",
+				 requested, elapsed[i], pm_state_to_str(states[i]), substates[i],
+				 entries[i], lpm_threshold_ms);
 		}
 
 		zassert_true(elapsed[i] >= (int64_t)requested - 1,
