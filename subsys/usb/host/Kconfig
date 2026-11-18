@@ -92,6 +92,18 @@ config USBH_ENUM_RETRY_DELAY_MS
 	range 0 500
 	depends on USBH_USB2_ENUM_SCHEME
 
+config USBH_GET_DESCRIPTOR_ROOT_RESET
+	bool "Root default-state reset before retrying GET_DESCRIPTOR"
+	default y
+	depends on USBH_USB2_ENUM_SCHEME
+	help
+	  On the root tier, after bounded delay-only retries of the initial
+	  64-byte GET_DESCRIPTOR fail with a retryable transfer error, call
+	  uhc_root_default_state_reset() once, reapply the EP0 MPS0 guess, and
+	  issue one final initial GET_DESCRIPTOR. Hub children use delay-only
+	  retries without a root default-state transition. Does not recover the
+	  full 18-byte device descriptor after SET_ADDRESS.
+
 config USBH_SET_ADDRESS_RETRY_DELAY_MS
 	int "Milliseconds between SET_ADDRESS retries"
 	default 200
