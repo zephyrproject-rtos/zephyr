@@ -108,4 +108,11 @@
     --graphviz-filter: invert(0.9) brightness(1.2);
 
     --landing-card-background-color: var(--navbar-background-color);
+
+    /* Architecture diagram of the Introduction page (stack-diagram.css) */
+    --zstack-frame-color: #8c9196;
+    --zstack-base-color: #e1e4e5;
+    --zstack-os-color: #6ab0de;
+    --zstack-modules-color: #cb99f6;
+    --zstack-tools-color: #39cd89;
 }
