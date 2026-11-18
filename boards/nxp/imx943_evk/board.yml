@@ -7,5 +7,7 @@ board:
     variants:
     - name: ddr
       cpucluster: m33
+    - name: ddr
+      cpucluster: m7_0
     - name: smp
       cpucluster: a55

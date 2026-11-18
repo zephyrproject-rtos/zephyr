@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "imx943_evk_mimx94398_m7_0.dts"
+
+/ {
+	model = "NXP i.MX943 EVK board DDR variant";
+
+	chosen {
+		zephyr,sram = &ddr;
+		/delete-property/ zephyr,flash;
+	};
+
+	ddr: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(4)>;
+		device_type = "memory";
+	};
+};
