@@ -10,6 +10,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/riscv/sys_io.h>
+#include <zephyr/sys/sys_io_non_atomic.h>
 
 #ifndef _ASMLANGUAGE
 /* CSR access helpers */
@@ -34,9 +35,12 @@ static inline uint32_t litex_read32(mem_addr_t addr)
 static inline uint64_t litex_read64(mem_addr_t addr)
 {
 #ifdef CONFIG_LITEX_CSR_ORDERING_BIG
-	return ((uint64_t)sys_read32(addr) << 32) | (uint64_t)sys_read32(addr + 0x4);
+	uint32_t high = sys_read32(addr);
+	uint32_t low = sys_read32(addr + 0x4);
+
+	return ((uint64_t)high << 32) | low;
 #else
-	return sys_read64(addr);
+	return sys_read64_hi_lo(addr);
 #endif
 }
 
@@ -61,7 +65,7 @@ static inline void litex_write64(uint64_t value, mem_addr_t addr)
 	sys_write32(value >> 32, addr);
 	sys_write32(value, addr + 0x4);
 #else
-	sys_write64(value, addr);
+	sys_write64_lo_hi(value, addr);
 #endif
 }
 
