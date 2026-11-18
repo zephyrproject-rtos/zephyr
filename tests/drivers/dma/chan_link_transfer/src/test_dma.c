@@ -132,7 +132,15 @@ static int test_task(const struct device *dma, int minor, int major)
 	dma_block_cfg.dest_address = (uint32_t)rx_data2;
 #endif
 
-	if (dma_config(dma, TEST_DMA_CHANNEL_1, &dma_cfg)) {
+	int ret = dma_config(dma, TEST_DMA_CHANNEL_1, &dma_cfg);
+
+	if (ret == -ENOTSUP) {
+		TC_PRINT("channel link transfer is not supported\n");
+		ztest_test_skip();
+		return TC_SKIP;
+	}
+
+	if (ret != 0) {
 		TC_PRINT("ERROR: transfer\n");
 		return TC_FAIL;
 	}
@@ -154,7 +162,14 @@ static int test_task(const struct device *dma, int minor, int major)
 	dma_block_cfg.dest_address = (uint32_t)rx_data;
 #endif
 
-	if (dma_config(dma, TEST_DMA_CHANNEL_0, &dma_cfg)) {
+	ret = dma_config(dma, TEST_DMA_CHANNEL_0, &dma_cfg);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("channel link transfer is not supported\n");
+		ztest_test_skip();
+		return TC_SKIP;
+	}
+
+	if (ret != 0) {
 		TC_PRINT("ERROR: transfer\n");
 		return TC_FAIL;
 	}
@@ -202,17 +217,29 @@ static int test_task(const struct device *dma, int minor, int major)
 #define DEFINE_DMA_M2M_LINK_TESTS(idx, _)                                                          \
 	ZTEST(dma_m2m_link, test_dma##idx##_m2m_chan0_1_major_link)                                \
 	{                                                                                          \
-		zassert_true(test_task(dma_test_devs[idx], 0, 1) == TC_PASS,                       \
+		int ret = test_task(dma_test_devs[idx], 0, 1);                                     \
+		if (ret == TC_SKIP) {                                                               \
+			return;                                                                    \
+		}                                                                                  \
+		zassert_true(ret == TC_PASS,                                                       \
 			     "%s failed major link transfer", dma_test_devs[idx]->name);           \
 	}                                                                                          \
 	ZTEST(dma_m2m_link, test_dma##idx##_m2m_chan0_1_minor_link)                                \
 	{                                                                                          \
-		zassert_true(test_task(dma_test_devs[idx], 1, 0) == TC_PASS,                       \
+		int ret = test_task(dma_test_devs[idx], 1, 0);                                     \
+		if (ret == TC_SKIP) {                                                               \
+			return;                                                                    \
+		}                                                                                  \
+		zassert_true(ret == TC_PASS,                                                       \
 			     "%s failed minor link transfer", dma_test_devs[idx]->name);           \
 	}                                                                                          \
 	ZTEST(dma_m2m_link, test_dma##idx##_m2m_chan0_1_minor_major_link)                          \
 	{                                                                                          \
-		zassert_true(test_task(dma_test_devs[idx], 1, 1) == TC_PASS,                       \
+		int ret = test_task(dma_test_devs[idx], 1, 1);                                     \
+		if (ret == TC_SKIP) {                                                               \
+			return;                                                                    \
+		}                                                                                  \
+		zassert_true(ret == TC_PASS,                                                       \
 			     "%s failed minor major link transfer", dma_test_devs[idx]->name);     \
 	}
 

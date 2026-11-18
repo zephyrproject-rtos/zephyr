@@ -124,7 +124,15 @@ static int test_sg(void)
 
 	TC_PRINT("Configuring the scatter-gather transfer on channel %d\n", chan_id);
 
-	if (dma_config(dma, chan_id, &dma_cfg)) {
+	int ret = dma_config(dma, chan_id, &dma_cfg);
+
+	if (ret == -ENOTSUP) {
+		TC_PRINT("scatter-gather mem2mem transfer is not supported\n");
+		ztest_test_skip();
+		return TC_SKIP;
+	}
+
+	if (ret != 0) {
 		TC_PRINT("ERROR: transfer config (%d)\n", chan_id);
 		return TC_FAIL;
 	}
@@ -157,5 +165,11 @@ static int test_sg(void)
 /* export test cases */
 ZTEST(dma_m2m_sg, test_dma_m2m_sg)
 {
-	zassert_true((test_sg() == TC_PASS));
+	int ret = test_sg();
+
+	if (ret == TC_SKIP) {
+		return;
+	}
+
+	zassert_true(ret == TC_PASS);
 }
