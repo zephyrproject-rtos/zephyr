@@ -467,6 +467,23 @@ OPAMP
 PCIe
 ====
 
+* PCIe host, MSI, PTM, and VC APIs (including :c:macro:`PCIE_IRQ_CONNECT`) now take
+  ``const struct pcie_endpoint *`` instead of bare :c:type:`pcie_bdf_t` so callers on
+  multi-controller platforms can qualify endpoints with their owning controller.
+  :c:func:`pcie_scan` still takes ``const struct pcie_scan_opt *``, with a new ``ctrl`` field on
+  :c:struct:`pcie_scan_opt` and ``cb`` / ``scan_masking_fn`` updated to receive
+  ``const struct pcie_endpoint *``. The endpoint pointer is valid only during the callback.
+  Copy the endpoint by value to retain it after the callback returns. When ``ctrl`` is ``NULL`` under
+  :kconfig:option:`CONFIG_PCIE_CONTROLLER`, operations default to the ``zephyr,pcie-controller``
+  chosen node. For a :c:struct:`pcie_dev`, pass the address of its ``ep`` member to the host APIs.
+  For an explicit controller and BDF, initialize a named endpoint with ``ctrl`` and ``bdf``. In
+  C++, use ``struct pcie_endpoint ep{ctrl, bdf};``. Static :c:struct:`pcie_dev` declarations resolve
+  their controller from devicetree in order: the new ``pcie-controller`` phandle property, then
+  the parent ``pcie`` bus controller, and otherwise ``NULL`` (defaulting to
+  ``zephyr,pcie-controller``).
+  :c:func:`pcie_msi_vector_connect` and :c:func:`pcie_msi_enable` also now require each vector's
+  ``ep.bdf`` and resolved ``ep.ctrl`` to match the target endpoint. (:github:`124235`)
+
 * :c:func:`pcie_msi_map` now returns ``uint64_t`` instead of ``uint32_t``, and the ``address``
   member of :c:struct:`msi_vector_generic` is now ``uint64_t``. Out-of-tree implementations of
   :c:func:`pcie_msi_map` and code that reads the MSI vector address must be updated. The ITS
