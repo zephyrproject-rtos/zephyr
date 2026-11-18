@@ -16,9 +16,11 @@ if DMA_AMD_ACP_HOST
 
 config DMA_AMD_ACP_HOST_CHANNEL_COUNT
 	int "Maximum channel count"
-	default 10
+	range 1 8
+	default 8
 	help
-	  Maximum number of host DMA channels.
+	  Maximum number of host DMA channels. The ACP firmware scratch
+	  memory holds the buffer layout of at most eight host streams.
 
 config DMA_AMD_ACP_BUFFER_ALIGN
 	int "Buffer alignment in bytes"

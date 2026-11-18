@@ -266,6 +266,14 @@ Comparator
   :zephyr_file:`tests/drivers/comparator/gpio_loopback` test provides an example of the comparator
   API. (:github:`124232`).
 
+DMA
+===
+
+* :kconfig:option:`CONFIG_DMA_AMD_ACP_HOST_CHANNEL_COUNT` now defaults to 8 and is limited to the
+  range 1 to 8, the number of host streams described in the ACP firmware scratch memory. Channels 8
+  and 9, previously accepted by the default of 10, have no stream layout and are now rejected with
+  ``-EINVAL``. Configurations that set a value above 8 must lower it.
+
 Ethernet
 ========
 
