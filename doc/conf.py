@@ -507,9 +507,15 @@ def _set_html_permalinks_icon(_, config):
     config.html_permalinks_icon = ""
 
 
+def _add_stack_diagram_css(app, pagename, templatename, context, doctree):
+    if pagename == "introduction/index":
+        app.add_css_file("css/stack-diagram.css")
+
+
 def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
     app.add_js_file("js/custom.js")
+    app.connect("html-page-context", _add_stack_diagram_css)
     # RTD theme hard codes a Font Awesome link icon in its setup() code, but we want no icon
     app.connect("config-inited", _set_html_permalinks_icon, priority=900)
