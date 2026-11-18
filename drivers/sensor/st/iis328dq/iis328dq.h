@@ -26,6 +26,12 @@
 #include <zephyr/drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
+#if defined(CONFIG_IIS328DQ_TRIGGER) && DT_ANY_INST_HAS_PROP_STATUS_OKAY(threshold_int_pad)
+#define IIS328DQ_THRESHOLD_ENABLED 1
+#else
+#define IIS328DQ_THRESHOLD_ENABLED 0
+#endif
+
 /**
  * struct iis328dq_dev_config - iis328dq hw configuration
  * @bus_name: Pointer to bus master identifier.
@@ -50,10 +56,10 @@ struct iis328dq_config {
 	const struct gpio_dt_spec gpio_int2;
 	/* interrupt pad to be used for DRDY interrupts, or -1 if not configured */
 	int8_t drdy_pad;
-#ifdef CONFIG_IIS328DQ_THRESHOLD
+#if IIS328DQ_THRESHOLD_ENABLED
 	/* interrupt pad to be used for threshold interrupts, or -1 if not configured */
 	int8_t threshold_pad;
-#endif /* CONFIG_IIS328DQ_THRESHOLD */
+#endif /* IIS328DQ_THRESHOLD_ENABLED */
 #endif /* CONFIG_IIS328DQ_TRIGGER */
 };
 
@@ -70,10 +76,10 @@ struct iis328dq_data {
 	struct gpio_callback int2_cb;
 	sensor_trigger_handler_t drdy_handler;
 	const struct sensor_trigger *drdy_trig;
-#ifdef CONFIG_IIS328DQ_THRESHOLD
+#if IIS328DQ_THRESHOLD_ENABLED
 	sensor_trigger_handler_t threshold_handler;
 	const struct sensor_trigger *threshold_trig;
-#endif /* CONFIG_IIS328DQ_THRESHOLD */
+#endif /* IIS328DQ_THRESHOLD_ENABLED */
 #if defined(CONFIG_IIS328DQ_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_IIS328DQ_THREAD_STACK_SIZE);
 	struct k_thread thread;
