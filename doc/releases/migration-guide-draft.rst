@@ -557,6 +557,14 @@ Networking
   :kconfig:option:`CONFIG_NET_SOCKETS_DNS_PREFER_IPV4` to keep IPv4 first, for example with
   offloaded network interfaces, where reachability cannot be determined.
 
+* On an Ethernet interface, :c:func:`zsock_connect`, :c:func:`zsock_sendto` and the other send
+  calls now fail with ``ENETUNREACH`` for an IPv4 destination that is neither on the link nor
+  reachable through a route or the gateway. Such packets were dropped before, after the send call
+  had reported success, and a TCP :c:func:`zsock_connect` failed with ``ETIMEDOUT`` once the
+  connect timeout passed. Applications that treat every send error as fatal may need to handle
+  ``ENETUNREACH``, for example by trying the next address or waiting for the interface to be
+  configured.
+
 * Network interface driver APIs are now device API classes. Out-of-tree network drivers must define
   their API instances with :c:macro:`DEVICE_API` and use the renamed structs:
 
