@@ -42,6 +42,7 @@
 #define ISOTP_PCI_SN_MASK          0x0F
 
 #define ISOTP_FF_DL_MIN            8
+#define ISOTP_FF_DL_MAX            0xFFFU
 #define ISOTP_PADDED_FRAME_DL_MIN  8
 #define ISOTP_PAD_BYTE             0xCC
 
