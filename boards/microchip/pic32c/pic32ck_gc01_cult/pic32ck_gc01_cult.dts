@@ -8,6 +8,8 @@
 #include <microchip/pic32c/pic32ck_sg_gc/pic32ck_gc01/pic32ck2051gc01144.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "pic32ck_gc01_cult-pinctrl.dtsi"
+#include <dt-bindings/adc/adc.h>
+#include <dt-bindings/adc/mchp_pic32ck_sg_gc_adc.h>
 
 / {
 	compatible = "microchip,pic32ck_gc01_cult";
@@ -307,6 +309,19 @@
 	rxpo = <1>;
 	txpo = <0>;
 	pinctrl-0 = <&sercom5_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc {
+	ctrl-clock-div = <1>;
+	adc-wkup-clock-count = <6>;
+	status = "okay";
+};
+
+&adc0 {
+	adc-div-ratio = <1>;
+	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
