@@ -296,8 +296,8 @@ Flash
 =====
 
 * The Espressif flash encryption compatibility option ``CONFIG_ESP_FLASH_ENCRYPTION`` is now
-  :kconfig:option:`CONFIG_ESP32_FLASH_ENCRYPTION`, defined by the ESP32 flash driver. The old name
-  is kept as a deprecated option and will be removed in a future release.
+  :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION`, defined by the ESP32 SoC family.
+  The old name is kept as a deprecated option and will be removed in a future release.
 
 I2S
 ===

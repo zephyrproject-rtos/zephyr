@@ -3,7 +3,7 @@
 
 # Espressif main application image configuration for hardware flash encryption.
 
-set_config_bool(${ZCMAKE_APPLICATION} CONFIG_ESP32_FLASH_ENCRYPTION y)
+set_config_bool(${ZCMAKE_APPLICATION} CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION y)
 
 if(SB_CONFIG_SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL)
   set_config_bool(${ZCMAKE_APPLICATION} CONFIG_SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL y)

@@ -97,26 +97,4 @@ config ESP_FLASH_WRITE_CHUNK_SIZE
 	  A write is issued in windows of at most this size. The cache is
 	  re-enabled between windows and the yield check runs before each.
 
-config ESP32_FLASH_ENCRYPTION
-	bool "Hardware flash encryption compatibility"
-	depends on !SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT
-	help
-	  Enable Espressif's hardware flash encryption compatibility with MCUboot
-	  Zephyr port. Requires hardware flash encryption to be enabled in the
-	  MCUboot bootloader (e.g. via sysbuild
-	  SB_CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION).
-	  Image signing uses 32-byte alignment when this option is enabled.
-
-	  The chosen flash node's write-block-size must be 32 (or a multiple of
-	  32). The build fails at configure time if it is not; set it in both
-	  the application and MCUboot overlays.
-
-config ESP_FLASH_ENCRYPTION
-	bool "Hardware flash encryption compatibility [DEPRECATED]"
-	depends on !SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT && !MCUBOOT && BOOTLOADER_MCUBOOT
-	select DEPRECATED
-	imply ESP32_FLASH_ENCRYPTION
-	help
-	  Deprecated. Use ESP32_FLASH_ENCRYPTION instead.
-
 endif # SOC_FLASH_ESP32

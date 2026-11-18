@@ -74,8 +74,6 @@ Zephyr build. Output is structured by the domain subdirectories:
 
 For more information about the system build please read the :ref:`sysbuild` documentation.
 
-.. _hardware_flash_encryption:
-
 Hardware Flash Encryption
 =========================
 
@@ -107,7 +105,7 @@ Further background: `ESP32 Flash Encryption`_.
    When enabling hardware flash encryption, ``write-block-size`` **must**
    be set to 32 bytes on the SoC or board's overlay file for **both**
    application and MCUboot bootloader. The build fails at configure time if
-   it is missing or if it is not a multiple of 32. See
+   it is missing or if it is not 32. See
    :zephyr_file:`samples/boards/espressif/flash_encryption/boards/esp32_devkitc_procpu.overlay`
    for an example.
 
@@ -235,7 +233,7 @@ OTA updates must still be sent as **plaintext** images: after encryption is
 enabled, runtime flash writes are encrypted by hardware; sending
 pre-encrypted OTA payloads would double-encrypt them. To update with a
 host-encrypted image, flash it over serial with encryption-aware tooling
-(see :ref:`manual_flashing_when_flash_encryption`); UART download must not
+(see `Manual flashing when Flash Encryption already enabled`_); UART download must not
 be fully disabled.
 
 Verifying eFuses (``espefuse summary``)
@@ -288,15 +286,23 @@ production builds.
 
    After the first successful boot and flash regions encryption,
    subsequent device re-flashing must use the encryption-aware flow (see
-   :ref:`manual_flashing_when_flash_encryption`).
+   `Manual flashing when Flash Encryption already enabled`_).
    OTA updates may be performed sending plaintext images, as the flash
    read/write operations are encrypted in runtime.
 
 When hardware flash encryption is enabled, sysbuild configures the
-application image and sets :kconfig:option:`CONFIG_ESP32_FLASH_ENCRYPTION`
+application image and sets :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION`
 so the flash driver matches the encrypted layout. Image signing must use
 32-byte alignment (``--align`` / ``--max-align`` consistent with
-``write-block-size``).
+``write-block-size``). The Espressif default upgrade mode (swap using move)
+does this when ``write-block-size`` is 32.
+
+MCUboot modes that force imgtool ``--overwrite-only --align 1``
+(overwrite-only, single-app, firmware-updater, and other
+:kconfig:option:`CONFIG_MCUBOOT_IMGTOOL_OVERWRITE_ONLY` paths) are
+**unsupported** with hardware flash encryption. Confirmed or padded images
+then get the 8-byte trailer magic while MCUboot expects the 32-byte form
+from ``write-block-size`` / ``BOOT_MAX_ALIGN``.
 
 Manual Build
 ============
@@ -379,8 +385,6 @@ message in the monitor:
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! <board>
 
-.. _manual_flashing_when_flash_encryption:
-
 Manual flashing when Flash Encryption already enabled
 =====================================================
 
@@ -403,7 +407,7 @@ Manually reset the board only after both images are flashed.
 
 .. note::
 
-   As mentioned in the :ref:`hardware_flash_encryption` section, MCUboot's
+   As mentioned in the `Hardware Flash Encryption`_ section, MCUboot's
    update-state checking mechanism is based on the flash erased value, thus
    invalid data left on ``slot1_partition`` or ``scratch_partition`` trailer
    regions could potentially lead to an unexpected behavior. In order to
