@@ -858,7 +858,7 @@ static bool peer_addr_cmp(const struct net_sockaddr *addr,
 
 static bool hostname_eq(const char *cached, const char *hostname)
 {
-	return strcmp((cached != NULL) ? cached : "", hostname) == 0;
+	return cached != NULL && strcmp(cached, hostname) == 0;
 }
 
 static int tls_session_save(const struct net_sockaddr *peer_addr,
