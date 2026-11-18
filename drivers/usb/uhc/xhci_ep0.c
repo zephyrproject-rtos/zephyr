@@ -400,3 +400,110 @@ int xhci_evaluate_ep0_mps(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot
 
 	return ret;
 }
+
+/*
+ * xHCI §4.9.2 / xhci_bulk_recover_ep(): after a failed or stopped EP0
+ * transfer, align the SW ring to the HW dequeue, then Reset Endpoint
+ * (Halted/Error) or Set TR Dequeue (Stopped / RUNNING mismatch) so the
+ * next control TD can be queued. Does not retry the failed request.
+ */
+int xhci_ep0_recover_slot(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot)
+{
+	struct xhci_ring *ring;
+	uint32_t st;
+	uint64_t deq;
+	int ret;
+	const uint32_t ep_index = 0U;
+	const uint8_t dci = XHCI_DCI_DEFAULT_CONTROL;
+
+	if (priv == NULL || slot == NULL || !slot->active || slot->udev == NULL ||
+	    slot->udev->slot_id == 0U) {
+		return 0;
+	}
+
+	ring = &slot->ep0_ring;
+	if (ring->trbs == NULL) {
+		return -EINVAL;
+	}
+
+	if (slot->ep0_active_xfer != NULL) {
+		return -EBUSY;
+	}
+
+	xhci_ep0_ring_sync_from_hw(priv, slot);
+	ring->dequeue = ring->enqueue;
+
+	st = uhc_dwc3_xhci_read_ep_state(priv, slot, dci);
+
+	if (st == XHCI_EP_CTX_EP_STATE_INVALID || st == XHCI_EP_CTX_EP_STATE_DISABLED) {
+		return 0;
+	}
+
+	if (st == XHCI_EP_CTX_EP_STATE_RUNNING) {
+		if (xhci_ep0_ring_verify_dequeue_matches_sw(priv, slot)) {
+			return 0;
+		}
+
+		deq = xhci_bulk_deq_operand(ring);
+		LOG_WRN("EP0 RUNNING — HW/SW ring mismatch, Set TR Dequeue deq=0x%016llx",
+			(unsigned long long)deq);
+
+		ret = xhci_cmd_set_tr_dequeue_deq(priv, slot, ep_index, deq);
+		if (ret != 0) {
+			LOG_ERR("EP0 Set TR Dequeue (RUNNING mismatch) failed: %d", ret);
+			return ret;
+		}
+
+		xhci_ep0_ring_sync_from_hw(priv, slot);
+		ring->dequeue = ring->enqueue;
+		return 0;
+	}
+
+	if (st != XHCI_EP_CTX_EP_STATE_HALTED && st != XHCI_EP_CTX_EP_STATE_ERROR &&
+	    st != XHCI_EP_CTX_EP_STATE_STOPPED) {
+		return 0;
+	}
+
+	deq = xhci_bulk_deq_operand(ring);
+
+	if (st == XHCI_EP_CTX_EP_STATE_STOPPED) {
+		LOG_WRN("EP0 STOPPED — Set TR Dequeue deq=0x%016llx sw_idx=%u pcs=%u",
+			(unsigned long long)deq, (unsigned int)ring->dequeue,
+			(unsigned int)(ring->cycle_state & 1U));
+
+		ret = xhci_cmd_set_tr_dequeue_deq(priv, slot, ep_index, deq);
+		if (ret != 0) {
+			LOG_ERR("EP0 Set TR Dequeue (STOPPED) failed: %d", ret);
+			return ret;
+		}
+
+		xhci_ep0_ring_sync_from_hw(priv, slot);
+		ring->dequeue = ring->enqueue;
+		return 0;
+	}
+
+	LOG_WRN("EP0 STATE=%u — Reset EP + Set TR Dequeue deq=0x%016llx sw_idx=%u pcs=%u",
+		(unsigned int)st, (unsigned long long)deq, (unsigned int)ring->dequeue,
+		(unsigned int)(ring->cycle_state & 1U));
+
+	ret = uhc_dwc3_xhci_reset_ep(priv, slot, ep_index);
+	if (ret != 0) {
+		LOG_ERR("EP0 Reset Endpoint failed: %d", ret);
+		return ret;
+	}
+
+	ret = xhci_cmd_set_tr_dequeue_deq(priv, slot, ep_index, deq);
+	if (ret != 0) {
+		LOG_ERR("EP0 Set TR Dequeue failed: %d", ret);
+		return ret;
+	}
+
+	xhci_ep0_ring_sync_from_hw(priv, slot);
+	ring->dequeue = ring->enqueue;
+
+	LOG_INF("EP0 recover OK Reset EP + Set TR Dequeue deq=0x%016llx sw_idx=%u pcs=%u",
+		(unsigned long long)deq, (unsigned int)ring->dequeue,
+		(unsigned int)(ring->cycle_state & 1U));
+
+	return 0;
+}
