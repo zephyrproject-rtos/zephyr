@@ -2225,7 +2225,7 @@ const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
 		"renewing",
 		"rebinding",
 		"bound",
-		"decline,"
+		"decline",
 	};
 
 	__ASSERT_NO_MSG(state >= 0 && state < ARRAY_SIZE(name));
