@@ -14,31 +14,33 @@
 #include <soc_clock.h>
 
 /* FMUL clock */
-#if (OFMCLK > (MAX_OFMCLK / 2))
+#if (OFMCLK <= MAX_FMCLK)
+#define FMCLK OFMCLK /* FMUL clock = OFMCLK */
+#elif ((OFMCLK / 2) <= MAX_FMCLK)
 #define FMCLK (OFMCLK / 2) /* FMUL clock = OFMCLK/2 */
 #else
-#define FMCLK OFMCLK /* FMUL clock = OFMCLK */
+#define FMCLK (OFMCLK / 4) /* FMUL clock = OFMCLK/4 */
 #endif
 
 /* APBs source clock */
 #define APBSRC_CLK OFMCLK
 
 /* AHB6 clock */
-#if (CORE_CLK > (MAX_OFMCLK / 2))
+#if (CORE_CLK > MAX_AHB6CLK)
 #define AHB6DIV_VAL 1 /* AHB6_CLK = CORE_CLK/2 */
 #else
 #define AHB6DIV_VAL 0 /* AHB6_CLK = CORE_CLK */
 #endif
 
 /* FIU clock divider */
-#if (CORE_CLK > (MAX_OFMCLK / 2))
+#if (CORE_CLK > MAX_FIUCLK)
 #define FIUDIV_VAL 1 /* FIU_CLK = CORE_CLK/2 */
 #else
 #define FIUDIV_VAL 0 /* FIU_CLK = CORE_CLK */
 #endif
 
 #if defined(CONFIG_CLOCK_CONTROL_NPCX_SUPP_FIU1)
-#if (CORE_CLK > (MAX_OFMCLK / 2))
+#if (CORE_CLK > MAX_FIU1CLK)
 #define FIU1DIV_VAL 1 /* FIU1_CLK = CORE_CLK/2 */
 #else
 #define FIU1DIV_VAL 0 /* FIU1_CLK = CORE_CLK */
@@ -61,14 +63,31 @@
  * Frequency multiplier M/N value definitions according to the requested
  * OFMCLK (Unit:Hz).
  */
-#if (OFMCLK > (MAX_OFMCLK / 2))
-#define HFCGN_VAL    0x82 /* Set XF_RANGE as 1 */
+#if (DT_NODE_HAS_PROP(DT_NODELABEL(pcc), hfcg_m_hval) && \
+	DT_NODE_HAS_PROP(DT_NODELABEL(pcc), hfcg_m_lval) && \
+	DT_NODE_HAS_PROP(DT_NODELABEL(pcc), hfcg_n_val))
+/* If M/N values are defined in dts, use them directly. */
+#define HFCGMH_VAL DT_PROP(DT_NODELABEL(pcc), hfcg_m_hval)
+#define HFCGML_VAL DT_PROP(DT_NODELABEL(pcc), hfcg_m_lval)
+#define HFCGN_VAL  DT_PROP(DT_NODELABEL(pcc), hfcg_n_val)
 #else
-#define HFCGN_VAL    0x02
+/* Check the requested OFMCLK and calculate HFCG N values accordingly. */
+#if (OFMCLK <= MAX_FMCLK)
+#define HFCGN_VAL    0x02 /* Set XF_RANGE as 0 */
+#elif ((OFMCLK / 2) <= MAX_FMCLK)
+#define HFCGN_VAL    0x82 /* Set XF_RANGE as 1 */
+#elif ((OFMCLK / 4) <= MAX_FMCLK) && defined(XF_4_RANGE_SUPP)
+#define HFCGN_VAL    0x42 /* Set XF_4_RANGE as 1 */
+#else
+#error "Out of OFMCLK Frequency limitation"
 #endif
-#if   (OFMCLK == 120000000)
-#define HFCGMH_VAL   0x0E
-#define HFCGML_VAL   0x4E
+/* Check the requested OFMCLK and calculate HFCG M values accordingly. */
+#if   (OFMCLK == 160000000) && defined(XF_4_RANGE_SUPP)
+#define HFCGMH_VAL   0x09
+#define HFCGML_VAL   0x89
+#elif (OFMCLK == 132000000) && defined(XF_4_RANGE_SUPP)
+#define HFCGMH_VAL   0x07
+#define HFCGML_VAL   0xDE
 #elif (OFMCLK == 100000000)
 #define HFCGMH_VAL   0x0B
 #define HFCGML_VAL   0xEC
@@ -92,6 +111,7 @@
 #define HFCGML_VAL   0x72
 #else
 #error "Unsupported OFMCLK Frequency"
+#endif
 #endif
 
 #endif /* _NUVOTON_NPCX_CLOCK_DEF_H_ */
