@@ -174,15 +174,15 @@ BUILD_ASSERT(CORE_CLK <= MAX_OFMCLK && CORE_CLK >= MHZ(4) &&
 	     OFMCLK % CORE_CLK == 0 &&
 	     OFMCLK / CORE_CLK <= 10,
 	     "Invalid CORE_CLK setting");
-BUILD_ASSERT(CORE_CLK / (FIUDIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
+BUILD_ASSERT(CORE_CLK / (FIUDIV_VAL + 1) <= MAX_FIUCLK &&
 	     CORE_CLK / (FIUDIV_VAL + 1) >= MHZ(4),
 	     "Invalid FIUCLK setting");
 #if defined(FIU1DIV_VAL)
-BUILD_ASSERT(CORE_CLK / (FIU1DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
+BUILD_ASSERT(CORE_CLK / (FIU1DIV_VAL + 1) <= MAX_FIU1CLK &&
 	     CORE_CLK / (FIU1DIV_VAL + 1) >= MHZ(4),
 	     "Invalid FIU1CLK setting");
 #endif
-BUILD_ASSERT(CORE_CLK / (AHB6DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
+BUILD_ASSERT(CORE_CLK / (AHB6DIV_VAL + 1) <= MAX_AHB6CLK &&
 	     CORE_CLK / (AHB6DIV_VAL + 1) >= MHZ(4),
 	     "Invalid AHB6_CLK setting");
 BUILD_ASSERT(APBSRC_CLK / (APB1DIV_VAL + 1) <= (MAX_OFMCLK / 2) &&
@@ -237,8 +237,35 @@ static int npcx_clock_control_init(const struct device *dev)
 		inst_cdcg->HFCGML = HFCGML_VAL;
 		inst_cdcg->HFCGMH = HFCGMH_VAL;
 
+		/* disable interrupts first */
+#if defined(CONFIG_NPCX_PLL_SETTLE_DELAY_ENABLE)
+		__asm__ volatile ("cpsid	i" ::: "memory");
+#endif
+
 		/* Load M and N values into the frequency multiplier */
 		inst_cdcg->HFCGCTRL |= BIT(NPCX_HFCGCTRL_LOAD);
+
+		/*
+		 * Busy-wait for the PLL to settle by executing N NOPs (>= 200us)
+		 * before polling the LOAD bit, then flush the pipeline and re-enable
+		 * interrupts.
+		 */
+#if defined(CONFIG_NPCX_PLL_SETTLE_DELAY_ENABLE)
+		__asm__ volatile("	movs	r0, #0\n"     /* cnt = 0 (R0) */
+				 "	movw	r1, #20000\n" /* N = 20000 (>= 200us) */
+				 "1:\n"
+				 "	nop\n"                /* execute one NOP */
+				 "	adds	r0, r0, #1\n" /* cnt++ */
+				 "	cmp	r0, r1\n"     /* compare cnt with N */
+				 "	blt	1b\n"         /* loop while cnt < N */
+				 "	nop\n" /* execute 3 NOPs to flush pipelines */
+				 "	nop\n"
+				 "	nop\n"
+				 "	cpsie	i\n" /* enable interrupts again */
+				 :
+				 :
+				 : "r0", "r1", "cc", "memory");
+#endif
 		/* Wait for stable */
 		while (IS_BIT_SET(inst_cdcg->HFCGCTRL, NPCX_HFCGCTRL_CLK_CHNG)) {
 			;
@@ -250,10 +277,9 @@ static int npcx_clock_control_init(const struct device *dev)
 	inst_cdcg->HFCBCD  = VAL_HFCBCD;
 	inst_cdcg->HFCBCD1 = VAL_HFCBCD1;
 	inst_cdcg->HFCBCD2 = VAL_HFCBCD2;
-#if defined(CONFIG_SOC_SERIES_NPCX4)
+#ifdef VAL_HFCBCD3
 	inst_cdcg->HFCBCD3 = VAL_HFCBCD3;
 #endif
-
 	/*
 	 * Power-down (turn off clock) the modules initially for better
 	 * power consumption.

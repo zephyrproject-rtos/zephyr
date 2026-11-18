@@ -43,4 +43,15 @@ config CLOCK_CONTROL_NPCX_ESPI_FMCLK_IN_SLEEP
 	  power state. It is required by the eSPI virtual UART channel, which
 	  cannot receive host traffic without FMCLK.
 
+config NPCX_PLL_SETTLE_DELAY_ENABLE
+	bool "Do the PLL settling delay when reloading the frequency multiplier"
+	default y
+	depends on NPCX_SOC_VARIANT_NPCKN
+	help
+	  When enabled, interrupts are disabled and a short NOP delay is run
+	  while the M/N frequency multiplier values are loaded, giving the PLL
+	  time to settle before the new clock is used. This delay is only
+	  required after the first PLL settlement. This workaround applies to
+	  the NPCK series.
+
 endif # CLOCK_CONTROL_NPCX
