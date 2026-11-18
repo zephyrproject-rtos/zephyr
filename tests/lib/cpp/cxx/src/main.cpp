@@ -19,7 +19,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/crc.h>
-#include <zephyr/sys/crc.h>
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/bbram.h>
