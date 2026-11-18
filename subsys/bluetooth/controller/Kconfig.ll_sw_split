@@ -57,6 +57,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
 	select BT_CTLR_CONN_RSSI_SUPPORT
+	select BT_CTLR_FRAME_SPACE_UPDATE_SUPPORT
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
 	select BT_CTLR_TIFS_HW_SUPPORT
@@ -1321,6 +1322,38 @@ config BT_CTLR_EVENT_IFS_LOW_LAT_US
 	default 150
 	help
 	  Set low latency tIFS value.
+
+config BT_CTLR_FRAME_SPACE_MIN_US
+	int "Minimum frame space in microseconds"
+	depends on BT_CTLR_FRAME_SPACE_UPDATE
+	range 16 150 if BT_CTLR_TIFS_PLLEN
+	range 52 150 if BT_CTLR_RADIO_ENABLE_FAST && !BT_CTLR_TIFS_HW
+	range 150 150
+	default 20 if BT_CTLR_TIFS_PLLEN
+	default 52 if BT_CTLR_RADIO_ENABLE_FAST && !BT_CTLR_TIFS_HW
+	default 150
+	help
+	  Minimum frame space the Controller accepts and selects in the Frame
+	  Space Update procedure. Software tIFS Trx switching using the Radio
+	  PLLEN state supports the lowest frame space, fast radio ramp-up
+	  supports frame space lower than the default 150 microseconds.
+
+	  With PLLEN, the Rx to Tx switch needs the Radio Tx ready delay plus
+	  the Rx chain delay of the received PHY, 15.1 us on LE 2M and 19.5 us
+	  on LE 1M with nRF54L, hence the default of 20 microseconds. Use 16
+	  microseconds only when the connection does not use LE 1M PHY.
+
+config BT_CTLR_FRAME_SPACE_MAX_US
+	int "Maximum frame space in microseconds"
+	depends on BT_CTLR_FRAME_SPACE_UPDATE
+	range BT_CTLR_FRAME_SPACE_MIN_US 1023 if BT_CTLR_TIFS_HW
+	range BT_CTLR_FRAME_SPACE_MIN_US 10000
+	default 1023 if BT_CTLR_TIFS_HW
+	default 10000
+	help
+	  Maximum frame space the Controller accepts in the Frame Space Update
+	  procedure. H/w accelerated tIFS Trx switching is limited by the
+	  10-bit Radio TIFS register.
 
 endif # BT_CONN
 
