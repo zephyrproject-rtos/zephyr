@@ -17,6 +17,9 @@
 #define IPC_MBOX_FIFO_SIZE 4
 #define IPC_MAX_CHANNELS   8
 
+/* Matches the HW FIFO depth. */
+#define IPC_MBOX_MSG_QUEUE_DEPTH 4
+
 LOG_MODULE_REGISTER(mbox_renesas_ra_ipc, CONFIG_MBOX_LOG_LEVEL);
 
 extern void ipc_isr(void);
@@ -28,12 +31,30 @@ struct renesas_ra_ipc_data {
 	void *user_cb_data[IPC_MAX_CHANNELS];
 	uint32_t enabled_channel_mask;
 	uint32_t received_data;
+	uint32_t pending_signals;
+	uint32_t pending_msg[IPC_MBOX_MSG_QUEUE_DEPTH];
+	uint8_t pending_msg_cnt;
+	uint8_t pending_msg_head;
 };
 
 struct renesas_ra_ipc_config {
 	const uint32_t channel_mask;
 	const uint8_t message_channel;
 };
+
+static void renesas_ra_ipc_latch_msg(const struct device *dev, uint32_t message)
+{
+	struct renesas_ra_ipc_data *data = dev->data;
+	uint8_t tail = (data->pending_msg_head + data->pending_msg_cnt) % IPC_MBOX_MSG_QUEUE_DEPTH;
+
+	if (data->pending_msg_cnt == IPC_MBOX_MSG_QUEUE_DEPTH) {
+		LOG_WRN("Pending message queue full, message dropped");
+		return;
+	}
+
+	data->pending_msg[tail] = message;
+	data->pending_msg_cnt++;
+}
 
 static void mbox_renesas_ra_callback(ipc_callback_args_t *fsp_args)
 {
@@ -43,6 +64,7 @@ static void mbox_renesas_ra_callback(ipc_callback_args_t *fsp_args)
 
 	if (fsp_args->event == IPC_EVENT_MESSAGE_RECEIVED) {
 		if (!(data->enabled_channel_mask & BIT(config->message_channel))) {
+			renesas_ra_ipc_latch_msg(dev, fsp_args->message);
 			return;
 		}
 
@@ -67,6 +89,7 @@ static void mbox_renesas_ra_callback(ipc_callback_args_t *fsp_args)
 		uint8_t channel_id = __builtin_ctz(fsp_args->event);
 
 		if (!(data->enabled_channel_mask & (uint32_t)fsp_args->event)) {
+			data->pending_signals |= BIT(channel_id);
 			return;
 		}
 
@@ -75,6 +98,38 @@ static void mbox_renesas_ra_callback(ipc_callback_args_t *fsp_args)
 						  NULL);
 		}
 	}
+}
+
+/* Feed events latched while disabled back through the callback. */
+static void ra_ipc_replay_pending(const struct device *dev)
+{
+	struct renesas_ra_ipc_data *data = dev->data;
+	ipc_callback_args_t args = {.p_context = (void *)dev};
+	uint32_t signals = data->pending_signals;
+	uint8_t msg_cnt = data->pending_msg_cnt;
+
+	data->pending_signals = 0U;
+
+	/* Messages of a still disabled channel are latched again in order. */
+	while (msg_cnt-- > 0U) {
+		args.event = IPC_EVENT_MESSAGE_RECEIVED;
+		args.message = data->pending_msg[data->pending_msg_head];
+		data->pending_msg_head = (data->pending_msg_head + 1U) % IPC_MBOX_MSG_QUEUE_DEPTH;
+		data->pending_msg_cnt--;
+		mbox_renesas_ra_callback(&args);
+	}
+
+	while (signals != 0U) {
+		args.event = (ipc_event_t)LSB_GET(signals);
+		signals &= ~args.event;
+		mbox_renesas_ra_callback(&args);
+	}
+}
+
+static void renesas_ra_ipc_isr(const struct device *dev)
+{
+	ra_ipc_replay_pending(dev);
+	ipc_isr();
 }
 
 static int renesas_ra_ipc_send(const struct device *dev, mbox_channel_id_t channel_id,
@@ -178,6 +233,8 @@ static int renesas_ra_ipc_set_enabled(const struct device *dev, mbox_channel_id_
 {
 	const struct renesas_ra_ipc_config *config = dev->config;
 	struct renesas_ra_ipc_data *data = dev->data;
+	bool replay = false;
+	unsigned int key;
 
 	if (channel_id >= IPC_MAX_CHANNELS) {
 		return -EINVAL;
@@ -188,10 +245,19 @@ static int renesas_ra_ipc_set_enabled(const struct device *dev, mbox_channel_id_
 		return -EINVAL;
 	}
 
+	key = irq_lock();
+
 	if (enabled) {
 		data->enabled_channel_mask |= BIT(channel_id);
+		replay = data->pending_msg_cnt > 0U || data->pending_signals != 0U;
 	} else {
 		data->enabled_channel_mask &= ~BIT(channel_id);
+	}
+
+	irq_unlock(key);
+
+	if (replay) {
+		NVIC_SetPendingIRQ(data->fsp_config.irq);
 	}
 
 	return 0;
@@ -224,7 +290,8 @@ static DEVICE_API(mbox, renesas_ra_ipc_driver_api) = {
 	{                                                                                          \
 		R_ICU->IELSR_b[DT_INST_IRQ(idx, irq)].IELS =                                       \
 			BSP_PRV_IELS_ENUM(CONCAT(EVENT_IPC_IRQ, DT_INST_PROP(idx, unit)));         \
-		IRQ_CONNECT(DT_INST_IRQ(idx, irq), DT_INST_IRQ(idx, priority), ipc_isr, NULL, 0);  \
+		IRQ_CONNECT(DT_INST_IRQ(idx, irq), DT_INST_IRQ(idx, priority),                     \
+			    renesas_ra_ipc_isr, DEVICE_DT_INST_GET(idx), 0);                       \
 		irq_enable(DT_INST_IRQ(idx, irq));                                                 \
 	}
 
