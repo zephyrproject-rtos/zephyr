@@ -77,7 +77,7 @@ static int w1_ds2485_init(const struct device *dev)
 	const struct w1_ds2477_85_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->i2c_spec.bus)) {
-		LOG_ERR("%s is not ready", cfg->i2c_spec.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c_spec.bus);
 		return -ENODEV;
 	}
 

@@ -40,6 +40,7 @@ static int ds2482_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 
 	if (!i2c_is_ready_dt(&config->i2c_spec)) {
+		LOG_ERR_DEVICE_NOT_READY(config->i2c_spec.bus);
 		return -ENODEV;
 	}
 
