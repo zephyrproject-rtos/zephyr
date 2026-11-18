@@ -117,6 +117,33 @@
 			reg-names = "pinctrl", "lpgpio_pinctrl";
 		};
 
+		/* PHY power switches in the VBAT PWR_CTRL register */
+		phy_pwr: regulator@1a609008 {
+			compatible = "alif,ensemble-phy-regulator";
+			reg = <0x1a609008 0x4>;
+			status = "disabled";
+
+			mipi_tx_dphy_reg: mipi-tx-dphy {
+				en-offset = <0>;
+			};
+
+			mipi_rx_dphy_reg: mipi-rx-dphy {
+				en-offset = <4>;
+			};
+
+			mipi_pll_dphy_reg: mipi-pll-dphy {
+				en-offset = <8>;
+			};
+
+			ldo_phy_reg: ldo-phy {
+				en-offset = <12>;
+			};
+
+			usb_phy_reg: usb-phy {
+				en-offset = <16>;
+			};
+		};
+
 		/*
 		 * LPTIMER channels. All channels share one 4 KB register block
 		 * at 0x42001000, each occupying a 0x14 byte slice of it.
