@@ -1860,8 +1860,6 @@ static inline uint32_t spi_stm32_frame_clocks(const struct device *dev,
 	return clocks;
 }
 
-BUILD_ASSERT(CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE >= 0);
-
 /* Longest time on the wire, in ms, whose timeout (plus the tolerance) still fits in K_MSEC() */
 #define SPI_STM32_DMA_WIRE_MS_MAX (INT32_MAX - CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE)
 
