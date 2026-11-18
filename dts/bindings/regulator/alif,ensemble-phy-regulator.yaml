@@ -1,0 +1,61 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Alif Ensemble PHY power switches
+
+description: |
+  PHY power switches controlled by the PWR_CTRL register in the Alif
+  Ensemble VBAT register block. Each child node describes one switch,
+  controlled by the two PWR_CTRL bits starting at its en-offset.
+
+  The driver recognizes children by node name:
+
+  - mipi-tx-dphy, mipi-rx-dphy, mipi-pll-dphy and usb-phy: the bit at
+    en-offset masks the PHY power and the bit at en-offset + 1 enables
+    isolation. Enabling clears both bits, disabling sets the isolation
+    bit.
+  - ldo-phy: the MIPI D-PHY 1.8 V supply. The bit at en-offset is the
+    bypass enable and the bit at en-offset + 1 is the bypass value.
+    Enabling clears both bits, so the supply follows the PD-6 power
+    state. Disabling enables bypass with a value of 0, which forces the
+    supply off.
+
+compatible: "alif,ensemble-phy-regulator"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-name
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-boot-off
+
+  properties:
+    en-offset:
+      type: int
+      required: true
+      description: |
+        Bit offset within PWR_CTRL of the first of the two control bits
+        for this power switch.
+
+examples:
+  - |
+    regulator@1a609008 {
+      compatible = "alif,ensemble-phy-regulator";
+      reg = <0x1a609008 0x4>;
+
+      mipi-rx-dphy {
+        en-offset = <4>;
+      };
+
+      ldo-phy {
+        en-offset = <12>;
+      };
+    };
