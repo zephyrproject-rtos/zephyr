@@ -394,6 +394,34 @@ uhc_shutdown_error:
 
 	return ret;
 }
+int uhc_endpoints_commit(const struct device *dev, struct usb_device *udev)
+{
+	const struct uhc_driver_api *api;
+	int ret = 0;
+
+	if (dev == NULL || udev == NULL) {
+		return -EINVAL;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto out_commit;
+	}
+
+	if (api->endpoints_commit != NULL) {
+		ret = api->endpoints_commit(dev, udev);
+	}
+
+out_commit:
+	api->unlock(dev);
+
+	return ret;
+}
+
 int uhc_add_endpoints(const struct device *dev, struct usb_device *udev)
 {
 	const struct uhc_driver_api *api;
@@ -482,12 +510,47 @@ out_sync:
 	return ret;
 }
 
-bool uhc_post_configure_steady(const struct device *dev)
+int uhc_endpoint_recover(const struct device *dev, struct usb_device *udev, uint8_t ep,
+			 enum uhc_ep_recovery_reason reason)
+{
+	const struct uhc_driver_api *api;
+	int ret;
+
+	if (dev == NULL || udev == NULL) {
+		return -EINVAL;
+	}
+
+	if (reason != UHC_EP_RECOVERY_CLEAR_HALT && reason != UHC_EP_RECOVERY_TRANSPORT_RESET) {
+		return -EINVAL;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->endpoint_recover == NULL) {
+		return 0;
+	}
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto out_recover;
+	}
+
+	ret = api->endpoint_recover(dev, udev, ep, reason);
+
+out_recover:
+	api->unlock(dev);
+
+	return ret;
+}
+
+bool uhc_post_configure_steady(const struct device *dev, struct usb_device *udev)
 {
 	const struct uhc_driver_api *api;
 	bool steady;
 
-	if (dev == NULL) {
+	if (dev == NULL || udev == NULL) {
 		return false;
 	}
 
@@ -504,7 +567,7 @@ bool uhc_post_configure_steady(const struct device *dev)
 		goto out_steady;
 	}
 
-	steady = api->post_configure_steady(dev);
+	steady = api->post_configure_steady(dev, udev);
 
 out_steady:
 	api->unlock(dev);
@@ -512,41 +575,48 @@ out_steady:
 	return steady;
 }
 
-void uhc_free_dev(const struct device *dev)
+int uhc_device_alloc(const struct device *dev, struct usb_device *udev)
 {
 	const struct uhc_driver_api *api;
+	int ret = 0;
 
-	if (dev == NULL) {
-		return;
-	}
-
-	api = DEVICE_API_GET(uhc, dev);
-
-	if (api->free_dev == NULL) {
-		return;
-	}
-
-	api->lock(dev);
-
-	if (uhc_is_initialized(dev)) {
-		api->free_dev(dev);
-	}
-
-	api->unlock(dev);
-}
-
-int uhc_assign_address(const struct device *dev, struct usb_device *udev, uint8_t *addr_out)
-{
-	const struct uhc_driver_api *api;
-	int ret;
-
-	if (dev == NULL || udev == NULL || addr_out == NULL) {
+	if (dev == NULL || udev == NULL) {
 		return -EINVAL;
 	}
 
 	api = DEVICE_API_GET(uhc, dev);
 
-	if (api->assign_address == NULL) {
+	if (api->device_alloc == NULL) {
+		return 0;
+	}
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto out_alloc;
+	}
+
+	ret = api->device_alloc(dev, udev);
+
+out_alloc:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_device_address(const struct device *dev, struct usb_device *udev, uint8_t *assigned_addr)
+{
+	const struct uhc_driver_api *api;
+	int ret;
+
+	if (dev == NULL || udev == NULL || assigned_addr == NULL) {
+		return -EINVAL;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->device_address == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -554,12 +624,42 @@ int uhc_assign_address(const struct device *dev, struct usb_device *udev, uint8_
 
 	if (!uhc_is_initialized(dev)) {
 		ret = -EPERM;
-		goto out_assign;
+		goto out_address;
 	}
 
-	ret = api->assign_address(dev, udev, addr_out);
+	ret = api->device_address(dev, udev, assigned_addr);
 
-out_assign:
+out_address:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_device_free(const struct device *dev, struct usb_device *udev)
+{
+	const struct uhc_driver_api *api;
+	int ret = 0;
+
+	if (dev == NULL || udev == NULL) {
+		return -EINVAL;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->device_free == NULL) {
+		return 0;
+	}
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = 0;
+		goto out_free;
+	}
+
+	ret = api->device_free(dev, udev);
+
+out_free:
 	api->unlock(dev);
 
 	return ret;
