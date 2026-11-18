@@ -1488,6 +1488,15 @@ static bool tcp_iface_from_peer(struct net_context *context)
 	return false;
 }
 
+/* With the addresses checked, check_ip() turns packets to the host itself
+ * around before they reach L2, so they need no next hop.
+ */
+static bool ipv4_dst_is_turned_around(const struct net_in_addr *dst)
+{
+	return IS_ENABLED(CONFIG_NET_IP_ADDR_CHECK) &&
+	       (net_ipv4_is_addr_loopback(dst) || net_ipv4_is_my_addr(dst));
+}
+
 int net_context_connect(struct net_context *context,
 			const struct net_sockaddr *addr,
 			net_socklen_t addrlen,
@@ -1628,6 +1637,8 @@ int net_context_connect(struct net_context *context,
 		struct net_sockaddr_in *addr4 = (struct net_sockaddr_in *)
 							&context->remote;
 		struct net_if *iface = net_context_get_iface(context);
+		struct net_sockaddr_in remote_before = *addr4;
+		uint16_t flags_before = context->flags;
 		bool iface_from_peer;
 
 		if (addrlen < sizeof(struct net_sockaddr_in)) {
@@ -1683,6 +1694,31 @@ int net_context_connect(struct net_context *context,
 				       &net_sin(&context->local)->sin_addr);
 
 			laddr = local_addr;
+		}
+
+		/* Fail now rather than send packets that L2 would drop. The
+		 * peer the context had before stays, as no new one was set.
+		 */
+		iface = net_context_get_iface(context);
+		if (addr4->sin_addr.s_addr != NET_INADDR_ANY && iface != NULL &&
+		    !net_if_is_ip_offloaded(iface) &&
+		    !ipv4_dst_is_turned_around(&addr4->sin_addr)) {
+			const struct net_in_addr *src;
+
+			if (laddr != NULL &&
+			    !net_ipv4_is_addr_unspecified(&net_sin(laddr)->sin_addr)) {
+				src = &net_sin(laddr)->sin_addr;
+			} else {
+				src = net_if_ipv4_select_src_addr(iface, &addr4->sin_addr);
+			}
+
+			if (!net_ipv4_has_next_hop(iface, src, &addr4->sin_addr)) {
+				*addr4 = remote_before;
+				context->flags = (context->flags & ~NET_CONTEXT_REMOTE_ADDR_SET) |
+						 (flags_before & NET_CONTEXT_REMOTE_ADDR_SET);
+				ret = -ENETUNREACH;
+				goto unlock;
+			}
 		}
 	} else {
 		ret = -EINVAL; /* Not IPv4 or IPv6 */
