@@ -142,7 +142,7 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_STREAM_FLASH_ERASE)) {
+	if (IS_ENABLED(CONFIG_STREAM_FLASH_ERASE) && ctx->auto_erase) {
 
 		rc = stream_flash_erase_to_append(ctx, ctx->buf_bytes);
 		if (rc < 0) {
@@ -360,6 +360,9 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 
 #ifdef CONFIG_STREAM_FLASH_ERASE
 	ctx->erased_up_to = 0;
+	ctx->auto_erase = true;
+#else
+	ctx->auto_erase = false;
 #endif
 	ctx->erase_value = params->erase_value;
 
@@ -451,6 +454,16 @@ int stream_flash_progress_clear(const struct stream_flash_ctx *ctx,
 	}
 
 	return rc;
+}
+
+int stream_flash_disable_auto_erasure(struct stream_flash_ctx *ctx)
+{
+	if (!ctx) {
+		return -EFAULT;
+	}
+
+	ctx->auto_erase = false;
+	return 0;
 }
 
 #endif  /* CONFIG_STREAM_FLASH_PROGRESS */

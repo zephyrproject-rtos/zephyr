@@ -65,6 +65,7 @@ struct stream_flash_ctx {
 #ifdef CONFIG_STREAM_FLASH_POST_WRITE_CALLBACK
 	stream_flash_callback_t callback; /* Callback invoked after write op */
 #endif
+	bool auto_erase; /* Automatically erase flash pages when needed */
 #ifdef CONFIG_STREAM_FLASH_ERASE
 	size_t erased_up_to;		/* First offset in continuous range,
 					 * relative to the stream_flash_ctx.offset,
@@ -182,6 +183,19 @@ int stream_flash_progress_save(const struct stream_flash_ctx *ctx,
  */
 int stream_flash_progress_clear(const struct stream_flash_ctx *ctx,
 				const char *settings_key);
+
+/**
+* @brief Disable auto erase for a flash stream instance for builds that support flash erase.
+*
+* @warning This function should only be called after initialization and before the first write
+*
+* @param ctx context
+*
+* @return non-negative on success, negative errno code on fail
+*/
+#ifdef CONFIG_STREAM_FLASH_ERASE
+int stream_flash_disable_auto_erasure(struct stream_flash_ctx *ctx);
+#endif
 
 #ifdef __cplusplus
 }
