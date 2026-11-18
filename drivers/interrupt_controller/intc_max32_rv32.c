@@ -9,6 +9,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/interrupt_controller/intc_max32_rv32.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(intc_max32_rv32, CONFIG_LOG_DEFAULT_LEVEL);
 
 typedef struct {
 	uint32_t enable;        /**< <tt>\b 0x00:<\tt> */
@@ -21,6 +24,12 @@ typedef struct {
 	rv32_intc_grp_t intr[2];
 	rv32_intc_grp_t event[2];
 } rv32_intc_regs_t;
+
+/*
+ * The source is cleared at the controller when it is read, so keep it for
+ * z_riscv_log_saved_info().
+ */
+static uint32_t save_source[CONFIG_MP_MAX_NUM_CPUS];
 
 static volatile rv32_intc_regs_t *get_intc_regs(void)
 {
@@ -135,7 +144,16 @@ uint32_t max32_rv32_intc_get_next_source(void)
 	int_grp->clear_pending |= BIT(clear);
 	evt_grp->clear_pending |= BIT(clear);
 
+	save_source[arch_curr_cpu()->id] = source;
+
 	return source;
+}
+
+void z_riscv_log_saved_info(unsigned long cause)
+{
+	ARG_UNUSED(cause);
+
+	LOG_ERR("MAX32 RV32 interrupt line causing the IRQ: %u", save_source[arch_curr_cpu()->id]);
 }
 
 static int max32_rv32_intc_init(const struct device *dev)
