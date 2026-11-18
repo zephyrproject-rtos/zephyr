@@ -46,6 +46,7 @@ const struct isotp_msg_id tx_addr = {
 struct isotp_recv_ctx recv_ctx;
 struct isotp_send_ctx send_ctx;
 uint8_t data_buf[128];
+static const uint8_t oversize_data[5000];
 
 void send_complete_cb(int error_nr, void *arg)
 {
@@ -322,6 +323,33 @@ ZTEST(isotp_implementation, test_send_receive_single_block)
 	}
 
 	isotp_unbind(&recv_ctx);
+}
+
+ZTEST(isotp_implementation, test_send_classic_oversize)
+{
+	const size_t lengths[] = {0x1000, sizeof(oversize_data)};
+	size_t i;
+	int ret;
+
+	for (i = 0; i < ARRAY_SIZE(lengths); i++) {
+		ret = isotp_send(&send_ctx, can_dev, oversize_data, lengths[i],
+				 &rx_addr, &tx_addr, NULL, NULL);
+		zassert_equal(ret, ISOTP_N_ERROR, "Send of %zu bytes returned %d",
+			      lengths[i], ret);
+	}
+}
+
+ZTEST(isotp_implementation, test_send_classic_oversize_ctx)
+{
+	int ret, i;
+
+	/* Rejecting must release the context, otherwise the slab runs out */
+	for (i = 0; i < CONFIG_ISOTP_TX_CONTEXT_BUF_COUNT + 1; i++) {
+		ret = isotp_send_ctx_buf(can_dev, oversize_data,
+					 sizeof(oversize_data), &rx_addr, &tx_addr,
+					 NULL, NULL, K_NO_WAIT);
+		zassert_equal(ret, ISOTP_N_ERROR, "Send returned %d", ret);
+	}
 }
 
 ZTEST(isotp_implementation, test_bind_unbind)
