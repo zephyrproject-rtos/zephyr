@@ -189,3 +189,8 @@
 	interrupt-parent = <&gic>;
 	interrupts = <GIC_SPI 336 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 };
+
+&mipi_dsi {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 364 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
