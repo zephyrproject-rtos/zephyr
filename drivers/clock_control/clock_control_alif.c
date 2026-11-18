@@ -11,6 +11,7 @@
  * This driver provides clock control for Alif Semiconductor SoC families.
  */
 
+#include "zephyr/arch/common/sys_bitops.h"
 #define DT_DRV_COMPAT alif_clockctrl
 
 #include <zephyr/device.h>
@@ -26,6 +27,9 @@ LOG_MODULE_REGISTER(alif_clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #define DEV_CFG(dev)  ((const struct alif_clock_control_config *)(dev)->config)
 #define DEV_DATA(dev) ((struct alif_clock_control_data *)(dev)->data)
+
+/* Clock Enable Register */
+#define CGU_CLK_ENA 0x14
 
 /**
  * @brief Alif clock controller data structure
@@ -259,6 +263,34 @@ static int alif_get_input_clock_freq(uint32_t clock_id)
 }
 
 /**
+ * @brief Enable parent clock
+ *
+ * @return 0 on success
+ * @param dev Clock control device
+ * @param clock_id Encoded clock ID from device tree
+ */
+static int alif_enable_parent_clock(const struct device *dev, uint32_t clock_id)
+{
+	mem_addr_t cgu = DEVICE_MMIO_NAMED_GET(dev, cgu);
+	uint32_t parent_clk = ALIF_CLOCK_CFG_PARENT_CLK(clock_id);
+	uint32_t mask = BIT(parent_clk);
+
+	if (parent_clk > ALIF_PARENT_CLK_SYST_ACLK && parent_clk < ALIF_PARENT_CLK_APSS) {
+		/* These parent clocks lack an enable bit */
+		return 0;
+	}
+
+	if (parent_clk == ALIF_PARENT_CLK_25M || parent_clk == ALIF_PARENT_CLK_50M) {
+		/* Enable 100MHz clock as well, these source it */
+		mask |= BIT(ALIF_PARENT_CLK_100M);
+	}
+
+	sys_set_bits(cgu + CGU_CLK_ENA, mask);
+
+	return 0;
+}
+
+/**
  * @brief Select the clock source and enable a peripheral clock
  *
  * Programs the clock source for peripherals fed by a source mux and enables
@@ -277,6 +309,12 @@ static int alif_clock_control_on(const struct device *dev,
 	uint32_t clk_id = (uint32_t)sub_system;
 	mem_addr_t reg_addr;
 	uint32_t reg_value;
+	int ret;
+
+	ret = alif_enable_parent_clock(dev, clk_id);
+	if (ret) {
+		return ret;
+	}
 
 	if (!ALIF_CLOCK_CFG_EN_MASK(clk_id) && !ALIF_CLOCK_CFG_SRC_FIELD_WIDTH(clk_id)) {
 		/* Always-on clock with a fixed source, nothing to program */
