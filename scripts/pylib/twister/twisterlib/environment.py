@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 import zephyr_module
+from twisterlib import results
 from twisterlib.constants import SUPPORTED_SIMS, ZEPHYR_BASE
 from twisterlib.coverage import supported_coverage_formats
 from twisterlib.hardwaremap import HardwareMap
@@ -803,6 +804,37 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         """)
 
     parser.add_argument(
+        "--report-ci", action="store_true",
+        help="""Also write zephyr-results.json, a results document for hardware
+        test results, next to twister.json. Needs --report-ci-origin. The CI
+        context is taken from the GitHub Actions or GitLab CI environment, else
+        from git. See doc/develop/twister/test_results.rst.
+        """)
+
+    parser.add_argument(
+        "--report-ci-origin", metavar="ORIGIN",
+        help="Origin (organisation) that submits the results document, as listed "
+             "in the origins registry. Lower case letters, digits and '_'.")
+
+    parser.add_argument(
+        "--report-ci-lab", metavar="LAB",
+        help="Lab of the origin where the tests ran. Leave out for build-only runs.")
+
+    parser.add_argument(
+        "--report-ci-trigger", choices=results.TRIGGERS,
+        help="Why the run happened. Default: taken from the CI event, else 'manual'.")
+
+    parser.add_argument(
+        "--report-ci-lab-events", metavar="FILENAME",
+        help="JSON file with lab facts per test suite (flashed image digest, "
+             "recorded lab events such as a console or power failure).")
+
+    parser.add_argument(
+        "--report-ci-flash-file", metavar="NAME",
+        help="Name of the image file the lab flashes, e.g. zephyr.hex. "
+             "Default: the first of zephyr.elf, zephyr.hex, zephyr.bin, zephyr.exe.")
+
+    parser.add_argument(
         "--retry-failed", type=int, default=0,
         help="Retry failing tests again, up to the number of times specified.")
 
@@ -972,6 +1004,26 @@ def parse_arguments(
         if options.coverage_tool != "lcov":
             logger.error("--coverage-per-test requires the 'lcov' coverage tool.")
             sys.exit(1)
+
+    if options.report_ci:
+        if not options.report_ci_origin:
+            logger.error("--report-ci requires --report-ci-origin.")
+            sys.exit(1)
+        if not re.fullmatch(r'[a-z0-9_]+', options.report_ci_origin):
+            logger.error("--report-ci-origin must match [a-z0-9_]+.")
+            sys.exit(1)
+        if options.report_ci_lab and not re.fullmatch(r'[a-z0-9][a-z0-9-]*', options.report_ci_lab):
+            logger.error("--report-ci-lab must match [a-z0-9][a-z0-9-]*.")
+            sys.exit(1)
+        if options.report_ci_lab_events:
+            try:
+                with open(options.report_ci_lab_events, encoding='utf-8') as f:
+                    json.load(f)
+            except (OSError, ValueError) as e:
+                logger.error(
+                    f"--report-ci-lab-events: cannot read {options.report_ci_lab_events}: {e}"
+                )
+                sys.exit(1)
 
     if options.coverage:
         options.enable_coverage = True
