@@ -131,7 +131,7 @@ struct supplicant_context {
 #endif
 	struct net_mgmt_event_callback cb;
 	struct net_if *iface;
-	char if_name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
+	char if_name[NET_IFNAMSIZ + 1];
 	struct k_fifo fifo;
 	int sock;
 	struct k_work iface_work;
@@ -476,7 +476,7 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 	/* Default interface, kick start supplicant */
 	if (get_iface_count(ctx) > 0) {
 		ctx->iface = iface;
-		net_if_get_name(iface, ctx->if_name, CONFIG_NET_INTERFACE_NAME_LEN);
+		net_if_get_name(iface, ctx->if_name, sizeof(ctx->if_name));
 	}
 
 	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
