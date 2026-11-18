@@ -17,3 +17,6 @@ tests:
     platform_allow:
       - stm32h573i_dk
       - stm32u5a9j_dk
+  drivers.regulator.ensemble.build:
+    platform_allow:
+      - ensemble_e8_ak/ae822fa0e5597bs0/rtss_hp
