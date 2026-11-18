@@ -3850,11 +3850,7 @@ static void ecred_connect_rsp_cb(struct bt_conn *conn, uint16_t result,
 
 int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 {
-	struct bt_att_chan *att_chan;
-	struct bt_att *att;
-	struct bt_l2cap_chan *chan[CONFIG_BT_EATT_MAX + 1] = {};
-	size_t offset = 0;
-	size_t i = 0;
+	size_t requested = 0U;
 	int err;
 
 	if (!conn) {
@@ -3873,38 +3869,79 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 		return -EINVAL;
 	}
 
-	att = att_get(conn);
-	if (att == NULL) {
-		return -ENOTCONN;
-	}
+	/* The bearers of a request are allocated just before it: while L2CAP waits
+	 * for a buffer for the request, a disconnection then finds all of them on
+	 * the connection and releases them. A disconnection also frees the ATT
+	 * context, so it is looked up again for each request, under the host lock
+	 * (bt_dev_lock()) and the scheduler lock as in bt_att_send().
+	 */
+	while (requested < num_channels) {
+		struct bt_l2cap_chan *chan[BT_L2CAP_ECRED_CHAN_MAX_PER_REQ] = {};
+		size_t count = 0U;
+		struct bt_att *att;
 
-	while (num_channels--) {
-		att_chan = att_chan_new(att, BIT(ATT_ENHANCED));
-		if (!att_chan) {
+		bt_dev_lock();
+		k_sched_lock();
+
+		att = att_get(conn);
+
+		while (att != NULL &&
+		       count < MIN(num_channels - requested, BT_L2CAP_ECRED_CHAN_MAX_PER_REQ)) {
+			struct bt_att_chan *att_chan = att_chan_new(att, BIT(ATT_ENHANCED));
+
+			if (att_chan == NULL) {
+				break;
+			}
+
+			chan[count] = att_chan_get_l2cap(att_chan);
+			count++;
+		}
+
+		k_sched_unlock();
+		bt_dev_unlock();
+
+		if (att == NULL) {
+			return -ENOTCONN;
+		}
+
+		if (count == 0U) {
 			break;
 		}
 
-		chan[i] = att_chan_get_l2cap(att_chan);
-		i++;
-	}
-
-	if (!i) {
-		return -ENOMEM;
-	}
-
-	while (offset < i) {
-		/* bt_l2cap_ecred_chan_connect() uses the first BT_L2CAP_ECRED_CHAN_MAX_PER_REQ
-		 * elements of the array or until a null-terminator is reached.
-		 */
-		err = bt_l2cap_ecred_chan_connect(conn, &chan[offset], BT_EATT_PSM);
-		if (err < 0) {
+		err = bt_l2cap_ecred_chan_connect(conn, chan, BT_EATT_PSM);
+		if (err == -ENOTCONN) {
+			/* Left alone: a disconnection while L2CAP waited has released
+			 * them, which this error does not tell apart from one before
+			 * L2CAP attached them
+			 */
 			return err;
 		}
 
-		offset += BT_L2CAP_ECRED_CHAN_MAX_PER_REQ;
+		if (err < 0) {
+			/* L2CAP left the bearers unused. The host lock (bt_dev_lock()) keeps
+			 * the senders, and the scheduler lock the RX workqueue, out of the
+			 * bearer list.
+			 */
+			bt_dev_lock();
+			k_sched_lock();
+
+			for (size_t i = 0; i < count; i++) {
+				struct bt_att_chan *att_chan = ATT_CHAN(chan[i]);
+
+				att_chan_detach(att_chan);
+				att_chan_free(att_chan);
+			}
+
+			k_sched_unlock();
+			bt_dev_unlock();
+
+			return err;
+		}
+
+		requested += count;
 	}
 
-	return 0;
+	return (requested > 0U) ? 0 : -ENOMEM;
 }
 
 #if defined(CONFIG_BT_EATT_AUTO_CONNECT)
