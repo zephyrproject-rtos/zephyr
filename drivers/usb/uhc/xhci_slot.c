@@ -1,0 +1,435 @@
+/*
+ * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <errno.h>
+#include <string.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/usb/usb_ch9.h>
+#include <zephyr/logging/log.h>
+
+#include "xhci_slot.h"
+#include "xhci_dwc3_internal.h"
+#include "xhci_dma.h"
+
+LOG_MODULE_DECLARE(uhc_dwc3, CONFIG_UHC_DRIVER_LOG_LEVEL);
+
+/*
+ * xhci_wait_cmd_sem() uses a 5 s deadline; EP0 recover may issue Reset EP +
+ * Set TR Dequeue (two commands) while holding ep0_recover_in_flight.
+ */
+#define XHCI_EP0_RECOVER_CMD_WAIT_MS 5000
+#define XHCI_EP0_RECOVER_MAX_CMDS    2U
+#define XHCI_EP0_RECOVER_TEARDOWN_MS                                                               \
+	(XHCI_EP0_RECOVER_CMD_WAIT_MS * XHCI_EP0_RECOVER_MAX_CMDS + 500)
+
+#define XHCI_SLOT_ROUTE(r)    ((uint32_t)(r) & 0xfffffU)
+#define XHCI_SLOT_DEV_HUB     BIT(26)
+#define XHCI_SLOT_TT_SLOT(id) ((uint32_t)(id) & 0xffU)
+#define XHCI_SLOT_TT_PORT(p)  (((uint32_t)(p) & 0xffU) << 8)
+
+void xhci_slot_init_sw_rings(struct xhci_dev_slot *slot)
+{
+	xhci_ring_init(&slot->ep0_ring, slot->ep0_trbs, XHCI_EP0_RING_SIZE, 0U);
+	dwc3_dma_flush(slot->ep0_trbs, sizeof(slot->ep0_trbs));
+
+	for (unsigned int dci = 2U; dci < 32U; dci++) {
+		xhci_ring_init(&slot->ep_bulk_rings[dci], slot->ep_bulk_trbs[dci],
+			       XHCI_BULK_RING_SIZE, 0U);
+		dwc3_dma_flush(slot->ep_bulk_trbs[dci], sizeof(slot->ep_bulk_trbs[dci]));
+	}
+}
+
+void xhci_slot_reset_sw_rings(struct xhci_dev_slot *slot)
+{
+	xhci_ring_init(&slot->ep0_ring, slot->ep0_trbs, XHCI_EP0_RING_SIZE, 0U);
+	dwc3_dma_flush(slot->ep0_trbs, sizeof(slot->ep0_trbs));
+	slot->ep0_active_xfer = NULL;
+	slot->ep0_expect_ioc_trb_phys = 0ULL;
+	memset(&slot->ep0_td, 0, sizeof(slot->ep0_td));
+	k_sem_reset(&slot->xfer_sem);
+
+	for (unsigned int dci = 2U; dci < 32U; dci++) {
+		xhci_ring_init(&slot->ep_bulk_rings[dci], slot->ep_bulk_trbs[dci],
+			       XHCI_BULK_RING_SIZE, 0U);
+		dwc3_dma_flush(slot->ep_bulk_trbs[dci], sizeof(slot->ep_bulk_trbs[dci]));
+		slot->bulk_active_xfer[dci] = NULL;
+		memset(&slot->bulk_urb[dci], 0, sizeof(slot->bulk_urb[dci]));
+		slot->bulk_expect_ioc_trb_phys[dci] = 0ULL;
+		slot->bulk_td_trb_count[dci] = 0U;
+		slot->bulk_xfer_result[dci] = 0;
+		slot->bulk_xfer_length[dci] = 0U;
+		slot->bulk_xfer_comp_code[dci] = 0U;
+	}
+}
+
+uint32_t xhci_device_route(const struct usb_device *udev)
+{
+	if (udev == NULL || udev->hub == NULL) {
+		return 0U;
+	}
+
+	const uint32_t parent_route = xhci_device_route(udev->hub);
+	const unsigned int shift = (unsigned int)(udev->hub->level - 1U) * 4U;
+	unsigned int port = udev->hub_port;
+
+	if (port >= 15U) {
+		port = 15U;
+	}
+
+	return parent_route + ((uint32_t)port << shift);
+}
+
+uint8_t xhci_device_root_hub_port(const struct usb_device *udev)
+{
+	const struct usb_device *walk = udev;
+
+	if (walk == NULL) {
+		return 1U;
+	}
+
+	while (walk->hub != NULL) {
+		walk = walk->hub;
+	}
+
+	return (walk->hub_port != 0U) ? walk->hub_port : 1U;
+}
+
+uint8_t xhci_udev_to_slot_speed(const struct usb_device *udev)
+{
+	switch (udev->speed) {
+	case USB_SPEED_SPEED_LS:
+		return XHCI_SPEED_LOW;
+	case USB_SPEED_SPEED_FS:
+		return XHCI_SPEED_FULL;
+	case USB_SPEED_SPEED_HS:
+		return XHCI_SPEED_HIGH;
+	case USB_SPEED_SPEED_SS:
+		return XHCI_SPEED_SUPER;
+	default:
+		return XHCI_SPEED_HIGH;
+	}
+}
+
+struct xhci_dev_slot *xhci_slot_from_udev(struct uhc_dwc3_data *priv, struct usb_device *udev)
+{
+	struct xhci_dev_slot *slot;
+
+	if (priv == NULL || udev == NULL) {
+		return NULL;
+	}
+
+	slot = xhci_slot_udev(priv, udev);
+	if (slot != NULL && slot->active && slot->udev == udev) {
+		return slot;
+	}
+
+	for (uint8_t sid = 1U; sid <= XHCI_MAX_DEVSLOTS; sid++) {
+		slot = xhci_slot_get(priv, sid);
+		if (slot == NULL || !slot->active || slot->udev != udev) {
+			continue;
+		}
+
+		if (udev->slot_id != 0U && udev->slot_id != sid) {
+			LOG_ERR("xHCI: udev slot_id %u disagrees with active slot %u",
+				(unsigned int)udev->slot_id, (unsigned int)sid);
+			return NULL;
+		}
+
+		return slot;
+	}
+
+	return NULL;
+}
+
+int xhci_enable_slot_for_udev(struct uhc_dwc3_data *priv, struct usb_device *udev)
+{
+	struct xhci_dev_slot *slot;
+	int ret;
+
+	if (udev == NULL || udev->slot_id != 0U) {
+		return -EINVAL;
+	}
+
+	ret = xhci_enable_slot(priv);
+	if (ret != 0) {
+		return ret;
+	}
+
+	slot = xhci_slot_get(priv, priv->cmd_slot_id);
+	if (slot == NULL) {
+		return -EIO;
+	}
+
+	memset(slot, 0, sizeof(*slot));
+	slot->active = true;
+	slot->udev = udev;
+	slot->root_port = xhci_device_root_hub_port(udev);
+	slot->port_speed = xhci_udev_to_slot_speed(udev);
+	k_sem_init(&slot->xfer_sem, 0, 1);
+	xhci_slot_init_sw_rings(slot);
+	udev->slot_id = priv->cmd_slot_id;
+
+	LOG_DBG("xHCI: slot %u bound to udev level=%u port=%u", (unsigned int)udev->slot_id,
+		(unsigned int)udev->level, (unsigned int)udev->hub_port);
+
+	return 0;
+}
+
+/*
+ * Block Disable Slot until the enqueue-thread EP0 recover path drops
+ * ep0_recover_in_flight. ep0_teardown_wait tells xhci_ep0_recover_slot_live()
+ * to stop before further xHCI commands once the current command completes.
+ */
+static void xhci_teardown_wait_ep0_recover(struct xhci_dev_slot *slot)
+{
+	const int64_t deadline = k_uptime_get() + XHCI_EP0_RECOVER_TEARDOWN_MS;
+	bool warned = false;
+
+	atomic_set(&slot->ep0_teardown_wait, 1);
+
+	while (atomic_get(&slot->ep0_recover_in_flight) != 0) {
+		if (!warned && k_uptime_get() >= deadline) {
+			LOG_WRN("EP0 recover still in flight after %d ms (waiting for completion)",
+				XHCI_EP0_RECOVER_TEARDOWN_MS);
+			warned = true;
+		}
+		k_busy_wait(100);
+	}
+
+	atomic_set(&slot->ep0_teardown_wait, 0);
+}
+
+int xhci_teardown_slot(struct uhc_dwc3_data *priv, uint8_t sid)
+{
+	struct xhci_dev_slot *slot = xhci_slot_get(priv, sid);
+	int ret = 0;
+
+	if (slot == NULL || !slot->active) {
+		return 0;
+	}
+
+	if (slot->ep0_active_xfer != NULL) {
+		(void)xhci_cancel_ep_xfer(priv, slot, XHCI_DCI_DEFAULT_CONTROL,
+					  slot->ep0_active_xfer, -ECONNRESET);
+	}
+
+	for (unsigned int dci = 2U; dci < 32U; dci++) {
+		if (slot->bulk_active_xfer[dci] != NULL) {
+			(void)xhci_cancel_ep_xfer(priv, slot, (uint8_t)dci,
+						  slot->bulk_active_xfer[dci], -ECONNRESET);
+		}
+	}
+
+	xhci_teardown_wait_ep0_recover(slot);
+
+	LOG_DBG("Disable Slot %u", (unsigned int)sid);
+	ret = xhci_disable_slot_cmd(priv, sid);
+	if (ret != 0) {
+		LOG_WRN("Disable Slot %u failed (%d)", (unsigned int)sid, ret);
+	}
+
+	priv->dcbaa[sid] = 0ULL;
+	dwc3_dma_flush(priv->dcbaa, sizeof(priv->dcbaa));
+
+	if (slot->udev != NULL) {
+		slot->udev->slot_id = 0U;
+	}
+
+	memset(slot, 0, sizeof(*slot));
+
+	return ret;
+}
+
+void xhci_teardown_all_slots(struct uhc_dwc3_data *priv)
+{
+	for (uint8_t sid = 1U; sid <= XHCI_MAX_DEVSLOTS; sid++) {
+		if (priv->slots[sid].active) {
+			xhci_teardown_slot(priv, sid);
+		}
+	}
+}
+
+void xhci_root_reconnect_slot_teardown(struct uhc_dwc3_data *priv, struct usb_device *udev)
+{
+	const bool cfg_ep_steady = (udev != NULL && udev->slot_id != 0U)
+					   ? priv->slots[udev->slot_id].steady_after_configure_ep
+					   : false;
+
+	if (cfg_ep_steady) {
+		LOG_WRN("bus_reset after Configure Endpoint (unexpected in steady state; "
+			"expect reset only on new enumeration or disconnect)");
+	}
+	if (udev != NULL && udev->slot_id != 0U) {
+		priv->slots[udev->slot_id].steady_after_configure_ep = false;
+	}
+
+	/*
+	 * Disconnect clears steady but may leave slot_id set; the next
+	 * bus_reset must Disable Slot and reset rings so ENABLE_SLOT runs again.
+	 * If this reset is the "unexpected during steady" path, keep the slot.
+	 */
+	if (udev != NULL && udev->slot_id != 0U && !cfg_ep_steady) {
+		xhci_teardown_slot(priv, udev->slot_id);
+	}
+}
+
+int xhci_prepare_root_device(struct uhc_dwc3_data *priv, struct usb_device *udev, uint8_t reset_rp)
+{
+	struct xhci_dev_slot *slot;
+	uint8_t slot_speed;
+	int ret;
+
+	/*
+	 * Slot context speed encoding differs from PORTSC speed field;
+	 * match xusb_host_example SlotCtxSpeed().
+	 */
+	UHC_DWC3_DBG("bus_reset: slot_speed %u", priv->port_speed);
+	switch (priv->port_speed) {
+	case XHCI_SPEED_FULL:
+		slot_speed = 1U;
+		break;
+	case XHCI_SPEED_LOW:
+		slot_speed = 2U;
+		break;
+	case XHCI_SPEED_HIGH:
+		slot_speed = 3U;
+		break;
+	case XHCI_SPEED_SUPER:
+		slot_speed = 4U;
+		break;
+	default:
+		slot_speed = 3U;
+		break;
+	}
+
+	if (udev == NULL) {
+		LOG_ERR("bus_reset without connect_udev (call uhc_device_alloc first)");
+		return -EINVAL;
+	}
+
+	if (udev->slot_id == 0U) {
+		UHC_DWC3_DBG("bus_reset: calling enable_slot_for_udev");
+		ret = xhci_enable_slot_for_udev(priv, udev);
+		if (ret != 0) {
+			return ret;
+		}
+		UHC_DWC3_DBG("bus_reset: enable_slot done");
+	}
+
+	slot = xhci_slot_udev(priv, udev);
+	if (slot == NULL) {
+		return -EIO;
+	}
+
+	UHC_DWC3_DBG("bus_reset: Address Device (BSR=1)");
+	ret = xhci_address_device_initial_udev(priv, slot, udev, reset_rp, slot_speed);
+	if (ret != 0) {
+		return ret;
+	}
+
+	UHC_DWC3_DBG("bus_reset() done — usbh will run GET_DESCRIPTOR next");
+
+	return 0;
+}
+
+int xhci_address_device_initial_udev(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot,
+				     struct usb_device *udev, uint8_t port, uint8_t speed)
+{
+	uint8_t *inp = slot->input_ctx;
+	struct xhci_input_ctrl_ctx *icc;
+	struct xhci_slot_ctx *slot_in;
+	struct xhci_ep_ctx *ep0;
+	uint16_t mps;
+	uint32_t dev_info;
+	int ad_ret;
+
+	memset(inp, 0, 2048);
+
+	icc = (struct xhci_input_ctrl_ctx *)inp;
+	icc->add_flags = XHCI_CTX_FLAG_SLOT | XHCI_CTX_FLAG_EP0;
+
+	slot_in = (struct xhci_slot_ctx *)(inp + xhci_input_ctx_slot_offset(priv->ctx_bytes));
+	dev_info = XHCI_SLOT_LAST_CTX(1) | XHCI_SLOT_SPEED(speed) |
+		   XHCI_SLOT_ROUTE(xhci_device_route(udev));
+
+	if (udev->dev_desc.bDeviceClass == USB_BCC_HUB ||
+	    (udev->dev_desc.bDeviceClass == 0U && udev->hub == NULL)) {
+		/* Hub class may not have dev_desc yet on first address — allow hub
+		 * interface later.
+		 */
+	}
+
+	if (udev->hub != NULL && udev->hub->dev_desc.bDeviceClass == USB_BCC_HUB) {
+		/* TT info for LS/FS devices behind an external HS hub. */
+		if (speed == XHCI_SPEED_LOW || speed == XHCI_SPEED_FULL) {
+			if (udev->hub->speed == USB_SPEED_SPEED_HS && udev->hub->slot_id != 0U) {
+				slot_in->tt_info = XHCI_SLOT_TT_SLOT(udev->hub->slot_id) |
+						   XHCI_SLOT_TT_PORT(udev->hub_port);
+			}
+		}
+	}
+
+	if (udev->dev_desc.bDeviceClass == USB_BCC_HUB) {
+		dev_info |= XHCI_SLOT_DEV_HUB;
+	}
+
+	slot_in->dev_info = dev_info;
+	slot_in->dev_info2 = XHCI_SLOT_ROOT_HUB_PORT(xhci_device_root_hub_port(udev));
+
+	ep0 = (struct xhci_ep_ctx *)(inp + xhci_input_ctx_ep0_offset(priv->ctx_bytes));
+
+	switch (speed) {
+	case XHCI_SPEED_LOW:
+		mps = 8U;
+		break;
+	case XHCI_SPEED_FULL:
+	case XHCI_SPEED_HIGH:
+		mps = 64U;
+		break;
+	default:
+		mps = 512U;
+		break;
+	}
+
+	ep0->ep_info2 = XHCI_EP_CTX_TYPE(XHCI_EP_CTX_TYPE_CTRL) | XHCI_EP_CTX_CERR(3) |
+			XHCI_EP_CTX_MAX_PACKET(mps);
+	{
+		uint64_t ep0_seg = xhci_dma_addr(slot->ep0_trbs);
+		unsigned int dcs = slot->ep0_ring.cycle_state & 1U;
+
+		ep0->deq = xhci_tr_deq_ptr(ep0_seg, dcs);
+	}
+	ep0->tx_info = XHCI_EP_AVG_TRB_LEN(8);
+
+	slot->ep0_max_packet = mps;
+	slot->port_speed = speed;
+	slot->root_port = port;
+
+	memset(slot->dev_ctx, 0, 2048);
+	priv->dcbaa[udev->slot_id] = xhci_dma_addr(slot->dev_ctx);
+
+	dwc3_dma_flush(inp, 2048);
+	dwc3_dma_flush(slot->dev_ctx, 2048);
+	dwc3_dma_flush(priv->dcbaa, sizeof(priv->dcbaa));
+
+	{
+		uint64_t inp_phys = xhci_dma_addr(inp);
+		uint32_t control = XHCI_TRB_TYPE(XHCI_TRB_ADDRESS_DEVICE) |
+				   XHCI_TRB_SLOT_ID(udev->slot_id) | XHCI_TRB_BSR;
+
+		ad_ret = xhci_send_command(priv, (uint32_t)inp_phys, (uint32_t)(inp_phys >> 32), 0,
+					   control);
+		if (ad_ret == 0) {
+			dwc3_dma_invalidate(slot->dev_ctx, 2048);
+			UHC_DWC3_DBG("xHCI: Address Device (BSR=1) slot %u level %u route 0x%x",
+				     (unsigned int)udev->slot_id, (unsigned int)udev->level,
+				     (unsigned int)xhci_device_route(udev));
+		}
+	}
+
+	return ad_ret;
+}

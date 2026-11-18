@@ -222,7 +222,7 @@ usb_status_t USB_HostHelperGetPeripheralInformation(usb_device_handle deviceHand
 	}
 
 	case kUSB_HostGetDeviceLevel:
-		*infoValue = udev->level;
+		*infoValue = (uint32_t)udev->level;
 		break;
 
 	case kUSB_HostGetDeviceSpeed:

@@ -7,7 +7,7 @@
 #define ZEPHYR_INCLUDE_USBH_CH11_H
 
 #include <zephyr/usb/usb_ch9.h>
-#include <zephyr/usb/class/usb_hub.h>
+#include <zephyr/usb/usb_hub.h>
 
 /* Port state enumeration */
 enum usbh_port_state {
