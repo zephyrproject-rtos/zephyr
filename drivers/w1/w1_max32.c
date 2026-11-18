@@ -151,7 +151,7 @@ static int w1_max32_init(const struct device *dev)
 	mxc_owm_cfg_t mxc_owm_cfg;
 
 	if (!device_is_ready(cfg->clock)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->clock);
 		return -ENODEV;
 	}
 

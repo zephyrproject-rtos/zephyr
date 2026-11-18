@@ -243,7 +243,7 @@ static int w1_serial_init(const struct device *dev)
 	struct w1_serial_data *data = dev->data;
 
 	if (!device_is_ready(cfg->uart_dev)) {
-		LOG_ERR("Serial device not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->uart_dev);
 		return -ENODEV;
 	}
 

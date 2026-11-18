@@ -145,6 +145,7 @@ static int ds2482_init(const struct device *dev)
 	struct ds2482_data *data = dev->data;
 
 	if (!device_is_ready(config->parent)) {
+		LOG_ERR_DEVICE_NOT_READY(config->parent);
 		return -ENODEV;
 	}
 

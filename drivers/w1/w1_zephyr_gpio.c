@@ -296,7 +296,7 @@ static int w1_gpio_init(const struct device *dev)
 			return ret;
 		}
 	} else {
-		LOG_ERR("GPIO port %s is not ready", spec->port->name);
+		LOG_ERR_DEVICE_NOT_READY(spec->port);
 		return -ENODEV;
 	}
 
