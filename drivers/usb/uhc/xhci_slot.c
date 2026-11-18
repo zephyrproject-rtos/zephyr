@@ -253,6 +253,65 @@ void xhci_teardown_all_slots(struct uhc_dwc3_data *priv)
 	}
 }
 
+int xhci_prepare_root_device(struct uhc_dwc3_data *priv, struct usb_device *udev, uint8_t reset_rp)
+{
+	struct xhci_dev_slot *slot;
+	uint8_t slot_speed;
+	int ret;
+
+	/*
+	 * Slot context speed encoding differs from PORTSC speed field;
+	 * match xusb_host_example SlotCtxSpeed().
+	 */
+	UHC_DWC3_DBG("bus_reset: slot_speed %u", priv->port_speed);
+	switch (priv->port_speed) {
+	case XHCI_SPEED_FULL:
+		slot_speed = 1U;
+		break;
+	case XHCI_SPEED_LOW:
+		slot_speed = 2U;
+		break;
+	case XHCI_SPEED_HIGH:
+		slot_speed = 3U;
+		break;
+	case XHCI_SPEED_SUPER:
+		slot_speed = 4U;
+		break;
+	default:
+		slot_speed = 3U;
+		break;
+	}
+
+	if (udev == NULL) {
+		LOG_ERR("bus_reset without connect_udev (call uhc_device_alloc first)");
+		return -EINVAL;
+	}
+
+	if (udev->slot_id == 0U) {
+		UHC_DWC3_DBG("bus_reset: calling enable_slot_for_udev");
+		ret = xhci_enable_slot_for_udev(priv, udev);
+		if (ret != 0) {
+			return ret;
+		}
+		UHC_DWC3_DBG("bus_reset: enable_slot done");
+	}
+
+	slot = xhci_slot_udev(priv, udev);
+	if (slot == NULL) {
+		return -EIO;
+	}
+
+	UHC_DWC3_DBG("bus_reset: Address Device (BSR=1)");
+	ret = xhci_address_device_initial_udev(priv, slot, udev, reset_rp, slot_speed);
+	if (ret != 0) {
+		return ret;
+	}
+
+	UHC_DWC3_DBG("bus_reset() done — usbh will run GET_DESCRIPTOR next");
+
+	return 0;
+}
+
 int xhci_address_device_initial_udev(struct uhc_dwc3_data *priv, struct xhci_dev_slot *slot,
 				     struct usb_device *udev, uint8_t port, uint8_t speed)
 {
