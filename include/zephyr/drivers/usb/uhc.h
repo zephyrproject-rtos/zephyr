@@ -365,31 +365,12 @@ __subsystem struct uhc_driver_api {
 	 */
 	int (*endpoints_commit)(const struct device *dev, struct usb_device *udev);
 	/**
-	 * Optional: commit configured endpoints after SET_CONFIGURATION.
-	 *
-	 * Host stack has populated @a udev endpoint descriptors; the HCD programs
-	 * hardware for bulk/control/interrupt use. NULL is success (no-op).
-	 */
-	int (*add_endpoints)(const struct device *dev, struct usb_device *udev);
-
-	/*
-	 * Optional class recovery hooks (e.g. after CLEAR_FEATURE HALT).
-	 * NULL => no-op / success where documented on the wrappers below.
-	 */
-	int (*eps_verify_steady)(const struct device *dev, struct usb_device *udev);
-	int (*ep_sync_after_clear_feature)(const struct device *dev, struct usb_device *udev);
-	/**
 	 * Optional: recover an endpoint after a USB-level recovery action.
 	 *
 	 * Return 0 only when @a ep is ready for a new transfer. NULL is success.
 	 */
 	int (*endpoint_recover)(const struct device *dev, struct usb_device *udev, uint8_t ep,
 				enum uhc_ep_recovery_reason reason);
-	/**
-	 * Optional: report whether @a udev endpoint programming is stable after
-	 * add_endpoints(). NULL treats the device as steady.
-	 */
-	bool (*post_configure_steady)(const struct device *dev, struct usb_device *udev);
 	/**
 	 * Optional: allocate controller resources for @a udev.
 	 *
@@ -412,6 +393,23 @@ __subsystem struct uhc_driver_api {
 	 * repeatedly.
 	 */
 	int (*device_free)(const struct device *dev, struct usb_device *udev);
+	/**
+	 * Optional: physical root-port reset for root-tier @a udev.
+	 *
+	 * Invoked only from @ref uhc_root_default_state_reset while the controller
+	 * lock is held. Must not allocate device resources or start Chapter 9
+	 * transfers. NULL with @a device_prepare also NULL uses @a bus_reset for
+	 * the full transition.
+	 */
+	int (*root_port_reset)(const struct device *dev, struct usb_device *udev);
+	/**
+	 * Optional: prepare HCD default control endpoint state for @a udev.
+	 *
+	 * Invoked only after a successful @a root_port_reset from
+	 * @ref uhc_root_default_state_reset while the controller lock is held.
+	 * Root-tier devices only; not used for hub-tier enumeration.
+	 */
+	int (*device_prepare)(const struct device *dev, struct usb_device *udev);
 };
 /**
  * @endcond
@@ -637,7 +635,7 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
 /**
  * @brief Remove a USB host controller transfer from the queue
  *
- * Stop Endpoint and wake waiter with -ECONNRESET.
+ * Cancel the transfer and wake the waiter with -ECONNRESET.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] xfer   Pointer to UHC transfer
@@ -721,48 +719,6 @@ int uhc_shutdown(const struct device *dev);
 int uhc_endpoints_commit(const struct device *dev, struct usb_device *udev);
 
 /**
- * @brief Notify UHC after SET_CONFIGURATION (descriptor tree parsed)
- *
- * Invoked when the host stack has read the full configuration descriptor and
- * walked interfaces and endpoint descriptors. The HCD commits endpoint
- * programming for @a udev (optional @c add_endpoints hook).
- *
- * @param dev  UHC device
- * @param udev USB device with ep_in/ep_out and ifaces populated
- *
- * @return 0 on success or if the driver has no optional hook; negative errno on failure.
- * @retval -EINVAL Invalid @a dev or @a udev
- * @retval -EPERM controller is not initialized
- */
-int uhc_add_endpoints(const struct device *dev, struct usb_device *udev);
-
-/**
- * @brief Optional: verify configured endpoint contexts appear steady (HCD-defined).
- *
- * @param dev UHC device
- * @param udev USB device with configured endpoints
- *
- * @retval 0 Endpoints steady, or hook not implemented
- * @retval -EINVAL Invalid @a dev or @a udev
- * @retval -EPERM controller is not initialized
- * @retval negative errno when verification detects mismatch
- */
-int uhc_eps_verify_steady(const struct device *dev, struct usb_device *udev);
-
-/**
- * @brief Optional: resync HCD endpoint state after CLEAR_FEATURE(ENDPOINT_HALT).
- *
- * @param dev UHC device
- * @param udev USB device
- *
- * @retval 0 Sync completed, or hook not implemented
- * @retval -EINVAL Invalid @a dev or @a udev
- * @retval -EPERM controller is not initialized
- * @retval negative errno on programming failure
- */
-int uhc_ep_sync_after_clear_feature(const struct device *dev, struct usb_device *udev);
-
-/**
  * @brief Recover an endpoint after a USB-level recovery event
  *
  * @param dev UHC device
@@ -782,15 +738,28 @@ int uhc_endpoint_recover(const struct device *dev, struct usb_device *udev, uint
 			 enum uhc_ep_recovery_reason reason);
 
 /**
- * @brief Optional: query whether @a udev is steady since add_endpoints().
+ * @brief Root default-state transition after root connect or port reset
+ *
+ * Serialize host-controller root reset and device preparation under one
+ * controller lock so no other UHC operation can interleave between physical
+ * port reset and default control-endpoint readiness.
+ *
+ * Root-tier @a udev only (@c udev->hub == NULL). Does not perform USB Chapter 9
+ * enumeration (no GET_DESCRIPTOR, SET_ADDRESS, or SET_CONFIGURATION).
+ *
+ * When both @c root_port_reset and @c device_prepare driver hooks are
+ * implemented, those run in order. Otherwise falls back to @ref uhc_bus_reset.
  *
  * @param dev UHC device
- * @param udev USB device that completed configuration
+ * @param udev Root USB device being enumerated
  *
- * @retval true Hook is unset, reports steady state, or @a udev is steady
- * @retval false Invalid arguments or controller not initialized
+ * @retval 0 Device is ready for DEFAULT-state control transfers
+ * @retval -EINVAL Invalid argument or hub-tier @a udev
+ * @retval -ENOTSUP No transition implementation on this controller
+ * @retval -EPERM Controller is not initialized
+ * @retval negative errno HCD failure from reset or preparation
  */
-bool uhc_post_configure_steady(const struct device *dev, struct usb_device *udev);
+int uhc_root_default_state_reset(const struct device *dev, struct usb_device *udev);
 
 /**
  * @brief Optional: allocate HCD resources for @a udev.
