@@ -199,6 +199,8 @@ void codec_play_start(void)
 			i2s_trigger(codec_tx, I2S_DIR_TX, I2S_TRIGGER_START);
 		}
 	}
+
+	audio_codec_start_output(DEVICE_DT_GET(DT_NODELABEL(audio_codec)));
 }
 
 void codec_play_stop(void)
@@ -208,6 +210,7 @@ void codec_play_stop(void)
 	}
 
 	audio_start = false;
+	audio_codec_stop_output(DEVICE_DT_GET(DT_NODELABEL(audio_codec)));
 	/* Don't need to stop codec_tx. After all the written buf is sent, the I2S tx is stopped. */
 	/* i2s_trigger(codec_tx, I2S_DIR_TX, I2S_TRIGGER_STOP); */
 }
