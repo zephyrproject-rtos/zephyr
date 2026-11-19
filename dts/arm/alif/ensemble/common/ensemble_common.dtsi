@@ -383,6 +383,15 @@
 			status = "disabled";
 		};
 
+		cdc200: cdc200@49031000 {
+			compatible = "tes,cdc-2.1";
+			reg = <0x49031000 0x1000>;
+
+			clocks = <&clockctrl ALIF_DPI_CLK>, <&clockctrl ALIF_CDC200_PIX_SYST_ACLK>;
+			clock-names = "dpi-clk-en", "pixel-clk";
+			status = "disabled";
+		};
+
 		mipi_dsi: mipi-dsi@49032000 {
 			compatible = "alif,mipi-dsi";
 			reg = <0x49032000 0x1000>,
