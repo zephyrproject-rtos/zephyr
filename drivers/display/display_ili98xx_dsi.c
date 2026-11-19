@@ -113,7 +113,7 @@ static int ili98xx_dsi_configure(const struct device *dev)
 	return ret;
 }
 
-static int ili98xx_dsi_blanking_on(const struct device *dev)
+int ili98xx_dsi_blanking_on(const struct device *dev)
 {
 	const struct ili98xx_dsi_config *cfg = dev->config;
 	int ret;
@@ -129,7 +129,7 @@ static int ili98xx_dsi_blanking_on(const struct device *dev)
 	return ili98xx_dsi_write_reg(dev, MIPI_DCS_SET_DISPLAY_OFF, NULL, 0);
 }
 
-static int ili98xx_dsi_blanking_off(const struct device *dev)
+int ili98xx_dsi_blanking_off(const struct device *dev)
 {
 	const struct ili98xx_dsi_config *cfg = dev->config;
 	int ret;
@@ -145,8 +145,8 @@ static int ili98xx_dsi_blanking_off(const struct device *dev)
 	return ili98xx_dsi_write_reg(dev, MIPI_DCS_SET_DISPLAY_ON, NULL, 0);
 }
 
-static void ili98xx_dsi_get_capabilities(const struct device *dev,
-					 struct display_capabilities *capabilities)
+void ili98xx_dsi_get_capabilities(const struct device *dev,
+				  struct display_capabilities *capabilities)
 {
 	const struct ili98xx_dsi_config *cfg = dev->config;
 
@@ -156,8 +156,8 @@ static void ili98xx_dsi_get_capabilities(const struct device *dev,
 	capabilities->current_pixel_format = cfg->pixel_format;
 }
 
-static int ili98xx_dsi_set_pixel_format(const struct device *dev,
-					const enum display_pixel_format pixel_format)
+int ili98xx_dsi_set_pixel_format(const struct device *dev,
+				 const enum display_pixel_format pixel_format)
 {
 	const struct ili98xx_dsi_config *cfg = dev->config;
 
@@ -169,14 +169,7 @@ static int ili98xx_dsi_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static DEVICE_API(display, ili98xx_dsi_api) = {
-	.blanking_on = ili98xx_dsi_blanking_on,
-	.blanking_off = ili98xx_dsi_blanking_off,
-	.set_pixel_format = ili98xx_dsi_set_pixel_format,
-	.get_capabilities = ili98xx_dsi_get_capabilities,
-};
-
-static int ili98xx_dsi_init(const struct device *dev)
+int ili98xx_dsi_init(const struct device *dev)
 {
 	const struct ili98xx_dsi_config *cfg = dev->config;
 	struct mipi_dsi_device mdev;
@@ -244,35 +237,3 @@ static int ili98xx_dsi_init(const struct device *dev)
 
 	return 0;
 }
-
-#define INST_DT_ILI98XX_DSI(n, t) DT_INST(n, ilitek_ili##t)
-
-#define ILI98XX_DSI_INIT(n, t)                                                                     \
-	static const struct ili98xx_dsi_config ili##t##_dsi_config_##n = {                         \
-		.mipi_dsi = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI98XX_DSI(n, t))),                   \
-		.reset = GPIO_DT_SPEC_GET_OR(INST_DT_ILI98XX_DSI(n, t), reset_gpios, {0}),         \
-		.backlight = GPIO_DT_SPEC_GET_OR(INST_DT_ILI98XX_DSI(n, t), bl_gpios, {0}),        \
-		.data_lanes = DT_PROP_BY_IDX(INST_DT_ILI98XX_DSI(n, t), data_lanes, 0),            \
-		.width = DT_PROP(INST_DT_ILI98XX_DSI(n, t), width),                                \
-		.height = DT_PROP(INST_DT_ILI98XX_DSI(n, t), height),                              \
-		.channel = DT_REG_ADDR(INST_DT_ILI98XX_DSI(n, t)),                                 \
-		.pixel_format = DT_PROP(INST_DT_ILI98XX_DSI(n, t), pixel_format),                  \
-		.regs_init_fn = ili##t##_dsi_regs_init,                                            \
-	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_DEFINE(INST_DT_ILI98XX_DSI(n, t), ili98xx_dsi_init, NULL, NULL,                  \
-			 &ili##t##_dsi_config_##n, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,  \
-			 &ili98xx_dsi_api)
-
-#define DT_INST_FOREACH_ILI98XX_DSI_STATUS_OKAY(t)                                                 \
-	LISTIFY(DT_NUM_INST_STATUS_OKAY(ilitek_ili##t), ILI98XX_DSI_INIT, (;), t)
-
-#ifdef CONFIG_ILI9806E_DSI
-#include "display_ili9806e_dsi.h"
-DT_INST_FOREACH_ILI98XX_DSI_STATUS_OKAY(9806e);
-#endif
-
-#ifdef CONFIG_ILI9881C_DSI
-#include "display_ili9881c_dsi.h"
-DT_INST_FOREACH_ILI98XX_DSI_STATUS_OKAY(9881c);
-#endif
