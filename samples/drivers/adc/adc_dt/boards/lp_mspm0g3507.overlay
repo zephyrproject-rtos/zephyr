@@ -1,0 +1,66 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 2>, <&adc0 3>, <&adc0 4>, <&adc0 5>, <&adc0 7>;
+	};
+};
+
+&adc0 {
+	vref = <&vref0>;
+	pinctrl-0 = <&analog_pa25 /* ADC0.2 */
+		     &analog_pa24 /* ADC0.3 */
+		     &analog_pb25 /* ADC0.4 */
+		     &analog_pb24 /* ADC0.5 */
+		     &analog_pa22 /* ADC0.7 */>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_NANOSECONDS, 63)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_NANOSECONDS, 63)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_NANOSECONDS, 63)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@5 {
+		reg = <5>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_NANOSECONDS, 63)>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_NANOSECONDS, 63)>;
+		zephyr,resolution = <12>;
+	};
+};
