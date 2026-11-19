@@ -133,6 +133,8 @@ void HAL_ETH_TxFreeCallback(STM32_ETH_ARGS(ETH_HandleTypeDef *heth, uint32_t *bu
 		}
 	}
 
+	net_pkt_unref(ctx->pkt);
+	ctx->pkt = NULL;
 	ctx->used = false;
 }
 
@@ -174,7 +176,8 @@ allocate_tx_context_async(struct eth_stm32_hal_dev_data *dev_data, struct net_pk
 	for (uint16_t index = 0U; index < ETH_TX_DESC_CNT; index++) {
 		if (!dev_data->tx_context[index].used) {
 			dev_data->tx_context[index].used = true;
-			dev_data->tx_context[index].pkt = pkt;
+			/* The context can outlive the caller's reference. */
+			dev_data->tx_context[index].pkt = net_pkt_ref(pkt);
 			tx_index = allocate_tx_buffer(dev_data);
 			dev_data->tx_context[index].first_tx_buffer_index = tx_index;
 			return &dev_data->tx_context[index];
@@ -284,7 +287,8 @@ allocate_tx_context(struct eth_stm32_hal_dev_data *dev_data, struct net_pkt *pkt
 		for (uint16_t index = 0; index < ETH_TX_DESC_CNT; index++) {
 			if (!dev_data->tx_context[index].used) {
 				dev_data->tx_context[index].used = true;
-				dev_data->tx_context[index].pkt = pkt;
+				/* The context can outlive the caller's reference. */
+				dev_data->tx_context[index].pkt = net_pkt_ref(pkt);
 				dev_data->tx_context[index].first_tx_buffer_index =
 					allocate_tx_buffer(dev_data);
 				return &dev_data->tx_context[index];
