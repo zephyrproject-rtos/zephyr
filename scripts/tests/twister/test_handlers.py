@@ -1223,8 +1223,8 @@ def test_devicehandler_handle(
 
     lp_mock = SimpleNamespace(
         comports=mock.Mock(return_value=[
-            SimpleNamespace(name='dummy serial'),
-            SimpleNamespace(name='slave name'),
+            SimpleNamespace(device='dummy serial', name='dummy serial'),
+            SimpleNamespace(device='slave name', name='slave name'),
         ])
     )
 
