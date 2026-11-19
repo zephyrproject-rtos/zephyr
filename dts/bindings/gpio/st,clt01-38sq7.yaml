@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Sebastian Balling
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ST CLT01-38SQ7 octal digital input current limiter / termination array.
+
+  The chip is used in 16-bit SPI mode (SPM = GND) and exposed as a GPIO
+  controller with 8 input-only pins (pin 0 = IN1 ... pin 7 = IN8). Every
+  port read is one SPI transfer; the driver checks the fixed bits and the
+  check bits of the frame and reports the undervoltage and over-temperature
+  alarms. The chip has no interrupt output, inputs have to be polled.
+
+compatible: "st,clt01-38sq7"
+
+include: [gpio-controller.yaml, spi-device.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    const: 8
+
+gpio-cells:
+  - pin
+  - flags
