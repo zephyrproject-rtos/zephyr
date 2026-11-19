@@ -58,6 +58,14 @@ static void trigger_callback(const struct device *dev, struct mbox_vevif_event_r
 	}
 }
 
+#if !defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+/* Implement here. To be removed when hal_nordic has this function. */
+static uint32_t nrfy_vpr_int_pending_get(NRF_VPR_Type *vpr)
+{
+	return vpr->INTPEND;
+}
+#endif
+
 static void vevif_event_rx_isr(const void *device)
 {
 	const struct device *dev = (struct device *)device;
@@ -66,12 +74,14 @@ static void vevif_event_rx_isr(const void *device)
 #if !defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
 	const struct mbox_vevif_event_rx_conf *config = dev->config;
 
-	for (uint8_t id = EVENTS_IDX_MIN; id < EVENTS_IDX_MAX + 1U; id++) {
-		nrf_vpr_event_t event = nrfy_vpr_triggered_event_get(id);
-		if (nrfy_vpr_event_check(config->vpr, event)) {
-			nrfy_vpr_event_clear(config->vpr, event);
-			trigger_callback(dev, cbs, id);
-		}
+	uint32_t intpend = nrfy_vpr_int_pending_get(config->vpr);
+
+	while (intpend != 0) {
+		uint32_t id = __builtin_ctz(intpend);
+
+		intpend &= ~BIT(id);
+		nrfy_vpr_event_clear(config->vpr, nrfy_vpr_triggered_event_get(id));
+		trigger_callback(dev, cbs, id);
 	}
 #else
 	trigger_callback(dev, cbs, VEVIF_54L_EVENT_IDX);
