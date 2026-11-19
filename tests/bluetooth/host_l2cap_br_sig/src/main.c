@@ -19,7 +19,7 @@
 #include <zephyr/ztest.h>
 
 #include "host/conn_internal.h"
-#include "host/classic/l2cap_br_interface.h"
+#include "host/classic/l2cap_br_internal.h"
 
 #define SIG_CID      0x0001U
 #define CONNLESS_CID 0x0002U
@@ -216,6 +216,67 @@ static void after(void *fixture)
 }
 
 ZTEST_SUITE(l2cap_br_sig, NULL, setup, before, after, NULL);
+
+ZTEST(l2cap_br_sig, test_dynamic_chan_reuse_tx_cid)
+{
+	static const struct bt_l2cap_chan_ops ops;
+	struct bt_l2cap_br_chan reused = {
+		.chan.ops = &ops,
+		.rx.cid = 0x0040,
+		.tx.cid = 0x0040,
+	};
+	struct bt_l2cap_br_chan other = {
+		.chan.ops = &ops,
+		.rx.cid = 0x0041,
+		.tx.cid = 0x0040,
+	};
+	struct bt_l2cap_chan *found;
+
+	bt_l2cap_chan_add(conn, &reused.chan, NULL);
+	bt_l2cap_chan_remove(conn, &reused.chan);
+	bt_l2cap_br_chan_del(&reused.chan);
+
+	/* Reattach the old channel before its new peer CID has been assigned. */
+	bt_l2cap_chan_add(conn, &reused.chan, NULL);
+	bt_l2cap_chan_add(conn, &other.chan, NULL);
+	found = bt_l2cap_br_lookup_tx_cid(conn, other.tx.cid);
+	bt_l2cap_chan_remove(conn, &reused.chan);
+	bt_l2cap_chan_remove(conn, &other.chan);
+
+	zassert_equal_ptr(found, &other.chan, "Stale TX CID matched the reused channel");
+	zassert_equal(reused.rx.cid, 0);
+	zassert_equal(reused.tx.cid, 0);
+}
+
+ZTEST(l2cap_br_sig, test_dynamic_chan_del_without_conn)
+{
+	static const struct bt_l2cap_chan_ops ops;
+	struct bt_l2cap_br_chan chan = {
+		.chan.ops = &ops,
+		.rx.cid = 0x0040,
+		.tx.cid = 0x0041,
+	};
+
+	bt_l2cap_br_chan_del(&chan.chan);
+
+	zassert_equal(chan.rx.cid, 0);
+	zassert_equal(chan.tx.cid, 0);
+}
+
+ZTEST(l2cap_br_sig, test_fixed_chan_del_preserves_cids)
+{
+	static const struct bt_l2cap_chan_ops ops;
+	struct bt_l2cap_br_chan chan = {
+		.chan.ops = &ops,
+		.rx.cid = SIG_CID,
+		.tx.cid = SIG_CID,
+	};
+
+	bt_l2cap_br_chan_del(&chan.chan);
+
+	zassert_equal(chan.rx.cid, SIG_CID);
+	zassert_equal(chan.tx.cid, SIG_CID);
+}
 
 /* Each Echo Request callback sees exactly the data of that request, although
  * another request follows in the same signaling packet and the other callback
