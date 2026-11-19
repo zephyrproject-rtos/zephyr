@@ -16,6 +16,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
+#include "clock_stm32_flash_latency.h"
 
 /* On all STM32F2x, F4x and F7x, the PLLs share the same source.
  * Ensure that it is the case for those enabled.
@@ -173,6 +174,18 @@ void config_pll_sysclock(void)
 #error "PLL doesn't have R output on this SOC"
 #endif /* DSI */
 #endif /* STM32_PLL_R_ENABLED */
+
+#if defined(PWR_CR_VOS_0)
+	/*
+	 * The PLL is off here. Set the voltage scale again in case it could
+	 * not be changed earlier because a chain-loading bootloader left the
+	 * PLL running, and set the flash latency for that scale before the
+	 * PLL is enabled. The PLL does not drive the system clock here, so
+	 * this latency is also valid for the current system clock.
+	 */
+	config_regulator_voltage(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	stm32_set_flash_latency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+#endif /* PWR_CR_VOS_0 */
 
 #if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(PWR_CR_ODEN)
 	/*
@@ -431,6 +444,28 @@ uint32_t get_ck48_frequency(void)
 	return 0;
 }
 #endif
+
+#if defined(PWR_CR_VOS_0)
+/**
+ * @brief Set up the regulator voltage scale needed by the system clock
+ *
+ * On STM32F410/F411/F412/F413/F423 the regulator resets to scale 2, which
+ * only allows HCLK up to 84 MHz. Select scale 1 when the configured HCLK is
+ * above the scale 2 limit, otherwise keep the current scale. On the other
+ * STM32F4 lines with a VOS field this either never triggers or selects the
+ * reset value.
+ *
+ * VOS can only be modified while the PLL is off and takes effect once the
+ * PLL is enabled (RM0430 §5.4.1). This function is called before the flash
+ * latency is computed, since LL_SetFlashLatency() uses the current scale.
+ */
+void config_regulator_voltage(uint32_t hclk_freq)
+{
+	if (hclk_freq > RCC_MAX_FREQUENCY_SCALE2) {
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+	}
+}
+#endif /* PWR_CR_VOS_0 */
 
 /**
  * @brief Activate default clocks
