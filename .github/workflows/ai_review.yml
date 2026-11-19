@@ -5,10 +5,13 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
 
 permissions:
-  contents: read
+  # Resolving the thread of an earlier comment that no longer applies needs write access to
+  # contents: GitHub refuses resolveReviewThread without it, although no content is changed.
+  # Nothing from the pull request is executed and the checkout does not persist the token.
+  contents: write
   pull-requests: write
   checks: read      # ci_status: check runs on the head commit
-  actions: read     # ci_failure_logs: failed job logs
+  actions: read     # ci_failure_logs: failed job logs; rereview=delta: the earlier run's artifact
 
 concurrency:
   group: ai-review-${{ github.event.pull_request.number }}
@@ -50,9 +53,14 @@ jobs:
           specialist_max_steps: "25"
           # Checked again by the action in case the label was removed before the run started.
           required_labels: ai-review
-          skip_reviewed: same-head
+          # A push that carries the change already reviewed (a rebase) is not reviewed again, and
+          # a re-review covers what changed since the earlier one, read from the artifact that
+          # run uploaded below.
+          skip_reviewed: same-patch
+          rereview: delta
           quiet: "true"
 
+      # Also the record the next review of this pull request builds on (rereview: delta).
       - name: Upload review artifacts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
