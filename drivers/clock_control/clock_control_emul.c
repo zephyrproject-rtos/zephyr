@@ -57,7 +57,6 @@ static int clock_control_emul_start(const struct device *dev, clock_control_subs
 	LOG_INF("start %p", dev);
 
 	ret = clock_control_emul_find_clock_idx(dev, sys, &index);
-
 	if (ret != 0) {
 		LOG_INF("start: clock-id not found: %d", ret);
 		return config->loose_check ? 0 : ret;
