@@ -89,6 +89,207 @@
 	};
 
 	soc {
+		timers2: timers@40000000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40000000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 0)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 0)>;
+			interrupts = <52 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
+		};
+
+		timers6: timers@40001000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 4)>;
+			interrupts = <56 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+		};
+
+		timers7: timers@40001400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 5)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 5)>;
+			interrupts = <57 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+		};
+
+		timers9: timers@40001800 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 6)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 6)>;
+			interrupts = <86 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timers10: timers@40001c00 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 7)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 7)>;
+			interrupts = <122 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timers11: timers@40002000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40002000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 8)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 8)>;
+			interrupts = <187 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timers12: timers@40002400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40002400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 9)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 9)>;
+			interrupts = <123 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timers13: timers@40002800 {
+			compatible = "st,stm32-timers";
+			reg = <0x40002800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 10)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 10)>;
+			interrupts = <124 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timers14: timers@40002c00 {
+			compatible = "st,stm32-timers";
+			reg = <0x40002c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 11)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1L, 11)>;
+			interrupts = <125 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		usart2: serial@40004400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 DT_SIZE_K(1)>;
@@ -119,6 +320,64 @@
 			status = "disabled";
 		};
 
+		timers1: timers@40012c00 {
+			compatible = "st,stm32-timers";
+			reg = <0x40012c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 11)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB2, 11)>;
+			interrupts = <48 0>, <49 0>, <50 0>, <51 0>;
+			interrupt-names = "brk", "up", "trgcom", "cc";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
+		};
+
+		timers8: timers@40013400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40013400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 13)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB2, 13)>;
+			interrupts = <72 0>, <73 0>, <74 0>, <75 0>;
+			interrupt-names = "brk", "up", "trgcom", "cc";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
+		};
+
 		usart1: serial@40013800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 DT_SIZE_K(1)>;
@@ -127,6 +386,81 @@
 			interrupts = <65 0>;
 			interrupt-names = "global";
 			status = "disabled";
+		};
+
+		timers15: timers@40014000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40014000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 16)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB2, 16)>;
+			interrupts = <78 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
+		};
+
+		timers16: timers@40014400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40014400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 17)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB2, 17)>;
+			interrupts = <79 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timers17: timers@40014800 {
+			compatible = "st,stm32-timers";
+			reg = <0x40014800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 18)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB2, 18)>;
+			interrupts = <80 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		flash: flash-controller@40022000 {
@@ -158,6 +492,40 @@
 			flash@8fff800 {
 				compatible = "st,stm32-nvm-otp";
 				reg = <0x08fff800 DT_SIZE_K(2)>;
+			};
+		};
+
+		timers26: timers@44000c00 {
+			compatible = "st,stm32-timers";
+			reg = <0x44000c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 3)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB3, 3)>;
+			interrupts = <188 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+		};
+
+		timers27: timers@44001000 {
+			compatible = "st,stm32-timers";
+			reg = <0x44001000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 4)>,
+				 <&rcc STM32_SRC_HCLK4 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB3, 4)>;
+			interrupts = <189 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
 		};
 
