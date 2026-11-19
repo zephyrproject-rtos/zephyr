@@ -44,3 +44,20 @@ child-binding:
     read-only:
       type: boolean
       description: Set this property if the cell is read-only.
+
+    zephyr,byte-order:
+      type: string
+      default: "raw"
+      enum:
+        - "raw"
+        - "little-endian"
+        - "big-endian"
+      description: |
+        Byte order metadata for consumers interpreting the contents of the
+        NVMEM cell. The raw default preserves existing consumer behavior
+        when no byte order is specified. Select little-endian or big-endian
+        when a consumer must decode data stored in that byte order.
+
+        This property does not change NVMEM read or write operations,
+        including the explicitly little-endian and big-endian helpers.
+        Consumers must explicitly use this metadata to interpret the data.
