@@ -211,7 +211,7 @@ static int ili98xx_dsi_init(const struct device *dev)
 	}
 
 	mdev.data_lanes = cfg->data_lanes;
-	mdev.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_LPM;
+	mdev.mode_flags = cfg->mode_flags;
 	mdev.timings.hactive = cfg->width;
 	mdev.timings.hbp = ILI98XX_DSI_HBP;
 	mdev.timings.hfp = ILI98XX_DSI_HFP;
@@ -257,6 +257,11 @@ static int ili98xx_dsi_init(const struct device *dev)
 		.height = DT_PROP(INST_DT_ILI98XX_DSI(n, t), height),                              \
 		.channel = DT_REG_ADDR(INST_DT_ILI98XX_DSI(n, t)),                                 \
 		.pixel_format = DT_PROP(INST_DT_ILI98XX_DSI(n, t), pixel_format),                  \
+		.mode_flags = MIPI_DSI_MODE_VIDEO |                                                \
+			COND_CODE_0(DT_PROP(INST_DT_ILI98XX_DSI(n, t), hp_mode),                   \
+				(MIPI_DSI_MODE_LPM), (0)) |                                        \
+			COND_CODE_1(DT_PROP(INST_DT_ILI98XX_DSI(n, t), burst_mode),                \
+				(MIPI_DSI_MODE_VIDEO_BURST), (0)),                                 \
 		.regs_init_fn = ili##t##_dsi_regs_init,                                            \
 	};                                                                                         \
                                                                                                    \

@@ -20,3 +20,15 @@ properties:
     description: |
       The BLn pin is asserted to control the backlight of the panel.
       The sensor receives this as an active-high signal.
+
+  hp-mode:
+    type: boolean
+    description: |
+      Set to attach to the MIPI-DSI host in high power mode. If not present,
+      the host will attach in low power mode.
+
+  burst-mode:
+    type: boolean
+    description: |
+      Set to enable burst mode for the MIPI-DSI interface. If not present,
+      burst mode will be disabled.
