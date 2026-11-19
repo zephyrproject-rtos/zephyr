@@ -79,7 +79,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_PM */
 
 #if !defined(CONFIG_PREEMPT_ENABLED)
-# if !defined(CONFIG_USE_SWITCH) || defined(CONFIG_SPARC)
+# if !defined(CONFIG_USE_SWITCH)
 		/* A legacy mess: the idle thread is by definition
 		 * preemptible as far as the modern scheduler is
 		 * concerned, but older platforms use
@@ -92,7 +92,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 		if (_kernel.ready_q.cache != _current) {
 			z_swap_unlocked();
 		}
-# endif /* !defined(CONFIG_USE_SWITCH) || defined(CONFIG_SPARC) */
+# endif /* !defined(CONFIG_USE_SWITCH) */
 #endif /* !defined(CONFIG_PREEMPT_ENABLED) */
 	}
 }
