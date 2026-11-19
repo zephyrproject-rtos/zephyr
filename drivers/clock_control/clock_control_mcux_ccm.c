@@ -550,7 +550,8 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#ifdef CONFIG_I2S_MCUX_SAI
+/* The audio PLL clock and the SAI root dividers exist only on i.MX RT10xx */
+#if defined(CONFIG_I2S_MCUX_SAI) && defined(CONFIG_SOC_SERIES_IMXRT10XX)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1))
 	case IMX_CCM_SAI1_CLK:
 		*rate = CLOCK_GetFreq(kCLOCK_AudioPllClk)
