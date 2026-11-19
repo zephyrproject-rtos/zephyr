@@ -71,7 +71,6 @@ bool gmap_supported_lc3_config_data(enum bt_audio_dir dir,
 #if defined(CONFIG_LIBLC3)
 #include "lc3.h"
 
-#define USB_SAMPLE_RATE            48000U
 #define LC3_MAX_SAMPLE_RATE        48000U
 #define LC3_MAX_FRAME_DURATION_US  10000U
 #define LC3_MAX_NUM_SAMPLES_MONO   ((LC3_MAX_FRAME_DURATION_US * LC3_MAX_SAMPLE_RATE) /            \
@@ -122,10 +121,10 @@ struct shell_stream {
 			lc3_encoder_mem_48k_t lc3_encoder_mem;
 			lc3_encoder_t lc3_encoder;
 #if defined(CONFIG_USBD_AUDIO2_CLASS)
-			/* Indicates where to read left USB data in the ring buffer */
-			size_t left_read_idx;
-			/* Indicates where to read right USB data in the ring buffer */
-			size_t right_read_idx;
+			/* Monotonic count of USB frames this stream has consumed. The ring
+			 * buffer index is (usb_read_pos % USB_RING_FRAMES).
+			 */
+			uint64_t usb_read_pos;
 #endif /* CONFIG_USBD_AUDIO2_CLASS */
 #endif /* CONFIG_LIBLC3 */
 		} tx;
@@ -162,19 +161,10 @@ bool supported_lc3_config(const struct bt_audio_codec_cap *codec_cap,
 			  enum bt_audio_location location,
 			  const struct bt_audio_codec_cfg *codec_cfg);
 
-int bap_usb_init(void);
-
-int bap_usb_add_frame_to_usb(enum bt_audio_location lc3_chan_allocation, const int16_t *frame,
-			     size_t frame_size, uint32_t ts);
-void bap_usb_clear_frames_to_usb(void);
 uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream);
 struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *bap_stream);
 struct bt_bap_stream *bap_stream_from_shell_stream(struct shell_stream *sh_stream);
 struct bt_cap_stream *cap_stream_from_shell_stream(struct shell_stream *sh_stream);
-bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream);
-void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location chan_alloc,
-		       int16_t buffer[]);
-size_t bap_usb_get_frame_size(const struct shell_stream *sh_stream);
 
 struct broadcast_source {
 	bool is_cap: 1;
