@@ -510,7 +510,21 @@
 			status = "disabled";
 		};
 
-		/* AHB1 peripherals: HSP/GPDMA/OTGFS/ADF (not supported yet) */
+		/* AHB1 peripherals */
+		gpdma1: dma@40021000 {
+			compatible = "st,stm32u5-dma";
+			reg = <0x40021000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 4)>;
+			interrupts = <39 0>, <40 0>, <41 0>, <42 0>,
+				     <43 0>, <44 0>, <45 0>, <46 0>,
+				     <133 0>, <134 0>, <135 0>, <136 0>,
+				     <137 0>, <138 0>, <139 0>, <140 0>;
+			#dma-cells = <3>;
+			dma-channels = <16>;
+			dma-requests = <145>;
+			status = "disabled";
+		};
+
 		/* APB2 peripherals */
 		timers1: timer@42000000 {
 			compatible = "st,stm32-timers";
@@ -773,6 +787,20 @@
 		/* AHB2 peripherals: CORDIC/FMAC (not supported yet) */
 		/* AHB3 peripherals: RNG/HASH (not supported yet) */
 		/* AHB5 peripherals */
+		hpdma1: dma@52000000 {
+			compatible = "st,stm32u5-dma";
+			reg = <0x52000000 DT_SIZE_K(4)>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 0)>;
+			interrupts = <64 0>, <65 0>, <66 0>, <67 0>,
+				     <68 0>, <69 0>, <70 0>, <71 0>,
+				     <141 0>, <142 0>, <143 0>, <144 0>,
+				     <145 0>, <146 0>, <147 0>, <148 0>;
+			#dma-cells = <3>;
+			dma-channels = <16>;
+			dma-requests = <146>;
+			status = "disabled";
+		};
+
 		flash: flash-controller@52002000 {
 			compatible = "st,stm32h7p-flash-controller", "st,stm32-flash-controller";
 			reg = <0x52002000 DT_SIZE_K(4)>;
