@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/wisblock-sensor-slot.h>
+
+/ {
+	aliases {
+		rtc = &rv3028_rak12002_rtc;
+	};
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	rv3028_rak12002: rv3028@52 {
+		compatible = "microcrystal,rv3028";
+		reg = <0x52>;
+		backup-switch-mode = "direct";
+		trickle-resistor-ohms = <3000>;
+
+		rv3028_rak12002_rtc: rtc {
+			compatible = "microcrystal,rv3028-rtc";
+			alarms-count = <1>;
+		};
+	};
+};
