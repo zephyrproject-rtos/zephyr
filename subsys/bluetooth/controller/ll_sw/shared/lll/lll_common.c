@@ -5,13 +5,22 @@
  */
 
 #include <errno.h>
+#include <limits.h>
+#include <string.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "util/mem.h"
 #include "util/memq.h"
 
+#include "pdu_df.h"
+#include "lll/pdu_vendor.h"
+#include "pdu.h"
+
 #include "lll.h"
+#include "lll_scan.h"
+#include "lll_filter.h"
 
 #include "hal/debug.h"
 
@@ -97,3 +106,66 @@ void lll_done_score(void *param, uint8_t result)
 	}
 }
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+#if defined(CONFIG_BT_OBSERVER)
+static inline bool isr_scan_tgta_rpa_check(const struct lll_scan *lll,
+					   uint8_t addr_type,
+					   const uint8_t *addr,
+					   bool *const dir_report);
+
+bool lll_scan_isr_rx_check(const struct lll_scan *lll, uint8_t irkmatch_ok,
+			   uint8_t devmatch_ok, uint8_t rl_idx)
+{
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	return (((lll->filter_policy & SCAN_FP_FILTER) == 0U) &&
+		(!devmatch_ok || ull_filter_lll_rl_idx_allowed(irkmatch_ok,
+							       rl_idx))) ||
+	       (((lll->filter_policy & SCAN_FP_FILTER) != 0U) &&
+		(devmatch_ok || ull_filter_lll_irk_in_fal(rl_idx)));
+#else
+	return ((lll->filter_policy & SCAN_FP_FILTER) == 0U) ||
+		devmatch_ok;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+}
+
+bool lll_scan_tgta_check(const struct lll_scan *lll, bool init,
+			 uint8_t addr_type, const uint8_t *addr,
+			 uint8_t rl_idx, bool *dir_report)
+{
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	if (ull_filter_lll_rl_addr_resolve(addr_type, addr, rl_idx)) {
+		return true;
+	} else if (init && lll->rpa_gen && ull_filter_lll_lrpa_get(rl_idx)) {
+		/* Initiator generating RPAs, and could not resolve TargetA:
+		 * discard
+		 */
+		return false;
+	}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+	return (((lll->init_addr_type == addr_type) &&
+		 !memcmp(lll->init_addr, addr, BDADDR_SIZE))) ||
+	       /* allow directed adv packets where TargetA address
+		* is resolvable private address (scanner only)
+		*/
+	       isr_scan_tgta_rpa_check(lll, addr_type, addr, dir_report);
+}
+
+static inline bool isr_scan_tgta_rpa_check(const struct lll_scan *lll,
+					   uint8_t addr_type,
+					   const uint8_t *addr,
+					   bool *const dir_report)
+{
+	if (((lll->filter_policy & SCAN_FP_EXT) != 0U) && (addr_type != 0U) &&
+	    ((addr[5] & 0xc0) == 0x40)) {
+
+		if (dir_report) {
+			*dir_report = true;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+#endif /* CONFIG_BT_OBSERVER */
