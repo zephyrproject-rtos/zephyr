@@ -107,11 +107,12 @@ static int omap_mailbox_send(const struct device *dev, uint32_t channel, const s
 		return -EINVAL;
 	}
 
+	key = k_spin_lock(&data->lock);
 	if (regs->fifo_status[channel]) {
+		k_spin_unlock(&data->lock, key);
 		return -EBUSY;
 	}
 
-	key = k_spin_lock(&data->lock);
 	if (!msg) {
 		regs->message[channel] = 0;
 		k_spin_unlock(&data->lock, key);
