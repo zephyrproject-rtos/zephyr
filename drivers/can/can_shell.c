@@ -78,7 +78,7 @@ static void can_shell_rx_msgq_triggered_work_handler(struct k_work *work);
 
 static bool can_device_check(const struct device *dev)
 {
-	return DEVICE_API_IS(can, dev) && device_is_ready(dev);
+	return device_is_ready(dev) && DEVICE_API_IS(can, dev);
 }
 
 #ifdef CONFIG_CAN_SHELL_SCRIPTING_FRIENDLY
