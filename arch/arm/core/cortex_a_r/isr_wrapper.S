@@ -297,19 +297,8 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	add r0, #1
 	str r0, [r2, #___cpu_t_nested_OFFSET]
 
-	/*
-	 * If not nested: switch to the IRQ stack and save current sp on it.
-	 * Stay in SYS mode so that a nested IRQ does not clobber lr_irq.
-	 */
-	cmp r0, #1
-	bhi 1f
-	mov r0, sp
-	cps #MODE_IRQ
-	mov r1, sp
-	cps #MODE_SYS
-	mov sp, r1
-	push {r0}
-1:
+	irq_stack_enter r0
+
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
 #endif /* CONFIG_TRACING_ISR */
@@ -428,19 +417,18 @@ z_arm_cortex_ar_irq_done:
 	str r0, [r2, #___cpu_t_nested_OFFSET]
 	/* Do not context switch if exiting a nested interrupt */
 	cmp r0, #0
-	/* Also reached from `z_arm_svc` for irq_offload, in MODE_SYS */
 	bhi __EXIT_INT
 
-	/* retrieve pointer to the current thread */
-	pop {r0}
+	/* Leave the IRQ stack, see irq_stack_enter */
+	pop {r0, r1}
 	mov sp, r0
 
 	ldr r1, [r2, #___cpu_t_current_OFFSET]
-	push {r1}
+	push {r1, r2}
 	mov r0, #0
 	bl z_get_next_switch_handle
 
-	pop {r1}
+	pop {r1, r2}
 	cmp r0, #0
 	beq __EXIT_INT
 
