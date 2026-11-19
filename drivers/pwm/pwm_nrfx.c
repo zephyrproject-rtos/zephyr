@@ -223,7 +223,9 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 
 #ifdef CONFIG_DCACHE
 	if (config->mem_attr & DT_MEM_CACHEABLE) {
-		sys_cache_data_flush_range(seq_values_ptr_get(dev), config->seq.length);
+		uint16_t *seq_values = seq_values_ptr_get(dev);
+
+		sys_cache_data_flush_range(seq_values, config->seq.length * sizeof(seq_values[0]));
 	}
 #endif
 
