@@ -9,7 +9,7 @@ SOURCES = ("subsys/micro_core/comm.c", "subsys/micro_core/msg.c")
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("xml", help="Twister coverage/coverage.xml")
     parser.add_argument("--min-line-percent", type=float, default=0.0)
     args = parser.parse_args()
@@ -17,8 +17,7 @@ def main():
     failed = False
 
     for source in SOURCES:
-        matches = [item for item in root.findall(".//class")
-                   if item.get("filename") == source]
+        matches = [item for item in root.findall(".//class") if item.get("filename") == source]
         if len(matches) != 1:
             parser.error(f"expected one coverage entry for {source}, found {len(matches)}")
         lines = matches[0].findall("./lines/line")
