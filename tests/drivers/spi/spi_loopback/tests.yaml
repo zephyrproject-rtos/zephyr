@@ -89,21 +89,21 @@ tests:
       - b_u585i_iot02a
       - nucleo_c071rb
       - nucleo_c5a3zg
-      - nucleo_g071rb
-      - nucleo_g474re
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
       - nucleo_f767zi
-      - nucleo_wba55cg
-      - nucleo_wb55rg
-      - nucleo_l152re
-      - nucleo_wl55jc
+      - nucleo_g071rb
+      - nucleo_g474re
       - nucleo_h743zi
-      - nucleo_h753zi
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_h753zi
+      - nucleo_l152re
       - nucleo_u385rg_q
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
       - stm32h573i_dk
       - stm32n6570_dk/stm32n657xx/sb
       - stm32u083c_dk
@@ -134,9 +134,9 @@ tests:
     filter: CONFIG_CPU_HAS_DCACHE
     platform_allow:
       - nucleo_h743zi
-      - nucleo_h753zi
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_h753zi
     integration_platforms:
       - nucleo_h753zi
   drivers.spi.stm32_spi_interrupt.loopback:
@@ -152,13 +152,13 @@ tests:
       - nucleo_g071rb
       - nucleo_g474re
       - nucleo_h743zi
-      - nucleo_h753zi
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_h753zi
       - nucleo_l152re
       - nucleo_u385rg_q
-      - nucleo_wba55cg
       - nucleo_wb55rg
+      - nucleo_wba55cg
       - nucleo_wl55jc
       - stm32f3_disco
       - stm32h573i_dk
@@ -179,12 +179,12 @@ tests:
       - nucleo_g071rb
       - nucleo_g474re
       - nucleo_h743zi
-      - nucleo_h753zi
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_h753zi
       - nucleo_l152re
-      - nucleo_wba55cg
       - nucleo_wb55rg
+      - nucleo_wba55cg
       - nucleo_wl55jc
       - stm32f3_disco
       - stm32h573i_dk
@@ -204,12 +204,12 @@ tests:
       - nucleo_f767zi
       - nucleo_g474re
       - nucleo_h743zi
-      - nucleo_h753zi
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_h753zi
       - nucleo_l152re
-      - nucleo_wba55cg
       - nucleo_wb55rg
+      - nucleo_wba55cg
       - nucleo_wl55jc
       - stm32h573i_dk
       - stm32n6570_dk/stm32n657xx/sb
