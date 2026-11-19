@@ -120,12 +120,21 @@ typedef stm32_status_t (*hal_cryp_aes_op_func_t)(hal_crypt_handle_t *hcryp, uint
 						 uint32_t timeout);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+#ifdef CONFIG_SOC_SERIES_STM32L4X
+#define hal_ecb_encrypt_op HAL_CRYPEx_AES
+#define hal_ecb_decrypt_op HAL_CRYPEx_AES
+#define hal_cbc_encrypt_op HAL_CRYPEx_AES
+#define hal_cbc_decrypt_op HAL_CRYPEx_AES
+#define hal_ctr_encrypt_op HAL_CRYPEx_AES
+#define hal_ctr_decrypt_op HAL_CRYPEx_AES
+#else
 #define hal_ecb_encrypt_op HAL_CRYP_AESECB_Encrypt
 #define hal_ecb_decrypt_op HAL_CRYP_AESECB_Decrypt
 #define hal_cbc_encrypt_op HAL_CRYP_AESCBC_Encrypt
 #define hal_cbc_decrypt_op HAL_CRYP_AESCBC_Decrypt
 #define hal_ctr_encrypt_op HAL_CRYP_AESCTR_Encrypt
 #define hal_ctr_decrypt_op HAL_CRYP_AESCTR_Decrypt
+#endif /* CONFIG_SOC_SERIES_STM32L4X */
 #else
 #define hal_ecb_encrypt_op hal_encrypt
 #define hal_ecb_decrypt_op hal_decrypt
@@ -204,6 +213,27 @@ static int hal2_set_config(struct crypto_stm32_data *const data, crypt_config_t 
 }
 #endif /* CONFIG_STM32_HAL2 */
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+static int hal1_l4_set_config(struct crypto_stm32_data *const data, crypt_config_t *config)
+{
+#ifndef CONFIG_SOC_SERIES_STM32L4X
+	if (HAL_CRYP_DeInit(&data->hcryp)) {
+		return -EIO;
+	}
+#endif
+
+	data->hcryp.Init = *config;
+
+#ifdef CONFIG_SOC_SERIES_STM32L4X
+	if (HAL_CRYP_Init(&data->hcryp)) {
+		return -EIO;
+	}
+#endif
+
+	return 0;
+}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) */
+
 static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in_buf,
 		  size_t in_len, uint8_t *out_buf)
 {
@@ -212,10 +242,7 @@ static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in
 	int ret = 0;
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
-	/* Device is initialized from the configuration in the encryption/decryption function
-	 * called below.
-	 */
-	memcpy(&data->hcryp.Init, &session->config, sizeof(session->config));
+	ret = hal1_l4_set_config(data, &session->config);
 #elif defined(CONFIG_STM32_HAL2)
 	ret = hal2_set_config(data, &session->config);
 #else
@@ -969,19 +996,25 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
 		switch (mode) {
 		case CRYPTO_CIPHER_MODE_ECB:
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+			session->config.ChainingMode = CRYP_CHAINMODE_AES_ECB;
+#elif !defined(CONFIG_STM32_HAL2)
 			session->config.Algorithm = CRYP_AES_ECB;
 #endif
 			ctx->ops.block_crypt_hndlr = crypto_stm32_ecb_encrypt;
 			break;
 		case CRYPTO_CIPHER_MODE_CBC:
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+			session->config.ChainingMode = CRYP_CHAINMODE_AES_CBC;
+#elif !defined(CONFIG_STM32_HAL2)
 			session->config.Algorithm = CRYP_AES_CBC;
 #endif
 			ctx->ops.cbc_crypt_hndlr = crypto_stm32_cbc_encrypt;
 			break;
 		case CRYPTO_CIPHER_MODE_CTR:
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+			session->config.ChainingMode = CRYP_CHAINMODE_AES_CTR;
+#elif !defined(CONFIG_STM32_HAL2)
 			session->config.Algorithm = CRYP_AES_CTR;
 #endif
 			ctx->ops.ctr_crypt_hndlr = crypto_stm32_ctr_encrypt;
@@ -1003,22 +1036,35 @@ static int crypto_stm32_session_setup(const struct device *dev,
 		default:
 			CODE_UNREACHABLE;
 		}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+		session->config.OperatingMode = CRYP_ALGOMODE_ENCRYPT;
+#endif
 	} else {
 		switch (mode) {
 		case CRYPTO_CIPHER_MODE_ECB:
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+			session->config.ChainingMode = CRYP_CHAINMODE_AES_ECB;
+			session->config.OperatingMode = CRYP_ALGOMODE_KEYDERIVATION_DECRYPT;
+#elif !defined(CONFIG_STM32_HAL2)
 			session->config.Algorithm = CRYP_AES_ECB;
 #endif
 			ctx->ops.block_crypt_hndlr = crypto_stm32_ecb_decrypt;
 			break;
 		case CRYPTO_CIPHER_MODE_CBC:
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+			session->config.ChainingMode = CRYP_CHAINMODE_AES_CBC;
+			session->config.OperatingMode = CRYP_ALGOMODE_KEYDERIVATION_DECRYPT;
+#elif !defined(CONFIG_STM32_HAL2)
 			session->config.Algorithm = CRYP_AES_CBC;
 #endif
 			ctx->ops.cbc_crypt_hndlr = crypto_stm32_cbc_decrypt;
 			break;
 		case CRYPTO_CIPHER_MODE_CTR:
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+			session->config.ChainingMode = CRYP_CHAINMODE_AES_CTR;
+			session->config.OperatingMode = CRYP_ALGOMODE_DECRYPT;
+#elif !defined(CONFIG_STM32_HAL2)
 			session->config.Algorithm = CRYP_AES_CTR;
 #endif
 			ctx->ops.ctr_crypt_hndlr = crypto_stm32_ctr_decrypt;
@@ -1060,10 +1106,12 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	session->config.pKey = CAST_VEC(session->key);
 	session->config.DataType = CRYP_DATATYPE_8B;
 
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+	session->config.KeyWriteFlag = CRYP_KEY_WRITE_ENABLE;
+#else
 	session->config.DataWidthUnit = CRYP_DATAWIDTHUNIT_BYTE;
 	session->config.KeyIVConfigSkip = CRYP_KEYIVCONFIG_ONCE;
-#endif
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) */
 #endif /* CONFIG_STM32_HAL2 */
 
 	ctx->drv_sessn_state = session;
