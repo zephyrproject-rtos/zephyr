@@ -918,7 +918,9 @@ class DeviceHandler(Handler):
                     # declare new start time instead of using existing one start_time.
                     serial_wait_timeout = max(10, int(flash_timeout * 0.2))
                     flash_start_time = time.time()
-                    while ser.port not in (p.name for p in list_ports.comports()):
+                    while os.path.realpath(ser.port) not in (
+                        os.path.realpath(p.device) for p in list_ports.comports()
+                    ):
                         time.sleep(0.1)
                         if time.time() - flash_start_time > serial_wait_timeout:
                             break
