@@ -100,7 +100,8 @@ static const whd_event_num_t ap_link_events[] = {WLC_E_DISASSOC_IND, WLC_E_DEAUT
 
 static uint16_t sta_event_handler_index = 0xFF;
 static void airoc_event_task(void);
-static struct airoc_wifi_data airoc_wifi_dev_data = {0};
+/* Not static: airoc_whd_hal_sdio.c's OOB handler needs direct access. */
+struct airoc_wifi_data airoc_wifi_dev_data = {0};
 
 #if defined(SPI_DATA_IRQ_SHARED)
 PINCTRL_DT_INST_DEFINE(0);
