@@ -402,7 +402,7 @@ int stream_flash_progress_load(struct stream_flash_ctx *ctx,
 
 	if (rc == 0) {
 		rc = settings_load_subtree_direct(settings_key, settings_direct_loader,
-						  (void *)ctx);
+			(void *)ctx);
 	}
 
 	if (rc != 0) {

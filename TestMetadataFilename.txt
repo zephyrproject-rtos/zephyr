@@ -1,0 +1,23 @@
+Sample and test metadata must be stored in a file named tests.yaml.
+
+ An exception occurred in TestMetadataFilename:
+Traceback (most recent call last):
+  File "/home/surface/zephyrproject/zephyr/./scripts/ci/check_compliance.py", line 3230, in _run_test
+    test.run()
+  File "/home/surface/zephyrproject/zephyr/./scripts/ci/check_compliance.py", line 2427, in run
+    for file in get_files(filter="A"):
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/surface/zephyrproject/zephyr/./scripts/ci/check_compliance.py", line 131, in get_files
+    out = git('diff', '--name-only', *filter_arg, COMMIT_RANGE, *paths_arg)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/surface/zephyrproject/zephyr/./scripts/ci/check_compliance.py", line 106, in git
+    err(
+  File "/home/surface/zephyrproject/zephyr/./scripts/ci/check_compliance.py", line 3616, in err
+    sys.exit(f"{cmd} error: {msg}")
+SystemExit: ./scripts/ci/check_compliance.py:  error: 'git diff --name-only --diff-filter=A origin/main..HEAD' exited with status 128 and/or wrote to stderr.
+==stdout==
+
+==stderr==
+fatal: ambiguous argument 'origin/main..HEAD': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git <command> [<revision>...] -- [<file>...]'
