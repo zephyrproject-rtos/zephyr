@@ -7647,6 +7647,7 @@ West:
     - josuah
   files:
     - modules/jpegenc/
+    - tests/modules/jpegenc/
   labels:
     - "area: Multimedia Pipeline"
 
