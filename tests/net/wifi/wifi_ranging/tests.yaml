@@ -1,0 +1,15 @@
+common:
+  depends_on: netif
+  tags:
+    - wifi
+    - net
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+tests:
+  net.wifi.ranging:
+    extra_configs:
+      - CONFIG_WIFI_MGMT_LOCATION=y
+      - CONFIG_WIFI_MGMT_LOCATION_LCI=y
+  net.wifi.ranging.no_location: {}
