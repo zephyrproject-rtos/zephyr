@@ -9,6 +9,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/nvmem.h>
 
 #include "eth_test_priv.h"
 
@@ -89,6 +90,66 @@ ZTEST(ethernet_mac_config, test_eth_mac_nvmem_prefix)
 	zexpect_equal_ptr(cfg->mcfg.cell.dev, DEVICE_DT_GET(DT_NODELABEL(eeprom0)));
 	zexpect_equal(cfg->mcfg.cell.offset, DT_REG_ADDR(DT_NODELABEL(cell6)));
 	zexpect_equal(cfg->mcfg.cell.size, DT_REG_SIZE(DT_NODELABEL(cell6)));
+}
+
+ZTEST(ethernet_mac_config, test_eth_mac_nvmem_little_endian)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(eth_mac_nvmem_le));
+	const struct vnd_ethernet_config *cfg = dev->config;
+	const uint8_t stored[] = {0x78, 0x56, 0x34, 0x12, 0xcd, 0xab};
+	const uint8_t expected[] = {0xab, 0xcd, 0x12, 0x34, 0x56, 0x78};
+	uint8_t mac[NET_ETH_ADDR_LEN];
+	int ret;
+
+	ret = nvmem_cell_write(&cfg->mcfg.cell, stored, 0, sizeof(stored));
+	zassert_ok(ret);
+
+	ret = net_eth_mac_load(&cfg->mcfg, mac);
+	zexpect_equal(ret, 0);
+	zexpect_mem_equal(mac, expected, sizeof(expected));
+	zexpect_equal(cfg->mcfg.cell.byte_order, NVMEM_CELL_BYTE_ORDER_LITTLE_ENDIAN);
+}
+
+ZTEST(ethernet_mac_config, test_eth_mac_nvmem_big_endian)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(eth_mac_nvmem_be));
+	const struct vnd_ethernet_config *cfg = dev->config;
+	const uint8_t stored[] = {0xab, 0xcd, 0x12, 0x34, 0x56, 0x78};
+	uint8_t mac[NET_ETH_ADDR_LEN];
+	int ret;
+
+	ret = nvmem_cell_write(&cfg->mcfg.cell, stored, 0, sizeof(stored));
+	zassert_ok(ret);
+
+	ret = net_eth_mac_load(&cfg->mcfg, mac);
+	zexpect_equal(ret, 0);
+	zexpect_mem_equal(mac, stored, sizeof(stored));
+	zexpect_equal(cfg->mcfg.cell.byte_order, NVMEM_CELL_BYTE_ORDER_BIG_ENDIAN);
+}
+
+ZTEST(ethernet_mac_config, test_eth_mac_nvmem_invalid_cell_size)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(eth_mac_nvmem_prefix));
+	const struct vnd_ethernet_config *cfg = dev->config;
+	struct net_eth_mac_config mcfg = cfg->mcfg;
+	const enum nvmem_cell_byte_order byte_orders[] = {
+		NVMEM_CELL_BYTE_ORDER_LITTLE_ENDIAN,
+		NVMEM_CELL_BYTE_ORDER_BIG_ENDIAN,
+	};
+	const size_t invalid_sizes[] = {3U, NET_ETH_ADDR_LEN + 1U};
+	uint8_t mac[NET_ETH_ADDR_LEN];
+
+	zassert_ok(net_eth_mac_load(&mcfg, mac));
+
+	for (size_t i = 0; i < ARRAY_SIZE(byte_orders); i++) {
+		mcfg.cell.byte_order = byte_orders[i];
+		for (size_t j = 0; j < ARRAY_SIZE(invalid_sizes); j++) {
+			mcfg.cell.size = invalid_sizes[j];
+			zexpect_equal(net_eth_mac_load(&mcfg, mac), -EINVAL,
+				      "Byte order %d, cell size %zu", byte_orders[i],
+				      invalid_sizes[j]);
+		}
+	}
 }
 
 ZTEST(ethernet_mac_config, test_eth_mac_none)
