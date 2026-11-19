@@ -170,6 +170,13 @@
 	status = "okay";
 };
 
+&i2c2 {
+	/* Arduino D14 (SCL) / D15 (SDA) */
+	pinctrl-0 = <&i2c2_scl_pi2 &i2c2_sda_pb8>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pg9 &spi1_mosi_pg5>;
 	pinctrl-names = "default";
