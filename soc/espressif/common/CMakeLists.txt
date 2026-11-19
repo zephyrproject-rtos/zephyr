@@ -105,6 +105,44 @@ if((CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_S
       --flash-size ${esptoolpy_flashsize}MB
       -o ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
       ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME})
+
+    # Secure Boot v2 signs the MCUboot image in place. The unsigned size is
+    # only known after elf2image, so the ROM buffer and boot_partition checks
+    # run in that same post-build step.
+    if(CONFIG_MCUBOOT AND CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT)
+      if(NOT EXISTS "${CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT_SIGNING_KEY}")
+        message(FATAL_ERROR
+          "Secure Boot v2 signing key was not found: "
+          "${CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT_SIGNING_KEY}")
+      endif()
+      find_program(ESPSECURE espsecure)
+      if(NOT ESPSECURE)
+        message(FATAL_ERROR
+          "espsecure was not found. Zephyr's esptool package provides it "
+          "(esptool >= 5) and is required to sign the MCUboot image.")
+      endif()
+
+      # Image body the ROM copies into a fixed buffer, excluding the signature sector.
+      if(CONFIG_SOC STREQUAL "esp32")
+        set(espressif_sb_rom_limit 49152)       # 48 KiB
+      elseif(CONFIG_SOC STREQUAL "esp32c5" OR CONFIG_SOC STREQUAL "esp32c61")
+        set(espressif_sb_rom_limit 81920)       # 80 KiB
+      else()
+        set(espressif_sb_rom_limit 65536)       # 64 KiB
+      endif()
+
+      dt_nodelabel(sb_boot_path NODELABEL "boot_partition")
+      dt_reg_size(sb_boot_size PATH ${sb_boot_path})
+
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+        COMMAND ${CMAKE_COMMAND}
+        -DUNSIGNED_BIN=${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
+        -DSIGNING_KEY=${CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT_SIGNING_KEY}
+        -DROM_LIMIT=${espressif_sb_rom_limit}
+        -DBOOT_PARTITION_SIZE=${sb_boot_size}
+        -DESPSECURE=${ESPSECURE}
+        -P ${CMAKE_CURRENT_LIST_DIR}/secure_boot_sign.cmake)
+    endif()
   endif()
 endif()
 

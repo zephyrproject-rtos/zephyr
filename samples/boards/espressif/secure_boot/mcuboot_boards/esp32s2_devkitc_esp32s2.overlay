@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../boards/boot_0x1000_68k.dtsi"
+
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};

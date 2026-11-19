@@ -304,6 +304,92 @@ MCUboot modes that force imgtool ``--overwrite-only --align 1``
 then get the 8-byte trailer magic while MCUboot expects the 32-byte form
 from ``write-block-size`` / ``BOOT_MAX_ALIGN``.
 
+Secure Boot v2
+==============
+
+Espressif Secure Boot v2 is independent of hardware flash encryption and can
+be enabled together with it. The ROM authenticates the MCUboot binary.
+MCUboot still authenticates applications with imgtool. Application images
+are not Secure Boot v2 signed.
+
+This is separate from MCUboot image signing (``imgtool`` / ``SB_CONFIG_BOOT_SIGNATURE_KEY_FILE``).
+
+Enable it at sysbuild time:
+
+.. code-block:: shell
+
+   west build -b <board> samples/hello_world --sysbuild \
+     -DSB_CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT=y \
+     -DSB_CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT_SIGNING_KEY=/path/to/key.pem
+
+Generate a signing key with ``espsecure`` (from the same esptool package
+Zephyr uses to flash). ESP32-C2 and ESP32-C61 use ECDSA-P256. Every other
+in-tree SoC uses RSA-3072, including classic ESP32 (Secure Boot v2 requires
+ECO3 or newer):
+
+.. code-block:: shell
+
+   espsecure generate-signing-key --version 2 rsa-3072.pem
+   espsecure generate-signing-key --version 2 --scheme ecdsa256 ecdsa-p256.pem
+
+The path may be absolute or relative to the application source directory.
+The build signs ``zephyr.bin`` in place after ``elf2image``. ``west flash``
+writes that signed bootloader. The build fails if the key file is missing.
+
+On first boot, MCUboot checks the signature sector, burns the public-key
+digest, and then burns the Secure Boot enable bit. That eFuse change is
+permanent. Later boots, the ROM verifies the MCUboot signature before
+MCUboot runs.
+
+.. warning::
+
+   The first-boot eFuse burn cannot be undone. Use virtual eFuses while
+   developing. JTAG stays available when
+   ``SB_CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT_ALLOW_JTAG`` is set; leave
+   it unset on a release device.
+
+Bootloader size
+---------------
+
+Secure Boot v2 pads the MCUboot image to 4 KiB and appends one 4 KiB
+signature sector. The ROM loads the image body, excluding that signature,
+into a fixed buffer. A larger ``boot_partition`` does not raise the buffer
+limit. The build fails when either limit is exceeded and reports the image
+size, the ROM limit, and the partition size:
+
+* ESP32: 48 KiB body (``0xC000``)
+* ESP32-S2, S3, C2, C3, C6, H2, and P4: 64 KiB body (``0x10000``)
+* ESP32-C5 and ESP32-C61: 80 KiB body (``0x14000``)
+
+``boot_partition`` must hold the 4 KiB-aligned body plus the 4 KiB signature
+sector. Flash encryption, when also enabled, encrypts that whole partition,
+which already contains the signature sector.
+
+Together with flash encryption
+------------------------------
+
+Pass both sysbuild flags. On ESP32-C2 the two features share one eFuse key
+block, so the first boot burns them in one batch and refuses to continue if
+only one is already enabled:
+
+.. code-block:: shell
+
+   west build -b esp8684_devkitm/esp32c2 samples/hello_world --sysbuild \
+     -DSB_CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT=y \
+     -DSB_CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT_SIGNING_KEY=/path/to/ecdsa-p256.pem \
+     -DSB_CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION=y \
+     -DSB_CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION_DEVELOPMENT=y \
+     -DSB_CONFIG_SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL=y
+
+JTAG, ROM BASIC (ESP32), UART ROM download mode, and virtual eFuse apply
+when either feature is enabled. Flash-encryption-only options (key size,
+UART encrypt/decrypt/cache, pseudo-rounds) stay under flash encryption.
+
+The build-only Twister sample
+:zephyr_file:`samples/boards/espressif/secure_boot` enables Secure Boot v2
+on one board for every in-tree Espressif SoC. It does not flash or boot a
+device. Its PEM files are test keys.
+
 Manual Build
 ============
 

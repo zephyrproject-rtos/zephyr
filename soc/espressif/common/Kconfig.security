@@ -31,6 +31,50 @@ config ESP_FLASH_ENCRYPTION
 	help
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION instead.
 
+config SOC_FAMILY_ESPRESSIF_SECURE_BOOT
+	bool "Espressif Secure Boot v2"
+	depends on MCUBOOT
+	help
+	  ROM authenticates the signed MCUboot image. Set on the MCUboot image
+	  by sysbuild (SB_CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT). Applications
+	  are still authenticated by MCUboot imgtool and are not Secure Boot v2
+	  signed.
+
+if SOC_FAMILY_ESPRESSIF_SECURE_BOOT
+
+config SOC_FAMILY_ESPRESSIF_SECURE_BOOT_SIGNING_KEY
+	string "Secure Boot v2 signing key (PEM path)"
+	help
+	  PEM private key used to sign zephyr.bin after elf2image. Absolute
+	  path, or a path relative to the application source directory.
+
+choice SOC_FAMILY_ESPRESSIF_SECURE_BOOT_SCHEME
+	prompt "Secure Boot v2 signing scheme"
+	default SOC_FAMILY_ESPRESSIF_SECURE_BOOT_ECDSA_V2 if SOC_SERIES_ESP32C2 || \
+		SOC_SERIES_ESP32C61
+	default SOC_FAMILY_ESPRESSIF_SECURE_BOOT_RSA
+
+config SOC_FAMILY_ESPRESSIF_SECURE_BOOT_RSA
+	bool "RSA-3072"
+	depends on !SOC_SERIES_ESP32C2 && !SOC_SERIES_ESP32C61
+
+config SOC_FAMILY_ESPRESSIF_SECURE_BOOT_ECDSA_V2
+	bool "ECDSA-P256"
+	depends on SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C5 || \
+		SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2 || SOC_SERIES_ESP32P4
+
+endchoice
+
+config SOC_FAMILY_ESPRESSIF_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+	bool
+	default y
+	depends on SOC_SERIES_ESP32C2 && SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION
+	help
+	  Burn the Secure Boot digest and the flash encryption key in one eFuse
+	  batch. Required on ESP32-C2, which has a single key block.
+
+endif # SOC_FAMILY_ESPRESSIF_SECURE_BOOT
+
 if SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION && MCUBOOT
 
 choice SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION_MODE
@@ -83,34 +127,6 @@ menu "Potentially insecure options"
 
 	# Options here also need SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION_DEVELOPMENT in
 	# "depends on": the menu visibility alone does not disable children.
-
-config SOC_FAMILY_ESPRESSIF_SECURE_BOOT_ALLOW_ROM_BASIC
-	bool "Leave ROM BASIC Interpreter available on reset"
-	depends on SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION_DEVELOPMENT && SOC_SERIES_ESP32
-	help
-	  By default, the BASIC ROM Console starts on reset if no valid
-	  bootloader is read from the flash.
-
-	  When flash encryption is enabled, the default is to disable this
-	  BASIC fallback mode permanently via eFuse.
-
-	  If this option is set, this eFuse is not burned and the BASIC ROM
-	  Console may remain accessible. Only set this option in testing
-	  environments.
-
-config SOC_FAMILY_ESPRESSIF_SECURE_BOOT_ALLOW_JTAG
-	bool "Allow JTAG Debugging"
-	depends on SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION_DEVELOPMENT
-	select SOC_FAMILY_ESPRESSIF_SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE \
-		if SOC_FAMILY_ESPRESSIF_SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
-	help
-	  If not set (default), the bootloader will permanently disable JTAG
-	  (across entire chip) on first boot when flash encryption is enabled.
-
-	  Setting this option leaves JTAG on for debugging, which negates
-	  all protections of flash encryption.
-
-	  Only set this option in testing environments.
 
 config SOC_FAMILY_ESPRESSIF_SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA
 	bool "Skip write-protection of SOC_FAMILY_ESPRESSIF_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH"
@@ -234,6 +250,40 @@ config SOC_FAMILY_ESPRESSIF_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH
 	default 2 if SOC_FAMILY_ESPRESSIF_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH_MEDIUM
 	default 3 if SOC_FAMILY_ESPRESSIF_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH_HIGH
 
+endif # SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION && MCUBOOT
+
+if MCUBOOT && (SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION || SOC_FAMILY_ESPRESSIF_SECURE_BOOT)
+
+config SOC_FAMILY_ESPRESSIF_SECURE_BOOT_ALLOW_ROM_BASIC
+	bool "Leave ROM BASIC Interpreter available on reset"
+	depends on SOC_SERIES_ESP32 && \
+		(SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION_DEVELOPMENT || \
+		SOC_FAMILY_ESPRESSIF_SECURE_BOOT)
+	help
+	  By default, the BASIC ROM Console starts on reset if no valid
+	  bootloader is read from the flash.
+
+	  When flash encryption or Secure Boot is enabled, the default is to
+	  disable this BASIC fallback mode permanently via eFuse.
+
+	  If this option is set, this eFuse is not burned and the BASIC ROM
+	  Console may remain accessible. Only set this option in testing
+	  environments.
+
+config SOC_FAMILY_ESPRESSIF_SECURE_BOOT_ALLOW_JTAG
+	bool "Allow JTAG Debugging"
+	depends on SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION_DEVELOPMENT || \
+		SOC_FAMILY_ESPRESSIF_SECURE_BOOT
+	select SOC_FAMILY_ESPRESSIF_SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE \
+		if SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION && \
+		SOC_FAMILY_ESPRESSIF_SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
+	help
+	  If not set (default), the bootloader permanently disables JTAG on
+	  first boot when flash encryption or Secure Boot is enabled.
+
+	  Setting this option leaves JTAG on for debugging. Only set this
+	  option in testing environments.
+
 config SOC_FAMILY_ESPRESSIF_SECURE_ROM_DL_MODE_ENABLED
 	bool
 	default y if SOC_FAMILY_ESPRESSIF_SUPPORTS_SECURE_DL_MODE && \
@@ -248,14 +298,14 @@ choice SOC_FAMILY_ESPRESSIF_SECURE_UART_ROM_DL_MODE
 config SOC_FAMILY_ESPRESSIF_SECURE_DISABLE_ROM_DL_MODE
 	bool "UART ROM download mode (Permanently disabled (recommended))"
 	help
-	  If set, during startup the bootloader will burn an eFuse bit to
+	  If set, during startup the bootloader burns an eFuse bit to
 	  permanently disable the UART ROM Download Mode.
 
 config SOC_FAMILY_ESPRESSIF_SECURE_ENABLE_SECURE_ROM_DL_MODE
 	bool "UART ROM download mode (Permanently switch to Secure mode (recommended))"
 	depends on SOC_FAMILY_ESPRESSIF_SUPPORTS_SECURE_DL_MODE
 	help
-	  If set, during startup the bootloader will burn an eFuse bit to
+	  If set, during startup the bootloader burns an eFuse bit to
 	  permanently switch the UART ROM Download Mode into Secure Download
 	  mode. Note: Secure Download mode is not available for ESP32.
 
@@ -268,6 +318,6 @@ config SOC_FAMILY_ESPRESSIF_SECURE_INSECURE_ALLOW_DL_MODE
 
 endchoice
 
-endif # SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION
+endif # MCUBOOT && (FLASH_ENCRYPTION || SECURE_BOOT)
 
 endif # SOC_FAMILY_ESPRESSIF && MCUBOOT

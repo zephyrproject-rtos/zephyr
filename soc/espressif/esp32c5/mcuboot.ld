@@ -104,6 +104,7 @@ SECTIONS
     *libzephyr.a:esp_rom_spiflash.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
     *libzephyr.a:esp_image_loader.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
     *libzephyr.a:bootloader_flash.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
+    *libzephyr.a:bootloader_sha_zephyr.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
     *libzephyr.a:soc_random.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
     *libzephyr.a:log.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
     *libkernel.a:device.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
