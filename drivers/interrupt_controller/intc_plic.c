@@ -214,7 +214,7 @@ static inline mem_addr_t get_pending_reg(const struct device *dev, uint32_t loca
  */
 static inline const struct device *get_plic_dev_from_irq(uint32_t irq)
 {
-#ifdef CONFIG_DYNAMIC_INTERRUPTS
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1
 	return z_get_sw_isr_device_from_irq(irq);
 #else
 	return DEVICE_DT_INST_GET(0);
