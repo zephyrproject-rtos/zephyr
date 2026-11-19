@@ -11,6 +11,18 @@
 #include <mesh/access.h>
 #include <mesh/net.h>
 
+#if defined(CONFIG_BT_MESH_GATT_PROXY)
+#include <mesh/proxy.h>
+
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/sys/byteorder.h>
+
+#include <testlib/att_read.h>
+#include <testlib/att_write.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test_suspend, LOG_LEVEL_INF);
 
@@ -469,6 +481,156 @@ static void test_tester_gatt(void)
 	PASS();
 }
 
+#if defined(CONFIG_BT_MESH_GATT_PROXY)
+
+static K_SEM_DEFINE(proxy_conn_sem, 0, 1);
+static K_SEM_DEFINE(proxy_disconn_sem, 0, 1);
+static struct bt_conn *proxy_link;
+static bt_addr_le_t proxy_dut_addr;
+static bool proxy_dut_addr_found;
+
+static void proxy_link_connected(struct bt_conn *conn, uint8_t err)
+{
+	ASSERT_EQUAL(0, err);
+	k_sem_give(&proxy_conn_sem);
+}
+
+static void proxy_link_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	if (proxy_link) {
+		bt_conn_unref(proxy_link);
+		proxy_link = NULL;
+	}
+	k_sem_give(&proxy_disconn_sem);
+}
+
+static struct bt_conn_cb proxy_conn_cb = {
+	.connected = proxy_link_connected,
+	.disconnected = proxy_link_disconnected,
+};
+
+static void proxy_dut_addr_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
+				   struct net_buf_simple *buf)
+{
+	if (adv_type != BT_GAP_ADV_TYPE_ADV_IND || proxy_dut_addr_found) {
+		return;
+	}
+
+	bt_mesh_test_parse_mesh_gatt_preamble(buf);
+	bt_mesh_test_parse_mesh_proxy_service(buf);
+
+	bt_addr_le_copy(&proxy_dut_addr, addr);
+	proxy_dut_addr_found = true;
+	k_sem_give(&publish_sem);
+}
+
+static void tester_connect_proxy_client(void)
+{
+	uint16_t svc_start, svc_end, data_in, data_out, ccc;
+	const uint8_t ccc_write[] = {BT_BYTES_LIST_LE16(BT_GATT_CCC_NOTIFY)};
+	int err;
+
+	ASSERT_OK(bt_enable(NULL));
+	ASSERT_OK(bt_conn_cb_register(&proxy_conn_cb));
+
+	proxy_dut_addr_found = false;
+	k_sem_init(&publish_sem, 0, 1);
+	gatt_param.service = MESH_SERVICE_PROXY;
+	gatt_param.transmits = 1;
+	gatt_param.interval = 1000;
+
+	ASSERT_OK(bt_mesh_test_wait_for_packet(proxy_dut_addr_scan_cb, &publish_sem, 30));
+	ASSERT_TRUE(proxy_dut_addr_found);
+
+	ASSERT_OK(bt_conn_le_create(&proxy_dut_addr, BT_CONN_LE_CREATE_CONN,
+				    BT_LE_CONN_PARAM_DEFAULT, &proxy_link));
+	ASSERT_OK(k_sem_take(&proxy_conn_sem, K_SECONDS(WAIT_TIME)));
+
+	ASSERT_OK(bt_testlib_gatt_discover_primary(
+		&svc_start, &svc_end, proxy_link, BT_UUID_MESH_PROXY,
+		BT_ATT_FIRST_ATTRIBUTE_HANDLE, BT_ATT_LAST_ATTRIBUTE_HANDLE));
+	ASSERT_OK(bt_testlib_gatt_discover_characteristic(
+		&data_in, NULL, NULL, proxy_link, BT_UUID_MESH_PROXY_DATA_IN, svc_start, svc_end));
+	ASSERT_OK(bt_testlib_gatt_discover_characteristic(
+		&data_out, NULL, NULL, proxy_link, BT_UUID_MESH_PROXY_DATA_OUT, svc_start, svc_end));
+	ASSERT_OK(bt_testlib_att_read_by_type_sync(NULL, NULL, &ccc, NULL, proxy_link,
+						   BT_ATT_CHAN_OPT_NONE, BT_UUID_GATT_CCC,
+						   data_out + 1, svc_end));
+
+	err = bt_testlib_att_write(proxy_link, BT_ATT_CHAN_OPT_NONE, ccc, ccc_write,
+				   sizeof(ccc_write));
+	ASSERT_OK_MSG(err, "Proxy CCC enable failed (err %d)", err);
+}
+
+static void dut_proxy_disconnect_during_suspend(void)
+{
+	struct k_sem send_sem;
+	const struct bt_mesh_send_cb send_cb = {
+		.start = send_start,
+		.end = send_end,
+	};
+
+	k_sem_init(&send_sem, 0, 1);
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &comp);
+	ASSERT_OK_MSG(bt_mesh_prov_enable(BT_MESH_PROV_GATT), "Failed to enable GATT provisioner");
+	dut_status = DUT_RUNNING;
+
+	k_sleep(K_MSEC(1800));
+	ASSERT_OK(bt_mesh_provision(test_net_key, 0, 0, 0, dut_cfg.addr, dut_cfg.dev_key));
+	k_sleep(K_MSEC(6500));
+
+	WAIT_FOR_COND(bt_mesh_proxy_srv_connected_cnt() == 1, 30);
+
+	dut_status = DUT_SUSPENDED;
+	bt_mesh_test_send_over_adv_cb(&dut_status, sizeof(enum dut_mesh_status), &send_cb,
+				      &send_sem);
+	ASSERT_OK(k_sem_take(&send_sem, K_MSEC(200)));
+
+	ASSERT_OK_MSG(bt_mesh_suspend(), "Failed to suspend Mesh.");
+
+	WAIT_FOR_COND(bt_mesh_proxy_srv_connected_cnt() == 0, 30);
+
+	ASSERT_OK_MSG(bt_mesh_resume(), "Failed to resume Mesh.");
+
+	dut_status = DUT_RUNNING;
+	bt_mesh_test_send_over_adv(&dut_status, sizeof(enum dut_mesh_status));
+	k_sleep(K_MSEC(6000));
+}
+
+static void test_dut_proxy_disconnect_during_suspend(void)
+{
+	dut_proxy_disconnect_during_suspend();
+	PASS();
+}
+
+static void test_tester_proxy_disconnect_during_suspend(void)
+{
+	k_sem_init(&publish_sem, 0, 1);
+	dut_status = DUT_RUNNING;
+
+	tester_connect_proxy_client();
+
+	ASSERT_OK(bt_mesh_test_wait_for_packet(suspend_state_change_cb, &publish_sem, 60));
+	ASSERT_EQUAL(dut_status, DUT_SUSPENDED);
+	k_sleep(K_MSEC(200));
+
+	ASSERT_OK(bt_conn_disconnect(proxy_link, BT_HCI_ERR_REMOTE_USER_TERM_CONN));
+	ASSERT_OK(k_sem_take(&proxy_disconn_sem, K_SECONDS(WAIT_TIME)));
+
+	gatt_param.transmits = 5000 / 1000;
+	gatt_param.interval = 1000;
+	gatt_param.service = MESH_SERVICE_PROXY;
+
+	ASSERT_OK(bt_mesh_test_wait_for_packet(suspend_state_change_cb, &publish_sem, 60));
+	ASSERT_EQUAL(dut_status, DUT_RUNNING);
+	ASSERT_OK(bt_mesh_test_wait_for_packet(gatt_scan_cb, &publish_sem, 20));
+
+	PASS();
+}
+
+#endif /* CONFIG_BT_MESH_GATT_PROXY */
+
 static void test_dut_suspend_resume_unref(void)
 {
 	const struct bt_mesh_test_cfg tx_cfg = {
@@ -514,9 +676,17 @@ static const struct bst_test_instance test_suspend[] = {
 			 "Suspend and resume Mesh (and disable/enable BT) with GATT proxy advs"),
 	TEST_CASE(dut, suspend_resume_unref,
 			 "Suspend and resume Mesh twice adv more than advertiser pool size times"),
+#if defined(CONFIG_BT_MESH_GATT_PROXY)
+	TEST_CASE(dut, proxy_disconnect_during_suspend,
+			 "Proxy client disconnects during bt_mesh_suspend; resume succeeds"),
+#endif
 
 	TEST_CASE(tester, pub, "Scan and verify behavior of periodic publishing adv"),
 	TEST_CASE(tester, gatt, "Scan and verify behavior of GATT proxy adv"),
+#if defined(CONFIG_BT_MESH_GATT_PROXY)
+	TEST_CASE(tester, proxy_disconnect_during_suspend,
+			 "Connect as GATT proxy client, disconnect during DUT suspend"),
+#endif
 
 	BSTEST_END_MARKER};
 
