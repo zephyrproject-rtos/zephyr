@@ -38,7 +38,8 @@ syscall_regex = re.compile(
 ([^(]+?)\s*                                # type and name of system call (split later)
 [(]                                        # Function opening parenthesis
 ([^)]*)                                    # Arg list (split later)
-[)]                                        # Closing parenthesis
+[)]\s*                                     # Closing parenthesis
+((?:__nonblocking)?)                       # Function type attribute, if any
 ''',
     regex_flags,
 )

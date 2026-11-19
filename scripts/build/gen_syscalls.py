@@ -235,19 +235,21 @@ def union_decl(ctype, split):
     return f"union {{ {middle}; {ctype} val; }}"
 
 
-def wrapper_defs(func_name, func_type, args, fn, userspace_only):
+def wrapper_defs(func_name, func_type, args, attrs, fn, userspace_only):
     ret64 = need_split(func_type)
     mrsh_args = []  # List of rvalue expressions for the marshalled invocation
 
     decl_arglist = ", ".join([" ".join(argrec) for argrec in args]) or "void"
+    # Function type attributes must be on every declaration of the function
+    decl_attrs = f" {attrs}" if attrs else ""
     syscall_id = "K_SYSCALL_" + func_name.upper()
 
     wrap = ''
     if not userspace_only:
-        wrap += f"extern {func_type} z_impl_{func_name}({decl_arglist});\n"
+        wrap += f"extern {func_type} z_impl_{func_name}({decl_arglist}){decl_attrs};\n"
         wrap += "\n"
 
-    wrap += f"static inline {func_type} {func_name}({decl_arglist})\n"
+    wrap += f"static inline {func_type} {func_name}({decl_arglist}){decl_attrs}\n"
     wrap += "{\n"
     if not userspace_only:
         wrap += "#ifdef CONFIG_USERSPACE\n"
@@ -432,7 +434,7 @@ def marshall_defs(func_name, func_type, args):
 
 
 def analyze_fn(match_group, fn, userspace_only):
-    func, args = match_group
+    func, args, attrs = match_group
 
     try:
         if args == "void":
@@ -449,7 +451,7 @@ def analyze_fn(match_group, fn, userspace_only):
 
     marshaller = None
     marshaller, handler = marshall_defs(func_name, func_type, args)
-    invocation = wrapper_defs(func_name, func_type, args, fn, userspace_only)
+    invocation = wrapper_defs(func_name, func_type, args, attrs, fn, userspace_only)
 
     # Entry in _k_syscall_table
     table_entry = f"[{sys_id}] = {handler}"
