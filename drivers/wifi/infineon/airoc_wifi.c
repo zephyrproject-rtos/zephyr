@@ -275,45 +275,6 @@ static int convert_whd_security_to_zephyr(whd_security_t security)
 	return zephyr_security;
 }
 
-static whd_security_t convert_zephyr_security_to_whd(int security)
-{
-	whd_security_t whd_security = WHD_SECURITY_UNKNOWN;
-
-	switch (security) {
-	case WIFI_SECURITY_TYPE_NONE:
-		whd_security = WHD_SECURITY_OPEN;
-		break;
-
-	case WIFI_SECURITY_TYPE_WEP:
-		whd_security = WHD_SECURITY_WEP_PSK;
-		break;
-
-	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
-		whd_security = WHD_SECURITY_WPA3_WPA2_PSK;
-		break;
-
-	case WIFI_SECURITY_TYPE_PSK:
-		whd_security = WHD_SECURITY_WPA2_AES_PSK;
-		break;
-
-	case WIFI_SECURITY_TYPE_PSK_SHA256:
-		whd_security = WHD_SECURITY_WPA2_AES_PSK_SHA256;
-		break;
-
-	case WIFI_SECURITY_TYPE_SAE:
-		whd_security = WHD_SECURITY_WPA3_SAE;
-		break;
-
-	case WIFI_SECURITY_TYPE_WPA_PSK:
-		whd_security = WHD_SECURITY_WPA_AES_PSK;
-		break;
-
-	default:
-		break;
-	}
-	return whd_security;
-}
-
 static uint8_t convert_whd_band_to_zephyr(whd_802_11_band_t band)
 {
 	uint8_t zephyr_band = WIFI_FREQ_BAND_UNKNOWN;
@@ -932,7 +893,7 @@ static int airoc_mgmt_connect(const struct device *dev,
 
 	usr_result.SSID.length = params->ssid_length;
 	memcpy(usr_result.SSID.value, params->ssid, params->ssid_length);
-	usr_result.security = convert_zephyr_security_to_whd(params->security);
+	usr_result.security = airoc_convert_zephyr_security_to_whd(params->security);
 
 	if (is_invalid_security(params->security, params->psk_length)) {
 
@@ -1083,19 +1044,10 @@ static int airoc_mgmt_ap_enable(const struct device *dev,
 		goto error;
 	}
 
-	switch (params->security) {
-	case WIFI_SECURITY_TYPE_NONE:
-		security = WHD_SECURITY_OPEN;
-		break;
-	case WIFI_SECURITY_TYPE_PSK:
-		security = WHD_SECURITY_WPA2_AES_PSK;
-		break;
-	case WIFI_SECURITY_TYPE_SAE:
-		security = WHD_SECURITY_WPA3_SAE;
-		break;
-	default:
-		ret = -ENOTSUP;
+	security = airoc_convert_zephyr_security_to_whd(params->security);
+	if (!airoc_wifi_security_supported_for_ap(security)) {
 		LOG_ERR("Unsupported AP security type: %d", params->security);
+		ret = -ENOTSUP;
 		goto error;
 	}
 
