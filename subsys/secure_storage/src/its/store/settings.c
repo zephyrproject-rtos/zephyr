@@ -75,42 +75,27 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
 	}
 }
 
-struct load_params {
-	const size_t data_size;
-	uint8_t *const data;
-	ssize_t ret;
-};
-
-static int load_direct_setting(const char *key, size_t len, settings_read_cb read_cb,
-			       void *cb_arg, void *param)
-{
-	(void)key;
-	struct load_params *load_params = param;
-
-	load_params->ret = read_cb(cb_arg, load_params->data, MIN(load_params->data_size, len));
-	return 0;
-}
-
 psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t data_size,
 					  void *data, size_t *data_length)
 {
 	psa_status_t ret;
 	char name[SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE];
-	struct load_params load_params = {.data_size = data_size, .data = data, .ret = -ENOENT};
+	ssize_t load_ret;
 
 	secure_storage_its_store_settings_get_name(uid, name);
 
-	settings_load_subtree_direct(name, load_direct_setting, &load_params);
-	if (load_params.ret > 0) {
-		*data_length = load_params.ret;
+	/* Returns the size of the stored entry, which may be more than was read. */
+	load_ret = settings_load_one(name, data, data_size);
+	if (load_ret > 0) {
+		*data_length = MIN((size_t)load_ret, data_size);
 		ret = PSA_SUCCESS;
-	} else if (load_params.ret == 0 || load_params.ret == -ENOENT) {
+	} else if (load_ret == 0 || load_ret == -ENOENT) {
 		ret = PSA_ERROR_DOES_NOT_EXIST;
 	} else {
 		ret = PSA_ERROR_STORAGE_FAILURE;
 	}
 	LOG_DBG("%s %s for up to %zu bytes. (%zd)", (ret != PSA_ERROR_STORAGE_FAILURE) ?
-		"Loaded" : "Failed to load", name, data_size, load_params.ret);
+		"Loaded" : "Failed to load", name, data_size, load_ret);
 	return ret;
 }
 
