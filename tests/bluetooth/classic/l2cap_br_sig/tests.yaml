@@ -6,6 +6,7 @@ common:
     - native_sim
   tags:
     - bluetooth
+    - classic
     - host
 tests:
-  bluetooth.host_l2cap_br_sig: {}
+  bluetooth.classic.l2cap_br_sig: {}
