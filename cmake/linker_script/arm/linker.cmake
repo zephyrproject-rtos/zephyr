@@ -309,6 +309,19 @@ foreach(path IN LISTS paths)
 endforeach()
 
 
+# Keep in sync with include/zephyr/arch/arm/cortex_m/scripts/linker.ld, which
+# includes sw-isr-table-switch-tail.ld at this point: the generated table must
+# come after every other romable section so the final link cannot shift
+# anything. Non-XIP builds are handled by ram-end.cmake instead.
+if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_SRAM_SW_ISR_TABLE
+   AND CONFIG_GEN_SW_ISR_TABLE_SWITCH AND CONFIG_XIP)
+  zephyr_linker_section(NAME sw_isr_table VMA FLASH LMA FLASH NOINPUT)
+  zephyr_linker_section_configure(
+    SECTION sw_isr_table
+    INPUT ".gnu.linkonce.sw_isr_table*"
+  )
+endif()
+
 # .last_section must be last in romable region
 # .last_section contains a fixed word to ensure location counter and actual
 # rom region data usage match when CONFIG_LINKER_LAST_SECTION_ID=y.
