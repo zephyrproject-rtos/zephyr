@@ -23,7 +23,7 @@ set(BINTOOLS llvm)
 # Developers can manually indicate library support with '-DTOOLCHAIN_HAS_<NEWLIB|PICOLIBC>=<ON|OFF>'
 
 # Support for newlib is indicated by the presence of '_newlib_version.h' in the toolchain path.
-if(NOT LLVM_TOOLCHAIN_PATH STREQUAL "")
+if(LLVM_TOOLCHAIN_PATH)
   file(GLOB_RECURSE newlib_header ${LLVM_TOOLCHAIN_PATH}/_newlib_version.h)
   if(newlib_header)
     set(TOOLCHAIN_HAS_NEWLIB ON CACHE BOOL "True if toolchain supports newlib")
