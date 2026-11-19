@@ -188,13 +188,13 @@ static int flash_ch32v_erase(const struct device *dev, off_t offset, size_t size
 {
 	const struct flash_ch32v_config *config = dev->config;
 	FLASH_TypeDef *regs = config->regs;
-	uint32_t erase_block_size = 1U << config->erase_block_shift;
+	const uint32_t erase_block_size = 1U << config->erase_block_shift;
 #ifdef FLASH_CTLR_PAGE_FTER
-	uint32_t erase_mode = config->erase_block_shift == FLASH_CH32V_STD_ERASE_SHIFT
-				      ? FLASH_CTLR_PER
-				      : FLASH_CTLR_PAGE_FTER;
+	const uint32_t erase_mode = config->erase_block_shift == FLASH_CH32V_STD_ERASE_SHIFT
+					    ? FLASH_CTLR_PER
+					    : FLASH_CTLR_PAGE_FTER;
 #else
-	uint32_t erase_mode = FLASH_CTLR_PER;
+	const uint32_t erase_mode = FLASH_CTLR_PER;
 #endif
 	int rc;
 
