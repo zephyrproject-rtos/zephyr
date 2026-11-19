@@ -8,7 +8,13 @@ description: |
     pin function selection and pin properties, such as routing the TX and RX of UART2
     to pin 0 and pin 1 of port 48.
 
-    #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzv-common.h>
+    The pin definitions are provided by a header per SoC, which includes the
+    helpers common to the RZ/V SoCs from pinctrl-rzv-common.h:
+    - pinctrl-rzv2l.h for RZ/V2L
+    - pinctrl-rzv2h.h for RZ/V2H
+    - pinctrl-rzv2n.h for RZ/V2N
+
+    #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzv2l.h>
     example_pins: device_pin {
         device-pinmux {
           pinmux = <RZV_PINMUX(PORT_04, 0, 2)>,
@@ -62,7 +68,7 @@ child-binding:
         type: array
         description: |
           Special Purpose pins configuration node.
-          Values are define in pinctrl-rzv-common.h.
+          Values are defined in the header of the SoC.
           Ex: BSP_IO_QSPI0_IO0,BSP_IO_RIIC1_SCL,...
 
       drive-strength:

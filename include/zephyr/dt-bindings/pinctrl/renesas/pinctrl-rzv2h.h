@@ -12,6 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZV2H_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZV2H_H_
 
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzv-common.h>
+
 /** @cond INTERNAL_HIDDEN */
 
 /* Superset list of all possible IO ports. */
@@ -27,15 +29,6 @@
 #define PORT_09 0x0900 /* IO port 9 */
 #define PORT_10 0x0A00 /* IO port 10 */
 #define PORT_11 0x0B00 /* IO port 11 */
-
-/*
- * Create the value contain port/pin/function information
- *
- * port: port number BSP_IO_PORT_00..BSP_IO_PORT_11
- * pin: pin number
- * func: pin function
- */
-#define RZV_PINMUX(port, pin, func) (port | pin | (func << 4))
 
 /* Special purpose port */
 #define BSP_IO_NMI 0xFFFF0100 /* NMI */
@@ -133,20 +126,6 @@
 #define BSP_IO_ET1_RXD1 0xFFFF1405 /* ET1_RXD1 */
 #define BSP_IO_ET1_RXD2 0xFFFF1406 /* ET1_RXD2 */
 #define BSP_IO_ET1_RXD3 0xFFFF1407 /* ET1_RXD3 */
-
-/* FILNUM */
-#define RZV_FILNUM_4_STAGE  0
-#define RZV_FILNUM_8_STAGE  1
-#define RZV_FILNUM_12_STAGE 2
-#define RZV_FILNUM_16_STAGE 3
-
-/* FILCLKSEL */
-#define RZV_FILCLKSEL_NOT_DIV   0
-#define RZV_FILCLKSEL_DIV_9000  1
-#define RZV_FILCLKSEL_DIV_18000 2
-#define RZV_FILCLKSEL_DIV_36000 3
-
-#define RZV_FILTER_SET(filnum, filclksel) (((filnum) & 0x3) << 0x2) | (filclksel & 0x3)
 
 /** @endcond */
 
