@@ -183,21 +183,22 @@ static int copy_words_adjust_endianness(uint8_t *dst_buf, size_t dst_len, const 
 }
 
 #ifdef CONFIG_STM32_HAL2
-static int hal2_set_config(struct crypto_stm32_data *const data, crypt_config_t *config)
+static int hal2_set_config(struct crypto_stm32_data *const data,
+			   struct crypto_stm32_session *session)
 {
-	switch (config->mode) {
+	switch (session->mode) {
 	case CRYPTO_CIPHER_MODE_ECB:
 		if (HAL_AES_ECB_SetConfig(&data->hcryp) != HAL_OK) {
 			return -EIO;
 		}
 		break;
 	case CRYPTO_CIPHER_MODE_CBC:
-		if (HAL_AES_CBC_SetConfig(&data->hcryp, config->iv) != HAL_OK) {
+		if (HAL_AES_CBC_SetConfig(&data->hcryp, session->config.iv) != HAL_OK) {
 			return -EIO;
 		}
 		break;
 	case CRYPTO_CIPHER_MODE_CTR:
-		if (HAL_AES_CTR_SetConfig(&data->hcryp, config->iv) != HAL_OK) {
+		if (HAL_AES_CTR_SetConfig(&data->hcryp, session->config.iv) != HAL_OK) {
 			return -EIO;
 		}
 		break;
@@ -244,7 +245,7 @@ static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
 	ret = hal1_l4_set_config(data, &session->config);
 #elif defined(CONFIG_STM32_HAL2)
-	ret = hal2_set_config(data, &session->config);
+	ret = hal2_set_config(data, session);
 #else
 	if (HAL_CRYP_SetConfig(&data->hcryp, &session->config) != HAL_OK) {
 		ret = -EIO;
@@ -1099,8 +1100,6 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	    HAL_OK) {
 		return -EIO;
 	}
-
-	session->config.mode = mode;
 #else
 	session->config.KeySize = key_size_id;
 	session->config.pKey = CAST_VEC(session->key);
@@ -1114,6 +1113,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) */
 #endif /* CONFIG_STM32_HAL2 */
 
+	session->mode = mode;
 	ctx->drv_sessn_state = session;
 	ctx->device = dev;
 

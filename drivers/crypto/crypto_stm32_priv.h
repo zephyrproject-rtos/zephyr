@@ -39,13 +39,13 @@ struct crypto_stm32_data {
 #ifdef CONFIG_STM32_HAL2
 /* HAL2 does not define a structure for the AES operatiopn configure, hence this local one */
 struct hal2_aes_config_data {
-	enum cipher_mode mode;
 	uint32_t *iv;
 	size_t iv_length;
 };
 #endif /* CONFIG_STM32_HAL2 */
 
 struct crypto_stm32_session {
+	enum cipher_mode mode;
 	crypt_config_t config;
 	uint32_t key[CRYPTO_STM32_AES_MAX_KEY_LEN / sizeof(uint32_t)];
 	bool in_use;
