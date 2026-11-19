@@ -398,7 +398,8 @@ int main(void)
 		create_sync();
 
 		printk("Waiting for periodic sync...\n");
-		err = k_sem_take(&sem_per_sync, K_MSEC(sync_create_timeout));
+		/* sync_create_timeout is in units of 10 ms */
+		err = k_sem_take(&sem_per_sync, K_MSEC(sync_create_timeout * 10U));
 		if (err != 0 || sync_terminated) {
 			if (err != 0) {
 				printk("failed (err %d)\n", err);
