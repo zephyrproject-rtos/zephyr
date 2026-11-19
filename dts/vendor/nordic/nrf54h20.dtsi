@@ -20,35 +20,35 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	power-states {
+		// substate-id = <0>; is reserved for "idle", cache powered on
+		idle_cache_retained: idle_cache_retained {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <700>;
+			exit-latency-us = <5>;
+		};
+
+		idle_cache_disabled: idle_cache_disabled {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <1000>;
+			exit-latency-us = <7>;
+		};
+
+		s2ram: s2ram {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			min-residency-us = <2000>;
+			exit-latency-us = <33>;
+		};
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		power-states {
-			// substate-id = <0>; is reserved for "idle", cache powered on
-			idle_cache_retained: idle_cache_retained {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				substate-id = <1>;
-				min-residency-us = <700>;
-				exit-latency-us = <5>;
-			};
-
-			idle_cache_disabled: idle_cache_disabled {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				substate-id = <2>;
-				min-residency-us = <1000>;
-				exit-latency-us = <7>;
-			};
-
-			s2ram: s2ram {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-ram";
-				min-residency-us = <2000>;
-				exit-latency-us = <33>;
-			};
-		};
 
 		cpuapp: cpu@2 {
 			compatible = "arm,cortex-m33";
