@@ -4,11 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "display_ili9881c_dsi.h"
 #include "display_ili98xx_dsi.h"
 
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
+
+#define DT_DRV_COMPAT ilitek_ili9881c
+
 LOG_MODULE_REGISTER(display_ili9881c_dsi, CONFIG_DISPLAY_LOG_LEVEL);
 
 static const struct ili98xx_dsi_cmd ili9881c_init_cmds[] = {
@@ -226,3 +228,10 @@ int ili9881c_dsi_regs_init(const struct device *dev)
 {
 	return ili98xx_dsi_write_sequence(dev, ili9881c_init_cmds, ARRAY_SIZE(ili9881c_init_cmds));
 }
+
+ILI98XX_DSI_API_DEFINE(ili98xx_dsi_api)
+
+#define ILI9881C_DSI_INIT(inst) \
+	ILI98XX_DSI_INIT(DT_DRV_INST(inst), ili9881c_dsi_regs_init, ili98xx_dsi_api)
+
+DT_INST_FOREACH_STATUS_OKAY(ILI9881C_DSI_INIT)

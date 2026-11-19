@@ -8,8 +8,12 @@
 #include "display_ili9806e_dsi.h"
 #include "display_ili98xx_dsi.h"
 
+#include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
+
+#define DT_DRV_COMPAT ilitek_ili9806e
+
 LOG_MODULE_REGISTER(display_ili9806e_dsi, CONFIG_DISPLAY_LOG_LEVEL);
 
 static const struct ili98xx_dsi_cmd ili9806e_init_cmds[] = {
@@ -186,7 +190,14 @@ static const struct ili98xx_dsi_cmd ili9806e_init_cmds[] = {
 	{.reg = ILI98XX_DSI_ENEXTC, .cmd_len = 5, .cmd = {0xff, 0x98, 0x06, 0x04, 0x00}},
 };
 
-int ili9806e_dsi_regs_init(const struct device *dev)
+static int ili9806e_dsi_regs_init(const struct device *dev)
 {
 	return ili98xx_dsi_write_sequence(dev, ili9806e_init_cmds, ARRAY_SIZE(ili9806e_init_cmds));
 }
+
+ILI98XX_DSI_API_DEFINE(ili98xx_dsi_api)
+
+#define ILI9806E_DSI_INIT(inst) \
+	ILI98XX_DSI_INIT(DT_DRV_INST(inst), ili9806e_dsi_regs_init, ili98xx_dsi_api)
+
+DT_INST_FOREACH_STATUS_OKAY(ILI9806E_DSI_INIT)

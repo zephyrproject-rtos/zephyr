@@ -157,4 +157,55 @@ struct ili98xx_dsi_config {
 int ili98xx_dsi_write_sequence(const struct device *dev, const struct ili98xx_dsi_cmd *cmds,
 			       size_t nr_cmds);
 
+
+/**
+ * @brief Initialize an ILI98XX DSI device.
+ *
+ * @param dev ILI9XXX DSI device instance
+ * @return 0 on success, errno otherwise.
+ */
+int ili98xx_dsi_init(const struct device *dev);
+
+/* API functions implemented by commont driver */
+int ili98xx_dsi_blanking_on(const struct device *dev);
+int ili98xx_dsi_blanking_off(const struct device *dev);
+int ili98xx_dsi_set_pixel_format(const struct device *dev, enum display_pixel_format format);
+void ili98xx_dsi_get_capabilities(const struct device *dev,
+				  struct display_capabilities *capabilities);
+
+#define ILI98XX_DSI_API_DEFINE(name) \
+	DEVICE_API(display, name) = { \
+		.blanking_on = ili98xx_dsi_blanking_on, \
+		.blanking_off = ili98xx_dsi_blanking_off, \
+		.set_pixel_format = ili98xx_dsi_set_pixel_format, \
+		.get_capabilities = ili98xx_dsi_get_capabilities, \
+	};
+
+#define _ILI98XX_DSI_INIT(node, init_fn, api_name)                                                 \
+	static const struct ili98xx_dsi_config ili##node##_dsi_config = {                          \
+		.mipi_dsi = DEVICE_DT_GET(DT_PARENT(node)),                                        \
+		.reset = GPIO_DT_SPEC_GET_OR(node, reset_gpios, {0}),                              \
+		.backlight = GPIO_DT_SPEC_GET_OR(node, bl_gpios, {0}),                             \
+		.data_lanes = DT_PROP_BY_IDX(node, data_lanes, 0),                                 \
+		.width = DT_PROP(node, width),                                                     \
+		.height = DT_PROP(node, height),                                                   \
+		.channel = DT_REG_ADDR(node),                                                      \
+		.pixel_format = DT_PROP(node, pixel_format),                                       \
+		.regs_init_fn = init_fn,                                                           \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_DEFINE(node, ili98xx_dsi_init, NULL, NULL,                                       \
+			 &ili##node##_dsi_config, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,   \
+			 &api_name)
+
+/**
+ * @brief Instantiate an ILI98XX DSI device.
+ *
+ * @param node Device tree node identifier
+ * @param init_fn Initialization function for the panel registers
+ * @param api_name Name of the API structure to use for this device
+ */
+#define ILI98XX_DSI_INIT(node, init_fn, api_name) _ILI98XX_DSI_INIT(node, init_fn, api_name)
+
+
 #endif /* ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI98XX_DSI_H_ */
