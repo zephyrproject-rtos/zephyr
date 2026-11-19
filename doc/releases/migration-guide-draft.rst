@@ -698,6 +698,8 @@ Modules
   with untrusted input (`GHSA-fmpg-qc28-5x4x
   <https://github.com/nanopb/nanopb/security/advisories/GHSA-fmpg-qc28-5x4x>`_). Use the
   ``submsg_callback``, ``no_unions`` or ``callback_function`` generator options instead.
+  Applications that only decode trusted data can restore the old behavior with
+  :kconfig:option:`CONFIG_NANOPB_UNSAFE_DECODE_ONEOF_CALLBACKS`.
 
 Architectures
 *************

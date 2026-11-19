@@ -48,4 +48,9 @@ if(CONFIG_NANOPB)
     PB_VALIDATE_UTF8
   )
 
+  zephyr_compile_definitions_ifdef(
+    CONFIG_NANOPB_UNSAFE_DECODE_ONEOF_CALLBACKS
+    PB_ENABLE_UNSAFE_DECODE_ONEOF_CALLBACKS
+  )
+
 endif()

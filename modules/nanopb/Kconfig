@@ -56,4 +56,17 @@ config NANOPB_VALIDATE_UTF8
 	  Check whether incoming strings are valid UTF-8 sequences.
 	  Adds a small performance and code size penalty.
 
+config NANOPB_UNSAFE_DECODE_ONEOF_CALLBACKS
+	bool "Decode callback fields directly inside oneofs [UNSAFE]"
+	select NOT_SECURE
+	help
+	  Call callbacks set on fields that are placed directly inside a
+	  oneof when decoding. Without this option the decoder clears such
+	  callbacks, so they are never called.
+	  This is not safe when decoding untrusted data, which can make the
+	  decoder call a function pointer taken from the message contents.
+	  Only enable it for existing code that decodes trusted data, and
+	  prefer the submsg_callback, no_unions or callback_function
+	  generator options.
+
 endif # NANOPB
