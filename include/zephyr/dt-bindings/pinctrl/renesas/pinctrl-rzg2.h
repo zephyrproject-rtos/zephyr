@@ -9,8 +9,10 @@
  * @ingroup pinctrl_rzg
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG2_COMMON_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG2_COMMON_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG2_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG2_H_
+
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzg-common.h>
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -64,15 +66,6 @@
 #define PORT_46 0x2E00 /* IO port 46 */
 #define PORT_47 0x2F00 /* IO port 47 */
 #define PORT_48 0x3000 /* IO port 48 */
-
-/*
- * Create the value contain port/pin/function information
- *
- * port: port number BSP_IO_PORT_00..BSP_IO_PORT_48
- * pin: pin number
- * func: pin function
- */
-#define RZG_PINMUX(port, pin, func) (port | pin | (func << 4))
 
 /* Special purpose port */
 #define BSP_IO_NMI 0xFFFF0100 /* NMI */
@@ -129,20 +122,12 @@
 #define BSP_IO_RIIC1_SDA 0xFFFF0E02 /* RIIC1_SDA */
 #define BSP_IO_RIIC1_SCL 0xFFFF0E03 /* RIIC1_SCL */
 
-/* FILNUM */
-#define RZG_FILNUM_4_STAGE  0
-#define RZG_FILNUM_8_STAGE  1
-#define RZG_FILNUM_12_STAGE 2
-#define RZG_FILNUM_16_STAGE 3
-
-/* FILCLKSEL */
-#define RZG_FILCLKSEL_NOT_DIV   0
-#define RZG_FILCLKSEL_DIV_9000  1
-#define RZG_FILCLKSEL_DIV_18000 2
-#define RZG_FILCLKSEL_DIV_36000 3
-
-#define RZG_FILTER_SET(filnum, filclksel) (((filnum) & 0x3) << 0x2) | (filclksel & 0x3)
+/* Digital noise filter sampling clock divider (FILCLKSEL) */
+#define RZG_FILCLKSEL_NOT_DIV   0 /* FILCLKSEL: no division */
+#define RZG_FILCLKSEL_DIV_9000  1 /* FILCLKSEL: divided by 9000 */
+#define RZG_FILCLKSEL_DIV_18000 2 /* FILCLKSEL: divided by 18000 */
+#define RZG_FILCLKSEL_DIV_36000 3 /* FILCLKSEL: divided by 36000 */
 
 /** @endcond */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG2_COMMON_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG2_H_ */

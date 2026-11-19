@@ -8,12 +8,13 @@ description: |
     The Renesas RZ/G pin controller is a node responsible for controlling
     pin function selection and pin properties.
 
-    The pre-defined combinations for the RZ/G variants are defined in the below headers
-    - pinctrl-rzg-common.h for RZ/G3S
+    The pin definitions are provided by a header per SoC, which includes the
+    helpers common to the RZ/G SoCs from pinctrl-rzg-common.h:
+    - pinctrl-rzg2.h for RZ/G2L, RZ/G2LC, RZ/G2UL
+    - pinctrl-rzg3s.h for RZ/G3S
     - pinctrl-rzg3e.h for RZ/G3E
-    - pinctrl-rzg2-common.h for RZ/G2L, RZ/G2LC, RZ/G2UL
 
-    #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzg(2)-common.h>
+    #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzg3s.h>
     example_pins: device_pin {
         device-pinmux {
           pinmux = <RZG_PINMUX(PORT_08, 1, 5)>,
@@ -67,13 +68,13 @@ child-binding:
           Pinmux configuration node.
           Values are constructed from GPIO port number, pin number, and
           alternate function configuration number using the RZG_PINMUX()
-          helper macro in pinctrl-rzg(2)-common.h.
+          helper macro in pinctrl-rzg-common.h.
 
       pins:
         type: array
         description: |
           Special Purpose pins configuration node.
-          Values are define in pinctrl-rzg(2)-common.h.
+          Values are defined in the header of the SoC.
           Ex: BSP_IO_XSPI_IO0,BSP_IO_I3C_SCL,...
 
       drive-strength:
@@ -97,7 +98,7 @@ child-binding:
         default: 0
         description: |
           Digital Noise Filter configuration for a pin which shell be defined
-          using RZG_FILTER_SET() helper macro in pinctrl_rzg.h to specify
+          using RZG_FILTER_SET() helper macro in pinctrl-rzg-common.h to specify
           FILNUM_m and FILCLKSEL_m. With 24Mhz external clock:
           - min debounce time will be 166.666ns for FILNUM_m=0 and FILCLKSEL_m=0
           - max debounce time will be 24ms for FILNUM_m=3 and FILCLKSEL_m=3.

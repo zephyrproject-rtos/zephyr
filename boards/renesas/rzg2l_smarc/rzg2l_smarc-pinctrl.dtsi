@@ -4,7 +4,7 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzg2-common.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzg2.h>
 
 &pinctrl {
 	/omit-if-no-ref/ scif0_pins: scif0 {

@@ -16,6 +16,8 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG3E_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZG3E_H_
 
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzg-common.h>
+
 /** @cond INTERNAL_HIDDEN */
 
 /**
@@ -79,14 +81,9 @@
 /**
  * @name  Renesas RZ/G3E Digital Noise Filter Options
  *
- * Set the number of stages (FILNUM) and the sampling internal (FILCLKSEL)
+ * Set the sampling clock divider (FILCLKSEL).
  * @{
  */
-
-#define RZG_FILNUM_4_STAGE  0 /**< FILNUM: 4-stage filter */
-#define RZG_FILNUM_8_STAGE  1 /**< FILNUM: 8-stage filter */
-#define RZG_FILNUM_12_STAGE 2 /**< FILNUM: 12-stage filter */
-#define RZG_FILNUM_16_STAGE 3 /**< FILNUM: 16-stage filter */
 
 #define RZG_FILCLKSEL_DIV_4   0 /**< FILCLKSEL: divided by 4 */
 #define RZG_FILCLKSEL_DIV_32  1 /**< FILCLKSEL: divided by 32 */
@@ -94,31 +91,6 @@
 #define RZG_FILCLKSEL_DIV_256 3 /**< FILCLKSEL: divided by 256 */
 
 /** @} */
-
-/**
- * @brief Create an encoded value containing port/pin/function information.
- *
- * @param port Port identifier (PORT_00..PORT_28).
- * @param pin Pin number within the port.
- * @param func Pin function selector.
- *
- * @return Encoded pinmux value.
- */
-#define RZG_PINMUX(port, pin, func) (port | pin | ((func) << 4))
-
-/**
- * @brief Encode filter stage count and clock selection into one configuration value.
- *
- * Encoding:
- * - bits [3:2] = FILNUM (masked to 2 bits)
- * - bits [1:0] = FILCLKSEL (masked to 2 bits)
- *
- * @param filnum Filter stage selection (RZG_FILNUM_*).
- * @param filclksel Filter clock selection (RZG_FILCLKSEL_*).
- *
- * @return Encoded filter configuration value.
- */
-#define RZG_FILTER_SET(filnum, filclksel) (((filnum) & 0x3) << 0x2) | (filclksel & 0x3)
 
 /** @endcond */
 
