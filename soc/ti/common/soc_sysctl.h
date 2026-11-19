@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_TI_MSPM_COMMON_SOC_SYSCTL_H_
-#define ZEPHYR_SOC_TI_MSPM_COMMON_SOC_SYSCTL_H_
+#ifndef ZEPHYR_SOC_TI_COMMON_SOC_SYSCTL_H_
+#define ZEPHYR_SOC_TI_COMMON_SOC_SYSCTL_H_
 
 #include <zephyr/sys/util.h>
 
 /**
- * @brief MSPM SYSCTL soclock Register Offsets
+ * @brief TI SYSCTL soclock Register Offsets
  *
  * Offsets are relative to the SYSCTL base (soclock region base = SYSCTL base + 0x1000).
  */
@@ -24,7 +24,7 @@
 #define SYSCTL_SYSPLLPARAM0_OFFSET 0x1128 /**< SYSPLL param0 */
 #define SYSCTL_SYSPLLPARAM1_OFFSET 0x112C /**< SYSPLL param1 */
 
-#if defined(CONFIG_SOC_SERIES_MSPM33C)
+#if defined(CONFIG_SOC_SERIES_MSPM33C) || defined(CONFIG_SOC_SERIES_AM13E)
 #define SYSCTL_SYSPLLPARAM2_OFFSET  0x1130 /**< SYSPLL param2 */
 #define SYSCTL_SYSPLLLDOCTL_OFFSET  0x1134 /**< SYSPLL LDO ctl */
 #define SYSCTL_SYSPLLLDOPROG_OFFSET 0x1138 /**< SYSPLL LDO VOUT PROG */
@@ -43,6 +43,9 @@
 #define SYSCTL_RESETCMD_OFFSET       0x1304 /**< Execute app-triggered reset */
 #define SYSCTL_LFXTCTL_OFFSET        0x1314 /**< LFXT and LFCLK control */
 #define SYSCTL_EXLFCTL_OFFSET        0x1318 /**< LFCLK_IN control */
+
+#define SYSCTL_XTALCR_OFFSET 0x1474 /**< XTAL control */
+#define SYSCTL_X1CNT_OFFSET  0x147C /**< X1 oscillator activity counter */
 
 /* sysosccfg bits */
 #define SYSCTL_SYSOSCCFG_DISABLE       BIT(10)
@@ -117,6 +120,15 @@
 /* hsclkcfg bits */
 #define SYSCTL_HSCLKCFG_HSCLKSEL BIT(0)
 
+/* xtalcr bits */
+#define SYSCTL_XTALCR_SE     BIT(1)
+#define SYSCTL_XTALCR_OSCOFF BIT(0)
+
+/* x1cnt bits */
+#define SYSCTL_X1CNT_CLR       BIT(16)
+#define SYSCTL_X1CNT_CNT       GENMASK(10, 0)
+#define SYSCTL_X1CNT_SATURATED (0x7FFU)
+
 /* hfclkclkcfg bits */
 #define SYSCTL_HFCLKCLKCFG_HFCLKFLTCHK        BIT(28)
 #define SYSCTL_HFCLKCLKCFG_HFXTRSEL           GENMASK(13, 12)
@@ -165,4 +177,4 @@
 #define SYSCTL_EXLFCTL_KEY_VAL    (0x36)
 #define SYSCTL_EXLFCTL_SETUSEEXLF BIT(0)
 
-#endif /* ZEPHYR_SOC_TI_MSPM_COMMON_SOC_SYSCTL_H_ */
+#endif /* ZEPHYR_SOC_TI_COMMON_SOC_SYSCTL_H_ */

@@ -20,11 +20,27 @@
 
 LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_SERIES_MSPM33C)
+#if defined(CONFIG_SOC_SERIES_MSPM33C) || defined(CONFIG_SOC_SERIES_AM13E)
 #define MSPM0_REQUIRES_SYSPLLPARAM2 1
 #define MSPM0_CONFIGURE_WAIT_STATES 1
 #define MSPM0_HAS_MCLK_DIV2_DIV4    1
 #define MSPM0_MCLK_CANNOT_USE_LFCLK 1
+#endif
+
+#if defined(CONFIG_SOC_SERIES_MSPM33C)
+#define MSPM0_HAS_RAM_WAIT_STATES 1
+#endif
+
+/*
+ * AM13E has no HSCLKEN.HFXTEN/HFCLKCLKCFG.HFXTRSEL; the XTAL is powered up
+ * via XTALCR.OSCOFF and its startup is confirmed by polling X1CNT for
+ * saturation instead of CLKSTATUS.HFCLKGOOD
+ * Same HFCLKCLKCFG.XTALTIME/HFCLKFLTCHK bits either way.
+ */
+#if defined(CONFIG_SOC_SERIES_AM13E)
+#define MSPM0_HFXT_VIA_XTALCR 1
+/* Repeat X1CNT check 4 times, as mentioned in the TRM */
+#define MSPM0_HFXT_X1CNT_ROUNDS 4
 #endif
 
 #if defined(CONFIG_SOC_SERIES_MSPM0L) || defined(CONFIG_SOC_SERIES_MSPM0G)
@@ -227,28 +243,30 @@ struct clock_mspm0_config {
 #endif
 #if defined(MSPM0_CONFIGURE_WAIT_STATES)
 	const struct device *fri;
+#endif
+#if defined(MSPM0_HAS_RAM_WAIT_STATES)
 	const struct device *memcfg;
 #endif
 };
 
 #define MSPM0_CLK_WAIT_RETRIES 100000
 
-static int clock_mspm0_wait_clkstatus(const struct device *sysctl, uint32_t mask, bool set,
-				      uint32_t timeout_us)
+static int clock_mspm0_wait_reg(const struct device *sysctl, uint32_t offset, uint32_t mask,
+				uint32_t expect, uint32_t timeout_us)
 {
-	uint32_t clkstatus;
+	uint32_t val;
 	int ret;
 
 	if (k_is_pre_kernel()) {
 		uint32_t retries = MSPM0_CLK_WAIT_RETRIES;
 
 		do {
-			ret = syscon_read_reg(sysctl, SYSCTL_CLKSTATUS_OFFSET, &clkstatus);
+			ret = syscon_read_reg(sysctl, offset, &val);
 			if (ret < 0) {
 				return ret;
 			}
 
-			if (!!(clkstatus & mask) == set) {
+			if ((val & mask) == expect) {
 				return 0;
 			}
 		} while (retries--);
@@ -258,12 +276,12 @@ static int clock_mspm0_wait_clkstatus(const struct device *sysctl, uint32_t mask
 		uint32_t timeout_cycles = k_us_to_cyc_ceil32(timeout_us);
 
 		do {
-			ret = syscon_read_reg(sysctl, SYSCTL_CLKSTATUS_OFFSET, &clkstatus);
+			ret = syscon_read_reg(sysctl, offset, &val);
 			if (ret < 0) {
 				return ret;
 			}
 
-			if (!!(clkstatus & mask) == set) {
+			if ((val & mask) == expect) {
 				return 0;
 			}
 		} while ((k_cycle_get_32() - start_cycles) < timeout_cycles);
@@ -341,8 +359,9 @@ static int clock_mspm0_on(const struct device *dev, clock_control_subsys_t sys)
 		if (ret < 0) {
 			return ret;
 		}
-		return clock_mspm0_wait_clkstatus(cfg->sysctl, SYSCTL_CLKSTATUS_SYSPLLGOOD, true,
-						  MSPM0_CLK_WAIT_TIMEOUT_US);
+		return clock_mspm0_wait_reg(cfg->sysctl, SYSCTL_CLKSTATUS_OFFSET,
+					    SYSCTL_CLKSTATUS_SYSPLLGOOD,
+					    SYSCTL_CLKSTATUS_SYSPLLGOOD, MSPM0_CLK_WAIT_TIMEOUT_US);
 	}
 #endif /* DT_SYSPLL_OKAY */
 
@@ -375,8 +394,9 @@ static int clock_mspm0_off(const struct device *dev, clock_control_subsys_t sys)
 		if (ret < 0) {
 			return ret;
 		}
-		return clock_mspm0_wait_clkstatus(cfg->sysctl, SYSCTL_CLKSTATUS_SYSPLLOFF, true,
-						  MSPM0_CLK_WAIT_TIMEOUT_US);
+		return clock_mspm0_wait_reg(cfg->sysctl, SYSCTL_CLKSTATUS_OFFSET,
+					    SYSCTL_CLKSTATUS_SYSPLLOFF, SYSCTL_CLKSTATUS_SYSPLLOFF,
+					    MSPM0_CLK_WAIT_TIMEOUT_US);
 	}
 #endif /* DT_SYSPLL_OKAY */
 
@@ -952,14 +972,22 @@ static int clock_mspm0_syspll_load_trim(const struct device *dev, uint32_t floop
 #endif /* MSPM0_HAS_CPUSS */
 
 #if defined(MSPM0_CONFIGURE_WAIT_STATES)
-	ret = syscon_update_bits(
-		cfg->fri, FRI_FRDCNTL_OFFSET,
-		FRI_FRDCNTL_TRIMENGRRWAIT | FRI_FRDCNTL_RWAIT | FRI_FRDCNTL_WS0_MODE,
-		FIELD_PREP(FRI_FRDCNTL_TRIMENGRRWAIT, 2) | FIELD_PREP(FRI_FRDCNTL_RWAIT, 2));
-	if (ret < 0) {
-		return ret;
+	{
+		uint32_t frdcntl_mask = FRI_FRDCNTL_RWAIT | FRI_FRDCNTL_WS0_MODE;
+		uint32_t frdcntl_val = FIELD_PREP(FRI_FRDCNTL_RWAIT, 2);
+
+#if defined(MSPM0_HAS_RAM_WAIT_STATES)
+		frdcntl_mask |= FRI_FRDCNTL_TRIMENGRRWAIT;
+		frdcntl_val |= FIELD_PREP(FRI_FRDCNTL_TRIMENGRRWAIT, 2);
+#endif /* defined(MSPM0_HAS_RAM_WAIT_STATES) */
+
+		ret = syscon_update_bits(cfg->fri, FRI_FRDCNTL_OFFSET, frdcntl_mask, frdcntl_val);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
+#if defined(MSPM0_HAS_RAM_WAIT_STATES)
 	ret = syscon_update_bits(
 		cfg->memcfg, MEMCFG_RAM_WS_CONFIG_OFFSET,
 		MEMCFG_RAM_WS_CONFIG_ULL_WS_ENABLE | MEMCFG_RAM_WS_CONFIG_GLXMP_0_WS_ENABLE |
@@ -971,6 +999,7 @@ static int clock_mspm0_syspll_load_trim(const struct device *dev, uint32_t floop
 	if (ret < 0) {
 		return ret;
 	}
+#endif /* defined(MSPM0_HAS_RAM_WAIT_STATES) */
 #endif /* defined(MSPM0_CONFIGURE_WAIT_STATES) */
 
 	if (floopin_hz >= MHZ(4) && floopin_hz < MHZ(8)) {
@@ -1228,6 +1257,35 @@ static int clock_mspm0_configure_hfclk(const struct device *sysctl, enum mspm0_c
 	switch (source) {
 #if DT_HFXT_OKAY
 	case MSPM0_CLOCK_SRC_HFXT:
+		/* set HFXT startup time */
+		ret = syscon_update_bits(sysctl, SYSCTL_HFCLKCLKCFG_OFFSET,
+					 SYSCTL_HFCLKCLKCFG_HFXTTIME,
+					 SYSCTL_HFCLKCLKCFG_HFXTTIME_VAL(MSPM0_HFXT_STARTUP_US));
+		if (ret < 0) {
+			return ret;
+		}
+
+#if defined(MSPM0_HFXT_VIA_XTALCR)
+		ret = syscon_update_bits(sysctl, SYSCTL_XTALCR_OFFSET, SYSCTL_XTALCR_OSCOFF, 0);
+		if (ret < 0) {
+			return ret;
+		}
+
+		for (int i = 0; i < MSPM0_HFXT_X1CNT_ROUNDS; i++) {
+			ret = syscon_write_reg(sysctl, SYSCTL_X1CNT_OFFSET, SYSCTL_X1CNT_CLR);
+			if (ret < 0) {
+				return ret;
+			}
+
+			ret = clock_mspm0_wait_reg(
+				sysctl, SYSCTL_X1CNT_OFFSET, SYSCTL_X1CNT_CNT,
+				SYSCTL_X1CNT_SATURATED,
+				MSPM0_XTAL_WAIT_TIMEOUT_US(MSPM0_HFXT_STARTUP_US));
+			if (ret < 0) {
+				return ret;
+			}
+		}
+#else
 		/* disable HFXT */
 		ret = syscon_update_bits(sysctl, SYSCTL_HSCLKEN_OFFSET, SYSCTL_HSCLKEN_HFXTEN, 0);
 		if (ret < 0) {
@@ -1241,14 +1299,7 @@ static int clock_mspm0_configure_hfclk(const struct device *sysctl, enum mspm0_c
 		if (ret < 0) {
 			return ret;
 		}
-
-		/* set HFXT startup time */
-		ret = syscon_update_bits(sysctl, SYSCTL_HFCLKCLKCFG_OFFSET,
-					 SYSCTL_HFCLKCLKCFG_HFXTTIME,
-					 SYSCTL_HFCLKCLKCFG_HFXTTIME_VAL(MSPM0_HFXT_STARTUP_US));
-		if (ret < 0) {
-			return ret;
-		}
+#endif /* defined(MSPM0_HFXT_VIA_XTALCR) */
 
 		/* set HFXT input as HFCLK source */
 		ret = syscon_update_bits(sysctl, SYSCTL_HSCLKEN_OFFSET, SYSCTL_HSCLKEN_USEEXTHFCLK,
@@ -1257,12 +1308,14 @@ static int clock_mspm0_configure_hfclk(const struct device *sysctl, enum mspm0_c
 			return ret;
 		}
 
+#if !defined(MSPM0_HFXT_VIA_XTALCR)
 		/* enable HFXT */
 		ret = syscon_update_bits(sysctl, SYSCTL_HSCLKEN_OFFSET, SYSCTL_HSCLKEN_HFXTEN,
 					 SYSCTL_HSCLKEN_HFXTEN);
 		if (ret < 0) {
 			return ret;
 		}
+#endif /* !defined(MSPM0_HFXT_VIA_XTALCR) */
 
 		/* enable HFXT startup monitor */
 		ret = syscon_update_bits(sysctl, SYSCTL_HFCLKCLKCFG_OFFSET,
@@ -1292,7 +1345,8 @@ static int clock_mspm0_configure_hfclk(const struct device *sysctl, enum mspm0_c
 	}
 
 	/* wait for HFCLK to stabilize */
-	return clock_mspm0_wait_clkstatus(sysctl, SYSCTL_CLKSTATUS_HFCLKGOOD, true, timeout_us);
+	return clock_mspm0_wait_reg(sysctl, SYSCTL_CLKSTATUS_OFFSET, SYSCTL_CLKSTATUS_HFCLKGOOD,
+				    SYSCTL_CLKSTATUS_HFCLKGOOD, timeout_us);
 }
 #endif /* DT_HFCLK_OKAY */
 
@@ -1331,8 +1385,9 @@ static int clock_mspm0_configure_lfclk(const struct device *sysctl, enum mspm0_c
 		}
 
 		/* wait for LFXT to stabilize */
-		ret = clock_mspm0_wait_clkstatus(sysctl, SYSCTL_CLKSTATUS_LFXTGOOD, true,
-						 MSPM0_XTAL_WAIT_TIMEOUT_US(MSPM0_LFXT_STARTUP_US));
+		ret = clock_mspm0_wait_reg(sysctl, SYSCTL_CLKSTATUS_OFFSET,
+					   SYSCTL_CLKSTATUS_LFXTGOOD, SYSCTL_CLKSTATUS_LFXTGOOD,
+					   MSPM0_XTAL_WAIT_TIMEOUT_US(MSPM0_LFXT_STARTUP_US));
 		if (ret < 0) {
 			return ret;
 		}
@@ -1346,8 +1401,9 @@ static int clock_mspm0_configure_lfclk(const struct device *sysctl, enum mspm0_c
 		}
 
 		/* wait for lfosc to turn off */
-		ret = clock_mspm0_wait_clkstatus(sysctl, SYSCTL_CLKSTATUS_LFOSCGOOD, false,
-						 MSPM0_CLK_WAIT_TIMEOUT_US);
+		ret = clock_mspm0_wait_reg(sysctl, SYSCTL_CLKSTATUS_OFFSET,
+					   SYSCTL_CLKSTATUS_LFOSCGOOD, 0,
+					   MSPM0_CLK_WAIT_TIMEOUT_US);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1465,8 +1521,8 @@ static int clock_mspm0_configure_mclk(const struct device *sysctl, enum mspm0_cl
 	}
 
 	/* verify that MCLK is not sourced from LFCLK */
-	ret = clock_mspm0_wait_clkstatus(sysctl, SYSCTL_CLKSTATUS_CURMCLKSEL, false,
-					 MSPM0_CLK_WAIT_TIMEOUT_US);
+	ret = clock_mspm0_wait_reg(sysctl, SYSCTL_CLKSTATUS_OFFSET, SYSCTL_CLKSTATUS_CURMCLKSEL, 0,
+				   MSPM0_CLK_WAIT_TIMEOUT_US);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1478,8 +1534,8 @@ static int clock_mspm0_configure_mclk(const struct device *sysctl, enum mspm0_cl
 	}
 
 	/* verify that MCLK is not sourced from HSCLK */
-	ret = clock_mspm0_wait_clkstatus(sysctl, SYSCTL_CLKSTATUS_HSCLKMUX, false,
-					 MSPM0_CLK_WAIT_TIMEOUT_US);
+	ret = clock_mspm0_wait_reg(sysctl, SYSCTL_CLKSTATUS_OFFSET, SYSCTL_CLKSTATUS_HSCLKMUX, 0,
+				   MSPM0_CLK_WAIT_TIMEOUT_US);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1500,8 +1556,9 @@ static int clock_mspm0_configure_mclk(const struct device *sysctl, enum mspm0_cl
 		}
 
 		/* verify that MCLK is sourced from LFCLK */
-		ret = clock_mspm0_wait_clkstatus(sysctl, SYSCTL_CLKSTATUS_CURMCLKSEL, true,
-						 MSPM0_CLK_WAIT_TIMEOUT_US);
+		ret = clock_mspm0_wait_reg(sysctl, SYSCTL_CLKSTATUS_OFFSET,
+					   SYSCTL_CLKSTATUS_CURMCLKSEL, SYSCTL_CLKSTATUS_CURMCLKSEL,
+					   MSPM0_CLK_WAIT_TIMEOUT_US);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1517,8 +1574,9 @@ static int clock_mspm0_configure_mclk(const struct device *sysctl, enum mspm0_cl
 		}
 
 		/* verify that MCLK is sourced from HSCLK */
-		ret = clock_mspm0_wait_clkstatus(sysctl, SYSCTL_CLKSTATUS_HSCLKMUX, true,
-						 MSPM0_CLK_WAIT_TIMEOUT_US);
+		ret = clock_mspm0_wait_reg(sysctl, SYSCTL_CLKSTATUS_OFFSET,
+					   SYSCTL_CLKSTATUS_HSCLKMUX, SYSCTL_CLKSTATUS_HSCLKMUX,
+					   MSPM0_CLK_WAIT_TIMEOUT_US);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1582,8 +1640,9 @@ static int clock_mspm0_configure_hsclk(const struct device *sysctl, enum mspm0_c
 
 	/* verify that HSCLK started, unless the source itself was rejected above */
 	if (ret == 0) {
-		ret = clock_mspm0_wait_clkstatus(sysctl, SYSCTL_CLKSTATUS_HSCLKGOOD, true,
-						 MSPM0_CLK_WAIT_TIMEOUT_US);
+		ret = clock_mspm0_wait_reg(sysctl, SYSCTL_CLKSTATUS_OFFSET,
+					   SYSCTL_CLKSTATUS_HSCLKGOOD, SYSCTL_CLKSTATUS_HSCLKGOOD,
+					   MSPM0_CLK_WAIT_TIMEOUT_US);
 	}
 
 	/* Restore MCLK to HSCLK regardless of whether the switch above
@@ -1878,6 +1937,8 @@ static const struct clock_mspm0_config clock_mspm0_cfg = {
 #endif
 #if defined(MSPM0_CONFIGURE_WAIT_STATES)
 	.fri = DEVICE_DT_GET(DT_PHANDLE(DT_NODELABEL(ckm), fri)),
+#endif
+#if defined(MSPM0_HAS_RAM_WAIT_STATES)
 	.memcfg = DEVICE_DT_GET(DT_PHANDLE(DT_NODELABEL(ckm), memcfg)),
 #endif
 };

@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_TI_MSPM_COMMON_SOC_MEMCFG_H_
-#define ZEPHYR_SOC_TI_MSPM_COMMON_SOC_MEMCFG_H_
+#ifndef ZEPHYR_SOC_TI_COMMON_SOC_MEMCFG_H_
+#define ZEPHYR_SOC_TI_COMMON_SOC_MEMCFG_H_
 
 #include <zephyr/sys/util.h>
 
 /**
- * @brief MSPM MEMCFG Register Offsets
+ * @brief TI MEMCFG Register Offsets
  */
 #define MEMCFG_RAM_WS_CONFIG_OFFSET 0x1008 /**< RAM wait state configuration */
 
@@ -19,4 +19,4 @@
 #define MEMCFG_RAM_WS_CONFIG_GLXMP_0_WS_ENABLE BIT(1) /**< GLXMP_0 RAM waitstate enable */
 #define MEMCFG_RAM_WS_CONFIG_ULL_WS_ENABLE     BIT(0) /**< ULL RAM waitstate enable */
 
-#endif /* ZEPHYR_SOC_TI_MSPM_COMMON_SOC_MEMCFG_H_ */
+#endif /* ZEPHYR_SOC_TI_COMMON_SOC_MEMCFG_H_ */
