@@ -116,6 +116,22 @@
 			compatible = "mmio-sram";
 		};
 
+		dma0: dma@40020000 {
+			compatible = "ti,mspm0-dma";
+			reg = <0x40020000 0x2000>;
+			interrupts = <43 0>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		dma1: dma@40022000 {
+			compatible = "ti,mspm0-dma";
+			reg = <0x40022000 0x2000>;
+			interrupts = <44 0>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
 		fri: syscon@40028000 {
 			compatible = "syscon";
 			reg = <0x40028000 0x2000>;
