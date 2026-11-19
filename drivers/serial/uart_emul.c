@@ -820,6 +820,10 @@ static int uart_emul_rx_enable(const struct device *dev, uint8_t *buf, size_t le
 	int ret = 0;
 	bool rx_stopping = false;
 
+	if (data->uart_callback == NULL) {
+		return -EINVAL;
+	}
+
 	K_SPINLOCK(&data->rx_lock) {
 		rx_stopping = data->rx_stopping;
 		k_work_cancel(&data->rx_disable_work);
