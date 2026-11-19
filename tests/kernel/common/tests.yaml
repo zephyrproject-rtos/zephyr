@@ -93,3 +93,14 @@ tests:
     integration_platforms:
       - qemu_x86
       - mps2/an385
+  kernel.common.function_effects:
+    # Only Clang 20 and later check __nonblocking functions
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    integration_toolchains:
+      - host/llvm
+    extra_configs:
+      - CONFIG_FUNCTION_EFFECT_ANALYSIS=y
