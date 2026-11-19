@@ -277,7 +277,10 @@ error:
 }
 #else
 
-/* allocate a tx context and mark it as used, the first tx buffer is also allocated */
+/* Allocate a tx context and mark it as used, the first tx buffer is also allocated.
+ * A context returns to the pool only through HAL_ETH_ReleaseTxPacket(), so
+ * release those the DMA has finished with while waiting for one.
+ */
 static inline struct eth_stm32_tx_context *
 allocate_tx_context(struct eth_stm32_hal_dev_data *dev_data, struct net_pkt *pkt)
 {
@@ -301,7 +304,8 @@ allocate_tx_context(struct eth_stm32_hal_dev_data *dev_data, struct net_pkt *pkt
 			return NULL;
 		}
 
-		k_yield();
+		(void)HAL_ETH_ReleaseTxPacket(&dev_data->heth);
+		k_sleep(K_TICKS(1));
 	}
 }
 
