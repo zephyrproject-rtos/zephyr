@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX MRAM controller
+
+compatible: "renesas,rx-mram-controller"
+
+include: base.yaml
+
+properties:
+  command-interface:
+    type: phandle
+    required: true
+    description: |
+      Phandle to command interface node.

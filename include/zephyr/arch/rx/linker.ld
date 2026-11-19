@@ -48,6 +48,9 @@
 #define RAM_START DT_CHOSEN_SRAM_ADDR
 #define RAM_SIZE DT_CHOSEN_SRAM_SIZE
 
+#define MPU_ALIGN(region_size) . = ALIGN(4)
+#define MPU_MIN_SIZE_ALIGN
+
 _region_min_align = 4;
 
 MEMORY
@@ -212,6 +215,7 @@ SECTIONS
 
 	GROUP_START(RAMABLE_REGION)
 
+	. = RAM_START;
 	_image_ram_start = .;
 
 #include <app_data_alignment.ld>
@@ -220,6 +224,18 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-ram-sections.ld>
+
+
+#ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
+	/* The RX compiler adds a leading underscore to C symbols. Provide the aliases
+	 * of the symbols defined by ramfunc.ld, which are referenced from C code.
+	 */
+	PROVIDE(___ramfunc_region_start = __ramfunc_region_start);
+	PROVIDE(___ramfunc_start = __ramfunc_start);
+	PROVIDE(___ramfunc_end = __ramfunc_end);
+	PROVIDE(___ramfunc_size = __ramfunc_size);
+	PROVIDE(___ramfunc_load_start = __ramfunc_load_start);
+#endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 
 #if defined(CONFIG_USERSPACE)
 #define APP_SHARED_ALIGN MPU_MIN_SIZE_ALIGN
@@ -242,8 +258,8 @@ SECTIONS
 
 	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
-		__data_region_start = .;
-		__data_start = .;
+		PLACE_SYMBOL_HERE(__data_region_start);
+		PLACE_SYMBOL_HERE(__data_start);
 		*(.data)
 		*(.data.*)
 		*(D)
@@ -253,6 +269,9 @@ SECTIONS
 
 #include <snippets-rwdata.ld>
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	___data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
+	PROVIDE(__data_region_load_start = ___data_region_load_start);
 
 	/* the sections defined in common-ram.ld have to be initialized on
 	 * reset as well, to place them before _edata */
@@ -265,7 +284,7 @@ SECTIONS
  */
 #include <snippets-data-sections.ld>
 
-	__data_region_end = .;
+	PLACE_SYMBOL_HERE(__data_region_end);
 
 #if DT_PROP(DT_NODELABEL(code_flash), programming_enable)
 
@@ -279,10 +298,13 @@ SECTIONS
 
 #endif
 
+	/* Sections generated from 'zephyr,memory-region' nodes */
+	LINKER_DT_SECTIONS()
+
 	SECTION_PROLOGUE(_BSS_SECTION_NAME,,)
 	{
-		_bss = .;
-		__bss_start = .;
+		PLACE_SYMBOL_HERE(_bss);
+		PLACE_SYMBOL_HERE(__bss_start);
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -295,10 +317,9 @@ SECTIONS
 		*(B)
 		*(B_1)
 		*(B_2)
-		_ebss = .;
-		__bss_end = .;
+		PLACE_SYMBOL_HERE(_ebss);
+		PLACE_SYMBOL_HERE(__bss_end);
 		. = ALIGN(128);
-		_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
 	_ebss = . ;
