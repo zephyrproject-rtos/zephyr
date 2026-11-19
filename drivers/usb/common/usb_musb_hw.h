@@ -21,6 +21,18 @@ extern "C" {
  * controller IP. Offsets are relative to the base of the MUSB core.
  */
 
+/* Host-mode target address registers of one endpoint (multipoint option) */
+struct usb_musb_target_reg {
+	volatile uint8_t txfuncaddr;
+	uint8_t reserved0;
+	volatile uint8_t txhubaddr;
+	volatile uint8_t txhubport;
+	volatile uint8_t rxfuncaddr;
+	uint8_t reserved1;
+	volatile uint8_t rxhubaddr;
+	volatile uint8_t rxhubport;
+};
+
 struct usb_musb_reg {
 	/* Common USB registers */
 	volatile uint8_t faddr;
@@ -87,8 +99,11 @@ struct usb_musb_reg {
 	volatile uint8_t fs_eof1;
 	volatile uint8_t ls_eof1;
 	volatile uint8_t softrst;
+	/* Host-mode target address registers, one set per endpoint */
+	struct usb_musb_target_reg target[16];
 };
 
+BUILD_ASSERT(sizeof(struct usb_musb_target_reg) == 0x08);
 BUILD_ASSERT(offsetof(struct usb_musb_reg, txmaxp) == 0x10);
 BUILD_ASSERT(offsetof(struct usb_musb_reg, rxcount) == 0x18);
 BUILD_ASSERT(offsetof(struct usb_musb_reg, fifosize) == 0x1F);
@@ -97,6 +112,7 @@ BUILD_ASSERT(offsetof(struct usb_musb_reg, devctl) == 0x60);
 BUILD_ASSERT(offsetof(struct usb_musb_reg, txfifoadd) == 0x64);
 BUILD_ASSERT(offsetof(struct usb_musb_reg, epinfo) == 0x78);
 BUILD_ASSERT(offsetof(struct usb_musb_reg, softrst) == 0x7F);
+BUILD_ASSERT(offsetof(struct usb_musb_reg, target) == 0x80);
 
 /* FADDR */
 #define MUSB_FADDR_FUNCADDR_Msk			0x7FU
@@ -190,6 +206,66 @@ BUILD_ASSERT(offsetof(struct usb_musb_reg, softrst) == 0x7F);
 #define MUSB_RAMINFO_RAMBITS(value)		((uint8_t)(value) & MUSB_RAMINFO_RAMBITS_Msk)
 #define MUSB_RAMINFO_RAMBITS_MAX		14U
 #define MUSB_RAMINFO_RAM_SIZE(rambits)		(4UL << (rambits))
+
+/*
+ * Host mode. Bits shared with peripheral mode (RXPKTRDY, TXPKTRDY, FLUSHFIFO,
+ * the POWER speed and suspend bits, ...) use the definitions above.
+ */
+
+/* POWER in host mode */
+#define MUSB_POWER_RESET_Msk			0x08U
+
+/* INTRUSB and INTRUSBE in host mode */
+#define MUSB_INTRUSB_CONN_Msk			0x10U
+#define MUSB_INTRUSB_DISCON_Msk			0x20U
+#define MUSB_INTRUSB_VBUSERR_Msk		0x80U
+#define MUSB_INTRUSBE_CONNEN_Msk		0x10U
+#define MUSB_INTRUSBE_DISCONEN_Msk		0x20U
+
+/* CSR0L in host mode */
+#define MUSB_CSR0L_HOST_RXSTALL_Msk		0x04U
+#define MUSB_CSR0L_HOST_SETUPPKT_Msk		0x08U
+#define MUSB_CSR0L_HOST_ERROR_Msk		0x10U
+#define MUSB_CSR0L_HOST_REQPKT_Msk		0x20U
+#define MUSB_CSR0L_HOST_STATUSPKT_Msk		0x40U
+#define MUSB_CSR0L_HOST_NAKTIMEOUT_Msk		0x80U
+
+/* TXCSRL in host mode */
+#define MUSB_TXCSRL_HOST_ERROR_Msk		0x04U
+#define MUSB_TXCSRL_HOST_RXSTALL_Msk		0x20U
+
+/* RXCSRL and RXCSRH in host mode */
+#define MUSB_RXCSRL_HOST_ERROR_Msk		0x04U
+#define MUSB_RXCSRL_HOST_REQPKT_Msk		0x20U
+#define MUSB_RXCSRL_HOST_RXSTALL_Msk		0x40U
+#define MUSB_RXCSRH_HOST_AUTOREQ_Msk		0x40U
+
+/* TYPE0, TXTYPE and RXTYPE: operating speed of the target device */
+#define MUSB_TYPE_SPEED(value)			(((uint8_t)(value) & 0x03U) << 6)
+#define MUSB_TYPE_SPEED_HIGH			0x1U
+#define MUSB_TYPE_SPEED_FULL			0x2U
+#define MUSB_TYPE_SPEED_LOW			0x3U
+
+/* TXTYPE and RXTYPE: transfer protocol and target endpoint number */
+#define MUSB_TYPE_PROTOCOL(value)		(((uint8_t)(value) & 0x03U) << 4)
+#define MUSB_TYPE_PROTOCOL_CONTROL		0x0U
+#define MUSB_TYPE_PROTOCOL_ISO			0x1U
+#define MUSB_TYPE_PROTOCOL_BULK			0x2U
+#define MUSB_TYPE_PROTOCOL_INTERRUPT		0x3U
+#define MUSB_TYPE_TARGET_EP(value)		((uint8_t)(value) & 0x0FU)
+
+/* DEVCTL in host mode */
+#define MUSB_DEVCTL_SESSION_Msk			0x01U
+#define MUSB_DEVCTL_HOSTMODE_Msk		0x04U
+#define MUSB_DEVCTL_VBUS_Pos			3U
+#define MUSB_DEVCTL_FSDEV_Msk			0x40U
+#define MUSB_DEVCTL_BDEVICE_Msk			0x80U
+
+/* SOFTRST */
+#define MUSB_SOFTRST_NRSTX_Msk			0x02U
+
+/* TXFUNCADDR and RXFUNCADDR */
+#define MUSB_FUNCADDR(value)			((uint8_t)(value) & 0x7FU)
 
 #ifdef __cplusplus
 }
