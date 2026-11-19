@@ -195,3 +195,7 @@
 &aon_lptmr0 {
 	status = "okay";
 };
+
+&aon_syscon {
+	status = "okay";
+};
