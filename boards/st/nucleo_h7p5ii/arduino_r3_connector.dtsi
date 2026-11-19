@@ -36,7 +36,7 @@
 	};
 };
 
-/* arduino_i2c: &i2c3 {}; */
+arduino_i2c: &i2c3 {};
 
 arduino_serial: &uart4 {};
 
