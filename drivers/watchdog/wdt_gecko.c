@@ -306,11 +306,6 @@ static int wdt_gecko_init(const struct device *dev)
 {
 	const struct wdt_gecko_cfg *config = dev->config;
 
-#ifdef CONFIG_WDT_DISABLE_AT_BOOT
-	/* Ignore any errors */
-	wdt_gecko_disable(dev);
-#endif
-
 	/* Enable ULFRCO (1KHz) oscillator */
 	CMU_OscillatorEnable(cmuOsc_ULFRCO, true, false);
 
@@ -321,6 +316,13 @@ static int wdt_gecko_init(const struct device *dev)
 	CMU_ClockSelectSet(config->clock, cmuSelect_ULFRCO);
 	/* Enable Watchdog clock. */
 	CMU_ClockEnable(cmuClock_WDOG0, true);
+#endif
+
+#ifdef CONFIG_WDT_DISABLE_AT_BOOT
+	/* Peripheral clock must be enabled before accessing registers.
+	 * Ignore any errors.
+	 */
+	wdt_gecko_disable(dev);
 #endif
 
 	/* Enable IRQs */
