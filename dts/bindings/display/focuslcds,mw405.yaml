@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Focus-LCDs E43GB-I-MW405-C Panel
+
+compatible: "focuslcds,mw405"
+
+include: ilitek,ili9806e.yaml
