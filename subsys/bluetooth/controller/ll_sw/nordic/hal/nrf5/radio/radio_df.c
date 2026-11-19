@@ -392,6 +392,11 @@ void radio_df_reset(void)
 	NRF_RADIO->DFEMODE = HAL_RADIO_RESET_VALUE_DFEMODE;
 	NRF_RADIO->CTEINLINECONF = HAL_RADIO_RESET_VALUE_CTEINLINECONF;
 
+	/* CTE inline parsing can start IQ sampling without DFEMODE set, hence do not leave the
+	 * power-on reset maximum count with no IQ sample buffer assigned.
+	 */
+	radio_df_iq_data_packet_set(NULL, 0U);
+
 	radio_df_ant_switch_pattern_clear();
 }
 
