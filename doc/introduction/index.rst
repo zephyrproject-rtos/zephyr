@@ -3,8 +3,9 @@
 Introduction
 ############
 
-Zephyr is an open source real-time operating system (RTOS) for resource-constrained and embedded
-devices, from simple sensors and wearables to smart watches and wireless gateways.
+Zephyr is an open source real-time operating system (RTOS) for embedded devices. It is designed
+for resource-constrained hardware and scales from small microcontrollers to multicore 64-bit
+processors.
 
 The diagram below shows its main components. It is a simplified view for illustration purposes and
 does not reflect the exact architecture of the system. Each block links to the corresponding
