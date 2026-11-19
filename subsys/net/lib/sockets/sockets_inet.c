@@ -1269,10 +1269,14 @@ static int update_msg_controllen(struct net_msghdr *msg)
 	size_t cmsg_space = 0;
 
 	for (cmsg = NET_CMSG_FIRSTHDR(msg); cmsg != NULL; cmsg = NET_CMSG_NXTHDR(msg, cmsg)) {
-		if (cmsg->cmsg_len == 0) {
+		size_t left = (uint8_t *)msg->msg_control + msg->msg_controllen - (uint8_t *)cmsg;
+
+		/* Stop at the unused part of the buffer or at a header that does not fit */
+		if (cmsg->cmsg_len < sizeof(struct net_cmsghdr) || cmsg->cmsg_len > left) {
 			break;
 		}
-		cmsg_space += NET_ALIGN_H(cmsg->cmsg_len);
+
+		cmsg_space += MIN(NET_ALIGN_H(cmsg->cmsg_len), left);
 	}
 	msg->msg_controllen = cmsg_space;
 
