@@ -1,16 +1,42 @@
+common:
+  tags:
+    - bluetooth
+  depends_on: bsim
+  build: false
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
 tests:
   bluetooth.controller.bsim_lll.adv:
-    tags:
-      - bluetooth
-    depends_on: bsim
-    build: false
-    platform_allow:
-      - nrf52_bsim/native
-    harness: bsim
     harness_config:
       fixture: bsim_multi_test
+      tests_scripts:
+        - tests_scripts/adv.sh
     required_applications:
       - application: bluetooth.controller.bsim_lll.advertiser
         path: advertiser
       - application: bluetooth.controller.bsim_lll.scanner
+        path: scanner
+
+  bluetooth.controller.bsim_lll.scan:
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - tests_scripts/scan.sh
+    required_applications:
+      - application: bluetooth.controller.bsim_lll.advertiser.nordic_lll
+        path: advertiser
+      - application: bluetooth.controller.bsim_lll.scanner.bsim_lll
+        path: scanner
+
+  bluetooth.controller.bsim_lll.adv_scan:
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - tests_scripts/adv_scan.sh
+    required_applications:
+      - application: bluetooth.controller.bsim_lll.advertiser
+        path: advertiser
+      - application: bluetooth.controller.bsim_lll.scanner.bsim_lll
         path: scanner
