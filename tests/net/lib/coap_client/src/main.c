@@ -1396,6 +1396,9 @@ static void test_setup(void *data)
 	}
 
 	memset(&client.requests, 0, sizeof(client.requests));
+	/* The fakes use the same message IDs in every test */
+	memset(&client.dedup_cache, 0, sizeof(client.dedup_cache));
+	memset(&client2.dedup_cache, 0, sizeof(client2.dedup_cache));
 	memset(last_token, 0, sizeof(last_token));
 	last_response_code = 0;
 	k_sem_reset(&sem1);

@@ -102,7 +102,6 @@ static void reset_internal_request(struct coap_client_internal_request *request)
 {
 	*request = (struct coap_client_internal_request){
 		.last_observe_seq = -1,
-		.last_response_id = -1,
 	};
 }
 
@@ -117,10 +116,46 @@ static void release_internal_request(struct coap_client_internal_request *reques
 	request->unreported_error = 0;
 }
 
+/* Whether the request went to a multicast address, which does not take
+ * CONFIG_COAP_CLIENT_MULTICAST.
+ */
+static bool sent_to_group(const struct coap_client_internal_request *internal_req)
+{
+	if (internal_req->addrlen == 0U) {
+		return false;
+	}
+
+	if (internal_req->addr.ss_family == NET_AF_INET) {
+		return net_ipv4_is_addr_mcast(&net_sin(net_sad(&internal_req->addr))->sin_addr);
+	}
+
+	if (internal_req->addr.ss_family == NET_AF_INET6) {
+		return net_ipv6_is_addr_mcast(&net_sin6(net_sad(&internal_req->addr))->sin6_addr);
+	}
+
+	return false;
+}
+
+/* Forget the responses received so far. The client lock is held, or the
+ * client not registered yet.
+ */
+static void dedup_cache_clear(struct coap_client *client)
+{
+	(void)memset(client->dedup_cache, 0, sizeof(client->dedup_cache));
+	client->dedup_next = 0U;
+}
+
 static void coap_client_schedule_poll(struct coap_client *client, int sock,
 				     struct coap_client_request *req,
 				     struct coap_client_internal_request *internal_req)
 {
+	if (client->fd != sock) {
+		/* Another socket is taken for another endpoint, towards which
+		 * the peer numbers its messages anew.
+		 */
+		dedup_cache_clear(client);
+	}
+
 	client->fd = sock;
 	memcpy(&internal_req->coap_request, req, sizeof(struct coap_client_request));
 	internal_req->request_ongoing = true;
@@ -815,6 +850,19 @@ static int get_next_timeout(void)
 	return (int)min_timeout;
 }
 
+/* The socket is of no more use. One opened in its place is taken for another
+ * endpoint, also when it gets the same descriptor, so the responses of this
+ * one are forgotten along with its requests.
+ */
+static void cancel_requests_on_socket_error(struct coap_client *client)
+{
+	k_mutex_lock(&client->lock, K_FOREVER);
+	dedup_cache_clear(client);
+	k_mutex_unlock(&client->lock);
+
+	cancel_requests_with(client, -EIO);
+}
+
 static int handle_poll(void)
 {
 	int ret = 0;
@@ -904,7 +952,7 @@ static int handle_poll(void)
 					continue;
 				}
 				LOG_ERR("Error receiving response");
-				cancel_requests_with(client, -EIO);
+				cancel_requests_on_socket_error(client);
 				continue;
 			}
 
@@ -919,15 +967,15 @@ static int handle_poll(void)
 		}
 		if (fds[i].revents & ZSOCK_POLLERR) {
 			LOG_ERR("Error in poll for socket %d", fds[i].fd);
-			cancel_requests_with(client, -EIO);
+			cancel_requests_on_socket_error(client);
 		}
 		if (fds[i].revents & ZSOCK_POLLHUP) {
 			LOG_ERR("Error in poll: POLLHUP for socket %d", fds[i].fd);
-			cancel_requests_with(client, -EIO);
+			cancel_requests_on_socket_error(client);
 		}
 		if (fds[i].revents & ZSOCK_POLLNVAL) {
 			LOG_ERR("Error in poll: POLLNVAL - fd %d not open", fds[i].fd);
-			cancel_requests_with(client, -EIO);
+			cancel_requests_on_socket_error(client);
 		}
 	}
 
@@ -1066,13 +1114,7 @@ static bool source_matches_request(const struct coap_client_internal_request *in
 		return true;
 	}
 
-	if (internal_req->addr.ss_family == NET_AF_INET &&
-	    net_ipv4_is_addr_mcast(&net_sin(net_sad(&internal_req->addr))->sin_addr)) {
-		return true;
-	}
-
-	if (internal_req->addr.ss_family == NET_AF_INET6 &&
-	    net_ipv6_is_addr_mcast(&net_sin6(net_sad(&internal_req->addr))->sin6_addr)) {
+	if (sent_to_group(internal_req)) {
 		return true;
 	}
 
@@ -1137,6 +1179,76 @@ static struct coap_client_internal_request *get_request_with_mid(struct coap_cli
 
 	return NULL;
 }
+
+#if CONFIG_COAP_CLIENT_DEDUP_CACHE_SIZE > 0
+/* RFC 7252, section 4.5: whether this message was received before, going by
+ * its source and message ID. An Acknowledgment carries a message ID of this
+ * client and any other message one of the peer, so the two are kept apart.
+ * Messages without source address come in on a connected socket, from its one
+ * peer.
+ */
+static bool dedup_cache_contains(const struct coap_client *client,
+				 const struct net_sockaddr *from, uint8_t type, uint16_t id)
+{
+	bool ack = type == COAP_TYPE_ACK;
+
+	ARRAY_FOR_EACH_PTR(client->dedup_cache, entry) {
+		const struct net_sockaddr *addr = (const struct net_sockaddr *)&entry->addr;
+
+		if (entry->id != id || entry->ack != ack ||
+		    sys_timepoint_expired(entry->expires)) {
+			continue;
+		}
+
+		if (from->sa_family == NET_AF_UNSPEC ? addr->sa_family == NET_AF_UNSPEC
+						     : net_sockaddr_cmp(addr, from)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Remember a message, in place of the one remembered longest */
+static void dedup_cache_add(struct coap_client *client, const struct net_sockaddr *from,
+			    net_socklen_t fromlen, uint8_t type, uint16_t id)
+{
+	struct coap_client_dedup_entry *oldest = &client->dedup_cache[client->dedup_next];
+
+	client->dedup_next =
+		(uint8_t)((client->dedup_next + 1U) % ARRAY_SIZE(client->dedup_cache));
+
+	*oldest = (struct coap_client_dedup_entry){
+		.expires = sys_timepoint_calc(K_SECONDS(CONFIG_COAP_CLIENT_DEDUP_LIFETIME)),
+		.id = id,
+		.ack = type == COAP_TYPE_ACK,
+	};
+	if (from->sa_family != NET_AF_UNSPEC) {
+		memcpy(&oldest->addr, from, MIN(fromlen, sizeof(oldest->addr)));
+	}
+}
+#else
+static bool dedup_cache_contains(const struct coap_client *client,
+				 const struct net_sockaddr *from, uint8_t type, uint16_t id)
+{
+	ARG_UNUSED(client);
+	ARG_UNUSED(from);
+	ARG_UNUSED(type);
+	ARG_UNUSED(id);
+
+	return false;
+}
+
+static void dedup_cache_add(struct coap_client *client, const struct net_sockaddr *from,
+			    net_socklen_t fromlen, uint8_t type, uint16_t id)
+{
+	ARG_UNUSED(client);
+	ARG_UNUSED(from);
+	ARG_UNUSED(fromlen);
+	ARG_UNUSED(type);
+	ARG_UNUSED(id);
+}
+#endif /* CONFIG_COAP_CLIENT_DEDUP_CACHE_SIZE > 0 */
 
 static bool find_echo_option(const struct coap_packet *response, struct coap_option *option)
 {
@@ -1272,6 +1384,22 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		return 1;
 	}
 
+	/* RFC 7252, section 4.5: a duplicate is acknowledged again if it is
+	 * Confirmable, and not processed. It is looked up before its request,
+	 * which may be over by now: the message would be rejected with a Reset.
+	 * An Acknowledgment is never rejected, and a message without source
+	 * address needs its request to tell whether several servers may have
+	 * sent it. Both are looked up once the request is found.
+	 */
+	if (response_type != COAP_TYPE_ACK && addr->sa_family != NET_AF_UNSPEC &&
+	    dedup_cache_contains(client, addr, response_type, response_id)) {
+		LOG_WRN("Duplicate message, dropping");
+		if (response_type == COAP_TYPE_CON) {
+			(void)send_ack(client->fd, addr, addrlen, response, COAP_CODE_EMPTY);
+		}
+		return 0;
+	}
+
 	internal_req = get_request_with_token(client, response, addr);
 	if (!internal_req) {
 		LOG_WRN("No matching request for response");
@@ -1380,14 +1508,18 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		}
 	}
 
-	/* MID-based deduplication */
-	if (response_id == internal_req->last_response_id &&
-	    COND_CODE_1(CONFIG_COAP_CLIENT_MULTICAST, (!internal_req->is_mcast), (true))) {
-		LOG_WRN("Duplicate MID, dropping");
-		return 0;
+	/* The servers answering a multicast request cannot be told apart without
+	 * a source address: their responses are neither looked up nor remembered.
+	 */
+	if (addr->sa_family != NET_AF_UNSPEC || !sent_to_group(internal_req)) {
+		if (dedup_cache_contains(client, addr, response_type, response_id)) {
+			LOG_WRN("Duplicate message, dropping");
+			return 0;
+		}
+
+		dedup_cache_add(client, addr, addrlen, response_type, response_id);
 	}
 
-	internal_req->last_response_id = response_id;
 
 	if (!internal_req->request_ongoing) {
 		if (internal_req->is_observe) {
@@ -1975,6 +2107,7 @@ int coap_client_init(struct coap_client *client, const char *info)
 	}
 
 	k_mutex_init(&client->lock);
+	dedup_cache_clear(client);
 
 	clients[num_clients] = client;
 	num_clients++;
