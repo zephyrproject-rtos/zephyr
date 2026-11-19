@@ -62,8 +62,19 @@ config BMP388_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
+config BMP388_FORCED_MODE
+	bool "Forced mode sampling"
+	depends on !BMP388_TRIGGER
+	help
+	  Keep the sensor in sleep mode, triggering a single forced mode
+	  measurement on each sample fetch and waiting for the result, instead
+	  of reading the latest result of continuous normal mode measurements.
+	  This reduces power consumption for infrequent sampling. The ODR is
+	  not used in this mode.
+
 config BMP388_ODR_RUNTIME
 	bool "Change ODR at runtime."
+	depends on !BMP388_FORCED_MODE
 	default y
 
 config BMP388_OSR_RUNTIME
