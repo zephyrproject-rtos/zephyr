@@ -236,6 +236,38 @@
 /* Note: allow a trailing ";" either way */
 
 /**
+ * @brief Check whether external analog input AIN<ain> is present on the SoC.
+ *
+ * The analog inputs are described by the node with compatible
+ * "nordic,nrf-ain". Evaluates to 0 if there is no such node.
+ *
+ * @param ain analog input index (integer literal)
+ */
+#define NRF_DT_AIN_EXISTS(ain)                                                                     \
+	DT_PROP_HAS_IDX(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_ain), ain_gpios, ain)
+
+/**
+ * Error out the build if 'prop' is set on node 'node_id' and refers to an
+ * external analog input that is not present in the "nordic,nrf-ain" node.
+ *
+ * Values greater than or equal to 'internal_offset' denote internal inputs
+ * and are not checked. If there is no "nordic,nrf-ain" node, do nothing.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property holding an analog input
+ * @param prop_name human-readable string name for 'prop'
+ * @param internal_offset first value of 'prop' which is not an external AIN
+ */
+#define NRF_DT_CHECK_AIN(node_id, prop, prop_name, internal_offset)		\
+	BUILD_ASSERT(!DT_NODE_HAS_PROP(node_id, prop) ||			\
+		     !DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_ain) ||		\
+		     (DT_PROP_OR(node_id, prop, 0) >= (internal_offset)) ||	\
+		     NRF_DT_AIN_EXISTS(DT_PROP_OR(node_id, prop, 0)),		\
+		     "Devicetree node " DT_NODE_PATH(node_id)			\
+		     " property " prop_name " refers to an analog input "	\
+		     "which is not present on this SoC")
+
+/**
  * Error out the build if CONFIG_PM_DEVICE=y and pinctrl-1 state (sleep) is not
  * defined.
  *
