@@ -225,12 +225,21 @@ int esp_intr_reserve(int intno, int cpu)
 /* Returns true if handler for interrupt is not the default unhandled interrupt handler */
 static bool intr_has_handler(int intr, int cpu)
 {
-	/* Map the CPU line to the ISR table index. */
+#ifdef CONFIG_RISCV
+	ARG_UNUSED(cpu);
 #ifdef CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
 	intr += CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET;
 #endif
 
+	/*
+	 * The RISC-V software ISR table has one entry per CPU line, shared by
+	 * all CPUs: irq_connect_dynamic() installs a handler at
+	 * (line + RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET) with no CPU term.
+	 */
+	return _sw_isr_table[intr].isr != z_irq_spurious;
+#else
 	return _sw_isr_table[intr * CONFIG_MP_MAX_NUM_CPUS + cpu].isr != z_irq_spurious;
+#endif
 }
 
 static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, int force)
