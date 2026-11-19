@@ -26,25 +26,13 @@ description: |
 
 compatible: "wisblock-adc"
 
-include: base.yaml
+include: [base.yaml, io-channel-nexus.yaml]
 
 properties:
   io-channel-map:
-    type: compound
-    required: true
     description: |
       Nexus mapping from WisBlock ADC pin indices to SoC ADC channels.
       Each entry is a tuple of (wisblock-pin, adc-phandle, adc-channel).
 
-  io-channel-map-mask:
-    type: array
-    description: Mask applied to the child specifier before nexus lookup.
-
-  io-channel-map-pass-thru:
-    type: array
-    description: Bits passed through unchanged from child to parent specifier.
-
   "#io-channel-cells":
-    type: int
-    required: true
     description: Number of cells in an ADC specifier. Must be 1.
