@@ -97,7 +97,7 @@ static void omap_mailbox_isr(const struct device *dev)
 
 static int omap_mailbox_send(const struct device *dev, uint32_t channel, const struct mbox_msg *msg)
 {
-	uint32_t __aligned(4) data32;
+	uint32_t __aligned(4) data32 = 0;
 
 	volatile struct omap_mailbox_regs *regs = DEV_REG_BASE(dev);
 	struct omap_mailbox_data *data = DEV_DATA(dev);
@@ -113,7 +113,7 @@ static int omap_mailbox_send(const struct device *dev, uint32_t channel, const s
 		return -EBUSY;
 	}
 
-	if (!msg) {
+	if (!msg || !msg->data || !msg->size) {
 		regs->message[channel] = 0;
 		k_spin_unlock(&data->lock, key);
 		return 0;
