@@ -5,6 +5,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (c) 2023 Nordic Semiconductor
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +16,7 @@
  * @brief L2CAP
  * @defgroup bt_l2cap L2CAP
  * @since 1.0
- * @version 1.1.0
+ * @version 1.1.1
  * @ingroup bluetooth
  * @{
  */
