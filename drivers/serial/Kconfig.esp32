@@ -31,24 +31,38 @@ config SERIAL_ESP32_USB
 	  UART peripheral.
 
 config UART_ESP32_TX_FIFO_THRESH
-	hex "ESP32 UART TX FIFO Threshold"
+	hex "ESP32 UART TX FIFO Threshold [DEPRECATED]"
 	depends on UART_ESP32
 	default 0x1
 	range 1 127
 	help
 	  Configure the TX FIFO threshold for ESP32 UART driver.
-	  The tx-fifo-threshold devicetree property overrides it per
-	  instance.
+
+	  This option is deprecated. Use the tx-fifo-threshold devicetree
+	  property of each UART instance instead.
 
 config UART_ESP32_RX_FIFO_THRESH
-	hex "ESP32 UART RX FIFO Threshold"
+	hex "ESP32 UART RX FIFO Threshold [DEPRECATED]"
 	depends on UART_ESP32
 	default 0x16
 	range 1 127
 	help
 	  Configure the RX FIFO threshold for ESP32 UART driver.
-	  The rx-fifo-threshold devicetree property overrides it per
-	  instance.
+
+	  This option is deprecated. Use the rx-fifo-threshold devicetree
+	  property of each UART instance instead.
+
+config UART_ESP32_FIFO_THRESH_DEPRECATED
+	bool
+	default y if UART_ESP32_TX_FIFO_THRESH != 0x1
+	default y if UART_ESP32_RX_FIFO_THRESH != 0x16
+	depends on UART_ESP32
+	select DEPRECATED
+	help
+	  Indicates that CONFIG_UART_ESP32_TX_FIFO_THRESH or
+	  CONFIG_UART_ESP32_RX_FIFO_THRESH was changed from its default.
+	  These options are deprecated and must be replaced by the
+	  tx-fifo-threshold and rx-fifo-threshold devicetree properties.
 
 config LPUART_ESP32
 	bool "ESP32 LP UART driver"

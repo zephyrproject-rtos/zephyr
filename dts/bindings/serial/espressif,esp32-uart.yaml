@@ -40,7 +40,8 @@ properties:
       Number of bytes in the RX FIFO that raises the RX FIFO full interrupt.
       A low value reports received bytes to the interrupt-driven API without
       waiting for the RX timeout, at the cost of more interrupts.
-      Defaults to CONFIG_UART_ESP32_RX_FIFO_THRESH when not set.
+      When not set, the deprecated CONFIG_UART_ESP32_RX_FIFO_THRESH value is
+      used.
 
   tx-fifo-threshold:
     type: int
@@ -49,7 +50,8 @@ properties:
     description: |
       Number of bytes in the TX FIFO at or below which the TX FIFO empty
       interrupt is raised.
-      Defaults to CONFIG_UART_ESP32_TX_FIFO_THRESH when not set.
+      When not set, the deprecated CONFIG_UART_ESP32_TX_FIFO_THRESH value is
+      used.
 
   rx-timeout:
     type: int
