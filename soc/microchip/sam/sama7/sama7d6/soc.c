@@ -34,7 +34,8 @@
 
 static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("vectors", CONFIG_KERNEL_VM_BASE, 0x1000,
-			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
+			      MT_NORMAL | MATTR_SHARED | MPERM_R | MPERM_X |
+			      MATTR_CACHE_OUTER_WB_nWA | MATTR_CACHE_INNER_WB_nWA),
 
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(microchip_aes_g1),
 		   (MMU_REGION_FLAT_ENTRY("aes", AES_BASE_ADDRESS, 0x100,
