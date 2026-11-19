@@ -497,7 +497,7 @@ static int si7210_init(const struct device *dev)
 		return rc;
 	}
 
-	LOG_INF("Found Si72%02d-%c-%02d S/N %08x, at I2C address 0x%x",
+	LOG_DBG("Found Si72%02d-%c-%02d S/N %08x, at I2C address 0x%x",
 		part_base, rev, part_variant, sn, config->bus.addr);
 
 	/* Set default scale depending on the part variant */
