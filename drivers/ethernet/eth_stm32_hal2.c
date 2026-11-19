@@ -503,11 +503,6 @@ static int eth_initialize(const struct device *dev)
 	k_sem_init(&dev_data->tx_int_sem, 0, 1);
 	k_event_init(&dev_data->rx_event);
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* Set up gated and source clocks */
 	for (size_t n = 0; n < cfg->pclken_cnt; n++) {
 		ret = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
