@@ -40,7 +40,9 @@ static ZTEST_BMEM adc_data_size_t m_sample_buffer[BUFFER_SIZE];
 static __aligned(32) adc_data_size_t m_sample_buffer[BUFFER_SIZE] __NOCACHE;
 #endif
 
-#define DT_SPEC_AND_COMMA(node_id, prop, idx)	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+#define DT_SPEC_AND_COMMA(node_id, prop, idx) \
+	ADC_DT_SPEC_STRUCT(DT_PHANDLE_BY_IDX(node_id, prop, idx), \
+			   DT_PHA_BY_IDX(node_id, prop, idx, input)),
 
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
 /* Data of ADC io-channels specified in devicetree. */
