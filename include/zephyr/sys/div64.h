@@ -146,14 +146,16 @@ static ALWAYS_INLINE uint64_t z_div64_mulhi(uint64_t n, uint64_t m, bool bias, b
 }
 
 /* n / d from the m and flags of a reciprocal of d. */
-__attribute_const__ uint64_t z_div64_u32_recip(uint64_t n, uint64_t m, uint32_t flags);
+__attribute_const__ uint64_t z_div64_u32_recip(uint64_t n, uint64_t m,
+					       uint32_t flags) __nonblocking;
 
 struct sys_div64_recip;
 
 /* n / d from a shared reciprocal of d. Those never change, so the result
  * depends only on the arguments.
  */
-__attribute_const__ uint64_t z_div64_shared_div(uint64_t n, const struct sys_div64_recip *r);
+__attribute_const__ uint64_t z_div64_shared_div(uint64_t n,
+						const struct sys_div64_recip *r) __nonblocking;
 
 #if defined(CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define Z_DIV64_TICKS ((uint32_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC)
