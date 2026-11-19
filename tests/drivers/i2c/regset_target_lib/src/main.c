@@ -61,7 +61,13 @@ static DEVICE_API(i2c, fake_i2c_api) = {
 	.target_unregister = fake_i2c_target_unregister,
 };
 
-DEVICE_DEFINE(fake_i2c_bus, "fake_i2c", NULL, NULL,
+static int fake_i2c_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
+
+DEVICE_DEFINE(fake_i2c_bus, "fake_i2c", fake_i2c_init, NULL,
 	      &fake_i2c_bus_data, NULL,
 	      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &fake_i2c_api);
 
