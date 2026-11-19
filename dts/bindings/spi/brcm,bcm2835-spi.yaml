@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: Broadcom BCM283x SPI Controller
+
+description: |
+  Chip select is driven through cs-gpios; the native CE0/CE1 lines of the
+  controller are not used.
+
+compatible: "brcm,bcm2835-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
