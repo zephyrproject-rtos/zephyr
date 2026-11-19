@@ -1758,9 +1758,7 @@ Documentation Infrastructure:
     - sample.drivers.clock_monitor
 
 "Drivers: Clock control":
-  status: maintained
-  maintainers:
-    - nordic-krch
+  status: odd fixes
   collaborators:
     - danieldegrasse
   files:
