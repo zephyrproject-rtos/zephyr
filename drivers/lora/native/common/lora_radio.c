@@ -261,7 +261,7 @@ void lora_radio_init(const struct device *dev)
 	data->configured = false;
 }
 
-int lora_radio_config_begin(const struct device *dev)
+int lora_radio_configure(const struct device *dev, lora_radio_config_fn fn, const void *cfg)
 {
 	struct lora_radio_data *data = dev->data;
 	int ret;
@@ -270,22 +270,20 @@ int lora_radio_config_begin(const struct device *dev)
 
 	ret = lora_radio_op_begin(dev, LORA_RADIO_OP_CONFIG);
 	if (ret < 0) {
-		k_mutex_unlock(&data->lock);
+		goto unlock;
 	}
 
-	return ret;
-}
-
-void lora_radio_config_end(const struct device *dev, int status)
-{
-	struct lora_radio_data *data = dev->data;
-
-	if (status >= 0) {
+	ret = fn(dev, cfg);
+	if (ret >= 0) {
 		data->configured = true;
 	}
 
 	lora_radio_op_end(dev, 0);
+
+unlock:
 	k_mutex_unlock(&data->lock);
+
+	return ret;
 }
 
 static int lora_radio_tx_start(const struct device *dev,
