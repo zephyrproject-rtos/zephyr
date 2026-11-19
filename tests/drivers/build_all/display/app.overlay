@@ -776,6 +776,20 @@
 				display-timing = <&test_adv7535_timing>;
 				status = "okay";
 			};
+
+			mw405: mw405@c {
+				compatible = "focuslcds,mw405";
+				reg = <0xc>;
+				reset-gpios = <&test_gpio 0 0>;
+				bl-gpios = <&test_gpio 0 0>;
+				data-lanes = <2>;
+				width = <480>;
+				height = <800>;
+				pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+				hp-mode;
+				burst-mode;
+				status = "okay";
+			};
 		};
 
 		test_led_strip_matrix {
