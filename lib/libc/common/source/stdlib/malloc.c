@@ -183,27 +183,6 @@ void *aligned_alloc(size_t alignment, size_t size)
 	return ret;
 }
 
-#ifdef CONFIG_GLIBCXX_LIBCPP
-
-/*
- * GCC's libstdc++ may use this function instead of aligned_alloc due to a
- * bug in the configuration for "newlib" environments (which includes picolibc).
- * When toolchains including that bug fix can become a dependency for Zephyr,
- * this work-around can be removed.
- *
- * Note that aligned_alloc isn't defined to work as a replacement for
- * memalign as it requires that the size be a multiple of the alignment,
- * while memalign does not. However, the aligned_alloc implementation here
- * is just a wrapper around sys_heap_aligned_alloc which doesn't have that
- * requirement and so can be used by memalign.
- */
-
-void *memalign(size_t alignment, size_t size)
-{
-	return aligned_alloc(alignment, size);
-}
-#endif
-
 static int malloc_prepare(void)
 {
 	void *heap_base = NULL;
@@ -325,6 +304,13 @@ void *malloc(size_t size)
 	return NULL;
 }
 
+void *aligned_alloc(size_t alignment, size_t size)
+{
+	ARG_UNUSED(alignment);
+
+	return malloc(size);
+}
+
 void free(void *ptr)
 {
 	ARG_UNUSED(ptr);
@@ -336,5 +322,26 @@ void *realloc(void *ptr, size_t size)
 	return malloc(size);
 }
 #endif /* else no malloc arena */
+
+#ifdef CONFIG_GLIBCXX_LIBCPP
+
+/*
+ * GCC's libstdc++ may use this function instead of aligned_alloc due to a
+ * bug in the configuration for "newlib" environments (which includes picolibc).
+ * When toolchains including that bug fix can become a dependency for Zephyr,
+ * this work-around can be removed.
+ *
+ * Note that aligned_alloc isn't defined to work as a replacement for
+ * memalign as it requires that the size be a multiple of the alignment,
+ * while memalign does not. However, the aligned_alloc implementation here
+ * is just a wrapper around sys_heap_aligned_alloc which doesn't have that
+ * requirement and so can be used by memalign.
+ */
+
+void *memalign(size_t alignment, size_t size)
+{
+	return aligned_alloc(alignment, size);
+}
+#endif
 
 #endif /* CONFIG_COMMON_LIBC_MALLOC */
