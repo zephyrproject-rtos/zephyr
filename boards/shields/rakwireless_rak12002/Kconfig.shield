@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_RAKWIRELESS_RAK12002_SENSOR_A
+	def_bool $(shields_list_contains,rakwireless_rak12002_sensor_a)
+
+config SHIELD_RAKWIRELESS_RAK12002_SENSOR_B
+	def_bool $(shields_list_contains,rakwireless_rak12002_sensor_b)
+
+config SHIELD_RAKWIRELESS_RAK12002_SENSOR_C
+	def_bool $(shields_list_contains,rakwireless_rak12002_sensor_c)
+
+config SHIELD_RAKWIRELESS_RAK12002_SENSOR_D
+	def_bool $(shields_list_contains,rakwireless_rak12002_sensor_d)
+
+config SHIELD_RAKWIRELESS_RAK12002_SENSOR_E
+	def_bool $(shields_list_contains,rakwireless_rak12002_sensor_e)
+
+config SHIELD_RAKWIRELESS_RAK12002_SENSOR_F
+	def_bool $(shields_list_contains,rakwireless_rak12002_sensor_f)
+
+config SHIELD_RAKWIRELESS_RAK12002
+	def_bool SHIELD_RAKWIRELESS_RAK12002_SENSOR_A || \
+		SHIELD_RAKWIRELESS_RAK12002_SENSOR_B || \
+		SHIELD_RAKWIRELESS_RAK12002_SENSOR_C || \
+		SHIELD_RAKWIRELESS_RAK12002_SENSOR_D || \
+		SHIELD_RAKWIRELESS_RAK12002_SENSOR_E || \
+		SHIELD_RAKWIRELESS_RAK12002_SENSOR_F
+
+config SHIELD_RAKWIRELESS_RAK12002_INT
+	def_bool SHIELD_RAKWIRELESS_RAK12002_SENSOR_B || \
+		SHIELD_RAKWIRELESS_RAK12002_SENSOR_C || \
+		SHIELD_RAKWIRELESS_RAK12002_SENSOR_D || \
+		SHIELD_RAKWIRELESS_RAK12002_SENSOR_E || \
+		SHIELD_RAKWIRELESS_RAK12002_SENSOR_F
