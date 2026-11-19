@@ -71,6 +71,7 @@ config MCUMGR_TRANSPORT_UDP_DTLS
 	select NET_SOCKETS_ENABLE_DTLS
 	select MBEDTLS_SSL_SRV_C if NET_NATIVE
 	select TLS_CREDENTIALS
+	select ZVFS_EVENTFD
 	help
 	  Enable DTLS for UDP transport, this means normal non-authenticated connections will not
 	  be supported and the transport will not be started automatically at boot-up, the
@@ -84,6 +85,15 @@ config MCUMGR_TRANSPORT_UDP_DTLS_TLS_TAG
 	help
 	  The TLS tag which the application must add the certificates to before starting the UDP
 	  transport.
+
+config ZVFS_EVENTFD_ADD_SIZE_MCUMGR_TRANSPORT_UDP
+	int "Number of eventfds needed by the UDP SMP transport"
+	default 2 if MCUMGR_TRANSPORT_UDP_IPV4 && MCUMGR_TRANSPORT_UDP_IPV6
+	default 1
+	depends on MCUMGR_TRANSPORT_UDP_DTLS
+	help
+	  With DTLS, each UDP SMP receive thread opens one zvfs eventfd, which
+	  wakes it when the transport is closed.
 
 config MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT
 	bool "UDP SMP autostart"
