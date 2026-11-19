@@ -693,6 +693,12 @@ Modules
   :ref:`external module <external_module_rust>`; add it to the application manifest to keep using
   Rust. The ``manifest.project-filter +zephyr-lang-rust`` west setting no longer has an effect.
 
+* Nanopb no longer decodes callback fields placed directly inside a ``oneof`` by default: the
+  decoder clears a callback set before decoding, so it is never called. The feature is unsafe
+  with untrusted input (`GHSA-fmpg-qc28-5x4x
+  <https://github.com/nanopb/nanopb/security/advisories/GHSA-fmpg-qc28-5x4x>`_). Use the
+  ``submsg_callback``, ``no_unions`` or ``callback_function`` generator options instead.
+
 Architectures
 *************
 
