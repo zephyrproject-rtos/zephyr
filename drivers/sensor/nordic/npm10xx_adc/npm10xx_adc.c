@@ -202,20 +202,30 @@ static int npm10xx_sensor_attr_set(const struct device *dev, enum sensor_channel
 {
 	const struct npm10xx_adc_config *config = dev->config;
 
-	if (attr != SENSOR_ATTR_FULL_SCALE ||
-	    (chan != SENSOR_CHAN_CURRENT && chan != SENSOR_CHAN_GAUGE_AVG_CURRENT)) {
-		LOG_ERR("Only current full scale attribute is supported");
+	switch ((int16_t)attr) {
+	case SENSOR_ATTR_FULL_SCALE:
+		if (chan != SENSOR_CHAN_CURRENT && chan != SENSOR_CHAN_GAUGE_AVG_CURRENT) {
+			LOG_ERR("Full scale selection available only for battery current");
+			return -ENOTSUP;
+		}
+
+		ARRAY_FOR_EACH(ibat_fullscale_ua, idx) {
+			if (sensor_value_to_micro(val) == ibat_fullscale_ua[idx]) {
+				return i2c_reg_write_byte_dt(
+					&config->i2c, NPM10_CHARGER_IBATFS,
+					FIELD_PREP(CHARGER_IBATFS_LVL_Msk, idx));
+			}
+		}
+
+		return -EINVAL;
+
+	case NPM10XX_SENSOR_ATTR_SUPPLY_SELECT:
+		return i2c_reg_write_byte_dt(&config->i2c, NPM10_BAT_CONFIG1,
+					     val->val1 & BIT_MASK(3));
+
+	default:
 		return -ENOTSUP;
 	}
-
-	ARRAY_FOR_EACH(ibat_fullscale_ua, idx) {
-		if (sensor_value_to_micro(val) == ibat_fullscale_ua[idx]) {
-			return i2c_reg_write_byte_dt(&config->i2c, NPM10_CHARGER_IBATFS,
-						     FIELD_PREP(CHARGER_IBATFS_LVL_Msk, idx));
-		}
-	}
-
-	return -EINVAL;
 }
 
 static int npm10xx_sensor_attr_get(const struct device *dev, enum sensor_channel chan,
@@ -225,19 +235,34 @@ static int npm10xx_sensor_attr_get(const struct device *dev, enum sensor_channel
 	int ret;
 	uint8_t reg;
 
-	if (attr != SENSOR_ATTR_FULL_SCALE ||
-	    (chan != SENSOR_CHAN_CURRENT && chan != SENSOR_CHAN_GAUGE_AVG_CURRENT)) {
-		LOG_ERR("Only current full scale attribute is supported");
+	switch ((int16_t)attr) {
+	case SENSOR_ATTR_FULL_SCALE:
+		if (chan != SENSOR_CHAN_CURRENT && chan != SENSOR_CHAN_GAUGE_AVG_CURRENT) {
+			LOG_ERR("Full scale selection available only for battery current");
+			return -ENOTSUP;
+		}
+
+		ret = i2c_reg_read_byte_dt(&config->i2c, NPM10_CHARGER_IBATFS, &reg);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return sensor_value_from_micro(
+			val, ibat_fullscale_ua[FIELD_GET(CHARGER_IBATFS_LVL_Msk, reg)]);
+
+	case NPM10XX_SENSOR_ATTR_SUPPLY_SELECT:
+		ret = i2c_reg_read_byte_dt(&config->i2c, NPM10_BAT_CONFIG1, &reg);
+		if (ret < 0) {
+			return ret;
+		}
+
+		val->val1 = reg;
+		val->val2 = 0;
+		return 0;
+
+	default:
 		return -ENOTSUP;
 	}
-
-	ret = i2c_reg_read_byte_dt(&config->i2c, NPM10_CHARGER_IBATFS, &reg);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return sensor_value_from_micro(val,
-				       ibat_fullscale_ua[FIELD_GET(CHARGER_IBATFS_LVL_Msk, reg)]);
 }
 
 static int npm10xx_single_chan_fetch(const struct device *dev, enum sensor_channel chan)
