@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 #include "zperf_internal.h"
 #include "zperf_session.h"
-#include "zperf_udp_pacing.h"
+#include "zperf_pacing.h"
 
 #if defined(CONFIG_NET_UDP)
 
@@ -172,16 +172,16 @@ static int udp_upload(int sock, int port,
 	uint32_t packet_size = param->packet_size;
 	uint32_t rate_in_kbps = param->rate_kbps;
 	uint32_t packet_duration_us = zperf_packet_duration(packet_size, rate_in_kbps);
-	struct zperf_udp_pacer pacer;
+	struct zperf_pacer pacer;
 	uint64_t data_offset = 0U;
 	uint32_t nb_packets = 0U;
 	uint64_t usecs64;
 	int64_t start_time, end_time;
+	int64_t loop_time;
 	int64_t print_time;
 	uint32_t print_period;
 	bool is_mcast_pkt = false;
 	int ret;
-	int compensate_delay;
 
 	if (packet_size > PACKET_SIZE_MAX) {
 		NET_WARN("Packet size too large! max size: %u", PACKET_SIZE_MAX);
@@ -193,7 +193,7 @@ static int udp_upload(int sock, int port,
 
 	/* Start the loop */
 	start_time = k_uptime_ticks();
-	zperf_udp_pacer_init(&pacer, packet_duration_us, start_time);
+	zperf_pacer_init(&pacer, packet_duration_us, start_time);
 	end_time = start_time + k_ms_to_ticks_ceil64(duration_in_ms);
 
 	/* Print log every seconds */
@@ -207,13 +207,11 @@ static int udp_upload(int sock, int port,
 		struct zperf_udp_datagram *datagram;
 		struct zperf_client_hdr_v1 *hdr;
 		uint32_t secs, usecs;
-		int64_t loop_time;
-		int32_t adjust;
 
 		/* Timestamp */
 		loop_time = k_uptime_ticks();
 
-		compensate_delay = zperf_udp_pacer_next(&pacer, loop_time, &adjust);
+		zperf_pacer_next(&pacer, loop_time);
 
 		usecs64 = param->unix_offset_us + k_ticks_to_us_floor64(loop_time - start_time);
 		secs = usecs64 / USEC_PER_SEC;
@@ -258,16 +256,14 @@ static int udp_upload(int sock, int port,
 
 		if (IS_ENABLED(CONFIG_NET_ZPERF_LOG_LEVEL_DBG)) {
 			if (print_time >= loop_time) {
-				NET_DBG("nb_packets=%u\tdelay=%u\tadjust=%d",
-					nb_packets, (unsigned int)compensate_delay,
-					(int)adjust);
+				NET_DBG("nb_packets=%u", nb_packets);
 				print_time += print_period;
 			}
 		}
 
 		/* Wait */
-		zperf_udp_pacer_wait(compensate_delay);
-	} while (pacer.last_loop_time < end_time);
+		zperf_pacer_wait(&pacer, end_time);
+	} while (loop_time < end_time);
 
 	end_time = k_uptime_ticks();
 	usecs64 = param->unix_offset_us + k_ticks_to_us_floor64(end_time - start_time);
