@@ -884,6 +884,7 @@ static int dma_stm32_configure(const struct device *dev,
 	 * stm32_dma_check_fifo_mburst().
 	 */
 	LL_DMA_DisableIT_FE(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_DisableIT_DME(dma, dma_stm32_id_to_stream(id));
 #endif
 	return ret;
 }
