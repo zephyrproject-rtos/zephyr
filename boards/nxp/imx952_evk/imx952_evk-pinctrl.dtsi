@@ -42,7 +42,7 @@
 		};
 	};
 
-	xspi_default: xspi_default {
+	xspi1_default: xspi1_default {
 		group0 {
 			pinmux = <&iomuxc_xspi1_sclk_xspi_a_sclk_xspi1_a_sclk>,
 				 <&iomuxc_xspi1_ss0_b_xspi_a_ss_b_xspi1_a_ss0_b>,
@@ -56,8 +56,7 @@
 				 <&iomuxc_xspi1_data5_xspi_a_data_xspi1_a_data_5>,
 				 <&iomuxc_xspi1_data6_xspi_a_data_xspi1_a_data_6>,
 				 <&iomuxc_xspi1_data7_xspi_a_data_xspi1_a_data_7>;
-			bias-pull-down;
-			slew-rate = "slightly_fast";
+			slew-rate = "fast";
 			drive-strength = "x4";
 		};
 	};

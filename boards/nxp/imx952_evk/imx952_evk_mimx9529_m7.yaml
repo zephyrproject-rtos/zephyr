@@ -16,6 +16,7 @@ toolchain:
 supported:
   - adc
   - dma
+  - flash
   - gpio
   - uart
 testing:
