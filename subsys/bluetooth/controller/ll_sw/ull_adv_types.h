@@ -94,7 +94,12 @@ struct ll_adv_aux_set {
 
 	uint8_t is_started:1;
 };
-
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+struct node_rx_adv_sync_data_req {
+	uint8_t subevent_start;
+	uint16_t Subevent_Data_Count;
+};
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_RSP */
 struct ll_adv_sync_set {
 	struct ull_hdr      ull;
 	struct lll_adv_sync lll;
@@ -108,6 +113,7 @@ struct ll_adv_sync_set {
 #if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	uint32_t aux_remainder;
 #endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
 };
 
 struct ll_adv_iso_set {
