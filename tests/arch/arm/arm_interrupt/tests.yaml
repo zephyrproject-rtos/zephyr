@@ -36,3 +36,10 @@ tests:
       - CONFIG_FAULT_DUMP=2
     integration_platforms:
       - mps3/corstone300/an547
+  arch.arm.interrupt.use_switch:
+    filter: CONFIG_ARMV7_R and CONFIG_GIC
+    extra_configs:
+      - CONFIG_USE_SWITCH=y
+      - CONFIG_FPU=n
+    integration_platforms:
+      - qemu_cortex_r5
