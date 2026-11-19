@@ -1811,25 +1811,6 @@ static int __stored_creds_to_params(struct wifi_credentials_personal *creds,
 }
 TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_CAST_QUAL)
 
-static inline const char *wpa_supp_security_txt(enum wifi_security_type security)
-{
-	switch (security) {
-	case WIFI_SECURITY_TYPE_NONE:
-		return "NONE";
-	case WIFI_SECURITY_TYPE_OWE:
-		return "OWE";
-	case WIFI_SECURITY_TYPE_PSK:
-		return "WPA-PSK";
-	case WIFI_SECURITY_TYPE_PSK_SHA256:
-		return "WPA-PSK-SHA256";
-	case WIFI_SECURITY_TYPE_SAE:
-		return "SAE";
-	case WIFI_SECURITY_TYPE_UNKNOWN:
-	default:
-		return "UNKNOWN";
-	}
-}
-
 static int add_network_from_credentials_struct_personal(struct wifi_credentials_personal *creds,
 							struct net_if *iface)
 {
@@ -1848,17 +1829,21 @@ static int add_network_from_credentials_struct_personal(struct wifi_credentials_
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 	};
 
-	if (__stored_creds_to_params(creds, &cnx_params) != 0) {
-		ret = -ENOEXEC;
+	ret = __stored_creds_to_params(creds, &cnx_params);
+	if (ret != 0) {
 		goto out;
 	}
 
 	ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &cnx_params,
 		       sizeof(struct wifi_connect_req_params));
+	if (ret == -EALREADY) {
+		LOG_INF("Already connected or connecting");
+		ret = 0;
+		goto out;
+	}
+
 	if (ret < 0) {
 		LOG_ERR("Connection request failed (%d)", ret);
-
-		ret = -ENOEXEC;
 		goto out;
 	}
 
@@ -1870,7 +1855,10 @@ out:
 
 struct add_stored_network_arg {
 	struct net_if *iface;
-	bool connected;
+	/* A connect request was accepted for one of the networks */
+	bool requested;
+	/* Error to report if no connect request was accepted */
+	int err;
 };
 
 static void add_stored_network(void *cb_arg, const char *ssid, size_t ssid_len)
@@ -1879,8 +1867,8 @@ static void add_stored_network(void *cb_arg, const char *ssid, size_t ssid_len)
 	int ret = 0;
 	struct wifi_credentials_personal creds;
 
-	if (arg->connected) {
-		/* Already connected */
+	if (arg->requested) {
+		/* Connect already requested for an earlier network */
 		return;
 	}
 
@@ -1890,35 +1878,42 @@ static void add_stored_network(void *cb_arg, const char *ssid, size_t ssid_len)
 	if (ret) {
 		LOG_ERR("Loading WiFi credentials failed for SSID [%.*s], len: %d, err: %d",
 			ssid_len, ssid, ssid_len, ret);
+		arg->err = ret;
 		return;
 	}
 
 	ret = add_network_from_credentials_struct_personal(&creds, arg->iface);
 	if (ret == 0) {
-		/* Indicate that we are connected */
-		arg->connected = true;
+		/* Stop at the first network that accepts a connect request */
+		arg->requested = true;
+	} else {
+		arg->err = ret;
 	}
 }
 
-static int add_static_network_config(struct net_if *iface)
+static void add_static_network_config(struct add_stored_network_arg *arg)
 {
 #if defined(CONFIG_WIFI_CREDENTIALS_STATIC)
 
-	struct wifi_credentials_personal creds = {
-		.header = {
-			.ssid_len = strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID),
-		},
-		.password_len = strlen(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD),
-	};
+	struct wifi_credentials_personal creds;
 
 	int ret = wifi_credentials_get_by_ssid_personal_struct(
 		CONFIG_WIFI_CREDENTIALS_STATIC_SSID, strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID),
 		&creds);
 
 	if (!ret) {
-		LOG_WRN("Statically configured WiFi network was overridden by storage.");
-		return 0;
+		LOG_DBG("Static network [%s] is also stored and was already tried, skipping",
+			CONFIG_WIFI_CREDENTIALS_STATIC_SSID);
+		return;
 	}
+
+	/* A failed lookup may have loaded a corrupted entry, so use only the Kconfig values */
+	creds = (struct wifi_credentials_personal){
+		.header = {
+			.ssid_len = strlen(CONFIG_WIFI_CREDENTIALS_STATIC_SSID),
+		},
+		.password_len = strlen(CONFIG_WIFI_CREDENTIALS_STATIC_PASSWORD),
+	};
 
 #if defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_OPEN)
 	creds.header.type = WIFI_SECURITY_TYPE_NONE;
@@ -1949,9 +1944,14 @@ static int add_static_network_config(struct net_if *iface)
 	LOG_DBG("Adding statically configured WiFi network [%s] to internal list.",
 		CONFIG_WIFI_CREDENTIALS_STATIC_SSID);
 
-	return add_network_from_credentials_struct_personal(&creds, iface);
+	ret = add_network_from_credentials_struct_personal(&creds, arg->iface);
+	if (ret == 0) {
+		arg->requested = true;
+	} else {
+		arg->err = ret;
+	}
 #else
-	return 0;
+	ARG_UNUSED(arg);
 #endif /* defined(CONFIG_WIFI_CREDENTIALS_STATIC) */
 }
 
@@ -1961,16 +1961,23 @@ static int connect_stored_command(uint64_t mgmt_request, struct net_if *iface, v
 	struct add_stored_network_arg cb_arg = {
 		.iface = iface,
 	};
-	int ret = 0;
-
-	ret = add_static_network_config(iface);
-	if (ret) {
-		return ret;
-	}
 
 	wifi_credentials_for_each_ssid(add_stored_network, &cb_arg);
 
-	return ret;
+	/* Fall back to the static network if no stored network accepted the request */
+	if (!cb_arg.requested) {
+		add_static_network_config(&cb_arg);
+	}
+
+	if (cb_arg.requested) {
+		return 0;
+	}
+
+	if (cb_arg.err == 0) {
+		LOG_INF("No stored Wi-Fi credentials, not connecting");
+	}
+
+	return cb_arg.err;
 };
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT_STORED, connect_stored_command);
