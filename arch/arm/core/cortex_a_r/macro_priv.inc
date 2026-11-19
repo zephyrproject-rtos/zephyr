@@ -66,4 +66,25 @@
 	strb r1, [r2, #_cpu_offset_to_exc_depth]
 .endm
 
+/*
+ * Move to the IRQ stack if \rnested, the interrupt nesting count after its
+ * increment, is 1, and push the current SP there. ISRs and irq_offload
+ * routines run in system mode on the IRQ stack: in IRQ mode, a nested
+ * interrupt would overwrite LR_irq. A nested interrupt then pushes its
+ * exception frame on the IRQ stack. z_arm_cortex_ar_irq_done undoes this.
+ * Clobbers r0 and r1.
+ */
+.macro irq_stack_enter rnested
+	cmp \rnested, #1
+	bhi 1f
+	mov r0, sp
+	cps #MODE_IRQ
+	mov r1, sp
+	cps #MODE_SYS
+	mov sp, r1
+	/* r1 keeps the stack 8-byte aligned */
+	push {r0, r1}
+1:
+.endm
+
 #endif /* _MACRO_PRIV_INC_ */
