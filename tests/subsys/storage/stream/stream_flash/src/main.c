@@ -809,6 +809,7 @@ ZTEST(lib_stream_flash, test_stream_flash_auto_erasure_per_instance)
 
 	struct stream_flash_ctx ctx1;
 	uint8_t buf1[BUF_LEN];
+
 	memset(&ctx1, 0, sizeof(ctx1));
 	memset(buf1, 0, sizeof(buf1));
 
