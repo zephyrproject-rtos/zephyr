@@ -8,7 +8,7 @@ sphinxcontrib-svg2pdfconverter
 pygments!=2.19.0,>=2.21.0
 sphinx-notfound-page
 sphinx-copybutton
-sphinx-design
+sphinx-design>=0.8.0
 sphinx-togglebutton
 sphinx-sitemap
 sphinx-autobuild
