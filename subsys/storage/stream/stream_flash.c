@@ -456,6 +456,7 @@ int stream_flash_progress_clear(const struct stream_flash_ctx *ctx,
 	return rc;
 }
 
+#ifdef CONFIG_STREAM_FLASH_ERASE
 int stream_flash_disable_auto_erasure(struct stream_flash_ctx *ctx)
 {
 	if (!ctx) {
@@ -465,5 +466,6 @@ int stream_flash_disable_auto_erasure(struct stream_flash_ctx *ctx)
 	ctx->auto_erase = false;
 	return 0;
 }
+#endif
 
 #endif  /* CONFIG_STREAM_FLASH_PROGRESS */

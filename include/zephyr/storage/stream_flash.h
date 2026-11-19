@@ -197,6 +197,7 @@ int stream_flash_progress_clear(const struct stream_flash_ctx *ctx,
 int stream_flash_disable_auto_erasure(struct stream_flash_ctx *ctx);
 #endif
 
+
 #ifdef __cplusplus
 }
 #endif
