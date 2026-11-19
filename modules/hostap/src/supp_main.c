@@ -90,6 +90,9 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.bss_support_neighbor_rep = supplicant_bss_support_neighbor_rep,
 	.bss_ext_capab = supplicant_bss_ext_capab,
 	.legacy_roam = supplicant_legacy_roam,
+#ifdef CONFIG_WIFI_MGMT_RANGING
+	.ranging_get_peer_caps = supplicant_ranging_get_peer_caps,
+#endif
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 	.btm_query = supplicant_btm_query,
 #endif

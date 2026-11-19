@@ -2306,6 +2306,42 @@ int supplicant_bss_ext_capab(const struct device *dev __unused, struct net_if *i
 	return is_support;
 }
 
+#ifdef CONFIG_WIFI_MGMT_RANGING
+int supplicant_ranging_get_peer_caps(const struct device *dev __unused, struct net_if *iface,
+				     struct wifi_ranging_peer_caps *caps)
+{
+	struct wpa_supplicant *wpa_s;
+	struct wpa_bss *bss;
+	const uint8_t *rrm;
+	int ret = 0;
+
+	wpa_s = get_wpa_s_handle(iface);
+	if (wpa_s == NULL) {
+		return -ENODEV;
+	}
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	bss = wpa_bss_get_bssid(wpa_s, caps->mac);
+	if (bss == NULL) {
+		ret = -ENOENT;
+		goto out;
+	}
+
+	caps->ftm_responder = wpa_bss_ext_capab(bss, WLAN_EXT_CAPAB_FTM_RESPONDER) != 0;
+
+	rrm = wpa_bss_get_ie(bss, WLAN_EID_RRM_ENABLED_CAPABILITIES);
+	if (rrm != NULL && rrm[1] >= 1) {
+		caps->lci = (rrm[2] & WLAN_RRM_CAPS_LCI_MEASUREMENT) != 0;
+		caps->civic = (rrm[2] & WLAN_RRM_CAPS_CIVIC_LOCATION_MEASUREMENT) != 0;
+	}
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return ret;
+}
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+
 int supplicant_legacy_roam(const struct device *dev __unused, struct net_if *iface)
 {
 	struct wpa_supplicant *wpa_s;

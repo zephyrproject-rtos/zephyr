@@ -325,6 +325,21 @@ bool supplicant_bss_support_neighbor_rep(const struct device *dev, struct net_if
  */
 int supplicant_bss_ext_capab(const struct device *dev, struct net_if *iface, int capab);
 
+#ifdef CONFIG_WIFI_MGMT_RANGING
+/** Read a peer's ranging capability from the supplicant's BSS entry
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param iface Network interface to use
+ * @param caps Peer capabilities; caps->mac selects the peer
+ *
+ * @retval 0 on success
+ * @retval -ENOENT if the peer is not in the supplicant's BSS table
+ * @retval -ENODEV if the interface has no supplicant handle
+ */
+int supplicant_ranging_get_peer_caps(const struct device *dev, struct net_if *iface,
+				     struct wifi_ranging_peer_caps *caps);
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+
 /** Get Wi-Fi connection parameters recently used
  *
  * @param dev Pointer to the device structure for the driver instance

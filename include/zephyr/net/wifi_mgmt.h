@@ -2869,8 +2869,9 @@ struct wifi_mgmt_ops {
 	int (*ranging_get_caps)(const struct device *dev,
 				struct net_if *iface,
 				struct wifi_ranging_caps *caps);
-	/** Read a peer's advertised ranging capability. The caller sets caps->mac
-	 *  to the peer of interest; the backend answers from cached scan info.
+	/** Optional. Read a peer's advertised ranging capability. The caller sets
+	 *  caps->mac to the peer of interest; the backend answers from cached scan
+	 *  info, returning -ENOENT if the peer was not seen.
 	 */
 	int (*ranging_get_peer_caps)(const struct device *dev,
 				     struct net_if *iface,
