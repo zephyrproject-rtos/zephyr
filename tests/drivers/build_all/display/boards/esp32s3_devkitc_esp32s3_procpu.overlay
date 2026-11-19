@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2026 Gustavo Reis
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
+};
+
+&pinctrl {
+	lcd_cam_default: lcd_cam_default {
+		group1 {
+			pinmux = <LCD_CAM_LCD_CLK_GPIO42>,
+				 <LCD_CAM_H_ENABLE_LCD_GPIO40>,
+				 <LCD_CAM_V_SYNC_LCD_GPIO41>,
+				 <LCD_CAM_H_SYNC_LCD_GPIO39>,
+				 <LCD_CAM_DATA_OUT0_GPIO8>,
+				 <LCD_CAM_DATA_OUT1_GPIO3>,
+				 <LCD_CAM_DATA_OUT2_GPIO46>,
+				 <LCD_CAM_DATA_OUT3_GPIO9>,
+				 <LCD_CAM_DATA_OUT4_GPIO1>,
+				 <LCD_CAM_DATA_OUT5_GPIO5>,
+				 <LCD_CAM_DATA_OUT6_GPIO6>,
+				 <LCD_CAM_DATA_OUT7_GPIO7>,
+				 <LCD_CAM_DATA_OUT8_GPIO15>,
+				 <LCD_CAM_DATA_OUT9_GPIO16>,
+				 <LCD_CAM_DATA_OUT10_GPIO4>,
+				 <LCD_CAM_DATA_OUT11_GPIO45>,
+				 <LCD_CAM_DATA_OUT12_GPIO48>,
+				 <LCD_CAM_DATA_OUT13_GPIO47>,
+				 <LCD_CAM_DATA_OUT14_GPIO21>,
+				 <LCD_CAM_DATA_OUT15_GPIO14>;
+		};
+	};
+};
+
+&dma {
+	status = "okay";
+};
+
+&lcd_cam {
+	pinctrl-0 = <&lcd_cam_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	lcd_rgb: lcd-rgb {
+		compatible = "espressif,esp32-lcd-cam-rgb";
+		width = <480>;
+		height = <272>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+		data-bus-width = <16>;
+		backlight-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+
+		display-timings {
+			compatible = "zephyr,panel-timing";
+			clock-frequency = <12000000>;
+			hsync-len = <1>;
+			hback-porch = <42>;
+			hfront-porch = <20>;
+			vsync-len = <10>;
+			vback-porch = <12>;
+			vfront-porch = <4>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			de-active = <1>;
+			pixelclk-active = <1>;
+		};
+	};
+};
