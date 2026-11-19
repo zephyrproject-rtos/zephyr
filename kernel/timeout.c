@@ -433,19 +433,19 @@ void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
 }
 
 #if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
-k_spinlock_key_t sys_clock_lock(void)
+k_spinlock_key_t sys_clock_lock(void) __nonblocking
 {
 	return k_spin_lock(&timeout_lock);
 }
 
-void sys_clock_unlock(k_spinlock_key_t key)
+void sys_clock_unlock(k_spinlock_key_t key) __nonblocking
 {
 	k_spin_unlock(&timeout_lock, key);
 }
 #endif
 
 #if defined(CONFIG_TEST) || defined(CONFIG_ASSERT)
-bool sys_clock_is_locked(void)
+bool sys_clock_is_locked(void) __nonblocking
 {
 	return z_spin_is_locked(&timeout_lock);
 }

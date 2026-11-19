@@ -27,9 +27,12 @@ static uint64_t timer_driver_cycle_get(void)
 }
 
 /* The model fires at once for a deadline already passed, hence ORDERED. */
-static void timer_driver_set_compare(uint64_t cycles)
+static void timer_driver_set_compare(uint64_t cycles) __nonblocking
 {
+	/* Only reprograms the simulated timer */
+	TOOLCHAIN_DISABLE_NONBLOCKING_CHECK;
 	hwtimer_set_tick_one_shot(cycles);
+	TOOLCHAIN_ENABLE_NONBLOCKING_CHECK;
 }
 
 /*

@@ -741,7 +741,7 @@ static void timer_core_arm(uint32_t ticks)
 #endif
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle) __nonblocking
 {
 	/* Deprecated: idle entry now goes through sys_clock_idle_enter(). */
 	ARG_UNUSED(idle);
@@ -754,7 +754,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	timer_core_arm(ticks);
 }
 
-uint32_t sys_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void) __nonblocking
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
