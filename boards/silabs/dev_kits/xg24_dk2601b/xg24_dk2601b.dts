@@ -252,6 +252,7 @@
 	si7021: si7021@40 {
 		compatible = "silabs,si7006";
 		reg = <0x40>;
+		vin-supply = <&sensor_enable>;
 	};
 
 	bmp384: bmp384@77 {
