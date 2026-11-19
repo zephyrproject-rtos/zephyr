@@ -11,3 +11,4 @@ config SOC_SERIES_MSPM33C
 	select ARMV8_M_DSP
 	select BUILD_OUTPUT_BIN
 	select BUILD_OUTPUT_HEX
+	select HAS_PM
