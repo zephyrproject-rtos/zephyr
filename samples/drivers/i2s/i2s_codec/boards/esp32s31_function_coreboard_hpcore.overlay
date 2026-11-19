@@ -1,0 +1,36 @@
+/* Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		i2s-codec-tx = &i2s0;
+	};
+};
+
+&i2c0 {
+	audio_codec: audio-codec@18 {
+		compatible = "everest,es8311";
+		reg = <0x18>;
+	};
+};
+
+/* NS4150B speaker amplifier enable on GPIO57 */
+&gpio1 {
+	speaker-amp-en-hog {
+		gpio-hog;
+		gpios = <25 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&i2s0 {
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
