@@ -32,14 +32,10 @@ static void sysintc_mux_isr(void)
 	zephyr_irq = irq_to_level_2((unsigned int)sys_int) | active_cpu_int;
 	table_idx = z_get_sw_isr_table_idx(zephyr_irq);
 
-#if defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
-	_sw_isr_table[table_idx].isr(_sw_isr_table[table_idx].arg);
-#elif defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
 	struct _isr_table_entry entry;
 
-	get_isr_entry(table_idx, &entry);
+	z_sw_isr_table_lookup(table_idx, &entry);
 	entry.isr(entry.arg);
-#endif
 }
 
 #define _SYSINTC_REGISTER_DISPATCHER(node_id)                                                      \
