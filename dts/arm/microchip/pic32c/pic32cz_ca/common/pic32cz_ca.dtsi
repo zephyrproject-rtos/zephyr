@@ -211,6 +211,15 @@
 				#microchip,pin-cells = <2>;
 				status = "disabled";
 			};
+
+			porte: gpio@44840200 {
+				compatible = "microchip,port-g1-gpio";
+				reg = <0x44840200 0x80>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#microchip,pin-cells = <2>;
+				status = "disabled";
+			};
 		};
 
 		dmac: dmac@44850000 {
