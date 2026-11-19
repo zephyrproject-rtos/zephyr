@@ -74,7 +74,9 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 
 	if (thread_status == SOCKET_SERVICE_THREAD_UNINITIALIZED) {
 		(void)k_condvar_wait(&wait_start, &lock, K_FOREVER);
-	} else if (thread_status != SOCKET_SERVICE_THREAD_RUNNING) {
+	}
+
+	if (thread_status != SOCKET_SERVICE_THREAD_RUNNING) {
 		NET_ERR("Socket service thread not running, service %p register fails.", svc);
 		ret = -EIO;
 		goto out;
