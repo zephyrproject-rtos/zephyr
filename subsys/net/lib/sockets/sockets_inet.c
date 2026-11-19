@@ -801,24 +801,27 @@ static int sock_get_pkt_src_addr(struct net_context *ctx,
 	uint16_t *port;
 	enum net_ip_protocol proto = net_context_get_proto(ctx);
 	enum net_sock_type type = net_context_get_type(ctx);
+	net_sa_family_t family;
+	bool map_ipv4;
 
 	if (!addr || !pkt) {
 		return -EINVAL;
 	}
 
+	family = net_pkt_family(pkt);
+	map_ipv4 = IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) && family == NET_AF_INET &&
+		   net_context_get_family(ctx) == NET_AF_INET6 && !net_context_is_v6only_set(ctx);
+
 	net_pkt_cursor_backup(pkt, &backup);
 	net_pkt_cursor_init(pkt);
 
-	addr->sa_family = net_pkt_family(pkt);
-
-	if (IS_ENABLED(CONFIG_NET_IPV4) &&
-	    net_pkt_family(pkt) == NET_AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
 		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access,
 						      struct net_ipv4_hdr);
 		struct net_sockaddr_in *addr4 = net_sin(addr);
 		struct net_ipv4_hdr *ipv4_hdr;
 
-		if (addrlen < sizeof(struct net_sockaddr_in)) {
+		if (addrlen < (map_ipv4 ? sizeof(struct net_sockaddr_in6) : sizeof(*addr4))) {
 			ret = -EINVAL;
 			goto error;
 		}
@@ -834,8 +837,7 @@ static int sock_get_pkt_src_addr(struct net_context *ctx,
 
 		net_ipv4_addr_copy_raw((uint8_t *)&addr4->sin_addr, ipv4_hdr->src);
 		port = &addr4->sin_port;
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   net_pkt_family(pkt) == NET_AF_INET6) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
 		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access,
 						      struct net_ipv6_hdr);
 		struct net_sockaddr_in6 *addr6 = net_sin6(addr);
@@ -892,14 +894,15 @@ static int sock_get_pkt_src_addr(struct net_context *ctx,
 		ret = -ENOTSUP;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) && net_pkt_family(pkt) == NET_AF_INET &&
-	    net_context_get_family(ctx) == NET_AF_INET6 && !net_context_is_v6only_set(ctx)) {
+	if (map_ipv4) {
 		struct net_sockaddr_in6 mapped_addr;
 
 		net_ipv6_addr_create_v4_mapped(&net_sin(addr)->sin_addr, &(mapped_addr.sin6_addr));
 		net_ipaddr_copy(&net_sin6(addr)->sin6_addr, &mapped_addr.sin6_addr);
-		addr->sa_family = NET_AF_INET6;
+		family = NET_AF_INET6;
 	}
+
+	addr->sa_family = family;
 
 error:
 	net_pkt_cursor_restore(pkt, &backup);
@@ -928,7 +931,7 @@ static int sock_get_offload_pkt_src_addr(struct net_pkt *pkt,
 {
 	int ret = 0;
 
-	if (!addr || !pkt) {
+	if (addr == NULL || pkt == NULL || addrlen < sizeof(addr->sa_family)) {
 		return -EINVAL;
 	}
 
