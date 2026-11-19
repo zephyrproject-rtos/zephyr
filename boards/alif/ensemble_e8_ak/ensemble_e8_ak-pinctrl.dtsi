@@ -56,6 +56,13 @@
 		};
 	};
 
+	gpio6_default: gpio6_default {
+		group0 {
+			/* P6_1 used to drive display backlight */
+			pinmux = <PIN_P6_1__GPIO>;
+		};
+	};
+
 	gpio7_default: gpio7_default {
 		group0 {
 			/* Multicolor LED0: green on P7_4 */
