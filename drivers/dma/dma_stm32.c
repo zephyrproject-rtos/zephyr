@@ -859,9 +859,12 @@ static int dma_stm32_configure(const struct device *dev,
 	}
 	/* FIFO error can be ignored, since it doesn't imply loss of data,
 	 * and errors caused by a wrong configuration are handled by
-	 * stm32_dma_check_fifo_mburst().
+	 * stm32_dma_check_fifo_mburst(). Also disable the direct mode
+	 * error interrupt which we don't care about, but may have been
+	 * enabled by a previous use of the channel in HAL override mode.
 	 */
 	LL_DMA_DisableIT_FE(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_DisableIT_DME(dma, dma_stm32_id_to_stream(id));
 #endif
 	return ret;
 }
