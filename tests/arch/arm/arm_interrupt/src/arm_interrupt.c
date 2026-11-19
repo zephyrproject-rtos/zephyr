@@ -934,3 +934,87 @@ ZTEST(arm_interrupt, test_arm_null_pointer_exception)
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC pop_options
 #endif
+
+#if defined(CONFIG_ARMV7_R) && (defined(CONFIG_GIC_V1) || defined(CONFIG_GIC_V2))
+#include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/* The inner SGI has a higher priority and preempts the ISR of the outer one */
+#define NESTED_OUTER_SGI 2
+#define NESTED_INNER_SGI 3
+
+static volatile bool nested_outer_active;
+static volatile uint32_t nested_inner_count;
+static volatile uint32_t nested_outer_sp;
+
+/*
+ * Raise an SGI through GICD_SGIR at addr, then return through lr, which a
+ * leaf function does not save. The SGI is taken in the nops, before the
+ * return.
+ */
+__attribute__((naked, noinline)) static void raise_sgi_in_leaf(uint32_t sgir, uint32_t addr)
+{
+	__asm__ volatile("str r0, [r1]\n"
+			 "dsb\n"
+			 "isb\n"
+			 "nop\n"
+			 "nop\n"
+			 "nop\n"
+			 "nop\n"
+			 "nop\n"
+			 "nop\n"
+			 "nop\n"
+			 "nop\n"
+			 "bx lr\n");
+}
+
+static void nested_inner_isr(const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	if (nested_outer_active) {
+		nested_inner_count++;
+	}
+}
+
+static void nested_outer_isr(const void *arg)
+{
+	uint32_t sp;
+
+	ARG_UNUSED(arg);
+
+	__asm__ volatile("mov %0, sp" : "=r"(sp));
+	nested_outer_sp = sp;
+	nested_outer_active = true;
+	raise_sgi_in_leaf(GICD_SGIR_TGTFILT_REQONLY | GICD_SGIR_SGIINTID(NESTED_INNER_SGI),
+			  GICD_SGIR);
+	nested_outer_active = false;
+}
+
+/**
+ * @brief Test an interrupt nested in a leaf function of an ISR
+ * @ingroup kernel_arch_interrupt_tests
+ */
+ZTEST(arm_interrupt, test_arm_nested_interrupt_in_leaf)
+{
+	nested_inner_count = 0U;
+	nested_outer_sp = 0U;
+
+	arch_irq_connect_dynamic(NESTED_OUTER_SGI, IRQ_DEFAULT_PRIORITY, nested_outer_isr, NULL, 0);
+	arch_irq_connect_dynamic(NESTED_INNER_SGI, 0, nested_inner_isr, NULL, 0);
+	irq_enable(NESTED_OUTER_SGI);
+	irq_enable(NESTED_INNER_SGI);
+
+	sys_write32(GICD_SGIR_TGTFILT_REQONLY | GICD_SGIR_SGIINTID(NESTED_OUTER_SGI), GICD_SGIR);
+	k_busy_wait(1000);
+
+	irq_disable(NESTED_INNER_SGI);
+	irq_disable(NESTED_OUTER_SGI);
+
+	zassert_equal(nested_inner_count, 1U, "%u nested interrupts in the ISR",
+		      nested_inner_count);
+	zassert_not_equal(nested_outer_sp, 0U, "outer ISR did not run");
+	zassert_equal(nested_outer_sp & 7U, 0U, "SP 0x%08x in the ISR is not 8-byte aligned",
+		      nested_outer_sp);
+}
+#endif
