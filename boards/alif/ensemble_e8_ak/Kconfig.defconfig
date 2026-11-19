@@ -8,4 +8,30 @@ if BOARD_ENSEMBLE_E8_AK
 configdefault ETH_DRIVER
 	default y if $(dt_nodelabel_enabled,eth)
 
+if LVGL
+
+# Apply performance tuning for LVGL with CDC200 display engine
+
+configdefault LV_Z_DOUBLE_VDB
+	default y
+
+choice LV_Z_RENDERING_MODE
+	default LV_Z_FULL_REFRESH
+endchoice
+
+configdefault LV_Z_VDB_ZEPHYR_REGION
+	default y
+
+configdefault LV_Z_VDB_ZEPHYR_REGION_NAME
+	default "SRAM0"
+
+configdefault LV_Z_BITS_PER_PIXEL
+	default 24
+
+choice LV_Z_COLOR_FORMAT
+	default LV_Z_COLOR_FORMAT_RGB888
+endchoice
+
+endif # LVGL
+
 endif # BOARD_ENSEMBLE_E8_AK
