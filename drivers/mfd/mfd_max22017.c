@@ -175,14 +175,10 @@ static void max22017_isr(const struct device *dev, struct gpio_callback *gpio_cb
 	struct max22017_data *data = CONTAINER_OF(gpio_cb, struct max22017_data, callback_int);
 	int ret;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
 	ret = k_work_submit(&data->int_work);
 	if (ret < 0) {
 		LOG_WRN("Could not submit int work: %d", ret);
 	}
-
-	k_mutex_unlock(&data->lock);
 }
 
 static void max22017_int_worker(struct k_work *work)
