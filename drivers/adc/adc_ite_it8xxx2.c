@@ -198,7 +198,7 @@ static void adc_it8xxx2_get_sample(const struct device *dev)
 	adc_disable_measurement(data->ch);
 }
 
-static void adc_poll_valid_data(void)
+static int adc_poll_valid_data(void)
 {
 	const struct device *const dev = DEVICE_DT_INST_GET(0);
 	int valid = 0;
@@ -222,11 +222,13 @@ static void adc_poll_valid_data(void)
 		adc_it8xxx2_get_sample(dev);
 	} else {
 		LOG_ERR("Sampling timeout.");
-		return;
+		return -ETIMEDOUT;
 	}
+
+	return 0;
 }
 
-static void adc_enable_measurement(uint32_t ch)
+static int adc_enable_measurement(uint32_t ch)
 {
 	struct adc_it8xxx2_regs *const adc_regs = ADC_IT8XXX2_REG_BASE;
 	const struct device *const dev = DEVICE_DT_INST_GET(0);
@@ -256,8 +258,14 @@ static void adc_enable_measurement(uint32_t ch)
 	 * at present.
 	 */
 	if (k_is_in_isr()) {
+		int ret;
+
 		/* polling wait for a valid data */
-		adc_poll_valid_data();
+		ret = adc_poll_valid_data();
+		if (ret != 0) {
+			adc_disable_measurement(ch);
+		}
+		return ret;
 	} else {
 		/* Enable adc interrupt */
 		irq_enable(DT_INST_IRQN(0));
@@ -265,9 +273,14 @@ static void adc_enable_measurement(uint32_t ch)
 		if (k_sem_take(&data->sem, IT8XXX2_ADC_READING_TIMEOUT)) {
 			irq_disable(DT_INST_IRQN(0));
 
-			adc_it8xxx2_get_sample(dev);
+			adc_disable_measurement(ch);
+			/* Discard a completion posted after the wait timed out. */
+			k_sem_reset(&data->sem);
+			return -ETIMEDOUT;
 		}
 	}
+
+	return 0;
 }
 
 static int check_buffer_size(const struct adc_sequence *sequence,
@@ -339,6 +352,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	struct adc_it8xxx2_data *data =
 		CONTAINER_OF(ctx, struct adc_it8xxx2_data, ctx);
 	uint32_t channels = ctx->sequence.channels;
+	int ret;
 
 	data->repeat_buffer = data->buffer;
 
@@ -350,7 +364,12 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		data->ch = find_lsb_set(channels) - 1;
 		channels &= ~BIT(data->ch);
 
-		adc_enable_measurement(data->ch);
+		ret = adc_enable_measurement(data->ch);
+		if (ret != 0) {
+			adc_context_disable_timer(ctx);
+			adc_context_complete(ctx, ret);
+			return;
+		}
 	}
 
 	adc_context_on_sampling_done(&data->ctx, DEVICE_DT_INST_GET(0));
