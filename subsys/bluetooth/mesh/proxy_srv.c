@@ -1180,13 +1180,21 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
+	client = find_client(conn);
+
 	if (!service_registered && bt_mesh_is_provisioned()) {
-		(void)proxy_gatt_service_register();
+		if (client->cli) {
+			bt_mesh_proxy_role_cleanup(client->cli);
+			client->cli = NULL;
+		}
+
+		if (!atomic_test_bit(bt_mesh.flags, BT_MESH_SUSPENDED)) {
+			(void)proxy_gatt_service_register();
+		}
+
 		adv_restart_pending = true;
 		return;
 	}
-
-	client = find_client(conn);
 	if (client->cli) {
 		bt_mesh_proxy_role_cleanup(client->cli);
 		client->cli = NULL;
