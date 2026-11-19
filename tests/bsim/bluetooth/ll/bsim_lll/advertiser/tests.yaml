@@ -1,13 +1,23 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  depends_on: bsim
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
 tests:
   bluetooth.controller.bsim_lll.advertiser:
-    build_only: true
-    tags:
-      - bluetooth
-    depends_on: bsim
-    platform_allow:
-      - nrf52_bsim/native
     required_snippets:
       - bt-ll-bsim
-    harness: bsim
+    # Run the Controller self-tests at init, among them the known answer test
+    # of the AES implementation of the BabbleSim LLL.
+    extra_configs:
+      - CONFIG_BT_CTLR_TEST=y
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_ll_bsim_lll_advertiser_prj_conf
+
+  bluetooth.controller.bsim_lll.advertiser.nordic_lll:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_ll_bsim_lll_advertiser_prj_conf_nordic_lll

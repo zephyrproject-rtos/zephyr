@@ -24,6 +24,11 @@
  */
 #define SCANNER_ADDR "C0:00:00:00:00:02"
 
+/* The advertiser uses this identity in the steps in which the scanner filters
+ * the advertisers.
+ */
+#define ADVERTISER_ADDR "C0:00:00:00:00:01"
+
 /* The advertiser moves to the next step once the scanner has seen the
  * current one.
  */
@@ -38,6 +43,10 @@ enum test_step {
 	STEP_FAL_ACCEPT,
 	/* Scan requests filtered, from a scanner not on the Filter Accept List */
 	STEP_FAL_REJECT,
+	/* Advertisers filtered by the scanner, the advertiser not on its Filter Accept List */
+	STEP_SCAN_FAL_REJECT,
+	/* Advertisers filtered by the scanner, the advertiser on its Filter Accept List */
+	STEP_SCAN_FAL_ACCEPT,
 	STEP_COUNT,
 };
 
