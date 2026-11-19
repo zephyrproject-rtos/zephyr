@@ -886,23 +886,14 @@ int sx126x_config_carrier(const struct device *dev, uint32_t frequency, int8_t t
 	return sx126x_hal_configure_tx_params(dev, tx_power, frequency, SX126X_RAMP_200_US);
 }
 
-static int sx126x_lora_config(const struct device *dev, const struct lora_modem_config *config)
+static int sx126x_apply_lora_config(const struct device *dev, const void *cfg)
 {
+	const struct lora_modem_config *config = cfg;
 	struct sx126x_data *data = dev->data;
 	const struct sx126x_hal_config *hal_config = dev->config;
 	uint8_t bw_reg;
 	bool ldro;
 	int ret;
-
-	ret = sx126x_validate_config(dev, config);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = lora_radio_config_begin(dev);
-	if (ret < 0) {
-		return ret;
-	}
 
 	/* Store configuration */
 	memcpy(&data->config, config, sizeof(*config));
@@ -929,12 +920,12 @@ static int sx126x_lora_config(const struct device *dev, const struct lora_modem_
 	 */
 	ret = sx126x_set_packet_type(dev, SX126X_PACKET_TYPE_LORA);
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 
 	ret = sx126x_config_carrier(dev, config->frequency, config->tx_power);
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 
 	/* Set modulation parameters */
@@ -944,19 +935,19 @@ static int sx126x_lora_config(const struct device *dev, const struct lora_modem_
 	ret = sx126x_set_modulation_params(dev, config->datarate, bw_reg, config->coding_rate,
 					   ldro);
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 
 	/* Set sync word */
 	ret = sx126x_set_sync_word(dev, config);
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 
 	/* Set RX gain */
 	ret = sx126x_set_rx_gain(dev, hal_config->rx_boosted);
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 
 	data->gfsk = false;
@@ -964,9 +955,19 @@ static int sx126x_lora_config(const struct device *dev, const struct lora_modem_
 		config->frequency, config->datarate, config->bandwidth,
 		config->coding_rate, config->tx_power);
 
-out:
-	lora_radio_config_end(dev, ret);
 	return ret;
+}
+
+static int sx126x_lora_config(const struct device *dev, const struct lora_modem_config *config)
+{
+	int ret;
+
+	ret = sx126x_validate_config(dev, config);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return lora_radio_configure(dev, sx126x_apply_lora_config, config);
 }
 
 /* Whether the radio can send data_len bytes as it is configured */

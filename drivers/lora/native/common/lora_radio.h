@@ -16,11 +16,11 @@
  * Operation state machine. The state is what the radio is claimed for, and
  * the functions are named without their lora_radio_ prefix.
  *
- *               config_begin()                    +---------------+
+ *               configure()                       +---------------+
  *           +------------------------------------>|               |
  *           |                                     |    CONFIG     |
  *           |<------------------------------------|               |
- *           |   config_end()                      +---------------+
+ *           |   configure() returns               +---------------+
  *           |
  *           |   send(), send_async()              +---------------+
  *           +------------------------------------>|               |
@@ -53,8 +53,8 @@
  * The radio is woken when an operation claims it and put to rest when the
  * operation ends. An operation the radio refuses to start, or a duty cycle it
  * fails to resume, ends at once. A call that finds the radio claimed returns
- * -EBUSY, except during a configuration: that one holds the lock, so the call
- * waits for it and is checked against what it set.
+ * -EBUSY, except during a configuration: that one holds the lock for as long
+ * as it runs, so the call waits for it and is checked against what it set.
  */
 
 /* What the radio is claimed for */
@@ -156,12 +156,15 @@ void lora_radio_init(const struct device *dev);
 /* To be called, from any context, when the radio raises its interrupt */
 void lora_radio_irq(const struct device *dev);
 
+/* Applies a configuration to a radio that is claimed, awake and locked */
+typedef int (*lora_radio_config_fn)(const struct device *dev, const void *cfg);
+
 /*
- * Claim the radio to configure it. On success the radio is awake and the lock
- * held until lora_radio_config_end(), which takes how the configuration went.
+ * Claim the radio, wake it, run fn() against it and let it rest again. The
+ * lock is held throughout, so a call that arrives meanwhile waits for the
+ * configuration instead of being turned away.
  */
-int lora_radio_config_begin(const struct device *dev);
-void lora_radio_config_end(const struct device *dev, int status);
+int lora_radio_configure(const struct device *dev, lora_radio_config_fn fn, const void *cfg);
 
 /* Implementations of the LoRa driver API */
 int lora_radio_send(const struct device *dev, uint8_t *data_buf, uint32_t data_len);
