@@ -337,7 +337,8 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	if (net_pkt_is_tx_timestamping(pkt)) {
 		/* Enable transmit timestamp */
 		if (HAL_ETH_PTP_InsertTxTimestamp(heth) != HAL_OK) {
-			return -EIO;
+			res = -EIO;
+			goto error;
 		}
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
