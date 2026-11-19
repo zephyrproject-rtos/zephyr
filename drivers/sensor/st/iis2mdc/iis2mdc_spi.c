@@ -20,9 +20,9 @@
 
 LOG_MODULE_DECLARE(IIS2MDC, CONFIG_SENSOR_LOG_LEVEL);
 
-static int iis2mdc_spi_read(const struct device *dev, uint8_t reg,
-			    uint8_t *val, uint16_t len)
+static int32_t iis2mdc_spi_read(void *ctx, uint8_t reg, uint8_t *val, uint16_t len)
 {
+	const struct device *dev = ctx;
 	const struct iis2mdc_dev_config *cfg = dev->config;
 	uint8_t buffer_tx[2] = { reg | IIS2MDC_SPI_READ, 0 };
 	const struct spi_buf tx_buf = {
@@ -59,9 +59,9 @@ static int iis2mdc_spi_read(const struct device *dev, uint8_t reg,
 	return 0;
 }
 
-static int iis2mdc_spi_write(const struct device *dev, uint8_t reg,
-			     uint8_t *val, uint16_t len)
+static int32_t iis2mdc_spi_write(void *ctx, uint8_t reg, const uint8_t *val, uint16_t len)
 {
+	const struct device *dev = ctx;
 	const struct iis2mdc_dev_config *cfg = dev->config;
 	uint8_t buffer_tx[1] = { reg & ~IIS2MDC_SPI_READ };
 	const struct spi_buf tx_buf[2] = {
@@ -70,7 +70,7 @@ static int iis2mdc_spi_write(const struct device *dev, uint8_t reg,
 			.len = 1,
 		},
 		{
-			.buf = val,
+			.buf = (uint8_t *)val,
 			.len = len,
 		}
 	};
@@ -100,9 +100,9 @@ int iis2mdc_spi_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	data->ctx_spi.read_reg = (stmdev_read_ptr) iis2mdc_spi_read;
-	data->ctx_spi.write_reg = (stmdev_write_ptr) iis2mdc_spi_write;
-	data->ctx_spi.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay;
+	data->ctx_spi.read_reg = iis2mdc_spi_read;
+	data->ctx_spi.write_reg = iis2mdc_spi_write;
+	data->ctx_spi.mdelay = stmemsc_mdelay;
 
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = (void *)dev;

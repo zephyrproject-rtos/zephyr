@@ -20,17 +20,17 @@
 
 LOG_MODULE_DECLARE(ISM330DHCX, CONFIG_SENSOR_LOG_LEVEL);
 
-static int ism330dhcx_i2c_read(const struct device *dev, uint8_t reg_addr, uint8_t *value,
-			       uint8_t len)
+static int32_t ism330dhcx_i2c_read(void *ctx, uint8_t reg_addr, uint8_t *value, uint16_t len)
 {
+	const struct device *dev = ctx;
 	const struct ism330dhcx_config *cfg = dev->config;
 
 	return i2c_burst_read_dt(&cfg->i2c, reg_addr, value, len);
 }
 
-static int ism330dhcx_i2c_write(const struct device *dev, uint8_t reg_addr, uint8_t *value,
-				uint8_t len)
+static int32_t ism330dhcx_i2c_write(void *ctx, uint8_t reg_addr, const uint8_t *value, uint16_t len)
 {
+	const struct device *dev = ctx;
 	const struct ism330dhcx_config *cfg = dev->config;
 
 	return i2c_burst_write_dt(&cfg->i2c, reg_addr, value, len);
@@ -46,9 +46,9 @@ int ism330dhcx_i2c_init(const struct device *dev)
 		return -ENODEV;
 	};
 
-	data->ctx_i2c.read_reg = (stmdev_read_ptr) ism330dhcx_i2c_read;
-	data->ctx_i2c.write_reg = (stmdev_write_ptr) ism330dhcx_i2c_write;
-	data->ctx_i2c.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay;
+	data->ctx_i2c.read_reg = ism330dhcx_i2c_read;
+	data->ctx_i2c.write_reg = ism330dhcx_i2c_write;
+	data->ctx_i2c.mdelay = stmemsc_mdelay;
 
 	data->ctx = &data->ctx_i2c;
 	data->ctx->handle = (void *)dev;
