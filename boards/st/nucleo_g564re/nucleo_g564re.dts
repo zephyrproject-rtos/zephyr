@@ -10,6 +10,8 @@
 #include "arduino_r3_connector.dtsi"
 #include "st_morpho_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 
 / {
 	compatible = "st,stm32g564re-nucleo";
@@ -31,6 +33,15 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm20 4 PWM_MSEC(20)
+				(PWM_POLARITY_NORMAL | STM32_PWM_COMPLEMENTARY)>;
+		};
+	};
+
 	gpio_keys {
 		compatible = "gpio-keys";
 
@@ -43,6 +54,7 @@
 
 	aliases {
 		led0 = &green_led;
+		pwm-led0 = &green_pwm_led;
 		rtc = &rtc;
 		sw0 = &user_button;
 	};
@@ -77,6 +89,17 @@
 	ppre1 = <1>;
 	ppre2 = <1>;
 	ppre3 = <1>;
+};
+
+&timers20 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm20: pwm {
+		pinctrl-0 = <&tim20_ch4n_pg3>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
 };
 
 &lpuart1 {

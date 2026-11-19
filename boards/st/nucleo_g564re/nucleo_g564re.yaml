@@ -10,6 +10,8 @@ ram: 112
 flash: 512
 supported:
   - arduino_gpio
+  - counter
   - gpio
+  - pwm
   - rtc
   - uart
