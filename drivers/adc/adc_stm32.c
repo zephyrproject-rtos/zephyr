@@ -15,6 +15,7 @@
 
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/adc/stm32_adc.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
@@ -1833,6 +1834,22 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 #endif /* STM32H72X_ADC */
 	}
 #endif /* ADC_STM32_DT_ANY_INST_HAS_CHANNEL_PRESELECTION */
+
+	/* Reset internal channels */
+	if (LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc)) != 0) {
+		/* This check is necessary on F1 to avoid rewriting CR2 to the same value and
+		 * prematurely triggering a conversion.
+		 */
+		LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
+					       STM32_ADC_INTERNAL_CHANNEL_NONE);
+	}
+
+#ifdef LL_ADC_PATH_INTERNAL_VDDCORE
+	LL_ADC_SetPathInternalCh(adc, STM32_ADC_INTERNAL_CHANNEL_NONE);
+#elif defined(CONFIG_SOC_SERIES_STM32H5X)
+	LL_ADC_DisableChannelVDDcore(adc);
+#endif
+	/* Nothing to do for DACx_OUTx. It is a select rather than an enable/disable path */
 #endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
 }
 
@@ -2118,13 +2135,89 @@ static void adc_stm32_sampling_time_restore(const struct device *dev, uint8_t ch
 }
 #endif /* CONFIG_ADC_STM32_VREFINT_CALIBRATE */
 
+static int adc_stm32_set_internal_channel(ADC_TypeDef *adc, uint8_t internal_channel)
+{
+	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
+	int ret = 0;
+
+	switch (internal_channel) {
+	case STM32_ADC_INTERNAL_CHANNEL_VREFINT:
+		LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
+					path | LL_ADC_PATH_INTERNAL_VREFINT);
+#ifdef LL_ADC_DELAY_VREFINT_STAB_US
+		k_usleep(LL_ADC_DELAY_VREFINT_STAB_US);
+#endif
+		break;
+	case STM32_ADC_INTERNAL_CHANNEL_TEMPSENSOR:
+#ifdef LL_ADC_PATH_INTERNAL_TEMPSENSOR
+		LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
+					path | LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+		k_usleep(LL_ADC_DELAY_TEMPSENSOR_STAB_US);
+#else
+		LOG_ERR("Temperature sensor not supported on this ADC");
+		ret = -ENOTSUP;
+#endif
+		break;
+	case STM32_ADC_INTERNAL_CHANNEL_VBAT:
+#ifdef LL_ADC_PATH_INTERNAL_VBAT
+		LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
+					path | LL_ADC_PATH_INTERNAL_VBAT);
+#else
+		LOG_ERR("VBAT not supported on this ADC");
+		ret = -ENOTSUP;
+#endif
+		break;
+	case STM32_ADC_INTERNAL_CHANNEL_VDDCORE:
+#ifdef LL_ADC_PATH_INTERNAL_VDDCORE
+		LL_ADC_SetPathInternalChAdd(adc, LL_ADC_PATH_INTERNAL_VDDCORE);
+#elif defined(CONFIG_SOC_SERIES_STM32H5X)
+		LL_ADC_EnableChannelVDDcore(adc);
+#else
+		LOG_ERR("VDDCORE not supported on this ADC");
+		ret = -ENOTSUP;
+#endif
+		break;
+	case STM32_ADC_INTERNAL_CHANNEL_DAC1_OUT1:
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+		if (adc == ADC4) {
+			stm32_reg_clear_bits(&adc->OR, ADC_OR_CHN0SEL);
+		} else {
+			LOG_ERR("DAC1_OUT1 not supported on this ADC");
+			ret = -ENOTSUP;
+			break;
+		}
+#else
+		LOG_ERR("DAC1_OUT1 not supported on this ADC");
+		ret = -ENOTSUP;
+#endif
+		break;
+	case STM32_ADC_INTERNAL_CHANNEL_DAC1_OUT2:
+#ifdef CONFIG_SOC_SERIES_STM32U5X
+		if (adc == ADC4) {
+			stm32_reg_set_bits(&adc->OR, ADC_OR_CHN0SEL);
+		} else {
+			LOG_ERR("DAC1_OUT2 not supported on this ADC");
+			ret = -ENOTSUP;
+		}
+#else
+		LOG_ERR("DAC1_OUT2 not supported on this ADC");
+		ret = -ENOTSUP;
+#endif
+		break;
+	default:
+		ret = -EINVAL;
+		break;
+	}
+	return ret;
+}
+
 static int adc_stm32_channel_setup(const struct device *dev,
 				   const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_sub_stm32_cfg *config = dev->config;
 	const struct adc_stm32_cfg *parent_config = adc_stm32_get_parent_cfg(config);
 	struct adc_sub_stm32_data *data = dev->data;
-	__maybe_unused ADC_TypeDef *adc = config->base;
+	ADC_TypeDef *adc = config->base;
 	int err = 0;
 
 	adc_context_lock(&data->ctx, false, NULL);
@@ -2180,6 +2273,14 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		goto release;
 	}
 #endif /* ADC_STM32_DT_ANY_INST_HAS_CHANNEL_PRESELECTION && CONFIG_ADC_STM32_INJECTED_CHANNELS */
+
+	if (channel_cfg->internal_channel != STM32_ADC_INTERNAL_CHANNEL_NONE) {
+		err = adc_stm32_set_internal_channel(adc, channel_cfg->internal_channel);
+		if (err < 0) {
+			LOG_ERR("Error setting internal channel");
+			goto release;
+		}
+	}
 
 #ifdef CONFIG_SOC_SERIES_STM32H5X
 	if (channel_cfg->channel_id == 0) {

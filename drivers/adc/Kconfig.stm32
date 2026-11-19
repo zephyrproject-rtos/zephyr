@@ -15,6 +15,7 @@ config ADC_STM32
 	default y
 	depends on DT_HAS_ST_STM32_ADC_ENABLED
 	select PINCTRL
+	select ADC_CONFIGURABLE_INTERNAL_CHANNELS
 	select ADC_ASYNC if ADC_STREAM
 	select ADC_HAS_SEQUENCE_PRIORITY if \
 		$(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_ADC),$(ADC_STM32_INJECTED_SUPPORT),True)
