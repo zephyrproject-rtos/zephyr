@@ -926,6 +926,55 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+uint8_t llcp_fsu_validate(uint16_t fsu_min, uint16_t fsu_max, uint8_t phys,
+			  uint16_t spacing_type)
+{
+	if ((fsu_min > fsu_max) || (fsu_max > FSU_FRAME_SPACE_MAX_US) || (phys == 0U) ||
+	    ((phys & ~FSU_PHYS_MASK) != 0U) || (spacing_type == 0U) ||
+	    ((spacing_type & ~T_SPACING_TYPE_MASK) != 0U)) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
+	/* The selected frame space is the smallest one in range supported by the radio */
+	if (((phys & ~LLCP_FSU_PHYS_SUPPORTED) != 0U) ||
+	    ((spacing_type & ~LLCP_FSU_SPACING_TYPE_SUPPORTED) != 0U) ||
+	    (MAX(fsu_min, CONFIG_BT_CTLR_EVENT_IFS_LOW_LAT_US) > fsu_max)) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+uint8_t ull_cp_fsu(struct ll_conn *conn, uint16_t fsu_min, uint16_t fsu_max, uint8_t phys,
+		   uint16_t spacing_type)
+{
+	struct proc_ctx *ctx;
+	uint8_t err;
+
+	err = llcp_fsu_validate(fsu_min, fsu_max, phys, spacing_type);
+	if (err == BT_HCI_ERR_INVALID_LL_PARAM) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	} else if (err != BT_HCI_ERR_SUCCESS) {
+		return err;
+	}
+
+	ctx = llcp_create_local_procedure(PROC_FRAME_SPACE);
+	if (ctx == NULL) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ctx->data.fsu.fsu_min = fsu_min;
+	ctx->data.fsu.fsu_max = fsu_max;
+	ctx->data.fsu.phys = phys;
+	ctx->data.fsu.spacing_type = spacing_type;
+
+	llcp_lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 uint8_t ull_cp_req_peer_sca(struct ll_conn *conn)
 {
@@ -1152,6 +1201,17 @@ uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn)
 	return (ctx && ctx->proc == PROC_DATA_LENGTH_UPDATE);
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+bool ull_cp_remote_fsu_pending(struct ll_conn *conn)
+{
+	const struct proc_ctx *ctx;
+
+	ctx = llcp_rr_peek(conn);
+
+	return (ctx != NULL) && (ctx->proc == PROC_FRAME_SPACE);
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 void ull_cp_conn_param_req_reply(struct ll_conn *conn)
@@ -1769,6 +1829,18 @@ static bool pdu_validate_length_rsp(struct pdu_data *pdu)
 	return VALIDATE_PDU_LEN(pdu, length_rsp);
 }
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+static bool pdu_validate_fsu_req(struct pdu_data *pdu)
+{
+	return VALIDATE_PDU_LEN(pdu, fsu_req);
+}
+
+static bool pdu_validate_fsu_rsp(struct pdu_data *pdu)
+{
+	return VALIDATE_PDU_LEN(pdu, fsu_rsp);
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 static bool pdu_validate_phy_req(struct pdu_data *pdu)
 {
@@ -1880,6 +1952,10 @@ static const struct pdu_validate pdu_validate[] = {
 	[PDU_DATA_LLCTRL_TYPE_LENGTH_REQ] = { pdu_validate_length_req },
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	[PDU_DATA_LLCTRL_TYPE_LENGTH_RSP] = { pdu_validate_length_rsp },
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ] = { pdu_validate_fsu_req },
+	[PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP] = { pdu_validate_fsu_rsp },
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
 #if defined(CONFIG_BT_CTLR_PHY)
 	[PDU_DATA_LLCTRL_TYPE_PHY_REQ] = { pdu_validate_phy_req },
 #endif /* CONFIG_BT_CTLR_PHY */

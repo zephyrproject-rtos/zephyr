@@ -778,6 +778,13 @@ static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 			ctx->data.pu.ntf_dle = pu_update_eff_times(conn, ctx);
 		}
 #endif
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+		if (phy_changed) {
+			/* Use the frame spaces of the new PHYs */
+			ull_fsu_tifs_set(conn);
+		}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		ctx->data.pu.ntf_pu = (phy_changed || ctx->data.pu.host_initiated);
@@ -1207,6 +1214,13 @@ static void rp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 			ctx->data.pu.ntf_dle = pu_update_eff_times(conn, ctx);
 		}
 #endif
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+		if (phy_changed) {
+			/* Use the frame spaces of the new PHYs */
+			ull_fsu_tifs_set(conn);
+		}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 		/* if PHY settings changed we should generate NTF */
 		ctx->data.pu.ntf_pu = phy_changed;
 		rp_pu_complete(conn, ctx, evt, param);

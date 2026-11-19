@@ -246,6 +246,13 @@
 	* !CONFIG_BT_CTLR_SYNC_PERIODIC_ADI_SUPPORT
 	*/
 
+/* Frame Space Update is feature bit 65, beyond the 64-bit LL feature mask
+ * used by the Feature Exchange procedure. The feature is not advertised
+ * until the Controller supports the extended feature set exchange, so a
+ * locally initiated Frame Space Update procedure is not started.
+ */
+#define LL_FEAT_BIT_FRAME_SPACE 0U
+
 /* All defined feature bits */
 #define LL_FEAT_BIT_MASK         0xFFFFFFFFFFULL
 
@@ -289,7 +296,8 @@
 				  LL_FEAT_BIT_SYNC_RECEIVER | \
 				  LL_FEAT_BIT_PERIODIC_ADI_SUPPORT | \
 				  LL_FEAT_BIT_SYNC_TRANSFER_RECEIVER | \
-				  LL_FEAT_BIT_SYNC_TRANSFER_SENDER)
+				  LL_FEAT_BIT_SYNC_TRANSFER_SENDER | \
+				  LL_FEAT_BIT_FRAME_SPACE)
 
 /* Connected Isochronous Stream (Host Support) bit is controlled by host */
 #if defined(CONFIG_BT_CTLR_CONN_ISO)

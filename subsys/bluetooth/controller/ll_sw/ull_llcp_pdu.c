@@ -730,6 +730,82 @@ void llcp_pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+/*
+ * Frame Space Update Procedure Helper
+ */
+void llcp_pdu_encode_fsu_req(const struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_fsu_req *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = PDU_DATA_LLCTRL_LEN(fsu_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ;
+
+	p = &pdu->llctrl.fsu_req;
+	p->fsu_min = sys_cpu_to_le16(ctx->data.fsu.fsu_min);
+	p->fsu_max = sys_cpu_to_le16(ctx->data.fsu.fsu_max);
+	p->phys = ctx->data.fsu.phys;
+	p->spacing_type = sys_cpu_to_le16(ctx->data.fsu.spacing_type);
+}
+
+void llcp_pdu_encode_fsu_rsp(const struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_fsu_rsp *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = PDU_DATA_LLCTRL_LEN(fsu_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_RSP;
+
+	p = &pdu->llctrl.fsu_rsp;
+	p->fsu = sys_cpu_to_le16(ctx->data.fsu.fsu);
+	p->phys = ctx->data.fsu.phys;
+	p->spacing_type = sys_cpu_to_le16(ctx->data.fsu.spacing_type);
+}
+
+void llcp_pdu_decode_fsu_req(struct proc_ctx *ctx, const struct pdu_data *pdu)
+{
+	const struct pdu_data_llctrl_fsu_req *p = &pdu->llctrl.fsu_req;
+
+	ctx->data.fsu.fsu_min = sys_le16_to_cpu(p->fsu_min);
+	ctx->data.fsu.fsu_max = sys_le16_to_cpu(p->fsu_max);
+	/* Ignore RFU bits */
+	ctx->data.fsu.phys = p->phys & FSU_PHYS_MASK;
+	ctx->data.fsu.spacing_type = sys_le16_to_cpu(p->spacing_type) & T_SPACING_TYPE_MASK;
+}
+
+void llcp_pdu_decode_fsu_rsp(struct proc_ctx *ctx, const struct pdu_data *pdu)
+{
+	const struct pdu_data_llctrl_fsu_rsp *p = &pdu->llctrl.fsu_rsp;
+
+	ctx->data.fsu.fsu = sys_le16_to_cpu(p->fsu);
+	/* Frame space applies only to the requested PHYs and spacing types */
+	ctx->data.fsu.phys &= p->phys;
+	ctx->data.fsu.spacing_type &= sys_le16_to_cpu(p->spacing_type);
+}
+
+void llcp_ntf_encode_fsu_change(const struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	if (ctx->tx_opcode == PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ) {
+		/* Locally initiated, notify as LL_FRAME_SPACE_RSP */
+		llcp_pdu_encode_fsu_rsp(ctx, pdu);
+	} else {
+		/* Peer initiated, notify as LL_FRAME_SPACE_REQ with the selected frame space */
+		struct pdu_data_llctrl_fsu_req *p;
+
+		pdu->ll_id = PDU_DATA_LLID_CTRL;
+		pdu->len = PDU_DATA_LLCTRL_LEN(fsu_req);
+		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FRAME_SPACE_REQ;
+
+		p = &pdu->llctrl.fsu_req;
+		p->fsu_min = sys_cpu_to_le16(ctx->data.fsu.fsu);
+		p->fsu_max = sys_cpu_to_le16(ctx->data.fsu.fsu);
+		p->phys = ctx->data.fsu.phys;
+		p->spacing_type = sys_cpu_to_le16(ctx->data.fsu.spacing_type);
+	}
+}
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
 /*
  * Constant Tone Request Procedure Helper

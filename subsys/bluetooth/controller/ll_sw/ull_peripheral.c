@@ -380,6 +380,10 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
 
+#if defined(CONFIG_BT_CTLR_FRAME_SPACE_UPDATE)
+	ull_fsu_init(conn, EVENT_IFS_DEFAULT_US);
+#endif /* CONFIG_BT_CTLR_FRAME_SPACE_UPDATE */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy_rx, PHY_FLAGS_S8);
 #else /* CONFIG_BT_CTLR_PHY */
