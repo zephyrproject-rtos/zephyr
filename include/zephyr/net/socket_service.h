@@ -162,7 +162,8 @@ struct net_socket_service_desc {
  *
  * @retval 0 No error
  * @retval -ENOENT Service is not found.
- * @retval -EINVAL Invalid parameter.
+ * @retval -ENOMEM Too many sockets for this service.
+ * @retval -EIO The socket service thread is not running.
  */
 __syscall int net_socket_service_register(const struct net_socket_service_desc *service,
 					  struct zsock_pollfd *fds, int len, void *user_data);
@@ -174,7 +175,7 @@ __syscall int net_socket_service_register(const struct net_socket_service_desc *
  *
  * @retval 0 No error
  * @retval -ENOENT Service is not found.
- * @retval -EINVAL Invalid parameter.
+ * @retval -EIO The socket service thread is not running.
  */
 static inline int net_socket_service_unregister(const struct net_socket_service_desc *service)
 {
@@ -188,7 +189,7 @@ static inline int net_socket_service_unregister(const struct net_socket_service_
  *
  * @retval 0 No error
  * @retval -ENOENT Service is not found.
- * @retval -EINVAL Invalid parameter.
+ * @retval -EIO The socket service thread is not running.
  */
 static inline int net_socket_service_close(const struct net_socket_service_desc *service)
 {
