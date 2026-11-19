@@ -171,6 +171,12 @@ Libraries / Subsystems
     command was run without that argument and its remaining arguments, which usually failed
     with a wrong argument count.
 
+* Toolchain
+
+  * ``__counted_by()`` names the member holding the element count of a flexible array member.
+    With GCC 15.1 or Clang 19.1.3 and later, the bounds sanitizer traps on an index past that
+    count and ``__builtin_dynamic_object_size()`` reports the size it implies.
+
 Devicetree
 **********
 
