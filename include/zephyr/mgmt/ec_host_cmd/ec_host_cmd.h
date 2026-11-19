@@ -482,11 +482,14 @@ enum ec_host_cmd_status ec_host_cmd_send_in_progress_continue(ec_host_cmd_in_pro
 /**
  * @brief Add a suppressed command.
  *
- * Suppressed commands are not logged. Add a command to be suppressed.
+ * Suppressed commands are not logged on reception, and @ref EC_HOST_CMD_UNAVAILABLE
+ * responses for suppressed commands are logged at debug level instead of info level.
+ * Add a command to be suppressed.
  *
  * @param[in] cmd_id        A command id to be suppressed.
  *
- * @retval 0 if successful, -EIO if exceeded max number of suppressed commands.
+ * @retval 0 if successful
+ * @retval -EIO if exceeded max number of suppressed commands
  */
 int ec_host_cmd_add_suppressed(uint16_t cmd_id);
 

@@ -155,19 +155,24 @@ int ec_host_cmd_add_suppressed(uint16_t cmd_id)
 	return 0;
 }
 
-static bool ec_host_cmd_is_suppressed(uint16_t cmd_id)
+static bool ec_host_cmd_find_suppressed(uint16_t cmd_id, size_t *index)
 {
-	int i;
-
-	for (i = 0; i < suppressed_cmds_number; i++) {
+	for (size_t i = 0; i < suppressed_cmds_number; i++) {
 		if (suppressed_cmds[i] == cmd_id) {
-			suppressed_cmds_count[i]++;
+			if (index != NULL) {
+				*index = i;
+			}
 
 			return true;
 		}
 	}
 
 	return false;
+}
+
+static bool ec_host_cmd_is_suppressed(uint16_t cmd_id)
+{
+	return ec_host_cmd_find_suppressed(cmd_id, NULL);
 }
 
 void ec_host_cmd_dump_suppressed(void)
@@ -191,6 +196,13 @@ static void ec_host_cmd_check_suppressed(void)
 	if (k_uptime_get() >= suppressed_cmds_deadline) {
 		ec_host_cmd_dump_suppressed();
 	}
+}
+#else
+static bool ec_host_cmd_is_suppressed(uint16_t cmd_id)
+{
+	ARG_UNUSED(cmd_id);
+
+	return false;
 }
 #endif /* CONFIG_EC_HOST_CMD_LOG_SUPPRESSED */
 
@@ -313,7 +325,12 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 			const struct ec_host_cmd_request_header *const rx_header =
 				(const struct ec_host_cmd_request_header *const)hc->rx_ctx.buf;
 
-			LOG_INF("HC 0x%04x err %d", rx_header->cmd_id, status);
+			if ((status == EC_HOST_CMD_UNAVAILABLE) &&
+			    ec_host_cmd_is_suppressed(rx_header->cmd_id)) {
+				LOG_DBG("HC 0x%04x err %d", rx_header->cmd_id, status);
+			} else {
+				LOG_INF("HC 0x%04x err %d", rx_header->cmd_id, status);
+			}
 		} else {
 			LOG_INF("HC rx err %d", status);
 		}
@@ -357,7 +374,10 @@ static void ec_host_cmd_log_request(const uint8_t *rx_buf)
 		(const struct ec_host_cmd_request_header *const)rx_buf;
 
 #ifdef CONFIG_EC_HOST_CMD_LOG_SUPPRESSED
-	if (ec_host_cmd_is_suppressed(rx_header->cmd_id)) {
+	size_t idx;
+
+	if (ec_host_cmd_find_suppressed(rx_header->cmd_id, &idx)) {
+		suppressed_cmds_count[idx]++;
 		ec_host_cmd_check_suppressed();
 
 		return;

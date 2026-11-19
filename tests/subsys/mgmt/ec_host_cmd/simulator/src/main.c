@@ -16,6 +16,7 @@ static size_t first_hexdump_len;
 static size_t last_hexdump_len;
 static char last_log_str[128];
 static size_t last_log_str_pos;
+static uint8_t last_log_level;
 
 static int test_log_str_out(int c, void *ctx)
 {
@@ -44,8 +45,13 @@ static void test_log_backend_process(const struct log_backend *const backend,
 		last_hexdump_len = data_len;
 	}
 
+	if (log_msg_get_level(&msg->log) == LOG_LEVEL_INTERNAL_RAW_STRING) {
+		return;
+	}
+
 	pkg = log_msg_get_package(&msg->log, &pkg_len);
 	if (pkg != NULL && pkg_len > 0) {
+		last_log_level = log_msg_get_level(&msg->log);
 		last_log_str_pos = 0;
 		last_log_str[0] = '\0';
 		cbpprintf(test_log_str_out, NULL, pkg);
@@ -838,6 +844,88 @@ ZTEST(ec_host_cmd, test_log_on_request_max_version)
 		      "Unexpected request hexdump length");
 
 	verify_tx_error(EC_HOST_CMD_INVALID_VERSION);
+}
+
+#define EC_CMD_SUPPRESSED_ERR   0x0004
+#define EC_CMD_UNSUPPRESSED_ERR 0x0005
+
+static enum ec_host_cmd_status ec_host_cmd_return_err(struct ec_host_cmd_handler_args *args)
+{
+	if (args->version == 0) {
+		return EC_HOST_CMD_UNAVAILABLE;
+	}
+
+	return EC_HOST_CMD_OVERFLOW;
+}
+EC_HOST_CMD_HANDLER_UNBOUND(EC_CMD_SUPPRESSED_ERR, ec_host_cmd_return_err, BIT(0) | BIT(1));
+EC_HOST_CMD_HANDLER_UNBOUND(EC_CMD_UNSUPPRESSED_ERR, ec_host_cmd_return_err, BIT(0) | BIT(1));
+
+ZTEST(ec_host_cmd, test_suppressed_unavailable_log_level)
+{
+#ifdef CONFIG_EC_HOST_CMD_LOG_SUPPRESSED
+	static bool suppressed_registered;
+
+	if (!suppressed_registered) {
+		zassert_equal(ec_host_cmd_add_suppressed(EC_CMD_SUPPRESSED_ERR), 0,
+			      "Failed to register suppressed command");
+		suppressed_registered = true;
+	}
+#endif
+
+	/* Suppressed command returning UNAVAILABLE logs at DBG (INF if suppression disabled). */
+	last_log_str[0] = '\0';
+	last_log_level = LOG_LEVEL_NONE;
+	*host_to_dut = (struct rx_structure){
+		.header = {
+			.prtcl_ver = 3,
+			.cmd_id = EC_CMD_SUPPRESSED_ERR,
+			.cmd_ver = 0,
+			.data_len = 0,
+		},
+	};
+	simulate_rx_data();
+	verify_tx_error(EC_HOST_CMD_UNAVAILABLE);
+	zassert_not_null(strstr(last_log_str, "HC 0x0004 err 9"),
+			 "Unexpected log message '%s'", last_log_str);
+	zassert_equal(last_log_level,
+		      IS_ENABLED(CONFIG_EC_HOST_CMD_LOG_SUPPRESSED) ? LOG_LEVEL_DBG : LOG_LEVEL_INF,
+		      "Unexpected log level %u", last_log_level);
+
+	/* Suppressed command returning a different error still logs at INF. */
+	last_log_str[0] = '\0';
+	last_log_level = LOG_LEVEL_NONE;
+	*host_to_dut = (struct rx_structure){
+		.header = {
+			.prtcl_ver = 3,
+			.cmd_id = EC_CMD_SUPPRESSED_ERR,
+			.cmd_ver = 1,
+			.data_len = 0,
+		},
+	};
+	simulate_rx_data();
+	verify_tx_error(EC_HOST_CMD_OVERFLOW);
+	zassert_equal(strcmp(last_log_str, "HC 0x0004 err 11"), 0,
+		      "Unexpected log message '%s'", last_log_str);
+	zassert_equal(last_log_level, LOG_LEVEL_INF,
+		      "Expected LOG_LEVEL_INF for non-UNAVAILABLE error, got %u", last_log_level);
+
+	/* Unsuppressed command returning UNAVAILABLE still logs at INF. */
+	last_log_str[0] = '\0';
+	last_log_level = LOG_LEVEL_NONE;
+	*host_to_dut = (struct rx_structure){
+		.header = {
+			.prtcl_ver = 3,
+			.cmd_id = EC_CMD_UNSUPPRESSED_ERR,
+			.cmd_ver = 0,
+			.data_len = 0,
+		},
+	};
+	simulate_rx_data();
+	verify_tx_error(EC_HOST_CMD_UNAVAILABLE);
+	zassert_equal(strcmp(last_log_str, "HC 0x0005 err 9"), 0,
+		      "Unexpected log message '%s'", last_log_str);
+	zassert_equal(last_log_level, LOG_LEVEL_INF,
+		      "Expected LOG_LEVEL_INF for unsuppressed command, got %u", last_log_level);
 }
 
 static void *ec_host_cmd_tests_setup(void)
