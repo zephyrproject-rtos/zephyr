@@ -14,7 +14,7 @@ Requirements
 ************
 
 * Nordic nRF SoC based board with Direction Finding support (example boards:
-  :zephyr:board:`nrf52833dk`, :zephyr:board:`nrf5340dk`)
+  :zephyr:board:`nrf52833dk`, :zephyr:board:`nrf5340dk`, :zephyr:board:`nrf54l15dk`)
 * Antenna matrix for AoD (optional)
 
 Check your SoC's product specification for Direction Finding support if you are
