@@ -69,8 +69,10 @@ K_MSGQ_DEFINE_STATIC_TYPE(xfer_msgq, struct latmon_data, 10);
 /* Network transfer thread: sends data to Latmus  */
 #define XFER_THREAD_STACK_SIZE CONFIG_NET_LATMON_XFER_THREAD_STACK_SIZE
 #define XFER_THREAD_PRIORITY CONFIG_NET_LATMON_XFER_THREAD_PRIORITY
+#define XFER_THREAD_LEAVE_TIMEOUT K_MSEC(CONFIG_NET_SOCKET_MAX_SEND_WAIT + MSEC_PER_SEC)
 K_THREAD_STACK_DEFINE(xfer_thread_stack, XFER_THREAD_STACK_SIZE);
 static struct k_thread xfer_thread;
+static bool abort_xfer;
 
 /* Latmon thread: receives application requests */
 #define LATMON_THREAD_PRIORITY CONFIG_NET_LATMON_THREAD_PRIORITY
@@ -239,6 +241,10 @@ static void xfer_thread_func(void *p1, void *p2, void *p3)
 			continue;
 		}
 
+		if (abort_xfer) {
+			break;
+		}
+
 		if (send_sample_data(latmus, &sample) < 0) {
 			LOG_ERR("Failed to transfer sample data");
 			break;
@@ -248,14 +254,23 @@ static void xfer_thread_func(void *p1, void *p2, void *p3)
 
 static void start_xfer_thread(int *latmus)
 {
+	abort_xfer = false;
 	k_thread_create(&xfer_thread, xfer_thread_stack, XFER_THREAD_STACK_SIZE,
 			xfer_thread_func, latmus, NULL, NULL,
 			XFER_THREAD_PRIORITY, 0, K_MSEC(10));
 }
 
-static void abort_xfer_thread(void)
+static void abort_xfer_thread(struct latmon_data *data)
 {
-	k_thread_abort(&xfer_thread);
+	abort_xfer = true;
+	k_msgq_purge(&xfer_msgq);
+
+	if ((k_msgq_put(&xfer_msgq, data, K_NO_WAIT) != 0) ||
+	    (k_thread_join(&xfer_thread, XFER_THREAD_LEAVE_TIMEOUT) != 0)) {
+		k_thread_abort(&xfer_thread);
+	}
+
+	k_msgq_purge(&xfer_msgq);
 }
 
 static int measure(uint32_t *delta, struct latmon_message *msg,
@@ -317,7 +332,7 @@ static void monitor_thread_func(void *p1, void *p2, void *p3)
 		/* Abort allowed after all samples have been queued */
 	} while (abort_monitor == false && ret == 0);
 out:
-	abort_xfer_thread();
+	abort_xfer_thread(data);
 	k_sem_give(&monitor_done);
 	monitor_tid = NULL;
 
