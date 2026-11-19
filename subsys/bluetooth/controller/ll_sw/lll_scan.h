@@ -99,6 +99,12 @@ int lll_scan_reset(void);
 
 void lll_scan_prepare(void *param);
 
+bool lll_scan_isr_rx_check(const struct lll_scan *lll, uint8_t irkmatch_ok,
+			   uint8_t devmatch_ok, uint8_t rl_idx);
+bool lll_scan_tgta_check(const struct lll_scan *lll, bool init,
+			 uint8_t addr_type, const uint8_t *addr,
+			 uint8_t rl_idx, bool *dir_report);
+
 extern uint8_t ull_scan_lll_handle_get(struct lll_scan *lll);
 extern struct lll_scan *ull_scan_lll_is_valid_get(struct lll_scan *lll);
 extern struct lll_scan_aux *ull_scan_aux_lll_is_valid_get(struct lll_scan_aux *lll);
