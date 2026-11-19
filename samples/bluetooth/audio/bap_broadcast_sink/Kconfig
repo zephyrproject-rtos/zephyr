@@ -36,6 +36,14 @@ config TARGET_BROADCAST_NAME
 	  Name of target broadcast device. If not empty string, sink device
 	  will only listen to the specified broadcast source. Not case sensitive.
 
+config TARGET_BROADCAST_CODE
+	string "Broadcast code of the target broadcast"
+	default ""
+	help
+	  Broadcast code used to decrypt an encrypted broadcast when no
+	  Broadcast Assistant provides one, at most 16 characters. When empty,
+	  the sample waits for the code from a Broadcast Assistant.
+
 config MAX_CODEC_FRAMES_PER_SDU
 	int "The maximum number of codec frame per SDU supported"
 	default 1
