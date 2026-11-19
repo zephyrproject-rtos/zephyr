@@ -459,6 +459,39 @@
 			status = "disabled";
 		};
 
+		i2c1: i2c@40005400 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005400 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
+			interrupts = <76 0>, <77 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005800 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
+			interrupts = <78 0>, <79 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c3: i2c@40005c00 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005c00 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
+			interrupts = <80 0>, <81 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
 		uart7: serial@40007800 {
 			compatible = "st,stm32-uart";
 			reg = <0x40007800 DT_SIZE_K(1)>;
