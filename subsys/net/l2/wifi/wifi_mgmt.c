@@ -261,6 +261,8 @@ const char *wifi_link_mode_txt(enum wifi_link_mode link_mode)
 		return "WIFI 6E (802.11ax 6GHz/HE)";
 	case WIFI_7:
 		return "WIFI 7 (802.11be/EHT)";
+	case WIFI_HALOW:
+		return "WIFI HaLow (802.11ah/S1G)";
 	case WIFI_LINK_MODE_UNKNOWN:
 	default:
 		return "UNKNOWN";

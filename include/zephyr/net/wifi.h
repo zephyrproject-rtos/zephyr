@@ -473,6 +473,8 @@ enum wifi_link_mode {
 	WIFI_6E,
 	/** 802.11be. */
 	WIFI_7,
+	/** 802.11ah. */
+	WIFI_HALOW,
 
 /** @cond INTERNAL_HIDDEN */
 	__WIFI_LINK_MODE_AFTER_LAST,
