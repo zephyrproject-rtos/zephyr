@@ -104,3 +104,7 @@ The sample requires proper devicetree configuration for:
   I2S capture.
 * ``i2s_codec_tx`` node alias for i2s.
 * ``audio_codec`` node label for audio codec.
+* ``audio_codec_capture`` node alias for I2S capture through a codec. The I2S
+  source configures the codec's capture path only through this alias, or a
+  ``codec`` phandle on the I2S RX node; without either, the codec input is left
+  unconfigured and the capture is silent.

@@ -6,6 +6,8 @@
 
 / {
 	aliases {
+		/* The I2S source configures the WM8904 capture path through this */
+		audio-codec-capture = &audio_codec;
 		i2s-codec-rx = &i2s0;
 		i2s-codec-tx = &i2s1;
 	};
