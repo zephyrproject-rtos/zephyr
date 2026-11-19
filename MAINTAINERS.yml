@@ -4531,6 +4531,25 @@ NXP Platform Drivers:
         - MarkWangChinese
       files:
         - drivers/usb/
+    - name: NXP Ethernet
+      description: >-
+        NXP ethernet MAC, MDIO and PHY drivers for the MCUXpresso platforms
+        (ENET, ENET_QOS, i.MX NETC, DWC ethernet QoS), excluding S32.
+      collaborators:
+        - Martin-Pitonak-NXP
+        - protohohol
+      files:
+        - drivers/ethernet/eth_nxp_enet_qos/
+        - drivers/ethernet/nxp_imx_netc/
+        - drivers/ethernet/*nxp*
+        - drivers/ethernet/*/*nxp*
+        - drivers/ethernet/dsa/dsa_tag_netc.*
+        - drivers/ethernet/phy/*tja*
+        - dts/bindings/ethernet/nxp,*
+        - dts/bindings/ethernet/*/nxp,*
+        - dts/bindings/dsa/nxp,*
+        - include/zephyr/dt-bindings/ethernet/nxp_*
+        - include/zephyr/drivers/ethernet/eth_nxp_*
   labels:
     - "platform: NXP"
   description: NXP Drivers
