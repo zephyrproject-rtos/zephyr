@@ -148,20 +148,22 @@ static int test_burst_gy271(void)
 	}
 
 #ifdef CONFIG_SENSOR_GY271_QMC
-	datas[0] = 0x09;
-	datas[1] = 0x01;
+	datas[0] = 0x00; /* register address */
+	datas[1] = 0x09;
+	datas[2] = 0x01;
 
-	if (i2c_burst_write(i2c_dev, GY271_ADDR, 0x00, datas, 2)) {
+	if (i2c_write(i2c_dev, datas, 3, GY271_ADDR)) {
 		TC_PRINT("Fail to configure sensor GY271 QMC\n");
 	}
 #else
-	datas[0] = 0x01;
-	datas[1] = 0x20;
-	datas[2] = 0x02;
-	datas[3] = 0x00;
+	datas[0] = 0x00; /* register address */
+	datas[1] = 0x01;
+	datas[2] = 0x20;
+	datas[3] = 0x02;
+	datas[4] = 0x00;
 
-	/* 3. verify i2c_burst_write() */
-	if (i2c_burst_write(i2c_dev, GY271_ADDR, 0x00, datas, 4)) {
+	/* 3. verify multi-byte register write with i2c_write() */
+	if (i2c_write(i2c_dev, datas, 5, GY271_ADDR)) {
 		TC_PRINT("Fail to write to sensor GY271\n");
 		return TC_FAIL;
 	}
