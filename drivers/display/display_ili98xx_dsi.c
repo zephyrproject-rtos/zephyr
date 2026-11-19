@@ -204,7 +204,7 @@ int ili98xx_dsi_init(const struct device *dev)
 	}
 
 	mdev.data_lanes = cfg->data_lanes;
-	mdev.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_LPM;
+	mdev.mode_flags = cfg->mode_flags;
 	mdev.timings.hactive = cfg->width;
 	mdev.timings.hbp = ILI98XX_DSI_HBP;
 	mdev.timings.hfp = ILI98XX_DSI_HFP;

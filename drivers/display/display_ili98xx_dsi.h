@@ -10,6 +10,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/mipi_dsi.h>
 
 #include "display_ili9xxx.h"
 
@@ -143,6 +144,7 @@ struct ili98xx_dsi_config {
 	uint16_t width;
 	uint16_t height;
 	uint8_t channel;
+	uint8_t mode_flags;
 	int (*regs_init_fn)(const struct device *dev);
 };
 
@@ -191,6 +193,9 @@ void ili98xx_dsi_get_capabilities(const struct device *dev,
 		.height = DT_PROP(node, height),                                                   \
 		.channel = DT_REG_ADDR(node),                                                      \
 		.pixel_format = DT_PROP(node, pixel_format),                                       \
+		.mode_flags = MIPI_DSI_MODE_VIDEO |                                                \
+			COND_CODE_0(DT_PROP(node, hp_mode), (MIPI_DSI_MODE_LPM), (0)) |            \
+			COND_CODE_1(DT_PROP(node, burst_mode), (MIPI_DSI_MODE_VIDEO_BURST), (0)),  \
 		.regs_init_fn = init_fn,                                                           \
 	};                                                                                         \
                                                                                                    \
