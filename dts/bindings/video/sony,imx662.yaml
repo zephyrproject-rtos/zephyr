@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sony IMX662 1/2.8" STARVIS 2 CMOS image sensor (MIPI CSI-2)
+
+compatible: "sony,imx662"
+
+include: i2c-device.yaml
+
+properties:
+  clocks:
+    required: true
+    description: Sensor input clock (INCK). Only 24 MHz is supported.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The XCLR pin is asserted to cause a hard reset. The sensor
+      receives this as an active-low signal.
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
