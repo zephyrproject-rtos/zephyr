@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The board DTS uses USBHS0 (hsusb0) as a USB device controller
+ * (zephyr_udc0). Switch it to the USB host role for this sample.
+ */
+
+&porte {
+	status = "okay";
+};
+
+/*
+ * USBHS0 as a USB host controller (MUSB host driver with the Microchip
+ * USBHS G1 glue). The USB host stack and samples reference the controller
+ * through the "zephyr_uhc0" node label.
+ *
+ * VBUS switching: the Curiosity Ultra drives the Type-C host VBUS switch from
+ * VBUS_AL on PE03, active-low (see the board User Guide / Harmony BSP).
+ */
+zephyr_uhc0: &hsusb0 {
+	compatible = "microchip,usbhs-g1-host", "mentor,musb-host";
+	vbus-gpios = <&porte 3 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
