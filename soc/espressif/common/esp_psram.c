@@ -5,11 +5,15 @@
 
 #include <string.h>
 #include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
 #include <rom/ets_sys.h>
 #include <esp_psram.h>
 #include <esp_private/esp_psram_extram.h>
 #include <hal/cache_hal.h>
 #include <zephyr/multi_heap/shared_multi_heap.h>
+#if DT_NODE_HAS_PROP(DT_NODELABEL(psram0), vin_supply)
+#include <hal/ldo_ll.h>
+#endif
 #if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPI_MEM_SUPPORT_TIMING_TUNING)
 #include <esp_flash.h>
 #include <esp_private/spi_flash_os.h>
@@ -64,10 +68,47 @@ static void esp_psram_refresh_flash_timing(void)
 }
 #endif
 
+#define PSRAM_NODE DT_NODELABEL(psram0)
+
+#if DT_NODE_HAS_PROP(PSRAM_NODE, vin_supply)
+#define PSRAM_LDO_NODE DT_PHANDLE(PSRAM_NODE, vin_supply)
+#define PSRAM_LDO_MV   (DT_PROP_OR(PSRAM_LDO_NODE, regulator_init_microvolt, 0) / 1000)
+
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_PARENT(PSRAM_LDO_NODE)) &&
+		     DT_NODE_HAS_PROP(PSRAM_LDO_NODE, regulator_init_microvolt) &&
+		     DT_PROP(PSRAM_LDO_NODE, regulator_always_on),
+	     "PSRAM vin-supply needs the ldo node enabled and the channel with "
+	     "regulator-init-microvolt and regulator-always-on");
+BUILD_ASSERT(PSRAM_LDO_MV >= LDO_LL_RECOMMEND_MIN_VOLTAGE_MV &&
+		     PSRAM_LDO_MV <= LDO_LL_RAIL_VOLTAGE_MV,
+	     "PSRAM vin-supply regulator-init-microvolt is out of range");
+
+/* The regulator driver applies the same settings at PRE_KERNEL_1. */
+static void psram_ldo_init(void)
+{
+	int unit = LDO_ID2UNIT(DT_REG_ADDR(PSRAM_LDO_NODE));
+	uint8_t dref = 0U;
+	uint8_t mul = 0U;
+	bool use_rail = false;
+
+	ldo_ll_enable_current_limit(unit, true);
+	ldo_ll_voltage_to_dref_mul(unit, PSRAM_LDO_MV, &dref, &mul, &use_rail);
+	ldo_ll_adjust_voltage(unit, dref, mul, use_rail);
+	ldo_ll_set_owner(unit, LDO_LL_UNIT_OWNER_SW);
+	ldo_ll_enable_ripple_suppression(unit, true);
+	ldo_ll_enable(unit, true);
+	ldo_ll_enable_current_limit(unit, false);
+}
+#endif
+
 void esp_init_psram(void)
 {
 	intptr_t mapped_vaddr = 0;
 	size_t mapped_size = 0;
+
+#if DT_NODE_HAS_PROP(PSRAM_NODE, vin_supply)
+	psram_ldo_init();
+#endif
 
 	/*
 	 * PSRAM chip init transitions the MSPI clock through low and high
