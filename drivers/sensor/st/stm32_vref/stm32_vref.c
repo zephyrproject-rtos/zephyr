@@ -11,6 +11,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/dt-bindings/adc/stm32_adc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/nvmem.h>
 #include <zephyr/pm/device_runtime.h>
@@ -55,26 +56,6 @@ struct stm32_vref_config {
 	uint8_t cal_shift;
 };
 
-static void stm32_vref_enable_vrefsensor_channel(ADC_TypeDef *adc)
-{
-	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
-
-	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
-					path | LL_ADC_PATH_INTERNAL_VREFINT);
-
-#ifdef LL_ADC_DELAY_VREFINT_STAB_US
-	k_usleep(LL_ADC_DELAY_VREFINT_STAB_US);
-#endif
-}
-
-__maybe_unused static void stm32_vref_disable_vrefsensor_channel(ADC_TypeDef *adc)
-{
-	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
-
-	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
-					path & ~LL_ADC_PATH_INTERNAL_VREFINT);
-}
-
 static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	const struct stm32_vref_config *cfg = dev->config;
@@ -89,26 +70,20 @@ static int stm32_vref_sample_fetch(const struct device *dev, enum sensor_channel
 	k_mutex_lock(&data->mutex, K_FOREVER);
 	pm_device_runtime_get(cfg->adc);
 
-#ifndef CONFIG_STM32_VREF_INJECTED
-	rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
-	if (rc) {
-		LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
-		goto unlock;
+	if (!IS_ENABLED(CONFIG_STM32_VREF_INJECTED)) {
+		rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
+		if (rc) {
+			LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
+			goto unlock;
+		}
 	}
-
-	stm32_vref_enable_vrefsensor_channel(cfg->adc_base);
-#endif /* CONFIG_STM32_VREF_INJECTED */
 
 	rc = adc_read(cfg->adc, sp);
 	if (rc == 0) {
 		data->raw = data->sample_buffer;
 	}
 
-#ifndef CONFIG_STM32_VREF_INJECTED
-	stm32_vref_disable_vrefsensor_channel(cfg->adc_base);
-
 unlock:
-#endif /* CONFIG_STM32_VREF_INJECTED */
 	pm_device_runtime_put(cfg->adc);
 	k_mutex_unlock(&data->mutex);
 
@@ -191,16 +166,14 @@ static int stm32_vref_init(const struct device *dev)
 
 	data->vrefint_cal_numerator = cfg->cal_mv * (vrefint_cal >> cfg->cal_shift);
 
-#ifdef CONFIG_STM32_VREF_INJECTED
-	int rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
+	if (IS_ENABLED(CONFIG_STM32_VREF_INJECTED)) {
+		int rc = adc_channel_setup(cfg->adc, &cfg->adc_cfg);
 
-	if (rc != 0) {
-		LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
-		return rc;
+		if (rc != 0) {
+			LOG_DBG("Setup AIN%u got %d", cfg->adc_cfg.channel_id, rc);
+			return rc;
+		}
 	}
-
-	stm32_vref_enable_vrefsensor_channel(cfg->adc_base);
-#endif /* CONFIG_STM32_VREF_INJECTED */
 
 	return 0;
 }
@@ -241,7 +214,8 @@ static const struct stm32_vref_config stm32_vref_dev_config = {
 		    .reference = ADC_REF_INTERNAL,
 		    .acquisition_time = ADC_ACQ_TIME_MAX,
 		    .channel_id = DT_INST_IO_CHANNELS_INPUT(0),
-		    .differential = 0},
+		    .differential = 0,
+		    .internal_channel = STM32_ADC_INTERNAL_CHANNEL_VREFINT},
 
 	.vrefint_cal = VREFINT_CAL_INIT(0),
 	.cal_mv = DT_INST_PROP(0, vrefint_cal_mv),
