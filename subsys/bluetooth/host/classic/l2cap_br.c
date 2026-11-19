@@ -2770,8 +2770,7 @@ enum l2cap_br_conn_security_result {
  * - existing security on link is applicable for requested PSM in connection,
  * - legacy (non SSP) devices connecting with low security requirements,
  * Returns L2CAP_CONN_SECURITY_PENDING if:
- * - channel connection process is on hold since there were valid security
- *   conditions triggering authentication indirectly in subcall.
+ * - authentication is already in progress or was started for the channel.
  * Returns L2CAP_CONN_SECURITY_REJECT if:
  * - bt_conn_set_security API returns < 0,
  * - Or, the ACL connection has been encrypted, the security level of link key cannot be upgraded,
@@ -2826,6 +2825,11 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 		 * security level of the L2CAP channel, reject the L2CAP conn request.
 		 */
 		return L2CAP_CONN_SECURITY_REJECT;
+	}
+
+	if (chan->conn->sec_level < br_chan->required_sec_level &&
+	    atomic_test_bit(chan->conn->flags, BT_CONN_BR_PAIRING)) {
+		return L2CAP_CONN_SECURITY_PENDING;
 	}
 
 	check = bt_conn_set_security(chan->conn, br_chan->required_sec_level);
@@ -5374,8 +5378,8 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, u
 	switch (l2cap_br_conn_security(chan, psm)) {
 	case L2CAP_CONN_SECURITY_PENDING:
 		/*
-		 * Authentication was triggered, wait with sending request on
-		 * connection security changed callback context.
+		 * Authentication is in progress. Wait for the connection
+		 * security changed callback before sending the request.
 		 */
 		return 0;
 	case L2CAP_CONN_SECURITY_PASSED:
@@ -5812,26 +5816,30 @@ done:
 	return 0;
 }
 
-static void l2cap_br_pend_conn_req_reply_sec_block(struct bt_l2cap_br *l2cap,
+/* A true return means released() may have freed or reused chan. */
+static bool l2cap_br_pend_conn_req_reply_sec_block(struct bt_l2cap_br *l2cap,
 						   struct bt_l2cap_chan *chan)
 {
 	/* Send response to connection request only when in acceptor role */
 	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
-		return;
+		return false;
 	}
 
 	if (BR_CHAN(chan)->state != BT_L2CAP_CONNECTING) {
-		return;
+		return false;
 	}
 
 	if (!l2cap_br_allocate_buf(l2cap)) {
 		LOG_WRN("No buffers for conn rsp (sec block)");
 		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RSP_SEC_BLOCK);
 		bt_work_schedule(&BR_CHAN(chan)->retry_work, L2CAP_BR_RETRY_INTERVAL);
-		return;
+		return false;
 	}
 
+	/* The signaling channel owns the queued response; the rejected channel can be released. */
 	l2cap_br_conn_req_reply(l2cap, chan, BT_L2CAP_BR_ERR_SEC_BLOCK);
+	l2cap_br_chan_cleanup(chan);
+	return true;
 }
 
 static void l2cap_br_pend_conn_req_reply_success(struct bt_l2cap_br *l2cap,
@@ -5914,7 +5922,9 @@ static void l2cap_br_retry_handler(struct k_work *work)
 	}
 
 	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_CONN_RSP_SEC_BLOCK)) {
-		l2cap_br_pend_conn_req_reply_sec_block(l2cap, &chan->chan);
+		if (l2cap_br_pend_conn_req_reply_sec_block(l2cap, &chan->chan)) {
+			return;
+		}
 	}
 
 	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_CONN_RSP_SUCCESS)) {
@@ -5934,14 +5944,22 @@ static void l2cap_br_retry_handler(struct k_work *work)
 	}
 }
 
-static void l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
+/* Propagate release so callers do not access chan after released(). */
+static bool l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
 			       uint8_t status)
 {
 	if (BR_CHAN(chan)->state != BT_L2CAP_CONNECTING) {
-		return;
+		return false;
 	}
 
 	LOG_DBG("chan %p status 0x%02x encr 0x%02x", chan, status, chan->conn->encrypt);
+
+	if (status == 0 && chan->conn->encrypt != 0 &&
+	    chan->conn->sec_level < BR_CHAN(chan)->required_sec_level) {
+		LOG_WRN("Security level %u below required %u", chan->conn->sec_level,
+			BR_CHAN(chan)->required_sec_level);
+		status = BT_HCI_ERR_AUTH_FAIL;
+	}
 
 	if (status != 0) {
 		/*
@@ -5949,20 +5967,20 @@ static void l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *
 		 * security violation only as channel acceptor.
 		 */
 		if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
-			l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
-			return;
+			return l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
 		}
 
 		/* Release channel allocated to outgoing connection request */
 		if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING)) {
 			l2cap_br_chan_cleanup(chan);
+			return true;
 		}
 
-		return;
+		return false;
 	}
 
 	if (chan->conn->encrypt == 0) {
-		return;
+		return false;
 	}
 
 	/*
@@ -5971,17 +5989,20 @@ static void l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *
 	 */
 	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
 		l2cap_br_pend_conn_req_reply_success(l2cap, chan);
-		return;
+		return false;
 	}
 
 	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING)) {
 		l2cap_br_connect_req(l2cap, chan);
 	}
+
+	return false;
 }
 
 void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 {
-	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_chan *chan, *next;
+	sys_snode_t *last = sys_slist_peek_tail(&conn->channels);
 	struct bt_l2cap_br *l2cap;
 	struct bt_l2cap_chan *sig_ch = bt_l2cap_br_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SIG);
 
@@ -5992,8 +6013,15 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 
 	l2cap = CONTAINER_OF(sig_ch, struct bt_l2cap_br, chan.chan);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
-		l2cap_br_conn_pend(l2cap, chan, hci_status);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
+		/* Callbacks may append a reused channel. Do not notify it of this old event. */
+		if (&chan->node == last) {
+			next = NULL;
+		}
+
+		if (l2cap_br_conn_pend(l2cap, chan, hci_status)) {
+			continue;
+		}
 
 		if (chan->conn == NULL) {
 			LOG_WRN("Invalid ACL conn for chan %p", chan);
