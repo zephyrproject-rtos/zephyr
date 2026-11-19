@@ -363,7 +363,8 @@
 			      <0x24 0x4>,
 			      <0x30 0x4>;
 			reg-names = "intc", "tscr", "titsr0", "tssr0";
-			gpioint-table = <0 4 9 13 17 23 28 33 38 42 47 52 56 58 64 67 72>;
+			/* In the order of the GPIO port nodes: P20 to P23, then P0 to P12 */
+			gpioint-table = <58 64 67 72 0 4 9 13 17 23 28 33 38 42 47 52 56>;
 			max-gpioint = <81>;
 			#address-cells = <1>;
 			#size-cells = <0>;
