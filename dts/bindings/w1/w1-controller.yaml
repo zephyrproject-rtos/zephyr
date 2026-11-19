@@ -5,6 +5,8 @@
 
 include: base.yaml
 
+class: w1
+
 bus: w1
 
 properties:
