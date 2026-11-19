@@ -302,20 +302,20 @@ static int max22017_init(const struct device *dev)
 		ret = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
 		if (ret) {
 			LOG_ERR("failed to initialize GPIO interrupt pin");
-			goto fail;
+			return ret;
 		}
 
 		ret = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
 		if (ret) {
 			LOG_ERR("failed to configure interrupt pin");
-			goto fail;
+			return ret;
 		}
 
 		gpio_init_callback(&data->callback_int, max22017_isr, BIT(config->gpio_int.pin));
 		ret = gpio_add_callback(config->gpio_int.port, &data->callback_int);
 		if (ret) {
 			LOG_ERR("failed to add data ready callback");
-			goto fail;
+			return ret;
 		}
 	}
 
@@ -323,7 +323,7 @@ static int max22017_init(const struct device *dev)
 
 	ret = max22017_reg_write(dev, MAX22017_AO_CNFG_OFF, 0);
 	if (ret) {
-		return ret;
+		goto fail;
 	}
 
 	ret = max22017_reg_write(dev, MAX22017_AO_DATA_CHn_OFF(0), 0);
