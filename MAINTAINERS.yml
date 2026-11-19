@@ -406,6 +406,10 @@ Alif Semiconductor Platforms:
     - sudhir-alifsemi
     - AnttiKauppila-AlifSemi
     - VeijoPesonen
+    - danieldegrasse
+    - ehay64
+    - petejohanson-adi
+    - MaureenHelm
   files:
     - boards/alif/
     - drivers/*/*alif*
