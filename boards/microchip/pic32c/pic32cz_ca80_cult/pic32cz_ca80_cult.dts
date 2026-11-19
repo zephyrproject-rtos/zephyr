@@ -113,6 +113,11 @@
 		xosc-frequency = <12000000>;
 		xosc-en = <1>;
 		xosc-xtal-en = <1>;
+		/*
+		 * USBHS PHY PLL reference: 12 MHz XOSC divided by 1. The PHY
+		 * derives its 480 MHz high-speed clock from it, in device and
+		 * host role.
+		 */
 		xosc-usb-ref-clock-div = "div1";
 	};
 
@@ -213,6 +218,7 @@
 			mclk-en = <1>;
 		};
 
+		/* AHB module clock for the USBHS0 controller (device or host role) */
 		husb0 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_HUSB0>;
 			mclk-en = <1>;
