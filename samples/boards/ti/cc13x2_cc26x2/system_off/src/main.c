@@ -56,8 +56,8 @@ int main(void)
 	printk("Powering off; press BUTTON1 to restart\n");
 
 	/* Clear GPIO interrupt */
-	status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
-	GPIO_clearEventMultiDio(status);
+	status = HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0);
+	HWREG(GPIO_BASE + GPIO_O_EVFLAGS31_0) = status;
 
 	sys_poweroff();
 
