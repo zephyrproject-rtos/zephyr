@@ -1081,6 +1081,22 @@ static int airoc_mgmt_ap_enable(const struct device *dev,
 		goto error;
 	}
 
+	switch (params->security) {
+	case WIFI_SECURITY_TYPE_NONE:
+		security = WHD_SECURITY_OPEN;
+		break;
+	case WIFI_SECURITY_TYPE_PSK:
+		security = WHD_SECURITY_WPA2_AES_PSK;
+		break;
+	case WIFI_SECURITY_TYPE_SAE:
+		security = WHD_SECURITY_WPA3_SAE;
+		break;
+	default:
+		ret = -ENOTSUP;
+		LOG_ERR("Unsupported AP security type: %d", params->security);
+		goto error;
+	}
+
 	if (!data->second_interface_init) {
 		if (whd_add_secondary_interface(data->whd_drv, NULL, &airoc_ap_if) !=
 		    CY_RSLT_SUCCESS) {
@@ -1124,22 +1140,8 @@ static int airoc_mgmt_ap_enable(const struct device *dev,
 		break;
 	}
 
-	switch (params->security) {
-	case WIFI_SECURITY_TYPE_NONE:
-		security = WHD_SECURITY_OPEN;
-		break;
-	case WIFI_SECURITY_TYPE_PSK:
-		security = WHD_SECURITY_WPA2_AES_PSK;
-		break;
-	case WIFI_SECURITY_TYPE_SAE:
-		security = WHD_SECURITY_WPA3_SAE;
-		break;
-	default:
-		goto error;
-	}
-
-	if (whd_wifi_init_ap(airoc_ap_if, &ssid, security, (const uint8_t *)params->psk,
-			     params->psk_length, chanspec) != 0) {
+	if (whd_wifi_init_ap(airoc_ap_if, &ssid, security, params->psk, params->psk_length,
+			     chanspec) != 0) {
 		LOG_ERR("Failed to init whd ap interface");
 		ret = -EAGAIN;
 		goto error;
