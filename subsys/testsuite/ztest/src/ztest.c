@@ -185,10 +185,48 @@ static inline void wait_for_thread_to_switch_out(struct k_thread *thread)
 	arch_irq_unlock(key);
 }
 
+static void cpu_hold(void *arg1, void *arg2, void *arg3);
+
+static void cpuhold_spawn(int slot, struct k_thread *parent, unsigned int idx, unsigned int cpu)
+{
+#ifdef CONFIG_SCHED_CPU_MASK
+	/* Pin before the thread can run: with a restrictive default mask
+	 * (e.g. CONFIG_SCHED_CPU_MASK_PIN_ONLY) a thread  created ready
+	 * would only ever be eligible for CPU 0.
+	 */
+	k_timeout_t delay = K_FOREVER;
+#else
+	k_timeout_t delay = K_NO_WAIT;
+
+	ARG_UNUSED(cpu);
+#endif
+
+	cpuhold_pool_items[slot].used = true;
+
+	k_tid_t tid = k_thread_create(&cpuhold_pool_items[slot].thread, cpuhold_stacks[slot],
+				      CPUHOLD_STACK_SZ, cpu_hold, parent, (void *)(uintptr_t)idx,
+				      NULL, K_HIGHEST_THREAD_PRIO, 0, delay);
+
+#ifdef CONFIG_SCHED_CPU_MASK
+	int ret = k_thread_cpu_pin(tid, cpu);
+
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
+
+	k_thread_start(tid);
+#else
+	ARG_UNUSED(tid);
+#endif
+}
+
 /* "Holds" a CPU for use with the "1cpu" test cases.  Note that we
  * can't use tools like the cpumask feature because we have tests that
  * may need to control that configuration themselves.  We do this at
- * the lowest level, but locking interrupts directly and spinning.
+ * the lowest level by locking interrupts directly and spinning.
+ *
+ * With CONFIG_SCHED_CPU_MASK the hold threads, which only ztest owns,
+ * are pinned to their CPU so that they can start there; no other
+ * thread's mask is changed.
  */
 static void cpu_hold(void *arg1, void *arg2, void *arg3)
 {
@@ -198,7 +236,10 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 
 	ARG_UNUSED(arg3);
 
-	if (arch_proc_id() == 0) {
+	/* With CPU masks every hold thread is pinned to its own CPU other
+	 * than 0 and can never start on CPU 0, so no respawn is needed.
+	 */
+	if (!IS_ENABLED(CONFIG_SCHED_CPU_MASK) && arch_proc_id() == 0) {
 		int i;
 
 		i = find_unused_thread();
@@ -207,10 +248,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 
 		cpuhold_spawned = false;
 
-		cpuhold_pool_items[i].used = true;
-		k_thread_create(&cpuhold_pool_items[i].thread, cpuhold_stacks[i], CPUHOLD_STACK_SZ,
-				cpu_hold, k_current_get(), (void *)(uintptr_t)idx, NULL,
-				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+		cpuhold_spawn(i, k_current_get(), idx, idx + 1);
 
 		/*
 		 * Busy-wait until we know the spawned thread is running to
@@ -287,10 +325,7 @@ void z_impl_z_test_1cpu_start(void)
 
 		__ASSERT_NO_MSG(j != -1);
 
-		cpuhold_pool_items[j].used = true;
-		k_thread_create(&cpuhold_pool_items[j].thread, cpuhold_stacks[j], CPUHOLD_STACK_SZ,
-				cpu_hold, NULL, (void *)(uintptr_t)i, NULL, K_HIGHEST_THREAD_PRIO,
-				0, K_NO_WAIT);
+		cpuhold_spawn(j, NULL, i, i + 1);
 		k_sem_take(&cpuhold_sem, K_FOREVER);
 	}
 #endif
