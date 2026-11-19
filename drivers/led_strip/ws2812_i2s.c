@@ -173,6 +173,10 @@ static int ws2812_strip_update_channels(const struct device *dev, uint8_t *chann
 	uint32_t *frame;
 	int ret;
 
+	if (num_channels > cfg->length * cfg->num_colors) {
+		return -ERANGE;
+	}
+
 	ret = k_mem_slab_alloc(cfg->mem_slab, &mem_block, K_SECONDS(10));
 	if (ret < 0) {
 		LOG_ERR("Unable to allocate mem slab for TX (err %d)", ret);
