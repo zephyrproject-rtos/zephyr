@@ -56,6 +56,16 @@ config NANOPB_VALIDATE_UTF8
 	  Check whether incoming strings are valid UTF-8 sequences.
 	  Adds a small performance and code size penalty.
 
+config NANOPB_MESSAGE_NESTING_MAX
+	int "Max nesting depth of decoded messages"
+	default 0
+	help
+	  Maximum nesting depth of submessages accepted by the decoder.
+	  Decoding fails when a message is nested deeper. This bounds the
+	  stack usage when decoding untrusted data of recursive message
+	  types.
+	  Set to 0 to disable the limit.
+
 config NANOPB_UNSAFE_DECODE_ONEOF_CALLBACKS
 	bool "Decode callback fields directly inside oneofs [UNSAFE]"
 	select NOT_SECURE
