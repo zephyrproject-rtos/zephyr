@@ -2,6 +2,8 @@
  * Copyright (c) 2024 Texas Instruments Incorporated.
  *
  * TI OMAP Mailbox driver for Zephyr's MBOX model.
+ *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/devicetree.h>
