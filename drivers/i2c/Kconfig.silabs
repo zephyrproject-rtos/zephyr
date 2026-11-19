@@ -16,12 +16,12 @@ config  I2C_SILABS_DMA
 	depends on DMA
 	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_SILABS_I2C),dmas)
 	help
-		Enable DMA mode for I2C DMA transfer.
+	  Enable DMA mode for I2C DMA transfer.
 
 config I2C_SILABS_TIMEOUT
 	int "I2C operation timeout (milliseconds)"
 	default 1000
 	help
-		Specify the timeout value in milliseconds for I2C transfer.
+	  Specify the timeout value in milliseconds for I2C transfer.
 
 endif # I2C_SILABS

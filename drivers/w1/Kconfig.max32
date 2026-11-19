@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config W1_MAX32
-	bool "MAX32xxx MCUs 1-Wire master driver"
+	bool "MAX32xxx MCUs 1-Wire controller driver"
 	default y
 	depends on DT_HAS_ADI_MAX32_W1_ENABLED
 	select PINCTRL
 	help
-	  This option enables the 1-Wire master driver for MAX32xxx MCUs
+	  This option enables the 1-Wire controller driver for MAX32xxx MCUs

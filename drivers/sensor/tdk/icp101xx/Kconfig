@@ -11,4 +11,4 @@ config ICP101XX
 	select I2C
 	select USE_EMD_ICP101XX
 	help
-		Enable driver for ICP101XX barometric pressure/temperature sensors.
+	  Enable driver for ICP101XX barometric pressure/temperature sensors.

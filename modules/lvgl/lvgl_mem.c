@@ -21,6 +21,11 @@ LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 #else
 #define HEAP_MEM_ATTRIBUTES __aligned(8)
 #endif /* CONFIG_LV_Z_MEMORY_POOL_CUSTOM_SECTION */
+
+BUILD_ASSERT(!IS_ENABLED(CONFIG_SYS_HEAP_SMALL_ONLY) || CONFIG_LV_Z_MEM_POOL_SIZE / 8 <= 0x7fff,
+	     "LV_Z_MEM_POOL_SIZE too big for CONFIG_SYS_HEAP_SMALL_ONLY, "
+	     "enable CONFIG_SYS_HEAP_AUTO");
+
 static char lvgl_heap_mem[CONFIG_LV_Z_MEM_POOL_SIZE] HEAP_MEM_ATTRIBUTES;
 
 static struct sys_heap lvgl_heap;

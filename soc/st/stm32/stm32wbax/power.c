@@ -149,47 +149,18 @@ static struct z_mpu_context_retained mpu_state;
 
 static int enter_low_power_mode(void)
 {
-	uint32_t basepri;
+	unsigned int key;
 
 	LL_LPM_EnableDeepSleep();
 
 	while (LL_PWR_IsActiveFlag_ACTVOS() == 0) {
 	}
 
-	/*
-	 * Prevent spurious entry in low-power state if any
-	 * interrupt is currently pending. The WFI instruction
-	 * will not enter low-power state if an interrupt with
-	 * higher priority than BASEPRI is pending, regardless
-	 * of the value of PRIMASK.
-	 *
-	 * When this function executes, Zephyr's arch_irq_lock() has
-	 * configured BASEPRI to mask interrupts. Set PRIMASK to keep
-	 * interrupts masked then lower BASEPRI to 0, after saving its
-	 * current value, so that any pending interrupt is seen by WFI
-	 * and inhibits low-power state entry.
-	 */
-	__disable_irq();
-	basepri = __get_BASEPRI();
-	__set_BASEPRI(0);
-	__ISB();
-	__DSB();
-
+	key = arch_pm_state_set_prepare();
 	/* Attempt entry in low-power state */
 	__WFI();
 
-	/*
-	 * If entry in STOP mode was attempted, execution
-	 * resumes here regardless of success or failure.
-	 * If entry in STANDBY mode was attempted, execution
-	 * will reach this point only if entry in low-power
-	 * state did not occur. Restore BASEPRI and clear
-	 * PRIMASK then return an error to indicate that
-	 * entry in STANDBY mode failed (return value of
-	 * this function is ignored for STOP mode entry).
-	 */
-	__set_BASEPRI(basepri);
-	__enable_irq();
+	arch_pm_state_set_finish(key);
 
 	/* Disable SLEEPDEEP at Cortex-M level */
 	LL_LPM_EnableSleep();
@@ -392,13 +363,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		standby_entered = false;
 	}
 #endif
-
-	/*
-	 * System is now in active mode.
-	 * Reenable interrupts which were disabled
-	 * when OS started idling code.
-	 */
-	irq_unlock(0);
 }
 
 #ifdef CONFIG_PM_CUSTOM_TICKS_HOOK

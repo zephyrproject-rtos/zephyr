@@ -84,6 +84,10 @@
 	status = "okay";
 };
 
+&coretemp {
+	status = "okay";
+};
+
 &wifi {
 	status = "okay";
 };

@@ -72,6 +72,28 @@ ZTEST(smp_client, test_msg_send_timeout)
 	zassert_equal_ptr(response_ptr, &testing_user_data, "User data not returned correctly");
 }
 
+ZTEST(smp_client, test_msg_send_truncated_header)
+{
+	NET_BUF_POOL_DEFINE(pool, 1, 0, 0, NULL);
+	uint8_t data[sizeof(struct smp_hdr) - 1U] = {0};
+	struct net_buf *nb;
+
+	/* External storage lets ASan detect a read past the truncated header. */
+	nb = net_buf_alloc_with_data(&pool, data, sizeof(data), K_NO_WAIT);
+	zassert_not_null(nb);
+
+	for (size_t len = 0; len < sizeof(struct smp_hdr); len++) {
+		nb->len = len;
+		int rc = smp_client_send_cmd(&smp_client, nb, smp_client_res_cb, &testing_user_data,
+					     2);
+
+		zassert_equal(rc, MGMT_ERR_EINVAL, "accepted a %zu-byte header", len);
+		zassert_equal(nb->ref, 1, "invalid request changed buffer ownership");
+	}
+
+	net_buf_unref(nb);
+}
+
 ZTEST(smp_client, test_msg_response_handler)
 {
 	struct smp_hdr dst_hdr;

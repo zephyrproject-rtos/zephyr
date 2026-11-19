@@ -248,7 +248,7 @@ static void history_handle(const struct shell *sh, bool up)
 
 	/* Start by checking if history is not empty. */
 	history_mode = z_shell_history_get(sh->history, up,
-					   sh->ctx->cmd_buff, &len);
+					   (uint8_t *)sh->ctx->cmd_buff, &len);
 
 	/* On exiting history mode print backed up command. */
 	if (!history_mode) {
@@ -1079,7 +1079,7 @@ static int execute(const struct shell *sh)
 
 	if (IS_ENABLED(CONFIG_SHELL_HISTORY)) {
 		z_shell_cmd_trim(sh);
-		history_put(sh, sh->ctx->cmd_buff,
+		history_put(sh, (uint8_t *)sh->ctx->cmd_buff,
 			    sh->ctx->cmd_buff_len);
 	}
 
@@ -1157,17 +1157,12 @@ static int execute(const struct shell *sh)
 
 			status = z_shell_wildcard_process(sh, entry,
 							  argvp[0]);
-			/* Wildcard character found but there is no matching
-			 * command.
+			/* An argument without a wildcard character, or with a
+			 * pattern that matches no command, is processed as a
+			 * normal argument and reaches the handler as typed.
 			 */
-			if (status == SHELL_WILDCARD_CMD_NO_MATCH_FOUND) {
-				break;
-			}
-
-			/* Wildcard character was not found function can process
-			 * argument.
-			 */
-			if (status != SHELL_WILDCARD_NOT_FOUND) {
+			if ((status != SHELL_WILDCARD_NOT_FOUND) &&
+			    (status != SHELL_WILDCARD_CMD_NO_MATCH_FOUND)) {
 				++cmd_lvl;
 				wildcard_found = true;
 				continue;
@@ -2434,8 +2429,11 @@ static int cmd_help(const struct shell *sh, size_t argc, char **argv)
 
 	if (IS_ENABLED(CONFIG_SHELL_HELP)) {
 		/* For NULL argument function will print all root commands */
+		z_shell_lock(sh);
 		z_shell_help_subcmd_print(sh, NULL,
 					 "\nAvailable commands:\n");
+		z_transport_buffer_flush(sh);
+		z_shell_unlock(sh);
 	} else {
 		const struct shell_static_entry *entry;
 		size_t idx = 0;

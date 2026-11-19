@@ -9,8 +9,8 @@
 #include "seven_nrf9151_common.dtsi"
 
 / {
-	model = "Seven nRF9151";
 	compatible = "id8,seven-nrf9151";
+	model = "Seven nRF9151";
 
 	chosen {
 		zephyr,sram = &sram0_s;

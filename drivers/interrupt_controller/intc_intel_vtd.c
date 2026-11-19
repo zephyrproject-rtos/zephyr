@@ -286,6 +286,7 @@ out:
 static void vtd_fault_event_init(const struct device *dev)
 {
 	struct vtd_ictl_data *data = dev->data;
+	uint64_t msi_addr;
 	uint64_t value;
 	uint32_t reg;
 
@@ -299,11 +300,11 @@ static void vtd_fault_event_init(const struct device *dev)
 	 */
 	data->fault_irq = arch_irq_allocate();
 	data->fault_vector = z_x86_allocate_vector(0, -1);
+	msi_addr = pcie_msi_map(data->fault_irq, NULL, 0);
 
 	vtd_write_reg32(dev, VTD_FEDATA_REG, data->fault_vector);
-	vtd_write_reg32(dev, VTD_FEADDR_REG,
-			pcie_msi_map(data->fault_irq, NULL, 0));
-	vtd_write_reg32(dev, VTD_FEUADDR_REG, 0);
+	vtd_write_reg32(dev, VTD_FEADDR_REG, (uint32_t)msi_addr);
+	vtd_write_reg32(dev, VTD_FEUADDR_REG, (uint32_t)(msi_addr >> 32));
 
 	z_x86_irq_connect_on_vector(data->fault_irq, data->fault_vector,
 				    fault_event_isr, dev);

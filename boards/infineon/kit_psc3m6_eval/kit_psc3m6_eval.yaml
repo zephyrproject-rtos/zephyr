@@ -15,12 +15,14 @@ toolchain:
 supported:
   - adc
   - can
+  - counter
   - gpio
   - i2c
   - uart
   - clock_control
   - pinctrl
   - dma
+  - pwm
   - rtc
   - watchdog
   - spi

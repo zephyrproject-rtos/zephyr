@@ -10,7 +10,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
-#include <getopt.h>
 #include <string.h>
 
 #include <zephyr/sys/sys_getopt.h>

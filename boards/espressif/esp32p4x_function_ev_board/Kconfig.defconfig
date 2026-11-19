@@ -10,7 +10,7 @@ configdefault ETH_DRIVER
 
 # The 1024x600 panel needs 1.76 MB per framebuffer, and the driver allocates
 # two of them for tear-free updates, so the stock heap does not fit them.
-configdefault ESP_SPIRAM_HEAP_SIZE
+configdefault SOC_FAMILY_ESPRESSIF_SPIRAM_HEAP_SIZE
 	default 5242880 if DISPLAY_ESP32_DSI
 
 # The controller has an interrupt line, so there is no reason to poll it.

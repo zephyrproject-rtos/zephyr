@@ -98,6 +98,7 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 	struct scmi_shmem_layout *layout;
 	struct scmi_shmem_data *data;
 	const struct scmi_shmem_config *cfg;
+	uint32_t len;
 
 	data = shmem->data;
 	cfg = shmem->config;
@@ -117,12 +118,22 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 		return -EINVAL;
 	}
 
-	/* mismatch between expected reply size and actual size? */
-	if (msg->len != (layout->len - sizeof(layout->msg_hdr))) {
-		LOG_ERR("bad message len. Expected 0x%x, got 0x%x",
-			msg->len,
-			(uint32_t)(layout->len - sizeof(layout->msg_hdr)));
-		return -EINVAL;
+	if (layout->len < (sizeof(layout->msg_hdr) + sizeof(int32_t))) {
+		LOG_ERR("reply too short: len 0x%x", layout->len);
+		return -EPROTO;
+	}
+
+	len = layout->len - sizeof(layout->msg_hdr);
+
+	if (cfg->size < (sizeof(*layout) + len)) {
+		LOG_ERR("reply doesn't fit in shmem area: len 0x%x", layout->len);
+		return -EPROTO;
+	}
+
+	/* return values past the end of the buffer are not known to the caller */
+	if (len > msg->len) {
+		LOG_DBG("reply truncated from 0x%x to 0x%x", len, msg->len);
+		len = msg->len;
 	}
 
 	/* header match? */
@@ -139,8 +150,10 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 
 	if (msg->content) {
 		scmi_shmem_memcpy(POINTER_TO_UINT(msg->content),
-				  data->regmap + sizeof(*layout), msg->len);
+				  data->regmap + sizeof(*layout), len);
 	}
+
+	msg->len = len;
 
 	return 0;
 }

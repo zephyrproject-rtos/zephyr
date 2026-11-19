@@ -68,7 +68,6 @@ config BMI270_THREAD_STACK_SIZE
 
 config BMI270_LOW_POWER_MODE
 	bool "Force low-power (power-optimized) filter mode at all ODRs"
-	default n
 	help
 	  When set, the accelerometer and gyroscope always use the
 	  power-optimized filter mode (acc_filter_perf=0, gyr_filter_perf=0,
@@ -88,7 +87,6 @@ config BMI270_STREAM
 config BMI270_FIFO_ON_INT2
 	bool "Route FIFO watermark/full interrupt to INT2 instead of INT1"
 	depends on BMI270_STREAM
-	default n
 	help
 	  By default, FIFO watermark and full interrupts are mapped to INT1
 	  and the single irq-gpios pin is assigned to INT1. Enable this only
@@ -97,7 +95,6 @@ config BMI270_FIFO_ON_INT2
 config BMI270_FIFO_POLL_FALLBACK
 	bool "Poll-based FIFO fallback alongside GPIO interrupt"
 	depends on BMI270_STREAM
-	default n
 	help
 	  When set, a periodic poll checks the FIFO fill level via SPI/I2C
 	  and triggers a read when the watermark is reached, as a fallback
@@ -116,7 +113,6 @@ config BMI270_FIFO_POLL_PERIOD_MS
 config BMI270_FIFO_HEADERLESS
 	bool "Use FIFO headerless mode (no per-frame headers)"
 	depends on BMI270_STREAM
-	default n
 	help
 	  When set, FIFO is configured with FIFO_CONFIG_1.fifo_header_en=0.
 	  Requires identical ODR for accelerometer and gyroscope.

@@ -64,15 +64,16 @@ The steps are as below.
 Spanning tree
 *************
 
-The :zephyr_file:`samples/net/ethernet/bridge/overlay-rstp.conf` overlay runs the Rapid Spanning
-Tree Protocol on the bridge. The bridge then blocks the ports that would make a loop, so its ports
-can be cabled in a ring with other bridges. The overlay also gives the bridge a MAC address derived
-from the device ID, so that its Bridge Identifier stays the same across reboots.
+The :zephyr_file:`samples/net/ethernet/bridge/rstp.conf` extra config file runs the Rapid
+Spanning Tree Protocol on the bridge. The bridge then blocks the ports that would make a loop, so
+its ports can be cabled in a ring with other bridges. The extra config file also gives the bridge a
+MAC address derived from the device ID, so that its Bridge Identifier stays the same across
+reboots.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/ethernet/bridge
    :board: mimxrt1170_evk@B/mimxrt1176/cm7
-   :gen-args: -DEXTRA_CONF_FILE=overlay-rstp.conf
+   :gen-args: -DEXTRA_CONF_FILE=rstp.conf
    :goals: build flash
    :compact:
 

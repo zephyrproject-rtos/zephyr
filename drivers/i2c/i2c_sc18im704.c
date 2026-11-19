@@ -68,7 +68,7 @@ int sc18im704_transfer(const struct device *dev,
 
 		for (uint8_t i = 0; i < rx_len && ret == 0; ++i)  {
 			/* Make sure we don't wait forever */
-			end = sys_timepoint_calc(K_SECONDS(1));
+			end = sys_timepoint_calc(K_MSEC(CONFIG_I2C_SC18IM704_READ_TIMEOUT_MS));
 
 			do {
 				ret = uart_poll_in(cfg->bus, &rx_data[i]);
@@ -302,7 +302,7 @@ static int i2c_sc18im_init(const struct device *dev)
 		}
 
 		/* Make sure UART buffer is sent */
-		k_msleep(2);
+		k_msleep(3);
 
 		/* Re-configure the UART controller with the new baudrate */
 		uart_cfg.baudrate = cfg->bus_speed;

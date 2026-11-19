@@ -61,9 +61,7 @@ def create_from_args(runner_config, argv):
     parser = argparse.ArgumentParser(allow_abbrev=False)
     JLinkBinaryRunner.add_parser(parser)
     args = parser.parse_args(['--device', TEST_DEVICE, *argv])
-    # The shared fixture leaves a non-None cfg.file; force it to None so the
-    # runner does not mistake it for a user-provided image.
-    return JLinkBinaryRunner.create(runner_config._replace(file=None), args)
+    return JLinkBinaryRunner.create(runner_config, args)
 
 
 #
@@ -166,4 +164,4 @@ def test_gdb_init_requires_the_capability(runner_config):
     args = parser.parse_args(['--device', TEST_DEVICE, '--gdb-init', 'p 1'])
 
     with pytest.raises(ValueError, match="doesn't support --gdb-init"):
-        NoGdbInit.create(runner_config._replace(file=None), args)
+        NoGdbInit.create(runner_config, args)

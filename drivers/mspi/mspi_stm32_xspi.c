@@ -1161,6 +1161,10 @@ static int mspi_stm32_xspi_access(const struct device *dev, const struct mspi_xf
 	int ret;
 	struct mspi_stm32_data *dev_data = dev->data;
 
+	if (access_mode == MSPI_ACCESS_MEMMAP) {
+		return read_write_in_memory_map_mode(dev, packet);
+	}
+
 	if (dev_data->memmap_cfg.enable) {
 		if ((packet->cmd == MSPI_NOR_CMD_WREN) || (packet->cmd == MSPI_NOR_OCMD_WREN) ||
 		    (packet->cmd == MSPI_NOR_CMD_SE_4B) || (packet->cmd == MSPI_NOR_OCMD_SE) ||
@@ -1697,6 +1701,36 @@ static int mspi_stm32_xspi_get_channel_status(const struct device *controller, u
 	return 0;
 }
 
+/**
+ * Check that a MSPI_MEMMAP transfer can be serviced through the memory
+ * mapped region with the current configuration.
+ */
+static bool mspi_stm32_xspi_memmap_xfer_possible(const struct device *controller,
+						 const struct mspi_xfer *xfer)
+{
+	const struct mspi_stm32_data *dev_data = controller->data;
+
+	/* The memory mapped access completes synchronously, no callback is raised */
+	if (!dev_data->memmap_cfg.enable || xfer->async) {
+		return false;
+	}
+
+	/* Same restriction as mspi_stm32_xspi_memmap_on() */
+	if ((dev_data->dev_cfg.io_mode == MSPI_IO_MODE_SINGLE) &&
+	    (dev_data->dev_cfg.addr_length != 4U)) {
+		return false;
+	}
+
+	for (uint32_t i = 0U; i < xfer->num_packet; i++) {
+		if ((xfer->packets[i].dir == MSPI_TX) &&
+		    (dev_data->memmap_cfg.permission != MSPI_MEMMAP_READ_WRITE)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static int mspi_stm32_xspi_pio_dma_transceive(const struct device *controller,
 					      const struct mspi_xfer *xfer)
 {
@@ -1721,21 +1755,25 @@ static int mspi_stm32_xspi_pio_dma_transceive(const struct device *controller,
 	while (ctx->packets_left > 0) {
 		packet_idx = ctx->xfer.num_packet - ctx->packets_left;
 		packet = &ctx->xfer.packets[packet_idx];
-#ifdef CONFIG_MSPI_DMA
-		const struct mspi_stm32_conf *dev_cfg = controller->config;
-
-		if (dev_cfg->dma_specified) {
-			ret = mspi_stm32_xspi_access(controller, packet, MSPI_ACCESS_DMA);
+		if (ctx->xfer.xfer_mode == MSPI_MEMMAP) {
+			ret = mspi_stm32_xspi_access(controller, packet, MSPI_ACCESS_MEMMAP);
 		} else {
-			LOG_ERR("DMA configuration is missing from the device tree");
-			ret = -EIO;
-			goto end;
-		}
+#ifdef CONFIG_MSPI_DMA
+			const struct mspi_stm32_conf *dev_cfg = controller->config;
+
+			if (dev_cfg->dma_specified) {
+				ret = mspi_stm32_xspi_access(controller, packet, MSPI_ACCESS_DMA);
+			} else {
+				LOG_ERR("DMA configuration is missing from the device tree");
+				ret = -EIO;
+				goto end;
+			}
 #else
-		ret = mspi_stm32_xspi_access(controller, packet,
-					     ctx->xfer.async ? MSPI_ACCESS_ASYNC :
-							       MSPI_ACCESS_SYNC);
+			ret = mspi_stm32_xspi_access(controller, packet,
+						     ctx->xfer.async ? MSPI_ACCESS_ASYNC
+								     : MSPI_ACCESS_SYNC);
 #endif
+		}
 
 		ctx->packets_left--;
 		if (ret != 0) {
@@ -1769,6 +1807,12 @@ static int mspi_stm32_xspi_transceive(const struct device *controller,
 	if (dev_id != dev_data->dev_id) {
 		LOG_ERR("transceive : dev_id don't match");
 		return -ESTALE;
+	}
+
+	if ((xfer->xfer_mode == MSPI_MEMMAP) &&
+	    !mspi_stm32_xspi_memmap_xfer_possible(controller, xfer)) {
+		LOG_DBG("transceive : memory mapped transfer not possible");
+		return -ENOTSUP;
 	}
 
 	/* Need to map the xfer to the data context */
@@ -2043,7 +2087,7 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 #ifdef CONFIG_MSPI_DMA
 #define DMA_CHANNEL_CONFIG(node, dir) DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
 
-#define XSPI_DMA_CHANNEL_INIT(node, dir, dir_cap, src_dev, dest_dev)                              \
+#define XSPI_DMA_CHANNEL_INIT(node, dir, src_dev, dest_dev)                                       \
 	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                                 \
 	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                                      \
 	.phys_addr = DT_REG_ADDR(DT_DMAS_CTLR(node)),                                              \
@@ -2058,14 +2102,14 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 	.dst_addr_increment =                                                                     \
 		STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(DMA_CHANNEL_CONFIG(node, dir)),
 
-#define XSPI_DMA_CHANNEL(node, dir, DIR, src, dest)                                               \
+#define XSPI_DMA_CHANNEL(node, dir, src, dest)                                                    \
 	.dma_##dir = {                                                                            \
 		COND_CODE_1(DT_DMAS_HAS_NAME(node, dir),                                          \
-			(XSPI_DMA_CHANNEL_INIT(node, dir, DIR, src, dest)),                       \
+			(XSPI_DMA_CHANNEL_INIT(node, dir, src, dest)),                            \
 			(NULL))                                                                   \
 	},
 #else
-#define XSPI_DMA_CHANNEL(node, dir, DIR, src, dest)
+#define XSPI_DMA_CHANNEL(node, dir, src, dest)
 #endif /* CONFIG_MSPI_DMA */
 
 /* MSPI control config */
@@ -2119,8 +2163,8 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 		.dev_cfg = {0},                                                                   \
 		.memmap_cfg = {0},                                                                \
 		.ctx.lock = Z_SEM_INITIALIZER(mspi_stm32_dev_data_##index.ctx.lock, 0, 1),        \
-		XSPI_DMA_CHANNEL(DT_DRV_INST(index), tx, TX, MEMORY, PERIPHERAL)                  \
-		XSPI_DMA_CHANNEL(DT_DRV_INST(index), rx, RX, PERIPHERAL, MEMORY)                  \
+		XSPI_DMA_CHANNEL(DT_DRV_INST(index), tx, MEMORY, PERIPHERAL)                      \
+		XSPI_DMA_CHANNEL(DT_DRV_INST(index), rx, PERIPHERAL, MEMORY)                      \
 	};                                                                                        \
                                                                                                   \
 	PM_DEVICE_DT_INST_DEFINE(index, mspi_stm32_xspi_pm_action);                               \

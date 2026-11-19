@@ -4,7 +4,6 @@
 
 config LD_LINKER_SCRIPT_SUPPORTED
 	bool
-	default n
 
 choice LINKER_SCRIPT
 	default CMAKE_LINKER_GENERATOR

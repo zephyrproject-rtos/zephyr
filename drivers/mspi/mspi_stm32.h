@@ -124,7 +124,8 @@ typedef void (*irq_config_func_t)(void);
 enum mspi_stm32_access_mode {
 	MSPI_ACCESS_ASYNC = 1,
 	MSPI_ACCESS_SYNC = 2,
-	MSPI_ACCESS_DMA = 3
+	MSPI_ACCESS_DMA = 3,
+	MSPI_ACCESS_MEMMAP = 4
 };
 
 struct mspi_stm32_context {

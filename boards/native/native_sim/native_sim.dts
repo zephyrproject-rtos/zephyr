@@ -37,6 +37,7 @@
 		fuel-gauge0 = &fuel_gauge0;
 		i2c-0 = &i2c0;
 		i2s-node0 = &i2s_rxtx;
+		i2s-codec-tx = &i2s_tx0;
 		spi-0 = &spi0;
 		led0 = &led0;
 		rtc = &rtc;

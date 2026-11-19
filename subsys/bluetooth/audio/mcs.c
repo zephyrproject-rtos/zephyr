@@ -962,7 +962,7 @@ static ssize_t write_playing_order(struct bt_conn *conn, const struct bt_gatt_at
 
 	LOG_DBG("Playing order write");
 
-	int8_t order;
+	uint8_t order;
 
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -975,7 +975,7 @@ static ssize_t write_playing_order(struct bt_conn *conn, const struct bt_gatt_at
 
 	mcs_cbs->set_playing_order(order);
 
-	LOG_DBG("Playing order write: %d", order);
+	LOG_DBG("Playing order write: %u", order);
 
 	return len;
 }

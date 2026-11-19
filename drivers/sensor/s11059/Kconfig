@@ -9,4 +9,4 @@ config S11059
 	depends on DT_HAS_HAMAMATSU_S11059_ENABLED
 	select I2C
 	help
-		Enable driver for S11059 color sensor
+	  Enable driver for S11059 color sensor

@@ -134,7 +134,19 @@
 			status = "disabled";
 		};
 
-		/* TODO: add XTAL32K trim, XTAL32M trim fields */
+		/* CFPA XTAL32K trim: OSC32K XTAL_CAP_SEL / EXTAL_CAP_SEL (1 byte) */
+		xtal32k_trim_ifr0: xtal32k-trim@1000160 {
+			reg = <0x1000160 0x1>;
+			#nvmem-cell-cells = <0>;
+			read-only;
+		};
+
+		/* CFPA XTAL32M trim: RFMC XO_TEST CDAC (1 byte) */
+		xtal32m_trim_ifr0: xtal32m-trim@1000164 {
+			reg = <0x1000164 0x1>;
+			#nvmem-cell-cells = <0>;
+			read-only;
+		};
 	};
 
 	ifr1: flash@1100000 {
@@ -410,13 +422,17 @@
 		core-clock-frequency = <DT_FREQ_M(96)>;
 		enable-sosc;
 		sosc-freq = <DT_FREQ_M(32)>;
+		nvmem-cells = <&xtal32k_trim_ifr0>;
 		#clock-cells = <1>;
 	};
 
 	nbu: nbu {
 		compatible = "nxp,nbu";
+		nvmem-cells = <&xtal32m_trim_ifr0>;
 		interrupts = <92 2>;
 		interrupt-names = "nbu_rx_int";
+		rfmc-xo-cdac = <0x0a>;
+		rfmc-xo-isel = <0x0b>;
 		status = "okay";
 	};
 

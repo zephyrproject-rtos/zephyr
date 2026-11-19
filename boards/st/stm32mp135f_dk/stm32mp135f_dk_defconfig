@@ -11,3 +11,8 @@ CONFIG_CONSOLE=y
 
 # UART console (overrides remote proc console)
 CONFIG_UART_CONSOLE=y
+
+# STPMIC1 regulator.
+# This ensures that every STPMIC1 regulator output is
+# enabled by default and cover every use case
+CONFIG_REGULATOR=y

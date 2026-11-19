@@ -114,11 +114,11 @@ endif
 
 choice SEGGER_RTT_INIT_MODE
 	prompt "RTT Initialization mode"
-	help
-		RTT initialization function can avoid re-init of Control Block
-		if another program (e.g. bootloader) has already initialized it.
 	default SEGGER_RTT_INIT_MODE_STRONG_CHECK if SEGGER_RTT_SECTION_CUSTOM
 	default SEGGER_RTT_INIT_MODE_STRONG_CHECK
+	help
+	  RTT initialization function can avoid re-init of Control Block
+	  if another program (e.g. bootloader) has already initialized it.
 
 config SEGGER_RTT_INIT_MODE_ALWAYS
 	bool "RTT Initialization done without conditions"

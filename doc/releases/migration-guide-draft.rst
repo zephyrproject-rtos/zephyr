@@ -34,6 +34,11 @@ Build System
 Kernel
 ******
 
+* :c:func:`k_queue_cancel_wait` and :c:macro:`k_fifo_cancel_wait` now wake every :c:func:`k_poll`
+  call waiting on the queue with ``-EINTR`` and submit every :c:func:`k_work_poll_submit` item
+  waiting on it, not only the first. Code that treated a cancel as addressed to one waiter must
+  re-check its own condition.
+
 Boards
 ******
 
@@ -53,6 +58,16 @@ Boards
     ``zephyr,sram`` and leave the first ``0x60`` bytes of the SRAM free.
   * Remove custom nodes and linker sections that reserve the push area, such as
     ``nrf_kmu_reserved_push_area``. They would overlap the ``kmu_push_area`` node.
+
+* On Nordic SoCs, :kconfig:option:`CONFIG_TRUSTED_EXECUTION_NONSECURE` no longer enables
+  :kconfig:option:`CONFIG_BUILD_WITH_TFM` by default, as TF-M is not the only possible secure
+  firmware. The in-tree ``/ns`` board targets now enable TF-M themselves. Out-of-tree non-secure
+  board targets that use TF-M must do the same, in their :file:`Kconfig.defconfig`:
+
+  .. code-block:: kconfig
+
+     configdefault BUILD_WITH_TFM
+             default y if BOARD_MY_BOARD_NRF9160_NS
 
 * :zephyr:board:`stm32_min_dev` now declares two SoCs, so the SoC qualifier is
   mandatory. Applications and test configurations that used ``stm32_min_dev``,
@@ -101,6 +116,73 @@ Boards
     drop the deletes of the other CPU nodes. Multicore boards must add the other CPU nodes and
     add them to the ``interrupts-extended`` of ``plic0``, ``mtimer`` and ``plic_sw``, or include
     the :file:`riscv/andes/andes_v5_ae350_<core>mp.dtsi` of their core.
+
+* The RAKwireless ``rak3172`` board is renamed to :zephyr:board:`rak3272s`. It
+  was named after the WisDuo stamp module it carries rather than the board it
+  describes, which is the RAK3272S Breakout Board. The other carrier for the
+  same module is the new :zephyr:board:`rak3372` WisBlock Core Module.
+  :file:`boards/deprecated.cmake` keeps ``-b rak3172`` working with a warning,
+  but out-of-tree code testing ``CONFIG_BOARD_RAK3172`` must switch to
+  ``CONFIG_BOARD_RAK3272S``.
+
+* :zephyr:board:`rak3272s` no longer defines ``led0``. The RAK3272S carries no
+  LEDs and leaves the two module pins the nodes used unrouted. Applications
+  that relied on the alias, such as :zephyr:code-sample:`blinky`, need an
+  overlay pointing at a LED wired to the headers.
+
+* The Espressif SoC family is renamed from ``espressif_esp32`` to ``espressif``. The
+  :kconfig:option:`CONFIG_SOC_FAMILY` string is now ``"espressif"`` and the family option is
+  :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF`. ``CONFIG_SOC_FAMILY_ESPRESSIF_ESP32`` is still set
+  for Espressif SoCs, but it is deprecated and will be removed in a future release. Use
+  :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF` instead.
+
+* The Kconfig options defined by the Espressif SoCs in :file:`soc/espressif` now use the SoC
+  symbol prefixes required by the Kconfig naming conventions. Options shared by the Espressif SoC
+  family use ``SOC_FAMILY_ESPRESSIF_`` and options that belong to a single SoC use ``SOC_<SoC>_``.
+  The former ``ESP_``, ``ESP32_``, ``ESP32<SoC>_`` and ``SOC_ESP32_`` prefixes are dropped, and
+  options that had no vendor prefix, such as ``SPIRAM_*``, ``SPI_FLASH_*`` and ``BOOTLOADER_*``,
+  gain the family prefix. The flash options lose the ``ESPTOOLPY_`` tool name (``FLASHFREQ`` and
+  ``FLASHMODE`` become ``FLASH_FREQ`` and ``FLASH_MODE``), and a few redundant words are dropped.
+  For example:
+
+  * ``CONFIG_ESP_SPIRAM`` is now :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM`.
+  * ``CONFIG_SPIRAM_MODE_OCT`` is now :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_OCT`.
+  * ``CONFIG_ESPTOOLPY_FLASHFREQ_80M`` is now
+    :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_FREQ_80M`.
+  * ``CONFIG_ESPTOOLPY_OCT_FLASH`` is now :kconfig:option:`CONFIG_SOC_ESP32S3_FLASH_OCTAL`.
+  * ``CONFIG_ESP32_ULP_COPROC_ENABLED`` is now
+    :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_ULP_ENABLED`.
+  * ``CONFIG_ESP_CONSOLE_UART_NUM`` is now
+    :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM`.
+  * ``CONFIG_SOC_ESP32_PM_SUPPORT_CPU_PD`` is now
+    :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_PM_SUPPORT_CPU_PD`.
+  * ``CONFIG_ESP32S3_DATA_CACHE_64KB`` is now :kconfig:option:`CONFIG_SOC_ESP32S3_DATA_CACHE_64KB`.
+  * ``CONFIG_ESP32_CACHE_L2_512KB`` is now :kconfig:option:`CONFIG_SOC_ESP32P4_CACHE_L2_512KB`.
+
+  The old names of the options that can be set by users are kept as deprecated options and will be
+  removed in a future release. Setting one of them forwards the value to the renamed option and
+  prints a deprecation warning when the value differs from the default of that option. Configuration
+  files should still be updated, because the following uses of the old names are not covered:
+
+  * Code that tests an old boolean ``CONFIG_`` macro. A deprecated boolean option only appears in
+    :file:`autoconf.h` when it is set.
+  * Board ``Kconfig.defconfig`` files that change the default of a renamed option or choice, for
+    example ``choice SPIRAM_MODE``. They must use the new option and choice names.
+  * A deprecated option set by an application does not override a value that a board sets for the
+    renamed option.
+
+  The options ``CONFIG_ESPTOOLPY_FLASHSIZE_*``, ``CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE``,
+  ``CONFIG_ESPTOOLPY_BEFORE_*``, ``CONFIG_ESPTOOLPY_AFTER_*``,
+  ``CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY``, ``CONFIG_SPIRAM_TYPE_ESPPSRAM*``,
+  ``CONFIG_ESP32S3_INSTRUCTION_CACHE_WRAP``, ``CONFIG_ESP32S3_DATA_CACHE_WRAP``,
+  ``CONFIG_ESP32_ULP_PANIC_OUTPUT_ENABLE`` and ``CONFIG_ESP32_ULP_RISCV_INTERRUPT_ENABLE`` have
+  been removed because they had no effect. Remove them from configuration files. Board
+  ``Kconfig.defconfig`` files must drop their ``choice SPIRAM_TYPE`` overrides. The flash size
+  comes from the ``zephyr,flash`` devicetree node.
+
+* On LiteX SoCs, :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` no longer falls back to the
+  CPU ``clock-frequency`` when ``/cpus`` has no ``timebase-frequency``. Out-of-tree boards must
+  set ``timebase-frequency`` on the ``/cpus`` node. (:github:`124446`)
 
 Device Drivers and Devicetree
 *****************************
@@ -155,6 +237,15 @@ Audio Codec
   When using a :dtcompatible:`fixed-clock` node,
   :kconfig:option:`CONFIG_CLOCK_CONTROL_FIXED_RATE_CLOCK` must be enabled.
 
+Clock control
+=============
+
+* NXP MCXC and K32L2B3 SoCs now use the :dtcompatible:`nxp,mcg-lite` binding and driver
+  for the MCG-Lite clock generator. Out-of-tree devicetrees must update the mcg node to use
+  the new compatible and replace any use of ``KINETIS_MCG_OUT_CLK`` with
+  ``NXP_MCG_LITE_OUT_CLK``. The ``lircdiv2`` property is no longer supported by
+  :dtcompatible:`nxp,kinetis-mcg` and should be removed from existing devicetrees.
+
 Comparator
 ==========
 
@@ -206,6 +297,35 @@ Ethernet
   on every Ethernet interface when :kconfig:option:`CONFIG_NET_LLDP` is set. Out-of-tree Ethernet
   drivers must stop reporting it. (:github:`124787`)
 
+* The ``ETHERNET_DSA_USER_PORT`` and ``ETHERNET_DSA_CONDUIT_PORT`` values of
+  :c:enum:`ethernet_hw_caps` have been removed. Use :c:func:`net_eth_get_dsa_port_type` to get the
+  DSA port type of an interface instead. (:github:`124790`)
+
+Flash
+=====
+
+* The Espressif flash encryption compatibility option ``CONFIG_ESP_FLASH_ENCRYPTION`` is now
+  :kconfig:option:`CONFIG_ESP32_FLASH_ENCRYPTION`, defined by the ESP32 flash driver. The old name
+  is kept as a deprecated option and will be removed in a future release.
+
+I2S
+===
+
+* :kconfig:option:`CONFIG_I2S_NATIVE_SIM_RX_FILE_PATH` and
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_FILE_PATH` are deprecated. Use
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_RX_PATH` and
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_PATH`, which also accept ALSA devices. Without the
+  ALSA backend the old options still provide their default. (:github:`123474`)
+
+MFD
+===
+
+* nPM13xx event callbacks now use :c:struct:`mfd_npm13xx_event_callback` instead of
+  :c:struct:`gpio_callback`. Set its ``handler`` and ``event_mask`` fields directly instead of
+  calling ``gpio_init_callback()``. The handler takes a pointer to the new callback structure
+  and an ``npm13xx_event_t`` event mask; existing ``BIT(NPM13XX_EVENT_*)`` masks are unchanged.
+  (:github:`123060`)
+
 Modem
 =====
 
@@ -236,6 +356,32 @@ OPAMP
   a runtime reference on the reference source while it measures an amplifier fed by it. Builds
   without device runtime PM are unaffected: the device is resumed at init and the instance comes
   up enabled as before. (:github:`122135`)
+
+PCIe
+====
+
+* :c:func:`pcie_msi_map` now returns ``uint64_t`` instead of ``uint32_t``, and the ``address``
+  member of :c:struct:`msi_vector_generic` is now ``uint64_t``. Out-of-tree implementations of
+  :c:func:`pcie_msi_map` and code that reads the MSI vector address must be updated. The ITS
+  getter (:c:func:`its_get_msi_addr`) also returns ``uint64_t``. (:github:`124156`)
+
+* A 32-bit MSI capability whose ITS target address is above 4 GiB now makes
+  :c:func:`pcie_msi_enable` return false without writing the configuration space or enabling bus
+  mastering; dependent drivers such as NVMe, ivshmem and IGC fail to initialize. This is
+  intentional: use a 64-bit MSI capability or a target address below 4 GiB. (:github:`124156`)
+
+Power Management
+================
+
+* NXP MCX :dtcompatible:`nxp,spc` ``wakeup-delay`` specifies regulator-settling delay in
+  SPC timer cycles. At the nominal 10 MHz timer frequency, every additional 100 cycles
+  adds approximately 10 us to wake-up time. A nonzero programmed delay can also apply
+  when ``LP_CFG`` and ``ACTIVE_CFG`` select the same voltage.
+  SoC power-state ``exit-latency-us`` defaults include SPC settling and mode-specific
+  recovery allowances. Board/application overlays can select counts for their regulator,
+  voltages, output capacitance and external power circuitry. Measure the total wake-up
+  time for the actual project, including clock recovery and resume processing, and adjust
+  ``exit-latency-us`` accordingly; these defaults are not measured worst-case bounds.
 
 PTP Clock
 =========
@@ -285,6 +431,46 @@ Timers
   ``z_cms_lptim_hook_on_lpm_entry`` and ``z_cms_lptim_hook_on_lpm_exit`` with
   :c:func:`z_sys_clock_lpm_enter` and :c:func:`z_sys_clock_lpm_exit`, respectively. (:github:`124238`).
 
+W1
+==
+
+* The 1-Wire API now uses controller/peripheral terminology. The former names remain available as
+  deprecated aliases:
+
+  * :c:struct:`w1_master_config` is deprecated in favor of :c:struct:`w1_controller_config`, and
+    its ``slave_count`` member is deprecated in favor of ``peripheral_count``.
+  * :c:struct:`w1_master_data` is deprecated in favor of :c:struct:`w1_controller_data`.
+  * :c:struct:`w1_slave_config` is deprecated in favor of :c:struct:`w1_peripheral_config`.
+  * :c:func:`w1_get_slave_count` is deprecated in favor of :c:func:`w1_get_peripheral_count`.
+  * ``W1_SLAVE_COUNT`` and ``W1_INST_SLAVE_COUNT`` are deprecated in favor of
+    ``W1_PERIPHERAL_COUNT`` and ``W1_INST_PERIPHERAL_COUNT``.
+
+* The common devicetree binding include files ``w1-master.yaml`` and ``w1-slave.yaml`` are
+  deprecated in favor of ``w1-controller.yaml`` and ``w1-peripheral.yaml``. Out-of-tree bindings
+  should update their ``include:`` statements accordingly; the old files are kept as thin
+  includes of the new ones for compatibility.
+
+Wi-Fi
+=====
+
+* :kconfig:option:`CONFIG_ESP32_WIFI_STA_RECONNECT` now only applies to an Espressif station
+  that loses an established connection. It reconnects with a growing backoff until it succeeds
+  or the application disconnects. While it reconnects, connection requests fail with
+  ``-EALREADY``. The option no longer changes how connection requests made by the application
+  are handled.
+
+* :kconfig:option:`CONFIG_ESP32_WIFI_STA_RECONNECT` is now enabled by default, so an Espressif
+  station that loses an established connection reconnects on its own. Set the option to ``n`` to
+  keep the station disconnected instead.
+
+* Espressif Wi-Fi connection requests now retry authentication and association failures, such as
+  an access point that rejects the first attempt after the station was reset, instead of failing
+  on the first rejection. A request that leaves the ``timeout`` field of
+  :c:struct:`wifi_connect_req_params` at 0 fails after three short retries. A request with a
+  timeout retries until it expires and then reports a connection timeout, and one with
+  ``SYS_FOREVER_MS`` retries until the application disconnects. A wrong WPA3-SAE password cannot
+  be told apart from such a rejection, so it is retried as well.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
@@ -294,6 +480,12 @@ Bluetooth Audio
 ===============
 
 .. zephyr-keep-sorted-start re(^\* \w)
+
+* BAP
+
+  * ``CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT`` has been renamed to
+    :kconfig:option:`CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT`. All applications must apply a
+    search and replace on this.
 
 * MCP
 
@@ -341,6 +533,16 @@ Bluetooth Host
   recommended sizing is ``CONFIG_BT_ATT_PREPARE_COUNT`` = buffers needed by one client
   multiplied by ``CONFIG_BT_MAX_CONN``, which keeps every connection's capacity independent
   of the other connections.
+* ``CONFIG_BT_ISO_TX_MTU`` has been removed. Applications should define their own SDU buffer sizes.
+  The ISO HCI data buffer size can be configured for the Controller with
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE`, and the SDU size with
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX`.
+  In most cases :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE` should be set to 4
+  (if timestamps are not used) or 8 (if timestamps are used) above
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX`. For larger values of
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX` it may be better to increase
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFERS` instead of
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE`.
 
 Bluetooth Mesh
 ==============
@@ -354,6 +556,17 @@ Bluetooth Mesh
   * The ``output_number`` callback of :c:struct:`bt_mesh_prov` with
     :c:member:`bt_mesh_prov.output_numeric`, which receives the numeric value as a
     little-endian byte array and its size.
+
+* The Bluetooth Mesh shell ``sar rx-set`` command now takes its arguments in the order the SAR
+  Receiver states are documented and printed: ``<SegThresh> <AckDelayInc> <DiscardTimeout>
+  <RxSegIntStep> <AckRetransCount>``. ``AckRetransCount`` moved from the third position to the
+  last, so an existing invocation keeps the same number of arguments but assigns them to
+  different states. The ``sar rx-get`` and ``sar rx-set`` responses are printed in this new
+  order too. Update scripts that call ``sar rx-set`` or parse those responses.
+
+* The Bluetooth Mesh shell ``dfu cli send`` command now takes the transfer mode as ``push`` or
+  ``pull`` instead of a number, matching ``blob cli tx``. Replace a numeric mode argument with
+  ``push`` or ``pull``.
 
 Networking
 **********
@@ -394,6 +607,29 @@ Networking
   ``DEVICE_API(wifi_offload, name)`` otherwise. ``struct net_wifi_mgmt_offload`` remains available
   to refer to the selected type. (:github:`124334`)
 
+* The extra config files of the samples in :zephyr_file:`samples/net`,
+  :zephyr_file:`samples/subsys/mgmt/hawkbit`, :zephyr_file:`samples/subsys/mgmt/updatehub` and
+  :zephyr_file:`samples/drivers/modem/hello_hl78xx`, and of the network tests, no longer start with
+  ``overlay-`` or ``overlay_``, as that name is reserved for devicetree overlays. Drop the prefix
+  from the names passed in ``EXTRA_CONF_FILE``, for example ``-DEXTRA_CONF_FILE=tls.conf`` instead
+  of ``-DEXTRA_CONF_FILE=overlay-tls.conf``. These files use new names instead:
+
+  * :zephyr_file:`samples/net/mqtt_publisher/testing.conf` replaces ``overlay-sample.conf``.
+  * :zephyr_file:`samples/net/dhcpv6_pd/pd-server.conf` and
+    :zephyr_file:`samples/net/dhcpv6_pd/pd-server.overlay` replace ``overlay-server.conf`` and
+    ``overlay-server.overlay``.
+  * :zephyr_file:`samples/net/ethernet/gptp/multiport.overlay` replaces
+    ``overlay-multiport.overlay``.
+  * :zephyr_file:`samples/subsys/mgmt/updatehub/local.conf.example` replaces
+    ``overlay-prj.conf.example``.
+
+OpenThread
+==========
+
+* The :kconfig:option:`OPENTHREAD_THREAD_VERSION_1_4` Kconfig option is now enabled by default.
+
+* Applications that require an older OpenThread version must explicitly select the desired version in their project Kconfig configuration.
+
 Other subsystems
 ****************
 
@@ -404,8 +640,53 @@ Shell
   ``-ENOEXEC`` instead of ``SHELL_CMD_HELP_PRINTED`` (1). The help is still printed. Update code
   that checks the return value of :c:func:`shell_execute_cmd` for this case.
 
+Task Watchdog
+=============
+
+* If :c:func:`task_wdt_add` fails to set up a hardware watchdog fallback, it now
+  returns the error without leaving a channel allocated. Applications must check
+  the returned errors and avoid requesting pause options their backend does not support.
+
+Tools
+*****
+
+* Deprecate the ``--esp-baud-rate`` argument on the esp32 runner, the ``-b`` / ``--baudrate``
+  argument on the bflb_mcu_tool runner, the ``-b`` argument on the bflb_flash_command runner and the
+  ``--baudrate`` argument on the amebaflash runner. They are replaced with a generic
+  ``--baud-rate`` argument.
+
+* The stm32flash runner now defaults to 115200 baud instead of 57600 when no ``--baud-rate`` is
+  given. Pass ``--baud-rate=57600`` to keep the previous speed.
+
+
+IPC
+===
+
+* :kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE` has been renamed to
+  :kconfig:option:`CONFIG_IPC_SERVICE_RPMSG_NUM_ENDPOINTS_PER_INSTANCE`, as it configures the RPMsg
+  support library. Update application and board configuration files to use the new name. The old
+  option remains as a deprecated alias: its value is used unless the new option is explicitly set.
+  (:github:`101918`)
+
 Modules
 *******
+
+* Espressif ``hal_espressif`` options moved from :file:`soc/espressif` to
+  :zephyr_file:`modules/Kconfig.esp32`:
+
+  * The per-SoC ``CONFIG_MAC_BB_PD`` options are merged into
+    :kconfig:option:`CONFIG_ESP32_MAC_BB_PD`.
+  * The per-SoC universal MAC address choices, such as
+    ``CONFIG_ESP32C6_UNIVERSAL_MAC_ADDRESSES_TWO``, are replaced by one choice with the
+    :kconfig:option:`CONFIG_ESP32_MAC_ADDRESSES_ONE`,
+    :kconfig:option:`CONFIG_ESP32_MAC_ADDRESSES_TWO` and
+    :kconfig:option:`CONFIG_ESP32_MAC_ADDRESSES_FOUR` options. The per-SoC integer options,
+    such as ``CONFIG_ESP32C6_UNIVERSAL_MAC_ADDRESSES``, and the hidden
+    ``CONFIG_ESP_MAC_ADDR_UNIVERSE_*`` and ``CONFIG_ESP_MAC_UNIVERSAL_MAC_ADDRESSES_*`` options
+    are removed.
+
+  The old names that can be set by users are kept as deprecated options and will be removed in a
+  future release.
 
 * The `zephyr-lang-rust <https://github.com/zephyrproject-rtos/zephyr-lang-rust>`_ module providing
   Rust language support is no longer an optional module of the Zephyr manifest. It is now an
@@ -414,3 +695,10 @@ Modules
 
 Architectures
 *************
+
+* On ARM Cortex-A/R with :kconfig:option:`CONFIG_USE_SWITCH`, ISRs run in SYS mode instead of
+  IRQ mode, and nested interrupts and the handlers they call use the per-CPU interrupt stack
+  rather than the interrupted thread's stack. Boards and applications that sized
+  :kconfig:option:`CONFIG_ISR_STACK_SIZE` for the outermost ISR frame alone may need a larger
+  interrupt stack, and code or debuggers that inspect the processor mode inside an ISR see SYS
+  mode. (:github:`123041`)

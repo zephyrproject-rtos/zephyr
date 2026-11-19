@@ -134,6 +134,15 @@ zephyr_i2c: &i2c1 {
 		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 };
 
+/* VREF+ is the AREF pin, pulled up to 3.1 V on the board */
+&adc12_common {
+	vref-mv = <3100>;
+};
+
+&adc3_common {
+	vref-mv = <3100>;
+};
+
 &mailbox {
 	status = "okay";
 };

@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32H7P5I_DK
+	select SOC_STM32H7P5XX

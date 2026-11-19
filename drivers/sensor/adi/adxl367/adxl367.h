@@ -227,7 +227,7 @@
 #define ADXL367_FIFO_HDR_GET_ACCEL_AXIS(x)	(((x) & 0xC000) >> 14)
 #define ADXL367_FIFO_HDR_CHECK_TEMP(x)	((((x) & 0xC000) >> 14) == 0x3)
 
-/* ADXL362 scale factors from specifications */
+/* ADXL367 scale factors from specifications */
 #define ADXL367_ACCEL_2G_LSB_PER_G	4000
 #define ADXL367_ACCEL_4G_LSB_PER_G	2000
 #define ADXL367_ACCEL_8G_LSB_PER_G	1000

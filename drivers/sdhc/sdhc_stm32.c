@@ -83,8 +83,6 @@ struct sdhc_stm32_data {
 	uint32_t error_code;           /* SD Card Error codes */
 	bool is_sdio_transfer;         /* Flag to indicate if current transfer is SDIO */
 
-	uint32_t rx_xfer_size; /* SD Rx Transfer size */
-	uint32_t tx_xfer_size; /* SD Tx Transfer size */
 	bool is_multi_block;   /* Flag for multi-block transfers */
 };
 
@@ -826,11 +824,9 @@ static int sdhc_stm32_rw_blocks_dma(struct sdhc_command *cmd, SDMMC_TypeDef *ins
 	instance->DCTRL = 0U;
 
 	if (is_write) {
-		dev_data->tx_xfer_size = BLOCKSIZE * number_of_blocks;
 		config.TransferDir = SDMMC_TRANSFER_DIR_TO_CARD;
 		data_error_it = SDMMC_IT_TXUNDERR;
 	} else {
-		dev_data->rx_xfer_size = BLOCKSIZE * number_of_blocks;
 		config.TransferDir = SDMMC_TRANSFER_DIR_TO_SDMMC;
 		data_error_it = SDMMC_IT_RXOVERR;
 	}

@@ -126,7 +126,6 @@ config ADSP_DISABLE_L2CACHE_AT_BOOT
 
 config ADSP_IMR_CONTEXT_SAVE
 	bool "Saves FW context into IMR before core is shut down"
-	default n
 	help
 	  When true, FW will store its entire context into IMR before
 	  entering D3 state. Later this context can be used to FW restore

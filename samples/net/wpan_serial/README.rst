@@ -30,19 +30,14 @@ Building and Running
      $ sudo systemctl disable ModemManager.service
 
 #. Build the sample Zephyr application to a board with a 802.15.4 radio
-   and USB controller. There are configuration files for various setups
-   in the ``samples/net/wpan_serial`` directory:
-
-   - :file:`prj.conf`
-     This is the standard default config. This can be used by itself for
-     hardware which has native 802.15.4 support.
+   and USB controller. The configuration is in :file:`prj.conf`; the
+   802.15.4 radio driver is enabled from the board devicetree.
 
    To build the wpan_serial sample:
 
    .. zephyr-app-commands::
      :zephyr-app: samples/net/wpan_serial
      :board: <board name>
-     :conf: "prj.conf [overlay-<RADIO>.conf]"
      :goals: build
      :compact:
 

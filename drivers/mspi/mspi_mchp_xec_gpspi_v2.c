@@ -1492,6 +1492,11 @@ static int api_mspi_mchp_xec_gpspi_tc(const struct device *ctrl, const struct ms
 		}
 	}
 
+	if (req->xfer_mode == MSPI_MEMMAP) {
+		LOG_DBG("Memory mapped transfers are not supported");
+		return -ENOTSUP;
+	}
+
 	if (req->num_packet == 0) {
 		return 0; /* nothing to do */
 	}

@@ -213,6 +213,77 @@ If this is not feasible, you can instead request that connectivity monitoring re
      conn_mgr_mon_resend_status();
    }
 
+.. _conn_mgr_monitoring_waiting:
+
+Waiting for readiness
+=====================
+
+Instead of listening for events, a thread can block until the network is ready by calling :c:func:`conn_mgr_wait_ready`.
+All flags in its mask must be set:
+
+* :c:macro:`CONN_MGR_READY_IPV4` or :c:macro:`CONN_MGR_READY_IPV6` for that address family,
+* :c:macro:`CONN_MGR_READY_IP_ANY` for at least one address family,
+* :c:macro:`CONN_MGR_READY_DNS` for name resolution.
+
+.. code-block:: c
+
+   /* Wait until IPv4 and name resolution are available */
+   (void)conn_mgr_wait_ready(CONN_MGR_READY_IPV4 | CONN_MGR_READY_DNS, NULL, K_FOREVER);
+
+.. note::
+   Do not call this function with a non-zero timeout from a :ref:`network management <net_mgmt_interface>` event callback or from the work queue that delivers network management events.
+   When the :kconfig:option:`CONFIG_NET_MGMT_EVENT_SYSTEM_WORKQUEUE` Kconfig option is enabled, the restriction applies to the system work queue, because events are delivered on it.
+
+To retry after a failed connection attempt, pass a ``last_seen`` value to :c:func:`conn_mgr_wait_ready`.
+Set it to 0 before the first call and do not change it afterwards.
+The function returns 0, meaning "try to connect now", when all flags in the mask are ready and one of the following is true:
+
+* Any flag in the mask was gained after ``last_seen``.
+* The timeout expired.
+
+It returns ``-EAGAIN`` if a flag in the mask is not ready when the timeout expires.
+A flag is gained when an iface becomes ready for an address family, also when another iface is already ready for it, or when name resolution becomes available.
+Losing readiness or adding a DNS server while name resolution is already available is not a gain.
+
+.. code-block:: c
+
+   const uint32_t mask = CONN_MGR_READY_IP_ANY | CONN_MGR_READY_DNS;
+   uint32_t last_seen = 0;
+   int err;
+
+   while (true) {
+           /* First call returns once ready, later ones after 60 s or a gain */
+           err = conn_mgr_wait_ready(mask, &last_seen, K_SECONDS(60));
+           if (err == -EAGAIN) {
+                   /* The network is not ready. Keep waiting. */
+                   continue;
+           } else if (err != 0) {
+                   /* -EINVAL or -EDEADLK: wrong use of the API */
+                   return err;
+           }
+
+           /* Resolves with conn_mgr_get_ready_addr_family() on every attempt, as it may change */
+           if (connect_to_server() == 0) {
+                   break;
+           }
+   }
+
+.. _conn_mgr_monitoring_addr_family:
+
+Resolving for a ready address family
+====================================
+
+A hostname can resolve to addresses of an address family that is not ready.
+To get only addresses of a ready address family, set the ``ai_family`` field of the :c:func:`zsock_getaddrinfo` hints using :c:func:`conn_mgr_get_ready_addr_family`.
+It returns ``NET_AF_INET`` or ``NET_AF_INET6`` if only that address family is ready, and ``NET_AF_UNSPEC`` otherwise.
+
+.. code-block:: c
+
+   struct zsock_addrinfo hints = {
+           .ai_family = conn_mgr_get_ready_addr_family(),
+           .ai_socktype = NET_SOCK_STREAM,
+   };
+
 .. _conn_mgr_monitoring_ignoring_ifaces:
 
 Ignoring ifaces

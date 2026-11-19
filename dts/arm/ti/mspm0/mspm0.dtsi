@@ -7,6 +7,7 @@
 
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <zephyr/dt-bindings/regulator/mspm0_vref.h>
 #include <freq.h>
 
 / {
@@ -169,6 +170,8 @@
 			clocks = <&ckm MSPM0_CLOCK_BUSCLK>;
 			off-on-delay-us = <200>;
 			regulator-uv = <1400000>;
+			regulator-allowed-modes = <MSPM0_VREF_MODE_NORMAL>,
+						  <MSPM0_VREF_MODE_SHMODE>;
 			ti,clk-div = <0x1>;
 			ti,sample-cycles = <10>;
 			ti,hold-cycles = <40>;
@@ -178,6 +181,8 @@
 		wdt0: wdt0@40080000 {
 			compatible = "ti,mspm0-watchdog";
 			reg = <0x40080000 0x2000>;
+			interrupts = <0 0>;
+			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
 			closed-window = <0>;
 			ti,watchdog-reset-action = <1>;
 			status = "disabled";
@@ -247,7 +252,7 @@
 
 		pinctrl: pin-controller@40428000 {
 			compatible = "ti,mspm0-pinctrl";
-			reg = <0x40428000 0x400>;
+			reg = <0x40428000 0x2000>;
 		};
 
 		dma: dma@4042a000 {

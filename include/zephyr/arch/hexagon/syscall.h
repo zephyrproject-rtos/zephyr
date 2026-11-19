@@ -121,9 +121,10 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
  * _hexagon_user_mode_active is set to 1 by arch_user_mode_enter() before
  * issuing vmrte, and cleared back to 0 when a trap0/exception returns to
  * kernel mode.  It must be read atomically (volatile) since it is written
- * and read across the user/kernel boundary.
+ * and read across the user/kernel boundary.  Thread-local so user code
+ * reads it from its own (user-mapped) TLS block, not kernel memory.
  */
-extern volatile uint32_t _hexagon_user_mode_active;
+extern Z_THREAD_LOCAL volatile uint32_t _hexagon_user_mode_active;
 
 static inline bool arch_is_user_context(void)
 {

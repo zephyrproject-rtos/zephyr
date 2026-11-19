@@ -9,4 +9,4 @@ config GPIO_DAVINCI
 	depends on DT_HAS_TI_DAVINCI_GPIO_ENABLED
 	select PINCTRL
 	help
-		Enable the Davinci GPIO controller support.
+	  Enable the Davinci GPIO controller support.

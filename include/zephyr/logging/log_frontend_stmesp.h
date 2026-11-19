@@ -65,7 +65,7 @@ void log_frontend_stmesp_dummy_write(void);
 static inline void log_frontend_stmesp_tp(uint16_t x)
 {
 #ifdef CONFIG_LOG_FRONTEND_STMESP
-	STMESP_Type *port;
+	STMESP_Type *port = NULL;
 	int err = stmesp_get_port((uint32_t)x + CONFIG_LOG_FRONTEND_STMESP_TP_CHAN_BASE, &port);
 
 	__ASSERT_NO_MSG(err == 0);
@@ -87,7 +87,7 @@ static inline void log_frontend_stmesp_tp(uint16_t x)
 static inline void log_frontend_stmesp_tp_d32(uint16_t x, uint32_t d)
 {
 #ifdef CONFIG_LOG_FRONTEND_STMESP
-	STMESP_Type *port;
+	STMESP_Type *port = NULL;
 	int err = stmesp_get_port((uint32_t)x + CONFIG_LOG_FRONTEND_STMESP_TP_CHAN_BASE, &port);
 
 	__ASSERT_NO_MSG(err == 0);

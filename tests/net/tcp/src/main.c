@@ -131,6 +131,7 @@ static enum test_case_no {
 	TEST_CLIENT_WIN_SCALE_CLAMP = 30,
 	TEST_SERVER_BUF_INHERIT = 31,
 	TEST_SERVER_WIN_SCALE = 32,
+	TEST_CLIENT_PEER_CLOSE_ON_CONNECT = 33,
 } test_case_no;
 
 static enum test_state t_state;
@@ -148,6 +149,7 @@ static void handle_win_scale_client(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_server_handshake(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_advertised_recv_window(struct tcphdr *th);
 static void handle_syn_rst_ack(net_sa_family_t af, struct tcphdr *th);
+static void handle_client_peer_close_on_connect(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_failure_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_closing_test(net_sa_family_t af, struct tcphdr *th);
@@ -776,6 +778,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case TEST_CLIENT_SYN_RST_ACK:
 		handle_syn_rst_ack(net_pkt_family(pkt), &th);
+		break;
+	case TEST_CLIENT_PEER_CLOSE_ON_CONNECT:
+		handle_client_peer_close_on_connect(net_pkt_family(pkt), &th);
 		break;
 	case TEST_SERVER_RST_ON_CLOSED_PORT:
 		handle_server_rst_on_closed_port(net_pkt_family(pkt), &th);
@@ -2276,6 +2281,103 @@ ZTEST(net_tcp, test_client_syn_rst_ack)
 	net_context_put(ctx);
 }
 
+static void handle_client_peer_close_on_connect(net_sa_family_t af, struct tcphdr *th)
+{
+	struct net_pkt *reply;
+
+	switch (t_state) {
+	case T_SYN:
+		test_verify_flags(th, SYN);
+		seq = 0U;
+		ack = net_ntohl(th->th_seq) + 1U;
+		reply = prepare_syn_ack_packet(af, net_htons(MY_PORT), th->th_sport);
+		seq++;
+		t_state = T_SYN_ACK;
+		break;
+	case T_SYN_ACK:
+		test_verify_flags(th, ACK);
+		reply = prepare_fin_ack_packet(af, net_htons(MY_PORT), th->th_sport);
+		seq++;
+		t_state = T_FIN_ACK;
+		break;
+	case T_FIN_ACK:
+		test_verify_flags(th, FIN | ACK);
+		ack++;
+		reply = prepare_ack_packet(af, net_htons(MY_PORT), th->th_sport);
+		t_state = T_CLOSING;
+		break;
+	default:
+		zassert_true(false, "%s unexpected state", __func__);
+		return;
+	}
+
+	zassert_ok(net_recv_data(net_iface, reply), "%s failed", __func__);
+}
+
+static void peer_close_on_connect(k_timeout_t timeout)
+{
+	struct net_context *ctx;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = TEST_CLIENT_PEER_CLOSE_ON_CONNECT;
+	seq = ack = 0;
+
+	zassert_ok(net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx),
+		   "Failed to get net_context");
+
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct net_sockaddr *)&peer_addr_s,
+				  sizeof(struct net_sockaddr_in), NULL, timeout, NULL);
+
+	zassert_ok(ret, "Connect failed (%d) after a completed handshake", ret);
+	zassert_equal(t_state, T_CLOSING, "Peer did not close the connection");
+
+	net_context_put(ctx);
+}
+
+/* Test case scenario IPv4
+ *   expect SYN,
+ *   send SYN ACK,
+ *   expect ACK,
+ *   send FIN ACK,
+ *   expect FIN ACK,
+ *   send ACK,
+ *   connect() must succeed although the peer closed the connection
+ *   before the connecting thread ran again.
+ *   Socket buffer options make tcp_in() wait for the context lock, which
+ *   connect() holds, so the close cannot overtake connect() with those.
+ *   On SMP, the RX thread runs on another CPU, so the order of the close
+ *   and the checks in connect() is not deterministic.
+ */
+ZTEST(net_tcp, test_client_peer_close_on_connect)
+{
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_CONTEXT_RCVBUF);
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_CONTEXT_SNDBUF);
+	Z_TEST_SKIP_IFDEF(CONFIG_SMP);
+
+	peer_close_on_connect(K_MSEC(1000));
+}
+
+/* As test_client_peer_close_on_connect, with a non-blocking connect().
+ * From a preemptible thread, the cooperative RX thread completes the
+ * handshake and the close before connect() checks the connection, so
+ * connect() must return 0, not -EINPROGRESS. On SMP, the RX thread runs
+ * on another CPU, so the thread priority does not decide the order.
+ */
+ZTEST(net_tcp, test_client_peer_close_on_connect_nonblock)
+{
+	int prio = k_thread_priority_get(k_current_get());
+
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_CONTEXT_RCVBUF);
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_CONTEXT_SNDBUF);
+	Z_TEST_SKIP_IFDEF(CONFIG_SMP);
+
+	k_thread_priority_set(k_current_get(), K_LOWEST_APPLICATION_THREAD_PRIO);
+	peer_close_on_connect(K_NO_WAIT);
+	k_thread_priority_set(k_current_get(), prio);
+}
 
 static void handle_client_fin_wait_2_test(net_sa_family_t af, struct tcphdr *th)
 {

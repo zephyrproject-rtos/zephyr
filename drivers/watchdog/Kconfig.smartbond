@@ -14,7 +14,6 @@ config WDT_SMARTBOND
 
 config WDT_SMARTBOND_NMI
 	bool "NMI pre-reset interrupt enable"
-	default n
 	depends on WDT_SMARTBOND
 	select RUNTIME_NMI
 	help

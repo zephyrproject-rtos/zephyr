@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_MCP355X
+	bool "Microchip MCP3550/1/3 ADC driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP3550_50_ENABLED || DT_HAS_MICROCHIP_MCP3550_60_ENABLED || \
+		DT_HAS_MICROCHIP_MCP3551_ENABLED || DT_HAS_MICROCHIP_MCP3553_ENABLED
+	select SPI
+	help
+	  Enable the driver for the Microchip MCP3550/1/3 single-channel 22-bit
+	  delta-sigma ADCs with SPI interface.
+
+if ADC_MCP355X
+
+config ADC_MCP355X_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 512
+	help
+	  Size of the stack used for the internal data acquisition thread.
+
+config ADC_MCP355X_ACQUISITION_THREAD_PRIO
+	int "Priority for the ADC data acquisition thread"
+	default 0
+	help
+	  Priority level for the internal data acquisition thread.
+
+endif # ADC_MCP355X

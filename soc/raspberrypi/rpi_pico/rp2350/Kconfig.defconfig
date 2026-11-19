@@ -19,7 +19,13 @@ config NUM_IRQS
 
 DT_CLK_SYS_PATH := $(dt_nodelabel_path,clk_sys)
 
+DT_COMPAT_SYSTEM_TIMER := $(DT_COMPAT_RASPBERRYPI_PICO_SYSTEM_TIMER)
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,timer0,clock-frequency) \
+		if $(dt_nodelabel_enabled_with_compat,timer0,$(DT_COMPAT_SYSTEM_TIMER))
+	default $(dt_nodelabel_int_prop,timer1,clock-frequency) \
+		if $(dt_nodelabel_enabled_with_compat,timer1,$(DT_COMPAT_SYSTEM_TIMER))
 	default $(dt_node_int_prop_int,$(DT_CLK_SYS_PATH),clock-frequency)
 
 config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS

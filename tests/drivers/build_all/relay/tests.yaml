@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.relay.build:
+    build_only: true
+    min_ram: 32
+    tags:
+      - drivers
+      - relay
+    integration_platforms:
+      - native_sim
+      - qemu_x86

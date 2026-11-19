@@ -22,6 +22,8 @@ config SOC_NRF7120_CPUAPP
 	select HAS_NORDIC_RAM_CTRL
 	select HAS_POWEROFF
 	select HAS_SWO
+	select SOC_LATE_INIT_HOOK if MULTITHREADING && \
+		$(dt_node_str_prop_equals,$(dt_nodelabel_path,lfxo),mode,pixo)
 
 config SOC_NRF7120_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
@@ -35,8 +37,11 @@ config SOC_NRF7120E_CPUAPP
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_FPU
 	select HAS_HW_NRF_RADIO_IEEE802154
+	select HAS_NORDIC_RAM_CTRL
 	select HAS_POWEROFF
 	select HAS_SWO
+	select SOC_LATE_INIT_HOOK if MULTITHREADING && \
+		$(dt_node_str_prop_equals,$(dt_nodelabel_path,lfxo),mode,pixo)
 
 config SOC_NRF7120E_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
@@ -69,11 +74,17 @@ config SOC_NRF7120_APPROTECT_BOOT_WORKAROUND
 config SOC_NRF7120_WICR_SETUP
 	bool
 	default y if DT_HAS_NORDIC_NRF_WICR_ENABLED && !MCUBOOT
-	select NRFX_MRAMC if !BUILD_WITH_TFM
+	select NRFX_MRAMC if !TRUSTED_EXECUTION_NONSECURE
 	help
 	  Program the Wi-Fi Information Configuration Registers (WICR) at boot.
 	  WICR is an NVM region for configuring Wi-Fi related settings and
 	  values.
+
+config SOC_SERIES_NRF71_READ_ICR
+	bool "nRF71 ICR fallback reader"
+	help
+	  Enable the nRF71 API for reading allowlisted configuration values from
+	  UICR, with fallback to FICR and a caller-provided default.
 
 config SOC_NRF71_WIFI_DAP
 	bool "nRF71 Wi-Fi Debug access port for debugging"

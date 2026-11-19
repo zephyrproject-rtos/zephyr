@@ -26,7 +26,7 @@ tests:
     tags:
       - net
     extra_args:
-      - EXTRA_CONF_FILE="overlay-iperf3.conf"
+      - EXTRA_CONF_FILE="iperf3.conf"
   sample.net.zperf.loopback_icount:
     harness: console
     platform_allow:
@@ -42,7 +42,7 @@ tests:
       # different absolute numbers, so keep separate baseline files for each.
       - net-perf
     extra_args:
-      - EXTRA_CONF_FILE="overlay-loopback.conf;overlay-loopback-icount.conf"
+      - EXTRA_CONF_FILE="loopback.conf;loopback-icount.conf"
     harness_config:
       type: one_line
       regex:
@@ -112,7 +112,7 @@ tests:
   sample.net.zperf.usbd_cdc_ecm:
     harness: net
     extra_args:
-      - EXTRA_CONF_FILE="overlay-usbd.conf"
+      - EXTRA_CONF_FILE="usbd.conf"
       - DTC_OVERLAY_FILE="usbd_cdc_ecm.overlay"
     platform_allow:
       - nrf52840dk/nrf52840
@@ -125,7 +125,7 @@ tests:
   sample.net.zperf.usbd_cdc_ncm:
     harness: net
     extra_args:
-      - EXTRA_CONF_FILE="overlay-usbd.conf"
+      - EXTRA_CONF_FILE="usbd.conf"
       - DTC_OVERLAY_FILE="usbd_cdc_ncm.overlay"
     platform_allow:
       - nrf52840dk/nrf52840
@@ -155,7 +155,7 @@ tests:
     platform_allow:
       - mimxrt1170_evk/mimxrt1176/cm7
   sample.net.zperf.802154.subg:
-    extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
+    extra_args: EXTRA_CONF_FILE="802154-subg.conf"
     tags:
       - net
     platform_allow:

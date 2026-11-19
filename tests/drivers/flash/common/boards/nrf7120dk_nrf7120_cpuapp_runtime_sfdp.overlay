@@ -13,8 +13,8 @@
 };
 
 &mx25u25645g {
-	status = "okay";
 	use-runtime-sfdp;
+	status = "okay";
 
 	/delete-property/ jedec-id;
 	/delete-property/ sfdp-bfp;

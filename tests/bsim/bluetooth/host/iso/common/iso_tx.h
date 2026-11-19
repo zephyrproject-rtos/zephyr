@@ -16,6 +16,8 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
+#define ISO_TX_SDU_SIZE 600U
+
 /**
  * @brief Initialize TX
  *

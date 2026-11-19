@@ -4,7 +4,7 @@
 dt_chosen(shelluart PROPERTY "zephyr,shell-uart")
 if(shelluart)
   dt_prop(shelluart_baudrate PATH ${shelluart} PROPERTY "current-speed")
-  board_runner_args(amebaflash "--baudrate=${shelluart_baudrate}")
+  board_runner_args(amebaflash "--baud-rate=${shelluart_baudrate}")
 endif()
 
 board_runner_args(amebaflash "--image-dir=${ZEPHYR_BINARY_DIR}/../images" "--device=${CONFIG_SOC_SERIES}")

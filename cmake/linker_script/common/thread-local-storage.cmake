@@ -29,12 +29,7 @@ if(CONFIG_THREAD_LOCAL_STORAGE)
   # the wrong values.
   #
   # This scheme is not yet handled
-  if(CONFIG_XIP)
-#	/* The "master copy" of tdata should be only in flash on XIP systems */
-#	PROVIDE(__tdata_start = LOADADDR(tdata));
-  else()
 #	PROVIDE(__tdata_start = ADDR(tdata));
-  endif()
 #	PROVIDE(__tdata_size = SIZEOF(tdata));
 #	PROVIDE(__tdata_end = __tdata_start + __tdata_size);
 #	PROVIDE(__tdata_align = ALIGNOF(tdata));

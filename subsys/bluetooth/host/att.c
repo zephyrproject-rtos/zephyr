@@ -177,6 +177,18 @@ static void att_chan_set_tx_mtu(struct bt_att_chan *chan, uint16_t mtu)
 	chan->chan.tx.mtu = mtu;
 }
 
+/* Tear down the bearer after a protocol error or a transaction timeout */
+static int att_chan_disconnect_bearer(struct bt_att_chan *chan)
+{
+	return bt_conn_disconnect(att_chan_get_conn(chan), BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+}
+
+/* Send a PDU on an Unenhanced ATT bearer */
+static int att_chan_send_uatt(struct bt_att_chan *chan, struct net_buf *buf)
+{
+	return bt_l2cap_send_pdu(&chan->chan, buf, NULL, NULL);
+}
+
 static uint16_t bt_att_mtu(struct bt_att_chan *chan)
 {
 	/* Core v5.3 Vol 3 Part F 3.4.2:
@@ -430,7 +442,7 @@ static void att_disconnect(struct bt_att_chan *chan)
 
 	bt_att_disconnected(att_chan_get_l2cap(chan));
 
-	err = bt_conn_disconnect(att_chan_get_conn(chan), BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = att_chan_disconnect_bearer(chan);
 	if (err) {
 		LOG_ERR("Disconnecting failed (err %d)", err);
 	}
@@ -544,7 +556,7 @@ static int chan_send(struct bt_att_chan *chan, struct net_buf *buf)
 
 	data->att_chan = chan;
 
-	err = bt_l2cap_send_pdu(&chan->chan, buf, NULL, NULL);
+	err = att_chan_send_uatt(chan, buf);
 	if (err) {
 		if (err == -ENOBUFS) {
 			LOG_ERR("Ran out of TX buffers or contexts.");
@@ -3163,9 +3175,21 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
-static struct bt_att *att_get(struct bt_conn *conn)
+/* Get the Unenhanced ATT bearer */
+static struct bt_att_chan *att_get_uatt_chan(struct bt_conn *conn)
 {
 	struct bt_l2cap_chan *chan;
+
+	chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
+	if (chan == NULL) {
+		return NULL;
+	}
+
+	return ATT_CHAN(chan);
+}
+
+static struct bt_att *att_get(struct bt_conn *conn)
+{
 	struct bt_att_chan *att_chan;
 
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -3173,13 +3197,12 @@ static struct bt_att *att_get(struct bt_conn *conn)
 		return NULL;
 	}
 
-	chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
-	if (!chan) {
+	att_chan = att_get_uatt_chan(conn);
+	if (att_chan == NULL) {
 		LOG_ERR("Unable to find ATT channel");
 		return NULL;
 	}
 
-	att_chan = ATT_CHAN(chan);
 	if (!atomic_test_bit(att_chan->flags, ATT_CONNECTED)) {
 		LOG_ERR("ATT channel not connected");
 		return NULL;
@@ -3508,12 +3531,8 @@ static void bt_att_status(struct bt_l2cap_chan *ch, atomic_t *status)
 	sys_slist_prepend(&chan->att->reqs, &req->node);
 }
 
-static void bt_att_released(struct bt_l2cap_chan *ch)
+static void att_chan_free(struct bt_att_chan *chan)
 {
-	struct bt_att_chan *chan = ATT_CHAN(ch);
-
-	LOG_DBG("chan %p", chan);
-
 	/* Drop any pending/in-flight ATT TX metadata still referencing this
 	 * channel, so the deferred att_on_sent_cb()/bt_att_sent() work cannot
 	 * dereference the channel after it is freed here. Bluetooth uses a
@@ -3529,6 +3548,15 @@ static void bt_att_released(struct bt_l2cap_chan *ch)
 	k_mem_slab_free(&chan_slab, (void *)chan);
 }
 
+static void bt_att_released(struct bt_l2cap_chan *ch)
+{
+	struct bt_att_chan *chan = ATT_CHAN(ch);
+
+	LOG_DBG("chan %p", chan);
+
+	att_chan_free(chan);
+}
+
 #if defined(CONFIG_BT_EATT)
 static void bt_att_reconfigured(struct bt_l2cap_chan *l2cap_chan)
 {
@@ -3540,23 +3568,24 @@ static void bt_att_reconfigured(struct bt_l2cap_chan *l2cap_chan)
 }
 #endif /* CONFIG_BT_EATT */
 
+static const struct bt_l2cap_chan_ops att_chan_ops = {
+	.connected = bt_att_connected,
+	.disconnected = bt_att_disconnected,
+	.recv = bt_att_recv,
+	.sent = bt_att_sent,
+	.status = bt_att_status,
+#if defined(CONFIG_BT_SMP)
+	.encrypt_change = bt_att_encrypt_change,
+#endif /* CONFIG_BT_SMP */
+	.released = bt_att_released,
+#if defined(CONFIG_BT_EATT)
+	.reconfigured = bt_att_reconfigured,
+#endif /* CONFIG_BT_EATT */
+};
+
 static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 {
 	int quota = 0;
-	static const struct bt_l2cap_chan_ops ops = {
-		.connected = bt_att_connected,
-		.disconnected = bt_att_disconnected,
-		.recv = bt_att_recv,
-		.sent = bt_att_sent,
-		.status = bt_att_status,
-	#if defined(CONFIG_BT_SMP)
-		.encrypt_change = bt_att_encrypt_change,
-	#endif /* CONFIG_BT_SMP */
-		.released = bt_att_released,
-	#if defined(CONFIG_BT_EATT)
-		.reconfigured = bt_att_reconfigured,
-	#endif /* CONFIG_BT_EATT */
-	};
 	struct bt_att_chan *chan;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
@@ -3576,7 +3605,7 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 	}
 
 	(void)memset(chan, 0, sizeof(*chan));
-	att_chan_get_l2cap(chan)->ops = &ops;
+	att_chan_get_l2cap(chan)->ops = &att_chan_ops;
 	k_fifo_init(&chan->tx_queue);
 	atomic_set(chan->flags, flags);
 	chan->att = att;
@@ -3643,19 +3672,14 @@ static void att_enhanced_connection_work_handler(struct k_work *work)
 }
 #endif /* CONFIG_BT_EATT */
 
-static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
+static struct bt_att *att_new(struct bt_conn *conn)
 {
 	struct bt_att *att;
-	struct bt_att_chan *chan;
-
-	LOG_DBG("conn %p handle %u", conn, conn->handle);
 
 	if (k_mem_slab_alloc(&att_slab, (void **)&att, K_NO_WAIT)) {
 		LOG_ERR("No available ATT context for conn %p", conn);
-		return -ENOMEM;
+		return NULL;
 	}
-
-	att_handle_rsp_thread = k_current_get();
 
 	(void)memset(att, 0, sizeof(*att));
 	att->conn = conn;
@@ -3666,6 +3690,23 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
 	k_work_init_delayable(&att->eatt.connection_work,
 			      att_enhanced_connection_work_handler);
 #endif /* CONFIG_BT_EATT */
+
+	return att;
+}
+
+static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
+{
+	struct bt_att *att;
+	struct bt_att_chan *chan;
+
+	LOG_DBG("conn %p handle %u", conn, conn->handle);
+
+	att = att_new(conn);
+	if (att == NULL) {
+		return -ENOMEM;
+	}
+
+	att_handle_rsp_thread = k_current_get();
 
 	chan = att_chan_new(att, 0);
 	if (!chan) {
@@ -4363,15 +4404,13 @@ void bt_att_clear_out_of_sync_sent(struct bt_conn *conn)
 
 bool bt_att_out_of_sync_sent_on_fixed(struct bt_conn *conn)
 {
-	struct bt_l2cap_chan *l2cap_chan;
 	struct bt_att_chan *att_chan;
 
-	l2cap_chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
-	if (!l2cap_chan) {
+	att_chan = att_get_uatt_chan(conn);
+	if (att_chan == NULL) {
 		return false;
 	}
 
-	att_chan = ATT_CHAN(l2cap_chan);
 	return atomic_test_bit(att_chan->flags, ATT_OUT_OF_SYNC_SENT);
 }
 

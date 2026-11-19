@@ -90,6 +90,8 @@ i2c0: &scb0 {
 	clocks = <&peri0_group1_16bit_3>;
 	pinctrl-0 = <&p8_0_scb0_i2c_scl &p8_1_scb0_i2c_sda>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio_prt8 0 GPIO_OPEN_DRAIN>;
+	sda-gpios = <&gpio_prt8 1 GPIO_OPEN_DRAIN>;
 	status = "okay";
 
 	sht4x: sht4x@44 {

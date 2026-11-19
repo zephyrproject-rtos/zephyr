@@ -80,4 +80,18 @@ ZTEST(settings_line, test_name_write_success)
 	zassert_ok(rc, "successful name write should return 0, got %d", rc);
 }
 
+ZTEST(settings_line, test_entry_copy_short_source_fails)
+{
+	int rc;
+
+	settings_line_io_init(dummy_read, counting_write, dummy_get_len, 1);
+
+	write_calls = 0;
+
+	/* The source returns no data although 13 bytes are expected */
+	rc = settings_line_entry_copy(NULL, 0, NULL, 0, 13);
+	zassert_equal(rc, -EIO, "copy of a truncated entry should fail, got %d after %d writes",
+		      rc, write_calls);
+}
+
 ZTEST_SUITE(settings_line, NULL, NULL, NULL, NULL, NULL);

@@ -470,6 +470,13 @@ When :c:func:`log_panic` is called, a *panic* notification is sent to all active
 backends. Once all backends are notified, all buffered messages are flushed. From
 that moment forward, all logs are processed in a blocking way.
 
+On SMP, a message that a thread is processing on another CPU is finished first, and no
+other message is processed there during the flush. A thread that was switched out in the
+middle of a message can still resume during the flush and mix its output with it. A
+caller that stops the other CPUs before the flush prevents that: it calls
+:c:func:`log_panic_prepare`, stops the other CPUs, and only then calls
+:c:func:`log_panic`. The default fatal error handler does so.
+
 .. _logging_printk:
 
 Printk

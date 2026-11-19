@@ -13,6 +13,10 @@
  */
 
 #include <stdint.h>
+#include <zephyr/arch/riscv/icsr.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/interrupt_controller/riscv_aplic.h>
 #include <zephyr/drivers/interrupt_controller/riscv_imsic.h>
@@ -146,54 +150,73 @@ ZTEST(intc_riscv_aia, test_imsic_eidelivery_modes)
 	zassert_equal(0x00000001, eidelivery_mmsi, "EIDELIVERY MMSI enabled");
 }
 
-/* Test IMSIC EIE register indexing */
+/*
+ * Read the enable bit of an EIID straight from the interrupt file, using the
+ * register layout from the AIA specification instead of the driver's own
+ * indexing: eie registers are numbered in steps of 32 identities and are XLEN
+ * bits wide, so on RV64 only the even-numbered ones exist.
+ */
+static bool imsic_eie_bit_is_set(uint32_t eiid)
+{
+	uint32_t reg = ICSR_EIE0 + (eiid / 32U);
+	uint32_t bit = eiid % 32U;
+
+	if (IS_ENABLED(CONFIG_64BIT)) {
+		reg = ICSR_EIE0 + (2U * (eiid / 64U));
+		bit = eiid % 64U;
+	}
+
+	return (micsr_read(reg) & BIT(bit)) != 0;
+}
+
+/* Test IMSIC EIE register indexing against the real interrupt file */
 ZTEST(intc_riscv_aia, test_imsic_eie_indexing)
 {
-	/* IMSIC implements 8 EIE registers (EIE0-EIE7), 32 IDs each = 256 total EIIDs */
+	/* Identities on both sides of every 32- and 64-identity boundary */
+	static const uint32_t eiids[] = {31, 32, 33, 63, 64, 65, 95, 96, 127, 128, 191, 192, 255};
+	const uint32_t num_ids = DT_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(riscv_imsic), riscv_num_ids);
 
-	/* Test EIID to EIE register mapping */
-	/* EIID 0-31 -> EIE0, EIID 32-63 -> EIE1, etc. */
+	ARRAY_FOR_EACH(eiids, i) {
+		uint32_t eiid = eiids[i];
+		unsigned int key;
+		bool was_enabled, reg_start, api_on, reg_on, api_off, reg_off;
 
-	/* Test register index calculation: eiid / 32 */
-	uint32_t reg_index_0 = 0 / 32U;
+		if (eiid >= MIN(num_ids, CONFIG_NUM_IRQS)) {
+			continue;
+		}
 
-	zassert_equal(0, reg_index_0, "EIID 0 -> EIE0");
+		/*
+		 * The IMSIC API acts on the interrupt file of the current hart,
+		 * so do not let the thread migrate while exercising it.
+		 */
+		key = irq_lock();
 
-	uint32_t reg_index_31 = 31 / 32U;
+		was_enabled = riscv_imsic_is_enabled(eiid) != 0;
 
-	zassert_equal(0, reg_index_31, "EIID 31 -> EIE0");
+		/* Start from a disabled identity so that enabling is a real transition */
+		riscv_imsic_disable_eiid(eiid);
+		reg_start = imsic_eie_bit_is_set(eiid);
 
-	uint32_t eiid_32 = 32;
-	uint32_t reg_index_32 = eiid_32 / 32U;
+		riscv_imsic_enable_eiid(eiid);
+		api_on = riscv_imsic_is_enabled(eiid) != 0;
+		reg_on = imsic_eie_bit_is_set(eiid);
 
-	zassert_equal(1, reg_index_32, "EIID 32 -> EIE1");
+		riscv_imsic_disable_eiid(eiid);
+		api_off = riscv_imsic_is_enabled(eiid) != 0;
+		reg_off = imsic_eie_bit_is_set(eiid);
 
-	uint32_t reg_index_65 = 65 / 32U;
+		if (was_enabled) {
+			riscv_imsic_enable_eiid(eiid);
+		}
 
-	zassert_equal(2, reg_index_65, "EIID 65 -> EIE2");
+		irq_unlock(key);
 
-	uint32_t reg_index_255 = 255 / 32U;
-
-	zassert_equal(7, reg_index_255, "EIID 255 -> EIE7");
-
-	/* Test bit position calculation: eiid % 32 */
-
-	uint32_t bit_0 = 0 % 32U;
-
-	zassert_equal(0, bit_0, "EIID 0 -> bit 0");
-
-	uint32_t bit_31 = 31 % 32U;
-
-	zassert_equal(31, bit_31, "EIID 31 -> bit 31");
-
-	uint32_t eiid_32_bit = 32;
-	uint32_t bit_32 = eiid_32_bit % 32U;
-
-	zassert_equal(0, bit_32, "EIID 32 -> bit 0");
-
-	uint32_t bit_65 = 65 % 32U;
-
-	zassert_equal(1, bit_65, "EIID 65 -> bit 1");
+		zassert_false(reg_start, "EIID %u enable bit set before enabling", eiid);
+		zassert_true(api_on, "EIID %u not reported as enabled", eiid);
+		zassert_true(reg_on, "EIID %u enable bit not set in its eie register", eiid);
+		zassert_false(api_off, "EIID %u still reported as enabled", eiid);
+		zassert_false(reg_off, "EIID %u enable bit still set in its eie register", eiid);
+	}
 }
 
 /* Test IMSIC EIE bit manipulation */

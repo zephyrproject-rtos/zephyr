@@ -773,6 +773,7 @@
 				reg = <0xb>;
 				data-lanes = <4>;
 				pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+				display-timing = <&test_adv7535_timing>;
 				status = "okay";
 			};
 		};
@@ -1085,12 +1086,12 @@
 				vcomh-voltage = <0x2>;
 			};
 
-			test_adv7535: hdmi-bridge@3d {
+			test_adv7535: hdmi-bridge@39 {
 				compatible = "adi,adv7535";
-				reg = <0x3d>;
+				reg = <0x39>;
 				dsi-device = <&test_adv7535_dsi>;
-				display-timing = <&test_adv7535_timing>;
-				adi,addr-cec = <0x3b>;
+				pd-gpios = <&test_gpio 0 0>;
+				int-gpios = <&test_gpio 0 0>;
 			};
 		};
 

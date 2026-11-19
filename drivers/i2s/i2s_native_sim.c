@@ -24,6 +24,18 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+/*
+ * Interval between retries while the host device is not ready. The worker is
+ * a Zephyr thread, so it cannot wait on the host poll descriptors ALSA offers
+ * without stalling the simulation; k_usleep() lets simulated time advance
+ * instead. ns_i2s_pace() already waits one block period per transfer, so a
+ * retry only covers the drift between the simulation and the device clock.
+ */
+#define NS_I2S_RETRY_US 1000U
+/* ALSA buffer length, unused by the file backend */
+#define NS_I2S_ALSA_LATENCY_MS                                                                     \
+	COND_CODE_1(CONFIG_I2S_NATIVE_SIM_ALSA, (CONFIG_I2S_NATIVE_SIM_ALSA_LATENCY_MS), (0))
+
 enum ns_i2s_mode {
 	NS_I2S_MODE_RX,
 	NS_I2S_MODE_TX,
@@ -161,7 +173,7 @@ static struct ns_i2s_stream *ns_i2s_stream_get(struct ns_i2s_data *data, enum i2
 static void ns_i2s_close_file(struct ns_i2s_stream *stream)
 {
 	if (stream->fd >= 0) {
-		(void)nsi_host_close(stream->fd);
+		ns_i2s_close_bottom(stream->fd);
 		stream->fd = -1;
 	}
 }
@@ -232,7 +244,8 @@ static bool ns_i2s_loopback_enabled(struct ns_i2s_data *data)
 	       ((data->tx.cfg.options & I2S_OPT_LOOPBACK) != 0U);
 }
 
-static void ns_i2s_pace(struct ns_i2s_stream *stream, size_t size)
+/* Waits for the block period with the lock released, so triggers get through meanwhile */
+static void ns_i2s_pace(struct ns_i2s_data *data, struct ns_i2s_stream *stream, size_t size)
 {
 	uint64_t deadline;
 	uint64_t duration_us;
@@ -259,9 +272,41 @@ static void ns_i2s_pace(struct ns_i2s_stream *stream, size_t size)
 		uint32_t sleep_us = (uint32_t)MIN(deadline - now, (uint64_t)UINT32_MAX);
 
 		if (sleep_us > 0U) {
+			k_mutex_unlock(&data->lock);
 			k_usleep(sleep_us);
+			k_mutex_lock(&data->lock, K_FOREVER);
 		}
 	}
+}
+
+static bool ns_i2s_stream_active(const struct ns_i2s_stream *stream)
+{
+	return (stream->state == I2S_STATE_RUNNING) || (stream->state == I2S_STATE_STOPPING);
+}
+
+/* Lets the simulation run while the host device is not ready */
+static void ns_i2s_retry_wait(struct ns_i2s_data *data)
+{
+	k_mutex_unlock(&data->lock);
+	k_usleep(NS_I2S_RETRY_US);
+	k_mutex_lock(&data->lock, K_FOREVER);
+}
+
+/*
+ * Lets the host device play what it still holds before TX goes READY, so
+ * closing the stream afterwards cuts nothing. Returns false when the stream
+ * was reset during the wait, in which case it is already READY.
+ */
+static bool ns_i2s_tx_drained(struct ns_i2s_data *data)
+{
+	while ((data->tx.fd >= 0) && (ns_i2s_flush_bottom(data->tx.fd) == -NSI_ERRNO_MID_EAGAIN)) {
+		ns_i2s_retry_wait(data);
+		if (!ns_i2s_stream_active(&data->tx) || (data->tx.fd < 0)) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 static int ns_i2s_prepare_file(const struct ns_i2s_config *cfg, struct ns_i2s_data *data,
@@ -274,7 +319,9 @@ static int ns_i2s_prepare_file(const struct ns_i2s_config *cfg, struct ns_i2s_da
 		return 0;
 	}
 
-	fd = ns_i2s_open_file_bottom(path, dir == I2S_DIR_RX);
+	fd = ns_i2s_open_bottom(path, dir == I2S_DIR_RX, stream->cfg.frame_clk_freq,
+				ns_i2s_frame_bytes(&stream->cfg), stream->cfg.word_size,
+				NS_I2S_ALSA_LATENCY_MS);
 
 	if (fd < 0) {
 		stream->missing_file = true;
@@ -324,7 +371,7 @@ static bool ns_i2s_process_tx(const struct device *dev)
 {
 	const struct ns_i2s_config *cfg = dev->config;
 	struct ns_i2s_data *data = dev->data;
-	ssize_t written;
+	long written;
 	int ret;
 	bool keep_running;
 
@@ -338,10 +385,10 @@ static bool ns_i2s_process_tx(const struct device *dev)
 	if (!data->tx.active_block_valid) {
 		ret = k_msgq_get(&data->tx.queue, &data->tx.active_block, K_NO_WAIT);
 		if (ret < 0) {
-			if (data->tx.state == I2S_STATE_STOPPING) {
-				ns_i2s_stream_ready(&data->tx);
-			} else {
+			if (data->tx.state != I2S_STATE_STOPPING) {
 				ns_i2s_stream_error(&data->tx, -EIO);
+			} else if (ns_i2s_tx_drained(data)) {
+				ns_i2s_stream_ready(&data->tx);
 			}
 			k_mutex_unlock(&data->lock);
 			return false;
@@ -350,13 +397,33 @@ static bool ns_i2s_process_tx(const struct device *dev)
 		data->tx.active_block_valid = true;
 	}
 
-	ns_i2s_pace(&data->tx, data->tx.active_block.size);
+	ns_i2s_pace(data, &data->tx, data->tx.active_block.size);
+	if (!ns_i2s_stream_active(&data->tx) || !data->tx.active_block_valid) {
+		/* Reset during the wait, which released the block */
+		k_mutex_unlock(&data->lock);
+		return false;
+	}
 
 	(void)ns_i2s_prepare_file(cfg, data, &data->tx, I2S_DIR_TX);
 
 	if (!data->tx.missing_file) {
-		written = nsi_host_write(data->tx.fd, data->tx.active_block.mem_block,
-					 data->tx.active_block.size);
+		written = ns_i2s_write_bottom(data->tx.fd, data->tx.active_block.mem_block,
+					      data->tx.active_block.size);
+		/*
+		 * Whoever frees the active block clears active_block_valid under
+		 * the lock, so it is still owned here when the flag survives the
+		 * wait.
+		 */
+		while (written == -NSI_ERRNO_MID_EAGAIN) {
+			ns_i2s_retry_wait(data);
+			if (!ns_i2s_stream_active(&data->tx) || !data->tx.active_block_valid) {
+				/* Stopped or reset during the wait */
+				k_mutex_unlock(&data->lock);
+				return false;
+			}
+			written = ns_i2s_write_bottom(data->tx.fd, data->tx.active_block.mem_block,
+						      data->tx.active_block.size);
+		}
 		if ((written < 0) || ((size_t)written != data->tx.active_block.size)) {
 			ns_i2s_free_block(&data->tx, &data->tx.active_block);
 			memset(&data->tx.active_block, 0, sizeof(data->tx.active_block));
@@ -371,23 +438,26 @@ static bool ns_i2s_process_tx(const struct device *dev)
 		(void)ns_i2s_copy_to_rx(data, &data->tx.active_block);
 	}
 
+	if ((data->tx.state == I2S_STATE_STOPPING) &&
+	    ((data->tx.stop_mode == NS_I2S_STOP_AT_BLOCK) ||
+	     (k_msgq_num_used_get(&data->tx.queue) == 0U))) {
+		/* The last block is released once the device has played it */
+		if (!ns_i2s_tx_drained(data)) {
+			/* Reset during the wait, which released the block */
+			k_mutex_unlock(&data->lock);
+			return false;
+		}
+		ns_i2s_free_block(&data->tx, &data->tx.active_block);
+		memset(&data->tx.active_block, 0, sizeof(data->tx.active_block));
+		data->tx.active_block_valid = false;
+		ns_i2s_stream_ready(&data->tx);
+		k_mutex_unlock(&data->lock);
+		return false;
+	}
+
 	ns_i2s_free_block(&data->tx, &data->tx.active_block);
 	memset(&data->tx.active_block, 0, sizeof(data->tx.active_block));
 	data->tx.active_block_valid = false;
-
-	if ((data->tx.state == I2S_STATE_STOPPING) &&
-	    (data->tx.stop_mode == NS_I2S_STOP_AT_BLOCK)) {
-		ns_i2s_stream_ready(&data->tx);
-		k_mutex_unlock(&data->lock);
-		return false;
-	}
-
-	if ((data->tx.state == I2S_STATE_STOPPING) && (data->tx.stop_mode == NS_I2S_DRAIN_QUEUE) &&
-	    (k_msgq_num_used_get(&data->tx.queue) == 0U)) {
-		ns_i2s_stream_ready(&data->tx);
-		k_mutex_unlock(&data->lock);
-		return false;
-	}
 
 	if ((data->tx.state == I2S_STATE_RUNNING) && (k_msgq_num_used_get(&data->tx.queue) == 0U)) {
 		ns_i2s_stream_error(&data->tx, -EIO);
@@ -405,8 +475,9 @@ static bool ns_i2s_process_rx_file(const struct device *dev)
 {
 	const struct ns_i2s_config *cfg = dev->config;
 	struct ns_i2s_data *data = dev->data;
+	struct k_mem_slab *slab = data->rx.cfg.mem_slab;
 	struct ns_i2s_block block = {0};
-	ssize_t bytes_read;
+	long bytes_read;
 	int ret;
 	bool keep_running = true;
 
@@ -417,14 +488,20 @@ static bool ns_i2s_process_rx_file(const struct device *dev)
 		return false;
 	}
 
-	ret = k_mem_slab_alloc(data->rx.cfg.mem_slab, &block.mem_block, K_NO_WAIT);
+	ret = k_mem_slab_alloc(slab, &block.mem_block, K_NO_WAIT);
 	if (ret < 0) {
 		ns_i2s_stream_error(&data->rx, -EIO);
 		k_mutex_unlock(&data->lock);
 		return false;
 	}
 
-	ns_i2s_pace(&data->rx, data->rx.cfg.block_size);
+	ns_i2s_pace(data, &data->rx, data->rx.cfg.block_size);
+	if (!ns_i2s_stream_active(&data->rx)) {
+		/* Reset during the wait */
+		k_mem_slab_free(slab, block.mem_block);
+		k_mutex_unlock(&data->lock);
+		return false;
+	}
 
 	(void)ns_i2s_prepare_file(cfg, data, &data->rx, I2S_DIR_RX);
 
@@ -448,7 +525,24 @@ static bool ns_i2s_process_rx_file(const struct device *dev)
 		return keep_running;
 	}
 
-	bytes_read = nsi_host_read(data->rx.fd, block.mem_block, data->rx.cfg.block_size);
+	bytes_read = ns_i2s_read_bottom(data->rx.fd, block.mem_block, data->rx.cfg.block_size);
+	while (bytes_read == -NSI_ERRNO_MID_EAGAIN) {
+		ns_i2s_retry_wait(data);
+		if (!ns_i2s_stream_active(&data->rx) || (data->rx.fd < 0)) {
+			/*
+			 * Stopped or reset during the wait. The device may hold
+			 * part of this block, so close it rather than let the
+			 * remainder leak into the next stream's first block.
+			 */
+			ns_i2s_close_file(&data->rx);
+			k_mem_slab_free(slab, block.mem_block);
+			k_mutex_unlock(&data->lock);
+			return false;
+		}
+		bytes_read =
+			ns_i2s_read_bottom(data->rx.fd, block.mem_block, data->rx.cfg.block_size);
+	}
+
 	if (bytes_read == 0) {
 		ns_i2s_free_block(&data->rx, &block);
 		ns_i2s_stream_error(&data->rx, -ENOMSG);
@@ -699,9 +793,8 @@ static int ns_i2s_write(const struct device *dev, void *mem_block, size_t size)
 	return 0;
 }
 
-static int ns_i2s_trigger_single(const struct device *dev, struct ns_i2s_data *data,
-					 struct ns_i2s_stream *stream,
-					 enum i2s_dir dir, enum i2s_trigger_cmd cmd)
+static int ns_i2s_trigger_single(struct ns_i2s_data *data, struct ns_i2s_stream *stream,
+				 enum i2s_dir dir, enum i2s_trigger_cmd cmd)
 {
 	k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -715,6 +808,10 @@ static int ns_i2s_trigger_single(const struct device *dev, struct ns_i2s_data *d
 		if ((dir == I2S_DIR_TX) && (k_msgq_num_used_get(&stream->queue) == 0U)) {
 			k_mutex_unlock(&data->lock);
 			return -EIO;
+		}
+
+		if ((dir == I2S_DIR_RX) && (stream->fd >= 0)) {
+			(void)ns_i2s_flush_bottom(stream->fd);
 		}
 
 		stream->state = I2S_STATE_RUNNING;
@@ -734,11 +831,7 @@ static int ns_i2s_trigger_single(const struct device *dev, struct ns_i2s_data *d
 		stream->state = I2S_STATE_STOPPING;
 		stream->stop_mode = NS_I2S_STOP_AT_BLOCK;
 		k_mutex_unlock(&data->lock);
-		if (dir == I2S_DIR_TX) {
-			(void)ns_i2s_process_tx(dev);
-		} else {
-			k_sem_give(&data->worker_sem);
-		}
+		k_sem_give(&data->worker_sem);
 		return 0;
 
 	case I2S_TRIGGER_DRAIN:
@@ -811,8 +904,7 @@ static int ns_i2s_trigger_both_special(struct ns_i2s_data *data, enum i2s_trigge
 	return 0;
 }
 
-static int ns_i2s_trigger_both(const struct device *dev, struct ns_i2s_data *data,
-				      enum i2s_trigger_cmd cmd)
+static int ns_i2s_trigger_both(struct ns_i2s_data *data, enum i2s_trigger_cmd cmd)
 {
 	int ret;
 
@@ -820,12 +912,12 @@ static int ns_i2s_trigger_both(const struct device *dev, struct ns_i2s_data *dat
 		return ns_i2s_trigger_both_special(data, cmd);
 	}
 
-	ret = ns_i2s_trigger_single(dev, data, &data->rx, I2S_DIR_RX, cmd);
+	ret = ns_i2s_trigger_single(data, &data->rx, I2S_DIR_RX, cmd);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return ns_i2s_trigger_single(dev, data, &data->tx, I2S_DIR_TX, cmd);
+	return ns_i2s_trigger_single(data, &data->tx, I2S_DIR_TX, cmd);
 }
 
 static int ns_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_trigger_cmd cmd)
@@ -839,7 +931,7 @@ static int ns_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_t
 	}
 
 	if (dir == I2S_DIR_BOTH) {
-		return ns_i2s_trigger_both(dev, data, cmd);
+		return ns_i2s_trigger_both(data, cmd);
 	}
 
 	stream = ns_i2s_stream_get(data, dir);
@@ -847,7 +939,7 @@ static int ns_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_t
 		return -EINVAL;
 	}
 
-	return ns_i2s_trigger_single(dev, data, stream, dir, cmd);
+	return ns_i2s_trigger_single(data, stream, dir, cmd);
 }
 
 static DEVICE_API(i2s, ns_i2s_driver_api) = {
@@ -888,8 +980,8 @@ static int ns_i2s_init(const struct device *dev)
 #define NS_I2S_INIT(inst) \
 	static const struct ns_i2s_config ns_i2s_config_##inst = { \
 		.mode = DT_INST_ENUM_IDX(inst, stream_direction), \
-		.rx_path = CONFIG_I2S_NATIVE_SIM_RX_FILE_PATH, \
-		.tx_path = CONFIG_I2S_NATIVE_SIM_TX_FILE_PATH, \
+		.rx_path = CONFIG_I2S_NATIVE_SIM_RX_PATH, \
+		.tx_path = CONFIG_I2S_NATIVE_SIM_TX_PATH, \
 	}; \
 	static struct ns_i2s_data ns_i2s_data_##inst; \
 	DEVICE_DT_INST_DEFINE(inst, ns_i2s_init, NULL, \
@@ -909,18 +1001,18 @@ DT_INST_FOREACH_STATUS_OKAY(NS_I2S_INIT)
 		.name = "path",                                                                    \
 		.type = 's',                                                                       \
 		.dest = (void *)&ns_i2s_data_##inst.cmd_rx_path,                                   \
-		.descript = "Path to binary file to be used as native_sim "                        \
-			    "I2S RX input for " INST_NAME(inst)                                  \
-			    ". Overrides CONFIG_I2S_NATIVE_SIM_RX_FILE_PATH if set",              \
+		.descript =                                                                        \
+			"Host PCM file or alsa:<device> for native_sim I2S RX input of "           \
+			INST_NAME(inst) ". Overrides CONFIG_I2S_NATIVE_SIM_RX_PATH if set",        \
 	},                                                                                         \
 	{                                                                                          \
 		.option = INST_NAME(inst) "_tx",                                                   \
 		.name = "path",                                                                    \
 		.type = 's',                                                                       \
 		.dest = (void *)&ns_i2s_data_##inst.cmd_tx_path,                                   \
-		.descript = "Path to binary file to be used as native_sim "                        \
-			    "I2S TX output for " INST_NAME(inst)                                 \
-			    ". Overrides CONFIG_I2S_NATIVE_SIM_TX_FILE_PATH if set",              \
+		.descript =                                                                        \
+			"Host PCM file or alsa:<device> for native_sim I2S TX output of "          \
+			INST_NAME(inst) ". Overrides CONFIG_I2S_NATIVE_SIM_TX_PATH if set",        \
 	},
 
 static void ns_i2s_options(void)

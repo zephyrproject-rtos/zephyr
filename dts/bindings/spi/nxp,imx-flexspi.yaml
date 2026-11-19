@@ -55,6 +55,14 @@ properties:
       Enable/disable SCKB pad use as SCKA differential clock output,
       when enabled, Port B flash access is not available.
 
+  ipeds:
+    type: boolean
+    description: |
+      FlexSPI supports IPED (Inline PRINCE Encryption/Decryption).
+      When present, the memc driver discovers BootROM-provisioned IPED
+      regions from the IPEDCTXn registers and exposes them to the flash
+      driver for decrypted AHB reads.
+
   rx-clock-source:
     type: int
     default: 0

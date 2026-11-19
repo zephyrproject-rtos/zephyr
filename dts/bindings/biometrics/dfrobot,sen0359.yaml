@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: DFRobot SEN0359 Gravity capacitive fingerprint sensor
+
+description: |
+  Fingerprint module built around the ID809 fingerprint processor.
+  Templates are enrolled, stored (80 or 200 slots depending on the
+  firmware) and matched on the module itself. The host talks to it over
+  I2C, default address 0x1f.
+
+compatible: "dfrobot,sen0359"
+
+include: i2c-device.yaml
+
+examples:
+  - |
+    i2c {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        fingerprint@1f {
+            compatible = "dfrobot,sen0359";
+            reg = <0x1f>;
+        };
+    };

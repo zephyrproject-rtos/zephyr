@@ -10,13 +10,16 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
+#include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/sem.h>
 #include <zephyr/ztest_assert.h>
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
+#include <zephyr/net/net_pkt.h>
 #include <zephyr/net/ptp_time.h>
 
 #include "ipv6.h"
@@ -4591,6 +4594,59 @@ ZTEST(net_socket_udp, test_ipv4_mapped_to_ipv6_sendmsg)
 	test_ipv4_mapped_to_ipv6_send_common(IPV4_MAPPED_TO_IPV6_SENDMSG);
 }
 
+/* A dual-stack socket bound to an IPv6 address other than the unspecified one
+ * has no IPv4 address to send from, so a send to an IPv4-mapped address fails.
+ */
+ZTEST(net_socket_udp, test_ipv4_mapped_to_ipv6_send_from_bound_v6)
+{
+	int off = 0;
+	int ret;
+	int err;
+	int sock_s, sock_c;
+	net_socklen_t addrlen;
+	struct net_sockaddr_in addr_s4 = { 0 };
+	struct net_sockaddr_in addr_recv = { 0 };
+	struct net_sockaddr_in6 addr_c6 = { 0 };
+	struct net_sockaddr_in6 addr_dst = { 0 };
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_MAPPING_TO_IPV6);
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &sock_s, &addr_s4);
+	ret = zsock_bind(sock_s, (struct net_sockaddr *)&addr_s4, sizeof(addr_s4));
+	zassert_ok(ret, "bind failed, %d", errno);
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR_ETH, CLIENT_PORT, &sock_c, &addr_c6);
+	ret = zsock_setsockopt(sock_c, NET_IPPROTO_IPV6, ZSOCK_IPV6_V6ONLY, &off, sizeof(off));
+	zassert_ok(ret, "setsockopt failed, %d", errno);
+	ret = zsock_bind(sock_c, (struct net_sockaddr *)&addr_c6, sizeof(addr_c6));
+	zassert_ok(ret, "bind failed, %d", errno);
+
+	addr_dst.sin6_family = NET_AF_INET6;
+	addr_dst.sin6_port = net_htons(SERVER_PORT);
+	ret = zsock_inet_pton(NET_AF_INET6, MY_IPV4_MAPPED_ADDR, &addr_dst.sin6_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	ret = zsock_sendto(sock_c, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0,
+			   (struct net_sockaddr *)&addr_dst, sizeof(addr_dst));
+	err = errno;
+	zexpect_equal(ret, -1, "sendto should fail (was %d)", ret);
+	zexpect_equal(err, EINVAL, "unexpected errno (%d)", err);
+
+	/* Give a datagram sent by mistake a chance to go through the net stack */
+	k_msleep(10);
+
+	addrlen = sizeof(addr_recv);
+	ret = zsock_recvfrom(sock_s, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT,
+			     (struct net_sockaddr *)&addr_recv, &addrlen);
+	zexpect_equal(ret, -1, "server received %d bytes from 0x%08x", ret,
+		      net_ntohl(addr_recv.sin_addr.s_addr));
+
+	ret = zsock_close(sock_c);
+	zassert_ok(ret, "close failed, %d", errno);
+	ret = zsock_close(sock_s);
+	zassert_ok(ret, "close failed, %d", errno);
+}
+
 static void test_rebinding_common(net_sa_family_t family)
 {
 	int rv;
@@ -4720,3 +4776,123 @@ static void *setup(void)
 }
 
 ZTEST_SUITE(net_socket_udp, NULL, setup, NULL, after, NULL);
+
+static K_THREAD_STACK_DEFINE(close_thread_stack, 2048);
+static struct k_thread close_thread;
+static int close_ret;
+
+static void close_thread_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	close_ret = zsock_close(POINTER_TO_INT(p1));
+}
+
+/* Close a socket while a multicast packet is being delivered to it. The
+ * receive callback waits for the descriptor lock that close() holds, so
+ * delivery must not hold the connection lock that close() takes next, and
+ * the callback must drop the packet once close() has released the socket.
+ * A deadlock leaves the stack wedged, so this runs in its own suite, after
+ * the others, and leaves the sockets open when it fails.
+ */
+ZTEST(net_socket_udp_close, test_v4_mcast_close_during_delivery)
+{
+	struct net_sockaddr_in bind_addr = { 0 };
+	struct net_sockaddr_in mcast_addr = { 0 };
+	struct net_ip_mreqn mreqn = { 0 };
+	struct net_context *ctx;
+	struct k_mem_slab *rx;
+	struct k_mem_slab *tx;
+	uint32_t rx_free;
+	uint32_t tx_free;
+	int loop = 1;
+	int send_sock;
+	int recv_sock;
+	int ret;
+
+	memcpy(&mreqn.imr_multiaddr, &my_mcast_addr2, sizeof(mreqn.imr_multiaddr));
+	mreqn.imr_ifindex = net_if_get_by_iface(eth_iface);
+
+	mcast_addr.sin_family = NET_AF_INET;
+	mcast_addr.sin_port = net_htons(SERVER_PORT);
+	memcpy(&mcast_addr.sin_addr, &my_mcast_addr2, sizeof(mcast_addr.sin_addr));
+
+	recv_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(recv_sock >= 0, "Cannot create socket (%d)", -errno);
+
+	bind_addr.sin_family = NET_AF_INET;
+	bind_addr.sin_port = net_htons(SERVER_PORT);
+	bind_addr.sin_addr.s_addr = net_htonl(NET_INADDR_ANY);
+	ret = zsock_bind(recv_sock, (struct net_sockaddr *)&bind_addr, sizeof(bind_addr));
+	zassert_ok(ret, "Cannot bind socket (%d)", -errno);
+
+	ret = zsock_setsockopt(recv_sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &mreqn, sizeof(mreqn));
+	zassert_ok(ret, "Cannot join multicast group (%d)", -errno);
+
+	send_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(send_sock >= 0, "Cannot create socket (%d)", -errno);
+
+	bind_addr.sin_port = net_htons(CLIENT_PORT);
+	memcpy(&bind_addr.sin_addr, &my_addr2, sizeof(bind_addr.sin_addr));
+	ret = zsock_bind(send_sock, (struct net_sockaddr *)&bind_addr, sizeof(bind_addr));
+	zassert_ok(ret, "Cannot bind socket (%d)", -errno);
+
+	ret = zsock_setsockopt(send_sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_LOOP,
+			       &loop, sizeof(loop));
+	zassert_ok(ret, "Cannot enable multicast loop (%d)", -errno);
+
+	ctx = zvfs_get_fd_obj(recv_sock, NULL, 0);
+	zassert_not_null(ctx, "No context for socket %d", recv_sock);
+
+	/* The looped back copy is cloned from the TX packet, so check both
+	 * pools.
+	 */
+	k_msleep(10);
+	net_pkt_get_info(&rx, &tx, NULL, NULL);
+	rx_free = k_mem_slab_num_free_get(rx);
+	tx_free = k_mem_slab_num_free_get(tx);
+
+	/* Holding the context lock stops the closer after it has taken the
+	 * descriptor lock, with the receive callback still installed.
+	 */
+	(void)k_mutex_lock(&ctx->lock, K_FOREVER);
+
+	k_thread_create(&close_thread, close_thread_stack,
+			K_THREAD_STACK_SIZEOF(close_thread_stack), close_thread_fn,
+			INT_TO_POINTER(recv_sock), NULL, NULL,
+			K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+	k_msleep(10);
+
+	/* The RX thread delivers the looped back copy to the socket and waits
+	 * for the context lock as well.
+	 */
+	ret = zsock_sendto(send_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0,
+			   (struct net_sockaddr *)&mcast_addr, sizeof(mcast_addr));
+	zassert_equal(ret, strlen(TEST_STR_SMALL), "Cannot send (%d)", -errno);
+	k_msleep(10);
+
+	/* The RX thread has the higher priority and gets the context lock
+	 * first: it finds the callback installed and waits in it for the
+	 * descriptor lock, which the closer holds.
+	 */
+	(void)k_mutex_unlock(&ctx->lock);
+
+	ret = k_thread_join(&close_thread, K_SECONDS(1));
+	zassert_ok(ret, "close() deadlocked with multicast delivery");
+	zassert_ok(close_ret, "Cannot close socket");
+
+	ret = zsock_close(send_sock);
+	zassert_ok(ret, "Cannot close socket (%d)", -errno);
+
+	k_msleep(10);
+	zassert_equal(k_mem_slab_num_free_get(rx), rx_free,
+		      "RX packet leaked (%u free, expected %u)",
+		      k_mem_slab_num_free_get(rx), rx_free);
+	zassert_equal(k_mem_slab_num_free_get(tx), tx_free,
+		      "TX packet leaked (%u free, expected %u)",
+		      k_mem_slab_num_free_get(tx), tx_free);
+}
+
+ZTEST_SUITE(net_socket_udp_close, NULL, setup, NULL, NULL, NULL);

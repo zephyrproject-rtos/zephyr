@@ -11,6 +11,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -47,6 +48,7 @@ struct mipi_dsi_stm32_data {
 	DSI_PLLInitTypeDef pll_init;
 	uint32_t lane_clk_khz;
 	uint32_t pixel_clk_khz;
+	bool attached;
 };
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_mipi_dsi)
@@ -392,6 +394,8 @@ static int mipi_dsi_stm32_attach(const struct device *dev, uint8_t channel,
 		}
 	}
 
+	data->attached = true;
+
 	return 0;
 }
 
@@ -406,6 +410,8 @@ static int mipi_dsi_stm32_detach(const struct device *dev, uint8_t channel,
 		LOG_ERR("Stop DSI host failed! (%d)", ret);
 		return -EIO;
 	}
+
+	data->attached = false;
 
 	return 0;
 }
@@ -520,6 +526,52 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int mipi_dsi_stm32_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+	struct mipi_dsi_stm32_data *data = dev->data;
+	const struct mipi_dsi_stm32_config *config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = clock_control_on(config->rcc, (clock_control_subsys_t)&config->dsi_clk);
+		if (ret < 0) {
+			LOG_ERR("Enable DSI peripheral clock failed! (%d)", ret);
+			return ret;
+		}
+
+		if (data->attached) {
+			ret = HAL_DSI_Start(&data->hdsi);
+			if (ret != HAL_OK) {
+				LOG_ERR("Resume DSI host failed! (%d)", ret);
+				return -EIO;
+			}
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (data->attached) {
+			ret = HAL_DSI_Stop(&data->hdsi);
+			if (ret != HAL_OK) {
+				LOG_ERR("Suspend DSI host failed! (%d)", ret);
+				return -EIO;
+			}
+		}
+
+		ret = clock_control_off(config->rcc, (clock_control_subsys_t)&config->dsi_clk);
+		if (ret < 0) {
+			LOG_ERR("Disable DSI peripheral clock failed! (%d)", ret);
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #define CHILD_GET_DATA_LANES(child) DT_PROP(child, data_lanes)
 
 #define STM32_MIPI_DSI_DEVICE(inst)								\
@@ -613,7 +665,8 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 					(.PLLTuning = DT_INST_PROP(inst, pll_tuning),))		\
 		},										\
 	};											\
-	DEVICE_DT_INST_DEFINE(inst, &mipi_dsi_stm32_init, NULL,					\
+	PM_DEVICE_DT_INST_DEFINE(inst, mipi_dsi_stm32_pm_action);				\
+	DEVICE_DT_INST_DEFINE(inst, &mipi_dsi_stm32_init, PM_DEVICE_DT_INST_GET(inst),		\
 			      &stm32_dsi_data_##inst, &stm32_dsi_config_##inst,			\
 			      POST_KERNEL, CONFIG_MIPI_DSI_INIT_PRIORITY, &dsi_stm32_api);
 

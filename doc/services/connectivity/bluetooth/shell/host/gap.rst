@@ -14,7 +14,7 @@ logical Bluetooth devices.
 The shell allows the creation of multiple identities, to a maximum that is set by the Kconfig symbol
 :kconfig:option:`CONFIG_BT_ID_MAX`. To create a new identity, use :code:`bt id-create` command. You
 can then use it by selecting it with its ID :code:`bt id-select <id>`. Finally, you can list all the
-available identities with :code:`id-show`.
+available identities with :code:`bt id-show`.
 
 Scan for devices
 ****************
@@ -42,7 +42,7 @@ Here is an example of what you can expect:
 
 As you can see, this can lead to a high number of results. To reduce that number and easily find a
 specific device, you can enable scan filters. There are four types of filters: by name, by RSSI, by
-address and by periodic advertising interval. To apply a filter, use the :code:`bt scan-set-filter`
+address and by periodic advertising interval. To apply a filter, use the :code:`bt scan-filter-set`
 command followed by the type of filters. You can add multiple filters by using the commands again.
 
 For example, if you want to look only for devices with the name *test shell*:
@@ -298,16 +298,16 @@ connect to those addresses automatically. Here is how to do it:
 The shell will then connect to the first available device. In the example, if both devices are
 advertising at the same time, we will connect to the first address added to the list.
 
-The Filter Accept List can also be used for scanning or advertising by using the option :code:`fal`.
-For example, if we want to scan for a bunch of selected addresses, we can set up a Filter Accept
-List:
+The Filter Accept List can also be used for scanning with the :code:`--fal` option of
+:code:`bt scan`, or for advertising with the :code:`fal` option of :code:`bt advertise`. For
+example, if we want to scan for a bunch of selected addresses, we can set up a Filter Accept List:
 
 .. code-block:: console
 
         uart:~$ bt fal-add R:65:4B:9E:83:AF:73
         uart:~$ bt fal-add R:73:72:82:B4:8F:B9
         uart:~$ bt fal-add R:5D:85:50:1C:72:64
-        uart:~$ bt scan on fal
+        uart:~$ bt scan --fal on
 
 You should see only those three addresses reported by the scanner.
 

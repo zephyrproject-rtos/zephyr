@@ -26,6 +26,7 @@ source "drivers/mfd/Kconfig.aw9523b"
 source "drivers/mfd/Kconfig.axp192"
 source "drivers/mfd/Kconfig.axp2101"
 source "drivers/mfd/Kconfig.bd8lb600fs"
+source "drivers/mfd/Kconfig.bq2589x"
 source "drivers/mfd/Kconfig.ds3231"
 source "drivers/mfd/Kconfig.infineon_autanalog"
 source "drivers/mfd/Kconfig.infineon_autanalog_ctb"
@@ -57,6 +58,7 @@ source "drivers/mfd/Kconfig.rv3032_mfd"
 source "drivers/mfd/Kconfig.sc18is606_mfd"
 source "drivers/mfd/Kconfig.tla2528"
 source "drivers/mfd/Kconfig.tle9104"
+source "drivers/mfd/Kconfig.tle927x"
 # zephyr-keep-sorted-stop
 
 endif # MFD

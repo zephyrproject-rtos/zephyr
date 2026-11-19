@@ -47,6 +47,7 @@
 			counterg8: counterg8 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				channels = <2>;
 				status = "disabled";
 			};
 		};
@@ -62,8 +63,16 @@
 			counterg9: counterg9 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				channels = <2>;
 				status = "disabled";
 			};
+		};
+
+		iwdt: iwdt@40095300 {
+			compatible = "ti,mspm0-iwdt";
+			reg = <0x40095300 0x100>;
+			clock-frequency = <32768>;
+			status = "disabled";
 		};
 
 		timg14: timg14@40096000 {
@@ -77,6 +86,7 @@
 			counterg14: counterg14 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				channels = <4>;
 				status = "disabled";
 			};
 		};

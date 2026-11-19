@@ -10,4 +10,4 @@ tests:
       - CONFIG_NET_SOCKETS_SOCKOPT_TLS=n
   net.socket.register.tls:
     extra_args:
-      - EXTRA_CONF_FILE=overlay-tls.conf
+      - EXTRA_CONF_FILE=tls.conf

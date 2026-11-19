@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_SC2336
+	bool "SC2336 2 Mega-Pixel CMOS image sensor"
+	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_SMARTSENS_SC2336),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_SMARTSENS_SC2336),powerdown-gpios)
+	depends on DT_HAS_SMARTSENS_SC2336_ENABLED
+	default y
+	help
+	  Enable driver for the SmartSens SC2336 2 Mega-Pixel CMOS image sensor.

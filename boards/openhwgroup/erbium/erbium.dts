@@ -8,8 +8,8 @@
 #include <openhwgroup/erbium.dtsi>
 
 / {
-	model = "OpenHW Foundation Erbium";
 	compatible = "openhwgroup,erbium";
+	model = "OpenHW Foundation Erbium";
 
 	chosen {
 		zephyr,sram = &mram;
@@ -19,7 +19,7 @@
 };
 
 &uart0 {
-	status = "okay";
 	clock-frequency = <400000000>;
 	current-speed = <115200>;
+	status = "okay";
 };

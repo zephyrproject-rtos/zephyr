@@ -24,11 +24,7 @@
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #if defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
-#ifdef CONFIG_XIP
-        PROVIDE(__stack_chk_start = LOADADDR(stack_chk));
-#else
         PROVIDE(__stack_chk_start = ADDR(stack_chk));
-#endif
 	PROVIDE(__stack_chk_align = ALIGNOF(stack_chk));
 	PROVIDE(__stack_chk_size = (SIZEOF(stack_chk) + __stack_chk_align - 1) & ~(__stack_chk_align - 1));
 	PROVIDE(__stack_chk_end = __stack_chk_start + __stack_chk_size);
@@ -40,12 +36,7 @@
 	 * thread-local variables, and the code would use
 	 * the wrong values.
 	 */
-#ifdef CONFIG_XIP
-	/* The "master copy" of tdata should be only in flash on XIP systems */
-	PROVIDE(__tdata_start = LOADADDR(tdata));
-#else
 	PROVIDE(__tdata_start = ADDR(tdata));
-#endif
 	PROVIDE(__tdata_align = ALIGNOF(tdata));
 	PROVIDE(__tdata_size = (SIZEOF(tdata) + __tdata_align - 1) & ~(__tdata_align - 1));
 	PROVIDE(__tdata_end = __tdata_start + __tdata_size);

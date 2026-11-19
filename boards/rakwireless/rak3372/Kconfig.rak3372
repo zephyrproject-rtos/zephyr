@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RAK3372
+	select SOC_STM32WLE5XX

@@ -17,3 +17,6 @@ source "boards/actinius/common/Kconfig"
 
 config BOARD_ACTINIUS_ICARUS
 	select USE_DT_CODE_PARTITION if BOARD_ACTINIUS_ICARUS_NRF9160_NS
+
+configdefault BUILD_WITH_TFM
+	default y if BOARD_ACTINIUS_ICARUS_NRF9160_NS

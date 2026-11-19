@@ -39,8 +39,9 @@ Supported Features
 Connections and IOs
 ===================
 
-The board uses the standard XIAO pinout. Default mapping of D0-D15 is as
-follows:
+The board uses the standard XIAO pinout. Default mapping of D0-D14 and D18
+is as follows. A board re-spin renamed the D15 header net and silkscreen
+to D18; both names refer to PB14.
 
 .. rst-class:: rst-columns
 
@@ -59,7 +60,7 @@ follows:
 * D12 : PB9 (FDCAN1_TX)
 * D13 : PB5 (FDCAN2_RX)
 * D14 : PB13 (FDCAN2_TX)
-* D15 : PB14 (CAN transceiver standby)
+* D18 : PB14 (CAN transceiver standby)
 
 On-board devices:
 

@@ -10,7 +10,6 @@
 #include <soc.h>
 #include <zephyr/sys/printk.h>
 #include <udma.h>
-#include <pad_ctrl.h>
 #include <zephyr/drivers/pinctrl.h>
 
 struct sy1xx_uart_config {

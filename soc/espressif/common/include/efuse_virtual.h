@@ -9,10 +9,10 @@
 
 static inline void esp_efuse_init_virtual(void)
 {
-#if CONFIG_ESP32_EFUSE_VIRTUAL
-#if CONFIG_ESP32_EFUSE_VIRTUAL_KEEP_IN_FLASH
-	esp_efuse_init_virtual_mode_in_flash(CONFIG_ESP32_EFUSE_VIRTUAL_OFFSET,
-					     CONFIG_ESP32_EFUSE_VIRTUAL_SIZE);
+#if CONFIG_SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL
+#if CONFIG_SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL_KEEP_IN_FLASH
+	esp_efuse_init_virtual_mode_in_flash(CONFIG_SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL_OFFSET,
+					     CONFIG_SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL_SIZE);
 #else
 	esp_efuse_init_virtual_mode_in_ram();
 #endif

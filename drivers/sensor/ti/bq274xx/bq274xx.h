@@ -99,6 +99,8 @@ struct bq274xx_data {
 	uint16_t remaining_charge_capacity;
 	uint16_t nom_avail_capacity;
 	uint16_t full_avail_capacity;
+	int64_t last_fetch_ms;
+	struct k_mutex lock;
 
 #ifdef CONFIG_BQ274XX_TRIGGER
 	const struct device *dev;

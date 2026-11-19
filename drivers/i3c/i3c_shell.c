@@ -332,10 +332,12 @@ static int cmd_i3c_config_get_controller(const struct shell *sh, size_t argc, ch
 		    "scl.i2c: %u Hz\n"
 		    "scl_od_min.high_ns: %u ns\n"
 		    "scl_od_min.low_ns: %u ns\n"
+		    "tcas_ps: %u ps\n"
 		    "supported_hdr: 0x%02x",
 		    config.is_secondary ? "true" : "false",
 		    config.scl.i3c, config.scl.i2c,
 		    config.scl_od_min.high_ns, config.scl_od_min.low_ns,
+		    config.tcas_ps,
 		    config.supported_hdr);
 
 	return 0;
@@ -411,8 +413,8 @@ static int i3c_write_from_buffer(const struct shell *sh, char *s_dev_name, char 
 	ret = i3c_write(desc, buf + MAX_BYTES_FOR_REGISTER_INDEX - reg_addr_bytes,
 			reg_addr_bytes + data_length);
 	if (ret < 0) {
-		shell_error(sh, "Failed to write to device: %s", tdev->name);
-		return -EIO;
+		shell_error(sh, "Failed to write to device: %s (error %d)", tdev->name, ret);
+		return ret;
 	}
 
 	return 0;
@@ -466,8 +468,8 @@ static int i3c_read_to_buffer(const struct shell *sh, char *s_dev_name, char *s_
 	ret = i3c_write_read(desc, reg_addr_buf + MAX_BYTES_FOR_REGISTER_INDEX - reg_addr_bytes,
 			     reg_addr_bytes, buf, buf_length);
 	if (ret < 0) {
-		shell_error(sh, "Failed to read from device: %s", tdev->name);
-		return -EIO;
+		shell_error(sh, "Failed to read from device: %s (error %d)", tdev->name, ret);
+		return ret;
 	}
 
 	return 0;

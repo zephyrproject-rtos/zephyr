@@ -259,12 +259,11 @@ static inline q31_t icm4268x_read_temperature_from_packet(const uint8_t *pkt)
 			temperature = (int8_t)pkt[0x7];
 		}
 
-		int64_t sensitivity = 207;
-		int64_t temperature100 = (temperature * 100) + (25 * sensitivity);
+		int32_t sensitivity = 207;
+		int32_t temperature100 = (temperature * 100) + (25 * sensitivity);
 
 		whole = temperature100 / sensitivity;
-		fraction =
-			((temperature100 - whole * sensitivity) * INT64_C(1000000)) / sensitivity;
+		fraction = (temperature100 - whole * sensitivity) * 1000000 / sensitivity;
 	}
 	__ASSERT_NO_MSG(whole >= -512 && whole <= 511);
 	return (q31_t)(((int64_t)whole << 22) + (((int64_t)fraction << 22) / INT64_C(1000000)));

@@ -13,6 +13,7 @@
 	model = "Silicon Labs xGM260P Explorer Kit";
 
 	chosen {
+		zephyr,bt-c2h-uart = &usart0;
 		zephyr,bt-hci = &bt_hci_silabs;
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,openthread-counter = &protimer;

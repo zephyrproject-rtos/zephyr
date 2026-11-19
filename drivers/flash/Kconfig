@@ -177,7 +177,6 @@ endif
 config FLASH_EX_OP_ENABLED
 	bool "API for extended flash operations"
 	depends on FLASH_HAS_EX_OP
-	default n
 	help
 	  Enables flash extended operations API. It can be used to perform
 	  non-standard operations e.g. manipulating flash protection.

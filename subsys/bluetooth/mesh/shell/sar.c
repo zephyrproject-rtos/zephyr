@@ -81,8 +81,8 @@ static int cmd_rx_get(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	shell_print(sh, "Receiver Get: %u %u %u %u %u", rsp.seg_thresh,
-		    rsp.ack_delay_inc, rsp.ack_retrans_count,
-		    rsp.discard_timeout, rsp.rx_seg_int_step);
+		    rsp.ack_delay_inc, rsp.discard_timeout,
+		    rsp.rx_seg_int_step, rsp.ack_retrans_count);
 
 	return 0;
 }
@@ -94,9 +94,9 @@ static int cmd_rx_set(const struct shell *sh, size_t argc, char *argv[])
 
 	set.seg_thresh = shell_strtoul(argv[1], 0, &err);
 	set.ack_delay_inc = shell_strtoul(argv[2], 0, &err);
-	set.ack_retrans_count = shell_strtoul(argv[3], 0, &err);
-	set.discard_timeout = shell_strtoul(argv[4], 0, &err);
-	set.rx_seg_int_step = shell_strtoul(argv[5], 0, &err);
+	set.discard_timeout = shell_strtoul(argv[3], 0, &err);
+	set.rx_seg_int_step = shell_strtoul(argv[4], 0, &err);
+	set.ack_retrans_count = shell_strtoul(argv[5], 0, &err);
 
 	if (err) {
 		shell_warn(sh, "Unable to parse input string argument");
@@ -111,8 +111,8 @@ static int cmd_rx_set(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	shell_print(sh, "Receiver Set: %u %u %u %u %u", rsp.seg_thresh,
-		    rsp.ack_delay_inc, rsp.ack_retrans_count,
-		    rsp.discard_timeout, rsp.rx_seg_int_step);
+		    rsp.ack_delay_inc, rsp.discard_timeout,
+		    rsp.rx_seg_int_step, rsp.ack_retrans_count);
 
 	return 0;
 }

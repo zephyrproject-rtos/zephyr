@@ -21,6 +21,3 @@ tests:
     integration_platforms:
       - b_u585i_iot02a/stm32u585xx
       - stm32h7s78_dk
-    extra_args:
-      - platform:b_u585i_iot02a/stm32u585xx:DTC_OVERLAY_FILE=boards/b_u585i_iot02a_mspi_aps6408l.overlay
-      - platform:b_u585i_iot02a/stm32u585xx:EXTRA_CONF_FILE=boards/b_u585i_iot02a_mspi_aps6408l.conf

@@ -534,6 +534,9 @@ struct net_if_dhcpv6 {
 	/** Retransmission counter. */
 	uint8_t retransmissions;
 
+	/** Rebind after link recovery uses Confirm retransmission parameters. */
+	bool rebind_on_link_change : 1;
+
 	/** Client was started automatically by a Router Advertisement. */
 	bool auto_started : 1;
 
@@ -667,6 +670,9 @@ struct net_if_dhcpv4 {
 
 	/** Number of attempts made for REQUEST and RENEWAL messages */
 	uint8_t attempts;
+
+	/** Network events received and not yet acted on */
+	uint8_t pending_events;
 
 	/** Gateway the client installed, unspecified if it installed none */
 	struct net_in_addr gw;

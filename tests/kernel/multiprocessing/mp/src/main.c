@@ -23,14 +23,20 @@ int cpu_arg;
 volatile int cpu_running[CONFIG_MP_MAX_NUM_CPUS];
 
 /**
- * @brief Tests for multi processing
+ * @brief Tests for the architecture multiprocessing (MP) bring-up API
  *
  * @defgroup kernel_mp_tests MP Tests
  *
  * @ingroup all_tests
  *
+ * These tests exercise arch_cpu_start() directly, without the SMP scheduler
+ * owning the secondary CPUs.
  * @{
  * @}
+ */
+
+/* Entry point executed on each started CPU: validates the argument it was
+ * handed and flags that the CPU is running.
  */
 FUNC_NORETURN void cpu_fn(void *arg)
 {
@@ -48,51 +54,30 @@ FUNC_NORETURN void cpu_fn(void *arg)
 }
 
 /**
- * @brief Test to verify CPU start
+ * @brief Verify that arch_cpu_start() brings up every non-boot CPU.
  *
  * @ingroup kernel_mp_tests
  *
  * @details
- * Test Objective:
- * - To verify kernel architecture layer shall provide a means to start non-boot
- *   CPUs on SMP systems.
- *   The way we verify it is to call it by give it parameters especially the
- *   target executing function, etc. Then check if the function is running or
- *   not.
+ * The architecture layer must provide a means to start the non-boot CPUs and
+ * to run a caller-supplied function on them with a caller-supplied stack and
+ * argument. Each CPU is started with a distinct argument value, and its entry
+ * point validates both the argument pointer and its content before flagging
+ * that it is running, so a pass proves the CPU came up and was handed the
+ * right parameters.
  *
- * Testing techniques:
- * - Interface testing, function and block box testing,
- *   dynamic analysis and testing
+ * Test steps:
+ * - For every CPU other than the boot CPU, set the shared argument to a value
+ *   derived from the CPU index.
+ * - Call arch_cpu_start() with that CPU's stack, stack size, entry function
+ *   and the argument address.
+ * - In the entry function, check the argument address and value, then set the
+ *   per-CPU running flag.
+ * - Poll the running flag for up to five seconds.
  *
- * Prerequisite Conditions:
- * - CONFIG_MP_MAX_NUM_CPUS > 1
- *
- * Input Specifications:
- * - CPU ID: the cpu want to start
- * - Stack structure
- * - Stack size
- * - Target executing function
- * - An argument that pass to the function
- *
- * Test Procedure:
- * -# In main thread, given and set a global variable cpu_arg to 12345.
- * -# Call arch_cpu_start() with parameters
- * -# Enter a while loop and wait for cpu_running equals to 1.
- * -# In target function, check if the address is &cpu_arg and its content
- *  equal to 12345.
- * -# Set the global flag variable cpu_running to 1.
- * -# In main thread, check if the cpu_running equals to 1.
- *
- * Expected Test Result:
- * - The given function execute cpu is running and .
- *
- * Pass/Fail Criteria:
- * - Successful if the check of step 4, 6 are all pass.
- * - Failure if one of the check of step 4, 6 is failed.
- *
- * Assumptions and Constraints:
- * - This test using for the platform that support MP or SMP, in our current
- *   scenario which own over two CPUs.
+ * Expected result:
+ * - Every non-boot CPU runs the supplied function with the expected argument
+ *   and reports itself running within the timeout.
  *
  * @see arch_cpu_start()
  */

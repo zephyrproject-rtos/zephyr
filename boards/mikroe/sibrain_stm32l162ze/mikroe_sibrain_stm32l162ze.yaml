@@ -1,0 +1,15 @@
+identifier: mikroe_sibrain_stm32l162ze
+name: SiBRAIN for STM32L162ZE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 80
+flash: 512
+supported:
+  - eeprom
+  - gpio
+  - rtc
+  - uart
+vendor: mikroe

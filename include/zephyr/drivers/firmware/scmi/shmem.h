@@ -94,10 +94,14 @@ int scmi_shmem_read_hdr(const struct device *shmem, uint32_t *hdr);
 /**
  * @brief Read a message from a SHMEM area
  *
+ * On success, @p msg->len is set to the number of bytes copied.
+ *
  * @param shmem Pointer to shmem device
  * @param msg Message to write the data into
  *
- * @return 0 on success, negative errno value on failure.
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid argument or header mismatch.
+ * @retval -EPROTO Length field holds no status or exceeds the SHMEM area.
  */
 int scmi_shmem_read_message(const struct device *shmem,
 			    struct scmi_message *msg);

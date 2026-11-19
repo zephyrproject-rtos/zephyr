@@ -172,7 +172,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: a67d46545def251403ad1aac4239776633c6afe7
+      revision: d92c48210719afd5ebbcd6bad5dfa22b8846eb4c
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -183,7 +183,7 @@ manifest:
       groups:
         - hal
     - name: hal_gigadevice
-      revision: 804f92bf5794e403fab89178dcc6d775b9269c0d
+      revision: 1f30b2e4d82cece8898ac8a717efd3c5a3f17a57
       path: modules/hal/gigadevice
       groups:
         - hal
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 62de98d1d2ab05e9fe41679158042c1237843c38
+      revision: b996d7a382a483c01f84048bc23fb88185915499
       path: modules/hal/nordic
       groups:
         - hal
@@ -213,7 +213,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 94438e50a4d831cf3dc081898e4a66724b81cb17
+      revision: 05dd3f4bba13e45608cf772c5c1e86e75410301d
       path: modules/hal/nxp
       groups:
         - hal
@@ -249,17 +249,17 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 3402d10d7bbe0f323e018a4142b7ab7d45f9308b
+      revision: 3bf15af7154aa46b1d4c306fbf44c95837695ec3
       path: modules/hal/silabs
       groups:
         - hal
     - name: hal_st
-      revision: ce795a9b0de623022c17d2ff394587c024aec850
+      revision: 066d2f481ce6c35a94730a3bc4bd05e9fb0e767c
       path: modules/hal/st
       groups:
         - hal
     - name: hal_stm32
-      revision: 2fd0502dd5e02aa3e95a2f01278fdf27e42d7229
+      revision: f71a095d78af60581f12a24f87eb3152d948b2ef
       path: modules/hal/stm32
       groups:
         - hal
@@ -274,7 +274,7 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: 53c80140dd69905cc5e034f637eff9c66b2f9654
+      revision: ce3c8f7624d8e8b517947ebe942b5d20c625a9e8
       path: modules/hal/ti
       groups:
         - hal
@@ -295,7 +295,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 1ce844ea5a9d8860d8690a125925fcc7274461df
+      revision: bd0cf9d3a4cd6214829873d835ea6ffef82a91e0
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -348,7 +348,7 @@ manifest:
       revision: 0f6d088e777a33dd7b54297f137ef10d745c5da8
       path: modules/lib/nanopb
     - name: net-tools
-      revision: dbb08b8233d74219fcea896850e73b30a0961aa6
+      revision: b3eae79a7546b369b3b8475323b6653c14c89ba8
       path: tools/net-tools
       groups:
         - tools

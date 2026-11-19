@@ -24,7 +24,7 @@ extern "C" {
  * @brief Network buffer library
  * @defgroup net_buf Network Buffer Library
  * @since 1.0
- * @version 1.2.0
+ * @version 1.4.0
  * @ingroup os_services
  *
  * The functions that add, push, pull or remove data check with an assertion
@@ -1649,6 +1649,36 @@ static inline void net_buf_destroy(struct net_buf *buf)
 }
 
 /**
+ * @brief Take a buffer back into use instead of destroying it
+ *
+ * This helper is only intended for a buffer that a custom destroy callback was
+ * called for, in place of net_buf_destroy(): in the callback itself, or later,
+ * when the callback has set the buffer aside instead of destroying it. The
+ * buffer does not return to its pool, where another allocator could get it
+ * first.
+ *
+ * The buffer is left as net_buf_alloc() returns one: reset, without
+ * fragments, with zeroed user data and with one reference, which the caller
+ * owns. It keeps its data area.
+ *
+ * A buffer with external data, see net_buf_alloc_with_data(), cannot be
+ * taken back into use: the data belongs to the user that passed it in. Its
+ * destroy callback has to call net_buf_destroy().
+ *
+ * The pointer passed in is set to NULL, as net_buf_take() does with a
+ * reference that moves: the returned reference is the only way to the buffer
+ * from here on, so the caller is left without a pointer that it could still
+ * destroy.
+ *
+ * @param orig Pointer to the buffer pointer that the destroy callback was
+ *             called with, or that it set aside. Will be set to NULL on
+ *             return.
+ *
+ * @return The buffer, with one reference that the caller owns.
+ */
+struct net_buf *__must_check net_buf_reuse(struct net_buf **orig);
+
+/**
  * @brief Reset buffer
  *
  * Reset buffer data and flags so it can be reused for other purposes.
@@ -1757,6 +1787,11 @@ struct net_buf * __must_check net_buf_ref(struct net_buf *buf);
  * This performs an atomic exchange on @p orig. setting it to NULL and
  * returning the previous value.
  *
+ * The exchange guarantees that when several contexts take or drop the same
+ * pointer at the same time, only one of them gets the buffer. Where no other
+ * context can access @p orig, net_buf_take_plain() moves the pointer at no
+ * cost.
+ *
  * Use it where ownership of the reference moves, so that the previous owner
  * is left without a pointer to a buffer it no longer owns:
  *
@@ -1777,6 +1812,36 @@ struct net_buf * __must_check net_buf_ref(struct net_buf *buf);
 static inline struct net_buf *__must_check net_buf_take(struct net_buf **orig)
 {
 	return (struct net_buf *)atomic_ptr_clear((atomic_ptr_t *)orig);
+}
+
+/**
+ * @brief Move a buffer pointer without an atomic exchange.
+ *
+ * Same as net_buf_take(), but @p orig is read and set to NULL with plain
+ * accesses. Use it where no other context can access @p orig at the same
+ * time: a local variable, or a field that only the caller's context uses or
+ * that the caller protects with a lock. The compiler then drops the store
+ * when the pointer is not read again, so the move costs no code:
+ *
+ * @code{.c}
+ * k_fifo_put(&tx_queue, net_buf_take_plain(&buf));
+ * @endcode
+ *
+ * As with net_buf_take(), passing `net_buf_take_plain(&buf)` as an argument
+ * is only correct for calls that always take ownership.
+ *
+ * @param orig Pointer to the buffer pointer to transfer. Will be set to NULL
+ *		on return.
+ *
+ * @return The buffer originally pointed to by @p orig
+ */
+static inline struct net_buf *__must_check net_buf_take_plain(struct net_buf **orig)
+{
+	struct net_buf *buf = *orig;
+
+	*orig = NULL;
+
+	return buf;
 }
 
 /** @brief Drop a buffer reference and clear the pointer.

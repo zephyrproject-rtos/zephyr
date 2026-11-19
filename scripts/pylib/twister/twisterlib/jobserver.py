@@ -67,6 +67,24 @@ class JobClient:
         return subprocess.Popen(argv, **kwargs)
 
 
+def _open_fifo(path):
+    """Open both ends of a named pipe without waiting for another process.
+
+    Args:
+        path: Path of the named pipe.
+
+    Returns:
+        The read and write file descriptors.
+    """
+    # A blocking open for reading would wait for a writer
+    read_fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+    try:
+        return (read_fd, os.open(path, os.O_WRONLY))
+    except OSError:
+        os.close(read_fd)
+        raise
+
+
 class GNUMakeJobClient(JobClient):
     """A job client for GNU make.
 
@@ -115,15 +133,22 @@ class GNUMakeJobClient(JobClient):
         If we are started under a GNU Make Job Server, we can search
         the environment for a string "--jobserver-auth=R,W", where R
         and W will be the read and write file descriptors to the pipe
-        respectively.  If we don't find this environment variable (or
-        the string inside of it), this will raise an OSError.
+        respectively, or "--jobserver-auth=fifo:PATH", where PATH is a
+        named pipe (the default since GNU make 4.4).
 
         The specification for MAKEFLAGS is:
           * If the first char is "n", this is a dry run, just exit.
+          * Only the words before a "--" word are options; the rest are
+            the variables set on the command line. Words are separated by
+            blanks that are not escaped with a backslash.
           * If the flags contains -j1, go to sequential mode.
+          * Only the last --jobserver-auth is relevant.
           * If the flags contains --jobserver-auth=R,W AND those file
             descriptors are valid, use the jobserver. Otherwise output a
             warning.
+          * If the flags contains --jobserver-auth=fifo:PATH AND the
+            named pipe can be opened, use the jobserver. Otherwise output
+            a warning.
 
         Args:
             env: Optionally, the environment to search.
@@ -138,14 +163,28 @@ class GNUMakeJobClient(JobClient):
         makeflags = env.get("MAKEFLAGS")
         if not makeflags:
             return None
-        match = re.search(r"--jobserver-auth=(\d+),(\d+)", makeflags)
-        if match:
-            pipe = [int(x) for x in match.groups()]
+        options = re.split(r"(?<!\\)\s+", makeflags.strip())
+        if "--" in options:
+            options = options[:options.index("--")]
+        auth = [word for word in options if word.startswith("--jobserver-auth=")]
+        auth = auth[-1].removeprefix("--jobserver-auth=") if auth else ""
+        match = re.fullmatch(r"(\d+),(\d+)", auth)
+        fifo = auth.removeprefix("fifo:") if auth.startswith("fifo:") else None
+        if match or fifo:
+            pipe = [int(x) for x in match.groups()] if match else None
             if jobs:
                 pipe = None
                 logger.warning(
                     "-jN forced on command line; ignoring GNU make jobserver"
                 )
+            elif fifo:
+                try:
+                    pipe = _open_fifo(fifo)
+                    logger.info("using GNU make jobserver")
+                except OSError as e:
+                    logger.warning(
+                        f"Cannot open {fifo} ({e.strerror}); ignoring GNU make jobserver"
+                    )
             else:
                 try:
                     # Use F_GETFL to see if file descriptors are valid
@@ -175,7 +214,7 @@ class GNUMakeJobClient(JobClient):
         else:
             pipe = None
         if not jobs:
-            match = re.search(r"-j(\d+)", makeflags)
+            match = next((m for word in options if (m := re.fullmatch(r"-j(\d+)", word))), None)
             if match:
                 jobs = int(match.group(1))
                 if jobs == 1:
@@ -183,7 +222,7 @@ class GNUMakeJobClient(JobClient):
         if makeflags[0] == "n":
             logger.info("MAKEFLAGS contained dry-run flag")
             sys.exit(0)
-        return cls(pipe, jobs, internal_jobs=1, makeflags=makeflags)
+        return cls(pipe, jobs, internal_jobs=1, makeflags=makeflags, fifo=fifo)
 
     def get_job(self):
         """Claim a job.
@@ -313,15 +352,10 @@ class GNUMakeJobServer(GNUMakeJobClient):
             fifo_dir = None
         if fifo_dir:
             path = os.path.join(fifo_dir, "fifo")
-            read_fd = None
             try:
                 os.mkfifo(path, 0o600)
-                # A blocking open for reading would wait for a writer
-                read_fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
-                pipe = (read_fd, os.open(path, os.O_WRONLY))
+                pipe = _open_fifo(path)
             except OSError:
-                if read_fd is not None:
-                    os.close(read_fd)
                 shutil.rmtree(fifo_dir, ignore_errors=True)
                 raise
             self._fifo_dir = fifo_dir

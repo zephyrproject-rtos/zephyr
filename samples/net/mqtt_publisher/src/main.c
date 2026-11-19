@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(net_mqtt_publisher_sample, LOG_LEVEL_DBG);
 #include <errno.h>
 
 #include "config.h"
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 #if defined(CONFIG_USERSPACE)
@@ -568,7 +569,11 @@ static K_HEAP_DEFINE(app_mem_pool, 1024 * 2);
 
 int main(void)
 {
-	wait_for_network();
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(IS_ENABLED(CONFIG_NET_IPV6) ? CONN_MGR_READY_IPV6
+							      : CONN_MGR_READY_IPV4,
+				  NULL, K_FOREVER);
+	LOG_INF("Network ready");
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 	int rc;

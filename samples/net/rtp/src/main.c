@@ -9,6 +9,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util_macro.h>
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 #ifdef CONFIG_RTP_SAMPLE_ROLE_SOURCE
 #include "sine.h"
@@ -186,7 +187,11 @@ int main(void)
 	LOG_INF("RTP source on %s", CONFIG_BOARD);
 #endif
 
-	wait_for_network();
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(IS_ENABLED(CONFIG_RTP_SAMPLE_IPV6) ? CONN_MGR_READY_IPV6
+								    : CONN_MGR_READY_IPV4,
+				  NULL, K_FOREVER);
+	LOG_INF("Network ready");
 
 	if (IS_ENABLED(CONFIG_RTP_SAMPLE_IPV6)) {
 		struct net_sockaddr_in6 *sockaddress_in6 = net_sin6(net_sad(&sockaddress));

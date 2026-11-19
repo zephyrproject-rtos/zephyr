@@ -135,6 +135,10 @@
 	status = "okay";
 };
 
+&coretemp {
+	status = "okay";
+};
+
 &dac {
 	status = "okay";
 };

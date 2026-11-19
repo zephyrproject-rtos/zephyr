@@ -94,15 +94,6 @@ static int parse_freq(uint32_t *out, const struct shell *sh, const char *arg)
 	return 0;
 }
 
-/* Both configurations carry the direction, and an operation names it before
- * the radio is set up.
- */
-static void lora_set_direction(bool tx)
-{
-	modem_config.tx = tx;
-	gfsk_config.tx = tx;
-}
-
 static const struct device *get_modem(const struct shell *sh)
 {
 	const struct device *dev;
@@ -117,7 +108,7 @@ static const struct device *get_modem(const struct shell *sh)
 	return dev;
 }
 
-static const struct device *get_configured_modem(const struct shell *sh)
+static const struct device *get_configured_modem(const struct shell *sh, bool tx)
 {
 	int ret;
 	const struct device *dev;
@@ -133,6 +124,8 @@ static const struct device *get_configured_modem(const struct shell *sh)
 			return NULL;
 		}
 
+		gfsk_config.tx = tx;
+
 		ret = lora_config_gfsk(dev, &gfsk_config);
 		if (ret < 0) {
 			shell_error(sh, "LoRa GFSK config failed: %d", ret);
@@ -146,6 +139,8 @@ static const struct device *get_configured_modem(const struct shell *sh)
 		shell_error(sh, "No frequency specified.");
 		return NULL;
 	}
+
+	modem_config.tx = tx;
 
 	ret = lora_config(dev, &modem_config);
 	if (ret < 0) {
@@ -400,8 +395,7 @@ static int cmd_lora_send(const struct shell *sh,
 	int ret;
 	const struct device *dev;
 
-	lora_set_direction(true);
-	dev = get_configured_modem(sh);
+	dev = get_configured_modem(sh, true);
 	if (!dev) {
 		return -ENODEV;
 	}
@@ -424,8 +418,7 @@ static int cmd_lora_recv(const struct shell *sh, size_t argc, char **argv)
 	int16_t rssi;
 	int8_t snr;
 
-	lora_set_direction(false);
-	dev = get_configured_modem(sh);
+	dev = get_configured_modem(sh, false);
 	if (!dev) {
 		return -ENODEV;
 	}
@@ -499,7 +492,7 @@ static int cmd_lora_rssi(const struct shell *sh, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	dev = get_configured_modem(sh);
+	dev = get_configured_modem(sh, false);
 	if (!dev) {
 		return -ENODEV;
 	}
@@ -536,7 +529,7 @@ static int cmd_lora_energy_detect(const struct shell *sh, size_t argc, char **ar
 	long threshold, duration;
 	int ret;
 
-	dev = get_configured_modem(sh);
+	dev = get_configured_modem(sh, false);
 	if (!dev) {
 		return -ENODEV;
 	}

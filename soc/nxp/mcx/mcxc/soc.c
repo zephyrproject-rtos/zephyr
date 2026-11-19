@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,6 @@
  ******************************************************************************/
 #define IRC48M_CLK_FREQ (48000000UL)
 
-#define MCG_NODE DT_NODELABEL(mcg)
 #define OSC_NODE DT_NODELABEL(osc)
 
 #define SIM_MODULE_CLK_SEL_DISABLED     0U /*!< Module clock select: Disabled */
@@ -29,6 +28,11 @@
 #define CLOCK_NODEID(clk) DT_CHILD(DT_INST(0, nxp_kinetis_sim), clk)
 
 #define CLOCK_DIVIDER(clk) DT_PROP_OR(CLOCK_NODEID(clk), clock_div, 1) - 1
+
+/* OSC_CR[SCxP] takes one bit per capacitor, not a value in pF */
+#define OSC_CAP_LOAD(pf)                                                                           \
+	((((pf) & 2) ? kOSC_Cap2P : 0U) | (((pf) & 4) ? kOSC_Cap4P : 0U) |                         \
+	 (((pf) & 8) ? kOSC_Cap8P : 0U) | (((pf) & 16) ? kOSC_Cap16P : 0U))
 
 /* Decode the clock name selector from the encoded `name` cell */
 #define DT_CLOCK_NAME(node_id) \
@@ -54,17 +58,6 @@
  * Variables
  ******************************************************************************/
 
-const mcglite_config_t mcgliteConfig_BOARD_BootClockRUN = {
-	.outSrc = kMCGLITE_ClkSrcHirc, /* MCGOUTCLK source is HIRC */
-	.irclkEnableMode = kMCGLITE_IrclkEnable, /* MCGIRCLK enabled */
-	.ircs = kMCGLITE_Lirc8M, /* Slow internal reference (LIRC) 8 MHz clock */
-	/* Low-frequency Reference Clock Divider */
-	.fcrdiv = DT_PROP_OR(MCG_NODE, fcrdiv, 0),
-	/* Second Low-frequency Reference Clock Divider */
-	.lircDiv2 = DT_PROP_OR(MCG_NODE, lircdiv2, 0),
-	.hircEnableInNotHircMode = true, /* HIRC source is enabled */
-};
-
 const sim_clock_config_t simConfig_BOARD_BootClockRUN = {
 	.er32kSrc = DT_PROP(DT_INST(0, nxp_kinetis_sim), er32k_select),
 	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CLOCK_DIVIDER(core_clk)) |
@@ -73,7 +66,7 @@ const sim_clock_config_t simConfig_BOARD_BootClockRUN = {
 
 const osc_config_t oscConfig_BOARD_BootClockRUN = {
 	.freq = DT_PROP(OSC_NODE, clock_frequency),
-	.capLoad = DT_PROP_OR(OSC_NODE, load_capacitance_picofarads, 0),
+	.capLoad = OSC_CAP_LOAD(DT_PROP_OR(OSC_NODE, load_capacitance_picofarads, 0)),
 #if DT_ENUM_HAS_VALUE(OSC_NODE, mode, external)
 	.workMode = kOSC_ModeExt,
 #elif DT_ENUM_HAS_VALUE(OSC_NODE, mode, low_power)
@@ -95,12 +88,8 @@ __weak void clock_init(void)
 	/* Initializes OSC0 according to board configuration. */
 	CLOCK_InitOsc0(&oscConfig_BOARD_BootClockRUN);
 	CLOCK_SetXtal0Freq(oscConfig_BOARD_BootClockRUN.freq);
-	/* Set MCG to HIRC mode. */
-	CLOCK_SetMcgliteConfig(&mcgliteConfig_BOARD_BootClockRUN);
 	/* Set the clock configuration in SIM module. */
 	CLOCK_SetSimConfig(&simConfig_BOARD_BootClockRUN);
-	/* Set SystemCoreClock variable. */
-	SystemCoreClock = DT_PROP(DT_NODELABEL(cpu0), clock_frequency);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	/* Set LPUART0 clock source. */
 	CLOCK_SetLpuart0Clock(LPUART_CLOCK_SEL(lpuart0));

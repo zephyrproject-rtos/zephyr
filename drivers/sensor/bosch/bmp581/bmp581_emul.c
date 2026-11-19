@@ -20,9 +20,6 @@
 
 LOG_MODULE_DECLARE(bmp581, CONFIG_SENSOR_LOG_LEVEL);
 
-/* Size of the emulated register file (highest register is CMD at 0x7E). */
-#define BMP581_EMUL_NUM_REGS 0x80
-
 struct bmp581_emul_data {
 	uint8_t reg[BMP581_EMUL_NUM_REGS];
 };
@@ -52,6 +49,24 @@ void bmp581_emul_set_temp_raw(const struct emul *target, int32_t raw_temp)
 void bmp581_emul_set_press_raw(const struct emul *target, uint32_t raw_press)
 {
 	bmp581_emul_set_reg24(target->data, BMP5_REG_PRESS_DATA_XLSB, raw_press);
+}
+
+int bmp581_emul_get_reg(const struct emul *target, uint8_t reg, uint8_t *val)
+{
+	const struct bmp581_emul_data *data;
+
+	if (target == NULL || target->data == NULL || val == NULL) {
+		return -EINVAL;
+	}
+
+	if (reg >= BMP581_EMUL_NUM_REGS) {
+		return -EINVAL;
+	}
+
+	data = target->data;
+	*val = data->reg[reg];
+
+	return 0;
 }
 
 static int bmp581_emul_handle_write(const struct emul *target, uint8_t reg, uint8_t val)

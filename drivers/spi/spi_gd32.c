@@ -360,6 +360,7 @@ static int spi_gd32_transceive_impl(const struct device *dev,
 {
 	struct spi_gd32_data *data = dev->data;
 	const struct spi_gd32_config *cfg = dev->config;
+	uint8_t dfs = SPI_WORD_SIZE_GET(config->operation) == 8U ? 1U : 2U;
 	int ret;
 
 	spi_context_lock(&data->ctx, (cb != NULL), cb, userdata, config);
@@ -371,7 +372,7 @@ static int spi_gd32_transceive_impl(const struct device *dev,
 
 	SPI_CTL0(cfg->reg) |= SPI_CTL0_SPIEN;
 
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, dfs);
 
 	spi_context_cs_control(&data->ctx, true);
 

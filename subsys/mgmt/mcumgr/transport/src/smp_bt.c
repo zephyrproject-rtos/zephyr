@@ -853,6 +853,14 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct conn_param_data *cpd = conn_param_data_get(conn);
 
+	/* Invalidate the session ID before sweeping the queue so that pending
+	 * requests of this connection are dropped; cpd->conn must stay set until
+	 * after the sweep because the validity check finds the session through it.
+	 */
+	if (cpd != NULL) {
+		cpd->id = 0;
+	}
+
 	/* Remove all pending requests from this device which have yet to be processed from the
 	 * FIFO (for this specific connection).
 	 */
@@ -869,7 +877,6 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 #endif
 
 		/* Clear cpd. */
-		cpd->id = 0;
 		cpd->conn = NULL;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
@@ -972,7 +979,8 @@ static bool smp_bt_bridge_connect(struct smp_transport_bridge *bridge, bool outg
 		uint32_t address_type = 0;
 		struct bt_conn_le_create_param *create_param = BT_CONN_LE_CREATE_CONN;
 		struct bt_le_conn_param *connection_param = BT_LE_CONN_PARAM_DEFAULT;
-		int decoded = 0;
+		uint16_t error = TRANSPORT_MGMT_ERR_CONNECT_FAILED;
+		size_t decoded = 0;
 		int rc;
 		struct zcbor_string address = { 0 };
 		bt_addr_le_t addr;
@@ -1041,8 +1049,7 @@ static bool smp_bt_bridge_connect(struct smp_transport_bridge *bridge, bool outg
 		if (le_coded == true) {
 #if defined(CONFIG_HAS_BT_CTLR) && !defined(CONFIG_BT_CTLR_PHY_CODED)
 			LOG_ERR("Requested LE CODED PHY is not supported");
-			smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
-					TRANSPORT_MGMT_ERR_CONNECT_UNSUPPORTED_PARAMETER);
+			error = TRANSPORT_MGMT_ERR_CONNECT_UNSUPPORTED_PARAMETER;
 			goto clean_up;
 #else
 			create_param->options |= (BT_CONN_LE_OPT_CODED | BT_CONN_LE_OPT_NO_1M);
@@ -1060,15 +1067,11 @@ static bool smp_bt_bridge_connect(struct smp_transport_bridge *bridge, bool outg
 			LOG_ERR("Connection failed: %d", rc);
 #if !defined(CONFIG_HAS_BT_CTLR)
 			if (rc == -EINVAL || rc == -EIO) {
-				smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
-						TRANSPORT_MGMT_ERR_CONNECT_UNSUPPORTED_PARAMETER);
-				return false;
+				error = TRANSPORT_MGMT_ERR_CONNECT_UNSUPPORTED_PARAMETER;
 			}
 #endif
 
-			smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
-					TRANSPORT_MGMT_ERR_CONNECT_FAILED);
-			return false;
+			goto clean_up;
 		}
 
 		k_sem_take(&cpd->smp_notify_sem, K_FOREVER);
@@ -1079,8 +1082,7 @@ clean_up:
 			cpd->id = 0;
 			cpd->conn = NULL;
 
-			smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
-					TRANSPORT_MGMT_ERR_CONNECT_FAILED);
+			smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT, error);
 
 		} else {
 			cpd->state |= DISCOVERED;
