@@ -14,9 +14,9 @@ properties:
     type: string
     description: |
       Default output data rate in Hz. Only the following values are allowed:
-        200   - 200     - 5ms  (default; chip reset value)
+        200   - 200     - 5ms  (chip reset value)
         100   - 100     - 10ms
-        50    - 50      - 20ms
+        50    - 50      - 20ms (default)
         25    - 25      - 40ms
         12.5  - 25/2    - 80ms
         6.25  - 25/4    - 160ms
@@ -31,7 +31,12 @@ properties:
         .012  - 25/2048 - 81.92s
         .006  - 25/4096 - 163.84s
         .003  - 25/8192 - 327.68s
-    default: "200"
+
+      The data rate period must be longer than the measurement time resulting
+      from the oversampling configuration, otherwise the sensor will reject the
+      configuration. The default is the fastest data rate compatible with the
+      default oversampling rates (approximately 10.9ms measurement time).
+    default: "50"
     enum:
       - "200"
       - "100"
