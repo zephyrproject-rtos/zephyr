@@ -6456,6 +6456,15 @@ Sysbuild:
   tests:
     - sample.sysbuild
 
+T3 Gemstone Platforms:
+  status: maintained
+  maintainers:
+    - alitalhq
+  files:
+    - boards/t3gemstone/
+  labels:
+    - "platform: T3 Gemstone"
+
 TDK Sensors:
   status: maintained
   maintainers:
