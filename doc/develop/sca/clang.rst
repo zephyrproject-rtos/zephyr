@@ -34,7 +34,9 @@ Installing clang analyzer
 *************************
 
 'scan-build' and its sub-tool 'analyze-build' come natively with llvm as part of the binaries.
-Make sure to have the binary directory accessible into your PATH.
+'analyze-build' is searched for next to the compiler used by the build, then in your PATH.
+The LLVM toolchain of the Zephyr SDK does not include it, so with
+``ZEPHYR_TOOLCHAIN_VARIANT=zephyr/llvm`` it must come from a host LLVM installation.
 
 'scan-build' is also available as a standalone python package available on `pypi <https://pypi.org/project/scan-build/>`__.
 
@@ -48,16 +50,17 @@ Run clang static analyzer
 .. note::
 
   The analyser requires that the project builds with a LLVM toolchain, and
-  produces a 'compile_commands.json' database.
+  produces a 'compile_commands.json' database. The analysis runs with the
+  ``clang`` that compiled the project.
 
 To run clang static analyzer, :ref:`west build <west-building>` should be
 called with a ``-DZEPHYR_SCA_VARIANT=clang`` parameter, alongside the llvm
 toolchain parameters, e.g.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/userspace/hello_world_user
-   :board: qemu_x86
-   :gen-args: -DZEPHYR_TOOLCHAIN_VARIANT=host/llvm -DLLVM_TOOLCHAIN_PATH=... -DZEPHYR_SCA_VARIANT=clang
+   :zephyr-app: samples/hello_world
+   :board: qemu_cortex_m3
+   :gen-args: -DZEPHYR_TOOLCHAIN_VARIANT=zephyr/llvm -DZEPHYR_SCA_VARIANT=clang
    :goals: build
    :compact:
 

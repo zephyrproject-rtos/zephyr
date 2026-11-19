@@ -2,12 +2,15 @@
 #
 # Copyright (c) 2025 Alex Fabre
 
-find_program(CLANG_SCA_EXE NAMES analyze-build REQUIRED)
+# The analyzer replays the compilation database, so it must be the clang that
+# compiled the tree. analyze-build is not part of every LLVM distribution (the
+# Zephyr SDK does not ship it), so look next to the compiler, then in the PATH.
+get_filename_component(clang_sca_compiler_dir ${CMAKE_C_COMPILER} DIRECTORY)
+find_program(CLANG_SCA_EXE NAMES analyze-build HINTS ${clang_sca_compiler_dir} REQUIRED)
 message(STATUS "Found SCA: clang static analyzer (${CLANG_SCA_EXE})")
 
 # Get clang analyzer user options
 zephyr_get(CLANG_SCA_OPTS)
-zephyr_get(LLVM_TOOLCHAIN_PATH)
 
 # Check analyzer extra options
 if(DEFINED CLANG_SCA_OPTS)
@@ -25,7 +28,7 @@ file(MAKE_DIRECTORY ${output_dir})
 
 # Add a cmake target to run the analyzer after the build is done
 add_custom_target(clang-sca ALL
-  COMMAND ${CLANG_SCA_EXE} --cdb ${CMAKE_BINARY_DIR}/compile_commands.json -o ${CMAKE_BINARY_DIR}/sca/clang/ --analyze-headers --use-analyzer ${LLVM_TOOLCHAIN_PATH}/bin/clang ${CLANG_SCA_EXTRA_OPTS}
+  COMMAND ${CLANG_SCA_EXE} --cdb ${CMAKE_BINARY_DIR}/compile_commands.json -o ${CMAKE_BINARY_DIR}/sca/clang/ --analyze-headers --use-analyzer ${CMAKE_C_COMPILER} ${CLANG_SCA_EXTRA_OPTS}
   DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json
 )
 
