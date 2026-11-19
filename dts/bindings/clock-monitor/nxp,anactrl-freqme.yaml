@@ -1,0 +1,65 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP ANACTRL (Analog Control) frequency-measurement.
+
+  Measures a target clock against a reference clock and reports the result in Hz.
+  Only the clock_monitor MEASURE (one-shot) mode is supported.
+
+  The reference and target clocks are fixed by the node's two child nodes,
+  "reference-source" and "target-source". Each child pairs a MUX route
+  with a frequency provider.
+
+  Place an NXP_ANACTRL_<series>_REF_* cookie in "reference-source" and an
+  NXP_ANACTRL_<series>_TAR_* cookie in "target-source". See
+  <zephyr/dt-bindings/clock-monitor/nxp-anactrl.h>.
+
+compatible: "nxp,anactrl-freqme"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      The ANACTRL peripheral gate clock, enabled by the driver via
+      clock_control_on().
+
+child-binding:
+  description: |
+    One ANACTRL freq-measure clock source: a MUX route paired with a frequency
+    provider. A node has exactly two such children, named "reference-source" and
+    "target-source"; the child's status property is not consulted, both are
+    always used.
+
+  include: [mux-consumer.yaml]
+
+  properties:
+    mux-states:
+      required: true
+      description: |
+        MUX route for this source, given as a single mux-states entry
+        <&inputmuxN index connection> where:
+          - &inputmuxN is the MUX controller device providing the route
+          - index is the destination index (0 for ANACTRL freq-measure)
+          - connection is an inputmux_connection_t cookie from the device's
+            fsl_inputmux_connections.h. Use the NXP_ANACTRL_<series>_REF_* /
+            NXP_ANACTRL_<series>_TAR_* macros in
+            <zephyr/dt-bindings/clock-monitor/nxp-anactrl.h>.
+        The route is applied through the mux subsystem (mux_state_apply()).
+
+    clocks:
+      type: phandle-array
+      description: |
+        Rate provider queried through clock_control_get_rate(), ignored when
+        clock-frequency is present. Not switched on by the driver.
+
+    clock-frequency:
+      type: int
+      description: |
+        Fixed frequency provider in Hz, used verbatim without querying
+        clock_control. Takes precedence over clocks.

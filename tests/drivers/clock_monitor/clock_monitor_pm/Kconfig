@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_CLOCK_MONITOR_MEASURE_NS
+	int "Clock monitor measure duration (ns)"
+	default 1000000
+	help
+	  Duration in nanoseconds for the measurement used by the cases that
+	  re-measure after a power transition.
+
+config TEST_CLOCK_MONITOR_PM_WINDOW_NS
+	int "Clock monitor long measure window (ns)"
+	range 1000000 2000000000
+	default 100000000
+	help
+	  Duration in nanoseconds of the measurement that must still be in flight
+	  when a case drives a power transition. The value is a request only: a
+	  back-end may quantize it or substitute a fixed window of its own, so
+	  keep it far above the microseconds a case spends between
+	  clock_monitor_start() and the transition.
+
+config TEST_CLOCK_MONITOR_PM_SETTLE_MS
+	int "Clock monitor PM settle timeout (ms)"
+	range 1 60000
+	default 1000
+	help
+	  How long a case waits for a completion before asserting that none
+	  arrives, in milliseconds. Must cover the worst case in which a
+	  measurement never completes: the actual window plus the internal retry
+	  budget of the back-end.
