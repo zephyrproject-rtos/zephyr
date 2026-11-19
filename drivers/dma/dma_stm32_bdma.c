@@ -311,6 +311,7 @@ static void bdma_stm32_irq_handler(const struct device *dev, uint32_t id)
 	BDMA_TypeDef *dma = (BDMA_TypeDef *)(config->base);
 	struct bdma_stm32_channel *channel;
 	uint32_t callback_arg;
+	int status;
 
 	__ASSERT_NO_MSG(id < config->max_channels);
 
@@ -339,7 +340,7 @@ static void bdma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		if (!channel->hal_override) {
 			bdma_stm32_clear_ht(dma, id);
 		}
-		channel->bdma_callback(dev, channel->user_data, callback_arg, 0);
+		status = 0;
 	} else if (stm32_bdma_is_tc_irq_active(dma, id)) {
 		/* Circular buffer never stops receiving as long as peripheral is enabled */
 		if (!channel->cyclic) {
@@ -349,14 +350,17 @@ static void bdma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		if (!channel->hal_override) {
 			bdma_stm32_clear_tc(dma, id);
 		}
-		channel->bdma_callback(dev, channel->user_data, callback_arg, 0);
+		status = 0;
 	} else {
 		LOG_ERR("Transfer Error.");
 		channel->busy = false;
 		bdma_stm32_dump_channel_irq(dev, id);
 		bdma_stm32_clear_channel_irq(dev, id);
-		channel->bdma_callback(dev, channel->user_data,
-				     callback_arg, -EIO);
+		status = -EIO;
+	}
+
+	if (channel->bdma_callback != NULL) {
+		channel->bdma_callback(dev, channel->user_data, callback_arg, status);
 	}
 }
 
