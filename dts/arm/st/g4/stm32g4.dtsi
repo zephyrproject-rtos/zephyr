@@ -432,6 +432,10 @@
 					    "OPAMP_GAIN_15", "OPAMP_GAIN_16",
 					    "OPAMP_GAIN_31", "OPAMP_GAIN_32",
 					    "OPAMP_GAIN_63", "OPAMP_GAIN_64";
+			st,opamp-offset-trimming-time-ms = <2>;
+			st,opamp-has-secondary-inputs;
+			st,opamp-has-lock;
+			st,opamp-has-internal-output;
 			status = "disabled";
 		};
 
@@ -446,6 +450,10 @@
 					    "OPAMP_GAIN_15", "OPAMP_GAIN_16",
 					    "OPAMP_GAIN_31", "OPAMP_GAIN_32",
 					    "OPAMP_GAIN_63", "OPAMP_GAIN_64";
+			st,opamp-offset-trimming-time-ms = <2>;
+			st,opamp-has-secondary-inputs;
+			st,opamp-has-lock;
+			st,opamp-has-internal-output;
 			status = "disabled";
 		};
 
@@ -460,6 +468,10 @@
 					    "OPAMP_GAIN_15", "OPAMP_GAIN_16",
 					    "OPAMP_GAIN_31", "OPAMP_GAIN_32",
 					    "OPAMP_GAIN_63", "OPAMP_GAIN_64";
+			st,opamp-offset-trimming-time-ms = <2>;
+			st,opamp-has-secondary-inputs;
+			st,opamp-has-lock;
+			st,opamp-has-internal-output;
 			status = "disabled";
 		};
 
