@@ -84,6 +84,31 @@
 #endif
 
 /**
+ * @def __nonblocking
+ * @brief Mark a function that never blocks.
+ *
+ * Marks the function type as ``nonblocking``: the function, and everything it
+ * calls, must not wait for another thread or context. Use it on code that runs
+ * in interrupt context or may be called from there.
+ *
+ * With @kconfig{CONFIG_FUNCTION_EFFECT_ANALYSIS} and Clang 20 or later, the
+ * compiler reports in such a function any call to a function that is neither
+ * marked ``nonblocking`` nor defined in the same translation unit without such
+ * calls, any call through a function pointer whose type lacks the attribute,
+ * and any static local or thread-local variable. Calls to functions that do not
+ * return, such as a failed assertion, are allowed.
+ *
+ * Put it after the parameter list, on every declaration of the function and on
+ * its definition.
+ *
+ * Expands to nothing on compilers without that analysis; see
+ * @ref TOOLCHAIN_HAS_NONBLOCKING.
+ */
+#if !defined(__nonblocking) || defined(__DOXYGEN__)
+#define __nonblocking
+#endif
+
+/**
  * @def TOOLCHAIN_GCC_VERSION
  * @brief GCC version in xxyyzz for xx.yy.zz. Zero if not GCC compatible.
  */
@@ -137,6 +162,14 @@
  */
 #ifndef TOOLCHAIN_HAS_ZLA
 #define TOOLCHAIN_HAS_ZLA 0
+#endif
+
+/**
+ * @def TOOLCHAIN_HAS_NONBLOCKING
+ * @brief Indicate if __nonblocking is passed to the compiler.
+ */
+#ifndef TOOLCHAIN_HAS_NONBLOCKING
+#define TOOLCHAIN_HAS_NONBLOCKING 0
 #endif
 
 /**
@@ -394,6 +427,28 @@
  */
 #ifndef TOOLCHAIN_ENABLE_IAR_WARNING
 #define TOOLCHAIN_ENABLE_IAR_WARNING(warning)
+#endif
+
+/**
+ * @def TOOLCHAIN_DISABLE_NONBLOCKING_CHECK
+ * @brief Stop checking the calls made by a __nonblocking function.
+ *
+ * For a call the compiler cannot prove non-blocking although it does not
+ * block where it is made. Keep the region to that call, say in a comment why
+ * it does not block, and end it with @ref TOOLCHAIN_ENABLE_NONBLOCKING_CHECK.
+ */
+#ifndef TOOLCHAIN_DISABLE_NONBLOCKING_CHECK
+#define TOOLCHAIN_DISABLE_NONBLOCKING_CHECK
+#endif
+
+/**
+ * @def TOOLCHAIN_ENABLE_NONBLOCKING_CHECK
+ * @brief Resume checking the calls made by a __nonblocking function.
+ *
+ * Can only be used after @ref TOOLCHAIN_DISABLE_NONBLOCKING_CHECK.
+ */
+#ifndef TOOLCHAIN_ENABLE_NONBLOCKING_CHECK
+#define TOOLCHAIN_ENABLE_NONBLOCKING_CHECK
 #endif
 
 /** @} */

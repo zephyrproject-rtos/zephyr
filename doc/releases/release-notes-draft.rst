@@ -171,6 +171,13 @@ Libraries / Subsystems
     command was run without that argument and its remaining arguments, which usually failed
     with a wrong argument count.
 
+* Toolchain
+
+  * ``__nonblocking`` marks a function that never blocks, such as code run from an interrupt.
+    With :kconfig:option:`CONFIG_FUNCTION_EFFECT_ANALYSIS` and Clang 20 or later, the build
+    reports any call from such a function to code that may block. The spinlock API,
+    :c:func:`k_sem_give` and :c:func:`k_is_in_isr` are marked.
+
 Devicetree
 **********
 
