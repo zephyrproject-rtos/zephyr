@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &pwm20;
+	};
+};
+
+&timers20 {
+	status = "okay";
+
+	pwm20: pwm {
+		pinctrl-0 = <&tim20_ch1_pb2>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
