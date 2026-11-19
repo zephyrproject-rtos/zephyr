@@ -693,6 +693,11 @@ Networking
   * :zephyr_file:`samples/subsys/mgmt/updatehub/local.conf.example` replaces
     ``overlay-prj.conf.example``.
 
+* :c:struct:`ocpp_cs_info` has a new ``auth`` member, which :c:func:`ocpp_init` reads even when
+  :kconfig:option:`CONFIG_OCPP_BASIC_AUTH` is disabled. Applications that fill the structure field
+  by field must zero-initialize it, or set ``auth.username`` to ``NULL`` to connect without
+  authentication. (:github:`125718`)
+
 Ethernet
 ========
 
