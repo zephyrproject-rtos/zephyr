@@ -79,6 +79,55 @@ struct _irq_parent_entry {
 #define Z_SW_ISR_TBL_KCONFIG_BY_ALVL(l) CONCAT(CONFIG_, CONCAT(Z_STR_L, l), _LVL_ISR_TBL_OFFSET)
 
 /**
+ * @brief Get the Kconfig with the number of aggregators of the given aggregator level
+ *
+ * @param l Aggregator level, must be 2 or 3
+ *
+ * @return `CONFIG_NUM_2ND_LEVEL_AGGREGATORS` if second level aggregator,
+ * `CONFIG_NUM_3RD_LEVEL_AGGREGATORS` if third level aggregator
+ */
+#define Z_NUM_AGGREGATORS_KCONFIG_BY_ALVL(l)                                                       \
+	CONCAT(CONFIG_, NUM_, CONCAT(Z_STR_L, l), _LEVEL_AGGREGATORS)
+
+/**
+ * @brief Get the Kconfig with the IRQ line of an aggregator of the given aggregator level
+ *
+ * @param l Aggregator level, must be 2 or 3
+ * @param i Index of the aggregator in its level
+ *
+ * @return `CONFIG_2ND_LVL_INTR_*_OFFSET` of aggregator i if second level aggregator,
+ * `CONFIG_3RD_LVL_INTR_*_OFFSET` of aggregator i if third level aggregator
+ */
+#define Z_AGGREGATOR_IRQ_KCONFIG_BY_ALVL(l, i)                                                     \
+	CONCAT(CONFIG_, CONCAT(Z_STR_L, l), _LVL_INTR_0, i, _OFFSET)
+
+/**
+ * @brief Check whether an aggregator has the IRQ line of an interrupt controller
+ *
+ * @param i Index of the aggregator in its level
+ * @param node_id node identifier of the interrupt controller
+ * @param l Aggregator level, must be 2 or 3
+ *
+ * @return `i,` if aggregator i of level l has the IRQ line of the interrupt controller, nothing
+ * otherwise
+ */
+#define Z_INTC_AGGREGATOR_IDX_IF_IRQ_MATCHES(i, node_id, l)             \
+	IF_ENABLED(IS_EQ(DT_IRQ(node_id, irq), Z_AGGREGATOR_IRQ_KCONFIG_BY_ALVL(l, i)), (i,))
+
+/**
+ * @brief Get the index of an interrupt controller among the aggregators of the given level
+ *
+ * @param node_id node identifier of the interrupt controller
+ * @param l Aggregator level, must be 2 or 3
+ *
+ * @return Index of the first aggregator of level l that has the IRQ line of the interrupt
+ * controller, 0 if there is none
+ */
+#define Z_INTC_AGGREGATOR_IDX_BY_ALVL(node_id, l)                                                  \
+	GET_ARG_N(1, LISTIFY(Z_NUM_AGGREGATORS_KCONFIG_BY_ALVL(l),                                 \
+			     Z_INTC_AGGREGATOR_IDX_IF_IRQ_MATCHES, (), node_id, l) 0)
+
+/**
  * INTERNAL_HIDDEN @endcond
  */
 
@@ -94,6 +143,17 @@ struct _irq_parent_entry {
 	Z_SW_ISR_TBL_KCONFIG_BY_ALVL(DT_INTC_GET_AGGREGATOR_LEVEL(node_id))
 
 /**
+ * @brief Get the index of an interrupt controller among the aggregators of its level
+ *
+ * @param node_id node identifier of the interrupt controller
+ *
+ * @return Position of the controller's IRQ line in `CONFIG_2ND_LVL_INTR_*_OFFSET` if node_id is
+ * a second level aggregator, in `CONFIG_3RD_LVL_INTR_*_OFFSET` if it is a third level aggregator
+ */
+#define INTC_AGGREGATOR_IDX(node_id)                                    \
+	Z_INTC_AGGREGATOR_IDX_BY_ALVL(node_id, DT_INTC_GET_AGGREGATOR_LEVEL(node_id))
+
+/**
  * @brief Get the SW ISR table offset for an instance of interrupt controller
  *
  * @param inst DT_DRV_COMPAT interrupt controller driver instance number
@@ -101,7 +161,8 @@ struct _irq_parent_entry {
  * @return Software ISR table offset of the interrupt controller
  */
 #define INTC_INST_ISR_TBL_OFFSET(inst)                                                             \
-	(INTC_BASE_ISR_TBL_OFFSET(DT_DRV_INST(inst)) + (inst * CONFIG_MAX_IRQ_PER_AGGREGATOR))
+	(INTC_BASE_ISR_TBL_OFFSET(DT_DRV_INST(inst)) +                                             \
+	 (INTC_AGGREGATOR_IDX(DT_DRV_INST(inst)) * CONFIG_MAX_IRQ_PER_AGGREGATOR))
 
 /**
  * @brief Get the SW ISR table offset for a child interrupt controller
