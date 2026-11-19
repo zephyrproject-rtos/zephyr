@@ -1452,7 +1452,7 @@ void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
  * @return false if invoked by a thread.
  * @return true if invoked by an ISR.
  */
-bool k_is_in_isr(void);
+bool k_is_in_isr(void) __nonblocking;
 
 /**
  * @brief Determine if code is running in a preemptible thread.
@@ -4089,7 +4089,7 @@ __syscall int k_sem_take(struct k_sem *sem, k_timeout_t timeout);
  *
  * @param sem Address of the semaphore.
  */
-__syscall void k_sem_give(struct k_sem *sem);
+__syscall void k_sem_give(struct k_sem *sem) __nonblocking;
 
 /**
  * @brief Resets a semaphore's count to zero.

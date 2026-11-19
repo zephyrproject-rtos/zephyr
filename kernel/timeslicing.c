@@ -100,7 +100,7 @@ static void slice_reset(int slice_size)
 	atomic_clear(&slice_expired[cpu]);
 }
 
-void z_time_slice_reset(struct k_thread *thread)
+void z_time_slice_reset(struct k_thread *thread) __nonblocking
 {
 	slice_reset(z_time_slice_size(thread));
 }

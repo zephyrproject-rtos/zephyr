@@ -173,7 +173,7 @@ static void reprogram_next(uint32_t ticks_elapsed)
 	}
 }
 
-k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout)
+k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout) __nonblocking
 {
 	k_ticks_t ticks = 0;
 
@@ -237,7 +237,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	return ticks;
 }
 
-int z_try_abort_timeout(struct _timeout *to)
+int z_try_abort_timeout(struct _timeout *to) __nonblocking
 {
 	int ret = -EINVAL;
 
@@ -277,7 +277,7 @@ int z_try_abort_timeout(struct _timeout *to)
 	return ret;
 }
 
-void z_timeout_wait_inflight_spin(const struct _timeout *to)
+void z_timeout_wait_inflight_spin(const struct _timeout *to) __nonblocking
 {
 	/* Lockless: the announcing CPU clears the slot (under timeout_lock)
 	 * once the handler has returned. A stale read only costs another

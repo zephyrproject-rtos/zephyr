@@ -9,7 +9,7 @@
 /* We are not building thread.c when MULTITHREADING=n, so we
  * need to provide a few stubs here.
  */
-bool k_is_in_isr(void)
+bool k_is_in_isr(void) __nonblocking
 {
 	return arch_is_in_isr();
 }

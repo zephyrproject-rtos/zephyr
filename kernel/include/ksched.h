@@ -53,13 +53,13 @@ void z_unpend_thread_no_timeout(struct k_thread *thread);
 /**
  * @brief Unpend thread and abort its timeout (if it exists).
  */
-void z_unpend_thread(struct k_thread *thread);
+void z_unpend_thread(struct k_thread *thread) __nonblocking;
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q);
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	       _wait_q_t *wait_q, k_timeout_t timeout);
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 		   k_timeout_t timeout);
-void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key);
+void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key) __nonblocking;
 void z_reschedule_locked(k_spinlock_key_t key);
 void z_reschedule_irqlock(uint32_t key);
 int z_unpend_all(_wait_q_t *wait_q);
@@ -140,7 +140,7 @@ static ALWAYS_INLINE void *z_sched_next_handle(struct k_thread *curr)
 }
 
 void z_sched_start(struct k_thread *thread);
-void z_ready_thread(struct k_thread *thread);
+void z_ready_thread(struct k_thread *thread) __nonblocking;
 void move_current_to_end_of_prio_q(void);
 
 /*
@@ -170,7 +170,7 @@ void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key, bool terminate
  *
  * @param thread Thread to make ready.
  */
-void z_sched_ready_locked(struct k_thread *thread);
+void z_sched_ready_locked(struct k_thread *thread) __nonblocking;
 
 /**
  * @brief Add a thread to a wait queue while the scheduler spinlock is held.
