@@ -557,27 +557,33 @@ static int bmp388_init(const struct device *dev)
 #define BMP388_INT_CFG(inst)
 #endif
 
-#define BMP3XX_INST(inst, chipid)\
-	static struct bmp388_data bmp388_data_##inst##chipid = {\
+#define BMP3XX_INST(inst, variant, chipid)\
+	static struct bmp388_data bmp388_data_##variant##_##inst = {\
 		.odr = DT_INST_ENUM_IDX(inst, odr),\
 		.osr_pressure = DT_INST_ENUM_IDX(inst, osr_press),\
 		.osr_temp = DT_INST_ENUM_IDX(inst, osr_temp),\
 		.chip_id = chipid,\
 	};\
-	static const struct bmp388_config bmp388_config_##inst##chipid = {\
+	static const struct bmp388_config bmp388_config_##variant##_##inst = {\
 		BMP388_BUS_CFG(inst)\
 		BMP388_INT_CFG(inst)\
 		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),\
 	};\
 	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmp388_init, PM_DEVICE_DT_INST_GET(inst),\
-				    &bmp388_data_##inst##chipid, &bmp388_config_##inst##chipid,\
+				    &bmp388_data_##variant##_##inst,\
+				    &bmp388_config_##variant##_##inst,\
 					POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &bmp388_api);
 
 #define DT_DRV_COMPAT bosch_bmp388
-DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, BMP388_ID)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, bmp388, BMP388_ID)
 #undef DT_DRV_COMPAT
 
 #define DT_DRV_COMPAT bosch_bmp390
-DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, BMP390_ID)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, bmp390, BMP390_ID)
+#undef DT_DRV_COMPAT
+
+/* BMP384 shares the BMP388 chip ID */
+#define DT_DRV_COMPAT bosch_bmp384
+DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, bmp384, BMP388_ID)
 #undef DT_DRV_COMPAT

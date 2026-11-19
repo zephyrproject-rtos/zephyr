@@ -29,11 +29,16 @@
 #define BMP390_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #undef DT_DRV_COMPAT
 
-#if defined(BMP388_BUS_SPI) || defined(BMP390_BUS_SPI)
+#define DT_DRV_COMPAT  bosch_bmp384
+#define BMP384_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BMP384_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#undef DT_DRV_COMPAT
+
+#if defined(BMP388_BUS_SPI) || defined(BMP390_BUS_SPI) || defined(BMP384_BUS_SPI)
 #define BMP3XX_USE_SPI_BUS
 #endif
 
-#if defined(BMP388_BUS_I2C) || defined(BMP390_BUS_I2C)
+#if defined(BMP388_BUS_I2C) || defined(BMP390_BUS_I2C) || defined(BMP384_BUS_I2C)
 #define BMP3XX_USE_I2C_BUS
 #endif
 

@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Embeint Holdings Pty Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Bosch BMP384 pressure sensor accessed through SPI bus
+
+    Variant of the BMP388 with a gel-filled package for robustness against
+    liquids, at slightly lower accuracy.
+
+compatible: "bosch,bmp384"
+
+include: [spi-device.yaml, "bosch,bmp388.yaml"]
