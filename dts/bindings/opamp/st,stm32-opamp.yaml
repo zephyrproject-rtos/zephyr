@@ -1,4 +1,5 @@
 # Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# Copyright (c) 2026 Witekio
 # SPDX-License-Identifier: Apache-2.0
 
 description: STM32 OPAMP (Operational Amplifier)
@@ -19,3 +20,62 @@ properties:
     required: true
   pinctrl-names:
     required: true
+
+  st,opamp-offset-trimming-time-ms:
+    type: int
+    required: true
+    description: |
+      Offset trim time: during calibration, minimum time needed between
+      two steps to have 1 mV accuracy
+
+  st,enable-self-calibration:
+    type: boolean
+    description: |
+      Run the offset self-calibration of the NMOS and PMOS differential pairs
+      at OPAMP initialization.
+
+  st,pmos-trimming-value:
+    type: int
+    description: |
+      Offset trimming value of the PMOS differential pair.
+      If present together with st,enable-self-calibration, this value
+      overrides the one found by self-calibration.
+    min: 0
+    max: 0x1f
+
+  st,nmos-trimming-value:
+    type: int
+    description: |
+      Offset trimming value of the NMOS differential pair.
+      If present together with st,enable-self-calibration, this value
+      overrides the one found by self-calibration.
+    min: 0
+    max: 0x1f
+
+  st,opamp-has-secondary-inputs:
+    type: boolean
+    description: |
+      If present, the OPAMP has secondary inputs selected by a timer controlled
+      multiplexer.
+
+  st,opamp-has-lock:
+    type: boolean
+    description: |
+      If present, the OPAMP configuration can be locked until the next system reset.
+
+  st,opamp-has-internal-output:
+    type: boolean
+    description: |
+      If present, the OPAMP output can be internally connected to an ADC input.
+
+  st,opamp-has-vdda-isolation:
+    type: boolean
+    description: |
+      If present, the analog peripherals are isolated from VDDA after reset and
+      their supply has to be enabled in the PWR peripheral.
+
+  st,opamp-has-common-power-range:
+    type: boolean
+    description: |
+      If present, the power supply range (OPA_RANGE) is common to all OPAMP
+      instances and has to be set before the first one is enabled.
