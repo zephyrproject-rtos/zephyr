@@ -11,4 +11,16 @@
 / {
 	compatible = "radxa,rock-5b-plus", "rockchip,rk3588";
 	model = "Radxa ROCK 5B+";
+
+	chosen {
+		zephyr,pcie-controller = &pcie2x1l2;
+	};
+};
+
+&its0 {
+	status = "okay";
+};
+
+&pcie2x1l2 {
+	status = "okay";
 };
