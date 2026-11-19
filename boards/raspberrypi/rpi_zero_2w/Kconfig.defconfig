@@ -16,4 +16,9 @@ config PM_DEVICE_POWER_DOMAIN
 
 endif # PM_DEVICE
 
+# The USB core is unpowered until the VideoCore firmware turns on its
+# power domain.
+config POWER_DOMAIN
+	default y if UDC_DWC2
+
 endif # BOARD_RPI_ZERO_2W
