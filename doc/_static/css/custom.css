@@ -1522,3 +1522,11 @@ li>a.code-sample-link.reference.internal.current {
     color: var(--svc-accent-soft, var(--link-color));
     font-weight: 500;
 }
+
+/* sphinx-design steps: the RTD theme sets list-style on each ol li, which
+ * would show a native number next to the step marker.
+ */
+.rst-content ol.sd-steps > li.sd-step {
+    list-style: none;
+    margin-left: 0;
+}
