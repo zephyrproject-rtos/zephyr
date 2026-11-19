@@ -18,3 +18,51 @@ properties:
 
   pinctrl-0:
     required: true
+
+  sub-mode:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 5]
+    description: |
+      SPI frame format:
+        0: Motorola
+        1: Texas Instruments, slave select coincides with the first data bit
+        2: National Semiconductor Microwire
+        5: Texas Instruments, slave select precedes the first data bit
+      SPI_FRAME_FORMAT_TI selects 5 when this property is 0.
+
+  enable-free-run-sclk:
+    type: boolean
+    description: Drive SCLK continuously in controller mode, also between transfers.
+
+  enable-input-filter:
+    type: boolean
+    description: Enable the median filter on the SPI inputs.
+
+  disable-miso-late-sample:
+    type: boolean
+    description: |
+      Sample MISO on the SCLK edge defined by the SPI mode instead of half an
+      SCLK period later.
+
+  enable-transfer-separation:
+    type: boolean
+    description: Deassert the slave select between data frames in controller mode.
+
+  ss-setup-delay:
+    type: boolean
+    description: |
+      Extend the slave select setup time by one SCLK period in Motorola
+      controller mode.
+
+  ss-hold-delay:
+    type: boolean
+    description: |
+      Extend the slave select hold time by one SCLK period in Motorola
+      controller mode.
+
+  ss-inter-frame-delay:
+    type: boolean
+    description: |
+      Extend the slave select deassertion between data frames by one SCLK
+      period in Motorola controller mode.
