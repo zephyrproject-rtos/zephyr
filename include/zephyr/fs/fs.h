@@ -754,6 +754,35 @@ int fs_unregister(int type, const struct fs_file_system_t *fs);
 int fs_gc(struct fs_mount_t *mp);
 
 /**
+ * @brief Canonicalise a filesystem path in place
+ *
+ * Resolves "." and ".." path segments and strips trailing '.', trailing ' '
+ * and any trailing byte below 0x20 from each path component, so that the
+ * canonical form returned is the same string a filesystem such as FatFS will
+ * actually act on -- FatFS silently applies the same component-level
+ * stripping itself when it builds or matches a short (8.3) directory entry.
+ * '\\' is accepted as a path separator alongside '/', matching FatFS's own
+ * IsSeparator().
+ *
+ * This lets a caller -- for example the MCUmgr fs_mgmt
+ * @kconfig{CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK} -- make an access decision
+ * on the exact path a subsequent fs_open() will act on, rather than on a raw
+ * client-supplied string the filesystem may go on to interpret differently.
+ *
+ * The output is always shorter than or equal in length to the input, so the
+ * in-place rewrite is always safe.
+ *
+ * @param path NUL-terminated path to canonicalise in place.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if a path component is empty, or becomes empty once
+ *         trailing '.', ' ' and control bytes are stripped from it -- the
+ *         same "reject a null name" case a filesystem such as FatFS applies
+ *         itself, caught here before the path is ever opened.
+ */
+int fs_path_resolve(char *path);
+
+/**
  * @}
  */
 

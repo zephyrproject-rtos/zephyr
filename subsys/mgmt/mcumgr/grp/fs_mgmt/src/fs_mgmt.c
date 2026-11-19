@@ -283,6 +283,10 @@ static int fs_mgmt_file_download(struct smp_streamer *ctxt)
 	memcpy(path, name.value, name.len);
 	path[name.len] = '\0';
 
+	if (fs_path_resolve(path) != 0) {
+		return MGMT_ERR_EINVAL;
+	}
+
 	if (k_sem_take(&fs_mgmt_ctxt.lock_sem, FILE_SEMAPHORE_MAX_TAKE_TIME)) {
 		return MGMT_ERR_EBUSY;
 	}
@@ -435,6 +439,10 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 
 	memcpy(file_name, name.value, name.len);
 	file_name[name.len] = '\0';
+
+	if (fs_path_resolve(file_name) != 0) {
+		return MGMT_ERR_EINVAL;
+	}
 
 	if (k_sem_take(&fs_mgmt_ctxt.lock_sem, FILE_SEMAPHORE_MAX_TAKE_TIME)) {
 		return MGMT_ERR_EBUSY;
@@ -675,6 +683,10 @@ static int fs_mgmt_file_status(struct smp_streamer *ctxt)
 	memcpy(path, name.value, name.len);
 	path[name.len] = '\0';
 
+	if (fs_path_resolve(path) != 0) {
+		return MGMT_ERR_EINVAL;
+	}
+
 #if defined(CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK)
 	/* Send request to application to check if access should be allowed or not */
 	status = mgmt_callback_notify(MGMT_EVT_OP_FS_MGMT_FILE_ACCESS, &file_access_data,
@@ -767,6 +779,10 @@ static int fs_mgmt_file_hash_checksum(struct smp_streamer *ctxt)
 	/* Copy strings and ensure they are null-teminated */
 	memcpy(path, name.value, name.len);
 	path[name.len] = '\0';
+
+	if (fs_path_resolve(path) != 0) {
+		return MGMT_ERR_EINVAL;
+	}
 
 	if (type.len != 0) {
 		memcpy(type_arr, type.value, type.len);
