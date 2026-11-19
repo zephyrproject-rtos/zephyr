@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+# SPDX-FileCopyrightText: (c) 2026 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config ILI98XX_DSI
@@ -25,3 +26,13 @@ config ILI9881C_DSI
 		$(dt_compat_any_has_prop,$(DT_COMPAT_ILITEK_ILI9881C),bl-gpios)
 	help
 	  Enable driver for ILI9881C_DSI display driver.
+
+config MW405_DSI
+	bool "Focus-LCD E43GB-I-MW405-C display driver"
+	default y
+	select MIPI_DSI
+	select GPIO
+	select ILI98XX_DSI
+	depends on DT_HAS_FOCUSLCDS_MW405_ENABLED
+	help
+	  Enable driver for FocusLCDs MW405 display driver.
