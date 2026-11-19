@@ -104,6 +104,8 @@
 		regulator-boot-on;
 		regulator-name = "sensor_enable";
 		enable-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+		/* BMP384 start-up time */
+		startup-delay-us = <2000>;
 	};
 
 	exp_header: exp-header {
