@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2026 Sebastian Balling
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * ST X-NUCLEO-PLC01A1 industrial I/O expansion board (Arduino UNO R3 header),
+ * see UM1918.
+ *
+ *   VNI8200XP   8 outputs  SPI CS2 = D10, OUT_EN = D6
+ *   CLT01-38SQ7 8 inputs   SPI CS1 = D9
+ *   SPI         D13 = SCK, D12 = MISO, D11 = MOSI
+ *               (D3 is an alternative SCK via the unpopulated R13)
+ *
+ * The VNI8200XP watchdog is enabled on this board (160 ms nominal, 120 ms
+ * worst case) and its WD input is wired to CS1. The outputs are switched off
+ * unless the inputs (CLT01-38SQ7) are read at least every ~100 ms.
+ *
+ * FAULT, TWARN and PG of the VNI8200XP only drive LEDs on the board; the
+ * same information is available in the SPI fault frame.
+ *
+ * Both chips are exposed as GPIO controllers:
+ *   plc01a1_outputs: pin 0..7 = OUT1..OUT8
+ *   plc01a1_inputs:  pin 0..7 = IN1..IN8
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+		   <&arduino_header ARDUINO_HEADER_R3_D9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+	plc01a1_outputs: gpio@0 {
+		compatible = "st,vni8200xp";
+		reg = <0>;
+		spi-max-frequency = <5000000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		out-en-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
+	};
+
+	plc01a1_inputs: gpio@1 {
+		compatible = "st,clt01-38sq7";
+		reg = <1>;
+		spi-max-frequency = <1000000>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+	};
+};
