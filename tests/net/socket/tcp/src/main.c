@@ -1333,6 +1333,59 @@ ZTEST_USER(net_socket_tcp, test_v4_sendto_recvmsg)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+/* recvmsg() copies at most msg_namelen bytes of the peer address and still
+ * reports the full address size in msg_namelen.
+ */
+ZTEST_USER(net_socket_tcp, test_v4_recvmsg_short_namelen)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in c_saddr;
+	struct net_sockaddr_in s_saddr;
+	struct net_sockaddr_in6 addr;
+	uint8_t unchanged[sizeof(addr)];
+	char buf[sizeof(TEST_STR_SMALL)];
+	struct net_iovec io_vector[1];
+	struct net_msghdr msg;
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, CLIENT_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	test_bind(c_sock, (struct net_sockaddr *)&c_saddr, sizeof(c_saddr));
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+
+	test_accept(s_sock, &new_sock, NULL, NULL);
+
+	(void)memset(&addr, 0xaa, sizeof(addr));
+	(void)memset(unchanged, 0xaa, sizeof(unchanged));
+
+	io_vector[0].iov_base = buf;
+	io_vector[0].iov_len = sizeof(buf);
+
+	(void)memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_name = &addr;
+	msg.msg_namelen = 1U;
+
+	test_recvmsg(new_sock, &msg, 0, strlen(TEST_STR_SMALL), __LINE__);
+	zassert_mem_equal(buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL), "wrong data");
+	zassert_equal(msg.msg_namelen, sizeof(struct net_sockaddr_in), "wrong addrlen");
+	zassert_mem_equal((uint8_t *)&addr + 1, &unchanged[1], sizeof(addr) - 1,
+			  "recvmsg wrote past msg_namelen");
+
+	test_close(new_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
 void _test_recv_enotconn(int c_sock, int s_sock)
 {
 	char rx_buf[1] = {0};

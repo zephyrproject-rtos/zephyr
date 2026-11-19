@@ -231,6 +231,104 @@ ZTEST(net_socket_udp, test_v6_sendto_recvfrom)
 	zassert_equal(rv, 0, "close failed");
 }
 
+/* recvfrom() with a src_addr but no addrlen returns the data and leaves
+ * src_addr untouched, from user mode as from supervisor mode.
+ */
+ZTEST_USER(net_socket_udp, test_v4_recvfrom_null_addrlen)
+{
+	int rv;
+	int client_sock;
+	int server_sock;
+	ssize_t len;
+	struct net_sockaddr_in client_addr;
+	struct net_sockaddr_in server_addr;
+	struct net_sockaddr_in src_addr;
+	struct net_sockaddr_in unchanged;
+	char buf[sizeof(TEST_STR_SMALL)];
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = zsock_bind(server_sock,
+			(struct net_sockaddr *)&server_addr,
+			sizeof(server_addr));
+	zassert_equal(rv, 0, "bind failed");
+
+	len = zsock_sendto(client_sock, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL), 0,
+			   (struct net_sockaddr *)&server_addr, sizeof(server_addr));
+	zassert_equal(len, STRLEN(TEST_STR_SMALL), "sendto failed (%d)", errno);
+
+	(void)memset(&src_addr, 0xaa, sizeof(src_addr));
+	(void)memset(&unchanged, 0xaa, sizeof(unchanged));
+
+	len = zsock_recvfrom(server_sock, buf, sizeof(buf), 0,
+			     (struct net_sockaddr *)&src_addr, NULL);
+	zassert_equal(len, STRLEN(TEST_STR_SMALL), "recvfrom failed (%d)", errno);
+	zassert_mem_equal(buf, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL), "wrong data");
+	zassert_mem_equal(&src_addr, &unchanged, sizeof(src_addr), "src_addr was written");
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+/* recvfrom() with an addrlen too short for the source address fails and
+ * leaves src_addr untouched.
+ */
+static void test_v4_recvfrom_short_addrlen_common(net_socklen_t addrlen)
+{
+	int rv;
+	int err;
+	int client_sock;
+	int server_sock;
+	ssize_t len;
+	struct net_sockaddr_in client_addr;
+	struct net_sockaddr_in server_addr;
+	struct net_sockaddr_in src_addr;
+	struct net_sockaddr_in unchanged;
+	char buf[sizeof(TEST_STR_SMALL)];
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = zsock_bind(server_sock,
+			(struct net_sockaddr *)&server_addr,
+			sizeof(server_addr));
+	zassert_equal(rv, 0, "bind failed");
+
+	len = zsock_sendto(client_sock, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL), 0,
+			   (struct net_sockaddr *)&server_addr, sizeof(server_addr));
+	zassert_equal(len, STRLEN(TEST_STR_SMALL), "sendto failed (%d)", errno);
+
+	(void)memset(&src_addr, 0xaa, sizeof(src_addr));
+	(void)memset(&unchanged, 0xaa, sizeof(unchanged));
+
+	len = zsock_recvfrom(server_sock, buf, sizeof(buf), 0,
+			     (struct net_sockaddr *)&src_addr, &addrlen);
+	err = errno;
+	zassert_equal(len, -1, "recvfrom should fail (was %zd)", len);
+	zassert_equal(err, EINVAL, "unexpected errno (%d)", err);
+	zassert_mem_equal(&src_addr, &unchanged, sizeof(src_addr), "src_addr was written");
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+ZTEST(net_socket_udp, test_v4_recvfrom_short_addrlen)
+{
+	test_v4_recvfrom_short_addrlen_common(1U);
+	test_v4_recvfrom_short_addrlen_common(0U);
+}
+
+ZTEST_USER(net_socket_udp, test_v4_recvfrom_short_addrlen_user)
+{
+	test_v4_recvfrom_short_addrlen_common(1U);
+	test_v4_recvfrom_short_addrlen_common(0U);
+}
+
 ZTEST(net_socket_udp, test_v4_bind_sendto)
 {
 	int rv;
@@ -3252,6 +3350,62 @@ ZTEST_USER(net_socket_udp, test_recvmsg_msg_controllen_update)
 	zassert_equal(rv, 0, "close failed");
 }
 
+/* A cmsg_len larger than the control buffer makes the stack sum up more
+ * control data than the buffer holds; recvmsg() must neither report nor
+ * copy out more than msg_controllen bytes.
+ */
+ZTEST_USER(net_socket_udp, test_recvmsg_cmsg_len_too_large)
+{
+	int rv;
+	int client_sock;
+	int server_sock;
+	ssize_t len;
+	struct net_sockaddr_in client_addr;
+	struct net_sockaddr_in server_addr;
+	struct net_msghdr msg;
+	struct net_iovec io_vector[1];
+	union {
+		struct net_cmsghdr hdr;
+		unsigned char buf[NET_CMSG_SPACE(sizeof(int))];
+	} cmsgbuf;
+	char buf[sizeof(TEST_STR_SMALL)];
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v4(MY_IPV4_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = zsock_bind(server_sock,
+			(struct net_sockaddr *)&server_addr,
+			sizeof(server_addr));
+	zassert_equal(rv, 0, "bind failed");
+
+	len = zsock_sendto(client_sock, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL), 0,
+			   (struct net_sockaddr *)&server_addr, sizeof(server_addr));
+	zassert_equal(len, STRLEN(TEST_STR_SMALL), "sendto failed (%d)", errno);
+
+	(void)memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+	cmsgbuf.hdr.cmsg_len = 0x40000U;
+
+	io_vector[0].iov_base = buf;
+	io_vector[0].iov_len = sizeof(buf);
+
+	(void)memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_control = cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+
+	len = zsock_recvmsg(server_sock, &msg, 0);
+	zassert_equal(len, STRLEN(TEST_STR_SMALL), "recvmsg failed (%d)", errno);
+	zassert_true(msg.msg_controllen <= sizeof(cmsgbuf.buf),
+		     "msg_controllen %zu exceeds the %zu byte buffer",
+		     (size_t)msg.msg_controllen, sizeof(cmsgbuf.buf));
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
 ZTEST_USER(net_socket_udp, test_recvmsg_timestamping_msg_controllen_update)
 {
 	int rv;
@@ -4640,6 +4794,61 @@ ZTEST(net_socket_udp, test_ipv4_mapped_to_ipv6_send_from_bound_v6)
 			     (struct net_sockaddr *)&addr_recv, &addrlen);
 	zexpect_equal(ret, -1, "server received %d bytes from 0x%08x", ret,
 		      net_ntohl(addr_recv.sin_addr.s_addr));
+
+	ret = zsock_close(sock_c);
+	zassert_ok(ret, "close failed, %d", errno);
+	ret = zsock_close(sock_s);
+	zassert_ok(ret, "close failed, %d", errno);
+}
+
+/* A dual-stack socket reports an IPv4 peer as an IPv4-mapped IPv6 address,
+ * so an addrlen that only holds an IPv4 address is too short: recvfrom()
+ * fails and leaves src_addr untouched.
+ */
+ZTEST(net_socket_udp, test_ipv4_mapped_to_ipv6_recvfrom_short_addrlen)
+{
+	int off = 0;
+	int ret;
+	int err;
+	int sock_s, sock_c;
+	net_socklen_t addrlen = sizeof(struct net_sockaddr_in);
+	struct net_sockaddr_in addr_c4 = { 0 };
+	struct net_sockaddr_in addr_s4 = { 0 };
+	struct net_sockaddr_in6 addr_s6 = { 0 };
+	struct net_sockaddr_in6 addr_recv;
+	struct net_sockaddr_in6 unchanged;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_MAPPING_TO_IPV6);
+
+	prepare_sock_udp_v4(MY_IPV4_ADDR, CLIENT_PORT, &sock_c, &addr_c4);
+	prepare_sock_udp_v6(ANY_IPV6_ADDR, SERVER_PORT, &sock_s, &addr_s6);
+
+	addr_s4.sin_family = NET_AF_INET;
+	addr_s4.sin_port = net_htons(SERVER_PORT);
+	ret = zsock_inet_pton(NET_AF_INET, MY_IPV4_ADDR, &addr_s4.sin_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+
+	ret = zsock_setsockopt(sock_s, NET_IPPROTO_IPV6, ZSOCK_IPV6_V6ONLY, &off, sizeof(off));
+	zassert_ok(ret, "setsockopt failed, %d", errno);
+	ret = zsock_bind(sock_s, (struct net_sockaddr *)&addr_s6, sizeof(addr_s6));
+	zassert_ok(ret, "bind failed, %d", errno);
+
+	ret = zsock_sendto(sock_c, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0,
+			   (struct net_sockaddr *)&addr_s4, sizeof(addr_s4));
+	zassert_equal(ret, sizeof(TEST_STR_SMALL) - 1, "sendto failed (%d)", errno);
+
+	/* Give the packet a chance to go through the net stack */
+	k_msleep(10);
+
+	(void)memset(&addr_recv, 0xaa, sizeof(addr_recv));
+	(void)memset(&unchanged, 0xaa, sizeof(unchanged));
+
+	ret = zsock_recvfrom(sock_s, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT,
+			     (struct net_sockaddr *)&addr_recv, &addrlen);
+	err = errno;
+	zassert_equal(ret, -1, "recvfrom should fail (was %d)", ret);
+	zassert_equal(err, EINVAL, "unexpected errno (%d)", err);
+	zassert_mem_equal(&addr_recv, &unchanged, sizeof(addr_recv), "src_addr was written");
 
 	ret = zsock_close(sock_c);
 	zassert_ok(ret, "close failed, %d", errno);
