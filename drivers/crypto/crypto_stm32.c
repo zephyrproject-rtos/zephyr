@@ -271,12 +271,10 @@ static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in
 {
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(ctx->device);
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
+	size_t remaining = in_len;
+	uint8_t *out = out_buf;
+	uint8_t *in = in_buf;
 	int ret = 0;
-
-	if (in_len == 0 && session->mode != CRYPTO_CIPHER_MODE_GCM &&
-	    session->mode != CRYPTO_CIPHER_MODE_CCM) {
-		return 0;
-	}
 
 	if (in_len != 0 && in_buf == NULL) {
 		return -EINVAL;
@@ -302,19 +300,32 @@ static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in
 		return ret;
 	}
 
-	size_t rounded_size = ROUND_DOWN(in_len, BLOCK_LEN_BYTES);
+	/* HAL API functions all rely on a 16 bit argument for the data size hence can
+	 * process up to 64kByte at most.
+	 *
+	 * HAL API functions always reads input data as full AES blocks and writes output data
+	 * either by 32 bit words or as full AES blocks. When data is not block aligned, we need
+	 * a bounce buffer.
+	 */
+	while (remaining >= BLOCK_LEN_BYTES) {
+		uint16_t chunk_size = ROUND_DOWN(MIN(remaining, UINT16_MAX), BLOCK_LEN_BYTES);
 
-	if (fn(&data->hcryp, in_buf, rounded_size, out_buf, HAL_MAX_DELAY) != HAL_OK) {
-		LOG_ERR("Encryption/decryption error");
-		return -EIO;
+		if (fn(&data->hcryp, in, chunk_size, out, HAL_MAX_DELAY) != HAL_OK) {
+			LOG_ERR("Encryption/decryption error");
+			return -EIO;
+		}
+
+		in += chunk_size;
+		out += chunk_size;
+		remaining -= chunk_size;
 	}
 
-	if (in_len == rounded_size) {
+	if (remaining == 0 && session->mode != CRYPTO_CIPHER_MODE_GCM &&
+	    session->mode != CRYPTO_CIPHER_MODE_CCM) {
 		return 0;
 	}
 
-	return do_aes_partial(data, fn, session->mode, in_buf + rounded_size, in_len - rounded_size,
-			      out_buf + rounded_size);
+	return do_aes_partial(data, fn, session->mode, in, remaining, out);
 }
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
