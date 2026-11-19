@@ -174,6 +174,18 @@ struct coap_client_request {
 };
 
 /** @cond INTERNAL_HIDDEN */
+/* A received message as RFC 7252 section 4.5 identifies it, to recognize a
+ * duplicate
+ */
+struct coap_client_dedup_entry {
+	struct net_sockaddr_storage addr;
+	/* When it is forgotten; a zeroed entry has expired */
+	k_timepoint_t expires;
+	uint16_t id;
+	/* An Acknowledgment, whose message ID is one of this client */
+	bool ack;
+};
+
 struct coap_client_internal_request {
 	struct net_sockaddr_storage addr;
 	net_socklen_t addrlen;
@@ -206,7 +218,6 @@ struct coap_client_internal_request {
 	int last_observe_seq;
 	/* Uptime at which the freshest notification was accepted */
 	int64_t last_observe_at;
-	int last_response_id;
 	uint8_t observe_token[COAP_TOKEN_MAX_LEN]; /* registration token snapshot */
 	uint8_t observe_tkl;
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
@@ -225,6 +236,9 @@ struct coap_client {
 	struct k_mutex lock;
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
+	struct coap_client_dedup_entry dedup_cache[CONFIG_COAP_CLIENT_DEDUP_CACHE_SIZE];
+	/* Entry of dedup_cache the next response replaces */
+	uint8_t dedup_next;
 	struct coap_option echo_option;
 	bool send_echo;
 	/** @endcond */
