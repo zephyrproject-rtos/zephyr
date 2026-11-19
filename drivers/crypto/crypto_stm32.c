@@ -154,8 +154,8 @@ static void set_iv_ctr(crypt_config_t *config, uint32_t *iv, size_t iv_length)
 #endif /* CONFIG_STM32_HAL2 */
 }
 
-static int copy_words_adjust_endianness(uint8_t *dst_buf, int dst_len, const uint8_t *src_buf,
-					int src_len)
+static int copy_words_adjust_endianness(uint8_t *dst_buf, size_t dst_len, const uint8_t *src_buf,
+					size_t src_len)
 {
 	if ((dst_len < src_len) || ((dst_len % 4) != 0)) {
 		LOG_ERR("Buffer length error");
@@ -165,7 +165,7 @@ static int copy_words_adjust_endianness(uint8_t *dst_buf, int dst_len, const uin
 	memcpy(dst_buf, src_buf, src_len);
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
-	for (int i = 0; i < dst_len; i += sizeof(uint32_t)) {
+	for (size_t i = 0; i < dst_len; i += sizeof(uint32_t)) {
 		sys_mem_swap(&dst_buf[i], sizeof(uint32_t));
 	}
 #endif
@@ -204,8 +204,8 @@ static int hal2_set_config(struct crypto_stm32_data *const data, crypt_config_t 
 }
 #endif /* CONFIG_STM32_HAL2 */
 
-static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in_buf, int in_len,
-		      uint8_t *out_buf)
+static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in_buf,
+		  size_t in_len, uint8_t *out_buf)
 {
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(ctx->device);
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
@@ -266,11 +266,18 @@ static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
 	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
 	int ret;
 
+	if (pkt->in_len == 0) {
+		pkt->out_len = 0;
+		return 0;
+	}
+
 	/* For security reasons, ECB mode should not be used to encrypt
 	 * more than one block. Use CBC mode instead.
 	 */
-	if (pkt->in_len > BLOCK_LEN_BYTES) {
-		LOG_ERR("Cannot encrypt more than 1 block");
+	if ((pkt->in_len != BLOCK_LEN_BYTES) || (pkt->out_buf_max < BLOCK_LEN_BYTES)) {
+		if (pkt->in_len > BLOCK_LEN_BYTES) {
+			LOG_ERR("Cannot encrypt more than 1 block");
+		}
 		return -EINVAL;
 	}
 
@@ -293,11 +300,18 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
 	int ret;
 
+	if (pkt->in_len == 0) {
+		pkt->out_len = 0;
+		return 0;
+	}
+
 	/* For security reasons, ECB mode should not be used to encrypt
 	 * more than one block. Use CBC mode instead.
 	 */
-	if (pkt->in_len > BLOCK_LEN_BYTES) {
-		LOG_ERR("Cannot encrypt more than 1 block");
+	if ((pkt->in_len != BLOCK_LEN_BYTES) || (pkt->out_buf_max < BLOCK_LEN_BYTES)) {
+		if (pkt->in_len > BLOCK_LEN_BYTES) {
+			LOG_ERR("Cannot decrypt more than 1 block");
+		}
 		return -EINVAL;
 	}
 
@@ -323,15 +337,23 @@ static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
 	uint32_t vec[BLOCK_LEN_WORDS];
 	int out_offset = 0;
 
+	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
+		/* Prefix IV to ciphertext unless CAP_NO_IV_PREFIX is set. */
+		out_offset = BLOCK_LEN_BYTES;
+	}
+
+	if ((pkt->in_len < 0) || ((pkt->in_len % BLOCK_LEN_BYTES) != 0) ||
+	    (pkt->out_buf_max < out_offset) || (pkt->in_len > (pkt->out_buf_max - out_offset))) {
+		return -EINVAL;
+	}
+
+	if (out_offset > 0U) {
+		memcpy(pkt->out_buf, iv, BLOCK_LEN_BYTES);
+	}
+
 	(void)copy_words_adjust_endianness((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 
 	set_iv_ctr(&session->config, vec, BLOCK_LEN_BYTES);
-
-	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
-		/* Prefix IV to ciphertext unless CAP_NO_IV_PREFIX is set. */
-		memcpy(pkt->out_buf, iv, BLOCK_LEN_BYTES);
-		out_offset = BLOCK_LEN_BYTES;
-	}
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
@@ -355,13 +377,18 @@ static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 	uint32_t vec[BLOCK_LEN_WORDS];
 	int in_offset = 0;
 
-	(void)copy_words_adjust_endianness((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
-
-	set_iv_ctr(&session->config, vec, BLOCK_LEN_BYTES);
-
 	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
 		in_offset = BLOCK_LEN_BYTES;
 	}
+
+	if ((pkt->in_len < in_offset) || ((pkt->in_len % BLOCK_LEN_BYTES) != 0) ||
+	    ((pkt->in_len - in_offset) > pkt->out_buf_max)) {
+		return -EINVAL;
+	}
+
+	(void)copy_words_adjust_endianness((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
+
+	set_iv_ctr(&session->config, vec, BLOCK_LEN_BYTES);
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
@@ -386,7 +413,7 @@ static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 	size_t ctr_len_byte = ctr_len_bit / 8;
 	int ret;
 	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
-	int ivlen = BLOCK_LEN_BYTES - ctr_len_byte;
+	size_t ivlen = BLOCK_LEN_BYTES - ctr_len_byte;
 
 	if ((pkt->out_buf_max < 0) || !IN_RANGE(pkt->in_len, 0, pkt->out_buf_max)) {
 		return -EINVAL;
@@ -426,7 +453,7 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 	size_t ctr_len_byte = ctr_len_bit / 8;
 	int ret;
 	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
-	int ivlen = BLOCK_LEN_BYTES - ctr_len_byte;
+	size_t ivlen = BLOCK_LEN_BYTES - ctr_len_byte;
 
 	if ((pkt->out_buf_max < 0) || !IN_RANGE(pkt->in_len, 0, pkt->out_buf_max)) {
 		return -EINVAL;
@@ -540,7 +567,8 @@ static int crypto_stm32_gcm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 	uint8_t *dst;
 	uint32_t iv[BLOCK_LEN_WORDS] = {0};
 
-	if (!IN_RANGE(apkt->pkt->in_len, 0, apkt->pkt->out_buf_max)) {
+	if ((apkt->pkt->out_buf_max < 0) ||
+	    !IN_RANGE(apkt->pkt->in_len, 0, apkt->pkt->out_buf_max)) {
 		return -EINVAL;
 	}
 
@@ -663,7 +691,8 @@ static int crypto_stm32_ccm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 	int ret;
 	uint8_t q;
 
-	if (!IN_RANGE(apkt->pkt->in_len, 0, apkt->pkt->out_buf_max)) {
+	if ((apkt->pkt->out_buf_max < 0) ||
+	    !IN_RANGE(apkt->pkt->in_len, 0, apkt->pkt->out_buf_max)) {
 		return -EINVAL;
 	}
 
