@@ -1,0 +1,11 @@
+# Copyright (c) 2026 NBuiLe
+# SPDX-License-Identifier: Apache-2.0
+
+config ITG3200
+	bool "InvenSense ITG3200 gyro and temperature sensor"
+	default y
+	depends on DT_HAS_INVENSENSE_ITG3200_ENABLED
+	depends on SENSOR
+	select I2C
+	help
+	  Enable driver for the InvenSense ITG3200 gyro and temperature sensor.
