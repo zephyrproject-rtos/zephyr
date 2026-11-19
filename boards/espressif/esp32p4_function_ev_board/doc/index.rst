@@ -60,6 +60,27 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+SMP
+===
+
+Both HP cores can be used by one Zephyr image with :kconfig:option:`CONFIG_SMP`.
+The board reports two CPUs, so applications and tests that enable
+:kconfig:option:`CONFIG_SMP` run threads on both cores. SMP is disabled by
+default. For example, to run a multiprocessing kernel test::
+
+   west build -b esp32p4_function_ev_board/esp32p4/hpcore \
+      tests/kernel/multiprocessing/cpu_mask
+
+SMP was tested on silicon revision v1.3 only. The following are not
+supported with :kconfig:option:`CONFIG_SMP`:
+
+- flash operations that disable the cache while the second core is running
+- FPU sharing (:kconfig:option:`CONFIG_FPU_SHARING`)
+- power management (:kconfig:option:`CONFIG_PM`)
+
+Device interrupts, including GPIO and the system timer tick, are handled by
+CPU 0; threads run on either core.
+
 Programming and Debugging
 *************************
 
