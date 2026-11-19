@@ -222,6 +222,12 @@ static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in
 	if (HAL_CRYP_SetConfig(&data->hcryp, &session->config) != HAL_OK) {
 		ret = -EIO;
 	}
+
+	/* A previous operation on this session may have already loaded its key and IV
+	 * (CRYP_KEYIVCONFIG_ONCE). Ensure this operation loads its own IV.
+	 */
+	__ASSERT_NO_MSG(data->hcryp.Init.KeyIVConfigSkip == CRYP_KEYIVCONFIG_ONCE);
+	data->hcryp.KeyIVConfig = 0;
 #endif
 	if (ret < 0) {
 		LOG_ERR("Configuration error");
@@ -536,20 +542,7 @@ static int do_aes_staged(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint
 			return ret;
 		}
 	} else {
-		/* skip key and iv init
-		 * set to always by default in session setup
-		 */
-		data->hcryp.Init.KeyIVConfigSkip = CRYP_KEYIVCONFIG_ONCE;
-		data->hcryp.KeyIVConfig = 1;
-
-		const stm32_status_t fn_rc =
-			fn(&data->hcryp, staging_in, rem_len, staging_out, HAL_MAX_DELAY);
-
-		/* restore key and iv init */
-		data->hcryp.Init.KeyIVConfigSkip = CRYP_KEYIVCONFIG_ALWAYS;
-		data->hcryp.KeyIVConfig = 0;
-
-		if (fn_rc != HAL_OK) {
+		if (fn(&data->hcryp, staging_in, rem_len, staging_out, HAL_MAX_DELAY) != HAL_OK) {
 			LOG_ERR("Encryption/decryption error");
 			return -EIO;
 		}
@@ -1069,6 +1062,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
 	session->config.DataWidthUnit = CRYP_DATAWIDTHUNIT_BYTE;
+	session->config.KeyIVConfigSkip = CRYP_KEYIVCONFIG_ONCE;
 #endif
 #endif /* CONFIG_STM32_HAL2 */
 
