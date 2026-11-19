@@ -15,7 +15,7 @@ configdefault MCUX_CORE_SUFFIX
 	default "_cm7_core0" if SOC_MIMX94398_M7_0
 
 configdefault NUM_IRQS
-	default 238
+	default 1070
 
 configdefault CORTEX_M_SYSTICK
 	default n if MCUX_GPT_TIMER
@@ -29,6 +29,55 @@ configdefault ETH_NXP_IMX_MSGINTR
 
 configdefault CACHE_MANAGEMENT
 	default y
+
+# Multi-level interrupts
+configdefault MULTI_LEVEL_INTERRUPTS
+	default y
+
+configdefault 1ST_LEVEL_INTERRUPT_BITS
+	default 9
+
+configdefault MAX_IRQ_PER_AGGREGATOR
+	default 64
+
+configdefault 2ND_LEVEL_INTERRUPTS
+	default y
+
+configdefault 2ND_LVL_ISR_TBL_OFFSET
+	default 238
+
+configdefault NUM_2ND_LEVEL_AGGREGATORS
+	default 8
+
+configdefault 2ND_LEVEL_INTERRUPT_BITS
+	default 10
+
+configdefault 2ND_LVL_INTR_00_OFFSET
+	default 224
+
+configdefault 2ND_LVL_INTR_01_OFFSET
+	default 225
+
+configdefault 2ND_LVL_INTR_02_OFFSET
+	default 226
+
+configdefault 2ND_LVL_INTR_03_OFFSET
+	default 227
+
+configdefault 2ND_LVL_INTR_04_OFFSET
+	default 228
+
+configdefault 2ND_LVL_INTR_05_OFFSET
+	default 229
+
+configdefault 2ND_LVL_INTR_06_OFFSET
+	default 230
+
+configdefault 2ND_LVL_INTR_07_OFFSET
+	default 231
+
+configdefault 3RD_LEVEL_INTERRUPTS
+	default n
 
 if PM
 
