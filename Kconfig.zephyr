@@ -558,6 +558,18 @@ config COMPILER_COLOR_DIAGNOSTICS
 	help
 	  Compiler diagnostic messages are colorized.
 
+config FUNCTION_EFFECT_ANALYSIS
+	bool "Clang function effect analysis"
+	depends on "$(TOOLCHAIN_VARIANT_COMPILER)" = "llvm"
+	help
+	  Check functions marked __nonblocking with Clang's -Wfunction-effects.
+	  A call from such a function to a function that may block, through
+	  a function pointer, or to a function Clang cannot see, is reported
+	  at build time. Clang 19 and earlier accept the option and check
+	  nothing.
+
+	  See include/zephyr/toolchain.h for details.
+
 choice COMPILER_SECURITY_FORTIFY
 	prompt "Detect buffer overflows in libc calls"
 	default FORTIFY_SOURCE_NONE if NO_OPTIMIZATIONS || MINIMAL_LIBC || NATIVE_BUILD
