@@ -819,6 +819,24 @@
 				#address-cells = <0>;
 				interrupts-extended = <&nvic 233 0>;
 			};
+
+			irqsteer_master10: interrupt-controller@10 {
+				compatible = "nxp,irqsteer-master";
+				reg = <10>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				#address-cells = <0>;
+				interrupts-extended = <&nvic 234 0>;
+			};
+
+			irqsteer_master11: interrupt-controller@11 {
+				compatible = "nxp,irqsteer-master";
+				reg = <11>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				#address-cells = <0>;
+				interrupts-extended = <&nvic 235 0>;
+			};
 		};
 
 		gpio1: gpio@47400000 {
