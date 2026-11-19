@@ -7756,6 +7756,7 @@ West:
     - tomi-font
   collaborators:
     - ithinuel
+    - tpambor
   files:
     - modules/mbedtls/
     - tests/crypto/psa/
@@ -7960,6 +7961,8 @@ West:
     - ceolin
     - valeriosetti
     - tomi-font
+  collaborators:
+    - tpambor
   files: []
   labels:
     - "area: TF-PSA-Crypto"
