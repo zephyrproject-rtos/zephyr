@@ -56,6 +56,8 @@ struct mpipe_aud_i2s_src {
 	const struct device *codec_dev;
 	/** Clock role configuration for the I2S receiver and optional codec */
 	enum mpipe_aud_i2s_codec_clk_role clk_role;
+	/** Receiver not meant to deliver: before START, and from a pause or stop on */
+	bool capture_paused;
 };
 
 /**

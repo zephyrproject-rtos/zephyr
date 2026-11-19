@@ -220,6 +220,7 @@ static int mpipe_aud_i2s_src_acquire_buffer(struct mpipe_buffer_pool *pool, stru
 {
 	struct mpipe_aud_buffer_pool *aud_pool =
 		CONTAINER_OF(pool, struct mpipe_aud_buffer_pool, pool);
+	struct mpipe_aud_i2s_src *self = CONTAINER_OF(aud_pool, struct mpipe_aud_i2s_src, pool);
 	struct mpipe_buffer_meta *meta;
 	void *mem_block = NULL;
 	size_t bytes_used = pool->config.size;
@@ -236,10 +237,11 @@ static int mpipe_aud_i2s_src_acquire_buffer(struct mpipe_buffer_pool *pool, stru
 		err = i2s_read(aud_pool->aud_dev, &mem_block, &bytes_used);
 	}
 	if (err < 0) {
-		if (err == -EAGAIN) {
-			/* RX drained after a stop/DROP: a flush, not an error. */
+		if (!pool->started || self->capture_paused) {
+			/* A read cut short by a pause or a stop: a flush, not an error */
 			return -EPIPE;
 		}
+		/* Includes a timeout while capturing: the receiver delivered nothing */
 		LOG_ERR("Unable to read an I2S buffer: %d", err);
 		return err;
 	}
@@ -281,12 +283,14 @@ static int mpipe_aud_i2s_src_start(struct mpipe_buffer_pool *pool)
 {
 	struct mpipe_aud_buffer_pool *aud_pool =
 		CONTAINER_OF(pool, struct mpipe_aud_buffer_pool, pool);
+	struct mpipe_aud_i2s_src *self = CONTAINER_OF(aud_pool, struct mpipe_aud_i2s_src, pool);
 
 	if (i2s_trigger(aud_pool->aud_dev, I2S_DIR_RX, I2S_TRIGGER_START) < 0) {
 		LOG_ERR("Unable to start I2S capture");
 		return -EIO;
 	}
 
+	self->capture_paused = false;
 	LOG_INF("Capture started now");
 	return 0;
 }
@@ -295,6 +299,10 @@ static int mpipe_aud_i2s_src_stop_capture(struct mpipe_buffer_pool *pool)
 {
 	struct mpipe_aud_buffer_pool *aud_pool =
 		CONTAINER_OF(pool, struct mpipe_aud_buffer_pool, pool);
+	struct mpipe_aud_i2s_src *self = CONTAINER_OF(aud_pool, struct mpipe_aud_i2s_src, pool);
+
+	/* Before the DROP: the read it cuts short must see a flush, not a failure */
+	self->capture_paused = true;
 
 	/* DROP returns the RX to READY so a later set_caps can reconfigure it. */
 	if (aud_pool->aud_dev != NULL) {
@@ -369,6 +377,7 @@ int mpipe_aud_i2s_src_init(struct mpipe_aud_i2s_src *aud_i2s_src, uint8_t id,
 	aud_i2s_src->pool.aud_dev = i2s_dev;
 	aud_i2s_src->codec_dev = DEVICE_DT_GET_OR_NULL(AUD_I2S_SRC_CODEC_NODE);
 	aud_i2s_src->clk_role = MPIPE_AUD_I2S_CONTROLLER_CODEC_TARGET;
+	aud_i2s_src->capture_paused = true;
 
 	aud_i2s_src->aud_src.get_audio_caps = mpipe_aud_i2s_src_get_audio_caps;
 

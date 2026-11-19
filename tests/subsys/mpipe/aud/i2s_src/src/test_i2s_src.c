@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2s.h>
+#include <zephyr/zbus/zbus.h>
 
 #include <zephyr/mpipe/mpipe.h>
 #include <zephyr/mpipe/mpipe_pipeline.h>
@@ -99,6 +100,150 @@ static struct prepare_probe_i2s_data prepare_probe_data;
 DEVICE_DEFINE(prepare_probe_i2s, "prepare_probe_i2s", NULL, NULL, &prepare_probe_data, NULL,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &prepare_probe_i2s_api);
 
+/*
+ * A receiver that never delivers a block: every read times out, as on a link
+ * whose bit clock is missing. With block_until_drop set, a read is instead held
+ * until a DROP, as one in flight when the pipeline pauses the capture.
+ */
+struct stall_probe_i2s_data {
+	struct i2s_config config;
+	struct k_sem dropped;
+	bool block_until_drop;
+};
+
+static int stall_probe_i2s_configure(const struct device *dev, enum i2s_dir dir,
+				     const struct i2s_config *config)
+{
+	struct stall_probe_i2s_data *data = dev->data;
+
+	ARG_UNUSED(dir);
+	data->config = *config;
+	return 0;
+}
+
+static const struct i2s_config *stall_probe_i2s_config_get(const struct device *dev,
+							   enum i2s_dir dir)
+{
+	struct stall_probe_i2s_data *data = dev->data;
+
+	ARG_UNUSED(dir);
+	return &data->config;
+}
+
+static int stall_probe_i2s_read(const struct device *dev, void **mem_block, size_t *size)
+{
+	struct stall_probe_i2s_data *data = dev->data;
+
+	ARG_UNUSED(mem_block);
+	ARG_UNUSED(size);
+	if (data->block_until_drop) {
+		(void)k_sem_take(&data->dropped, K_SECONDS(2));
+	}
+	return -EAGAIN;
+}
+
+static int stall_probe_i2s_write(const struct device *dev, void *mem_block, size_t size)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(mem_block);
+	ARG_UNUSED(size);
+	return -ENOSYS;
+}
+
+static int stall_probe_i2s_trigger(const struct device *dev, enum i2s_dir dir,
+				   enum i2s_trigger_cmd cmd)
+{
+	struct stall_probe_i2s_data *data = dev->data;
+
+	ARG_UNUSED(dir);
+	if (cmd == I2S_TRIGGER_DROP) {
+		k_sem_give(&data->dropped);
+	}
+	return 0;
+}
+
+/* Negotiate exactly as the native_sim receiver would */
+static int stall_probe_i2s_get_caps(const struct device *dev, struct audio_caps *caps,
+				    enum i2s_dir dir)
+{
+	ARG_UNUSED(dev);
+	return i2s_get_caps(DEVICE_DT_GET(DT_ALIAS(i2s_codec_rx)), caps, dir);
+}
+
+static DEVICE_API(i2s, stall_probe_i2s_api) = {
+	.configure = stall_probe_i2s_configure,
+	.config_get = stall_probe_i2s_config_get,
+	.read = stall_probe_i2s_read,
+	.write = stall_probe_i2s_write,
+	.trigger = stall_probe_i2s_trigger,
+	.get_caps = stall_probe_i2s_get_caps,
+};
+
+static struct stall_probe_i2s_data stall_probe_data;
+
+DEVICE_DEFINE(stall_probe_i2s, "stall_probe_i2s", NULL, NULL, &stall_probe_data, NULL,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &stall_probe_i2s_api);
+
+ZBUS_MSG_SUBSCRIBER_DEFINE(test_i2s_src_sub);
+
+static struct zbus_channel *bus;
+static bool pipe_built;
+
+static void reset_stall_probe(bool block_until_drop)
+{
+	memset(&stall_probe_data, 0, sizeof(stall_probe_data));
+	k_sem_init(&stall_probe_data.dropped, 0, 1);
+	stall_probe_data.block_until_drop = block_until_drop;
+}
+
+/* source -> caps filter -> sink, watched on the pipeline bus */
+static void build_capture_pipeline(const struct device *rx_dev)
+{
+	const struct zbus_channel *chan;
+	struct mpipe_message msg;
+	struct mpipe_structure caps;
+
+	/* The elements are reused by every test: start each one from zero, as on first use */
+	memset(&pipe, 0, sizeof(pipe));
+	memset(&src, 0, sizeof(src));
+	memset(&caps_filter, 0, sizeof(caps_filter));
+	memset(&sink, 0, sizeof(sink));
+
+	zassert_ok(mpipe_pipeline_init(&pipe, 0));
+	zassert_ok(mpipe_aud_i2s_src_init(&src, 1, rx_dev));
+	zassert_ok(mpipe_caps_filter_init(&caps_filter, 2));
+	zassert_ok(mpipe_aud_i2s_codec_sink_init(&sink, 3));
+
+	zassert_ok(mpipe_object_set_properties((struct mpipe_object *)&src,
+					       MPIPE_PROP_AUD_SRC_SLAB_PTR, &test_slab,
+					       MPIPE_PROP_LIST_END));
+	zassert_ok(mpipe_object_set_properties((struct mpipe_object *)&sink,
+					       MPIPE_PROP_AUD_SINK_SLAB_PTR, &test_slab,
+					       MPIPE_PROP_LIST_END));
+
+	zassert_ok(mpipe_structure_init_fields(
+		&caps, MPIPE_MEDIA_AUDIO_PCM, MPIPE_CAPS_FRAME_INTERVAL, MPIPE_TYPE_UINT, 10000,
+		MPIPE_CAPS_NUM_CHANNELS, MPIPE_TYPE_UINT, 2, MPIPE_CAPS_END));
+	zassert_ok(mpipe_object_set_properties((struct mpipe_object *)&caps_filter,
+					       MPIPE_PROP_BASE_CAPS_FILTER_CAPS, &caps,
+					       MPIPE_PROP_LIST_END));
+
+	zassert_ok(mpipe_element_link((struct mpipe_element *)&src,
+				      (struct mpipe_element *)&caps_filter,
+				      (struct mpipe_element *)&sink, NULL));
+	zassert_ok(mpipe_bin_add((struct mpipe_bin *)&pipe, (struct mpipe_element *)&src,
+				 (struct mpipe_element *)&caps_filter,
+				 (struct mpipe_element *)&sink, NULL));
+
+	/* Drop anything an earlier test left queued */
+	while (zbus_sub_wait_msg(&test_i2s_src_sub, &chan, &msg, K_NO_WAIT) == 0) {
+	}
+
+	bus = mpipe_element_get_bus_chan((struct mpipe_element *)&pipe);
+	zassert_ok(zbus_chan_add_obs(bus, &test_i2s_src_sub, K_FOREVER));
+	pipe_built = true;
+}
+
 ZTEST(mpipe_aud_i2s_src, test_enum_caps_nonempty)
 {
 	struct mpipe_aud_i2s_src local;
@@ -139,33 +284,7 @@ ZTEST(mpipe_aud_i2s_src, test_sink_does_not_prepare_a_healthy_stream)
 /* READY->PAUSED prepares I2S; only PLAYING may start the hardware streams. */
 ZTEST(mpipe_aud_i2s_src, test_pipeline_starts_i2s_only_while_playing)
 {
-	struct mpipe_structure caps;
-
-	zassert_ok(mpipe_pipeline_init(&pipe, 0));
-	zassert_ok(mpipe_aud_i2s_src_init(&src, 1, DEVICE_DT_GET(DT_ALIAS(i2s_codec_rx))));
-	zassert_ok(mpipe_caps_filter_init(&caps_filter, 2));
-	zassert_ok(mpipe_aud_i2s_codec_sink_init(&sink, 3));
-
-	zassert_ok(mpipe_object_set_properties((struct mpipe_object *)&src,
-					       MPIPE_PROP_AUD_SRC_SLAB_PTR, &test_slab,
-					       MPIPE_PROP_LIST_END));
-	zassert_ok(mpipe_object_set_properties((struct mpipe_object *)&sink,
-					       MPIPE_PROP_AUD_SINK_SLAB_PTR, &test_slab,
-					       MPIPE_PROP_LIST_END));
-
-	zassert_ok(mpipe_structure_init_fields(
-		&caps, MPIPE_MEDIA_AUDIO_PCM, MPIPE_CAPS_FRAME_INTERVAL, MPIPE_TYPE_UINT, 10000,
-		MPIPE_CAPS_NUM_CHANNELS, MPIPE_TYPE_UINT, 2, MPIPE_CAPS_END));
-	zassert_ok(mpipe_object_set_properties((struct mpipe_object *)&caps_filter,
-					       MPIPE_PROP_BASE_CAPS_FILTER_CAPS, &caps,
-					       MPIPE_PROP_LIST_END));
-
-	zassert_ok(mpipe_element_link((struct mpipe_element *)&src,
-				      (struct mpipe_element *)&caps_filter,
-				      (struct mpipe_element *)&sink, NULL));
-	zassert_ok(mpipe_bin_add((struct mpipe_bin *)&pipe, (struct mpipe_element *)&src,
-				 (struct mpipe_element *)&caps_filter,
-				 (struct mpipe_element *)&sink, NULL));
+	build_capture_pipeline(DEVICE_DT_GET(DT_ALIAS(i2s_codec_rx)));
 
 	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PAUSED),
 		      0, "negotiation to PAUSED failed");
@@ -185,4 +304,58 @@ ZTEST(mpipe_aud_i2s_src, test_pipeline_starts_i2s_only_while_playing)
 	(void)mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_READY);
 }
 
-ZTEST_SUITE(mpipe_aud_i2s_src, NULL, NULL, NULL, NULL, NULL);
+/* A receiver that stops delivering while capturing is reported, not a silent pause */
+ZTEST(mpipe_aud_i2s_src, test_capture_stall_is_reported)
+{
+	const struct zbus_channel *chan;
+	struct mpipe_message msg;
+
+	reset_stall_probe(false);
+	build_capture_pipeline(DEVICE_GET(stall_probe_i2s));
+
+	zassert_ok(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PAUSED));
+	zassert_ok(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PLAYING));
+
+	zassert_ok(zbus_sub_wait_msg(&test_i2s_src_sub, &chan, &msg, K_SECONDS(1)),
+		   "a capture that delivered nothing was not reported");
+	zassert_equal(msg.type, MPIPE_MESSAGE_ERROR, "expected an error, got type %u", msg.type);
+	zassert_equal_ptr(msg.origin, (struct mpipe_element *)&src);
+	zassert_equal(msg.code, -EAGAIN, "expected the read timeout, got %d", msg.code);
+}
+
+/* A read cut short by pausing the pipeline is a flush, not an error */
+ZTEST(mpipe_aud_i2s_src, test_capture_pause_is_not_reported)
+{
+	const struct zbus_channel *chan;
+	struct mpipe_message msg = {0};
+	int ret;
+
+	reset_stall_probe(true);
+	build_capture_pipeline(DEVICE_GET(stall_probe_i2s));
+
+	zassert_ok(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PAUSED));
+	zassert_ok(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PLAYING));
+	/* Let the pipeline thread block in the read before pausing under it */
+	k_sleep(K_MSEC(50));
+	zassert_ok(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PAUSED));
+
+	ret = zbus_sub_wait_msg(&test_i2s_src_sub, &chan, &msg, K_MSEC(300));
+	zassert_equal(ret, -ENOMSG, "pausing the capture was reported (type %u, code %d)",
+		      msg.type, msg.code);
+}
+
+static void i2s_src_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	if (!pipe_built) {
+		return;
+	}
+
+	/* Also runs when a test failed before tearing its pipeline down */
+	(void)mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_READY);
+	(void)zbus_chan_rm_obs(bus, &test_i2s_src_sub, K_FOREVER);
+	pipe_built = false;
+}
+
+ZTEST_SUITE(mpipe_aud_i2s_src, NULL, NULL, NULL, i2s_src_after, NULL);
