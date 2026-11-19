@@ -296,6 +296,10 @@ manifest:
     - name: hostap
       path: modules/lib/hostap
       revision: bd0cf9d3a4cd6214829873d835ea6ffef82a91e0
+    - name: jpegdec
+      url: https://github.com/chemag/jpegdec
+      revision: 171ad4c7d82163c2426dd1ec677e805714302aeb
+      path: modules/lib/jpegdec
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3

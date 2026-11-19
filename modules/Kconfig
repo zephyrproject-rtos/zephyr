@@ -73,6 +73,9 @@ comment "hal_nordic module not available."
 comment "hal_nxp module not available."
 	depends on !ZEPHYR_HAL_NXP_MODULE
 
+comment "jpegdec module not available."
+	depends on !ZEPHYR_JPEGDEC_MODULE
+
 comment "liblc3 module not available."
 	depends on !ZEPHYR_LIBLC3_MODULE
 
