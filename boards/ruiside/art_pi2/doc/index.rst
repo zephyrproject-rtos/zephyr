@@ -14,8 +14,8 @@ Key Features
 - SDIO TF Card slot
 - SDIO WIFI:CYWL6208
 - HDC UART BuleTooth:CYWL6208
-- 32-MB HyperRAM
-- 64-MB HyperFlash
+- 32-MB APS256XXN-OBR PSRAM
+- 64-MB W35T51NW Octal NOR Flash
 - One Power LED (blue) for 3.3 V power-on
 - Two user LEDs blue and red
 - Two ST-LINK LEDs: blue and red
@@ -70,6 +70,16 @@ Serial Port
 ART-Pi2 board has 4 UARTs and 3 USARTs plus one LowPower UART. The Zephyr console
 output is assigned to UART4. Default settings are 115200 8N1.
 
+External Memory
+---------------
+
+The 64-MiB W35T51NW NOR flash uses XSPI2 in octal DDR mode. The 32-MiB
+APS256XXN-OBR PSRAM uses XSPI1 with a 16-bit data bus. Both run at 50 MHz.
+
+Enable :kconfig:option:`CONFIG_FLASH` for NOR flash access; see the
+:zephyr:code-sample:`jesd216` and :zephyr:code-sample:`mspi-flash` samples.
+The :zephyr:code-sample:`memc` sample provides the PSRAM configuration.
+
 Backup SRAM
 -----------
 
@@ -92,6 +102,9 @@ Flashing
 
 The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
 so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+OpenOCD is also supported with ``west flash -r openocd`` and
+``west debug -r openocd``. It requires ``target/stm32h7rsx.cfg``.
 
 Flashing an application to ART-Pi2
 ----------------------------------

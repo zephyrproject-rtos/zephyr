@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ext_flash_ctrl {
+	mspi-io-mode = "MSPI_IO_MODE_SINGLE";
+	mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+	read-command = <0x0c>;
+	write-command = <0x12>;
+	command-length = "INSTR_1_BYTE";
+	rx-dummy = <8>;
+};

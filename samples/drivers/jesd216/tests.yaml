@@ -63,3 +63,8 @@ tests:
       - ek_ra8p1/r7ka8p1kflcac/cm85
     extra_args:
       - DTC_OVERLAY_FILE="./boards/ra8_ospi_b_nor.overlay"
+  sample.drivers.jesd216.art_pi2:
+    platform_allow:
+      - art_pi2
+    integration_platforms:
+      - art_pi2

@@ -8,6 +8,8 @@ ram: 640
 flash: 64
 supported:
   - gpio
+  - memc
+  - mspi
   - uart
   - watchdog
   - entropy

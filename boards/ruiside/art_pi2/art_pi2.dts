@@ -53,6 +53,20 @@
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 	};
+
+	ext_flash_mem: memory@70000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x70000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "EXTMEM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
+	};
+
+	psram: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "PSRAM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	};
 };
 
 &dtcm {
@@ -71,6 +85,18 @@
 &pll {
 	div-m = <12>;
 	mul-n = <250>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	div-s = <2>;
+	div-t = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <12>;
+	mul-n = <200>;
 	div-p = <2>;
 	div-q = <2>;
 	div-r = <2>;
@@ -120,6 +146,108 @@
 
 &vbat {
 	status = "okay";
+};
+
+&hpdma1 {
+	status = "okay";
+};
+
+&xspim {
+	status = "okay";
+};
+
+&xspi1 {
+	compatible = "st,stm32-xspi-controller";
+	clock-frequency = <DT_FREQ_M(50)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	pinctrl-0 = <&xspim_p1_ncs1_po0 &xspim_p1_clk_po4
+		     &xspim_p1_dqs0_po2 &xspim_p1_dqs1_po3
+		     &xspim_p1_io0_pp0 &xspim_p1_io1_pp1
+		     &xspim_p1_io2_pp2 &xspim_p1_io3_pp3
+		     &xspim_p1_io4_pp4 &xspim_p1_io5_pp5
+		     &xspim_p1_io6_pp6 &xspim_p1_io7_pp7
+		     &xspim_p1_io8_pp8 &xspim_p1_io9_pp9
+		     &xspim_p1_io10_pp10 &xspim_p1_io11_pp11
+		     &xspim_p1_io12_pp12 &xspim_p1_io13_pp13
+		     &xspim_p1_io14_pp14 &xspim_p1_io15_pp15>;
+	pinctrl-names = "default";
+	dmas = <&hpdma1 2 2 STM32_DMA_PERIPH_TX
+		&hpdma1 3 2 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+	st,csbound = <3>;
+	st,refresh = <96>;
+	status = "okay";
+
+	memc: psram@0 {
+		compatible = "st,psram-device", "aps-z8";
+		reg = <0>;
+		size = <DT_SIZE_M(256)>;
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_HEX_8_8_16";
+		mspi-data-rate = "MSPI_DATA_RATE_S_D_D";
+		mspi-hardware-ce-num = <0>;
+		read-command = <0x20>;
+		write-command = <0xa0>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_4_BYTE";
+		rx-dummy = <5>;
+		tx-dummy = <5>;
+		memmap-config = <1 0 DT_SIZE_M(32) 0>;
+		aps-version = "APS256";
+		ce-break-config = <1024 4>;
+		st,timing-config = <1>;
+		st,mem-type = "apmem_16bits";
+	};
+};
+
+&xspi2 {
+	compatible = "st,stm32-xspi-controller";
+	clock-frequency = <DT_FREQ_M(50)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	pinctrl-0 = <&xspim_p2_clk_pn6 &xspim_p2_ncs1_pn1
+		     &xspim_p2_io0_pn2 &xspim_p2_io1_pn3
+		     &xspim_p2_io2_pn4 &xspim_p2_io3_pn5
+		     &xspim_p2_io4_pn8 &xspim_p2_io5_pn9
+		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11
+		     &xspim_p2_dqs0_pn0>;
+	pinctrl-names = "default";
+	dmas = <&hpdma1 0 3 STM32_DMA_PERIPH_TX
+		&hpdma1 1 3 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+	st,csbound = <0>;
+	status = "okay";
+
+	ext_flash_ctrl: nor-flash-controller@0 {
+		compatible = "st,nor", "winbond,w35t51nw", "jedec,nor";
+		reg = <0>;
+		ranges = <0x0 0x70000000 DT_SIZE_M(64)>;
+		size = <DT_SIZE_M(512)>;
+		jedec-id = [ef 5b 1a];
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_DUAL";
+		mspi-hardware-ce-num = <0>;
+		read-command = <0xfdfd>;
+		write-command = <0x8e8e>;
+		command-length = "INSTR_2_BYTE";
+		address-length = "ADDR_4_BYTE";
+		rx-dummy = <16>;
+		memmap-config = <1 0 DT_SIZE_M(64) 1>;
+		use-4byte-addressing;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		st,mem-type = "micron";
+
+		ext_flash: w35t51nw: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			ranges = <0x0 0x0 DT_SIZE_M(64)>;
+			write-block-size = <1>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
 };
 
 &iocell {

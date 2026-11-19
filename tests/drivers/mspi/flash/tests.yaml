@@ -17,6 +17,7 @@ tests:
       - native_sim
       - apollo3p_evb
       - apollo510_evb
+      - art_pi2
       - nrf7120dk/nrf7120/cpuapp
       - nrf7120dk/nrf7120e/cpuapp
       - frdm_mcxe247@w25q64
@@ -33,19 +34,23 @@ tests:
       - native_sim
       - apollo3p_evb
       - apollo510_evb
+      - art_pi2
       - stm32h7b3i_dk
   drivers.mspi.flash.stm32.dma:
     platform_allow:
+      - art_pi2
       - b_u585i_iot02a
       - stm32h573i_dk
       - stm32h5f5j_dk
       - stm32l562e_dk
     integration_platforms:
+      - art_pi2
       - stm32h573i_dk
     extra_configs:
       - CONFIG_MSPI_DMA=y
   drivers.mspi.flash.stm32.memmap:
     platform_allow:
+      - art_pi2
       - b_u585i_iot02a
       - stm32h573i_dk
       - stm32h735g_disco
@@ -55,6 +60,7 @@ tests:
       - stm32h7s78_dk
       - nucleo_h7s3l8
     integration_platforms:
+      - art_pi2
       - stm32h573i_dk
       - stm32h7b3i_dk
     extra_configs:

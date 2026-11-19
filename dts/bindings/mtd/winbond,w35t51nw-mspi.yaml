@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Winbond W35T51NW Octal DDR NOR flash
+
+compatible: "winbond,w35t51nw"
+
+include: jedec,nor-mspi.yaml
