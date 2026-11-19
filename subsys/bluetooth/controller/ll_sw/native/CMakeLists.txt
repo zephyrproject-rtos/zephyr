@@ -18,6 +18,12 @@ if(CONFIG_BT_BROADCASTER)
   )
 endif()
 
+if(CONFIG_BT_OBSERVER)
+  zephyr_library_sources(
+    "lll/lll_scan.c"
+  )
+endif()
+
 zephyr_library_sources(
   "hal/bsim/cntr.c"
   "hal/bsim/ecb.c"
