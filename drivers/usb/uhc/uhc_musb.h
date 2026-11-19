@@ -170,6 +170,10 @@ struct uhc_musb_data {
 	atomic_t port_state;
 };
 
+#if DT_HAS_COMPAT_STATUS_OKAY(microchip_usbhs_g1_host)
+#include "uhc_musb_mchp_usbhs_g1.h"
+#endif
+
 #define UHC_MUSB_VENDOR_QUIRK_GET(n)						\
 	COND_CODE_1(DT_NODE_VENDOR_HAS_IDX(DT_DRV_INST(n), 1),			\
 		    (&uhc_musb_vendor_quirks_##n),				\

@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip USBHS G1 host controller
+
+description: |
+  Microchip USBHS G1 host-role bindings.
+
+  Group usbhs-g1 USB driver supports following hardware peripherals:
+    - module name="USBHS" id="03787" version="2a0"
+
+  The same USBHS hardware block is used as a device controller through the
+  "microchip,usbhs-g1", "mentor,musb" compatibles (drivers/usb/udc/udc_musb.c).
+  To use the host role (drivers/usb/uhc/uhc_musb.c), override the compatible
+  of the SoC USBHS node in the board or application overlay:
+
+    compatible = "microchip,usbhs-g1-host", "mentor,musb-host";
+
+compatible: "microchip,usbhs-g1-host"
+
+include: mentor,musb-host.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      USBHS wrapper and MUSB core register regions.
+
+  reg-names:
+    required: true
+    description: |
+      Must be "wrapper", "core".
+
+  clocks:
+    required: true
+    description: |
+      Clock configuration for the USB controller. At minimum the AHB module
+      clock must be provided.
+
+  clock-names:
+    description: |
+      Names of the clock inputs, e.g. "ahb".
+
+  nvm-phy-calib:
+    type: phandle
+    description: |
+      Phandle to the NVM PHY calibration fuse area. Inherited from the SoC
+      USBHS node (see microchip,usbhs-g1). The host role programs fixed PHY
+      calibration values and does not read this fuse.
