@@ -28,6 +28,7 @@ Roles
 - ``:zephyr:code-sample-category:`` - References a code sample category.
 - ``:zephyr:board:`` - References a board.
 - ``:zephyr:board-catalog:`` - References the board catalog page, optionally with filter parameters.
+- ``:zephyr:board-count:`` - Shows the number of boards found in the tree.
 
 """
 
@@ -51,7 +52,7 @@ from sphinx.roles import XRefRole
 from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
-from sphinx.util.docutils import SphinxDirective, switch_source_input
+from sphinx.util.docutils import SphinxDirective, SphinxRole, switch_source_input
 from sphinx.util.nodes import NodeMatcher, make_refnode
 from sphinx.util.parsing import nested_parse_to_nodes
 from sphinx.util.template import SphinxRenderer
@@ -1225,6 +1226,27 @@ class BoardSupportedRunnersDirective(SphinxDirective):
         return result_nodes
 
 
+class BoardCountRole(SphinxRole):
+    """Number of boards in the tree, rounded down to a multiple of the role's content."""
+
+    def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
+        if not self.text.isdecimal() or int(self.text) == 0:
+            msg = self.inliner.reporter.error(
+                f'"{self.text}" is not a positive integer to round the board count to.',
+                line=self.lineno,
+            )
+            return [self.inliner.problematic(self.rawtext, self.rawtext, msg)], [msg]
+
+        step = int(self.text)
+        count = len(self.env.domaindata["zephyr"]["boards"])
+        text = f"{count // step * step:,}" + ("+" if step > 1 else "")
+
+        # The count changes when boards are added, not when the page is edited.
+        self.env.note_reread()
+
+        return [nodes.inline(text, text, classes=["board-count"])], []
+
+
 class ZephyrDomain(Domain):
     """Zephyr domain"""
 
@@ -1236,6 +1258,7 @@ class ZephyrDomain(Domain):
         "code-sample-category": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
         "board": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
         "board-catalog": XRefRole(innernodeclass=nodes.inline, warn_dangling=False),
+        "board-count": BoardCountRole(),
     }
 
     directives = {

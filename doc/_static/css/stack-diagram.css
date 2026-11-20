@@ -1,0 +1,346 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Layout of the architecture diagram of the Introduction page.
+ *
+ * The content of the diagram (labels and links) is written in
+ * doc/introduction/index.rst as nested "container" directives. This stylesheet
+ * places every "zstack-<name>" block on a grid. The colors are defined in
+ * light.css and dark.css.
+ */
+
+.zstack {
+    --zstack-gap: 0.5rem;
+    --zstack-border: 2px;
+    --zstack-color: var(--zstack-os-color);
+    --zstack-background: var(--content-background-color);
+
+    /* how far the tooling row overlaps the frame: half the height of a two-line pill */
+    --zstack-overlap: 1.5rem;
+
+    /* The layout follows the width of the content column, not of the window. */
+    container-type: inline-size;
+
+    margin-bottom: 24px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+}
+
+.zstack-layers {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 137fr)) minmax(0, 154fr) minmax(0, 106fr);
+    grid-template-areas:
+        "application  application application application application application"
+        "networking   storage     device-mgmt frameworks  osal        modules"
+        "connectivity power       diagnostics ipc         security    modules"
+        "os           os          os          os          os          modules"
+        "hardware     hardware    hardware    hardware    hardware    modules";
+    gap: var(--zstack-gap);
+    padding: 0.75rem 0.75rem calc(var(--zstack-overlap) + var(--zstack-gap));
+    border: var(--zstack-border) solid var(--zstack-frame-color);
+    border-radius: 1rem;
+}
+
+.zstack-tooling {
+    display: grid;
+    grid-template-columns: minmax(0, 372fr) repeat(2, minmax(0, 222fr));
+    gap: 1rem;
+    margin: calc(-1 * var(--zstack-overlap)) 0.75rem 0;
+}
+
+.zstack-application    { grid-area: application; }
+.zstack-networking     { grid-area: networking; }
+.zstack-storage        { grid-area: storage; }
+.zstack-device-mgmt    { grid-area: device-mgmt; }
+.zstack-frameworks     { grid-area: frameworks; }
+.zstack-osal           { grid-area: osal; }
+.zstack-connectivity   { grid-area: connectivity; }
+.zstack-power          { grid-area: power; }
+.zstack-diagnostics    { grid-area: diagnostics; }
+.zstack-ipc            { grid-area: ipc; }
+.zstack-security       { grid-area: security; }
+.zstack-modules        { grid-area: modules; }
+.zstack-split-os       { grid-area: os; }
+.zstack-split-hardware { grid-area: hardware; }
+
+/* Blocks */
+
+/* Background of a hovered or focused block, light enough for its title to keep an AA contrast */
+.zstack-block,
+.zstack-cut {
+    --zstack-highlight: color-mix(in srgb, var(--zstack-color) 6%, var(--zstack-background));
+}
+
+.zstack-block {
+    position: relative;
+    padding: 0.25rem 0.5rem;
+    border: var(--zstack-border) solid var(--zstack-color);
+    background-color: var(--zstack-background);
+}
+
+.zstack-application,
+.zstack-split-hardware,
+.zstack-tooling {
+    --zstack-color: var(--zstack-base-color);
+}
+
+.zstack-modules {
+    --zstack-color: var(--zstack-modules-color);
+}
+
+.zstack p,
+.rst-content .zstack .line-block {
+    margin: 0;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.zstack a.reference,
+.zstack a.reference:visited,
+.zstack a.reference:hover {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* The title of a block is the link of its first paragraph, stretched over the whole block. */
+.zstack p:first-child > a.reference,
+.zstack p:first-child > a.reference:visited,
+.zstack p:first-child > a.reference:hover {
+    color: var(--zstack-color);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.zstack p:first-child > a.reference::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--zstack-border));
+}
+
+.zstack p:first-child > a.reference:focus-visible {
+    outline: none;
+}
+
+.zstack p:first-child > a.reference:focus-visible::after {
+    outline: var(--zstack-border) solid var(--zstack-color);
+    outline-offset: 2px;
+}
+
+/* The other links are the items of a block. They are placed above the stretched link of the title
+   and look like plain text until they are hovered or focused. */
+.zstack :not(p:first-child) > a.reference {
+    position: relative;
+    z-index: 1;
+}
+
+.zstack :not(p:first-child) > a.reference:hover {
+    color: var(--zstack-color);
+    text-decoration: underline;
+}
+
+.zstack :not(p:first-child) > a.reference:focus-visible {
+    border-radius: 2px;
+    outline: var(--zstack-border) solid var(--zstack-color);
+    outline-offset: 1px;
+}
+
+.zstack-block:hover,
+.zstack-block:focus-within {
+    background-color: var(--zstack-highlight);
+}
+
+.zstack .board-count {
+    color: var(--zstack-os-color);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* Application: title on the left, languages on the right */
+
+.zstack-application {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--zstack-gap);
+}
+
+/* Modules: a dashed column, in two parts that follow the rows of the grid */
+
+.zstack-modules {
+    display: grid;
+    grid-template-rows: subgrid;
+    padding: 0;
+    border-style: dashed;
+}
+
+.zstack-modules-libraries,
+.zstack-modules-hals {
+    grid-row: span 2;
+    padding: 0.25rem 0.5rem;
+}
+
+.zstack-modules-hals {
+    display: flex;
+    align-items: center;
+    /* draw the separator in the middle of the gap between the two rows */
+    margin-top: calc((var(--zstack-gap) + var(--zstack-border)) / -2);
+    border-top: var(--zstack-border) dashed var(--zstack-color);
+}
+
+/* Split rows: two blocks side by side, separated by an oblique cut. The two shapes are the
+   polygons of the inline SVG that follows the blocks in the page source. */
+
+.zstack-split {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+/* The outline is centered on the edge of the SVG, hence the inset and the visible overflow (the
+   selector has to win over the theme's "svg:not(:root)" rule). */
+.zstack .zstack-cut {
+    position: absolute;
+    top: calc(var(--zstack-border) / 2);
+    left: calc(var(--zstack-border) / 2);
+    width: calc(100% - var(--zstack-border));
+    height: calc(100% - var(--zstack-border));
+    overflow: visible;
+}
+
+.zstack-cut polygon {
+    fill: var(--zstack-background);
+    stroke: var(--zstack-color);
+    stroke-width: var(--zstack-border);
+    vector-effect: non-scaling-stroke;
+}
+
+.zstack-split > .zstack-block {
+    z-index: 1;
+    border-color: transparent;
+    background-color: transparent;
+}
+
+/* keep the text clear of the cut */
+.zstack-split > .zstack-block:nth-child(1) {
+    padding-right: 5%;
+}
+
+.zstack-split > .zstack-block:nth-child(2) {
+    padding-left: 5%;
+    text-align: right;
+}
+
+/* the first block is drawn by the first polygon, the second block by the second one */
+.zstack-split > :nth-child(1):is(:hover, :focus-within) ~ .zstack-cut :nth-child(1),
+.zstack-split > :nth-child(2):is(:hover, :focus-within) ~ .zstack-cut :nth-child(2) {
+    fill: var(--zstack-highlight);
+}
+
+/* the focus ring of these blocks is drawn on their shape */
+.zstack-split p:first-child > a.reference:focus-visible::after {
+    outline: none;
+}
+
+.zstack-split > :nth-child(1):has(p:first-child > a:focus-visible) ~ .zstack-cut :nth-child(1),
+.zstack-split > :nth-child(2):has(p:first-child > a:focus-visible) ~ .zstack-cut :nth-child(2) {
+    stroke-width: calc(2.5 * var(--zstack-border));
+}
+
+/* Tooling: three pills that overlap the bottom edge of the frame */
+
+.zstack-tooling > .zstack-block {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0.25rem 1rem;
+    border-color: var(--zstack-tools-color);
+    border-radius: 2rem;
+    text-align: center;
+}
+
+.zstack-tooling p:first-child > a.reference {
+    font-size: 0.9375rem;
+}
+
+.zstack-tooling p:first-child > a.reference::after {
+    border-radius: 2rem;
+}
+
+.zstack-tooling p {
+    text-wrap: pretty;
+}
+
+/* Narrow column: one block per row, services two by two, modules last, no oblique cut */
+
+@container (max-width: 50rem) {
+    .zstack-layers {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+            "application application"
+            "networking  storage"
+            "device-mgmt frameworks"
+            "osal        connectivity"
+            "power       diagnostics"
+            "ipc         security"
+            "os          os"
+            "hardware    hardware"
+            "modules     modules";
+    }
+
+    .zstack-modules .line {
+        display: inline;
+    }
+
+    .zstack-modules .line:not(:last-child)::after {
+        content: "\00a0·";
+    }
+
+    .zstack-modules {
+        display: block;
+    }
+
+    .zstack-modules-hals {
+        margin-top: 0;
+    }
+
+    .zstack-layers {
+        padding-bottom: 0.75rem;
+    }
+
+    .zstack-split,
+    .zstack-tooling {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--zstack-gap);
+    }
+
+    .zstack-tooling {
+        margin-top: var(--zstack-gap);
+    }
+
+    .zstack-split > .zstack-block:nth-child(n) {
+        padding: 0.25rem 0.5rem;
+        border-color: var(--zstack-color);
+        background-color: var(--zstack-background);
+        text-align: left;
+    }
+
+    .zstack-split > .zstack-block:nth-child(n):is(:hover, :focus-within) {
+        background-color: var(--zstack-highlight);
+    }
+
+    .zstack-cut {
+        display: none;
+    }
+
+    .zstack-split p:first-child > a.reference:focus-visible::after {
+        outline: var(--zstack-border) solid var(--zstack-color);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .zstack-block,
+    .zstack-cut polygon {
+        transition: background-color 0.15s, fill 0.15s, stroke-width 0.15s;
+    }
+}
