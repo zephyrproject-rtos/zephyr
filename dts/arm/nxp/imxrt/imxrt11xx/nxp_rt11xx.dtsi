@@ -1443,6 +1443,14 @@
 			};
 		};
 
+		sema4: hwspinlock@40cc8000 {
+			compatible = "nxp,sema42";
+			reg = <0x40cc8000 0x1000>;
+			#hwlock-cells = <1>;
+			num-locks = <16>;
+			status = "disabled";
+		};
+
 		/*
 		 * Note that CM7 and CM4 cores do not have the same memory addresses
 		 * for GPIO2 and GPIO3, so those peripherals are defined in the SOC
