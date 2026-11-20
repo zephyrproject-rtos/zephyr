@@ -15,3 +15,10 @@ CONFIG_GPIO=y
 
 # Clock controller
 CONFIG_CLOCK_CONTROL=y
+
+# On this baseline Cortex-M (ARMv6-M) the supervisor call has no reserved
+# priority level and can have the same priority as an interrupt at priority 0,
+# so the supervisor call of a nested irq_offload() can escalate to a hard
+# fault (see the description of the change that enabled nested irq_offload()
+# on all Arm cores, zephyrproject-rtos/zephyr#119470).
+CONFIG_IRQ_OFFLOAD_NESTED=n
