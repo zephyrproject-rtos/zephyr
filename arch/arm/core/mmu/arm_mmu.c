@@ -75,10 +75,9 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 	  .attrs = MT_NORMAL | MATTR_SHARED |
 		   MPERM_R | MPERM_W |
 		   MATTR_CACHE_OUTER_WB_WA | MATTR_CACHE_INNER_WB_WA},
-#if defined(CONFIG_AARCH32_ARMV8_A)
-	/* The ARMv8-A AArch32 implementation uses VBAR to hold the final vector
-	 * table address (_vector_start); map it here rather than requiring
-	 * each SoC to provide its own entry in mmu_regions.c.
+#if defined(CONFIG_ARM_MMU_MAP_VECTORS)
+	/* The vector table is part of the image and may be placed outside
+	 * the regular text range on platforms using VBAR for relocation.
 	 */
 	{ .name  = "vectors",
 	  .start = (uint32_t)_vector_start,
