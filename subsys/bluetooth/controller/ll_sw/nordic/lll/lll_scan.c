@@ -95,7 +95,7 @@ static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp);
 static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 			      uint8_t irkmatch_ok, uint8_t rl_idx,
 			      uint8_t rssi_ready, uint8_t phy_flags_rx,
-			      bool dir_report);
+			      bool dir_report, bool tgta_resolved);
 
 int lll_scan_init(void)
 {
@@ -189,7 +189,7 @@ bool lll_scan_adva_check(const struct lll_scan *lll, uint8_t addr_type,
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 bool lll_scan_ext_tgta_check(const struct lll_scan *lll, bool pri, bool is_init,
 			     const struct pdu_adv *pdu, uint8_t rl_idx,
-			     bool *const dir_report)
+			     bool *const dir_report, bool *const tgta_resolved)
 {
 	const struct pdu_adv_com_ext_adv *com_hdr = &pdu->adv_ext_ind;
 	const struct pdu_adv_ext_hdr *hdr = &com_hdr->ext_hdr;
@@ -225,12 +225,31 @@ bool lll_scan_ext_tgta_check(const struct lll_scan *lll, bool pri, bool is_init,
 		return false;
 	}
 
+	if (!is_directed) {
+		return true;
+	}
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	/* Without AdvA there is no resolving list entry of the advertiser, so
+	 * a TargetA that is a resolvable private address is resolved with the
+	 * local IRKs of the list (Core Spec v6.3, Vol 6, Part B, Sections
+	 * 1.3.2.3 and 6.3)
+	 */
+	if ((adva_size == 0U) &&
+	    ull_filter_lll_local_irk_resolve(pdu->rx_addr, &hdr->data[adva_size])) {
+		if (tgta_resolved != NULL) {
+			*tgta_resolved = true;
+		}
+
+		return true;
+	}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
 	/* TargetA follows the AdvA, if any. An ADV_EXT_IND may have it while
 	 * the AdvA is in its AUX_ADV_IND, which then has no TargetA.
 	 */
-	return !is_directed ||
-	       isr_scan_tgta_check(lll, is_init, pdu->rx_addr,
-				   &hdr->data[adva_size], rl_idx, dir_report);
+	return isr_scan_tgta_check(lll, is_init, pdu->rx_addr, &hdr->data[adva_size], rl_idx,
+				   dir_report);
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1187,6 +1206,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			     uint8_t rl_idx, uint8_t rssi_ready,
 			     uint8_t phy_flags_rx)
 {
+	bool tgta_resolved = false;
 	bool dir_report = false;
 
 	if (0) {
@@ -1399,7 +1419,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		/* save the adv packet */
 		err = isr_rx_scan_report(lll, devmatch_ok, irkmatch_ok, rl_idx,
-					 rssi_ready, phy_flags_rx, false);
+					 rssi_ready, phy_flags_rx, false, false);
 		if (err) {
 			return err;
 		}
@@ -1494,7 +1514,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		   lll->phy &&
 		   !lll->state &&
 		   lll_scan_ext_tgta_check(lll, true, false, pdu_adv_rx, rl_idx,
-					   &dir_report)) ||
+					   &dir_report, &tgta_resolved)) ||
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
 		   (pdu_adv_rx->len >= offsetof(struct pdu_adv_scan_rsp, data)) &&
@@ -1515,7 +1535,8 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		/* save the scan response packet */
 		err = isr_rx_scan_report(lll, devmatch_ok, irkmatch_ok, rl_idx,
-					 rssi_ready, phy_flags_rx, dir_report);
+					 rssi_ready, phy_flags_rx, dir_report,
+					 tgta_resolved);
 		if (err) {
 			/* Auxiliary PDU LLL scanning has been setup */
 			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
@@ -1608,7 +1629,7 @@ static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp)
 static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 			      uint8_t irkmatch_ok, uint8_t rl_idx,
 			      uint8_t rssi_ready, uint8_t phy_flags_rx,
-			      bool dir_report)
+			      bool dir_report, bool tgta_resolved)
 {
 	struct node_rx_pdu *node_rx;
 	int err = 0;
@@ -1697,7 +1718,7 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 	node_rx->rx_ftr.rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	node_rx->rx_ftr.direct_resolved = (rl_idx != FILTER_IDX_NONE);
+	node_rx->rx_ftr.direct_resolved = (rl_idx != FILTER_IDX_NONE) || tgta_resolved;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 

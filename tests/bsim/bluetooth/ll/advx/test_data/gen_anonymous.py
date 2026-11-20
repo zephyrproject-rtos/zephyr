@@ -14,6 +14,12 @@ AUX_ADV_IND and without, which is not valid: the scanner may only send AUX_SCAN_
 first. The input for both tests has an AUX_ADV_IND whose flags announce a TxPower that its
 extended header has no room for, which the scanner may not report.
 
+The input for the scanner of anonymous.sh also has directed advertising whose TargetA is a
+resolvable private address in a PDU without AdvA: in the ADV_EXT_IND with the AdvA in the
+AUX_ADV_IND, and in the AUX_ADV_IND without any AdvA or with the AdvA in the ADV_EXT_IND. The
+scanner has to report the advertising whose TargetA resolves with its local IRK, and not the
+advertising whose TargetA does not.
+
 The test scripts run this script with the folder to write anonymous.Tx.csv and
 anonymous_other.Tx.csv into.
 """
@@ -32,10 +38,26 @@ OTHER_ADDR = bytes.fromhex("03 00 00 00 00 C0")
 # tests_scripts/anonymous.sh looks for in the AUX_SCAN_REQs of the scanner
 SCANNABLE_ADDR = bytes.fromhex("04 00 00 00 00 C0")
 
+# The TargetA of the directed advertising to a resolvable private address: the address from
+# the prand 0x708194 and the IRK of the sample data of the random address hash function ah
+# (Core Spec v6.3, Vol 3, Part H, Appendix D.7), which is the local IRK of the resolving list
+# entry of the scanner (local_irk in src/anonymous.c), and an address with another hash
+RESOLVABLE_RPA = bytes.fromhex("AA FB 0D 94 81 70")
+UNRESOLVABLE_RPA = bytes.fromhex("AB FB 0D 94 81 70")
+
+# The AdvA of the directed advertising to a resolvable private address, the static random
+# address C0:00:00:00:00:05 (rpa_directed_addr in src/anonymous.c)
+RPA_DIRECTED_ADDR = bytes.fromhex("05 00 00 00 00 C0")
+
 # The AD data of each kind of advertising, as in src/anonymous.c
 AD_UNDIRECTED = 0x01
 AD_DIRECTED = 0x02
 AD_DIRECTED_PRI = 0x03
+AD_DIRECTED_RPA = 0x04
+AD_DIRECTED_RPA_OTHER = 0x05
+AD_DIRECTED_RPA_AUX = 0x06
+AD_DIRECTED_RPA_AUX_OTHER = 0x07
+AD_DIRECTED_RPA_AUX_ADVA = 0x08
 
 # The advertising set of the AUX_ADV_IND with the truncated extended header, as in
 # src/anonymous.c
@@ -145,14 +167,18 @@ def tx(start_us, freq, pdu):
     )
 
 
-def event(start_us, sid, aux_pdu, adv_mode=0, pri_target_a=None):
+def event(start_us, sid, aux_pdu, adv_mode=0, pri_target_a=None, pri_adv_a=None):
     """An extended advertising event: three ADV_EXT_INDs that point to the AUX_ADV_IND."""
     lines = []
 
     for i, freq in enumerate(PRIMARY_FREQS):
         offset_us = i * PRIMARY_SPACING_US
         pdu = ext_adv_pdu(
-            sid, adv_mode, target_a=pri_target_a, aux_offset_us=AUX_OFFSET_US - offset_us
+            sid,
+            adv_mode,
+            adv_a=pri_adv_a,
+            target_a=pri_target_a,
+            aux_offset_us=AUX_OFFSET_US - offset_us,
         )
         lines.append(tx(start_us + offset_us, freq, pdu))
 
@@ -161,10 +187,11 @@ def event(start_us, sid, aux_pdu, adv_mode=0, pri_target_a=None):
     return lines
 
 
-def tx_dump(target_a, scannable=False):
+def tx_dump(target_a, scannable=False, rpa=False):
     """The Tx dump: undirected advertising, and directed to the given address with the
     TargetA in the ADV_EXT_IND and with the TargetA in the AUX_ADV_IND, all of it anonymous,
-    the one with the truncated extended header, and the scannable advertising if asked for.
+    the one with the truncated extended header, and the scannable advertising and the
+    directed advertising to resolvable private addresses if asked for.
     """
     lines = [
         "start_time,end_time,center_freq,phy_address,modulation,power_level,"
@@ -191,6 +218,22 @@ def tx_dump(target_a, scannable=False):
         aux_pdu = bytes([PDU_TYPE_ADV_EXT_IND, 2, 1, EXT_HDR_TX_PWR])
         lines += event(start_us + 125_000, SID_TRUNCATED, aux_pdu)
 
+        if rpa:
+            # Non-connectable and non-scannable directed advertising, whose AUX_ADV_IND has
+            # the AdvA and no TargetA (Core Spec v6.3, Vol 6, Part B, Tables 2.4 and 2.5)
+            aux_pdu = ext_adv_pdu(7, adv_a=RPA_DIRECTED_ADDR, ad_value=AD_DIRECTED_RPA)
+            lines += event(start_us + 150_000, 7, aux_pdu, pri_target_a=RESOLVABLE_RPA)
+            aux_pdu = ext_adv_pdu(8, adv_a=RPA_DIRECTED_ADDR, ad_value=AD_DIRECTED_RPA_OTHER)
+            lines += event(start_us + 175_000, 8, aux_pdu, pri_target_a=UNRESOLVABLE_RPA)
+            # The TargetA in the AUX_ADV_IND, without any AdvA
+            aux_pdu = ext_adv_pdu(9, target_a=RESOLVABLE_RPA, ad_value=AD_DIRECTED_RPA_AUX)
+            lines += event(start_us + 200_000, 9, aux_pdu)
+            aux_pdu = ext_adv_pdu(10, target_a=UNRESOLVABLE_RPA, ad_value=AD_DIRECTED_RPA_AUX_OTHER)
+            lines += event(start_us + 225_000, 10, aux_pdu)
+            # The TargetA in the AUX_ADV_IND, with the AdvA in the ADV_EXT_IND
+            aux_pdu = ext_adv_pdu(11, target_a=RESOLVABLE_RPA, ad_value=AD_DIRECTED_RPA_AUX_ADVA)
+            lines += event(start_us + 250_000, 11, aux_pdu, pri_adv_a=RPA_DIRECTED_ADDR)
+
     return "\n".join(lines) + "\n"
 
 
@@ -201,7 +244,7 @@ def main():
     folder = Path(sys.argv[1])
 
     (folder / "anonymous.Tx.csv").write_text(
-        tx_dump(SCANNER_ADDR, scannable=True), encoding="ascii"
+        tx_dump(SCANNER_ADDR, scannable=True, rpa=True), encoding="ascii"
     )
     (folder / "anonymous_other.Tx.csv").write_text(tx_dump(OTHER_ADDR), encoding="ascii")
 
