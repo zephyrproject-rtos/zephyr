@@ -37,6 +37,8 @@ Configuration
 * :kconfig:option:`CONFIG_NVMEM_EEPROM`: Enables NVMEM support for EEPROM devices.
 * :kconfig:option-regex:`CONFIG_NVMEM_FLASH.*`: Configure NVMEM support for flash devices.
 * :kconfig:option-regex:`CONFIG_NVMEM_OTP.*`: Configure NVMEM support for OTP devices.
+* :kconfig:option:`CONFIG_NVMEM_REVERSED_WRITE_BUF_SIZE`: Buffer size for writes to cells stored in
+  reversed byte order, longer writes are split.
 
 Devicetree Bindings
 *******************
@@ -52,6 +54,11 @@ The reg property is an array containing:
 
 * The offset in the memory in which we are creating the cell,
 * The size of the cell, in bytes.
+
+A cell with the ``zephyr,reversed-byte-order`` property is stored in reversed byte order, for
+example a MAC address programmed with its last octet first. The NVMEM API reverses the bytes on
+read and write, so consumers always get the same byte order and offsets are relative to the
+reversed contents.
 
 ``#nvmem-cell-cells`` describes the number of property items in the phandle,
 see :ref:`dt-bindings-cells`, typically set to zero.
