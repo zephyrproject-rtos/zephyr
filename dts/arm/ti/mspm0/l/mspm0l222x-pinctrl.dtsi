@@ -705,6 +705,7 @@
 
 	/omit-if-no-ref/ spi0_pico_pb2: spi0_pico_pb2 {
 		pinmux = <MSP_PINMUX(15, MSPM0_PIN_FUNCTION_11)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ analog_pb3: analog_pb3 {
@@ -758,6 +759,7 @@
 
 	/omit-if-no-ref/ spi0_sclk_pb3: spi0_sclk_pb3 {
 		pinmux = <MSP_PINMUX(16, MSPM0_PIN_FUNCTION_11)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ analog_pb4: analog_pb4 {
@@ -840,6 +842,7 @@
 
 	/omit-if-no-ref/ spi0_cs0_pa8: spi0_cs0_pa8 {
 		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ i2c0_sda_pa8: i2c0_sda_pa8 {
@@ -1168,6 +1171,7 @@
 
 	/omit-if-no-ref/ spi1_cs0_pb6: spi1_cs0_pb6 {
 		pinmux = <MSP_PINMUX(27, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ i2c2_scl_pb6: i2c2_scl_pb6 {
@@ -1268,6 +1272,7 @@
 
 	/omit-if-no-ref/ spi1_pico_pb8: spi1_pico_pb8 {
 		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ i2c2_scl_pb8: i2c2_scl_pb8 {
@@ -2017,6 +2022,7 @@
 
 	/omit-if-no-ref/ spi1_sclk_pa17: spi1_sclk_pa17 {
 		pinmux = <MSP_PINMUX(49, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ i2c1_scl_pa17: i2c1_scl_pa17 {

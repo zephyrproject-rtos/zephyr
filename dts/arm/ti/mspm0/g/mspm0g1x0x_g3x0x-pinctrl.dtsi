@@ -633,6 +633,7 @@
 
 	/omit-if-no-ref/ spi0_cs0_pa8: spi0_cs0_pa8 {
 		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ uart0_rts_pa8: uart0_rts_pa8 {
@@ -793,6 +794,7 @@
 
 	/omit-if-no-ref/ spi1_cs0_pb6: spi1_cs0_pb6 {
 		pinmux = <MSP_PINMUX(23, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ spi0_cs1_poci1_pb6: spi0_cs1_poci1_pb6 {
@@ -871,6 +873,7 @@
 
 	/omit-if-no-ref/ spi1_pico_pb8: spi1_pico_pb8 {
 		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ tima0_ccp0_pb8: tima0_ccp0_pb8 {
@@ -895,6 +898,7 @@
 
 	/omit-if-no-ref/ spi1_sclk_pb9: spi1_sclk_pb9 {
 		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ tima0_ccp1_pb9: tima0_ccp1_pb9 {
@@ -1384,6 +1388,7 @@
 
 	/omit-if-no-ref/ spi0_pico_pb17: spi0_pico_pb17 {
 		pinmux = <MSP_PINMUX(43, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ spi1_cs1_poci1_pb17: spi1_cs1_poci1_pb17 {
@@ -1414,6 +1419,7 @@
 
 	/omit-if-no-ref/ spi0_sclk_pb18: spi0_sclk_pb18 {
 		pinmux = <MSP_PINMUX(44, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ spi1_cs2_poci2_pb18: spi1_cs2_poci2_pb18 {
