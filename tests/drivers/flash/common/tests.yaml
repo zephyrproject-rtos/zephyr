@@ -215,6 +215,7 @@ tests:
     integration_platforms:
       - stm32h573i_dk
     platform_allow:
+      - b_u585i_iot02a
       - stm32h573i_dk
       - stm32l562e_dk
     extra_args:
