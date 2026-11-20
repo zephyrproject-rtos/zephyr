@@ -12,6 +12,7 @@ Bluetooth Classic Host and profiles
    classic/sdp.rst
    classic/l2cap_br.rst
    classic/rfcomm.rst
+   classic/sco.rst
    classic/hfp.rst
    classic/a2dp.rst
    classic/avrcp.rst
