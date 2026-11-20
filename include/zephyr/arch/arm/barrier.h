@@ -10,7 +10,28 @@
 #error Please include <zephyr/sys/barrier.h>
 #endif
 
+#if defined(CONFIG_CPU_AARCH32_ARM9)
+/*
+ * ARM Architecture Reference Manual, Issue I, July 2005
+ * ARM document ID DDI 0100I
+ * Table B6-6 Register 7: cache control and similar functions
+ *
+ * ARM9 (ARMv5) does not have dedicated DMB/DSB/ISB instructions.
+ * Memory barriers are implemented via CP15 coprocessor operations.
+ */
+#if defined(CONFIG_ARMV5)
+#define __DMB()
+#else
+/* Data Memory Barrier (Introduced with ARMv6. May be applied to earlier architecture variants.) */
+#define __DMB() __asm__("mcr p15, 0, r0, c7, c10, 5" :: "r"(0) : "memory")
+#endif /* CONFIG_ARMV5 */
+/* Data Synchronization Barrier (formerly Drain Write Buffer) */
+#define __DSB() __asm__("mcr p15, 0, %0, c7, c10, 4" :: "r"(0) : "memory")
+#define __ISB() __asm__("" ::: "memory")
+#define __sync_synchronize() __asm__("" ::: "memory")
+#else
 #include <cmsis_core.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
