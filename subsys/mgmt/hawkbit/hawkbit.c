@@ -447,6 +447,19 @@ int hawkbit_event_remove_callback(struct hawkbit_event_callback *cb)
 }
 #endif /* CONFIG_HAWKBIT_EVENT_CALLBACKS */
 
+static void cleanup_connection(int *hb_sock)
+{
+	if (*hb_sock < 0) {
+		return;
+	}
+
+	if (zsock_close(*hb_sock) < 0) {
+		LOG_ERR("Failed to close the socket");
+	}
+
+	*hb_sock = -1;
+}
+
 static bool start_http_client(int *hb_sock)
 {
 	int ret = -1;
@@ -462,6 +475,9 @@ static bool start_http_client(int *hb_sock)
 		hints.ai_family = NET_AF_INET;
 		hints.ai_socktype = NET_SOCK_STREAM;
 	}
+
+	/* The HTTP state's exit action closes this on every path, even a failure here */
+	*hb_sock = -1;
 
 	while (resolve_attempts--) {
 		ret = zsock_getaddrinfo(HAWKBIT_SERVER_ADDR, HAWKBIT_PORT, &hints, &addr);
@@ -509,17 +525,10 @@ static bool start_http_client(int *hb_sock)
 	return true;
 
 err_sock:
-	zsock_close(*hb_sock);
+	cleanup_connection(hb_sock);
 err:
 	zsock_freeaddrinfo(addr);
 	return false;
-}
-
-static void cleanup_connection(int *hb_sock)
-{
-	if (zsock_close(*hb_sock) < 0) {
-		LOG_ERR("Failed to close the socket");
-	}
 }
 
 static int hawkbit_time2sec(const char *s)
