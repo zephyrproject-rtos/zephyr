@@ -198,3 +198,8 @@ zephyr_udc0: &usbhs {
 &enet_ptp_clock {
 	status = "okay";
 };
+
+/* SHA-1 / SHA-256 engine. */
+&sha0 {
+	status = "okay";
+};

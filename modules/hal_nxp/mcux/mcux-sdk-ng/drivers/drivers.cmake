@@ -34,6 +34,7 @@ else()
   set_variable_ifdef(CONFIG_UART_MCUX_LPUART    CONFIG_MCUX_COMPONENT_driver.lpuart)
 endif()
 
+set_variable_ifdef(CONFIG_CRYPTO_MCUX_LPC_SHA   CONFIG_MCUX_COMPONENT_driver.sha)
 set_variable_ifdef(CONFIG_DMA_MCUX_LPC          CONFIG_MCUX_COMPONENT_driver.lpc_dma)
 set_variable_ifdef(CONFIG_GPIO_MCUX_LPC         CONFIG_MCUX_COMPONENT_driver.lpc_gpio)
 set_variable_ifdef(CONFIG_NXP_PINT              CONFIG_MCUX_COMPONENT_driver.pint)

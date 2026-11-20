@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_MCUX_LPC_SHA
+	bool "NXP LPC SHA driver"
+	default y
+	depends on DT_HAS_NXP_LPC_SHA_ENABLED
+	help
+	  Enable the SHA engine found on NXP LPC parts such as the LPC546xx.
+	  The driver exposes SHA-256 through the crypto hash API.
