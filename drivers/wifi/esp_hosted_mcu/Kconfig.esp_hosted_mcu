@@ -29,6 +29,10 @@ config NET_MGMT_EVENT_STACK_SIZE
 config NET_RX_STACK_SIZE
 	default 2560
 
+# Keep network transmits off the transport event thread.
+configdefault NET_TC_TX_COUNT
+	default 1 if ESP_HOSTED_MCU_SPI
+
 config WIFI_ESP_HOSTED_MCU_AP_STA_MODE
 	bool "Soft-AP interface support"
 	default y if WIFI_USAGE_MODE_STA_AP || WIFI_USAGE_MODE_AP
