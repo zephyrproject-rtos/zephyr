@@ -121,6 +121,10 @@ if(CONFIG_ZBUS)
   zephyr_iterable_section(NAME zbus_channel_observation_mask GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 endif()
 
+if(CONFIG_RC)
+  zephyr_iterable_section(NAME rc_raw_iodev_data GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
+endif()
+
 if(CONFIG_UVB)
   zephyr_iterable_section(NAME uvb_node GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 endif()
