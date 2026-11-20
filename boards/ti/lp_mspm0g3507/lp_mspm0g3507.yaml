@@ -15,6 +15,7 @@ supported:
   - counter
   - dac
   - pwm
+  - i2c
   - spi
   - vref
   - trng
