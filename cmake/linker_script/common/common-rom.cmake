@@ -252,6 +252,11 @@ if(CONFIG_INPUT)
   zephyr_iterable_section(NAME input_callback KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
+if(CONFIG_RC)
+  zephyr_iterable_section(NAME rc_callback KVMA RAM_REGION GROUP RODATA_REGION)
+  zephyr_iterable_section(NAME rc_protocol KVMA RAM_REGION GROUP RODATA_REGION)
+endif()
+
 if(CONFIG_USBD_MSC_CLASS)
   zephyr_iterable_section(NAME usbd_msc_lun KVMA RAM_REGION GROUP RODATA_REGION)
 endif()

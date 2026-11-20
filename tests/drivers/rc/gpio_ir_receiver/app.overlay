@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	rc_rx_high: rc-rx-high {
+		compatible = "gpio-ir-receiver";
+		gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+	};
+
+	rc_rx_low: rc-rx-low {
+		compatible = "gpio-ir-receiver";
+		gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+	};
+};

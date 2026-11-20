@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config RC_GPIO_IR_RECEIVER
+	bool "GPIO infrared receiver"
+	default y
+	depends on DT_HAS_GPIO_IR_RECEIVER_ENABLED && GPIO
+	help
+	  Receive driver for a demodulating infrared receiver on a GPIO. The
+	  edges are timed by the rc core.
