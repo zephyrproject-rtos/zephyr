@@ -161,7 +161,7 @@ static int iis328dq_channel_get(const struct device *dev, enum sensor_channel ch
 	return -ENOTSUP;
 }
 
-#ifdef CONFIG_IIS328DQ_THRESHOLD
+#if IIS328DQ_THRESHOLD_ENABLED
 static int iis328dq_set_threshold(const struct device *dev, bool is_lower,
 				  const struct sensor_value *val)
 {
@@ -182,14 +182,14 @@ static int iis328dq_set_threshold(const struct device *dev, bool is_lower,
 
 	if (is_lower) {
 		/* internal INT1 handles lower threshold */
-		err = iis328dq_int1_treshold_set(ctx, val_raw);
+		err = iis328dq_int1_threshold_set(ctx, val_raw);
 		if (err) {
 			LOG_ERR("Could not set INT1_THS to 0x%02X, error %d", val_raw, err);
 			return err;
 		}
 	} else {
-		/* internal INT2 handles lower threshold */
-		err = iis328dq_int2_treshold_set(ctx, val_raw);
+		/* internal INT2 handles higher threshold */
+		err = iis328dq_int2_threshold_set(ctx, val_raw);
 		if (err) {
 			LOG_ERR("Could not set INT2_THS to 0x%02X, error %d", val_raw, err);
 			return err;
@@ -221,7 +221,7 @@ static int iis328dq_set_duration(const struct device *dev, uint16_t dur)
 	}
 	return 0;
 }
-#endif /* CONFIG_IIS328DQ_THRESHOLD */
+#endif /* IIS328DQ_THRESHOLD_ENABLED */
 #define IIS328DQ_ATTR_DURATION SENSOR_ATTR_PRIV_START
 
 static int iis328dq_dev_config(const struct device *dev, enum sensor_channel chan,
@@ -232,7 +232,7 @@ static int iis328dq_dev_config(const struct device *dev, enum sensor_channel cha
 		return iis328dq_set_range(dev, sensor_ms2_to_g(val));
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return iis328dq_set_odr(dev, val->val1);
-#ifdef CONFIG_IIS328DQ_THRESHOLD
+#if IIS328DQ_THRESHOLD_ENABLED
 	case SENSOR_ATTR_LOWER_THRESH:
 	case SENSOR_ATTR_UPPER_THRESH:
 		if (chan != SENSOR_CHAN_ACCEL_XYZ) {
@@ -246,7 +246,7 @@ static int iis328dq_dev_config(const struct device *dev, enum sensor_channel cha
 			return -ENOTSUP;
 		}
 		return iis328dq_set_duration(dev, val->val1);
-#endif /* CONFIG_IIS328DQ_THRESHOLD */
+#endif /* IIS328DQ_THRESHOLD_ENABLED */
 	default:
 		LOG_DBG("Acc attribute not supported");
 		break;
@@ -372,17 +372,12 @@ static int iis328dq_init(const struct device *dev)
 				     CONFIG_SENSOR_INIT_PRIORITY, &iis328dq_driver_api);
 
 #ifdef CONFIG_IIS328DQ_TRIGGER
-#ifdef CONFIG_IIS328DQ_THRESHOLD
-#define IIS328DQ_CFG_IRQ_THRESHOLD(inst)                                                           \
-	.threshold_pad = DT_INST_PROP_OR(inst, threshold_int_pad, -1),
-#else
-#define IIS328DQ_CFG_IRQ_THRESHOLD(inst)
-#endif /* CONFIG_IIS328DQ_THRESHOLD */
-
 #define IIS328DQ_CFG_IRQ(inst)                                                                     \
 	.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, {0}),                              \
 	.gpio_int2 = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, {0}),                              \
-	.drdy_pad = DT_INST_PROP_OR(inst, drdy_int_pad, -1), IIS328DQ_CFG_IRQ_THRESHOLD(inst)
+	.drdy_pad = DT_INST_PROP_OR(inst, drdy_int_pad, -1),                                       \
+	IF_ENABLED(IIS328DQ_THRESHOLD_ENABLED,                                                     \
+		   (.threshold_pad = DT_INST_PROP_OR(inst, threshold_int_pad, -1),))
 #else
 #define IIS328DQ_CFG_IRQ(inst)
 #endif /* CONFIG_IIS328DQ_TRIGGER */
