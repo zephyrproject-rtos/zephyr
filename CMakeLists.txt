@@ -1752,7 +1752,8 @@ list(APPEND post_build_byproducts ${KERNEL_MAP_NAME})
 # Use ';' as separator to get proper space in resulting command.
 # Ignore gapfill for RX target as some RX toolchains generate wrong output image when running
 # gapfill for binary format.
-if(NOT CONFIG_RX)
+# Also ignore it for Andes Clang with LLD, whose empty output sections make the binary too large.
+if(NOT CONFIG_RX AND NOT CONFIG_ANDES_CLANG_USE_LLD)
   set(gap_fill_prop "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>")
   set(gap_fill "$<$<BOOL:${gap_fill_prop}>:${gap_fill_prop}${CONFIG_BUILD_GAP_FILL_PATTERN}>")
 endif()
