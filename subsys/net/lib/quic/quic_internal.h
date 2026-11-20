@@ -1366,6 +1366,28 @@ static inline uint64_t *quic_stream_id_counter(struct quic_context *ctx, uint64_
 	return &ctx->stream_id_counter[(id_or_type & 2U) != 0U ? 1 : 0];
 }
 
+/**
+ * Tell whether a stream is send-only for this endpoint. Bit 0 of a stream
+ * ID is the initiator, 0 for the client and 1 for the server, and bit 1 is
+ * set for a unidirectional stream (RFC 9000 ch. 2.1). A unidirectional
+ * stream is send-only for the endpoint that opened it.
+ */
+static inline bool quic_stream_id_is_send_only(const struct quic_endpoint *ep,
+					       uint64_t stream_id)
+{
+	return (stream_id & 2U) != 0U && ((stream_id & 1U) != 0U) == ep->is_server;
+}
+
+/**
+ * Tell whether a stream is receive-only for this endpoint: a
+ * unidirectional stream that the peer opened.
+ */
+static inline bool quic_stream_id_is_receive_only(const struct quic_endpoint *ep,
+						  uint64_t stream_id)
+{
+	return (stream_id & 2U) != 0U && ((stream_id & 1U) != 0U) != ep->is_server;
+}
+
 #if defined(CONFIG_QUIC_STATS_HISTORY)
 struct quic_closed_context_stats {
 	int id;
@@ -1710,6 +1732,7 @@ struct quic_endpoint *quic_test_endpoint_alloc(void);
 void quic_test_endpoint_unref(struct quic_endpoint *ep);
 void quic_test_check_idle_timeouts(void);
 void quic_test_receive_data(int sock, struct quic_endpoint *ep_hint);
+void quic_readvertise_flow_control(struct quic_endpoint *ep);
 
 bool stream_seq_was_opened(const struct quic_stream_seq_set *set, uint64_t seq);
 bool stream_seq_gaps_fit(const struct quic_stream_seq_set *set, uint64_t seq);
