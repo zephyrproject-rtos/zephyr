@@ -12,3 +12,17 @@
 	compatible = "radxa,rock-5b", "rockchip,rk3588";
 	model = "Radxa ROCK 5B";
 };
+
+&u2phy0 {
+	status = "okay";
+};
+
+&u2phy0_otg {
+	status = "okay";
+};
+
+/* USB 3.0 OTG0 port, at high speed as its USB3 PHY is not described */
+zephyr_udc0: &usb_host0_xhci {
+	maximum-speed = "high-speed";
+	status = "okay";
+};
