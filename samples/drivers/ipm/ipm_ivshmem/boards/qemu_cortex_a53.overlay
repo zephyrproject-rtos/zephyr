@@ -12,3 +12,7 @@
 		status = "okay";
 	};
 };
+
+&ivshmem0 {
+	pcie-controller = <&pcie>;
+};

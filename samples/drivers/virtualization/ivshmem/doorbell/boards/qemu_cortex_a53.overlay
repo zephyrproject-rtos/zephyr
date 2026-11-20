@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "pcie_ivshmem.dtsi"
+
+&ivshmem0 {
+	pcie-controller = <&pcie>;
+};
