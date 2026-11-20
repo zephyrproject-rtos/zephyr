@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #define TIMEOUT_MS 500
 
@@ -95,6 +96,143 @@ ZTEST_USER(dynamic_thread_stack, test_dynamic_thread_stack_userspace_dyn_obj)
 	zassert_ok(k_thread_join(tid, K_MSEC(TIMEOUT_MS)));
 	zassert_true(tflag[0]);
 	zassert_ok(k_thread_stack_free(stack));
+}
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+static K_THREAD_STACK_DEFINE(creator_stack, CONFIG_DYNAMIC_THREAD_STACK_SIZE);
+static struct k_thread creator_thread;
+K_SEM_DEFINE(child_go_sem, 0, 1);
+K_SEM_DEFINE(creator_ready_sem, 0, 1);
+K_SEM_DEFINE(creator_done_sem, 0, 1);
+ZTEST_BMEM static struct k_thread *child_thread;
+ZTEST_BMEM static k_thread_stack_t *child_stack;
+ZTEST_BMEM static volatile bool child_ran;
+
+static void release_child(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	k_sem_take(&child_go_sem, K_FOREVER);
+	child_ran = true;
+}
+
+static void release_creator(void *arg1, void *arg2, void *arg3)
+{
+	k_thread_stack_t *stack;
+	struct k_thread *th;
+
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	stack = k_thread_stack_alloc(CONFIG_DYNAMIC_THREAD_STACK_SIZE, K_USER);
+	th = k_object_alloc(K_OBJ_THREAD);
+
+	if ((stack != NULL) && (th != NULL)) {
+		/* Without K_INHERIT_PERMS the child gets no permission on its
+		 * stack, so this thread holds the only one.
+		 */
+		(void)k_thread_create(th, stack, CONFIG_DYNAMIC_THREAD_STACK_SIZE, release_child,
+				      NULL, NULL, NULL, 0, K_USER, K_FOREVER);
+		k_object_access_grant(&child_go_sem, th);
+		k_thread_start(th);
+
+		/* Drop all permissions of this thread on the stack and thread
+		 * object of the child while the child still runs on them.
+		 */
+		k_object_release(stack);
+		k_object_release(th);
+	}
+
+	child_stack = stack;
+	child_thread = th;
+	k_sem_give(&creator_ready_sem);
+	k_sem_take(&creator_done_sem, K_FOREVER);
+}
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+
+/**
+ * @brief Verify that a thread's dynamic stack and thread object stay
+ *        allocated while the thread uses them.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * A dynamically allocated kernel object is freed once no thread has
+ * permission on it anymore. The stack and thread object of a thread are in
+ * use for its whole life though, whatever permissions are dropped on them.
+ * A user thread creates a child on a stack and a thread object it allocated,
+ * without passing its permissions on, and then releases both while the child
+ * still runs. Skipped unless userspace and heap allocated thread stacks are
+ * enabled.
+ *
+ * Test steps:
+ * - From a user thread, allocate a stack and a thread object, create a child
+ *   on them, and release both.
+ * - Check that both objects are still kernel objects while the child runs.
+ * - Let the child return, join it and check both objects again.
+ * - Let the creator exit and check that both objects are gone.
+ *
+ * Expected result:
+ * - Both objects stay allocated until the child has exited and the kernel is
+ *   done with them, and are then freed.
+ *
+ * @see k_thread_stack_alloc()
+ * @see k_object_alloc()
+ * @see k_object_release()
+ */
+ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_userspace_kept_in_use)
+{
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_PREFER_ALLOC)) {
+		ztest_test_skip();
+	}
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
+		ztest_test_skip();
+	}
+
+	(void)k_thread_create(&creator_thread, creator_stack, K_THREAD_STACK_SIZEOF(creator_stack),
+			      release_creator, NULL, NULL, NULL, 0, K_USER, K_FOREVER);
+	k_thread_heap_assign(&creator_thread, &stack_heap);
+	k_thread_access_grant(&creator_thread, &child_go_sem, &creator_ready_sem,
+			      &creator_done_sem);
+	k_thread_start(&creator_thread);
+
+	zassert_ok(k_sem_take(&creator_ready_sem, K_MSEC(TIMEOUT_MS)));
+	zassert_not_null(child_stack);
+	zassert_not_null(child_thread);
+
+	/* No thread has permission on the stack anymore, but the child runs
+	 * on it.
+	 */
+	zassert_not_null(k_object_find(child_stack), "stack of a running thread was freed");
+	zassert_not_null(k_object_find(child_thread),
+			 "thread object of a running thread was freed");
+
+	/* The child clears its own permission on its thread object when it
+	 * exits, but it still runs on its stack and thread object until it is
+	 * switched out. The kernel cannot tell when that has happened for a
+	 * thread that ends itself, so it keeps both until the next thread
+	 * abort, which is the exit of the creator below.
+	 */
+	k_sem_give(&child_go_sem);
+	zassert_ok(k_thread_join(child_thread, K_MSEC(TIMEOUT_MS)));
+	zassert_true(child_ran);
+	zassert_not_null(k_object_find(child_thread),
+			 "thread object of an exiting thread was freed");
+	zassert_not_null(k_object_find(child_stack), "stack of an exiting thread was freed");
+
+	/* Once the kernel is done with the child, nothing keeps them anymore */
+	k_sem_give(&creator_done_sem);
+	zassert_ok(k_thread_join(&creator_thread, K_MSEC(TIMEOUT_MS)));
+	zassert_is_null(k_object_find(child_thread), "thread object was not freed");
+	zassert_is_null(k_object_find(child_stack), "stack was not freed");
+#else
+	ztest_test_skip();
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 }
 
 /**

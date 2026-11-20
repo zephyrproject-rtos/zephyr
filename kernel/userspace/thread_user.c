@@ -16,6 +16,8 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <string.h>
 #include <kernel_internal.h>
+#include <ksmp.h>
+#include <kthread.h>
 #include <kuser.h>
 
 bool z_stack_is_user_capable(k_thread_stack_t *stack)
@@ -34,6 +36,28 @@ void z_thread_user_init(struct k_thread *thread, k_thread_stack_t *stack, uint32
 
 	/* Any given thread has access to itself */
 	k_object_access_grant(thread, thread);
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	/* Until it has switched away from them for the last time, the thread
+	 * runs on its stack and the kernel uses its thread object, whatever
+	 * permissions are dropped on them meanwhile. Keep dynamically
+	 * allocated ones from being freed until then, see
+	 * z_thread_user_hold_put(), and record their metadata for that, as
+	 * k_object_free() may meanwhile take them off the list that
+	 * k_object_find() looks them up in. Only for a thread that is a
+	 * kernel object: releasing them reads the thread object, which then
+	 * stays intact until that point.
+	 */
+	struct k_object *ko = k_object_find(thread);
+
+	thread->held_thread_obj = NULL;
+	thread->held_stack_obj = NULL;
+
+	if (ko != NULL) {
+		thread->held_thread_obj = z_object_hold(ko);
+		thread->held_stack_obj = z_object_hold(k_object_find(stack));
+	}
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 }
 
 void z_thread_user_perms_init(struct k_thread *thread, struct k_thread *parent, uint32_t options)
@@ -52,6 +76,51 @@ void z_thread_user_exit(struct k_thread *thread)
 	k_object_uninit(thread->stack_obj);
 	k_object_uninit(thread);
 }
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+void z_thread_user_hold_get(struct k_thread *thread, struct z_thread_user_hold *hold)
+{
+	hold->thread = thread;
+	hold->thread_obj = thread->held_thread_obj;
+	hold->stack_obj = thread->held_stack_obj;
+
+	thread->held_thread_obj = NULL;
+	thread->held_stack_obj = NULL;
+}
+
+void z_thread_user_hold_put(struct z_thread_user_hold *hold)
+{
+	if ((hold->thread_obj == NULL) && (hold->stack_obj == NULL)) {
+		return;
+	}
+
+	/* The thread may still be saving its context on the CPU it last
+	 * ran on, so wait for that as k_thread_join() does. Its thread
+	 * object is a static or held kernel object, and it is not reused
+	 * before this runs. But k_thread_abort() lets its owner overwrite it
+	 * once the thread is off the CPU, in which case it no longer reads
+	 * as dead.
+	 */
+	if (z_is_thread_dead(hold->thread)) {
+		z_sched_switch_spin(hold->thread);
+	}
+
+	z_object_hold_release(hold->stack_obj);
+	z_object_hold_release(hold->thread_obj);
+
+	hold->thread = NULL;
+	hold->thread_obj = NULL;
+	hold->stack_obj = NULL;
+}
+
+void z_thread_user_release(struct k_thread *thread)
+{
+	struct z_thread_user_hold hold;
+
+	z_thread_user_hold_get(thread, &hold);
+	z_thread_user_hold_put(&hold);
+}
+#endif /* CONFIG_DYNAMIC_OBJECTS */
 
 void z_thread_user_dummy_init(struct k_thread *dummy_thread)
 {

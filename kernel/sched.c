@@ -26,6 +26,7 @@
 #include <metairq.h>
 #include <run_q.h>
 #include <timeslicing.h>
+#include <kuser.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -662,6 +663,16 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_k
 		 * thread_halt_spin()).
 		 */
 		z_smp_clear_halting(thread);
+
+		/* Done with the thread. One aborted by another thread no
+		 * longer runs, so release the thread and stack objects kept
+		 * for it now. One that aborted itself (dummified or still
+		 * _current) still runs on its stack, so k_thread_abort_cleanup()
+		 * has deferred that.
+		 */
+		if (!dummify && (thread != _current)) {
+			z_thread_user_release(thread);
+		}
 	}
 }
 
