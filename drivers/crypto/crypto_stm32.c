@@ -278,6 +278,10 @@ static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in
 		return 0;
 	}
 
+	if (in_len != 0 && in_buf == NULL) {
+		return -EINVAL;
+	}
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
 	ret = hal1_l4_set_config(data, &session->config);
 #elif defined(CONFIG_STM32_HAL2)
@@ -578,68 +582,6 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 }
 
 #if IS_ENABLED(STM32_CRYPTO_GCM_CCM_SUPPORT)
-static int do_aes_staged(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in_buf,
-			 size_t in_len, uint8_t *out_buf)
-{
-	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
-	uint8_t staging_in[BLOCK_LEN_BYTES] __aligned(4) = {0};
-	uint8_t staging_out[BLOCK_LEN_BYTES] __aligned(4);
-	int ret;
-
-	/* Zero payload is allowed.
-	 * Have to configure and execute the operation
-	 * to let the HAL go through required phases.
-	 */
-	if (in_len == 0) {
-		return do_aes(ctx, fn, staging_in, 0, staging_out);
-	}
-
-	/* must be valid */
-	if (in_buf == NULL) {
-		return -EINVAL;
-	}
-
-	/* Process complete 16-byte blocks first to avoid zero-padding in
-	 * the intermediate data within HAL.
-	 * Any trailing partial block is copied into a 4-byte aligned
-	 * stage buffer to avoid data corruption.
-	 * Trailing block shall be processed without key and nonce reloading
-	 * to preserve CRYP state.
-	 */
-	const size_t rem_len = in_len % BLOCK_LEN_BYTES;
-	const size_t aligned_len = in_len - rem_len;
-
-	if (aligned_len != 0) {
-		ret = do_aes(ctx, fn, in_buf, aligned_len, out_buf);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	if (rem_len == 0) {
-		return 0;
-	}
-
-	memcpy(staging_in, in_buf + aligned_len, rem_len);
-
-	if (aligned_len == 0) {
-		/* have to config, then execute the operation */
-		ret = do_aes(ctx, fn, staging_in, rem_len, staging_out);
-		if (ret < 0) {
-			return ret;
-		}
-	} else {
-		if (fn(&data->hcryp, staging_in, rem_len, staging_out, HAL_MAX_DELAY) != HAL_OK) {
-			LOG_ERR("Encryption/decryption error");
-			return -EIO;
-		}
-	}
-
-	memcpy(out_buf + aligned_len, staging_out, rem_len);
-
-	return 0;
-}
-
 static int crypto_stm32_gcm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 			    struct cipher_aead_pkt *apkt, uint8_t *nonce)
 {
@@ -681,7 +623,7 @@ static int crypto_stm32_gcm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 		session->config.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_BYTE;
 	}
 
-	return do_aes_staged(ctx, fn, apkt->pkt->in_buf, apkt->pkt->in_len, dst);
+	return do_aes(ctx, fn, apkt->pkt->in_buf, apkt->pkt->in_len, dst);
 }
 
 static int crypto_stm32_gcm_encrypt(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt,
@@ -871,7 +813,7 @@ static int crypto_stm32_ccm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 
 	session->config.B0 = CAST_VEC(b0);
 
-	ret = do_aes_staged(ctx, fn, apkt->pkt->in_buf, apkt->pkt->in_len, dst);
+	ret = do_aes(ctx, fn, apkt->pkt->in_buf, apkt->pkt->in_len, dst);
 
 	k_free(b1);
 
