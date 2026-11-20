@@ -67,6 +67,17 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	  and most people should say n here to minimize context switching
 	  overhead.
 
+config RISCV_SOC_NO_NESTED_EXCEPTIONS
+	bool
+	depends on RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+	help
+	  Hidden option for SoCs that cannot take an exception while an
+	  exception handler is running. As every context switch goes through
+	  an ecall, aborting the faulting thread from the fatal error handler
+	  would take such a nested exception. The fatal error handler then
+	  runs as ISR context instead, so the abort is deferred to the
+	  reschedule on exception exit.
+
 config RISCV_HAS_NESTED_INTERRUPTS
 	bool
 	help
