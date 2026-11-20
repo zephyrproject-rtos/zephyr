@@ -139,6 +139,9 @@ static uint32_t
 	requested_bis_sync[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS]; /* holds data from bis_sync_req_cb */
 static uint8_t sink_broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
+BUILD_ASSERT(sizeof(CONFIG_TARGET_BROADCAST_CODE) - 1U <= BT_ISO_BROADCAST_CODE_SIZE,
+	     "CONFIG_TARGET_BROADCAST_CODE is longer than a broadcast code");
+
 static int stop_adv(void);
 static uint8_t get_stream_count(uint32_t bitfield);
 
@@ -386,6 +389,11 @@ static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_
 	k_sem_give(&sem_syncable);
 
 	if (!biginfo->encryption) {
+		k_sem_give(&sem_broadcast_code_received);
+	} else if (strlen(CONFIG_TARGET_BROADCAST_CODE) > 0U) {
+		(void)memset(sink_broadcast_code, 0, sizeof(sink_broadcast_code));
+		(void)memcpy(sink_broadcast_code, CONFIG_TARGET_BROADCAST_CODE,
+			     strlen(CONFIG_TARGET_BROADCAST_CODE));
 		k_sem_give(&sem_broadcast_code_received);
 	}
 }

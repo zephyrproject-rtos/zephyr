@@ -412,6 +412,8 @@ static uint16_t bt_esp32_get_hw_variant(void)
 	return BT_HCI_VS_HW_VAR_ESP32C61;
 #elif defined(CONFIG_SOC_SERIES_ESP32H2)
 	return BT_HCI_VS_HW_VAR_ESP32H2;
+#elif defined(CONFIG_SOC_SERIES_ESP32S31)
+	return BT_HCI_VS_HW_VAR_ESP32S31;
 #else
 	return 0x0000;
 #endif
@@ -548,11 +550,44 @@ static bool is_hci_event_discardable(uint8_t evt_code, const uint8_t *payload, s
 	}
 }
 
+static void bt_esp_evt_fixup_bredr_feature(uint8_t evt, uint8_t *payload, size_t len)
+{
+	struct bt_hci_evt_cmd_complete *cc = (struct bt_hci_evt_cmd_complete *)payload;
+	uint8_t *features = NULL;
+	uint16_t opcode;
+
+	if (evt != BT_HCI_EVT_CMD_COMPLETE || len < sizeof(*cc)) {
+		return;
+	}
+
+	opcode = sys_le16_to_cpu(cc->opcode);
+
+	if (opcode == BT_HCI_OP_READ_LOCAL_FEATURES &&
+	    len >= sizeof(*cc) + sizeof(struct bt_hci_rp_read_local_features)) {
+		struct bt_hci_rp_read_local_features *rp = (void *)&cc[1];
+
+		features = rp->features;
+	} else if (opcode == BT_HCI_OP_READ_LOCAL_EXT_FEATURES &&
+		   len >= sizeof(*cc) + sizeof(struct bt_hci_rp_read_local_ext_features)) {
+		struct bt_hci_rp_read_local_ext_features *rp = (void *)&cc[1];
+
+		if (rp->page == 0U) {
+			features = rp->ext_features;
+		}
+	}
+
+	/* LMP feature bit 37: BR/EDR Not Supported */
+	if (features != NULL) {
+		features[4] &= (uint8_t)~BIT(5);
+	}
+}
+
 static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 {
 	bool discardable = false;
 	struct bt_hci_evt_hdr hdr;
 	struct net_buf *buf;
+	uint8_t *payload;
 	size_t buf_tailroom;
 
 	if (remaining < sizeof(hdr)) {
@@ -591,7 +626,11 @@ static struct net_buf *bt_esp_evt_recv(uint8_t *data, size_t remaining)
 		return NULL;
 	}
 
-	net_buf_add_mem(buf, data, remaining);
+	payload = net_buf_add_mem(buf, data, remaining);
+
+	if (IS_ENABLED(CONFIG_SOC_SERIES_ESP32S31) && IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		bt_esp_evt_fixup_bredr_feature(hdr.evt, payload, remaining);
+	}
 
 	return buf;
 }
@@ -767,12 +806,21 @@ static int bt_esp32_send(const struct device *dev, struct net_buf *buf)
 static int bt_esp32_ble_init(void)
 {
 	int ret;
+#if defined(CONFIG_SOC_SERIES_ESP32S31)
+	esp_bt_controller_config_t bt_cfg;
+#else
 	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+#endif
 
-#if defined(CONFIG_BT_CLASSIC) && defined(CONFIG_SOC_SERIES_ESP32)
+#if defined(CONFIG_BT_CLASSIC) &&                                                              \
+	(defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32S31))
 	esp_bt_mode_t mode = ESP_BT_MODE_BTDM;
 #else
 	esp_bt_mode_t mode = ESP_BT_MODE_BLE;
+#endif
+
+#if defined(CONFIG_SOC_SERIES_ESP32S31)
+	esp_bt_controller_get_default_config(&bt_cfg);
 #endif
 
 	ret = esp_bt_controller_init(&bt_cfg);

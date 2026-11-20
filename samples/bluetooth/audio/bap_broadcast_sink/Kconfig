@@ -36,6 +36,14 @@ config TARGET_BROADCAST_NAME
 	  Name of target broadcast device. If not empty string, sink device
 	  will only listen to the specified broadcast source. Not case sensitive.
 
+config TARGET_BROADCAST_CODE
+	string "Broadcast code of the target broadcast"
+	default ""
+	help
+	  Broadcast code used to decrypt an encrypted broadcast when no
+	  Broadcast Assistant provides one, at most 16 characters. When empty,
+	  the sample waits for the code from a Broadcast Assistant.
+
 config MAX_CODEC_FRAMES_PER_SDU
 	int "The maximum number of codec frame per SDU supported"
 	default 1
@@ -50,7 +58,7 @@ config ENABLE_LC3
 	default y
 	depends on CPU_HAS_FPU && \
 		(ARCH_POSIX || SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF5340_CPUAPP || \
-			SOC_MIMXRT1062 || SOC_SF32LB525UC6)
+			SOC_MIMXRT1062 || SOC_SF32LB525UC6 || SOC_SERIES_ESP32S31)
 	select LIBLC3
 	select FPU
 
@@ -71,6 +79,17 @@ config USE_CODEC_AUDIO_OUTPUT
 	help
 	  Enables codec audio as output. This uses the hardware audio codec for audio playback.
 	  Supports audio output through the codec driver.
+
+config CODEC_AUDIO_OUTPUT_I2S
+	bool "Send codec audio over I2S"
+	depends on USE_CODEC_AUDIO_OUTPUT
+	depends on $(dt_alias_enabled,i2s-codec-tx)
+	select I2S
+	help
+	  Send the decoded audio over I2S, for codecs that are only configured
+	  through the audio codec API and take their PCM data on an I2S bus.
+	  The I2S controller is the devicetree alias i2s-codec-tx and the codec
+	  is the alias codec0. The mono stream is played on both I2S channels.
 
 config USE_SPECIFIC_BROADCAST_CHANNEL
 	bool "Use specific Broadcast Channel Audio Location"

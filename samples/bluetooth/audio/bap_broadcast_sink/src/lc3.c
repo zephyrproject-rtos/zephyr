@@ -212,9 +212,14 @@ static int codec_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
 	 */
 	if (chn != 0) {
 		return 0;
-	} else {
-		return hw_codec_write_data((const uint8_t *)lc3_rx_buf, sizeof(lc3_rx_buf));
 	}
+
+	if (hw_codec_write_data((const uint8_t *)lc3_rx_buf, sizeof(lc3_rx_buf)) !=
+	    sizeof(lc3_rx_buf)) {
+		return -ENOMEM;
+	}
+
+	return 0;
 }
 
 static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)

@@ -19,11 +19,13 @@
 #include <esp_private/esp_clk_tree_common.h>
 #include <hal/i2s_hal.h>
 
-#if !SOC_GDMA_SUPPORTED
+#if SOC_GDMA_SUPPORTED
+#include <hal/gdma_channel.h>
+#else
 #include <soc/lldesc.h>
 #include <esp_memory_utils.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#endif /* !SOC_GDMA_SUPPORTED */
+#endif /* SOC_GDMA_SUPPORTED */
 
 #if SOC_GDMA_SUPPORTED && !DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_gdma)
 #error "DMA peripheral is not enabled!"
@@ -1137,7 +1139,12 @@ int IRAM_ATTR i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
 	}
 	dma_cfg.user_data = (void *)dev;
+#if defined(SOC_GDMA_TRIG_PERIPH_I2S1CH0)
+	dma_cfg.dma_slot = (dev_cfg->unit == 0U) ? SOC_GDMA_TRIG_PERIPH_I2S0CH0
+						 : SOC_GDMA_TRIG_PERIPH_I2S1CH0;
+#else
 	dma_cfg.dma_slot = ESP_GDMA_TRIG_PERIPH_I2S0 + dev_cfg->unit;
+#endif
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
 

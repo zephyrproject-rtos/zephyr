@@ -60,6 +60,9 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define TXDESC_PHYS_L(idx) phys_lo32(&p->tx_descs[idx])
 #define RXDESC_PHYS_L(idx) phys_lo32(&p->rx_descs[idx])
 
+BUILD_ASSERT(IS_POWER_OF_TWO(CONFIG_ETH_DWC_ETHER_1000_CORE_DMA_PBL),
+	     "CONFIG_ETH_DWC_ETHER_1000_CORE_DMA_PBL must be 1, 2, 4, 8, 16 or 32");
+
 static void dwmac_rx_refill(const struct device *dev);
 
 static uint32_t phys_lo32(void *addr)
@@ -67,10 +70,12 @@ static uint32_t phys_lo32(void *addr)
 	return (uint32_t)(uintptr_t)addr;
 }
 
-static enum ethernet_hw_caps dwmac_caps(const struct device *dev __unused,
-					struct net_if *iface __unused)
+static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
+	struct dwmac_priv *p = dev->data;
+
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
+	       ((p->feature0 & DWMAC_HWFR_1000) != 0U ? ETHERNET_LINK_1000BASE : 0)
 #ifdef CONFIG_NET_PROMISCUOUS_MODE
 	       | ETHERNET_PROMISC_MODE
 #endif
@@ -482,6 +487,12 @@ static int dwmac_set_config(const struct device *dev, struct net_if *iface __unu
 	return 0;
 }
 
+__weak void dwmac_platform_link_speed_changed(const struct device *dev, enum phy_link_speed speed)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(speed);
+}
+
 static void phy_link_state_changed(const struct device *phy_dev __unused,
 				   struct phy_link_state *state, void *user_data)
 {
@@ -507,6 +518,7 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 		}
 
 		DWMAC_REG_WRITE(DWMAC_MACCR, reg);
+		dwmac_platform_link_speed_changed(dev, state->speed);
 	}
 
 	net_eth_carrier_set(p->iface, state->is_up);
@@ -702,6 +714,11 @@ int dwmac_probe(const struct device *dev)
 	DWMAC_REG_WRITE(DWMAC_MMC_TX_INTERRUPT_MASK, UINT32_MAX);
 	DWMAC_REG_WRITE(DWMAC_MMC_IPC_RX_INTERRUPT_MASK, UINT32_MAX);
 
+	/* The RGMII/SGMII link status interrupt stays asserted until the link
+	 * status register is read, which the interrupt handler never does.
+	 */
+	DWMAC_REG_WRITE(DWMAC_MACIMR, DWMAC_REG_READ(DWMAC_MACIMR) | DWMAC_MACIMR_RGSMIIIM);
+
 	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
 
 	ret = dwmac_platform_init(dev);
@@ -713,7 +730,7 @@ int dwmac_probe(const struct device *dev)
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
 
 	reg_val = DWMAC_REG_READ(DWMAC_DMABMR) & ~DWMAC_DMABMR_PBL;
-	reg_val |= FIELD_PREP(DWMAC_DMABMR_PBL, 32);
+	reg_val |= FIELD_PREP(DWMAC_DMABMR_PBL, CONFIG_ETH_DWC_ETHER_1000_CORE_DMA_PBL);
 
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)) {
 		reg_val |= DWMAC_DMABMR_EDFE;

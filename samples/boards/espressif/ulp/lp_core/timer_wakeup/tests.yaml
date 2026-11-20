@@ -4,6 +4,7 @@ tests:
   sample.boards.esp32.ulp.lp_core.timer_wakeup:
     platform_allow:
       - esp32c6_devkitc/esp32c6/hpcore
+      - esp32s31_function_coreboard/esp32s31/hpcore
     tags:
       - samples
     sysbuild: true

@@ -27,12 +27,19 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include "../eth_esp32_priv.h"
 
-BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii) ||
-		     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii),
-	     "Unsupported PHY interface type. Only RMII and MII are supported.");
+#define ETH_ESP32_RGMII ESP32_EMAC_DT_IS_RGMII(DT_DRV_INST(0))
 
+BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii) ||
+		     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii) || ETH_ESP32_RGMII,
+	     "Unsupported PHY interface type. Only RMII, MII and RGMII are supported.");
+
+#ifdef CONFIG_SOC_SERIES_ESP32S31
+/* The DMA bus master interface is a 64-bit AXI interface on ESP32-S31 */
+#define DATA_BUS_WIDTH 64
+#else
 /* The DMA bus master interface is a 32-bit AHB interface on this IP */
 #define DATA_BUS_WIDTH 32
+#endif
 
 DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 
@@ -56,7 +63,20 @@ int dwmac_bus_init(const struct device *dev)
 		return ret;
 	}
 
-	if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
+	if (ETH_ESP32_RGMII) {
+#if SOC_EMAC_SUPPORT_1000M
+		ret = esp32_emac_iomux_init_rgmii_pinctrl(pcfg);
+		if (ret != 0) {
+			return -EIO;
+		}
+
+		ret = esp32_emac_rgmii_clock_init();
+		if (ret != 0) {
+			LOG_ERR("Failed to configure the RGMII clock");
+			return ret;
+		}
+#endif
+	} else if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
 		int rmii_clk_gpio = -1;
 
 		ret = esp32_emac_iomux_init_rmii_pinctrl(pcfg, &rmii_clk_gpio);
@@ -96,6 +116,11 @@ int dwmac_bus_init(const struct device *dev)
 	ret = clock_control_on(cfg->clock, cfg->ptp_clk);
 	if (ret < 0 && ret != -EALREADY) {
 		LOG_ERR("Failed to setup PTP reference clock");
+#if SOC_EMAC_SUPPORT_1000M
+		if (ETH_ESP32_RGMII) {
+			esp32_emac_rgmii_clock_deinit();
+		}
+#endif
 		return ret;
 	}
 #endif
@@ -122,10 +147,14 @@ int dwmac_platform_init(const struct device *dev)
 
 	DWMAC_REG_WRITE(DWMAC_DMABMR, DWMAC_DMABMR_AAL | DWMAC_DMABMR_FB);
 
+	if (!ETH_ESP32_RGMII) {
+		p->feature0 &= ~DWMAC_HWFR_1000;
+	}
+
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;
 
-#ifdef CONFIG_SOC_SERIES_ESP32P4
+#if defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32S31)
 	/* Deactivates store and forward mode for rx and tx */
 	/* Enable OSF (Operate on Second Frame) to improve performance */
 	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_OSF | FIELD_PREP(DWMAC_DMAOMR_RTC, 0x3));
@@ -159,6 +188,22 @@ int dwmac_platform_init(const struct device *dev)
 
 	return 0;
 }
+
+#if !defined(CONFIG_SOC_SERIES_ESP32)
+void dwmac_platform_link_speed_changed(const struct device *dev, enum phy_link_speed speed)
+{
+	ARG_UNUSED(dev);
+
+#if SOC_EMAC_SUPPORT_1000M
+	if (ETH_ESP32_RGMII && esp32_emac_rgmii_link_speed(speed) != 0) {
+		LOG_ERR("Failed to set the RGMII TX clock");
+	}
+#endif
+	if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
+		esp32_emac_rmii_link_speed(speed);
+	}
+}
+#endif
 
 static const struct dwmac_config dwmac_config = {
 	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),

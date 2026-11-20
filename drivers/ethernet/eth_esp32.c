@@ -36,9 +36,12 @@ LOG_MODULE_REGISTER(eth_esp32, CONFIG_ETHERNET_LOG_LEVEL);
 #define MAC_RESET_TIMEOUT_MS 100
 #define ETH_CRC_LENGTH       4
 
+#define ETH_ESP32_RGMII ESP32_EMAC_DT_IS_RGMII(DT_DRV_INST(0))
+
 BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii) ||
-	     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii),
-	     "Unsupported PHY interface type. Only RMII and MII are supported.");
+	     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii) ||
+	     ETH_ESP32_RGMII,
+	     "Unsupported PHY interface type. Only RMII, MII and RGMII are supported.");
 
 /*
  * On SoCs with L2 cache (ESP32-P4), DMA data is accessed by the CPU
@@ -70,14 +73,10 @@ struct eth_esp32_dev_data {
 	struct eth_esp32_dma_data *dma;
 	eth_dma_rx_descriptor_t *rx_desc;
 	eth_dma_tx_descriptor_t *tx_desc;
-	uint8_t txb[NET_ETH_MAX_FRAME_SIZE];
-	uint8_t rxb[NET_ETH_MAX_FRAME_SIZE];
 	uint8_t *dma_rx_buf[CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM];
 	uint8_t *dma_tx_buf[CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM];
 #if defined(CONFIG_PTP_CLOCK_ESP32)
 	const struct device *ptp_clock;
-	struct net_ptp_time rx_timestamp;
-	bool rx_timestamp_valid;
 #endif
 	struct k_sem int_sem;
 	struct k_sem tx_sem;
@@ -187,13 +186,11 @@ static void eth_esp32_reset_desc_chain(struct eth_esp32_dev_data *dev_data)
 				     (eth_dma_tx_descriptor_t *)ADDR_CPU_TO_DMA(dev_data->tx_desc));
 }
 
-static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, uint8_t *buf,
-					 uint32_t length, struct net_pkt *pkt)
+static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data,
+					 struct net_pkt *pkt, uint32_t length)
 {
 #if defined(CONFIG_PTP_CLOCK_ESP32)
 	const bool timestamp = net_pkt_is_tx_timestamping(pkt);
-#else
-	ARG_UNUSED(pkt);
 #endif
 	uint32_t bufcount = 0;
 	uint32_t lastlen = length;
@@ -216,14 +213,26 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 	eth_dma_tx_descriptor_t *first_desc = dev_data->tx_desc;
 #endif
 
-	/* Fill descriptors */
 	for (size_t i = 0; i < bufcount; i++) {
 		if (desc_iter->TDES0.Own != EMAC_LL_DMADESC_OWNER_CPU) {
+			return 0;
+		}
+		desc_iter = tx_desc_next(dev_data, desc_iter);
+	}
+
+	/* Fill descriptors, reading the frame straight into the DMA buffers */
+	net_pkt_cursor_init(pkt);
+	desc_iter = dev_data->tx_desc;
+	for (size_t i = 0; i < bufcount; i++) {
+		uint32_t chunk = (i == (bufcount - 1)) ? lastlen : CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
+
+		if (net_pkt_read(pkt, ADDR_DMA_TO_CPU(desc_iter->Buffer1Addr), chunk) != 0) {
 			return 0;
 		}
 
 		desc_iter->TDES0.FirstSegment = 0;
 		desc_iter->TDES0.LastSegment = 0;
+		desc_iter->TDES0.InterruptOnComplete = 0;
 
 		if (i == 0) {
 			desc_iter->TDES0.FirstSegment = 1;
@@ -233,17 +242,10 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 		}
 		if (i == (bufcount - 1)) {
 			desc_iter->TDES0.LastSegment = 1;
-			desc_iter->TDES1.TransmitBuffer1Size = lastlen;
-			memcpy(ADDR_DMA_TO_CPU(desc_iter->Buffer1Addr),
-			       buf + i * CONFIG_ETH_ESP32_DMA_BUFFER_SIZE, lastlen);
-			sentout += lastlen;
-		} else {
-			desc_iter->TDES1.TransmitBuffer1Size = CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
-			memcpy(ADDR_DMA_TO_CPU(desc_iter->Buffer1Addr),
-			       buf + i * CONFIG_ETH_ESP32_DMA_BUFFER_SIZE,
-			       CONFIG_ETH_ESP32_DMA_BUFFER_SIZE);
-			sentout += CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
+			desc_iter->TDES0.InterruptOnComplete = 1;
 		}
+		desc_iter->TDES1.TransmitBuffer1Size = chunk;
+		sentout += chunk;
 		desc_iter = tx_desc_next(dev_data, desc_iter);
 	}
 
@@ -354,6 +356,12 @@ static uint32_t eth_esp32_validate_rx_frame(struct eth_esp32_dev_data *dev_data,
 		return 0;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_CHECKSUM_OFFLOAD) && last_desc->RDES0.ExtendStatusAvailable &&
+	    (last_desc->ExtendedStatus.IPHeadErr || last_desc->ExtendedStatus.IPPayloadErr)) {
+		eth_esp32_drop_rx_frame(dev_data, first_desc, last_desc);
+		return 0;
+	}
+
 	ret_len = last_desc->RDES0.FrameLength - ETH_CRC_LENGTH;
 	if (ret_len > NET_ETH_MAX_FRAME_SIZE) {
 		eth_esp32_drop_rx_frame(dev_data, first_desc, last_desc);
@@ -363,13 +371,14 @@ static uint32_t eth_esp32_validate_rx_frame(struct eth_esp32_dev_data *dev_data,
 	return ret_len;
 }
 
-static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uint8_t *buf,
-					uint32_t size, uint32_t *frames_remaining)
+static struct net_pkt *eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data,
+					       uint32_t *frames_remaining)
 {
 	eth_dma_rx_descriptor_t *desc_iter = eth_esp32_find_rx_start(dev_data);
 	eth_dma_rx_descriptor_t *first_desc = NULL;
-	uint32_t ret_len = 0;
-	uint32_t copy_len = 0;
+	eth_dma_rx_descriptor_t *last_desc = NULL;
+	struct net_pkt *pkt;
+	uint32_t frame_len = 0;
 	uint32_t used_descs = 0;
 	uint32_t frame_count = 0;
 
@@ -387,11 +396,12 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 		if (desc_iter->RDES0.LastDescriptor) {
 			frame_count++;
 			if (frame_count == 1 && first_desc != NULL) {
-				ret_len = eth_esp32_validate_rx_frame(dev_data, first_desc,
-								      desc_iter);
-				if (ret_len == 0) {
-					return 0;
+				frame_len = eth_esp32_validate_rx_frame(dev_data, first_desc,
+									desc_iter);
+				if (frame_len == 0) {
+					return NULL;
 				}
+				last_desc = desc_iter;
 			}
 		}
 		desc_iter = rx_desc_next(dev_data, desc_iter);
@@ -399,28 +409,32 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 
 	*frames_remaining = (frame_count > 1) ? (frame_count - 1) : 0;
 
-	if (ret_len == 0 || first_desc == NULL) {
-		return 0;
+	if (last_desc == NULL) {
+		return NULL;
 	}
 
-	/* Copy frame data */
-	copy_len = (ret_len > size) ? size : ret_len;
+	pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface, frame_len, NET_AF_UNSPEC, 0,
+					   K_NO_WAIT);
+	if (pkt == NULL) {
+		eth_stats_update_errors_rx(dev_data->iface);
+		LOG_DBG("Could not allocate rx buffer");
+		eth_esp32_drop_rx_frame(dev_data, first_desc, last_desc);
+		return NULL;
+	}
+
+	/* Copy frame data straight from the DMA buffers, CRC excluded */
 	desc_iter = first_desc;
-	uint32_t remaining = copy_len;
+	for (uint32_t remaining = frame_len; remaining > 0U;) {
+		uint32_t chunk = MIN(remaining, (uint32_t)CONFIG_ETH_ESP32_DMA_BUFFER_SIZE);
 
-	while (remaining > CONFIG_ETH_ESP32_DMA_BUFFER_SIZE) {
-		memcpy(buf, ADDR_DMA_TO_CPU(desc_iter->Buffer1Addr),
-		       CONFIG_ETH_ESP32_DMA_BUFFER_SIZE);
-		buf += CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
-		remaining -= CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
-		desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-		desc_iter = rx_desc_next(dev_data, desc_iter);
-	}
-	memcpy(buf, ADDR_DMA_TO_CPU(desc_iter->Buffer1Addr), remaining);
-
-	/* Return descriptors including any that held CRC */
-	while (!desc_iter->RDES0.LastDescriptor) {
-		desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
+		if (net_pkt_write(pkt, ADDR_DMA_TO_CPU(desc_iter->Buffer1Addr), chunk) != 0) {
+			LOG_ERR("Unable to write frame into the pkt");
+			eth_stats_update_errors_rx(dev_data->iface);
+			net_pkt_unref(pkt);
+			eth_esp32_drop_rx_frame(dev_data, first_desc, last_desc);
+			return NULL;
+		}
+		remaining -= chunk;
 		desc_iter = rx_desc_next(dev_data, desc_iter);
 	}
 
@@ -428,29 +442,42 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 	/*
 	 * The capture is reported in the last descriptor of the frame. A
 	 * timestamp is only present when the MAC snapshotted this frame,
-	 * which it does for PTP frames only, so it must be latched here
-	 * before the descriptor is handed back to the DMA.
+	 * which it does for PTP frames only.
 	 */
-	dev_data->rx_timestamp_valid = desc_iter->RDES0.TSAvailIPChecksumErrGiantFrame &&
-				       !desc_iter->ExtendedStatus.TimestampDropped;
-	if (dev_data->rx_timestamp_valid) {
-		dev_data->rx_timestamp.second = desc_iter->TimeStampHigh;
-		dev_data->rx_timestamp.nanosecond = desc_iter->TimeStampLow;
+	if (last_desc->RDES0.TSAvailIPChecksumErrGiantFrame &&
+	    !last_desc->ExtendedStatus.TimestampDropped) {
+		struct net_ptp_time ts = {
+			.second = last_desc->TimeStampHigh,
+			.nanosecond = last_desc->TimeStampLow,
+		};
+
+		net_pkt_set_timestamp(pkt, &ts);
+		net_pkt_set_rx_timestamping(pkt, true);
 	}
 #endif
 
-	desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-
-	dev_data->rx_desc = rx_desc_next(dev_data, desc_iter);
+	/* Return descriptors including any that held CRC */
+	eth_esp32_flush_rx_frame(dev_data, first_desc, last_desc);
+	dev_data->rx_desc = rx_desc_next(dev_data, last_desc);
 	emac_hal_receive_poll_demand(&dev_data->hal);
 
-	return copy_len;
+	return pkt;
 }
 
 static enum ethernet_hw_caps eth_esp32_caps(const struct device *dev __unused,
 					    struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
+	enum ethernet_hw_caps caps = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
+
+	if (ETH_ESP32_RGMII) {
+		caps |= ETHERNET_LINK_1000BASE;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CHECKSUM_OFFLOAD)) {
+		caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
+	}
+
+	return caps;
 }
 
 static int eth_esp32_set_config(const struct device *dev,
@@ -477,10 +504,6 @@ static int eth_esp32_send(const struct device *dev, struct net_pkt *pkt)
 	struct eth_esp32_dev_data *dev_data = dev->data;
 	size_t len = net_pkt_get_len(pkt);
 
-	if (net_pkt_read(pkt, dev_data->txb, len)) {
-		return -EIO;
-	}
-
 	/*
 	 * transmit_frame returns 0 when the next TX descriptor is still owned
 	 * by the DMA. Wait for the TX-finish interrupt to recycle one and
@@ -491,47 +514,12 @@ static int eth_esp32_send(const struct device *dev, struct net_pkt *pkt)
 	k_timepoint_t deadline = sys_timepoint_calc(K_MSEC(100));
 
 	do {
-		if (eth_esp32_transmit_frame(dev_data, dev_data->txb, len, pkt) == len) {
+		if (eth_esp32_transmit_frame(dev_data, pkt, len) == len) {
 			return 0;
 		}
 	} while (k_sem_take(&dev_data->tx_sem, sys_timepoint_timeout(deadline)) == 0);
 
 	return -EIO;
-}
-
-static struct net_pkt *eth_esp32_rx(
-	struct eth_esp32_dev_data *const dev_data, uint32_t *frames_remaining)
-{
-	uint32_t receive_len = eth_esp32_receive_frame(dev_data, dev_data->rxb,
-						       sizeof(dev_data->rxb), frames_remaining);
-	if (receive_len == 0) {
-		/* Nothing to receive */
-		return NULL;
-	}
-
-	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface, receive_len,
-							   NET_AF_UNSPEC, 0, K_NO_WAIT);
-	if (pkt == NULL) {
-		eth_stats_update_errors_rx(dev_data->iface);
-		LOG_ERR("Could not allocate rx buffer");
-		return NULL;
-	}
-
-	if (net_pkt_write(pkt, dev_data->rxb, receive_len) != 0) {
-		LOG_ERR("Unable to write frame into the pkt");
-		eth_stats_update_errors_rx(dev_data->iface);
-		net_pkt_unref(pkt);
-		return NULL;
-	}
-
-#if defined(CONFIG_PTP_CLOCK_ESP32)
-	if (dev_data->rx_timestamp_valid) {
-		net_pkt_set_timestamp(pkt, &dev_data->rx_timestamp);
-		net_pkt_set_rx_timestamping(pkt, true);
-	}
-#endif
-
-	return pkt;
 }
 
 FUNC_NORETURN static void eth_esp32_rx_thread(void *arg1, void *arg2, void *arg3)
@@ -553,8 +541,8 @@ FUNC_NORETURN static void eth_esp32_rx_thread(void *arg1, void *arg2, void *arg3
 		uint32_t frames_remaining;
 
 		do {
-			struct net_pkt *pkt = eth_esp32_rx(
-				dev_data, &frames_remaining);
+			struct net_pkt *pkt = eth_esp32_receive_frame(dev_data,
+								      &frames_remaining);
 			if (pkt == NULL) {
 				break;
 			}
@@ -614,6 +602,31 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 				   void *user_data)
 {
 	struct net_if *iface = (struct net_if *)user_data;
+	struct eth_esp32_dev_data *const dev_data = net_if_get_device(iface)->data;
+
+	if (state->is_up) {
+		eth_speed_t speed = ETH_SPEED_10M;
+
+		if (PHY_LINK_IS_SPEED_1000M(state->speed)) {
+			speed = ETH_SPEED_1000M;
+		} else if (PHY_LINK_IS_SPEED_100M(state->speed)) {
+			speed = ETH_SPEED_100M;
+		}
+
+#if SOC_EMAC_SUPPORT_1000M
+		if (ETH_ESP32_RGMII && esp32_emac_rgmii_link_speed(state->speed) != 0) {
+			LOG_ERR("Failed to set the RGMII TX clock");
+		}
+#endif
+#if !defined(CONFIG_SOC_SERIES_ESP32)
+		if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
+			esp32_emac_rmii_link_speed(state->speed);
+		}
+#endif
+		emac_hal_set_speed(&dev_data->hal, speed);
+		emac_hal_set_duplex(&dev_data->hal, PHY_LINK_IS_FULL_DUPLEX(state->speed) ?
+							    ETH_DUPLEX_FULL : ETH_DUPLEX_HALF);
+	}
 
 	net_eth_carrier_set(iface, state->is_up);
 }
@@ -657,22 +670,25 @@ int eth_esp32_initialize(const struct device *dev)
 	/* Initialize HAL context */
 	emac_hal_init(&dev_data->hal);
 
-	/* Configure ISR */
-	res = esp_intr_alloc(
-		DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, irq),
-		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, priority)) |
-			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, flags)) |
-			ESP_INTR_FLAG_IRAM,
-		eth_esp32_isr, (void *)(uintptr_t)dev, NULL);
-	if (res != 0) {
-		goto err;
-	}
-
-	/* Configure phy for Media-Independent Interface (MII) or
-	 * Reduced Media-Independent Interface (RMII) mode
+	/* Configure phy for Media-Independent Interface (MII), Reduced
+	 * Media-Independent Interface (RMII) or Reduced Gigabit
+	 * Media-Independent Interface (RGMII) mode
 	 */
 
-	if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
+	if (ETH_ESP32_RGMII) {
+#if SOC_EMAC_SUPPORT_1000M
+		res = esp32_emac_iomux_init_rgmii_pinctrl(cfg->pcfg);
+		if (res != 0) {
+			goto err;
+		}
+
+		res = esp32_emac_rgmii_clock_init();
+		if (res != 0) {
+			LOG_ERR("Failed to configure the RGMII clock");
+			goto err;
+		}
+#endif
+	} else if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
 		int rmii_clk_gpio = -1;
 
 		res = esp32_emac_iomux_init_rmii_pinctrl(cfg->pcfg, &rmii_clk_gpio);
@@ -722,7 +738,7 @@ int eth_esp32_initialize(const struct device *dev)
 	}
 	if (!reset_success) {
 		res = -ETIMEDOUT;
-		goto err;
+		goto err_clk;
 	}
 
 	/* Set dma_burst_len as ETH_DMA_BURST_LEN_32 by default */
@@ -763,9 +779,20 @@ int eth_esp32_initialize(const struct device *dev)
 
 	res = generate_mac_addr(dev_data->mac_addr);
 	if (res != 0) {
-		goto err;
+		goto err_clk;
 	}
 	emac_hal_set_address(&dev_data->hal, dev_data->mac_addr);
+
+	/* Configure ISR */
+	res = esp_intr_alloc(
+		DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, irq),
+		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, priority)) |
+			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(eth), 0, flags)) |
+			ESP_INTR_FLAG_IRAM,
+		eth_esp32_isr, (void *)(uintptr_t)dev, NULL);
+	if (res != 0) {
+		goto err_clk;
+	}
 
 	k_tid_t tid = k_thread_create(
 		&dev_data->rx_thread, dev_data->rx_thread_stack,
@@ -782,6 +809,12 @@ int eth_esp32_initialize(const struct device *dev)
 
 	return 0;
 
+err_clk:
+#if SOC_EMAC_SUPPORT_1000M
+	if (ETH_ESP32_RGMII) {
+		esp32_emac_rgmii_clock_deinit();
+	}
+#endif
 err:
 	return res;
 }
