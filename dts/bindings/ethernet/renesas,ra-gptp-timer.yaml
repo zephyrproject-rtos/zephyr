@@ -1,0 +1,18 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA Ethernet Generic PTP Timer (GPTP) timer.
+
+  One timer of the gPTP timer block, exposed as a PTP (Precision Time
+  Protocol) clock. The node must be a child of the "renesas,ra-gptp" node,
+  and both nodes must be enabled.
+
+compatible: "renesas,ra-gptp-timer"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Timer number within the gPTP timer block.
