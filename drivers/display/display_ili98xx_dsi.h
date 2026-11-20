@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+ * SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,11 +30,11 @@ BUILD_ASSERT(DT_HAS_COMPAT_STATUS_OKAY(zephyr_panel_timing),
 #define LCD_VTIMMING_FRONT_PORCH DT_PROP(LCD_TIMINGS_NODE, vfront_porch)
 
 #define ILI98XX_DSI_HSYNC LCD_HTIMMING_SYNC
-#define ILI98XX_DSI_HBP   LCD_HTIMMING_BACK_PORCH - LCD_HTIMMING_SYNC
+#define ILI98XX_DSI_HBP   LCD_HTIMMING_BACK_PORCH
 #define ILI98XX_DSI_HFP   LCD_HTIMMING_FRONT_PORCH
 
 #define ILI98XX_DSI_VSYNC LCD_VTIMMING_SYNC
-#define ILI98XX_DSI_VBP   LCD_VTIMMING_BACK_PORCH - LCD_VTIMMING_SYNC
+#define ILI98XX_DSI_VBP   LCD_VTIMMING_BACK_PORCH
 #define ILI98XX_DSI_VFP   LCD_VTIMMING_FRONT_PORCH
 
 /** Longest parameter list used by any of the supported panels. */
