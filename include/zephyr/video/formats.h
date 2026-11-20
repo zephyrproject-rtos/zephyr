@@ -19,7 +19,7 @@
  * @brief Video pixel format definitions.
  * @defgroup video_formats Video Formats
  * @since 4.4
- * @version 0.0.1
+ * @version 0.1.0
  * @ingroup video_api
  *
  * The '|' characters separate the pixels or logical blocks, and spaces separate the bytes.
@@ -1457,6 +1457,28 @@ extern "C" {
 #define VIDEO_FMT_IS_FULL_PLANAR(pixfmt)                                                           \
 	(0 VIDEO_FOREACH_YUV_FULL_PLANAR(_VIDEO_FMT_OR_EQ, pixfmt)                                 \
 		 VIDEO_FOREACH_RGB_FULL_PLANAR(_VIDEO_FMT_OR_EQ, pixfmt))
+
+/**
+ * @brief Get the number of image planes in a pixel format.
+ *
+ * This count does not account for chroma subsampling or per-plane padding.
+ *
+ * @param pixfmt FourCC pixel format value (@ref video_formats).
+ *
+ * @retval 1 Format is neither semiplanar nor fully planar.
+ * @retval 2 Format is semiplanar.
+ * @retval 3 Format is fully planar.
+ */
+static inline unsigned int video_num_planes(uint32_t pixfmt)
+{
+	if (VIDEO_FMT_IS_SEMI_PLANAR(pixfmt)) {
+		return 2U;
+	}
+	if (VIDEO_FMT_IS_FULL_PLANAR(pixfmt)) {
+		return 3U;
+	}
+	return 1U;
+}
 
 /**
  * @brief Get number of bits per pixel of a pixel format
