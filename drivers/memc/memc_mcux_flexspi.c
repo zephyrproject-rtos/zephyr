@@ -574,6 +574,7 @@ static int memc_flexspi_init(const struct device *dev)
 	flexspi_config_t flexspi_config;
 	uint32_t flash_sizes[kFLEXSPI_PortCount] = { 0 };
 	FLEXSPI_Type *base;
+	bool xip;
 	int ret;
 	uint8_t i;
 
@@ -708,7 +709,12 @@ FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 		flexspi_config.ahbConfig.buffer[i].bufferSize = data->buf_cfg[i].buf_size;
 	}
 
-	if (memc_flexspi_is_running_xip(dev)) {
+	xip = memc_flexspi_is_running_xip(dev);
+#if CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	unsigned int key = irq_lock();
+#endif
+
+	if (xip) {
 		/* Save flash sizes- FlexSPI init will reset them */
 		for (i = 0; i < kFLEXSPI_PortCount; i++) {
 			flash_sizes[i] = base->FLSHCR0[i];
@@ -723,7 +729,7 @@ FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 		FLEXSPI_AHBCR_ALIGNMENT(data->ahb_boundary);
 #endif
 
-	if (memc_flexspi_is_running_xip(dev)) {
+	if (xip) {
 		/* Restore flash sizes */
 		for (i = 0; i < kFLEXSPI_PortCount; i++) {
 			base->FLSHCR0[i] = flash_sizes[i];
@@ -732,6 +738,10 @@ FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 		/* Reenable FLEXSPI module */
 		base->MCR0 &= ~FLEXSPI_MCR0_MDIS_MASK;
 	}
+
+#if CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	irq_unlock(key);
+#endif
 
 	return 0;
 }
