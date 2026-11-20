@@ -157,7 +157,7 @@ ZTEST(br_acl_recv, test_single_pdu_kept)
 	check_kept(0, lens[0]);
 	zassert_equal(acl_freed, 0);
 
-	net_buf_unref(rx[0].buf);
+	net_buf_drop(&rx[0].buf);
 	zassert_equal(acl_freed, 1);
 }
 
@@ -185,11 +185,11 @@ ZTEST(br_acl_recv, test_multiple_pdus_kept)
 		zassert_equal(net_buf_headroom(rx[pdu].buf), 0U, "PDU %zu: headroom", pdu);
 	}
 
-	net_buf_unref(rx[2].buf);
-	net_buf_unref(rx[0].buf);
+	net_buf_drop(&rx[2].buf);
+	net_buf_drop(&rx[0].buf);
 	zassert_equal(acl_freed, 0);
 
-	net_buf_unref(rx[1].buf);
+	net_buf_drop(&rx[1].buf);
 	zassert_equal(acl_freed, 1);
 }
 
@@ -242,7 +242,7 @@ ZTEST(br_acl_recv, test_views_exhausted)
 	zassert_equal(acl_freed, 0);
 
 	for (size_t pdu = 0; pdu < views; pdu++) {
-		net_buf_unref(rx[pdu].buf);
+		net_buf_drop(&rx[pdu].buf);
 	}
 
 	zassert_equal(acl_freed, 1);

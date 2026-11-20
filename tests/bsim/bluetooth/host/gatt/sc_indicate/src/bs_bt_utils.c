@@ -48,12 +48,8 @@ struct bt_conn *get_g_conn(void)
 
 void clear_g_conn(void)
 {
-	struct bt_conn *conn;
-
-	conn = g_conn;
-	g_conn = NULL;
-	TEST_ASSERT(conn, "Test error: no g_conn!");
-	bt_conn_unref(conn);
+	TEST_ASSERT(g_conn != NULL, "Test error: no g_conn!");
+	bt_conn_drop(&g_conn);
 }
 
 static void connected(struct bt_conn *conn, uint8_t err)
