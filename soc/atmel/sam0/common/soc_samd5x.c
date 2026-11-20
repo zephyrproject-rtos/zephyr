@@ -137,6 +137,19 @@ static void gclk_connect(uint8_t gclk, uint8_t src, uint8_t div)
 				| GCLK_GENCTRL_GENEN;
 }
 
+static void cmcc_init(void)
+{
+	/* A bootloader may have used the cache: invalidate it, which requires it disabled */
+	CMCC->CTRL.reg = 0U;
+	while (CMCC->SR.bit.CSTS != 0) {
+	}
+	CMCC->MAINT0.reg = CMCC_MAINT0_INVALL;
+
+	if (IS_ENABLED(CONFIG_SOC_ATMEL_SAMD5X_CMCC)) {
+		CMCC->CTRL.reg = CMCC_CTRL_CEN;
+	}
+}
+
 void soc_reset_hook(void)
 {
 	uint8_t dfll_div;
@@ -149,14 +162,7 @@ void soc_reset_hook(void)
 		dfll_div = 1;
 	}
 
-	/*
-	 * Force Cortex M Cache Controller disabled
-	 *
-	 * It is not clear if regular Cortex-M instructions can be used to
-	 * perform cache maintenance or this is a proprietary cache controller
-	 * that require special SoC support.
-	 */
-	CMCC->CTRL.bit.CEN = 0;
+	cmcc_init();
 
 	gclk_reset();
 	xosc32k_init();
