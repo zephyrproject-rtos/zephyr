@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_FLASH_RTS5817_QSPI_REG_H_
+#define ZEPHYR_DRIVERS_FLASH_RTS5817_QSPI_REG_H_
+
+#include <zephyr/sys/util.h>
+
+#define R_SPI_TCTL         0x14
+#define R_SPI_CLK_DIVIDER  0x18
+#define R_SPI_COM_TRANSFER 0x2C
+#define R_SPI_SUB1_MODE    0x30
+#define R_SPI_SUB1_COMMAND 0x34
+#define R_SPI_SUB1_ADDR    0x38
+#define R_SPI_SUB1_LENGTH  0x3C
+#define R_SPI_SUB2_MODE    0x40
+#define R_SPI_SUB2_COMMAND 0x44
+#define R_SPI_SUB2_ADDR    0x48
+#define R_SPI_SUB2_LENGTH  0x4C
+#define R_SPI_SUB3_MODE    0x50
+#define R_SPI_SUB3_COMMAND 0x54
+#define R_SPI_SUB3_ADDR    0x58
+#define R_SPI_SUB4_MODE    0x60
+#define R_SPI_WB_DMA_ADDR  0x78
+#define R_SPI_WB_DMA_LEN   0x7C
+#define R_SPI_WB_DMA_DIR   0x80
+
+/* Bits of R_SPI_TCTL (0x14) */
+
+#define RTS5817_QSPI_T_EDO_MASK         GENMASK(1, 0)
+#define RTS5817_QSPI_T_CS_MASK          GENMASK(3, 2)
+#define RTS5817_QSPI_U_DUM_BIT_NUM_MASK GENMASK(12, 8)
+
+/* Bits of R_SPI_CLK_DIVIDER (0x18) */
+
+#define RTS5817_QSPI_SCK_DIVIDER_MASK GENMASK(7, 0)
+
+/* Bits of R_SPI_COM_TRANSFER (0x2C) */
+
+#define RTS5817_QSPI_WB_TRANS_NUM_MASK GENMASK(1, 0)
+#define RTS5817_QSPI_WB_RST_OFFSET     2
+#define RTS5817_QSPI_WB_RST_MASK       BIT(2)
+
+#define RTS5817_QSPI_WB_IDLE_OFFSET 6
+#define RTS5817_QSPI_WB_IDLE_MASK   BIT(6)
+#define RTS5817_QSPI_WB_START_MASK  BIT(7)
+
+/* Parameters of R_SPI_COM_TRANSFER (0x2C) */
+
+#define RTS5817_QSPI_COM_TRANSFER_NUM_1 0x00
+#define RTS5817_QSPI_COM_TRANSFER_NUM_3 0x02
+
+/* Parameters of R_SPI_WB_DMA_DIR (0x80) */
+
+#define RTS5817_QSPI_DMA_SPI_TO_DTCM 0
+#define RTS5817_QSPI_DMA_DTCM_TO_SPI 1
+
+#endif /* ZEPHYR_DRIVERS_FLASH_RTS5817_QSPI_REG_H_ */

@@ -8,10 +8,24 @@
 / {
 	chosen {
 		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flash_controller;
 	};
 
-	flash0: memory@1800000 {
-		compatible = "soc-nv-flash";
-		reg = <0x1800000 DT_SIZE_M(2)>;
+	soc {
+		flash_controller: flash-controller@40000000 {
+			/*
+			 * Offsets below 0x1100 are not on the bus: flash0 starts at
+			 * 0x17fef00 so that offset 0x1100 lands on 0x1800000.
+			 */
+			flash0: flash0@17fef00 {
+				compatible = "soc-nv-flash";
+				reg = <0x17fef00 DT_SIZE_M(2)>;
+				ranges = <0x0 0x17fef00 DT_SIZE_M(2)>;
+				erase-block-size = <DT_SIZE_K(4)>;
+				write-block-size = <1>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
 	};
 };
