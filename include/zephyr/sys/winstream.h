@@ -6,6 +6,7 @@
 #define ZEPHYR_INCLUDE_SYS_WINSTREAM_H_
 
 #include <stdint.h>
+#include <zephyr/toolchain.h>
 
 /** @brief Lockless shared memory byte stream IPC
  *
@@ -27,7 +28,7 @@ struct sys_winstream {
 	uint32_t start; /* Index of first valid byte in data[] */
 	uint32_t end;   /* Index of next byte in data[] to write */
 	uint32_t seq;   /* Mod-2^32 index of 'end' since stream init */
-	uint8_t data[];
+	uint8_t data[] __counted_by(len);
 };
 
 /** @brief Construct a sys_winstream from a region of memory

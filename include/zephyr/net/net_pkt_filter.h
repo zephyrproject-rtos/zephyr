@@ -90,7 +90,7 @@ struct npf_rule {
 	enum net_verdict result;    /**< result if all tests pass */
 	enum net_priority priority; /**< priority in case of NET_CONTINUE */
 	uint32_t nb_tests;          /**< number of tests for this rule */
-	struct npf_test *tests[];   /**< pointers to @ref npf_test instances */
+	struct npf_test *tests[] __counted_by(nb_tests); /**< pointers to @ref npf_test instances */
 };
 
 /** @brief Default rule list termination for accepting a packet */

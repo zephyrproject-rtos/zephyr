@@ -36,6 +36,13 @@
 
 #define TOOLCHAIN_HAS_ZLA 1
 
+/* GCC supports counted_by on flexible array members since 15.1, in C only */
+#if !defined(__counted_by) && !defined(__clang__) && !defined(__cplusplus) &&                      \
+	(TOOLCHAIN_GCC_VERSION >= 150100)
+#define __counted_by(member)     __attribute__((__counted_by__(member)))
+#define TOOLCHAIN_HAS_COUNTED_BY 1
+#endif
+
 /*
  * Older versions of GCC do not define __BYTE_ORDER__, so it must be manually
  * detected and defined using arch-specific definitions.

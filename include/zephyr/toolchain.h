@@ -84,6 +84,28 @@
 #endif
 
 /**
+ * @def __counted_by
+ * @brief Name the member holding the element count of a flexible array member.
+ *
+ * Applied to a flexible array member, tells the compiler that @p member holds
+ * the number of elements of the array. The bounds sanitizer
+ * (``-fsanitize=array-bounds``) then traps on an index past that count, and
+ * ``__builtin_dynamic_object_size()`` returns the size it implies.
+ *
+ * @p member must be declared before the array, in the same structure, and must
+ * hold an element count, not a size in bytes. Set it before any access to the
+ * array, including right after allocating the object.
+ *
+ * Expands to nothing in C++ and on compilers without a correct implementation
+ * of the attribute; see @ref TOOLCHAIN_HAS_COUNTED_BY.
+ *
+ * @param member Name of the structure member holding the element count.
+ */
+#if !defined(__counted_by) || defined(__DOXYGEN__)
+#define __counted_by(member)
+#endif
+
+/**
  * @def TOOLCHAIN_GCC_VERSION
  * @brief GCC version in xxyyzz for xx.yy.zz. Zero if not GCC compatible.
  */
@@ -137,6 +159,14 @@
  */
 #ifndef TOOLCHAIN_HAS_ZLA
 #define TOOLCHAIN_HAS_ZLA 0
+#endif
+
+/**
+ * @def TOOLCHAIN_HAS_COUNTED_BY
+ * @brief Indicate if __counted_by() is passed to the compiler.
+ */
+#ifndef TOOLCHAIN_HAS_COUNTED_BY
+#define TOOLCHAIN_HAS_COUNTED_BY 0
 #endif
 
 /**
