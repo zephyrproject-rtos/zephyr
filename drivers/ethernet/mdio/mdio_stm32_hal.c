@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(mdio_stm32_hal, CONFIG_MDIO_LOG_LEVEL);
 
 #define MDIO_STM32_PINCTRL_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(pinctrl_0)
 
-#define ADIN1100_REG_VALUE_MASK		GENMASK(15, 0)
+#define MDIO_STM32_REG_VALUE_MASK	GENMASK(15, 0)
 
 struct mdio_stm32_data {
 	struct k_mutex mutex;
@@ -67,7 +67,7 @@ static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
 		return -EIO;
 	}
 
-	*data = read & ADIN1100_REG_VALUE_MASK;
+	*data = read & MDIO_STM32_REG_VALUE_MASK;
 
 	return 0;
 }
@@ -143,7 +143,7 @@ static DEVICE_API(mdio, mdio_stm32_api) = {
                                                                                                    \
 	static struct mdio_stm32_data mdio_stm32_data_##inst;                                      \
                                                                                                    \
-	static struct mdio_stm32_config mdio_stm32_config_##inst = {                               \
+	static const struct mdio_stm32_config mdio_stm32_config_##inst = {                         \
 		.ethernet_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                               \
 		MDIO_STM32_PINCTRL_CONFIG(inst)                                                    \
 	};                                                                                         \
