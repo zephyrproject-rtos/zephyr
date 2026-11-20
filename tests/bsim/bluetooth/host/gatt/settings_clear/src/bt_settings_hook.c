@@ -25,6 +25,13 @@ static atomic_t settings_record_enabled = ATOMIC_INIT(0);
 
 static sys_slist_t settings_list = SYS_SLIST_STATIC_INIT(settings_list);
 
+static bool hash_stored;
+
+bool bt_settings_hash_stored(void)
+{
+	return hash_stored;
+}
+
 static void add_key(const char *key)
 {
 	struct settings_list_node *new_node;
@@ -131,6 +138,20 @@ void bt_testing_settings_store_hook(const char *key, const void *value, size_t v
 {
 	LOG_DBG("Store: %s", key);
 	LOG_HEXDUMP_DBG(value, val_len, "Data:");
+
+	/* Writing to flash takes more stack than an application has to reserve
+	 * for the thread that loads its settings.
+	 */
+	TEST_ASSERT(strcmp(k_thread_name_get(k_current_get()), "main") != 0,
+		    "Stored %s on the main thread", key);
+
+	/* The database hash does not belong to a bond, and is stored in the
+	 * background after settings_load() has returned.
+	 */
+	if (strcmp(key, "bt/hash") == 0) {
+		hash_stored = true;
+		return;
+	}
 
 	add_key(key);
 }

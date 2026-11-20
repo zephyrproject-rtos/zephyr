@@ -221,6 +221,10 @@ struct bt_smp {
 	/* Delayed work for timeout handling */
 	struct k_work_delayable		work;
 
+	/* Keys whose transmission completed, handled by the work item */
+	atomic_t			sent_dist;
+	struct k_work			sent_work;
+
 	/* Used Bluetooth authentication callbacks. */
 	atomic_ptr_t			auth_cb;
 
@@ -284,6 +288,10 @@ struct bt_smp_br {
 
 	/* Delayed work for timeout handling */
 	struct k_work_delayable	work;
+
+	/* Keys whose transmission completed, handled by the work item */
+	atomic_t		sent_dist;
+	struct k_work		sent_work;
 };
 
 static struct bt_smp_br bt_smp_br_pool[CONFIG_BT_MAX_CONN];
@@ -699,17 +707,72 @@ static bool update_debug_keys_check(struct bt_smp *smp)
 }
 #endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
-#if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_SIGNING) || \
-	!defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
-/* For TX callbacks */
 static void smp_pairing_complete(struct bt_smp *smp, uint8_t status);
+
+static void smp_sent_process(struct bt_smp *smp)
+{
+	uint8_t dist_complete = (uint8_t)atomic_clear(&smp->sent_dist);
+
+	/* The pairing can have ended since, and bt_disable() resets the keys
+	 * that completing it would store.
+	 */
+	if (dist_complete == 0U || !atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) ||
+	    !bt_is_ready()) {
+		return;
+	}
+
+	smp->local_dist &= ~dist_complete;
+
+	/* if all keys were distributed, pairing is done */
+	if (!smp->local_dist && !smp->remote_dist) {
+		smp_pairing_complete(smp, 0);
+	}
+}
+
+static void smp_sent_work(struct k_work *work)
+{
+	smp_sent_process(CONTAINER_OF(work, struct bt_smp, sent_work));
+}
+
 #if defined(CONFIG_BT_CLASSIC)
 static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status);
-#endif
 
-static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
+static void smp_br_sent_process(struct bt_smp_br *smp)
+{
+	uint8_t dist_complete = (uint8_t)atomic_clear(&smp->sent_dist);
+
+	/* The pairing can have ended since, and bt_disable() resets the keys
+	 * that completing it would store.
+	 */
+	if (dist_complete == 0U || !atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) ||
+	    !bt_is_ready()) {
+		return;
+	}
+
+	smp->local_dist &= ~dist_complete;
+
+	/* if all keys were distributed, pairing is done */
+	if (!smp->local_dist && !smp->remote_dist) {
+		smp_pairing_br_complete(smp, 0);
+	}
+}
+
+static void smp_br_sent_work(struct k_work *work)
+{
+	smp_br_sent_process(CONTAINER_OF(work, struct bt_smp_br, sent_work));
+}
+#endif /* CONFIG_BT_CLASSIC */
+
+#if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_SIGNING) || \
+	!defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
+/* For TX callbacks, which run on the TX notify queue. Completing a pairing stores
+ * keys and CCC values, so leave that to the Bluetooth workqueue: to the work item,
+ * or to the next SMP PDU if that comes first, as TX callbacks precede received data.
+ */
+static void smp_key_sent(struct bt_conn *conn, uint8_t dist_complete)
 {
 	struct bt_l2cap_chan *chan;
+	int err;
 
 	if (bt_conn_is_le(conn)) {
 		struct bt_smp *smp;
@@ -718,11 +781,11 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 		__ASSERT(chan, "No SMP channel found");
 
 		smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
-		smp->local_dist &= ~dist_complete;
+		(void)atomic_or(&smp->sent_dist, dist_complete);
 
-		/* if all keys were distributed, pairing is done */
-		if (!smp->local_dist && !smp->remote_dist) {
-			smp_pairing_complete(smp, 0);
+		err = bt_work_submit(&smp->sent_work);
+		if (err < 0) {
+			LOG_ERR("Failed to submit the sent work (err %d)", err);
 		}
 
 		return;
@@ -736,11 +799,11 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 		__ASSERT(chan, "No SMP channel found");
 
 		smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
-		smp->local_dist &= ~dist_complete;
+		(void)atomic_or(&smp->sent_dist, dist_complete);
 
-		/* if all keys were distributed, pairing is done */
-		if (!smp->local_dist && !smp->remote_dist) {
-			smp_pairing_br_complete(smp, 0);
+		err = bt_work_submit(&smp->sent_work);
+		if (err < 0) {
+			LOG_ERR("Failed to submit the sent work (err %d)", err);
 		}
 	}
 #endif
@@ -751,7 +814,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 static void smp_id_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	if (!err) {
-		smp_check_complete(conn, BT_SMP_DIST_ID_KEY);
+		smp_key_sent(conn, BT_SMP_DIST_ID_KEY);
 	}
 }
 #endif /* CONFIG_BT_PRIVACY */
@@ -760,7 +823,7 @@ static void smp_id_sent(struct bt_conn *conn, void *user_data, int err)
 static void smp_sign_info_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	if (!err) {
-		smp_check_complete(conn, BT_SMP_DIST_SIGN);
+		smp_key_sent(conn, BT_SMP_DIST_SIGN);
 	}
 }
 #endif /* CONFIG_BT_SIGNING */
@@ -906,6 +969,8 @@ static void smp_br_reset(struct bt_smp_br *smp)
 	 */
 	(void)k_work_cancel_delayable(&smp->work);
 
+	(void)atomic_clear(&smp->sent_dist);
+
 	atomic_set(smp->allowed_cmds, 0);
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
@@ -1041,9 +1106,10 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 
 	/* The channel disconnected callback and timeout work both run on the
 	 * Bluetooth workqueue, so canceling the timeout work should always
-	 * succeed.
+	 * succeed. The same goes for the sent work.
 	 */
 	(void)k_work_cancel_delayable(&smp->work);
+	(void)k_work_cancel(&smp->sent_work);
 
 	(void)memset(smp, 0, sizeof(*smp));
 }
@@ -1697,6 +1763,8 @@ static int bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_smp_hdr *hdr;
 	uint8_t err;
 
+	smp_br_sent_process(smp);
+
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("Too small SMP PDU received");
 		return 0;
@@ -1784,6 +1852,7 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	*chan = &smp->chan.chan;
 
 	k_work_init_delayable(&smp->work, smp_br_timeout);
+	k_work_init(&smp->sent_work, smp_br_sent_work);
 	smp_br_reset(smp);
 
 	return 0;
@@ -1898,6 +1967,8 @@ static void smp_reset(struct bt_smp *smp)
 	 * on this connection if that happens.
 	 */
 	(void)k_work_cancel_delayable(&smp->work);
+
+	(void)atomic_clear(&smp->sent_dist);
 
 	smp->method = JUST_WORKS;
 	atomic_set(smp->allowed_cmds, 0);
@@ -2228,7 +2299,7 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 static void smp_ident_sent(struct bt_conn *conn, void *user_data, int err)
 {
 	if (!err) {
-		smp_check_complete(conn, BT_SMP_DIST_ENC_KEY);
+		smp_key_sent(conn, BT_SMP_DIST_ENC_KEY);
 	}
 }
 
@@ -4862,6 +4933,8 @@ static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_smp_hdr *hdr;
 	uint8_t err;
 
+	smp_sent_process(smp);
+
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("Too small SMP PDU received");
 		return 0;
@@ -4986,6 +5059,7 @@ static void bt_smp_connected(struct bt_l2cap_chan *chan)
 		CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
 	k_work_init_delayable(&smp->work, smp_timeout);
+	k_work_init(&smp->sent_work, smp_sent_work);
 	smp_reset(smp);
 
 	atomic_ptr_set(&smp->auth_cb, BT_SMP_AUTH_CB_UNINITIALIZED);
@@ -5005,6 +5079,7 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 	 * succeed.
 	 */
 	(void)k_work_cancel_delayable(&smp->work);
+	(void)k_work_cancel(&smp->sent_work);
 
 	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) ||
 	    atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING) ||
