@@ -44,6 +44,15 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	addi %d15, %d15, 1
 	st.w [%a15]+___cpu_t_nested_OFFSET, %d15
 
+#ifdef CONFIG_ARCH_STACKWALK
+	/* Keep the interrupted thread's chain across nested interrupts. */
+	jne	%d15, 1, .L_stackwalk_pcxi_done
+	ld.a	%a13, [%a15]+___cpu_t_current_OFFSET
+	mfcr	%d14, TRICORE_PCXI
+	st.w	[%a13]+_thread_offset_to_saved_pcxi, %d14
+.L_stackwalk_pcxi_done:
+#endif
+
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_enter
 #endif

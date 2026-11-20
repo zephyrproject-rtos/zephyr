@@ -11,3 +11,7 @@ target_sources(app PRIVATE ${app_sources})
 if(CONFIG_RISCV)
   target_sources(app PRIVATE src/riscv_leaf.S)
 endif()
+
+if(CONFIG_TRICORE)
+  target_include_directories(app PRIVATE "${ZEPHYR_BASE}/arch/tricore/include")
+endif()
