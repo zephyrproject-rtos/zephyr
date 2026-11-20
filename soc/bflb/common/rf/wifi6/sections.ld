@@ -19,7 +19,8 @@ SECTION_DATA_PROLOGUE(SHAREDRAM, (NOLOAD),)
 /* libbl616_phyrf.a build-tag -- referenced by wl_get_version; keep in ROM
  * (an explicit placement avoids an orphan-section warning at link time).
  */
-SECTION_PROLOGUE(.version.phyrf,,)
+SECTION_PROLOGUE(.version.bflb,,)
 {
 	*(.version.phyrf)
+	*(.version.wl80211)
 } GROUP_ROM_LINK_IN(ROMABLE_REGION, ROMABLE_REGION)
