@@ -285,6 +285,42 @@ const char *npf_test_get_str(struct npf_test *test, char *buf,
 		.tests = { FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__) }, \
 	}
 
+/**
+ * @brief Statically define one packet filter rule that sets the packet priority
+ *
+ * This creates a rule from a variable amount of filter conditions. Unlike a
+ * rule created with NPF_RULE(), it does not determine the fate of the packet:
+ * if all conditions are true, the priority of the packet is set to
+ * @p _priority and the next rule in the list is evaluated.
+ *
+ * A priority rule does not end the evaluation. If no later rule in the list
+ * matches, the packet is dropped, so the list needs a terminating rule such as
+ * @ref npf_default_ok, as in the example below.
+ *
+ * Example:
+ *
+ * @code{.c}
+ *
+ *     static NPF_ETH_TYPE_MATCH(is_ptp, NET_ETH_PTYPE_PTP);
+ *
+ *     static NPF_PRIORITY(priority_nc, NET_PRIORITY_NC, is_ptp);
+ *
+ *     void install_my_filter(void)
+ *     {
+ *         npf_append_recv_rule(&priority_nc);
+ *         npf_append_recv_rule(&npf_default_ok);
+ *     }
+ *
+ * @endcode
+ *
+ * The above would accept all packets and give the PTP packets the network
+ * control priority.
+ *
+ * @param _name Name for this rule.
+ * @param _priority Priority of the packet if all conditions are true, one of
+ *                  @ref net_priority.
+ * @param ... List of conditions for this rule.
+ */
 #define NPF_PRIORITY(_name, _priority, ...)				\
 	struct npf_rule _name = {					\
 		.result = NET_CONTINUE,					\
