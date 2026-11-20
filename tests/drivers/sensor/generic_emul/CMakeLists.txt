@@ -8,3 +8,4 @@ project(generic_emul)
 target_sources(app PRIVATE
   src/main.c
 )
+target_sources_ifdef(CONFIG_SENSOR_ASYNC_API app PRIVATE src/stream.c)
