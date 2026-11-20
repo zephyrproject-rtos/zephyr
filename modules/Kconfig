@@ -79,6 +79,9 @@ comment "hal_nxp module not available."
 comment "liblc3 module not available."
 	depends on !ZEPHYR_LIBLC3_MODULE
 
+comment "libpeer module not available."
+	depends on !ZEPHYR_LIBPEER_MODULE
+
 comment "libsbc module not available."
 	depends on !ZEPHYR_LIBSBC_MODULE
 

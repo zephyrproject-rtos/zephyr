@@ -311,6 +311,12 @@ manifest:
       path: modules/hal/libmetal
       groups:
         - hal
+    - name: libpeer
+      url: https://github.com/chemag/libpeer
+      revision: 1087157e8836cf70226ecf344db347b6474976b9
+      path: modules/lib/libpeer
+      submodules:
+        - path: third_party/libsrtp
     - name: libsbc
       revision: 8e1beda02acb8972e29e6edbb423f7cafe16e445
       path: modules/lib/libsbc
