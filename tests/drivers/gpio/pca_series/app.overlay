@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	i2c_emul: i2c@12340000 {
+		compatible = "zephyr,i2c-emul-controller";
+		reg = <0x12340000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clock-frequency = <100000>;
+		status = "okay";
+
+		expander: gpio@20 {
+			compatible = "nxp,pca9555";
+			reg = <0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+		};
+	};
+};
