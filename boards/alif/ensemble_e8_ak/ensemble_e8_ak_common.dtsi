@@ -23,6 +23,7 @@
 
 	chosen {
 		zephyr,display = &cdc200;
+		zephyr,touch = &gt911;
 	};
 
 	leds {
@@ -178,6 +179,30 @@
 		hp-mode;
 		burst-mode;
 		status = "okay";
+	};
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio9 {
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	// Hack- this is for E7
+	clocks = <&clockctrl ALIF_CLK_CFG(CLKCTL_PER_SLV, I2C1_CTRL, 0U, 0U,
+					  0U, 0U, 0U, ALIF_PARENT_CLK_SYST_PCLK)>;
+	status = "okay";
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpio9 4 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio4 0 GPIO_ACTIVE_LOW>;
 	};
 };
 

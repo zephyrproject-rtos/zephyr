@@ -34,4 +34,12 @@ endchoice
 
 endif # LVGL
 
+if I2C_DW
+
+# HACK! The E7 has this configuration, not the E8!
+config I2C_DW_EMPTYFIFO_HOLD_MASTER_EN
+	default n
+
+endif
+
 endif # BOARD_ENSEMBLE_E8_AK

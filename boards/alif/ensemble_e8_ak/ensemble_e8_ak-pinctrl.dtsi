@@ -90,4 +90,13 @@
 			bias-pull-up;
 		};
 	};
+
+	i2c1_default: i2c1_default {
+		group0 {
+			pinmux = <PIN_P7_2__I2C1_SDA_C>,
+				 <PIN_P7_3__I2C1_SCL_C>;
+			input-enable;
+			drive-strength = <12>;
+		};
+	};
 };
