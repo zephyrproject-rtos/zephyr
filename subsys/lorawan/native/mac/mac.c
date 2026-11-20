@@ -37,7 +37,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
 
-#define RX_SETUP_MARGIN_MS	50
+#define RX_SETUP_MARGIN_MS	CONFIG_LORAWAN_NATIVE_RX_SETUP_MARGIN_MS
 #define RX_TIMEOUT_MARGIN_MS	100
 
 /* PHY frame overhead: MHDR(1) + FHDR(7) + FPort(1) + MIC(4) */

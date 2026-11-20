@@ -415,6 +415,15 @@ typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
 typedef int (*lora_api_rssi)(const struct device *dev, int16_t *rssi);
 
 /**
+ * @typedef lora_api_lbt()
+ * @brief Callback API for sensing a channel before transmitting on it
+ *
+ * @see lora_lbt() for argument descriptions.
+ */
+typedef int (*lora_api_lbt)(const struct device *dev, uint32_t frequency, uint32_t bandwidth_hz,
+			    int16_t threshold_dbm, k_timeout_t duration);
+
+/**
  * @typedef lora_api_recv_duty_cycle()
  * @brief Callback API for blocking receive with duty cycling
  *
@@ -470,6 +479,8 @@ __subsystem struct lora_driver_api {
 	lora_api_cad_async cad_async;
 	/** @driver_ops_optional @copybrief lora_rssi */
 	lora_api_rssi rssi;
+	/** @driver_ops_optional @copybrief lora_lbt */
+	lora_api_lbt lbt;
 	/** @driver_ops_optional @copybrief lora_recv_duty_cycle_async */
 	lora_api_recv_duty_cycle_async recv_duty_cycle_async;
 	/** @driver_ops_optional @copybrief lora_recv_duty_cycle */
@@ -616,6 +627,49 @@ static inline int lora_recv_async(const struct device *dev, lora_recv_cb cb,
 			       void *user_data)
 {
 	return DEVICE_API_GET(lora, dev)->recv_async(dev, cb, user_data);
+}
+
+/**
+ * @brief Sense a channel before transmitting on it
+ *
+ * Some regions reach the medium by listening before they talk: a channel is
+ * sensed for a minimum time against a level, and a transmission may start
+ * only where nothing was heard. KR920 and the Japanese AS923 are the plans
+ * that ask for it.
+ *
+ * A device that senses the channel itself answers this from one exchange,
+ * where a radio the host drives has @ref lora_config_gfsk and @ref lora_rssi
+ * for the caller to build the same measurement out of. This call is for the
+ * former, so that a modem which cannot hand over the parts can still hand
+ * over the answer.
+ *
+ * @note This is a blocking call, for at least @a duration.
+ *
+ * @param dev           LoRa device
+ * @param frequency     Frequency in Hz to sense
+ * @param bandwidth_hz  Width to sense, measured across both sidebands, the
+ *                      way radio datasheets state their channel filters. A
+ *                      regulation that states a single-sideband figure gives
+ *                      half of this.
+ * @param threshold_dbm Level at or above which the channel counts as busy
+ * @param duration      Shortest time to sense for. A device is free to take
+ *                      longer, which the regulations state as a minimum.
+ *
+ * @retval 0 Nothing was heard, the channel is clear
+ * @retval 1 The channel is busy
+ * @retval -ENOSYS The device cannot sense a channel
+ * @retval -EINVAL The device cannot sense that width or frequency
+ */
+static inline int lora_lbt(const struct device *dev, uint32_t frequency, uint32_t bandwidth_hz,
+			   int16_t threshold_dbm, k_timeout_t duration)
+{
+	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
+
+	if (api->lbt == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->lbt(dev, frequency, bandwidth_hz, threshold_dbm, duration);
 }
 
 /**
