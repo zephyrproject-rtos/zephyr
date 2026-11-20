@@ -6,9 +6,9 @@
 
 /**
  * @file
- * @brief New experimental USB device stack APIs and structures
+ * @brief New experimental USB host stack APIs and structures
  *
- * This file contains the USB device stack APIs and structures.
+ * This file contains the USB host stack APIs and structures.
  */
 
 #ifndef ZEPHYR_INCLUDE_USBH_H_
@@ -50,7 +50,7 @@ struct usbh_status {
  * USB host support runtime context
  */
 struct usbh_context {
-	/** Name of the USB device */
+	/** Name of the USB host controller context */
 	const char *name;
 	/** Access mutex */
 	struct k_mutex mutex;
@@ -188,22 +188,26 @@ struct usbh_class_node {
 	};
 
 /**
- * @brief Initialize the USB host support;
+ * @brief Initialize the USB host support
  *
  * @param[in] uhs_ctx Pointer to USB host support context
  *
  * @return 0 on success, other values on fail.
+ * @retval -ENODEV USB host controller is not ready
+ * @retval -EALREADY USB host controller is already initialized
  */
 int usbh_init(struct usbh_context *uhs_ctx);
 
 /**
- * @brief Enable the USB host support and class instances
+ * @brief Enable the USB host support
  *
  * This function enables the USB host support.
  *
  * @param[in] uhs_ctx Pointer to USB host support context
  *
  * @return 0 on success, other values on fail.
+ * @retval -EPERM USB host controller is not initialized
+ * @retval -EALREADY USB host controller is already enabled
  */
 int usbh_enable(struct usbh_context *uhs_ctx);
 
@@ -226,6 +230,8 @@ int usbh_disable(struct usbh_context *uhs_ctx);
  * @param[in] uhs_ctx Pointer to USB host support context
  *
  * @return 0 on success, other values on fail.
+ * @retval -EBUSY USB host controller is enabled
+ * @retval -EALREADY USB host controller is not initialized
  */
 int usbh_shutdown(struct usbh_context *const uhs_ctx);
 
