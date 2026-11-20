@@ -1,0 +1,50 @@
+# Copyright (c) 2026 Dimitri Varpusvuori
+# SPDX-License-Identifier: Apache-2.0
+
+menu "M68K Options"
+	depends on M68K
+
+config ARCH
+	string
+	default "m68k"
+
+config CPU_M68000
+	bool
+	select ATOMIC_OPERATIONS_C
+
+config CPU_M68010
+	bool
+	select ATOMIC_OPERATIONS_C
+	select M68K_EXCEPTION_FRAME_HAS_FORMAT_WORD
+
+# m68k supplies the CPU vector table; _sw_isr_table mirrors its 256 slots.
+# Cascaded controllers append entries after the CPU vector range.
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config GEN_SW_ISR_TABLE
+	default y
+
+config NUM_IRQS
+	int
+	default 256
+
+# Bump the kernel default for m68k initialization and test workloads.
+config MAIN_STACK_SIZE
+	default 2048
+
+config IDLE_STACK_SIZE
+	default 512
+
+config M68K_EXCEPTION_FRAME_HAS_FORMAT_WORD
+	bool
+	help
+	  Set if the processor tags exception stack frames with a
+	  format/vector-offset word (68010 and later), as opposed to the
+	  fixed, untagged frame used by the plain 68000.
+
+endmenu

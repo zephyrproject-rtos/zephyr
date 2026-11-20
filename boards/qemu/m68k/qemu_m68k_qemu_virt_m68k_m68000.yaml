@@ -1,0 +1,16 @@
+identifier: qemu_m68k/qemu_virt_m68k_m68000
+name: QEMU M68K Virtual Machine (M68000)
+type: qemu
+simulation:
+  - name: qemu
+arch: m68k
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 16384
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: qemu

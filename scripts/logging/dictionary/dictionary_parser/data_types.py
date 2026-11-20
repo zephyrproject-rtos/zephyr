@@ -72,7 +72,7 @@ class DataTypes:
             need_further_align = True
             stack_min_align = 8
 
-        elif arch == "sparc":
+        elif arch in ("m68k", "sparc"):
             need_further_align = False
             stack_min_align = 1
 
