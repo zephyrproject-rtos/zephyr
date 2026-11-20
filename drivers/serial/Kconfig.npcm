@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_NPCM
+	bool "NUVOTON NPCM serial driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCM_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  This option enables the UART driver for Nuvoton NPCM
+	  family of processors.
+	  Say y to use serial port on Nuvoton MCU.

@@ -61,6 +61,38 @@
 			reg = <0x400c3000 0x1000>;
 			reg-io-width = <1>;
 		};
+
+		uart1: serial@400c4000 {
+			compatible = "nuvoton,npcm-uart";
+			reg = <0x400c4000 0x100>;
+			interrupts = <23 3>;
+			clocks = <&pcc NPCM_CLOCK_UART>;
+			status = "disabled";
+		};
+
+		uart2: serial@400c4200 {
+			compatible = "nuvoton,npcm-uart";
+			reg = <0x400c4200 0x100>;
+			interrupts = <76 3>;
+			clocks = <&pcc NPCM_CLOCK_UART2>;
+			status = "disabled";
+		};
+
+		uart3: serial@400c4400 {
+			compatible = "nuvoton,npcm-uart";
+			reg = <0x400c4400 0x100>;
+			interrupts = <77 3>;
+			clocks = <&pcc NPCM_CLOCK_UART3>;
+			status = "disabled";
+		};
+
+		uart4: serial@400c4600 {
+			compatible = "nuvoton,npcm-uart";
+			reg = <0x400c4600 0x100>;
+			interrupts = <78 3>;
+			clocks = <&pcc NPCM_CLOCK_UART4>;
+			status = "disabled";
+		};
 	};
 };
 
