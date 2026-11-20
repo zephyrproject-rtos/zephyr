@@ -6,7 +6,6 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
-#include <zephyr/init.h>
 #include <zephyr/net/wifi_credentials.h>
 #include <sys/types.h>
 
@@ -19,6 +18,22 @@ static K_MUTEX_DEFINE(wifi_credentials_mutex);
 /* SSID cache: maps SSIDs to their storage indices */
 static char ssid_cache[CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES][WIFI_SSID_MAX_LEN];
 static size_t ssid_cache_lengths[CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES];
+
+/* Slots holding an entry that the backend can neither load nor remove. They are not used to
+ * store new entries.
+ */
+static bool unusable_slots[CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES];
+
+/* Slots holding an entry that the backend could not read, possibly only temporarily. Loading
+ * is retried on next use. As they may hold any SSID, an SSID that is not cached is neither
+ * retrieved nor deleted, but is stored in another slot: the entry may never become readable.
+ */
+static bool unreadable_slots[CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES];
+
+/* Whether the stored entries have been loaded into the SSID cache. They are loaded on first
+ * use, because the storage used by the backend may only become usable late during boot.
+ */
+static bool entries_loaded;
 
 /**
  * @brief Finds index of given SSID if it exists.
@@ -60,7 +75,7 @@ static inline bool is_entry_used(size_t idx)
 static inline ssize_t lookup_unused_idx(void)
 {
 	for (size_t i = 0; i < CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES; ++i) {
-		if (!is_entry_used(i)) {
+		if (!is_entry_used(i) && !unusable_slots[i] && !unreadable_slots[i]) {
 			return i;
 		}
 	}
@@ -68,19 +83,53 @@ static inline ssize_t lookup_unused_idx(void)
 	return -1;
 }
 
-static int init(void)
+static bool has_unreadable_slots(void)
 {
-
-	int ret;
-
-	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
-
-	ret = wifi_credentials_backend_init();
-	if (ret) {
-		LOG_ERR("Initializing WiFi credentials storage backend failed, err: %d", ret);
+	for (size_t i = 0; i < CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES; ++i) {
+		if (unreadable_slots[i]) {
+			return true;
+		}
 	}
 
-	k_mutex_unlock(&wifi_credentials_mutex);
+	return false;
+}
+
+static void clear_slots(void)
+{
+	memset(ssid_cache_lengths, 0, sizeof(ssid_cache_lengths));
+	memset(unusable_slots, 0, sizeof(unusable_slots));
+	memset(unreadable_slots, 0, sizeof(unreadable_slots));
+}
+
+/**
+ * @brief Load the stored entries into the SSID cache if not done yet.
+ *
+ * Must be called with wifi_credentials_mutex held. If loading fails, or a slot could not be
+ * read, it is retried on next use.
+ *
+ * @return		0 if the entries are loaded, -EACCES otherwise
+ */
+static int load_entries(void)
+{
+	int ret;
+
+	if (entries_loaded && !has_unreadable_slots()) {
+		return 0;
+	}
+
+	/* Load all entries again, as the backend reports every slot that it cannot use. */
+	clear_slots();
+
+	ret = wifi_credentials_backend_init();
+	if (ret != 0) {
+		LOG_ERR("Loading WiFi credentials from storage backend failed, err: %d", ret);
+		/* Do not keep the entries cached before the failure. */
+		clear_slots();
+		entries_loaded = false;
+		return -EACCES;
+	}
+
+	entries_loaded = true;
 
 	return 0;
 }
@@ -101,6 +150,36 @@ void wifi_credentials_uncache_ssid(size_t idx)
 	ssid_cache_lengths[idx] = 0;
 }
 
+void wifi_credentials_mark_unusable(size_t idx)
+{
+	unusable_slots[idx] = true;
+}
+
+void wifi_credentials_mark_unreadable(size_t idx)
+{
+	unreadable_slots[idx] = true;
+}
+
+/**
+ * @brief Finds index of given SSID if it exists and no slot that could not be read may hold it.
+ *
+ * @param op		operation, for logging
+ * @return		index if entry is found, -1 if it is not found, -EACCES if it may be
+ *			stored in a slot that could not be read
+ */
+static ssize_t lookup_loaded_idx(const uint8_t *ssid, size_t ssid_len, const char *op)
+{
+	ssize_t idx = lookup_idx(ssid, ssid_len);
+
+	if (idx == -1 && has_unreadable_slots()) {
+		LOG_ERR("Cannot %s WiFi credentials, %s", op,
+			"SSID not found but a stored entry could not be read");
+		return -EACCES;
+	}
+
+	return idx;
+}
+
 int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_len,
 						 struct wifi_credentials_personal *buf)
 {
@@ -119,8 +198,16 @@ int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_l
 
 	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
 
-	idx = lookup_idx(ssid, ssid_len);
-	if (idx == -1) {
+	ret = load_entries();
+	if (ret != 0) {
+		goto exit;
+	}
+
+	idx = lookup_loaded_idx(ssid, ssid_len, "retrieve");
+	if (idx == -EACCES) {
+		ret = -EACCES;
+		goto exit;
+	} else if (idx == -1) {
 		LOG_DBG("Cannot %s WiFi credentials, %s", "retrieve", "SSID not found");
 		ret = -ENOENT;
 		goto exit;
@@ -160,6 +247,12 @@ int wifi_credentials_set_personal_struct(const struct wifi_credentials_personal 
 	}
 
 	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
+
+	/* Do not store before the entries are loaded, as it could overwrite a stored entry. */
+	ret = load_entries();
+	if (ret != 0) {
+		goto exit;
+	}
 
 	idx = lookup_idx(creds->header.ssid, creds->header.ssid_len);
 	if (idx == -1) {
@@ -337,8 +430,16 @@ int wifi_credentials_delete_by_ssid(const char *ssid, size_t ssid_len)
 
 	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
 
-	idx = lookup_idx(ssid, ssid_len);
-	if (idx == -1) {
+	ret = load_entries();
+	if (ret != 0) {
+		goto exit;
+	}
+
+	idx = lookup_loaded_idx(ssid, ssid_len, "delete");
+	if (idx == -EACCES) {
+		ret = -EACCES;
+		goto exit;
+	} else if (idx == -1) {
 		LOG_DBG("WiFi credentials entry was not found");
 		ret = -ENOENT;
 		goto exit;
@@ -361,6 +462,8 @@ void wifi_credentials_for_each_ssid(wifi_credentials_ssid_cb cb, void *cb_arg)
 {
 	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
 
+	(void)load_entries();
+
 	for (size_t i = 0; i < CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES; ++i) {
 		if (is_entry_used(i)) {
 			cb(cb_arg, ssid_cache[i], ssid_cache_lengths[i]);
@@ -374,8 +477,10 @@ bool wifi_credentials_is_empty(void)
 {
 	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
 
+	(void)load_entries();
+
 	for (size_t i = 0; i < CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES; ++i) {
-		if (is_entry_used(i)) {
+		if (is_entry_used(i) || unreadable_slots[i]) {
 			k_mutex_unlock(&wifi_credentials_mutex);
 			return false;
 		}
@@ -390,21 +495,41 @@ int wifi_credentials_delete_all(void)
 	int ret = 0;
 
 	k_mutex_lock(&wifi_credentials_mutex, K_FOREVER);
-	for (size_t i = 0; i < CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES; ++i) {
-		if (is_entry_used(i)) {
-			ret = wifi_credentials_delete_entry(i);
-			if (ret) {
-				LOG_ERR("Failed to %s WiFi credentials index %d, err: %d",
-					"delete", i, ret);
-				break;
-			}
 
-			wifi_credentials_uncache_ssid(i);
+	/* Load the entries to know which slots are unusable. Deleting does not need them to be
+	 * loaded, so continue if loading fails.
+	 */
+	(void)load_entries();
+
+	/* Delete every slot, not only the cached ones, so that no entry the backend skipped is
+	 * left in storage.
+	 */
+	for (size_t i = 0; i < CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES; ++i) {
+		int err = wifi_credentials_delete_entry(i);
+
+		if (err != 0 && err != -ENOENT && unusable_slots[i]) {
+			LOG_WRN("Cannot %s WiFi credentials index %d, it is unusable, err: %d",
+				"delete", i, err);
+			continue;
+		} else if (err != 0 && err != -ENOENT) {
+			LOG_ERR("Failed to %s WiFi credentials index %d, err: %d", "delete", i,
+				err);
+			if (ret == 0) {
+				ret = err;
+			}
+			continue;
 		}
+
+		wifi_credentials_uncache_ssid(i);
+		unusable_slots[i] = false;
+		unreadable_slots[i] = false;
+	}
+
+	/* All slots are empty, so there is nothing left to load. */
+	if (ret == 0) {
+		entries_loaded = true;
 	}
 
 	k_mutex_unlock(&wifi_credentials_mutex);
 	return ret;
 }
-
-SYS_INIT(init, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
