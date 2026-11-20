@@ -335,6 +335,12 @@ p3t1755dp_ard_i2c_interface: &lpi2c2 {};
 	pinctrl-names = "default";
 };
 
+&micfil {
+	pinctrl-0 = <&pinmux_micfil>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &lpi2c2 {
 	pinctrl-0 = <&pinmux_lpi2c2>;
 	pinctrl-names = "default";

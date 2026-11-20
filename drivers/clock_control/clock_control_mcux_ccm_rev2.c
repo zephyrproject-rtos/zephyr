@@ -18,9 +18,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
-#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX) || defined(CONFIG_SOC_SERIES_IMXRT118X)
 /*
- * The RT11xx MCUX clock table maps MIC root mux slot 6 to Audio PLL output.
+ * The RT11xx and RT118x MCUX clock tables map a MIC root mux slot to Audio PLL
+ * output.
  * On boards that leave Audio PLL uninitialized, CLOCK_GetRootClockFreq()
  * asserts instead of reporting that the rate is unavailable.
  */
@@ -94,7 +95,7 @@ static int mcux_ccm_on(const struct device *dev, clock_control_subsys_t sub_syst
 		return 0;
 #endif
 #endif
-#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX) || defined(CONFIG_SOC_SERIES_IMXRT118X)
 	case IMX_CCM_PDM_CLK:
 		CLOCK_EnableClock(kCLOCK_Pdm);
 		return 0;
@@ -262,7 +263,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev, clock_control_subs
 		break;
 #endif
 #endif
-#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX) || defined(CONFIG_SOC_SERIES_IMXRT118X)
 	case IMX_CCM_PDM_CLK:
 		if (DT_NODE_HAS_PROP(RT11XX_MICFIL_NODE, pll_clocks) &&
 		    !mcux_ccm_rt11xx_audio_pll_ready()) {
