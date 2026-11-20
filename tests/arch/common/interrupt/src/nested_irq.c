@@ -13,7 +13,9 @@
  * Run the nested interrupt test for the supported platforms only.
  */
 #if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_ARC) || \
-	defined(CONFIG_GIC) || defined(CONFIG_RISCV_NESTED_INTERRUPTS)
+	defined(CONFIG_GIC) || \
+	(defined(CONFIG_RISCV_NESTED_INTERRUPTS) && \
+	 !(defined(CONFIG_RISCV_S_MODE) && defined(CONFIG_SMP)))
 #define TEST_NESTED_ISR
 #endif
 
@@ -91,6 +93,18 @@
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	2
+#elif defined(CONFIG_RISCV_NESTED_INTERRUPTS) && defined(CONFIG_RISCV_S_MODE)
+/*
+ * An S-mode kernel uses the supervisor timer interrupt itself, and software
+ * can only set the supervisor software interrupt pending. So isr0 runs from
+ * a kernel timer expiry function, in the timer ISR with interrupts enabled,
+ * and triggers the software interrupt, which ranks above the timer interrupt
+ * and is not used as an IPI without SMP.
+ */
+#define IRQ1_LINE	IRQ_S_SOFT
+#define IRQ1_PRIO	0
+
+#define ISR0_FROM_TIMER
 #elif defined(CONFIG_RISCV_NESTED_INTERRUPTS) && defined(CONFIG_CLIC)
 /*
  * The CLIC lines that software can trigger depend on the SoC. The test is
@@ -166,7 +180,9 @@
 #endif
 
 #ifdef TEST_NESTED_ISR
+#ifndef ISR0_FROM_TIMER
 static uint32_t irq_line_0;
+#endif
 static uint32_t irq_line_1;
 
 static volatile uint32_t isr0_result;
@@ -209,6 +225,15 @@ void isr0(const void *param)
 	k_str_out_count("ISR0: Leave\n");
 }
 
+#ifdef ISR0_FROM_TIMER
+static void timer0_expiry(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+
+	isr0(NULL);
+}
+#endif /* ISR0_FROM_TIMER */
+
 /**
  * @brief Test interrupt nesting
  *
@@ -229,6 +254,19 @@ void isr0(const void *param)
  */
 ZTEST(interrupt_feature, test_nested_isr)
 {
+#ifdef ISR0_FROM_TIMER
+	static struct k_timer timer0;
+
+	irq_line_1 = IRQ1_LINE;
+	IRQ_CONNECT(IRQ1_LINE, IRQ1_PRIO, isr1, 0, 0);
+	irq_enable(irq_line_1);
+
+	/* Run isr0 from the timer ISR */
+	k_timer_init(&timer0, timer0_expiry, NULL);
+	k_timer_start(&timer0, K_MSEC(1), K_NO_WAIT);
+	k_msleep(2 * DURATION);
+	k_timer_stop(&timer0);
+#else
 	/* Resolve test IRQ line numbers */
 #if defined(IRQ0_LINE) && defined(IRQ1_LINE)
 	irq_line_0 = IRQ0_LINE;
@@ -261,6 +299,7 @@ ZTEST(interrupt_feature, test_nested_isr)
 
 	/* Wait for interrupt */
 	k_busy_wait(DURATION * USEC_PER_MSEC);
+#endif /* ISR0_FROM_TIMER */
 
 	/* Validate ISR result token */
 	zassert_equal(isr0_result, ISR0_TOKEN, "isr0 did not execute");
