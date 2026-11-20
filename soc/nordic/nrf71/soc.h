@@ -17,7 +17,7 @@
 #define FLASH_PAGE_MAX_CNT           381UL
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc)
-
+#if NRF71_ERRATA_159_ENABLE_WORKAROUND
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || !defined(__ZEPHYR__)
 #define PWR_ANTSWC_REG (0x5010F780UL)
 #else
@@ -25,6 +25,7 @@
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
 #define PWR_ANTSWC_ENABLE (0x3UL)
+#endif /* NRF71_ERRATA_159_ENABLE_WORKAROUND */
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc) */
 
 #endif /* _NORDICSEMI_NRF71_SOC_H_ */
