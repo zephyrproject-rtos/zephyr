@@ -1301,7 +1301,7 @@ static void z_paging_ondemand_section_map(void)
 	uint32_t flags;
 	int ret;
 
-	size = (uintptr_t)lnkr_ondemand_text_size;
+	size = LINKER_SECTION_SIZE(lnkr_ondemand_text_start, lnkr_ondemand_text_end);
 	flags = K_MEM_MAP_UNPAGED | K_MEM_PERM_EXEC | K_MEM_CACHE_WB;
 	VIRT_FOREACH(lnkr_ondemand_text_start, size, addr) {
 		k_mem_paging_backing_store_location_query(addr, &location);
@@ -1316,7 +1316,7 @@ static void z_paging_ondemand_section_map(void)
 					virt_to_bitmap_offset(addr, CONFIG_MMU_PAGE_SIZE));
 	}
 
-	size = (uintptr_t)lnkr_ondemand_rodata_size;
+	size = LINKER_SECTION_SIZE(lnkr_ondemand_rodata_start, lnkr_ondemand_rodata_end);
 	flags = K_MEM_MAP_UNPAGED | K_MEM_CACHE_WB;
 	VIRT_FOREACH(lnkr_ondemand_rodata_start, size, addr) {
 		k_mem_paging_backing_store_location_query(addr, &location);

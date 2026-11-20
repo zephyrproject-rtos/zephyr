@@ -35,12 +35,12 @@ void arch_data_copy(void)
 #ifdef CONFIG_ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 #if CONFIG_NOCACHE_MEMORY
 	arch_early_memcpy(&_nocache_load_ram_start, &_nocache_load_rom_start,
-		       (uintptr_t) &_nocache_load_ram_size);
+			  LINKER_SECTION_SIZE(_nocache_load_ram_start, _nocache_load_ram_end));
 #endif /* CONFIG_NOCACHE_MEMORY */
 #endif /* CONFIG_ARCH_HAS_NOCACHE_MEMORY_SUPPORT */
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm))
 	arch_early_memcpy(&__itcm_start, &__itcm_load_start,
-		       (uintptr_t) &__itcm_size);
+			  LINKER_SECTION_SIZE(__itcm_start, __itcm_end));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
 	arch_early_memcpy(&__dtcm_data_start, &__dtcm_data_load_start,

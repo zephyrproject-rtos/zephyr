@@ -32,17 +32,14 @@
 #define FLAGS_MASK	(MMU_P | MMU_RW | MMU_US | MMU_PWT | MMU_PCD | \
 			 MMU_G | MMU_PS | MMU_XD)
 
-#define LPTR(name, suffix)	((uint8_t *)&_CONCAT(name, suffix))
-#define LSIZE(name, suffix)	((size_t)&_CONCAT(name, suffix))
-#define IN_REGION(name, virt) \
-	(virt >= LPTR(name, _start) && \
-	 virt < (LPTR(name, _start) + LSIZE(name, _size)))
+#define IN_EXTENT(start, limit, virt)                                                              \
+	((virt) >= (uint8_t *)(start) &&                                                           \
+	 (virt) < ((uint8_t *)(start) + LINKER_SECTION_SIZE(start, limit)))
 
 #ifdef CONFIG_X86_64
 extern char _locore_start[];
-extern char _locore_size[];
 extern char _lorodata_start[];
-extern char _lorodata_size[];
+extern char _lodata_start[];
 extern char _lodata_end[];
 
 #define LOCORE_START	((uint8_t *)&_locore_start)
@@ -51,13 +48,12 @@ extern char _lodata_end[];
 
 #ifdef CONFIG_COVERAGE_GCOV
 extern char __gcov_bss_start[];
-extern char __gcov_bss_size[];
 #endif
 
 #include <zephyr/sys/libc-hooks.h>
 #ifdef Z_LIBC_PARTITION_EXISTS
 extern char z_data_smem_z_libc_partition_part_start[];
-extern char z_data_smem_z_libc_partition_part_size[];
+extern char z_data_smem_z_libc_partition_part_end[];
 #endif
 
 static pentry_t get_entry(pentry_t *flags, void *addr)
@@ -112,16 +108,16 @@ ZTEST(x86_pagetables, test_ram_perms)
 
 		if (!IS_ENABLED(CONFIG_SRAM_REGION_PERMISSIONS)) {
 			expected = MMU_P | MMU_RW;
-		} else if (IN_REGION(__text_region, pos)) {
+		} else if (IN_EXTENT(__text_region_start, __text_region_end, pos)) {
 			expected = MMU_P | MMU_US;
-		} else if (IN_REGION(__rodata_region, pos)) {
+		} else if (IN_EXTENT(__rodata_region_start, __rodata_region_end, pos)) {
 			expected = MMU_P | MMU_US | MMU_XD;
 #ifdef CONFIG_COVERAGE_GCOV
-		} else if (IN_REGION(__gcov_bss, pos)) {
+		} else if (IN_EXTENT(__gcov_bss_start, __gcov_bss_end, pos)) {
 			expected = MMU_P | MMU_RW | MMU_US | MMU_XD;
 #endif
 #if !defined(CONFIG_X86_KPTI) && defined(CONFIG_USERSPACE)
-		} else if (IN_REGION(_app_smem, pos)) {
+		} else if (IN_EXTENT(_app_smem_start, _app_smem_end, pos)) {
 			/* If KPTI is not enabled, every partition in
 			 * _app_smem is accessible from supervisor mode with
 			 * its US bit set: with a per-thread page table, the
@@ -134,13 +130,14 @@ ZTEST(x86_pagetables, test_ram_perms)
 			expected = MMU_P | MMU_US | MMU_RW | MMU_XD;
 #endif /* CONFIG_X86_KPTI */
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
-		} else if (IN_REGION(lnkr_boot_text, pos)) {
+		} else if (IN_EXTENT(lnkr_boot_text_start, lnkr_boot_text_end, pos)) {
 			expected = MMU_P | MMU_US;
-		} else if (IN_REGION(lnkr_boot_rodata, pos)) {
+		} else if (IN_EXTENT(lnkr_boot_rodata_start, lnkr_boot_rodata_end, pos)) {
 			expected = MMU_P | MMU_US | MMU_XD;
 #endif
 #ifdef Z_LIBC_PARTITION_EXISTS
-		} else if (IN_REGION(z_data_smem_z_libc_partition_part, pos)) {
+		} else if (IN_EXTENT(z_data_smem_z_libc_partition_part_start,
+				     z_data_smem_z_libc_partition_part_end, pos)) {
 			expected = MMU_P | MMU_RW | MMU_XD;
 #endif
 		} else {
@@ -166,13 +163,13 @@ ZTEST(x86_pagetables, test_ram_perms)
 
 		entry = get_entry(&flags, pos);
 
-		if (IN_REGION(_locore, pos)) {
+		if (IN_EXTENT(_locore_start, _lorodata_start, pos)) {
 			if (IS_ENABLED(CONFIG_X86_KPTI)) {
 				expected = MMU_P | MMU_US;
 			} else {
 				expected = MMU_P;
 			}
-		} else if (IN_REGION(_lorodata, pos)) {
+		} else if (IN_EXTENT(_lorodata_start, _lodata_start, pos)) {
 			if (IS_ENABLED(CONFIG_X86_KPTI)) {
 				expected = MMU_P | MMU_US | MMU_XD;
 			} else {

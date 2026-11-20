@@ -28,10 +28,11 @@
  */
 static inline FUNC_NO_STACK_PROTECTOR size_t z_tls_data_size(void)
 {
-	size_t size = (size_t)(uintptr_t)__tdata_size + (size_t)(uintptr_t)__tbss_size;
+	size_t size = LINKER_SECTION_SIZE(__tdata_start, __tdata_end) +
+		      LINKER_SECTION_SIZE(__tbss_start, __tbss_end);
 
 #if defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
-	size += (size_t)(uintptr_t)__stack_chk_size;
+	size += LINKER_SECTION_SIZE(__stack_chk_start, __stack_chk_end);
 #endif
 	return size;
 }
@@ -50,18 +51,24 @@ static inline FUNC_NO_STACK_PROTECTOR void z_tls_copy(char *dest)
 	/* Copy .stack_chk.guard and .tdata separately since the linker may insert
 	 * padding between sections.
 	 */
-	memcpy(dest, __stack_chk_start, (size_t)(uintptr_t)__stack_chk_size);
-	dest += (size_t)(uintptr_t)__stack_chk_size;
+	size_t stack_chk_size = LINKER_SECTION_SIZE(__stack_chk_start, __stack_chk_end);
 
-	memcpy(dest, __tdata_start, (size_t)(uintptr_t)__tdata_size);
-	dest += (size_t)(uintptr_t)__tdata_size;
+	memcpy(dest, __stack_chk_start, stack_chk_size);
+	dest += stack_chk_size;
+
+	size_t tdata_size = LINKER_SECTION_SIZE(__tdata_start, __tdata_end);
+
+	memcpy(dest, __tdata_start, tdata_size);
+	dest += tdata_size;
 #else
 	/* Copy initialized data (tdata) */
-	memcpy(dest, __tdata_start, (size_t)(uintptr_t)__tdata_size);
-	dest += (size_t)(uintptr_t)__tdata_size;
+	size_t tdata_size = LINKER_SECTION_SIZE(__tdata_start, __tdata_end);
+
+	memcpy(dest, __tdata_start, tdata_size);
+	dest += tdata_size;
 #endif
 	/* Clear BSS data (tbss) */
-	memset(dest, 0, (size_t)(uintptr_t)__tbss_size);
+	memset(dest, 0, LINKER_SECTION_SIZE(__tbss_start, __tbss_end));
 }
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_TLS_H_ */
