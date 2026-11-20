@@ -27,4 +27,11 @@
 				 <PA25C_SERCOM5_PAD1>; /* RX */
 		};
 	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <PA4B_ADC_VINP0>,	/* EXT1 pin 3 */
+				 <PA5B_ADC_VINM0>;	/* EXT1 pin 4 */
+		};
+	};
 };

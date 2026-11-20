@@ -8,6 +8,7 @@ description: |
 
   Group G2 ADC driver supports the following hardware peripheral:
     - module name="ADC" id="03620" version="1a0"
+    - module name="ADC" id="03620" version="1b0"
 
 compatible: "microchip,adc-g2"
 

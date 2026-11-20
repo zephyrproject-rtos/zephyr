@@ -86,6 +86,7 @@ tests:
       - ek_ra8t2/r7ka8t2lflcac/cm85
       - pic32cz_ca80_cult
       - pic32cz_ca90_cult
+      - pic32ck_gc01_cult
       - it51xxx_evb/it51526aw
     extra_args:
       - platform:sam_e54_xpro/atsame54p20a:"DTC_OVERLAY_FILE=boards/sam_e54_xpro_ref.overlay"
@@ -93,6 +94,7 @@ tests:
       - platform:pic32cz_ca80_cult/pic32cz8110ca80208:"DTC_OVERLAY_FILE=boards/pic32cz_ca80_cult_ref.overlay"
       - platform:pic32cz_ca90_cult/pic32cz8110ca90208:"DTC_OVERLAY_FILE=boards/pic32cz_ca90_cult_ref.overlay"
       - platform:pic32cm_jh01_cpro/pic32cm5164jh01100:"DTC_OVERLAY_FILE=boards/pic32cm_jh01_cpro_ref.overlay"
+      - platform:pic32ck_gc01_cult/pic32ck2051gc01144:"DTC_OVERLAY_FILE=boards/pic32ck_gc01_cult_ref.overlay"
     integration_platforms:
       - frdm_kl25z
       - nrf54l15dk/nrf54l15/cpuapp
