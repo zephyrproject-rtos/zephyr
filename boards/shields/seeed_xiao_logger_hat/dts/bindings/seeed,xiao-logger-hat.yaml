@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026, Dawid Zadlo
+# SPDX-License-Identifier: Apache-2.0
+
+description: seeed logger hat GPIO Controller
+
+compatible: "seeed,xiao-logger-hat"
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
