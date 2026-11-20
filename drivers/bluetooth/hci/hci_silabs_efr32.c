@@ -46,14 +46,54 @@ struct efr_hci_data {
 	K_KERNEL_STACK_MEMBER(rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 };
 
+/* Interface with the Silicon Labs Controller library. The library references or defines the
+ * symbols below by name.
+ */
+
+/* FIXME: this function should come from the SiSDK headers! */
+int16_t BTLE_LL_SetMaxPower(int16_t power);
+
 const struct {
 	uint32_t buffer_memory_size;
 } sli_bluetooth_common_default_config = {
 	.buffer_memory_size = CONFIG_BT_SILABS_EFR32_BUFFER_MEMORY,
 };
 
-/* FIXME: this function should come from the SiSDK headers! */
-int16_t BTLE_LL_SetMaxPower(int16_t power);
+/* Called by the Controller, in the link layer thread, to pass an HCI packet (H4 packet type
+ * first) to the Host. That thread must not wait for Host buffers: the HCI RX thread copies the
+ * packet and then calls sl_btctrl_hci_transmit_complete(); until then the Controller keeps data
+ * unchanged and holds back its next packet. Returns 0, also for a packet that the HCI RX thread
+ * then drops.
+ */
+uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
+{
+	struct efr_hci_data *hci = DEVICE_DT_INST_GET(0)->data;
+
+	hci->rx_pkt.data = data;
+	hci->rx_pkt.len = len;
+	k_sem_give(&hci->rx_sem);
+
+	return 0;
+}
+
+/* Called by the Controller when it has link layer work pending, such as radio events, scheduler
+ * requests or HCI commands. Wakes up the link layer thread, which passes the events to
+ * sl_btctrl_process_events().
+ */
+void sl_btctrl_raise_events(uint32_t events)
+{
+	struct efr_hci_data *hci = DEVICE_DT_INST_GET(0)->data;
+
+	(void)atomic_or(&hci->ll_events, events);
+	k_sem_give(&hci->ll_sem);
+}
+
+void sli_btctrl_events_init(void)
+{
+	struct efr_hci_data *hci = DEVICE_DT_INST_GET(0)->data;
+
+	(void)atomic_clear(&hci->ll_events);
+}
 
 static bool efr_hci_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8_t *params,
 				       int16_t params_len)
@@ -173,28 +213,6 @@ static struct net_buf *efr_hci_recv_pkt(const uint8_t *data, int16_t len)
 		LOG_ERR("Unknown HCI type: %d", packet_type);
 		return NULL;
 	}
-}
-
-/**
- * @brief Transmit HCI message using the currently used transport layer.
- * The HCI calls this function to transmit a full HCI message.
- * @param[in] data Packet type followed by HCI packet data.
- * @param[in] len Length of the `data` parameter
- * @return 0, also for a packet that the HCI RX thread then drops.
- */
-uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
-{
-	struct efr_hci_data *hci = DEVICE_DT_INST_GET(0)->data;
-
-	/* Called in the link layer thread, which must not wait for Host buffers. The HCI RX
-	 * thread copies the packet and then calls sl_btctrl_hci_transmit_complete(); until then
-	 * the Controller keeps data unchanged and holds back its next packet.
-	 */
-	hci->rx_pkt.data = data;
-	hci->rx_pkt.len = len;
-	k_sem_give(&hci->rx_sem);
-
-	return 0;
 }
 
 static int efr_hci_send(const struct device *dev, struct net_buf *buf)
@@ -360,22 +378,6 @@ static int efr_hci_close(const struct device *dev)
 	LOG_DBG("SiLabs BT HCI stopped");
 
 	return 0;
-}
-
-void sli_btctrl_events_init(void)
-{
-	struct efr_hci_data *hci = DEVICE_DT_INST_GET(0)->data;
-
-	(void)atomic_clear(&hci->ll_events);
-}
-
-/* Store event flags and increment the LL semaphore */
-void sl_btctrl_raise_events(uint32_t events)
-{
-	struct efr_hci_data *hci = DEVICE_DT_INST_GET(0)->data;
-
-	(void)atomic_or(&hci->ll_events, events);
-	k_sem_give(&hci->ll_sem);
 }
 
 static int efr_hci_init(const struct device *dev)
