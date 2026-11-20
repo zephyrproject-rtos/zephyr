@@ -190,8 +190,11 @@ static uint16_t dap_connect(struct dap_link_context *const ctx,
 
 		if (atomic_test_and_set_bit(&ctx->state,
 					    DAP_STATE_CONNECTED)) {
-			LOG_ERR("DAP device is already connected");
-			break;
+			/* The host may have vanished without DAP_Disconnect
+			 * (process killed, cable unplugged), leaving the
+			 * port off. port_on is idempotent; run it again.
+			 */
+			LOG_WRN("DAP device is already connected");
 		}
 
 		if (swdp_port_on(ctx->dev) != 0) {
