@@ -9,6 +9,7 @@ include(${ZEPHYR_BASE}/boards/nxp/common/mpu/mpu.cmake)
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   zephyr_library()
   if(NOT ((DEFINED CONFIG_BOARD_MIMXRT1170_EVK_MIMXRT1176_CM7)
+    OR (DEFINED CONFIG_BOARD_MIMXRT1170_EVK_MIMXRT1176_CM7_ENET_QOS)
     OR (DEFINED CONFIG_BOARD_MIMXRT1170_EVK_MIMXRT1176_CM4)))
     message(WARNING "It appears you are using the board definition for "
       "the MIMXRT1170-EVK, but targeting a custom board. You may need to "

@@ -409,6 +409,16 @@ Current default of ethernet driver is to use 100M Ethernet instance ENET.
 To use the 1G Ethernet instance ENET1G, include the overlay to west build with
 the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.
 
+ENET_QOS Driver
+===============
+
+ENET_QOS and ENET1G share the RGMII pins and the RTL8211F PHY, so only one of
+them can be enabled at a time. To use ENET_QOS, build for the ``enet_qos``
+board variant, for example ``-b mimxrt1170_evk@B/mimxrt1176/cm7/enet_qos``.
+The variant enables ENET_QOS and disables ENET1G. It also disables ENET (100M),
+which has its own pins and PHY, so that ENET_QOS is the default network
+interface; an application overlay can re-enable ENET to use both ports.
+
 .. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1170-EVK Website:
