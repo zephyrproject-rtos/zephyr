@@ -23,4 +23,5 @@ supported:
   - spi
   - adc
   - counter
+  - dmic
 vendor: nordic
