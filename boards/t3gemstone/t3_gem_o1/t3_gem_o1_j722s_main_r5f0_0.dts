@@ -12,6 +12,7 @@
 #include <ti/j722s_main_r5.dtsi>
 #include "t3_gem_o1_j722s_r5f0_0-pinctrl.dtsi"
 #include <freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	compatible = "t3gemstone,t3-gem-o1";
@@ -23,6 +24,25 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,ipc = &ipc0;
 		zephyr,ipc_shm = &ddr0;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&main_gpio1 52 GPIO_ACTIVE_HIGH>;
+			label = "User LED Green";
+		};
+
+		led1: led_1 {
+			gpios = <&main_gpio1 53 GPIO_ACTIVE_LOW>;
+			label = "User LED Red";
+		};
 	};
 
 	cpus {
@@ -63,5 +83,61 @@
 };
 
 &systick_timer {
+	status = "okay";
+};
+
+/* GPIO0_33..42 on the 40-pin header */
+&main_gpio0_1 {
+	status = "okay";
+};
+
+/* GPIO1_7..18 on the 40-pin header */
+&main_gpio1_0 {
+	status = "okay";
+};
+
+/* User LEDs: GPIO1_52 (green), GPIO1_53 (red) */
+&main_gpio1_1 {
+	pinctrl-0 = <&led_green_default &led_red_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* HDC2010 temperature and humidity sensor is on this bus at 0x41 */
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	hdc2010: hdc2010@41 {
+		compatible = "ti,hdc2010";
+		reg = <0x41>;
+	};
+};
+
+/* LPS22DF on chip select 1, ICM-20948 on chip select 3 */
+&mcu_spi0 {
+	pinctrl-0 = <&mcu_spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	lps22df: lps22df@1 {
+		compatible = "st,lps22df";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		odr = <3>;
+	};
+
+	icm20948: icm20948@3 {
+		compatible = "invensense,icm20948";
+		reg = <3>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+	};
+};
+
+/* I2C on the 40-pin header, pin 3 (SDA) and pin 5 (SCL) */
+&mcu_i2c0 {
+	pinctrl-0 = <&mcu_i2c0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
