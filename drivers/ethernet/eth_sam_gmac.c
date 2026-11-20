@@ -623,8 +623,10 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
 	struct gmac_desc *tx_desc;
 	struct net_buf *frag;
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	struct net_pkt *pkt;
+#endif
+#if defined(CONFIG_NET_GPTP)
 	struct gptp_hdr *hdr;
 	struct eth_sam_dev_data *dev_data =
 		CONTAINER_OF(queue, struct eth_sam_dev_data,
