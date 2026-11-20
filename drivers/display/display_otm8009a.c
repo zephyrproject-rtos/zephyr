@@ -11,6 +11,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(otm8009a, CONFIG_DISPLAY_LOG_LEVEL);
@@ -604,6 +605,26 @@ static void otm8009a_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = data->orientation;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int otm8009a_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = otm8009a_dcs_write(dev, MIPI_DCS_EXIT_SLEEP_MODE, NULL, 0);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = otm8009a_dcs_write(dev, MIPI_DCS_ENTER_SLEEP_MODE, NULL, 0);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
+
 static DEVICE_API(display, otm8009a_api) = {
 	.blanking_on = otm8009a_blanking_on,
 	.blanking_off = otm8009a_blanking_off,
@@ -712,8 +733,9 @@ static int otm8009a_init(const struct device *dev)
 	static struct otm8009a_data otm8009a_data_##inst = {					\
 		.dsi_pixel_format = DT_INST_PROP(inst, pixel_format),				\
 	};											\
-	DEVICE_DT_INST_DEFINE(inst, &otm8009a_init, NULL, &otm8009a_data_##inst,		\
-			      &otm8009a_config_##inst, POST_KERNEL,				\
+	PM_DEVICE_DT_INST_DEFINE(inst, otm8009a_pm_action);                                     \
+	DEVICE_DT_INST_DEFINE(inst, &otm8009a_init, PM_DEVICE_DT_INST_GET(inst),		\
+			      &otm8009a_data_##inst, &otm8009a_config_##inst, POST_KERNEL,	\
 			      CONFIG_DISPLAY_OTM8009A_INIT_PRIORITY, &otm8009a_api);		\
 
 DT_INST_FOREACH_STATUS_OKAY(OTM8009A_DEVICE)
