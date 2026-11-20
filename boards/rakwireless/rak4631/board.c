@@ -9,7 +9,7 @@
 #include <hal/nrf_nvmc.h>
 #include <hal/nrf_power.h>
 
-#if defined(CONFIG_PWM)
+#if defined(CONFIG_PWM_NRFX)
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
@@ -84,7 +84,7 @@ static void wisblock_pwm_connect(void)
 static void wisblock_pwm_connect(void)
 {
 }
-#endif /* CONFIG_PWM */
+#endif /* CONFIG_PWM_NRFX */
 
 static void rak4630_regout0_set_3v3(void)
 {
