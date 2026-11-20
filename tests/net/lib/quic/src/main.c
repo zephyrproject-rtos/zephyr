@@ -1072,6 +1072,30 @@ ZTEST(net_socket_quic, test_080_frame_type_level_validation)
 
 	ret = quic_validate_frame_type(0x30, QUIC_SECRET_LEVEL_APPLICATION);
 	zassert_equal(ret, -ENOTSUP, "Unknown frame type must be rejected (%d)", ret);
+
+	/* RFC 9000 ch. 12.5: a transport close in every packet number space,
+	 * an application close only in the application data one.
+	 */
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT,
+				       QUIC_SECRET_LEVEL_INITIAL);
+	zassert_equal(ret, 0, "Transport close must be allowed in Initial (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT,
+				       QUIC_SECRET_LEVEL_HANDSHAKE);
+	zassert_equal(ret, 0, "Transport close must be allowed in Handshake (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION,
+				       QUIC_SECRET_LEVEL_INITIAL);
+	zassert_equal(ret, -EPROTO, "Application close must be forbidden in Initial (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION,
+				       QUIC_SECRET_LEVEL_HANDSHAKE);
+	zassert_equal(ret, -EPROTO, "Application close must be forbidden in Handshake (%d)",
+		      ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION,
+				       QUIC_SECRET_LEVEL_APPLICATION);
+	zassert_equal(ret, 0, "Application close must be allowed in Application (%d)", ret);
 }
 
 ZTEST(net_socket_quic, test_081_0rtt_frame_type_level_validation)
@@ -1105,6 +1129,10 @@ ZTEST(net_socket_quic, test_081_0rtt_frame_type_level_validation)
 	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_PATH_RESPONSE,
 					 QUIC_SECRET_LEVEL_EARLY);
 	zassert_equal(ret, -EPROTO, "PATH_RESPONSE must be forbidden in 0-RTT (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION,
+				       QUIC_SECRET_LEVEL_EARLY);
+	zassert_equal(ret, 0, "Application close must be allowed in 0-RTT (%d)", ret);
 }
 
 ZTEST(net_socket_quic, test_082_client_early_data_arming_uses_session_state)
