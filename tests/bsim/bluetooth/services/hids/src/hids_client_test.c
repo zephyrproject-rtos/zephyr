@@ -6,10 +6,13 @@
 
 /* Peer of the HID Service server test, in the HID Host role. It is a plain
  * GATT client: it discovers the HID Service, checks the static values and the
- * descriptors, and drives the Report and HID Control Point characteristics
- * the way a Host would.
+ * descriptors, and drives the Report, Protocol Mode and HID Control Point
+ * characteristics the way a Host would.
  *
  * It never initiates pairing, so the server has to request security itself.
+ *
+ * hids_client_2 is a second Host, which connects while the first one has Boot
+ * Protocol Mode and Suspend set and checks that it does not see them.
  */
 
 #include <errno.h>
@@ -44,12 +47,13 @@
 
 /* One Report characteristic of each type */
 #define MAX_REPORTS 4U
-/* Every characteristic of the service: the Reports above, Report Map, HID
- * Information and HID Control Point.
+/* Every characteristic of the service: the Reports above, Protocol Mode, Report
+ * Map, HID Information and HID Control Point.
  */
-#define MAX_CHRCS (MAX_REPORTS + 3U)
+#define MAX_CHRCS (MAX_REPORTS + 4U)
 
 DEFINE_FLAG_STATIC(flag_security_updated);
+DEFINE_FLAG_STATIC(flag_disconnected);
 DEFINE_FLAG_STATIC(flag_discover_complete);
 DEFINE_FLAG_STATIC(flag_subscribed);
 DEFINE_FLAG_STATIC(flag_notified);
@@ -75,6 +79,7 @@ static struct bt_conn *client_conn;
 
 static uint16_t hids_start_handle;
 static uint16_t hids_end_handle;
+static uint16_t protocol_mode_handle;
 static uint16_t report_map_handle;
 static uint16_t hid_info_handle;
 static uint16_t ctrl_point_handle;
@@ -122,9 +127,75 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	SET_FLAG(flag_security_updated);
 }
 
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(reason);
+
+	SET_FLAG(flag_disconnected);
+}
+
 static struct bt_conn_cb client_conn_cb = {
+	.disconnected = disconnected,
 	.security_changed = security_changed,
 };
+
+/* The second Host looks for the advertising the server starts for it. The
+ * server advertised from the same address for the first Host before, which
+ * the duplicate filter of bt_testlib_scan_find_name() would hide, so it scans
+ * without one.
+ */
+static K_SEM_DEFINE(second_host_found, 0, 1);
+static bt_addr_le_t second_host_addr;
+
+static bool second_host_ad_parse(struct bt_data *data, void *user_data)
+{
+	bool *found = user_data;
+
+	if (data->type == BT_DATA_NAME_COMPLETE &&
+	    data->data_len == sizeof(TEST_SECOND_HOST_ADV_NAME) - 1 &&
+	    memcmp(data->data, TEST_SECOND_HOST_ADV_NAME, data->data_len) == 0) {
+		*found = true;
+		return false;
+	}
+
+	return true;
+}
+
+static void second_host_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
+				struct net_buf_simple *buf)
+{
+	bool found = false;
+
+	ARG_UNUSED(rssi);
+	ARG_UNUSED(adv_type);
+
+	bt_data_parse(buf, second_host_ad_parse, &found);
+	if (found && bt_le_scan_stop() == 0) {
+		second_host_addr = *addr;
+		k_sem_give(&second_host_found);
+	}
+}
+
+static void find_server(bt_addr_le_t *addr, bool second_host)
+{
+	int err;
+
+	if (!second_host) {
+		err = bt_testlib_scan_find_name(addr, CONFIG_BT_DEVICE_NAME);
+		TEST_ASSERT(err == 0, "Failed to find the server: %d", err);
+		return;
+	}
+
+	err = bt_le_scan_start(BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, BT_LE_SCAN_OPT_NONE,
+						BT_GAP_SCAN_FAST_INTERVAL, BT_GAP_SCAN_FAST_WINDOW),
+			       second_host_scan_cb);
+	TEST_ASSERT(err == 0, "Failed to start scanning: %d", err);
+
+	err = k_sem_take(&second_host_found, K_FOREVER);
+	TEST_ASSERT(err == 0, "No HID Service server found: %d", err);
+	*addr = second_host_addr;
+}
 
 static void connect_to_server(void)
 {
@@ -133,8 +204,7 @@ static void connect_to_server(void)
 
 	UNSET_FLAG(flag_security_updated);
 
-	err = bt_testlib_scan_find_name(&addr, CONFIG_BT_DEVICE_NAME);
-	TEST_ASSERT(err == 0, "Failed to find the server: %d", err);
+	find_server(&addr, false);
 
 	err = bt_testlib_connect(&addr, &client_conn);
 	TEST_ASSERT(err == 0, "Failed to connect: %d", err);
@@ -142,6 +212,26 @@ static void connect_to_server(void)
 	/* The HID Device requests security itself, so all the Host has to do is
 	 * wait for it.
 	 */
+	WAIT_FOR_FLAG(flag_security_updated);
+}
+
+/* The second Host uses a connection interval other than that of the first
+ * Host, so that the connection events of the two links do not keep colliding.
+ */
+static void connect_second_host(void)
+{
+	bt_addr_le_t addr;
+	int err;
+
+	UNSET_FLAG(flag_security_updated);
+
+	find_server(&addr, true);
+
+	err = bt_conn_le_create(&addr, BT_CONN_LE_CREATE_CONN,
+				BT_LE_CONN_PARAM(0x20, 0x20, 0, BT_GAP_MS_TO_CONN_TIMEOUT(4000)),
+				&client_conn);
+	TEST_ASSERT(err == 0, "Failed to connect: %d", err);
+
 	WAIT_FOR_FLAG(flag_security_updated);
 }
 
@@ -268,7 +358,9 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 		chrcs[chrcs_cnt].uuid_val = BT_UUID_16(chrc->uuid)->val;
 		chrcs_cnt++;
 
-		if (bt_uuid_cmp(chrc->uuid, BT_UUID_HIDS_REPORT_MAP) == 0) {
+		if (bt_uuid_cmp(chrc->uuid, BT_UUID_HIDS_PROTOCOL_MODE) == 0) {
+			protocol_mode_handle = chrc->value_handle;
+		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_HIDS_REPORT_MAP) == 0) {
 			report_map_handle = chrc->value_handle;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_HIDS_INFO) == 0) {
 			hid_info_handle = chrc->value_handle;
@@ -305,6 +397,7 @@ static void discover_hids(void)
 
 	reports_cnt = 0U;
 	chrcs_cnt = 0U;
+	protocol_mode_handle = 0U;
 	report_map_handle = 0U;
 	hid_info_handle = 0U;
 	ctrl_point_handle = 0U;
@@ -323,6 +416,7 @@ static void discover_hids(void)
 
 	WAIT_FOR_FLAG(flag_discover_complete);
 
+	TEST_ASSERT(protocol_mode_handle != 0U, "Protocol Mode not found");
 	TEST_ASSERT(report_map_handle != 0U, "Report Map not found");
 	TEST_ASSERT(hid_info_handle != 0U, "HID Information not found");
 	TEST_ASSERT(ctrl_point_handle != 0U, "HID Control Point not found");
@@ -413,7 +507,7 @@ static void gatt_write_expect_err(uint16_t handle, const uint8_t *data, uint16_t
 		    handle, att_err, expected);
 }
 
-/* The HID Control Point is written without a response */
+/* The Protocol Mode and the HID Control Point are written without a response */
 static void gatt_write_cmd(uint16_t handle, uint8_t value)
 {
 	int err;
@@ -627,7 +721,7 @@ static void verify_long_report_reads(void)
 	gatt_read_blob_expect_err(long_feature->value_handle, TEST_LONG_REPORT_LEN + 1U,
 				  BT_ATT_ERR_INVALID_OFFSET);
 
-	/* The server replaces the value, so the next read returns the new one */
+	/* Tell the server the first value was read, wait for it to replace the value */
 	bk_sync_send();
 	bk_sync_wait();
 
@@ -642,6 +736,14 @@ static void verify_long_report_reads(void)
 			    "Octet %u of the long read is 0x%02x, expected 0x%02x", i,
 			    read_buf.data[i], read_buf.data[0]);
 	}
+}
+
+static void verify_protocol_mode(uint8_t expected)
+{
+	gatt_read(protocol_mode_handle);
+	TEST_ASSERT(read_buf.len == 1U, "Protocol Mode of %u bytes, expected 1", read_buf.len);
+	TEST_ASSERT(read_buf.data[0] == expected, "Protocol Mode is %u, expected %u",
+		    read_buf.data[0], expected);
 }
 
 static void test_hids_client(void)
@@ -662,7 +764,8 @@ static void test_hids_client(void)
 	TEST_ASSERT(err == 0, "Failed to enable Bluetooth: %d", err);
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
-		(void)settings_load();
+		err = settings_load();
+		TEST_ASSERT(err == 0, "Failed to load the settings: %d", err);
 	}
 
 	connect_to_server();
@@ -671,13 +774,14 @@ static void test_hids_client(void)
 	discover_hids();
 	resolve_reports();
 	verify_static_values();
+	verify_protocol_mode(BT_HIDS_PROTOCOL_REPORT);
 
 	input = report_by_type(BT_HIDS_REPORT_TYPE_INPUT);
 	output = report_by_type(BT_HIDS_REPORT_TYPE_OUTPUT);
 	feature = report_by_id(TEST_REPORT_ID_FEATURE);
 	TEST_ASSERT(input != NULL && output != NULL && feature != NULL, "A Report is missing");
 
-	/* The server notifies its first Input Report once we have subscribed */
+	/* Subscribe, then tell the server, which notifies its first Input Report */
 	test_ccc_validation(input->ccc_handle);
 	subscribe_input_report(input);
 	bk_sync_send();
@@ -686,22 +790,52 @@ static void test_hids_client(void)
 
 	/* SET_REPORT of the Output Report */
 	gatt_write(output->value_handle, test_output_data, TEST_OUTPUT_REPORT_LEN);
+	/* Tell the server the Output Report is written, wait for it to check the value */
 	bk_sync_send();
 	bk_sync_wait();
 
 	/* SET_REPORT of the Feature Report */
 	gatt_write(feature->value_handle, test_feature_data, TEST_FEATURE_REPORT_LEN);
+	/* Tell the server the Feature Report is written, wait for it to check the value */
 	bk_sync_send();
 	bk_sync_wait();
 
+	/* The server application rejects this value, which leaves the Feature
+	 * Report as it was
+	 */
+	gatt_write_expect_err(feature->value_handle, test_feature_rejected,
+			      TEST_FEATURE_REPORT_LEN, BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	gatt_read(feature->value_handle);
+	TEST_ASSERT(read_buf.len == TEST_FEATURE_REPORT_LEN &&
+		    memcmp(read_buf.data, test_feature_data, TEST_FEATURE_REPORT_LEN) == 0,
+		    "A rejected SET_REPORT changed the Feature Report");
+
 	/* Suspend and Exit Suspend through the HID Control Point */
 	gatt_write_cmd(ctrl_point_handle, BT_HIDS_CTRL_SUSPEND);
+	/* Tell the server Suspend is written, wait for it to check the Suspend state */
 	bk_sync_send();
 	bk_sync_wait();
 
 	gatt_write_cmd(ctrl_point_handle, BT_HIDS_CTRL_EXIT_SUSPEND);
+	/* Tell the server Exit Suspend is written, wait for it to check the Suspend state */
 	bk_sync_send();
 	bk_sync_wait();
+
+	/* Protocol Mode to the mode already selected, which the server does
+	 * not report as a change, then to Boot Protocol Mode and back.
+	 */
+	gatt_write_cmd(protocol_mode_handle, BT_HIDS_PROTOCOL_REPORT);
+	gatt_write_cmd(protocol_mode_handle, BT_HIDS_PROTOCOL_BOOT);
+	/* Tell the server both Protocol Modes are written, wait for it to check them */
+	bk_sync_send();
+	bk_sync_wait();
+	verify_protocol_mode(BT_HIDS_PROTOCOL_BOOT);
+
+	gatt_write_cmd(protocol_mode_handle, BT_HIDS_PROTOCOL_REPORT);
+	/* Tell the server Report Protocol Mode is written, wait for it to check it */
+	bk_sync_send();
+	bk_sync_wait();
+	verify_protocol_mode(BT_HIDS_PROTOCOL_REPORT);
 
 	/* GET_REPORT of the Input Report */
 	gatt_read(input->value_handle);
@@ -710,6 +844,7 @@ static void test_hids_client(void)
 		    TEST_INPUT_REPORT_LEN);
 	TEST_ASSERT(memcmp(read_buf.data, test_input_data, TEST_INPUT_REPORT_LEN) == 0,
 		    "GET_REPORT payload mismatch");
+	/* Tell the server the Input Report was read, wait for it to let us go on */
 	bk_sync_send();
 	bk_sync_wait();
 
@@ -720,14 +855,31 @@ static void test_hids_client(void)
 		    TEST_FEATURE_REPORT_LEN);
 	TEST_ASSERT(memcmp(read_buf.data, test_feature_data, TEST_FEATURE_REPORT_LEN) == 0,
 		    "GET_REPORT payload mismatch");
+	/* Tell the server the Feature Report was read, wait for it to let us go on */
 	bk_sync_send();
 	bk_sync_wait();
 
 	verify_long_report_reads();
+	/* Tell the server the new value was read, wait for it to let us go on */
 	bk_sync_send();
 	bk_sync_wait();
 
-	/* Reconnect: the server serves the same HID Service again */
+	/* Select Boot Protocol Mode and suspend the Device, so that the
+	 * reconnection shows the state was reset. The read returns after the
+	 * server handled both writes. The second Host connects meanwhile.
+	 */
+	gatt_write_cmd(protocol_mode_handle, BT_HIDS_PROTOCOL_BOOT);
+	gatt_write_cmd(ctrl_point_handle, BT_HIDS_CTRL_SUSPEND);
+	verify_protocol_mode(BT_HIDS_PROTOCOL_BOOT);
+	/* Tell the server Boot Protocol Mode and Suspend are set, wait for it to
+	 * check them and to serve the second Host
+	 */
+	bk_sync_send();
+	bk_sync_wait();
+
+	/* Reconnect: the server serves the same HID Service again, with the
+	 * per connection state back at its default values.
+	 */
 	err = bt_gatt_unsubscribe(client_conn, &sub_params);
 	TEST_ASSERT(err == 0, "Failed to unsubscribe: %d", err);
 
@@ -738,26 +890,40 @@ static void test_hids_client(void)
 
 	discover_hids();
 	resolve_reports();
+	verify_protocol_mode(BT_HIDS_PROTOCOL_REPORT);
 
 	input = report_by_type(BT_HIDS_REPORT_TYPE_INPUT);
 	TEST_ASSERT(input != NULL, "The Input Report is missing after reconnecting");
 
 	subscribe_input_report(input);
+	/* Tell the server we subscribed again, wait for it to notify the Input Report */
 	bk_sync_send();
 	bk_sync_wait();
 	wait_for_input_report();
 
-	/* The server unregisters the HID Service while we are connected */
+	/* Select Boot Protocol Mode and suspend the Device, which unregistering
+	 * the HID Service resets. The read returns after the server handled
+	 * both writes.
+	 */
+	gatt_write_cmd(protocol_mode_handle, BT_HIDS_PROTOCOL_BOOT);
+	gatt_write_cmd(ctrl_point_handle, BT_HIDS_CTRL_SUSPEND);
+	verify_protocol_mode(BT_HIDS_PROTOCOL_BOOT);
+
+	/* Tell the server Boot Protocol Mode and Suspend are set, wait for it to
+	 * unregister the HID Service
+	 */
 	bk_sync_send();
 	bk_sync_wait();
 	TEST_ASSERT(is_connected(),
 		    "The server disconnected us when it unregistered the HID Service");
 
-	/* The server registers the HID Service again, which serves it at the
-	 * same handles
+	/* Wait for the server to register the HID Service again. It serves it at
+	 * the same handles, with the Protocol Mode back at its default value.
 	 */
 	bk_sync_wait();
 	verify_static_values();
+	verify_protocol_mode(BT_HIDS_PROTOCOL_REPORT);
+	/* Tell the server the new registration was read */
 	bk_sync_send();
 
 	disconnect_from_server();
@@ -765,11 +931,55 @@ static void test_hids_client(void)
 	TEST_PASS("HID Service client test passed");
 }
 
+/* The second Host only connects once. The server checks the state of both
+ * Hosts when it gets the Exit Suspend, then disconnects this one.
+ */
+static void test_hids_client_2(void)
+{
+	int err;
+
+	TEST_START("HID Service second client test");
+
+	err = bt_conn_cb_register(&client_conn_cb);
+	TEST_ASSERT(err == 0, "Failed to register the connection callbacks: %d", err);
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Failed to enable Bluetooth: %d", err);
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		err = settings_load();
+		TEST_ASSERT(err == 0, "Failed to load the settings: %d", err);
+	}
+
+	connect_second_host();
+	discover_hids();
+
+	/* The first Host selected Boot Protocol Mode. Writing Boot and then Report
+	 * Protocol Mode here must leave the first Host in Boot Protocol Mode, which
+	 * the server checks.
+	 */
+	verify_protocol_mode(BT_HIDS_PROTOCOL_REPORT);
+	gatt_write_cmd(protocol_mode_handle, BT_HIDS_PROTOCOL_BOOT);
+	gatt_write_cmd(protocol_mode_handle, BT_HIDS_PROTOCOL_REPORT);
+	verify_protocol_mode(BT_HIDS_PROTOCOL_REPORT);
+
+	UNSET_FLAG(flag_disconnected);
+	gatt_write_cmd(ctrl_point_handle, BT_HIDS_CTRL_EXIT_SUSPEND);
+	WAIT_FOR_FLAG(flag_disconnected);
+
+	TEST_PASS("HID Service second client test passed");
+}
+
 static struct bst_test_instance test_hids_client_defs[] = {
 	{
 		.test_id = "hids_client",
-		.test_descr = "HID Host side of the two device HID Service test",
+		.test_descr = "First HID Host of the three device HID Service test",
 		.test_main_f = test_hids_client,
+	},
+	{
+		.test_id = "hids_client_2",
+		.test_descr = "Second HID Host of the three device HID Service test",
+		.test_main_f = test_hids_client_2,
 	},
 	BSTEST_END_MARKER,
 };
