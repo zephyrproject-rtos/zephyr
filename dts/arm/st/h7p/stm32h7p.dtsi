@@ -1205,6 +1205,14 @@
 		reg = <0x30000000 DT_SIZE_K(96)>;
 		zephyr,memory-region = "AHBSRAM";
 	};
+
+	backup_sram: memory@38800000 {
+		compatible = "zephyr,memory-region", "st,stm32-backup-sram";
+		reg = <0x38800000 DT_SIZE_K(4)>;
+		clocks = <&rcc STM32_CLOCK(AHB4, 28)>;
+		zephyr,memory-region = "BACKUP_SRAM";
+		status = "disabled";
+	};
 };
 
 &nvic {
