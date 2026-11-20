@@ -191,22 +191,9 @@ static int rm692c9_blanking_on(const struct device *dev)
 	}
 }
 
-static int rm692c9_set_orientation(const struct device *dev,
-				   const enum display_orientation orientation)
-{
-	ARG_UNUSED(dev);
-
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		return 0;
-	}
-	LOG_ERR("Changing display orientation not implemented");
-	return -ENOTSUP;
-}
-
 static DEVICE_API(display, rm692c9_api) = {
 	.blanking_on = rm692c9_blanking_on,
 	.blanking_off = rm692c9_blanking_off,
-	.set_orientation = rm692c9_set_orientation,
 };
 
 #define RM692C9_CONTROLLER(id)                                                                     \

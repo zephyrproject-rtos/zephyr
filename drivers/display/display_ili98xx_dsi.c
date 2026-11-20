@@ -10,6 +10,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_ili98xx_dsi, CONFIG_DISPLAY_LOG_LEVEL);
@@ -94,7 +95,7 @@ static int ili98xx_dsi_configure(const struct device *dev)
 
 	/* Set color mode */
 	ret = ili98xx_dsi_write_reg_val(dev, MIPI_DCS_SET_PIXEL_FORMAT,
-					cfg->pixel_format == PIXEL_FORMAT_RGB_565
+					cfg->pixel_format == MIPI_DSI_PIXFMT_RGB565
 						? ILI98XX_DSI_COLMOD_RGB565
 						: ILI98XX_DSI_COLMOD_RGB888);
 	if (ret < 0) {
@@ -152,27 +153,14 @@ static void ili98xx_dsi_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
-	capabilities->supported_pixel_formats = cfg->pixel_format;
-	capabilities->current_pixel_format = cfg->pixel_format;
-}
-
-static int ili98xx_dsi_set_pixel_format(const struct device *dev,
-					const enum display_pixel_format pixel_format)
-{
-	const struct ili98xx_dsi_config *cfg = dev->config;
-
-	LOG_WRN("Pixel format change not implemented");
-	if (pixel_format == cfg->pixel_format) {
-		return 0;
-	}
-
-	return -ENOTSUP;
+	capabilities->current_pixel_format = cfg->pixel_format == MIPI_DSI_PIXFMT_RGB565 ?
+					     PIXEL_FORMAT_RGB_565 : PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = capabilities->current_pixel_format;
 }
 
 static DEVICE_API(display, ili98xx_dsi_api) = {
 	.blanking_on = ili98xx_dsi_blanking_on,
 	.blanking_off = ili98xx_dsi_blanking_off,
-	.set_pixel_format = ili98xx_dsi_set_pixel_format,
 	.get_capabilities = ili98xx_dsi_get_capabilities,
 };
 

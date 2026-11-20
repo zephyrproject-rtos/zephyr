@@ -9,6 +9,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
@@ -437,15 +438,6 @@ static ssize_t hx8394_mipi_tx(const struct device *mipi_dev, uint8_t channel,
 	return mipi_dsi_transfer(mipi_dev, channel, &msg);
 }
 
-static int hx8394_write(const struct device *dev, const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
-{
-	LOG_WRN("Write not supported, use LCD controller display driver");
-	return 0;
-}
-
 static int hx8394_blanking_off(const struct device *dev)
 {
 	const struct hx8394_config *config = dev->config;
@@ -466,18 +458,6 @@ static int hx8394_blanking_on(const struct device *dev)
 	} else {
 		return -ENOTSUP;
 	}
-}
-
-static int hx8394_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
-{
-	const struct hx8394_config *config = dev->config;
-
-	if (pixel_format == config->pixel_format) {
-		return 0;
-	}
-	LOG_WRN("Pixel format change not implemented");
-	return -ENOTSUP;
 }
 
 static int hx8394_set_orientation(const struct device *dev,
@@ -518,17 +498,16 @@ static void hx8394_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
-	capabilities->supported_pixel_formats = config->pixel_format;
-	capabilities->current_pixel_format = config->pixel_format;
+	capabilities->current_pixel_format = config->pixel_format == MIPI_DSI_PIXFMT_RGB565 ?
+					     PIXEL_FORMAT_RGB_565 : PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = capabilities->current_pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
 static DEVICE_API(display, hx8394_api) = {
 	.blanking_on = hx8394_blanking_on,
 	.blanking_off = hx8394_blanking_off,
-	.write = hx8394_write,
 	.get_capabilities = hx8394_get_capabilities,
-	.set_pixel_format = hx8394_set_pixel_format,
 	.set_orientation = hx8394_set_orientation,
 };
 
