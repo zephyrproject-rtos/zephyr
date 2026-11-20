@@ -64,7 +64,19 @@ config SOC_MCXA_EARLY_SRAM_ECC_INIT
 	select SOC_EARLY_RESET_HOOK
 
 # Parts within the MCXA family that integrate the SGI PKC crypto accelerator.
+config SOC_MCXA255
+	select HAS_MCUX_SGI_PKC
+
+config SOC_MCXA256
+	select HAS_MCUX_SGI_PKC
+
+config SOC_MCXA265
+	select HAS_MCUX_SGI_PKC
+
 config SOC_MCXA266
+	select HAS_MCUX_SGI_PKC
+
+config SOC_MCXA365
 	select HAS_MCUX_SGI_PKC
 
 config SOC_MCXA366

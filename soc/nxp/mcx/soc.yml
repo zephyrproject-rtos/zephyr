@@ -64,6 +64,17 @@ family:
     - name: mcxa156
   - name: mcxaxx6
     socs:
+    - name: mcxa175
+    - name: mcxa176
+    - name: mcxa185
+    - name: mcxa186
+    - name: mcxa255
+    - name: mcxa256
+    - name: mcxa265
+    - name: mcxa345
+    - name: mcxa355
+    - name: mcxa356
+    - name: mcxa365
     - name: mcxa346
     - name: mcxa266
     - name: mcxa366
@@ -174,6 +185,28 @@ runners:
         - mcxa155
       - qualifiers:
         - mcxa156
+      - qualifiers:
+        - mcxa175
+      - qualifiers:
+        - mcxa176
+      - qualifiers:
+        - mcxa185
+      - qualifiers:
+        - mcxa186
+      - qualifiers:
+        - mcxa255
+      - qualifiers:
+        - mcxa256
+      - qualifiers:
+        - mcxa265
+      - qualifiers:
+        - mcxa345
+      - qualifiers:
+        - mcxa355
+      - qualifiers:
+        - mcxa356
+      - qualifiers:
+        - mcxa365
       - qualifiers:
         - mcxa346
       - qualifiers:
