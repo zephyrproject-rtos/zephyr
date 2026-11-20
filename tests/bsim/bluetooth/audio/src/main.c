@@ -8,6 +8,7 @@
 
 #include "bstests.h"
 
+extern struct bst_test_list *test_gatt_invalid_services_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_vcp_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_vcp_vol_ctlr_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_micp_install(struct bst_test_list *tests);
@@ -49,6 +50,7 @@ extern struct bst_test_list *test_ccp_call_control_client_install(struct bst_tes
 extern struct bst_test_list *test_ccp_call_control_server_install(struct bst_test_list *tests);
 
 bst_test_install_t test_installers[] = {
+	test_gatt_invalid_services_install,
 	test_vcp_install,
 	test_vcp_vol_ctlr_install,
 	test_micp_install,
