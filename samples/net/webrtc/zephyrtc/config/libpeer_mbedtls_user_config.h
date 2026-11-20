@@ -1,0 +1,10 @@
+/* SPDX-FileCopyrightText: Copyright (c) 2026 Meta Platforms, Inc. */
+/* SPDX-License-Identifier: Apache-2.0 */
+#ifndef ZEPHYRTC_ZEPHYR_MBEDTLS_USER_CONFIG_H_
+#define ZEPHYRTC_ZEPHYR_MBEDTLS_USER_CONFIG_H_
+
+#define MBEDTLS_SSL_DTLS_SRTP
+#define MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
+#define MBEDTLS_TIMING_C
+
+#endif /* ZEPHYRTC_ZEPHYR_MBEDTLS_USER_CONFIG_H_ */

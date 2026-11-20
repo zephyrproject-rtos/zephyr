@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Meta Platforms, Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# zephyrtc settings for tools/rt1170_demo.py.
+#
+# Copy this file to ~/.config/zephyrtc/rt1170.toml, edit it and make it private:
+#   chmod 600 ~/.config/zephyrtc/rt1170.toml
+# It may hold Wi-Fi credentials, so keep it outside any source tree.
+
+# "ethernet" (J32) or "wifi" (Embedded Artists 2EL module in J54).
+network = "ethernet"
+
+# Wi-Fi only.
+wifi_ssid = ""
+wifi_password = ""
+
+# The host running tests/physical_browser_call.py, as the board reaches it.
+signaling_url = "http://192.0.2.2:8080/offer"
+
+# Call length on the board, in milliseconds.
+run_ms = 120000
+
+# Remote video on the 720x1280 panel: rotation in degrees and integer scale.
+display_rotation = 90
+display_scale = 3

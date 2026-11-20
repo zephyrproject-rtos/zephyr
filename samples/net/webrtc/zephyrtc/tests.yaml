@@ -1,0 +1,83 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Meta Platforms, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  description: WebRTC client demo that calls a browser with audio and video
+  name: zephyrtc
+common:
+  tags:
+    - audio
+    - webrtc
+  harness: console
+
+tests:
+  # Default gate: two in-process PeerConnections over host ICE, DTLS-SRTP, and RTP.
+  sample.net.webrtc.zephyrtc.native_sim:
+    integration_platforms:
+      - native_sim/native/64
+    platform_allow:
+      - native_sim/native/64
+    timeout: 15
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "event=transport_probe status=pass"
+        - "event=loopback_result status=pass result=0 offerer_rx=25 answerer_rx=25 invalid=0/0"
+        - "event=native_sim_result status=pass"
+  # Bounded HTTP signaling: failure matrix, then one offerer call against a mock answerer.
+  sample.net.webrtc.zephyrtc.native_sim.http_signaling:
+    platform_allow:
+      - native_sim/native/64
+    extra_args: EXTRA_CONF_FILE=overlay-http-signaling.conf
+    timeout: 45
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "event=transport_probe status=pass"
+        - "event=signaling_matrix status=pass cases=[0-9]+ failures=0"
+        - "event=signaling_offerer_cases status=pass"
+        - "event=signaling_transaction status=pass result=0 offerer_rx=25 answerer_rx=25
+          invalid=0/0"
+        - "event=native_sim_result status=pass"
+  # Compile-only regression gate for MiniH264, H264SwDec, and H.264 RTP wiring.
+  sample.net.webrtc.zephyrtc.native_sim.video:
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args: EXTRA_CONF_FILE=overlay-external-video.conf
+    harness: none
+  # RT1170 compile gate for Ethernet plus synthetic H.264/PCMU software media.
+  sample.net.webrtc.zephyrtc.rt1170_video:
+    build_only: true
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_args: EXTRA_CONF_FILE=overlay-mimxrt1170-video.conf
+    harness: none
+  # RT1170 compile gate for the physical audio, camera, and display endpoint.
+  sample.net.webrtc.zephyrtc.rt1170_av:
+    build_only: true
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-mimxrt1170-av.conf
+      - SHIELD="nxp_btb44_ov5640;rk055hdmipi4ma0"
+    harness: none
+  # Compile-only regression gate for Ethernet, DMIC, PCMU, and WM8962 playback.
+  sample.net.webrtc.zephyrtc.rt1170_audio:
+    build_only: true
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_args: EXTRA_CONF_FILE=overlay-mimxrt1170-ethernet.conf
+    harness: none
+  # RT1170 compile gate for the physical endpoint over Wi-Fi (Embedded Artists 2EL).
+  sample.net.webrtc.zephyrtc.rt1170_av_wifi:
+    build_only: true
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-mimxrt1170-av.conf;overlay-mimxrt1170-wifi.conf"
+      - EXTRA_DTC_OVERLAY_FILE=boards/mimxrt1170_evk_mimxrt1176_cm7_B_wifi.overlay
+      - SHIELD="nxp_btb44_ov5640;rk055hdmipi4ma0"
+    harness: none

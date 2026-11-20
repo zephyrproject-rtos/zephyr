@@ -146,6 +146,10 @@ manifest:
       path: modules/fs/fatfs
       groups:
         - fs
+    - name: h264swdec
+      url: https://github.com/chemag/h264swdec
+      revision: ccc0685134653cf206b5b22f1a47da01b48c3303
+      path: modules/lib/h264swdec
     - name: hal_adi
       revision: 489885cdfa668870f95b00ded1cc56ac52cdf5c4
       path: modules/hal/adi
@@ -307,6 +311,12 @@ manifest:
       path: modules/hal/libmetal
       groups:
         - hal
+    - name: libpeer
+      url: https://github.com/chemag/libpeer
+      revision: 1087157e8836cf70226ecf344db347b6474976b9
+      path: modules/lib/libpeer
+      submodules:
+        - path: third_party/libsrtp
     - name: libsbc
       revision: 8e1beda02acb8972e29e6edbb423f7cafe16e445
       path: modules/lib/libsbc
@@ -334,6 +344,10 @@ manifest:
       path: bootloader/mcuboot
       groups:
         - bootloader
+    - name: minih264
+      url: https://github.com/chemag/minih264
+      revision: ba2a573ecbdea643244d499b3af847539632f889
+      path: modules/lib/minih264
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:

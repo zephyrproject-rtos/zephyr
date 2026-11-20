@@ -1,0 +1,173 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Meta Platforms, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "zephyrtc"
+
+# The decoder only has to accept the 320x240 stream the sample negotiates.
+if ZEPHYRTC_VIDEO_H264
+
+config H264SWDEC_HEAP_SIZE
+	default 393216
+
+config H264SWDEC_MAX_FRAME_WIDTH
+	default 320
+
+config H264SWDEC_MAX_FRAME_HEIGHT
+	default 240
+
+config H264SWDEC_MAX_FRAME_SIZE
+	default 76800
+
+endif # ZEPHYRTC_VIDEO_H264
+
+source "Kconfig.zephyr"
+
+menu "zephyrtc"
+
+config ZEPHYRTC_TRANSPORT
+	bool
+	default y
+	select LIBPEER
+	help
+	  Build libpeer and libsrtp against Zephyr's Mbed TLS integration and
+	  run a bounded cryptographic initialization probe.
+
+choice ZEPHYRTC_DEMO_MODE
+	prompt "libpeer endpoint mode"
+	default ZEPHYRTC_MODE_LOOPBACK
+	help
+	  Select the loopback, signaling-test, or external endpoint mode.
+
+config ZEPHYRTC_MODE_LOOPBACK
+	bool "In-process two-peer loopback"
+	help
+	  Two PeerConnections in one image exchange SDP directly, then complete host
+	  ICE, DTLS-SRTP, and bidirectional PCMU RTP. This is the default gate.
+
+config ZEPHYRTC_MODE_HTTP_SIGNALING
+	bool "HTTP signaling client against an in-process mock answerer"
+	depends on NET_SOCKETS && NET_TCP && NET_IPV4
+	select ZEPHYRTC_SIGNALING_CLIENT
+	help
+	  Run the signaling failure matrix, then drive one PeerConnection as SDP
+	  offerer through POST /offer to an in-process mock answerer over Zephyr
+	  loopback TCP, and require the same ICE, DTLS-SRTP, and PCMU RTP result.
+
+config ZEPHYRTC_MODE_EXTERNAL
+	bool "External HTTP answerer"
+	depends on NET_SOCKETS && NET_TCP && NET_UDP && NET_IPV4
+	select ZEPHYRTC_SIGNALING_CLIENT
+	help
+	  POST one complete PCMU-only or H.264/PCMU offer to an external answerer,
+	  apply the answer, complete ICE and DTLS-SRTP, then send the configured
+	  bounded media sources and require sustained received media.
+
+endchoice
+
+config ZEPHYRTC_AUDIO_RT1170
+	bool "RT1170 DMIC and WM8962 PCMU audio"
+	depends on ZEPHYRTC_MODE_EXTERNAL
+	depends on BOARD_MIMXRT1170_EVK_MIMXRT1176_CM7 && BOARD_REVISION_B
+	depends on I2S && AUDIO_CODEC && AUDIO_DMIC
+	help
+	  Capture 16 kHz stereo samples from the RT1170 DMIC, downsample and encode
+	  them as 8 kHz mono PCMU, and decode remote PCMU to the WM8962 playback path.
+
+config ZEPHYRTC_VIDEO_H264
+	bool "Software H.264 video with MiniH264 and H264SwDec"
+	depends on ZEPHYRTC_MODE_EXTERNAL
+	depends on !ZEPHYRTC_AUDIO_RT1170 || (VIDEO && DISPLAY)
+	select MINIH264
+	select H264SWDEC
+	help
+	  Enable 320x240 all-IDR MiniH264 and H264SwDec video. Synthetic media is used
+	  for software gates; the RT1170 audio configuration uses the chosen camera
+	  and display. Codec memory uses bounded static storage and a dedicated heap.
+
+config ZEPHYRTC_DISPLAY_ROTATION
+	int "Decoded-video display rotation in clockwise degrees"
+	depends on ZEPHYRTC_VIDEO_H264 && ZEPHYRTC_AUDIO_RT1170
+	range 0 270
+	default 0
+	help
+	  Rotate decoded video clockwise before display. Valid values are 0, 90,
+	  180, and 270 degrees. Other values fail at compile time.
+
+config ZEPHYRTC_DISPLAY_SCALE
+	int "Decoded-video integer display scale"
+	depends on ZEPHYRTC_VIDEO_H264 && ZEPHYRTC_AUDIO_RT1170
+	range 1 3
+	default 1
+	help
+	  Upscale decoded video by this integer factor using nearest-neighbor
+	  replication. The transformed image must fit the active display.
+
+config ZEPHYRTC_SIGNALING_CLIENT
+	bool
+	help
+	  Build the Zephyr socket client that POSTs one complete SDP offer and
+	  validates one bounded complete SDP answer, and the libpeer offerer that
+	  uses it. Select it from an application mode that needs an external peer.
+
+config ZEPHYRTC_SIGNALING_TIMEOUT_MS
+	int "Default total signaling deadline in milliseconds"
+	depends on ZEPHYRTC_SIGNALING_CLIENT
+	range 100 120000
+	default 25000
+	help
+	  Covers connect, request write, and response read for one offer exchange.
+	  Callers may pass a shorter deadline per request.
+
+config ZEPHYRTC_SIGNALING_URL
+	string "External SDP answerer URL"
+	depends on ZEPHYRTC_MODE_EXTERNAL
+	default "http://127.77.0.1:18080/offer"
+	help
+	  Complete HTTP URL accepted by the bounded signaling client. Only a dotted
+	  IPv4 literal or localhost is supported; TLS and DNS are intentionally out
+	  of scope for the bring-up endpoint.
+
+config ZEPHYRTC_NETWORK_TIMEOUT_MS
+	int "Network readiness deadline in milliseconds"
+	depends on ZEPHYRTC_MODE_EXTERNAL
+	range 1000 120000
+	default 30000
+	help
+	  Wait this long for the default interface to acquire a preferred IPv4
+	  address before creating the PeerConnection and gathering a host candidate.
+
+config ZEPHYRTC_WIFI_SSID
+	string "Wi-Fi station SSID"
+	depends on ZEPHYRTC_MODE_EXTERNAL && WIFI
+	default ""
+	help
+	  SSID used to associate the Wi-Fi station. Set this only from a private
+	  EXTRA_CONF_FILE outside the source tree, such as the one
+	  tools/rt1170_demo.py generates.
+
+config ZEPHYRTC_WIFI_PASSWORD
+	string "Wi-Fi station password"
+	depends on ZEPHYRTC_MODE_EXTERNAL && WIFI
+	default ""
+	help
+	  WPA2-PSK password for the Wi-Fi station. An empty value selects an open
+	  network. Set this only from a private EXTRA_CONF_FILE outside the source
+	  tree, such as the one tools/rt1170_demo.py generates.
+
+config ZEPHYRTC_EXTERNAL_RUN_MS
+	int "External connected-media validation time in milliseconds"
+	depends on ZEPHYRTC_MODE_EXTERNAL
+	range 5000 86400000
+	default 12000
+	help
+	  Run external media validation for this connected interval. The maximum
+	  supports soak tests lasting up to 24 hours.
+
+config ZEPHYRTC_DEMO_RUN_MS
+	int "native_sim synthetic media run time in milliseconds"
+	range 4200 60000
+	default 4200
+	help
+	  Run long enough to generate beeps beginning at 0, 2, and 4 seconds.
+
+endmenu

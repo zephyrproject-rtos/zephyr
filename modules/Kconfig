@@ -61,6 +61,9 @@ comment "Unavailable modules, please install those via the project manifest."
 # config ZEPHYR_<MODULE_NAME_UPPER>_MODULE
 # 	bool
 
+comment "h264swdec module not available."
+	depends on !ZEPHYR_H264SWDEC_MODULE
+
 comment "hal_bouffalolab module not available."
 	depends on !ZEPHYR_HAL_BOUFFALOLAB_MODULE
 
@@ -75,6 +78,9 @@ comment "hal_nxp module not available."
 
 comment "liblc3 module not available."
 	depends on !ZEPHYR_LIBLC3_MODULE
+
+comment "libpeer module not available."
+	depends on !ZEPHYR_LIBPEER_MODULE
 
 comment "libsbc module not available."
 	depends on !ZEPHYR_LIBSBC_MODULE
@@ -99,6 +105,9 @@ comment "loramac-node module not available."
 
 comment "LoRa Basics Modem module not available."
 	depends on !ZEPHYR_LORA_BASICS_MODEM_MODULE
+
+comment "minih264 module not available."
+	depends on !ZEPHYR_MINIH264_MODULE
 
 comment "zcbor module not available."
 	depends on !ZEPHYR_ZCBOR_MODULE

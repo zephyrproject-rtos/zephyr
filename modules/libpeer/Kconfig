@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Meta Platforms, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# libpeer carries its own Zephyr build files and Kconfig options.
+config ZEPHYR_LIBPEER_MODULE
+	bool
