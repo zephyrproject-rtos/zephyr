@@ -150,6 +150,7 @@ static int scd4x_read_sample(const struct device *dev)
 static int scd4x_setup_measurement(const struct device *dev)
 {
 	const struct scd4x_config *cfg = dev->config;
+	struct scd4x_data *data = dev->data;
 	int ret;
 
 	switch ((enum scd4x_mode_t)cfg->mode) {
@@ -168,10 +169,12 @@ static int scd4x_setup_measurement(const struct device *dev)
 		}
 		break;
 	case SCD4X_MODE_SINGLE_SHOT:
-		ret = scd4x_write_command(dev, SCD4X_CMD_POWER_DOWN);
-		if (ret < 0) {
-			LOG_ERR("Failed to write power_down command.");
-			return ret;
+		if (!data->power_latched) {
+			ret = scd4x_write_command(dev, SCD4X_CMD_POWER_DOWN);
+			if (ret < 0) {
+				LOG_ERR("Failed to write power_down command.");
+				return ret;
+			}
 		}
 		break;
 	default:
@@ -258,6 +261,22 @@ static int scd4x_set_automatic_calib_enable(const struct device *dev,
 			      1);
 	if (ret < 0) {
 		LOG_ERR("Failed to write set_automatic_calibration_enable register.");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int scd4x_set_automatic_calib_target(const struct device *dev,
+					    const struct sensor_value *val)
+{
+	int ret;
+	uint16_t automatic_calib_target = val->val1;
+
+	ret = scd4x_write_reg(dev, SCD4X_CMD_SET_AUTOMATIC_CALIB_TARGET, &automatic_calib_target,
+			      1);
+	if (ret < 0) {
+		LOG_ERR("Failed to write set_automatic_calibration_target register.");
 		return ret;
 	}
 
@@ -390,6 +409,29 @@ static int scd4x_get_automatic_calib_enable(const struct device *dev, struct sen
 	return 0;
 }
 
+static int scd4x_get_automatic_calib_target(const struct device *dev, struct sensor_value *val)
+{
+	int ret;
+	uint8_t rx_buf[3];
+
+	ret = scd4x_write_command(dev, SCD4X_CMD_GET_AUTOMATIC_CALIB_TARGET);
+	if (ret < 0) {
+		LOG_ERR("Failed to write get_automatic_calibration_target command.");
+		return ret;
+	}
+
+	ret = scd4x_read_reg(dev, rx_buf, sizeof(rx_buf));
+	if (ret < 0) {
+		LOG_ERR("Failed to read get_automatic_calibration_target register.");
+		return ret;
+	}
+
+	val->val1 = sys_get_be16(rx_buf);
+	val->val2 = 0;
+
+	return 0;
+}
+
 static int scd4x_get_self_calib_initial_period(const struct device *dev, struct sensor_value *val)
 {
 	int ret;
@@ -479,6 +521,32 @@ int scd4x_forced_recalibration(const struct device *dev, uint16_t target_concent
 	return 0;
 }
 
+int scd4x_power_latch(const struct device *dev, bool latch)
+{
+	struct scd4x_data *data = dev->data;
+	const struct scd4x_config *cfg = dev->config;
+	int ret;
+
+	if (cfg->mode == SCD4X_MODE_SINGLE_SHOT) {
+		if (latch) {
+			ret = scd4x_set_idle_mode(dev);
+			if (ret < 0) {
+				LOG_ERR("Failed to set idle mode.");
+				return ret;
+			}
+			data->power_latched = true;
+		} else {
+			data->power_latched = false;
+			ret = scd4x_setup_measurement(dev);
+			if (ret < 0) {
+				LOG_ERR("Failed to setup measurement.");
+				return ret;
+			}
+		}
+	}
+	return 0;
+}
+
 int scd4x_self_test(const struct device *dev)
 {
 	int ret;
@@ -520,7 +588,14 @@ int scd4x_self_test(const struct device *dev)
 
 int scd4x_persist_settings(const struct device *dev)
 {
+	struct scd4x_data *data = dev->data;
+	const struct scd4x_config *cfg = dev->config;
 	int ret;
+
+	if (cfg->mode == SCD4X_MODE_SINGLE_SHOT && !data->power_latched) {
+		LOG_ERR("Sensor is powered down between commands, persist_settings will not work.");
+		return -EAGAIN;
+	}
 
 	ret = scd4x_set_idle_mode(dev);
 	if (ret < 0) {
@@ -658,12 +733,18 @@ static int scd4x_channel_get(const struct device *dev, enum sensor_channel chan,
 int scd4x_attr_set(const struct device *dev, enum sensor_channel chan, enum sensor_attribute attr,
 		   const struct sensor_value *val)
 {
+	const struct scd4x_data *data = dev->data;
 	const struct scd4x_config *cfg = dev->config;
 	int ret;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP &&
 	    chan != SENSOR_CHAN_HUMIDITY && chan != SENSOR_CHAN_CO2) {
 		return -ENOTSUP;
+	}
+
+	if (cfg->mode == SCD4X_MODE_SINGLE_SHOT && !data->power_latched) {
+		LOG_ERR("Sensor is powered down between commands, attr_set will not work.");
+		return -EAGAIN;
 	}
 
 	if ((enum sensor_attribute_scd4x)attr != SENSOR_ATTR_SCD4X_AMBIENT_PRESSURE) {
@@ -717,6 +798,13 @@ int scd4x_attr_set(const struct device *dev, enum sensor_channel chan, enum sens
 		ret = scd4x_set_automatic_calib_enable(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to set automatic calib enable.");
+			return ret;
+		}
+		break;
+	case SENSOR_ATTR_SCD4X_AUTOMATIC_CALIB_TARGET:
+		ret = scd4x_set_automatic_calib_target(dev, val);
+		if (ret < 0) {
+			LOG_ERR("Failed to set automatic calib target.");
 			return ret;
 		}
 		break;
@@ -808,6 +896,13 @@ static int scd4x_attr_get(const struct device *dev, enum sensor_channel chan,
 		ret = scd4x_get_automatic_calib_enable(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to get automatic calib.");
+			return ret;
+		}
+		break;
+	case SENSOR_ATTR_SCD4X_AUTOMATIC_CALIB_TARGET:
+		ret = scd4x_get_automatic_calib_target(dev, val);
+		if (ret < 0) {
+			LOG_ERR("Failed to get automatic calib target.");
 			return ret;
 		}
 		break;

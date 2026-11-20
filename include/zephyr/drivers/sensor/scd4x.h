@@ -55,6 +55,12 @@ enum sensor_attribute_scd4x {
 	 */
 	SENSOR_ATTR_SCD4X_AUTOMATIC_CALIB_ENABLE,
 	/**
+	 * Automatic calibration target
+	 *
+	 * Default: 400ppm
+	 */
+	SENSOR_ATTR_SCD4X_AUTOMATIC_CALIB_TARGET,
+	/**
 	 * Initial period for automatic self calibration correction (in hours).
 	 *
 	 * Allowed values are integer multiples of 4 hours.
@@ -74,7 +80,7 @@ enum sensor_attribute_scd4x {
  * @brief Performs a forced recalibration.
  *
  * Operate the SCD4x in the operation mode for at least 3 minutes in an environment with a
- * homogeneous and constant CO2 concentration. Otherwise the recalibratioin will fail. The sensor
+ * homogeneous and constant CO2 concentration. Otherwise the recalibration will fail. The sensor
  * must be operated at the voltage desired for the application when performing the FRC sequence.
  *
  * @param dev Pointer to the sensor device
@@ -85,6 +91,19 @@ enum sensor_attribute_scd4x {
  */
 int scd4x_forced_recalibration(const struct device *dev, uint16_t target_concentration,
 			       uint16_t *frc_correction);
+
+/**
+ * @brief Latch the power of the sensor.
+ *
+ * Prevents the sensor from powering down between commands.
+ * This is required before performing calibration or modifying sensor registers.
+ *
+ * @param dev Pointer to the sensor device
+ * @param latch True to keep the power on, false to release the power.
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+int scd4x_power_latch(const struct device *dev, bool latch);
 
 /**
  * @brief Performs a self test.
@@ -98,11 +117,13 @@ int scd4x_forced_recalibration(const struct device *dev, uint16_t target_concent
 int scd4x_self_test(const struct device *dev);
 
 /**
- * @brief Performs a self test.
+ * @brief Persist settings to EEPROM.
  *
  * The persist_settings command can be used to save the actual configuration. This command
  * should only be sent when persistence is required and if actual changes to the configuration have
  * been made. The EEPROM is guaranteed to withstand at least 2000 write cycles
+ *
+ * @note @ref scd4x_power_latch must be used before calling this function.
  *
  * @param dev Pointer to the sensor device
  *
