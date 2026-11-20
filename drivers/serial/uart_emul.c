@@ -384,12 +384,15 @@ static void uart_emul_irq_callback_set(const struct device *dev, uart_irq_callba
 static void uart_emul_post_event(const struct device *dev, struct uart_event *evt)
 {
 	struct uart_emul_data *data = dev->data;
+	uart_callback_t cb = data->uart_callback;
+	void *user_data = data->callback_user_data;
 
-	if (!data->uart_callback) {
+	if (cb == NULL) {
 		LOG_DBG("No async callback configured for uart_emul device %p", dev);
+		return;
 	}
 
-	data->uart_callback(dev, evt, data->callback_user_data);
+	cb(dev, evt, user_data);
 }
 
 static void uart_emul_simple_event(const struct device *dev, enum uart_event_type type)
