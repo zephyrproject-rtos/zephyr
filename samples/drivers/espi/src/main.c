@@ -521,16 +521,14 @@ int espi_test(void)
 		return ret;
 	}
 
-	/*  Attempt to use OOB channel to read temperature, regardless of
-	 * if is enabled or not.
-	 */
-#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
-	/* System without host-initiated OOB Rx traffic */
-	get_pch_temp_sync(espi_dev);
-#else
-	/* System with host-initiated OOB Rx traffic */
-	get_pch_temp_async(espi_dev);
-#endif
+	/* Use OOB channel, if enabled, to read PCH temperature */
+	if (IS_ENABLED(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)) {
+		/* System with host-initiated OOB Rx traffic */
+		get_pch_temp_async(espi_dev);
+	} else if (IS_ENABLED(CONFIG_ESPI_OOB_CHANNEL)) {
+		/* System without host-initiated OOB Rx traffic */
+		get_pch_temp_sync(espi_dev);
+	}
 
 	/* Cleanup */
 	k_sleep(K_SECONDS(1));
