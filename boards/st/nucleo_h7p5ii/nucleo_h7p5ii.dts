@@ -24,6 +24,7 @@
 		pwm-led1 = &red_pwm_led;
 		pwm-led2 = &blue_pwm_led;
 		sw0 = &user_button;
+		rtc = &rtc;
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat;
 	};
@@ -212,6 +213,12 @@
 		pinctrl-names = "default";
 		status = "okay";
 	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(2)>;
+	status = "okay";
 };
 
 /* ADC1 - used by analog sensors */
