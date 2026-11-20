@@ -31,6 +31,29 @@ void _isr_wrapper(void);
 /* Spurious interrupt handler. Throws an error if called */
 void z_irq_spurious(const void *unused);
 
+struct _isr_reloc_param_info {
+	int32_t table_index;
+	int32_t shared_index;
+};
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+/*
+ * CONFIG_POSITION_INDEPENDENT: link-time addresses of the ISR and IRQ vector
+ * tables in zephyr_pre0.elf, and the list of table entries whose argument
+ * needs relocation, terminated by a table_index of -1. Defined by the
+ * generated isr_tables.c, with weak fallbacks in arch/common/isr_tables.c.
+ */
+extern uintptr_t z_sw_isr_table_pre0_addr;
+extern struct _isr_reloc_param_info reloc_param_list[];
+extern uintptr_t z_irq_vector_table_pre0_addr;
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
 /*
  * Note the order: arg first, then ISR. This allows a table entry to be
  * loaded arg -> r0, isr -> r3 in _isr_wrapper with one ldmia instruction,
@@ -46,7 +69,7 @@ struct _isr_table_entry {
  * irq line
  */
 extern
-#ifndef CONFIG_DYNAMIC_INTERRUPTS
+#if !defined(CONFIG_DYNAMIC_INTERRUPTS) && !defined(CONFIG_POSITION_INDEPENDENT)
 	const
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 	struct _isr_table_entry _sw_isr_table[];
@@ -182,7 +205,7 @@ struct z_shared_isr_table_entry {
 void z_shared_isr(const void *data);
 
 extern
-#ifndef CONFIG_DYNAMIC_INTERRUPTS
+#if !defined(CONFIG_DYNAMIC_INTERRUPTS) && !defined(CONFIG_POSITION_INDEPENDENT)
 const
 #endif
 struct z_shared_isr_table_entry z_shared_sw_isr_table[];
