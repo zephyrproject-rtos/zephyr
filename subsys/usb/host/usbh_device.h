@@ -1,5 +1,7 @@
 /*
  * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Renesas Electronics Corporation
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +10,7 @@
 
 #include <stdint.h>
 #include <zephyr/usb/usbh.h>
+#include <zephyr/usb/bos.h>
 #include <zephyr/drivers/usb/uhc.h>
 
 /* Callback type to be used for e.g. synchronous requests */
@@ -26,6 +29,9 @@ struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uin
 /* Allocate/free USB device */
 struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx);
 void usbh_device_free(struct usb_device *const udev);
+
+/* Fetch bos descriptor */
+int usbh_device_fetch_bos_desc(struct usb_device *const udev);
 
 /* Reset and configure new USB device */
 int usbh_device_init(struct usb_device *const udev);
