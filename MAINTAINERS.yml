@@ -545,6 +545,7 @@ Base OS:
   collaborators:
     - andyross
     - dcpleung
+    - Denny-Lin
     - peter-mitsis
   files:
     - include/zephyr/sys/
