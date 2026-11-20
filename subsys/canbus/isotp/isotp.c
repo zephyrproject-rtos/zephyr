@@ -668,15 +668,26 @@ int isotp_bind(struct isotp_recv_ctx *rctx, const struct device *can_dev,
 		return ISOTP_NO_NET_BUF_LEFT;
 	}
 
+	/*
+	 * Initialize the receive work and timer before the RX filter can be
+	 * registered. A CAN controller may deliver a matching frame as soon as
+	 * the filter is added, and receive_can_rx() submits this work item and
+	 * may start the timer.
+	 */
+	k_work_init(&rctx->work, receive_work_handler);
+	k_timer_init(&rctx->timer, receive_timeout_handler, NULL);
+
 	ret = add_ff_sf_filter(rctx);
 	if (ret) {
 		LOG_ERR("Can't add filter for binding");
+		/*
+		 * k_timer_init() registers the timer with the object core when
+		 * CONFIG_OBJ_CORE_TIMER is enabled; undo that before returning.
+		 */
+		(void)k_timer_cleanup(&rctx->timer);
 		net_buf_drop(&rctx->buf);
 		return ret;
 	}
-
-	k_work_init(&rctx->work, receive_work_handler);
-	k_timer_init(&rctx->timer, receive_timeout_handler, NULL);
 
 	return ISOTP_N_OK;
 }
