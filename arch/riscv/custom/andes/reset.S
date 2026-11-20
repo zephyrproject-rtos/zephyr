@@ -134,8 +134,18 @@ cache_enable_finish:
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(andestech_dlm)
+#if DT_REG_ADDR(DT_CHOSEN(zephyr_sram)) == DT_REG_ADDR(DT_INST(0, andestech_dlm))
+	/* Set the base when DLM is selected as the main RAM. */
+	csrr t0, NDS_MDLMB
+	andi t0, t0, NDS_MDLMB_ECCEN
+	li t1, DT_REG_ADDR(DT_INST(0, andestech_dlm)) | NDS_MDLMB_DEN
+	or t0, t0, t1
+	csrw NDS_MDLMB, t0
+	fence rw, rw
+#else
 	/* Enable DLM. */
 	csrsi NDS_MDLMB, NDS_MDLMB_DEN
+#endif
 #ifdef CONFIG_XIP
 	/*
 	 * When XIP=n, the earlier boot stage or loader is responsible for

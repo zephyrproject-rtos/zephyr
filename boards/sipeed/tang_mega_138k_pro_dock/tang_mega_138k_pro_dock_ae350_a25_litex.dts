@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "tang_mega_138k_pro_dock_ae350_a25.dts"
+
+&dram {
+	status = "disabled";
+};
+
+&uart1 {
+	clock-frequency = <DT_FREQ_M(50)>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/ {
+	compatible = "sipeed,tang-mega-138k-pro-dock-ae350-litex";
+	model = "Sipeed Tang Mega 138K Pro Dock AE350 Litex";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &dlm;
+		zephyr,flash = &spiflash;
+	};
+};
