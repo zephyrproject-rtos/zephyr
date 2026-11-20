@@ -1,0 +1,64 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Potentiometer on VTEMP (P1.1), short J6 pins 1 and 2. Input range is 0 - 1.2 V. */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/infineon-dsadc.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 0>;
+	};
+};
+
+&pinctrl {
+	p1_1_adc_vtemp: p1_1_adc_vtemp {
+		pinmux = <DT_CAT1_PINMUX(1, 1, HSIOM_SEL_GPIO)>;
+	};
+};
+
+&gpio_prt1 {
+	status = "okay";
+
+	vtemp_sup {
+		gpio-hog;
+		gpios = <0 GPIO_OPEN_SOURCE>;
+		output-high;
+	};
+
+	vtemp_ret {
+		gpio-hog;
+		gpios = <2 GPIO_OPEN_DRAIN>;
+		output-low;
+	};
+};
+
+&peri_clk_div1 {
+	status = "okay";
+};
+
+&adc0 {
+	pinctrl-0 = <&p1_1_adc_vtemp>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,differential;
+		zephyr,input-positive = <IFX_DSADC_POS_VTS>;
+		zephyr,input-negative = <IFX_DSADC_NEG_VTS_RET>;
+		zephyr,resolution = <16>;
+	};
+};
