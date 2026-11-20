@@ -279,6 +279,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 {
 	const struct memc_mspi_aps6404l_config *cfg = psram->config;
 	struct memc_mspi_aps6404l_data *data = psram->data;
+	bool qpi_exit_sent;
 	uint8_t vendor_id;
 
 	if (!device_is_ready(cfg->bus)) {
@@ -295,21 +296,20 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 		return -EIO;
 	}
 
-	if (data->dev_cfg.io_mode == MSPI_IO_MODE_QUAD) {
-		if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL,
-				    &cfg->quad_cfg)) {
-			LOG_ERR("Failed to config mspi controller/%u", __LINE__);
-			return -EIO;
-		}
+	/* The device keeps QPI mode across a host reset, and a bootloader may have left
+	 * it there: leave it before talking SPI. QPI commands are ignored by a device in
+	 * SPI mode, and the SPI reset below completes the recovery.
+	 */
+	qpi_exit_sent = mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL,
+					&cfg->quad_cfg) == 0;
+	if (qpi_exit_sent) {
 		data->dev_cfg = cfg->quad_cfg;
-		if (memc_mspi_aps6404l_reset(psram)) {
-			LOG_ERR("Could not reset pSRAM/%u", __LINE__);
-			return -EIO;
-		}
 		if (memc_mspi_aps6404l_command_write(psram, APS6404L_QUAD_MODE_EXIT, 0, NULL, 0)) {
 			LOG_ERR("Could not exit quad mode/%u", __LINE__);
 			return -EIO;
 		}
+	} else {
+		LOG_WRN("Quad config rejected, QPI exit skipped/%u", __LINE__);
 	}
 
 	if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL, &cfg->serial_cfg)) {
@@ -329,6 +329,12 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 	}
 	LOG_DBG("Vendor id: 0x%0x", vendor_id);
 	if (vendor_id != APM_VENDOR_ID) {
+		/* Without the QPI exit, a wrong ID may mean the device is still in QPI mode */
+		if (!qpi_exit_sent) {
+			LOG_ERR("Vendor id 0x%0x, device may be in QPI mode/%u", vendor_id,
+				__LINE__);
+			return -EIO;
+		}
 		LOG_WRN("Vendor ID does not match expected value of 0x%0x/%u", APM_VENDOR_ID,
 			__LINE__);
 	}
@@ -403,7 +409,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 	{                                                                                         \
 		.ce_num             = DT_INST_PROP(n, mspi_hardware_ce_num),                      \
 		.freq               = 24000000,                                                   \
-		.io_mode            = MSPI_IO_MODE_SINGLE,                                        \
+		.io_mode            = MSPI_IO_MODE_QUAD,                                          \
 		.data_rate          = MSPI_DATA_RATE_SINGLE,                                      \
 		.cpp                = MSPI_CPP_MODE_0,                                            \
 		.endian             = MSPI_XFER_LITTLE_ENDIAN,                                    \
