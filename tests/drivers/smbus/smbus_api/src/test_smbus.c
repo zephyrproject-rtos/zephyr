@@ -140,6 +140,8 @@ ZTEST_USER(test_smbus_general, test_smbus_api_errors)
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(smbus0));
 	uint8_t fake_addr = 0x10;
 	uint8_t buf[2];
+	uint8_t rcv_buf[SMBUS_BLOCK_BYTES_MAX];
+	uint8_t rcv_count;
 	int ret;
 
 	zassert_true(device_is_ready(dev), "Device is not ready");
@@ -153,6 +155,13 @@ ZTEST_USER(test_smbus_general, test_smbus_api_errors)
 	zassert_equal(ret, -EINVAL, "Wrong parameter check failed");
 	ret = smbus_block_write(dev, fake_addr, 0, SMBUS_BLOCK_BYTES_MAX + 1,
 				buf);
+	zassert_equal(ret, -EINVAL, "Wrong parameter check failed");
+
+	/* Test parsing SMBus block_pcall */
+	ret = smbus_block_pcall(dev, fake_addr, 0, 0, buf, &rcv_count, rcv_buf);
+	zassert_equal(ret, -EINVAL, "Wrong parameter check failed");
+	ret = smbus_block_pcall(dev, fake_addr, 0, SMBUS_BLOCK_BYTES_MAX + 1,
+				buf, &rcv_count, rcv_buf);
 	zassert_equal(ret, -EINVAL, "Wrong parameter check failed");
 }
 
