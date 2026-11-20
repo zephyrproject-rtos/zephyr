@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SAMPLE_RFC2217_PORT
+	int "TCP port of the server the application starts"
+	default 2217
+	help
+	  Without a zephyr,rfc2217-server node in the devicetree, the
+	  application starts a server on the UART with the rfc2217-uart
+	  alias, on this port.
+
+source "samples/net/common/Kconfig"
+source "Kconfig.zephyr"
