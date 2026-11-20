@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Software JPEG encoder based on the jpegenc module.
+
+compatible: "zephyr,video-jpegenc"

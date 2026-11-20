@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_JPEGENC
+	bool "Software JPEG encoder based on the jpegenc module"
+	default y
+	depends on DT_HAS_ZEPHYR_VIDEO_JPEGENC_ENABLED
+	depends on VIDEO_ENCODER_JPEG
+	depends on ZEPHYR_JPEGENC_MODULE
+	select JPEGENC
+	help
+	  Enable a software baseline JPEG encoder based on the jpegenc module.
+	  It encodes NV12, YUV420, YUYV, RGB565 (either byte order) or GREY
+	  frames and runs on any platform, including native_sim and QEMU. It
+	  needs no heap: the encoder state (about 3.3 KiB) is part of the
+	  device data, and the image is written directly into the output
+	  buffer. Encoding runs in the thread calling video_enqueue(). The
+	  quality control maps onto the encoder's four quality levels.
