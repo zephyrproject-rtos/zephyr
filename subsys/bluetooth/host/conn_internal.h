@@ -75,6 +75,7 @@ enum {
 	BT_CONN_USER,                         /* user I/O when pairing */
 	BT_CONN_BR_PAIRING,                   /* BR connection in pairing context */
 	BT_CONN_BR_PAIRED,                    /* BR connection pairing is done */
+	BT_CONN_BR_IO_CAPA_INVALID,           /* BR peer sent invalid IO capabilities */
 	BT_CONN_BR_NOBOND,                    /* SSP no bond pairing tracker */
 	BT_CONN_BR_GENERAL_BONDING,           /* BR general bonding */
 	BT_CONN_BR_PAIRING_INITIATOR,         /* local host starts authentication */

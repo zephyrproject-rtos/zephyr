@@ -514,6 +514,16 @@ struct bt_hci_cp_accept_sync_conn_req {
 	uint16_t  pkt_type;
 } __packed;
 
+/** HCI Reject Synchronous Connection Request command opcode */
+#define BT_HCI_OP_REJECT_SYNC_CONN_REQ          BT_OP(BT_OGF_LINK_CTRL, 0x002a) /* 0x042a */
+/** HCI Reject Synchronous Connection Request command parameters */
+struct bt_hci_cp_reject_sync_conn_req {
+	/** Address of the device that requests the connection */
+	bt_addr_t bdaddr;
+	/** Reason of the rejection, 0x0D to 0x0F */
+	uint8_t   reason;
+} __packed;
+
 #define BT_HCI_OP_REJECT_CONN_REQ               BT_OP(BT_OGF_LINK_CTRL, 0x000a) /* 0x040a */
 struct bt_hci_cp_reject_conn_req {
 	bt_addr_t bdaddr;
