@@ -864,8 +864,6 @@ static int stm32_xspi_config_mem(const struct device *dev)
 /* gpio or send the different reset command to the NOR flash in SPI/OSPI and STR/DTR */
 static int stm32_xspi_mem_reset(const struct device *dev)
 {
-	struct flash_stm32_xspi_data *dev_data = dev->data;
-
 #if STM32_XSPI_RESET_GPIO
 	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
 
@@ -874,6 +872,7 @@ static int stm32_xspi_mem_reset(const struct device *dev)
 	k_msleep(dev_cfg->reset_gpios_duration);
 	gpio_pin_set_dt(&dev_cfg->reset, 0);
 #else
+	struct flash_stm32_xspi_data *dev_data = dev->data;
 
 	/* Reset command sent successively for each mode SPI/OPS & STR/DTR */
 	XSPI_RegularCmdTypeDef s_command = {
