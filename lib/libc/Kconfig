@@ -62,7 +62,6 @@ config PICOLIBC_SUPPORTED
 
 config IAR_LIBC_SUPPORTED
 	bool
-	default n
 	select FULL_LIBC_SUPPORTED
 	help
 	  Selected if the target is an IAR Systems compiler
