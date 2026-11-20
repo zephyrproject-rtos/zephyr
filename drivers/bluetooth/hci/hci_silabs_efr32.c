@@ -20,18 +20,6 @@ LOG_MODULE_REGISTER(bt_hci_driver_efr32, CONFIG_BT_HCI_DRIVER_LOG_LEVEL);
 
 #define DT_DRV_COMPAT silabs_bt_hci_efr32
 
-#if defined(CONFIG_BT_MAX_CONN)
-#define MAX_CONN CONFIG_BT_MAX_CONN
-#else
-#define MAX_CONN 0
-#endif
-
-#if defined(CONFIG_BT_CTLR_RL_SIZE)
-#define CTLR_RL_SIZE CONFIG_BT_CTLR_RL_SIZE
-#else
-#define CTLR_RL_SIZE 0
-#endif
-
 static K_KERNEL_STACK_DEFINE(slz_ll_stack, CONFIG_BT_SILABS_EFR32_LINK_LAYER_STACK_SIZE);
 static struct k_thread slz_ll_thread;
 
