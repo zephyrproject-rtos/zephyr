@@ -1194,6 +1194,11 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 #if defined(CONFIG_UART_ASYNC_API)
 	sci_b_uart_eri_isr();
 #else
+	const struct uart_ra_sci_b_config *cfg = dev->config;
+
+	/* Discard the faulty character and clear the error flags, as FSP does */
+	(void)cfg->regs->RDR;
+	uart_ra_sci_b_irq_update(dev);
 	R_BSP_IrqStatusClear(data->fsp_config.eri_irq);
 #endif
 }
