@@ -12,6 +12,7 @@ tests:
       - esp32h2_devkitm
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
+      - esp32s31_function_coreboard/esp32s31/hpcore
       - qemu_cortex_m3
       - frdm_mcxc242
       - frdm_mcxc444

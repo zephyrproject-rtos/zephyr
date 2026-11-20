@@ -18,7 +18,8 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
 	uint32_t rdata1 = sys_read32(EFUSE_RD_BLK2_DATA0_REG);
 	uint32_t rdata2 = sys_read32(EFUSE_RD_BLK2_DATA1_REG);
-#elif defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C61)
+#elif defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C61) ||                 \
+	defined(CONFIG_SOC_SERIES_ESP32S31)
 	uint32_t rdata1 = sys_read32(EFUSE_RD_MAC_SYS0_REG);
 	uint32_t rdata2 = sys_read32(EFUSE_RD_MAC_SYS1_REG);
 #elif defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
@@ -64,6 +65,11 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 		      | RESET_CPU_LOCKUP
 		      | RESET_BROWNOUT);
 
+#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32H2) || \
+	defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32S31)
+	*supported |= RESET_SECURITY;
+#endif
+
 	return 0;
 }
 
@@ -90,10 +96,14 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		*cause = RESET_LOW_POWER_WAKE;
 		break;
 	case ESP_RST_PANIC:
+	case ESP_RST_CPU_LOCKUP:
 		*cause = RESET_CPU_LOCKUP;
 		break;
 	case ESP_RST_BROWNOUT:
 		*cause = RESET_BROWNOUT;
+		break;
+	case ESP_RST_PWR_GLITCH:
+		*cause = RESET_SECURITY;
 		break;
 	default:
 		*cause = 0;
