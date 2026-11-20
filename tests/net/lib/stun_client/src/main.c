@@ -33,18 +33,19 @@ static int client_sock = -1;
 /* Is the address the loopback address of the family? The port is not compared. */
 static bool is_loopback(const struct net_sockaddr *sa, int family)
 {
-	static const uint8_t kV4[4] = {127, 0, 0, 1};
+	static const uint8_t loopback4[NET_IPV4_ADDR_SIZE] = {127, 0, 0, 1};
 
 	if (sa->sa_family != family) {
 		return false;
 	}
 	if (family == NET_AF_INET) {
-		return memcmp(net_sin(sa)->sin_addr.s4_addr, kV4, sizeof(kV4)) == 0;
+		return memcmp(net_sin(sa)->sin_addr.s4_addr, loopback4, sizeof(loopback4)) == 0;
 	}
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		static const uint8_t kV6[16] = {[15] = 1};
+		/* The address ::1: every byte zero but the last. */
+		static const uint8_t loopback6[NET_IPV6_ADDR_SIZE] = {[15] = 1};
 
-		return memcmp(net_sin6(sa)->sin6_addr.s6_addr, kV6, sizeof(kV6)) == 0;
+		return memcmp(net_sin6(sa)->sin6_addr.s6_addr, loopback6, sizeof(loopback6)) == 0;
 	}
 	return false;
 }
@@ -422,19 +423,22 @@ ZTEST(stun_client, test_simple_failures_do_not_leak)
  */
 static int64_t simple_with_each_family_failing(uint32_t timeout_ms)
 {
-	static const int kFamilies[] = {NET_AF_INET, NET_AF_INET6};
+	static const int families[] = {NET_AF_INET, NET_AF_INET6};
 	struct net_sockaddr_storage mapped = {0};
 	int64_t start = k_uptime_get();
 
-	ARRAY_FOR_EACH(kFamilies, i) {
-		int other = kFamilies[(i + 1U) % ARRAY_SIZE(kFamilies)];
+	ARRAY_FOR_EACH(families, i) {
+		int family = families[i];
+		int other = (family == NET_AF_INET) ? NET_AF_INET6 : NET_AF_INET;
+		bool from_other = false;
+		int rc = 0;
 
-		atomic_set(&server.mode_family, kFamilies[i]);
-		zassert_ok(stun_client_simple(DUAL_HOST, SERVER_PORT, timeout_ms,
-					      &mapped),
-			   "family %d fails", kFamilies[i]);
-		zassert_true(is_loopback(net_sad(&mapped), other), "family %d fails",
-			     kFamilies[i]);
+		atomic_set(&server.mode_family, family);
+		rc = stun_client_simple(DUAL_HOST, SERVER_PORT, timeout_ms, &mapped);
+		zassert_ok(rc, "family %d fails", family);
+
+		from_other = is_loopback(net_sad(&mapped), other);
+		zassert_true(from_other, "family %d fails", family);
 	}
 	return k_uptime_get() - start;
 }
