@@ -22,11 +22,11 @@
 			clocks = <&rcc STM32_CLOCK(AHB2, 12)>,
 				 <&rcc STM32_SRC_MSI CLK48_SEL(3)>;
 			status = "disabled";
-		};
-	};
 
-	otgfs_phy: otgfs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
+			otgfs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
+		};
 	};
 };

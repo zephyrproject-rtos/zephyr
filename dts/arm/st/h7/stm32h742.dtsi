@@ -53,8 +53,13 @@
 			maximum-speed = "full-speed";
 			clocks = <&rcc STM32_CLOCK(AHB1, 27)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
-			phys = <&otghs_fs_phy>;
+			phys = <&otgfs_phy>;
 			status = "disabled";
+
+			otgfs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		ltdc: display-controller@50001000 {

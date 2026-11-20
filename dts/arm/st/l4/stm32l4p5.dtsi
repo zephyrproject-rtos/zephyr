@@ -466,6 +466,11 @@
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 			phys = <&otgfs_phy>;
 			status = "disabled";
+
+			otgfs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		dcmi: dcmi@50050000 {
@@ -546,11 +551,6 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
-	};
-
-	otgfs_phy: otgfs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	smbus2: smbus2 {

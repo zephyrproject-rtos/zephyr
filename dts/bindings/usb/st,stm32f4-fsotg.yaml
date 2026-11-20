@@ -16,3 +16,6 @@ properties:
 
   pinctrl-names:
     required: true
+
+  phys:
+    dependency-mode: child-ignore

@@ -954,6 +954,11 @@
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
 			phys = <&otghs_fs_phy>;
 			status = "disabled";
+
+			otghs_fs_phy: usb-phy {
+				compatible = "usb-nop-xceiv";
+				#phy-cells = <0>;
+			};
 		};
 
 		dcmi: dcmi@48020000 {
@@ -1353,11 +1358,6 @@
 				status = "disabled";
 			};
 		};
-	};
-
-	otghs_fs_phy: otghs_fs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
 	};
 
 	die_temp: dietemp {
