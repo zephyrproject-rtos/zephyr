@@ -62,6 +62,9 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define STM32_ADC_DECIMAL_NB_TO_CHANNEL	LL_ADC_DECIMAL_NB_TO_CHANNEL
 #define STM32_ADC_COMMON_INSTANCE	ADC_COMMON_INSTANCE
 #define STM32_IN_ADC_SINGLE_ENDED	LL_ADC_IN_SINGLE_ENDED
+#if defined(LL_ADC_IN_DIFFERENTIAL)
+#define STM32_IN_ADC_DIFFERENTIAL_ENDED	LL_ADC_IN_DIFFERENTIAL
+#endif /* LL_ADC_IN_DIFFERENTIAL */
 #define STM32_ADC_OVS_REG_CONTINUED	LL_ADC_OVS_REG_CONTINUED
 #else /* CONFIG_STM32_HAL2 */
 #define STM32_ADC_DECIMAL_NB_TO_CHANNEL	__LL_ADC_DECIMAL_NB_TO_CHANNEL
@@ -69,6 +72,9 @@ LOG_MODULE_REGISTER(adc_stm32);
 #if defined(LL_ADC_SINGLE_ENDED)
 #define STM32_IN_ADC_SINGLE_ENDED	LL_ADC_SINGLE_ENDED
 #endif /* LL_ADC_SINGLE_ENDED */
+#if defined(LL_ADC_DIFFERENTIAL_ENDED)
+#define STM32_IN_ADC_DIFFERENTIAL_ENDED	LL_ADC_DIFFERENTIAL_ENDED
+#endif /* LL_ADC_DIFFERENTIAL_ENDED */
 #if defined(LL_ADC_OVS_GRP_REGULAR_CONTINUED)
 #define STM32_ADC_OVS_REG_CONTINUED	LL_ADC_OVS_GRP_REGULAR_CONTINUED
 #endif /* LL_ADC_OVS_GRP_REGULAR_CONTINUED */
@@ -784,11 +790,13 @@ static void adc_stm32_calibration_start(const struct device *dev, __maybe_unused
 	__maybe_unused uint32_t calib_type;
 
 #if defined(STM32_IN_ADC_SINGLE_ENDED)
-#if defined(LL_ADC_DIFFERENTIAL_ENDED)
-	calib_type = single_ended ? STM32_IN_ADC_SINGLE_ENDED : LL_ADC_DIFFERENTIAL_ENDED;
-#else /* LL_ADC_DIFFERENTIAL_ENDED */
+#if defined(STM32_IN_ADC_DIFFERENTIAL_ENDED)
+	calib_type = single_ended
+		? STM32_IN_ADC_SINGLE_ENDED
+		: STM32_IN_ADC_DIFFERENTIAL_ENDED;
+#else /* STM32_IN_ADC_DIFFERENTIAL_ENDED */
 	calib_type = STM32_IN_ADC_SINGLE_ENDED;
-#endif /* LL_ADC_DIFFERENTIAL_ENDED */
+#endif /* STM32_IN_ADC_DIFFERENTIAL_ENDED */
 #endif /* STM32_IN_ADC_SINGLE_ENDED */
 
 #if defined(CONFIG_SOC_SERIES_STM32C5X) || \
@@ -2013,7 +2021,7 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 #if ADC_STM32_DT_ANY_INST_HAS_DIFFERENTIAL_SUPPORT
 static int set_channel_differential_mode(ADC_TypeDef *adc, uint8_t channel_id, bool differential)
 {
-	const uint32_t mode = differential ? LL_ADC_DIFFERENTIAL_ENDED : STM32_IN_ADC_SINGLE_ENDED;
+	const uint32_t mode = differential ? STM32_IN_ADC_DIFFERENTIAL_ENDED : STM32_IN_ADC_SINGLE_ENDED;
 	const uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
 	uint32_t current_mode = LL_ADC_GetChannelSingleDiff(adc, channel);
 	int err;
@@ -2022,7 +2030,7 @@ static int set_channel_differential_mode(ADC_TypeDef *adc, uint8_t channel_id, b
 	 * disable / re-enable cycle can take some time, so avoid doing this if the channel is
 	 * already set to the correct mode.
 	 */
-	if ((current_mode != 0U && mode == LL_ADC_DIFFERENTIAL_ENDED) ||
+	if ((current_mode != 0U && mode == STM32_IN_ADC_DIFFERENTIAL_ENDED) ||
 	    (current_mode == 0U && mode == STM32_IN_ADC_SINGLE_ENDED)) {
 		return 0;
 	}
