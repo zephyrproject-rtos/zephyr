@@ -31,4 +31,5 @@ Run it with:
    ./scripts/twister -p native_sim -T tests/bluetooth/classic/bumble/acl_conn
 
 Bumble must be importable by the Python interpreter running twister
-(``pip install bumble``); otherwise the test is built but not run.
+(``pip install bumble==0.0.236``, the version the backend is written for);
+otherwise the test is built but not run.
