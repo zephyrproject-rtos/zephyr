@@ -222,6 +222,12 @@ manifest:
       path: modules/hal/openisa
       groups:
         - hal
+    - name: hal_py32
+      url: https://github.com/IOsetting/py32f0-template
+      revision: pull/72/head
+      path: modules/hal/py32
+      groups:
+        - hal
     - name: hal_quicklogic
       revision: bad894440fe72c814864798c8e3a76d13edffb6c
       path: modules/hal/quicklogic

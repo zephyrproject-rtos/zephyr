@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Puya PY32 I2C controller. Supports 7-bit controller transfers at 100 kHz
+  and 400 kHz. Configure SDA and SCL as alternate-function open-drain pins
+  and provide external pull-up resistors.
+
+compatible: "puya,py32-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  resets:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+  clock-frequency:
+    default: 100000
+    enum: [100000, 400000]
