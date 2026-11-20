@@ -158,6 +158,21 @@ Libraries / Subsystems
   * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
     (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
 
+* Storage
+
+  * Transport-neutral MBR/GPT layout scan (:c:func:`disk_partition_walk`) when
+    :kconfig:option:`CONFIG_DISK_PARTITION` is enabled; see :ref:`disk_partition_layout`
+  * :ref:`SCSI mid-layer <scsi_midlayer>` for transport-neutral initiator command
+    execution, SCSI :ref:`disk_access <disk_access_api>` volumes, and generic partition
+    table parsing on block devices.
+
+* USB host
+
+  * :ref:`uhc_api` optional HCD lifecycle hooks (enumeration, endpoint programming, and
+    disconnect cleanup) with public wrappers; see the migration guide for
+    :c:struct:`usb_device` field renames.
+  * Experimental USB host Mass Storage class support with Bulk-Only Transport.
+
 * Utilities
 
   * :c:func:`utf8_is_valid` checks a given number of bytes for well-formed UTF-8

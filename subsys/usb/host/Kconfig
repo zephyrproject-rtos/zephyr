@@ -41,19 +41,86 @@ config USBH_INIT_PRIO
 	help
 	  USB host thread initialization priority level.
 
-config USBH_STACK_SIZE
-	int "USB host stack thread stack size"
-	default 1024
-	help
-	  USB host stack thread stack size in bytes.
-
 config USBH_MAX_UHC_MSG
 	int "Maximum number of UHC events"
 	default 10
 	help
-	  Maximum number of USB host controller events that can be queued.
+	  Maximum number of UHC events that can be queued.
 
 rsource "Kconfig.usbip"
+rsource "Kconfig.msc"
 rsource "class/Kconfig"
+
+config USBH_STACK_SIZE
+	int "USB host stack thread stack size"
+	default 8192 if USBH_MSC_DISK_PARTITION
+	default 4096 if USBH_MSC_DISK
+	default 1024
+	help
+	  Stack size in bytes for the USB host worker threads (main and bus).
+
+	  MSC storage bringup with partition discovery runs on the host thread
+	  and calls disk_partition helpers; that path needs roughly 1.5 KiB for
+	  the partition table plus a sector buffer on top of SCSI/BOT frames.
+	  Keep at least 8192 when USBH_MSC_DISK_PARTITION is enabled.
+
+config USBH_USB2_ENUM_SCHEME
+	bool "USB2 enumeration (64-byte GET_DESCRIPTOR before SET_ADDRESS)"
+	default n
+	help
+	  USB2 enumeration order in usbh_device_init() with optional HCD
+	  uhc_device_address instead of legacy SET_ADDRESS.
+
+config USBH_USB2_ENUM_SECOND_RESET
+	bool "Second bus reset after first GET_DESCRIPTOR"
+	default n
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_POST_SET_ADDRESS_MS
+	int "Milliseconds to delay after SET_ADDRESS"
+	default 10
+	range 0 500
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_GET_DESCRIPTOR_TRIES
+	int "GET_DESCRIPTOR retry count"
+	default 2
+	range 1 5
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_SET_ADDRESS_TRIES
+	int "SET_ADDRESS retry count"
+	default 2
+	range 1 5
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_ENUM_RETRY_DELAY_MS
+	int "Milliseconds between GET_DESCRIPTOR retries"
+	default 100
+	range 0 500
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_GET_DESCRIPTOR_ROOT_RESET
+	bool "Root default-state reset before retrying GET_DESCRIPTOR"
+	default y
+	depends on USBH_USB2_ENUM_SCHEME
+	help
+	  On the root tier, after bounded delay-only retries of the initial
+	  64-byte GET_DESCRIPTOR fail with a retryable transfer error, call
+	  uhc_root_default_state_reset() once, reapply the EP0 MPS0 guess, and
+	  issue one final initial GET_DESCRIPTOR. Hub children use delay-only
+	  retries without a root default-state transition. Does not recover the
+	  full 18-byte device descriptor after SET_ADDRESS.
+
+config USBH_SET_ADDRESS_RETRY_DELAY_MS
+	int "Milliseconds between SET_ADDRESS retries"
+	default 200
+	range 0 500
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_POST_SET_CONFIGURATION_MS
+	int "Milliseconds to delay after SET_CONFIGURATION before full cfg read"
+	default 0
+	range 0 500
 
 endif # USB_HOST_STACK

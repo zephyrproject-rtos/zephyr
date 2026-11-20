@@ -1,0 +1,20 @@
+sample:
+  description: Unmount a FAT volume by mount-point path
+  name: fs_unmount_path
+common:
+  tags:
+    - filesystem
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "fs_unmount_path sample"
+      - "fs_unmount_path OK"
+tests:
+  sample.subsys.fs.unmount_path:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
