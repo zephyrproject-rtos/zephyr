@@ -28,6 +28,10 @@ extern "C" {
 /* Initialize per-CPU kernel data */
 void z_init_cpu(int id);
 
+#ifdef CONFIG_HYPERVISOR_SECONDARY_CPU_INIT
+void z_hypervisor_secondary_cpu_init(void);
+#endif
+
 /* Initialize a thread */
 void z_init_thread_base(struct _thread_base *thread_base, int priority,
 			uint32_t initial_state, unsigned int options);
