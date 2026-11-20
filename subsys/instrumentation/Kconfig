@@ -22,6 +22,7 @@ config INSTRUMENTATION_MODE_CALLGRAPH
 	select THREAD_NAME
 	select TRACING
 	select TIMING_FUNCTIONS
+	select RING_BUFFER_LARGE if INSTRUMENTATION_MODE_CALLGRAPH_TRACE_BUFFER_SIZE > 32766
 	help
 	  Enables reconstruction of function call graphs and the observation
 	  of context switches (threads), within the limits of the trace buffer
