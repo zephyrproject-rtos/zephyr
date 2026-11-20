@@ -28,7 +28,7 @@ static void esf_dump(const struct arch_esf *esf)
 	EXCEPTION_DUMP("r3/a4:  0x%08x r12/ip:  0x%08x r14/lr:  0x%08x",
 		esf->basic.a4, esf->basic.ip, esf->basic.lr);
 	EXCEPTION_DUMP(" xpsr:  0x%08x", esf->basic.xpsr);
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_CPU_CORTEX_M)
 	bool extended_frame;
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(EXC_RETURN_STACK_FRAME_TYPE_Msk)
 	extended_frame = ((esf->extra_info.exc_return & EXC_RETURN_STACK_FRAME_TYPE_Msk) ==
@@ -160,7 +160,8 @@ void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs, 
 
 #endif /* CONFIG_USERSPACE */
 
-#if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
+#if !defined(CONFIG_EXTRA_EXCEPTION_INFO) || !defined(CONFIG_CPU_CORTEX_M)
+	/* On Cortex-A/R, z_arm_cortex_ar_save_extra has filled the extra info */
 	z_arm_fatal_error(reason, esf);
 #else
 	struct arch_esf esf_copy;

@@ -32,10 +32,6 @@ GEN_OFFSET_SYM(_cpu_t, arch);
 
 GEN_OFFSET_SYM(_kernel_t, cpus);
 
-#if defined(CONFIG_FPU_SHARING)
-GEN_OFFSET_SYM(_cpu_t, fp_ctx);
-#endif /* CONFIG_FPU_SHARING */
-
 #ifdef CONFIG_PM
 GEN_OFFSET_SYM(_kernel_t, idle);
 #endif /* CONFIG_PM */

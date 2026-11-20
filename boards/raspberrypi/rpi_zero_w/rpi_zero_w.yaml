@@ -1,0 +1,16 @@
+identifier: rpi_zero_w
+name: Raspberry Pi Zero W
+type: mcu
+simulation:
+  - name: qemu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+supported:
+  - gpio
+  - pinctrl
+  - serial
+  - uart
+testing:
+  default: false
