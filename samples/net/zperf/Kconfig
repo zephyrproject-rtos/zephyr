@@ -90,6 +90,32 @@ config ZPERF_LOOPBACK_SELFTEST_PORT
 	int "Loopback selftest server port"
 	default 5001
 
+config ZPERF_LOOPBACK_SELFTEST_ONLY
+	string "Run only the named transfer"
+	default ""
+	help
+	  Run a single transfer instead of all of them. The value is one of
+	  the labels used in the ZPERF-RESULT output: udp4, udp4_frag, tcp4,
+	  tcp4_nodelay, udp6, udp6_frag, tcp6 or tcp6_nodelay. An empty
+	  value, the default, runs all of them and leaves the throughput
+	  scenario unchanged. A value naming no transfer built into the
+	  image runs none of them and reports the value as an error result.
+
+	  Profiling the run needs one transfer at a time: a profile collected
+	  over all eight blends UDP, TCP, fragmentation and both IP families
+	  into an average that is attributable to none of them.
+
+config ZPERF_LOOPBACK_SELFTEST_HALT_ON_DONE
+	bool "Halt the machine once the selftest is done"
+	help
+	  Halt the machine after printing ZPERF-DONE instead of returning
+	  from main() and idling forever. On qemu_x86 and qemu_x86_64 this
+	  leaves the emulator through the isa-debug-exit device, which matters
+	  when an external profiler is attached: QEMU writes an instrumentation
+	  report from an atexit handler, and that handler never runs while the
+	  guest idles. Whether the halt also ends the emulator on other boards
+	  depends on their arch_system_halt().
+
 endif # ZPERF_LOOPBACK_SELFTEST
 
 source "Kconfig.zephyr"
