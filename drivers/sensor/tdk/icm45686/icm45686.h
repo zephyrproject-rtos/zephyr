@@ -274,6 +274,17 @@ static inline void icm45686_gyro_rads(uint8_t fs, int32_t in, bool high_res, int
 	*out_urads = in_urads % 1000000LL;
 }
 
+/* The configured measuring range: a full-scale count, converted like the samples */
+static inline void icm45686_accel_reg_to_fs(uint8_t fs, struct sensor_value *out)
+{
+	icm45686_accel_ms(fs, INT16_MAX + 1, false, &out->val1, &out->val2);
+}
+
+static inline void icm45686_gyro_reg_to_fs(uint8_t fs, struct sensor_value *out)
+{
+	icm45686_gyro_rads(fs, INT16_MAX + 1, false, &out->val1, &out->val2);
+}
+
 static inline void icm45686_temp_c(int32_t in, int32_t *out_c, uint32_t *out_uc)
 {
 	int64_t sensitivity = 13248; /* value equivalent for x100 1c */
