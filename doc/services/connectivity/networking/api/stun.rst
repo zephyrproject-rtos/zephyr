@@ -46,6 +46,9 @@ and the socket client are enabled together:
      - :kconfig:option:`CONFIG_STUN_CLIENT`
      - Blocking calls that run a transaction over a UDP socket and return the
        address the server saw.
+   * - Shell commands
+     - :kconfig:option:`CONFIG_STUN_SHELL`
+     - ``net stun server`` and ``net stun query``.
 
 An application that only wants to know its public address uses the socket
 client. A protocol that shares its socket with STUN, as ICE does, uses the
@@ -96,6 +99,10 @@ Retransmission schedule
    times the request is sent (7 by default, 1 to 16), and
    :kconfig:option:`CONFIG_STUN_BINDING_FINAL_WAIT_RTO`, Rm, the wait after
    the last transmission in initial timeouts (16 by default, 1 to 255).
+
+Shell commands
+   :kconfig:option:`CONFIG_STUN_SHELL`, with
+   :kconfig:option:`CONFIG_STUN_CLIENT` and :kconfig:option:`CONFIG_NET_SHELL`.
 
 Logging
    :kconfig:option:`CONFIG_STUN_LOG_LEVEL_DBG` and its siblings, available
@@ -368,6 +375,28 @@ a request which fails more than one of them gets the first of these codes. The
 codec builds the responses with :c:func:`stun_add_error_code` and
 :c:func:`stun_add_unknown_attributes`.
 
+Shell commands
+==============
+
+With :kconfig:option:`CONFIG_STUN_SHELL` the :ref:`network shell <net_shell>`
+has two more commands:
+
+.. code-block:: console
+
+   uart:~$ net stun server stun.example.org
+   STUN server: stun.example.org port 3478
+   uart:~$ net stun query
+   Mapped address: 203.0.113.7:54321
+
+``net stun server`` takes a host name or address and, optionally, a port;
+without arguments it shows the server that is set, and an empty name (``""``)
+unsets it. The commands start with no server set.
+``net stun query`` takes the longest time to wait, in milliseconds, and waits
+5 seconds if it is not given; a server name that resolves to several addresses
+has that time shared between them. With ``0`` each address is asked for as long
+as the request is retransmitted, with the default configuration 39.5 seconds if
+it does not answer.
+
 Limitations
 ***********
 
@@ -400,7 +429,7 @@ The tests under :zephyr_file:`tests/net/lib/stun/` check the codec against the
 sample messages of :rfc:`5769` and of :rfc:`8489` Appendix B.1, and the Binding
 transaction against the retransmission schedule of :rfc:`8489` section 6.2.1.
 The tests under :zephyr_file:`tests/net/lib/stun_client/` run the socket client
-against a server on the loopback interface.
+and the shell commands against a server on the loopback interface.
 
 API Reference
 *************
