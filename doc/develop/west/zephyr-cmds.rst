@@ -3,7 +3,7 @@
 Additional Zephyr extension commands
 ####################################
 
-This page documents miscellaneous :ref:`west-zephyr-extensions`.
+This page documents miscellaneous Zephyr :ref:`extension commands <west-extensions>`.
 
 .. _west-boards:
 
@@ -28,6 +28,7 @@ Additional help about the formatting options can be found by running::
   west boards -h
 
 .. _west-completion:
+.. _west-shell-completion:
 
 Shell completion scripts: ``west completion``
 *********************************************
@@ -41,6 +42,70 @@ It currently supports the following shells:
 - zsh
 - fish
 - powershell (board qualifiers only)
+
+To enable shell completion, obtain the completion script for your shell and
+have it sourced:
+
+.. tabs::
+
+  .. group-tab:: bash
+
+    *One-time setup*:
+
+    .. code-block:: bash
+
+      source <(west completion bash)
+
+    *Permanent setup*:
+
+    .. code-block:: bash
+
+      west completion bash > ~/west-completion.bash; printf '\n%s\n' "source ~/west-completion.bash" >> ~/.bashrc
+
+  .. group-tab:: zsh
+
+    *One-time setup*:
+
+    .. code-block:: zsh
+
+      source <(west completion zsh)
+
+    *Permanent setup*:
+
+    .. code-block:: zsh
+
+      west completion zsh > "${fpath[1]}/_west"
+
+  .. group-tab:: fish
+
+    *One-time setup*:
+
+    .. code-block:: fish
+
+      west completion fish | source
+
+    *Permanent setup*:
+
+    .. code-block:: fish
+
+      west completion fish > $HOME/.config/fish/completions/west.fish
+
+  .. group-tab:: powershell
+
+    *One-time setup*:
+
+    .. code-block:: powershell
+
+      west completion powershell | Out-String | Invoke-Expression
+
+    *Permanent setup*:
+
+    .. code-block:: powershell
+
+      Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+      New-item -type file -force $PROFILE
+      west completion powershell > $HOME/west-completion.ps1
+      (Add-Content -Path $PROFILE -Value ". '{$HOME/west-completion.ps1}'")
 
 Additional instructions are available in the command's help::
 

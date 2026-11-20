@@ -9,7 +9,8 @@ doc directories)
 Notes:
     - Please keep this list sorted alphabetically.
     - URLs must be relative to document root (with NO leading slash), and
-      without the html extension).
+      without the html extension). A new URL may instead be an absolute
+      http(s) URL for pages moved out of this documentation set.
 """
 
 REDIRECTS = (
@@ -260,6 +261,18 @@ REDIRECTS = (
     ('develop/test/pytest', 'develop/twister/pytest'),
     ('develop/test/twister', 'develop/twister/index'),
     ('develop/test/twister_statuses', 'develop/twister/twister_statuses'),
+    ('develop/west/alias', 'https://docs.zephyrproject.org/west/latest/alias.html'),
+    ('develop/west/basics', 'https://docs.zephyrproject.org/west/latest/basics.html'),
+    ('develop/west/built-in', 'https://docs.zephyrproject.org/west/latest/built-in.html'),
+    ('develop/west/config', 'https://docs.zephyrproject.org/west/latest/config.html'),
+    ('develop/west/extensions', 'https://docs.zephyrproject.org/west/latest/extensions.html'),
+    ('develop/west/install', 'https://docs.zephyrproject.org/west/latest/install.html'),
+    ('develop/west/manifest', 'https://docs.zephyrproject.org/west/latest/manifest.html'),
+    ('develop/west/release-notes', 'https://docs.zephyrproject.org/west/latest/release-notes.html'),
+    ('develop/west/troubleshooting', 'https://docs.zephyrproject.org/west/latest/troubleshooting.html'),
+    ('develop/west/west-apis', 'https://docs.zephyrproject.org/west/latest/west-apis.html'),
+    ('develop/west/why', 'https://docs.zephyrproject.org/west/latest/why.html'),
+    ('develop/west/workspaces', 'https://docs.zephyrproject.org/west/latest/workspaces.html'),
     ('hardware/peripherals/mipi_dbi', 'hardware/peripherals/display/index'),
     ('hardware/peripherals/mipi_dsi', 'hardware/peripherals/display/index'),
     ('samples/bluetooth/bap_broadcast_assistant/README', 'samples/bluetooth/audio/bap_broadcast_assistant/README'),
