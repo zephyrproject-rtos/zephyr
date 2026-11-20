@@ -30,6 +30,10 @@ struct bt_pub_key_cb {
 	 *  available (either because of a failure to read it or because it is
 	 *  being regenerated).
 	 *
+	 *  Called on the Bluetooth workqueue. bt_pub_key_hci_disrupted() calls
+	 *  it in its caller's context instead, and so does bt_pub_key_gen()
+	 *  with CONFIG_BT_USE_DEBUG_KEYS.
+	 *
 	 *  @param key The local public key, or NULL in case of no key.
 	 */
 	void (*func)(const uint8_t key[BT_PUB_KEY_LEN]);
@@ -61,7 +65,9 @@ bool bt_pub_key_is_valid(const uint8_t key[BT_PUB_KEY_LEN]);
 
 /*  @brief Generate a new Public Key.
  *
- *  Generate a new ECC Public Key. Provided cb must persists until callback
+ *  Generate a new ECC Public Key, unless there is one: a key is kept until
+ *  bt_pub_key_hci_disrupted(), as pairings and OOB data may be using it, and
+ *  is read with bt_pub_key_get(). Provided cb must persists until callback
  *  is called. Callee adds the callback structure to a linked list. Registering
  *  multiple callbacks requires multiple calls to bt_pub_key_gen() and separate
  *  callback structures. This method cannot be called directly from result
@@ -70,13 +76,16 @@ bool bt_pub_key_is_valid(const uint8_t key[BT_PUB_KEY_LEN]);
  *
  *  @param cb Callback to notify the new key.
  *
- *  @return Zero on success or negative error code otherwise
+ *  @retval 0 Success, @p cb is called with the result.
+ *  @retval -EALREADY @p cb is already registered, or there is a key.
+ *  @retval -EINVAL @p cb is NULL.
  */
 int bt_pub_key_gen(struct bt_pub_key_cb *cb);
 
 /*  @brief Cleanup public key callbacks when HCI is disrupted.
  *
- *  Clear the pub_key_cb_slist and clear the BT_DEV_PUB_KEY_BUSY flag.
+ *  Call the registered callbacks without a key, clear the list and the
+ *  pending state, and drop the key.
  */
 void bt_pub_key_hci_disrupted(void);
 
@@ -91,7 +100,8 @@ const uint8_t *bt_pub_key_get(void);
 /*  @typedef bt_dh_key_cb_t
  *  @brief Callback type for DH Key calculation.
  *
- *  Used to notify of the calculated DH Key.
+ *  Used to notify of the calculated DH Key. Called on the Bluetooth
+ *  workqueue.
  *
  *  @param key The DH Key, or NULL in case of failure.
  */
