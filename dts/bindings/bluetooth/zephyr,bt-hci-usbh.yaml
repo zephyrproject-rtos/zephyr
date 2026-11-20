@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bluetooth HCI provided by a USB Bluetooth controller attached to the
+  USB host stack.
+
+  The node does not describe the controller itself, which is found by
+  enumeration as a Wireless Controller class (0xE0/0x01/0x01) function.
+
+  Example:
+
+    / {
+            chosen {
+                    zephyr,bt-hci = &bt_hci_usbh;
+            };
+
+            bt_hci_usbh: bt-hci-usbh {
+                    compatible = "zephyr,bt-hci-usbh";
+                    status = "okay";
+            };
+    };
+
+compatible: "zephyr,bt-hci-usbh"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "USB host"
+  bt-hci-bus:
+    default: "usb"
