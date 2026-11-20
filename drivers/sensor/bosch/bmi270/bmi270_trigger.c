@@ -153,30 +153,6 @@ static void bmi270_trig_work_cb(struct k_work *work)
 }
 #endif
 
-static int bmi270_feature_reg_write(const struct device *dev,
-			     const struct bmi270_feature_reg *reg,
-			     uint16_t value)
-{
-	int ret;
-	uint8_t feat_page = reg->page;
-
-	ret = bmi270_reg_write(dev, BMI270_REG_FEAT_PAGE, &feat_page, 1);
-	if (ret < 0) {
-		LOG_ERR("bmi270_reg_write (0x%02x) failed: %d", BMI270_REG_FEAT_PAGE, ret);
-		return ret;
-	}
-
-	LOG_DBG("feature reg[0x%02x]@%d = 0x%04x", reg->addr, reg->page, value);
-
-	ret = bmi270_reg_write(dev, reg->addr, (uint8_t *)&value, 2);
-	if (ret < 0) {
-		LOG_ERR("bmi270_reg_write (0x%02x) failed: %d", reg->addr, ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 static int bmi270_init_int_pin(const struct gpio_dt_spec *pin,
 			       struct gpio_callback *pin_cb,
 			       gpio_callback_handler_t handler)

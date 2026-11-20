@@ -120,6 +120,31 @@ int bmi270_adv_power_save_disable(const struct device *dev)
 					   BMI270_TRANSC_DELAY_SUSPEND);
 }
 
+int bmi270_feature_reg_write(const struct device *dev, const struct bmi270_feature_reg *reg,
+			     uint16_t value)
+{
+	int ret;
+	uint8_t feat_page = reg->page;
+	uint8_t buf[2];
+
+	ret = bmi270_reg_write(dev, BMI270_REG_FEAT_PAGE, &feat_page, 1);
+	if (ret < 0) {
+		LOG_ERR("bmi270_reg_write (0x%02x) failed: %d", BMI270_REG_FEAT_PAGE, ret);
+		return ret;
+	}
+
+	LOG_DBG("feature reg[0x%02x]@%d = 0x%04x", reg->addr, reg->page, value);
+
+	sys_put_le16(value, buf);
+	ret = bmi270_reg_write(dev, reg->addr, buf, sizeof(buf));
+	if (ret < 0) {
+		LOG_ERR("bmi270_reg_write (0x%02x) failed: %d", reg->addr, ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static void channel_accel_convert(struct sensor_value *val, int64_t raw_val,
 				  uint8_t range)
 {

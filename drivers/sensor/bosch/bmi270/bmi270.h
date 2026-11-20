@@ -473,6 +473,9 @@ int bmi270_reg_write_with_delay(const struct device *dev,
 				uint16_t length,
 				uint32_t delay_us);
 
+int bmi270_feature_reg_write(const struct device *dev, const struct bmi270_feature_reg *reg,
+			     uint16_t value);
+
 #ifdef CONFIG_BMI270_TRIGGER
 int bmi270_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
