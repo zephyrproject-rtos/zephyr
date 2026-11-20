@@ -475,7 +475,7 @@ static int gmac_find_valid_frame(struct gmac_desc_list *rx_desc_list,
 				 struct gmac_frame_info *frame_info)
 {
 	uint16_t tail = rx_desc_list->tail;
-	bool sof_found = false;
+	uint16_t scanned = 0U;
 	struct gmac_desc *rx_desc = &rx_desc_list->buf_desc[tail];
 
 	frame_info->sof_index = -1;
@@ -484,28 +484,48 @@ static int gmac_find_valid_frame(struct gmac_desc_list *rx_desc_list,
 	while (((rx_desc->addr & GMAC_RXW0_OWNERSHIP) != 0) && (frame_info->eof_index == -1)) {
 		if ((rx_desc->addr & GMAC_RXW0_ADDR) == 0) {
 			rx_desc->addr &= ~GMAC_RXW0_OWNERSHIP;
-			break;
+			return -EINVAL;
+		}
+
+		if (scanned == rx_desc_list->len) {
+			/* Every descriptor is owned by software and holds no complete
+			 * frame: the GMAC cannot make progress, so the ring must be reset.
+			 */
+			return -EINVAL;
 		}
 
 		if (rx_desc->status & GMAC_RXW1_SOF) {
+			/* A newer SOF makes any earlier partial frame an orphan */
 			frame_info->sof_index = tail;
-			sof_found = true;
+			frame_info->num_descriptors = 0;
 		}
 
-		if (rx_desc->status & GMAC_RXW1_EOF) {
-			frame_info->eof_index = tail;
-		}
-
-		if (sof_found) {
+		if (frame_info->sof_index != -1) {
 			frame_info->num_descriptors++;
+			if (rx_desc->status & GMAC_RXW1_EOF) {
+				frame_info->eof_index = tail;
+			}
 		}
 
 		MODULO_INC(tail, rx_desc_list->len);
 		rx_desc = &rx_desc_list->buf_desc[tail];
+		scanned++;
 	}
 
-	if ((frame_info->eof_index == -1) || (frame_info->sof_index == -1)) {
-		return -EINVAL;
+	if (frame_info->eof_index == -1) {
+		/* The frame is still being written by the GMAC: wait for it */
+		return -ENODATA;
+	}
+
+	/*
+	 * Give back descriptors left before the frame by a frame the GMAC
+	 * abandoned (no SOF or no EOF), so they are not leaked from the ring.
+	 */
+	for (tail = rx_desc_list->tail; tail != frame_info->sof_index;) {
+		rx_desc = &rx_desc_list->buf_desc[tail];
+		rx_desc->status = 0U;
+		rx_desc->addr &= ~GMAC_RXW0_OWNERSHIP;
+		MODULO_INC(tail, rx_desc_list->len);
 	}
 
 	rx_desc_list->tail = frame_info->sof_index;
@@ -609,6 +629,7 @@ static struct net_pkt *gmac_pkt_get(gmac_registers_t *gmac_regs, struct gmac_que
 	struct gmac_desc_list *rx_desc_list = &queue->rx_desc_list;
 	struct net_pkt *rx_pkt = NULL;
 	struct gmac_frame_info frame_info;
+	int ret;
 
 	/* if the packet not available in the first descriptor */
 	if (gmac_check_queue_for_data(rx_desc_list) == false) {
@@ -617,7 +638,15 @@ static struct net_pkt *gmac_pkt_get(gmac_registers_t *gmac_regs, struct gmac_que
 		return NULL;
 	}
 
-	if (gmac_find_valid_frame(rx_desc_list, &frame_info) != 0) {
+	ret = gmac_find_valid_frame(rx_desc_list, &frame_info);
+	if (ret == -ENODATA) {
+		/* Frame not complete yet: process it on the next RCOMP */
+		*err_no = -ENODATA;
+
+		return NULL;
+	}
+
+	if (ret != 0) {
 		gmac_rx_error_handler(gmac_regs, queue);
 		*err_no = -EINVAL;
 
@@ -683,6 +712,23 @@ static void gmac_rx_thread(void *arg1, void *unused1, void *unused2)
 			struct gmac_queue *queue = dev_data->rx_queue;
 
 			gmac_rx(gmac_regs, queue);
+		} else {
+			struct gmac_queue *queue = &dev_data->queue_list[GMAC_QUE_0];
+			struct gmac_frame_info frame_info;
+
+			/* Pick up any complete frame whose RCOMP was missed */
+			gmac_rx(gmac_regs, queue);
+
+			/*
+			 * A partial frame still pending after a full timeout was
+			 * abandoned by the GMAC: reset the ring so RX cannot stall.
+			 */
+			if (gmac_check_queue_for_data(&queue->rx_desc_list) &&
+			    (gmac_find_valid_frame(&queue->rx_desc_list, &frame_info) ==
+			     -ENODATA)) {
+				LOG_DBG("Dropping stale partial RX frame");
+				gmac_rx_error_handler(gmac_regs, queue);
+			}
 		}
 	}
 }
