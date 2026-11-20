@@ -1,0 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&chain {
+	reset-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+};
