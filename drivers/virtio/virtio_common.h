@@ -16,9 +16,11 @@
  *
  * @param dev virtio device it operates on
  * @param isr_status value of isr status register
+ * @param virtqueues virtqueues of the device
  * @param virtqueue_count amount of available virtqueues
  */
-void virtio_isr(const struct device *dev, uint8_t isr_status, uint16_t virtqueue_count);
+void virtio_isr(const struct device *dev, uint8_t isr_status, struct virtq *virtqueues,
+		uint16_t virtqueue_count);
 
 /**
  * @brief checks whether the device has to be notified about added buffers

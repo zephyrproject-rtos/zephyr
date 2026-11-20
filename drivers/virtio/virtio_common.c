@@ -12,11 +12,12 @@
 
 LOG_MODULE_REGISTER(virtio_common, CONFIG_VIRTIO_LOG_LEVEL);
 
-void virtio_isr(const struct device *dev, uint8_t isr_status, uint16_t virtqueue_count)
+void virtio_isr(const struct device *dev, uint8_t isr_status, struct virtq *virtqueues,
+		uint16_t virtqueue_count)
 {
 	if (isr_status & VIRTIO_QUEUE_INTERRUPT) {
 		for (int i = 0; i < virtqueue_count; i++) {
-			struct virtq *vq = virtio_get_virtqueue(dev, i);
+			struct virtq *vq = &virtqueues[i];
 			uint16_t used_idx = sys_le16_to_cpu(vq->used->idx);
 
 			while (vq->last_used_idx != used_idx) {

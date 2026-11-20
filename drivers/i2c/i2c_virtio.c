@@ -30,6 +30,8 @@
 LOG_MODULE_REGISTER(i2c_virtio, CONFIG_I2C_LOG_LEVEL);
 
 #define VIRTIO_I2C_REQUESTQ 0
+/* Up to three descriptors per message, for a whole batch at once. */
+#define VIRTIO_I2C_REQUESTQ_SIZE NHPOT(3 * CONFIG_I2C_VIRTIO_MAX_MSGS)
 
 /* Mandatory: zero-length requests, and M_RD carrying the direction. */
 #define VIRTIO_I2C_F_ZERO_LENGTH_REQUEST 0
@@ -68,7 +70,7 @@ struct i2c_virtio_data {
 	struct k_mutex lock;
 	/* given once per completed chain, taken once per queued chain */
 	struct k_sem done;
-	struct virtq *requestq;
+	struct virtq requestq;
 	/* outcome of the batch in flight, written by the completion callback */
 	int status;
 	struct i2c_virtio_slot slots[CONFIG_I2C_VIRTIO_MAX_MSGS];
@@ -138,7 +140,7 @@ static int i2c_virtio_queue_msg(struct i2c_virtio_data *data, struct i2c_virtio_
 
 	bufs[nbufs++] = (struct virtq_buf){.addr = &slot->in_hdr, .len = sizeof(slot->in_hdr)};
 
-	return virtq_add_buffer_chain(data->requestq, bufs, nbufs, readable, cb, slot, K_NO_WAIT);
+	return virtq_add_buffer_chain(&data->requestq, bufs, nbufs, readable, cb, slot, K_NO_WAIT);
 }
 
 static int i2c_virtio_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
@@ -266,17 +268,6 @@ static DEVICE_API(i2c, i2c_virtio_api) = {
 	.transfer = i2c_virtio_transfer,
 };
 
-static uint16_t i2c_virtio_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *unused)
-{
-	ARG_UNUSED(unused);
-
-	if (q_index != VIRTIO_I2C_REQUESTQ) {
-		return 0;
-	}
-	/* Up to three descriptors per message, for a whole batch at once. */
-	return MIN(NHPOT(3 * CONFIG_I2C_VIRTIO_MAX_MSGS), q_size_max);
-}
-
 static int i2c_virtio_init(const struct device *dev)
 {
 	const struct i2c_virtio_config *cfg = dev->config;
@@ -311,16 +302,10 @@ static int i2c_virtio_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = virtio_init_virtqueues(cfg->vdev, 1, i2c_virtio_enum_queues_cb, NULL);
+	ret = virtio_init_virtqueues(cfg->vdev, &data->requestq, 1);
 	if (ret != 0) {
 		LOG_ERR("virtio_init_virtqueues failed: %d", ret);
 		return ret;
-	}
-
-	data->requestq = virtio_get_virtqueue(cfg->vdev, VIRTIO_I2C_REQUESTQ);
-	if (data->requestq == NULL) {
-		LOG_ERR("failed to get the request virtqueue");
-		return -ENODEV;
 	}
 
 	virtio_finalize_init(cfg->vdev);
@@ -331,7 +316,10 @@ static int i2c_virtio_init(const struct device *dev)
 }
 
 #define I2C_VIRTIO_DEFINE(inst)                                                                    \
-	static struct i2c_virtio_data i2c_virtio_data_##inst;                                      \
+	VIRTQ_STORAGE_DEFINE(i2c_virtio_vq_##inst, VIRTIO_I2C_REQUESTQ_SIZE);                      \
+	static struct i2c_virtio_data i2c_virtio_data_##inst = {                                   \
+		.requestq = VIRTQ_INITIALIZER(i2c_virtio_vq_##inst, VIRTIO_I2C_REQUESTQ_SIZE),     \
+	};                                                                                         \
 	static const struct i2c_virtio_config i2c_virtio_config_##inst = {                         \
 		.vdev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                       \
 	};                                                                                         \
