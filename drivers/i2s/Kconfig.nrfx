@@ -49,4 +49,22 @@ config I2S_NRF_TDM_TX_BLOCK_COUNT
 	int "TX queue length"
 	default 4
 
+config I2S_NRF_TDM_CHANNEL_MASK_WORKAROUND
+	bool "Duplex channel masking workaround"
+	default y
+	help
+	  In duplex with channel masking, when TX finishes each block before
+	  RX, the TDM transmits the CONFIG.ORS value instead of TX data after
+	  each buffer switch, and when TX starts after RX, TX data moves to
+	  other slots. This was measured on nRF54H20.
+
+	  Compensate when TX starts no later than RX, or ends on the same
+	  channel as RX. i2s_configure() returns -EINVAL for a direction whose
+	  channel mask, together with the mask of the other configured
+	  direction, gives a layout that cannot be compensated: TX starting
+	  after RX within the RX channel range without ending on the last RX
+	  channel. When changing the masks of both directions, unconfigure
+	  them first (frame_clk_freq of 0) so that the old mask of one
+	  direction is not checked against the new mask of the other.
+
 endif # I2S_NRF_TDM

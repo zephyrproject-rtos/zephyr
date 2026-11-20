@@ -1,0 +1,30 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* TDM_SDOUT (P1.30) must be wired to TDM_SDIN (P1.31). */
+
+/ {
+	aliases {
+		i2s-tdm = &tdm;
+	};
+};
+
+&pinctrl {
+	tdm_loopback: tdm_loopback {
+		group1 {
+			psels = <NRF_PSEL(TDM_SCK_M, 1, 23)>,
+				<NRF_PSEL(TDM_FSYNC_M, 1, 14)>,
+				<NRF_PSEL(TDM_SDOUT, 1, 30)>,
+				<NRF_PSEL(TDM_SDIN, 1, 31)>;
+		};
+	};
+};
+
+&tdm {
+	pinctrl-0 = <&tdm_loopback>;
+	pinctrl-names = "default";
+	status = "okay";
+};
