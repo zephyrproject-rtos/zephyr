@@ -7,3 +7,4 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(stun_client)
 
 target_sources(app PRIVATE src/main.c src/server.c)
+target_sources_ifdef(CONFIG_NET_SHELL app PRIVATE src/shell.c)
