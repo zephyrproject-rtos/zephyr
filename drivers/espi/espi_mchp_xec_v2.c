@@ -298,8 +298,8 @@ static bool espi_xec_channel_ready(const struct device *dev, enum espi_channel c
  * groups it has configured when eSPI was initialized. When GET_VW reads any XEC
  * Target-to-Controller group, XEC HW clears the read-only changed bit(s).
  */
-static int espi_xec_send_vwire(const struct device *dev, enum espi_vwire_signal signal,
-			       uint8_t level)
+static int espi_xec_vw_send(const struct device *dev, enum espi_vwire_signal signal,
+			    uint8_t level, uint32_t timeout_us)
 {
 	struct xec_signal signal_info = vw_tbl[signal];
 	uint8_t xec_id = signal_info.xec_reg_idx;
@@ -324,16 +324,15 @@ static int espi_xec_send_vwire(const struct device *dev, enum espi_vwire_signal 
 		regaddr = xec_smvw_addr(dev, xec_id);
 		sys_write8(level, regaddr + SMVW_BI_SRC0 + src_id);
 
+		if (timeout_us == 0U) {
+			return 0;
+		}
+
 		/* Ensure eSPI virtual wire packet is transmitted
 		 * There is no interrupt, so need to poll register
 		 */
-		uint16_t rd_cnt = ESPI_XEC_VWIRE_SEND_TIMEOUT;
-
-		while (sys_read8(regaddr + SMVW_BI_SRC_CHG) && rd_cnt--) {
-			k_busy_wait(1);
-		}
-
-		if (rd_cnt == 0) {
+		if (!WAIT_FOR(sys_read8(regaddr + SMVW_BI_SRC_CHG) == 0U, timeout_us,
+			      k_busy_wait(1))) {
 			LOG_ERR("VW %d send timeout", signal);
 			return -ETIMEDOUT;
 		}
@@ -341,6 +340,18 @@ static int espi_xec_send_vwire(const struct device *dev, enum espi_vwire_signal 
 	}
 
 	return 0;
+}
+
+static int espi_xec_send_vwire(const struct device *dev, enum espi_vwire_signal signal,
+			       uint8_t level)
+{
+	return espi_xec_vw_send(dev, signal, level, ESPI_XEC_VWIRE_SEND_TIMEOUT);
+}
+
+static int espi_xec_send_vwire_timeout(const struct device *dev, enum espi_vwire_signal signal,
+				       uint8_t level, k_timeout_t timeout)
+{
+	return espi_xec_vw_send(dev, signal, level, espi_timeout_to_us(timeout));
 }
 
 static int espi_xec_receive_vwire(const struct device *dev, enum espi_vwire_signal signal,
@@ -1262,6 +1273,7 @@ static DEVICE_API(espi, espi_xec_driver_api) = {
 	.config = espi_xec_configure,
 	.get_channel_status = espi_xec_channel_ready,
 	.send_vwire = espi_xec_send_vwire,
+	.send_vwire_timeout = espi_xec_send_vwire_timeout,
 	.receive_vwire = espi_xec_receive_vwire,
 #ifdef CONFIG_ESPI_OOB_CHANNEL
 	.send_oob = espi_xec_send_oob,

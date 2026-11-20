@@ -65,6 +65,28 @@ static inline void espi_send_callbacks(sys_slist_t *list,
 }
 
 /**
+ * @brief Convert a timeout into microseconds for a busy wait with WAIT_FOR().
+ *
+ * A relative timeout is rounded up to the next microsecond. An absolute timeout is converted
+ * into the time left until it expires. The result is limited to the range of the 32-bit cycle
+ * counter used by WAIT_FOR().
+ *
+ * @param timeout Timeout other than K_FOREVER.
+ *
+ * @return Time to wait in microseconds, 0 for K_NO_WAIT or an expired absolute timeout.
+ */
+static inline uint32_t espi_timeout_to_us(k_timeout_t timeout)
+{
+	uint64_t max_us = MIN(k_cyc_to_us_floor64(UINT32_MAX), UINT32_MAX);
+
+	if (!Z_IS_TIMEOUT_RELATIVE(timeout)) {
+		timeout = sys_timepoint_timeout(sys_timepoint_calc(timeout));
+	}
+
+	return (uint32_t)MIN(k_ticks_to_us_ceil64(timeout.ticks), max_us);
+}
+
+/**
  * @brief Propagate eSPI driver interrupt control changes to eSPI host-specific implementations
  *
  * @param espi_flags the bitmap to select generic eSPI interrupt events.
