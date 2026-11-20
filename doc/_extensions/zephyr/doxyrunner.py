@@ -142,8 +142,8 @@ def process_doxyfile(
     """Process Doxyfile.
 
     Notes:
-        OUTPUT_DIRECTORY, WARN_FORMAT and QUIET are overridden to satisfy
-        extension operation needs.
+        OUTPUT_DIRECTORY, WARN_FORMAT, WARN_AS_ERROR and QUIET are overridden
+        to satisfy extension operation needs.
 
     Args:
         doxyfile: Path to the Doxyfile.
@@ -175,9 +175,18 @@ def process_doxyfile(
         flags=re.MULTILINE,
     )
 
+    # Warnings are reported through the Sphinx logger, which fails the build
+    # in -W mode, so Doxygen itself must not exit early or with an error.
+    content = re.sub(
+        r"^\s*WARN_AS_ERROR\s*=.*$",
+        "WARN_AS_ERROR=NO",
+        content,
+        flags=re.MULTILINE,
+    )
+
     content = re.sub(
         r"^\s*QUIET\s*=.*$",
-        "QUIET=" + "YES" if silent else "NO",
+        "QUIET=" + ("YES" if silent else "NO"),
         content,
         flags=re.MULTILINE,
     )
