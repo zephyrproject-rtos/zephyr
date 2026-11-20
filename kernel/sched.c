@@ -241,7 +241,7 @@ static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
  */
 static void reschedule_locked(k_spinlock_key_t key)
 {
-	return reschedule(&_sched_spinlock, key);
+	reschedule(&_sched_spinlock, key);
 }
 
 void z_sched_lock_reschedule(k_spinlock_key_t key)
