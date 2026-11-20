@@ -7331,6 +7331,7 @@ __syscall int k_poll_signal_raise(struct k_poll_signal *sig, int result);
  */
 static inline void k_cpu_idle(void)
 {
+	z_crit_irq_idle_enter();
 	arch_cpu_idle();
 }
 
@@ -7350,6 +7351,8 @@ static inline void k_cpu_idle(void)
  */
 static inline void k_cpu_atomic_idle(unsigned int key)
 {
+	/* Notify the consumer before idle can enable interrupts. */
+	z_crit_hook_irq_end(key);
 	arch_cpu_atomic_idle(key);
 }
 
