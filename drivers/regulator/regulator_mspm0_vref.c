@@ -272,8 +272,9 @@ static int regulator_mspm0_vref_init(const struct device *dev)
 
 	regulator_common_data_init(dev);
 
+	/* The VREF+ pin is optional */
 	ret = pinctrl_apply_state(config->vref_pin, PINCTRL_STATE_DEFAULT);
-	if (ret) {
+	if ((ret < 0) && (ret != -ENOENT)) {
 		LOG_ERR("Pinctrl apply state Failed");
 		return ret;
 	}
