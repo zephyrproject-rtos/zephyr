@@ -118,6 +118,10 @@ config SOC_IT8XXX2_PLL_FLASH_48M
 	  Set n to use the default settings.
 	  (PLL and CPU run at 48MHz, flash frequency is 16MHz)
 
+config IT8XXX2_PLL_SEQUENCE_PRIORITY
+	int
+	depends on SOC_IT8XXX2_PLL_FLASH_48M
+
 config SOC_IT8XXX2_GPIO_GROUP_K_L_DEFAULT_PULL_DOWN
 	bool "The pins of GPIO group K and L aren't bonding with pad"
 	default y
