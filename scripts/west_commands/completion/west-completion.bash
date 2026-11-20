@@ -1125,6 +1125,7 @@ __comp_west_twister()
 		--footprint-threshold -H
 		--jobs -j
 		--level
+		--platform-filter
 		--pytest-args
 		--report-name
 		--report-suffix

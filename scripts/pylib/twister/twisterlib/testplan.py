@@ -31,6 +31,7 @@ try:
 except ImportError:
     print("Install the anytree module to use the --test-tree option")
 
+import expr_parser
 import scl
 from devicetree import edtlib  # pylint: disable=unused-import
 from twisterlib.config_parser import TwisterConfigParser
@@ -863,6 +864,35 @@ class TestPlan:
     def check_platform(self, platform, platform_list):
         return any(p in platform.aliases for p in platform_list)
 
+    @staticmethod
+    def _platform_attr_env(platform):
+        """Build the flat environment used to evaluate --platform-filter
+        expressions, exposing a platform's static metadata attributes.
+        """
+        return {
+            "name": platform.name,
+            "arch": platform.arch or "",
+            "vendor": platform.vendor or "",
+            "soc": platform.soc or "",
+            "soc_series": platform.soc_series or "",
+            "soc_family": platform.soc_family or "",
+        }
+
+    def _platform_matches_filters(self, platform, attr_filters, expr_filter):
+        """Return True if platform matches every --vendor/attribute filter in
+        attr_filters (all must match) and the --platform-filter expression
+        expr_filter, if any (must evaluate to true).
+        """
+        if attr_filters and not all(
+            getattr(platform, attr) in values for attr, values in attr_filters.items()
+        ):
+            return False
+        if expr_filter:
+            env = self._platform_attr_env(platform)
+            if not expr_parser.parse(expr_filter, env, None):
+                return False
+        return True
+
     def get_toolchains(self, ts, plat):
         """Return the toolchains a testsuite should be built with on a platform.
 
@@ -885,6 +915,7 @@ class TestPlan:
         platform_filter = self.options.platform
         platform_pattern = self.options.platform_pattern
         vendor_filter = self.options.vendor
+        platform_expr_filter = self.options.platform_filter
         exclude_platform = self.options.exclude_platform
         testsuite_filter = self.run_individual_testsuite
         arch_filter = self.options.arch
@@ -898,29 +929,40 @@ class TestPlan:
         ignore_platform_key = self.options.ignore_platform_key
         emu_filter = self.options.emulation_only
 
-        logger.debug(" platform filter: " + str(platform_filter))
-        logger.debug("platform_pattern: " + str(platform_pattern))
-        logger.debug("   vendor filter: " + str(vendor_filter))
-        logger.debug("     arch_filter: " + str(arch_filter))
-        logger.debug("      tag_filter: " + str(tag_filter))
-        logger.debug("     exclude_tag: " + str(exclude_tag))
+        # Platform attribute filters (--vendor, --platform-filter) compose with
+        # each other: a platform must match every attribute for which a filter
+        # was given, and any one of the values given for that attribute.
+        attr_filters = {
+            attr: values for attr, values in (
+                ('vendor', vendor_filter),
+            ) if values
+        }
+
+        logger.debug("     platform filter: " + str(platform_filter))
+        logger.debug("    platform_pattern: " + str(platform_pattern))
+        logger.debug("       vendor filter: " + str(vendor_filter))
+        logger.debug("platform_filter expr: " + str(platform_expr_filter))
+        logger.debug("         arch_filter: " + str(arch_filter))
+        logger.debug("          tag_filter: " + str(tag_filter))
+        logger.debug("         exclude_tag: " + str(exclude_tag))
 
         default_platforms = False
-        vendor_platforms = False
+        attribute_platforms = False
         emulation_platforms = False
 
         if all_filter:
             logger.info("Selecting all possible platforms per testsuite scenario")
             # When --all used, any --platform arguments ignored
             platform_filter = []
-        elif not platform_filter and not emu_filter and not vendor_filter and not platform_pattern:
+        elif (not platform_filter and not emu_filter and not attr_filters
+                and not platform_expr_filter and not platform_pattern):
             logger.info("Selecting default platforms per testsuite scenario")
             default_platforms = True
         elif emu_filter:
             logger.info("Selecting emulation platforms per testsuite scenario")
             emulation_platforms = True
-        elif vendor_filter:
-            vendor_platforms = True
+        elif attr_filters or platform_expr_filter:
+            attribute_platforms = True
 
         _platforms = []
         if platform_filter:
@@ -937,9 +979,29 @@ class TestPlan:
             platforms = list(
                 filter(lambda p: bool(p.simulator_by_name(self.options.sim_name)), self.platforms)
             )
-        elif vendor_filter:
-            platforms = list(filter(lambda p: p.vendor in vendor_filter, self.platforms))
-            logger.info(f"Selecting platforms by vendors: {','.join(vendor_filter)}")
+        elif attribute_platforms:
+            try:
+                platforms = list(
+                    filter(
+                        lambda p: self._platform_matches_filters(
+                            p, attr_filters, platform_expr_filter
+                        ),
+                        self.platforms
+                    )
+                )
+            except (SyntaxError, ValueError) as se:
+                logger.error(f"Invalid --platform-filter expression: {se}")
+                sys.exit(2)
+            if attr_filters:
+                logger.info(
+                    "Selecting platforms by " + ", ".join(
+                        f"{attr}: {','.join(values)}" for attr, values in attr_filters.items()
+                    )
+                )
+            if platform_expr_filter:
+                logger.info(
+                    f"Selecting platforms by --platform-filter: {platform_expr_filter}"
+                )
         elif arch_filter:
             platforms = list(filter(lambda p: p.arch in arch_filter, self.platforms))
         elif default_platforms:
@@ -1328,15 +1390,16 @@ class TestPlan:
                     )
                 ):
                     instance.add_filter("Not an emulated platform", Filters.CMD_LINE)
-            elif vendor_platforms:
+            elif attribute_platforms:
                 self.add_instances(instance_list)
-                for instance in list(
-                    filter(
-                        lambda inst: inst.platform.vendor not in vendor_filter,
-                        instance_list
-                    )
-                ):
-                    instance.add_filter("Not a selected vendor platform", Filters.CMD_LINE)
+                for instance in instance_list:
+                    if not self._platform_matches_filters(
+                        instance.platform, attr_filters, platform_expr_filter
+                    ):
+                        instance.add_filter(
+                            "Not matching --vendor/--platform-filter filters",
+                            Filters.CMD_LINE
+                        )
             else:
                 self.add_instances(instance_list)
 
