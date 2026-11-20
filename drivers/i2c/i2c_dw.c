@@ -841,17 +841,102 @@ bool i2c_dw_is_busy(const struct device *dev)
 	return false;
 }
 
-static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
-			   uint16_t target_address)
+static void i2c_dw_prep_msg(struct i2c_dw_dev_config *dw, struct i2c_msg *cur_msg)
+{
+	uint8_t pflags;
+
+	/* Workaround for I2C scanner as DW HW does not support 0 byte transfers.*/
+	if ((cur_msg->len == 0) && (cur_msg->buf != NULL)) {
+		cur_msg->len = 1;
+	}
+
+	pflags = dw->xfr_flags;
+
+	dw->xfr_buf = cur_msg->buf;
+	dw->xfr_len = cur_msg->len;
+	dw->xfr_flags = cur_msg->flags;
+	dw->rx_pending = 0U;
+
+	/* Need to RESTART if changing transfer direction */
+	if ((pflags & I2C_MSG_RW_MASK) != (dw->xfr_flags & I2C_MSG_RW_MASK)) {
+		dw->xfr_flags |= I2C_MSG_RESTART;
+	}
+
+	dw->state &= ~(I2C_DW_CMD_SEND | I2C_DW_CMD_RECV);
+
+	if ((dw->xfr_flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+		dw->state |= I2C_DW_CMD_SEND;
+		dw->request_bytes = 0U;
+	} else {
+		dw->state |= I2C_DW_CMD_RECV;
+		dw->request_bytes = dw->xfr_len;
+	}
+}
+
+static int i2c_dw_run_xfer(const struct device *dev)
 {
 	const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
-	struct i2c_msg *cur_msg = msgs;
-	uint8_t msg_left = num_msgs;
-	uint8_t pflags;
 	int ret;
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t value = 0;
+
+	/* Enable interrupts to trigger ISR */
+	if (test_bit_con_master_mode(reg_base)) {
+		/* Enable necessary interrupts */
+		write_intr_mask((DW_ENABLE_TX_INT_I2C_CONTROLLER |
+				 DW_ENABLE_RX_INT_I2C_CONTROLLER),
+				reg_base);
+	} else {
+		/* Enable necessary interrupts */
+		write_intr_mask(DW_ENABLE_TX_INT_I2C_TARGET, reg_base);
+	}
+
+	/* Wait for transfer to be done */
+	ret = k_sem_take(&dw->device_sync_sem, rom->transfer_timeout);
+	if (ret != 0) {
+		if (test_bit_con_master_mode(reg_base)) {
+			/* Trigger abort and wait for it to complete. */
+			set_bit_enable_abort(reg_base);
+			(void)k_sem_take(&dw->device_sync_sem, K_MSEC(1));
+		}
+		write_intr_mask(DW_DISABLE_ALL_I2C_INT, reg_base);
+		value = read_clr_intr(reg_base);
+		ret = -ETIMEDOUT;
+		k_sem_reset(&dw->device_sync_sem);
+		return ret;
+	}
+
+	if (dw->state & I2C_DW_CMD_ERROR) {
+		return -EIO;
+	}
+
+	/* Something wrong if there is something left to do */
+	if (dw->xfr_len > 0) {
+		ret = -EIO;
+		return ret;
+	}
+
+	if (dw->state & I2C_DW_ERR_MASK) {
+		if (dw->state & (I2C_DW_SDA_STUCK | I2C_DW_SCL_STUCK)) {
+			ret = -ETIME;
+		} else if (dw->state & (I2C_DW_NACK | I2C_DW_CMD_ERROR)) {
+			ret = -EIO;
+		}
+		return ret;
+	}
+
+	return 0;
+}
+
+static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+			   uint16_t target_address)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	struct i2c_msg *cur_msg = msgs;
+	uint8_t msg_left = num_msgs;
+	int ret;
+	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 
 	__ASSERT_NO_MSG(msgs);
 
@@ -924,81 +1009,17 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	 */
 	pm_device_busy_set(dev);
 
+	dw->xfr_len = 0;
 	/* Process all the messages */
 	while (msg_left > 0) {
-		/* Workaround for I2C scanner as DW HW does not support 0 byte transfers.*/
-		if ((cur_msg->len == 0) && (cur_msg->buf != NULL)) {
-			cur_msg->len = 1;
+		if (dw->xfr_len == 0) {
+			i2c_dw_prep_msg(dw, cur_msg);
 		}
 
-		pflags = dw->xfr_flags;
-
-		dw->xfr_buf = cur_msg->buf;
-		dw->xfr_len = cur_msg->len;
-		dw->xfr_flags = cur_msg->flags;
-		dw->rx_pending = 0U;
-
-		/* Need to RESTART if changing transfer direction */
-		if ((pflags & I2C_MSG_RW_MASK) != (dw->xfr_flags & I2C_MSG_RW_MASK)) {
-			dw->xfr_flags |= I2C_MSG_RESTART;
-		}
-
-		dw->state &= ~(I2C_DW_CMD_SEND | I2C_DW_CMD_RECV);
-
-		if ((dw->xfr_flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			dw->state |= I2C_DW_CMD_SEND;
-			dw->request_bytes = 0U;
-		} else {
-			dw->state |= I2C_DW_CMD_RECV;
-			dw->request_bytes = dw->xfr_len;
-		}
-
-		/* Enable interrupts to trigger ISR */
-		if (test_bit_con_master_mode(reg_base)) {
-			/* Enable necessary interrupts */
-			write_intr_mask((DW_ENABLE_TX_INT_I2C_CONTROLLER |
-					 DW_ENABLE_RX_INT_I2C_CONTROLLER),
-					reg_base);
-		} else {
-			/* Enable necessary interrupts */
-			write_intr_mask(DW_ENABLE_TX_INT_I2C_TARGET, reg_base);
-		}
-
-		/* Wait for transfer to be done */
-		ret = k_sem_take(&dw->device_sync_sem, rom->transfer_timeout);
-		if (ret != 0) {
-			if (test_bit_con_master_mode(reg_base)) {
-				/* Trigger abort and wait for it to complete. */
-				set_bit_enable_abort(reg_base);
-				(void)k_sem_take(&dw->device_sync_sem, K_MSEC(1));
-			}
-			write_intr_mask(DW_DISABLE_ALL_I2C_INT, reg_base);
-			value = read_clr_intr(reg_base);
-			ret = -ETIMEDOUT;
-			k_sem_reset(&dw->device_sync_sem);
+		ret = i2c_dw_run_xfer(dev);
+		if (ret < 0) {
 			break;
 		}
-
-		if (dw->state & I2C_DW_CMD_ERROR) {
-			ret = -EIO;
-			break;
-		}
-
-		/* Something wrong if there is something left to do */
-		if (dw->xfr_len > 0) {
-			ret = -EIO;
-			break;
-		}
-
-		if (dw->state & I2C_DW_ERR_MASK) {
-			if (dw->state & (I2C_DW_SDA_STUCK | I2C_DW_SCL_STUCK)) {
-				ret = -ETIME;
-			} else if (dw->state & (I2C_DW_NACK | I2C_DW_CMD_ERROR)) {
-				ret = -EIO;
-			}
-			break;
-		}
-
 		cur_msg++;
 		msg_left--;
 	}
