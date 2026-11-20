@@ -30,6 +30,20 @@ config FILE_SYSTEM_MAX_TYPES
 	  LittleFS, but it is possible to define additional ones and
 	  register them.  A slot is required for each type.
 
+config FILE_SYSTEM_UTILS
+	bool "File system utilities"
+	help
+	  High-level helpers built on top of the fs API.
+
+config FILE_SYSTEM_UTILS_MAX_PATH_LEN
+	int "Maximum path length accepted by fs utils"
+	depends on FILE_SYSTEM_UTILS
+	default 128
+	range 32 1024
+	help
+	  Size of the stack buffer used when walking a path. A path must be
+	  shorter than this value; longer ones fail with -ENAMETOOLONG.
+
 config FILE_SYSTEM_MAX_FILE_NAME
 	int "Optional override for maximum file name length"
 	default -1
