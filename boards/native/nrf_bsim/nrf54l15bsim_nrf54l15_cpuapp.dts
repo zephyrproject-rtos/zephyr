@@ -40,9 +40,6 @@
 			/delete-node/ spi@c7000;
 			/delete-node/ i2c@c8000;
 			/delete-node/ spi@c8000;
-			/delete-node/ pwm@d2000;
-			/delete-node/ pwm@d3000;
-			/delete-node/ pwm@d4000;
 			/delete-node/ adc@d5000;
 			/delete-node/ nfct@d6000;
 			/delete-node/ i2s@dd000;
@@ -101,6 +98,13 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart30_default>;
 	pinctrl-1 = <&uart30_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm20 {
+	status = "okay";
+	pinctrl-0 = <&pwm20_default>;
+	pinctrl-1 = <&pwm20_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 
