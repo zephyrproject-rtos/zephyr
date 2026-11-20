@@ -16,12 +16,15 @@
 	model = "STMicroelectronics STM32H7P5I-DISCOVERY KIT board";
 
 	aliases {
+		die-temp0 = &die_temp;
 		led0 = &green_led;
 		led1 = &red_led;
 		led2 = &blue_led;
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &blue_pwm_led;
 		sw0 = &user_button;
+		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat;
 	};
 
 	chosen {
@@ -227,4 +230,30 @@
 		pinctrl-names = "default";
 		status = "okay";
 	};
+};
+
+/* ADC1 - used by analog sensors */
+&adc12_common {
+	/* adc_ker_ck = HCLK/4 = 260 MHz / 4 = 65 MHz */
+	clocks = <&rcc STM32_CLOCK(AHB3, 24)>,
+		 <&rcc (STM32_SRC_HCLK3 | STM32_CLOCK_DIV(4)) ADC_SEL(0)>,
+		 <&rcc (STM32_SRC_HCLK3 | STM32_CLOCK_DIV(4)) ADCDIV(2)>;
+	clock-names = "adcx", "adc_ker", "adc_pre";
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+};
+
+&vref1 {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
 };
