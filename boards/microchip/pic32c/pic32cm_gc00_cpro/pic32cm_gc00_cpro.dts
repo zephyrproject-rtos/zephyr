@@ -22,6 +22,7 @@
 		zephyr,console = &sercom4;
 		zephyr,shell-uart = &sercom4;
 		zephyr,canbus = &can0;
+		zephyr,romstart = &boot_partition;
 	};
 
 	aliases {
@@ -70,9 +71,10 @@
 
 		/* 16 KB for MCUboot in BFM */
 		boot_partition: partition@0 {
-			compatible = "zephyr,mapped-partition";
+			compatible = "zephyr,memory-region", "zephyr,mapped-partition";
 			reg = <0x0 DT_SIZE_K(16)>;
 			label = "mcuboot";
+			zephyr,memory-region = "BOOT_FLASH";
 		};
 
 		/* 240 KB for slot0 (primary image) in PFM */
