@@ -4,9 +4,32 @@ tests:
       - esp32_ethernet_kit/esp32/procpu
     tags:
       - ethernet
-
   boards.esp32.ethernet.esp_threadbr:
     platform_allow:
       - esp_threadbr/esp32s3/procpu/ethernet
     tags:
       - ethernet
+  boards.esp32.ethernet.pm:
+    extra_args:
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_SOC_ESP32_PM_SLEEP_STATS=y
+    platform_allow:
+      - esp32_ethernet_kit/esp32/procpu
+      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    tags:
+      - ethernet
+      - pm
+  boards.esp32.ethernet.pm.periph_pd:
+    extra_args:
+      - SNIPPET=espressif-pm
+    extra_configs:
+      - CONFIG_SOC_ESP32_PM_SLEEP_STATS=y
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+    platform_allow:
+      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    tags:
+      - ethernet
+      - pm
