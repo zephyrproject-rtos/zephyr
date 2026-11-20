@@ -136,6 +136,75 @@ ZTEST(sys_clock_hw_cycles_update, test_conversions_follow_update)
 	}
 }
 
+#ifdef CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE
+/* The rate changes 2 ticks into a wait of 10 ticks */
+#define CHANGE_AT_TICKS 2U
+#define WAIT_TICKS      10U
+
+static uint32_t change_hz;
+static uint32_t change_start;
+static uint32_t change_end;
+
+static void change_rate(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+
+	change_start = k_cycle_get_32();
+	z_sys_clock_hw_cycles_per_sec_update(change_hz);
+	change_end = k_cycle_get_32();
+}
+
+/* Microseconds that k_busy_wait(wait_us) took with the rate changing from
+ * hz to new_hz during the wait, at most. The cycles between change_start
+ * and change_end are counted at the lower rate, as the change may be
+ * anywhere between them. With SMP, the change may run on another CPU
+ * while the wait goes on. A wait that ends early by less than that
+ * interval goes undetected.
+ */
+static uint64_t busy_wait_across(uint32_t hz, uint32_t new_hz, uint32_t wait_us)
+{
+	struct k_timer timer;
+	uint32_t start;
+	uint32_t end;
+
+	set_rate(hz);
+	change_hz = new_hz;
+	k_timer_init(&timer, change_rate, NULL);
+	k_timer_start(&timer, K_TICKS(CHANGE_AT_TICKS), K_NO_WAIT);
+	start = k_cycle_get_32();
+	k_busy_wait(wait_us);
+	end = k_cycle_get_32();
+	k_timer_stop(&timer);
+
+	zassert_equal(sys_clock_hw_cycles_per_sec(), new_hz, "no rate change during the wait");
+	zassert_true((change_end - start) < (end - start), "rate changed after the wait");
+
+	return (((uint64_t)(change_start - start) * USEC_PER_SEC) / hz) +
+	       (((uint64_t)(change_end - change_start) * USEC_PER_SEC) / MIN(hz, new_hz)) +
+	       (((uint64_t)(end - change_end) * USEC_PER_SEC) / new_hz);
+}
+
+/* A rate change during k_busy_wait() does not end the wait early. With
+ * CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT, k_busy_wait() calls arch_busy_wait()
+ * instead.
+ */
+ZTEST(sys_clock_hw_cycles_update, test_busy_wait_across_rate_change)
+{
+	uint32_t hz = sys_clock_hw_cycles_per_sec();
+	uint32_t wait_us = k_ticks_to_us_ceil32(WAIT_TICKS);
+	uint64_t us;
+
+	if (IS_ENABLED(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)) {
+		ztest_test_skip();
+	}
+
+	us = busy_wait_across(hz, hz / 2U, wait_us);
+	zassert_true(us >= wait_us, "rate down: waited %llu us of %u", us, wait_us);
+	us = busy_wait_across(hz, hz * 2U, wait_us);
+	zassert_true(us >= wait_us, "rate up: waited %llu us of %u", us, wait_us);
+}
+#endif /* CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE */
+
 /* A conversion from a variable rate other than the cycle rate divides by it */
 ZTEST(sys_clock_hw_cycles_update, test_other_rate)
 {
