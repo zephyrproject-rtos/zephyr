@@ -7,6 +7,8 @@
  */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_ctrl.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <zephyr/types.h>
@@ -2150,6 +2152,66 @@ ZTEST(net_mld_test_suite, test_mld_multi_join)
 	test_leave_group();
 	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting leave event");
 	zassert_true(is_leave_msg_ok, "Leave msg invalid");
+}
+
+static atomic_t net_pkt_err_count;
+
+#if defined(CONFIG_NET_PKT_LOG_LEVEL_DBG)
+static void err_counter_process(const struct log_backend *const backend,
+				union log_msg_generic *msg)
+{
+	struct log_msg *m = &msg->log;
+	const void *source = log_msg_get_source(m);
+	const char *name;
+
+	if (log_msg_get_level(m) != LOG_LEVEL_ERR || source == NULL) {
+		return;
+	}
+
+	name = log_source_name_get(log_msg_get_domain(m), log_source_id(source));
+	if (name != NULL && strcmp(name, "net_pkt") == 0) {
+		atomic_inc(&net_pkt_err_count);
+	}
+}
+
+static void err_counter_panic(const struct log_backend *const backend)
+{
+}
+
+static const struct log_backend_api err_counter_api = {
+	.process = err_counter_process,
+	.panic = err_counter_panic,
+};
+
+LOG_BACKEND_DEFINE(net_pkt_err_counter, err_counter_api, true);
+#endif
+
+/* A second unref of a freed pkt is a no-op apart from net_pkt's
+ * "freed already" error, which only exists at debug level.
+ */
+ZTEST(net_mld_test_suite, test_send_single_no_double_free_on_send_fail)
+{
+	struct net_in6_addr test_mcast = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+					       0, 0, 0, 0, 0, 0, 0, 0x42 } } };
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_NET_PKT_LOG_LEVEL_DBG)) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(net_if_down(net_iface), "Failed to bring iface down");
+	atomic_clear(&net_pkt_err_count);
+
+	ret = net_ipv6_mld_send_single(net_iface, &test_mcast,
+				       NET_IPV6_MLDv2_MODE_IS_EXCLUDE);
+
+	zassert_ok(net_if_up(net_iface), "Failed to bring iface up");
+	k_msleep(THREAD_SLEEP);
+
+	zassert_equal(ret, -ENETDOWN, "expected -ENETDOWN, got %d", ret);
+	zassert_equal(atomic_get(&net_pkt_err_count), 0,
+		      "net_pkt logged %d error(s): pkt unref'd twice",
+		      (int)atomic_get(&net_pkt_err_count));
 }
 
 ZTEST_SUITE(net_mld_test_suite, NULL, test_mld_setup, test_mld_before, NULL, NULL);
