@@ -1,0 +1,28 @@
+identifier: uedx80480070e_wb_a/esp32s3/appcpu
+name: VIEWE UEDX80480070E-WB-A APPCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - flash
+    - cpp
+    - posix
+    - watchdog
+    - logging
+    - kernel
+    - pm
+    - gpio
+    - crypto
+    - eeprom
+    - heap
+    - cmsis_rtos
+    - jwt
+    - zdsp
+    - psa.secure_storage
+vendor: viewe
