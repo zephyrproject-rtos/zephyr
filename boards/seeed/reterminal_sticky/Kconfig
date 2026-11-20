@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BOARD_RETERMINAL_STICKY_ESP32S3_PROCPU
+	default 256 if BOARD_RETERMINAL_STICKY_ESP32S3_APPCPU
+
+config RETERMINAL_STICKY_POWER_OFF_KEY
+	bool "Power off on long press of the power button"
+	default y
+	depends on BOARD_RETERMINAL_STICKY_ESP32S3_PROCPU
+	depends on INPUT_LONGPRESS
+	help
+	  Clear the power latch when the power_longpress devicetree node
+	  reports a long press of the power button. When running from the
+	  battery, the system then switches off once the button is released.
+	  USB power keeps the system on regardless of the latch.

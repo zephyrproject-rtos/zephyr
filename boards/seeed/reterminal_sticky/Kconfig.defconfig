@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RETERMINAL_STICKY_ESP32S3_PROCPU
+
+# Needed for the power button long press handling
+configdefault INPUT
+	default y if !MCUBOOT
+
+if LVGL
+
+choice LV_Z_COLOR_FORMAT
+	default LV_Z_COLOR_FORMAT_I1
+endchoice
+
+endif # LVGL
+
+endif # BOARD_RETERMINAL_STICKY_ESP32S3_PROCPU

@@ -1,0 +1,311 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <espressif/partitions_0x0_amp_32M.dtsi>
+#include "reterminal_sticky-pinctrl.dtsi"
+
+/ {
+	compatible = "seeed,reterminal-sticky";
+	model = "Seeed Studio reTerminal Sticky PROCPU";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,rtc = &pcf8563_rtc;
+		zephyr,display = &ssd1677_epd;
+		zephyr,touch = &gt911_touch;
+	};
+
+	aliases {
+		accel0 = &lsm6ds3tr_c;
+		buzzer0 = &buzzer0;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		rtc = &pcf8563_rtc;
+		sdhc0 = &sdcard0;
+		sw0 = &power_key;
+		sw1 = &up_key;
+		sw2 = &down_key;
+		temp0 = &sht40_temp;
+		uart-0 = &uart0;
+		watchdog0 = &wdt0;
+	};
+
+	vin: vin {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 8>;
+		output-ohms = <5100>;
+		full-ohms = <10200>;
+		skip-calibration;
+	};
+
+	charger: charger {
+		compatible = "zephyr,charger-gpio";
+		ctrl-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+	};
+
+	buttons: buttons {
+		compatible = "gpio-keys";
+
+		power_key: button_0 {
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			label = "Power";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		up_key: button_1 {
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			label = "Up";
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		down_key: button_2 {
+			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			label = "Down";
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+	};
+
+	power_longpress: power-longpress {
+		compatible = "zephyr,input-longpress";
+		input = <&buttons>;
+		input-codes = <INPUT_KEY_0>;
+		long-codes = <INPUT_KEY_POWER>;
+		long-delay-ms = <1500>;
+	};
+
+	buzzer0: buzzer0 {
+		compatible = "pwm-buzzer";
+		pwms = <&ledc0 0 PWM_HZ(4000) PWM_POLARITY_NORMAL>;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ssd1677_epd: ssd1677@1 {
+			compatible = "solomon,ssd1677";
+			reg = <1>;
+			mipi-max-frequency = <DT_FREQ_M(10)>;
+			width = <480>;
+			height = <800>;
+			busy-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+			softstart = [ae c7 c3 c0 80];
+			tssv = <0x80>;
+			gdo-flags = <0x02>;
+			v-mirror;
+
+			full {
+				border-waveform = <0x01>;
+			};
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(32)>;
+	ranges = <0x0 0x0 DT_SIZE_M(32)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
+};
+
+&dma {
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+
+	/*
+	 * The system power switch is held on by a 74AHC1G79 flip-flop once the
+	 * power button is released. PWR_HOLD (GPIO45) drives D and PWR_LOCK
+	 * (GPIO46) drives CP. Hogs are applied in order, so D is set before
+	 * the rising edge on CP latches it.
+	 */
+	pwr_hold: pwr-hold-hog {
+		gpio-hog;
+		gpios = <13 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "pwr-hold";
+	};
+
+	pwr_lock: pwr-lock-hog {
+		gpio-hog;
+		gpios = <14 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "pwr-lock";
+	};
+
+	tp-pwr-en-hog {
+		gpio-hog;
+		gpios = <10 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "tp-pwr-en";
+	};
+
+	ep-pwr-en-hog {
+		gpio-hog;
+		gpios = <15 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "ep-pwr-en";
+	};
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sht40_temp: sht4x@44 {
+		compatible = "sensirion,sht4x";
+		reg = <0x44>;
+		repeatability = <2>;
+	};
+
+	pcf8563_rtc: pcf8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+	};
+
+	lsm6ds3tr_c: lsm6ds3tr-c@6a {
+		compatible = "st,lsm6dsl";
+		reg = <0x6a>;
+	};
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gt911_touch: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+		screen-width = <480>;
+		screen-height = <800>;
+		inverted-y;
+	};
+};
+
+&ledc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>, <&gpio0 15 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	sdcard0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(20)>;
+		pwr-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		cd-gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		power-delay-ms = <5>;
+		status = "okay";
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@8 {
+		reg = <8>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&timer0 {
+	status = "disabled";
+};
+
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+&timer3 {
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&usb_serial {
+	status = "disabled";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
