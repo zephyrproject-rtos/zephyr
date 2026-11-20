@@ -41,4 +41,10 @@ config IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE_DEPRECATED
 	def_bool IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE != 2
 	select DEPRECATED
 
+config IPC_SERVICE_BACKEND_RPMSG_TX_POLL_INTERVAL_MS
+	int "Poll interval while waiting for a free TX buffer"
+	default 1
+	help
+	  Time a thread waits between checks for a free TX buffer.
+
 endif # IPC_SERVICE_BACKEND_RPMSG
