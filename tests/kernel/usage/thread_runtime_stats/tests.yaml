@@ -19,3 +19,18 @@ tests:
     platform_exclude:
       - mr_canhubk3
       - cortex_r8_virtual
+  kernel.usage.history:
+    tags: kernel
+    arch_exclude:
+      - posix
+      - sparc
+      - mips
+    filter: not CONFIG_SMP
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
+    platform_exclude:
+      - mr_canhubk3
+      - cortex_r8_virtual
+    extra_configs:
+      - CONFIG_SCHED_THREAD_USAGE_HISTORY=4

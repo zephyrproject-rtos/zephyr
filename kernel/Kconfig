@@ -475,6 +475,17 @@ config SCHED_THREAD_USAGE_ANALYSIS
 	  has been scheduled, the longest time for which it was scheduled and
 	  others.
 
+config SCHED_THREAD_USAGE_HISTORY
+	int "Number of recent thread switch-ins to record"
+	default 0
+	depends on SCHED_THREAD_USAGE && !SMP
+	help
+	  When non-zero, each thread switch-in also stores the incoming thread
+	  and the usage timestamp the switch already read into
+	  z_sched_usage_history, a ring of this many entries, so a core dump
+	  shows the most recent thread switches. Must be a power of two. Each
+	  entry is 8 bytes on 32-bit targets. 0 disables the ring.
+
 config SCHED_THREAD_USAGE_ALL
 	bool "Collect total system runtime usage"
 	default y if SCHED_THREAD_USAGE

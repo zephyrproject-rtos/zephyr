@@ -623,5 +623,99 @@ ZTEST(usage_api, test_thread_stats_usage)
 	k_thread_abort(tid);
 }
 
+#if defined(CONFIG_SCHED_THREAD_USAGE_HISTORY) && (CONFIG_SCHED_THREAD_USAGE_HISTORY > 0)
+#define HISTORY_SIZE   CONFIG_SCHED_THREAD_USAGE_HISTORY
+#define HISTORY_ROUNDS (HISTORY_SIZE + 3U)
+
+static K_SEM_DEFINE(history_sem, 0, 1);
+
+/**
+ * @brief Helper thread to test_thread_usage_history()
+ */
+static void history_helper(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	for (uint32_t i = 0U; i < HISTORY_ROUNDS; i++) {
+		k_sem_take(&history_sem, K_FOREVER);
+	}
+}
+
+/**
+ * @brief Test the thread switch-in history ring
+ *
+ * A higher priority helper thread blocks on a semaphore that the test
+ * thread gives HISTORY_ROUNDS times, so each round switches in the helper
+ * and then the test thread. The ring wraps, and its newest entries must
+ * alternate between the two threads with timestamps that never run
+ * backwards and stay within the cycles that elapsed.
+ */
+ZTEST(usage_api, test_thread_usage_history)
+{
+	int old_priority = k_thread_priority_get(_current);
+	struct z_sched_usage_history_entry newest[HISTORY_SIZE];
+	uint32_t seq_start;
+	uint32_t seq_end;
+	uint32_t start_cycles;
+	uint32_t elapsed_cycles;
+	k_tid_t tid;
+
+	k_thread_priority_set(_current, K_PRIO_PREEMPT(1));
+
+	tid = k_thread_create(&helper_thread, helper_stack, K_THREAD_STACK_SIZEOF(helper_stack),
+			      history_helper, NULL, NULL, NULL, K_PRIO_PREEMPT(0), 0, K_FOREVER);
+
+	start_cycles = k_cycle_get_32();
+	seq_start = z_sched_usage_history.seq;
+
+	/* The helper preempts the test thread and blocks on history_sem. */
+	k_thread_start(tid);
+
+	for (uint32_t i = 1U; i < HISTORY_ROUNDS; i++) {
+		k_sem_give(&history_sem);
+	}
+
+	seq_end = z_sched_usage_history.seq;
+	elapsed_cycles = k_cycle_get_32() - start_cycles;
+
+	/* Copy newest first: the last round and the helper exit overwrite the oldest slots. */
+	for (uint32_t i = 0U; i < HISTORY_SIZE; i++) {
+		newest[i] = z_sched_usage_history.entries[(seq_end - 1U - i) & (HISTORY_SIZE - 1U)];
+	}
+
+	k_sem_give(&history_sem);
+	k_thread_join(tid, K_FOREVER);
+	k_thread_priority_set(_current, old_priority);
+
+	zassert_equal(seq_end - seq_start, 2U * HISTORY_ROUNDS,
+		      "expected %u switch-ins, recorded %u", 2U * HISTORY_ROUNDS,
+		      seq_end - seq_start);
+
+	for (uint32_t i = 0U; i < HISTORY_SIZE; i++) {
+		struct k_thread *expected = ((i % 2U) == 0U) ? _current : tid;
+
+		zassert_equal_ptr(newest[i].thread, expected,
+				  "entry %u from newest has thread %p, expected %p", i,
+				  newest[i].thread, expected);
+	}
+
+	for (uint32_t i = 0U; (i + 1U) < HISTORY_SIZE; i++) {
+		uint32_t newer = newest[i].cycles;
+		uint32_t older = newest[i + 1U].cycles;
+
+		zassert_true((newer - older) <= elapsed_cycles,
+			     "entry %u from newest at %u precedes the next older entry at %u", i,
+			     newer, older);
+	}
+}
+#else
+ZTEST(usage_api, test_thread_usage_history)
+{
+	ztest_test_skip();
+}
+#endif /* CONFIG_SCHED_THREAD_USAGE_HISTORY > 0 */
+
 ZTEST_SUITE(usage_api, NULL, NULL,
 		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
