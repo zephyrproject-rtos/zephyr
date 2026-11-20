@@ -16,6 +16,7 @@ zephyr_library_sources(
   thread.c
   cpu_idle.c
   smp.c
+  switch.S
   )
 
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
@@ -26,5 +27,4 @@ zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE __aeabi_read_tp.S)
 if(CONFIG_ARCH_CACHE OR CONFIG_DCACHE)
   zephyr_library_sources(cache.c)
 endif()
-zephyr_library_sources_ifdef(CONFIG_USE_SWITCH switch.S)
-zephyr_library_sources_ifndef(CONFIG_USE_SWITCH swap_helper.S exc_exit.S)
+zephyr_library_sources_ifdef(CONFIG_FPU_SHARING fpu.c)

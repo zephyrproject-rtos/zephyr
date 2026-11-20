@@ -10,6 +10,8 @@
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <ipi.h>
+#include <kernel_arch_func.h>
+#include <kuser.h>
 #include "boot.h"
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/toolchain/gcc.h>
@@ -31,7 +33,7 @@ K_KERNEL_STACK_ARRAY_DECLARE(z_arm_fiq_stack,
 
 K_KERNEL_STACK_ARRAY_DECLARE(z_arm_abort_stack,
 			    CONFIG_MP_MAX_NUM_CPUS,
-			    CONFIG_ARMV7_EXCEPTION_STACK_SIZE);
+			    CONFIG_ARMV7_ABORT_STACK_SIZE);
 
 K_KERNEL_STACK_ARRAY_DECLARE(z_arm_undef_stack,
 			    CONFIG_MP_MAX_NUM_CPUS,
@@ -75,7 +77,7 @@ volatile struct boot_params arm_cpu_boot_params = {
 	.fiq_sp =
 		(char *)z_arm_fiq_stack[0] + K_KERNEL_STACK_RESERVED + CONFIG_ARMV7_FIQ_STACK_SIZE,
 	.abt_sp = (char *)z_arm_abort_stack[0] + K_KERNEL_STACK_RESERVED +
-		  CONFIG_ARMV7_EXCEPTION_STACK_SIZE,
+		  CONFIG_ARMV7_ABORT_STACK_SIZE,
 	.udf_sp = (char *)z_arm_undef_stack[0] + K_KERNEL_STACK_RESERVED +
 		  CONFIG_ARMV7_EXCEPTION_STACK_SIZE,
 	.svc_sp =
@@ -134,7 +136,7 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	arm_cpu_boot_params.fiq_sp = K_KERNEL_STACK_BUFFER(z_arm_fiq_stack[cpu_num])
 				     + CONFIG_ARMV7_FIQ_STACK_SIZE;
 	arm_cpu_boot_params.abt_sp = K_KERNEL_STACK_BUFFER(z_arm_abort_stack[cpu_num])
-				     + CONFIG_ARMV7_EXCEPTION_STACK_SIZE;
+				     + CONFIG_ARMV7_ABORT_STACK_SIZE;
 	arm_cpu_boot_params.udf_sp = K_KERNEL_STACK_BUFFER(z_arm_undef_stack[cpu_num])
 				     + CONFIG_ARMV7_EXCEPTION_STACK_SIZE;
 	arm_cpu_boot_params.svc_sp = K_KERNEL_STACK_BUFFER(z_arm_svc_stack[cpu_num])
@@ -209,6 +211,10 @@ void arch_secondary_cpu_init(void)
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidruro((uintptr_t)&_kernel.cpus[cpu_num]);
 
+#if defined(CONFIG_CPU_HAS_FPU)
+	z_arm_floating_point_init();
+#endif
+
 #ifdef CONFIG_ARM_MPU
 
 	/*! TODO: Unify mpu and mmu initialization function
@@ -224,6 +230,9 @@ void arch_secondary_cpu_init(void)
 	arm_gic_secondary_init();
 
 	irq_enable(SGI_SCHED_IPI);
+#ifdef CONFIG_USERSPACE
+	irq_enable(SGI_MMCFG_IPI);
+#endif
 
 	/*! TODO: FPU irq
 	 *  \todo FPU irq
@@ -294,6 +303,27 @@ void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 	send_ipi(SGI_SCHED_IPI, cpu_bitmap);
 }
 
+#ifdef CONFIG_USERSPACE
+static void mem_cfg_ipi_handler(const void *unused)
+{
+	ARG_UNUSED(unused);
+
+	/*
+	 * The sender holds z_mem_domain_lock and may not be done with the
+	 * change yet. Taking the lock makes the MPU reflect the final state.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&z_mem_domain_lock);
+
+	z_arm_configure_dynamic_mpu_regions(_current);
+	k_spin_unlock(&z_mem_domain_lock, key);
+}
+
+void z_arm_mem_cfg_ipi(uint32_t cpu_bitmap)
+{
+	send_ipi(SGI_MMCFG_IPI, cpu_bitmap);
+}
+#endif
+
 int arch_smp_init(void)
 {
 	cpu_map[0] = MPIDR_TO_CORE(GET_MPIDR());
@@ -304,6 +334,10 @@ int arch_smp_init(void)
 	 */
 	IRQ_CONNECT(SGI_SCHED_IPI, IRQ_DEFAULT_PRIORITY, sched_ipi_handler, NULL, 0);
 	irq_enable(SGI_SCHED_IPI);
+#ifdef CONFIG_USERSPACE
+	IRQ_CONNECT(SGI_MMCFG_IPI, IRQ_DEFAULT_PRIORITY, mem_cfg_ipi_handler, NULL, 0);
+	irq_enable(SGI_MMCFG_IPI);
+#endif
 
 	return 0;
 }

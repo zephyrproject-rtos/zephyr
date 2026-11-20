@@ -50,8 +50,10 @@ config CPU_AARCH32_CORTEX_R
 	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	select HAS_FLASH_LOAD_OFFSET
 	select ARCH_HAS_BIT_REV
-	select ARCH_HAS_USERSPACE if ARM_MPU && !USE_SWITCH
-	select ARCH_HAS_EXTRA_EXCEPTION_INFO if !USE_SWITCH
+	select ARCH_HAS_USERSPACE if ARM_MPU
+	# With SMP, a memory domain change must reach the MPU of other CPUs
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE && SMP
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	# Backed by the GIC distributor ICPENDR/ISPENDR registers.
 	select ARCH_HAS_IRQ_PENDING_OPS if !ARM_CUSTOM_INTERRUPT_CONTROLLER && \
@@ -59,6 +61,7 @@ config CPU_AARCH32_CORTEX_R
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_HAS_DCACHE
 	select ARCH_HAS_NOCACHE_MEM_PARTITION_SUPPORT if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select ARCH_SUPPORTS_ROM_START
+	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
@@ -76,12 +79,13 @@ config CPU_AARCH32_CORTEX_A
 	select HAS_CMSIS_CORE_A
 	select HAS_FLASH_LOAD_OFFSET
 	select ARCH_HAS_BIT_REV
-	select ARCH_HAS_EXTRA_EXCEPTION_INFO if !USE_SWITCH
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select ARCH_HAS_NOCACHE_MEM_PARTITION_SUPPORT
 	# Backed by the GIC distributor ICPENDR/ISPENDR registers.
 	select ARCH_HAS_IRQ_PENDING_OPS if !ARM_CUSTOM_INTERRUPT_CONTROLLER && \
 		!MULTI_LEVEL_INTERRUPTS
+	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	# GDBSTUB has not yet been tested on Cortex M or R SoCs
 	select ARCH_HAS_GDBSTUB
@@ -212,6 +216,7 @@ config SLOW_FLASH_DATA
 
 config RUNTIME_NMI
 	bool "Attach an NMI handler at runtime"
+	depends on CPU_CORTEX_M
 	select REBOOT
 	help
 	  The kernel provides a simple NMI handler that simply hangs in a tight

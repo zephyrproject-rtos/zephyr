@@ -10,6 +10,7 @@
 #include <zephyr/arch/exception.h>
 #include <kernel_internal.h>
 #include <zephyr/arch/common/exc_handle.h>
+#include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #if defined(CONFIG_GDBSTUB)
 #include <zephyr/arch/arm/gdbstub.h>
@@ -171,117 +172,16 @@ static uint32_t dump_fault(uint32_t status, uint32_t addr)
 }
 #endif
 
-#if defined(CONFIG_FPU_SHARING)
-
-static ALWAYS_INLINE void z_arm_fpu_caller_save(struct __fpu_sf *fpu)
-{
-	__asm__ volatile (
-		"vstmia %0, {s0-s15};\n"
-		: : "r" (&fpu->s[0])
-		: "memory"
-		);
-#if CONFIG_VFP_FEATURE_REGS_S64_D32
-	__asm__ volatile (
-		"vstmia %0, {d16-d31};\n\t"
-		:
-		: "r" (&fpu->d[0])
-		: "memory"
-		);
-#endif
-}
-
-/**
- * @brief FPU undefined instruction fault handler
- *
- * @return Returns true if the FPU is already enabled
- *           implying a true undefined instruction
- *         Returns false if the FPU was disabled
- */
-bool z_arm_fault_undef_instruction_fp(void)
-{
-	/*
-	 * Assume this is a floating point instruction that faulted because
-	 * the FP unit was disabled.  Enable the FP unit and try again.  If
-	 * the FP was already enabled then this was an actual undefined
-	 * instruction.
-	 */
-	if (__get_FPEXC() & FPEXC_EN) {
-		return true;
-	}
-
-	__set_FPEXC(FPEXC_EN);
-
-	if (_current_cpu->nested > 1) {
-		/*
-		 * If the nested count is greater than 1, the undefined
-		 * instruction exception came from an irq/svc context.  (The
-		 * irq/svc handler would have the nested count at 1 and then
-		 * the undef exception would increment it to 2).
-		 */
-		struct __fpu_sf *spill_esf =
-			(struct __fpu_sf *)_current_cpu->fp_ctx;
-
-		if (spill_esf == NULL) {
-			return false;
-		}
-
-		_current_cpu->fp_ctx = NULL;
-
-		/*
-		 * If the nested count is 2 and the current thread has used the
-		 * VFP (whether or not it was actually using the VFP before the
-		 * current exception) OR if the nested count is greater than 2
-		 * and the VFP was enabled on the irq/svc entrance for the
-		 * saved exception stack frame, then save the floating point
-		 * context because it is about to be overwritten.
-		 */
-		if (((_current_cpu->nested == 2)
-				&& (_current->base.user_options & K_FP_REGS))
-			|| ((_current_cpu->nested > 2)
-				&& (spill_esf->undefined & FPEXC_EN))) {
-			/*
-			 * Spill VFP registers to specified exception stack
-			 * frame
-			 */
-			spill_esf->undefined |= FPEXC_EN;
-			spill_esf->fpscr = __get_FPSCR();
-			z_arm_fpu_caller_save(spill_esf);
-		}
-	} else {
-		/*
-		 * If the nested count is one, a thread was the faulting
-		 * context.  Just flag that this thread uses the VFP.  This
-		 * means that a thread that uses the VFP does not have to,
-		 * but should, set K_FP_REGS on thread creation.
-		 */
-		_current->base.user_options |= K_FP_REGS;
-	}
-
-	return false;
-}
-#endif
-
 /**
  * @brief Undefined instruction fault handler
- *
- * @return Returns true if the fault is fatal
  */
-bool z_arm_fault_undef_instruction(struct arch_esf *esf)
+void z_arm_fault_undef_instruction(struct arch_esf *esf)
 {
-#if defined(CONFIG_FPU_SHARING)
-	/*
-	 * This is a true undefined instruction and we will be crashing
-	 * so save away the VFP registers.
-	 */
-	esf->fpu.undefined = __get_FPEXC();
-	esf->fpu.fpscr = __get_FPSCR();
-	z_arm_fpu_caller_save(&esf->fpu);
-#endif
 
 #if defined(CONFIG_GDBSTUB)
 	z_gdb_entry(esf, GDB_EXCEPTION_INVALID_INSTRUCTION);
 	/* Might not be fatal if GDB stub placed it in the code. */
-	return false;
+	return;
 #endif
 
 	/* Print fault information */
@@ -293,17 +193,12 @@ bool z_arm_fault_undef_instruction(struct arch_esf *esf)
 
 	/* Invoke kernel fatal exception handler */
 	z_arm_fatal_error(reason, esf);
-
-	/* All undefined instructions are treated as fatal for now */
-	return true;
 }
 
 /**
  * @brief Prefetch abort fault handler
- *
- * @return Returns true if the fault is fatal
  */
-bool z_arm_fault_prefetch(struct arch_esf *esf)
+void z_arm_fault_prefetch(struct arch_esf *esf)
 {
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -327,7 +222,7 @@ bool z_arm_fault_prefetch(struct arch_esf *esf)
 		/* Fatal */
 		z_gdb_entry(esf, GDB_EXCEPTION_MEMORY_FAULT);
 	}
-	return false;
+	return;
 #endif
 	/* Print fault information*/
 	EXCEPTION_DUMP("***** PREFETCH ABORT *****");
@@ -345,9 +240,6 @@ bool z_arm_fault_prefetch(struct arch_esf *esf)
 
 	/* Invoke kernel fatal exception handler */
 	z_arm_fatal_error(reason, esf);
-
-	/* All prefetch aborts are treated as fatal for now */
-	return true;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -379,12 +271,117 @@ static bool memory_fault_recoverable(struct arch_esf *esf)
 }
 #endif
 
+#if defined(CONFIG_MPU_STACK_GUARD)
+/*
+ * Tell whether pc is the push {r0-r3, r12, lr} that follows the SRS and
+ * the CPS to SYS mode in z_arm_cortex_ar_enter_exc.
+ */
+static bool is_exc_entry_push(uint32_t pc)
+{
+	const uint32_t *insn = (const uint32_t *)pc;
+
+	if (((pc & 3U) != 0U) || (pc < (POINTER_TO_UINT(__text_region_start) + 8U)) ||
+	    (pc >= POINTER_TO_UINT(__text_region_end))) {
+		return false;
+	}
+
+	return (insn[-2] == 0xf96d051fU) && /* srsdb sp!, #MODE_SYS */
+	       (insn[-1] == 0xf102001fU) && /* cps #MODE_SYS */
+	       (insn[0] == 0xe92d500fU);    /* push {r0-r3, r12, lr} */
+}
+
+/*
+ * Tell whether pc is the store of the frame address that follows the frame
+ * push in z_arm_cortex_ar_enter_exc.
+ */
+static bool is_exc_entry_store(uint32_t pc)
+{
+	const uint32_t *insn = (const uint32_t *)pc;
+
+	if (((pc & 3U) != 0U) || (pc < POINTER_TO_UINT(__text_region_start)) ||
+	    (pc >= (POINTER_TO_UINT(__text_region_end) - 4U))) {
+		return false;
+	}
+
+	return (insn[0] == 0xe5010008U) && /* str r0, [r1, #-8] */
+	       (insn[1] == 0xe241d008U);   /* sub sp, r1, #8 */
+}
+
+/**
+ * @brief Stack overflow fault handler
+ *
+ * Called on a data abort taken while an exception entry pushed its frame
+ * into the MPU guard of the stack. esf is built on the abort mode stack,
+ * with the r0-r3, r12 and lr of the interrupted context. z_arm_data_abort
+ * stores the SP, PC and CPSR of that context right above esf, where a
+ * nested data abort would overwrite the PC and CPSR: read them first.
+ *
+ * If the guard hit is the push that follows the SRS of an exception entry,
+ * that SRS stored the PC and CPSR of the context the entry interrupted at
+ * SP. If it is the store of the frame address that follows, the whole
+ * frame of that context is at SP. That context may itself be an exception
+ * entry that hit the guard. If code that runs on the thread stack after a
+ * complete exception entry hits the guard, such as a fault handler or the
+ * context switch on interrupt exit, the PC is that of this code, as on
+ * ARM64 and RISC-V.
+ *
+ * This runs on the abort mode stack of the CPU, which a second stack
+ * overflow on that CPU reuses from its top. The fatal error handler must
+ * therefore neither block nor enable IRQs.
+ *
+ * The interrupted context can't be resumed, as its stack is unusable:
+ * halt the system if the fatal error handling returns.
+ */
+FUNC_NORETURN void z_arm_fault_stack_overflow(struct arch_esf *esf)
+{
+	const uint32_t *ctx = (const uint32_t *)(&esf->basic + 1);
+	uint32_t sp = ctx[0];
+	uint32_t pc = ctx[1];
+	uint32_t cpsr = ctx[2];
+	struct __basic_sf regs = esf->basic;
+
+	while ((cpsr & MODE_MASK) == MODE_SYS) {
+		if (is_exc_entry_push(pc)) {
+			const uint32_t *srs_frame = UINT_TO_POINTER(sp);
+
+			pc = srs_frame[0];
+			cpsr = srs_frame[1];
+			sp += 8U;
+		} else if (is_exc_entry_store(pc)) {
+			regs = *(const struct __basic_sf *)UINT_TO_POINTER(sp);
+			pc = regs.pc;
+			cpsr = regs.xpsr;
+			sp += sizeof(regs);
+		} else {
+			break;
+		}
+	}
+
+#if defined(CONFIG_USERSPACE)
+	/* The exception entry from user mode switched SP to the privileged stack */
+	if ((cpsr & MODE_MASK) == MODE_USR) {
+		sp = _current->arch.sp_usr;
+	}
+#endif
+
+	regs.pc = pc;
+	regs.xpsr = cpsr;
+	esf->basic = regs;
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	esf->extra_info.callee->psp = sp;
+#endif
+
+	EXCEPTION_DUMP("***** STACK OVERFLOW *****");
+	EXCEPTION_DUMP("Frame push @ 0x%08x, SP 0x%08x", __get_DFAR(), sp);
+	z_arm_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
+	k_fatal_halt(K_ERR_STACK_CHK_FAIL);
+}
+#endif
+
 /**
  * @brief Data abort fault handler
- *
- * @return Returns true if the fault is fatal
  */
-bool z_arm_fault_data(struct arch_esf *esf)
+void z_arm_fault_data(struct arch_esf *esf)
 {
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
 
@@ -401,8 +398,7 @@ bool z_arm_fault_data(struct arch_esf *esf)
 
 #if defined(CONFIG_GDBSTUB)
 	z_gdb_entry(esf, GDB_EXCEPTION_MEMORY_FAULT);
-	/* return false - non-fatal error */
-	return false;
+	return;
 #endif
 
 #if defined(CONFIG_USERSPACE)
@@ -411,7 +407,7 @@ bool z_arm_fault_data(struct arch_esf *esf)
 				(FSR_FS_BACKGROUND_FAULT)))
 			|| (fs == FSR_FS_PERMISSION_FAULT)) {
 		if (memory_fault_recoverable(esf)) {
-			return false;
+			return;
 		}
 	}
 #endif
@@ -432,9 +428,6 @@ bool z_arm_fault_data(struct arch_esf *esf)
 
 	/* Invoke kernel fatal exception handler */
 	z_arm_fatal_error(reason, esf);
-
-	/* All data aborts are treated as fatal for now */
-	return true;
 }
 
 /**

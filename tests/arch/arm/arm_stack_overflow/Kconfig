@@ -1,0 +1,38 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Cortex-A/R stack overflow report test"
+
+choice TEST_OVERFLOW
+	prompt "What hits the stack guard"
+
+config TEST_OVERFLOW_PUSH
+	bool "A push in thread code, then the data abort entry"
+
+config TEST_OVERFLOW_PUSH_PARTIAL
+	bool "A push in thread code, then two data abort entries after their SRS"
+
+config TEST_OVERFLOW_PUSH_FRAME
+	bool "A push in thread code, then the data abort entry after its frame push"
+
+config TEST_OVERFLOW_SVC
+	bool "The SVC entry"
+
+config TEST_OVERFLOW_IRQ
+	bool "The IRQ entry"
+
+config TEST_OVERFLOW_IRQ_PARTIAL
+	bool "The IRQ entry after its SRS, then the data abort entry"
+
+config TEST_OVERFLOW_IRQ_FRAME
+	bool "The IRQ entry after its frame push"
+
+config TEST_OVERFLOW_UNDEF
+	bool "The undefined instruction entry"
+
+config TEST_OVERFLOW_PABT
+	bool "The prefetch abort entry"
+
+endchoice
+
+source "Kconfig.zephyr"

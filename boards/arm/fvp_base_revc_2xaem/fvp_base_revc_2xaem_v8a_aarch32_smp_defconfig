@@ -24,8 +24,7 @@ CONFIG_UART_CONSOLE=y
 # Enable Monitor mode initialization for GICv3 system register access.
 CONFIG_AARCH32_ARMV8_A_MONITOR_INIT=y
 
-# Enable SMP. The switch-based context path is required for SMP.
-CONFIG_USE_SWITCH=y
+# Enable SMP
 CONFIG_SMP=y
 CONFIG_MP_MAX_NUM_CPUS=4
 CONFIG_CACHE_MANAGEMENT=y
