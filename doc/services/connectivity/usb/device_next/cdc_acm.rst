@@ -169,6 +169,11 @@ succeed. Function :c:func:`uart_irq_tx_complete()` is not implemented yet.
 Polling UART API
 ----------------
 
-The CDC ACM poll out implementation follows :ref:`uart_polling_api` and
-blocks when the TX FIFO is full only if the hw-flow-control property is enabled
-and called from a non-ISR context.
+The CDC ACM poll out implementation deviates from :ref:`uart_polling_api`
+because it does not always block when the TX FIFO is full. If the function is
+called from a context that cannot sleep, such as an interrupt handler, and the
+TX FIFO is full, the character is discarded. In all other contexts, the
+function blocks until the character is stored in the TX FIFO if the
+hw-flow-control property is enabled. Without hw-flow-control, it blocks only
+while a full TX buffer is waiting to be submitted to the USB stack, and the
+character is discarded if all TX buffers are already queued for transfer.
