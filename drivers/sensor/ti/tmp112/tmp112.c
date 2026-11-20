@@ -157,13 +157,11 @@ static int tmp112_attr_set(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		/* conversion rate in mHz */
 		cr = val->val1 * 1000 + val->val2 / 1000;
-		drv_data->one_shot = false;
 
 		/* the sensor supports 0 (shutdown/one-shot), 0.25, 1, 4 and 8 Hz */
 		switch (cr) {
 		case 0:
 			value = TMP112_CONFIG_SD;
-			drv_data->one_shot = true;
 			break;
 
 		case 250:
@@ -192,6 +190,7 @@ static int tmp112_attr_set(const struct device *dev, enum sensor_channel chan,
 			return -EIO;
 		}
 
+		drv_data->one_shot = (cr == 0);
 		break;
 #endif
 
