@@ -1004,6 +1004,24 @@ int bt_br_init(void)
 		}
 	}
 
+	if (bt_dev_cmd_supported(BT_DEV_CMD_SET_MIN_ENCRYPTION_KEY_SIZE)) {
+		struct bt_hci_cp_set_min_encryption_key_size *key_size_cp;
+
+		buf = bt_hci_cmd_alloc(K_FOREVER);
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		key_size_cp = net_buf_add(buf, sizeof(*key_size_cp));
+		key_size_cp->min_encryption_key_size = CONFIG_BT_BR_MIN_ENC_KEY_SIZE;
+
+		/* Not fatal: br_sufficient_key_size() checks the negotiated size in any case */
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_SET_MIN_ENCRYPTION_KEY_SIZE, buf, NULL);
+		if (err != 0) {
+			LOG_WRN("Failed to set minimum encryption key size (err %d)", err);
+		}
+	}
+
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_DEFAULT_LINK_POLICY_SETTINGS, NULL, &rsp);
 	if (err) {
 		return err;

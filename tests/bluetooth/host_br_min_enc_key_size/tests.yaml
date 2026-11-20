@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
+
+tests:
+  bluetooth.host_br_min_enc_key_size:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  bluetooth.host_br_min_enc_key_size.key_size_8:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+    extra_configs:
+      - CONFIG_BT_BR_MIN_ENC_KEY_SIZE=8
+  bluetooth.host_br_min_enc_key_size.no_reset:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay;no_reset.overlay"
