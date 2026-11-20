@@ -23,4 +23,7 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 configdefault LV_Z_DRAW_DMA2D_HAL_INCLUDE
 	default "stm32f7xx.h" if LVGL && LV_Z_DRAW_DMA2D
 
+configdefault CACHE_MANAGEMENT
+	default y
+
 endif # SOC_SERIES_STM32F7X
