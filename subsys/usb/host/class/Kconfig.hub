@@ -1,15 +1,6 @@
 # SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config USBH_HUB_CLASS
-	bool "USB Host Hub Class Driver"
-	default y
-	help
-	  Enable USB Host Hub Class driver support.
-	  This allows connecting USB hubs and managing downstream devices.
-
-if USBH_HUB_CLASS
-
 config USBH_HUB_MAX_LEVELS
 	int "Maximum Hub chain depth"
 	default 5
@@ -57,6 +48,17 @@ config USBH_HUB_ERROR_RECOVERY_DELAY_MS
 	  Delay before retrying after serious errors.
 	  Longer delays help avoid flooding the bus.
 
+config USBH_HUB_ROOT_POLL_INTERVAL_MS
+	int "Root hub status polling interval (ms)"
+	default 250
+	range 100 250
+	help
+	  Interval at which the root hub status is polled for changes such as
+	  a device connection or disconnection. The USB 2.0 specification allows
+	  a hub status change endpoint interval of up to 256 ms, so the default
+	  is 250 ms. Lower values shorten the delay before a connection or
+	  disconnection is noticed at the cost of more frequent wakeups.
+
 config USBH_HUB_INIT_PRIO
 	int
 	default 89
@@ -68,5 +70,3 @@ module-str = usbh hub
 default-count = 7
 source "subsys/logging/Kconfig.template.log_config"
 source "subsys/usb/common/Kconfig.template.instances_count"
-
-endif # USBH_HUB_CLASS

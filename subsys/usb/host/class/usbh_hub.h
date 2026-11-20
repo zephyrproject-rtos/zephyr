@@ -8,6 +8,7 @@
 #define _USBH_HUB_H_
 
 #include <zephyr/sys/slist.h>
+#include <zephyr/net_buf.h>
 #include "usbh_ch11.h"
 
 #define USBH_HUB_INT_BUFFER_SIZE 8
@@ -34,6 +35,7 @@ struct usbh_hub_data {
 	const struct usb_ep_descriptor *int_ep;
 	struct uhc_transfer *interrupt_transfer;
 	struct k_work hub_work;
+	struct k_work_delayable rh_status_work;
 	struct k_mutex lock;
 	union {
 		struct usb_hub_descriptor hub_desc;
@@ -41,6 +43,7 @@ struct usbh_hub_data {
 	};
 	struct usb_hub_status status;
 	uint8_t int_buffer[USBH_HUB_INT_BUFFER_SIZE];
+	struct net_buf_simple rh_status;
 	enum usbh_hub_state state;
 	uint8_t port_count;
 	bool connected;
