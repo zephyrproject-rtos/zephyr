@@ -10,3 +10,8 @@ include: eeprom-base.yaml
 properties:
   size:
     required: true
+  memory-region:
+    type: phandle
+    description: |
+      Memory region used by the simulated EEPROM. If this option is used
+      the memory that is used by the simulated EEPROM is not erased.
