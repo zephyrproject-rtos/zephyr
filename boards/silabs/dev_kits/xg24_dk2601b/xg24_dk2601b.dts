@@ -104,6 +104,8 @@
 		regulator-boot-on;
 		regulator-name = "sensor_enable";
 		enable-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+		/* BMP384 start-up time */
+		startup-delay-us = <2000>;
 	};
 
 	exp_header: exp-header {
@@ -250,6 +252,7 @@
 	si7021: si7021@40 {
 		compatible = "silabs,si7006";
 		reg = <0x40>;
+		vin-supply = <&sensor_enable>;
 	};
 
 	bmp384: bmp384@77 {
