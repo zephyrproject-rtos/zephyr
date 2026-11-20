@@ -28,6 +28,17 @@ struct twt_interval_float {
 	unsigned char exponent;
 };
 
+enum nrf_wifi_twt_state_change {
+	/* Setup request sent, waiting for the response */
+	NRF_WIFI_TWT_SETUP_INITIATED,
+	/* Setup negotiation finished and the flow was accepted */
+	NRF_WIFI_TWT_SETUP_ACCEPTED,
+	/* Setup ended without a flow: rejected by the peer or the request could not be sent */
+	NRF_WIFI_TWT_SETUP_FAILED,
+	/* Flow was torn down */
+	NRF_WIFI_TWT_TEARDOWN,
+};
+
 int nrf_wifi_set_power_save(const struct device *dev,
 			    struct net_if *iface,
 			    struct wifi_ps_params *params);
