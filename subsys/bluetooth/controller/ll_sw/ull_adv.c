@@ -1386,6 +1386,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		if (lll->aux) {
 			struct lll_adv_aux *lll_aux = lll->aux;
 			uint32_t ticks_slot_overhead_aux;
+			const struct pdu_adv *sec_pdu;
 			uint32_t ticks_anchor_aux;
 			uint64_t interval_us;
 
@@ -1403,14 +1404,26 @@ uint8_t ll_adv_enable(uint8_t enable)
 			 */
 			ticks_anchor_aux =
 				ticks_anchor + ticks_slot +
-				HAL_TICKER_US_TO_TICKS(
+					HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
 					(EVENT_TICKER_RES_MARGIN_US << 1));
 
+			/* Time reservation uses the auxiliary PDU that has
+			 * the SyncInfo added, it is enqueued only after the
+			 * auxiliary and periodic advertising events are
+			 * started.
+			 */
+			sec_pdu = lll_adv_aux_data_peek(lll_aux);
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			if (sync != NULL) {
+				sec_pdu = (void *)lll_aux->data.pdu[sec_idx];
+			}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
 			ticks_slot_overhead_aux =
-				ull_adv_aux_evt_init(aux, &ticks_anchor_aux);
+				ull_adv_aux_evt_init(aux, sec_pdu, &ticks_anchor_aux);
 
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 			/* Start periodic advertising if enabled and not already
@@ -1427,7 +1440,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 						PDU_AC_PAYLOAD_SIZE_MAX,
 						PDU_AC_PAYLOAD_SIZE_MAX);
 				ticks_slot_aux =
-					HAL_TICKER_US_TO_TICKS(us_slot) +
+					HAL_TICKER_US_TO_TICKS_CEIL(us_slot) +
 					ticks_slot_overhead_aux;
 #else
 				ticks_slot_aux = aux->ull.ticks_slot +
@@ -1448,7 +1461,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 				 */
 				uint32_t ticks_anchor_sync = ticks_anchor_aux +
 					ticks_slot_aux +
-					HAL_TICKER_US_TO_TICKS(
+					HAL_TICKER_US_TO_TICKS_CEIL(
 						MAX(EVENT_MAFS_US,
 						    EVENT_OVERHEAD_START_US) -
 						EVENT_OVERHEAD_START_US +

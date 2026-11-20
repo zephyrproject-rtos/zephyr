@@ -14,6 +14,7 @@ target_link_libraries(app PRIVATE
 
 target_sources(app PRIVATE
   "src/main.c"
+  "src/aux_time.c"
   "src/scan_req_tgta.c"
   "src/anonymous.c"
   "src/connect.c"
@@ -23,4 +24,8 @@ zephyr_include_directories(
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
   ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/include
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic/lll
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/util
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/hal
   )

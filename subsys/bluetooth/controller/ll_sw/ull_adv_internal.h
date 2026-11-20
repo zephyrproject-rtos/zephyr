@@ -85,7 +85,7 @@ uint8_t ull_adv_aux_chm_update(void);
 
 /* helper function to initialize event timings */
 uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
-			      uint32_t *ticks_anchor);
+			   const struct pdu_adv *pdu, uint32_t *ticks_anchor);
 
 /* helper function to start auxiliary advertising */
 uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
@@ -104,8 +104,8 @@ void ull_adv_aux_release(struct ll_adv_aux_set *aux);
 struct ll_adv_aux_set *ull_adv_aux_get(uint8_t handle);
 
 /* helper function to return time reservation for auxiliary PDU */
-uint32_t ull_adv_aux_time_get(const struct ll_adv_aux_set *aux, uint8_t pdu_len,
-			      uint8_t pdu_scan_len);
+uint32_t ull_adv_aux_time_get(const struct ll_adv_aux_set *aux, uint16_t pdu_len,
+			      uint16_t pdu_scan_len);
 
 /* helper function to schedule a mayfly to get aux offset */
 void ull_adv_aux_offset_get(struct ll_adv_set *adv);
