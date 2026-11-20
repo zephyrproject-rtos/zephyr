@@ -600,21 +600,22 @@ static void modem_ppp_process_handler(struct k_work *item)
 	struct modem_ppp *ppp = CONTAINER_OF(item, struct modem_ppp, process_work);
 	int ret;
 
-	ret = modem_pipe_receive(ppp->pipe, ppp->receive_buf, ppp->buf_size);
-	if (ret < 1) {
-		return;
-	}
-
+	/*
+	 * Drain the pipe before returning. When it is a CMUX DLCI, the CMUX receive work on the
+	 * same workqueue can put several frames in the DLCI buffer at every run, much more than
+	 * buf_size: reading only buf_size per run lets that buffer overrun.
+	 */
+	while ((ret = modem_pipe_receive(ppp->pipe, ppp->receive_buf, ppp->buf_size)) > 0) {
 #if CONFIG_MODEM_STATS
-	advertise_receive_buf_stats(ppp, ret);
+		advertise_receive_buf_stats(ppp, ret);
 #endif
 
-	for (int i = 0; i < ret; i++) {
-		i += modem_ppp_process_received_bytes_fast(ppp, &ppp->receive_buf[i], ret - i);
-		modem_ppp_process_received_byte(ppp, ppp->receive_buf[i]);
+		for (int i = 0; i < ret; i++) {
+			i += modem_ppp_process_received_bytes_fast(ppp, &ppp->receive_buf[i],
+								   ret - i);
+			modem_ppp_process_received_byte(ppp, ppp->receive_buf[i]);
+		}
 	}
-
-	modem_work_submit(&ppp->process_work);
 }
 
 static void modem_ppp_ppp_api_init(struct net_if *iface)
