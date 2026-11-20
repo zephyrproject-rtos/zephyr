@@ -38,6 +38,9 @@
 #define ETH_SECTION Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME_TOKEN(ETH_DMA_REGION))
 #define __eth_stm32_desc __aligned(32) ETH_SECTION
 #define __eth_stm32_buf  __aligned(32) ETH_SECTION
+#elif defined(CONFIG_NOCACHE_MEMORY) && defined(CONFIG_SOC_SERIES_STM32N6X)
+#define __eth_stm32_desc __nocache __aligned(8)
+#define __eth_stm32_buf  __nocache __aligned(8)
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define __eth_stm32_desc __nocache __aligned(4)
 #define __eth_stm32_buf  __nocache __aligned(4)
