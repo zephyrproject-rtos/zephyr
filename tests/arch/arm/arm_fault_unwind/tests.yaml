@@ -1,0 +1,89 @@
+common:
+  tags:
+    - arm
+  arch_allow: arm
+  filter: CONFIG_CPU_AARCH32_CORTEX_A or CONFIG_CPU_AARCH32_CORTEX_R
+  harness: pytest
+  ignore_faults: true
+tests:
+  # QEMU waits for GDB, which checks the backtraces from the fault handlers.
+  # The GDB ports are unique so that Twister can run tests in parallel.
+  arch.arm.fault_unwind.gdb:
+    platform_allow:
+      - qemu_cortex_a9
+    integration_platforms:
+      - qemu_cortex_a9
+    harness_config:
+      pytest_root:
+        - "pytest/test_fault_unwind.py"
+      pytest_args:
+        - "--gdb_port"
+        - "1238"
+    extra_configs:
+      - CONFIG_QEMU_EXTRA_FLAGS="-S -gdb tcp::1238"
+      - CONFIG_QEMU_GDBSERVER_LISTEN_DEV=""
+  arch.arm.fault_unwind.gdb.extra_exception_info:
+    platform_allow:
+      - qemu_cortex_a9
+    integration_platforms:
+      - qemu_cortex_a9
+    harness_config:
+      pytest_root:
+        - "pytest/test_fault_unwind.py"
+      pytest_args:
+        - "--gdb_port"
+        - "1239"
+    extra_configs:
+      - CONFIG_FPU=n
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+      - CONFIG_QEMU_EXTRA_FLAGS="-S -gdb tcp::1239"
+      - CONFIG_QEMU_GDBSERVER_LISTEN_DEV=""
+  arch.arm.fault_unwind.gdb.no_fpu:
+    platform_allow:
+      - qemu_cortex_a9
+    integration_platforms:
+      - qemu_cortex_a9
+    harness_config:
+      pytest_root:
+        - "pytest/test_fault_unwind.py"
+      pytest_args:
+        - "--gdb_port"
+        - "1240"
+    extra_configs:
+      - CONFIG_FPU=n
+      - CONFIG_QEMU_EXTRA_FLAGS="-S -gdb tcp::1240"
+      - CONFIG_QEMU_GDBSERVER_LISTEN_DEV=""
+  # The fault dump only. GDB cannot resume the Cortex-R5 cluster of the
+  # Xilinx QEMU, so the user mode faults are checked this way.
+  arch.arm.fault_unwind.dump:
+    platform_allow:
+      - qemu_cortex_a9
+      - qemu_cortex_r5
+    integration_platforms:
+      - qemu_cortex_r5
+    harness_config:
+      pytest_root:
+        - "pytest/test_fault_unwind.py"
+  arch.arm.fault_unwind.dump.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    platform_allow:
+      - qemu_cortex_r5
+    integration_platforms:
+      - qemu_cortex_r5
+    harness_config:
+      pytest_root:
+        - "pytest/test_fault_unwind.py"
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+  arch.arm.fault_unwind.dump.userspace.extra_exception_info:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    platform_allow:
+      - qemu_cortex_r5
+    integration_platforms:
+      - qemu_cortex_r5
+    harness_config:
+      pytest_root:
+        - "pytest/test_fault_unwind.py"
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y

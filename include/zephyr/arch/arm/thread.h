@@ -47,7 +47,7 @@ struct _callee_saved {
 
 typedef struct _callee_saved _callee_saved_t;
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_CPU_CORTEX_M)
 struct _preempt_float {
 #ifndef _ARM_M_SWITCH
 	float  s16;
@@ -70,6 +70,19 @@ struct _preempt_float {
 };
 #endif
 
+#if (defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)) && \
+	defined(CONFIG_FPU_SHARING)
+/* FP context saved while another thread owns the FPU */
+struct z_arm_fp_context {
+#ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
+	uint64_t d[32];
+#else
+	uint64_t d[16];
+#endif
+	uint32_t fpscr;
+};
+#endif
+
 #if defined(CONFIG_ARM_PAC_PER_THREAD)
 struct pac_keys {
 	uint32_t key_0;
@@ -81,7 +94,7 @@ struct pac_keys {
 
 struct _thread_arch {
 
-#ifndef _ARM_M_SWITCH
+#if defined(CONFIG_CPU_CORTEX_M) && !defined(CONFIG_USE_SWITCH)
 	/* interrupt locking key */
 	uint32_t basepri;
 
@@ -94,7 +107,7 @@ struct _thread_arch {
 	uint32_t iciit_apsr;
 #endif
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_CPU_CORTEX_M)
 	/*
 	 * No cooperative floating point register set structure exists for
 	 * the Cortex-M as it automatically saves the necessary registers
@@ -108,6 +121,7 @@ struct _thread_arch {
 #endif
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE)
+#if defined(CONFIG_CPU_CORTEX_M)
 	/*
 	 * Status variable holding several thread status flags
 	 * as follows:
@@ -151,6 +165,7 @@ struct _thread_arch {
 		};
 #endif
 	};
+#endif /* CONFIG_CPU_CORTEX_M */
 
 #if defined(CONFIG_USERSPACE)
 	uint32_t priv_stack_start;
@@ -164,9 +179,18 @@ struct _thread_arch {
 #if defined(CONFIG_ARM_PAC_PER_THREAD)
 	struct pac_keys pac_keys;
 #endif
+
+#if (defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)) && \
+	defined(CONFIG_FPU_SHARING)
+	/* saved_fp_context holds nothing: the FPU starts with zeroed registers */
+	bool fp_context_empty;
+
+	/* Last, as it needs 8-byte alignment */
+	struct z_arm_fp_context saved_fp_context;
+#endif
 };
 
-#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_MPU_STACK_GUARD)
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_MPU_STACK_GUARD)
 #define Z_ARM_MODE_MPU_GUARD_FLOAT_Msk (1 << 3)
 #endif
 typedef struct _thread_arch _thread_arch_t;

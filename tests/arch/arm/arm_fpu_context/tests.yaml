@@ -1,0 +1,16 @@
+common:
+  tags:
+    - arm
+    - fpu
+  arch_allow:
+    - arm
+  filter: CONFIG_CPU_AARCH32_CORTEX_A or CONFIG_CPU_AARCH32_CORTEX_R
+  integration_platforms:
+    - qemu_cortex_a9
+    - qemu_cortex_r5
+tests:
+  arch.arm.fpu_context: {}
+  arch.arm.fpu_context.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_USERSPACE=y

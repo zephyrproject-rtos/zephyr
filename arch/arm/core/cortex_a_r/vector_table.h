@@ -31,13 +31,11 @@
 GTEXT(__start)
 GDATA(_vector_table)
 
-GTEXT(z_arm_nmi)
 GTEXT(z_arm_undef_instruction)
 GTEXT(z_arm_svc)
 GTEXT(z_arm_prefetch_abort)
 GTEXT(z_arm_data_abort)
 
-GTEXT(z_arm_pendsv)
 GTEXT(z_arm_reserved)
 
 GTEXT(z_prep_c)
