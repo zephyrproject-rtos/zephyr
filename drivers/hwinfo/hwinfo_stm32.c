@@ -13,6 +13,9 @@
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
+#if defined(CONFIG_SOC_SERIES_STM32H7PX)
+#include <stm32_ll_system.h>
+#endif /* CONFIG_SOC_SERIES_STM32H7PX */
 
 #if defined(CONFIG_SOC_SERIES_STM32MP13X) \
 	|| defined(CONFIG_SOC_SERIES_STM32MP2X)
