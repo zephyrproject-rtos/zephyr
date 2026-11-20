@@ -616,6 +616,59 @@ ZTEST(spi_loopback, test_spi_complete_large_transfers)
 			"Large Buffer contents are different");
 }
 
+#define LATE_IRQ_ROUNDS 10
+#define LATE_IRQ_MAX_LEN MIN(BUF3_SIZE, 64)
+static K_THREAD_STACK_DEFINE(late_irq_stack, 1024);
+static struct k_thread late_irq_thread;
+static atomic_t late_irq_stop;
+
+/* delay the interrupts of the transfer by a varying time, up to 40 us */
+static void late_irq_entry(void *p1, void *p2, void *p3)
+{
+	uint32_t us = 1;
+
+	while (!atomic_get(&late_irq_stop)) {
+		unsigned int key = irq_lock();
+
+		k_busy_wait(us);
+		irq_unlock(key);
+		k_busy_wait(3);
+		us = (us * 7U + 3U) % 41U;
+	}
+}
+
+/* A driver that refills its FIFOs from interrupts has to complete a transfer of any length
+ * whatever the fill level at the last refill. Late interrupts vary that level. They may also
+ * overrun a FIFO, which is reported as an error or as wrong data, so only the completion
+ * is checked: a driver that stops never returns.
+ */
+ZTEST(spi_loopback, test_spi_every_length_late_interrupts)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	const size_t step = DIV_ROUND_UP(FRAME_SIZE, BITS_PER_BYTE);
+
+	atomic_set(&late_irq_stop, 0);
+	k_thread_create(&late_irq_thread, late_irq_stack, K_THREAD_STACK_SIZEOF(late_irq_stack),
+			late_irq_entry, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(CONFIG_NUM_PREEMPT_PRIORITIES - 1), 0, K_NO_WAIT);
+	zassert_ok(pm_device_runtime_get(spec->bus));
+
+	for (int round = 0; round < LATE_IRQ_ROUNDS; round++) {
+		for (size_t len = 2 * step; len <= LATE_IRQ_MAX_LEN; len += step) {
+			const struct spi_buf_set tx = spi_loopback_setup_xfer(
+				tx_bufs_pool, 1, large_buffer_tx, step);
+			const struct spi_buf_set rx = spi_loopback_setup_xfer(
+				rx_bufs_pool, 2, NULL, step, large_buffer_rx, len - step);
+
+			(void)spi_transceive_dt(spec, &tx, &rx);
+		}
+	}
+
+	zassert_ok(pm_device_runtime_put(spec->bus));
+	atomic_set(&late_irq_stop, 1);
+	zassert_ok(k_thread_join(&late_irq_thread, K_SECONDS(1)));
+}
+
 ZTEST(spi_loopback, test_spi_null_tx_buf_set)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
