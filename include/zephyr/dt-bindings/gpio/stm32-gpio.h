@@ -39,6 +39,11 @@
 #define STM32_GPIO_SPEED_MASK  0x3
 /** @endcond */
 
+/**
+ * @name GPIO output speed
+ * @{
+ */
+
 /** Configure the GPIO pin output speed to be low */
 #define STM32_GPIO_LOW_SPEED (0x0 << STM32_GPIO_SPEED_SHIFT)
 
@@ -50,6 +55,8 @@
 
 /** Configure the GPIO pin output speed to be very high */
 #define STM32_GPIO_VERY_HIGH_SPEED (0x3 << STM32_GPIO_SPEED_SHIFT)
+
+/** @} */
 
 /** @} */
 

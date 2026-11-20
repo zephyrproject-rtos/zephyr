@@ -42,6 +42,13 @@
 /** Set pin voltage level at 1.8 V */
 #define ENE_GPIO_VOLTAGE_1P8     (1U << ENE_GPIO_VOLTAGE_POS)
 
+/** @} */
+
+/**
+ * @name GPIO pin driving current flags
+ * @{
+ */
+
 /** Set pin at the default driving current (4mA) */
 #define ENE_GPIO_DRIVING_DEFAULT (0U << ENE_GPIO_DRIVING_POS)
 /** Set pin driving current at 16mA */
