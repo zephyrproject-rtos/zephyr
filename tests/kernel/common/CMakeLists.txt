@@ -16,6 +16,7 @@ target_sources(app PRIVATE
   src/byteorder.c
   src/clock.c
   src/main.c
+  src/nonblocking.c
   src/timeout_order.c
   src/multilib.c
   src/errno.c

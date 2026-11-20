@@ -2649,6 +2649,7 @@ PREDEFINED             = __DOXYGEN__ \
                          __sparse_cache= \
                          __packed= \
                          __aligned(x)= \
+                         __nonblocking= \
                          __attribute_nonnull(...)= \
                          "__printf_like(x, y)=" \
                          __attribute__(x)= \

@@ -30,6 +30,17 @@
 #define TOOLCHAIN_HAS_C_AUTO_TYPE 1
 #endif
 
+/*
+ * Clang 19 parses nonblocking without checking callees, yet warns by default
+ * when declarations of a function disagree on it.
+ */
+#if !defined(__nonblocking) && (TOOLCHAIN_CLANG_VERSION >= 200000)
+#define __nonblocking                       __attribute__((nonblocking))
+#define TOOLCHAIN_HAS_NONBLOCKING           1
+#define TOOLCHAIN_DISABLE_NONBLOCKING_CHECK TOOLCHAIN_DISABLE_CLANG_WARNING("-Wfunction-effects")
+#define TOOLCHAIN_ENABLE_NONBLOCKING_CHECK  TOOLCHAIN_ENABLE_CLANG_WARNING("-Wfunction-effects")
+#endif
+
 #include <zephyr/toolchain/gcc.h>
 
 /* clear out common version. The build assert assert from gcc.h is defined to be empty */

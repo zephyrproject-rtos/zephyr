@@ -174,9 +174,16 @@ void nsif_cpu0_irq_raised_from_sw(void)
  * "interrupt disable state" prior to the call.
  *
  */
-unsigned int posix_irq_lock(void)
+unsigned int posix_irq_lock(void) __nonblocking
 {
-	return hw_irq_ctrl_change_lock(true);
+	unsigned int key;
+
+	/* The simulated interrupt controller only records the new lock state */
+	TOOLCHAIN_DISABLE_NONBLOCKING_CHECK;
+	key = hw_irq_ctrl_change_lock(true);
+	TOOLCHAIN_ENABLE_NONBLOCKING_CHECK;
+
+	return key;
 }
 
 /**
@@ -188,9 +195,12 @@ unsigned int posix_irq_lock(void)
  *
  * This routine can be called from either interrupt, task or fiber level.
  */
-void posix_irq_unlock(unsigned int key)
+void posix_irq_unlock(unsigned int key) __nonblocking
 {
+	/* As on hardware, an interrupt pending at unlock runs at once */
+	TOOLCHAIN_DISABLE_NONBLOCKING_CHECK;
 	hw_irq_ctrl_change_lock(key);
+	TOOLCHAIN_ENABLE_NONBLOCKING_CHECK;
 }
 
 void posix_irq_full_unlock(void)
