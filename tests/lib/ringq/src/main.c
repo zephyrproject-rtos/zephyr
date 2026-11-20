@@ -118,3 +118,11 @@ ZTEST(sys_ringq_api, test_stress)
 	zassert_mem_equal(input, output, ARRAY_SIZE(input) * sizeof(input[0]),
 			  "sys_ringq get should return the same data as put");
 }
+
+SYS_RINGQ_DEFINE_STATIC(test_macro2, sizeof(struct element), 4);
+
+ZTEST(sys_ringq_api, test_use_static)
+{
+	zassert_true(sys_ringq_empty(&test_macro2));
+	zassert_equal(sys_ringq_capacity(&test_macro2), 4);
+}

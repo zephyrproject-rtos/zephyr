@@ -61,6 +61,20 @@ struct sys_ringq {
 					       (item_capacity))
 
 /**
+ * @brief Define and initialize a ring queue a private (static) scope.
+ *
+ * Same as @ref SYS_RINGQ_DEFINE but places the ring queue in a private (static) scope.
+ *
+ * @param name Name of the ringq instance.
+ * @param item_size Size of each ringq element (in bytes).
+ * @param item_capacity capacity (in number of elements).
+ */
+#define SYS_RINGQ_DEFINE_STATIC(name, item_size, item_capacity)					\
+	static uint8_t __noinit CONCAT(_ringq_data_, name)[(item_size) * (item_capacity)];	\
+	static struct sys_ringq name = SYS_RINGQ_INIT(CONCAT(_ringq_data_, name), (item_size),	\
+						      (item_capacity))
+
+/**
  * @brief Initialize a ringq queue.
  *
  * This routine initializes a ringq queue.
