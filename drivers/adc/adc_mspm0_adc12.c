@@ -44,6 +44,8 @@ LOG_MODULE_REGISTER(adc_mspm0);
 #define ADC_MSPM0_SCOMP0                 0
 #define ADC_MSPM0_SCOMP1                 1
 #define ADC_MSPM0_WAKEUP_TIME_NS         5000
+/* Longest 12-bit tSample minimum in the MSPM0 datasheets (L series, RS = 50 ohm) */
+#define ADC_MSPM0_MIN_SAMPLE_TIME_NS     156
 #define ADC_MSPM0_NS_PER_SEC             1000000000
 #define INT_VREF                         BIT(0)
 #define EXT_VREF                         BIT(1)
@@ -147,6 +149,7 @@ static int adc_mspm0_validate_sampling_time(const struct adc_mspm0_cfg *config, 
 {
 	uint32_t clock_rate;
 	uint32_t period_ns;
+	uint32_t min_cycles;
 	int ret;
 	uint8_t wakeup_cycles;
 
@@ -156,9 +159,12 @@ static int adc_mspm0_validate_sampling_time(const struct adc_mspm0_cfg *config, 
 		return ret;
 	}
 
+	period_ns = ADC_MSPM0_NS_PER_SEC / (clock_rate / config->divider);
+	min_cycles = DIV_ROUND_UP(ADC_MSPM0_MIN_SAMPLE_TIME_NS, period_ns);
+
 	if (!config->auto_pwdn) {
 		if (acq_time == ADC_ACQ_TIME_DEFAULT) {
-			return 0;
+			return min_cycles;
 		}
 
 		if ((ADC_ACQ_TIME_UNIT(acq_time) == ADC_ACQ_TIME_TICKS) &&
@@ -168,12 +174,11 @@ static int adc_mspm0_validate_sampling_time(const struct adc_mspm0_cfg *config, 
 			return -EINVAL;
 		}
 	} else {
-		period_ns = ADC_MSPM0_NS_PER_SEC / (clock_rate / config->divider);
 		/* Wakeup time is 5us for both l and g mspm0 series */
 		wakeup_cycles = ADC_MSPM0_WAKEUP_TIME_NS / period_ns;
 
 		if (acq_time == ADC_ACQ_TIME_DEFAULT) {
-			return wakeup_cycles + 1;
+			return wakeup_cycles + min_cycles;
 		}
 
 		if (ADC_ACQ_TIME_UNIT(acq_time) != ADC_ACQ_TIME_TICKS) {
