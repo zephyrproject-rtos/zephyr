@@ -168,6 +168,23 @@ static int mcux_flexcomm_status_to_errno(status_t status)
 	}
 }
 
+/*
+ * Used instead of I2C_MasterTransferAbort(): on a stuck bus that one only returns if
+ * FSL_FEATURE_I2C_TIMEOUT_RECOVERY or I2C_RETRY_TIMES is set, otherwise it waits forever.
+ */
+static void mcux_flexcomm_abort_timed_out(I2C_Type *base, i2c_master_handle_t *handle)
+{
+	I2C_DisableInterrupts(base, I2C_INTSTAT_MSTPENDING_MASK | I2C_INTSTAT_MSTARBLOSS_MASK |
+				    I2C_INTSTAT_MSTSTSTPERR_MASK | I2C_INTSTAT_EVENTTIMEOUT_MASK |
+				    I2C_INTSTAT_SCLTIMEOUT_MASK);
+	I2C_MasterEnable(base, false);
+	I2C_MasterEnable(base, true);
+	I2C_ClearStatusFlags(base, kI2C_MasterAllClearFlags | kI2C_EventTimeoutFlag |
+				   kI2C_SclTimeoutFlag);
+	handle->state = (uint8_t)kIdleState;
+	handle->checkAddrNack = false;
+}
+
 static int mcux_flexcomm_transfer(const struct device *dev,
 				  struct i2c_msg *msgs,
 				  uint8_t num_msgs, uint16_t addr)
@@ -208,6 +225,9 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		transfer.data = msgs->buf;
 		transfer.dataSize = msgs->len;
 
+		/* Drop a completion that arrived after an earlier timeout */
+		k_sem_reset(&data->device_sync_sem);
+
 		/* Start the transfer */
 		status = I2C_MasterTransferNonBlocking(base,
 				&data->handle, &transfer);
@@ -222,7 +242,11 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		}
 
 		/* Wait for the transfer to complete */
-		k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT_MSEC);
+		if (k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT_MSEC) != 0) {
+			mcux_flexcomm_abort_timed_out(base, &data->handle);
+			ret = -ETIMEDOUT;
+			break;
+		}
 
 		/* Return an error if the transfer didn't complete
 		 * successfully. e.g., nak, timeout, lost arbitration
