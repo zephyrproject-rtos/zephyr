@@ -55,8 +55,8 @@ const struct {
 int16_t BTLE_LL_SetMaxPower(int16_t power);
 bool sli_pending_btctrl_events(void);
 
-static bool slz_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8_t *params,
-				   int16_t params_len)
+static bool efr_hci_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8_t *params,
+				       int16_t params_len)
 {
 	switch (hdr->evt) {
 	case BT_HCI_EVT_LE_META_EVENT: {
@@ -99,7 +99,7 @@ static bool slz_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8
 	}
 }
 
-static struct net_buf *slz_bt_recv_evt(const uint8_t *data, const uint16_t len)
+static struct net_buf *efr_hci_recv_evt(const uint8_t *data, const uint16_t len)
 {
 	struct net_buf *buf;
 	bool discardable;
@@ -113,7 +113,7 @@ static struct net_buf *slz_bt_recv_evt(const uint8_t *data, const uint16_t len)
 		return NULL;
 	}
 
-	discardable = slz_is_evt_discardable(hdr, params, params_len);
+	discardable = efr_hci_is_evt_discardable(hdr, params, params_len);
 	buf = bt_buf_get_evt(hdr->evt, discardable, discardable ? K_NO_WAIT : K_FOREVER);
 	if (!buf) {
 		LOG_DBG("Discardable buffer pool full, ignoring event");
@@ -132,7 +132,7 @@ static struct net_buf *slz_bt_recv_evt(const uint8_t *data, const uint16_t len)
 	return buf;
 }
 
-static struct net_buf *slz_bt_recv_acl(const uint8_t *data, const uint16_t len)
+static struct net_buf *efr_hci_recv_acl(const uint8_t *data, const uint16_t len)
 {
 	struct net_buf *buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 	size_t buf_tailroom = net_buf_tailroom(buf);
@@ -148,7 +148,7 @@ static struct net_buf *slz_bt_recv_acl(const uint8_t *data, const uint16_t len)
 	return buf;
 }
 
-static struct net_buf *slz_bt_recv_pkt(const uint8_t *data, int16_t len)
+static struct net_buf *efr_hci_recv_pkt(const uint8_t *data, int16_t len)
 {
 	uint8_t packet_type;
 
@@ -166,9 +166,9 @@ static struct net_buf *slz_bt_recv_pkt(const uint8_t *data, int16_t len)
 
 	switch (packet_type) {
 	case BT_HCI_H4_EVT:
-		return slz_bt_recv_evt(data, len);
+		return efr_hci_recv_evt(data, len);
 	case BT_HCI_H4_ACL:
-		return slz_bt_recv_acl(data, len);
+		return efr_hci_recv_acl(data, len);
 	default:
 		LOG_ERR("Unknown HCI type: %d", packet_type);
 		return NULL;
@@ -197,7 +197,7 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 	return 0;
 }
 
-static int slz_bt_send(const struct device *dev, struct net_buf *buf)
+static int efr_hci_send(const struct device *dev, struct net_buf *buf)
 {
 	int rv;
 
@@ -219,7 +219,7 @@ static int slz_bt_send(const struct device *dev, struct net_buf *buf)
  * or an HCI event to pass upstairs. The sl_btctrl_process_events function call will
  * take care of all of them, and add HCI events to the HCI queue when applicable.
  */
-static void slz_ll_thread_func(void *p1, void *p2, void *p3)
+static void efr_hci_ll_thread_func(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
 	struct efr_hci_data *hci = dev->data;
@@ -236,7 +236,7 @@ static void slz_ll_thread_func(void *p1, void *p2, void *p3)
 	}
 }
 
-static void slz_rx_thread_func(void *p1, void *p2, void *p3)
+static void efr_hci_rx_thread_func(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
 	struct efr_hci_data *hci = dev->data;
@@ -248,7 +248,7 @@ static void slz_rx_thread_func(void *p1, void *p2, void *p3)
 		struct net_buf *buf;
 
 		(void)k_sem_take(&hci->rx_sem, K_FOREVER);
-		buf = slz_bt_recv_pkt(hci->rx_pkt.data, hci->rx_pkt.len);
+		buf = efr_hci_recv_pkt(hci->rx_pkt.data, hci->rx_pkt.len);
 		/* From here on the Controller may hand over its next packet in rx_pkt */
 		sl_btctrl_hci_transmit_complete(0);
 
@@ -258,7 +258,7 @@ static void slz_rx_thread_func(void *p1, void *p2, void *p3)
 	}
 }
 
-static void slz_set_tx_power(int16_t max_power_dbm)
+static void efr_hci_set_tx_power(int16_t max_power_dbm)
 {
 	const int16_t max_power_cbm = max_power_dbm * 10;
 	const int16_t actual_max_power_cbm = BTLE_LL_SetMaxPower(max_power_cbm);
@@ -270,7 +270,7 @@ static void slz_set_tx_power(int16_t max_power_dbm)
 	}
 }
 
-static int slz_bt_open(const struct device *dev)
+static int efr_hci_open(const struct device *dev)
 {
 	struct efr_hci_data *hci = dev->data;
 	int ret;
@@ -281,7 +281,7 @@ static int slz_bt_open(const struct device *dev)
 	BUILD_ASSERT(CONFIG_BT_SILABS_EFR32_LL_THREAD_PRIO < CONFIG_NUM_METAIRQ_PRIORITIES,
 		     "Config BT_SILABS_EFR32_LL_THREAD_PRIO must be a meta-IRQ priority");
 
-	/* slz_bt_close() and a failed open stop the threads before sl_btctrl_deinit(), so events
+	/* efr_hci_close() and a failed open stop the threads before sl_btctrl_deinit(), so events
 	 * raised in between by sl_btctrl_raise_events() and a packet handed over in rx_pkt can
 	 * be left over. Drop them: the LL thread starts before sl_btctrl_init() and would pass
 	 * stale events to sl_btctrl_process_events() on a deinitialized Controller, and the HCI RX
@@ -292,12 +292,12 @@ static int slz_bt_open(const struct device *dev)
 	k_sem_reset(&hci->rx_sem);
 
 	k_thread_create(&hci->ll_thread, hci->ll_stack, K_KERNEL_STACK_SIZEOF(hci->ll_stack),
-			slz_ll_thread_func, (void *)dev, NULL, NULL,
+			efr_hci_ll_thread_func, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_SILABS_EFR32_LL_THREAD_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(&hci->ll_thread, "EFR32 LL");
 
 	k_thread_create(&hci->rx_thread, hci->rx_stack, K_KERNEL_STACK_SIZEOF(hci->rx_stack),
-			slz_rx_thread_func, (void *)dev, NULL, NULL,
+			efr_hci_rx_thread_func, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(&hci->rx_thread, "EFR32 HCI RX");
 
@@ -311,7 +311,7 @@ static int slz_bt_open(const struct device *dev)
 		goto deinit;
 	}
 
-	slz_set_tx_power(CONFIG_BT_CTLR_TX_PWR_ANTENNA);
+	efr_hci_set_tx_power(CONFIG_BT_CTLR_TX_PWR_ANTENNA);
 
 	if (IS_ENABLED(CONFIG_PM)) {
 		sl_rail_timer_sync_config_t timer_sync_config = SL_RAIL_TIMER_SYNC_DEFAULT;
@@ -348,7 +348,7 @@ deinit:
 	return ret;
 }
 
-static int slz_bt_close(const struct device *dev)
+static int efr_hci_close(const struct device *dev)
 {
 	struct efr_hci_data *hci = dev->data;
 
@@ -394,9 +394,9 @@ static int efr_hci_init(const struct device *dev)
 }
 
 static DEVICE_API(bt_hci, drv) = {
-	.open           = slz_bt_open,
-	.close          = slz_bt_close,
-	.send           = slz_bt_send,
+	.open           = efr_hci_open,
+	.close          = efr_hci_close,
+	.send           = efr_hci_send,
 };
 
 #define HCI_DEVICE_INIT(inst) \
