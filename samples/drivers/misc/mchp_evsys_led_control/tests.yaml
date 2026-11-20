@@ -1,0 +1,11 @@
+sample:
+  name: Mchp Evsys led control Sample
+tests:
+  sample.drivers.misc.mchp_evsys_led_control:
+    tags:
+      - evsys
+    filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds")
+    depends_on: gpio
+    harness: led
+    integration_platforms:
+      - sam_e54_xpro
