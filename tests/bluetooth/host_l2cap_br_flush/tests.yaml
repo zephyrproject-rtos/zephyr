@@ -1,0 +1,22 @@
+common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host_l2cap_br_flush: {}
+  bluetooth.host_l2cap_br_flush.stream:
+    extra_configs:
+      - CONFIG_BT_L2CAP_STREAM=y
+  bluetooth.host_l2cap_br_flush.min_timeout:
+    extra_configs:
+      - CONFIG_BT_L2CAP_TX_FLUSH_TO=1
+  bluetooth.host_l2cap_br_flush.disabled:
+    extra_configs:
+      - CONFIG_BT_L2CAP_TX_FLUSH_TO=0
