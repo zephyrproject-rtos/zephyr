@@ -886,6 +886,15 @@ class BoardSupportedHardwareDirective(SphinxDirective):
             result_nodes.append(note)
             return result_nodes
 
+        if any(payload["features"] for payload in supported_features.values()):
+            finder_paragraph = nodes.paragraph()
+            finder_paragraph += nodes.Text("The names in ")
+            finder_paragraph += nodes.emphasis(text="Identifiers")
+            finder_paragraph += nodes.Text(" can be typed into the ")
+            finder_paragraph += _board_catalog_xref({}, nodes.Text("board finder"))
+            finder_paragraph += nodes.Text(" to list other boards with the same hardware.")
+            result_nodes.append(finder_paragraph)
+
         html_contents = """<div class="legend admonition">
   <dl class="supported-hardware field-list">
     <dt>
@@ -900,15 +909,18 @@ class BoardSupportedHardwareDirective(SphinxDirective):
       <span class="count disabled-count">2</span>
     </dt>
     <dd>
-      Number of instances that are enabled / disabled. <br/>
-      Click on the label to see the first instance of this feature in the board/SoC DTS files.
+      Number of instances that are enabled / not enabled in this board's devicetree.
+      An enabled instance still needs its driver enabled in Kconfig. <br/>
+      Click on the label to open the file that describes the first one.
     </dd>
     <dt>
       <code class="docutils literal notranslate"><span class="pre">vnd,foo</span></code>
     </dt>
     <dd>
-      Compatible string for the Devicetree binding matching the feature. <br/>
-      Click on the link to view the binding documentation.
+      Names that identify this hardware to software, and that the board finder searches.
+      They are the names declared by this board's devices of this kind; the first one
+      selects the description shown here. <br/>
+      Click on a name to open its documentation, where there is some.
     </dd>
   </dl>
 </div>"""
@@ -972,9 +984,11 @@ class BoardSupportedHardwareDirective(SphinxDirective):
 
             thead = nodes.thead()
             row = nodes.row()
-            headers = ["Type", "Location", "Description", "Compatible"]
+            headers = ["Type", "Location", "Description", "Identifiers"]
             for header in headers:
-                entry = nodes.entry(classes=[header.lower()])
+                entry = nodes.entry(
+                    classes=["compatible" if header == "Identifiers" else header.lower()]
+                )
                 entry += nodes.paragraph(text=header)
                 row += entry
             thead += row
@@ -992,10 +1006,10 @@ class BoardSupportedHardwareDirective(SphinxDirective):
             sorted_features = sorted(features.keys(), key=feature_sort_key)
 
             for feature in sorted_features:
-                items = list(features[feature].items())
+                items = list(features[feature].values())
                 num_items = len(items)
 
-                for i, (key, value) in enumerate(items):
+                for i, value in enumerate(items):
                     row = nodes.row()
 
                     # TYPE column
@@ -1082,16 +1096,20 @@ class BoardSupportedHardwareDirective(SphinxDirective):
 
                     # COMPATIBLE column
                     compatible_entry = nodes.entry(classes=["compatible"])
-                    xref = addnodes.pending_xref(
-                        "",
-                        refdomain="std",
-                        reftype="dtcompatible",
-                        reftarget=key,
-                        refexplicit=False,
-                        refwarn=(not value.get("custom_binding", False)),
-                    )
-                    xref += nodes.literal(text=key)
-                    compatible_entry += nodes.paragraph("", "", xref)
+                    for compatible_index, compatible in enumerate(value["compatibles"]):
+                        is_primary = compatible_index == 0
+                        xref = addnodes.pending_xref(
+                            "",
+                            refdomain="std",
+                            reftype="dtcompatible",
+                            reftarget=compatible,
+                            refexplicit=False,
+                            refwarn=(is_primary and not value.get("custom_binding", False)),
+                        )
+                        xref += nodes.literal(text=compatible)
+                        compatible_entry += nodes.paragraph(
+                            "", "", xref, classes=[] if is_primary else ["secondary"]
+                        )
                     row += compatible_entry
 
                     tbody += row
