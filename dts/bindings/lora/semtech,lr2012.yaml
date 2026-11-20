@@ -1,0 +1,25 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: Semtech LR2012 LoRa Modem
+
+description: |
+  Semtech LR2012 LoRa Modem.
+  It supports 150-960MHz sub-GHz ISM bands only.
+  On top of this, LR2012 loses FLRC, O-QPSK, Z-Wave and BLE support compared to LR2021.
+
+compatible: "semtech,lr2012"
+
+include: semtech,lr20xx-base.yaml
+
+properties:
+  reset-gpios:
+    required: true
+  busy-gpios:
+    required: true
+  irq-gpios:
+    required: true
+  dio-functions:
+    required: true
+  dio-sleep-pulls:
+    required: true

@@ -285,30 +285,15 @@ static int lr11xx_set_tx(const struct device *dev, uint32_t timeout_ms)
 	return lr11xx_hal_write_cmd(dev, LR11XX_CMD_SET_TX, buf, 3);
 }
 
-static int lr11xx_set_stop_timer_on_preamble(const struct device *dev,
-					    bool enable)
-{
-	uint8_t val = enable;
-
-	return lr11xx_hal_write_cmd(dev, LR11XX_CMD_STOP_TIMEOUT_ON_PREAMBLE,
-				    &val, 1);
-}
-
 static int lr11xx_set_rx_duty_cycle(const struct device *dev,
 				    uint32_t rx_period, uint32_t sleep_period)
 {
 	uint8_t buf[7];
-	int ret;
 
 	sys_put_be24(rx_period, &buf[0]);
 	sys_put_be24(sleep_period, &buf[3]);
 	/* Mode = RX mode, not CAD mode */
 	buf[6] = 0;
-
-	ret = lr11xx_set_stop_timer_on_preamble(dev, true);
-	if (ret < 0) {
-		return ret;
-	}
 
 	return lr11xx_hal_write_cmd(dev, LR11XX_CMD_SET_RX_DUTY_CYCLE, buf, 7);
 }
