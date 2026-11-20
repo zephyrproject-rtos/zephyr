@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  settings.load_error:
+    tags:
+      - settings
+    integration_platforms:
+      - native_sim
+      - mps2/an385

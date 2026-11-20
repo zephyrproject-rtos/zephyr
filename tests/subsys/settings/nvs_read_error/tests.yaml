@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - settings
+    - nvs
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - mps2/an385
+  integration_platforms:
+    - native_sim
+    - mps2/an385
+tests:
+  settings.nvs_read_error: {}
+  settings.nvs_read_error.cache:
+    extra_configs:
+      - CONFIG_SETTINGS_NVS_NAME_CACHE=y
+      - CONFIG_SETTINGS_NVS_NAME_CACHE_SIZE=4
