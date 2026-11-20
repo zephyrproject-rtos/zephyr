@@ -578,88 +578,10 @@ Here are more details on the peripherals that are currently provided with this b
 .. _SDL2:
    https://www.libsdl.org
 
-.. _nsim_per_video_fifo:
-
 **Video capture driver**
-  A video capture driver is provided that reads raw frames from a named pipe
-  (FIFO) on the host, and presents them through the :ref:`video_api` as an
-  ordinary ``zephyr,camera`` device. This makes it possible to feed an
-  application with frames coming from a real webcam, a video file, or a
-  generated test pattern, without any camera hardware.
-
-  The device can be instantiated using the :ref:`snippet-video-native-fifo`
-  snippet, or by adding a devicetree node with the
-  ``zephyr,native-sim-video-fifo`` compatible. The application selects the
-  pixel format and the frame size, up to 1920x1080, with
-  :c:func:`video_set_format`. The default is 320x240 RGB565. The host writer
-  must produce frames of that format, as the driver does no scaling or
-  conversion. In ``ffmpeg``, RGB565, YUYV and GREY are ``rgb565le``,
-  ``yuyv422`` and ``gray``.
-
-  The FIFO path is taken from the ``fifo-path`` devicetree property, and
-  defaults to ``/tmp/zephyr-<device>-<pid>.fifo``. Each instance exposes its own
-  command line override in the form ``--<device>=<path>``. For a node named
-  ``video-fifo`` this is ``--video-fifo=<path>``. A FIFO created by the driver
-  is removed when the simulator exits.
-
-  The FIFO is created by the driver when the application starts streaming. A
-  writer must therefore either create the FIFO itself, for instance with
-  ``mkfifo``, or be started afterwards. For example:
-
-  .. code-block:: console
-
-     $ mkfifo /tmp/zephyr-cam.fifo
-     $ zephyr.exe --video-fifo=/tmp/zephyr-cam.fifo
-
-  Then, from another terminal, feed it a test pattern in the default format:
-
-  .. code-block:: console
-
-     $ ffmpeg -re -f lavfi -i testsrc2=size=320x240:rate=10 \
-         -pix_fmt rgb565le -f rawvideo -y /tmp/zephyr-cam.fifo
-
-  To capture from a webcam instead:
-
-  .. code-block:: console
-
-     $ ffmpeg -f v4l2 -i /dev/video0 \
-         -vf "scale=320:240:force_original_aspect_ratio=increase,crop=320:240,fps=10" \
-         -pix_fmt rgb565le -f rawvideo -y /tmp/zephyr-cam.fifo
-
-  If the path exists but is not a FIFO, the driver prints an error and refuses
-  to start streaming. The FIFO is opened non-blocking and polled from a
-  dedicated thread, so the simulation is never blocked: while no host writer is
-  attached, no frame is delivered. If a writer disconnects in the middle of a
-  frame, the incomplete frame is discarded so that the next writer resumes on a
-  frame boundary.
-
-  Frames are handed to the application as soon as they arrive, without any
-  pacing of its own: the frame rate is entirely the one the host writer
-  produces. When the host has more data pending and the application still has a
-  free buffer, the driver keeps reading without waiting; ``poll-interval-ms``
-  only applies once the host has nothing more to offer.
-
-  The driver enlarges the host pipe to hold two frames. Unprivileged processes
-  are limited by ``/proc/sys/fs/pipe-max-size`` for each pipe (1 MiB by
-  default), and by ``/proc/sys/fs/pipe-user-pages-soft`` for all their pipes
-  together. When the pipe cannot hold two frames, the driver logs a warning, as
-  the frame rate may be limited: the host writer then waits for the driver to
-  make room, which it does every ``poll-interval-ms``. To avoid this, run
-  ``zephyr.exe`` with root privileges (or the CAP_SYS_RESOURCE POSIX
-  capability, to be exact), or raise the limit beforehand. 16 MiB fits two
-  frames of any supported format:
-
-  .. code-block:: console
-
-     $ sudo sysctl fs.pipe-max-size=16777216
-
-  A shorter ``poll-interval-ms`` also helps, down to one system tick, see
-  :kconfig:option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`.
-
-  When the application holds every buffer, the driver stops reading and the
-  host writer blocks once the pipe is full, so the driver drops nothing. Use a
-  rate-limited writer such as ``ffmpeg -re``: an unpaced one is read as fast as
-  the application returns buffers.
+  A video capture driver is provided that reads raw frames from a named pipe (FIFO) on the host,
+  or captures them from a host V4L2 device, and presents them through the :ref:`video_api` as an
+  ordinary camera. For more information refer to the section `Video capture`_.
 
 .. _nsim_per_flash_simu:
 
@@ -927,6 +849,107 @@ supported.
 It has runtime configuration support. With
 :kconfig:option:`CONFIG_UART_LINE_CTRL`, :c:func:`uart_line_ctrl_set` drives the
 port's DTR and RTS lines.
+
+.. _nsim_per_video_fifo:
+
+Video capture
+=============
+
+This driver is automatically enabled when devicetree contains nodes with the
+``"zephyr,native-sim-video-fifo"`` compatible property and ``okay`` status and
+:kconfig:option:`CONFIG_VIDEO` is set.
+By default one disabled node of this type, ``video_fifo``, is defined in DTS; the
+:ref:`snippet-video-native-fifo` snippet enables it and selects it as ``zephyr,camera``.
+
+Each instance reads raw frames from a named pipe (FIFO) on the host, or captures them from a host
+V4L2 device, and presents them through the :ref:`video_api` as an ordinary camera. This makes it
+possible to feed an application with frames from a real webcam, a video file or a generated test
+pattern, without any camera hardware.
+
+The host path is set by the ``fifo-path`` devicetree property, ``/dev/video0`` on the board node,
+and defaults to :file:`/tmp/zephyr-{<node>}-{<pid>}.fifo` when the property is absent. It can be
+overridden with the command line option ``--<node>=<path>`` (where ``<node>`` is the DTS node
+name), i.e. ``--video-fifo=<path>`` for the board node.
+
+The application selects the pixel format and the frame size, up to 1920x1080, with
+:c:func:`video_set_format`; the default is 320x240 RGB565. The driver does no scaling, and no
+conversion other than the one noted below for V4L2 devices.
+
+V4L2 device
+-----------
+
+When the path is a character device, the driver sets the selected format on it and streams with
+memory mapped buffers. The device must provide that format, see ``v4l2-ctl --list-formats-ext``,
+except RGB565, the default, which is converted on the host from YUYV, the format most webcams
+offer. Otherwise the driver prints what the device offers and refuses to start streaming. When the
+application is slower than the device, the newest frame is delivered and the older ones are
+dropped.
+
+Frames arrive in real time, so the simulation is slowed down to real time by default when this
+driver is enabled, see :kconfig:option:`CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME`. With the board
+node, the first webcam needs no option:
+
+.. code-block:: console
+
+   $ zephyr.exe
+
+FIFO
+----
+
+When the path is a FIFO, a host writer must produce frames of exactly the selected format; in
+``ffmpeg``, RGB565, YUYV and GREY are ``rgb565le``, ``yuyv422`` and ``gray``. The FIFO is created
+by the driver when the application starts streaming, and removed when the simulator exits, so the
+writer must either create it itself, for instance with ``mkfifo``, or be started afterwards. For
+example:
+
+.. code-block:: console
+
+   $ mkfifo /tmp/zephyr-cam.fifo
+   $ zephyr.exe --video-fifo=/tmp/zephyr-cam.fifo
+
+Then, from another terminal, feed it a test pattern in the default format:
+
+.. code-block:: console
+
+   $ ffmpeg -re -f lavfi -i testsrc2=size=320x240:rate=10 \
+       -pix_fmt rgb565le -f rawvideo -y /tmp/zephyr-cam.fifo
+
+or a webcam, scaled and converted by ``ffmpeg``:
+
+.. code-block:: console
+
+   $ ffmpeg -f v4l2 -i /dev/video0 \
+       -vf "scale=320:240:force_original_aspect_ratio=increase,crop=320:240,fps=10" \
+       -pix_fmt rgb565le -f rawvideo -y /tmp/zephyr-cam.fifo
+
+The FIFO is opened non-blocking and polled from a dedicated thread, so the simulation is never
+blocked: while no writer is attached, no frame is delivered, and if a writer disconnects in the
+middle of a frame, the incomplete frame is discarded so that the next writer resumes on a frame
+boundary. If the path exists but is neither a FIFO nor a character device, the driver prints an
+error and refuses to start streaming.
+
+Frames are handed to the application as soon as they arrive, without any pacing of its own: the
+frame rate is the one the host writer produces. When the host has more data pending and the
+application still has a free buffer, the driver keeps reading without waiting; ``poll-interval-ms``
+only applies once the host has nothing more to offer. When the application holds every buffer, the
+driver stops reading and the writer blocks once the pipe is full, so nothing is dropped. Use a
+rate-limited writer such as ``ffmpeg -re``: an unpaced one is read as fast as the application
+returns buffers.
+
+The driver enlarges the host pipe to hold two frames. Unprivileged processes are limited by
+``/proc/sys/fs/pipe-max-size`` for each pipe (1 MiB by default), and by
+``/proc/sys/fs/pipe-user-pages-soft`` for all their pipes together. When the pipe cannot hold two
+frames, the driver logs a warning, as the frame rate may be limited: the writer then waits for the
+driver to make room, which it does every ``poll-interval-ms``. To avoid this, run ``zephyr.exe``
+with root privileges (the CAP_SYS_RESOURCE POSIX capability, to be exact), or raise the limit
+beforehand; 16 MiB fits two frames of any supported format:
+
+.. code-block:: console
+
+   $ sudo sysctl fs.pipe-max-size=16777216
+
+A shorter ``poll-interval-ms`` also helps, down to one system tick, see
+:kconfig:option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`.
 
 .. _native_sim_backends:
 
