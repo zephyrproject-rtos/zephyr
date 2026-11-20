@@ -18,7 +18,7 @@ if UDC_DWC2
 
 config UDC_DWC2_DMA
 	bool "DWC2 USB DMA support"
-	default y if !SOC_SERIES_XMC4XXX
+	default y if !SOC_SERIES_XMC4XXX && !DT_HAS_BRCM_BCM2835_USB_ENABLED
 	help
 	  Enable Buffer DMA if DWC2 USB controller supports Internal DMA.
 

@@ -60,3 +60,8 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+zephyr_udc0: &usb0 {
+	power-domains = <&usb_hcd>;
+	status = "okay";
+};
