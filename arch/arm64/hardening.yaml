@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for the Arm64 architecture.
+
+rules:
+  ARM64_PMUV3_USER_ACCESS:
+    value: n
+    rationale: |
+      Lets unprivileged threads read and program the PMU cycle and event counters, a
+      high-resolution timer and cache-event counter for side-channel attacks against the kernel and
+      other threads.
+    references: [CWE-203]
