@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <!-- SPDX-FileCopyrightText: Copyright (c) 2026 Meta Platforms, Inc. -->
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <defs>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#dc2626"/>
+    </marker>
+    <marker id="arrow-black" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#111827"/>
+    </marker>
+    <style>
+      .title { font: 700 28px Arial, sans-serif; fill: #0f172a; }
+      .main-title { font: 700 24px Arial, sans-serif; fill: #ffffff; }
+      .box-title { font: 700 20px Arial, sans-serif; fill: #0f172a; }
+      .label { font: 16px Arial, sans-serif; fill: #1e293b; }
+      .small { font: 14px Arial, sans-serif; fill: #334155; }
+      .tiny { font: 12px Arial, sans-serif; fill: #475569; }
+      .line { stroke-linecap: round; stroke-linejoin: round; fill: none; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="900" fill="#f8fafc"/>
+  <text x="700" y="38" text-anchor="middle" class="title">zephyrtc: a WebRTC Client Demo for Zephyr</text>
+
+  <!-- Linux desktop -->
+  <rect x="35" y="65" width="625" height="765" rx="22" fill="#e8f1fb" stroke="#2563eb" stroke-width="3"/>
+  <rect x="35" y="65" width="625" height="55" rx="22" fill="#2563eb"/>
+  <rect x="35" y="97" width="625" height="23" fill="#2563eb"/>
+  <text x="347" y="101" text-anchor="middle" class="main-title">Linux Desktop (WebRTC)</text>
+
+  <!-- Linux app above Browser -->
+  <rect x="150" y="145" width="395" height="115" rx="16" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+  <text x="347" y="178" text-anchor="middle" class="box-title">Linux app</text>
+  <text x="347" y="205" text-anchor="middle" class="label">Python test harness + HTTP server</text>
+  <text x="347" y="229" text-anchor="middle" class="small">SDP call control, browser launch, and grading</text>
+  <text x="347" y="249" text-anchor="middle" class="tiny">No media proxying</text>
+
+  <rect x="150" y="300" width="395" height="190" rx="16" fill="#ffffff" stroke="#3b82f6" stroke-width="2.5"/>
+  <text x="347" y="333" text-anchor="middle" class="box-title">Browser</text>
+  <rect x="245" y="350" width="205" height="72" rx="12" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="347" y="380" text-anchor="middle" class="box-title">WebRTC</text>
+  <text x="347" y="404" text-anchor="middle" class="small">Chrome</text>
+  <text x="347" y="451" text-anchor="middle" class="small">H.264 + PCMU / ICE + DTLS-SRTP</text>
+  <text x="347" y="475" text-anchor="middle" class="tiny">Standard browser endpoint</text>
+
+  <!-- Local browser control and signaling -->
+  <line x1="330" y1="260" x2="330" y2="300" stroke="#111827" stroke-width="1.5" stroke-dasharray="8 6" marker-end="url(#arrow-black)" class="line"/>
+  <line x1="365" y1="300" x2="365" y2="260" stroke="#111827" stroke-width="1.5" stroke-dasharray="8 6" marker-end="url(#arrow-black)" class="line"/>
+  <text x="380" y="285" class="tiny">local control</text>
+
+  <!-- Linux peripherals -->
+  <rect x="75" y="550" width="545" height="250" rx="16" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+
+  <!-- Camera -->
+  <rect x="105" y="620" width="70" height="48" rx="7" fill="#ffffff" stroke="#334155" stroke-width="3"/>
+  <circle cx="140" cy="644" r="14" fill="none" stroke="#334155" stroke-width="3"/>
+  <path d="M175 630 L195 620 L195 668 L175 658 Z" fill="#ffffff" stroke="#334155" stroke-width="3"/>
+  <text x="150" y="700" text-anchor="middle" class="label">Camera</text>
+
+  <!-- Microphone -->
+  <rect x="266" y="608" width="30" height="55" rx="15" fill="#ffffff" stroke="#334155" stroke-width="3"/>
+  <path d="M253 646 Q253 678 281 678 Q309 678 309 646" fill="none" stroke="#334155" stroke-width="3"/>
+  <line x1="281" y1="678" x2="281" y2="695" stroke="#334155" stroke-width="3"/>
+  <line x1="263" y1="695" x2="299" y2="695" stroke="#334155" stroke-width="3"/>
+  <text x="281" y="726" text-anchor="middle" class="label">Mic</text>
+
+  <!-- Speaker -->
+  <path d="M345 630 L370 630 L398 605 L398 680 L370 655 L345 655 Z" fill="#ffffff" stroke="#334155" stroke-width="3"/>
+  <path d="M410 625 Q430 642 410 660" fill="none" stroke="#334155" stroke-width="3"/>
+  <path d="M422 612 Q455 642 422 673" fill="none" stroke="#334155" stroke-width="3"/>
+  <text x="400" y="708" text-anchor="middle" class="label">Speaker</text>
+
+  <!-- Display -->
+  <rect x="494" y="610" width="92" height="62" rx="5" fill="#ffffff" stroke="#334155" stroke-width="3"/>
+  <line x1="540" y1="672" x2="540" y2="690" stroke="#334155" stroke-width="3"/>
+  <line x1="516" y1="690" x2="564" y2="690" stroke="#334155" stroke-width="3"/>
+  <text x="540" y="722" text-anchor="middle" class="label">Display</text>
+
+  <!-- Raw desktop media -->
+  <line x1="150" y1="620" x2="275" y2="490" stroke="#2563eb" stroke-width="5" marker-end="url(#arrow-blue)" class="line"/>
+  <line x1="420" y1="490" x2="540" y2="610" stroke="#2563eb" stroke-width="5" marker-end="url(#arrow-blue)" class="line"/>
+  <line x1="281" y1="608" x2="320" y2="490" stroke="#dc2626" stroke-width="5" marker-end="url(#arrow-red)" class="line"/>
+  <line x1="375" y1="490" x2="400" y2="605" stroke="#dc2626" stroke-width="5" marker-end="url(#arrow-red)" class="line"/>
+
+  <!-- RT1170 -->
+  <rect x="740" y="65" width="625" height="765" rx="22" fill="#ecfdf5" stroke="#059669" stroke-width="3"/>
+  <rect x="740" y="65" width="625" height="55" rx="22" fill="#059669"/>
+  <rect x="740" y="97" width="625" height="23" fill="#059669"/>
+  <text x="1052" y="101" text-anchor="middle" class="main-title">NXP RT1170 (Zephyr)</text>
+
+  <!-- Zephyr app above libpeer -->
+  <rect x="855" y="145" width="395" height="115" rx="16" fill="#ffffff" stroke="#111827" stroke-width="2.5"/>
+  <text x="1052" y="181" text-anchor="middle" class="box-title">zephyrtc app</text>
+  <text x="1052" y="209" text-anchor="middle" class="label">HTTP signaling client + media orchestration</text>
+  <text x="1052" y="235" text-anchor="middle" class="small">Bounded queues, workers, and hardware integration</text>
+
+  <rect x="905" y="295" width="295" height="105" rx="16" fill="#ffffff" stroke="#059669" stroke-width="2.5"/>
+  <text x="1052" y="330" text-anchor="middle" class="box-title">libpeer</text>
+  <text x="1052" y="357" text-anchor="middle" class="small">SDP / ICE / DTLS-SRTP</text>
+  <text x="1052" y="382" text-anchor="middle" class="small">RTP / partial RTCP</text>
+
+  <!-- Application-to-libpeer relationship -->
+  <line x1="1052" y1="260" x2="1052" y2="295" stroke="#111827" stroke-width="1.5" stroke-dasharray="8 6" marker-end="url(#arrow-black)" class="line"/>
+
+  <!-- Codecs -->
+  <rect x="795" y="440" width="235" height="100" rx="14" fill="#ffffff" stroke="#16a34a" stroke-width="2.5"/>
+  <text x="912" y="476" text-anchor="middle" class="box-title">MiniH264</text>
+  <text x="912" y="503" text-anchor="middle" class="small">Software encoder</text>
+  <text x="912" y="526" text-anchor="middle" class="tiny">Board camera to browser</text>
+
+  <rect x="1075" y="440" width="235" height="100" rx="14" fill="#ffffff" stroke="#16a34a" stroke-width="2.5"/>
+  <text x="1192" y="476" text-anchor="middle" class="box-title">h264swdec</text>
+  <text x="1192" y="503" text-anchor="middle" class="small">Software decoder</text>
+  <text x="1192" y="526" text-anchor="middle" class="tiny">Browser camera to board</text>
+
+  <!-- Encoded video within board -->
+  <line x1="950" y1="440" x2="1000" y2="400" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)" class="line"/>
+  <line x1="1104" y1="400" x2="1155" y2="440" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)" class="line"/>
+
+  <!-- Board peripherals -->
+  <rect x="785" y="585" width="535" height="215" rx="16" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+
+  <!-- Camera -->
+  <rect x="815" y="650" width="70" height="48" rx="7" fill="#ffffff" stroke="#334155" stroke-width="3"/>
+  <circle cx="850" cy="674" r="14" fill="none" stroke="#334155" stroke-width="3"/>
+  <path d="M885 660 L905 650 L905 698 L885 688 Z" fill="#ffffff" stroke="#334155" stroke-width="3"/>
+  <text x="860" y="730" text-anchor="middle" class="label">OV5640</text>
+
+  <!-- Microphone -->
+  <rect x="976" y="638" width="30" height="55" rx="15" fill="#ffffff" stroke="#334155" stroke-width="3"/>
+  <path d="M963 676 Q963 708 991 708 Q1019 708 1019 676" fill="none" stroke="#334155" stroke-width="3"/>
+  <line x1="991" y1="708" x2="991" y2="725" stroke="#334155" stroke-width="3"/>
+  <line x1="973" y1="725" x2="1009" y2="725" stroke="#334155" stroke-width="3"/>
+  <text x="991" y="755" text-anchor="middle" class="label">DMIC</text>
+
+  <!-- Speaker -->
+  <path d="M1055 660 L1080 660 L1108 635 L1108 710 L1080 685 L1055 685 Z" fill="#ffffff" stroke="#334155" stroke-width="3"/>
+  <path d="M1120 655 Q1140 672 1120 690" fill="none" stroke="#334155" stroke-width="3"/>
+  <path d="M1132 642 Q1165 672 1132 703" fill="none" stroke="#334155" stroke-width="3"/>
+  <text x="1110" y="738" text-anchor="middle" class="label">WM8962</text>
+
+  <!-- Display -->
+  <rect x="1204" y="640" width="92" height="62" rx="5" fill="#ffffff" stroke="#334155" stroke-width="3"/>
+  <line x1="1250" y1="702" x2="1250" y2="720" stroke="#334155" stroke-width="3"/>
+  <line x1="1226" y1="720" x2="1274" y2="720" stroke="#334155" stroke-width="3"/>
+  <text x="1250" y="752" text-anchor="middle" class="label">RK055</text>
+
+  <!-- Raw board media -->
+  <line x1="860" y1="650" x2="885" y2="540" stroke="#2563eb" stroke-width="5" marker-end="url(#arrow-blue)" class="line"/>
+  <line x1="1192" y1="540" x2="1250" y2="640" stroke="#2563eb" stroke-width="5" marker-end="url(#arrow-blue)" class="line"/>
+  <line x1="991" y1="638" x2="1018" y2="400" stroke="#dc2626" stroke-width="5" marker-end="url(#arrow-red)" class="line"/>
+  <line x1="1085" y1="400" x2="1110" y2="635" stroke="#dc2626" stroke-width="5" marker-end="url(#arrow-red)" class="line"/>
+
+  <!-- Direct browser-to-libpeer media -->
+  <line x1="545" y1="350" x2="905" y2="325" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)" class="line"/>
+  <line x1="905" y1="350" x2="545" y2="375" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)" class="line"/>
+  <line x1="545" y1="415" x2="905" y2="365" stroke="#dc2626" stroke-width="5" marker-end="url(#arrow-red)" class="line"/>
+  <line x1="905" y1="390" x2="545" y2="440" stroke="#dc2626" stroke-width="5" marker-end="url(#arrow-red)" class="line"/>
+  <rect x="605" y="330" width="230" height="54" rx="9" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="720" y="351" text-anchor="middle" class="small">Direct bidirectional media</text>
+  <text x="720" y="373" text-anchor="middle" class="tiny">H.264 video + PCMU audio</text>
+
+  <!-- Call control between applications -->
+  <line x1="545" y1="185" x2="855" y2="185" stroke="#111827" stroke-width="1.5" stroke-dasharray="8 6" marker-end="url(#arrow-black)" class="line"/>
+  <line x1="855" y1="220" x2="545" y2="220" stroke="#111827" stroke-width="1.5" stroke-dasharray="8 6" marker-end="url(#arrow-black)" class="line"/>
+  <rect x="620" y="165" width="160" height="70" rx="9" fill="#f8fafc" stroke="#111827" stroke-width="1.5"/>
+  <text x="700" y="192" text-anchor="middle" class="small">HTTP call control</text>
+  <text x="700" y="216" text-anchor="middle" class="tiny">SDP offer / answer</text>
+
+  <!-- Legend -->
+  <line x1="190" y1="865" x2="240" y2="865" stroke="#2563eb" stroke-width="5" marker-end="url(#arrow-blue)" class="line"/>
+  <text x="255" y="871" class="small">Raw video</text>
+  <line x1="400" y1="865" x2="450" y2="865" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)" class="line"/>
+  <text x="465" y="871" class="small">Encoded video</text>
+  <line x1="650" y1="865" x2="700" y2="865" stroke="#dc2626" stroke-width="5" marker-end="url(#arrow-red)" class="line"/>
+  <text x="715" y="871" class="small">Audio</text>
+  <line x1="850" y1="865" x2="900" y2="865" stroke="#111827" stroke-width="1.5" stroke-dasharray="8 6" marker-end="url(#arrow-black)" class="line"/>
+  <text x="915" y="871" class="small">Call control</text>
+  <text x="347" y="785" text-anchor="middle" class="box-title">Desktop media devices</text>
+  <text x="1052" y="785" text-anchor="middle" class="box-title">Board media devices</text>
+</svg>

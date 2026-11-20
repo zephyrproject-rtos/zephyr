@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Meta Platforms, Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Host-side requirements of tests/physical_browser_call.py.
+selenium>=4.11
