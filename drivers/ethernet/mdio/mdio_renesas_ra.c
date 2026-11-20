@@ -129,7 +129,7 @@ static DEVICE_API(mdio, renesas_ra_mdio_api) = {
 		}};                                                                                \
 	static const struct renesas_ra_mdio_config renesas_ra_mdio##node##_cfg = {                 \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(node)};                                   \
-	DEVICE_DT_INST_DEFINE(node, &renesas_ra_mdio_initialize, NULL,                             \
+	DEVICE_DT_INST_DEFINE(node, renesas_ra_mdio_initialize, NULL,                              \
 			      &renesas_ra_mdio##node##_data, &renesas_ra_mdio##node##_cfg,         \
 			      POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY, &renesas_ra_mdio_api);
 

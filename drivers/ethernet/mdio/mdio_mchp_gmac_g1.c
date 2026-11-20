@@ -152,5 +152,5 @@ static const struct mdio_dev_config mdio_dev_cfg = {
 
 static struct mdio_dev_data mdio_data;
 
-DEVICE_DT_INST_DEFINE(0, &mdio_mchp_initialize, NULL, &mdio_data, &mdio_dev_cfg, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, mdio_mchp_initialize, NULL, &mdio_data, &mdio_dev_cfg, POST_KERNEL,
 		      CONFIG_MDIO_INIT_PRIORITY, &mdio_mchp_driver_api);

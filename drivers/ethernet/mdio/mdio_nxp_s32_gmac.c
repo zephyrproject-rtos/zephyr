@@ -164,7 +164,7 @@ static DEVICE_API(mdio, mdio_nxp_s32_driver_api) = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 	};										\
 	DEVICE_DT_INST_DEFINE(n,							\
-			&mdio_nxp_s32_init,						\
+			mdio_nxp_s32_init,						\
 			NULL,								\
 			&mdio_nxp_s32_data_##n,						\
 			&mdio_nxp_s32_config_##n,					\

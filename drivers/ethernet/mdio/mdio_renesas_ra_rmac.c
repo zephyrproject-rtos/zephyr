@@ -180,7 +180,7 @@ static DEVICE_API(mdio, mdio_renesas_ra_api) = {
 		.mdio_hold_time = DT_INST_PROP(n, mdio_hold_time_ns),                              \
 		.mdio_capture_time = DT_INST_PROP(n, mdio_capture_time_ns),                        \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &mdio_renesas_ra_initialize, NULL, &renesas_ra_mdio##n##_data,    \
+	DEVICE_DT_INST_DEFINE(n, mdio_renesas_ra_initialize, NULL, &renesas_ra_mdio##n##_data,     \
 			      &renesas_ra_mdio##n##_cfg, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,   \
 			      &mdio_renesas_ra_api);
 

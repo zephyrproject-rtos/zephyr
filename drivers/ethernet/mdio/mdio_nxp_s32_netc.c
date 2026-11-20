@@ -86,7 +86,7 @@ static DEVICE_API(mdio, nxp_s32_mdio_api) = {
 		.instance = NXP_S32_MDIO_HW_INSTANCE(n),			\
 	};									\
 	DEVICE_DT_INST_DEFINE(n,						\
-			      &nxp_s32_mdio_initialize,				\
+			      nxp_s32_mdio_initialize,				\
 			      NULL,						\
 			      &nxp_s32_mdio##n##_data,				\
 			      &nxp_s32_mdio##n##_cfg,				\

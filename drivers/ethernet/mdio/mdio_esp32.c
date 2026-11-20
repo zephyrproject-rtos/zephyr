@@ -168,7 +168,7 @@ static const struct mdio_esp32_dev_config mdio_esp32_dev_config_##n = {	\
 	MDIO_ESP32_CONFIG(n);						\
 	static struct mdio_esp32_dev_data mdio_esp32_dev_data##n;	\
 	DEVICE_DT_INST_DEFINE(n,					\
-			      &mdio_esp32_initialize,			\
+			      mdio_esp32_initialize,			\
 			      NULL,					\
 			      &mdio_esp32_dev_data##n,			\
 			      &mdio_esp32_dev_config_##n, POST_KERNEL,	\
