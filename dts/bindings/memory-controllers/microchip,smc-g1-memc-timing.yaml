@@ -1,0 +1,137 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip Static Memory Controller (SMC) G1 timing configuration.
+
+child-binding:
+  description: |
+    Child device nodes are representing devices connected to the EBI/SMC bus.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: |
+        The device's EBI Chip Select number and address.
+
+    smc-configure-bus:
+      type: boolean
+      description: |
+        Indicates that the bus should be configured.
+
+    smc-bus-width:
+      type: string
+      description: |
+        Data bus width.
+      enum:
+        - "8-bit"
+        - "16-bit"
+
+    smc-tdf-mode:
+      type: boolean
+      description: |
+        TDF Optimization Enable.
+
+    smc-tdf-cycles:
+      type: int
+      default: 15
+      description: |
+        The number of clock cycles required by the external device to release
+        the data after the rising edge of the read controlling signal.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    smc-write-mode:
+      type: string
+      description: |
+        Selection of the Control Signal for Write Operation.
+        ncs - The Write operation is controller by the NCS signal
+        nwe - The Write operation is controlled by the NWE signal
+      enum:
+        - "ncs"
+        - "nwe"
+
+    smc-read-mode:
+      type: string
+      description: |
+        Selection of the Control Signal for Read Operation.
+        ncs - The Read operation is controlled by the NCS signal
+        nrd - The Read operation is controlled by the NRD signal
+      enum:
+        - "ncs"
+        - "nrd"
+
+    smc-setup-timing:
+      type: array
+      description: |
+        Array[0] is NWE_SETUP[5:0], defines the NWE signal setup length.
+        Array[1] is NCS_WR_SETUP[5:0], defines the NCS signal setup length in write access.
+        Array[2] is NRD_SETUP[5:0], defines the NRD signal setup length.
+        Array[3] is NCS_RD_SETUP[5:0], defines the NCS signal setup length in read access.
+        Setup length = (128 * SETUP[5] + SETUP[4:0]) clock cycles
+
+    smc-pulse-timing:
+      type: array
+      description: |
+        Array[0] is NWE_PULSE[6:0], defines the NWE signal pulse length.
+        Array[1] is NCS_WR_PULSE[6:0], defines the NCS signal pulse length in write access.
+        Array[2] is NRD_PULSE[6:0], defines the NRD signal pulse length.
+        Array[3] is NCS_RD_PULSE[6:0], defines the NCS signal pulse length in read access.
+        Pulse length = (256 * PULSE[6] + PULSE[5:0]) clock cycles.
+
+    smc-cycle-timing:
+      type: array
+      description: |
+        Array[0] is NWE_CYCLE[8:0], defines the total write cycle length.
+        Array[1] is NRD_CYCLE[8:0], defines the total read cycle length.
+        Cycle length = (CYCLE[8:7] * 256) + CYCLE[6:0] clock cycles.
+
+    nfc-timings-nfsel:
+      type: boolean
+      description: |
+        NAND Flash Selection.
+
+    nfc-timings-twb:
+      type: int
+      description: |
+        WEN High to REN to Busy
+        Write Enable rising edge to Ready/Busy falling edge timing.
+        Write Enable to Read/Busy = (TWB[3] * 64) + TWB[2:0] clock cycles.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    nfc-timings-trr:
+      type: int
+      description: |
+        Ready to REN Low Delay
+        Ready/Busy signal to Read Enable falling edge timing.
+        Read to REN = (TRR[3] * 64) + TRR[2:0] clock cycles.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    nfc-timings-ocms:
+      type: boolean
+      description: |
+        Off Chip Memory Scrambling Enable.
+
+    nfc-timings-tar:
+      type: int
+      description: |
+        ALE to REN Low Delay
+        Address Latch Enable falling edge to Read Enable falling edge timing.
+        Address Latch Enable to Read Enable = (TAR[3] * 64) + TAR[2:0] clock cycles.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    nfc-timings-tadl:
+      type: int
+      description: |
+        ALE to Data Start
+        Last address latch cycle to the first rising edge of WEN for data input.
+        Last address latch to first rising edge of WEN = (TADL[3] * 64) + TADL[2:0] clock cycles.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    nfc-timings-tclr:
+      type: int
+      description: |
+        CLE to REN Low Delay
+        Command Latch Enable falling edge to Read Enable falling edge timing.
+        Latch Enable Falling to Read Enable Falling = (TCLR[3] * 64) + TCLR[2:0] clock cycles.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]

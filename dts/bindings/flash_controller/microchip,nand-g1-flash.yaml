@@ -1,0 +1,95 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip SAM NAND Flash driver G1
+
+examples:
+  - |
+    Example devicetree configuration:
+
+      nand0: nandflash {
+        compatible = "microchip,nand-g1-flash";
+        nand-controller = <&nfc>;
+        cs-gpios = <&piod 4 GPIO_ACTIVE_LOW>;
+        status = "okay";
+      };
+
+compatible: "microchip,nand-g1-flash"
+
+include:
+  - name: base.yaml
+
+properties:
+  nand-controller:
+    type: phandle
+    required: true
+    description: |
+      Hold a phandle reference to the nand-controller.
+
+  cs-gpios:
+    type: phandle-array
+    description: GPIO cs pin.
+
+child-binding:
+  description: |
+    Child device nodes represent NAND Flash ID devices.
+
+  properties:
+    nand-id:
+      type: uint8-array
+      required: true
+      description: |
+        Array[0] contains the NAND Manufacturer ID.
+        Array[1] contains the NAND Device ID.
+
+    nand-page-size:
+      type: int
+      required: true
+      description: |
+        Size of the NAND page data area, in bytes.
+
+    nand-oob-size:
+      type: int
+      required: true
+      description: |
+        Size of the NAND OOB (spare) area per page, in bytes.
+
+    nand-block-pages:
+      type: int
+      required: true
+      description: |
+        Number of pages per NAND block.
+
+    nand-block-count:
+      type: int
+      required: true
+      description: |
+        Number of blocks in the NAND device.
+
+    nand-ecc-bits:
+      type: int
+      required: true
+      description: |
+        ECC correction strength, in bits per sector.
+
+    nand-ecc-sector:
+      type: int
+      required: true
+      description: |
+        Size of an ECC sector, in bytes.
+
+    nand-features:
+      type: int
+      description: |
+        NAND features supported, as specified in the ONFI parameter page.
+
+    nand-optional-commands:
+      type: int
+      description: |
+        NAND optional commands supported, as specified in the ONFI parameter page.
+
+    nand-timing-mode:
+      type: int
+      description: |
+        NAND timing mode support, as specified in the ONFI parameter page.
