@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Rockchip RK3588 OTP
+
+description: |
+  Rockchip RK3588 One-Time Programmable memory controller.
+
+  This binding represents the OTP peripheral found on Rockchip RK3588 SoCs.
+  The OTP module provides access to on-chip fuse memory used to store
+  device-specific information such as CPU ID, calibration data, etc.
+
+compatible: "rockchip,rk3588-otp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

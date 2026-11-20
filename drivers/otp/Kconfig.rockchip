@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_ROCKCHIP
+	bool "Rockchip RK3588 OTP driver"
+	default y
+	depends on DT_HAS_ROCKCHIP_RK3588_OTP_ENABLED
+	help
+	  Enable Rockchip RK3588 OTP driver.

@@ -23,3 +23,6 @@ CONFIG_MP_MAX_NUM_CPUS=8
 
 # PSCI support
 CONFIG_PM_CPU_OPS=y
+
+# OTP (the device ID source of hwinfo)
+CONFIG_OTP=y

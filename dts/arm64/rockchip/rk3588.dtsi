@@ -248,4 +248,10 @@
 		reg-shift = <2>;
 		status = "disabled";
 	};
+
+	rk3588_otp: otp@fecc0000 {
+		compatible = "rockchip,rk3588-otp";
+		reg = <0xfecc0000 0x400>;
+		status = "disabled";
+	};
 };
