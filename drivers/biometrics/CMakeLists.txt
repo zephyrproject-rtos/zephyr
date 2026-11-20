@@ -7,6 +7,7 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_BIOMETRICS_SHELL biometrics_shell.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_BIOMETRICS_AI10 biometrics_ai10.c)
 zephyr_library_sources_ifdef(CONFIG_BIOMETRICS_EMUL biometrics_emul.c)
 zephyr_library_sources_ifdef(CONFIG_BIOMETRICS_GT5X biometrics_gt5x.c)
 zephyr_library_sources_ifdef(CONFIG_BIOMETRICS_SEN0359 biometrics_sen0359.c)
