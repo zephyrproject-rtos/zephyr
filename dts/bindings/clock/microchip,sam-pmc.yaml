@@ -17,6 +17,32 @@ properties:
   "#clock-cells":
     const: 2
 
+  microchip,plla-mul:
+    type: int
+    description: |
+      PLLA multiplier (CKGR_PLLAR.MULA + 1). Used by SoCs whose clocks are
+      configured at boot by Zephyr, such as PIC32CZ CA70. PLLA output is
+      main clock * microchip,plla-mul / microchip,plla-div.
+
+  microchip,plla-div:
+    type: int
+    description: |
+      PLLA divider (CKGR_PLLAR.DIVA). See microchip,plla-mul.
+
+  microchip,mck-prescaler:
+    type: int
+    enum: [1, 2, 3, 4, 8, 16, 32, 64]
+    description: |
+      Master clock prescaler (PMC_MCKR.PRES) applied to the PLLA output. The
+      prescaler output is the processor clock.
+
+  microchip,mck-divider:
+    type: int
+    enum: [1, 2, 3, 4]
+    description: |
+      Master clock divider (PMC_MCKR.MDIV) applied to the processor clock to
+      produce MCK.
+
 clock-cells:
   - clock-type
   - peripheral-id

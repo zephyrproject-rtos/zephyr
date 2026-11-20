@@ -1,0 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <microchip/pic32c/pic32cz_ca/pic32cz_ca70/pic32cz_ca70.dtsi>
+#include <dt-bindings/pic32c/pic32cz_ca/pic32cz_ca70/pic32cz2051ca70064-pinctrl.h>
