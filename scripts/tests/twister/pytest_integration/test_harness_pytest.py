@@ -26,7 +26,7 @@ def testinstance(tmp_path: Path) -> TestInstance:
     platform = Platform()
 
     testinstance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
-    testinstance.handler = mock.Mock()
+    testinstance.handler = mock.Mock(extra_test_args=None, extra_pytest_args=[])
     testinstance.handler.get_test_timeout = mock.Mock(return_value=60)
     testinstance.handler.options = mock.Mock(
         verbose=1,
@@ -95,6 +95,29 @@ def test_pytest_command_extra_test_args(testinstance: TestInstance):
     pytest_harness.configure(testinstance)
     pytest_harness.generate_command()
     assert pytest_harness.pytest_params.extra_test_args == ' '.join(extra_test_args)
+
+
+def test_pytest_command_extra_test_args_of_the_instance(testinstance: TestInstance):
+    # The handler's are what a sidecar adds to those of the command line.
+    pytest_harness = Pytest()
+    testinstance.handler.options.extra_test_args = ['-no-rt']
+    testinstance.handler.extra_test_args = ['-no-rt', '--bt-dev=127.0.0.1:1234']
+    pytest_harness.configure(testinstance)
+    pytest_harness.generate_command()
+    assert pytest_harness.pytest_params.extra_test_args == '-no-rt --bt-dev=127.0.0.1:1234'
+
+
+def test_pytest_command_extra_pytest_args_of_the_instance(testinstance: TestInstance):
+    pytest_harness = Pytest()
+    testinstance.testsuite.harness_config.pytest_args = ['--from-yaml']
+    testinstance.handler.extra_pytest_args = ['--from-sidecar']
+    testinstance.handler.options.pytest_args = ['--from-cmd']
+    pytest_harness.configure(testinstance)
+    command = pytest_harness.generate_command()
+    # Last wins, so the command line can override what the sidecar set up.
+    assert (
+        command.index('--from-yaml') < command.index('--from-sidecar') < command.index('--from-cmd')
+    )
 
 
 def test_pytest_command_extra_args_in_options(testinstance: TestInstance):

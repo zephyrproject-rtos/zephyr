@@ -125,6 +125,8 @@ class Handler:
         self.execution_time = 0
 
         self.args = []
+        # pytest arguments of this instance alone, such as those of a sidecar.
+        self.extra_pytest_args = []
         self.terminated = False
 
     def get_test_timeout(self):

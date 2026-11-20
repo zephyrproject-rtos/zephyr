@@ -1,9 +1,11 @@
 # Copyright 2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
+# pylint: disable=duplicate-code
 
 import asyncio
 import logging
+import re
 import sys
 
 from bumble.core import (
@@ -324,12 +326,17 @@ SDP_SERVICE_RECORDS_A2DP_SINK = {
 }
 
 
-async def wait_for_shell_response(dut, message):
+# The shell reprints its colored prompt around everything printed outside a command, so also in
+# the middle of a line that is printed in parts.
+SHELL_DECORATION = re.compile(r'\x1b\[[0-9;]*[A-Za-z]|uart:~\$ ')
+
+
+async def wait_for_shell_response(dut, message, max_time=30):
     found = False
     lines = []
     try:
-        while found is False:
-            read_lines = dut.readlines()
+        for _ in range(max_time):
+            read_lines = [SHELL_DECORATION.sub('', line) for line in dut.readlines()]
             for line in read_lines:
                 logger.info(f'{str(line)}')
                 if message in line:
@@ -337,6 +344,8 @@ async def wait_for_shell_response(dut, message):
                     break
             lines = lines + read_lines
             await asyncio.sleep(1)
+            if found:
+                break
     except Exception as e:
         logger.error(f'{e}!', exc_info=True)
         raise e
@@ -1114,7 +1123,7 @@ async def sdp_ssa_discover_fail(hci_port, shell, dut, address) -> None:
                 identifier=request.identifier,
                 destination_cid=self.source_cid,
                 source_cid=self.destination_cid,
-                result=L2CAP_Connection_Response.CONNECTION_REFUSED_NO_RESOURCES_AVAILABLE,
+                result=L2CAP_Connection_Response.Result.CONNECTION_REFUSED_NO_RESOURCES_AVAILABLE,
                 status=0x0000,
             )
         )
