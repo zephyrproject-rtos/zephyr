@@ -36,6 +36,16 @@ tests:
     tags: picolibc
     extra_configs:
       - CONFIG_PICOLIBC=y
+  libraries.libc.common.picolibc.link_speed_optimized:
+    toolchain_allow:
+      - zephyr/gnu
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_PICOLIBC_USE_TOOLCHAIN=y
+      - CONFIG_SIZE_OPTIMIZATIONS=y
+      - CONFIG_PICOLIBC_LINK_SPEED_OPTIMIZED=y
   libraries.libc.common.picolibc.module:
     filter: CONFIG_ZEPHYR_PICOLIBC_MODULE
     tags: picolibc
