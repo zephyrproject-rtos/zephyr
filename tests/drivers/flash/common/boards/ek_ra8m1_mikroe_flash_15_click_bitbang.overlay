@@ -1,0 +1,82 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
+/*
+ * MikroE Flash 15 Click (Foresee F35SQA512M) on the mikroBUS socket through the
+ * bitbang MSPI controller. The socket SPI shares the CS, SCK, MISO and MOSI
+ * pins and ADC0 the AN pin.
+ *
+ * The mikroBUS RST line selects what the CS line reaches: the flash when high,
+ * the ClickID memory when low. The click pulls it up and it is left alone.
+ */
+
+&spi1 {
+	status = "disabled";
+};
+
+&adc0 {
+	status = "disabled";
+};
+
+/delete-node/ &storage_partition;
+
+/ {
+	mspi_bb: mspi-bitbang-controller {
+		compatible = "zephyr,mspi-bitbang-controller";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sck-gpios = <&mikrobus_header MIKROBUS_SCK GPIO_ACTIVE_HIGH>;
+		/*
+		 * IO0 is the mikroBUS MOSI line (DI), IO1 the MISO line (DO), IO2 the
+		 * AN line (WP#) and IO3 the PWM line (HOLD#). The click has no
+		 * pull-ups on WP# and HOLD#, which have to be high in single-line mode.
+		 */
+		io-gpios = <&mikrobus_header MIKROBUS_MOSI GPIO_ACTIVE_HIGH>,
+			   <&mikrobus_header MIKROBUS_MISO GPIO_ACTIVE_HIGH>,
+			   <&mikrobus_header MIKROBUS_AN (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			   <&mikrobus_header MIKROBUS_PWM (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+		ce-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
+		clock-frequency = <DT_FREQ_K(250)>;
+		status = "okay";
+
+		f35sqa512m: mspi-nand@0 {
+			compatible = "jedec,mspi-nand";
+			reg = <0>;
+
+			mspi-io-mode = "MSPI_IO_MODE_SINGLE";
+			mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+			mspi-max-frequency = <DT_FREQ_K(250)>;
+
+			/* A page transfer on the bitbang bus exceeds the default */
+			transfer-timeout = <1000>;
+
+			/* f35sqa512m parameters */
+			jedec-id = [cd 70 70];
+			size-bytes = <DT_SIZE_M(64)>;
+			plane-bytes = <DT_SIZE_M(64)>;
+			erase-block-size = <DT_SIZE_K(128)>;
+			write-block-size = <DT_SIZE_K(2)>;
+			block-erase-duration-max = <10000>;
+			page-program-duration-max = <750>;
+			page-read-duration-max = <60>;
+			reset-duration-max = <200>;
+			status = "okay";
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				storage_partition: partition@0 {
+					reg = <0x0 DT_SIZE_K(256)>;
+					label = "storage";
+				};
+			};
+		};
+	};
+};
