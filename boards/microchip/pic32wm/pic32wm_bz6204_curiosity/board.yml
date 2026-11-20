@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: pic32wm_bz6204_curiosity
+  full_name: Microchip PIC32WM BZ6204 Curiosity Board
+  vendor: microchip
+  socs:
+    - name: pic32cx2051bz62132

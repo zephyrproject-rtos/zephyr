@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ENABLE_PMU_BUCK_MODE
+	bool "PMU Buck Mode support"
+
+rsource "*/Kconfig.soc"
+rsource "Kconfig.image_header"
+rsource "Kconfig.system_config"
