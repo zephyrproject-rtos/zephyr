@@ -711,10 +711,11 @@ static void i2c_ctrl_isr(const struct device *dev)
 #if defined(CONFIG_I2C_NPCX_DMA_DRIVEN)
 	if (IS_BIT_SET(dma_status, NPCX_DMA_CTL_IRQSTS)) {
 		if (data->is_write) {
-			return i2c_ctrl_handle_write_dma_int_event(dev);
+			i2c_ctrl_handle_write_dma_int_event(dev);
 		} else {
-			return i2c_ctrl_handle_read_dma_int_event(dev);
+			i2c_ctrl_handle_read_dma_int_event(dev);
 		}
+		return;
 	}
 #endif
 

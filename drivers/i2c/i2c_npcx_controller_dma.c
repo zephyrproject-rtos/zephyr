@@ -241,7 +241,8 @@ void i2c_ctrl_handle_write_dma_int_event(const struct device *dev)
 			data->oper_state = NPCX_I2C_WRITE_SUSPEND;
 		}
 
-		return i2c_ctrl_notify(dev, 0);
+		i2c_ctrl_notify(dev, 0);
+		return;
 	}
 }
 
@@ -291,6 +292,7 @@ void i2c_ctrl_handle_read_dma_int_event(const struct device *dev)
 			data->oper_state = NPCX_I2C_READ_SUSPEND;
 		}
 
-		return i2c_ctrl_notify(dev, 0);
+		i2c_ctrl_notify(dev, 0);
+		return;
 	}
 }

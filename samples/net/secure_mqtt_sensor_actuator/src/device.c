@@ -46,7 +46,8 @@ void device_command_handler(uint8_t *command)
 	for (int i = 0; i < num_device_commands; i++) {
 		if (strcmp(command, device_commands[i].command) == 0) {
 			LOG_INF("Executing device command: %s", device_commands[i].command);
-			return device_commands[i].handler();
+			device_commands[i].handler();
+			return;
 		}
 	}
 	LOG_ERR("Unknown command: %s", command);
