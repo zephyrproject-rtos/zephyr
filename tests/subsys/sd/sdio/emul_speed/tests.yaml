@@ -1,0 +1,9 @@
+tests:
+  sd.sdio.emul.speed:
+    tags:
+      - sd
+      - sdio
+      - emul
+    platform_allow:
+      - native_sim/native/64
+    harness: ztest
