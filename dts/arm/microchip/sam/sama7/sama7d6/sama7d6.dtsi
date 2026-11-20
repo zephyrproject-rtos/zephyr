@@ -145,6 +145,13 @@
 			clock-names = "td_slck", "md_slck", "main_xtal";
 		};
 
+		ps_wdt: watchdog@e001d000 {
+			compatible = "microchip,dwdt-g1-watchdog";
+			reg = <0xe001d000 0x30>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+
 		clk32k: clock-controller@e001d500 {
 			compatible = "microchip,sama7g5-sckc", "microchip,sam9x60-sckc";
 			reg = <0xe001d500 0x4>;
