@@ -114,6 +114,7 @@ void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 #define BMI270_ANYMO_2_THRESHOLD_MASK	BIT_MASK(11)
 #define BMI270_ANYMO_2_THRESHOLD(n)	(((n) & BMI270_ANYMO_2_THRESHOLD_MASK) << \
 					 BMI270_ANYMO_2_THRESHOLD_POS)
+#define BMI270_ANYMO_2_THRESHOLD_LSB_PER_G 2048 /* 0.48828 mg/LSB, max 1 g */
 #define BMI270_ANYMO_2_OUT_CONF_POS	11
 #define BMI270_ANYMO_2_OUT_CONF_MASK	(BIT(11) | BIT(12) | BIT(13) | BIT(14))
 #define BMI270_ANYMO_2_ENABLE		BIT(15)
@@ -172,7 +173,11 @@ void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 #define BMI270_FIFO_FHPARM_GYR BIT(1)
 #define BMI270_FIFO_FHPARM_AUX BIT(2)
 
-/* Regular frame payload: acc+gyr only = 6 + 6 bytes */
+/* FIFO_LENGTH_0/1: 14 bit byte counter */
+#define BMI270_FIFO_LENGTH_MSK 0x3FFF
+
+/* Regular frame payload: acc only = 6 bytes, acc+gyr = 6 + 6 bytes */
+#define BMI270_FIFO_FRAME_PAYLOAD_ACC_BYTES     6
 #define BMI270_FIFO_FRAME_PAYLOAD_ACC_GYR_BYTES 12
 #define BMI270_FIFO_HEADER_BYTES                1
 #define BMI270_FIFO_FRAME_ACC_GYR_BYTES                                                            \
@@ -180,6 +185,14 @@ void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 
 /* Chunk size used when draining leftover FIFO bytes that exceed a stream block */
 #define BMI270_FIFO_DRAIN_CHUNK_SIZE 64
+
+/* FIFO_DOWNS (register 0x45) */
+#define BMI270_FIFO_DOWNS_GYR_DOWNS_MSK     0x07
+#define BMI270_FIFO_DOWNS_GYR_DOWNS_POS     0
+#define BMI270_FIFO_DOWNS_GYR_FILT_DATA_MSK BIT(3)
+#define BMI270_FIFO_DOWNS_ACC_DOWNS_MSK     0x70
+#define BMI270_FIFO_DOWNS_ACC_DOWNS_POS     4
+#define BMI270_FIFO_DOWNS_ACC_FILT_DATA_MSK BIT(7)
 
 /* FIFO_CONFIG_0 (register 0x48) */
 #define BMI270_FIFO_CONFIG_0_STOP_ON_FULL_MSK BIT(0)
@@ -472,6 +485,9 @@ int bmi270_reg_write_with_delay(const struct device *dev,
 				const uint8_t *data,
 				uint16_t length,
 				uint32_t delay_us);
+
+int bmi270_feature_reg_write(const struct device *dev, const struct bmi270_feature_reg *reg,
+			     uint16_t value);
 
 #ifdef CONFIG_BMI270_TRIGGER
 int bmi270_trigger_set(const struct device *dev,
