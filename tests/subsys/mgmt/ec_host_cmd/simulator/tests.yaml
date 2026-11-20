@@ -5,3 +5,14 @@ tests:
     integration_platforms:
       - native_sim
     tags: ec_host_cmd
+  mgmt.ec_host_cmd.simulator.rate_limiting:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags: ec_host_cmd
+    extra_configs:
+      - CONFIG_EC_HOST_CMD_RATE_LIMITING=y
+      - CONFIG_EC_HOST_CMD_RATE_LIMITING_PERIOD_MS=10
+      - CONFIG_EC_HOST_CMD_RATE_LIMITING_MIN_REST_MS=3
+      - CONFIG_EC_HOST_CMD_RATE_LIMITING_RECESS_MS=20

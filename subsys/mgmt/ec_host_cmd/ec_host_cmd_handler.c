@@ -308,6 +308,25 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 	}
 	hc->state = EC_HOST_CMD_STATE_SENDING;
 
+#ifdef CONFIG_EC_HOST_CMD_RATE_LIMITING
+	if (!k_is_in_isr()) {
+		int64_t now = k_uptime_get();
+
+		/*
+		 * If commands have processed for longer than the allowable
+		 * period without sufficient rest, sleep before sending the
+		 * response to hold off the host and yield CPU to other tasks.
+		 */
+		if (now - hc->last_recess_time >=
+		    CONFIG_EC_HOST_CMD_RATE_LIMITING_PERIOD_MS) {
+			k_msleep(CONFIG_EC_HOST_CMD_RATE_LIMITING_RECESS_MS);
+			now = k_uptime_get();
+			hc->last_recess_time = now;
+		}
+		hc->last_response_time = now;
+	}
+#endif
+
 	if (status != EC_HOST_CMD_SUCCESS) {
 		if (hc->rx_status == EC_HOST_CMD_SUCCESS) {
 			const struct ec_host_cmd_request_header *const rx_header =
@@ -340,6 +359,11 @@ void ec_host_cmd_rx_notify(void)
 {
 	struct ec_host_cmd *hc = &ec_host_cmd;
 	struct ec_host_cmd_rx_ctx *rx = &hc->rx_ctx;
+
+#ifdef CONFIG_EC_HOST_CMD_RATE_LIMITING
+	hc->cmd_arrival_time = k_uptime_get();
+	hc->cmd_arrival_valid = true;
+#endif
 
 	hc->rx_status = verify_rx(rx);
 
@@ -417,6 +441,17 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 		k_sem_take(&hc->rx_ready, K_FOREVER);
 		hc->state = EC_HOST_CMD_STATE_PROCESSING;
 
+#ifdef CONFIG_EC_HOST_CMD_RATE_LIMITING
+		int64_t cmd_start_time = hc->cmd_arrival_valid ?
+					 hc->cmd_arrival_time :
+					 k_uptime_get();
+		hc->cmd_arrival_valid = false;
+
+		if (cmd_start_time - hc->last_response_time >=
+		    CONFIG_EC_HOST_CMD_RATE_LIMITING_MIN_REST_MS) {
+			hc->last_recess_time = cmd_start_time;
+		}
+#endif
 		/* Check status of the rx data, that has been verified in
 		 * ec_host_cmd_send_received.
 		 */
