@@ -19,6 +19,14 @@ LOG_MODULE_REGISTER(adc_nrfx_saadc, CONFIG_ADC_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_saadc
 
+#define SAADC_CHECK_CHANNEL_AIN(node_id)                                                           \
+	NRF_DT_CHECK_AIN(node_id, zephyr_input_positive, "zephyr,input-positive",                  \
+			 NRFX_ANALOG_AIN_TEST_OFFSET);                                             \
+	NRF_DT_CHECK_AIN(node_id, zephyr_input_negative, "zephyr,input-negative",                  \
+			 NRFX_ANALOG_AIN_TEST_OFFSET);
+
+DT_INST_FOREACH_CHILD_STATUS_OKAY(0, SAADC_CHECK_CHANNEL_AIN)
+
 struct driver_data {
 	struct adc_context ctx;
 	uint8_t single_ended_channels;
