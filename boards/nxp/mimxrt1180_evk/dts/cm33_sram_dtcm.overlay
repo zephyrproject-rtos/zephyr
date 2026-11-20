@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 NXP
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 / {
 	chosen {
 		zephyr,sram = &dtcm;
+		/delete-property/ zephyr,dtcm;
 	};
 
 	soc {
