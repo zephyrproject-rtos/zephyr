@@ -1085,6 +1085,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 					.s4_addr[3] = 2
 				}
 			},
+			.mask_len = 32,
 			.verdict = "",
 		},
 		{
@@ -1123,14 +1124,79 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			.verdict = &"127.0.0.42/8,1.2.3.4"[13],
 		},
 		{
+			.address = "192.0.2.1/",
+			.len = sizeof("192.0.2.1/") - 1,
+			.verdict = NULL,
+		},
+		{
+			.address = "192.0.2.1/8x,192.0.2.2",
+			.len = sizeof("192.0.2.1/8x,192.0.2.2") - 1,
+			.verdict = NULL,
+		},
+		{
+			.address = "192.0.2.1/33",
+			.len = sizeof("192.0.2.1/33") - 1,
+			.verdict = NULL,
+		},
+		{
+			.address = "192.0.2.1/32",
+			.len = sizeof("192.0.2.1/32") - 1,
+			.result = {
+				.sin_family = NET_AF_INET,
+				.sin_addr = {
+					.s4_addr[0] = 192,
+					.s4_addr[1] = 0,
+					.s4_addr[2] = 2,
+					.s4_addr[3] = 1
+				}
+			},
+			.mask_len = 32,
+			.verdict = "",
+		},
+		{
+			.address = "192.0.2.1/24",
+			.len = sizeof("192.0.2.1/24") - 2,
+			.result = {
+				.sin_family = NET_AF_INET,
+				.sin_addr = {
+					.s4_addr[0] = 192,
+					.s4_addr[1] = 0,
+					.s4_addr[2] = 2,
+					.s4_addr[3] = 1
+				}
+			},
+			.mask_len = 2,
+			.verdict = "",
+		},
+		{
+			.address = "192.0.2.1/3",
+			.len = sizeof("192.0.2.1/3") - 2,
+			.verdict = NULL,
+		},
+		{
+			.address = "192.0.2.1\0/8",
+			.len = sizeof("192.0.2.1\0/8") - 1,
+			.result = {
+				.sin_family = NET_AF_INET,
+				.sin_addr = {
+					.s4_addr[0] = 192,
+					.s4_addr[1] = 0,
+					.s4_addr[2] = 2,
+					.s4_addr[3] = 1
+				}
+			},
+			.mask_len = 32,
+			.verdict = "",
+		},
+		{
 			.address = "192.0.2.3:80/foobar",
 			.len = sizeof("192.0.2.3:80/foobar") - 1,
-			.verdict = false
+			.verdict = NULL,
 		},
 		{
 			.address = "192.168.1.1:65536/foobar",
 			.len = sizeof("192.168.1.1:65536") - 1,
-			.verdict = false
+			.verdict = NULL,
 		},
 		{
 			.address = "192.0.2.3:80/foobar",
@@ -1145,6 +1211,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 					.s4_addr[3] = 3
 				}
 			},
+			.mask_len = 32,
 			.verdict = "",
 		},
 		{
@@ -1154,7 +1221,8 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 		},
 		{
 			.address = "a.b.c.d",
-			.verdict = false
+			.len = sizeof("a.b.c.d") - 1,
+			.verdict = NULL,
 		},
 	};
 #endif
@@ -1181,6 +1249,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 					.s6_addr16[7] = net_ntohs(2)
 				}
 			},
+			.mask_len = 128,
 			.verdict = "",
 		},
 		{
@@ -1199,6 +1268,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 					.s6_addr16[7] = net_ntohs(0xa)
 				}
 			},
+			.mask_len = 128,
 			.verdict = "",
 		},
 		{
@@ -1217,6 +1287,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 					.s6_addr16[7] = net_ntohs(0xa)
 				}
 			},
+			.mask_len = 128,
 			.verdict = "",
 		},
 		{
@@ -1245,6 +1316,7 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 					.s6_addr16[7] = net_ntohs(0x42)
 				}
 			},
+			.mask_len = 128,
 			.verdict = "",
 		},
 		{
@@ -1318,6 +1390,31 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 					.s6_addr16[7] = net_ntohs(0x80)
 				}
 			},
+			.mask_len = 128,
+			.verdict = "",
+		},
+		{
+			.address = "2001:db8::1/129",
+			.len = sizeof("2001:db8::1/129") - 1,
+			.verdict = NULL,
+		},
+		{
+			.address = "2001:db8::1/1x",
+			.len = sizeof("2001:db8::1/1x") - 1,
+			.verdict = NULL,
+		},
+		{
+			.address = "2001:db8::1/128",
+			.len = sizeof("2001:db8::1/128") - 1,
+			.result = {
+				.sin6_family = NET_AF_INET6,
+				.sin6_addr = {
+					.s6_addr16[0] = net_ntohs(0x2001),
+					.s6_addr16[1] = net_ntohs(0xdb8),
+					.s6_addr16[7] = net_ntohs(0x01)
+				}
+			},
+			.mask_len = 128,
 			.verdict = "",
 		},
 		{
@@ -1337,13 +1434,13 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 				}
 			},
 			.mask_len = 64,
-			.verdict = &"2001:db8::1/64,2001:db8::2"[14],
+			.verdict = &"2001:db8::1/64,2001:db8::2"[15],
 		},
 	};
 #endif
 
 #if defined(CONFIG_NET_IPV4)
-	for (i = 0; i < ARRAY_SIZE(parse_ipv4_entries) - 1; i++) {
+	for (i = 0; i < ARRAY_SIZE(parse_ipv4_entries); i++) {
 		(void)memset(&addr, 0, sizeof(addr));
 		mask_len = 0;
 
@@ -1351,34 +1448,36 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			parse_ipv4_entries[i].address,
 			parse_ipv4_entries[i].len,
 			&addr, &mask_len);
-		if (next == NULL && parse_ipv4_entries[i].verdict == NULL) {
+		if (parse_ipv4_entries[i].verdict == NULL) {
+			zexpect_is_null(next, "IPv4 entry [%d] \"%s\" was accepted", i,
+					parse_ipv4_entries[i].address);
 			continue;
 		}
 
-		if (next != NULL && memcmp(next, parse_ipv4_entries[i].verdict,
-					   strlen(next)) != 0) {
-			printk("IPv4 entry [%d] \"%s\" failed\n", i,
-				parse_ipv4_entries[i].address);
-			printk("Points to \"%s\" but should point to \"%s\"\n",
-			       next, parse_ipv4_entries[i].verdict);
-			zassert_true(false, "failure");
-		}
+		zexpect_not_null(next, "IPv4 entry [%d] \"%s\" was refused", i,
+				 parse_ipv4_entries[i].address);
 
-		if (next != NULL && *next == '\0') {
-			zassert_true(
+		if (next != NULL) {
+			zexpect_str_equal(next, parse_ipv4_entries[i].verdict,
+					  "IPv4 entry [%d] \"%s\" points to \"%s\"", i,
+					  parse_ipv4_entries[i].address, next);
+			zexpect_true(
 				net_ipv4_addr_cmp(
 				      &net_sin(&addr)->sin_addr,
 				      &parse_ipv4_entries[i].result.sin_addr));
-			zassert_true(net_sin(&addr)->sin_port == 0,
+			zexpect_true(net_sin(&addr)->sin_port == 0,
 				     "IPv4 port");
-			zassert_true(net_sin(&addr)->sin_family ==
+			zexpect_true(net_sin(&addr)->sin_family ==
 				     parse_ipv4_entries[i].result.sin_family,
 				     "IPv4 family");
+			zexpect_equal(mask_len, parse_ipv4_entries[i].mask_len,
+				      "IPv4 entry [%d] \"%s\" has mask length %u", i,
+				      parse_ipv4_entries[i].address, mask_len);
 		}
 	}
 #endif
 #if defined(CONFIG_NET_IPV6)
-	for (i = 0; i < ARRAY_SIZE(parse_ipv6_entries) - 1; i++) {
+	for (i = 0; i < ARRAY_SIZE(parse_ipv6_entries); i++) {
 		(void)memset(&addr, 0, sizeof(addr));
 		mask_len = 0;
 
@@ -1386,27 +1485,31 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 			parse_ipv6_entries[i].address,
 			parse_ipv6_entries[i].len,
 			&addr, &mask_len);
-		if (next == NULL && parse_ipv6_entries[i].verdict == NULL) {
+		if (parse_ipv6_entries[i].verdict == NULL) {
+			zexpect_is_null(next, "IPv6 entry [%d] \"%s\" was accepted", i,
+					parse_ipv6_entries[i].address);
 			continue;
 		}
 
-		if (next != NULL && memcmp(next, parse_ipv6_entries[i].verdict,
-					   strlen(next)) != 0) {
-			printk("IPv6 entry [%d] \"%s\" failed\n", i,
-			       parse_ipv6_entries[i].address);
-			zassert_true(false, "failure");
-		}
+		zexpect_not_null(next, "IPv6 entry [%d] \"%s\" was refused", i,
+				 parse_ipv6_entries[i].address);
 
-		if (next != NULL && *next == '\0') {
-			zassert_true(
+		if (next != NULL) {
+			zexpect_str_equal(next, parse_ipv6_entries[i].verdict,
+					  "IPv6 entry [%d] \"%s\" points to \"%s\"", i,
+					  parse_ipv6_entries[i].address, next);
+			zexpect_true(
 				net_ipv6_addr_cmp(
 				      &net_sin6(&addr)->sin6_addr,
 				      &parse_ipv6_entries[i].result.sin6_addr));
-			zassert_true(net_sin6(&addr)->sin6_port == 0,
+			zexpect_true(net_sin6(&addr)->sin6_port == 0,
 				     "IPv6 port");
-			zassert_true(net_sin6(&addr)->sin6_family ==
+			zexpect_true(net_sin6(&addr)->sin6_family ==
 				     parse_ipv6_entries[i].result.sin6_family,
 				     "IPv6 family");
+			zexpect_equal(mask_len, parse_ipv6_entries[i].mask_len,
+				      "IPv6 entry [%d] \"%s\" has mask length %u", i,
+				      parse_ipv6_entries[i].address, mask_len);
 		}
 	}
 #endif

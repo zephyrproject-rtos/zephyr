@@ -64,10 +64,17 @@ inline uint32_t riscv_imsic_claim(void)
 	return topei & MTOPEI_EIID_MASK;
 }
 
-/* Helper to calculate EIE register index and bit position for an EIID */
+/*
+ * Helper to calculate EIE register index and bit position for an EIID.
+ *
+ * The eie registers are numbered in steps of 32 identities, but each one is
+ * XLEN bits wide. On RV64 only the even-numbered registers exist (eie0, eie2,
+ * ...), each covering 64 identities, and accessing an odd-numbered one raises
+ * an illegal instruction exception.
+ */
 static inline void eiid_to_eie_index(uint32_t eiid, uint32_t *reg_index, uint32_t *bit)
 {
-	*reg_index = eiid / __riscv_xlen;
+	*reg_index = (eiid / __riscv_xlen) * (__riscv_xlen / 32);
 	*bit = eiid % __riscv_xlen;
 }
 

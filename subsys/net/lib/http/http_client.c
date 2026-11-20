@@ -15,10 +15,8 @@ LOG_MODULE_REGISTER(net_http_client, CONFIG_NET_HTTP_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <string.h>
-#include <strings.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <stdlib.h>
 
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_log.h>
@@ -222,18 +220,6 @@ static int on_header_field(struct http_parser *parser, const char *at,
 	struct http_request *req = CONTAINER_OF(parser,
 						struct http_request,
 						internal.parser);
-	static const char content_len[] = "Content-Length";
-	static const char content_range[] = "Content-Range";
-
-	uint16_t content_len_len = sizeof(content_len) - 1;
-	uint16_t content_range_len = sizeof(content_range) - 1;
-
-	if (length >= content_len_len && strncasecmp(at, content_len, content_len_len) == 0) {
-		req->internal.response.cl_present = true;
-	} else if (length >= content_range_len &&
-		   strncasecmp(at, content_range, content_range_len) == 0) {
-		req->internal.response.cr_present = true;
-	}
 
 	print_header_field(length, at);
 
@@ -246,40 +232,12 @@ static int on_header_field(struct http_parser *parser, const char *at,
 	return 0;
 }
 
-#define MAX_NUM_DIGITS	16
-
 static int on_header_value(struct http_parser *parser, const char *at,
 			   size_t length)
 {
 	struct http_request *req = CONTAINER_OF(parser,
 						struct http_request,
 						internal.parser);
-	char str[MAX_NUM_DIGITS];
-
-	if (req->internal.response.cl_present) {
-		if (length <= MAX_NUM_DIGITS - 1) {
-			long int num;
-
-			memcpy(str, at, length);
-			str[length] = 0;
-
-			num = strtol(str, NULL, 10);
-			if (num == LONG_MIN || num == LONG_MAX) {
-				return -EINVAL;
-			}
-
-			req->internal.response.content_length = num;
-		}
-
-		req->internal.response.cl_present = false;
-	}
-
-	if (req->internal.response.cr_present) {
-		req->internal.response.content_range.start = parser->content_range.start;
-		req->internal.response.content_range.end = parser->content_range.end;
-		req->internal.response.content_range.total = parser->content_range.total;
-		req->internal.response.cr_present = false;
-	}
 
 	if (req->internal.response.http_cb &&
 	    req->internal.response.http_cb->on_header_value) {
@@ -343,6 +301,24 @@ static int on_headers_complete(struct http_parser *parser)
 	struct http_request *req = CONTAINER_OF(parser,
 						struct http_request,
 						internal.parser);
+
+	/* A header value spanning two receives reaches the callbacks in
+	 * slices, while the parser accumulates the numbers across them. Take
+	 * them from the parser once all headers have been parsed.
+	 */
+	if (parser->flags & F_CONTENTLENGTH) {
+		req->internal.response.content_length = parser->content_length;
+		if (req->internal.response.content_length != parser->content_length) {
+			return -EINVAL;
+		}
+
+		req->internal.response.cl_present = true;
+	}
+
+	if (parser->content_range_present) {
+		req->internal.response.content_range = parser->content_range;
+		req->internal.response.cr_present = true;
+	}
 
 	if (req->internal.response.http_cb &&
 	    req->internal.response.http_cb->on_headers_complete) {

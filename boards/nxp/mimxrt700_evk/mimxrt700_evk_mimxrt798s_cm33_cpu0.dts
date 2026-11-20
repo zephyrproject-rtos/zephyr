@@ -574,6 +574,15 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 	status = "okay";
 };
 
+/* SEMA42_4: compute domain (VDD2_COMP), pairs with MU4 for cpu0 <-> HiFi4.
+ * Clock gate and reset must be released here because the DSP devicetree has
+ * no access to clkctl0/rstctl0.
+ */
+&sema424 {
+	domain-id = <0>;
+	status = "okay";
+};
+
 &crc {
 	status = "okay";
 };

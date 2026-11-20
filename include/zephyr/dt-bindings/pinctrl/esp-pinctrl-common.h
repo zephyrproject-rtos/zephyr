@@ -87,6 +87,7 @@
  * - output level [ 4 : 5 ]
  * - input/output enable override [ 6 : 7 ]
  * - sleep hold   [ 8 ]
+ * - output invert [ 9 ]
  *
  * These values are combined into a single integer and later
  * translated into GPIO configuration flags by the driver.
@@ -106,6 +107,8 @@
 #define ESP32_PIN_EN_DIR_MASK      0x3U
 #define ESP32_PIN_SLEEP_HOLD_SHIFT 8U   /**< Sleep hold bit */
 #define ESP32_PIN_SLEEP_HOLD_MASK  0x1U /**< Sleep hold mask */
+#define ESP32_PIN_OUT_INV_SHIFT    9U   /**< Output invert bit */
+#define ESP32_PIN_OUT_INV_MASK     0x1U /**< Output invert mask */
 /** @} */
 
 /**
@@ -149,6 +152,13 @@
 /** @} */
 
 /**
+ * @name ESP32 output invert configuration
+ * @{
+ */
+#define ESP32_PIN_OUT_INV_EN 0x1 /**< Invert the output signal */
+/** @} */
+
+/**
  * @brief Internal flags used by the ESP32 pinctrl driver.
  *
  * These flags are derived from the pin configuration bit field
@@ -169,6 +179,7 @@
 #define ESP32_PIN_OUT_EN_FLAG   BIT(9)
 #define ESP32_PIN_IN_EN_FLAG    BIT(10)
 #define ESP32_SLEEP_HOLD_FLAG   BIT(11) /**< Sleep hold enable bit */
+#define ESP32_OUT_INV_FLAG      BIT(12) /**< Output invert bit */
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP_PINCTRL_COMMON_H_ */

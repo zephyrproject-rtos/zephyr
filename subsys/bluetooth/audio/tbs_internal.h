@@ -281,6 +281,7 @@ struct bt_tbs_current_call_item {
 	uint8_t length;
 	uint8_t call_index;
 	uint8_t call_state;
+	uint8_t flags;
 	uint8_t uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
 } __packed;
 

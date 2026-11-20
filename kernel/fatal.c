@@ -18,6 +18,73 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+#ifdef CONFIG_SMP
+#define FATAL_NO_CPU           (-1)
+/* Time given to the other CPUs to park, in microseconds */
+#define FATAL_PAUSE_TIMEOUT_US 100000
+
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS < ATOMIC_BITS);
+
+/* CPU halting the system, FATAL_NO_CPU when none */
+static atomic_t fatal_cpu = ATOMIC_INIT(FATAL_NO_CPU);
+/* CPUs parked on behalf of fatal_cpu */
+static atomic_t paused_cpus;
+
+static bool paused_by_other_cpu(int cpu)
+{
+	atomic_val_t owner = atomic_get(&fatal_cpu);
+
+	return (owner != FATAL_NO_CPU) && (owner != cpu);
+}
+
+static FUNC_NORETURN void park(int cpu)
+{
+	(void)arch_irq_lock();
+	atomic_or(&paused_cpus, BIT(cpu));
+	for (;;) {
+		arch_spin_relax();
+	}
+}
+
+void z_fatal_pause_cpus(void)
+{
+	atomic_val_t others;
+	int cpu;
+
+	/* k_fatal_halt() may be called by a thread that could still change CPU */
+	(void)arch_irq_lock();
+	cpu = arch_curr_cpu()->id;
+	others = BIT_MASK(arch_num_cpus()) & ~BIT(cpu);
+
+	if (atomic_get(&fatal_cpu) == cpu) {
+		return;
+	}
+
+	if (!atomic_cas(&fatal_cpu, FATAL_NO_CPU, cpu)) {
+		park(cpu);
+	}
+
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
+	arch_sched_broadcast_ipi();
+#endif
+	for (int i = 0; i < FATAL_PAUSE_TIMEOUT_US; i += 10) {
+		if ((atomic_get(&paused_cpus) & others) == others) {
+			break;
+		}
+		k_busy_wait(10);
+	}
+}
+
+void z_fatal_ipi(void)
+{
+	int cpu = arch_curr_cpu()->id;
+
+	if (paused_by_other_cpu(cpu)) {
+		park(cpu);
+	}
+}
+#endif /* CONFIG_SMP */
+
 /* LCOV_EXCL_START */
 FUNC_NORETURN __weak void arch_system_halt(unsigned int reason)
 {
@@ -39,6 +106,15 @@ __weak void k_sys_fatal_error_handler(unsigned int reason,
 				      const struct arch_esf *esf)
 {
 	ARG_UNUSED(esf);
+
+	/*
+	 * The logs are flushed with the other CPUs parked, so that no thread
+	 * resumes there and mixes its output with the flush. A log message
+	 * being printed on another CPU is finished first, as parking that CPU
+	 * would cut the message short.
+	 */
+	LOG_PANIC_PREPARE();
+	z_fatal_pause_cpus();
 	LOG_PANIC();
 
 #if CONFIG_RESET_ON_FATAL_ERROR
@@ -85,6 +161,7 @@ static const char *reason_to_str(unsigned int reason)
 /* LCOV_EXCL_START */
 FUNC_NORETURN void k_fatal_halt(unsigned int reason)
 {
+	z_fatal_pause_cpus();
 	arch_system_halt(reason);
 }
 /* LCOV_EXCL_STOP */

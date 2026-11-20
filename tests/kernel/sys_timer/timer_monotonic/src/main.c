@@ -108,11 +108,17 @@ ZTEST(timer_fn, test_timer_monotonic_irq_locked)
 		/* Lock interrupts so timer ISR cannot execute when timer expires */
 		key = irq_lock();
 
-		/* Busy-wait 10ms (longer than the remaining 4ms on the timer) */
-		k_busy_wait(10000);
+		/* Poll across 10ms (longer than the remaining 4ms on the timer) */
+		uint32_t t_prev = t_before;
 
-		/* Sample cycles with interrupts still locked */
-		t_during = k_cycle_get_32();
+		for (int i = 0; i < 1000; i++) {
+			k_busy_wait(10);
+			t_during = k_cycle_get_32();
+			if ((int32_t)(t_during - t_prev) < 0) {
+				break;
+			}
+			t_prev = t_during;
+		}
 
 		/* Unlock interrupts */
 		irq_unlock(key);
@@ -123,6 +129,10 @@ ZTEST(timer_fn, test_timer_monotonic_irq_locked)
 			 iter, t_before, t_during, t_after, (int32_t)(t_during - t_before));
 
 		/* Verify cycle counter did not jump backwards */
+		zassert_true((int32_t)(t_during - t_prev) >= 0,
+			     "Timer went backward while IRQs locked! diff=%d (prev=%u, during=%u)",
+			     (int32_t)(t_during - t_prev), t_prev, t_during);
+
 		zassert_true((int32_t)(t_during - t_before) > 0,
 			     "Timer went backward while IRQs locked! diff=%d (before=%u, during=%u)",
 			     (int32_t)(t_during - t_before), t_before, t_during);

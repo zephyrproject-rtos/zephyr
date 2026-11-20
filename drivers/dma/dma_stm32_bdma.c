@@ -651,8 +651,6 @@ int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *
 		return ret;
 	}
 
-	hal_config->SrcBurstLength = zephyr_config->source_burst_length;
-	hal_config->DestBurstLength = zephyr_config->dest_burst_length;
 	hal_config->Request = zephyr_config->dma_slot;
 
 #ifdef DMA_FIFOMODE_DISABLE

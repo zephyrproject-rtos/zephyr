@@ -484,7 +484,6 @@ config TRACING_NET_CORE
 
 config TRACING_GPIO
 	bool "Tracing GPIO"
-	default n
 	help
 	  Enable tracing GPIO.
 

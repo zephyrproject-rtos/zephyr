@@ -97,6 +97,7 @@ config SPI_INIT_PRIORITY
 config SPI_COMPLETION_TIMEOUT_TOLERANCE
 	int "Completion timeout tolerance (ms)"
 	default 200
+	range 0 $(INT32_MAX)
 	help
 	  The tolerance value in ms for the SPI completion timeout logic.
 

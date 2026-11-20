@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config WUC_SILABS_SIWX91X
+	bool "Silicon Labs SiWx91x wake-up controller"
+	default y
+	depends on DT_HAS_SILABS_SIWX91X_WUC_ENABLED
+	help
+	  Enable the wake-up controller for Silicon Labs SiWx91x SoCs.

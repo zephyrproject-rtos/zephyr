@@ -1156,6 +1156,75 @@ ZTEST(mqtt_client, test_mqtt_disconnect_reason_reset_on_reconnect)
 		      test_ctx.disconnect_reason);
 }
 
+/* MQTT 5.0 PUBLISH, QoS 0, topic "t", Topic Alias 1: the broker teaches
+ * alias 1 for topic "t".
+ */
+static const uint8_t publish_alias_1_5_0[] = {
+	MQTT_PKT_TYPE_PUBLISH, 0x07, 0x00, 0x01, 't', 0x03, 0x23, 0x00, 0x01,
+};
+
+/* MQTT 5.0 PUBLISH, QoS 0, zero-length topic, Topic Alias 1: legal only if
+ * the receiver already knows alias 1 on this connection.
+ */
+static const uint8_t publish_alias_only_5_0[] = {
+	MQTT_PKT_TYPE_PUBLISH, 0x06, 0x00, 0x00, 0x03, 0x23, 0x00, 0x01,
+};
+
+ZTEST(mqtt_client, test_mqtt_topic_alias_reset_on_reconnect)
+{
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_MQTT_VERSION_5_0)) {
+		ztest_test_skip();
+	}
+
+	client_ctx.protocol_version = MQTT_VERSION_5_0;
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected");
+	test_send_reply(publish_alias_1_5_0, sizeof(publish_alias_1_5_0));
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zassert_ok(ret, "Teaching PUBLISH should be handled (%d)", ret);
+	zassert_true(test_ctx.publish_handled, "Teaching PUBLISH should be delivered");
+
+	/* The alias-only form resolves against the alias learned above. */
+	test_ctx.publish_handled = false;
+	test_send_reply(publish_alias_only_5_0, sizeof(publish_alias_only_5_0));
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zassert_ok(ret, "Alias-only PUBLISH should resolve on this connection (%d)",
+		   ret);
+	zassert_true(test_ctx.publish_handled, "Alias-only PUBLISH should be delivered");
+
+	/* Reconnect on the same client instance: topic alias mappings exist
+	 * only for the lifetime of the network connection and must not
+	 * survive it.
+	 */
+	mqtt_abort(&client_ctx);
+	broker_destroy();
+	clear_client_fds();
+	k_msleep(10);
+	broker_init();
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected again");
+	test_ctx.publish_error_expected = true;
+	test_send_reply(publish_alias_only_5_0, sizeof(publish_alias_only_5_0));
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -EBADMSG,
+		      "Alias learned on a previous connection must be an error (%d)",
+		      ret);
+	zexpect_equal(test_ctx.publish_error, -EBADMSG, "PUBLISH event result %d",
+		      test_ctx.publish_error);
+	test_ctx.publish_error_expected = false;
+	broker_process(MQTT_PKT_TYPE_DISCONNECT);
+	zexpect_equal(test_ctx.disconnect_reason, MQTT_DISCONNECT_PROTOCOL_ERROR,
+		      "DISCONNECT reason 0x%02x after reconnect, previous connection leaked",
+		      test_ctx.disconnect_reason);
+}
+
 static void mqtt_tests_before(void *fixture)
 {
 	ARG_UNUSED(fixture);

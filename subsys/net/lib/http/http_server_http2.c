@@ -777,8 +777,7 @@ static int dynamic_post_put_req_v2(struct http_resource_detail_dynamic *dynamic_
 		client->data_len -= data_len;
 	}
 
-	if (frame->length == 0 && is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM) &&
-	    !headers_only) {
+	if (frame->length == 0 && is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
 		status = HTTP_SERVER_REQUEST_DATA_FINAL;
 	} else {
 		status = HTTP_SERVER_REQUEST_DATA_MORE;
@@ -822,37 +821,34 @@ static int dynamic_post_put_req_v2(struct http_resource_detail_dynamic *dynamic_
 	}
 
 	/* At end of stream, ensure response is sent and terminated */
-	if (frame->length == 0 && !client->current_stream->end_stream_sent &&
-	    is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
-		if (client->current_stream->headers_sent) {
-			ret = send_data_frame(client, NULL, 0, frame->stream_identifier,
-					      HTTP2_FLAG_END_STREAM);
-		} else {
-			memset(&response_ctx, 0, sizeof(response_ctx));
-			response_ctx.final_chunk = true;
-			ret = http2_dynamic_response(client, frame, &response_ctx,
-						     HTTP_SERVER_REQUEST_DATA_FINAL,
-						     dynamic_detail);
-		}
+	if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
+		if (!client->current_stream->end_stream_sent) {
+			if (client->current_stream->headers_sent) {
+				ret = send_data_frame(client, NULL, 0, frame->stream_identifier,
+						      HTTP2_FLAG_END_STREAM);
+			} else {
+				memset(&response_ctx, 0, sizeof(response_ctx));
+				response_ctx.final_chunk = true;
+				ret = http2_dynamic_response(client, frame, &response_ctx,
+							     HTTP_SERVER_REQUEST_DATA_FINAL,
+							     dynamic_detail);
+			}
 
-		if (ret < 0) {
-			LOG_DBG("Cannot send last frame (%d)", ret);
-			return ret;
-		}
-
-		client->current_stream->end_stream_sent = true;
-
-		if (http_response_is_final(&response_ctx, status) &&
-		    status == HTTP_SERVER_REQUEST_DATA_FINAL) {
-			ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE,
-						 &request_ctx, &response_ctx,
-						 dynamic_detail->user_data);
 			if (ret < 0) {
+				LOG_DBG("Cannot send last frame (%d)", ret);
 				return ret;
 			}
 
-			dynamic_detail->holder = NULL;
+			client->current_stream->end_stream_sent = true;
 		}
+
+		ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE, &request_ctx,
+					 &response_ctx, dynamic_detail->user_data);
+		if (ret < 0) {
+			return ret;
+		}
+
+		dynamic_detail->holder = NULL;
 	}
 
 	return ret;
@@ -1025,6 +1021,8 @@ static int enter_http_frame_headers_state(struct http_client_ctx *client)
 		client->expect_continuation = false;
 	}
 
+	client->headers_end_stream = is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM);
+
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
 		/* Reset header capture state for new headers frame */
 		client->header_capture_ctx.count = 0;
@@ -1051,6 +1049,16 @@ static int enter_http_frame_continuation_state(struct http_client_ctx *client)
 		LOG_DBG("Unexpected CONTINUATION frame for stream ID %d",
 			frame->stream_identifier);
 		return -ENOENT;
+	}
+
+	/* The frame is processed by the HEADERS handler. END_HEADERS is the
+	 * only flag defined for a CONTINUATION frame, the others are ignored
+	 * (RFC 9113, Section 4.1), and END_STREAM is the one of the HEADERS
+	 * frame that started the header block.
+	 */
+	frame->flags &= HTTP2_FLAG_END_HEADERS;
+	if (client->headers_end_stream) {
+		frame->flags |= HTTP2_FLAG_END_STREAM;
 	}
 
 	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_END_HEADERS)) {
@@ -1204,6 +1212,7 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 	struct http_resource_detail *detail;
 	struct http2_stream_ctx *stream;
 	bool new_request = false;
+	bool finished = false;
 	size_t discard_len;
 	int path_len;
 	int ret;
@@ -1282,6 +1291,13 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 			}
 #endif
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
+			/* With captured headers, a request with no body left is
+			 * already finished by the headers call.
+			 */
+			finished = IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) &&
+				   frame->length == 0 &&
+				   is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM);
+
 			ret = handle_http2_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,
 				frame, client);
@@ -1300,7 +1316,7 @@ request_body:
 	/* A dynamic resource accepting a POST, PUT or PATCH request receives
 	 * the body. Otherwise the body is discarded.
 	 */
-	if (stream->current_detail != NULL) {
+	if (stream->current_detail != NULL && !finished) {
 		ret = dynamic_post_put_req_v2(
 			(struct http_resource_detail_dynamic *)stream->current_detail, client,
 			false);
@@ -1673,7 +1689,9 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 		goto out;
 	}
 
-	if (client->current_stream->current_detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
+	/* Already answered by dynamic_post_put_req_v2() with the captured headers */
+	if (client->current_stream->current_detail->type == HTTP_RESOURCE_TYPE_DYNAMIC &&
+	    !client->current_stream->end_stream_sent) {
 		struct http_resource_detail_dynamic *dynamic_detail =
 			(struct http_resource_detail_dynamic *)
 				client->current_stream->current_detail;

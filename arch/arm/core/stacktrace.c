@@ -475,7 +475,7 @@ static bool seed_from_esf(struct unwind_control_block *ucb, const struct arch_es
 	ucb->vrs[13] = esf_stack_pointer(esf) + sizeof(esf->basic);
 
 #if defined(CONFIG_CPU_CORTEX_M)
-	if ((esf->basic.xpsr & BIT(9)) != 0) {
+	if ((esf->basic.xpsr & XPSR_SPREALIGN_Msk) != 0) {
 		ucb->vrs[13] += sizeof(uint32_t);
 	}
 #endif

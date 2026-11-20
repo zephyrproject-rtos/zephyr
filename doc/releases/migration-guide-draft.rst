@@ -34,6 +34,11 @@ Build System
 Kernel
 ******
 
+* :c:func:`k_queue_cancel_wait` and :c:macro:`k_fifo_cancel_wait` now wake every :c:func:`k_poll`
+  call waiting on the queue with ``-EINTR`` and submit every :c:func:`k_work_poll_submit` item
+  waiting on it, not only the first. Code that treated a cancel as addressed to one waiter must
+  re-check its own condition.
+
 Boards
 ******
 
@@ -174,6 +179,10 @@ Boards
   been removed because they had no effect. Remove them from configuration files. Board
   ``Kconfig.defconfig`` files must drop their ``choice SPIRAM_TYPE`` overrides. The flash size
   comes from the ``zephyr,flash`` devicetree node.
+
+* On LiteX SoCs, :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` no longer falls back to the
+  CPU ``clock-frequency`` when ``/cpus`` has no ``timebase-frequency``. Out-of-tree boards must
+  set ``timebase-frequency`` on the ``/cpus`` node. (:github:`124446`)
 
 Device Drivers and Devicetree
 *****************************
@@ -422,6 +431,25 @@ Timers
   ``z_cms_lptim_hook_on_lpm_entry`` and ``z_cms_lptim_hook_on_lpm_exit`` with
   :c:func:`z_sys_clock_lpm_enter` and :c:func:`z_sys_clock_lpm_exit`, respectively. (:github:`124238`).
 
+W1
+==
+
+* The 1-Wire API now uses controller/peripheral terminology. The former names remain available as
+  deprecated aliases:
+
+  * :c:struct:`w1_master_config` is deprecated in favor of :c:struct:`w1_controller_config`, and
+    its ``slave_count`` member is deprecated in favor of ``peripheral_count``.
+  * :c:struct:`w1_master_data` is deprecated in favor of :c:struct:`w1_controller_data`.
+  * :c:struct:`w1_slave_config` is deprecated in favor of :c:struct:`w1_peripheral_config`.
+  * :c:func:`w1_get_slave_count` is deprecated in favor of :c:func:`w1_get_peripheral_count`.
+  * ``W1_SLAVE_COUNT`` and ``W1_INST_SLAVE_COUNT`` are deprecated in favor of
+    ``W1_PERIPHERAL_COUNT`` and ``W1_INST_PERIPHERAL_COUNT``.
+
+* The common devicetree binding include files ``w1-master.yaml`` and ``w1-slave.yaml`` are
+  deprecated in favor of ``w1-controller.yaml`` and ``w1-peripheral.yaml``. Out-of-tree bindings
+  should update their ``include:`` statements accordingly; the old files are kept as thin
+  includes of the new ones for compatibility.
+
 Wi-Fi
 =====
 
@@ -594,6 +622,35 @@ Networking
     ``overlay-multiport.overlay``.
   * :zephyr_file:`samples/subsys/mgmt/updatehub/local.conf.example` replaces
     ``overlay-prj.conf.example``.
+
+Ethernet
+========
+
+* Checksum offload capabilities are now advertised with one bit per IP version and protocol.
+  ``ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER``, ``ETHERNET_CHECKSUM_SUPPORT_TCP`` and
+  ``ETHERNET_CHECKSUM_SUPPORT_UDP`` have been removed. :c:enumerator:`NET_IF_CHECKSUM_IPV6_HEADER`
+  has been deprecated, as IPv6 has no header checksum and no interface advertises it anymore.
+  Drivers reporting ``ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT`` or
+  ``ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT`` must set
+  :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP`,
+  :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP`,
+  :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP` and
+  :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP` for the combinations they offload. The old
+  bits map per IP version:
+
+  * ``ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER`` together with ``ETHERNET_CHECKSUM_SUPPORT_TCP`` or
+    ``ETHERNET_CHECKSUM_SUPPORT_UDP`` becomes :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP`
+    or :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP`.
+  * ``ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER`` together with ``ETHERNET_CHECKSUM_SUPPORT_TCP`` or
+    ``ETHERNET_CHECKSUM_SUPPORT_UDP`` becomes :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP`
+    or :c:enumerator:`ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP`.
+
+OpenThread
+==========
+
+* The :kconfig:option:`OPENTHREAD_THREAD_VERSION_1_4` Kconfig option is now enabled by default.
+
+* Applications that require an older OpenThread version must explicitly select the desired version in their project Kconfig configuration.
 
 Other subsystems
 ****************

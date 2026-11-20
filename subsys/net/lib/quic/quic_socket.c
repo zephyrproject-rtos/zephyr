@@ -153,6 +153,7 @@ static int quic_connection_init(struct quic_context *ctx,
 
 fail:
 	sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ep->list_ref_dropped = true;
 
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
@@ -770,13 +771,16 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 		}
 	}
 
-	/* Report POLLHUP when the connection has been closed (no endpoints
-	 * remain). This allows upper layers (e.g. the HTTP server) to
-	 * immediately detect and clean up stale connections instead of
-	 * waiting for an inactivity timer. POLLHUP is always reported
-	 * regardless of the requested events, per POSIX semantics.
+	/* Report POLLHUP when the connection has been closed: no endpoints
+	 * remain, or the connection was closed while streams the peer opened
+	 * are still waiting to be accepted. Those make the socket readable
+	 * too, so the hang-up would otherwise not show until they are taken.
+	 * This allows upper layers (e.g. the HTTP server) to immediately
+	 * detect and clean up stale connections instead of waiting for an
+	 * inactivity timer. POLLHUP is always reported regardless of the
+	 * requested events, per POSIX semantics.
 	 */
-	if (quic_ctx_is_eof(ctx)) {
+	if (quic_ctx_is_eof(ctx) || (!ctx->is_listening && ctx->closed)) {
 		pfd->revents |= ZSOCK_POLLHUP;
 	}
 
@@ -1023,7 +1027,19 @@ static int quic_send_stream_fin(struct quic_stream *stream, struct quic_endpoint
 	enum quic_secret_level level;
 	size_t frame_len = 0;
 	uint64_t sent_pn;
+	bool reset;
 	int ret;
+
+	/* RESET_STREAM fixed the final size already, and a FIN cannot change
+	 * it (RFC 9000 ch. 4.5)
+	 */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	reset = stream->tx_reset;
+	k_mutex_unlock(&stream->tx_lock);
+
+	if (reset) {
+		return -EPIPE;
+	}
 
 	/*
 	 * STREAM frame type bits:
@@ -1120,6 +1136,14 @@ static ssize_t quic_stream_replay_pending_data(struct quic_stream *stream)
 	if (state == STATE_RESET_SENT || state == STATE_DATA_READ) {
 		return -EPIPE;
 	}
+
+	/* No data is replayed on a stream that RESET_STREAM ended */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	if (stream->tx_reset) {
+		k_mutex_unlock(&stream->tx_lock);
+		return -EPIPE;
+	}
+	k_mutex_unlock(&stream->tx_lock);
 
 	if (stream->bytes_sent < tx->base_offset ||
 	    stream->bytes_sent > tx->base_offset + tx->len) {
@@ -1218,8 +1242,14 @@ static ssize_t quic_stream_replay_pending_data(struct quic_stream *stream)
 		return ret;
 	}
 
-	stream->bytes_sent += to_send;
-	ep->tx_fc.bytes_sent += to_send;
+	/* A reset counted the data in its final size already */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	if (!stream->tx_reset) {
+		stream->bytes_sent += to_send;
+		ep->tx_fc.bytes_sent += to_send;
+	}
+	k_mutex_unlock(&stream->tx_lock);
+
 	quic_annotate_sent_stream(ep, level, sent_pn, stream->id, this_offset,
 				  (uint16_t)to_send, false);
 
@@ -1283,15 +1313,25 @@ int quic_replay_rejected_early_data(struct quic_endpoint *ep)
 			continue;
 		}
 
+		ret = 0;
 		while (stream->bytes_sent < stream->tx_buf.base_offset + stream->tx_buf.len) {
 			ret = quic_stream_replay_pending_data(stream);
-			if (ret == -EAGAIN) {
+			if (ret == -EAGAIN || ret == -EPIPE) {
 				break;
 			}
 
 			if (ret < 0) {
 				return ret;
 			}
+		}
+
+		/* A reset stream has nothing left to replay and gets no FIN.
+		 * It is skipped, so that it does not hold up the streams after
+		 * it.
+		 */
+		if (ret == -EPIPE) {
+			stream->replay_fin_pending = false;
+			continue;
 		}
 
 		if (!stream->replay_fin_pending ||
@@ -1304,7 +1344,7 @@ int quic_replay_rejected_early_data(struct quic_endpoint *ep)
 			continue;
 		}
 
-		if (ret < 0) {
+		if (ret < 0 && ret != -EPIPE) {
 			return ret;
 		}
 
@@ -1434,6 +1474,15 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 
 	/* Also limit by TX retransmit buffer space */
 	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+
+	/* No data is sent at or beyond the final size of a RESET_STREAM
+	 * (RFC 9000 ch. 4.5)
+	 */
+	if (stream->tx_reset) {
+		k_mutex_unlock(&stream->tx_lock);
+		return -EPIPE;
+	}
+
 	tx = &stream->tx_buf;
 	tx_free = sizeof(tx->data) - tx->len;
 
@@ -1503,9 +1552,16 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	frame_len += to_send;
 
 	/* Copy into retransmit buffer before sending. If the send fails the
-	 * data stays here for PTO / loss detection retransmission.
+	 * data stays here for PTO / loss detection retransmission. A reset
+	 * takes its final size from the end of this buffer, so data is not
+	 * queued once the stream is reset.
 	 */
 	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	if (stream->tx_reset) {
+		k_mutex_unlock(&stream->tx_lock);
+		return -EPIPE;
+	}
+
 	memcpy(&tx->data[tx->len], buf, to_send);
 	tx->len += to_send;
 	k_mutex_unlock(&stream->tx_lock);
@@ -1513,9 +1569,12 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	/* Send the packet */
 	ret = quic_send_packet_with_pn(ep, level, frame, frame_len, &sent_pn);
 	if (ret < 0) {
-		/* Roll back TX buffer on send failure */
+		/* Roll back TX buffer on send failure. Data that a reset
+		 * has counted in its final size stays in the buffer, and the
+		 * reset counted it as sent already.
+		 */
 		k_mutex_lock(&stream->tx_lock, K_FOREVER);
-		if (stream->bytes_sent == this_offset) {
+		if (!stream->tx_reset && stream->bytes_sent == this_offset) {
 			size_t buf_off = (size_t)(this_offset - tx->base_offset);
 
 			if (buf_off < tx->len && buf_off + to_send <= tx->len) {
@@ -1534,9 +1593,15 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 		return ret;
 	}
 
-	/* Update flow control tracking */
-	stream->bytes_sent += to_send;
-	ep->tx_fc.bytes_sent += to_send;
+	/* Update flow control tracking, unless a reset counted the data in
+	 * its final size already
+	 */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	if (!stream->tx_reset) {
+		stream->bytes_sent += to_send;
+		ep->tx_fc.bytes_sent += to_send;
+	}
+	k_mutex_unlock(&stream->tx_lock);
 
 	/* Annotate the sent_pkt ring-buffer entry with stream frame info
 	 * so loss detection knows what to retransmit.
@@ -2258,10 +2323,12 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 {
 	struct quic_stream *stream = obj;
 	struct quic_endpoint *ep;
+	int wr_ret = 0;
 	int ret = 0;
 
 	if (!PART_OF_ARRAY(streams, stream)) {
-		return -EINVAL;
+		errno = EINVAL;
+		return -1;
 	}
 
 	/* One endpoint, held by a reference, is used for everything that is
@@ -2294,18 +2361,27 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 		    state != STATE_RESET_RECVD &&
 		    state != STATE_RESET_READ) {
 			ret = quic_send_stream_fin(stream, ep);
-			if (ret < 0) {
+			if (ret == -EPIPE) {
+				/* RESET_STREAM ended the sending half, no FIN is
+				 * sent and the state stays. The receiving half is
+				 * still shut down below, and the error is returned.
+				 */
+				wr_ret = ret;
+				ret = 0;
+				NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): no FIN after a reset",
+					stream, quic_get_by_stream(stream));
+			} else if (ret < 0) {
 				NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): FIN send failed (%d)",
 					stream, quic_get_by_stream(stream), ret);
 				goto out;
+			} else {
+				/* Advance state so that close does not send a second FIN */
+				smf_set_state(SMF_CTX(&stream->state.ctx),
+					      &quic_stream_bidirectional_states[STATE_DATA_SENT]);
+
+				NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): FIN sent on stream %" PRIu64,
+					stream, quic_get_by_stream(stream), stream->id);
 			}
-
-			/* Advance state so quic_stream_close_vmeth won't send a second FIN */
-			smf_set_state(SMF_CTX(&stream->state.ctx),
-				      &quic_stream_bidirectional_states[STATE_DATA_SENT]);
-
-			NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): FIN sent on stream %" PRIu64,
-				stream, quic_get_by_stream(stream), stream->id);
 		} else {
 			NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): FIN already sent (state=%d)",
 				stream, quic_get_by_stream(stream), state);
@@ -2355,7 +2431,17 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 out:
 	quic_endpoint_unref(ep);
 
-	return ret;
+	if (ret >= 0 && wr_ret < 0) {
+		ret = wr_ret;
+	}
+
+	/* zsock_shutdown() returns the result as it is: -1 and errno */
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	return 0;
 }
 
 static const struct socket_op_vtable quic_ctx_fd_op_vtable = {
