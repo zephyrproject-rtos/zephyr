@@ -360,8 +360,12 @@ int bt_id_set_private_addr(uint8_t id)
 		return -EINVAL;
 	}
 
-	/* check if RPA is valid */
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID)) {
+	/* Keep a valid RPA while the random address still holds it. Since the
+	 * RPA was set, a legacy advertiser may have replaced it with an
+	 * identity address, an NRPA or the RPA of another identity.
+	 */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID) &&
+	    bt_addr_matches_irk(&bt_dev.random_addr, bt_dev.irk[id])) {
 		return 0;
 	}
 
