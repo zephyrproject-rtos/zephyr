@@ -1,0 +1,15 @@
+/*
+ * Copyright 2026 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	intc: interrupt-controller@f03f00 {
+		compatible = "vnd,intc";
+		#address-cells = <0>;
+		#interrupt-cells = <2>;
+		interrupt-controller;
+		reg = <0x00f03f00 0x0100>;
+	};
+};
