@@ -183,6 +183,11 @@ static inline int adc_context_wait_for_completion(struct adc_context *ctx)
 
 static inline void adc_context_complete(struct adc_context *ctx, int status)
 {
+	/* If there's a running timer, disable it on error */
+	if ((status != 0) && (ctx->sequence.options != NULL) && (ctx->options.interval_us != 0U)) {
+		adc_context_disable_timer(ctx);
+	}
+
 #ifdef ADC_CONTEXT_ENABLE_ON_COMPLETE
 	adc_context_on_complete(ctx, status);
 #endif /* ADC_CONTEXT_ENABLE_ON_COMPLETE */
