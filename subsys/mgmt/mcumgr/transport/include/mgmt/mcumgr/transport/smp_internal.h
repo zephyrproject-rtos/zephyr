@@ -50,9 +50,9 @@ struct zephyr_smp_transport;
  */
 void smp_rx_req(struct smp_transport *smtp, struct net_buf *nb);
 
-#ifdef CONFIG_SMP_CLIENT
+#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
 /**
- * @brief Get work queue for SMP client.
+ * @brief Get work queue for SMP client and transport management bridges.
  *
  * @return SMP work queue object.
  */

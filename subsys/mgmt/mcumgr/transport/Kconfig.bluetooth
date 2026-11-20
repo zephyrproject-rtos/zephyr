@@ -13,15 +13,10 @@ menuconfig MCUMGR_TRANSPORT_BT
 	bool "Bluetooth MCUmgr SMP transport"
 	depends on BT_PERIPHERAL
 	help
-	  Enables handling of SMP commands received over Bluetooth.
+	  Enables handling of SMP commands received over Bluetooth. See
+	  MCUMGR_TRANSPORT_BT_CLIENT for sending SMP commands to a Bluetooth peer.
 
 if MCUMGR_TRANSPORT_BT
-
-config MCUMGR_TRANSPORT_BT_CLIENT
-	bool "Bluetooth MCUmgr SMP client transport"
-	depends on BT_CENTRAL && BT_GATT_CLIENT && MCUMGR_GRP_TRANSPORT
-	help
-	  Enables connecting to and issuing commands to a remote Bluetooth MCUmgr server.
 
 config MCUMGR_TRANSPORT_BT_REASSEMBLY
 	bool "Reassemble packets in Bluetooth SMP transport"
@@ -117,3 +112,52 @@ config MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION
 	  will be statically defined and registered.
 
 endif # MCUMGR_TRANSPORT_BT
+
+menuconfig MCUMGR_TRANSPORT_BT_CLIENT
+	bool "Bluetooth MCUmgr SMP client transport [EXPERIMENTAL]"
+	depends on BT_CENTRAL && BT_GATT_CLIENT
+	depends on SMP_CLIENT || MCUMGR_GRP_TRANSPORT
+	depends on !(SMP_CLIENT && MCUMGR_GRP_TRANSPORT)
+	select MCUMGR_TRANSPORT_REASSEMBLY
+	select EXPERIMENTAL
+	help
+	  Enables issuing commands to a remote Bluetooth MCUmgr server, as the GATT client of
+	  its SMP service. The transport serves one server at a time, for one of two uses,
+	  which are not built together:
+
+	  - a peer the application has connected to and attached with smp_client_bt_attach(),
+	    for the SMP client (SMP_CLIENT), or
+	  - a peer that a transport management bridge (MCUMGR_GRP_TRANSPORT) connects to, as
+	    the outgoing side of the bridge. This option is also needed for a central
+	    connected to the SMP service of this device (MCUMGR_TRANSPORT_BT) to be the
+	    incoming side of a bridge.
+
+	  Packets are written in fragments of ATT_MTU - 3 bytes. Unless the peer starts the ATT
+	  MTU exchange, enable BT_GATT_AUTO_UPDATE_MTU or call bt_gatt_exchange_mtu(); otherwise
+	  the ATT_MTU stays at 23 and each fragment carries 20 bytes. MCUMGR_TRANSPORT_NETBUF_SIZE
+	  must not exceed the server's, because the image upload client sizes its frames from it.
+
+if MCUMGR_TRANSPORT_BT_CLIENT
+
+config MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDITS
+	int "Bluetooth SMP client transmit credits"
+	range 1 255
+	default 2 if BT_ATT_TX_COUNT > 1
+	default 1
+	help
+	  Number of fragments, each an ATT Write Without Response, that the transport may have
+	  in flight at once. Must not exceed BT_ATT_TX_COUNT, which a build assertion checks.
+	  The default is 2, or 1 when BT_ATT_TX_COUNT is 1.
+
+config MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDIT_TIMEOUT
+	int "Bluetooth SMP client transmit credit timeout in milliseconds"
+	range 1 10000
+	default 500
+	help
+	  How long the first fragment of a packet waits for a transmit credit before the
+	  packet is dropped. The SMP client retries a dropped request; a bridge answers the
+	  forwarded request with an error. The wait blocks the MCUmgr work queue. Once its
+	  first fragment has been written, a packet waits for credits until its link is lost
+	  or released.
+
+endif # MCUMGR_TRANSPORT_BT_CLIENT

@@ -655,6 +655,44 @@ OpenThread
 Other subsystems
 ****************
 
+MCUmgr
+======
+
+* :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT` now builds a transport of its own, the
+  :ref:`Bluetooth client transport <mcumgr_smp_transport_ble_client>`, which is still registered
+  as ``SMP_BLUETOOTH_TRANSPORT``. The option is no longer part of
+  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT`, so it no longer needs the Bluetooth server
+  transport or :kconfig:option:`CONFIG_BT_PERIPHERAL`. It depends on either
+  :kconfig:option:`CONFIG_SMP_CLIENT` or :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT`, but not
+  both, and selects :kconfig:option:`CONFIG_EXPERIMENTAL` and
+  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_REASSEMBLY`. Configurations that also enable
+  :kconfig:option:`CONFIG_SMP_CLIENT` can no longer bridge to a Bluetooth peer. A bridge whose
+  incoming side is a central connected to the local SMP service still needs both
+  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT` and this option.
+
+* Bridges to a Bluetooth peer, which are part of the experimental
+  :ref:`transport management <mcumgr_smp_group_11>` group, changed:
+
+  * The connect command now waits up to 30 seconds for the peer to accept the subscription. It
+    fails with ``TRANSPORT_MGMT_ERR_CONNECT_FAILED`` if the peer has no usable SMP service or
+    rejects the subscription, and the link is then disconnected. Previously the connect reported
+    success as soon as the subscription was requested.
+  * Fragments are no longer halved on ``-ENOMEM``. The number of fragments in flight is set with
+    :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT_TX_CREDITS`, which must not exceed
+    :kconfig:option:`CONFIG_BT_ATT_TX_COUNT`.
+  * The disconnect command with ``transport`` set to the ID of ``SMP_BLUETOOTH_TRANSPORT`` only
+    matches bridges whose outgoing side is a Bluetooth peer. To disconnect a bridge whose
+    incoming side is a Bluetooth central, use ``all``, or send the command over that link without
+    ``transport``.
+  * With :kconfig:option:`CONFIG_BT_MAX_CONN` set to 1, a bridge between the Bluetooth server and
+    a Bluetooth peer fails with ``TRANSPORT_MGMT_ERR_CONNECT_FAILED`` instead of
+    ``TRANSPORT_MGMT_ERR_SAME_BRIDGE_DEVICE_DISALLOWED``.
+
+* An SMP client object initialized with ``SMP_BLUETOOTH_TRANSPORT`` now uses the Bluetooth client
+  transport and needs a target attached with :c:func:`smp_client_bt_attach`. Previously, with
+  :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT` enabled, it was bound to the Bluetooth
+  server transport, over which it could not send requests.
+
 Shell
 =====
 
