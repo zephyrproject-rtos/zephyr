@@ -38,8 +38,21 @@ This is supported by the ``openocd`` binary available in the board, and its
 functionality can be made available to the computer via ``adb`` port forwarding
 commands.
 
-This interface is not yet integrated with the ``west flash`` command, but
-debugging is supported.
+Flashing
+========
+
+The ``adb-openocd`` runner copies ``zephyr.elf`` to the QRB2210 with
+``adb push`` and programs the STM32U585 with the ``openocd`` binary available in
+the board. Only ``adb`` is needed on the computer and the ``adb`` server must be
+running before you flash:
+
+.. code-block:: console
+
+   west build -b arduino_uno_q samples/basic/blinky
+   west flash -r adb-openocd
+
+If more than one board is connected, select one by its ADB serial number with
+``west flash -r adb-openocd --dev-id <serial>``.
 
 Debugging
 =========

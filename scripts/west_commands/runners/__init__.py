@@ -26,6 +26,7 @@ def _import_runner_module(runner_name):
 
 _names = [
     # zephyr-keep-sorted-start
+    'adb_openocd',
     'alif_flash',
     'amebaflash',
     'bflb_flash_command',
