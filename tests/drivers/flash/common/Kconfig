@@ -24,4 +24,12 @@ config TEST_FORCE_STORAGE_PARTITION
 	  the storage area by default. Set this config to prioritize
 	  testing the storage partition instead.
 
+config TEST_FLASH_WRITE_FROM_ISR
+	bool "Test a flash write from ISR context"
+	select IRQ_OFFLOAD
+	help
+	  Writes the test area from an offloaded ISR, as a fatal-error
+	  coredump does. Enable only for drivers that support writes
+	  from ISR context.
+
 source "Kconfig.zephyr"
