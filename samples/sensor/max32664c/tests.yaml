@@ -13,3 +13,17 @@ tests:
     filter: dt_compat_enabled("maxim,max32664c")
     depends_on:
       - i2c
+  sample.sensor.max32664c.interrupt:
+    build_only: true
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    tags:
+      - sensors
+      - heart_rate
+    filter: dt_compat_enabled("maxim,max32664c")
+    depends_on:
+      - i2c
+      - gpio
+    extra_configs:
+      - CONFIG_MAX32664C_USE_INTERRUPT=y
+      - CONFIG_GPIO=y
