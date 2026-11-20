@@ -168,6 +168,24 @@
 		current-speed = <115200>;
 		status = "disabled";
 	};
+
+	mram_flash: flash-controller@80000000 {
+		compatible = "alif,mram-flash-controller";
+		reg = <0x80000000 DT_SIZE_K(5632)>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mram: flash@80000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x80000000 DT_SIZE_K(5632)>;
+			ranges = <0x0 0x80000000 DT_SIZE_K(5632)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			erase-block-size = <4096>;
+			write-block-size = <16>;
+		};
+	};
 };
 
 /* These devices carry the full eight pin wide LPGPIO. */

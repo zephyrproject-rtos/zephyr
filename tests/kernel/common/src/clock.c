@@ -314,6 +314,23 @@ static void init_data_count(void)
 	tdata.stop_count = 0;
 }
 
+static void busy_wait(uint32_t duration_ms)
+{
+	if (!IS_ENABLED(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)) {
+		k_busy_wait(duration_ms * 1000);
+		return;
+	}
+
+	/* If custom busy wait is used then it might use different clock source than the system
+	 * clock so we keep polling the uptime clock until the duration elapses.
+	 */
+	uint32_t start = k_uptime_get_32();
+
+	while (k_uptime_get_32() - start < duration_ms) {
+		k_busy_wait(1);
+	}
+}
+
 /**
  * @brief Verify a kernel timer expires only after its millisecond duration elapses.
  *
@@ -339,14 +356,13 @@ static void init_data_count(void)
  * @see k_timer_start(), k_timer_stop(), k_busy_wait()
  *
  */
-
 ZTEST(clock, test_ms_time_duration)
 {
 	init_data_count();
 	k_timer_start(&ktimer, K_MSEC(DURATION), K_NO_WAIT);
 
 	/** TESTPOINT: waiting time less than duration and check the count*/
-	k_busy_wait(LESS_DURATION * 1000);
+	busy_wait(LESS_DURATION);
 	zassert_true(tdata.duration_count == 0);
 	zassert_true(tdata.stop_count == 0);
 
@@ -356,7 +372,7 @@ ZTEST(clock, test_ms_time_duration)
 
 	/** TESTPOINT: waiting time more than duration and check the count */
 	k_usleep(1);		/* align to tick */
-	k_busy_wait((DURATION + 1) * 1000);
+	busy_wait(DURATION + 1);
 	zassert_true(tdata.duration_count == 1, "duration %u not 1",
 		     tdata.duration_count);
 	zassert_true(tdata.stop_count == 0,

@@ -17,6 +17,7 @@
 	model = "Silicon Labs EFR32xG21B +10 dBm Radio Board (xG21-RB4195B, BRD4195B)";
 
 	chosen {
+		zephyr,bt-c2h-uart = &usart0;
 		zephyr,bt-hci = &bt_hci_silabs;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &usart0;

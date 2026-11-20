@@ -18,6 +18,8 @@ supported:
   - crc
   - gpio
   - hwinfo
+  - netif:eth
+  - ptp_clock
   - pwm
   - uart
   - watchdog

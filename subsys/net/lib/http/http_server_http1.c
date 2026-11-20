@@ -759,23 +759,15 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 	}
 
 	/* get filename and content-type from url */
-	len = http_server_path_len_without_query(client->url_buffer);
-	if (len == 1) {
-		/* url is just the leading slash, use index.html as filename */
-		snprintk(fname, sizeof(fname), "%s/index.html", static_fs_detail->fs_path);
-	} else {
-		http_server_get_content_type_from_extension(client->url_buffer, content_type,
-							    sizeof(content_type));
-		snprintk(fname, sizeof(fname), "%s%.*s", static_fs_detail->fs_path, len,
-			 client->url_buffer);
-	}
-
-	/* open file, if it exists */
 #ifdef CONFIG_HTTP_SERVER_COMPRESSION
-	ret = http_server_find_file(fname, sizeof(fname), &file_size, client->supported_compression,
-			    &chosen_compression);
+	ret = http_server_find_static_fs_file(static_fs_detail, client->url_buffer, fname,
+					      sizeof(fname), content_type, sizeof(content_type),
+					      &file_size, client->supported_compression,
+					      &chosen_compression);
 #else
-	ret = http_server_find_file(fname, sizeof(fname), &file_size, 0, NULL);
+	ret = http_server_find_static_fs_file(static_fs_detail, client->url_buffer, fname,
+					      sizeof(fname), content_type, sizeof(content_type),
+					      &file_size, 0, NULL);
 #endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 	if (ret < 0) {
 		LOG_ERR("fs_stat %s: %d", fname, ret);
@@ -1229,12 +1221,30 @@ int enter_http1_request(struct http_client_ctx *client)
 	return 0;
 }
 
+/* An accepted protocol upgrade receives every piece of the request body. */
+static bool http1_upgrade_accepted(const struct http_client_ctx *client)
+{
+	int path_len;
+
+	if (!client->has_upgrade_header || is_client_http10(client)) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_WEBSOCKET) && client->websocket_upgrade) {
+		return get_resource_detail(client->service, client->url_buffer, &path_len,
+					   true) != NULL;
+	}
+
+	return IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) && client->http2_upgrade;
+}
+
 int handle_http1_request(struct http_client_ctx *client)
 {
 	int ret, path_len = 0;
 	struct http_resource_detail *detail;
 	bool skip_headers = (client->parser_state < HTTP1_RECEIVING_DATA_STATE);
 	size_t frag_skip_len;
+	bool upgrade_accepted;
 	size_t parsed;
 
 	LOG_DBG("HTTP_SERVER_REQUEST");
@@ -1289,6 +1299,21 @@ int handle_http1_request(struct http_client_ctx *client)
 
 	client->cursor += frag_skip_len;
 	client->data_len -= frag_skip_len;
+
+	upgrade_accepted = http1_upgrade_accepted(client);
+
+	/* The request body can arrive over several calls. Once a response has
+	 * been sent, only an accepted protocol upgrade or a dynamic resource
+	 * still receiving the body gets the rest of it. For any other resource
+	 * the response is complete, and the rest of the body is discarded.
+	 */
+	if (client->http1_headers_sent && !upgrade_accepted) {
+		detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
+		if (detail == NULL || detail->type != HTTP_RESOURCE_TYPE_DYNAMIC ||
+		    ((struct http_resource_detail_dynamic *)detail)->holder != client) {
+			goto consume;
+		}
+	}
 
 	/* An upgrade to a protocol that is not supported, and any Upgrade in an
 	 * HTTP/1.0 request, is ignored, and the request is served over HTTP/1.
@@ -1361,6 +1386,7 @@ not_found: ; /* Add extra semicolon to make clang to compile when using label */
 		client->http1_headers_sent = true;
 	}
 
+consume:
 	client->cursor += parsed;
 	client->data_len -= parsed;
 

@@ -4,6 +4,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 
 #include <zephyr/sys/util.h>
@@ -27,9 +28,20 @@ LOG_MODULE_REGISTER(soc);
 #define SY1XX_ARCHI_ITC_FIFO_OFFSET       0x24
 #define SY1XX_ARCHI_ITC_IRQ_MASK          0x1f
 
+#define SY1XX_ARCHI_SYSCTRL_RSTEN_OFFSET       0x8U
+#define SY1XX_ARCHI_SYSCTRL_SORTRIGGER_OFFSET  0x1cU
+
 void sys_arch_reboot(int type)
 {
+	const uintptr_t base = DT_REG_ADDR(DT_NODELABEL(sysctrl));
+	const uintptr_t rsten = base + SY1XX_ARCHI_SYSCTRL_RSTEN_OFFSET;
+	const uintptr_t sortrigger = base + SY1XX_ARCHI_SYSCTRL_SORTRIGGER_OFFSET;
+
 	ARG_UNUSED(type);
+
+	/* Enable and trigger software reset. */
+	sys_set_bit(rsten, 0U);
+	sys_set_bit(sortrigger, 0U);
 }
 
 #define SY1XX_ARCHI_REF_CLOCK 32768

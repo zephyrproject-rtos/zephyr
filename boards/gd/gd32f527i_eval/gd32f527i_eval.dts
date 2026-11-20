@@ -1,0 +1,148 @@
+/*
+ * Copyright (c) 2026 GigaDevice Semiconductor Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <gd/gd32f527/gd32f527is.dtsi>
+#include "gd32f527i_eval-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	compatible = "gd,gd32f527i-eval";
+	model = "GigaDevice GD32F527I-EVAL";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &sram0;
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&gpiof 7 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+
+		led2: led2 {
+			gpios = <&gpiof 8 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+
+		led3: led3 {
+			gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+
+		led4: led4 {
+			gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
+			label = "LED4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		wakeup_key: wakeup_key {
+			label = "WAKEUP_KEY";
+			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+
+		tamper_key: tamper_key {
+			label = "TAMPER_KEY";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		user_key: user_key {
+			label = "USER_KEY";
+			gpios = <&gpiob 14 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
+		led3 = &led4;
+		sw0 = &user_key;
+		sw1 = &tamper_key;
+		sw2 = &wakeup_key;
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&gpiog {
+	status = "okay";
+};
+
+&gpioh {
+	status = "okay";
+};
+
+&gpioi {
+	status = "okay";
+};
+
+&usart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&ckout0 {
+	clocks = <&cctl GD32_CKOUT0SRC_PLLP>;
+	clock-names = "clksel";
+	prescaler = <GD32_CKOUT0_DIV4>;
+	pinctrl-0 = <&ckout0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&hxtal {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&pll {
+	pll-psc = <25>;
+	pll-n = <400>;
+	pll-p = <2>;
+	pll-q = <9>;
+	status = "okay";
+};
+
+&rcu {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(200)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};

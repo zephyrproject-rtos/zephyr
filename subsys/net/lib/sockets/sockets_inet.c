@@ -274,6 +274,16 @@ static void zsock_received_cb(struct net_context *ctx,
 		(void)k_mutex_lock(ctx->cond.lock, K_FOREVER);
 	}
 
+	if (!net_context_is_used(ctx)) {
+		/* close() released the context while this waited for the
+		 * descriptor lock, after it flushed the queue.
+		 */
+		NET_DBG("%sctx=%p, pkt=%p, st=%d, user_data=%p",
+			"DROP: ", ctx, pkt, status, user_data);
+		net_pkt_unref(pkt);
+		goto unlock;
+	}
+
 	NET_DBG("%sctx=%p, pkt=%p, st=%d, user_data=%p", "", ctx, pkt, status,
 		user_data);
 
@@ -1595,6 +1605,14 @@ static int zsock_fionwrite_ctx(struct net_context *ctx)
 	return outq_bytes;
 }
 
+/* Open the receive window by the data consumed, while recv() waits for more */
+static void zsock_recv_stream_consumed(struct net_context *ctx, size_t len, int flags)
+{
+	if (len > 0 && !(flags & ZSOCK_MSG_PEEK)) {
+		net_context_update_recv_wnd(ctx, len);
+	}
+}
+
 static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct net_msghdr *msg,
 				       uint8_t *buf, size_t max_len,
 				       int flags, k_timeout_t timeout)
@@ -1660,6 +1678,7 @@ static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct net_msghd
 again:
 			res = zsock_recv_stream_immediate(ctx, &buf, &available_len, flags);
 			recv_len += res;
+			zsock_recv_stream_consumed(ctx, res, flags);
 
 			if (res == 0 && K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				if (recv_len == 0) {
@@ -1669,7 +1688,6 @@ again:
 				break;
 			}
 
-			buf = (uint8_t *)(msg->msg_iov[iovec].iov_base) + res;
 			max_len -= res;
 
 			if (available_len == 0) {
@@ -1694,6 +1712,7 @@ again:
 		} else {
 			res = zsock_recv_stream_immediate(ctx, &buf, &max_len, flags);
 			recv_len += res;
+			zsock_recv_stream_consumed(ctx, res, flags);
 
 			if (res == 0 && K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				if (recv_len == 0) {
@@ -1753,10 +1772,6 @@ static ssize_t zsock_recv_stream(struct net_context *ctx, struct net_msghdr *msg
 	if (res < 0) {
 		errno = -res;
 		return -1;
-	}
-
-	if (!(flags & ZSOCK_MSG_PEEK)) {
-		net_context_update_recv_wnd(ctx, recv_len);
 	}
 
 	return recv_len;
@@ -2292,6 +2307,15 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 		switch (optname) {
 		case ZSOCK_TCP_NODELAY:
 			ret = net_tcp_get_option(ctx, TCP_OPT_NODELAY, optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+
+		case ZSOCK_TCP_QUICKACK:
+			ret = net_tcp_get_option(ctx, TCP_OPT_QUICKACK, optval, optlen);
 			if (ret < 0) {
 				errno = -ret;
 				return -1;
@@ -3024,6 +3048,15 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case ZSOCK_TCP_NODELAY:
 			ret = net_tcp_set_option(ctx,
 						 TCP_OPT_NODELAY, optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+
+		case ZSOCK_TCP_QUICKACK:
+			ret = net_tcp_set_option(ctx, TCP_OPT_QUICKACK, optval, optlen);
 			if (ret < 0) {
 				errno = -ret;
 				return -1;

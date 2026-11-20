@@ -30,7 +30,8 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 #include "spi_esp32_spim.h"
 
-#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_SPI_SUPPORT_SLEEP_RETENTION
+#if CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP &&                         \
+	SOC_SPI_SUPPORT_SLEEP_RETENTION
 #define SPI_SLEEP_RETENTION_ENABLED 1
 #else
 #define SPI_SLEEP_RETENTION_ENABLED 0
@@ -1067,10 +1068,10 @@ static int transceive(const struct device *dev,
 #else
 
 	do {
-		spi_esp32_transfer(dev);
-	} while (spi_esp32_transfer_ongoing(data));
+		ret = spi_esp32_transfer(dev);
+	} while (ret == 0 && spi_esp32_transfer_ongoing(data));
 
-	spi_esp32_complete(dev, data, cfg->spi, 0);
+	spi_esp32_complete(dev, data, cfg->spi, ret);
 
 #endif  /* CONFIG_SPI_ESP32_INTERRUPT */
 

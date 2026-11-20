@@ -262,6 +262,11 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 	uint32_t clock_freq;
 	PIO pio = pio_rpi_pico_get_pio(dev_cfg->piodev);
 
+	/* Checked first: getting the clock rate is costly and this runs on every transfer */
+	if (spi_context_configured(&data->spi_ctx, spi_cfg)) {
+		return 0;
+	}
+
 	rc = clock_control_on(dev_cfg->clk_dev, dev_cfg->clk_id);
 	if (rc < 0) {
 		LOG_ERR("Failed to enable the clock");
@@ -272,10 +277,6 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 	if (rc < 0) {
 		LOG_ERR("Failed to get clock frequency");
 		return rc;
-	}
-
-	if (spi_context_configured(&data->spi_ctx, spi_cfg)) {
-		return 0;
 	}
 
 	if (spi_cfg->operation & SPI_OP_MODE_PERIPHERAL) {

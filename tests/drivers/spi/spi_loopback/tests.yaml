@@ -13,6 +13,13 @@ tests:
   drivers.spi.loopback: {}
   drivers.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
+  drivers.spi.loopback.deinit_busy:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    extra_configs:
+      - CONFIG_SPI_LOOPBACK_TEST_BUSY_DEINIT=y
   drivers.spi.loopback.lpspi.dma:
     filter: DT_HAS_NXP_LPSPI_ENABLED and DT_HAS_NXP_MCUX_EDMA_ENABLED
     extra_configs:
@@ -102,6 +109,23 @@ tests:
       - stm32u083c_dk
     integration_platforms:
       - nucleo_g474re
+  drivers.spi.stm32_spi_dma_cached_memory.loopback:
+    extra_args: EXTRA_CONF_FILE="stm32-spi-dma-cached-memory.conf"
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_u575zi_q
+    integration_platforms:
+      - b_u585i_iot02a
+  drivers.spi.stm32_spi_dma_cached_memory_polling.loopback:
+    extra_args: EXTRA_CONF_FILE="stm32-spi-dma-cached-memory-polling.conf"
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_u575zi_q
+  drivers.spi.stm32_spi_dma_cached_memory_auto_suspend.loopback:
+    extra_args: EXTRA_CONF_FILE="stm32-spi-dma-cached-memory-auto-suspend.conf"
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_u575zi_q
   drivers.spi.stm32_spi_dma_dt_nocache_mem.loopback:
     # this test case is for when nocache memory region is defined in DT
     # using `zephyr,memory-attr = < DT_MEM_ARM_MPU_RAM_NOCACHE)>`

@@ -445,17 +445,17 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	uint8_t major_ver = (base->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
 	int ret;
 
+	/* Check CS hold on feature for DMA mode, it is not supported on some platform. */
+	if ((spi_cfg->operation & SPI_HOLD_ON_CS) && major_ver < 2) {
+		LOG_ERR("SPI CS hold on feature is not supported on this platform.");
+		return -ENOTSUP;
+	}
+
 	spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
 
 	ret = lpspi_configure(dev, spi_cfg);
 	if (ret) {
 		goto out;
-	}
-
-	/* Check CS hold on feature for DMA mode, it is not supported on some platform. */
-	if ((spi_cfg->operation & SPI_HOLD_ON_CS) && major_ver < 2) {
-		LOG_ERR("SPI CS hold on feature is not supported on this platform.");
-		return -ENOTSUP;
 	}
 
 	/* Always use continuous mode to satisfy SPI API requirements. */

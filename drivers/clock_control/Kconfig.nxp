@@ -65,6 +65,13 @@ config CLOCK_CONTROL_NXP_MC_CGM
 	help
 	  Enable support for NXP MC_CGM clock driver.
 
+config CLOCK_CONTROL_NXP_MCG_LITE
+	bool "NXP MCG-Lite driver"
+	default y
+	depends on DT_HAS_NXP_MCG_LITE_ENABLED
+	help
+	  Enable support for NXP MCG-Lite driver.
+
 config CLOCK_CONTROL_NXP_S32
 	bool "NXP S32 clock control driver"
 	default y
@@ -87,8 +94,19 @@ config CLOCK_CONTROL_NXP_MCXW7X
 	bool "NXP MCXW7X clock control driver"
 	default y
 	depends on DT_HAS_NXP_MCXW7X_CLOCK_ENABLED
+	select NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_MCXW7X_CLOCK),nvmem-cells)
 	help
 	  Enable support for NXP MCXW7X clock control driver.
+
+config CLOCK_CONTROL_NXP_MCXW7X_IFR_TRIM_INIT_PRIORITY
+	int "MCXW7X OSC32K factory trim init priority"
+	default 51
+	depends on CLOCK_CONTROL_NXP_MCXW7X
+	help
+	  POST_KERNEL initialization priority of the step which applies the
+	  factory OSC32K trim read from non-volatile memory. It must be higher
+	  than the priority of the driver providing the NVMEM cell, for instance
+	  FLASH_INIT_PRIORITY.
 
 config CLOCK_CONTROL_MCUX_CCM_REV3
 	bool "MCUX CCM rev3 driver"

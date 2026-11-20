@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Deere & Company
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon TLE927x SBC HS-CAN transceiver
+
+compatible: "infineon,tle927x-can"
+
+include: can-transceiver.yaml
+
+on-bus: tle927x

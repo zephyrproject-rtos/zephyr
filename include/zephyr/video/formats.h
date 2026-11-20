@@ -770,10 +770,11 @@ extern "C" {
  * @param X macro to replicate
  * @param ... extra parameters
  */
-#define VIDEO_FOREACH_RGB(X, ...)						\
-	VIDEO_FOREACH_RGB_PACKED(X, __VA_ARGS__)				\
-	VIDEO_FOREACH_RGB_NON_PACKED(X, __VA_ARGS__)				\
-	VIDEO_FOREACH_RGB_ALPHA(X, __VA_ARGS__)					\
+#define VIDEO_FOREACH_RGB(X, ...)                                                                  \
+	VIDEO_FOREACH_RGB_PACKED(X, __VA_ARGS__)                                                   \
+	VIDEO_FOREACH_RGB_NON_PACKED(X, __VA_ARGS__)                                               \
+	VIDEO_FOREACH_RGB_FULL_PLANAR(X, __VA_ARGS__)                                              \
+	VIDEO_FOREACH_RGB_ALPHA(X, __VA_ARGS__)                                                    \
 	VIDEO_FOREACH_RGB_PADDED(X, __VA_ARGS__)
 
 /**
@@ -839,6 +840,31 @@ extern "C" {
  * @endcode
  */
 #define VIDEO_PIX_FMT_RGB24 VIDEO_FOURCC('R', 'G', 'B', '3')
+
+/**
+ * @brief Repeat a macro for every RGB Full-Planar format, passed as first parameter
+ *
+ * Red, green and blue channels are stored as separate planes.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_RGB_FULL_PLANAR(X, ...) X(VIDEO_PIX_FMT_RGB24PLANAR, __VA_ARGS__)
+
+/**
+ * Three full-resolution planes of width x height bytes each, 8 bits per component per pixel.
+ * The order of planes is red, green, blue.
+ *
+ * @code{.unparsed}
+ * | Rrrrrrrr | Rrrrrrrr | ... |
+ * | ... |
+ * | Gggggggg | Gggggggg | ... |
+ * | ... |
+ * | Bbbbbbbb | Bbbbbbbb | ... |
+ * | ... |
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_RGB24PLANAR VIDEO_FOURCC('R', 'G', '3', 'P')
 
 /**
  * @brief Repeat a macro for every RGB alpha format, passed as first parameter
@@ -1428,8 +1454,9 @@ extern "C" {
  * @param pixfmt FourCC of the pixel format to test
  * @return Whether the format is known to match this category
  */
-#define VIDEO_FMT_IS_FULL_PLANAR(pixfmt)					\
-	(0 VIDEO_FOREACH_YUV_FULL_PLANAR(_VIDEO_FMT_OR_EQ, pixfmt))
+#define VIDEO_FMT_IS_FULL_PLANAR(pixfmt)                                                           \
+	(0 VIDEO_FOREACH_YUV_FULL_PLANAR(_VIDEO_FMT_OR_EQ, pixfmt)                                 \
+		 VIDEO_FOREACH_RGB_FULL_PLANAR(_VIDEO_FMT_OR_EQ, pixfmt))
 
 /**
  * @brief Get number of bits per pixel of a pixel format
@@ -1505,6 +1532,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:
+	case VIDEO_PIX_FMT_RGB24PLANAR:
 	case VIDEO_PIX_FMT_NV24:
 	case VIDEO_PIX_FMT_NV42:
 	case VIDEO_PIX_FMT_YUV24:

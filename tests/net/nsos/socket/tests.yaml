@@ -13,3 +13,5 @@ tests:
   net.nsos.socket.asan:
     extra_configs:
       - CONFIG_ASAN=y
+  net.nsos.socket.tls:
+    extra_args: EXTRA_CONF_FILE=overlay-tls.conf

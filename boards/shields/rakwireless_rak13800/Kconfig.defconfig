@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+if SHIELD_RAKWIRELESS_RAK13800
+
+configdefault ETH_DRIVER
+	default y
+
+# The controller runs from the switched rail, and it has to be up before
+# the Ethernet driver reaches the controller
+configdefault POWER_DOMAIN
+	default y if ETH_DRIVER
+
+configdefault POWER_DOMAIN_GPIO_INIT_PRIORITY
+	default 45
+
+endif # SHIELD_RAKWIRELESS_RAK13800

@@ -147,11 +147,14 @@ config GEN_ISR_TABLES
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
-config DCACHE_LINE_SIZE
-	default 32
+configdefault DCACHE_LINE_SIZE
+	default 64 if (CPU_CORTEX_A7 || CPU_CORTEX_A32) && \
+		!$(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
+	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
 
-config ICACHE_LINE_SIZE
-	default 32
+configdefault ICACHE_LINE_SIZE
+	default 64 if CPU_CORTEX_A32 && !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
+	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
 
 endif # CPU_AARCH32_CORTEX_A
 
@@ -252,6 +255,8 @@ config ARMV7_R_FP
 config AARCH32_ARMV8_R
 	bool
 	select ATOMIC_OPERATIONS_BUILTIN
+	select ISA_ARM
+	select ISA_THUMB2
 	select SCHED_IPI_SUPPORTED if SMP
 	select ARCH_HAS_DIRECTED_IPIS
 	help
@@ -303,13 +308,13 @@ config DISABLE_TCM_ECC
 	help
 	  This option disables ECC checks on Tightly Coupled Memory.
 
-config DCACHE_LINE_SIZE
-	default 64 if CPU_CORTEX_R52
-	default 32
+configdefault DCACHE_LINE_SIZE
+	default 64 if CPU_CORTEX_R52 && !$(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
+	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
 
-config ICACHE_LINE_SIZE
-	default 64 if CPU_CORTEX_R52
-	default 32
+configdefault ICACHE_LINE_SIZE
+	default 64 if CPU_CORTEX_R52 && !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
+	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
 
 endif # CPU_AARCH32_CORTEX_R
 

@@ -85,8 +85,9 @@
 #define BTP_SERVICE_ID_PBP      0x1e
 #define BTP_SERVICE_ID_SDP      0x1f
 #define BTP_SERVICE_ID_RFCOMM   0x20
+#define BTP_SERVICE_ID_NLCP     0x21
 
-#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_RFCOMM
+#define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_NLCP
 
 /* Service ID starts from index 0.
  * BTP_SERVICE_ID_MAX is the last service ID.

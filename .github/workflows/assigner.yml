@@ -21,7 +21,8 @@ permissions:
 jobs:
   assignment:
     name: Pull Request/Issue Assignment
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft == false &&
+      github.repository == 'zephyrproject-rtos/zephyr'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -66,7 +67,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
       run: |
-        FLAGS="-v"
+        FLAGS="--size-labels"
+        FLAGS+=" -v"
         FLAGS+=" -o ${{ github.event.repository.owner.login }}"
         FLAGS+=" -r ${{ github.event.repository.name }}"
         FLAGS+=" -M MAINTAINERS.yml"

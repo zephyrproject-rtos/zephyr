@@ -86,6 +86,7 @@ tests:
       - ek_ra8t2/r7ka8t2lflcac/cm85
       - pic32cz_ca80_cult
       - pic32cz_ca90_cult
+      - it51xxx_evb/it51526aw
     extra_args:
       - platform:sam_e54_xpro/atsame54p20a:"DTC_OVERLAY_FILE=boards/sam_e54_xpro_ref.overlay"
       - platform:pic32cx_sg41_cult/pic32cx1025sg41128:"DTC_OVERLAY_FILE=boards/pic32cx_sg41_cult_ref.overlay"

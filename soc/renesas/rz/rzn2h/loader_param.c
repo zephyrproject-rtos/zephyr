@@ -13,7 +13,7 @@
 #define BMCFG_V_DUMMY2       (0x00000000)
 #define RESTORE_FLG          (0x00000000)
 #define LDR_ADDR_NML         (0x50000050)
-#define LDR_SIZE_NML         (0x00006000)
+#define LDR_SIZE_NML         (0x0000C000)
 #define DEST_ADDR_NML        (0x00102000)
 #define DUMMY3               (0x00000000)
 #define DUMMY4               (0x00000000)
@@ -25,7 +25,7 @@
 #define DUMMY8               (0x00000000)
 #define DUMMY9               (0x00000000)
 #define ACCESS_SPEED_DUMMY10 (0x00000600)
-#define CHECK_SUM            (0x1D675)
+#define CHECK_SUM            (0x23675)
 #define LOADER_PARAM_MAX     (19)
 
 #define __loader_param Z_GENERIC_SECTION(.loader_param)

@@ -105,11 +105,6 @@
 		};
 	};
 
-	otghs_fs_phy: otghs_fs_phy {
-		compatible = "usb-nop-xceiv";
-		#phy-cells = <0>;
-	};
-
 	vref: vref {
 		io-channels = <&adc3 19>;
 	};

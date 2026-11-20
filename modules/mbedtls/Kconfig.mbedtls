@@ -119,6 +119,22 @@ endif # MBEDTLS_SSL_PROTO_TLS1_2
 
 if MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
 
+config MBEDTLS_SSL_CLI_C
+	bool "(D)TLS client role support"
+	default y
+	help
+	  Enable support for the client side of the (D)TLS handshake.
+	  Required to connect to (D)TLS servers.
+
+config MBEDTLS_SSL_SRV_C
+	bool "(D)TLS server role support"
+	default y
+	help
+	  Enable support for the server side of the (D)TLS handshake.
+	  Required to accept (D)TLS connections from clients. Leave
+	  disabled on devices that only act as (D)TLS clients to save
+	  code size.
+
 config MBEDTLS_SSL_ALPN
 	bool "Support for setting the supported Application Layer Protocols"
 
@@ -239,6 +255,7 @@ config MBEDTLS_HAVE_TIME_DATE
 
 config MBEDTLS_SSL_CACHE_C
 	bool "SSL session cache support"
+	depends on MBEDTLS_SSL_SRV_C
 	help
 	  This option enables simple SSL cache implementation (server side).
 

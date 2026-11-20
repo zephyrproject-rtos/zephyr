@@ -1,0 +1,16 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* OpenTitan master @ 6a3c2e98, which has the same hardware as the Earlgrey-M2.5.x releases. */
+
+&aontimer {
+	compatible = "lowrisc,opentitan-aontimer";
+	interrupts = <156 1>;
+};
+
+&plic {
+	riscv,ndev = <185>;
+};

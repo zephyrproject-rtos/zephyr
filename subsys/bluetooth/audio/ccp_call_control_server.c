@@ -22,11 +22,16 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_utf8.h>
+#include <zephyr/sys/zassert.h>
 #include <zephyr/toolchain.h>
+
+#include "audio_internal.h"
 
 LOG_MODULE_REGISTER(bt_ccp_call_control_server, CONFIG_BT_CCP_CALL_CONTROL_SERVER_LOG_LEVEL);
 
-#define MUTEX_TIMEOUT K_MSEC(1000U)
+ZASSERT_MODULE(DEFAULT); /* for BT_AUDIO_LOCK_ASSERT */
+
+static K_MUTEX_DEFINE(ccp_mutex);
 
 /* A service instance can either be a GTBS or a TBS instance */
 struct bt_ccp_call_control_server_bearer {
@@ -36,7 +41,6 @@ struct bt_ccp_call_control_server_bearer {
 	char uri_schemes[CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH + 1];
 	uint8_t tbs_index;
 	bool registered;
-	struct k_mutex mutex;
 };
 
 static struct bt_ccp_call_control_server_bearer
@@ -45,26 +49,16 @@ static struct bt_ccp_call_control_server_bearer
 /**
  * @brief Returns a free bearer
  *
- * If the return value is not NULL, the caller is responsible for unlocking the mutex
- *
  * @return A free bearer, or NULL
  */
 static struct bt_ccp_call_control_server_bearer *get_free_bearer(void)
 {
+	BT_AUDIO_LOCK_ASSERT(&ccp_mutex);
+
 	for (size_t i = 0U; i < ARRAY_SIZE(bearers); i++) {
-		int err;
-
-		err = k_mutex_lock(&bearers[i].mutex, K_NO_WAIT);
-		if (err != 0) {
-			continue;
-		}
-
 		if (!bearers[i].registered) {
 			return &bearers[i];
 		}
-
-		err = k_mutex_unlock(&bearers[i].mutex);
-		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 
 	return NULL;
@@ -151,7 +145,6 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
 {
 	struct bt_ccp_call_control_server_bearer *free_bearer;
 	size_t uri_schemes_len;
-	__maybe_unused int err;
 	int ret;
 
 	if (bearer == NULL) {
@@ -177,45 +170,46 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
 		return -ENOMEM;
 	}
 
+	bt_audio_mutex_lock_forever(&ccp_mutex);
+
 	free_bearer = get_free_bearer();
 	if (free_bearer == NULL) {
-		return -ENOMEM;
-	}
-
-	ret = bt_tbs_register_bearer(param);
-	if (ret < 0) {
-		LOG_DBG("Failed to register TBS bearer: %d", ret);
-
-		/* Return known errors */
-		if (!(ret == -EINVAL || ret == -EALREADY || ret == -EAGAIN || ret == -ENOMEM)) {
-			ret = -ENOEXEC;
-		}
+		ret = -ENOMEM;
 	} else {
-		free_bearer->registered = true;
-		free_bearer->tbs_index = (uint8_t)ret;
-		(void)utf8_lcpy(free_bearer->provider_name, param->provider_name,
-				sizeof(free_bearer->provider_name));
-		(void)utf8_lcpy(free_bearer->uci, param->uci, sizeof(free_bearer->uci));
-		free_bearer->bearer_tech = param->technology;
+		ret = bt_tbs_register_bearer(param);
+		if (ret < 0) {
+			LOG_DBG("Failed to register TBS bearer: %d", ret);
 
-		(void)memcpy(free_bearer->uri_schemes, param->uri_schemes_supported,
-			     uri_schemes_len);
-		free_bearer->uri_schemes[uri_schemes_len] = '\0';
+			/* Return known errors */
+			if (!(ret == -EINVAL || ret == -EALREADY || ret == -EAGAIN ||
+			      ret == -ENOMEM)) {
+				ret = -ENOEXEC;
+			}
+		} else {
+			free_bearer->registered = true;
+			free_bearer->tbs_index = (uint8_t)ret;
+			(void)utf8_lcpy(free_bearer->provider_name, param->provider_name,
+					sizeof(free_bearer->provider_name));
+			(void)utf8_lcpy(free_bearer->uci, param->uci, sizeof(free_bearer->uci));
+			free_bearer->bearer_tech = param->technology;
 
-		*bearer = free_bearer;
+			(void)memcpy(free_bearer->uri_schemes, param->uri_schemes_supported,
+				     uri_schemes_len);
+			free_bearer->uri_schemes[uri_schemes_len] = '\0';
 
-		ret = 0;
+			*bearer = free_bearer;
+
+			ret = 0;
+		}
 	}
 
-	err = k_mutex_unlock(&free_bearer->mutex);
-	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	bt_audio_mutex_unlock(&ccp_mutex);
 
 	return ret;
 }
 
 int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_server_bearer *bearer)
 {
-	__maybe_unused int err;
 	int ret;
 
 	if (bearer == NULL) {
@@ -224,8 +218,7 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
 		return -EINVAL;
 	}
 
-	err = k_mutex_lock(&bearer->mutex, MUTEX_TIMEOUT);
-	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+	bt_audio_mutex_lock_forever(&ccp_mutex);
 
 	if (!bearer->registered) {
 		LOG_DBG("Bearer %p already unregistered", bearer);
@@ -243,8 +236,7 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
 		}
 	}
 
-	err = k_mutex_unlock(&bearer->mutex);
-	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	bt_audio_mutex_unlock(&ccp_mutex);
 
 	return ret;
 }
@@ -252,7 +244,6 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
 int bt_ccp_call_control_server_set_bearer_provider_name(
 	struct bt_ccp_call_control_server_bearer *bearer, const char *name)
 {
-	__maybe_unused int err;
 	size_t len;
 	int ret;
 
@@ -275,8 +266,7 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
 		return -EINVAL;
 	}
 
-	err = k_mutex_lock(&bearer->mutex, MUTEX_TIMEOUT);
-	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+	bt_audio_mutex_lock_forever(&ccp_mutex);
 
 	if (!bearer->registered) {
 		LOG_DBG("Bearer %p not registered", bearer);
@@ -299,8 +289,7 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
 		}
 	}
 
-	err = k_mutex_unlock(&bearer->mutex);
-	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	bt_audio_mutex_unlock(&ccp_mutex);
 
 	return ret;
 }
@@ -309,7 +298,6 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
 	struct bt_ccp_call_control_server_bearer *bearer, char *name, size_t name_size)
 {
 	size_t provider_name_len;
-	__maybe_unused int err;
 	int ret;
 
 	if (bearer == NULL) {
@@ -324,8 +312,7 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
 		return -EINVAL;
 	}
 
-	err = k_mutex_lock(&bearer->mutex, MUTEX_TIMEOUT);
-	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+	bt_audio_mutex_lock_forever(&ccp_mutex);
 
 	if (!bearer->registered) {
 		LOG_DBG("Bearer %p not registered", bearer);
@@ -345,8 +332,7 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
 		}
 	}
 
-	err = k_mutex_unlock(&bearer->mutex);
-	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	bt_audio_mutex_unlock(&ccp_mutex);
 
 	return ret;
 }
@@ -354,7 +340,6 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
 int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
 					      char uci[BT_TBS_MAX_UCI_SIZE])
 {
-	__maybe_unused int err;
 	int ret;
 	size_t uci_len;
 
@@ -370,8 +355,7 @@ int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_
 		return -EINVAL;
 	}
 
-	err = k_mutex_lock(&bearer->mutex, MUTEX_TIMEOUT);
-	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+	bt_audio_mutex_lock_forever(&ccp_mutex);
 
 	if (!bearer->registered) {
 		LOG_DBG("Bearer %p not registered", bearer);
@@ -386,8 +370,7 @@ int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_
 		ret = 0;
 	}
 
-	err = k_mutex_unlock(&bearer->mutex);
-	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	bt_audio_mutex_unlock(&ccp_mutex);
 
 	return ret;
 }
@@ -395,7 +378,7 @@ int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_
 int bt_ccp_call_control_server_set_bearer_tech(struct bt_ccp_call_control_server_bearer *bearer,
 					       enum bt_bearer_tech tech)
 {
-	int err;
+	int ret;
 
 	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
@@ -403,33 +386,29 @@ int bt_ccp_call_control_server_set_bearer_tech(struct bt_ccp_call_control_server
 		return -EINVAL;
 	}
 
+	bt_audio_mutex_lock_forever(&ccp_mutex);
+
 	if (!bearer->registered) {
 		LOG_DBG("Bearer %p not registered", bearer);
 
-		return -EFAULT;
+		ret = -EFAULT;
+	} else {
+		ret = bt_tbs_set_bearer_technology(bearer->tbs_index, tech);
+		if (ret == 0) {
+			bearer->bearer_tech = tech;
+		}
 	}
 
-	if (!IN_RANGE(tech, BT_BEARER_TECH_3G, BT_BEARER_TECH_WCDMA)) {
-		LOG_DBG("Invalid tech param: %d", tech);
+	bt_audio_mutex_unlock(&ccp_mutex);
 
-		return -EINVAL;
-	}
-
-	if (bearer->bearer_tech == tech) {
-		return 0;
-	}
-
-	err = bt_tbs_set_bearer_technology(bearer->tbs_index, tech);
-	if (err == 0) {
-		bearer->bearer_tech = tech;
-	}
-
-	return err;
+	return ret;
 }
 
 int bt_ccp_call_control_server_get_bearer_tech(
 	const struct bt_ccp_call_control_server_bearer *bearer, enum bt_bearer_tech *tech)
 {
+	int ret;
+
 	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
@@ -442,22 +421,26 @@ int bt_ccp_call_control_server_get_bearer_tech(
 		return -EINVAL;
 	}
 
+	bt_audio_mutex_lock_forever(&ccp_mutex);
+
 	if (!bearer->registered) {
 		LOG_DBG("Bearer %p not registered", bearer);
 
-		return -EFAULT;
+		ret = -EFAULT;
+	} else {
+		*tech = bearer->bearer_tech;
+		ret = 0;
 	}
 
-	*tech = bearer->bearer_tech;
+	bt_audio_mutex_unlock(&ccp_mutex);
 
-	return 0;
+	return ret;
 }
 
 int bt_ccp_call_control_server_set_bearer_uri_schemes(
 	struct bt_ccp_call_control_server_bearer *bearer, const char *uri_schemes)
 {
 	size_t uri_schemes_len;
-	__maybe_unused int err;
 	int ret;
 
 	if (bearer == NULL) {
@@ -477,8 +460,7 @@ int bt_ccp_call_control_server_set_bearer_uri_schemes(
 		return -ENOMEM;
 	}
 
-	err = k_mutex_lock(&bearer->mutex, MUTEX_TIMEOUT);
-	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+	bt_audio_mutex_lock_forever(&ccp_mutex);
 
 	if (!bearer->registered) {
 		LOG_DBG("Bearer %p not registered", bearer);
@@ -495,8 +477,7 @@ int bt_ccp_call_control_server_set_bearer_uri_schemes(
 		}
 	}
 
-	err = k_mutex_unlock(&bearer->mutex);
-	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	bt_audio_mutex_unlock(&ccp_mutex);
 
 	return ret;
 }
@@ -506,7 +487,6 @@ int bt_ccp_call_control_server_get_bearer_uri_schemes(
 	size_t uri_schemes_size)
 {
 	size_t uri_schemes_len;
-	__maybe_unused int err;
 	int ret;
 
 	if (bearer == NULL) {
@@ -521,8 +501,7 @@ int bt_ccp_call_control_server_get_bearer_uri_schemes(
 		return -EINVAL;
 	}
 
-	err = k_mutex_lock(&bearer->mutex, MUTEX_TIMEOUT);
-	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+	bt_audio_mutex_lock_forever(&ccp_mutex);
 
 	if (!bearer->registered) {
 		LOG_DBG("Bearer %p not registered", bearer);
@@ -541,22 +520,7 @@ int bt_ccp_call_control_server_get_bearer_uri_schemes(
 		}
 	}
 
-	err = k_mutex_unlock(&bearer->mutex);
-	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	bt_audio_mutex_unlock(&ccp_mutex);
 
 	return ret;
 }
-
-static int ccp_server_init(void)
-{
-	ARRAY_FOR_EACH_PTR(bearers, bearer) {
-		__maybe_unused int err;
-
-		err = k_mutex_init(&bearer->mutex);
-		__ASSERT(err == 0, "Failed to init mutex: %d", err);
-	}
-
-	return 0;
-}
-
-SYS_INIT(ccp_server_init, APPLICATION, 0);

@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_ALIF_MRAM
+	bool "Alif MRAM flash driver"
+	default y
+	depends on DT_HAS_ALIF_MRAM_FLASH_CONTROLLER_ENABLED
+	depends on CPU_CORTEX_M
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	help
+	  Enable the flash driver for the on-chip MRAM of Alif SoCs.
+
+	  MRAM is programmed in 128-bit words and needs no erase before a
+	  write. The writable part of MRAM must be mapped as Device memory
+	  in the MPU.

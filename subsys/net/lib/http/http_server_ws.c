@@ -40,13 +40,31 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 		"Upgrade: websocket\r\n"
 		"Sec-WebSocket-Accept: ";
 	char key_accept[HTTP_SERVER_WS_MAX_SEC_KEY_LEN + sizeof(WS_MAGIC)];
+	struct http_resource_detail_websocket *ws_detail;
+	struct http_request_ctx request_ctx;
 	char accept[20];
 	size_t accept_len;
 	char tmp[128];
+	size_t discard_len;
+	size_t params_len;
 	size_t key_len;
 	size_t olen;
+	char *params;
+	int ws_sock;
 	int ret;
 	psa_status_t psa_status;
+
+	/* The request body has no meaning for the handshake and is discarded.
+	 * Answer only after the whole request has been received, so that the
+	 * client sends no WebSocket data before the request has been read.
+	 */
+	if (client->parser_state != HTTP1_MESSAGE_COMPLETE_STATE) {
+		discard_len = MIN(client->http1_frag_data_len, client->data_len);
+		client->cursor += discard_len;
+		client->data_len -= discard_len;
+
+		return 0;
+	}
 
 	key_len = MIN(sizeof(key_accept) - 1, sizeof(client->ws_sec_key));
 	strncpy(key_accept, client->ws_sec_key, key_len);
@@ -111,39 +129,28 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 		goto error;
 	}
 
-	/* Only after the complete HTTP1 payload has been processed, switch
-	 * to Websocket.
-	 */
-	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
-		struct http_resource_detail_websocket *ws_detail;
-		struct http_request_ctx request_ctx;
-		int ws_sock;
-		char *params;
-		size_t params_len;
+	ws_detail = (struct http_resource_detail_websocket *)client->current_detail;
 
-		ws_detail = (struct http_resource_detail_websocket *)client->current_detail;
+	ret = ws_sock = websocket_register(client->fd,
+					   ws_detail->data_buffer,
+					   ws_detail->data_buffer_len);
+	if (ret < 0) {
+		NET_DBG("Cannot register websocket (%d)", ret);
+		goto error;
+	}
 
-		ret = ws_sock = websocket_register(client->fd,
-						   ws_detail->data_buffer,
-						   ws_detail->data_buffer_len);
-		if (ret < 0) {
-			NET_DBG("Cannot register websocket (%d)", ret);
-			goto error;
-		}
+	memset(&request_ctx, 0, sizeof(request_ctx));
+	params = &client->url_buffer[client->current_detail->path_len];
+	params_len = strlen(params);
+	populate_request_ctx(&request_ctx, params, params_len, &client->header_capture_ctx);
 
-		memset(&request_ctx, 0, sizeof(request_ctx));
-		params = &client->url_buffer[client->current_detail->path_len];
-		params_len = strlen(params);
-		populate_request_ctx(&request_ctx, params, params_len, &client->header_capture_ctx);
+	ret = ws_detail->cb(ws_sock, &request_ctx, ws_detail->user_data);
+	http_server_release_client(client);
 
-		ret = ws_detail->cb(ws_sock, &request_ctx, ws_detail->user_data);
-		http_server_release_client(client);
-
-		if (ret < 0) {
-			NET_DBG("WS connection failed (%d)", ret);
-			websocket_unregister(ws_sock);
-			goto error;
-		}
+	if (ret < 0) {
+		NET_DBG("WS connection failed (%d)", ret);
+		websocket_unregister(ws_sock);
+		goto error;
 	}
 
 	return 0;

@@ -148,6 +148,7 @@ static void smp_lorawan_downlink(uint8_t port, uint8_t flags, int16_t rssi, int8
 					LOG_ERR("LoRaWAN SMP reassembly complete failed: %d", rc);
 				}
 			} else if (rc < 0) {
+				(void)smp_reassembly_drop(&smp_lorawan_transport);
 				LOG_ERR("LoRaWAN SMP reassembly collect failed: %d", rc);
 			} else {
 				LOG_ERR("LoRaWAN SMP expected data left: %d", rc);

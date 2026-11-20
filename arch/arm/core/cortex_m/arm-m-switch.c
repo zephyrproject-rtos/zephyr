@@ -6,6 +6,7 @@
  */
 #include <zephyr/sys/util.h>
 #include <ksched.h>
+#include <cortex_m/exception.h>
 
 /* The basic exception frame, popped by the hardware during return */
 struct hw_frame_base {
@@ -183,9 +184,6 @@ struct arm_m_cs_ptrs arm_m_cs_ptrs;
  */
 void *arm_m_lto_refs[2];
 #endif
-
-/* Bitmask to determine if the XPSR indicates the exception frame was padded */
-#define XPSR_STACK_ALIGN BIT(9)
 
 /* RETPSR.SFPA: exception return to Secure state loads CONTROL_S.SFPA
  * from this bit.  If it is clear, the first FP instruction afterwards
@@ -420,7 +418,7 @@ static void *arm_m_switch_to_cpu(void *sp)
 	if (have_fpu) {
 		f = CONTAINER_OF(sp, union frame, zfp.have_fpu);
 		splim = PSPLIM(f);
-		padded = f->zfp.u.sw.apsr & XPSR_STACK_ALIGN;
+		padded = f->zfp.u.sw.apsr & XPSR_SPREALIGN_Msk;
 		if (padded) {
 			ZFP_TO_SYNTH(f, synth_fp_a, base.base);
 		} else {
@@ -429,7 +427,7 @@ static void *arm_m_switch_to_cpu(void *sp)
 	} else {
 		f = CONTAINER_OF(sp, union frame, z.have_fpu);
 		splim = PSPLIM(f);
-		padded = f->z.u.sw.apsr & XPSR_STACK_ALIGN;
+		padded = f->z.u.sw.apsr & XPSR_SPREALIGN_Msk;
 		if (padded) {
 			SWITCH_TO_SYNTH_ALIGN(f->z.u.sw, f->synth_a);
 		} else {
@@ -438,7 +436,7 @@ static void *arm_m_switch_to_cpu(void *sp)
 	}
 #else
 	f = CONTAINER_OF(sp, union frame, z.u.sw);
-	padded = f->z.u.sw.apsr & XPSR_STACK_ALIGN;
+	padded = f->z.u.sw.apsr & XPSR_SPREALIGN_Msk;
 	splim = PSPLIM(f);
 
 	if (padded) {
@@ -492,7 +490,7 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 {
 	union frame *f = NULL;
 	struct hw_frame_base *base = sp;
-	bool padded = (base->apsr & XPSR_STACK_ALIGN);
+	bool padded = (base->apsr & XPSR_SPREALIGN_Msk);
 	uint32_t fpscr = 0;
 	uint32_t vpr = 0;
 

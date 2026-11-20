@@ -25,6 +25,7 @@
 #include <zephyr/random/random.h>
 #include <zephyr/zbus/zbus.h>
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -330,6 +331,7 @@ int main(void)
 	int ret;
 	int i;
 	char *ip = NULL;
+	uint32_t ready_mask = CONN_MGR_READY_IPV4;
 
 	struct ocpp_cp_info cpi = {
 		"basic",   "zephyr",  .num_of_con = NO_OF_CONN,
@@ -344,7 +346,16 @@ int main(void)
 
 	printk("OCPP sample %s\n", CONFIG_BOARD);
 
-	wait_for_network();
+	/* Hostname servers also need a DNS server */
+	if (IS_ENABLED(CONFIG_NET_SAMPLE_COMMON_WAIT_DNS) &&
+	    (is_hostname(CONFIG_NET_SAMPLE_OCPP_SERVER) ||
+	     is_hostname(CONFIG_NET_SAMPLE_SNTP_SERVER))) {
+		ready_mask |= CONN_MGR_READY_DNS;
+	}
+
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(ready_mask, NULL, K_FOREVER);
+	LOG_INF("Network ready");
 
 	ret = ocpp_getaddrinfo(CONFIG_NET_SAMPLE_OCPP_SERVER, CONFIG_NET_SAMPLE_OCPP_PORT, &ip);
 	if (ret < 0) {

@@ -1035,21 +1035,39 @@ class SPDX3Serializer:
         components,
         sbom_doc: SBOMDocument,
     ):
-        """Attach the selected elements, imports and root components to the document."""
+        """Attach the selected elements, imports and root Sbom to the document."""
         for element in self.elements:
             if self._belongs_in_document(element, document._id, element_ids):
                 document.element.append(element)
 
         self._add_external_maps(document, import_ids)
 
+        sbom = self._new_sbom(document)
         for component in components:
             package = self.component_elements.get(component.name)
             if package:
-                document.rootElement.append(package)
+                sbom.rootElement.append(package)
 
         # The Build element is a root of the build document.
         if self.build and sbom_doc.name == self._BUILD_DOCUMENT:
-            document.rootElement.append(self.build)
+            sbom.rootElement.append(self.build)
+
+        document.element.append(sbom)
+        document.rootElement.append(sbom)
+
+    def _new_sbom(self, document: spdx.SpdxDocument) -> spdx.software_Sbom:
+        """Create the ``software_Sbom`` that holds a document's root elements.
+
+        Rooting the document at an Sbom records the SBOM type, here ``build`` as every document
+        is generated from a build directory.
+        """
+        sbom = spdx.software_Sbom()
+        sbom._id = f"{document._id}/sbom"
+        sbom.name = document.name
+        sbom.creationInfo = self.creation_info._id
+        sbom.software_sbomType.append(spdx.software_SbomType.build)
+        self.elements.append(sbom)
+        return sbom
 
     def _add_external_maps(self, document: spdx.SpdxDocument, import_ids: set):
         """Declare elements used by, but defined outside, this document.

@@ -235,7 +235,7 @@ def map_regs(log_only):
     ace15 = did in [ 0x7728, 0x7f50, 0x7e28 ]
     ace20 = did in [ 0xa828 ]
     ace30 = did in [ 0xe428, 0x4d28 ]
-    ace40 = did in [ 0x6e50 ]
+    ace40 = did in [ 0x6e50, 0xd328 ]
 
     # Check sysfs for a loaded driver and remove it
     if os.path.exists(f"{pcidir}/driver"):

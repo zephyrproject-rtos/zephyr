@@ -12,4 +12,4 @@ sample:
 tests:
   sample.net.sockets.http_client: {}
   sample.net.sockets.http_client.tls:
-    extra_args: EXTRA_CONF_FILE="overlay-tls.conf"
+    extra_args: EXTRA_CONF_FILE="tls.conf"

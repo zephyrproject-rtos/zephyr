@@ -593,15 +593,13 @@ ZTEST(mem_protect_domain, test_mem_domain_init_fail)
 	/* init another domain fail */
 	set_fault_valid(false);
 
+	/* The partitions are checked before any architecture-specific
+	 * initialization, so a failed init leaves nothing to de-initialize.
+	 */
 	zassert_not_equal(
 		k_mem_domain_init(&test_domain_fail, ARRAY_SIZE(no_parts),
 				  no_parts),
 		0, "should fail to initialize memory domain");
-
-#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
-	zassert_equal(k_mem_domain_deinit(&test_domain_fail), 0,
-		      "cannot de-initialize memory domain");
-#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
 }
 
 /**

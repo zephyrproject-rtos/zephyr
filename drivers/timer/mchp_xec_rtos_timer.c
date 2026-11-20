@@ -13,7 +13,6 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/spinlock.h>
-#include <cmsis_core.h>
 #include <zephyr/irq.h>
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "XEC RTOS timer doesn't support SMP");
@@ -293,7 +292,7 @@ static int sys_clock_driver_init(void)
 	sys_write32(0, TIMER_BASE + TIMER_CR_OFS);
 	sys_write32(BIT(TIMER_GIRQ_BITPOS), TIMER_GIRQ_BASE + GIRQ_ENCLR_OFS);
 	sys_write32(BIT(TIMER_GIRQ_BITPOS), TIMER_GIRQ_BASE + GIRQ_SRC_OFS);
-	NVIC_ClearPendingIRQ(TIMER_NVIC_NO);
+	k_irq_clear_pending(TIMER_NVIC_NO);
 
 	IRQ_CONNECT(TIMER_NVIC_NO, TIMER_NVIC_PRIO, xec_rtos_timer_isr, 0, 0);
 	irq_enable(TIMER_NVIC_NO);

@@ -29,6 +29,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/byteorder.h>
@@ -55,6 +56,9 @@ size_t bap_scan_delegator_ad_data_add(struct bt_data data[], size_t data_size);
 size_t gmap_ad_data_add(struct bt_data data[], size_t data_size);
 size_t pbp_ad_data_add(struct bt_data data[], size_t data_size);
 size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size);
+
+bool gmap_supported_lc3_config_data(enum bt_audio_dir dir,
+				    const struct bt_audio_codec_cfg *codec_cfg);
 
 #if defined(CONFIG_BT_AUDIO)
 /* Must guard before including audio.h as audio.h uses Kconfigs guarded by
@@ -155,6 +159,9 @@ const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_aud
 size_t bap_get_rx_streaming_cnt(void);
 size_t bap_get_tx_streaming_cnt(void);
 void bap_foreach_stream(void (*func)(struct shell_stream *sh_stream, void *data), void *data);
+bool supported_lc3_config(const struct bt_audio_codec_cap *codec_cap,
+			  enum bt_audio_location location,
+			  const struct bt_audio_codec_cfg *codec_cfg);
 
 int bap_usb_init(void);
 
@@ -169,6 +176,13 @@ bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream);
 void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location chan_alloc,
 		       int16_t buffer[]);
 size_t bap_usb_get_frame_size(const struct shell_stream *sh_stream);
+void bap_broadcast_sink_foreach_stream(void (*func)(struct shell_stream *sh_stream, void *data),
+				       void *data);
+
+void bap_stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
+			struct net_buf *buf);
+void bap_stream_started_cb(struct bt_bap_stream *bap_stream);
+void bap_stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason);
 
 struct broadcast_source {
 	bool is_cap: 1;
@@ -189,7 +203,6 @@ struct broadcast_sink {
 	struct bt_le_per_adv_sync *pa_sync;
 	uint8_t received_base[UINT8_MAX];
 	uint8_t base_size;
-	size_t stream_cnt;
 	bool syncable;
 };
 

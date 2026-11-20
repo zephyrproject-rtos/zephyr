@@ -421,12 +421,12 @@ struct elf32_phdr {
  */
 struct elf64_phdr {
 	elf64_word p_type;      /**< Type of segment */
+	elf64_word p_flags;     /**< Segment flags */
 	elf64_off p_offset;     /**< Offset in file */
 	elf64_addr p_vaddr;     /**< Virtual address in memory */
 	elf64_addr p_paddr;     /**< Physical address (usually reserved) */
 	elf64_xword p_filesz;   /**< Size of segment in file */
 	elf64_xword p_memsz;    /**< Size of segment in memory */
-	elf64_word p_flags;     /**< Segment flags */
 	elf64_xword p_align;    /**< Alignment of segment */
 };
 

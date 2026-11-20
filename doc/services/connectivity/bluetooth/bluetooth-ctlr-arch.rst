@@ -260,6 +260,15 @@ LLL Resume
 .. image:: img/ctlr_exec_lll_resume_bottom.png
 
 
+LLL Implementations
+===================
+
+.. toctree::
+   :maxdepth: 1
+
+   bluetooth-ctlr-bsim-lll.rst
+
+
 Bare metal utilities
 ********************
 

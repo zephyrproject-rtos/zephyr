@@ -14,6 +14,9 @@ extern "C" {
 
 #define MAX_RX_BUF_SIZE		255
 
+/* RX2 opens this long after RX1 (RECEIVE_DELAY2 - RECEIVE_DELAY1) */
+#define RX2_DELAY_OFFSET_MS	1000
+
 /* LoRaWAN field sizes in bytes */
 #define LWAN_MIC_SIZE		4
 #define MHDR_SIZE		1
@@ -32,6 +35,30 @@ extern "C" {
 #define MHDR_TYPE_MASK		GENMASK(7, 5)
 #define MHDR_MAJOR_MASK		GENMASK(1, 0)
 #define MHDR_MAJOR_R1		0
+
+#define MHDR_JOIN_REQUEST	0x00
+#define MHDR_JOIN_ACCEPT	0x20
+
+struct pkt_join_request {
+	uint8_t mhdr;
+	uint8_t join_eui[EUI_SIZE];
+	uint8_t dev_eui[EUI_SIZE];
+	uint8_t dev_nonce[DEV_NONCE_SIZE];
+	uint8_t mic[LWAN_MIC_SIZE];
+} __packed;
+
+struct pkt_join_accept {
+	uint8_t join_nonce[JOIN_NONCE_SIZE];
+	uint8_t net_id[NET_ID_SIZE];
+	uint8_t dev_addr[DEV_ADDR_SIZE];
+	uint8_t dl_settings;
+	uint8_t rx_delay;
+} __packed;
+
+#define JA_CFLIST_SIZE		16
+
+#define JA_MIN_SIZE (sizeof(struct pkt_join_accept) + LWAN_MIC_SIZE)
+#define JA_MAX_SIZE (sizeof(struct pkt_join_accept) + JA_CFLIST_SIZE + LWAN_MIC_SIZE)
 
 enum mac_rx_result {
 	MAC_RX_DONE,

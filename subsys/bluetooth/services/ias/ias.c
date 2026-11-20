@@ -117,11 +117,12 @@ static ssize_t bt_ias_write_alert_lvl(struct bt_conn *conn, const struct bt_gatt
 
 	net_buf_simple_init_with_data(&data, (void *)buf, len);
 	alert_val = net_buf_simple_pull_u8(&data);
-	devices[bt_conn_index(conn)].alert_level = alert_val;
 
 	if (alert_val < BT_IAS_ALERT_LVL_NO_ALERT || alert_val > BT_IAS_ALERT_LVL_HIGH_ALERT) {
 		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
+
+	devices[bt_conn_index(conn)].alert_level = alert_val;
 	set_alert_level();
 
 	return len;

@@ -119,3 +119,10 @@ tests:
   drivers.can.build_all.xmc4xxx:
     platform_allow:
       - xmc47_relax_kit
+  # Test definition for CAN transceiver drivers.
+  drivers.can.build_all.transceivers:
+    extra_dtc_overlay_files:
+      - transceivers.overlay
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

@@ -173,6 +173,7 @@ struct lsm6dsv16x_data {
 	uint64_t timestamp;
 	uint8_t status;
 	uint8_t fifo_status[2];
+	uint8_t fifo_watermark;
 	uint16_t fifo_count;
 	struct trigger_config trig_cfg;
 	uint16_t accel_batch_odr : 4;

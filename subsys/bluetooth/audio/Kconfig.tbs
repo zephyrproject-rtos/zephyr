@@ -93,7 +93,6 @@ config BT_TBS_CLIENT_MAX_TBS_INSTANCES
 
 config BT_TBS_CLIENT_MINIMAL
 	bool "Minimal TBS Client without optional procedures"
-	default n
 	help
 	  This option disables all optional procedures in the TBS Client.
 

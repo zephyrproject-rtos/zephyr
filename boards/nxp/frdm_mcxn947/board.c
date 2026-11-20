@@ -139,7 +139,8 @@ void board_early_init_hook(void)
 	/* Set AHBCLKDIV divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
 /* PLL fractional M divider: 86.016 */
 #define PLL1_SS_MDIV_LSB_VALUE 2886218023U
 
@@ -219,7 +220,7 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM9);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer0))
 	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
 #endif
 
@@ -480,6 +481,11 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivSai1Clk, 1u);
 	CLOCK_AttachClk(kPLL1_CLK0_to_SAI1);
 	CLOCK_EnableClock(kCLOCK_Sai1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
+	CLOCK_AttachClk(kPLL1_CLK0_to_MICFILF);
+	CLOCK_SetClkDiv(kCLOCK_DivMicfilFClk, 1U);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))

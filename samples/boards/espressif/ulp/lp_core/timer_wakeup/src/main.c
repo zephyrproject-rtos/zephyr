@@ -24,7 +24,7 @@ int main(void)
 	} else {
 		wake_count = 0;
 		printf("First boot, LP core will wake us every %d ms\n",
-		       CONFIG_ESP32_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US / 1000);
+		       CONFIG_SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US / 1000);
 	}
 
 	printf("HP core entering deep sleep...\n");

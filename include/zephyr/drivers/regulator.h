@@ -66,6 +66,8 @@ typedef uint8_t regulator_error_flags_t;
 #define REGULATOR_ERROR_OVER_CURRENT BIT(1)
 /** Temperature is too high. */
 #define REGULATOR_ERROR_OVER_TEMP    BIT(2)
+/** Voltage is too low. */
+#define REGULATOR_ERROR_UNDER_VOLTAGE BIT(3)
 
 /** @} */
 

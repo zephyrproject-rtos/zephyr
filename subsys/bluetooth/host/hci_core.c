@@ -2140,15 +2140,22 @@ static void le_phy_update_complete(struct net_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
+	if (evt->status != BT_HCI_ERR_SUCCESS) {
+		/* The procedure failed, so the controller did not change the PHYs.
+		 * TX_PHY and RX_PHY are only meaningful on success.
+		 */
+		LOG_WRN("status 0x%02x %s handle %u", evt->status,
+			bt_hci_err_to_str(evt->status), handle);
+		return;
+	}
+
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unable to lookup conn for handle %u", handle);
 		return;
 	}
 
-	LOG_DBG("PHY updated: status: 0x%02x %s, tx: %u, rx: %u",
-		evt->status, bt_hci_err_to_str(evt->status), evt->tx_phy,
-		evt->rx_phy);
+	LOG_DBG("PHY updated: tx: %u, rx: %u", evt->tx_phy, evt->rx_phy);
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	conn->le.phy.tx_phy = bt_get_phy(evt->tx_phy);
@@ -4500,7 +4507,7 @@ static const char *vs_hw_variant(uint16_t platform, uint16_t variant)
 		return nordic_str[variant];
 	}
 #endif
-#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF)
 	static const char *const esp32_str[] = {"reserved", "ESP32",    "ESP32-S3",
 						"ESP32-C2", "ESP32-C3", "ESP32-C6",
 						"ESP32-H2", "ESP32-C5", "ESP32-C61"};
@@ -5283,9 +5290,18 @@ int bt_disable(void)
 	/* Mark the transport closed before purging the command queue: a
 	 * command queued after this point is taken back by its sender (see
 	 * bt_hci_cmd_send()), so nothing is left behind for the next enable.
+	 *
+	 * The TX processor holds the host lock from taking a command off the
+	 * queue until the driver's send() has returned. With the lock held
+	 * here, none of its passes is sending a command when the transport is
+	 * closed, and every later one finds the transport closed. Without it,
+	 * a command could reach the driver during the close, or after the
+	 * next bt_enable() has opened the transport again.
 	 */
+	bt_dev_lock();
 	atomic_clear_bit(bt_dev.flags, BT_DEV_OPEN);
 	hci_cmd_queue_purge();
+	bt_dev_unlock();
 
 	err = bt_hci_close(bt_dev.hci);
 	if (err) {

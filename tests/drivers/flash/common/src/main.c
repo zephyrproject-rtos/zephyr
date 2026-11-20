@@ -116,9 +116,11 @@ static void flash_driver_before(void *arg)
 	zassert_equal(rc, 0, "Cannot read flash");
 
 	/* Fill test buffer with random data */
+	const uint8_t dev_erase_value = flash_get_parameters(flash_dev)->erase_value;
+
 	for (int i = 0, val = 0; i < EXPECTED_SIZE; i++, val++) {
-		/* Skip erase value */
-		if (val == erase_value) {
+		/* Skip both the placeholder and the device erase value */
+		while (((uint8_t)val == erase_value) || ((uint8_t)val == dev_erase_value)) {
 			val++;
 		}
 		expected[i] = val;

@@ -14,11 +14,13 @@ properties:
   wakeup-delay:
     type: int
     description: |
-      When a different VDD_CORE level is configured
-      in low power modes (LP_CFG register) compared
-      to active modes (ACTIVE_CFG register), the
-      LPWKUP_DELAY register must be configured to a
-      minimum value.
+      Number of SPC timer clock cycles written to the 16-bit LPWKUP_DELAY
+      field. When LP_CFG and ACTIVE_CFG select different VDD_CORE levels,
+      this value must meet the chip-specific minimum for the regulator and
+      voltage transition described in the reference manual. Board power
+      policies must increase this value if needed for a different transition
+      or an external PMIC/switch controlled by SPC_LPREQ; use the larger of
+      the regulator and external-device delays.
 
   active-dcdc-output-microvolt:
     type: int

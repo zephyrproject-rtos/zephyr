@@ -47,6 +47,13 @@ GEN_NAMED_OFFSET_SYM(_esf_t, fp, fp);
 
 GEN_NAMED_OFFSET_SYM(_esf_t, spsr, spsr_elr);
 GEN_NAMED_OFFSET_SYM(_esf_t, x18, x18_lr);
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+GEN_NAMED_OFFSET_SYM(_esf_t, x27, x27_x28);
+GEN_NAMED_OFFSET_SYM(_esf_t, x25, x25_x26);
+GEN_NAMED_OFFSET_SYM(_esf_t, x23, x23_x24);
+GEN_NAMED_OFFSET_SYM(_esf_t, x21, x21_x22);
+GEN_NAMED_OFFSET_SYM(_esf_t, x19, x19_x20);
+#endif
 GEN_NAMED_OFFSET_SYM(_esf_t, x16, x16_x17);
 GEN_NAMED_OFFSET_SYM(_esf_t, x14, x14_x15);
 GEN_NAMED_OFFSET_SYM(_esf_t, x12, x12_x13);

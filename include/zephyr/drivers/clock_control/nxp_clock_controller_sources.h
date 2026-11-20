@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,11 @@
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(firc), nxp_firc, okay)
 /** @brief FIRC output divider selection index. */
 #define NXP_FIRC_DIV DT_ENUM_IDX(DT_NODELABEL(firc), firc_div)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(sirc), nxp_sirc, okay)
+/** @brief Whether the SIRC keeps running in Standby mode. */
+#define NXP_SIRC_STANDBY_ENABLE DT_PROP(DT_NODELABEL(sirc), standby_enable)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(fxosc), nxp_fxosc, okay)

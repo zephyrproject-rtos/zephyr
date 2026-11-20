@@ -22,6 +22,17 @@ config PRIVILEGED_STACK_SIZE
 	# are reserved as FRAMELIMIT headroom for an event frame.
 	default 2048
 
+config HEXAGON_USER_STACK_ENTRIES
+	int "Linear-map entries per user thread for its own stack"
+	depends on USERSPACE
+	default 8
+	help
+	  Each user thread's linear list maps its own stack ahead of its
+	  memory domain's partitions. A stack takes one entry for each aligned
+	  4KB, 16KB, 64KB, ... chunk in its decomposition. Eight entries cover
+	  any stack below 64KB. Part of a stack that does not fit faults on access.
+	  Each entry adds 8 bytes to struct k_thread.
+
 if CPU_HAS_MMU
 
 config HEXAGON_MMU
@@ -34,5 +45,21 @@ config HEXAGON_MMU
 	  The HVM/H2 hypervisor maintains a single flat identity-mapped page
 	  table, so mappings require virt == phys and KERNEL_DIRECT_MAP is
 	  mandatory here.
+
+config HEXAGON_H2_KERNEL_BASE
+	hex "H2 hypervisor kernel image base address"
+	depends on HEXAGON_MMU
+	default 0x9b800000
+	help
+	  Guest-visible address of the H2 kernel image. The kernel's linear
+	  map keeps it mapped RWX for guest mode only. Must be 4MB-aligned.
+
+config HEXAGON_H2_KERNEL_SIZE
+	hex "H2 hypervisor kernel image size"
+	depends on HEXAGON_MMU
+	default 0x800000
+	help
+	  Size of the H2 kernel image window at HEXAGON_H2_KERNEL_BASE. Must
+	  be a non-zero multiple of 4MB, at most 16MB.
 
 endif # CPU_HAS_MMU

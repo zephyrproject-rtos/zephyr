@@ -10,6 +10,7 @@
 
 / {
 	main_gpio0: main-gpio0 {
+		compatible = "ti,davinci-gpio-nexus";
 		#gpio-cells = <2>;
 		gpio-map = <0 0 &main_gpio0_0 0 0>, <1 0 &main_gpio0_0 1 0>,
 			   <2 0 &main_gpio0_0 2 0>, <3 0 &main_gpio0_0 3 0>,

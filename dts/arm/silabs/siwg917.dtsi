@@ -7,6 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/clock/silabs/siwx91x-clock.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/wuc/silabs-siwx91x-wuc.h>
 #include <freq.h>
 
 / {
@@ -292,6 +293,14 @@
 
 			/* RTC and watchdog LF muxes are fixed to UULP LF ref in hardware. */
 			/* SYSRTC source: sleeptimer / HAL, not a clock-route child here. */
+		};
+
+		wuc0: wakeup-controller@2404813c {
+			compatible = "silabs,siwx91x-wuc";
+			reg = <0x2404813c 4>;
+			reg-names = "mcu_fsm";
+			#wakeup-ctrl-cells = <1>;
+			status = "okay";
 		};
 
 		rtc0: rtc@24048200 {

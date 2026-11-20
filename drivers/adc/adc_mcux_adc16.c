@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(adc_mcux_adc16);
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
+#include "adc_common.h"
+
 struct mcux_adc16_config {
 	ADC_Type *base;
 #ifndef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
@@ -202,7 +204,6 @@ static int start_read(const struct device *dev,
 	int error;
 	uint32_t tmp32;
 	ADC_Type *base = config->base;
-	size_t min_buffer_size = 0;
 
 	uint32_t channels_count = POPCOUNT(sequence->channels);
 
@@ -256,32 +257,15 @@ static int start_read(const struct device *dev,
 	}
 	ADC16_SetHardwareAverage(config->base, mode);
 
-	if (sequence->buffer_size < 2) {
-		LOG_ERR("sequence buffer size too small %d < 2", sequence->buffer_size);
-		return -EINVAL;
-	}
-
-	min_buffer_size = channels_count * sizeof(uint16_t);
-
 	if (channels_count == 0) {
 		LOG_ERR("No channels selected");
 		return -EINVAL;
 	}
 
-	if (sequence->buffer_size < min_buffer_size) {
-		LOG_ERR("sequence buffer size too small %d < %d",
-			sequence->buffer_size, min_buffer_size);
-		return -EINVAL;
-	}
-
-	if (sequence->options) {
-		min_buffer_size = channels_count * sizeof(uint16_t) *
-				  (sequence->options->extra_samplings + 1);
-		if (sequence->buffer_size < min_buffer_size) {
-			LOG_ERR("sequence buffer size too small for samplings: %d < %d",
-				sequence->buffer_size, min_buffer_size);
-			return -EINVAL;
-		}
+	error = adc_sequence_validate_buffer(sequence, channels_count, sizeof(uint16_t));
+	if (error < 0) {
+		LOG_ERR("Buffer size too small");
+		return error;
 	}
 
 	data->buffer = sequence->buffer;

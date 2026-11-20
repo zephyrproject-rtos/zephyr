@@ -35,6 +35,8 @@
 #define TMP11X_CFGR_CONV        (BIT(7) | BIT(8) | BIT(9))
 #define TMP11X_CFGR_MODE        (BIT(10) | BIT(11))
 #define TMP11X_CFGR_DATA_READY  BIT(13)
+#define TMP11X_CFGR_LOW_ALERT   BIT(14)
+#define TMP11X_CFGR_HIGH_ALERT  BIT(15)
 #define TMP11X_EEPROM_UL_UNLOCK BIT(15)
 #define TMP11X_EEPROM_UL_BUSY   BIT(14)
 
@@ -59,6 +61,8 @@ struct tmp11x_data {
 	struct gpio_callback alert_cb;
 	sensor_trigger_handler_t alert_handler;
 	const struct sensor_trigger *alert_trigger;
+	/* CFGR status bits latched by the interrupt handler (they are clear-on-read) */
+	uint16_t alert_status;
 
 #if defined(CONFIG_TMP11X_TRIGGER_OWN_THREAD)
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_TMP11X_THREAD_STACK_SIZE);

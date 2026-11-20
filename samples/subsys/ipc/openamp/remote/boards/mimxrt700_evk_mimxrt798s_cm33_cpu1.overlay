@@ -18,3 +18,7 @@
 		mbox-names = "tx", "rx";
 	};
 };
+
+&sram1 {
+	zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
+};

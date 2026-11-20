@@ -10,7 +10,7 @@
 #include <esp_private/esp_psram_extram.h>
 #include <hal/cache_hal.h>
 #include <zephyr/multi_heap/shared_multi_heap.h>
-#if defined(CONFIG_SOC_ESP32_SPI_MEM_SUPPORT_TIMING_TUNING)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPI_MEM_SUPPORT_TIMING_TUNING)
 #include <esp_flash.h>
 #include <esp_private/spi_flash_os.h>
 #include <hal/spi_flash_hal.h>
@@ -36,7 +36,7 @@ int esp_psram_smh_init(void)
 	return shared_multi_heap_add(&smh_psram, NULL);
 }
 
-#if defined(CONFIG_SOC_ESP32_SPI_MEM_SUPPORT_TIMING_TUNING)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPI_MEM_SUPPORT_TIMING_TUNING)
 /*
  * PSRAM timing tuning reprograms the MSPI core clock, which is shared
  * between flash and PSRAM. The esp_flash driver latched the flash
@@ -83,7 +83,7 @@ void esp_init_psram(void)
 		return;
 	}
 
-#if defined(CONFIG_SOC_ESP32_SPI_MEM_SUPPORT_TIMING_TUNING)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPI_MEM_SUPPORT_TIMING_TUNING)
 	esp_psram_refresh_flash_timing();
 #endif
 
@@ -101,7 +101,7 @@ void esp_init_psram(void)
 		return;
 	}
 
-	if (esp_psram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
+	if (esp_psram_get_size() < CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE) {
 		ets_printf("External RAM size is less than configured.\n");
 	}
 
@@ -121,7 +121,7 @@ void esp_init_psram(void)
 	smh_psram.size = (uintptr_t)&_ext_ram_heap_end -
 			 (uintptr_t)&_ext_ram_heap_start;
 
-	if (IS_ENABLED(CONFIG_ESP_SPIRAM_MEMTEST)) {
+	if (IS_ENABLED(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_MEMTEST)) {
 		if (esp_psram_is_initialized()) {
 			if (!esp_psram_extram_test()) {
 				ets_printf("External RAM failed memory test!");
@@ -134,7 +134,7 @@ void esp_init_psram(void)
 	       (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
 }
 
-#if CONFIG_ESP_SPIRAM && defined(CONFIG_SOC_SERIES_ESP32P4)
+#if CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM && defined(CONFIG_SOC_SERIES_ESP32P4)
 static int esp32p4_psram_init(void)
 {
 	esp_init_psram();

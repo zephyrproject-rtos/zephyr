@@ -633,8 +633,14 @@ def test_bumble_takes_no_exit_status_for_a_verdict(tmp_path):
 
     sidecar.teardown()
 
+    reason = "Bumble peer 1 ended without a verdict"
     assert instance.status == TwisterStatus.FAIL
-    assert instance.reason == "Bumble peer 1 ended without a verdict"
+    assert instance.reason == reason
+    # No case failed, so the cases that passed, on the guest or on the peer,
+    # show the failure in reports that list cases alone.
+    for name in ("id.central.connect", "id.peripheral.connect"):
+        assert instance.get_case_by_name(name).status == TwisterStatus.FAIL
+        assert instance.get_case_by_name(name).reason == reason
 
 
 def test_bumble_requires_a_verdict_of_any_ztest_run(tmp_path):
@@ -733,4 +739,109 @@ def test_bumble_stops_everything_before_it_reads_results(tmp_path):
 
     assert order == ['peer', 'controllers', 'results']
     assert sidecar._proc is None
+    assert instance.status == TwisterStatus.PASS
+
+
+def _bumble_controllers_ran(sidecar, log, returncode=None):
+    """Controllers that wrote ``log``, and exited with ``returncode`` unless None."""
+    log_path = os.path.join(sidecar.instance.build_dir, 'bumble-controllers.log')
+    with open(log_path, 'w') as f:
+        f.write(log)
+    sidecar._log_path = log_path
+    sidecar._proc = mock.Mock()
+    sidecar._proc.poll.return_value = returncode
+    return log_path
+
+
+# What asyncio logs for an exception in a callback, and carries on.
+CONTROLLERS_CALLBACK_EXCEPTION = """\
+12:00:00.000 D bumble.link: new controller
+12:00:01.000 E asyncio: Exception in callback Controller.on_hci_packet()
+Traceback (most recent call last):
+  File "bt_sim_controller.py", line 1, in on_hci_packet
+KeyError: 1
+"""
+# A future that failed and that nothing awaited has no traceback to log.
+CONTROLLERS_FUTURE_EXCEPTION = """\
+12:00:01.000 E asyncio: Future exception was never retrieved
+future: <Future finished exception=TimeoutError()>
+TimeoutError
+"""
+
+
+def test_bumble_errors_on_an_exception_in_the_controllers(tmp_path, caplog):
+    instance, sidecar = _bumble_after_guest(tmp_path)
+    sidecar._peers = [_finished_peer(tmp_path, output=PEER_PASSED)]
+    log_path = _bumble_controllers_ran(sidecar, CONTROLLERS_CALLBACK_EXCEPTION)
+
+    with (
+        mock.patch("twisterlib.sidecars.bumble.terminate_process"),
+        caplog.at_level("ERROR", logger="twister"),
+    ):
+        sidecar.teardown()
+
+    # Both devices passed, and the result cannot be trusted.
+    reason = f"Bumble controllers raised an exception (see {log_path})"
+    assert instance.status == TwisterStatus.ERROR
+    assert instance.reason == reason
+    assert log_path in caplog.text
+    # Nor can the cases that passed, on the guest or on the peer; reports
+    # that list cases alone show the error through them.
+    for name in ("id.central.connect", "id.peripheral.connect"):
+        assert instance.get_case_by_name(name).status == TwisterStatus.ERROR
+        assert instance.get_case_by_name(name).reason == reason
+
+
+def test_bumble_names_the_controllers_for_a_failure_they_caused(tmp_path):
+    instance, sidecar = _bumble_after_guest(tmp_path)
+    instance.status = TwisterStatus.FAIL
+    instance.reason = "Timeout"
+    instance.set_case_status_by_name("id.central.connect", TwisterStatus.FAIL, "Timeout")
+    log_path = _bumble_controllers_ran(sidecar, CONTROLLERS_FUTURE_EXCEPTION)
+
+    with mock.patch("twisterlib.sidecars.bumble.terminate_process"):
+        sidecar.teardown()
+
+    assert instance.status == TwisterStatus.ERROR
+    assert instance.reason == f"Bumble controllers raised an exception (see {log_path})"
+    # A case keeps its own failure.
+    assert instance.get_case_by_name("id.central.connect").status == TwisterStatus.FAIL
+    assert instance.get_case_by_name("id.central.connect").reason == "Timeout"
+
+
+def test_bumble_errors_on_an_exception_in_a_skipped_run(tmp_path):
+    instance, sidecar = _bumble_after_guest(tmp_path)
+    # What the pytest harness reports when every case was skipped.
+    instance.status = TwisterStatus.SKIP
+    instance.set_case_status_by_name("id.central.connect", TwisterStatus.SKIP, "pytest skip")
+    log_path = _bumble_controllers_ran(sidecar, CONTROLLERS_CALLBACK_EXCEPTION)
+
+    with mock.patch("twisterlib.sidecars.bumble.terminate_process"):
+        sidecar.teardown()
+
+    assert instance.status == TwisterStatus.ERROR
+    assert instance.reason == f"Bumble controllers raised an exception (see {log_path})"
+    assert instance.get_case_by_name("id.central.connect").status == TwisterStatus.SKIP
+
+
+def test_bumble_errors_on_controllers_that_exited_early(tmp_path):
+    instance, sidecar = _bumble_after_guest(tmp_path)
+    log_path = _bumble_controllers_ran(sidecar, "", returncode=0)
+
+    with mock.patch("twisterlib.sidecars.bumble.terminate_process"):
+        sidecar.teardown()
+
+    assert instance.status == TwisterStatus.ERROR
+    assert instance.reason == f"Bumble controllers exited early with 0 (see {log_path})"
+
+
+def test_bumble_takes_warnings_of_the_controllers_for_no_failure(tmp_path):
+    instance, sidecar = _bumble_after_guest(tmp_path)
+    _bumble_controllers_ran(
+        sidecar, "12:00:01.000 W bumble.controller: !!! no connection for handle 0x0001\n"
+    )
+
+    with mock.patch("twisterlib.sidecars.bumble.terminate_process"):
+        sidecar.teardown()
+
     assert instance.status == TwisterStatus.PASS

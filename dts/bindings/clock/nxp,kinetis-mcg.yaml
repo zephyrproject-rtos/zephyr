@@ -21,12 +21,5 @@ properties:
       Internal Reference Clock Divider.
       Division factor is given as 2^fcrdiv.
 
-  lircdiv2:
-    type: int
-    enum: [0, 1, 2, 3, 4, 5, 6, 7]
-    description: |
-      Second Low-frequency Internal Reference Clock Divider.
-      Division factor is given as 2^lircdiv2.
-
 clock-cells:
   - name

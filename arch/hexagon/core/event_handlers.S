@@ -98,10 +98,26 @@ GDATA(_kernel)
 	memw(r29+#EVENT_CTX_GELR) = r0
 
 	/* Save GSR (g1 = guest status at time of event).
-	 * H2 has already disabled guest interrupts (GSR.IE=0).
+	 *
+	 * For an event from user mode:
+	 *
+	 *   interrupted context
+	 *          | event: save GSR, clear UM
+	 *          v
+	 *   privileged handler
+	 *          | EVENT_EXIT: restore selected context's GSR, vmrte
+	 *          v
+	 *   selected context resumes
+	 *
+	 * H2 has already disabled guest interrupts (GSR.IE=0), but leaves UM
+	 * as it was in the interrupted context. Clear UM so kernel data mapped
+	 * without U remains accessible. EVENT_EXIT restores the selected
+	 * context's saved GSR before vmrte.
 	 */
 	r0 = gsr
 	memw(r29+#EVENT_CTX_GSR) = r0
+	r0 = clrbit(r0, #31)
+	gsr = r0
 
 	/* Save remaining volatile registers */
 	{
@@ -269,6 +285,11 @@ _event_no_switch_\event_id:
 	 */
 	{
 		call ##z_hexagon_event_exit_user_sync
+	}
+
+	/* Reinstall this thread's hardware memory-domain map, if needed. */
+	{
+		call ##z_hexagon_mem_domain_switch
 	}
 #endif
 

@@ -1292,10 +1292,10 @@ void bt_conn_tx_processor(void)
 		LOG_DBG("no buf returned");
 
 		/* A connection without data left leaves the list on the next pass:
-		 * run it now, so that the connections behind it are served without
-		 * waiting for a completion or new data.
+		 * run that pass now while the list holds connections, so that those
+		 * behind it are served without waiting for a completion or new data.
 		 */
-		if (!conn->has_data(conn)) {
+		if (!conn->has_data(conn) && !sys_slist_is_empty(&bt_dev.le.conn_ready)) {
 			goto raise_and_exit;
 		}
 
@@ -1586,11 +1586,12 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 * Timer is needed only for LE. For other link types controller
 		 * will handle connection timeout.
 		 */
-		if (IS_ENABLED(CONFIG_BT_CENTRAL) && bt_conn_is_le(conn) &&
-		    bt_dev.create_param.timeout != 0) {
+#if defined(CONFIG_BT_CENTRAL)
+		if (bt_conn_is_le(conn) && bt_dev.create_param.timeout != 0U) {
 			bt_work_schedule(&conn->deferred_work,
 					 K_MSEC(10 * bt_dev.create_param.timeout));
 		}
+#endif /* CONFIG_BT_CENTRAL */
 
 		break;
 	case BT_CONN_DISCONNECTING:
@@ -1868,7 +1869,7 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 	/*
 	 * Only K_FOREVER is forced to K_NO_WAIT here: it is the only timeout
 	 * that blocks bt_workq indefinitely, since bt_workq is also what
-	 * releases the buffers. Bounded timeouts (e.g. L2CAP_RTX_TIMEOUT)
+	 * releases the buffers. Bounded timeouts (e.g. BT_L2CAP_RTX_TIMEOUT)
 	 * only stall RX processing briefly and are intentionally left
 	 * untouched.
 	 */

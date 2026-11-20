@@ -45,7 +45,6 @@ config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 
 config SHELL_ASYNC_API
 	bool "Asynchronous shell API"
-	default n
 	depends on UART_ASYNC_API
 	help
 	  This option enables asynchronous shell API.

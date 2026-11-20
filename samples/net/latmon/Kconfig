@@ -6,7 +6,6 @@ mainmenu "Latmon Sample application"
 
 config LATMON_LOOPBACK_CALIBRATION
 	bool "Run the sample code in calibration mode"
-	default n
 	help
 	  Run Latmon in calibration mode.
 

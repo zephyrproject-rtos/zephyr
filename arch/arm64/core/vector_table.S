@@ -257,6 +257,34 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 	.align 7
 	b	.
 
+#if defined(CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS) && defined(CONFIG_EXTRA_EXCEPTION_INFO)
+/*
+ * ISR entry for the coredump freeze IPI (see z_arm64_coredump_freeze_ipi_handler
+ * in smp.c).
+ *
+ * Copy the live callee-saved registers into the interrupted context's
+ * exception frame before any C code runs: the interrupt dispatch and the
+ * C handler itself may reuse x19-x28 for their own locals, so capturing
+ * them there could record handler values instead of the interrupted
+ * context's. This mirrors what the fault paths do, so the frame copied by
+ * the C handler carries the same callee-saved information as a faulting
+ * CPU's.
+ *
+ * _isr_wrapper() stored the interrupted context's ESF pointer just below
+ * the top of the IRQ stack (outermost interrupt only), and the x19-x28
+ * slots are otherwise dead storage: exception exit never restores them.
+ * x0 (the ISR argument) is passed through untouched.
+ */
+GTEXT(z_arm64_coredump_freeze_isr)
+GTEXT(z_arm64_coredump_freeze_ipi_handler)
+SECTION_FUNC(TEXT, z_arm64_coredump_freeze_isr)
+	get_cpu	x1
+	ldr	x1, [x1, #___cpu_t_irq_stack_OFFSET]
+	ldr	x1, [x1, #-16]
+	z_arm64_save_exception_info x1
+	b	z_arm64_coredump_freeze_ipi_handler
+#endif
+
 GTEXT(z_arm64_serror)
 SECTION_FUNC(TEXT, z_arm64_serror)
 	/*
@@ -269,6 +297,10 @@ SECTION_FUNC(TEXT, z_arm64_serror)
 	.cfi_offset 30, (___esf_t_spsr_elr_OFFSET + 8 - ___esf_t_SIZEOF)
 #ifdef CONFIG_FRAME_POINTER
 	.cfi_offset 29, (___esf_t_fp_OFFSET - ___esf_t_SIZEOF)
+#endif
+
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	z_arm64_save_exception_info sp
 #endif
 
 	mov	x1, sp

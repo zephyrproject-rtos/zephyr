@@ -13,3 +13,10 @@ tests:
     min_ram: 32
     integration_platforms:
       - mimxrt1064_evk
+  sd.sdio.emul:
+    depends_on: []
+    harness: ztest
+    filter: dt_alias_exists("sdhc0")
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

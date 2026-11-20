@@ -23,7 +23,7 @@ Requirements
 - The example provides three ways to get internet:
 
   * Ethernet: Using default configuration
-  * WiFi: Using default configuration plus wifi overlay
+  * WiFi: Using default configuration plus the Wi-Fi extra config file
 
 TagoIO Device Configuration
 ***************************
@@ -62,12 +62,12 @@ To enable WIFI support, you need a board with an embedded WIFI support like
 :ref:`module_esp_8266` or :ref:`inventek_eswifi_shield`.  Additionally you
 need fill ``CONFIG_TAGOIO_HTTP_WIFI_SSID`` with your wifi network SSID and
 ``CONFIG_TAGOIO_HTTP_WIFI_PSK`` with the correspondent password at
-:zephyr_file:`samples/net/cloud/tagoio_http_post/overlay-wifi.conf` file.
+:zephyr_file:`samples/net/cloud/tagoio_http_post/wifi.conf` file.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/tagoio_http_post
    :board: disco_l475_iot1
-   :gen-args: -DEXTRA_CONF_FILE=overlay-wifi.conf
+   :gen-args: -DEXTRA_CONF_FILE=wifi.conf
    :goals: build flash
    :compact:
 
@@ -75,7 +75,7 @@ need fill ``CONFIG_TAGOIO_HTTP_WIFI_SSID`` with your wifi network SSID and
    :zephyr-app: samples/net/cloud/tagoio_http_post
    :board: [sam_v71_xult/samv71q21 | frdm_k64f | nucleo_f767zi]
    :shield: [esp_8266_arduino | inventek_eswifi_arduino_uart]
-   :gen-args: -DEXTRA_CONF_FILE=overlay-wifi.conf
+   :gen-args: -DEXTRA_CONF_FILE=wifi.conf
    :goals: build flash
    :compact:
 

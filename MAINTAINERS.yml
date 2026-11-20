@@ -229,6 +229,7 @@ ADI Platforms:
     - boards/shields/mikroe_accel_click/
     - boards/shields/mikroe_accel22_click/
     - boards/shields/mikroe_adac_click/
+    - boards/shields/mikroe_surface_temp_2_click/
     - boards/shields/pmod_acl/
     - drivers/*/*max*
     - drivers/*/*max*/
@@ -624,6 +625,7 @@ Biometrics Drivers:
     - include/zephyr/drivers/biometrics/
     - samples/drivers/biometrics/
     - tests/drivers/biometrics/
+    - tests/drivers/build_all/biometrics/
     - doc/hardware/peripherals/biometrics.rst
   labels:
     - "area: Biometrics"
@@ -744,7 +746,6 @@ Bluetooth HCI:
     - sjanc
     - HoZHel
     - cvinayak
-    - HaavardRei
     - MerinMGeorge
   files:
     - include/zephyr/drivers/bluetooth/
@@ -1526,7 +1527,6 @@ Documentation:
     - carlescufi
   files:
     - AGENTS.md
-    - CLAUDE.md
     - CODE_OF_CONDUCT.md
     - CONTRIBUTING.rst
     - doc/glossary.rst
@@ -2566,6 +2566,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - ithinuel
+    - TomasGalbickaNXP
   files:
     - include/zephyr/drivers/mbox.h
     - drivers/mbox/
@@ -2830,8 +2831,26 @@ Documentation Infrastructure:
   tests:
     - drivers.regulator
 
+"Drivers: Relay":
+  status: maintained
+  maintainers:
+    - Vec7or
+  files:
+    - doc/hardware/peripherals/relay.rst
+    - drivers/relay/
+    - dts/bindings/relay/
+    - include/zephyr/drivers/relay/
+    - tests/drivers/build_all/relay/
+    - tests/drivers/relay/
+  labels:
+    - "area: Relay"
+  tests:
+    - drivers.relay
+
 "Drivers: Reset":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - andrei-edward-popa
   files:
     - drivers/reset/
     - include/zephyr/drivers/reset.h
@@ -3054,6 +3073,7 @@ Documentation Infrastructure:
   collaborators:
     - teburd
     - andyross
+    - ZhaoxiangJin
   files:
     - drivers/timer/
     - include/zephyr/drivers/timer/
@@ -3389,6 +3409,17 @@ Ezurio platforms:
   labels:
     - "platform: Ezurio"
 
+Fastbit Platforms:
+  status: maintained
+  maintainers:
+    - kiran-fastbit
+    - shreyas-fastbit
+  files:
+    - boards/fastbit/
+    - dts/bindings/gpio/fastbit,nano-header.yaml
+  labels:
+    - "platform: Fastbit"
+
 Filesystems:
   status: maintained
   maintainers:
@@ -3534,6 +3565,7 @@ Hexagon arch:
   status: maintained
   maintainers:
     - androm3da
+    - malto101
   collaborators:
     - dkalowsk
   files:
@@ -3557,6 +3589,7 @@ IPC:
     - anangl
   collaborators:
     - arnopo
+    - TomasGalbickaNXP
   files:
     - include/zephyr/ipc/
     - samples/subsys/ipc/
@@ -4731,6 +4764,9 @@ NXP Platforms (MPU):
     - tests/arch/arm64/arm64_gicv3_its/boards/imx*.conf
   files-regex:
     - boards/nxp/.*m?imx[^(rt)].*/
+  files-exclude:
+    - drivers/video/imx*
+    - drivers/video/Kconfig.imx*
   labels:
     - "platform: NXP MPU"
     - "platform: NXP"
@@ -6442,6 +6478,7 @@ TI AM13 Platforms:
     - boards/ti/*am13*/
     - dts/arm/ti/am13*/
     - soc/ti/am13*/
+    - soc/ti/mspm_am13/
   labels:
     - "platform: TI AM13"
 
@@ -6456,6 +6493,7 @@ TI K3 Platforms:
     - natto1784
     - Kronosblaster
     - soumya-TI
+    - Sunil-Hegde
   files:
     - boards/ti/*am2*/
     - boards/ti/*am6*/
@@ -6487,8 +6525,10 @@ TI MSPM Platforms:
     - Girinandha-M
     - santhosh-c-c
     - soumya-TI
+    - Sunil-Hegde
   files:
     - soc/ti/mspm/
+    - soc/ti/mspm_am13/
     - boards/ti/*mspm*/
     - dts/arm/ti/mspm*/
     - dts/bindings/*/*mspm0*

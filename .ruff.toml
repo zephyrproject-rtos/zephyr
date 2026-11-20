@@ -10,6 +10,7 @@ target-version = "py312"
 select = [
     # zephyr-keep-sorted-start
     "B",      # flake8-bugbear
+    "BLE001", # blind-except
     "E",      # pycodestyle
     "F",      # pyflakes
     "I",      # isort

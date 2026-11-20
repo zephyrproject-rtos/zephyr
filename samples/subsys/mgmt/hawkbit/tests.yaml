@@ -29,7 +29,7 @@ tests:
       - CONFIG_HAWKBIT_DDI_TARGET_SECURITY=y
   sample.net.hawkbit.tls:
     extra_args:
-      - EXTRA_CONF_FILE="overlay-tls.conf"
+      - EXTRA_CONF_FILE="tls.conf"
   sample.net.hawkbit.set_settings_runtime:
     extra_configs:
       - CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME=y

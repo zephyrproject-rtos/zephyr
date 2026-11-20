@@ -43,11 +43,9 @@ config VIDEO_HEIGHT
 
 config VIDEO_HFLIP
 	bool "Horizontal flip"
-	default n
 
 config VIDEO_VFLIP
 	bool "Vertical flip"
-	default n
 
 endmenu
 

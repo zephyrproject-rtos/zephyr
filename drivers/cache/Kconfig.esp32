@@ -4,7 +4,7 @@
 config CACHE_ESP32
 	bool "Espressif ESP32 cache driver"
 	default y
-	depends on SOC_FAMILY_ESPRESSIF_ESP32 && CACHE_MANAGEMENT
+	depends on SOC_FAMILY_ESPRESSIF && CACHE_MANAGEMENT
 	select CACHE_HAS_DRIVER
 	help
 	  Enable the data cache driver for Espressif SoCs with a

@@ -37,6 +37,8 @@
 #include <zephyr/dt-bindings/clock/stm32c0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32C5X)
 #include <zephyr/dt-bindings/clock/stm32c5_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32G5X)
+#include <zephyr/dt-bindings/clock/stm32g5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F0X)
 #include <zephyr/dt-bindings/clock/stm32f0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F1X)
@@ -61,6 +63,8 @@
 #include <zephyr/dt-bindings/clock/stm32h5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 #include <zephyr/dt-bindings/clock/stm32h7_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32H7PX)
+#include <zephyr/dt-bindings/clock/stm32h7p_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #include <zephyr/dt-bindings/clock/stm32h7rs_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
@@ -116,6 +120,12 @@
 #define STM32_AHB5_PRESCALER	DT_PROP_OR(DT_NODELABEL(rcc), ahb5_prescaler, 1)
 #define STM32_CPU1_PRESCALER	DT_PROP(DT_NODELABEL(rcc), cpu1_prescaler)
 #define STM32_CPU2_PRESCALER	DT_PROP(DT_NODELABEL(rcc), cpu2_prescaler)
+#define STM32_HPRE		DT_PROP(DT_NODELABEL(rcc), hpre)
+#define STM32_PPRE1		DT_PROP(DT_NODELABEL(rcc), ppre1)
+#define STM32_PPRE2		DT_PROP(DT_NODELABEL(rcc), ppre2)
+#define STM32_PPRE3		DT_PROP(DT_NODELABEL(rcc), ppre3)
+#define STM32_PPRE4		DT_PROP(DT_NODELABEL(rcc), ppre4)
+#define STM32_PPRE5		DT_PROP(DT_NODELABEL(rcc), ppre5)
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb_prescaler)
 #define STM32_CORE_PRESCALER	STM32_AHB_PRESCALER
@@ -133,17 +143,14 @@
 
 #define STM32_TIMER_PRESCALER	DT_PROP(DT_NODELABEL(rcc), timpre)
 
-/** STM2H7RS specific RCC dividers */
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+/** STM32H7-like specific RCC dividers */
+#if defined(CONFIG_SOC_SERIES_STM32H7PX)
+#define STM32_CPRE	DT_PROP(DT_NODELABEL(rcc), cpre)
+#define STM32_BMPRE	DT_PROP(DT_NODELABEL(rcc), bmpre)
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #define STM32_D1CPRE	DT_PROP(DT_NODELABEL(rcc), dcpre)
-#define STM32_HPRE	DT_PROP(DT_NODELABEL(rcc), hpre)
-#define STM32_PPRE1	DT_PROP(DT_NODELABEL(rcc), ppre1)
-#define STM32_PPRE2	DT_PROP(DT_NODELABEL(rcc), ppre2)
-#define STM32_PPRE4	DT_PROP(DT_NODELABEL(rcc), ppre4)
-#define STM32_PPRE5	DT_PROP(DT_NODELABEL(rcc), ppre5)
 #else
 #define STM32_D1CPRE	DT_PROP(DT_NODELABEL(rcc), d1cpre)
-#define STM32_HPRE	DT_PROP(DT_NODELABEL(rcc), hpre)
 #define STM32_D2PPRE1	DT_PROP(DT_NODELABEL(rcc), d2ppre1)
 #define STM32_D2PPRE2	DT_PROP(DT_NODELABEL(rcc), d2ppre2)
 #define STM32_D1PPRE	DT_PROP(DT_NODELABEL(rcc), d1ppre)
@@ -288,6 +295,10 @@
 #define STM32_PLLSAI_POST_R_DIVISOR	DT_PROP_OR(DT_NODELABEL(pllsai), post_div_r, 1)
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32g5_pll_clock, okay)
+#define STM32_PLL_ICLK_DIV		DT_PROP(DT_NODELABEL(pll), iclk_div)
+#endif
+
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai1), st_stm32l4_pll_clock, okay)
 #define STM32_PLLSAI1_ENABLED	1
 #define STM32_PLLSAI1_M_DIVISOR		DT_PROP(DT_NODELABEL(pllsai1), div_m)
@@ -334,6 +345,10 @@
 #define STM32_PLL2_T_DIVISOR	DT_PROP_OR(DT_NODELABEL(pll2), div_t, 1)
 #define STM32_PLL2_FRACN_ENABLED	DT_NODE_HAS_PROP(DT_NODELABEL(pll2), fracn)
 #define STM32_PLL2_FRACN_VALUE	DT_PROP_OR(DT_NODELABEL(pll2), fracn, 0)
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll2), st_stm32g5_pll_clock, okay)
+#define STM32_PLL2_ICLK_DIV		DT_PROP(DT_NODELABEL(pll2), iclk_div)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll3), st_stm32h5_pll_clock, okay) || \
@@ -748,6 +763,10 @@
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(perck), st_stm32_clock_mux, okay)
 #define STM32_CKPER_ENABLED	1
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(adckerck), st_stm32_clock_mux, okay)
+#define STM32_ADCKERCK_ENABLED	1
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(cpusw), st_stm32_clock_mux, okay)

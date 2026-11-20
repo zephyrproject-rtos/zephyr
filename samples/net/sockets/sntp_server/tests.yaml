@@ -19,4 +19,4 @@ tests:
     extra_configs:
       - CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME=y
     extra_args:
-      - EXTRA_CONF_FILE="overlay-nsos.conf"
+      - EXTRA_CONF_FILE="nsos.conf"

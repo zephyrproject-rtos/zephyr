@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 RAKwireless Technology Limited
+
+if SHIELD_RAKWIRELESS_RAK1904
+
+if LIS2DH
+
+choice LIS2DH_TRIGGER_MODE
+	default LIS2DH_TRIGGER_GLOBAL_THREAD
+endchoice
+
+endif # LIS2DH
+
+endif # SHIELD_RAKWIRELESS_RAK1904

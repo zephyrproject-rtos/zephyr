@@ -25,6 +25,7 @@ config STM32_BACKUP_SRAM_INIT_PRIORITY
 config STM32_ENABLE_DEBUG_SLEEP_STOP
 	bool "Allow debugger attach in stop/sleep Mode"
 	default y if DEBUG
+	default y if ZTEST
 	help
 	  Some STM32 parts disable the DBGMCU in sleep/stop modes because
 	  of power consumption. As a side-effects this prevents

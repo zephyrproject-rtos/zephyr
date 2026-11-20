@@ -94,9 +94,9 @@ static void run_load_seq(void)
 
 ZTEST(cpu_load, test_load)
 {
-	if (CONFIG_CPU_LOAD_LOG_PERIODICALLY > 0) {
-		cpu_load_log_control(false);
-	}
+#if CONFIG_CPU_LOAD_LOG_PERIODICALLY > 0
+	cpu_load_log_control(false);
+#endif
 
 	run_load_seq();
 

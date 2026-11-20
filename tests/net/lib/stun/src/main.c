@@ -2740,7 +2740,7 @@ static const char *repeat(char *text, size_t text_size, const char *utf8, size_t
 /* The builder keeps to the limits RFC 8489 puts on text it sends: USERNAME
  * shorter than 509 bytes (section 14.3), SOFTWARE and the reason phrase of
  * ERROR-CODE shorter than 128 characters whatever they take in bytes
- * (sections 14.14 and 14.8), and UTF-8 with no bad lead or continuation byte.
+ * (sections 14.14 and 14.8), and well-formed UTF-8 (RFC 3629 section 4).
  * A string over the limit, broken or missing is refused with -EINVAL and
  * nothing is written; one at the limit is sent whole.
  */
@@ -2756,6 +2756,13 @@ ZTEST(stun, test_text_limits_on_sending)
 	 */
 	static const char bad_continuation[] = "ok\xc3\x28";
 	static const char lone_continuation[] = "ok\x80";
+	/* Sequences of the right shape that stand for no character: U+0000 in
+	 * two bytes instead of one, the UTF-16 surrogate U+D800, and U+110000,
+	 * which is past the last code point.
+	 */
+	static const char overlong[] = "ok\xc0\x80";
+	static const char surrogate[] = "ok\xed\xa0\x80";
+	static const char past_the_last[] = "ok\xf4\x90\x80\x80";
 	/* Room for the longest strings the test builds: 128 characters of up to
 	 * 4 bytes, and the ending '\0'.
 	 */
@@ -2770,10 +2777,17 @@ ZTEST(stun, test_text_limits_on_sending)
 	fill_txid(txid, TEST_TXID_FIRST);
 	euro_text_len = STUN_TEXT_MAX_CHARS * strlen(euro);
 
-	/* USERNAME: one byte over the limit is refused, the limit is sent. */
+	/* USERNAME: one byte over the limit is refused, and so is broken UTF-8.
+	 * The limit is sent.
+	 */
 	zassert_ok(stun_builder_init(&b, msg, sizeof(msg), STUN_BINDING_REQUEST, txid));
 	zassert_equal(stun_add_username(&b, repeat(text, sizeof(text), one_byte,
 						   STUN_USERNAME_MAX_LEN + 1U)), -EINVAL);
+	zassert_equal(stun_add_username(&b, bad_continuation), -EINVAL);
+	zassert_equal(stun_add_username(&b, lone_continuation), -EINVAL);
+	zassert_equal(stun_add_username(&b, overlong), -EINVAL);
+	zassert_equal(stun_add_username(&b, surrogate), -EINVAL);
+	zassert_equal(stun_add_username(&b, past_the_last), -EINVAL);
 	zassert_equal(stun_builder_len(&b), (int)STUN_HEADER_SIZE);
 	zassert_ok(stun_add_username(&b, repeat(text, sizeof(text), one_byte,
 						STUN_USERNAME_MAX_LEN)));
@@ -2792,6 +2806,9 @@ ZTEST(stun, test_text_limits_on_sending)
 						   STUN_TEXT_MAX_CHARS + 1U)), -EINVAL);
 	zassert_equal(stun_add_software(&b, bad_continuation), -EINVAL);
 	zassert_equal(stun_add_software(&b, lone_continuation), -EINVAL);
+	zassert_equal(stun_add_software(&b, overlong), -EINVAL);
+	zassert_equal(stun_add_software(&b, surrogate), -EINVAL);
+	zassert_equal(stun_add_software(&b, past_the_last), -EINVAL);
 	zassert_equal(stun_builder_len(&b), (int)STUN_HEADER_SIZE);
 	zassert_ok(stun_add_software(&b, repeat(text, sizeof(text), euro, STUN_TEXT_MAX_CHARS)));
 	zassert_equal(stun_builder_len(&b),
@@ -2812,6 +2829,9 @@ ZTEST(stun, test_text_limits_on_sending)
 						 STUN_TEXT_MAX_CHARS + 1U)), -EINVAL);
 	zassert_equal(stun_add_error_code(&b, TEST_ERROR_BAD_REQUEST, bad_continuation), -EINVAL);
 	zassert_equal(stun_add_error_code(&b, TEST_ERROR_BAD_REQUEST, lone_continuation), -EINVAL);
+	zassert_equal(stun_add_error_code(&b, TEST_ERROR_BAD_REQUEST, overlong), -EINVAL);
+	zassert_equal(stun_add_error_code(&b, TEST_ERROR_BAD_REQUEST, surrogate), -EINVAL);
+	zassert_equal(stun_add_error_code(&b, TEST_ERROR_BAD_REQUEST, past_the_last), -EINVAL);
 	zassert_equal(stun_builder_len(&b), (int)STUN_HEADER_SIZE);
 	zassert_ok(stun_add_error_code(&b, TEST_ERROR_BAD_REQUEST,
 				       repeat(text, sizeof(text), euro, STUN_TEXT_MAX_CHARS)));

@@ -11,11 +11,6 @@
 };
 
 / {
-	scmi_shmem0: memory@47ff0000 {
-		compatible = "arm,scmi-shmem";
-		reg = <0x0 0x47ff0000 0x0 0x80>;
-	};
-
 	/*
 	 * The SCMI headers need a transport. No protocol is declared, so the
 	 * SMC doorbell is never rung.
@@ -24,9 +19,14 @@
 		scmi {
 			compatible = "arm,scmi-smc";
 			shmem = <&scmi_shmem0>;
-			arm,smc-id = <0x82000010>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			arm,smc-id = <0x82000010>;
 		};
+	};
+
+	scmi_shmem0: memory@47ff0000 {
+		compatible = "arm,scmi-shmem";
+		reg = <0x0 0x47ff0000 0x0 0x80>;
 	};
 };

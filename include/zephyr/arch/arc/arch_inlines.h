@@ -14,26 +14,19 @@
 
 #include <zephyr/arch/arc/v2/aux_regs.h>
 
+/* ARCNUM field of the IDENTITY auxiliary register */
+static ALWAYS_INLINE uint32_t arch_proc_id(void)
+{
+	return z_arc_v2_core_id();
+}
+
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
 #ifdef CONFIG_SMP
-	uint32_t core;
-
-	core = z_arc_v2_core_id();
-
-	return &_kernel.cpus[core];
+	return &_kernel.cpus[arch_proc_id()];
 #else
 	return &_kernel.cpus[0];
 #endif /* CONFIG_SMP */
-}
-
-static ALWAYS_INLINE uint32_t arch_proc_id(void)
-{
-	/*
-	 * Placeholder implementation to be replaced with an architecture
-	 * specific call to get processor ID
-	 */
-	return arch_curr_cpu()->id;
 }
 
 static ALWAYS_INLINE unsigned int arch_num_cpus(void)

@@ -1502,6 +1502,7 @@ enum chip_pll_mode {
 /* 0x13: Nack Status */
 #define IT8XXX2_I2C_NST_CNS          BIT(7)
 #define IT8XXX2_I2C_NST_ID_NACK      BIT(3)
+#define IT8XXX2_I2C_NST_NACK_MASK    GENMASK(3, 0)
 /* 0x18: Timeout and Arbiter Status */
 #define IT8XXX2_I2C_SCL_TIMEOUT_EN   BIT(7)
 #define IT8XXX2_I2C_SDA_TIMEOUT_EN   BIT(6)

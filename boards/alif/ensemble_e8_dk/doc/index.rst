@@ -88,6 +88,14 @@ bus, the PHY and the PTP hardware clock of the MAC:
    :board: ensemble_e8_dk/ae822fa0e5597ls0/rtss_he/sram
    :goals: build
 
+For the APSS core, Ethernet is enabled on the default build variant, as the
+APSS core utilizes the system SRAM by default:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dhcpv4_client
+   :board: ensemble_e8_dk/ae822fa0e5597ls0/apss
+   :goals: build
+
 Programming and Debugging
 *************************
 

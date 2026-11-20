@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_KIT_PSC3M6_EVAL
+
+configdefault ARM_MPU
+	default y
+
+configdefault HW_STACK_PROTECTION
+	default y
+
+configdefault GPIO
+	default y
+
+configdefault CLOCK_CONTROL
+	default y
+
+configdefault CONSOLE
+	default y
+
+configdefault UART_CONSOLE
+	default y
+
+configdefault SERIAL
+	default y
+
+endif # BOARD_KIT_PSC3M6_EVAL

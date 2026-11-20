@@ -34,10 +34,10 @@ int hardware_init(void)
 
 	soc_hw_init();
 
-#ifdef CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_BOOTLOADER_REGION_PROTECTION_ENABLE
 	esp_cpu_configure_region_protection();
 #endif
-#if CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V
+#if CONFIG_SOC_FAMILY_ESPRESSIF_BOOTLOADER_VDDSDIO_BOOST_1_9V
 	rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
 
 	if (cfg.enable == 1 && cfg.tieh == RTC_VDDSDIO_TIEH_1_8V) {
@@ -48,15 +48,15 @@ int hardware_init(void)
 		rtc_vddsdio_set_config(cfg);
 		esp_rom_delay_us(10);
 	}
-#endif /* CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_BOOTLOADER_VDDSDIO_BOOST_1_9V */
 
 	bootloader_clock_configure();
 
-#ifdef CONFIG_ESP_CONSOLE
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE
 	/* initialize console right after clock change, from now on, we can log */
 	esp_console_init();
 	print_banner();
-#endif /* CONFIG_ESP_CONSOLE */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE */
 
 	reset_mmu();
 

@@ -222,6 +222,9 @@ int dwmac_bus_init(const struct device *dev)
 		(SYSCON->ENET_CTRL &
 		 ~(SYSCON_ENET_CTRL_PHY_INTF_MASK | SYSCON_ENET_CTRL_PHY_SEL_MASK)) |
 		SYSCON_ENET_CTRL_PHY_INTF(PHY_MODE) | SYSCON_ENET_CTRL_PHY_SEL(PHY_INTERNAL);
+#elif defined(CONFIG_SOC_SERIES_LPC54XXX)
+	SYSCON->ETHPHYSEL = (SYSCON->ETHPHYSEL & ~SYSCON_ETHPHYSEL_PHY_SEL_MASK) |
+			    SYSCON_ETHPHYSEL_PHY_SEL(PHY_MODE);
 #endif
 
 	/*
@@ -342,7 +345,8 @@ int dwmac_platform_init(const struct device *dev)
 	NXP_ETH_IRQ_CONNECT(common);
 	NXP_ETH_IRQ_CONNECT(tx);
 	NXP_ETH_IRQ_CONNECT(rx);
-#elif defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_FAMILY_MCXA)
+#elif defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_FAMILY_MCXA) ||                        \
+	defined(CONFIG_SOC_SERIES_LPC54XXX)
 	NXP_ETH_IRQ_CONNECT(mac);
 #endif
 

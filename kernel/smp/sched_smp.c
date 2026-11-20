@@ -271,6 +271,7 @@ void z_smp_halt_remote(struct k_thread *thread, struct _cpu *cpu,
 	 * dereference of thread->base will occur.
 	 */
 	while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
+		z_wait_thread_timeout_inflight(thread);
 	}
 }
 

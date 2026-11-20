@@ -268,6 +268,9 @@ static int sdio_read_cccr(struct sd_card *card)
 	if (data & SDIO_CCCR_CAPS_SMB) {
 		card->cccr_flags |= SDIO_SUPPORT_MULTIBLOCK;
 	}
+	if (data & SDIO_CCCR_CAPS_LSC) {
+		card->cccr_flags |= SDIO_LOW_SPEED_CARD;
+	}
 	if (cccr_ver >= SDIO_CCCR_CCCR_REV_2_00) {
 		/* Read high speed properties */
 		ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
@@ -353,7 +356,7 @@ static int sdio_read_cis(struct sdio_func *func,
 			 uint32_t tuple_count)
 {
 	int ret;
-	char *data = func->card->card_buffer;
+	uint8_t *data = func->card->card_buffer;
 	uint32_t cis_ptr = 0, num = 0;
 	uint8_t tpl_code, tpl_link;
 	bool match_tpl = false;
@@ -666,10 +669,12 @@ int sdio_card_init(struct sd_card *card)
 		return ret;
 	}
 
-	/* If card and host support 4 bit bus, enable it */
-	if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE) &&
-		((card->cccr_flags & SDIO_SUPPORT_HS) ||
-		(card->cccr_flags & SDIO_SUPPORT_4BIT_LS_BUS))) {
+	/* Every full speed card supports the 4 bit bus, a low speed card only
+	 * when it reports 4BLS
+	 */
+	if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE) && card->host_props.bus_4_bit_support &&
+	    (!(card->cccr_flags & SDIO_LOW_SPEED_CARD) ||
+	     (card->cccr_flags & SDIO_SUPPORT_4BIT_LS_BUS))) {
 		/* Raise bus width to 4 bits */
 		ret = sdio_set_bus_width(card, SDHC_BUS_WIDTH4BIT);
 		if (ret) {
