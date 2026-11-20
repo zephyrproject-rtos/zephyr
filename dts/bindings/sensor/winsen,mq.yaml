@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: Winsen MQ series gas sensor read through an ADC.
+
+description: |
+  The sensing element of an MQ sensor is a heated resistor whose value falls
+  as the gas it is sensitive to grows denser. It sits in series with a load
+  resistor across the heater supply, and an ADC reads the voltage across that
+  load resistor.
+
+  The sensor resistance follows from that voltage and is reported on
+  SENSOR_CHAN_GAS_RES. One compatible covers the series, because what sets
+  the parts apart is the sensitivity curve, and a part sensitive to several
+  gases has one curve per gas, so the curve is a property of the board and
+  the gas it watches rather than of the part alone.
+
+  Turning the resistance into a concentration also needs the resistance the
+  part shows in clean air, which differs from part to part and drifts, so
+  SENSOR_CHAN_MQ_PPM is reported only once r0-ohms is known. It can be given
+  here or measured at runtime with SENSOR_ATTR_MQ_R0.
+
+compatible: "winsen,mq"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    type: phandle-array
+    required: true
+    description: |
+      ADC that reads the voltage across the load resistor:
+      <&adc_node channel>
+
+  load-resistance-ohms:
+    type: int
+    required: true
+    description: |
+      Resistance in series with the sensing element, in ohms. Boards that
+      trim it with a potentiometer state the value it was set to.
+
+  r0-ohms:
+    type: int
+    description: |
+      Resistance the sensing element shows in clean air, in ohms. Without it
+      SENSOR_CHAN_MQ_PPM returns -ENODATA until SENSOR_ATTR_MQ_R0 is set.
+
+  curve-scale-milli:
+    type: int
+    description: |
+      Factor a of ppm = a * (Rs / R0) ^ b, scaled by 1000. Read off the
+      sensitivity curve of the part for the gas being measured.
+
+  curve-exponent-milli:
+    type: int
+    description: |
+      Exponent b of ppm = a * (Rs / R0) ^ b, scaled by 1000. It is negative,
+      as the resistance falls while the concentration rises. Without both
+      curve properties SENSOR_CHAN_MQ_PPM returns -ENOTSUP.
