@@ -107,7 +107,8 @@ config QEMU_IVSHMEM_PLAIN_MEM_SIZE
 
 config QEMU_UEFI_BOOT
 	bool "QEMU uses UEFI to boot up"
-	depends on BUILD_OUTPUT_EFI && QEMU_TARGET && X86_64
+	depends on BUILD_OUTPUT_EFI && QEMU_TARGET
+	depends on X86_64 || (BOARD_QEMU_CORTEX_A53 && ARMV8_A_NS)
 	help
 	  This option indicates that QEMU will use UEFI bootable method
 	  to boot up.

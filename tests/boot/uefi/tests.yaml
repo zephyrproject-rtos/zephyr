@@ -1,5 +1,4 @@
 common:
-  platform_allow: qemu_x86_64
   harness: console
   harness_config:
     type: one_line
@@ -7,4 +6,12 @@ common:
       - "Hello World! (.*)"
 tests:
   boot.uefi:
+    platform_allow:
+      - qemu_x86_64
+    tags: uefi
+  boot.uefi.arm64:
+    platform_allow:
+      - qemu_cortex_a53
+    required_snippets:
+      - qemu-uefi
     tags: uefi

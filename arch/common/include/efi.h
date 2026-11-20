@@ -4,15 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_ARCH_X86_EFI_H_
-#define ZEPHYR_ARCH_X86_EFI_H_
+#ifndef ZEPHYR_ARCH_COMMON_INCLUDE_EFI_H_
+#define ZEPHYR_ARCH_COMMON_INCLUDE_EFI_H_
 
 #ifndef _ASMLANGUAGE
 
 #include <stdbool.h>
 #include <zephyr/autoconf.h>
 
+/* UEFI uses the Microsoft x64 calling convention on x86_64 and AAPCS64 on arm64 */
+#if defined(__x86_64__)
 #define __abi __attribute__((ms_abi))
+#else
+#define __abi
+#endif
 
 /*
  * This is a quick installment of EFI structures and functions.
@@ -566,6 +571,7 @@ struct efi_boot_services {
 	efi_reinstall_protocol_interface_t ReinstallProtocolInterface;
 	efi_uninstall_protocol_interface_t UninstallProtocolInterface;
 	efi_handle_protocol_t HandleProtocol;
+	void *Reserved;
 	efi_register_protocol_notify_t RegisterProtocolNotify;
 	efi_locate_handle_t LocateHandle;
 	efi_locate_device_path_t LocateDevicePath;
@@ -639,4 +645,4 @@ struct efi_loaded_image_protocol {
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_X86_EFI_H_ */
+#endif /* ZEPHYR_ARCH_COMMON_INCLUDE_EFI_H_ */
