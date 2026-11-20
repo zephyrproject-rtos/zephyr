@@ -46,6 +46,7 @@ if(CONFIG_BT_HCI_HOST)
       l2cap.c
       att.c
       gatt.c
+      buf_waiter.c
       )
 
     zephyr_library_sources_ifdef(

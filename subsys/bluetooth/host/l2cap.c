@@ -794,6 +794,11 @@ struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
 					  timeout);
 }
 
+struct net_buf *bt_l2cap_create_pdu_waiter(struct bt_buf_waiter *waiter, size_t reserve)
+{
+	return bt_conn_create_pdu_waiter(waiter, sizeof(struct bt_l2cap_hdr) + reserve);
+}
+
 static void raise_data_ready(struct bt_l2cap_le_chan *le_chan)
 {
 	__maybe_unused bool added;

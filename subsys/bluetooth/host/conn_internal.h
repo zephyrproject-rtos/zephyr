@@ -599,6 +599,16 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 	bt_conn_create_pdu_timeout(_pool, _reserve, K_FOREVER)
 #endif
 
+struct bt_buf_waiter;
+
+/* Prepare a PDU from the pool of bt_conn_create_pdu() without waiting for a
+ * buffer. NULL means that the waiter waits for one, see bt_buf_waiter_alloc().
+ */
+struct net_buf *bt_conn_create_pdu_waiter(struct bt_buf_waiter *waiter, size_t reserve);
+
+/* End the wait of a waiter of bt_conn_create_pdu_waiter() */
+void bt_conn_pdu_waiter_cancel(struct bt_buf_waiter *waiter);
+
 /* Initialize connection management */
 int bt_conn_init(void);
 

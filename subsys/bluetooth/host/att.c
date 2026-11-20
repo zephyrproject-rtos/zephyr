@@ -37,6 +37,7 @@
 #include <sys/types.h>
 
 #include "att_internal.h"
+#include "buf_waiter.h"
 #include "common/bt_str.h"
 #include "conn_internal.h"
 #include "gatt_internal.h"
@@ -57,6 +58,9 @@ LOG_MODULE_REGISTER(bt_att);
 #else
 #define ATT_CHAN_MAX				1
 #endif /* CONFIG_BT_EATT */
+
+/* The bearers that all connections can have */
+#define ATT_CHAN_COUNT				(CONFIG_BT_MAX_CONN * ATT_CHAN_MAX)
 
 typedef enum __packed {
 		ATT_COMMAND,
@@ -100,6 +104,8 @@ enum {
 	ATT_ENHANCED,
 	ATT_PENDING_SENT,
 	ATT_OUT_OF_SYNC_SENT,
+	/* The owed confirmation waits for a buffer of att_pool */
+	ATT_CONFIRM_WAITING,
 
 	/* Total number of flags - must be at the end of the enum */
 	ATT_NUM_FLAGS,
@@ -119,6 +125,31 @@ struct bt_att_tx_meta_data {
 	enum bt_att_chan_opt chan_opt;
 };
 
+/* The flags of a connection's response slot */
+enum {
+	/* A buffer of att_rsp_pool is in use for a response of the slot */
+	ATT_RSP_SLOT_BUF_AWAY,
+	/* That response is one of the unenhanced bearer */
+	ATT_RSP_SLOT_UATT_RSP,
+	/* A response of the unenhanced bearer has left, see att_rsp_work_handler() */
+	ATT_RSP_SLOT_UATT_SENT,
+
+	ATT_RSP_SLOT_NUM_FLAGS,
+};
+
+/* What a connection has for its responses. It is not part of the connection's
+ * struct bt_att, which can go while the lower layers still hold its response.
+ */
+struct att_rsp_slot {
+	/* The connection that has the slot, NULL for none */
+	atomic_ptr_t att;
+	/* The connection's unenhanced bearer, NULL for none */
+	atomic_ptr_t uatt_chan;
+	ATOMIC_DEFINE(flags, ATT_RSP_SLOT_NUM_FLAGS);
+	/* Runs on bt_workq when a response of the unenhanced bearer has left */
+	struct k_work work;
+};
+
 /* ATT channel specific data */
 struct bt_att_chan {
 	/* Connection this channel is associated with */
@@ -129,6 +160,10 @@ struct bt_att_chan {
 	struct k_fifo		tx_queue;
 	struct k_work_delayable	timeout_work;
 	sys_snode_t		node;
+	/* The buffer for the response to the request being processed, see
+	 * att_chan_rsp_buf_secure()
+	 */
+	struct net_buf		*rsp_buf;
 };
 
 static bool bt_att_is_enhanced(struct bt_att_chan *chan)
@@ -210,6 +245,8 @@ struct bt_att {
 #endif
 	/* Contains bt_att_chan instance(s) */
 	sys_slist_t		chans;
+	/* The connection's slot of att_rsp_slots */
+	struct att_rsp_slot	*rsp_slot;
 #if defined(CONFIG_BT_EATT)
 	struct {
 		struct k_work_delayable connection_work;
@@ -224,8 +261,7 @@ struct bt_att {
 
 K_MEM_SLAB_DEFINE_STATIC_TYPE(att_slab, struct bt_att,
 			      CONFIG_BT_MAX_CONN);
-K_MEM_SLAB_DEFINE_STATIC_TYPE(chan_slab, struct bt_att_chan,
-			      CONFIG_BT_MAX_CONN * ATT_CHAN_MAX);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(chan_slab, struct bt_att_chan, ATT_CHAN_COUNT);
 static struct bt_att_req cancel;
 
 /** The thread ATT response handlers likely run on.
@@ -242,7 +278,8 @@ static struct bt_att_req cancel;
  */
 static k_tid_t att_handle_rsp_thread;
 
-static struct bt_att_tx_meta_data tx_meta_data_storage[CONFIG_BT_ATT_TX_COUNT];
+/* For the buffers of att_pool, then for those of att_rsp_pool */
+static struct bt_att_tx_meta_data tx_meta_data_storage[CONFIG_BT_ATT_TX_COUNT + CONFIG_BT_MAX_CONN];
 
 static struct bt_att_tx_meta_data *att_get_tx_meta_data(const struct net_buf *buf);
 static void att_on_sent_cb(struct bt_att_tx_meta_data *meta);
@@ -303,6 +340,9 @@ const char *bt_att_err_to_str(uint8_t att_err)
 }
 #endif /* CONFIG_BT_ATT_ERR_TO_STR */
 
+/* Bearers that owe a confirmation and got no buffer of att_pool for it */
+static BT_BUF_WAITERS_DEFINE(att_pool_waiters);
+
 static void att_tx_destroy_work_handler(struct k_work *work);
 static K_WORK_DEFINE(att_tx_destroy_work, att_tx_destroy_work_handler);
 static struct k_spinlock tx_destroy_queue_lock;
@@ -351,7 +391,11 @@ static void att_tx_destroy_work_handler(struct k_work *work)
 	/* After this point, p_meta doesn't belong to us. The user data will
 	 * be memset to 0 on allocation.
 	 */
-	net_buf_destroy(buf);
+	if (IS_ENABLED(CONFIG_BT_GATT_CLIENT)) {
+		bt_buf_waiters_destroy(&att_pool_waiters, buf);
+	} else {
+		net_buf_destroy(buf);
+	}
 
 	/* ATT opcode 0 is invalid. If we get here, that means the buffer got
 	 * destroyed before it was ready to be sent. Hopefully nobody sets the
@@ -374,18 +418,18 @@ static void att_tx_destroy_work_handler(struct k_work *work)
 	}
 }
 
+static void att_cfm_buf_release(const struct net_buf *buf);
+
 static void att_tx_destroy(struct net_buf *buf)
 {
 	int err;
 	k_spinlock_key_t key;
 
+	att_cfm_buf_release(buf);
+
 	/* We need to invoke att_on_sent_cb, which may block. We
 	 * don't want to block in a net buf destroy callback, so we
 	 * defer to a sensible workqueue.
-	 *
-	 * bt_workq cannot be used because it currently forms a
-	 * deadlock with att_pool: bt_workq -> bt_att_recv ->
-	 * send_err_rsp waits for att pool.
 	 *
 	 * We use the system work queue to preserve earlier
 	 * behavior. The tx_processor used to run on the system work
@@ -411,14 +455,60 @@ NET_BUF_POOL_DEFINE(att_pool, CONFIG_BT_ATT_TX_COUNT,
 		    BT_L2CAP_SDU_BUF_SIZE(BT_ATT_BUF_SIZE),
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, att_tx_destroy);
 
+/* Declared ahead: the callback needs the pool, for the meta data of its buffer */
+static void att_rsp_destroy(struct net_buf *buf);
+
+/* A buffer for the responses of each connection, so that a request is answered
+ * while the application's threads keep att_pool empty. A slot has at most one
+ * of the buffers in use, so there is always one for a slot that has none.
+ */
+NET_BUF_POOL_FIXED_DEFINE(att_rsp_pool, CONFIG_BT_MAX_CONN,
+			  BT_L2CAP_SDU_BUF_SIZE(BT_ATT_BUF_SIZE), CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+			  att_rsp_destroy);
+
+static struct att_rsp_slot att_rsp_slots[CONFIG_BT_MAX_CONN];
+
+/* The slot that each buffer of att_rsp_pool is in use for */
+static struct att_rsp_slot *att_rsp_buf_slots[CONFIG_BT_MAX_CONN];
+
 static struct bt_att_tx_meta_data *att_get_tx_meta_data(const struct net_buf *buf)
 {
-	__ASSERT_NO_MSG(net_buf_pool_get(buf->pool_id) == &att_pool);
+	const struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	/* Metadata lifetime is implicitly tied to the buffer lifetime.
 	 * Treat it as part of the buffer itself.
 	 */
-	return &tx_meta_data_storage[net_buf_id((struct net_buf *)buf)];
+	if (pool == &att_rsp_pool) {
+		return &tx_meta_data_storage[CONFIG_BT_ATT_TX_COUNT + net_buf_id(buf)];
+	}
+
+	__ASSERT_NO_MSG(pool == &att_pool);
+
+	return &tx_meta_data_storage[net_buf_id(buf)];
+}
+
+/* Called by whoever drops the last reference, the driver's ISR included, so
+ * that the connection has its buffer again at once, not once the system
+ * workqueue has run as for att_pool. Touches only the static slot.
+ */
+static void att_rsp_destroy(struct net_buf *buf)
+{
+	struct att_rsp_slot *slot = att_rsp_buf_slots[net_buf_id(buf)];
+	__maybe_unused int err;
+	bool is_uatt_rsp;
+
+	(void)memset(att_get_tx_meta_data(buf), 0, sizeof(struct bt_att_tx_meta_data));
+
+	/* In the pool, and the flag cleared, before the slot may take it again */
+	net_buf_destroy(buf);
+	is_uatt_rsp = atomic_test_and_clear_bit(slot->flags, ATT_RSP_SLOT_UATT_RSP);
+	atomic_clear_bit(slot->flags, ATT_RSP_SLOT_BUF_AWAY);
+
+	if (is_uatt_rsp) {
+		atomic_set_bit(slot->flags, ATT_RSP_SLOT_UATT_SENT);
+		err = bt_work_submit(&slot->work);
+		__ASSERT(err >= 0, "Response buffer work not submitted (err %d)", err);
+	}
 }
 
 static int bt_att_chan_send(struct bt_att_chan *chan, struct net_buf *buf);
@@ -427,6 +517,7 @@ static void att_chan_mtu_updated(struct bt_att_chan *updated_chan);
 static void bt_att_disconnected(struct bt_l2cap_chan *chan);
 
 static struct net_buf *att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op);
+static void att_rsp_pdu_put_back(struct bt_att_chan *chan, struct net_buf **rsp);
 
 static void att_disconnect(struct bt_att_chan *chan)
 {
@@ -888,6 +979,7 @@ static void att_on_sent_cb(struct bt_att_tx_meta_data *meta)
 
 static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t op, size_t len)
 {
+	k_tid_t current_thread = k_current_get();
 	struct bt_att_hdr *hdr;
 	struct net_buf *buf;
 	struct bt_att_tx_meta_data *data;
@@ -899,25 +991,14 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 		return NULL;
 	}
 
-	switch (att_op_get_type(op)) {
-	case ATT_RESPONSE:
-	case ATT_CONFIRMATION:
-		/* Use a timeout only when responding/confirming */
-		timeout = BT_ATT_TIMEOUT;
-		break;
-	default: {
-		k_tid_t current_thread = k_current_get();
-
-		if (current_thread == k_work_queue_thread_get(&k_sys_work_q)) {
-			/* No blocking in the sysqueue. */
-			timeout = K_NO_WAIT;
-		} else if (current_thread == att_handle_rsp_thread) {
-			/* Blocking would cause deadlock. */
-			timeout = K_NO_WAIT;
-		} else {
-			timeout = K_FOREVER;
-		}
-	}
+	if (current_thread == k_work_queue_thread_get(&k_sys_work_q)) {
+		/* No blocking in the sysqueue. */
+		timeout = K_NO_WAIT;
+	} else if (current_thread == att_handle_rsp_thread) {
+		/* Blocking would cause deadlock. */
+		timeout = K_NO_WAIT;
+	} else {
+		timeout = K_FOREVER;
 	}
 
 	/* This will reserve headspace for lower layers */
@@ -988,10 +1069,41 @@ static void bt_att_chan_send_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	int err;
 
 	err = chan_send(chan, buf);
-	if (err) {
+	if (err != 0 && !atomic_test_bit(chan->flags, ATT_CONNECTED)) {
+		/* Nothing sends what is queued on a detached bearer */
+		net_buf_unref(buf);
+	} else if (err != 0) {
 		/* Responses need to be sent back using the same channel */
 		k_fifo_put(&chan->tx_queue, net_buf_take(&buf));
 	}
+}
+
+/* Start a response or a confirmation in the buffer that was taken for it */
+static void att_rsp_pdu_init(struct bt_att_chan *chan, struct net_buf *buf, uint8_t op)
+{
+	size_t headroom = BT_L2CAP_BUF_SIZE(0);
+	struct bt_att_hdr *hdr;
+
+	if (bt_att_is_enhanced(chan)) {
+		headroom += BT_L2CAP_SDU_HDR_SIZE;
+	}
+
+	net_buf_reserve(buf, headroom);
+
+	att_get_tx_meta_data(buf)->att_chan = chan;
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = op;
+}
+
+/* What the server answers: the requests, and what it does not know and
+ * rejects with an Error Response
+ */
+static bool att_op_needs_rsp(uint8_t op)
+{
+	const att_type_t type = att_op_get_type(op);
+
+	return type == ATT_REQUEST || type == ATT_UNKNOWN;
 }
 
 static void send_err_rsp(struct bt_att_chan *chan, uint8_t req, uint16_t handle,
@@ -1005,7 +1117,15 @@ static void send_err_rsp(struct bt_att_chan *chan, uint8_t req, uint16_t handle,
 		return;
 	}
 
-	buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_ERROR_RSP, sizeof(*rsp));
+	/* Only a request is owed its Error Response. What else gets one, a
+	 * PDU for a client that is not there, gets it if att_pool has a buffer.
+	 */
+	if (att_op_needs_rsp(req)) {
+		buf = att_create_rsp_pdu(chan, BT_ATT_OP_ERROR_RSP);
+	} else {
+		buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_ERROR_RSP, sizeof(*rsp));
+	}
+
 	if (!buf) {
 		LOG_ERR("Unable to create err rsp PDU");
 		return;
@@ -1294,7 +1414,7 @@ static uint8_t att_find_info_rsp(struct bt_att_chan *chan, uint16_t start_handle
 	bt_gatt_foreach_attr(start_handle, end_handle, find_info_cb, &data);
 
 	if (!data.rsp) {
-		net_buf_unref(data.buf);
+		att_rsp_pdu_put_back(chan, &data.buf);
 		/* Respond since handle is set */
 		send_err_rsp(chan, BT_ATT_OP_FIND_INFO_REQ, start_handle,
 			     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
@@ -1456,7 +1576,7 @@ static uint8_t att_find_type_rsp(struct bt_att_chan *chan, uint16_t start_handle
 
 	/* If error has not been cleared, no service has been found */
 	if (data.err) {
-		net_buf_unref(data.buf);
+		att_rsp_pdu_put_back(chan, &data.buf);
 		/* Respond since handle is set */
 		send_err_rsp(chan, BT_ATT_OP_FIND_TYPE_REQ, start_handle,
 			     data.err);
@@ -1691,7 +1811,7 @@ static uint8_t att_read_type_rsp(struct bt_att_chan *chan, struct bt_uuid *uuid,
 	bt_gatt_foreach_attr(start_handle, end_handle, read_type_cb, &data);
 
 	if (data.err) {
-		net_buf_unref(data.buf);
+		att_rsp_pdu_put_back(chan, &data.buf);
 		/* Response here since handle is set */
 		send_err_rsp(chan, BT_ATT_OP_READ_TYPE_REQ, start_handle,
 			     data.err);
@@ -1842,7 +1962,7 @@ static uint8_t att_read_rsp(struct bt_att_chan *chan, uint8_t op, uint8_t rsp,
 
 	/* In case of error discard data and respond with an error */
 	if (data.err) {
-		net_buf_unref(data.buf);
+		att_rsp_pdu_put_back(chan, &data.buf);
 		/* Respond here since handle is set */
 		send_err_rsp(chan, op, handle, data.err);
 		return 0;
@@ -1925,7 +2045,7 @@ static uint8_t att_read_mult_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 		/* Stop reading in case of error */
 		if (data.err) {
-			net_buf_unref(data.buf);
+			att_rsp_pdu_put_back(chan, &data.buf);
 			/* Respond here since handle is set */
 			send_err_rsp(chan, BT_ATT_OP_READ_MULT_REQ, handle,
 				     data.err);
@@ -2025,7 +2145,7 @@ static uint8_t att_read_mult_vl_req(struct bt_att_chan *chan, struct net_buf *bu
 
 		/* Stop reading in case of error */
 		if (data.err) {
-			net_buf_unref(data.buf);
+			att_rsp_pdu_put_back(chan, &data.buf);
 			/* Respond here since handle is set */
 			send_err_rsp(chan, BT_ATT_OP_READ_MULT_VL_REQ, handle,
 				     data.err);
@@ -2140,7 +2260,7 @@ static uint8_t att_read_group_rsp(struct bt_att_chan *chan, struct bt_uuid *uuid
 	bt_gatt_foreach_attr(start_handle, end_handle, read_group_cb, &data);
 
 	if (!data.rsp->len) {
-		net_buf_unref(data.buf);
+		att_rsp_pdu_put_back(chan, &data.buf);
 		/* Respond here since handle is set */
 		send_err_rsp(chan, BT_ATT_OP_READ_GROUP_REQ, start_handle,
 			     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
@@ -2309,7 +2429,7 @@ static uint8_t att_write_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 	err = perform_write(chan, BT_ATT_OP_WRITE_REQ, handle, 0, buf->data, buf->len);
 	if (err == 0) {
-		buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_WRITE_RSP, 0);
+		buf = att_create_rsp_pdu(chan, BT_ATT_OP_WRITE_RSP);
 		if (buf == NULL) {
 			LOG_ERR("Unable to create rsp PDU");
 			return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
@@ -2881,9 +3001,166 @@ static uint8_t att_notify(struct bt_att_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
+/* What a bearer has for its confirmations: static, as the waiter's work can
+ * run after the bearer has gone
+ */
+struct att_cfm_slot {
+	/* The bearer that has the slot, NULL for none */
+	atomic_ptr_t chan;
+	struct bt_buf_waiter waiter;
+};
+
+static struct att_cfm_slot att_cfm_slots[ATT_CHAN_COUNT];
+
+/* The slot of the confirmation in each buffer of att_pool: the confirmation
+ * is owed until att_tx_destroy() clears it, without touching the bearer
+ */
+static struct att_cfm_slot *att_cfm_buf_slots[CONFIG_BT_ATT_TX_COUNT];
+static struct k_spinlock att_cfm_lock;
+
+static void att_cfm_buf_release(const struct net_buf *buf)
+{
+	k_spinlock_key_t key = k_spin_lock(&att_cfm_lock);
+
+	att_cfm_buf_slots[net_buf_id(buf)] = NULL;
+	k_spin_unlock(&att_cfm_lock, key);
+}
+
+static struct att_cfm_slot *att_chan_cfm_slot(const struct bt_att_chan *chan)
+{
+	ARRAY_FOR_EACH_PTR(att_cfm_slots, slot) {
+		if (atomic_ptr_get(&slot->chan) == chan) {
+			return slot;
+		}
+	}
+
+	return NULL;
+}
+
+/* A new bearer owes no confirmation, also while one of the bearer that had the
+ * slot before is still on its way
+ */
+static void att_cfm_slot_claim(struct bt_att_chan *chan)
+{
+	ARRAY_FOR_EACH_PTR(att_cfm_slots, slot) {
+		if (atomic_ptr_cas(&slot->chan, NULL, chan)) {
+			k_spinlock_key_t key = k_spin_lock(&att_cfm_lock);
+
+			ARRAY_FOR_EACH(att_cfm_buf_slots, i) {
+				if (att_cfm_buf_slots[i] == slot) {
+					att_cfm_buf_slots[i] = NULL;
+				}
+			}
+
+			k_spin_unlock(&att_cfm_lock, key);
+			return;
+		}
+	}
+
+	__ASSERT(false, "No confirmation slot for chan %p", chan);
+}
+
+static void att_cfm_slot_release(struct bt_att_chan *chan)
+{
+	ARRAY_FOR_EACH_PTR(att_cfm_slots, slot) {
+		(void)atomic_ptr_cas(&slot->chan, chan, NULL);
+	}
+}
+
+/* From the indication until the confirmation's buffer is freed */
+static bool att_chan_confirm_owed(struct bt_att_chan *chan, const struct att_cfm_slot *slot)
+{
+	k_spinlock_key_t key = k_spin_lock(&att_cfm_lock);
+	bool is_owed = atomic_test_bit(chan->flags, ATT_CONFIRM_WAITING);
+
+	ARRAY_FOR_EACH(att_cfm_buf_slots, i) {
+		if (att_cfm_buf_slots[i] == slot) {
+			is_owed = true;
+		}
+	}
+
+	k_spin_unlock(&att_cfm_lock, key);
+
+	return is_owed;
+}
+
+/* Send the confirmation that the bearer owes, if there is a buffer for it.
+ * Without one the bearer waits for att_pool, which the application's threads
+ * block on as well, and att_cfm_work_handler() calls this again.
+ */
+static void att_chan_confirm_send(struct bt_att_chan *chan, struct att_cfm_slot *slot)
+{
+	k_spinlock_key_t key;
+	struct net_buf *buf;
+
+	buf = bt_buf_waiter_alloc(&att_pool_waiters, &slot->waiter, &att_pool);
+	if (buf == NULL) {
+		LOG_DBG("chan %p waits for a buffer for its confirmation", chan);
+		return;
+	}
+
+	key = k_spin_lock(&att_cfm_lock);
+	att_cfm_buf_slots[net_buf_id(buf)] = slot;
+	atomic_clear_bit(chan->flags, ATT_CONFIRM_WAITING);
+	k_spin_unlock(&att_cfm_lock, key);
+
+	att_rsp_pdu_init(chan, buf, BT_ATT_OP_CONFIRM);
+	bt_att_chan_send_rsp(chan, buf);
+}
+
+static void att_cfm_work_handler(struct k_work *work)
+{
+	struct bt_buf_waiter *waiter = CONTAINER_OF(work, struct bt_buf_waiter, work);
+	struct att_cfm_slot *slot = CONTAINER_OF(waiter, struct att_cfm_slot, waiter);
+	struct bt_att_chan *chan;
+
+	/* att_chan_free() takes the bearer out of the slot under the host lock
+	 * (bt_dev_lock()) before it frees it, so it stays while the lock is held.
+	 * A slot of a new bearer has had the old one's kept buffer given back.
+	 */
+	bt_dev_lock();
+
+	chan = atomic_ptr_get(&slot->chan);
+	if (chan != NULL && atomic_test_bit(chan->flags, ATT_CONNECTED) &&
+	    atomic_test_bit(chan->flags, ATT_CONFIRM_WAITING)) {
+		att_chan_confirm_send(chan, slot);
+	}
+
+	bt_dev_unlock();
+}
+
+static void att_cfm_slots_init(void)
+{
+	ARRAY_FOR_EACH_PTR(att_cfm_slots, slot) {
+		bt_buf_waiter_init(&slot->waiter, att_cfm_work_handler);
+	}
+}
+
+static void att_chan_confirm_cancel(struct bt_att_chan *chan)
+{
+	struct att_cfm_slot *slot = att_chan_cfm_slot(chan);
+
+	if (slot != NULL) {
+		bt_buf_waiter_cancel(&att_pool_waiters, &slot->waiter);
+	}
+}
+
 static uint8_t att_indicate(struct bt_att_chan *chan, struct net_buf *buf)
 {
+	struct att_cfm_slot *slot = att_chan_cfm_slot(chan);
 	uint16_t handle;
+
+	__ASSERT_NO_MSG(slot != NULL);
+
+	if (att_chan_confirm_owed(chan, slot)) {
+		/* Core v6.3 Vol 3 Part F 3.3.2: no other indication on the
+		 * bearer before the confirmation, which has not left the Host
+		 */
+		LOG_WRN("Indication from %s before the previous one was confirmed, disconnecting",
+			bt_conn_dst_str(chan->att->conn));
+		att_disconnect(chan);
+		return 0;
+	}
 
 	handle = net_buf_pull_le16(buf);
 
@@ -2891,13 +3168,8 @@ static uint8_t att_indicate(struct bt_att_chan *chan, struct net_buf *buf)
 
 	bt_gatt_notification(chan->att->conn, handle, buf->data, buf->len);
 
-	buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_CONFIRM, 0);
-	if (!buf) {
-		LOG_ERR("Unable to create confirm PDU");
-		return 0;
-	}
-
-	bt_att_chan_send_rsp(chan, buf);
+	atomic_set_bit(chan->flags, ATT_CONFIRM_WAITING);
+	att_chan_confirm_send(chan, slot);
 
 	return 0;
 }
@@ -2909,6 +3181,30 @@ static uint8_t att_notify_mult(struct bt_att_chan *chan, struct net_buf *buf)
 	bt_gatt_mult_notification(chan->att->conn, buf->data, buf->len);
 
 	return 0;
+}
+#else
+static void att_cfm_buf_release(const struct net_buf *buf)
+{
+	ARG_UNUSED(buf);
+}
+
+static void att_cfm_slot_claim(struct bt_att_chan *chan)
+{
+	ARG_UNUSED(chan);
+}
+
+static void att_cfm_slot_release(struct bt_att_chan *chan)
+{
+	ARG_UNUSED(chan);
+}
+
+static void att_cfm_slots_init(void)
+{
+}
+
+static void att_chan_confirm_cancel(struct bt_att_chan *chan)
+{
+	ARG_UNUSED(chan);
 }
 #endif /* CONFIG_BT_GATT_CLIENT */
 
@@ -3115,6 +3411,47 @@ static att_type_t att_op_get_type(uint8_t op)
 	return ATT_UNKNOWN;
 }
 
+/* Secures the buffer for the response to a request before its handler runs,
+ * so that the request is answered or not processed at all: the connection's
+ * own buffer if it is back, otherwise one of att_pool. Returns false for neither.
+ */
+static bool att_chan_rsp_buf_secure(struct bt_att_chan *chan)
+{
+	struct att_rsp_slot *slot = chan->att->rsp_slot;
+	struct net_buf *buf;
+
+	if (!atomic_test_and_set_bit(slot->flags, ATT_RSP_SLOT_BUF_AWAY)) {
+		/* There is a buffer per slot, and no slot has two */
+		buf = net_buf_alloc(&att_rsp_pool, K_NO_WAIT);
+		__ASSERT_NO_MSG(buf != NULL);
+		att_rsp_buf_slots[net_buf_id(buf)] = slot;
+		atomic_set_bit_to(slot->flags, ATT_RSP_SLOT_UATT_RSP, !bt_att_is_enhanced(chan));
+	} else {
+		/* The previous response has not left the Host */
+		buf = net_buf_alloc(&att_pool, K_NO_WAIT);
+		if (buf == NULL) {
+			return false;
+		}
+	}
+
+	chan->rsp_buf = buf;
+
+	return true;
+}
+
+/* A handler gives back the response that it drops for an Error Response, which
+ * then goes out in the same buffer: a buffer of att_pool is not free again at
+ * once, see att_tx_destroy().
+ */
+static void att_rsp_pdu_put_back(struct bt_att_chan *chan, struct net_buf **rsp)
+{
+	struct net_buf *buf = net_buf_take(rsp);
+
+	net_buf_drop(&buf->frags);
+	net_buf_reset(buf);
+	chan->rsp_buf = buf;
+}
+
 static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_att_chan *att_chan = ATT_CHAN(chan);
@@ -3143,6 +3480,16 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
+	if (att_op_needs_rsp(hdr->code) && !att_chan_rsp_buf_secure(att_chan)) {
+		/* This implementation's choice: the previous response has not
+		 * left the Host and att_pool is empty, and the request is not
+		 * processed rather than left without a response.
+		 */
+		LOG_WRN("No buffer for a response to %s, disconnecting", bt_conn_dst_str(conn));
+		att_disconnect(att_chan);
+		return 0;
+	}
+
 	for (i = 0, handler = NULL; i < ARRAY_SIZE(handlers); i++) {
 		if (hdr->code == handlers[i].op) {
 			handler = &handlers[i];
@@ -3157,7 +3504,7 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			send_err_rsp(att_chan, hdr->code, 0,
 				     BT_ATT_ERR_NOT_SUPPORTED);
 		}
-		return 0;
+		goto out;
 	}
 
 	if (buf->len < handler->expect_len) {
@@ -3172,7 +3519,34 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		send_err_rsp(att_chan, hdr->code, 0, err);
 	}
 
+out:
+	/* What the handler did not send in the buffer secured for its response */
+	net_buf_drop(&att_chan->rsp_buf);
+
 	return 0;
+}
+
+/* A response of the unenhanced bearer in the connection's buffer has left the
+ * Host, see att_rsp_destroy(): the bearer's next queued PDU may go, as
+ * att_on_sent_cb() lets it for the PDUs of att_pool
+ */
+static void att_rsp_work_handler(struct k_work *work)
+{
+	struct att_rsp_slot *slot = CONTAINER_OF(work, struct att_rsp_slot, work);
+	struct bt_att_chan *chan;
+
+	/* att_chan_free() clears the pointer under the host lock (bt_dev_lock())
+	 * before it frees the bearer, so the bearer stays while the lock is held
+	 */
+	bt_dev_lock();
+
+	chan = atomic_ptr_get(&slot->uatt_chan);
+	if (atomic_test_and_clear_bit(slot->flags, ATT_RSP_SLOT_UATT_SENT) && chan != NULL &&
+	    atomic_test_bit(chan->flags, ATT_CONNECTED)) {
+		bt_att_sent(att_chan_get_l2cap(chan));
+	}
+
+	bt_dev_unlock();
 }
 
 /* Get the Unenhanced ATT bearer */
@@ -3237,30 +3611,18 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op, size_t len)
 
 static struct net_buf *att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op)
 {
-	size_t headroom;
-	struct bt_att_hdr *hdr;
-	struct bt_att_tx_meta_data *data;
 	struct net_buf *buf;
 
-	buf = net_buf_alloc(&att_pool, BT_ATT_TIMEOUT);
-	if (!buf) {
-		LOG_ERR("Unable to allocate buffer for op 0x%02x", op);
+	/* Secured before the request's handler ran, see bt_att_recv(), and
+	 * gone only when the bearer was detached meanwhile
+	 */
+	buf = net_buf_take(&chan->rsp_buf);
+	if (buf == NULL) {
+		LOG_DBG("No response buffer for op 0x%02x", op);
 		return NULL;
 	}
 
-	headroom = BT_L2CAP_BUF_SIZE(0);
-
-	if (bt_att_is_enhanced(chan)) {
-		headroom += BT_L2CAP_SDU_HDR_SIZE;
-	}
-
-	net_buf_reserve(buf, headroom);
-
-	data = att_get_tx_meta_data(buf);
-	data->att_chan = chan;
-
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->code = op;
+	att_rsp_pdu_init(chan, buf, op);
 
 	return buf;
 }
@@ -3299,6 +3661,7 @@ static void att_reset(struct bt_att *att)
 	 * and `bt_conn_unref` to follow convention.
 	 */
 	att->conn = NULL;
+	(void)atomic_ptr_clear(&att->rsp_slot->att);
 	k_mem_slab_free(&att_slab, (void *)att);
 }
 
@@ -3318,6 +3681,13 @@ static void att_chan_detach(struct bt_att_chan *chan)
 
 	chan->att = NULL;
 	atomic_clear_bit(chan->flags, ATT_CONNECTED);
+
+	/* A handler on another thread may still hold the response buffer,
+	 * see bt_att_recv(), or queue its response, see bt_att_chan_send_rsp()
+	 */
+	net_buf_drop(&chan->rsp_buf);
+	net_buf_fifo_purge(&chan->tx_queue);
+	att_chan_confirm_cancel(chan);
 }
 
 static void att_timeout(struct k_work *work)
@@ -3533,6 +3903,18 @@ static void bt_att_status(struct bt_l2cap_chan *ch, atomic_t *status)
 
 static void att_chan_free(struct bt_att_chan *chan)
 {
+	/* Under the host lock (bt_dev_lock()), which the slots' work items hold
+	 * while they use the bearer: afterwards they no longer find it
+	 */
+	bt_dev_lock();
+
+	ARRAY_FOR_EACH_PTR(att_rsp_slots, slot) {
+		(void)atomic_ptr_cas(&slot->uatt_chan, chan, NULL);
+	}
+
+	att_cfm_slot_release(chan);
+	bt_dev_unlock();
+
 	/* Drop any pending/in-flight ATT TX metadata still referencing this
 	 * channel, so the deferred att_on_sent_cb()/bt_att_sent() work cannot
 	 * dereference the channel after it is freed here. Bluetooth uses a
@@ -3583,6 +3965,7 @@ static const struct bt_l2cap_chan_ops att_chan_ops = {
 #endif /* CONFIG_BT_EATT */
 };
 
+
 static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 {
 	int quota = 0;
@@ -3610,6 +3993,11 @@ static struct bt_att_chan *att_chan_new(struct bt_att *att, atomic_val_t flags)
 	atomic_set(chan->flags, flags);
 	chan->att = att;
 	att_chan_attach(att, chan);
+	att_cfm_slot_claim(chan);
+
+	if (!bt_att_is_enhanced(chan)) {
+		atomic_ptr_set(&att->rsp_slot->uatt_chan, chan);
+	}
 
 	if (bt_att_is_enhanced(chan)) {
 		/* EATT: The MTU will be sent in the ECRED conn req/rsp PDU. The
@@ -3672,6 +4060,28 @@ static void att_enhanced_connection_work_handler(struct k_work *work)
 }
 #endif /* CONFIG_BT_EATT */
 
+/* A slot for a new connection. There is one per connection, so one is always
+ * free. The lower layers may still hold a response of the connection that had a
+ * slot before, so a slot whose buffer is back is taken first.
+ */
+static struct att_rsp_slot *att_rsp_slot_claim(struct bt_att *att)
+{
+	ARRAY_FOR_EACH_PTR(att_rsp_slots, slot) {
+		if (!atomic_test_bit(slot->flags, ATT_RSP_SLOT_BUF_AWAY) &&
+		    atomic_ptr_cas(&slot->att, NULL, att)) {
+			return slot;
+		}
+	}
+
+	ARRAY_FOR_EACH_PTR(att_rsp_slots, slot) {
+		if (atomic_ptr_cas(&slot->att, NULL, att)) {
+			return slot;
+		}
+	}
+
+	return NULL;
+}
+
 static struct bt_att *att_new(struct bt_conn *conn)
 {
 	struct bt_att *att;
@@ -3685,6 +4095,9 @@ static struct bt_att *att_new(struct bt_conn *conn)
 	att->conn = conn;
 	sys_slist_init(&att->reqs);
 	sys_slist_init(&att->chans);
+	att->rsp_slot = att_rsp_slot_claim(att);
+	__ASSERT_NO_MSG(att->rsp_slot != NULL);
+	atomic_clear_bit(att->rsp_slot->flags, ATT_RSP_SLOT_UATT_SENT);
 
 #if defined(CONFIG_BT_EATT)
 	k_work_init_delayable(&att->eatt.connection_work,
@@ -3710,6 +4123,7 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
 
 	chan = att_chan_new(att, 0);
 	if (!chan) {
+		(void)atomic_ptr_clear(&att->rsp_slot->att);
 		k_mem_slab_free(&att_slab, (void *)att);
 		return -ENOMEM;
 	}
@@ -4051,6 +4465,21 @@ static void bt_eatt_init(void)
 
 void bt_att_init(void)
 {
+	/* The slots stay in use across bt_disable(), which leaves bt_workq
+	 * running
+	 */
+	static bool is_rsp_slots_init_done;
+
+	if (!is_rsp_slots_init_done) {
+		ARRAY_FOR_EACH_PTR(att_rsp_slots, slot) {
+			k_work_init(&slot->work, att_rsp_work_handler);
+		}
+
+		att_cfm_slots_init();
+
+		is_rsp_slots_init_done = true;
+	}
+
 	bt_gatt_init();
 
 	if (IS_ENABLED(CONFIG_BT_EATT)) {

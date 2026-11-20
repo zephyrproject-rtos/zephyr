@@ -19,8 +19,10 @@ config BT_ATT_TX_COUNT
 	default 3
 	range 1 $(UINT8_MAX)
 	help
-	  These buffers are only used for sending anything over ATT.
-	  Requests, responses, indications, confirmations, notifications.
+	  Number of buffers for the requests, commands, notifications,
+	  indications and confirmations sent over ATT. Responses are sent
+	  from a buffer that every connection has for them, and from these
+	  buffers while that one is in use.
 
 config BT_ATT_PREPARE_COUNT
 	int "Number of ATT prepare write buffers"
