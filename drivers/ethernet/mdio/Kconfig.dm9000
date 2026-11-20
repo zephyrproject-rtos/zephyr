@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Fuyu Fei
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_DM9000
+	bool "Davicom DM9000 MDIO driver"
+	default y
+	depends on DT_HAS_DAVICOM_DM9000_MDIO_ENABLED
+	depends on ETH_DM9000
+	help
+	  Enable the Davicom DM9000 MDIO driver. The controller reaches its
+	  integrated PHY (and an optional external PHY) through the parent
+	  MAC's EPCR/EPAR/EPDR registers.
