@@ -666,11 +666,22 @@ static int clock_get_rate_dpll_out(const struct device *dev, uint8_t dpll_out_id
 	pll = dpll_out_id / PLLOUT_COUNT;
 	ret_val = clock_get_rate_dpll(dev, pll, &src_freq);
 	if (ret_val == 0) {
-		postdiv = *(&oscctrl_regs->OSCCTRL_PLL0POSTDIVA + (pll * DPLLREG_OFFSET)) &
-			  (OSCCTRL_PLL0POSTDIVA_POSTDIV0_Msk
-			   << ((dpll_out_id % PLLOUT_COUNT) * PLLOUT_POSTDIV_SPAN));
+		/*
+		 * 1. Shift the register right to move the target channel's bits to the LSB.
+		 * 2. Mask with POSTDIV0_Msk since the channel bits are now LSB-aligned.
+		 */
+		postdiv = (*(&oscctrl_regs->OSCCTRL_PLL0POSTDIVA + (pll * DPLLREG_OFFSET)) >>
+			   ((dpll_out_id % PLLOUT_COUNT) * PLLOUT_POSTDIV_SPAN)) &
+			  OSCCTRL_PLL0POSTDIVA_POSTDIV0_Msk;
+
+		/*
+		 * Hardware logic check: A register value of 0 means divide-by-1 (bypass).
+		 * Avoid division-by-zero or leaving *freq unassigned.
+		 */
 		if (postdiv != 0) {
 			*freq = src_freq / postdiv;
+		} else {
+			*freq = src_freq;
 		}
 	}
 
@@ -878,7 +889,7 @@ static int clock_mchp_on(const struct device *dev, clock_control_subsys_t sys)
 
 	/* Validate subsystem. */
 	if (0 != clock_check_subsys(subsys)) {
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	status = clock_mchp_get_status(dev, sys);
@@ -888,12 +899,23 @@ static int clock_mchp_on(const struct device *dev, clock_control_subsys_t sys)
 	}
 
 	/* Check if the clock on operation is successful. */
-	ret_val = clock_on(dev, subsys);
-	if (ret_val != 0) {
-		return ret_val;
+	if (clock_on(dev, subsys) != 0) {
+		LOG_ERR("%s: Clock ON operation failed", __func__);
+		return -ENOTSUP;
 	}
+	/*
+	 * Wait until the clock state becomes ON.
+	 * Oscillators (XOSC, XOSC32K, DFLL48M, PLL) use extended timeout (2 seconds)
+	 * to allow for hardware startup time.
+	 * Peripheral clocks use the configured timeout (default 5ms).
+	 */
+	uint32_t timeout_limit = config->on_timeout_ms;
 
-	/* Wait until the clock state becomes ON. */
+	if ((subsys.bits.type == SUBSYS_TYPE_XOSC) || (subsys.bits.type == SUBSYS_TYPE_XOSC32K) ||
+	    (subsys.bits.type == SUBSYS_TYPE_DFLL48M) || (subsys.bits.type == SUBSYS_TYPE_DPLL) ||
+	    (subsys.bits.type == SUBSYS_TYPE_DPLL_OUT)) {
+		timeout_limit = 2000; /* 2 second timeout for oscillators */
+	}
 	while (1) {
 		/* For XOSC32K, need to wait for the oscillator to be on. get_status only
 		 * return if EN1K or EN32K is on, which does not indicate the status of
@@ -913,13 +935,13 @@ static int clock_mchp_on(const struct device *dev, clock_control_subsys_t sys)
 			}
 		}
 
-		if (on_timeout_ms < config->on_timeout_ms) {
+		if (on_timeout_ms < timeout_limit) {
 			/* Thread is not available while booting. */
 			if ((k_is_pre_kernel() == false) && (k_current_get() != NULL)) {
 				/* Sleep before checking again. */
 				k_sleep(K_MSEC(1));
 			} else {
-				WAIT_FOR(0, 1000, NULL);
+				k_busy_wait(1000); /* 1 ms */
 			}
 			on_timeout_ms++;
 		} else {
@@ -947,7 +969,7 @@ static int clock_mchp_off(const struct device *dev, clock_control_subsys_t sys)
 
 	/* Validate subsystem. */
 	if (0 != clock_check_subsys(subsys)) {
-		return -EINVAL;
+		return -ENOTSUP;
 	}
 
 	switch (subsys.bits.type) {
@@ -1875,7 +1897,7 @@ void clock_mclkperiph_init(const struct device *dev, uint32_t subsys_val, uint8_
 		dpll_init.subsys.val = DT_PROP(child, subsystem);                                  \
 		dpll_init.feedback_divider_factor = DT_PROP(child, dpll_feedback_divider_factor);  \
 		dpll_init.ref_division_factor = DT_PROP(child, dpll_ref_division_factor);          \
-		dpll_init.bandwidth_sel = DT_ENUM_IDX(child, dpll_bandwidth_sel);                  \
+		dpll_init.bandwidth_sel = DT_ENUM_IDX(child, dpll_bandwidth_sel) + 1;              \
 		dpll_init.src = DT_ENUM_IDX(child, dpll_src);                                      \
 		dpll_init.on_demand_en = DT_PROP(child, dpll_on_demand_en);                        \
 		dpll_init.enable = DT_PROP(child, dpll_en);                                        \
@@ -1953,11 +1975,18 @@ static int clock_mchp_init(const struct device *dev)
 	/* To avoid changing dfll48m, while gclk0 is driven by it. Else will affect CPU */
 	data->gclk0_src = CLOCK_MCHP_GCLK_SRC_DFLL48M;
 	for (int i = 0; i < CLOCK_INIT_ITERATION_COUNT; i++) {
-		DT_FOREACH_CHILD(DT_NODELABEL(gclkgen), CLOCK_MCHP_ITERATE_GCLKGEN);
-		CLOCK_MCHP_PROCESS_DFLL48M(DT_NODELABEL(dfll48m));
+		/* Process clock sources before consumers:
+		 * 1. DPLL/DPLL_OUT first (sources for GCLKGENs)
+		 * 2. DFLL48M (may source GCLKGENs or be sourced by them)
+		 * 3. GCLKGENs last (consumers of DPLL outputs)
+		 */
 		DT_FOREACH_CHILD(DT_NODELABEL(dpll), CLOCK_MCHP_ITERATE_DPLL);
 		DT_FOREACH_CHILD(DT_NODELABEL(dpll0), CLOCK_MCHP_ITERATE_DPLL_OUT);
 		DT_FOREACH_CHILD(DT_NODELABEL(dpll1), CLOCK_MCHP_ITERATE_DPLL_OUT);
+
+		CLOCK_MCHP_PROCESS_DFLL48M(DT_NODELABEL(dfll48m));
+
+		DT_FOREACH_CHILD(DT_NODELABEL(gclkgen), CLOCK_MCHP_ITERATE_GCLKGEN);
 	}
 
 	CLOCK_MCHP_PROCESS_RTC(DT_NODELABEL(rtcclock));
