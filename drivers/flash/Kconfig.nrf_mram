@@ -23,14 +23,42 @@ config SOC_FLASH_NRF_MRAM
 	  pre-erased area is faster. Hence, the erase API is not required, but
 	  it can be used to amortize write performance for some use cases.
 
+if SOC_FLASH_NRF_MRAM
+
 config NRF_MRAM_MAX_RETRIES
 	int "Maximum number of retries for MRAM write/erase operations"
 	default 20
 	range 1 255
-	depends on SOC_FLASH_NRF_MRAM
 	help
 	  This option sets the maximum number of retry attempts for MRAM
 	  write and erase operations when verification fails. Each retry
 	  attempts to rewrite or re-erase the data to ensure reliability.
 	  Higher values increase reliability but may impact performance
 	  in case of persistent failures.
+
+config NRF_MRAM_CHECK_READY_BIT
+	bool "Check MRAMC READY bit before write or erase operation"
+	default y if MRAM_LATENCY
+	depends on (SOC_SERIES_NRF54H || SOC_SERIES_NRF92)
+	help
+	  Before each MRAM word write or erase, and after it completes, wait
+	  until the MRAMC of the addressed bank reports it is ready (READY).
+
+config NRF_MRAM_CHECK_READYNEXT_BIT
+	bool "Check MRAMC READYNEXT bit before write or erase operation."
+	default y if NRF_MRAM_CHECK_READY_BIT
+	depends on (SOC_SERIES_NRF54H || SOC_SERIES_NRF92)
+	help
+	  After each MRAM word write or erase, wait until the MRAMC reports it
+	  can accept the next write operation (READYNEXT).
+
+config NRF_MRAM_READY_TIMEOUT_US
+	int "MRAMC READY/READYNEXT timeout in microseconds"
+	default 10000
+	range 1 2147483647
+	depends on NRF_MRAM_CHECK_READY_BIT || NRF_MRAM_CHECK_READYNEXT_BIT
+	help
+	  Time to wait for the MRAMC READY/READYNEXT status before a write
+	  or erase gives up and fails with -ETIMEDOUT.
+
+endif # SOC_FLASH_NRF_MRAM
