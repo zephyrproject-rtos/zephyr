@@ -85,7 +85,7 @@ static void skiplist_unlink(struct _timeout *to, struct _timeout **update)
 	uint8_t height = to->height;
 
 	for (i = 0; i < height; i++) {
-		__ASSERT_NO_MSG(update[i]->forward[i] == to);
+		ZASSERT(update[i]->forward[i] == to);
 		update[i]->forward[i] = to->forward[i];
 	}
 
@@ -157,7 +157,7 @@ static inline bool z_timeout_q_remove(struct _timeout *to)
 {
 	bool was_first = (skiplist_first() == to);
 
-	__ASSERT_NO_MSG(to->height > 0);
+	ZASSERT(to->height > 0);
 
 	skiplist_update_init(sl_update);
 	skiplist_predecessors_of(to, sl_update);
@@ -219,7 +219,7 @@ static inline struct _timeout *z_timeout_q_pop_due(void)
 	}
 
 	for (i = 0; i < t->height; i++) {
-		__ASSERT_NO_MSG(sl_head.forward[i] == t);
+		ZASSERT(sl_head.forward[i] == t);
 		sl_head.forward[i] = t->forward[i];
 	}
 

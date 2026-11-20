@@ -28,6 +28,9 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_MODULE(KERNEL);
 
 /* Optional striped locks reduce the performance impact of a system-wide
  * semaphore lock without the significant extra RAM required by per-object
@@ -151,8 +154,8 @@ int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 	struct k_spinlock *lock = sem_spinlock_get(sem);
 	int ret;
 
-	__ASSERT(((arch_is_in_isr() == false) ||
-		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
+	ZASSERT(((arch_is_in_isr() == false) ||
+		 K_TIMEOUT_EQ(timeout, K_NO_WAIT)));
 
 	k_spinlock_key_t key = k_spin_lock(lock);
 

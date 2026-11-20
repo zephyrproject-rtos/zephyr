@@ -17,6 +17,9 @@
 #include <string.h>
 #include <kernel_internal.h>
 #include <kuser.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_MODULE(KERNEL);
 
 bool z_stack_is_user_capable(k_thread_stack_t *stack)
 {
@@ -25,8 +28,8 @@ bool z_stack_is_user_capable(k_thread_stack_t *stack)
 
 void z_thread_user_init(struct k_thread *thread, k_thread_stack_t *stack, uint32_t options)
 {
-	__ASSERT((options & K_USER) == 0U || z_stack_is_user_capable(stack),
-		 "user thread %p with kernel-only stack %p", thread, stack);
+	ZASSERT((options & K_USER) == 0U || z_stack_is_user_capable(stack),
+		"user thread %p with kernel-only stack %p", thread, stack);
 	k_object_init(thread);
 	k_object_init(stack);
 	thread->stack_obj = stack;
@@ -69,8 +72,8 @@ void z_thread_user_grant_static(void)
 
 FUNC_NORETURN void z_thread_user_mode_enter(k_thread_entry_t entry, void *p1, void *p2, void *p3)
 {
-	__ASSERT(z_stack_is_user_capable(_current->stack_obj),
-		 "dropping to user mode with kernel-only stack object");
+	ZASSERT(z_stack_is_user_capable(_current->stack_obj),
+		"dropping to user mode with kernel-only stack object");
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	memset(_current->userspace_local_data, 0, sizeof(struct _thread_userspace_local_data));
 #endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */

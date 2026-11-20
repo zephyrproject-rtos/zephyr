@@ -23,7 +23,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/zassert.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/sflist.h>

@@ -6,6 +6,9 @@
 #include <kernel_internal.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/llext/symbol.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_MODULE(KERNEL);
 
 #define SPIN_CPU_ID_MASK (sizeof(void *) - 1)
 
@@ -59,16 +62,16 @@ bool z_spin_unlock_valid(struct k_spinlock *l)
 	    (_raw_current->base.thread_state & _THREAD_DUMMY) != 0) {
 		/* Edge case where an ISR aborted _current */
 		z_held_spinlock_count[cpu_id]--;
-		__ASSERT(z_held_spinlock_count[cpu_id] >= 0,
-			 "spinlock unlock with no matching lock");
+		ZASSERT(z_held_spinlock_count[cpu_id] >= 0,
+			"spinlock unlock with no matching lock");
 		return true;
 	}
 	if (tcpu != (cpu_id | (uintptr_t)_raw_current)) {
 		return false;
 	}
 	z_held_spinlock_count[cpu_id]--;
-	__ASSERT(z_held_spinlock_count[cpu_id] >= 0,
-		 "spinlock unlock with no matching lock");
+	ZASSERT(z_held_spinlock_count[cpu_id] >= 0,
+		"spinlock unlock with no matching lock");
 	return true;
 }
 EXPORT_SYMBOL(z_spin_unlock_valid);
@@ -158,17 +161,17 @@ void z_assert_can_swap(unsigned int key, struct k_spinlock *swap_lock)
 	    _current->base.swap_data == (void *)&z_spinlock_abort_sentinel) {
 		z_spin_validate_reset(swap_lock != NULL);
 	} else {
-		__ASSERT(extra >= 0,
-			 "swap_lock %p is not tracked in the spinlock hold count!", swap_lock);
+		ZASSERT(extra >= 0,
+			"swap_lock %p is not tracked in the spinlock hold count!", swap_lock);
 
-		__ASSERT(held == NULL || held == swap_lock,
-			 "Context switching while holding spinlock %p!", held);
+		ZASSERT(held == NULL || held == swap_lock,
+			"Context switching while holding spinlock %p!", held);
 
 		/* Catches lock(A); lock(B); unlock(A); z_swap(): slot cleared when A
 		 * is released but count stays at 1 because B is still held.
 		 */
-		__ASSERT(extra == 0,
-			 "Context switching while holding %d extra spinlock(s)!", extra);
+		ZASSERT(extra == 0,
+			"Context switching while holding %d extra spinlock(s)!", extra);
 	}
 
 #ifndef CONFIG_ARM64
@@ -178,9 +181,9 @@ void z_assert_can_swap(unsigned int key, struct k_spinlock *swap_lock)
 	 * usage in exception context may leave IRQs masked without holding
 	 * a lock (see #94285).
 	 */
-	__ASSERT(arch_irq_unlocked(key) ||
-		 _current->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
-		 "Context switching with irq_lock held!");
+	ZASSERT(arch_irq_unlocked(key) ||
+		_current->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
+		"Context switching with irq_lock held!");
 #endif
 }
 
