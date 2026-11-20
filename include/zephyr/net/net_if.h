@@ -3802,12 +3802,12 @@ __subsystem struct net_if_driver_api {
 #define NET_IF_DHCPV4_INIT						\
 	IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_NET_DHCPV4),		\
 			    IS_ENABLED(CONFIG_NET_NATIVE_IPV4)),	\
-		   (.dhcpv4.state = NET_DHCPV4_DISABLED,))
+		   (.dhcpv4 = { .state = NET_DHCPV4_DISABLED },))
 
 #define NET_IF_DHCPV6_INIT						\
 	IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_NET_DHCPV6),		\
 			    IS_ENABLED(CONFIG_NET_NATIVE_IPV6)),	\
-		   (.dhcpv6.state = NET_DHCPV6_DISABLED,))
+		   (.dhcpv6 = { .state = NET_DHCPV6_DISABLED },))
 
 #define NET_IF_CONFIG_INIT				\
 	.config = {					\
@@ -3840,8 +3840,8 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 		.dev = &(DEVICE_NAME_GET(dev_id)),			\
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
 		.l2_data = &(NET_L2_GET_DATA(dev_id, sfx)),		\
-		.mtu = _mtu,						\
 		.flags = {BIT(NET_IF_LOWER_UP)},			\
+		.mtu = _mtu,						\
 	};								\
 	static STRUCT_SECTION_ITERABLE(net_if,				\
 				NET_IF_GET_NAME(dev_id, sfx)) = {	\
@@ -3861,9 +3861,9 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 	static STRUCT_SECTION_ITERABLE(net_if_dev,			\
 				NET_IF_DEV_GET_NAME(dev_id, sfx)) = {	\
 		.dev = &(DEVICE_NAME_GET(dev_id)),			\
-		.mtu = _mtu,						\
 		.l2 = &(NET_L2_GET_NAME(OFFLOADED_NETDEV)),		\
 		.flags = {BIT(NET_IF_LOWER_UP)},			\
+		.mtu = _mtu,						\
 	};								\
 	static STRUCT_SECTION_ITERABLE(net_if,				\
 				NET_IF_GET_NAME(dev_id, sfx)) = {	\
