@@ -1105,6 +1105,15 @@ static int mspi_stm32_ospi_dma_setup(const struct mspi_stm32_conf *dev_cfg,
 		return -ENODEV;
 	}
 
+	/* DMA channel has not been initialized */
+	if (dev_data->dma.channel < 0) {
+		dev_data->dma.channel = dma_request_channel(dev_data->dma.dev, NULL);
+		if (dev_data->dma.channel < 0) {
+			LOG_ERR("Failed to request DMA channel: %d", dev_data->dma.channel);
+			return -ENODEV;
+		}
+	}
+
 	dma_cfg.user_data = hdma;
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
@@ -1506,7 +1515,7 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 
 #define OSPI_DMA_CHANNEL_INIT(node, dir)                                                           \
 	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                                  \
-	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                                       \
+	.channel = DT_DMAS_CELL_BY_NAME_OR(node, dir, channel, -1),                                \
 	.phys_addr = DT_REG_ADDR(DT_DMAS_CTLR(node)),                                              \
 	.cfg = {                                                                                   \
 		.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),                                 \

@@ -1529,6 +1529,15 @@ static int i3c_stm32_dma_stream_config(const struct device *dev,
 
 	memset(&dma_stream->blk_cfg, 0, sizeof(dma_stream->blk_cfg));
 
+	/* DMA channel has not been initialized */
+	if (dma_stream->dma_channel < 0) {
+		dma_stream->dma_channel = dma_request_channel(dma_stream->dma_dev, NULL);
+		if (dma_stream->dma_channel < 0) {
+			LOG_ERR("Failed to request DMA channel: %d", dma_stream->dma_channel);
+			return -ENODEV;
+		}
+	}
+
 	dma_stream->blk_cfg.source_address = src_addr;
 
 	dma_stream->blk_cfg.dest_address = dst_addr;
@@ -2637,7 +2646,7 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 #ifdef CONFIG_I3C_STM32_DMA
 #define STM32_I3C_DMA_CHANNEL_INIT(index, dir, src_dev, dest_dev)                                  \
 	.dma_dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),                              \
-	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                             \
+	.dma_channel = DT_DMAS_CELL_BY_NAME_OR(DT_DRV_INST(index), index, dir, channel, -1),       \
 	.dma_cfg = {                                                                               \
 		.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir),                                    \
 		.channel_direction =                                                               \

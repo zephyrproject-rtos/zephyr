@@ -209,6 +209,15 @@ static int sai_sub_dma_start(const struct device *dev)
 
 	stream->dma_cfg.head_block = blk_cfg;
 
+	/* DMA channel has not been initialized */
+	if (stream->dma_channel < 0) {
+		stream->dma_channel = dma_request_channel(stream->dma_dev, NULL);
+		if (stream->dma_channel < 0) {
+			LOG_ERR("Failed to request DMA channel: %d", stream->dma_channel);
+			return -ENODEV;
+		}
+	}
+
 	ret = dma_config(stream->dma_dev, stream->dma_channel, &stream->dma_cfg);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure DMA channel %u: %d", stream->dma_channel, ret);
@@ -1139,7 +1148,7 @@ static DEVICE_API(i2s, i2s_stm32_sai_api) = {
 #define SAI_SUB_DMA_CHANNEL_INIT(node, src, dest)                                                  \
 	.stream = {                                                                                \
 		.dma_dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                      \
-		.dma_channel = DT_DMAS_CELL_BY_IDX(node, 0, channel),                              \
+		.dma_channel = DT_DMAS_CELL_BY_IDX(node, 0, channel, -1),                          \
 		.dma_cfg = {                                                                       \
 			.dma_slot = STM32_DT_DMA_SLOT_BY_IDX(node, 0),                             \
 			.channel_direction = src##_TO_##dest,                                      \

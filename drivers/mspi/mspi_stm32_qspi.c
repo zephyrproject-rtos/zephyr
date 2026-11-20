@@ -148,6 +148,15 @@ static int mspi_stm32_qspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 		return -ENODEV;
 	}
 
+	/* DMA channel has not been initialized */
+	if (dma_stream->channel < 0) {
+		dma_stream->channel = dma_request_channel(dma_stream->dev, NULL);
+		if (dma_stream->channel < 0) {
+			LOG_ERR("Failed to request DMA channel: %d", dma_stream->channel);
+			return -ENODEV;
+		}
+	}
+
 	/* Configure Zephyr DMA driver */
 	dma_stream->cfg.user_data = hdma;
 	dma_stream->cfg.channel_direction = PERIPHERAL_TO_MEMORY;
@@ -1273,7 +1282,7 @@ static DEVICE_API(mspi, mspi_stm32_qspi_driver_api) = {
 
 #define QSPI_DMA_CHANNEL_INIT(node, dir)                                                      \
 	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),                                             \
-	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),                                  \
+	.channel = DT_DMAS_CELL_BY_NAME_OR(node, dir, channel, -1),                           \
 	.reg = (DMA_TypeDef *)DT_REG_ADDR(DT_PHANDLE_BY_NAME(node, dmas, dir)),               \
 	.cfg = {                                                                              \
 		.dma_slot = DT_DMAS_CELL_BY_NAME(node, dir, slot),                            \

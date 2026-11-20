@@ -484,6 +484,15 @@ static int dmic_stm32_dfsdm_start(const struct device *dev)
 			.half_complete_callback_en = 1,
 		};
 
+		/* DMA channel has not been initialized */
+		if (drv_cfg->dma_channel < 0 || drv_cfg->dma_channel == STM32_DMA_CHANNEL_AUTO) {
+			drv_cfg->dma_channel = dma_request_channel(drv_cfg->dma_dev, NULL);
+			if (drv_cfg->dma_channel < 0) {
+				LOG_ERR("Failed to request DMA channel: %d", drv_cfg->dma_channel);
+				return -ENODEV;
+			}
+		}
+
 		ret = dma_config(drv_cfg->dma_dev, drv_cfg->dma_channel, &dma_cfg);
 		if (ret < 0) {
 			LOG_ERR("Failed to configure DMA: %d", ret);
@@ -953,7 +962,7 @@ static int dmic_stm32_dfsdm_pm_action(const struct device *dev, enum pm_device_a
 	(DEVICE_DT_GET(DT_DMAS_CTLR_BY_NAME(id, rx))), (NULL))
 
 #define DFSDM_DMA_CHAN(id)                                                     \
-	DT_DMAS_CELL_BY_NAME_OR(id, rx, channel, 0)
+	DT_DMAS_CELL_BY_NAME_OR(id, rx, channel, -1)
 
 #define DFSDM_DMA_SLOT(id)                                                     \
 	DT_DMAS_CELL_BY_NAME_OR(id, rx, slot, 0)
