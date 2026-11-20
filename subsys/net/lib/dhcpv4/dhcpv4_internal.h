@@ -70,6 +70,7 @@ struct dhcp_msg {
 #define DHCPV4_OPTIONS_REBINDING	59
 #define DHCPV4_OPTIONS_VENDOR_CLASS_ID	60
 #define DHCPV4_OPTIONS_CLIENT_ID	61
+#define DHCPV4_OPTIONS_IPV6_ONLY_PREFERRED 108
 #define DHCPV4_OPTIONS_CAPTIVE_PORTAL	114
 #define DHCPV4_OPTIONS_END		255
 
@@ -125,6 +126,18 @@ struct dhcp_msg {
  * RFC2131 3.1
  */
 #define DHCPV4_RESTART_DELAY 10
+
+/* Shortest time the client stays off DHCPv4 when the server prefers it to
+ * run IPv6-only (in seconds).
+ * RFC 8925 3.4
+ */
+#define DHCPV4_MIN_V6ONLY_WAIT 300U
+
+/* Longest such time the client accepts (in seconds). The timers count it
+ * in milliseconds, and K_SECONDS() multiplies in the type of its argument,
+ * so a longer time would wrap into a shorter one.
+ */
+#define DHCPV4_MAX_V6ONLY_WAIT (UINT32_MAX / MSEC_PER_SEC)
 
 #if defined(CONFIG_NET_DHCPV4)
 

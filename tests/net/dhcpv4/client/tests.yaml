@@ -30,3 +30,12 @@ tests:
   net.dhcpv4_client.ignored_options:
     extra_configs:
       - CONFIG_NET_DHCPV4_OPTION_PRINT_IGNORED=y
+  net.dhcpv4_client.ipv6_only_preferred:
+    extra_configs:
+      - CONFIG_NET_IPV6=y
+      - CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED=y
+  net.dhcpv4_client.ipv6_only_preferred_optioncbs:
+    extra_configs:
+      - CONFIG_NET_IPV6=y
+      - CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED=y
+      - CONFIG_NET_DHCPV4_OPTION_CALLBACKS=y

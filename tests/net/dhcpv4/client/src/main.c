@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dummy.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
 #include "ipv4.h"
@@ -389,6 +390,17 @@ static bool stop_on_addr_del;
 static bool stop_on_addr_add;
 static bool restart_on_addr_add;
 static enum { RENEWAL_ACK, RENEWAL_DROP, RENEWAL_NAK } renewal_reply;
+/* An IPv6-Only Preferred option of v6only_len bytes carrying v6only_value,
+ * put in the offers or the ACKs in place of their POP3 server option.
+ */
+static bool v6only_in_offer;
+static bool v6only_in_ack;
+static uint8_t v6only_len;
+static uint32_t v6only_value;
+/* Times the last DISCOVER and the last REQUEST listed option 108. */
+static uint8_t discover_v6only_listed;
+static uint8_t request_v6only_listed;
+static uint32_t v6only_event_wait;
 
 #define SHORT_LEASE_T1   10
 #define SHORT_LEASE_T2   20
@@ -425,6 +437,7 @@ static const struct net_in_addr static_gw = { { { 192, 0, 2, 7 } } };
 #define EVT_DHCP_NAK        BIT(18)
 #define EVT_DHCP_RENEW_REQ  BIT(19)
 #define EVT_DHCP_REBIND_REQ BIT(20)
+#define EVT_DHCP_V6ONLY     BIT(21)
 
 #define EVT_DNS_ALL_DEL (EVT_DNS_SERVER1_DEL | EVT_DNS_SERVER2_DEL | EVT_DNS_SERVER3_DEL)
 
@@ -491,6 +504,14 @@ static void dhcp_test_reset_iface(struct net_if *iface)
 	no_router_option = false;
 	zero_router_option = false;
 	renewal_reply = RENEWAL_ACK;
+	v6only_in_offer = false;
+	v6only_in_ack = false;
+	v6only_len = sizeof(uint32_t);
+	v6only_value = 0U;
+	discover_v6only_listed = 0U;
+	request_v6only_listed = 0U;
+	v6only_event_wait = 0U;
+	(void)net_dhcpv4_set_ipv6_only_capable(iface, true);
 }
 
 static void dhcpv4_tests_before(void *fixture)
@@ -622,6 +643,37 @@ static int dhcp_patch_option_be32(struct net_pkt *pkt, const unsigned char *msg,
 	return ret;
 }
 
+/* Turn the POP3 server option at the end of a reply already written to @p pkt
+ * into the IPv6-Only Preferred option, padding the bytes it leaves free.
+ */
+static int dhcp_put_v6only_option(struct net_pkt *pkt, const unsigned char *msg, size_t len)
+{
+	int offset = dhcp_option_value_offset(msg, len, OPTION_POP3);
+	uint8_t value[sizeof(uint32_t)];
+	int ret = 0;
+
+	if (offset < 0 || msg[offset - 1] != sizeof(value) || v6only_len > sizeof(value)) {
+		return -ENOENT;
+	}
+
+	sys_put_be32(v6only_value, value);
+	memset(&value[v6only_len], DHCPV4_OPTIONS_PAD, sizeof(value) - v6only_len);
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	if (net_pkt_skip(pkt, NET_IPV4UDPH_LEN + offset - 2) ||
+	    net_pkt_write_u8(pkt, DHCPV4_OPTIONS_IPV6_ONLY_PREFERRED) ||
+	    net_pkt_write_u8(pkt, v6only_len) ||
+	    net_pkt_write(pkt, value, sizeof(value))) {
+		ret = -EINVAL;
+	}
+
+	net_pkt_set_overwrite(pkt, false);
+
+	return ret;
+}
+
 struct net_pkt *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 {
 	struct net_pkt *pkt;
@@ -660,6 +712,10 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, uint32_t xid)
 	if (zero_router_option &&
 	    dhcp_patch_option_be32(pkt, offer, sizeof(offer), DHCPV4_OPTIONS_ROUTER,
 				   0U) != 0) {
+		goto fail;
+	}
+
+	if (v6only_in_offer && dhcp_put_v6only_option(pkt, offer, sizeof(offer)) != 0) {
 		goto fail;
 	}
 
@@ -716,6 +772,10 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, uint32_t xid, bool includ
 	if (zero_router_option &&
 	    dhcp_patch_option_be32(pkt, reply, reply_len, DHCPV4_OPTIONS_ROUTER,
 				   0U) != 0) {
+		goto fail;
+	}
+
+	if (v6only_in_ack && dhcp_put_v6only_option(pkt, reply, reply_len) != 0) {
 		goto fail;
 	}
 
@@ -796,6 +856,19 @@ static struct net_pkt *prepare_dhcp_nak(struct net_if *iface, uint32_t xid)
 fail:
 	net_pkt_unref(pkt);
 	return NULL;
+}
+
+static uint8_t dhcp_msg_req_list_count(const struct dhcp_client_msg *msg, uint8_t option)
+{
+	uint8_t count = 0U;
+
+	for (uint8_t i = 0; i < msg->req_options_cnt; i++) {
+		if (msg->req_options[i] == option) {
+			count++;
+		}
+	}
+
+	return count;
 }
 
 static bool dhcp_msg_req_list_contains(const struct dhcp_client_msg *msg, uint8_t option)
@@ -995,6 +1068,11 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
+	/* Only the DHCP client is under test. */
+	if (net_pkt_family(pkt) != NET_AF_INET) {
+		return 0;
+	}
+
 	if (parse_dhcp_client_message(pkt, &msg) < 0) {
 		return -EINVAL;
 	}
@@ -1004,6 +1082,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 			discover_req_included_dns =
 				dhcp_msg_req_list_contains(&msg, OPTION_DNS_SERVER);
 		}
+
+		discover_v6only_listed =
+			dhcp_msg_req_list_count(&msg, DHCPV4_OPTIONS_IPV6_ONLY_PREFERRED);
 
 		if (discovers_seen < ARRAY_SIZE(discover_xids)) {
 			discover_xids[discovers_seen] = msg.xid;
@@ -1027,6 +1108,8 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		bool nak_reply;
 
 		dns_requested = dhcp_msg_req_list_contains(&msg, OPTION_DNS_SERVER);
+		request_v6only_listed =
+			dhcp_msg_req_list_count(&msg, DHCPV4_OPTIONS_IPV6_ONLY_PREFERRED);
 		is_init_reboot = msg.has_requested_ip && !msg.has_server_id;
 		init_reboot_request_seen |= is_init_reboot;
 		if (is_init_reboot) {
@@ -1225,6 +1308,11 @@ static void receiver_cb(uint64_t nm_event, struct net_if *iface, void *info, siz
 		stop_seq = ++event_seq;
 		k_event_post(&events, EVT_DHCP_STOP);
 		break;
+	case NET_EVENT_IPV4_DHCP_V6ONLY:
+		zassert_equal(info_length, sizeof(v6only_event_wait));
+		memcpy(&v6only_event_wait, info, sizeof(v6only_event_wait));
+		k_event_post(&events, EVT_DHCP_V6ONLY);
+		break;
 	}
 }
 
@@ -1234,7 +1322,7 @@ NET_MGMT_REGISTER_EVENT_HANDLER(dns_cb, NET_EVENT_DNS_SERVER_ADD | NET_EVENT_DNS
 				receiver_cb, NULL);
 NET_MGMT_REGISTER_EVENT_HANDLER(dhcp_cb,
 				NET_EVENT_IPV4_DHCP_START | NET_EVENT_IPV4_DHCP_BOUND |
-					NET_EVENT_IPV4_DHCP_STOP,
+					NET_EVENT_IPV4_DHCP_STOP | NET_EVENT_IPV4_DHCP_V6ONLY,
 				receiver_cb, NULL);
 
 #ifdef CONFIG_NET_DHCPV4_OPTION_CALLBACKS
@@ -2625,5 +2713,395 @@ ZTEST(dhcpv4_tests, test_acd_conflict_on_the_lease_starts_over)
 
 	net_dhcpv4_stop(iface);
 }
+
+/* RFC 8925 3.2: an offer with the IPv6-Only Preferred option the client
+ * asked for leaves the offered address unrequested and the client off
+ * DHCPv4 for the time the server gives.
+ */
+static void start_into_v6only_wait(struct net_if *iface, uint32_t value)
+{
+	uint32_t evt;
+
+	v6only_in_offer = true;
+	v6only_value = value;
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait(&events, EVT_DHCP_V6ONLY, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_V6ONLY, "Offer with option 108 did not stop the client %08x",
+		      evt);
+	zassert_equal(iface->config.dhcpv4.state, NET_DHCPV4_V6ONLY_WAIT,
+		      "Client in state %s after an offer with option 108",
+		      net_dhcpv4_state_name(iface->config.dhcpv4.state));
+}
+
+ZTEST(dhcpv4_tests, test_v6only_offer_stops_ipv4)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	start_into_v6only_wait(iface, 1800U);
+
+	zexpect_equal(discover_v6only_listed, 1U, "DISCOVER listed option 108 %u times",
+		      discover_v6only_listed);
+	zexpect_equal(v6only_event_wait, 1800U, "Event gave a wait of %us", v6only_event_wait);
+
+	/* The test server counts a REQUEST as an ACK sent. */
+	evt = k_event_wait(&events,
+			   EVT_DHCP_ACK | EVT_DHCP_BOUND | EVT_ADDR_ADD | EVT_DNS_SERVER1_ADD,
+			   false, K_SECONDS(2));
+	zexpect_equal(evt, 0U, "Client went on with the offer %08x", evt);
+	zexpect_equal(net_if_ipv4_get_gw(iface).s_addr, NET_INADDR_ANY,
+		      "The offer set the gateway");
+	zexpect_equal(iface->config.dhcpv4.requested_ip.s_addr, NET_INADDR_ANY,
+		      "Client kept an address to request");
+
+	/* A late offer of the same exchange does not wake the client. */
+	check_unexpected_reply(iface, offer_xid, NET_DHCPV4_MSG_TYPE_OFFER, true);
+
+	net_dhcpv4_stop(iface);
+}
+
+/* RFC 8925 3.2 and 3.4: a wait shorter than MIN_V6ONLY_WAIT is raised to it,
+ * and one longer than the client's timers can count is cut to what they can.
+ */
+ZTEST(dhcpv4_tests, test_v6only_wait_is_limited)
+{
+	static const struct {
+		uint32_t offered;
+		uint32_t expected;
+	} cases[] = {
+		{ 0U, 300U },
+		{ 299U, 300U },
+		{ 300U, 300U },
+		{ 301U, 301U },
+		{ DHCPV4_MAX_V6ONLY_WAIT, DHCPV4_MAX_V6ONLY_WAIT },
+		{ DHCPV4_MAX_V6ONLY_WAIT + 1U, DHCPV4_MAX_V6ONLY_WAIT },
+		{ UINT32_MAX, DHCPV4_MAX_V6ONLY_WAIT },
+	};
+	struct net_if *iface;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	for (size_t i = 0; i < ARRAY_SIZE(cases); i++) {
+		start_into_v6only_wait(iface, cases[i].offered);
+
+		zexpect_equal(v6only_event_wait, cases[i].expected,
+			      "Offered %us, event gave %us, expected %us", cases[i].offered,
+			      v6only_event_wait, cases[i].expected);
+		zexpect_equal(iface->config.dhcpv4.request_time, cases[i].expected,
+			      "Offered %us, client waits %us, expected %us", cases[i].offered,
+			      iface->config.dhcpv4.request_time, cases[i].expected);
+
+		dhcp_test_reset_iface(iface);
+	}
+}
+
+/* A wait longer than the client's timers can count in milliseconds must
+ * not come out as a shorter one, or as none at all.
+ */
+ZTEST(dhcpv4_tests, test_v6only_long_wait_does_not_end_early)
+{
+	static const uint32_t offered[] = { 4294968U, BIT(29), UINT32_MAX };
+	struct net_if *iface;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	for (size_t i = 0; i < ARRAY_SIZE(offered); i++) {
+		start_into_v6only_wait(iface, offered[i]);
+
+		k_sleep(K_SECONDS(10));
+
+		zexpect_equal(discovers_seen, 1, "Offered %us, client sent %d DISCOVERs in 10s",
+			      offered[i], discovers_seen);
+		zexpect_equal(iface->config.dhcpv4.state, NET_DHCPV4_V6ONLY_WAIT,
+			      "Offered %us, client in state %s after 10s", offered[i],
+			      net_dhcpv4_state_name(iface->config.dhcpv4.state));
+
+		dhcp_test_reset_iface(iface);
+	}
+}
+
+/* RFC 8925 3.1: an option of the wrong length is ignored, and the rest of
+ * the offer is not.
+ */
+ZTEST(dhcpv4_tests, test_v6only_bad_length_is_ignored)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	v6only_in_offer = true;
+	v6only_len = 3U;
+	v6only_value = 1800U;
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait_all(&events, EVT_DHCP_BOUND | EVT_ADDR_ADD, false, WAIT_TIME);
+	zexpect_equal(evt, EVT_DHCP_BOUND | EVT_ADDR_ADD,
+		      "Offer with a 3 byte option 108 was not taken %08x", evt);
+	zexpect_false(k_event_test(&events, EVT_DHCP_V6ONLY),
+		      "A 3 byte option 108 stopped the client");
+
+	net_dhcpv4_stop(iface);
+}
+
+/* RFC 8925 3.2: an interface that needs IPv4 neither asks for the option nor
+ * acts on it.
+ */
+ZTEST(dhcpv4_tests, test_v6only_ignored_when_not_capable)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	zassert_ok(net_dhcpv4_set_ipv6_only_capable(iface, false));
+
+	v6only_in_offer = true;
+	v6only_in_ack = true;
+	v6only_value = 1800U;
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait_all(&events, EVT_DHCP_BOUND | EVT_ADDR_ADD, false, WAIT_TIME);
+	zexpect_equal(evt, EVT_DHCP_BOUND | EVT_ADDR_ADD,
+		      "An interface needing IPv4 did not bind %08x", evt);
+	zexpect_false(k_event_test(&events, EVT_DHCP_V6ONLY),
+		      "Option 108 stopped an interface needing IPv4");
+	zexpect_equal(discover_v6only_listed, 0U, "DISCOVER listed option 108");
+	zexpect_equal(request_v6only_listed, 0U, "REQUEST listed option 108");
+
+	net_dhcpv4_stop(iface);
+}
+
+/* RFC 8925 3.2: DHCPREQUEST lists the option too, after an offer without it
+ * and when renewing, and an ACK with it in any state but INIT-REBOOT leaves
+ * the client on the address it was given.
+ */
+ZTEST(dhcpv4_tests, test_v6only_ack_keeps_the_lease)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	v6only_in_ack = true;
+	v6only_value = 1800U;
+
+	bind_with_short_lease(iface);
+
+	zexpect_equal(discover_v6only_listed, 1U, "DISCOVER listed option 108 %u times",
+		      discover_v6only_listed);
+	zexpect_equal(request_v6only_listed, 1U, "REQUEST listed option 108 %u times",
+		      request_v6only_listed);
+
+	k_event_set(&events, 0U);
+	request_v6only_listed = 0U;
+
+	evt = k_event_wait_all(&events, EVT_DHCP_RENEW_REQ | EVT_DHCP_ACK | EVT_DHCP_BOUND,
+			       false, SHORT_LEASE_WAIT);
+	zexpect_equal(evt, EVT_DHCP_RENEW_REQ | EVT_DHCP_ACK | EVT_DHCP_BOUND,
+		      "The renewal at T1 was not answered %08x", evt);
+	zexpect_equal(request_v6only_listed, 1U, "Renewal listed option 108 %u times",
+		      request_v6only_listed);
+	zexpect_false(k_event_test(&events, EVT_DHCP_V6ONLY),
+		      "An ACK with option 108 stopped a bound client");
+	zexpect_equal(iface->config.dhcpv4.state, NET_DHCPV4_BOUND,
+		      "Client in state %s after a renewal",
+		      net_dhcpv4_state_name(iface->config.dhcpv4.state));
+	zexpect_not_null(net_if_ipv4_addr_lookup_by_iface(iface, &leased_addr),
+			 "An ACK with option 108 took the address away");
+
+	net_dhcpv4_stop(iface);
+}
+
+/* RFC 8925 3.2: in INIT-REBOOT, an ACK with the option sends the client off
+ * IPv4 instead of confirming the remembered address.
+ */
+ZTEST(dhcpv4_tests, test_v6only_init_reboot_ack_stops_ipv4)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	zassert_ok(net_dhcpv4_set_reboot_hint(iface, &leased_addr));
+	v6only_in_ack = true;
+	v6only_value = 1800U;
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait(&events, EVT_DHCP_V6ONLY, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_V6ONLY,
+		      "INIT-REBOOT ACK with option 108 did not stop the client %08x", evt);
+	zexpect_true(init_reboot_request_seen, "INIT-REBOOT REQUEST was not sent");
+	zexpect_equal(request_v6only_listed, 1U, "INIT-REBOOT REQUEST listed option 108 %u times",
+		      request_v6only_listed);
+	zexpect_equal(iface->config.dhcpv4.state, NET_DHCPV4_V6ONLY_WAIT,
+		      "Client in state %s after the ACK",
+		      net_dhcpv4_state_name(iface->config.dhcpv4.state));
+
+	evt = k_event_wait(&events, EVT_DHCP_BOUND | EVT_ADDR_ADD | EVT_DNS_SERVER1_ADD, false,
+			   K_SECONDS(2));
+	zexpect_equal(evt, 0U, "Client used the remembered address %08x", evt);
+	zexpect_is_null(net_if_ipv4_addr_lookup_by_iface(iface, &leased_addr),
+			"Remembered address put on the interface");
+	zexpect_equal(net_if_ipv4_get_gw(iface).s_addr, NET_INADDR_ANY,
+		      "The ACK set the gateway");
+	zexpect_equal(iface->config.dhcpv4.requested_ip.s_addr, NET_INADDR_ANY,
+		      "Client kept the remembered address");
+
+	net_dhcpv4_stop(iface);
+}
+
+/* RFC 8925 3.2: the wait lasts V6ONLY_WAIT seconds or until a network
+ * attachment event, whichever happens first.
+ */
+ZTEST(dhcpv4_tests, test_v6only_wait_ends_when_it_expires)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	start_into_v6only_wait(iface, 0U);
+
+	v6only_in_offer = false;
+	k_event_set(&events, 0U);
+
+	evt = k_event_wait(&events, EVT_DHCP_OFFER, false, K_SECONDS(DHCPV4_MIN_V6ONLY_WAIT - 10));
+	zexpect_equal(evt, 0U, "Client sent a DISCOVER before the wait was over");
+
+	check_bound_again(iface, "the wait", K_SECONDS(20));
+
+	net_dhcpv4_stop(iface);
+}
+
+ZTEST(dhcpv4_tests, test_v6only_wait_ends_when_the_interface_comes_up)
+{
+	struct net_if *iface;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	start_into_v6only_wait(iface, 1800U);
+
+	v6only_in_offer = false;
+	k_event_set(&events, 0U);
+
+	zassert_ok(net_if_down(iface));
+	zassert_ok(net_if_up(iface));
+
+	check_bound_again(iface, "the interface came up", WAIT_TIME);
+
+	net_dhcpv4_stop(iface);
+}
+
+ZTEST(dhcpv4_tests, test_v6only_wait_ends_on_restart)
+{
+	struct net_if *iface;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	start_into_v6only_wait(iface, 1800U);
+
+	v6only_in_offer = false;
+	k_event_set(&events, 0U);
+
+	net_dhcpv4_restart(iface);
+
+	check_bound_again(iface, "a restart", WAIT_TIME);
+
+	net_dhcpv4_stop(iface);
+}
+
+#if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
+static void option_v6only_cb(struct net_dhcpv4_option_callback *cb, size_t length,
+			     enum net_dhcpv4_msg_type msg_type, struct net_if *iface)
+{
+	ARG_UNUSED(cb);
+	ARG_UNUSED(length);
+	ARG_UNUSED(msg_type);
+	ARG_UNUSED(iface);
+}
+
+/* RFC 8925 3.2: an option callback for 108 does not put it in the list on an
+ * interface that needs IPv4, nor twice on one that does not.
+ */
+ZTEST(dhcpv4_tests, test_v6only_option_callback_does_not_list_it)
+{
+	static struct net_dhcpv4_option_callback opt_v6only_cb;
+	static uint8_t v6only_buf[sizeof(uint32_t)];
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_OPTION_IPV6_ONLY_PREFERRED);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	net_dhcpv4_init_option_callback(&opt_v6only_cb, option_v6only_cb,
+					DHCPV4_OPTIONS_IPV6_ONLY_PREFERRED, v6only_buf,
+					sizeof(v6only_buf));
+	zassert_ok(net_dhcpv4_add_option_callback(&opt_v6only_cb));
+
+	zassert_ok(net_dhcpv4_set_ipv6_only_capable(iface, false));
+	net_dhcpv4_start(iface);
+	evt = k_event_wait(&events, EVT_DHCP_BOUND, false, WAIT_TIME);
+	zexpect_equal(evt, EVT_DHCP_BOUND, "Missing DHCP bound %08x", evt);
+	zexpect_equal(discover_v6only_listed, 0U, "DISCOVER listed option 108 %u times",
+		      discover_v6only_listed);
+	zexpect_equal(request_v6only_listed, 0U, "REQUEST listed option 108 %u times",
+		      request_v6only_listed);
+
+	dhcp_test_reset_iface(iface);
+
+	net_dhcpv4_start(iface);
+	evt = k_event_wait(&events, EVT_DHCP_BOUND, false, WAIT_TIME);
+	zexpect_equal(evt, EVT_DHCP_BOUND, "Missing DHCP bound %08x", evt);
+	zexpect_equal(discover_v6only_listed, 1U, "DISCOVER listed option 108 %u times",
+		      discover_v6only_listed);
+	zexpect_equal(request_v6only_listed, 1U, "REQUEST listed option 108 %u times",
+		      request_v6only_listed);
+
+	zassert_ok(net_dhcpv4_remove_option_callback(&opt_v6only_cb));
+	net_dhcpv4_stop(iface);
+}
+#endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS */
 
 ZTEST_SUITE(dhcpv4_tests, NULL, NULL, dhcpv4_tests_before, NULL, NULL);

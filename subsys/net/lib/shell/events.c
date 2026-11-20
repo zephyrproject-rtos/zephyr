@@ -442,6 +442,17 @@ static char *get_l3_desc(struct event_msg *msg,
 		*desc = "DHCPv4";
 		*desc2 = "stop";
 		break;
+	case NET_EVENT_IPV4_DHCP_V6ONLY:
+		*desc = "DHCPv4";
+		*desc2 = "IPv6-only preferred";
+		if (msg->len >= sizeof(uint32_t)) {
+			uint32_t wait;
+
+			memcpy(&wait, msg->data, sizeof(wait));
+			snprintk(extra_info, extra_info_len, "wait %us", wait);
+			info = extra_info;
+		}
+		break;
 	case NET_EVENT_IPV4_MCAST_JOIN:
 		*desc = "IPv4 mcast";
 		*desc2 = "join";
