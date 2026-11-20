@@ -24,3 +24,13 @@ tests:
       - CONFIG_NET_IPV6_ROUTE_MCAST=y
       - CONFIG_NET_IPV6_MAX_MCAST_ROUTES=5
       - CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS=y
+  # pkt debug logging formats on the caller's stack and overflows it on qemu_riscv32/64
+  net.mld.pkt_debug:
+    platform_allow:
+      - qemu_x86
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+      - CONFIG_NET_PKT_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
