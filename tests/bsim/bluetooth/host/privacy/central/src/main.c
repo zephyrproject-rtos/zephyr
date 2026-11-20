@@ -50,7 +50,9 @@ static struct bst_test_list *install(struct bst_test_list *tests)
 	return bst_add_tests(tests, test_to_add);
 };
 
-bst_test_install_t test_installers[] = {install, NULL};
+extern struct bst_test_list *test_rpa_expired_install(struct bst_test_list *tests);
+
+bst_test_install_t test_installers[] = {install, test_rpa_expired_install, NULL};
 
 int main(void)
 {
