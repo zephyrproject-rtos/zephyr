@@ -1,0 +1,95 @@
+# Copyright (c) 2026 Gustavo Reis
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ESP32 LCD-CAM parallel RGB (DPI / dot-clock) display controller.
+
+  This node must be a child of the "espressif,esp32-lcd-cam" controller node
+  and includes a "display-timings" child node with compatible
+  "zephyr,panel-timing".
+
+compatible: "espressif,esp32-lcd-cam-rgb"
+
+include: [lcd-controller.yaml]
+
+properties:
+  data-bus-width:
+    type: int
+    default: 16
+    enum:
+      - 8
+      - 16
+    description: |
+      Parallel RGB output data bus width in bits. Default is 16-bit (RGB565).
+
+  backlight-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO used to control the display panel backlight. The driver
+      initializes this GPIO to active state when blanking is turned off.
+
+  disp-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO used to control the panel display enable (DISP / STBYB)
+      pin.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO connected to the panel hardware reset line.
+
+  pclk-idle-high:
+    type: boolean
+    description: |
+      Set the pixel clock (PCLK) level high during the idle phase. By default
+      the pixel clock idles low.
+
+  de-mode-only:
+    type: boolean
+    description: |
+      Suppress HSYNC output during the vertical porch region (pure DE mode).
+      By default HSYNC is also output in the vertical porch region (HV+DE mode).
+
+  invert-byte-order:
+    type: boolean
+    description: |
+      Swap adjacent bytes of DMA pixel data before outputting to the RGB bus.
+
+  invert-bit-order:
+    type: boolean
+    description: |
+      Reverse the bit order of DMA pixel data before outputting to the RGB bus.
+
+examples:
+  - |
+    &lcd_cam {
+      status = "okay";
+      pinctrl-0 = <&lcd_cam_default>;
+      pinctrl-names = "default";
+
+      lcd_rgb: lcd-rgb {
+        compatible = "espressif,esp32-lcd-cam-rgb";
+        width = <480>;
+        height = <272>;
+        pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+        data-bus-width = <16>;
+        backlight-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+        status = "okay";
+
+        display-timings {
+          compatible = "zephyr,panel-timing";
+          clock-frequency = <12000000>;
+          hsync-len = <1>;
+          hback-porch = <42>;
+          hfront-porch = <20>;
+          vsync-len = <10>;
+          vback-porch = <12>;
+          vfront-porch = <4>;
+          hsync-active = <0>;
+          vsync-active = <0>;
+          de-active = <1>;
+          pixelclk-active = <1>;
+        };
+      };
+    };

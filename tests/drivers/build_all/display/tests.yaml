@@ -28,3 +28,19 @@ tests:
   drivers.display.build.sf32lb_dbi:
     platform_allow:
       - sf32lb52_devkit_lcd
+
+  drivers.display.build.esp32_lcd_cam_rgb:
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+
+  drivers.display.build.esp32_lcd_cam_rgb_no_bb:
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+    extra_configs:
+      - CONFIG_DISPLAY_ESP32_LCD_CAM_RGB_BOUNCE_BUFFER_LINES=0
+      - CONFIG_DISPLAY_ESP32_LCD_CAM_RGB_FB_NUM=2
+      - CONFIG_DISPLAY_ESP32_LCD_CAM_RGB_RESTART_IN_VSYNC=y

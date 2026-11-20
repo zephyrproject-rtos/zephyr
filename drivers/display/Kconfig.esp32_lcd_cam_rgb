@@ -1,0 +1,49 @@
+# Copyright (c) 2026 Gustavo Reis
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DISPLAY_ESP32_LCD_CAM_RGB
+	bool "ESP32 LCD-CAM parallel RGB display controller"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_LCD_CAM_RGB_ENABLED
+	depends on SOC_SERIES_ESP32S3
+	depends on SOC_FAMILY_ESPRESSIF_LCD_CAM
+	select SOC_FAMILY_ESPRESSIF_SPIRAM
+	select SHARED_MULTI_HEAP
+	help
+	  Enable driver for the ESP32-S3 LCD_CAM peripheral in parallel RGB
+	  (DPI / dot-clock) mode. The controller continuously streams the
+	  framebuffer from external PSRAM via GDMA to an RGB TTL panel.
+
+if DISPLAY_ESP32_LCD_CAM_RGB
+
+config DISPLAY_ESP32_LCD_CAM_RGB_FB_NUM
+	int "Framebuffers to allocate in the driver"
+	default 1
+	range 1 2
+	help
+	  Number of full-screen framebuffers allocated in external PSRAM.
+	  When internal SRAM bounce buffers are enabled, a single PSRAM
+	  framebuffer is sufficient for tear-free partial updates. Two
+	  framebuffers enable page flipping synchronized to VSYNC.
+
+config DISPLAY_ESP32_LCD_CAM_RGB_BOUNCE_BUFFER_LINES
+	int "Internal SRAM bounce buffer height in lines (0 to disable)"
+	default 16
+	range 0 64
+	help
+	  When greater than 0, allocates two ping-pong bounce buffers of the
+	  specified number of horizontal lines in internal DMA-capable SRAM.
+	  GDMA streams exclusively from internal SRAM while the bounce-buffer
+	  EOF ISR prefetches lines from the PSRAM framebuffer, eliminating
+	  LCD FIFO underflow and horizontal drift during PSRAM cache flushes.
+	  When set to 0, GDMA streams directly from the PSRAM framebuffer.
+
+config DISPLAY_ESP32_LCD_CAM_RGB_RESTART_IN_VSYNC
+	bool "Restart GDMA and reset LCD FIFO on VSYNC"
+	default n
+	help
+	  Reset the LCD async FIFO and restart the GDMA descriptor chain at
+	  the beginning of each VSYNC blanking interval when streaming
+	  directly from PSRAM without bounce buffers.
+
+endif # DISPLAY_ESP32_LCD_CAM_RGB
