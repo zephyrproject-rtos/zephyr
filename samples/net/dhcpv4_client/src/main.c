@@ -11,6 +11,12 @@
 LOG_MODULE_REGISTER(net_dhcpv4_client_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/kernel.h>
+#if defined(CONFIG_USB_HOST_STACK)
+#include <zephyr/device.h>
+#include <zephyr/usb/usbh.h>
+
+USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
+#endif
 #include <zephyr/linker/sections.h>
 #include <errno.h>
 #include <stdio.h>
@@ -86,6 +92,24 @@ static void option_handler(struct net_dhcpv4_option_callback *cb,
 
 int main(void)
 {
+#if defined(CONFIG_USB_HOST_STACK)
+	int err;
+
+	LOG_INF("Starting USB host");
+
+	err = usbh_init(&uhs_ctx);
+	if (err) {
+		LOG_ERR("USB host initialization failed: %d", err);
+		return err;
+	}
+
+	err = usbh_enable(&uhs_ctx);
+	if (err) {
+		LOG_ERR("USB host enable failed: %d", err);
+		return err;
+	}
+#endif
+
 	LOG_INF("Run dhcpv4 client");
 
 	net_mgmt_init_event_callback(&mgmt_cb, handler,

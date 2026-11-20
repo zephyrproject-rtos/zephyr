@@ -1,5 +1,3 @@
-/* usb_cdc.h - USB CDC-ACM and CDC-ECM public header */
-
 /*
  * Copyright (c) 2017 PHYTEC Messtechnik GmbH
  * Copyright (c) 2025 - 2026 NXP
@@ -7,16 +5,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /**
  * @file
  * @brief USB Communications Device Class (CDC) public header
  *
  * Header follows the Class Definitions for
  * Communications Devices Specification (CDC120-20101103-track.pdf),
- * PSTN Devices Specification (PSTN120.pdf) and
- * Ethernet Control Model Devices Specification (ECM120.pdf).
- * Header is limited to ACM and ECM Subclasses.
+ * PSTN Devices Specification (PSTN120.pdf),
+ * Ethernet Control Model Devices Specification (ECM120.pdf) and
+ * Network Control Model Devices Specification (NCM11_20260205.pdf).
+ * Header is limited to ACM, ECM and NCM Subclasses.
  */
 
 #ifndef ZEPHYR_INCLUDE_USB_CLASS_USB_CDC_H_
@@ -28,20 +26,22 @@
 /** Communications Class Subclass Codes */
 #define ACM_SUBCLASS			0x02
 #define ECM_SUBCLASS			0x06
-#define EEM_SUBCLASS			0x0c
-#define NCM_SUBCLASS			0x0d
+#define EEM_SUBCLASS			0x0C
+#define NCM_SUBCLASS			0x0D
 
 /** Communications Class Protocol Codes */
 #define AT_CMD_V250_PROTOCOL		0x01
 #define EEM_PROTOCOL			0x07
 #define ACM_VENDOR_PROTOCOL		0xFF
-#define NCM_DATA_PROTOCOL		0x01
 
 /**
  * @brief Data Class Interface Codes
  * @note CDC120-20101103-track.pdf, 4.5, Table 6
  */
 #define DATA_INTERFACE_CLASS		0x0A
+
+/** Data Class Protocol Codes */
+#define NCM_NTB_PROTOCOL		0x01
 
 /**
  * @brief bDescriptor SubType for Communications
@@ -53,7 +53,14 @@
 #define ACM_FUNC_DESC			0x02
 #define UNION_FUNC_DESC			0x06
 #define ETHERNET_FUNC_DESC		0x0F
-#define ETHERNET_FUNC_DESC_NCM		0x1a
+#define NCM_FUNC_DESC			0x1A
+
+/**
+ * @brief bDescriptor SubType for NCM Functional Descriptors
+ * @note NCM11_20260205.pdf, 5.4, Table 5-4
+ */
+#define NCM_EXT_CAPABILITY_DESC	0x1D
+#define NCM_EXT_FEATURE_DESC	0x1E
 
 /**
  * @brief Communications Class Notification Codes
@@ -159,47 +166,6 @@
 #define SET_ETHERNET_PACKET_FILTER	0x43
 #define GET_ETHERNET_STATISTIC		0x44
 
-/**
- * @brief Class-Specific Request Codes for NCM subclass
- * @note NCM100.pdf, 6.2, Table 6-2
- */
-#define GET_NTB_PARAMETERS     0x80
-#define GET_NET_ADDRESS        0x81
-#define SET_NET_ADDRESS        0x82
-#define GET_NTB_FORMAT         0x83
-#define SET_NTB_FORMAT         0x84
-#define GET_NTB_INPUT_SIZE     0x85
-#define SET_NTB_INPUT_SIZE     0x86
-#define GET_MAX_DATAGRAM_SIZE  0x87
-#define SET_MAX_DATAGRAM_SIZE  0x88
-#define GET_CRC_MODE           0x89
-#define SET_CRC_MODE           0x8A
-
-/**
- * @name Network Capabilities Bitmap of the NCM Functional Descriptor
- * @note NCM100.pdf, 5.2.1, Table 5-2
- * @{
- */
-/** Function can process SetEthernetPacketFilter requests */
-#define USB_CDC_NCM_NCAP_ETH_FILTER		BIT(0)
-/** Function can process GetNetAddress and SetNetAddress requests */
-#define USB_CDC_NCM_NCAP_NET_ADDRESS		BIT(1)
-/** Function can process SendEncapsulatedCommand and
- *  GetEncapsulatedResponse requests
- */
-#define USB_CDC_NCM_NCAP_ENCAP_COMMAND		BIT(2)
-/** Function can process SetMaxDatagramSize and GetMaxDatagramSize
- *  requests
- */
-#define USB_CDC_NCM_NCAP_MAX_DATAGRAM_SIZE	BIT(3)
-/** Function can process SetCrcMode and GetCrcMode requests */
-#define USB_CDC_NCM_NCAP_CRC_MODE		BIT(4)
-/** Function can process 8-byte forms of GetNtbInputSize and
- *  SetNtbInputSize requests
- */
-#define USB_CDC_NCM_NCAP_NTB_INPUT_SIZE		BIT(5)
-/** @} */
-
 /** Ethernet Packet Filter Bitmap */
 #define PACKET_TYPE_MULTICAST		0x10
 #define PACKET_TYPE_BROADCAST		0x08
@@ -273,6 +239,68 @@
 /** Late collisions detected */
 #define USB_CDC_ECM_STAT_XMIT_LATE_COLLISIONS	0x1D
 
+/**
+ * @brief Class-Specific Request Codes for NCM 1.0 subclass
+ * @note NCM11_20260205.pdf, 7.2, Table 7-2
+ */
+#define GET_NTB_PARAMETERS	0x80
+#define GET_NET_ADDRESS		0x81
+#define SET_NET_ADDRESS		0x82
+#define GET_NTB_FORMAT		0x83
+#define SET_NTB_FORMAT		0x84
+#define GET_NTB_INPUT_SIZE	0x85
+#define SET_NTB_INPUT_SIZE	0x86
+#define GET_MAX_DATAGRAM_SIZE	0x87
+#define SET_MAX_DATAGRAM_SIZE	0x88
+#define GET_CRC_MODE		0x89
+#define SET_CRC_MODE 		0x8A
+
+/**
+ * @brief Class-Specific Request Codes for NCM 1.1 subclass
+ * @note NCM11_20260205.pdf, 8.2, Table 8-2
+ */
+#define GET_EXTENDED_CAPABILITY_MODE	0x8B
+#define SET_EXTENDED_CAPABILITY_MODE	0x8C
+#define GET_EXTENDED_CAPABILTIES	0x8D
+#define GET_EXTENDED_FEATURE		0x8E
+#define	SET_EXTENDED_FEATURE		0x8F
+
+/**
+ * @name Network Capabilities Bitmap of the NCM Functional Descriptor
+ * @note NCM11_20260205.pdf, 6.2.1, Table 6-2
+ * @{
+ */
+/**
+ * Function can process SetEthernetPacketFilter requests, as defined in [USBECM12].
+ * If not set, broadcast, directed and multicast packets are always passed to the host.
+ */
+#define USB_CDC_NCM_NCAP_ETH_FILTER		BIT(0)
+/** Function can process GetNetAddress and SetNetAddress requests */
+#define USB_CDC_NCM_NCAP_NET_ADDRESS		BIT(1)
+/** Function can process SendEncapsulatedCommand and GetEncapsulatedResponse requests */
+#define USB_CDC_NCM_NCAP_ENCAP_COMMAND		BIT(2)
+/** Function can process SetMaxDatagramSize and GetMaxDatagramSize requests */
+#define USB_CDC_NCM_NCAP_MAX_DATAGRAM_SIZE	BIT(3)
+/** Function can process SetCrcMode and GetCrcMode requests */
+#define USB_CDC_NCM_NCAP_CRC_MODE		BIT(4)
+/** Function can process 8-byte forms of GetNtbInputSize and SetNtbInputSize requests */
+#define USB_CDC_NCM_NCAP_NTB_INPUT_SIZE		BIT(5)
+/** Function supports extended NCM capabilities (NCM 1.1) */
+#define USB_CDC_NCM_NCAP_EXTENDED_CAPABILITIES	BIT(7)
+/** @} */
+
+/** bmNtbFormatsSupported bits (GetNtbParameters) */
+#define USB_CDC_NCM_NTB16_SUPPORTED	BIT(0)
+#define USB_CDC_NCM_NTB32_SUPPORTED	BIT(1)
+
+/** NTB format selection values (GetNtbFormat/SetNtbFormat) */
+#define USB_CDC_NCM_NTB16_FORMAT	0x0000
+#define USB_CDC_NCM_NTB32_FORMAT	0x0001
+
+/** NTB format CRC mode values (GetCrcMode/SetCrcMode) */
+#define USB_CDC_NCM_CRC_NOT_APPENDED	0x0000
+#define USB_CDC_NCM_CRC_APPENDED	0x0001
+
 /** Header Functional Descriptor */
 struct cdc_header_descriptor {
 	uint8_t bFunctionLength;
@@ -337,13 +365,63 @@ struct cdc_ecm_descriptor {
 	uint8_t bNumberPowerFilters;
 } __packed;
 
-/** Ethernet Network Control Model (NCM) Descriptor */
+/** NCM Functional Descriptor */
 struct cdc_ncm_descriptor {
 	uint8_t bFunctionLength;
 	uint8_t bDescriptorType;
 	uint8_t bDescriptorSubtype;
 	uint16_t bcdNcmVersion;
 	uint8_t bmNetworkCapabilities;
+} __packed;
+
+/** NCM Transfer Header for 16-bit NTBs (NTH16) */
+struct usb_cdc_ncm_nth16 {
+	uint32_t dwSignature;
+	uint16_t wHeaderLength;
+	uint16_t wSequence;
+	uint16_t wBlockLength;
+	uint16_t wNdpIndex;
+} __packed;
+
+/** NCM Transfer Header for 32-bit NTBs (NTH32) */
+struct usb_cdc_ncm_nth32 {
+	uint32_t dwSignature;
+	uint16_t wHeaderLength;
+	uint16_t wSequence;
+	uint32_t wBlockLength;
+	uint32_t wNdpIndex;
+} __packed;
+
+/** Datagram Pointer Entry used by NDP16 (DPE16) */
+struct usb_cdc_ncm_ndp16_dpe {
+	uint16_t wDatagramIndex;
+	uint16_t wDatagramLength;
+} __packed;
+
+/** NTB Parameter Structure */
+struct usb_cdc_ncm_ntb_parameters {
+	uint16_t wLength;
+	uint16_t bmNtbFormatsSupported;
+	uint32_t dwNtbInMaxSize;
+	uint16_t wNdpInDivisor;
+	uint16_t wNdpInPayloadRemainder;
+	uint16_t wNdpInAlignment;
+	uint16_t wReserved;
+	uint32_t dwNtbOutMaxSize;
+	uint16_t wNdpOutDivisor;
+	uint16_t wNdpOutPayloadRemainder;
+	uint16_t wNdpOutAlignment;
+	uint16_t wNtbOutMaxDatagrams;
+} __packed;
+
+/**
+ * NTB Input Size Structure, Get/SetNtbInputSize 8-byte form (NCM11_20260205.pdf, 7.2.7,
+ * Table 7-4)
+ */
+struct usb_cdc_ncm_ntb_input_size {
+	uint32_t dwNtbInMaxSize;
+	uint16_t wNtbInMaxDatagrams;
+	uint16_t wReserved;
 } __packed;
 
 #endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_CDC_H_ */
