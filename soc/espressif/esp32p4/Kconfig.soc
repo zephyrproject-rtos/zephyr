@@ -40,6 +40,8 @@ config SOC_ESP32P4_REV_3_1
 config SOC_ESP32P4_HPCORE
 	bool
 	select SOC_ESP32P4
+	select PM_CPU_OPS if SMP
+	select SOC_PER_CORE_INIT_HOOK if SMP
 	help
 	  This hidden configuration defines that build is targeted for HP CORE.
 
