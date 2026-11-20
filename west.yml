@@ -345,7 +345,7 @@ manifest:
       groups:
         - crypto
     - name: nanopb
-      revision: 0f6d088e777a33dd7b54297f137ef10d745c5da8
+      revision: ffecb2fd7cc0f71f9b083a49c4ae2a97e1a34684
       path: modules/lib/nanopb
     - name: net-tools
       revision: b3eae79a7546b369b3b8475323b6653c14c89ba8
