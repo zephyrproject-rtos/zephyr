@@ -36,6 +36,8 @@ extern "C" {
 
 /** The NVMEM cell is read-only */
 #define NVMEM_CELL_FLAG_READ_ONLY BIT(0)
+/** The NVMEM cell is stored in reversed byte order */
+#define NVMEM_CELL_FLAG_REVERSED  BIT(1)
 
 /** @endcond */
 
@@ -106,7 +108,9 @@ struct nvmem_cell {
 		.dev = DEVICE_DT_GET(DT_MTD_FROM_NVMEM_CELL(node_id)),                             \
 		.offset = DT_REG_ADDR(node_id),                                                    \
 		.size = DT_REG_SIZE(node_id),                                                      \
-		.flags = (DT_PROP(node_id, read_only) ? NVMEM_CELL_FLAG_READ_ONLY : 0U),           \
+		.flags = (DT_PROP(node_id, read_only) ? NVMEM_CELL_FLAG_READ_ONLY : 0U) |          \
+			 (DT_PROP(node_id, zephyr_reversed_byte_order) ?                           \
+				  NVMEM_CELL_FLAG_REVERSED : 0U),                                  \
 	}
 
 /**
@@ -322,6 +326,10 @@ struct nvmem_cell {
 /**
  * @brief Read data from an NVMEM cell.
  *
+ * A cell with the @c zephyr,reversed-byte-order devicetree property is stored with its
+ * last byte first. The bytes are returned in their logical order, and @p off and
+ * @p len refer to that order, not to the stored layout.
+ *
  * @param cell NVMEM cell to read from.
  * @param[out] data Buffer to store the read data.
  *                  Must be at least @p len bytes.
@@ -341,6 +349,12 @@ int nvmem_cell_read(const struct nvmem_cell *cell, void *data, off_t off, size_t
 
 /**
  * @brief Write data to an NVMEM cell.
+ *
+ * A cell with the @c zephyr,reversed-byte-order devicetree property is stored with its
+ * last byte first. @p data, @p off and @p len use the logical order, the bytes are
+ * reversed before they are stored. A write longer than
+ * @kconfig{CONFIG_NVMEM_REVERSED_WRITE_BUF_SIZE} is split in multiple writes to the
+ * underlying device.
  *
  * @param cell NVMEM cell to write to.
  *             Must not be read-only.

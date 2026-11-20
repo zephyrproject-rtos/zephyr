@@ -40,6 +40,21 @@ config NVMEM_OTP_WRITE
 	bool "NVMEM (write) support for OTP memory handling devices"
 	depends on NVMEM_OTP && OTP_PROGRAM
 
+config NVMEM_REVERSED_WRITE_BUF_SIZE
+	int "Buffer size for writes to cells in reversed byte order"
+	default 16
+	range 1 1024
+	help
+	  Size in bytes of the stack buffer used to reverse the data written
+	  to an NVMEM cell with the zephyr,reversed-byte-order devicetree
+	  property.
+
+	  A write of at most this size reaches the underlying device as a
+	  single write. A longer write is split in multiple writes of this
+	  size, which is not suited for devices with write alignment or
+	  program-once constraints. Set this to at least the largest write
+	  to such a cell.
+
 module = NVMEM
 module-str = nvmem
 source "subsys/logging/Kconfig.template.log_config"
