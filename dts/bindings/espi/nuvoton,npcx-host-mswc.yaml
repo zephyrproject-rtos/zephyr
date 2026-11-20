@@ -1,0 +1,16 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NPCX Host Sub-Module - Mobile System Wake-Up Control (MSWC)
+
+compatible: "nuvoton,npcx-host-mswc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: Clock configuration for the MSWC module.
