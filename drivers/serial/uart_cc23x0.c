@@ -363,14 +363,14 @@ static void uart_cc23x0_irq_err_enable(const struct device *dev)
 {
 	const struct uart_cc23x0_config *config = dev->config;
 
-	return UARTEnableInt(config->reg, UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE);
+	UARTEnableInt(config->reg, UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE);
 }
 
 static void uart_cc23x0_irq_err_disable(const struct device *dev)
 {
 	const struct uart_cc23x0_config *config = dev->config;
 
-	return UARTDisableInt(config->reg, UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE);
+	UARTDisableInt(config->reg, UART_INT_OE | UART_INT_BE | UART_INT_PE | UART_INT_FE);
 }
 
 static int uart_cc23x0_irq_is_pending(const struct device *dev)

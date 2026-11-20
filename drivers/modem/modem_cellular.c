@@ -1004,7 +1004,7 @@ static void modem_cellular_delegate_event_ptr(struct modem_cellular_data *data,
 static void modem_cellular_delegate_event(struct modem_cellular_data *data,
 					  enum modem_cellular_event evt)
 {
-	return modem_cellular_delegate_event_ptr(data, evt, NULL);
+	modem_cellular_delegate_event_ptr(data, evt, NULL);
 }
 
 static void modem_cellular_begin_power_off_pulse(struct modem_cellular_data *data)
