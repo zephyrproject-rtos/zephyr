@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_TI_AM3352_EQEP
+	bool "Whether to enable TI EQEP counter driver"
+	default y
+	depends on DT_HAS_TI_AM3352_EQEP_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enables the TI EQEP counter driver.
