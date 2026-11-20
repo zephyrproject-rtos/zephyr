@@ -586,6 +586,20 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
       - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}.overlay"
+  drivers.spi.loopback.mikroe_i2c_to_spi_click:
+    platform_allow:
+      - ensemble_e8_dk/ae822fa0e5597ls0/rtss_hp
+    filter: dt_compat_enabled("nxp,sc18is60x-spi")
+    extra_args:
+      - SHIELD=mikroe_i2c_to_spi_click
+    harness_config:
+      fixture: mikroe_i2c_to_spi_click
+    extra_configs:
+      - CONFIG_SPI_ASYNC=n
+      - CONFIG_SPI_LARGE_BUFFER_SIZE=200
+      - CONFIG_SPI_LOOPBACK_MODE_LOOP=n
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0
+      - CONFIG_DMA=n
   drivers.spi.max32_pm_runtime:
     depends_on:
       - counter
