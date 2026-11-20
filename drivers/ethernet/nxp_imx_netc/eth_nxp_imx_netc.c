@@ -393,7 +393,13 @@ int netc_eth_init_common(const struct device *dev)
 		return ret;
 	}
 	data->tx_intid = its_alloc_intid(config->msi_dev);
+	if (data->tx_intid == ITS_INTID_INVALID) {
+		return -ENOSPC;
+	}
 	data->rx_intid = its_alloc_intid(config->msi_dev);
+	if (data->rx_intid == ITS_INTID_INVALID) {
+		return -ENOSPC;
+	}
 
 	msg_addr = its_get_msi_addr(config->msi_dev);
 	msix_entry[NETC_TX_MSIX_ENTRY_IDX].control = kNETC_MsixIntrMaskBit;
