@@ -56,7 +56,7 @@ To release the Cortex®-M7 cores from M0+ during boot, pass the corresponding Kc
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: kit_t2g_c2d6m_lite/cyt4dnjbzs/m0p
-   :gen-args: -DCONFIG_SOC_SERIES_CYT4DN_START_M7_0=y -DCONFIG_SOC_SERIES_CYT4DN_START_M7_1=y
+   :gen-args: -DCONFIG_SOC_CYT4XX_START_M7_0=y -DCONFIG_SOC_CYT4XX_START_M7_1=y
    :goals: build
 
 Build for the Cortex®-M7 Core 0:
@@ -106,7 +106,7 @@ Build and flash for the Cortex®-M0+ core with M7 cores released during boot:
    :zephyr-app: samples/hello_world
    :board: kit_t2g_c2d6m_lite/cyt4dnjbzs/m0p
    :west-args: -p always
-   :gen-args: -DCONFIG_SOC_SERIES_CYT4DN_START_M7_0=y -DCONFIG_SOC_SERIES_CYT4DN_START_M7_1=y
+   :gen-args: -DCONFIG_SOC_CYT4XX_START_M7_0=y -DCONFIG_SOC_CYT4XX_START_M7_1=y
    :goals: build flash debug
 
 Build and flash for the Cortex®-M7 Core 0:

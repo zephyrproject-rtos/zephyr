@@ -15,6 +15,9 @@
 
 #ifndef _ASMLANGUAGE
 #include <cy_device_headers.h>
+#if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1C)
+#define COMPONENT_CAT1C
+#endif
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _SOC__H_ */

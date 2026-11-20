@@ -30,9 +30,9 @@ void soc_prep_hook(void)
 	/* Allow write access to Vector Table Offset Register and ITCM/DTCM configuration register
 	 * (CPUSS_CM7_X_CTL.PPB_LOCK[3] and CPUSS_CM7_X_CTL.PPB_LOCK[1:0])
 	 */
-#ifdef CONFIG_SOC_CYT4DNJBZS_M7_1
+#ifdef CONFIG_SOC_CYT4XX_CORE_M7_1
 	CPUSS->CM7_1_CTL &= ~(0xB);
-#elif CONFIG_SOC_CYT4DNJBZS_M7_0
+#elif CONFIG_SOC_CYT4XX_CORE_M7_0
 	CPUSS->CM7_0_CTL &= ~(0xB);
 #else
 #error "Not valid"
@@ -45,12 +45,12 @@ void soc_prep_hook(void)
 	SCB->ITCMCR = SCB->ITCMCR | 0x7; /* Set ITCMCR.EN, .RMW and .RETEN fields */
 	SCB->DTCMCR = SCB->DTCMCR | 0x7; /* Set DTCMCR.EN, .RMW and .RETEN fields */
 
-#ifdef CONFIG_SOC_CYT4DNJBZS_M7_0
+#ifdef CONFIG_SOC_CYT4XX_CORE_M7_0
 	CPUSS_CM7_0_CTL |= (0x1 << CPUSS_CM7_0_CTL_INIT_TCM_EN_Pos);
 	CPUSS_CM7_0_CTL |= (0x2 << CPUSS_CM7_0_CTL_INIT_TCM_EN_Pos);
 	CPUSS_CM7_0_CTL |= (0x1 << CPUSS_CM7_0_CTL_INIT_RMW_EN_Pos);
 	CPUSS_CM7_0_CTL |= (0x2 << CPUSS_CM7_0_CTL_INIT_RMW_EN_Pos);
-#elif CONFIG_SOC_CYT4DNJBZS_M7_1
+#elif CONFIG_SOC_CYT4XX_CORE_M7_1
 	CPUSS_CM7_1_CTL |= (0x1 << CPUSS_CM7_1_CTL_INIT_TCM_EN_Pos);
 	CPUSS_CM7_1_CTL |= (0x2 << CPUSS_CM7_1_CTL_INIT_TCM_EN_Pos);
 	CPUSS_CM7_1_CTL |= (0x1 << CPUSS_CM7_1_CTL_INIT_RMW_EN_Pos);
@@ -73,6 +73,10 @@ void soc_prep_hook(void)
 	(void)Cy_SysClk_PeriGroupSetSlaveCtl(6, CY_SYSCLK_PERI_GROUP_SL_CTL, 0xFFFFU);
 	(void)Cy_SysClk_PeriGroupSetSlaveCtl(8, CY_SYSCLK_PERI_GROUP_SL_CTL, 0xFFFFU);
 	(void)Cy_SysClk_PeriGroupSetSlaveCtl(9, CY_SYSCLK_PERI_GROUP_SL_CTL, 0xFFFFU);
+
+	Cy_WDT_Unlock();
+	Cy_WDT_Disable();
+	SystemCoreClockUpdate();
 }
 
 void soc_early_init_hook(void)

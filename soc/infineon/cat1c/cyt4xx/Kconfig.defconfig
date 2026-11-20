@@ -4,9 +4,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Infineon CAT1C CYT4DN based MCU default configuration
+# Infineon CAT1C CYTXXX based MCU default configuration
 
-if SOC_SERIES_CYT4DN
+if SOC_SERIES_CYT4XX
 
 # Multi-level interrupt bit allocation:
 # L1: 5 bits (covers 16 L1 lines on M7 and M0+)
@@ -56,14 +56,10 @@ config 2ND_LVL_INTR_07_OFFSET
 config NUM_IRQS
 	default 6368
 
-choice GEN_SW_ISR_TABLE_TYPE
-	default GEN_SW_ISR_TABLE_SWITCH
-endchoice
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if SOC_CYT4DNJBZS_M0P
-	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if SOC_CYT4DNJBZS_M7_0
-	default $(dt_node_int_prop_int,/cpus/cpu@2,clock-frequency) if SOC_CYT4DNJBZS_M7_1
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if SOC_CYT4XX_CORE_M0PLUS
+	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if SOC_CYT4XX_CORE_M7_0
+	default $(dt_node_int_prop_int,/cpus/cpu@2,clock-frequency) if SOC_CYT4XX_CORE_M7_1
 
 config INFINEON_INTC_SYSINTC
 	default y
@@ -80,4 +76,4 @@ config CLOCK_CONTROL
 config ARM_MPU
 	default y
 
-endif # SOC_SERIES_CYT4DN
+endif # SOC_SERIES_CYT4XX

@@ -158,10 +158,13 @@ static int ifx_configure_hf_clk(const struct ifx_hf_clk_cfg *hf_configs)
 			return -EINVAL;
 		}
 
+#if defined(CY_IP_MXS40SSRSS) || defined(CY_IP_MXS22SRSS) ||                                       \
+	(defined(CY_IP_MXS40SRSS) && (CY_IP_MXS40SRSS_VERSION >= 3))
 		ret = Cy_SysClk_ClkHfDirectSel(hf_cfg->hf_clk_id, false);
 		if (ret != 0) {
 			return -EINVAL;
 		}
+#endif
 
 		ret = Cy_SysClk_ClkHfEnable(hf_cfg->hf_clk_id);
 		if (ret != 0) {
