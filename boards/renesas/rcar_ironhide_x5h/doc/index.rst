@@ -91,6 +91,56 @@ The Ironhide board is providing two serial ports through CN44:
 - HSCIF0 for the A720AE core running Linux,
 - HSCIF1 for the R52 core running a RTOS.
 
+Watchdog (A720)
+---------------
+
+The A720 devicetree describes WWDT0 through WWDT19, disabled by default.
+To use one, enable :kconfig:option:`CONFIG_WATCHDOG` and provide an application
+overlay with its bus and counter clock frequencies in Hz.
+
+Platform firmware must reserve the selected watchdog for Zephyr from the last
+peripheral reset, leave it stopped with its mode register unwritten, maintain
+its clocks, and configure a reset route with the required SoC reset scope.
+The driver checks the route but does not configure or clear it. An armed
+watchdog cannot be stopped by the driver.
+
+Example nominal clock frequencies for WWDT0-19 are 16,666,667 Hz for the bus
+and 32,768 Hz for the counter.
+
+Confirm the rates and clock-source selection for the platform firmware before
+using them. The driver enables the clocks but does not set or measure their
+rates. It uses the supplied rates to calculate watchdog timing and setup delays.
+Allow for clock tolerance and scheduling delays when feeding the watchdog.
+
+The following overlay illustrates the configuration for WWDT0. It assumes
+firmware has reserved the instance and configured its ECM reset route:
+
+.. code-block:: devicetree
+
+   / {
+           aliases {
+                   watchdog0 = &wwdt0;
+           };
+   };
+
+   &ecm {
+           status = "okay";
+   };
+
+   &wwdt0 {
+           bus-clock-frequency = <16666667>;
+           counter-clock-frequency = <32768>;
+           status = "okay";
+   };
+
+The Zephyr watchdog sample uses the ``watchdog0`` alias. Other applications
+may reference the watchdog differently.
+
+The driver does not support callbacks or debugger-pause options. The unmodified
+:zephyr:code-sample:`watchdog` requests debugger pause. Adapt the application
+to use no setup options and a supported timeout and feed window before running
+it.
+
 Programming and Debugging (R52)
 *******************************
 
