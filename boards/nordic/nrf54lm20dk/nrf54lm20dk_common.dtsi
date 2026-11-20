@@ -93,7 +93,7 @@
 		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <0 0 &gpio3 5 0>,
 			   <1 0 &gpio3 4 0>,
-			   <2 0 &gpio1 2 0>,
+			   <2 0 &gpio1 0 0>,
 			   <3 0 &gpio1 3 0>,
 			   <4 0 &gpio1 4 0>,
 			   <5 0 &gpio1 13 0>,
