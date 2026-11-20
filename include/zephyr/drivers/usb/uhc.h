@@ -29,17 +29,36 @@
  * @{
  */
 
-/** USB device state */
+/**
+ * @brief USB device state (Chapter 9)
+ */
 enum usb_device_state {
+	/** Device is not connected or has been detached */
 	USB_STATE_NOTCONNECTED,
+	/** Device is connected but has not been assigned an address */
 	USB_STATE_DEFAULT,
+	/** Device has been assigned an address but is not configured */
 	USB_STATE_ADDRESSED,
+	/** Device has an active configuration */
 	USB_STATE_CONFIGURED,
 };
 
 /**
  * @brief USB device operating speed
  */
+/**
+ * @brief USB endpoint recovery reason (host-visible)
+ *
+ * Identifies the USB-level event that required host-controller recovery
+ * for an endpoint pipe.
+ */
+enum uhc_ep_recovery_reason {
+	/** CLEAR_FEATURE(ENDPOINT_HALT) completed on the endpoint */
+	UHC_EP_RECOVERY_CLEAR_HALT,
+	/** Class transport reset completed (e.g. BOT reset) after halt clear */
+	UHC_EP_RECOVERY_TRANSPORT_RESET,
+};
+
 enum usb_device_speed {
 	/** Device is probably not connected */
 	USB_SPEED_UNKNOWN,
@@ -55,6 +74,9 @@ enum usb_device_speed {
 
 #define UHC_INTERFACES_MAX 32
 
+/**
+ * @brief Host-side view of a USB interface alternate setting
+ */
 struct usb_host_interface {
 	/** Pointer to the interface descriptor */
 	struct usb_desc_header *dhp;
@@ -64,13 +86,20 @@ struct usb_host_interface {
 	uint8_t alternate;
 };
 
+/**
+ * @brief Host-side view of a USB endpoint
+ */
 struct usb_host_ep {
 	/** Pointer to the endpoint descriptor */
 	struct usb_ep_descriptor *desc;
 };
 
 /**
- * Host representation of a USB device
+ * @brief Host representation of a USB device
+ *
+ * Hub topology (@a hub, @a hub_port, @a level) is populated by the host stack.
+ * @a slot_id is written only by the HCD as an opaque per-device controller
+ * binding (used for detach on disconnect); host core must not interpret it.
  */
 struct usb_device {
 	/** dlist node */
@@ -89,6 +118,8 @@ struct usb_device {
 	uint8_t actual_cfg;
 	/** Device address */
 	uint8_t addr;
+	/** HCD opaque device binding; 0 until the controller claims @a udev */
+	uint8_t slot_id;
 	/** Pointer to actual device configuration descriptor */
 	void *cfg_desc;
 	/** Pointers to device interfaces */
@@ -99,9 +130,9 @@ struct usb_device {
 	struct usb_host_ep ep_in[16];
 	/** Pointer to the hub to which this device is connected */
 	struct usb_device *hub;
-	/** Device's hub Think Time */
+	/** Hub think time (USB 2.0 wHubCharacteristics); hub devices only */
 	uint16_t tt;
-	/** Device's hub port */
+	/** Device's hub port (1-based); root port index when @a hub is NULL */
 	uint8_t hub_port;
 	/** Device's level (root device = 1) */
 	uint8_t level;
@@ -117,7 +148,7 @@ enum uhc_control_stage {
 };
 
 /**
- * UHC endpoint buffer info
+ * @brief UHC endpoint transfer context
  *
  * This structure is mandatory for all UHC request.
  * It contains the meta data about the request and FIFOs
@@ -174,6 +205,8 @@ enum uhc_event_type {
 	UHC_EVT_DEV_CONNECTED_FS,
 	/** High speed device connected */
 	UHC_EVT_DEV_CONNECTED_HS,
+	/** SuperSpeed device connected (emitted by integrated xHCI HCDs) */
+	UHC_EVT_DEV_CONNECTED_SS,
 	/** Device (peripheral) removed */
 	UHC_EVT_DEV_REMOVED,
 	/** Bus reset operation finished */
@@ -194,7 +227,7 @@ enum uhc_event_type {
 };
 
 /**
- * USB host controller event
+ * @brief USB host controller event
  *
  * Common structure for all events that originate from
  * the UHC driver and are passed to higher layer using
@@ -214,6 +247,11 @@ struct uhc_event {
 	};
 	/** Pointer to controller's device struct */
 	const struct device *dev;
+	/**
+	 * Root hub port (1-based) for connect/remove events on the controller
+	 * root. Zero when not applicable or unknown (treated as port 1).
+	 */
+	uint8_t port;
 };
 
 /**
@@ -230,7 +268,7 @@ typedef int (*uhc_event_cb_t)(const struct device *dev,
 			      const struct uhc_event *const event);
 
 /**
- * USB host controller capabilities
+ * @brief USB host controller capabilities
  *
  * This structure is mainly intended for the USB host stack.
  */
@@ -249,7 +287,7 @@ struct uhc_device_caps {
 #define UHC_STATUS_ENABLED		1
 
 /**
- * Common UHC driver data structure
+ * @brief Common UHC driver data structure
  *
  * Mandatory structure for each UHC controller driver.
  * To be implemented as device's private data (device->data).
@@ -322,6 +360,61 @@ __subsystem struct uhc_driver_api {
 			  struct uhc_transfer *const xfer);
 	int (*ep_dequeue)(const struct device *dev,
 			  struct uhc_transfer *const xfer);
+	/**
+	 * Optional: commit active endpoint state for @a udev.
+	 *
+	 * Invoked when the host stack has finished building the active endpoint
+	 * set (for example after SET_CONFIGURATION or SET_INTERFACE). The HCD
+	 * programs hardware and must return success only when endpoints are ready
+	 * for transfer. NULL is success (no-op).
+	 */
+	int (*endpoints_commit)(const struct device *dev, struct usb_device *udev);
+	/**
+	 * Optional: recover an endpoint after a USB-level recovery action.
+	 *
+	 * Return 0 only when @a ep is ready for a new transfer. NULL is success.
+	 */
+	int (*endpoint_recover)(const struct device *dev, struct usb_device *udev, uint8_t ep,
+				enum uhc_ep_recovery_reason reason);
+	/**
+	 * Optional: allocate controller resources for @a udev.
+	 *
+	 * Root devices: called before @ref uhc_bus_reset. Hub-tier children:
+	 * called after hub port reset (no root bus reset). NULL is success.
+	 */
+	int (*device_alloc)(const struct device *dev, struct usb_device *udev);
+	/**
+	 * Optional: perform controller-managed USB addressing.
+	 *
+	 * On success writes the wire address to @a assigned_addr. NULL returns
+	 * @c -ENOTSUP so the host stack uses Chapter 9 SET_ADDRESS.
+	 */
+	int (*device_address)(const struct device *dev, struct usb_device *udev,
+			      uint8_t *assigned_addr);
+	/**
+	 * Optional: release controller resources for @a udev (disconnect).
+	 *
+	 * No-op success when no private state exists. Must be safe to call
+	 * repeatedly.
+	 */
+	int (*device_free)(const struct device *dev, struct usb_device *udev);
+	/**
+	 * Optional: physical root-port reset for root-tier @a udev.
+	 *
+	 * Invoked only from @ref uhc_root_default_state_reset while the controller
+	 * lock is held. Must not allocate device resources or start Chapter 9
+	 * transfers. NULL with @a device_prepare also NULL uses @a bus_reset for
+	 * the full transition.
+	 */
+	int (*root_port_reset)(const struct device *dev, struct usb_device *udev);
+	/**
+	 * Optional: prepare HCD default control endpoint state for @a udev.
+	 *
+	 * Invoked only after a successful @a root_port_reset from
+	 * @ref uhc_root_default_state_reset while the controller lock is held.
+	 * Root-tier devices only; not used for hub-tier enumeration.
+	 */
+	int (*device_prepare)(const struct device *dev, struct usb_device *udev);
 };
 /**
  * @endcond
@@ -545,15 +638,16 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf);
 int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
- * @brief Remove a USB host controller transfers from queue
+ * @brief Remove a USB host controller transfer from the queue
  *
- * Not implemented yet.
+ * Cancel the transfer and wake the waiter with -ECONNRESET.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] xfer   Pointer to UHC transfer
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
+ * @retval -ENOENT HCD-specific: transfer is not active on the endpoint
  */
 int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
 
@@ -611,6 +705,97 @@ int uhc_disable(const struct device *dev);
  * @retval -EALREADY controller is already uninitialized
  */
 int uhc_shutdown(const struct device *dev);
+
+/**
+ * @brief Commit active endpoint state for @a udev to the host controller
+ *
+ * Call when the host stack has completed the active USB endpoint state for
+ * @a udev (descriptors parsed for the current configuration or alternate
+ * setting). The HCD applies that state and returns only when endpoints are
+ * ready for new transfers, or returns an error.
+ *
+ * @param dev  UHC device
+ * @param udev USB device with endpoint descriptors populated
+ *
+ * @return 0 on success or if the driver has no optional hook; negative errno on failure.
+ * @retval -EINVAL Invalid @a dev or @a udev
+ * @retval -EPERM controller is not initialized
+ */
+int uhc_endpoints_commit(const struct device *dev, struct usb_device *udev);
+
+/**
+ * @brief Recover an endpoint after a USB-level recovery event
+ *
+ * @param dev UHC device
+ * @param udev USB device
+ * @param ep Endpoint address affected by the recovery (0 to apply device-wide
+ *	     recovery where the HCD requires it)
+ * @param reason Host-visible recovery reason
+ *
+ * @retval 0 Endpoint ready for a new transfer, or hook not implemented
+ * @retval -EINVAL Invalid argument
+ * @retval -ENODEV Device disconnected
+ * @retval -ETIMEDOUT Recovery did not complete in bounded time
+ * @retval -EPERM Controller is not initialized
+ * @retval negative errno Endpoint cannot be reused safely
+ */
+int uhc_endpoint_recover(const struct device *dev, struct usb_device *udev, uint8_t ep,
+			 enum uhc_ep_recovery_reason reason);
+
+/**
+ * @brief Root default-state transition after root connect or port reset
+ *
+ * Serialize host-controller root reset and device preparation under one
+ * controller lock so no other UHC operation can interleave between physical
+ * port reset and default control-endpoint readiness.
+ *
+ * Root-tier @a udev only (@c udev->hub == NULL). Does not perform USB Chapter 9
+ * enumeration (no GET_DESCRIPTOR, SET_ADDRESS, or SET_CONFIGURATION).
+ *
+ * When both @c root_port_reset and @c device_prepare driver hooks are
+ * implemented, those run in order. Otherwise falls back to @ref uhc_bus_reset.
+ *
+ * @param dev UHC device
+ * @param udev Root USB device being enumerated
+ *
+ * @retval 0 Device is ready for DEFAULT-state control transfers
+ * @retval -EINVAL Invalid argument or hub-tier @a udev
+ * @retval -ENOTSUP No transition implementation on this controller
+ * @retval -EPERM Controller is not initialized
+ * @retval negative errno HCD failure from reset or preparation
+ */
+int uhc_root_default_state_reset(const struct device *dev, struct usb_device *udev);
+
+/**
+ * @brief Optional: allocate HCD resources for @a udev.
+ *
+ * @retval 0 Success or hook not implemented
+ * @retval negative errno HCD failure
+ */
+int uhc_device_alloc(const struct device *dev, struct usb_device *udev);
+
+/**
+ * @brief Optional: controller-managed USB device addressing.
+ *
+ * When implemented, the HCD assigns or reports the wire address in
+ * @a assigned_addr. When the hook is unset, returns @c -ENOTSUP and the host
+ * stack performs Chapter 9 SET_ADDRESS after allocating an address locally.
+ *
+ * @param assigned_addr Output USB address (1–127) on success
+ *
+ * @retval 0 Address assigned
+ * @retval -ENOTSUP Hook not implemented (use CH9 SET_ADDRESS)
+ * @retval negative errno HCD failure (no silent CH9 fallback)
+ */
+int uhc_device_address(const struct device *dev, struct usb_device *udev, uint8_t *assigned_addr);
+
+/**
+ * @brief Release HCD resources for @a udev on disconnect.
+ *
+ * @retval 0 Success or hook not implemented
+ * @retval negative errno HCD teardown failure
+ */
+int uhc_device_free(const struct device *dev, struct usb_device *udev);
 
 /**
  * @brief Get USB host controller capabilities

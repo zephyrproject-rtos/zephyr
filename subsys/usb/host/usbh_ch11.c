@@ -103,7 +103,7 @@ int usbh_req_desc_hub(struct usb_device *const udev,
 				      USB_REQTYPE_TYPE_CLASS << 5 |
 				      USB_REQTYPE_RECIPIENT_DEVICE;
 	const uint8_t bRequest = USB_HCREQ_GET_DESCRIPTOR;
-	const uint16_t wValue = USB_HUB_DESCRIPTOR_TYPE << 8;
+	const uint16_t wValue = USB_DT_HUB << 8;
 	struct net_buf *buf;
 	int ret;
 
