@@ -35,9 +35,10 @@ struct i2s_stm32_cfg {
 	void (*irq_config)(const struct device *dev);
 	bool master_clk_sel: 1;
 	bool ioswp: 1;
+	bool full_duplex: 1;
 };
 
-struct stream {
+struct i2s_stm32_stream {
 	int32_t state;
 	struct k_msgq *msgq;
 
@@ -54,15 +55,42 @@ struct stream {
 	void *mem_block;
 	bool last_block;
 	bool master;
-	int (*stream_start)(struct stream *, const struct device *dev);
-	void (*stream_disable)(struct stream *, const struct device *dev);
+	/* Full duplex only: the direction is enabled in the shared peripheral */
+	bool hw_active;
+	int (*stream_start)(struct i2s_stm32_stream *stream, const struct device *dev);
+	void (*stream_disable)(struct i2s_stm32_stream *stream, const struct device *dev);
 };
 
 /* Device run time data */
 struct i2s_stm32_data {
-	struct stream rx;
-	struct stream tx;
+	struct i2s_stm32_stream rx;
+	struct i2s_stm32_stream tx;
+	/* Both directions are configured with the same clock, format and role */
+	bool fd_configured;
+	/* Stop the RX when the TX drain is done (DRAIN on I2S_DIR_BOTH) */
+	bool rx_drain_with_tx;
+	/* The first direction of a joint start is armed, the peripheral is not enabled yet */
+	bool fd_arming;
+	/* The peripheral runs in full duplex mode, shared by both streams */
+	bool fd_active;
+	/* DMA source and target of an idle direction, see i2s_stm32_fd_idle_dma_start() */
+	uint32_t tx_idle_word;
+	uint32_t rx_idle_word;
 };
+
+/* Full duplex needs the SPI peripheral of the H7 family and its LL API */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s) && !defined(CONFIG_STM32_HAL2)
+#define I2S_STM32_HAS_FULL_DUPLEX 1
+#endif
+
+static inline uint32_t ll_i2s_is_enabled(SPI_TypeDef *i2s)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s) && !defined(CONFIG_STM32_HAL2)
+	return LL_SPI_IsEnabled(i2s);
+#else
+	return LL_I2S_IsEnabled(i2s);
+#endif
+}
 
 /* checks that DMA Tx packet is fully transmitted over the I2S */
 static inline uint32_t ll_i2s_dma_busy(SPI_TypeDef *i2s)

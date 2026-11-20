@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s3;
+		i2s-node1 = &i2s2;
+	};
+};
+
+/*
+ * i2s-node1 (I2S2) is the transmitter (controller), i2s-node0 (I2S3) the
+ * receiver (target).
+ * Wiring:
+ *   PD3  (I2S2_CK)  -> PC10 (I2S3_CK)
+ *   PB9  (I2S2_WS)  -> PA15 (I2S3_WS)
+ *   PB15 (I2S2_SDO) -> PC11 (I2S3_SDI)
+ */
+
+&dmamux1 {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&i2s2 {
+	pinctrl-0 = <&i2s2_ck_pd3 &i2s2_ws_pb9 &i2s2_sdo_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2s3 {
+	pinctrl-0 = <&i2s3_ck_pc10 &i2s3_ws_pa15 &i2s3_sdi_pc11>;
+	pinctrl-names = "default";
+	dmas = <&dmamux1 2 62 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&dmamux1 3 61 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	/* A target receiver takes its data from the MOSI line: receive on SDI */
+	ioswp;
+	status = "okay";
+};
+
+/* PB9 is I2C1_SDA on this board */
+&i2c1 {
+	status = "disabled";
+};
