@@ -388,7 +388,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 #define MSPI_DEVICE_CONFIG_SERIAL(n)                                                              \
 	{                                                                                         \
 		.ce_num             = DT_INST_PROP(n, mspi_hardware_ce_num),                      \
-		.freq               = 12000000,                                                   \
+		.freq               = MIN(12000000, DT_INST_PROP(n, mspi_max_frequency)),         \
 		.io_mode            = MSPI_IO_MODE_SINGLE,                                        \
 		.data_rate          = MSPI_DATA_RATE_SINGLE,                                      \
 		.cpp                = MSPI_CPP_MODE_0,                                            \
@@ -408,7 +408,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 #define MSPI_DEVICE_CONFIG_QUAD(n)                                                                \
 	{                                                                                         \
 		.ce_num             = DT_INST_PROP(n, mspi_hardware_ce_num),                      \
-		.freq               = 24000000,                                                   \
+		.freq               = MIN(24000000, DT_INST_PROP(n, mspi_max_frequency)),         \
 		.io_mode            = MSPI_IO_MODE_QUAD,                                          \
 		.data_rate          = MSPI_DATA_RATE_SINGLE,                                      \
 		.cpp                = MSPI_CPP_MODE_0,                                            \
