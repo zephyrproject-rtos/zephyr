@@ -118,11 +118,33 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	int ret = 0;
 	int detachstate;
 	struct timer_obj *timer;
+	bool default_evp_used = false;
+	struct sigevent default_evp;
 	const k_timeout_t alloc_timeout = K_MSEC(CONFIG_TIMER_CREATE_WAIT);
 
-	if (evp == NULL || timerid == NULL) {
+	if (timerid == NULL) {
 		errno = EINVAL;
 		return -1;
+	}
+
+	if ((clockid_t)(int)clockid != clockid || sys_clock_from_clockid((int)clockid) < 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (evp == NULL) {
+		/*
+		 * Under IEEE Std 1003.1-2017, NULL evp defaults to SIGEV_SIGNAL with
+		 * SIGALRM and timer ID. Note: asynchronous POSIX signal delivery is
+		 * not yet supported in Zephyr; timers created with NULL evp can be
+		 * polled via timer_gettime() and timer_getoverrun().
+		 */
+		default_evp = (struct sigevent){
+			.sigev_notify = SIGEV_SIGNAL,
+			.sigev_signo = SIGALRM,
+		};
+		evp = &default_evp;
+		default_evp_used = true;
 	}
 
 	if (k_mem_slab_alloc(&posix_timer_slab, (void **)&timer, alloc_timeout) != 0) {
@@ -192,6 +214,9 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	}
 
 	*timerid = (timer_t)timer;
+	if (default_evp_used) {
+		timer->evp.sigev_value.sival_ptr = (void *)timer;
+	}
 	goto out;
 
 free_timer:
@@ -212,7 +237,7 @@ int timer_gettime(timer_t timerid, struct itimerspec *its)
 	int32_t remaining, leftover;
 	int64_t   nsecs, secs;
 
-	if (timer == NULL) {
+	if (timer == NULL || its == NULL) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -245,7 +270,11 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 {
 	struct timer_obj *timer = (struct timer_obj *) timerid;
 	uint32_t duration;
-	if ((timer == NULL) || !timespec_is_valid(&value->it_interval) ||
+
+	if (timer == NULL || value == NULL || (flags & ~TIMER_ABSTIME) != 0 ||
+	    value->it_interval.tv_sec < 0 ||
+	    ((flags & TIMER_ABSTIME) == 0 && value->it_value.tv_sec < 0) ||
+	    !timespec_is_valid(&value->it_interval) ||
 	    !timespec_is_valid(&value->it_value)) {
 		errno = EINVAL;
 		return -1;
@@ -295,14 +324,20 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 int timer_getoverrun(timer_t timerid)
 {
 	struct timer_obj *timer = (struct timer_obj *) timerid;
+	uint32_t status;
+	int overruns;
 
 	if (timer == NULL) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	int overruns = k_timer_status_get(&timer->ztimer) - 1;
+	status = k_timer_status_get(&timer->ztimer);
+	if (status <= 1U) {
+		return 0;
+	}
 
+	overruns = (int)(status - 1U);
 	if (overruns > CONFIG_POSIX_DELAYTIMER_MAX) {
 		overruns = CONFIG_POSIX_DELAYTIMER_MAX;
 	}
