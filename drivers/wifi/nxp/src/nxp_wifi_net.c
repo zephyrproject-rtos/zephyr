@@ -90,10 +90,10 @@ enum netif_mac_filter_action {
 	NET_IF_ADD_MAC_FILTER = 1
 };
 
-static int igmp_mac_filter(const struct in_addr *group, enum netif_mac_filter_action action);
+static int igmp_mac_filter(const struct net_in_addr *group, enum netif_mac_filter_action action);
 
 #ifdef CONFIG_NXP_WIFI_IPV6
-static int mld_mac_filter(const struct in6_addr *group, enum netif_mac_filter_action action);
+static int mld_mac_filter(const struct net_in6_addr *group, enum netif_mac_filter_action action);
 #endif
 
 static int (*net_internal_rx_callback)(struct net_if *iface, struct net_pkt *pkt);
@@ -134,7 +134,7 @@ void deliver_packet_above(struct net_pkt *p, int recv_interface)
 	/* points to packet payload, which starts with an Ethernet header */
 	struct net_eth_hdr *ethhdr = NET_ETH_HDR(p);
 
-	switch (htons(ethhdr->type)) {
+	switch (net_htons(ethhdr->type)) {
 	case NET_ETH_PTYPE_IP:
 #ifdef CONFIG_NXP_WIFI_IPV6
 	case NET_ETH_PTYPE_IPV6:
@@ -180,16 +180,16 @@ void deliver_packet_above(struct net_pkt *p, int recv_interface)
 static inline net_sa_family_t get_packet_family(void)
 {
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
-	/* Fragmentation enabled: AF_INET ensures correct buffer sizing for large packets */
-	return AF_INET;
+	/* Fragmentation enabled: NET_AF_INET ensures correct buffer sizing for large packets */
+	return NET_AF_INET;
 #elif defined(CONFIG_NET_IPV6_FRAGMENT)
-	/* Fragmentation enabled: AF_INET6 ensures correct buffer sizing for large packets */
-	return AF_INET6;
+	/* Fragmentation enabled: NET_AF_INET6 ensures correct buffer sizing for large packets */
+	return NET_AF_INET6;
 #else
-	/* Fragmentation disabled: AF_UNSPEC avoids buffer calculation bug for 1488-1500 byte
+	/* Fragmentation disabled: NET_AF_UNSPEC avoids buffer calculation bug for 1488-1500 byte
 	 * packets
 	 */
-	return AF_UNSPEC;
+	return NET_AF_UNSPEC;
 #endif
 }
 
@@ -439,21 +439,21 @@ static void process_data_packet(const t_u8 *rcvdata, const t_u16 datalen)
 	/* points to packet payload, which starts with an Ethernet header */
 	struct net_eth_hdr *ethhdr = NET_ETH_HDR(p);
 
-	header_type = htons(ethhdr->type);
+	header_type = net_htons(ethhdr->type);
 
 	if (!memcmp(payload + SIZEOF_ETH_HDR, rfc1042_eth_hdr, sizeof(rfc1042_eth_hdr))) {
 		struct eth_llc_hdr *ethllchdr =
 			(struct eth_llc_hdr *)(void *)(payload + SIZEOF_ETH_HDR);
 
 		if (rxpd->rx_pkt_type == PKT_TYPE_AMSDU) {
-			header_type = htons(ethllchdr->type);
+			header_type = net_htons(ethllchdr->type);
 		} else {
 			/* Remove the LLC header if not the AMSDU packet */
 			ethhdr->type = ethllchdr->type;
 			(void)memmove(payload + SIZEOF_ETH_LLC_HDR, payload, SIZEOF_ETH_HDR);
 			net_buf_pull(p->frags, SIZEOF_ETH_LLC_HDR);
 			net_pkt_cursor_init(p);
-			header_type = htons(ethhdr->type);
+			header_type = net_htons(ethhdr->type);
 		}
 	}
 
@@ -524,7 +524,7 @@ void handle_deliver_packet_above(t_void *rxpd, t_u8 interface, t_void *pkt)
 bool wrapper_net_is_ip_or_ipv6(const t_u8 *buffer)
 {
 	struct net_eth_hdr *hdr = (struct net_eth_hdr *)buffer;
-	uint16_t type = ntohs(hdr->type);
+	uint16_t type = net_ntohs(hdr->type);
 
 	if ((type == NET_ETH_PTYPE_IP) || type == NET_ETH_PTYPE_IPV6) {
 		return true;
@@ -712,7 +712,7 @@ typedef struct group_ip4_addr {
 static group_ip4_addr_t *igmp_ip4_list;
 
 /* Callback called by net_mgmt to add or delete an entry in the multicast filter table */
-static int igmp_mac_filter(const struct in_addr *group, enum netif_mac_filter_action action)
+static int igmp_mac_filter(const struct net_in_addr *group, enum netif_mac_filter_action action)
 {
 	uint8_t mcast_mac[6];
 	int result;
@@ -720,7 +720,7 @@ static int igmp_mac_filter(const struct in_addr *group, enum netif_mac_filter_ac
 	group_ip4_addr_t *curr, *prev;
 
 	/* IPv4 to MAC conversion as per section 6.4 of rfc1112 */
-	wifi_get_ipv4_multicast_mac(ntohl(group->s_addr), mcast_mac);
+	wifi_get_ipv4_multicast_mac(net_ntohl(group->s_addr), mcast_mac);
 
 	switch (action) {
 	case NET_IF_ADD_MAC_FILTER:
@@ -773,8 +773,8 @@ static int igmp_mac_filter(const struct in_addr *group, enum netif_mac_filter_ac
 		curr = igmp_ip4_list;
 		while (curr != NULL) {
 			/* If other IP is mapped to same MAC than skip Multicast MAC removal */
-			if ((ntohl(curr->group_ip) & 0x7FFFFFU) ==
-			    (ntohl(group->s_addr) & 0x7FFFFFU)) {
+			if ((net_ntohl(curr->group_ip) & 0x7FFFFFU) ==
+			    (net_ntohl(group->s_addr) & 0x7FFFFFU)) {
 				result = WM_SUCCESS;
 				goto done;
 			}
@@ -807,7 +807,7 @@ typedef struct group_ip6_addr {
 static group_ip6_addr_t *mld_ip6_list;
 
 /* Callback called by net_mgmt to add or delete an entry in the IPv6 multicast filter table */
-static int mld_mac_filter(const struct in6_addr *group, enum netif_mac_filter_action action)
+static int mld_mac_filter(const struct net_in6_addr *group, enum netif_mac_filter_action action)
 {
 	uint8_t mcast_mac[6];
 	int result;
@@ -815,7 +815,7 @@ static int mld_mac_filter(const struct in6_addr *group, enum netif_mac_filter_ac
 	group_ip6_addr_t *curr, *prev;
 
 	/* IPv6 to MAC conversion as per section 7 of rfc2464 */
-	wifi_get_ipv6_multicast_mac(ntohl(group->s6_addr32[3]), mcast_mac);
+	wifi_get_ipv6_multicast_mac(net_ntohl(group->s6_addr32[3]), mcast_mac);
 
 	switch (action) {
 	case NET_IF_ADD_MAC_FILTER:
@@ -868,8 +868,8 @@ static int mld_mac_filter(const struct in6_addr *group, enum netif_mac_filter_ac
 		curr = mld_ip6_list;
 		while (curr != NULL) {
 			/* If other IP is mapped to same MAC than skip Multicast MAC removal */
-			if ((ntohl(curr->group_ip) & 0xFFFFFF) ==
-			    (ntohl(group->s6_addr32[3]) & 0xFFFFFF)) {
+			if ((net_ntohl(curr->group_ip) & 0xFFFFFF) ==
+			    (net_ntohl(group->s6_addr32[3]) & 0xFFFFFF)) {
 				result = WM_SUCCESS;
 				goto done;
 			}
@@ -1168,7 +1168,7 @@ int net_get_if_addr(struct net_ip_config *addr, void *intrfc_handle)
 			struct net_sockaddr *server_addr =
 				net_sad(&ctx->servers[i].dns_server_addr);
 
-			if (ctx->servers[i].dns_server_addr.ss_family == AF_INET) {
+			if (ctx->servers[i].dns_server_addr.ss_family == NET_AF_INET) {
 				if (i == 0) {
 					addr->ipv4.dns1 =
 						net_sin(server_addr)->sin_addr.s_addr;
@@ -1204,18 +1204,18 @@ char extra_info[NET_IPV6_ADDR_LEN];
 
 char *ipv6_addr_addr_to_desc(struct net_ipv6_config *ipv6_conf)
 {
-	struct in6_addr ip6_addr;
+	struct net_in6_addr ip6_addr;
 
 	(void)memcpy((void *)&ip6_addr, (const void *)ipv6_conf->address, sizeof(ip6_addr));
 
-	info = net_addr_ntop(AF_INET6, &ip6_addr, extra_info, NET_IPV6_ADDR_LEN);
+	info = net_addr_ntop(NET_AF_INET6, &ip6_addr, extra_info, NET_IPV6_ADDR_LEN);
 
 	return info;
 }
 
 char *ipv6_addr_type_to_desc(struct net_ipv6_config *ipv6_conf)
 {
-	struct in6_addr ip6_addr;
+	struct net_in6_addr ip6_addr;
 
 	(void)memcpy((void *)&ip6_addr, (const void *)ipv6_conf->address, sizeof(ip6_addr));
 
@@ -1326,7 +1326,7 @@ static void net_clear_ipv6_ll_address(void *intrfc_handle)
 	 * needed.
 	 */
 	if (IS_ENABLED(CONFIG_NET_NATIVE_IPV6)) {
-		struct in6_addr iid;
+		struct net_in6_addr iid;
 
 		net_ipv6_addr_create_iid(&iid, net_if_get_link_addr(iface));
 
