@@ -8,8 +8,8 @@ identifier: frdm_mcxw23
 name: NXP FRDM-MCXW23
 type: mcu
 arch: arm
-ram: 128
-flash: 1016
+ram: 112
+flash: 440
 toolchain:
   - zephyr
   - gnuarmemb
