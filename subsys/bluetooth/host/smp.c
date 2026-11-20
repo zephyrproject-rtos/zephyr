@@ -1742,8 +1742,13 @@ static int bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
-static bool br_sc_supported(void)
+bool bt_smp_br_supported(void)
 {
+	/* SMP over BR/EDR only derives keys for LE */
+	if (!BT_FEAT_LE(bt_dev.features)) {
+		return false;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR)) {
 		LOG_WRN("Enabling BR/EDR SMP without BR/EDR SC support");
 		return true;
@@ -1762,8 +1767,7 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		.recv = bt_smp_br_recv,
 	};
 
-	/* Check BR/EDR SC is supported */
-	if (!br_sc_supported()) {
+	if (!bt_smp_br_supported()) {
 		return -ENOTSUP;
 	}
 
@@ -1809,6 +1813,10 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 	uint8_t max_key_size;
 	struct bt_smp_br *smp;
 	uint8_t remote_fixed_chan;
+
+	if (!bt_smp_br_supported()) {
+		return -ENOTSUP;
+	}
 
 	remote_fixed_chan = bt_l2cap_br_get_remote_fixed_chan(conn);
 	if (!(remote_fixed_chan & BIT(BT_L2CAP_CID_BR_SMP))) {
@@ -3238,6 +3246,12 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	rsp->init_key_dist = (req->init_key_dist & RECV_KEYS);
 	rsp->resp_key_dist = (req->resp_key_dist & SEND_KEYS);
 
+	/* A link key is of no use with a Controller that lacks BR/EDR */
+	if (IS_ENABLED(CONFIG_BT_SMP_DERIVE_LK) && !BT_FEAT_BREDR(bt_dev.features)) {
+		rsp->init_key_dist &= ~BT_SMP_DIST_LINK_KEY;
+		rsp->resp_key_dist &= ~BT_SMP_DIST_LINK_KEY;
+	}
+
 	if ((rsp->auth_req & BT_SMP_AUTH_SC) &&
 	    (req->auth_req & BT_SMP_AUTH_SC)) {
 		atomic_set_bit(smp->flags, SMP_FLAG_SC);
@@ -3432,6 +3446,12 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 	if (req->auth_req & BT_SMP_AUTH_BONDING) {
 		req->init_key_dist = SEND_KEYS;
 		req->resp_key_dist = RECV_KEYS;
+
+		/* A link key is of no use with a Controller that lacks BR/EDR */
+		if (IS_ENABLED(CONFIG_BT_SMP_DERIVE_LK) && !BT_FEAT_BREDR(bt_dev.features)) {
+			req->init_key_dist &= ~BT_SMP_DIST_LINK_KEY;
+			req->resp_key_dist &= ~BT_SMP_DIST_LINK_KEY;
+		}
 	} else {
 		req->init_key_dist = 0;
 		req->resp_key_dist = 0;
