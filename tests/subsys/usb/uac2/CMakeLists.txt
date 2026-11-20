@@ -6,6 +6,7 @@ project(uac2)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/subsys/usb/device_next/class
+  ${ZEPHYR_BASE}/subsys/usb/common
 )
 
 FILE(GLOB app_sources src/*.c)
