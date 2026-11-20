@@ -182,9 +182,14 @@ SECTIONS {
     KEEP (*(.fw_ready_metadata))
   } >RAM
 
-  .noinit SEGSTART_UNCACHED : {
+  .noinit SEGSTART_UNCACHED (NOLOAD) : {
     *(.noinit)
     *(.noinit.*)
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
+    *(.llext_heap)
+    *(.llext_ext_heap)
+    *(.llext_metadata_heap)
+#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
   } >ucram
 
   .data SEGSTART_UNCACHED : {
