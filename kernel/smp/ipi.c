@@ -209,8 +209,14 @@ atomic_val_t ipi_mask_create(struct k_thread *thread)
 		}
 #endif
 
+		/*
+		 * An idle thread counts as preemptible. pm_system_suspend()
+		 * holds the scheduler lock on it while the CPU is in a PM
+		 * state, and only an interrupt ends that state.
+		 */
 		if ((z_sched_prio_cmp(cpu_thread, thread) < 0 &&
-		     thread_is_preemptible(cpu_thread)) ||
+		     (thread_is_preemptible(cpu_thread) ||
+		      z_is_idle_thread_object(cpu_thread))) ||
 		    thread_is_metairq(thread)) {
 			ipi_mask |= BIT(i);
 		}
