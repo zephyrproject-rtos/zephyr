@@ -25,11 +25,7 @@ This configuration provides support for:
 * ARM architected (Generic) timer
 * PL011 UART controller
 * SVE2 (Scalable Vector Extension 2)
-
-.. note::
-
-   The Ethos-U85 NPU is present in the FVP model but is not currently supported
-   by this board configuration.
+* Ethos-U85 NPU (256 MAC, cache-coherent via ACE)
 
 Hardware
 ********
@@ -62,6 +58,8 @@ The Corstone-1000-A320 FVP has the following memory layout for the host subsyste
 | GIC Redistributor| 0x1C040000        | 2 MB   |
 +------------------+-------------------+--------+
 | Host UART0       | 0x1A510000        | 4 KB   |
++------------------+-------------------+--------+
+| Ethos-U85 NPU    | 0x1A050000        | 16 KB  |
 +------------------+-------------------+--------+
 
 Boot Architecture
@@ -194,15 +192,20 @@ using the Iris debug interface.
    :kconfig:option:`CONFIG_UART_CONSOLE`. The FVP has
    semihosting enabled by default.
 
+Ethos-U85 NPU
+=============
+
+The Ethos-U85 NPU is enabled with :kconfig:option:`CONFIG_ETHOS_U`.  It
+connects to the host CPU via ACE (AXI Coherency Extensions), so hardware
+maintains cache coherency and no software cache maintenance is required
+(``CONFIG_ETHOS_U_DCACHE=n``).
+
 Known Limitations
 =================
 
 * **Linux/Unix host only** — the sysbuild integration uses POSIX shell
   utilities (``sh``, ``dd``, ``sgdisk``) to assemble the Secure Enclave
   flash image and is not currently supported on Windows hosts.
-
-* **Ethos-U85 NPU** — the NPU is present in the FVP model but is not
-  currently supported by Zephyr.
 
 * **mmap overlap warning** — ``mmap_add_region_check() failed. error -22``
   appears in TF-A BL2/BL31. This is a non-fatal Ethos-U85 memory map overlap

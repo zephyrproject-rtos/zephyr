@@ -10,6 +10,20 @@
 
 / {
 	model = "Arm Corstone-1000-A320 FVP";
+
+	ethosu {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-parent = <&gic>;
+
+		ethosu0: ethosu@1a050000 {
+			compatible = "arm,ethos-u";
+			reg = <0x1a050000 0x4000>;
+			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			status = "okay";
+		};
+	};
 };
 
 &cpu0 {

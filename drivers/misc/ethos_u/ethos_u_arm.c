@@ -8,6 +8,7 @@
 #include <zephyr/init.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/sys/device_mmio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
@@ -149,6 +150,20 @@ static inline void ethosu_ta_apply(const struct ethosu_ta_cfg *c)
 	sys_write32(c->histcnt, base + TA_HISTCNT);
 }
 
+struct ethosu_arm_config {
+	DEVICE_MMIO_ROM;
+	bool secure_enable;
+	bool privilege_enable;
+	void (*irq_config)(void);
+	const void *fast_mem_base;
+	size_t fast_mem_size;
+};
+
+struct ethosu_arm_data {
+	DEVICE_MMIO_RAM;
+	struct ethosu_driver drv;
+};
+
 /* DT helpers: use fast-memory-region if present; else NULL/0. */
 #define ETHOSU_FAST_BASE(n)                                                                        \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, fast_memory_region), \
@@ -162,7 +177,7 @@ static inline void ethosu_ta_apply(const struct ethosu_ta_cfg *c)
 
 void ethosu_zephyr_irq_handler(const struct device *dev)
 {
-	struct ethosu_data *data = dev->data;
+	struct ethosu_arm_data *data = dev->data;
 	struct ethosu_driver *drv = &data->drv;
 
 	ethosu_irq_handler(drv);
@@ -170,14 +185,16 @@ void ethosu_zephyr_irq_handler(const struct device *dev)
 
 static int ethosu_zephyr_init(const struct device *dev)
 {
-	const struct ethosu_dts_info *config = dev->config;
-	struct ethosu_data *data = dev->data;
+	const struct ethosu_arm_config *config = dev->config;
+	struct ethosu_arm_data *data = dev->data;
 	struct ethosu_driver *drv = &data->drv;
 	struct ethosu_driver_version version;
 
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
 	LOG_DBG("Ethos-U DTS info. base_address=%p, fast_mem=%p, fast_size=%zu, secure_enable=%u, "
 		"privilege_enable=%u",
-		config->base_addr, config->fast_mem_base, config->fast_mem_size,
+		(void *)DEVICE_MMIO_GET(dev), config->fast_mem_base, config->fast_mem_size,
 		config->secure_enable, config->privilege_enable);
 
 	ethosu_get_driver_version(&version);
@@ -189,8 +206,8 @@ static int ethosu_zephyr_init(const struct device *dev)
 		ethosu_ta_apply(&g_ta_cfgs[i]);
 	}
 
-	if (ethosu_init(drv, config->base_addr, config->fast_mem_base, config->fast_mem_size,
-			config->secure_enable, config->privilege_enable)) {
+	if (ethosu_init(drv, (void *)DEVICE_MMIO_GET(dev), config->fast_mem_base,
+			config->fast_mem_size, config->secure_enable, config->privilege_enable)) {
 		LOG_ERR("Failed to initialize NPU with ethosu_init().");
 		return -EINVAL;
 	}
@@ -201,7 +218,7 @@ static int ethosu_zephyr_init(const struct device *dev)
 }
 
 #define ETHOSU_DEVICE_INIT(n)                                                                      \
-	static struct ethosu_data ethosu_data_##n;                                                 \
+	static struct ethosu_arm_data ethosu_data_##n;                                             \
                                                                                                    \
 	static void ethosu_zephyr_irq_config_##n(void)                                             \
 	{                                                                                          \
@@ -210,8 +227,8 @@ static int ethosu_zephyr_init(const struct device *dev)
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
                                                                                                    \
-	static const struct ethosu_dts_info ethosu_dts_info_##n = {                                \
-		.base_addr = (void *)DT_INST_REG_ADDR(n),                                          \
+	static const struct ethosu_arm_config ethosu_config_##n = {                                \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.secure_enable = DT_INST_PROP(n, secure_enable),                                   \
 		.privilege_enable = DT_INST_PROP(n, privilege_enable),                             \
 		.irq_config = &ethosu_zephyr_irq_config_##n,                                       \
@@ -219,7 +236,7 @@ static int ethosu_zephyr_init(const struct device *dev)
 		.fast_mem_size = ETHOSU_FAST_SIZE(n),                                              \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, ethosu_zephyr_init, NULL, &ethosu_data_##n, &ethosu_dts_info_##n, \
+	DEVICE_DT_INST_DEFINE(n, ethosu_zephyr_init, NULL, &ethosu_data_##n, &ethosu_config_##n,   \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(ETHOSU_DEVICE_INIT);
