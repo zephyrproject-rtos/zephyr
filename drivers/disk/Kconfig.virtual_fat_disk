@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_DRIVER_VIRTUAL_FAT
+	bool "Virtual FAT disk"
+	depends on DT_HAS_ZEPHYR_VIRTUAL_FAT_DISK_ENABLED
+	select VIRTUAL_FAT
+	default y
+
+if DISK_DRIVER_VIRTUAL_FAT
+
+module = VIRTUAL_FAT_DISK
+module-str = virtual_fat_disk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_VIRTUAL_FAT
