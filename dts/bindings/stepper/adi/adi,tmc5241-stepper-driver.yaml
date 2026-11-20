@@ -1,0 +1,25 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADI/Trinamic TMC5241/TMC2241 "stepper-driver" child node - implements
+  Zephyr's stepper.h hardware driver API. Identical for both parent chips
+  (CHOPCONF/COOLCONF/DRVSTATUS layout matches), so this binding and its
+  driver source (tmc5241_stepper_driver.c) are shared.
+
+compatible: "adi,tmc5241-stepper-driver"
+
+include:
+  - name: stepper-driver.yaml
+  - name: adi,trinamic-stallguard.yaml
+    property-allowlist:
+      - stallguard2-threshold
+
+properties:
+  toff:
+    type: int
+    default: 5
+    description: |
+      CHOPCONF.TOFF [3:0], off time / driver enable setting (0 = disabled).
+      Must be a DT property, not hardcoded - stepper_enable() restores this
+      value, stepper_disable() writes 0.

@@ -1,0 +1,29 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADI/Trinamic TMC5241 "stepper-ctrl" child node - implements Zephyr's
+  stepper_ctrl.h motion controller API. TMC5241 only: never instantiated
+  under an adi,tmc2241 parent (no ramp generator hardware to back it).
+
+compatible: "adi,tmc5241-stepper-ctrl"
+
+include:
+  - name: adi,trinamic-ramp-generator.yaml
+    property-allowlist:
+      - vstart
+      - a1
+      - v1
+      - amax
+      - vmax
+      - dmax
+      - d1
+      - vstop
+      - tzerowait
+      - thigh
+      - tcoolthrs
+      - tpwmthrs
+      - tpowerdown
+      - ihold
+      - irun
+      - iholddelay

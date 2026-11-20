@@ -1,0 +1,75 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADI/Trinamic TMC5241 Stepper Motor Controller (UART single-wire mode)
+
+  This binding supports the single-wire UART mode where:
+  - SWIOP is connected to the MCU's UART TX/RX pin
+  - SWION should be connected to half the IO level voltage (1.65V for 3.3V systems)
+  - SW_SEL must be HIGH (either via GPIO control or hardwired)
+
+compatible: "adi,tmc5241"
+
+include: [uart-device.yaml, "adi,tmc5241-base.yaml"]
+
+properties:
+  sw-sel-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the SW_SEL pin of TMC5241.
+      Must be set HIGH for UART mode operation.
+      If not provided, it's assumed SW_SEL is hardwired to VCC/HIGH.
+
+  uart-device-addr:
+    type: int
+    description: |
+      UART device address for TMC5241 in UART mode.
+    min: 0
+    max: 253
+
+examples:
+  - |
+    &uart2 {
+        current-speed = <115200>;
+        status = "okay";
+
+        tmc5241: tmc5241 {
+            compatible = "adi,tmc5241";
+            sw-sel-gpios = <&gpiob 0x01 GPIO_ACTIVE_HIGH>;
+
+            /* Common settings from base binding */
+            clock-frequency = <DT_FREQ_M(12)>;
+            en-pwm-mode;
+            shaft;
+
+            tmc5241_stepper_driver: stepper-driver {
+                compatible = "adi,tmc5241-stepper-driver";
+                micro-step-res = <256>;
+
+                /* ADI TMC stallguard settings specific to TMC5241 */
+                stallguard2-threshold = <9>;
+            };
+
+            tmc5241_stepper_ctrl: stepper-ctrl {
+              compatible = "adi,tmc5241-stepper-ctrl";
+
+              /* ADI TMC ramp generator as well as current settings */
+              vstart = <10>;
+              a1 = <20>;
+              v1 = <30>;
+              d1 = <40>;
+              vmax = <50>;
+              amax = <60>;
+              dmax = <70>;
+              tzerowait = <80>;
+              thigh = <90>;
+              tcoolthrs = <100>;
+              tpwmthrs = <110>;
+              tpowerdown = <120>;
+              ihold = <1>;
+              irun = <2>;
+              iholddelay = <3>;
+            };
+        };
+    };
