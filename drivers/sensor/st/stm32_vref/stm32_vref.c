@@ -205,23 +205,6 @@ static int stm32_vref_init(const struct device *dev)
 	return 0;
 }
 
-/**
- * Verify that the ADC instance which this driver uses to measure internal
- * voltage reference is enabled. On STM32 MCUs with more than one ADC, it is
- * possible to compile this driver even if the ADC used for measurement is
- * disabled. In such cases, fail build with an explicit error message.
- */
-#if !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0))
-
-/* Use BUILD_ASSERT to get preprocessing on the message */
-BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed by "
-		"Vref sensor '" DT_NODE_FULL_NAME(DT_DRV_INST(0)) "' is not enabled");
-
-/* To reduce noise in the compiler error log, do not attempt
- * to instantiate device if the sensor's ADC is not enabled.
- */
-#else
-
 #if defined(CONFIG_STM32_VREF_READ_CALIB_VIA_NVMEM)
 #define VREFINT_CAL_INIT(inst) NVMEM_CELL_INST_GET_BY_IDX(inst, 0)
 #else
@@ -232,27 +215,42 @@ BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed
 	VREFINT_CAL_INIT_INNER(DT_INST_NVMEM_CELL(inst))
 #endif /* CONFIG_STM32_VREF_READ_CALIB_VIA_NVMEM */
 
-static struct stm32_vref_data stm32_vref_dev_data;
+#define STM32_VREF_DEFINE(inst)									\
+	BUILD_ASSERT(DT_INST_PROP(inst, vrefint_cal_resolution) >= MEAS_RES,			\
+		"VREFINT calibration resolution is too low");					\
+												\
+	static struct stm32_vref_data stm32_vref_dev_data_##inst;				\
+												\
+	static const struct stm32_vref_config stm32_vref_dev_config_##inst = {			\
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),				\
+		.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(inst)),		\
+		.adc_cfg = {.gain = ADC_GAIN_1,							\
+			    .reference = ADC_REF_INTERNAL,					\
+			    .acquisition_time = ADC_ACQ_TIME_MAX,				\
+			    .channel_id = DT_INST_IO_CHANNELS_INPUT(inst),			\
+			    .differential = 0},							\
+												\
+		.vrefint_cal = VREFINT_CAL_INIT(inst),						\
+		.cal_mv = DT_INST_PROP(inst, vrefint_cal_mv),					\
+		.cal_shift = (DT_INST_PROP(inst, vrefint_cal_resolution) - MEAS_RES),		\
+	};											\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, stm32_vref_init, NULL,				\
+				     &stm32_vref_dev_data_##inst,				\
+				     &stm32_vref_dev_config_##inst,				\
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
+				     &stm32_vref_driver_api);
 
-static const struct stm32_vref_config stm32_vref_dev_config = {
-	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
-	.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(0)),
-	.adc_cfg = {.gain = ADC_GAIN_1,
-		    .reference = ADC_REF_INTERNAL,
-		    .acquisition_time = ADC_ACQ_TIME_MAX,
-		    .channel_id = DT_INST_IO_CHANNELS_INPUT(0),
-		    .differential = 0},
+/*
+ * Wrapper which prevents expansion of STM32_VREF_DEFINE() if the corresponding ADC
+ * is not enabled to reduce noise in the compiler error, ensuring only a clear error
+ * message is shown instead.
+ */
+#define STM32_VREF_DEFINE_OR_BUILD_ERROR(inst)							\
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(inst)),			\
+		(STM32_VREF_DEFINE(inst)),							\
+		(BUILD_ASSERT(0,								\
+			"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(inst)) "' needed by "\
+			"Vref sensor '" DT_NODE_FULL_NAME(DT_DRV_INST(inst)) "' is not enabled"	\
+		);))
 
-	.vrefint_cal = VREFINT_CAL_INIT(0),
-	.cal_mv = DT_INST_PROP(0, vrefint_cal_mv),
-	.cal_shift = (DT_INST_PROP(0, vrefint_cal_resolution) - MEAS_RES),
-};
-
-/* Make sure no series with unsupported configuration can be added silently */
-BUILD_ASSERT(DT_INST_PROP(0, vrefint_cal_resolution) >= MEAS_RES,
-	"VREFINT calibration resolution is too low");
-
-SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_vref_init, NULL, &stm32_vref_dev_data, &stm32_vref_dev_config,
-			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &stm32_vref_driver_api);
-
-#endif /* !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0)) */
+DT_INST_FOREACH_STATUS_OKAY(STM32_VREF_DEFINE_OR_BUILD_ERROR)
