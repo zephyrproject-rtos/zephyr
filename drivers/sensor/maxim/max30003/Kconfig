@@ -1,0 +1,49 @@
+# Copyright (c) 2026 Nainaiu Rakhaine
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MAX30003
+	bool "MAX30003 ECG analog front end"
+	default y
+	depends on DT_HAS_MAXIM_MAX30003_ENABLED
+	select SPI
+	select PWM if $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX30003),pwms)
+	help
+	  Driver for the Maxim (ADI) MAX30003.
+
+if MAX30003
+
+choice MAX30003_TRIGGER_MODE
+	prompt "Trigger mode"
+	default MAX30003_TRIGGER_NONE
+	help
+	  How the interrupt pin is handled.
+
+config MAX30003_TRIGGER_NONE
+	bool "No trigger"
+
+config MAX30003_TRIGGER_GLOBAL_THREAD
+	bool "Use global (system work queue) thread"
+	depends on GPIO
+	select MAX30003_TRIGGER
+
+config MAX30003_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select MAX30003_TRIGGER
+
+endchoice
+
+config MAX30003_TRIGGER
+	bool
+
+config MAX30003_THREAD_PRIORITY
+	int "Thread priority"
+	depends on MAX30003_TRIGGER_OWN_THREAD
+	default 10
+
+config MAX30003_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on MAX30003_TRIGGER_OWN_THREAD
+	default 1024
+
+endif # MAX30003
