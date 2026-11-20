@@ -351,8 +351,7 @@ static int mld_send(struct net_pkt *pkt)
 		net_stats_update_icmp_drop(iface);
 		net_stats_update_ipv6_mld_drop(iface);
 
-		net_pkt_unref(pkt);
-
+		/* Caller unrefs pkt via its drop label. */
 		return ret;
 	}
 
