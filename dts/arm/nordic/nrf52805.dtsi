@@ -7,6 +7,8 @@
 #include <arm/armv7-m.dtsi>
 #include <nordic/nrf_common.dtsi>
 #include <zephyr/dt-bindings/adc/nrf-saadc.h>
+#include <zephyr/dt-bindings/misc/nordic-nrf-ain.h>
+#include <nrfx_analog/nrf52805_ain.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 / {
@@ -34,6 +36,11 @@
 			startup-time-us = <1400>;
 			#clock-cells = <0>;
 		};
+	};
+
+	nrf_ain: analog-inputs {
+		compatible = "nordic,nrf-ain";
+		ain-gpios = <NRF_AIN_DT_GPIOS>;
 	};
 
 	soc {
