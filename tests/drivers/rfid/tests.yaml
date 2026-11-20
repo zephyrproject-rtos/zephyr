@@ -1,0 +1,8 @@
+tests:
+  drivers.rfid.cr95hf:
+    tags:
+      - drivers
+      - rfid
+    harness: ztest
+    platform_allow:
+      - native_sim
