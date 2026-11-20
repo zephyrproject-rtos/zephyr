@@ -12,5 +12,6 @@ moving data efficiently between application code and hardware.
 
    console.rst
    input/index.rst
+   rc/index.rst
    rtio/index.rst
    formatted_output.rst

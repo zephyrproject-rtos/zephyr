@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infrared LED driven by a PWM output. The PWM generates the carrier and
+  a counter alarm switches it on and off at each pulse and space edge.
+
+compatible: "pwm-ir-transmitter"
+
+include:
+  - name: rc-device.yaml
+    property-blocklist:
+      - protocols
+      - rx-timeout-us
+
+properties:
+  pwms:
+    type: phandle-array
+    required: true
+    description: |
+      PWM output driving the LED, one entry. The period in the
+      specifier is not used: the carrier comes from carrier-hz and
+      duty-cycle-percent, or from the protocol.
+
+  counter:
+    type: phandle
+    required: true
+    description: |
+      Counter timing the edges. Its frequency sets the edge resolution,
+      1 MHz or more is recommended.
+
+  counter-channel:
+    type: int
+    default: 0
+    description: Counter alarm channel used for the edges.
