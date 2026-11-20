@@ -30,6 +30,14 @@ config SENSOR_ASYNC_API
 	help
 	  Enables the asynchronous sensor API by leveraging the RTIO subsystem.
 
+config EMUL_SENSOR_REGMAP
+	bool "Register map based sensor emulators"
+	default y
+	depends on EMUL && I2C
+	help
+	  Enable I2C sensor emulators described by register and channel tables.
+	  These implement register access and sample encoding for driver tests.
+
 config SENSOR_SHELL
 	bool "Sensor shell"
 	depends on SHELL

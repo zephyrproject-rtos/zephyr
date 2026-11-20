@@ -84,6 +84,11 @@ Available Emulators
   * Main Kconfig option: :kconfig:option:`CONFIG_RTC_EMUL`
   * DT binding: :dtcompatible:`zephyr,rtc-emul`
 
+**Sensor register map emulators**
+  * I2C sensor models described by register and channel tables. See
+    :ref:`register map emulators <sensor-emulators>`.
+  * Main Kconfig option: :kconfig:option:`CONFIG_EMUL_SENSOR_REGMAP`
+
 **SPI emulator**
   * Emulated SPI bus. See :ref:`bus emulators <bus_emul>`.
   * Main Kconfig option: :kconfig:option:`CONFIG_SPI_EMUL`
