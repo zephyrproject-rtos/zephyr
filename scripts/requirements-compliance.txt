@@ -16,6 +16,7 @@ reuse>=6.3.0
 ruff==0.14.2
 sphinx-lint
 tabulate
+tree-sitter-c
 tree-sitter-cmake
 tree-sitter>=0.23,<0.26
 unidiff
