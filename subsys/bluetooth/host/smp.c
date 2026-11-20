@@ -294,6 +294,9 @@ static bool bondable = IS_ENABLED(CONFIG_BT_BONDABLE);
 static bool sc_oobd_present;
 static bool legacy_oobd_present;
 static bool sc_supported;
+/* Set by bt_smp_pkey_ready() and, never to NULL, by smp_init(); cleared by
+ * bt_smp_init()
+ */
 static const uint8_t *sc_public_key;
 
 static void bt_smp_pkey_ready(const uint8_t *pkey);
@@ -2895,7 +2898,15 @@ static int smp_init(struct bt_smp *smp)
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 
 #if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
-	sc_public_key = bt_pub_key_get();
+	/* Takes a key that bt_smp_pkey_ready() has not been given, such as
+	 * one generated after bt_disable(), but never NULL: the key may have
+	 * been delivered since it was read.
+	 */
+	const uint8_t *pkey = bt_pub_key_get();
+
+	if (pkey != NULL) {
+		sc_public_key = pkey;
+	}
 #endif
 
 	return 0;
@@ -4953,7 +4964,7 @@ static void bt_smp_pkey_ready(const uint8_t *pkey)
 		struct bt_smp *smp = &bt_smp_pool[i];
 		uint8_t err;
 
-		if (!atomic_test_bit(smp->flags, SMP_FLAG_PKEY_SEND)) {
+		if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_PKEY_SEND)) {
 			continue;
 		}
 
@@ -6014,19 +6025,26 @@ int bt_smp_le_oob_set_tk(struct bt_conn *conn, const uint8_t *tk)
 
 int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 {
+	const uint8_t *pkey;
 	int err;
 
 	if (!le_sc_supported()) {
 		return -ENOTSUP;
 	}
 
-	if (!sc_public_key) {
+	/* The key is taken from ecc.c: sc_public_key is set only when
+	 * bt_smp_pkey_ready() runs, after the publication, and until then
+	 * still points to the key of a previous enable.
+	 */
+	pkey = bt_pub_key_get();
+	if (pkey == NULL) {
 		/* Public key request has not been finished yet, or finished, but generation failed.
 		 * Retrying.
 		 */
 		err = k_mutex_lock(&pub_key_gen.lock, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
 
+		/* A key published since is kept, and -EALREADY returned */
 		err = bt_pub_key_gen(&pub_key_gen.cb);
 		if (err && err != -EALREADY) {
 			LOG_WRN("Public key re-generation request failed (%d)", err);
@@ -6039,28 +6057,44 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 			return err;
 		}
 
-		/* 30 seconds is an arbitrary number. Increase if fails earlier on certain
-		 * platforms.
-		 */
-		err = k_condvar_wait(&pub_key_gen.condvar,
-				     &pub_key_gen.lock,
-				     K_SECONDS(30));
-		if (err != 0) {
-			LOG_WRN("Public key generation timeout");
-
+		pkey = bt_pub_key_get();
+		if (pkey == NULL && bt_is_work_thread()) {
+			/* The key is delivered on this thread, so waiting
+			 * for it here could only time out.
+			 */
 			__maybe_unused int mutex_err;
 
 			mutex_err = k_mutex_unlock(&pub_key_gen.lock);
 			__ASSERT_NO_MSG(mutex_err == 0);
 
-			return err;
+			return -EAGAIN;
+		}
+
+		if (pkey == NULL) {
+			/* 30 seconds is an arbitrary number. Increase if fails earlier on certain
+			 * platforms.
+			 */
+			err = k_condvar_wait(&pub_key_gen.condvar, &pub_key_gen.lock,
+					     K_SECONDS(30));
+			if (err != 0) {
+				LOG_WRN("Public key generation timeout");
+
+				__maybe_unused int mutex_err;
+
+				mutex_err = k_mutex_unlock(&pub_key_gen.lock);
+				__ASSERT_NO_MSG(mutex_err == 0);
+
+				return err;
+			}
+
+			pkey = bt_pub_key_get();
 		}
 
 		err = k_mutex_unlock(&pub_key_gen.lock);
 		__ASSERT_NO_MSG(err == 0);
 
 		/* Public key has been re-requested but generation failed. */
-		if (!sc_public_key) {
+		if (pkey == NULL) {
 			return -EAGAIN;
 		}
 	}
@@ -6079,8 +6113,7 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 		}
 	}
 
-	err = bt_crypto_f4(sc_public_key, sc_public_key, le_sc_oob->r, 0,
-		     le_sc_oob->c);
+	err = bt_crypto_f4(pkey, pkey, le_sc_oob->r, 0, le_sc_oob->c);
 	if (err) {
 		return err;
 	}
@@ -6248,8 +6281,14 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 			return legacy_send_pairing_confirm(smp);
 		}
 
-		if (!sc_public_key) {
-			atomic_set_bit(smp->flags, SMP_FLAG_PKEY_SEND);
+		/* This runs in the application's thread, and the key may be
+		 * delivered at any point here: the flag is set first, and
+		 * whichever of this and bt_smp_pkey_ready() clears it sends
+		 * the key.
+		 */
+		atomic_set_bit(smp->flags, SMP_FLAG_PKEY_SEND);
+		if (sc_public_key == NULL ||
+		    !atomic_test_and_clear_bit(smp->flags, SMP_FLAG_PKEY_SEND)) {
 			return 0;
 		}
 
@@ -6477,6 +6516,10 @@ int bt_smp_init(void)
 	LOG_DBG("LE SC %s", sc_supported ? "enabled" : "disabled");
 
 	if (!IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		/* The key of a previous bt_enable() is regenerated: until the
+		 * new one is there, it is not to be used.
+		 */
+		sc_public_key = NULL;
 		bt_pub_key_gen(&pub_key_gen.cb);
 	}
 
