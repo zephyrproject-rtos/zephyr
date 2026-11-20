@@ -55,3 +55,34 @@ tests:
   keyvalstorage.zms.mcxw71_sim:
     extra_args: DTC_OVERLAY_FILE=boards/qemu_x86_mcxw71.overlay
     platform_allow: qemu_x86
+  keyvalstorage.zms.physical_delete:
+    extra_configs:
+      - CONFIG_ZMS_PHYSICAL_DELETE=y
+      - CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=y
+      - CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES=y
+    platform_allow:
+      - native_sim
+  keyvalstorage.zms.physical_delete_cache:
+    extra_configs:
+      - CONFIG_ZMS_PHYSICAL_DELETE=y
+      - CONFIG_ZMS_LOOKUP_CACHE=y
+      - CONFIG_ZMS_LOOKUP_CACHE_SIZE=64
+      - CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=y
+      - CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES=y
+    platform_allow:
+      - native_sim
+  keyvalstorage.zms.physical_delete_no_erase:
+    extra_configs:
+      - CONFIG_ZMS_PHYSICAL_DELETE=y
+      - CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=n
+      - CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES=y
+    platform_allow:
+      - native_sim
+  keyvalstorage.zms.physical_delete_id_64bit:
+    extra_configs:
+      - CONFIG_ZMS_PHYSICAL_DELETE=y
+      - CONFIG_ZMS_ID_64BIT=y
+      - CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=y
+      - CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES=y
+    platform_allow:
+      - native_sim
