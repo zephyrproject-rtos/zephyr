@@ -1,0 +1,7 @@
+tests:
+  include.zephyr.zerror:
+    integration_platforms:
+      - qemu_cortex_m3
+      - native_sim
+    harness: ztest
+    tags: zerror
