@@ -9,20 +9,28 @@
 #include "arduino_r3_connector.dtsi"
 
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 
 / {
 	compatible = "st,stm32h7p5i-dk";
 	model = "STMicroelectronics STM32H7P5I-DISCOVERY KIT board";
 
 	aliases {
+		die-temp0 = &die_temp;
 		led0 = &green_led;
 		led1 = &red_led;
 		led2 = &blue_led;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &blue_pwm_led;
+		rtc = &rtc;
 		sw0 = &user_button;
+		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat;
 	};
 
 	chosen {
 		zephyr,console = &usart2;
+		zephyr,display = &gjx_2864tswbg09;
 		zephyr,shell-uart = &usart2;
 	};
 
@@ -52,6 +60,21 @@
 		blue_led: led_2 {
 			gpios = <&gpioh 5 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		/* LD1 not present here as no PWM-capable pin is wired to it */
+
+		red_pwm_led: led_1_pwm {
+			pwms = <&pwm20 2 PWM_MSEC(20)
+				(PWM_POLARITY_NORMAL | STM32_PWM_COMPLEMENTARY)>;
+		};
+
+		blue_pwm_led: led_2_pwm {
+			pwms = <&pwm17 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 };
@@ -141,5 +164,103 @@
 	pinctrl-0 = <&uart4_rx_ph14 &uart4_tx_ph13>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
+};
+
+&spi5 {
+	/* Arduino D10 (NSS) / D11 (MOSI) / D12 (MISO) / D13 (SCK) */
+	pinctrl-0 = <&spi5_nss_ph9 &spi5_mosi_ph8 &spi5_miso_ph7 &spi5_sck_ph6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c2 {
+	/* Arduino D14 (SCL) / D15 (SDA) */
+	pinctrl-0 = <&i2c2_scl_pi2 &i2c2_sda_pb8>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pg9 &spi1_mosi_pg5>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiog 4 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	/*
+	 * The on-board display (GJX-2864TSWBG09) uses an ST7315 driver IC
+	 * which behaves identically to an SSD1306, so use that as compatible.
+	 */
+	gjx_2864tswbg09: display@0 {
+		compatible = "solomon,ssd1306";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		width = <128>;
+		height = <64>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+
+		data-cmd-gpios = <&gpiog 6 0>;
+		reset-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+/* User LEDs PWM */
+&timers17 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm17: pwm {
+		pinctrl-0 = <&tim17_ch1_ph5>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timers20 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm20: pwm {
+		pinctrl-0 = <&tim20_ch2n_pg1>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+/* ADC1 - used by analog sensors */
+&adc12_common {
+	/* adc_ker_ck = HCLK/4 = 260 MHz / 4 = 65 MHz */
+	clocks = <&rcc STM32_CLOCK(AHB3, 24)>,
+		 <&rcc (STM32_SRC_HCLK3 | STM32_CLOCK_DIV(4)) ADC_SEL(0)>,
+		 <&rcc (STM32_SRC_HCLK3 | STM32_CLOCK_DIV(4)) ADCDIV(2)>;
+	clock-names = "adcx", "adc_ker", "adc_pre";
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+};
+
+&vref1 {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };

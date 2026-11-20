@@ -36,4 +36,8 @@
 	};
 };
 
+arduino_i2c: &i2c2 {};
+
 arduino_serial: &uart4 {};
+
+arduino_spi: &spi5 {};
