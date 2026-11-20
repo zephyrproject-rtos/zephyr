@@ -99,6 +99,32 @@ int wiznet_writebuf(const struct device *dev, uint16_t offset, uint8_t *buf, siz
 	return wiznet_write(dev, mem_start, buf + len, remain);
 }
 
+static int wiznet_wait_sendok(const struct device *dev)
+{
+	const struct wiznet_config *cfg = dev->config;
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(WIZNET_TX_TIMEOUT_MS));
+	uint8_t ir;
+	int ret;
+
+	while (true) {
+		ret = wiznet_read(dev, cfg->regs->s0_ir, &ir, 1);
+		if (ret < 0) {
+			return ret;
+		}
+		if ((ir & WIZNET_S0_IR_SENDOK) != 0U) {
+			break;
+		}
+		if (sys_timepoint_expired(end)) {
+			return -EIO;
+		}
+		k_busy_wait(WIZNET_CMD_POLL_DELAY_US);
+	}
+
+	ir = WIZNET_S0_IR_SENDOK;
+
+	return wiznet_write(dev, cfg->regs->s0_irclr, &ir, 1);
+}
+
 int wiznet_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct wiznet_config *cfg = dev->config;
@@ -127,14 +153,14 @@ int wiznet_tx(const struct device *dev, struct net_pkt *pkt)
 	wiznet_write(dev, cfg->regs->s0_tx_wr, off, 2);
 
 	wiznet_command(dev, WIZNET_S0_CR_SEND);
-	if (k_sem_take(&ctx->tx_sem, K_MSEC(WIZNET_TX_TIMEOUT_MS))) {
-		return -EIO;
-	}
 
-	return 0;
+	/* Wait here, not for the interrupt. The interrupt thread sends too,
+	 * for example a TCP ACK, and cannot handle SENDOK while it waits.
+	 */
+	return wiznet_wait_sendok(dev);
 }
 
-void wiznet_rx(const struct device *dev)
+bool wiznet_rx(const struct device *dev)
 {
 	const struct wiznet_config *cfg = dev->config;
 	struct wiznet_runtime *ctx = dev->data;
@@ -149,25 +175,25 @@ void wiznet_rx(const struct device *dev)
 	uint16_t reader;
 
 	if (wiznet_read(dev, cfg->regs->s0_rx_rsr, tmp, 2) < 0) {
-		return;
+		return false;
 	}
 	rx_buf_len = sys_get_be16(tmp);
 
 	if (rx_buf_len == 0) {
-		return;
+		return false;
 	}
 
 	if (wiznet_read(dev, cfg->regs->s0_rx_rd, tmp, 2) < 0) {
-		return;
+		return false;
 	}
 	off = sys_get_be16(tmp);
 
 	if (wiznet_readbuf(dev, off, header, 2) < 0) {
-		return;
+		return false;
 	}
 	if (sys_get_be16(header) <= 2U) {
 		LOG_ERR("%s: invalid header size %u", dev->name, sys_get_be16(header));
-		return;
+		return false;
 	}
 	rx_len = sys_get_be16(header) - 2;
 
@@ -175,7 +201,7 @@ void wiznet_rx(const struct device *dev)
 					   K_MSEC(CONFIG_ETH_WIZNET_TIMEOUT));
 	if (!pkt) {
 		eth_stats_update_errors_rx(ctx->iface);
-		return;
+		return false;
 	}
 
 	pkt_buf = pkt->buffer;
@@ -201,7 +227,7 @@ void wiznet_rx(const struct device *dev)
 		if (wiznet_readbuf(dev, reader, data_ptr, frame_len) < 0) {
 			eth_stats_update_errors_rx(ctx->iface);
 			net_pkt_unref(pkt);
-			return;
+			return false;
 		}
 		net_buf_add(pkt_buf, frame_len);
 		reader += (uint16_t)frame_len;
@@ -217,12 +243,13 @@ void wiznet_rx(const struct device *dev)
 	sys_put_be16(off + 2 + rx_len, tmp);
 	wiznet_write(dev, cfg->regs->s0_rx_rd, tmp, 2);
 	wiznet_command(dev, WIZNET_S0_CR_RECV);
+
+	return true;
 }
 
 static uint8_t wiznet_check_for_ir(const struct device *dev)
 {
 	const struct wiznet_config *cfg = dev->config;
-	struct wiznet_runtime *ctx = dev->data;
 	uint8_t ir;
 
 	if (cfg->ops->clear_pending != NULL) {
@@ -233,17 +260,18 @@ static uint8_t wiznet_check_for_ir(const struct device *dev)
 		return 0U;
 	}
 
+	/* SENDOK belongs to wiznet_tx() */
+	ir &= ~WIZNET_S0_IR_SENDOK;
 	if (ir != 0U) {
 		wiznet_write(dev, cfg->regs->s0_irclr, &ir, 1);
 		LOG_DBG("IR received");
 
-		if ((ir & WIZNET_S0_IR_SENDOK) != 0U) {
-			k_sem_give(&ctx->tx_sem);
-			LOG_DBG("TX Done");
-		}
-
+		/* RECV is raised once for all frames that arrived until it is
+		 * cleared, read every frame or the rest waits for the next one
+		 */
 		if ((ir & WIZNET_S0_IR_RECV) != 0U) {
-			wiznet_rx(dev);
+			while (wiznet_rx(dev)) {
+			}
 			LOG_DBG("RX Done");
 		}
 	}
@@ -277,16 +305,15 @@ static void wiznet_thread_interrupt(const struct device *dev)
 
 	res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_ETH_WIZNET_MONITOR_PERIOD));
 
-	if (res == 0) {
-		if (!ctx->state.is_up) {
-			cfg->ops->update_link_status(dev);
-		}
-
-		while (gpio_pin_get_dt(&cfg->interrupt)) {
-			wiznet_check_for_ir(dev);
-		}
-	} else if (res == -EAGAIN) {
+	if (res == -EAGAIN || !ctx->state.is_up) {
 		cfg->ops->update_link_status(dev);
+	}
+
+	/* The interrupt is edge triggered, check the level also after a
+	 * timeout so a missed edge does not stop reception for good
+	 */
+	while (gpio_pin_get_dt(&cfg->interrupt)) {
+		wiznet_check_for_ir(dev);
 	}
 }
 
@@ -410,8 +437,11 @@ int wiznet_hw_start(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct wiznet_config *cfg = dev->config;
 	uint8_t mask = WIZNET_IR_S0;
+	uint8_t s0_mask = WIZNET_S0_IR_RECV;
 
 	wiznet_command(dev, WIZNET_S0_CR_OPEN);
+	/* Only RECV raises the interrupt, wiznet_tx() polls for SENDOK */
+	wiznet_write(dev, cfg->regs->s0_imr, &s0_mask, 1);
 	wiznet_write(dev, cfg->regs->imr, &mask, 1);
 
 	return 0;
