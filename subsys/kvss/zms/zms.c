@@ -702,8 +702,11 @@ static int zms_recover_last_ate(struct zms_fs *fs, uint64_t *addr, uint64_t *dat
 
 	LOG_DBG("Recovering last ate from sector %llu", SECTOR_NUM(*addr));
 
-	/* skip close and empty ATE */
-	*addr -= 2 * fs->ate_size;
+	/* addr is the close ATE of the sector: start at the first ATE of the
+	 * sector, which is where garbage collection writes the first entry that
+	 * it copies.
+	 */
+	*addr -= fs->ate_size;
 
 	ate_end_addr = *addr;
 	data_end_addr = *addr & ADDR_SECT_MASK;
