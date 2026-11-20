@@ -511,13 +511,25 @@ static int zms_ate_valid(struct zms_fs *fs, const struct zms_ate *entry)
 /* zms_ate_valid_different_sector validates an ate that is in a different
  * sector than the active one. It takes as argument the cycle_cnt of the
  * sector where the ATE to be validated is stored
- *     return 1 if crc8 and cycle_cnt are valid,
+ *     return 1 if crc8 and cycle_cnt are valid and the data of the entry
+ *              is below the ATEs of the sector,
  *            0 otherwise
  */
 static int zms_ate_valid_different_sector(struct zms_fs *fs, const struct zms_ate *entry,
 					  uint8_t cycle_cnt)
 {
 	if ((cycle_cnt != entry->cycle_cnt) || zms_ate_crc8_check(entry)) {
+		return 0;
+	}
+
+	/* The data of an entry is in the sector of its ATE, below the first ATE.
+	 * Bytes that pass the crc8 and cycle_cnt checks but describe data outside
+	 * of this area are not an ATE: reading or garbage collecting such an entry
+	 * would access other sectors.
+	 */
+	if ((entry->id != ZMS_HEAD_ID) && (entry->len > ZMS_DATA_IN_ATE_SIZE) &&
+	    (((uint64_t)entry->offset + zms_al_size(fs, entry->len)) >
+	     (fs->sector_size - 3 * fs->ate_size))) {
 		return 0;
 	}
 

@@ -1977,6 +1977,76 @@ ZTEST_F(zms, test_zms_read_evil_ate)
 	zassert_equal(len, -ENOENT, "zms_read(id=3) should return -ENOENT, got %zd", len);
 }
 
+/*
+ * An ATE-shaped pattern with a valid crc8 and cycle_cnt, but with data that
+ * cannot be in its sector, must not become an entry: zms_read() must not
+ * return it and garbage collection must not copy data for it.
+ */
+ZTEST_F(zms, test_zms_ate_with_data_outside_of_sector)
+{
+	const uint32_t fake_id = TEST_DATA_ID + 2;
+	struct zms_ate fake_ate;
+	uint8_t data[64];
+	uint8_t rd_buf[64];
+	off_t fake_offset;
+	ssize_t len;
+	int err;
+
+	err = zms_mount(&fixture->fs);
+	zassert_ok(err, "zms_mount failed: %d", err);
+
+	memset(data, 0x11, sizeof(data));
+	len = zms_write(&fixture->fs, TEST_DATA_ID, data, sizeof(data));
+	zassert_equal(len, sizeof(data), "zms_write failed: %zd", len);
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_ok(err, "zms_sector_use_next failed: %d", err);
+
+	memset(data, 0x22, sizeof(data));
+	len = zms_write(&fixture->fs, TEST_DATA_ID + 1, data, sizeof(data));
+	zassert_equal(len, sizeof(data), "zms_write failed: %zd", len);
+
+	/* Inject a valid-looking ATE into the next unwritten slot. Its data would
+	 * start at the data write address and end in another sector.
+	 */
+	memset(&fake_ate, 0, sizeof(fake_ate));
+	fake_ate.id = fake_id;
+	fake_ate.len = MIN(2 * fixture->fs.sector_size, UINT16_MAX);
+	fake_ate.offset = SECTOR_OFFSET(fixture->fs.data_wra);
+	fake_ate.cycle_cnt = fixture->fs.sector_cycle;
+	fake_ate.crc8 = crc8_ccitt(0xff, (uint8_t *)&fake_ate + SIZEOF_FIELD(struct zms_ate, crc8),
+				   sizeof(fake_ate) - SIZEOF_FIELD(struct zms_ate, crc8));
+	fake_offset = fixture->fs.offset +
+		      (fixture->fs.sector_size * SECTOR_NUM(fixture->fs.ate_wra)) +
+		      SECTOR_OFFSET(fixture->fs.ate_wra);
+	err = flash_write(fixture->fs.flash_device, fake_offset, &fake_ate, sizeof(fake_ate));
+	zassert_ok(err, "flash_write of fake ATE failed: %d", err);
+
+	/* Simulate a reboot so recovery, rather than the live cursors, is used. */
+	memset(&fixture->fs, 0, sizeof(fixture->fs));
+	(void)setup();
+	err = zms_mount(&fixture->fs);
+	zassert_ok(err, "zms_mount after reboot failed: %d", err);
+
+	len = zms_read(&fixture->fs, fake_id, rd_buf, sizeof(rd_buf));
+	zassert_equal(len, -ENOENT, "zms_read(fake ATE) should return -ENOENT, got %zd", len);
+
+	/* The last sector change garbage collects the sector of the fake ATE */
+	for (uint32_t i = 0; i < fixture->fs.sector_count - 1; i++) {
+		err = zms_sector_use_next(&fixture->fs);
+		zassert_ok(err, "zms_sector_use_next failed: %d", err);
+	}
+
+	len = zms_read(&fixture->fs, TEST_DATA_ID + 1, rd_buf, sizeof(rd_buf));
+	zassert_equal(len, sizeof(rd_buf), "zms_read failed: %zd", len);
+	zassert_mem_equal(rd_buf, data, sizeof(data), "wrong data after garbage collection");
+
+	memset(data, 0x11, sizeof(data));
+	len = zms_read(&fixture->fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
+	zassert_equal(len, sizeof(rd_buf), "zms_read failed: %zd", len);
+	zassert_mem_equal(rd_buf, data, sizeof(data), "wrong data after garbage collection");
+}
+
 ZTEST_F(zms, test_zms_iter_empty_partition)
 {
 	int err;
