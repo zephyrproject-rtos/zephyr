@@ -993,6 +993,17 @@
 		status = "disabled";
 	};
 
+	crypto@190000 {
+		compatible = "nxp,els";
+		reg = <0x190000 0x1000>;
+		clocks = <&clkctl0 MCUX_ELS_CLK>;
+
+		trng: rng {
+			compatible = "nxp,els-trng";
+			status = "disabled";
+		};
+	};
+
 	flexcomm8: flexcomm@199000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x199000 0x1000>;
