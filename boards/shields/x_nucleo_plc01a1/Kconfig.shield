@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Sebastian Balling
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_X_NUCLEO_PLC01A1
+	def_bool $(shields_list_contains,x_nucleo_plc01a1)
