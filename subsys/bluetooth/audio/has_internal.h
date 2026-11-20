@@ -152,6 +152,7 @@ static inline const char *bt_has_change_id_str(uint8_t change_id)
 enum has_client_flags {
 	HAS_CLIENT_DISCOVER_IN_PROGRESS,
 	HAS_CLIENT_CP_OPERATION_IN_PROGRESS,
+	HAS_CLIENT_DISCOVER_FAILED,
 
 	HAS_CLIENT_NUM_FLAGS, /* keep as last */
 };
