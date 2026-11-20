@@ -3873,8 +3873,10 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels)
 		return -EINVAL;
 	}
 
-	att_chan = att_get_fixed_chan(conn);
-	att = att_chan->att;
+	att = att_get(conn);
+	if (att == NULL) {
+		return -ENOTCONN;
+	}
 
 	while (num_channels--) {
 		att_chan = att_chan_new(att, BIT(ATT_ENHANCED));
@@ -3939,8 +3941,10 @@ int bt_eatt_disconnect(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	chan = att_get_fixed_chan(conn);
-	att = chan->att;
+	att = att_get(conn);
+	if (att == NULL) {
+		return -ENOTCONN;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
 		if (bt_att_is_enhanced(chan)) {
@@ -3961,8 +3965,10 @@ int bt_eatt_disconnect_one(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	chan = att_get_fixed_chan(conn);
-	att = chan->att;
+	att = att_get(conn);
+	if (att == NULL) {
+		return -ENOTCONN;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, chan, node) {
 		if (bt_att_is_enhanced(chan)) {
@@ -3975,12 +3981,17 @@ int bt_eatt_disconnect_one(struct bt_conn *conn)
 
 int bt_eatt_reconfigure(struct bt_conn *conn, uint16_t mtu)
 {
-	struct bt_att_chan *att_chan = att_get_fixed_chan(conn);
-	struct bt_att *att = att_chan->att;
+	struct bt_att_chan *att_chan;
+	struct bt_att *att;
 	struct bt_l2cap_chan *chans[CONFIG_BT_EATT_MAX + 1] = {};
 	size_t offset = 0;
 	size_t i = 0;
 	int err;
+
+	att = att_get(conn);
+	if (att == NULL) {
+		return -ENOTCONN;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&att->chans, att_chan, node) {
 		if (bt_att_is_enhanced(att_chan)) {

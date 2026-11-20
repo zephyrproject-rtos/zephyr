@@ -12,6 +12,7 @@
 
 static void test_peripheral_main(void)
 {
+	struct bt_conn *conn;
 	int err;
 
 	TEST_ASSERT(bk_sync_init() == 0, "Failed to open backchannel");
@@ -36,7 +37,14 @@ static void test_peripheral_main(void)
 	/* Do not disconnect until the central also has connected all channels */
 	k_sleep(K_MSEC(1000));
 
+	/* The connection object outlives the connection */
+	conn = bt_conn_ref(default_conn);
+
 	disconnect();
+
+	err = bt_eatt_connect(conn, CONFIG_BT_EATT_MAX);
+	bt_conn_drop(&conn);
+	TEST_ASSERT(err == -ENOTCONN, "bt_eatt_connect() after disconnection: %d", err);
 
 	TEST_PASS("EATT Peripheral tests Passed");
 }
