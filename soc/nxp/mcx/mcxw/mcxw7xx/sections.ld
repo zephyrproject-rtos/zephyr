@@ -35,6 +35,14 @@
 } > SHARED_MEM_REGION
 #endif
 
+#ifdef CONFIG_SOC_SERIES_MCXW7XX
+/* Keep noinit after the first 64 KiB initialized by the MCXW7x reset hook. */
+.noinit_mcxw7xx (NOLOAD) : ALIGN(4)
+{
+    . += 0x10000;
+} > RAM
+#endif
+
 #ifdef CONFIG_SOC_MCXW70AC
 /* For MCXW70 the bootrom doesn't accept images that don't have the main stack in the main RAM bank.
  * Since the image for the shell (openthread) app is larger the 64K (first bank) it pushes the stack
