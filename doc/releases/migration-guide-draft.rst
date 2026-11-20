@@ -275,6 +275,17 @@ Comparator
   :zephyr_file:`tests/drivers/comparator/gpio_loopback` test provides an example of the comparator
   API. (:github:`124232`).
 
+DMA
+===
+
+* The STM32 DMA drivers (:dtcompatible:`st,stm32-dma-v1`, :dtcompatible:`st,stm32-dma-v2`,
+  :dtcompatible:`st,stm32-dma-v2bis`, :dtcompatible:`st,stm32u5-dma` and
+  :dtcompatible:`st,stm32-bdma`) no longer start the transfer in :c:func:`dma_reload`, which now
+  only reprograms the source and destination addresses and the size. Call :c:func:`dma_start`
+  after :c:func:`dma_reload` to run the reloaded transfer, as with most other DMA drivers. Code
+  that relied on :c:func:`dma_reload` starting the transfer no longer transfers anything and
+  waits for a completion callback that never comes.
+
 Ethernet
 ========
 

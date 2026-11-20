@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Short D1 (PA9, USART1_TX) and D0 (PA10, USART1_RX) on CN3 */
+dut: &usart1 {
+	dmas = <&dma1 4 2 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&dma1 5 2 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};

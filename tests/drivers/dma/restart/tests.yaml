@@ -1,0 +1,18 @@
+common:
+  tags:
+    - drivers
+    - dma
+  depends_on: dma
+  harness: ztest
+  filter: dt_nodelabel_enabled("tst_dma0")
+tests:
+  drivers.dma.restart:
+    platform_allow:
+      - nucleo_h755zi_q/stm32h755xx/m7
+      - nucleo_l432kc
+      - nucleo_u3c5zi_q
+  drivers.dma.restart.stm32_bdma:
+    extra_args:
+      - FILE_SUFFIX=bdma
+    platform_allow:
+      - nucleo_h755zi_q/stm32h755xx/m7
