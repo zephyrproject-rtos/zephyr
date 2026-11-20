@@ -378,6 +378,22 @@ static enum net_verdict net_gptp_recv(struct net_if *iface, uint16_t ptype,
 		return NET_DROP;
 	}
 
+	/* An event message is only usable with its receive timestamp; the
+	 * driver leaves it unset when the hardware stamp could not be read.
+	 */
+	if (GPTP_IS_EVENT_MSG(hdr->message_type) &&
+	    !net_pkt_is_rx_timestamping(pkt)) {
+		int port = gptp_get_port_number(iface);
+
+		NET_DBG("No RX timestamp for event message %d", hdr->message_type);
+
+		if (port != -ENODEV) {
+			GPTP_STATS_INC(port, rx_ptp_packet_discard_count);
+		}
+
+		return NET_DROP;
+	}
+
 	/* Handle critical messages. */
 	if (!gptp_handle_critical_msg(iface, pkt)) {
 		k_fifo_put(&gptp_rx_queue, pkt);
