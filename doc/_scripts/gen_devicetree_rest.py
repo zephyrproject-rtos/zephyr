@@ -861,13 +861,13 @@ def print_top_level_properties(binding, base_names, string_io):
     def base_props_filter(prop_spec):
         return prop_spec.name in base_names
 
-    if binding.child_binding:
+    if binding.all_child_bindings():
         print_block('''\
         Top level properties
         ====================
         ''', string_io)
     if binding.prop2specs:
-        if binding.child_binding:
+        if binding.all_child_bindings():
             print_block(f'''
             These property descriptions apply to "{binding.compatible}"
             nodes themselves. This page also describes child node
@@ -902,27 +902,41 @@ def print_top_level_properties(binding, base_names, string_io):
     else:
         print('No top-level properties.\n', file=string_io)
 
-def print_child_binding_properties(binding, string_io):
+def print_child_binding_properties(binding, string_io, level=1, patterns=()):
     # Prints property tables for all levels of nesting of child
-    # bindings.
+    # bindings, including the ones selected by node name with
+    # 'child-bindings:'. 'patterns' holds the node name patterns that
+    # led to 'binding'.
 
-    level = 1
-    child = binding.child_binding
-    while child is not None:
-        if level == 1:
-            level_string = 'Child'
-        elif level == 2:
-            level_string = 'Grandchild'
-        else:
-            level_string = f'Level {level} child'
+    if level == 1:
+        level_string = 'Child'
+    elif level == 2:
+        level_string = 'Grandchild'
+    else:
+        level_string = f'Level {level} child'
+
+    children = []
+    if binding.child_binding:
+        children.append((patterns, binding.child_binding))
+    for pattern, child in binding.child_bindings.items():
+        children.append((patterns + (pattern,), child))
+
+    for child_patterns, child in children:
         if child.prop2specs:
             title = f'{level_string} node properties'
+            if child_patterns:
+                title += f' ({" / ".join(f"``{p}``" for p in child_patterns)})'
             underline = '=' * len(title)
             print(f'{title}\n{underline}\n', file=string_io)
+            if child_patterns:
+                print_block('''\
+                These properties apply to nodes without a compatible whose
+                names match the patterns in the title, outermost node first.
+                ''', string_io)
             print_property_table(child.prop2specs.values(), string_io,
                                  deprecated=True)
-        child = child.child_binding
-        level += 1
+        print_child_binding_properties(child, string_io, level + 1,
+                                       child_patterns)
 
 def print_property_table(prop_specs, string_io, deprecated=False):
     # Writes a table of properties based on 'prop_specs', an iterable
