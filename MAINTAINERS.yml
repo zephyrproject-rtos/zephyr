@@ -1763,8 +1763,8 @@ Documentation Infrastructure:
     - sample.drivers.clock_monitor
 
 "Drivers: Clock control":
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - danieldegrasse
   files:
     - drivers/clock_control/
