@@ -6,7 +6,8 @@
 /*
  * Hooks through which the common kernel code reaches the SMP support in
  * kernel/smp/. Each hook has a uniprocessor variant at the end of this file
- * that compiles to nothing, so the callers carry no SMP conditionals.
+ * that compiles to nothing or to the uniprocessor equivalent, so the callers
+ * carry no SMP conditionals.
  */
 
 #ifndef ZEPHYR_KERNEL_INCLUDE_KSMP_H_
@@ -180,6 +181,11 @@ static inline void z_smp_switch_handle_clear(struct k_thread *thread)
  */
 void z_smp_switch_requeue(struct k_thread *old_thread);
 
+/* Whether @p curr, just moved to the end of its priority queue, is still
+ * the thread that runs next. Scheduler spinlock held.
+ */
+bool z_sched_slice_keeps_current(struct k_thread *curr);
+
 /* Set up the timer of a secondary CPU, implemented by the timer driver. */
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 void smp_timer_init(void);
@@ -280,6 +286,11 @@ static inline void z_smp_switch_handle_clear(struct k_thread *thread)
 static inline void z_smp_switch_requeue(struct k_thread *old_thread)
 {
 	ARG_UNUSED(old_thread);
+}
+
+static inline bool z_sched_slice_keeps_current(struct k_thread *curr)
+{
+	return _kernel.ready_q.cache == curr;
 }
 
 static inline void z_fatal_pause_cpus(void)
