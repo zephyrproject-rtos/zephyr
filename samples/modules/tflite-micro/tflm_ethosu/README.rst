@@ -9,76 +9,50 @@ Overview
 A sample application that demonstrates how to run an inference using the TFLM
 framework and the Arm Ethos-U NPU.
 
-The sample application runs a model that has been downloaded from the
-`Arm model zoo <https://github.com/ARM-software/ML-zoo>`_. This model has then
-been optimized using the
-`Vela compiler <https://gitlab.arm.com/artificial-intelligence/ethos-u/ethos-u-vela>`_.
+Testing the TFLM integration, the Ethos-U driver and the NPU does not need a
+large model. The sample runs two int8 test models of a few KB each instead, and
+compares each output with the one computed by ``src/models/generate.py``:
 
+* ``dft``: the 16-point `discrete Fourier transform`_ of a noisy two-tone
+  signal, as one fully connected layer. Its output is requantized with rounding,
+  so a match also checks that the NPU rounds like TFLite. The int8 scheme is
+  defined in the `LiteRT 8-bit quantization specification`_.
+* ``life``: four generations of `Conway's Game of Life`_ on an 8x8 board, as a
+  chain of eight convolutions with ReLU. The input glider moves one cell
+  diagonally. `Springer and Kenyon`_ show how n generations map to a small
+  convolutional network.
+
+.. _discrete Fourier transform: https://en.wikipedia.org/wiki/Discrete_Fourier_transform
+.. _LiteRT 8-bit quantization specification: https://ai.google.dev/edge/litert/models/quantization_spec
+.. _Conway's Game of Life: https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
+.. _Springer and Kenyon: https://arxiv.org/abs/2009.01398
+
+Each model was compiled with the
+`Vela compiler <https://gitlab.arm.com/artificial-intelligence/ethos-u/ethos-u-vela>`_.
 Vela takes a tflite file as input and produces another tflite file as output,
 where the operators supported by Arm Ethos-U NPU have been replaced by an Ethos-U custom
 operator. In an ideal case the complete network would be replaced by a single
-Ethos-U custom operator.
+Ethos-U custom operator, which is the case for both models.
 
-Generating Vela-compiled model
-******************************
+Generating the models
+*********************
 
-Follow the steps below to generate Vela-compiled model and test input/output data.
-Use `keyword_spotting_cnn_small_int8`_ model in this sample:
+``src/models/generate.py`` builds both models, computes their expected output with
+TFLite's int8 arithmetic, and compiles them with Vela. It writes one header per
+model holding the plain model, used when ``CONFIG_TAINT_BLOBS_TFLM_ETHOSU=n``, and
+one Vela-compiled variant per NPU configuration:
 
-.. _keyword_spotting_cnn_small_int8: https://github.com/Arm-Examples/ML-zoo/tree/master/models/keyword_spotting/cnn_small/model_package_tf/model_archive/TFLite/tflite_int8
+* Arm Ethos-U55 NPU with 128 MACs (``CONFIG_ETHOS_U55_128``), such as Corstone-300
 
-.. note:: The default Vela-compiled model is to target Arm Ethos-U55 NPU and 128 MAC
-   on MPS3 target. Because one model can add up to hundreds of KB, don't
-   attempt to add more models into code base for other targets.
+The Vela-compiled variants use the ``Shared_Sram`` memory mode. Other NPU
+configurations or memory modes need an entry in ``NPU_CONFIGS`` or a change to
+``MEMORY_MODE`` in the script. The script needs Vela, which also provides the
+TFLite schema it uses:
 
-1. Downloading the files below from `keyword_spotting_cnn_small_int8`_:
+.. code-block:: console
 
-   - cnn_s_quantized.tflite
-   - testing_input/input/0.npy
-   - testing_output/identity/0.npy
-
-2. Optimizing the model for Arm Ethos-U NPU using Vela
-
-   Assuming target Arm Ethos-U55 NPU and 128 MAC:
-
-   .. code-block:: console
-
-       $ vela cnn_s_quantized.tflite \
-       --output-dir . \
-       --accelerator-config ethos-u55-128 \
-       --system-config Ethos_U55_High_End_Embedded \
-       --memory-mode Shared_Sram
-
-3. Removing unnecessary header
-
-   ``testing_input/input/0.npy`` and ``testing_output/0.npy`` have 128-byte header.
-   They must be removed for integration with this sample.
-
-   .. code-block:: console
-
-       $ dd if=testing_input/input/0.npy of=testing_input/input/0_no-header.npy bs=1 skip=128
-       $ dd if=testing_output/identity/0.npy of=testing_output/identity/0_no-header.npy bs=1 skip=128
-
-4. Converting to C array
-
-   .. code-block:: console
-
-       $ xxd -c 16 -i cnn_s_quantized.tflite cnn_s_quantized.tflite.h
-       $ xxd -c 16 -i cnn_s_quantized_vela.tflite cnn_s_quantized_vela.tflite.h
-       $ xxd -c 16 -i testing_input/input/0_no-header.npy testing_input/input/0_no-header.npy.h
-       $ xxd -c 16 -i testing_output/identity/0_no-header.npy testing_output/identity/0_no-header.npy.h
-
-5. Synchronizing to this sample
-
-   Synchronize the files below to ``keyword_spotting_cnn_small_int8`` directory
-   in this sample:
-
-   - cnn_s_quantized_vela.tflite.h > model.h
-   - testing_input/input/0_no-header.npy.h > input.h
-   - testing_output/identity/0_no-header.npy.h > output.h
-
-   .. note:: To run non-Vela-compiled model (``CONFIG_TAINT_BLOBS_TFLM_ETHOSU=n``),
-      synchronize ``cnn_s_quantized.tflite.h`` instead.
+   $ pip install ethos-u-vela
+   $ python3 src/models/generate.py
 
 Building and running
 ********************

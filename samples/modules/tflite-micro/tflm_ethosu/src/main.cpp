@@ -17,9 +17,7 @@
 #include <zephyr/kernel.h>
 
 /* Model data */
-#include "input.h"
-#include "model.h"
-#include "output.h"
+#include "models.h"
 
 using namespace std;
 using namespace InferenceProcess;
@@ -39,9 +37,9 @@ using namespace InferenceProcess;
 #define NUM_JOB_TASKS 2
 #endif
 
-/* Number of inferences per sender task. */
+/* Inferences per sender task, one per model by default. */
 #ifndef NUM_JOBS_PER_TASK
-#define NUM_JOBS_PER_TASK 2
+#define NUM_JOBS_PER_TASK static_cast<int>(ARRAY_SIZE(models))
 #endif
 
 /* Tensor arena size */
@@ -172,9 +170,11 @@ void inferenceSenderTask(void *_name, void *heap, void *_queue)
 	xInferenceJob jobs[NUM_JOBS_PER_TASK];
 	for (int n = 0; n < NUM_JOBS_PER_TASK; n++) {
 		auto &job = jobs[n];
-		job = xInferenceJob(modelName, DataPtr(networkModelData, sizeof(networkModelData)),
-				    { DataPtr(inputData, sizeof(inputData)) }, {},
-				    { DataPtr(expectedOutputData, sizeof(expectedOutputData)) },
+		const struct model_data &m = models[n % ARRAY_SIZE(models)];
+
+		job = xInferenceJob(m.name, DataPtr(m.model, m.model_size),
+				    { DataPtr(m.input, m.input_size) }, {},
+				    { DataPtr(m.expected_output, m.expected_output_size) },
 				    &senderQueue);
 
 		printf("%s: Sending inference. job=%p, name=%s\n", name->c_str(), &job,
