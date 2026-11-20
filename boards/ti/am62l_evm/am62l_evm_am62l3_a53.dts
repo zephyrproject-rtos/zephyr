@@ -19,6 +19,7 @@
 		zephyr,sram = &ddr0;
 		zephyr,flash-controller = &main_ospi0;
 		zephyr,flash = &flash0_memory;
+		zephyr,touch = &gt911;
 	};
 
 	aliases {
@@ -132,6 +133,16 @@
 		pagesize = <128>;
 		size = <65536>;
 		timeout = <5>;
+	};
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		alt-addr = <0x14>;
+		reset-gpios = <&display_mcu 1 GPIO_ACTIVE_LOW>;
+		screen-width = <720>;
+		screen-height = <1280>;
+		status = "disabled";
 	};
 };
 
