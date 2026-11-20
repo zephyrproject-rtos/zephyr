@@ -21,9 +21,10 @@
 # esp32_procpu_qemu.conf, which are not in the MCUboot module. Point
 # mcuboot_EXTRA_CONF_FILE at the existing hardware fragment (esp32_procpu.conf
 # and the S3/C3/C6 siblings) so /qemu sysbuild gets the same Espressif profile
-# without adding files outside this repository.
+# without adding files outside this repository. Hardware qualifiers already get
+# that fragment from MCUboot, so it is only added for /qemu.
 
-if(TARGET mcuboot)
+if(TARGET mcuboot AND BOARD_QUALIFIERS MATCHES "/qemu$")
   string(REPLACE "/" "_" _esp_qemu_mcuboot_socs "${BOARD_QUALIFIERS}")
   string(REGEX REPLACE "^_" "" _esp_qemu_mcuboot_socs "${_esp_qemu_mcuboot_socs}")
   string(REGEX REPLACE "_qemu$" "" _esp_qemu_mcuboot_socs "${_esp_qemu_mcuboot_socs}")
