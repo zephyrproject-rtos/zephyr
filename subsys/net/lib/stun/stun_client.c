@@ -72,7 +72,7 @@ static int wait_and_receive(int sock, struct stun_binding *txn, uint32_t wait_ms
 	uint8_t rx[CONFIG_STUN_CLIENT_RX_BUF_SIZE];
 	struct net_sockaddr_storage from;
 	net_socklen_t from_len = sizeof(from);
-	ssize_t n;
+	ssize_t len;
 	int rc;
 
 	rc = zsock_poll(&pfd, 1, (int)MIN(wait_ms, (uint32_t)INT32_MAX));
@@ -101,9 +101,9 @@ static int wait_and_receive(int sock, struct stun_binding *txn, uint32_t wait_ms
 	}
 
 	memset(&from, 0, sizeof(from));
-	n = zsock_recvfrom(sock, rx, sizeof(rx), ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_TRUNC,
-			   net_sad(&from), &from_len);
-	if (n < 0) {
+	len = zsock_recvfrom(sock, rx, sizeof(rx), ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_TRUNC,
+			     net_sad(&from), &from_len);
+	if (len < 0) {
 		return (errno == EAGAIN || errno == EWOULDBLOCK) ? 0 : -errno;
 	}
 	/* MSG_TRUNC reports the length of the datagram, not of what was copied:
@@ -111,17 +111,17 @@ static int wait_and_receive(int sock, struct stun_binding *txn, uint32_t wait_ms
 	 * (RFC 8489 section 5: the message fills the datagram), so it is not the
 	 * answer. The transaction goes on waiting.
 	 */
-	if ((size_t)n > sizeof(rx)) {
-		LOG_DBG("datagram of %d bytes does not fit %zu: ignored", (int)n, sizeof(rx));
+	if ((size_t)len > sizeof(rx)) {
+		LOG_DBG("datagram of %d bytes does not fit %zu: ignored", (int)len, sizeof(rx));
 		return 0;
 	}
 
 	/* What is not the server's answer is dropped here: the transaction
 	 * goes on waiting. The caller is not told why; the log is.
 	 */
-	rc = stun_binding_on_datagram(txn, net_sad(&from), rx, (size_t)n);
+	rc = stun_binding_on_datagram(txn, net_sad(&from), rx, (size_t)len);
 	if (rc < 0) {
-		LOG_DBG("datagram of %d bytes ignored (%d)", (int)n, rc);
+		LOG_DBG("datagram of %d bytes ignored (%d)", (int)len, rc);
 	}
 	return 0;
 }
