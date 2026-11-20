@@ -29,6 +29,49 @@ struct nxp_t1s_data {
 	void *cb_data;
 };
 
+/*
+ * The TENBASET_PHY exposes its Clause 45 register set directly on the APB as one
+ * 16-bit register file, so a C45 access is a direct 16-bit access at base + regad
+ * (devad is informational). Highest documented register is VERSION at 0x1FE.
+ */
+#define NXP_T1S_C45_REG_MAX 0x1FEU
+
+static int phy_nxp_t1s_read_c45(const struct device *dev, uint8_t devad, uint16_t regad,
+				uint16_t *data)
+{
+	const struct nxp_t1s_config *config = dev->config;
+	TENBASET_PHY_Type *base = config->base;
+
+	ARG_UNUSED(devad);
+
+	/* Registers are 16-bit, so the offset must be halfword aligned and in range. */
+	if ((regad > NXP_T1S_C45_REG_MAX) || ((regad & 0x1U) != 0U)) {
+		return -EINVAL;
+	}
+
+	*data = *(volatile uint16_t *)((uintptr_t)base + regad);
+
+	return 0;
+}
+
+static int phy_nxp_t1s_write_c45(const struct device *dev, uint8_t devad, uint16_t regad,
+				 uint16_t data)
+{
+	const struct nxp_t1s_config *config = dev->config;
+	TENBASET_PHY_Type *base = config->base;
+
+	ARG_UNUSED(devad);
+
+	/* Registers are 16-bit, so the offset must be halfword aligned and in range. */
+	if ((regad > NXP_T1S_C45_REG_MAX) || ((regad & 0x1U) != 0U)) {
+		return -EINVAL;
+	}
+
+	*(volatile uint16_t *)((uintptr_t)base + regad) = data;
+
+	return 0;
+}
+
 static int phy_nxp_t1s_get_link(const struct device *dev, struct phy_link_state *state)
 {
 	const struct nxp_t1s_config *config = dev->config;
@@ -182,6 +225,8 @@ static void phy_nxp_t1s_isr(const struct device *dev)
 static DEVICE_API(ethphy, nxp_t1s_phy_api) = {
 	.get_link = phy_nxp_t1s_get_link,
 	.link_cb_set = phy_nxp_t1s_link_cb_set,
+	.read_c45 = phy_nxp_t1s_read_c45,
+	.write_c45 = phy_nxp_t1s_write_c45,
 	.set_plca_cfg = phy_nxp_t1s_set_plca_cfg,
 	.get_plca_cfg = phy_nxp_t1s_get_plca_cfg,
 	.get_plca_sts = phy_nxp_t1s_get_plca_sts,
