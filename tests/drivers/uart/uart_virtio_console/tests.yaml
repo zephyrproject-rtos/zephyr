@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - uart
+  platform_allow:
+    - qemu_x86_64
+  harness: ztest
+  timeout: 30
+tests:
+  drivers.uart.virtio_console: {}
+  drivers.uart.virtio_console.scheduler_lock:
+    extra_configs:
+      - CONFIG_SMP=y
+  drivers.uart.virtio_console.smp_lock_order:
+    extra_args:
+      - TEST_SMP_LOCK_ORDER=y
+    extra_configs:
+      - CONFIG_SMP=y
+      - CONFIG_MP_MAX_NUM_CPUS=2
+      - CONFIG_SCHED_CPU_MASK=y
+  drivers.uart.virtio_console.multiport:
+    extra_configs:
+      - CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT=y
+      - >-
+        CONFIG_QEMU_EXTRA_FLAGS="-chardev null,id=second_console
+        -device virtconsole,chardev=second_console"
+      # Control-message logging must not generate a data-TX completion.
+      - CONFIG_UART_LOG_LEVEL_OFF=y
+  drivers.uart.virtio_console.printk_sync:
+    extra_configs:
+      - CONFIG_PRINTK_SYNC=y
+  drivers.uart.virtio_console.immediate_logging:
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_BACKEND_UART=y
+      - CONFIG_LOG_BACKEND_UART_AUTOSTART=n
+      - CONFIG_LOG_PRINTK=n
+      - CONFIG_PRINTK_SYNC=y
