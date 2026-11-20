@@ -11,3 +11,17 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+  # A preemptible RX thread, at the lowest priority, lets the connecting thread
+  # run the moment the receive path wakes it up, while the RX thread is still
+  # in the middle of delivering the packet. That order is otherwise only seen
+  # on SMP or with a connecting thread of higher priority than the RX thread.
+  net.socks5.rx_preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.socks5.rx_preempt.asan:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+      - CONFIG_ASAN=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
