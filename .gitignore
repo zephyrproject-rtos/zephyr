@@ -106,6 +106,7 @@ ImageSize.txt
 Kconfig.txt
 KconfigBasic.txt
 KconfigBasicNoModules.txt
+KconfigDefconfig.txt
 KconfigFormat.txt
 KconfigHWMv2.txt
 KeepSorted.txt
