@@ -189,8 +189,8 @@ static uint32_t calc_ntc_res(const struct npm13xx_charger_config *const config, 
 
 	float inv_temp_k = 1.f / (temp + 273.15f);
 
-	return config->thermistor_ohms *
-	       exp((double)((float)config->thermistor_beta * (inv_temp_k - inv_t0)));
+	return (uint32_t)((float)config->thermistor_ohms *
+			  expf((float)config->thermistor_beta * (inv_temp_k - inv_t0)));
 }
 
 static uint16_t adc_get_res(uint8_t msb, uint8_t lsb, uint16_t lsb_shift)
