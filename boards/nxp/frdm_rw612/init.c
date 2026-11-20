@@ -1,8 +1,9 @@
 /*
- * Copyright 2022, 2024-25 NXP
+ * Copyright 2022, 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/init.h>
 #include <zephyr/pm/pm.h>
 #include <fsl_power.h>
 #include <fsl_common.h>
