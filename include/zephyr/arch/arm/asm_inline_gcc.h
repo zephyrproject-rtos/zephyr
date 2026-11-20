@@ -21,9 +21,12 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/arch/exception.h>
+#ifdef CONFIG_HAS_CMSIS_CORE
 #include <cmsis_core.h>
+#endif
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A) ||                \
+	defined(CONFIG_CPU_AARCH32_ARMV6)
 #include <zephyr/arch/arm/cortex_a_r/cpu.h>
 #endif
 
@@ -67,7 +70,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	 * erratum) no ISB is needed here; see Arm DAI0321A, section 4.8.
 	 */
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) ||                                \
-	defined(CONFIG_ARM_A_PROFILE_AARCH32)
+	defined(CONFIG_ARM_A_PROFILE_AARCH32) || defined(CONFIG_ARMV6)
 	__asm__ volatile(
 		"mrs %0, cpsr;"
 		"and %0, #" STRINGIFY(I_BIT) ";"
@@ -104,11 +107,11 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__set_BASEPRI(key);
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) ||                                \
-	defined(CONFIG_ARM_A_PROFILE_AARCH32)
+	defined(CONFIG_ARM_A_PROFILE_AARCH32) || defined(CONFIG_ARMV6)
 	if (key != 0U) {
 		return;
 	}
-	__enable_irq();
+	__asm__ volatile("cpsie i" : : : "memory");
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -129,7 +132,7 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 	/* irq_lock() uses BASEPRI, but PRIMASK also masks interrupts. */
 	return (__get_BASEPRI() == 0U) && (__get_PRIMASK() == 0U);
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) ||                                \
-	defined(CONFIG_ARM_A_PROFILE_AARCH32)
+	defined(CONFIG_ARM_A_PROFILE_AARCH32) || defined(CONFIG_ARMV6)
 	unsigned int cpsr;
 
 	__asm__ volatile("mrs %0, cpsr" : "=r" (cpsr));

@@ -30,8 +30,4 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 #else
 	ldr pc, =z_irq_spurious
 #endif
-#ifndef CONFIG_USE_SWITCH
-	ldr pc, =z_arm_nmi               /* FIQ            offset 0x1c */
-#else
-	ldr pc,=z_irq_spurious
-#endif
+	ldr pc, =z_irq_spurious		 /* FIQ            offset 0x1c */
