@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CH582M_DEV_BOARD
+	select SOC_CH582M

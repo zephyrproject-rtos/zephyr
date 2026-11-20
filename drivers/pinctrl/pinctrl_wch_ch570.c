@@ -13,7 +13,7 @@
 
 #include <hal_ch32fun.h>
 
-static GPIO_TypeDef *const wch_gpioa_regs = (GPIO_TypeDef *)DT_REG_ADDR(DT_NODELABEL(gpioa));
+static GPIO_TypeDef *const wch_gpio_regs = (GPIO_TypeDef *)DT_REG_ADDR(DT_NODELABEL(gpios));
 
 static void pinctrl_wch_ch570_gpio_init(const pinctrl_soc_pin_t *pin)
 {
@@ -21,36 +21,36 @@ static void pinctrl_wch_ch570_gpio_init(const pinctrl_soc_pin_t *pin)
 	uint32_t gpio_pin_mask = BIT(gpio_pin);
 
 	if (pin->drive_push_pull || pin->output_high || pin->output_low) {
-		wch_gpioa_regs->PA_DIR |= gpio_pin_mask;
+		wch_gpio_regs->PA_DIR |= gpio_pin_mask;
 
 		if (pin->drive_push_pull && pin->push_pull_high_capacity) {
-			wch_gpioa_regs->PA_PD_DRV |= gpio_pin_mask;
+			wch_gpio_regs->PA_PD_DRV |= gpio_pin_mask;
 		} else {
-			wch_gpioa_regs->PA_PD_DRV &= ~gpio_pin_mask;
+			wch_gpio_regs->PA_PD_DRV &= ~gpio_pin_mask;
 		}
 
 		if (pin->output_high) {
-			wch_gpioa_regs->PA_SET = gpio_pin_mask;
+			wch_gpio_regs->PA_SET = gpio_pin_mask;
 		} else if (pin->output_low) {
-			wch_gpioa_regs->PA_CLR = gpio_pin_mask;
+			wch_gpio_regs->PA_CLR = gpio_pin_mask;
 		} else {
 			/* No output level specified */
 		}
 	} else if (pin->input_disable) {
 		R16_PIN_ALTERNATE |= gpio_pin_mask;
 	} else {
-		wch_gpioa_regs->PA_DIR &= ~gpio_pin_mask;
+		wch_gpio_regs->PA_DIR &= ~gpio_pin_mask;
 
 		if (pin->bias_pull_up) {
-			wch_gpioa_regs->PA_PD_DRV &= ~gpio_pin_mask;
-			wch_gpioa_regs->PA_PU |= gpio_pin_mask;
+			wch_gpio_regs->PA_PD_DRV &= ~gpio_pin_mask;
+			wch_gpio_regs->PA_PU |= gpio_pin_mask;
 		} else if (pin->bias_pull_down) {
-			wch_gpioa_regs->PA_PD_DRV |= gpio_pin_mask;
-			wch_gpioa_regs->PA_PU &= ~gpio_pin_mask;
+			wch_gpio_regs->PA_PD_DRV |= gpio_pin_mask;
+			wch_gpio_regs->PA_PU &= ~gpio_pin_mask;
 		} else {
 			/* bias-high-impedance */
-			wch_gpioa_regs->PA_PD_DRV &= ~gpio_pin_mask;
-			wch_gpioa_regs->PA_PU &= ~gpio_pin_mask;
+			wch_gpio_regs->PA_PD_DRV &= ~gpio_pin_mask;
+			wch_gpio_regs->PA_PU &= ~gpio_pin_mask;
 		}
 	}
 }

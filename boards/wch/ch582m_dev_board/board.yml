@@ -1,0 +1,6 @@
+board:
+  name: ch582m_dev_board
+  full_name: WCH CH582M Dev Board
+  vendor: wch
+  socs:
+    - name: ch582m

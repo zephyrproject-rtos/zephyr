@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_QINGKE_V4A
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+rsource "Kconfig.defconfig.*"
+
+endif # SOC_SERIES_QINGKE_V4A

@@ -21,15 +21,21 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			gpioa: gpio@40001090 {
-				compatible = "wch,ch5xx-gpio";
+			gpios: gpio@40001090 {
 				reg = <0x40001090 0x2c>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <12>;
-				interrupt-parent = <&pfic>;
-				interrupts = <17>;
-				port = "port-a";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				gpioa: gpio@0 {
+					compatible = "wch,ch5xx-gpio";
+					reg = <0>;
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <12>;
+					interrupt-parent = <&pfic>;
+					interrupts = <17>;
+					port = "port-a";
+				};
 			};
 		};
 
