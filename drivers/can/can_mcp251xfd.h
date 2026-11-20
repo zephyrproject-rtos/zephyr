@@ -520,6 +520,9 @@ struct mcp251xfd_data {
 	uint8_t current_mcp251xfd_mode;
 	int tdco;
 
+	/* Controller is in Sleep mode (PM suspended), protected by mutex */
+	bool sleeping;
+
 	struct mcp251xfd_spi_data spi_data;
 
 };
