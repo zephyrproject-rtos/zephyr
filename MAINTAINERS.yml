@@ -6852,10 +6852,10 @@ USB:
 USB-C:
   status: maintained
   maintainers:
-    - sambhurst
     - keith-zephyr
   collaborators:
     - ncadieux
+    - alevkoy
   files:
     - drivers/usb_c/
     - dts/bindings/usb-c/
