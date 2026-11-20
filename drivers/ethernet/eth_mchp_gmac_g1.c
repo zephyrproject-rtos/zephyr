@@ -12,6 +12,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
 #include <zephyr/types.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/sys/ring_buffer.h>
 
 LOG_MODULE_REGISTER(eth_mchp_gmac_g1, CONFIG_ETHERNET_LOG_LEVEL);
@@ -125,9 +126,8 @@ struct gmac_queue {
 	struct k_sem tx_desc_sem;
 	struct net_buf **rx_frag_list;
 	struct ring_buf tx_frag_rb;
-	volatile uint32_t err_rx_queue_frames_dropped;
-	volatile uint32_t err_rx_queue_flushed_count;
-	volatile uint32_t err_tx_queue_flushed_count;
+	struct k_mutex tx_mutex;
+	uint32_t err_tx_queue_flushed_count;
 	enum queue_idx que_idx;
 };
 
@@ -281,16 +281,14 @@ static int gmac_queue_init(gmac_registers_t *gmac_regs, struct gmac_queue *queue
 
 	gmac_tx_descriptors_init(gmac_regs, queue);
 	k_sem_init(&queue->tx_desc_sem, queue->tx_desc_list.len - 1, queue->tx_desc_list.len - 1);
+	k_mutex_init(&queue->tx_mutex);
+	queue->err_tx_queue_flushed_count = 0U;
 
 	gmac_regs->GMAC_DCFGR =
 		/* Receive Buffer Size (defined in multiples of 64 bytes) */
 		GMAC_DCFGR_DRBS(CONFIG_NET_BUF_DATA_SIZE >> 6) | GMAC_DCFGR_RXBMS(3) |
-		GMAC_DCFGR_FBLDO_INCR4 | GMAC_DMA_QUEUE_FLAGS;
+		GMAC_DCFGR_TXCOEN_Msk | GMAC_DCFGR_FBLDO_INCR4 | GMAC_DMA_QUEUE_FLAGS;
 	gmac_regs->GMAC_IER = GMAC_INT_EN_FLAGS;
-
-	queue->err_rx_queue_frames_dropped = 0U;
-	queue->err_rx_queue_flushed_count = 0U;
-	queue->err_tx_queue_flushed_count = 0U;
 
 	LOG_INF("Queue %d activated", queue->que_idx);
 
@@ -315,14 +313,20 @@ static void gmac_tx_completed(gmac_registers_t *gmac, struct gmac_queue *queue)
 	struct gmac_desc *tx_desc;
 	struct net_buf *frag;
 	uintptr_t ptr;
+	bool frame_start = true;
 
-	__ASSERT(tx_desc_list->buf_desc[tx_desc_list->tail].status & GMAC_TXW1_USED,
-		 "first buffer of a frame is not marked as own by GMAC");
 	while (tx_desc_list->tail != tx_desc_list->head) {
+		uint32_t status;
+
 		tx_desc = &tx_desc_list->buf_desc[tx_desc_list->tail];
-		tx_desc->status &= ~(GMAC_TXW1_LEN | GMAC_TXW1_LASTBUFFER | GMAC_TXW1_NOCRC |
-				     GMAC_TXW1_CHKSUMERR | GMAC_TXW1_LATECOLERR |
-				     GMAC_TXW1_TRANSERR | GMAC_TXW1_RETRYEXC | GMAC_TXW1_USED);
+		status = tx_desc->status;
+
+		/* DMA marks only the first descriptor of a completed frame as used. */
+		if (frame_start && (status & GMAC_TXW1_USED) == 0U) {
+			break;
+		}
+
+		tx_desc->status = (status & GMAC_TXW1_WRAP) | GMAC_TXW1_USED;
 		MODULO_INC(tx_desc_list->tail, tx_desc_list->len);
 		k_sem_give(&queue->tx_desc_sem);
 		ring_buf_get(&queue->tx_frag_rb, (uint8_t *)&ptr, sizeof(ptr));
@@ -330,10 +334,7 @@ static void gmac_tx_completed(gmac_registers_t *gmac, struct gmac_queue *queue)
 		net_pkt_frag_unref(frag);
 		LOG_DBG("Dropping frag %p", frag);
 
-		if (tx_desc->status & GMAC_TXW1_LASTBUFFER) {
-			tx_desc->status &= ~GMAC_TXW1_LASTBUFFER;
-			break;
-		}
+		frame_start = (status & GMAC_TXW1_LASTBUFFER) != 0U;
 	}
 }
 
@@ -363,7 +364,6 @@ static void gmac_tx_error_handler(gmac_registers_t *gmac, struct gmac_queue *que
 static void gmac_rx_error_handler(gmac_registers_t *gmac, struct gmac_queue *queue)
 {
 	gmac->GMAC_NCR &= ~GMAC_NCR_RXEN_Msk;
-	queue->err_rx_queue_flushed_count++;
 	queue->rx_desc_list.tail = 0U;
 
 	LOG_DBG("rx Err");
@@ -540,7 +540,6 @@ static struct net_pkt *gmac_extract_and_replace_buffers(struct gmac_queue *queue
 			rx_desc = &rx_desc_list->buf_desc[i];
 		}
 
-		queue->err_rx_queue_frames_dropped++;
 		*err_no = -ENOMEM;
 
 		return NULL;
@@ -571,7 +570,6 @@ static struct net_pkt *gmac_extract_and_replace_buffers(struct gmac_queue *queue
 				rx_desc = &rx_desc_list->buf_desc[i];
 			}
 
-			queue->err_rx_queue_frames_dropped++;
 			net_pkt_unref(rx_pkt);
 			*err_no = -ENOMEM;
 
@@ -699,78 +697,101 @@ static int eth_mchp_send(const struct device *dev, struct net_pkt *pkt)
 	struct net_buf *frag;
 	uint8_t *frag_data;
 	uint16_t frag_len = 0;
+	uint16_t pkt_buff_cnt = 0;
+	uint16_t head;
 	uint32_t err_tx_queue_flushed_count_at_entry;
-	uint8_t pkt_buff_cnt = 0;
-	uint8_t free_desc_cnt = 0;
-	int8_t head_desc_index = 0;
+	unsigned int free_desc_cnt;
+	unsigned int irq_lock_key;
+	int ret;
 
 	queue = &dev_data->queue_list[0];
-	err_tx_queue_flushed_count_at_entry = queue->err_tx_queue_flushed_count;
 	tx_desc_list = &queue->tx_desc_list;
-	tx_first_desc = &tx_desc_list->buf_desc[tx_desc_list->head];
+	/* Serialize senders so descriptors can be prepared without disabling IRQs. */
+	k_mutex_lock(&queue->tx_mutex, K_FOREVER);
+
 	frag = pkt->frags;
 
-	free_desc_cnt = k_sem_count_get(&queue->tx_desc_sem);
 	while (frag != NULL) {
 		frag = frag->frags;
 		pkt_buff_cnt++;
 	}
 
+	irq_lock_key = irq_lock();
+	err_tx_queue_flushed_count_at_entry = queue->err_tx_queue_flushed_count;
+	free_desc_cnt = k_sem_count_get(&queue->tx_desc_sem);
 	if (free_desc_cnt < pkt_buff_cnt) {
-		return -EIO;
+		irq_unlock(irq_lock_key);
+		ret = -EIO;
+		goto out;
 	}
 
+	head = tx_desc_list->head;
+	tx_first_desc = &tx_desc_list->buf_desc[head];
+	irq_unlock(irq_lock_key);
+
+	/* Keep the new frame outside the visible descriptor range while preparing it. */
 	frag = pkt->frags;
 
 	while (frag != NULL) {
-		uintptr_t ptr = POINTER_TO_UINT(frag);
-		unsigned int irq_lock_key;
+		uint32_t status;
 
 		frag_data = frag->data;
 		frag_len = frag->len;
-		k_sem_take(&queue->tx_desc_sem, K_FOREVER);
-		if (queue->err_tx_queue_flushed_count != err_tx_queue_flushed_count_at_entry) {
-			return -EIO;
-		}
 
-		tx_desc = &tx_desc_list->buf_desc[tx_desc_list->head];
+		tx_desc = &tx_desc_list->buf_desc[head];
 		tx_desc->addr = (uint32_t)frag_data;
-		tx_desc->status |= GMAC_TXW1_USED;
 
+		status = frag_len & GMAC_TXW1_LEN;
 		if (frag->frags == NULL) {
-			tx_desc->status |= GMAC_TXW1_LASTBUFFER;
+			status |= GMAC_TXW1_LASTBUFFER;
 		}
+		if (head == tx_desc_list->len - 1U) {
+			status |= GMAC_TXW1_WRAP;
+		}
+		if (tx_desc == tx_first_desc) {
+			status |= GMAC_TXW1_USED;
+		}
+		tx_desc->status = status;
 
-		tx_desc->status &= ~GMAC_TXW1_LEN;
-		tx_desc->status |= (frag_len & GMAC_TXW1_LEN);
-		irq_lock_key = irq_lock();
-		MODULO_INC(tx_desc_list->head, tx_desc_list->len);
+		MODULO_INC(head, tx_desc_list->len);
+		frag = frag->frags;
+	}
+
+	/* Publish the complete frame atomically with respect to the interrupt handler. */
+	irq_lock_key = irq_lock();
+	if (queue->err_tx_queue_flushed_count != err_tx_queue_flushed_count_at_entry) {
 		irq_unlock(irq_lock_key);
-		__ASSERT(tx_desc_list->head != tx_desc_list->tail, "tx_desc_list overflow");
+		ret = -EIO;
+		goto out;
+	}
+
+	frag = pkt->frags;
+	while (frag != NULL) {
+		uintptr_t ptr = POINTER_TO_UINT(frag);
+
+		k_sem_take(&queue->tx_desc_sem, K_NO_WAIT);
 		ring_buf_put(&queue->tx_frag_rb, (uint8_t *)&ptr, sizeof(ptr));
 		net_pkt_frag_ref(frag);
 		frag = frag->frags;
 	}
 
-	if (queue->err_tx_queue_flushed_count != err_tx_queue_flushed_count_at_entry) {
-		gmac_regs->GMAC_NCR |= GMAC_NCR_TSTART_Msk;
-
-		return -EIO;
-	}
-
-	head_desc_index = tx_desc_list->head;
-	MODULO_DEC(head_desc_index, tx_desc_list->len);
-	frag = pkt->frags;
-
-	while (pkt_buff_cnt) {
-		tx_desc_list->buf_desc[head_desc_index].status &= ~GMAC_TXW1_USED;
-		MODULO_DEC(head_desc_index, tx_desc_list->len);
-		pkt_buff_cnt--;
-	}
-
+	__ASSERT(head != tx_desc_list->tail, "tx_desc_list overflow");
+	tx_desc_list->buf_desc[head].status =
+		(tx_desc_list->buf_desc[head].status & GMAC_TXW1_WRAP) | GMAC_TXW1_USED;
+	/* Publish the descriptor contents before granting DMA ownership. */
+	barrier_dmem_fence_full();
+	tx_desc_list->head = head;
+	tx_first_desc->status &= ~GMAC_TXW1_USED;
+	/* Ensure the ownership change is visible before starting DMA. */
+	barrier_dmem_fence_full();
 	gmac_regs->GMAC_NCR |= GMAC_NCR_TSTART_Msk;
+	irq_unlock(irq_lock_key);
 
-	return 0;
+	ret = 0;
+out:
+	k_mutex_unlock(&queue->tx_mutex);
+
+	return ret;
 }
 
 static void eth_mchp_queue0_isr(const struct device *dev)
@@ -786,15 +807,11 @@ static void eth_mchp_queue0_isr(const struct device *dev)
 
 	LOG_DBG("GMAC_ISR=0x%08x", isr);
 
-	if (isr & GMAC_ISR_RCOMP_Msk) {
+	if (isr & (GMAC_INT_RX_ERR_BITS | GMAC_ISR_RCOMP_Msk)) {
 		tail_desc = &rx_desc_list->buf_desc[rx_desc_list->tail];
 		LOG_DBG("rx.w1=0x%08x, tail=%d", tail_desc->status, rx_desc_list->tail);
 		dev_data->rx_queue = queue;
 		k_sem_give(&dev_data->rx_int_sem);
-	}
-
-	if ((isr & GMAC_INT_RX_ERR_BITS) != 0) {
-		queue->err_rx_queue_flushed_count++;
 	}
 
 	if (isr & GMAC_ISR_TCOMP_Msk) {
