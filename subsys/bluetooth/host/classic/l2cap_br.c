@@ -3010,6 +3010,9 @@ destroy:
 	if (L2CAP_BR_CID_IS_DYN(BR_CHAN(chan)->rx.cid)) {
 		BR_CHAN(chan)->rx.cid = 0U;
 	}
+	if (L2CAP_BR_CID_IS_DYN(BR_CHAN(chan)->tx.cid)) {
+		BR_CHAN(chan)->tx.cid = 0U;
+	}
 #endif
 	if (chan->destroy) {
 		chan->destroy(chan);
