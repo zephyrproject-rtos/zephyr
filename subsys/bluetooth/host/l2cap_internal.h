@@ -97,6 +97,10 @@ struct bt_l2cap_le_conn_req {
 	uint16_t credits;
 } __packed;
 
+/* The smallest MTU and MPS of an LE credit-based channel (Core Vol 3, Part A, section 4.22) */
+#define BT_L2CAP_LE_MIN_MTU             23U
+#define BT_L2CAP_LE_MIN_MPS             23U
+
 /* valid results in conn response on LE */
 #define BT_L2CAP_LE_SUCCESS             0x0000
 #define BT_L2CAP_LE_ERR_PSM_NOT_SUPP    0x0002
