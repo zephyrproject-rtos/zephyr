@@ -98,10 +98,17 @@ static inline int esp32_usb_otg_hs_disable(struct esp32_usb_otg_hs_data *data)
 static inline int esp32_usb_otg_hs_shutdown(const struct esp32_usb_otg_hs_config *cfg,
 					    struct esp32_usb_otg_hs_data *data)
 {
+	int ret;
+
 	usb_utmi_hal_disable();
 	esp_intr_free(data->int_handle);
 
-	return clock_control_off(cfg->clock_dev, cfg->clock_subsys);
+	ret = clock_control_off(cfg->clock_dev, cfg->clock_subsys);
+	if (ret == -ENOTSUP) {
+		ret = 0;
+	}
+
+	return ret;
 }
 
 #ifndef UDC_DWC2_IRQ_DT_INST_DEFINE
