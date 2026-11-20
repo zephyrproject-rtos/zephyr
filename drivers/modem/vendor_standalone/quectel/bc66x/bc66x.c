@@ -36,7 +36,6 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/offloaded_netdev.h>
-#include <zephyr/device.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/atomic.h>

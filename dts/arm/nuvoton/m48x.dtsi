@@ -10,7 +10,6 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/numicro_m48x_clock.h>
 #include <zephyr/dt-bindings/reset/numicro_m48x_reset.h>
-#include <freq.h>
 
 / {
 	cpus {

@@ -15,7 +15,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/clock.h>
-#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
 LOG_MODULE_REGISTER(xsi_single_process, CONFIG_XSI_SINGLE_PROCESS_LOG_LEVEL);

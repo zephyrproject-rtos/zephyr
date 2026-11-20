@@ -31,7 +31,6 @@ void otPlatFree(void *aPtr)
 }
 #else
 
-#include <openthread/platform/memory.h>
 
 #include <stdlib.h>
 

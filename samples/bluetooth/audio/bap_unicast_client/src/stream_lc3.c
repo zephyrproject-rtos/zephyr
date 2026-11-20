@@ -16,7 +16,6 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
 #include <lc3.h>
