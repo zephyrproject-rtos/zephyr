@@ -137,5 +137,13 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
     REQUIRED)
 endif()
 
+if(CONFIG_SOC_MIMX94398_M33 AND CONFIG_OPENAMP_RSC_TABLE)
+  # Linux imx_rproc finds the nonzero M33S boot-vector address by this section name.
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND ${CMAKE_OBJCOPY} --rename-section rom_start=.interrupts
+            $<TARGET_FILE:zephyr_final>
+  )
+endif()
+
 zephyr_library()
 zephyr_library_sources(board.c)
