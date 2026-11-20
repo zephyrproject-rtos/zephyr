@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    A Fake I2S controller for use as either a stub or a mock in Zephyr
+    testing.
+
+compatible: "zephyr,fake-i2s"
+
+include: i2s-controller.yaml
