@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+
+shield:
+  name: bosch_bmi270_bmm350_shuttle
+  full_name: BMI270 and BMM350 Shuttle Board
+  vendor: espressif
+  supported_features:
+    - sensor

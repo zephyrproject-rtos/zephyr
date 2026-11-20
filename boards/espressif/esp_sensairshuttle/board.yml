@@ -1,0 +1,6 @@
+board:
+  name: esp_sensairshuttle
+  full_name: ESP-SensairShuttle
+  vendor: espressif
+  socs:
+    - name: esp32c5
