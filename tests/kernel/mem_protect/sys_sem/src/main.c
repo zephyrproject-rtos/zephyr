@@ -14,10 +14,12 @@
 #define SEM_TIMEOUT (K_MSEC(100))
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define TOTAL_THREADS_WAITING (3)
+#define SEM_RETRY_TIMEOUT_TICKS MAX(40U, k_ms_to_ticks_ceil32(100))
 
 /******************************************************************************/
 /* declaration */
 ZTEST_BMEM struct sys_sem simple_sem;
+static ZTEST_BMEM uint32_t remaining_wakeups;
 ZTEST_BMEM struct sys_sem low_prio_sem;
 ZTEST_BMEM struct sys_sem mid_prio_sem;
 ZTEST_DMEM struct sys_sem high_prio_sem;
@@ -41,6 +43,24 @@ static void isr_sem_give(const void *semaphore)
 static void isr_sem_take(const void *semaphore)
 {
 	sys_sem_take((struct sys_sem *)semaphore, K_NO_WAIT);
+}
+
+static void give_take_timer(struct k_timer *timer)
+{
+	zassert_ok(sys_sem_give(&simple_sem));
+	zassert_ok(sys_sem_take(&simple_sem, K_NO_WAIT));
+
+	if (--remaining_wakeups == 0U) {
+		k_timer_stop(timer);
+	}
+}
+
+K_TIMER_DEFINE(wakeup_timer, give_take_timer, NULL);
+
+static void sys_sem_1cpu_after(void *data)
+{
+	k_timer_stop(&wakeup_timer);
+	ztest_simple_1cpu_after(data);
 }
 
 static void sem_give_from_isr(void *semaphore)
@@ -848,6 +868,109 @@ ZTEST_USER(sys_sem_1cpu, test_sys_sem_multiple_threads_wait)
 }
 
 /**
+ * @brief Verify a wakeup without a token does not restart the timeout.
+ */
+ZTEST_USER(sys_sem_1cpu, test_sys_sem_take_timeout_after_wakeup)
+{
+	const uint32_t timeout_ticks = SEM_RETRY_TIMEOUT_TICKS;
+	int64_t start;
+	int64_t elapsed;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_USERSPACE)) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(sys_sem_init(&simple_sem, 0, 1));
+	remaining_wakeups = 1U;
+	k_timer_start(&wakeup_timer, K_TICKS(3U * timeout_ticks / 4U), K_NO_WAIT);
+	start = k_uptime_ticks();
+	ret = sys_sem_take(&simple_sem, K_TICKS(timeout_ticks));
+	elapsed = k_uptime_ticks() - start;
+	k_timer_stop(&wakeup_timer);
+
+	zassert_equal(ret, -ETIMEDOUT);
+	zassert_true(elapsed >= timeout_ticks && elapsed < timeout_ticks + timeout_ticks / 2U,
+		     "Timeout not preserved: %lld ticks", (long long)elapsed);
+}
+
+enum retry_timeout_type {
+	RELATIVE_TIMEOUT,
+	ABSOLUTE_TIMEOUT,
+	NO_WAIT_TIMEOUT,
+};
+
+static void check_timeout_under_contention(enum retry_timeout_type type)
+{
+	const uint32_t timeout_ticks = SEM_RETRY_TIMEOUT_TICKS;
+	k_timeout_t timeout = K_TICKS(timeout_ticks);
+	int64_t start;
+	int64_t elapsed;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_USERSPACE) ||
+	    (type == ABSOLUTE_TIMEOUT && !IS_ENABLED(CONFIG_TIMEOUT_64BIT))) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(sys_sem_init(&simple_sem, 0, 1));
+	/* Bound a broken implementation's wait so it fails without hanging the suite. */
+	remaining_wakeups = timeout_ticks;
+	k_timer_start(&wakeup_timer,
+		      type == NO_WAIT_TIMEOUT ? K_NO_WAIT : K_TICKS(timeout_ticks - 8U),
+		      K_TICKS(1));
+	start = k_uptime_ticks();
+#ifdef CONFIG_TIMEOUT_64BIT
+	if (type == ABSOLUTE_TIMEOUT) {
+		timeout = K_TIMEOUT_ABS_TICKS(start + timeout_ticks);
+	}
+#endif
+	if (type == NO_WAIT_TIMEOUT) {
+		timeout = K_NO_WAIT;
+	}
+	ret = sys_sem_take(&simple_sem, timeout);
+	elapsed = k_uptime_ticks() - start;
+	k_timer_stop(&wakeup_timer);
+
+	TC_PRINT("Timeout mode %d: %lld ticks, %u wakeups\n", type, (long long)elapsed,
+		 timeout_ticks - remaining_wakeups);
+	zassert_equal(ret, -ETIMEDOUT);
+	if (type == NO_WAIT_TIMEOUT) {
+		zassert_true(elapsed < timeout_ticks / 4U, "No-wait take kept retrying: %lld ticks",
+			     (long long)elapsed);
+	} else {
+		zassert_true(elapsed >= timeout_ticks, "Timeout returned early: %lld ticks",
+			     (long long)elapsed);
+		zassert_true(elapsed < timeout_ticks + timeout_ticks / 2U,
+			     "Wait outlasted contention: %lld ticks", (long long)elapsed);
+	}
+}
+
+/**
+ * @brief Verify repeated wakeups cannot extend a relative timeout past its deadline.
+ */
+ZTEST_USER(sys_sem_1cpu, test_sys_sem_take_timeout_under_contention)
+{
+	check_timeout_under_contention(RELATIVE_TIMEOUT);
+}
+
+/**
+ * @brief Verify repeated wakeups cannot extend an absolute timeout past its deadline.
+ */
+ZTEST_USER(sys_sem_1cpu, test_sys_sem_take_absolute_timeout_under_contention)
+{
+	check_timeout_under_contention(ABSOLUTE_TIMEOUT);
+}
+
+/**
+ * @brief Verify a no-wait take cannot keep retrying under repeated wakeups.
+ */
+ZTEST_USER(sys_sem_1cpu, test_sys_sem_take_no_wait_under_contention)
+{
+	check_timeout_under_contention(NO_WAIT_TIMEOUT);
+}
+
+/**
  * @}
  */
 
@@ -862,9 +985,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 void *sys_sem_setup(void)
 {
 #ifdef CONFIG_USERSPACE
-	k_thread_access_grant(k_current_get(),
-			      &stack_1, &stack_2, &stack_3,
-			      &sem_tid, &sem_tid_1, &sem_tid_2);
+	k_thread_access_grant(k_current_get(), &stack_1, &stack_2, &stack_3, &sem_tid, &sem_tid_1,
+			      &sem_tid_2, &wakeup_timer);
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
 		k_thread_access_grant(k_current_get(),
@@ -877,7 +999,6 @@ void *sys_sem_setup(void)
 
 ZTEST_SUITE(sys_sem, NULL, sys_sem_setup, NULL, NULL, NULL);
 
-ZTEST_SUITE(sys_sem_1cpu, NULL, sys_sem_setup, ztest_simple_1cpu_before,
-		ztest_simple_1cpu_after, NULL);
+ZTEST_SUITE(sys_sem_1cpu, NULL, sys_sem_setup, ztest_simple_1cpu_before, sys_sem_1cpu_after, NULL);
 
 /******************************************************************************/
