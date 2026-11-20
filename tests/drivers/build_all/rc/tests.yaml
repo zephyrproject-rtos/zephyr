@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - rc
+  build_only: true
+tests:
+  drivers.rc.default:
+    platform_allow:
+      - native_sim
+  drivers.rc.rx_only:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=rx_only.overlay
+  drivers.rc.pwm_ir_transmitter.m1s_dock:
+    platform_allow:
+      - m1s_dock
+    extra_args:
+      - DTC_OVERLAY_FILE=m1s_dock.overlay

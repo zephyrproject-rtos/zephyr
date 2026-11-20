@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Demodulating infrared receiver module, such as a TSOP or VS1838B, whose
+  output is connected to a GPIO.
+
+compatible: "gpio-ir-receiver"
+
+include:
+  - name: rc-device.yaml
+    property-blocklist:
+      - carrier-hz
+      - duty-cycle-percent
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Receiver output, one GPIO. The flags give the active level, for
+      example GPIO_ACTIVE_LOW for modules that pull the output low while
+      they receive the carrier.

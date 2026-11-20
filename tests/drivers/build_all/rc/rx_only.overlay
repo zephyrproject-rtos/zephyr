@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	rc-loopback-0 {
+		rx-only;
+	};
+
+	rc-loopback-1 {
+		rx-only;
+	};
+
+	rc-loopback-2 {
+		rx-only;
+	};
+};
+
+&rc_pwm_ir_transmitter {
+	status = "disabled";
+};
