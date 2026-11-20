@@ -41,8 +41,10 @@ int dsa_port_initialize(const struct device *dev)
 
 		/* Provide DSA information to the conduit port */
 		eth_ctx_conduit = net_if_l2_data(dsa_switch_ctx->iface_conduit);
-		eth_ctx_conduit->dsa_switch_ctx = dsa_switch_ctx;
-		eth_ctx_conduit->dsa_port = DSA_CONDUIT_PORT;
+		if (eth_ctx_conduit != NULL) {
+			eth_ctx_conduit->dsa_switch_ctx = dsa_switch_ctx;
+			eth_ctx_conduit->dsa_port = DSA_CONDUIT_PORT;
+		}
 	}
 
 	if (cfg->ethernet_connection == NULL) {
