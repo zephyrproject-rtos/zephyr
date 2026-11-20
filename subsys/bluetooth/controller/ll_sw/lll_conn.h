@@ -41,8 +41,21 @@ struct node_tx {
 		memq_link_t *link;
 	};
 
+#if defined(CONFIG_BT_CTLR_TX_PDU_META)
+	union {
+		lll_tx_pdu_meta_t tx_pdu_meta __aligned(4); /* force alignment of union */
+		struct {
+			uint8_t _pdu_offset[LLL_TX_PDU_META_PDU_OFFSET];
+			uint8_t pdu[0];
+		};
+	};
+#else /* !CONFIG_BT_CTLR_TX_PDU_META */
 	uint8_t pdu[];
+#endif /* !CONFIG_BT_CTLR_TX_PDU_META */
 };
+
+/* As for node rx: keep pdu[] 2-byte aligned */
+BUILD_ASSERT((offsetof(struct node_tx, pdu) % 2U) == 0U, "pdu[] must be 2-byte aligned");
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 struct data_pdu_length {
@@ -216,3 +229,8 @@ extern struct lll_conn *ull_conn_lll_get(uint16_t handle);
 extern void ull_conn_lll_tx_demux_sched(struct lll_conn *lll);
 extern void ull_conn_lll_ack_enqueue(uint16_t handle, struct node_tx *tx);
 extern uint16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll);
+
+/* Vendor initializer for the connection meta member, called after the native members are set.
+ * Writes memory only: radio resources are acquired after the connection request.
+ */
+void lll_conn_meta_init(struct lll_conn *lll);
