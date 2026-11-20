@@ -1,15 +1,44 @@
+# SPDX-FileCopyrightText: Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - arm
+  arch_allow:
+    - arm
+  platform_allow:
+    - qemu_cortex_m3
+    - mps2/an385
+    - mps2/an386
+    - mps2/an521/cpu0
+    - mps2/an521/cpu1
+    - mps3/corstone300/an547
+    - mps3/corstone300/fvp
+    - mps3/corstone310/fvp
+    - mps4/corstone320/fvp
 tests:
-  arch.arm.switch:
-    tags:
-      - arm
-    arch_allow:
-      - arm
-    platform_allow:
-      - qemu_cortex_m3
-      - mps2/an385
+  arch.arm.switch_coop:
+    extra_configs:
+      - CONFIG_MULTITHREADING=n
+      - CONFIG_FPU=n
+      # The test calls arm_m_switch() from application code with frame pointers.
+      - CONFIG_ARM_FP_CLOBBER_WORKAROUND=y
+  arch.arm.switch_coop.fpu:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_MULTITHREADING=n
+      - CONFIG_FPU=y
+      - CONFIG_ARM_FP_CLOBBER_WORKAROUND=y
+  arch.arm.switch_interrupt:
+    extra_configs:
+      - CONFIG_MULTITHREADING=y
+      - CONFIG_FPU=n
+  arch.arm.switch_interrupt.fpu:
+    filter: CONFIG_CPU_HAS_FPU
+    integration_platforms:
       - mps2/an386
-      - mps2/an521/cpu0
-      - mps2/an521/cpu1
-      - mps3/corstone300/fvp
-      - mps3/corstone310/fvp
-      - mps4/corstone320/fvp
+      - mps3/corstone300/an547
+    extra_configs:
+      - CONFIG_MULTITHREADING=y
+      - CONFIG_FPU=y
+      - CONFIG_FPU_SHARING=y
