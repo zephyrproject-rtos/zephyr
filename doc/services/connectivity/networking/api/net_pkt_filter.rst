@@ -201,6 +201,8 @@ API Reference
 
 .. doxygengroup:: npf_eth_cond
 
+.. doxygengroup:: npf_ip_cond
+
 .. doxygengroup:: npf_udp_cond
 
 .. doxygengroup:: npf_tcp_cond
