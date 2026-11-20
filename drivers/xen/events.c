@@ -48,6 +48,24 @@ static evtchn_handle_t event_channels[EVTCHN_2L_NR_CHANNELS];
 static uint32_t active_callback_port[CONFIG_MP_MAX_NUM_CPUS];
 
 #define EVTCHN_WORD_BITS (8 * sizeof(xen_ulong_t))
+#define EVTCHN_WORDS (EVTCHN_2L_NR_CHANNELS / EVTCHN_WORD_BITS)
+
+/*
+ * Driver-side port ownership cache.
+ *
+ * Xen's evtchn_pending_sel is per-vCPU, but it selects a word in the
+ * domain-wide evtchn_pending bitmap. If ports for different vCPUs share that
+ * word, an ISR running on one CPU must not drain the other CPU's ports just
+ * because their pending bits live in the same word.
+ *
+ * Updates use atomic read/modify/write helpers so the ISR can read this cache
+ * without taking any callback-state lock.
+ *
+ * Per-vCPU selector/upcall fields live in vcpu_info_t. Those fields are
+ * consumed using the ordering and atomic read-clear rules defined by the Xen
+ * shared-memory ABI.
+ */
+static xen_ulong_t event_channel_cpu_mask[CONFIG_MP_MAX_NUM_CPUS][EVTCHN_WORDS];
 
 static void empty_callback(void *data)
 {
@@ -69,6 +87,14 @@ static xen_ulong_t shared_event_word(const xen_ulong_t *bitmap, uint32_t word)
 	return __atomic_load_n(&bitmap[word], __ATOMIC_SEQ_CST);
 }
 
+static bool read_and_set_shared_event_bit(xen_ulong_t *bitmap, evtchn_port_t port)
+{
+	uint32_t word = port / EVTCHN_WORD_BITS;
+	xen_ulong_t bit = shared_event_bit(port);
+
+	return (__atomic_fetch_or(&bitmap[word], bit, __ATOMIC_SEQ_CST) & bit) != 0;
+}
+
 static void set_shared_event_bit(xen_ulong_t *bitmap, evtchn_port_t port)
 {
 	uint32_t word = port / EVTCHN_WORD_BITS;
@@ -85,14 +111,6 @@ static void clear_shared_event_bit(xen_ulong_t *bitmap, evtchn_port_t port)
 	(void)__atomic_fetch_and(&bitmap[word], ~bit, __ATOMIC_SEQ_CST);
 }
 
-static bool read_and_set_shared_event_bit(xen_ulong_t *bitmap, evtchn_port_t port)
-{
-	uint32_t word = port / EVTCHN_WORD_BITS;
-	xen_ulong_t bit = shared_event_bit(port);
-
-	return (__atomic_fetch_or(&bitmap[word], bit, __ATOMIC_SEQ_CST) & bit) != 0;
-}
-
 static bool read_and_clear_shared_event_bit(xen_ulong_t *bitmap, evtchn_port_t port)
 {
 	uint32_t word = port / EVTCHN_WORD_BITS;
@@ -101,11 +119,35 @@ static bool read_and_clear_shared_event_bit(xen_ulong_t *bitmap, evtchn_port_t p
 	return (__atomic_fetch_and(&bitmap[word], ~bit, __ATOMIC_SEQ_CST) & bit) != 0;
 }
 
+static void set_event_channel_cpu(evtchn_port_t port, uint32_t vcpu)
+{
+	uint32_t old_vcpu;
+	uint32_t word = port / EVTCHN_WORD_BITS;
+	xen_ulong_t bit_mask = shared_event_bit(port);
+
+	(void)__atomic_fetch_or(&event_channel_cpu_mask[vcpu][word], bit_mask, __ATOMIC_SEQ_CST);
+
+	for (old_vcpu = 0; old_vcpu < CONFIG_MP_MAX_NUM_CPUS; old_vcpu++) {
+		if (old_vcpu == vcpu) {
+			continue;
+		}
+
+		(void)__atomic_fetch_and(&event_channel_cpu_mask[old_vcpu][word],
+					 ~bit_mask, __ATOMIC_SEQ_CST);
+	}
+}
+
 static void reset_event_channel_state(evtchn_port_t port)
 {
 	event_channels[port].cb = empty_callback;
 	event_channels[port].priv = NULL;
 	event_channels[port].missed = false;
+}
+
+static void reset_unused_event_channel_state(evtchn_port_t port)
+{
+	reset_event_channel_state(port);
+	set_event_channel_cpu(port, 0);
 }
 
 int alloc_unbound_event_channel(domid_t remote_dom)
@@ -159,6 +201,12 @@ int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port
 
 	rc = bind_event_channel(bind.local_port, cb, data);
 	if (rc < 0) {
+		close_rc = evtchn_close(bind.local_port);
+		if (close_rc != 0) {
+			LOG_ERR("%s: close evtchn #%u after bind failure failed: %d",
+				__func__, bind.local_port, close_rc);
+		}
+
 		return rc;
 	}
 
@@ -181,6 +229,28 @@ int evtchn_status(evtchn_status_t *status)
 	return HYPERVISOR_event_channel_op(EVTCHNOP_status, status);
 }
 
+static int get_event_channel_cpu(evtchn_port_t port, uint32_t *vcpu)
+{
+	struct evtchn_status status = {
+		.dom = DOMID_SELF,
+		.port = port,
+	};
+	int rc;
+
+	rc = evtchn_status(&status);
+	if (rc != 0) {
+		return rc;
+	}
+
+	if (status.vcpu >= CONFIG_MP_MAX_NUM_CPUS) {
+		return -EINVAL;
+	}
+
+	*vcpu = status.vcpu;
+
+	return 0;
+}
+
 /* The caller holds event_channels[port].lock. */
 static int evtchn_close_locked(evtchn_port_t port)
 {
@@ -193,6 +263,7 @@ static int evtchn_close_locked(evtchn_port_t port)
 	};
 	evtchn_cb_t cb;
 	void *priv;
+	uint32_t vcpu;
 	bool missed;
 	bool was_masked;
 	bool was_pending;
@@ -211,13 +282,21 @@ static int evtchn_close_locked(evtchn_port_t port)
 	 */
 	was_masked = read_and_set_shared_event_bit(s->evtchn_mask, port);
 	was_pending = read_and_clear_shared_event_bit(s->evtchn_pending, port);
-	reset_event_channel_state(port);
+	reset_unused_event_channel_state(port);
 
 	rc = HYPERVISOR_event_channel_op(EVTCHNOP_close, &close);
 	if (rc != 0) {
 		event_channels[port].cb = cb;
 		event_channels[port].priv = priv;
 		event_channels[port].missed = missed;
+
+		restore_rc = get_event_channel_cpu(port, &vcpu);
+		if (restore_rc == 0) {
+			set_event_channel_cpu(port, vcpu);
+		} else {
+			LOG_ERR("%s: restore evtchn #%u CPU failed: %d",
+				__func__, port, restore_rc);
+		}
 
 		if (was_pending) {
 			set_shared_event_bit(s->evtchn_pending, port);
@@ -299,9 +378,59 @@ int notify_evtchn(evtchn_port_t port)
 	return HYPERVISOR_event_channel_op(EVTCHNOP_send, &send);
 }
 
+int set_event_channel_affinity(evtchn_port_t port, uint32_t vcpu)
+{
+	shared_info_t *s = HYPERVISOR_shared_info;
+	struct evtchn_bind_vcpu bind = {
+		.port = port,
+		.vcpu = vcpu,
+	};
+	struct evtchn_unmask unmask = {
+		.port = port,
+	};
+	k_spinlock_key_t key;
+	bool was_masked;
+	int rc;
+	int unmask_rc = 0;
+
+	if (port >= EVTCHN_2L_NR_CHANNELS) {
+		return -EINVAL;
+	}
+
+	if (vcpu >= CONFIG_MP_MAX_NUM_CPUS) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Keep the port masked while Xen and the driver's dispatch cache move
+	 * to the new vCPU. Otherwise Xen can set the new vCPU's pending
+	 * selector before event_channel_cpu_mask[] lets that CPU drain the
+	 * port, leaving the event pending without a matching selector kick.
+	 */
+	key = k_spin_lock(&event_channels[port].lock);
+	was_masked = read_and_set_shared_event_bit(s->evtchn_mask, port);
+	rc = HYPERVISOR_event_channel_op(EVTCHNOP_bind_vcpu, &bind);
+	if (rc == 0) {
+		set_event_channel_cpu(port, vcpu);
+	}
+
+	if (!was_masked) {
+		unmask_rc = HYPERVISOR_event_channel_op(EVTCHNOP_unmask, &unmask);
+		if (unmask_rc != 0) {
+			LOG_ERR("%s: restore evtchn #%u unmask failed: %d",
+				__func__, port, unmask_rc);
+		}
+	}
+	k_spin_unlock(&event_channels[port].lock, key);
+
+	return rc ? rc : unmask_rc;
+}
+
 int bind_event_channel(evtchn_port_t port, evtchn_cb_t cb, void *data)
 {
 	k_spinlock_key_t key;
+	uint32_t vcpu;
+	int rc;
 
 	__ASSERT(port < EVTCHN_2L_NR_CHANNELS,
 		"%s: trying to bind invalid evtchn #%u\n",
@@ -310,6 +439,13 @@ int bind_event_channel(evtchn_port_t port, evtchn_cb_t cb, void *data)
 		__func__, port);
 
 	key = k_spin_lock(&event_channels[port].lock);
+	rc = get_event_channel_cpu(port, &vcpu);
+	if (rc != 0) {
+		k_spin_unlock(&event_channels[port].lock, key);
+		return rc;
+	}
+
+	set_event_channel_cpu(port, vcpu);
 	event_channels[port].priv = data;
 	event_channels[port].cb = cb;
 	k_spin_unlock(&event_channels[port].lock, key);
@@ -398,10 +534,12 @@ void clear_event_channel(evtchn_port_t port)
 static inline xen_ulong_t get_pending_events(uint32_t pos)
 {
 	shared_info_t *s = HYPERVISOR_shared_info;
+	uint32_t cpu = arch_curr_cpu()->id;
 	xen_ulong_t pending = shared_event_word(s->evtchn_pending, pos);
 	xen_ulong_t mask = shared_event_word(s->evtchn_mask, pos);
+	xen_ulong_t cpu_mask = shared_event_word(event_channel_cpu_mask[cpu], pos);
 
-	return pending & ~mask;
+	return pending & ~mask & cpu_mask;
 }
 
 /*
@@ -410,22 +548,37 @@ static inline xen_ulong_t get_pending_events(uint32_t pos)
  */
 static void process_event(evtchn_port_t port)
 {
+	shared_info_t *s = HYPERVISOR_shared_info;
 	uint32_t cpu = arch_curr_cpu()->id;
+	uint32_t word = port / EVTCHN_WORD_BITS;
+	xen_ulong_t bit = shared_event_bit(port);
 	k_spinlock_key_t key;
 
-	clear_event_channel(port);
-
+	/*
+	 * get_pending_events() is only a snapshot. Affinity may have changed
+	 * before this CPU claims the port, so recheck ownership and consume the
+	 * pending bit under the same lock used by affinity updates.
+	 */
 	key = k_spin_lock(&event_channels[port].lock);
+	if ((shared_event_word(event_channel_cpu_mask[cpu], word) & bit) == 0) {
+		k_spin_unlock(&event_channels[port].lock, key);
+		return;
+	}
+
+	if (!read_and_clear_shared_event_bit(s->evtchn_pending, port)) {
+		k_spin_unlock(&event_channels[port].lock, key);
+		return;
+	}
+
 	if (event_channels[port].cb == empty_callback) {
 		event_channels[port].missed = true;
 	} else {
 		/*
 		 * Keep event_channels[port].lock held while invoking the handler, so
-		 * bind/unbind cannot replace or remove callback state until an
-		 * in-flight callback returns. Event-channel callbacks run in IRQ
-		 * context and must not call APIs that take this lock for the same
-		 * port, except evtchn_close(), which detects this path and reuses the
-		 * lock already held here.
+		 * callback-state and affinity updates cannot race with an in-flight
+		 * callback. Event-channel callbacks run in IRQ context and must not
+		 * call APIs that take this lock for the same port, except evtchn_close(),
+		 * which detects this path and reuses the lock already held here.
 		 */
 		__atomic_store_n(&active_callback_port[cpu], port + 1U, __ATOMIC_RELAXED);
 		event_channels[port].cb(event_channels[port].priv);
@@ -547,7 +700,7 @@ int xen_events_init(void)
 
 	/* bind all ports with default callback */
 	for (i = 0; i < EVTCHN_2L_NR_CHANNELS; i++) {
-		reset_event_channel_state(i);
+		reset_unused_event_channel_state(i);
 	}
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq),

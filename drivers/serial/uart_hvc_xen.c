@@ -251,7 +251,12 @@ int xen_console_init(const struct device *dev)
 	data->intf = (struct xencons_interface *) DEVICE_MMIO_GET(dev);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	bind_event_channel(data->evtchn, hvc_uart_evtchn_cb, data);
+	ret = bind_event_channel(data->evtchn, hvc_uart_evtchn_cb, data);
+	if (ret != 0) {
+		LOG_ERR("%s: failed to bind Xen console evtchn, ret = %d\n",
+			__func__, ret);
+		return ret;
+	}
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 	LOG_INF("Xen HVC inited successfully\n");
