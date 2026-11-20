@@ -107,6 +107,7 @@
 
 &clock {
 	compatible = "microchip,pic32cz-ca-clock";
+	flash-address-wait-state-en = <1>;
 
 	xosc: xosc {
 		compatible = "microchip,pic32cz-ca-xosc";
