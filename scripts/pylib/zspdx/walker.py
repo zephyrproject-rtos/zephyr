@@ -129,6 +129,12 @@ class WalkerConfig:
     # should also add an SPDX document for the SDK?
     include_sdk: bool = False
 
+    # organization credited as the SBOM creator instead of The Zephyr Project,
+    # and its contact details
+    creator_name: str = ""
+    creator_email: str = ""
+    creator_url: str = ""
+
 
 # Walker is the main analysis class: it walks through the CMake codemodel,
 # build files, and corresponding source and SDK files, and gathers the
@@ -362,7 +368,11 @@ class Walker:
         fields, so the SBOM advertises a human/organization author alongside the
         versioned generation tool.
         """
-        self.sbom_graph.metadata["creator_organization"] = ZEPHYR_ORGANIZATION
+        self.sbom_graph.metadata["creator_organization"] = (
+            self.cfg.creator_name or ZEPHYR_ORGANIZATION
+        )
+        self.sbom_graph.metadata["creator_email"] = self.cfg.creator_email
+        self.sbom_graph.metadata["creator_url"] = self.cfg.creator_url
         self.sbom_graph.metadata["tool_name"] = SPDX_TOOL_NAME
         self.sbom_graph.metadata["tool_version"] = self._read_zephyr_version(
             (zephyr or {}).get("path", "")

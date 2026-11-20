@@ -184,7 +184,10 @@ DocumentNamespace: {namespace}
 
         organization = metadata.get("creator_organization")
         if organization:
-            creators.append(f"Organization: {organization}")
+            # SPDX 2.x only has room for an e-mail address, not a URL
+            email = metadata.get("creator_email")
+            contact = f" ({email})" if email else ""
+            creators.append(f"Organization: {organization}{contact}")
 
         tool_name = metadata.get("tool_name") or "Zephyr SPDX builder"
         tool_version = metadata.get("tool_version")

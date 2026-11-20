@@ -6,14 +6,53 @@
 
 import pytest
 from conftest import NAMESPACE, ORGANIZATION, TOOL_NAME, TOOL_VERSION
+from spdx_tools.spdx.model.actor import ActorType
 from spdx_tools.spdx.model.relationship import RelationshipType
 from spdx_tools.spdx.validation.document_validator import validate_full_spdx_document
+from zspdx.walker import ZEPHYR_ORGANIZATION, Walker, WalkerConfig
+
+CREATOR_EMAIL = "sbom@example.com"
+CREATOR_URL = "https://example.com/sbom"
 
 
 @pytest.fixture
 def graph(walker_graph):
     """A graph spanning more than one document, so every document is checked."""
     return walker_graph([{"name": "mymodule", "remote": "https://github.com/vendor/mymodule"}])
+
+
+@pytest.fixture
+def graph_with_contact(graph):
+    """The same graph, with contact details for the SBOM creator."""
+    graph.metadata.update({"creator_email": CREATOR_EMAIL, "creator_url": CREATOR_URL})
+    return graph
+
+
+class TestCreatorMetadata:
+    """Tests for the SBOM creator the walker records in the graph metadata."""
+
+    @pytest.mark.parametrize(
+        ("name", "expected"),
+        [
+            pytest.param("", ZEPHYR_ORGANIZATION, id="default"),
+            pytest.param("Example Manufacturer", "Example Manufacturer", id="override"),
+        ],
+    )
+    def test_creator(self, tmp_path, name, expected):
+        config = WalkerConfig()
+        config.namespace_prefix = NAMESPACE
+        config.build_dir = str(tmp_path)
+        config.creator_name = name
+        config.creator_email = CREATOR_EMAIL
+        config.creator_url = CREATOR_URL
+        walker = Walker(config)
+        walker._set_creation_metadata(None)
+        metadata = walker.sbom_graph.metadata
+        assert (
+            metadata["creator_organization"],
+            metadata["creator_email"],
+            metadata["creator_url"],
+        ) == (expected, CREATOR_EMAIL, CREATOR_URL)
 
 
 class TestSPDX2Documents:
@@ -46,6 +85,19 @@ class TestSPDX2Documents:
             creators = [str(c) for c in document.creation_info.creators]
             assert f"Organization: {ORGANIZATION}" in creators, f"{name}: got {creators}"
             assert f"Tool: {TOOL_NAME}-{TOOL_VERSION}" in creators, f"{name}: got {creators}"
+
+    def test_creator_contact(self, graph_with_contact, spdx2_documents):
+        """The e-mail address rides on the creator; SPDX 2.x has no room for the URL."""
+        _, documents = spdx2_documents(graph_with_contact)
+        for name, document in documents.items():
+            organizations = [
+                (c.name, c.email)
+                for c in document.creation_info.creators
+                if c.actor_type == ActorType.ORGANIZATION
+            ]
+            assert organizations == [(ORGANIZATION, CREATOR_EMAIL)], name
+            messages = [m.validation_message for m in validate_full_spdx_document(document)]
+            assert messages == [], f"{name}: {messages}"
 
     def test_describes_relationship(self, graph, spdx2_documents):
         _, documents = spdx2_documents(graph)
@@ -144,3 +196,19 @@ class TestSPDX3Documents:
             assert any(i.endswith(f"@{TOOL_VERSION}") for i in identifiers), (
                 f"{name}: no tool identifier carrying version {TOOL_VERSION}, got {identifiers}"
             )
+
+    def test_creator_contact(self, graph_with_contact, spdx3_documents):
+        """The creator organization carries its e-mail address and URL."""
+        spdx, documents = spdx3_documents(graph_with_contact)
+        for name, objects in documents.items():
+            document = next(o for o in objects.objects if isinstance(o, spdx.SpdxDocument))
+            organizations = [
+                a for a in document.creationInfo.createdBy if isinstance(a, spdx.Organization)
+            ]
+            assert [o.name for o in organizations] == [ORGANIZATION], name
+            identifiers = organizations[0].externalIdentifier
+            emitted = {(i.externalIdentifierType, i.identifier) for i in identifiers}
+            assert emitted == {
+                (spdx.ExternalIdentifierType.email, CREATOR_EMAIL),
+                (spdx.ExternalIdentifierType.urlScheme, CREATOR_URL),
+            }, name
