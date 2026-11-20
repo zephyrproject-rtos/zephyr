@@ -217,6 +217,11 @@ void tmc51xx_reschedule_rampstat_callback(const struct device *dev)
 {
 	struct tmc51xx_data *data = dev->data;
 
+	if (!device_is_ready(dev)) {
+		LOG_ERR_DEVICE_NOT_READY(dev);
+		return;
+	}
+
 	k_work_reschedule(&data->rampstat_callback_dwork,
 			  K_MSEC(CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
 }
@@ -410,6 +415,7 @@ static int tmc51xx_init(const struct device *dev)
 		config->motion_controller->name, config->stepper_driver->name);
 
 	k_sem_init(&data->sem, 1, 1);
+	k_work_init_delayable(&data->rampstat_callback_dwork, rampstat_work_handler);
 
 	err = tmc51xx_bus_check(dev);
 	if (err < 0) {
@@ -447,8 +453,6 @@ static int tmc51xx_init(const struct device *dev)
 			LOG_ERR("Could not configure DIAG0 GPIO (%d)", err);
 			return err;
 		}
-		k_work_init_delayable(&data->rampstat_callback_dwork, rampstat_work_handler);
-
 		err = gpio_pin_interrupt_configure_dt(&config->diag0_gpio, GPIO_INT_EDGE_RISING);
 		if (err) {
 			LOG_ERR("failed to configure DIAG0 interrupt (err %d)", err);
@@ -493,7 +497,6 @@ static int tmc51xx_init(const struct device *dev)
 		return -EIO;
 	}
 
-	k_work_init_delayable(&data->rampstat_callback_dwork, rampstat_work_handler);
 	uint32_t rampstat_value;
 	(void)rampstat_read_clear(dev, &rampstat_value);
 
