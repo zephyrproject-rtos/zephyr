@@ -5355,7 +5355,8 @@ static void quic_pto_work_handler(struct k_work *work)
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
-	if (ep->recovery.closing) {
+	/* RFC 9000 ch. 10.2.2: no probe is sent to a peer that closed */
+	if (ep->recovery.closing || ep->draining) {
 		k_mutex_unlock(&ep->recovery.lock);
 		return;
 	}
@@ -7030,6 +7031,14 @@ static int quic_endpoint_send_close(struct quic_endpoint *ep,
 	uint8_t frame[128];
 	enum quic_secret_level level;
 	int len;
+
+	/* RFC 9000 ch. 10.2.2: a connection the peer closed is draining, and
+	 * a close of ours is not sent to it any more.
+	 */
+	if (ep->draining) {
+		quic_recovery_begin_shutdown(ep);
+		return 0;
+	}
 
 	/* Send at the highest available encryption level */
 	if (ep->crypto.application.initialized) {
@@ -9446,12 +9455,12 @@ static int process_short_header(struct quic_endpoint *ep,
 		goto out;
 	} else if (ret > 0) {
 		QUIC_EP_STAT_INC(target_ep, valid_rx);
-		/* Close the connection */
+		/* The peer closed the connection, which is draining: its
+		 * packet is not acknowledged (RFC 9000 ch. 10.2.2).
+		 */
 		NET_DBG("[EP:%p/%d] Connection closing after short header packet",
 			target_ep, quic_get_by_ep(target_ep));
 
-		quic_send_ack(target_ep, QUIC_SECRET_LEVEL_APPLICATION,
-			      decrypted.packet_number);
 		quic_endpoint_notify_streams_closed(target_ep);
 		ret = 0;
 		goto out;
