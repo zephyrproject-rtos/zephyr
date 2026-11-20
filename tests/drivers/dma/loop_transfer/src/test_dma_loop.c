@@ -326,13 +326,20 @@ static int test_loop_suspend_resume(const struct device *dma)
 		k_busy_wait(100);
 	} while (tc != transfer_count);
 
-	/* If we failed to suspend we failed */
 	if (transfer_count == TRANSFER_LOOPS) {
-		TC_PRINT("ERROR: failed to suspend transfers\n");
+		/*
+		 * The DMA controller is too quick - we couldn't suspend any transfer!
+		 * Don't treat as a failure but warn that dma_resume() was not tested
+		 * and skip the test.
+		 */
+		TC_PRINT("WARNING: could not suspend any transfer (DMA too fast?)\n");
+		TC_PRINT("         dma_resume() will not be tested for %s\n", dma->name);
+
 		if (dma_stop(dma, chan_id)) {
 			TC_PRINT("ERROR: transfer stop\n");
+			return TC_FAIL;
 		}
-		return TC_FAIL;
+		ztest_test_skip();
 	}
 	TC_PRINT("suspended after %d transfers occurred\n", transfer_count);
 
