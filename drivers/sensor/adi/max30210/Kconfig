@@ -8,6 +8,7 @@ menuconfig MAX30210
 	default y
 	depends on DT_HAS_ADI_MAX30210_ENABLED
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX30210),pdb-gpios)
 	help
 	  Enable driver for the MAX30210 temperature sensor.
 

@@ -192,6 +192,7 @@
 
 struct max30210_config {
 	struct i2c_dt_spec i2c;
+	struct gpio_dt_spec pdb_gpio;
 
 #if defined(CONFIG_MAX30210_TRIGGER)
 	struct gpio_dt_spec interrupt_gpio; /* GPIO for interrupt */

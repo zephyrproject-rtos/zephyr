@@ -17,6 +17,8 @@
 
 LOG_MODULE_REGISTER(MAX30210, CONFIG_SENSOR_LOG_LEVEL);
 
+#define MAX30210_POWER_UP_DELAY_US 1000
+
 /**
  * @brief Read from MAX30210 register
  *
@@ -847,12 +849,32 @@ static int max30210_init(const struct device *dev)
 	const struct max30210_config *config = dev->config;
 	uint8_t part_id;
 	uint8_t status;
+	int ret;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
 		return -ENODEV;
 	}
+
+#ifdef CONFIG_GPIO
+	if (config->pdb_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->pdb_gpio)) {
+			LOG_ERR("PDB GPIO controller is not ready");
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&config->pdb_gpio, GPIO_OUTPUT_INACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure PDB GPIO: %d", ret);
+			return ret;
+		}
+
+		/* The sensor requires 700 us after leaving power-down before I2C access. */
+		k_busy_wait(MAX30210_POWER_UP_DELAY_US);
+	}
+#endif
+
 	/* Check PART_ID */
-	int ret = max30210_reg_read(dev, PART_ID, &part_id, 1);
+	ret = max30210_reg_read(dev, PART_ID, &part_id, 1);
 
 	if (ret < 0) {
 		LOG_ERR("Failed to read PART_ID: %d\n", ret);
@@ -894,6 +916,7 @@ static int max30210_init(const struct device *dev)
 }
 
 #define MAX30210_CONFIG(inst)                                                                      \
+	.pdb_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, pdb_gpios, {0}),                                \
 	.sampling_rate = DT_INST_PROP_OR(inst, sampling_rate, 0),                                  \
 	.hi_trip_count = DT_INST_PROP(inst, hi_trip_count),                                        \
 	.lo_trip_count = DT_INST_PROP(inst, lo_trip_count),                                        \

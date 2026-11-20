@@ -12,6 +12,15 @@ properties:
   reg:
     required: true
 
+  pdb-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the sensor's CVT/PDB pin. The asserted state places
+      the sensor in power-down. During initialization, the driver deasserts
+      this GPIO and waits 1 ms before accessing the sensor over I2C. If this
+      property is omitted, the sensor must already be powered and ready for
+      I2C communication.
+
   interrupt-gpios:
     type: phandle-array
     description: |
