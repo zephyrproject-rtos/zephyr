@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_RENESAS_RH850
+	bool
+
+config SOC_FAMILY
+	default "renesas_rh850" if SOC_FAMILY_RENESAS_RH850
+
+rsource "*/Kconfig.soc"

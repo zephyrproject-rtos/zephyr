@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_RENESAS_RH850
+	bool "Renesas RH850 pinctrl driver"
+	default y
+	depends on DT_HAS_RENESAS_RH850_PINCTRL_ENABLED
+	help
+	  Enable the Renesas RH850 series pin controller driver.
