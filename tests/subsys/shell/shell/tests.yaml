@@ -16,6 +16,15 @@ tests:
       - qemu_x86_64/atom
     integration_platforms:
       - native_sim
+  shell.core.log_backend:
+    min_flash: 64
+    min_ram: 32
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SHELL_LOG_BACKEND=y
+    integration_platforms:
+      - native_sim
   # all tests below are just a build test verifying config options, it fails if run
   # and can be covered with one platform.
   shell.min:
