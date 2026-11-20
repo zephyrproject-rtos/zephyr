@@ -544,6 +544,12 @@ Bluetooth Host
   :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFERS` instead of
   :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE`.
 
+* An LTK derived from a BR/EDR link key no longer encrypts an LE connection that existed before
+  the pairing over BR/EDR completed (Core v7.0, Vol 3, Part H, 2.4.3.2). On such a connection
+  :c:func:`bt_conn_set_security` returns ``-EPERM`` instead, and the peer's requests to encrypt
+  it are rejected. Applications that need the connection encrypted with the derived LTK have to
+  disconnect and connect again.
+
 Bluetooth Mesh
 ==============
 
