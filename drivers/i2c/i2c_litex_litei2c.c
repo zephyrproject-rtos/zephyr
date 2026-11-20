@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/minmax.h>
 
@@ -15,8 +16,6 @@
 LOG_MODULE_REGISTER(i2c_litex_litei2c, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
-
-#include <soc.h>
 
 #define I2C_LITEX_ANY_HAS_IRQ DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 #define I2C_LITEX_ALL_HAS_IRQ DT_ALL_INST_HAS_PROP_STATUS_OKAY(interrupts)
