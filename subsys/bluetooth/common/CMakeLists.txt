@@ -9,6 +9,7 @@ zephyr_library_sources(hci_pkt.c)
 zephyr_library_sources(hci_lockstep.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_HCI_SET_PUBLIC_ADDR hci_public_addr.c)
+zephyr_library_sources_ifdef(CONFIG_BT_HCI_STATE_REPORT hci_state.c)
 zephyr_library_sources_ifdef(CONFIG_BT_RPA   rpa.c)
 zephyr_library_sources_ifdef(CONFIG_BT_LONG_WQ long_wq.c)
 zephyr_library_sources_ifdef(CONFIG_BT_PRIVATE_SHELL bt_shell_private.c)
