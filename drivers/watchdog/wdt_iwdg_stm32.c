@@ -137,7 +137,7 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 		LL_APB0_GRP1_EnableClock(LL_APB0_GRP1_PERIPH_DBGMCU);
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32C5X)
+#if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32G5X)
 		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_IWDG_STOP);
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_IWDG1_STOP);
