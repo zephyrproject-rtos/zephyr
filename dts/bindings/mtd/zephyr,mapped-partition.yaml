@@ -38,9 +38,27 @@ properties:
     type: array
     required: true
     description: |
-      This should be in the format <OFFSET SIZE>, where OFFSET is the offset of the flash
-      partition relative to the base address of the parent memory, and SIZE is the size of the
-      partition in bytes.
+      If the "reg-names" property is provided:
+
+      - the "cpu-mapped" entry must be <OFFSET SIZE>, where OFFSET is the offset of the flash
+        partition relative to the base address of the parent memory, and SIZE is the size of
+        the partition in bytes.
+
+      - the "execution" entry must be <OFFSET SIZE> in the same address space as the
+        "cpu-mapped" entry and is translated through the same ranges. It describes where a
+        bootloader maps the stored image for execution. For XIP linking, the image must fit in
+        both entries. Aliases of the parent memory at other CPU addresses cannot be described.
+
+      If the "reg-names" property is not provided, only a single unnamed entry must be
+      provided with the same semantics as the "cpu-mapped" entry described above.
+
+      The "execution" entry is currently supported only by the Arm Cortex-M XIP linker script
+      template and CMake linker generator.
+
+  reg-names:
+    enum: ["cpu-mapped", "execution"]
+    min-len: 2
+    max-len: 2
 
 examples:
   - |
