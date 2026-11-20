@@ -38,4 +38,9 @@ zephyr_library_sources_ifdef(
   usbip.c
 )
 
+zephyr_library_sources_ifdef(
+  CONFIG_USBH_TESTUSB
+  class/usbh_testusb.c
+)
+
 zephyr_linker_sources(DATA_SECTIONS usbh_data.ld)
