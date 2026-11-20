@@ -38,3 +38,6 @@ archs:
   - name: tricore
     path: tricore
     full_name: TriCore
+  - name: rh850
+    path: rh850
+    full_name: Renesas RH850
