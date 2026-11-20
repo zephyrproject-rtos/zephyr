@@ -148,8 +148,12 @@ ZTESTABLE_STATIC int quic_validate_frame_type(uint8_t frame_type,
 	case QUIC_FRAME_TYPE_PADDING:
 	case QUIC_FRAME_TYPE_PING:
 	case QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT:
-	case QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION:
 		return 0;
+
+	/* RFC 9000 ch. 12.5: only in the application data packet number space */
+	case QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION:
+		return level == QUIC_SECRET_LEVEL_APPLICATION ||
+		       level == QUIC_SECRET_LEVEL_EARLY ? 0 : -EPROTO;
 
 	case QUIC_FRAME_TYPE_ACK:
 	case QUIC_FRAME_TYPE_ACK_ECN:
