@@ -843,6 +843,31 @@ static int dma_stm32_configure(const struct device *dev,
 			LL_DMA_ConfigBurstLength(STM32_DMA_GET_CHANNEL(dma, id), 8, 8);
 		}
 	}
+#elif defined(CONFIG_SOC_SERIES_STM32H7PX)
+	if (dma == HPDMA1) {
+		const uint32_t xfer_dir = config->channel_direction;
+		uint32_t src_port, dst_port;
+		/*
+		 * Master Port 0 (AXI) has access to FLASH and SRAM.
+		 * Master Port 1 (AHB) has access to peripherals.
+		 * (this is heavily simplified but sufficient for now)
+		 */
+		if (xfer_dir == MEMORY_TO_MEMORY) {
+			src_port = LL_DMA_SRC_ALLOCATED_PORT0;
+			dst_port = LL_DMA_DEST_ALLOCATED_PORT0;
+		} else if (xfer_dir == MEMORY_TO_PERIPHERAL) {
+			src_port = LL_DMA_SRC_ALLOCATED_PORT0;
+			dst_port = LL_DMA_DEST_ALLOCATED_PORT1;
+		} else if (xfer_dir == PERIPHERAL_TO_MEMORY) {
+			src_port = LL_DMA_SRC_ALLOCATED_PORT1;
+			dst_port = LL_DMA_DEST_ALLOCATED_PORT0;
+		} else {
+			CODE_UNREACHABLE;
+		}
+
+		LL_DMA_SetSrcAllocatedPort(STM32_DMA_GET_CHANNEL(dma, id), src_port);
+		LL_DMA_SetDestAllocatedPort(STM32_DMA_GET_CHANNEL(dma, id), dst_port);
+	}
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 	LL_DMA_EnableIT_TC(STM32_DMA_GET_CHANNEL(dma, id));

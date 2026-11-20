@@ -11,6 +11,11 @@ toolchain:
 ram: 320
 flash: 2048
 supported:
+  - arduino_i2c
+  - arduino_spi
+  - display
+  - i2c
   - gpio
   - uart
+  - spi
 vendor: st
