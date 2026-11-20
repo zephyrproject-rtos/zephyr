@@ -147,6 +147,9 @@ struct uhc_dwc2_data {
 	struct uhc_dwc2_channel_data ch_data[MAX_CHANNEL_DATA];
 	/* Number of channels, available on the hardware */
 	uint32_t numhstchnl;
+	/* Largest transfer size and packet count a channel is programmed with */
+	uint32_t max_xfersize;
+	uint32_t max_pktcnt;
 	/* Number of channels currently not claimed */
 	uint32_t free_chs;
 	/* Root port does the debounce of connection/disconnection */
@@ -360,6 +363,7 @@ static inline int dwc2_core_init_host_gusbcfg(const struct device *dev)
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	uint32_t gusbcfg = sys_read32((mem_addr_t)&base->gusbcfg);
 	uint32_t ghwcfg2 = sys_read32((mem_addr_t)&base->ghwcfg2);
+	uint32_t ghwcfg3 = sys_read32((mem_addr_t)&base->ghwcfg3);
 	uint32_t ghwcfg4 = sys_read32((mem_addr_t)&base->ghwcfg4);
 	const k_timepoint_t timepoint = sys_timepoint_calc(K_MSEC(100));
 
@@ -384,6 +388,11 @@ static inline int dwc2_core_init_host_gusbcfg(const struct device *dev)
 	if (data->numhstchnl > MAX_CHANNELS) {
 		return -EIO;
 	}
+
+	data->max_pktcnt = GHWCFG3_PKTCOUNT(usb_dwc2_get_ghwcfg3_pktsizewidth(ghwcfg3));
+	data->max_xfersize = GHWCFG3_XFERSIZE(usb_dwc2_get_ghwcfg3_xfersizewidth(ghwcfg3));
+	LOG_DBG("Max packet count %u, Max transfer size %u",
+		data->max_pktcnt, data->max_xfersize);
 
 	if (usb_dwc2_get_ghwcfg2_hsphytype(ghwcfg2) == USB_DWC2_GHWCFG2_HSPHYTYPE_NO_HS) {
 		/* Select FS PHY */
@@ -1469,6 +1478,7 @@ static void ch_start_control(const struct device *dev,
 static void ch_start_bulk(const struct device *dev,
 			  struct uhc_dwc2_channel *const ch)
 {
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct uhc_transfer *const xfer = ch->xfer;
 	mem_addr_t dma_addr = 0;
 	uint32_t pkt_cnt;
@@ -1491,6 +1501,9 @@ static void ch_start_bulk(const struct device *dev,
 		LOG_HEXDUMP_DBG(xfer->buf->data, ch->length, "BULK OUT");
 	}
 
+	/* A transfer longer than the channel counters hold goes on in more runs */
+	ch->length = MIN(ch->length, ROUND_DOWN(MIN(priv->max_xfersize,
+						     priv->max_pktcnt * xfer->mps), xfer->mps));
 	pkt_cnt = calc_packet_count(ch->length, xfer->mps);
 
 	hctsiz = usb_dwc2_set_hctsiz_pid(ch->data->next_pid) |
@@ -1645,6 +1658,39 @@ static void ch_reinit(const struct device *dev,
 		LOG_ERR("Reinit channel with type=%u isn't supported yet", ch->xfer->type);
 		break;
 	}
+}
+
+/*
+ * Start the next run of a bulk transfer that the last one did not finish,
+ * unless the device ended it with a short packet.
+ */
+static bool ch_continue_bulk(const struct device *dev, struct uhc_dwc2_channel *const ch)
+{
+	struct uhc_transfer *const xfer = ch->xfer;
+	uint32_t hctsiz;
+
+	if (xfer->type != USB_EP_TYPE_BULK) {
+		return false;
+	}
+
+	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		hctsiz = sys_read32((mem_addr_t)&ch->regs->hctsiz);
+		if (usb_dwc2_get_hctsiz_xfersize(hctsiz) != 0U ||
+		    ch->length == net_buf_tailroom(xfer->buf)) {
+			return false;
+		}
+	} else if (ch->length == xfer->buf->len) {
+		return false;
+	}
+
+	ch_complete_data(dev, ch);
+	if (USB_EP_DIR_IS_OUT(xfer->ep)) {
+		net_buf_pull(xfer->buf, ch->length);
+	}
+
+	ch_reinit(dev, ch);
+
+	return true;
 }
 
 static void port_start_periodic(const struct device *dev)
@@ -2124,6 +2170,10 @@ static void ch_handle_events(const struct device *dev, struct uhc_dwc2_channel *
 		} else if (events & BIT(UHC_DWC2_CHANNEL_EVENT_STALL)) {
 			err = -EPIPE;
 		} else if (events & BIT(UHC_DWC2_CHANNEL_EVENT_CPLT)) {
+			if (ch_continue_bulk(dev, ch)) {
+				return;
+			}
+
 			err = 0;
 			ch_complete(dev, ch);
 		} else {
