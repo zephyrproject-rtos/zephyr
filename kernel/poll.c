@@ -378,7 +378,6 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 				int num_events, k_timeout_t timeout)
 {
 	int ret;
-	k_spinlock_key_t key;
 	struct k_poll_event *events_copy = NULL;
 	uint32_t bounds;
 
@@ -406,9 +405,7 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 		goto oops_free;
 	}
 
-	key = k_spin_lock(&poll_lock);
 	(void)memcpy(events_copy, events, bounds);
-	k_spin_unlock(&poll_lock, key);
 
 	/* Validate what's inside events_copy */
 	for (int i = 0; i < num_events; i++) {
