@@ -1,0 +1,99 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include <mem.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "riscv";
+			reg = <0>;
+			device_type = "cpu";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "m", "c", "zicsr";
+			status = "okay";
+
+			hlic0: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-parent = <&hlic0>;
+
+		uart_clk: clock {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(80)>;
+		};
+
+		uart0: serial@40008000 {
+			compatible = "hisilicon,hi3861-uart";
+			reg = <0x40008000 0x1000>;
+			clock-frequency = <DT_FREQ_M(80)>;
+			clocks = <&uart_clk>;
+			interrupts = <38>;
+			interrupt-names = "uart";
+			status = "disabled";
+		};
+
+		uart1: serial@40009000 {
+			compatible = "hisilicon,hi3861-uart";
+			reg = <0x40009000 0x1000>;
+			clock-frequency = <DT_FREQ_M(80)>;
+			clocks = <&uart_clk>;
+			hw-flow-control-supported;
+			interrupts = <39>;
+			status = "disabled";
+		};
+
+		uart2: serial@4000a000 {
+			compatible = "hisilicon,hi3861-uart";
+			reg = <0x4000a000 0x1000>;
+			clock-frequency = <DT_FREQ_M(80)>;
+			clocks = <&uart_clk>;
+			hw-flow-control-supported;
+			interrupts = <40>;
+			status = "disabled";
+		};
+
+		timer0: timer@40050000 {
+			compatible = "hisilicon,hi3861-timer";
+			reg = <0x40050000 0x14>, <0x40050014 0x14>;
+			reg-names = "alarm", "counter";
+			interrupts = <26>;
+			status = "disabled";
+		};
+	};
+
+	sram0: memory@d8000 {
+		compatible = "mmio-sram";
+		reg = <0x000d8000 DT_SIZE_K(280)>;
+		status = "okay";
+	};
+
+	flash0: flash@400000 {
+		compatible = "soc-nv-flash";
+		reg = <0x00400000 DT_SIZE_M(2)>;
+		status = "disabled";
+	};
+};

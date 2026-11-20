@@ -22,6 +22,17 @@ tests:
     integration_platforms:
       - nucleo_h753zi
     extra_args: DTC_OVERLAY_FILE="boards/nucleo_h743zi.overlay"
+  drivers.uart.basic_api.hi3861:
+    extra_args: CONF_FILE=prj_hi3861.conf
+    tags:
+      - drivers
+      - uart
+    filter: CONFIG_UART_CONSOLE and dt_compat_enabled("hisilicon,hi3861-uart")
+    harness: keyboard
+    platform_allow:
+      - bearpi_hm_nano
+    integration_platforms:
+      - bearpi_hm_nano
   drivers.uart.basic_api.poll:
     extra_args: CONF_FILE=prj_poll.conf
     tags:
