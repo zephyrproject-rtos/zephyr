@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BCM2835_SDHC
+	bool "BCM283x Arasan SDHCI host controller"
+	default y
+	depends on DT_HAS_BRCM_BCM2835_SDHCI_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	# Data path runs through the external BCM2835 DMA engine via DREQ;
+	# the Arasan core's CAPABILITIES register reads zero on this silicon
+	# so SDMA / ADMA2 are not available. DMA pulls CACHE_MANAGEMENT for
+	# buffer maintenance around transfers.
+	select DMA
+	select CACHE_MANAGEMENT
+	help
+	  Enable the Broadcom BCM283x Arasan SDHCI host controller driver.
+	  IRQ-driven control path, DMA data path via DREQ. R1b/R5b
+	  responses are not supported.
