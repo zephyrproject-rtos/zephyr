@@ -50,6 +50,23 @@ tests:
     extra_configs:
       - CONFIG_BT_CTLR_DF=y
       - CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT=y
+  sample.bluetooth.hci_uart.nrf54l15.df:
+    harness: bluetooth
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args: DTC_OVERLAY_FILE=./boards/nrf54l15dk_nrf54l15_cpuapp_df.overlay
+    extra_configs:
+      - CONFIG_BT_CTLR_DF=y
+  sample.bluetooth.hci_uart.nrf54l15.df.iq_report:
+    harness: bluetooth
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args: DTC_OVERLAY_FILE=./boards/nrf54l15dk_nrf54l15_cpuapp_df.overlay
+    extra_configs:
+      - CONFIG_BT_CTLR_DF=y
+      - CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT=y
   sample.bluetooth.hci_uart.nrf5340dk_cpuapp:
     harness: bluetooth
     platform_allow:

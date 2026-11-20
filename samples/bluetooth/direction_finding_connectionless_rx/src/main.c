@@ -6,6 +6,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/sys/printk.h>
@@ -22,6 +23,7 @@
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 #define NAME_LEN        30
 #define PEER_NAME_LEN_MAX 30
+#define PEER_NAME       "DF Connectionless Beacon App"
 /* BT Core 5.3 Vol 6, Part B section 4.4.5.1 Periodic Advertising Trains allows controller to wait
  * 6 periodic advertising events for synchronization establishment, hence timeout must be longer
  * than that.
@@ -240,7 +242,8 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
 	       info->interval, info->interval * 5 / 4, info->sid);
 
-	if (!per_adv_found && info->interval != 0) {
+	if (!per_adv_found && (info->interval != 0U) &&
+	    (strncmp(name, PEER_NAME, sizeof(name)) == 0)) {
 		sync_create_timeout = sync_create_timeout_get(info->interval);
 		per_adv_found = true;
 		per_sid = info->sid;
@@ -395,7 +398,8 @@ int main(void)
 		create_sync();
 
 		printk("Waiting for periodic sync...\n");
-		err = k_sem_take(&sem_per_sync, K_MSEC(sync_create_timeout));
+		/* sync_create_timeout is in units of 10 ms */
+		err = k_sem_take(&sem_per_sync, K_MSEC(sync_create_timeout * 10U));
 		if (err != 0 || sync_terminated) {
 			if (err != 0) {
 				printk("failed (err %d)\n", err);
