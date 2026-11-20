@@ -973,9 +973,9 @@ static uint8_t tbs_supported_commands(const void *cmd, uint16_t cmd_len, void *r
 static uint8_t tbs_remote_incoming(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_tbs_remote_incoming_cmd *cp = cmd;
-	char friendly_name[CONFIG_BT_TBS_MAX_URI_LENGTH];
-	char caller_uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
-	char recv_uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
+	char friendly_name[CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH + sizeof((char)'\0')];
+	char caller_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof((char)'\0')];
+	char recv_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof((char)'\0')];
 	int err;
 
 	ARG_UNUSED(cmd_len);
@@ -1008,7 +1008,7 @@ static uint8_t tbs_remote_incoming(const void *cmd, uint16_t cmd_len, void *rsp,
 static uint8_t tbs_originate(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_tbs_originate_cmd *cp = cmd;
-	char uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
+	char uri[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof((char)'\0')];
 	int err;
 
 	ARG_UNUSED(cmd_len);
@@ -1074,7 +1074,7 @@ static uint8_t tbs_remote_hold(const void *cmd, uint16_t cmd_len, void *rsp, uin
 static uint8_t tbs_set_bearer_name(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_tbs_set_bearer_name_cmd *cp = cmd;
-	char bearer_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
+	char bearer_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH + sizeof((char)'\0')];
 	int err;
 
 	ARG_UNUSED(cmd_len);
@@ -1122,7 +1122,7 @@ static uint8_t tbs_set_uri_scheme_list(const void *cmd, uint16_t cmd_len, void *
 				       uint16_t *rsp_len)
 {
 	const struct btp_tbs_set_uri_schemes_list_cmd *cp = cmd;
-	char uri_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
+	char uri_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH + sizeof((char)'\0')];
 	int err;
 
 	ARG_UNUSED(cmd_len);
@@ -1320,9 +1320,9 @@ static uint8_t tbs_register_bearer(const void *cmd, uint16_t cmd_len, void *rsp,
 	const struct btp_tbs_register_bearer_cmd *cp = cmd;
 	const uint8_t *strings = cp->strings;
 	struct btp_tbs_register_bearer_rp *rp = rsp;
-	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH + 1];
+	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH + sizeof((char)'\0')];
 	char uci[BT_TBS_MAX_UCI_SIZE];
-	char uri_scheme_list[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
+	char uri_scheme_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH + sizeof((char)'\0')];
 
 	if (cmd_len < sizeof(*cp)) {
 		LOG_DBG("Packet too short: %u", cmd_len);
@@ -1349,7 +1349,7 @@ static uint8_t tbs_register_bearer(const void *cmd, uint16_t cmd_len, void *rsp,
 
 	if (cp->uri_scheme_list_len >= sizeof(uri_scheme_list)) {
 		LOG_DBG("Buffer overflow risk: uri_scheme_list_len=%u (max=%d)",
-			cp->uri_scheme_list_len, CONFIG_BT_TBS_MAX_URI_LENGTH);
+			cp->uri_scheme_list_len, CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH);
 		return BTP_STATUS_FAILED;
 	}
 
