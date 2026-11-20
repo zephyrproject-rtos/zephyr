@@ -182,6 +182,46 @@ enum {
 	 * already carried accepted early data on this connection.
 	 */
 	ZSOCK_QUIC_SO_STREAM_EARLY_DATA = 8,
+
+	/**
+	 * Read how the peer closed the connection.
+	 *
+	 * The option value is a pointer to struct quic_peer_close and is only
+	 * valid with getsockopt() on QUIC connection sockets. It fails with
+	 * ENOTCONN as long as no CONNECTION_CLOSE frame
+	 * (@rfc{9000,section-19.19}) has been received.
+	 */
+	ZSOCK_QUIC_SO_PEER_CLOSE = 9,
+
+	/**
+	 * Close the connection with an error of the application protocol.
+	 *
+	 * The option value is a pointer to a uint64_t holding the application
+	 * error code and is only valid on QUIC connection sockets. Once it is
+	 * set, quic_connection_close() and close() end the connection with a
+	 * CONNECTION_CLOSE frame of the application type (0x1d) carrying that
+	 * code (@rfc{9000,section-10.2}), instead of a transport close with
+	 * NO_ERROR. A connection closed before its handshake is complete is
+	 * ended with a transport close carrying APPLICATION_ERROR instead
+	 * (@rfc{9000,section-10.2.3}).
+	 */
+	ZSOCK_QUIC_SO_APPLICATION_CLOSE_CODE = 10,
+};
+
+/** How the peer closed the connection, see ZSOCK_QUIC_SO_PEER_CLOSE. */
+struct quic_peer_close {
+	/** Error code carried by the CONNECTION_CLOSE frame. */
+	uint64_t error_code;
+
+	/** Type of the frame that caused a transport error, 0 when unknown.
+	 *  Only set for a transport close.
+	 */
+	uint64_t frame_type;
+
+	/** Whether the peer closed with an error of the application protocol
+	 *  (frame type 0x1d) rather than a transport error (frame type 0x1c).
+	 */
+	bool application;
 };
 
 /** Version of struct quic_session_state. */
@@ -299,7 +339,9 @@ int quic_connection_close(int sock);
  *         If set to QUIC_STREAM_UNIDIRECTIONAL, then only the initiator can write.
  * @param  priority Priority level (0-255) for scheduling stream data.
  *
- * @return New QUIC stream socket on success, <0 on failure.
+ * @return New QUIC stream socket on success, <0 on failure: -EAGAIN when
+ *         the peer allows no more streams of that type for now; a
+ *         MAX_STREAMS frame from it lifts the limit (@rfc{9000,section-4.6}).
  */
 int quic_stream_open(int connection_sock,
 		     enum quic_stream_initiator initiator,
