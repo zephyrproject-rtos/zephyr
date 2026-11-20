@@ -160,3 +160,20 @@ void z_vim_arm_enter_irq(int irq)
 
 	sys_write32(BIT(irq_bit_num), VIM_RAW(irq_group_num));
 }
+
+void z_vim_irq_clear_pending(unsigned int irq)
+{
+	uint32_t irq_group_num, irq_bit_num;
+
+	if (irq > CONFIG_NUM_IRQS) {
+		LOG_ERR("%s: Invalid irq number = %u\n", __func__, irq);
+		return;
+	}
+
+	irq_group_num = VIM_GET_IRQ_GROUP_NUM(irq);
+	irq_bit_num = VIM_GET_IRQ_BIT_NUM(irq);
+
+	/* Write-1-to-clear raw/status bits left after a masked edge. */
+	sys_write32(BIT(irq_bit_num), VIM_STS(irq_group_num));
+	sys_write32(BIT(irq_bit_num), VIM_IRQSTS(irq_group_num));
+}
