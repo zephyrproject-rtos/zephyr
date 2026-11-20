@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Space Cubics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Common properties for Avalanche Technology serial MRAM-based persistent SRAM
+
+include: [spi-device.yaml]
+
+properties:
+  spi-rx-bus-width:
+    type: int
+    required: true
+    enum: [1, 4]
+    description: |
+      Number of data lines used to receive data. Set both spi-rx-bus-width and
+      spi-tx-bus-width to 4 to operate the device in QPI (4-4-4) mode.
+
+  spi-tx-bus-width:
+    type: int
+    required: true
+    enum: [1, 4]
+    description: |
+      Number of transmit data lines. Must match spi-rx-bus-width.
