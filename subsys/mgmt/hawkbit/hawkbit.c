@@ -456,7 +456,7 @@ static bool start_http_client(int *hb_sock)
 	int protocol = IS_ENABLED(CONFIG_HAWKBIT_USE_TLS) ? NET_IPPROTO_TLS_1_2 : NET_IPPROTO_TCP;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		hints.ai_family = NET_AF_INET6;
+		hints.ai_family = NET_AF_UNSPEC;
 		hints.ai_socktype = NET_SOCK_STREAM;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		hints.ai_family = NET_AF_INET;
