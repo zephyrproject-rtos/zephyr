@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas G4MH CPU
+
+compatible: "renesas,g4mh"
+
+include: renesas,rh850.yaml

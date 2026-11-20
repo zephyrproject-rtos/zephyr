@@ -36,6 +36,10 @@ config LINKER_USE_NO_RELAX
 config REQUIRES_STD_C17
 	default y
 
+# ICCRH850 does not support alloca(), hence CONFIG_MISRA_SANE must be enabled
+config MISRA_SANE
+	default y if RH850
+
 config CODING_GUIDELINE_CHECK
 	default n
 	help
