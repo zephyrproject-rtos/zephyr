@@ -34,3 +34,27 @@ config NRF_MRAM_MAX_RETRIES
 	  attempts to rewrite or re-erase the data to ensure reliability.
 	  Higher values increase reliability but may impact performance
 	  in case of persistent failures.
+
+if SOC_FLASH_NRF_MRAM
+
+DT_PROP_NORDIC_MUTEXES := nordic,mutexes
+
+config NRF_MRAM_USE_MUTEX_HW
+	bool "Use hardware mutexes to serialize MRAM access across CPU domains"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NORDIC_MRAM_BANK),$(DT_PROP_NORDIC_MUTEXES))
+	help
+	  When enabled, the driver claims a per-bank hardware mutex around each
+	  MRAM write and erase transaction, using the controller's
+	  "nordic,mutexes" property of each "nordic,mram-bank" node.
+
+config NRF_MRAM_MUTEX_HW_TIMEOUT_US
+	int "Hardware mutex acquisition timeout in microseconds"
+	default 10000
+	range 1 2147483647
+	depends on NRF_MRAM_USE_MUTEX_HW
+	help
+	  Time to wait for the hardware mutex of an MRAM bank before a write
+	  or erase gives up and fails with -ETIMEDOUT.
+
+endif # SOC_FLASH_NRF_MRAM
