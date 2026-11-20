@@ -26,11 +26,13 @@
 #define AES_MSPM0_ICLR_AESRDY_MASK			BIT(0)
 #else
 #define AESADV_MSPM0_IMASK_OUTPUTRDY_MASK		BIT(0)
+#define AESADV_MSPM0_IMASK_INPUTRDY_MASK		BIT(1)
 #define AESADV_MSPM0_IMASK_INT_MASK			GENMASK(3, 0)
 
 #define AESADV_MSPM0_ICLR_INT_MASK			GENMASK(3, 0)
 
 #define AESADV_MSPM0_IIDX_OUTPUTRDY			0x1
+#define AESADV_MSPM0_IIDX_INPUTRDY			0x2
 #define AESADV_MSPM0_IIDX_CTXRDY			0x3
 #endif
 
@@ -81,8 +83,30 @@
 #define AESADV_MSPM0_CTRL_SAVED_CNTXT_RDY			BIT(30)
 #define AESADV_MSPM0_CTRL_CNTXT_RDY			BIT(31)
 
+#define AESADV_MSPM0_CTRL_GCM_AUTO_GHASH		FIELD_PREP(AESADV_MSPM0_CTRL_GCM, 0x3)
+#define AESADV_MSPM0_CTRL_CTR_WIDTH_64			FIELD_PREP(AESADV_MSPM0_CTRL_CTR_WIDTH, 0x1)
+
 #define AESADV_MSPM0_CTRL_KEYSIZE_128			FIELD_PREP(AESADV_MSPM0_CTRL_KEYSIZE, 0x1)
 #define AESADV_MSPM0_CTRL_KEYSIZE_256			FIELD_PREP(AESADV_MSPM0_CTRL_KEYSIZE, 0x3)
+
+/*
+ * CCM IV block = flags (1 byte) || nonce || counter.
+ * The counter/length field is L bytes wide (2..8), so the nonce takes the remaining
+ * AES_BLOCK_SIZE - 1 - L bytes (13..7). The hardware wants L - 1 in both the IV flags
+ * byte and CTRL.CCML. CTRL.CCMM holds the tag length M as (M / 2) - 1, M being even, 4..16.
+ */
+#define AESADV_MSPM0_CCM_FLAGS_LEN		1
+#define AESADV_MSPM0_CCM_L(nonce_len) \
+	(AES_BLOCK_SIZE - AESADV_MSPM0_CCM_FLAGS_LEN - (nonce_len))
+
+/* Raw L - 1, for the IV flags byte */
+#define AESADV_MSPM0_CCM_IV_FLAGS(nonce_len)	(AESADV_MSPM0_CCM_L(nonce_len) - 1)
+
+/* CTRL register fields */
+#define AESADV_MSPM0_CTRL_CCML_VAL(nonce_len) \
+	FIELD_PREP(AESADV_MSPM0_CTRL_CCML, AESADV_MSPM0_CCM_IV_FLAGS(nonce_len))
+#define AESADV_MSPM0_CTRL_CCMM_VAL(tag_len) \
+	FIELD_PREP(AESADV_MSPM0_CTRL_CCMM, (tag_len) / 2 - 1)
 #endif
 
 #define AES_HW_CAPS	(CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX)

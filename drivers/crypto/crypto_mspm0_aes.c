@@ -130,6 +130,43 @@ static int validate_pkt(struct cipher_pkt *pkt)
 	return 0;
 }
 
+#ifdef CONFIG_CRYPTO_MSPM0_AES_ADV
+/* AEAD data need not be block aligned, and a request may carry only AAD */
+static int validate_aead_pkt(struct cipher_aead_pkt *aead_pkt)
+{
+	struct cipher_pkt *pkt;
+
+	if (aead_pkt == NULL || aead_pkt->pkt == NULL || aead_pkt->tag == NULL) {
+		LOG_ERR("Invalid AEAD packet");
+		return -EINVAL;
+	}
+
+	pkt = aead_pkt->pkt;
+
+	if (pkt->in_len == 0 && aead_pkt->ad_len == 0) {
+		LOG_ERR("Empty AEAD request");
+		return -EINVAL;
+	}
+
+	if (pkt->in_len != 0 && (pkt->in_buf == NULL || pkt->out_buf == NULL)) {
+		LOG_ERR("NULL data buffers");
+		return -EINVAL;
+	}
+
+	if (aead_pkt->ad_len != 0 && aead_pkt->ad == NULL) {
+		LOG_ERR("NULL AAD buffer");
+		return -EINVAL;
+	}
+
+	if (pkt->out_buf_max < pkt->in_len) {
+		LOG_ERR("Output buffer too small");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif
+
 static int aes_hw_init(struct cipher_ctx *ctx)
 {
 	const struct device *dev = ctx->device;
@@ -590,6 +627,149 @@ cleanup:
 	return ret;
 }
 
+#ifdef CONFIG_CRYPTO_MSPM0_AES_ADV
+/* GCM and CCM share the flow: key, IV, lengths, AAD, data, tag. Only the IV differs. */
+static int crypto_aes_aead_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *aead_pkt,
+			      const uint8_t *iv, uint16_t tag_len)
+{
+	const struct device *dev = ctx->device;
+	const struct crypto_mspm0_aes_config *config = dev->config;
+	struct mspm0_aes_session *session = ctx->drv_sessn_state;
+	struct crypto_mspm0_aes_data *data = dev->data;
+	uint8_t tag[AES_BLOCK_SIZE], scratch[AES_BLOCK_SIZE];
+	uint32_t aad_processed = 0;
+	int bytes_processed = 0;
+	int ret;
+
+	if (session == NULL || !session->in_use) {
+		LOG_ERR("Invalid session");
+		return -EINVAL;
+	}
+
+	ret = validate_aead_pkt(aead_pkt);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = k_mutex_lock(&data->device_mutex, AES_WAIT_TIMEOUT);
+	if (ret != 0) {
+		return ret;
+	}
+
+	k_sem_reset(&data->aes_done);
+
+	ret = aes_hw_init(ctx);
+	if (ret != 0) {
+		goto cleanup;
+	}
+
+	/* Load gcmccm_tag registers with 0 */
+	memset(tag, 0, sizeof(tag));
+	aes_adv_load_words(config->regs->gcmccm_tag, tag, AES_BLOCK_WORDS);
+
+	/* Load iv */
+	aes_adv_load_iv(config->regs, iv);
+
+	config->regs->c_length_0 = aead_pkt->pkt->in_len;
+	config->regs->aad_length = aead_pkt->ad_len;
+
+	/* AAD is fed first, then data, each is zero padded to 128 bits */
+	do {
+		bool is_aad = aad_processed < aead_pkt->ad_len;
+		const uint8_t *src = is_aad ? &aead_pkt->ad[aad_processed]
+					    : &aead_pkt->pkt->in_buf[bytes_processed];
+		uint32_t len = is_aad ? MIN(AES_BLOCK_SIZE, aead_pkt->ad_len - aad_processed)
+				      : MIN(AES_BLOCK_SIZE,
+					    aead_pkt->pkt->in_len - bytes_processed);
+
+		memset(scratch, 0, sizeof(scratch));
+		memcpy(scratch, src, len);
+
+		/* AAD blocks give no output, so wait for the engine to accept the next input */
+		config->regs->cpu_int.imask |= is_aad ? AESADV_MSPM0_IMASK_INPUTRDY_MASK
+						      : AESADV_MSPM0_IMASK_OUTPUTRDY_MASK;
+		aes_adv_load_words(config->regs->data, scratch, AES_BLOCK_WORDS);
+
+		/* wait for AES operation completion */
+		ret = k_sem_take(&data->aes_done, AES_SEM_TIMEOUT);
+		if (ret != 0) {
+			goto cleanup;
+		}
+
+		if (is_aad) {
+			aad_processed += len;
+			continue;
+		}
+
+		aes_adv_read_words(config->regs->data, scratch, AES_BLOCK_WORDS);
+		memcpy(&aead_pkt->pkt->out_buf[bytes_processed], scratch, len);
+
+		bytes_processed += len;
+	} while (aad_processed < aead_pkt->ad_len || bytes_processed < aead_pkt->pkt->in_len);
+
+	/* Tag is ready once the context is saved; the TRM requires polling for it */
+	if (!WAIT_FOR(config->regs->ctrl & AESADV_MSPM0_CTRL_SAVED_CNTXT_RDY, 100,
+		      k_busy_wait(1))) {
+		ret = -ETIMEDOUT;
+		goto cleanup;
+	}
+
+	aes_adv_read_words(config->regs->tag, tag, AES_BLOCK_WORDS);
+
+	if (session->op == CRYPTO_CIPHER_OP_ENCRYPT) {
+		memcpy(aead_pkt->tag, tag, tag_len);
+	} else {
+		uint8_t diff = 0;
+
+		for (uint16_t i = 0; i < tag_len; i++) {
+			diff |= tag[i] ^ aead_pkt->tag[i];
+		}
+
+		if (diff != 0) {
+			LOG_ERR("Tag mismatch");
+			memset(aead_pkt->pkt->out_buf, 0, aead_pkt->pkt->in_len);
+			bytes_processed = 0;
+			ret = -EFAULT;
+		}
+	}
+
+cleanup:
+	if (ret != 0 && bytes_processed < aead_pkt->pkt->in_len) {
+		LOG_ERR("aborted after %d/%d bytes (ret : %d)", bytes_processed,
+			aead_pkt->pkt->in_len, ret);
+	}
+	aead_pkt->pkt->out_len = bytes_processed;
+	k_mutex_unlock(&data->device_mutex);
+
+	return ret;
+}
+
+static int crypto_aes_gcm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *aead_pkt,
+			     uint8_t *nonce)
+{
+	uint8_t counter[AES_BLOCK_SIZE] = {0};
+
+	/* Y0 = nonce || 0x00000001 */
+	memcpy(counter, nonce, AES_BLOCK_SIZE - sizeof(uint32_t));
+	sys_put_be32(1U, &counter[12]);
+
+	return crypto_aes_aead_op(ctx, aead_pkt, counter, ctx->mode_params.gcm_info.tag_len);
+}
+
+static int crypto_aes_ccm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *aead_pkt,
+			     uint8_t *nonce)
+{
+	const uint16_t nonce_len = ctx->mode_params.ccm_info.nonce_len;
+	uint8_t iv[AES_BLOCK_SIZE] = {0};
+
+	/* IV = flags (L - 1) || nonce || counter, the counter starts at zero */
+	iv[0] = AESADV_MSPM0_CCM_IV_FLAGS(nonce_len);
+	memcpy(&iv[AESADV_MSPM0_CCM_FLAGS_LEN], nonce, nonce_len);
+
+	return crypto_aes_aead_op(ctx, aead_pkt, iv, ctx->mode_params.ccm_info.tag_len);
+}
+#endif /* CONFIG_CRYPTO_MSPM0_AES_ADV */
+
 static void crypto_mspm0_aes_isr(const struct device *dev)
 {
 	const struct crypto_mspm0_aes_config *config = dev->config;
@@ -608,6 +788,10 @@ static void crypto_mspm0_aes_isr(const struct device *dev)
 	switch (config->regs->cpu_int.iidx) {
 	case AESADV_MSPM0_IIDX_OUTPUTRDY:
 		config->regs->cpu_int.imask &= ~AESADV_MSPM0_IMASK_OUTPUTRDY_MASK;
+		k_sem_give(&data->aes_done);
+		break;
+	case AESADV_MSPM0_IIDX_INPUTRDY:
+		config->regs->cpu_int.imask &= ~AESADV_MSPM0_IMASK_INPUTRDY_MASK;
 		k_sem_give(&data->aes_done);
 		break;
 	case AESADV_MSPM0_IIDX_CTXRDY:
@@ -706,6 +890,28 @@ static int aes_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 #endif
 		ctx->ops.ctr_crypt_hndlr = crypto_aes_ctr_op;
 		break;
+
+#ifdef CONFIG_CRYPTO_MSPM0_AES_ADV
+	case CRYPTO_CIPHER_MODE_GCM:
+		aesconfig = AESADV_MSPM0_CTRL_CTR |
+			    AESADV_MSPM0_CTRL_GCM_AUTO_GHASH |
+			    AESADV_MSPM0_CTRL_SAVE_CNTXT |
+			    ((op == CRYPTO_CIPHER_OP_ENCRYPT) ? AESADV_MSPM0_CTRL_DIR : 0);
+		ctx->ops.gcm_crypt_hndlr = crypto_aes_gcm_op;
+		break;
+
+	case CRYPTO_CIPHER_MODE_CCM:
+		/* CTR_WIDTH must cover the L byte counter field, 64 bits covers the maximum */
+		aesconfig = AESADV_MSPM0_CTRL_CTR |
+			    AESADV_MSPM0_CTRL_CCM |
+			    AESADV_MSPM0_CTRL_SAVE_CNTXT |
+			    AESADV_MSPM0_CTRL_CTR_WIDTH_64 |
+			    AESADV_MSPM0_CTRL_CCML_VAL(ctx->mode_params.ccm_info.nonce_len) |
+			    AESADV_MSPM0_CTRL_CCMM_VAL(ctx->mode_params.ccm_info.tag_len) |
+			    ((op == CRYPTO_CIPHER_OP_ENCRYPT) ? AESADV_MSPM0_CTRL_DIR : 0);
+		ctx->ops.ccm_crypt_hndlr = crypto_aes_ccm_op;
+		break;
+#endif
 	default:
 		LOG_ERR("Mode Not Supported");
 		return -EINVAL;
