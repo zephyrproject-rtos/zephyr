@@ -33,6 +33,21 @@ usual (see :ref:`build_an_application`) using the corresponding board name:
          :board: hifive_unleashed/fu540/u54
          :goals: build
 
+QEMU
+====
+
+The ``qemu`` variants of the board run on the ``sifive_u`` machine of QEMU, which emulates the
+HiFive Unleashed: ``hifive_unleashed/fu540/e51/qemu`` on the E51 core, hart 0, and
+``hifive_unleashed/fu540/u54/qemu`` on the U54 cores that follow it. The image is loaded into the
+L2 LIM, as on the board.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: hifive_unleashed/fu540/u54/qemu
+   :goals: build run
+
+The machine has no QSPI1, so this device is disabled.
+
 Flashing
 ========
 

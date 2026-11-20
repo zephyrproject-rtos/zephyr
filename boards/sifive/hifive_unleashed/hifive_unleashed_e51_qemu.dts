@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * HiFive Unleashed as emulated by the sifive_u machine of QEMU.
+ */
+
+#include "hifive_unleashed_e51.dts"
+
+/* QEMU has no QSPI1 */
+&spi1 {
+	status = "disabled";
+};
