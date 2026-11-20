@@ -94,3 +94,24 @@ zephyr_sources_ifdef(
   CONFIG_LOG_BACKEND_ACP
   log_backend_acp.c
 )
+
+zephyr_sources_ifdef(
+  CONFIG_LOG_BACKEND_FCB
+  log_backend_fcb.c
+  fcb_log.c
+)
+
+zephyr_sources_ifdef(
+  CONFIG_FCB_LOG_SHELL
+  fcb_shell.c
+  fcb_shell.h
+)
+
+if(CONFIG_LOG_BACKEND_FCB)
+# Add the private fcb directory to the include path
+    zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/fs/fcb)
+endif()
+
+if(CONFIG_FCB_LOG_SHELL)
+  zephyr_include_directories(.)
+endif()
