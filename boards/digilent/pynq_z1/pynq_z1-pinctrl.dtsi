@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Radu Pirea
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/pinctrl-zynq.h>
+
+&pinctrl0 {
+	pinctrl_uart0_default: uart0-default {
+		mux {
+			groups = "uart0_1_grp";
+			function = "uart0";
+		};
+
+		conf {
+			groups = "uart0_1_grp";
+			slew-rate = <IO_SPEED_SLOW>;
+			power-source = <IO_STANDARD_LVCMOS33>;
+		};
+
+		conf-rx {
+			pins = "MIO14";
+			bias-high-impedance;
+		};
+
+		conf-tx {
+			pins = "MIO15";
+			bias-disable;
+		};
+	};
+};
