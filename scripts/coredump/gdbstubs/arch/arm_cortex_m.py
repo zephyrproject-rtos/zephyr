@@ -35,10 +35,20 @@ class RegNum:
     XPSR = 16
 
 
+class SwitchFrame:
+    """Layout flags of the frame a suspended thread's switch handle points to"""
+
+    VALID = 1 << 0
+    FPU = 1 << 1
+    PSPLIM = 1 << 2
+    VPR = 1 << 3
+
+
 class GdbStub_ARM_CortexM(GdbStub):
     ARCH_DATA_BLK_STRUCT = "<IIIIIIIII"
     ARCH_DATA_BLK_STRUCT_V2 = "<IIIIIIIIIIIIIIIII"
     ARCH_DATA_BLK_STRUCT_V3 = "<IIIIIIIIIIIIIIIIIII"
+    ARCH_DATA_BLK_STRUCT_V4 = "<IIIIIIIIIIIIIIIIIIII"
 
     GDB_SIGNAL_DEFAULT = 7
 
@@ -49,6 +59,7 @@ class GdbStub_ARM_CortexM(GdbStub):
         self.registers = None
         self.gdb_signal = self.GDB_SIGNAL_DEFAULT
         self.callee_saved_offset = None
+        self.switch_frame = 0
 
         self.parse_arch_data_block()
 
@@ -62,6 +73,8 @@ class GdbStub_ARM_CortexM(GdbStub):
             tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_V2, arch_data_blk)
         elif arch_data_ver == 3:
             tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_V3, arch_data_blk)
+        elif arch_data_ver == 4:
+            tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_V4, arch_data_blk)
 
         self.registers = dict()
 
@@ -89,6 +102,9 @@ class GdbStub_ARM_CortexM(GdbStub):
             callee_saved_valid = tu[17]
             if callee_saved_valid:
                 self.callee_saved_offset = tu[18]
+
+        if arch_data_ver > 3:
+            self.switch_frame = tu[19]
 
     def send_registers_packet(self, registers):
         reg_fmt = "<I"
@@ -138,6 +154,42 @@ class GdbStub_ARM_CortexM(GdbStub):
     def arch_supports_thread_operations(self):
         return True
 
+    def read_switch_frame(self, handle):
+        """Registers of a thread suspended with CONFIG_USE_SWITCH"""
+        registers = dict()
+        offset = 0
+
+        if self.switch_frame & SwitchFrame.FPU:
+            have_fpu = self.get_memory(handle, 4)
+            if have_fpu is None:
+                return registers
+
+            offset += 4
+            if int.from_bytes(have_fpu, "little") != 0:
+                # s0-s31, VPR on cores with MVE, FPSCR
+                offset += 4 * 33
+                if self.switch_frame & SwitchFrame.VPR:
+                    offset += 4
+
+        if self.switch_frame & SwitchFrame.PSPLIM:
+            offset += 4
+
+        barray = self.get_memory(handle + offset, 4 * 16)
+        if barray is None:
+            return registers
+
+        # xPSR, r0-r12, lr, pc
+        tu = struct.unpack("<IIIIIIIIIIIIIIII", barray)
+        registers[RegNum.XPSR] = tu[0]
+        for i in range(13):
+            registers[RegNum.R0 + i] = tu[1 + i]
+        registers[RegNum.LR] = tu[14]
+        # The saved PC has the Thumb bit set
+        registers[RegNum.PC] = tu[15] & ~1
+        registers[RegNum.SP] = handle + offset + 4 * 16
+
+        return registers
+
     def handle_thread_register_group_read_packet(self):
         # For selected_thread 0, use the register data retrieved from the dump's arch section
         if self.selected_thread == 0:
@@ -154,7 +206,10 @@ class GdbStub_ARM_CortexM(GdbStub):
 
             thread_registers = dict()
 
-            if stack_ptr_bytes is not None:
+            if stack_ptr_bytes is not None and self.switch_frame & SwitchFrame.VALID:
+                stack_ptr = int.from_bytes(stack_ptr_bytes, "little")
+                thread_registers = self.read_switch_frame(stack_ptr)
+            elif stack_ptr_bytes is not None:
                 # Read registers stored at top of stack
                 stack_ptr = int.from_bytes(stack_ptr_bytes, "little")
                 barray = self.get_memory(stack_ptr, (size_t_size * 8))
