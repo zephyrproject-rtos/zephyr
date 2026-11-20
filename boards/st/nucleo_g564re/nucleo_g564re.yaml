@@ -13,3 +13,4 @@ supported:
   - gpio
   - rtc
   - uart
+  - watchdog
