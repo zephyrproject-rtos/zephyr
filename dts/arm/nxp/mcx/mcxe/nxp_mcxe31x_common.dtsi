@@ -1401,7 +1401,7 @@
 
 	sxosc: sxosc@402cc000 {
 		compatible = "nxp,sxosc";
-		reg = <0x402cc000 0x24>;
+		reg = <0x402cc000 0x8>;
 		status = "disabled";
 	};
 

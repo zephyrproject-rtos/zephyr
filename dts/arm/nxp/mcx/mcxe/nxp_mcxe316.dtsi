@@ -79,4 +79,5 @@
 	/delete-node/ pit@2fc000;
 	/delete-node/ stm@474000;
 	/delete-node/ emios@90000;
+	/delete-node/ sxosc@402cc000;
 };
