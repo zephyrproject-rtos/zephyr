@@ -36,7 +36,7 @@ config USBH_HUB_PORT_RESET_DELAY_MS
 
 config USBH_HUB_STACK_SIZE
 	int "USB host hub workqueue stack size"
-	default 2048
+	default USBH_STACK_SIZE
 	help
 	  Stack size of the shared USB host hub workqueue thread. This thread
 	  runs hub status handling and downstream device enumeration, including
