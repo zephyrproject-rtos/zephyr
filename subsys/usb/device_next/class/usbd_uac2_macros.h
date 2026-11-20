@@ -13,6 +13,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/usb/usb_ch9.h>
 
+#include "uac2.h"
+
 #ifndef ZEPHYR_INCLUDE_USBD_UAC2_MACROS_H_
 #define ZEPHYR_INCLUDE_USBD_UAC2_MACROS_H_
 
@@ -36,77 +38,6 @@
 #define FIRST_INTERFACE_NUMBER			0x00
 #define FIRST_IN_EP_ADDR			0x81
 #define FIRST_OUT_EP_ADDR			0x01
-
-/* A.1 Audio Function Class Code */
-#define AUDIO_FUNCTION				AUDIO
-
-/* A.2 Audio Function Subclass Codes */
-#define FUNCTION_SUBCLASS_UNDEFINED		0x00
-
-/* A.3 Audio Function Protocol Codes */
-#define FUNCTION_PROTOCOL_UNDEFINED		0x00
-#define AF_VERSION_02_00			IP_VERSION_02_00
-
-/* A.4 Audio Interface Class Code */
-#define AUDIO					0x01
-
-/* A.5 Audio Interface Subclass Codes */
-#define INTERFACE_SUBCLASS_UNDEFINED		0x00
-#define AUDIOCONTROL				0x01
-#define AUDIOSTREAMING				0x02
-#define MIDISTREAMING				0x03
-
-/* A.6 Audio Interface Protocol Codes */
-#define INTERFACE_PROTOCOL_UNDEFINED		0x00
-#define IP_VERSION_02_00			0x20
-
-/* A.8 Audio Class-Specific Descriptor Types */
-#define CS_UNDEFINED		0x20
-#define CS_DEVICE		0x21
-#define CS_CONFIGURATION	0x22
-#define CS_STRING		0x23
-#define CS_INTERFACE		0x24
-#define CS_ENDPOINT		0x25
-
-/* A.9 Audio Class-Specific AC Interface Descriptor Subtypes */
-#define AC_DESCRIPTOR_UNDEFINED			0x00
-#define AC_DESCRIPTOR_HEADER			0x01
-#define AC_DESCRIPTOR_INPUT_TERMINAL		0x02
-#define AC_DESCRIPTOR_OUTPUT_TERMINAL		0x03
-#define AC_DESCRIPTOR_MIXER_UNIT		0x04
-#define AC_DESCRIPTOR_SELECTOR_UNIT		0x05
-#define AC_DESCRIPTOR_FEATURE_UNIT		0x06
-#define AC_DESCRIPTOR_EFFECT_UNIT		0x07
-#define AC_DESCRIPTOR_PROCESSING_UNIT		0x08
-#define AC_DESCRIPTOR_EXTENSION_UNIT		0x09
-#define AC_DESCRIPTOR_CLOCK_SOURCE		0x0A
-#define AC_DESCRIPTOR_CLOCK_SELECTOR		0x0B
-#define AC_DESCRIPTOR_CLOCK_MULTIPLIER		0x0C
-#define AC_DESCRIPTOR_SAMPLE_RATE_CONVERTER	0x0D
-
-/* A.10 Audio Class-Specific AS Interface Descriptor Subtypes */
-#define AS_DESCRIPTOR_UNDEFINED			0x00
-#define AS_DESCRIPTOR_GENERAL			0x01
-#define AS_DESCRIPTOR_FORMAT_TYPE		0x02
-#define AS_DESCRIPTOR_ENCODER			0x03
-#define AS_DESCRIPTOR_DECODER			0x04
-
-/* A.13 Audio Class-Specific Endpoint Descriptor Subtypes */
-#define DESCRIPTOR_UNDEFINED			0x00
-#define EP_GENERAL				0x01
-
-/* Universal Serial Bus Device Class Definition for Audio Data Formats
- * Release 2.0, May 31, 2006. A.1 Format Type Codes
- * Values are in decimal to facilitate use with IS_EQ() macro.
- */
-#define FORMAT_TYPE_UNDEFINED			0
-#define FORMAT_TYPE_I				1
-#define FORMAT_TYPE_II				2
-#define FORMAT_TYPE_III				3
-#define FORMAT_TYPE_IV				4
-#define EXT_FORMAT_TYPE_I			129
-#define EXT_FORMAT_TYPE_II			130
-#define EXT_FORMAT_TYPE_III			131
 
 /* Convert 0 to empty and everything else to itself */
 #define EMPTY_ON_ZERO(value) COND_CODE_0(value, (), (value))
