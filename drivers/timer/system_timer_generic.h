@@ -772,6 +772,7 @@ uint32_t sys_clock_elapsed(void)
  * first, e.g. adding a wrap to its software count.
  */
 static void timer_core_announce_from(k_spinlock_key_t key)
+	Z_RELEASES(z_timeout_lock)
 {
 	timer_core_ticks_t dticks = timer_core_delta_ticks();
 
@@ -816,6 +817,7 @@ static void timer_core_announce_from(k_spinlock_key_t key)
  * inline so drivers that don't use it get no unused-function warning.
  */
 static inline void timer_core_announce_cycles64_from(k_spinlock_key_t key, uint64_t cycles)
+	Z_RELEASES(z_timeout_lock)
 {
 	uint64_t dticks = timer_core_ticks_in64(cycles);
 
