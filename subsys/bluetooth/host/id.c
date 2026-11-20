@@ -347,6 +347,7 @@ static void le_rpa_timeout_submit(void)
 	le_rpa_timeout_update();
 #endif
 
+	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_TAKEN);
 	(void)bt_work_schedule(&bt_dev.rpa_update, K_SECONDS(bt_dev.rpa_timeout));
 }
 
@@ -359,6 +360,9 @@ int bt_id_set_private_addr(uint8_t id)
 	if (id >= CONFIG_BT_ID_MAX) {
 		return -EINVAL;
 	}
+
+	/* Taken before the check, so that rpa_timeout() cannot miss it */
+	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_TAKEN);
 
 	/* check if RPA is valid */
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID)) {
@@ -613,7 +617,8 @@ static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 	}
 }
 
-static void le_update_private_addr(void)
+/* rpa_valid: the RPA was valid before it was invalidated for this update */
+static void le_update_private_addr(bool rpa_valid)
 {
 	struct bt_le_ext_adv *adv = NULL;
 	bool adv_enabled = false;
@@ -662,12 +667,18 @@ static void le_update_private_addr(void)
 	} else {
 		err = bt_id_set_private_addr(id);
 	}
-	if (err) {
+	if (err != 0) {
+		/* Enable the paused roles again anyway, with their old address. An
+		 * old RPA stays valid until the RPA timer tries again.
+		 */
 		LOG_WRN("Failed to update RPA address (%d)", err);
-		return;
+
+		if (rpa_valid) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) && adv != NULL &&
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) && err == 0 && adv != NULL &&
 	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
 		/* The legacy advertiser advertises with the device-wide
 		 * random address that was just refreshed.
@@ -700,9 +711,11 @@ static void le_force_rpa_timeout(void)
 
 	k_work_cancel_delayable_sync(&bt_dev.rpa_update, &sync);
 #endif
+	bool rpa_valid = atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+
 	(void)le_adv_rpa_timeout();
 	le_rpa_invalidate();
-	le_update_private_addr();
+	le_update_private_addr(rpa_valid);
 }
 
 #if defined(CONFIG_BT_PRIVACY)
@@ -715,6 +728,7 @@ static int bt_gen_irk(uint8_t id)
 static void rpa_timeout(struct k_work *work)
 {
 	bool adv_enabled;
+	bool rpa_valid;
 
 	LOG_DBG("");
 
@@ -729,20 +743,39 @@ static void rpa_timeout(struct k_work *work)
 		}
 	}
 
+	rpa_valid = atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 	adv_enabled = le_adv_rpa_timeout();
 	le_rpa_invalidate();
 
 	/* If no roles using the RPA are running we can stop the RPA timer. Without
 	 * a Broadcaster there are no advertising sets to call rpa_expired for.
+	 * A passive scanner sends no address, but with a Central the initiator
+	 * shares its random address and cannot set a new one while it scans.
 	 */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) || !IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		bool taken = atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_RPA_TAKEN);
+
 		if (!(adv_enabled || atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
-		      bt_le_scan_active_scanner_running())) {
+		      bt_le_scan_active_scanner_running() ||
+		      (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+		       atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)))) {
+			if (taken) {
+				/* A role that took the RPA may still be starting with it:
+				 * rotate it on the next timeout, when the role shows.
+				 */
+				int err = bt_work_schedule(&bt_dev.rpa_update,
+							   K_SECONDS(bt_dev.rpa_timeout));
+
+				if (err < 0) {
+					LOG_WRN("Failed to keep the RPA timer (%d)", err);
+				}
+			}
+
 			return;
 		}
 	}
 
-	le_update_private_addr();
+	le_update_private_addr(rpa_valid);
 }
 #endif /* CONFIG_BT_PRIVACY */
 
@@ -1691,7 +1724,13 @@ int bt_id_reset_irk(uint8_t id, uint8_t *irk)
 		(void)memcpy(irk, new_irk, sizeof(new_irk));
 	}
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	/* A running scanner or initiator uses the default identity (see above),
+	 * so the RPA it shares with the other roles stays valid.
+	 */
+	if (!(atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) ||
+	      atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING))) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	}
 
 #if defined(CONFIG_BT_RPA_SHARING)
 	bt_addr_copy(&bt_dev.rpa[id], BT_ADDR_NONE);

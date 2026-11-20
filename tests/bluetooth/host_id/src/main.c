@@ -292,6 +292,26 @@ static const struct cmd_handler cmds[] = {
 	},
 };
 
+/* How long the Command Complete of LE Set Scan Parameters is held back when
+ * hold_scan_param_rsp is set, so that a scan start spans the one-second RPA
+ * timeout of the test.
+ */
+#define SCAN_PARAM_RSP_HOLD_MS 1500U
+
+static bool hold_scan_param_rsp;
+static const struct device *held_rsp_dev;
+static struct net_buf *held_rsp;
+
+static void held_rsp_deliver(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	bt_hci_recv(held_rsp_dev, held_rsp);
+	held_rsp = NULL;
+}
+
+static K_WORK_DELAYABLE_DEFINE(held_rsp_work, held_rsp_deliver);
+
 static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 {
 	struct net_buf *evt = NULL;
@@ -310,6 +330,19 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 	}
 
 	generic_success(cmd, &evt, GENERIC_RP_SIZE, opcode);
+
+	if (opcode == BT_HCI_OP_LE_SET_SCAN_PARAM && hold_scan_param_rsp) {
+		int err;
+
+		hold_scan_param_rsp = false;
+		held_rsp_dev = dev;
+		held_rsp = evt;
+		/* Not from this thread: it sends commands with the Host lock held */
+		err = k_work_schedule(&held_rsp_work, K_MSEC(SCAN_PARAM_RSP_HOLD_MS));
+		zassert_equal(err, 1, "Failed to schedule the held response: %d", err);
+		return;
+	}
+
 	bt_hci_recv(dev, evt);
 }
 
@@ -822,6 +855,27 @@ static ZTEST(bt_id_public_api, test_reset_irk_rejects_active_roles)
 	zassert_ok(err, "IRK reset failed after active roles stopped");
 }
 
+#if defined(CONFIG_BT_OBSERVER)
+static ZTEST(bt_id_public_api, test_reset_irk_keeps_scanner_rpa)
+{
+	bt_addr_le_t addr = test_addr(0x49U);
+	bool rpa_valid;
+	int err;
+	int id;
+
+	id = bt_id_create(&addr, NULL);
+	zassert_true(id > 0, "Failed to create a secondary identity: %d", id);
+
+	zassert_ok(bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL), "Failed to start scanning");
+	err = bt_id_reset_irk((uint8_t)id, NULL);
+	rpa_valid = atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	zassert_ok(bt_le_scan_stop(), "Failed to stop scanning");
+
+	zassert_ok(err, "Secondary IRK reset failed while scanning: %d", err);
+	zassert_true(rpa_valid, "The secondary IRK reset invalidated the scanner's RPA");
+}
+#endif /* defined(CONFIG_BT_OBSERVER) */
+
 #if defined(CONFIG_BT_BROADCASTER) &&                                                              \
 	(!defined(CONFIG_BT_EXT_ADV) || defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT))
 /* The test controller has no extended advertising, so this is the legacy advertiser */
@@ -974,8 +1028,9 @@ static ZTEST(bt_id_public_api, test_nrpa_adv_rejects_conn_create_with_host_resol
 #endif /* CONFIG_BT_BROADCASTER && (!CONFIG_BT_EXT_ADV || CONFIG_BT_EXT_ADV_LEGACY_SUPPORT) */
 
 #if defined(CONFIG_BT_OBSERVER) && !defined(CONFIG_BT_BROADCASTER) &&                              \
-	defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
-/* Scan through one expiry of the RPA timeout. Report whether
+	!defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+/* Scan through two expiries of the RPA timeout, as the first one after the
+ * scanner took the RPA keeps the timer running anyway. Report whether
  * rpa_timeout() started the RPA timer again.
  */
 static int scan_through_rpa_timeout(const struct bt_le_scan_param *param, uint16_t rpa_timeout_s,
@@ -988,10 +1043,10 @@ static int scan_through_rpa_timeout(const struct bt_le_scan_param *param, uint16
 		return err;
 	}
 
-	/* Wait half a second past the RPA timeout: rpa_timeout() has run,
-	 * and the next expiry is still ahead.
+	/* Wait half a second past the second expiry: rpa_timeout() has run
+	 * twice, and the next expiry is still ahead.
 	 */
-	(void)k_sleep(K_MSEC(rpa_timeout_s * MSEC_PER_SEC + 500U));
+	(void)k_sleep(K_MSEC(2U * rpa_timeout_s * MSEC_PER_SEC + 500U));
 	*pending = k_work_delayable_is_pending(&bt_dev.rpa_update);
 
 	return bt_le_scan_stop();
@@ -1021,7 +1076,106 @@ static ZTEST(bt_id_public_api, test_rpa_timer_stops_without_active_scanner)
 	zassert_false(passive_pending, "The RPA timer kept running for a passive scanner");
 	zassert_true(active_pending, "The RPA timer stopped for an active scanner");
 }
-#endif /* CONFIG_BT_OBSERVER && !CONFIG_BT_BROADCASTER && CONFIG_BT_RPA_TIMEOUT_DYNAMIC */
+#endif /* Observer-only build with CONFIG_BT_RPA_TIMEOUT_DYNAMIC */
+
+#if defined(CONFIG_BT_OBSERVER) && defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+static ZTEST(bt_id_public_api, test_scan_started_across_rpa_timeout_rotates)
+{
+	const uint16_t rpa_timeout_s = 1U;
+	struct k_work_sync sync;
+	struct bt_le_oob oob;
+	bt_addr_t scan_addr;
+	bool timer_pending;
+	bt_addr_t rotated;
+	int err;
+
+	zassert_ok(bt_le_set_rpa_timeout(rpa_timeout_s), "Failed to set the RPA timeout");
+	/* Start a new RPA period, which uses the new timeout */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to get the local address");
+	bt_addr_copy(&scan_addr, &random_addr);
+
+	/* The RPA timeout expires while the scan start waits for the Controller */
+	hold_scan_param_rsp = true;
+	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
+	hold_scan_param_rsp = false;
+
+	/* Run the next rpa_timeout() now, which sees the scanner */
+	timer_pending = k_work_flush_delayable(&bt_dev.rpa_update, &sync);
+	bt_addr_copy(&rotated, &random_addr);
+
+	if (err == 0) {
+		zassert_ok(bt_le_scan_stop(), "Failed to stop scanning");
+	}
+
+	zassert_ok(bt_le_set_rpa_timeout(CONFIG_BT_RPA_TIMEOUT),
+		   "Failed to restore the RPA timeout");
+
+	zassert_ok(err, "Active scanning failed: %d", err);
+	zassert_true(timer_pending, "The RPA timer stopped while the scanner was starting");
+	zassert_false(bt_addr_eq(&rotated, &scan_addr), "The scanner kept the RPA it started with");
+}
+#endif /* defined(CONFIG_BT_OBSERVER) && defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC) */
+
+#if defined(CONFIG_BT_CENTRAL)
+/* The initiator shares the scanner's random address and cannot set a new one
+ * while scanning, so the RPA stays valid under a passive scanner too.
+ */
+static ZTEST(bt_id_public_api, test_rpa_rotates_under_passive_scanner)
+{
+	struct k_work_sync sync;
+	struct bt_le_oob oob;
+	bt_addr_t scan_addr;
+	bool timer_pending;
+	bt_addr_t rotated;
+	bool rpa_valid;
+	bool scanning;
+
+	/* Start a new RPA period, which starts the RPA timer */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to get the local address");
+
+	zassert_ok(bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL), "Failed to start scanning");
+	bt_addr_copy(&scan_addr, &random_addr);
+
+	/* Run rpa_timeout() now and wait for it */
+	timer_pending = k_work_flush_delayable(&bt_dev.rpa_update, &sync);
+	rpa_valid = atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	bt_addr_copy(&rotated, &random_addr);
+	scanning = scan_enabled;
+
+	zassert_ok(bt_le_scan_stop(), "Failed to stop scanning");
+
+	zassert_true(timer_pending, "The RPA timer was not running");
+	zassert_true(rpa_valid, "The RPA expired under the passive scanner");
+	zassert_false(bt_addr_eq(&rotated, &scan_addr), "The RPA was not rotated");
+	zassert_true(scanning, "The scanner was not enabled again after the rotation");
+}
+
+static ZTEST(bt_id_public_api, test_failed_rpa_rotation_keeps_scanning)
+{
+	struct k_work_sync sync;
+	struct bt_le_oob oob;
+	bool timer_pending;
+	bool rpa_valid;
+	bool scanning;
+
+	/* Start a new RPA period, which starts the RPA timer */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to get the local address");
+	zassert_ok(bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL), "Failed to start scanning");
+
+	/* Run rpa_timeout() now and make the creation of the new RPA fail */
+	rand_failure = true;
+	timer_pending = k_work_flush_delayable(&bt_dev.rpa_update, &sync);
+	rand_failure = false;
+	rpa_valid = atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	scanning = scan_enabled;
+
+	zassert_ok(bt_le_scan_stop(), "Failed to stop scanning");
+
+	zassert_true(timer_pending, "The RPA timer was not running");
+	zassert_true(scanning, "The scanner was not enabled again after a failed rotation");
+	zassert_true(rpa_valid, "The RPA in use was left invalid after a failed rotation");
+}
+#endif /* defined(CONFIG_BT_CENTRAL) */
 #endif /* defined(CONFIG_BT_PRIVACY) */
 
 /* The public identity address reaches the driver through the common driver
