@@ -1,0 +1,14 @@
+# Synaptics SR100 Astra Machina Micro (RDK) Board configuration options
+
+# SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SR100_RDK
+
+configdefault UART_INTERRUPT_DRIVEN
+	default y if BOARD_SR100_RDK_SR100_M55
+
+configdefault I2C_DW_CLOCK_SPEED
+	default 100
+
+endif # BOARD_SR100_RDK

@@ -20,6 +20,7 @@ comment "Device Drivers"
 
 # zephyr-keep-sorted-start
 source "drivers/cache/Kconfig.andes"
+source "drivers/cache/Kconfig.arm_ahb"
 source "drivers/cache/Kconfig.aspeed"
 source "drivers/cache/Kconfig.bflb"
 source "drivers/cache/Kconfig.esp32"
