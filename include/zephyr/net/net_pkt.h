@@ -333,7 +333,12 @@ struct net_pkt {
 	uint16_t ipv6_prev_hdr_start;
 
 	uint8_t ipv6_ext_opt_len; /* IPv6 ND option length */
-	uint8_t ipv6_next_hdr;	/* What is the very first next header */
+
+	/* Next header value. For a packet to send, the extension header that
+	 * follows the IPv6 header. For a received packet, the upper layer
+	 * protocol.
+	 */
+	uint8_t ipv6_next_hdr;
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IP_DSCP_ECN)

@@ -294,6 +294,11 @@ bool npf_ip_src_addr_match(struct npf_test *test, struct net_pkt *pkt)
 			CONTAINER_OF(test, struct npf_test_ip, test);
 	uint8_t pkt_family = net_pkt_family(pkt);
 
+	/* The list holds addresses of one family, no packet of another one is in it */
+	if (pkt_family != test_ip->addr_family) {
+		return false;
+	}
+
 	for (uint32_t ip_it = 0; ip_it < test_ip->ipaddr_num; ip_it++) {
 		if (IS_ENABLED(CONFIG_NET_IPV4) && pkt_family == NET_AF_INET) {
 			struct net_in_addr *addr = (struct net_in_addr *)NET_IPV4_HDR(pkt)->src;
@@ -484,6 +489,20 @@ const char *npf_test_get_str(struct npf_test *test, char *buf, size_t len)
 
 		snprintk(buf, len, "[fn=%p, data=%p]",
 			 test_local_in->fn, test_local_in->user_data);
+
+	} else if (test->type == NPF_TEST_TYPE_UDP_SRC_PORT_MATCH ||
+		   test->type == NPF_TEST_TYPE_UDP_DST_PORT_MATCH ||
+		   test->type == NPF_TEST_TYPE_TCP_SRC_PORT_MATCH ||
+		   test->type == NPF_TEST_TYPE_TCP_DST_PORT_MATCH) {
+		struct npf_test_port *test_port = CONTAINER_OF(test, struct npf_test_port, test);
+
+		snprintk(buf, len, "[%u]", net_ntohs(test_port->port));
+
+	} else if (test->type == NPF_TEST_TYPE_TCP_FLAGS_MATCH) {
+		struct npf_test_tcp_flags *test_flags =
+			CONTAINER_OF(test, struct npf_test_tcp_flags, test);
+
+		snprintk(buf, len, "[0x%02x/0x%02x]", test_flags->flags, test_flags->mask);
 	}
 
 out:

@@ -61,8 +61,13 @@ In network shell, you can monitor the network packet filters:
    [ 4]  recv        OK             N/A    N/A          N/A  2    iface[2],eth vlan type[0x0806]
    [ 5]  recv        OK             N/A    N/A          N/A  2    iface[3],eth vlan type[0x0806]
    [ 6]  recv        DROP           N/A    N/A          N/A  0
-   [ 7]  IPv4 recv   OK             N/A    N/A          N/A  1    ip src block[192.0.2.2,198.51.100.2]
-   [ 8]  IPv6 recv   OK             N/A    N/A          N/A  1    ip src block[2001:db8::2,2001:db8::100:2]
+   [ 7]  local recv  OK             N/A    N/A          N/A  1    local_in[fn=0x804a755, data=0x809204c]
+   [ 8]  local recv  DROP           N/A    N/A          N/A  2    iface[3],udp dst port[4242]
+   [ 9]  local recv  DROP           N/A    N/A          N/A  2    tcp flags[0x02/0x12],tcp dst port[8080]
+   [10]  local recv  DROP           N/A    N/A          N/A  3    udp dst port[5000],ip src block[203.0.113.2],ip src block[2001:db8:200::2]
+   [11]  local recv  OK             N/A    N/A          N/A  0
+   [12]  IPv4 recv   OK             N/A    N/A          N/A  1    ip src block[192.0.2.2,198.51.100.3]
+   [13]  IPv6 recv   OK             N/A    N/A          N/A  1    ip src block[2001:db8::2,2001:db8::100:2]
 
 The above sample application network packet filter rules can be interpreted
 like this:
@@ -82,9 +87,28 @@ like this:
 * Rule 6: Drop all other packets. This also means that IPv6 packets are
   dropped.
 
-* Rule 7: Drop IPv4 packets where the source address is either ``192.0.2.2`` or ``198.51.100.2``.
+* Rule 7: Call the ``handler_local_in()`` function of the sample for each received UDP or TCP
+  packet. The function counts the packets and returns false, so this rule does not match any
+  packet and the rules that follow decide what happens to it.
 
-* Rule 8: Drop IPv6 packets where the source address is either ``2001:db8::2`` or ``2001:db8::100:2``.
+* Rule 8: Drop UDP datagrams to port 4242 received from network interface 3, which is the
+  second VLAN interface.
+
+* Rule 9: Drop TCP connection requests to port 8080. A connection request is a TCP segment
+  with the SYN flag (0x02) set and the ACK flag (0x10) clear.
+
+* Rule 10: Accept UDP datagrams to port 5000 from one host only, the peer on the second VLAN,
+  by dropping the ones that are not from ``203.0.113.2`` or ``2001:db8:200::2``. Each address
+  condition only restricts the packets of its address family and is true for the packets of
+  the other one, so one rule can have a condition for the IPv4 and one for the IPv6 address.
+
+* Rule 11: Accept all other packets.
+
+* Rule 12: Drop IPv4 packets where the source address is either ``192.0.2.2`` or
+  ``198.51.100.3``.
+
+* Rule 13: Drop IPv6 packets where the source address is either ``2001:db8::2`` or
+  ``2001:db8::100:2``.
 
 If you enable network packet priority option :kconfig:option:`CONFIG_NET_SAMPLE_USE_PACKET_PRIORITIES`
 then the sample will install extra rules for setting up the priorities.
@@ -102,15 +126,20 @@ then the sample will install extra rules for setting up the priorities.
    [ 9]  recv        OK             N/A    N/A          N/A  2    iface[2],eth vlan type[0x0806]
    [10]  recv        OK             N/A    N/A          N/A  2    iface[3],eth vlan type[0x0806]
    [11]  recv        DROP           N/A    N/A          N/A  0
-   [12]  IPv4 recv   OK             N/A    N/A          N/A  1    ip src block[192.0.2.2,198.51.100.2]
-   [13]  IPv6 recv   OK             N/A    N/A          N/A  1    ip src block[2001:db8::2,2001:db8::100:2]
+   [12]  local recv  OK             N/A    N/A          N/A  1    local_in[fn=0x804a755, data=0x809324c]
+   [13]  local recv  DROP           N/A    N/A          N/A  2    iface[3],udp dst port[4242]
+   [14]  local recv  DROP           N/A    N/A          N/A  2    tcp flags[0x02/0x12],tcp dst port[8080]
+   [15]  local recv  DROP           N/A    N/A          N/A  3    udp dst port[5000],ip src block[203.0.113.2],ip src block[2001:db8:200::2]
+   [16]  local recv  OK             N/A    N/A          N/A  0
+   [17]  IPv4 recv   OK             N/A    N/A          N/A  1    ip src block[192.0.2.2,198.51.100.3]
+   [18]  IPv6 recv   OK             N/A    N/A          N/A  1    ip src block[2001:db8::2,2001:db8::100:2]
 
 The above sample application network packet filter rules can be interpreted
 like this:
 
 * Rules 1 - 5: Add rules to set network packet priority to certain type packets.
 
-* Rule 6 - 13: These are the same as in previous rule list.
+* Rule 6 - 18: These are the same as in previous rule list.
 
 The network statistics can be used to see that the packets are dropped.
 Use ``net stats`` command to monitor statistics.
@@ -150,3 +179,43 @@ You can verify the rules from network shell:
    uart:~$ net ping 203.0.113.2 -c 1 -s 101
    PING 203.0.113.2
    125 bytes from 203.0.113.2 to 203.0.113.1: icmp_seq=1 ttl=64 time=20 ms
+
+The UDP and TCP rules can be verified from the host, for example with ``nc``. A UDP datagram
+that the host sends to port 4242 of ``203.0.113.1`` is dropped without an answer, while one to
+another port is answered with an ICMP port unreachable message, as no application listens to
+it. A tool like ``tcpdump`` on the ``vlan.200`` interface of the host shows the answer. The
+datagram needs at least 54 bytes of data to get past rule 2:
+
+.. code-block:: console
+
+   $ head -c 64 /dev/zero | nc -u -w1 203.0.113.1 4242
+   $ head -c 64 /dev/zero | nc -u -w1 203.0.113.1 4243
+
+A datagram to port 5000 of that address is answered as well, because the host sends it from
+``203.0.113.2``, but one to port 5000 of ``198.51.100.1`` is not, because the host sends it
+from ``198.51.100.2``:
+
+.. code-block:: console
+
+   $ head -c 64 /dev/zero | nc -u -w1 203.0.113.1 5000
+   $ head -c 64 /dev/zero | nc -u -w1 198.51.100.1 5000
+
+In the same way, a TCP connection request to port 8080 of ``198.51.100.1`` is not answered, so
+the first of these commands reports a timeout, while one to another port is answered with a
+reset, so the second one reports that the connection is refused:
+
+.. code-block:: console
+
+   $ nc -zv -w3 198.51.100.1 8080
+   $ nc -zv -w3 198.51.100.1 8081
+
+The dropped packets are counted in the local filter statistics of the interface they are
+received from:
+
+.. code-block:: console
+
+   uart:~$ net stats 3
+   Interface 0x8091ec8 (Virtual) [3]
+   ==================================
+   ...
+   Filter drop rx 0        IPv4    0       IPv6    0       local   1       tx      0

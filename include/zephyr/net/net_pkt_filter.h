@@ -61,6 +61,11 @@ enum npf_test_type {
 	NPF_TEST_TYPE_ETH_VLAN_TYPE_MATCH,
 	NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH,
 	NPF_TEST_TYPE_LOCAL_IN_MATCH,
+	NPF_TEST_TYPE_UDP_SRC_PORT_MATCH,
+	NPF_TEST_TYPE_UDP_DST_PORT_MATCH,
+	NPF_TEST_TYPE_TCP_SRC_PORT_MATCH,
+	NPF_TEST_TYPE_TCP_DST_PORT_MATCH,
+	NPF_TEST_TYPE_TCP_FLAGS_MATCH,
 };
 
 #if defined(CONFIG_NET_PKT_FILTER_LOG_LEVEL_DBG) || \
@@ -419,6 +424,9 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
  * This tests if the packet source ip address matches any of the ip
  * addresses contained in the provided set.
  *
+ * The set holds addresses of one address family. A packet of another address
+ * family matches none of them, so the condition is false for it.
+ *
  * @param _name Name of the condition
  * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
  * <tt>struct net_in6_addr</tt> items to test against
@@ -439,8 +447,11 @@ extern npf_test_fn_t npf_ip_src_addr_unmatch;
 /**
  * @brief Statically define a "ip address blocklist" packet filter condition
  *
- * This tests if the packet source ip address matches any of the ip
+ * This tests if the packet source ip address matches none of the ip
  * addresses contained in the provided set.
+ *
+ * The set holds addresses of one address family. A packet of another address
+ * family matches none of them, so the condition is true for it.
  *
  * @param _name Name of the condition
  * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
@@ -760,6 +771,176 @@ void npf_rules_foreach(npf_rule_cb_t cb, void *user_data);
 const char *npf_test_get_str(struct npf_test *test, char *buf,
 			     size_t len);
 /** @endcond */
+
+/** @} */
+
+/**
+ * @defgroup npf_udp_cond UDP Filter Conditions
+ * @ingroup net_pkt_filter
+ * @since 4.6
+ * @version 0.1.0
+ *
+ * These conditions are for the rules of @ref npf_local_in_recv_rules. They
+ * rely on what the IP input stores in a packet while it processes the IP
+ * headers, so their result is not defined in the other rule lists.
+ *
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
+struct npf_test_port {
+	struct npf_test test;
+	uint16_t port; /* port in network order */
+	uint8_t proto;
+};
+
+extern npf_test_fn_t npf_src_port_match;
+extern npf_test_fn_t npf_dst_port_match;
+
+/** @endcond */
+
+/**
+ * @brief Statically define a "UDP source port match" packet filter condition
+ *
+ * This tests if the packet is a UDP datagram with the given source port.
+ *
+ * @param _name Name of the condition
+ * @param _port Source port to match
+ */
+#define NPF_UDP_SRC_PORT_MATCH(_name, _port)                                                       \
+	struct npf_test_port _name = {                                                             \
+		.proto = NET_IPPROTO_UDP,                                                          \
+		.port = net_htons(_port),                                                          \
+		.test.fn = npf_src_port_match,                                                     \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,                                                   \
+			   (.test.name = "udp src port",                                           \
+			    .test.type = NPF_TEST_TYPE_UDP_SRC_PORT_MATCH,))                       \
+	}
+
+/**
+ * @brief Statically define a "UDP destination port match" packet filter condition
+ *
+ * This tests if the packet is a UDP datagram with the given destination port.
+ *
+ * @param _name Name of the condition
+ * @param _port Destination port to match
+ */
+#define NPF_UDP_DST_PORT_MATCH(_name, _port)                                                       \
+	struct npf_test_port _name = {                                                             \
+		.proto = NET_IPPROTO_UDP,                                                          \
+		.port = net_htons(_port),                                                          \
+		.test.fn = npf_dst_port_match,                                                     \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,                                                   \
+			   (.test.name = "udp dst port",                                           \
+			    .test.type = NPF_TEST_TYPE_UDP_DST_PORT_MATCH,))                       \
+	}
+
+/** @} */
+
+/**
+ * @defgroup npf_tcp_cond TCP Filter Conditions
+ * @ingroup net_pkt_filter
+ * @since 4.6
+ * @version 0.1.0
+ *
+ * These conditions are for the rules of @ref npf_local_in_recv_rules. They
+ * rely on what the IP input stores in a packet while it processes the IP
+ * headers, so their result is not defined in the other rule lists.
+ *
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
+struct npf_test_tcp_flags {
+	struct npf_test test;
+	uint8_t mask;
+	uint8_t flags;
+};
+
+extern npf_test_fn_t npf_tcp_flags_match;
+
+/** @endcond */
+
+/**
+ * @brief Statically define a "TCP source port match" packet filter condition
+ *
+ * This tests if the packet is a TCP segment with the given source port.
+ *
+ * @param _name Name of the condition
+ * @param _port Source port to match
+ */
+#define NPF_TCP_SRC_PORT_MATCH(_name, _port)                                                       \
+	struct npf_test_port _name = {                                                             \
+		.proto = NET_IPPROTO_TCP,                                                          \
+		.port = net_htons(_port),                                                          \
+		.test.fn = npf_src_port_match,                                                     \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,                                                   \
+			   (.test.name = "tcp src port",                                           \
+			    .test.type = NPF_TEST_TYPE_TCP_SRC_PORT_MATCH,))                       \
+	}
+
+/**
+ * @brief Statically define a "TCP destination port match" packet filter condition
+ *
+ * This tests if the packet is a TCP segment with the given destination port.
+ *
+ * @param _name Name of the condition
+ * @param _port Destination port to match
+ */
+#define NPF_TCP_DST_PORT_MATCH(_name, _port)                                                       \
+	struct npf_test_port _name = {                                                             \
+		.proto = NET_IPPROTO_TCP,                                                          \
+		.port = net_htons(_port),                                                          \
+		.test.fn = npf_dst_port_match,                                                     \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,                                                   \
+			   (.test.name = "tcp dst port",                                           \
+			    .test.type = NPF_TEST_TYPE_TCP_DST_PORT_MATCH,))                       \
+	}
+
+/**
+ * @name TCP header flags
+ *
+ * Flags for the mask and the flags of NPF_TCP_FLAGS_MATCH().
+ *
+ * @{
+ */
+#define NPF_TCP_FLAG_FIN BIT(0) /**< No more data from the sender */
+#define NPF_TCP_FLAG_SYN BIT(1) /**< Synchronize the sequence numbers */
+#define NPF_TCP_FLAG_RST BIT(2) /**< Reset the connection */
+#define NPF_TCP_FLAG_PSH BIT(3) /**< Push the data to the application */
+#define NPF_TCP_FLAG_ACK BIT(4) /**< The acknowledgment number is valid */
+#define NPF_TCP_FLAG_URG BIT(5) /**< The urgent pointer is valid */
+#define NPF_TCP_FLAG_ECE BIT(6) /**< Explicit congestion notification echo */
+#define NPF_TCP_FLAG_CWR BIT(7) /**< Congestion window reduced */
+/** @} */
+
+/**
+ * @brief Statically define a "TCP flags match" packet filter condition
+ *
+ * This tests if the packet is a TCP segment in which, of the flags in
+ * @p _mask, exactly the ones in @p _flags are set. The flags that are not in
+ * @p _mask are not tested.
+ *
+ * For example, the mask <tt>NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_ACK</tt> with the
+ * flags <tt>NPF_TCP_FLAG_SYN</tt> matches the segment that requests a
+ * connection, but neither the answer to it nor any later segment.
+ *
+ * @param _name Name of the condition
+ * @param _mask Flags to test, a combination of the NPF_TCP_FLAG values
+ * @param _flags Flags that have to be set, the other flags of @p _mask have
+ *               to be clear. A flag that is not in @p _mask is a build error.
+ */
+#define NPF_TCP_FLAGS_MATCH(_name, _mask, _flags)                                                  \
+	struct npf_test_tcp_flags _name = {                                                        \
+		.mask = (_mask),                                                                   \
+		.flags = (_flags) + ZERO_OR_COMPILE_ERROR(((_flags) & ~(_mask)) == 0),             \
+		.test.fn = npf_tcp_flags_match,                                                    \
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,                                                   \
+			   (.test.name = "tcp flags",                                              \
+			    .test.type = NPF_TEST_TYPE_TCP_FLAGS_MATCH,))                          \
+	}
 
 /** @} */
 

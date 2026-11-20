@@ -145,6 +145,53 @@ accordance with the standard 802.1Q and depends on the
         npf_append_recv_rule(&npf_default_ok);
     }
 
+The UDP and TCP port conditions match a UDP datagram or a TCP segment by its source or
+destination port. They are for the ``local_in`` rules, so
+:kconfig:option:`CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK` needs to be enabled. The conditions are
+stateless: a rule list that only accepts packets to the ports the device serves also drops the
+answers to the connections the device opens itself, which arrive with the port of the remote
+service as source port.
+
+This example accepts CoAP requests and the answers of DNS servers, and drops every other UDP
+and TCP packet:
+
+.. code-block:: c
+
+    static NPF_UDP_DST_PORT_MATCH(to_coap_server, 5683);
+    static NPF_UDP_SRC_PORT_MATCH(from_dns_server, 53);
+
+    static NPF_RULE(accept_coap, NET_OK, to_coap_server);
+    static NPF_RULE(accept_dns, NET_OK, from_dns_server);
+
+    void install_my_filter(void) {
+        npf_append_local_in_recv_rule(&accept_coap);
+        npf_append_local_in_recv_rule(&accept_dns);
+        npf_append_local_in_recv_rule(&npf_default_drop);
+    }
+
+The TCP flags condition matches a TCP segment by the flags of its header: of the flags in a
+mask, exactly the given ones have to be set. With the mask ``SYN | ACK`` and the flag ``SYN`` it
+is true for the segment that requests a connection and for no other segment, which a rule list
+can use to tell new connections from the packets of the connections the device opened itself.
+
+This example accepts the connections to an HTTP server, drops the other connection requests,
+and accepts all other TCP segments, so that the device can still open connections:
+
+.. code-block:: c
+
+    static NPF_TCP_DST_PORT_MATCH(to_http_server, 80);
+    static NPF_TCP_FLAGS_MATCH(is_connection_request,
+                               NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_ACK, NPF_TCP_FLAG_SYN);
+
+    static NPF_RULE(accept_http, NET_OK, to_http_server);
+    static NPF_RULE(drop_connection_request, NET_DROP, is_connection_request);
+
+    void install_my_filter(void) {
+        npf_append_local_in_recv_rule(&accept_http);
+        npf_append_local_in_recv_rule(&drop_connection_request);
+        npf_append_local_in_recv_rule(&npf_default_ok);
+    }
+
 API Reference
 *************
 
@@ -153,3 +200,7 @@ API Reference
 .. doxygengroup:: npf_basic_cond
 
 .. doxygengroup:: npf_eth_cond
+
+.. doxygengroup:: npf_udp_cond
+
+.. doxygengroup:: npf_tcp_cond

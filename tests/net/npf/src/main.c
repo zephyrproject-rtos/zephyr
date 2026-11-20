@@ -24,6 +24,9 @@ LOG_MODULE_REGISTER(npf_test, NET_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_pkt_filter.h>
+#include <zephyr/sys/byteorder.h>
+
+#include "net_private.h"
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -590,6 +593,70 @@ ZTEST(net_pkt_filter_test_suite, test_npf_ipv6_address_filtering)
 	net_pkt_unref(pkt_v4);
 }
 
+ZTEST(net_pkt_filter_test_suite, test_npf_ip_address_family)
+{
+	/* Lists of one address, so that reading the IPv4 list as an IPv6
+	 * address stays inside ipv4_address_list.
+	 */
+	static NPF_IP_SRC_ADDR_ALLOWLIST(allow_v4, (void *)ipv4_address_list, 1, NET_AF_INET);
+	static NPF_IP_SRC_ADDR_BLOCKLIST(block_v4, (void *)ipv4_address_list, 1, NET_AF_INET);
+	static NPF_IP_SRC_ADDR_ALLOWLIST(allow_v6, (void *)ipv6_address_list, 1, NET_AF_INET6);
+	static NPF_IP_SRC_ADDR_BLOCKLIST(block_v6, (void *)ipv6_address_list, 1, NET_AF_INET6);
+	static NPF_RULE(accept_v4, NET_OK, allow_v4);
+	static NPF_RULE(accept_v6, NET_OK, allow_v6);
+	static NPF_RULE(drop_others, NET_DROP, block_v4, block_v6);
+	struct net_pkt *pkt_v4 = build_test_ip_pkt(&ipv4_address_list[1], &ipv4_address_list[2],
+						   NET_AF_INET, dummy_iface_a);
+	struct net_pkt *pkt_v6 = build_test_ip_pkt(&ipv6_address_list[1], &ipv6_address_list[2],
+						   NET_AF_INET6, dummy_iface_a);
+
+	BUILD_ASSERT(sizeof(ipv4_address_list) == sizeof(struct net_in6_addr));
+
+	/* Give the packets the source address that a condition would find if
+	 * it read the list of the other family as addresses of the family of
+	 * the packet: the four IPv4 addresses as one IPv6 address, and the
+	 * start of the first IPv6 address as an IPv4 address. A packet is in
+	 * no list of the other family, so the allowlists are false and the
+	 * blocklists are true for these packets.
+	 */
+	memcpy(NET_IPV6_HDR(pkt_v6)->src, ipv4_address_list, sizeof(struct net_in6_addr));
+	memcpy(NET_IPV4_HDR(pkt_v4)->src, ipv6_address_list, sizeof(struct net_in_addr));
+	zassert_false(allow_v4.test.fn(&allow_v4.test, pkt_v6));
+	zassert_false(allow_v6.test.fn(&allow_v6.test, pkt_v4));
+	zassert_true(block_v4.test.fn(&block_v4.test, pkt_v6));
+	zassert_true(block_v6.test.fn(&block_v6.test, pkt_v4));
+
+	/* A rule per family accepts the addresses of both lists and no others */
+	npf_append_send_rule(&accept_v4);
+	npf_append_send_rule(&accept_v6);
+	zassert_false(net_pkt_filter_send_ok(pkt_v4));
+	zassert_false(net_pkt_filter_send_ok(pkt_v6));
+
+	memcpy(NET_IPV4_HDR(pkt_v4)->src, &ipv4_address_list[0], sizeof(struct net_in_addr));
+	memcpy(NET_IPV6_HDR(pkt_v6)->src, &ipv6_address_list[0], sizeof(struct net_in6_addr));
+	zassert_true(net_pkt_filter_send_ok(pkt_v4));
+	zassert_true(net_pkt_filter_send_ok(pkt_v6));
+
+	zassert_true(npf_remove_send_rule(&accept_v4));
+	zassert_true(npf_remove_send_rule(&accept_v6));
+
+	/* A rule with the blocklists of both families drops all other addresses */
+	npf_append_send_rule(&drop_others);
+	npf_append_send_rule(&npf_default_ok);
+	zassert_true(net_pkt_filter_send_ok(pkt_v4));
+	zassert_true(net_pkt_filter_send_ok(pkt_v6));
+
+	memcpy(NET_IPV4_HDR(pkt_v4)->src, &ipv4_address_list[1], sizeof(struct net_in_addr));
+	memcpy(NET_IPV6_HDR(pkt_v6)->src, &ipv6_address_list[1], sizeof(struct net_in6_addr));
+	zassert_false(net_pkt_filter_send_ok(pkt_v4));
+	zassert_false(net_pkt_filter_send_ok(pkt_v6));
+
+	zassert_true(npf_remove_send_rule(&drop_others));
+	zassert_true(npf_remove_send_rule(&npf_default_ok));
+	net_pkt_unref(pkt_v6);
+	net_pkt_unref(pkt_v4);
+}
+
 static NPF_ETH_VLAN_TYPE_MATCH(vlan_ip_packet, NET_ETH_PTYPE_IP);
 static NPF_RULE(vlan_small_ip_pkt, NET_OK, vlan_ip_packet, maxsize_200);
 
@@ -629,6 +696,439 @@ ZTEST(net_pkt_filter_test_suite, test_npf_vlan_filtering)
 	/* remove filter rules */
 	zassert_true(npf_remove_recv_rule(&npf_default_drop), "");
 	zassert_true(npf_remove_recv_rule(&vlan_small_ip_pkt), "");
+}
+
+/*
+ * Local-in filtering
+ *
+ * The conditions for the local-in rules use what the IP input stored in the
+ * packet, so they are tested with packets that go through the IP input up to
+ * the local-in hook.
+ */
+
+/* Enough for an IP header, its options or extension headers and a TCP header */
+#define TEST_IP_PKT_MAX_LEN 96
+
+/* Length of the IPv4 options and of each IPv6 extension header in the tests */
+#define TEST_IP_OPTS_LEN 8
+
+#define TEST_IPV4_ADDR      192, 0, 2, 1
+#define TEST_IPV4_PEER_ADDR 192, 0, 2, 2
+#define TEST_IPV6_ADDR      0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+#define TEST_IPV6_PEER_ADDR 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2
+
+/* What the local-in rules saw of the packets given to the IP input */
+struct local_in_test_result {
+	/* Packets for which the condition under test was true */
+	uint32_t matched;
+	/* Packets that reached the local-in hook and did not match */
+	uint32_t unmatched;
+};
+
+static struct local_in_test_result local_in_result;
+
+static bool local_in_test_count(struct net_pkt *pkt, void *user_data)
+{
+	uint32_t *counter = user_data;
+
+	ARG_UNUSED(pkt);
+
+	(*counter)++;
+
+	return true;
+}
+
+/* Both rules drop the packet, so that it is not answered */
+static NPF_LOCAL_IN_MATCH(local_in_test_count_matched, local_in_test_count,
+			  &local_in_result.matched);
+static NPF_LOCAL_IN_MATCH(local_in_test_count_unmatched, local_in_test_count,
+			  &local_in_result.unmatched);
+static NPF_RULE(local_in_test_matched, NET_DROP, local_in_test_count_matched,
+		local_in_test_count_matched);
+static NPF_RULE(local_in_test_unmatched, NET_DROP, local_in_test_count_unmatched);
+
+/* Install the local-in rules that count the packets for which cond is true */
+static void local_in_test_start(struct npf_test *cond)
+{
+	static const struct net_in_addr ipv4_addr = {{{TEST_IPV4_ADDR}}};
+	static const struct net_in6_addr ipv6_addr = {{{TEST_IPV6_ADDR}}};
+	struct net_if_addr *ifaddr;
+
+	zassert_not_null(net_if_ipv4_addr_add(dummy_iface_a, (struct net_in_addr *)&ipv4_addr,
+					      NET_ADDR_MANUAL, 0));
+
+	ifaddr = net_if_ipv6_addr_add(dummy_iface_a, (struct net_in6_addr *)&ipv6_addr,
+				      NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr);
+	/* Do not wait for the duplicate address detection */
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	local_in_result = (struct local_in_test_result){0};
+	local_in_test_matched.tests[0] = cond;
+
+	npf_append_local_in_recv_rule(&local_in_test_matched);
+	npf_append_local_in_recv_rule(&local_in_test_unmatched);
+}
+
+static struct local_in_test_result local_in_test_stop(void)
+{
+	zassert_true(npf_remove_all_local_in_recv_rules());
+
+	return local_in_result;
+}
+
+/* Give a packet to the IP input. The data from offset split on is put into a
+ * buffer of its own.
+ */
+static void local_in_test_input(net_sa_family_t family, const uint8_t *data, size_t len,
+				size_t split)
+{
+	const size_t part_len[] = {MIN(split, len), len - MIN(split, len)};
+	enum net_verdict verdict;
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_rx_alloc_on_iface(dummy_iface_a, K_NO_WAIT);
+	zassert_not_null(pkt);
+
+	ARRAY_FOR_EACH(part_len, i) {
+		struct net_buf *buf;
+
+		if (part_len[i] > 0U) {
+			buf = net_pkt_get_frag(pkt, part_len[i], K_NO_WAIT);
+			zassert_not_null(buf);
+			zassert_true(net_buf_tailroom(buf) >= part_len[i]);
+
+			net_buf_add_mem(buf, data, part_len[i]);
+			net_pkt_frag_add(pkt, buf);
+			data += part_len[i];
+		}
+	}
+
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_cursor_init(pkt);
+
+	verdict = (family == NET_AF_INET) ? net_ipv4_input(pkt) : net_ipv6_input(pkt);
+	if (verdict == NET_DROP) {
+		net_pkt_unref(pkt);
+	}
+}
+
+/* Give one packet to the IP input and tell what the local-in rules saw of it */
+static struct local_in_test_result local_in_test_pkt_split(struct npf_test *cond,
+							   net_sa_family_t family,
+							   const uint8_t *data, size_t len,
+							   size_t split)
+{
+	local_in_test_start(cond);
+	local_in_test_input(family, data, len, split);
+
+	return local_in_test_stop();
+}
+
+static uint32_t test_chksum_add(uint32_t sum, const uint8_t *data, size_t len)
+{
+	for (size_t i = 0; i < len; i++) {
+		sum += ((i % 2U) == 0U) ? ((uint32_t)data[i] << 8) : data[i];
+	}
+
+	return sum;
+}
+
+static void test_chksum_put(uint32_t sum, uint8_t *chksum)
+{
+	while ((sum >> 16) != 0U) {
+		sum = (sum & 0xffffU) + (sum >> 16);
+	}
+
+	sys_put_be16((uint16_t)~sum, chksum);
+}
+
+/* Write an IPv4 packet that holds payload, with opts_len bytes of no-operation
+ * IP options.
+ */
+static size_t put_ipv4_pkt(uint8_t *data, uint8_t proto, size_t opts_len, const uint8_t *payload,
+			   size_t payload_len)
+{
+	size_t hdr_len = sizeof(struct net_ipv4_hdr) + opts_len;
+	struct net_ipv4_hdr hdr = {
+		.vhl = 0x40 | (hdr_len / 4U),
+		.len = net_htons(hdr_len + payload_len),
+		.ttl = 64,
+		.proto = proto,
+		.src = {TEST_IPV4_PEER_ADDR},
+		.dst = {TEST_IPV4_ADDR},
+	};
+
+	memcpy(data, &hdr, sizeof(hdr));
+	memset(&data[sizeof(hdr)], NET_IPV4_OPTS_NOP, opts_len);
+	test_chksum_put(test_chksum_add(0, data, hdr_len),
+			&data[offsetof(struct net_ipv4_hdr, chksum)]);
+
+	memcpy(&data[hdr_len], payload, payload_len);
+
+	return hdr_len + payload_len;
+}
+
+/* Write an IPv6 packet that holds payload. If ext_hdrs is true, it has a
+ * hop-by-hop options and a destination options header, which hold one PadN
+ * option each.
+ */
+static size_t put_ipv6_pkt(uint8_t *data, uint8_t proto, bool ext_hdrs, const uint8_t *payload,
+			   size_t payload_len)
+{
+	struct net_ipv6_hdr hdr = {
+		.vtc = 0x60,
+		.nexthdr = ext_hdrs ? NET_IPV6_NEXTHDR_HBHO : proto,
+		.hop_limit = 64,
+		.src = {TEST_IPV6_PEER_ADDR},
+		.dst = {TEST_IPV6_ADDR},
+	};
+	size_t len = sizeof(hdr);
+
+	if (ext_hdrs) {
+		const uint8_t ext_hdr[TEST_IP_OPTS_LEN] = {
+			0, 0, NET_IPV6_EXT_HDR_OPT_PADN, 4, 0, 0, 0, 0,
+		};
+
+		memcpy(&data[len], ext_hdr, sizeof(ext_hdr));
+		data[len] = NET_IPV6_NEXTHDR_DESTO;
+		len += sizeof(ext_hdr);
+
+		memcpy(&data[len], ext_hdr, sizeof(ext_hdr));
+		data[len] = proto;
+		len += sizeof(ext_hdr);
+	}
+
+	memcpy(&data[len], payload, payload_len);
+	len += payload_len;
+
+	hdr.len = net_htons(len - sizeof(hdr));
+	memcpy(data, &hdr, sizeof(hdr));
+
+	return len;
+}
+
+/*
+ * UDP and TCP port filtering
+ */
+
+#define TEST_SRC_PORT 49152
+#define TEST_DST_PORT 4242
+
+/* Write a UDP or TCP header for a packet of the given family, followed by
+ * data_len bytes of data. The TCP header and the data hold tcp_flags, so that
+ * a UDP datagram can have them where the TCP header has its flags.
+ */
+static size_t put_port_hdr(uint8_t *data, net_sa_family_t family, uint8_t proto, uint16_t src_port,
+			   uint16_t dst_port, uint8_t tcp_flags, size_t data_len)
+{
+	const uint8_t ipv4_addrs[] = {TEST_IPV4_PEER_ADDR, TEST_IPV4_ADDR};
+	const uint8_t ipv6_addrs[] = {TEST_IPV6_PEER_ADDR, TEST_IPV6_ADDR};
+	size_t hdr_len = (proto == NET_IPPROTO_UDP) ? sizeof(struct net_udp_hdr)
+						    : sizeof(struct net_tcp_hdr);
+	size_t chksum_offset = (proto == NET_IPPROTO_UDP) ? offsetof(struct net_udp_hdr, chksum)
+							  : offsetof(struct net_tcp_hdr, chksum);
+	size_t len = hdr_len + data_len;
+	/* The pseudo header adds the protocol, the length and the addresses */
+	uint32_t sum = proto + len;
+
+	if (family == NET_AF_INET) {
+		sum = test_chksum_add(sum, ipv4_addrs, sizeof(ipv4_addrs));
+	} else {
+		sum = test_chksum_add(sum, ipv6_addrs, sizeof(ipv6_addrs));
+	}
+
+	memset(data, 0, hdr_len);
+	memset(&data[hdr_len], tcp_flags, data_len);
+	sys_put_be16(src_port, &data[0]);
+	sys_put_be16(dst_port, &data[2]);
+
+	if (proto == NET_IPPROTO_UDP) {
+		sys_put_be16(len, &data[offsetof(struct net_udp_hdr, len)]);
+	} else {
+		data[offsetof(struct net_tcp_hdr, offset)] = (hdr_len / 4U) << 4;
+		data[offsetof(struct net_tcp_hdr, flags)] = tcp_flags;
+	}
+
+	test_chksum_put(test_chksum_add(sum, data, len), &data[chksum_offset]);
+
+	return len;
+}
+
+/* Write a UDP or TCP packet from TEST_SRC_PORT to TEST_DST_PORT. With ip_opts,
+ * IP options or extension headers precede the UDP or TCP header. The offset
+ * of that header is stored in hdr_offset.
+ */
+static size_t put_port_pkt(uint8_t *data, net_sa_family_t family, uint8_t proto, bool ip_opts,
+			   uint8_t tcp_flags, size_t data_len, size_t *hdr_offset)
+{
+	uint8_t payload[sizeof(struct net_tcp_hdr)];
+	size_t payload_len;
+	size_t len;
+
+	zassert_true(((proto == NET_IPPROTO_UDP) ? sizeof(struct net_udp_hdr)
+						 : sizeof(struct net_tcp_hdr)) +
+			     data_len <=
+		     sizeof(payload));
+
+	payload_len = put_port_hdr(payload, family, proto, TEST_SRC_PORT, TEST_DST_PORT, tcp_flags,
+				   data_len);
+
+	if (family == NET_AF_INET) {
+		len = put_ipv4_pkt(data, proto, ip_opts ? TEST_IP_OPTS_LEN : 0, payload,
+				   payload_len);
+	} else {
+		len = put_ipv6_pkt(data, proto, ip_opts, payload, payload_len);
+	}
+
+	*hdr_offset = len - payload_len;
+
+	return len;
+}
+
+/* Give a UDP or TCP packet from TEST_SRC_PORT to TEST_DST_PORT to the IP input
+ * and check which port conditions are true for it. With ip_opts, IP options
+ * or extension headers precede the UDP or TCP header. With split_hdr, the
+ * header is split between two buffers after its first byte.
+ */
+static void port_test_pkt(net_sa_family_t family, uint8_t proto, bool ip_opts, bool split_hdr)
+{
+	static NPF_UDP_SRC_PORT_MATCH(udp_src, TEST_SRC_PORT);
+	static NPF_UDP_DST_PORT_MATCH(udp_dst, TEST_DST_PORT);
+	static NPF_TCP_SRC_PORT_MATCH(tcp_src, TEST_SRC_PORT);
+	static NPF_TCP_DST_PORT_MATCH(tcp_dst, TEST_DST_PORT);
+	/* The port of the other direction must not match */
+	static NPF_UDP_SRC_PORT_MATCH(udp_src_other, TEST_DST_PORT);
+	static NPF_UDP_DST_PORT_MATCH(udp_dst_other, TEST_SRC_PORT);
+	static NPF_TCP_SRC_PORT_MATCH(tcp_src_other, TEST_DST_PORT);
+	static NPF_TCP_DST_PORT_MATCH(tcp_dst_other, TEST_SRC_PORT);
+	const struct {
+		struct npf_test *cond;
+		uint8_t proto;
+		bool port_matches;
+	} conds[] = {
+		{&udp_src.test, NET_IPPROTO_UDP, true},
+		{&udp_dst.test, NET_IPPROTO_UDP, true},
+		{&tcp_src.test, NET_IPPROTO_TCP, true},
+		{&tcp_dst.test, NET_IPPROTO_TCP, true},
+		{&udp_src_other.test, NET_IPPROTO_UDP, false},
+		{&udp_dst_other.test, NET_IPPROTO_UDP, false},
+		{&tcp_src_other.test, NET_IPPROTO_TCP, false},
+		{&tcp_dst_other.test, NET_IPPROTO_TCP, false},
+	};
+	uint8_t data[TEST_IP_PKT_MAX_LEN];
+	size_t hdr_offset;
+	size_t split;
+	size_t len;
+
+	len = put_port_pkt(data, family, proto, ip_opts, NPF_TCP_FLAG_SYN, 0, &hdr_offset);
+	split = split_hdr ? (hdr_offset + 1) : len;
+
+	ARRAY_FOR_EACH(conds, i) {
+		struct local_in_test_result result;
+		bool match = conds[i].port_matches && conds[i].proto == proto;
+
+		result = local_in_test_pkt_split(conds[i].cond, family, data, len, split);
+		zassert_true(result.matched == (match ? 1U : 0U) &&
+				     result.unmatched == (match ? 0U : 1U),
+			     "condition %zu: matched %u unmatched %u", i, result.matched,
+			     result.unmatched);
+	}
+}
+
+static void port_test_proto(uint8_t proto)
+{
+	const net_sa_family_t families[] = {NET_AF_INET, NET_AF_INET6};
+
+	ARRAY_FOR_EACH(families, i) {
+		port_test_pkt(families[i], proto, false, false);
+		port_test_pkt(families[i], proto, true, false);
+		port_test_pkt(families[i], proto, false, true);
+		port_test_pkt(families[i], proto, true, true);
+	}
+}
+
+ZTEST(net_pkt_filter_test_suite, test_npf_udp_port)
+{
+	port_test_proto(NET_IPPROTO_UDP);
+}
+
+ZTEST(net_pkt_filter_test_suite, test_npf_tcp_port)
+{
+	port_test_proto(NET_IPPROTO_TCP);
+}
+
+/*
+ * TCP flags filtering
+ */
+
+/* Data of the UDP datagram, which has to reach as far as the TCP flags */
+#define TEST_UDP_DATA_LEN 8
+
+ZTEST(net_pkt_filter_test_suite, test_npf_tcp_flags)
+{
+	static NPF_TCP_FLAGS_MATCH(syn, NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_ACK, NPF_TCP_FLAG_SYN);
+	static NPF_TCP_FLAGS_MATCH(syn_ack, NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_ACK,
+				   NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_ACK);
+	static NPF_TCP_FLAGS_MATCH(no_syn, NPF_TCP_FLAG_SYN, 0);
+	static NPF_TCP_FLAGS_MATCH(any, 0, 0);
+	struct npf_test *const conds[] = {&syn.test, &syn_ack.test, &no_syn.test, &any.test};
+	const struct {
+		uint8_t proto;
+		uint8_t flags;
+		/* Whether the conditions are true, in the order of conds */
+		bool match[ARRAY_SIZE(conds)];
+	} pkts[] = {
+		{NET_IPPROTO_TCP, NPF_TCP_FLAG_SYN, {true, false, false, true}},
+		{NET_IPPROTO_TCP, NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_ACK, {false, true, false, true}},
+		{NET_IPPROTO_TCP, NPF_TCP_FLAG_ACK, {false, false, true, true}},
+		{NET_IPPROTO_TCP, NPF_TCP_FLAG_RST, {false, false, true, true}},
+		/* A flag that is not in the mask does not matter */
+		{NET_IPPROTO_TCP, NPF_TCP_FLAG_SYN | NPF_TCP_FLAG_PSH, {true, false, false, true}},
+		/* The flags are in the data of the UDP datagram */
+		{NET_IPPROTO_UDP, NPF_TCP_FLAG_SYN, {false, false, false, false}},
+	};
+	const net_sa_family_t families[] = {NET_AF_INET, NET_AF_INET6};
+	const bool ip_opts[] = {false, true};
+	const bool split_hdr[] = {false, true};
+
+	ARRAY_FOR_EACH(families, f) {
+		ARRAY_FOR_EACH(ip_opts, o) {
+			ARRAY_FOR_EACH(split_hdr, s) {
+				ARRAY_FOR_EACH(pkts, p) {
+					uint8_t data[TEST_IP_PKT_MAX_LEN];
+					size_t data_len = (pkts[p].proto == NET_IPPROTO_UDP)
+								  ? TEST_UDP_DATA_LEN
+								  : 0;
+					size_t hdr_offset;
+					size_t split;
+					size_t len;
+
+					len = put_port_pkt(data, families[f], pkts[p].proto,
+							   ip_opts[o], pkts[p].flags, data_len,
+							   &hdr_offset);
+					/* The flags are in the second buffer */
+					split = split_hdr[s] ? (hdr_offset + 1) : len;
+
+					ARRAY_FOR_EACH(conds, c) {
+						struct local_in_test_result result;
+						bool match = pkts[p].match[c];
+
+						result = local_in_test_pkt_split(
+							conds[c], families[f], data, len, split);
+						zassert_true(
+							result.matched == (match ? 1U : 0U) &&
+								result.unmatched ==
+									(match ? 0U : 1U),
+							"family %zu opts %zu split %zu packet %zu "
+							"condition %zu: matched %u unmatched %u",
+							f, o, s, p, c, result.matched,
+							result.unmatched);
+					}
+				}
+			}
+		}
+	}
 }
 
 ZTEST_SUITE(net_pkt_filter_test_suite, NULL, test_npf_iface, NULL, NULL, NULL);
