@@ -13,6 +13,10 @@
 	compatible = "sipeed,tang-mega-138k-pro-dock-ae350-demo";
 	model = "Sipeed Tang Mega 138K Pro Dock AE350 Demo";
 
+	chosen {
+		zephyr,sram = &dram;
+	};
+
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
@@ -65,7 +69,7 @@
 };
 
 &dram {
-	reg = <0x00000000 DT_SIZE_M(256)>;
+	status = "okay";
 };
 
 &uart1 {
