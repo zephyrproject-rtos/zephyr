@@ -41,6 +41,8 @@ tests:
       - stm32wba65i_dk1
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - ensemble_e8_dk/ae822fa0e5597ls0/rtss_he
+      - ensemble_e8_dk/ae822fa0e5597ls0/rtss_hp
     integration_platforms:
       - nrf52840dk/nrf52840
       - esp32_devkitc/esp32/procpu

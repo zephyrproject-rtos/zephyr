@@ -110,6 +110,13 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
 
         self.ensure_output('bin')
 
+        # The ATOC must boot MCUboot, not an application slot
+        if self.build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
+            raise ValueError(
+                'MCUboot application images cannot be booted from the ATOC; '
+                'flash MCUboot with alif_flash and the application with -r jlink'
+            )
+
         # Resolve tool filenames (binary preferred over .py)
         gen_toc = self._require_tool(self.gen_toc)
         write_toc = self._require_tool(self.write_toc)

@@ -18,11 +18,18 @@
 
 	chosen {
 		zephyr,flash = &mram;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &dtcm;
 		zephyr,console = &uart4;
 		zephyr,shell-uart = &uart4;
 	};
 };
+
+boot_partition: &rtss_hp_boot_partition {};
+
+slot0_partition: &rtss_hp_slot0_partition {};
+
+slot1_partition: &rtss_hp_slot1_partition {};
 
 &uart4 {
 	pinctrl-0 = <&uart4_default>;

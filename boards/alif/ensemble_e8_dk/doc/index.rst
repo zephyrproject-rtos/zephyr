@@ -189,6 +189,30 @@ Building and flashing for the Application Processor (APSS):
 
    west flash --bl32-bin=<path to bl32.bin>
 
+MCUboot
+=======
+
+The RTSS-HE and RTSS-HP cores each have an MCUboot partition and two image slots
+in MRAM. Build an application with MCUboot using sysbuild:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sysbuild/with_mcuboot
+   :board: ensemble_e8_dk/ae822fa0e5597ls0/rtss_hp
+   :west-args: --sysbuild
+   :goals: build
+
+The Secure Enclave boots the image named in the ATOC. Program MCUboot with the
+``alif_flash`` runner once, so that the ATOC boots MCUboot, then program the
+application with J-Link:
+
+.. code-block:: console
+
+   west flash --domain mcuboot
+   west flash -r jlink --domain with_mcuboot
+
+The ``alif_flash`` runner refuses the application image, so a plain
+``west flash`` stops after programming MCUboot.
+
 Debugging
 =========
 
