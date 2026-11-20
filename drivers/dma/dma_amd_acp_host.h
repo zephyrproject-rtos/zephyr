@@ -15,7 +15,11 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_SOC_ACP_7_X
+#define ACP_MAX_STREAMS           10
+#else
 #define ACP_MAX_STREAMS           8
+#endif
 #define ACP_DMA_BASE_CTRL         ACP_DMA_CNTL_0
 #define ACP_DMA_BASE_STAT         ACP_DMA_CH_STS
 #define ACP_DMA_CHAN_SIZE         0x4

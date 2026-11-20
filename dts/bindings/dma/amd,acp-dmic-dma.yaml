@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMD ACP DMIC (PDM) DMA (DMIC0/DMIC1)
+
+compatible: "amd,acp-dmic-dma"
+
+include: dma-controller.yaml
+
+"#dma-cells":
+  - channel
+
+properties:
+  dma-channels:
+    type: int
+    description: Number of DMA channels supported
+  dma-requests:
+    type: int
+    description: Number of DMA requests supported
