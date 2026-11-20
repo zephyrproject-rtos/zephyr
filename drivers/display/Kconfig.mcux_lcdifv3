@@ -19,5 +19,8 @@ config MCUX_LCDIFV3_FB_NUM
 	help
 	  Number of framebuffers to be allocated in LCDIFV3 driver. Driver allocates
 	  framebuffers in order to support partial display update.
+	  Partial writes with frame_incomplete set are accumulated until the
+	  final write submits the framebuffer for display. Cache maintenance
+	  covers the updated area of each partial write.
 
 endif # DISPLAY_MCUX_LCDIFV3

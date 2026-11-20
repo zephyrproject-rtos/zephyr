@@ -52,7 +52,20 @@ struct mcux_dcnano_lcdif_data {
 	uint32_t fb_bytes;
 	/* Tracks index of next active driver framebuffer */
 	uint8_t next_idx;
+	/* The next framebuffer contains an unfinished partial update. */
+	bool draw_pending;
 };
+
+static void mcux_dcnano_lcdif_flush_rows(uint8_t *row, size_t row_bytes, size_t pitch_bytes,
+					 uint16_t height)
+{
+#if defined(CONFIG_HAS_MCUX_CACHE) && defined(CONFIG_MCUX_DCNANO_LCDIF_MAINTAIN_CACHE)
+	if (height > 0U) {
+		CACHE64_CleanCacheByRange((uint32_t)row,
+					  ((size_t)(height - 1U) * pitch_bytes) + row_bytes);
+	}
+#endif
+}
 
 static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 			     const uint16_t y,
@@ -64,6 +77,7 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 	uint32_t h_idx;
 	const uint8_t *src;
 	uint8_t *dst;
+	uint8_t *row;
 
 	__ASSERT((data->pixel_bytes * desc->pitch * desc->height) <=
 		desc->buf_size, "Input buffer too small");
@@ -77,12 +91,17 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 		LOG_DBG("Setting FB from %p->%p",
 			(void *)data->active_fb, (void *)buf);
 		data->active_fb = buf;
+		data->draw_pending = false;
+
+#if defined(CONFIG_HAS_MCUX_CACHE) && defined(CONFIG_MCUX_DCNANO_LCDIF_MAINTAIN_CACHE)
+		CACHE64_CleanCacheByRange((uint32_t)data->active_fb, data->fb_bytes);
+#endif
 	} else {
 		/* We must use partial framebuffer copy */
 		if (CONFIG_MCUX_DCNANO_LCDIF_FB_NUM == 0)  {
 			LOG_ERR("Partial display refresh requires driver framebuffers");
 			return -ENOTSUP;
-		} else if (data->active_fb != data->fb[data->next_idx]) {
+		} else if (!data->draw_pending && (data->active_fb != data->fb[data->next_idx])) {
 			/*
 			 * Copy the entirety of the current framebuffer to new
 			 * buffer, since we are changing the active buffer address
@@ -90,27 +109,36 @@ static int mcux_dcnano_lcdif_write(const struct device *dev, const uint16_t x,
 			src = data->active_fb;
 			dst = data->fb[data->next_idx];
 			memcpy(dst, src, data->fb_bytes);
+
+#if defined(CONFIG_HAS_MCUX_CACHE) && defined(CONFIG_MCUX_DCNANO_LCDIF_MAINTAIN_CACHE)
+			CACHE64_CleanCacheByRange((uint32_t)dst, data->fb_bytes);
+#endif
 		}
 		/* Write the display update to the active framebuffer */
 		src = buf;
-		dst = data->fb[data->next_idx];
-		dst += data->pixel_bytes * x + (y * data->pitch_bytes);
+		row = data->fb[data->next_idx];
+		row += data->pixel_bytes * x + (y * data->pitch_bytes);
+		dst = row;
 
 		for (h_idx = 0; h_idx < desc->height; h_idx++) {
 			memcpy(dst, src, data->pixel_bytes * desc->width);
 			src += data->pixel_bytes * desc->pitch;
 			dst += data->pitch_bytes;
 		}
+
+		mcux_dcnano_lcdif_flush_rows(row, (size_t)data->pixel_bytes * desc->width,
+					     data->pitch_bytes, desc->height);
+
+		data->draw_pending = desc->frame_incomplete;
+		if (data->draw_pending) {
+			return 0;
+		}
+
 		LOG_DBG("Setting FB from %p->%p", (void *) data->active_fb,
 			(void *) data->fb[data->next_idx]);
 		/* Set new active framebuffer */
 		data->active_fb = data->fb[data->next_idx];
 	}
-
-#if defined(CONFIG_HAS_MCUX_CACHE) && defined(CONFIG_MCUX_DCNANO_LCDIF_MAINTAIN_CACHE)
-	CACHE64_CleanCacheByRange((uint32_t) data->active_fb,
-					data->fb_bytes);
-#endif
 
 	k_sem_reset(&data->sem);
 
@@ -287,6 +315,7 @@ static int mcux_dcnano_lcdif_set_pixel_format(const struct device *dev,
 		data->fb[i] = config->fb_ptr + (data->fb_bytes * i);
 	}
 	data->active_fb = config->fb_ptr;
+	data->draw_pending = false;
 
 	/* Clear the framebuffer since the frame size may be larger. */
 	memset(config->fb_ptr, 0, data->fb_bytes * CONFIG_MCUX_DCNANO_LCDIF_FB_NUM);

@@ -1,0 +1,6 @@
+shield:
+  name: lcm_rgb_5inch
+  full_name: LCM 5" 800x480 RGB parallel panel
+  vendor: nxp
+  supported_features:
+    - display
