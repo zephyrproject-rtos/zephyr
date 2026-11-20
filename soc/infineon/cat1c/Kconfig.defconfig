@@ -5,6 +5,9 @@
 
 if SOC_FAMILY_INFINEON_CAT1C
 
+config CLOCK_CONTROL_IFX_PERI_CLOCK_HAS_GROUP
+	default y
+
 rsource "*/Kconfig.defconfig"
 
 endif # SOC_FAMILY_INFINEON_CAT1C
