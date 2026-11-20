@@ -17,6 +17,13 @@ struct memc_xspi_dev_config {
 	size_t lut_count;
 };
 
+/*
+ * Controller operations are not internally serialized. Callers must exclude
+ * concurrent transfers, resets, configuration changes and memory-mapped reads
+ * for each complete operation. The XSPI NOR driver serializes its flash API
+ * calls; direct MEMC or memory-mapped users need external coordination.
+ */
+
 /**
  * @brief Update device address mode.
  *
@@ -90,5 +97,16 @@ int memc_xspi_set_device_config(const struct device *dev, const xspi_device_conf
  * @return AHB access address for XSPI device
  */
 uint32_t memc_mcux_xspi_get_ahb_address(const struct device *dev);
+
+/**
+ * @brief Invalidate the XSPI AHB read buffers.
+ *
+ * The XSPI controller caches memory-mapped flash reads in its AHB buffers.
+ * After an erase or program the buffer contents are stale, so it must be
+ * cleared before the next memory-mapped read to observe the new flash data.
+ *
+ * @param dev: XSPI device
+ */
+void memc_mcux_xspi_clear_ahb_buffer(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_MEMC_MCUX_XSPI_H_ */

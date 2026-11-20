@@ -142,10 +142,129 @@
 			reg = <0x20000000 DT_SIZE_K(256)>;
 		};
 
+		mu7: mailbox@42050000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x42050000 DT_SIZE_K(4)>;
+			interrupts = <207 0>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
 		tstmr2: timer@420a0000 {
 			compatible = "nxp,tstmr";
 			reg = <0x420a0000 0x8>;
 			clock-frequency = <DT_FREQ_M(24)>;
+			status = "disabled";
+		};
+
+		lptmr2: timer@420f0000 {
+			compatible = "nxp,lptmr";
+			reg = <0x420f0000 DT_SIZE_K(4)>;
+			interrupts = <63 0>;
+			clocks = <&scmi_clk IMX952_CLK_LPTMR2>;
+			clock-frequency = <DT_FREQ_K(32)>;
+			clk-source = <2>;
+			prescale-glitch-filter-bypass;
+			resolution = <32>;
+			status = "disabled";
+		};
+
+		tpm3: pwm@42100000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x42100000 0x88>;
+			interrupts = <73 0>;
+			clocks = <&scmi_clk IMX952_CLK_BUSWAKEUP>;
+			prescaler = <16>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		tpm4: pwm@42110000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x42110000 0x88>;
+			interrupts = <74 0>;
+			clocks = <&scmi_clk IMX952_CLK_TPM4>;
+			prescaler = <16>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		tpm5: pwm@42120000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x42120000 0x88>;
+			interrupts = <75 0>;
+			clocks = <&scmi_clk IMX952_CLK_TPM5>;
+			prescaler = <16>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		tpm6: pwm@42130000 {
+			compatible = "nxp,kinetis-tpm";
+			reg = <0x42130000 0x88>;
+			interrupts = <76 0>;
+			clocks = <&scmi_clk IMX952_CLK_TPM6>;
+			prescaler = <16>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		i3c2: i3c@42140000 {
+			compatible = "nxp,mcux-i3c";
+			reg = <0x42140000 0x1000>;
+			interrupts = <57 0>;
+			clocks = <&scmi_clk IMX952_CLK_I3C2SLOW>;
+			clk-divider = <6>;
+			clk-divider-slow = <1>;
+			clk-divider-tc = <1>;
+			#address-cells = <3>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lpi2c3: i2c@42150000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x42150000 0x4000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <58 0>;
+			clocks = <&scmi_clk IMX952_CLK_LPI2C3>;
+			status = "disabled";
+		};
+
+		lpi2c4: i2c@42160000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x42160000 0x4000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <59 0>;
+			clocks = <&scmi_clk IMX952_CLK_LPI2C4>;
+			status = "disabled";
+		};
+
+		lpspi3: spi@42170000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42170000 0x4000>;
+			interrupts = <61 3>;
+			clocks = <&scmi_clk IMX952_CLK_LPSPI3>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
+			status = "disabled";
+		};
+
+		lpspi4: spi@42180000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42180000 0x4000>;
+			interrupts = <62 3>;
+			clocks = <&scmi_clk IMX952_CLK_LPSPI4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
 			status = "disabled";
 		};
 
@@ -185,6 +304,22 @@
 			status = "disabled";
 		};
 
+		flexio1: flexio@421e0000 {
+			compatible = "nxp,flexio";
+			reg = <0x421e0000 0x4000>;
+			interrupts = <46 0>;
+			clocks = <&scmi_clk IMX952_CLK_FLEXIO1>;
+			status = "disabled";
+		};
+
+		flexio2: flexio@421f0000 {
+			compatible = "nxp,flexio";
+			reg = <0x421f0000 0x4000>;
+			interrupts = <47 0>;
+			clocks = <&scmi_clk IMX952_CLK_FLEXIO2>;
+			status = "disabled";
+		};
+
 		lpuart7: serial@422b0000 {
 			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x422b0000 DT_SIZE_K(64)>;
@@ -201,106 +336,55 @@
 			status = "disabled";
 		};
 
-		mu7: mailbox@42440000 {
-			compatible = "nxp,mbox-imx-mu";
-			reg = <0x42440000 DT_SIZE_K(4)>;
-			interrupts = <207 0>;
-			#mbox-cells = <1>;
-			status = "disabled";
-		};
-
-		lptmr2: timer@424d0000 {
-			compatible = "nxp,lptmr";
-			reg = <0x424d0000 DT_SIZE_K(4)>;
-			interrupts = <63 0>;
-			clocks = <&scmi_clk IMX952_CLK_LPTMR2>;
-			clock-frequency = <DT_FREQ_K(32)>;
-			clk-source = <2>;
-			prescale-glitch-filter-bypass;
-			resolution = <32>;
-			status = "disabled";
-		};
-
-		tpm3: pwm@424e0000 {
-			compatible = "nxp,kinetis-tpm";
-			reg = <0x424e0000 0x88>;
-			interrupts = <73 0>;
-			clocks = <&scmi_clk IMX952_CLK_BUSWAKEUP>;
-			prescaler = <16>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		tpm4: pwm@424f0000 {
-			compatible = "nxp,kinetis-tpm";
-			reg = <0x424f0000 0x88>;
-			interrupts = <74 0>;
-			clocks = <&scmi_clk IMX952_CLK_TPM4>;
-			prescaler = <16>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		tpm5: pwm@42500000 {
-			compatible = "nxp,kinetis-tpm";
-			reg = <0x42500000 0x88>;
-			interrupts = <75 0>;
-			clocks = <&scmi_clk IMX952_CLK_TPM5>;
-			prescaler = <16>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		tpm6: pwm@42510000 {
-			compatible = "nxp,kinetis-tpm";
-			reg = <0x42510000 0x88>;
-			interrupts = <76 0>;
-			clocks = <&scmi_clk IMX952_CLK_TPM6>;
-			prescaler = <16>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		i3c2: i3c@42520000 {
-			compatible = "nxp,mcux-i3c";
-			reg = <0x42520000 0x1000>;
-			interrupts = <57 0>;
-			clocks = <&scmi_clk IMX952_CLK_I3C2SLOW>;
-			clk-divider = <6>;
-			clk-divider-slow = <1>;
-			clk-divider-tc = <1>;
-			#address-cells = <3>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		lpi2c3: i2c@42530000 {
+		lpi2c5: i2c@422d0000 {
 			compatible = "nxp,lpi2c";
-			reg = <0x42530000 0x4000>;
+			reg = <0x422d0000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <58 0>;
-			clocks = <&scmi_clk IMX952_CLK_LPI2C3>;
+			interrupts = <181 0>;
+			clocks = <&scmi_clk IMX952_CLK_LPI2C5>;
 			status = "disabled";
 		};
 
-		lpi2c4: i2c@42540000 {
+		lpi2c6: i2c@422e0000 {
 			compatible = "nxp,lpi2c";
-			reg = <0x42540000 0x4000>;
+			reg = <0x422e0000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			interrupts = <59 0>;
-			clocks = <&scmi_clk IMX952_CLK_LPI2C4>;
+			interrupts = <182 0>;
+			clocks = <&scmi_clk IMX952_CLK_LPI2C6>;
 			status = "disabled";
 		};
 
-		lpspi3: spi@42550000 {
+		lpi2c7: i2c@422f0000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x422f0000 0x4000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <183 0>;
+			clocks = <&scmi_clk IMX952_CLK_LPI2C7>;
+			status = "disabled";
+		};
+
+		lpi2c8: i2c@42300000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x42300000 0x4000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <184 0>;
+			clocks = <&scmi_clk IMX952_CLK_LPI2C8>;
+			status = "disabled";
+		};
+
+		lpspi5: spi@42310000 {
 			compatible = "nxp,lpspi";
-			reg = <0x42550000 0x4000>;
-			interrupts = <61 3>;
-			clocks = <&scmi_clk IMX952_CLK_LPSPI3>;
+			reg = <0x42310000 0x4000>;
+			interrupts = <177 3>;
+			clocks = <&scmi_clk IMX952_CLK_LPSPI5>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
@@ -308,15 +392,52 @@
 			status = "disabled";
 		};
 
-		lpspi4: spi@42560000 {
+		lpspi6: spi@42320000 {
 			compatible = "nxp,lpspi";
-			reg = <0x42560000 0x4000>;
-			interrupts = <62 3>;
-			clocks = <&scmi_clk IMX952_CLK_LPSPI4>;
+			reg = <0x42320000 0x4000>;
+			interrupts = <178 3>;
+			clocks = <&scmi_clk IMX952_CLK_LPSPI6>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
 			rx-fifo-size = <16>;
+			status = "disabled";
+		};
+
+		lpspi7: spi@42330000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42330000 0x4000>;
+			interrupts = <179 3>;
+			clocks = <&scmi_clk IMX952_CLK_LPSPI7>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
+			status = "disabled";
+		};
+
+		lpspi8: spi@42340000 {
+			compatible = "nxp,lpspi";
+			reg = <0x42340000 0x4000>;
+			interrupts = <180 3>;
+			clocks = <&scmi_clk IMX952_CLK_LPSPI8>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			tx-fifo-size = <16>;
+			rx-fifo-size = <16>;
+			status = "disabled";
+		};
+
+		xspi1: spi@42400000 {
+			compatible = "nxp,xspi";
+			reg = <0x42400000 DT_SIZE_K(64)>,
+			      <0x28000000 DT_SIZE_M(128)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg-names = "xspi", "xspi_mmap";
+			interrupt-parent = <&irqsteer_master0>;
+			interrupts = <0 0>;
+			clocks = <&scmi_clk IMX952_CLK_XSPI1>;
 			status = "disabled";
 		};
 
@@ -332,22 +453,6 @@
 			status = "disabled";
 		};
 
-		flexio1: flexio@425c0000 {
-			compatible = "nxp,flexio";
-			reg = <0x425c0000 0x4000>;
-			interrupts = <46 0>;
-			clocks = <&scmi_clk IMX952_CLK_FLEXIO1>;
-			status = "disabled";
-		};
-
-		flexio2: flexio@425d0000 {
-			compatible = "nxp,flexio";
-			reg = <0x425d0000 0x4000>;
-			interrupts = <47 0>;
-			clocks = <&scmi_clk IMX952_CLK_FLEXIO2>;
-			status = "disabled";
-		};
-
 		flexcan3: can@42600000 {
 			compatible = "nxp,flexcan-fd", "nxp,flexcan";
 			reg = <0x42600000 DT_SIZE_K(64)>;
@@ -357,111 +462,6 @@
 			clock-names = "clksrc0";
 			clk-source = <0>;
 			number-of-mb = <96>;
-			status = "disabled";
-		};
-
-		sai3: dai@42650000 {
-			compatible = "nxp,dai-sai";
-			reg = <0x42650000 DT_SIZE_K(64)>;
-			clocks = <&scmi_clk IMX952_CLK_SAI3>;
-			clock-names = "mclk1";
-			interrupts = <170 0>;
-			dai-index = <3>;
-			mclk-is-output;
-			dmas = <&edma2 4 60>, <&edma2 5 61>;
-			dma-names = "tx", "rx";
-			status = "disabled";
-		};
-
-		lpi2c5: i2c@426b0000 {
-			compatible = "nxp,lpi2c";
-			reg = <0x426b0000 0x4000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <181 0>;
-			clocks = <&scmi_clk IMX952_CLK_LPI2C5>;
-			status = "disabled";
-		};
-
-		lpi2c6: i2c@426c0000 {
-			compatible = "nxp,lpi2c";
-			reg = <0x426c0000 0x4000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <182 0>;
-			clocks = <&scmi_clk IMX952_CLK_LPI2C6>;
-			status = "disabled";
-		};
-
-		lpi2c7: i2c@426d0000 {
-			compatible = "nxp,lpi2c";
-			reg = <0x426d0000 0x4000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <183 0>;
-			clocks = <&scmi_clk IMX952_CLK_LPI2C7>;
-			status = "disabled";
-		};
-
-		lpi2c8: i2c@426e0000 {
-			compatible = "nxp,lpi2c";
-			reg = <0x426e0000 0x4000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <184 0>;
-			clocks = <&scmi_clk IMX952_CLK_LPI2C8>;
-			status = "disabled";
-		};
-
-		lpspi5: spi@426f0000 {
-			compatible = "nxp,lpspi";
-			reg = <0x426f0000 0x4000>;
-			interrupts = <177 3>;
-			clocks = <&scmi_clk IMX952_CLK_LPSPI5>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			tx-fifo-size = <16>;
-			rx-fifo-size = <16>;
-			status = "disabled";
-		};
-
-		lpspi6: spi@42700000 {
-			compatible = "nxp,lpspi";
-			reg = <0x42700000 0x4000>;
-			interrupts = <178 3>;
-			clocks = <&scmi_clk IMX952_CLK_LPSPI6>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			tx-fifo-size = <16>;
-			rx-fifo-size = <16>;
-			status = "disabled";
-		};
-
-		lpspi7: spi@42710000 {
-			compatible = "nxp,lpspi";
-			reg = <0x42710000 0x4000>;
-			interrupts = <179 3>;
-			clocks = <&scmi_clk IMX952_CLK_LPSPI7>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			tx-fifo-size = <16>;
-			rx-fifo-size = <16>;
-			status = "disabled";
-		};
-
-		lpspi8: spi@42720000 {
-			compatible = "nxp,lpspi";
-			reg = <0x42720000 0x4000>;
-			interrupts = <180 3>;
-			clocks = <&scmi_clk IMX952_CLK_LPSPI8>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			tx-fifo-size = <16>;
-			rx-fifo-size = <16>;
 			status = "disabled";
 		};
 
@@ -519,6 +519,19 @@
 						    0x00000000 0x03000000 0x00000000 0x0c000000
 						    0x00000000 0x30000000 0x00000000 0xc0000000>;
 			nxp,version = <5>;
+			status = "disabled";
+		};
+
+		sai3: dai@433e0000 {
+			compatible = "nxp,dai-sai";
+			reg = <0x433e0000 DT_SIZE_K(64)>;
+			clocks = <&scmi_clk IMX952_CLK_SAI3>;
+			clock-names = "mclk1";
+			interrupts = <170 0>;
+			dai-index = <3>;
+			mclk-is-output;
+			dmas = <&edma2 4 60>, <&edma2 5 61>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
@@ -819,6 +832,24 @@
 				#address-cells = <0>;
 				interrupts-extended = <&nvic 233 0>;
 			};
+
+			irqsteer_master10: interrupt-controller@10 {
+				compatible = "nxp,irqsteer-master";
+				reg = <10>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				#address-cells = <0>;
+				interrupts-extended = <&nvic 234 0>;
+			};
+
+			irqsteer_master11: interrupt-controller@11 {
+				compatible = "nxp,irqsteer-master";
+				reg = <11>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				#address-cells = <0>;
+				interrupts-extended = <&nvic 235 0>;
+			};
 		};
 
 		gpio1: gpio@47400000 {
@@ -1004,144 +1035,144 @@
 };
 
 &gpio1 {
-	pinmux = <&iomuxc_i2c1_scl_gpio_io_bit_gpio1_io_bit0>,
-		 <&iomuxc_i2c1_sda_gpio_io_bit_gpio1_io_bit1>,
-		 <&iomuxc_i2c2_scl_gpio_io_bit_gpio1_io_bit2>,
-		 <&iomuxc_i2c2_sda_gpio_io_bit_gpio1_io_bit3>,
-		 <&iomuxc_uart1_rxd_gpio_io_bit_gpio1_io_bit4>,
-		 <&iomuxc_uart1_txd_gpio_io_bit_gpio1_io_bit5>,
-		 <&iomuxc_uart2_rxd_gpio_io_bit_gpio1_io_bit6>,
-		 <&iomuxc_uart2_txd_gpio_io_bit_gpio1_io_bit7>,
-		 <&iomuxc_pdm_clk_gpio_io_bit_gpio1_io_bit8>,
-		 <&iomuxc_pdm_bit_stream0_gpio_io_bit_gpio1_io_bit9>,
-		 <&iomuxc_pdm_bit_stream1_gpio_io_bit_gpio1_io_bit10>,
-		 <&iomuxc_sai1_txfs_gpio_io_bit_gpio1_io_bit11>,
-		 <&iomuxc_sai1_txc_gpio_io_bit_gpio1_io_bit12>,
-		 <&iomuxc_sai1_txd0_gpio_io_bit_gpio1_io_bit13>,
-		 <&iomuxc_sai1_rxd0_gpio_io_bit_gpio1_io_bit14>,
-		 <&iomuxc_wdog_any_gpio_io_bit_gpio1_io_bit15>;
+	pinmux = <&iomuxc_i2c1_scl_gpio_io_gpio1_io_0>,
+		 <&iomuxc_i2c1_sda_gpio_io_gpio1_io_1>,
+		 <&iomuxc_i2c2_scl_gpio_io_gpio1_io_2>,
+		 <&iomuxc_i2c2_sda_gpio_io_gpio1_io_3>,
+		 <&iomuxc_uart1_rxd_gpio_io_gpio1_io_4>,
+		 <&iomuxc_uart1_txd_gpio_io_gpio1_io_5>,
+		 <&iomuxc_uart2_rxd_gpio_io_gpio1_io_6>,
+		 <&iomuxc_uart2_txd_gpio_io_gpio1_io_7>,
+		 <&iomuxc_pdm_clk_gpio_io_gpio1_io_8>,
+		 <&iomuxc_pdm_bit_stream0_gpio_io_gpio1_io_9>,
+		 <&iomuxc_pdm_bit_stream1_gpio_io_gpio1_io_10>,
+		 <&iomuxc_sai1_txfs_gpio_io_gpio1_io_11>,
+		 <&iomuxc_sai1_txc_gpio_io_gpio1_io_12>,
+		 <&iomuxc_sai1_txd0_gpio_io_gpio1_io_13>,
+		 <&iomuxc_sai1_rxd0_gpio_io_gpio1_io_14>,
+		 <&iomuxc_wdog_any_gpio_io_gpio1_io_15>;
 };
 
 &gpio2 {
-	pinmux = <&iomuxc_gpio_io00_gpio_io_bit_gpio2_io_bit0>,
-		 <&iomuxc_gpio_io01_gpio_io_bit_gpio2_io_bit1>,
-		 <&iomuxc_gpio_io02_gpio_io_bit_gpio2_io_bit2>,
-		 <&iomuxc_gpio_io03_gpio_io_bit_gpio2_io_bit3>,
-		 <&iomuxc_gpio_io04_gpio_io_bit_gpio2_io_bit4>,
-		 <&iomuxc_gpio_io05_gpio_io_bit_gpio2_io_bit5>,
-		 <&iomuxc_gpio_io06_gpio_io_bit_gpio2_io_bit6>,
-		 <&iomuxc_gpio_io07_gpio_io_bit_gpio2_io_bit7>,
-		 <&iomuxc_gpio_io08_gpio_io_bit_gpio2_io_bit8>,
-		 <&iomuxc_gpio_io09_gpio_io_bit_gpio2_io_bit9>,
-		 <&iomuxc_gpio_io10_gpio_io_bit_gpio2_io_bit10>,
-		 <&iomuxc_gpio_io11_gpio_io_bit_gpio2_io_bit11>,
-		 <&iomuxc_gpio_io12_gpio_io_bit_gpio2_io_bit12>,
-		 <&iomuxc_gpio_io13_gpio_io_bit_gpio2_io_bit13>,
-		 <&iomuxc_gpio_io14_gpio_io_bit_gpio2_io_bit14>,
-		 <&iomuxc_gpio_io15_gpio_io_bit_gpio2_io_bit15>,
-		 <&iomuxc_gpio_io16_gpio_io_bit_gpio2_io_bit16>,
-		 <&iomuxc_gpio_io17_gpio_io_bit_gpio2_io_bit17>,
-		 <&iomuxc_gpio_io18_gpio_io_bit_gpio2_io_bit18>,
-		 <&iomuxc_gpio_io19_gpio_io_bit_gpio2_io_bit19>,
-		 <&iomuxc_gpio_io20_gpio_io_bit_gpio2_io_bit20>,
-		 <&iomuxc_gpio_io21_gpio_io_bit_gpio2_io_bit21>,
-		 <&iomuxc_gpio_io22_gpio_io_bit_gpio2_io_bit22>,
-		 <&iomuxc_gpio_io23_gpio_io_bit_gpio2_io_bit23>,
-		 <&iomuxc_gpio_io24_gpio_io_bit_gpio2_io_bit24>,
-		 <&iomuxc_gpio_io25_gpio_io_bit_gpio2_io_bit25>,
-		 <&iomuxc_gpio_io26_gpio_io_bit_gpio2_io_bit26>,
-		 <&iomuxc_gpio_io27_gpio_io_bit_gpio2_io_bit27>,
-		 <&iomuxc_gpio_io28_gpio_io_bit_gpio2_io_bit28>,
-		 <&iomuxc_gpio_io29_gpio_io_bit_gpio2_io_bit29>,
-		 <&iomuxc_gpio_io30_gpio_io_bit_gpio2_io_bit30>,
-		 <&iomuxc_gpio_io31_gpio_io_bit_gpio2_io_bit31>;
+	pinmux = <&iomuxc_gpio_io00_gpio_io_gpio2_io_0>,
+		 <&iomuxc_gpio_io01_gpio_io_gpio2_io_1>,
+		 <&iomuxc_gpio_io02_gpio_io_gpio2_io_2>,
+		 <&iomuxc_gpio_io03_gpio_io_gpio2_io_3>,
+		 <&iomuxc_gpio_io04_gpio_io_gpio2_io_4>,
+		 <&iomuxc_gpio_io05_gpio_io_gpio2_io_5>,
+		 <&iomuxc_gpio_io06_gpio_io_gpio2_io_6>,
+		 <&iomuxc_gpio_io07_gpio_io_gpio2_io_7>,
+		 <&iomuxc_gpio_io08_gpio_io_gpio2_io_8>,
+		 <&iomuxc_gpio_io09_gpio_io_gpio2_io_9>,
+		 <&iomuxc_gpio_io10_gpio_io_gpio2_io_10>,
+		 <&iomuxc_gpio_io11_gpio_io_gpio2_io_11>,
+		 <&iomuxc_gpio_io12_gpio_io_gpio2_io_12>,
+		 <&iomuxc_gpio_io13_gpio_io_gpio2_io_13>,
+		 <&iomuxc_gpio_io14_gpio_io_gpio2_io_14>,
+		 <&iomuxc_gpio_io15_gpio_io_gpio2_io_15>,
+		 <&iomuxc_gpio_io16_gpio_io_gpio2_io_16>,
+		 <&iomuxc_gpio_io17_gpio_io_gpio2_io_17>,
+		 <&iomuxc_gpio_io18_gpio_io_gpio2_io_18>,
+		 <&iomuxc_gpio_io19_gpio_io_gpio2_io_19>,
+		 <&iomuxc_gpio_io20_gpio_io_gpio2_io_20>,
+		 <&iomuxc_gpio_io21_gpio_io_gpio2_io_21>,
+		 <&iomuxc_gpio_io22_gpio_io_gpio2_io_22>,
+		 <&iomuxc_gpio_io23_gpio_io_gpio2_io_23>,
+		 <&iomuxc_gpio_io24_gpio_io_gpio2_io_24>,
+		 <&iomuxc_gpio_io25_gpio_io_gpio2_io_25>,
+		 <&iomuxc_gpio_io26_gpio_io_gpio2_io_26>,
+		 <&iomuxc_gpio_io27_gpio_io_gpio2_io_27>,
+		 <&iomuxc_gpio_io28_gpio_io_gpio2_io_28>,
+		 <&iomuxc_gpio_io29_gpio_io_gpio2_io_29>,
+		 <&iomuxc_gpio_io30_gpio_io_gpio2_io_30>,
+		 <&iomuxc_gpio_io31_gpio_io_gpio2_io_31>;
 };
 
 &gpio3 {
-	pinmux = <&iomuxc_sd2_cd_b_gpio_io_bit_gpio3_io_bit0>,
-		 <&iomuxc_sd2_clk_gpio_io_bit_gpio3_io_bit1>,
-		 <&iomuxc_sd2_cmd_gpio_io_bit_gpio3_io_bit2>,
-		 <&iomuxc_sd2_data0_gpio_io_bit_gpio3_io_bit3>,
-		 <&iomuxc_sd2_data1_gpio_io_bit_gpio3_io_bit4>,
-		 <&iomuxc_sd2_data2_gpio_io_bit_gpio3_io_bit5>,
-		 <&iomuxc_sd2_data3_gpio_io_bit_gpio3_io_bit6>,
-		 <&iomuxc_sd2_reset_b_gpio_io_bit_gpio3_io_bit7>,
-		 <&iomuxc_sd1_clk_gpio_io_bit_gpio3_io_bit8>,
-		 <&iomuxc_sd1_cmd_gpio_io_bit_gpio3_io_bit9>,
-		 <&iomuxc_sd1_data0_gpio_io_bit_gpio3_io_bit10>,
-		 <&iomuxc_sd1_data1_gpio_io_bit_gpio3_io_bit11>,
-		 <&iomuxc_sd1_data2_gpio_io_bit_gpio3_io_bit12>,
-		 <&iomuxc_sd1_data3_gpio_io_bit_gpio3_io_bit13>,
-		 <&iomuxc_sd1_data4_gpio_io_bit_gpio3_io_bit14>,
-		 <&iomuxc_sd1_data5_gpio_io_bit_gpio3_io_bit15>,
-		 <&iomuxc_sd1_data6_gpio_io_bit_gpio3_io_bit16>,
-		 <&iomuxc_sd1_data7_gpio_io_bit_gpio3_io_bit17>,
-		 <&iomuxc_sd1_strobe_gpio_io_bit_gpio3_io_bit18>,
-		 <&iomuxc_sd2_vselect_gpio_io_bit_gpio3_io_bit19>,
-		 <&iomuxc_sd3_clk_gpio_io_bit_gpio3_io_bit20>,
-		 <&iomuxc_sd3_cmd_gpio_io_bit_gpio3_io_bit21>,
-		 <&iomuxc_sd3_data0_gpio_io_bit_gpio3_io_bit22>,
-		 <&iomuxc_sd3_data1_gpio_io_bit_gpio3_io_bit23>,
-		 <&iomuxc_sd3_data2_gpio_io_bit_gpio3_io_bit24>,
-		 <&iomuxc_sd3_data3_gpio_io_bit_gpio3_io_bit25>,
-		 <&iomuxc_ccm_clko1_gpio_io_bit_gpio3_io_bit26>,
-		 <&iomuxc_ccm_clko2_gpio_io_bit_gpio3_io_bit27>,
-		 <&iomuxc_dap_tdi_gpio_io_bit_gpio3_io_bit28>,
-		 <&iomuxc_dap_tms_swdio_gpio_io_bit_gpio3_io_bit29>,
-		 <&iomuxc_dap_tclk_swclk_gpio_io_bit_gpio3_io_bit30>,
-		 <&iomuxc_dap_tdo_traceswo_gpio_io_bit_gpio3_io_bit31>;
+	pinmux = <&iomuxc_sd2_cd_b_gpio_io_gpio3_io_0>,
+		 <&iomuxc_sd2_clk_gpio_io_gpio3_io_1>,
+		 <&iomuxc_sd2_cmd_gpio_io_gpio3_io_2>,
+		 <&iomuxc_sd2_data0_gpio_io_gpio3_io_3>,
+		 <&iomuxc_sd2_data1_gpio_io_gpio3_io_4>,
+		 <&iomuxc_sd2_data2_gpio_io_gpio3_io_5>,
+		 <&iomuxc_sd2_data3_gpio_io_gpio3_io_6>,
+		 <&iomuxc_sd2_reset_b_gpio_io_gpio3_io_7>,
+		 <&iomuxc_sd1_clk_gpio_io_gpio3_io_8>,
+		 <&iomuxc_sd1_cmd_gpio_io_gpio3_io_9>,
+		 <&iomuxc_sd1_data0_gpio_io_gpio3_io_10>,
+		 <&iomuxc_sd1_data1_gpio_io_gpio3_io_11>,
+		 <&iomuxc_sd1_data2_gpio_io_gpio3_io_12>,
+		 <&iomuxc_sd1_data3_gpio_io_gpio3_io_13>,
+		 <&iomuxc_sd1_data4_gpio_io_gpio3_io_14>,
+		 <&iomuxc_sd1_data5_gpio_io_gpio3_io_15>,
+		 <&iomuxc_sd1_data6_gpio_io_gpio3_io_16>,
+		 <&iomuxc_sd1_data7_gpio_io_gpio3_io_17>,
+		 <&iomuxc_sd1_strobe_gpio_io_gpio3_io_18>,
+		 <&iomuxc_sd2_vselect_gpio_io_gpio3_io_19>,
+		 <&iomuxc_sd3_clk_gpio_io_gpio3_io_20>,
+		 <&iomuxc_sd3_cmd_gpio_io_gpio3_io_21>,
+		 <&iomuxc_sd3_data0_gpio_io_gpio3_io_22>,
+		 <&iomuxc_sd3_data1_gpio_io_gpio3_io_23>,
+		 <&iomuxc_sd3_data2_gpio_io_gpio3_io_24>,
+		 <&iomuxc_sd3_data3_gpio_io_gpio3_io_25>,
+		 <&iomuxc_ccm_clko1_gpio_io_gpio3_io_26>,
+		 <&iomuxc_ccm_clko2_gpio_io_gpio3_io_27>,
+		 <&iomuxc_dap_tdi_gpio_io_gpio3_io_28>,
+		 <&iomuxc_dap_tms_swdio_gpio_io_gpio3_io_29>,
+		 <&iomuxc_dap_tclk_swclk_gpio_io_gpio3_io_30>,
+		 <&iomuxc_dap_tdo_traceswo_gpio_io_gpio3_io_31>;
 };
 
 &gpio4 {
-	pinmux = <&iomuxc_enet1_mdc_gpio_io_bit_gpio4_io_bit0>,
-		 <&iomuxc_enet1_mdio_gpio_io_bit_gpio4_io_bit1>,
-		 <&iomuxc_enet1_td3_gpio_io_bit_gpio4_io_bit2>,
-		 <&iomuxc_enet1_td2_gpio_io_bit_gpio4_io_bit3>,
-		 <&iomuxc_enet1_td1_gpio_io_bit_gpio4_io_bit4>,
-		 <&iomuxc_enet1_td0_gpio_io_bit_gpio4_io_bit5>,
-		 <&iomuxc_enet1_tx_ctl_gpio_io_bit_gpio4_io_bit6>,
-		 <&iomuxc_enet1_txc_gpio_io_bit_gpio4_io_bit7>,
-		 <&iomuxc_enet1_rx_ctl_gpio_io_bit_gpio4_io_bit8>,
-		 <&iomuxc_enet1_rxc_gpio_io_bit_gpio4_io_bit9>,
-		 <&iomuxc_enet1_rd0_gpio_io_bit_gpio4_io_bit10>,
-		 <&iomuxc_enet1_rd1_gpio_io_bit_gpio4_io_bit11>,
-		 <&iomuxc_enet1_rd2_gpio_io_bit_gpio4_io_bit12>,
-		 <&iomuxc_enet1_rd3_gpio_io_bit_gpio4_io_bit13>,
-		 <&iomuxc_enet2_mdc_gpio_io_bit_gpio4_io_bit14>,
-		 <&iomuxc_enet2_mdio_gpio_io_bit_gpio4_io_bit15>,
-		 <&iomuxc_enet2_td3_gpio_io_bit_gpio4_io_bit16>,
-		 <&iomuxc_enet2_td2_gpio_io_bit_gpio4_io_bit17>,
-		 <&iomuxc_enet2_td1_gpio_io_bit_gpio4_io_bit18>,
-		 <&iomuxc_enet2_td0_gpio_io_bit_gpio4_io_bit19>,
-		 <&iomuxc_enet2_tx_ctl_gpio_io_bit_gpio4_io_bit20>,
-		 <&iomuxc_enet2_txc_gpio_io_bit_gpio4_io_bit21>,
-		 <&iomuxc_enet2_rx_ctl_gpio_io_bit_gpio4_io_bit22>,
-		 <&iomuxc_enet2_rxc_gpio_io_bit_gpio4_io_bit23>,
-		 <&iomuxc_enet2_rd0_gpio_io_bit_gpio4_io_bit24>,
-		 <&iomuxc_enet2_rd1_gpio_io_bit_gpio4_io_bit25>,
-		 <&iomuxc_enet2_rd2_gpio_io_bit_gpio4_io_bit26>,
-		 <&iomuxc_enet2_rd3_gpio_io_bit_gpio4_io_bit27>,
-		 <&iomuxc_ccm_clko3_gpio_io_bit_gpio4_io_bit28>,
-		 <&iomuxc_ccm_clko4_gpio_io_bit_gpio4_io_bit29>;
+	pinmux = <&iomuxc_enet1_mdc_gpio_io_gpio4_io_0>,
+		 <&iomuxc_enet1_mdio_gpio_io_gpio4_io_1>,
+		 <&iomuxc_enet1_td3_gpio_io_gpio4_io_2>,
+		 <&iomuxc_enet1_td2_gpio_io_gpio4_io_3>,
+		 <&iomuxc_enet1_td1_gpio_io_gpio4_io_4>,
+		 <&iomuxc_enet1_td0_gpio_io_gpio4_io_5>,
+		 <&iomuxc_enet1_tx_ctl_gpio_io_gpio4_io_6>,
+		 <&iomuxc_enet1_txc_gpio_io_gpio4_io_7>,
+		 <&iomuxc_enet1_rx_ctl_gpio_io_gpio4_io_8>,
+		 <&iomuxc_enet1_rxc_gpio_io_gpio4_io_9>,
+		 <&iomuxc_enet1_rd0_gpio_io_gpio4_io_10>,
+		 <&iomuxc_enet1_rd1_gpio_io_gpio4_io_11>,
+		 <&iomuxc_enet1_rd2_gpio_io_gpio4_io_12>,
+		 <&iomuxc_enet1_rd3_gpio_io_gpio4_io_13>,
+		 <&iomuxc_enet2_mdc_gpio_io_gpio4_io_14>,
+		 <&iomuxc_enet2_mdio_gpio_io_gpio4_io_15>,
+		 <&iomuxc_enet2_td3_gpio_io_gpio4_io_16>,
+		 <&iomuxc_enet2_td2_gpio_io_gpio4_io_17>,
+		 <&iomuxc_enet2_td1_gpio_io_gpio4_io_18>,
+		 <&iomuxc_enet2_td0_gpio_io_gpio4_io_19>,
+		 <&iomuxc_enet2_tx_ctl_gpio_io_gpio4_io_20>,
+		 <&iomuxc_enet2_txc_gpio_io_gpio4_io_21>,
+		 <&iomuxc_enet2_rx_ctl_gpio_io_gpio4_io_22>,
+		 <&iomuxc_enet2_rxc_gpio_io_gpio4_io_23>,
+		 <&iomuxc_enet2_rd0_gpio_io_gpio4_io_24>,
+		 <&iomuxc_enet2_rd1_gpio_io_gpio4_io_25>,
+		 <&iomuxc_enet2_rd2_gpio_io_gpio4_io_26>,
+		 <&iomuxc_enet2_rd3_gpio_io_gpio4_io_27>,
+		 <&iomuxc_ccm_clko3_gpio_io_gpio4_io_28>,
+		 <&iomuxc_ccm_clko4_gpio_io_gpio4_io_29>;
 };
 
 &gpio5 {
-	pinmux = <&iomuxc_xspi1_data0_gpio_io_bit_gpio5_io_bit0>,
-		 <&iomuxc_xspi1_data1_gpio_io_bit_gpio5_io_bit1>,
-		 <&iomuxc_xspi1_data2_gpio_io_bit_gpio5_io_bit2>,
-		 <&iomuxc_xspi1_data3_gpio_io_bit_gpio5_io_bit3>,
-		 <&iomuxc_xspi1_data4_gpio_io_bit_gpio5_io_bit4>,
-		 <&iomuxc_xspi1_data5_gpio_io_bit_gpio5_io_bit5>,
-		 <&iomuxc_xspi1_data6_gpio_io_bit_gpio5_io_bit6>,
-		 <&iomuxc_xspi1_data7_gpio_io_bit_gpio5_io_bit7>,
-		 <&iomuxc_xspi1_dqs_gpio_io_bit_gpio5_io_bit8>,
-		 <&iomuxc_xspi1_sclk_gpio_io_bit_gpio5_io_bit9>,
-		 <&iomuxc_xspi1_ss0_b_gpio_io_bit_gpio5_io_bit10>,
-		 <&iomuxc_xspi1_ss1_b_gpio_io_bit_gpio5_io_bit11>,
-		 <&iomuxc_gpio_io32_gpio_io_bit_gpio5_io_bit12>,
-		 <&iomuxc_gpio_io33_gpio_io_bit_gpio5_io_bit13>,
-		 <&iomuxc_gpio_io34_gpio_io_bit_gpio5_io_bit14>,
-		 <&iomuxc_gpio_io35_gpio_io_bit_gpio5_io_bit15>,
-		 <&iomuxc_gpio_io36_gpio_io_bit_gpio5_io_bit16>,
-		 <&iomuxc_gpio_io37_gpio_io_bit_gpio5_io_bit17>;
+	pinmux = <&iomuxc_xspi1_data0_gpio_io_gpio5_io_0>,
+		 <&iomuxc_xspi1_data1_gpio_io_gpio5_io_1>,
+		 <&iomuxc_xspi1_data2_gpio_io_gpio5_io_2>,
+		 <&iomuxc_xspi1_data3_gpio_io_gpio5_io_3>,
+		 <&iomuxc_xspi1_data4_gpio_io_gpio5_io_4>,
+		 <&iomuxc_xspi1_data5_gpio_io_gpio5_io_5>,
+		 <&iomuxc_xspi1_data6_gpio_io_gpio5_io_6>,
+		 <&iomuxc_xspi1_data7_gpio_io_gpio5_io_7>,
+		 <&iomuxc_xspi1_dqs_gpio_io_gpio5_io_8>,
+		 <&iomuxc_xspi1_sclk_gpio_io_gpio5_io_9>,
+		 <&iomuxc_xspi1_ss0_b_gpio_io_gpio5_io_10>,
+		 <&iomuxc_xspi1_ss1_b_gpio_io_gpio5_io_11>,
+		 <&iomuxc_gpio_io32_gpio_io_gpio5_io_12>,
+		 <&iomuxc_gpio_io33_gpio_io_gpio5_io_13>,
+		 <&iomuxc_gpio_io34_gpio_io_gpio5_io_14>,
+		 <&iomuxc_gpio_io35_gpio_io_gpio5_io_15>,
+		 <&iomuxc_gpio_io36_gpio_io_gpio5_io_16>,
+		 <&iomuxc_gpio_io37_gpio_io_gpio5_io_17>;
 };
