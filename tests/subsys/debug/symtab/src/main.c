@@ -54,6 +54,31 @@ ZTEST(test_symtab, test_symtab_find_symbol_name)
 	zassert_str_equal(symbol_name, "setup");
 }
 
+/*
+ * A local function label without .size at the address of a global sized function, as an
+ * assembly alias is commonly written. Local symbols precede global ones in the ELF symbol
+ * table. The code is never executed, only its address is looked up.
+ */
+__asm__(".pushsection .text.symtab_test_sized_func, \"ax\"\n\t"
+	".balign 4\n\t"
+	".type symtab_test_unsized_alias, %function\n"
+	"symtab_test_unsized_alias:\n\t"
+	".globl symtab_test_sized_func\n\t"
+	".type symtab_test_sized_func, %function\n"
+	"symtab_test_sized_func:\n\t"
+	".skip 4\n\t"
+	".size symtab_test_sized_func, . - symtab_test_sized_func\n\t"
+	".popsection\n");
+
+ZTEST(test_symtab, test_unsized_alias)
+{
+	extern void symtab_test_sized_func(void);
+	const char *symbol_name;
+
+	symbol_name = symtab_find_symbol_name((uintptr_t)symtab_test_sized_func, NULL);
+	zassert_str_equal(symbol_name, "symtab_test_sized_func");
+}
+
 /**
  * This testsuite tests the following position in the symbol table
  *
