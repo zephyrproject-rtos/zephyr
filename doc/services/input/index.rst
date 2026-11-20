@@ -46,12 +46,34 @@ the cost of extra memory for the thread stack.
 Application API
 ***************
 
-An application can register a callback using the
+An application can register a callback at compile time using the
 :c:macro:`INPUT_CALLBACK_DEFINE` macro. If a device node is specified, the
 callback is only invoked for events from the specific device, otherwise the
 callback will receive all the events in the system. This is the only type of
 filtering supported, any more complex filtering logic has to be implemented in
 the callback itself.
+
+.. code-block:: c
+
+    extern void input_event_cb(struct input_event *evt, void *user_data);
+    INPUT_CALLBACK_DEFINE(NULL, input_event_cb, NULL);
+
+Alternatively, an application can register a callback at runtime by registering
+a :c:struct:`input_callback` by calling :c:func:`input_add_callback`.
+
+.. code-block:: c
+
+    struct input_callback input_cb;
+    extern void input_event_cb(struct input_event *evt, void *user_data);
+
+    input_add_callback(&input_cb, NULL, input_event_cb, NULL);
+
+Callbacks registered at runtime can also be removed at runtime by calling
+:c:func:`input_remove_callback`.
+
+.. code-block:: c
+
+    input_remove_callback(&input_cb);
 
 The subsystem can operate synchronously or by using an event queue, depending
 on the :kconfig:option:`CONFIG_INPUT_MODE` option. If the input thread is used,
