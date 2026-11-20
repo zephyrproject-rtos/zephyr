@@ -40,7 +40,8 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 #define IFX_SPI_RSLT_TRANSFER_ERROR (-2)
 #define IFX_SPI_RSLT_CLOCK_ERROR    (-3)
 
-#if CY_SCB_DRV_VERSION_MINOR >= 20 && defined(COMPONENT_CAT1) && CY_SCB_DRV_VERSION_MAJOR == 3
+#if CY_SCB_DRV_VERSION_MINOR >= 20 && CY_SCB_DRV_VERSION_MAJOR == 3 &&                             \
+	(defined(COMPONENT_CAT1) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE))
 #define IFX_SPI_ASYMM_PDL_FUNC_AVAIL
 #endif
 
@@ -59,7 +60,8 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 static uint32_t tx_dummy_data;
 static uint32_t rx_dummy_data;
 
-#define IFX_CAT1_SPI_DMA_BURST_SIZE 256
+/* DataWire X/Y loop limit: one block holds 256 frames, or 256 * k frames as 2D. */
+#define IFX_CAT1_SPI_DMA_ROW 256U
 #endif
 
 typedef void (*ifx_cat1_spi_event_callback_t)(void *callback_arg, uint32_t event);
@@ -85,7 +87,8 @@ struct ifx_cat1_dma_stream {
 	const struct device *dev_dma;
 	uint32_t dma_channel;
 	struct dma_config dma_cfg;
-	struct dma_block_config blk_cfg;
+	/* Buffer part and fill/discard part, each as 256 * k frames plus the rest. */
+	struct dma_block_config blk_cfg[4];
 };
 #endif
 
@@ -99,6 +102,7 @@ struct ifx_cat1_spi_data {
 	struct spi_context ctx;
 	uint8_t dfs_value;
 	size_t chunk_len;
+	bool one_shot;
 
 #ifdef CONFIG_SPI_INFINEON_DMA
 	struct ifx_cat1_dma_stream dma_rx;
@@ -271,12 +275,84 @@ static uint8_t get_dfs_value(struct spi_context *ctx)
 	}
 }
 
+/*
+ * The peripheral runs each frame as one PDL transfer, which needs Cy_SCB_SPI_Transfer_Buffer()
+ * for different tx and rx lengths. Without it the peripheral keeps splitting into chunks.
+ */
+static bool ifx_cat1_spi_periph_one_shot(struct spi_context *ctx)
+{
+#ifdef IFX_SPI_ASYMM_PDL_FUNC_AVAIL
+	return spi_context_is_peripheral(ctx);
+#else
+	ARG_UNUSED(ctx);
+	return false;
+#endif
+}
+
+#ifdef CONFIG_SPI_INFINEON_DMA
+/* Append frames at the memory side of the stream as 256 * k frames, then the rest. */
+static void ifx_cat1_spi_dma_add(struct ifx_cat1_dma_stream *stream, uintptr_t addr, bool inc,
+				 size_t frames, uint8_t dfs)
+{
+	bool tx = (stream->dma_cfg.channel_direction == MEMORY_TO_PERIPHERAL);
+	uint32_t adj = inc ? DMA_ADDR_ADJ_INCREMENT : DMA_ADDR_ADJ_NO_CHANGE;
+
+	while (frames > 0U) {
+		size_t n = (frames > IFX_CAT1_SPI_DMA_ROW)
+				   ? frames - (frames % IFX_CAT1_SPI_DMA_ROW)
+				   : frames;
+		struct dma_block_config *blk = &stream->blk_cfg[stream->dma_cfg.block_count++];
+
+		blk->block_size = n * dfs;
+		if (tx) {
+			blk->source_address = addr;
+			blk->source_addr_adj = adj;
+		} else {
+			blk->dest_address = addr;
+			blk->dest_addr_adj = adj;
+		}
+		if (inc) {
+			addr += n * dfs;
+		}
+		frames -= n;
+	}
+}
+#endif
+
 static void transfer_chunk(const struct device *dev)
 {
 	struct ifx_cat1_spi_data *const data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	size_t chunk_len = spi_context_max_continuous_chunk(ctx);
+	size_t tx_len = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
+	size_t rx_len = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
+	bool one_shot = ifx_cat1_spi_periph_one_shot(ctx);
 	int ret = 0;
+
+#ifdef CONFIG_SPI_INFINEON_DMA
+	const struct ifx_cat1_spi_config *const config = dev->config;
+
+	/* One DMA chain per channel holds at most 256 * 256 frames. */
+	if (one_shot && (MAX(ctx->tx_len, ctx->rx_len) > IFX_CAT1_SPI_DMA_ROW * IFX_CAT1_SPI_DMA_ROW)) {
+		one_shot = false;
+	}
+#endif
+
+	data->one_shot = one_shot;
+
+	if (one_shot) {
+		/*
+		 * The controller clocks the whole frame without pausing, so the peripheral cannot
+		 * split it into chunks restarted from the interrupt. tx and rx are a single buffer
+		 * each, so run one transfer with both lengths: the PDL pads a shorter (or NULL) tx
+		 * with write_fill and discards data received beyond (or without) the rx buffer.
+		 * A receive-only frame may use several rx buffers; each is one transfer and data
+		 * arriving before the next one starts waits in the RX FIFO.
+		 */
+		tx_len = ctx->tx_len;
+		rx_len = ctx->rx_len;
+		chunk_len = MAX(tx_len, rx_len);
+	}
 
 	if (chunk_len == 0) {
 		goto exit;
@@ -284,61 +360,39 @@ static void transfer_chunk(const struct device *dev)
 	data->chunk_len = chunk_len;
 
 #ifdef CONFIG_SPI_INFINEON_DMA
-	const struct ifx_cat1_spi_config *const config = dev->config;
 	register struct ifx_cat1_dma_stream *dma_tx = &data->dma_tx;
 	register struct ifx_cat1_dma_stream *dma_rx = &data->dma_rx;
 
 	if (chunk_len <= Cy_SCB_GetFifoSize(config->reg_addr)) {
 
-		cy_rslt_t result = ifx_cat1_spi_transfer_async(
-			dev, ctx->tx_buf, spi_context_tx_buf_on(ctx) ? chunk_len : 0, ctx->rx_buf,
-			spi_context_rx_buf_on(ctx) ? chunk_len : 0);
+		cy_rslt_t result =
+			ifx_cat1_spi_transfer_async(dev, ctx->tx_buf, tx_len, ctx->rx_buf, rx_len);
 		if (result == CY_RSLT_SUCCESS) {
 			return;
 		}
 		ret = -EIO;
 	} else {
+		uint8_t dfs = data->dfs_value;
+
 		Cy_SCB_SetTxFifoLevel(config->reg_addr, 1U);
 		Cy_SCB_SetRxFifoLevel(config->reg_addr, 0U);
 
-		if (chunk_len > IFX_CAT1_SPI_DMA_BURST_SIZE) {
-			dma_rx->dma_cfg.source_burst_length = dma_tx->dma_cfg.source_burst_length =
-				1;
-			dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length =
-				IFX_CAT1_SPI_DMA_BURST_SIZE;
-			if (chunk_len % IFX_CAT1_SPI_DMA_BURST_SIZE != 0) {
-				LOG_ERR("DMA (DW) only supports lengths is multiple of burst "
-					"length (%d)",
-					IFX_CAT1_SPI_DMA_BURST_SIZE);
-				goto exit;
-			}
-			dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
-		} else {
-			dma_rx->dma_cfg.source_burst_length = dma_tx->dma_cfg.source_burst_length =
-				1;
-			dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length = 0;
-			dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
-		}
+		/* Anything beyond 256 * 256 frames goes in the next chunk. */
+		chunk_len = MIN(chunk_len, IFX_CAT1_SPI_DMA_ROW * IFX_CAT1_SPI_DMA_ROW);
+		data->chunk_len = chunk_len;
+		tx_len = MIN(tx_len, chunk_len);
+		rx_len = MIN(rx_len, chunk_len);
 
-		dma_rx->blk_cfg.block_size = dma_tx->blk_cfg.block_size = chunk_len;
-
-		if (spi_context_rx_buf_on(ctx)) {
-			dma_rx->blk_cfg.dest_address = (uint32_t)ctx->rx_buf;
-			dma_rx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-		} else {
-			dma_rx->blk_cfg.dest_address = (uint32_t)&rx_dummy_data;
-			dma_rx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		}
-
-		if (spi_context_tx_buf_on(ctx)) {
-			dma_tx->blk_cfg.source_address = (uint32_t)ctx->tx_buf;
-			dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-
-		} else {
-			tx_dummy_data = 0;
-			dma_tx->blk_cfg.source_address = (uint32_t)&tx_dummy_data;
-			dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		}
+		/* Both channels run the full chunk: past its buffer, tx sends fill, rx discards. */
+		tx_dummy_data = 0;
+		dma_tx->dma_cfg.block_count = 0;
+		dma_rx->dma_cfg.block_count = 0;
+		ifx_cat1_spi_dma_add(dma_tx, (uintptr_t)ctx->tx_buf, true, tx_len, dfs);
+		ifx_cat1_spi_dma_add(dma_tx, (uintptr_t)&tx_dummy_data, false, chunk_len - tx_len,
+				     dfs);
+		ifx_cat1_spi_dma_add(dma_rx, (uintptr_t)ctx->rx_buf, true, rx_len, dfs);
+		ifx_cat1_spi_dma_add(dma_rx, (uintptr_t)&rx_dummy_data, false, chunk_len - rx_len,
+				     dfs);
 
 		ret = dma_config(dma_rx->dev_dma, dma_rx->dma_channel, &dma_rx->dma_cfg);
 		if (ret < 0) {
@@ -361,9 +415,8 @@ static void transfer_chunk(const struct device *dev)
 		}
 	}
 #else
-	cy_rslt_t result = ifx_cat1_spi_transfer_async(
-		dev, ctx->tx_buf, spi_context_tx_buf_on(ctx) ? chunk_len : 0, ctx->rx_buf,
-		spi_context_rx_buf_on(ctx) ? chunk_len : 0);
+	cy_rslt_t result =
+		ifx_cat1_spi_transfer_async(dev, ctx->tx_buf, tx_len, ctx->rx_buf, rx_len);
 	if (result == CY_RSLT_SUCCESS) {
 		return;
 	}
@@ -379,11 +432,28 @@ exit:
 	spi_context_complete(ctx, dev, ret);
 }
 
+/* Consume what the finished transfer moved. */
+static void ifx_cat1_spi_update_ctx(struct ifx_cat1_spi_data *data, uint8_t dfs)
+{
+	struct spi_context *ctx = &data->ctx;
+
+	if (data->one_shot) {
+		/*
+		 * A peripheral transfer always covers the current tx and rx buffer completely.
+		 * Using the rx length keeps the received frame count at what was stored.
+		 */
+		spi_context_update_tx(ctx, dfs, ctx->tx_len);
+		spi_context_update_rx(ctx, dfs, ctx->rx_len);
+	} else {
+		spi_context_update_tx(ctx, dfs, data->chunk_len);
+		spi_context_update_rx(ctx, dfs, data->chunk_len);
+	}
+}
+
 static void spi_interrupt_callback(void *arg, uint32_t event)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct ifx_cat1_spi_data *const data = dev->data;
-	struct spi_context *ctx = &data->ctx;
 
 	if (event & CY_SCB_SPI_TRANSFER_ERR_EVENT) {
 		const struct ifx_cat1_spi_config *const config = dev->config;
@@ -393,8 +463,7 @@ static void spi_interrupt_callback(void *arg, uint32_t event)
 	}
 
 	if (event & CY_SCB_SPI_TRANSFER_CMPLT_EVENT) {
-		spi_context_update_tx(ctx, data->dfs_value, data->chunk_len);
-		spi_context_update_rx(ctx, data->dfs_value, data->chunk_len);
+		ifx_cat1_spi_update_ctx(data, data->dfs_value);
 
 		transfer_chunk(dev);
 	}
@@ -408,8 +477,7 @@ static void dma_callback(const struct device *dma_dev, void *arg, uint32_t chann
 	struct spi_context *ctx = &data->ctx;
 
 	if (channel == data->dma_rx.dma_channel) {
-		spi_context_update_tx(ctx, get_dfs_value(ctx), data->chunk_len);
-		spi_context_update_rx(ctx, get_dfs_value(ctx), data->chunk_len);
+		ifx_cat1_spi_update_ctx(data, get_dfs_value(ctx));
 
 		transfer_chunk(dev);
 	} else if (channel == data->dma_tx.dma_channel) {
@@ -431,6 +499,11 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 	bool spi_mode_cpha = false;
 
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP) {
+		return -ENOTSUP;
+	}
+
+	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
+		LOG_ERR("Half-duplex mode is not supported");
 		return -ENOTSUP;
 	}
 
@@ -503,6 +576,7 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 	/* Initialize the SPI peripheral */
 	result = ifx_cat1_spi_init_cfg(dev, &scb_spi_config);
 	if (result != CY_RSLT_SUCCESS) {
+		ctx->config = NULL;
 		return -ENOTSUP;
 	}
 
@@ -515,6 +589,7 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 	/* Set the data rate */
 	result = spi_set_frequency(dev, spi_cfg->frequency);
 	if (result != CY_RSLT_SUCCESS) {
+		ctx->config = NULL;
 		return -EIO;
 	}
 
@@ -544,12 +619,31 @@ int spi_config(const struct device *dev, const struct spi_config *spi_cfg)
 	return 0;
 }
 
+/* Number of non-empty buffers; spi_context skips zero-length ones. */
+static size_t ifx_cat1_spi_buf_count(const struct spi_buf_set *bufs)
+{
+	size_t count = 0U;
+
+	if (bufs == NULL) {
+		return 0U;
+	}
+
+	for (size_t i = 0U; i < bufs->count; i++) {
+		if (bufs->buffers[i].len != 0U) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
 static int transceive(const struct device *dev, const struct spi_config *spi_cfg,
 		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 		      bool asynchronous, spi_callback_t cb, void *userdata)
 {
 	int result;
 	struct ifx_cat1_spi_data *const data = dev->data;
+	const struct ifx_cat1_spi_config *const config = dev->config;
 	struct spi_context *ctx = &data->ctx;
 
 	spi_context_lock(ctx, asynchronous, cb, userdata, spi_cfg);
@@ -559,6 +653,26 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		LOG_ERR("Error in SPI Configuration (result: 0x%x)", result);
 		spi_context_release(ctx, result);
 		return result;
+	}
+
+	if (ifx_cat1_spi_periph_one_shot(ctx)) {
+		size_t tx_cnt = ifx_cat1_spi_buf_count(tx_bufs);
+		size_t rx_cnt = ifx_cat1_spi_buf_count(rx_bufs);
+
+		/*
+		 * Every buffer after the first is started from the completion interrupt. Data
+		 * received meanwhile waits in the RX FIFO, but a late TX reload is clocked out
+		 * as 0xFF. So scattered buffers are only supported when nothing is transmitted.
+		 */
+		if ((tx_cnt > 1U) || ((rx_cnt > 1U) && (tx_cnt != 0U))) {
+			LOG_ERR("Scattered peripheral buffers are only supported without tx");
+			spi_context_release(ctx, -ENOTSUP);
+			return -ENOTSUP;
+		}
+
+		/* Drop data left by a previous transaction that the controller never clocked. */
+		Cy_SCB_ClearTxFifo(config->reg_addr);
+		Cy_SCB_ClearRxFifo(config->reg_addr);
 	}
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, data->dfs_value);
@@ -695,10 +809,15 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		if (!device_is_ready(data->dma_rx.dev_dma)) {
 			return -ENODEV;
 		}
-		data->dma_rx.blk_cfg.source_address = (uint32_t)(&(config->reg_addr->RX_FIFO_RD));
-		data->dma_rx.blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		data->dma_rx.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-		data->dma_rx.dma_cfg.head_block = &data->dma_rx.blk_cfg;
+		for (size_t i = 0; i < ARRAY_SIZE(data->dma_rx.blk_cfg); i++) {
+			data->dma_rx.blk_cfg[i].source_address =
+				(uint32_t)(&(config->reg_addr->RX_FIFO_RD));
+			data->dma_rx.blk_cfg[i].source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			if (i + 1 < ARRAY_SIZE(data->dma_rx.blk_cfg)) {
+				data->dma_rx.blk_cfg[i].next_block = &data->dma_rx.blk_cfg[i + 1];
+			}
+		}
+		data->dma_rx.dma_cfg.head_block = &data->dma_rx.blk_cfg[0];
 		data->dma_rx.dma_cfg.user_data = (void *)dev;
 		data->dma_rx.dma_cfg.dma_callback = dma_callback;
 		data->dma_rx.dma_cfg.source_handshake = 0;
@@ -713,10 +832,15 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		if (!device_is_ready(data->dma_tx.dev_dma)) {
 			return -ENODEV;
 		}
-		data->dma_tx.blk_cfg.dest_address = (uint32_t)(&(config->reg_addr->TX_FIFO_WR));
-		data->dma_tx.blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-		data->dma_tx.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		data->dma_tx.dma_cfg.head_block = &data->dma_tx.blk_cfg;
+		for (size_t i = 0; i < ARRAY_SIZE(data->dma_tx.blk_cfg); i++) {
+			data->dma_tx.blk_cfg[i].dest_address =
+				(uint32_t)(&(config->reg_addr->TX_FIFO_WR));
+			data->dma_tx.blk_cfg[i].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			if (i + 1 < ARRAY_SIZE(data->dma_tx.blk_cfg)) {
+				data->dma_tx.blk_cfg[i].next_block = &data->dma_tx.blk_cfg[i + 1];
+			}
+		}
+		data->dma_tx.dma_cfg.head_block = &data->dma_tx.blk_cfg[0];
 		data->dma_tx.dma_cfg.user_data = (void *)dev;
 		data->dma_tx.dma_cfg.dma_callback = dma_callback;
 		data->dma_tx.dma_cfg.source_handshake = 1;
@@ -758,7 +882,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		.source_burst_length = 1,                                                          \
 		.dest_burst_length = 0,                                                            \
 		.block_count = 1,                                                                  \
-		.complete_callback_en = 1,                                                         \
+		.complete_callback_en = 0,                                                         \
 	},
 
 #define SPI_DMA_CHANNEL(index, dir, ch_dir, src_data_size, dst_data_size)                          \
@@ -956,24 +1080,22 @@ cy_rslt_t ifx_cat1_spi_transfer_async(const struct device *dev, const uint8_t *t
 		Cy_SCB_SPI_Transfer(config->reg_addr, (void *)tx, rx, tx_words, &data->context);
 #else /* !defined(IFX_SPI_ASYMM_PDL_FUNC_AVAIL) */
 
-	if (tx_words != rx_words) {
-		if (tx_words == 0) {
-			data->pending = IFX_SPI_PENDING_RX;
-			tx = NULL;
-		} else if (rx_words == 0) {
-			data->pending = IFX_SPI_PENDING_TX;
-			rx = NULL;
-		} else {
-			data->pending = IFX_SPI_PENDING_TX_RX;
-		}
-		spi_status = Cy_SCB_SPI_Transfer_Buffer(config->reg_addr, (void *)tx, (void *)rx,
-							tx_words, rx_words, data->write_fill,
-							&data->context);
+	/*
+	 * Cy_SCB_SPI_Transfer_Buffer() also covers equal lengths. Unlike Cy_SCB_SPI_Transfer(), it
+	 * sends write_fill for a NULL tx buffer and resets the fill/discard state that an aborted
+	 * transfer may leave in the context.
+	 */
+	if (tx_words == 0) {
+		data->pending = IFX_SPI_PENDING_RX;
+		tx = NULL;
+	} else if (rx_words == 0) {
+		data->pending = IFX_SPI_PENDING_TX;
+		rx = NULL;
 	} else {
 		data->pending = IFX_SPI_PENDING_TX_RX;
-		spi_status = Cy_SCB_SPI_Transfer(config->reg_addr, (void *)tx, rx, tx_words,
-						 &data->context);
 	}
+	spi_status = Cy_SCB_SPI_Transfer_Buffer(config->reg_addr, (void *)tx, (void *)rx, tx_words,
+						rx_words, data->write_fill, &data->context);
 
 #endif /* IFX_SPI_ASYMM_PDL_FUNC_AVAIL */
 	return spi_status == CY_SCB_SPI_SUCCESS ? CY_RSLT_SUCCESS : IFX_SPI_RSLT_TRANSFER_ERROR;
