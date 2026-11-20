@@ -8,6 +8,7 @@ if(CONFIG_THREAD_LOCAL_STORAGE)
     zephyr_linker_section(NAME .stack_chk LMA FLASH NOINPUT)
     zephyr_linker_section_configure(SECTION .stack_chk INPUT ".stack_chk.guard" KEEP)
   endif()
+endif()
 
   zephyr_linker_section(NAME .tdata LMA FLASH NOINPUT)
   zephyr_linker_section_configure(SECTION .tdata INPUT ".tdata")
@@ -22,6 +23,7 @@ if(CONFIG_THREAD_LOCAL_STORAGE)
   zephyr_linker_section_configure(SECTION .tbss INPUT ".tcommon")
   # GROUP_ROM_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
+if(CONFIG_THREAD_LOCAL_STORAGE)
   #
   # These needs to be outside of the tdata/tbss
   # sections or else they would be considered
