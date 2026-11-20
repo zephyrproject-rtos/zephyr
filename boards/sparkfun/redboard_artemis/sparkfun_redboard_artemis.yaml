@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sparkfun_redboard_artemis
+name: SparkFun RedBoard Artemis
+type: mcu
+arch: arm
+ram: 384
+flash: 960
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - arduino_gpio
+  - gpio
+  - uart
+vendor: sparkfun

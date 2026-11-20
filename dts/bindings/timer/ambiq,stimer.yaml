@@ -14,6 +14,11 @@ properties:
   interrupts:
     required: true
 
+  clock-frequency:
+    type: int
+    description: |
+      Counter frequency in Hz resulting from the selected clk-source.
+
   clk-source:
     type: int
     required: true
