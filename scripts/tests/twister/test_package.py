@@ -60,18 +60,28 @@ def test_get_testsuite_artifact_dir_uses_name_when_detailed_id(tmp_path):
     assert artifacts.get_testsuite_artifact_dir(testsuite) == str(build_dir)
 
 
-def test_get_testsuite_artifact_dir_rejects_escaping_path(tmp_path):
+def test_get_testsuite_artifact_dir_uses_path_outside_zephyr_base(tmp_path):
     artifacts = _make_artifacts(tmp_path, detailed_test_id=False)
+    build_dir = (
+        tmp_path
+        / "qemu_x86_atom"
+        / "zephyr_gnu"
+        / "modules"
+        / "app"
+        / "samples"
+        / "hello"
+        / "sample.app.hello"
+    )
+    build_dir.mkdir(parents=True)
 
     testsuite = {
         "platform": "qemu_x86/atom",
         "toolchain": "zephyr/gnu",
-        "path": os.path.join("..", "..", "outside"),
-        "name": "sample.basic.helloworld",
+        "path": os.path.join("..", "modules", "app", "samples", "hello"),
+        "name": "sample.app.hello",
     }
 
-    with pytest.raises(ValueError, match="Invalid testsuite artifact path"):
-        artifacts.get_testsuite_artifact_dir(testsuite)
+    assert artifacts.get_testsuite_artifact_dir(testsuite) == str(build_dir)
 
 
 def test_get_testsuite_artifact_dir_rejects_escaping_name(tmp_path):
