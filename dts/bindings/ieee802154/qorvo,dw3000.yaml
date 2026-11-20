@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Qorvo DW3000 family of IEEE 802.15.4 HRP UWB transceivers (DW3110, DW3120,
+  DW3210 and DW3220).
+
+  The parts share one register map. Their device ID register tells the parts
+  with one antenna port (DW3110, DW3210) from those with two (DW3120,
+  DW3220). The SPI clock may run at up to 36 MHz.
+
+compatible: "qorvo,dw3000"
+
+include: spi-device.yaml
+
+examples:
+  - |
+    &spi3 {
+        dw3000@0 {
+            compatible = "qorvo,dw3000";
+            reg = <0>;
+            spi-max-frequency = <8000000>;
+            int-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+            reset-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+        };
+    };
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      IRQ pin. The transceiver drives it high while an enabled event is
+      pending.
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      RSTn pin, active low. The transceiver drives this pin itself and it
+      must never be driven high, so the driver either pulls it low or
+      leaves it floating.
+
+  wakeup-gpios:
+    type: phandle-array
+    description: |
+      WAKEUP pin, active high. Leave this property out when the pin is tied
+      to ground on the board.
