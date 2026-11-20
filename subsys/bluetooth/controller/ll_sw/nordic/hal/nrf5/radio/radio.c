@@ -1718,6 +1718,15 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 	start_us += last_pdu_end_us;
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
+#if defined(HAL_RADIO_FEM_IS_NRF21540) && DT_NODE_HAS_PROP(FEM_NODE, pdn_gpios)
+	/* Radio ready delay is shorter than the FEM PDN plus PA/LNA settle
+	 * time, defer the radio start so that the PDN and PA/LNA compares
+	 * set relative to the returned start_us are not in the past.
+	 */
+	start_us += NRF_GPIO_PDN_OFFSET + (trx ? DT_PROP(FEM_NODE, tx_en_settle_time_us) :
+						 DT_PROP(FEM_NODE, rx_en_settle_time_us));
+#endif /* HAL_RADIO_FEM_IS_NRF21540 && pdn_gpios */
+
 	/* Setup radio start at current time */
 	start_us = radio_tmr_start_us(trx, start_us);
 
