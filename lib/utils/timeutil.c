@@ -88,7 +88,9 @@ int timeutil_sync_state_update(struct timeutil_sync_state *tsp,
 		if (tsp->base.ref == 0) {
 			tsp->base = *inst;
 			tsp->latest = (struct timeutil_sync_instant){};
-			tsp->skew = 1.0f;
+			if (tsp->skew == 0.0f) {
+				tsp->skew = 1.0f;
+			}
 			rv = 0;
 		} else {
 			tsp->latest = *inst;

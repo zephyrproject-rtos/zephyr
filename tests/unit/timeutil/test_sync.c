@@ -151,6 +151,17 @@ static void test_state_set_skew(void)
 		      "uncleared latest local");
 }
 
+ZTEST(timeutil_api, test_initial_update_preserves_skew)
+{
+	const struct timeutil_sync_instant inst = { .ref = 1 };
+	const float skew = 1.001f;
+	struct timeutil_sync_state ss = { 0 };
+
+	zassert_ok(timeutil_sync_state_set_skew(&ss, skew, NULL));
+	zassert_ok(timeutil_sync_state_update(&ss, &inst));
+	zassert_equal(ss.skew, skew, "Initial update overwrote the configured skew");
+}
+
 static void test_estimate_skew(void)
 {
 	struct timeutil_sync_state ss = {
