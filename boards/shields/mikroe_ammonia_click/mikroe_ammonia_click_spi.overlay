@@ -1,0 +1,38 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+#include "mikroe_ammonia_click.overlay"
+
+/ {
+	zephyr,user {
+		io-channels = <&mcp3551_mikroe_ammonia_click 0>;
+	};
+};
+
+&mikrobus_spi {
+	status = "okay";
+
+	mcp3551_mikroe_ammonia_click: mcp3551@0 {
+		compatible = "microchip,mcp3551";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#io-channel-cells = <1>;
+
+		/* VIN- is tied to ground; VREF and VDD come from the 5 V rail */
+		channel@0 {
+			reg = <0>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL0";
+			zephyr,vref-mv = <5000>;
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,resolution = <22>;
+			zephyr,differential;
+		};
+	};
+};
