@@ -732,8 +732,9 @@ static int adc_mspm0_init(const struct device *dev)
 
 	data->dev = dev;
 
+	/* A node using only internal channels has no pinctrl state */
 	ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
+	if ((ret < 0) && (ret != -ENOENT)) {
 		return ret;
 	}
 
