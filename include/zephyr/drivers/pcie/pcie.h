@@ -27,6 +27,7 @@
  */
 
 #include <stddef.h>
+#include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
@@ -38,14 +39,70 @@ extern "C" {
 #endif
 
 /**
- * @brief A unique PCI(e) endpoint (bus, device, function).
+ * @brief A PCI(e) bus, device, function tuple within one controller.
  *
- * A PCI(e) endpoint is uniquely identified topologically using a
- * (bus, device, function) tuple. The internal structure is documented
- * in include/dt-bindings/pcie/pcie.h: see PCIE_BDF() and friends, since
- * these tuples are referenced from devicetree.
+ * A PCI(e) endpoint is identified within a controller's bus hierarchy using a
+ * (bus, device, function) tuple. Different controllers may expose the same
+ * tuple. The internal structure is documented in
+ * include/dt-bindings/pcie/pcie.h: see PCIE_BDF() and friends, since these
+ * tuples are referenced from devicetree.
  */
 typedef uint32_t pcie_bdf_t;
+
+/**
+ * @brief Controller-qualified PCI(e) endpoint identifier.
+ *
+ * When @a ctrl is NULL on CONFIG_PCIE_CONTROLLER platforms, PCIe host APIs
+ * default to the @c zephyr,pcie-controller devicetree chosen node. On
+ * architecture-specific backends, @a ctrl is unused and should be NULL.
+ */
+struct pcie_endpoint {
+	/** Owning PCIe controller device; NULL selects the chosen controller. */
+	const struct device *ctrl;
+	/** Bus, device, and function tuple within @a ctrl. */
+	pcie_bdf_t bdf;
+};
+
+/**
+ * @brief Construct a @ref pcie_endpoint value from a controller and BDF.
+ *
+ * Works in both C and C++.
+ *
+ * @param ctrl PCIe controller device pointer, or NULL for the chosen controller.
+ * @param bdf Endpoint BDF tuple.
+ * @return Endpoint value.
+ */
+static inline struct pcie_endpoint pcie_endpoint_make(const struct device *ctrl, pcie_bdf_t bdf)
+{
+	struct pcie_endpoint ep;
+
+	ep.ctrl = ctrl;
+	ep.bdf = bdf;
+	return ep;
+}
+
+#ifndef __cplusplus
+/**
+ * @brief Construct a @ref pcie_endpoint pointer from a controller and BDF.
+ *
+ * C99+ only (block-scoped compound literal). C++ callers should pass the
+ * address of a named @ref pcie_endpoint initialized with @ref pcie_endpoint_make.
+ *
+ * @param ctrl_dev PCIe controller device pointer, or NULL for the chosen controller.
+ * @param bdf_val Endpoint BDF tuple.
+ */
+#define PCIE_ENDPOINT(ctrl_dev, bdf_val)                                                           \
+	(&(const struct pcie_endpoint){.ctrl = (ctrl_dev), .bdf = (bdf_val)})
+
+/**
+ * @brief Construct a @ref pcie_endpoint pointer using the default controller.
+ *
+ * C99+ only (block-scoped compound literal).
+ *
+ * @param bdf_val Endpoint BDF tuple.
+ */
+#define PCIE_ENDPOINT_BDF(bdf_val) PCIE_ENDPOINT(NULL, (bdf_val))
+#endif /* !__cplusplus */
 
 /**
  * @brief A unique PCI(e) identifier (vendor ID, device ID).
@@ -71,7 +128,64 @@ struct pcie_dev {
 	pcie_id_t  id;
 	uint32_t   class_rev;
 	uint32_t   class_rev_mask;
+	/**
+	 * Expected owning controller, set before enumeration. When NULL on
+	 * CONFIG_PCIE_CONTROLLER platforms, defaults to the chosen controller.
+	 * Unused on architecture-specific backends.
+	 */
+	const struct device *ctrl;
 };
+
+/**
+ * @brief Construct a @ref pcie_endpoint value from a static @ref pcie_dev declaration.
+ *
+ * Works in both C and C++ and evaluates @p dev once.
+ *
+ * @param dev Non-NULL PCIe device declaration.
+ * @return Endpoint value combining @c dev->ctrl and @c dev->bdf.
+ */
+static inline struct pcie_endpoint pcie_dev_endpoint(const struct pcie_dev *dev)
+{
+	return pcie_endpoint_make(dev->ctrl, dev->bdf);
+}
+
+#ifndef __cplusplus
+/**
+ * @brief Construct a @ref pcie_endpoint pointer from a static @ref pcie_dev declaration.
+ *
+ * C99+ only (block-scoped compound literal); evaluates @p dev once. C++ callers
+ * should use a named @ref pcie_endpoint initialized with @ref pcie_dev_endpoint.
+ *
+ * @param dev Non-NULL PCIe device declaration.
+ */
+#define PCIE_DEV_ENDPOINT(dev) ((const struct pcie_endpoint[]){pcie_dev_endpoint(dev)})
+#endif /* !__cplusplus */
+
+/*
+ * Resolve the owning controller from devicetree:
+ * 1. Explicit pcie-controller phandle property, if present.
+ * 2. Parent PCIe controller node when the node is directly on a pcie bus.
+ * 3. NULL otherwise, falling back to the zephyr,pcie-controller chosen node.
+ */
+#ifdef CONFIG_PCIE_CONTROLLER
+#define Z_PCIE_DT_CTRL(node_id)                                                                    \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, pcie_controller),                                    \
+		    (DEVICE_DT_GET(DT_PHANDLE(node_id, pcie_controller))),                         \
+		    (COND_CODE_1(DT_ON_BUS(node_id, pcie), (DEVICE_DT_GET(DT_BUS(node_id))),       \
+				 (NULL))))
+
+#define Z_PCIE_ASSERT_CTRL(node_id)                                                                \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, pcie_controller),                                    \
+		    (BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE(node_id, pcie_controller)),   \
+				  "pcie-controller phandle target must be okay");),                \
+		    (COND_CODE_1(DT_ON_BUS(node_id, pcie),                                         \
+				 (BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_BUS(node_id)),           \
+					       "parent PCIe controller must be okay");),           \
+				 ())))
+#else
+#define Z_PCIE_DT_CTRL(node_id) NULL
+#define Z_PCIE_ASSERT_CTRL(node_id)
+#endif
 
 #define Z_DEVICE_PCIE_NAME(node_id) _CONCAT(pcie_dev_, DT_DEP_ORD(node_id))
 
@@ -103,12 +217,14 @@ struct pcie_dev {
  *
  * @param node_id DTS node identifier
  */
-#define DEVICE_PCIE_DECLARE(node_id)                                        \
-	STRUCT_SECTION_ITERABLE(pcie_dev, Z_DEVICE_PCIE_NAME(node_id)) = {  \
-		.bdf = PCIE_BDF_NONE,                                       \
-		.id = PCIE_DT_ID(node_id),                                  \
-		.class_rev = DT_PROP_OR(node_id, class_rev, 0),             \
-		.class_rev_mask = DT_PROP_OR(node_id, class_rev_mask, 0),   \
+#define DEVICE_PCIE_DECLARE(node_id)                                                               \
+	Z_PCIE_ASSERT_CTRL(node_id)                                                                \
+	STRUCT_SECTION_ITERABLE(pcie_dev, Z_DEVICE_PCIE_NAME(node_id)) = {                         \
+		.bdf = PCIE_BDF_NONE,                                                              \
+		.id = PCIE_DT_ID(node_id),                                                         \
+		.class_rev = DT_PROP_OR(node_id, class_rev, 0),                                    \
+		.class_rev_mask = DT_PROP_OR(node_id, class_rev_mask, 0),                          \
+		.ctrl = Z_PCIE_DT_CTRL(node_id),                                                   \
 	}
 
 /**
@@ -173,35 +289,37 @@ struct pcie_bar {
  *
  * This function is exported by the arch/SoC/board code.
  *
- * @param bdf PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint (if @c ep->ctrl is NULL on
+ *           CONFIG_PCIE_CONTROLLER, defaults to the chosen controller)
  * @param reg the configuration word index (not address)
  * @return the word read (0xFFFFFFFFU if nonexistent endpoint or word)
  */
-extern uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg);
+extern uint32_t pcie_conf_read(const struct pcie_endpoint *ep, unsigned int reg);
 
 /**
  * @brief Write a 32-bit word to an endpoint's configuration space.
  *
  * This function is exported by the arch/SoC/board code.
  *
- * @param bdf PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint (if @c ep->ctrl is NULL on
+ *           CONFIG_PCIE_CONTROLLER, defaults to the chosen controller)
  * @param reg the configuration word index (not address)
  * @param data the value to write
  */
-extern void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data);
+extern void pcie_conf_write(const struct pcie_endpoint *ep, unsigned int reg, uint32_t data);
 
 /** Callback type used for scanning for PCI endpoints
  *
- * @param bdf      BDF value for a found endpoint.
+ * @param ep       Endpoint identity for a found endpoint (valid during callback).
  * @param id       Vendor & Device ID for the found endpoint.
  * @param cb_data  Custom, use case specific data.
  *
  * @return true to continue scanning, false to stop scanning.
  */
-typedef bool (*pcie_scan_cb_t)(pcie_bdf_t bdf, pcie_id_t id, void *cb_data);
+typedef bool (*pcie_scan_cb_t)(const struct pcie_endpoint *ep, pcie_id_t id, void *cb_data);
 
 enum {
-	/** Scan all available PCI host controllers and sub-buses */
+	/** Follow bridges and sub-buses within the selected controller */
 	PCIE_SCAN_RECURSIVE = BIT(0),
 	/** Do the callback for all endpoint types, including bridges */
 	PCIE_SCAN_CB_ALL = BIT(1),
@@ -209,6 +327,13 @@ enum {
 
 /** Options for performing a scan for PCI devices */
 struct pcie_scan_opt {
+	/**
+	 * PCIe controller device to scan. When NULL on CONFIG_PCIE_CONTROLLER
+	 * platforms, defaults to the zephyr,pcie-controller devicetree chosen
+	 * node. Unused on architecture-specific backends.
+	 */
+	const struct device *ctrl;
+
 	/** Initial bus number to scan */
 	uint8_t bus;
 
@@ -221,13 +346,16 @@ struct pcie_scan_opt {
 	/** Scan flags */
 	uint32_t flags;
 
-	/** Function to call to determine if a BDF is masked */
-	bool (*scan_masking_fn)(pcie_bdf_t bdf);
+	/**
+	 * Function to call to determine if an endpoint is masked.
+	 * The @p ep pointer is valid only during the callback.
+	 */
+	bool (*scan_masking_fn)(const struct pcie_endpoint *ep);
 };
 
 /** Scan for PCIe devices.
  *
- * Scan the PCI bus (or buses) for available endpoints.
+ * Scan the selected controller's PCI bus (or buses) for available endpoints.
  *
  * @param opt Options determining how to perform the scan.
  * @return 0 on success, negative POSIX error number on failure.
@@ -236,18 +364,17 @@ int pcie_scan(const struct pcie_scan_opt *opt);
 
 /**
  * @brief Get the MBAR at a specific BAR index
- * @param bdf the PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint
  * @param bar_index 0-based BAR index
  * @param mbar Pointer to struct pcie_bar
  * @return true if the mbar was found and is valid, false otherwise
  */
-extern bool pcie_get_mbar(pcie_bdf_t bdf,
-			  unsigned int bar_index,
+extern bool pcie_get_mbar(const struct pcie_endpoint *ep, unsigned int bar_index,
 			  struct pcie_bar *mbar);
 
 /**
  * @brief Probe the nth MMIO address assigned to an endpoint.
- * @param bdf the PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint
  * @param index (0-based) index
  * @param mbar Pointer to struct pcie_bar
  * @return true if the mbar was found and is valid, false otherwise
@@ -258,24 +385,22 @@ extern bool pcie_get_mbar(pcie_bdf_t bdf,
  * are order-preserving with respect to the endpoint BARs: e.g., index 0
  * will return the lowest-numbered memory BAR on the endpoint.
  */
-extern bool pcie_probe_mbar(pcie_bdf_t bdf,
-			    unsigned int index,
+extern bool pcie_probe_mbar(const struct pcie_endpoint *ep, unsigned int index,
 			    struct pcie_bar *mbar);
 
 /**
  * @brief Get the I/O BAR at a specific BAR index
- * @param bdf the PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint
  * @param bar_index 0-based BAR index
  * @param iobar Pointer to struct pcie_bar
  * @return true if the I/O BAR was found and is valid, false otherwise
  */
-extern bool pcie_get_iobar(pcie_bdf_t bdf,
-			   unsigned int bar_index,
+extern bool pcie_get_iobar(const struct pcie_endpoint *ep, unsigned int bar_index,
 			   struct pcie_bar *iobar);
 
 /**
  * @brief Probe the nth I/O BAR address assigned to an endpoint.
- * @param bdf the PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint
  * @param index (0-based) index
  * @param iobar Pointer to struct pcie_bar
  * @return true if the I/O BAR was found and is valid, false otherwise
@@ -286,18 +411,17 @@ extern bool pcie_get_iobar(pcie_bdf_t bdf,
  * are order-preserving with respect to the endpoint BARs: e.g., index 0
  * will return the lowest-numbered I/O BAR on the endpoint.
  */
-extern bool pcie_probe_iobar(pcie_bdf_t bdf,
-			     unsigned int index,
+extern bool pcie_probe_iobar(const struct pcie_endpoint *ep, unsigned int index,
 			     struct pcie_bar *iobar);
 
 /**
  * @brief Set or reset bits in the endpoint command/status register.
  *
- * @param bdf the PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint
  * @param bits the powerset of bits of interest
  * @param on use true to set bits, false to reset them
  */
-extern void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on);
+extern void pcie_set_cmd(const struct pcie_endpoint *ep, uint32_t bits, bool on);
 
 #ifndef CONFIG_PCIE_CONTROLLER
 /**
@@ -310,24 +434,24 @@ extern void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on);
  * It is thus available where architecture tied dynamic IRQ allocation for
  * PCIe device makes sense.
  *
- * @param bdf the PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint
  * @return the IRQ number, or PCIE_CONF_INTR_IRQ_NONE if allocation failed.
  */
-extern unsigned int pcie_alloc_irq(pcie_bdf_t bdf);
+extern unsigned int pcie_alloc_irq(const struct pcie_endpoint *ep);
 #endif /* CONFIG_PCIE_CONTROLLER */
 
 /**
  * @brief Return the IRQ assigned by the firmware/board to an endpoint.
  *
- * @param bdf the PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint
  * @return the IRQ number, or PCIE_CONF_INTR_IRQ_NONE if unknown.
  */
-extern unsigned int pcie_get_irq(pcie_bdf_t bdf);
+extern unsigned int pcie_get_irq(const struct pcie_endpoint *ep);
 
 /**
  * @brief Enable the PCI(e) endpoint to generate the specified IRQ.
  *
- * @param bdf the PCI(e) endpoint
+ * @param ep Non-NULL PCI(e) endpoint
  * @param irq the IRQ to generate
  *
  * If MSI is enabled and the endpoint supports it, the endpoint will
@@ -336,30 +460,30 @@ extern unsigned int pcie_get_irq(pcie_bdf_t bdf);
  * to the specified IRQ, and the IRQ is enabled (at the I/O APIC, or
  * wherever appropriate).
  */
-extern void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq);
+extern void pcie_irq_enable(const struct pcie_endpoint *ep, unsigned int irq);
 
 /**
  * @brief Find a PCI(e) capability in an endpoint's configuration space.
  *
- * @param bdf the PCI endpoint to examine
+ * @param ep Non-NULL PCI(e) endpoint to examine
  * @param cap_id the capability ID of interest
  * @return the index of the configuration word, or 0 if no capability.
  */
-extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
+extern uint32_t pcie_get_cap(const struct pcie_endpoint *ep, uint32_t cap_id);
 
 /**
  * @brief Find an Extended PCI(e) capability in an endpoint's configuration space.
  *
- * @param bdf the PCI endpoint to examine
+ * @param ep Non-NULL PCI(e) endpoint to examine
  * @param cap_id the capability ID of interest
  * @return the index of the configuration word, or 0 if no capability.
  */
-extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id);
+extern uint32_t pcie_get_ext_cap(const struct pcie_endpoint *ep, uint32_t cap_id);
 
 /**
  * @brief Dynamically connect a PCIe endpoint IRQ to an ISR handler
  *
- * @param bdf the PCI endpoint to examine
+ * @param ep Non-NULL PCI(e) endpoint to examine
  * @param irq the IRQ to connect (see pcie_alloc_irq())
  * @param priority priority of the IRQ
  * @param routine the ISR handler to connect to the IRQ
@@ -367,12 +491,9 @@ extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id);
  * @param flags IRQ connection flags
  * @return true if connected, false otherwise
  */
-extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
-				     unsigned int irq,
-				     unsigned int priority,
-				     void (*routine)(const void *parameter),
-				     const void *parameter,
-				     uint32_t flags);
+extern bool pcie_connect_dynamic_irq(const struct pcie_endpoint *ep, unsigned int irq,
+				     unsigned int priority, void (*routine)(const void *parameter),
+				     const void *parameter, uint32_t flags);
 
 /**
  * @brief Get the BDF for a given PCI host controller
@@ -575,17 +696,15 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
  * fixed or MSI based IRQ (so no runtime detection of the IRQ). In case
  * of runtime detection see pcie_connect_dynamic_irq()
  *
- * @param bdf_p PCIe endpoint BDF
+ * @param ep_p Non-NULL PCIe endpoint pointer (see @ref pcie_endpoint)
  * @param irq_p IRQ line number.
  * @param priority_p Interrupt priority.
  * @param isr_p Address of interrupt service routine.
  * @param isr_param_p Parameter passed to interrupt service routine.
  * @param flags_p Architecture-specific IRQ configuration flags..
  */
-#define PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
-			 isr_p, isr_param_p, flags_p)			\
-	ARCH_PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
-			      isr_p, isr_param_p, flags_p)
+#define PCIE_IRQ_CONNECT(ep_p, irq_p, priority_p, isr_p, isr_param_p, flags_p)                     \
+	ARCH_PCIE_IRQ_CONNECT(ep_p, irq_p, priority_p, isr_p, isr_param_p, flags_p)
 
 #ifdef __cplusplus
 }

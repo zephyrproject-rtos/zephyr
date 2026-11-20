@@ -144,17 +144,25 @@ static inline void pcie_conf(pcie_bdf_t bdf, unsigned int reg,
 
 /* these functions are explained in include/drivers/pcie/pcie.h */
 
-uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg)
+uint32_t pcie_conf_read(const struct pcie_endpoint *ep, unsigned int reg)
 {
 	uint32_t data = 0U;
 
-	pcie_conf(bdf, reg, false, &data);
+	if (ep == NULL) {
+		return 0xffffffffU;
+	}
+
+	pcie_conf(ep->bdf, reg, false, &data);
 	return data;
 }
 
-void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
+void pcie_conf_write(const struct pcie_endpoint *ep, unsigned int reg, uint32_t data)
 {
-	pcie_conf(bdf, reg, true, &data);
+	if (ep == NULL) {
+		return;
+	}
+
+	pcie_conf(ep->bdf, reg, true, &data);
 }
 
 #ifdef CONFIG_PCIE_MSI
@@ -251,7 +259,7 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 			 * been already allocated and/or set on the PCIe bus.
 			 * We only need to retrieve it.
 			 */
-			irq = pcie_get_irq(vectors->bdf);
+			irq = pcie_get_irq(PCIE_ENDPOINT(vectors->ctrl, vectors->bdf));
 
 			/* If that is not the case, we will need to allocate
 			 * IRQ before proceeding.

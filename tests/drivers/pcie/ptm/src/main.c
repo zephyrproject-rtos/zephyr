@@ -37,17 +37,19 @@ static size_t read_count;
 static size_t write_count;
 static bool cap_present;
 
-uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
+uint32_t pcie_get_ext_cap(const struct pcie_endpoint *ep, uint32_t cap_id)
 {
-	zassert_equal(bdf, TEST_BDF);
+	zassert_not_null(ep);
+	zassert_equal(ep->bdf, TEST_BDF);
 	zassert_equal(cap_id, PCIE_EXT_CAP_ID_PTM);
 
 	return cap_present ? TEST_PTM_BASE : 0U;
 }
 
-uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg)
+uint32_t pcie_conf_read(const struct pcie_endpoint *ep, unsigned int reg)
 {
-	zassert_equal(bdf, TEST_BDF);
+	zassert_not_null(ep);
+	zassert_equal(ep->bdf, TEST_BDF);
 	zassert_true(reg < ARRAY_SIZE(config_space),
 		     "configuration register %u is out of range", reg);
 	zassert_true(read_count < ARRAY_SIZE(read_regs), "read history overflow");
@@ -56,9 +58,10 @@ uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg)
 	return config_space[reg];
 }
 
-void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
+void pcie_conf_write(const struct pcie_endpoint *ep, unsigned int reg, uint32_t data)
 {
-	zassert_equal(bdf, TEST_BDF);
+	zassert_not_null(ep);
+	zassert_equal(ep->bdf, TEST_BDF);
 	zassert_true(reg < ARRAY_SIZE(config_space),
 		     "configuration register %u is out of range", reg);
 	zassert_true(write_count < ARRAY_SIZE(write_regs), "write history overflow");
@@ -108,7 +111,7 @@ static void before(void *fixture)
 
 ZTEST(pcie_ptm, test_enable_uses_dword_offsets_and_preserves_control)
 {
-	zassert_true(pcie_ptm_enable(TEST_BDF));
+	zassert_true(pcie_ptm_enable(PCIE_ENDPOINT_BDF(TEST_BDF)));
 
 	zassert_equal(read_count, 2U);
 	zassert_equal(read_regs[0], TEST_PTM_CAP_REG);
@@ -165,7 +168,7 @@ ZTEST(pcie_ptm, test_missing_requester_capability_does_not_write)
 {
 	config_space[TEST_PTM_CAP_REG] = TEST_PTM_CAP_RESPONDER;
 
-	zassert_false(pcie_ptm_enable(TEST_BDF));
+	zassert_false(pcie_ptm_enable(PCIE_ENDPOINT_BDF(TEST_BDF)));
 
 	zassert_equal(read_count, 1U);
 	zassert_equal(read_regs[0], TEST_PTM_CAP_REG);
@@ -177,7 +180,7 @@ ZTEST(pcie_ptm, test_missing_ptm_capability_does_not_access_config_space)
 {
 	cap_present = false;
 
-	zassert_false(pcie_ptm_enable(TEST_BDF));
+	zassert_false(pcie_ptm_enable(PCIE_ENDPOINT_BDF(TEST_BDF)));
 
 	zassert_equal(read_count, 0U);
 	zassert_equal(write_count, 0U);

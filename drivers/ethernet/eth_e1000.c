@@ -218,9 +218,9 @@ int e1000_probe(const struct device *ddev)
 		return -ENODEV;
 	}
 
-	pcie_probe_mbar(dev->pcie->bdf, 0, &mbar);
-	pcie_set_cmd(dev->pcie->bdf, PCIE_CONF_CMDSTAT_MEM |
-		     PCIE_CONF_CMDSTAT_MASTER, true);
+	pcie_probe_mbar(PCIE_DEV_ENDPOINT(dev->pcie), 0, &mbar);
+	pcie_set_cmd(PCIE_DEV_ENDPOINT(dev->pcie), PCIE_CONF_CMDSTAT_MEM | PCIE_CONF_CMDSTAT_MASTER,
+		     true);
 
 	device_map(&dev->address, mbar.phys_addr, mbar.size,
 		   K_MEM_CACHE_NONE);

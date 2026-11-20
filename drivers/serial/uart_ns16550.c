@@ -947,14 +947,15 @@ static int uart_ns16550_init(const struct device *dev)
 			return -EINVAL;
 		}
 
-		pcie_probe_mbar(dev_cfg->pcie->bdf, 0, &mbar);
-		pcie_set_cmd(dev_cfg->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
+		pcie_probe_mbar(PCIE_DEV_ENDPOINT(dev_cfg->pcie), 0, &mbar);
+		pcie_set_cmd(PCIE_DEV_ENDPOINT(dev_cfg->pcie), PCIE_CONF_CMDSTAT_MEM, true);
 
 		device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size,
 			   K_MEM_CACHE_NONE);
 #if defined(CONFIG_UART_ASYNC_API)
 		if (data->async.tx_dma_params.dma_dev != NULL) {
-			pcie_set_cmd(dev_cfg->pcie->bdf, PCIE_CONF_CMDSTAT_MASTER, true);
+			pcie_set_cmd(PCIE_DEV_ENDPOINT(dev_cfg->pcie), PCIE_CONF_CMDSTAT_MASTER,
+				     true);
 			data->phys_addr = mbar.phys_addr;
 		}
 #endif
@@ -2032,22 +2033,21 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 	}
 
 /* PCI(e) with auto IRQ detection */
-#define UART_NS16550_IRQ_CONFIG_PCIE(n)                                       \
-	static void uart_ns16550_irq_config_func##n(const struct device *dev) \
-	{                                                                     \
-		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,              \
-			     "Only runtime IRQ configuration is supported");  \
-		const struct uart_ns16550_dev_config *dev_cfg = dev->config;  \
-		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);        \
-		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                         \
-			return;                                               \
-		}                                                             \
-		pcie_connect_dynamic_irq(dev_cfg->pcie->bdf, irq,	      \
-				     UART_NS16550_IRQ_PRIORITY(n),	      \
-				    (void (*)(const void *))uart_ns16550_isr, \
-				    DEVICE_DT_INST_GET(n),                    \
-				    UART_NS16550_IRQ_FLAGS(n));               \
-		pcie_irq_enable(dev_cfg->pcie->bdf, irq);                    \
+#define UART_NS16550_IRQ_CONFIG_PCIE(n)                                                            \
+	static void uart_ns16550_irq_config_func##n(const struct device *dev)                      \
+	{                                                                                          \
+		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,                                   \
+			     "Only runtime IRQ configuration is supported");                       \
+		const struct uart_ns16550_dev_config *dev_cfg = dev->config;                       \
+		unsigned int irq = pcie_alloc_irq(PCIE_DEV_ENDPOINT(dev_cfg->pcie));               \
+		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                                              \
+			return;                                                                    \
+		}                                                                                  \
+		pcie_connect_dynamic_irq(PCIE_DEV_ENDPOINT(dev_cfg->pcie), irq,                    \
+					 UART_NS16550_IRQ_PRIORITY(n),                             \
+					 (void (*)(const void *))uart_ns16550_isr,                 \
+					 DEVICE_DT_INST_GET(n), UART_NS16550_IRQ_FLAGS(n));        \
+		pcie_irq_enable(PCIE_DEV_ENDPOINT(dev_cfg->pcie), irq);                            \
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

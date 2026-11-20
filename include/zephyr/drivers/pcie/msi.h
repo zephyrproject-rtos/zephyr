@@ -61,6 +61,12 @@ struct msi_vector {
 	struct msix_vector *msix_vector;
 	bool msix;
 #endif /* CONFIG_PCIE_MSI_X */
+	/**
+	 * Owning PCIe controller device. When NULL on CONFIG_PCIE_CONTROLLER
+	 * platforms, defaults to the chosen controller. Unused on architecture
+	 * backends.
+	 */
+	const struct device *ctrl;
 };
 
 typedef struct msi_vector msi_vector_t;
@@ -70,33 +76,32 @@ typedef struct msi_vector msi_vector_t;
 /**
  * @brief Allocate vector(s) for the endpoint MSI message(s)
  *
- * @param bdf the target PCI endpoint
+ * @param ep Non-NULL target PCI endpoint (if @c ep->ctrl is NULL on
+ *           CONFIG_PCIE_CONTROLLER, defaults to the chosen controller)
  * @param priority the MSI vectors base interrupt priority
  * @param vectors an array for storing allocated MSI vectors
  * @param n_vector the size of the MSI vectors array
  *
  * @return the number of allocated MSI vectors.
  */
-extern uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
-					 unsigned int priority,
-					 msi_vector_t *vectors,
-					 uint8_t n_vector);
+extern uint8_t pcie_msi_vectors_allocate(const struct pcie_endpoint *ep, unsigned int priority,
+					 msi_vector_t *vectors, uint8_t n_vector);
 
 /**
  * @brief Connect the MSI vector to the handler
  *
- * @param bdf the target PCI endpoint
- * @param vector the MSI vector to connect
+ * @param ep Non-NULL target PCI endpoint (if @c ep->ctrl is NULL on
+ *           CONFIG_PCIE_CONTROLLER, defaults to the chosen controller)
+ * @param vector the MSI vector to connect (must match @p ep's resolved
+ *               controller and BDF)
  * @param routine Interrupt service routine
  * @param parameter ISR parameter
  * @param flags Arch-specific IRQ configuration flag
  *
  * @return True on success, false otherwise
  */
-extern bool pcie_msi_vector_connect(pcie_bdf_t bdf,
-				    msi_vector_t *vector,
-				    void (*routine)(const void *parameter),
-				    const void *parameter,
+extern bool pcie_msi_vector_connect(const struct pcie_endpoint *ep, msi_vector_t *vector,
+				    void (*routine)(const void *parameter), const void *parameter,
 				    uint32_t flags);
 
 #endif /* CONFIG_PCIE_MSI_MULTI_VECTOR */
@@ -128,8 +133,10 @@ extern uint16_t pcie_msi_mdr(unsigned int irq,
 /**
  * @brief Configure the given PCI endpoint to generate MSIs.
  *
- * @param bdf the target PCI endpoint
- * @param vectors an array of allocated vector(s)
+ * @param ep Non-NULL target PCI endpoint (if @c ep->ctrl is NULL on
+ *           CONFIG_PCIE_CONTROLLER, defaults to the chosen controller)
+ * @param vectors an array of allocated vector(s); each entry must match @p ep's
+ *                resolved controller and BDF.
  * @param n_vector the size of the vector array
  * @param irq The IRQ we wish to trigger via MSI.
  * @retval true MSI or MSI-X was enabled.
@@ -139,18 +146,17 @@ extern uint16_t pcie_msi_mdr(unsigned int irq,
  *                On failure, the endpoint's MSI configuration and bus-master
  *                state are left unchanged.
  */
-extern bool pcie_msi_enable(pcie_bdf_t bdf,
-			    msi_vector_t *vectors,
-			    uint8_t n_vector,
+extern bool pcie_msi_enable(const struct pcie_endpoint *ep, msi_vector_t *vectors, uint8_t n_vector,
 			    unsigned int irq);
 
 /**
  * @brief Check if the given PCI endpoint supports MSI/MSI-X
  *
- * @param bdf the target PCI endpoint
+ * @param ep Non-NULL target PCI endpoint (if @c ep->ctrl is NULL on
+ *           CONFIG_PCIE_CONTROLLER, defaults to the chosen controller)
  * @return true if the endpoint support MSI/MSI-X
  */
-extern bool pcie_is_msi(pcie_bdf_t bdf);
+extern bool pcie_is_msi(const struct pcie_endpoint *ep);
 
 /*
  * The first word of the MSI capability is shared with the

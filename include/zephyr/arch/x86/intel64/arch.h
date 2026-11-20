@@ -103,11 +103,9 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 
 #ifdef CONFIG_PCIE
 
-#define ARCH_PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
-			      isr_p, isr_param_p, flags_p)		\
-	X86_RESERVE_IRQ(irq_p, _CONCAT(_irq_alloc_fixed, __COUNTER__)); \
-	pcie_connect_dynamic_irq(bdf_p, irq_p, priority_p,		\
-				 (void (*)(const void *))isr_p,		\
+#define ARCH_PCIE_IRQ_CONNECT(ep_p, irq_p, priority_p, isr_p, isr_param_p, flags_p)                \
+	X86_RESERVE_IRQ(irq_p, _CONCAT(_irq_alloc_fixed, __COUNTER__));                            \
+	pcie_connect_dynamic_irq(ep_p, irq_p, priority_p, (void (*)(const void *))isr_p,           \
 				 isr_param_p, flags_p)
 
 #endif /* CONFIG_PCIE */
