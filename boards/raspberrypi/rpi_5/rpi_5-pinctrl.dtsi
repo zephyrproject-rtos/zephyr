@@ -5,6 +5,7 @@
  */
 
 #include <broadcom/rp1_common-pinctrl.dtsi>
+#include "../common/rpi_common.dtsi"
 
 &pinctrl {
 	/* Not yet implemented BCM2712 side pinctrl. Put a stub definition at this time. */
