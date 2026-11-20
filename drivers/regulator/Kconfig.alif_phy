@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_ALIF_PHY
+	bool "Alif PHY power regulator driver"
+	default y
+	depends on DT_HAS_ALIF_PHY_REGULATOR_ENABLED
+	help
+	  Enable the driver for the Alif PHY power switches
+	  controlled by the PWR_CTRL register.
+
+config REGULATOR_ALIF_PHY_INIT_PRIORITY
+	int "Alif PHY power regulator init priority"
+	default 75
+	depends on REGULATOR_ALIF_PHY
+	help
+	  Init priority for the Alif PHY power regulator driver.
