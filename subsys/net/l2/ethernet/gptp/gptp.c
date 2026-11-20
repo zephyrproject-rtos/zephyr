@@ -587,6 +587,13 @@ static void gptp_state_machine(void)
 			}
 		} else {
 			GPTP_GLOBAL_DS()->selected_role[port] = GPTP_PORT_DISABLED;
+
+			/* Let the announce state machines see the port as
+			 * disabled, so that they drop what they hold and the
+			 * port role is selected again when the interface
+			 * returns.
+			 */
+			gptp_mi_port_bmca_state_machines(port);
 		}
 
 		port_ds->prev_ptt_port_enabled = port_ds->ptt_port_enabled;

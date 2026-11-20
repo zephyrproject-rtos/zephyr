@@ -1306,6 +1306,12 @@ static bool gptp_mi_qualify_announce(int port, struct net_pkt *announce_msg)
 	return true;
 }
 
+/* "portEnabled": the interface of the port is up and running. */
+static bool gptp_mi_port_enabled(int port)
+{
+	return net_if_is_up(GPTP_PORT_IFACE(port));
+}
+
 static void gptp_mi_port_announce_receive_state_machine(int port)
 {
 	struct gptp_port_ds *port_ds;
@@ -1316,7 +1322,8 @@ static void gptp_mi_port_announce_receive_state_machine(int port)
 	port_ds = GPTP_PORT_DS(port);
 	bmca_data = GPTP_PORT_BMCA_DATA(port);
 
-	if ((!port_ds->ptt_port_enabled) || (!port_ds->as_capable)) {
+	if (!gptp_mi_port_enabled(port) || (!port_ds->ptt_port_enabled) ||
+	    (!port_ds->as_capable)) {
 		state->state = GPTP_PA_RCV_DISCARD;
 	}
 
@@ -1333,8 +1340,8 @@ static void gptp_mi_port_announce_receive_state_machine(int port)
 		break;
 
 	case GPTP_PA_RCV_RECEIVE:
-		/* "portEnabled" is not checked: the interface is always up. */
 		if (state->rcvd_announce &&
+		    gptp_mi_port_enabled(port) &&
 		    port_ds->ptt_port_enabled &&
 		    port_ds->as_capable	&&
 		    !bmca_data->rcvd_msg) {
@@ -1480,7 +1487,8 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 	port_ds = GPTP_PORT_DS(port);
 	global_ds = GPTP_GLOBAL_DS();
 
-	if ((!port_ds->ptt_port_enabled || !port_ds->as_capable) &&
+	if ((!gptp_mi_port_enabled(port) || !port_ds->ptt_port_enabled ||
+	     !port_ds->as_capable) &&
 	    (bmca_data->info_is != GPTP_INFO_IS_DISABLED)) {
 		gptp_change_pa_info_state(port, state, GPTP_PA_INFO_DISABLED);
 	}
@@ -1498,7 +1506,8 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 		__fallthrough;
 
 	case GPTP_PA_INFO_POST_DISABLED:
-		if (port_ds->ptt_port_enabled && port_ds->as_capable) {
+		if (gptp_mi_port_enabled(port) && port_ds->ptt_port_enabled &&
+		    port_ds->as_capable) {
 			gptp_change_pa_info_state(port, state,
 						  GPTP_PA_INFO_AGED);
 		} else if (bmca_data->rcvd_msg) {
