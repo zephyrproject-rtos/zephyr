@@ -205,6 +205,7 @@ void esp_wifi_mesh_get_config(struct esp_wifi_mesh_config *config);
  * @retval 0 on success.
  * @retval -EINVAL if the auto role is used without a router SSID.
  * @retval -EIO on a mesh stack error.
+ * @retval -EALREADY if the mesh is already active.
  */
 int esp_wifi_mesh_start(void);
 
