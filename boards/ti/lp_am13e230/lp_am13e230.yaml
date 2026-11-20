@@ -8,4 +8,5 @@ ram: 96
 flash: 512
 supported:
   - hwinfo
+  - watchdog
 vendor: ti
