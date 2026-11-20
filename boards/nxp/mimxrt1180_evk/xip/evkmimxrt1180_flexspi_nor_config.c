@@ -28,9 +28,9 @@ __attribute__((section(".boot_hdr.xmcd_data"), used))
 
 const uint32_t xmcd_data[] = {
 	0xC010000D, /* SEMC -> SDRAM */
-	0xA60001A1, /* SDRAM config */
+	0xC80001A1, /* SDRAM config */
 	0x00008000, /* SDRAM config */
-	0X00000001  /* SDRAM config */
+	0X00000002  /* SDRAM config */
 };
 
 #endif
