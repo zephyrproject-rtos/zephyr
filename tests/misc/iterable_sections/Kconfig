@@ -1,0 +1,11 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_LARGE_ROM_SECTION
+	bool "Link a multi-page iterable ROM section"
+	help
+	  Add two 4 KiB entries to the test_rom_large iterable section, so
+	  that the section ends at least one MMU page past the sections
+	  linked before it.
+
+source "Kconfig.zephyr"
