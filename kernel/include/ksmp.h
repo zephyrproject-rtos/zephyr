@@ -18,6 +18,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/barrier.h>
 #include <wait_q.h>
+#include <timeslicing.h>
 
 #ifdef CONFIG_SMP
 
@@ -186,6 +187,16 @@ void z_smp_switch_requeue(struct k_thread *old_thread);
  */
 bool z_sched_slice_keeps_current(struct k_thread *curr);
 
+/* Start the time slice of @p new_thread at the context switch to it. */
+static inline void z_smp_slice_start(struct k_thread *new_thread)
+{
+#ifdef CONFIG_TIMESLICING
+	z_time_slice_reset(new_thread);
+#else
+	ARG_UNUSED(new_thread);
+#endif /* CONFIG_TIMESLICING */
+}
+
 /* Set up the timer of a secondary CPU, implemented by the timer driver. */
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 void smp_timer_init(void);
@@ -291,6 +302,12 @@ static inline void z_smp_switch_requeue(struct k_thread *old_thread)
 static inline bool z_sched_slice_keeps_current(struct k_thread *curr)
 {
 	return _kernel.ready_q.cache == curr;
+}
+
+/* Uniprocessor builds start the time slice in update_cache(). */
+static inline void z_smp_slice_start(struct k_thread *new_thread)
+{
+	ARG_UNUSED(new_thread);
 }
 
 static inline void z_fatal_pause_cpus(void)
