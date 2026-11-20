@@ -84,6 +84,11 @@ Libraries / Subsystems
   * The native backend now supports the AS923 region
     (:kconfig:option:`CONFIG_LORAWAN_REGION_AS923`).
 
+* Management
+
+  * MCUmgr: an application can connect a bridge between two SMP transports with
+    :c:func:`transport_mgmt_connect_bridge`, as the transport management connect command does.
+
 * Mbed TLS
 
   * :kconfig:option:`CONFIG_MBEDTLS_SSL_CLI_C`
