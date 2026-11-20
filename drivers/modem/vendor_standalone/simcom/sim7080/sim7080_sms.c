@@ -12,6 +12,14 @@ LOG_MODULE_REGISTER(modem_sim7080_sms, CONFIG_MODEM_LOG_LEVEL);
 
 #define SMS_TP_UDHI_HEADER 0x40
 
+/*
+ * Longest SMS-DELIVER PDU as listed by AT+CMGL, in octets: SMSC length and
+ * up to 11 octets of SMSC address, first octet, originating address length,
+ * type and up to 10 octets of digits, TP-PID, TP-DCS, 7 octets of TP-SCTS,
+ * TP-UDL and up to 140 octets of user data.
+ */
+#define SMS_PDU_MAX_LEN (1 + 11 + 1 + 2 + 10 + 1 + 1 + 7 + 1 + 140)
+
 /**
  * Decode readable hex to "real" hex.
  */
@@ -142,9 +150,13 @@ static int mdm_decode_pdu(const char *pdu, size_t pdu_len, struct sim7080_sms *t
 	uint8_t tp_udl = mdm_pdu_read_byte(pdu, index++);
 
 	/* Discard header */
-	uint8_t header_skip = 0;
+	size_t header_skip = 0;
 
 	if (target_buf->first_octet & SMS_TP_UDHI_HEADER) {
+		if (index >= pdu_len) {
+			return -1;
+		}
+
 		uint8_t tp_udhl = mdm_pdu_read_byte(pdu, index);
 
 		index += tp_udhl + 1;
@@ -160,6 +172,12 @@ static int mdm_decode_pdu(const char *pdu, size_t pdu_len, struct sim7080_sms *t
 		/* 7 bit GSM coding */
 		uint8_t fill_level = 0;
 		uint16_t buf = 0;
+		/* TP-UDL counts septets, the header included */
+		size_t header_septets = DIV_ROUND_UP(header_skip * 8, 7);
+
+		if (header_septets > tp_udl) {
+			return -1;
+		}
 
 		if (target_buf->first_octet & SMS_TP_UDHI_HEADER) {
 			/* Initial fill because septets are aligned to
@@ -178,8 +196,12 @@ static int mdm_decode_pdu(const char *pdu, size_t pdu_len, struct sim7080_sms *t
 
 		uint16_t data_index = 0;
 
-		for (unsigned int idx = 0; idx < tp_udl; idx++) {
+		for (size_t idx = 0; idx < tp_udl - header_septets; idx++) {
 			if (fill_level < 7) {
+				if (index >= pdu_len) {
+					return -1;
+				}
+
 				uint8_t octet = mdm_pdu_read_byte(pdu, index++);
 
 				buf &= ((1 << fill_level) - 1);
@@ -192,6 +214,17 @@ static int mdm_decode_pdu(const char *pdu, size_t pdu_len, struct sim7080_sms *t
 			 * then to UTF-8
 			 */
 			short letter = enc7_basic[buf & 0x007f];
+			/* the table holds no code point needing more than two bytes */
+			size_t letter_len = (letter < 0x0080) ? 1 : 2;
+
+			/*
+			 * A full message of characters taking two bytes in
+			 * UTF-8 does not fit: keep what does.
+			 */
+			if ((data_index + letter_len) > SIM7080_SMS_MAX_LEN) {
+				LOG_WRN("SMS truncated to %u bytes", data_index);
+				break;
+			}
 
 			if (letter < 0x0080) {
 				target_buf->data[data_index++] = letter & 0x007f;
@@ -203,18 +236,25 @@ static int mdm_decode_pdu(const char *pdu, size_t pdu_len, struct sim7080_sms *t
 			fill_level -= 7;
 		}
 		target_buf->data_len = data_index;
-	} else if (tp_dcs == 0x04) {
-		/* 8 bit binary coding */
-		for (int idx = 0; idx < tp_udl - header_skip; idx++) {
+	} else if ((tp_dcs == 0x04) || (tp_dcs == 0x08)) {
+		/*
+		 * 8 bit binary coding, or Unicode (16 bit per character).
+		 * TP-UDL counts octets, the header included.
+		 */
+		if (header_skip > tp_udl) {
+			return -1;
+		}
+
+		size_t data_len = tp_udl - header_skip;
+
+		if ((data_len > SIM7080_SMS_MAX_LEN) || ((index + data_len) > pdu_len)) {
+			return -1;
+		}
+
+		for (size_t idx = 0; idx < data_len; idx++) {
 			target_buf->data[idx] = mdm_pdu_read_byte(pdu, index++);
 		}
-		target_buf->data_len = tp_udl;
-	} else if (tp_dcs == 0x08) {
-		/* Unicode (16 bit per character) */
-		for (int idx = 0; idx < tp_udl - header_skip; idx++) {
-			target_buf->data[idx] = mdm_pdu_read_byte(pdu, index++);
-		}
-		target_buf->data_len = tp_udl;
+		target_buf->data_len = data_len;
 	} else {
 		return -1;
 	}
@@ -295,7 +335,8 @@ static size_t net_buf_find_crlf(struct net_buf *buf, size_t skip)
 MODEM_CMD_DEFINE(on_cmd_cmgl)
 {
 	int sms_index, sms_stat, ret;
-	char pdu_buffer[256];
+	/* the PDU in hex, two characters per octet */
+	static char pdu_buffer[(2 * SMS_PDU_MAX_LEN) + 1];
 	size_t out_len, sms_len, param_len;
 	struct sim7080_sms *sms;
 
@@ -321,6 +362,12 @@ MODEM_CMD_DEFINE(on_cmd_cmgl)
 
 	/* Skip to start of pdu. */
 	data->rx_buf = net_buf_skip(data->rx_buf, param_len + 2);
+
+	if (sms_len >= sizeof(pdu_buffer)) {
+		LOG_WRN("SMS %d PDU too long (%zu)", sms_index, sms_len);
+		data->rx_buf = net_buf_skip(data->rx_buf, sms_len);
+		return 0;
+	}
 
 	out_len = net_buf_linearize(pdu_buffer, sizeof(pdu_buffer) - 1, data->rx_buf, 0, sms_len);
 	pdu_buffer[out_len] = '\0';
