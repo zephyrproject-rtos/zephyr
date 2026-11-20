@@ -142,6 +142,12 @@ int modbus_raw_backend_txn(const int iface, struct modbus_adu *adu)
 		return -ENOTSUP;
 	}
 
+	if (adu->length > sizeof(adu->data)) {
+		LOG_ERR("ADU length %u exceeds the buffer", adu->length);
+		modbus_set_exception(adu, MODBUS_EXC_ILLEGAL_DATA_VAL);
+		return -EINVAL;
+	}
+
 	LOG_DBG("Use backend interface %d", iface);
 	memcpy(&ctx->tx_adu, adu, sizeof(struct modbus_adu));
 	err = modbus_tx_wait_rx_adu(ctx);
