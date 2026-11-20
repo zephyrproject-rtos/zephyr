@@ -33,23 +33,41 @@ static int quic_connection_init(struct quic_context *ctx,
 	if (remote_addr == NULL) {
 		/* Server side, find endpoint by local address only */
 		ep = find_local_endpoint(local_addr);
-		if (ep == NULL) {
-			ep = alloc_local_endpoint(ctx, local_addr);
-			if (ep == NULL) {
-				k_mutex_unlock(&endpoints_lock);
-				k_mutex_unlock(&contexts_lock);
-				return -ENOMEM;
-			}
+		if (ep != NULL) {
+			/* A listener is in use while its connections hold it
+			 * as their parent, also after its listening socket
+			 * is closed. It keeps the TLS settings and socket
+			 * options of that socket, and the connections send
+			 * on its UDP socket, so it is not shared or taken
+			 * over.
+			 */
+			NET_DBG("[CO:%p/%d] Listener %p is still in use", ctx,
+				quic_get_by_conn(ctx), ep);
 
-			ep->is_server = true;
-			ctx->listen = ep;
-			ctx->is_listening = true;
+			k_mutex_unlock(&endpoints_lock);
+			k_mutex_unlock(&contexts_lock);
 
-			NET_DBG("[EP:%p/%d] Created new endpoint from %s to %s", ep,
-				quic_get_by_ep(ep), "ANY",
-				net_sprint_addr(local_addr->sa_family,
-						&net_sin(local_addr)->sin_addr));
+			/* Dropped without the locks, see the fail path */
+			quic_endpoint_unref(ep);
+
+			return -EADDRINUSE;
 		}
+
+		ep = alloc_local_endpoint(ctx, local_addr);
+		if (ep == NULL) {
+			k_mutex_unlock(&endpoints_lock);
+			k_mutex_unlock(&contexts_lock);
+			return -ENOMEM;
+		}
+
+		ep->is_server = true;
+		ctx->listen = ep;
+		ctx->is_listening = true;
+
+		NET_DBG("[EP:%p/%d] Created new endpoint from %s to %s", ep,
+			quic_get_by_ep(ep), "ANY",
+			net_sprint_addr(local_addr->sa_family,
+					&net_sin(local_addr)->sin_addr));
 	} else {
 		/* Always allocate a dedicated client endpoint per connection
 		 * context. Orphans from prior failed opens were dropped above.
