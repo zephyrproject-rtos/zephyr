@@ -14,6 +14,16 @@ tests:
       - native_sim/native/64
     integration_platforms:
       - native_sim/native/64
+  subsys.precision_timing.minimal_libc:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim/native/64
+      - qemu_cortex_m3
   subsys.precision_timing.build:
     build_only: true
     platform_allow:
