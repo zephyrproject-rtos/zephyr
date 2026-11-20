@@ -96,6 +96,17 @@ config BME680_FILTER_128
 	bool "128"
 endchoice
 
+config BME680_GAS
+	bool "BME680 gas resistance measurement"
+	default y
+	help
+	  Run the gas sensor's heater and measure the gas resistance on every
+	  sample fetch. Disable when only temperature, pressure and humidity
+	  are needed: the heater draws several mA for the heating duration and
+	  warms up the sensor.
+
+if BME680_GAS
+
 choice
 	prompt "BME680 gas sensor's heater temperature in degree Celsius"
 	default BME680_HEATR_TEMP_LP
@@ -117,5 +128,7 @@ config BME680_HEATR_DUR_LP
 config BME680_HEATR_DUR_ULP
 	bool "1943"
 endchoice
+
+endif # BME680_GAS
 
 endif # BME680

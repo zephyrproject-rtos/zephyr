@@ -312,6 +312,9 @@ static int bme680_channel_get(const struct device *dev,
 		val->val2 = (data->calc_humidity % 1000) * 1000;
 		break;
 	case SENSOR_CHAN_GAS_RES:
+		if (!IS_ENABLED(CONFIG_BME680_GAS)) {
+			return -ENOTSUP;
+		}
 		/*
 		 * data->calc_gas_resistance has a resolution of 1 ohm.
 		 * So 100000 equals 100000 ohms.
@@ -479,7 +482,7 @@ static int bme680_pm_control(const struct device *dev, enum pm_device_action act
 
 static int bme680_init(const struct device *dev)
 {
-#if BME680_BUS_SPI || defined(CONFIG_SENSOR_ASYNC_API)
+#ifdef CONFIG_SENSOR_ASYNC_API
 	struct bme680_data *data = dev->data;
 #endif
 	int err;

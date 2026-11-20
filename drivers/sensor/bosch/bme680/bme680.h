@@ -154,16 +154,21 @@ struct bme680_config {
 #define BME680_HUMIDITY_OVER            5
 #endif
 
+/* Without gas measurement the heater does not run: no temperature, no duration */
 #if defined CONFIG_BME680_HEATR_TEMP_LP
 #define BME680_HEATR_TEMP                               320
 #elif defined CONFIG_BME680_HEATR_TEMP_ULP
 #define BME680_HEATR_TEMP                               400
+#else
+#define BME680_HEATR_TEMP                               0
 #endif
 
 #if defined CONFIG_BME680_HEATR_DUR_LP
 #define BME680_HEATR_DUR_MS                             197
 #elif defined CONFIG_BME680_HEATR_DUR_ULP
 #define BME680_HEATR_DUR_MS                             1943
+#else
+#define BME680_HEATR_DUR_MS                             0
 #endif
 
 /* Forced-mode data-ready time is the TPH conversion time plus the programmed
@@ -195,7 +200,7 @@ struct bme680_config {
 #define BME680_CTRL_MEAS_VAL    (BME680_PRESS_OVER | BME680_TEMP_OVER \
 				 | BME680_MODE_FORCED)
 #define BME680_CONFIG_VAL               BME680_FILTER
-#define BME680_CTRL_GAS_1_VAL   0x10
+#define BME680_CTRL_GAS_1_VAL           (IS_ENABLED(CONFIG_BME680_GAS) ? 0x10 : 0x00)
 
 #define BME680_CONCAT_BYTES(msb, lsb) (((uint16_t)msb << 8) | (uint16_t)lsb)
 
