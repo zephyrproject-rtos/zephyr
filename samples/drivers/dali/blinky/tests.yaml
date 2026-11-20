@@ -1,0 +1,27 @@
+sample:
+  description: Dali Zephyr driver blinky application
+  name: dali-blinky
+common:
+  tags: dali
+  filter: dt_alias_exists("dali")
+tests:
+  sample.drivers.dali.blinky.nucleo_f091rc:
+    platform_allow:
+      - nucleo_f091rc
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Target board: (.*)"
+    extra_args:
+      - SHIELD=arduino_uno_click;mikroe_dali_2_click
+  sample.drivers.dali.blinky.nrf52840dk:
+    platform_allow:
+      - nrf52840dk/nrf52840
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Target board: (.*)"
+    extra_args:
+      - SHIELD=arduino_uno_click;mikroe_dali_2_click

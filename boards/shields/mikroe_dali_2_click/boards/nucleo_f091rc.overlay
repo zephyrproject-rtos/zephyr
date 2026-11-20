@@ -2,27 +2,17 @@
  * Copyright 2026 by Sven Hädrich <sven.haedrich@sevenlab.de>
  * SPDX-License-Identifier: Apache-2.0
  *
- * add DALI 2 Click (MIKROE-2672)
- * via Arduino UNO click shield (MIKROE-1581)
- * to STM32 NUCLEO F091RC
- * DALI 2 Click
- *   DALI TX 2
- *   DALI RX 15
- * Arduino UNO click shield (slot 1)
- *   DALI TX 2 > A3
- *   DALI RX 15 > D2
- * STM32F091
- *   DALI TX A3 > PB_0
- *   DALI RX D2 > PA_10
+ * DALI TX is on mikroBUS RST and is driven by a PWM output. pinctrl needs
+ * the SoC pin, so this overlay assumes the click is in slot 1 of the
+ * arduino_uno_click shield (RST -> A3 -> PB_0).
  */
 
 &mikroe_dali2_click {
 	counter = <&counter2>;
+	chan-id-rx = <0>;
+	chan-id-tx = <1>;
 	pwms = <&pwm3 3 PWM_USEC(41) PWM_POLARITY_NORMAL>;
-	tx-rx-propagation-max-us = <2400>;
 	tx-prog-delay-us = <(-200)>;
-	rx-max-latency-us = <80>;
-	rx-grey-area-us = <800>;
 };
 
 &timers2 {
