@@ -1530,16 +1530,27 @@ static void convert_to_id_on_irk_match(struct bt_conn *conn, void *data)
 {
 	struct bt_keys *keys = data;
 
+	/* A disconnected object, which the application can keep, holds no keys */
+	if (conn->state == BT_CONN_DISCONNECTED) {
+		return;
+	}
+
 	if (!bt_addr_le_is_rpa(&conn->le.dst)) {
 		return;
 	}
 
 	if (bt_addr_matches_irk(&conn->le.dst.a, keys->irk.val)) {
-		if (conn->le.keys != NULL && conn->le.keys != keys) {
-			bt_keys_clear(conn->le.keys);
+		/* An object being set up finds the keys once connected, and a failed attempt
+		 * has no teardown that would clear them.
+		 */
+		if (conn->state == BT_CONN_CONNECTED) {
+			if (conn->le.keys != NULL && conn->le.keys != keys) {
+				bt_keys_clear(conn->le.keys);
+			}
+
+			conn->le.keys = keys;
 		}
 
-		conn->le.keys = keys;
 		/* always update last use RPA */
 		bt_addr_copy(&keys->irk.rpa, &conn->le.dst.a);
 		bt_addr_le_copy(&conn->le.dst, &keys->addr);

@@ -63,5 +63,7 @@ static inline void writer_value_fill(uint8_t *value, size_t len)
 void server_procedure(void);
 void holder_procedure(void);
 void writer_procedure(void);
+void kept_conn_dut_procedure(void);
+void kept_conn_peer_procedure(void);
 
 #endif /* ZEPHYR_TESTS_BSIM_BLUETOOTH_HOST_GATT_PREPARE_WRITE_QUOTA_SRC_COMMON_H_ */
