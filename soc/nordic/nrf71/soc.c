@@ -270,7 +270,12 @@ int nordicsemi_nrf71_init(void)
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc)
 	/* Power on the antenna switch before steering it or starting the Wi-Fi core. */
-	*(volatile uint32_t *)PWR_ANTSWC_REG |= PWR_ANTSWC_ENABLE;
+#if NRF71_ERRATA_159_ENABLE_WORKAROUND
+	/* Workaround for Errata 159 */
+	if (nrf71_errata_159()) {
+		*(volatile uint32_t *)PWR_ANTSWC_REG |= PWR_ANTSWC_ENABLE;
+	}
+#endif
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf71_antsw)
