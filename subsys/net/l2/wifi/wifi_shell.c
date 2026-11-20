@@ -2172,13 +2172,15 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 		{"info-disable", sys_getopt_required_argument, 0, 'd'},
 		{"exponent", sys_getopt_required_argument, 0, 'e'},
 		{"mantissa", sys_getopt_required_argument, 0, 'm'},
+		{"retry-interval", sys_getopt_required_argument, 0, 'R'},
+		{"retry-count", sys_getopt_required_argument, 0, 'C'},
 		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
 	params->operation = WIFI_TWT_SETUP;
 
-	while ((opt = sys_getopt_long(argc, argv, "n:c:t:f:r:T:I:a:t:w:p:D:d:e:m:i:h",
+	while ((opt = sys_getopt_long(argc, argv, "n:c:t:f:r:T:I:a:t:w:p:D:d:e:m:R:C:i:h",
 				  long_options, &opt_index)) != -1) {
 		state = sys_getopt_state_get();
 		switch (opt) {
@@ -2287,6 +2289,24 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 				return -EINVAL;
 			}
 			params->setup.twt_mantissa = (uint16_t)value;
+			break;
+
+		case 'R':
+			if (!parse_number(sh, &value, state->optarg, NULL,
+					  WIFI_MIN_TWT_RETRY_INTERVAL_S,
+					  WIFI_MAX_TWT_RETRY_INTERVAL_S)) {
+				return -EINVAL;
+			}
+			params->setup.twt_retry_interval = (uint8_t)value;
+			break;
+
+		case 'C':
+			if (!parse_number(sh, &value, state->optarg, NULL,
+					  WIFI_MIN_TWT_RETRY_COUNT,
+					  WIFI_MAX_TWT_RETRY_COUNT)) {
+				return -EINVAL;
+			}
+			params->setup.twt_retry_count = (uint8_t)value;
 			break;
 
 		case 'i':
@@ -6208,9 +6228,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 				 "<-D --wake-ahead-duration>: 0us-2^31us\n"
 				 "<-d --info-disable>: 0/1\n"
 				 "<-e --exponent>: 0-31\n"
-				 "<-m --mantissa>: 1-2^16"),
+				 "<-m --mantissa>: 1-2^16\n"
+				 "[-R --retry-interval]: 1-60s\n"
+				 "[-C --retry-count]: 1-10"),
 		      cmd_wifi_twt_setup,
-		      25, 7),
+		      29, 7),
 	SHELL_CMD_ARG(btwt_setup, NULL,
 		      SHELL_HELP("Start a BTWT flow",
 				 "[-i, --iface=<interface index>]\n"

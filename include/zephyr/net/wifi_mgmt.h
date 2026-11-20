@@ -1067,6 +1067,10 @@ struct wifi_twt_params {
 			uint8_t twt_exponent;
 			/** TWT Mantissa Range: [0-sizeof(UINT16)] */
 			uint16_t twt_mantissa;
+			/** Interval between TWT setup request retries, in seconds */
+			uint8_t twt_retry_interval;
+			/** TWT setup request retry count */
+			uint8_t twt_retry_count;
 		} setup;
 		/** Setup specific parameters */
 		struct {
@@ -1101,6 +1105,10 @@ struct wifi_twt_params {
  */
 #define WIFI_MAX_TWT_EXPONENT 31
 #define WIFI_MAX_TWT_INTERVAL_US ((uint64_t)UINT16_MAX << WIFI_MAX_TWT_EXPONENT)
+#define WIFI_MIN_TWT_RETRY_INTERVAL_S 1
+#define WIFI_MAX_TWT_RETRY_INTERVAL_S 60
+#define WIFI_MIN_TWT_RETRY_COUNT 1
+#define WIFI_MAX_TWT_RETRY_COUNT 10
 /* 256 (u8) * 1TU */
 #define WIFI_MAX_TWT_WAKE_INTERVAL_US 262144
 #define WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US (LONG_MAX - 1)
