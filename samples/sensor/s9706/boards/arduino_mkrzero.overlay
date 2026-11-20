@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Carl Zeiss AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+	};
+
+	s9706: s9706 {
+		compatible = "hamamatsu,s9706";
+
+		data-gpios = <&arduino_mkr_header 0 GPIO_PULL_UP>;
+		range-gpios = <&arduino_mkr_header 1 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL)>;
+		clk-gpios = <&arduino_mkr_header 2 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL)>;
+		gate-gpios = <&arduino_mkr_header 3 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL)>;
+
+		max-frequency = <1500000>;
+		integration-time = <5000>;
+	};
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "Zephyr USB CDC-ACM";
+	};
+};
