@@ -9,4 +9,9 @@ zephyr_include_directories(
 
 target_sources(app PRIVATE settings_test_zms.c)
 
+if(CONFIG_FLASH_SIMULATOR_CALLBACKS)
+  target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/kvss/zms)
+  target_sources(app PRIVATE settings_test_zms_reset.c)
+endif()
+
 add_subdirectory(../../src settings_test_bindir)
