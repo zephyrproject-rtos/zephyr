@@ -40,6 +40,10 @@ typedef uint32_t psa_key_id_t;
 #define ZEPHYR_PSA_BT_MESH_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x20000000
 #define ZEPHYR_PSA_BT_MESH_KEY_ID_RANGE_SIZE  0xC000 /**< 48 Ki */
 
+/** PSA key ID range to be used by the Bluetooth host for the stored LTKs and IRKs. */
+#define ZEPHYR_PSA_BT_HOST_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x2000C000
+#define ZEPHYR_PSA_BT_HOST_KEY_ID_RANGE_SIZE  0x1000 /**< 4 Ki */
+
 /** PSA key ID range to be used by Wi-Fi credentials management. */
 #define ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x20010000
 #define ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_SIZE  0x100 /**< 256 */

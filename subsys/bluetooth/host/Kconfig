@@ -51,6 +51,7 @@ config BT_RX_STACK_SIZE
 	default 3092 if BT_MESH_GATT_CLIENT
 	default 2800 if BT_MESH_PB_GATT
 	default 2600 if BT_MESH
+	default 2500 if BT_SETTINGS
 	default 2048 if BT_AUDIO
 	default 1200
 	help
@@ -195,6 +196,8 @@ config BT_HOST_CRYPTO_PRNG
 config BT_SETTINGS
 	bool "Store Bluetooth state and configuration persistently"
 	depends on SETTINGS
+	select PSA_CRYPTO
+	select PSA_WANT_KEY_TYPE_AES
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  When selected, the Bluetooth stack will take care of storing

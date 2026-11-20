@@ -31,6 +31,7 @@
 #include "hci_core.h"
 #include "id.h"
 #include "keys.h"
+#include "keys_psa.h"
 #include "settings.h"
 #include "smp.h"
 #include "sys/types.h"
@@ -40,14 +41,7 @@ LOG_MODULE_REGISTER(bt_keys);
 
 static struct bt_keys key_pool[CONFIG_BT_MAX_PAIRED];
 
-#define BT_KEYS_STORAGE_LEN_COMPAT (BT_KEYS_STORAGE_LEN - sizeof(uint32_t))
-
-/* Configuration version used to detect if the device has configuration flags present in the stored
- * keys. Shall be higher than the maximum value of the `enc_size` field (16).
- */
-#define STORAGE_CFG_VERSION_MIN		17U
 #define STORAGE_CFG_VERSION		17U
-BUILD_ASSERT(STORAGE_CFG_VERSION >= STORAGE_CFG_VERSION_MIN, "STORAGE_CFG_VERSION is too small");
 BUILD_ASSERT(STORAGE_CFG_VERSION <= UINT8_MAX, "STORAGE_CFG_VERSION is too large");
 /* Configuration flags for storage. Based on the bt_keys_cfg_flags enum. */
 #define STORAGE_CFG_FLAGS                                                                          \
@@ -55,6 +49,170 @@ BUILD_ASSERT(STORAGE_CFG_VERSION <= UINT8_MAX, "STORAGE_CFG_VERSION is too large
 	 (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) ? BT_KEYS_CFG_SC_PAIR_ONLY : 0) |                 \
 	 (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) ? BT_KEYS_CFG_OVERWRITE_OLDEST : 0))
 BUILD_ASSERT(STORAGE_CFG_FLAGS < BIT(24), "STORAGE_CFG_FLAGS is too large");
+
+#define KEYS_SECRET_COUNT (IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) ? 2 : 3)
+
+#if defined(CONFIG_BT_SETTINGS)
+struct keys_secret {
+	/* Whether the key type of this secret is set in `bt_keys.keys` */
+	bool present;
+	uint8_t *val;
+	psa_key_id_t *psa_id;
+};
+
+static void keys_secrets_get(struct bt_keys *keys, struct keys_secret secrets[KEYS_SECRET_COUNT])
+{
+	secrets[0] = (struct keys_secret){
+		.present = (keys->keys & (BT_KEYS_LTK | BT_KEYS_LTK_P256)) != 0U,
+		.val = keys->ltk.val,
+		.psa_id = &keys->ltk_psa_id,
+	};
+	secrets[1] = (struct keys_secret){
+		.present = (keys->keys & BT_KEYS_IRK) != 0U,
+		.val = keys->irk.val,
+		.psa_id = &keys->irk_psa_id,
+	};
+#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
+	secrets[2] = (struct keys_secret){
+		.present = (keys->keys & BT_KEYS_PERIPH_LTK) != 0U,
+		.val = keys->periph_ltk.val,
+		.psa_id = &keys->periph_ltk_psa_id,
+	};
+#endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
+}
+
+/* Stage the live secret `cur` in PSA storage and set its key ID in the secret `out` of the record
+ * to be stored.
+ *
+ * A changed value is stored in a new PSA key. The value in `out` is cleared, except when an error
+ * is returned.
+ */
+static int keys_secret_psa_stage(const struct keys_secret *cur, const struct keys_secret *out)
+{
+	int err;
+
+	if (!cur->present) {
+		*out->psa_id = PSA_KEY_ID_NULL;
+	} else if (*cur->psa_id == PSA_KEY_ID_NULL ||
+		   !bt_keys_psa_matches(*cur->psa_id, cur->val)) {
+		err = bt_keys_psa_put(cur->val, out->psa_id);
+		if (err != 0) {
+			*out->psa_id = *cur->psa_id;
+			return err;
+		}
+	}
+
+	(void)memset(out->val, 0, BT_KEYS_PSA_KEY_SIZE);
+
+	return 0;
+}
+
+/* Destroy the PSA key that is no longer needed and keep the other one in the live secret `cur`.
+ *
+ * If the record was `committed`, the replaced keys are obsolete, otherwise the new ones are.
+ */
+static void keys_secret_psa_finalize(const struct keys_secret *cur, const struct keys_secret *out,
+				     bool committed)
+{
+	const psa_key_id_t obsolete = committed ? *cur->psa_id : *out->psa_id;
+	const psa_key_id_t kept = committed ? *out->psa_id : *cur->psa_id;
+
+	if (obsolete != kept) {
+		bt_keys_psa_del(obsolete);
+	}
+
+	*cur->psa_id = kept;
+}
+
+/* Write the record of `keys` to settings with the values replaced by PSA key IDs.
+ *
+ * A changed value is stored in a new PSA key. The replaced PSA keys are only destroyed after the
+ * record is written, so a failure at any point leaves the previous record usable.
+ */
+static int keys_psa_store(struct bt_keys *keys)
+{
+	struct bt_keys rec = *keys;
+	struct keys_secret cur[KEYS_SECRET_COUNT];
+	struct keys_secret out[KEYS_SECRET_COUNT];
+	int err = 0;
+	size_t i;
+
+	keys_secrets_get(keys, cur);
+	keys_secrets_get(&rec, out);
+
+	for (i = 0; i < KEYS_SECRET_COUNT; i++) {
+		err = keys_secret_psa_stage(&cur[i], &out[i]);
+		if (err != 0) {
+			break;
+		}
+	}
+
+	if (err == 0) {
+		err = bt_settings_store_keys(rec.id, &rec.addr, rec.storage_start,
+					     BT_KEYS_STORAGE_LEN);
+	}
+
+	for (i = 0; i < KEYS_SECRET_COUNT; i++) {
+		keys_secret_psa_finalize(&cur[i], &out[i], err == 0);
+	}
+
+	/* `rec` holds the values of the secrets that were not cleared if the loop was left early */
+	(void)memset(&rec, 0, sizeof(rec));
+
+	return err;
+}
+
+/* Read the values of the PSA keys referenced by the stored record of `keys` */
+static int keys_psa_load(struct bt_keys *keys)
+{
+	struct keys_secret secrets[KEYS_SECRET_COUNT];
+	int err;
+
+	keys_secrets_get(keys, secrets);
+
+	for (size_t i = 0; i < KEYS_SECRET_COUNT; i++) {
+		if (!secrets[i].present) {
+			bt_keys_psa_del(*secrets[i].psa_id);
+			*secrets[i].psa_id = PSA_KEY_ID_NULL;
+			continue;
+		}
+
+		if (*secrets[i].psa_id == PSA_KEY_ID_NULL) {
+			return -ENOENT;
+		}
+
+		err = bt_keys_psa_get(*secrets[i].psa_id, secrets[i].val);
+		if (err != 0) {
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+static void keys_psa_clear(struct bt_keys *keys)
+{
+	struct keys_secret secrets[KEYS_SECRET_COUNT];
+
+	keys_secrets_get(keys, secrets);
+
+	for (size_t i = 0; i < KEYS_SECRET_COUNT; i++) {
+		*secrets[i].psa_id = PSA_KEY_ID_NULL;
+	}
+}
+
+static void keys_psa_del(struct bt_keys *keys)
+{
+	struct keys_secret secrets[KEYS_SECRET_COUNT];
+
+	keys_secrets_get(keys, secrets);
+
+	for (size_t i = 0; i < KEYS_SECRET_COUNT; i++) {
+		bt_keys_psa_del(*secrets[i].psa_id);
+		*secrets[i].psa_id = PSA_KEY_ID_NULL;
+	}
+}
+#endif /* CONFIG_BT_SETTINGS */
 
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 static uint32_t aging_counter_val;
@@ -101,6 +259,9 @@ static bool key_is_in_use(uint8_t id)
 void bt_keys_reset(void)
 {
 	memset(key_pool, 0, sizeof(key_pool));
+
+	/* The PSA keys stay in the secure storage, they are in use again once loaded. */
+	bt_keys_psa_reset();
 }
 
 bool bt_keys_has_bond(uint8_t id)
@@ -374,7 +535,11 @@ void bt_keys_clear(struct bt_keys *keys)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		/* Delete stored keys from flash */
 		bt_settings_delete_keys(keys->id, &keys->addr);
+
+		/* After the record is deleted, so a failure leaves an unused key, not a dangling ID. */
+		keys_psa_del(keys);
 	}
+
 
 	(void)memset(keys, 0, sizeof(*keys));
 }
@@ -386,8 +551,7 @@ int bt_keys_store(struct bt_keys *keys)
 
 	__ASSERT_NO_MSG(keys != NULL);
 
-	err = bt_settings_store_keys(keys->id, &keys->addr, keys->storage_start,
-				     BT_KEYS_STORAGE_LEN);
+	err = keys_psa_store(keys);
 	if (err) {
 		LOG_ERR("Failed to save keys (err %d)", err);
 		return err;
@@ -446,6 +610,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	if (!len) {
 		keys = bt_keys_find(BT_KEYS_ALL, id, &addr);
 		if (keys) {
+			keys_psa_del(keys);
 			(void)memset(keys, 0, sizeof(*keys));
 			LOG_DBG("Cleared keys for %s", bt_addr_le_str(&addr));
 		} else {
@@ -460,63 +625,15 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		LOG_ERR("Failed to allocate keys for %s", bt_addr_le_str(&addr));
 		return -ENOMEM;
 	}
+	/* The older formats store the values of the keys, they cannot be loaded from PSA keys. */
 	if (len != BT_KEYS_STORAGE_LEN) {
-		if ((uint8_t)val[0] < (uint8_t)STORAGE_CFG_VERSION_MIN &&
-		    len == BT_KEYS_STORAGE_LEN_COMPAT) {
-			/* This check migrates keys without configuration flags to the new format
-			 * granted only the configuration version and flags are missing. Older keys
-			 * are recognized by the first octet being the enc_size field.
-			 */
-			LOG_DBG("Keys for %s do not have configuration flags, adding automatically",
-				bt_addr_le_str(&addr));
-			keys->cfg_version = STORAGE_CFG_VERSION;
-			sys_put_le24(STORAGE_CFG_FLAGS, keys->cfg_flags);
-			memcpy((char *)keys + offsetof(struct bt_keys, enc_size), val, len);
-		} else if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST) &&
-			   len == BT_KEYS_STORAGE_LEN_COMPAT) {
-			/* Load shorter structure for compatibility with old
-			 * records format with no counter.
-			 */
-			LOG_WRN("Keys for %s have no aging counter", bt_addr_le_str(&addr));
-			memcpy(keys->storage_start, val, len);
-		} else {
-			LOG_ERR("Invalid key length %zd != %zu", len, BT_KEYS_STORAGE_LEN);
-			bt_keys_clear(keys);
+		LOG_ERR("Invalid key length %zd != %zu", len, BT_KEYS_STORAGE_LEN);
+		bt_keys_clear(keys);
 
-			return -EINVAL;
-		}
-	} else if (!IS_ENABLED(CONFIG_BT_SIGNING) && IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) &&
-		   (uint8_t)val[0] < (uint8_t)STORAGE_CFG_VERSION_MIN) {
-		/* Migrate `bt_keys` stored with extra data to the new format in the most common
-		 * scenario where both legacy pairing and signing support are disabled. This allows
-		 * to still properly load and use the keys after firmware upgrade.
-		 */
-		size_t load_size = BT_KEYS_STORAGE_LEN_COMPAT;
-
-		if (IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)) {
-			/* Restoring aging counter is not implemented for this use-case. */
-			LOG_WRN("Skip aging counter - keys for %s", bt_addr_le_str(&addr));
-			/* `aging_counter` is an `uint32_t` */
-			load_size -= sizeof(uint32_t);
-		}
-
-		if (len >= load_size) {
-			LOG_DBG("Adding configuration flags to keys for %s", bt_addr_le_str(&addr));
-			keys->cfg_version = STORAGE_CFG_VERSION;
-			sys_put_le24(STORAGE_CFG_FLAGS, keys->cfg_flags);
-			(void)memcpy((char *)keys + offsetof(struct bt_keys, enc_size),
-				     val, load_size);
-			/* Ensure no unsupported key types are set. */
-			keys->keys &= (BT_KEYS_IRK | BT_KEYS_LTK_P256);
-			if ((keys->keys & BT_KEYS_LTK_P256) == 0U) {
-				LOG_WRN("Dropping keys for %s, no SC LTK", bt_addr_le_str(&addr));
-				bt_keys_clear(keys);
-				return -EINVAL;
-			}
-		}
-	} else {
-		memcpy(keys->storage_start, val, len);
+		return -EINVAL;
 	}
+
+	memcpy(keys->storage_start, val, len);
 
 	/* Some Kconfig options can change the size of the keys structure. This check will clear
 	 * the stored keys if the config flags are not matching between firmware updates.
@@ -525,6 +642,14 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	    (sys_get_le24(keys->cfg_flags) != STORAGE_CFG_FLAGS)) {
 		LOG_ERR("Stored keys for %s do not match current config flags or version",
 			bt_addr_le_str(&addr));
+		keys_psa_clear(keys);
+		bt_keys_clear(keys);
+		return -EINVAL;
+	}
+
+	err = keys_psa_load(keys);
+	if (err != 0) {
+		LOG_ERR("Unable to load the PSA keys of %s (err %d)", bt_addr_le_str(&addr), err);
 		bt_keys_clear(keys);
 		return -EINVAL;
 	}
