@@ -47,6 +47,16 @@ config DAP_BACKEND_USB
 	help
 	  DAP USB backend using bulk endpoints.
 
+config DAP_BACKEND_USB_BUF_COUNT
+	int "Number of USB OUT buffers"
+	depends on DAP_BACKEND_USB
+	default 4
+	range 1 16
+	help
+	  Number of buffers queued on the bulk OUT endpoint. More buffers
+	  let the host stream request packets while earlier ones are still
+	  being executed, at the cost of RAM (512 bytes each).
+
 module = DAP
 module-str = dap
 source "subsys/logging/Kconfig.template.log_config"
