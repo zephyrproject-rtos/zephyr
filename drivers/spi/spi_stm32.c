@@ -343,6 +343,22 @@ static uint8_t bits2bytes(spi_operation_t operation)
  */
 static __aligned(32) uint32_t dummy_rx_tx_buffer __nocache;
 
+static void spi_stm32_dma_set_size(struct spi_stm32_data *data, uint8_t dfs)
+{
+	struct dma_config *rx_cfg = &data->dma_rx.dma_cfg, *tx_cfg = &data->dma_tx.dma_cfg;
+
+	if (rx_cfg->source_data_size != dfs) {
+		/* Data size change => force DMA reconfiguration */
+		data->dma_tx.dma_blk_cfg.dest_address = 0;
+		data->dma_rx.dma_blk_cfg.source_address = 0;
+	}
+
+	rx_cfg->source_data_size = rx_cfg->source_burst_length = dfs;
+	rx_cfg->dest_data_size   = rx_cfg->dest_burst_length   = dfs;
+	tx_cfg->source_data_size = tx_cfg->source_burst_length = dfs;
+	tx_cfg->dest_data_size   = tx_cfg->dest_burst_length   = dfs;
+}
+
 static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t len)
 {
 	const struct spi_stm32_config *cfg = dev->config;
@@ -354,6 +370,31 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf, s
 	struct stream *stream = &data->dma_tx;
 
 	blk_cfg = &stream->dma_blk_cfg;
+
+	/* Check if we can call dma_reload instead of dma_config */
+	if (blk_cfg->dest_address == ll_dma_get_reg_addr(cfg->spi, SPI_STM32_DMA_TX)) {
+		uint32_t expected_src_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+		if (!(buf == NULL || len == 0)) {
+			if (data->dma_tx.src_addr_increment) {
+				expected_src_adj = DMA_ADDR_ADJ_INCREMENT;
+			}
+		}
+		if (expected_src_adj == blk_cfg->source_addr_adj) {
+			if (buf == NULL || len == 0) {
+				dummy_rx_tx_buffer = 0;
+#if SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED
+				sys_cache_data_flush_range((void *)&dummy_rx_tx_buffer,
+							   sizeof(uint32_t));
+#endif /* SPI_STM32_MANUAL_CACHE_COHERENCY_REQUIRED */
+				blk_cfg->source_address = (uint32_t)&dummy_rx_tx_buffer;
+			} else {
+				blk_cfg->source_address = (uint32_t)buf;
+			}
+			return dma_reload(data->dma_tx.dma_dev, data->dma_tx.channel,
+					  blk_cfg->source_address, blk_cfg->dest_address, len);
+		}
+	}
 
 	/* prepare the block for this TX DMA channel */
 	memset(blk_cfg, 0, sizeof(struct dma_block_config));
@@ -419,6 +460,26 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf, size_t 
 	struct stream *stream = &data->dma_rx;
 
 	blk_cfg = &stream->dma_blk_cfg;
+
+	/* Check if we can call dma_reload instead of dma_config */
+	if (blk_cfg->source_address == ll_dma_get_reg_addr(cfg->spi, SPI_STM32_DMA_RX)) {
+		uint32_t expected_dest_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+		if (!(buf == NULL || len == 0)) {
+			if (data->dma_rx.dst_addr_increment) {
+				expected_dest_adj = DMA_ADDR_ADJ_INCREMENT;
+			}
+		}
+		if (expected_dest_adj == blk_cfg->dest_addr_adj) {
+			if (buf == NULL || len == 0) {
+				blk_cfg->dest_address = (uint32_t)&dummy_rx_tx_buffer;
+			} else {
+				blk_cfg->dest_address = (uint32_t)buf;
+			}
+			return dma_reload(data->dma_rx.dma_dev, data->dma_rx.channel,
+					  blk_cfg->source_address, blk_cfg->dest_address, len);
+		}
+	}
 
 	/* prepare the block for this RX DMA channel */
 	memset(blk_cfg, 0, sizeof(struct dma_block_config));
@@ -1072,13 +1133,7 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 		size_t dma_len;
 		int ret = 0;
 
-		struct dma_config *rx_cfg = &data->dma_rx.dma_cfg;
-		struct dma_config *tx_cfg = &data->dma_tx.dma_cfg;
-
-		rx_cfg->source_data_size = rx_cfg->source_burst_length = dfs;
-		rx_cfg->dest_data_size   = rx_cfg->dest_burst_length   = dfs;
-		tx_cfg->source_data_size = tx_cfg->source_burst_length = dfs;
-		tx_cfg->dest_data_size   = tx_cfg->dest_burst_length   = dfs;
+		spi_stm32_dma_set_size(data, dfs);
 
 		spi_dma_enable_requests(spi);
 		LL_SPI_Enable(spi);
@@ -2202,7 +2257,6 @@ static int transceive_dma(const struct device *dev,
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
 	SPI_TypeDef *spi = cfg->spi;
-	struct dma_config *rx_cfg = &data->dma_rx.dma_cfg, *tx_cfg = &data->dma_tx.dma_cfg;
 	uint32_t transfer_dir = ll_get_transfer_direction(spi);
 	int ret;
 	int err;
@@ -2210,10 +2264,7 @@ static int transceive_dma(const struct device *dev,
 
 	k_sem_reset(&data->status_sem);
 
-	rx_cfg->source_data_size = rx_cfg->source_burst_length = dfs;
-	rx_cfg->dest_data_size = rx_cfg->dest_burst_length = dfs;
-	tx_cfg->source_data_size = tx_cfg->source_burst_length = dfs;
-	tx_cfg->dest_data_size = tx_cfg->dest_burst_length = dfs;
+	spi_stm32_dma_set_size(data, dfs);
 
 #ifdef CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND
 	/*
