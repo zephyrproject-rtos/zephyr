@@ -35,6 +35,41 @@
 		};
 	};
 
+	/* ENET (ETH1, 1G) RGMII data pins, J71. */
+	pinmux_enet: pinmux_enet {
+		tx {
+			pinmux = <&main__iomuxc_pio4_0_comm_enet_tx_clk_io>,
+				 <&main__iomuxc_pio4_1_comm_enet_txd0>,
+				 <&main__iomuxc_pio4_2_comm_enet_txd1>,
+				 <&main__iomuxc_pio4_8_comm_enet_txd2>,
+				 <&main__iomuxc_pio4_9_comm_enet_txd3>,
+				 <&main__iomuxc_pio4_3_comm_enet_tx_en>;
+			slew-rate = "high";
+		};
+
+		rx {
+			pinmux = <&main__iomuxc_pio4_4_comm_enet_rxd0>,
+				 <&main__iomuxc_pio4_5_comm_enet_rxd1>,
+				 <&main__iomuxc_pio4_11_comm_enet_rxd2>,
+				 <&main__iomuxc_pio4_12_comm_enet_rxd3>,
+				 <&main__iomuxc_pio4_10_comm_enet_rx_clk>,
+				 <&main__iomuxc_pio4_13_comm_enet_rx_en>;
+			input-enable;
+		};
+	};
+
+	pinmux_enet_mdio: pinmux_enet_mdio {
+		mdio {
+			pinmux = <&main__iomuxc_pio4_6_comm_enet_mdio>;
+			bias-pull-up;
+			input-enable;
+		};
+
+		mdc {
+			pinmux = <&main__iomuxc_pio4_7_comm_enet_mdc>;
+		};
+	};
+
 	/*
 	 * LPI2C1 on PIO2_24 (SDA) / PIO2_25 (SCL) -- the bus the on-board
 	 * P3T1755DP sensor (U28) sits on, which is why this instance rather than
