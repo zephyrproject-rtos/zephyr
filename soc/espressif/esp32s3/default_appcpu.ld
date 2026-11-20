@@ -14,6 +14,10 @@
 
 #include "memory.h"
 
+#if defined(CONFIG_CODE_DATA_RELOCATION)
+#error "Code relocation is not supported in this image"
+#endif
+
 /* User available SRAM memory segments */
 appcpu_iram_end = USER_IRAM_END;
 appcpu_dram_end = USER_DRAM_END;

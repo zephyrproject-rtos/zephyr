@@ -9,6 +9,10 @@
 
 #include "memory.h"
 
+#if defined(CONFIG_CODE_DATA_RELOCATION)
+#error "Code relocation is not supported in this image"
+#endif
+
 #define ALIGN_DOWN(SIZE, AL)   (SIZE & ~(AL - 1))
 /* Ensure the end where the shared memory starts is aligned to 8 bytes
    if updating this also update the same in ulp_lp_core_memory_shared.c
