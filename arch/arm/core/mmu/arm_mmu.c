@@ -209,6 +209,10 @@ static struct arm_mmu_l2_page_table *arm_mmu_assign_l2_table(uint32_t va)
 static void arm_mmu_release_l2_table(struct arm_mmu_l2_page_table *l2_page_table)
 {
 	uint32_t l2_page_table_index = ARM_MMU_L2_PT_INDEX(l2_page_table);
+	uint32_t l1_index = l2_page_tables_status[l2_page_table_index].l1_index;
+
+	/* Remove the L1 reference before releasing the table for reuse. */
+	l1_page_table.entries[l1_index].word = 0;
 
 	l2_page_tables_status[l2_page_table_index].l1_index = 0;
 	if (arm_mmu_l2_tables_free == 0) {
@@ -598,7 +602,7 @@ static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 
 	if (l1_page_table.entries[l1_index].undefined.id == ARM_MMU_PTE_ID_INVALID ||
 	    (l1_page_table.entries[l1_index].undefined.id & ARM_MMU_PTE_ID_SECTION) != 0) {
-		l2_page_table = arm_mmu_assign_l2_table(pa);
+		l2_page_table = arm_mmu_assign_l2_table(va);
 		if (l2_page_table == NULL) {
 			LOG_ERR("Cannot map virtual address 0x%08X: "
 				"no L2 page table available", va);
