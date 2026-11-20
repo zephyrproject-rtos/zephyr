@@ -31,6 +31,18 @@ Common
 Build System
 ************
 
+* The ``armfvp`` emulator no longer adds ``-a <application ELF>`` automatically. Boards must
+  provide all firmware-loading arguments in ``ARMFVP_FLAGS``. Out-of-tree boards that relied
+  on the default ELF loading must add the following to their ``board.cmake``:
+
+  .. code-block:: cmake
+
+     list(APPEND ARMFVP_FLAGS -a "${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}")
+
+  Add this only for configurations that load the application ELF directly. Configurations that
+  load a merged TF-M image, TF-A firmware, or other images must retain their corresponding
+  loading arguments instead.
+
 Kernel
 ******
 
