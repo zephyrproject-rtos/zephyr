@@ -11,7 +11,14 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
 #include <ironside/se/versions.h>
-#if defined(CONFIG_MRAM_LATENCY)
+
+#if defined(CONFIG_MRAM_LATENCY) && defined(CONFIG_SOC_SERIES_NRF54H)
+#define USE_MRAM_LATENCY_SERVICE 1
+#else
+#define USE_MRAM_LATENCY_SERVICE 0
+#endif
+
+#if USE_MRAM_LATENCY_SERVICE
 #include "../soc/nordic/common/mram_latency.h"
 #endif
 #if defined(CONFIG_HAS_IRONSIDE_SE)
@@ -177,7 +184,7 @@ static int nrf_mram_erase_and_verify_word(uint32_t addr, size_t len)
 	return -EIO;
 }
 
-#if defined(CONFIG_MRAM_LATENCY) && defined(CONFIG_SOC_SERIES_NRF54H)
+#if USE_MRAM_LATENCY_SERVICE
 static inline bool nrf_mram_ready(uint32_t addr, uint32_t ironside_se_ver)
 {
 	if (ironside_se_ver < IRONSIDE_SE_SUPPORT_READY_VER) {
@@ -259,7 +266,7 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 	k_mutex_lock(&nrf_mram_data->nrf_mram_mutex, K_FOREVER);
 
 	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
-#if defined(CONFIG_MRAM_LATENCY)
+#if USE_MRAM_LATENCY_SERVICE
 		int rc = mram_no_latency_sync_request();
 
 		if (rc) {
@@ -284,7 +291,7 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 
 latency_release:
 	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
-#if defined(CONFIG_MRAM_LATENCY)
+#if USE_MRAM_LATENCY_SERVICE
 		int rc = mram_no_latency_sync_release();
 
 		if (rc) {
@@ -293,7 +300,7 @@ latency_release:
 		}
 #endif
 	}
-#if defined(CONFIG_MRAM_LATENCY)
+#if USE_MRAM_LATENCY_SERVICE
 unlock:
 #endif
 	k_mutex_unlock(&nrf_mram_data->nrf_mram_mutex);
@@ -318,7 +325,7 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 
 	/* Ensure that the mramc banks are powered on */
 	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
-#if defined(CONFIG_MRAM_LATENCY)
+#if USE_MRAM_LATENCY_SERVICE
 		int rc = mram_no_latency_sync_request();
 
 		if (rc) {
@@ -341,7 +348,7 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 
 latency_release:
 	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
-#if defined(CONFIG_MRAM_LATENCY)
+#if USE_MRAM_LATENCY_SERVICE
 		int rc = mram_no_latency_sync_release();
 
 		if (rc) {
@@ -350,7 +357,7 @@ latency_release:
 		}
 #endif
 	}
-#if defined(CONFIG_MRAM_LATENCY)
+#if USE_MRAM_LATENCY_SERVICE
 unlock:
 #endif
 	k_mutex_unlock(&nrf_mram_data->nrf_mram_mutex);
