@@ -43,4 +43,24 @@
 #define NSI_NOASAN
 #endif
 
+/*
+ * Place a symbol in a named data or text section.
+ *
+ * On Mach-O the section name is the section part of a "__DATA,<sec>" or
+ * "__TEXT,<sec>" specifier, at most 16 characters, and the section is marked so
+ * the linker does not dead strip it. On ELF the name is used as is and keeping
+ * the symbol is up to the linker script, as before.
+ */
+#if defined(__APPLE__)
+#define NSI_SECTION_DATA(sec) \
+	__attribute__((__used__)) \
+	__attribute__((__section__("__DATA," sec ",regular,no_dead_strip")))
+#define NSI_SECTION_TEXT(sec) \
+	__attribute__((__used__)) \
+	__attribute__((__section__("__TEXT," sec ",regular,pure_instructions+no_dead_strip")))
+#else
+#define NSI_SECTION_DATA(sec) __attribute__((__section__(sec)))
+#define NSI_SECTION_TEXT(sec) __attribute__((__section__(sec)))
+#endif
+
 #endif /* NSI_COMMON_SRC_INCL_NSI_UTILS_H */
