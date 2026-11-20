@@ -52,6 +52,20 @@ struct sensor_chan_spec gbias_chan = { SENSOR_CHAN_GBIAS_XYZ, 0 };
 static K_THREAD_STACK_ARRAY_DEFINE(thread_stack, NUM_SENSORS, TASK_STACK_SIZE);
 static struct k_thread thread_id[NUM_SENSORS];
 
+#define MAX_THREE_AXIS_READINGS 8
+#define MAX_TEMP_READINGS       4
+#define MAX_ROT_VECT_READINGS   8
+
+#define THREE_AXIS_BUF_SIZE                                                                       \
+	(sizeof(struct sensor_three_axis_data) +                                                  \
+	 (MAX_THREE_AXIS_READINGS - 1) * sizeof(struct sensor_three_axis_sample_data))
+#define TEMP_BUF_SIZE                                                                             \
+	(sizeof(struct sensor_q31_data) +                                                         \
+	 (MAX_TEMP_READINGS - 1) * sizeof(struct sensor_q31_sample_data))
+#define ROT_VECT_BUF_SIZE                                                                         \
+	(sizeof(struct sensor_game_rotation_vector_data) +                                        \
+	 (MAX_ROT_VECT_READINGS - 1) * sizeof(struct sensor_game_rotation_vector_sample_data))
+
 static void print_stream(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = (const struct device *)p1;
@@ -62,12 +76,18 @@ static void print_stream(void *p1, void *p2, void *p3)
 	uint8_t *buf;
 	uint32_t buf_len;
 	rtio_sqe_handle_t handle;
-	uint8_t accel_buf[128] = { 0 };
-	uint8_t gyro_buf[128] = { 0 };
-	uint8_t temp_buf[64] = { 0 };
-	uint8_t rot_vect_buf[128] = { 0 };
-	uint8_t gravity_buf[128] = { 0 };
-	uint8_t gbias_buf[128] = { 0 };
+	uint8_t accel_buf[THREE_AXIS_BUF_SIZE]
+		__aligned(__alignof__(struct sensor_three_axis_data)) = { 0 };
+	uint8_t gyro_buf[THREE_AXIS_BUF_SIZE]
+		__aligned(__alignof__(struct sensor_three_axis_data)) = { 0 };
+	uint8_t temp_buf[TEMP_BUF_SIZE]
+		__aligned(__alignof__(struct sensor_q31_data)) = { 0 };
+	uint8_t rot_vect_buf[ROT_VECT_BUF_SIZE]
+		__aligned(__alignof__(struct sensor_game_rotation_vector_data)) = { 0 };
+	uint8_t gravity_buf[THREE_AXIS_BUF_SIZE]
+		__aligned(__alignof__(struct sensor_three_axis_data)) = { 0 };
+	uint8_t gbias_buf[THREE_AXIS_BUF_SIZE]
+		__aligned(__alignof__(struct sensor_three_axis_data)) = { 0 };
 	struct sensor_three_axis_data *accel_data = (struct sensor_three_axis_data *)accel_buf;
 	struct sensor_three_axis_data *gyro_data = (struct sensor_three_axis_data *)gyro_buf;
 	struct sensor_q31_data *temp_data = (struct sensor_q31_data *)temp_buf;
@@ -141,66 +161,90 @@ static void print_stream(void *p1, void *p2, void *p3)
 		int i = 0;
 
 		while (i < frame_count) {
-			int8_t c = 0;
+			int c = 0;
+			int decoded = 0;
 
 			/* decode and print Accelerometer FIFO frames */
-			c = decoder->decode(buf, accel_chan, &accel_fit, 8, accel_data);
+			c = decoder->decode(buf, accel_chan, &accel_fit,
+					    MAX_THREE_AXIS_READINGS, accel_data);
 
 			for (int k = 0; k < c; k++) {
 				printk("XL data for %s %lluns (%" PRIq(6) ", %" PRIq(6)
 				       ", %" PRIq(6) ")\n", dev->name,
 				       PRIsensor_three_axis_data_arg(*accel_data, k));
 			}
-			i += c;
+			if (c > 0) {
+				decoded += c;
+			}
 
 			/* decode and print Gyroscope FIFO frames */
-			c = decoder->decode(buf, gyro_chan, &gyro_fit, 8, gyro_data);
+			c = decoder->decode(buf, gyro_chan, &gyro_fit,
+					    MAX_THREE_AXIS_READINGS, gyro_data);
 
 			for (int k = 0; k < c; k++) {
 				printk("GY data for %s %lluns (%" PRIq(6) ", %" PRIq(6)
 				       ", %" PRIq(6) ")\n", dev->name,
 				       PRIsensor_three_axis_data_arg(*gyro_data, k));
 			}
-			i += c;
+			if (c > 0) {
+				decoded += c;
+			}
 
 			/* decode and print Temperature FIFO frames */
-			c = decoder->decode(buf, temp_chan, &temp_fit, 4, temp_data);
+			c = decoder->decode(buf, temp_chan, &temp_fit,
+					    MAX_TEMP_READINGS, temp_data);
 
 			for (int k = 0; k < c; k++) {
 				printk("TP data for %s %lluns %s%d.%d °C\n", dev->name,
 				       PRIsensor_q31_data_arg(*temp_data, k));
 			}
-			i += c;
+			if (c > 0) {
+				decoded += c;
+			}
 
 			/* decode and print Game Rotation Vector FIFO frames */
-			c = decoder->decode(buf, rot_vector_chan, &rot_vect_fit, 8, rot_vect_data);
+			c = decoder->decode(buf, rot_vector_chan, &rot_vect_fit,
+					    MAX_ROT_VECT_READINGS, rot_vect_data);
 
 			for (int k = 0; k < c; k++) {
 				printk("ROT data for %s %lluns (%" PRIq(6) ", %" PRIq(6)
 				       ", %" PRIq(6) ", %" PRIq(6) ")\n", dev->name,
 				       PRIsensor_game_rotation_vector_data_arg(*rot_vect_data, k));
 			}
-			i += c;
+			if (c > 0) {
+				decoded += c;
+			}
 
 			/* decode and print Gravity Vector FIFO frames */
-			c = decoder->decode(buf, gravity_chan, &gravity_fit, 8, gravity_data);
+			c = decoder->decode(buf, gravity_chan, &gravity_fit,
+					    MAX_THREE_AXIS_READINGS, gravity_data);
 
 			for (int k = 0; k < c; k++) {
 				printk("GV data for %s %lluns (%" PRIq(6) ", %" PRIq(6)
 				       ", %" PRIq(6) ")\n", dev->name,
 				       PRIsensor_three_axis_data_arg(*gravity_data, k));
 			}
-			i += c;
+			if (c > 0) {
+				decoded += c;
+			}
 
 			/* decode and print Gyroscope GBIAS FIFO frames */
-			c = decoder->decode(buf, gbias_chan, &gbias_fit, 8, gbias_data);
+			c = decoder->decode(buf, gbias_chan, &gbias_fit,
+					    MAX_THREE_AXIS_READINGS, gbias_data);
 
 			for (int k = 0; k < c; k++) {
 				printk("GY GBIAS data for %s %lluns (%" PRIq(6) ", %" PRIq(6)
 				       ", %" PRIq(6) ")\n", dev->name,
 				       PRIsensor_three_axis_data_arg(*gbias_data, k));
 			}
-			i += c;
+			if (c > 0) {
+				decoded += c;
+			}
+
+			if (decoded == 0) {
+				break;
+			}
+			i += decoded;
 		}
 
 		rtio_release_buffer(&stream_ctx, buf, buf_len);
