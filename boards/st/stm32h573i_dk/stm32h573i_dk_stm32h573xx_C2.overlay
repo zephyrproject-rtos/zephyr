@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* SAI2_A MCLK output (PI4): PLL3.P = 25MHz / 2 * 28 / 31 = 11.290323 MHz */
+	cs42l51_mclk: sai2a-mclk {
+		compatible = "fixed-clock";
+		clock-frequency = <11290323>;
+		#clock-cells = <0>;
+	};
+};
+
+&i2c4 {
+	audio_codec: cs42l51@4a {
+		compatible = "cirrus,cs42l51";
+		reg = <0x4a>;
+		clocks = <&cs42l51_mclk>;
+		clock-names = "mclk";
+
+		reset-gpios = <&gpioi 11 GPIO_ACTIVE_LOW>;
+		input-channel = <3>;
+		status = "okay";
+	};
+};

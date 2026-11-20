@@ -1,0 +1,47 @@
+# Copyright (c) 2026 ZAL Zentrum für Angewandte Luftfahrtforschung GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cirrus CS42L51 Audio Codec
+
+include: [i2c-device.yaml]
+
+compatible: "cirrus,cs42l51"
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    type: phandle-array
+    required: true
+    description: |
+      Phandle to the clock supplying the codec's MCLK pin. If the clock
+      is not backed by a real clock controller, a "fixed-clock" node can
+      be used to describe its frequency.
+
+  clock-names:
+    type: string-array
+    required: true
+    enum:
+      - mclk
+    description: Must contain "mclk" matching the MCLK input
+
+  reset-gpios:
+    required: true
+    type: phandle-array
+    description: |
+      RESET pin
+
+  input-channel:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 3
+    description: |
+      Analog input pair that feeds the ADC, applied to both the A and B
+      channels:
+        1 = AIN1
+        2 = AIN2
+        3 = the MICIN1/MICIN2 pins, wired directly to the ADC without
+            the mic preamp

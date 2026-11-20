@@ -110,6 +110,16 @@
 				reg = <0xa>;
 				status = "okay";
 			};
+
+			test_i2c_cs42l51: cs42l51@b {
+				compatible = "cirrus,cs42l51";
+				reg = <0xb>;
+				clocks = <&test_mclk>;
+				clock-names = "mclk";
+				reset-gpios = <&test_gpio 0 0>;
+				input-channel = <1>;
+				status = "okay";
+			};
 		};
 
 		test_gpio: gpio@deadbeef {
