@@ -22,6 +22,7 @@
 		led2 = &blue_led;
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &blue_pwm_led;
+		rtc = &rtc;
 		sw0 = &user_button;
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat;
@@ -207,6 +208,12 @@
 		data-cmd-gpios = <&gpiog 6 0>;
 		reset-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
 	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
 };
 
 /* User LEDs PWM */
