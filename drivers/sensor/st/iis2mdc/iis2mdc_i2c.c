@@ -19,17 +19,17 @@
 
 LOG_MODULE_DECLARE(IIS2MDC, CONFIG_SENSOR_LOG_LEVEL);
 
-static int iis2mdc_i2c_read(const struct device *dev, uint8_t reg_addr,
-				 uint8_t *value, uint16_t len)
+static int32_t iis2mdc_i2c_read(void *ctx, uint8_t reg_addr, uint8_t *value, uint16_t len)
 {
+	const struct device *dev = ctx;
 	const struct iis2mdc_dev_config *cfg = dev->config;
 
 	return i2c_burst_read_dt(&cfg->i2c, reg_addr, value, len);
 }
 
-static int iis2mdc_i2c_write(const struct device *dev, uint8_t reg_addr,
-				  uint8_t *value, uint16_t len)
+static int32_t iis2mdc_i2c_write(void *ctx, uint8_t reg_addr, const uint8_t *value, uint16_t len)
 {
+	const struct device *dev = ctx;
 	const struct iis2mdc_dev_config *cfg = dev->config;
 
 	return i2c_burst_write_dt(&cfg->i2c, reg_addr, value, len);
@@ -45,9 +45,9 @@ int iis2mdc_i2c_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	data->ctx_i2c.read_reg = (stmdev_read_ptr) iis2mdc_i2c_read;
-	data->ctx_i2c.write_reg = (stmdev_write_ptr) iis2mdc_i2c_write;
-	data->ctx_i2c.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay;
+	data->ctx_i2c.read_reg = iis2mdc_i2c_read;
+	data->ctx_i2c.write_reg = iis2mdc_i2c_write;
+	data->ctx_i2c.mdelay = stmemsc_mdelay;
 
 	data->ctx = &data->ctx_i2c;
 	data->ctx->handle = (void *)dev;
