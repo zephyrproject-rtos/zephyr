@@ -11,7 +11,7 @@ follows a suitable approach.
    :maxdepth: 1
    :glob:
 
-   safety_requirements.rst
-   safety_requirements_checklist.rst
+   requirements.rst
+   requirements_checklist.rst
    getting_started/index
    requirements_catalog.rst
