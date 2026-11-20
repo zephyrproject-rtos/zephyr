@@ -121,12 +121,20 @@ static void tcp_cb(struct tcp *conn, void *user_data)
 	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	uint16_t recv_mss = net_tcp_get_supported_mss(conn);
+	char srtt[11] = "-";
+	char rttvar[11] = "-";
 
-	PR("%p %p   %5u    %5u %10u %10u %5u   %s\n",
+	/* SRTT is kept scaled by 8 and RTTVAR by 4 */
+	if (conn->rtt_sampled) {
+		snprintk(srtt, sizeof(srtt), "%u", conn->srtt >> 3);
+		snprintk(rttvar, sizeof(rttvar), "%u", conn->rttvar >> 2);
+	}
+
+	PR("%p %p   %5u    %5u %10u %10u %5u %6s %6s %6u   %s\n",
 	   conn, conn->context,
 	   net_ntohs(net_sin6(&conn->context->local)->sin6_port),
 	   net_ntohs(net_sin6(&conn->context->remote)->sin6_port),
-	   conn->seq, conn->ack, recv_mss,
+	   conn->seq, conn->ack, recv_mss, srtt, rttvar, net_tcp_get_rto(conn),
 	   net_tcp_state_str(net_tcp_get_state(conn)));
 
 	(*count)++;
@@ -249,7 +257,7 @@ static int cmd_net_conn(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_NET_TCP)
 	PR("\nTCP        Context   Src port Dst port   "
-	   "Send-Seq   Send-Ack  MSS    State\n");
+	   "Send-Seq   Send-Ack  MSS   SRTT RTTVAR    RTO   State\n");
 
 	count = 0;
 
