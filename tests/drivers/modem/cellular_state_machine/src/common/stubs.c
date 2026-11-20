@@ -94,7 +94,7 @@ K_MSGQ_DEFINE(line_msgq, sizeof(struct test_backend_line), 16, 4);
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {0}),                \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {0}),                \
-		.set_baudrate_script = !DT_INST_PROP(inst, no_set_baudrate_script),                \
+		.set_baudrate_script = DT_INST_NODE_HAS_PROP(inst, target_baudrate),               \
 		.network_script = !DT_INST_PROP(inst, no_network_script),                          \
 		.dlci_setup_script = !DT_INST_PROP(inst, no_dlci_setup_script),                    \
 		.periodic_script = !DT_INST_PROP(inst, no_periodic_script),                        \

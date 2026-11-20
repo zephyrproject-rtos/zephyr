@@ -8,9 +8,11 @@ compatible: "zephyr,modem-cellular-test"
 include: zephyr,cellular-modem-device.yaml
 
 properties:
-  no-set-baudrate-script:
+  common-baudrate-script:
     type: boolean
-    description: Omit the optional UART baud-rate configuration script
+    description: |
+      Configure the target-baudrate with the common baudrate script instead of
+      the test command
 
   no-network-script:
     type: boolean
@@ -46,6 +48,16 @@ properties:
     type: int
     default: 1
     description: Duration of the reset pulse
+
+  reset-power-on-delay-ms:
+    type: int
+    default: 100
+    description: Delay between releasing the reset line and pressing the power key
+
+  baudrate-update-delay-ms:
+    type: int
+    default: 1
+    description: Time the modem takes to switch to the new baudrate
 
   cmux-disconnect-timeout-ms:
     type: int

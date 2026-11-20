@@ -54,7 +54,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(shutdown_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(shutdown_chat_script, shutdown_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 10);
 
-static const struct modem_cellular_vendor_config nrf91_sm_vendor = {
+static const struct modem_cellular_vendor_config_common nrf91_sm_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &init_chat_script,
@@ -68,6 +68,8 @@ static const struct modem_cellular_vendor_config nrf91_sm_vendor = {
 	},
 	/* clang-format on */
 	.chat_delimiter = "\r\n",
+	.baudrate_update_delay_ms = 300,
+	.reset_power_on_delay_ms = 500,
 	.power_pulse_duration_ms = 0,
 	.reset_pulse_duration_ms = 500,
 	.startup_time_ms = 2000,
@@ -79,10 +81,15 @@ static const struct modem_cellular_vendor_config nrf91_sm_vendor = {
 #define MODEM_CELLULAR_DEVICE_NORDIC_NRF91_SM_V2(inst)                                             \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 1500);     \
                                                                                                    \
+	static const struct modem_cellular_vendor_config MODEM_CELLULAR_INST_NAME(vendor_config,   \
+										  inst) = {        \
+		.common = &nrf91_sm_vendor,                                                        \
+	};                                                                                         \
+                                                                                                   \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &nrf91_sm_vendor, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &MODEM_CELLULAR_INST_NAME(vendor_config, inst))
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_NORDIC_NRF91_SM_V2)

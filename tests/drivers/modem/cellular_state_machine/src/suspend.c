@@ -116,7 +116,8 @@ ZTEST(modem_cellular_suspend, test_resume_from_init_keeps_baudrate_no_gpios)
 		   "resume failed");
 
 	expect_line(TEST_BACKEND_PIPE_UART, MODEM_CELLULAR_TEST_SET_BAUDRATE_CMD);
-	zassert_equal(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE, uart_baudrate(modem_no_power),
+	zassert_equal(DT_PROP(DT_NODELABEL(modem_no_power), target_baudrate),
+		      uart_baudrate(modem_no_power),
 		      "baudrate script sent at the original baudrate");
 }
 

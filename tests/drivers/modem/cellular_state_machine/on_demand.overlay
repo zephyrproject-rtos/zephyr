@@ -29,6 +29,7 @@
 			mdm-reset-gpios = <&test_gpio 1 0>;
 			mdm-ring-gpios = <&test_gpio 2 0>;
 			no-network-script;
+			target-baudrate = <921600>;
 			status = "okay";
 		};
 	};
