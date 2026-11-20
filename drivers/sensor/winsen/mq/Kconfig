@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config MQ
+	bool "Winsen MQ series gas sensors"
+	default y
+	depends on DT_HAS_WINSEN_MQ_ENABLED
+	select ADC
+	select REQUIRES_FULL_LIBC
+	help
+	  Enable the driver for the Winsen MQ series of heated resistive gas
+	  sensors read through an ADC, such as the MQ-2 and the MQ-3B.

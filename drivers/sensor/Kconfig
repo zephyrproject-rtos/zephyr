@@ -129,6 +129,7 @@ source "drivers/sensor/st/Kconfig"
 source "drivers/sensor/tdk/Kconfig"
 source "drivers/sensor/ti/Kconfig"
 source "drivers/sensor/vishay/Kconfig"
+source "drivers/sensor/winsen/Kconfig"
 source "drivers/sensor/wsen/Kconfig"
 # zephyr-keep-sorted-stop
 

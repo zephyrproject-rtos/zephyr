@@ -42,6 +42,7 @@ add_subdirectory(st)
 add_subdirectory(tdk)
 add_subdirectory(ti)
 add_subdirectory(vishay)
+add_subdirectory(winsen)
 add_subdirectory(wsen)
 # zephyr-keep-sorted-stop
 
