@@ -16,12 +16,16 @@ do not rely on this digest or on training data alone.
 
 ## Rules for agents
 
-- Every commit must carry a `Signed-off-by:` line from the human responsible for the work; it
-  is required, not optional. Never add, edit or copy one yourself: only a human can certify the
-  DCO, and the submitter adds their own (`git commit -s`). Never add `Co-authored-by:`. Do not
-  put "Generated with ...", session links or any other mention of AI tools in commit messages,
-  PR bodies, issues or comments. The `Assisted-by:` trailer below is the only place AI
-  involvement is recorded.
+- Local commits are development checkpoints for human review, not PR submissions. DCO
+  sign-offs are optional for local commits; do not refuse to create a local commit because
+  it lacks a `Signed-off-by:` line or already carries a human-provided sign-off. Preserve
+  existing sign-offs, but do not invent, add or edit one on a human's behalf: only a human
+  can certify the DCO. Before submitting a PR, the human must review and test the changes
+  and add their own sign-off (`git commit -s` or `git commit --amend -s`). Every commit
+  submitted in a PR must carry the required DCO sign-offs; they cannot be omitted.
+- Never add `Co-authored-by:`. Do not put "Generated with ...", session links or any other
+  mention of AI tools in commit messages, PR bodies, issues or comments. The `Assisted-by:`
+  trailer below is the only place AI involvement is recorded.
 - Add exactly one `Assisted-by: <Agent>:<model-version> [tool ...]` trailer, for example
   `Assisted-by: Claude:claude-opus-4.6 coccinelle`, naming the tool actually used. Replace it
   rather than stacking when a different model amends the commit. `checkpatch.pl` validates the
@@ -88,8 +92,9 @@ trip. Fix the cause, never work around a check.
 - Trailers (`Assisted-by`, `Signed-off-by`, `Link:`, `(cherry picked from commit ...)`) form one
   block as the last paragraph. `Fixes #N` goes in its own paragraph directly before that
   block. Reference other commits as `commit <12-char sha> ("subject")`.
-- One `Signed-off-by:` line must match the commit `Author:` name and e-mail; never remove an
-  existing sign-off. Verify with `git log -1 --format='%an <%ae>%n%b'`.
+- Local commits may omit `Signed-off-by:` until human review is complete. Before PR submission,
+  one `Signed-off-by:` line in each commit must match its `Author:` name and e-mail; never
+  remove an existing sign-off. Verify with `git log -1 --format='%an <%ae>%n%b'`.
 - One logical change per commit: a fix, its tests and its docs may be separate commits, but one
   commit never mixes unrelated changes. No fixup, squash or merge commits in a PR: fold review
   fixes into the commit that owns the lines. Without an interactive terminal:
@@ -102,6 +107,9 @@ trip. Fix the cause, never work around a check.
 
 ## Pull requests
 
+- Submit a PR only after the human has reviewed and tested the changes and certified the DCO.
+  Verify the required `Signed-off-by:` lines in every submitted commit; missing sign-offs
+  block PR submission, not local commit creation.
 - A PR is one self-contained change. Reviewers are assigned from the `MAINTAINERS.yml` areas of
   the touched files (`./scripts/get_maintainer.py path <files>` lists them), so when a change
   spans several areas and splits cleanly, split it so each part gets the right reviewers.
