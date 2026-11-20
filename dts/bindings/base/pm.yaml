@@ -26,3 +26,19 @@ properties:
     type: phandles
     description: |
       List of power states that will disable this device power.
+
+  zephyr,wakeup-disabling-power-states:
+    type: phandles
+    description: |
+      List of power states this device cannot wake the system from, even when
+      it is enabled as a wake up source. If this property is not present, the
+      device is assumed to be capable of waking the system from any power state.
+
+      Note: power states in the zephyr,disabling-power-states property are
+      implicitly considered as part of this property too because unpowered
+      devices cannot take any action, and are thus unable to wake the
+      system. This makes it redundant to add power states present in the
+      zephyr,disabling-power-states property to this one as well; only
+      power states in which the device remains powered but is unable
+      to wake the system (e.g., because a clock is disabled) should
+      be listed in this property.
