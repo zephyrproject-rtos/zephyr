@@ -22,5 +22,6 @@ properties:
     type: int
     default: 64
     description: |
-      To determine the maximum number of rx filters in the Acceptance Filter List can be added on this CAN device.
-      The total number of filters must be less than or equal to 64 per channel.
+      Maximum number of RX filters that can be added to the Acceptance Filter List
+      for this CAN device. The total number of filters must be less than or equal
+      to 64 per channel.

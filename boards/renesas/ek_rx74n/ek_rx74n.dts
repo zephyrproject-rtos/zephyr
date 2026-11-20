@@ -67,8 +67,8 @@
 };
 
 &pll {
-	status = "okay";
 	freq = <DT_FREQ_M(1200)>;
+	status = "okay";
 
 	pllp: pllp {
 		div = <2>;
