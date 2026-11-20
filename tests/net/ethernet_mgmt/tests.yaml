@@ -6,3 +6,16 @@ tests:
     tags:
       - net
       - ethernet_mgmt
+  net.ethernet_mgmt.qbu_shell:
+    min_ram: 32
+    tags:
+      - net
+      - ethernet_mgmt
+      - shell
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_NET_SHELL=y
+      - CONFIG_NET_QBU=y
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_SHELL_BACKEND_SERIAL=n
+      - CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE=1024

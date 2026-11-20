@@ -97,5 +97,6 @@ void events_enable(void);
 int get_iface_idx(const struct shell *sh, char *index_str);
 const char *iface2str(struct net_if *iface, const char **extra);
 void ipv6_frag_cb(struct net_ipv6_reassembly *reass, void *user_data);
+struct net_if *get_iface_from_shell(const struct shell *sh, size_t argc, char **argv);
 
 #endif /* ZEPHYR_SUBSYS_NET_LIB_SHELL_NET_SHELL_PRIVATE_H_ */

@@ -17,27 +17,6 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 
-#if defined(CONFIG_NET_QBV)
-static struct net_if *get_iface_from_shell(const struct shell *sh, size_t argc, char **argv)
-{
-	int idx;
-	struct net_if *iface;
-
-	idx = get_iface_idx(sh, argv[1]);
-	if (idx < 0) {
-		return NULL;
-	}
-
-	iface = net_if_get_by_index(idx);
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
-		PR_WARNING("No such interface in index %d\n", idx);
-		return NULL;
-	}
-
-	return iface;
-}
-#endif
-
 /* qbv enable <iface_index> <value(off, on)> */
 static int cmd_net_qbv(const struct shell *sh, size_t argc, char **argv)
 {
