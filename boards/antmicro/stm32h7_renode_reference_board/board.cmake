@@ -6,7 +6,11 @@ board_runner_args(openocd "--config=${BOARD_DIR}/support/stm32h7xx_over_ft4232h-
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
 
 set(SUPPORTED_EMU_PLATFORMS renode)
-set(RENODE_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/support/stm32h7_renode_reference_board.resc)
+if(CONFIG_ZTEST)
+  set_ifndef(RENODE_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/support/testing.resc)
+else()
+  set_ifndef(RENODE_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/support/stm32h7_renode_reference_board.resc)
+endif()
 set(RENODE_UART sysbus.usart2)
 
 set_ifndef(BOARD_SIM_RUNNER renode)

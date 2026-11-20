@@ -167,6 +167,15 @@ You can debug an application in the usual way. Here is an example for the
    :maybe-skip-config:
    :goals: debug
 
+Simulation
+==========
+
+Ztest applications use an STM32H753 model with on-chip peripherals, compatible with Renode 1.16.0.
+This model supports kernel and UART tests without loading external sensor models.
+Other applications use the full board model, validated with Renode 1.17.0.
+Tests that need external peripherals can select the full board script with
+``-DRENODE_SCRIPT=<board-directory>/support/stm32h7_renode_reference_board.resc``.
+
 References
 **********
 
