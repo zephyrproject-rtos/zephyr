@@ -8,6 +8,7 @@
 #include <zephyr/logging/log_backend.h>
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <zephyr/mgmt/ec_host_cmd/simulator.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/cbprintf.h>
 #include <zephyr/ztest.h>
 
@@ -16,6 +17,7 @@ static size_t first_hexdump_len;
 static size_t last_hexdump_len;
 static char last_log_str[128];
 static size_t last_log_str_pos;
+static uint8_t last_log_level;
 
 static int test_log_str_out(int c, void *ctx)
 {
@@ -44,8 +46,13 @@ static void test_log_backend_process(const struct log_backend *const backend,
 		last_hexdump_len = data_len;
 	}
 
+	if (log_msg_get_level(&msg->log) == LOG_LEVEL_INTERNAL_RAW_STRING) {
+		return;
+	}
+
 	pkg = log_msg_get_package(&msg->log, &pkg_len);
 	if (pkg != NULL && pkg_len > 0) {
+		last_log_level = log_msg_get_level(&msg->log);
 		last_log_str_pos = 0;
 		last_log_str[0] = '\0';
 		cbpprintf(test_log_str_out, NULL, pkg);
@@ -86,6 +93,10 @@ struct ec_params_unbounded {
 	uint32_t bytes_to_write;
 } __packed;
 
+struct ec_params_busy_wait {
+	uint32_t usec;
+} __packed;
+
 /**
  * struct ec_response_add - Response to the add command.
  * @out_data: Output will be in_data + 0x01020304.
@@ -105,6 +116,7 @@ struct rx_structure {
 	union {
 		struct ec_params_add add;
 		struct ec_params_unbounded unbounded;
+		struct ec_params_busy_wait busy_wait;
 		uint8_t raw[0];
 	};
 } __packed * const host_to_dut = (void *)&host_to_dut_buffer;
@@ -838,6 +850,290 @@ ZTEST(ec_host_cmd, test_log_on_request_max_version)
 		      "Unexpected request hexdump length");
 
 	verify_tx_error(EC_HOST_CMD_INVALID_VERSION);
+}
+
+#define EC_CMD_SUPPRESSED_ERR   0x0004
+#define EC_CMD_UNSUPPRESSED_ERR 0x0005
+
+static enum ec_host_cmd_status ec_host_cmd_return_err(struct ec_host_cmd_handler_args *args)
+{
+	if (args->version == 0) {
+		return EC_HOST_CMD_UNAVAILABLE;
+	}
+
+	return EC_HOST_CMD_OVERFLOW;
+}
+EC_HOST_CMD_HANDLER_UNBOUND(EC_CMD_SUPPRESSED_ERR, ec_host_cmd_return_err, BIT(0) | BIT(1));
+EC_HOST_CMD_HANDLER_UNBOUND(EC_CMD_UNSUPPRESSED_ERR, ec_host_cmd_return_err, BIT(0) | BIT(1));
+
+ZTEST(ec_host_cmd, test_suppressed_unavailable_log_level)
+{
+#ifdef CONFIG_EC_HOST_CMD_LOG_SUPPRESSED
+	static bool suppressed_registered;
+
+	if (!suppressed_registered) {
+		zassert_equal(ec_host_cmd_add_suppressed(EC_CMD_SUPPRESSED_ERR), 0,
+			      "Failed to register suppressed command");
+		suppressed_registered = true;
+	}
+#endif
+
+	/* Suppressed command returning UNAVAILABLE logs at DBG (INF if suppression disabled). */
+	last_log_str[0] = '\0';
+	last_log_level = LOG_LEVEL_NONE;
+	*host_to_dut = (struct rx_structure){
+		.header = {
+			.prtcl_ver = 3,
+			.cmd_id = EC_CMD_SUPPRESSED_ERR,
+			.cmd_ver = 0,
+			.data_len = 0,
+		},
+	};
+	simulate_rx_data();
+	verify_tx_error(EC_HOST_CMD_UNAVAILABLE);
+	zassert_not_null(strstr(last_log_str, "HC 0x0004 err 9"),
+			 "Unexpected log message '%s'", last_log_str);
+	zassert_equal(last_log_level,
+		      IS_ENABLED(CONFIG_EC_HOST_CMD_LOG_SUPPRESSED) ? LOG_LEVEL_DBG : LOG_LEVEL_INF,
+		      "Unexpected log level %u", last_log_level);
+
+	/* Suppressed command returning a different error still logs at INF. */
+	last_log_str[0] = '\0';
+	last_log_level = LOG_LEVEL_NONE;
+	*host_to_dut = (struct rx_structure){
+		.header = {
+			.prtcl_ver = 3,
+			.cmd_id = EC_CMD_SUPPRESSED_ERR,
+			.cmd_ver = 1,
+			.data_len = 0,
+		},
+	};
+	simulate_rx_data();
+	verify_tx_error(EC_HOST_CMD_OVERFLOW);
+	zassert_equal(strcmp(last_log_str, "HC 0x0004 err 11"), 0,
+		      "Unexpected log message '%s'", last_log_str);
+	zassert_equal(last_log_level, LOG_LEVEL_INF,
+		      "Expected LOG_LEVEL_INF for non-UNAVAILABLE error, got %u", last_log_level);
+
+	/* Unsuppressed command returning UNAVAILABLE still logs at INF. */
+	last_log_str[0] = '\0';
+	last_log_level = LOG_LEVEL_NONE;
+	*host_to_dut = (struct rx_structure){
+		.header = {
+			.prtcl_ver = 3,
+			.cmd_id = EC_CMD_UNSUPPRESSED_ERR,
+			.cmd_ver = 0,
+			.data_len = 0,
+		},
+	};
+	simulate_rx_data();
+	verify_tx_error(EC_HOST_CMD_UNAVAILABLE);
+	zassert_equal(strcmp(last_log_str, "HC 0x0005 err 9"), 0,
+		      "Unexpected log message '%s'", last_log_str);
+	zassert_equal(last_log_level, LOG_LEVEL_INF,
+		      "Expected LOG_LEVEL_INF for unsuppressed command, got %u", last_log_level);
+}
+
+#define EC_CMD_BUSY_WAIT 0x0006
+
+#ifdef CONFIG_EC_HOST_CMD_RATE_LIMITING
+#define RATE_LIMIT_PERIOD_MS   CONFIG_EC_HOST_CMD_RATE_LIMITING_PERIOD_MS
+#define RATE_LIMIT_MIN_REST_MS CONFIG_EC_HOST_CMD_RATE_LIMITING_MIN_REST_MS
+#define RATE_LIMIT_RECESS_MS   CONFIG_EC_HOST_CMD_RATE_LIMITING_RECESS_MS
+#else
+#define RATE_LIMIT_PERIOD_MS   50
+#define RATE_LIMIT_MIN_REST_MS 5
+#define RATE_LIMIT_RECESS_MS   20
+#endif
+
+static enum ec_host_cmd_status ec_host_cmd_busy_wait(struct ec_host_cmd_handler_args *args)
+{
+	const struct ec_params_busy_wait *p = args->input_buf;
+
+	k_busy_wait(p->usec);
+	return EC_HOST_CMD_SUCCESS;
+}
+EC_HOST_CMD_HANDLER_REQ_ONLY(EC_CMD_BUSY_WAIT, ec_host_cmd_busy_wait, BIT(0),
+			     struct ec_params_busy_wait);
+
+static K_THREAD_STACK_DEFINE(low_prio_stack, 1024);
+static struct k_thread low_prio_thread;
+static atomic_t low_prio_runs;
+
+static void low_prio_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	atomic_inc(&low_prio_runs);
+}
+
+static int32_t rate_limit_rest_ms(void)
+{
+	return (int32_t)k_ticks_to_ms_ceil32(k_ms_to_ticks_ceil64(RATE_LIMIT_MIN_REST_MS) + 2U);
+}
+
+static int64_t send_busy_wait_cmd(uint32_t usec)
+{
+	int64_t start_ms;
+	int64_t elapsed_ms;
+
+	*host_to_dut = (struct rx_structure){
+		.header = {
+			.prtcl_ver = 3,
+			.cmd_id = EC_CMD_BUSY_WAIT,
+			.cmd_ver = 0,
+			.data_len = sizeof(host_to_dut->busy_wait),
+		},
+		.busy_wait = {
+			.usec = usec,
+		},
+	};
+
+	start_ms = k_uptime_get();
+	simulate_rx_data();
+	elapsed_ms = k_uptime_get() - start_ms;
+	verify_tx_error(EC_HOST_CMD_SUCCESS);
+
+	return elapsed_ms;
+}
+
+ZTEST(ec_host_cmd, test_rate_limiting_burst_allows_low_prio_thread)
+{
+	const uint32_t step_ms = 2U;
+	const uint32_t count = (RATE_LIMIT_PERIOD_MS / step_ms) + 20U;
+	int64_t max_cmd_ms = 0;
+
+	/* Ensure a fresh rate-limiting burst window. */
+	k_msleep(rate_limit_rest_ms());
+
+	atomic_set(&low_prio_runs, 0);
+	k_thread_create(&low_prio_thread, low_prio_stack, K_THREAD_STACK_SIZEOF(low_prio_stack),
+			low_prio_entry, NULL, NULL, NULL, CONFIG_EC_HOST_CMD_HANDLER_PRIO + 1, 0,
+			K_NO_WAIT);
+
+	for (uint32_t i = 0; i < count; i++) {
+		int64_t elapsed_ms = send_busy_wait_cmd(step_ms * USEC_PER_MSEC);
+
+		if (elapsed_ms > max_cmd_ms) {
+			max_cmd_ms = elapsed_ms;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_EC_HOST_CMD_RATE_LIMITING)) {
+		zassert_true(max_cmd_ms >= RATE_LIMIT_RECESS_MS,
+			     "Expected recess >= %d ms during burst, max was %lld ms",
+			     RATE_LIMIT_RECESS_MS, max_cmd_ms);
+		zassert_equal(atomic_get(&low_prio_runs), 1,
+			      "Lower-priority thread did not run during recess");
+	} else {
+		zassert_true(max_cmd_ms < RATE_LIMIT_RECESS_MS,
+			     "Unexpected recess (%lld ms) with rate limiting disabled",
+			     max_cmd_ms);
+		zassert_equal(atomic_get(&low_prio_runs), 0,
+			      "Lower-priority thread unexpectedly ran during burst");
+	}
+
+	zassert_equal(k_thread_join(&low_prio_thread, K_SECONDS(1)), 0,
+		      "Failed to join lower-priority thread");
+}
+
+ZTEST(ec_host_cmd, test_rate_limiting_slow_handler_burst)
+{
+	const uint32_t slow_ms = (uint32_t)rate_limit_rest_ms() + 5U;
+	const uint32_t count = (RATE_LIMIT_PERIOD_MS / slow_ms) + 3U;
+	int64_t max_cmd_ms = 0;
+
+	k_msleep(rate_limit_rest_ms());
+
+	/*
+	 * Each handler runs longer than MIN_REST_MS while the host sends
+	 * commands back-to-back with no idle gap. Rate limiting must still
+	 * trigger because there is no idle rest between response and next RX.
+	 */
+	for (uint32_t i = 0; i < count; i++) {
+		int64_t elapsed_ms = send_busy_wait_cmd(slow_ms * USEC_PER_MSEC);
+
+		if (elapsed_ms > max_cmd_ms) {
+			max_cmd_ms = elapsed_ms;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_EC_HOST_CMD_RATE_LIMITING)) {
+		zassert_true(max_cmd_ms >= (int64_t)(slow_ms + RATE_LIMIT_RECESS_MS),
+			     "Expected recess >= %u ms during slow-handler burst, max was %lld ms",
+			     slow_ms + RATE_LIMIT_RECESS_MS, max_cmd_ms);
+	} else {
+		zassert_true(max_cmd_ms < (int64_t)(slow_ms + RATE_LIMIT_RECESS_MS),
+			     "Unexpected recess (%lld ms) with rate limiting disabled",
+			     max_cmd_ms);
+	}
+}
+
+ZTEST(ec_host_cmd, test_rate_limiting_malformed_rx_burst)
+{
+	const uint32_t step_ms = 2U;
+	const uint32_t count = (RATE_LIMIT_PERIOD_MS / step_ms) + 20U;
+	int64_t max_cmd_ms = 0;
+
+	k_msleep(rate_limit_rest_ms());
+
+	for (uint32_t i = 0; i < count; i++) {
+		int64_t start_ms = k_uptime_get();
+		int64_t elapsed_ms;
+		int rv;
+
+		rv = ec_host_cmd_backend_sim_data_received(host_to_dut_buffer, 2);
+		zassert_equal(rv, 0, "Could not send data %d", rv);
+		rv = k_sem_take(&send_called, K_SECONDS(1));
+		zassert_equal(rv, 0, "Send was not called");
+		elapsed_ms = k_uptime_get() - start_ms;
+		verify_tx_error(EC_HOST_CMD_REQUEST_TRUNCATED);
+
+		if (elapsed_ms > max_cmd_ms) {
+			max_cmd_ms = elapsed_ms;
+		}
+
+		k_busy_wait(step_ms * USEC_PER_MSEC);
+	}
+
+	if (IS_ENABLED(CONFIG_EC_HOST_CMD_RATE_LIMITING)) {
+		zassert_true(max_cmd_ms >= RATE_LIMIT_RECESS_MS,
+			     "Expected recess >= %d ms during malformed RX burst, max was %lld ms",
+			     RATE_LIMIT_RECESS_MS, max_cmd_ms);
+	} else {
+		zassert_true(max_cmd_ms < RATE_LIMIT_RECESS_MS,
+			     "Unexpected recess (%lld ms) with rate limiting disabled",
+			     max_cmd_ms);
+	}
+}
+
+ZTEST(ec_host_cmd, test_rate_limiting_idle_rest_resets_window)
+{
+	const uint32_t step_ms = RATE_LIMIT_PERIOD_MS / 4U;
+	const int32_t rest_ms = rate_limit_rest_ms();
+	int64_t max_cmd_ms = 0;
+
+	k_msleep(rest_ms);
+
+	/*
+	 * Cumulative active processing exceeds 2 * PERIOD_MS, but the host
+	 * pauses longer than MIN_REST_MS between commands, so no recess should
+	 * be inserted.
+	 */
+	for (uint32_t i = 0; i < 8U; i++) {
+		int64_t elapsed_ms = send_busy_wait_cmd(step_ms * USEC_PER_MSEC);
+
+		if (elapsed_ms > max_cmd_ms) {
+			max_cmd_ms = elapsed_ms;
+		}
+
+		k_msleep(rest_ms);
+	}
+
+	zassert_true(max_cmd_ms < (int64_t)(step_ms + RATE_LIMIT_RECESS_MS),
+		     "Unexpected recess (%lld ms) when host rested between commands", max_cmd_ms);
 }
 
 static void *ec_host_cmd_tests_setup(void)

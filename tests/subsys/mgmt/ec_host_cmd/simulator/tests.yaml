@@ -1,7 +1,22 @@
+common:
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags: ec_host_cmd
+
 tests:
-  mgmt.ec_host_cmd.simulator.core:
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
-    tags: ec_host_cmd
+  mgmt.ec_host_cmd.simulator.core: {}
+  mgmt.ec_host_cmd.simulator.no_suppressed:
+    extra_configs:
+      - CONFIG_EC_HOST_CMD_LOG_SUPPRESSED_NUMBER=0
+  mgmt.ec_host_cmd.simulator.no_rate_limiting:
+    extra_configs:
+      - CONFIG_EC_HOST_CMD_RATE_LIMITING=n
+  mgmt.ec_host_cmd.simulator.rate_limiting:
+    extra_configs:
+      - CONFIG_EC_HOST_CMD_RATE_LIMITING=y
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+      - CONFIG_EC_HOST_CMD_RATE_LIMITING_PERIOD_MS=50
+      - CONFIG_EC_HOST_CMD_RATE_LIMITING_MIN_REST_MS=5
+      - CONFIG_EC_HOST_CMD_RATE_LIMITING_RECESS_MS=20

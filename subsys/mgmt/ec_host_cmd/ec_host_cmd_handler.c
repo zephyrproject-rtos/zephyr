@@ -86,6 +86,13 @@ static int64_t suppressed_cmds_deadline = CONFIG_EC_HOST_CMD_LOG_SUPPRESSED_INTE
 static size_t suppressed_cmds_number;
 #endif /* CONFIG_EC_HOST_CMD_LOG_SUPPRESSED */
 
+#ifdef CONFIG_EC_HOST_CMD_RATE_LIMITING
+static struct k_spinlock rx_timestamp_lock;
+static int64_t rx_timestamp;
+static int64_t last_response_ticks;
+static bool has_prev_response;
+#endif /* CONFIG_EC_HOST_CMD_RATE_LIMITING */
+
 static uint8_t cal_checksum(const uint8_t *const buffer, const size_t size)
 {
 	uint8_t checksum = 0;
@@ -155,19 +162,24 @@ int ec_host_cmd_add_suppressed(uint16_t cmd_id)
 	return 0;
 }
 
-static bool ec_host_cmd_is_suppressed(uint16_t cmd_id)
+static bool ec_host_cmd_find_suppressed(uint16_t cmd_id, size_t *index)
 {
-	int i;
-
-	for (i = 0; i < suppressed_cmds_number; i++) {
+	for (size_t i = 0; i < suppressed_cmds_number; i++) {
 		if (suppressed_cmds[i] == cmd_id) {
-			suppressed_cmds_count[i]++;
+			if (index != NULL) {
+				*index = i;
+			}
 
 			return true;
 		}
 	}
 
 	return false;
+}
+
+static bool ec_host_cmd_is_suppressed(uint16_t cmd_id)
+{
+	return ec_host_cmd_find_suppressed(cmd_id, NULL);
 }
 
 void ec_host_cmd_dump_suppressed(void)
@@ -191,6 +203,13 @@ static void ec_host_cmd_check_suppressed(void)
 	if (k_uptime_get() >= suppressed_cmds_deadline) {
 		ec_host_cmd_dump_suppressed();
 	}
+}
+#else
+static bool ec_host_cmd_is_suppressed(uint16_t cmd_id)
+{
+	ARG_UNUSED(cmd_id);
+
+	return false;
 }
 #endif /* CONFIG_EC_HOST_CMD_LOG_SUPPRESSED */
 
@@ -313,7 +332,12 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 			const struct ec_host_cmd_request_header *const rx_header =
 				(const struct ec_host_cmd_request_header *const)hc->rx_ctx.buf;
 
-			LOG_INF("HC 0x%04x err %d", rx_header->cmd_id, status);
+			if ((status == EC_HOST_CMD_UNAVAILABLE) &&
+			    ec_host_cmd_is_suppressed(rx_header->cmd_id)) {
+				LOG_DBG("HC 0x%04x err %d", rx_header->cmd_id, status);
+			} else {
+				LOG_INF("HC 0x%04x err %d", rx_header->cmd_id, status);
+			}
 		} else {
 			LOG_INF("HC rx err %d", status);
 		}
@@ -336,11 +360,62 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 	return hc->backend->api->send(hc->backend);
 }
 
+#ifdef CONFIG_EC_HOST_CMD_RATE_LIMITING
+static void ec_host_cmd_record_rx_time(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&rx_timestamp_lock);
+
+	rx_timestamp = k_uptime_ticks();
+	k_spin_unlock(&rx_timestamp_lock, key);
+}
+
+static void ec_host_cmd_record_tx_time(void)
+{
+	last_response_ticks = k_uptime_ticks();
+	has_prev_response = true;
+}
+
+static void ec_host_cmd_rate_limit(void)
+{
+	const int64_t period_ticks =
+		(int64_t)k_ms_to_ticks_ceil64(CONFIG_EC_HOST_CMD_RATE_LIMITING_PERIOD_MS);
+	const int64_t min_rest_ticks =
+		(int64_t)k_ms_to_ticks_ceil64(CONFIG_EC_HOST_CMD_RATE_LIMITING_MIN_REST_MS);
+	static int64_t recess_start_ticks;
+	k_spinlock_key_t key;
+	int64_t cmd_start_ticks;
+	int64_t now_ticks;
+
+	key = k_spin_lock(&rx_timestamp_lock);
+	cmd_start_ticks = rx_timestamp;
+	k_spin_unlock(&rx_timestamp_lock, key);
+
+	/*
+	 * Reset the burst window only when the host actually paused between
+	 * the previous response and the arrival of this command.
+	 */
+	if (!has_prev_response || ((cmd_start_ticks - last_response_ticks) > min_rest_ticks)) {
+		recess_start_ticks = cmd_start_ticks;
+	}
+
+	now_ticks = k_uptime_ticks();
+	if ((now_ticks - recess_start_ticks) >= period_ticks) {
+		/*
+		 * Sleep before sending the response so the host is held off
+		 * during the recess and lower-priority threads can run.
+		 */
+		k_msleep(CONFIG_EC_HOST_CMD_RATE_LIMITING_RECESS_MS);
+		recess_start_ticks = k_uptime_ticks();
+	}
+}
+#endif /* CONFIG_EC_HOST_CMD_RATE_LIMITING */
+
 void ec_host_cmd_rx_notify(void)
 {
 	struct ec_host_cmd *hc = &ec_host_cmd;
 	struct ec_host_cmd_rx_ctx *rx = &hc->rx_ctx;
 
+	IF_ENABLED(CONFIG_EC_HOST_CMD_RATE_LIMITING, (ec_host_cmd_record_rx_time();))
 	hc->rx_status = verify_rx(rx);
 
 	if (!hc->rx_status && hc->user_cb) {
@@ -357,7 +432,10 @@ static void ec_host_cmd_log_request(const uint8_t *rx_buf)
 		(const struct ec_host_cmd_request_header *const)rx_buf;
 
 #ifdef CONFIG_EC_HOST_CMD_LOG_SUPPRESSED
-	if (ec_host_cmd_is_suppressed(rx_header->cmd_id)) {
+	size_t idx;
+
+	if (ec_host_cmd_find_suppressed(rx_header->cmd_id, &idx)) {
+		suppressed_cmds_count[idx]++;
 		ec_host_cmd_check_suppressed();
 
 		return;
@@ -392,6 +470,56 @@ static void ec_host_cmd_log_request(const uint8_t *rx_buf)
 	}
 }
 
+static enum ec_host_cmd_status ec_host_cmd_process(struct ec_host_cmd *hc,
+						   struct ec_host_cmd_handler_args *args)
+{
+	struct ec_host_cmd_rx_ctx *rx = &hc->rx_ctx;
+	struct ec_host_cmd_tx_buf *tx = &hc->tx;
+	const struct ec_host_cmd_request_header *const rx_header = (void *)rx->buf;
+	const struct ec_host_cmd_handler *found_handler = NULL;
+	enum ec_host_cmd_status status;
+
+	/* Check status of the rx data, that has been verified in
+	 * ec_host_cmd_rx_notify.
+	 */
+	if (hc->rx_status != EC_HOST_CMD_SUCCESS) {
+		return hc->rx_status;
+	}
+
+	ec_host_cmd_log_request(rx->buf);
+
+	STRUCT_SECTION_FOREACH(ec_host_cmd_handler, handler) {
+		if (handler->id == rx_header->cmd_id) {
+			found_handler = handler;
+			break;
+		}
+	}
+
+	/* No handler in this image for requested command */
+	if (found_handler == NULL) {
+		return EC_HOST_CMD_INVALID_COMMAND;
+	}
+
+	args->command = rx_header->cmd_id;
+	args->version = rx_header->cmd_ver;
+	args->input_buf_size = rx_header->data_len;
+	args->output_buf_max = tx->len_max - TX_HEADER_SIZE;
+	args->output_buf_size = 0;
+
+	status = validate_handler(found_handler, args);
+	if (status != EC_HOST_CMD_SUCCESS) {
+		return status;
+	}
+
+	/*
+	 * Preemptively clear the entire response buffer so we do not
+	 * have any left over contents from previous host commands.
+	 */
+	memset(args->output_buf, 0, args->output_buf_max);
+
+	return found_handler->handler(args);
+}
+
 FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg2);
@@ -400,8 +528,6 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 	struct ec_host_cmd *hc = (struct ec_host_cmd *)hc_handle;
 	struct ec_host_cmd_rx_ctx *rx = &hc->rx_ctx;
 	struct ec_host_cmd_tx_buf *tx = &hc->tx;
-	const struct ec_host_cmd_handler *found_handler;
-	const struct ec_host_cmd_request_header *const rx_header = (void *)rx->buf;
 	/* The pointer to rx buffer is constant during communication */
 	struct ec_host_cmd_handler_args args = {
 		.output_buf = (uint8_t *)tx->buf + TX_HEADER_SIZE,
@@ -417,51 +543,10 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 		k_sem_take(&hc->rx_ready, K_FOREVER);
 		hc->state = EC_HOST_CMD_STATE_PROCESSING;
 
-		/* Check status of the rx data, that has been verified in
-		 * ec_host_cmd_send_received.
-		 */
-		if (hc->rx_status != EC_HOST_CMD_SUCCESS) {
-			ec_host_cmd_send_response(hc->rx_status, &args);
-			continue;
-		}
-
-		ec_host_cmd_log_request(rx->buf);
-
-		found_handler = NULL;
-		STRUCT_SECTION_FOREACH(ec_host_cmd_handler, handler) {
-			if (handler->id == rx_header->cmd_id) {
-				found_handler = handler;
-				break;
-			}
-		}
-
-		/* No handler in this image for requested command */
-		if (found_handler == NULL) {
-			ec_host_cmd_send_response(EC_HOST_CMD_INVALID_COMMAND, &args);
-			continue;
-		}
-
-		args.command = rx_header->cmd_id;
-		args.version = rx_header->cmd_ver;
-		args.input_buf_size = rx_header->data_len;
-		args.output_buf_max = tx->len_max - TX_HEADER_SIZE,
-		args.output_buf_size = 0;
-
-		status = validate_handler(found_handler, &args);
-		if (status != EC_HOST_CMD_SUCCESS) {
-			ec_host_cmd_send_response(status, &args);
-			continue;
-		}
-
-		/*
-		 * Preemptively clear the entire response buffer so we do not
-		 * have any left over contents from previous host commands.
-		 */
-		memset(args.output_buf, 0, args.output_buf_max);
-
-		status = found_handler->handler(&args);
-
+		status = ec_host_cmd_process(hc, &args);
+		IF_ENABLED(CONFIG_EC_HOST_CMD_RATE_LIMITING, (ec_host_cmd_rate_limit();))
 		ec_host_cmd_send_response(status, &args);
+		IF_ENABLED(CONFIG_EC_HOST_CMD_RATE_LIMITING, (ec_host_cmd_record_tx_time();))
 	}
 }
 

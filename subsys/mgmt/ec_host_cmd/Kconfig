@@ -114,6 +114,46 @@ config EC_HOST_CMD_IN_PROGRESS_STATUS
 	  EC_HOST_CMD_IN_PROGRESS status. The saved status can be get with the
 	  ec_host_cmd_send_in_progress_status function.
 
+menuconfig EC_HOST_CMD_RATE_LIMITING
+	bool "Rate limit continuous host command bursts"
+	default y
+	help
+	  Limit continuous bursts of host commands by inserting a short recess
+	  delay before sending a response once commands have been processed
+	  continuously without a sufficient idle gap. This allows lower-priority
+	  threads (such as watchdog feeders) to run during host command storms.
+
+if EC_HOST_CMD_RATE_LIMITING
+
+config EC_HOST_CMD_RATE_LIMITING_PERIOD_MS
+	int "Continuous burst period before recess (ms)"
+	default 500
+	range 1 60000
+	help
+	  Duration in milliseconds of continuous host command processing without
+	  an idle gap exceeding EC_HOST_CMD_RATE_LIMITING_MIN_REST_MS before
+	  inserting a recess delay.
+
+config EC_HOST_CMD_RATE_LIMITING_MIN_REST_MS
+	int "Minimum idle gap to reset burst window (ms)"
+	default 3
+	range 1 60000
+	help
+	  Minimum idle time in milliseconds between the completion of the
+	  previous host command response and the reception of the next host
+	  command required to reset the continuous burst window.
+
+config EC_HOST_CMD_RATE_LIMITING_RECESS_MS
+	int "Recess delay inserted on sustained bursts (ms)"
+	default 20
+	range 1 1000
+	help
+	  Duration in milliseconds to sleep before sending the response when
+	  continuous host command processing exceeds
+	  EC_HOST_CMD_RATE_LIMITING_PERIOD_MS.
+
+endif # EC_HOST_CMD_RATE_LIMITING
+
 source "subsys/mgmt/ec_host_cmd/Kconfig.logging"
 source "subsys/mgmt/ec_host_cmd/backends/Kconfig"
 

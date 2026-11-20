@@ -15,9 +15,10 @@ config EC_HOST_CMD_LOG_SUPPRESSED_NUMBER
 	int "Maximum number of suppressed commands"
 	default 8
 	help
-	  Suppressed commands are not logged on host command reception. Set
-	  the maximum number of the suppressed commands. Set 0 to disable
-	  suppressing commands.
+	  Suppressed commands are not logged on host command reception, and
+	  EC_HOST_CMD_UNAVAILABLE responses for suppressed commands are logged
+	  at debug level instead of info level. Set the maximum number of the
+	  suppressed commands. Set 0 to disable suppressing commands.
 
 config EC_HOST_CMD_LOG_SUPPRESSED_INTERVAL_SECS
 	int "Interval of logging suppressed commands"
