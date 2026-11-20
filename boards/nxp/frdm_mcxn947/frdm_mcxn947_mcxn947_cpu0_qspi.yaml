@@ -34,6 +34,7 @@ supported:
   - spi
   - usb_device
   - usbd
+  - usbh
   - watchdog
   - crc
 vendor: nxp
