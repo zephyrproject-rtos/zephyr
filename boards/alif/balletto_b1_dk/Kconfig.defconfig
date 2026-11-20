@@ -8,4 +8,7 @@ if BOARD_BALLETTO_B1_DK
 configdefault I2C_DW_CLOCK_SPEED
 	default 40
 
+config GPIO
+	default y if SPI
+
 endif # BOARD_BALLETTO_B1_DK

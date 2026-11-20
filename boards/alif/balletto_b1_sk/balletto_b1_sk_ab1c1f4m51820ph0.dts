@@ -8,6 +8,7 @@
 #include <alif/balletto/ab1c1f4m51820ph0.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include "balletto_b1_sk-pinctrl.dtsi"
 
 / {
@@ -61,6 +62,23 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <MIKROBUS_AN 0 &gpio0 2 0>,
+			   <MIKROBUS_RST 0 &gpio3 0 0>,
+			   <MIKROBUS_CS 0 &gpio0 3 0>,
+			   <MIKROBUS_SCK 0 &gpio3 6 0>,
+			   <MIKROBUS_MISO 0 &gpio3 4 0>,
+			   <MIKROBUS_MOSI 0 &gpio3 5 0>,
+			   <MIKROBUS_PWM 0 &gpio4 4 0>,
+			   <MIKROBUS_INT 0 &gpio3 1 0>,
+			   <MIKROBUS_RX 0 &gpio0 4 0>,
+			   <MIKROBUS_TX 0 &gpio0 5 0>;
+	};
 };
 
 &uart2 {
@@ -78,5 +96,24 @@
 &lpgpio {
 	pinctrl-0 = <&lpgpio_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio0 {
+	pinctrl-0 = <&gpio0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio3 {
+	pinctrl-0 = <&gpio3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+mikrobus_spi: &spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
 	status = "okay";
 };
