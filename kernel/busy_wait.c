@@ -65,6 +65,7 @@ void z_impl_k_busy_wait(uint32_t usec_to_wait)
 	}
 
 	uint32_t cycles_to_wait = busy_wait_us_to_cyc_ceil32(usec_to_wait, hz);
+	uint32_t last_cycles = start_cycles;
 
 	/* Now busy wait, adjusting if the frequency changes. */
 	for (;;) {
@@ -78,17 +79,23 @@ void z_impl_k_busy_wait(uint32_t usec_to_wait)
 		}
 
 		if (hz1 != hz) {
-			/* Keep our reference point in the same scale as the cycle counter. */
-			start_cycles = (uint32_t)(((uint64_t)start_cycles * (uint64_t)hz1) /
-						  (uint64_t)hz);
+			/* The counter keeps counting across a frequency change. The
+			 * cycles up to last_cycles were counted at hz. Those since
+			 * then were counted at hz or hz1, so they are not counted.
+			 * The cycles left to wait are converted to hz1, rounded up.
+			 */
+			uint64_t left = cycles_to_wait - (last_cycles - start_cycles);
+
+			cycles_to_wait = (uint32_t)(((left * hz1) + hz - 1U) / hz);
+			start_cycles = current_cycles;
 			hz = hz1;
-			cycles_to_wait = busy_wait_us_to_cyc_ceil32(usec_to_wait, hz);
 		}
 
 		/* This handles the rollover on an unsigned 32-bit value. */
 		if ((current_cycles - start_cycles) >= cycles_to_wait) {
 			break;
 		}
+		last_cycles = current_cycles;
 	}
 #else
 	uint32_t start_cycles = k_cycle_get_32();
