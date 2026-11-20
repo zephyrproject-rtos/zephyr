@@ -22,6 +22,12 @@ struct i2c_xilinx_axi_config {
 	void (*irq_config_func)(const struct device *dev);
 	/* Whether device has working dynamic read (broken prior to core rev. 2.1) */
 	bool dyn_read_working;
+	/* AXI input clock in Hz, from optional DT "clocks"; 0 = none (setclk skipped) */
+	uint32_t input_clk_hz;
+	/* Default SCL speed in Hz, from DT "clock-frequency" (applied at init) */
+	uint32_t default_bitrate;
+	/* SCL half-period compensation in AXI cycles, from optional DT "serial-clk-delay" */
+	uint32_t serial_clk_delay;
 };
 
 struct i2c_xilinx_axi_data {
@@ -32,6 +38,9 @@ struct i2c_xilinx_axi_data {
 	/* Provides exclusion against multiple concurrent requests */
 	struct k_mutex mutex;
 
+	/* Current SCL bus speed in Hz, set by configure() */
+	uint32_t bus_speed;
+
 #if defined(CONFIG_I2C_TARGET)
 	struct i2c_target_config *target_cfg;
 	bool target_reading;
@@ -39,6 +48,27 @@ struct i2c_xilinx_axi_data {
 	bool target_writing;
 #endif
 };
+
+/*
+ * SCL setup/hold times (ns) per speed mode, derived from the I2C spec and
+ * PG090 (matching the mainline Linux xiic timing_reg_values[]).
+ * Index: 0 = 100 kHz, 1 = 400 kHz, 2 = 1 MHz.
+ */
+struct i2c_xilinx_axi_timing {
+	uint32_t tsusta; /* START condition setup time */
+	uint32_t tsusto; /* STOP condition setup time */
+	uint32_t thdsta; /* START condition hold time */
+	uint32_t tsudat; /* data setup time */
+	uint32_t tbuf;   /* bus free time between STOP and START */
+};
+
+static const struct i2c_xilinx_axi_timing i2c_xilinx_axi_timings[] = {
+	{5700, 5000, 4300, 550, 5000}, /* Standard mode (100 kHz) */
+	{900,  900,  900,  400, 1600}, /* Fast mode (400 kHz)     */
+	{380,  380,  380,  170, 620},  /* Fast mode plus (1 MHz)  */
+};
+
+#define I2C_XILINX_AXI_NS_PER_SEC   1000000000ULL
 
 static void i2c_xilinx_axi_reinit(const struct device *dev)
 {
@@ -255,12 +285,154 @@ static void i2c_xilinx_axi_isr(const struct device *dev)
 	}
 }
 
+static inline uint32_t i2c_xilinx_axi_ns_to_cycles(uint32_t ns, uint32_t clk_hz)
+{
+	/* Convert a nanosecond value to AXI clock cycles (minus 1 for the register). */
+	uint64_t cycles = ((uint64_t)ns * clk_hz) / I2C_XILINX_AXI_NS_PER_SEC;
+
+	return (cycles > 0U) ? (uint32_t)(cycles - 1U) : 0U;
+}
+
+static int i2c_xilinx_axi_setclk(const struct device *dev, uint32_t fscl_hz)
+{
+	const struct i2c_xilinx_axi_config *config = dev->config;
+	const struct i2c_xilinx_axi_timing *timing;
+	mm_reg_t base = DEVICE_MMIO_GET(dev);
+	uint32_t half_period;
+	uint32_t timing_idx;
+	uint32_t base_div;
+	uint32_t overhead;
+
+	/*
+	 * Program the SCL timing registers for the requested bus speed using the
+	 * AXI input clock. Only called when an input clock is provided via DT
+	 * "clocks". On some AXI IIC cores the timing registers must be programmed
+	 * while the core is idle/disabled; if the measured SCL is wrong on
+	 * hardware, move this before the CR_EN write in i2c_xilinx_axi_reinit().
+	 */
+	if (fscl_hz <= I2C_BITRATE_STANDARD) {
+		timing_idx = 0U;
+	} else if (fscl_hz <= I2C_BITRATE_FAST) {
+		timing_idx = 1U;
+	} else if (fscl_hz <= I2C_BITRATE_FAST_PLUS) {
+		timing_idx = 2U;
+	} else {
+		return -EINVAL;
+	}
+	timing = &i2c_xilinx_axi_timings[timing_idx];
+
+	/*
+	 * SCL high/low half-period in AXI cycles
+	 * half_period = AxiClk / (2 * Fscl) - 7 - serial_clk_delay
+	 * (the -7 and delay account for the core's internal fixed overhead)
+	 *
+	 * Compute the base divisor and overhead separately and range-check
+	 * before subtracting: the arithmetic is unsigned, so a low AXI clock
+	 * or a large serial-clk-delay would otherwise wrap to a huge invalid
+	 * half-period instead of failing.
+	 */
+	base_div = config->input_clk_hz / (2U * fscl_hz);
+	overhead = 7U + config->serial_clk_delay;
+
+	if (base_div <= overhead) {
+		LOG_ERR("AXI clk %u too low for %u Hz SCL (delay %u)",
+			config->input_clk_hz, fscl_hz, config->serial_clk_delay);
+		return -EINVAL;
+	}
+	half_period = base_div - overhead;
+
+	/*
+	 * THIGH/TLOW use N-1 encoding (PG090), so write half_period - 1. This
+	 * matches the mainline Linux xiic driver (xiic_setclk), which writes
+	 * reg_val - 1 and rejects reg_val == 0. The base_div <= overhead check
+	 * above rejects half_period == 0, so the minimum value written here is 0
+	 * (when half_period == 1), which is valid.
+	 */
+	sys_write32(half_period - 1U, base + REG_THIGH);
+	sys_write32(half_period - 1U, base + REG_TLOW);
+
+	/* Setup/hold times: convert the spec ns values to AXI clock cycles. */
+	sys_write32(i2c_xilinx_axi_ns_to_cycles(timing->tsusta, config->input_clk_hz),
+		    base + REG_TSUSTA);
+	sys_write32(i2c_xilinx_axi_ns_to_cycles(timing->tsusto, config->input_clk_hz),
+		    base + REG_TSUSTO);
+	sys_write32(i2c_xilinx_axi_ns_to_cycles(timing->thdsta, config->input_clk_hz),
+		    base + REG_THDSTA);
+	sys_write32(i2c_xilinx_axi_ns_to_cycles(timing->tsudat, config->input_clk_hz),
+		    base + REG_TSUDAT);
+	sys_write32(i2c_xilinx_axi_ns_to_cycles(timing->tbuf, config->input_clk_hz),
+		    base + REG_TBUF);
+	sys_write32(1U, base + REG_THDDAT);
+
+	LOG_INF("SCL set to %u Hz (AXI clk %u Hz)", fscl_hz, config->input_clk_hz);
+	return 0;
+}
+
 static int i2c_xilinx_axi_configure(const struct device *dev, uint32_t dev_config)
 {
+	const struct i2c_xilinx_axi_config *config = dev->config;
+	struct i2c_xilinx_axi_data *data = dev->data;
 	mm_reg_t base = DEVICE_MMIO_GET(dev);
+	uint32_t fscl_hz;
+	int ret;
+
+	if (!(dev_config & I2C_MODE_CONTROLLER)) {
+		return -ENOTSUP;
+	}
+
+	switch (I2C_SPEED_GET(dev_config)) {
+	case I2C_SPEED_STANDARD:
+		fscl_hz = I2C_BITRATE_STANDARD;
+		break;
+	case I2C_SPEED_FAST:
+		fscl_hz = I2C_BITRATE_FAST;
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		fscl_hz = I2C_BITRATE_FAST_PLUS;
+		break;
+	default:
+		return -ENOTSUP;
+	}
 
 	LOG_INF("Configuring %s at 0x%08" PRIxPTR, dev->name, base);
 	i2c_xilinx_axi_reinit(dev);
+
+	if (config->input_clk_hz != 0U) {
+		/* Input clock provided: program the SCL timing registers. */
+		ret = i2c_xilinx_axi_setclk(dev, fscl_hz);
+		if (ret) {
+			return ret;
+		}
+	} else {
+		/*
+		 * No input clock in DT: the SCL frequency is fixed by the FPGA
+		 * build and cannot be changed here. Record the requested speed
+		 * for get_config() as a best-effort value.
+		 */
+		LOG_DBG("No DT 'clocks' - SCL fixed by FPGA build, not reprogrammed");
+	}
+
+	data->bus_speed = fscl_hz;
+	return 0;
+}
+
+static int i2c_xilinx_axi_get_config(const struct device *dev, uint32_t *dev_config)
+{
+	struct i2c_xilinx_axi_data *data = dev->data;
+	uint32_t speed_cfg;
+
+	/* Report the SCL speed last applied by configure(). */
+	if (data->bus_speed <= I2C_BITRATE_STANDARD) {
+		speed_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD);
+	} else if (data->bus_speed <= I2C_BITRATE_FAST) {
+		speed_cfg = I2C_SPEED_SET(I2C_SPEED_FAST);
+	} else if (data->bus_speed <= I2C_BITRATE_FAST_PLUS) {
+		speed_cfg = I2C_SPEED_SET(I2C_SPEED_FAST_PLUS);
+	} else {
+		return -ERANGE;
+	}
+
+	*dev_config = speed_cfg | I2C_MODE_CONTROLLER;
 	return 0;
 }
 
@@ -616,7 +788,9 @@ static int i2c_xilinx_axi_init(const struct device *dev)
 	k_event_init(&data->irq_event);
 	k_mutex_init(&data->mutex);
 
-	error = i2c_xilinx_axi_configure(dev, I2C_MODE_CONTROLLER);
+	/* Apply the default bus speed from the DT "clock-frequency" property. */
+	error = i2c_xilinx_axi_configure(dev, I2C_MODE_CONTROLLER |
+					 i2c_map_dt_bitrate(config->default_bitrate));
 	if (error) {
 		return error;
 	}
@@ -629,6 +803,7 @@ static int i2c_xilinx_axi_init(const struct device *dev)
 
 static DEVICE_API(i2c, i2c_xilinx_axi_driver_api) = {
 	.configure = i2c_xilinx_axi_configure,
+	.get_config = i2c_xilinx_axi_get_config,
 	.transfer = i2c_xilinx_axi_transfer,
 #if defined(CONFIG_I2C_TARGET)
 	.target_register = i2c_xilinx_axi_target_register,
@@ -645,7 +820,11 @@ static DEVICE_API(i2c, i2c_xilinx_axi_driver_api) = {
 	static const struct i2c_xilinx_axi_config i2c_xilinx_axi_config_##compat##_##n = {         \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.irq_config_func = i2c_xilinx_axi_config_func_##compat##_##n,                      \
-		.dyn_read_working = DT_INST_NODE_HAS_COMPAT(n, xlnx_xps_iic_2_1)};                 \
+		.dyn_read_working = DT_INST_NODE_HAS_COMPAT(n, xlnx_xps_iic_2_1),                  \
+		.input_clk_hz = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),                      \
+			(DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency)), (0)),               \
+		.default_bitrate = DT_INST_PROP_OR(n, clock_frequency, I2C_BITRATE_STANDARD),      \
+		.serial_clk_delay = DT_INST_PROP_OR(n, serial_clk_delay, 0)};                      \
                                                                                                    \
 	static struct i2c_xilinx_axi_data i2c_xilinx_axi_data_##compat##_##n;                      \
                                                                                                    \
