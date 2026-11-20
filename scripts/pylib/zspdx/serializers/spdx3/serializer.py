@@ -5,7 +5,6 @@ import importlib
 import logging
 import os
 import re
-from datetime import UTC, datetime
 
 from spdx_python_model import v3_0_1 as spdx
 
@@ -169,7 +168,7 @@ class SPDX3Serializer:
         if self.creation_info is None:
             self.creation_info = spdx.CreationInfo()
             self.creation_info._id = f"{namespace}/creationinfo"
-            self.creation_info.created = datetime.now(UTC)
+            self.creation_info.created = self.sbom_data.created
             # createdBy references the Agent that created this SPDX document (REQUIRED)
             self.creation_info.createdBy.append(self.creator_agent._id)
             # createdUsing references the Tool that created this SPDX document (optional)
@@ -877,12 +876,7 @@ class SPDX3Serializer:
         """Build the SpdxDocument shell: identity, name and licensing."""
         document = spdx.SpdxDocument()
 
-        # Use the document's own namespace when set, otherwise the global prefix.
-        namespace = (
-            sbom_doc.namespace.rstrip("/")
-            if sbom_doc.namespace
-            else self.sbom_data.namespace_prefix.rstrip("/")
-        )
+        namespace = self.sbom_data.document_namespace(sbom_doc).rstrip("/")
         document._id = f"{namespace}/documents/{sbom_doc.name}"
 
         document.name = self._DOCUMENT_NAMES.get(

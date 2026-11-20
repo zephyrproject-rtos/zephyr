@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any, TypedDict
 
@@ -237,7 +238,8 @@ class SBOMDocument:
               filename, namespace, and cross-document reference ID.
         title: Human-readable document name emitted as the SPDX ``DocumentName``. Falls back to
                ``name`` when empty, allowing the displayed name to differ from the identifier.
-        namespace: Document namespace URI.
+        namespace: Document namespace URI. When empty, ``SBOMGraph.document_namespace()``
+                   derives it from the graph's namespace prefix.
         components: Components contained in this document, keyed by component name.
         described_components: Names of the components that are the primary subject(s) of this
             document, emitted as SPDX ``DESCRIBES`` relationships. When empty, the document
@@ -376,6 +378,7 @@ class SBOMGraph:
         relationships: Relationships in the graph.
         custom_license_ids: Custom license IDs that need to be declared by serializers.
         build: Build that produced the graph's artifacts, or ``None`` if it carries no build.
+        created: Creation time recorded in every document serialized from the graph.
         metadata: Additional data not represented by the common model fields.
     """
 
@@ -387,6 +390,7 @@ class SBOMGraph:
     relationships: list[SBOMRelationship] = field(default_factory=list)
     custom_license_ids: set[str] = field(default_factory=set)
     build: SBOMBuild | None = None
+    created: datetime = field(default_factory=lambda: datetime.now(UTC))
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_document(self, document: SBOMDocument) -> None:
@@ -412,6 +416,18 @@ class SBOMGraph:
             Matching document, or ``None`` if the graph does not contain it.
         """
         return self.documents.get(name)
+
+    def document_namespace(self, document: SBOMDocument) -> str:
+        """Get the namespace URI of a document.
+
+        Args:
+            document: Document of this graph.
+
+        Returns:
+            The document's own namespace, or ``<namespace_prefix>/<document name>`` if it has
+            none.
+        """
+        return document.namespace or f"{self.namespace_prefix}/{document.name}"
 
     def add_component(self, component: SBOMComponent, document_name: str) -> None:
         """Add a component to the graph and to an existing document.

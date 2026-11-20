@@ -212,6 +212,11 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* West
+
+  * ``west spdx`` honors the ``SOURCE_DATE_EPOCH`` environment variable, so that the same build
+    gives the same SBOM. See :ref:`west-spdx-reproducible`.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?
