@@ -26,7 +26,7 @@ static struct fd_op_vtable posix_op_vtable = {
 
 void FD_CLR(int fd, struct zvfs_fd_set *fdset)
 {
-	return ZVFS_FD_CLR(fd, fdset);
+	ZVFS_FD_CLR(fd, fdset);
 }
 
 int FD_ISSET(int fd, struct zvfs_fd_set *fdset)
