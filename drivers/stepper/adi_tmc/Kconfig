@@ -6,6 +6,7 @@ comment "ADI Trinamic Stepper Drivers"
 rsource "bus/Kconfig"
 
 rsource "tmc22xx/Kconfig.tmc22xx"
+rsource "tmc2300/Kconfig.tmc2300"
 rsource "tmc50xx/Kconfig.tmc50xx"
 rsource "tmc51xx/Kconfig.tmc51xx"
 rsource "tmc522x/Kconfig.tmc522x"

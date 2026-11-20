@@ -9,6 +9,18 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
+adi_tmc2300: adi-tmc2300 {
+	compatible = "adi,tmc2300";
+	uart-device-addr = <1>;
+	micro-step-res = <16>;
+	en-gpios = <&test_gpio 0 0>;
+	dual-edge-step;
+	extcap;
+	irun = <16>;
+	ihold = <4>;
+	status = "okay";
+};
+
 adi_tmc51xx_uart: adi-tmc51xx {
 	compatible = "adi,tmc51xx";
 
