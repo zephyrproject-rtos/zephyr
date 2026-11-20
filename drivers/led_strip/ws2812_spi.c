@@ -46,6 +46,10 @@ LOG_MODULE_REGISTER(ws2812_spi);
 
 struct ws2812_spi_cfg {
 	struct spi_dt_spec bus;
+#ifdef CONFIG_WS2812_STRIP_SPI_ASYNC
+	/* The SPI driver uses it until the transfer ends */
+	struct spi_buf_set tx;
+#endif
 	uint8_t *px_buf;
 	uint8_t one_frame;
 	uint8_t zero_frame;
@@ -54,6 +58,17 @@ struct ws2812_spi_cfg {
 	const uint8_t *color_mapping;
 	size_t length;
 	uint16_t reset_delay;
+};
+
+struct ws2812_spi_data {
+#ifdef CONFIG_WS2812_STRIP_SPI_ASYNC
+	/* Held from the start of an update until its transfer ends */
+	struct k_sem lock;
+	/* The frame being sent through cfg->tx */
+	struct spi_buf buf;
+#endif
+	/* When the strip is done latching the last update */
+	k_timepoint_t reset_done;
 };
 
 static const struct ws2812_spi_cfg *dev_cfg(const struct device *dev)
@@ -109,18 +124,65 @@ static inline void ws2812_spi_ser(uint8_t color, uint8_t one, uint8_t zero,
 }
 
 /*
- * Latch current color values on strip and reset its state machines.
+ * Wait for the strip to latch the last update and reset its state machines.
+ * This only sleeps if the last update was less than the reset delay ago.
  */
-static inline void ws2812_reset_delay(uint16_t delay)
+static void ws2812_reset_wait(struct ws2812_spi_data *data)
 {
-	k_usleep(delay);
+	if (!sys_timepoint_expired(data->reset_done)) {
+		k_sleep(sys_timepoint_timeout(data->reset_done));
+	}
 }
+
+#ifdef CONFIG_WS2812_STRIP_SPI_ASYNC
+/*
+ * SPI completion, may run in interrupt context. px_buf is free again, and the
+ * strip latches the data during the reset delay.
+ */
+static void ws2812_spi_done(const struct device *spi_dev, int result,
+			    void *user_data)
+{
+	const struct device *dev = user_data;
+	struct ws2812_spi_data *data = dev->data;
+
+	ARG_UNUSED(spi_dev);
+
+	if (result < 0) {
+		LOG_ERR("%s: SPI transfer failed: %d", dev->name, result);
+	}
+
+	data->reset_done = sys_timepoint_calc(K_USEC(dev_cfg(dev)->reset_delay));
+	k_sem_give(&data->lock);
+}
+
+/*
+ * Start sending buf and return. ws2812_spi_done() releases the lock when the
+ * transfer ends.
+ */
+static int ws2812_spi_write_async(const struct device *dev,
+				  const struct spi_buf *buf)
+{
+	const struct ws2812_spi_cfg *cfg = dev_cfg(dev);
+	struct ws2812_spi_data *data = dev->data;
+	int rc;
+
+	data->buf = *buf;
+	rc = spi_transceive_cb(cfg->bus.bus, &cfg->bus.config, &cfg->tx, NULL,
+			       ws2812_spi_done, (void *)dev);
+	if (rc < 0) {
+		k_sem_give(&data->lock);
+	}
+
+	return rc;
+}
+#endif
 
 static int ws2812_strip_update_rgb(const struct device *dev,
 				   struct led_rgb *pixels,
 				   size_t num_pixels)
 {
 	const struct ws2812_spi_cfg *cfg = dev_cfg(dev);
+	struct ws2812_spi_data *data = dev->data;
 	const uint8_t one = cfg->one_frame, zero = cfg->zero_frame;
 	const uint8_t bits_per_symbol = cfg->bits_per_symbol;
 	const size_t total_bits = num_pixels * cfg->num_colors *
@@ -138,6 +200,11 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	uint8_t bit_mask = BIT(SPI_FRAME_BITS - 1);
 	size_t i;
 	int rc;
+
+#ifdef CONFIG_WS2812_STRIP_SPI_ASYNC
+	/* The last transfer may still be sending px_buf */
+	k_sem_take(&data->lock, K_FOREVER);
+#endif
 
 	/*
 	 * Convert pixel data into an SPI bitstream. The bitstream contains
@@ -165,6 +232,9 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 				pixel = pixels[i].b;
 				break;
 			default:
+#ifdef CONFIG_WS2812_STRIP_SPI_ASYNC
+				k_sem_give(&data->lock);
+#endif
 				return -EINVAL;
 			}
 
@@ -179,10 +249,17 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	}
 
 	/*
-	 * Display the pixel data.
+	 * Display the pixel data. The strip latches it during the reset delay,
+	 * which the next update waits for.
 	 */
+	ws2812_reset_wait(data);
+
+#ifdef CONFIG_WS2812_STRIP_SPI_ASYNC
+	return ws2812_spi_write_async(dev, &buf);
+#endif
+
 	rc = spi_write_dt(&cfg->bus, &tx);
-	ws2812_reset_delay(cfg->reset_delay);
+	data->reset_done = sys_timepoint_calc(K_USEC(cfg->reset_delay));
 
 	return rc;
 }
@@ -218,6 +295,12 @@ static int ws2812_spi_init(const struct device *dev)
 			return -EINVAL;
 		}
 	}
+
+#ifdef CONFIG_WS2812_STRIP_SPI_ASYNC
+	struct ws2812_spi_data *data = dev->data;
+
+	k_sem_init(&data->lock, 1, 1);
+#endif
 
 	return 0;
 }
@@ -264,8 +347,15 @@ static DEVICE_API(led_strip, ws2812_spi_api) = {
 										\
 	WS2812_COLOR_MAPPING(idx);						\
 										\
+	static struct ws2812_spi_data ws2812_spi_##idx##_data;			\
+										\
 	static const struct ws2812_spi_cfg ws2812_spi_##idx##_cfg = {		\
 		.bus = SPI_DT_SPEC_INST_GET(idx, SPI_OPER(idx)),		\
+		IF_ENABLED(CONFIG_WS2812_STRIP_SPI_ASYNC, (			\
+			.tx = {							\
+				.buffers = &ws2812_spi_##idx##_data.buf,	\
+				.count = 1,					\
+			},))							\
 		.px_buf = ws2812_spi_##idx##_px_buf,				\
 		.one_frame = WS2812_SPI_ONE_FRAME(idx),				\
 		.zero_frame = WS2812_SPI_ZERO_FRAME(idx),			\
@@ -279,7 +369,7 @@ static DEVICE_API(led_strip, ws2812_spi_api) = {
 	DEVICE_DT_INST_DEFINE(idx,						\
 			      ws2812_spi_init,					\
 			      NULL,						\
-			      NULL,						\
+			      &ws2812_spi_##idx##_data,				\
 			      &ws2812_spi_##idx##_cfg,				\
 			      POST_KERNEL,					\
 			      CONFIG_LED_STRIP_INIT_PRIORITY,			\
