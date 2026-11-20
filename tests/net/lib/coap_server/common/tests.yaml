@@ -13,3 +13,6 @@ common:
 
 tests:
   net.coap.server.secure: {}
+  net.coap.server.secure.poll_max_3:
+    extra_configs:
+      - CONFIG_ZVFS_POLL_MAX=3

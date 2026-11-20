@@ -104,6 +104,11 @@ static const struct socket_op_vtable tls_sock_fd_op_vtable;
 #define TLS_ROLE_CLIENT_SUPPORTED false
 #endif
 
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS) && defined(CONFIG_ZVFS_POLL_EXTRA_EVENT) && \
+	defined(MBEDTLS_SSL_SRV_C)
+#define DTLS_POLL_TIMER 1
+#endif
+
 /** A list of secure tags that TLS context should use. */
 struct sec_tag_list {
 	/** An array of secure tags referencing TLS credentials. */
@@ -584,6 +589,22 @@ static void dtls_server_refresh_session_timeout(struct tls_session_context *sess
 	session_ctx->session_expiry =
 		sys_timepoint_calc(K_MSEC(CONFIG_NET_SOCKETS_DTLS_TIMEOUT));
 }
+
+#if defined(DTLS_POLL_TIMER)
+struct dtls_poll_timer {
+	struct k_timer timer;
+	struct k_poll_signal signal;
+};
+
+static struct dtls_poll_timer dtls_poll_timers[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
+
+static void dtls_poll_timer_expiry(struct k_timer *timer)
+{
+	struct dtls_poll_timer *poll_timer = CONTAINER_OF(timer, struct dtls_poll_timer, timer);
+
+	(void)k_poll_signal_raise(&poll_timer->signal, 0);
+}
+#endif /* DTLS_POLL_TIMER */
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 /* Initialize TLS internals. */
@@ -597,6 +618,13 @@ static int tls_init(void)
 
 	(void)memset(tls_contexts, 0, sizeof(tls_contexts));
 	(void)memset(client_cache, 0, sizeof(client_cache));
+
+#if defined(DTLS_POLL_TIMER)
+	ARRAY_FOR_EACH(dtls_poll_timers, i) {
+		k_timer_init(&dtls_poll_timers[i].timer, dtls_poll_timer_expiry, NULL);
+		k_poll_signal_init(&dtls_poll_timers[i].signal);
+	}
+#endif
 
 #if defined(MBEDTLS_SSL_CACHE_C)
 	mbedtls_ssl_cache_init(&server_cache);
@@ -615,6 +643,70 @@ static inline bool is_handshake_complete(struct tls_session_context *session_ctx
 {
 	return k_sem_count_get(&session_ctx->tls_established) != 0;
 }
+
+#if defined(DTLS_POLL_TIMER)
+static struct dtls_poll_timer *dtls_poll_timer_get(struct tls_context *ctx)
+{
+	return &dtls_poll_timers[ARRAY_INDEX(tls_contexts, ctx)];
+}
+
+static bool dtls_poll_timer_used(struct tls_context *ctx, short events)
+{
+	return (ctx->type == NET_SOCK_DGRAM) && (ctx->options.role == MBEDTLS_SSL_IS_SERVER) &&
+	       ((events & ZSOCK_POLLIN) != 0);
+}
+
+static int dtls_poll_timer_due_ms(struct tls_context *ctx)
+{
+	if (!ctx->is_initialized || is_handshake_complete(ctx->active_session)) {
+		return SYS_FOREVER_MS;
+	}
+
+	return dtls_get_remaining_timeout(ctx->active_session);
+}
+
+static void dtls_poll_timer_stop(struct tls_context *ctx)
+{
+	struct dtls_poll_timer *poll_timer = dtls_poll_timer_get(ctx);
+
+	k_timer_stop(&poll_timer->timer);
+	k_poll_signal_reset(&poll_timer->signal);
+}
+
+static void dtls_poll_timer_arm(struct tls_context *ctx)
+{
+	struct dtls_poll_timer *poll_timer = dtls_poll_timer_get(ctx);
+	int due_ms = dtls_poll_timer_due_ms(ctx);
+
+	dtls_poll_timer_stop(ctx);
+
+	if (due_ms == SYS_FOREVER_MS) {
+		return;
+	}
+
+	if (due_ms == 0) {
+		(void)k_poll_signal_raise(&poll_timer->signal, 0);
+		return;
+	}
+
+	k_timer_start(&poll_timer->timer, K_MSEC(due_ms), K_NO_WAIT);
+}
+
+static int dtls_poll_timer_update(struct tls_context *ctx, struct zsock_pollfd *pfd,
+				  struct k_poll_event *slot, int ret)
+{
+	slot->state = K_POLL_STATE_NOT_READY;
+
+	if ((pfd->revents != 0) || ((ret != 0) && (ret != -EAGAIN))) {
+		dtls_poll_timer_stop(ctx);
+		return ret;
+	}
+
+	dtls_poll_timer_arm(ctx);
+
+	return -EAGAIN;
+}
+#endif /* DTLS_POLL_TIMER */
 
 /*
  * Copied from include/mbedtls/ssl_internal.h
@@ -4544,10 +4636,26 @@ static int tls_poll_handshake_revents(struct tls_context *ctx, short events, sho
 /* Tags of the k_poll_event of a socket that poll() prepared to wait for a
  * handshake deferred by accept(), saying which event of the underlying socket
  * it waits for, so that ztls_poll_update_ctx() reads the event back the same
- * way. The event of any other TLS socket is tagged 0.
+ * way. The event of a DTLS server's handshake timer is tagged
+ * TLS_POLL_TAG_DTLS_TIMER, and the event of any other TLS socket 0.
  */
 #define TLS_POLL_TAG_HANDSHAKE_IN  1
 #define TLS_POLL_TAG_HANDSHAKE_OUT 2
+#define TLS_POLL_TAG_DTLS_TIMER    3
+
+#if defined(DTLS_POLL_TIMER)
+static struct k_poll_event *dtls_poll_timer_slot(struct tls_context *ctx,
+						 struct zsock_pollfd *pfd,
+						 struct k_poll_event *pev)
+{
+	if (!dtls_poll_timer_used(ctx, pfd->events) || (pev->tag != TLS_POLL_TAG_DTLS_TIMER) ||
+	    (pev->obj != &dtls_poll_timer_get(ctx)->signal)) {
+		return NULL;
+	}
+
+	return pev;
+}
+#endif /* DTLS_POLL_TIMER */
 
 /* The event of the underlying socket a deferred handshake waits for. Once it
  * has completed, only data from the peer is left to wait for.
@@ -4658,6 +4766,7 @@ static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 	struct k_mutex *lock;
 	struct k_poll_event *first = *pev;
 	bool on_handshake = false;
+	__maybe_unused bool timer_slot = false;
 	void *obj;
 	int ret;
 	short events = pfd->events;
@@ -4707,6 +4816,17 @@ static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 		goto exit;
 	}
 
+#if defined(DTLS_POLL_TIMER)
+	if (dtls_poll_timer_used(ctx, pfd->events) && ((pev_end - *pev) >= 2)) {
+		k_poll_event_init(*pev, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+				  &dtls_poll_timer_get(ctx)->signal);
+		(*pev)->tag = TLS_POLL_TAG_DTLS_TIMER;
+		(*pev)++;
+		first = *pev;
+		timer_slot = true;
+	}
+#endif
+
 	ret = zvfs_fdtable_call_poll_prepare(vtable, obj, pfd, pev, pev_end);
 	if (*pev != first) {
 		first->tag = 0;
@@ -4719,6 +4839,12 @@ static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 	if (pfd->events & ZSOCK_POLLIN) {
 		ret = ztls_poll_prepare_pollin(ctx);
 	}
+
+#if defined(DTLS_POLL_TIMER)
+	if (timer_slot && (ret == 0)) {
+		dtls_poll_timer_arm(ctx);
+	}
+#endif
 
 exit:
 	/* Restore original events. */
@@ -4960,7 +5086,7 @@ again:
 }
 
 static int dtls_update_pollin(int fd, struct tls_context *ctx,
-			      struct zsock_pollfd *pfd)
+			      struct zsock_pollfd *pfd, bool timer_fired)
 {
 	int ret;
 
@@ -4973,7 +5099,8 @@ static int dtls_update_pollin(int fd, struct tls_context *ctx,
 	/* Perform data check without incoming data for completed DTLS connections.
 	 * This allows the connections to timeout with CONFIG_NET_SOCKETS_DTLS_TIMEOUT.
 	 */
-	if (!is_handshake_complete(ctx->active_session) && (pfd->revents & ZSOCK_POLLIN) == 0) {
+	if (!timer_fired && !is_handshake_complete(ctx->active_session) &&
+	    ((pfd->revents & ZSOCK_POLLIN) == 0)) {
 		goto next;
 	}
 
@@ -5009,12 +5136,14 @@ again:
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 static int ztls_poll_update_pollin(int fd, struct tls_context *ctx,
-				   struct zsock_pollfd *pfd)
+				   struct zsock_pollfd *pfd, bool timer_fired)
 {
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	if (ctx->type == NET_SOCK_DGRAM) {
-		return dtls_update_pollin(fd, ctx, pfd);
+		return dtls_update_pollin(fd, ctx, pfd, timer_fired);
 	}
+#else
+	ARG_UNUSED(timer_fired);
 #endif
 
 	return tls_update_pollin(fd, ctx, pfd);
@@ -5026,6 +5155,8 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 {
 	const struct fd_op_vtable *vtable;
 	struct k_mutex *lock;
+	__maybe_unused struct k_poll_event *timer_slot = NULL;
+	bool timer_fired = false;
 	void *obj;
 	int ret;
 	short events = pfd->events;
@@ -5049,6 +5180,15 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 		ret = tls_poll_update_handshake(ctx, vtable, obj, pfd, pev);
 		goto exit;
 	}
+
+#if defined(DTLS_POLL_TIMER)
+	timer_slot = dtls_poll_timer_slot(ctx, pfd, *pev);
+	if (timer_slot != NULL) {
+		timer_fired = (timer_slot->state != K_POLL_STATE_NOT_READY) &&
+			      (dtls_poll_timer_due_ms(ctx) == 0);
+		(*pev)++;
+	}
+#endif
 
 	/* Check if the socket was waiting for the handshake to complete. */
 	if ((pfd->events & ZSOCK_POLLIN) &&
@@ -5083,7 +5223,7 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 	}
 
 	if (pfd->events & ZSOCK_POLLIN) {
-		ret = ztls_poll_update_pollin(pfd->fd, ctx, pfd);
+		ret = ztls_poll_update_pollin(pfd->fd, ctx, pfd, timer_fired);
 		if (ret == -EAGAIN && pfd->revents == 0) {
 			(*pev - 1)->state = K_POLL_STATE_NOT_READY;
 			goto exit;
@@ -5092,6 +5232,12 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 		}
 	}
 exit:
+#if defined(DTLS_POLL_TIMER)
+	if (timer_slot != NULL) {
+		ret = dtls_poll_timer_update(ctx, pfd, timer_slot, ret);
+	}
+#endif
+
 	/* Restore original events. */
 	pfd->events = events;
 
@@ -5269,7 +5415,7 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 					}
 
 					result = ztls_poll_update_pollin(
-						    fd_backup[i], ctx, &fds[i]);
+						    fd_backup[i], ctx, &fds[i], false);
 					if (result == -EAGAIN) {
 						retry = true;
 					}

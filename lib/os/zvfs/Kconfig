@@ -83,6 +83,14 @@ config ZVFS_POLL_MAX
 	help
 	  Maximum number of entries supported for poll() call.
 
+config ZVFS_POLL_EXTRA_EVENT
+	bool
+	help
+	  Selected by a descriptor type whose poll() can take two
+	  k_poll_event entries. zvfs_poll() then has room for two entries per
+	  descriptor, which costs CONFIG_ZVFS_POLL_MAX more struct
+	  k_poll_event on the stack of each poll() and select() caller.
+
 config ZVFS_SELECT
 	bool "ZVFS select"
 	help

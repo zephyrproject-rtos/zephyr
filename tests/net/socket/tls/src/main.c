@@ -7,6 +7,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
+#include <limits.h>
+
 #include <zephyr/ztest_assert.h>
 #include <zephyr/net/loopback.h>
 #include <zephyr/net/socket.h>
@@ -3805,6 +3807,417 @@ ZTEST(net_socket_tls, test_mfl_reset_to_default)
 		      "MFL not reset to global default (1024)");
 }
 
+#define RELAY_CLIENT_SIDE_PORT 4246U
+#define RELAY_SERVER_SIDE_PORT 4247U
+#define RELAY_STACK_SIZE 2048U
+#define RELAY_STOP_CHECK_MS 50U
+#define RELAY_DROP_ALL INT_MAX
+
+#define DTLS_RECORD_HEADER_LEN 13U
+
+#define SERVER_HS_TIMEOUT_MIN_MS 100U
+#define SERVER_HS_TIMEOUT_MAX_MS 2000U
+#define CLIENT_HS_TIMEOUT_MIN_MS 5000U
+#define CLIENT_HS_TIMEOUT_MAX_MS 10000U
+
+#define RETRANSMIT_POLL_WINDOW_MS 8000U
+#define RETRANSMIT_MAX_MS 1000U
+#define TIMER_ONLY_POLL_WINDOW_MS 600U
+#define CLIENT_DONE_MAX_MS 12000U
+#define CLIENT_DONE_CHECK_MS 100U
+
+K_THREAD_STACK_DEFINE(relay_stack, RELAY_STACK_SIZE);
+
+static struct {
+	struct k_thread thread;
+	bool started;
+	atomic_t stop;
+	atomic_t drop_left;
+	atomic_t server_hellos;
+	int client_side;
+	int server_side;
+	struct net_sockaddr_storage client_addr;
+	net_socklen_t client_addrlen;
+	struct net_sockaddr_storage server_addr;
+	net_socklen_t server_addrlen;
+} relay = {
+	.client_side = -1,
+	.server_side = -1,
+};
+
+static bool relay_is_server_hello(const uint8_t *buf, ssize_t len)
+{
+	return (len > (ssize_t)DTLS_RECORD_HEADER_LEN) &&
+	       (buf[0] == MBEDTLS_SSL_MSG_HANDSHAKE) &&
+	       (buf[DTLS_RECORD_HEADER_LEN] == MBEDTLS_SSL_HS_SERVER_HELLO);
+}
+
+static void relay_forward_to_server(uint8_t *buf, size_t size)
+{
+	ssize_t len;
+
+	relay.client_addrlen = sizeof(relay.client_addr);
+	len = zsock_recvfrom(relay.client_side, buf, size, ZSOCK_MSG_DONTWAIT,
+			     (struct net_sockaddr *)&relay.client_addr, &relay.client_addrlen);
+	if (len < 0) {
+		return;
+	}
+
+	(void)zsock_sendto(relay.server_side, buf, len, 0,
+			   (struct net_sockaddr *)&relay.server_addr, relay.server_addrlen);
+}
+
+static void relay_forward_to_client(uint8_t *buf, size_t size)
+{
+	ssize_t len;
+
+	len = zsock_recv(relay.server_side, buf, size, ZSOCK_MSG_DONTWAIT);
+	if (len < 0) {
+		return;
+	}
+
+	if (relay_is_server_hello(buf, len)) {
+		atomic_inc(&relay.server_hellos);
+
+		if (atomic_get(&relay.drop_left) > 0) {
+			if (atomic_get(&relay.drop_left) != RELAY_DROP_ALL) {
+				atomic_dec(&relay.drop_left);
+			}
+
+			return;
+		}
+	}
+
+	(void)zsock_sendto(relay.client_side, buf, len, 0,
+			   (struct net_sockaddr *)&relay.client_addr, relay.client_addrlen);
+}
+
+static void relay_thread_fn(void *p1, void *p2, void *p3)
+{
+	static uint8_t buf[1500];
+	struct zsock_pollfd fds[2];
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	fds[0].fd = relay.client_side;
+	fds[0].events = ZSOCK_POLLIN;
+	fds[1].fd = relay.server_side;
+	fds[1].events = ZSOCK_POLLIN;
+
+	while (atomic_get(&relay.stop) == 0) {
+		if (zsock_poll(fds, ARRAY_SIZE(fds), RELAY_STOP_CHECK_MS) <= 0) {
+			continue;
+		}
+
+		if ((fds[0].revents & ZSOCK_POLLIN) != 0) {
+			relay_forward_to_server(buf, sizeof(buf));
+		}
+
+		if ((fds[1].revents & ZSOCK_POLLIN) != 0) {
+			relay_forward_to_client(buf, sizeof(buf));
+		}
+	}
+}
+
+static void relay_start(net_sa_family_t family, int drop, struct net_sockaddr *client_side_addr)
+{
+	struct net_sockaddr_storage server_side_addr;
+	net_socklen_t addrlen = family == NET_AF_INET6 ? sizeof(struct net_sockaddr_in6) :
+							  sizeof(struct net_sockaddr_in);
+
+	if (family == NET_AF_INET6) {
+		prepare_sock_udp_v6(MY_IPV6_ADDR, RELAY_CLIENT_SIDE_PORT, &relay.client_side,
+				    (struct net_sockaddr_in6 *)client_side_addr);
+		prepare_sock_udp_v6(MY_IPV6_ADDR, RELAY_SERVER_SIDE_PORT, &relay.server_side,
+				    (struct net_sockaddr_in6 *)&server_side_addr);
+	} else {
+		prepare_sock_udp_v4(MY_IPV4_ADDR, RELAY_CLIENT_SIDE_PORT, &relay.client_side,
+				    (struct net_sockaddr_in *)client_side_addr);
+		prepare_sock_udp_v4(MY_IPV4_ADDR, RELAY_SERVER_SIDE_PORT, &relay.server_side,
+				    (struct net_sockaddr_in *)&server_side_addr);
+	}
+
+	(void)memcpy(&relay.server_addr, &server_side_addr, sizeof(server_side_addr));
+	if (family == NET_AF_INET6) {
+		net_sin6(net_sad(&relay.server_addr))->sin6_port = net_htons(SERVER_PORT);
+	} else {
+		net_sin(net_sad(&relay.server_addr))->sin_port = net_htons(SERVER_PORT);
+	}
+
+	relay.server_addrlen = addrlen;
+	test_bind(relay.client_side, client_side_addr, addrlen);
+	test_bind(relay.server_side, (struct net_sockaddr *)&server_side_addr, addrlen);
+
+	atomic_set(&relay.stop, 0);
+	atomic_set(&relay.drop_left, drop);
+	atomic_set(&relay.server_hellos, 0);
+
+	k_thread_create(&relay.thread, relay_stack, K_THREAD_STACK_SIZEOF(relay_stack),
+			relay_thread_fn, NULL, NULL, NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	relay.started = true;
+}
+
+static void relay_stop(void)
+{
+	if (relay.started) {
+		atomic_set(&relay.stop, 1);
+		(void)k_thread_join(&relay.thread, K_FOREVER);
+		relay.started = false;
+	}
+
+	if (relay.client_side >= 0) {
+		test_close(relay.client_side);
+		relay.client_side = -1;
+	}
+
+	if (relay.server_side >= 0) {
+		test_close(relay.server_side);
+		relay.server_side = -1;
+	}
+}
+
+struct client_handshake_data {
+	struct k_work_delayable work;
+	struct k_sem done;
+	int sock;
+	struct net_sockaddr *addr;
+	ssize_t sent;
+};
+
+static void client_handshake_send_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct client_handshake_data *data =
+		CONTAINER_OF(dwork, struct client_handshake_data, work);
+	uint8_t tx_buf = 0;
+
+	data->sent = -1;
+
+	if (zsock_connect(data->sock, data->addr, data->addr->sa_family == NET_AF_INET ?
+			  sizeof(struct net_sockaddr_in) : sizeof(struct net_sockaddr_in6)) == 0) {
+		data->sent = zsock_send(data->sock, &tx_buf, sizeof(tx_buf), 0);
+	}
+
+	k_sem_give(&data->done);
+}
+
+static void set_hs_timeouts(int sock, uint32_t min_ms, uint32_t max_ms)
+{
+	zassert_ok(zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_HANDSHAKE_TIMEOUT_MIN,
+				    &min_ms, sizeof(min_ms)));
+	zassert_ok(zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_HANDSHAKE_TIMEOUT_MAX,
+				    &max_ms, sizeof(max_ms)));
+}
+
+static void dtls_relay_prepare(net_sa_family_t family, int drop,
+			       struct client_handshake_data *data,
+			       struct net_sockaddr *relay_addr)
+{
+	struct net_sockaddr s_saddr;
+	struct net_sockaddr c_saddr;
+	net_socklen_t addrlen = family == NET_AF_INET6 ? sizeof(struct net_sockaddr_in6) :
+							  sizeof(struct net_sockaddr_in);
+	int role = ZSOCK_TLS_DTLS_ROLE_SERVER;
+	int on_connect = 0;
+
+	if (family == NET_AF_INET6) {
+		prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock,
+				     (struct net_sockaddr_in6 *)&c_saddr, NET_IPPROTO_DTLS_1_2);
+		prepare_sock_dtls_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock,
+				     (struct net_sockaddr_in6 *)&s_saddr, NET_IPPROTO_DTLS_1_2);
+	} else {
+		prepare_sock_dtls_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock,
+				     (struct net_sockaddr_in *)&c_saddr, NET_IPPROTO_DTLS_1_2);
+		prepare_sock_dtls_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock,
+				     (struct net_sockaddr_in *)&s_saddr, NET_IPPROTO_DTLS_1_2);
+	}
+
+	test_config_psk(s_sock, c_sock);
+
+	zassert_ok(zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_ROLE,
+				    &role, sizeof(role)));
+	zassert_ok(zsock_setsockopt(c_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_HANDSHAKE_ON_CONNECT,
+				    &on_connect, sizeof(on_connect)));
+	set_hs_timeouts(s_sock, SERVER_HS_TIMEOUT_MIN_MS, SERVER_HS_TIMEOUT_MAX_MS);
+	set_hs_timeouts(c_sock, CLIENT_HS_TIMEOUT_MIN_MS, CLIENT_HS_TIMEOUT_MAX_MS);
+
+	test_bind(s_sock, &s_saddr, addrlen);
+
+	relay_start(family, drop, relay_addr);
+
+	k_sem_init(&data->done, 0, 1);
+	data->sock = c_sock;
+	data->addr = relay_addr;
+	k_work_init_delayable(&data->work, client_handshake_send_work_handler);
+	test_work_reschedule(&data->work, K_NO_WAIT);
+}
+
+static void dtls_relay_drive_until_client_done(struct client_handshake_data *data)
+{
+	struct zsock_pollfd fds[1];
+	int64_t start = k_uptime_get();
+	uint8_t rx_buf;
+
+	while (k_sem_take(&data->done, K_NO_WAIT) != 0) {
+		if (k_uptime_get() - start > CLIENT_DONE_MAX_MS) {
+			break;
+		}
+
+		fds[0].fd = s_sock;
+		fds[0].events = ZSOCK_POLLIN;
+		if ((zsock_poll(fds, 1, CLIENT_DONE_CHECK_MS) > 0) &&
+		    ((fds[0].revents & ZSOCK_POLLIN) != 0)) {
+			(void)zsock_recv(s_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+		}
+	}
+
+	test_work_wait(&data->work);
+}
+
+static void test_dtls_server_poll_retransmits(net_sa_family_t family)
+{
+	struct client_handshake_data data;
+	struct net_sockaddr relay_addr;
+	struct zsock_pollfd fds[1];
+	int64_t start;
+	int64_t elapsed = 0;
+	short revents = 0;
+	ssize_t received = -1;
+	uint8_t rx_buf;
+	int ret = 0;
+
+	dtls_relay_prepare(family, 1, &data, &relay_addr);
+
+	start = k_uptime_get();
+	while ((ret == 0) && (elapsed < RETRANSMIT_POLL_WINDOW_MS)) {
+		fds[0].fd = s_sock;
+		fds[0].events = ZSOCK_POLLIN;
+		ret = zsock_poll(fds, 1, RETRANSMIT_POLL_WINDOW_MS - elapsed);
+		elapsed = k_uptime_get() - start;
+	}
+
+	if (ret > 0) {
+		revents = fds[0].revents;
+	}
+
+	if ((revents & ZSOCK_POLLIN) != 0) {
+		received = zsock_recv(s_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	}
+
+	dtls_relay_drive_until_client_done(&data);
+
+	zassert_true(elapsed < RETRANSMIT_MAX_MS,
+		     "server poll() returned after %lld ms, revents 0x%x", (long long)elapsed,
+		     revents);
+	zassert_equal(revents, ZSOCK_POLLIN, "unexpected revents 0x%x", revents);
+	zassert_equal(received, sizeof(rx_buf), "recv() failed");
+	zassert_equal(data.sent, sizeof(rx_buf), "client send() failed");
+}
+
+ZTEST(net_socket_tls, test_v4_dtls_server_poll_retransmits)
+{
+	test_dtls_server_poll_retransmits(NET_AF_INET);
+}
+
+ZTEST(net_socket_tls, test_v6_dtls_server_poll_retransmits)
+{
+	test_dtls_server_poll_retransmits(NET_AF_INET6);
+}
+
+static void test_dtls_server_poll_timer_no_pollin(net_sa_family_t family)
+{
+	struct client_handshake_data data;
+	struct net_sockaddr relay_addr;
+	struct zsock_pollfd fds[1];
+	atomic_val_t server_hellos;
+	short revents;
+	int ret;
+
+	dtls_relay_prepare(family, RELAY_DROP_ALL, &data, &relay_addr);
+
+	fds[0].fd = s_sock;
+	fds[0].events = ZSOCK_POLLIN;
+	ret = zsock_poll(fds, 1, TIMER_ONLY_POLL_WINDOW_MS);
+	revents = fds[0].revents;
+	server_hellos = atomic_get(&relay.server_hellos);
+
+	atomic_set(&relay.drop_left, 0);
+	dtls_relay_drive_until_client_done(&data);
+
+	zassert_equal(ret, 0, "poll() reported an event, revents 0x%x", revents);
+	zassert_true(server_hellos >= 2, "server sent %ld ServerHello flights",
+		     (long)server_hellos);
+}
+
+ZTEST(net_socket_tls, test_v4_dtls_server_poll_timer_no_pollin)
+{
+	test_dtls_server_poll_timer_no_pollin(NET_AF_INET);
+}
+
+ZTEST(net_socket_tls, test_v6_dtls_server_poll_timer_no_pollin)
+{
+	test_dtls_server_poll_timer_no_pollin(NET_AF_INET6);
+}
+
+static void test_dtls_server_full_poll_set(net_sa_family_t family)
+{
+	struct zsock_pollfd fds[CONFIG_ZVFS_POLL_MAX];
+	struct net_sockaddr s_saddr;
+	net_socklen_t addrlen = family == NET_AF_INET6 ? sizeof(struct net_sockaddr_in6) :
+							  sizeof(struct net_sockaddr_in);
+	int role = ZSOCK_TLS_DTLS_ROLE_SERVER;
+	bool opened = true;
+	int ret;
+	int err;
+
+	if (family == NET_AF_INET6) {
+		prepare_sock_dtls_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock,
+				     (struct net_sockaddr_in6 *)&s_saddr, NET_IPPROTO_DTLS_1_2);
+	} else {
+		prepare_sock_dtls_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock,
+				     (struct net_sockaddr_in *)&s_saddr, NET_IPPROTO_DTLS_1_2);
+	}
+
+	zassert_ok(zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_ROLE,
+				    &role, sizeof(role)));
+	test_bind(s_sock, &s_saddr, addrlen);
+
+	fds[0].fd = s_sock;
+	fds[0].events = ZSOCK_POLLIN;
+	for (size_t i = 1U; i < ARRAY_SIZE(fds); i++) {
+		fds[i].fd = zsock_socket(family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+		fds[i].events = ZSOCK_POLLIN;
+		if (fds[i].fd < 0) {
+			opened = false;
+		}
+	}
+
+	ret = zsock_poll(fds, ARRAY_SIZE(fds), 0);
+	err = errno;
+
+	for (size_t i = 1U; i < ARRAY_SIZE(fds); i++) {
+		if (fds[i].fd >= 0) {
+			(void)zsock_close(fds[i].fd);
+		}
+	}
+
+	zassert_true(opened, "a UDP socket of the poll set was not created");
+	zassert_false((ret < 0) && (err == ENOMEM), "poll() of a full set failed with ENOMEM");
+	zassert_equal(ret, 0, "poll() returned %d, errno %d", ret, err);
+}
+
+ZTEST(net_socket_tls, test_v4_dtls_server_full_poll_set)
+{
+	test_dtls_server_full_poll_set(NET_AF_INET);
+}
+
+ZTEST(net_socket_tls, test_v6_dtls_server_full_poll_set)
+{
+	test_dtls_server_full_poll_set(NET_AF_INET6);
+}
+
 static void *tls_tests_setup(void)
 {
 	k_work_queue_init(&tls_test_work_queue);
@@ -3819,6 +4232,7 @@ static void tls_tests_after(void *arg)
 {
 	ARG_UNUSED(arg);
 
+	relay_stop();
 	test_sockets_close();
 }
 
