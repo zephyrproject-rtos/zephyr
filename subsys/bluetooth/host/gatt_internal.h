@@ -35,6 +35,9 @@
 void bt_gatt_init(void);
 void bt_gatt_connected(struct bt_conn *conn);
 void bt_gatt_att_max_mtu_changed(struct bt_conn *conn, uint16_t tx, uint16_t rx);
+
+/* Local MTU to use in the ATT MTU exchange on the unenhanced bearer */
+uint16_t bt_gatt_local_uatt_mtu(struct bt_conn *conn);
 void bt_gatt_encrypt_change(struct bt_conn *conn);
 void bt_gatt_disconnected(struct bt_conn *conn);
 
