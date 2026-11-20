@@ -19,6 +19,7 @@
 		wakeup-button = &user_button_2;
 		sdhc0 = &usdhc0;
 		mcuboot-button0 = &user_button_2;
+		die-temp0 = &temp0;
 	};
 
 	leds {
