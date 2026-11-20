@@ -162,6 +162,7 @@ class PeriphconfBuilder:
         *,
         has_irq_mapping: bool = True,
         add_ppib_channel_links: bool = True,
+        skip_spu_periph_perm: bool = False,
     ) -> None:
         """Generate macros for populating PERIPHCONF based on the properties of the given
         devicetree node located in a global domain.
@@ -171,12 +172,14 @@ class PeriphconfBuilder:
             devicetree belongs to, if interrupts are specified on the node.
         :param add_ppib_channel_links: add PPIB connections based on the channel link properties of
             the node.
+        :param skip_spu_periph_perm: do not generate SPU PERIPHCONF entries for this peripheral.
         """
         self._add_peripheral_cfg(
             node_or_nodelabel,
             is_global=True,
             has_irq_mapping=has_irq_mapping,
             add_ppib_channel_links=add_ppib_channel_links,
+            skip_spu_periph_perm=skip_spu_periph_perm,
         )
 
     def _add_peripheral_cfg(
@@ -185,6 +188,7 @@ class PeriphconfBuilder:
         is_global: bool = True,
         has_irq_mapping: bool = True,
         add_ppib_channel_links: bool = True,
+        skip_spu_periph_perm: bool = False,
     ) -> None:
         if isinstance(node_or_nodelabel, str):
             node = self._dt.label2node[node_or_nodelabel]
@@ -195,7 +199,7 @@ class PeriphconfBuilder:
             return
 
         if is_global:
-            has_skip_spu_periph_perm_compat = any(
+            has_skip_spu_periph_perm_compat = skip_spu_periph_perm or any(
                 compat in SKIP_SPU_PERIPH_PERM_COMPATS for compat in node.compats
             )
             if not has_skip_spu_periph_perm_compat:
