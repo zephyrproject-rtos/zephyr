@@ -1,0 +1,9 @@
+tests:
+  mc.msg:
+    tags:
+      - mc
+    platform_allow:
+      - native_sim/native/64
+      - nrf54l15dk/nrf54l15/cpuapp
+      - qemu_x86/atom
+      - qemu_x86_64/atom

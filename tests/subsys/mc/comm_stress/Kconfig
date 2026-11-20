@@ -1,0 +1,18 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "MC communication stress tests"
+
+source "Kconfig.zephyr"
+
+config TEST_MC_STRESS_UART
+	bool "Use the two-board UART transport"
+	depends on SERIAL
+	help
+	  Run the communication tests between two boards over UART.
+
+config TEST_MC_STRESS_SENDER
+	bool "Run the UART sender role"
+	depends on TEST_MC_STRESS_UART
+	help
+	  Send test payloads to the receiver board.
