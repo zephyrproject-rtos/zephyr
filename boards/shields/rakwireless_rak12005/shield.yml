@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: rakwireless_rak12005
+  full_name: RAK12005 WisBlock Rain Sensor
+  vendor: rakwireless
+  supported_features:
+    - gpio
+    - input

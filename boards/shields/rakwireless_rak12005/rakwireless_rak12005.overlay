@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		sw0 = &mcp606_rak12005;
+	};
+
+	input-rak12005 {
+		compatible = "gpio-keys";
+
+		mcp606_rak12005: mcp606-rak12005 {
+			gpios = <&wisblock_io WISBLOCK_IO_IO6 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
