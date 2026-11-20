@@ -227,10 +227,45 @@ static int sx126x_config_gfsk(const struct device *dev, const struct lora_modem_
  * made, so it is made here rather than at each of them.
  */
 
-int sx126x_lora_config_gfsk(const struct device *dev, const struct lora_modem_config_gfsk *gfsk)
+static int sx126x_apply_gfsk_config(const struct device *dev, const void *cfg)
 {
+	const struct lora_modem_config_gfsk *gfsk = cfg;
 	struct sx126x_data *data = dev->data;
 	const struct sx126x_hal_config *hal_config = dev->config;
+	int ret;
+
+	data->gfsk_config = *gfsk;
+
+	ret = sx126x_set_packet_type(dev, SX126X_PACKET_TYPE_GFSK);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = sx126x_config_carrier(dev, gfsk->frequency, gfsk->tx_power);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = sx126x_config_gfsk(dev, gfsk);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Boosting the receiver is a board property, not a modem one */
+	ret = sx126x_set_rx_gain(dev, hal_config->rx_boosted);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->gfsk = true;
+	LOG_DBG("Config: GFSK freq=%u, br=%u, fdev=%u, bw=%u, power=%d", gfsk->frequency,
+		gfsk->bitrate, gfsk->freq_deviation, gfsk->bandwidth, gfsk->tx_power);
+
+	return ret;
+}
+
+int sx126x_lora_config_gfsk(const struct device *dev, const struct lora_modem_config_gfsk *gfsk)
+{
 	int ret;
 
 	ret = sx126x_validate_gfsk_config(gfsk);
@@ -238,41 +273,5 @@ int sx126x_lora_config_gfsk(const struct device *dev, const struct lora_modem_co
 		return ret;
 	}
 
-	ret = sx126x_config_begin(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
-	data->gfsk_config = *gfsk;
-
-	ret = sx126x_set_packet_type(dev, SX126X_PACKET_TYPE_GFSK);
-	if (ret < 0) {
-		goto out;
-	}
-
-	ret = sx126x_config_carrier(dev, gfsk->frequency, gfsk->tx_power);
-	if (ret < 0) {
-		goto out;
-	}
-
-	ret = sx126x_config_gfsk(dev, gfsk);
-	if (ret < 0) {
-		goto out;
-	}
-
-	/* Boosting the receiver is a board property, not a modem one */
-	ret = sx126x_set_rx_gain(dev, hal_config->rx_boosted);
-	if (ret < 0) {
-		goto out;
-	}
-
-	data->gfsk = true;
-	data->config_valid = true;
-	LOG_DBG("Config: GFSK freq=%u, br=%u, fdev=%u, bw=%u, power=%d", gfsk->frequency,
-		gfsk->bitrate, gfsk->freq_deviation, gfsk->bandwidth, gfsk->tx_power);
-
-out:
-	sx126x_set_sleep(dev);
-	k_mutex_unlock(&data->lock);
-	return ret;
+	return lora_radio_configure(dev, sx126x_apply_gfsk_config, gfsk);
 }

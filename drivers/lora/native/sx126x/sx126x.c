@@ -15,10 +15,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 
-#define SX126X_REST_STATE \
-	(IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP) \
-	 ? SX126X_STATE_SLEEP : SX126X_STATE_IDLE)
-
 #define SX126X_SF56_MIN_PREAMBLE_LEN	12
 
 #ifdef CONFIG_LORA_GFSK
@@ -396,14 +392,52 @@ static int sx126x_set_stop_timer_on_preamble(const struct device *dev,
 				    &val, 1);
 }
 
+/*
+ * Read this if you have trouble making the duty cycle working reliably.
+ * I have wasted many hours on this so I'm passing this along.
+ *
+ * The driver sets StopTimerOnPreamble = true before entering duty
+ * cycle mode. This makes the radio stay in RX once a preamble is
+ * detected, instead of going back to sleep when the RX window
+ * expires. The radio then searches for the sync word within a
+ * window sized by the receiver's preamble_len. This value must
+ * match the sender's: a mismatch causes the demodulator to stop
+ * searching before the sync word arrives.
+ *
+ * Matching preamble_len — OK (works even if RX joins mid-preamble)
+ *
+ *   TX  |#########< 100 preamble symbols >###########|SW|HDR| payload |
+ *                       ^                            ^
+ *   RX  ..sleep..|==RX==|<<< stays in RX >>>>>>>>>>>>|
+ *                   ^                                |
+ *                   preamble detected                |
+ *                   timer stops (StopTimerOnPreamble)|
+ *                   search window = 100 symbols      |
+ *                   sync word found -----------------+
+ *                   --> full packet received, RX_DONE
+ *
+ * Mismatched preamble_len (RX = 8, TX = 100) — FAIL
+ *
+ *   TX  |#########< 100 preamble symbols >###########|SW|HDR| payload |
+ *                       ^                            ^
+ *   RX  ..sleep..|==RX==|<<< stays in RX             |
+ *                   ^        but gives up here       |
+ *                   |        |<-8->|                 |
+ *                   preamble detected                |
+ *                   search window = only 8 symbols   |
+ *                   sync word NOT found within window
+ *                   --> demodulator fails, packet lost
+ *
+ * See samples/drivers/lora/duty_cycle/
+ */
 static int sx126x_set_rx_duty_cycle(const struct device *dev,
-				    uint32_t rx_period, uint32_t sleep_period)
+				    uint32_t rx_ms, uint32_t sleep_ms)
 {
 	uint8_t buf[6];
 	int ret;
 
-	sys_put_be24(rx_period, &buf[0]);
-	sys_put_be24(sleep_period, &buf[3]);
+	sys_put_be24(SX126X_MS_TO_TIMEOUT(rx_ms), &buf[0]);
+	sys_put_be24(SX126X_MS_TO_TIMEOUT(sleep_ms), &buf[3]);
 
 	ret = sx126x_set_stop_timer_on_preamble(dev, true);
 	if (ret < 0) {
@@ -631,13 +665,6 @@ static int sx126x_chip_init(const struct device *dev)
 	return 0;
 }
 
-static void sx126x_dio1_callback(const struct device *dev)
-{
-	struct sx126x_data *data = dev->data;
-
-	k_work_submit(&data->irq_work);
-}
-
 static void sx126x_set_rf_path(const struct device *dev, bool enable, bool tx)
 {
 	sx126x_hal_set_antenna_enable(dev, enable);
@@ -689,19 +716,12 @@ static int sx126x_reconnect_rf_gpios(const struct device *dev)
 }
 #endif /* CONFIG_PM_DEVICE */
 
-int sx126x_set_sleep(const struct device *dev)
+static int sx126x_set_sleep(const struct device *dev)
 {
-	struct sx126x_data *data = dev->data;
 	uint8_t cfg = SX126X_SLEEP_WARM_START;
-	int ret;
 
 	if (!IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP)) {
-		atomic_set(&data->state, SX126X_STATE_IDLE);
 		sx126x_set_rf_path(dev, false, false);
-		return 0;
-	}
-
-	if (atomic_get(&data->state) == SX126X_STATE_SLEEP) {
 		return 0;
 	}
 
@@ -710,12 +730,7 @@ int sx126x_set_sleep(const struct device *dev)
 
 	sx126x_set_rf_path(dev, false, false);
 
-	ret = sx126x_hal_write_cmd(dev, SX126X_CMD_SET_SLEEP, &cfg, 1);
-	if (ret == 0) {
-		atomic_set(&data->state, SX126X_STATE_SLEEP);
-	}
-
-	return ret;
+	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_SLEEP, &cfg, 1);
 }
 
 static int sx126x_ensure_ready(const struct device *dev)
@@ -724,7 +739,7 @@ static int sx126x_ensure_ready(const struct device *dev)
 	int ret;
 
 	/* Re-enable DIO1 interrupt */
-	ret = sx126x_hal_set_dio1_callback(dev, sx126x_dio1_callback);
+	ret = sx126x_hal_set_dio1_callback(dev, lora_radio_irq);
 	if (ret < 0) {
 		return ret;
 	}
@@ -753,139 +768,64 @@ static int sx126x_ensure_ready(const struct device *dev)
 	return 0;
 }
 
-static void sx126x_handle_irq_tx_done(const struct device *dev)
+/* Take the radio out of the operation it is busy with */
+static int sx126x_stop(const struct device *dev, enum lora_radio_op op)
 {
-	struct sx126x_data *data = dev->data;
-	struct sx126x_tx_result result = { .status = 0 };
-
-	LOG_DBG("TX done");
-	sx126x_set_sleep(dev);
-
-	if (data->tx_async_signal != NULL) {
-		k_poll_signal_raise(data->tx_async_signal, 0);
-		data->tx_async_signal = NULL;
+	/*
+	 * During duty cycle the BUSY pin stays asserted even in the
+	 * sleep phase. Wake the radio via a raw NSS edge (bypasses
+	 * BUSY check) so the standby command can go through
+	 * immediately.
+	 */
+	if (op == LORA_RADIO_OP_RX_DUTY_CYCLE && sx126x_hal_is_busy(dev)) {
+		sx126x_hal_wakeup(dev);
 	}
-	k_msgq_put(&data->tx_msgq, &result, K_NO_WAIT);
+
+	return sx126x_set_standby(dev, SX126X_STANDBY_RC);
 }
 
-static void sx126x_rx_restart(const struct device *dev)
+/* Read the packet behind an RX done interrupt. Returns its length. */
+static int sx126x_read_packet(const struct device *dev, uint32_t irq_status,
+			      uint8_t *buf, uint8_t size, int16_t *rssi, int8_t *snr)
 {
-	struct sx126x_data *data = dev->data;
-
-	if (atomic_get(&data->state) == SX126X_STATE_RX_DUTY_CYCLE) {
-		int ret;
-
-		ret = sx126x_set_rx_duty_cycle(dev,
-					       data->duty_cycle.rx_period,
-					       data->duty_cycle.sleep_period);
-		if (ret < 0) {
-			data->rx_cb = NULL;
-			data->rx_cb_user_data = NULL;
-			atomic_set(&data->state, SX126X_REST_STATE);
-			sx126x_set_sleep(dev);
-		}
-	} else {
-		sx126x_set_rx(dev, 0);
-	}
-}
-
-static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_status)
-{
-	struct sx126x_data *data = dev->data;
-	struct sx126x_rx_result result = { 0 };
 	uint8_t payload_len = 0, offset = 0;
+	uint8_t len;
 	int ret;
 
-	/* Get received packet info */
 	ret = sx126x_get_rx_buffer_status(dev, &payload_len, &offset);
 	if (ret < 0) {
 		LOG_ERR("Failed to get RX buffer status");
-		result.status = ret;
-		goto out;
+		return ret;
 	}
 
-	sx126x_get_packet_status(dev, &result.rssi, &result.snr);
+	sx126x_get_packet_status(dev, rssi, snr);
 
-	if (irq_status & SX126X_IRQ_CRC_ERR) {
+	if ((irq_status & SX126X_IRQ_CRC_ERR) != 0) {
 		LOG_WRN("CRC error");
-		result.status = -EIO;
-		goto out;
+		return -EIO;
 	}
 
-	result.len = MIN(payload_len, sizeof(data->rx_buf));
-	ret = sx126x_hal_read_buffer(dev, offset, data->rx_buf, result.len);
+	len = MIN(payload_len, size);
+	ret = sx126x_hal_read_buffer(dev, offset, buf, len);
 	if (ret < 0) {
 		LOG_ERR("Failed to read RX buffer");
-		result.status = ret;
-		goto out;
+		return ret;
 	}
 
-	result.status = result.len;
-	LOG_DBG("RX done: %d bytes, RSSI=%d, SNR=%d",
-		result.len, result.rssi, result.snr);
+	LOG_DBG("RX done: %d bytes, RSSI=%d, SNR=%d", len, *rssi, *snr);
 
-out:
-	if (data->rx_cb == NULL) {
-		sx126x_set_sleep(dev);
-		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
-		return;
-	}
-
-	/* Async mode: deliver valid packets, drop errors silently */
-	if (result.status > 0) {
-		data->rx_cb(dev, data->rx_buf, result.len,
-			    result.rssi, result.snr,
-			    data->rx_cb_user_data);
-	}
-
-	/* Restart reception unless the callback stopped it */
-	if (data->rx_cb != NULL) {
-		sx126x_rx_restart(dev);
-	}
+	return len;
 }
 
-static void sx126x_handle_irq_timeout(const struct device *dev)
+/* Read and clear the pending interrupts */
+static int sx126x_get_and_clear_irq(const struct device *dev, uint32_t *irq)
 {
-	struct sx126x_data *data = dev->data;
-
-	LOG_DBG("Timeout");
-
-	if (atomic_get(&data->state) == SX126X_STATE_RX_DUTY_CYCLE) {
-		/*
-		 * Preamble was detected but full packet reception failed.
-		 * The radio fell back to STDBY_RC — restart the duty cycle.
-		 */
-		sx126x_rx_restart(dev);
-		return;
-	}
-
-	sx126x_set_sleep(dev);
-
-	if (data->tx_async_signal != NULL) {
-		struct sx126x_tx_result result = { .status = -ETIMEDOUT };
-
-		k_poll_signal_raise(data->tx_async_signal, -ETIMEDOUT);
-		data->tx_async_signal = NULL;
-		k_msgq_put(&data->tx_msgq, &result, K_NO_WAIT);
-	} else if (data->rx_cb == NULL) {
-		/* Sync RX timeout */
-		struct sx126x_rx_result result = { .status = -EAGAIN };
-
-		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
-	}
-}
-
-static void sx126x_irq_work_handler(struct k_work *work)
-{
-	struct sx126x_data *data = CONTAINER_OF(work, struct sx126x_data, irq_work);
-	const struct device *dev = data->dev;
 	uint16_t irq_status = 0;
 	int ret;
 
 	ret = sx126x_get_irq_status(dev, &irq_status);
 	if (ret < 0) {
-		LOG_ERR("Failed to get IRQ status");
-		return;
+		return ret;
 	}
 
 	LOG_DBG("IRQ status: 0x%04x", irq_status);
@@ -893,22 +833,9 @@ static void sx126x_irq_work_handler(struct k_work *work)
 	/* Clear handled IRQs */
 	sx126x_clear_irq_status(dev, irq_status);
 
-	if (irq_status & SX126X_IRQ_TX_DONE) {
-		sx126x_handle_irq_tx_done(dev);
-	}
+	*irq = irq_status;
 
-	if (irq_status & SX126X_IRQ_RX_DONE) {
-		sx126x_handle_irq_rx_done(dev, irq_status);
-	}
-
-	if (irq_status & SX126X_IRQ_RX_TX_TIMEOUT) {
-		sx126x_handle_irq_timeout(dev);
-	}
-
-	/* Re-enable the DIO1 interrupt for the next event (unless sleeping) */
-	if (atomic_get(&data->state) != SX126X_REST_STATE) {
-		sx126x_hal_dio1_irq_enable(dev);
-	}
+	return 0;
 }
 
 static int sx126x_set_configured_packet_params(const struct device *dev, uint8_t payload_len,
@@ -939,26 +866,6 @@ static int sx126x_set_configured_packet_params(const struct device *dev, uint8_t
 				SX126X_LORA_IQ_STANDARD);
 }
 
-int sx126x_config_begin(const struct device *dev)
-{
-	struct sx126x_data *data = dev->data;
-	int ret;
-
-	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_IDLE)) {
-		return -EBUSY;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	ret = sx126x_ensure_ready(dev);
-	if (ret < 0) {
-		k_mutex_unlock(&data->lock);
-		atomic_set(&data->state, SX126X_REST_STATE);
-	}
-
-	return ret;
-}
-
 /* Frequency and transmit power are reached the same way whichever modem the
  * rest of the configuration is for.
  */
@@ -979,23 +886,14 @@ int sx126x_config_carrier(const struct device *dev, uint32_t frequency, int8_t t
 	return sx126x_hal_configure_tx_params(dev, tx_power, frequency, SX126X_RAMP_200_US);
 }
 
-static int sx126x_lora_config(const struct device *dev, const struct lora_modem_config *config)
+static int sx126x_apply_lora_config(const struct device *dev, const void *cfg)
 {
+	const struct lora_modem_config *config = cfg;
 	struct sx126x_data *data = dev->data;
 	const struct sx126x_hal_config *hal_config = dev->config;
 	uint8_t bw_reg;
 	bool ldro;
 	int ret;
-
-	ret = sx126x_validate_config(dev, config);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = sx126x_config_begin(dev);
-	if (ret < 0) {
-		return ret;
-	}
 
 	/* Store configuration */
 	memcpy(&data->config, config, sizeof(*config));
@@ -1022,12 +920,12 @@ static int sx126x_lora_config(const struct device *dev, const struct lora_modem_
 	 */
 	ret = sx126x_set_packet_type(dev, SX126X_PACKET_TYPE_LORA);
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 
 	ret = sx126x_config_carrier(dev, config->frequency, config->tx_power);
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 
 	/* Set modulation parameters */
@@ -1037,49 +935,45 @@ static int sx126x_lora_config(const struct device *dev, const struct lora_modem_
 	ret = sx126x_set_modulation_params(dev, config->datarate, bw_reg, config->coding_rate,
 					   ldro);
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 
 	/* Set sync word */
 	ret = sx126x_set_sync_word(dev, config);
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 
 	/* Set RX gain */
 	ret = sx126x_set_rx_gain(dev, hal_config->rx_boosted);
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 
 	data->gfsk = false;
-	data->config_valid = true;
 	LOG_DBG("Config: freq=%u, SF=%d, BW=%d, CR=%d, power=%d",
 		config->frequency, config->datarate, config->bandwidth,
 		config->coding_rate, config->tx_power);
 
-out:
-	sx126x_set_sleep(dev);
-	k_mutex_unlock(&data->lock);
 	return ret;
 }
 
-static int sx126x_lora_send_async(const struct device *dev,
-				  uint8_t *data_buf, uint32_t data_len,
-				  struct k_poll_signal *async)
+static int sx126x_lora_config(const struct device *dev, const struct lora_modem_config *config)
 {
-	struct sx126x_data *data = dev->data;
 	int ret;
 
-	if (!data->config_valid) {
-		LOG_ERR("Not configured");
-		return -EINVAL;
+	ret = sx126x_validate_config(dev, config);
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (data_len > SX126X_MAX_PAYLOAD_LEN) {
-		LOG_ERR("Payload too long: %u", data_len);
-		return -EINVAL;
-	}
+	return lora_radio_configure(dev, sx126x_apply_lora_config, config);
+}
+
+/* Whether the radio can send data_len bytes as it is configured */
+static int sx126x_tx_check(const struct device *dev, uint32_t data_len)
+{
+	struct sx126x_data *data = dev->data;
 
 	/* The radio clocks out the configured length, so a shorter payload
 	 * would put whatever the buffer still held on air.
@@ -1091,429 +985,53 @@ static int sx126x_lora_send_async(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_TX)) {
-		LOG_ERR("Busy");
-		return -EBUSY;
-	}
+	return 0;
+}
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	ret = sx126x_ensure_ready(dev);
-	if (ret < 0) {
-		k_mutex_unlock(&data->lock);
-		atomic_set(&data->state, SX126X_REST_STATE);
-		return ret;
-	}
-
-	data->tx_async_signal = async;
-	k_msgq_purge(&data->tx_msgq);
+static int sx126x_send_packet(const struct device *dev, const uint8_t *data_buf,
+			      uint32_t data_len)
+{
+	struct sx126x_data *data = dev->data;
+	int ret;
 
 	/* Set packet parameters */
 	ret = sx126x_set_configured_packet_params(dev, data_len, false);
 	if (ret < 0) {
-		goto out_error;
+		return ret;
 	}
 
 	/* Write payload to buffer */
 	ret = sx126x_hal_write_buffer(dev, 0x00, data_buf, data_len);
 	if (ret < 0) {
-		goto out_error;
+		return ret;
 	}
 
 	ret = sx126x_apply_tx_modulation_workaround(
 		dev, !SX126X_IS_GFSK(data) && data->config.bandwidth == BW_500_KHZ);
 	if (ret < 0) {
-		goto out_error;
+		return ret;
 	}
 
 	/* Enable antenna and set TX path */
 	sx126x_set_rf_path(dev, true, true);
 
 	/* Start transmission with 10 second timeout */
-	ret = sx126x_set_tx(dev, 10000);
-	if (ret < 0) {
-		goto out_error;
-	}
-
-	k_mutex_unlock(&data->lock);
-	return 0;
-
-out_error:
-	data->tx_async_signal = NULL;
-	sx126x_set_sleep(dev);
-	k_mutex_unlock(&data->lock);
-	return ret;
+	return sx126x_set_tx(dev, 10000);
 }
 
-static int sx126x_lora_send(const struct device *dev,
-			    uint8_t *data_buf, uint32_t data_len)
+/* Set the radio up for the receptions that follow */
+static int sx126x_rx_prepare(const struct device *dev)
 {
-	struct sx126x_data *data = dev->data;
-	struct sx126x_tx_result result;
 	int ret;
-
-	ret = sx126x_lora_send_async(dev, data_buf, data_len, NULL);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Wait for TX completion */
-	ret = k_msgq_get(&data->tx_msgq, &result, K_SECONDS(15));
-	if (ret < 0) {
-		LOG_ERR("TX timeout");
-		/* Chip is still transmitting, abort first */
-		sx126x_set_standby(dev, SX126X_STANDBY_RC);
-		sx126x_set_sleep(dev);
-		return -ETIMEDOUT;
-	}
-
-	return result.status;
-}
-
-static int sx126x_lora_recv(const struct device *dev, uint8_t *data_buf,
-			    uint8_t size, k_timeout_t timeout,
-			    int16_t *rssi, int8_t *snr)
-{
-	struct sx126x_data *data = dev->data;
-	struct sx126x_rx_result result;
-	uint32_t timeout_ms;
-	int ret;
-
-	if (!data->config_valid) {
-		LOG_ERR("Not configured");
-		return -EINVAL;
-	}
-
-	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_RX)) {
-		LOG_ERR("Busy");
-		return -EBUSY;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	ret = sx126x_ensure_ready(dev);
-	if (ret < 0) {
-		k_mutex_unlock(&data->lock);
-		atomic_set(&data->state, SX126X_REST_STATE);
-		return ret;
-	}
-
-	data->rx_cb = NULL;
-	k_msgq_purge(&data->rx_msgq);
-
-	/* Set packet parameters for variable length reception */
-	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN, true);
-	if (ret < 0) {
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
-	}
-
-	/* Enable antenna and set RX path */
-	sx126x_set_rf_path(dev, true, false);
-
-	/* Start reception (0 = continuous for K_FOREVER) */
-	timeout_ms = K_TIMEOUT_EQ(timeout, K_FOREVER)
-		     ? 0 : k_ticks_to_ms_ceil32(timeout.ticks);
-	ret = sx126x_set_rx(dev, timeout_ms);
-	if (ret < 0) {
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
-	}
-
-	k_mutex_unlock(&data->lock);
-
-	/* Wait for RX completion */
-	ret = k_msgq_get(&data->rx_msgq, &result, timeout);
-	if (ret < 0) {
-		LOG_DBG("RX timeout");
-		/* Chip is still receiving, abort first */
-		sx126x_set_standby(dev, SX126X_STANDBY_RC);
-		sx126x_set_sleep(dev);
-		return -EAGAIN;
-	}
-
-	/* Copy received data from shared buffer */
-	if (result.status > 0) {
-		int copy_len = MIN(result.status, size);
-
-		memcpy(data_buf, data->rx_buf, copy_len);
-		if (rssi != NULL) {
-			*rssi = result.rssi;
-		}
-		if (snr != NULL) {
-			*snr = result.snr;
-		}
-		return copy_len;
-	}
-
-	return result.status;
-}
-
-static int sx126x_lora_recv_async(const struct device *dev,
-				  lora_recv_cb cb, void *user_data)
-{
-	struct sx126x_data *data = dev->data;
-	int ret;
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	if (cb == NULL) {
-		/* Stop async reception */
-		data->rx_cb = NULL;
-		data->rx_cb_user_data = NULL;
-		if (atomic_cas(&data->state, SX126X_STATE_RX, SX126X_STATE_IDLE)) {
-			sx126x_set_standby(dev, SX126X_STANDBY_RC);
-			sx126x_set_sleep(dev);
-		}
-		k_mutex_unlock(&data->lock);
-		return 0;
-	}
-
-	if (!data->config_valid) {
-		LOG_ERR("Not configured");
-		k_mutex_unlock(&data->lock);
-		return -EINVAL;
-	}
-
-	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_RX)) {
-		LOG_ERR("Busy");
-		k_mutex_unlock(&data->lock);
-		return -EBUSY;
-	}
-
-	ret = sx126x_ensure_ready(dev);
-	if (ret < 0) {
-		k_mutex_unlock(&data->lock);
-		atomic_set(&data->state, SX126X_REST_STATE);
-		return ret;
-	}
-
-	data->rx_cb = cb;
-	data->rx_cb_user_data = user_data;
-
-	/* Set packet parameters */
-	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN, true);
-	if (ret < 0) {
-		data->rx_cb = NULL;
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
-	}
-
-	/* Enable antenna and set RX path */
-	sx126x_set_rf_path(dev, true, false);
-
-	/* Start continuous reception */
-	ret = sx126x_set_rx(dev, 0);
-	if (ret < 0) {
-		data->rx_cb = NULL;
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
-	}
-
-	k_mutex_unlock(&data->lock);
-	return 0;
-}
-
-/*
- * Read this if you have trouble making the duty cycle working reliably.
- * I have wasted many hours on this so I'm passing this along.
- *
- * The driver sets StopTimerOnPreamble = true before entering duty
- * cycle mode. This makes the radio stay in RX once a preamble is
- * detected, instead of going back to sleep when the RX window
- * expires. The radio then searches for the sync word within a
- * window sized by the receiver's preamble_len. This value must
- * match the sender's: a mismatch causes the demodulator to stop
- * searching before the sync word arrives.
- *
- * Matching preamble_len — OK (works even if RX joins mid-preamble)
- *
- *   TX  |#########< 100 preamble symbols >###########|SW|HDR| payload |
- *                       ^                            ^
- *   RX  ..sleep..|==RX==|<<< stays in RX >>>>>>>>>>>>|
- *                   ^                                |
- *                   preamble detected                |
- *                   timer stops (StopTimerOnPreamble)|
- *                   search window = 100 symbols      |
- *                   sync word found -----------------+
- *                   --> full packet received, RX_DONE
- *
- * Mismatched preamble_len (RX = 8, TX = 100) — FAIL
- *
- *   TX  |#########< 100 preamble symbols >###########|SW|HDR| payload |
- *                       ^                            ^
- *   RX  ..sleep..|==RX==|<<< stays in RX             |
- *                   ^        but gives up here       |
- *                   |        |<-8->|                 |
- *                   preamble detected                |
- *                   search window = only 8 symbols   |
- *                   sync word NOT found within window
- *                   --> demodulator fails, packet lost
- *
- * See samples/drivers/lora/duty_cycle/
- */
-static void sx126x_duty_cycle_stop(const struct device *dev)
-{
-	/*
-	 * During duty cycle the BUSY pin stays asserted even in the
-	 * sleep phase. Wake the radio via a raw NSS edge (bypasses
-	 * BUSY check) so the standby command can go through
-	 * immediately.
-	 */
-	if (sx126x_hal_is_busy(dev)) {
-		sx126x_hal_wakeup(dev);
-	}
-	sx126x_set_standby(dev, SX126X_STANDBY_RC);
-	sx126x_set_sleep(dev);
-}
-
-static int sx126x_duty_cycle_start(const struct device *dev,
-				   k_timeout_t rx_period,
-				   k_timeout_t sleep_period)
-{
-	struct sx126x_data *data = dev->data;
-	int ret;
-
-	data->duty_cycle.rx_period = SX126X_MS_TO_TIMEOUT(
-		k_ticks_to_ms_ceil32(rx_period.ticks));
-	data->duty_cycle.sleep_period = SX126X_MS_TO_TIMEOUT(
-		k_ticks_to_ms_ceil32(sleep_period.ticks));
 
 	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN, true);
 	if (ret < 0) {
-		goto out_error;
+		return ret;
 	}
 
 	sx126x_set_rf_path(dev, true, false);
 
-	ret = sx126x_set_rx_duty_cycle(dev, data->duty_cycle.rx_period,
-				       data->duty_cycle.sleep_period);
-	if (ret < 0) {
-		goto out_error;
-	}
-
-	k_mutex_unlock(&data->lock);
 	return 0;
-
-out_error:
-	data->rx_cb = NULL;
-	atomic_set(&data->state, SX126X_REST_STATE);
-	sx126x_set_sleep(dev);
-	k_mutex_unlock(&data->lock);
-	return ret;
-}
-
-static int sx126x_duty_cycle_enter(const struct device *dev,
-				   lora_recv_cb cb, void *user_data)
-{
-	struct sx126x_data *data = dev->data;
-	int ret;
-
-	if (!data->config_valid) {
-		LOG_ERR("Not configured");
-		return -EINVAL;
-	}
-
-	if (!atomic_cas(&data->state, SX126X_REST_STATE,
-			SX126X_STATE_RX_DUTY_CYCLE)) {
-		LOG_ERR("Busy");
-		return -EBUSY;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	ret = sx126x_ensure_ready(dev);
-	if (ret < 0) {
-		k_mutex_unlock(&data->lock);
-		atomic_set(&data->state, SX126X_REST_STATE);
-		return ret;
-	}
-
-	data->rx_cb = cb;
-	data->rx_cb_user_data = user_data;
-
-	return 0;
-}
-
-static int sx126x_lora_recv_duty_cycle(const struct device *dev,
-				       k_timeout_t rx_period,
-				       k_timeout_t sleep_period,
-				       uint8_t *data_buf, uint8_t size,
-				       k_timeout_t timeout,
-				       int16_t *rssi, int8_t *snr)
-{
-	struct sx126x_data *data = dev->data;
-	struct sx126x_rx_result result;
-	int ret;
-
-	ret = sx126x_duty_cycle_enter(dev, NULL, NULL);
-	if (ret < 0) {
-		return ret;
-	}
-
-	k_msgq_purge(&data->rx_msgq);
-
-	ret = sx126x_duty_cycle_start(dev, rx_period, sleep_period);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Block until a packet arrives or timeout */
-	ret = k_msgq_get(&data->rx_msgq, &result, timeout);
-	if (ret < 0) {
-		LOG_DBG("RX duty cycle timeout");
-		sx126x_duty_cycle_stop(dev);
-		return -EAGAIN;
-	}
-
-	sx126x_duty_cycle_stop(dev);
-
-	if (result.status > 0) {
-		int copy_len = MIN(result.status, size);
-
-		memcpy(data_buf, data->rx_buf, copy_len);
-		if (rssi != NULL) {
-			*rssi = result.rssi;
-		}
-		if (snr != NULL) {
-			*snr = result.snr;
-		}
-		return copy_len;
-	}
-
-	return result.status;
-}
-
-static int sx126x_lora_recv_duty_cycle_async(const struct device *dev,
-					     k_timeout_t rx_period,
-					     k_timeout_t sleep_period,
-					     lora_recv_cb cb, void *user_data)
-{
-	struct sx126x_data *data = dev->data;
-	int ret;
-
-	if (cb == NULL) {
-		k_mutex_lock(&data->lock, K_FOREVER);
-		data->rx_cb = NULL;
-		data->rx_cb_user_data = NULL;
-		if (atomic_cas(&data->state, SX126X_STATE_RX_DUTY_CYCLE,
-			       SX126X_STATE_IDLE)) {
-			sx126x_duty_cycle_stop(dev);
-		}
-		k_mutex_unlock(&data->lock);
-		return 0;
-	}
-
-	ret = sx126x_duty_cycle_enter(dev, cb, user_data);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return sx126x_duty_cycle_start(dev, rx_period, sleep_period);
 }
 
 static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len)
@@ -1525,7 +1043,7 @@ static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len)
 	bool de, crc;
 	int ret;
 
-	if (!data->config_valid) {
+	if (!data->common.configured) {
 		return 0;
 	}
 
@@ -1591,76 +1109,62 @@ static int sx126x_lora_rssi(const struct device *dev, int16_t *rssi)
 	return ret;
 }
 
-static int sx126x_lora_test_cw(const struct device *dev, uint32_t frequency,
-			       int8_t tx_power, uint16_t duration)
+static int sx126x_start_cw(const struct device *dev, uint32_t frequency, int8_t tx_power)
 {
-	struct sx126x_data *data = dev->data;
 	int ret;
-
-	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_TX)) {
-		return -EBUSY;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	ret = sx126x_ensure_ready(dev);
-	if (ret < 0) {
-		goto out_unlock;
-	}
 
 	/* Set frequency */
 	ret = sx126x_set_rf_frequency(dev, frequency);
 	if (ret < 0) {
-		goto out_sleep;
+		return ret;
 	}
 
 	/* Set PA config and TX power */
 	ret = sx126x_hal_configure_tx_params(dev, tx_power, frequency,
 						SX126X_RAMP_200_US);
 	if (ret < 0) {
-		goto out_sleep;
+		return ret;
 	}
 
 	/* Enable antenna and TX path */
 	sx126x_set_rf_path(dev, true, true);
 
 	/* Start CW transmission */
-	ret = sx126x_hal_write_cmd(dev, SX126X_CMD_SET_TX_CONTINUOUS_WAVE, NULL, 0);
-	if (ret < 0) {
-		goto out_sleep;
-	}
-
-	k_mutex_unlock(&data->lock);
-
-	/* Wait for duration */
-	k_sleep(K_SECONDS(duration));
-
-	/* Stop CW */
-	k_mutex_lock(&data->lock, K_FOREVER);
-	sx126x_set_standby(dev, SX126X_STANDBY_RC);
-
-out_sleep:
-	sx126x_set_sleep(dev);
-out_unlock:
-	k_mutex_unlock(&data->lock);
-	atomic_set(&data->state, SX126X_REST_STATE);
-
-	return ret;
+	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_TX_CONTINUOUS_WAVE, NULL, 0);
 }
+
+static const struct lora_radio_ops sx126x_radio_ops = {
+	.irq_tx_done = SX126X_IRQ_TX_DONE,
+	.irq_rx_done = SX126X_IRQ_RX_DONE,
+	.irq_timeout = SX126X_IRQ_RX_TX_TIMEOUT,
+	.sleeps = IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP),
+	.wake = sx126x_ensure_ready,
+	.sleep = sx126x_set_sleep,
+	.stop = sx126x_stop,
+	.irq_get = sx126x_get_and_clear_irq,
+	.irq_rearm = sx126x_hal_dio1_irq_enable,
+	.tx_check = sx126x_tx_check,
+	.tx_start = sx126x_send_packet,
+	.rx_prepare = sx126x_rx_prepare,
+	.rx_start = sx126x_set_rx,
+	.rx_duty_cycle_start = sx126x_set_rx_duty_cycle,
+	.rx_read = sx126x_read_packet,
+	.cw_start = sx126x_start_cw,
+};
 
 static DEVICE_API(lora, sx126x_lora_api) = {
 	.config = sx126x_lora_config,
 #ifdef CONFIG_LORA_GFSK
 	.config_gfsk = sx126x_lora_config_gfsk,
 #endif
-	.send = sx126x_lora_send,
-	.send_async = sx126x_lora_send_async,
-	.recv = sx126x_lora_recv,
-	.recv_async = sx126x_lora_recv_async,
-	.recv_duty_cycle = sx126x_lora_recv_duty_cycle,
-	.recv_duty_cycle_async = sx126x_lora_recv_duty_cycle_async,
+	.send = lora_radio_send,
+	.send_async = lora_radio_send_async,
+	.recv = lora_radio_recv,
+	.recv_async = lora_radio_recv_async,
+	.recv_duty_cycle = lora_radio_recv_duty_cycle,
+	.recv_duty_cycle_async = lora_radio_recv_duty_cycle_async,
 	.airtime = sx126x_lora_airtime,
-	.test_cw = sx126x_lora_test_cw,
+	.test_cw = lora_radio_test_cw,
 	.rssi = sx126x_lora_rssi,
 };
 
@@ -1682,19 +1186,10 @@ static int sx126x_pm_action(const struct device *dev,
 
 static int sx126x_init(const struct device *dev)
 {
-	struct sx126x_data *data = dev->data;
 	int ret;
 
 	/* Initialize data structures */
-	k_mutex_init(&data->lock);
-	k_msgq_init(&data->tx_msgq, (char *)&data->tx_result,
-		    sizeof(struct sx126x_tx_result), 1);
-	k_msgq_init(&data->rx_msgq, (char *)&data->rx_result,
-		    sizeof(struct sx126x_rx_result), 1);
-	k_work_init(&data->irq_work, sx126x_irq_work_handler);
-	data->dev = dev;
-	atomic_set(&data->state, SX126X_STATE_IDLE);
-	data->config_valid = false;
+	lora_radio_init(dev);
 
 	/* Initialize HAL */
 	ret = sx126x_hal_init(dev);
@@ -1704,7 +1199,7 @@ static int sx126x_init(const struct device *dev)
 	}
 
 	/* Setup DIO1 interrupt callback */
-	ret = sx126x_hal_set_dio1_callback(dev, sx126x_dio1_callback);
+	ret = sx126x_hal_set_dio1_callback(dev, lora_radio_irq);
 	if (ret < 0) {
 		LOG_ERR("DIO1 callback setup failed: %d", ret);
 		return ret;
@@ -1743,6 +1238,7 @@ static int sx126x_init(const struct device *dev)
 	static struct sx126x_data sx126x_data_##node_id;					\
 												\
 	static const struct sx126x_hal_config sx126x_config_##node_id = {			\
+		.common = { .ops = &sx126x_radio_ops },						\
 		.spi = SPI_DT_SPEC_GET(node_id, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),		\
 		.reset = GPIO_DT_SPEC_GET(node_id, reset_gpios),				\
 		.busy = GPIO_DT_SPEC_GET(node_id, busy_gpios),					\
@@ -1787,6 +1283,7 @@ DT_FOREACH_STATUS_OKAY_VARGS(semtech_llcc68, SX126X_INIT, SX126X_LLCC68)
 	static struct sx126x_data sx126x_stm32wl_data_##inst;			\
 										\
 	static const struct sx126x_hal_config sx126x_stm32wl_config_##inst = {	\
+		.common = { .ops = &sx126x_radio_ops },				\
 		.spi = SPI_DT_SPEC_INST_GET(inst,				\
 					    SPI_WORD_SET(8) | SPI_TRANSFER_MSB), \
 		.pa_output = SX126X_STM32WL_PA_OUTPUT(inst),			\
