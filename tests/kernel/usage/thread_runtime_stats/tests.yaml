@@ -1,21 +1,30 @@
+common:
+  tags: kernel
+  # The following architectures are excluded as they have boards that
+  # exhibit precision timing anomalies related to emulation.
+  #     posix, sparc
+  # The following architectures are excluded as the necessary
+  # thread runtime statistic hooks do not yet exist.
+  #     mips
+  arch_exclude:
+    - posix
+    - sparc
+    - mips
+  # SMP is excluded as the test was only written for UP
+  filter: not CONFIG_SMP
+  platform_exclude:
+    - mr_canhubk3
+    - cortex_r8_virtual
 tests:
   kernel.usage:
-    tags: kernel
-    # The following architectures are excluded as they have boards that
-    # exhibit precision timing anomalies related to emulation.
-    #     posix, sparc
-    # The following architectures are excluded as the necessary
-    # thread runtime statistic hooks do not yet exist.
-    #     mips
-    arch_exclude:
-      - posix
-      - sparc
-      - mips
-    # SMP is excluded as the test was only written for UP
-    filter: not CONFIG_SMP
     integration_platforms:
       - qemu_x86
       - mps2/an385
-    platform_exclude:
-      - mr_canhubk3
-      - cortex_r8_virtual
+  # A timer interrupt on every tick returns to the running thread without
+  # a context switch, which must not end its execution window.
+  kernel.usage.tickful:
+    extra_configs:
+      - CONFIG_TICKLESS_KERNEL=n
+    integration_platforms:
+      - qemu_cortex_a53
+      - qemu_riscv32
