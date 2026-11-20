@@ -245,6 +245,7 @@
 			reg = <0x40240000 0xfcc>;
 			interrupts = <6 3>;
 			clk-dst = <0x0>;
+			fifo-depth = <16>;
 			status = "disabled";
 		};
 
@@ -253,6 +254,7 @@
 			reg = <0x40250000 0xfcc>;
 			interrupts = <7 3>;
 			clk-dst = <0x1>;
+			fifo-depth = <16>;
 			status = "disabled";
 		};
 
@@ -261,6 +263,7 @@
 			reg = <0x40260000 0xfcc>;
 			interrupts = <8 3>;
 			clk-dst = <0x2>;
+			fifo-depth = <16>;
 			status = "disabled";
 		};
 
@@ -269,6 +272,7 @@
 			reg = <0x40270000 0xfcc>;
 			interrupts = <9 3>;
 			clk-dst = <0x3>;
+			fifo-depth = <16>;
 			status = "disabled";
 		};
 
@@ -277,6 +281,7 @@
 			reg = <0x40280000 0xfcc>;
 			interrupts = <10 3>;
 			clk-dst = <0x4>;
+			fifo-depth = <16>;
 			status = "disabled";
 		};
 
