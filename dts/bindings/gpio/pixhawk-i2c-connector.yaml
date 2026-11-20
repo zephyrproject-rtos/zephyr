@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Pixhawk I2C connector
+
+description: |
+  4-pin JST-GH I2C port, as defined by the Pixhawk Connector Standard
+  (DS-009).
+
+  This binding provides a nexus mapping for the signal pins, indexed by
+  connector pin number. Use the PIXHAWK_I2C_* constants in
+  <zephyr/dt-bindings/gpio/pixhawk-connector.h> to refer to them.
+
+    1  VCC (5 V)
+    2  SCL
+    3  SDA
+    4  GND
+
+  See https://github.com/pixhawk/Pixhawk-Standards for the standard.
+
+compatible: "pixhawk-i2c-connector"
+
+include: [gpio-nexus.yaml, base.yaml]
