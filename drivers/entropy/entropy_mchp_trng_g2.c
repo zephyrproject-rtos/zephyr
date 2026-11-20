@@ -12,6 +12,7 @@
 #include <zephyr/drivers/clock_control/mchp_sam_pmc.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(entropy_mchp_trng_g2, CONFIG_ENTROPY_LOG_LEVEL);
 
@@ -127,7 +128,7 @@ static int entropy_mchp_trng_init(const struct device *dev)
 	}
 
 	/* TRNG Provides a 32-bit Random Number at Maximum 84 Clock Cycles */
-	data->wait_us = 84 * 1000 * 1000 / rate;
+	data->wait_us = DIV_ROUND_UP(84 * 1000 * 1000, rate);
 	if (rate > MHZ(100)) {
 		/* HALFR must be written to '1' when the TRNG peripheral clock
 		 * frequency is above 100 MHz.
