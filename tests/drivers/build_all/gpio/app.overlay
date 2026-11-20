@@ -464,6 +464,14 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
+			test_i2c_tca9536: tca9536@23 {
+				compatible = "ti,tca9536";
+				reg = <0x23>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <4>;
+			};
+
 			test_i2c_pcal6534a: pcal6534@42 {
 				compatible = "nxp,pcal6534";
 				reg = <0x42>;
