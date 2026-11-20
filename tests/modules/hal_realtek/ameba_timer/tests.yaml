@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+common:
+  tags:
+    - timer
+    - realtek
+  modules:
+    - hal_realtek
+  integration_platforms:
+    - qemu_cortex_m3
+  platform_allow:
+    - qemu_cortex_m3
+    - native_sim
+    - native_sim/native/64
+  timeout: 30
+tests:
+  modules.hal_realtek.ameba_timer: {}
+  modules.hal_realtek.ameba_timer.no_heap:
+    extra_configs:
+      - CONFIG_HEAP_MEM_POOL_SIZE=0
