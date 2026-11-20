@@ -823,13 +823,18 @@ static int video_shell_set_ctrl(const struct shell *sh, const struct device *dev
 
 	switch (cq.type) {
 	case VIDEO_CTRL_TYPE_MENU:
+		if (cq.menu == NULL) {
+			shell_error(sh, "Video control '%s' has no menu names", arg_ctrl);
+			return -ENOTSUP;
+		}
 		for (i = 0; cq.menu[i] != NULL; i++) {
 			video_shell_convert_ctrl_name(cq.menu[i], menu_name, sizeof(menu_name));
 			if (strcmp(menu_name, arg_value) == 0) {
-				ctrl.val64 = i;
+				ctrl.val = i;
+				break;
 			}
 		}
-		if (cq.menu[i] != NULL) {
+		if (cq.menu[i] == NULL) {
 			shell_error(sh, "Video control value '%s' is not present in the menu",
 				    arg_value);
 			return -EINVAL;
@@ -949,7 +954,7 @@ static void complete_video_ctrl_menu_name(size_t idx, struct shell_static_entry 
 	/* Check which control name was selected */
 
 	ret = video_shell_get_ctrl_by_num(&cq, ctrln);
-	if (ret < 0) {
+	if (ret < 0 || cq.menu == NULL) {
 		return;
 	}
 
