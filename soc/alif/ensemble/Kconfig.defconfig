@@ -9,6 +9,15 @@ if SOC_FAMILY_ENSEMBLE
 # can override the defaults given here
 rsource "*/Kconfig.defconfig"
 
+# Compute the IRQ table size of the RTSS cores from DT.
+# dt_highest_controller_irq_number() returns a zero-based IRQn, increment it
+# to obtain the table size. APSS has no NVIC and keeps its per-SoC value.
+DT_NVIC_PATH := $(dt_nodelabel_path,nvic)
+DT_NVIC_MAX_IRQN := $(dt_highest_controller_irq_number,$(DT_NVIC_PATH),irq)
+
+configdefault NUM_IRQS
+	default $(inc,$(DT_NVIC_MAX_IRQN)) if $(dt_path_enabled,$(DT_NVIC_PATH))
+
 config CLOCK_CONTROL
 	default y
 
