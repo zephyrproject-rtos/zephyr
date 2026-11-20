@@ -26,10 +26,18 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/devicetree/nvmem.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @cond INTERNAL_HIDDEN */
+
+/** The NVMEM cell is read-only */
+#define NVMEM_CELL_FLAG_READ_ONLY BIT(0)
+
+/** @endcond */
 
 /**
  * @brief Non-Volatile Memory cell representation.
@@ -43,8 +51,8 @@ struct nvmem_cell {
 	off_t offset;
 	/** Size of the NVMEM cell */
 	size_t size;
-	/** Indicator if the NVMEM cell is read-write or read-only */
-	bool read_only;
+	/** Bitmask of NVMEM_CELL_FLAG_* values */
+	uint8_t flags;
 
 	/* @endcond */
 };
@@ -85,7 +93,7 @@ struct nvmem_cell {
  *	//	.dev = DEVICE_DT_GET(DT_NODELABEL(mac_eeprom)),
  *	//	.offset = 0xfa,
  *	//	.size = 6,
- *	//	.read_only = false,
+ *	//	.flags = 0,
  *	// }
  * @endcode
  *
@@ -98,7 +106,7 @@ struct nvmem_cell {
 		.dev = DEVICE_DT_GET(DT_MTD_FROM_NVMEM_CELL(node_id)),                             \
 		.offset = DT_REG_ADDR(node_id),                                                    \
 		.size = DT_REG_SIZE(node_id),                                                      \
-		.read_only = DT_PROP(node_id, read_only),                                          \
+		.flags = (DT_PROP(node_id, read_only) ? NVMEM_CELL_FLAG_READ_ONLY : 0U),           \
 	}
 
 /**
@@ -140,7 +148,7 @@ struct nvmem_cell {
  *	//	.dev = DEVICE_DT_GET(DT_NODELABEL(mac_eeprom)),
  *	//	.offset = 0xfa,
  *	//	.size = 6,
- *	//	.read_only = false,
+ *	//	.flags = 0,
  *	// }
  * @endcode
  *
@@ -247,7 +255,7 @@ struct nvmem_cell {
  *	//	.dev = DEVICE_DT_GET(DT_NODELABEL(mac_eeprom)),
  *	//	.offset = 0xfa,
  *	//	.size = 6,
- *	//	.read_only = false,
+ *	//	.flags = 0,
  *	// }
  * @endcode
  *
@@ -374,7 +382,7 @@ static inline bool nvmem_cell_is_ready(const struct nvmem_cell *cell)
  */
 static inline bool nvmem_cell_is_read_only(const struct nvmem_cell *cell)
 {
-	return cell->read_only;
+	return (cell->flags & NVMEM_CELL_FLAG_READ_ONLY) != 0U;
 }
 
 /**
