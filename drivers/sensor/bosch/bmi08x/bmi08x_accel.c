@@ -261,8 +261,12 @@ static int bmi08x_acc_odr_set(const struct device *dev, uint16_t freq_int, uint1
 {
 	int odr = bmi08x_freq_to_odr_val(freq_int, freq_milli);
 
-	if (odr < BMI08X_ACCEL_ODR_12_5_HZ) {
+	if (odr < 0) {
 		return odr;
+	}
+
+	if (odr < BMI08X_ACCEL_ODR_12_5_HZ || odr > BMI08X_ACCEL_ODR_1600_HZ) {
+		return -ENOTSUP;
 	}
 
 	return bmi08x_accel_reg_field_update(dev, BMI08X_REG_ACCEL_CONF, 0, BMI08X_ACCEL_ODR_MASK,
@@ -288,19 +292,22 @@ static const struct bmi08x_range bmi088_acc_range_map[] = {
 static int bmi08x_acc_range_set(const struct device *dev, int32_t range)
 {
 	struct bmi08x_accel_data *data = dev->data;
-	int32_t reg_val = -1;
+	const struct bmi08x_range *range_map;
+	uint16_t range_map_size;
+	int32_t reg_val;
 	int ret;
 
 	if (data->accel_chip_id == BMI085_ACCEL_CHIP_ID) {
-		reg_val = bmi08x_range_to_reg_val(range, bmi085_acc_range_map,
-						  BMI085_ACC_RANGE_MAP_SIZE);
+		range_map = bmi085_acc_range_map;
+		range_map_size = BMI085_ACC_RANGE_MAP_SIZE;
 	} else if (data->accel_chip_id == BMI088_ACCEL_CHIP_ID) {
-		reg_val = bmi08x_range_to_reg_val(range, bmi088_acc_range_map,
-						  BMI088_ACC_RANGE_MAP_SIZE);
+		range_map = bmi088_acc_range_map;
+		range_map_size = BMI088_ACC_RANGE_MAP_SIZE;
 	} else {
 		return -ENODEV;
 	}
 
+	reg_val = bmi08x_range_to_reg_val(range, range_map, range_map_size);
 	if (reg_val < 0) {
 		return reg_val;
 	}
@@ -310,7 +317,8 @@ static int bmi08x_acc_range_set(const struct device *dev, int32_t range)
 		return ret;
 	}
 
-	data->scale = BMI08X_ACC_SCALE(range);
+	data->scale = BMI08X_ACC_SCALE(bmi08x_reg_val_to_range(reg_val, range_map,
+							       range_map_size));
 	data->range = reg_val;
 
 	return ret;
@@ -455,8 +463,8 @@ static int bmi08x_temp_channel_get(const struct device *dev, struct sensor_value
 	/* the value ranges in [-504, 496] */
 	/* the scale is 0.125°C/LSB = 125000 micro degrees */
 	temp_micro = temp_int11 * 125000 + 23 * 1000000;
-	val->val1 = temp_micro / 1000000ULL;
-	val->val2 = temp_micro % 1000000ULL;
+	val->val1 = temp_micro / 1000000;
+	val->val2 = temp_micro % 1000000;
 
 	return ret;
 }
