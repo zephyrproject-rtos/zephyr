@@ -84,3 +84,18 @@ tests:
     integration_platforms:
       - qemu_cortex_a53
     extra_args: DTC_OVERLAY_FILE="virtio.overlay"
+
+  drivers.gpio.build.max96717_gpio:
+    min_ram: 32
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    depends_on:
+      - gpio
+      - i2c
+    extra_args:
+      - DTC_OVERLAY_FILE="max96717_gpio.overlay"
+    extra_configs:
+      - CONFIG_VIDEO=y

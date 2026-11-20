@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MAX96717
+	bool "MAX96717 serializer GPIO controller"
+	default y
+	depends on DT_HAS_ADI_MAX96717_GPIO_ENABLED
+	depends on GPIO && VIDEO_MAX96717
+	help
+	  GPIO controller for the MFP pins of the MAX96717 serializer, reached
+	  through the GMSL2 link.
+
+if GPIO_MAX96717
+
+config GPIO_MAX96717_INIT_PRIORITY
+	int "MAX96717 GPIO controller init priority"
+	default 59
+	help
+	  Must be after the serializer (VIDEO_MAX96717_INIT_PRIORITY, default
+	  58) and before the camera sensors that use the pins
+	  (VIDEO_INIT_PRIORITY, default 60).
+
+endif # GPIO_MAX96717
