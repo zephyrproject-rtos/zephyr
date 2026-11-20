@@ -50,6 +50,12 @@
 			pwms = <&pwma0 0 PWM_MSEC(100) PWM_POLARITY_NORMAL>;
 		};
 	};
+
+	zephyr,user {
+		dac = <&dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
 };
 
 &cpu0 {
@@ -67,6 +73,10 @@
 
 &hsclk {
 	clocks = <&syspll>;
+	status = "okay";
+};
+
+&mfpclk {
 	status = "okay";
 };
 
@@ -149,6 +159,8 @@
 };
 
 &dac0 {
+	fifo-enable;
+	sample-rate-hz = <1000>;
 	status = "okay";
 };
 
