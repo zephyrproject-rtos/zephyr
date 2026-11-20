@@ -36,3 +36,9 @@ CONFIG_TFM_PROFILE_TYPE_MEDIUM=y
 CONFIG_TFM_LOG_LEVEL_SILENCE=y
 
 CONFIG_USE_DT_CODE_PARTITION=y
+
+# Trusted Firmware-M sets the "prioritize secure exceptions" bit, which halves
+# the resolution of non-secure priorities. With only 3 implemented priority
+# bits, the supervisor call (level 0) and an interrupt at level 1 end up with
+# the same priority, so a nested irq_offload() escalates to a hard fault.
+CONFIG_IRQ_OFFLOAD_NESTED=n
