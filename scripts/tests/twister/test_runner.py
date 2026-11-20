@@ -286,7 +286,13 @@ TESTDATA_1_2 = [
          'error - image size exceed', 'error']
 )
 @pytest.mark.parametrize('sys_platform', TESTDATA_1_1)
+@pytest.mark.parametrize(
+    'not_run_reason',
+    [None, 'Slow test, run with --enable-slow'],
+    ids=['no not run reason', 'not run reason']
+)
 def test_cmake_run_build(
+    not_run_reason,
     sys_platform,
     return_code,
     is_instance_run,
@@ -321,6 +327,7 @@ def test_cmake_run_build(
     instance_mock.run = is_instance_run
     instance_mock.status = TwisterStatus.NONE
     instance_mock.reason = None
+    instance_mock.not_run_reason = not_run_reason
 
     cmake = CMake(testsuite_mock, platform_mock, source_dir, build_dir,
                   jobserver_mock)
@@ -359,6 +366,9 @@ def test_cmake_run_build(
         cwd=os.path.join('dummy', 'working', 'dir')
     )
 
+    if expected_add_missing:
+        expected_reason = not_run_reason
+
     assert cmake.instance.status == expected_status
     assert cmake.instance.reason == expected_reason
 
@@ -367,7 +377,7 @@ def test_cmake_run_build(
 
     if expected_add_missing:
         cmake.instance.add_missing_case_status.assert_called_once_with(
-            TwisterStatus.NOTRUN, 'Test was built only'
+            TwisterStatus.NOTRUN, not_run_reason or 'Test was built only'
         )
 
 
@@ -2220,6 +2230,13 @@ TESTDATA_13 = [
         None
     ),
     (
+        TwisterStatus.NOTRUN, True, False, False,
+        ['INFO      20/25 dummy platform' \
+         '            dummy.testsuite.name' \
+         '                               NOT RUN (dummy reason)'],
+        None
+    ),
+    (
         'unknown status', False, False, False,
         ['Unknown status = unknown status'],
         'INFO    - Total complete:   20/  25  80%'
@@ -2231,7 +2248,8 @@ TESTDATA_13 = [
     'status, verbose, cmake_only, ready_run, expected_logs, expected_out',
     TESTDATA_13,
     ids=['verbose error cmake only', 'failed', 'verbose skipped', 'filtered',
-         'verbose passed ready run', 'verbose passed', 'unknown status']
+         'verbose passed ready run', 'verbose passed', 'verbose not run',
+         'unknown status']
 )
 def test_projectbuilder_report_out(
     capfd,
