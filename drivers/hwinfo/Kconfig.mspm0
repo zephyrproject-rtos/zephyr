@@ -4,7 +4,7 @@
 config HWINFO_MSPM0
 	bool "TI MSPM0 hwinfo"
 	default y
-	depends on SOC_FAMILY_TI_MSPM
+	depends on SOC_FAMILY_TI_MSPM || SOC_FAMILY_TI_AM13
 	depends on $(dt_nodelabel_enabled,sysctl)
 	depends on $(dt_nodelabel_enabled,factoryregion)
 	select HWINFO_HAS_DRIVER
