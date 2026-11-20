@@ -97,10 +97,6 @@ void rtio_executor_submit(struct rtio *r)
 			rtio_iodev_sqe_set_canceled(iodev_sqe);
 		}
 
-		/* If this submission was cancelled before submit, then generate no response */
-		if (rtio_iodev_sqe_is_canceled(iodev_sqe)) {
-			iodev_sqe->sqe.flags |= RTIO_SQE_NO_RESPONSE;
-		}
 		iodev_sqe->r = r;
 
 		struct rtio_iodev_sqe *curr = iodev_sqe, *next;
@@ -128,12 +124,9 @@ void rtio_executor_submit(struct rtio *r)
 				rtio_iodev_sqe_set_canceled(next);
 			}
 
-			/* If the current submission was cancelled before submit,
-			 * then cancel the next one and generate no response
-			 */
+			/* Cancellation cascades down the chain like a failure */
 			if (rtio_iodev_sqe_is_canceled(curr)) {
 				rtio_iodev_sqe_set_canceled(next);
-				next->sqe.flags |= RTIO_SQE_NO_RESPONSE;
 			}
 			curr->next = next;
 			curr = next;
@@ -176,6 +169,11 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 	 * re-submitting, rebooting or anything else.
 	 */
 	if (is_canceled || !is_ok) {
+		/* Say the stream was stopped, unless there is a real error to report */
+		if (is_canceled && is_ok) {
+			result = -ECANCELED;
+		}
+
 		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->rt.rx_bind.buf,
 			iodev_sqe->rt.rx_bind.buf_len);
 		rtio_release_buffer(r, iodev_sqe->rt.rx_bind.buf, iodev_sqe->rt.rx_bind.buf_len);
@@ -183,7 +181,14 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 
 		/* The blocks are back in the pool, so do not hand them out again */
 		cqe_flags = 0;
-	} else {
+	}
+
+	if (requires_response) {
+		rtio_cqe_submit(r, result, userdata, cqe_flags);
+	}
+
+	/* resubmit directly to the iodev if the sqe has not stopped */
+	if (is_ok && !is_canceled) {
 		/* Request was not canceled, re-arm it */
 		if (iodev_sqe->sqe.op == RTIO_OP_RX && uses_mempool) {
 			/* Reset the buffer info so the next request can get a new one */
@@ -191,15 +196,7 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 			iodev_sqe->rt.rx_bind.buf_len = 0;
 		}
 
-		/* Straight back to the iodev. Going through r->sq would make this
-		 * context, usually an interrupt, a second consumer of a queue that
-		 * takes one. A multishot is never chained, so it needs no relinking.
-		 */
 		rtio_iodev_submit(iodev_sqe, 0);
-	}
-
-	if (requires_response) {
-		rtio_cqe_submit(r, result, userdata, cqe_flags);
 	}
 }
 
@@ -229,7 +226,7 @@ static inline void rtio_executor_handle_oneshot(struct rtio_iodev_sqe *iodev_sqe
 
 		sqe_flags = curr->sqe.flags;
 
-		if (!is_canceled && FIELD_GET(RTIO_SQE_NO_RESPONSE, sqe_flags) == 0) {
+		if (FIELD_GET(RTIO_SQE_NO_RESPONSE, sqe_flags) == 0) {
 			/* Generate a result back to the client if need be.*/
 			rtio_cqe_submit(r, result, userdata, cqe_flags);
 		}
