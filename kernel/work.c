@@ -161,6 +161,21 @@ void k_work_init(struct k_work *work,
 	SYS_PORT_TRACING_OBJ_INIT(k_work, work);
 }
 
+#ifdef CONFIG_SYSTEM_WORKQUEUE_PRIORITY_ORDERING
+void k_work_init_priority(struct k_work *work,
+			   k_work_handler_t handler,
+			   uint8_t prio)
+{
+	__ASSERT_NO_MSG(work != NULL);
+	__ASSERT_NO_MSG(handler != NULL);
+
+	*work = (struct k_work)Z_WORK_INITIALIZER(handler);
+	work->priority = prio;
+
+	SYS_PORT_TRACING_OBJ_INIT(k_work, work);
+}
+#endif
+
 static inline int work_busy_get_locked(const struct k_work *work)
 {
 	return flags_get(&work->flags) & K_WORK_MASK;
@@ -283,7 +298,34 @@ static inline int queue_submit_locked(struct k_work_q *queue,
 	} else if (plugged && !draining) {
 		ret = -EBUSY;
 	} else {
+#ifdef CONFIG_SYSTEM_WORKQUEUE_PRIORITY_ORDERING
+		/* Insert work item in priority order. Lower priority values
+		 * have higher priority. Items with equal priority maintain
+		 * FIFO ordering (insert after existing same-priority items).
+		 */
+		sys_snode_t *prev = NULL;
+		sys_snode_t *node;
+		bool inserted = false;
+
+		SYS_SLIST_FOR_EACH_NODE(&queue->pending, node) {
+			struct k_work *queued_work = CONTAINER_OF(node, struct k_work, node);
+
+			/* Insert before this node if new work has higher priority */
+			if (work->priority < queued_work->priority) {
+				sys_slist_insert(&queue->pending, prev, &work->node);
+				inserted = true;
+				break;
+			}
+			prev = node;
+		}
+
+		/* If not inserted, append at the end (lowest priority or equal) */
+		if (!inserted) {
+			sys_slist_append(&queue->pending, &work->node);
+		}
+#else
 		sys_slist_append(&queue->pending, &work->node);
+#endif
 		ret = 1;
 		(void)notify_queue_locked(queue);
 	}
