@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon SCB in SPI mode on the M0S8 SCB generation (PSOC 4 HVMS)
+
+  The M0S8 SCB selects the FIFO element width with CTRL.BYTE_MODE instead of
+  CTRL.MEM_WIDTH, and has no slave select delay or SPI_TX_CTRL/SPI_RX_CTRL
+  registers. List "infineon,spi" as the fallback compatible.
+
+compatible: "infineon,spi-m0s8"
+
+include: "infineon,spi.yaml"
