@@ -5,6 +5,7 @@ arch: riscv
 toolchain:
   - zephyr
   - cross-compile
+ram: 64
 testing:
   ignore_tags:
     - bluetooth
