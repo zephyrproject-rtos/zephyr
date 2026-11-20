@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Atmel SAM QSPI controller, as found on SAM E70/S70/V70/V71 and
+  PIC32CZ CA70/MC70.
+
+  The driver runs the controller in SPI mode, as a single-line SPI
+  controller. The chip select is the hardware QCS line unless cs-gpios
+  is set.
+
+examples:
+  - |
+    &qspi {
+      pinctrl-0 = <&qspi_default>;
+      pinctrl-names = "default";
+      status = "okay";
+
+      flash@0 {
+        compatible = "jedec,spi-nor";
+        reg = <0>;
+        spi-max-frequency = <50000000>;
+      };
+    };
+
+compatible: "atmel,sam-qspi"
+
+include:
+  - name: spi-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+    description: |
+      "qspi" for the registers, "qspi_mm" for the serial memory window.
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
