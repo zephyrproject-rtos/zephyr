@@ -622,6 +622,15 @@ static int clock_control_infineon_cat1_init(const struct device *dev)
 	}
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(fll0))
+	/* A bootloader may hand over with the FLL locked and clk_hf0 running off it, in
+	 * which case reconfiguring the path muxes below would glitch the core clock.
+	 * Putting the FLL back in bypass restores the reset state: clk_hf0 free-runs on
+	 * the path source while the tree is rebuilt. On a cold boot this is a no-op.
+	 */
+	Cy_SysClk_FllDisable();
+#endif
+
 	/* Configure the PathMux[0] to source defined in tree device 'path_mux0' node */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(path_mux0))
 	clock_obj = &clock_info_table[INFINEON_CAT1_CLOCK_PATHMUX0].obj.cyhal_clock;
