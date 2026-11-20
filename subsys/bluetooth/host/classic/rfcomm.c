@@ -333,22 +333,16 @@ struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool)
 				  sizeof(struct bt_rfcomm_hdr) + 1);
 }
 
-static int rfcomm_send_cb(struct bt_rfcomm_session *session, struct net_buf *buf,
-				 bt_conn_tx_cb_t cb, void *user_data)
+static int rfcomm_send(struct bt_rfcomm_session *session, struct net_buf *buf)
 {
 	int err;
 
-	err = bt_l2cap_br_chan_send_cb(&session->br_chan.chan, buf, cb, user_data);
+	err = bt_l2cap_br_chan_send(&session->br_chan.chan, buf);
 	if (err < 0) {
 		net_buf_unref(buf);
 	}
 
 	return err;
-}
-
-static int rfcomm_send(struct bt_rfcomm_session *session, struct net_buf *buf)
-{
-	return rfcomm_send_cb(session, buf, NULL, NULL);
 }
 
 static struct net_buf *rfcomm_create_pdu(uint16_t len)
@@ -1604,6 +1598,8 @@ static void rfcomm_dlc_tx_worker(struct k_work *work)
 
 	if (dlc->state == BT_RFCOMM_STATE_CONNECTED ||
 	    dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
+		int err;
+
 		if (k_fifo_is_empty(&dlc->tx_queue) == true) {
 			goto user_disconnect;
 		}
@@ -1615,10 +1611,12 @@ static void rfcomm_dlc_tx_worker(struct k_work *work)
 
 		buf = k_fifo_get(&dlc->tx_queue, K_NO_WAIT);
 		LOG_DBG("Tx buf %p", buf);
-		if (rfcomm_send_cb(dlc->session, buf, rfcomm_sent, dlc) < 0) {
+		err = bt_l2cap_br_chan_send_cb(&dlc->session->br_chan.chan, buf, rfcomm_sent, dlc);
+		if (err < 0) {
 			/* This fails only if channel is disconnected */
 			dlc->state = BT_RFCOMM_STATE_DISCONNECTED;
 			bt_rfcomm_tx_destroy(dlc, buf);
+			net_buf_unref(buf);
 			LOG_ERR("Failed to send buffer, disconnected");
 			goto disconnect;
 		}
