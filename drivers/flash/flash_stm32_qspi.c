@@ -1061,9 +1061,20 @@ static int flash_stm32_qspi_generic_read(const struct device *dev, QSPI_CommandT
 	}
 #endif
 	qspi_lock_thread(dev);
+#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
+	if (stm32_qspi_is_memory_mapped(dev)) {
+		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		ret = stm32_qspi_abort(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to abort memory-mapped access before write");
+			goto end;
+		}
+	}
+#endif
 
 	ret = qspi_read_access(dev, cmd, out, cmd->NbData);
 
+end:
 	qspi_unlock_thread(dev);
 
 	return ret;
@@ -1089,9 +1100,20 @@ static int flash_stm32_qspi_generic_write(const struct device *dev, QSPI_Command
 	}
 #endif
 	qspi_lock_thread(dev);
+#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
+	if (stm32_qspi_is_memory_mapped(dev)) {
+		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		ret = stm32_qspi_abort(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to abort memory-mapped access before write");
+			goto end;
+		}
+	}
+#endif
 
 	ret = qspi_write_access(dev, cmd, in, cmd->NbData);
 
+end:
 	qspi_unlock_thread(dev);
 
 	return ret;
