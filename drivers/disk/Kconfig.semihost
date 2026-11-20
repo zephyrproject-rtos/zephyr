@@ -1,0 +1,20 @@
+# Copyright (c) 2026 RBR Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_DRIVER_SEMIHOST
+	bool "Semihost file-backed disk"
+	default y
+	depends on DT_HAS_ZEPHYR_SEMIHOST_DISK_ENABLED
+	depends on SEMIHOST
+	help
+	  Enable a disk driver backed by a file on the semihosting host.
+	  Suitable for QEMU targets. Disk data persists in the host file
+	  between runs.
+
+if DISK_DRIVER_SEMIHOST
+
+module = SEMIHOST_DISK
+module-str = semihost_disk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_SEMIHOST
