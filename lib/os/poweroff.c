@@ -6,8 +6,13 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/poweroff.h>
 
+__weak void z_sys_pre_poweroff_hook(void)
+{
+}
+
 void sys_poweroff(void)
 {
+	z_sys_pre_poweroff_hook();
 	(void)irq_lock();
 
 #if defined(CONFIG_ZERO_LATENCY_IRQS)
