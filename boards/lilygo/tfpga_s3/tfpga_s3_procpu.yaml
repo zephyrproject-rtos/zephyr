@@ -1,0 +1,19 @@
+identifier: tfpga_s3/esp32s3/procpu
+name: T-FPGA S3 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - rtc
+  - regulator
+  - charger
+  - fuel_gauge
+vendor: lilygo
