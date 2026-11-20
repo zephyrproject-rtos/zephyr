@@ -1,0 +1,16 @@
+sample:
+  name: CANopen node
+tests:
+  sample.canbus.canopen:
+    tags:
+      - can
+      - canopen
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
+    integration_platforms:
+      - native_sim/native/64
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "CANopen node 0x10 started at 500000 bit/s"
