@@ -286,6 +286,36 @@ static inline void zdsp_not_u32(const DSP_DATA uint32_t *src, DSP_DATA uint32_t 
 	arm_not_u32(src, dst, block_size);
 }
 
+static inline float32_t zdsp_sin_f32(DSP_DATA float32_t x)
+{
+	return arm_sin_f32(x);
+}
+
+static inline q15_t zdsp_sin_q15(DSP_DATA q15_t x)
+{
+	return arm_sin_q15(x);
+}
+
+static inline q31_t zdsp_sin_q31(DSP_DATA q31_t x)
+{
+	return arm_sin_q31(x);
+}
+
+static inline float32_t zdsp_cos_f32(DSP_DATA float32_t x)
+{
+	return arm_cos_f32(x);
+}
+
+static inline q15_t zdsp_cos_q15(DSP_DATA q15_t x)
+{
+	return arm_cos_q15(x);
+}
+
+static inline q31_t zdsp_cos_q31(DSP_DATA q31_t x)
+{
+	return arm_cos_q31(x);
+}
+
 #ifdef __cplusplus
 }
 #endif
