@@ -190,7 +190,7 @@ static DEVICE_API(mdio, sy1xx_mdio_driver_api) = {
                                                                                                    \
 	static struct sy1xx_mdio_dev_data sy1xx_mdio_dev_data##n;                                  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &sy1xx_mdio_initialize, NULL, &sy1xx_mdio_dev_data##n,            \
+	DEVICE_DT_INST_DEFINE(n, sy1xx_mdio_initialize, NULL, &sy1xx_mdio_dev_data##n,             \
 			      &sy1xx_mdio_dev_config_##n, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,  \
 			      &sy1xx_mdio_driver_api);
 
