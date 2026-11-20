@@ -1,0 +1,22 @@
+identifier: ulanzi_tc001/esp32/procpu
+name: Ulanzi TC001 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - bluetooth
+  - display
+  - entropy
+  - gpio
+  - i2c
+  - input
+  - netif:wifi
+  - pwm
+  - rtc
+  - sensor
+  - spi
+  - uart
+  - watchdog
+vendor: ulanzi
