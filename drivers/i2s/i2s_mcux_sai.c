@@ -27,6 +27,7 @@
 #endif
 
 #include <zephyr/sys/barrier.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <soc.h>
 
 #include <fsl_sai.h>
@@ -42,6 +43,15 @@ BUILD_ASSERT(NUM_DMA_BLOCKS_RX_PREP >= 3,
 #endif /* CONFIG_DMA_MCUX_EDMA */
 
 #define MAX_TX_DMA_BLOCKS CONFIG_DMA_TCD_QUEUE_SIZE
+
+#ifndef CONFIG_I2S_HAS_PLL_SETTING
+#define I2S_MCUX_DEVICE(inst) DEVICE_DT_INST_GET(inst),
+static const struct device *const sai_retune_devices[] = {
+	DT_INST_FOREACH_STATUS_OKAY(I2S_MCUX_DEVICE)
+};
+K_MUTEX_DEFINE(sai_retune_lock);
+#endif
+
 BUILD_ASSERT(MAX_TX_DMA_BLOCKS > NUM_DMA_BLOCKS_RX_PREP,
 	     "NUM_DMA_BLOCKS_RX_PREP must be < CONFIG_DMA_TCD_QUEUE_SIZE");
 
@@ -808,6 +818,90 @@ static void set_mclk_rate(const struct device *dev, uint32_t rate)
 }
 #endif
 
+#ifndef CONFIG_I2S_HAS_PLL_SETTING
+static int invalidate_retune_peers(const struct device *dev, struct stream *strm,
+				  uint32_t desired_mclk)
+{
+	struct stream *invalidated[ARRAY_SIZE(sai_retune_devices) * 2];
+	size_t invalidated_count = 0;
+	unsigned int key;
+	int ret = 0;
+
+	/*
+	 * Make validation and READY-to-NOT_READY transitions atomic. This prevents
+	 * START from racing the retune and avoids discarding buffers if a peer
+	 * rejects the operation.
+	 */
+	key = irq_lock();
+	for (size_t i = 0; i < ARRAY_SIZE(sai_retune_devices); i++) {
+		const struct device *peer_dev = sai_retune_devices[i];
+		struct i2s_dev_data *data = peer_dev->data;
+		struct stream *peers[] = {&data->tx, &data->rx};
+
+#if defined(CONFIG_SOC_FAMILY_MCXN)
+		const struct i2s_mcux_config *peer_cfg = peer_dev->config;
+
+		if (peer_cfg->ccm_dev != DEV_CFG(dev)->ccm_dev) {
+			continue;
+		}
+#else
+		if (peer_dev != dev) {
+			continue;
+		}
+#endif
+
+		for (size_t j = 0; j < ARRAY_SIZE(peers); j++) {
+			struct stream *peer = peers[j];
+
+			if (peer != strm && peer->state != I2S_STATE_NOT_READY &&
+			    peer->state != I2S_STATE_READY) {
+				ret = -EINVAL;
+				goto unlock;
+			}
+		}
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(sai_retune_devices); i++) {
+		const struct device *peer_dev = sai_retune_devices[i];
+		struct i2s_dev_data *data = peer_dev->data;
+		struct stream *peers[] = {&data->tx, &data->rx};
+
+#if defined(CONFIG_SOC_FAMILY_MCXN)
+		const struct i2s_mcux_config *peer_cfg = peer_dev->config;
+
+		if (peer_cfg->ccm_dev != DEV_CFG(dev)->ccm_dev) {
+			continue;
+		}
+#else
+		if (peer_dev != dev) {
+			continue;
+		}
+#endif
+
+		for (size_t j = 0; j < ARRAY_SIZE(peers); j++) {
+			struct stream *peer = peers[j];
+
+			if (peer != strm && peer->state == I2S_STATE_READY) {
+				peer->state = I2S_STATE_NOT_READY;
+				invalidated[invalidated_count++] = peer;
+			}
+		}
+	}
+unlock:
+	irq_unlock(key);
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (size_t i = 0; i < invalidated_count; i++) {
+		i2s_purge_stream_buffers(invalidated[i], invalidated[i]->cfg.mem_slab,
+					 true, true);
+	}
+	set_mclk_rate(dev, desired_mclk);
+	return 0;
+}
+#endif
+
 static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 			   const struct i2s_config *i2s_cfg)
 {
@@ -823,6 +917,9 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	struct stream *strm;
 	int ret = -EINVAL;
 	uint32_t mclk;
+#ifndef CONFIG_I2S_HAS_PLL_SETTING
+	bool retune_lock_held = false;
+#endif
 
 	if (dir == I2S_DIR_BOTH) {
 		return -ENOSYS;
@@ -907,12 +1004,13 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	 * responsible for reconfiguring the underlying audio PLL family.
 	 *
 	 * Both directions share this root clock, so only touch it when the
-	 * rate actually has to change, and refuse the change while the
-	 * opposite direction is configured: its bit clock divider was
-	 * derived from the current MCLK and would silently shift.
+	 * rate actually has to change. A NOT_READY peer has no divider to
+	 * preserve. A READY peer has a divider derived from the old MCLK, so
+	 * invalidate it before the retune; it must be configured again before
+	 * it can start. Never retune while the peer is active or stopping, or
+	 * after it has encountered an error.
 	 */
 	{
-		enum i2s_state peer_state = (dir == I2S_DIR_TX) ? *rx_state : *tx_state;
 		uint32_t desired_mclk;
 		uint32_t current_mclk;
 
@@ -922,15 +1020,15 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 			desired_mclk = 12288000U;   /* 48kHz family (default) */
 		}
 
+		k_mutex_lock(&sai_retune_lock, K_FOREVER);
+		retune_lock_held = true;
 		get_mclk_rate(dev, &current_mclk);
 
-		if (current_mclk != desired_mclk) {
-			if (peer_state != I2S_STATE_NOT_READY) {
-				LOG_ERR("cannot retune root clock to %uHz: opposite "
-					"direction is already configured", desired_mclk);
-				goto invalid_config;
-			}
-			set_mclk_rate(dev, desired_mclk);
+		if (current_mclk != desired_mclk &&
+		    invalidate_retune_peers(dev, strm, desired_mclk) < 0) {
+			LOG_ERR("cannot retune root clock to %uHz while a peer is active",
+				desired_mclk);
+			goto invalid_config;
 		}
 	}
 #endif
@@ -1107,9 +1205,19 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		dev_data->rx.state = I2S_STATE_READY;
 	}
 
+#ifndef CONFIG_I2S_HAS_PLL_SETTING
+	if (retune_lock_held) {
+		k_mutex_unlock(&sai_retune_lock);
+	}
+#endif
 	return 0;
 
 invalid_config:
+#ifndef CONFIG_I2S_HAS_PLL_SETTING
+	if (retune_lock_held) {
+		k_mutex_unlock(&sai_retune_lock);
+	}
+#endif
 	if (dir == I2S_DIR_TX) {
 		*tx_state = I2S_STATE_NOT_READY;
 	} else if (dir == I2S_DIR_RX) {
