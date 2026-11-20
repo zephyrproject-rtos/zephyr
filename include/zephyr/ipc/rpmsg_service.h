@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Endpoint registration and messaging over a shared OpenAMP RPMsg instance.
+ * @ingroup rpmsg_service_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_RPMSG_SERVICE_H_
 #define ZEPHYR_INCLUDE_IPC_RPMSG_SERVICE_H_
 

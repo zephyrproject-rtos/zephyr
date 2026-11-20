@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Interface implemented by IPC service backends.
+ * @ingroup ipc_service_backend
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_IPC_SERVICE_BACKEND_H_
 #define ZEPHYR_INCLUDE_IPC_IPC_SERVICE_BACKEND_H_
 
@@ -34,8 +40,8 @@ struct ipc_service_backend {
 	 *  @retval -EALREADY when the instance is already opened.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
-	 *	    backend.
+	 *  @retval -errno Other negative errno code depending on the
+	 *	    implementation of the backend.
 	 */
 	int (*open_instance)(const struct device *instance);
 
@@ -46,8 +52,8 @@ struct ipc_service_backend {
 	 *  @retval -EALREADY when the instance is not already inited.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
-	 *	    backend.
+	 *  @retval -errno Other negative errno code depending on the
+	 *	    implementation of the backend.
 	 */
 	int (*close_instance)(const struct device *instance);
 
@@ -64,9 +70,9 @@ struct ipc_service_backend {
 	 *  @retval -EBUSY when the instance is busy or not ready.
 	 *  @retval -ENOMEM when no memory / buffers are available.
 	 *
-	 *  @retval bytes number of bytes sent.
-	 *  @retval other errno codes depending on the implementation of the
-	 *	    backend.
+	 *  @return Number of bytes sent on success.
+	 *  @retval -errno Other negative errno code depending on the
+	 *	    implementation of the backend.
 	 */
 	int (*send)(const struct device *instance, void *token,
 		    const void *data, size_t len);
@@ -88,8 +94,9 @@ struct ipc_service_backend {
 	 *  @retval -ENOTSUP when critical send is not supported.
 	 *  @retval -ENOMEM when even critical buffers are unavailable.
 	 *
-	 *  @retval bytes number of bytes sent.
-	 *  @retval other errno codes depending on the implementation of the backend.
+	 *  @return Number of bytes sent on success.
+	 *  @retval -errno Other negative errno code depending on the
+	 *	    implementation of the backend.
 	 */
 	int (*send_critical)(const struct device *instance, void *token,
 			     const void *data, size_t len);
@@ -104,8 +111,8 @@ struct ipc_service_backend {
 	 *  @retval -EBUSY when the instance is busy or not ready.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
-	 *	    backend.
+	 *  @retval -errno Other negative errno code depending on the
+	 *	    implementation of the backend.
 	 */
 	int (*register_endpoint)(const struct device *instance,
 				 void **token,
@@ -121,8 +128,8 @@ struct ipc_service_backend {
 	 *  @retval -EBUSY when the instance is busy or not ready.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
-	 *      backend.
+	 *  @retval -errno Other negative errno code depending on the
+	 *	    implementation of the backend.
 	 */
 	int (*deregister_endpoint)(const struct device *instance, void *token);
 
@@ -135,9 +142,9 @@ struct ipc_service_backend {
 	 *  @retval -ENOENT when the endpoint is not registered with the instance.
 	 *  @retval -ENOTSUP when the operation is not supported.
 	 *
-	 *  @retval size TX buffer size on success.
-	 *  @retval other errno codes depending on the implementation of the
-	 *	    backend.
+	 *  @return TX buffer size on success.
+	 *  @retval -errno Other negative errno code depending on the
+	 *	    implementation of the backend.
 	 */
 	int (*get_tx_buffer_size)(const struct device *instance, void *token);
 
@@ -158,8 +165,8 @@ struct ipc_service_backend {
 	 *		    contains the maximum allowed size).
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
-	 *	    backend.
+	 *  @retval -errno Other negative errno code depending on the
+	 *	    implementation of the backend.
 	 */
 	int (*get_tx_buffer)(const struct device *instance, void *token,
 			     void **data, uint32_t *len, k_timeout_t wait);
@@ -176,8 +183,8 @@ struct ipc_service_backend {
 	 *  @retval -EALREADY when the buffer was already dropped.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
-	 *	    backend.
+	 *  @retval -errno Other negative errno code depending on the
+	 *	    implementation of the backend.
 	 */
 	int (*drop_tx_buffer)(const struct device *instance, void *token,
 			      const void *data);
@@ -197,9 +204,9 @@ struct ipc_service_backend {
 	 *		     invalid length, ...)
 	 *  @retval -EBUSY when the instance is busy or not ready.
 	 *
-	 *  @retval bytes number of bytes sent.
-	 *  @retval other errno codes depending on the implementation of the
-	 *	    backend.
+	 *  @return Number of bytes sent on success.
+	 *  @retval -errno Other negative errno code depending on the
+	 *	    implementation of the backend.
 	 */
 	int (*send_nocopy)(const struct device *instance, void *token,
 			   const void *data, size_t len);
@@ -216,8 +223,8 @@ struct ipc_service_backend {
 	 *  @retval -ENOTSUP when this function is not supported.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
-	 *	    backend.
+	 *  @retval -errno Other negative errno code depending on the
+	 *	    implementation of the backend.
 	 */
 	int (*hold_rx_buffer)(const struct device *instance, void *token,
 			      void *data);
@@ -234,8 +241,8 @@ struct ipc_service_backend {
 	 *  @retval -ENOTSUP when this function is not supported.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
-	 *	    backend.
+	 *  @retval -errno Other negative errno code depending on the
+	 *	    implementation of the backend.
 	 */
 	int (*release_rx_buffer)(const struct device *instance, void *token,
 				 void *data);

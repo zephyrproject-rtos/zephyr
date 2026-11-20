@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Static VRING setup for OpenAMP-based IPC service backends.
+ * @ingroup ipc_service_static_vrings_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_IPC_STATIC_VRINGS_H_
 #define ZEPHYR_INCLUDE_IPC_IPC_STATIC_VRINGS_H_
 
@@ -98,7 +104,7 @@ struct ipc_static_vrings {
  *  @retval -EINVAL When some parameter is missing.
  *  @retval -ENOMEM When memory is not enough for VQs allocation.
  *  @retval 0 If successful.
- *  @retval Other errno codes depending on the OpenAMP implementation.
+ *  @retval -errno Other negative errno code depending on the OpenAMP implementation.
  */
 int ipc_static_vrings_init(struct ipc_static_vrings *vr, unsigned int role);
 
@@ -110,7 +116,7 @@ int ipc_static_vrings_init(struct ipc_static_vrings *vr, unsigned int role);
  *  @param role Host / Remote role.
  *
  *  @retval 0 If successful.
- *  @retval Other errno codes depending on the OpenAMP implementation.
+ *  @retval -errno Other negative errno code depending on the OpenAMP implementation.
  */
 int ipc_static_vrings_deinit(struct ipc_static_vrings *vr, unsigned int role);
 
