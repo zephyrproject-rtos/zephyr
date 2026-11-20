@@ -36,7 +36,7 @@ process, which simulates the air for all devices.
 
 Everything above the roles is the code that every LLL runs on. The LLL prepare pipeline, the
 advertising PDU buffers and the checks of a received ``SCAN_REQ`` are common code in
-:zephyr_file:`subsys/bluetooth/controller/ll_sw`, which the LLLs share.
+:zephyr_file:`subsys/bluetooth/controller/ll_sw/shared/lll`, which the LLLs share.
 
 Only two interfaces cross from the Zephyr image into the runner:
 

@@ -8,13 +8,13 @@ zephyr_library_sources(
   "lll/lll_clock.c"
   "lll/lll_radio.c"
   "lll/lll_addr.c"
-  "../lll_prepare_pipeline.c"
+  "../shared/lll/lll_prepare_pipeline.c"
 )
 
 if(CONFIG_BT_BROADCASTER)
   zephyr_library_sources(
     "lll/lll_adv.c"
-    "../lll_adv_pdu.c"
+    "../shared/lll/lll_adv_pdu.c"
   )
 endif()
 
