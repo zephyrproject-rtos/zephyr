@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Adafruit ItsyBitsy nRF52840 Express
+ *
+ * UART0: TX = D1 (P0.24), RX = D0 (P0.25)
+ * DE = D10 (P0.05), RE = D11 (P0.26)
+ */
+
+#include <zephyr/dt-bindings/dmx/dmx.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&uart0 {
+	status = "okay";
+	current-speed = <DMX_BAUD_RATE>;
+
+	dmx0: dmx {
+		compatible = "zephyr,dmx-uart-isr";
+		de-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>; /* D10 */
+		re-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>; /* D11 */
+	};
+};
