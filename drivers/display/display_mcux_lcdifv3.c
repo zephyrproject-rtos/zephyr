@@ -59,6 +59,8 @@ struct mcux_lcdifv3_data {
 	/* Tracks index of next active driver framebuffer */
 	uint8_t next_idx;
 	size_t fb_bytes;
+	/* The next framebuffer contains an unfinished partial update. */
+	bool draw_pending;
 };
 
 static void dump_reg(LCDIF_Type *base)
@@ -79,6 +81,16 @@ static void dump_reg(LCDIF_Type *base)
 	LOG_DBG("CTRLDESCL_5: 0x%x", base->CTRLDESCL_5[0]);
 }
 
+static void mcux_lcdifv3_flush_rows(uint8_t *row, size_t row_bytes, size_t pitch_bytes,
+				    uint16_t height)
+{
+	if (height > 0U) {
+		size_t size = ((size_t)(height - 1U) * pitch_bytes) + row_bytes;
+
+		sys_cache_data_flush_and_invd_range(row, size);
+	}
+}
+
 static int mcux_lcdifv3_write(const struct device *dev, const uint16_t x, const uint16_t y,
 			      const struct display_buffer_descriptor *desc, const void *buf)
 {
@@ -88,8 +100,8 @@ static int mcux_lcdifv3_write(const struct device *dev, const uint16_t x, const 
 	uint32_t h_idx;
 	const uint8_t *src;
 	uint8_t *dst;
+	uint8_t *row;
 	uint32_t src_stride_bytes = (uint32_t)desc->pitch * data->pixel_bytes;
-	uint32_t cache_flush_size = data->fb_bytes;
 
 	__ASSERT((src_stride_bytes * desc->height) <= desc->buf_size, "Input buffer too small");
 
@@ -101,12 +113,16 @@ static int mcux_lcdifv3_write(const struct device *dev, const uint16_t x, const 
 		/* We can use the display buffer directly, without copying */
 		LOG_DBG("Setting FB from %p->%p", (void *)(uintptr_t)data->active_fb, (void *)buf);
 		data->active_fb = buf;
+		data->draw_pending = false;
+
+		sys_cache_data_flush_and_invd_range((void *)(uintptr_t)data->active_fb,
+						    src_stride_bytes * desc->height);
 	} else {
 		/* We must use partial framebuffer copy */
 		if (CONFIG_MCUX_LCDIFV3_FB_NUM == 0) {
 			LOG_ERR("Partial display refresh requires driver framebuffers");
 			return -ENOTSUP;
-		} else if (data->active_fb != data->fb[data->next_idx]) {
+		} else if (!data->draw_pending && (data->active_fb != data->fb[data->next_idx])) {
 			/*
 			 * Copy the entirety of the current framebuffer to new
 			 * buffer, since we are changing the active buffer address
@@ -114,28 +130,34 @@ static int mcux_lcdifv3_write(const struct device *dev, const uint16_t x, const 
 			src = data->active_fb;
 			dst = data->fb[data->next_idx];
 			memcpy(dst, src, data->fb_bytes);
+
+			sys_cache_data_flush_and_invd_range(dst, data->fb_bytes);
 		}
 		/* Write the display update to the active framebuffer */
 		src = buf;
-		dst = data->fb[data->next_idx];
-		dst += y * data->buffer_config.strideBytes + x * data->pixel_bytes;
+		row = data->fb[data->next_idx];
+		row += y * data->buffer_config.strideBytes + x * data->pixel_bytes;
+		dst = row;
 
 		for (h_idx = 0; h_idx < desc->height; h_idx++) {
 			memcpy(dst, src, data->pixel_bytes * desc->width);
 			src += src_stride_bytes;
 			dst += data->buffer_config.strideBytes;
 		}
+
+		mcux_lcdifv3_flush_rows(row, (size_t)data->pixel_bytes * desc->width,
+					data->buffer_config.strideBytes, desc->height);
+
+		data->draw_pending = desc->frame_incomplete;
+		if (data->draw_pending) {
+			return 0;
+		}
+
 		LOG_DBG("Setting FB from %p->%p", (void *)(uintptr_t)data->active_fb,
 			(void *)data->fb[data->next_idx]);
 		/* Set new active framebuffer */
 		data->active_fb = data->fb[data->next_idx];
 	}
-
-	if (data->active_fb == buf) {
-		cache_flush_size = src_stride_bytes * desc->height;
-	}
-
-	sys_cache_data_flush_and_invd_range((void *)(uintptr_t)data->active_fb, cache_flush_size);
 
 	k_sem_reset(&data->sem);
 
@@ -213,6 +235,7 @@ static int mcux_lcdifv3_set_pixel_format(const struct device *dev,
 			 MCUX_LCDIFV3_FB_PITCH_ALIGN);
 	dev_data->fb_bytes =
 		dev_data->buffer_config.strideBytes * config->display_config.panelHeight;
+	dev_data->draw_pending = false;
 
 	return 0;
 }

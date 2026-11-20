@@ -66,6 +66,8 @@ struct mcux_elcdif_data {
 	struct mcux_elcdif_cb_data cb;
 	/* Tracks index of next active driver framebuffer */
 	uint8_t next_idx;
+	/* The next framebuffer contains an unfinished partial update. */
+	bool draw_pending;
 #ifndef CONFIG_MCUX_ELCDIF_START_ON_INIT
 	bool running;
 #endif
@@ -85,6 +87,17 @@ static void mcux_elcdif_pxp_callback(const struct device *dma_dev, void *user_da
 }
 #endif /* CONFIG_MCUX_ELCDIF_PXP */
 
+static void mcux_elcdif_flush_rows(uint8_t *row, size_t row_bytes, size_t pitch_bytes,
+				   uint16_t height)
+{
+#ifdef CONFIG_HAS_MCUX_CACHE
+	if (height > 0U) {
+		DCACHE_CleanByRange((uint32_t)row,
+				    ((size_t)(height - 1U) * pitch_bytes) + row_bytes);
+	}
+#endif
+}
+
 static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const uint16_t y,
 			     const struct display_buffer_descriptor *desc, const void *buf)
 {
@@ -93,6 +106,7 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 	int h_idx;
 	const uint8_t *src;
 	uint8_t *dst;
+	uint8_t *row;
 	int ret = 0;
 	bool full_fb = false;
 
@@ -106,6 +120,7 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 		/* We can use the display buffer directly, no need to copy it */
 		LOG_DBG("Setting FB from %p->%p", (void *)dev_data->active_fb, (void *)buf);
 		dev_data->active_fb = buf;
+		dev_data->draw_pending = false;
 		full_fb = true;
 	} else if ((x == 0) && (y == 0) && (desc->width == config->rgb_mode.panelHeight) &&
 		   (desc->height == config->rgb_mode.panelWidth) && (desc->pitch == desc->width) &&
@@ -115,13 +130,15 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 		 */
 		LOG_DBG("Setting FB from %p->%p", (void *)dev_data->active_fb, (void *)buf);
 		dev_data->active_fb = buf;
+		dev_data->draw_pending = false;
 		full_fb = true;
 	} else {
 		/* We must use partial framebuffer copy */
 		if (CONFIG_MCUX_ELCDIF_FB_NUM == 0) {
 			LOG_ERR("Partial display refresh requires driver framebuffers");
 			return -ENOTSUP;
-		} else if (dev_data->active_fb != dev_data->fb[dev_data->next_idx]) {
+		} else if (!dev_data->draw_pending &&
+			   (dev_data->active_fb != dev_data->fb[dev_data->next_idx])) {
 			/*
 			 * We must copy the entire current framebuffer to new
 			 * buffer, since we will change the active buffer
@@ -130,16 +147,30 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 			src = dev_data->active_fb;
 			dst = dev_data->fb[dev_data->next_idx];
 			memcpy(dst, src, dev_data->fb_bytes);
+
+#ifdef CONFIG_HAS_MCUX_CACHE
+			DCACHE_CleanByRange((uint32_t)dst, dev_data->fb_bytes);
+#endif
 		}
 		/* Now, write the display update into active framebuffer */
 		src = buf;
-		dst = dev_data->fb[dev_data->next_idx];
-		dst += dev_data->pixel_bytes * (y * config->rgb_mode.panelWidth + x);
+		row = dev_data->fb[dev_data->next_idx];
+		row += dev_data->pixel_bytes * (y * config->rgb_mode.panelWidth + x);
+		dst = row;
 
 		for (h_idx = 0; h_idx < desc->height; h_idx++) {
 			memcpy(dst, src, dev_data->pixel_bytes * desc->width);
 			src += dev_data->pixel_bytes * desc->pitch;
 			dst += dev_data->pixel_bytes * config->rgb_mode.panelWidth;
+		}
+
+		mcux_elcdif_flush_rows(row, dev_data->pixel_bytes * desc->width,
+				       dev_data->pixel_bytes * config->rgb_mode.panelWidth,
+				       desc->height);
+
+		dev_data->draw_pending = desc->frame_incomplete;
+		if (dev_data->draw_pending) {
+			return 0;
 		}
 
 		LOG_DBG("Setting FB from %p->%p", (void *)dev_data->active_fb,
@@ -149,7 +180,9 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_CleanByRange((uint32_t)dev_data->active_fb, dev_data->fb_bytes);
+	if (full_fb) {
+		DCACHE_CleanByRange((uint32_t)dev_data->active_fb, dev_data->fb_bytes);
+	}
 #endif
 
 #ifdef CONFIG_MCUX_ELCDIF_PXP
@@ -297,6 +330,7 @@ static int mcux_elcdif_set_pixel_format(const struct device *dev,
 	dev_data->pixel_bytes = DISPLAY_BITS_PER_PIXEL(pixel_format) / BITS_PER_BYTE;
 	dev_data->fb_bytes =
 		config->rgb_mode.panelWidth * config->rgb_mode.panelHeight * dev_data->pixel_bytes;
+	dev_data->draw_pending = false;
 
 	for (int i = 0; i < CONFIG_MCUX_ELCDIF_FB_NUM; i++) {
 		k_heap_free(&display_heap, dev_data->fb[i]);
