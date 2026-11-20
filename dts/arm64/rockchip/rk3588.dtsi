@@ -248,4 +248,24 @@
 		reg-shift = <2>;
 		status = "disabled";
 	};
+
+	uart4: serial@feb70000 {
+		compatible = "rockchip,rk3588-uart", "snps,dw-apb-uart", "ns16550";
+		reg = <0xfeb70000 0x100>;
+		interrupts = <GIC_SPI 335 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		reg-shift = <2>;
+		/* Supply clock-frequency or clocks and current-speed before enabling. */
+		status = "disabled";
+	};
+
+	uart7: serial@feba0000 {
+		compatible = "rockchip,rk3588-uart", "snps,dw-apb-uart", "ns16550";
+		reg = <0xfeba0000 0x100>;
+		interrupts = <GIC_SPI 338 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		reg-shift = <2>;
+		/* Supply clock-frequency or clocks and current-speed before enabling. */
+		status = "disabled";
+	};
 };
+
+#include "rk3588-pinctrl.dtsi"
