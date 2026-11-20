@@ -145,6 +145,8 @@ def main():
                     if "array" in node.props[item].type:
                         # Convert array to CMake list
                         cmake_value = to_cmake_list(node.props[item].val)
+                    elif node.props[item].type == "path":
+                        cmake_value = node.props[item].val.path
                     else:
                         cmake_value = node.props[item].val
 
