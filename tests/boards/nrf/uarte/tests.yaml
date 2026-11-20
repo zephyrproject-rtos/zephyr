@@ -11,6 +11,7 @@ tests:
   boards.nrf.uarte:
     platform_allow:
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
       - nrf7120dk/nrf7120/cpuapp
