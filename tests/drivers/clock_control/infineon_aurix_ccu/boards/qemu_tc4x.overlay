@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Expected rates: fsource0 = fsource2 = fBACK 100 MHz */
+/ {
+	zephyr,user {
+		sri-hz = <100000000>;
+		spb-hz = <50000000>;
+		fsi-hz = <100000000>;
+		stm-hz = <50000000>;
+		asclinf-hz = <100000000>;
+	};
+};
