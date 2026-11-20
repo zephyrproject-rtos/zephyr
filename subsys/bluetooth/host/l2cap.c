@@ -2665,56 +2665,114 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
+static void fifo_move_bufs(struct k_fifo *from, struct k_fifo *to)
 {
-	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+	struct net_buf *buf = k_fifo_get(from, K_NO_WAIT);
 
-	LOG_DBG("chan %p", chan);
-
-	/* chan_queue() checks this under the host lock, so an SDU is either
-	 * queued before it is set, and freed below, or refused
-	 */
-	bt_dev_lock();
-	atomic_set_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN);
-	bt_dev_unlock();
-
-	/* Destroy segmented SDU if it exists */
-	if (le_chan->_sdu) {
-		net_buf_drop(&le_chan->_sdu);
-		le_chan->_sdu_len = 0U;
-	}
-
-	/* Remove buffers on the TX queue */
-	net_buf_fifo_purge(&le_chan->tx_queue);
-
-	/* Remove buffers on the RX queue */
-	net_buf_fifo_purge(&le_chan->rx_queue);
-
-	/* Update status */
-	if (chan->ops->status) {
-		chan->ops->status(chan, chan->status);
+	while (buf != NULL) {
+		k_fifo_put(to, buf);
+		buf = k_fifo_get(from, K_NO_WAIT);
 	}
 }
 
-static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
+/* Caller must hold the host lock, under which chan_queue() checks the flag: an
+ * SDU is either queued before it is set, and moved below, or refused. The
+ * channel's buffers go to purged, for the caller to free after unlocking: a
+ * destroy callback may wait on the TX processor. The caller reports the status.
+ */
+static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan, struct k_fifo *purged)
+{
+	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+	struct net_buf *sdu;
+
+	BT_DEV_LOCK_ASSERT();
+
+	LOG_DBG("chan %p", chan);
+
+	atomic_set_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN);
+
+	/* Segmented SDU, if it exists */
+	sdu = net_buf_take(&le_chan->_sdu);
+	if (sdu != NULL) {
+		k_fifo_put(purged, sdu);
+		le_chan->_sdu_len = 0U;
+	}
+
+	fifo_move_bufs(&le_chan->tx_queue, purged);
+	fifo_move_bufs(&le_chan->rx_queue, purged);
+}
+
+/* Also called by bt_l2cap_chan_recv_complete() on an application thread, where
+ * a disconnection can tear the channel down while this waits for a buffer. That
+ * clears the channel's connection, so the caller passes it.
+ */
+static void l2cap_chan_send_credits(struct bt_conn *conn, struct bt_l2cap_le_chan *chan,
 				    uint16_t credits)
 {
+	const uint16_t rx_cid = chan->rx.cid;
 	struct bt_l2cap_le_credits *ev;
 	struct net_buf *buf;
 	int err;
 
-	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
-
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_LE_CREDITS, get_ident(),
 				      sizeof(*ev));
-	if (!buf) {
+
+	/* Held until the credits are sent or the channel is shut down, so that
+	 * a disconnection cannot come between the check and either
+	 */
+	bt_dev_lock();
+
+	/* Compares pointers only: a channel torn down meanwhile may be freed. A
+	 * channel object connected again meanwhile is back on the list, but
+	 * with another CID: l2cap_chan_alloc_cid() hands out the CIDs of a
+	 * connection in turn.
+	 */
+	if (!sys_slist_find(&conn->channels, &chan->chan.node, NULL) || chan->rx.cid != rx_cid ||
+	    bt_l2cap_chan_get_state(&chan->chan) != BT_L2CAP_CONNECTED) {
+		bt_dev_unlock();
+		net_buf_drop(&buf);
+
+		return;
+	}
+
+	if (buf == NULL) {
+		const bool on_workq = bt_is_work_thread();
+		struct k_fifo purged;
+
 		LOG_ERR("Unable to send credits update");
 		/* Without credits the peer would wait on the channel forever */
 		err = bt_l2cap_chan_disconnect(&chan->chan);
 		if (err != 0) {
 			LOG_ERR("Unable to disconnect (err %d)", err);
 		}
-		l2cap_chan_shutdown(&chan->chan);
+
+		k_fifo_init(&purged);
+		l2cap_chan_shutdown(&chan->chan, &purged);
+
+		/* An application thread can call the status callback neither
+		 * here, where it may wait for an HCI command that the TX
+		 * processor does not send while the host lock is held, nor
+		 * after unlocking, when a disconnection may have released the
+		 * channel. A teardown of the channel cancels the work.
+		 */
+		if (!on_workq && (chan->chan.ops->status != NULL)) {
+			err = bt_work_submit(&chan->status_work);
+			if (err < 0) {
+				LOG_ERR("Unable to submit status_work (err %d)", err);
+			}
+		}
+
+		bt_dev_unlock();
+
+		net_buf_fifo_purge(&purged);
+
+		/* The Bluetooth workqueue also processes the disconnections
+		 * that tear channels down, so none has come since the check
+		 */
+		if (on_workq && (chan->chan.ops->status != NULL)) {
+			chan->chan.ops->status(&chan->chan, chan->chan.status);
+		}
+
 		return;
 	}
 
@@ -2725,9 +2783,11 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 	ev->cid = sys_cpu_to_le16(chan->rx.cid);
 	ev->credits = sys_cpu_to_le16(credits);
 
-	l2cap_send_sig(chan->chan.conn, buf);
+	l2cap_send_sig(conn, buf);
 
 	LOG_DBG("chan %p credits %lu", chan, atomic_get(&chan->rx.credits));
+
+	bt_dev_unlock();
 }
 
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
@@ -2837,7 +2897,7 @@ int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	LOG_DBG("chan %p buf %p", chan, buf);
 
 	if (bt_l2cap_chan_get_state(&le_chan->chan) == BT_L2CAP_CONNECTED) {
-		l2cap_chan_send_credits(le_chan, 1);
+		l2cap_chan_send_credits(conn, le_chan, 1);
 	}
 
 	return 0;
@@ -2878,7 +2938,7 @@ static void l2cap_chan_le_recv_sdu(struct bt_l2cap_le_chan *chan,
 		}
 		return;
 	} else if (bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED) {
-		l2cap_chan_send_credits(chan, 1);
+		l2cap_chan_send_credits(chan->chan.conn, chan, 1);
 	}
 
 	net_buf_unref(buf);
@@ -2928,7 +2988,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 		 */
 		if (atomic_get(&chan->rx.credits) == 0) {
 			LOG_DBG("remote is not fully utilizing MPS");
-			l2cap_chan_send_credits(chan, 1);
+			l2cap_chan_send_credits(chan->chan.conn, chan, 1);
 		}
 
 		return;
@@ -3062,7 +3122,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 				sdu_len,
 				buf->len,
 				chan->rx.mps);
-			l2cap_chan_send_credits(chan, credits);
+			l2cap_chan_send_credits(chan->chan.conn, chan, credits);
 		}
 
 		/* A channel that could not give the credits has dropped the SDU */
@@ -3092,7 +3152,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 	 * in the recv() callback above
 	 */
 	if (bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED) {
-		l2cap_chan_send_credits(chan, 1);
+		l2cap_chan_send_credits(chan->chan.conn, chan, 1);
 	}
 }
 
