@@ -247,6 +247,22 @@ function(dts_configuration_files)
   set(EXTRA_GEN_EDT_ARGS ${EXTRA_GEN_EDT_ARGS} PARENT_SCOPE)
 endfunction()
 
+function(dts_workspace_dir out_var)
+  #
+  # Set out_var to the workspace root that generated files write source
+  # paths relative to.
+  #
+
+  if(WEST_TOPDIR)
+    set(${out_var} ${WEST_TOPDIR} PARENT_SCOPE)
+  else()
+    # If West is not available, define the parent directory of ZEPHYR_BASE as
+    # the workspace. This will create comments that reference the files in the
+    # Zephyr tree with a 'zephyr/' prefix.
+    set(${out_var} ${ZEPHYR_BASE}/.. PARENT_SCOPE)
+  endif()
+endfunction()
+
 function(dts_edt_pickle)
   #
   # Run the C preprocessor on the devicetree source, so we can parse it
@@ -303,14 +319,7 @@ function(dts_edt_pickle)
   # Run GEN_EDT_SCRIPT.
   #
 
-  if(WEST_TOPDIR)
-    set(gen_edt_workspace_dir ${WEST_TOPDIR})
-  else()
-    # If West is not available, define the parent directory of ZEPHYR_BASE as
-    # the workspace. This will create comments that reference the files in the
-    # Zephyr tree with a 'zephyr/' prefix.
-    set(gen_edt_workspace_dir ${ZEPHYR_BASE}/..)
-  endif()
+  dts_workspace_dir(gen_edt_workspace_dir)
 
   string(REPLACE ";" " " EXTRA_DTC_FLAGS_RAW "${EXTRA_DTC_FLAGS}")
   set(cmd_gen_edt ${PYTHON_EXECUTABLE} ${GEN_EDT_SCRIPT}
@@ -340,11 +349,13 @@ function(dts_gen_defines)
   # Run GEN_DEFINES_SCRIPT.
   #
 
+  dts_workspace_dir(workspace_dir)
   set(cmd_gen_defines ${PYTHON_EXECUTABLE} ${GEN_DEFINES_SCRIPT}
     --header-out ${DEVICETREE_GENERATED_H}.new
     --deps-out ${DEVICETREE_BINDINGS_USED}
     --edt-pickle ${EDT_PICKLE}
     --zephyr-base ${ZEPHYR_BASE}
+    --workspace-dir ${workspace_dir}
     ${EXTRA_GEN_DEFINES_ARGS}
   )
 
