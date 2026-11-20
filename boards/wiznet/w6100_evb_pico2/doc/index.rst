@@ -105,4 +105,4 @@ Below is an example of building and flashing the :zephyr:code-sample:`blinky` ap
   https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf
 
 .. _W6100 Evaluation Board Pico 2 Documentation:
-  https://https://docs.wiznet.io/Product/Chip/Ethernet/W6100/w6100-evb-pico2
+  https://docs.wiznet.io/Product/Chip/Ethernet/W6100/w6100-evb-pico2
