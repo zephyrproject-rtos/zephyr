@@ -1,0 +1,19 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Use the DTC for the transfers. The default polling mode of the SPI driver
+ * fails to open the SPI, and handling each byte in an interrupt slows the
+ * transfers down.
+ */
+&mikrobus_spi {
+	rx-dtc;
+	tx-dtc;
+};
+
+/* Communication is only stable up to 30 MHz */
+&spi_nand_mikroe_flash_5_click {
+	spi-max-frequency = <DT_FREQ_M(30)>;
+};

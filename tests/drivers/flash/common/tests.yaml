@@ -329,6 +329,7 @@ tests:
       fixture: mikroe_flash_5_click
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
+      - ek_ra8m1
     extra_args:
       - SHIELD=mikroe_flash_5_click
       - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
@@ -338,6 +339,7 @@ tests:
       fixture: mikroe_flash_8_click
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
+      - ek_ra8m1
     extra_args:
       - SHIELD=mikroe_flash_8_click
       - DTC_OVERLAY_FILE="./boards/mikroe_flash_8_click.overlay"
