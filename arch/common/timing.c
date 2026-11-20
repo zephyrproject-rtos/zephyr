@@ -20,6 +20,7 @@ void arch_timing_stop(void)
 {
 }
 
+__no_instrumentation__
 timing_t arch_timing_counter_get(void)
 {
 #if CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
@@ -29,6 +30,7 @@ timing_t arch_timing_counter_get(void)
 #endif
 }
 
+__no_instrumentation__
 uint64_t arch_timing_cycles_get(volatile timing_t *const start,
 				volatile timing_t *const end)
 {
@@ -45,6 +47,7 @@ uint64_t arch_timing_freq_get(void)
 	return sys_clock_hw_cycles_per_sec();
 }
 
+__no_instrumentation__
 uint64_t arch_timing_cycles_to_ns(uint64_t cycles)
 {
 	return k_cyc_to_ns_floor64(cycles);

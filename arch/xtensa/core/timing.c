@@ -20,6 +20,7 @@ uint64_t arch_timing_freq_get(void)
 	return CONFIG_XTENSA_CCOUNT_HZ;
 }
 
+__no_instrumentation__
 timing_t arch_timing_counter_get(void)
 {
 	uint32_t ccount;
@@ -29,6 +30,7 @@ timing_t arch_timing_counter_get(void)
 	return ccount;
 }
 
+__no_instrumentation__
 uint64_t arch_timing_cycles_get(volatile timing_t *const start,
 				volatile timing_t *const end)
 {
@@ -41,6 +43,7 @@ uint64_t arch_timing_cycles_get(volatile timing_t *const start,
 	return (uint64_t) dt;
 }
 
+__no_instrumentation__
 uint64_t arch_timing_cycles_to_ns(uint64_t cycles)
 {
 	return cycles * 1000000000ULL / CONFIG_XTENSA_CCOUNT_HZ;
