@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2026 sensry.io
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8.1-m.dtsi>
+#include <freq.h>
+
+/ {
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(40)>;
+		#clock-cells = <0>;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m85";
+			reg = <0>;
+			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(40)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	soc {
+		sram0: memory@1000000 {
+			compatible = "mmio-sram";
+			reg = <0x01000000 DT_SIZE_M(1)>;
+		};
+
+		uart0: uart@40048000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40048000 0x1000>;
+			interrupts = <1 3>;
+			clocks = <&sysclk &sysclk>;
+			current-speed = <921600>;
+			status = "okay";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

@@ -1,0 +1,5 @@
+socs:
+  - name: edgevision
+    cpuclusters:
+      - name: m85
+      - name: m4

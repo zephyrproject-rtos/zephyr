@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright 2026 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_XIP=n
+
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_SERIAL=y
+
+# Set UART as device used for both printf & printk
+CONFIG_STDOUT_CONSOLE=y
+CONFIG_PRINTK=y
+CONFIG_UART_CONSOLE=y

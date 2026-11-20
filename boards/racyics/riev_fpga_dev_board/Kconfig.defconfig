@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright 2026 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RIEV_FPGA_DEV_BOARD
+
+# This image is chain-loaded into SRAM by a ROM bootloader, so force the
+# architectural reset state at entry.
+config INIT_ARCH_HW_AT_BOOT
+	default y
+
+endif

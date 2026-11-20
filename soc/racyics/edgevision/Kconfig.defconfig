@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright 2026 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_EDGEVISION
+
+config INCLUDE_RESET_VECTOR
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default y
+
+config NUM_IRQS
+	default 32
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+config GEN_ISR_TABLES
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config USE_DT_CODE_PARTITION
+	default y
+
+config INIT_STACKS
+	default y
+
+config TIMESLICE_SIZE
+	default 10
+
+endif
