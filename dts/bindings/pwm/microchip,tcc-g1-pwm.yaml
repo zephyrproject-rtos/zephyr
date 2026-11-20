@@ -28,4 +28,4 @@ properties:
 pwm-cells:
   - channel
   - period
-  - polarity
+  - flags
