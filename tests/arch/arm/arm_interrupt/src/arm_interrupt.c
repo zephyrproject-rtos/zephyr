@@ -960,6 +960,12 @@ static inline void z_vrfy_test_arm_user_interrupt_syscall(void)
  */
 ZTEST_USER(arm_interrupt, test_arm_user_interrupt)
 {
+	/*
+	 * With SMP, irq_lock() takes the global lock, which lives in kernel
+	 * data that user mode cannot access.
+	 */
+	Z_TEST_SKIP_IFDEF(CONFIG_SMP);
+
 	/* Test thread executing in user mode */
 	zassert_true(arch_is_user_context(), "Test thread not running in user mode\n");
 
