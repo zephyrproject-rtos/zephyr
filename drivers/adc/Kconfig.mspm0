@@ -8,5 +8,6 @@ config ADC_MSPM0_ADC12
 	depends on DT_HAS_TI_MSPM0_ADC12_ENABLED
 	select USE_MSPM0_DL_ADC
 	select PINCTRL
+	select REGULATOR if $(dt_compat_any_has_prop,$(DT_COMPAT_TI_MSPM0_ADC12),vref)
 	help
 	  Enable support for ADC12 on the TI MSPM0 series.
