@@ -354,6 +354,23 @@ uint32_t sys_clock_cycle_get_32(void);
  */
 uint64_t sys_clock_cycle_get_64(void);
 
+/**
+ * @brief Set the system timer frequency.
+ *
+ * Available with @kconfig{CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME} or
+ * @kconfig{CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE}.
+ *
+ * Store the frequency returned by sys_clock_hw_cycles_per_sec(). A system
+ * timer driver that reads its frequency at run time calls this before the
+ * first conversion involving cycles. Implementations of
+ * z_sys_clock_hw_cycles_per_sec_update() call it to publish a new value.
+ *
+ * @note This is a kernel/platform hook. Application code must not call it.
+ *
+ * @param[in] hz System timer clock frequency, in Hz. Must not be 0.
+ */
+void z_sys_clock_hw_cycles_per_sec_set(uint32_t hz);
+
 #if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE) || defined(__DOXYGEN__)
 /**
  * @brief Update the system timer frequency at runtime.
@@ -370,8 +387,8 @@ uint64_t sys_clock_cycle_get_64(void);
  *
  * System timer drivers that cache derived constants or need to reprogram
  * hardware on a frequency change should provide a strong override of this
- * function. Driver overrides must also ensure the stored frequency returned
- * by sys_clock_hw_cycles_per_sec() is updated.
+ * function. Driver overrides must also update the stored frequency with
+ * z_sys_clock_hw_cycles_per_sec_set().
  *
  * @note This is a kernel/platform hook. Application code must not call it.
  *

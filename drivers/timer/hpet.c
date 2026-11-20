@@ -381,11 +381,9 @@ void sys_clock_idle_exit(void)
 __boot_func
 static int sys_clock_driver_init(void)
 {
-	extern unsigned int z_clock_hw_cycles_per_sec;
 	uint32_t hz, reg;
 
 	ARG_UNUSED(hz);
-	ARG_UNUSED(z_clock_hw_cycles_per_sec);
 
 	DEVICE_MMIO_TOPLEVEL_MAP(hpet_regs, K_MEM_CACHE_NONE);
 
@@ -403,7 +401,7 @@ static int sys_clock_driver_init(void)
 
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	hz = (uint32_t)(HPET_COUNTER_CLK_PERIOD / hpet_counter_clk_period_get());
-	z_clock_hw_cycles_per_sec = hz;
+	z_sys_clock_hw_cycles_per_sec_set(hz);
 #endif
 
 	reg = hpet_gconf_get();
