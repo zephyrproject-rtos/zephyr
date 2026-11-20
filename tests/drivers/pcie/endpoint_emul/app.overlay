@@ -1,0 +1,55 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	tst_ep0: pcie-ep-emul-0 {
+		compatible = "zephyr,pcie-ep-emul";
+		vendor-id = <0x1234>;
+		device-id = <0x0001>;
+		class-code = <0x060400>;
+		revision-id = <0x01>;
+		bar-sizes = <0x10000 0x1000 0 0 0 0>;
+		msi-vectors = <4>;
+		msix-vectors = <8>;
+		legacy-irq;
+		dmas = <&dma 0>, <&dma 1>;
+		dma-names = "host-to-device", "device-to-host";
+		status = "okay";
+	};
+
+	tst_ep1: pcie-ep-emul-1 {
+		compatible = "zephyr,pcie-ep-emul";
+		vendor-id = <0x5678>;
+		device-id = <0x0002>;
+		class-code = <0xff0000>;
+		revision-id = <0x02>;
+		bar-sizes = <0x1000 0x2000 0x4000 0 0 0>;
+		msi-vectors = <1>;
+		msix-vectors = <0>;
+		dmas = <&dma 2>, <&dma 3>;
+		dma-names = "host-to-device", "device-to-host";
+		status = "okay";
+	};
+
+	/* No dmas property: DMA transfers must report -ENODEV at runtime. */
+	tst_ep2: pcie-ep-emul-2 {
+		compatible = "zephyr,pcie-ep-emul";
+		vendor-id = <0x9abc>;
+		device-id = <0x0003>;
+		class-code = <0x058000>;
+		revision-id = <0x01>;
+		bar-sizes = <0x1000 0 0 0 0 0>;
+		msi-vectors = <0>;
+		msix-vectors = <2>;
+		status = "okay";
+	};
+};
+
+/* Two endpoints x two directions: four distinct dedicated channels. */
+&dma {
+	dma-channels = <4>;
+	status = "okay";
+};

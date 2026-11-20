@@ -206,7 +206,7 @@ static int iproc_pcie_pl330_dma_xfer(const struct device *dev, uint64_t mapped_a
 		goto out;
 	}
 
-	/* start DMA */
+	/* The PL330 backend waits for completion inside dma_start(). */
 	ret = dma_start(cfg->pl330_dev, chan_id);
 	if (ret) {
 		LOG_ERR("DMA transfer failed\n");

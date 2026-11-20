@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - pcie
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+    - native_sim/native/64
+  filter: dt_compat_enabled("zephyr,pcie-ep-emul")
+tests:
+  drivers.pcie.endpoint_emul: {}
+  drivers.pcie.endpoint_emul.irq_queue_3:
+    extra_configs:
+      - CONFIG_PCIE_EP_EMUL_MAX_IRQ_EVENTS=3
+  drivers.pcie.endpoint_emul.shuffle_repeat:
+    extra_configs:
+      - CONFIG_ZTEST_SHUFFLE=y
+      - CONFIG_ZTEST_REPEAT=y
+      - CONFIG_ZTEST_SUITE_REPEAT_COUNT=2
+      - CONFIG_ZTEST_TEST_REPEAT_COUNT=2
