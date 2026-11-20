@@ -1211,10 +1211,12 @@ static int eusart_configure(const struct device *dev, const struct uart_config *
 	struct uart_config *uart_cfg = &data->uart_cfg;
 	sl_hal_eusart_ovs_t ovs;
 	uint32_t clock_rate;
+	unsigned int key;
+	uint32_t ien;
 	int err;
 
 #ifdef CONFIG_UART_SILABS_EUSART_ASYNC
-	if (data->dma_rx.enabled || data->dma_tx.enabled) {
+	if (data->dma_rx.enabled || data->dma_tx.buffer_length) {
 		return -EBUSY;
 	}
 #endif
@@ -1253,7 +1255,14 @@ static int eusart_configure(const struct device *dev, const struct uart_config *
 	eusart_irq_tx_abort_drain(dev);
 #endif
 
+	key = irq_lock();
+	ien = config->eusart->IEN;
+	config->eusart->IEN = 0;
+	irq_unlock(key);
+
 	eusart_configure_peripheral(dev, clock_rate, ovs, true);
+
+	config->eusart->IEN = ien;
 
 	return 0;
 };
