@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_MCUX_LPC546XX
+	bool "NXP LPC546xx on-chip EEPROM driver"
+	default y
+	depends on DT_HAS_NXP_LPC546XX_EEPROM_ENABLED
+	select RESET
+	help
+	  Enable the driver for the on-chip EEPROM controller of the NXP
+	  LPC546xx.

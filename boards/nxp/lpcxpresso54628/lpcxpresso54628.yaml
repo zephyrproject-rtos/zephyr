@@ -16,6 +16,7 @@ toolchain:
 supported:
   - counter
   - crc
+  - eeprom
   - gpio
   - hwinfo
   - netif:eth
