@@ -79,6 +79,14 @@ Libraries / Subsystems
     :c:member:`i3c_config_controller.tcas_ps` and the ``tcas-ps`` controller
     Devicetree property.
 
+* IPC
+
+  * Added the :ref:`IPC link backend <ipc_service_backend_link>`, which runs the IPC service
+    between two processors over a :ref:`UART <ipc_service_backend_link_uart>` or an
+    :ref:`SPI bus <ipc_service_backend_link_spi>`. It retransmits lost and corrupted frames,
+    detects a peer reboot or a peer that stops answering, and unbinds the endpoints when the
+    session ends.
+
 * LoRaWAN
 
   * The native backend now supports the AS923 region
