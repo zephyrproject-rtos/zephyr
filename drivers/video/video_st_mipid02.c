@@ -260,7 +260,7 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 	const struct mipid02_config *cfg = dev->config;
 	struct mipid02_data *drv_data = dev->data;
 	const struct mipid02_format_desc *desc;
-	int32_t link_freq;
+	int64_t link_freq;
 	int ret;
 
 	if (!enable) {
@@ -297,10 +297,10 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 	}
 
 	/* Get link-frequency information from source */
-	link_freq = video_get_csi_link_freq(cfg->source_dev,
-					    video_bits_per_pixel(desc->csi_pixelformat),
-					    cfg->csi.nb_lanes);
-	if (link_freq < 0) {
+	ret = video_get_link_freq(cfg->source_dev, &link_freq, VIDEO_BUS_TYPE_CSI2_DPHY,
+				  video_bits_per_pixel(desc->csi_pixelformat),
+				  cfg->csi.nb_lanes);
+	if (ret < 0) {
 		LOG_ERR("Failed to retrieve source link-frequency");
 		return -EIO;
 	}
