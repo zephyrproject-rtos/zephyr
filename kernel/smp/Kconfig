@@ -105,6 +105,19 @@ config SCHED_CPU_MASK_PIN_ONLY
 	  only be modified before a thread is started.  Most
 	  applications don't want this.
 
+config SCHED_CPU_MASK_DEFAULT_SINGLE_CPU
+	bool "Default new threads to a single CPU"
+	depends on SCHED_CPU_MASK && !SCHED_CPU_MASK_PIN_ONLY
+	help
+	  When enabled, threads are created with only logical CPU 0 in their CPU
+	  mask instead of all CPUs. A thread runs on other CPUs only after its
+	  mask is widened with k_thread_cpu_mask_enable() or
+	  k_thread_cpu_mask_enable_all() while it is prevented from running
+	  (before it is started, or while it is blocked or suspended). Kernel
+	  threads that start before application code runs, such as the system
+	  workqueue, stay on CPU 0. The idle threads are not affected.
+	  SCHED_CPU_MASK_PIN_ONLY already defaults to CPU 0.
+
 config TRACE_SCHED_IPI
 	bool "Test IPI"
 	help
