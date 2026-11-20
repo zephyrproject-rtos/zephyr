@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+  - name: renesas_rh850
+    series:
+      - name: rh850u2a
+        socs:
+          - name: r7f702300
+      - name: rh850u2b
+        socs:
+          - name: rh850u2b
+      - name: rh850u2c
+        socs:
+          - name: r7f702600

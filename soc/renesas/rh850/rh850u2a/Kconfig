@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RH850U2A
+	select RH850
+	select CPU_G4MH
+	select XIP
+	select RENESAS_RH850_INTC
+	select SOC_EARLY_INIT_HOOK

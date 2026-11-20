@@ -1,0 +1,47 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include <renesas/r7f702600.dtsi>
+
+/ {
+	compatible = "renesas,qemu-rh850-u2c";
+	model = "QEMU RH850/U2C";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &cram0;
+		zephyr,console = &rlin311;
+		zephyr,shell-uart = &rlin311;
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+/* CLK_RLIN3 = CLKC_HSB, 20 MHz */
+&rlin311 {
+	clock-frequency = <DT_FREQ_M(20)>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&ostm0 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_M(8)>;
+		};
+	};
+};

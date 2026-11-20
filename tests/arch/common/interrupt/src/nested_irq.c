@@ -13,7 +13,8 @@
  * Run the nested interrupt test for the supported platforms only.
  */
 #if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_ARC) || \
-	defined(CONFIG_GIC) || defined(CONFIG_RISCV_NESTED_INTERRUPTS)
+	defined(CONFIG_GIC) || defined(CONFIG_NRFX_CLIC) || \
+	defined(CONFIG_RISCV_NESTED_INTERRUPTS) || defined(CONFIG_RH850)
 #define TEST_NESTED_ISR
 #endif
 
@@ -133,6 +134,21 @@
  */
 #define ISR0_UNLOCK_IRQ()	arch_irq_unlock(RV_STATUS_IE)
 #define ISR0_LOCK_IRQ()		((void)arch_irq_lock())
+#elif defined(CONFIG_RH850)
+/* Edge-detected channels that software can raise through EIRF */
+#if defined(CONFIG_SOC_SERIES_RH850U2A)
+#define IRQ0_LINE	702
+#define IRQ1_LINE	703
+#elif defined(CONFIG_SOC_SERIES_RH850U2B)
+#define IRQ0_LINE	845
+#define IRQ1_LINE	846
+#else
+#define IRQ0_LINE	617
+#define IRQ1_LINE	618
+#endif
+
+#define IRQ0_PRIO	3
+#define IRQ1_PRIO	2
 #else
 /*
  * For all the other platforms, use the last two available IRQ lines for

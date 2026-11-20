@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+boards:
+  - name: qemu_rh850_u2a
+    full_name: QEMU Emulation for Renesas RH850/U2A
+    vendor: renesas
+    socs:
+      - name: r7f702300
+
+  - name: qemu_rh850_u2b
+    full_name: QEMU Emulation for Renesas RH850/U2B
+    vendor: renesas
+    socs:
+      - name: rh850u2b
+
+  - name: qemu_rh850_u2c
+    full_name: QEMU Emulation for Renesas RH850/U2C
+    vendor: renesas
+    socs:
+      - name: r7f702600
