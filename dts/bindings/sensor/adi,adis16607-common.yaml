@@ -9,7 +9,7 @@ description: |
   asserted for the entire frame. Maximum SPI clock frequency is 15 MHz
   for burst reads; 2 MHz for individual register reads/writes.
 
-include: spi-device.yaml
+include: [sensor-device.yaml, spi-device.yaml]
 
 properties:
   drdy-gpios:
