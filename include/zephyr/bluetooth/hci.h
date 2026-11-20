@@ -80,6 +80,7 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout);
   *
   * @return 0 on success (the command has been queued), negative errno value on failure.
   * @retval -EHOSTDOWN The HCI transport is not open, i.e. Bluetooth is not enabled.
+  * @retval -ENOTSUP The command is an LE command and the Controller does not support LE.
   */
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
 
@@ -106,6 +107,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
   *
   * @return 0 on success (the command completed), negative errno value on failure.
   * @retval -EHOSTDOWN The HCI transport is not open, i.e. Bluetooth is not enabled.
+  * @retval -ENOTSUP The command is an LE command and the Controller does not support LE.
   */
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp);
