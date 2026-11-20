@@ -4,7 +4,7 @@
 
 description: |
     When setting the odr, lpf, avg properties in a .dts or .dtsi file
-    you may include ilps22qs.h and use the macros defined there.
+    you may include lps2xdf.h and use the macros defined there.
 
 include: sensor-device.yaml
 
@@ -73,7 +73,7 @@ properties:
 
 examples:
   - |
-    #include <zephyr/dt-bindings/sensor/ilps22qs.h>
+    #include <zephyr/dt-bindings/sensor/lps2xdf.h>
 
     ilps22qs@5d {
       /* ... */
