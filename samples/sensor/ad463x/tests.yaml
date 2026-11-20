@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: AD463x precision SAR ADC
+  description: >-
+    Capture conversion data from an AD463x ADC over the AXI offload data
+    path and print decoded codes for both channels
+tests:
+  sample.sensor.ad463x:
+    platform_allow: zedboard
+    tags: sensor adc
+    build_only: true
