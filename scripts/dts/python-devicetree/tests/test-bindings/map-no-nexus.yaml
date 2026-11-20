@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Binding that declares 'gpio-map' and '#gpio-cells' without 'nexus-map'
+
+compatible: "map-no-nexus"
+
+properties:
+  gpio-map:
+    type: compound
+
+  "#gpio-cells":
+    type: int

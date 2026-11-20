@@ -252,6 +252,7 @@ Property entries in ``properties:`` are written in this syntax:
      max-len: <int>
      specifier-space: <space-name>
      dependency-mode: <normal | reverse | ignore | child-ignore>
+     nexus-map: <true | false>
 
 .. _dt-bindings-example-properties:
 
@@ -700,6 +701,28 @@ Default behavior
 If ``dependency-mode`` is not specified, the default value is ``normal``, which
 means the referencing node depends on the referenced node.
 
+.. _dt-bindings-nexus-map:
+
+nexus-map
+=========
+
+Setting ``nexus-map: true`` marks a ``<space>-map`` property, such as ``gpio-map``, as a nexus
+map. Map macros are generated only for nexus maps; see :ref:`dt-bindings-nexus`. The property
+must have ``type: compound``.
+
+The common nexus bindings :file:`gpio-nexus.yaml`, :file:`interrupt-nexus.yaml`,
+:file:`io-channel-nexus.yaml` and :file:`pwm-nexus.yaml` set it, so a binding that includes one
+of them does not need to:
+
+.. code-block:: YAML
+
+   compatible: "vendor,gpio-connector"
+
+   include: [base.yaml, gpio-nexus.yaml]
+
+A ``<space>-map`` property that is not a nexus map, such as ``msi-map``, does not set
+``nexus-map``.
+
 .. _dt-bindings-child:
 
 Child-binding
@@ -1140,11 +1163,18 @@ Finally, you can filter from a child binding like this:
          property-allowlist:
            - child-prop-to-allow
 
+.. _dt-bindings-nexus:
+
 Nexus nodes and maps
 ********************
 
 All ``phandle-array`` type properties support mapping through ``*-map``
 properties, e.g. ``gpio-map``, as defined by the Devicetree specification.
+
+Map macros are generated only for nexus maps. If the node has a binding, a ``<space>-map``
+property is a nexus map if the binding sets :ref:`nexus-map <dt-bindings-nexus-map>` for it,
+for example by including :file:`gpio-nexus.yaml`. If the node has no binding, a
+``<space>-map`` property is a nexus map if the node also has a ``#<space>-cells`` property.
 
 This is used, for example, to define connector nodes for common breakout
 headers, such as the ``arduino_header`` nodes that are conventionally defined

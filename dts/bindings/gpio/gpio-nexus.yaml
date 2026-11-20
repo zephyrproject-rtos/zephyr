@@ -11,6 +11,7 @@ properties:
   gpio-map:
     type: compound
     required: true
+    nexus-map: true
 
   gpio-map-mask:
     type: array

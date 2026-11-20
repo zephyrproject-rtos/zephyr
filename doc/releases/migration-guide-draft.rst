@@ -275,6 +275,20 @@ Comparator
   :zephyr_file:`tests/drivers/comparator/gpio_loopback` test provides an example of the comparator
   API. (:github:`124232`).
 
+Devicetree
+==========
+
+* Map macros such as :c:macro:`DT_MAP_ENTRY_PARENT_BY_IDX` are no longer generated for a
+  ``<space>-map`` property of a node with a binding unless the binding marks the property with
+  :ref:`nexus-map: true <dt-bindings-nexus-map>`. This prevents properties like ``msi-map``,
+  which are not nexus maps, from being parsed as one. Out-of-tree bindings that declare a nexus
+  map such as ``gpio-map`` themselves must include the matching common binding, for example
+  :file:`gpio-nexus.yaml`, or set ``nexus-map: true``. For a node without a binding, map macros
+  are generated only if the node has the matching ``#<space>-cells`` property, for example
+  ``#gpio-cells`` for ``gpio-map``. Previously, a ``<space>-map`` property without it caused a
+  build error. Specifier mapping through nexus nodes, such as
+  ``gpios = <&arduino_header 1 0>``, is not affected.
+
 Ethernet
 ========
 

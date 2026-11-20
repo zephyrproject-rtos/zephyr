@@ -11,6 +11,7 @@ properties:
   interrupt-map:
     type: compound
     required: true
+    nexus-map: true
 
   interrupt-map-mask:
     type: array

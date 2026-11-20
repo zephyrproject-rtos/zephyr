@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: nexus-map set on a property that is not a map
+
+compatible: "wrong_nexus_map_name"
+
+properties:
+  gpio-mapping:
+    type: compound
+    nexus-map: true
