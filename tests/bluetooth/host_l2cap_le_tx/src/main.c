@@ -521,6 +521,49 @@ static ZTEST(host_l2cap_le_tx, test_status_sync)
 	net_buf_unref(buf);
 }
 
+/* What the RTX work items of the channels were busy with in chan_released() */
+static int released_rtx_busy;
+static K_SEM_DEFINE(rtx_released_sem, 0, BT_L2CAP_ECRED_CHAN_MAX_PER_REQ);
+
+static void chan_released(struct bt_l2cap_chan *ch)
+{
+	released_rtx_busy |= k_work_delayable_busy_get(&BT_L2CAP_LE_CHAN(ch)->rtx_work);
+	k_sem_give(&rtx_released_sem);
+}
+
+/* Channels whose connection request the peer does not answer are released
+ * once the work queue has finished with the RTX work item of the request
+ */
+static ZTEST(host_l2cap_le_tx, test_rtx_timeout_released)
+{
+	static const struct bt_l2cap_chan_ops ops = {
+		.recv = chan_recv,
+		.released = chan_released,
+	};
+	static struct bt_l2cap_le_chan chans[2];
+	struct bt_l2cap_chan *request[] = { &chans[0].chan, &chans[1].chan, NULL };
+
+	ARRAY_FOR_EACH_PTR(chans, ch) {
+		ch->chan.ops = &ops;
+		ch->rx.mtu = BT_L2CAP_ECRED_MIN_MTU;
+	}
+
+	zassert_ok(bt_l2cap_ecred_chan_connect(conn, request, PSM));
+	(void)tx_sig(BT_L2CAP_ECRED_CONN_REQ);
+
+	ARRAY_FOR_EACH_PTR(chans, ch) {
+		zassert_ok(k_sem_take(&rtx_released_sem,
+				      K_SECONDS(CONFIG_BT_L2CAP_CONN_RTX_TIMEOUT + 1)),
+			   "A channel was not released");
+	}
+
+	zassert_equal(released_rtx_busy, 0, "RTX work item busy: 0x%x", released_rtx_busy);
+
+	ARRAY_FOR_EACH_PTR(chans, ch) {
+		zassert_equal(ch->state, BT_L2CAP_DISCONNECTED);
+	}
+}
+
 /* Nothing else may follow what a test expected the Host to send */
 static void tx_none(void)
 {
