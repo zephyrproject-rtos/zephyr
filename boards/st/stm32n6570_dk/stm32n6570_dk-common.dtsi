@@ -297,6 +297,11 @@
 	timg-prescaler = <2>;
 };
 
+&pwr {
+	power-supply = "external-source";
+	st,external-control-gpios = <&gpiof 4 GPIO_ACTIVE_HIGH>;
+};
+
 &iocell {
 	status = "okay";
 
