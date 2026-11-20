@@ -121,6 +121,11 @@ static void soc_rif_config(void)
 	/* SDMMC2 */
 	RIF_MASTER_CID1_SEC_PRIV(SDMMC2);
 	RIF_SLAVE_SEC_PRIV(SDMMC2);
+	/* USB OTG, whose controllers master their own transfers */
+	RIF_MASTER_CID1_SEC_PRIV(OTG1);
+	RIF_SLAVE_SEC_PRIV(OTG1HS);
+	RIF_MASTER_CID1_SEC_PRIV(OTG2);
+	RIF_SLAVE_SEC_PRIV(OTG2HS);
 #ifdef NPU_PRESENT
 	/* NPU */
 	RIF_MASTER_CID1_SEC_PRIV(NPU);
