@@ -99,8 +99,13 @@ static void mesh_tx_frame(struct mesh_tx_msg *msg)
 							 CONFIG_WIFI_ESP32_MESH_MAX_CONNECTIONS +
 						 1];
 			int n = 0;
+			int ret;
 
-			esp_wifi_mesh_read_routing_table(route, sizeof(route), &n);
+			ret = esp_wifi_mesh_read_routing_table(route, sizeof(route), &n);
+			if (ret != 0) {
+				LOG_WRN("routing table read failed (%d), dropping frame", ret);
+				return;
+			}
 
 			for (int i = 0; i < n; i++) {
 				if (memcmp(route[i].addr, mesh_netif.mac, sizeof(mesh_netif.mac)) ==

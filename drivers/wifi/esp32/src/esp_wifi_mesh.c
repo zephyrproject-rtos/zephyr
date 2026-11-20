@@ -90,15 +90,25 @@ static K_MUTEX_DEFINE(route_lock);
  */
 static K_MUTEX_DEFINE(send_lock);
 
-void esp_wifi_mesh_read_routing_table(mesh_addr_t *buf, size_t buf_size, int *count)
+int esp_wifi_mesh_read_routing_table(mesh_addr_t *buf, size_t buf_size, int *count)
 {
-	int table_size = 0;
+	esp_err_t ret;
+
+	if (buf == NULL || count == NULL) {
+		return -EINVAL;
+	}
 
 	k_mutex_lock(&route_lock, K_FOREVER);
-	esp_mesh_get_routing_table(buf, (int)buf_size, &table_size);
+	ret = esp_mesh_get_routing_table(buf, (int)buf_size, count);
 	k_mutex_unlock(&route_lock);
 
-	*count = table_size;
+	if (ret != 0) {
+		LOG_ERR("esp_mesh_get_routing_table failed %d", ret);
+		*count = 0;
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 esp_err_t esp_event_handler_register(esp_event_base_t event_base, int32_t event_id,
@@ -313,12 +323,16 @@ int esp_wifi_mesh_get_routing_table(struct esp_wifi_mesh_addr *macs, size_t max,
 		route[CONFIG_WIFI_ESP32_MESH_MAX_LAYER * CONFIG_WIFI_ESP32_MESH_MAX_CONNECTIONS +
 		      1];
 	int table_size = 0;
+	int ret;
 
 	if (macs == NULL || count == NULL) {
 		return -EINVAL;
 	}
 
-	esp_wifi_mesh_read_routing_table(route, sizeof(route), &table_size);
+	ret = esp_wifi_mesh_read_routing_table(route, sizeof(route), &table_size);
+	if (ret != 0) {
+		return ret;
+	}
 
 	size_t n = MIN((size_t)table_size, max);
 
@@ -611,7 +625,13 @@ int esp_wifi_mesh_send(const uint8_t *data, size_t len)
 		 * snapshot buffer is not overwritten mid-loop.
 		 */
 		k_mutex_lock(&send_lock, K_FOREVER);
-		esp_wifi_mesh_read_routing_table(route, sizeof(route), &table_size);
+		ret = esp_wifi_mesh_read_routing_table(route, sizeof(route), &table_size);
+
+		if (ret != 0) {
+			k_mutex_unlock(&send_lock);
+			return ret;
+		}
+
 		table_size = CLAMP(table_size, 0, (int)ARRAY_SIZE(route));
 
 		for (int i = 0; i < table_size; i++) {
