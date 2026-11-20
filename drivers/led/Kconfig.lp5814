@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_LP5814
+	bool "LP5814 LED driver"
+	default y
+	depends on DT_HAS_TI_LP5814_ENABLED
+	select I2C
+	help
+	  Enable manual brightness control for the four constant-current
+	  outputs of the Texas Instruments LP5814 LED driver.
