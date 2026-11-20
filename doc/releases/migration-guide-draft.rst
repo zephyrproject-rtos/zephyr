@@ -402,6 +402,15 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+Serial
+======
+
+* The ``CONFIG_UART_ESP32_RX_FIFO_THRESH`` and ``CONFIG_UART_ESP32_TX_FIFO_THRESH`` Kconfig options
+  of the Espressif UART driver are deprecated. Set the ``rx-fifo-threshold`` and
+  ``tx-fifo-threshold`` properties of each UART node in devicetree instead. The Kconfig options
+  applied to every UART instance, while the properties apply to the node that sets them.
+  (:github:`119492`)
+
 Timers
 ======
 

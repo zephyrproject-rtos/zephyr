@@ -121,6 +121,9 @@ struct uart_esp32_config {
 	int irq_flags;
 	bool tx_invert;
 	bool rx_invert;
+	uint8_t rx_fifo_thresh;
+	uint8_t tx_fifo_thresh;
+	uint8_t rx_timeout;
 #if CONFIG_UART_ASYNC_API
 	const struct device *dma_dev;
 	uint8_t tx_dma_channel;
@@ -185,8 +188,6 @@ struct uart_esp32_data {
 #endif
 
 #define UART_FIFO_LIMIT	    (UART_LL_FIFO_DEF_LEN)
-#define UART_TX_FIFO_THRESH (CONFIG_UART_ESP32_TX_FIFO_THRESH)
-#define UART_RX_FIFO_THRESH (CONFIG_UART_ESP32_RX_FIFO_THRESH)
 #define UART_MAX_FRAME_BITS (12U)
 /* RX idle time that ends a UHCI packet, in bit times (hardware reset value) */
 #define UART_RX_IDLE_THRESH (256U)
@@ -491,8 +492,8 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	}
 #endif
 
-	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
-	uart_hal_set_txfifo_empty_thr(&data->hal, UART_TX_FIFO_THRESH);
+	uart_hal_set_rxfifo_full_thr(&data->hal, config->rx_fifo_thresh);
+	uart_hal_set_txfifo_empty_thr(&data->hal, config->tx_fifo_thresh);
 	uart_hal_rxfifo_rst(&data->hal);
 	uart_hal_txfifo_rst(&data->hal);
 
@@ -559,7 +560,8 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 
 	uart_hal_set_baudrate(&data->hal, cfg->baudrate, sclk_freq);
 
-	uart_hal_set_rx_timeout(&data->hal, 0x16);
+	uart_hal_set_rx_timeout(
+		&data->hal, MIN(config->rx_timeout, uart_hal_get_max_rx_timeout_thrd(&data->hal)));
 
 	if (config->tx_invert) {
 		inv_mask |= UART_SIGNAL_TXD_INV;
@@ -1789,6 +1791,11 @@ static DEVICE_API(uart, uart_esp32_api) = {
 #define ESP_UART_UHCI_INIT(n)
 #endif
 
+#define ESP_UART_RX_FIFO_THRESH(idx)                                                               \
+	DT_INST_PROP_OR(idx, rx_fifo_threshold, CONFIG_UART_ESP32_RX_FIFO_THRESH)
+#define ESP_UART_TX_FIFO_THRESH(idx)                                                               \
+	DT_INST_PROP_OR(idx, tx_fifo_threshold, CONFIG_UART_ESP32_TX_FIFO_THRESH)
+
 #define ESP32_UART_INIT(idx)                                                                       \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(idx);                                                               \
@@ -1802,6 +1809,9 @@ static DEVICE_API(uart, uart_esp32_api) = {
 		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags),                                    \
 		.tx_invert = DT_INST_PROP_OR(idx, tx_invert, false),                               \
 		.rx_invert = DT_INST_PROP_OR(idx, rx_invert, false),                               \
+		.rx_fifo_thresh = ESP_UART_RX_FIFO_THRESH(idx),                                    \
+		.tx_fifo_thresh = ESP_UART_TX_FIFO_THRESH(idx),                                    \
+		.rx_timeout = DT_INST_PROP(idx, rx_timeout),                                       \
 		ESP_UART_DMA_INIT(idx)};                                                           \
                                                                                                    \
 	static struct uart_esp32_data uart_esp32_data_##idx = {                                    \

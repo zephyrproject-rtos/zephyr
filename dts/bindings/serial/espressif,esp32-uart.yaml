@@ -32,6 +32,41 @@ properties:
       Using this mode, the pin assigned to DTR
       is asserted during transmission.
 
+  rx-fifo-threshold:
+    type: int
+    min: 1
+    max: 127
+    description: |
+      Number of bytes in the RX FIFO that raises the RX FIFO full interrupt.
+      A low value reports received bytes to the interrupt-driven API without
+      waiting for the RX timeout, at the cost of more interrupts.
+      When not set, the deprecated CONFIG_UART_ESP32_RX_FIFO_THRESH value is
+      used.
+
+  tx-fifo-threshold:
+    type: int
+    min: 1
+    max: 127
+    description: |
+      Number of bytes in the TX FIFO at or below which the TX FIFO empty
+      interrupt is raised.
+      When not set, the deprecated CONFIG_UART_ESP32_TX_FIFO_THRESH value is
+      used.
+
+  rx-timeout:
+    type: int
+    default: 22
+    min: 1
+    max: 255
+    description: |
+      RX line idle time, in character times, after which the bytes held in the
+      RX FIFO are reported to the interrupt-driven API even when fewer than
+      rx-fifo-threshold bytes were received. The default keeps RX interrupts
+      infrequent on ports that receive continuous data. Protocols that end a
+      frame on line idle time, such as Modbus RTU, need a value below their
+      inter-frame gap. Values above the hardware limit for the current frame
+      format are clamped to that limit.
+
   uhci-slip-tx:
     type: boolean
     description: |
