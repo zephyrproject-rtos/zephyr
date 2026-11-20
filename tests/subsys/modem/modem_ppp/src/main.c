@@ -515,6 +515,37 @@ ZTEST(modem_ppp, test_ppp_frame_receive_too_short)
 	put_and_validate_wrapped_frame();
 }
 
+static K_SEM_DEFINE(drain_checked, 0, 1);
+static bool receive_batch_drained;
+
+static void check_receive_batch(struct k_work *work)
+{
+	receive_batch_drained = ring_buf_is_empty(&mock.rx_rb);
+	k_sem_give(&drain_checked);
+}
+
+static K_WORK_DEFINE(check_receive_batch_work, check_receive_batch);
+
+static void queue_receive_batch(struct k_work *work)
+{
+	ring_buf_put(&mock.rx_rb, ppp_frame_wrapped, sizeof(ppp_frame_wrapped));
+	modem_pipe_notify_receive_ready(mock_pipe);
+	k_work_submit(&check_receive_batch_work);
+}
+
+static K_WORK_DEFINE(queue_receive_batch_work, queue_receive_batch);
+
+ZTEST(modem_ppp, test_receive_batch_drained_before_next_producer)
+{
+	receive_batch_drained = false;
+	k_work_submit(&queue_receive_batch_work);
+
+	zassert_ok(k_sem_take(&drain_checked, K_SECONDS(1)));
+	zassert_true(receive_batch_drained, "PPP yielded with unread data in the pipe");
+	zassert_ok(k_sem_take(&rx_pkt_sem, K_SECONDS(1)));
+	zassert_equal(received_packets_len, 1);
+}
+
 ZTEST(modem_ppp, test_carrier_follows_attach_release)
 {
 	/* Attached by the test fixture */
