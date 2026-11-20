@@ -97,6 +97,12 @@
 			};
 		};
 
+		cordic0: cordic@52240000 {
+			compatible = "infineon,mxcordic";
+			reg = <0x52240000 0x100>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@52400000 {
 			compatible = "infineon,pinctrl";
 			reg = <0x52400000 0x20000>;
