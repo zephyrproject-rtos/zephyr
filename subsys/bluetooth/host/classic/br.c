@@ -1653,10 +1653,14 @@ static void unpair(const bt_addr_t *addr)
 
 	if (conn) {
 		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-		bt_conn_unref(conn);
 	}
 
 	bt_keys_link_key_clear_addr(addr);
+
+	if (conn) {
+		conn->br.link_key = NULL;
+		bt_conn_unref(conn);
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
 					  next, node) {
