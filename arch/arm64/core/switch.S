@@ -193,7 +193,7 @@ fpu_sve_trap:
 #endif
 
 	cmp	x1, #0x15 /* 0x15 = SVC */
-	bne	inv
+	bne	not_svc
 
 	/* Demux the SVC call */
 	and	x1, x0, #0xff
@@ -266,6 +266,41 @@ oops:
 #endif
 	mov	x0, sp
 	b	z_arm64_do_kernel_oops
+
+not_svc:
+#ifdef CONFIG_GDBSTUB
+	/*
+	 * Debug exceptions taken to EL1:
+	 *  0x30/0x31 - hardware breakpoint
+	 *  0x32/0x33 - software step
+	 *  0x34/0x35 - watchpoint (routed; Z2-Z4 not supported in gdbstub.c)
+	 *  0x3c      - BRK instruction
+	 */
+	cmp	x1, #0x30
+	b.lt	inv
+	cmp	x1, #0x35
+	b.le	gdb_debug_exc
+	cmp	x1, #0x3c
+	b.ne	inv
+
+gdb_debug_exc:
+	/* Save callee-saved GPRs (x19-x28) in arch_esf for C gdbstub */
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	z_arm64_save_exception_info sp
+#endif
+
+	mov	x0, sp
+	/* GDB_EXCEPTION_BREAKPOINT */
+	mov	x1, #5
+	bl	z_gdb_entry
+
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	/* Restore possibly GDB-modified x19-x28 from arch_esf */
+	z_arm64_restore_exception_info sp
+#endif
+
+	b	z_arm64_exit_exc
+#endif /* CONFIG_GDBSTUB */
 
 inv:
 	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
