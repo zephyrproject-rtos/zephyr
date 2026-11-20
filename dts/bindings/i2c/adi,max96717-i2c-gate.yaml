@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  I2C gate of an ADI MAX96717 GMSL2 serializer: the camera-side I2C bus driven
+  by the serializer's I2C master.
+
+  The node is a child of the serializer, which itself sits on the deserializer's
+  I2C gate. The image sensor and any other device on the serializer's local I2C
+  bus are children of this node. Transfers are forwarded unchanged to the
+  serializer's own bus, the deserializer gate.
+
+compatible: "adi,max96717-i2c-gate"
+
+include: i2c-controller.yaml
