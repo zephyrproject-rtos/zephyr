@@ -22,6 +22,7 @@ config MFD_INIT_PRIORITY
 source "drivers/mfd/Kconfig.ad559x"
 source "drivers/mfd/Kconfig.adp5360"
 source "drivers/mfd/Kconfig.adp5585"
+source "drivers/mfd/Kconfig.atecc608a"
 source "drivers/mfd/Kconfig.aw9523b"
 source "drivers/mfd/Kconfig.axp192"
 source "drivers/mfd/Kconfig.axp2101"
