@@ -9,6 +9,7 @@ config WIFI_SILABS_SIWX91X
 	select SILABS_SIWX91X_NWP
 	select EVENTS
 	select NET_L2_WIFI_MGMT
+	select WIFI_HAS_2_4_GHZ
 	help
 	  Enable WiFi driver for the Silabs SiWx91x SoC series.
 

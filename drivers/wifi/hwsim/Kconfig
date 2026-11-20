@@ -7,6 +7,7 @@ config WIFI_HWSIM
 	depends on NET_L2_ETHERNET
 	select NET_L2_WIFI_MGMT
 	select WIFI_USE_NATIVE_NETWORKING
+	select WIFI_HAS_2_4_GHZ
 	help
 	  Registers N virtual Wi-Fi interfaces backed by an in-process
 	  frame relay bus. Intended for testing hostapd and wpa_supplicant
