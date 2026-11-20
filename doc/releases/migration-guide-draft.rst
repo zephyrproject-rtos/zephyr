@@ -743,3 +743,8 @@ Architectures
   :kconfig:option:`CONFIG_ISR_STACK_SIZE` for the outermost ISR frame alone may need a larger
   interrupt stack, and code or debuggers that inspect the processor mode inside an ISR see SYS
   mode. (:github:`123041`)
+
+* The portable CPU performance monitoring API has been renamed to disambiguate it from
+  power-management units (the ``pmu`` name is used by both). The header
+  :file:`include/zephyr/arch/pmu.h` is now :file:`include/zephyr/arch/perf_counter.h`, and its
+  ``pmu_*`` functions and types gained a ``perf_counter_`` prefix. (:github:`125939`)

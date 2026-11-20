@@ -8,8 +8,9 @@
  * @file
  * @brief ARMv8-A AArch64 PMUv3 — architectural events and register bits
  *
- * Portable applications should include <zephyr/arch/pmu.h> for the @c pmu_*() API.
- * This header defines @c pmu_info_t, @c pmu_evt_t (Arm architectural PMU event
+ * Portable applications should include <zephyr/arch/perf_counter.h> for the
+ * @c perf_counter_*() API.
+ * This header defines @c perf_counter_info_t, @c perf_counter_evt_t (Arm architectural PMU event
  * numbers in the @c 0x00-0x1F range), and @c PMCR_EL0 / @c PMUSERENR_EL0 bits.
  */
 
@@ -24,9 +25,9 @@ extern "C" {
 #endif
 
 /**
- * @brief PMU identification for the current logical CPU (after @ref pmu_init).
+ * @brief PMU identification for the current logical CPU (after @ref perf_counter_init).
  */
-struct pmu_info {
+struct perf_counter_info {
 	/** PMU implementer code (Arm PMU identification register encoding). */
 	uint32_t implementer;
 	/** PMU part number / ID code (Arm PMU identification register encoding). */
@@ -34,9 +35,9 @@ struct pmu_info {
 };
 
 /**
- * @brief Typedef for @ref pmu_info.
+ * @brief Typedef for @ref perf_counter_info.
  */
-typedef struct pmu_info pmu_info_t;
+typedef struct perf_counter_info perf_counter_info_t;
 
 /**
  * @brief Arm architectural PMU event encoding (PMUv3, 0x00–0x1F).
@@ -67,7 +68,7 @@ typedef enum {
 	PMU_EVT_INST_SPEC = 0x1B,          /*!< Instruction speculatively executed */
 	PMU_EVT_TTBR_WRITE_RETIRED = 0x1C, /*!< Instruction architecturally executed (TTBR write) */
 	PMU_EVT_BUS_CYCLES = 0x1D,         /*!< Bus cycle */
-} pmu_evt_t;
+} perf_counter_evt_t;
 
 /** @brief PMCR_EL0: enable all counters. */
 #define PMCR_E  BIT(0)
@@ -120,54 +121,54 @@ typedef enum {
 
 /** @cond INTERNAL_HIDDEN */
 
-int arch_pmu_init(void);
-uint32_t arch_pmu_num_counters(void);
-void arch_pmu_get_info(pmu_info_t *info);
-int arch_pmu_counter_config(uint32_t counter, pmu_evt_t event);
-void arch_pmu_counter_enable(uint32_t counter);
-void arch_pmu_counter_disable(uint32_t counter);
-void arch_pmu_counter_enable_all(void);
-void arch_pmu_counter_disable_all(void);
-uint64_t arch_pmu_counter_read(uint32_t counter);
-void arch_pmu_counter_reset(uint32_t counter);
-void arch_pmu_counter_reset_all(void);
-uint64_t arch_pmu_cycle_count(void);
-void arch_pmu_cycle_reset(void);
-void arch_pmu_start(void);
-void arch_pmu_stop(void);
-bool arch_pmu_counter_overflow(uint32_t counter);
-void arch_pmu_counter_clear_overflow(uint32_t counter);
+int arch_perf_counter_init(void);
+uint32_t arch_perf_counter_num_counters(void);
+void arch_perf_counter_get_info(perf_counter_info_t *info);
+int arch_perf_counter_config(uint32_t counter, perf_counter_evt_t event);
+void arch_perf_counter_enable(uint32_t counter);
+void arch_perf_counter_disable(uint32_t counter);
+void arch_perf_counter_enable_all(void);
+void arch_perf_counter_disable_all(void);
+uint64_t arch_perf_counter_read(uint32_t counter);
+void arch_perf_counter_reset(uint32_t counter);
+void arch_perf_counter_reset_all(void);
+uint64_t arch_perf_counter_cycle_count(void);
+void arch_perf_counter_cycle_reset(void);
+void arch_perf_counter_start(void);
+void arch_perf_counter_stop(void);
+bool arch_perf_counter_overflow(uint32_t counter);
+void arch_perf_counter_clear_overflow(uint32_t counter);
 
-#define pmu_init                   arch_pmu_init
-#define pmu_num_counters           arch_pmu_num_counters
-#define pmu_get_info               arch_pmu_get_info
-#define pmu_counter_config         arch_pmu_counter_config
-#define pmu_counter_enable         arch_pmu_counter_enable
-#define pmu_counter_disable        arch_pmu_counter_disable
-#define pmu_counter_enable_all     arch_pmu_counter_enable_all
-#define pmu_counter_disable_all    arch_pmu_counter_disable_all
-#define pmu_counter_read           arch_pmu_counter_read
-#define pmu_counter_reset          arch_pmu_counter_reset
-#define pmu_counter_reset_all      arch_pmu_counter_reset_all
-#define pmu_cycle_count            arch_pmu_cycle_count
-#define pmu_cycle_reset            arch_pmu_cycle_reset
-#define pmu_start                  arch_pmu_start
-#define pmu_stop                   arch_pmu_stop
-#define pmu_counter_overflow       arch_pmu_counter_overflow
-#define pmu_counter_clear_overflow arch_pmu_counter_clear_overflow
+#define perf_counter_init           arch_perf_counter_init
+#define perf_counter_num_counters   arch_perf_counter_num_counters
+#define perf_counter_get_info       arch_perf_counter_get_info
+#define perf_counter_config         arch_perf_counter_config
+#define perf_counter_enable         arch_perf_counter_enable
+#define perf_counter_disable        arch_perf_counter_disable
+#define perf_counter_enable_all     arch_perf_counter_enable_all
+#define perf_counter_disable_all    arch_perf_counter_disable_all
+#define perf_counter_read           arch_perf_counter_read
+#define perf_counter_reset          arch_perf_counter_reset
+#define perf_counter_reset_all      arch_perf_counter_reset_all
+#define perf_counter_cycle_count    arch_perf_counter_cycle_count
+#define perf_counter_cycle_reset    arch_perf_counter_cycle_reset
+#define perf_counter_start          arch_perf_counter_start
+#define perf_counter_stop           arch_perf_counter_stop
+#define perf_counter_overflow       arch_perf_counter_overflow
+#define perf_counter_clear_overflow arch_perf_counter_clear_overflow
 
 /** @endcond */
 
 /**
- * @name Diagnostic helpers (not portable @c pmu_*() primitives)
+ * @name Diagnostic helpers (not portable @c perf_counter_*() primitives)
  * @{
  */
 
-/** @brief Calibrated CPU MHz from @ref pmu_init (PMU cycle counter vs system timer). */
-uint32_t arch_pmu_cpu_freq_mhz(void);
+/** @brief Calibrated CPU MHz from @ref perf_counter_init (PMU cycle counter vs system timer). */
+uint32_t arch_perf_counter_cpu_freq_mhz(void);
 
 /** @brief Human-readable name for @a event, or @c "UNKNOWN". */
-const char *arch_pmu_event_name(uint32_t event);
+const char *arch_perf_counter_event_name(uint32_t event);
 
 /** @} */
 

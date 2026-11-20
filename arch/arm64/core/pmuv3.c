@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/arch/pmu.h>
+#include <zephyr/arch/perf_counter.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
@@ -69,7 +69,7 @@ static const struct event_info event_names[] = {{PMU_EVT_SW_INCR, "SW_INCR"},
 						{PMU_EVT_TTBR_WRITE_RETIRED, "TTBR_WRITE_RETIRED"},
 						{PMU_EVT_BUS_CYCLES, "BUS_CYCLES"}};
 
-const char *arch_pmu_event_name(uint32_t event)
+const char *arch_perf_counter_event_name(uint32_t event)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(event_names); i++) {
 		if (event_names[i].code == event) {
@@ -153,7 +153,7 @@ static void pmu_calibrate_cpu_freq(void)
 	}
 }
 
-int arch_pmu_init(void)
+int arch_perf_counter_init(void)
 {
 	uint64_t pmcr;
 	uint64_t id_aa64dfr0;
@@ -229,17 +229,17 @@ int arch_pmu_init(void)
 	return 0;
 }
 
-uint32_t arch_pmu_num_counters(void)
+uint32_t arch_perf_counter_num_counters(void)
 {
 	return pmu_curr_state()->num_counters;
 }
 
-uint32_t arch_pmu_cpu_freq_mhz(void)
+uint32_t arch_perf_counter_cpu_freq_mhz(void)
 {
 	return pmu_curr_state()->cpu_freq_mhz;
 }
 
-void arch_pmu_get_info(pmu_info_t *info)
+void arch_perf_counter_get_info(perf_counter_info_t *info)
 {
 	struct pmu_cpu_state *st = pmu_curr_state();
 
@@ -251,7 +251,7 @@ void arch_pmu_get_info(pmu_info_t *info)
 	info->idcode = st->idcode;
 }
 
-int arch_pmu_counter_config(uint32_t counter, pmu_evt_t event)
+int arch_perf_counter_config(uint32_t counter, perf_counter_evt_t event)
 {
 	unsigned int key;
 
@@ -276,26 +276,26 @@ int arch_pmu_counter_config(uint32_t counter, pmu_evt_t event)
 	arch_irq_unlock(key);
 
 	LOG_DBG("Counter %u configured for event 0x%02x (%s)", counter, event,
-		arch_pmu_event_name(event));
+		arch_perf_counter_event_name(event));
 
 	return 0;
 }
 
-void arch_pmu_counter_enable(uint32_t counter)
+void arch_perf_counter_enable(uint32_t counter)
 {
 	if (counter < pmu_curr_state()->num_counters) {
 		write_pmcntenset_el0(BIT(counter));
 	}
 }
 
-void arch_pmu_counter_disable(uint32_t counter)
+void arch_perf_counter_disable(uint32_t counter)
 {
 	if (counter < pmu_curr_state()->num_counters) {
 		write_pmcntenclr_el0(BIT(counter));
 	}
 }
 
-void arch_pmu_counter_enable_all(void)
+void arch_perf_counter_enable_all(void)
 {
 	uint32_t mask = (1U << pmu_curr_state()->num_counters) - 1;
 
@@ -303,12 +303,12 @@ void arch_pmu_counter_enable_all(void)
 	write_pmcntenset_el0(mask | BIT(31));
 }
 
-void arch_pmu_counter_disable_all(void)
+void arch_perf_counter_disable_all(void)
 {
 	write_pmcntenclr_el0(0xFFFFFFFFUL);
 }
 
-uint64_t arch_pmu_counter_read(uint32_t counter)
+uint64_t arch_perf_counter_read(uint32_t counter)
 {
 	unsigned int key;
 	uint64_t value;
@@ -332,7 +332,7 @@ uint64_t arch_pmu_counter_read(uint32_t counter)
 	return value;
 }
 
-void arch_pmu_counter_reset(uint32_t counter)
+void arch_perf_counter_reset(uint32_t counter)
 {
 	unsigned int key;
 
@@ -350,7 +350,7 @@ void arch_pmu_counter_reset(uint32_t counter)
 	arch_irq_unlock(key);
 }
 
-void arch_pmu_counter_reset_all(void)
+void arch_perf_counter_reset_all(void)
 {
 	unsigned int key;
 	uint64_t pmcr;
@@ -366,12 +366,12 @@ void arch_pmu_counter_reset_all(void)
 	arch_irq_unlock(key);
 }
 
-uint64_t arch_pmu_cycle_count(void)
+uint64_t arch_perf_counter_cycle_count(void)
 {
 	return read_pmccntr_el0();
 }
 
-void arch_pmu_cycle_reset(void)
+void arch_perf_counter_cycle_reset(void)
 {
 	unsigned int key;
 	uint64_t pmcr;
@@ -383,7 +383,7 @@ void arch_pmu_cycle_reset(void)
 	arch_irq_unlock(key);
 }
 
-void arch_pmu_start(void)
+void arch_perf_counter_start(void)
 {
 	unsigned int key;
 	uint64_t pmcr;
@@ -398,7 +398,7 @@ void arch_pmu_start(void)
 	write_pmcntenset_el0(BIT(31));
 }
 
-void arch_pmu_stop(void)
+void arch_perf_counter_stop(void)
 {
 	unsigned int key;
 	uint64_t pmcr;
@@ -410,7 +410,7 @@ void arch_pmu_stop(void)
 	arch_irq_unlock(key);
 }
 
-bool arch_pmu_counter_overflow(uint32_t counter)
+bool arch_perf_counter_overflow(uint32_t counter)
 {
 	uint64_t ovsr;
 
@@ -423,7 +423,7 @@ bool arch_pmu_counter_overflow(uint32_t counter)
 	return (ovsr & BIT(counter)) != 0;
 }
 
-void arch_pmu_counter_clear_overflow(uint32_t counter)
+void arch_perf_counter_clear_overflow(uint32_t counter)
 {
 	if (!atomic_get(&pmu_curr_state()->initialized) ||
 	    counter >= pmu_curr_state()->num_counters) {
