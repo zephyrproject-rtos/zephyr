@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clk_peripheral, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
@@ -16,7 +17,7 @@ LOG_MODULE_REGISTER(clk_peripheral, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define PERIPHERAL_ID_MIN	2
 
 struct clk_peripheral {
-	pmc_registers_t *pmc;
+	mem_addr_t pmc;
 	struct device clk;
 	struct device *parent;
 	struct clk_range range;
@@ -33,15 +34,34 @@ static uint32_t clocks_periph_idx;
 static void clk_peripheral_set(struct clk_peripheral *periph,
 			       uint32_t enable)
 {
+	mem_addr_t pcr_addr = periph->pmc + periph->layout->offset;
 	k_spinlock_key_t key = k_spin_lock(periph->lock);
 
 	LOG_DBG("id %d, enable %d", periph->id, enable);
 	enable = enable ? PMC_PCR_EN_Msk : 0;
-	regmap_write((void *)periph->pmc, periph->layout->offset,
-		     periph->id & periph->layout->pid_mask);
-	regmap_update_bits((void *)periph->pmc, periph->layout->offset,
-			   periph->layout->cmd | enable,
-			   periph->layout->cmd | enable);
+	sys_write32(periph->id & periph->layout->pid_mask, pcr_addr);
+	sys_write32((sys_read32(pcr_addr) & ~PMC_PCR_EN_Msk) | (periph->layout->cmd | enable),
+		    pcr_addr);
+
+	/*
+	 * For SAMA5D2, PMC Peripheral Clock Enable/Disable Register 0/1
+	 * enables and disables the peripheral clocks.
+	 */
+#if defined(PMC_PCER0_REG_OFST)
+	if (enable != 0) {
+		if (periph->id < 32) {
+			sys_set_bit(periph->pmc + PMC_PCER0_REG_OFST, periph->id);
+		} else {
+			sys_set_bit(periph->pmc + PMC_PCER1_REG_OFST, periph->id % 32);
+		}
+	} else {
+		if (periph->id < 32) {
+			sys_set_bit(periph->pmc + PMC_PCDR0_REG_OFST, periph->id);
+		} else {
+			sys_set_bit(periph->pmc + PMC_PCDR1_REG_OFST, periph->id % 32);
+		}
+	}
+#endif
 
 	k_spin_unlock(periph->lock, key);
 }
@@ -80,9 +100,8 @@ static enum clock_control_status clk_peripheral_get_status(const struct device *
 	}
 
 	key = k_spin_lock(periph->lock);
-	regmap_write((void *)periph->pmc, periph->layout->offset,
-		     (periph->id & periph->layout->pid_mask));
-	regmap_read((void *)periph->pmc, periph->layout->offset, &status);
+	sys_write32(periph->id & periph->layout->pid_mask, periph->pmc + periph->layout->offset);
+	status = sys_read32(periph->pmc + periph->layout->offset);
 	k_spin_unlock(periph->lock, key);
 
 	if (!!(status & PMC_PCR_EN_Msk)) {
@@ -103,9 +122,8 @@ static int clk_peripheral_get_rate(const struct device *clk,
 
 	struct clk_peripheral *periph = to_clk_peripheral(clk);
 
-	regmap_write((void *)periph->pmc, periph->layout->offset,
-		     (periph->id & periph->layout->pid_mask));
-	regmap_read((void *)periph->pmc, periph->layout->offset, &status);
+	sys_write32(periph->id & periph->layout->pid_mask, periph->pmc + periph->layout->offset);
+	status = sys_read32(periph->pmc + periph->layout->offset);
 
 	if (status & PMC_PCR_EN_Msk) {
 		retval = clock_control_get_rate(periph->parent, NULL, rate);
@@ -150,10 +168,12 @@ int clk_register_peripheral(pmc_registers_t *const pmc,
 	periph->clk.api = &clk_peripheral_api;
 	periph->parent = parent;
 	periph->id = id;
-	periph->pmc = pmc;
+	periph->pmc = (mem_addr_t)pmc;
 	periph->lock = lock;
 	periph->layout = layout;
-	periph->range = *range;
+	if (range != NULL) {
+		periph->range = *range;
+	}
 
 	return 0;
 }

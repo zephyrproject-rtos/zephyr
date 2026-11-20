@@ -37,6 +37,7 @@ struct clk_range {
 
 struct clk_master_layout {
 	uint32_t offset;
+	uint32_t css_msk;
 	uint32_t mask;
 	uint8_t pres_shift;
 };
@@ -135,6 +136,12 @@ int clk_register_main_osc(pmc_registers_t *const pmc, const char *name, uint32_t
 int clk_register_main(pmc_registers_t *const pmc, const char *name,
 		      const struct device **parents, int num_parents, struct device **clk);
 
+int clk_register_master_pres(pmc_registers_t *const pmc, const char *name,
+			     const struct device **parent, int num_parents,
+			     const struct clk_master_layout *layout,
+			     const struct clk_master_characteristics *characteristics,
+			     struct k_spinlock *lock, struct device **clk);
+
 int clk_register_master_div(pmc_registers_t *const pmc, const char *name,
 			    const struct device *parent, const struct clk_master_layout *layout,
 			    const struct clk_master_characteristics *characteristics,
@@ -155,6 +162,9 @@ int clk_register_peripheral(pmc_registers_t *const pmc,
 			    uint32_t id,
 			    const struct clk_range *range,
 			    struct device **clk);
+
+int sam_pmc_register_plla(mm_reg_t reg, struct pmc_data *sama5d2_pmc, const struct device *parent,
+			  struct device **clk);
 
 int sam9x60_clk_register_div_pll(pmc_registers_t *const pmc, struct k_spinlock *lock,
 				 const char *name,
