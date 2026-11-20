@@ -1,0 +1,10 @@
+tests:
+  drivers.pinctrl.infineon_aurix:
+    tags:
+      - drivers
+      - pinctrl
+    platform_allow:
+      - qemu_tc3x
+      - qemu_tc4x
+    integration_platforms:
+      - qemu_tc4x

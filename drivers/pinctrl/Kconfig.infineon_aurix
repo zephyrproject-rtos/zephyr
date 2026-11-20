@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_INFINEON_AURIX_TC3X
+	bool "Infineon AURIX TC3x pin controller driver"
+	default y
+	depends on DT_HAS_INFINEON_AURIX_TC3X_PINCTRL_ENABLED
+	help
+	  Pin controller driver for the ports of Infineon AURIX TC3x devices.
+
+config PINCTRL_INFINEON_AURIX_TC4X
+	bool "Infineon AURIX TC4x pin controller driver"
+	default y
+	depends on DT_HAS_INFINEON_AURIX_TC4X_PINCTRL_ENABLED
+	help
+	  Pin controller driver for the ports of Infineon AURIX TC4x devices.

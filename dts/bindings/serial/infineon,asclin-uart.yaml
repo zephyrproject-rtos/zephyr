@@ -14,12 +14,11 @@ properties:
   reg:
     required: true
 
-  clock-frequency:
-    type: int
+  clocks:
     required: true
     description: |
-      Frequency in Hz of the ASCLIN baud-rate logic input clock (fASCLINF),
-      used to compute the baud-rate divider.
+      fASCLINF clock of the clock controller, the input of the baud-rate
+      logic.
 
   oversampling:
     type: int
