@@ -1,0 +1,27 @@
+# Copyright (c) 2020 George Gkinis
+# Copyright (c) 2021 Jan Gnip
+# SPDX-License-Identifier: Apache-2.0
+
+include: base.yaml
+
+properties:
+  sample-fetch-timeout-ms:
+    type: int
+    default: 700
+    description: |
+      Time until sample-fetch will wait before returning an error.
+      Most module implementations have a wake-up time after power up of about 600ms.
+      Default set to 700ms to ensure most implementations will work.
+      Increase if necessary.
+
+  dout-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Pin on which sensor data will be read from.
+
+  sck-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Pin on which data fetch triggering occurs.

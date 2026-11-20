@@ -238,6 +238,9 @@ enum sensor_channel {
 	/** Number of revolutions for quadrature decoder */
 	SENSOR_CHAN_ENCODER_REVOLUTIONS,
 
+	/** Weight in grams */
+	SENSOR_CHAN_MASS,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 
