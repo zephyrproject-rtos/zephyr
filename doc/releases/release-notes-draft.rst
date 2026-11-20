@@ -89,6 +89,31 @@ Libraries / Subsystems
   * :kconfig:option:`CONFIG_MBEDTLS_SSL_CLI_C`
   * :kconfig:option:`CONFIG_MBEDTLS_SSL_SRV_C`
 
+* Memory Management
+
+  * The memref API provides reference counted memory allocations that can have several
+    simultaneous owners (see :ref:`memref`).
+    Each allocation carries a private control block in front of the payload holding an atomic
+    reference count, the backend it came from and, with
+    :kconfig:option:`CONFIG_MEMREF_DESTROY_CB`, an optional destroy callback.
+    Storage comes from pluggable backends: variable length backends honour the requested size,
+    fixed block size backends serve blocks sized by the underlying allocator, and ready-made
+    definitions exist for ``k_heap`` and ``k_mem_slab``.
+    :c:func:`memref_ref` takes a reference and returns the pointer, :c:func:`memref_unref`
+    releases one and :c:macro:`memref_drop` releases one and clears the variable holding it.
+    The last release runs the destroy callback and returns the block to its backend.
+
+    * :kconfig:option:`CONFIG_MEMREF`
+    * :kconfig:option:`CONFIG_MEMREF_DESTROY_CB`
+    * :kconfig:option:`CONFIG_MEMREF_DEBUG`
+    * :c:func:`memref_alloc`
+    * :c:func:`memref_block_alloc`
+    * :c:func:`memref_alloc_with_destroy`
+    * :c:func:`memref_block_alloc_with_destroy`
+    * :c:func:`memref_ref`
+    * :c:func:`memref_unref`
+    * :c:macro:`memref_drop`
+
 * Networking
 
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client
