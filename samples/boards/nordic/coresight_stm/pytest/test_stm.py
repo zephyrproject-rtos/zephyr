@@ -6,6 +6,7 @@
 
 import logging
 import re
+import signal
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -155,30 +156,52 @@ def check_benchmark_results(output: str, core: str, constraints: STMLimits) -> N
         ), f"{core}: Timing for {check} - {observed} us exceeds {threshold} us"
 
 
+def _on_child_terminate(proc):
+    logger.info(f"Process {proc} terminated with exit code {proc.returncode}")
+
+
 # nrfutil starts children processes
-# when subprocess.terminate(nrfutil_process) is executed, only the parent terminates
+# when signal SIGTERM is sent to main nrfutil process, --output-raw file is empty
+# when signal SIGINT is sent to main nrfutil process, only the parent terminates
 # this blocks serial port for other uses
-def _kill(proc):
-    try:
-        for child in psutil.Process(proc.pid).children(recursive=True):
+def _terminate(proc):
+    # make list of children processes and parent
+    childrens = psutil.Process(proc.pid).children(recursive=True)
+    childrens.append(psutil.Process(proc.pid))
+
+    # exit cleanly parent, then children
+    proc.send_signal(signal.SIGINT)
+    sleep(1)
+    for child in childrens:
+        try:
+            child.send_signal(signal.SIGINT)
+        except psutil.NoSuchProcess:
+            pass
+    gone, alive = psutil.wait_procs(childrens, timeout=3, callback=_on_child_terminate)
+
+    # kill childer that refused to terminate
+    for child in alive:
+        try:
             child.kill()
-        proc.kill()
-    except Exception as e:
-        logger.exception(f'Could not kill nrfutil - {e}')
+            logger.info("Killing child process")
+        except psutil.NoSuchProcess:
+            pass
+        except Exception as e:
+            logger.exception(f'Could not kill child - {e}')
 
 
 def nrfutil_dictionary_from_serial(
     dut: DeviceAdapter,
-    decoded_file_name: str = "output.txt",
+    raw_file_name: str = "output.txt",
     collect_time: float = 60.0,
-) -> None:
+) -> str:
     UART_PATH = dut.device_config.serial_configs[0].port
     dut.close()
 
     logger.debug(f"Using serial: {UART_PATH}")
 
     try:
-        Path(f"{decoded_file_name}").unlink()
+        Path(f"{raw_file_name}").unlink()
         logger.info("Old output file was deleted")
     except FileNotFoundError:
         pass
@@ -198,7 +221,7 @@ def nrfutil_dictionary_from_serial(
         "nrfutil trace stm --database-config "
         f"{config_str} "
         f"--input-serialport {UART_PATH} "
-        f"--output-ascii {decoded_file_name}"
+        f"--output-raw {raw_file_name}"
     )
     try:
         # run nrfutil trace in background non-blocking
@@ -208,6 +231,7 @@ def nrfutil_dictionary_from_serial(
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 encoding='UTF-8',
+                                text=True,
                                 errors='replace')
     except OSError as exc:
         logger.error(f"Unable to start nrfutil trace:\n{cmd}\n{exc}")
@@ -216,9 +240,11 @@ def nrfutil_dictionary_from_serial(
     except subprocess.TimeoutExpired:
         pass
     finally:
-        _kill(proc)
+        _terminate(proc)
         outs, errs = proc.communicate()
         logger.info(f"{outs=}\n{errs=}")
+
+    return outs
 
 
 def test_sample_STM_decoded(dut: DeviceAdapter):
@@ -369,44 +395,47 @@ def test_sample_STM_dictionary_mode(dut: DeviceAdapter):
     analyse_autoconf(autoconf_file)
 
     # use nrfutil trace to decode logs
-    nrfutil_dictionary_from_serial(
+    decoded_dict_logs = nrfutil_dictionary_from_serial(
         dut=dut,
-        decoded_file_name=f"{test_filename}",
+        raw_file_name=f"{test_filename}",
         collect_time=COLLECT_TIMEOUT,
     )
 
-    # read decoded logs
-    with open(f"{test_filename}", errors="ignore") as decoded_file:
-        decoded_file_content = decoded_file.read()
+    # stop test if logs are empty
+    assert len(decoded_dict_logs) > 0, "Nrfutil trace stm returned no dictionary logs."
 
-    # if nothing in decoded_file, stop test
+    # read raw logs
+    with open(f"{test_filename}", errors="ignore") as raw_file:
+        raw_file_content = raw_file.read()
+
+    # if nothing in raw_file, stop test
     assert(
-        len(decoded_file_content) > 0
+        len(raw_file_content) > 0
     ), f"File {test_filename} is empty"
 
     # check that LOGs from Application core are present
     check_console_output(
-        output=decoded_file_content,
+        output=decoded_dict_logs,
         core='app',
     )
 
     # check that LOGs from Radio core are present
     check_console_output(
-        output=decoded_file_content,
+        output=decoded_dict_logs,
         core='rad',
     )
 
     if SB_CONFIG_APP_CPUPPR_RUN:
         # check that LOGs from PPR core are present
         check_console_output(
-            output=decoded_file_content,
+            output=decoded_dict_logs,
             core='ppr',
         )
 
     if SB_CONFIG_APP_CPUFLPR_RUN:
         # check that LOGs from FLPR core are present
         check_console_output(
-            output=decoded_file_content,
+            output=decoded_dict_logs,
             core='flpr',
         )
 
@@ -475,33 +504,38 @@ def test_STM_dictionary_mode(dut: DeviceAdapter):
     analyse_autoconf(autoconf_file)
 
     # use nrfutil trace to decode logs
-    nrfutil_dictionary_from_serial(
+    decoded_dict_logs = nrfutil_dictionary_from_serial(
         dut=dut,
-        decoded_file_name=f"{test_filename}",
+        raw_file_name=f"{test_filename}",
         collect_time=COLLECT_TIMEOUT,
     )
 
-    # read decoded logs
-    with open(f"{test_filename}", errors="ignore") as decoded_file:
-        decoded_file_content = decoded_file.read()
+    # stop test if logs are empty
+    assert len(decoded_dict_logs) > 0, "Nrfutil trace stm returned no dictionary logs."
 
-    # if nothing in decoded_file, stop test
-    assert len(decoded_file_content) > 0, f"File {test_filename} is empty"
+    # read raw logs
+    with open(f"{test_filename}", errors="ignore") as raw_file:
+        raw_file_content = raw_file.read()
+
+    # if nothing in raw_file, stop test
+    assert(
+        len(raw_file_content) > 0
+    ), f"File {test_filename} is empty"
 
     # check results on Application core
-    check_benchmark_results(output=decoded_file_content, core='app', constraints=app_constraints)
+    check_benchmark_results(output=decoded_dict_logs, core='app', constraints=app_constraints)
 
     # check results on Radio core
-    check_benchmark_results(output=decoded_file_content, core='rad', constraints=rad_constraints)
+    check_benchmark_results(output=decoded_dict_logs, core='rad', constraints=rad_constraints)
 
     if SB_CONFIG_APP_CPUPPR_RUN:
         # check results on PPR core
         check_benchmark_results(
-            output=decoded_file_content, core='ppr', constraints=ppr_constraints
+            output=decoded_dict_logs, core='ppr', constraints=ppr_constraints
         )
 
     if SB_CONFIG_APP_CPUFLPR_RUN:
         # check results on FLPR core
         check_benchmark_results(
-            output=decoded_file_content, core='flpr', constraints=flpr_constraints
+            output=decoded_dict_logs, core='flpr', constraints=flpr_constraints
         )
