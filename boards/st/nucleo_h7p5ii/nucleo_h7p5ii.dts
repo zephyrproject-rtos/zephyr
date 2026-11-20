@@ -143,3 +143,10 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+&spi1 {
+	/* Arduino D10 (NSS) / D11 (MOSI) / D12 (MISO) / D13 (SCK) */
+	pinctrl-0 = <&spi1_nss_pb7 &spi1_miso_pc11 &spi1_mosi_pb2 &spi1_sck_pg9>;
+	pinctrl-names = "default";
+	status = "okay";
+};

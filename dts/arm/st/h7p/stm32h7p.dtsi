@@ -127,6 +127,36 @@
 
 	soc {
 		/* APB1 peripherals */
+		spi2: spi@40003800 {
+			/* NOTE: this instance supports I2S mode */
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40003800 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <59 0>;
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
+
+			status = "disabled";
+		};
+
+		spi3: spi@40003c00 {
+			/* NOTE: this instance supports I2S mode */
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40003c00 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
+			interrupts = <60 0>;
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
+
+			status = "disabled";
+		};
+
 		usart2: serial@40004400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 DT_SIZE_K(1)>;
@@ -217,6 +247,49 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 7)>;
 			resets = <&rctl STM32_RESET(APB2, 7)>;
 			interrupts = <125 0>;
+			status = "disabled";
+		};
+
+		spi1: spi@42003000 {
+			/* NOTE: this instance supports I2S mode */
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x42003000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			interrupts = <58 0>;
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
+
+			status = "disabled";
+		};
+
+		spi4: spi@42003400 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x42003400 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
+			interrupts = <61 0>;
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-16-bit";
+
+			status = "disabled";
+		};
+
+		spi5: spi@42005000 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x42005000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
+			interrupts = <62 0>;
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-16-bit";
+
 			status = "disabled";
 		};
 
@@ -315,6 +388,20 @@
 			clocks = <&rcc STM32_CLOCK(APB4, 3)>;
 			resets = <&rctl STM32_RESET(APB4, 3)>;
 			interrupts = <131 0>;
+			status = "disabled";
+		};
+
+		spi6: spi@58001400 {
+			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x58001400 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB4, 5)>;
+			interrupts = <63 0>;
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-16-bit";
+
 			status = "disabled";
 		};
 
