@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 #include <errno.h>
 #include <stdio.h>
 
+#include <zephyr/posix/poll.h>
 #include <zephyr/posix/sys/socket.h>
 #include <zephyr/posix/unistd.h>
 
@@ -22,6 +23,10 @@ LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 
 #include "common.h"
 #include "certificate.h"
+
+#define DTLS_POLL_MS 100
+
+static APP_BMEM bool udp_stopping;
 
 static void process_udp4(void);
 static void process_udp6(void);
@@ -118,12 +123,42 @@ static int process_udp(struct data *data)
 		 MY_PORT, data->proto);
 
 	do {
+		int flags = 0;
+
+		if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS)) {
+			struct pollfd pfd = {
+				.fd = data->udp.sock,
+				.events = POLLIN,
+			};
+
+			if (poll(&pfd, 1, DTLS_POLL_MS) < 0) {
+				LOG_ERR("UDP (%s): poll error %d", data->proto, errno);
+				(void)k_msleep(DTLS_POLL_MS);
+			}
+
+			if (udp_stopping) {
+				ret = -ECANCELED;
+				break;
+			}
+
+			flags = MSG_DONTWAIT;
+		}
+
 		client_addr_len = sizeof(client_addr);
 		received = recvfrom(data->udp.sock, data->udp.recv_buffer,
-				    sizeof(data->udp.recv_buffer), 0,
+				    sizeof(data->udp.recv_buffer), flags,
 				    &client_addr, &client_addr_len);
 
 		if (received < 0) {
+			if (udp_stopping) {
+				ret = -ECANCELED;
+				break;
+			}
+
+			if ((flags != 0) && (errno == EAGAIN)) {
+				continue;
+			}
+
 			/* Socket error */
 			LOG_ERR("UDP (%s): Connection error %d", data->proto,
 				errno);
@@ -225,6 +260,8 @@ static void print_stats(struct k_work *work)
 
 void start_udp(void)
 {
+	udp_stopping = false;
+
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 #if defined(CONFIG_USERSPACE)
 		k_mem_domain_add_thread(&app_domain, udp6_thread_id);
@@ -250,22 +287,38 @@ void start_udp(void)
 	}
 }
 
+static void stop_thread(struct k_thread *thread)
+{
+	if (k_thread_join(thread, K_SECONDS(1)) != 0) {
+		/* Not very graceful way to close a thread, but as we may be blocked
+		 * in recvfrom call it seems to be necessary
+		 */
+		k_thread_abort(thread);
+	}
+}
+
+static void stop_proto(struct data *cfg, struct k_thread *thread)
+{
+	if (!IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && (cfg->udp.sock >= 0)) {
+		(void)close(cfg->udp.sock);
+	}
+
+	stop_thread(thread);
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && (cfg->udp.sock >= 0)) {
+		(void)close(cfg->udp.sock);
+	}
+}
+
 void stop_udp(void)
 {
-	/* Not very graceful way to close a thread, but as we may be blocked
-	 * in recvfrom call it seems to be necessary
-	 */
+	udp_stopping = true;
+
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		k_thread_abort(udp6_thread_id);
-		if (conf.ipv6.udp.sock >= 0) {
-			(void)close(conf.ipv6.udp.sock);
-		}
+		stop_proto(&conf.ipv6, udp6_thread_id);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		k_thread_abort(udp4_thread_id);
-		if (conf.ipv4.udp.sock >= 0) {
-			(void)close(conf.ipv4.udp.sock);
-		}
+		stop_proto(&conf.ipv4, udp4_thread_id);
 	}
 }

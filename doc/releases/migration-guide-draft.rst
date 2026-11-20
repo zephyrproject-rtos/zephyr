@@ -623,6 +623,16 @@ Networking
   * :zephyr_file:`samples/subsys/mgmt/updatehub/local.conf.example` replaces
     ``overlay-prj.conf.example``.
 
+* A socket call now holds the socket's file descriptor until it returns. A recv() blocked on an IP
+  socket without TLS or on a CAN socket, and an accept() blocked on an IP socket or a TLS listener,
+  also hold the network context, unless the interface is IP-offloaded. :c:func:`zsock_close` wakes
+  a recv() or accept() blocked on an IP socket without TLS, but not a blocked connect() or a recv()
+  on a CAN socket. To stop a thread blocked in a call it wakes, close the socket, then join the
+  thread, and abort it with :c:func:`k_thread_abort` only if the call does not return. A thread
+  aborted inside a socket call leaks the file descriptor, and the context if the call holds it.
+  Where the context is held, the port of a closed UDP socket or TCP listener stays bound until the
+  woken recv() or accept() returns.
+
 Ethernet
 ========
 
