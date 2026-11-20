@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 
+#include "conn_internal.h"
 #include "gatt_internal.h"
 
 /* Custom Service Variables */
@@ -97,7 +98,86 @@ static struct bt_gatt_attr test1_attrs[] = {
 
 static struct bt_gatt_service test1_svc = BT_GATT_SERVICE(test1_attrs);
 
-ZTEST_SUITE(test_gatt, NULL, NULL, NULL, NULL, NULL);
+static const struct bt_uuid_128 iter_a_uuid = BT_UUID_INIT_128(
+	0xf6, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+static const struct bt_uuid_128 iter_b_uuid = BT_UUID_INIT_128(
+	0xf7, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static struct bt_gatt_attr iter_a_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(&iter_a_uuid),
+};
+
+static struct bt_gatt_service iter_a_svc = BT_GATT_SERVICE(iter_a_attrs);
+
+static struct bt_gatt_attr iter_b_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(&iter_b_uuid),
+};
+
+static struct bt_gatt_service iter_b_svc = BT_GATT_SERVICE(iter_b_attrs);
+
+static const struct bt_uuid_128 unreg_uuid = BT_UUID_INIT_128(
+	0xf8, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+static const struct bt_uuid_128 unreg_chrc_uuid = BT_UUID_INIT_128(
+	0xf9, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static struct bt_gatt_attr unreg_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(&unreg_uuid),
+	BT_GATT_CHARACTERISTIC(&unreg_chrc_uuid.uuid, BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE, NULL,
+			       NULL, NULL),
+	BT_GATT_CCC(NULL, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+};
+
+static struct bt_gatt_service unreg_svc = BT_GATT_SERVICE(unreg_attrs);
+
+static K_THREAD_STACK_DEFINE(iter_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(unregister_stack,
+			     CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread iter_thread;
+static struct k_thread unregister_thread;
+static bool iter_thread_started;
+static bool unregister_thread_started;
+static K_SEM_DEFINE(unregister_sem, 0, 1);
+
+/* The threads of an iteration test end within milliseconds: this only bounds a hang */
+#define ITER_THREAD_TIMEOUT K_SECONDS(1)
+
+/* A test that fails can leave its threads running and its services registered:
+ * clean up, so that the next test starts from the same state
+ */
+static void test_gatt_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	if (iter_thread_started) {
+		k_thread_abort(&iter_thread);
+		iter_thread_started = false;
+	}
+
+	if (unregister_thread_started) {
+		k_thread_abort(&unregister_thread);
+		unregister_thread_started = false;
+	}
+
+	k_sem_reset(&unregister_sem);
+
+	if (bt_gatt_service_is_registered(&iter_a_svc)) {
+		zassert_ok(bt_gatt_service_unregister(&iter_a_svc), "Cleanup unregister failed");
+	}
+
+	if (bt_gatt_service_is_registered(&iter_b_svc)) {
+		zassert_ok(bt_gatt_service_unregister(&iter_b_svc), "Cleanup unregister failed");
+	}
+
+	if (bt_gatt_service_is_registered(&unreg_svc)) {
+		zassert_ok(bt_gatt_service_unregister(&unreg_svc), "Cleanup unregister failed");
+	}
+}
+
+ZTEST_SUITE(test_gatt, NULL, NULL, NULL, test_gatt_after, NULL);
 
 ZTEST(test_gatt, test_gatt_register)
 {
@@ -421,6 +501,233 @@ ZTEST(test_gatt, test_gatt_foreach)
 		zassert_equal(attr->user_data, &nfy_enabled,
 			      "Attribute value don't match");
 	}
+}
+
+/* What the iteration does when it calls back into service A */
+enum iter_mode {
+	/* Wake the thread that unregisters service A */
+	ITER_WAKE,
+	/* The same, and then block for a while */
+	ITER_WAKE_AND_BLOCK,
+	/* Wake that thread, which unregisters service A from an iteration of its own */
+	ITER_WAKE_OTHER_ITER,
+	/* Unregister service A */
+	ITER_UNREGISTER_SELF,
+	/* Unregister and register service A, and then wake the unregistering thread */
+	ITER_REREGISTER_AND_WAKE,
+	/* Unregister service B */
+	ITER_UNREGISTER_OTHER,
+};
+
+static enum iter_mode iter_mode;
+static int unregister_err;
+static int reregister_err;
+static size_t iter_b_visits;
+
+static uint8_t unregister_attr(const struct bt_gatt_attr *attr, uint16_t handle, void *user_data)
+{
+	ARGS_UNUSED(attr, handle, user_data);
+
+	unregister_err = bt_gatt_service_unregister(&iter_a_svc);
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void unregister_entry(void *p1, void *p2, void *p3)
+{
+	ARGS_UNUSED(p1, p2, p3);
+
+	if (k_sem_take(&unregister_sem, K_FOREVER) != 0) {
+		/* Reset by the after() of a failed test */
+		return;
+	}
+
+	if (iter_mode == ITER_WAKE_OTHER_ITER) {
+		bt_gatt_foreach_attr(iter_a_attrs[0].handle, iter_a_attrs[0].handle,
+				     unregister_attr, NULL);
+	} else {
+		unregister_err = bt_gatt_service_unregister(&iter_a_svc);
+	}
+}
+
+static uint8_t iter_attr(const struct bt_gatt_attr *attr, uint16_t handle, void *user_data)
+{
+	ARGS_UNUSED(handle, user_data);
+
+	if (attr == &iter_a_attrs[0]) {
+		switch (iter_mode) {
+		case ITER_WAKE:
+		case ITER_WAKE_OTHER_ITER:
+			/* Wakes the unregistering thread without blocking
+			 * this one
+			 */
+			k_sem_give(&unregister_sem);
+			break;
+		case ITER_WAKE_AND_BLOCK:
+			k_sem_give(&unregister_sem);
+			/* Block in the callback, as one that waits for a buffer
+			 * would. The unregistering thread has the higher priority
+			 * and runs at once, so any duration does.
+			 */
+			(void)k_sleep(K_MSEC(10));
+			break;
+		case ITER_UNREGISTER_SELF:
+			unregister_err = bt_gatt_service_unregister(&iter_a_svc);
+			break;
+		case ITER_REREGISTER_AND_WAKE:
+			reregister_err = bt_gatt_service_unregister(&iter_a_svc);
+			if (reregister_err == 0) {
+				reregister_err = bt_gatt_service_register(&iter_a_svc);
+			}
+
+			k_sem_give(&unregister_sem);
+			break;
+		case ITER_UNREGISTER_OTHER:
+			unregister_err = bt_gatt_service_unregister(&iter_b_svc);
+			break;
+		}
+	} else if (IS_ARRAY_ELEMENT(iter_b_attrs, attr)) {
+		iter_b_visits++;
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void iter_entry(void *p1, void *p2, void *p3)
+{
+	ARGS_UNUSED(p1, p2, p3);
+
+	bt_gatt_foreach_attr(iter_a_attrs[0].handle,
+			     iter_b_attrs[ARRAY_SIZE(iter_b_attrs) - 1].handle, iter_attr, NULL);
+}
+
+/* Iterate services A and B in a preemptible thread, with a service unregistered
+ * while the iteration calls back into service A.
+ */
+static void iterate_and_unregister(enum iter_mode mode)
+{
+	bool uses_other_thread = mode != ITER_UNREGISTER_SELF && mode != ITER_UNREGISTER_OTHER;
+
+	zassert_ok(bt_gatt_service_register(&iter_a_svc), "Service A registration failed");
+	zassert_ok(bt_gatt_service_register(&iter_b_svc), "Service B registration failed");
+
+	iter_mode = mode;
+	unregister_err = -EINPROGRESS;
+	reregister_err = 0;
+	iter_b_visits = 0U;
+
+	/* The unregistering thread waits for the iteration before it starts:
+	 * both start once this cooperative test thread waits for them, the
+	 * higher-priority one first.
+	 */
+	if (uses_other_thread) {
+		(void)k_thread_create(&unregister_thread, unregister_stack,
+				      K_THREAD_STACK_SIZEOF(unregister_stack), unregister_entry,
+				      NULL, NULL, NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+		unregister_thread_started = true;
+	}
+
+	(void)k_thread_create(&iter_thread, iter_stack, K_THREAD_STACK_SIZEOF(iter_stack),
+			      iter_entry, NULL, NULL, NULL, K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
+	iter_thread_started = true;
+
+	zassert_ok(k_thread_join(&iter_thread, ITER_THREAD_TIMEOUT), "The iteration did not end");
+	if (uses_other_thread) {
+		zassert_ok(k_thread_join(&unregister_thread, ITER_THREAD_TIMEOUT),
+			   "The unregister did not end");
+	}
+
+	if (mode == ITER_UNREGISTER_OTHER) {
+		zassert_ok(unregister_err, "Service B unregister failed (%d)", unregister_err);
+		zassert_equal(iter_b_visits, 0U, "The iteration visited an unregistered service");
+		zassert_ok(bt_gatt_service_unregister(&iter_a_svc), "Service A unregister failed");
+		return;
+	}
+
+	zassert_equal(iter_b_visits, ARRAY_SIZE(iter_b_attrs),
+		      "The iteration visited %zu of %zu attributes of service B", iter_b_visits,
+		      ARRAY_SIZE(iter_b_attrs));
+	zassert_ok(bt_gatt_service_unregister(&iter_b_svc), "Service B unregister failed");
+
+	if (mode == ITER_UNREGISTER_SELF) {
+		zassert_ok(unregister_err, "Service A unregister failed (%d)", unregister_err);
+		zassert_false(bt_gatt_service_is_registered(&iter_a_svc),
+			      "Service A still registered");
+		return;
+	}
+
+	zassert_ok(reregister_err, "Service A registered again failed (%d)", reregister_err);
+	zassert_equal(unregister_err, -EBUSY, "Service A unregister not refused (%d)",
+		      unregister_err);
+	zassert_true(bt_gatt_service_is_registered(&iter_a_svc), "Service A not registered");
+	zassert_ok(bt_gatt_service_unregister(&iter_a_svc), "Service A unregister failed");
+}
+
+/* A preemptible thread that iterates the database can be woken from, and so be
+ * preempted by, a thread that unregisters the service the iteration is in. That
+ * is refused, and the iteration reaches the services after it.
+ */
+static ZTEST(test_gatt, test_gatt_foreach_unregister)
+{
+	iterate_and_unregister(ITER_WAKE);
+}
+
+/* The same when the callback blocks, which lets the unregistering thread run
+ * also with the scheduler locked.
+ */
+static ZTEST(test_gatt, test_gatt_foreach_unregister_blocked)
+{
+	iterate_and_unregister(ITER_WAKE_AND_BLOCK);
+}
+
+/* The same when the unregistering thread is in a callback for the service too */
+static ZTEST(test_gatt, test_gatt_foreach_unregister_both_in_callback)
+{
+	iterate_and_unregister(ITER_WAKE_OTHER_ITER);
+}
+
+/* A callback that unregisters and registers the service of its own attribute
+ * keeps other threads from unregistering it while the callback runs.
+ */
+static ZTEST(test_gatt, test_gatt_foreach_unregister_reregister)
+{
+	iterate_and_unregister(ITER_REREGISTER_AND_WAKE);
+}
+
+/* A callback can unregister the service of its own attribute, and the iteration
+ * still reaches the services after it.
+ */
+static ZTEST(test_gatt, test_gatt_foreach_unregister_self)
+{
+	iterate_and_unregister(ITER_UNREGISTER_SELF);
+}
+
+/* A callback can unregister another service, which the iteration then skips */
+static ZTEST(test_gatt, test_gatt_foreach_unregister_other)
+{
+	iterate_and_unregister(ITER_UNREGISTER_OTHER);
+}
+
+/* Another thread can unregister the service while bt_gatt_is_subscribed()
+ * looks for the CCC. With handles set by the application, which unregistration
+ * keeps, it then finds no attribute after the characteristic declaration.
+ */
+static ZTEST(test_gatt, test_gatt_is_subscribed_unregistered)
+{
+	static struct bt_conn conn = {
+		.state = BT_CONN_CONNECTED,
+	};
+
+	/* After the handles of all other services */
+	for (size_t i = 0; i < ARRAY_SIZE(unreg_attrs); i++) {
+		unreg_attrs[i].handle = (uint16_t)(0xfff0U + i);
+	}
+
+	zassert_ok(bt_gatt_service_register(&unreg_svc), "Service registration failed");
+	zassert_ok(bt_gatt_service_unregister(&unreg_svc), "Service unregister failed");
+
+	zassert_false(bt_gatt_is_subscribed(&conn, &unreg_attrs[1], BT_GATT_CCC_NOTIFY),
+		      "Subscribed to a characteristic of an unregistered service");
 }
 
 ZTEST(test_gatt, test_gatt_read)

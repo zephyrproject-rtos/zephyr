@@ -17,7 +17,7 @@
  *          information, see @ref bt_gatt_client and @ref bt_gatt_server.
  * @defgroup bt_gatt Generic Attribute Profile (GATT)
  * @since 1.0
- * @version 1.0.2
+ * @version 1.1.0
  * @ingroup bluetooth
  * @{
  */
@@ -738,9 +738,29 @@ int bt_gatt_service_register(struct bt_gatt_service *svc);
 
 /** @brief Unregister GATT service.
  *
+ *  A service cannot be unregistered while the stack is calling back for one of
+ *  its attributes in another thread, such as the read or write callback of an
+ *  attribute that a peer reads or writes, or the function given to
+ *  @ref bt_gatt_foreach_attr_type. The caller then has to try again later. It
+ *  must not wait for that in a way that the callback could depend on, such as
+ *  blocking the system workqueue. A callback can unregister the service of its
+ *  own attribute.
+ *
+ *  Once this has returned 0, no such callback is in progress or can start in
+ *  another thread. The memory of the service, its attributes and their user data
+ *  can then be freed or reused, once the calling thread has returned from any
+ *  such callback that it is in itself. The application still has to make sure
+ *  that nothing of its own uses that memory: a call for the service from another
+ *  thread, such as @ref bt_gatt_notify_cb, @ref bt_gatt_indicate,
+ *  @ref bt_gatt_notify_multiple or @ref bt_gatt_is_subscribed, or an attribute
+ *  pointer that it kept, such as from @ref bt_gatt_find_by_uuid.
+ *
  *  @param svc Service to be unregistered.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 Success.
+ *  @retval -EBUSY The stack is calling back for an attribute of the service in
+ *                 another thread.
+ *  @retval -ENOENT The service is not registered.
  */
 int bt_gatt_service_unregister(struct bt_gatt_service *svc);
 
