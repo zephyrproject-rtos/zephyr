@@ -40,6 +40,7 @@ enum {
 	BT_DEV_DISABLING,   /* Host stack is being disabled */
 	BT_DEV_OPEN,        /* HCI transport is open */
 	BT_DEV_CTLR_RX,     /* Controller has sent a packet during bt_enable() */
+	BT_DEV_CMD_FAILED,  /* The controller stopped responding to commands */
 	BT_DEV_READY,       /* Host stack has completed init */
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,
@@ -93,6 +94,7 @@ enum {
 				 BIT(BT_DEV_DISABLING) | \
 				 BIT(BT_DEV_OPEN) | \
 				 BIT(BT_DEV_CTLR_RX) | \
+				 BIT(BT_DEV_CMD_FAILED) | \
 				 BIT(BT_DEV_PRESET_ID))
 
 #if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
@@ -485,14 +487,25 @@ struct bt_dev {
 	/* Number of commands controller can accept */
 	struct k_sem		ncmd_sem;
 
-	/* Last sent HCI command */
+	/* Last sent HCI command, protected by cmd_lock */
 	struct net_buf		*sent_cmd;
 
 	/* Queue for incoming HCI events & ACL data */
 	sys_slist_t rx_queue;
 
-	/* Queue for outgoing HCI commands */
-	struct k_fifo		cmd_tx_queue;
+	/* Queue for outgoing HCI commands, protected by cmd_lock */
+	sys_slist_t		cmd_tx_queue;
+	struct k_spinlock	cmd_lock;
+
+#if defined(CONFIG_BT_CONN)
+	/* Asynchronous commands waiting for a command buffer, and those whose
+	 * completion callback is still to run. Protected by cmd_lock. Built
+	 * with CONFIG_BT_CONN only, for the one user so far: the HCI Disconnect
+	 * of a connection, see conn_hci_send() in conn.c.
+	 */
+	sys_slist_t		cmd_op_queue;
+	sys_slist_t		cmd_done_list;
+#endif /* CONFIG_BT_CONN */
 
 	const struct device *hci;
 
@@ -567,6 +580,12 @@ int bt_work_reschedule(struct k_work_delayable *work, k_timeout_t delay);
 /* Check whether it is executing in the `bt_workq` thread context. */
 bool bt_is_work_thread(void);
 
+/* The command deadline: how long the HCI command path may make no progress
+ * before the Host gives up the commands that wait, see cmd_deadline_expired()
+ * in hci_core.c.
+ */
+#define HCI_CMD_TIMEOUT K_SECONDS(10)
+
 /* Data type to store state related with command to be updated
  * when command completes successfully.
  */
@@ -585,6 +604,12 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       atomic_t *target, int bit, bool val);
 
 int bt_hci_disconnect(uint16_t handle, uint8_t reason);
+
+/* Finish the teardown of a connection that the controller turns out not to
+ * have any more, once it is in BT_CONN_DISCONNECT_COMPLETE, as the handling of
+ * a Disconnection Complete event does.
+ */
+void bt_hci_conn_lost(struct bt_conn *conn);
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_time);

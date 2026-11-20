@@ -417,6 +417,13 @@ static inline int bt_hci_close(const struct device *dev)
  * HCI driver. On error, the caller still owns the reference and is responsible
  * for eventually calling @ref net_buf_unref on it.
  *
+ * For an HCI command, an error also tells the caller that no response to the
+ * command will follow. The caller fails the command and goes on to send the
+ * next one, so a response that came after all would be taken for the response
+ * to that next command. A driver that cannot rule a response out, for example
+ * because the transport failed part of the way through the packet, returns 0
+ * and leaves the outcome to the caller's command timeout.
+ *
  * The transport must be open: the function may only be called after
  * bt_hci_open() has returned successfully, and neither while a bt_hci_close()
  * call is in progress nor after one has succeeded. There is no query for
