@@ -13,7 +13,7 @@ Ideal for learners, hobbyists, and hardware/software co-design prototyping.
 Hardware
 ********
 
-- Microcontroller `RP2040`_, with a max frequency of 133 MHz
+- Microcontroller `RP2040`_, with a max frequency of 200 MHz
 - Dual ARM Cortex M0+ cores
 - 264 kByte SRAM
 - 4 Mbyte QSPI flash

@@ -12,8 +12,10 @@ if REGULATOR_RPI_PICO
 
 config REGULATOR_RPI_PICO_INIT_PRIORITY
 	int "Raspberry Pi Pico regulator driver init priority"
-	default KERNEL_INIT_PRIORITY_DEVICE
+	default 20
 	help
 	  Init priority for the Raspberry Pi Pico regulator driver.
+	  Must precede clock control initialization when supplying the core
+	  voltage required for higher clock frequencies.
 
 endif

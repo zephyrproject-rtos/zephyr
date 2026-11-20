@@ -20,7 +20,7 @@ using an external adapter.
 Hardware
 ********
 
-- Dual core Arm Cortex-M0+ processor running up to 133MHz
+- Dual core Arm Cortex-M0+ processor running up to 200MHz
 - 264KB on-chip SRAM
 - 2MB on-board QSPI flash with XIP capabilities
 - 26 GPIO pins

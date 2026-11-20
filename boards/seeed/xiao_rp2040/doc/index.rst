@@ -15,7 +15,7 @@ Hardware
 
 The Seeed Studio XIAO RP2040 is a low-power microcontroller that
 carries the powerful Dual-core RP2040 processor with a flexible
-clock running up to 133 MHz. There is also 264KB of SRAM, and 2MB of
+clock running up to 200 MHz. There is also 264KB of SRAM, and 2MB of
 on-board Flash memory.
 
 There are 14 GPIO PINs on Seeed Studio XIAO RP2040, on which there
