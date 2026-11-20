@@ -182,6 +182,33 @@ config COAP_CLIENT_MAX_REQUESTS
 	help
 	  Maximum number of CoAP requests a single client can handle at a time
 
+config COAP_CLIENT_DEDUP_CACHE_SIZE
+	int "Number of responses a client remembers to detect duplicates"
+	default 8
+	range 0 $(UINT8_MAX)
+	help
+	  Number of responses a CoAP client remembers, by source address and
+	  message ID, to recognize one the server sends again. Such a
+	  response is acknowledged again but processed only once
+	  (RFC 7252 section 4.5).
+
+	  A response is remembered for COAP_CLIENT_DEDUP_LIFETIME, or until
+	  this many newer ones arrived. The size should cover the responses
+	  that can arrive in between: one per server answering a multicast
+	  request, and the notifications of the observations a client keeps.
+
+	  Set to 0 to disable deduplication: a response the server sends
+	  again is then passed to the application again.
+
+config COAP_CLIENT_DEDUP_LIFETIME
+	int "Time a client remembers a response (seconds)"
+	default 247
+	range 1 3600
+	depends on COAP_CLIENT_DEDUP_CACHE_SIZE > 0
+	help
+	  Time after which a remembered response is forgotten. The default is
+	  EXCHANGE_LIFETIME from RFC 7252 section 4.8.2.
+
 config COAP_CLIENT_TRUNCATE_MSGS
 	bool "Receive notification when blocks are truncated"
 	default y

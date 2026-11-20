@@ -1396,6 +1396,9 @@ static void test_setup(void *data)
 	}
 
 	memset(&client.requests, 0, sizeof(client.requests));
+	/* The fakes use the same message IDs in every test */
+	memset(&client.dedup_cache, 0, sizeof(client.dedup_cache));
+	memset(&client2.dedup_cache, 0, sizeof(client2.dedup_cache));
 	memset(last_token, 0, sizeof(last_token));
 	last_response_code = 0;
 	k_sem_reset(&sem1);
@@ -2208,6 +2211,168 @@ ZTEST(coap_client, test_duplicate_response)
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
 
 	zassert_equal(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)), -EAGAIN, "");
+}
+
+static uint8_t same_mid_token[COAP_TOKEN_MAX_LEN];
+
+static ssize_t z_impl_zsock_sendto_custom_fake_same_mid(int sock, void *buf, size_t len, int flags,
+							const struct net_sockaddr *dest_addr,
+							net_socklen_t addrlen)
+{
+	uint8_t *buf_u8 = buf;
+
+	/* A request, not the Acknowledgment of its response */
+	if ((buf_u8[0] & 0x30) == 0) {
+		memcpy(same_mid_token, buf_u8 + TOKEN_OFFSET, sizeof(same_mid_token));
+		set_socket_events(sock, ZSOCK_POLLIN);
+	}
+
+	return 1;
+}
+
+/* Separate Confirmable 2.05, under the same message ID for every request */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_same_mid(int sock, void *buf, size_t max_len,
+							  int flags, struct net_sockaddr *src_addr,
+							  net_socklen_t *addrlen)
+{
+	uint8_t data[] = {0x48, 0x45, 0x73, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+	memcpy(data + TOKEN_OFFSET, same_mid_token, sizeof(same_mid_token));
+	memcpy(buf, data, sizeof(data));
+
+	fill_recv_src_addr(src_addr, addrlen);
+
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return sizeof(data);
+}
+
+/* A socket is an endpoint of its own: a response on another socket is no
+ * duplicate of one with the same source and message ID on the first.
+ */
+ZTEST(coap_client, test_duplicate_response_other_socket)
+{
+	static const int socks[] = {0, 1, 0};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_same_mid;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_same_mid;
+
+	ARRAY_FOR_EACH(socks, i) {
+		last_response_code = 0;
+
+		zassert_ok(coap_client_req(&client, socks[i], net_sad(&dst_address),
+					   &short_request, NULL));
+
+		zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_ACK_TIMEOUT_MS)));
+		zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT,
+			      "Unexpected response on socket %d", socks[i]);
+
+		/* The request is held for its exchange lifetime; with none
+		 * left the client may change sockets.
+		 */
+		k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
+	}
+
+	zassert_equal(z_impl_zsock_recvfrom_fake.call_count, ARRAY_SIZE(socks));
+}
+
+/* A socket that failed is replaced by another one, which may get the same
+ * descriptor: a response on it is no duplicate of one received before.
+ */
+ZTEST(coap_client, test_duplicate_response_after_socket_error)
+{
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_same_mid;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_same_mid;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_ACK_TIMEOUT_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+
+	/* The socket is still polled, for the exchange lifetime of the request */
+	set_socket_events(client.fd, ZSOCK_POLLERR);
+	k_sleep(K_MSEC(MORE_THAN_ACK_TIMEOUT_MS));
+	clear_socket_events(client.fd, ZSOCK_POLLERR);
+
+	last_response_code = 0;
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_ACK_TIMEOUT_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+
+	zassert_equal(z_impl_zsock_recvfrom_fake.call_count, 2);
+}
+
+static int same_mid_req_cnt;
+static int same_mid_ack_cnt;
+
+/* As the fake above for the first request only, counting the replies */
+static ssize_t z_impl_zsock_sendto_custom_fake_same_mid_once(int sock, void *buf, size_t len,
+							     int flags,
+							     const struct net_sockaddr *dest_addr,
+							     net_socklen_t addrlen)
+{
+	uint8_t type = (((uint8_t *)buf)[0] >> 4) & 0x3;
+
+	if (type == COAP_TYPE_ACK) {
+		same_mid_ack_cnt++;
+	} else if (type == COAP_TYPE_RESET) {
+		rst_sent_cnt++;
+	} else if (same_mid_req_cnt++ == 0) {
+		return z_impl_zsock_sendto_custom_fake_same_mid(sock, buf, len, flags, dest_addr,
+								addrlen);
+	}
+
+	return 1;
+}
+
+/* A server that missed the Acknowledgment repeats its response for longer
+ * than the request is held. The late copy is acknowledged again, not rejected.
+ */
+ZTEST(coap_client, test_duplicate_response_after_exchange)
+{
+	same_mid_req_cnt = 0;
+	same_mid_ack_cnt = 0;
+	rst_sent_cnt = 0;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_same_mid_once;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_same_mid;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_ACK_TIMEOUT_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+	zassert_equal(same_mid_ack_cnt, 1);
+
+	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
+
+	/* The socket is polled for another request, which gets no answer */
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &long_request, NULL));
+	set_socket_events(0, ZSOCK_POLLIN);
+
+	zassert_equal(k_sem_take(&sem1, K_MSEC(MORE_THAN_ACK_TIMEOUT_MS)), -EAGAIN,
+		      "Duplicate delivered");
+	zassert_equal(z_impl_zsock_recvfrom_fake.call_count, 2);
+	zassert_equal(same_mid_ack_cnt, 2);
+	zassert_equal(rst_sent_cnt, 0, "Duplicate rejected");
+}
+
+/* A response is remembered for a time only, after which its message ID may
+ * come again.
+ */
+ZTEST(coap_client, test_duplicate_response_after_lifetime)
+{
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_same_mid;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_same_mid;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_ACK_TIMEOUT_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+
+	k_sleep(K_SECONDS(CONFIG_COAP_CLIENT_DEDUP_LIFETIME + 1));
+
+	last_response_code = 0;
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_ACK_TIMEOUT_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+
+	zassert_equal(z_impl_zsock_recvfrom_fake.call_count, 2);
 }
 
 ZTEST(coap_client, test_observe)
@@ -3563,6 +3728,25 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_multicast_con(int sock, void *b
 						    true);
 }
 
+/* Two servers answer, then the first one's response arrives once more */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_multicast_again(int sock, void *buf,
+								 size_t max_len, int flags,
+								 struct net_sockaddr *src_addr,
+								 net_socklen_t *addrlen)
+{
+	int index = multicast_recv_index;
+	ssize_t ret = zsock_recvfrom_custom_fake_multicast(sock, buf, max_len, flags, src_addr,
+							   addrlen, false);
+
+	if (index == 1) {
+		set_socket_events(sock, ZSOCK_POLLIN);
+	} else if (index == 2) {
+		net_sin(src_addr)->sin_addr.s_addr = net_htonl(MULTICAST_SERVER_START_IP);
+	}
+
+	return ret;
+}
+
 ZTEST(coap_client, test_multicast_confirmable_rejected)
 {
 	struct coap_client_request req = {
@@ -3638,6 +3822,42 @@ ZTEST(coap_client, test_multicast_get_responses)
 	/* Then wait for the completion callback after multicast timeout */
 	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 
+	zassert_equal(multicast_response_count, 2, "Expected 2 streamed responses");
+	zassert_true(multicast_completed, "Expected completion callback after timeout");
+}
+
+ZTEST(coap_client, test_multicast_response_duplicated)
+{
+	multicast_response_count = 0;
+	multicast_completed = false;
+	multicast_recv_index = 0;
+
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = false,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = multicast_coap_callback,
+		.multicast_timeout_ms = MULTICAST_TIMEOUT_MS,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_multicast;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_multicast_again;
+	set_socket_events(client.fd, ZSOCK_POLLIN | ZSOCK_POLLOUT);
+
+	zassert_ok(coap_client_req(&client, 0, (const struct net_sockaddr *)&mcast_address, &req,
+				   NULL));
+
+	/* One callback per server, then the completion callback after the
+	 * multicast timeout: the copy is dropped although another server's
+	 * response came in between.
+	 */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+	zassert_equal(z_impl_zsock_recvfrom_fake.call_count, 3, "Expected 3 messages");
 	zassert_equal(multicast_response_count, 2, "Expected 2 streamed responses");
 	zassert_true(multicast_completed, "Expected completion callback after timeout");
 }
