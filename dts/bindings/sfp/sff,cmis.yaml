@@ -1,0 +1,60 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cage for a CMIS managed pluggable transceiver (QSFP-DD, OSFP, SFP-DD,
+  DSFP).
+
+  As with sff,sfp, the node describes the cage on the board, not the module
+  in it. CMIS modules answer at the fixed I2C address 0x50 on the bus given
+  by i2c-bus and use a paged memory model: a 128-byte Lower Memory that is
+  always accessible and 128-byte upper pages selected through the
+  page-select register. The driver reads Lower Memory and Page 00h.
+
+  The GPIO properties use the QSFP-DD signal names. The driver uses
+  modprsl-gpios to detect the module; the other lines are described for the
+  board and are not driven yet.
+
+  Example:
+
+    qsfp0: qsfp-cage {
+      compatible = "sff,cmis";
+      i2c-bus = <&i2c2>;
+      modprsl-gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+      intl-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+      resetl-gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+      lpmode-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+    };
+
+compatible: "sff,cmis"
+
+include: base.yaml
+
+properties:
+  i2c-bus:
+    type: phandle
+    required: true
+    description: I2C controller the cage's management interface is wired to.
+
+  modprsl-gpios:
+    type: phandle-array
+    description: |
+      ModPrsL module presence input. A module pulls ModPrsL low, so this is
+      normally GPIO_ACTIVE_LOW and reads 1 while a module is inserted.
+      Without this property a module is assumed to be present.
+
+  intl-gpios:
+    type: phandle-array
+    description: IntL interrupt input from the module.
+
+  resetl-gpios:
+    type: phandle-array
+    description: ResetL module reset output.
+
+  lpmode-gpios:
+    type: phandle-array
+    description: LPMode low-power mode output.
+
+  modsell-gpios:
+    type: phandle-array
+    description: ModSelL module select output, for cages sharing one I2C bus.
