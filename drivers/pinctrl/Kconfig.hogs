@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Axonne Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PINCTRL_HOGS
+	bool "Pin controller hogs"
+	depends on PINCTRL && !PINCTRL_STORE_REG
+	default $(dt_pinctrl_hogs_enabled)
+	help
+	  Apply the default state of pin controllers that reference their own
+	  configuration nodes through pinctrl-N and pinctrl-names properties.
+	  The backend must support configuring pins without a peripheral
+	  register address.
+
+if PINCTRL_HOGS
+
+choice PINCTRL_HOGS_INIT_LEVEL
+	prompt "Initialization level"
+	default PINCTRL_HOGS_INIT_POST_KERNEL
+	help
+	  Select a level after the controller's dependencies are initialized
+	  and before consumers of the pins. Use a pre-kernel level only if
+	  the pin controller backend can run without kernel services.
+
+config PINCTRL_HOGS_INIT_PRE_KERNEL_1
+	bool "PRE_KERNEL_1"
+
+config PINCTRL_HOGS_INIT_PRE_KERNEL_2
+	bool "PRE_KERNEL_2"
+
+config PINCTRL_HOGS_INIT_POST_KERNEL
+	bool "POST_KERNEL"
+
+endchoice
+
+config PINCTRL_HOGS_INIT_PRIORITY
+	int "Initialization priority"
+	default 41
+	help
+	  Initialize pin controller hogs after the controller's dependencies,
+	  including GPIO and clock drivers, and before consumers of the pins.
+	  All pin controller hogs use the same initialization level and priority.
+	  The default priority matches that of GPIO hogs. If GPIO hogs depend on
+	  this configuration, select an earlier level or a lower priority within
+	  the same level so pin controller hogs run first.
+
+endif # PINCTRL_HOGS

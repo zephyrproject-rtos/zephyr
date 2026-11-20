@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Axonne Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Pin controllers consuming their own default state
+
+include: pinctrl-device.yaml
+
+# Configuration children do not introduce controller initialization dependencies.
+properties:
+  pinctrl-0:
+    dependency-mode: child-ignore
+
+  pinctrl-1:
+    dependency-mode: child-ignore
+
+  pinctrl-2:
+    dependency-mode: child-ignore
+
+  pinctrl-3:
+    dependency-mode: child-ignore
+
+  pinctrl-4:
+    dependency-mode: child-ignore

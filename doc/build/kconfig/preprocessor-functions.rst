@@ -84,6 +84,7 @@ property type whose value is a single integer, i.e. ``int`` and
    $(dt_nodelabel_reg_size_int,<node label>[,<index>,<unit>])
    $(dt_path_enabled,<node path>)
    $(dt_partition_mtd,<node path>)
+   $(dt_pinctrl_hogs_enabled)
 
 
 Integer functions
