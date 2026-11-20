@@ -32,6 +32,10 @@ anytree
 # Used to generate API coverage reports
 coverxygen!=1.8.2 # See https://github.com/psycofdj/coverxygen/issues/37
 
+# Used by the zephyr.llms_txt extension to generate LLM-friendly markdown
+# output (llms.txt)
+sphinx-llm
+
 # Used by Kconfig extension
 python-dotenv
 
