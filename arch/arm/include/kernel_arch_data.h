@@ -27,7 +27,8 @@
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <cortex_m/stack.h>
 #include <cortex_m/exception.h>
-#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A) ||              \
+	defined(CONFIG_CPU_AARCH32_ARMV6)
 #include <cortex_a_r/stack.h>
 #include <cortex_a_r/exception.h>
 #endif
@@ -44,9 +45,6 @@ extern "C" {
 
 typedef struct arch_esf _esf_t;
 typedef struct __basic_sf _basic_sf_t;
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-typedef struct __fpu_sf _fpu_sf_t;
-#endif
 
 #ifdef CONFIG_ARM_MPU
 struct z_arm_mpu_partition {

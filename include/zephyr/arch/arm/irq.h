@@ -127,7 +127,7 @@ static inline void z_arm_int_exit(void)
 {
 	arm_m_exc_tail();
 }
-#else
+#elif defined(CONFIG_CPU_CORTEX_M)
 extern void z_arm_int_exit(void);
 #endif
 
@@ -222,9 +222,14 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 #ifdef CONFIG_TRACING_ISR
 	sys_trace_isr_exit();
 #endif
+#if defined(CONFIG_CPU_CORTEX_M)
 	if (maybe_swap != 0) {
 		z_arm_int_exit();
 	}
+#else
+	/* Cortex-A/R has no vector table to install direct ISRs in */
+	ARG_UNUSED(maybe_swap);
+#endif
 }
 
 #define ARCH_ISR_DIAG_OFF \

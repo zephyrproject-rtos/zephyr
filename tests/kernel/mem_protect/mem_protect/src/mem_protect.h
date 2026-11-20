@@ -88,8 +88,12 @@ static inline void set_fault_valid(bool valid)
 /* Pointer-array bound in test_kobj_create_out_of_memory() */
 #define MAX_OBJ 4096
 #else
-#define TEST_HEAP_SIZE	(2 << CONFIG_MAX_THREAD_BYTES) * 256
-#define MAX_OBJ 256
+/* Room for (2 << CONFIG_MAX_THREAD_BYTES) dynamic thread objects, each with
+ * its dyn_obj header and heap chunk overhead.
+ */
+#define TEST_HEAP_SIZE	((2 << CONFIG_MAX_THREAD_BYTES) * MAX(256, sizeof(struct k_thread) + 64))
+/* Each dynamic object takes at least 32 bytes of the heap */
+#define MAX_OBJ (TEST_HEAP_SIZE / 32)
 #endif
 
 #ifndef _TEST_SYSCALLS_H_
