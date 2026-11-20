@@ -1,0 +1,17 @@
+identifier: mikroe_uni_clicker/stm32f429xx/mcu_card_4
+name: MikroE UNI Clicker with MCU CARD 4 for STM32 (STM32F429NI)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 192
+flash: 2048
+supported:
+  - dma
+  - entropy
+  - gpio
+  - rtc
+  - usbd
+  - watchdog
+vendor: mikroe

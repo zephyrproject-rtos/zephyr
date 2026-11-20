@@ -1,0 +1,380 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Pin mapping of the MIKROE MCU CARD 4 for STM32 (STM32F429NI) onto the
+ * two MCU card connectors of the UNI Clicker.
+ */
+
+/ {
+	right_connector: mcu-card-connector-1 {
+		compatible = "mikroe,mcu-card-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpioc 0 0>,
+			   /* 1 - NC */
+			   <2 0 &gpioc 2 0>,
+			   <3 0 &gpioc 3 0>,
+			   /* 4 - NC */
+			   /* 5 - NC */
+			   <6 0 &gpioc 6 0>,
+			   <7 0 &gpioc 7 0>,
+			   /* 8 - NC */
+			   /* 9 - NC */
+			   /* 10 - NC */
+			   <11 0 &gpiod 0 0>,
+			   <12 0 &gpiod 1 0>,
+			   <13 0 &gpiod 2 0>,
+			   <14 0 &gpiod 3 0>,
+			   <15 0 &gpiod 4 0>,
+			   <16 0 &gpiod 5 0>,
+			   <17 0 &gpiod 6 0>,
+			   <18 0 &gpiod 7 0>,
+			   <19 0 &gpioe 0 0>,
+			   <20 0 &gpioe 1 0>,
+			   <21 0 &gpioe 2 0>,
+			   <22 0 &gpioe 3 0>,
+			   <23 0 &gpioe 4 0>,
+			   <24 0 &gpioe 5 0>,
+			   <25 0 &gpioe 6 0>,
+			   <26 0 &gpioe 7 0>,
+			   <27 0 &gpiof 0 0>,
+			   <28 0 &gpiof 1 0>,
+			   <29 0 &gpiof 2 0>,
+			   <30 0 &gpiof 3 0>,
+			   <31 0 &gpiof 4 0>,
+			   <32 0 &gpiof 5 0>,
+			   <33 0 &gpiof 6 0>,
+			   <34 0 &gpiof 7 0>,
+			   /* 35 - NC */
+			   /* 36 - NC */
+			   /* 37 - NC */
+			   /* 38 - NC */
+			   /* 39 - NC */
+			   /* 40 - NC */
+			   /* 41 - NC */
+			   <42 0 &gpiod 0 0>,
+			   <43 0 &gpiod 1 0>,
+			   <44 0 &gpiog 0 0>,
+			   <45 0 &gpiog 1 0>,
+			   <46 0 &gpiog 2 0>,
+			   <47 0 &gpiog 3 0>,
+			   <48 0 &gpiog 4 0>,
+			   <49 0 &gpiog 5 0>,
+			   <50 0 &gpiog 6 0>,
+			   <51 0 &gpiog 7 0>,
+			   /* 52 - NC */
+			   /* 53 - NC */
+			   <54 0 &gpioh 2 0>,
+			   <55 0 &gpioh 3 0>,
+			   <56 0 &gpioh 4 0>,
+			   <57 0 &gpioh 5 0>,
+			   <58 0 &gpioh 6 0>,
+			   <59 0 &gpioh 7 0>,
+			   <60 0 &gpioe 10 0>,
+			   <61 0 &gpiof 2 0>,
+			   <62 0 &gpiof 11 0>,
+			   <63 0 &gpiof 12 0>,
+			   <64 0 &gpiof 15 0>,
+			   /* 65 - NC */
+			   /* 66 - NC */
+			   /* 67 - NC */
+			   <68 0 &gpioi 0 0>,
+			   <69 0 &gpioi 1 0>,
+			   <70 0 &gpioi 2 0>,
+			   <71 0 &gpioi 3 0>,
+			   <72 0 &gpioi 4 0>,
+			   <73 0 &gpioi 5 0>,
+			   <74 0 &gpioi 6 0>,
+			   <75 0 &gpioi 7 0>,
+			   <76 0 &gpioj 0 0>,
+			   <77 0 &gpioj 1 0>,
+			   <78 0 &gpioj 2 0>,
+			   <79 0 &gpioj 3 0>,
+			   <80 0 &gpioj 4 0>,
+			   <81 0 &gpioj 5 0>,
+			   <82 0 &gpioj 6 0>,
+			   <83 0 &gpioj 7 0>,
+			   <84 0 &gpioj 15 0>,
+			   <85 0 &gpioj 14 0>,
+			   <86 0 &gpioj 13 0>,
+			   <87 0 &gpioj 12 0>,
+			   <88 0 &gpioj 11 0>,
+			   <89 0 &gpioj 10 0>,
+			   <90 0 &gpioj 9 0>,
+			   <91 0 &gpioj 8 0>,
+			   <92 0 &gpioi 15 0>,
+			   <93 0 &gpioi 14 0>,
+			   <94 0 &gpioi 13 0>,
+			   <95 0 &gpioi 12 0>,
+			   <96 0 &gpioi 11 0>,
+			   <97 0 &gpioi 10 0>,
+			   <98 0 &gpioi 9 0>,
+			   <99 0 &gpioi 8 0>,
+			   <100 0 &gpioe 9 0>,
+			   <101 0 &gpiod 14 0>,
+			   <102 0 &gpiod 11 0>,
+			   <103 0 &gpiod 10 0>,
+			   <104 0 &gpiod 7 0>,
+			   <105 0 &gpiod 6 0>,
+			   <106 0 &gpiod 5 0>,
+			   <107 0 &gpiod 4 0>,
+			   <108 0 &gpioh 15 0>,
+			   <109 0 &gpioh 14 0>,
+			   <110 0 &gpioh 13 0>,
+			   <111 0 &gpioh 12 0>,
+			   <112 0 &gpioh 11 0>,
+			   <113 0 &gpioh 10 0>,
+			   <114 0 &gpioh 9 0>,
+			   <115 0 &gpioh 8 0>,
+			   <116 0 &gpiog 15 0>,
+			   <117 0 &gpiog 14 0>,
+			   <118 0 &gpiog 13 0>,
+			   <119 0 &gpiog 12 0>,
+			   <120 0 &gpiog 11 0>,
+			   <121 0 &gpiog 10 0>,
+			   <122 0 &gpiog 9 0>,
+			   <123 0 &gpiog 8 0>,
+			   <124 0 &gpioc 0 0>,
+			   <125 0 &gpiof 5 0>,
+			   <126 0 &gpiof 4 0>,
+			   <127 0 &gpiof 3 0>,
+			   <128 0 &gpiof 10 0>,
+			   <129 0 &gpioa 10 0>,
+			   /* 130 - NC */
+			   /* 131 - NC */
+			   <132 0 &gpioa 9 0>,
+			   <133 0 &gpiof 15 0>,
+			   <134 0 &gpiof 14 0>,
+			   <135 0 &gpiof 13 0>,
+			   <136 0 &gpiof 12 0>,
+			   <137 0 &gpiof 11 0>,
+			   <138 0 &gpiof 10 0>,
+			   <139 0 &gpiof 9 0>,
+			   <140 0 &gpiof 8 0>,
+			   <141 0 &gpioe 15 0>,
+			   <142 0 &gpioe 14 0>,
+			   <143 0 &gpioe 13 0>,
+			   <144 0 &gpioe 12 0>,
+			   <145 0 &gpioe 11 0>,
+			   <146 0 &gpioe 10 0>,
+			   <147 0 &gpioe 9 0>,
+			   <148 0 &gpioe 8 0>,
+			   <149 0 &gpiod 15 0>,
+			   <150 0 &gpiod 14 0>,
+			   <151 0 &gpiod 13 0>,
+			   <152 0 &gpiod 12 0>,
+			   <153 0 &gpiod 11 0>,
+			   <154 0 &gpiod 10 0>,
+			   <155 0 &gpiod 9 0>,
+			   <156 0 &gpiod 8 0>,
+			   /* 157 - NC */
+			   <158 0 &gpiof 6 0>,
+			   <159 0 &gpiof 7 0>,
+			   /* 160 - NC */
+			   /* 161 - NC */
+			   <162 0 &gpioc 13 0>,
+			   <163 0 &gpioc 12 0>,
+			   <164 0 &gpioc 11 0>,
+			   <165 0 &gpioc 10 0>,
+			   <166 0 &gpioc 9 0>,
+			   <167 0 &gpioc 8 0>;
+	};
+
+	left_connector: mcu-card-connector-2 {
+		compatible = "mikroe,mcu-card-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpioa 0 0>,
+			   /* 1 - NC */
+			   /* 2 - NC */
+			   <3 0 &gpioa 3 0>,
+			   <4 0 &gpioa 4 0>,
+			   <5 0 &gpioa 5 0>,
+			   <6 0 &gpioa 6 0>,
+			   /* 7 - NC */
+			   /* 8 - NC */
+			   /* 9 - NC */
+			   /* 10 - NC */
+			   /* 11 - NC */
+			   <12 0 &gpioa 9 0>,
+			   <13 0 &gpioa 10 0>,
+			   /* 14 - NC */
+			   /* 15 - NC */
+			   <16 0 &gpioa 13 0>,
+			   <17 0 &gpioa 14 0>,
+			   <18 0 &gpioa 15 0>,
+			   /* 19 - NC */
+			   <20 0 &gpiog 0 0>,
+			   <21 0 &gpiog 1 0>,
+			   <22 0 &gpiog 8 0>,
+			   <23 0 &gpiog 9 0>,
+			   <24 0 &gpioh 14 0>,
+			   <25 0 &gpioh 13 0>,
+			   <26 0 &gpiok 2 0>,
+			   <27 0 &gpiok 1 0>,
+			   <28 0 &gpiok 0 0>,
+			   <29 0 &gpioj 0 0>,
+			   <30 0 &gpioj 1 0>,
+			   <31 0 &gpioj 2 0>,
+			   <32 0 &gpioj 3 0>,
+			   <33 0 &gpioj 4 0>,
+			   <34 0 &gpioj 5 0>,
+			   <35 0 &gpioj 6 0>,
+			   <36 0 &gpioj 7 0>,
+			   <37 0 &gpioj 8 0>,
+			   <38 0 &gpioj 9 0>,
+			   <39 0 &gpioj 10 0>,
+			   <40 0 &gpioj 11 0>,
+			   <41 0 &gpioj 12 0>,
+			   <42 0 &gpioj 13 0>,
+			   <43 0 &gpioj 14 0>,
+			   <44 0 &gpioj 15 0>,
+			   /* 45 - NC */
+			   /* 46 - NC */
+			   /* 47 - NC */
+			   /* 48 - NC */
+			   /* 49 - NC */
+			   /* 50 - NC */
+			   /* 51 - NC */
+			   /* 52 - NC */
+			   <53 0 &gpiog 2 0>,
+			   <54 0 &gpiog 3 0>,
+			   <55 0 &gpioh 12 0>,
+			   <56 0 &gpioh 9 0>,
+			   <57 0 &gpioh 7 0>,
+			   <58 0 &gpioh 8 0>,
+			   <59 0 &gpioh 11 0>,
+			   <60 0 &gpioh 10 0>,
+			   <61 0 &gpiog 4 0>,
+			   <62 0 &gpioa 0 0>,
+			   <63 0 &gpioa 3 0>,
+			   /* 64 - NC */
+			   /* 65 - NC */
+			   /* 66 - NC */
+			   /* 67 - NC */
+			   <68 0 &gpiob 0 0>,
+			   /* 69 - NC */
+			   <70 0 &gpiob 2 0>,
+			   <71 0 &gpiob 3 0>,
+			   <72 0 &gpiob 4 0>,
+			   <73 0 &gpiob 5 0>,
+			   <74 0 &gpiob 6 0>,
+			   <75 0 &gpiob 7 0>,
+			   <76 0 &gpiob 8 0>,
+			   <77 0 &gpiob 9 0>,
+			   /* 78 - NC */
+			   /* 79 - NC */
+			   /* 80 - NC */
+			   /* 81 - NC */
+			   <82 0 &gpiob 14 0>,
+			   <83 0 &gpiob 15 0>,
+			   <84 0 &gpioh 5 0>,
+			   <85 0 &gpioh 4 0>,
+			   <86 0 &gpioe 8 0>,
+			   <87 0 &gpioe 7 0>,
+			   <88 0 &gpiof 14 0>,
+			   <89 0 &gpiod 12 0>,
+			   <90 0 &gpioe 14 0>,
+			   <91 0 &gpioe 13 0>,
+			   <92 0 &gpioe 12 0>,
+			   <93 0 &gpioe 11 0>,
+			   <94 0 &gpiof 13 0>,
+			   <95 0 &gpioa 6 0>,
+			   <96 0 &gpioh 5 0>,
+			   <97 0 &gpioh 4 0>,
+			   <98 0 &gpiod 8 0>,
+			   <99 0 &gpiod 9 0>,
+			   <100 0 &gpiog 5 0>,
+			   <101 0 &gpiod 15 0>,
+			   <102 0 &gpioe 14 0>,
+			   <103 0 &gpioe 13 0>,
+			   <104 0 &gpioe 12 0>,
+			   <105 0 &gpioe 15 0>,
+			   <106 0 &gpiod 13 0>,
+			   <107 0 &gpioa 5 0>,
+			   <108 0 &gpiob 7 0>,
+			   <109 0 &gpiob 6 0>,
+			   <110 0 &gpioc 6 0>,
+			   <111 0 &gpioc 7 0>,
+			   <112 0 &gpiog 6 0>,
+			   <113 0 &gpioc 8 0>,
+			   <114 0 &gpioi 3 0>,
+			   <115 0 &gpioi 2 0>,
+			   <116 0 &gpioi 1 0>,
+			   <117 0 &gpioh 15 0>,
+			   <118 0 &gpiog 7 0>,
+			   <119 0 &gpiob 0 0>,
+			   <120 0 &gpiob 7 0>,
+			   <121 0 &gpiob 6 0>,
+			   <122 0 &gpioc 10 0>,
+			   <123 0 &gpioc 11 0>,
+			   <124 0 &gpioi 9 0>,
+			   <125 0 &gpiob 14 0>,
+			   <126 0 &gpioi 3 0>,
+			   <127 0 &gpioi 2 0>,
+			   <128 0 &gpioi 1 0>,
+			   <129 0 &gpioi 0 0>,
+			   <130 0 &gpiob 15 0>,
+			   <131 0 &gpiof 8 0>,
+			   <132 0 &gpiof 0 0>,
+			   <133 0 &gpiof 1 0>,
+			   <134 0 &gpioe 1 0>,
+			   <135 0 &gpioe 0 0>,
+			   <136 0 &gpiog 11 0>,
+			   <137 0 &gpioi 5 0>,
+			   <138 0 &gpiog 14 0>,
+			   <139 0 &gpiog 12 0>,
+			   <140 0 &gpiog 13 0>,
+			   <141 0 &gpiob 9 0>,
+			   <142 0 &gpiog 15 0>,
+			   <143 0 &gpiof 9 0>,
+			   <144 0 &gpiod 3 0>,
+			   <145 0 &gpiod 2 0>,
+			   <146 0 &gpioc 13 0>,
+			   <147 0 &gpioc 12 0>,
+			   <148 0 &gpioc 9 0>,
+			   <149 0 &gpioc 3 0>,
+			   <150 0 &gpioc 2 0>,
+			   <151 0 &gpiob 8 0>,
+			   <152 0 &gpiob 5 0>,
+			   <153 0 &gpiob 4 0>,
+			   /* 154 - NC */
+			   /* 155 - NC */
+			   /* 156 - NC */
+			   <157 0 &gpioe 6 0>,
+			   <158 0 &gpioe 5 0>,
+			   <159 0 &gpioe 4 0>,
+			   <160 0 &gpioe 3 0>,
+			   <161 0 &gpioe 2 0>,
+			   /* 162 - NC */
+			   <163 0 &gpioa 15 0>,
+			   <164 0 &gpiob 3 0>,
+			   <165 0 &gpioa 14 0>,
+			   <166 0 &gpioa 13 0>;
+		/* 167 - NC */
+	};
+};
+
+/*
+ * UNI Clicker USB power switch (right_connector pin 127) and USB ID
+ * (pin 128), driven high for USB device mode.
+ */
+&gpiof {
+	usb-psw-hog {
+		gpio-hog;
+		gpios = <3 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "usb-psw";
+	};
+
+	usb-id-hog {
+		gpio-hog;
+		gpios = <10 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "usb-id";
+	};
+};
