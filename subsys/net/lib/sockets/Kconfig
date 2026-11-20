@@ -194,6 +194,7 @@ config NET_SOCKETS_ENABLE_DTLS
 	depends on NET_SOCKETS_SOCKOPT_TLS
 	select MBEDTLS_SSL_PROTO_TLS1_2 if NET_NATIVE
 	select MBEDTLS_SSL_PROTO_DTLS if NET_NATIVE
+	select ZVFS_POLL_EXTRA_EVENT if MBEDTLS_SSL_SRV_C
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.
 

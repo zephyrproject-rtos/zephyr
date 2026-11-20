@@ -604,6 +604,12 @@ Networking
   :kconfig:option:`CONFIG_NET_SOCKETS_DNS_PREFER_IPV4` to keep IPv4 first, for example with
   offloaded network interfaces, where reachability cannot be determined.
 
+* With :kconfig:option:`CONFIG_NET_SOCKETS_ENABLE_DTLS` and
+  :kconfig:option:`CONFIG_MBEDTLS_SSL_SRV_C` enabled, :c:func:`zsock_poll` now has room for two
+  ``struct k_poll_event`` entries per descriptor, so that a DTLS server socket can take a second
+  one. Each thread that calls it or :c:func:`zsock_select` needs
+  :kconfig:option:`CONFIG_ZVFS_POLL_MAX` times ``sizeof(struct k_poll_event)`` more stack.
+
 * Network interface driver APIs are now device API classes. Out-of-tree network drivers must define
   their API instances with :c:macro:`DEVICE_API` and use the renamed structs:
 
