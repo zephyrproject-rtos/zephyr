@@ -3,8 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief ITE IT8xxx2-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_it8xxx2
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ITE_IT8XXX2_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ITE_IT8XXX2_GPIO_H_
+
+/**
+ * @defgroup gpio_interface_it8xxx2 ITE IT8xxx2-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ * @{
+ */
 
 /**
  * @name GPIO pin voltage flags
@@ -28,6 +41,8 @@
 #define IT8XXX2_GPIO_VOLTAGE_3P3	(2U << IT8XXX2_GPIO_VOLTAGE_POS)
 /** Set pin voltage level at 5.0 V */
 #define IT8XXX2_GPIO_VOLTAGE_5P0	(3U << IT8XXX2_GPIO_VOLTAGE_POS)
+
+/** @} */
 
 /** @} */
 

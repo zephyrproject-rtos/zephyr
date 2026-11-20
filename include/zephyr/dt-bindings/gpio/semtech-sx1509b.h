@@ -3,8 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Semtech SX1509B-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_sx1509b
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_SEMTECH_SX1509B_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_SEMTECH_SX1509B_H_
+
+/**
+ * @defgroup gpio_interface_sx1509b SX1509B-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ * @{
+ */
 
 /**
  * @brief Enable GPIO pin debounce.
@@ -14,5 +27,7 @@
  * controllers.
  */
 #define SX1509B_GPIO_DEBOUNCE (1U << 8)
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_SEMTECH_SX1509B_H_ */

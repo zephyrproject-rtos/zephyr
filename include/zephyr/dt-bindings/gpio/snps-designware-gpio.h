@@ -3,8 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Synopsys DesignWare-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_dw
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_SNPS_DESIGNWARE_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_SNPS_DESIGNWARE_GPIO_H_
+
+/**
+ * @defgroup gpio_interface_dw DesignWare-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ * @{
+ */
 
 /**
  * @brief Enable GPIO pin debounce.
@@ -22,5 +35,7 @@
  * supported).
  */
 #define DW_GPIO_HW_MODE (1U << 9)
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_SNPS_DESIGNWARE_GPIO_H_ */
