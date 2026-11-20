@@ -157,7 +157,7 @@ static int rv32m1_lpuart_irq_tx_ready(const struct device *dev)
 static void rv32m1_lpuart_irq_rx_enable(const struct device *dev)
 {
 	const struct rv32m1_lpuart_config *config = dev->config;
-	uint32_t mask = kLPUART_RxDataRegFullInterruptEnable;
+	uint32_t mask = kLPUART_RxDataRegFullInterruptEnable | kLPUART_RxOverrunInterruptEnable;
 
 	LPUART_EnableInterrupts(config->base, mask);
 }
@@ -165,7 +165,7 @@ static void rv32m1_lpuart_irq_rx_enable(const struct device *dev)
 static void rv32m1_lpuart_irq_rx_disable(const struct device *dev)
 {
 	const struct rv32m1_lpuart_config *config = dev->config;
-	uint32_t mask = kLPUART_RxDataRegFullInterruptEnable;
+	uint32_t mask = kLPUART_RxDataRegFullInterruptEnable | kLPUART_RxOverrunInterruptEnable;
 
 	LPUART_DisableInterrupts(config->base, mask);
 }
@@ -225,10 +225,19 @@ static void rv32m1_lpuart_irq_callback_set(const struct device *dev,
 
 static void rv32m1_lpuart_isr(const struct device *dev)
 {
+	const struct rv32m1_lpuart_config *config = dev->config;
 	struct rv32m1_lpuart_data *data = dev->data;
+	uint32_t flags = LPUART_GetStatusFlags(config->base);
 
 	if (data->callback) {
 		data->callback(dev, data->cb_data);
+	}
+
+	/* The receiver stores no data while OR is set. Clear it after the
+	 * callback so that uart_err_check() can still report the overrun.
+	 */
+	if ((flags & kLPUART_RxOverrunFlag) != 0U) {
+		LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
