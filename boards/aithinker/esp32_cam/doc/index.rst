@@ -12,13 +12,18 @@ ESP32-CAM features the following components:
 
 - ESP32S module
 - 8MB PSRAM
-- 24-pin FPC connector (for OV2640 Sensor)
+- 24-pin FPC camera connector
 - MicroSD card slot
 - Flash LED
 
 .. note::
 
    ESP32's GPIO4 on the ESP32 is shared between the MicroSD data pin and the onboard flash LED.
+
+.. note::
+
+   The board devicetree describes a module fitted with a GC2145 sensor. Modules with an OV2640
+   need the ``gc2145`` node replaced by an :dtcompatible:`ovti,ov2640` one.
 
 .. include:: ../../../espressif/common/soc-esp32-features.rst
    :start-after: espressif-soc-esp32-features
