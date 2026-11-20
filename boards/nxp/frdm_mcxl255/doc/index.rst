@@ -179,6 +179,59 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v4.3.0-2208-gcf34f44c1e18 ***
    Hello World! frdm_mcxl255/mcxl255/cpu0
 
+Flash Access Control
+********************
+
+The MCX L255 SoC uses a Memory Block Checker (MBC) unit to control access
+permissions to internal Flash. The MBC configuration applied at runtime is
+derived from the ``FLASH_ACL`` fields stored in the Customer Manufacturing
+Programming Area (CMPA) of the Flash IFR region. During ROM boot the boot
+ROM reads these fields and programs the MBC accordingly before handing
+control to application code.
+
+ROM-boot vs Debug-boot
+======================
+
+When an application is flashed through a debug probe (e.g. MCU-Link or
+J-Link) the debug session typically holds the MBC in a permissive state,
+so Flash erase and write operations succeed. However, after a hard reset
+(power-cycle or pressing the RESET button) the ROM boot reconfigures the
+MBC from the CMPA ``FLASH_ACL`` fields. If those fields restrict write or
+erase access to the Flash region where the application resides, any
+subsequent attempt to erase or program Flash will trigger a HardFault.
+
+Changing CMPA Configuration
+============================
+
+The CMPA ``FLASH_ACL`` fields can be updated with NXP's
+`MCUXpresso Secure Provisioning`_ tool. The tool provides a graphical
+interface to read, modify, and write back the CMPA page, allowing the user
+to grant the required Flash access permissions before deploying the
+application in a standalone (non-debug) scenario.
+
+Unrestricted Access Configuration
+==================================
+
+The Kconfig option :kconfig:option:`CONFIG_NXP_MCXL_FLASH_ACCESS_UNRESTRICTED`
+controls whether the SoC reset hook in ``soc/nxp/mcx/mcxl/soc.c`` programs
+the MBC to grant full read, write, and execute access to the entire internal
+Flash for all security levels.
+
+This option is enabled by default for the ``frdm_mcxl255`` board target.
+When enabled, the ROM-boot MBC restrictions described above are overridden
+early in ``soc_reset_hook()``, before any application code runs, so Flash
+erase and write operations succeed regardless of the CMPA ``FLASH_ACL``
+configuration (unless sticky bit option was used). This makes it easier
+to get started with development without having to modify the CMPA page first.
+
+Disable this option (set ``CONFIG_NXP_MCXL_FLASH_ACCESS_UNRESTRICTED=n``)
+when a higher-level component such as a custom MCUboot hook takes
+responsibility for configuring the MBC with a more restrictive policy
+suited to the production use case.
+
+.. _MCUXpresso Secure Provisioning:
+   https://www.nxp.com/design/design-center/software/development-software/mcuxpresso-software-and-tools-/mcuxpresso-secure-provisioning-tool:MCUXPRESSO-SECURE-PROVISIONING
+
 .. _MCX L Series Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-l-series-microcontrollers:MCX-L-SERIES
 
