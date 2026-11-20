@@ -1,0 +1,29 @@
+/*
+ * Copyright 2026 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	vph_pwr_comp: vph-pwr-comp {
+		compatible = "adc-comparator";
+		io-channels = <&adc0 0>;
+		output-ohms = <470000>;
+		full-ohms = <(100000 + 470000)>;
+		threshold-mv = <2400>;
+	};
+};
+
+&adc0 {
+	ref-internal-mv = <3300>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+};
