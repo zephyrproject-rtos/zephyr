@@ -316,15 +316,21 @@ static ALWAYS_INLINE bool soc_pmc_osc_is_ready_main_xtal(void)
  */
 static ALWAYS_INLINE void soc_pmc_switch_mainck_to_xtal(bool bypass, uint32_t xtal_startup_time)
 {
-	soc_pmc_osc_enable_main_xtal(xtal_startup_time);
-
-	/* Enable Main Xtal oscillator */
 	if (bypass) {
-		PMC->CKGR_MOR = (PMC->CKGR_MOR & ~CKGR_MOR_MOSCXTEN)
-			      | CKGR_MOR_KEY_PASSWD
-			      | CKGR_MOR_MOSCXTBY
-			      | CKGR_MOR_MOSCSEL;
+		/*
+		 * An external clock drives XIN, so the crystal oscillator must stay
+		 * disabled. Select the bypass first, then switch MAINCK to it.
+		 */
+		soc_pmc_osc_bypass_main_xtal();
+
+		PMC->CKGR_MOR |= CKGR_MOR_KEY_PASSWD | CKGR_MOR_MOSCSEL;
+
+		/* Wait until MAINCK runs from XIN */
+		while (!(PMC->PMC_SR & PMC_SR_MOSCSELS)) {
+		}
 	} else {
+		soc_pmc_osc_enable_main_xtal(xtal_startup_time);
+
 		PMC->CKGR_MOR = (PMC->CKGR_MOR & ~CKGR_MOR_MOSCXTBY)
 			      | CKGR_MOR_KEY_PASSWD
 			      | CKGR_MOR_MOSCXTEN
