@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/mcxa/nxp_mcxa366.dtsi>
+
+/delete-node/ &opamp1;
+/delete-node/ &opamp2;
+/delete-node/ &opamp3;
+/delete-node/ &lpcmp2;
+/delete-node/ &lpadc2;
+/delete-node/ &lpadc3;
+/delete-node/ &trng;
+
+&flash {
+	reg = <0 DT_SIZE_K(1016)>;
+	ranges = <0x0 0x0 DT_SIZE_K(1016)>;
+};
+
+&sramx {
+	reg = <0x04000000 DT_SIZE_K(16)>;
+};
