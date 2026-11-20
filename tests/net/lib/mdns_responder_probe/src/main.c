@@ -363,6 +363,53 @@ static bool packet_has_ptr_answer(struct net_pkt *pkt, const char *service, cons
 	return true;
 }
 
+static bool check_address_announce(struct net_pkt *pkt)
+{
+	struct dns_rr answer;
+	uint8_t label_len;
+	uint16_t rrclass;
+
+	if (!pkt_is_query_response(pkt)) {
+		return false;
+	}
+
+	net_pkt_cursor_init(pkt);
+	if (net_pkt_skip(pkt, NET_IPV6UDPH_LEN + sizeof(struct dns_header)) != 0) {
+		return false;
+	}
+
+	while (true) {
+		if (net_pkt_read_u8(pkt, &label_len) != 0) {
+			return false;
+		}
+		if (label_len == 0) {
+			break;
+		}
+		if ((label_len & NS_CMPRSFLGS) == NS_CMPRSFLGS) {
+			if (net_pkt_skip(pkt, DNS_POINTER_SIZE - 1) != 0) {
+				return false;
+			}
+			break;
+		}
+		if (label_len > DNS_LABEL_MAX_SIZE || net_pkt_skip(pkt, label_len) != 0) {
+			return false;
+		}
+	}
+
+	if (net_pkt_read(pkt, &answer, sizeof(answer)) != 0 ||
+	    sys_be16_to_cpu(answer.type) != DNS_RR_TYPE_AAAA) {
+		return false;
+	}
+
+	rrclass = sys_be16_to_cpu(answer.class_);
+	zassert_equal(rrclass & ~DNS_CLASS_FLUSH, DNS_CLASS_IN,
+		      "Announced AAAA record has an unexpected class");
+	zassert_true((rrclass & DNS_CLASS_FLUSH) != 0,
+		     "Announced AAAA record is missing the cache-flush bit");
+
+	return true;
+}
+
 /* Regression test for the RFC 6762 8.3 announce-completeness feature:
  * send_announce() used to only ever announce address (A/AAAA) records on
  * startup/re-announce, never a registered DNS-SD service's PTR/SRV/TXT
@@ -389,6 +436,7 @@ ZTEST(test_mdns_responder_probe, test_announce_includes_dns_sd_records)
 		.port = &svc_port,
 	};
 	bool found_dns_sd_announce = false;
+	bool found_address_announce = false;
 
 	zassert_ok(mdns_responder_set_ext_records(&record, 1),
 		   "Failed to register the external DNS-SD record");
@@ -397,18 +445,22 @@ ZTEST(test_mdns_responder_probe, test_announce_includes_dns_sd_records)
 	 * probe window: this returns as soon as the DNS-SD PTR answer shows
 	 * up, while still bounding the wait at PROBE_SEQUENCE_TIMEOUT_MS.
 	 */
-	for (int poll = 0; poll < PROBE_MAX_POLLS && !found_dns_sd_announce; poll++) {
+	for (int poll = 0; poll < PROBE_MAX_POLLS &&
+	     (!found_dns_sd_announce || !found_address_announce); poll++) {
 		k_sleep(RESPONSE_TIMEOUT);
 
 		for (size_t i = 0; i < responses_count; i++) {
+			if (!found_address_announce) {
+				found_address_announce = check_address_announce(response_pkts[i]);
+			}
 			if (packet_has_ptr_answer(response_pkts[i], service, proto, domain)) {
 				found_dns_sd_announce = true;
-				break;
 			}
 		}
 	}
 
 	zassert_true(responses_count > 0, "No announce packets were sent at all");
+	zassert_true(found_address_announce, "No AAAA announcement was sent");
 
 	zassert_true(found_dns_sd_announce,
 		     "None of the %zu announce packets included a PTR answer for the "
