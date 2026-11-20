@@ -80,16 +80,17 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 #define DMA_DW_AXI_AXPROT   (DMA_DW_AXI_AXPROT_NON_SECURE)
 
 /* Channel enable by setting ch_en and ch_en_we */
-#define CH_EN(chan)    (BIT64(8 + chan) | BIT64(chan))
+#define CH_EN_BIT(chan)    BIT64(chan)
+#define CH_EN_WE(chan)     BIT64(8 + (chan))
+#define CH_EN(chan)        (CH_EN_WE(chan) | CH_EN_BIT(chan))
 /* Channel enable by setting ch_susp and ch_susp_we */
-#define CH_SUSP(chan)  (BIT64(24 + chan) | BIT64(16 + chan))
+#define CH_SUSP_BIT(chan)  BIT64(16 + (chan))
+#define CH_SUSP_WE(chan)   BIT64(24 + (chan))
+#define CH_SUSP(chan)      (CH_SUSP_WE(chan) | CH_SUSP_BIT(chan))
 /* Channel enable by setting ch_abort and ch_abort_we */
-#define CH_ABORT(chan) (BIT64(40 + chan) | BIT64(32 + chan))
-
-/* channel susp/resume write enable pos */
-#define CH_RESUME_WE(chan) (BIT64(24) + (chan))
-/* channel resume bit pos */
-#define CH_RESUME(chan)    (BIT64(16) + (chan))
+#define CH_ABORT_BIT(chan) BIT64(32 + (chan))
+#define CH_ABORT_WE(chan)  BIT64(40 + (chan))
+#define CH_ABORT(chan)     (CH_ABORT_WE(chan) | CH_ABORT_BIT(chan))
 
 #define DMA_DW_AXI_CHAN_OFFSET(chan)             (0x100 * chan)
 
@@ -310,22 +311,20 @@ struct dma_dw_axi_dev_cfg {
  */
 static uint32_t dma_dw_axi_get_ch_status(const struct device *dev, uint32_t ch)
 {
-	uint32_t bit_status;
 	uint64_t ch_status;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
 
 	ch_status = sys_read64(reg_base + DMA_DW_AXI_CHENREG);
 
 	/* channel is active/busy in the dma transfer */
-	bit_status = ((ch_status >> ch) & 1);
-	if (bit_status) {
-		return DMA_DW_AXI_CH_ACTIVE;
-	}
+	if (ch_status & CH_EN_BIT(ch)) {
 
-	/* channel is currently suspended */
-	bit_status = ((ch_status >> (16 + ch)) & 1);
-	if (bit_status) {
-		return DMA_DW_AXI_CH_SUSPENDED;
+		/* channel is currently suspended */
+		if (ch_status & CH_SUSP_BIT(ch)) {
+			return DMA_DW_AXI_CH_SUSPENDED;
+		}
+
+		return DMA_DW_AXI_CH_ACTIVE;
 	}
 
 	/* channel is idle */
@@ -334,7 +333,7 @@ static uint32_t dma_dw_axi_get_ch_status(const struct device *dev, uint32_t ch)
 
 static bool dma_dw_axi_is_chan_busy(uintptr_t reg_base, uint32_t channel)
 {
-	return !WAIT_FOR(!((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) & (BIT(channel))),
+	return !WAIT_FOR(!((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) & (CH_EN_BIT(channel))),
 			  CONFIG_DMA_CHANNEL_STATUS_TIMEOUT, k_busy_wait(10));
 }
 
@@ -795,7 +794,7 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 	sys_write64(CH_SUSP(channel), reg_base + DMA_DW_AXI_CHENREG);
 
 	/* Try to disable the channel */
-	sys_clear_bit(reg_base + DMA_DW_AXI_CHENREG, channel);
+	sys_write64(CH_EN_WE(channel), reg_base + DMA_DW_AXI_CHENREG);
 
 	/* Bit [channel+16] is the write-enable mask for the channel-enable
 	 * bit above. Hardware only latches the write to the enable bit
@@ -846,9 +845,9 @@ static int dma_dw_axi_resume(const struct device *dev, uint32_t channel)
 
 	reg = sys_read64(reg_base + DMA_DW_AXI_CHENREG);
 	/* channel susp write enable bit has to be asserted */
-	reg |= CH_RESUME_WE(channel);
+	reg |= CH_SUSP_WE(channel);
 	/* channel susp bit must be cleared to resume a channel*/
-	reg &= ~CH_RESUME(channel);
+	reg &= ~CH_SUSP_BIT(channel);
 	/* resume a channel by writing 0: ch_susp and 1: ch_susp_we */
 	sys_write64(reg, reg_base + DMA_DW_AXI_CHENREG);
 
