@@ -415,25 +415,32 @@ static int cmd_disconnect(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
 	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
-	int ret, len = DATA_MTU, count = 1;
+	unsigned long len = DATA_MTU, count = 1;
+	int ret, err = 0;
 	struct net_buf *buf;
 
 	if (argc > 1) {
-		count = strtoul(argv[1], NULL, 10);
+		count = shell_strtoul(argv[1], 10, &err);
 	}
 
 	if (argc > 2) {
-		len = strtoul(argv[2], NULL, 10);
-		if (len > DATA_MTU) {
-			shell_print(sh, "Length exceeds TX MTU for the channel");
-			return -ENOEXEC;
-		}
+		len = shell_strtoul(argv[2], 10, &err);
+	}
+
+	if (err != 0) {
+		shell_error(sh, "Invalid parameter (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	if (len > DATA_MTU) {
+		shell_print(sh, "Length exceeds TX MTU for the channel");
+		return -ENOEXEC;
 	}
 
 	len = MIN(l2ch_chan.ch.tx.mtu, len);
 
 	while (count--) {
-		shell_print(sh, "Rem %d", count);
+		shell_print(sh, "Rem %lu", count);
 		buf = net_buf_alloc(&data_tx_pool, K_SECONDS(2));
 		if (!buf) {
 			if (l2ch_chan.ch.state != BT_L2CAP_CONNECTED) {

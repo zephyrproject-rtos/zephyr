@@ -1185,7 +1185,9 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
  *
  *  Write value in the buffer into CCC attribute.
  *
- *  @param conn Connection object.
+ *  @param conn Connection object. The configuration is stored per peer, so a
+ *              write without a connection (NULL) is rejected with
+ *              @ref BT_ATT_ERR_WRITE_NOT_PERMITTED.
  *  @param attr Attribute to read.
  *  @param buf Buffer to store the value read.
  *  @param len Buffer length.
