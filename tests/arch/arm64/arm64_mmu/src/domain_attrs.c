@@ -20,6 +20,7 @@
 /* test hooks in arch/arm64/core/mmu.c */
 extern int arm64_mmu_pte_get(struct arm_mmu_ptables *ptables, uintptr_t virt, uint64_t *desc,
 			     unsigned int *level);
+extern int arm64_mmu_nb_free_tables(void);
 
 /*
  * Arbitrary addresses well away from anything the image maps, with the
@@ -348,6 +349,104 @@ ZTEST(arm64_mmu_domain, test_thread_move_without_tables)
 
 	k_thread_abort(tid);
 	(void)k_mem_domain_deinit(&other_domain);
+}
+
+/* A level 1 block and the level 2 block just below it, see the next test */
+#define L1_BLOCK_SIZE	(1ULL << LEVEL_TO_VA_SIZE_SHIFT(1))
+#define L2_BLOCK_SIZE	(1ULL << LEVEL_TO_VA_SIZE_SHIFT(2))
+#define GB_VIRT		0x640000000ULL
+#define GB_PHYS		0x400000000ULL
+#define LOW_VIRT	(GB_VIRT - L2_BLOCK_SIZE)
+#define LOW_PHYS	0x380000000ULL
+
+/*
+ * Once a moved user thread runs on its new domain's tables, the old domain
+ * must not keep its stack reachable from EL0, even when the pool has no
+ * table left for handing the range back to the kernel's entries.
+ *
+ * The stack is made to cover a whole level 2 entry the kernel maps with a
+ * table, then a page into a level 1 block. Handing the range back shares
+ * the kernel's table for the first part, which frees one, then needs two
+ * to split the kernel's level 1 and level 2 blocks at the end of the stack,
+ * and fails with that page still private to the old domain.
+ *
+ * The thread starts out in other_domain, made after the kernel mappings so
+ * it holds the kernel's own entries for the stack and leaving it splits
+ * nothing, and is moved to test_domain and back.
+ */
+ZTEST(arm64_mmu_domain, test_thread_move_revokes_stack_without_tables)
+{
+	struct arm_mmu_ptables *from = &test_domain.arch.ptables;
+	struct arm_mmu_ptables *to = &other_domain.arch.ptables;
+	uintptr_t stack = LOW_VIRT;
+	size_t stack_size = L2_BLOCK_SIZE + CONFIG_MMU_PAGE_SIZE;
+	uintptr_t last_page = GB_VIRT;
+	struct k_mem_partition part = {
+		.start = stack,
+		.size = stack_size,
+		.attr = K_MEM_PARTITION_P_RW_U_RW,
+	};
+	struct _thread_stack_info saved;
+	unsigned int level;
+	uint64_t desc;
+	int hogged;
+	k_tid_t tid;
+
+	zassert_equal(arm64_mmu_pte_get(NULL, LOW_VIRT, &desc, &level), -ENOENT);
+	zassert_equal(arm64_mmu_pte_get(NULL, GB_VIRT, &desc, &level), -ENOENT);
+
+	/* a level 3 table under the first part, mapped in two goes */
+	zassert_ok(arch_mem_map((void *)LOW_VIRT, LOW_PHYS, L2_BLOCK_SIZE - CONFIG_MMU_PAGE_SIZE,
+				K_MEM_PERM_RW));
+	zassert_ok(arch_mem_map((void *)(GB_VIRT - CONFIG_MMU_PAGE_SIZE),
+				LOW_PHYS + L2_BLOCK_SIZE - CONFIG_MMU_PAGE_SIZE,
+				CONFIG_MMU_PAGE_SIZE, K_MEM_PERM_RW));
+	zassert_ok(arm64_mmu_pte_get(NULL, LOW_VIRT, &desc, &level));
+	zassert_equal(level, 3U, "first part mapped at level %u", level);
+
+	/* a level 1 block under the last page */
+	zassert_ok(arch_mem_map((void *)GB_VIRT, GB_PHYS, L1_BLOCK_SIZE, K_MEM_PERM_RW));
+	zassert_ok(arm64_mmu_pte_get(NULL, GB_VIRT, &desc, &level));
+	zassert_equal(level, 1U, "last page mapped at level %u", level);
+
+	/* a new thread joins the domain of the thread creating it */
+	zassert_ok(k_mem_domain_init(&other_domain, 0, NULL));
+	zassert_ok(k_mem_domain_add_thread(&other_domain, k_current_get()));
+	tid = k_thread_create(&mover, mover_stack, K_THREAD_STACK_SIZEOF(mover_stack),
+			      mover_entry, NULL, NULL, NULL, K_PRIO_PREEMPT(1), K_USER,
+			      K_FOREVER);
+	zassert_ok(k_mem_domain_add_thread(&k_mem_domain_default, k_current_get()));
+
+	saved = tid->stack_info;
+	tid->stack_info.start = stack;
+	tid->stack_info.size = stack_size;
+
+	zassert_ok(k_mem_domain_add_thread(&test_domain, tid));
+	zassert_true(el0_can_reach(from, stack), "stack not mapped in test_domain");
+	zassert_true(el0_can_reach(from, last_page), "stack end not mapped in test_domain");
+	zassert_ok(arm64_mmu_pte_get(NULL, GB_VIRT, &desc, &level));
+	zassert_equal(level, 1U, "kernel block split by the first move");
+
+	/* map the stack in other_domain up front so the move needs no table there */
+	zassert_ok(k_mem_domain_add_partition(&other_domain, &part));
+
+	hogged = hog_tables();
+	zassert_equal(arm64_mmu_nb_free_tables(), 0, "table pool not empty");
+
+	zassert_ok(k_mem_domain_add_thread(&other_domain, tid));
+	zassert_equal_ptr(tid->arch.ptables, to, "page tables not switched");
+	zassert_true(el0_can_reach(to, last_page), "stack end not mapped in other_domain");
+	zassert_false(el0_can_reach(from, stack), "stack still reachable in test_domain");
+	zassert_false(el0_can_reach(from, last_page), "stack end still reachable in test_domain");
+
+	release_tables(hogged);
+
+	tid->stack_info = saved;
+	k_thread_abort(tid);
+	(void)k_mem_domain_remove_partition(&other_domain, &part);
+	(void)k_mem_domain_deinit(&other_domain);
+	(void)arch_mem_unmap((void *)GB_VIRT, L1_BLOCK_SIZE);
+	(void)arch_mem_unmap((void *)LOW_VIRT, L2_BLOCK_SIZE);
 }
 
 ZTEST_SUITE(arm64_mmu_domain, NULL, NULL, before, after, NULL);
