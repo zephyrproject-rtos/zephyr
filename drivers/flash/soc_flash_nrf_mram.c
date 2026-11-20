@@ -50,6 +50,147 @@ struct nrf_mram_data_t {
 	struct k_mutex nrf_mram_mutex;
 };
 
+
+#if defined(CONFIG_NRF_MRAM_USE_MUTEX_HW)
+
+/* Maps an MRAM bank address range to the hardware mutex that serializes it. */
+struct mram_bank_mutex {
+	uint32_t start;
+	uint32_t end;
+	NRF_MUTEX_Type *reg;
+	uint8_t index;
+};
+
+/* Only "nordic,mram-bank" children that define "nordic,mutexes" are mapped;
+ * banks without it (and any other child) are left unlocked.
+ */
+#define MRAM_BANK_HAS_MUTEX(node_id)                                                               \
+	UTIL_AND(DT_NODE_HAS_COMPAT(node_id, nordic_mram_bank),                                    \
+		 DT_NODE_HAS_PROP(node_id, nordic_mutexes))
+
+#define MRAM_BANK_MUTEX_ENTRY(node_id)                                                             \
+	COND_CODE_1(MRAM_BANK_HAS_MUTEX(node_id),                                                  \
+		    ({                                                                             \
+			     .start = DT_REG_ADDR(node_id),                                        \
+			     .end = DT_REG_ADDR(node_id) + DT_REG_SIZE(node_id),                   \
+			     .reg = (NRF_MUTEX_Type *)DT_REG_ADDR(                                 \
+				     DT_PHANDLE_BY_IDX(node_id, nordic_mutexes, 0)),               \
+			     .index = DT_PHA_BY_IDX(node_id, nordic_mutexes, 0, index),            \
+		     },),                                                                          \
+		    ())
+
+static const struct mram_bank_mutex mram_bank_mutexes[] = {
+	DT_FOREACH_CHILD(MRAM_NVM_CHILD_NODE, MRAM_BANK_MUTEX_ENTRY)
+};
+
+/* Verify that each claimed mutex index is within its MUTEX instance's range. */
+#define MRAM_BANK_MUTEX_RANGE_ASSERT(node_id)                                                      \
+	COND_CODE_1(MRAM_BANK_HAS_MUTEX(node_id),                                                  \
+		    (BUILD_ASSERT(DT_PHA_BY_IDX(node_id, nordic_mutexes, 0, index) <               \
+					  DT_PROP(DT_PHANDLE_BY_IDX(node_id, nordic_mutexes, 0),   \
+						  nordic_mutex_count),                             \
+				  "nordic,mram-bank: mutex index out of range for MUTEX");),       \
+		    ())
+
+DT_FOREACH_CHILD(MRAM_NVM_CHILD_NODE, MRAM_BANK_MUTEX_RANGE_ASSERT)
+
+/* Each (MUTEX instance, index) pair may be claimed by only one bank. Every claim defines
+ * an enumerator named after the pair, so a second claim of the same mutex is a redeclaration
+ * error at build time.
+ */
+#define MRAM_BANK_MUTEX_CLAIM(node_id)                                                             \
+	COND_CODE_1(MRAM_BANK_HAS_MUTEX(node_id),                                                  \
+		    (enum {                                                                        \
+			    UTIL_CAT(UTIL_CAT(mram_mutex_claimed_twice_ord_,                       \
+					      DT_DEP_ORD(DT_PHANDLE_BY_IDX(node_id,                \
+									   nordic_mutexes, 0))),   \
+				     UTIL_CAT(_index_,                                             \
+					      DT_PHA_BY_IDX(node_id, nordic_mutexes, 0, index)))   \
+		    };),                                                                           \
+		    ())
+
+DT_FOREACH_CHILD(MRAM_NVM_CHILD_NODE, MRAM_BANK_MUTEX_CLAIM)
+
+static inline bool hw_mutex_lock(NRF_MUTEX_Type *p_reg, uint8_t mutex)
+{
+	if (p_reg->MUTEX[mutex] != MUTEX_MUTEX_MUTEX_Unlocked) {
+		return false;
+	}
+
+	/* Keep the MRAM accesses after the point where the mutex was acquired. */
+	barrier_dmem_fence_full();
+
+	return true;
+}
+
+static inline void hw_mutex_unlock(NRF_MUTEX_Type *p_reg, uint8_t mutex)
+{
+	/* Make the MRAM accesses visible before the mutex is released. */
+	barrier_dmem_fence_full();
+
+	p_reg->MUTEX[mutex] = MUTEX_MUTEX_MUTEX_Unlocked;
+}
+
+static const struct mram_bank_mutex *nrf_mram_bank_mutex(uint32_t addr)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(mram_bank_mutexes); i++) {
+		if (addr >= mram_bank_mutexes[i].start && addr < mram_bank_mutexes[i].end) {
+			return &mram_bank_mutexes[i];
+		}
+	}
+
+	return NULL;
+}
+
+static inline int nrf_mram_hw_lock(uint32_t addr)
+{
+	const struct mram_bank_mutex *bank = nrf_mram_bank_mutex(addr);
+
+	if (bank == NULL) {
+		return 0;
+	}
+
+	if (!WAIT_FOR(hw_mutex_lock(bank->reg, bank->index),
+		      CONFIG_NRF_MRAM_MUTEX_HW_TIMEOUT_US, NULL)) {
+		LOG_ERR("MRAM hardware mutex timeout at 0x%x", addr);
+		return -ETIMEDOUT;
+	}
+
+	/* A preempted holder would make the other domains and our own READY
+	 * polling hit their timeouts, so keep the section non-preemptible.
+	 */
+	k_sched_lock();
+
+	return 0;
+}
+
+static inline void nrf_mram_hw_unlock(uint32_t addr)
+{
+	const struct mram_bank_mutex *bank = nrf_mram_bank_mutex(addr);
+
+	if (bank == NULL) {
+		return;
+	}
+
+	hw_mutex_unlock(bank->reg, bank->index);
+	k_sched_unlock();
+}
+
+#else
+
+static inline int nrf_mram_hw_lock(uint32_t addr)
+{
+	ARG_UNUSED(addr);
+
+	return 0;
+}
+
+static inline void nrf_mram_hw_unlock(uint32_t addr)
+{
+	ARG_UNUSED(addr);
+}
+#endif /* CONFIG_NRF_MRAM_USE_MUTEX_HW */
+
 /**
  * Safely probes one MRAM word to detect a BusFault.
  *
@@ -271,12 +412,17 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 	}
 
 	for (uint32_t i = 0; i < (len / MRAM_WORD_SIZE); i++) {
+		ret = nrf_mram_hw_lock(addr + (i * MRAM_WORD_SIZE));
+		if (ret) {
+			goto latency_release;
+		}
 		while (!nrf_mram_ready(addr + (i * MRAM_WORD_SIZE), ironside_se_ver)) {
 			/* Wait until MRAM controller is ready */
 		}
 		ret = nrf_mram_write_and_verify_word(
 			addr + (i * MRAM_WORD_SIZE),
 			(void *)((uintptr_t)data + (i * MRAM_WORD_SIZE)), MRAM_WORD_SIZE);
+		nrf_mram_hw_unlock(addr + (i * MRAM_WORD_SIZE));
 		if (ret) {
 			goto latency_release;
 		}
@@ -330,10 +476,15 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 	}
 
 	for (uint32_t i = 0; i < (size / MRAM_WORD_SIZE); i++) {
+		ret = nrf_mram_hw_lock(addr + (i * MRAM_WORD_SIZE));
+		if (ret) {
+			goto latency_release;
+		}
 		while (!nrf_mram_ready(addr + (i * MRAM_WORD_SIZE), ironside_se_ver)) {
 			/* Wait until MRAM controller is ready */
 		}
 		ret = nrf_mram_erase_and_verify_word(addr + (i * MRAM_WORD_SIZE), MRAM_WORD_SIZE);
+		nrf_mram_hw_unlock(addr + (i * MRAM_WORD_SIZE));
 		if (ret) {
 			goto latency_release;
 		}

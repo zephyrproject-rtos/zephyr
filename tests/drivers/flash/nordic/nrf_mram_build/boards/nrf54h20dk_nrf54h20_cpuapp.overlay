@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The nRF54H20 and nRF9280 devicetrees have no MRAM hardware mutex description yet;
+ * add one so that the driver's mutex locking can be built on these SoCs.
+ */
+&mram10 {
+	compatible = "nordic,mram-bank";
+	nordic,mutexes = <&mutex120 31>;
+};
+
+&mram11 {
+	compatible = "nordic,mram-bank";
+	nordic,mutexes = <&mutex120 30>;
+};
+
+/ {
+	soc {
+		mutex120: mutex@4f8d2000 {
+			compatible = "nordic,nrf-mutex";
+			reg = <0x4f8d2000 0x480>;
+			#mutex-cells = <1>;
+			nordic,mutex-count = <32>;
+			status = "okay";
+		};
+	};
+};
