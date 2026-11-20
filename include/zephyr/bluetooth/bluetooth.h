@@ -60,7 +60,7 @@ extern "C" {
  *
  * @defgroup bt_gap Generic Access Profile (GAP)
  * @since 1.0
- * @version 1.1.2
+ * @version 1.1.3
  * @ingroup bluetooth
  * @{
  */
@@ -386,6 +386,10 @@ int bt_enable(bt_ready_cb_t cb);
  * @retval -EALREADY Bluetooth is already disabled, or being disabled.
  * @retval -EAGAIN Bluetooth is still being enabled, which with @kconfig{CONFIG_BT_SETTINGS}
  *                 includes loading the Bluetooth settings; retry once bt_is_ready() returns true.
+ * @retval -EHOSTDOWN The Controller could not be reset. Bluetooth is disabled all the same: the
+ *                    HCI transport is closed, and bt_enable() resets the Controller again. Until
+ *                    then the Controller may go on with what it was doing, unless the HCI driver
+ *                    stops it when it closes the transport.
  */
 int bt_disable(void);
 
