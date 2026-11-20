@@ -62,11 +62,9 @@ int ocpp_boot_notification(ocpp_session_handle_t hndl,
 	struct ocpp_info *ctx = sh->ctx;
 	struct ocpp_upstream_info *ui = &ctx->ui;
 	char *buf = ctx->pdu_buf;
-	ocpp_msg_fp_t fn;
 	struct ocpp_wamp_rpc_msg rmsg = {0};
 
-	fn = ctx->cfn[PDU_BOOTNOTIFICATION];
-	ret = fn(buf, sizeof(ctx->pdu_buf), sh, cpi);
+	ret = ctx->cfn->bootnotif(buf, sizeof(ctx->pdu_buf), sh, cpi);
 	if (ret < 0) {
 		return ret;
 	}
@@ -93,7 +91,6 @@ int ocpp_get_configuration(enum ocpp_key key, struct ocpp_info *ctx, char *uid)
 	char *buf = ctx->pdu_buf;
 	struct ocpp_wamp_rpc_msg rmsg = {0};
 	union ocpp_keyval *kval;
-	ocpp_msg_fp_t fn;
 	bool is_rw;
 	enum ocpp_key_type ktype;
 
@@ -112,8 +109,7 @@ int ocpp_get_configuration(enum ocpp_key key, struct ocpp_info *ctx, char *uid)
 		sval = kval->str;
 	}
 
-	fn = ctx->cfn[PDU_GET_CONFIGURATION];
-	fn(buf, sizeof(ctx->pdu_buf), ocpp_get_key_literal(key), sval, is_rw, uid);
+	ctx->cfn->getconfig(buf, sizeof(ctx->pdu_buf), ocpp_get_key_literal(key), sval, is_rw, uid);
 
 	rmsg.ctx = ctx;
 	rmsg.msg = buf;
@@ -130,7 +126,6 @@ int ocpp_change_configuration(char *skey, struct ocpp_info *ctx,
 	char *buf = ctx->pdu_buf;
 	struct ocpp_wamp_rpc_msg rmsg = {0};
 	union ocpp_keyval kval;
-	ocpp_msg_fp_t fn;
 	enum ocpp_key key;
 	const char *res = "Accepted";
 
@@ -171,8 +166,7 @@ int ocpp_change_configuration(char *skey, struct ocpp_info *ctx,
 		}
 	}
 
-	fn = ctx->cfn[PDU_CHANGE_CONFIGURATION];
-	fn(buf, sizeof(ctx->pdu_buf), res, uid);
+	ctx->cfn->status_resp(buf, sizeof(ctx->pdu_buf), res, uid);
 
 	rmsg.ctx = ctx;
 	rmsg.msg = buf;
@@ -194,7 +188,6 @@ int ocpp_authorize(ocpp_session_handle_t hndl, char *idtag,
 	char buf[OCPP_USER_REQ_PDU_BUF];
 	union ocpp_keyval *val;
 	struct ocpp_wamp_rpc_msg rmsg = {0};
-	ocpp_msg_fp_t fn;
 
 	if (idtag == NULL || status == NULL || !ocpp_session_is_valid(sh) ||
 	    strlen(idtag) > CISTR20) {
@@ -215,8 +208,7 @@ int ocpp_authorize(ocpp_session_handle_t hndl, char *idtag,
 
 	strncpy(sh->idtag, idtag, sizeof(sh->idtag));
 	ui = &ctx->ui;
-	fn = ctx->cfn[PDU_AUTHORIZE];
-	ret = fn(buf, sizeof(buf), sh);
+	ret = ctx->cfn->authorize(buf, sizeof(buf), sh);
 	if (ret < 0) {
 		return ret;
 	}
@@ -247,12 +239,10 @@ int ocpp_heartbeat(ocpp_session_handle_t hndl)
 	struct ocpp_session *sh = (struct ocpp_session *)hndl;
 	struct ocpp_info *ctx = sh->ctx;
 	struct ocpp_upstream_info *ui = &ctx->ui;
-	ocpp_msg_fp_t fn;
 	struct ocpp_wamp_rpc_msg rmsg = {0};
 	char *buf = ctx->pdu_buf;
 
-	fn = ctx->cfn[PDU_HEARTBEAT];
-	ret = fn(buf, sizeof(ctx->pdu_buf), sh);
+	ret = ctx->cfn->heartbeat(buf, sizeof(ctx->pdu_buf), sh);
 	if (ret < 0) {
 		return ret;
 	}
@@ -281,7 +271,6 @@ int ocpp_start_transaction(ocpp_session_handle_t hndl,
 	struct ocpp_upstream_info *ui;
 	char buf[OCPP_USER_REQ_PDU_BUF];
 	struct ocpp_wamp_rpc_msg rmsg = {0};
-	ocpp_msg_fp_t fn;
 	char utc[CISTR25] = {0};
 	atomic_val_t ref;
 	int ret;
@@ -303,9 +292,8 @@ int ocpp_start_transaction(ocpp_session_handle_t hndl,
 		return 0;
 	}
 
-	fn = ctx->cfn[PDU_START_TRANSACTION];
 	ocpp_get_utc_now(utc);
-	ret = fn(buf, sizeof(buf), sh, meter_val, -1, utc);
+	ret = ctx->cfn->start_txn(buf, sizeof(buf), sh, meter_val, -1, utc);
 	if (ret < 0) {
 		return ret;
 	}
@@ -353,7 +341,6 @@ int ocpp_stop_transaction(ocpp_session_handle_t hndl,
 	char buf[OCPP_USER_REQ_PDU_BUF];
 	char utc[CISTR25] = {0};
 	struct ocpp_wamp_rpc_msg rmsg = {0};
-	ocpp_msg_fp_t fn;
 	atomic_val_t ref;
 	int ret;
 
@@ -384,9 +371,8 @@ int ocpp_stop_transaction(ocpp_session_handle_t hndl,
 		return 0;
 	}
 
-	fn = ctx->cfn[PDU_STOP_TRANSACTION];
 	ocpp_get_utc_now(utc);
-	ret = fn(buf, sizeof(buf), sh, meter_val, NULL, utc);
+	ret = ctx->cfn->stop_txn(buf, sizeof(buf), sh, meter_val, NULL, utc);
 	if (ret < 0) {
 		return ret;
 	}
@@ -445,7 +431,6 @@ int ocpp_status_notification(ocpp_session_handle_t hndl,
 	char buf[OCPP_USER_REQ_PDU_BUF];
 	char utc[CISTR25] = {0};
 	struct ocpp_wamp_rpc_msg rmsg = {0};
-	ocpp_msg_fp_t fn;
 	int ret;
 
 	if (!ocpp_session_is_valid(sh) || conn_id < 0 ||
@@ -462,10 +447,9 @@ int ocpp_status_notification(ocpp_session_handle_t hndl,
 		return -EAGAIN;
 	}
 
-	fn = ctx->cfn[PDU_STATUS_NOTIFICATION];
 	ocpp_get_utc_now(utc);
-	ret = fn(buf, sizeof(buf), sh, conn_id, cp_status_str[status],
-		 cp_error_str[error], utc);
+	ret = ctx->cfn->status_notif(buf, sizeof(buf), sh, conn_id, cp_status_str[status],
+				     cp_error_str[error], utc);
 	if (ret < 0) {
 		return ret;
 	}
@@ -488,7 +472,6 @@ int ocpp_remote_start_transaction(struct ocpp_info *ctx,
 	char *buf = ctx->pdu_buf;
 	const char *resp = "Rejected";
 	struct ocpp_wamp_rpc_msg rmsg = {0};
-	ocpp_msg_fp_t fn;
 	int ret;
 
 	ret = k_msgq_put(ctx->msgq, msg, K_MSEC(100));
@@ -496,8 +479,7 @@ int ocpp_remote_start_transaction(struct ocpp_info *ctx,
 		resp = "Accepted";
 	}
 
-	fn = ctx->cfn[PDU_REMOTE_START_TRANSACTION];
-	fn(buf, sizeof(ctx->pdu_buf), resp, uid);
+	ctx->cfn->status_resp(buf, sizeof(ctx->pdu_buf), resp, uid);
 
 	rmsg.ctx = ctx;
 	rmsg.msg = buf;
@@ -514,7 +496,6 @@ int ocpp_remote_stop_transaction(struct ocpp_info *ctx,
 	char *buf = ctx->pdu_buf;
 	const char *resp = "Rejected";
 	struct ocpp_wamp_rpc_msg rmsg = {0};
-	ocpp_msg_fp_t fn;
 	sys_snode_t *node;
 	struct ocpp_session *sh;
 	bool is_found = false;
@@ -539,8 +520,7 @@ int ocpp_remote_stop_transaction(struct ocpp_info *ctx,
 		}
 	}
 
-	fn = ctx->cfn[PDU_REMOTE_STOP_TRANSACTION];
-	fn(buf, sizeof(ctx->pdu_buf), resp, uid);
+	ctx->cfn->status_resp(buf, sizeof(ctx->pdu_buf), resp, uid);
 
 	rmsg.ctx = ctx;
 	rmsg.msg = buf;
@@ -557,7 +537,6 @@ int ocpp_unlock_connector(struct ocpp_info *ctx,
 	char *buf = ctx->pdu_buf;
 	char *resp = "UnlockFailed";
 	struct ocpp_wamp_rpc_msg rmsg = {0};
-	ocpp_msg_fp_t fn;
 	int ret;
 
 	ret = k_msgq_put(ctx->msgq, msg, K_MSEC(100));
@@ -565,8 +544,7 @@ int ocpp_unlock_connector(struct ocpp_info *ctx,
 		resp = "Unlocked";
 	}
 
-	fn = ctx->cfn[PDU_UNLOCK_CONNECTOR];
-	fn(buf, sizeof(ctx->pdu_buf), resp, uid);
+	ctx->cfn->status_resp(buf, sizeof(ctx->pdu_buf), resp, uid);
 
 	rmsg.ctx = ctx;
 	rmsg.msg = buf;
@@ -589,7 +567,6 @@ int ocpp_reset(struct ocpp_info *ctx, struct internal_msg *msg, char *uid)
 	char *buf = ctx->pdu_buf;
 	enum ocpp_req_status status = OCPP_REQ_REJECTED;
 	struct ocpp_wamp_rpc_msg rmsg = {0};
-	ocpp_msg_fp_t fn;
 	int ret;
 
 	if (msg != NULL) {
@@ -600,8 +577,7 @@ int ocpp_reset(struct ocpp_info *ctx, struct internal_msg *msg, char *uid)
 		}
 	}
 
-	fn = ctx->cfn[PDU_RESET];
-	fn(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
+	ctx->cfn->status_resp(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
 
 	rmsg.ctx = ctx;
 	rmsg.msg = buf;
@@ -618,7 +594,6 @@ int ocpp_change_availability(struct ocpp_info *ctx, struct internal_msg *msg,
 	enum ocpp_req_status status = OCPP_REQ_REJECTED;
 	struct ocpp_wamp_rpc_msg rmsg = {0};
 	union ocpp_keyval *nconn;
-	ocpp_msg_fp_t fn;
 	int ret;
 
 	nconn = ocpp_get_key_val(CFG_NO_OF_CONNECTORS);
@@ -632,8 +607,7 @@ int ocpp_change_availability(struct ocpp_info *ctx, struct internal_msg *msg,
 		}
 	}
 
-	fn = ctx->cfn[PDU_CHANGE_AVAILABILITY];
-	fn(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
+	ctx->cfn->status_resp(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
 
 	rmsg.ctx = ctx;
 	rmsg.msg = buf;
@@ -647,12 +621,10 @@ int ocpp_clear_cache(struct ocpp_info *ctx, char *uid)
 {
 	char *buf = ctx->pdu_buf;
 	struct ocpp_wamp_rpc_msg rmsg = {0};
-	ocpp_msg_fp_t fn;
 	int ret;
 
 	/* No local authorization cache is maintained, so accept the request. */
-	fn = ctx->cfn[PDU_CLEAR_CACHE];
-	fn(buf, sizeof(ctx->pdu_buf), "Accepted", uid);
+	ctx->cfn->status_resp(buf, sizeof(ctx->pdu_buf), "Accepted", uid);
 
 	rmsg.ctx = ctx;
 	rmsg.msg = buf;
@@ -667,7 +639,6 @@ int ocpp_data_transfer(struct ocpp_info *ctx, struct internal_msg *msg, char *ui
 	char *buf = ctx->pdu_buf;
 	enum ocpp_req_status status = OCPP_REQ_REJECTED;
 	struct ocpp_wamp_rpc_msg rmsg = {0};
-	ocpp_msg_fp_t fn;
 	int ret;
 
 	if (msg != NULL) {
@@ -681,8 +652,7 @@ int ocpp_data_transfer(struct ocpp_info *ctx, struct internal_msg *msg, char *ui
 		}
 	}
 
-	fn = ctx->cfn[PDU_DATA_TRANSFER];
-	fn(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
+	ctx->cfn->status_resp(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
 
 	rmsg.ctx = ctx;
 	rmsg.msg = buf;
@@ -702,18 +672,15 @@ int ocpp_meter_values(ocpp_session_handle_t hndl,
 	char *buf = ctx->pdu_buf;
 	char utc[CISTR25] = {0};
 	struct ocpp_wamp_rpc_msg rmsg = {0};
-	ocpp_msg_fp_t fn;
 	int ret;
 
 	if (ctx->is_cs_offline) {
 		return -EAGAIN;
 	}
 
-	fn = ctx->cfn[PDU_METER_VALUES];
 	ocpp_get_utc_now(utc);
-	ret = fn(buf, sizeof(ctx->pdu_buf), sh, utc, sval,
-		 mtr_ref_table[mes].smes,
-		 mtr_ref_table[mes].unit);
+	ret = ctx->cfn->meter_val(buf, sizeof(ctx->pdu_buf), sh, utc, sval, mtr_ref_table[mes].smes,
+				  mtr_ref_table[mes].unit);
 	if (ret < 0) {
 		return ret;
 	}
