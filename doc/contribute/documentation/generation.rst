@@ -155,7 +155,7 @@ as described below:
 
       .. code-block:: console
 
-         choco install doxygen.install graphviz strawberryperl miktex rsvg-convert imagemagick
+         winget install DimitriVanHeesch.Doxygen Graphviz.Graphviz StrawberryPerl.StrawberryPerl MiKTeX.MiKTeX ImageMagick.ImageMagick
 
       .. note::
          On Windows, the Sphinx executable ``sphinx-build.exe`` is placed in
