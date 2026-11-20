@@ -1,0 +1,123 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DISPLAY_CONSOLE
+	bool "Text console on the chosen display"
+	depends on DISPLAY
+	depends on UART_EMUL
+	help
+	  Text console on the display selected by the zephyr,display chosen
+	  node, showing the data transmitted by the zephyr,uart-emul device
+	  selected by the zephyr,console chosen node, so that printk and the
+	  logging subsystem appear on the display; selecting that UART as
+	  zephyr,shell-uart as well puts the shell there too. The text is kept
+	  in a grid of character cells and drawn by the selected renderer.
+
+if DISPLAY_CONSOLE
+
+module = DISPLAY_CONSOLE
+module-str = display_console
+source "subsys/logging/Kconfig.template.log_config"
+
+config DISPLAY_CONSOLE_INIT_PRIORITY
+	int "Init priority at which the console attaches to the UART"
+	default 99
+	help
+	  Priority at the POST_KERNEL level at which the console takes over
+	  the display. It must be greater than DISPLAY_INIT_PRIORITY.
+
+config DISPLAY_CONSOLE_MAX_ROWS
+	int "Maximum number of text rows"
+	default 32
+	help
+	  Upper bound for the text grid; the display size and the font decide
+	  the number of rows actually used.
+
+config DISPLAY_CONSOLE_MAX_COLS
+	int "Maximum number of text columns"
+	default 64
+	help
+	  Upper bound for the text grid; the display size and the font decide
+	  the number of columns actually used.
+
+config DISPLAY_CONSOLE_FLUSH_DELAY_MS
+	int "Delay before the display is redrawn"
+	default 50
+	help
+	  Output is coalesced so that a burst of writes causes one redraw.
+	  The display is updated at most this long after the last write.
+
+config DISPLAY_CONSOLE_KBD
+	bool "Keyboard input"
+	default y
+	depends on INPUT
+	help
+	  Queue the key events of every input device on the receive side of
+	  the console UART as the bytes a terminal keyboard sends: the
+	  characters of the US layout with the shift and control modifiers
+	  applied, the control characters of Enter, Backspace, Tab and Escape,
+	  and the escape sequences of the cursor and editing keys.
+
+choice DISPLAY_CONSOLE_RENDERER
+	prompt "Renderer"
+	default DISPLAY_CONSOLE_RENDERER_CFB
+
+config DISPLAY_CONSOLE_RENDERER_CFB
+	bool "Character framebuffer font"
+	select CHARACTER_FRAMEBUFFER
+	select LOG_OUTPUT if LOG
+	help
+	  Draw the cells with a character framebuffer font, directly in the
+	  pixel format the display is configured for. Monochrome, greyscale
+	  and colour displays are supported. With logging enabled, fault
+	  reports are drawn from the fatal error handler, which needs a
+	  display driver that can write with interrupts locked.
+
+config DISPLAY_CONSOLE_RENDERER_LVGL
+	bool "LVGL text rendering"
+	depends on LVGL
+	select LV_Z_LVGL_MUTEX
+	imply LV_Z_AUTO_INIT
+	imply LV_Z_RUN_LVGL_ON_WORKQUEUE
+	help
+	  Draw the rows with the LVGL text renderer in the default LVGL font,
+	  which must be monospaced, such as LV_FONT_DEFAULT_UNSCII_8, from the
+	  draw event of the active screen.
+	  No LVGL object is created per row, so the LVGL memory pool does not
+	  grow with the size of the display. The rows appear once LVGL is
+	  initialized, which must happen before the APPLICATION level init
+	  priority DISPLAY_CONSOLE_LVGL_INIT_PRIORITY, as LV_Z_AUTO_INIT does.
+	  They cannot be drawn from a fatal error handler.
+
+endchoice
+
+if DISPLAY_CONSOLE_RENDERER_CFB
+
+config DISPLAY_CONSOLE_CFB_FONT_IDX
+	int "Character framebuffer font index"
+	default 0
+
+config DISPLAY_CONSOLE_CFB_BUFFER_SIZE
+	int "Pixel buffer size in bytes"
+	default 2048
+	help
+	  Buffer used to render text before it is written to the display. It
+	  must hold at least one character cell (font width x height x bytes
+	  per pixel), or one full-width row of tiles on a monochrome display.
+	  A larger buffer means fewer, larger display writes.
+
+endif # DISPLAY_CONSOLE_RENDERER_CFB
+
+if DISPLAY_CONSOLE_RENDERER_LVGL
+
+config DISPLAY_CONSOLE_LVGL_INIT_PRIORITY
+	int "Init priority at which the console is drawn on the LVGL screen"
+	default 95
+	help
+	  Priority at the APPLICATION level, greater than LV_Z_INIT_PRIORITY,
+	  at which the console starts drawing on the active LVGL screen and
+	  the text written so far is drawn.
+
+endif # DISPLAY_CONSOLE_RENDERER_LVGL
+
+endif # DISPLAY_CONSOLE
