@@ -26,3 +26,4 @@ CONFIG_PM_CPU_OPS=y
 
 # OTP (the device ID source of hwinfo)
 CONFIG_OTP=y
+CONFIG_HWINFO=y

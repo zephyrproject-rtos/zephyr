@@ -19,3 +19,4 @@ CONFIG_TICKLESS_KERNEL=y
 
 # OTP (the device ID source of hwinfo)
 CONFIG_OTP=y
+CONFIG_HWINFO=y

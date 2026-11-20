@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_RK3588
+	bool "Rockchip RK3588 device ID"
+	default y
+	depends on SOC_RK3588
+	depends on DT_HAS_ROCKCHIP_RK3588_OTP_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable Rockchip RK3588 hwinfo driver via OTP.
