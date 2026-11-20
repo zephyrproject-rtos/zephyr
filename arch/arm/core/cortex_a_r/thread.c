@@ -84,6 +84,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 {
 	struct __basic_sf *iframe;
 
+#ifdef CONFIG_KERNEL_COHERENCE
+	thread->arch.last_cpu = UINT32_MAX;
+#endif
+
 #if defined(CONFIG_FP_HARDABI) || defined(CONFIG_FP_SOFTABI)
 	/*
 	 * Both CONFIG_FP_HARDABI and CONFIG_FP_SOFTABI allow the compiler

@@ -21,6 +21,9 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_A_R_KERNEL_ARCH_FUNC_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_A_R_KERNEL_ARCH_FUNC_H_
 
+#ifdef CONFIG_KERNEL_COHERENCE
+#include <zephyr/cache.h>
+#endif
 #include <zephyr/platform/hooks.h>
 
 #ifdef __cplusplus
@@ -28,6 +31,11 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
+
+#ifdef CONFIG_KERNEL_COHERENCE
+void arch_cohere_stacks(struct k_thread *old_thread, void *old_switch_handle,
+			struct k_thread *new_thread);
+#endif
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
