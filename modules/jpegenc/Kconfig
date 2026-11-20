@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_JPEGENC_MODULE
+	bool
+
+config JPEGENC
+	bool "JPEGENC software JPEG encoder"
+	depends on ZEPHYR_JPEGENC_MODULE
+	help
+	  Software JPEG encoder from the jpegenc module. It encodes baseline
+	  JPEG images with 4:4:4 or 4:2:0 chroma subsampling from grayscale,
+	  RGB565, RGB888, ARGB8888, packed YUV422, planar YUV420 or NV12
+	  input. The encoder keeps its state in a caller-owned structure and
+	  does not allocate memory.

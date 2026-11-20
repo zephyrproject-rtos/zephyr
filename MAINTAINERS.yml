@@ -7638,6 +7638,19 @@ West:
   tests:
     - net.wifi
 
+"West project: jpegenc":
+  status: maintained
+  maintainers:
+    - chemag
+  collaborators:
+    - ngphibang
+    - josuah
+  files:
+    - modules/jpegenc/
+    - tests/modules/jpegenc/
+  labels:
+    - "area: Multimedia Pipeline"
+
 "West project: liblc3":
   status: maintained
   maintainers:
