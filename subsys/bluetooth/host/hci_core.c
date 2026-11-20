@@ -364,7 +364,6 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	struct bt_hci_cp_host_num_completed_packets *cp;
 	uint16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
-	struct bt_conn *conn;
 	uint8_t index = acl(buf)->index;
 
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
@@ -378,25 +377,38 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 		return;
 	}
 
-	/* Dropped before its connection was looked up */
-	if (index == BT_CONN_INDEX_INVALID) {
-		return;
-	}
+	if ((BT_HCI_QUIRKS & BT_HCI_QUIRK_FC_CLOSED_CONN_CREDITS) != 0U) {
+		/* Dropped before hci_acl() has read its handle */
+		if (handle > BT_ACL_HANDLE_MASK) {
+			return;
+		}
 
-	conn = bt_conn_lookup_index(index);
-	if (!conn) {
-		LOG_WRN("Unable to look up conn with index 0x%02x", index);
-		return;
-	}
+		/* Freed by bt_disable() after it has reset the Controller */
+		if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+			return;
+		}
+	} else {
+		struct bt_conn *conn;
 
-	if (conn->state != BT_CONN_CONNECTED &&
-	    conn->state != BT_CONN_DISCONNECTING) {
-		LOG_WRN("Not reporting packet for non-connected conn");
+		/* Dropped before its connection was looked up */
+		if (index == BT_CONN_INDEX_INVALID) {
+			return;
+		}
+
+		conn = bt_conn_lookup_index(index);
+		if (!conn) {
+			LOG_WRN("Unable to look up conn with index 0x%02x", index);
+			return;
+		}
+
+		if (conn->state != BT_CONN_CONNECTED && conn->state != BT_CONN_DISCONNECTING) {
+			LOG_WRN("Not reporting packet for non-connected conn");
+			bt_conn_unref(conn);
+			return;
+		}
+
 		bt_conn_unref(conn);
-		return;
 	}
-
-	bt_conn_unref(conn);
 
 	LOG_DBG("Reporting completed packet for handle %u", handle);
 
