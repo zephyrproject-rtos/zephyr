@@ -113,8 +113,6 @@ enum ocpp_wamp_rpc {
 	OCPP_WAMP_RPC_ERR = '4'
 };
 
-typedef int (*ocpp_msg_fp_t)(char *buf, ...);
-
 struct boot_notif {
 	enum boot_status status;
 	int interval;
@@ -126,6 +124,43 @@ struct ocpp_idtag_info {
 	char p_idtag[CISTR20 + 1];
 	enum ocpp_auth_status auth_status;
 	char exptime[CISTR25];
+};
+
+struct ocpp_session;
+
+/* Builds the PDUs sent to the central system */
+struct ocpp_frame_ops {
+	int (*bootnotif)(char *buf, int len, struct ocpp_session *ses, struct ocpp_cp_info *cpi);
+	int (*authorize)(char *buf, int len, struct ocpp_session *ses);
+	int (*start_txn)(char *buf, int len, struct ocpp_session *ses, int wh, int reserv_id,
+			 char *timestamp);
+	int (*stop_txn)(char *buf, int len, struct ocpp_session *ses, int wh, char *reason,
+			char *timestamp);
+	int (*meter_val)(char *buf, int len, struct ocpp_session *ses, char *timestamp, char *val,
+			 const char *measurand, const char *unit);
+	int (*heartbeat)(char *buf, int len, struct ocpp_session *ses);
+	int (*status_notif)(char *buf, int len, struct ocpp_session *ses, int conn_id,
+			    const char *status, const char *error, char *timestamp);
+	int (*getconfig)(char *buf, int len, char *key, char *val, bool is_rw, char *uid);
+	int (*status_resp)(char *buf, int len, const char *res, char *uid);
+};
+
+/* Parses the PDUs received from the central system */
+struct ocpp_parse_ops {
+	int (*bootnotif)(char *json, struct boot_notif *binfo);
+	/* idTagInfo, in Authorize and StopTransaction responses */
+	int (*authorize)(char *json, struct ocpp_idtag_info *idtag_info);
+	int (*start_txn)(char *json, int *idtxn, struct ocpp_idtag_info *idtag_info);
+	int (*heartbeat)(char *json, struct timeval *date);
+	int (*getconfig)(char *json, char *key);
+	int (*changeconfig)(char *json, char *key, char *val);
+	int (*remote_start_txn)(char *json, int *idcon, char *idtag);
+	int (*remote_stop_txn)(char *json, int *idtxn);
+	int (*unlock_connector)(char *json, int *idcon);
+	int (*reset)(char *json, enum ocpp_reset_type *type);
+	int (*change_availability)(char *json, int *idcon, enum ocpp_availability_type *type);
+	int (*data_transfer)(char *json, const char **vendor, const char **msgid,
+			     const char **data);
 };
 
 struct ocpp_upstream_info {
@@ -144,8 +179,8 @@ struct ocpp_upstream_info {
 struct ocpp_info {
 	struct k_mutex ilock; /* internal to lib */
 	sys_slist_t slist; /* session list */
-	ocpp_msg_fp_t *cfn;
-	ocpp_msg_fp_t *pfn;
+	const struct ocpp_frame_ops *cfn;
+	const struct ocpp_parse_ops *pfn;
 	bool is_cs_offline;
 	struct k_timer hb_timer;
 	struct k_timer mtr_timer;
@@ -194,7 +229,7 @@ struct internal_msg {
 	union ocpp_io_value usr;
 };
 
-void ocpp_parser_init(ocpp_msg_fp_t **cfn, ocpp_msg_fp_t **pfn);
+void ocpp_parser_init(const struct ocpp_frame_ops **cfn, const struct ocpp_parse_ops **pfn);
 int parse_rpc_msg(char *msg, int msglen, char *uid, int uidlen,
 		  int *pdu, bool *is_rsp);
 int ocpp_notify_user(struct ocpp_info *ctx, enum ocpp_notify_reason reason,

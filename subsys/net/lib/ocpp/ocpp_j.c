@@ -185,7 +185,7 @@ static int frame_bootnotif_msg(char *buf, int len,
 }
 
 static int frame_meter_val_msg(char *buf, int len, struct ocpp_session *ses, char *timestamp,
-			       char *val, char *measurand, char *unit)
+			       char *val, const char *measurand, const char *unit)
 {
 	int ret;
 	char tmp_buf[JSON_MSG_BUF_512];
@@ -353,10 +353,8 @@ static int frame_start_txn_msg(char *buf, int len, struct ocpp_session *ses,
 	return 0;
 }
 
-static int frame_status_notification_msg(char *buf, int len,
-					 struct ocpp_session *ses, int conn_id,
-					 char *status, char *error,
-					 char *timestamp)
+static int frame_status_notification_msg(char *buf, int len, struct ocpp_session *ses, int conn_id,
+					 const char *status, const char *error, char *timestamp)
 {
 	int ret;
 	char tmp_buf[JSON_MSG_BUF_256];
@@ -446,7 +444,7 @@ static int frame_getconfig_msg(char *buf, int len, char *key, char *val,
 	return 0;
 }
 
-static int frame_status_resp_msg(char *buf, int len, char *res, char *uid)
+static int frame_status_resp_msg(char *buf, int len, const char *res, char *uid)
 {
 	int ret;
 	char tmp_buf[JSON_MSG_BUF_128];
@@ -973,44 +971,35 @@ static int parse_data_transfer_msg(char *json, const char **vendor,
 	return 0;
 }
 
-static ocpp_msg_fp_t ocpp_json_parser[PDU_MSG_END] = {
-	[PDU_BOOTNOTIFICATION]	= (ocpp_msg_fp_t)parse_bootnotification_msg,
-	[PDU_AUTHORIZE]		= (ocpp_msg_fp_t)parse_authorize_msg,
-	[PDU_START_TRANSACTION]	= (ocpp_msg_fp_t)parse_start_txn_msg,
-	[PDU_STOP_TRANSACTION]	= (ocpp_msg_fp_t)parse_authorize_msg,
-	[PDU_METER_VALUES]	= NULL,
-	[PDU_HEARTBEAT]		= (ocpp_msg_fp_t)parse_heartbeat_msg,
-	[PDU_GET_CONFIGURATION]	= (ocpp_msg_fp_t)parse_getconfig_msg,
-	[PDU_CHANGE_CONFIGURATION]	= (ocpp_msg_fp_t)parse_changeconfig_msg,
-	[PDU_REMOTE_START_TRANSACTION]	= (ocpp_msg_fp_t)parse_remote_start_txn_msg,
-	[PDU_REMOTE_STOP_TRANSACTION]	= (ocpp_msg_fp_t)parse_remote_stop_txn_msg,
-	[PDU_UNLOCK_CONNECTOR]	= (ocpp_msg_fp_t)parse_unlock_connectormsg,
-	[PDU_RESET]		= (ocpp_msg_fp_t)parse_reset_msg,
-	[PDU_CHANGE_AVAILABILITY] = (ocpp_msg_fp_t)parse_change_availability_msg,
-	[PDU_DATA_TRANSFER]	= (ocpp_msg_fp_t)parse_data_transfer_msg,
+static const struct ocpp_parse_ops ocpp_json_parser = {
+	.bootnotif = parse_bootnotification_msg,
+	.authorize = parse_authorize_msg,
+	.start_txn = parse_start_txn_msg,
+	.heartbeat = parse_heartbeat_msg,
+	.getconfig = parse_getconfig_msg,
+	.changeconfig = parse_changeconfig_msg,
+	.remote_start_txn = parse_remote_start_txn_msg,
+	.remote_stop_txn = parse_remote_stop_txn_msg,
+	.unlock_connector = parse_unlock_connectormsg,
+	.reset = parse_reset_msg,
+	.change_availability = parse_change_availability_msg,
+	.data_transfer = parse_data_transfer_msg,
 };
 
-static ocpp_msg_fp_t ocpp_json_frame[PDU_MSG_END] = {
-	[PDU_BOOTNOTIFICATION]	=  (ocpp_msg_fp_t)frame_bootnotif_msg,
-	[PDU_AUTHORIZE]		=  (ocpp_msg_fp_t)frame_authorize_msg,
-	[PDU_START_TRANSACTION]	=  (ocpp_msg_fp_t)frame_start_txn_msg,
-	[PDU_STOP_TRANSACTION]	=  (ocpp_msg_fp_t)frame_stop_txn_msg,
-	[PDU_METER_VALUES]	=  (ocpp_msg_fp_t)frame_meter_val_msg,
-	[PDU_HEARTBEAT]		=  (ocpp_msg_fp_t)frame_heartbeat_msg,
-	[PDU_GET_CONFIGURATION]	=  (ocpp_msg_fp_t)frame_getconfig_msg,
-	[PDU_CHANGE_CONFIGURATION] (ocpp_msg_fp_t)frame_status_resp_msg,
-	[PDU_REMOTE_START_TRANSACTION]	= (ocpp_msg_fp_t)frame_status_resp_msg,
-	[PDU_REMOTE_STOP_TRANSACTION]	= (ocpp_msg_fp_t)frame_status_resp_msg,
-	[PDU_UNLOCK_CONNECTOR]	= (ocpp_msg_fp_t)frame_status_resp_msg,
-	[PDU_STATUS_NOTIFICATION] = (ocpp_msg_fp_t)frame_status_notification_msg,
-	[PDU_RESET]		= (ocpp_msg_fp_t)frame_status_resp_msg,
-	[PDU_CHANGE_AVAILABILITY] = (ocpp_msg_fp_t)frame_status_resp_msg,
-	[PDU_CLEAR_CACHE]	= (ocpp_msg_fp_t)frame_status_resp_msg,
-	[PDU_DATA_TRANSFER]	= (ocpp_msg_fp_t)frame_status_resp_msg,
+static const struct ocpp_frame_ops ocpp_json_frame = {
+	.bootnotif = frame_bootnotif_msg,
+	.authorize = frame_authorize_msg,
+	.start_txn = frame_start_txn_msg,
+	.stop_txn = frame_stop_txn_msg,
+	.meter_val = frame_meter_val_msg,
+	.heartbeat = frame_heartbeat_msg,
+	.status_notif = frame_status_notification_msg,
+	.getconfig = frame_getconfig_msg,
+	.status_resp = frame_status_resp_msg,
 };
 
-void ocpp_parser_init(ocpp_msg_fp_t **cfn, ocpp_msg_fp_t **pfn)
+void ocpp_parser_init(const struct ocpp_frame_ops **cfn, const struct ocpp_parse_ops **pfn)
 {
-	*pfn = ocpp_json_parser;
-	*cfn = ocpp_json_frame;
+	*pfn = &ocpp_json_parser;
+	*cfn = &ocpp_json_frame;
 }
