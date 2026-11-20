@@ -121,7 +121,7 @@
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART1>;
 			resets = <&rctl CH32_RESET(APB2, 14)>;
 			interrupt-parent = <&pfic>;
-			interrupts = <53>;
+			interrupts = <48>;
 			status = "disabled";
 		};
 
