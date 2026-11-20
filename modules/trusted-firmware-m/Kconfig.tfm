@@ -187,10 +187,14 @@ config TFM_PARTITION_PLATFORM_CUSTOM_REBOOT
 	bool "Use custom reboot handler"
 	depends on TFM_PARTITION_PLATFORM
 	help
-	  Do not include the default zephyr implementation of calling the TF-M
+	  Do not include the default Zephyr implementation of calling the TF-M
 	  platform reset service.
 	  Instead the application will have to override the weak ARM
-	  implementation of sys_arch_reset().
+	  implementation of sys_arch_reboot(). If that implementation goes
+	  through the TF-M NS interface, it should override
+	  sys_arch_reboot_prepare() as well and call
+	  tfm_ns_interface_lock_forever() from it, see
+	  modules/trusted-firmware-m/src/reboot.c.
 
 config TFM_DUMMY_PROVISIONING
 	bool "Provision with dummy values. NOT to be used in production"

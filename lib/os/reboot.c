@@ -11,7 +11,10 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/debug/gcov.h>
 
-extern void sys_arch_reboot(int type);
+void __weak sys_arch_reboot_prepare(int type)
+{
+	ARG_UNUSED(type);
+}
 
 FUNC_NORETURN void sys_reboot(int type)
 {
@@ -20,6 +23,12 @@ FUNC_NORETURN void sys_reboot(int type)
 #elif defined(CONFIG_COVERAGE_SEMIHOST)
 	gcov_coverage_semihost();
 #endif /* CONFIG_COVERAGE_DUMP */
+
+	/* Everything below runs with interrupts locked and must not block,
+	 * so this is the last chance for the platform to do anything that
+	 * needs the scheduler.
+	 */
+	sys_arch_reboot_prepare(type);
 
 	(void)irq_lock();
 
