@@ -8,6 +8,10 @@
 #include <ti/mspm0/mspm0.dtsi>
 
 / {
+	chosen {
+		zephyr,system-timer = &timg12;
+	};
+
 	clocks: clocks {
 		syspll: syspll {
 			compatible = "ti,mspm0-pll";
