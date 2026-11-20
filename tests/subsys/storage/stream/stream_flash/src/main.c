@@ -13,16 +13,16 @@
 
 #include <zephyr/storage/stream_flash.h>
 
-#define BUF_LEN 512
-#define MAX_PAGE_SIZE 0x1000 /* Max supported page size to run test on */
-#define MAX_NUM_PAGES 4      /* Max number of pages used in these tests */
-#define TESTBUF_SIZE (MAX_PAGE_SIZE * MAX_NUM_PAGES)
+#define BUF_LEN           512
+#define MAX_PAGE_SIZE     0x1000 /* Max supported page size to run test on */
+#define MAX_NUM_PAGES     4      /* Max number of pages used in these tests */
+#define TESTBUF_SIZE      (MAX_PAGE_SIZE * MAX_NUM_PAGES)
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
-#define FLASH_SIZE DT_REG_SIZE(SOC_NV_FLASH_NODE)
+#define FLASH_SIZE        DT_REG_SIZE(SOC_NV_FLASH_NODE)
 
 /* so that we don't overwrite the application when running on hw */
-#define FLASH_BASE (128*1024)
-#define FLASH_AVAILABLE (FLASH_SIZE-FLASH_BASE)
+#define FLASH_BASE      (128 * 1024)
+#define FLASH_AVAILABLE (FLASH_SIZE - FLASH_BASE)
 
 static const struct device *const fdev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static const struct flash_driver_api *api;
@@ -42,15 +42,18 @@ static uint8_t read_buf[TESTBUF_SIZE];
 const static uint8_t write_buf[TESTBUF_SIZE] = {[0 ... TESTBUF_SIZE - 1] = 0xaa};
 static uint8_t written_pattern[TESTBUF_SIZE] = {[0 ... TESTBUF_SIZE - 1] = 0xaa};
 #if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
-static uint8_t erased_pattern[TESTBUF_SIZE]  = {[0 ... TESTBUF_SIZE - 1] = 0xff};
+static uint8_t erased_pattern[TESTBUF_SIZE] = {[0 ... TESTBUF_SIZE - 1] = 0xff};
+#endif
+#ifdef CONFIG_STREAM_FLASH_ERASE
+static int erase_count;
 #endif
 
-#define VERIFY_BUF(start, size, buf) \
-do { \
-	rc = flash_read(fdev, FLASH_BASE + start, read_buf, size); \
-	zassert_equal(rc, 0, "should succeed"); \
-	zassert_mem_equal(read_buf, buf, size, "should equal %s", #buf);\
-} while (0)
+#define VERIFY_BUF(start, size, buf)                                                               \
+	do {                                                                                       \
+		rc = flash_read(fdev, FLASH_BASE + start, read_buf, size);                         \
+		zassert_equal(rc, 0, "should succeed");                                            \
+		zassert_mem_equal(read_buf, buf, size, "should equal %s", #buf);                   \
+	} while (0)
 
 #define VERIFY_WRITTEN(start, size) VERIFY_BUF(start, size, written_pattern)
 #if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
@@ -83,14 +86,11 @@ static void erase_flash(void)
 #endif
 
 	for (int i = 0; i < MAX_NUM_PAGES; i++) {
-		rc = flash_erase(fdev,
-				 FLASH_BASE + (i * layout->pages_size),
-				 layout->pages_size);
+		rc = flash_erase(fdev, FLASH_BASE + (i * layout->pages_size), layout->pages_size);
 		zassert_equal(rc, 0, "should succeed");
 	}
 #endif
 }
-
 
 static void init_target(void)
 {
@@ -120,8 +120,8 @@ ZTEST(lib_stream_flash, test_stream_flash_init)
 	init_target();
 
 	/* End address out of range */
-	rc = stream_flash_init(&ctx, fdev, generic_buf, BUF_LEN, FLASH_BASE,
-		      FLASH_AVAILABLE + 4, NULL);
+	rc = stream_flash_init(&ctx, fdev, generic_buf, BUF_LEN, FLASH_BASE, FLASH_AVAILABLE + 4,
+			       NULL);
 	zassert_true(rc < 0, "should fail as size is more than available");
 
 	/* End address overflows `size_t` */
@@ -185,7 +185,7 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_cross_buf_border)
 	VERIFY_WRITTEN(BUF_LEN, BUF_LEN);
 
 	/* Fill half of the buffer */
-	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN/2, false);
+	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN / 2, false);
 	zassert_equal(rc, 0, "expected success");
 
 	/* Flush the buffer */
@@ -238,16 +238,14 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_multi_page)
 	init_target();
 
 	/* Test when write spans multiple pages crosses border of page */
-	rc = stream_flash_buffered_write(&ctx, write_buf,
-					 (page_size * num_pages) + 128, false);
+	rc = stream_flash_buffered_write(&ctx, write_buf, (page_size * num_pages) + 128, false);
 	zassert_equal(rc, 0, "expected success");
 
 	/* First three pages should be written */
 	VERIFY_WRITTEN(0, page_size * num_pages);
 
 	/* Fill rest of the page */
-	rc = stream_flash_buffered_write(&ctx, write_buf,
-					 page_size - 128, false);
+	rc = stream_flash_buffered_write(&ctx, write_buf, page_size - 128, false);
 	zassert_equal(rc, 0, "expected success");
 
 	/* First four pages should be written */
@@ -398,8 +396,19 @@ static int bad_write(const struct device *dev, off_t off, const void *data, size
 static int forward_erase(const struct device *dev, off_t off, size_t len)
 {
 	ARG_UNUSED(dev);
+#ifdef CONFIG_STREAM_FLASH_ERASE
+	erase_count++;
+#endif
 	return api->erase(fdev, off, len);
 }
+
+#ifdef CONFIG_STREAM_FLASH_ERASE
+static int forward_read(const struct device *dev, off_t off, void *data, size_t len)
+{
+	ARG_UNUSED(dev);
+	return api->read(fdev, off, data, len);
+}
+#endif
 
 static const struct flash_parameters *forward_get_parameters(const struct device *dev)
 {
@@ -408,8 +417,7 @@ static const struct flash_parameters *forward_get_parameters(const struct device
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-static void forward_page_layout(const struct device *dev,
-				const struct flash_pages_layout **lay,
+static void forward_page_layout(const struct device *dev, const struct flash_pages_layout **lay,
 				size_t *lay_size)
 {
 	ARG_UNUSED(dev);
@@ -441,6 +449,22 @@ static DEVICE_API(flash, fake_api_bad_write) = {
 #endif
 };
 
+/* Fake flash API used by test_stream_flash_auto_erasure_* tests to track erase operations
+ * and verify automatic erasure behavior, including default enablement, explicit disabling,
+ * and per-instance configuration.
+ */
+#ifdef CONFIG_STREAM_FLASH_ERASE
+static DEVICE_API(flash, fake_api_count_erase) = {
+	.read = forward_read,
+	.write = fake_write,
+	.erase = forward_erase,
+	.get_parameters = forward_get_parameters,
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	.page_layout = forward_page_layout,
+#endif
+};
+#endif
+
 ZTEST(lib_stream_flash, test_stream_flash_buffered_write_callback)
 {
 	int rc;
@@ -464,10 +488,10 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_callback)
 	VERIFY_WRITTEN(BUF_LEN, BUF_LEN);
 
 	/* Fill half of the buffer and flush it to flash */
-	cb_len = BUF_LEN/2;
+	cb_len = BUF_LEN / 2;
 	cb_offset = FLASH_BASE + (2 * BUF_LEN);
 
-	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN/2, true);
+	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN / 2, true);
 	zassert_equal(rc, 0, "expected success");
 
 	/* Ensure that failing callback trickles up to caller */
@@ -581,7 +605,7 @@ static size_t write_and_save_progress(size_t bytes, const char *save_key)
 
 static void clear_all_progress(void)
 {
-	(void) settings_delete(progress_key);
+	(void)settings_delete(progress_key);
 }
 
 static size_t load_progress(const char *load_key)
@@ -611,7 +635,7 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_api)
 	rc = stream_flash_progress_save(&ctx, progress_key);
 	zassert_equal(rc, 0, "expected success");
 
-	(void) write_and_save_progress(BUF_LEN, progress_key);
+	(void)write_and_save_progress(BUF_LEN, progress_key);
 
 	/* Test load parameter validation */
 	rc = stream_flash_progress_load(NULL, progress_key);
@@ -659,19 +683,16 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_resume)
 	zassert_equal(rc, 0, "expected success");
 
 	bytes_written = stream_flash_bytes_written(&ctx);
-	zassert_equal(bytes_written, bytes_written_old,
-		      "expected bytes_written to be unchanged");
+	zassert_equal(bytes_written, bytes_written_old, "expected bytes_written to be unchanged");
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	zassert_equal(ctx.erased_up_to, erased_up_to_old,
-		      "expected erase offset to be unchanged");
+	zassert_equal(ctx.erased_up_to, erased_up_to_old, "expected erase offset to be unchanged");
 #endif
 
 	clear_all_progress();
 	init_target();
 
 	/* Write some data and save the progress */
-	bytes_written_old = write_and_save_progress(page_size * 2,
-						    progress_key);
+	bytes_written_old = write_and_save_progress(page_size * 2, progress_key);
 #ifdef CONFIG_STREAM_FLASH_ERASE
 	zassert_false(ctx.erased_up_to == 0, "expected pages to be erased");
 	erased_up_to_old = ctx.erased_up_to;
@@ -681,8 +702,7 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_resume)
 
 	/* Load the previous progress */
 	bytes_written = load_progress(progress_key);
-	zassert_equal(bytes_written, bytes_written_old,
-		      "expected bytes_written to be loaded");
+	zassert_equal(bytes_written, bytes_written_old, "expected bytes_written to be loaded");
 #if defined(CONFIG_STREAM_FLASH_ERASE)
 	zassert_equal(erased_up_to_old, ctx.erased_up_to,
 		      "expected last erased page offset to be loaded");
@@ -691,7 +711,7 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_resume)
 	/* Check that outdated progress does not overwrite current progress */
 	init_target();
 
-	(void) write_and_save_progress(BUF_LEN, progress_key);
+	(void)write_and_save_progress(BUF_LEN, progress_key);
 	bytes_written_old = write_and_save_progress(BUF_LEN, NULL);
 	bytes_written = load_progress(progress_key);
 	zassert_equal(bytes_written, bytes_written_old,
@@ -711,7 +731,7 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_clear)
 	init_target();
 
 	/* Test that progress is cleared. */
-	(void) write_and_save_progress(BUF_LEN, progress_key);
+	(void)write_and_save_progress(BUF_LEN, progress_key);
 
 	rc = stream_flash_progress_clear(&ctx, progress_key);
 	zassert_equal(rc, 0, "expected success");
@@ -727,14 +747,102 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_clear)
 	zassert_equal(rc, 0, "expected success");
 
 	bytes_written = stream_flash_bytes_written(&ctx);
-	zassert_equal(bytes_written, bytes_written_old,
-		      "expected bytes_written to be unchanged");
+	zassert_equal(bytes_written, bytes_written_old, "expected bytes_written to be unchanged");
 
 #ifdef CONFIG_STREAM_FLASH_ERASE
-	zassert_equal(ctx.erased_up_to, erase_offset_old,
-		      "expected erase offset to be unchanged");
+	zassert_equal(ctx.erased_up_to, erase_offset_old, "expected erase offset to be unchanged");
 #endif
 }
+
+#ifdef CONFIG_STREAM_FLASH_ERASE
+ZTEST(lib_stream_flash, test_stream_flash_auto_erasure_default)
+{
+	int rc;
+	struct device fake_dev = *fdev;
+
+	init_target();
+
+	fake_dev.api = &fake_api_count_erase;
+	ctx.fdev = &fake_dev;
+
+	erase_count = 0;
+
+	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN, false);
+	zassert_equal(rc, 0, "expected write to succeed");
+
+	/* Test that under CONFIG_STREAM_FLASH_ERASE
+	 * automatic erase is initialized by default.
+	 */
+	zassert_true(erase_count > 0, "expected automatic erase to be enabled by default");
+}
+
+ZTEST(lib_stream_flash, test_stream_flash_auto_erasure_disabled)
+{
+	int rc;
+	struct device fake_dev = *fdev;
+
+	init_target();
+
+	fake_dev.api = &fake_api_count_erase;
+	ctx.fdev = &fake_dev;
+
+	stream_flash_disable_auto_erasure(&ctx);
+
+	erase_count = 0;
+
+	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN, false);
+	zassert_equal(rc, 0, "expected write to succeed");
+
+	/* Test that under CONFIG_STREAM_FLASH_ERASE, when
+	 * stream_flash_disable_auto_erasure() is called
+	 * on a context, automatic erase is disabled.
+	 */
+	zassert_equal(erase_count, 0, "automatic erase should not be performed");
+}
+
+ZTEST(lib_stream_flash, test_stream_flash_auto_erasure_per_instance)
+{
+	int rc;
+	struct device fake_dev = *fdev;
+
+	init_target();
+
+	struct stream_flash_ctx ctx1;
+	uint8_t buf1[BUF_LEN];
+
+	memset(&ctx1, 0, sizeof(ctx1));
+	memset(buf1, 0, sizeof(buf1));
+
+	rc = stream_flash_init(&ctx, fdev, generic_buf, BUF_LEN, FLASH_BASE, FLASH_AVAILABLE,
+			       stream_flash_callback);
+	zassert_equal(rc, 0, "expected first initialization to succeed");
+
+	rc = stream_flash_init(&ctx1, fdev, buf1, sizeof(buf1), FLASH_BASE + page_size,
+			       FLASH_AVAILABLE - page_size, NULL);
+	zassert_equal(rc, 0, "expected second initialization to succeed");
+
+	fake_dev.api = &fake_api_count_erase;
+	ctx.fdev = &fake_dev;
+	ctx1.fdev = &fake_dev;
+
+	stream_flash_disable_auto_erasure(&ctx);
+	erase_count = 0;
+
+	/* Tests that under CONFIG_STREAM_FLASH_ERASE,
+	 * one context can use auto erasure, and one
+	 * can use manual erasure.
+	 */
+	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN, false);
+	zassert_equal(rc, 0, "expected first write to succeed");
+
+	zassert_equal(erase_count, 0, "first context should not perform automatic erase");
+
+	rc = stream_flash_buffered_write(&ctx1, write_buf, BUF_LEN, false);
+	zassert_equal(rc, 0, "expected second write to succeed");
+
+	zassert_true(erase_count > 0, "second context should perform automatic erase");
+}
+#endif
 
 void lib_stream_flash_before(void *data)
 {
