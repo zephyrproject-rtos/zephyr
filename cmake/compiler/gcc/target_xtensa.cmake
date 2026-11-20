@@ -28,3 +28,7 @@ set(LLEXT_APPEND_FLAGS ${LLEXT_APPEND_FLAGS}
   -ffreestanding
 )
 endif()
+
+if(CONFIG_XTENSA_CALL0_ABI)
+  list(APPEND TOOLCHAIN_C_FLAGS -mabi=call0)
+endif()
