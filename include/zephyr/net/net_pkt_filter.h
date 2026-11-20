@@ -499,6 +499,9 @@ struct npf_test_local_in {
 /**
  * @brief Statically define a "local_in match" packet filter condition
  *
+ * This condition is only available if
+ * @kconfig{CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK} is enabled.
+ *
  * @param _name Name of the condition
  * @param _handler Function to call for the local_in hook
  * @param _user_data Optional user data pointer passed to the handler
