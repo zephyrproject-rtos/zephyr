@@ -1,0 +1,21 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - socket
+tests:
+  net.socket.unreachable: {}
+  net.socket.unreachable.no_ipv4_route:
+    extra_configs:
+      - CONFIG_NET_IPV4_ROUTE=n
+  net.socket.unreachable.no_ip_addr_check:
+    extra_configs:
+      - CONFIG_NET_IP_ADDR_CHECK=n
+  net.socket.unreachable.ipv4_autoconf:
+    extra_configs:
+      - CONFIG_NET_IPV4_ACD=y
+      - CONFIG_NET_IPV4_AUTO=y
+  net.socket.unreachable.vlan:
+    extra_configs:
+      - CONFIG_NET_VLAN=y
+      - CONFIG_NET_IF_MAX_IPV4_COUNT=2
