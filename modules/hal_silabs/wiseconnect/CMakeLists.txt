@@ -182,10 +182,28 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_SILABS_SIWX91X
 zephyr_compile_definitions_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI
   QSPI_ROMDRIVER_PRESENT # replace rsi_qspi.c
 )
-zephyr_library_sources_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/rsi_d_cache.c
-  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_psram.c
-)
+
+if(CONFIG_MEMC_SILABS_SIWX91X_QSPI)
+  zephyr_library_sources(
+    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/rsi_d_cache.c
+    ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_psram.c
+  )
+  zephyr_compile_definitions(
+    SLI_SI91X_MCU_PSRAM_PRESENT
+    SLI_SI91X_MCU_ENABLE_PSRAM_FEATURE
+  )
+  dt_nodelabel(psram_path NODELABEL "psram")
+  dt_prop(half_sleep PATH "${psram_path}" PROPERTY "half-sleep-supported")
+  if(half_sleep)
+    zephyr_compile_definitions(PSRAM_HALF_SLEEP_SUPPORTED)
+  endif()
+  dt_prop(ext_ldo PATH "${psram_path}" PROPERTY "external-ldo")
+  if(ext_ldo)
+    zephyr_compile_definitions(SLI_SI91X_MCU_EXTERNAL_LDO_FOR_PSRAM)
+  else()
+    zephyr_compile_definitions(SLI_SI91X_MCU_INTERNAL_LDO_FOR_PSRAM)
+  endif()
+endif() # CONFIG_MEMC_SILABS_SIWX91X_QSPI
 
 zephyr_library_sources_ifdef(CONFIG_PWM_SILABS_SIWX91X
   # Do not use PWM_ROMDRIVER_PRESENT since ROM of siwx917b0 is buggy

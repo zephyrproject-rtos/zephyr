@@ -41,9 +41,11 @@
 	status = "okay";
 
 	psram: psram@a000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
+		compatible = "silabs,siwx91x-psram","zephyr,memory-region", "mmio-sram";
 		reg = <0xa000000 DT_SIZE_M(8)>;
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 		zephyr,memory-region = "psram";
+		half-sleep-supported;
+		external-ldo;
 	};
 };
