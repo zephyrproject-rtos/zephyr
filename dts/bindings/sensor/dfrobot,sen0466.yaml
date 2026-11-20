@@ -1,0 +1,10 @@
+# Copyright (c) 2026, Iomico
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  DFRobot SEN0466 electrochemical carbon monoxide sensor.
+  Provides CO concentration and on-board temperature readings via I2C.
+
+compatible: "dfrobot,sen0466"
+
+include: [sensor-device.yaml, i2c-device.yaml]

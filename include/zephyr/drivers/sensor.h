@@ -146,6 +146,8 @@ enum sensor_channel {
 
 	/** CO2 level, in parts per million (ppm) **/
 	SENSOR_CHAN_CO2,
+	/** CO level, in parts per million (ppm) **/
+	SENSOR_CHAN_CO,
 	/** O2 level, in parts per million (ppm) **/
 	SENSOR_CHAN_O2,
 	/** VOC level, in parts per billion (ppb) **/
