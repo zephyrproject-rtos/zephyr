@@ -51,7 +51,7 @@ int nvmem_cell_write(const struct nvmem_cell *cell, const void *buf, off_t off, 
 		return -EINVAL;
 	}
 
-	if (cell->read_only) {
+	if (nvmem_cell_is_read_only(cell)) {
 		return -EROFS;
 	}
 
