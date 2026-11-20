@@ -382,6 +382,7 @@ int netc_eth_init_common(const struct device *dev)
 #ifdef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 	int ret;
 	uint64_t msg_addr;
+	unsigned int first_intid;
 
 	if (config->msi_dev == NULL) {
 		LOG_ERR("MSI device is not configured");
@@ -392,29 +393,22 @@ int netc_eth_init_common(const struct device *dev)
 		LOG_ERR("Failed to setup device ID for MSI: %d", ret);
 		return ret;
 	}
-	data->tx_intid = its_alloc_intid(config->msi_dev);
-	data->rx_intid = its_alloc_intid(config->msi_dev);
+	ret = its_alloc_map_intids(config->msi_dev, config->msi_device_id, 2U, &first_intid);
+	if (ret != 0) {
+		LOG_ERR("Failed to allocate MSI INTIDs: %d", ret);
+		return ret;
+	}
+
+	data->tx_intid = first_intid;
+	data->rx_intid = first_intid + 1;
 
 	msg_addr = its_get_msi_addr(config->msi_dev);
 	msix_entry[NETC_TX_MSIX_ENTRY_IDX].control = kNETC_MsixIntrMaskBit;
 	msix_entry[NETC_TX_MSIX_ENTRY_IDX].msgAddr = msg_addr;
 	msix_entry[NETC_TX_MSIX_ENTRY_IDX].msgData = NETC_TX_MSIX_ENTRY_IDX;
-	ret = its_map_intid(config->msi_dev, config->msi_device_id, NETC_TX_MSIX_ENTRY_IDX,
-			    data->tx_intid);
-	if (ret != 0) {
-		LOG_ERR("Failed to map TX MSI interrupt: %d", ret);
-		return ret;
-	}
-
 	msix_entry[NETC_RX_MSIX_ENTRY_IDX].control = kNETC_MsixIntrMaskBit;
 	msix_entry[NETC_RX_MSIX_ENTRY_IDX].msgAddr = msg_addr;
 	msix_entry[NETC_RX_MSIX_ENTRY_IDX].msgData = NETC_RX_MSIX_ENTRY_IDX;
-	ret = its_map_intid(config->msi_dev, config->msi_device_id, NETC_RX_MSIX_ENTRY_IDX,
-			    data->rx_intid);
-	if (ret != 0) {
-		LOG_ERR("Failed to map RX MSI interrupt: %d", ret);
-		return ret;
-	}
 
 	if (!irq_is_enabled(data->tx_intid)) {
 		irq_connect_dynamic(data->tx_intid, 0, netc_tx_isr_handler, dev, 0);

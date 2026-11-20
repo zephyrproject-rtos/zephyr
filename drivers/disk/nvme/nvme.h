@@ -428,12 +428,15 @@ struct nvme_controller {
 	uint32_t id;
 
 	msi_vector_t vectors[NVME_PCIE_MSIX_VECTORS];
+	uint8_t num_vectors;
 
 	struct nvme_controller_data cdata;
 
 	uint32_t num_io_queues;
 	struct nvme_cmd_qpair *adminq;
 	struct nvme_cmd_qpair *ioq;
+	struct nvme_cmd_qpair *qpair_list;
+	struct k_spinlock qpair_lock;
 
 	uint32_t ready_timeout_in_ms;
 
