@@ -227,6 +227,21 @@ ZTEST(libc_common, test_strcmp)
 	zassert_true((strncasecmp(&test, &test, 1) == 0), "strncasecmp failed");
 }
 
+ZTEST(libc_common, test_string_compare_unsigned_bytes)
+{
+	int (*volatile compare)(const char *, const char *) = strcmp;
+	int (*volatile compare_n)(const char *, const char *, size_t) = strncmp;
+	const char low[] = {'a', 0x7f, '\0'};
+	const char high[] = {'a', (char)0x80, '\0'};
+
+	zexpect_true(compare(high, low) > 0);
+	zexpect_true(compare(low, high) < 0);
+	zexpect_true(compare_n(high, low, sizeof(high)) > 0);
+	zexpect_true(compare_n(low, high, sizeof(low)) < 0);
+	zexpect_equal(compare_n(high, low, 1), 0);
+	zexpect_equal(compare_n(high, low, 0), 0);
+}
+
 /**
  *
  * @brief Test string N compare function
