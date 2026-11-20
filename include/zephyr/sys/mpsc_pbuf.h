@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Multi producer, single consumer packet buffer.
+ * @ingroup mpsc_buf
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_MPSC_PBUF_H_
 #define ZEPHYR_INCLUDE_SYS_MPSC_PBUF_H_
 
@@ -109,25 +116,27 @@ struct mpsc_pbuf_buffer {
 	/** Configuration. */
 	const struct mpsc_pbuf_buffer_config *config;
 
-	/* Store max buffer usage. */
+	/** Maximum usage in 32-bit words, tracked with @ref MPSC_PBUF_MAX_UTILIZATION. */
 	uint32_t max_usage;
 
+	/** Given when space is freed, taken by allocations that wait for space. */
 	struct k_sem sem;
 };
 
 /** @brief MPSC packet buffer configuration. */
 struct mpsc_pbuf_buffer_config {
-	/* Pointer to a memory used for storing packets. */
+	/** Memory used for storing packets. */
 	uint32_t *buf;
 
-	/* Buffer size in 32 bit words. */
+	/** Buffer size in 32-bit words. */
 	uint32_t size;
 
-	/* Callbacks. */
+	/** Called when a packet is dropped. Can be NULL. */
 	mpsc_pbuf_notify_drop notify_drop;
+	/** Returns the length of a packet. */
 	mpsc_pbuf_get_wlen get_wlen;
 
-	/* Configuration flags. */
+	/** Configuration flags, see @ref MPSC_PBUF_FLAGS. */
 	uint32_t flags;
 };
 
@@ -144,8 +153,8 @@ void mpsc_pbuf_init(struct mpsc_pbuf_buffer *buffer,
  *
  * @param buffer Buffer.
  *
- * @return true if initialized.
- * @return false if not initialized.
+ * @retval true The buffer is initialized.
+ * @retval false The buffer is not initialized.
  */
 static inline bool mpsc_pbuf_is_init(struct mpsc_pbuf_buffer *buffer)
 {
@@ -194,7 +203,7 @@ void mpsc_pbuf_put_word(struct mpsc_pbuf_buffer *buffer,
 			const union mpsc_pbuf_generic word);
 
 /** @brief Put a packet consisting of a word and a pointer.
- *  *
+ *
  * Function is optimized for storing packet consisting of a word and a pointer.
  * Note that 2 bits of a first word is used by the buffer.
  *
@@ -244,8 +253,8 @@ void mpsc_pbuf_free(struct mpsc_pbuf_buffer *buffer,
  *
  * @param buffer Buffer.
  *
- * @retval true if pending.
- * @retval false if no message is pending.
+ * @retval true At least one packet is pending.
+ * @retval false No packet is pending.
  */
 bool mpsc_pbuf_is_pending(struct mpsc_pbuf_buffer *buffer);
 
@@ -263,8 +272,8 @@ void mpsc_pbuf_get_utilization(struct mpsc_pbuf_buffer *buffer,
  * @param[in, out] buffer Buffer.
  * @param[out]     max    Maximum buffer usage in bytes.
  *
- * retval 0 if utilization data collected successfully.
- * retval -ENOTSUP if Collecting utilization data is not supported.
+ * @retval 0 Utilization data collected successfully.
+ * @retval -ENOTSUP @ref MPSC_PBUF_MAX_UTILIZATION is not set.
  */
 int mpsc_pbuf_get_max_utilization(struct mpsc_pbuf_buffer *buffer, uint32_t *max);
 /**
