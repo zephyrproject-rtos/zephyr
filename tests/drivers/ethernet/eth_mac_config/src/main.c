@@ -9,6 +9,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/nvmem.h>
 
 #include "eth_test_priv.h"
 
@@ -89,6 +90,46 @@ ZTEST(ethernet_mac_config, test_eth_mac_nvmem_prefix)
 	zexpect_equal_ptr(cfg->mcfg.cell.dev, DEVICE_DT_GET(DT_NODELABEL(eeprom0)));
 	zexpect_equal(cfg->mcfg.cell.offset, DT_REG_ADDR(DT_NODELABEL(cell6)));
 	zexpect_equal(cfg->mcfg.cell.size, DT_REG_SIZE(DT_NODELABEL(cell6)));
+}
+
+ZTEST(ethernet_mac_config, test_eth_mac_nvmem_reversed)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(eth_mac_nvmem_reversed));
+	const struct vnd_ethernet_config *cfg = dev->config;
+	const struct nvmem_cell stored = {
+		.dev = cfg->mcfg.cell.dev,
+		.offset = cfg->mcfg.cell.offset,
+		.size = cfg->mcfg.cell.size,
+	};
+	const uint8_t stored_mac[] = {0x78, 0x56, 0x34, 0x12, 0xcd, 0xab};
+	const uint8_t expected[] = {0xab, 0xcd, 0x12, 0x34, 0x56, 0x78};
+	uint8_t mac[NET_ETH_ADDR_LEN];
+
+	zassert_ok(nvmem_cell_write(&stored, stored_mac, 0, sizeof(stored_mac)));
+
+	zexpect_equal(cfg->mcfg.addr_len, 0);
+	zexpect_ok(net_eth_mac_load(&cfg->mcfg, mac));
+	zexpect_mem_equal(mac, expected, sizeof(expected));
+}
+
+ZTEST(ethernet_mac_config, test_eth_mac_nvmem_reversed_prefix)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(eth_mac_nvmem_reversed_prefix));
+	const struct vnd_ethernet_config *cfg = dev->config;
+	const struct nvmem_cell stored = {
+		.dev = cfg->mcfg.cell.dev,
+		.offset = cfg->mcfg.cell.offset,
+		.size = cfg->mcfg.cell.size,
+	};
+	const uint8_t stored_suffix[] = {0x56, 0x34, 0x12};
+	const uint8_t expected[] = {0x00, 0x33, 0x66, 0x12, 0x34, 0x56};
+	uint8_t mac[NET_ETH_ADDR_LEN];
+
+	zassert_ok(nvmem_cell_write(&stored, stored_suffix, 0, sizeof(stored_suffix)));
+
+	zexpect_equal(cfg->mcfg.addr_len, 3);
+	zexpect_ok(net_eth_mac_load(&cfg->mcfg, mac));
+	zexpect_mem_equal(mac, expected, sizeof(expected));
 }
 
 ZTEST(ethernet_mac_config, test_eth_mac_none)
