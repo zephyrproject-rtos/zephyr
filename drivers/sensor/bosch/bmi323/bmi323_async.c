@@ -202,6 +202,14 @@ static void bmi323_complete_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	reading.gyro_z     = (int16_t)sys_get_le16(&data_raw[10]);
 	reading.temperature = (int16_t)sys_get_le16(&data_raw[12]);
 
+	fetch_accel = fetch_accel && bosch_bmi323_value_is_valid(reading.accel_x) &&
+		      bosch_bmi323_value_is_valid(reading.accel_y) &&
+		      bosch_bmi323_value_is_valid(reading.accel_z);
+	fetch_gyro = fetch_gyro && bosch_bmi323_value_is_valid(reading.gyro_x) &&
+		     bosch_bmi323_value_is_valid(reading.gyro_y) &&
+		     bosch_bmi323_value_is_valid(reading.gyro_z);
+	fetch_temp = fetch_temp && bosch_bmi323_value_is_valid(reading.temperature);
+
 	rc = rtio_sqe_rx_buf(iodev_sqe, sizeof(*edata), sizeof(*edata),
 			&buf, &buf_len);
 	if (rc != 0) {
@@ -227,7 +235,7 @@ static void bmi323_complete_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	edata->has_temp         = fetch_temp;
 	/* acc_full_scale is in milli-G, convert to G */
 	edata->accel_range      = (data->acc_full_scale / 1000);
-	/* gyro_full_scale is in micro-dps, convert to dps */
+	/* gyro_full_scale is in milli-dps, convert to dps */
 	edata->gyro_range       = (data->gyro_full_scale / 1000);
 	edata->reading          = reading;
 
