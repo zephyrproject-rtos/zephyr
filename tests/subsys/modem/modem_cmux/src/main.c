@@ -714,6 +714,37 @@ ZTEST(modem_cmux, test_modem_cmux_reopen_clears_receive_flow_control_dlci2)
 			  "MSC after open has FC set");
 }
 
+ZTEST(modem_cmux, test_modem_cmux_receive_overrun_dlci2)
+{
+	uint32_t receive_dropped;
+	int ret;
+
+	/* Start with an empty receive buffer */
+	modem_pipe_receive(dlci2_pipe, buffer2, sizeof(buffer2));
+	k_msleep(TRANSMISSION_DELAY_MS);
+	modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+
+	receive_dropped = modem_cmux_get_receive_dropped(&cmux);
+
+	/* Three frames do not fit in the DLCI receive buffer */
+	for (int i = 0; i < 3; i++) {
+		modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_ppp_52,
+				       sizeof(cmux_frame_dlci2_ppp_52));
+	}
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	ret = modem_pipe_receive(dlci2_pipe, buffer2, sizeof(buffer2));
+	zassert_true(ret > 0, "No data received");
+	zassert_true(ret < 3 * sizeof(cmux_frame_data_dlci2_ppp_52), "No data dropped");
+	zassert_equal(modem_cmux_get_receive_dropped(&cmux) - receive_dropped,
+		      3 * sizeof(cmux_frame_data_dlci2_ppp_52) - ret,
+		      "Incorrect number of dropped bytes");
+
+	/* Consume the MSC commands sent for flow control */
+	k_msleep(TRANSMISSION_DELAY_MS);
+	modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+}
+
 ZTEST(modem_cmux, test_modem_cmux_msc_cmd_ack)
 {
 	int ret;
@@ -1108,6 +1139,7 @@ ZTEST(modem_cmux, test_modem_cmux_connect_peer_sabm)
 
 ZTEST(modem_cmux, test_modem_drop_frames_with_invalid_length)
 {
+	uint32_t frames_dropped = modem_cmux_get_frames_dropped(&cmux);
 	int ret;
 	uint32_t events;
 
@@ -1120,6 +1152,8 @@ ZTEST(modem_cmux, test_modem_drop_frames_with_invalid_length)
 
 	zassert_false(events & EVENT_CMUX_DLCI2_RECEIVE_READY,
 		      "Receive event should not have been received for DLCI2 pipe");
+	zassert_equal(modem_cmux_get_frames_dropped(&cmux) - frames_dropped, 1,
+		      "Dropped frame not counted");
 
 	modem_backend_mock_put(&bus_mock, cmux_frame_dlci2_at_cgdcont,
 			       sizeof(cmux_frame_dlci2_at_cgdcont));

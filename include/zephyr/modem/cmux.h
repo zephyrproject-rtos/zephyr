@@ -39,7 +39,7 @@ extern "C" {
  * @brief Modem CMUX
  * @defgroup modem_cmux Modem CMUX
  * @since 3.5
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup modem
  * @{
  */
@@ -224,6 +224,11 @@ struct modem_cmux {
 	k_timepoint_t t3_timepoint;
 	k_timepoint_t idle_timepoint;
 
+	/* Received frames dropped as malformed (bad FCS, length or closing flag) */
+	uint32_t frames_dropped;
+	/* Received bytes dropped because a DLCI receive buffer was full */
+	uint32_t receive_dropped;
+
 	/* Statistics */
 #if CONFIG_MODEM_STATS
 	struct modem_stats_buffer receive_buf_stats;
@@ -332,6 +337,29 @@ int modem_cmux_disconnect_async(struct modem_cmux *cmux);
  * @note The bus pipe can be used directly again after CMUX instance is released.
  */
 void modem_cmux_release(struct modem_cmux *cmux);
+
+/**
+ * @brief Get the number of received frames dropped as malformed
+ *
+ * @details A frame is malformed when its FCS, length or closing flag is wrong,
+ * which happens when bytes are lost or corrupted on the bus, e.g. by a UART
+ * receive overrun.
+ *
+ * @param cmux CMUX instance
+ * @returns Frames dropped since the CMUX instance was initialized
+ */
+uint32_t modem_cmux_get_frames_dropped(const struct modem_cmux *cmux);
+
+/**
+ * @brief Get the number of received bytes dropped because a DLCI buffer was full
+ *
+ * @details Bytes are dropped when a DLCI pipe user does not read its received
+ * data fast enough.
+ *
+ * @param cmux CMUX instance
+ * @returns Bytes dropped since the CMUX instance was initialized, all DLCIs
+ */
+uint32_t modem_cmux_get_receive_dropped(const struct modem_cmux *cmux);
 
 /**
  * @}
