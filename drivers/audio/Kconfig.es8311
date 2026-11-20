@@ -6,6 +6,8 @@ config AUDIO_CODEC_ES8311
 	default y
 	depends on DT_HAS_EVEREST_ES8311_ENABLED
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_EVEREST_ES8311),pa-gpios)
+	select REGULATOR if $(dt_compat_any_has_prop,$(DT_COMPAT_EVEREST_ES8311),vin-supply)
 	help
 	  Enable the ES8311 mono ADC/DAC with I2C control and standard I2S:
 	  two 16-bit slots, MSB first, normal clock polarity. The codec must
@@ -28,11 +30,20 @@ config AUDIO_CODEC_ES8311
 	  rolled back to mute; call audio_codec_start() to retry.
 
 	  Check audio_codec_stop() before stopping I2S clocks. The application
-	  manages regulators, clocks and external amplifiers; device PM is not
-	  implemented. Supplies must be available before initialization, or use
-	  zephyr,deferred-init and device_init() after enabling them. Muting
-	  cannot be guaranteed when I2C fails; validate analog settling and
-	  power transitions on the board.
+	  manages clocks; device PM is not implemented. An optional vin-supply
+	  enables codec power before initialization, and pa-gpios gates an
+	  external amplifier with playback. Without vin-supply, power must be
+	  available before initialization, or use zephyr,deferred-init and
+	  device_init() after enabling it. Muting cannot be guaranteed when I2C
+	  fails; validate analog settling and power transitions on the board.
+
+config AUDIO_CODEC_ES8311_INIT_PRIORITY
+	int "ES8311 initialization priority"
+	default 90
+	depends on AUDIO_CODEC_ES8311
+	help
+	  Initialize after the I2C controller, GPIO controller and optional
+	  codec supply regulator.
 
 config EMUL_ES8311
 	bool "Everest ES8311 audio codec emulator"

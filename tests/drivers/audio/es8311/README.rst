@@ -23,3 +23,8 @@ repeat the probes themselves; ``device_init()`` cannot initialize a device twice
 The emulator models registers, I2C failures and controlled transaction blocking.
 It does not model analog settling, I2S data, clocks or power sequencing. These
 tests do not replace board validation.
+
+The ``power`` scenario checks supply initialization and cleanup, amplifier control
+for playback and capture, startup while the DAC is muted, and amplifier shutdown
+after I2C failures. GPIO and regulator emulators verify software control, not
+electrical timing or settling.

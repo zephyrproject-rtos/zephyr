@@ -10,7 +10,9 @@
 
 #include <zephyr/audio/codec.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/regulator.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
@@ -163,6 +165,8 @@ LOG_MODULE_REGISTER(es8311);
 
 struct es8311_config {
 	struct i2c_dt_spec bus;
+	const struct device *supply;
+	struct gpio_dt_spec pa;
 	uint8_t sdp_in_sel; /* 0x09 bit 7: mono DAC source slot (0 = left, 0x80 = right) */
 	uint8_t pga_reg;    /* 0x14: MIC1 differential plus the configured PGA gain */
 };
@@ -193,6 +197,17 @@ static int es8311_reg_read(const struct device *dev, uint8_t reg, uint8_t *val)
 	const struct es8311_config *cfg = dev->config;
 
 	return i2c_reg_read_byte_dt(&cfg->bus, reg, val);
+}
+
+static int es8311_pa_set(const struct device *dev, bool enable)
+{
+	const struct es8311_config *cfg = dev->config;
+
+	if (cfg->pa.port == NULL) {
+		return 0;
+	}
+
+	return gpio_pin_set_dt(&cfg->pa, enable);
 }
 
 struct es8311_reg_val {
@@ -241,7 +256,7 @@ static int es8311_quiesce(const struct device *dev)
 		{ES8311_REG_SYSTEM_0E, ES8311_ADC_PWR_DOWN},
 		{ES8311_REG_ADC_PGA, ES8311_ADC_MIC_OFF},
 	};
-	int first_err = 0;
+	int first_err = es8311_pa_set(dev, false);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(quiesce); i++) {
 		int ret = es8311_reg_write(dev, quiesce[i].reg, quiesce[i].val);
@@ -405,6 +420,10 @@ static int es8311_configure(const struct device *dev, struct audio_codec_cfg *cf
 	/* Reconfiguration leaves both directions stopped until an explicit start. */
 	data->output_stopped = true;
 	data->input_stopped = true;
+	ret = es8311_pa_set(dev, false);
+	if (ret != 0) {
+		goto end;
+	}
 
 	/* Program both directions so a route change cannot retain an unused converter. */
 	if (playback && capture) {
@@ -686,11 +705,15 @@ static int es8311_start_tx_locked(const struct device *dev)
 	if (ret == 0) {
 		ret = es8311_reg_write(dev, ES8311_REG_DAC_VOLUME, data->dac_volume_code);
 	}
+	if (ret == 0) {
+		ret = es8311_pa_set(dev, true);
+	}
 	if (ret == 0 && !data->output_mute) {
 		ret = es8311_reg_write(dev, ES8311_REG_DAC_MUTE, ES8311_DAC_MUTE_OFF);
 	}
 	if (ret < 0) {
 		(void)es8311_reg_write(dev, ES8311_REG_DAC_MUTE, ES8311_DAC_MUTE_ON);
+		(void)es8311_pa_set(dev, false);
 		data->output_stopped = true;
 	} else {
 		data->output_stopped = false;
@@ -703,11 +726,16 @@ static int es8311_start_tx_locked(const struct device *dev)
 static int es8311_stop_tx_locked(const struct device *dev)
 {
 	struct es8311_data *data = dev->data;
+	int ret;
+	int err;
 
 	data->output_stopped = true;
 
 	/* The lifecycle stops; the OUTPUT_MUTE property is left exactly as the caller set it. */
-	return es8311_reg_write(dev, ES8311_REG_DAC_MUTE, ES8311_DAC_MUTE_ON);
+	ret = es8311_reg_write(dev, ES8311_REG_DAC_MUTE, ES8311_DAC_MUTE_ON);
+	/* Disable the external amplifier even if the codec cannot be reached. */
+	err = es8311_pa_set(dev, false);
+	return ret != 0 ? ret : err;
 }
 
 /* Start RX before TX; if TX fails, undo only the RX start performed by this call. */
@@ -917,6 +945,7 @@ static int es8311_apply_properties(const struct device *dev)
 			first_err = ret;
 			/* Retry the DAC mute and undo any RX unmute sent by this call. */
 			(void)es8311_reg_write(dev, ES8311_REG_DAC_MUTE, ES8311_DAC_MUTE_ON);
+			(void)es8311_pa_set(dev, false);
 			data->output_stopped = true;
 			if (mic_unmute_sent) {
 				(void)es8311_reg_write(dev, ES8311_REG_SDP_OUT,
@@ -993,6 +1022,25 @@ static int es8311_init(const struct device *dev)
 		LOG_ERR("I2C controller not ready");
 		return -ENODEV;
 	}
+	if (cfg->pa.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->pa)) {
+			return -ENODEV;
+		}
+		ret = gpio_pin_configure_dt(&cfg->pa, GPIO_OUTPUT_INACTIVE);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+	if (IS_ENABLED(CONFIG_REGULATOR) && cfg->supply != NULL) {
+		if (!device_is_ready(cfg->supply)) {
+			return -ENODEV;
+		}
+		ret = regulator_enable(cfg->supply);
+		if (ret != 0) {
+			return ret;
+		}
+		k_msleep(20);
+	}
 
 	k_mutex_init(&data->lock);
 	/* Both directions default to 0 dB. */
@@ -1009,7 +1057,7 @@ static int es8311_init(const struct device *dev)
 
 	ret = es8311_check_id(dev);
 	if (ret < 0) {
-		return ret;
+		goto power_off;
 	}
 
 	/* Release INI_REG before attempting the mute and power-down writes. */
@@ -1030,15 +1078,31 @@ static int es8311_init(const struct device *dev)
 
 	/* Report a quiesce failure ahead of the INI_REG error. */
 	if (quiesce_err < 0) {
-		return quiesce_err;
+		ret = quiesce_err;
+	} else {
+		ret = normalize_err;
+	}
+	if (ret == 0) {
+		return 0;
 	}
 
-	return normalize_err;
+power_off:
+	if (IS_ENABLED(CONFIG_REGULATOR) && cfg->supply != NULL) {
+		int err = regulator_disable(cfg->supply);
+
+		if (err != 0) {
+			LOG_ERR("Failed to disable codec supply (%d)", err);
+		}
+	}
+
+	return ret;
 }
 
 #define ES8311_INST(idx)                                                                           \
 	static const struct es8311_config es8311_config_##idx = {                                  \
 		.bus = I2C_DT_SPEC_INST_GET(idx),                                                  \
+		.supply = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(idx, vin_supply)),                 \
+		.pa = GPIO_DT_SPEC_INST_GET_OR(idx, pa_gpios, {0}),                                \
 		.sdp_in_sel = (DT_INST_ENUM_IDX(idx, everest_mono_dac_source) == 1)                \
 				      ? ES8311_SDP_IN_SEL_RIGHT                                    \
 				      : 0U,                                                        \
@@ -1047,6 +1111,6 @@ static int es8311_init(const struct device *dev)
 	};                                                                                         \
 	static struct es8311_data es8311_data_##idx;                                               \
 	DEVICE_DT_INST_DEFINE(idx, es8311_init, NULL, &es8311_data_##idx, &es8311_config_##idx,    \
-			      POST_KERNEL, CONFIG_AUDIO_CODEC_INIT_PRIORITY, &es8311_api)
+			      POST_KERNEL, CONFIG_AUDIO_CODEC_ES8311_INIT_PRIORITY, &es8311_api)
 
 DT_INST_FOREACH_STATUS_OKAY(ES8311_INST)
