@@ -50,7 +50,7 @@ static uint32_t cycles_elapsed(void)
 
 	if ((ctrl & PIT64B_IER_PERIOD_Msk) || (val1 > val2)) {
 		overflow += last_load;
-		(void)PIT64B0_REGS->PIT64B_TLSBR;
+		(void)pit64b_cfg.reg->PIT64B_TLSBR;
 	}
 
 	return val2 + overflow;
