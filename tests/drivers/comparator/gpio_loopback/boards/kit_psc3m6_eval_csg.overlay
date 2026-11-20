@@ -1,0 +1,53 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Wiring (fixture: gpio_loopback):
+ *   P3.0 (gpio_prt3 pin 0) ----> AN_A4 (CSG slice 4 positive input).
+ * The paired DAC provides the threshold at code 512.
+ */
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &comp4;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio_prt3 0 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio_prt3 {
+	status = "okay";
+};
+
+&hppass_analog0 {
+	status = "okay";
+};
+
+&peri0_group0_16bit_0 {
+	clock-div = <2>;
+	status = "okay";
+};
+
+&csg0 {
+	clocks = <&peri0_group0_16bit_0>;
+	status = "okay";
+};
+
+&csg_dac4 {
+	initial-value = <512>;
+	status = "okay";
+};
+
+&comp4 {
+	positive-input = "ain-pa";
+	negative-input = "dac";
+	infineon,aroute-input = "ain-a";
+	status = "okay";
+};

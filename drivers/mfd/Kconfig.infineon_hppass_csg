@@ -10,11 +10,11 @@ config MFD_INFINEON_HPPASS_CSG
 	depends on MFD_INFINEON_HPPASS
 	help
 	  Enable the Infineon HPPASS CSG MFD driver.  The CSG block contains
-	  five identical slices, each pairing a 10-bit, 30 Msps DAC with a
+	  five (PSC3M5) or nine (PSC3M6) slices, each pairing a 10-bit, 30 Msps DAC with a
 	  high-speed comparator.  This MFD owns the combined comparator
 	  interrupt and dispatches it to per-slice comparator child devices,
-	  and applies per-slice CMP_CFG / DAC_CFG configuration from devicetree
-	  at init time.
+	  and powers the groups used by comparator or DAC children on MCPASS v3.
+	  The child drivers apply their per-slice CMP_CFG / DAC_CFG configuration.
 
 config MFD_INFINEON_HPPASS_CSG_INIT_PRIORITY
 	int "Infineon HPPASS CSG MFD init priority"

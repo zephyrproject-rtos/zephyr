@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon MCPASS v3 Comparator Slope Generator (CSG) with nine slices,
+  grouped power control and per-slice analog routing.
+
+  List infineon,hppass-csg as the fallback compatible so the shared driver
+  binds. The parent must use infineon,hppass-analog-v3; its revision selects
+  the shared HPPASS, CSG comparator and DAC register layouts.
+
+compatible: "infineon,hppass-csg-v3"
+
+include: infineon,hppass-csg.yaml

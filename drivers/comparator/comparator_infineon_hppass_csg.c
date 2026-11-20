@@ -93,9 +93,24 @@ LOG_MODULE_REGISTER(comparator_infineon_hppass_csg, CONFIG_COMPARATOR_LOG_LEVEL)
 #define IFX_CSG_CMP_CFG_POS_SEL      BIT(0)          /* [0]     positive-input select */
 #define IFX_CSG_CMP_CFG_NEG_SEL      GENMASK(3, 2)   /* [3:2]   negative-input select */
 #define IFX_CSG_CMP_CFG_BLANK_MODE   GENMASK(5, 4)   /* [5:4]   blank mode */
+
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+/* PSC3M6 widens blank-trigger selection and shifts edge mode and polarity. */
+#define IFX_CSG_CMP_CFG_BLANK_TR_SEL GENMASK(12, 8)  /* [12:8]  blank trigger select */
+#define IFX_CSG_CMP_CFG_EDGE_MODE    GENMASK(17, 16) /* [17:16] edge detection mode */
+#define IFX_CSG_CMP_CFG_POLARITY     BIT(18)         /* [18]    output polarity */
+#else
 #define IFX_CSG_CMP_CFG_BLANK_TR_SEL GENMASK(11, 8)  /* [11:8]  blank trigger select */
 #define IFX_CSG_CMP_CFG_EDGE_MODE    GENMASK(13, 12) /* [13:12] edge detection mode */
 #define IFX_CSG_CMP_CFG_POLARITY     BIT(16)         /* [16]    output polarity */
+#endif
+
+#define IFX_CSG_AROUTE_REG_NONE  0U
+#define IFX_CSG_AROUTE_REG_AIN_A 1U
+#define IFX_CSG_AROUTE_REG_AIN_B 2U
+#define IFX_CSG_AROUTE_REG_AIN_C 4U
+#define IFX_CSG_AROUTE_REG_AIN_D 8U
+#define IFX_CSG_AROUTE_REG(val) CONCAT(IFX_CSG_AROUTE_REG_, val)
 
 /*
  * CMP_CFG.CMP_EDGE_MODE encoding:
@@ -114,6 +129,10 @@ struct ifx_csg_comp_config {
 	mem_addr_t slice_base;
 	uint8_t slice;
 	uint32_t cmp_cfg;
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+	mem_addr_t aroute_addr;
+	uint8_t aroute;
+#endif
 };
 
 struct ifx_csg_comp_data {
@@ -260,6 +279,10 @@ static int ifx_csg_comp_init(const struct device *dev)
 
 	sys_write32(cfg->cmp_cfg, cfg->slice_base + IFX_HPPASS_CSG_SLICE_CMP_CFG);
 
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+	sys_write32(cfg->aroute, cfg->aroute_addr);
+#endif
+
 	data->cb = NULL;
 	data->user_data = NULL;
 	atomic_clear(&data->pending);
@@ -335,6 +358,12 @@ static int ifx_csg_comp_pm_action(const struct device *dev, enum pm_device_actio
 		.slice_base = (mem_addr_t)DT_INST_REG_ADDR(n),                            \
 		.slice      = IFX_CSG_COMP_SLICE_OF(n),                                   \
 		.cmp_cfg    = IFX_CSG_COMP_CFG_INIT(DT_DRV_INST(n)),                      \
+		IF_ENABLED(CONFIG_MFD_INFINEON_HPPASS_V3, (                              \
+			.aroute_addr = DT_REG_ADDR(IFX_CSG_COMP_PARENT(n)) +             \
+				IFX_HPPASS_CSG_AROUTEMUX_SEL(IFX_CSG_COMP_SLICE_OF(n)),   \
+			.aroute = IFX_CSG_AROUTE_REG(DT_INST_STRING_UPPER_TOKEN(          \
+				n, infineon_aroute_input)),                             \
+		))                                                                        \
 	};                                                                                \
 	PM_DEVICE_DT_INST_DEFINE(n, ifx_csg_comp_pm_action);                              \
 	DEVICE_DT_INST_DEFINE(n, ifx_csg_comp_init, PM_DEVICE_DT_INST_GET(n),             \

@@ -39,6 +39,13 @@ extern "C" {
  */
 typedef void (*ifx_hppass_csg_cmp_cb_t)(void *user_data);
 
+/** Bitmask covering all CSG slices supported by the target. */
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+typedef uint16_t ifx_hppass_csg_slice_mask_t;
+#else
+typedef uint8_t ifx_hppass_csg_slice_mask_t;
+#endif
+
 /**
  * @brief Combined "any comparator" interrupt callback.
  *
@@ -52,7 +59,7 @@ typedef void (*ifx_hppass_csg_cmp_cb_t)(void *user_data);
  * @param user_data  Caller-supplied opaque pointer from registration.
  */
 typedef void (*ifx_hppass_csg_combined_cmp_cb_t)(const struct device *dev,
-						 uint8_t slice_mask,
+						 ifx_hppass_csg_slice_mask_t slice_mask,
 						 void *user_data);
 
 /**

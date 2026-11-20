@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -12,8 +12,9 @@ description: |
   This DAC has no external output pin.  Its output is wired internally to
   the paired comparator's negative input, and may optionally be
   routed to the SAR ADC for observation through CSG_CTRL.VDAC_OUT_SEL.
-  The DAC therefore cannot be used in isolation: the paired comparator
-  child node (same slice index) must also be configured and enabled.
+  The paired comparator need not be enabled when the DAC is used only
+  for SAR observation. On MCPASS v3 (PSC3M6), the CSG parent powers the
+  group containing each enabled comparator or DAC.
 
   Resolution is fixed at 10 bits.  Only direct-write mode is supported
   through the standard Zephyr DAC API.  Advanced modes (buffered, slope,
@@ -55,8 +56,9 @@ properties:
     max: 1023
     description: |
       Optional 10-bit value (0..1023) to write into SLICE[s].DAC_VAL at
-      driver init, before the HPPASS AC enters its locked state.  When
-      omitted, DAC_VAL is left at its hardware reset value of 0
+      driver init, before the HPPASS AC enters its locked state. On MCPASS v3,
+      the same value is loaded into DAC_VAL_A before the firmware start.
+      When omitted, the initial value is 0
       (~0 V output).  Useful when the paired comparator must see a
       stable mid-rail or other reference before the application has a
       chance to call dac_write_value().

@@ -1,0 +1,36 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Exercise slice 8 and its group power without an enabled comparator. */
+/ {
+	zephyr,user {
+		io-channels = <&csg_dac8 0>;
+		io-channel-names = "dac1";
+	};
+};
+
+&peri0_group0_16bit_0 {
+	clock-div = <2>;
+	status = "okay";
+};
+
+&csg0 {
+	clocks = <&peri0_group0_16bit_0>;
+	status = "okay";
+};
+
+&csg_dac8 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	initial-value = <512>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,resolution = <10>;
+	};
+};

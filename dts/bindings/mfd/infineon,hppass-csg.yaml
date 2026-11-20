@@ -45,9 +45,10 @@ properties:
     type: int
     required: true
     min: 1
-    max: 8
+    max: 9
     description: |
-      Number of CSG slices present in this instance.
+      Number of CSG slices present in this instance: five on PSC3M5,
+      nine on PSC3M6.
 
   infineon,slice-reg-spacing:
     type: int
