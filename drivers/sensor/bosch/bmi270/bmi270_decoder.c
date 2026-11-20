@@ -39,6 +39,19 @@ LOG_MODULE_REGISTER(bmi270_decoder, CONFIG_SENSOR_LOG_LEVEL);
 
 #define BMI270_FIFO_SENSOR_BYTES           6
 #define BMI270_FIFO_PAYLOAD_ACC_GYR        12
+
+/*
+ * Headerless dummy frames: the BMI270 fills an element's slot with this pattern when the element
+ * has no valid sample for the frame (while it starts up, is off or is being reconfigured). See
+ * BMI2_FIFO_HEADERLESS_DUMMY_* in Bosch's BMI270 SensorAPI.
+ */
+#define BMI270_FIFO_HEADERLESS_GYR_OFFSET 0
+#define BMI270_FIFO_HEADERLESS_ACC_OFFSET 6
+#define BMI270_FIFO_DUMMY_ACC             0x01
+#define BMI270_FIFO_DUMMY_GYR             0x02
+#define BMI270_FIFO_DUMMY_BYTE_1          0x7F
+#define BMI270_FIFO_DUMMY_BYTE_2          0x00
+#define BMI270_FIFO_DUMMY_BYTE_3          0x80
 #define BMI270_FIFO_CTRL_LEN_SKIP_FRAME    2
 #define BMI270_FIFO_CTRL_LEN_SENSORTIME    4
 #define BMI270_FIFO_CTRL_LEN_CONFIG_CHANGE 5
@@ -70,6 +83,17 @@ static inline uint32_t bmi270_sample_period_ns(const struct bmi270_decoder_heade
 		(chan == SENSOR_CHAN_ACCEL_XYZ) ? header->acc_odr_hz : header->gyr_odr_hz;
 
 	return (uint32_t)(1000000000ULL / odr_hz);
+}
+
+/* True if the headerless frame holds a dummy instead of a sample for the requested element. */
+static bool bmi270_fifo_headerless_is_dummy(const uint8_t *frame, bool want_acc)
+{
+	const uint8_t *slot = frame + (want_acc ? BMI270_FIFO_HEADERLESS_ACC_OFFSET
+						: BMI270_FIFO_HEADERLESS_GYR_OFFSET);
+
+	return slot[0] == (want_acc ? BMI270_FIFO_DUMMY_ACC : BMI270_FIFO_DUMMY_GYR) &&
+	       slot[1] == BMI270_FIFO_DUMMY_BYTE_1 && slot[2] == BMI270_FIFO_DUMMY_BYTE_2 &&
+	       slot[3] == BMI270_FIFO_DUMMY_BYTE_3;
 }
 
 /* Advance past one FIFO frame; increment *count if frame has a sample for the requested channel. */
@@ -119,15 +143,20 @@ static int bmi270_decoder_get_frame_count(const uint8_t *buffer, struct sensor_c
 		return -ENOTSUP;
 	}
 
-	if (edata->header.is_headerless) {
-		*frame_count = edata->fifo_byte_count / BMI270_FIFO_PAYLOAD_ACC_GYR;
-		return 0;
-	}
-
 	uint16_t count = 0;
 	const uint8_t *p = edata->fifo_data;
 	const uint8_t *end = p + edata->fifo_byte_count;
 	bool want_acc = (chan_spec.chan_type == SENSOR_CHAN_ACCEL_XYZ);
+
+	if (edata->header.is_headerless) {
+		for (; p + BMI270_FIFO_PAYLOAD_ACC_GYR <= end; p += BMI270_FIFO_PAYLOAD_ACC_GYR) {
+			if (!bmi270_fifo_headerless_is_dummy(p, want_acc)) {
+				count++;
+			}
+		}
+		*frame_count = count;
+		return 0;
+	}
 
 	while (p < end) {
 		p = bmi270_fifo_advance_frame(p, want_acc, &count);
@@ -225,28 +254,36 @@ struct bmi270_fifo_decode_ctx {
 	int64_t gyr_scale;
 };
 
-/* Headerless: fixed 12-byte frames, payload order GYR then ACC (same as header mode). */
+/*
+ * Headerless: fixed 12-byte frames, payload order GYR then ACC (same as header mode). Dummy frames
+ * are skipped, but still take one sample period, so timestamps follow the frame's position.
+ */
 static uint16_t decode_fifo_headerless(const uint8_t *p, const uint8_t *end, uint16_t max_count,
 				       const struct bmi270_fifo_decode_ctx *ctx)
 {
+	bool want_acc = (ctx->chan_type == SENSOR_CHAN_ACCEL_XYZ);
 	uint32_t skip = ctx->fit_base;
+	uint32_t position = 0;
 	uint16_t decoded = 0;
 
-	while (p + BMI270_FIFO_PAYLOAD_ACC_GYR <= end && decoded < max_count) {
-		if (skip > 0) {
-			skip--;
-			p += BMI270_FIFO_PAYLOAD_ACC_GYR;
+	for (; p + BMI270_FIFO_PAYLOAD_ACC_GYR <= end && decoded < max_count;
+	     p += BMI270_FIFO_PAYLOAD_ACC_GYR, position++) {
+		if (bmi270_fifo_headerless_is_dummy(p, want_acc)) {
 			continue;
 		}
-		if (ctx->chan_type == SENSOR_CHAN_ACCEL_XYZ) {
-			decode_accel_frame(&p[6], ctx->acc_scale, &ctx->out->readings[decoded]);
-		} else {
-			decode_gyro_frame(p, ctx->gyr_scale, &ctx->out->readings[decoded]);
+		if (skip > 0) {
+			skip--;
+			continue;
 		}
-		ctx->out->readings[decoded].timestamp_delta =
-			(uint32_t)(ctx->fit_base + decoded) * ctx->sample_period_ns;
+		if (want_acc) {
+			decode_accel_frame(&p[BMI270_FIFO_HEADERLESS_ACC_OFFSET], ctx->acc_scale,
+					   &ctx->out->readings[decoded]);
+		} else {
+			decode_gyro_frame(&p[BMI270_FIFO_HEADERLESS_GYR_OFFSET], ctx->gyr_scale,
+					  &ctx->out->readings[decoded]);
+		}
+		ctx->out->readings[decoded].timestamp_delta = position * ctx->sample_period_ns;
 		decoded++;
-		p += BMI270_FIFO_PAYLOAD_ACC_GYR;
 	}
 
 	return decoded;
