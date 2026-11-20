@@ -11,3 +11,7 @@ properties:
   size:
     type: int
     required: true
+
+  vin-supply:
+    type: phandle
+    description: Regulator that powers the PSRAM.
