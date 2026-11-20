@@ -29,7 +29,7 @@ properties:
   infineon,version:
     type: int
     required: true
-    enum: [2, 3]
+    enum: [2, 3, 4]
     description: |
       SAR ADC IP block version. Corresponds to CY_IP_M0S8PASS4A_SAR_VERSION
       in the PDL. Different versions have varying capabilities (e.g., v2/v3
