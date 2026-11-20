@@ -125,6 +125,16 @@ void IRAM_ATTR __esp_platform_app_start(void)
 
 	esp_efuse_init_virtual();
 
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM)
+	esp_init_psram();
+
+#if defined(CONFIG_SHARED_MULTI_HEAP)
+	if (esp_psram_smh_init() != 0) {
+		printk("Failed to initialize PSRAM shared multi heap\n");
+	}
+#endif
+#endif
+
 #if defined(CONFIG_NOCACHE_MEMORY)
 	nocache_region_init();
 #endif

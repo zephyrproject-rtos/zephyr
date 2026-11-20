@@ -105,6 +105,7 @@
 			psram0: psram0 {
 				compatible = "espressif,esp32-psram";
 				size = <0x0>;
+				vin-supply = <&ldo2>;
 			};
 		};
 
