@@ -9,18 +9,18 @@
 
 #include "stmemsc.h"
 
-int stmemsc_i3c_read(void *stmemsc,
-		     uint8_t reg_addr, uint8_t *value, uint8_t len)
+int32_t stmemsc_i3c_read(void *ctx, uint8_t reg_addr,
+			 uint8_t *value, uint16_t len)
 {
-	struct i3c_device_desc *target = **(struct i3c_device_desc ***)stmemsc;
+	struct i3c_device_desc *target = **(struct i3c_device_desc ***)ctx;
 
 	return i3c_burst_read(target, reg_addr, value, len);
 }
 
-int stmemsc_i3c_write(void *stmemsc,
-		      uint8_t reg_addr, uint8_t *value, uint8_t len)
+int32_t stmemsc_i3c_write(void *ctx, uint8_t reg_addr,
+			  const uint8_t *value, uint16_t len)
 {
-	struct i3c_device_desc *target = **(struct i3c_device_desc ***)stmemsc;
+	struct i3c_device_desc *target = **(struct i3c_device_desc ***)ctx;
 	uint8_t buf[CONFIG_STMEMSC_I3C_I2C_WRITE_BUFFER_SIZE];
 
 	__ASSERT_NO_MSG(len <= sizeof(buf) - 1);
