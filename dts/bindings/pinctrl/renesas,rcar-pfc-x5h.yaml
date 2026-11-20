@@ -14,6 +14,17 @@ description: |
     used to route CAN8 TX to pin 'CLK_EXTFXR', and enable pull-up resistor as
     well as driving ability.
 
+    A child node without a pin function puts the pin in GPIO mode.
+
+    When CONFIG_PINCTRL_RCAR_SCMI is enabled, the pin configuration is sent to
+    the system control processor with the SCMI pin control protocol, using the
+    pin selector:
+    - the SCMI pin identifier is the index of the pin among the existing pins
+      of the PFC, in ascending hardware order, starting from 0;
+    - the SCMI function identifier is the ALTSEL code of the pin function;
+    - a node without a pin function sends the function identifier 0xFFFFFFFF
+      (no function).
+
 compatible: "renesas,rcar-pfc-x5h"
 
 include: base.yaml
