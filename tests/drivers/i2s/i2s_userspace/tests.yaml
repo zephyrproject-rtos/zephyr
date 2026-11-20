@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Mario Paja
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - i2s
+    - userspace
+  filter: CONFIG_ARCH_HAS_USERSPACE
+  # One case expects an oops when a user thread passes a device it has no access to
+  ignore_faults: true
+  platform_allow:
+    - qemu_x86
+    - qemu_x86/atom
+    - mps2/an385
+  integration_platforms:
+    - qemu_x86
+tests:
+  drivers.i2s.userspace:
+    harness: ztest
