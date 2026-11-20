@@ -1,0 +1,19 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_DRIVER_FFAT
+	bool "Fake FAT Disk"
+	default y if DT_HAS_ZEPHYR_FFAT_DISK_ENABLED
+	help
+	  Fake FAT disk emulates a disk formatted with the FAT file system
+	  and provides very limited functionality. It can be used for testing
+	  or to map services such as firmware updates to a file on
+	  the emulated disk.
+
+if DISK_DRIVER_FFAT
+
+module = FFATDISK
+module-str = ffatdisk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_FFAT

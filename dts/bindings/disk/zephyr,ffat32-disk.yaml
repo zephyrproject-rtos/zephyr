@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Fake FAT32 (FFAT32) disk
+  Selects FAT32 for a fake FAT disk, use it together with the zephyr,ffat-disk
+  compatible.
+
+compatible: "zephyr,ffat32-disk"
+
+include: zephyr,ffat-disk.yaml
