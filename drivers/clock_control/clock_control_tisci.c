@@ -87,10 +87,20 @@ static enum clock_control_status tisci_get_status(const struct device *dev,
 	return CLOCK_CONTROL_STATUS_UNKNOWN;
 }
 
+static int tisci_nosys_on_off(const struct device *dev, clock_control_subsys_t sys)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(sys);
+
+	return -ENOSYS;
+}
+
 static DEVICE_API(clock_control, tisci_clock_driver_api) = {
+	.on = tisci_nosys_on_off,
+	.off = tisci_nosys_on_off,
 	.get_rate = tisci_get_rate,
 	.set_rate = tisci_set_rate,
-	.get_status = tisci_get_status
+	.get_status = tisci_get_status,
 };
 
 #define TI_K2G_SCI_CLK_INIT(_n)                                                                    \
