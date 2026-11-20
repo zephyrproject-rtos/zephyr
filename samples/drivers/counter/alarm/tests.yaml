@@ -79,3 +79,12 @@ tests:
       - CONFIG_COUNTER_TIMER_STM32=n
     tags:
       - rtc
+  sample.drivers.counter.alarm.mchp_rtc:
+    # Uses the RTC peripheral instead of TC via boards/<board>_rtc.overlay
+    platform_allow:
+      - pic32cm_jh01_cpro
+      - pic32cm_jh01_cnano
+    extra_args:
+      - FILE_SUFFIX=rtc
+    tags:
+      - rtc

@@ -34,6 +34,20 @@ Building and Running
     :goals: run
     :compact:
 
+Building with RTC on Microchip boards
+======================================
+
+On the ``pic32cm_jh01_cpro`` and ``pic32cm_jh01_cnano`` boards the sample uses
+TC0 by default. To use the RTC peripheral instead, build with
+``FILE_SUFFIX=rtc``, which selects ``boards/<board>_rtc.overlay``:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/counter/alarm
+   :board: pic32cm_jh01_cpro
+   :gen-args: -DFILE_SUFFIX=rtc
+   :goals: build flash
+   :compact:
+
 Sample Output
 =============
 
