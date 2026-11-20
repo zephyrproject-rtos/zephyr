@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * boot_partition holds the Secure Boot v2 image: the ROM body limit, padded
+ * to 4 KiB, plus the 4 KiB signature sector. A larger partition would not
+ * raise the ROM buffer limit.
+ */
+
+&flash0 {
+	/delete-node/ partitions;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(68)>;
+			label = "mcuboot";
+		};
+
+		sys_partition: partition@11000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x11000 DT_SIZE_K(60)>;
+			label = "sys";
+		};
+
+		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x20000 DT_SIZE_K(512)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@a0000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0xa0000 DT_SIZE_K(512)>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@120000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x120000 DT_SIZE_K(64)>;
+			label = "storage";
+		};
+	};
+};

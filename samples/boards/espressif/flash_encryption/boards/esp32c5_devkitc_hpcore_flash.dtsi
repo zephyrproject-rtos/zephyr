@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	write-block-size = <32>;
+	/delete-node/ partitions;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@2000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x2000 DT_SIZE_K(120)>;
+			label = "mcuboot";
+		};
+
+		sys_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x20000 DT_SIZE_K(64)>;
+			label = "sys";
+		};
+
+		slot0_partition: partition@30000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x30000 DT_SIZE_K(3840)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@3f0000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x3f0000 DT_SIZE_K(3840)>;
+			label = "image-1";
+		};
+
+		slot0_lpcore_partition: partition@7b0000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x7b0000 DT_SIZE_K(32)>;
+			label = "image-0-lpcore";
+		};
+
+		slot1_lpcore_partition: partition@7b8000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x7b8000 DT_SIZE_K(32)>;
+			label = "image-1-lpcore";
+		};
+
+		storage_partition: partition@7c0000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x7c0000 DT_SIZE_K(128)>;
+			label = "storage";
+		};
+
+		scratch_partition: partition@7e0000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x7e0000 DT_SIZE_K(124)>;
+			label = "image-scratch";
+		};
+
+		coredump_partition: partition@7ff000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x7ff000 DT_SIZE_K(4)>;
+			label = "coredump";
+		};
+	};
+};

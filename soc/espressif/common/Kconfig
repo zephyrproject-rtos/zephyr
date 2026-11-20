@@ -36,6 +36,7 @@ rsource "Kconfig.esptool"
 rsource "Kconfig.flash"
 rsource "Kconfig.lcd_cam"
 rsource "Kconfig.ppa"
+rsource "Kconfig.security"
 
 if PM && TICKLESS_KERNEL
 rsource "Kconfig.pm"

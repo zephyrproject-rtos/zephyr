@@ -68,6 +68,26 @@ if(DEFINED dts_shell_uart AND dts_shell_uart)
   dt_prop(monitor_baud PATH ${dts_shell_uart} PROPERTY "current-speed")
 endif()
 
+# Flash encryption requires write-block-size to be 32.
+dt_prop(write_block_size PATH "${dts_flash}" PROPERTY "write-block-size")
+if(CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION)
+  if(NOT write_block_size)
+    message(FATAL_ERROR
+      "Hardware flash encryption requires zephyr,flash write-block-size to be "
+      "set (must be 32). Add it to both the application and MCUboot overlays,"
+      " e.g.:\n"
+      "  &flash0 {\n"
+      "          write-block-size = <32>;\n"
+      "  };")
+  endif()
+  if(NOT write_block_size EQUAL 32)
+    message(FATAL_ERROR
+      "Hardware flash encryption requires zephyr,flash write-block-size to be "
+      "32 (got ${write_block_size}). Set write-block-size = <32> "
+      "in both the application and MCUboot overlays.")
+  endif()
+endif()
+
 message("-- Espressif HAL path: ${ESP_IDF_PATH}")
 
 if((CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
@@ -85,6 +105,44 @@ if((CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_S
       --flash-size ${esptoolpy_flashsize}MB
       -o ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
       ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME})
+
+    # Secure Boot v2 signs the MCUboot image in place. The unsigned size is
+    # only known after elf2image, so the ROM buffer and boot_partition checks
+    # run in that same post-build step.
+    if(CONFIG_MCUBOOT AND CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT)
+      if(NOT EXISTS "${CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT_SIGNING_KEY}")
+        message(FATAL_ERROR
+          "Secure Boot v2 signing key was not found: "
+          "${CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT_SIGNING_KEY}")
+      endif()
+      find_program(ESPSECURE espsecure)
+      if(NOT ESPSECURE)
+        message(FATAL_ERROR
+          "espsecure was not found. Zephyr's esptool package provides it "
+          "(esptool >= 5) and is required to sign the MCUboot image.")
+      endif()
+
+      # Image body the ROM copies into a fixed buffer, excluding the signature sector.
+      if(CONFIG_SOC STREQUAL "esp32")
+        set(espressif_sb_rom_limit 49152)       # 48 KiB
+      elseif(CONFIG_SOC STREQUAL "esp32c5" OR CONFIG_SOC STREQUAL "esp32c61")
+        set(espressif_sb_rom_limit 81920)       # 80 KiB
+      else()
+        set(espressif_sb_rom_limit 65536)       # 64 KiB
+      endif()
+
+      dt_nodelabel(sb_boot_path NODELABEL "boot_partition")
+      dt_reg_size(sb_boot_size PATH ${sb_boot_path})
+
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+        COMMAND ${CMAKE_COMMAND}
+        -DUNSIGNED_BIN=${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
+        -DSIGNING_KEY=${CONFIG_SOC_FAMILY_ESPRESSIF_SECURE_BOOT_SIGNING_KEY}
+        -DROM_LIMIT=${espressif_sb_rom_limit}
+        -DBOOT_PARTITION_SIZE=${sb_boot_size}
+        -DESPSECURE=${ESPSECURE}
+        -P ${CMAKE_CURRENT_LIST_DIR}/secure_boot_sign.cmake)
+    endif()
   endif()
 endif()
 
@@ -130,18 +188,33 @@ endif()
 
 # Look for cross references between bootloader sections
 if(CONFIG_MCUBOOT)
-    message("check_callgraph using: ${ESP_IDF_PATH}/tools/ci/check_callgraph.py")
+  message("check_callgraph using: ${ESP_IDF_PATH}/tools/ci/check_callgraph.py")
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND
+      ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/tools/ci/check_callgraph.py
+    ARGS
+      --rtl-dirs ${CMAKE_BINARY_DIR}/zephyr
+      --elf-file ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
+      find-reachable-from-loader-func
+      --map ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_MAP_NAME}
+      --roots='do_boot,start_cpu0_image'
+      --outplacers
+      --summary
+  )
+
+  if(CONFIG_BUILD_OUTPUT_BIN)
+    # Compare bootloader binary to DT boot_partition size.
+    dt_nodelabel(boot_part_path NODELABEL "boot_partition")
+    dt_reg_size(boot_part_size PATH ${boot_part_path})
+    math(EXPR boot_part_size_dec "${boot_part_size}" OUTPUT_FORMAT DECIMAL)
+    message(STATUS "boot_partition size: ${boot_part_size_dec} bytes")
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND
-        ${PYTHON_EXECUTABLE} ${ESP_IDF_PATH}/tools/ci/check_callgraph.py
+      COMMAND ${CMAKE_COMMAND}
       ARGS
-        --rtl-dirs ${CMAKE_BINARY_DIR}/zephyr
-        --elf-file ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
-        find-reachable-from-loader-func
-        --map ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_MAP_NAME}
-        --roots='do_boot,start_cpu0_image'
-        --outplacers
-        --summary)
+        -DBIN_FILE=${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
+        -DMAX_SIZE=${boot_part_size_dec}
+        -P ${CMAKE_CURRENT_LIST_DIR}/check_boot_partition_size.cmake)
+  endif()
 endif()
 
 if(CONFIG_MCUBOOT)
