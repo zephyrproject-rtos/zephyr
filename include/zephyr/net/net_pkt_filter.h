@@ -399,66 +399,6 @@ extern npf_test_fn_t npf_size_inbounds;
 			    .test.type = NPF_TEST_TYPE_SIZE_BOUNDS,)) \
 	}
 
-/** @cond INTERNAL_HIDDEN */
-
-struct npf_test_ip {
-	struct npf_test test;
-	uint8_t addr_family;
-	void *ipaddr;
-	uint32_t ipaddr_num;
-};
-
-extern npf_test_fn_t npf_ip_src_addr_match;
-extern npf_test_fn_t npf_ip_src_addr_unmatch;
-
-/** @endcond */
-
-/**
- * @brief Statically define a "ip address allowlist" packet filter condition
- *
- * This tests if the packet source ip address matches any of the ip
- * addresses contained in the provided set.
- *
- * @param _name Name of the condition
- * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
- * <tt>struct net_in6_addr</tt> items to test against
- * @param _ip_addr_num number of IP addresses in the array
- * @param _af Addresses family type (NET_AF_INET / NET_AF_INET6) in the array
- */
-#define NPF_IP_SRC_ADDR_ALLOWLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
-	struct npf_test_ip _name = {					\
-		.addr_family = _af,					\
-		.ipaddr = (_ip_addr_array),				\
-		.ipaddr_num = _ip_addr_num,				\
-		.test.fn = npf_ip_src_addr_match,			\
-		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
-			   (.test.name = "ip src allow",		\
-			    .test.type = NPF_TEST_TYPE_IP_SRC_ADDR_ALLOWLIST,)) \
-	}
-
-/**
- * @brief Statically define a "ip address blocklist" packet filter condition
- *
- * This tests if the packet source ip address matches any of the ip
- * addresses contained in the provided set.
- *
- * @param _name Name of the condition
- * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
- * <tt>struct net_in6_addr</tt> items to test against
- * @param _ip_addr_num number of IP addresses in the array
- * @param _af Addresses family type (NET_AF_INET / NET_AF_INET6) in the array
- */
-#define NPF_IP_SRC_ADDR_BLOCKLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
-	struct npf_test_ip _name = {					\
-		.addr_family = _af,					\
-		.ipaddr = (_ip_addr_array),				\
-		.ipaddr_num = _ip_addr_num,				\
-		.test.fn = npf_ip_src_addr_unmatch,			\
-		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
-			   (.test.name = "ip src block",		\
-			    .test.type = NPF_TEST_TYPE_IP_SRC_ADDR_BLOCKLIST,)) \
-	}
-
 /** @} */
 
 /**
@@ -760,6 +700,76 @@ void npf_rules_foreach(npf_rule_cb_t cb, void *user_data);
 const char *npf_test_get_str(struct npf_test *test, char *buf,
 			     size_t len);
 /** @endcond */
+
+/** @} */
+
+/**
+ * @defgroup npf_ip_cond IP Filter Conditions
+ * @ingroup net_pkt_filter
+ * @since 3.5
+ * @version 0.8.0
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
+struct npf_test_ip {
+	struct npf_test test;
+	uint8_t addr_family;
+	void *ipaddr;
+	uint32_t ipaddr_num;
+};
+
+extern npf_test_fn_t npf_ip_src_addr_match;
+extern npf_test_fn_t npf_ip_src_addr_unmatch;
+
+/** @endcond */
+
+/**
+ * @brief Statically define a "ip address allowlist" packet filter condition
+ *
+ * This tests if the packet source ip address matches any of the ip
+ * addresses contained in the provided set.
+ *
+ * @param _name Name of the condition
+ * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
+ * <tt>struct net_in6_addr</tt> items to test against
+ * @param _ip_addr_num number of IP addresses in the array
+ * @param _af Addresses family type (NET_AF_INET / NET_AF_INET6) in the array
+ */
+#define NPF_IP_SRC_ADDR_ALLOWLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
+	struct npf_test_ip _name = {					\
+		.addr_family = _af,					\
+		.ipaddr = (_ip_addr_array),				\
+		.ipaddr_num = _ip_addr_num,				\
+		.test.fn = npf_ip_src_addr_match,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "ip src allow",		\
+			    .test.type = NPF_TEST_TYPE_IP_SRC_ADDR_ALLOWLIST,)) \
+	}
+
+/**
+ * @brief Statically define a "ip address blocklist" packet filter condition
+ *
+ * This tests if the packet source ip address matches any of the ip
+ * addresses contained in the provided set.
+ *
+ * @param _name Name of the condition
+ * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
+ * <tt>struct net_in6_addr</tt> items to test against
+ * @param _ip_addr_num number of IP addresses in the array
+ * @param _af Addresses family type (NET_AF_INET / NET_AF_INET6) in the array
+ */
+#define NPF_IP_SRC_ADDR_BLOCKLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
+	struct npf_test_ip _name = {					\
+		.addr_family = _af,					\
+		.ipaddr = (_ip_addr_array),				\
+		.ipaddr_num = _ip_addr_num,				\
+		.test.fn = npf_ip_src_addr_unmatch,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "ip src block",		\
+			    .test.type = NPF_TEST_TYPE_IP_SRC_ADDR_BLOCKLIST,)) \
+	}
 
 /** @} */
 
