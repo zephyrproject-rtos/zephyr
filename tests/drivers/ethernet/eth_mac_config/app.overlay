@@ -35,6 +35,19 @@
 		zephyr,mac-address-prefix = [00 33 66];
 	};
 
+	eth_mac_nvmem_reversed: eth-mac-nvmem-reversed {
+		compatible = "vnd,ethernet";
+		nvmem-cells = <&cell_reversed6>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	eth_mac_nvmem_reversed_prefix: eth-mac-nvmem-reversed-prefix {
+		compatible = "vnd,ethernet";
+		nvmem-cells = <&cell_reversed3>;
+		nvmem-cell-names = "mac-address";
+		zephyr,mac-address-prefix = [00 33 66];
+	};
+
 	eth_mac_none: eth-mac-none {
 		compatible = "vnd,ethernet";
 	};
@@ -54,6 +67,18 @@
 		cell6: cell@6 {
 			reg = <0x6 0x3>;
 			#nvmem-cell-cells = <0>;
+		};
+
+		cell_reversed6: cell@12 {
+			reg = <0x12 0x6>;
+			#nvmem-cell-cells = <0>;
+			zephyr,reversed-byte-order;
+		};
+
+		cell_reversed3: cell@18 {
+			reg = <0x18 0x3>;
+			#nvmem-cell-cells = <0>;
+			zephyr,reversed-byte-order;
 		};
 	};
 };
