@@ -315,6 +315,9 @@ static int ifx_cat1_dma_start(const struct device *dev, uint32_t channel)
 	sys_cache_data_flush_and_invd_all();
 #endif
 
+	Cy_DMA_Channel_ClearInterrupt(cfg->regs, channel);
+	Cy_DMA_Channel_SetInterruptMask(cfg->regs, channel, CY_DMA_INTR_MASK);
+
 	/* Enable DMA channel */
 	Cy_DMA_Channel_Enable(cfg->regs, channel);
 
@@ -333,7 +336,9 @@ static int ifx_cat1_dma_stop(const struct device *dev, uint32_t channel)
 	}
 
 	/* Disable DMA channel */
+	Cy_DMA_Channel_SetInterruptMask(cfg->regs, channel, 0);
 	Cy_DMA_Channel_Disable(cfg->regs, channel);
+	Cy_DMA_Channel_ClearInterrupt(cfg->regs, channel);
 
 	return 0;
 }
@@ -364,6 +369,9 @@ int ifx_cat1_dma_reload(const struct device *dev, uint32_t channel, uint32_t src
 #ifdef CONFIG_CPU_HAS_DCACHE
 	sys_cache_data_flush_and_invd_range((void *)src, size);
 #endif
+
+	/* Restore notification after dma_stop() masked the channel interrupt. */
+	Cy_DMA_Channel_SetInterruptMask(cfg->regs, channel, CY_DMA_INTR_MASK);
 
 	/* Initialize channel */
 	Cy_DMA_Channel_Enable(cfg->regs, channel);
@@ -544,6 +552,11 @@ static void ifx_cat1_dma_isr(struct ifx_cat1_dma_irq_context *irq_context)
 	dma_callback_t callback = data->channels[channel].callback;
 	int status = -EIO;
 
+	/* A cancelled channel can still have a pending NVIC interrupt. */
+	if (Cy_DMA_Channel_GetInterruptStatusMasked(cfg->regs, channel) == 0U) {
+		return;
+	}
+
 	/* Get interrupt type and call users event callback if they have enabled that event */
 	uint32_t intr_cause = Cy_DMA_Channel_GetStatus(cfg->regs, channel);
 
@@ -594,7 +607,7 @@ static void ifx_cat1_dma_isr(struct ifx_cat1_dma_irq_context *irq_context)
 	}
 
 	/* Give callback with error status only if enabled */
-	if (status != 0 && !data->channels[channel].error_callback_dis) {
+	if (status != 0 && data->channels[channel].error_callback_dis) {
 		return;
 	}
 
