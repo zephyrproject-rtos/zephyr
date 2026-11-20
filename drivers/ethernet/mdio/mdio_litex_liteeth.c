@@ -163,7 +163,7 @@ static DEVICE_API(mdio, mdio_litex_driver_api) = {
 		.r_addr = DT_INST_REG_ADDR_BY_NAME(inst, mdio_r),                                  \
 	};                                                                                         \
 	static struct mdio_litex_data mdio_litex_dev_data_##inst;                                  \
-	DEVICE_DT_INST_DEFINE(inst, &mdio_litex_initialize, NULL, &mdio_litex_dev_data_##inst,     \
+	DEVICE_DT_INST_DEFINE(inst, mdio_litex_initialize, NULL, &mdio_litex_dev_data_##inst,      \
 			      &mdio_litex_dev_config_##inst, POST_KERNEL,                          \
 			      CONFIG_MDIO_INIT_PRIORITY, &mdio_litex_driver_api);
 

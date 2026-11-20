@@ -117,7 +117,7 @@ static DEVICE_API(mdio, mdio_bcmgenet_api) = {
 		.mdio_reg = DT_INST_REG_ADDR(n),                                                   \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &mdio_bcmgenet_init, NULL, &mdio_bcmgenet_data##n,                \
+	DEVICE_DT_INST_DEFINE(n, mdio_bcmgenet_init, NULL, &mdio_bcmgenet_data##n,                 \
 			      &mdio_bcmgenet_config_##n, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,   \
 			      &mdio_bcmgenet_api);
 

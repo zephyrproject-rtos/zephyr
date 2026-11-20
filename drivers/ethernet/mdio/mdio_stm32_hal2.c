@@ -127,7 +127,7 @@ static DEVICE_API(mdio, mdio_stm32_api) = {
 		DEVICE_MMIO_ROM_INIT(DT_INST_PARENT(inst)),                                        \
 		MDIO_STM32_PINCTRL_CONFIG(inst)                                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &mdio_stm32_init, NULL, &mdio_stm32_data_##inst,               \
+	DEVICE_DT_INST_DEFINE(inst, mdio_stm32_init, NULL, &mdio_stm32_data_##inst,                \
 			      &mdio_stm32_config_##inst, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,   \
 			      &mdio_stm32_api);
 

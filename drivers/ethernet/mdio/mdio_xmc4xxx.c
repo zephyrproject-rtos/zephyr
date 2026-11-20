@@ -162,6 +162,6 @@ static const struct mdio_xmc4xxx_dev_config mdio_xmc4xxx_dev_config_0 = {
 
 static struct mdio_xmc4xxx_dev_data mdio_xmc4xxx_dev_data_0;
 
-DEVICE_DT_INST_DEFINE(0, &mdio_xmc4xxx_initialize, NULL, &mdio_xmc4xxx_dev_data_0,
+DEVICE_DT_INST_DEFINE(0, mdio_xmc4xxx_initialize, NULL, &mdio_xmc4xxx_dev_data_0,
 		      &mdio_xmc4xxx_dev_config_0, POST_KERNEL,
 		      CONFIG_MDIO_INIT_PRIORITY, &mdio_xmc4xxx_driver_api);
