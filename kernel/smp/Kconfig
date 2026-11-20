@@ -6,6 +6,7 @@ menu "SMP Options"
 config SMP
 	bool "Symmetric multiprocessing support"
 	depends on USE_SWITCH
+	depends on KERNEL_SCOPE_SMP
 	help
 	  When true, kernel will be built with SMP support, allowing
 	  more than one CPU to schedule Zephyr tasks at a time.
@@ -13,6 +14,7 @@ config SMP
 config MP_MAX_NUM_CPUS
 	int "Maximum number of CPUs/cores"
 	default 1
+	range 1 1 if !KERNEL_SCOPE_SMP
 	range 1 32
 	help
 	  Maximum number of multiprocessing-capable cores available to the

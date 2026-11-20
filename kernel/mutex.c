@@ -85,7 +85,7 @@ K_OBJ_TYPE_DEFINE(obj_type_mutex, k_mutex, K_OBJ_TYPE_MUTEX_ID, NULL);
  * linked in the owner's held_mutexes list and reset the wait queue under
  * pending waiters (threads only pend while the mutex has an owner).
  */
-static int mutex_init(struct k_mutex *mutex, bool refuse_if_owned)
+int z_mutex_init(struct k_mutex *mutex, bool refuse_if_owned)
 {
 	k_spinlock_key_t key = k_spin_lock(&mutex_lock);
 
@@ -118,26 +118,8 @@ static int mutex_init(struct k_mutex *mutex, bool refuse_if_owned)
 
 int z_impl_k_mutex_init(struct k_mutex *mutex)
 {
-	return mutex_init(mutex, false);
+	return z_mutex_init(mutex, false);
 }
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_mutex_init(struct k_mutex *mutex)
-{
-	bool initialized;
-
-	K_OOPS(K_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX));
-
-	/* The owner field is only meaningful once the mutex was initialized */
-	initialized = (k_object_find(mutex)->flags & K_OBJ_FLAG_INITIALIZED) != 0U;
-
-	K_OOPS(K_SYSCALL_VERIFY_MSG(mutex_init(mutex, initialized) == 0,
-				    "mutex %p is locked", mutex));
-
-	return 0;
-}
-#include <zephyr/syscalls/k_mutex_init_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 
 #if Z_MUTEX_PI_ENABLED
 /*
@@ -398,16 +380,6 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 #endif
 }
 
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_mutex_lock(struct k_mutex *mutex,
-				      k_timeout_t timeout)
-{
-	K_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
-	return z_impl_k_mutex_lock(mutex, timeout);
-}
-#include <zephyr/syscalls/k_mutex_lock_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
 	struct k_thread *new_owner = NULL;
@@ -505,18 +477,8 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 		k_spin_unlock(&mutex_lock, key);
 	}
 
-
 k_mutex_unlock_return:
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, unlock, mutex, 0);
 
 	return 0;
 }
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_mutex_unlock(struct k_mutex *mutex)
-{
-	K_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
-	return z_impl_k_mutex_unlock(mutex);
-}
-#include <zephyr/syscalls/k_mutex_unlock_mrsh.c>
-#endif /* CONFIG_USERSPACE */

@@ -62,6 +62,7 @@ else()
     mem_slab.c
     float.c
     version.c
+    scope.c
     )
 
   # Toolchain workaround: on ARM Thumb, when frame pointers are enabled,
@@ -116,6 +117,7 @@ else()
   kernel_sources_ifdef(CONFIG_SPIN_VALIDATE spinlock_validate.c)
   kernel_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
   kernel_sources_ifdef(CONFIG_THREAD_MONITOR thread_monitor.c)
+  kernel_sources_ifdef(CONFIG_THREAD_STACK_MEM_MAPPED thread_stack_map.c)
   kernel_sources_ifdef(CONFIG_DEMAND_PAGING_STATS paging/statistics.c)
 
   target_sources(kernel PRIVATE ${kernel_files})
@@ -136,6 +138,7 @@ else()
     target_sources(kernel PRIVATE sys_clock_hw_cycles.c)
   endif()
   target_sources_ifdef(CONFIG_MMU                   kernel PRIVATE mmu.c)
+  target_sources_ifdef(CONFIG_DEMAND_PAGING         kernel PRIVATE paging/demand_paging.c)
   target_sources_ifdef(CONFIG_POLL                  kernel PRIVATE poll.c)
   target_sources_ifdef(CONFIG_EVENTS                kernel PRIVATE events.c)
   target_sources_ifdef(CONFIG_SCHED_THREAD_USAGE    kernel PRIVATE usage.c)

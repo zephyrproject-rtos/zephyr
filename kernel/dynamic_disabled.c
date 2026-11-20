@@ -18,27 +18,9 @@ k_thread_stack_t *z_impl_k_thread_stack_alloc(size_t size, int flags)
 	return NULL;
 }
 
-#ifdef CONFIG_USERSPACE
-static inline k_thread_stack_t *z_vrfy_k_thread_stack_alloc(size_t size, int flags)
-{
-	/* No check needed: neither argument is dereferenced, allocation always fails. */
-	return z_impl_k_thread_stack_alloc(size, flags);
-}
-#include <zephyr/syscalls/k_thread_stack_alloc_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-
 int z_impl_k_thread_stack_free(k_thread_stack_t *stack)
 {
 	ARG_UNUSED(stack);
 
 	return -ENOSYS;
 }
-
-#ifdef CONFIG_USERSPACE
-static inline int z_vrfy_k_thread_stack_free(k_thread_stack_t *stack)
-{
-	/* No check needed: stack is not dereferenced, -ENOSYS is always returned. */
-	return z_impl_k_thread_stack_free(stack);
-}
-#include <zephyr/syscalls/k_thread_stack_free_mrsh.c>
-#endif /* CONFIG_USERSPACE */

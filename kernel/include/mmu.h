@@ -9,6 +9,7 @@
 #ifdef CONFIG_MMU
 
 #include <stdint.h>
+#include <kernel_arch_interface.h>
 #include <zephyr/sys/sflist.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
@@ -342,6 +343,94 @@ void k_mem_page_frames_dump(void);
 					  CONFIG_MMU_PAGE_SIZE))
 #else
 #define K_MEM_VM_RESERVED	0
+#endif /* CONFIG_DEMAND_PAGING */
+
+/* Page frame bookkeeping of the virtual memory core, shared with the demand
+ * paging code. z_mm_lock must be held.
+ */
+extern struct k_spinlock z_mm_lock;
+struct k_mem_page_frame *z_mem_page_frame_get_free(void);
+void z_mem_page_frame_free_locked(struct k_mem_page_frame *pf);
+void z_mem_page_frame_mapped_set(struct k_mem_page_frame *pf, void *addr);
+#ifdef CONFIG_ASSERT
+extern bool z_mem_page_frames_initialized;
+#endif /* CONFIG_ASSERT */
+
+/* Hooks through which the virtual memory core reaches the demand paging
+ * code in kernel/paging/demand_paging.c. Without CONFIG_DEMAND_PAGING they
+ * compile to nothing.
+ */
+#ifdef CONFIG_DEMAND_PAGING
+#include <zephyr/kernel/mm/demand_paging.h>
+
+/* Initialize the backing store and eviction algorithm at the end of
+ * z_mem_manage_init(). z_mm_lock held.
+ */
+void z_paging_init(void);
+
+/* Evict a page frame to satisfy an allocation when the free list is empty.
+ * Returns the frame, unmapped and written back, or NULL when every evictable
+ * frame is pinned or busy. z_mm_lock held.
+ */
+struct k_mem_page_frame *z_paging_frame_evict_locked(void);
+
+/* Physical address of a page being unmapped. A paged-out page has no page
+ * frame: its mapping and backing store are released here and @p paged_out
+ * is set. z_mm_lock held.
+ */
+int z_paging_unmap_page_locate(void *addr, uintptr_t *phys, bool *paged_out);
+
+/* Start or stop tracking a page frame as an eviction candidate. */
+static inline void z_paging_eviction_track(struct k_mem_page_frame *pf)
+{
+	if (IS_ENABLED(CONFIG_EVICTION_TRACKING)) {
+		k_mem_paging_eviction_add(pf);
+	}
+}
+
+static inline void z_paging_eviction_untrack(struct k_mem_page_frame *pf)
+{
+	if (IS_ENABLED(CONFIG_EVICTION_TRACKING)) {
+		k_mem_paging_eviction_remove(pf);
+	}
+}
+
+/* Page frames kept free for the paging code, not reported by k_mem_free_get(). */
+static inline size_t z_paging_frames_reserved(void)
+{
+	return CONFIG_DEMAND_PAGING_PAGE_FRAMES_RESERVE;
+}
+#else /* !CONFIG_DEMAND_PAGING */
+static inline void z_paging_init(void)
+{
+}
+
+static inline struct k_mem_page_frame *z_paging_frame_evict_locked(void)
+{
+	return NULL;
+}
+
+static inline int z_paging_unmap_page_locate(void *addr, uintptr_t *phys, bool *paged_out)
+{
+	*paged_out = false;
+
+	return arch_page_phys_get(addr, phys);
+}
+
+static inline void z_paging_eviction_track(struct k_mem_page_frame *pf)
+{
+	ARG_UNUSED(pf);
+}
+
+static inline void z_paging_eviction_untrack(struct k_mem_page_frame *pf)
+{
+	ARG_UNUSED(pf);
+}
+
+static inline size_t z_paging_frames_reserved(void)
+{
+	return 0;
+}
 #endif /* CONFIG_DEMAND_PAGING */
 
 #ifdef CONFIG_DEMAND_PAGING

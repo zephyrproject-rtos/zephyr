@@ -42,11 +42,4 @@ void __weak z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
 	defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
-#ifdef CONFIG_USERSPACE
-static inline unsigned int z_vrfy_sys_clock_hw_cycles_per_sec_runtime_get(void)
-{
-	return z_impl_sys_clock_hw_cycles_per_sec_runtime_get();
-}
-#include <zephyr/syscalls/sys_clock_hw_cycles_per_sec_runtime_get_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
