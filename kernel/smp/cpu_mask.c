@@ -55,17 +55,31 @@ int k_thread_cpu_mask_enable_all(k_tid_t thread)
 
 int k_thread_cpu_mask_enable(k_tid_t thread, int cpu)
 {
+	if (!IN_RANGE(cpu, 0, (int)arch_num_cpus() - 1)) {
+		return -EINVAL;
+	}
+
 	return cpu_mask_mod(thread, BIT(cpu), 0);
 }
 
 int k_thread_cpu_mask_disable(k_tid_t thread, int cpu)
 {
+	if (!IN_RANGE(cpu, 0, (int)arch_num_cpus() - 1)) {
+		return -EINVAL;
+	}
+
 	return cpu_mask_mod(thread, 0, BIT(cpu));
 }
 
 int k_thread_cpu_pin(k_tid_t thread, int cpu)
 {
-	uint32_t mask = BIT(cpu);
+	uint32_t mask;
+
+	if (!IN_RANGE(cpu, 0, (int)arch_num_cpus() - 1)) {
+		return -EINVAL;
+	}
+
+	mask = BIT(cpu);
 
 	return cpu_mask_mod(thread, mask, ~mask);
 }

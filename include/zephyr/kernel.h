@@ -1275,7 +1275,8 @@ int k_thread_cpu_mask_enable_all(k_tid_t thread);
  *
  * @param thread Thread to operate upon
  * @param cpu CPU index
- * @return Zero on success, otherwise error code
+ * @retval 0 Success
+ * @retval -EINVAL @p cpu is out of range, or the thread is currently runnable
  */
 int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
 
@@ -1294,7 +1295,8 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
  *
  * @param thread Thread to operate upon
  * @param cpu CPU index
- * @return Zero on success, otherwise error code
+ * @retval 0 Success
+ * @retval -EINVAL @p cpu is out of range, or the thread is currently runnable
  */
 int k_thread_cpu_mask_disable(k_tid_t thread, int cpu);
 
@@ -1306,7 +1308,8 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu);
  *
  * @param thread Thread to operate upon
  * @param cpu CPU index
- * @return Zero on success, otherwise error code
+ * @retval 0 Success
+ * @retval -EINVAL @p cpu is out of range, or the thread is currently runnable
  */
 int k_thread_cpu_pin(k_tid_t thread, int cpu);
 #endif

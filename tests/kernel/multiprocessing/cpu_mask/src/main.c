@@ -128,6 +128,81 @@ ZTEST(cpu_mask, test_cpu_mask_rejects_running_thread)
 }
 
 /**
+ * @brief Verify that the cpu_mask APIs reject an out-of-range CPU index.
+ *
+ * @ingroup kernel_cpu_mask_tests
+ *
+ * @details
+ * k_thread_cpu_mask_enable(), k_thread_cpu_mask_disable() and
+ * k_thread_cpu_pin() take a CPU index. An index outside
+ * [0, arch_num_cpus()) has no corresponding CPU; it must be rejected with
+ * -EINVAL rather than accepted. A regression: an out-of-range index used to be
+ * fed straight into BIT() and returned 0, leaving the thread with a mask bit
+ * that matches no CPU so it was ready but never eligible.
+ *
+ * Test steps:
+ * - Create a high-priority thread in the K_FOREVER (prevented-from-running)
+ *   state, so the index check is reached rather than the runnable-thread
+ *   rejection.
+ * - Call enable/disable/pin with a negative index and with arch_num_cpus()
+ *   (the first index past the valid range).
+ * - Pin the thread to a valid CPU, start it and wait for it to run.
+ *
+ * Expected result:
+ * - Every out-of-range call returns -EINVAL.
+ * - The thread is unharmed: pinned to a valid CPU it still runs.
+ *
+ * @see k_thread_cpu_mask_enable()
+ * @see k_thread_cpu_mask_disable()
+ * @see k_thread_cpu_pin()
+ */
+ZTEST(cpu_mask, test_cpu_mask_rejects_bad_cpu)
+{
+	int bad = (int)arch_num_cpus();
+	k_tid_t tid;
+	int prio = k_thread_priority_get(k_current_get()) - 1;
+	int ret;
+
+	reset_state();
+
+	tid = k_thread_create(&worker_threads[0], worker_stacks[0],
+			      STACK_SIZE, worker_fn,
+			      INT_TO_POINTER(0), NULL, NULL,
+			      prio, 0, K_FOREVER);
+
+	ret = k_thread_cpu_mask_enable(tid, -1);
+	zassert_equal(ret, -EINVAL, "enable(-1) returned %d", ret);
+
+	ret = k_thread_cpu_mask_enable(tid, bad);
+	zassert_equal(ret, -EINVAL, "enable(ncpus) returned %d", ret);
+
+	ret = k_thread_cpu_mask_disable(tid, -1);
+	zassert_equal(ret, -EINVAL, "disable(-1) returned %d", ret);
+
+	ret = k_thread_cpu_mask_disable(tid, bad);
+	zassert_equal(ret, -EINVAL, "disable(ncpus) returned %d", ret);
+
+	ret = k_thread_cpu_pin(tid, -1);
+	zassert_equal(ret, -EINVAL, "pin(-1) returned %d", ret);
+
+	ret = k_thread_cpu_pin(tid, bad);
+	zassert_equal(ret, -EINVAL, "pin(ncpus) returned %d", ret);
+
+	/* The rejected calls must not have wedged the thread: pinned to a
+	 * valid CPU it still runs.
+	 */
+	ret = k_thread_cpu_pin(tid, 0);
+	zassert_equal(ret, 0, "k_thread_cpu_pin(0) failed: %d", ret);
+
+	k_thread_start(tid);
+
+	ret = k_sem_take(&worker_sem, K_MSEC(2000));
+	zassert_equal(ret, 0, "thread did not run after bad-index rejections");
+
+	k_thread_join(tid, K_FOREVER);
+}
+
+/**
  * @brief Verify that a thread with a cleared CPU mask never executes.
  *
  * @ingroup kernel_cpu_mask_tests
