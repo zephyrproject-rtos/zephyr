@@ -66,38 +66,34 @@ enum adc_gain {
 };
 
 /**
- * @brief Invert the application of gain to a measurement value.
+ * @brief Remove the configured gain from a measurement value.
  *
- * For example, if the gain passed in is ADC_GAIN_1_6 and the
- * referenced value is 10, the value after the function returns is 60.
+ * On success, the value pointed to by @p value is divided by @p gain.
+ * For example, with @p gain set to ADC_GAIN_1_6, an input value of 10
+ * becomes 60 (10 / (1/6)).
  *
- * @param gain the gain used to amplify the input signal.
+ * @param gain The gain applied to the measurement.
+ * @param value Pointer to the measurement value. It is updated on success
+ *              and left unchanged if the gain cannot be reversed.
  *
- * @param value a pointer to a value that initially has the effect of
- * the applied gain but has that effect removed when this function
- * successfully returns.  If the gain cannot be reversed the value
- * remains unchanged.
- *
- * @retval 0 if the gain was successfully reversed
- * @retval -EINVAL if the gain could not be interpreted
+ * @retval 0       The gain was successfully reversed.
+ * @retval -EINVAL The gain could not be interpreted.
  */
 int adc_gain_invert(enum adc_gain gain, int32_t *value);
 
 /**
- * @brief Invert the application of gain to a measurement value.
+ * @brief Remove the configured gain from a 64-bit measurement value.
  *
- * For example, if the gain passed in is ADC_GAIN_1_6 and the
- * referenced value is 10, the value after the function returns is 60.
+ * On success, the value pointed to by @p value is divided by @p gain.
+ * For example, with @p gain set to ADC_GAIN_1_6, an input value of 10
+ * becomes 60 (10 / (1/6)).
  *
- * @param gain the gain used to amplify the input signal.
+ * @param gain The gain applied to the measurement.
+ * @param value Pointer to the measurement value. It is updated on success
+ *              and left unchanged if the gain cannot be reversed.
  *
- * @param value a pointer to a value that initially has the effect of
- * the applied gain but has that effect removed when this function
- * successfully returns.  If the gain cannot be reversed the value
- * remains unchanged.
- *
- * @retval 0 if the gain was successfully reversed
- * @retval -EINVAL if the gain could not be interpreted
+ * @retval 0       The gain was successfully reversed.
+ * @retval -EINVAL The gain could not be interpreted.
  */
 int adc_gain_invert_64(enum adc_gain gain, int64_t *value);
 
