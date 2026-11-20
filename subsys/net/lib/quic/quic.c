@@ -7031,6 +7031,14 @@ static int quic_endpoint_send_close(struct quic_endpoint *ep,
 	enum quic_secret_level level;
 	int len;
 
+	/* RFC 9000 ch. 10.2.2: a connection the peer closed is draining, and
+	 * a close of ours is not sent to it any more.
+	 */
+	if (ep->draining) {
+		quic_recovery_begin_shutdown(ep);
+		return 0;
+	}
+
 	/* Send at the highest available encryption level */
 	if (ep->crypto.application.initialized) {
 		level = QUIC_SECRET_LEVEL_APPLICATION;
