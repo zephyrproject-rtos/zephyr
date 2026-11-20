@@ -966,7 +966,8 @@ static inline int send_ff(struct isotp_send_ctx *sctx)
 		frame.data[index++] = sctx->tx_addr.ext_addr;
 	}
 
-	if (len > 0xFFF) {
+	if ((sctx->tx_addr.flags & ISOTP_MSG_FDF) != 0 && len > ISOTP_FF_DL_MAX) {
+		/* 32-bit FF_DL escape, CAN FD only */
 		frame.data[index++] = ISOTP_PCI_TYPE_FF;
 		frame.data[index++] = 0;
 		frame.data[index++] = (len >> 3 * 8) & 0xFF;
@@ -974,6 +975,8 @@ static inline int send_ff(struct isotp_send_ctx *sctx)
 		frame.data[index++] = (len >>   8) & 0xFF;
 		frame.data[index++] = len & 0xFF;
 	} else {
+		/* send() rejects classic CAN messages above ISOTP_FF_DL_MAX */
+		__ASSERT_NO_MSG(len <= ISOTP_FF_DL_MAX);
 		frame.data[index++] = ISOTP_PCI_TYPE_FF | (len >> 8);
 		frame.data[index++] = len & 0xFF;
 	}
@@ -1259,6 +1262,13 @@ static int send(struct isotp_send_ctx *sctx, const struct device *can_dev,
 	}
 
 	len = get_send_ctx_data_len(sctx);
+	/* Classic CAN is limited to the 12-bit FF_DL */
+	if ((sctx->tx_addr.flags & ISOTP_MSG_FDF) == 0 && len > ISOTP_FF_DL_MAX) {
+		LOG_ERR("Message length %zu exceeds the classic CAN limit", len);
+		free_send_ctx(&sctx);
+		return ISOTP_N_ERROR;
+	}
+
 	LOG_DBG("Send %zu bytes to addr 0x%x and listen on 0x%x", len,
 		sctx->tx_addr.ext_id, sctx->rx_addr.ext_id);
 	/* Single frames > 8 bytes use an additional byte for length (CAN FD only) */
