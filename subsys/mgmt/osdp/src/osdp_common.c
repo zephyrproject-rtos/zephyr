@@ -60,7 +60,8 @@ void osdp_encrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 		.in_buf = data,
 		.in_len = len,
 		.out_buf = data,
-		.out_len = len
+		.out_len = len,
+		.out_buf_max = len,
 	};
 
 	dev = device_get_binding(CONFIG_OSDP_CRYPTO_DRV_NAME);
@@ -107,7 +108,8 @@ void osdp_decrypt(uint8_t *key, uint8_t *iv, uint8_t *data, int len)
 		.in_buf = data,
 		.in_len = len,
 		.out_buf = data,
-		.out_len = len
+		.out_len = len,
+		.out_buf_max = len,
 	};
 
 	dev = device_get_binding(CONFIG_OSDP_CRYPTO_DRV_NAME);
