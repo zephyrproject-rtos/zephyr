@@ -222,6 +222,12 @@ Other notable changes
 
   * NXP RW61x hwinfo reports PM4 wakeup resets as :c:macro:`RESET_LOW_POWER_WAKE`.
 
+* Serial
+
+  * :c:func:`uart_fifo_read_flagged` reads received data together with the error flags of each
+    byte, so that protocols such as DMX512 can tell which byte a break, framing error, or parity
+    error belongs to.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?

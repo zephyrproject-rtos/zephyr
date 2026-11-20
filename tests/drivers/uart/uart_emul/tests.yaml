@@ -12,6 +12,7 @@ tests:
   drivers.uart.emul.interrupt_driven:
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_FIFO_READ_FLAGGED=y
   drivers.uart.emul.async:
     extra_configs:
       - CONFIG_EVENTS=y
