@@ -1085,7 +1085,7 @@ static int uart_rx_sci_pm_action(const struct device *dev, enum pm_device_action
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = clock_control_off(config->clock,
 					(clock_control_subsys_t)&config->clock_subsys);
-		if (ret < 0) {
+		if (ret != 0 && ret != -ENOTSUP) {
 			return ret;
 		}
 		break;
