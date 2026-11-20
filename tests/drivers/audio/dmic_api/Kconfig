@@ -25,6 +25,15 @@ config TEST_HW_CHANNEL_INDEX
 	help
 	  Specifies the index of the hardware controller.
 
+config TEST_EXPECTED_MAX_CHANNELS
+	int "Expected maximum channel count reported by get_caps"
+	default 0
+	help
+	  When non-zero, test_get_caps_max_channels checks that dmic_get_caps()
+	  reports exactly this max_total_channels value. Used by scenarios that
+	  enable a sparse set of hardware channels in devicetree. 0 disables
+	  the check.
+
 config TEST_SMALL_BUFFER
 	bool "Use a smaller buffer for testing"
 	default y if DT_HAS_RENESAS_RA_PDM_ENABLED

@@ -614,10 +614,58 @@ static int nxp_micfil_init(const struct device *dev)
 	return 0;
 }
 
+static int nxp_micfil_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	const struct nxp_micfil_cfg *cfg = dev->config;
+	struct nxp_micfil_drv_data *data = dev->data;
+	/*
+	 * nxp_micfil_configure() requires each logical pair (2k, 2k + 1) to map
+	 * to consecutive hardware channels 2n and 2n + 1. Only the last logical
+	 * channel may be left unpaired, and it can use any enabled hardware
+	 * channel. So the maximum is two channels per complete hardware pair,
+	 * plus one if any enabled hardware channel is not part of a complete
+	 * pair.
+	 */
+	uint8_t usable_mask = cfg->ch_enabled_mask & BIT_MASK(ARRAY_SIZE(data->hw_chan));
+	uint8_t num_chan = 0U;
+	bool has_unpaired = false;
+
+	for (uint8_t n = 0U; n < ARRAY_SIZE(data->hw_chan); n += 2U) {
+		bool left = (usable_mask & BIT(n)) != 0U;
+		bool right = ((n + 1U) < ARRAY_SIZE(data->hw_chan)) &&
+			     ((usable_mask & BIT(n + 1U)) != 0U);
+
+		if (left && right) {
+			num_chan += 2U;
+		} else if (left || right) {
+			has_unpaired = true;
+		}
+	}
+
+	if (has_unpaired) {
+		num_chan += 1U;
+	}
+
+	memset(caps, 0, sizeof(struct audio_caps));
+
+	caps->min_total_channels = (usable_mask != 0U) ? 1U : 0U;
+	caps->max_total_channels = num_chan;
+	caps->supported_sample_rates = AUDIO_SAMPLE_RATE_16000;
+	/* Currently, driver supports only 32-bit samples */
+	caps->supported_bit_widths = AUDIO_BIT_WIDTH_32;
+	caps->min_num_buffers = 4;
+	caps->min_frame_interval = 1000;   /* 1ms minimum */
+	caps->max_frame_interval = 100000; /* 100ms maximum */
+	caps->supported_channel_layouts = AUDIO_CHANNEL_LAYOUT_INTERLEAVED;
+
+	return 0;
+}
+
 static DEVICE_API(dmic, dmic_ops) = {
 	.configure = nxp_micfil_configure,
 	.trigger = nxp_micfil_trigger,
 	.read = nxp_micfil_read,
+	.get_caps = nxp_micfil_get_caps,
 };
 
 #define NXP_MICFIL_IRQ_CONFIG(inst)							\
