@@ -33,6 +33,8 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/minmax.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/drivers/i2c/i2c_dw.h>
 
 #if defined(CONFIG_I2C_DW_LPSS_DMA)
 #include <zephyr/drivers/dma.h>
@@ -1157,6 +1159,7 @@ static int i2c_dw_set_controller_mode(const struct device *dev)
 
 	clear_bit_enable_en(reg_base);
 
+	ic_con.raw = 0U;
 	ic_con.bits.master_mode = 1U;
 	ic_con.bits.slave_disable = 1U;
 	ic_con.bits.rx_fifo_full = 0U;
@@ -1176,6 +1179,7 @@ static int i2c_dw_set_controller_mode(const struct device *dev)
 
 static int i2c_dw_set_target_mode(const struct device *dev, struct i2c_target_config *cfg)
 {
+	struct i2c_dw_dev_config *const dw = dev->data;
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 	union ic_con_register ic_con;
 
@@ -1194,9 +1198,15 @@ static int i2c_dw_set_target_mode(const struct device *dev, struct i2c_target_co
 	ic_con.bits.rx_fifo_full = 1U;
 	ic_con.bits.restart_en = 1U;
 	ic_con.bits.stop_det = 1U;
+	/* Controller mode clears IC_CON */
+	ic_con.bits.smbus_arp_en = dw->smbus_arp ? 1U : 0U;
+	ic_con.bits.smbus_persistent_slv_addr_en = dw->smbus_arp_persistent ? 1U : 0U;
 
 	write_con(ic_con.raw, reg_base);
-	write_sar(cfg->address, reg_base);
+	/* IC_SAR is owned by the ARP engine */
+	if (!dw->smbus_arp) {
+		write_sar(cfg->address, reg_base);
+	}
 	write_intr_mask(~DW_INTR_MASK_RESET, reg_base);
 
 	set_bit_enable_en(reg_base);
@@ -1214,6 +1224,11 @@ static int i2c_dw_target_register(const struct device *dev, struct i2c_target_co
 	struct i2c_dw_dev_config *const dw = dev->data;
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 	int ret;
+
+	if (dw->smbus_arp && (cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS)) {
+		/* SMBus addresses are 7-bit */
+		return -EINVAL;
+	}
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
@@ -1238,10 +1253,108 @@ static int i2c_dw_target_unregister(const struct device *dev, struct i2c_target_
 
 	dw->state = I2C_DW_STATE_READY;
 	ret = i2c_dw_set_controller_mode(dev);
+	dw->target_cfg = NULL;
 
 	pm_device_runtime_put(dev);
 
 	return ret;
+}
+
+/* Call while disabled. SMBUS_ARP_EN reads back 0 without the ARP engine; IC_CON is restored. */
+static bool i2c_dw_smbus_arp_supported(mm_reg_t reg_base)
+{
+	uint32_t saved_con = read_con(reg_base);
+	union ic_con_register ic_con;
+
+	ic_con.raw = saved_con;
+	ic_con.bits.smbus_arp_en = 1U;
+	write_con(ic_con.raw, reg_base);
+	ic_con.raw = read_con(reg_base);
+	write_con(saved_con, reg_base);
+
+	return ic_con.bits.smbus_arp_en == 1U;
+}
+
+int i2c_dw_smbus_arp_enable(const struct device *dev, const struct i2c_dw_smbus_arp_config *cfg)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
+	bool supported;
+	bool enabled;
+
+	if ((cfg == NULL) || (cfg->persistent && (cfg->addr > DW_IC_SAR_7BIT_MASK))) {
+		return -EINVAL;
+	}
+
+	if (dw->target_cfg != NULL) {
+		return -EBUSY;
+	}
+
+	/* Writable only while disabled */
+	enabled = test_bit_enable_sts(reg_base);
+	clear_bit_enable_en(reg_base);
+
+	supported = i2c_dw_smbus_arp_supported(reg_base);
+	if (supported) {
+		/* WORD3 holds UDID bytes 15..12 */
+		write_smbus_udid_word3(sys_get_be32(&cfg->udid[0]), reg_base);
+		write_smbus_udid_word2(sys_get_be32(&cfg->udid[4]), reg_base);
+		write_smbus_udid_word1(sys_get_be32(&cfg->udid[8]), reg_base);
+		write_smbus_udid_word0(sys_get_be32(&cfg->udid[12]), reg_base);
+
+		if (cfg->persistent) {
+			write_sar(cfg->addr, reg_base);
+		}
+
+		/* The ISR does not service SMBus interrupts */
+		write_smbus_intr_mask(0U, reg_base);
+		write_clr_smbus_intr(DW_IC_SMBUS_INTR_ALL, reg_base);
+	}
+
+	if (enabled) {
+		set_bit_enable_en(reg_base);
+	}
+
+	if (!supported) {
+		return -ENOTSUP;
+	}
+
+	dw->smbus_arp = true;
+	dw->smbus_arp_persistent = cfg->persistent;
+
+	return 0;
+}
+
+int i2c_dw_smbus_arp_disable(const struct device *dev)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+
+	if (dw->target_cfg != NULL) {
+		return -EBUSY;
+	}
+
+	dw->smbus_arp = false;
+	dw->smbus_arp_persistent = false;
+
+	return 0;
+}
+
+int i2c_dw_smbus_arp_get_addr(const struct device *dev, uint8_t *addr7)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
+
+	if (!dw->smbus_arp) {
+		return -ENOTSUP;
+	}
+
+	if (!test_bit_status_smbus_slave_addr_valid(reg_base)) {
+		return -EADDRNOTAVAIL;
+	}
+
+	*addr7 = (uint8_t)(read_sar(reg_base) & DW_IC_SAR_7BIT_MASK);
+
+	return 0;
 }
 
 static void i2c_dw_target_read_clear_intr_bits(const struct device *dev,
