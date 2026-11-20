@@ -24,7 +24,7 @@ LOG_MODULE_DECLARE(bosch_bmi323, CONFIG_SENSOR_LOG_LEVEL);
  *
  * raw_buffer layout:
  *   [0]              : register address (BMI323_DATA_REG)
- *   [1 .. off]       : bus dummy bytes  (1 for SPI, 2 for I2C)
+ *   [1 .. off]       : bus dummy bytes  (1 for SPI, 2 for I2C/I3C)
  *   [1+off .. 14+off]: 14 bytes of sensor data (accel XYZ, gyro XYZ, temp)
  *
  * Worst-case allocation: 1 (addr) + 2 (max dummy) + 14 (data) = 17 bytes.
@@ -90,8 +90,10 @@ static void bmi323_start_transfer(struct rtio_iodev_sqe *iodev_sqe, struct bosch
 
 	if (data->async_bus_type == BMI323_BUS_I2C) {
 		rd_data->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
-	} else {
-		/* SPI: no special flags needed */
+#ifdef CONFIG_BMI323_BUS_I3C
+	} else if (data->async_bus_type == BMI323_BUS_I3C) {
+		rd_data->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
+#endif
 	}
 
 	rtio_sqe_prep_callback_no_cqe(cb, bmi323_complete_cb, (void *)(uintptr_t)data->dev,

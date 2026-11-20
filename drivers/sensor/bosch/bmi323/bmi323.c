@@ -21,6 +21,9 @@
 #ifdef CONFIG_BMI323_BUS_I2C
 #include "bmi323_i2c.h"
 #endif
+#ifdef CONFIG_BMI323_BUS_I3C
+#include "bmi323_i3c.h"
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bosch_bmi323);
@@ -66,6 +69,16 @@ static int bosch_bmi323_bus_write_words(const struct device *dev, uint8_t offset
 
 	return bus->api->write_words(bus->context, offset, words, words_count);
 }
+
+#ifdef CONFIG_BMI323_BUS_I3C
+static int bosch_bmi323_bus_restore_da(const struct device *dev)
+{
+	const struct bosch_bmi323_config *config = (const struct bosch_bmi323_config *)dev->config;
+	const struct bosch_bmi323_bus *bus = config->bus;
+
+	return bus->api->restore_da(bus->context);
+}
+#endif /* CONFIG_BMI323_BUS_I3C */
 
 static int32_t bosch_bmi323_lsb_from_fullscale(int64_t fullscale)
 {
@@ -1200,6 +1213,19 @@ static int bosch_bmi323_pm_resume(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_BMI323_BUS_I3C
+	if (data->async_bus_type == BMI323_BUS_I3C) {
+		/* I3C: wait in soft_reset (∆tPO) then SETDASA at slow OD. */
+		ret = bosch_bmi323_bus_restore_da(dev);
+
+		if (ret < 0) {
+			LOG_WRN("Failed to restore I3C dynamic address");
+
+			return ret;
+		}
+	}
+#endif /* CONFIG_BMI323_BUS_I3C */
+
 	/* Soft reset restores chip to power-on defaults: 8g accel, 2000dps gyro */
 	data->acc_full_scale = 8000;  /* ±8G in milli-G */
 	data->gyro_full_scale = 2000000;  /* ±2000dps in micro-dps */
@@ -1246,7 +1272,27 @@ static int bosch_bmi323_pm_suspend(const struct device *dev)
 		LOG_WRN("Failed to disable int");
 	}
 
-	/* Soft reset device to put it into suspend */
+#ifdef CONFIG_BMI323_BUS_I3C
+	{
+		struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
+
+		/* Soft-reset drops the I3C dynamic address; disable accel/gyro instead. */
+		if (data->async_bus_type == BMI323_BUS_I3C) {
+			struct sensor_value disable = {
+				.val1 = 0,
+				.val2 = 0,
+			};
+
+			ret = bosch_bmi323_driver_api_set_acc_feature_mask(dev, &disable);
+			if (ret < 0) {
+				return ret;
+			}
+
+			return bosch_bmi323_driver_api_set_gyro_feature_mask(dev, &disable);
+		}
+	}
+#endif /* CONFIG_BMI323_BUS_I3C */
+
 	return bosch_bmi323_soft_reset(dev);
 }
 #endif /* CONFIG_PM_DEVICE */
@@ -1331,8 +1377,9 @@ static int bosch_bmi323_init(const struct device *dev)
 
 #define BMI323_DEVICE_BUS(inst)                                                                    \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI323_DEVICE_SPI_BUS(inst)),                      \
+	(COND_CODE_1(DT_INST_ON_BUS(inst, i3c), (BMI323_DEVICE_I3C_BUS(inst)),                     \
 	(COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (BMI323_DEVICE_I2C_BUS(inst)),                     \
-	(BUILD_ASSERT(0, "Unsupported bus type for BMI323")))))
+	(BUILD_ASSERT(0, "Unsupported bus type for BMI323")))))))
 
 /* RTIO context definition - one per device instance */
 #ifdef CONFIG_SENSOR_ASYNC_API
@@ -1344,12 +1391,15 @@ static int bosch_bmi323_init(const struct device *dev)
 			    SPI_WORD_SET(8))
 #define BMI323_I2C_IODEV_DEFINE(inst) \
 	I2C_DT_IODEV_DEFINE(bmi323_iodev_##inst, DT_DRV_INST(inst))
+#define BMI323_I3C_IODEV_DEFINE(inst) \
+	I3C_DT_INST_IODEV_DEFINE(bmi323_iodev_##inst, inst)
 
 #define BMI323_BUS_IODEV(inst)         (&bmi323_iodev_##inst)
 #else
 #define BMI323_RTIO_DEFINE(inst)
 #define BMI323_SPI_IODEV_DEFINE(inst)
 #define BMI323_I2C_IODEV_DEFINE(inst)
+#define BMI323_I3C_IODEV_DEFINE(inst)
 #define BMI323_BUS_IODEV(inst)         NULL
 #endif
 
@@ -1357,14 +1407,14 @@ static int bosch_bmi323_init(const struct device *dev)
 
 #define BMI323_BUS_TYPE(inst)                                                                      \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (BMI323_BUS_SPI),                                   \
+	(COND_CODE_1(DT_INST_ON_BUS(inst, i3c), (BMI323_BUS_I3C),                                  \
 	(COND_CODE_1(DT_INST_ON_BUS(inst, i2c), (BMI323_BUS_I2C),                                  \
-	(BUILD_ASSERT(0, "Unsupported bus type for BMI323")))))
+	(BUILD_ASSERT(0, "Unsupported bus type for BMI323")))))))
 
 #ifdef CONFIG_SENSOR_ASYNC_API
 #define BMI323_RTIO_DATA_INIT(inst)                                                                \
 	.r = &bmi323_rtio_ctx_##inst,                                                           \
-	.bus_iodev = BMI323_BUS_IODEV(inst),                                                    \
-	.async_bus_type = BMI323_BUS_TYPE(inst),
+	.bus_iodev = BMI323_BUS_IODEV(inst),
 #else
 #define BMI323_RTIO_DATA_INIT(inst)
 #endif
@@ -1375,6 +1425,7 @@ static int bosch_bmi323_init(const struct device *dev)
 	BMI323_DEVICE_BUS(inst);                                                                   \
                                                                                                    \
 	static struct bosch_bmi323_data bosch_bmi323_data_##inst = {                               \
+		.async_bus_type = BMI323_BUS_TYPE(inst),                                           \
 		BMI323_RTIO_DATA_INIT(inst)                                                        \
 	}; \
                                                                                                \
