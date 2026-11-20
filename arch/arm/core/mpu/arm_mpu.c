@@ -103,8 +103,147 @@ static int region_allocate_and_init(const uint8_t index,
 						    (reg).dt_size,	\
 						    _ATTR)
 #ifdef CONFIG_MEM_ATTR
-/* This internal function programs the MPU regions defined in the DT when using
- * the `zephyr,memory-attr = <( DT_MEM_ARM(...) )>` property.
+#if defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R)
+static int mpu_region_from_generic_policy(const struct mem_attr_region_t *region,
+					  struct arm_mpu_region *region_conf)
+{
+	uint32_t policy = DT_MEM_ATTR_GET(region->dt_attr);
+	bool readable = (policy & DT_MEM_K_READABLE) != 0U;
+	bool writable = (policy & DT_MEM_K_WRITABLE) != 0U;
+	bool executable = (policy & DT_MEM_K_EXECUTABLE) != 0U;
+	bool cacheable = (policy & DT_MEM_CACHEABLE) != 0U;
+	bool non_cacheable = (policy & DT_MEM_NON_CACHEABLE) != 0U;
+	bool shareable = (policy & DT_MEM_SHAREABLE) != 0U;
+	bool user_readable = (policy & DT_MEM_U_READABLE) != 0U;
+	bool user_writable = (policy & DT_MEM_U_WRITABLE) != 0U;
+	bool user_executable = (policy & DT_MEM_U_EXECUTABLE) != 0U;
+	uint32_t access;
+
+	if (region->dt_size == 0U || region->dt_size - 1U > UINT32_MAX - region->dt_addr ||
+	    !(policy & DT_MEM_EXPLICIT_PERMS) || cacheable == non_cacheable ||
+	    (writable && !readable) || (executable && !readable) ||
+	    (user_writable && !user_readable) || (user_executable && !user_readable) ||
+	    (user_readable && !readable) || (user_writable && !writable) ||
+	    (user_readable && user_executable != executable)) {
+		LOG_ERR("Invalid MPU attributes 0x%x for %s", policy, region->dt_name);
+		return -EINVAL;
+	}
+
+	if (!readable) {
+#if defined(CONFIG_ARMV7_R)
+		access = P_NA_U_NA_Msk;
+#else
+		/* PMSAv8 has no AP encoding that denies privileged reads. */
+		LOG_ERR("MPU cannot deny all access to %s", region->dt_name);
+		return -EINVAL;
+#endif
+	} else if (writable) {
+		if (!user_readable) {
+			access = P_RW_U_NA_Msk;
+		} else if (user_writable) {
+			access = P_RW_U_RW_Msk;
+		} else {
+#if defined(CONFIG_ARMV7_R)
+			access = P_RW_U_RO_Msk;
+#else
+			LOG_ERR("MPU cannot encode kernel RW/user RO for %s", region->dt_name);
+			return -EINVAL;
+#endif
+		}
+	} else {
+		access = user_readable ? P_RO_U_RO_Msk : P_RO_U_NA_Msk;
+	}
+
+	region_conf->name = region->dt_name;
+	region_conf->base = region->dt_addr;
+
+#if defined(CONFIG_ARMV7_R)
+	uint32_t memory_attr;
+
+	if (cacheable) {
+		memory_attr = shareable ?
+			NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_SHAREABLE :
+			NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE;
+	} else {
+		memory_attr = shareable ? NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE :
+			NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE;
+	}
+	region_conf->attr.rasr = memory_attr | access | (executable ? 0U : NOT_EXEC);
+#elif defined(CONFIG_AARCH32_ARMV8_R)
+	region_conf->attr.rbar = access | (shareable ? OUTER_SHAREABLE_Msk : NON_SHAREABLE_Msk) |
+		(executable ? 0U : NOT_EXEC);
+	region_conf->attr.mair_idx = cacheable ? MPU_MAIR_INDEX_SRAM :
+		MPU_MAIR_INDEX_SRAM_NOCACHE;
+	region_conf->attr.r_limit = region->dt_addr + region->dt_size - 1U;
+#endif
+
+	return 0;
+}
+#endif /* CONFIG_ARMV7_R || CONFIG_AARCH32_ARMV8_R */
+
+static int mpu_validate_dt_region(const struct mem_attr_region_t *region,
+				  struct arm_mpu_region *region_conf)
+{
+	if (region->dt_size == 0U || region->dt_size - 1U > UINT32_MAX - region->dt_addr) {
+		LOG_ERR("MPU region %s has invalid address range", region->dt_name);
+		return -EINVAL;
+	}
+#if defined(CONFIG_ARMV7_R)
+	if (!is_power_of_two(region->dt_size) ||
+	    region->dt_size < CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE ||
+	    !IS_ALIGNED(region->dt_addr, region->dt_size)) {
+		LOG_ERR("MPU region %s has invalid size or alignment", region->dt_name);
+		return -EINVAL;
+	}
+	region_conf->size = size_to_mpu_rasr_size(region->dt_size);
+#elif defined(CONFIG_AARCH32_ARMV8_R)
+	if (region->dt_size < CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE ||
+	    !IS_ALIGNED(region->dt_addr, CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE) ||
+	    !IS_ALIGNED(region->dt_size, CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)) {
+		LOG_ERR("MPU region %s has invalid size or alignment", region->dt_name);
+		return -EINVAL;
+	}
+
+#endif
+
+	return 0;
+}
+
+#if defined(CONFIG_ZTEST) && \
+	(defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R))
+int z_arm_mpu_dt_region_attr(uint32_t addr, uint32_t size, uint32_t attr,
+			     arm_mpu_region_attr_t *result)
+{
+	struct mem_attr_region_t region = {
+		.dt_name = "test-region",
+		.dt_addr = addr,
+		.dt_size = size,
+		.dt_attr = attr,
+	};
+	struct arm_mpu_region region_conf;
+
+	if (mpu_region_from_generic_policy(&region, &region_conf) < 0) {
+		return -EINVAL;
+	}
+
+	if (mpu_validate_dt_region(&region, &region_conf) < 0) {
+		return -EINVAL;
+	}
+	if (result != NULL) {
+		*result = region_conf.attr;
+	}
+	return 0;
+}
+
+int z_arm_mpu_validate_dt_region(uint32_t addr, uint32_t size, uint32_t attr)
+{
+	return z_arm_mpu_dt_region_attr(addr, size, attr, NULL);
+}
+#endif
+
+/* This internal function programs MPU regions defined by the DT
+ * `zephyr,memory-attr` property. R-profile CPUs accept generic permission
+ * policies in addition to the legacy ARM-specific memory types.
  */
 static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 {
@@ -115,71 +254,124 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 
 	for (size_t idx = 0; idx < num_regions; idx++) {
 		struct arm_mpu_region region_conf;
+		bool explicit_policy = false;
 
-		switch (DT_MEM_ARM_GET(region[idx].dt_attr)) {
-		case DT_MEM_ARM_MPU_RAM:
-			region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_ATTR);
-			break;
+#if defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R)
+		uint32_t policy = DT_MEM_ATTR_GET(region[idx].dt_attr);
+
+		if (policy & DT_MEM_EXPLICIT_PERMS) {
+			if (mpu_region_from_generic_policy(&region[idx], &region_conf) < 0) {
+				return -EINVAL;
+			}
+
+			explicit_policy = true;
+		}
+#endif /* CONFIG_ARMV7_R || CONFIG_AARCH32_ARMV8_R */
+
+		if (!explicit_policy) {
+			switch (DT_MEM_ARM_GET(region[idx].dt_attr)) {
+			case DT_MEM_ARM_MPU_RAM:
+				region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_ATTR);
+				break;
 #ifdef CONFIG_ARM_MPU_PXN
-		case DT_MEM_ARM_MPU_RAM_PXN:
-			region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_ATTR_PXN);
-			break;
+			case DT_MEM_ARM_MPU_RAM_PXN:
+				region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_ATTR_PXN);
+				break;
 #endif
 #ifdef REGION_RAM_NOCACHE_ATTR
-		case DT_MEM_ARM_MPU_RAM_NOCACHE:
-			region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_NOCACHE_ATTR);
-			__ASSERT(!(region[idx].dt_attr & DT_MEM_CACHEABLE),
-				 "RAM_NOCACHE with DT_MEM_CACHEABLE attribute\n");
-			break;
+			case DT_MEM_ARM_MPU_RAM_NOCACHE:
+				region_conf = _BUILD_REGION_CONF(region[idx],
+							 REGION_RAM_NOCACHE_ATTR);
+				__ASSERT(!(region[idx].dt_attr & DT_MEM_CACHEABLE),
+					 "RAM_NOCACHE with DT_MEM_CACHEABLE attribute\n");
+				break;
 #endif
 #ifdef REGION_FLASH_ATTR
-		case DT_MEM_ARM_MPU_FLASH:
-			region_conf = _BUILD_REGION_CONF(region[idx], REGION_FLASH_ATTR);
-			break;
+			case DT_MEM_ARM_MPU_FLASH:
+				region_conf = _BUILD_REGION_CONF(region[idx], REGION_FLASH_ATTR);
+				break;
 #endif
 #ifdef REGION_PPB_ATTR
-		case DT_MEM_ARM_MPU_PPB:
-			region_conf = _BUILD_REGION_CONF(region[idx], REGION_PPB_ATTR);
-			break;
+			case DT_MEM_ARM_MPU_PPB:
+				region_conf = _BUILD_REGION_CONF(region[idx], REGION_PPB_ATTR);
+				break;
 #endif
 #ifdef REGION_IO_ATTR
-		case DT_MEM_ARM_MPU_IO:
-			region_conf = _BUILD_REGION_CONF(region[idx], REGION_IO_ATTR);
-			break;
+			case DT_MEM_ARM_MPU_IO:
+				region_conf = _BUILD_REGION_CONF(region[idx], REGION_IO_ATTR);
+				break;
 #endif
 #ifdef REGION_DEVICE_ATTR
-		case DT_MEM_ARM_MPU_DEVICE:
-			region_conf = _BUILD_REGION_CONF(region[idx], REGION_DEVICE_ATTR);
-			break;
+			case DT_MEM_ARM_MPU_DEVICE:
+				region_conf = _BUILD_REGION_CONF(region[idx], REGION_DEVICE_ATTR);
+				break;
 #endif
 #ifdef REGION_EXTMEM_ATTR
-		case DT_MEM_ARM_MPU_EXTMEM:
-			region_conf = _BUILD_REGION_CONF(region[idx], REGION_EXTMEM_ATTR);
-			break;
+			case DT_MEM_ARM_MPU_EXTMEM:
+				region_conf = _BUILD_REGION_CONF(region[idx], REGION_EXTMEM_ATTR);
+				break;
 #endif
 #ifdef REGION_RAM_WT_ATTR
-		case DT_MEM_ARM_MPU_RAM_WT:
-			region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_WT_ATTR);
-			break;
+			case DT_MEM_ARM_MPU_RAM_WT:
+				region_conf = _BUILD_REGION_CONF(region[idx], REGION_RAM_WT_ATTR);
+				break;
 #endif
-		default:
-			/* Attribute other than ARM-specific is set.
-			 * This region should not be configured in MPU.
-			 */
-			continue;
+			default:
+				/* Attribute other than ARM-specific is set.
+				 * This region should not be configured in MPU.
+				 */
+				continue;
+			}
 		}
 
-		if (region_allocate_and_init((*reg_index),
-					     (const struct arm_mpu_region *) &region_conf) < 0) {
+		if (mpu_validate_dt_region(&region[idx], &region_conf) < 0 ||
+		    region_allocate_and_init(*reg_index, &region_conf) < 0) {
 			return -EINVAL;
 		}
-
 		(*reg_index)++;
 	}
 
 	return 0;
 }
 #endif /* CONFIG_MEM_ATTR */
+#if defined(CONFIG_AARCH32_ARMV8_R)
+/* Validate all enabled boot regions, including SoC regions without MEM_ATTR. */
+static int mpu_validate_boot_regions(uint8_t num_regions)
+{
+	for (uint8_t index = 0U; index < num_regions; index++) {
+		uint32_t base;
+		uint32_t limit;
+
+		mpu_set_rnr(index);
+		if (!(mpu_get_rlar() & MPU_RLAR_EN_Msk)) {
+			continue;
+		}
+		base = mpu_get_rbar() & MPU_RBAR_BASE_Msk;
+		limit = (mpu_get_rlar() & MPU_RLAR_LIMIT_Msk) | (~MPU_RLAR_LIMIT_Msk);
+		for (uint8_t other = 0U; other < index; other++) {
+			mpu_set_rnr(other);
+			if (!(mpu_get_rlar() & MPU_RLAR_EN_Msk)) {
+				continue;
+			}
+			if (base <= ((mpu_get_rlar() & MPU_RLAR_LIMIT_Msk) |
+				     (~MPU_RLAR_LIMIT_Msk)) &&
+			    (mpu_get_rbar() & MPU_RBAR_BASE_Msk) <= limit) {
+				LOG_ERR("MPU regions %u and %u overlap", index, other);
+				return -EINVAL;
+			}
+		}
+	}
+	return 0;
+}
+
+#if defined(CONFIG_ZTEST)
+int z_arm_mpu_validate_boot_regions(void)
+{
+	return mpu_validate_boot_regions(get_num_regions());
+}
+#endif
+#endif
+
 /* This internal function programs an MPU region
  * of a given configuration at a given MPU index.
  */
@@ -542,6 +734,11 @@ int z_arm_mpu_init(void)
 		mpu_clear_region(i);
 	}
 
+#if defined(CONFIG_AARCH32_ARMV8_R)
+	if (mpu_validate_boot_regions(static_regions_num) < 0) {
+		return -EINVAL;
+	}
+#endif
 	arm_core_mpu_enable();
 
 	/* Program additional fixed flash region for null-pointer
