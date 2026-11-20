@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Marcelo Roberto Jimenez
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Four counts per revolution: the counter must still wrap over its full range.
+ */
+
+&qdec {
+	st,counts-per-revolution = <4>;
+};
