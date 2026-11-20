@@ -120,12 +120,21 @@ typedef stm32_status_t (*hal_cryp_aes_op_func_t)(hal_crypt_handle_t *hcryp, uint
 						 uint32_t timeout);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+#ifdef CONFIG_SOC_SERIES_STM32L4X
+#define hal_ecb_encrypt_op HAL_CRYPEx_AES
+#define hal_ecb_decrypt_op HAL_CRYPEx_AES
+#define hal_cbc_encrypt_op HAL_CRYPEx_AES
+#define hal_cbc_decrypt_op HAL_CRYPEx_AES
+#define hal_ctr_encrypt_op HAL_CRYPEx_AES
+#define hal_ctr_decrypt_op HAL_CRYPEx_AES
+#else
 #define hal_ecb_encrypt_op HAL_CRYP_AESECB_Encrypt
 #define hal_ecb_decrypt_op HAL_CRYP_AESECB_Decrypt
 #define hal_cbc_encrypt_op HAL_CRYP_AESCBC_Encrypt
 #define hal_cbc_decrypt_op HAL_CRYP_AESCBC_Decrypt
 #define hal_ctr_encrypt_op HAL_CRYP_AESCTR_Encrypt
 #define hal_ctr_decrypt_op HAL_CRYP_AESCTR_Decrypt
+#endif /* CONFIG_SOC_SERIES_STM32L4X */
 #else
 #define hal_ecb_encrypt_op hal_encrypt
 #define hal_ecb_decrypt_op hal_decrypt
@@ -154,8 +163,8 @@ static void set_iv_ctr(crypt_config_t *config, uint32_t *iv, size_t iv_length)
 #endif /* CONFIG_STM32_HAL2 */
 }
 
-static int copy_words_adjust_endianness(uint8_t *dst_buf, int dst_len, const uint8_t *src_buf,
-					int src_len)
+static int copy_words_adjust_endianness(uint8_t *dst_buf, size_t dst_len, const uint8_t *src_buf,
+					size_t src_len)
 {
 	if ((dst_len < src_len) || ((dst_len % 4) != 0)) {
 		LOG_ERR("Buffer length error");
@@ -165,7 +174,7 @@ static int copy_words_adjust_endianness(uint8_t *dst_buf, int dst_len, const uin
 	memcpy(dst_buf, src_buf, src_len);
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
-	for (int i = 0; i < dst_len; i += sizeof(uint32_t)) {
+	for (size_t i = 0; i < dst_len; i += sizeof(uint32_t)) {
 		sys_mem_swap(&dst_buf[i], sizeof(uint32_t));
 	}
 #endif
@@ -174,21 +183,22 @@ static int copy_words_adjust_endianness(uint8_t *dst_buf, int dst_len, const uin
 }
 
 #ifdef CONFIG_STM32_HAL2
-static int hal2_set_config(struct crypto_stm32_data *const data, crypt_config_t *config)
+static int hal2_set_config(struct crypto_stm32_data *const data,
+			   struct crypto_stm32_session *session)
 {
-	switch (config->mode) {
+	switch (session->mode) {
 	case CRYPTO_CIPHER_MODE_ECB:
 		if (HAL_AES_ECB_SetConfig(&data->hcryp) != HAL_OK) {
 			return -EIO;
 		}
 		break;
 	case CRYPTO_CIPHER_MODE_CBC:
-		if (HAL_AES_CBC_SetConfig(&data->hcryp, config->iv) != HAL_OK) {
+		if (HAL_AES_CBC_SetConfig(&data->hcryp, session->config.iv) != HAL_OK) {
 			return -EIO;
 		}
 		break;
 	case CRYPTO_CIPHER_MODE_CTR:
-		if (HAL_AES_CTR_SetConfig(&data->hcryp, config->iv) != HAL_OK) {
+		if (HAL_AES_CTR_SetConfig(&data->hcryp, session->config.iv) != HAL_OK) {
 			return -EIO;
 		}
 		break;
@@ -204,36 +214,118 @@ static int hal2_set_config(struct crypto_stm32_data *const data, crypt_config_t 
 }
 #endif /* CONFIG_STM32_HAL2 */
 
-static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in_buf, int in_len,
-		      uint8_t *out_buf)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+static int hal1_l4_set_config(struct crypto_stm32_data *const data, crypt_config_t *config)
+{
+#ifndef CONFIG_SOC_SERIES_STM32L4X
+	if (HAL_CRYP_DeInit(&data->hcryp)) {
+		return -EIO;
+	}
+#endif
+
+	data->hcryp.Init = *config;
+
+#ifdef CONFIG_SOC_SERIES_STM32L4X
+	if (HAL_CRYP_Init(&data->hcryp)) {
+		return -EIO;
+	}
+#endif
+
+	return 0;
+}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) */
+
+static int do_aes_partial(struct crypto_stm32_data *dev_data, hal_cryp_aes_op_func_t fn,
+			  enum cipher_mode mode, uint8_t *in_buf, size_t in_len, uint8_t *out_buf)
+{
+	uint8_t block[BLOCK_LEN_BYTES]	__aligned(4) = { };
+	uint16_t size = (uint16_t)in_len;
+	uint16_t hal_size;
+
+	__ASSERT_NO_MSG(in_len < sizeof(block));
+
+	if (size > 0) {
+		memcpy(block, in_buf, size);
+	}
+
+	if (mode == CRYPTO_CIPHER_MODE_CTR) {
+		hal_size = BLOCK_LEN_BYTES;
+	} else {
+		hal_size = size;
+	}
+
+	if (fn(&dev_data->hcryp, block, hal_size, block, HAL_MAX_DELAY) != HAL_OK) {
+		LOG_ERR("Encryption/decryption error");
+		return -EIO;
+	}
+
+	if (size > 0) {
+		memcpy(out_buf, block, size);
+	}
+
+	return 0;
+}
+
+static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in_buf,
+		  size_t in_len, uint8_t *out_buf)
 {
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(ctx->device);
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
+	size_t remaining = in_len;
+	uint8_t *out = out_buf;
+	uint8_t *in = in_buf;
 	int ret = 0;
 
+	if (in_len != 0 && in_buf == NULL) {
+		return -EINVAL;
+	}
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
-	/* Device is initialized from the configuration in the encryption/decryption function
-	 * called below.
-	 */
-	memcpy(&data->hcryp.Init, &session->config, sizeof(session->config));
+	ret = hal1_l4_set_config(data, &session->config);
 #elif defined(CONFIG_STM32_HAL2)
-	ret = hal2_set_config(data, &session->config);
+	ret = hal2_set_config(data, session);
 #else
 	if (HAL_CRYP_SetConfig(&data->hcryp, &session->config) != HAL_OK) {
 		ret = -EIO;
 	}
+
+	/* A previous operation on this session may have already loaded its key and IV
+	 * (CRYP_KEYIVCONFIG_ONCE). Ensure this operation loads its own IV.
+	 */
+	__ASSERT_NO_MSG(data->hcryp.Init.KeyIVConfigSkip == CRYP_KEYIVCONFIG_ONCE);
+	data->hcryp.KeyIVConfig = 0;
 #endif
 	if (ret < 0) {
 		LOG_ERR("Configuration error");
 		return ret;
 	}
 
-	if (fn(&data->hcryp, in_buf, in_len, out_buf, HAL_MAX_DELAY) != HAL_OK) {
-		LOG_ERR("Encryption/decryption error");
-		return -EIO;
+	/* HAL API functions all rely on a 16 bit argument for the data size hence can
+	 * process up to 64kByte at most.
+	 *
+	 * HAL API functions always reads input data as full AES blocks and writes output data
+	 * either by 32 bit words or as full AES blocks. When data is not block aligned, we need
+	 * a bounce buffer.
+	 */
+	while (remaining >= BLOCK_LEN_BYTES) {
+		uint16_t chunk_size = ROUND_DOWN(MIN(remaining, UINT16_MAX), BLOCK_LEN_BYTES);
+
+		if (fn(&data->hcryp, in, chunk_size, out, HAL_MAX_DELAY) != HAL_OK) {
+			LOG_ERR("Encryption/decryption error");
+			return -EIO;
+		}
+
+		in += chunk_size;
+		out += chunk_size;
+		remaining -= chunk_size;
 	}
 
-	return 0;
+	if (remaining == 0 && session->mode != CRYPTO_CIPHER_MODE_GCM &&
+	    session->mode != CRYPTO_CIPHER_MODE_CCM) {
+		return 0;
+	}
+
+	return do_aes_partial(data, fn, session->mode, in, remaining, out);
 }
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
@@ -266,11 +358,18 @@ static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
 	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
 	int ret;
 
+	if (pkt->in_len == 0) {
+		pkt->out_len = 0;
+		return 0;
+	}
+
 	/* For security reasons, ECB mode should not be used to encrypt
 	 * more than one block. Use CBC mode instead.
 	 */
-	if (pkt->in_len > 16) {
-		LOG_ERR("Cannot encrypt more than 1 block");
+	if ((pkt->in_len != BLOCK_LEN_BYTES) || (pkt->out_buf_max < BLOCK_LEN_BYTES)) {
+		if (pkt->in_len > BLOCK_LEN_BYTES) {
+			LOG_ERR("Cannot encrypt more than 1 block");
+		}
 		return -EINVAL;
 	}
 
@@ -281,7 +380,7 @@ static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
 	k_sem_give(&data->device_sem);
 
 	if (ret == 0) {
-		pkt->out_len = 16;
+		pkt->out_len = BLOCK_LEN_BYTES;
 	}
 
 	return ret;
@@ -293,11 +392,18 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
 	int ret;
 
+	if (pkt->in_len == 0) {
+		pkt->out_len = 0;
+		return 0;
+	}
+
 	/* For security reasons, ECB mode should not be used to encrypt
 	 * more than one block. Use CBC mode instead.
 	 */
-	if (pkt->in_len > 16) {
-		LOG_ERR("Cannot encrypt more than 1 block");
+	if ((pkt->in_len != BLOCK_LEN_BYTES) || (pkt->out_buf_max < BLOCK_LEN_BYTES)) {
+		if (pkt->in_len > BLOCK_LEN_BYTES) {
+			LOG_ERR("Cannot decrypt more than 1 block");
+		}
 		return -EINVAL;
 	}
 
@@ -308,7 +414,7 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 	k_sem_give(&data->device_sem);
 
 	if (ret == 0) {
-		pkt->out_len = 16;
+		pkt->out_len = BLOCK_LEN_BYTES;
 	}
 
 	return ret;
@@ -323,15 +429,23 @@ static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
 	uint32_t vec[BLOCK_LEN_WORDS];
 	int out_offset = 0;
 
+	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
+		/* Prefix IV to ciphertext unless CAP_NO_IV_PREFIX is set. */
+		out_offset = BLOCK_LEN_BYTES;
+	}
+
+	if ((pkt->in_len < 0) || ((pkt->in_len % BLOCK_LEN_BYTES) != 0) ||
+	    (pkt->out_buf_max < out_offset) || (pkt->in_len > (pkt->out_buf_max - out_offset))) {
+		return -EINVAL;
+	}
+
+	if (out_offset > 0U) {
+		memcpy(pkt->out_buf, iv, BLOCK_LEN_BYTES);
+	}
+
 	(void)copy_words_adjust_endianness((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 
 	set_iv_ctr(&session->config, vec, BLOCK_LEN_BYTES);
-
-	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
-		/* Prefix IV to ciphertext unless CAP_NO_IV_PREFIX is set. */
-		memcpy(pkt->out_buf, iv, 16);
-		out_offset = 16;
-	}
 
 	k_sem_take(&data->device_sem, K_FOREVER);
 
@@ -355,17 +469,23 @@ static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 	uint32_t vec[BLOCK_LEN_WORDS];
 	int in_offset = 0;
 
+	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
+		in_offset = BLOCK_LEN_BYTES;
+	}
+
+	if ((pkt->in_len < in_offset) || ((pkt->in_len % BLOCK_LEN_BYTES) != 0) ||
+	    ((pkt->in_len - in_offset) > pkt->out_buf_max)) {
+		return -EINVAL;
+	}
+
 	(void)copy_words_adjust_endianness((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 
 	set_iv_ctr(&session->config, vec, BLOCK_LEN_BYTES);
 
-	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
-		in_offset = 16;
-	}
-
 	k_sem_take(&data->device_sem, K_FOREVER);
 
-	ret = do_aes(ctx, hal_cbc_decrypt_op, pkt->in_buf + in_offset, pkt->in_len, pkt->out_buf);
+	ret = do_aes(ctx, hal_cbc_decrypt_op, pkt->in_buf + in_offset, pkt->in_len - in_offset,
+		     pkt->out_buf);
 
 	k_sem_give(&data->device_sem);
 
@@ -381,9 +501,29 @@ static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 {
 	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
 	struct crypto_stm32_session *const session = CRYPTO_STM32_SESSN(ctx);
+	size_t ctr_len_bit = ctx->mode_params.ctr_info.ctr_len;
+	size_t ctr_len_byte = ctr_len_bit / 8;
 	int ret;
 	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
-	int ivlen = BLOCK_LEN_BYTES - (ctx->mode_params.ctr_info.ctr_len >> 3);
+	size_t ivlen = BLOCK_LEN_BYTES - ctr_len_byte;
+
+	if ((pkt->out_buf_max < 0) || !IN_RANGE(pkt->in_len, 0, pkt->out_buf_max)) {
+		return -EINVAL;
+	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_SOC_SERIES_STM32L4X)
+	/* stm32l0xx and stm32l1xx write to output buffer by 16 byte burst */
+	if (ROUND_UP(pkt->in_len, BLOCK_LEN_BYTES) > pkt->out_buf_max) {
+		LOG_ERR("STM32L0/L1 require an output buffer size multiple of 16 bytes");
+		return -ENOTSUP;
+	}
+#endif
+
+	/* Counter is at most 16 bytes with a byte granule and shall not wrap (up to 32 bit) */
+	if (ctr_len_bit > 128 || (ctr_len_bit % 8) != 0 ||
+	    (ctr_len_bit < 32 && DIV_ROUND_UP(pkt->in_len, BLOCK_LEN_BYTES) > BIT64(ctr_len_bit))) {
+		return -EINVAL;
+	}
 
 	if (copy_words_adjust_endianness((uint8_t *)ctr, sizeof(ctr), iv, ivlen) != 0) {
 		return -EIO;
@@ -409,9 +549,29 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 {
 	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
 	struct crypto_stm32_session *const session = CRYPTO_STM32_SESSN(ctx);
+	size_t ctr_len_bit = ctx->mode_params.ctr_info.ctr_len;
+	size_t ctr_len_byte = ctr_len_bit / 8;
 	int ret;
 	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
-	int ivlen = BLOCK_LEN_BYTES - (ctx->mode_params.ctr_info.ctr_len >> 3);
+	size_t ivlen = BLOCK_LEN_BYTES - ctr_len_byte;
+
+	if ((pkt->out_buf_max < 0) || !IN_RANGE(pkt->in_len, 0, pkt->out_buf_max)) {
+		return -EINVAL;
+	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_SOC_SERIES_STM32L4X)
+	/* stm32l0xx and stm32l1xx write to output buffer by 16 byte burst */
+	if (ROUND_UP(pkt->in_len, BLOCK_LEN_BYTES) > pkt->out_buf_max) {
+		LOG_ERR("STM32L0/L1 require an output buffer size multiple of 16 bytes");
+		return -ENOTSUP;
+	}
+#endif
+
+	/* Counter is at most 16 bytes with a byte granule and shall not wrap (up to 32 bit) */
+	if (ctr_len_bit > 128 || (ctr_len_bit % 8) != 0 ||
+	    (ctr_len_bit < 32 && DIV_ROUND_UP(pkt->in_len, BLOCK_LEN_BYTES) > BIT64(ctr_len_bit))) {
+		return -EINVAL;
+	}
 
 	if (copy_words_adjust_endianness((uint8_t *)ctr, sizeof(ctr), iv, ivlen) != 0) {
 		return -EIO;
@@ -433,81 +593,6 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 }
 
 #if IS_ENABLED(STM32_CRYPTO_GCM_CCM_SUPPORT)
-static int do_aes_staged(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in_buf,
-			 size_t in_len, uint8_t *out_buf)
-{
-	struct crypto_stm32_data *const data = CRYPTO_STM32_DATA(ctx->device);
-	uint8_t staging_in[BLOCK_LEN_BYTES] __aligned(4) = {0};
-	uint8_t staging_out[BLOCK_LEN_BYTES] __aligned(4);
-	int ret;
-
-	/* Zero payload is allowed.
-	 * Have to configure and execute the operation
-	 * to let the HAL go through required phases.
-	 */
-	if (in_len == 0) {
-		return do_aes(ctx, fn, staging_in, 0, staging_out);
-	}
-
-	/* must be valid */
-	if (in_buf == NULL) {
-		return -EINVAL;
-	}
-
-	/* Process complete 16-byte blocks first to avoid zero-padding in
-	 * the intermediate data within HAL.
-	 * Any trailing partial block is copied into a 4-byte aligned
-	 * stage buffer to avoid data corruption.
-	 * Trailing block shall be processed without key and nonce reloading
-	 * to preserve CRYP state.
-	 */
-	const size_t rem_len = in_len % BLOCK_LEN_BYTES;
-	const size_t aligned_len = in_len - rem_len;
-
-	if (aligned_len != 0) {
-		ret = do_aes(ctx, fn, in_buf, aligned_len, out_buf);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	if (rem_len == 0) {
-		return 0;
-	}
-
-	memcpy(staging_in, in_buf + aligned_len, rem_len);
-
-	if (aligned_len == 0) {
-		/* have to config, then execute the operation */
-		ret = do_aes(ctx, fn, staging_in, rem_len, staging_out);
-		if (ret < 0) {
-			return ret;
-		}
-	} else {
-		/* skip key and iv init
-		 * set to always by default in session setup
-		 */
-		data->hcryp.Init.KeyIVConfigSkip = CRYP_KEYIVCONFIG_ONCE;
-		data->hcryp.KeyIVConfig = 1;
-
-		const stm32_status_t fn_rc =
-			fn(&data->hcryp, staging_in, rem_len, staging_out, HAL_MAX_DELAY);
-
-		/* restore key and iv init */
-		data->hcryp.Init.KeyIVConfigSkip = CRYP_KEYIVCONFIG_ALWAYS;
-		data->hcryp.KeyIVConfig = 0;
-
-		if (fn_rc != HAL_OK) {
-			LOG_ERR("Encryption/decryption error");
-			return -EIO;
-		}
-	}
-
-	memcpy(out_buf + aligned_len, staging_out, rem_len);
-
-	return 0;
-}
-
 static int crypto_stm32_gcm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 			    struct cipher_aead_pkt *apkt, uint8_t *nonce)
 {
@@ -515,7 +600,8 @@ static int crypto_stm32_gcm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 	uint8_t *dst;
 	uint32_t iv[BLOCK_LEN_WORDS] = {0};
 
-	if (!IN_RANGE(apkt->pkt->in_len, 0, apkt->pkt->out_buf_max)) {
+	if ((apkt->pkt->out_buf_max < 0) ||
+	    !IN_RANGE(apkt->pkt->in_len, 0, apkt->pkt->out_buf_max)) {
 		return -EINVAL;
 	}
 
@@ -548,7 +634,7 @@ static int crypto_stm32_gcm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 		session->config.HeaderWidthUnit = CRYP_HEADERWIDTHUNIT_BYTE;
 	}
 
-	return do_aes_staged(ctx, fn, apkt->pkt->in_buf, apkt->pkt->in_len, dst);
+	return do_aes(ctx, fn, apkt->pkt->in_buf, apkt->pkt->in_len, dst);
 }
 
 static int crypto_stm32_gcm_encrypt(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt,
@@ -638,7 +724,8 @@ static int crypto_stm32_ccm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 	int ret;
 	uint8_t q;
 
-	if (!IN_RANGE(apkt->pkt->in_len, 0, apkt->pkt->out_buf_max)) {
+	if ((apkt->pkt->out_buf_max < 0) ||
+	    !IN_RANGE(apkt->pkt->in_len, 0, apkt->pkt->out_buf_max)) {
 		return -EINVAL;
 	}
 
@@ -737,7 +824,7 @@ static int crypto_stm32_ccm(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn,
 
 	session->config.B0 = CAST_VEC(b0);
 
-	ret = do_aes_staged(ctx, fn, apkt->pkt->in_buf, apkt->pkt->in_len, dst);
+	ret = do_aes(ctx, fn, apkt->pkt->in_buf, apkt->pkt->in_len, dst);
 
 	k_free(b1);
 
@@ -922,19 +1009,25 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
 		switch (mode) {
 		case CRYPTO_CIPHER_MODE_ECB:
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+			session->config.ChainingMode = CRYP_CHAINMODE_AES_ECB;
+#elif !defined(CONFIG_STM32_HAL2)
 			session->config.Algorithm = CRYP_AES_ECB;
 #endif
 			ctx->ops.block_crypt_hndlr = crypto_stm32_ecb_encrypt;
 			break;
 		case CRYPTO_CIPHER_MODE_CBC:
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+			session->config.ChainingMode = CRYP_CHAINMODE_AES_CBC;
+#elif !defined(CONFIG_STM32_HAL2)
 			session->config.Algorithm = CRYP_AES_CBC;
 #endif
 			ctx->ops.cbc_crypt_hndlr = crypto_stm32_cbc_encrypt;
 			break;
 		case CRYPTO_CIPHER_MODE_CTR:
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+			session->config.ChainingMode = CRYP_CHAINMODE_AES_CTR;
+#elif !defined(CONFIG_STM32_HAL2)
 			session->config.Algorithm = CRYP_AES_CTR;
 #endif
 			ctx->ops.ctr_crypt_hndlr = crypto_stm32_ctr_encrypt;
@@ -956,22 +1049,35 @@ static int crypto_stm32_session_setup(const struct device *dev,
 		default:
 			CODE_UNREACHABLE;
 		}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+		session->config.OperatingMode = CRYP_ALGOMODE_ENCRYPT;
+#endif
 	} else {
 		switch (mode) {
 		case CRYPTO_CIPHER_MODE_ECB:
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+			session->config.ChainingMode = CRYP_CHAINMODE_AES_ECB;
+			session->config.OperatingMode = CRYP_ALGOMODE_KEYDERIVATION_DECRYPT;
+#elif !defined(CONFIG_STM32_HAL2)
 			session->config.Algorithm = CRYP_AES_ECB;
 #endif
 			ctx->ops.block_crypt_hndlr = crypto_stm32_ecb_decrypt;
 			break;
 		case CRYPTO_CIPHER_MODE_CBC:
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+			session->config.ChainingMode = CRYP_CHAINMODE_AES_CBC;
+			session->config.OperatingMode = CRYP_ALGOMODE_KEYDERIVATION_DECRYPT;
+#elif !defined(CONFIG_STM32_HAL2)
 			session->config.Algorithm = CRYP_AES_CBC;
 #endif
 			ctx->ops.cbc_crypt_hndlr = crypto_stm32_cbc_decrypt;
 			break;
 		case CRYPTO_CIPHER_MODE_CTR:
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) && !defined(CONFIG_STM32_HAL2)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+			session->config.ChainingMode = CRYP_CHAINMODE_AES_CTR;
+			session->config.OperatingMode = CRYP_ALGOMODE_DECRYPT;
+#elif !defined(CONFIG_STM32_HAL2)
 			session->config.Algorithm = CRYP_AES_CTR;
 #endif
 			ctx->ops.ctr_crypt_hndlr = crypto_stm32_ctr_decrypt;
@@ -1006,18 +1112,20 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	    HAL_OK) {
 		return -EIO;
 	}
-
-	session->config.mode = mode;
 #else
 	session->config.KeySize = key_size_id;
 	session->config.pKey = CAST_VEC(session->key);
 	session->config.DataType = CRYP_DATATYPE_8B;
 
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+	session->config.KeyWriteFlag = CRYP_KEY_WRITE_ENABLE;
+#else
 	session->config.DataWidthUnit = CRYP_DATAWIDTHUNIT_BYTE;
-#endif
+	session->config.KeyIVConfigSkip = CRYP_KEYIVCONFIG_ONCE;
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) */
 #endif /* CONFIG_STM32_HAL2 */
 
+	session->mode = mode;
 	ctx->drv_sessn_state = session;
 	ctx->device = dev;
 
