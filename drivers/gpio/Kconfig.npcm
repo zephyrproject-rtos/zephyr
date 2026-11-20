@@ -1,0 +1,14 @@
+# NPCM GPIO driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_NPCM
+	bool "Nuvoton NPCM GPIO driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCM_GPIO_ENABLED
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCM_GPIO),pinctrl-0)
+	help
+	  This option enables the GPIO driver for the NPCM family of
+	  processors. Each port owns one Multi-Input Wake-Up (MIWU) input
+	  group, which provides its pin interrupts.

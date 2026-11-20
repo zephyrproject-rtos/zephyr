@@ -1,0 +1,52 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NPCM Multi-Input Wake-Up (MIWU) module.
+
+  A module has eight groups of eight wake-up inputs (WUI). Each group has its own edge, mode,
+  pending, and enable registers and drives one NVIC line, named WKINTA through WKINTH in the
+  datasheet. The NVIC line of a group belongs to the driver that owns all eight inputs:
+
+  - A GPIO port owns its group and programs it directly through the port node's nuvoton,miwu
+    and nuvoton,wui-group properties. Do not list that group's line here.
+  - A group shared by several peripherals, such as the SMBus and RTC wake-ups on MIWU1 group 8,
+    is serviced by the MIWU driver. List its NVIC line in interrupts with the datasheet output
+    name, and let each peripheral name its input with a nuvoton,wui phandle:
+
+      miwu1: miwu@400bd000 {
+        interrupts = <55 3>;
+        interrupt-names = "wkinth";
+        #wui-cells = <2>;
+      };
+
+      rtc { nuvoton,wui = <&miwu1 8 7>; };   /* group 8, input 7 */
+
+  - An input with its own NVIC line, such as the EMAC wake-up on MIWU1 group 5, is configured
+    through the same phandle by the driver that connects that interrupt. Its group is not listed
+    here.
+
+compatible: "nuvoton,npcm-miwu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    description: NVIC lines of the groups the MIWU driver services, one per interrupt-names entry.
+
+  interrupt-names:
+    description: |
+      Datasheet name of each line in interrupts, in lower case: wkinta for group 1 through
+      wkinth for group 8.
+
+  "#wui-cells":
+    type: int
+    required: true
+    const: 2
+
+wui-cells:
+  - group
+  - bit
