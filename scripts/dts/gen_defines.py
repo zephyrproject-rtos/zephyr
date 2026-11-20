@@ -860,6 +860,8 @@ def write_vanilla_props(node: edtlib.Node) -> None:
 
         if "phandle" in prop.type:
             macro2val.update(phandle_macros(prop, macro))
+        elif prop.type == "path":
+            macro2val[macro] = f"DT_{prop.val.z_path_id}"
         elif "array" in prop.type:
             macro2val.update(array_macros(prop, macro))
 
