@@ -1249,6 +1249,22 @@ ZTEST_USER(net_socket_tcp, test_v4_sendto_recvmsg)
 	zassert_equal(net_sin(&addr)->sin_port, net_htons(CLIENT_PORT), "Wrong port");
 	zassert_true(net_ipv4_is_addr_loopback(&net_sin(&addr)->sin_addr), "Wrong address");
 
+	/* Peek in two chunks, the second one continues where the first ends */
+	io_vector[0].iov_base = buf2;
+	io_vector[0].iov_len = sizeof(buf2);
+	io_vector[1].iov_base = buf3;
+	io_vector[1].iov_len = sizeof(buf3);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 2;
+
+	len = strlen(TEST_STR_SMALL);
+	test_recvmsg(new_sock, &msg, ZSOCK_MSG_PEEK, len, __LINE__);
+	zassert_mem_equal(buf2, TEST_STR_SMALL, sizeof(buf2), "wrong data in %s", "iov[0]");
+	zassert_mem_equal(buf3, &TEST_STR_SMALL[sizeof(buf2)], len - sizeof(buf2),
+			  "wrong data in %s", "iov[1]");
+
 	/* Then in two chunks */
 	io_vector[0].iov_base = buf2;
 	io_vector[0].iov_len = sizeof(buf2);
@@ -1378,6 +1394,70 @@ ZTEST_USER(net_socket_tcp, test_v4_recvmsg_short_namelen)
 	zassert_equal(msg.msg_namelen, sizeof(struct net_sockaddr_in), "wrong addrlen");
 	zassert_mem_equal((uint8_t *)&addr + 1, &unchanged[1], sizeof(addr) - 1,
 			  "recvmsg wrote past msg_namelen");
+
+	test_close(new_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+/* recvmsg() with MSG_PEEK and without MSG_WAITALL returns once the queued data is
+ * peeked, also when a full iovec is followed by NULL or empty ones. Runs in kernel
+ * mode, as the recvmsg() syscall verifier rejects zero-length iovecs.
+ */
+ZTEST(net_socket_tcp, test_v4_recvmsg_peek_empty_iovec)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in c_saddr;
+	struct net_sockaddr_in s_saddr;
+	struct net_sockaddr_in addr;
+	net_socklen_t addrlen = sizeof(addr);
+	struct timeval timeo_optval = {
+		.tv_sec = 1,
+		.tv_usec = 0,
+	};
+	char buf[5] = { 0 };
+	char buf2[5];
+	struct net_iovec io_vector[4] = {
+		{ .iov_base = buf, .iov_len = sizeof(buf) },
+		{ .iov_base = NULL, .iov_len = 0 },
+		{ .iov_base = buf2, .iov_len = 0 },
+		{ .iov_base = buf2, .iov_len = sizeof(buf2) },
+	};
+	struct net_msghdr msg = {
+		.msg_iov = io_vector,
+		.msg_iovlen = ARRAY_SIZE(io_vector),
+	};
+	uint32_t start;
+	uint32_t elapsed;
+	int ret;
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_accept(s_sock, &new_sock, (struct net_sockaddr *)&addr, &addrlen);
+
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeo_optval,
+			       sizeof(timeo_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	test_send(c_sock, TEST_STR_SMALL, sizeof(buf), 0);
+	k_msleep(THREAD_SLEEP);
+
+	start = k_uptime_get_32();
+	ret = zsock_recvmsg(new_sock, &msg, ZSOCK_MSG_PEEK);
+	elapsed = k_uptime_get_32() - start;
+
+	zassert_equal(ret, sizeof(buf), "Unexpected length %d", ret);
+	zassert_mem_equal(buf, TEST_STR_SMALL, sizeof(buf), "Wrong data");
+	zassert_true(elapsed < 500, "Waited %u ms", elapsed);
 
 	test_close(new_sock);
 	test_close(s_sock);
@@ -2429,6 +2509,90 @@ static void test_msg_waitall_recvmsg(int c_sock, int new_sock)
 	zexpect_mem_equal(rx_buf, data, sizeof(rx_buf), "Invalid data received");
 }
 
+/* MSG_PEEK | MSG_WAITALL waits for data arriving after what it already peeked */
+static void test_msg_waitall_peek(int c_sock, int new_sock)
+{
+	struct test_msg_waitall_data test_data = {
+		.sock = c_sock,
+		.data = TEST_STR_SMALL,
+		.offset = 0,
+		.retries = 5,
+	};
+	struct timeval timeo_optval = {
+		.tv_sec = 1,
+		.tv_usec = 0,
+	};
+	uint8_t rx_buf[5] = { 0 };
+	struct k_work_sync sync;
+	ssize_t ret;
+
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeo_optval,
+			       sizeof(timeo_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	k_work_init_delayable(&test_data.tx_work, test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_PEEK | ZSOCK_MSG_WAITALL);
+	(void)k_work_cancel_delayable_sync(&test_data.tx_work, &sync);
+
+	zassert_equal(ret, sizeof(rx_buf), "Invalid length peeked (%zd)", ret);
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf), "Invalid data peeked");
+
+	/* The peeked data is still queued */
+	memset(rx_buf, 0, sizeof(rx_buf));
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(rx_buf), "Invalid length received (%zd)", ret);
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf), "Invalid data received");
+}
+
+/* recvmsg() with MSG_PEEK | MSG_WAITALL fills the iovecs in order while data trickles in */
+static void test_msg_waitall_peek_recvmsg(int c_sock, int new_sock)
+{
+	static const char data[] = "0123456789";
+	struct test_msg_waitall_data test_data = {
+		.sock = c_sock,
+		.data = (const uint8_t *)data,
+		.offset = 0,
+		.retries = sizeof(data) - 1,
+	};
+	struct timeval timeo_optval = {
+		.tv_sec = 1,
+		.tv_usec = 0,
+	};
+	uint8_t rx_buf[sizeof(data) - 1] = { 0 };
+	struct net_iovec iov[2] = {
+		{ .iov_base = rx_buf, .iov_len = sizeof(rx_buf) / 2 },
+		{ .iov_base = rx_buf + sizeof(rx_buf) / 2,
+		  .iov_len = sizeof(rx_buf) - sizeof(rx_buf) / 2 },
+	};
+	struct net_msghdr msg = {
+		.msg_iov = iov,
+		.msg_iovlen = ARRAY_SIZE(iov),
+	};
+	struct k_work_sync sync;
+	ssize_t ret;
+
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeo_optval,
+			       sizeof(timeo_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	k_work_init_delayable(&test_data.tx_work, test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+	ret = zsock_recvmsg(new_sock, &msg, ZSOCK_MSG_PEEK | ZSOCK_MSG_WAITALL);
+	(void)k_work_cancel_delayable_sync(&test_data.tx_work, &sync);
+
+	zassert_equal(ret, sizeof(rx_buf), "Invalid length peeked (%zd)", ret);
+	zassert_mem_equal(rx_buf, data, sizeof(rx_buf), "Invalid data peeked");
+
+	/* The peeked data is still queued */
+	memset(rx_buf, 0, sizeof(rx_buf));
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, sizeof(rx_buf), "Invalid length received (%zd)", ret);
+	zassert_mem_equal(rx_buf, data, sizeof(rx_buf), "Invalid data received");
+}
+
 ZTEST(net_socket_tcp, test_v4_msg_waitall)
 {
 	struct test_msg_waitall_data test_data = {
@@ -2513,6 +2677,9 @@ ZTEST(net_socket_tcp, test_v4_msg_waitall)
 	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
 			  "Invalid data received");
+
+	test_msg_waitall_peek(c_sock, new_sock);
+	test_msg_waitall_peek_recvmsg(c_sock, new_sock);
 
 	test_close(new_sock);
 	test_close(s_sock);
@@ -2602,9 +2769,108 @@ ZTEST(net_socket_tcp, test_v6_msg_waitall)
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
 			  "Invalid data received");
 
+	test_msg_waitall_peek(c_sock, new_sock);
+	test_msg_waitall_peek_recvmsg(c_sock, new_sock);
+
 	test_close(new_sock);
 	test_close(s_sock);
 	test_close(c_sock);
+
+	test_context_cleanup();
+}
+
+struct test_close_work_data {
+	struct k_work_delayable work;
+	int sock;
+};
+
+static void test_close_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct test_close_work_data *data =
+		CONTAINER_OF(dwork, struct test_close_work_data, work);
+
+	(void)zsock_close(data->sock);
+}
+
+/* MSG_PEEK | MSG_WAITALL returns the data peeked so far when the timeout expires
+ * or the peer closes the connection
+ */
+ZTEST(net_socket_tcp, test_v4_msg_waitall_peek_partial)
+{
+	struct test_msg_waitall_data test_data = {
+		.data = TEST_STR_SMALL,
+		.offset = 0,
+		.retries = 3,
+	};
+	struct test_close_work_data close_data;
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in c_saddr;
+	struct net_sockaddr_in s_saddr;
+	struct net_sockaddr_in addr;
+	net_socklen_t addrlen = sizeof(addr);
+	struct timeval timeo_optval = {
+		.tv_sec = 0,
+		.tv_usec = 200000,
+	};
+	uint8_t rx_buf[5] = { 0 };
+	struct k_work_sync sync;
+	uint32_t start;
+	uint32_t elapsed;
+	ssize_t ret;
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_accept(s_sock, &new_sock, (struct net_sockaddr *)&addr, &addrlen);
+
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeo_optval,
+			       sizeof(timeo_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	/* Timeout: only 3 of the 5 bytes arrive */
+	test_data.sock = c_sock;
+	k_work_init_delayable(&test_data.tx_work, test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+	start = k_uptime_get_32();
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_PEEK | ZSOCK_MSG_WAITALL);
+	elapsed = k_uptime_get_32() - start;
+	(void)k_work_cancel_delayable_sync(&test_data.tx_work, &sync);
+
+	zassert_equal(ret, 3, "Invalid length peeked (%zd)", ret);
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, 3, "Invalid data peeked");
+	zassert_true(elapsed >= 200, "Returned after %u ms", elapsed);
+
+	/* Peer close: the same 3 bytes are still queued, then the peer closes */
+	timeo_optval.tv_sec = 1;
+	timeo_optval.tv_usec = 0;
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeo_optval,
+			       sizeof(timeo_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	close_data.sock = c_sock;
+	k_work_init_delayable(&close_data.work, test_close_work_handler);
+	k_work_reschedule(&close_data.work, K_MSEC(100));
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	start = k_uptime_get_32();
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_PEEK | ZSOCK_MSG_WAITALL);
+	elapsed = k_uptime_get_32() - start;
+	(void)k_work_cancel_delayable_sync(&close_data.work, &sync);
+
+	zassert_equal(ret, 3, "Invalid length peeked (%zd)", ret);
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, 3, "Invalid data peeked");
+	zassert_true(elapsed < 500, "Waited %u ms", elapsed);
+
+	test_close(new_sock);
+	test_close(s_sock);
 
 	test_context_cleanup();
 }
