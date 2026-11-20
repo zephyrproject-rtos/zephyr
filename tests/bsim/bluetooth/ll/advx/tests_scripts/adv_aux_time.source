@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
+verbosity_level=2
+EXECUTE_TIMEOUT=120
+
+cd ${BSIM_OUT_PATH}/bin
+
+run_sim() {
+  local exe=$1
+  local testid=$2
+  local simulation_id="${BOARD_TS}_${testid}"
+
+  Execute ${exe} \
+    -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=${testid}
+
+  Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
+    -D=1 -sim_length=5e6
+
+  wait_for_background_jobs
+}
