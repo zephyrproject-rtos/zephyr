@@ -1,0 +1,31 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Andrei-Edward Popa
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Execute in place from a 1 MiB region at the reset address. The board flash
+ * at 0x88000000 is in the Device region of the Armv8-R default memory map,
+ * where the reset code cannot execute.
+ */
+
+/delete-node/ &dram0;
+
+/ {
+	chosen {
+		zephyr,flash = &xip_rom;
+		zephyr,sram = &dram0;
+	};
+
+	soc {
+		xip_rom: rom@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(1)>;
+		};
+
+		dram0: memory@100000 {
+			compatible = "mmio-dram";
+			reg = <0x100000 (DT_SIZE_M(128) - DT_SIZE_M(1))>;
+		};
+	};
+};

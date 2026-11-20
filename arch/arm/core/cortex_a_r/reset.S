@@ -275,6 +275,36 @@ EL1_Reset_Handler:
      */
     get_cpu_logic_id r1, r2, r3, r4 // r1: MPID, r2: logic id
 
+#if defined(CONFIG_XIP)
+    /*
+     * When executing in place, arm_cpu_boot_params is initialized only by
+     * z_prep_c(), so it cannot hold the voting lock. The first CPU in the
+     * devicetree is the primary; the others wait for arch_cpu_start() to
+     * publish their MPID. With CONFIG_PM_CPU_OPS, the CPU that runs at
+     * reset must therefore be the first CPU in the devicetree.
+     */
+    cmp r2, #0
+    beq _primary_core
+#if !defined(CONFIG_PM_CPU_OPS)
+    /*
+     * Until z_prep_c() initializes it, mpid holds whatever the RAM held,
+     * possibly the MPID of a secondary from the previous boot. Wait for
+     * the -1 that the initialization stores before waiting for our MPID.
+     * That store reaches memory without cache maintenance: the Cortex-R52
+     * data cache is write-through, and Cortex-A data accesses are
+     * non-cacheable until the MMU is enabled. The -1 lasts only until
+     * arch_cpu_start() publishes the first secondary, so the secondaries
+     * must leave reset with the primary; a SoC that releases them later
+     * needs CONFIG_PM_CPU_OPS, with which they are powered on only after
+     * that initialization.
+     */
+3:  dmb
+    ldr r3, [r0, #BOOT_PARAM_MPID_OFFSET]
+    cmn r3, #1
+    bne 3b
+#endif /* !CONFIG_PM_CPU_OPS */
+    b _secondary_core
+#else
     add r4, r0, #BOOT_PARAM_VOTING_OFFSET
 
     /* signal our desire to vote */
@@ -310,6 +340,7 @@ EL1_Reset_Handler:
     cmp r3, r1
     beq _primary_core
     /* fallthrough secondary */
+#endif /* CONFIG_XIP */
 
     /* loop until our turn comes */
 _secondary_core:
