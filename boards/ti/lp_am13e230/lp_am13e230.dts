@@ -17,6 +17,7 @@
 		zephyr,sram = &sram0_1_2;
 		zephyr,flash = &flash0;
 		zephyr,crc = &crc;
+		zephyr,console = &unicomm4_uart;
 	};
 };
 
@@ -34,5 +35,16 @@
 };
 
 &syspll {
+	status = "okay";
+};
+
+&unicomm4 {
+	status = "okay";
+};
+
+&unicomm4_uart {
+	current-speed = <115200>;
+	pinctrl-0 = <&uc4_tx_sda_pico_pa0 &uc4_rx_scl_sclk_pa1>;
+	pinctrl-names = "default";
 	status = "okay";
 };
