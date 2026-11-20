@@ -28,10 +28,17 @@
 
 #include <zephyr/logging/log.h>
 
-#if defined(CONFIG_PM) && (defined(CONFIG_BT) || defined(CONFIG_IEEE802154))
+#if (defined(CONFIG_BT_STM32WBA) || defined(CONFIG_IEEE802154_STM32WBA))
+#define RADIO_LL_ACTIVE
+#else
+#undef RADIO_LL_ACTIVE
+#endif
+
+#if defined(RADIO_LL_ACTIVE)
 #include <zephyr/pm/policy.h>
 #include <os_wrapper.h>
 #include <ll_sys.h>
+#include <app_conf.h>
 #endif
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -134,17 +141,31 @@ BUILD_ASSERT(SRAM1_RETENTION_MASK != 0U,
 
 #define HSE_ON (stm32_reg_read_bits(&RCC->CR, RCC_CR_HSEON) == RCC_CR_HSEON)
 
+/* Number of 32-bit words needed for ISER/IPR depending on IRQ count */
+#define NVIC_ISER_COUNT ((CONFIG_NUM_IRQS + 31) / 32)
+#define NVIC_IPR_COUNT  (CONFIG_NUM_IRQS)
+
+struct nvic_context {
+	uint32_t iser[NVIC_ISER_COUNT];
+	uint8_t ipr[NVIC_IPR_COUNT];
+};
+
 static uint32_t ram_waitstates_backup;
 static uint32_t flash_latency_backup;
 
 #if defined(CONFIG_PM_S2RAM)
 /* set to true if standby mode has been effectively entered */
-bool standby_entered;
+static bool standby_entered;
 static struct fpu_ctx_full fpu_state;
 static struct scb_context scb_state;
+static struct nvic_context nvic_state;
 #if defined(CONFIG_ARM_MPU)
 static struct z_mpu_context_retained mpu_state;
 #endif
+#endif
+
+#if defined(RADIO_LL_ACTIVE)
+static uint32_t radio_wkup_us;
 #endif
 
 static int enter_low_power_mode(void)
@@ -169,6 +190,36 @@ static int enter_low_power_mode(void)
 }
 
 #if defined(CONFIG_PM_S2RAM)
+
+static void nvic_save_context(void)
+{
+	/* 1. Save Peripheral Interrupt Priorities (IPR) */
+	for (int i = 0; i < NVIC_IPR_COUNT; i++) {
+		nvic_state.ipr[i] = NVIC->IPR[i];
+	}
+
+	/* 2. Save active interrupt enables */
+	for (int i = 0; i < NVIC_ISER_COUNT; i++) {
+		nvic_state.iser[i] = NVIC->ISER[i];
+	}
+}
+
+static void nvic_restore_context(void)
+{
+	/* 1. Restore Peripheral Interrupt Priorities (IPR) */
+	for (int i = 0; i < NVIC_IPR_COUNT; i++) {
+		NVIC->IPR[i] = nvic_state.ipr[i];
+	}
+
+	/* 2. Restore Active Interrupt Enables (ISER) */
+	for (int i = 0; i < NVIC_ISER_COUNT; i++) {
+		NVIC->ISER[i] = nvic_state.iser[i];
+	}
+
+	__DSB();
+	__ISB();
+}
+
 static void set_mode_suspend_to_ram_enter(void)
 {
 	/* Enable RTC wakeup
@@ -187,12 +238,13 @@ static void set_mode_suspend_to_ram_enter(void)
 	/* Select standby mode */
 	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
 
-	/* Save FPU, SCB and MPU states */
+	/* Save NVIC, FPU, SCB and MPU states */
 	z_arm_save_fp_context(&fpu_state);
 	z_arm_save_scb_context(&scb_state);
 #if defined(CONFIG_ARM_MPU)
 	z_arm_save_mpu_context(&mpu_state);
 #endif /* CONFIG_ARM_MPU */
+	nvic_save_context();
 
 	standby_entered = true;
 	/* Save context and enter Standby mode */
@@ -207,7 +259,10 @@ static void set_mode_suspend_to_ram_enter(void)
 
 static void set_mode_suspend_to_ram_exit(void)
 {
-	/* Save MPU, SCB and FPU states */
+	/* Restore NVIC, MPU, SCB and FPU states */
+	if (standby_entered) {
+		nvic_restore_context();
+	}
 #if defined(CONFIG_ARM_MPU)
 	z_arm_restore_mpu_context(&mpu_state);
 #endif /* CONFIG_ARM_MPU */
@@ -227,6 +282,30 @@ static void set_mode_suspend_to_ram_exit(void)
 	stm32wba_init();
 	stm32_power_init();
 }
+#if defined(RADIO_LL_ACTIVE)
+
+void stm32wba_radio_pm_resume(void)
+{
+	if (ll_sys_dp_slp_exit() != LL_SYS_OK) {
+		LOG_ERR("Failed to exit low-power sleep mode");
+	}
+}
+
+void stm32wba_radio_pm_suspend(void)
+{
+	/* Check if radio is already suspended */
+	if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_DISABLED) {
+		const struct pm_state_info *pm_state = pm_state_next_get(_current_cpu->id);
+
+		if (pm_state->state == PM_STATE_SUSPEND_TO_RAM) {
+			if (radio_wkup_us > 0) {
+				(void)ll_sys_dp_slp_enter(radio_wkup_us);
+			}
+		}
+	}
+}
+#endif
+
 #endif
 
 /*
@@ -375,10 +454,14 @@ int64_t pm_policy_next_custom_ticks(void)
 	} else {
 		uint64_t next_radio_evt_us = os_timer_get_earliest_time();
 
-		if (next_radio_evt_us == LL_DP_SLP_NO_WAKEUP) {
+		if (next_radio_evt_us >= LL_DP_SLP_NO_WAKEUP) {
 			ret = -1LL; /* No radio event pending */
+			radio_wkup_us = LL_DP_SLP_NO_WAKEUP;
 		} else {
 			ret = k_us_to_ticks_floor64(next_radio_evt_us);
+			radio_wkup_us = (next_radio_evt_us > CFG_LPM_STDBY_WAKEUP_TIME) ?
+				next_radio_evt_us - CFG_LPM_STDBY_WAKEUP_TIME :
+				UINT32_C(0);
 		}
 	}
 	return ret;
