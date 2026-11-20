@@ -55,6 +55,59 @@ static int test_poll_out(void)
 	return TC_PASS;
 }
 
+static int test_poll_out_blocking(void)
+{
+	const struct device *const uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	struct uart_config cfg;
+	uint32_t start_cycles, elapsed_cycles, elapsed_us;
+	uint32_t expected_us, min_us;
+	int err;
+
+	if (!device_is_ready(uart_dev)) {
+		TC_PRINT("UART device not ready\n");
+		return TC_FAIL;
+	}
+
+	err = uart_config_get(uart_dev, &cfg);
+	if (err < 0) {
+		TC_PRINT("Failed to get UART config (%d)\n", err);
+		return TC_FAIL;
+	}
+	k_sleep(K_MSEC(20));
+
+	start_cycles = k_cycle_get_32();
+	uart_poll_out(uart_dev, '#');
+	elapsed_cycles = k_cycle_get_32() - start_cycles;
+	elapsed_us = (uint32_t)k_cyc_to_us_floor32(elapsed_cycles);
+
+	expected_us = (10U * 1000000U) / cfg.baudrate;
+	min_us = (expected_us * 7U) / 10U;
+
+	TC_PRINT("uart_poll_out took %u us (min expected %u us for %u baud)\n",
+		 elapsed_us, min_us, cfg.baudrate);
+
+	zassert_true(elapsed_us >= min_us,
+		     "uart_poll_out did not block until character was sent. "
+		     "Took %u us, expected >= %u us",
+		     elapsed_us, min_us);
+
+	return TC_PASS;
+}
+
+#if CONFIG_SHELL
+void test_uart_poll_out_blocking(void)
+#else
+ZTEST(uart_basic_api, test_uart_poll_out_blocking)
+#endif
+{
+	if (IS_ENABLED(CONFIG_UART_NRFX_UARTE) &&
+	    !IS_ENABLED(CONFIG_UART_NRFX_UARTE_POLL_OUT_WAIT)) {
+		ztest_test_skip();
+	}
+
+	zassert_true(test_poll_out_blocking() == TC_PASS);
+}
+
 #if CONFIG_SHELL
 void test_uart_poll_out(void)
 #else
