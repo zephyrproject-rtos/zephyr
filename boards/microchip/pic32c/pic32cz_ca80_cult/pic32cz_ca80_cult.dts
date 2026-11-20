@@ -113,6 +113,12 @@
 		xosc-frequency = <12000000>;
 		xosc-en = <1>;
 		xosc-xtal-en = <1>;
+		/*
+		 * USBHS PHY PLL reference: 12 MHz XOSC divided by 1. The PHY
+		 * derives its 480 MHz high-speed clock from it, in device and
+		 * host role.
+		 */
+		xosc-usb-ref-clock-div = "div1";
 	};
 
 	dpll: dpll {
@@ -194,7 +200,7 @@
 
 		mclkperiph {
 			subsystem = <CLOCK_MCHP_MCLKDOMAIN_ID_PERIPH>;
-			mclk-div = <1>;
+			mclk-div = <2>;
 		};
 	};
 
@@ -209,6 +215,12 @@
 
 		sercom2 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SERCOM2>;
+			mclk-en = <1>;
+		};
+
+		/* AHB module clock for the USBHS0 controller (device or host role) */
+		husb0 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_HUSB0>;
 			mclk-en = <1>;
 		};
 	};
@@ -301,4 +313,15 @@ i2c0: &sercom9 {
 	#io-channel-cells = <1>;
 	adc-div-ratio = <1>;
 	status = "okay";
+};
+
+zephyr_udc0: &hsusb0 {
+	status = "okay";
+};
+
+zephyr_udc1: &hsusb1 {
+	/* USBHS1 is disabled – USBHS (hsusb0) is used as the primary USB device
+	 * controller via the zephyr_udc0 alias below.
+	 */
+	status = "disabled";
 };

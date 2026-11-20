@@ -9,8 +9,10 @@ tests:
     extra_configs:
       - CONFIG_FPU=y
     platform_allow:
+      - pic32cz_ca80_cult
       - rd_rw612_bga/rw612
     integration_platforms:
+      - pic32cz_ca80_cult
       - rd_rw612_bga/rw612
     timeout: 30
     harness: console

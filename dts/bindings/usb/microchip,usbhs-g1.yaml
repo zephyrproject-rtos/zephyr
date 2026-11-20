@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip USBHS G1 driver
+
+description: |
+  Microchip USBHS G1 driver bindings.
+
+  Group usbhs-g1 USB driver supports following hardware peripherals:
+    - module name="USBHS" id="03787" version="2a0"
+
+compatible: "microchip,usbhs-g1"
+
+include:
+  - name: mentor,musb.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      USBHS wrapper and MUSB core register regions.
+
+  reg-names:
+    required: true
+    description: |
+      Must be "wrapper", "core".
+
+  clocks:
+    required: true
+    description: |
+      Clock configuration for the USB controller.
+
+  clock-names:
+    description: |
+      Names of the clock inputs.
+
+  nvm-phy-calib:
+    type: phandle
+    description: |
+      Phandle to the NVM PHY calibration fuse area.
+
+      This property provides the address of the PHY calibration fuse word
+      in the NVM (OTP) region. The USB HS PHY driver reads this 32-bit fuse
+      word at initialization and extracts calibration values for squelch
+      threshold, HS amplitude tuning, on-die termination, HS slew rate,
+      disconnect detection threshold, and HS drive current compensation.
+
+      If this property is not provided, or if the fuse word is unprogrammed
+      (reads as 0x00000000 or 0xFFFFFFFF), the driver will use compile-time
+      default calibration values suitable for engineering samples.

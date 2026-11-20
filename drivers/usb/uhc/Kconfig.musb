@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_MUSB
+	bool "MUSB USB host controller driver"
+	default y
+	depends on DT_HAS_MENTOR_MUSB_HOST_ENABLED
+	select GPIO
+	select EVENTS
+	help
+	  Mentor Graphics MUSB USB host controller driver. Vendor-specific
+	  glue, such as the Microchip USBHS G1 wrapper, is selected by the
+	  devicetree compatible of the controller node.
+
+if UHC_MUSB
+
+config UHC_MUSB_STACK_SIZE
+	int "UHC MUSB driver internal thread stack size"
+	default 1024
+	help
+	  Size of the stack used by the MUSB host controller driver worker
+	  thread.
+
+config UHC_MUSB_THREAD_PRIORITY
+	int "UHC MUSB driver thread priority"
+	default 2
+	help
+	  Cooperative priority of the MUSB host controller driver worker
+	  thread.
+
+endif # UHC_MUSB
