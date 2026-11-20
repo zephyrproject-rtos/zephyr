@@ -97,7 +97,7 @@ ZTEST(nrf_lf_clock_start, test_wait_in_thread)
 	}
 #endif
 
-	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_AVAILABLE);
+	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_AVAILABLE, NULL);
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 	o = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &t);
 #else
@@ -107,7 +107,7 @@ ZTEST(nrf_lf_clock_start, test_wait_in_thread)
 	k_busy_wait(35);
 	zassert_true(k_cycle_get_32() > 0);
 
-	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_STABLE);
+	z_nrf_clock_control_lf_on(CLOCK_CONTROL_NRF_LF_START_STABLE, NULL);
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 	o = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &t);
 #else
