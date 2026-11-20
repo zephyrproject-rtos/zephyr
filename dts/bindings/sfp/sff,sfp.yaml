@@ -1,0 +1,68 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SFP, SFP+ or SFP28 cage for an SFF-8472 managed pluggable transceiver.
+
+  The node describes the cage on the board, not the module in it: a module
+  can be absent or exchanged at run time. The module's management memory is
+  reached on the I2C bus given by i2c-bus, at the addresses SFF-8472 fixes:
+  0x50 for the serial ID page (A0h) and 0x51 for the diagnostics page (A2h).
+
+  The properties follow the Linux sff,sfp binding, so a board description
+  can be shared between the two. The driver uses mod-def0-gpios to detect
+  the module; the remaining control and status lines are described for the
+  board and are not driven yet.
+
+  Example:
+
+    sfp0: sfp-cage {
+      compatible = "sff,sfp";
+      i2c-bus = <&i2c1>;
+      mod-def0-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+      los-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+      tx-fault-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+      tx-disable-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+    };
+
+compatible: "sff,sfp"
+
+include: base.yaml
+
+properties:
+  i2c-bus:
+    type: phandle
+    required: true
+    description: I2C controller the cage's management interface is wired to.
+
+  mod-def0-gpios:
+    type: phandle-array
+    description: |
+      MOD_DEF0 module presence input. A module grounds MOD_DEF0, so this is
+      normally GPIO_ACTIVE_LOW and reads 1 while a module is inserted.
+      Without this property a module is assumed to be present.
+
+  los-gpios:
+    type: phandle-array
+    description: Receiver loss of signal (Rx_LOS) input.
+
+  tx-fault-gpios:
+    type: phandle-array
+    description: Transmitter fault (Tx_Fault) input.
+
+  tx-disable-gpios:
+    type: phandle-array
+    description: Transmitter disable (Tx_Disable) output.
+
+  rate-select0-gpios:
+    type: phandle-array
+    description: Receiver rate select (RS0) output.
+
+  rate-select1-gpios:
+    type: phandle-array
+    description: Transmitter rate select (RS1) output.
+
+  maximum-power-milliwatt:
+    type: int
+    default: 1000
+    description: Maximum power the cage can supply to a module, in milliwatts.
