@@ -99,4 +99,14 @@ config STUN_BINDING_FINAL_WAIT_RTO
 
 endif # STUN_CLIENT
 
+config STUN_SHELL
+	bool "STUN shell commands"
+	depends on STUN_CLIENT && NET_SHELL
+	help
+	  Add "net stun" to the network shell: "net stun server" names the
+	  STUN server to ask, "net stun query" asks it for the address it
+	  sees this device at and prints the answer. The query runs in the
+	  thread of the shell and takes some 2.5 KB of its stack on a 32-bit
+	  target, so SHELL_STACK_SIZE defaults to 4096 with this option.
+
 endif # STUN
