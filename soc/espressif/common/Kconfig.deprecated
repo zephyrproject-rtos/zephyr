@@ -4,13 +4,13 @@
 menu "Deprecated options"
 
 config BOOTLOADER_FLASH_XMC_SUPPORT
-	bool "Support flash chips of XMC (READ HELP FIRST) [DEPRECATED]"
+	bool "Support flash chips of XMC (READ HELP FIRST)"
 	default y
 	help
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_BOOTLOADER_FLASH_XMC_SUPPORT instead.
 
 config BOOTLOADER_REGION_PROTECTION_ENABLE
-	bool "Protect unmapped memory regions from unintended accesses [DEPRECATED]"
+	bool "Protect unmapped memory regions from unintended accesses"
 	default y if !RISCV_PMP && BOOTLOADER_MCUBOOT
 	imply SOC_FAMILY_ESPRESSIF_BOOTLOADER_REGION_PROTECTION_ENABLE if !(!RISCV_PMP && \
 		BOOTLOADER_MCUBOOT)
@@ -305,7 +305,7 @@ config ESP32_PM_CPU_RETENTION_STATIC
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_PM_CPU_RETENTION_STATIC instead.
 
 config ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
-	bool "Power down CPU in light sleep [DEPRECATED]"
+	bool "Power down CPU in light sleep"
 	depends on (PM && TICKLESS_KERNEL) && SOC_FAMILY_ESPRESSIF_PM_SUPPORT_CPU_PD
 	default y
 	help
@@ -321,7 +321,7 @@ config ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP instead.
 
 config ESP32_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
-	bool "Restore I/D-cache tag memory after CPU power-down light sleep [DEPRECATED]"
+	bool "Restore I/D-cache tag memory after CPU power-down light sleep"
 	depends on (PM && TICKLESS_KERNEL) && (SOC_SERIES_ESP32S3 && \
 		SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
 	default y
@@ -359,7 +359,7 @@ config ESP32_PPA_WAIT_TIMEOUT_US
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_PPA_WAIT_TIMEOUT_US instead.
 
 config ESP32_REGION_1_NOINIT
-	bool "Use DRAM region 1 to spill noinit section [DEPRECATED]"
+	bool "Use DRAM region 1 to spill noinit section"
 	depends on SOC_SERIES_ESP32
 	default y if !(SOC_FAMILY_ESPRESSIF_ENABLE_APPCPU || SOC_ESP32_APPCPU || BOOTLOADER_MCUBOOT)
 	imply SOC_ESP32_REGION_1_NOINIT if (SOC_FAMILY_ESPRESSIF_ENABLE_APPCPU || \
@@ -406,7 +406,7 @@ config ESP32_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY instead.
 
 config ESP32_ULP_COPROC_ENABLED
-	bool "Ultra Low Power (ULP) Coprocessor [DEPRECATED]"
+	bool "Ultra Low Power (ULP) Coprocessor"
 	default y if SOC_ESP32C5_LPCORE || SOC_ESP32C6_LPCORE || SOC_ESP32P4_LPCORE || MBOX_ESP32
 	imply SOC_FAMILY_ESPRESSIF_ULP_ENABLED if !(SOC_ESP32C5_LPCORE || SOC_ESP32C6_LPCORE || \
 		SOC_ESP32P4_LPCORE || MBOX_ESP32)
@@ -481,14 +481,14 @@ config ESP32_ULP_NORESET_UNDER_DEBUG
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_ULP_NORESET_UNDER_DEBUG instead.
 
 config ESP32_ULP_ROM_PRINT_ENABLE
-	bool "Print utilities from LP ROM [DEPRECATED]"
+	bool "Print utilities from LP ROM"
 	depends on SOC_FAMILY_ESPRESSIF_ULP_TYPE_LP_CORE
 	default y
 	help
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_ULP_ROM_PRINT_ENABLE instead.
 
 config ESP32_ULP_TRAP_WAKEUP
-	bool "Wakeup HP-CPU when LP-core encounters an exception [DEPRECATED]"
+	bool "Wakeup HP-CPU when LP-core encounters an exception"
 	depends on SOC_FAMILY_ESPRESSIF_ULP_TYPE_LP_CORE
 	default y
 	help
@@ -583,7 +583,7 @@ config ESPTOOLPY_FLASHMODE_QOUT
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_FLASH_MODE_QOUT instead.
 
 config ESPTOOLPY_FLASH_MODE_AUTO_DETECT
-	bool "Choose flash mode automatically (please read help) [DEPRECATED]"
+	bool "Choose flash mode automatically (please read help)"
 	depends on SOC_SERIES_ESP32S3
 	default y
 	help
@@ -639,7 +639,7 @@ config ESP_APPCPU_IROM_SIZE
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_APPCPU_IROM_SIZE instead.
 
 config ESP_SIMPLE_BOOT
-	bool "Simple Boot method [DEPRECATED]"
+	bool "Simple Boot method"
 	default y if !BOOTLOADER_MCUBOOT && !MCUBOOT
 	imply SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT if !(!BOOTLOADER_MCUBOOT && !MCUBOOT)
 	help
@@ -695,7 +695,7 @@ config ESP_SPIRAM_SIZE
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE instead.
 
 config ESP_USB_SERIAL_JTAG_ENABLED
-	bool "Keep USB Serial/JTAG controller enabled [DEPRECATED]"
+	bool "Keep USB Serial/JTAG controller enabled"
 	depends on SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32S3 || 		SOC_SERIES_ESP32C5 || \
 		SOC_SERIES_ESP32C6 || 		SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32H2 || \
 		SOC_SERIES_ESP32P4
@@ -716,7 +716,7 @@ config SOC_ESP32_APPCPU_TARGET
 	def_bool SOC_FAMILY_ESPRESSIF_APPCPU_TARGET
 
 config SOC_ESP32_ENABLE_PVT
-	bool "Auto adjust hp & lp voltage using pvt function [DEPRECATED]"
+	bool "Auto adjust hp & lp voltage using pvt function"
 	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32C61 || \
 		SOC_SERIES_ESP32P4
 	default y if !SOC_SERIES_ESP32C6
@@ -892,52 +892,52 @@ config SPIRAM_SPIWP_SD3_PIN
 	  Deprecated. Use SOC_ESP32_SPIRAM_SPIWP_SD3_PIN instead.
 
 config SPI_FLASH_ROM_DRIVER_PATCH
-	bool "SPI flash ROM driver patched functions [DEPRECATED]"
+	bool "SPI flash ROM driver patched functions"
 	default y
 	help
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_SPI_FLASH_ROM_DRIVER_PATCH instead.
 
 config SPI_FLASH_SUPPORT_BOYA_CHIP
-	bool "BOYA [DEPRECATED]"
+	bool "BOYA"
 	default y if !SOC_SERIES_ESP32
 	imply SOC_FAMILY_ESPRESSIF_SPI_FLASH_BOYA if SOC_SERIES_ESP32
 	help
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_SPI_FLASH_BOYA instead.
 
 config SPI_FLASH_SUPPORT_GD_CHIP
-	bool "GigaDevice [DEPRECATED]"
+	bool "GigaDevice"
 	default y
 	help
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_SPI_FLASH_GD instead.
 
 config SPI_FLASH_SUPPORT_ISSI_CHIP
-	bool "ISSI [DEPRECATED]"
+	bool "ISSI"
 	default y
 	help
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_SPI_FLASH_ISSI instead.
 
 config SPI_FLASH_SUPPORT_MXIC_CHIP
-	bool "MXIC [DEPRECATED]"
+	bool "MXIC"
 	default y
 	help
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_SPI_FLASH_MXIC instead.
 
 config SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
-	bool "mxic (opi) [DEPRECATED]"
+	bool "mxic (opi)"
 	depends on SOC_SERIES_ESP32S3
 	default y
 	help
 	  Deprecated. Use SOC_ESP32S3_SPI_FLASH_MXIC_OPI instead.
 
 config SPI_FLASH_SUPPORT_TH_CHIP
-	bool "TH [DEPRECATED]"
+	bool "TH"
 	default y if !SOC_SERIES_ESP32
 	imply SOC_FAMILY_ESPRESSIF_SPI_FLASH_TH if SOC_SERIES_ESP32
 	help
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_SPI_FLASH_TH instead.
 
 config SPI_FLASH_SUPPORT_WINBOND_CHIP
-	bool "Winbond [DEPRECATED]"
+	bool "Winbond"
 	default y
 	help
 	  Deprecated. Use SOC_FAMILY_ESPRESSIF_SPI_FLASH_WINBOND instead.
