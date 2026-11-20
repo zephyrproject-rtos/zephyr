@@ -1,0 +1,21 @@
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - ipc
+    - openamp
+  harness: ztest
+  platform_allow:
+    - qemu_cortex_a53
+    - mps2/an385
+  integration_platforms:
+    - qemu_cortex_a53
+    - mps2/an385
+tests:
+  ipc.static_vrings.mapping:
+    extra_configs:
+      - CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET=n
+  ipc.static_vrings.mapping.reset:
+    extra_configs:
+      - CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET=y

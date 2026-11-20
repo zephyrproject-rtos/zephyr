@@ -79,6 +79,12 @@ Libraries / Subsystems
     :c:member:`i3c_config_controller.tcas_ps` and the ``tcas-ps`` controller
     Devicetree property.
 
+* IPC
+
+  * The static vrings backend supports peers with different local addresses for
+    shared memory. Existing identity mappings remain supported; see
+    :ref:`ipc_service_static_vrings_mapping`.
+
 * LoRaWAN
 
   * The native backend now supports the AS923 region

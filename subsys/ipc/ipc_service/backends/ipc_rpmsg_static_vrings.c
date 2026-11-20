@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,8 +60,7 @@ struct backend_data_t {
 
 struct backend_config_t {
 	unsigned int role;
-	uintptr_t shm_addr;
-	size_t shm_size;
+	struct metal_io_dt_spec io;
 	struct mbox_dt_spec mbox_tx;
 	struct mbox_dt_spec mbox_rx;
 	unsigned int wq_prio_type;
@@ -253,13 +253,18 @@ static int vr_shm_configure(struct ipc_static_vrings *vr, const struct backend_c
 {
 	unsigned int num_desc;
 
-	num_desc = optimal_num_desc(conf->shm_size, conf->buffer_size);
+	if (!IS_ALIGNED(conf->io.region_addr, MEM_ALIGNMENT) ||
+	    conf->io.region_size > UINTPTR_MAX - conf->io.region_addr) {
+		return -EINVAL;
+	}
+
+	num_desc = optimal_num_desc(conf->io.region_size, conf->buffer_size);
 	if (num_desc == 0) {
 		return -ENOMEM;
 	}
 
 	/*
-	 * conf->shm_addr  +--------------+  vr->status_reg_addr
+	 * region base    +--------------+  vr->status_reg_addr
 	 *		   |    STATUS    |
 	 *		   +--------------+  vr->shm_addr
 	 *		   |              |
@@ -280,14 +285,15 @@ static int vr_shm_configure(struct ipc_static_vrings *vr, const struct backend_c
 	 *		   +--------------+
 	 */
 
-	vr->shm_addr = ROUND_UP(conf->shm_addr + VDEV_STATUS_SIZE, MEM_ALIGNMENT);
+	vr->shm_addr = ROUND_UP(conf->io.region_addr + VDEV_STATUS_SIZE, MEM_ALIGNMENT);
 	vr->shm_size = shm_size(num_desc, conf->buffer_size);
 
 	vr->rx_addr = vr->shm_addr + VRING_COUNT * vq_ring_size(num_desc, conf->buffer_size);
 	vr->tx_addr = ROUND_UP(vr->rx_addr + vring_size(num_desc, MEM_ALIGNMENT),
 			       MEM_ALIGNMENT);
 
-	vr->status_reg_addr = conf->shm_addr;
+	vr->status_reg_addr = conf->io.region_addr;
+	vr->io = conf->io.phys_map != NULL ? &conf->io : NULL;
 
 	vr->vring_size = num_desc;
 
@@ -800,20 +806,35 @@ static int backend_init(const struct device *instance)
 }
 
 
+#define BACKEND_IS_METAL_IO(i) \
+	DT_NODE_HAS_COMPAT(DT_INST_PHANDLE(i, memory_region), zephyr_metal_io)
+#define BACKEND_REGION(i) \
+	COND_CODE_1(BACKEND_IS_METAL_IO(i), \
+		(DT_PHANDLE(DT_INST_PHANDLE(i, memory_region), region)), \
+		(DT_INST_PHANDLE(i, memory_region)))
+
 #if defined(CONFIG_ARCH_POSIX)
 #define BACKEND_PRE(i) extern char IPC##i##_shm_buffer[];
 #define BACKEND_SHM_ADDR(i) (const uintptr_t)IPC##i##_shm_buffer
 #else
 #define BACKEND_PRE(i)
-#define BACKEND_SHM_ADDR(i) DT_REG_ADDR(DT_INST_PHANDLE(i, memory_region))
+#define BACKEND_SHM_ADDR(i) DT_REG_ADDR(BACKEND_REGION(i))
 #endif /* defined(CONFIG_ARCH_POSIX) */
+
+#define BACKEND_FROM_REG(i) \
+	{ \
+		.region_addr = BACKEND_SHM_ADDR(i), \
+		.region_size = DT_REG_SIZE(BACKEND_REGION(i)), \
+	}
 
 #define DEFINE_BACKEND_DEVICE(i)							\
 	BACKEND_PRE(i)									\
 	static struct backend_config_t backend_config_##i = {				\
 		.role = DT_ENUM_IDX_OR(DT_DRV_INST(i), role, ROLE_HOST),		\
-		.shm_size = DT_REG_SIZE(DT_INST_PHANDLE(i, memory_region)),		\
-		.shm_addr = BACKEND_SHM_ADDR(i),					\
+		.io = COND_CODE_1(BACKEND_IS_METAL_IO(i),				\
+			(Z_METAL_IO_DT_SPEC_GET(DT_INST_PHANDLE(i, memory_region), \
+					       BACKEND_SHM_ADDR(i))),		\
+			(BACKEND_FROM_REG(i))),					\
 		.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),				\
 		.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),				\
 		.wq_prio = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),	\
@@ -851,7 +872,7 @@ static int shared_memory_prepare(void)
 
 	for (int i = 0; i < DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT); i++) {
 		if (config[i]->role == ROLE_HOST) {
-			memset((void *) config[i]->shm_addr, 0, VDEV_STATUS_SIZE);
+			memset((void *)config[i]->io.region_addr, 0, VDEV_STATUS_SIZE);
 		}
 	}
 
