@@ -27,9 +27,12 @@ static void conn_mgr_iface_events_handler(uint64_t mgmt_event, struct net_if *if
 		return;
 	}
 
-	idx = net_if_get_by_iface(iface) - 1;
+	idx = conn_mgr_get_index_for_if(iface);
+	if (idx < 0) {
+		return;
+	}
 
-	NET_DBG("Iface index %u", idx);
+	NET_DBG("Iface index %d", idx);
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
@@ -67,9 +70,12 @@ static void conn_mgr_ipv6_events_handler(uint64_t mgmt_event, struct net_if *ifa
 		return;
 	}
 
-	idx = net_if_get_by_iface(iface) - 1;
+	idx = conn_mgr_get_index_for_if(iface);
+	if (idx < 0) {
+		return;
+	}
 
-	NET_DBG("Iface index %u", idx);
+	NET_DBG("Iface index %d", idx);
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
@@ -118,9 +124,12 @@ static void conn_mgr_ipv4_events_handler(uint64_t mgmt_event, struct net_if *ifa
 		return;
 	}
 
-	idx = net_if_get_by_iface(iface) - 1;
+	idx = conn_mgr_get_index_for_if(iface);
+	if (idx < 0) {
+		return;
+	}
 
-	NET_DBG("Iface index %u", idx);
+	NET_DBG("Iface index %d", idx);
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 

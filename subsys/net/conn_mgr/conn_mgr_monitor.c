@@ -36,7 +36,8 @@ static struct k_thread conn_mgr_mon_thread;
 /* Internal state array tracking readiness, flags, and other state information for all available
  * ifaces. Note that indexing starts at 0, whereas Zephyr iface indices start at 1.
  * conn_mgr_mon_get_if_by_index and conn_mgr_get_index_for_if are used to go back and forth between
- * iface_states indices and Zephyr iface pointers.
+ * iface_states indices and Zephyr iface pointers. Ifaces with an index above CONN_MGR_IFACE_MAX
+ * are not tracked.
  */
 static uint16_t iface_states[CONN_MGR_IFACE_MAX];
 
@@ -92,11 +93,17 @@ static struct net_if *conn_mgr_mon_get_if_by_index(int index)
  * @brief Gets the index in iface_states for the state corresponding to a provided iface.
  *
  * @param iface - iface to find the index of.
- * @return int - The index found.
+ * @return int - The index found, or -ENOENT if the iface is not tracked.
  */
-static int conn_mgr_get_index_for_if(struct net_if *iface)
+int conn_mgr_get_index_for_if(struct net_if *iface)
 {
-	return net_if_get_by_iface(iface) - 1;
+	int idx = net_if_get_by_iface(iface) - 1;
+
+	if (idx < 0 || idx >= CONN_MGR_IFACE_MAX) {
+		return -ENOENT;
+	}
+
+	return idx;
 }
 
 /**
@@ -553,6 +560,10 @@ void conn_mgr_ignore_iface(struct net_if *iface)
 {
 	int idx = conn_mgr_get_index_for_if(iface);
 
+	if (idx < 0) {
+		return;
+	}
+
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
 	if (!(iface_states[idx] & CONN_MGR_IF_IGNORED)) {
@@ -567,6 +578,10 @@ void conn_mgr_ignore_iface(struct net_if *iface)
 void conn_mgr_watch_iface(struct net_if *iface)
 {
 	int idx = conn_mgr_get_index_for_if(iface);
+
+	if (idx < 0) {
+		return;
+	}
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
@@ -584,6 +599,10 @@ bool conn_mgr_is_iface_ignored(struct net_if *iface)
 	int idx = conn_mgr_get_index_for_if(iface);
 
 	bool ret = false;
+
+	if (idx < 0) {
+		return false;
+	}
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
@@ -642,6 +661,13 @@ void conn_mgr_watch_l2(const struct net_l2 *l2)
 
 static int conn_mgr_mon_init(void)
 {
+	int if_count;
+
+	NET_IFACE_COUNT(&if_count);
+	if (if_count > CONN_MGR_IFACE_MAX) {
+		LOG_WRN("Ifaces %d to %d are not monitored", CONN_MGR_IFACE_MAX + 1, if_count);
+	}
+
 	k_thread_create(&conn_mgr_mon_thread, conn_mgr_mon_stack,
 			CONFIG_NET_CONNECTION_MANAGER_MONITOR_STACK_SIZE,
 			conn_mgr_mon_thread_fn,
@@ -656,7 +682,7 @@ uint16_t conn_mgr_if_state(struct net_if *iface)
 	int idx = conn_mgr_get_index_for_if(iface);
 	uint16_t state = CONN_MGR_IF_STATE_INVALID;
 
-	if (idx < CONN_MGR_IFACE_MAX) {
+	if (idx >= 0) {
 		k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 		state = iface_states[idx];
 		k_mutex_unlock(&conn_mgr_mon_lock);
