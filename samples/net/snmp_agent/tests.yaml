@@ -1,0 +1,18 @@
+sample:
+  description: SNMP agent sample
+  name: snmp_agent_sample
+common:
+  harness: net
+  depends_on: netif
+  min_ram: 64
+  tags:
+    - net
+    - snmp
+  integration_platforms:
+    - qemu_x86
+tests:
+  sample.net.snmp_agent: {}
+  sample.net.snmp_agent.v1_traps:
+    extra_configs:
+      - CONFIG_NET_SAMPLE_SNMP_TRAP_RECEIVER="192.0.2.2"
+      - CONFIG_NET_SAMPLE_SNMP_TRAP_V1=y
