@@ -60,6 +60,7 @@ config ETH_NIC_MODEL_ONBOARD
 source "drivers/ethernet/Kconfig.adin1140"
 source "drivers/ethernet/Kconfig.adin2111"
 source "drivers/ethernet/Kconfig.bcmgenet"
+source "drivers/ethernet/Kconfig.ch390"
 source "drivers/ethernet/Kconfig.cyclonev"
 source "drivers/ethernet/Kconfig.dm9051"
 source "drivers/ethernet/Kconfig.e1000"
