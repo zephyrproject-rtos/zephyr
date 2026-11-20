@@ -5,7 +5,7 @@ tests:
     arch_allow: arm
     filter: CONFIG_CPU_CORTEX_M_HAS_VTOR
     # Exclude mps3/corstone310 because it uses another mechanism to support relocation
-    # of the vector table (CONFIG_ROMSTART_RELOCATION_ROM).
+    # of the vector table (chosen `zephyr,romstart` node).
     platform_exclude:
       - mps3/corstone310/an555
       - mps3/corstone310/fvp

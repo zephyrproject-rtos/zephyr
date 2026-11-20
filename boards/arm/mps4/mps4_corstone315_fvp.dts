@@ -19,6 +19,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram;
 		zephyr,flash = &isram;
+		zephyr,romstart = &itcm;
 	};
 
 	cpus {
