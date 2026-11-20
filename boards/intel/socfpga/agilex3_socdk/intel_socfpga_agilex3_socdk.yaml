@@ -1,0 +1,8 @@
+identifier: intel_socfpga_agilex3_socdk
+name: Intel SoC FPGA Agilex3
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+vendor: intel

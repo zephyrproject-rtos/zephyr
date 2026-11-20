@@ -4,5 +4,6 @@
 if SOC_FAMILY_INTEL_SOCFPGA
 
 rsource "*/Kconfig.defconfig.series"
+rsource "*/Kconfig.defconfig"
 
 endif # SOC_FAMILY_INTEL_SOCFPGA

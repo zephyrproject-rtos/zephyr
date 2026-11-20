@@ -7,3 +7,5 @@ family:
       - name: agilex5
         socs:
           - name: agilex5
+    socs:
+      - name: agilex3
