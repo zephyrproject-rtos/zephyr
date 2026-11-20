@@ -185,7 +185,8 @@ static void ws_server_cb(struct net_socket_service_event *evt)
 		LOG_ERR("Websocket socket %d error (%d)", evt->event.fd, sock_error);
 
 		if (evt->event.fd == ws->fds[0].fd) {
-			return ws_end_client_connection(ws, false);
+			ws_end_client_connection(ws, false);
+			return;
 		}
 
 		return;
@@ -196,7 +197,8 @@ static void ws_server_cb(struct net_socket_service_event *evt)
 	}
 
 	if (evt->event.fd == ws->fds[0].fd) {
-		return ws_recv(ws, &ws->fds[0]);
+		ws_recv(ws, &ws->fds[0]);
+		return;
 	}
 }
 
