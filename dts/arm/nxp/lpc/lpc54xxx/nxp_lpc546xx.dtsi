@@ -217,6 +217,14 @@
 			};
 		};
 
+		rit: rit@4002d000 {
+			compatible = "nxp,lpc-rit";
+			reg = <0x4002d000 0x1000>;
+			interrupts = <38 0>;
+			clocks = <&syscon MCUX_BUS_CLK>;
+			status = "disabled";
+		};
+
 		iap: flash-controller@40034000 {
 			compatible = "nxp,iap-fmc54";
 			reg = <0x40034000 0x18>;

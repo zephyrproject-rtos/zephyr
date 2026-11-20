@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP LPC Repetitive Interrupt Timer: a 48 bit up-counter with one compare
+  register, a compare mask and clear-on-match.
+
+compatible: "nxp,lpc-rit"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
