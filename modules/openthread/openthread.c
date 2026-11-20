@@ -353,6 +353,34 @@ int openthread_init(void)
 
 	__ASSERT(openthread_instance, "OT instance initialization failed");
 
+#if defined(CONFIG_OPENTHREAD_IP6_INIT_EXT_ADDR_POOL_ENABLE) && \
+	!defined(CONFIG_OPENTHREAD_CLI_IFCONFIG_INIT_ENABLE)
+#if CONFIG_OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS > 0
+	static otNetifAddress ext_unicast_addr_pool[CONFIG_OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS];
+#define OT_EXT_UNICAST_ADDR_POOL ext_unicast_addr_pool
+#else
+#define OT_EXT_UNICAST_ADDR_POOL NULL
+#endif
+#if CONFIG_OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS > 0
+	static otNetifMulticastAddress
+		ext_multicast_addr_pool[CONFIG_OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS];
+#define OT_EXT_MULTICAST_ADDR_POOL ext_multicast_addr_pool
+#else
+#define OT_EXT_MULTICAST_ADDR_POOL NULL
+#endif
+	error = otIp6Init(openthread_instance, OT_EXT_UNICAST_ADDR_POOL,
+			  CONFIG_OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS,
+			  OT_EXT_MULTICAST_ADDR_POOL,
+			  CONFIG_OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS);
+#undef OT_EXT_UNICAST_ADDR_POOL
+#undef OT_EXT_MULTICAST_ADDR_POOL
+	if (error != OT_ERROR_NONE) {
+		LOG_ERR("Failed to initialize external IPv6 address pools: %d", error);
+		openthread_mutex_unlock();
+		return -EIO;
+	}
+#endif
+
 	if (IS_ENABLED(CONFIG_OPENTHREAD_SHELL)) {
 		platformShellInit(openthread_instance);
 	}
