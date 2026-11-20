@@ -653,7 +653,7 @@ ZTEST(basic, test_specification_based__zbus_obs_set_enable)
 	zassert_equal(0, zbus_chan_rm_obs(&aux1_chan, &rt_fast_lis, K_MSEC(200)));
 }
 
-ZBUS_SUBSCRIBER_DEFINE(not_observing_sub, 0);
+ZBUS_SUBSCRIBER_DEFINE(not_observing_sub, 1);
 
 ZTEST(basic, test_specification_based__zbus_obs_set_chan_notification_mask)
 {
