@@ -721,6 +721,26 @@ ZTEST(lib_json_test, test_json_limits)
 		     "Integer limits not decoded correctly");
 }
 
+ZTEST(lib_json_test, test_json_signed_integer_overflow)
+{
+	const char *const cases[] = {
+		"{\"int_max\":2147483648}",          "{\"int_min\":-2147483649}",
+		"{\"int_max\":4294967296}",          "{\"int_min\":-4294967296}",
+		"{\"int8_max\":4294967297}",         "{\"int16_max\":4294967297}",
+		"{\"int_max\":9223372036854775807}", "{\"int_min\":-9223372036854775808}",
+	};
+	struct test_int_limits decoded;
+	char payload[64];
+
+	for (size_t i = 0; i < ARRAY_SIZE(cases); i++) {
+		strcpy(payload, cases[i]);
+		int64_t ret = json_obj_parse(payload, strlen(payload), obj_limits_descr,
+					     ARRAY_SIZE(obj_limits_descr), &decoded);
+
+		zexpect_equal(ret, -ERANGE, "%s returned %lld", cases[i], (long long)ret);
+	}
+}
+
 ZTEST(lib_json_test, test_json_float)
 {
 	char encoded[] = "{\"some_float\":-0.000244140625,"
