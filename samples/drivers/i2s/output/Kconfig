@@ -9,6 +9,12 @@ config SAMPLE_I2S_OPT_BIT_CLK_GATED
 	  Enable I2S bit clock (BCLK) so that it runs
 	  only while audio data is actively being transmitted.
 
+config SAMPLE_I2S_FORMAT_PDM
+	bool "Transmit with the PDM data format"
+	help
+	  Configure the stream with I2S_FMT_DATA_FORMAT_PDM instead of
+	  I2S_FMT_DATA_FORMAT_I2S.
+
 config HEAP_MEM_POOL_ADD_SIZE_SAMPLE
 	int
 	default 256 if SOC_FAMILY_STM32 && I2S_STM32_SAI
