@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&{/soc} {
+	virtio_mmio_test: virtio-mmio@7fff0000 {
+		compatible = "virtio,mmio";
+		reg = <0x7fff0000 0x200>;
+		interrupts = <5>;
+		zephyr,deferred-init;
+		status = "okay";
+	};
+};
