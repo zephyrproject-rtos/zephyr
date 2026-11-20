@@ -188,3 +188,7 @@
 	ti,period = <3906>; /* ~100 ms at 39,062 Hz */
 	status = "okay";
 };
+
+&aes {
+	status = "okay";
+};
