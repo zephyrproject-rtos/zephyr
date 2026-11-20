@@ -5,6 +5,7 @@ target_sources(kernel PRIVATE
   smp.c
   ipi.c
   sched_smp.c
+  fatal_smp.c
   )
 
 target_sources_ifdef(CONFIG_SCHED_CPU_MASK kernel PRIVATE
