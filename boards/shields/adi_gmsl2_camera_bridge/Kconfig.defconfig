@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ADI_GMSL2_CAMERA_BRIDGE
+
+# The deserializer occasionally refuses a transaction that starts right after
+# the previous one; a retry recovers. Most of them are forwarded over the GMSL
+# link, which the deserializer's I2C gate retries for every device behind it;
+# rarely, one to the deserializer's own registers, which the video drivers'
+# register helpers retry.
+config I2C_GMSL_GATE_RETRY_NUM
+	default 5
+
+config VIDEO_I2C_RETRY_NUM
+	default 5
+
+endif # SHIELD_ADI_GMSL2_CAMERA_BRIDGE
