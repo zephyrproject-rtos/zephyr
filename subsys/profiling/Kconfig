@@ -10,5 +10,6 @@ menuconfig PROFILING
 if PROFILING
 
 source "subsys/profiling/perf/Kconfig"
+source "subsys/profiling/pmu_sampling/Kconfig"
 
 endif
