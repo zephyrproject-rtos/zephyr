@@ -11,6 +11,12 @@ include:
   - rtc-device.yaml
 
 properties:
+  clocks:
+    description: |
+      The first entry is the RTC gate clock and the second entry selects the
+      RTC source. Additional entries are gate clocks required to access the
+      peripheral, such as the STM32N6 RTCAPB clock.
+
   reg:
     required: true
 
