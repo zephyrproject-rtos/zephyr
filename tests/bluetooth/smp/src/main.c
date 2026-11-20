@@ -55,3 +55,34 @@ ZTEST(test_smp, test_bt_security_err_to_str)
 		zassert_not_null(bt_security_err_to_str(i), ": %d", i);
 	}
 }
+
+static void auth_cb_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	(void)bt_conn_auth_cb_register(NULL);
+}
+
+ZTEST_SUITE(test_auth_cb_register, NULL, NULL, NULL, auth_cb_after, NULL);
+
+static const struct bt_conn_auth_cb auth_cb_a;
+static const struct bt_conn_auth_cb auth_cb_b;
+
+ZTEST(test_auth_cb_register, test_register_same_cb_returns_eexist)
+{
+	zassert_ok(bt_conn_auth_cb_register(&auth_cb_a));
+	zassert_equal(bt_conn_auth_cb_register(&auth_cb_a), -EEXIST);
+}
+
+ZTEST(test_auth_cb_register, test_register_other_cb_returns_ealready)
+{
+	zassert_ok(bt_conn_auth_cb_register(&auth_cb_a));
+	zassert_equal(bt_conn_auth_cb_register(&auth_cb_b), -EALREADY);
+}
+
+ZTEST(test_auth_cb_register, test_register_after_unregister)
+{
+	zassert_ok(bt_conn_auth_cb_register(&auth_cb_a));
+	zassert_ok(bt_conn_auth_cb_register(NULL));
+	zassert_ok(bt_conn_auth_cb_register(&auth_cb_b));
+}
