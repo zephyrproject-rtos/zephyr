@@ -164,6 +164,7 @@ macro(toolchain_ld_relocation)
     -s ${MEM_RELOCATION_SRAM_DATA_LD}
     -b ${MEM_RELOCATION_SRAM_BSS_LD}
     -c ${MEM_RELOCATION_CODE}
+    -l \"$<JOIN:$<TARGET_PROPERTY:code_data_relocation_target,late_relocation_regions>,:>\"
     DEPENDS app kernel ${ZEPHYR_LIBS_PROPERTY}
   )
 
