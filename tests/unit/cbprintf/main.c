@@ -682,6 +682,22 @@ ZTEST(prf, test_o)
 	PRF_CHECK("01234567", rc);
 }
 
+ZTEST(prf, test_o_alternate_precision)
+{
+	int rc;
+
+	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {
+		ztest_test_skip();
+		return;
+	}
+
+	TEST_PRF(&rc, "/%#.4o/%#6.4o/%#.*o/%#.2o/", 10U, 10U, 4, 10U, 10U);
+	PRF_CHECK("/0012/  0012/0012/012/", rc);
+
+	TEST_PRF(&rc, "/%#o/%#.0o/%#.3o/", 0U, 0U, 0U);
+	PRF_CHECK("/0/0/000/", rc);
+}
+
 ZTEST(prf, test_fp_value)
 {
 	if (!IS_ENABLED(CONFIG_CBPRINTF_FP_SUPPORT)) {
