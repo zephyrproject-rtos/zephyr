@@ -19,6 +19,7 @@
 aaeon	AAEON Technology Inc.
 abb	ABB
 abilis	Abilis Systems
+abov	ABOV Semiconductor Co., Ltd.
 abracon	Abracon Corporation
 abt	ShenZhen Asia Better Technology Ltd.
 acer	Acer Inc.
