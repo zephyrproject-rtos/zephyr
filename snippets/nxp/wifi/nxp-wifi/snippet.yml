@@ -1,0 +1,14 @@
+name: nxp-wifi
+description: NXP Native Wi-Fi configuration
+append:
+  EXTRA_CONF_FILE: nxp-wifi.conf
+boards:
+  /.*rw612.*/:
+    append:
+      EXTRA_CONF_FILE: boards/rw612.conf
+  /.*mimxrt1060.*/:
+    append:
+      EXTRA_CONF_FILE: boards/mimxrt1060_evk_mimxrt1062_qspi_C.conf
+  /.*mcxn947.*/:
+    append:
+      EXTRA_CONF_FILE: boards/frdm_mcxn947_mcxn947_cpu0.conf
