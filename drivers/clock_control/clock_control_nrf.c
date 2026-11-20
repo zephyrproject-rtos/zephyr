@@ -538,7 +538,7 @@ static int api_blocking_start(const struct device *dev,
 	int err;
 
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	err = api_start(dev, subsys, blocking_start_callback, &sem);
