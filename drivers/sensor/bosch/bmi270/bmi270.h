@@ -114,6 +114,7 @@ void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 #define BMI270_ANYMO_2_THRESHOLD_MASK	BIT_MASK(11)
 #define BMI270_ANYMO_2_THRESHOLD(n)	(((n) & BMI270_ANYMO_2_THRESHOLD_MASK) << \
 					 BMI270_ANYMO_2_THRESHOLD_POS)
+#define BMI270_ANYMO_2_THRESHOLD_LSB_PER_G 2048 /* 0.48828 mg/LSB, max 1 g */
 #define BMI270_ANYMO_2_OUT_CONF_POS	11
 #define BMI270_ANYMO_2_OUT_CONF_MASK	(BIT(11) | BIT(12) | BIT(13) | BIT(14))
 #define BMI270_ANYMO_2_ENABLE		BIT(15)
