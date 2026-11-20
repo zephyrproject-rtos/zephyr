@@ -57,6 +57,7 @@
 		pwm-led0 = &green_pwm_led;
 		rtc = &rtc;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 };
 
@@ -112,6 +113,10 @@
 &rtc {
 	clocks = <&rcc STM32_CLOCK(APB3, 23)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&iwdg {
 	status = "okay";
 };
 
