@@ -48,6 +48,8 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 		ctx = zvfs_get_fd_obj_and_vtable(pfd->fd, &vtable, &lock);
 		if (ctx == NULL) {
 			/* Will set POLLNVAL in return loop */
+			timeout = K_NO_WAIT;
+			end = sys_timepoint_calc(timeout);
 			continue;
 		}
 
