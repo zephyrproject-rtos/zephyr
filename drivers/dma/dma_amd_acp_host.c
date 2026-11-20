@@ -37,7 +37,13 @@ static uint32_t *host_read_ptr;
 static uint32_t *host_wr_ptr;
 
 /* Static storage for DMA status of each channel */
-static struct dma_status channel_status[8];
+static struct dma_status channel_status[ACP_MAX_STREAMS];
+
+BUILD_ASSERT(CONFIG_DMA_AMD_ACP_HOST_CHANNEL_COUNT <= ACP_MAX_STREAMS,
+	     "Host DMA channel count exceeds the number of ACP streams");
+BUILD_ASSERT(ARRAY_SIZE(((acp_scratch_mem_config_t *)0)->phy_offset) == ACP_MAX_STREAMS);
+BUILD_ASSERT(ARRAY_SIZE(((acp_scratch_mem_config_t *)0)->syst_buff_size) == ACP_MAX_STREAMS);
+BUILD_ASSERT(ACP_DMA_CHAN_COUNT >= ACP_MAX_STREAMS);
 
 LOG_MODULE_REGISTER(host_dma_acp, CONFIG_DMA_LOG_LEVEL);
 
@@ -61,7 +67,7 @@ static void dma_config_descriptor(uint32_t dscr_start_idx, uint32_t dscr_count,
 static int acp_host_dma_config(const struct device *dev, uint32_t channel, struct dma_config *cfg)
 {
 	struct acp_dma_dev_data *dev_data = dev->data;
-	struct acp_dma_chan_data *chan = &dev_data->chan_data[channel];
+	struct acp_dma_chan_data *chan;
 	struct acp_dma_ptr_data *ptr_data;
 
 	uint32_t dscr_cnt, dscr = 0;
@@ -73,6 +79,11 @@ static int acp_host_dma_config(const struct device *dev, uint32_t channel, struc
 	uint32_t buff_size = 0;
 	uint16_t dscr_strt_idx = 0;
 	acp_dma_cntl_0_t dma_cntl;
+
+	if (channel >= dev_data->dma_ctx.dma_channels) {
+		return -EINVAL;
+	}
+	chan = &dev_data->chan_data[channel];
 
 	dev_data->dma_config = cfg;
 	volatile acp_scratch_mem_config_t *pscratch_mem_cfg =
@@ -196,17 +207,18 @@ static int acp_host_dma_config(const struct device *dev, uint32_t channel, struc
 static int acp_host_dma_start(const struct device *dev, uint32_t channel)
 {
 	struct acp_dma_dev_data *const dev_data = dev->data;
-	struct acp_dma_chan_data *chan = &dev_data->chan_data[channel];
+	struct acp_dma_chan_data *chan;
 	uint64_t deadline = k_cycle_get_64() + k_us_to_cyc_ceil64(ACP_DMA_START_TIMEOUT_US);
 	uint32_t chan_sts, ret = 0;
 	acp_dma_cntl_0_t dma_cntl;
 	acp_dma_ch_sts_t dma_sts;
 
 	/* validate channel */
-	if (channel >= 10) {
+	if (channel >= dev_data->dma_ctx.dma_channels) {
 		ret = -EINVAL;
 		goto out;
 	}
+	chan = &dev_data->chan_data[channel];
 	if (chan->state != ACP_DMA_PREPARED && chan->state != ACP_DMA_SUSPENDED) {
 		ret = -EINVAL;
 		goto out;
@@ -268,7 +280,12 @@ static bool acp_host_dma_chan_filter(const struct device *dev, int channel, void
 static void acp_host_dma_chan_release(const struct device *dev, uint32_t channel)
 {
 	struct acp_dma_dev_data *const dev_data = dev->data;
-	struct acp_dma_chan_data *chan_data = &dev_data->chan_data[channel];
+	struct acp_dma_chan_data *chan_data;
+
+	if (channel >= dev_data->dma_ctx.dma_channels) {
+		return;
+	}
+	chan_data = &dev_data->chan_data[channel];
 
 	chan_data->state = ACP_DMA_READY;
 	/* reset read and write pointer */
@@ -281,7 +298,7 @@ static void acp_host_dma_chan_release(const struct device *dev, uint32_t channel
 static int acp_host_dma_stop(const struct device *dev, uint32_t channel)
 {
 	struct acp_dma_dev_data *const dev_data = dev->data;
-	struct acp_dma_chan_data *chan = &dev_data->chan_data[channel];
+	struct acp_dma_chan_data *chan;
 	uint32_t dmach_mask;
 	uint32_t delay_cnt = 10000;
 	acp_dma_cntl_0_t dma_cntl;
@@ -290,6 +307,7 @@ static int acp_host_dma_stop(const struct device *dev, uint32_t channel)
 	if (channel >= dev_data->dma_ctx.dma_channels) {
 		return 0;
 	}
+	chan = &dev_data->chan_data[channel];
 	switch (chan->state) {
 	case ACP_DMA_READY:
 		/* fallthrough */
@@ -335,7 +353,7 @@ static int acp_host_dma_stop(const struct device *dev, uint32_t channel)
 static int acp_host_dma_resume(const struct device *dev, uint32_t channel)
 {
 	struct acp_dma_dev_data *const dev_data = dev->data;
-	struct acp_dma_chan_data *chan_data = &dev_data->chan_data[channel];
+	struct acp_dma_chan_data *chan_data;
 	int ret = 0;
 
 	/* Validate channel index */
@@ -343,6 +361,7 @@ static int acp_host_dma_resume(const struct device *dev, uint32_t channel)
 		ret = -EINVAL;
 		goto out;
 	}
+	chan_data = &dev_data->chan_data[channel];
 	/* Validate channel state */
 	if (chan_data->state != ACP_DMA_SUSPENDED) {
 		ret = -EINVAL;
@@ -357,7 +376,7 @@ out:
 static int acp_host_dma_suspend(const struct device *dev, uint32_t channel)
 {
 	struct acp_dma_dev_data *const dev_data = dev->data;
-	struct acp_dma_chan_data *chan_data = &dev_data->chan_data[channel];
+	struct acp_dma_chan_data *chan_data;
 	int ret = 0;
 
 	/* Validate channel index */
@@ -365,6 +384,7 @@ static int acp_host_dma_suspend(const struct device *dev, uint32_t channel)
 		ret = -EINVAL;
 		goto out;
 	}
+	chan_data = &dev_data->chan_data[channel];
 	/* Validate channel state */
 	if (chan_data->state != ACP_DMA_ACTIVE) {
 		ret = -EINVAL;
@@ -416,11 +436,11 @@ static int acp_host_dma_reload(const struct device *dev, uint32_t channel, uint3
 			       uint32_t dst, size_t bytes)
 {
 	struct acp_dma_dev_data *const dev_data = dev->data;
-	struct acp_dma_chan_data *chan = &dev_data->chan_data[channel];
-	struct acp_dma_ptr_data *ptr_data = &chan->ptr_data;
+	struct acp_dma_chan_data *chan;
+	struct acp_dma_ptr_data *ptr_data;
 
 	uint32_t strt_idx = 0;
-	uint32_t tail = 0, head = 0, ret = 0;
+	uint32_t tail = 0, head = 0;
 	uint32_t src1 = 0;
 	uint32_t dest1 = 0;
 	uint32_t host_rdptr, host_wrptr, pb_avail, pb_free, host_buff_size;
@@ -431,8 +451,11 @@ static int acp_host_dma_reload(const struct device *dev, uint32_t channel, uint3
 
 	/* Validate channel index */
 	if (channel >= dev_data->dma_ctx.dma_channels) {
-		ret = -EINVAL;
+		return -EINVAL;
 	}
+	chan = &dev_data->chan_data[channel];
+	ptr_data = &chan->ptr_data;
+
 	volatile acp_scratch_mem_config_t *pscratch_mem_cfg =
 		(volatile acp_scratch_mem_config_t *)(PU_SCRATCH_REG_BASE + SCRATCH_REG_OFFSET);
 
