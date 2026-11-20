@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif cross-core interrupt (FROM_CPU) trigger register.
+
+  Each node describes one FROM_CPU software interrupt source. Writing the
+  register raises the corresponding interrupt on the core the source is
+  routed to, which is how the SoC signals the scheduler IPI and, on SoCs
+  with a shared cache, the cross-core stall used around flash operations.
+
+compatible: "espressif,crosscore-interrupt"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

@@ -15,6 +15,7 @@
 
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/spinlock.h>
 LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_SERIES_ESP32P4)
@@ -22,6 +23,8 @@ BUILD_ASSERT(DT_PROP(DT_INST(0, espressif_esp32_clock), slow_clk_src) !=
 		     ESP32_RTC_SLOW_CLK_32K_EXT_OSC,
 	     "ESP32-P4 has no external 32 kHz oscillator input");
 #endif
+
+static struct k_spinlock cpu_freq_lock;
 
 int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 {
@@ -50,12 +53,6 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 	}
 #endif
 
-	/*
-	 * RTC slow clock calibration uses TIMG0 to count XTAL cycles.
-	 * Ensure TIMG0 bus clock is enabled before calibration.
-	 */
-	_timg_ll_enable_bus_clock(0, true);
-	_timg_ll_reset_register(0);
 	do {
 		if (clk_32k_src) {
 			/* 32k XTAL oscillator or external 32k clock needs to be enabled and
@@ -271,8 +268,6 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 	}
 #endif
 
-	rtc_clk_cpu_freq_get_config(&old_config);
-
 	ret = rtc_clk_cpu_freq_mhz_to_config(cpu_cfg->cpu_freq, &new_config);
 #if defined(CONFIG_SOC_SERIES_ESP32C5)
 	/*
@@ -344,7 +339,9 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 	}
 #endif
 
-	unsigned int key = irq_lock();
+	k_spinlock_key_t lock_key = k_spin_lock(&cpu_freq_lock);
+
+	rtc_clk_cpu_freq_get_config(&old_config);
 
 #if defined(CONFIG_SOC_SERIES_ESP32C6)
 	/* Leave the divided XTAL clock before the BBPLL is recalibrated */
@@ -362,7 +359,7 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 
 	esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * cpu_cfg->cpu_freq /
 				old_config.freq_mhz);
-	irq_unlock(key);
+	k_spin_unlock(&cpu_freq_lock, lock_key);
 
 #if defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32C61)
 	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL) {

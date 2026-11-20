@@ -217,6 +217,13 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Espressif
+
+  * Added experimental SMP support for the ESP32-S3 dual-core SoC, enabled with
+    :kconfig:option:`CONFIG_SMP`. The Wi-Fi task core is selected with
+    :kconfig:option:`CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_0`
+    or :kconfig:option:`CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_1`.
+
 * Hardware information
 
   * NXP RW61x hwinfo reports PM4 wakeup resets as :c:macro:`RESET_LOW_POWER_WAKE`.

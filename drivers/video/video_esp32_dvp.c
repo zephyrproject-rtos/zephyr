@@ -62,6 +62,7 @@ struct video_esp32_data {
 	const struct video_esp32_config *config;
 	struct video_format video_format;
 	struct video_buffer *active_vbuf;
+	struct k_spinlock lock;
 	bool is_streaming;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
@@ -71,18 +72,13 @@ struct video_esp32_data {
 #endif
 };
 
-static int video_esp32_reload_dma(struct video_esp32_data *data)
+static int video_esp32_reload_dma(struct video_esp32_data *data, struct video_buffer *vbuf)
 {
 	const struct video_esp32_config *cfg = data->config;
 	int ret = 0;
 
-	if (data->active_vbuf == NULL) {
-		LOG_ERR("No video buffer available. Enqueue some buffers first.");
-		return -EAGAIN;
-	}
-
-	ret = dma_reload(cfg->dma_dev, cfg->rx_dma_channel, 0, (uint32_t)data->active_vbuf->buffer,
-			 data->active_vbuf->bytesused);
+	ret = dma_reload(cfg->dma_dev, cfg->rx_dma_channel, 0, (uint32_t)vbuf->buffer,
+			 vbuf->bytesused);
 	if (ret < 0) {
 		LOG_ERR("Unable to reload DMA (%d)", ret);
 		return ret;
@@ -101,6 +97,9 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 			     int status)
 {
 	struct video_esp32_data *data = user_data;
+	struct video_buffer *vbuf;
+	struct video_buffer *next;
+	k_spinlock_key_t key;
 
 	if (status == DMA_STATUS_BLOCK) {
 		LOG_DBG("received block");
@@ -113,23 +112,30 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 		return;
 	}
 
-	if (data->active_vbuf == NULL) {
+	key = k_spin_lock(&data->lock);
+	vbuf = data->active_vbuf;
+	if (vbuf == NULL) {
+		k_spin_unlock(&data->lock, key);
 		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
 		LOG_ERR("No video buffer available. Enqueue some buffers first.");
 		return;
 	}
 
-	data->active_vbuf->timestamp = k_uptime_get_32();
-	k_fifo_put(&data->fifo_out, data->active_vbuf);
-	VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_DONE)
-	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	next = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	data->active_vbuf = next;
+	if (next != NULL) {
+		video_esp32_reload_dma(data, next);
+	}
+	k_spin_unlock(&data->lock, key);
 
-	if (data->active_vbuf == NULL) {
+	vbuf->timestamp = k_uptime_get_32();
+	k_fifo_put(&data->fifo_out, vbuf);
+	VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_DONE)
+
+	if (next == NULL) {
 		LOG_WRN("Frame dropped. No buffer available");
 		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
-		return;
 	}
-	video_esp32_reload_dma(data);
 }
 
 static int video_esp32_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -327,9 +333,12 @@ static int video_esp32_flush(const struct device *dev, bool cancel)
 	struct video_buffer *vbuf = NULL;
 
 	if (cancel) {
-		if (data->active_vbuf) {
-			k_fifo_put(&data->fifo_out, data->active_vbuf);
+		K_SPINLOCK(&data->lock) {
+			vbuf = data->active_vbuf;
 			data->active_vbuf = NULL;
+		}
+		if (vbuf != NULL) {
+			k_fifo_put(&data->fifo_out, vbuf);
 		}
 		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
 			k_fifo_put(&data->fifo_out, vbuf);

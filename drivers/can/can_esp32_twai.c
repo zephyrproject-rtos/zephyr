@@ -205,9 +205,9 @@ static int can_esp32_twai_init(const struct device *dev)
 #endif /* !CONFIG_SOC_SERIES_ESP32 */
 
 	err = esp_intr_alloc(twai_config->irq_source,
-			ESP_PRIO_TO_FLAGS(twai_config->irq_priority) |
-			ESP_INT_FLAGS_CHECK(twai_config->irq_flags) | ESP_INTR_FLAG_IRAM,
-			can_esp32_twai_isr, (void *)dev, NULL);
+			     ESP_PRIO_TO_FLAGS(twai_config->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(twai_config->irq_flags),
+			     can_esp32_twai_isr, (void *)dev, NULL);
 
 	if (err != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", err);

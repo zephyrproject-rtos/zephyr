@@ -15,6 +15,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/arch/cpu.h>
 
 LOG_MODULE_REGISTER(entropy, CONFIG_ENTROPY_LOG_LEVEL);
 
@@ -62,22 +63,30 @@ static inline uint32_t entropy_esp32_get_u32(void)
 
 	uint32_t cpu_to_apb_freq_ratio = esp_clk_cpu_freq() / esp_clk_apb_freq();
 
-	static uint32_t last_ccount;
+	/* The cycle counter is per core. */
+	static uint32_t last_ccount[CONFIG_MP_MAX_NUM_CPUS];
+	uint32_t *last;
 	uint32_t ccount;
 	uint32_t result = 0;
+	unsigned int key;
+
+	key = arch_irq_lock();
+	last = &last_ccount[arch_curr_cpu()->id];
 
 	for (size_t i = 0; i < sizeof(result); i++) {
 		do {
 			ccount = esp_cpu_get_cycle_count();
 			result ^= rng_ll_read_data();
-		} while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
+		} while (ccount - *last < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
 #if SOC_RTC_TIMER_SUPPORTED
 		uint32_t current_rtc_timer_counter = (rtc_timer_hal_get_cycle_count(0) & 0xFF);
 
 		result ^= (current_rtc_timer_counter << (i * 8));
 #endif
 	}
-	last_ccount = ccount;
+	*last = ccount;
+	arch_irq_unlock(key);
+
 	return result ^ rng_ll_read_data();
 }
 

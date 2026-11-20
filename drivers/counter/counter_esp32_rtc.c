@@ -22,6 +22,9 @@
 #else
 #define SOC_HAS_LP_TIMER 0
 #include <soc/rtc_cntl_reg.h>
+#include <esp_private/critical_section.h>
+
+extern esp_os_spinlock_t rtc_spinlock;
 #endif
 
 #include <zephyr/device.h>
@@ -50,6 +53,7 @@ struct counter_esp32_data {
 	struct counter_alarm_cfg alarm_cfg;
 	uint32_t ticks;
 	uint32_t clk_src_freq;
+	struct k_spinlock lock;
 };
 
 static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id);
@@ -88,7 +92,7 @@ static int counter_esp32_init(const struct device *dev)
 			       &data->clk_src_freq);
 
 	flags = ESP_PRIO_TO_FLAGS(cfg->irq_priority) | ESP_INT_FLAGS_CHECK(cfg->irq_flags) |
-		ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM;
+		ESP_INTR_FLAG_SHARED;
 
 	ret = esp_intr_alloc(cfg->irq_source, flags,
 			     (intr_handler_t)counter_esp32_isr, (void *)dev, NULL);
@@ -154,6 +158,8 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 		return -EINVAL;
 	}
 #endif
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
 	data->alarm_cfg.callback = alarm_cfg->callback;
 	data->alarm_cfg.user_data = alarm_cfg->user_data;
 
@@ -179,17 +185,19 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 #else
 	/* For chips without LP_TIMER, enable alarm and interrupt via registers */
 	SET_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN);
+	esp_os_enter_critical(&rtc_spinlock);
 	SET_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, RTC_CNTL_MAIN_TIMER_INT_ENA);
+	esp_os_exit_critical(&rtc_spinlock);
 #endif
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
 
-static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
+/* Caller must hold data->lock. */
+static void counter_esp32_disable_alarm_locked(struct counter_esp32_data *data)
 {
-	ARG_UNUSED(chan_id);
-	struct counter_esp32_data *data = dev->data;
-
 #if SOC_HAS_LP_TIMER
 	rtc_timer_ll_set_target_enable(&LP_TIMER, 0, false);
 	rtc_timer_ll_alarm_intr_enable(&LP_TIMER, 0, false);
@@ -199,12 +207,25 @@ static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	CLEAR_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN);
 
 	/* RTC main timer interrupt disable, and clear interrupt flag */
-	REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
-	SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR);
+	esp_os_enter_critical(&rtc_spinlock);
+	CLEAR_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, RTC_CNTL_MAIN_TIMER_INT_ENA);
+	esp_os_exit_critical(&rtc_spinlock);
+	REG_WRITE(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR);
 #endif
 
 	data->alarm_cfg.callback = NULL;
 	data->alarm_cfg.user_data = NULL;
+}
+
+static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
+{
+	ARG_UNUSED(chan_id);
+	struct counter_esp32_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	counter_esp32_disable_alarm_locked(data);
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -286,8 +307,10 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct counter_esp32_data *data = dev->data;
-	counter_alarm_callback_t cb = data->alarm_cfg.callback;
-	void *cb_data = data->alarm_cfg.user_data;
+	counter_alarm_callback_t cb;
+	void *cb_data;
+	k_spinlock_key_t key;
+	uint32_t ticks;
 	uint32_t now;
 
 #if SOC_HAS_LP_TIMER
@@ -302,10 +325,16 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 	}
 #endif
 
-	counter_esp32_cancel_alarm(dev, 0);
+	key = k_spin_lock(&data->lock);
+	cb = data->alarm_cfg.callback;
+	cb_data = data->alarm_cfg.user_data;
+	ticks = data->ticks;
+	counter_esp32_disable_alarm_locked(data);
+	k_spin_unlock(&data->lock, key);
+
 	counter_esp32_get_value(dev, &now);
 
-	if (cb && (now > data->ticks)) {
+	if (cb && (now > ticks)) {
 		cb(dev, 0, now, cb_data);
 	}
 }

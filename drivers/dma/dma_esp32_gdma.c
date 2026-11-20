@@ -526,6 +526,9 @@ static void IRAM_ATTR dma_esp32_isr_handle_rx(const struct device *dev,
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
 	int status = -EIO;
 	bool pm_unlock = false;
+	dma_callback_t cb;
+	void *user_data;
+	k_spinlock_key_t key;
 
 	gdma_hal_clear_intr(&data->hal, rx->channel_id, GDMA_CHANNEL_DIRECTION_RX, intr_status);
 
@@ -552,8 +555,13 @@ static void IRAM_ATTR dma_esp32_isr_handle_rx(const struct device *dev,
 	}
 #endif
 
-	if (rx->cb) {
-		rx->cb(dev, rx->user_data, rx->channel_id * 2, status);
+	key = k_spin_lock(&data->lock);
+	cb = rx->cb;
+	user_data = rx->user_data;
+	k_spin_unlock(&data->lock, key);
+
+	if (cb) {
+		cb(dev, user_data, rx->channel_id * 2, status);
 	}
 }
 
@@ -598,12 +606,15 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 					      struct dma_esp32_channel *tx, uint32_t intr_status)
 {
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
-
+	dma_callback_t cb;
+	void *user_data;
+	k_spinlock_key_t key;
 	bool completed = false;
 
 	gdma_hal_clear_intr(&data->hal, tx->channel_id, GDMA_CHANNEL_DIRECTION_TX, intr_status);
+
+	key = k_spin_lock(&data->lock);
 	if ((intr_status & GDMA_LL_EVENT_TX_EOF) != 0U) {
-		k_spinlock_key_t key = k_spin_lock(&data->lock);
 		intptr_t eof = (intptr_t)gdma_hal_get_eof_desc_addr(
 			&data->hal, tx->channel_id, GDMA_CHANNEL_DIRECTION_TX, true);
 		uint8_t before = tx->in_flight;
@@ -642,14 +653,17 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 			tx->restart_pending = false;
 			gdma_hal_append(&data->hal, tx->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 		}
-		k_spin_unlock(&data->lock, key);
 	}
-	if (tx->cb) {
+	cb = tx->cb;
+	user_data = tx->user_data;
+	k_spin_unlock(&data->lock, key);
+
+	if (cb) {
 		intr_status &= ~(GDMA_LL_EVENT_TX_TOTAL_EOF | GDMA_LL_EVENT_TX_DONE |
 				 GDMA_LL_EVENT_TX_EOF);
 
 		if (intr_status != 0U || completed) {
-			tx->cb(dev, tx->user_data, tx->channel_id * 2 + 1, -intr_status);
+			cb(dev, user_data, tx->channel_id * 2 + 1, -intr_status);
 		}
 	}
 }
@@ -917,14 +931,16 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 	gdma_hal_set_priority(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 			      config_dma->channel_priority);
 
-	dma_channel->cb = config_dma->dma_callback;
-	dma_channel->user_data = config_dma->user_data;
-
 	gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 			     GDMA_LL_RX_EVENT_MASK, false);
 
 	gdma_hal_clear_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 			    GDMA_LL_RX_EVENT_MASK);
+
+	K_SPINLOCK(&data->lock) {
+		dma_channel->cb = config_dma->dma_callback;
+		dma_channel->user_data = config_dma->user_data;
+	}
 
 	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block);
 }
@@ -953,14 +969,16 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 	gdma_hal_set_priority(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 			      config_dma->channel_priority);
 
-	dma_channel->cb = config_dma->dma_callback;
-	dma_channel->user_data = config_dma->user_data;
-
 	gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 			     GDMA_LL_TX_EVENT_MASK, false);
 
 	gdma_hal_clear_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 			    GDMA_LL_TX_EVENT_MASK);
+
+	K_SPINLOCK(&data->lock) {
+		dma_channel->cb = config_dma->dma_callback;
+		dma_channel->user_data = config_dma->user_data;
+	}
 
 	return dma_esp32_config_descriptor(dma_channel, config_dma->head_block);
 }
@@ -1171,11 +1189,13 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 		dma_esp32_stop_barrier(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 	}
 
-	dma_channel->tail = NULL;
-	dma_channel->tail_prev = NULL;
-	dma_channel->in_flight = 0;
-	dma_channel->running = false;
-	dma_channel->restart_pending = false;
+	K_SPINLOCK(&data->lock) {
+		dma_channel->tail = NULL;
+		dma_channel->tail_prev = NULL;
+		dma_channel->in_flight = 0;
+		dma_channel->running = false;
+		dma_channel->restart_pending = false;
+	}
 
 	return 0;
 }
@@ -1282,7 +1302,7 @@ static int IRAM_ATTR dma_esp32_tx_append(struct dma_esp32_data *data,
 
 	key = k_spin_lock(&data->lock);
 
-	if (dma_channel->in_flight >= 2) {
+	if (dma_channel->tail == NULL || dma_channel->in_flight >= 2) {
 		k_spin_unlock(&data->lock, key);
 		return -EBUSY;
 	}
@@ -1458,14 +1478,12 @@ static int dma_esp32_configure_irq(const struct device *dev)
 		}
 #endif
 
-		int ret = esp_intr_alloc_intrstatus(irq_cfg[i].irq_source,
+		int ret = esp_intr_alloc_intrstatus(
+			irq_cfg[i].irq_source,
 			ESP_PRIO_TO_FLAGS(irq_cfg[i].irq_priority) |
-				ESP_INT_FLAGS_CHECK(irq_cfg[i].irq_flags) | ESP_INTR_FLAG_IRAM,
-			(uint32_t)status_reg,
-			status_mask,
-			(intr_handler_t)config->irq_handlers[i],
-			(void *)dev,
-			NULL);
+				ESP_INT_FLAGS_CHECK(irq_cfg[i].irq_flags),
+			(uint32_t)status_reg, status_mask, (intr_handler_t)config->irq_handlers[i],
+			(void *)dev, NULL);
 
 		if (ret != 0) {
 			LOG_ERR("Could not allocate interrupt handler");

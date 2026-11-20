@@ -72,6 +72,8 @@ ZTEST(rtc_clk, test_cpu_xtal_src)
 	int ret = 0;
 	uint32_t cpu_rate = 0;
 
+	Z_TEST_SKIP_IFDEF(CONFIG_SMP);
+
 	clk_cfg.cpu.clk_src = ESP32_CPU_CLK_SRC_XTAL;
 	clk_cfg.cpu.xtal_freq = (DT_PROP(DT_INST(0, DT_CPU_COMPAT), xtal_freq) / MHZ(1));
 
@@ -119,6 +121,8 @@ ZTEST(rtc_clk, test_cpu_pll_src)
 	struct esp32_clock_config clk_cfg = {0};
 	int ret = 0;
 	uint32_t cpu_rate = 0;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_SMP);
 
 	clk_cfg.cpu.clk_src = ESP32_CPU_CLK_SRC_PLL;
 	clk_cfg.cpu.xtal_freq = (DT_PROP(DT_INST(0, DT_CPU_COMPAT), xtal_freq) / MHZ(1));

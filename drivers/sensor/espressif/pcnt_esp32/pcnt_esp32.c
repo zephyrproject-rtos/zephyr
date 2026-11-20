@@ -83,6 +83,7 @@ struct pcnt_esp32_config {
 struct pcnt_esp32_data {
 	pcnt_hal_context_t hal;
 	struct k_mutex cmd_mux;
+	struct k_spinlock lock;
 };
 
 static inline struct pcnt_esp32_unit_config *
@@ -117,9 +118,9 @@ static int32_t pcnt_esp32_read_count(const struct device *dev,
 	struct pcnt_esp32_data *data = dev->data;
 	uint8_t u = unit_config->idx;
 	int32_t raw;
-	unsigned int key;
+	k_spinlock_key_t key;
 
-	key = irq_lock();
+	key = k_spin_lock(&data->lock);
 
 	raw = pcnt_ll_get_count(data->hal.dev, u);
 
@@ -135,7 +136,7 @@ static int32_t pcnt_esp32_read_count(const struct device *dev,
 
 	raw += unit_config->accum;
 
-	irq_unlock(key);
+	k_spin_unlock(&data->lock, key);
 
 	return raw;
 }
@@ -302,7 +303,7 @@ int pcnt_esp32_init(const struct device *dev)
 	 */
 	ret = esp_intr_alloc(config->irq_source,
 			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
-				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
+				     ESP_INT_FLAGS_CHECK(config->irq_flags),
 			     (intr_handler_t)pcnt_esp32_isr, (void *)dev, NULL);
 	if (ret != 0) {
 		LOG_ERR("pcnt isr alloc failed (%d)", ret);
@@ -368,7 +369,7 @@ static int pcnt_esp32_attr_set(const struct device *dev, enum sensor_channel cha
 	struct pcnt_esp32_data *data = dev->data;
 	struct pcnt_esp32_unit_config *unit_config;
 	uint16_t chan_idx;
-	unsigned int key;
+	k_spinlock_key_t key;
 
 	if (chan != SENSOR_CHAN_ROTATION && chan != SENSOR_CHAN_ENCODER_COUNT &&
 	    ((int)chan < (int)SENSOR_CHAN_PRIV_START ||
@@ -396,11 +397,11 @@ static int pcnt_esp32_attr_set(const struct device *dev, enum sensor_channel cha
 		return 0;
 	case SENSOR_ATTR_PRIV_START: /* SENSOR_ATTR_PCNT_ESP32_RESET */
 		k_mutex_lock(&data->cmd_mux, K_FOREVER);
-		key = irq_lock();
+		key = k_spin_lock(&data->lock);
 		pcnt_ll_clear_count(data->hal.dev, unit_config->idx);
 		unit_config->accum = 0;
 		unit_config->count_val_acc = 0;
-		irq_unlock(key);
+		k_spin_unlock(&data->lock, key);
 		k_mutex_unlock(&data->cmd_mux);
 		return 0;
 	default:
@@ -455,6 +456,10 @@ static void IRAM_ATTR pcnt_esp32_isr(const struct device *dev)
 	const struct pcnt_esp32_config *config = dev->config;
 	struct pcnt_esp32_data *data = dev->data;
 	uint32_t intr_status;
+	uint32_t fired = 0U;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->lock);
 
 	intr_status = pcnt_ll_get_intr_status(data->hal.dev);
 	pcnt_ll_clear_intr_status(data->hal.dev, intr_status);
@@ -487,12 +492,20 @@ static void IRAM_ATTR pcnt_esp32_isr(const struct device *dev)
 			unit_config->accum += unit_config->h_limit_eff;
 		}
 
+		fired |= BIT(i);
+	}
+
+	k_spin_unlock(&data->lock, key);
+
 #ifdef CONFIG_PCNT_ESP32_TRIGGER
-		if (unit_config->trigger_handler != NULL) {
+	for (uint8_t i = 0; i < config->unit_len; i++) {
+		struct pcnt_esp32_unit_config *unit_config = &config->unit_config[i];
+
+		if ((fired & BIT(i)) != 0U && unit_config->trigger_handler != NULL) {
 			unit_config->trigger_handler(dev, unit_config->trigger);
 		}
-#endif
 	}
+#endif
 }
 
 #ifdef CONFIG_PCNT_ESP32_TRIGGER
@@ -529,6 +542,8 @@ static int pcnt_esp32_trigger_set(const struct device *dev, const struct sensor_
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&data->cmd_mux, K_FOREVER);
+
 	unit_config->trigger_handler = handler;
 	unit_config->trigger = trig;
 
@@ -544,6 +559,9 @@ static int pcnt_esp32_trigger_set(const struct device *dev, const struct sensor_
 	pcnt_ll_clear_intr_status(data->hal.dev, BIT(unit_config->idx));
 	pcnt_ll_enable_intr(data->hal.dev, BIT(unit_config->idx), true);
 	pcnt_ll_start_count(data->hal.dev, unit_config->idx);
+
+	k_mutex_unlock(&data->cmd_mux);
+
 	return 0;
 }
 #endif /* CONFIG_PCNT_ESP32_TRIGGER */
