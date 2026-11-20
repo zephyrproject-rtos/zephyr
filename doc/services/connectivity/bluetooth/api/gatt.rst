@@ -101,6 +101,42 @@ being triggered for the same attribute. Subscriptions can be removed with use of
   When subscriptions are removed ``notify`` callback is called with the data
   set to NULL.
 
+GATT over BR/EDR
+****************
+
+With :kconfig:option:`CONFIG_BT_ATT_BR`, GATT is also available on BR/EDR connections. The ATT
+bearer is then an L2CAP channel on the ATT PSM (0x001F) in Basic mode (Core Vol 3, Part G, 5.1).
+Either device can create it: the local L2CAP server accepts incoming connections and
+:c:func:`bt_att_br_connect` connects to the peer. :c:func:`bt_att_br_disconnect` closes the
+bearer and leaves the ACL connection up. Once the bearer is connected, the GATT client and server
+APIs are used with the BR/EDR connection object as with an LE connection, and
+:c:member:`bt_gatt_cb.att_mtu_updated` reports the ATT MTU.
+
+Compared to LE:
+
+* The ATT MTU is the result of the L2CAP configuration. :c:func:`bt_gatt_exchange_mtu` is not
+  supported and returns ``-ENOTSUP``.
+* The L2CAP channel requires an encrypted link, at least :c:enumerator:`BT_SECURITY_L2`. Signed
+  writes are not used.
+* An ATT transaction timeout closes the bearer, not the ACL connection.
+* The GATT state of a peer, such as its CCC values, is keyed by its BD_ADDR as a public address
+  and is stored if the peer is bonded on BR/EDR.
+
+The local GATT server publishes SDP records with the service UUID, the ATT PSM and the service
+handle range (Core Vol 3, Part G, 9 and Part C, 15.4) for the GAP and GATT services, and for the
+other primary services defined with :c:macro:`BT_ATT_BR_SDP_SERVICE`. Use it for services whose
+specification defines SDP interoperability; services without it have no SDP record, but can still
+be discovered with ATT on the BR/EDR bearer. The records are updated when services are registered
+or unregistered. :kconfig:option:`CONFIG_BT_ATT_BR_SDP_RECORDS` sets the number of records,
+including the ones of the GAP and GATT services.
+
+.. code-block:: c
+
+   BT_GATT_SERVICE_DEFINE(my_svc, BT_GATT_PRIMARY_SERVICE(MY_SVC_UUID), ...);
+   BT_ATT_BR_SDP_SERVICE(my_svc, MY_SVC_UUID);
+
+The Enhanced ATT bearer is not supported on BR/EDR.
+
 API Reference
 *************
 
