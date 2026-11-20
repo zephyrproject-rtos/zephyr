@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/clock/esp32p4_clock.h>
 #include <zephyr/dt-bindings/pinctrl/esp32p4-pinctrl.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-riscv.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 
 / {
 	#address-cells = <1>;
@@ -301,6 +302,23 @@
 			reg = <0x5009e000 0x4>;
 			friendly-name = "coretemp";
 			status = "disabled";
+		};
+
+		csi: csi@5009f000 {
+			compatible = "espressif,esp32-csi";
+			reg = <0x5009f000 0x800>, <0x5009f800 0x800>, <0x500a1000 0x1000>;
+			reg-names = "host", "bridge", "isp";
+			interrupts = <DW_GDMA_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			dma-channel = <1>;
+			status = "disabled";
+
+			port {
+				endpoint {
+					remote-endpoint-label = "";
+					bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+				};
+			};
 		};
 
 		dsi_display: display-controller@500a0800 {

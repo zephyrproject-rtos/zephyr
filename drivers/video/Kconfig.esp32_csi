@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_ESP32_CSI
+	bool "ESP32 MIPI CSI camera interface"
+	depends on DT_HAS_ESPRESSIF_ESP32_CSI_ENABLED
+	default y
+	select SOC_ESP32P4_DW_GDMA
+	help
+	  Enable the MIPI CSI-2 camera interface of the ESP32-P4. Raw Bayer
+	  frames from the sensor are converted to RGB565 by the image signal
+	  processor and written to memory by the DW-GDMA.
+
+config VIDEO_ESP32_CSI_INIT_PRIORITY
+	int "ESP32 MIPI CSI camera interface init priority"
+	default 61
+	depends on VIDEO_ESP32_CSI
+	help
+	  Initialization priority of the camera interface. It must be lower
+	  than VIDEO_INIT_PRIORITY so that the sensor initializes first.
