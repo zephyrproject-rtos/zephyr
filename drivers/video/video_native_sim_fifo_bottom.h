@@ -33,19 +33,47 @@ int video_nsi_fifo_default_path_bottom(const char *name, char *buf, size_t size)
 void video_nsi_fifo_unlink_bottom(const char *path);
 
 /**
- * @brief Open the host FIFO used as video source, creating it if needed.
+ * @brief Open the host video source: a FIFO, created if needed, or a V4L2 device.
  *
- * The FIFO is opened read-only and non-blocking, so that it can be opened
- * before any writer is attached and so that no later read can stall the
- * simulated system.
+ * The path is opened non-blocking, so that a FIFO can be opened before any
+ * writer is attached and so that no later access can stall the simulated
+ * system. A FIFO is opened read-only, a V4L2 device read-write, as its buffers
+ * cannot be mapped otherwise.
  *
- * @param path    Path of the FIFO on the host filesystem.
+ * @param path    Path of the FIFO or V4L2 capture device on the host filesystem.
  * @param created Set to true if this call created the FIFO, left untouched otherwise.
+ * @param v4l2    Set to true if the path is a character device, false if it is a FIFO.
  *
  * @return A host file descriptor on success.
  * @return A negative intermediate errno value (see nsi_errno.h) on error.
  */
-int video_nsi_fifo_open_bottom(const char *path, bool *created);
+int video_nsi_fifo_open_bottom(const char *path, bool *created, bool *v4l2);
+
+/**
+ * @brief Set the format of a V4L2 capture device and start streaming from it.
+ *
+ * RGB565 is converted on the host from YUYV when the device does not provide it.
+ * When frames queue up in the device, the newest one is delivered.
+ *
+ * @param fd          File descriptor of a V4L2 device returned by video_nsi_fifo_open_bottom().
+ * @param pixelformat Four character code of the pixel format, shared with V4L2.
+ * @param width       Frame width in pixels.
+ * @param height      Frame height in pixels.
+ * @param pitch       Line length in bytes.
+ *
+ * @return 0 on success.
+ * @return A negative intermediate errno value (see nsi_errno.h) on error:
+ *         ENOTSUP when the device does not provide the requested format.
+ */
+int video_nsi_fifo_v4l2_start_bottom(int fd, unsigned int pixelformat, unsigned int width,
+				     unsigned int height, unsigned int pitch);
+
+/**
+ * @brief Close the host video source, stopping a V4L2 stream first.
+ *
+ * @param fd File descriptor returned by video_nsi_fifo_open_bottom().
+ */
+void video_nsi_fifo_close_bottom(int fd);
 
 /**
  * @brief Enlarge the host pipe.
@@ -69,7 +97,8 @@ int video_nsi_fifo_grow_pipe_bottom(int fd, size_t size);
  *
  * Read whatever the host made available without ever blocking, until either a
  * complete frame of @p frame_size bytes has been read, no more data is
- * available, or the last writer closed the FIFO.
+ * available, or the last writer closed the FIFO. A V4L2 device provides whole
+ * frames: one is copied when ready, @p offset is not used.
  *
  * @param fd         File descriptor returned by video_nsi_fifo_open_bottom().
  * @param buf        Buffer of at least @p frame_size bytes.
