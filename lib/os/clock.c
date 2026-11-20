@@ -117,7 +117,7 @@ void z_impl_sys_clock_getrtoffset(struct timespec *tp)
 void z_vrfy_sys_clock_getrtoffset(struct timespec *tp)
 {
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(tp, sizeof(*tp)));
-	return z_impl_sys_clock_getrtoffset(tp);
+	z_impl_sys_clock_getrtoffset(tp);
 }
 #include <zephyr/syscalls/sys_clock_getrtoffset_mrsh.c>
 #endif /* CONFIG_USERSPACE */
