@@ -974,8 +974,9 @@ static ZTEST(bt_id_public_api, test_nrpa_adv_rejects_conn_create_with_host_resol
 #endif /* CONFIG_BT_BROADCASTER && (!CONFIG_BT_EXT_ADV || CONFIG_BT_EXT_ADV_LEGACY_SUPPORT) */
 
 #if defined(CONFIG_BT_OBSERVER) && !defined(CONFIG_BT_BROADCASTER) &&                              \
-	defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
-/* Scan through one expiry of the RPA timeout. Report whether
+	!defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+/* Scan through two expiries of the RPA timeout, as the first one after the
+ * scanner took the RPA keeps the timer running anyway. Report whether
  * rpa_timeout() started the RPA timer again.
  */
 static int scan_through_rpa_timeout(const struct bt_le_scan_param *param, uint16_t rpa_timeout_s,
@@ -988,10 +989,10 @@ static int scan_through_rpa_timeout(const struct bt_le_scan_param *param, uint16
 		return err;
 	}
 
-	/* Wait half a second past the RPA timeout: rpa_timeout() has run,
-	 * and the next expiry is still ahead.
+	/* Wait half a second past the second expiry: rpa_timeout() has run
+	 * twice, and the next expiry is still ahead.
 	 */
-	(void)k_sleep(K_MSEC(rpa_timeout_s * MSEC_PER_SEC + 500U));
+	(void)k_sleep(K_MSEC(2U * rpa_timeout_s * MSEC_PER_SEC + 500U));
 	*pending = k_work_delayable_is_pending(&bt_dev.rpa_update);
 
 	return bt_le_scan_stop();
@@ -1021,7 +1022,7 @@ static ZTEST(bt_id_public_api, test_rpa_timer_stops_without_active_scanner)
 	zassert_false(passive_pending, "The RPA timer kept running for a passive scanner");
 	zassert_true(active_pending, "The RPA timer stopped for an active scanner");
 }
-#endif /* CONFIG_BT_OBSERVER && !CONFIG_BT_BROADCASTER && CONFIG_BT_RPA_TIMEOUT_DYNAMIC */
+#endif /* Observer-only build with CONFIG_BT_RPA_TIMEOUT_DYNAMIC */
 #endif /* defined(CONFIG_BT_PRIVACY) */
 
 /* The public identity address reaches the driver through the common driver
