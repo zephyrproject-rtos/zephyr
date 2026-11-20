@@ -34,6 +34,10 @@
 		pwm-1 = &sc_timer;
 		rtc = &rtc;
 	};
+
+	mikrobus_adc: zephyr,user {
+		io-channels = <&lpadc1 0>;
+	};
 };
 
 /*
@@ -240,6 +244,11 @@
 };
 
 &lpadc0 {
+	status = "okay";
+};
+
+/* Required on MikroBus connector. */
+&lpadc1 {
 	status = "okay";
 };
 
