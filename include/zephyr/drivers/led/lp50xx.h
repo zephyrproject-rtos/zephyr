@@ -17,6 +17,8 @@
 #define LP5024_MAX_LEDS		8
 #define LP5030_MAX_LEDS		10
 #define LP5036_MAX_LEDS		12
+/** Maximum number of LEDs of the Diodes AL5887 */
+#define AL5887_MAX_LEDS		12
 
 /*
  * LED channels mapping.
@@ -39,7 +41,7 @@
  * Each channel definition is compatible with the following chips:
  *   - LP5012_XXX => LP5009 / LP5012
  *   - LP5024_XXX => LP5018 / LP5024
- *   - LP5036_XXX => LP5030 / LP5036
+ *   - LP5036_XXX => LP5030 / LP5036 / AL5887
  */
 #define LP5012_LED_COL_CHAN_BASE	8
 #define LP5012_LED_COL1_CHAN(led) \
