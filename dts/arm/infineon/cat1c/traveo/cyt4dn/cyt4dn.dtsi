@@ -132,15 +132,39 @@
 		};
 
 		flash_controller: flash-controller@40240000 {
+			compatible = "infineon,ect-flash-controller";
 			reg = <0x40240000 0x10000>;
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "disabled";
 
 			code_flash0: flash@10000000 {
 				compatible = "soc-nv-flash";
 				reg = <0x10000000 DT_SIZE_K(6336)>;
 				ranges = <0x0 0x10000000 DT_SIZE_K(6336)>;
+				write-block-size = <512>;
+				erase-block-size = <32768>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			work_flash0: flash@14000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x14000000 DT_SIZE_K(96)>;
+				ranges = <0x0 0x14000000 DT_SIZE_K(96)>;
+				write-block-size = <64>;
+				erase-block-size = <2048>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			work_flash1: flash@14018000 {
+				compatible = "soc-nv-flash";
+				reg = <0x14018000 DT_SIZE_K(32)>;
+				ranges = <0x0 0x14018000 DT_SIZE_K(32)>;
+				write-block-size = <64>;
+				erase-block-size = <128>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
@@ -154,7 +178,7 @@
 		gpio_prt0: gpio@40310000 {
 			compatible = "infineon,gpio";
 			reg = <0x40310000 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <24 0>;
 			gpio-controller;
 			ngpios = <6>;
@@ -165,7 +189,7 @@
 		gpio_prt1: gpio@40310080 {
 			compatible = "infineon,gpio";
 			reg = <0x40310080 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <25 0>;
 			gpio-controller;
 			ngpios = <4>;
@@ -176,7 +200,7 @@
 		gpio_prt2: gpio@40310100 {
 			compatible = "infineon,gpio";
 			reg = <0x40310100 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <26 0>;
 			gpio-controller;
 			ngpios = <4>;
@@ -187,7 +211,7 @@
 		gpio_prt3: gpio@40310180 {
 			compatible = "infineon,gpio";
 			reg = <0x40310180 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <27 0>;
 			gpio-controller;
 			ngpios = <5>;
@@ -198,7 +222,7 @@
 		gpio_prt4: gpio@40310200 {
 			compatible = "infineon,gpio";
 			reg = <0x40310200 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <28 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -209,7 +233,7 @@
 		gpio_prt5: gpio@40310280 {
 			compatible = "infineon,gpio";
 			reg = <0x40310280 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <29 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -220,7 +244,7 @@
 		gpio_prt6: gpio@40310300 {
 			compatible = "infineon,gpio";
 			reg = <0x40310300 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <30 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -231,7 +255,7 @@
 		gpio_prt7: gpio@40310380 {
 			compatible = "infineon,gpio";
 			reg = <0x40310380 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <31 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -242,7 +266,7 @@
 		gpio_prt8: gpio@40310400 {
 			compatible = "infineon,gpio";
 			reg = <0x40310400 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <32 0>;
 			gpio-controller;
 			ngpios = <4>;
@@ -253,7 +277,7 @@
 		gpio_prt9: gpio@40310480 {
 			compatible = "infineon,gpio";
 			reg = <0x40310480 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <33 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -264,7 +288,7 @@
 		gpio_prt11: gpio@40310580 {
 			compatible = "infineon,gpio";
 			reg = <0x40310580 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <35 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -275,7 +299,7 @@
 		gpio_prt12: gpio@40310600 {
 			compatible = "infineon,gpio";
 			reg = <0x40310600 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <36 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -286,7 +310,7 @@
 		gpio_prt13: gpio@40310680 {
 			compatible = "infineon,gpio";
 			reg = <0x40310680 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <53 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -297,7 +321,7 @@
 		gpio_prt14: gpio@40310700 {
 			compatible = "infineon,gpio";
 			reg = <0x40310700 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <54 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -308,7 +332,7 @@
 		gpio_prt15: gpio@40310780 {
 			compatible = "infineon,gpio";
 			reg = <0x40310780 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <55 0>;
 			gpio-controller;
 			ngpios = <6>;
@@ -319,7 +343,7 @@
 		gpio_prt16: gpio@40310800 {
 			compatible = "infineon,gpio";
 			reg = <0x40310800 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <56 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -330,7 +354,7 @@
 		gpio_prt17: gpio@40310880 {
 			compatible = "infineon,gpio";
 			reg = <0x40310880 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <57 0>;
 			gpio-controller;
 			ngpios = <1>;
@@ -341,7 +365,7 @@
 		gpio_prt18: gpio@40310900 {
 			compatible = "infineon,gpio";
 			reg = <0x40310900 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <58 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -352,7 +376,7 @@
 		gpio_prt19: gpio@40310980 {
 			compatible = "infineon,gpio";
 			reg = <0x40310980 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <59 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -363,7 +387,7 @@
 		gpio_prt20: gpio@40310a00 {
 			compatible = "infineon,gpio";
 			reg = <0x40310a00 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <60 0>;
 			gpio-controller;
 			ngpios = <8>;
@@ -374,7 +398,7 @@
 		gpio_prt21: gpio@40310a80 {
 			compatible = "infineon,gpio";
 			reg = <0x40310a80 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <61 0>;
 			gpio-controller;
 			ngpios = <4>;
@@ -385,7 +409,7 @@
 		gpio_prt23: gpio@40310b80 {
 			compatible = "infineon,gpio";
 			reg = <0x40310b80 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <63 0>;
 			gpio-controller;
 			ngpios = <5>;
@@ -396,7 +420,7 @@
 		gpio_prt24: gpio@40310c00 {
 			compatible = "infineon,gpio";
 			reg = <0x40310c00 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <64 0>;
 			gpio-controller;
 			ngpios = <2>;
@@ -407,7 +431,7 @@
 		gpio_prt25: gpio@40310c80 {
 			compatible = "infineon,gpio";
 			reg = <0x40310c80 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <65 0>;
 			gpio-controller;
 			ngpios = <6>;
@@ -418,7 +442,7 @@
 		gpio_prt26: gpio@40310d00 {
 			compatible = "infineon,gpio";
 			reg = <0x40310d00 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <66 0>;
 			gpio-controller;
 			ngpios = <5>;
@@ -429,7 +453,7 @@
 		gpio_prt27: gpio@40310d80 {
 			compatible = "infineon,gpio";
 			reg = <0x40310d80 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <67 0>;
 			gpio-controller;
 			ngpios = <2>;
@@ -440,7 +464,7 @@
 		gpio_prt28: gpio@40310e00 {
 			compatible = "infineon,gpio";
 			reg = <0x40310e00 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <68 0>;
 			gpio-controller;
 			ngpios = <6>;
@@ -451,7 +475,7 @@
 		gpio_prt29: gpio@40310e80 {
 			compatible = "infineon,gpio";
 			reg = <0x40310e80 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <37 0>;
 			gpio-controller;
 			ngpios = <2>;
@@ -462,7 +486,7 @@
 		gpio_prt30: gpio@40310f00 {
 			compatible = "infineon,gpio";
 			reg = <0x40310f00 0x80>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <69 0>;
 			gpio-controller;
 			ngpios = <2>;
@@ -1871,7 +1895,7 @@
 		scb0: scb@40600000 {
 			compatible = "infineon,scb";
 			reg = <0x40600000 0x10000>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <20 0>;
 			clk-dst = <IFX_PCLK_SCB0>;
 			status = "disabled";
@@ -1880,7 +1904,7 @@
 		scb1: scb@40610000 {
 			compatible = "infineon,scb";
 			reg = <0x40610000 0x10000>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <135 0>;
 			clk-dst = <IFX_PCLK_SCB1>;
 			status = "disabled";
@@ -1889,7 +1913,7 @@
 		scb2: scb@40620000 {
 			compatible = "infineon,scb";
 			reg = <0x40620000 0x10000>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <136 0>;
 			clk-dst = <IFX_PCLK_SCB2>;
 			status = "disabled";
@@ -1898,7 +1922,7 @@
 		scb3: scb@40630000 {
 			compatible = "infineon,scb";
 			reg = <0x40630000 0x10000>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <137 0>;
 			clk-dst = <IFX_PCLK_SCB3>;
 			status = "disabled";
@@ -1907,7 +1931,7 @@
 		scb4: scb@40640000 {
 			compatible = "infineon,scb";
 			reg = <0x40640000 0x10000>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <138 0>;
 			clk-dst = <IFX_PCLK_SCB4>;
 			status = "disabled";
@@ -1916,7 +1940,7 @@
 		scb5: scb@40650000 {
 			compatible = "infineon,scb";
 			reg = <0x40650000 0x10000>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <139 0>;
 			clk-dst = <IFX_PCLK_SCB5>;
 			status = "disabled";
@@ -1925,7 +1949,7 @@
 		scb6: scb@40660000 {
 			compatible = "infineon,scb";
 			reg = <0x40660000 0x10000>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <140 0>;
 			clk-dst = <IFX_PCLK_SCB6>;
 			status = "disabled";
@@ -1934,7 +1958,7 @@
 		scb7: scb@40670000 {
 			compatible = "infineon,scb";
 			reg = <0x40670000 0x10000>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <141 0>;
 			clk-dst = <IFX_PCLK_SCB7>;
 			status = "disabled";
@@ -1943,7 +1967,7 @@
 		scb8: scb@40680000 {
 			compatible = "infineon,scb";
 			reg = <0x40680000 0x10000>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <142 0>;
 			clk-dst = <IFX_PCLK_SCB8>;
 			status = "disabled";
@@ -1952,7 +1976,7 @@
 		scb9: scb@40690000 {
 			compatible = "infineon,scb";
 			reg = <0x40690000 0x10000>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <143 0>;
 			clk-dst = <IFX_PCLK_SCB9>;
 			status = "disabled";
@@ -1961,7 +1985,7 @@
 		scb10: scb@406a0000 {
 			compatible = "infineon,scb";
 			reg = <0x406a0000 0x10000>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <144 0>;
 			clk-dst = <IFX_PCLK_SCB10>;
 			status = "disabled";
@@ -1970,7 +1994,7 @@
 		scb11: scb@406b0000 {
 			compatible = "infineon,scb";
 			reg = <0x406b0000 0x10000>;
-			interrupt-parent = <&intmux_ch0>;
+			interrupt-parent = <&intmux_ch3>;
 			interrupts = <145 0>;
 			clk-dst = <IFX_PCLK_SCB11>;
 			status = "disabled";

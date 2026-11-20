@@ -17,5 +17,6 @@ endif()
 zephyr_sources(soc_vector_table.c)
 
 zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors ld/vector_table.ld)
+zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY NOCACHE_SECTION ld/sharedmem_nocache.ld)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
