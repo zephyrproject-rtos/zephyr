@@ -21,6 +21,8 @@ supported:
   - netif:eth
   - ptp_clock
   - pwm
+  - sdhc
   - uart
+  - usbd
   - watchdog
 vendor: nxp
