@@ -1,0 +1,50 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/infineon/psoc4/mpns/cy8c4147azi_s475.dtsi>
+#include <arm/infineon/psoc4/psoc4100splus/system_clocks.dtsi>
+
+#include "cy8ckit_149_plus_common.dtsi"
+
+/ {
+	compatible = "infineon,cy8ckit-149-plus", "infineon,psoc4100splus";
+	model = "CY8CKIT-149 PLUS Development Board";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+	};
+
+	aliases {
+		led0 = &user_led;
+		sw0 = &user_button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		user_led: led_0 {
+			label = "USER_LED";
+			gpios = <&gpio_prt3 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		status = "okay";
+
+		user_button: sw0 {
+			label = "USER_BUTTON";
+			gpios = <&gpio_prt3 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
