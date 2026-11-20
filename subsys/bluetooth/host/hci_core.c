@@ -1490,6 +1490,16 @@ static struct bt_conn *find_pending_connect(uint8_t role, const bt_addr_le_t *pe
 	return NULL;
 }
 
+/* With no initiator left in the Controller, neither the create timeout nor the application could
+ * end the connection attempt.
+ */
+static void le_conn_restart_failed(struct bt_conn *conn, int err)
+{
+	LOG_WRN("Failed to restart initiator (err %d)", err);
+	conn->err = BT_HCI_ERR_UNSPECIFIED;
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+}
+
 static void le_conn_complete_cancel(uint8_t err)
 {
 	int ret;
@@ -1513,8 +1523,8 @@ static void le_conn_complete_cancel(uint8_t err)
 		} else {
 			/* Restart FAL initiator after RPA timeout. */
 			ret = bt_le_create_conn(conn);
-			if (ret) {
-				LOG_ERR("Failed to restart initiator");
+			if (ret != 0) {
+				le_conn_restart_failed(conn, ret);
 			}
 		}
 	} else {
@@ -1527,8 +1537,8 @@ static void le_conn_complete_cancel(uint8_t err)
 		} else {
 			/* Restart initiator after RPA timeout. */
 			ret = bt_le_create_conn(conn);
-			if (ret) {
-				LOG_ERR("Failed to restart initiator");
+			if (ret != 0) {
+				le_conn_restart_failed(conn, ret);
 			}
 		}
 	}
