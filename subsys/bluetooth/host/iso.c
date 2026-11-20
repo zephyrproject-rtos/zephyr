@@ -1736,6 +1736,8 @@ static struct bt_conn *bt_conn_add_iso(struct bt_conn *acl)
 	}
 
 	iso->iso.acl = bt_conn_ref(acl);
+	bt_addr_le_copy(&iso->iso.dst, &acl->le.dst);
+	iso->id = acl->id;
 
 	return iso;
 }
@@ -2553,6 +2555,8 @@ int bt_iso_chan_connect(const struct bt_iso_connect_param *param, size_t count)
 		struct bt_iso_cig *cig;
 
 		iso_chan->iso->iso.acl = bt_conn_ref(param[i].acl);
+		bt_addr_le_copy(&iso_chan->iso->iso.dst, &param[i].acl->le.dst);
+		iso_chan->iso->id = param[i].acl->id;
 		bt_conn_set_state(iso_chan->iso, BT_CONN_INITIATING);
 		bt_iso_chan_set_state(iso_chan, BT_ISO_STATE_CONNECTING);
 
