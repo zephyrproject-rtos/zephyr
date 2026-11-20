@@ -948,6 +948,51 @@ ZTEST(net_socket_quic, test_040_stream_type_helpers_for_local_streams)
 	zassert_equal(ret, 0, "Failed to close QUIC connection (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_041_local_stream_ids_count_per_direction)
+{
+	static const struct {
+		int direction;
+		uint64_t id;
+	} opens[] = {
+		/* The IDs of each type are used in order (RFC 9000 ch. 2.1),
+		 * whatever streams of the other direction are opened between
+		 * them.
+		 */
+		{ QUIC_STREAM_BIDIRECTIONAL, 1 },
+		{ QUIC_STREAM_UNIDIRECTIONAL, 3 },
+		{ QUIC_STREAM_UNIDIRECTIONAL, 7 },
+		{ QUIC_STREAM_BIDIRECTIONAL, 5 },
+	};
+	int socks[ARRAY_SIZE(opens)];
+	int ret, conn_sock;
+
+	ret = quic_connection_open(NULL,
+				   (struct net_sockaddr *)&local_addr_ipv4);
+	zassert_true(ret >= 0, "Failed to open QUIC connection (%d)", ret);
+	conn_sock = ret;
+
+	ARRAY_FOR_EACH(opens, i) {
+		uint64_t stream_id = UINT64_MAX;
+
+		ret = quic_stream_open(conn_sock, QUIC_STREAM_SERVER, opens[i].direction, 0);
+		zassert_true(ret >= 0, "Failed to open stream %zu (%d)", i, ret);
+		socks[i] = ret;
+
+		ret = quic_stream_get_id(socks[i], &stream_id);
+		zassert_equal(ret, 0, "Failed to get the ID of stream %zu (%d)", i, ret);
+		zexpect_equal(stream_id, opens[i].id, "Stream %zu got ID %" PRIu64 ", expected %"
+			      PRIu64, i, stream_id, opens[i].id);
+	}
+
+	ARRAY_FOR_EACH(socks, i) {
+		ret = quic_stream_close(socks[i]);
+		zassert_equal(ret, 0, "Failed to close stream %zu (%d)", i, ret);
+	}
+
+	ret = quic_connection_close(conn_sock);
+	zassert_equal(ret, 0, "Failed to close QUIC connection (%d)", ret);
+}
+
 /* Test 050: Variable-length integer encoding/decoding */
 ZTEST(net_socket_quic, test_050_len_encode_decode)
 {
@@ -7210,7 +7255,8 @@ ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
 	 * None has been opened on this connection.
 	 */
 	ep->is_server = true;
-	zassert_equal(ctx->stream_id_counter, 0, "Unexpected streams on a new context");
+	zassert_equal(ctx->stream_id_counter[0], 0, "Unexpected streams on a new context");
+	zassert_equal(ctx->stream_id_counter[1], 0, "Unexpected streams on a new context");
 
 	ret = stop_sending_for_stream(ep, ctx, 1);
 	zassert_equal(ret, -EPROTO,
@@ -7230,10 +7276,10 @@ ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
 	 */
 	ep = reset_test_ep(&test_ep_a);
 	ep->is_server = true;
-	ctx->stream_id_counter = 1;
+	ctx->stream_id_counter[0] = 1;
 	ret = stop_sending_for_stream(ep, ctx, 1);
 	zassert_true(ret >= 0, "STOP_SENDING for a closed stream must be ignored (%d)", ret);
-	ctx->stream_id_counter = 0;
+	ctx->stream_id_counter[0] = 0;
 
 	/* A stream of the peer that we do not know is not ours to judge
 	 * here either.
@@ -7243,6 +7289,166 @@ ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
 	ret = stop_sending_for_stream(ep, ctx, 0);
 	zassert_true(ret >= 0, "STOP_SENDING for an unknown peer stream must be ignored (%d)",
 		     ret);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+#define TEST_STREAM_FIN (QUIC_FRAME_TYPE_STREAM_BASE | 0x01) /* FIN, data to the end */
+
+/* Hand a payload with one frame for a stream to the frame parser, from a
+ * fresh endpoint attached to a listening context so that the parser can find
+ * the connection the stream belongs to. A frame that closes the connection
+ * leaves the endpoint closing, so every frame gets a fresh one.
+ */
+static int frame_for_stream(struct quic_context *ctx, bool is_server, uint8_t type,
+			    uint8_t stream_id)
+{
+	/* The field after the stream ID is the error code of RESET_STREAM
+	 * and the limit of MAX_STREAM_DATA and STREAM_DATA_BLOCKED. The
+	 * final size of RESET_STREAM follows it.
+	 */
+	const uint8_t payload[] = { type, stream_id, 0x3f, 0x00 };
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	bool ack_only = false;
+	size_t len;
+	int ret;
+
+	if (type == TEST_STREAM_FIN) {
+		len = 2;
+	} else if (type == QUIC_FRAME_TYPE_RESET_STREAM) {
+		len = 4;
+	} else {
+		len = 3;
+	}
+
+	ep->is_server = is_server;
+
+	/* The parser drops a reference when it gives up on the connection */
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, len, len, &ack_only);
+
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	return ret;
+}
+
+ZTEST(net_socket_quic, test_550_stream_frames_in_the_wrong_direction)
+{
+	static const uint8_t to_send_only[] = {
+		TEST_STREAM_FIN,
+		QUIC_FRAME_TYPE_RESET_STREAM,
+		QUIC_FRAME_TYPE_STREAM_DATA_BLOCKED,
+	};
+	/* The stream states are private to the stack, so the test stream
+	 * starts in a state of its own. A frame that is handled moves it on.
+	 */
+	static const struct smf_state test_stream_state =
+		SMF_CREATE_STATE(NULL, NULL, NULL, NULL, NULL);
+	static struct quic_stream stream;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54394");
+
+	/* As a server, stream 3 is our first unidirectional stream, which is
+	 * send-only for us. The peer cannot send on it, reset it or be
+	 * blocked on it (RFC 9000 ch. 19.4, 19.8 and 19.13), whether the
+	 * stream is open or closed already.
+	 */
+	ctx->stream_id_counter[1] = 1;
+	link_test_stream(&stream, ctx, &test_ep_a, 3);
+	smf_set_initial(SMF_CTX(&stream.state.ctx), &test_stream_state);
+	atomic_set(&stream.refcount, 1);
+
+	for (size_t i = 0; i < ARRAY_SIZE(to_send_only); i++) {
+		ret = frame_for_stream(ctx, true, to_send_only[i], 3);
+		zexpect_equal(ret, -EPROTO,
+			      "Frame 0x%02x for an open send-only stream must close the "
+			      "connection (%d)", to_send_only[i], ret);
+	}
+
+	zexpect_false(stream.rx_buf.fin_received, "A send-only stream received a FIN");
+	zexpect_false(stream.read_closed, "A send-only stream was reset by the peer");
+	zexpect_equal(atomic_get(&stream.refcount), 1, "Frames changed the stream references");
+	unlink_test_stream(&stream, ctx);
+
+	for (size_t i = 0; i < ARRAY_SIZE(to_send_only); i++) {
+		ret = frame_for_stream(ctx, true, to_send_only[i], 3);
+		zexpect_equal(ret, -EPROTO,
+			      "Frame 0x%02x for a closed send-only stream must close the "
+			      "connection (%d)", to_send_only[i], ret);
+	}
+
+	/* Stream 2 is a unidirectional stream of the client, receive-only
+	 * for us, so the peer cannot give us credit to send on it
+	 * (ch. 19.10).
+	 */
+	link_test_stream(&stream, ctx, &test_ep_a, 2);
+	k_poll_signal_init(&stream.send.signal);
+	atomic_set(&stream.refcount, 1);
+
+	ret = frame_for_stream(ctx, true, QUIC_FRAME_TYPE_MAX_STREAM_DATA, 2);
+	zexpect_equal(ret, -EPROTO,
+		      "MAX_STREAM_DATA for a receive-only stream must close the connection (%d)",
+		      ret);
+	zexpect_equal(stream.remote_max_data, 0, "A receive-only stream got credit to send");
+	zexpect_equal(atomic_get(&stream.refcount), 1, "Frames changed the stream references");
+	unlink_test_stream(&stream, ctx);
+
+	/* MAX_STREAM_DATA for a stream of our own that was never opened is an
+	 * error too (ch. 19.10): streams 5 and 7 are the next bidirectional
+	 * and unidirectional ones after streams 1 and 3.
+	 */
+	ctx->stream_id_counter[0] = 1;
+
+	ret = frame_for_stream(ctx, true, QUIC_FRAME_TYPE_MAX_STREAM_DATA, 5);
+	zexpect_equal(ret, -EPROTO,
+		      "MAX_STREAM_DATA for a bidirectional stream that was never opened "
+		      "must close the connection (%d)", ret);
+	ret = frame_for_stream(ctx, true, QUIC_FRAME_TYPE_MAX_STREAM_DATA, 7);
+	zexpect_equal(ret, -EPROTO,
+		      "MAX_STREAM_DATA for a unidirectional stream that was never opened "
+		      "must close the connection (%d)", ret);
+
+	/* For streams of our own that are closed already, it is a late frame
+	 * and is ignored.
+	 */
+	ret = frame_for_stream(ctx, true, QUIC_FRAME_TYPE_MAX_STREAM_DATA, 1);
+	zexpect_true(ret >= 0, "MAX_STREAM_DATA for a closed stream must be ignored (%d)", ret);
+	ret = frame_for_stream(ctx, true, QUIC_FRAME_TYPE_MAX_STREAM_DATA, 3);
+	zexpect_true(ret >= 0, "MAX_STREAM_DATA for a closed stream must be ignored (%d)", ret);
+
+	/* The peer can reset and be blocked on its own unidirectional stream
+	 * and on a bidirectional stream of ours.
+	 */
+	ret = frame_for_stream(ctx, true, QUIC_FRAME_TYPE_RESET_STREAM, 2);
+	zexpect_true(ret >= 0, "RESET_STREAM for a receive-only stream failed (%d)", ret);
+	ret = frame_for_stream(ctx, true, QUIC_FRAME_TYPE_STREAM_DATA_BLOCKED, 2);
+	zexpect_true(ret >= 0, "STREAM_DATA_BLOCKED for a receive-only stream failed (%d)", ret);
+	ret = frame_for_stream(ctx, true, QUIC_FRAME_TYPE_RESET_STREAM, 1);
+	zexpect_true(ret >= 0, "RESET_STREAM for a bidirectional stream failed (%d)", ret);
+	ret = frame_for_stream(ctx, true, QUIC_FRAME_TYPE_STREAM_DATA_BLOCKED, 1);
+	zexpect_true(ret >= 0, "STREAM_DATA_BLOCKED for a bidirectional stream failed (%d)",
+		     ret);
+
+	/* As a client, stream 2 is our own unidirectional stream and stream
+	 * 3 one of the server.
+	 */
+	ret = frame_for_stream(ctx, false, TEST_STREAM_FIN, 2);
+	zexpect_equal(ret, -EPROTO,
+		      "STREAM for a send-only stream must close the connection (%d)", ret);
+	ret = frame_for_stream(ctx, false, QUIC_FRAME_TYPE_MAX_STREAM_DATA, 3);
+	zexpect_equal(ret, -EPROTO,
+		      "MAX_STREAM_DATA for a receive-only stream must close the connection (%d)",
+		      ret);
+
+	ctx->stream_id_counter[0] = 0;
+	ctx->stream_id_counter[1] = 0;
 
 	ret = quic_connection_close(sock);
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
@@ -8163,6 +8369,159 @@ ZTEST(net_socket_quic, test_549_stream_shutdown_failure_sets_errno)
 	multi_server_stop(1);
 }
 
+/* Wait for a stream of the peer and accept it */
+static int accept_peer_stream(int conn_sock)
+{
+	struct zsock_pollfd pfd = {
+		.fd = conn_sock,
+		.events = ZSOCK_POLLIN,
+	};
+	int ret;
+
+	ret = zsock_poll(&pfd, 1, 5 * POLL_TIMEOUT_MS);
+	if (ret <= 0) {
+		return -1;
+	}
+
+	return zsock_accept(conn_sock, NULL, NULL);
+}
+
+/* Open a unidirectional stream on a connection and send one byte on it, so
+ * that the peer sees the stream, and accept the stream on the other end.
+ */
+static void open_uni_stream_pair(int conn_sock, enum quic_stream_initiator initiator,
+				 int peer_conn_sock, int *own, int *peer)
+{
+	static const uint8_t byte = 'u';
+	int ret;
+
+	*own = quic_stream_open(conn_sock, initiator, QUIC_STREAM_UNIDIRECTIONAL, 0);
+	zassert_true(*own >= 0, "Cannot open a unidirectional stream (%d)", *own);
+
+	ret = quic_test_send_all(*own, &byte, sizeof(byte));
+	zassert_ok(ret, "Cannot send on a send-only stream (%d)", ret);
+
+	*peer = accept_peer_stream(peer_conn_sock);
+	zassert_true(*peer >= 0, "The unidirectional stream was not accepted (%d)", errno);
+}
+
+/* The peer checks the direction of every stream frame, so a frame sent in
+ * the wrong direction closes the connection, and the echo on the
+ * bidirectional stream fails after it.
+ */
+ZTEST(net_socket_quic, test_551_send_only_stream_sends_no_stop_sending)
+{
+	int client_uni;
+	int server_copy;
+	int ret;
+
+	multi_server_start();
+	multi_client_connect(0);
+
+	open_uni_stream_pair(multi_client_sock[0], QUIC_STREAM_CLIENT, multi_srv.conn[0],
+			     &client_uni, &server_copy);
+
+	/* The stream is send-only for the client, so shutting down its
+	 * receiving half sends no STOP_SENDING (RFC 9000 ch. 19.5).
+	 */
+	ret = zsock_shutdown(client_uni, ZSOCK_SHUT_RD);
+	zexpect_ok(ret, "shutdown(SHUT_RD) of a send-only stream failed (%d)", errno);
+	multi_client_echo(multi_client_stream[0], 0xb0);
+
+	/* It is receive-only for the server, which sends no FIN on it when
+	 * it closes it (ch. 19.8).
+	 */
+	ret = zsock_close(server_copy);
+	zexpect_ok(ret, "Cannot close a receive-only stream (%d)", errno);
+	multi_client_echo(multi_client_stream[0], 0xb1);
+
+	ret = zsock_close(client_uni);
+	zexpect_ok(ret, "Cannot close a send-only stream (%d)", errno);
+
+	multi_server_stop(1);
+}
+
+ZTEST(net_socket_quic, test_553_receive_only_stream_sends_nothing)
+{
+	static const uint8_t byte = 'u';
+	int server_uni;
+	int client_copy;
+	int ret;
+
+	multi_server_start();
+	multi_client_connect(0);
+
+	open_uni_stream_pair(multi_srv.conn[0], QUIC_STREAM_SERVER, multi_client_sock[0],
+			     &server_uni, &client_copy);
+
+	/* The stream is receive-only for the client. Nothing can be sent on
+	 * it, and neither shutdown() nor close() sends a FIN on it
+	 * (RFC 9000 ch. 19.8).
+	 */
+	errno = 0;
+	ret = zsock_send(client_copy, &byte, sizeof(byte), 0);
+	zexpect_equal(ret, -1, "send() on a receive-only stream returned %d", ret);
+	zexpect_equal(errno, EPIPE, "send() on a receive-only stream set errno to %d", errno);
+	multi_client_echo(multi_client_stream[0], 0xb2);
+
+	ret = zsock_shutdown(client_copy, ZSOCK_SHUT_WR);
+	zexpect_ok(ret, "shutdown(SHUT_WR) of a receive-only stream failed (%d)", errno);
+	multi_client_echo(multi_client_stream[0], 0xb3);
+
+	ret = zsock_close(client_copy);
+	zexpect_ok(ret, "Cannot close a receive-only stream (%d)", errno);
+	multi_client_echo(multi_client_stream[0], 0xb4);
+
+	ret = zsock_close(server_uni);
+	zexpect_ok(ret, "Cannot close a send-only stream (%d)", errno);
+
+	multi_server_stop(1);
+}
+
+ZTEST(net_socket_quic, test_552_readvertise_skips_send_only_streams)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	static struct quic_stream peer_bidi;
+	static struct quic_stream own_uni;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54395");
+
+	ep->is_server = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	/* As a server, stream 0 is a bidirectional stream of the client and
+	 * stream 3 a unidirectional stream of our own. Both have a limit that
+	 * was not advertised yet, but we receive nothing on stream 3, and
+	 * the peer would take a MAX_STREAM_DATA for it as a connection error
+	 * (RFC 9000 ch. 19.10).
+	 */
+	link_test_stream(&peer_bidi, ctx, ep, 0);
+	link_test_stream(&own_uni, ctx, ep, 3);
+	peer_bidi.local_max_data = 100U;
+	own_uni.local_max_data = 100U;
+	atomic_set(&peer_bidi.refcount, 1);
+	atomic_set(&own_uni.refcount, 1);
+
+	quic_readvertise_flow_control(ep);
+
+	zexpect_equal(peer_bidi.local_max_data_sent, 100U,
+		      "The limit of a stream we receive on was not advertised");
+	zexpect_equal(own_uni.local_max_data_sent, 0U,
+		      "A limit was advertised for a send-only stream");
+	zexpect_equal(atomic_get(&peer_bidi.refcount), 1, "Stream reference not given back");
+	zexpect_equal(atomic_get(&own_uni.refcount), 1, "Stream reference changed");
+
+	unlink_test_stream(&own_uni, ctx);
+	unlink_test_stream(&peer_bidi, ctx);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 ZTEST(net_socket_quic, test_503_close_notifies_only_its_connection)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
@@ -8288,6 +8647,176 @@ ZTEST(net_socket_quic, test_504_closed_connection_hangs_up_with_streams_waiting)
 
 	ret = quic_connection_close(sock);
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+/* Feed a STREAM frame with the FIN bit and no data to the endpoint */
+static int stream_fin_for_stream(struct quic_endpoint *ep, struct quic_context *ctx,
+				 uint8_t stream_id)
+{
+	const uint8_t payload[] = {
+		QUIC_FRAME_TYPE_STREAM_BASE | 0x01, /* FIN, data to the end */
+		stream_id,
+	};
+	bool ack_only = false;
+	int ret;
+
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload), sizeof(payload),
+					 &ack_only);
+
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	return ret;
+}
+
+/* Take the stream a frame just opened off the context, as if it had been
+ * accepted and closed again.
+ */
+static struct quic_stream *take_opened_stream(struct quic_context *ctx, uint64_t stream_id)
+{
+	struct quic_stream *stream = k_fifo_get(&ctx->incoming.stream_q, K_NO_WAIT);
+
+	zassert_not_null(stream, "Stream %" PRIu64 " was not opened", stream_id);
+	zassert_equal(stream->id, stream_id, "Opened stream %" PRIu64 " instead of %" PRIu64,
+		      stream->id, stream_id);
+	zassert_true(sys_slist_find_and_remove(&ctx->streams, &stream->node),
+		     "Stream %" PRIu64 " not on the context", stream_id);
+	k_sem_reset(&ctx->incoming.stream_sem);
+
+	return stream;
+}
+
+/* Put a stream back, so that closing the context releases it */
+static void return_opened_stream(struct quic_context *ctx, struct quic_stream *stream)
+{
+	sys_slist_append(&ctx->streams, &stream->node);
+	k_fifo_put(&ctx->incoming.stream_q, stream);
+}
+
+ZTEST(net_socket_quic, test_502_late_frame_does_not_reopen_a_closed_stream)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_stream *closed_4;
+	struct quic_stream *closed_8;
+	struct quic_stream *opened_0;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54354");
+
+	ep->is_server = true;
+	ep->rx_sl.max_bidi = 8;
+	ep->rx_sl.max_uni = 8;
+
+	/* The peer opens streams 8 and 4, in that order as packets can be
+	 * reordered. Opening 8 first must not stop 4 from being opened.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 8);
+	zassert_true(ret >= 0, "STREAM frame for stream 8 failed (%d)", ret);
+	closed_8 = take_opened_stream(ctx, 8);
+
+	ret = stream_fin_for_stream(ep, ctx, 4);
+	zassert_true(ret >= 0, "STREAM frame for stream 4 failed (%d)", ret);
+	closed_4 = take_opened_stream(ctx, 4);
+
+	/* Both are closed now. A late frame for either of them is ignored
+	 * and does not open the stream again.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 8);
+	zexpect_true(ret >= 0, "Late frame for stream 8 failed (%d)", ret);
+	ret = stream_fin_for_stream(ep, ctx, 4);
+	zexpect_true(ret >= 0, "Late frame for stream 4 failed (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A closed peer stream was opened again");
+
+	/* Stream 0 was opened implicitly by stream 4 (RFC 9000 ch. 2.1) but
+	 * not used yet, so it can still be opened.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STREAM frame for stream 0 failed (%d)", ret);
+	opened_0 = take_opened_stream(ctx, 0);
+
+	/* A stream of our own that was opened and closed, stream 1 */
+	ctx->stream_id_counter[0] = 1;
+	ret = stream_fin_for_stream(ep, ctx, 1);
+	zexpect_true(ret >= 0, "Late frame for our stream 1 failed (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A closed stream of our own was opened as a peer stream");
+
+	/* Stream 5 is the next one of our own and was never opened, so a
+	 * frame for it closes the connection (RFC 9000 ch. 19.8).
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 5);
+	zexpect_equal(ret, -EPROTO,
+		      "A frame for a stream of our own that was never opened must "
+		      "close the connection (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A stream of our own that was never opened was opened as a peer stream");
+	ctx->stream_id_counter[0] = 0;
+
+	return_opened_stream(ctx, opened_0);
+	return_opened_stream(ctx, closed_4);
+	return_opened_stream(ctx, closed_8);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_508_unused_stream_ids_stay_unopened)
+{
+	struct quic_stream_seq_set set = { 0 };
+	uint64_t top = ARRAY_SIZE(set.gaps);
+
+	/* The peer leaves stream 0 unused while it opens and closes more
+	 * streams than any fixed window would cover. Stream 0 is opened
+	 * implicitly only and can still be used later.
+	 */
+	for (uint64_t seq = 1; seq <= 70; seq++) {
+		zassert_true(stream_seq_gaps_fit(&set, seq), "No room for stream %" PRIu64, seq);
+		stream_seq_mark_opened(&set, seq);
+	}
+
+	zexpect_false(stream_seq_was_opened(&set, 0), "An unused stream was taken as opened");
+	zexpect_true(stream_seq_was_opened(&set, 1), "An opened stream was not taken as opened");
+	zexpect_true(stream_seq_was_opened(&set, 70), "An opened stream was not taken as opened");
+	zexpect_false(stream_seq_was_opened(&set, 71),
+		      "A stream not opened yet was taken as opened");
+
+	stream_seq_mark_opened(&set, 0);
+	zexpect_true(stream_seq_was_opened(&set, 0), "A late first stream was not opened");
+	zexpect_equal(set.gap_count, 0, "%u unused streams left", set.gap_count);
+
+	/* Packets reordered: the highest stream the gaps allow comes first,
+	 * then each lower one. All of them can be opened.
+	 */
+	memset(&set, 0, sizeof(set));
+	zassert_true(stream_seq_gaps_fit(&set, top), "No room for stream %" PRIu64, top);
+	stream_seq_mark_opened(&set, top);
+
+	for (uint64_t seq = 0; seq < top; seq++) {
+		zexpect_false(stream_seq_was_opened(&set, seq),
+			      "Stream %" PRIu64 " taken as opened before it was used", seq);
+	}
+
+	for (uint64_t seq = top; seq > 0; seq--) {
+		stream_seq_mark_opened(&set, seq - 1U);
+	}
+
+	for (uint64_t seq = 0; seq <= top; seq++) {
+		zexpect_true(stream_seq_was_opened(&set, seq),
+			     "Stream %" PRIu64 " not opened", seq);
+	}
+
+	/* Leaving more streams unused than there is room for is more than
+	 * the peer may open.
+	 */
+	memset(&set, 0, sizeof(set));
+	zexpect_false(stream_seq_gaps_fit(&set, top + 1U),
+		      "Room claimed for more unused streams than can be kept");
 }
 
 ZTEST(net_socket_quic, test_506_orphan_release_keeps_a_held_endpoint)

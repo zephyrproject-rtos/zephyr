@@ -205,6 +205,25 @@ static void quic_stream_limit_give_back(struct quic_endpoint *ep, bool is_bidi)
 	}
 }
 
+/* A frame that only the sending part of a stream sends, for a stream that is
+ * send-only for us, is a connection error of type STREAM_STATE_ERROR
+ * (RFC 9000 ch. 19.4, 19.8 and 19.13).
+ */
+static int quic_check_not_send_only(struct quic_endpoint *ep, uint64_t stream_id,
+				    const char *frame_name)
+{
+	if (!quic_stream_id_is_send_only(ep, stream_id)) {
+		return 0;
+	}
+
+	NET_DBG("[EP:%p/%d] %s for send-only stream %" PRIu64,
+		ep, quic_get_by_ep(ep), frame_name, stream_id);
+	quic_endpoint_send_connection_close(ep, QUIC_ERROR_STREAM_STATE_ERROR,
+					    "frame for a send-only stream");
+
+	return -EPROTO;
+}
+
 /*
  * Handle STREAM frame (frame types 0x08 - 0x0f)
  *
@@ -221,6 +240,59 @@ static void quic_stream_limit_give_back(struct quic_endpoint *ep, bool is_bidi)
  *   0x02 (LEN): Length field present
  *   0x01 (FIN): Final frame of stream
  */
+/* Tell whether a peer-initiated stream with this sequence number has been
+ * opened already.
+ */
+ZTESTABLE_STATIC bool stream_seq_was_opened(const struct quic_stream_seq_set *set, uint64_t seq)
+{
+	if (seq >= set->next) {
+		return false;
+	}
+
+	for (uint8_t i = 0; i < set->gap_count; i++) {
+		if (set->gaps[i] == seq) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/* Tell whether there is room to remember the streams that opening this
+ * one leaves unused below it.
+ */
+ZTESTABLE_STATIC bool stream_seq_gaps_fit(const struct quic_stream_seq_set *set, uint64_t seq)
+{
+	if (seq <= set->next) {
+		return true;
+	}
+
+	return seq - set->next <= ARRAY_SIZE(set->gaps) - set->gap_count;
+}
+
+ZTESTABLE_STATIC void stream_seq_mark_opened(struct quic_stream_seq_set *set, uint64_t seq)
+{
+	if (seq >= set->next) {
+		/* The streams in between are opened implicitly but not used
+		 * yet. stream_seq_gaps_fit() made sure they fit.
+		 */
+		for (uint64_t gap = set->next; gap < seq; gap++) {
+			set->gaps[set->gap_count++] = gap;
+		}
+
+		set->next = seq + 1U;
+
+		return;
+	}
+
+	for (uint8_t i = 0; i < set->gap_count; i++) {
+		if (set->gaps[i] == seq) {
+			set->gaps[i] = set->gaps[--set->gap_count];
+			break;
+		}
+	}
+}
+
 static int handle_stream_frame(struct quic_endpoint *ep,
 			       const uint8_t *buf, size_t len,
 			       size_t *consumed,
@@ -279,6 +351,11 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		", len=%" PRIu64 ", fin=%d",
 		ep, quic_get_by_ep(ep), stream_id, offset, data_len, is_fin);
 
+	ret = quic_check_not_send_only(ep, stream_id, "STREAM");
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* Find the connection context for the accepting endpoint */
 	conn = quic_find_context(ep);
 	if (conn == NULL) {
@@ -289,6 +366,40 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	/* Find or create the stream */
 	stream = quic_find_stream(conn, ep, stream_id);
 	if (stream == NULL) {
+		bool local_init = ((stream_id & 1U) != 0U) == ep->is_server;
+		struct quic_stream_seq_set *opened =
+			((stream_id & 2U) == 0U) ? &ep->rx_sl.opened_bidi : &ep->rx_sl.opened_uni;
+
+		/* Stream IDs are used in order (RFC 9000 ch. 2.1), so a stream
+		 * of ours with an ID below the next one we would open was
+		 * opened before, and one at or above it was never created. A
+		 * STREAM frame for a stream of ours that was never created is
+		 * a connection error of type STREAM_STATE_ERROR (ch. 19.8).
+		 */
+		if (local_init && (stream_id >> 2) >= *quic_stream_id_counter(conn, stream_id)) {
+			NET_DBG("[EP:%p/%d] STREAM frame for stream %" PRIu64
+				" that was never opened",
+				ep, quic_get_by_ep(ep), stream_id);
+			quic_endpoint_send_connection_close(
+				ep, QUIC_ERROR_STREAM_STATE_ERROR,
+				"STREAM for a stream that was never opened");
+			return -EPROTO;
+		}
+
+		/* A stream that is not found can be one that was closed
+		 * already, and the frame a late one, for example a FIN that
+		 * crossed our STOP_SENDING. All its data was received or is
+		 * not wanted any more, so the frame is discarded (RFC 9000
+		 * ch. 3.2) instead of opening the stream again.
+		 */
+		if (local_init || stream_seq_was_opened(opened, stream_id >> 2)) {
+			NET_DBG("[EP:%p/%d] STREAM frame for closed stream %" PRIu64 " ignored",
+				ep, quic_get_by_ep(ep), stream_id);
+			*consumed = pos + data_len;
+
+			return pos + data_len;
+		}
+
 		/*
 		 * This is a new peer-initiated stream. Before allocating a slot,
 		 * verify the peer has not exceeded the stream limit we advertised.
@@ -311,7 +422,11 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		if (peer_init) {
 			uint64_t limit = is_bidi ? ep->rx_sl.max_bidi : ep->rx_sl.max_uni;
 
-			if (stream_seq >= limit) {
+			/* The stream IDs a peer leaves unused count against
+			 * its limit too, so with the limit kept there is
+			 * always room to remember them.
+			 */
+			if (stream_seq >= limit || !stream_seq_gaps_fit(opened, stream_seq)) {
 				NET_ERR("[EP:%p/%d] Stream %" PRIu64
 					" exceeds our %s limit %" PRIu64
 					", sending STREAM_LIMIT_ERROR",
@@ -347,6 +462,10 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 			NET_DBG("[CO:%p/%d] Failed to create stream %" PRIu64,
 				conn, quic_get_by_conn(conn), stream_id);
 			return -ENOMEM;
+		}
+
+		if (!local_init) {
+			stream_seq_mark_opened(opened, stream_id >> 2);
 		}
 
 		sys_slist_find_and_remove(&conn->streams, &stream->node);
@@ -450,6 +569,11 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] RESET_STREAM: stream=%" PRIu64 ", error=0x%" PRIx64
 		", final_size=%" PRIu64,
 		ep, quic_get_by_ep(ep), stream_id, error_code, final_size);
+
+	ret = quic_check_not_send_only(ep, stream_id, "RESET_STREAM");
+	if (ret < 0) {
+		return ret;
+	}
 
 	/*
 	 * Wake any thread blocked in quic_stream_recv() so it gets
@@ -631,7 +755,7 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 		 * one that is closed already, which is fine, so only an ID
 		 * past everything opened so far is taken as never created.
 		 */
-		if (conn != NULL && (stream_id >> 2) >= conn->stream_id_counter) {
+		if (conn != NULL && (stream_id >> 2) >= *quic_stream_id_counter(conn, stream_id)) {
 			NET_DBG("[EP:%p/%d] STOP_SENDING for stream %" PRIu64
 				" that was never opened",
 				ep, quic_get_by_ep(ep), stream_id);
@@ -802,8 +926,40 @@ static int handle_max_stream_data_frame(struct quic_endpoint *ep,
 
 	pos += ret;
 
+	/* RFC 9000 ch. 19.10: a unidirectional stream opened by the peer is
+	 * receive-only for us, there is nothing we could send on it. The
+	 * frame is a connection error of type STREAM_STATE_ERROR.
+	 */
+	if (quic_stream_id_is_receive_only(ep, stream_id)) {
+		NET_DBG("[EP:%p/%d] MAX_STREAM_DATA for receive-only stream %" PRIu64,
+			ep, quic_get_by_ep(ep), stream_id);
+		quic_endpoint_send_connection_close(ep, QUIC_ERROR_STREAM_STATE_ERROR,
+						    "MAX_STREAM_DATA for a receive-only stream");
+		return -EPROTO;
+	}
+
 	/* Find the stream and update its TX flow control */
 	stream = quic_find_stream_by_id(ep, stream_id);
+	if (stream == NULL && ((stream_id & 1U) != 0U) == ep->is_server) {
+		struct quic_context *conn = quic_find_context(ep);
+
+		/* RFC 9000 ch. 19.10: a MAX_STREAM_DATA for a stream of ours
+		 * that was never created is a connection error of type
+		 * STREAM_STATE_ERROR. A stream that is not found can also be
+		 * one that is closed already, which is fine, so only an ID
+		 * past everything opened so far is taken as never created.
+		 */
+		if (conn != NULL && (stream_id >> 2) >= *quic_stream_id_counter(conn, stream_id)) {
+			NET_DBG("[EP:%p/%d] MAX_STREAM_DATA for stream %" PRIu64
+				" that was never opened",
+				ep, quic_get_by_ep(ep), stream_id);
+			quic_endpoint_send_connection_close(
+				ep, QUIC_ERROR_STREAM_STATE_ERROR,
+				"MAX_STREAM_DATA for a stream that was never opened");
+			return -EPROTO;
+		}
+	}
+
 	if (stream != NULL) {
 		if (max_stream_data > stream->remote_max_data) {
 			NET_DBG("[EP:%p/%d] MAX_STREAM_DATA: stream=%" PRIu64
@@ -1053,6 +1209,11 @@ static int handle_stream_data_blocked_frame(struct quic_endpoint *ep,
 
 	NET_DBG("[EP:%p/%d] STREAM_DATA_BLOCKED: stream=%" PRIu64 ", limit=%" PRIu64,
 		ep, quic_get_by_ep(ep), stream_id, max_stream_data);
+
+	ret = quic_check_not_send_only(ep, stream_id, "STREAM_DATA_BLOCKED");
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Find the stream and send MAX_STREAM_DATA */
 	stream = quic_find_stream_by_id(ep, stream_id);

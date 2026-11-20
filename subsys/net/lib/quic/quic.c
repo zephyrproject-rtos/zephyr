@@ -5007,7 +5007,7 @@ static bool quic_recovery_take_pending_retransmit(struct quic_endpoint *ep,
 static struct quic_stream *quic_readvertise_snapshot[ARRAY_SIZE(streams)];
 static K_MUTEX_DEFINE(quic_readvertise_lock);
 
-static void quic_readvertise_flow_control(struct quic_endpoint *ep)
+ZTESTABLE_STATIC void quic_readvertise_flow_control(struct quic_endpoint *ep)
 {
 	size_t count = 0;
 	struct quic_context *ctx;
@@ -5038,6 +5038,15 @@ static void quic_readvertise_flow_control(struct quic_endpoint *ep)
 		}
 
 		if (stream->ep != ep) {
+			continue;
+		}
+
+		/* We receive nothing on a send-only stream, so there is no
+		 * limit to advertise, and the peer would take a
+		 * MAX_STREAM_DATA for it as a connection error (RFC 9000
+		 * ch. 19.10).
+		 */
+		if (quic_stream_id_is_send_only(ep, stream->id)) {
 			continue;
 		}
 
@@ -7263,7 +7272,7 @@ ZTESTABLE_STATIC void quic_connection_accept_enqueue(struct quic_endpoint *child
 	}
 
 	child_ctx->listen = NULL;
-	child_ctx->stream_id_counter = 0ULL;
+	memset(child_ctx->stream_id_counter, 0, sizeof(child_ctx->stream_id_counter));
 	child_ctx->id = connection_ids++;
 	child_ctx->is_listening = false;
 

@@ -80,7 +80,7 @@ static int quic_connection_init(struct quic_context *ctx,
 					&net_sin(remote_addr)->sin_addr));
 	}
 
-	ctx->stream_id_counter = 0ULL;
+	memset(ctx->stream_id_counter, 0, sizeof(ctx->stream_id_counter));
 	ctx->id = connection_ids++;
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
@@ -1390,6 +1390,16 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 		return -ENOTCONN;
 	}
 
+	/* A unidirectional stream of the peer has no sending part on our
+	 * side, and the peer would take any STREAM frame on it as a
+	 * connection error (RFC 9000 ch. 19.8).
+	 */
+	if (quic_stream_id_is_receive_only(ep, stream->id)) {
+		NET_DBG("[ST:%p/%d] Stream %" PRIu64 " is receive-only", stream,
+			quic_get_by_stream(stream), stream->id);
+		return -EPIPE;
+	}
+
 	/* Check if the stream is in a state that allows sending */
 	state = quic_stream_get_state(stream);
 	if (state == STATE_RESET_SENT || state == STATE_DATA_READ) {
@@ -2287,8 +2297,10 @@ static int quic_stream_close_vmeth(void *obj)
 	 *   - No endpoint (connection already gone)
 	 *   - Stream was reset (RESET_STREAM already sent/received)
 	 *   - FIN was already sent (DATA_SENT or DATA_RECVD)
+	 *   - The stream is receive-only, a unidirectional stream of the peer
 	 */
-	if (ep != NULL && ep->crypto.application.initialized) {
+	if (ep != NULL && ep->crypto.application.initialized &&
+	    !quic_stream_id_is_receive_only(ep, stream->id)) {
 		state = quic_stream_get_state(stream);
 
 		if (state != STATE_RESET_SENT &&
@@ -2347,8 +2359,12 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 	/*
 	 * SHUT_WR (or SHUT_RDWR): send a STREAM+FIN to close our sending half.
 	 * RFC 9000 ch. 2.4.
+	 *
+	 * A receive-only stream has no sending half to close, and the peer
+	 * would take a FIN on it as a connection error (ch. 19.8).
 	 */
-	if (how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) {
+	if ((how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) &&
+	    !quic_stream_id_is_receive_only(ep, stream->id)) {
 		int state;
 
 		state = quic_stream_get_state(stream);
@@ -2394,8 +2410,12 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 	 *
 	 * Skip if the peer already sent FIN (stream is in SIZE_KNOWN or later),
 	 * all data has already arrived so there is nothing left to stop.
+	 *
+	 * A send-only stream has no receiving half, and the peer would take a
+	 * STOP_SENDING on it as a connection error (ch. 19.5).
 	 */
-	if (how == ZSOCK_SHUT_RD || how == ZSOCK_SHUT_RDWR) {
+	if ((how == ZSOCK_SHUT_RD || how == ZSOCK_SHUT_RDWR) &&
+	    !quic_stream_id_is_send_only(ep, stream->id)) {
 		int state;
 
 		state = quic_stream_get_state(stream);
@@ -2582,7 +2602,9 @@ int quic_connection_close(int sock)
 
 static uint64_t quic_stream_id_get(struct quic_stream *stream)
 {
-	return ((stream->conn->stream_id_counter++) << 2) | (uint64_t)stream->type;
+	uint64_t *counter = quic_stream_id_counter(stream->conn, stream->type);
+
+	return ((*counter)++ << 2) | (uint64_t)stream->type;
 }
 
 int quic_stream_open(int connection_sock,
