@@ -242,6 +242,11 @@ static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 	int ret = 0;
 
+	if (in_len == 0 && session->mode != CRYPTO_CIPHER_MODE_GCM &&
+	    session->mode != CRYPTO_CIPHER_MODE_CCM) {
+		return 0;
+	}
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
 	ret = hal1_l4_set_config(data, &session->config);
 #elif defined(CONFIG_STM32_HAL2)
