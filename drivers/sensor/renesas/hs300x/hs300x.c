@@ -14,7 +14,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
-#define HS300X_STATUS_MASK (BIT(0) | BIT(1))
+/* Status bits are the two MSBs of the first data byte, above humidity [13:8] */
+#define HS300X_STATUS_MASK GENMASK(7, 6)
 
 LOG_MODULE_REGISTER(HS300X, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -39,7 +40,7 @@ static int hs300x_read_sample(const struct device *dev, uint16_t *t_sample, uint
 		return rc;
 	}
 
-	if ((rx_buf[3] & HS300X_STATUS_MASK) != 0) {
+	if ((rx_buf[0] & HS300X_STATUS_MASK) != 0) {
 		LOG_ERR("Stale data");
 		return -EIO;
 	}
@@ -47,7 +48,7 @@ static int hs300x_read_sample(const struct device *dev, uint16_t *t_sample, uint
 	*rh_sample = sys_get_be16(rx_buf);
 	*t_sample = sys_get_be16(&rx_buf[2]);
 
-	/* Remove status bits (only present in temperature value)*/
+	/* The two LSBs of the temperature value are undetermined */
 	*t_sample >>= 2;
 
 	return 0;
