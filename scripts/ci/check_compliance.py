@@ -1864,6 +1864,88 @@ flagged.
 {undef_desc}""")
 
 
+class KconfigPrefixCheck(ComplianceTest):
+    """
+    Checks that the correct Kconfig prefix is used in the correct directories
+    """
+
+    name = "KconfigPrefix"
+    doc = zephyr_doc_detail_builder("/contribute/style/kconfig.html")
+    global_prefixes = tuple(
+        [
+            'HEAP_MEM_POOL_ADD_SIZE_',
+            'NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_',
+            'ZVFS_EVENTFD_ADD_SIZE_',
+            'ZVFS_OPEN_ADD_SIZE_',
+        ]
+    )
+
+    def _process(
+        self, prefix: str, path: str, path_excludes: tuple = None, allowed_kconfigs: tuple = None
+    ):
+        # TODO: choice symbols are deliberately excluded as they can be extended
+        config_regex = re.compile('^config(\\s+([a-zA-Z0-9_-]+)|\\s*\\\\)\\s*$')
+        menuconfig_regex = re.compile('^menuconfig(\\s+([a-zA-Z0-9_-]+)|\\s*\\\\)\\s*$')
+
+        for file in get_files(filter="d"):
+            if (
+                Path(file).name.startswith("Kconfig")
+                and file.startswith(path)
+                and 'defconfig' not in Path(file).name
+                and (path_excludes is None or not file.startswith(path_excludes))
+            ):
+                diff = git("diff", "-U0", "--no-color", COMMIT_RANGE, "--", file)
+
+                for patch in unidiff.PatchSet.from_string(diff):
+                    for hunk in patch:
+                        for line in hunk:
+                            if not line.is_added or line.target_line_no is None:
+                                continue
+
+                            if line.value[0] in ['+', '-']:
+                                trimmed_value = line.value[1:].strip()
+                            else:
+                                trimmed_value = line.value.strip()
+
+                            kconfig_name = re.search(config_regex, trimmed_value)
+
+                            if kconfig_name is None:
+                                kconfig_name = re.search(menuconfig_regex, trimmed_value)
+
+                            if kconfig_name is None:
+                                continue
+
+                            kconfig_name = kconfig_name.group(2)
+
+                            if (
+                                kconfig_name.startswith(prefix)
+                                or kconfig_name.startswith(self.global_prefixes)
+                                or (
+                                    allowed_kconfigs is not None
+                                    and kconfig_name.startswith(allowed_kconfigs)
+                                )
+                            ):
+                                continue
+
+                            self.fmtd_failure(
+                                "error",
+                                "KconfigPrefixCheck",
+                                file,
+                                line.target_line_no,
+                                desc=f"""
+Kconfig file does not use correct prefix: {prefix} for Kconfig: {kconfig_name}
+""",
+                            )
+
+    def run(self):
+        self._process(path='drivers/sensor', prefix='SENSOR_', allowed_kconfigs=tuple(['SENSOR']))
+        self._process(path='samples', prefix='SAMPLE_')
+        self._process(path='tests', prefix='TEST_')
+        self._process(path='boards', path_excludes=tuple(['boards/shields']), prefix='BOARD_')
+        self._process(path='boards/shields', prefix='SHIELD_')
+        self._process(path='soc', prefix='SOC_', allowed_kconfigs=tuple(['SOC']))
+
+
 class KconfigBasicCheck(KconfigCheck):
     """
     Checks if we are introducing any new warnings/errors with Kconfig,
