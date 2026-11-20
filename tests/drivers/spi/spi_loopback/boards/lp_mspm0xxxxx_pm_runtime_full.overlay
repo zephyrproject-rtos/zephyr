@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,system-timer-companion = &counterg0;
+	};
+};
+
+&counterg0 {
+	wakeup-source;
+	status = "okay";
+};
+
+&timg0 {
+	clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+	wakeup-source;
+	ti,clk-prescaler = <0>;
+	status = "okay";
+};
+
+&spi0 {
+	/*
+	 * Clock SPI from LFCLK (32768 Hz) so it keeps running in low-power states.
+	 * The max SPI frequency is LFCLK / 2 = 16384 Hz, so limit the test specs to that range.
+	 */
+	clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+	zephyr,pm-device-runtime-auto;
+
+	slow@0 {
+		spi-max-frequency = <8192>;
+	};
+
+	fast@0 {
+		spi-max-frequency = <16384>;
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&run0 &run1 &run2
+			    &stop0 &stop1 &stop2
+			    &stdby0 &stdby1>;
+};
