@@ -236,6 +236,11 @@ Boards
   (e.g. use :zephyr_file:`boards/nxp/mimxrt1180_evk/dts/cm7_flash_boot.overlay`
   instead of :file:`boards/nxp/mimxrt1180_evk/cm7_flash_boot.overlay`).
 
+* On the Alif Ensemble RTSS and Balletto cores, :kconfig:option:`CONFIG_NUM_IRQS` now defaults
+  to the highest IRQ of the enabled devicetree nodes plus one, instead of 480. Applications that
+  connect a higher IRQ with :c:macro:`IRQ_CONNECT()` or :c:func:`irq_connect_dynamic` must set
+  :kconfig:option:`CONFIG_NUM_IRQS` explicitly.
+
 Device Drivers and Devicetree
 *****************************
 
