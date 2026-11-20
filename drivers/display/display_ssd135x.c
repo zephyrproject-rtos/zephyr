@@ -214,7 +214,7 @@ static int ssd135x_write(const struct device *dev, const uint16_t x, const uint1
 	}
 
 	err = mipi_dbi_write_display(config->mipi_dev, &config->dbi_config, buf, &mipi_desc,
-				     PIXEL_FORMAT_RGB_565);
+				     PIXEL_FORMAT_RGB_565X);
 	if (err < 0) {
 		return err;
 	}
@@ -239,14 +239,14 @@ static void ssd135x_get_capabilities(const struct device *dev, struct display_ca
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
-	caps->current_pixel_format = PIXEL_FORMAT_RGB_565;
+	caps->supported_pixel_formats = PIXEL_FORMAT_RGB_565X;
+	caps->current_pixel_format = PIXEL_FORMAT_RGB_565X;
 	caps->screen_info = 0;
 }
 
 static int ssd135x_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
 {
-	if (pf == PIXEL_FORMAT_RGB_565) {
+	if (pf == PIXEL_FORMAT_RGB_565X) {
 		return 0;
 	}
 	LOG_ERR("Unsupported pixel format");
