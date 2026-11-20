@@ -1,0 +1,18 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+# Exercises the 64-bit system-clock tick interface (CONFIG_SYSTEM_CLOCK_LONG_WAIT).
+#
+# The suite is filtered to platforms whose timer driver advertises
+# SYSTEM_CLOCK_LONG_WAIT_CAPABLE (arm_arch_timer on ARM64, riscv_machine_timer
+# and riscv_supervisor_timer on RV64, and any future capable driver) and forces
+# the feature on, so the widened tick type and announce range are actually
+# validated rather than depending on the platform default.
+tests:
+  kernel.timer.long_wait:
+    tags:
+      - kernel
+      - timer
+    filter: CONFIG_SYSTEM_CLOCK_LONG_WAIT_CAPABLE
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_LONG_WAIT=y
