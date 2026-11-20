@@ -135,7 +135,8 @@ Libraries / Subsystems
   * Added the :ref:`STUN <stun_interface>` library, a codec for the messages of
     :rfc:`8489` with the attributes of ICE (:rfc:`8445`): parsing, building,
     MESSAGE-INTEGRITY, FINGERPRINT and the address attributes. A device finds out
-    its public address with the Binding transaction or the blocking socket client.
+    its public address with the Binding transaction, the blocking socket client
+    or the ``net stun`` shell commands.
 
   * OCPP: the charge point can authenticate to the central system with HTTP Basic
     authentication (:kconfig:option:`CONFIG_OCPP_BASIC_AUTH`), with the credentials set in the
