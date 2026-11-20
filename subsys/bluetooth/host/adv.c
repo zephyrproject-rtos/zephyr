@@ -2332,10 +2332,30 @@ int bt_le_per_adv_set_info_transfer(const struct bt_le_ext_adv *adv,
 
 #if defined(CONFIG_BT_EXT_ADV)
 #if defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
+/* Nothing will take a connection complete event that waits for a set that is gone */
+static void cached_conn_complete_drop(const struct bt_hci_evt_le_adv_set_terminated *evt)
+{
+	ARRAY_FOR_EACH_PTR(bt_dev.cached_conn_complete, cached) {
+		if (evt->status == BT_HCI_ERR_SUCCESS && cached->valid &&
+		    cached->evt.handle == evt->conn_handle) {
+			cached->valid = false;
+			break;
+		}
+	}
+}
+#else
+static void cached_conn_complete_drop(const struct bt_hci_evt_le_adv_set_terminated *evt)
+{
+	ARG_UNUSED(evt);
+}
+#endif
+
 static void adv_set_terminated(struct bt_le_ext_adv *adv,
 			       const struct bt_hci_evt_le_adv_set_terminated *evt)
 {
 	uint16_t conn_handle = sys_le16_to_cpu(evt->conn_handle);
+	uint8_t disconnect_reason = BT_HCI_ERR_SUCCESS;
 #if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
 	bool was_adv_enabled;
 #endif
@@ -2361,10 +2381,13 @@ static void adv_set_terminated(struct bt_le_ext_adv *adv,
 				 * complete event has been raised to the application, we
 				 * discard the event.
 				 */
+				disconnect_reason =
+					bt_dev.cached_conn_complete[i].disconnect_reason;
 				bt_hci_le_enh_conn_complete(&bt_dev.cached_conn_complete[i].evt,
-							    adv);
+							    adv, disconnect_reason);
 			}
 			bt_dev.cached_conn_complete[i].valid = false;
+			break;
 		}
 	}
 #endif
@@ -2429,6 +2452,11 @@ static void adv_set_terminated(struct bt_le_ext_adv *adv,
 	if (adv == bt_dev.adv) {
 		bt_le_adv_delete_legacy();
 	}
+
+	/* The controller reported the disconnection ahead of this event */
+	if (IS_ENABLED(CONFIG_BT_CONN) && disconnect_reason != BT_HCI_ERR_SUCCESS) {
+		bt_hci_conn_disconnected(conn_handle, disconnect_reason);
+	}
 }
 
 void bt_hci_le_adv_set_terminated(struct net_buf *buf)
@@ -2445,6 +2473,7 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 
 	if (adv == NULL) {
 		LOG_ERR("No valid adv for handle %u", evt->adv_handle);
+		cached_conn_complete_drop(evt);
 		return;
 	}
 
