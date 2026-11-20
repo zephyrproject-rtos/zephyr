@@ -68,8 +68,8 @@ enum sensor_attribute_stc31 {
 	/**
 	 * Binary gas / measurement mode argument for command 0x3615.
 	 *
-	 * See :c:macro:`STC31_DT_BINARY_GAS_*` in
-	 * :file:`zephyr/dt-bindings/sensor/stc31.h`.
+	 * Use one of the @c STC31_DT_BINARY_GAS_* values from
+	 * @ref zephyr/dt-bindings/sensor/stc31.h.
 	 */
 	SENSOR_ATTR_STC31_BINARY_GAS,
 };

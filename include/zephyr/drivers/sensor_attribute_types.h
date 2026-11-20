@@ -36,13 +36,20 @@ extern "C" {
  *   - SENSOR_ATTR_OFFSET
  */
 struct sensor_three_axis_attribute {
+	/**
+	 * Scaling of the q31 values: a value @c v stands for v * 2^(shift - 31) in the unit of
+	 * the channel.
+	 */
 	int8_t shift;
+	/** Values, per axis or as an array. */
 	union {
+		/** Values per axis. */
 		struct {
-			q31_t x;
-			q31_t y;
-			q31_t z;
+			q31_t x; /**< X-axis value. */
+			q31_t y; /**< Y-axis value. */
+			q31_t z; /**< Z-axis value. */
 		};
+		/** X, Y and Z values. */
 		q31_t values[3];
 	};
 };
