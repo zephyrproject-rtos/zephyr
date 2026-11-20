@@ -696,7 +696,11 @@ enum hl78xx_evt_type {
 	HL78XX_LTE_FOTA_UPDATE_STATUS,
 	/** DNS resolution path completed and modem is ready for data transmission */
 	HL78XX_LTE_DNS_READY,
-	/** The AT command interface is ready for application use. */
+	/** The AT command interface is ready for application use. Dispatched once
+	 * per modem session, when the driver reaches airplane mode, the wait for
+	 * a registration or GNSS mode: after a power-up, and again after a
+	 * restart of the modem.
+	 */
 	HL78XX_LTE_AT_CMD_READY,
 	/** Phone functionality changed (+CFUN) */
 	HL78XX_LTE_PHONE_FUNCTIONALITY_UPDATE,
@@ -1672,6 +1676,13 @@ static inline bool hl78xx_at_is_busy(const struct device *dev)
  *
  * Configures the operational state of the modem (e.g., full, airplane, or minimum functionality).
  * Optionally, the modem can be reset during this transition.
+ *
+ * A request for full functionality without a reset, made in airplane mode before the driver
+ * has configured the modem in the current session, is not sent at once: the driver runs its
+ * initialization and configuration first and enables full functionality at their end. The
+ * call then returns 0 before the modem changes its functionality. The driver performs this
+ * deferred restore from airplane mode, and from GNSS mode once a search has been started; a
+ * request made in GNSS mode before that is not acted on.
  *
  * @param dev Pointer to the modem device instance.
  * @param functionality Desired phone functionality mode to be set.

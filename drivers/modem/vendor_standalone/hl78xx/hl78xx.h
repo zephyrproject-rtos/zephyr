@@ -214,6 +214,8 @@ enum hl78xx_event {
 	MODEM_HL78XX_EVENT_NTN_POSREQ,
 #endif /* CONFIG_MODEM_HL78XX_NTN_SUPPORT */
 	MODEM_HL78XX_EVENT_PHONE_FUNCTIONALITY_CHANGED,
+	/* Full functionality requested before the init chain ran in this session */
+	MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED,
 #ifdef CONFIG_HL78XX_GNSS
 	MODEM_HL78XX_EVENT_GNSS_START_REQUESTED,
 	MODEM_HL78XX_EVENT_GNSS_SEARCH_STARTED,
@@ -225,7 +227,6 @@ enum hl78xx_event {
 	/* Explicit GNSS mode switching events */
 	MODEM_HL78XX_EVENT_GNSS_MODE_ENTER_REQUESTED,
 	MODEM_HL78XX_EVENT_GNSS_MODE_EXIT_REQUESTED,
-	MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED,
 #endif /* CONFIG_HL78XX_GNSS */
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	MODEM_HL78XX_EVENT_DEVICE_ASLEEP,
@@ -329,6 +330,12 @@ struct hl78xx_power_down_status {
 	 * back to the state machine.
 	 */
 	bool pdp_activation_held;
+	/** The power down work asked the chat to abort its script. RUN_INIT_SCRIPT
+	 * takes the failure of its script for that abort, also when the power
+	 * down has been aborted since. Cleared there, and when
+	 * hl78xx_start_state_script() starts a script.
+	 */
+	bool script_aborted;
 };
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
@@ -654,6 +661,17 @@ struct modem_event_system {
 	uint8_t event_buf[8];
 	struct ring_buf event_rb;
 	struct k_mutex event_rb_lock;
+	/* Script results (success, failure, AT command timeout) queued and not
+	 * handled yet: a state that must tell the result of its own script from
+	 * that of an earlier one starts its script when none is left.
+	 */
+	atomic_t script_results_queued;
+	/* The current state waits to start its script: another script held the
+	 * chat, a script result was still queued, or a power down stopped the
+	 * script. Until the script starts, a script result is not the result of
+	 * that script: see hl78xx_is_stale_script_result().
+	 */
+	bool script_start_deferred;
 };
 
 enum hl78xx_at_cmd_terminal_result {
@@ -1361,11 +1379,12 @@ void hl78xx_enter_lte_restore_state(struct hl78xx_data *data);
  * Must be called at every hardware session boundary: cold power-on
  * (AWAIT_POWER_ON entry), graceful power-down (INIT_POWER_OFF entry) and
  * detected unexpected restart (+KSUP while already booted). The modem's RAM
- * state is gone at these points, so any driver-side record of it — the cached
- * phone functionality and the GNSS engine/search latches — is stale and must
- * not survive into the next session. (Leaving them set is what made GNSS
- * permanently unstartable: a gnss_start_status latched true could only be
- * cleared by a +GNSSEV stop URC that a powered-off modem can never send.)
+ * state is gone at these points, so any driver-side record of it is stale and
+ * must not survive into the next session: the cached phone functionality, the
+ * first-attach state and the GNSS engine/search latches. (Leaving the latches
+ * set is what made GNSS permanently unstartable: a gnss_start_status latched
+ * true could only be cleared by a +GNSSEV stop URC that a powered-off modem
+ * can never send.)
  *
  * Deliberately does NOT touch request/intent flags (gnss_mode_enter_pending):
  * those record what the caller wants, not what the hardware was doing, and the
