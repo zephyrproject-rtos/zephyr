@@ -9,4 +9,13 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
 
+# The CPU fetches its reset vector from BFM (0x08000000) while application
+# code lives in PFM (0x0C000000). Relocate the vector table to BFM for
+# standalone images; under MCUboot each image keeps its vector table in slot0.
+config ROMSTART_RELOCATION_ROM
+	default y if !(BOOTLOADER_MCUBOOT || MCUBOOT)
+
+config ROMSTART_REGION_ADDRESS
+	default $(dt_nodelabel_reg_addr_hex,flash0)
+
 endif # SOC_FAMILY_MICROCHIP_PIC32CZ_CA
