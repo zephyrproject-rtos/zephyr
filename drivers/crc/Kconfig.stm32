@@ -1,6 +1,16 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
+config CRC_STM32F1
+	bool "STM32F1 CRC driver"
+	default y
+	depends on DT_HAS_ST_STM32F1_CRC_ENABLED
+	select CRC_DRIVER_HAS_CRC32_IEEE
+	select CRC_DRIVER_HAS_CRC32_MPEG2
+	select CRC_DRIVER_NEEDS_WORDS
+	help
+	  Enables STM32 family CRC driver for the F1, F2, F4 and L1 series.
+
 menuconfig CRC_STM32
 	bool "STM32 CRC driver"
 	default y
@@ -18,7 +28,7 @@ menuconfig CRC_STM32
 	select CRC_DRIVER_HAS_CRC32_IEEE
 	select CRC_DRIVER_HAS_CRC32_MPEG2
 	help
-	  Enables STM32 family CRC driver.
+	  Enables STM32 family CRC driver for the F0, F3, L0, L4, L5 and all non-F non-L series.
 
 if CRC_STM32
 

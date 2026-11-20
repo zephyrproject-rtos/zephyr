@@ -23,6 +23,7 @@
 
 / {
 	chosen {
+		zephyr,crc = &crc;
 		zephyr,flash-controller = &flash;
 		zephyr,system-timer-companion = &rtc;
 	};
@@ -564,6 +565,14 @@
 				#gpio-cells = <2>;
 				clocks = <&rcc STM32_CLOCK(AHB1, 7)>;
 			};
+		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32f1-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
+			resets = <&rctl STM32_RESET(AHB1, 12)>;
+			status = "disabled";
 		};
 
 		rcc: rcc@40023800 {
