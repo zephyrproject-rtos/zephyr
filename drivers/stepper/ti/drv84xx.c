@@ -47,6 +47,7 @@ struct drv84xx_data {
 	struct drv84xx_pin_states pin_states;
 	enum stepper_micro_step_resolution ustep_res;
 	struct gpio_callback fault_cb_data;
+	struct k_work fault_work;
 	stepper_event_cb_t fault_cb;
 	void *fault_cb_user_data;
 };
@@ -352,15 +353,29 @@ static int drv84xx_get_micro_step_res(const struct device *dev,
 	return 0;
 }
 
-void fault_event(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+static void fault_event(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
 	struct drv84xx_data *data = CONTAINER_OF(cb, struct drv84xx_data, fault_cb_data);
+	int ret;
+
+	ARG_UNUSED(port);
+	ARG_UNUSED(pins);
+
+	ret = k_work_submit(&data->fault_work);
+	if (ret < 0) {
+		LOG_ERR("%s: Failed to submit fault work (error: %d)", data->dev->name, ret);
+	}
+}
+
+static void fault_work_handler(struct k_work *work)
+{
+	struct drv84xx_data *data = CONTAINER_OF(work, struct drv84xx_data, fault_work);
 
 	if (data->fault_cb != NULL) {
 		data->fault_cb(data->dev, STEPPER_EVENT_FAULT_DETECTED,
 			data->fault_cb_user_data);
 	} else {
-		LOG_WRN_ONCE("%s: Fault pin triggered but no callback is set", dev->name);
+		LOG_WRN_ONCE("%s: Fault pin triggered but no callback is set", data->dev->name);
 	}
 }
 
@@ -433,6 +448,7 @@ static int drv84xx_init(const struct device *dev)
 			return ret;
 		}
 
+		k_work_init(&data->fault_work, fault_work_handler);
 		gpio_init_callback(&data->fault_cb_data, fault_event, BIT(config->fault_pin.pin));
 	}
 
