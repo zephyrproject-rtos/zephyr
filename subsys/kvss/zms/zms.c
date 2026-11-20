@@ -817,8 +817,11 @@ static void zms_sector_advance(struct zms_fs *fs, uint64_t *addr)
 static int zms_sector_close(struct zms_fs *fs)
 {
 	int rc;
+	int wrt_rc = 0;
 	struct zms_ate close_ate;
 	struct zms_ate garbage_ate;
+	uint64_t ate_wra_prev;
+	uint64_t close_ate_addr;
 
 	/* Initialize all members to 0xff */
 	memset(&close_ate, 0xff, sizeof(struct zms_ate));
@@ -848,11 +851,23 @@ static int zms_sector_close(struct zms_fs *fs)
 		}
 	}
 
-	fs->ate_wra = zms_close_ate_addr(fs, fs->ate_wra);
+	ate_wra_prev = fs->ate_wra;
+
+	close_ate_addr = zms_close_ate_addr(fs, fs->ate_wra);
+	fs->ate_wra = close_ate_addr;
 
 	zms_ate_crc8_update(&close_ate);
 
-	(void)zms_flash_ate_wrt(fs, &close_ate);
+	wrt_rc = zms_flash_ate_wrt(fs, &close_ate);
+	if (wrt_rc) {
+		if (zms_flash_cmp_const(fs, close_ate_addr,
+					fs->flash_parameters->erase_value,
+					sizeof(struct zms_ate)) == 0) {
+			fs->ate_wra = ate_wra_prev;
+			return wrt_rc;
+		}
+		fs->ate_wra -= fs->ate_size;
+	}
 
 	zms_sector_advance(fs, &fs->ate_wra);
 
@@ -867,7 +882,7 @@ static int zms_sector_close(struct zms_fs *fs)
 
 	fs->data_wra = fs->ate_wra & ADDR_SECT_MASK;
 
-	return 0;
+	return wrt_rc;
 }
 
 static int zms_add_gc_done_ate(struct zms_fs *fs)
