@@ -4,6 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/nxp-siul2-gpio.h>
+
+/ {
+	zephyr,user {
+		wake-gpios = <&gpioe_l 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP |
+					  NXP_SIUL2_GPIO_INT_WKPU)>;
+	};
+};
+
+&gpioe_l {
+	status = "okay";
+};
+
 /* Enable the Wake-up Unit. The RTC counter (used as the internal stimulus) is
  * already enabled in the board devicetree.
  */
