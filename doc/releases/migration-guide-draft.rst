@@ -184,6 +184,14 @@ Boards
   CPU ``clock-frequency`` when ``/cpus`` has no ``timebase-frequency``. Out-of-tree boards must
   set ``timebase-frequency`` on the ``/cpus`` node. (:github:`124446`)
 
+* :zephyr:board:`bbc_microbit` and :zephyr:board:`bbc_microbit_v2` now drive their LED matrix with
+  :dtcompatible:`charlieplex-led-matrix` instead of :dtcompatible:`nordic,nrf-led-matrix`. The
+  new driver lights one LED at a time, so the display is dimmer, and the boards configure it for
+  on/off pixels only, so brightness levels have no effect. Code that gets the device with
+  ``DEVICE_DT_GET_ONE(nordic_nrf_led_matrix)`` must use
+  ``DEVICE_DT_GET(DT_CHOSEN(zephyr_display))``. To keep the previous driver, use an overlay like
+  the ones in :zephyr_file:`samples/boards/nordic/nrf_led_matrix/boards`.
+
 Device Drivers and Devicetree
 *****************************
 

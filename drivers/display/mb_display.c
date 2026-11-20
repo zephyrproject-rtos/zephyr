@@ -399,7 +399,7 @@ struct mb_display *mb_display_get(void)
 static int mb_display_init_on_boot(void)
 {
 
-	display.lm_dev = DEVICE_DT_GET_ONE(nordic_nrf_led_matrix);
+	display.lm_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display.lm_dev)) {
 		LOG_ERR("Display controller device not ready");
 		return -ENODEV;

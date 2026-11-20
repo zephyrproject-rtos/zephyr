@@ -19,6 +19,10 @@ of GPIOs available for driving an LED matrix. To do it, one needs to add an
 overlay file with the corresponding ``"nordic,nrf-led-matrix"`` compatible
 node.
 
+Both micro:bit boards drive their matrix with :dtcompatible:`charlieplex-led-matrix`
+by default. The overlays in :zephyr_file:`samples/boards/nordic/nrf_led_matrix/boards`
+replace it with a ``"nordic,nrf-led-matrix"`` node.
+
 Building and Running
 ********************
 
