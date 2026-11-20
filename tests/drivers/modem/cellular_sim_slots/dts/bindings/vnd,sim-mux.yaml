@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MUX controller of the SIM slot selection test, which can be made to fail
+  the next state changes.
+
+compatible: "vnd,sim-mux"
+
+include: [base.yaml, mux-controller.yaml]
+
+mux-state-cells:
+  - state

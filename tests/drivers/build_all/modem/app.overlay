@@ -31,4 +31,11 @@
 			status = "okay";
 		};
 	};
+
+	test_sim_mux: test-sim-mux {
+		compatible = "gpio-mux";
+		#mux-control-cells = <0>;
+		#mux-state-cells = <1>;
+		mux-gpios = <&test_gpio 1 0>;
+	};
 };
