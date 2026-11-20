@@ -104,6 +104,33 @@ NET_DEVICE_INIT(test_if_connected_b,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2),
 		127);
 
+/* Two ifaces not used by the other tests, so that there are more ifaces than the connection
+ * manager can monitor (CONN_MGR_IFACE_MAX). Named to come last in iface index order.
+ */
+NET_DEVICE_INIT(test_if_unused_a,
+		"test_if_unused_a",
+		test_iface_netdev_init,
+		NULL,
+		NULL,
+		NULL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		&test_iface_api,
+		DUMMY_L2,
+		NET_L2_GET_CTX_TYPE(DUMMY_L2),
+		127);
+
+NET_DEVICE_INIT(test_if_unused_b,
+		"test_if_unused_b",
+		test_iface_netdev_init,
+		NULL,
+		NULL,
+		NULL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		&test_iface_api,
+		DUMMY_L2,
+		NET_L2_GET_CTX_TYPE(DUMMY_L2),
+		127);
+
 /* A dummy ETHERNET_L2 iface so that we can test L2 ignore.
  * This iface is not properly defined, do not attempt to use it.
  */
