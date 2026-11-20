@@ -27,6 +27,10 @@
 #include <zephyr/arch/arm/cortex_a_r/cpu.h>
 #endif
 
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#include <zephyr/arch/arm/cortex_m/cpu.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
