@@ -299,7 +299,13 @@ static void polling_rx_timeout_handler(struct k_timer *timer)
 
 	while ((ring_buf_space_get(&sh_uart->rx_ringbuf) > 0) &&
 	       (uart_poll_in(sh_uart->common.dev, &c) == 0)) {
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
+		if (smp_shell_rx_bytes(&sh_uart->common.smp, &c, 1) == 0) {
+			ring_buf_put(&sh_uart->rx_ringbuf, &c, 1);
+		}
+#else
 		ring_buf_put(&sh_uart->rx_ringbuf, &c, 1);
+#endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
 		sh_uart->common.handler(SHELL_TRANSPORT_EVT_RX_RDY, sh_uart->common.context);
 	}
 }
