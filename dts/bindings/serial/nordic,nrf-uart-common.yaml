@@ -25,6 +25,12 @@ properties:
     description: |
       Initial baud rate setting for UART.
 
+  max-speed:
+    type: int
+    default: 1000000
+    description: |
+      Maximum baud rate supported by the UART. Standard UARTE instance supports up to 1000000 buads.
+
   current-speed-is-enum:
     type: boolean
     description: |
