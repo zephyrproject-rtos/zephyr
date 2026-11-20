@@ -511,7 +511,7 @@ dvp_20pin_interface: &ceu {};
 
 	ext_flash_ctrl: flash-controller@1 {
 		compatible = "renesas,ra-ospi-b-nor";
-		reg = <1>;
+		reg = <0x1 0x0>;
 		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
 		protocol-mode = <OSPI_OPI_MODE>;
 		nor-max-frequency = <DT_FREQ_M(166)>;

@@ -264,14 +264,15 @@ i2s1: &flexcomm3 {
 };
 
 &flexspi {
+	ranges = <0x18000000 0x18000000 DT_SIZE_M(128)>;
 	pinctrl-0 = <&pinmux_flexspi>;
 	pinctrl-names = "default";
 	status = "okay";
 
 	ext_flash_ctrl: flash-controller@2 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
-		reg = <2>;
-		ranges = <0x0 0x18000000 DT_SIZE_M(64)>;
+		reg = <0x2 0x0>;
+		ranges = <0x0 0x18000000 DT_SIZE_M(128)>;
 		/* MX25UM51245G is 64MB, 512MBit flash part */
 		size = <DT_SIZE_M(64 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(120)>;
@@ -292,7 +293,6 @@ i2s1: &flexcomm3 {
 			#size-cells = <1>;
 
 			partitions {
-
 				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;

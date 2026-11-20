@@ -549,9 +549,10 @@
 		ospi0: ospi@40268000 {
 			compatible = "renesas,ra-ospi-b";
 			reg = <0x40268000 0x19c>, <0x80000000 DT_SIZE_M(512)>;
+			ranges = <0x80000000 0x80000000 DT_SIZE_M(512)>;
 			unit = <0>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			clocks = <&octaspiclk MSTPB 16>;
 			status = "disabled";
 		};

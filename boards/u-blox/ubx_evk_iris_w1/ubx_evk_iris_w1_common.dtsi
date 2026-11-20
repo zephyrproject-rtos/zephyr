@@ -113,7 +113,7 @@
 
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		reg = <0>;
+		reg = <0x0 0x0>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
 
 		#address-cells = <1>;

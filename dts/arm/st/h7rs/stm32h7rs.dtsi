@@ -1039,11 +1039,12 @@
 		xspi1: spi@52005000 {
 			compatible = "st,stm32-xspi";
 			reg = <0x52005000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
+			ranges = <0x90000000 0x90000000 DT_SIZE_M(256)>;
 			interrupts = <105 0>;
 			clock-names = "xspix";
 			clocks = <&rcc STM32_CLOCK(AHB5, 5)>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "disabled";
 		};
 
@@ -1060,11 +1061,12 @@
 		xspi2: spi@5200a000 {
 			compatible = "st,stm32-xspi";
 			reg = <0x5200a000 0x1000>, <0x70000000 DT_SIZE_M(256)>;
+			ranges = <0x70000000 0x70000000 DT_SIZE_M(128)>;
 			interrupts = <106 0>;
 			clock-names = "xspix";
 			clocks = <&rcc STM32_CLOCK(AHB5, 12)>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "disabled";
 		};
 

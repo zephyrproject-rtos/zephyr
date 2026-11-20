@@ -109,6 +109,7 @@
 
 	sim_flash: sim_flash {
 		compatible = "zephyr,sim-flash";
+		ranges;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -117,6 +118,9 @@
 		flash_sim0: flash_sim@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x00000000 DT_SIZE_K(1024)>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			erase-block-size = <1024>;
 			write-block-size = <4>;

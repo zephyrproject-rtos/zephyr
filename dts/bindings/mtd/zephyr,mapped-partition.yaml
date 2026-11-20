@@ -13,6 +13,8 @@ compatible: "zephyr,mapped-partition"
 
 include: base.yaml
 
+cpu-mapped: true
+
 properties:
   "#address-cells":
     type: int

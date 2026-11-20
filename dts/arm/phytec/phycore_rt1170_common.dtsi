@@ -85,12 +85,10 @@
 };
 
 &flexspi {
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
+	ranges = <0x30000000 0x30000000 DT_SIZE_M(16)>;
 	pinctrl-0 = <&pinmux_flexspi1>;
 	pinctrl-names = "default";
-};
-
-&flexspi {
-	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
@@ -99,7 +97,7 @@
 
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		reg = <0>;
+		reg = <0x0 0x0>;
 		ranges = <0x0 0x30000000 DT_SIZE_M(16)>;
 		/* MX25U12832FM2I02 is 16MB, 128MBit flash part */
 		size = <DT_SIZE_M(16 * 8)>;
