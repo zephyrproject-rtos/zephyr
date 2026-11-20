@@ -3,8 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief NXP Kinetis-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_kinetis
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NXP_KINETIS_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NXP_KINETIS_GPIO_H_
+
+/**
+ * @defgroup gpio_interface_kinetis Kinetis-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ * @{
+ */
 
 /**
  * @name GPIO drive strength flags
@@ -29,6 +42,8 @@
 
 /** Alternative drive strength. */
 #define KINETIS_GPIO_DS_ALT (0x3U << KINETIS_GPIO_DS_POS)
+
+/** @} */
 
 /** @} */
 

@@ -3,8 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief NXP i.MX IGPIO-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_imx_igpio
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NXP_IMX_IGPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NXP_IMX_IGPIO_H_
+
+/**
+ * @defgroup gpio_interface_imx_igpio i.MX IGPIO-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ * @{
+ */
 
 /**
  * @name GPIO pull strength flags
@@ -24,9 +37,12 @@
 #define NXP_IGPIO_PULL_STRENGTH_MASK (0x1U << NXP_IGPIO_PULL_STRENGTH_POS)
 /** @endcond */
 
-/** pull up/down strengths (only applies to CONFIG_SOC_SERIES_IMXRT10XX) */
+/** Weak pull-up/pull-down (i.MX RT10xx only). */
 #define NXP_IGPIO_PULL_WEAK (0x0U << NXP_IGPIO_PULL_STRENGTH_POS)
+/** Strong pull-up/pull-down (i.MX RT10xx only). */
 #define NXP_IGPIO_PULL_STRONG (0x1U << NXP_IGPIO_PULL_STRENGTH_POS)
+
+/** @} */
 
 /** @} */
 

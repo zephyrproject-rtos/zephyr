@@ -3,8 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Andes ATCGPIO100-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_atcgpio100
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ANDESTECH_ATCGPIO100_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ANDESTECH_ATCGPIO100_H_
+
+/**
+ * @defgroup gpio_interface_atcgpio100 ATCGPIO100-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ * @{
+ */
 
 /**
  * @brief Enable GPIO pin debounce.
@@ -14,5 +27,7 @@
  * Corporation ATCGPIO100 SoCs.
  */
 #define ATCGPIO100_GPIO_DEBOUNCE (1U << 8)
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ANDESTECH_ATCGPIO100_H_ */
