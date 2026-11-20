@@ -87,9 +87,9 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 #define CH_ABORT(chan) (BIT64(40 + chan) | BIT64(32 + chan))
 
 /* channel susp/resume write enable pos */
-#define CH_RESUME_WE(chan) (BIT64(24) + (chan))
+#define CH_RESUME_WE(chan) (BIT64(24 + (chan)))
 /* channel resume bit pos */
-#define CH_RESUME(chan)    (BIT64(16) + (chan))
+#define CH_RESUME(chan)    (BIT64(16 + (chan)))
 
 #define DMA_DW_AXI_CHAN_OFFSET(chan)             (0x100 * chan)
 
@@ -141,6 +141,13 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 #define DMA_DW_AXI_CFG_HW_HS_DST_BIT_POS         36
 
 #define DMA_DW_AXI_CFG_PRIORITY(x)               FIELD_PREP(GENMASK64(51, 47), x)
+
+/*
+ * Outstanding request limits (value + 1 requests). Same position in the
+ * CHx_CFG layouts for up to 8 and for more than 8 channels.
+ */
+#define DMA_DW_AXI_CFG_SRC_OSR_LMT(x)            FIELD_PREP(GENMASK64(58, 55), x)
+#define DMA_DW_AXI_CFG_DST_OSR_LMT(x)            FIELD_PREP(GENMASK64(62, 59), x)
 
 /* descriptor valid or not */
 #define DMA_DW_AXI_CTL_LLI_VALID                 BIT64(63)
@@ -298,6 +305,9 @@ struct dma_dw_axi_dev_cfg {
 	void (*irq_config)(void);
 	/* max number of channel supported by dma controller */
 	uint32_t max_channel;
+	/* source/destination outstanding request limits for all channels */
+	uint8_t src_osr_lmt;
+	uint8_t dst_osr_lmt;
 };
 
 /**
@@ -552,7 +562,8 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 	msize_src = DMA_DW_AXI_GET_MSIZE(cfg->source_burst_length);
 	msize_dst = DMA_DW_AXI_GET_MSIZE(cfg->dest_burst_length);
 
-	chan_data->cfg = 0;
+	chan_data->cfg = DMA_DW_AXI_CFG_SRC_OSR_LMT(dw_dma_config->src_osr_lmt) |
+			 DMA_DW_AXI_CFG_DST_OSR_LMT(dw_dma_config->dst_osr_lmt);
 	chan_data->irq_unmask = 0;
 
 	chan_data->direction = cfg->channel_direction;
@@ -606,7 +617,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 			chan_data->cfg |= DMA_DW_AXI_CFG_TT_FC(M2P_DMAC);
 			lli_desc->ctl |= DMA_DW_AXI_CTL_SRC_MSIZE(msize_src) |
 					DMA_DW_AXI_CTL_DST_MSIZE(msize_dst);
-			WRITE_BIT(chan_data->cfg, DMA_DW_AXI_CFG_HW_HS_DST_BIT_POS, 0);
+			chan_data->cfg &= ~BIT64(DMA_DW_AXI_CFG_HW_HS_DST_BIT_POS);
 
 			/* assign a hardware handshake interface */
 			chan_data->cfg |= DMA_DW_AXI_CFG_DST_PER(cfg->dma_slot);
@@ -615,7 +626,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 			lli_desc->ctl |= DMA_DW_AXI_CTL_SRC_MSIZE(msize_src) |
 					DMA_DW_AXI_CTL_DST_MSIZE(msize_dst);
 			chan_data->cfg |= DMA_DW_AXI_CFG_TT_FC(P2M_DMAC);
-			WRITE_BIT(chan_data->cfg, DMA_DW_AXI_CFG_HW_HS_SRC_BIT_POS, 0);
+			chan_data->cfg &= ~BIT64(DMA_DW_AXI_CFG_HW_HS_SRC_BIT_POS);
 
 			/* assign a hardware handshake interface */
 			chan_data->cfg |= DMA_DW_AXI_CFG_SRC_PER(cfg->dma_slot);
@@ -639,7 +650,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 		lli_desc->ctl |= DMA_DW_AXI_CTL_AW_CACHE_WIDTH(DMA_DW_AXI_AXCACHE);
 
 		/* set pointer to the next descriptor */
-		lli_desc->llp = ((uint64_t)(lli_desc + 1));
+		lli_desc->llp = (uint64_t)(uintptr_t)(lli_desc + 1);
 
 #if defined(CONFIG_DMA_DW_AXI_LLI_SUPPORT)
 		/* configure multi block transfer size as linked list */
@@ -743,7 +754,7 @@ static int dma_dw_axi_start(const struct device *dev, uint32_t channel)
 	lli_desc = chan_data->lli_desc_current;
 
 #if defined(CONFIG_DMA_DW_AXI_LLI_SUPPORT)
-	sys_write64(((uint64_t)lli_desc), reg_base + DMA_DW_AXI_CH_LLP(channel));
+	sys_write64((uint64_t)(uintptr_t)lli_desc, reg_base + DMA_DW_AXI_CH_LLP(channel));
 #else
 	/* Program Source and Destination addresses */
 	sys_write64(lli_desc->sar, reg_base + DMA_DW_AXI_CH_SAR(channel));
@@ -794,16 +805,10 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 	 */
 	sys_write64(CH_SUSP(channel), reg_base + DMA_DW_AXI_CHENREG);
 
-	/* Try to disable the channel */
-	sys_clear_bit(reg_base + DMA_DW_AXI_CHENREG, channel);
-
-	/* Bit [channel+16] is the write-enable mask for the channel-enable
-	 * bit above. Hardware only latches the write to the enable bit
-	 * (channel) if its corresponding write-enable bit is also set in
-	 * the same write; otherwise the clear is ignored. Set it here so
-	 * the disable request actually takes effect.
+	/* Try to disable the channel: the write to CH_EN only takes effect
+	 * if the matching CH_EN_WE bit (channel + 8) is set in the same write.
 	 */
-	sys_set_bit(reg_base + DMA_DW_AXI_CHENREG, channel + 16);
+	sys_write64(BIT64(8 + channel), reg_base + DMA_DW_AXI_CHENREG);
 
 	is_channel_busy = dma_dw_axi_is_chan_busy(reg_base, channel);
 
@@ -892,7 +897,7 @@ static int dma_dw_axi_suspend(const struct device *dev, uint32_t channel)
 static int dma_dw_axi_init(const struct device *dev)
 {
 	DEVICE_MMIO_NAMED_MAP(dev, dma_mmio, K_MEM_CACHE_NONE);
-	int i, ret;
+	int i;
 	struct dma_dw_axi_ch_data *chan_data;
 	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
 	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
@@ -900,6 +905,8 @@ static int dma_dw_axi_init(const struct device *dev)
 #if DMA_DW_AXI_RESET_SUPPORTED
 
 	if (dw_dma_config->reset.dev != NULL) {
+		int ret;
+
 	/* check if reset manager is in ready state */
 		if (!device_is_ready(dw_dma_config->reset.dev)) {
 			LOG_ERR("reset controller device not found");
@@ -973,7 +980,12 @@ static DEVICE_API(dma, dma_dw_axi_driver_api) = {
 			(DW_AXI_DMA_RESET_SPEC_INIT(inst)))				\
 		.irq_config = dw_dma_irq_config_##inst,					\
 		.max_channel = DT_INST_PROP(inst, dma_channels), \
+		.src_osr_lmt = DT_INST_PROP(inst, snps_src_osr_limit),			\
+		.dst_osr_lmt = DT_INST_PROP(inst, snps_dst_osr_limit),			\
 	};										\
+	BUILD_ASSERT(DT_INST_PROP(inst, snps_src_osr_limit) <= 15 &&			\
+		     DT_INST_PROP(inst, snps_dst_osr_limit) <= 15,			\
+		     "outstanding request limits must be in the range 0-15");		\
 											\
 	DEVICE_DT_INST_DEFINE(inst,							\
 				dma_dw_axi_init,					\
