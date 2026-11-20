@@ -604,6 +604,11 @@ Networking
   :kconfig:option:`CONFIG_NET_SOCKETS_DNS_PREFER_IPV4` to keep IPv4 first, for example with
   offloaded network interfaces, where reachability cannot be determined.
 
+* :c:func:`zsock_poll` on a DTLS server socket now wakes for its handshake retransmission timer,
+  so that the server retransmits without the caller polling with a timeout. A DTLS server whose
+  handshake stalls can now report ``POLLHUP`` once its session expires
+  (:kconfig:option:`CONFIG_NET_SOCKETS_DTLS_TIMEOUT`), not only when the next datagram arrives.
+
 * With :kconfig:option:`CONFIG_NET_SOCKETS_ENABLE_DTLS` and
   :kconfig:option:`CONFIG_MBEDTLS_SSL_SRV_C` enabled, :c:func:`zsock_poll` now has room for two
   ``struct k_poll_event`` entries per descriptor, so that a DTLS server socket can take a second
