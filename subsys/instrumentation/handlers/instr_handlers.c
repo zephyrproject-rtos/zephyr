@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * GNU instrumentation ABI handlers used by both GCC and Clang/LLVM when
+ * compiling with -finstrument-functions.
+ */
+
 #include <zephyr/instrumentation/instrumentation.h>
 #include <instr_timestamp.h>
 
