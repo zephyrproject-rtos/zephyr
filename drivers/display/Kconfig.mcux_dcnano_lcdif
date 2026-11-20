@@ -20,10 +20,11 @@ config MCUX_DCNANO_LCDIF_FB_NUM
 	  Number of framebuffers to allocate in DCNANO driver. Driver allocated
 	  framebuffers are required to support partial display updates.
 	  The driver has been validated to support 0 through 2 framebuffers.
-	  Note that hardware will likely perform best if zero driver
-	  framebuffers are allocated by the driver, and the application
-	  implements double framebuffering by always calling display_write with
-	  a buffer equal in size to the connected panel.
+	  A write covering the whole panel is scanned out of the caller's
+	  buffer whatever the count, and that buffer stays in use until the
+	  next full-frame write returns (SCREEN_INFO_WRITE_HOLDS_BUFFER).
+	  The driver framebuffers serve partial updates and the frame shown
+	  before the first write.
 
 
 config MCUX_DCNANO_LCDIF_MAINTAIN_CACHE

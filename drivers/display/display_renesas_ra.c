@@ -209,7 +209,7 @@ static void ra_display_get_capabilities(const struct device *dev,
 	capabilities->supported_pixel_formats =
 		PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_565;
 	capabilities->current_pixel_format = data->current_pixel_format;
-	capabilities->screen_info = 0U;
+	capabilities->screen_info = SCREEN_INFO_WRITE_HOLDS_BUFFER;
 }
 
 static int ra_display_set_pixel_format(const struct device *dev,
