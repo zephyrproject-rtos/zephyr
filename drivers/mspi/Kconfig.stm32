@@ -71,4 +71,13 @@ config HEAP_MEM_POOL_ADD_SIZE_MSPI_STM32_XSPI
 	  from the system heap for the length of that packet, so the heap has
 	  to hold the largest read the application issues.
 
+config MSPI_STM32_XSPI_SELECT_IO_7_4
+	bool "STM32 XSPI Controller select IO 7-4 of OctoSPI"
+	depends on DT_HAS_ST_STM32_XSPI_CONTROLLER_ENABLED
+	default n
+	help
+	  Select IO[7:4] of the OctoSPI interface for the STM32 XSPI controller.
+	  When enabled, OCTOSPI_CR register bit MSEL will be set to enable data
+	  exchange over IO[7:4]
+
 endif # MSPI_STM32_CONTROLLER
