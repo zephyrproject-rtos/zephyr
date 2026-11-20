@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2026 NXP
+ * SPDX-FileCopyrightText: Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,15 @@
 / {
 	chosen {
 		zephyr,flash-controller = &ftfe;
+	};
+
+	clocks {
+		osc32: osc32 {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
 	};
 
 	cpus {

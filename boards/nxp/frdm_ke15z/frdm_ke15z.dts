@@ -163,6 +163,15 @@
 	status = "okay";
 };
 
+&lptmr0 {
+	clock-frequency = <32768>;
+	clk-source = <2>;
+};
+
+&osc32 {
+	status = "okay";
+};
+
 &sosc_clk {
 	clock-frequency = <DT_FREQ_M(8)>;
 	status = "okay";
@@ -209,4 +218,13 @@
 			label = "storage";
 		};
 	};
+};
+
+&lpit0 {
+	status = "okay";
+};
+
+&rtc {
+	clock-source = "RTC";
+	status = "okay";
 };
