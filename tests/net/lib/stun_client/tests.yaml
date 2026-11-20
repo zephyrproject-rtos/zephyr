@@ -23,3 +23,48 @@ tests:
   net.stun.client.dns:
     extra_args:
       - EXTRA_CONF_FILE="dns.conf"
+  # The network shell without the commands of disabled features.
+  net.stun.client.shell:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_SERIAL=n
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_NET_SHELL=y
+      - CONFIG_NET_SHELL_SHOW_DISABLED_COMMANDS=n
+      - CONFIG_STUN_SHELL=y
+      - CONFIG_SHELL_CMD_BUFF_SIZE=512
+      - CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE=512
+      - CONFIG_INIT_STACKS=y
+      - CONFIG_THREAD_STACK_INFO=y
+  net.stun.client.shell.ipv4_only:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_SERIAL=n
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_NET_SHELL=y
+      - CONFIG_NET_SHELL_SHOW_DISABLED_COMMANDS=n
+      - CONFIG_STUN_SHELL=y
+      - CONFIG_SHELL_CMD_BUFF_SIZE=512
+      - CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE=512
+      - CONFIG_INIT_STACKS=y
+      - CONFIG_THREAD_STACK_INFO=y
+      - CONFIG_NET_IPV6=n
+  net.stun.client.shell.ipv6_only:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_SERIAL=n
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_NET_SHELL=y
+      - CONFIG_NET_SHELL_SHOW_DISABLED_COMMANDS=n
+      - CONFIG_STUN_SHELL=y
+      - CONFIG_SHELL_CMD_BUFF_SIZE=512
+      - CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE=512
+      - CONFIG_INIT_STACKS=y
+      - CONFIG_THREAD_STACK_INFO=y
+      - CONFIG_NET_IPV4=n
+  net.stun.client.shell_disabled:
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_SERIAL=n
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_NET_SHELL=y
