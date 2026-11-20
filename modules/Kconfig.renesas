@@ -564,4 +564,9 @@ config USE_RX_FSP_SCI_B_UART
 	help
 	  Enable RX FSP SCI-B UART driver
 
+config USE_RX_FSP_CANFDG
+	bool
+	help
+	  Enable RX FSP CANFDG driver
+
 endif # HAS_RENESAS_RX_FSP
