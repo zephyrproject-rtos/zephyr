@@ -11,6 +11,26 @@ config USBD_VIDEO_CLASS
 
 if USBD_VIDEO_CLASS
 
+choice USBD_VIDEO_MODE
+	prompt "Streaming Mode"
+
+config USBD_VIDEO_MODE_BULK
+	bool "USB Video class Bulk EP Implementation"
+	help
+	  This allows the USB video class to use BULK Endpoint Implementation
+
+config USBD_VIDEO_MODE_ISO
+	bool "USB Video Class ISO EP Implementation"
+	help
+	  This allows the USB Video class to use an ISO Endpoint Implementation
+endchoice
+
+config USBD_VIDEO_THREAD_PRIO
+	int "Thread priority for the UVC Isochronous EP transfer thread"
+	default 5
+	help
+	   Set the thread priority for the UVC Isochronous EP Trassfer thread
+
 config USBD_VIDEO_MAX_FORMATS
 	int "Max number of format descriptors"
 	range 1 254
