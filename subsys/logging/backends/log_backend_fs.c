@@ -338,6 +338,12 @@ static int allocate_new_file(struct fs_file_t *file)
 		if (rc < 0) {
 			goto out;
 		}
+		/* Append mode does not necessarily position the file at its end on open. */
+		rc = fs_seek(file, 0, FS_SEEK_END);
+		if (rc < 0) {
+			(void)fs_close(file);
+			goto out;
+		}
 		file_size = fs_tell(file);
 		if (IS_ENABLED(CONFIG_LOG_BACKEND_FS_APPEND_TO_NEWEST_FILE) &&
 		    file_size < CONFIG_LOG_BACKEND_FS_FILE_SIZE) {
