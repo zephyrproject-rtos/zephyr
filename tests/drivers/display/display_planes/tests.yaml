@@ -1,0 +1,42 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - display
+  harness: ztest
+tests:
+  drivers.display.planes.dummy:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+    integration_platforms:
+      - native_sim
+    extra_args:
+      - DTC_OVERLAY_FILE=dummy_dc.overlay
+  drivers.display.planes.none:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+    integration_platforms:
+      - native_sim
+    extra_args:
+      - DTC_OVERLAY_FILE=dummy_dc.overlay
+    extra_configs:
+      - CONFIG_DUMMY_DISPLAY_PLANES=0
+  drivers.display.planes.sdl:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    harness_config:
+      fixture: display
+  drivers.display.planes.mcux_lcdifv2:
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_args:
+      - SHIELD=rk055hdmipi4ma0
+    harness_config:
+      fixture: display

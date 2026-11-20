@@ -83,6 +83,15 @@ config SDL_DISPLAY_ROUNDED_MASK_COLOR
 	  The color of the rounded mask.
 	  Byte order: RGB_888
 
+config SDL_DISPLAY_PLANES
+	int "Planes"
+	default 4
+	range 1 8
+	help
+	  Number of planes the display composes, each an SDL texture
+	  blended over the ones below it. Plane 0 is the one display_write()
+	  draws into.
+
 config SDL_DISPLAY_THREAD_PRIORITY
 	int "SDL display thread priority"
 	default MAIN_THREAD_PRIORITY

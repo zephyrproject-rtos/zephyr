@@ -83,8 +83,8 @@
 	status = "okay";
 };
 
-/* Choose lcdif as default controller. Change to lcdifv2 to switch controller. */
-zephyr_lcdif: &lcdif {};
+/* LCDIFv2 drives the display shields; change to lcdif to switch to the eLCDIF */
+zephyr_lcdif: &lcdifv2 {};
 
 zephyr_mipi_dsi: &mipi_dsi {
 	dphy-ref-frequency = <DT_FREQ_M(24)>;
