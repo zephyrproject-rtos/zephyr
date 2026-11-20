@@ -79,7 +79,9 @@
 		reg = <0>;
 		reset-gpios = <&gpio5 2 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&gpio5 15 GPIO_ACTIVE_LOW>;
-		ti,interface-type = "rgmii";
+		ti,interface-type = "rgmii-id";
+		ti,rx-internal-delay = <0x5>;
+		ti,tx-internal-delay = <0x5>;
 		status = "okay";
 	};
 };
