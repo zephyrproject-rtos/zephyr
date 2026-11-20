@@ -184,6 +184,30 @@ SECTION_VAR(RODATA, riscv_irq_mask_table)
 #endif /* CONFIG_RISCV_HAS_CUSTOM_NESTED_INTERRUPTS */
 #endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 
+#ifdef CONFIG_RISCV_SOC_NO_NESTED_EXCEPTIONS
+/*
+ * A context switch requested while a fault is handled would issue an ecall
+ * from within the exception, which the SoC cannot take. Handle faults as ISR
+ * context instead, so aborting the current thread is deferred to the
+ * reschedule on exception exit.
+ */
+#define FAULT_ISR_CONTEXT_ENTER			\
+	lw t1, ___cpu_t_nested_OFFSET(s0);	\
+	addi t1, t1, 1;				\
+	sw t1, ___cpu_t_nested_OFFSET(s0)
+
+#define FAULT_ISR_CONTEXT_EXIT			\
+	lw t1, ___cpu_t_nested_OFFSET(s0);	\
+	addi t1, t1, -1;			\
+	sw t1, ___cpu_t_nested_OFFSET(s0)
+
+#define FAULT_EXIT_PATH check_reschedule
+#else
+#define FAULT_ISR_CONTEXT_ENTER
+#define FAULT_ISR_CONTEXT_EXIT
+#define FAULT_EXIT_PATH no_reschedule
+#endif
+
 /* exports */
 GTEXT(_isr_wrapper)
 
@@ -508,10 +532,10 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * Call z_riscv_fault to handle exception.
 	 * Stack pointer is pointing to a struct_arch_esf structure, pass it
 	 * to z_riscv_fault (via register a0).
-	 * If z_riscv_fault shall return, set return address to
-	 * no_reschedule to restore stack.
+	 * If z_riscv_fault returns, continue on the exception exit path.
 	 */
 	mv a0, sp
+	FAULT_ISR_CONTEXT_ENTER
 #ifdef CONFIG_EXCEPTION_DEBUG
 	/* Make space for callee-saved registers */
 	addi sp, sp, -__callee_saved_t_SIZEOF
@@ -519,14 +543,13 @@ no_fp:	/* increment _current->arch.exception_depth */
 
 	call z_riscv_fault
 
-	/* Restore SP if z_riscv_fault returns before jumping to no_reschedule */
+	/* Restore SP if z_riscv_fault returns */
 	addi sp, sp, __callee_saved_t_SIZEOF
-
-	j no_reschedule
 #else
-	la ra, no_reschedule
-	tail z_riscv_fault
+	call z_riscv_fault
 #endif /* CONFIG_EXCEPTION_DEBUG */
+	FAULT_ISR_CONTEXT_EXIT
+	j FAULT_EXIT_PATH
 
 is_kernel_syscall:
 	/*
@@ -594,12 +617,17 @@ do_fault:
 	/* Handle RV_ECALL_RUNTIME_EXCEPT. Retrieve reason in a0, esf in A1. */
 	lr a0, __struct_arch_esf_a0_OFFSET(sp)
 1:	mv a1, sp
+	FAULT_ISR_CONTEXT_ENTER
 
 #ifdef CONFIG_EXCEPTION_DEBUG
 	addi sp, sp, -__callee_saved_t_SIZEOF
 	STORE_CALLEE_SAVED(a1)
 #endif /* CONFIG_EXCEPTION_DEBUG */
 	call z_riscv_fatal_error
+#ifdef CONFIG_EXCEPTION_DEBUG
+	addi sp, sp, __callee_saved_t_SIZEOF
+#endif /* CONFIG_EXCEPTION_DEBUG */
+	FAULT_ISR_CONTEXT_EXIT
 	j check_reschedule
 
 #if defined(CONFIG_IRQ_OFFLOAD)
