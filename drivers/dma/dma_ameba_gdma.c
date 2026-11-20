@@ -154,6 +154,14 @@ static int dma_ameba_blockcfg_update(const struct device *dev, uint32_t channel)
 		LOG_ERR("The same channel cannot enable source gather and dest scatter at the same "
 			"time");
 		return -EPERM;
+	} else if (data->channel_status[channel].cur_dma_blk_cfg->source_gather_en &&
+		data->channel_status[channel].cur_dma_blk_cfg->source_gather_interval < 0) {
+		LOG_ERR("source_gather_interval cannot be negative");
+		return -EINVAL;
+	} else if (data->channel_status[channel].cur_dma_blk_cfg->dest_scatter_en &&
+		data->channel_status[channel].cur_dma_blk_cfg->dest_scatter_interval < 0) {
+		LOG_ERR("dest_scatter_interval cannot be negative");
+		return -EINVAL;
 	} else if (data->channel_status[channel].cur_dma_blk_cfg->source_gather_en) {
 		GDMA_SourceGather(
 			config->instance_id, channel,
