@@ -36,3 +36,11 @@
 &syspll {
 	status = "okay";
 };
+
+&timg12_0 {
+	status = "okay";
+};
+
+&counterg12_0 {
+	status = "okay";
+};
