@@ -1,0 +1,15 @@
+{
+  "base": "built-only-no-lab.json",
+  "ops": [
+    [
+      "del",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "skip_reason"
+      ]
+    ]
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "base": "ci-build.json",
+  "ops": [
+    [
+      "del",
+      [
+        "checkouts"
+      ]
+    ]
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "format": "zephyr-results",
+  "version": {
+    "major": 0,
+    "minor": 1
+  },
+  "submission": {
+    "id": "zephyr:gha-20000000000-1:hil-images",
+    "origin": "zephyr",
+    "submitter": "zephyr-ci",
+    "generated_by": {
+      "tool": "twister --report-ci",
+      "version": "v4.5.0-rc1-0-g0123456789ab"
+    },
+    "created": "2026-11-14T11:30:00Z",
+    "context": {
+      "trigger": "pr",
+      "pr": 123456,
+      "commit": "0123456789abcdef0123456789abcdef01234567",
+      "repository": "https://github.com/zephyrproject-rtos/zephyr.git",
+      "run_url": "https://github.com/zephyrproject-rtos/zephyr/actions/runs/20000000000"
+    }
+  },
+  "checkouts": [
+    {
+      "id": "zephyr:gha-20000000000-1",
+      "origin": "zephyr",
+      "tree_name": "zephyr",
+      "git_repository_url": "https://github.com/zephyrproject-rtos/zephyr.git",
+      "git_commit_hash": "0123456789abcdef0123456789abcdef01234567",
+      "git_commit_name": "v4.5.0-rc1-0-g0123456789ab",
+      "misc": {
+        "zephyr": {
+          "run": {
+            "id": "gha-20000000000-1",
+            "url": "https://github.com/zephyrproject-rtos/zephyr/actions/runs/20000000000"
+          }
+        }
+      }
+    }
+  ],
+  "builds": [
+    {
+      "id": "zephyr:gha-20000000000-1:hil-images:cytvii_b_e_1m_100_cpu/cyt2b75cae/m4:sample.basic.helloworld",
+      "origin": "zephyr",
+      "checkout_id": "zephyr:gha-20000000000-1",
+      "duration": 26.94,
+      "architecture": "arm",
+      "compiler": "arm-zephyr-eabi-gcc (Zephyr SDK 1.0.1) 14.3.0",
+      "command": "west twister --build-only -p cytvii_b_e_1m_100_cpu/cyt2b75cae/m4 -s sample.basic.helloworld",
+      "config_name": "cytvii_b_e_1m_100_cpu/cyt2b75cae/m4",
+      "status": "PASS",
+      "output_files": [
+        {
+          "name": "zephyr.elf",
+          "url": "https://artifacts.example.invalid/zephyr/gha-20000000000-1/cytvii_b_e_1m_100_cpu_cyt2b75cae_m4/sample.basic.helloworld/zephyr.elf"
+        }
+      ],
+      "misc": {
+        "zephyr": {
+          "target": {
+            "id": "cytvii_b_e_1m_100_cpu/cyt2b75cae/m4",
+            "board": "cytvii_b_e_1m_100_cpu",
+            "soc": "cyt2b75cae",
+            "cpucluster": "m4",
+            "arch": "arm"
+          },
+          "provenance": "ci",
+          "scenario": "sample.basic.helloworld",
+          "artifacts": [
+            {
+              "name": "zephyr.elf",
+              "sha256": "2fdae7e83f6053fe0ee63f4182539bd69e24e4bdfceb2b24a0f16f7e0eb6e459",
+              "size": 672592,
+              "flash": true
+            }
+          ],
+          "toolchain": {
+            "name": "zephyr",
+            "variant": "zephyr/gnu",
+            "sdk_version": "1.0.1"
+          },
+          "tools": {
+            "twister": "v4.5.0-rc1-0-g0123456789ab",
+            "west": "v1.5.0"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -19,6 +19,8 @@ from platform import system as platform_system
 from typing import TYPE_CHECKING, Any
 
 from colorama import Fore
+from twisterlib import results
+from twisterlib.constants import ZEPHYR_BASE
 from twisterlib.statuses import TwisterStatus
 
 if TYPE_CHECKING:
@@ -371,6 +373,8 @@ class JsonReport:
                 suite["available_ram"] = available_ram
             if available_rom:
                 suite["available_rom"] = available_rom
+            if instance.metrics.get("artifacts"):
+                suite["artifacts"] = instance.metrics["artifacts"]
             if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
                 suite['status'] = instance.status
                 # FIXME
@@ -889,8 +893,45 @@ class Reporting:
         self.xunit_report.create(json_file, filename + "_report.xml", full_report=True)
         self.xunit_report.create_with_all_testsuites(json_file, filename + "_suite_report.xml")
 
+        if self.env.options.report_ci:
+            ci_file = os.path.join(os.path.dirname(filename), 'zephyr-results')
+            if suffix:
+                ci_file = f"{ci_file}_{suffix}"
+            self.results_report(json_file, ci_file + ".json")
+
         if platform_reports:
             self.target_report(json_file, outdir, suffix)
+
+    def results_report(self, json_file: str | Path, out_file: str | Path) -> None:
+        """Write the results document (zephyr-results) built from twister.json."""
+        opts = self.env.options
+        # A results problem is logged; other reports and the exit code are not affected.
+        try:
+            with open(json_file) as f:
+                report = json.load(f)
+            ctx = results.context_from_env(
+                opts.report_ci_origin, opts.report_ci_lab, opts.report_ci_trigger
+            )
+            ctx.command = results.invocation()
+            events = None
+            if opts.report_ci_lab_events:
+                events = results.load_lab_events(opts.report_ci_lab_events)
+            build_dirs = {
+                (inst.platform.name, inst.testsuite.name): inst.build_dir
+                for inst in self.instances.values()
+            }
+            doc = results.convert(
+                report, ctx, build_dirs, events, opts.report_ci_flash_file, zephyr_base=ZEPHYR_BASE
+            )
+            results.write(doc, out_file)
+            errors = results.validate_document(doc)
+        except Exception as e:
+            logger.error(f"{out_file}: results document failed: {type(e).__name__}: {e}")
+            return
+        for line in errors[:20]:
+            logger.error(f"{out_file}: {line}")
+        if not errors:
+            logger.info(f"Results document written to {out_file}")
 
     def target_report(self, json_file: str | Path, outdir: str | Path, suffix: str) -> None:
         platforms = {repr(inst.platform):inst.platform for _, inst in self.instances.items()}

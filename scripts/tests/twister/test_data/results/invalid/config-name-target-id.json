@@ -1,0 +1,14 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "builds",
+        0,
+        "config_name"
+      ],
+      "cytvii_b_e_1m_100_cpu"
+    ]
+  ]
+}

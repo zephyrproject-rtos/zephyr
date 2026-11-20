@@ -1,0 +1,40 @@
+{
+  "base": "miss-lab-event.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "failure_class",
+        "detail"
+      ],
+      "target not reachable"
+    ],
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "failure_class",
+        "source"
+      ],
+      "runner"
+    ],
+    [
+      "del",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "failure_class",
+        "event"
+      ]
+    ]
+  ]
+}

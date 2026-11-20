@@ -1,0 +1,13 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "version",
+        "minor"
+      ],
+      0
+    ]
+  ]
+}

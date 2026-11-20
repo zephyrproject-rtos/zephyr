@@ -1,0 +1,14 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        3,
+        "build_id"
+      ],
+      "examplelab:3068165495:t2g_hil:cytvii_b_e_1m_100_cpu/cyt2b75cae/m4:sample.basic.helloworld"
+    ]
+  ]
+}

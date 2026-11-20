@@ -7,6 +7,7 @@ Tests for runner.py classes
 """
 
 import errno
+import hashlib
 import os
 import pathlib
 import re
@@ -2911,17 +2912,79 @@ def test_projectbuilder_gather_metrics(
     pb.options.create_rom_ram_report = False
     pb.options.cmake_only = cmake_only
     pb.calc_size = mock.Mock()
+    pb._get_artifacts = mock.Mock(return_value=['dummy'])
 
     pb.gather_metrics(instance_mock)
 
     if expect_calc_size:
         pb.calc_size.assert_called_once()
 
+    if cmake_only:
+        pb._get_artifacts.assert_not_called()
+        assert 'artifacts' not in instance_mock.metrics
+    else:
+        assert instance_mock.metrics['artifacts'] == ['dummy']
+
     if expect_zeroes:
         assert instance_mock.metrics['used_ram'] == 0
         assert instance_mock.metrics['used_rom'] == 0
         assert instance_mock.metrics['available_rom'] == 0
         assert instance_mock.metrics['available_ram'] == 0
+
+
+TESTDATA_15_1 = [
+    (TwisterStatus.NONE, True),
+    (TwisterStatus.ERROR, False),
+    (TwisterStatus.FAIL, False),
+]
+
+@pytest.mark.parametrize(
+    'status, expect_artifacts',
+    TESTDATA_15_1,
+    ids=['built', 'error', 'failed']
+)
+def test_projectbuilder_get_artifacts(
+    mocked_jobserver,
+    tmp_path,
+    status,
+    expect_artifacts
+):
+    zephyr_dir = tmp_path / 'zephyr'
+    zephyr_dir.mkdir()
+    (zephyr_dir / 'zephyr.elf').write_bytes(b'elf')
+    (zephyr_dir / 'zephyr.hex').write_bytes(b'hex file')
+
+    instance_mock = mock.Mock()
+    instance_mock.status = status
+    instance_mock.build_dir = str(tmp_path)
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb._get_binaries = mock.Mock(return_value=[
+        os.path.join('zephyr', 'zephyr.elf'),
+        os.path.join('zephyr', 'zephyr.hex'),
+        os.path.join('zephyr', 'zephyr.bin'),
+        os.path.join('zephyr', 'zephyr.elf'),
+    ])
+
+    artifacts = pb._get_artifacts()
+
+    if not expect_artifacts:
+        assert artifacts == []
+        return
+
+    assert artifacts == [
+        {
+            'file': os.path.join('zephyr', 'zephyr.elf'),
+            'sha256': hashlib.sha256(b'elf').hexdigest(),
+            'size': 3,
+        },
+        {
+            'file': os.path.join('zephyr', 'zephyr.hex'),
+            'sha256': hashlib.sha256(b'hex file').hexdigest(),
+            'size': 8,
+        },
+    ]
 
 
 TESTDATA_16 = [

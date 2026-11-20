@@ -1,0 +1,1225 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Schema of the twister results document (zephyr-results 0.1), written by
+# twister --report-ci and checked by twisterlib.results.validate().
+# The object model follows KCIDB (checkouts, builds, tests); Zephyr fields
+# live in the closed misc.zephyr objects. The "title" of a node names the
+# rule reported by the validator.
+#
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: urn:zephyr-results:schema:0.1
+title: zephyr-results-0.1
+type: object
+required:
+  - format
+  - version
+  - submission
+additionalProperties: false
+properties:
+  format:
+    title: format-name
+    const: zephyr-results
+  version:
+    title: version-0.1
+    type: object
+    required:
+      - major
+      - minor
+    additionalProperties: false
+    properties:
+      major:
+        const: 0
+      minor:
+        const: 1
+  submission:
+    $ref: '#/$defs/submission'
+  checkouts:
+    type: array
+    items:
+      $ref: '#/$defs/checkout'
+  builds:
+    type: array
+    items:
+      $ref: '#/$defs/build'
+  tests:
+    type: array
+    items:
+      $ref: '#/$defs/test'
+allOf:
+  - if:
+      required:
+        - tests
+      properties:
+        tests:
+          contains:
+            not:
+              $ref: '#/$defs/built_only_test'
+    then:
+      title: tests-need-lab
+      properties:
+        submission:
+          required:
+            - lab
+  - title: export-needs-checkout-or-tests
+    anyOf:
+      - required:
+          - checkouts
+        properties:
+          checkouts:
+            minItems: 1
+      - required:
+          - tests
+        properties:
+          tests:
+            minItems: 1
+$defs:
+  origin:
+    title: origin-pattern
+    type: string
+    pattern: ^[a-z0-9_]+$
+  lab:
+    title: lab-pattern
+    type: string
+    pattern: ^[a-z0-9][a-z0-9-]*$
+  datetime:
+    title: date-time-pattern
+    type: string
+    pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:\
+      [0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+  sha256:
+    title: sha256-pattern
+    type: string
+    pattern: ^[0-9a-f]{64}$
+  sha40:
+    title: sha40-pattern
+    type: string
+    pattern: ^[0-9a-f]{40}$
+  https_url:
+    title: url-https
+    type: string
+    pattern: ^https://[^\s]+$
+  log_url:
+    title: log-url-https
+    type: string
+    pattern: ^https://[^\s]+$
+  text:
+    title: comment-max-1024
+    type: string
+    maxLength: 1024
+    pattern: ^[^\u0000]*$
+  excerpt:
+    title: excerpt-max-16384
+    type: string
+    maxLength: 16384
+    pattern: ^[^\u0000]*$
+  path:
+    title: path-pattern
+    type: string
+    pattern: ^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)*$
+  status:
+    title: status-enum
+    enum:
+      - FAIL
+      - ERROR
+      - MISS
+      - PASS
+      - SKIP
+  checkout_id:
+    title: checkout-id-pattern
+    type: string
+    pattern: ^[a-z0-9_]+:[A-Za-z0-9._-]+$
+  build_id:
+    title: build-id-pattern
+    type: string
+    pattern: ^[a-z0-9_]+:[A-Za-z0-9._-]+:[A-Za-z0-9._-]+:\S+:[^:\s]+$
+  built_only_test:
+    $comment: 'SKIP built_only without environment: never ran on a lab, so no lab or DUT'
+    required:
+      - status
+      - misc
+    not:
+      required:
+        - environment
+    properties:
+      status:
+        const: SKIP
+      misc:
+        properties:
+          zephyr:
+            required:
+              - skip_reason
+            properties:
+              skip_reason:
+                required:
+                  - reason
+                properties:
+                  reason:
+                    const: built_only
+  test_id:
+    title: test-id-pattern
+    type: string
+    pattern: "^[a-z0-9_]+:[A-Za-z0-9._-]+:[A-Za-z0-9._-]+:\\S+:\
+      [a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)*(@[a-z0-9][a-z0-9-]*)?$"
+  resource:
+    title: resource
+    type: object
+    required:
+      - name
+      - url
+    additionalProperties: false
+    properties:
+      name:
+        type: string
+        pattern: ^[^/\u0000]+$
+      url:
+        $ref: '#/$defs/https_url'
+  resource_list:
+    type: array
+    items:
+      $ref: '#/$defs/resource'
+  tool:
+    type: object
+    required:
+      - name
+    additionalProperties: false
+    properties:
+      name:
+        type: string
+        minLength: 1
+      version:
+        type: string
+  counts:
+    type: object
+    propertyNames:
+      $ref: '#/$defs/status'
+    additionalProperties:
+      type: integer
+      minimum: 0
+  ingest_reserved:
+    title: ingest-reserved
+    not: {}
+  submission:
+    type: object
+    required:
+      - id
+      - origin
+      - submitter
+      - generated_by
+      - created
+      - context
+    additionalProperties: false
+    properties:
+      id:
+        title: submission-id-pattern
+        type: string
+        pattern: ^[a-z0-9_]+:[A-Za-z0-9._-]+:[A-Za-z0-9._-]+(:[A-Za-z0-9._-]+)?$
+      origin:
+        $ref: '#/$defs/origin'
+      lab:
+        $ref: '#/$defs/lab'
+      submitter:
+        type: string
+        minLength: 1
+      generated_by:
+        type: object
+        required:
+          - tool
+          - version
+        additionalProperties: false
+        properties:
+          tool:
+            type: string
+            minLength: 1
+          version:
+            type: string
+            minLength: 1
+      created:
+        $ref: '#/$defs/datetime'
+      context:
+        type: object
+        required:
+          - trigger
+          - commit
+          - repository
+        additionalProperties: false
+        properties:
+          trigger:
+            title: trigger-enum
+            enum:
+              - pr
+              - merge_queue
+              - push
+              - nightly
+              - rc
+              - release
+              - manual
+          pr:
+            type: integer
+            minimum: 1
+          merge_queue:
+            type: string
+            minLength: 1
+          commit:
+            $ref: '#/$defs/sha40'
+          repository:
+            $ref: '#/$defs/https_url'
+          ref:
+            type: string
+            minLength: 1
+          run_url:
+            $ref: '#/$defs/https_url'
+        if:
+          properties:
+            trigger:
+              const: pr
+          required:
+            - trigger
+        then:
+          title: pr-with-trigger-pr
+          required:
+            - pr
+        else:
+          title: pr-with-trigger-pr
+          not:
+            required:
+              - pr
+      summary:
+        type: object
+        additionalProperties: false
+        properties:
+          status:
+            $ref: '#/$defs/status'
+          suites:
+            $ref: '#/$defs/counts'
+          testcases:
+            $ref: '#/$defs/counts'
+  checkout:
+    type: object
+    required:
+      - id
+      - origin
+      - tree_name
+      - git_repository_url
+      - git_commit_hash
+    additionalProperties: false
+    properties:
+      id:
+        $ref: '#/$defs/checkout_id'
+      origin:
+        $ref: '#/$defs/origin'
+      tree_name:
+        type: string
+        minLength: 1
+      git_repository_url:
+        $ref: '#/$defs/https_url'
+      git_commit_hash:
+        $ref: '#/$defs/sha40'
+      git_commit_name:
+        type: string
+      git_repository_branch:
+        type: string
+      git_commit_tags:
+        type: array
+        items:
+          type: string
+      start_time:
+        $ref: '#/$defs/datetime'
+      log_url:
+        $ref: '#/$defs/log_url'
+      valid:
+        type: boolean
+      misc:
+        type: object
+        properties:
+          zephyr:
+            title: misc-zephyr-closed
+            type: object
+            additionalProperties: false
+            properties:
+              commit_date:
+                $ref: '#/$defs/datetime'
+              manifest:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - name
+                  additionalProperties: false
+                  properties:
+                    name:
+                      type: string
+                      minLength: 1
+                    url:
+                      $ref: '#/$defs/https_url'
+                    revision:
+                      type: string
+                      minLength: 1
+              run:
+                type: object
+                required:
+                  - id
+                additionalProperties: false
+                properties:
+                  id:
+                    type: string
+                    pattern: ^[A-Za-z0-9._-]+$
+                  url:
+                    $ref: '#/$defs/https_url'
+              _ingest:
+                $ref: '#/$defs/ingest_reserved'
+  build:
+    type: object
+    required:
+      - id
+      - origin
+      - checkout_id
+      - architecture
+      - compiler
+      - command
+      - config_name
+      - status
+      - misc
+    additionalProperties: false
+    properties:
+      id:
+        $ref: '#/$defs/build_id'
+      origin:
+        $ref: '#/$defs/origin'
+      checkout_id:
+        $ref: '#/$defs/checkout_id'
+      start_time:
+        $ref: '#/$defs/datetime'
+      duration:
+        type: number
+        minimum: 0
+      architecture:
+        type: string
+        pattern: ^[a-z0-9_]+$
+      compiler:
+        type: string
+        minLength: 1
+      command:
+        type: string
+        minLength: 1
+      config_name:
+        type: string
+        minLength: 1
+      status:
+        $ref: '#/$defs/status'
+      comment:
+        $ref: '#/$defs/text'
+      log_url:
+        $ref: '#/$defs/log_url'
+      log_excerpt:
+        $ref: '#/$defs/excerpt'
+      output_files:
+        $ref: '#/$defs/resource_list'
+      misc:
+        type: object
+        required:
+          - zephyr
+        properties:
+          zephyr:
+            $ref: '#/$defs/build_misc'
+    allOf:
+      - if:
+          properties:
+            status:
+              enum:
+                - PASS
+                - SKIP
+          required:
+            - status
+        then:
+          title: excerpt-only-on-failure
+          not:
+            required:
+              - log_excerpt
+  build_misc:
+    title: misc-zephyr-closed
+    type: object
+    required:
+      - target
+      - provenance
+      - artifacts
+      - toolchain
+    additionalProperties: false
+    properties:
+      target:
+        type: object
+        required:
+          - id
+          - board
+          - arch
+        additionalProperties: false
+        properties:
+          id:
+            type: string
+            minLength: 1
+          board:
+            type: string
+            minLength: 1
+          revision:
+            type: string
+            minLength: 1
+          soc:
+            type: string
+            minLength: 1
+          cpucluster:
+            type: string
+            minLength: 1
+          variant:
+            type: string
+            minLength: 1
+          arch:
+            type: string
+            minLength: 1
+      provenance:
+        title: provenance-enum
+        enum:
+          - ci
+          - local
+      scenario:
+        type: string
+        minLength: 1
+      artifacts:
+        title: one-flash-artifact
+        type: array
+        minItems: 1
+        items:
+          type: object
+          required:
+            - name
+            - sha256
+            - size
+          additionalProperties: false
+          properties:
+            name:
+              type: string
+              pattern: ^[^/\u0000]+$
+            sha256:
+              $ref: '#/$defs/sha256'
+            size:
+              type: integer
+              minimum: 0
+            flash:
+              type: boolean
+        contains:
+          required:
+            - flash
+          properties:
+            flash:
+              const: true
+        minContains: 1
+        maxContains: 1
+      toolchain:
+        type: object
+        required:
+          - name
+        additionalProperties: false
+        properties:
+          name:
+            type: string
+            minLength: 1
+          variant:
+            type: string
+          version:
+            type: string
+          sdk_version:
+            type: string
+      tools:
+        type: object
+        additionalProperties: false
+        properties:
+          twister:
+            type: string
+          west:
+            type: string
+          cmake:
+            type: string
+      config_files:
+        type: array
+        items:
+          type: string
+          minLength: 1
+      twister:
+        type: object
+        additionalProperties: false
+        properties:
+          run_id:
+            type: string
+      footprint:
+        type: object
+        additionalProperties: false
+        properties:
+          used_ram:
+            type: integer
+            minimum: 0
+          used_rom:
+            type: integer
+            minimum: 0
+      _ingest:
+        $ref: '#/$defs/ingest_reserved'
+    allOf:
+      - title: zephyr-needs-scenario
+        required:
+          - scenario
+  environment:
+    type: object
+    required:
+      - misc
+    additionalProperties: false
+    properties:
+      comment:
+        $ref: '#/$defs/text'
+      compatible:
+        type: array
+        items:
+          type: string
+          minLength: 1
+      misc:
+        type: object
+        required:
+          - zephyr
+        properties:
+          zephyr:
+            title: misc-zephyr-closed
+            type: object
+            required:
+              - lab
+              - dut
+            additionalProperties: false
+            properties:
+              lab:
+                $ref: '#/$defs/lab'
+              node:
+                type: string
+                minLength: 1
+              dut:
+                type: object
+                required:
+                  - board_tag
+                additionalProperties: false
+                properties:
+                  board_tag:
+                    type: string
+                    minLength: 1
+                  board_serial:
+                    type: string
+                    minLength: 1
+                  probe:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      type:
+                        type: string
+                        minLength: 1
+                      serial:
+                        type: string
+                        minLength: 1
+                      firmware:
+                        type: string
+                        minLength: 1
+              _ingest:
+                $ref: '#/$defs/ingest_reserved'
+  failure_class:
+    type: object
+    required:
+      - reason
+      - source
+    additionalProperties: false
+    properties:
+      reason:
+        type: string
+      detail:
+        $ref: '#/$defs/text'
+      source:
+        title: source-enum
+        enum:
+          - twister
+          - lab
+          - runner
+          - ingest
+      event:
+        type: object
+        required:
+          - id
+        additionalProperties: false
+        properties:
+          id:
+            type: string
+            pattern: ^\S{1,256}$
+          url:
+            $ref: '#/$defs/https_url'
+    if:
+      properties:
+        source:
+          const: lab
+        reason:
+          not:
+            const: artifact_mismatch
+      required:
+        - source
+    then:
+      title: lab-source-needs-event
+      required:
+        - event
+  skip_reason:
+    type: object
+    required:
+      - reason
+    additionalProperties: false
+    properties:
+      reason:
+        title: skip-reason-enum
+        enum:
+          - built_only
+          - filtered
+          - excluded
+          - harness_skip
+          - not_applicable
+      detail:
+        $ref: '#/$defs/text'
+      source:
+        $ref: '#/$defs/failure_class/properties/source'
+  test_misc:
+    title: misc-zephyr-closed
+    type: object
+    required:
+      - kind
+      - original_id
+    additionalProperties: false
+    properties:
+      kind:
+        title: kind-enum
+        enum:
+          - suite
+          - testcase
+      original_id:
+        type: string
+        minLength: 1
+        pattern: ^[^\u0000]*$
+      suite_id:
+        $ref: '#/$defs/test_id'
+      failure_class:
+        $ref: '#/$defs/failure_class'
+      skip_reason:
+        $ref: '#/$defs/skip_reason'
+      artifact:
+        type: object
+        required:
+          - name
+          - sha256
+          - size
+          - provenance
+        additionalProperties: false
+        properties:
+          name:
+            type: string
+            pattern: ^[^/\u0000]+$
+          sha256:
+            $ref: '#/$defs/sha256'
+          flashed_sha256:
+            $ref: '#/$defs/sha256'
+          size:
+            type: integer
+            minimum: 0
+          provenance:
+            $ref: '#/$defs/build_misc/properties/provenance'
+      retries:
+        type: integer
+        minimum: 0
+      counts:
+        $ref: '#/$defs/counts'
+      tools:
+        type: object
+        additionalProperties: false
+        properties:
+          harness:
+            $ref: '#/$defs/tool'
+          testsuite:
+            $ref: '#/$defs/tool'
+          lab_tool:
+            $ref: '#/$defs/tool'
+      lab_job:
+        type: object
+        additionalProperties: false
+        properties:
+          reservation_id:
+            type:
+              - string
+              - integer
+          flash_job_id:
+            type:
+              - string
+              - integer
+          flash_rc:
+            type: integer
+          flash_duration:
+            type: number
+            minimum: 0
+      tags:
+        type: object
+        additionalProperties: false
+        properties:
+          ip:
+            type: array
+            items:
+              type: string
+              minLength: 1
+          tier:
+            type: string
+            minLength: 1
+      _ingest:
+        $ref: '#/$defs/ingest_reserved'
+  test:
+    type: object
+    required:
+      - id
+      - origin
+      - build_id
+      - path
+      - status
+      - misc
+    additionalProperties: false
+    properties:
+      id:
+        $ref: '#/$defs/test_id'
+      origin:
+        $ref: '#/$defs/origin'
+      build_id:
+        $ref: '#/$defs/build_id'
+      path:
+        $ref: '#/$defs/path'
+      status:
+        $ref: '#/$defs/status'
+      comment:
+        $ref: '#/$defs/text'
+      start_time:
+        $ref: '#/$defs/datetime'
+      duration:
+        type: number
+        minimum: 0
+      log_url:
+        $ref: '#/$defs/log_url'
+      log_excerpt:
+        $ref: '#/$defs/excerpt'
+      input_files:
+        $ref: '#/$defs/resource_list'
+      output_files:
+        $ref: '#/$defs/resource_list'
+      environment:
+        $ref: '#/$defs/environment'
+      misc:
+        type: object
+        required:
+          - zephyr
+        properties:
+          zephyr:
+            $ref: '#/$defs/test_misc'
+    allOf:
+      - if:
+          properties:
+            status:
+              const: MISS
+          required:
+            - status
+        then:
+          title: miss-needs-failure-class
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  required:
+                    - failure_class
+      - if:
+          properties:
+            status:
+              const: SKIP
+          required:
+            - status
+        then:
+          title: skip-needs-skip-reason
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  required:
+                    - skip_reason
+      - if:
+          properties:
+            status:
+              enum:
+                - PASS
+                - SKIP
+          required:
+            - status
+        then:
+          title: failure-class-status
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  not:
+                    required:
+                      - failure_class
+      - if:
+          properties:
+            status:
+              not:
+                const: SKIP
+          required:
+            - status
+        then:
+          title: skip-reason-status
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  not:
+                    required:
+                      - skip_reason
+      - if:
+          properties:
+            status:
+              enum:
+                - PASS
+                - SKIP
+          required:
+            - status
+        then:
+          title: excerpt-only-on-failure
+          not:
+            required:
+              - log_excerpt
+      - if:
+          properties:
+            status:
+              const: MISS
+          required:
+            - status
+        then:
+          title: miss-reason-enum
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    failure_class:
+                      properties:
+                        reason:
+                          enum:
+                            - reservation
+                            - flash
+                            - console
+                            - power
+                            - probe
+                            - timeout
+                            - lab_offline
+                            - artifact
+                            - artifact_mismatch
+                            - harness
+                            - aborted
+                            - blocked
+                            - other
+      - if:
+          properties:
+            status:
+              const: ERROR
+          required:
+            - status
+        then:
+          title: error-reason-enum
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    failure_class:
+                      properties:
+                        reason:
+                          enum:
+                            - blocked
+                            - incomplete
+                            - harness
+                            - timeout
+                            - no_output
+                            - other
+      - if:
+          properties:
+            status:
+              const: FAIL
+          required:
+            - status
+        then:
+          title: fail-reason-enum
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    failure_class:
+                      properties:
+                        reason:
+                          enum:
+                            - assertion
+                            - fault
+                            - timeout
+                            - unexpected_output
+                            - other
+      - if:
+          properties:
+            status:
+              const: MISS
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    failure_class:
+                      properties:
+                        reason:
+                          const: console
+                        source:
+                          const: twister
+                      required:
+                        - reason
+                        - source
+                  required:
+                    - failure_class
+              required:
+                - zephyr
+          required:
+            - status
+            - misc
+        then:
+          title: console-twister-other-detail
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    failure_class:
+                      required:
+                        - detail
+                      properties:
+                        detail:
+                          const: Serial Device Error
+      - if:
+          properties:
+            status:
+              const: MISS
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    failure_class:
+                      properties:
+                        reason:
+                          enum:
+                            - console
+                            - timeout
+                      required:
+                        - reason
+                      not:
+                        properties:
+                          reason:
+                            const: console
+                          source:
+                            const: twister
+                        required:
+                          - reason
+                          - source
+                  required:
+                    - failure_class
+              required:
+                - zephyr
+          required:
+            - status
+            - misc
+        then:
+          title: miss-console-timeout-needs-lab-event
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    failure_class:
+                      required:
+                        - source
+                        - event
+                      properties:
+                        source:
+                          const: lab
+      - if:
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    kind:
+                      const: testcase
+                  required:
+                    - kind
+              required:
+                - zephyr
+          required:
+            - misc
+        then:
+          title: testcase-needs-suite-id
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  required:
+                    - suite_id
+      - if:
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    kind:
+                      const: testcase
+                  required:
+                    - kind
+              required:
+                - zephyr
+          required:
+            - misc
+        then:
+          title: testcase-no-artifact
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  not:
+                    required:
+                      - artifact
+      - if:
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    kind:
+                      const: testcase
+                  required:
+                    - kind
+              required:
+                - zephyr
+          required:
+            - misc
+        then:
+          title: testcase-no-environment
+          not:
+            required:
+              - environment
+      - if:
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    kind:
+                      const: suite
+                  required:
+                    - kind
+              required:
+                - zephyr
+          required:
+            - misc
+        then:
+          title: suite-needs-artifact
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  required:
+                    - artifact
+      - if:
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    kind:
+                      const: suite
+                  required:
+                    - kind
+              required:
+                - zephyr
+          required:
+            - misc
+          not:
+            properties:
+              status:
+                const: SKIP
+              misc:
+                properties:
+                  zephyr:
+                    properties:
+                      skip_reason:
+                        properties:
+                          reason:
+                            const: built_only
+                        required:
+                          - reason
+                    required:
+                      - skip_reason
+            required:
+              - status
+              - misc
+        then:
+          title: suite-needs-environment
+          required:
+            - environment
+      - if:
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    kind:
+                      const: suite
+                  required:
+                    - kind
+              required:
+                - zephyr
+          required:
+            - misc
+        then:
+          title: suite-needs-harness
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  required:
+                    - tools
+                  properties:
+                    tools:
+                      required:
+                        - harness
+      - if:
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  properties:
+                    kind:
+                      const: suite
+                  required:
+                    - kind
+              required:
+                - zephyr
+          required:
+            - misc
+        then:
+          title: suite-no-suite-id
+          properties:
+            misc:
+              properties:
+                zephyr:
+                  not:
+                    required:
+                      - suite_id

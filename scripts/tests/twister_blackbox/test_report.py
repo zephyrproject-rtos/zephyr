@@ -15,13 +15,19 @@ Covered options:
   --clobber-output (-c)    Move existing output before writing
   --no-clean (-k)          Keep stale files from a previous run
   --aggressive-no-clean    Keep every artifact from a previous run
+  --runtime-artifact-cleanup (-M)  Artifact hashes survive the cleanup
+  --report-ci              Results document next to twister.json
 """
 
+import glob
+import hashlib
+import json
 import os
 from unittest import mock
 
 import pytest
 from conftest import TEST_DATA, TEST_FILENAME_MOCK, read_testplan
+from twisterlib import results
 from twisterlib.testplan import TestPlan
 from twisterlib.twister_main import main as twister_main
 
@@ -416,3 +422,126 @@ class TestArtifacts:
         result = twister_main(args)
         assert result == 0
         assert os.path.isfile(pkg_file), f'Package tarball {pkg_file!r} was not created'
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestArtifactDigests:
+    """Tests for the per-suite artifacts list in twister.json."""
+
+    @pytest.mark.build
+    @pytest.mark.parametrize(
+        'extra_flags, kept',
+        [([], True), (['-M', 'pass'], False)],
+        ids=['kept', 'cleaned'],
+    )
+    def test_artifacts_in_twister_json(self, out_path, extra_flags, kept):
+        """Each built suite lists its binaries with size and SHA-256."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '--build-only',
+            '-p',
+            'native_sim/native',
+        ] + extra_flags
+        twister_main(args)
+
+        with open(os.path.join(out_path, 'twister.json')) as fh:
+            report = json.load(fh)
+
+        built = [ts for ts in report['testsuites'] if ts.get('status') == 'not run']
+        assert built, 'Expected at least one built test suite'
+        for ts in built:
+            assert ts['artifacts'], f'No artifacts for {ts["name"]}'
+            build_dir = glob.glob(
+                os.path.join(out_path, 'native_sim_native', '*', ts['path'], ts['name'])
+            )
+            assert len(build_dir) == 1
+            for artifact in ts['artifacts']:
+                assert len(artifact['sha256']) == 64
+                assert artifact['size'] > 0
+                path = os.path.join(build_dir[0], artifact['file'])
+                assert os.path.isfile(path) == kept
+                if kept:
+                    with open(path, 'rb') as fh:
+                        assert hashlib.sha256(fh.read()).hexdigest() == artifact['sha256']
+                    assert os.path.getsize(path) == artifact['size']
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestResultsDocument:
+    """Tests for the results document written with --report-ci."""
+
+    @pytest.mark.build
+    def test_report_ci_build_only(self, out_path):
+        """A build-only run gives a valid document of SKIP built_only tests with image digests."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '--build-only',
+            '-p',
+            'native_sim/native',
+            '--report-ci',
+            '--report-ci-origin',
+            'examplelab',
+        ]
+        with mock.patch.dict(os.environ, {'GITHUB_ACTIONS': '', 'GITLAB_CI': ''}):
+            twister_main(args)
+
+        path = os.path.join(out_path, 'zephyr-results.json')
+        with open(path, 'rb') as fh:
+            raw = fh.read()
+        assert results.validate(raw) == []
+        doc = json.loads(raw)
+        assert doc['submission']['origin'] == 'examplelab'
+        assert doc['builds'] and doc['tests']
+        with open(os.path.join(out_path, 'twister.json')) as fh:
+            report = json.load(fh)
+        digests = {
+            (ts['platform'], ts['name']): {a['sha256'] for a in ts['artifacts']}
+            for ts in report['testsuites']
+            if ts.get('artifacts')
+        }
+        for build in doc['builds']:
+            z = build['misc']['zephyr']
+            key = (build['config_name'], z['scenario'])
+            assert {a['sha256'] for a in z['artifacts']} == digests[key]
+        for test in doc['tests']:
+            assert test['status'] == 'SKIP'
+            assert test['misc']['zephyr']['skip_reason']['reason'] == 'built_only'
+
+    @pytest.mark.build
+    def test_report_ci_broken_lab_events(self, out_path, tmp_path):
+        """A lab events file that fails its check stops only the results document."""
+        events = tmp_path / 'events.json'
+        events.write_text('{"suites": [{"platform": "native_sim/native"}]}')
+        pkg_file = str(tmp_path / 'PACKAGE')
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            AGNOSTIC,
+            '--build-only',
+            '-p',
+            'native_sim/native',
+            '--platform-reports',
+            '--package-artifacts',
+            pkg_file,
+            '--report-ci',
+            '--report-ci-origin',
+            'examplelab',
+            '--report-ci-lab-events',
+            str(events),
+        ]
+        with mock.patch.dict(os.environ, {'GITHUB_ACTIONS': '', 'GITLAB_CI': ''}):
+            assert twister_main(args) == 0
+
+        assert not os.path.exists(os.path.join(out_path, 'zephyr-results.json'))
+        assert os.path.isfile(os.path.join(out_path, 'native_sim_native.json'))
+        assert os.path.isfile(pkg_file)

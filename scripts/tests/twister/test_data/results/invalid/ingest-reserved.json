@@ -1,0 +1,22 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "misc",
+        "zephyr",
+        "_ingest"
+      ],
+      {
+        "withdrawn": {
+          "time": "2026-11-16T00:00:00Z",
+          "reason": "test",
+          "by": "examplelab"
+        }
+      }
+    ]
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "base": "hil-two-boards.json",
+  "ops": [
+    [
+      "set",
+      [
+        "tests",
+        0,
+        "log_url"
+      ],
+      "http://results.example.invalid/examplelab/3068165495/t2g_hil/cytvii_b_e_1m_100_cpu_cyt2b75cae_m4/sample.basic.helloworld/handler.log"
+    ]
+  ]
+}
