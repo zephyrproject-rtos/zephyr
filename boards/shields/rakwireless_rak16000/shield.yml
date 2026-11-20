@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: rakwireless_rak16000
+  full_name: RAK16000 WisBlock DC Current Module
+  vendor: rakwireless
+  supported_features:
+    - sensor
