@@ -3,8 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Atmel SAM0-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_sam0
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ATMEL_SAM0_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ATMEL_SAM0_GPIO_H_
+
+/**
+ * @defgroup gpio_interface_sam0 Atmel SAM0-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ * @{
+ */
 
 /**
  * @brief Enable GPIO pin debounce.
@@ -22,5 +35,7 @@
  * outputs. Only applicable for Atmel SAM0 SoCs.
  */
 #define SAM0_GPIO_DRIVE_STRONG (1U << 9)
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ATMEL_SAM0_GPIO_H_ */

@@ -3,8 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief TI CC13xx/CC26xx-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_cc13xx_cc26xx
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_TI_CC13XX_CC26XX_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_TI_CC13XX_CC26XX_GPIO_H_
+
+/**
+ * @defgroup gpio_interface_cc13xx_cc26xx CC13xx/CC26xx-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ * @{
+ */
 
 /**
  * @brief Enable GPIO pin debounce.
@@ -38,6 +51,8 @@
 
 /** Alternative drive strength. */
 #define CC13XX_CC26XX_GPIO_DS_ALT (0x3U << CC13XX_CC26XX_GPIO_DS_POS)
+
+/** @} */
 
 /** @} */
 

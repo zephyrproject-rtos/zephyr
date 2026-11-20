@@ -3,8 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief ENE KB1200-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_kb1200
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ENE_KB1200_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ENE_KB1200_GPIO_H_
+
+/**
+ * @defgroup gpio_interface_kb1200 ENE KB1200-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ * @{
+ */
 
 /**
  * @name GPIO pin voltage flags
@@ -29,11 +42,20 @@
 /** Set pin voltage level at 1.8 V */
 #define KB1200_GPIO_VOLTAGE_1P8	        (1U << KB1200_GPIO_VOLTAGE_POS)
 
+/** @} */
+
+/**
+ * @name GPIO pin driving current flags
+ * @{
+ */
+
 /** Set pin at the default driving current (4mA) */
 #define KB1200_GPIO_DRIVING_DEFAULT     (0U << KB1200_GPIO_DRIVING_POS)
 /** Set pin driving current at 16mA */
 #define KB1200_GPIO_DRIVING_16MA        (1U << KB1200_GPIO_DRIVING_POS)
 
+
+/** @} */
 
 /** @} */
 

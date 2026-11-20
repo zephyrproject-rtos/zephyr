@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief MAX32-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_max32
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ADI_MAX32_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_ADI_MAX32_GPIO_H_
 
@@ -10,12 +17,6 @@
  * @brief MAX32-specific GPIO Flags
  * @defgroup gpio_interface_max32 MAX32-specific GPIO Flags
  * @ingroup gpio_interface_ext
- * @{
- */
-
-/**
- * @name MAX32 GPIO drive flags
- * @brief MAX32 GPIO drive flags
  *
  * The drive flags are encoded in the 8 upper bits of @ref gpio_dt_flags_t as
  * follows:
@@ -25,7 +26,7 @@
  *          0: VDDIO
  *          1: VDDIOH
  *
- * - Bit 9: GPIO Drive Strength Select,
+ * - Bits 9-10: GPIO Drive Strength Select,
  *          MAX32_GPIO_DRV_STRENGTH_0 = 1mA
  *          MAX32_GPIO_DRV_STRENGTH_1 = 2mA
  *          MAX32_GPIO_DRV_STRENGTH_2 = 4mA
@@ -41,25 +42,49 @@
  * @{
  */
 
-/** GPIO Voltage Select */
+/**
+ * @name GPIO supply voltage select
+ * @{
+ */
+/** @cond INTERNAL_HIDDEN */
 #define MAX32_GPIO_VSEL_POS    (8U)
 #define MAX32_GPIO_VSEL_MASK   (0x01U << MAX32_GPIO_VSEL_POS)
+/** @endcond */
+/** Use the VDDIO supply rail. */
 #define MAX32_GPIO_VSEL_VDDIO  (0U << MAX32_GPIO_VSEL_POS)
+/** Use the VDDIOH supply rail. */
 #define MAX32_GPIO_VSEL_VDDIOH (1U << MAX32_GPIO_VSEL_POS)
+/** @} */
 
-/** GPIO Drive Strength Select */
+/**
+ * @name GPIO drive strength select
+ * @{
+ */
+/** @cond INTERNAL_HIDDEN */
 #define MAX32_GPIO_DRV_STRENGTH_POS  (9U)
 #define MAX32_GPIO_DRV_STRENGTH_MASK (0x03U << MAX32_GPIO_DRV_STRENGTH_POS)
+/** @endcond */
+/** 1 mA drive strength. */
 #define MAX32_GPIO_DRV_STRENGTH_0    (0U << MAX32_GPIO_DRV_STRENGTH_POS)
+/** 2 mA drive strength. */
 #define MAX32_GPIO_DRV_STRENGTH_1    (1U << MAX32_GPIO_DRV_STRENGTH_POS)
+/** 4 mA drive strength. */
 #define MAX32_GPIO_DRV_STRENGTH_2    (2U << MAX32_GPIO_DRV_STRENGTH_POS)
+/** 8 mA drive strength. */
 #define MAX32_GPIO_DRV_STRENGTH_3    (3U << MAX32_GPIO_DRV_STRENGTH_POS)
+/** @} */
 
-/** GPIO bias weak pull up selection, to VDDIO (1MOhm) */
+/**
+ * @name GPIO weak pull-up and pull-down
+ * @{
+ */
+/** @cond INTERNAL_HIDDEN */
 #define MAX32_GPIO_WEAK_PULL_UP_POS   (11U)
+#define MAX32_GPIO_WEAK_PULL_DOWN_POS (12U)
+/** @endcond */
+/** GPIO bias weak pull up selection, to VDDIO (1MOhm) */
 #define MAX32_GPIO_WEAK_PULL_UP       (1U << MAX32_GPIO_WEAK_PULL_UP_POS)
 /** GPIO bias weak pull down selection, to VDDIOH (1MOhm) */
-#define MAX32_GPIO_WEAK_PULL_DOWN_POS (12U)
 #define MAX32_GPIO_WEAK_PULL_DOWN     (1U << MAX32_GPIO_WEAK_PULL_DOWN_POS)
 
 /** @} */

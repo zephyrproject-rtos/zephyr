@@ -3,18 +3,26 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief PCA series GPIO expander-specific devicetree flags.
+ * @ingroup gpio_interface_pca_series
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_PCA_SERIES_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_PCA_SERIES_GPIO_H_
 
 /**
  * @brief PCA-Series GPIO expander specific flags
+ * @defgroup gpio_interface_pca_series PCA series-specific GPIO flags
  *
  * The driver flags are encoded in the 8 upper bits of @ref gpio_dt_flags_t as
  * follows:
  *
  * - Bit 8-9: Drive strength for output drive strength register.
  *
- * @ingroup gpio_interface
+ * @ingroup gpio_interface_ext
  * @{
  */
 
@@ -41,23 +49,27 @@
  * @{
  */
 
-/** Interrupt routed to the WKPU controller */
+/** Lowest drive strength. */
 #define PCA_SERIES_GPIO_DRIVE_STRENGTH_X1 \
-	((0x0U << PCA_SERIES_GPIO_DRIVE_STRENGTH_POS) | \
+	((0x0U << PCA_SERIES_GPIO_DRIVE_STRENGTH_CONFIG_POS) | \
 	 (0x1U << PCA_SERIES_GPIO_DRIVE_STRENGTH_ENABLE_POS))
+/** Second lowest drive strength. */
 #define PCA_SERIES_GPIO_DRIVE_STRENGTH_X2 \
-	((0x1U << PCA_SERIES_GPIO_DRIVE_STRENGTH_POS) | \
+	((0x1U << PCA_SERIES_GPIO_DRIVE_STRENGTH_CONFIG_POS) | \
 	 (0x1U << PCA_SERIES_GPIO_DRIVE_STRENGTH_ENABLE_POS))
+/** Second highest drive strength. */
 #define PCA_SERIES_GPIO_DRIVE_STRENGTH_X3 \
-	((0x2U << PCA_SERIES_GPIO_DRIVE_STRENGTH_POS) | \
+	((0x2U << PCA_SERIES_GPIO_DRIVE_STRENGTH_CONFIG_POS) | \
 	 (0x1U << PCA_SERIES_GPIO_DRIVE_STRENGTH_ENABLE_POS))
+/** Highest drive strength. */
 #define PCA_SERIES_GPIO_DRIVE_STRENGTH_X4 \
-	((0x3U << PCA_SERIES_GPIO_DRIVE_STRENGTH_POS) | \
+	((0x3U << PCA_SERIES_GPIO_DRIVE_STRENGTH_CONFIG_POS) | \
 	 (0x1U << PCA_SERIES_GPIO_DRIVE_STRENGTH_ENABLE_POS))
 
 /** Default drive strength on device reset */
 #define PCA_SERIES_GPIO_DRIVE_STRENGTH_DEFAULT PCA_SERIES_GPIO_DRIVE_STRENGTH_X4
 
+/** @cond INTERNAL_HIDDEN */
 #define PCA_SERIES_GPIO_DRIVE_STRENGTH_CONFIG(x) \
 	((x & PCA_SERIES_GPIO_DRIVE_STRENGTH_CONFIG_MASK) >> \
 	PCA_SERIES_GPIO_DRIVE_STRENGTH_CONFIG_POS)
@@ -65,6 +77,7 @@
 #define PCA_SERIES_GPIO_DRIVE_STRENGTH_ENABLE(x) \
 	((x & PCA_SERIES_GPIO_DRIVE_STRENGTH_ENABLE_MASK) >> \
 	PCA_SERIES_GPIO_DRIVE_STRENGTH_ENABLE_POS)
+/** @endcond */
 
 /** @} */
 

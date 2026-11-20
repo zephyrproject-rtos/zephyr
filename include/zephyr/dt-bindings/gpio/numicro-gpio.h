@@ -3,8 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Nuvoton NuMicro-specific GPIO devicetree flags.
+ * @ingroup gpio_interface_numicro
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NUMICRO_GPIO_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NUMICRO_GPIO_H_
+
+/**
+ * @defgroup gpio_interface_numicro NuMicro-specific GPIO flags
+ * @ingroup gpio_interface_ext
+ * @{
+ */
 
 /**
  * @brief Enable GPIO pin debounce.
@@ -21,5 +34,7 @@
  * specified by the Linux GPIO binding. Only applicable for Nuvoton NuMicro SoCs.
  */
 #define NUMICRO_GPIO_INPUT_SCHMITT	(1U << 9)
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_NUMICRO_GPIO_H_ */
