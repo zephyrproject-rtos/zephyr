@@ -1,0 +1,9 @@
+common:
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.sensor.rtio_cancel:
+    tags:
+      - drivers
+      - sensor
+      - rtio
