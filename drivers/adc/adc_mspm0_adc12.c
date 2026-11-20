@@ -237,7 +237,7 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 		data->channel_mem_ctl[ch] |= FIELD_PREP(ADC_MSPM0_MEM_CTL_REF,
 							ADC_MSPM0_REF_INTERNAL);
 
-		if ((data->vref_flags & EXT_VREF) || !(config->vref_config)) {
+		if ((data->vref_flags & EXT_VREF) || !device_is_ready(config->vref_config)) {
 			ret = -EINVAL;
 			goto unlock;
 		}
@@ -254,7 +254,7 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 		data->channel_mem_ctl[ch] |= FIELD_PREP(ADC_MSPM0_MEM_CTL_REF,
 							ADC_MSPM0_REF_EXTERNAL);
 
-		if ((data->vref_flags & INT_VREF) || !(config->vref_config)) {
+		if ((data->vref_flags & INT_VREF) || !device_is_ready(config->vref_config)) {
 			ret = -EINVAL;
 			goto unlock;
 		}
