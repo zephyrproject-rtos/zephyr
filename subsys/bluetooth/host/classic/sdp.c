@@ -1984,43 +1984,78 @@ failed:
 	return err;
 }
 
-static uint16_t get_ss_record_len(struct net_buf *buf)
+enum rec_len_state {
+	REC_LEN_OK,
+	REC_LEN_INCOMPLETE,
+	REC_LEN_MALFORMED,
+};
+
+static uint16_t get_ss_record_len(struct net_buf *buf,
+					enum rec_len_state *rec_state)
 {
 	if (buf->len >= SDP_RECORD_HANDLE_SIZE) {
+		*rec_state = REC_LEN_OK;
 		return SDP_RECORD_HANDLE_SIZE;
 	}
 
 	LOG_WRN("Invalid service record handle length");
+	*rec_state = REC_LEN_INCOMPLETE;
 	return 0;
 }
 
-static uint16_t get_ssa_record_len(struct net_buf *buf)
+static uint16_t get_ssa_record_len(struct net_buf *buf,
+					enum rec_len_state *rec_state)
 {
-	uint16_t len;
+	uint32_t len_32b;
+	uint16_t len = 0U;
 	uint8_t seq;
 
+	if (buf->len < sizeof(uint8_t)) {
+		*rec_state = REC_LEN_INCOMPLETE;
+		return 0U;
+	}
 	seq = net_buf_pull_u8(buf);
 
 	switch (seq) {
 	case BT_SDP_SEQ8:
+		if (buf->len < sizeof(uint8_t)) {
+			*rec_state = REC_LEN_INCOMPLETE;
+			return 0U;
+		}
 		len = net_buf_pull_u8(buf);
 		break;
 	case BT_SDP_SEQ16:
+		if (buf->len < sizeof(uint16_t)) {
+			*rec_state = REC_LEN_INCOMPLETE;
+			return 0U;
+		}
 		len = net_buf_pull_be16(buf);
 		break;
 	case BT_SDP_SEQ32:
-		len = net_buf_pull_be32(buf);
+		if (buf->len < sizeof(uint32_t)) {
+			*rec_state = REC_LEN_INCOMPLETE;
+			return 0U;
+		}
+		len_32b = net_buf_pull_be32(buf);
+		if (len_32b > UINT16_MAX) {
+			LOG_WRN("SDP length exceeds 16-bit max");
+			*rec_state = REC_LEN_MALFORMED;
+			return 0U;
+		}
+		len = (uint16_t)len_32b;
 		break;
 	default:
 		LOG_WRN("Sequence type 0x%02x not handled", seq);
-		len = 0U;
-		break;
+		*rec_state = REC_LEN_MALFORMED;
+		return 0U;
 	}
 
+	*rec_state = REC_LEN_OK;
 	return len;
 }
 
-static uint16_t get_record_len(struct bt_sdp_client *session)
+static uint16_t get_record_len(struct bt_sdp_client *session,
+					enum rec_len_state *rec_state)
 {
 	struct net_buf *buf;
 	uint16_t len;
@@ -2028,18 +2063,20 @@ static uint16_t get_record_len(struct bt_sdp_client *session)
 	buf = session->rec_buf;
 
 	if (!session->param) {
+		*rec_state = REC_LEN_OK;
 		return buf->len;
 	}
 
 	switch (session->param->type) {
 	case BT_SDP_DISCOVER_SERVICE_SEARCH:
-		len = get_ss_record_len(buf);
+		len = get_ss_record_len(buf, rec_state);
 		break;
 	case BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR:
-		len = get_ssa_record_len(buf);
+		len = get_ssa_record_len(buf, rec_state);
 		break;
 	case BT_SDP_DISCOVER_SERVICE_ATTR:
 	default:
+		*rec_state = REC_LEN_OK;
 		len = buf->len;
 		break;
 	}
@@ -2055,27 +2092,50 @@ enum uuid_state {
 	UUID_PARTIAL_RESOLVED,
 };
 
+static int sdp_client_notify_failure(struct bt_conn *conn,
+				struct bt_sdp_client *session)
+{
+	struct bt_sdp_client_result result = {
+		.resp_buf = NULL,
+		.next_record_hint = false,
+	};
+
+	session->param->func(conn, &result, session->param);
+	return 0;
+}
+
 static int sdp_client_notify_result(struct bt_conn *conn, struct bt_sdp_client *session,
 				    enum uuid_state state)
 {
 	struct bt_sdp_client_result result;
+	enum rec_len_state rec_state;
 	uint16_t rec_len;
 	uint8_t user_ret;
 
 	if ((state == UUID_NOT_RESOLVED) || (session->rec_buf->len == 0U)) {
-		result.resp_buf = NULL;
-		result.next_record_hint = false;
-		session->param->func(conn, &result, session->param);
-		return 0;
+		return sdp_client_notify_failure(conn, session);
 	}
 
 	while (session->rec_buf->len) {
 		struct net_buf_simple_state buf_state;
+		bool incomplete;
 
 		net_buf_simple_save(&session->rec_buf->b, &buf_state);
-		rec_len = get_record_len(session);
+		rec_len = get_record_len(session, &rec_state);
+
+		if (rec_state == REC_LEN_MALFORMED) {
+			return sdp_client_notify_failure(conn, session);
+		}
+
+		incomplete = (rec_state == REC_LEN_INCOMPLETE) ||
+						session->rec_buf->len < rec_len;
+
+		if (incomplete && state != UUID_PARTIAL_RESOLVED) {
+			return sdp_client_notify_failure(conn, session);
+		}
+
 		/* tell the user about multi record resolution */
-		if (session->rec_buf->len > rec_len) {
+		if (!incomplete && session->rec_buf->len > rec_len) {
 			result.next_record_hint = true;
 		} else {
 			if (state == UUID_PARTIAL_RESOLVED) {
