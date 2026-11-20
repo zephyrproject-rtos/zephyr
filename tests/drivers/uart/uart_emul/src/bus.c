@@ -238,6 +238,30 @@ ZTEST_F(uart_emul, test_irq_tx)
 	zassert_equal(tx_len, 0, "TX buffer should be empty");
 }
 
+/* A writer held back by a full TX FIFO is resumed when the FIFO is flushed */
+ZTEST_F(uart_emul, test_irq_tx_flush)
+{
+	size_t tx_len;
+
+	for (size_t i = 0; i < EMUL_UART_TX_FIFO_SIZE; i++) {
+		uart_poll_out(fixture->dev, 'p');
+	}
+
+	uart_irq_callback_user_data_set(fixture->dev, uart_emul_isr, fixture);
+	/* No room in the TX FIFO, so this does not call the callback */
+	uart_irq_tx_enable(fixture->dev);
+	zassert_equal(k_sem_take(&fixture->tx_done_sem, K_MSEC(100)), -EAGAIN,
+		      "ISR ran with a full TX FIFO");
+
+	zassert_equal(uart_emul_flush_tx_data(fixture->dev), EMUL_UART_TX_FIFO_SIZE);
+	zassert_equal(k_sem_take(&fixture->tx_done_sem, K_SECONDS(1)), 0,
+		      "Timeout waiting for UART ISR");
+
+	tx_len = uart_emul_get_tx_data(fixture->dev, fixture->tx_content, SAMPLE_DATA_SIZE);
+	zassert_equal(tx_len, SAMPLE_DATA_SIZE, "TX buffer length does not match");
+	zassert_mem_equal(fixture->tx_content, fixture->sample_data, SAMPLE_DATA_SIZE);
+}
+
 ZTEST_F(uart_emul, test_irq_rx)
 {
 	int rc;
@@ -346,6 +370,38 @@ static void uart_emul_callback_rx_timeout(const struct device *dev, struct uart_
 
 	zassert_not_null(evt);
 	k_event_post(&fixture->async_events, ((uint32_t)1 << evt->type));
+}
+
+static void uart_emul_callback_tx_done(const struct device *dev, struct uart_event *evt,
+				       void *user_data)
+{
+	ARG_UNUSED(dev);
+
+	if (evt->type == UART_TX_DONE) {
+		k_sem_give(user_data);
+	}
+}
+
+/* With loopback, a transfer completes even when polled output filled the TX FIFO */
+ZTEST(uart_emul, test_async_tx_loopback_fifo_full)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(euart_loopback));
+	static const uint8_t tx_data[32];
+	struct k_sem tx_done;
+
+	k_sem_init(&tx_done, 0, 1);
+
+	for (size_t i = 0; i < DT_PROP(DT_NODELABEL(euart_loopback), tx_fifo_size); i++) {
+		uart_poll_out(dev, 'p');
+	}
+
+	zassert_ok(uart_callback_set(dev, uart_emul_callback_tx_done, &tx_done));
+	zassert_ok(uart_tx(dev, tx_data, sizeof(tx_data), SYS_FOREVER_US));
+	zassert_ok(k_sem_take(&tx_done, K_SECONDS(1)), "UART_TX_DONE expected");
+
+	uart_emul_flush_rx_data(dev);
+	uart_emul_flush_tx_data(dev);
+	zassert_ok(uart_callback_set(dev, NULL, NULL));
 }
 
 ZTEST_F(uart_emul, test_async_rx_buffer_release)
