@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A single MRAM bank within a Nordic MRAM memory node.
+
+compatible: "nordic,mram-bank"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  nordic,mutexes:
+    type: phandle-array
+    specifier-space: mutex
+    min-len: 1
+    max-len: 1
+    description: |
+      Hardware mutexes used to serialize MRAM access across CPU domains.
