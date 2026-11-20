@@ -1,0 +1,185 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - native_sim
+  harness: ztest
+  sidecar: bumble
+tests:
+  bluetooth.classic.sim.l2cap.basic:
+    timeout: 120
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_client::test_01_basic_mode
+          - --peer_bd_address={addr0} -test=l2cap_server::test_01_basic_mode
+  bluetooth.classic.sim.l2cap.basic.mode_optional:
+    timeout: 120
+    extra_args:
+      - EXTRA_CONF_FILE="prj_basic.conf"
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_client::test_02_basic_mode_optional
+          - --peer_bd_address={addr0} -test=l2cap_server::test_02_basic_mode_optional
+
+  bluetooth.classic.sim.l2cap.retransmission:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_ret.conf"
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_client::test_03_ret_mode
+          - --peer_bd_address={addr0} -test=l2cap_server::test_03_ret_mode
+  bluetooth.classic.sim.l2cap.retransmission.mode_optional:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_ret.conf"
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_client::test_04_ret_mode_optional
+          - --peer_bd_address={addr0} -test=l2cap_server::test_04_ret_mode_optional
+
+  bluetooth.classic.sim.l2cap.enhanced_retransmission:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_eret.conf"
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_client::test_07_eret_mode
+          - --peer_bd_address={addr0} -test=l2cap_server::test_07_eret_mode
+  bluetooth.classic.sim.l2cap.enhanced_retransmission.mode_optional:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_eret.conf"
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_client::test_08_eret_mode_optional
+          - --peer_bd_address={addr0} -test=l2cap_server::test_08_eret_mode_optional
+
+  bluetooth.classic.sim.l2cap.flow_control:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_fc.conf"
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_client::test_05_fc_mode
+          - --peer_bd_address={addr0} -test=l2cap_server::test_05_fc_mode
+  bluetooth.classic.sim.l2cap.flow_control.mode_optional:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_fc.conf"
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_client::test_06_fc_mode_optional
+          - --peer_bd_address={addr0} -test=l2cap_server::test_06_fc_mode_optional
+
+  bluetooth.classic.sim.l2cap.streaming:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_stream.conf"
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_client::test_09_stream_mode
+          - --peer_bd_address={addr0} -test=l2cap_server::test_09_stream_mode
+  bluetooth.classic.sim.l2cap.streaming.mode_optional:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_stream.conf"
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_client::test_10_stream_mode_optional
+          - --peer_bd_address={addr0} -test=l2cap_server::test_10_stream_mode_optional
+
+  bluetooth.classic.sim.l2cap.multiple_channels_simultaneously.basic:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_basic.conf"
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_client::test_11_basic_mode_multi
+          - --peer_bd_address={addr0} -test=l2cap_server::test_11_basic_mode_multi
+  bluetooth.classic.sim.l2cap.multiple_channels_simultaneously.eret:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_eret.conf"
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_client::test_12_eret_mode_multi
+          - --peer_bd_address={addr0} -test=l2cap_server::test_12_eret_mode_multi
