@@ -513,7 +513,10 @@ static int set_iir_config(const struct sensor_value *iir, const struct device *d
 		return ret;
 	}
 	/* IIR configuration is writable only during STANDBY mode(as per datasheet) */
-	set_power_mode(BMP5_POWERMODE_STANDBY, dev);
+	ret = set_power_mode(BMP5_POWERMODE_STANDBY, dev);
+	if (ret != BMP5_OK) {
+		return ret;
+	}
 
 	/* update IIR config */
 	uint8_t dsp_config[2];
