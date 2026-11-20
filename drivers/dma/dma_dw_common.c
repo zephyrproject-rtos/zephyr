@@ -14,6 +14,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/cache.h>
 #include <soc.h>
 #include "dma_dw_common.h"
 
@@ -480,6 +481,21 @@ int dw_dma_start(const struct device *dev, uint32_t channel)
 	}
 
 	LOG_INF("%s: channel %d start", dev->name, channel);
+
+	sys_cache_data_flush_range(chan_data->lli,
+				   sizeof(struct dw_lli) * chan_data->lli_count);
+
+	if (chan_data->dma_blkcallback) {
+		dw_write(dev_cfg->base, DW_MASK_BLOCK, DW_CHAN_UNMASK(channel));
+	} else if (chan_data->dma_tfrcallback) {
+		dw_write(dev_cfg->base, DW_MASK_TFR, DW_CHAN_UNMASK(channel));
+	}
+	dw_write(dev_cfg->base, DW_MASK_ERR, DW_CHAN_UNMASK(channel));
+	dw_write(dev_cfg->base, DW_CLEAR_TFR, 0x1 << channel);
+	dw_write(dev_cfg->base, DW_CLEAR_BLOCK, 0x1 << channel);
+	dw_write(dev_cfg->base, DW_CLEAR_SRC_TRAN, 0x1 << channel);
+	dw_write(dev_cfg->base, DW_CLEAR_DST_TRAN, 0x1 << channel);
+	dw_write(dev_cfg->base, DW_CLEAR_ERR, 0x1 << channel);
 
 	struct dw_lli *lli = chan_data->lli_current;
 
