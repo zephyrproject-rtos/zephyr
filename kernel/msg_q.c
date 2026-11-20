@@ -43,6 +43,8 @@ static inline bool msgq_handle_poll_events(struct k_msgq *msgq)
 void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 		 uint32_t max_msgs)
 {
+	__ASSERT(msg_size != 0U, "msg_size must not be zero");
+	__ASSERT(max_msgs != 0U, "max_msgs must not be zero");
 	__ASSERT_NO_MSG(!size_mul_overflow(max_msgs, msg_size, &(size_t){0}));
 	__ASSERT_NO_MSG(!size_add_overflow((size_t)(uintptr_t)buffer, max_msgs * msg_size,
 					&(size_t){0}));
@@ -79,7 +81,7 @@ int z_impl_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, alloc_init, msgq);
 
-	if (size_mul_overflow(msg_size, max_msgs, &total_size)) {
+	if (size_mul_overflow(msg_size, max_msgs, &total_size) || (total_size == 0U)) {
 		ret = -EINVAL;
 	} else {
 		buffer = z_thread_malloc(total_size);

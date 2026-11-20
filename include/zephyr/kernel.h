@@ -5607,12 +5607,15 @@ struct k_msgq_attrs {
  *       instead.
  *
  * @param q_name Name of the message queue.
- * @param q_msg_size Message size (in bytes).
- * @param q_max_msgs Maximum number of messages that can be queued.
+ * @param q_msg_size Message size (in bytes). Must not be zero.
+ * @param q_max_msgs Maximum number of messages that can be queued. Must not
+ *                   be zero.
  * @param q_align Alignment of the message queue's ring buffer (power of 2).
  *
  */
 #define K_MSGQ_DEFINE(q_name, q_msg_size, q_max_msgs, q_align)		\
+	BUILD_ASSERT((q_msg_size) > 0, "q_msg_size must not be zero");	\
+	BUILD_ASSERT((q_max_msgs) > 0, "q_max_msgs must not be zero");	\
 	static char __noinit __aligned(q_align)				\
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
 	STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
@@ -5627,12 +5630,15 @@ struct k_msgq_attrs {
  * ring buffer is not necessary, setting @a q_align to 1 is sufficient.
  *
  * @param q_name Name of the message queue.
- * @param q_msg_size Message size (in bytes).
- * @param q_max_msgs Maximum number of messages that can be queued.
+ * @param q_msg_size Message size (in bytes). Must not be zero.
+ * @param q_max_msgs Maximum number of messages that can be queued. Must not
+ *                   be zero.
  * @param q_align Alignment of the message queue's ring buffer (power of 2).
  *
  */
 #define K_MSGQ_DEFINE_STATIC(q_name, q_msg_size, q_max_msgs, q_align)	\
+	BUILD_ASSERT((q_msg_size) > 0, "q_msg_size must not be zero");	\
+	BUILD_ASSERT((q_max_msgs) > 0, "q_max_msgs must not be zero");	\
 	static char __noinit __aligned(q_align)				\
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
 	static STRUCT_SECTION_ITERABLE(k_msgq, q_name) =		\
@@ -5656,7 +5662,8 @@ struct k_msgq_attrs {
  *
  * @param q_name Name of the message queue.
  * @param q_msg_type Type of each message.
- * @param q_max_msgs Maximum number of messages that can be queued.
+ * @param q_max_msgs Maximum number of messages that can be queued. Must not
+ *                   be zero.
  */
 #define K_MSGQ_DEFINE_TYPE(q_name, q_msg_type, q_max_msgs) \
 	K_MSGQ_DEFINE(q_name, sizeof(q_msg_type), q_max_msgs, __alignof(q_msg_type))
@@ -5670,7 +5677,8 @@ struct k_msgq_attrs {
  *
  * @param q_name Name of the message queue.
  * @param q_msg_type Type of each message.
- * @param q_max_msgs Maximum number of messages that can be queued.
+ * @param q_max_msgs Maximum number of messages that can be queued. Must not
+ *                   be zero.
  */
 #define K_MSGQ_DEFINE_STATIC_TYPE(q_name, q_msg_type, q_max_msgs) \
 	K_MSGQ_DEFINE_STATIC(q_name, sizeof(q_msg_type), q_max_msgs, __alignof(q_msg_type))
@@ -5686,8 +5694,9 @@ struct k_msgq_attrs {
  *
  * @param msgq Address of the message queue.
  * @param buffer Pointer to ring buffer that holds queued messages.
- * @param msg_size Message size (in bytes).
- * @param max_msgs Maximum number of messages that can be queued.
+ * @param msg_size Message size (in bytes), must not be zero.
+ * @param max_msgs Maximum number of messages that can be queued, must not be
+ *	zero.
  */
 void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
 		 uint32_t max_msgs);
@@ -5708,8 +5717,8 @@ void k_msgq_init(struct k_msgq *msgq, char *buffer, size_t msg_size,
  * @param max_msgs Maximum number of messages that can be queued.
  *
  * @return 0 on success, -ENOMEM if there was insufficient memory in the
- *	thread's resource pool, or -EINVAL if the size parameters cause
- *	an integer overflow.
+ *	thread's resource pool, or -EINVAL if @p msg_size or @p max_msgs is
+ *	zero or the size parameters cause an integer overflow.
  */
 __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 				uint32_t max_msgs);
