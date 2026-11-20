@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2026 Vasilis Liaskovitis
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpu1 {
+	zephyr,deferred-start;
+};
