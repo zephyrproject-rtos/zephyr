@@ -172,6 +172,14 @@
 
 #define __builtin_unreachable() __builtin_trap()
 
+/* __builtin_unreachable() is a trap here, which would turn the CODE_ASSUME()
+ * fallback into a runtime check. Keep it a pure hint.
+ */
+#if !HAS_BUILTIN(__builtin_assume)
+#undef CODE_ASSUME
+#define CODE_ASSUME(cond) ((void)0)
+#endif
+
 /* Not a full barrier, just a SW barrier */
 #define __sync_synchronize() do { __asm__ __volatile__ ("" ::: "memory"); } \
 	while (false)
