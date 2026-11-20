@@ -14,6 +14,24 @@
 
 #include <stm32_backup_domain.h>
 
+static inline void ll_pwr_enable_backup_regulator(void)
+{
+#if defined(CONFIG_STM32_HAL2)
+	LL_PWR_EnableBackupRegulator();
+#else /* CONFIG_STM32_HAL2 */
+	LL_PWR_EnableBkUpRegulator();
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+static inline uint32_t ll_pwr_is_enabled_backup_regulator(void)
+{
+#if defined(CONFIG_STM32_HAL2)
+	return LL_PWR_IsEnabledBackupRegulator();
+#else /* CONFIG_STM32_HAL2 */
+	return LL_PWR_IsEnabledBkUpRegulator();
+#endif /* CONFIG_STM32_HAL2 */
+}
+
 LOG_MODULE_REGISTER(stm32_backup_sram, CONFIG_SOC_LOG_LEVEL);
 
 struct stm32_backup_sram_config {
@@ -61,8 +79,8 @@ static int stm32_backup_sram_init(const struct device *dev)
 	/* enable backup sram regulator (required to retain backup SRAM content
 	 * while in standby or VBAT modes).
 	 */
-	LL_PWR_EnableBkUpRegulator();
-	while (!LL_PWR_IsEnabledBkUpRegulator()) {
+	ll_pwr_enable_backup_regulator();
+	while (!ll_pwr_is_enabled_backup_regulator()) {
 	}
 #endif
 

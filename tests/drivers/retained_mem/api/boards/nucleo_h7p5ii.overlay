@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		retainedmemtestdevice = &retainedmem0;
+	};
+};
+
+&backup_sram {
+	status = "okay";
+
+	retainedmem0: retainedmem {
+		compatible = "zephyr,retained-ram";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+};

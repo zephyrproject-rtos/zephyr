@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+tst_dma0: &hpdma1 {
+	status = "okay";
+};
+
+tst_dma1: &gpdma1 {
+	status = "okay";
+};

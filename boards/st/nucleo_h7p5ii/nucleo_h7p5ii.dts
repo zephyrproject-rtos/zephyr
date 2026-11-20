@@ -16,10 +16,17 @@
 	model = "STMicroelectronics STM32H7P5II-NUCLEO board";
 
 	aliases {
+		die-temp0 = &die_temp;
 		led0 = &green_led;
 		led1 = &red_led;
 		led2 = &blue_led;
+		pwm-led0 = &green_pwm_led;
+		pwm-led1 = &red_pwm_led;
+		pwm-led2 = &blue_pwm_led;
 		sw0 = &user_button;
+		rtc = &rtc;
+		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat;
 	};
 
 	chosen {
@@ -53,6 +60,22 @@
 		blue_led: led_2 {
 			gpios = <&gpiof 4 GPIO_ACTIVE_HIGH>;
 			label = "User LD3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		green_pwm_led: led_0_pwm {
+			pwms = <&pwm5 4 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		red_pwm_led: led_1_pwm {
+			pwms = <&pwm16 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		blue_pwm_led: led_2_pwm {
+			pwms = <&pwm10 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 };
@@ -141,5 +164,85 @@
 	pinctrl-0 = <&uart4_rx_pd11 &uart4_tx_pd12>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
+};
+
+&spi1 {
+	/* Arduino D10 (NSS) / D11 (MOSI) / D12 (MISO) / D13 (SCK) */
+	pinctrl-0 = <&spi1_nss_pb7 &spi1_miso_pc11 &spi1_mosi_pb2 &spi1_sck_pg9>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c3 {
+	/* Arduino D14 (SCL) / D15 (SDA) */
+	pinctrl-0 = <&i2c3_scl_pc8 &i2c3_sda_pc9>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* User LEDs PWMs */
+&timers5 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm5: pwm {
+		pinctrl-0 = <&tim5_ch4_pg9>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timers16 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm16: pwm {
+		pinctrl-0 = <&tim16_ch1_pf1>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timers10 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm10: pwm {
+		pinctrl-0 = <&tim10_ch1_pf4>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(2)>;
+	status = "okay";
+};
+
+/* ADC1 - used by analog sensors */
+&adc12_common {
+	/* adc_ker_ck = HCLK/4 = 260 MHz / 4 = 65 MHz (must not exceed 80 MHz) */
+	clocks = <&rcc STM32_CLOCK(AHB3, 24)>,
+		 <&rcc (STM32_SRC_HCLK3 | STM32_CLOCK_DIV(4)) ADC_SEL(0)>,
+		 <&rcc (STM32_SRC_HCLK3 | STM32_CLOCK_DIV(4)) ADCDIV(2)>;
+	clock-names = "adcx", "adc_ker", "adc_pre";
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+};
+
+&vref1 {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
