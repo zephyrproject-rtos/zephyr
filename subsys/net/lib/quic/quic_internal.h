@@ -1024,6 +1024,13 @@ struct quic_endpoint {
 	 */
 	bool list_ref_dropped;
 
+	/** The peer closed the connection, which is draining: nothing is
+	 * sent to the peer any more (RFC 9000 ch. 10.2.2). Not a bit field,
+	 * so that the receive path writes it without touching the bits
+	 * below.
+	 */
+	bool draining;
+
 	/** Is this endpoint in a server role.
 	 */
 	bool is_server : 1;

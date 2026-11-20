@@ -1974,6 +1974,8 @@ static int handle_connection_close_frame(struct quic_endpoint *ep,
 
 	pos += reason_len;
 
+	ep->draining = true;
+
 	/* Keep what the peer said for the application to read. A connection
 	 * that is still on its listening context has no socket to read it
 	 * from. Only the first close is kept: the connection is draining
