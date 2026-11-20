@@ -39,6 +39,40 @@ extern void z_tricore_irq_config(unsigned int irq, unsigned int prio, unsigned i
 		Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p);                                       \
 		z_tricore_irq_config(irq_p, priority_p, flags_p);                                  \
 	}
+
+/* Vectored by priority: one direct ISR per priority, given as a literal */
+#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)                                 \
+	{                                                                                          \
+		__asm__(".globl z_tricore_prio_isr_" STRINGIFY(priority_p) "\n\t"                  \
+			".set z_tricore_prio_isr_" STRINGIFY(priority_p)                           \
+			", " STRINGIFY(isr_p));                                                    \
+		z_tricore_irq_config(irq_p, priority_p, flags_p);                                  \
+	}
+
+/* The common interrupt entry and exit do the nesting count and tracing */
+#define ARCH_ISR_DIRECT_HEADER()     do { } while (false)
+#define ARCH_ISR_DIRECT_FOOTER(swap) ARG_UNUSED(swap)
+#define ARCH_ISR_DIRECT_PM()         do { } while (false)
+
+/* A non-zero return requests a reschedule check */
+#define ARCH_ISR_DIRECT_DECLARE(name)                                                              \
+	static inline int name##_body(void);                                                       \
+	static int __used name##_handler(void)                                                     \
+	{                                                                                          \
+		return name##_body();                                                              \
+	}                                                                                          \
+	__asm__(".section .text." #name ", \"ax\"\n\t"                                             \
+		".globl " #name "\n\t"                                                             \
+		".type " #name ", @function\n\t"                                                   \
+		".p2align 1\n"                                                                     \
+		#name ":\n\t"                                                                      \
+		"movh.a %a12, hi:" #name "_handler\n\t"                                            \
+		"lea %a12, [%a12], lo:" #name "_handler\n\t"                                       \
+		"j z_tricore_isr_direct\n\t"                                                       \
+		".size " #name ", . - " #name "\n\t"                                               \
+		".previous");                                                                      \
+	void name(void);                                                                           \
+	static inline int name##_body(void)
 #endif /* _ASMLANGUAGE */
 
 /** @endcond */
