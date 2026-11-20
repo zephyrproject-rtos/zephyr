@@ -407,7 +407,15 @@ static void icm20689_convert_gyro(struct sensor_value *val, int32_t raw_val,
 
 static inline void icm20689_convert_temp(struct sensor_value *val, int16_t raw_val)
 {
-	int64_t temperature = ((int64_t)raw_val * 10 * 1000000) / 3268 + (25 * 1000000);
+	/* (raw_val * 10 * 1000000) / 3268 reduces to raw_val * 2500000 / 817.
+	 * Splitting it into whole and remainder parts keeps every product
+	 * within int32, so the conversion runs without the software 64-bit
+	 * division helper on divider-less cores.
+	 */
+	int32_t whole = raw_val / 817;
+	int32_t remainder = raw_val % 817;
+	int32_t temperature = whole * 2500000 + remainder * 2500000 / 817
+			    + (25 * 1000000);
 
 	(void)sensor_value_from_micro(val, temperature);
 }
