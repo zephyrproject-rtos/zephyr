@@ -418,21 +418,18 @@ static void l2cap_br_chan_cleanup(struct bt_l2cap_chan *chan)
 	bt_l2cap_br_chan_del(chan);
 }
 
-static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
+static void l2cap_br_chan_cancel_work(struct bt_l2cap_br_chan *br_chan)
 {
-	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
-	struct k_work_sync retry_sync = {0};
-
-	LOG_DBG("chan %p cid 0x%04x", br_chan, br_chan->rx.cid);
+	struct k_work_sync sync = {0};
 
 	/* Cancel ongoing work. Since the channel can be re-used after this
 	 * we need to sync to make sure that the kernel does not have it
 	 * in its queue anymore.
 	 *
-	 * In the case where we are in the context of executing the rtx_work
-	 * item, we don't sync as it will deadlock the workqueue.
+	 * On the work's own queue, non-synchronous cancellation suffices
+	 * once deletion from a running channel work has been deferred.
 	 */
-	struct k_work_q *work_queue = br_chan->rtx_work.queue;
+	struct k_work_q *work_queue = br_chan->rtx_work.work.queue;
 
 	if (work_queue == NULL || k_current_get() != work_queue->thread_id) {
 		k_work_cancel_delayable_sync(&br_chan->rtx_work, &br_chan->rtx_sync);
@@ -440,18 +437,37 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 		k_work_cancel_delayable(&br_chan->rtx_work);
 	}
 
-	work_queue = br_chan->retry_work.queue;
+	work_queue = br_chan->retry_work.work.queue;
 	if (work_queue == NULL || k_current_get() != work_queue->thread_id) {
-		k_work_cancel_delayable_sync(&br_chan->retry_work, &retry_sync);
+		k_work_cancel_delayable_sync(&br_chan->retry_work, &sync);
 	} else {
 		k_work_cancel_delayable(&br_chan->retry_work);
 	}
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
-	k_work_cancel_delayable(&br_chan->ret_work);
-	k_work_cancel_delayable(&br_chan->monitor_work);
-#endif /* CONFIG_BT_L2CAP_RET_FC */
+	work_queue = br_chan->ret_work.work.queue;
+	if (work_queue == NULL || k_current_get() != work_queue->thread_id) {
+		k_work_cancel_delayable_sync(&br_chan->ret_work, &sync);
+	} else {
+		k_work_cancel_delayable(&br_chan->ret_work);
+	}
 
+	work_queue = br_chan->monitor_work.work.queue;
+	if (work_queue == NULL || k_current_get() != work_queue->thread_id) {
+		k_work_cancel_delayable_sync(&br_chan->monitor_work, &sync);
+	} else {
+		k_work_cancel_delayable(&br_chan->monitor_work);
+	}
+#endif /* CONFIG_BT_L2CAP_RET_FC */
+}
+
+static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
+{
+	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
+
+	LOG_DBG("chan %p cid 0x%04x", br_chan, br_chan->rx.cid);
+
+	l2cap_br_chan_cancel_work(br_chan);
 	ARRAY_FOR_EACH(BR_CHAN(chan)->flags, i) {
 		atomic_clear(&BR_CHAN(chan)->flags[i]);
 	}
@@ -1139,13 +1155,14 @@ static void l2cap_br_retry_handler(struct k_work *work);
 static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 			      bt_l2cap_chan_destroy_t destroy)
 {
-	struct bt_l2cap_br_chan *ch = l2cap_br_chan_alloc_cid(conn, chan);
+	struct bt_l2cap_br_chan *ch = BR_CHAN(chan);
 
-	if (!ch) {
-		LOG_WRN("Unable to allocate L2CAP CID");
-		return false;
+	/* CID allocation failure still runs teardown without attaching conn. */
+	ARRAY_FOR_EACH_PTR(ch->flags, flag) {
+		atomic_clear(flag);
 	}
-
+	chan->conn = NULL;
+	chan->destroy = destroy;
 	sys_slist_init(&ch->_pdu_tx_queue);
 
 	/* All dynamic channels have the destroy handler which makes sure that
@@ -1161,6 +1178,11 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	k_work_init_delayable(&ch->ret_work, l2cap_br_ret_timeout);
 	k_work_init_delayable(&ch->monitor_work, l2cap_br_monitor_timeout);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
+	if (l2cap_br_chan_alloc_cid(conn, chan) == NULL) {
+		LOG_WRN("Unable to allocate L2CAP CID");
+		return false;
+	}
+
 	bt_l2cap_chan_add(conn, chan, destroy);
 
 	return true;
@@ -2770,8 +2792,7 @@ enum l2cap_br_conn_security_result {
  * - existing security on link is applicable for requested PSM in connection,
  * - legacy (non SSP) devices connecting with low security requirements,
  * Returns L2CAP_CONN_SECURITY_PENDING if:
- * - channel connection process is on hold since there were valid security
- *   conditions triggering authentication indirectly in subcall.
+ * - authentication is already in progress or was started for the channel.
  * Returns L2CAP_CONN_SECURITY_REJECT if:
  * - bt_conn_set_security API returns < 0,
  * - Or, the ACL connection has been encrypted, the security level of link key cannot be upgraded,
@@ -2826,6 +2847,11 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 		 * security level of the L2CAP channel, reject the L2CAP conn request.
 		 */
 		return L2CAP_CONN_SECURITY_REJECT;
+	}
+
+	if (chan->conn->sec_level < br_chan->required_sec_level &&
+	    atomic_test_bit(chan->conn->flags, BT_CONN_BR_PAIRING)) {
+		return L2CAP_CONN_SECURITY_PENDING;
 	}
 
 	check = bt_conn_set_security(chan->conn, br_chan->required_sec_level);
@@ -2974,17 +3000,8 @@ void bt_l2cap_br_chan_set_state(struct bt_l2cap_chan *chan, bt_l2cap_chan_state_
 }
 #endif /* CONFIG_BT_L2CAP_LOG_LEVEL_DBG && CONFIG_BT_L2CAP_DYNAMIC_CHANNEL*/
 
-void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan)
+static void l2cap_br_chan_cleanup_tx(struct bt_l2cap_br_chan *br_chan)
 {
-	const struct bt_l2cap_chan_ops *ops = chan->ops;
-	struct bt_l2cap_br_chan *br_chan = CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan);
-
-	LOG_DBG("conn %p chan %p", chan->conn, chan);
-
-	if (!chan->conn) {
-		goto destroy;
-	}
-
 	cancel_data_ready(br_chan);
 
 	/* Remove buffers on the PDU TX queue. */
@@ -2995,6 +3012,20 @@ void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan)
 
 		net_buf_unref(buf);
 	}
+}
+
+static void l2cap_br_chan_del_now(struct bt_l2cap_chan *chan)
+{
+	const struct bt_l2cap_chan_ops *ops = chan->ops;
+	struct bt_l2cap_br_chan *br_chan = CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan);
+
+	LOG_DBG("conn %p chan %p", chan->conn, chan);
+
+	if (chan->conn == NULL) {
+		goto destroy;
+	}
+
+	l2cap_br_chan_cleanup_tx(br_chan);
 
 	if (ops->disconnected) {
 		ops->disconnected(chan);
@@ -3018,6 +3049,89 @@ destroy:
 	if (ops->released) {
 		ops->released(chan);
 	}
+}
+
+static sys_slist_t br_pending_delete = SYS_SLIST_STATIC_INIT(&br_pending_delete);
+static struct k_spinlock br_pending_delete_lock;
+
+static void l2cap_br_delete_work(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	while (true) {
+		k_spinlock_key_t key = k_spin_lock(&br_pending_delete_lock);
+		sys_snode_t *node = sys_slist_get(&br_pending_delete);
+		struct bt_l2cap_chan *chan;
+		struct bt_conn *conn;
+
+		k_spin_unlock(&br_pending_delete_lock, key);
+		if (node == NULL) {
+			return;
+		}
+
+		chan = CONTAINER_OF(node, struct bt_l2cap_chan, node);
+		conn = chan->conn;
+		/* Wait through the kernel's handler epilogue before either callback. */
+		l2cap_br_chan_cancel_work(BR_CHAN(chan));
+		l2cap_br_chan_del_now(chan);
+		if (conn != NULL) {
+			bt_conn_unref(conn);
+		}
+	}
+}
+
+static K_WORK_DEFINE(br_delete_work, l2cap_br_delete_work);
+
+static bool l2cap_br_work_is_current(struct k_work_delayable *work)
+{
+	return work->work.queue != NULL && work->work.queue->thread_id == k_current_get() &&
+	       (k_work_busy_get(&work->work) & K_WORK_RUNNING) != 0;
+}
+
+void bt_l2cap_br_chan_del(struct bt_l2cap_chan *chan)
+{
+	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
+	bool defer = l2cap_br_work_is_current(&br_chan->rtx_work) ||
+		     l2cap_br_work_is_current(&br_chan->retry_work);
+
+#if defined(CONFIG_BT_L2CAP_RET_FC)
+	defer = defer || l2cap_br_work_is_current(&br_chan->ret_work) ||
+		l2cap_br_work_is_current(&br_chan->monitor_work);
+#endif
+
+	if (defer) {
+		k_spinlock_key_t key;
+		int err;
+
+		l2cap_br_chan_cancel_work(br_chan);
+		if (chan->conn != NULL) {
+			l2cap_br_chan_cleanup_tx(br_chan);
+		}
+
+		key = k_spin_lock(&br_pending_delete_lock);
+		/* Keep the embedded work alive through the kernel's handler epilogue.
+		 * The independent worker synchronizes cancellation before released().
+		 * Channel deletion callers have already removed chan from the ACL list.
+		 */
+		if (!sys_slist_find(&br_pending_delete, &chan->node, NULL)) {
+			if (chan->conn != NULL) {
+				struct bt_conn *conn = bt_conn_ref(chan->conn);
+
+				__ASSERT_NO_MSG(conn != NULL);
+				ARG_UNUSED(conn);
+			}
+			sys_slist_append(&br_pending_delete, &chan->node);
+		}
+		k_spin_unlock(&br_pending_delete_lock, key);
+
+		err = bt_work_submit(&br_delete_work);
+		if (err < 0) {
+			LOG_ERR("Failed to submit channel deletion (%d)", err);
+		}
+		return;
+	}
+
+	l2cap_br_chan_del_now(chan);
 }
 
 static void l2cap_br_config_req(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan)
@@ -5374,8 +5488,8 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, u
 	switch (l2cap_br_conn_security(chan, psm)) {
 	case L2CAP_CONN_SECURITY_PENDING:
 		/*
-		 * Authentication was triggered, wait with sending request on
-		 * connection security changed callback context.
+		 * Authentication is in progress. Wait for the connection
+		 * security changed callback before sending the request.
 		 */
 		return 0;
 	case L2CAP_CONN_SECURITY_PASSED:
@@ -5812,26 +5926,30 @@ done:
 	return 0;
 }
 
-static void l2cap_br_pend_conn_req_reply_sec_block(struct bt_l2cap_br *l2cap,
+/* A true return means released() may have freed or reused chan. */
+static bool l2cap_br_pend_conn_req_reply_sec_block(struct bt_l2cap_br *l2cap,
 						   struct bt_l2cap_chan *chan)
 {
 	/* Send response to connection request only when in acceptor role */
 	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
-		return;
+		return false;
 	}
 
 	if (BR_CHAN(chan)->state != BT_L2CAP_CONNECTING) {
-		return;
+		return false;
 	}
 
 	if (!l2cap_br_allocate_buf(l2cap)) {
 		LOG_WRN("No buffers for conn rsp (sec block)");
 		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RSP_SEC_BLOCK);
 		bt_work_schedule(&BR_CHAN(chan)->retry_work, L2CAP_BR_RETRY_INTERVAL);
-		return;
+		return false;
 	}
 
+	/* The signaling channel owns the queued response; the rejected channel can be released. */
 	l2cap_br_conn_req_reply(l2cap, chan, BT_L2CAP_BR_ERR_SEC_BLOCK);
+	l2cap_br_chan_cleanup(chan);
+	return true;
 }
 
 static void l2cap_br_pend_conn_req_reply_success(struct bt_l2cap_br *l2cap,
@@ -5914,7 +6032,9 @@ static void l2cap_br_retry_handler(struct k_work *work)
 	}
 
 	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_CONN_RSP_SEC_BLOCK)) {
-		l2cap_br_pend_conn_req_reply_sec_block(l2cap, &chan->chan);
+		if (l2cap_br_pend_conn_req_reply_sec_block(l2cap, &chan->chan)) {
+			return;
+		}
 	}
 
 	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_CONN_RSP_SUCCESS)) {
@@ -5934,14 +6054,22 @@ static void l2cap_br_retry_handler(struct k_work *work)
 	}
 }
 
-static void l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
+/* Propagate release so callers do not access chan after released(). */
+static bool l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
 			       uint8_t status)
 {
 	if (BR_CHAN(chan)->state != BT_L2CAP_CONNECTING) {
-		return;
+		return false;
 	}
 
 	LOG_DBG("chan %p status 0x%02x encr 0x%02x", chan, status, chan->conn->encrypt);
+
+	if (status == 0 && chan->conn->encrypt != 0 &&
+	    chan->conn->sec_level < BR_CHAN(chan)->required_sec_level) {
+		LOG_WRN("Security level %u below required %u", chan->conn->sec_level,
+			BR_CHAN(chan)->required_sec_level);
+		status = BT_HCI_ERR_AUTH_FAIL;
+	}
 
 	if (status != 0) {
 		/*
@@ -5949,20 +6077,20 @@ static void l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *
 		 * security violation only as channel acceptor.
 		 */
 		if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
-			l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
-			return;
+			return l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
 		}
 
 		/* Release channel allocated to outgoing connection request */
 		if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING)) {
 			l2cap_br_chan_cleanup(chan);
+			return true;
 		}
 
-		return;
+		return false;
 	}
 
 	if (chan->conn->encrypt == 0) {
-		return;
+		return false;
 	}
 
 	/*
@@ -5971,17 +6099,20 @@ static void l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *
 	 */
 	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
 		l2cap_br_pend_conn_req_reply_success(l2cap, chan);
-		return;
+		return false;
 	}
 
 	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING)) {
 		l2cap_br_connect_req(l2cap, chan);
 	}
+
+	return false;
 }
 
 void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 {
-	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_chan *chan, *next;
+	sys_snode_t *last = sys_slist_peek_tail(&conn->channels);
 	struct bt_l2cap_br *l2cap;
 	struct bt_l2cap_chan *sig_ch = bt_l2cap_br_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SIG);
 
@@ -5992,8 +6123,15 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 
 	l2cap = CONTAINER_OF(sig_ch, struct bt_l2cap_br, chan.chan);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
-		l2cap_br_conn_pend(l2cap, chan, hci_status);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
+		/* Callbacks may append a reused channel. Do not notify it of this old event. */
+		if (&chan->node == last) {
+			next = NULL;
+		}
+
+		if (l2cap_br_conn_pend(l2cap, chan, hci_status)) {
+			continue;
+		}
 
 		if (chan->conn == NULL) {
 			LOG_WRN("Invalid ACL conn for chan %p", chan);

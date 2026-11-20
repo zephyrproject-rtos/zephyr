@@ -7,3 +7,8 @@ project(host_l2cap_br_sig)
 
 target_sources(app PRIVATE src/main.c)
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/bluetooth)
+target_link_options(app PUBLIC
+  -Wl,--wrap=bt_work_submit
+  -Wl,--wrap=bt_work_schedule
+  -Wl,--wrap=bt_work_reschedule
+)
