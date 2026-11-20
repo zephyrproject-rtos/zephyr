@@ -324,6 +324,63 @@ int video_write_cci_multiregs8(const struct i2c_dt_spec *i2c, const struct video
 int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct video_reg16 *regs,
 				size_t num_regs);
 
+/** Continuous block of register entries supporting 8-bit or 16-bit address encoded with
+ *  CCI size flags and variable length data
+ */
+struct video_block_reg {
+	/** Starting register address with CCI flags (e.g. VIDEO_REG_ADDR16_DATA8) */
+	uint32_t addr;
+	/** Number of contiguous registers / data bytes */
+	uint16_t num_regs;
+	/** Pointer to array of contiguous data bytes */
+	const uint8_t *data;
+};
+
+/** Macro to initialize a struct video_block_reg element with generic address */
+#define VIDEO_BLOCK_REG(start_addr, ...)                                                           \
+	{                                                                                          \
+		.addr = (start_addr), .num_regs = sizeof((const uint8_t[]){__VA_ARGS__}),          \
+		.data = (const uint8_t[])                                                          \
+		{                                                                                  \
+			__VA_ARGS__                                                                \
+		}                                                                                  \
+	}
+
+/** Macro to initialize a struct video_block_reg element with 8-bit address */
+#define VIDEO_BLOCK_REG8(start_addr, ...)                                                          \
+	{                                                                                          \
+		.addr = (start_addr) | VIDEO_REG_ADDR8_DATA8,                                      \
+		.num_regs = sizeof((const uint8_t[]){__VA_ARGS__}), .data = (const uint8_t[])      \
+		{                                                                                  \
+			__VA_ARGS__                                                                \
+		}                                                                                  \
+	}
+
+/** Macro to initialize a struct video_block_reg element with 16-bit address */
+#define VIDEO_BLOCK_REG16(start_addr, ...)                                                         \
+	{                                                                                          \
+		.addr = (start_addr) | VIDEO_REG_ADDR16_DATA8,                                     \
+		.num_regs = sizeof((const uint8_t[]){__VA_ARGS__}), .data = (const uint8_t[])      \
+		{                                                                                  \
+			__VA_ARGS__                                                                \
+		}                                                                                  \
+	}
+
+/**
+ * @brief Write contiguous blocks starting at generic register addresses using zero-copy.
+ *
+ * The block addresses are the generic address encoding the address size information using the
+ * @ref VIDEO_REG_ADDR16_DATA8 and @ref VIDEO_REG_ADDR8_DATA8.
+ * The values in the block are 8-bit wide.
+ *
+ * @brief i2c Reference to the video device on an I2C bus.
+ * @brief blocks Array of address/values blocks with size structures to write to the device
+ * sequentially.
+ * @brief num_blocks Number of block entries in the table.
+ */
+int video_write_cci_multiblocks_reg(const struct i2c_dt_spec *i2c,
+				    const struct video_block_reg *blocks, size_t num_blocks);
+
 /**
  * @}
  */
