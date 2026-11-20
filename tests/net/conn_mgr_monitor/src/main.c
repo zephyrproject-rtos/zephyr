@@ -1300,6 +1300,63 @@ ZTEST(conn_mgr_monitor, test_ignore_while_ready)
 		"No events should be fired if disconnecting iface is ignored.");
 }
 
+/* Get the first iface the connection manager cannot monitor */
+static struct net_if *get_untracked_iface(void)
+{
+	struct net_if *iface = net_if_get_by_index(CONN_MGR_IFACE_MAX + 1);
+
+	zassert_not_null(iface, "Test needs more ifaces than CONN_MGR_IFACE_MAX");
+	zassert_true(iface != if_simp_a && iface != if_simp_b && iface != if_conn_a &&
+		     iface != if_conn_b && iface != if_dummy_eth,
+		     "Untracked iface must not be one used by other tests");
+
+	return iface;
+}
+
+/* Ifaces beyond CONN_MGR_IFACE_MAX have no state */
+ZTEST(conn_mgr_monitor, test_untracked_iface_state)
+{
+	zexpect_not_equal(conn_mgr_if_state(if_simp_a), CONN_MGR_IF_STATE_INVALID,
+			  "if_simp_a should have a state.");
+	zexpect_equal(conn_mgr_if_state(get_untracked_iface()), CONN_MGR_IF_STATE_INVALID,
+		      "Untracked iface should have no state.");
+	zexpect_equal(conn_mgr_if_state(NULL), CONN_MGR_IF_STATE_INVALID,
+		      "Unknown iface should have no state.");
+}
+
+/* Changes to an iface beyond CONN_MGR_IFACE_MAX are ignored and affect no other iface */
+ZTEST(conn_mgr_monitor, test_untracked_iface_changes)
+{
+	struct net_if *iface = get_untracked_iface();
+	uint16_t state = conn_mgr_if_state(if_simp_a);
+	struct test_stats stats;
+
+	conn_mgr_ignore_iface(iface);
+	zexpect_false(conn_mgr_is_iface_ignored(iface), "Untracked iface cannot be ignored.");
+	conn_mgr_watch_iface(iface);
+	zexpect_false(conn_mgr_is_iface_ignored(iface), "Untracked iface cannot be ignored.");
+
+	zassert_not_null(net_if_ipv4_addr_add(iface, &test_ipv4_a, NET_ADDR_MANUAL, 0),
+			 "IPv4 address should be added to the untracked iface.");
+	zassert_equal(net_if_up(iface), 0, "net_if_up should succeed for the untracked iface.");
+	k_sleep(EVENT_WAIT_TIME);
+	zassert_equal(net_if_down(iface), 0,
+		      "net_if_down should succeed for the untracked iface.");
+	zassert_true(net_if_ipv4_addr_rm(iface, &test_ipv4_a),
+		     "IPv4 address should be removed from the untracked iface.");
+	k_sleep(EVENT_WAIT_TIME);
+
+	stats = get_reset_stats();
+	zexpect_equal(stats.event_count_gen, 0, "No events should be fired for untracked iface.");
+	zexpect_equal(stats.event_count_iface, 0,
+		      "No events should be fired for untracked iface.");
+	zexpect_equal(stats.event_count_ipv4, 0,
+		      "No IPv4 events should be fired for untracked iface.");
+	zexpect_equal(conn_mgr_if_state(if_simp_a), state, "if_simp_a should not be affected.");
+	zexpect_equal(conn_mgr_if_state(iface), CONN_MGR_IF_STATE_INVALID,
+		      "Untracked iface should have no state.");
+}
+
 /* Test L2 and iface ignore API */
 ZTEST(conn_mgr_monitor, test_ignores)
 {
