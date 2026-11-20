@@ -15,6 +15,12 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <esp_gpio_port.h>
+#include <zephyr/irq.h>
+#if defined(CONFIG_ADC_ESP32_DMA) && !SOC_GDMA_SUPPORTED
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+
+static void adc_esp32_dma_irq_connect(void);
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
@@ -27,7 +33,7 @@ LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
 /* Default internal reference voltage */
 #define ADC_ESP32_DEFAULT_VREF_INTERNAL (1100)
 
-#define ADC_CLIP_MVOLT_12DB	2550
+#define ADC_CLIP_MVOLT_12DB 2550
 
 static void adc_hw_calibration(adc_unit_t unit)
 {
@@ -369,7 +375,6 @@ static int adc_esp32_init(const struct device *dev)
 	const struct adc_esp32_conf *conf = (struct adc_esp32_conf *)dev->config;
 	uint32_t clock_src_hz;
 
-
 #if SOC_ADC_DIG_CTRL_SUPPORTED && (!SOC_ADC_RTC_CTRL_SUPPORTED || CONFIG_ADC_ESP32_DMA)
 	if (!device_is_ready(conf->clock_dev)) {
 		return -ENODEV;
@@ -388,6 +393,10 @@ static int adc_esp32_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_ADC_ESP32_DMA
+#if !SOC_GDMA_SUPPORTED
+	adc_esp32_dma_irq_connect();
+#endif
+
 	int err = adc_esp32_dma_init(dev);
 
 	if (err < 0) {
@@ -437,6 +446,32 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 #else
 #define ADC_ESP32_CONF_INIT(n)
 #endif /* defined(SOC_GDMA_SUPPORTED) && SOC_GDMA_SUPPORTED */
+
+#if defined(CONFIG_ADC_ESP32_DMA) && !SOC_GDMA_SUPPORTED
+/*
+ * Both ADC units run DMA through the same engine (I2S0 on the ESP32, SPI3 on
+ * the ESP32-S2), so every instance names the same interrupt source and the
+ * handler is connected once.
+ */
+#define ADC_ESP32_DMA_IRQN DT_INST_IRQN_BY_IDX(0, 0)
+#define ADC_ESP32_CHECK_IRQ(n)                                                                     \
+	BUILD_ASSERT(DT_INST_IRQN_BY_IDX(n, 0) == ADC_ESP32_DMA_IRQN,                              \
+		     "every ADC unit must share the DMA interrupt source");
+DT_INST_FOREACH_STATUS_OKAY(ADC_ESP32_CHECK_IRQ)
+
+static void adc_esp32_dma_irq_connect(void)
+{
+	static bool connected;
+
+	if (connected) {
+		return;
+	}
+	connected = true;
+
+	IRQ_CONNECT(ADC_ESP32_DMA_IRQN, IRQ_DEFAULT_PRIORITY, adc_esp32_dma_intr_handler, NULL, 0);
+	irq_enable(ADC_ESP32_DMA_IRQN);
+}
+#endif
 
 #define ADC_ESP32_CHECK_CHANNEL_REF(chan)                                                          \
 	BUILD_ASSERT(DT_ENUM_HAS_VALUE(chan, zephyr_reference, adc_ref_internal),                  \

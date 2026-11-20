@@ -15,7 +15,11 @@ config ADC_ESP32_DMA
 	bool "ESP32 ADC DMA Support"
 	select DMA if DT_HAS_ESPRESSIF_ESP32_GDMA_ENABLED
 	help
-	  Enable the ADC DMA mode
+	  Enable the ADC DMA mode.
+
+	  On the ESP32 the ADC DMA path runs through the I2S0 peripheral and
+	  shares its interrupt, so it cannot be enabled together with the i2s0
+	  node.
 
 config ADC_ESP32_CONVERSION_TIMEOUT_US
 	int "Oneshot conversion completion timeout in microseconds"

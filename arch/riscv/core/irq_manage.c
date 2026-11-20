@@ -67,7 +67,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(const void *parameter),
 			     const void *parameter, uint32_t flags)
 {
-	z_isr_install(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, routine, parameter);
+	z_isr_install(Z_RISCV_IRQ_TABLE_IRQ(irq), routine, parameter);
 
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC) ||                            \
 	defined(CONFIG_RISCV_HAS_AIA)
@@ -87,7 +87,7 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 	ARG_UNUSED(priority);
 	ARG_UNUSED(flags);
 
-	return z_isr_uninstall(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, routine,
+	return z_isr_uninstall(Z_RISCV_IRQ_TABLE_IRQ(irq), routine,
 			       parameter);
 }
 #endif /* CONFIG_SHARED_INTERRUPTS */

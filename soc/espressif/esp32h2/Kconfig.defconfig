@@ -3,8 +3,62 @@
 
 if SOC_SERIES_ESP32H2
 
+# Multi-level interrupts: L1 = intc (CPU lines), L2 = intmux (the interrupt
+# matrix as one aggregator, slot = 32 + source, ETS_MAX_INTR_SOURCE = 65),
+# L3 = gpio0_l3_intc (16 slots from 97); NUM_IRQS = 97 + 16.
 config NUM_IRQS
+	default 113
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
 	default 32
+
+# Key line of intmux, the "interrupts" line of the intmux node. Line 6 is
+# permanently disabled, so no matrix source is ever routed to it.
+config 2ND_LVL_INTR_00_OFFSET
+	default 6
+
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 65
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+# Level-3: GPIO_INTR_SOURCE is shared by the analog comparator, which owns
+# GPIO_EXT.int_st bit 0, and the GPIO port driver, which has no bit in that
+# register and is the catch-all input instead (see gpio0_l3_intc in the SoC
+# dtsi). Window base is the end of the level-2 window.
+config 3RD_LEVEL_INTERRUPTS
+	default y
+
+config 3RD_LEVEL_INTERRUPT_BITS
+	default 8
+
+config NUM_3RD_LEVEL_AGGREGATORS
+	default 1
+
+config 3RD_LVL_INTR_00_OFFSET
+	default 22	# GPIO_INTR_SOURCE, gpio0_l3_intc
+
+config MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR
+	default 16
+
+config 3RD_LVL_ISR_TBL_OFFSET
+	default 97
+
+config MAIN_STACK_SIZE
+	default 2048
 
 config PMP_SLOTS
 	default 16
@@ -14,8 +68,5 @@ config PMP_SLOTS
 # covered. Use unlocked entries with MPRV-based enforcement instead.
 config PMP_NO_LOCK_GLOBAL
 	default y
-
-config MAIN_STACK_SIZE
-	default 2048
 
 endif # SOC_SERIES_ESP32H2

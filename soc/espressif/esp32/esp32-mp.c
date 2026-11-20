@@ -9,7 +9,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/storage/flash_map.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #include <soc.h>
 #include <esp_cpu.h>
@@ -18,6 +17,7 @@
 #include <esp_mcuboot_image.h>
 #include <esp_memory_utils.h>
 #include <zephyr/zsr.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #ifdef CONFIG_SMP
 
@@ -97,6 +97,9 @@ static void appcpu_entry2(void)
 	__asm__ volatile("wsr %0, " ZSR_CPU_STR : : "r"(cpu));
 
 	smp_log("ESP32: APPCPU running");
+
+	/* FROM_CPU_INTR1 interrupts this core: route it here */
+	irq_enable(DT_IRQN(DT_NODELABEL(ipi1)));
 
 	*start_rec->alive = 1;
 	start_rec->fn(start_rec->arg);
@@ -213,20 +216,19 @@ void esp_appcpu_start(void *entry_point)
 	ets_printf("ESP32: APPCPU start sequence complete");
 }
 
-IRAM_ATTR static void esp_crosscore_isr(void *arg)
+/*
+ * FROM_CPU_INTRn interrupts core n; its argument is n. Right now this
+ * interrupt is only used for IPIs.
+ */
+IRAM_ATTR static void esp_crosscore_isr(const void *arg)
 {
-	ARG_UNUSED(arg);
-
-	/* Right now this interrupt is only used for IPIs */
-	z_sched_ipi();
-
-	const int core_id = esp_core_id();
-
-	if (core_id == 0) {
+	if ((uintptr_t)arg == 0U) {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
 	} else {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
 	}
+
+	z_sched_ipi();
 }
 
 void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
@@ -261,41 +263,33 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 	cpus_active[0] = true;
 	cpus_active[cpu_num] = true;
 
-	esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, irq),
-		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, priority)) |
-		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, flags)) |
-			ESP_INTR_FLAG_IRAM,
-		esp_crosscore_isr,
-		NULL,
-		NULL);
-
-	esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, irq),
-		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, priority)) |
-		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, flags)) |
-			ESP_INTR_FLAG_IRAM,
-		esp_crosscore_isr,
-		NULL,
-		NULL);
+	/*
+	 * FROM_CPU_INTRn interrupts core n, so each core routes its own source to
+	 * itself: core 0 here, core 1 in appcpu_entry2().
+	 */
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(ipi0)), IRQ_DEFAULT_PRIORITY, esp_crosscore_isr,
+		    (void *)0, 0);
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(ipi1)), IRQ_DEFAULT_PRIORITY, esp_crosscore_isr,
+		    (void *)1, 0);
+	irq_enable(DT_IRQN(DT_NODELABEL(ipi0)));
 
 	smp_log("ESP32: APPCPU initialized");
 }
 
 void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 {
-	const int core_id = esp_core_id();
-
-	ARG_UNUSED(cpu_bitmap);
-
-	if (core_id == 0) {
+	if ((cpu_bitmap & BIT(0)) != 0U) {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
-	} else {
+	}
+	if ((cpu_bitmap & BIT(1)) != 0U) {
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
 	}
 }
 
 void arch_sched_broadcast_ipi(void)
 {
-	arch_sched_directed_ipi(IPI_ALL_CPUS_MASK);
+	/* Every other CPU */
+	arch_sched_directed_ipi(IPI_ALL_CPUS_MASK & ~BIT(esp_core_id()));
 }
 
 IRAM_ATTR bool arch_cpu_active(int cpu_num)

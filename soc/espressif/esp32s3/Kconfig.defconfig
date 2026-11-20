@@ -24,4 +24,64 @@ endchoice
 
 endif # PM && TICKLESS_KERNEL
 
+# Multi-level interrupt hierarchy
+#   L1 = intc            : CPU interrupt lines
+#   L2 = intmux          : interrupt matrix, one aggregator, one input per source
+#   L3 = <periph>_l3_intc: status bits of one peripheral that share a source
+#
+# _sw_isr_table: 32 L1 slots, then the intmux window (slot = 32 + source), then
+# one 16-entry window per L3 aggregator: 32 + 99 + 2 * 16 = 163 entries. On
+# Xtensa NUM_IRQS is the CONFIG_NUM_IRQS macro in <zephyr/arch/xtensa/irq.h>,
+# derived from the values below.
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 3RD_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 3RD_LEVEL_INTERRUPT_BITS
+	default 8
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+# Key line of intmux, the "interrupts" line of the intmux node. Line 6 is the
+# internal CPU timer line, so no matrix source is ever routed to it.
+config 2ND_LVL_INTR_00_OFFSET
+	default 6
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 32
+
+# One input per interrupt matrix source (ETS_MAX_INTR_SOURCE)
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 99
+
+config NUM_3RD_LEVEL_AGGREGATORS
+	default 2
+
+# The matrix source of each L3 aggregator, in devicetree order
+config 3RD_LVL_INTR_00_OFFSET
+	default 39	# RTC_CORE_INTR_SOURCE, rtc_l3_intc
+
+config 3RD_LVL_INTR_01_OFFSET
+	default 24	# LCD_CAM_INTR_SOURCE, lcd_cam_l3_intc
+
+# Right after the intmux window: 32 + 99
+config 3RD_LVL_ISR_TBL_OFFSET
+	default 131
+
+config MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR
+	default 16
+
 endif # SOC_SERIES_ESP32S3
