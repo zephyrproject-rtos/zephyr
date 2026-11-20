@@ -1,0 +1,72 @@
+common:
+  tags:
+    - arm
+  arch_allow:
+    - arm
+  filter: CONFIG_CPU_AARCH32_CORTEX_R and CONFIG_ARM_MPU
+  integration_platforms:
+    - qemu_cortex_r5
+  ignore_faults: true
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Stack overflow report OK"
+tests:
+  arch.arm.stack_overflow.push:
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_PUSH=y
+  arch.arm.stack_overflow.push.extra_exception_info:
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_PUSH=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+  arch.arm.stack_overflow.push_partial:
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_PUSH_PARTIAL=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+  arch.arm.stack_overflow.push_frame:
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_PUSH_FRAME=y
+  arch.arm.stack_overflow.push_frame.extra_exception_info:
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_PUSH_FRAME=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+  arch.arm.stack_overflow.svc:
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_SVC=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+  arch.arm.stack_overflow.irq:
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_IRQ=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+  arch.arm.stack_overflow.irq_partial:
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_IRQ_PARTIAL=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+  arch.arm.stack_overflow.irq_partial.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_IRQ_PARTIAL=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+      - CONFIG_USERSPACE=y
+  arch.arm.stack_overflow.irq_frame:
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_IRQ_FRAME=y
+  arch.arm.stack_overflow.irq_frame.extra_exception_info:
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_IRQ_FRAME=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+  arch.arm.stack_overflow.undef:
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_UNDEF=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+  arch.arm.stack_overflow.pabt:
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_PABT=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+  arch.arm.stack_overflow.pabt.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_TEST_OVERFLOW_PABT=y
+      - CONFIG_EXTRA_EXCEPTION_INFO=y
+      - CONFIG_USERSPACE=y
