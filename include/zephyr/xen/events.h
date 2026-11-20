@@ -53,9 +53,16 @@ int evtchn_status(evtchn_status_t *status);
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
  *
+ * A callback may close its own port. Closing a different port from an
+ * event-channel callback is rejected to avoid a lock cycle with a callback
+ * running concurrently on another CPU.
+ *
  * @param port Local event-channel port to close.
  *
- * @return 0 on success, negative errno value on failure.
+ * @retval 0 on success.
+ * @retval -EDEADLK The function was called from a callback for another port.
+ * @retval -EINVAL Invalid event-channel port.
+ * @return Other negative errno values on failure.
  */
 int evtchn_close(evtchn_port_t port);
 
@@ -110,6 +117,8 @@ int alloc_unbound_event_channel_dom0(domid_t dom, domid_t remote_dom);
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
  *
+ * This function must not be called from an event-channel callback.
+ *
  * @param remote_dom Peer domain that already owns @p remote_port.
  * @param remote_port Event-channel port in @p remote_dom.
  * @param cb Callback invoked when the local channel fires.
@@ -125,6 +134,17 @@ int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
  *
+ * To reconfigure an active channel, callers should mask the port, drain or
+ * clear its pending state, update the Xen binding and/or callback, and then
+ * unmask the port again.
+ *
+ * Event-channel callbacks run in IRQ context and must not sleep. They must not
+ * bind, unbind, or inspect missed-event state for any port. A callback may
+ * close its own port, but closing another port returns -EDEADLK.
+ *
+ * After this function returns, any previously bound handler for the same port
+ * is no longer running and future events use the new handler.
+ *
  * @param port Local event-channel port number.
  * @param cb Callback to invoke when the port is signaled.
  * @param data User data pointer passed to @p cb.
@@ -136,10 +156,15 @@ int bind_event_channel(evtchn_port_t port, evtchn_cb_t cb, void *data);
 /**
  * @brief Remove the callback bound to an event channel.
  *
+ * After this function returns, the previously bound handler is no longer
+ * running and will not be invoked for later events.
+ *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
  *
  * The channel remains allocated, but subsequent notifications are recorded as
  * missed events until another callback is registered.
+ *
+ * This function must not be called from an event-channel callback.
  *
  * @param port Local event-channel port number.
  *
@@ -151,6 +176,8 @@ int unbind_event_channel(evtchn_port_t port);
  * @brief Get and clear the missed-event state for an unbound channel.
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
+ *
+ * This function must not be called from an event-channel callback.
  *
  * @param port Local event-channel port number.
  *
@@ -177,7 +204,11 @@ int mask_event_channel(evtchn_port_t port);
  *
  * @param port Local event-channel port number.
  *
- * @retval 0 Always returned after updating the shared-info mask bit.
+ * If an event is already pending, unmasking asks Xen to notify the vCPU
+ * assigned to the channel.
+ *
+ * @retval 0 on success.
+ * @return Negative errno value returned by Xen on failure.
  */
 int unmask_event_channel(evtchn_port_t port);
 
