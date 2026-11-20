@@ -551,6 +551,57 @@ static struct bt_l2cap_br *l2cap_br_find_signal_channel(struct bt_conn *conn)
 	return CONTAINER_OF(signaling_channel, struct bt_l2cap_br, chan.chan);
 }
 
+/* Channels that l2cap_br_rtx_expired() removed from their connection and that
+ * are not deleted yet, linked through bt_l2cap_chan.node. Protected by the
+ * host lock (bt_dev_lock()).
+ */
+static sys_slist_t rtx_expired = SYS_SLIST_STATIC_INIT(&rtx_expired);
+
+static void l2cap_br_rtx_expired_del(void)
+{
+	sys_snode_t *node;
+
+	do {
+		bt_dev_lock();
+		node = sys_slist_get(&rtx_expired);
+		bt_dev_unlock();
+
+		if (node != NULL) {
+			bt_l2cap_br_chan_del(CONTAINER_OF(node, struct bt_l2cap_chan, node));
+		}
+	} while (node != NULL);
+}
+
+static void l2cap_br_rtx_expired_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	l2cap_br_rtx_expired_del();
+}
+
+/* The work queue still uses rtx_work when l2cap_br_rtx_timeout() has returned,
+ * while the released callback hands the channel back to the application: a
+ * work item that is not part of the channel deletes it instead.
+ */
+static void l2cap_br_rtx_expired(struct bt_l2cap_br_chan *chan)
+{
+	static K_WORK_DEFINE(expired_work, l2cap_br_rtx_expired_handler);
+	int err;
+
+	bt_dev_lock();
+
+	if (sys_slist_find_and_remove(&chan->chan.conn->channels, &chan->chan.node)) {
+		sys_slist_append(&rtx_expired, &chan->chan.node);
+	}
+
+	bt_dev_unlock();
+
+	err = bt_work_submit(&expired_work);
+	if (err < 0) {
+		LOG_ERR("Failed to submit the deletion (err %d)", err);
+	}
+}
+
 static void l2cap_br_rtx_timeout(struct k_work *work)
 {
 	struct bt_l2cap_br_chan *chan = BR_CHAN_RTX(work);
@@ -588,7 +639,7 @@ static void l2cap_br_rtx_timeout(struct k_work *work)
 		__fallthrough;
 	case BT_L2CAP_DISCONNECTING:
 	case BT_L2CAP_CONNECTING:
-		l2cap_br_chan_cleanup(&chan->chan);
+		l2cap_br_rtx_expired(chan);
 		break;
 	default:
 		break;
@@ -2337,6 +2388,9 @@ void bt_l2cap_br_disconnected(struct bt_conn *conn)
 		bt_l2cap_chan_remove(conn, chan);
 		bt_l2cap_br_chan_del(chan);
 	}
+
+	/* No channel keeps its connection past this function */
+	l2cap_br_rtx_expired_del();
 }
 
 static struct bt_l2cap_server *l2cap_br_server_lookup_psm(uint16_t psm)
