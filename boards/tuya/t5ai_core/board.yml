@@ -1,0 +1,6 @@
+board:
+  name: t5ai_core
+  full_name: T5AI Core
+  vendor: tuya
+  socs:
+    - name: bk7258

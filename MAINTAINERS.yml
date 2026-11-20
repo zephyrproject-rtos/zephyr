@@ -581,6 +581,24 @@ BeagleBoard Platforms:
   labels:
     - "platform: BeagleBoard"
 
+Beken Platforms:
+  status: maintained
+  maintainers:
+    - Embracecactus
+  files:
+    - boards/tuya/t5ai_core/
+    - drivers/clock_control/*bk7258*
+    - drivers/clock_control/Kconfig.beken
+    - drivers/pinctrl/*bk7258*
+    - drivers/pinctrl/Kconfig.beken
+    - drivers/serial/*bk7258*
+    - drivers/serial/Kconfig.beken
+    - dts/arm/beken/
+    - dts/bindings/*/beken,*
+    - include/zephyr/dt-bindings/clock/beken*
+    - include/zephyr/dt-bindings/pinctrl/bk7258*
+    - soc/beken/
+
 Benchmarks:
   status: maintained
   meta: true

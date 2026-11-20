@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Embracecactus
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_T5AI_CORE
+	select SOC_BK7258_CPU0 if BOARD_T5AI_CORE_BK7258_CPU0
