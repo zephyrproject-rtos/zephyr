@@ -375,6 +375,97 @@ LLEXT_LOAD_UNLOAD(tls,
 	.test_setup = tls_test_setup,
 	.test_cleanup = tls_test_cleanup,
 )
+
+/*
+ * The same extension after tprel_oob.py moved the addend of its
+ * R_AARCH64_TLSLE_ADD_TPREL_HI12 relocation by 2**24, which puts TPREL(S+A)
+ * outside the range AAELF64 defines for that relocation.
+ */
+static LLEXT_CONST uint8_t tls_oob_ext[] LLEXT_SECT ELF_ALIGN = {
+	#include "tls_oob.inc"
+};
+
+ZTEST(llext, test_tprel_out_of_range)
+{
+	struct llext_buf_loader buf_loader =
+		LLEXT_BUF_LOADER(tls_oob_ext, sizeof(tls_oob_ext));
+	struct llext_loader *loader = &buf_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+	int res;
+
+	res = llext_load(loader, "tls_oob", &ext, &ldr_parm);
+	zassert_equal(res, -ENOEXEC, "load should fail with -ENOEXEC, got %d", res);
+	zassert_is_null(ext, "ext should be NULL after a failed load");
+}
+
+/*
+ * Same extension, but tprel_oob.py rewrote the symbol value so the unsigned
+ * sum wraps back below 2**24 and the addend alone still looks valid. The offset
+ * is out of range regardless of what the arithmetic wraps to.
+ */
+static LLEXT_CONST uint8_t tls_wrap_ext[] LLEXT_SECT ELF_ALIGN = {
+	#include "tls_wrap.inc"
+};
+
+ZTEST(llext, test_tprel_wrapped_symbol)
+{
+	struct llext_buf_loader buf_loader =
+		LLEXT_BUF_LOADER(tls_wrap_ext, sizeof(tls_wrap_ext));
+	struct llext_loader *loader = &buf_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+	int res;
+
+	res = llext_load(loader, "tls_wrap", &ext, &ldr_parm);
+	zassert_equal(res, -ENOEXEC, "load should fail with -ENOEXEC, got %d", res);
+	zassert_is_null(ext, "ext should be NULL after a failed load");
+}
+
+/*
+ * And one where tprel_oob.py kept both operands inside the range they are
+ * bounded to and put only their sum at 2**24, so nothing but the check on the
+ * computed offset can reject it.
+ */
+static LLEXT_CONST uint8_t tls_sum_ext[] LLEXT_SECT ELF_ALIGN = {
+	#include "tls_sum.inc"
+};
+
+ZTEST(llext, test_tprel_sum_out_of_range)
+{
+	struct llext_buf_loader buf_loader =
+		LLEXT_BUF_LOADER(tls_sum_ext, sizeof(tls_sum_ext));
+	struct llext_loader *loader = &buf_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+	int res;
+
+	res = llext_load(loader, "tls_sum", &ext, &ldr_parm);
+	zassert_equal(res, -ENOEXEC, "load should fail with -ENOEXEC, got %d", res);
+	zassert_is_null(ext, "ext should be NULL after a failed load");
+}
+
+/*
+ * And one where the addend is negative but still inside the range, which is the
+ * only way to reach the signed side of the same check: TPREL(S+A) is -1.
+ */
+static LLEXT_CONST uint8_t tls_neg_ext[] LLEXT_SECT ELF_ALIGN = {
+	#include "tls_neg.inc"
+};
+
+ZTEST(llext, test_tprel_negative_offset)
+{
+	struct llext_buf_loader buf_loader =
+		LLEXT_BUF_LOADER(tls_neg_ext, sizeof(tls_neg_ext));
+	struct llext_loader *loader = &buf_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+	int res;
+
+	res = llext_load(loader, "tls_neg", &ext, &ldr_parm);
+	zassert_equal(res, -ENOEXEC, "load should fail with -ENOEXEC, got %d", res);
+	zassert_is_null(ext, "ext should be NULL after a failed load");
+}
 #endif
 
 static LLEXT_CONST uint8_t inspect_ext[] LLEXT_SECT ELF_ALIGN = {
