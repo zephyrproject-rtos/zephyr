@@ -11,56 +11,57 @@
 
 #include "vc.h"
 
-uint32_t pcie_vc_cap_lookup(pcie_bdf_t bdf, struct pcie_vc_regs *regs)
+uint32_t pcie_vc_cap_lookup(const struct pcie_endpoint *ep, struct pcie_vc_regs *regs)
 {
 	uint32_t base;
 
-	base = pcie_get_ext_cap(bdf, PCIE_EXT_CAP_ID_VC);
+	if (ep == NULL) {
+		return 0;
+	}
+
+	base = pcie_get_ext_cap(ep, PCIE_EXT_CAP_ID_VC);
 	if (base == 0) {
-		base = pcie_get_ext_cap(bdf, PCIE_EXT_CAP_ID_MFVC_VC);
+		base = pcie_get_ext_cap(ep, PCIE_EXT_CAP_ID_MFVC_VC);
 		if (base == 0) {
 			return 0;
 		}
 	}
 
-	regs->cap_reg_1.raw = pcie_conf_read(bdf, base +
-					     PCIE_VC_CAP_REG_1_OFFSET);
-	regs->cap_reg_2.raw = pcie_conf_read(bdf, base +
-					     PCIE_VC_CAP_REG_2_OFFSET);
-	regs->ctrl_reg.raw = pcie_conf_read(bdf, base +
-					    PCIE_VC_CTRL_STATUS_REG_OFFSET);
+	regs->cap_reg_1.raw = pcie_conf_read(ep, base + PCIE_VC_CAP_REG_1_OFFSET);
+	regs->cap_reg_2.raw = pcie_conf_read(ep, base + PCIE_VC_CAP_REG_2_OFFSET);
+	regs->ctrl_reg.raw = pcie_conf_read(ep, base + PCIE_VC_CTRL_STATUS_REG_OFFSET);
 
 	return base;
 }
 
-void pcie_vc_load_resources_regs(pcie_bdf_t bdf,
-				 uint32_t base,
-				 struct pcie_vc_resource_regs *regs,
-				 int nb_regs)
+void pcie_vc_load_resources_regs(const struct pcie_endpoint *ep, uint32_t base,
+				 struct pcie_vc_resource_regs *regs, int nb_regs)
 {
 	int idx;
 
+	if (ep == NULL) {
+		return;
+	}
+
 	for (idx = 0; idx < nb_regs; idx++) {
-		regs->cap_reg.raw =
-			pcie_conf_read(bdf, base +
-				       PCIE_VC_RES_CAP_REG_OFFSET(idx));
-		regs->ctrl_reg.raw =
-			pcie_conf_read(bdf, base +
-				       PCIE_VC_RES_CTRL_REG_OFFSET(idx));
+		regs->cap_reg.raw = pcie_conf_read(ep, base + PCIE_VC_RES_CAP_REG_OFFSET(idx));
+		regs->ctrl_reg.raw = pcie_conf_read(ep, base + PCIE_VC_RES_CTRL_REG_OFFSET(idx));
 		regs->status_reg.raw =
-			pcie_conf_read(bdf, base +
-				       PCIE_VC_RES_STATUS_REG_OFFSET(idx));
+			pcie_conf_read(ep, base + PCIE_VC_RES_STATUS_REG_OFFSET(idx));
 		regs++;
 	}
 }
 
-static int get_vc_registers(pcie_bdf_t bdf,
-			    struct pcie_vc_regs *regs,
+static int get_vc_registers(const struct pcie_endpoint *ep, struct pcie_vc_regs *regs,
 			    struct pcie_vc_resource_regs *res_regs)
 {
 	uint32_t base;
 
-	base = pcie_vc_cap_lookup(bdf, regs);
+	if (ep == NULL) {
+		return -EINVAL;
+	}
+
+	base = pcie_vc_cap_lookup(ep, regs);
 	if (base == 0) {
 		return -ENOTSUP;
 	}
@@ -70,21 +71,21 @@ static int get_vc_registers(pcie_bdf_t bdf,
 		return -ENOTSUP;
 	}
 
-	pcie_vc_load_resources_regs(bdf, base, res_regs,
-			       regs->cap_reg_1.vc_count + 1);
+	pcie_vc_load_resources_regs(ep, base, res_regs, regs->cap_reg_1.vc_count + 1);
 
 	return 0;
 }
 
-
-int pcie_vc_enable(pcie_bdf_t bdf)
+int pcie_vc_enable(const struct pcie_endpoint *ep)
 {
 	struct pcie_vc_regs regs;
 	struct pcie_vc_resource_regs res_regs[PCIE_VC_MAX_COUNT];
 	int idx;
+	int ret;
 
-	if (get_vc_registers(bdf, &regs, res_regs) != 0) {
-		return -ENOTSUP;
+	ret = get_vc_registers(ep, &regs, res_regs);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* We do not touch VC0: it is always on */
@@ -102,14 +103,16 @@ int pcie_vc_enable(pcie_bdf_t bdf)
 	return 0;
 }
 
-int pcie_vc_disable(pcie_bdf_t bdf)
+int pcie_vc_disable(const struct pcie_endpoint *ep)
 {
 	struct pcie_vc_regs regs;
 	struct pcie_vc_resource_regs res_regs[PCIE_VC_MAX_COUNT];
 	int idx;
+	int ret;
 
-	if (get_vc_registers(bdf, &regs, res_regs) != 0) {
-		return -ENOTSUP;
+	ret = get_vc_registers(ep, &regs, res_regs);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* We do not touch VC0: it is always on */
@@ -125,15 +128,17 @@ int pcie_vc_disable(pcie_bdf_t bdf)
 	return 0;
 }
 
-int pcie_vc_map_tc(pcie_bdf_t bdf, struct pcie_vctc_map *map)
+int pcie_vc_map_tc(const struct pcie_endpoint *ep, struct pcie_vctc_map *map)
 {
 	struct pcie_vc_regs regs;
 	struct pcie_vc_resource_regs res_regs[PCIE_VC_MAX_COUNT];
 	int idx;
+	int ret;
 	uint8_t tc_mapped = 0;
 
-	if (get_vc_registers(bdf, &regs, res_regs) != 0) {
-		return -ENOTSUP;
+	ret = get_vc_registers(ep, &regs, res_regs);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* Map must relate to the actual VC count */

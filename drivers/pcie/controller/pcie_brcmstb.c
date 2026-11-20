@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
 
+#include <zephyr/drivers/interrupt_controller/msi_proxy.h>
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/drivers/pcie/controller.h>
 
@@ -35,6 +36,7 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 
 #define PCIE_MISC_RC_BAR1_CONFIG_LO           0x402c
 #define PCIE_MISC_RC_BAR1_CONFIG_LO_SIZE_MASK 0x1f
+#define PCIE_MISC_RC_BAR1_CONFIG_HI           0x4030
 
 #define PCIE_MISC_RC_BAR2_CONFIG_LO           0x4034
 #define PCIE_MISC_RC_BAR2_CONFIG_LO_SIZE_MASK 0x1f
@@ -53,6 +55,9 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 
 #define PCIE_MISC_UBUS_BAR2_CONFIG_REMAP                    0x40b4
 #define PCIE_MISC_UBUS_BAR2_CONFIG_REMAP_ACCESS_ENABLE_MASK 0x1
+
+#define PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_LO 0x40ac
+#define PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_HI 0x40b0
 
 #define PCIE_MISC_UBUS_BAR4_CONFIG_REMAP_LO 0x410c
 #define PCIE_MISC_UBUS_BAR4_CONFIG_REMAP_HI 0x4110
@@ -176,6 +181,8 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 
 struct pcie_brcmstb_config {
 	const struct pcie_ctrl_config *common;
+	const struct device *msi_parent;
+	bool supports_msi_bar1;
 	size_t regs_count;
 	struct {
 		uintptr_t addr;
@@ -194,6 +201,9 @@ struct pcie_brcmstb_data {
 	uintptr_t cfg_phys_addr;
 	mm_reg_t cfg_addr;
 	size_t cfg_size;
+	uint64_t msi_bus_addr;
+	uint64_t msi_cpu_addr;
+	size_t msi_size;
 	struct {
 		uintptr_t phys_start;
 		uintptr_t bus_start;
@@ -609,6 +619,18 @@ static int pcie_brcmstb_setup(const struct device *dev)
 	tmp &= ~PCIE_MISC_RC_BAR1_CONFIG_LO_SIZE_MASK;
 	sys_write32(tmp, data->cfg_addr + PCIE_MISC_RC_BAR1_CONFIG_LO);
 
+	if (data->msi_size != 0U) {
+		/* Map the proxy doorbell window; its size is already rounded up. */
+		sys_write32(upper_32_bits(data->msi_bus_addr),
+			    data->cfg_addr + PCIE_MISC_RC_BAR1_CONFIG_HI);
+		sys_write32(lower_32_bits(data->msi_cpu_addr) | BIT(0),
+			    data->cfg_addr + PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_LO);
+		sys_write32(upper_32_bits(data->msi_cpu_addr),
+			    data->cfg_addr + PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_HI);
+		sys_write32(lower_32_bits(data->msi_bus_addr) | encode_ibar_size(data->msi_size),
+			    data->cfg_addr + PCIE_MISC_RC_BAR1_CONFIG_LO);
+	}
+
 	tmp = sys_read32(data->cfg_addr + PCIE_MISC_RC_BAR3_CONFIG_LO);
 	tmp &= ~PCIE_MISC_RC_BAR3_CONFIG_LO_SIZE_MASK;
 	sys_write32(tmp, data->cfg_addr + PCIE_MISC_RC_BAR3_CONFIG_LO);
@@ -658,6 +680,51 @@ static int pcie_brcmstb_init(const struct device *dev)
 	data->cfg_size = config->common->cfg_size;
 
 	device_map(&data->cfg_addr, data->cfg_phys_addr, data->cfg_size, K_MEM_CACHE_NONE);
+
+	if (config->msi_parent != NULL) {
+		uint64_t msi_bus_addr;
+		uint64_t msi_cpu_addr;
+		size_t msi_size;
+		size_t size;
+
+		if (!device_is_ready(config->msi_parent)) {
+			LOG_ERR("MSI parent is not ready");
+			return -ENODEV;
+		}
+
+		if (!config->supports_msi_bar1) {
+			LOG_WRN("Controller does not support MSI inbound BAR1 remap");
+		} else if (DEVICE_API_IS(msi_proxy, config->msi_parent)) {
+			ret = msi_proxy_get_window(config->msi_parent, &msi_bus_addr, &msi_cpu_addr,
+						   &msi_size);
+			if (ret != 0) {
+				LOG_ERR("Failed to get MSI parent doorbell window: %d", ret);
+				return ret;
+			}
+
+			if ((msi_size == 0U) || (msi_size > BIT64(36))) {
+				LOG_ERR("MSI parent doorbell window size is not supported");
+				return -EINVAL;
+			}
+
+			/* The controller maps power-of-two windows of at least one page. */
+			size = BIT(LOG2CEIL(MAX(msi_size, 0x1000U)));
+			if (encode_ibar_size(size) == 0U) {
+				LOG_ERR("MSI parent doorbell window size cannot be encoded");
+				return -EINVAL;
+			}
+
+			if (((msi_bus_addr & (size - 1U)) != 0U) ||
+			    ((msi_cpu_addr & (size - 1U)) != 0U)) {
+				LOG_ERR("MSI parent doorbell window is not aligned");
+				return -EINVAL;
+			}
+
+			data->msi_bus_addr = msi_bus_addr;
+			data->msi_cpu_addr = msi_cpu_addr;
+			data->msi_size = size;
+		}
+	}
 
 	/* PCIe Setup */
 	pcie_brcmstb_setup(dev);
@@ -714,7 +781,9 @@ static int pcie_brcmstb_init(const struct device *dev)
 	return 0;
 }
 
+/* clang-format off */
 #define PCIE_BRCMSTB_INIT(n)                                                                       \
+	PCIE_CTRL_SCAN_BUSES_DEFINE(DT_DRV_INST(n))                                                \
 	static struct pcie_brcmstb_data pcie_brcmstb_data_##n = {};                                \
                                                                                                    \
 	static const struct pcie_ctrl_config pcie_ctrl_cfg_##n = {                                 \
@@ -726,6 +795,16 @@ static int pcie_brcmstb_init(const struct device *dev)
                                                                                                    \
 	static const struct pcie_brcmstb_config pcie_brcmstb_cfg_##n = {                           \
 		.common = &pcie_ctrl_cfg_##n,                                                      \
+		.supports_msi_bar1 = IS_ENABLED(CONFIG_SOC_BCM2712),                               \
+		IF_ENABLED(CONFIG_MSI_PROXY, (                                                     \
+			IF_ENABLED(DT_INST_NODE_HAS_PROP(n, msi_parent), (                         \
+				IF_ENABLED(                                                        \
+					DT_NODE_HAS_STATUS_OKAY(DT_INST_PHANDLE(n, msi_parent)), ( \
+					.msi_parent = DEVICE_DT_GET(                               \
+						DT_INST_PHANDLE(n, msi_parent)),                   \
+				))                                                                 \
+			))                                                                         \
+		))                                                                                 \
 		.regs_count = DT_NUM_REGS(DT_DRV_INST(n)),                                         \
 		.regs =                                                                            \
 			{                                                                          \
@@ -743,3 +822,4 @@ static int pcie_brcmstb_init(const struct device *dev)
 			      &pcie_brcmstb_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCIE_BRCMSTB_INIT)
+/* clang-format on */

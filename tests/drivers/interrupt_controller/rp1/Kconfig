@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_RP1_MSI_PROXY
+	bool
+	default y if !PCIE_MSI
+	select MSI_PROXY
+
+source "Kconfig.zephyr"

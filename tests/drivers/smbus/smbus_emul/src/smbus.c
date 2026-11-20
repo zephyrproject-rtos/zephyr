@@ -37,11 +37,11 @@ static void mock_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t data)
 	emul_pci_write(bdf, reg, data);
 }
 
-#define pcie_conf_write(bdf, reg, val)	mock_conf_write(bdf, reg, val)
+#define pcie_conf_write(ep, reg, val) mock_conf_write((ep)->bdf, reg, val)
 #endif /* PCIE_CONF_WRITE */
 
 /* Redefine PCIE access */
-#define pcie_conf_read(bdf, reg)	mock_conf_read(bdf, reg)
+#define pcie_conf_read(ep, reg) mock_conf_read((ep)->bdf, reg)
 
 /* Redefine sys_in function */
 #define sys_in8(port)			mock_sys_in8(port)

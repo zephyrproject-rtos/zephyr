@@ -515,14 +515,14 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 #endif
 
 /**
- * @def ARCH_PCIE_IRQ_CONNECT(bdf, irq, pri, isr, arg, flags)
+ * @def ARCH_PCIE_IRQ_CONNECT(ep, irq, pri, isr, arg, flags)
  * @brief Arch-specific hook for connecting a PCIe endpoint interrupt
  *
  * As for ARCH_IRQ_CONNECT(), but for an interrupt belonging to the PCIe
- * endpoint identified by @p bdf, so the architecture may resolve the
+ * endpoint identified by @p ep, so the architecture may resolve the
  * final interrupt vector from the endpoint at build or run time.
  *
- * @param bdf PCIe endpoint bus/device/function identifier
+ * @param ep Non-NULL PCIe endpoint pointer (see @ref pcie_endpoint)
  * @param irq Interrupt line number
  * @param pri Interrupt priority
  * @param isr Interrupt service routine
@@ -532,7 +532,7 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  * @see PCIE_IRQ_CONNECT()
  */
 #ifdef __DOXYGEN__
-#define ARCH_PCIE_IRQ_CONNECT(bdf, irq, pri, isr, arg, flags)
+#define ARCH_PCIE_IRQ_CONNECT(ep, irq, pri, isr, arg, flags)
 #endif
 
 /**

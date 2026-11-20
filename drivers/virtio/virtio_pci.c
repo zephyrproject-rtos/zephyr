@@ -119,19 +119,19 @@ void virtio_pci_isr(const struct device *dev)
 	k_spin_unlock(&data->isr_lock, key);
 }
 
-static bool virtio_pci_read_cap(
-	pcie_bdf_t bdf, uint8_t cfg_type, void *cap_struct, size_t cap_struct_size)
+static bool virtio_pci_read_cap(const struct pcie_endpoint *ep, uint8_t cfg_type, void *cap_struct,
+				size_t cap_struct_size)
 {
 	struct virtio_pci_cap tmp;
 	uint16_t status =
-		(sys_le32_to_cpu(pcie_conf_read(bdf, STATUS_COMMAND_REG)) & GENMASK(31, 16)) >> 16;
+		(sys_le32_to_cpu(pcie_conf_read(ep, STATUS_COMMAND_REG)) & GENMASK(31, 16)) >> 16;
 
 	if (!(status & BIT(CABABILITY_LIST_VALID_BIT))) {
-		LOG_ERR("no capability list for device with bdf 0x%x", bdf);
+		LOG_ERR("no capability list for device with bdf 0x%x", ep->bdf);
 		return false;
 	}
 
-	uint32_t cap_ptr = sys_le32_to_cpu(pcie_conf_read(bdf, CAPABILITIES_POINTER_REG)) &
+	uint32_t cap_ptr = sys_le32_to_cpu(pcie_conf_read(ep, CAPABILITIES_POINTER_REG)) &
 			   CAPABILITIES_POINTER_MASK;
 	uint32_t cap_off = cap_ptr / sizeof(uint32_t);
 
@@ -141,13 +141,13 @@ static bool virtio_pci_read_cap(
 	 */
 	do {
 		for (int i = 0; i < sizeof(struct virtio_pci_cap) / sizeof(uint32_t); i++) {
-			((uint32_t *)&tmp)[i] = pcie_conf_read(bdf, cap_off + i);
+			((uint32_t *)&tmp)[i] = pcie_conf_read(ep, cap_off + i);
 		}
 		if (tmp.cfg_type == cfg_type) {
 			if (tmp.cap_len < sizeof(struct virtio_pci_cap) ||
 			    tmp.cap_len > cap_struct_size) {
-				LOG_ERR("invalid virtio pci cap_len %u for bdf 0x%x",
-					tmp.cap_len, bdf);
+				LOG_ERR("invalid virtio pci cap_len %u for bdf 0x%x", tmp.cap_len,
+					ep->bdf);
 				return false;
 			}
 			size_t extra_data_words =
@@ -162,7 +162,7 @@ static bool virtio_pci_read_cap(
 			cap->length = sys_le32_to_cpu(cap->length);
 
 			for (int i = 0; i < extra_data_words; i++) {
-				extra_data[i] = pcie_conf_read(bdf, extra_data_offset + i);
+				extra_data[i] = pcie_conf_read(ep, extra_data_offset + i);
 			}
 
 			return true;
@@ -327,11 +327,12 @@ fail:
 	return ret;
 }
 
-static bool virtio_pci_map_cap(pcie_bdf_t bdf, struct virtio_pci_cap *cap, void **virt_ptr)
+static bool virtio_pci_map_cap(const struct pcie_endpoint *ep, struct virtio_pci_cap *cap,
+			       void **virt_ptr)
 {
 	struct pcie_bar mbar;
 
-	if (!pcie_get_mbar(bdf, cap->bar, &mbar)) {
+	if (!pcie_get_mbar(ep, cap->bar, &mbar)) {
 		LOG_ERR("no mbar for capability type %d found", cap->cfg_type);
 		return false;
 	}
@@ -439,8 +440,10 @@ static int virtio_pci_init_common(const struct device *dev)
 		"found virtio pci device with id 0x%x and bdf 0x%x", conf->pcie->id, conf->pcie->bdf
 	);
 
-	if (virtio_pci_read_cap(conf->pcie->bdf, VIRTIO_PCI_CAP_COMMON_CFG, &vpc, sizeof(vpc))) {
-		if (!virtio_pci_map_cap(conf->pcie->bdf, &vpc, (void **)&data->common_cfg)) {
+	const struct pcie_endpoint ep = pcie_dev_endpoint(conf->pcie);
+
+	if (virtio_pci_read_cap(&ep, VIRTIO_PCI_CAP_COMMON_CFG, &vpc, sizeof(vpc))) {
+		if (!virtio_pci_map_cap(&ep, &vpc, (void **)&data->common_cfg)) {
 			return 1;
 		}
 	} else {
@@ -452,8 +455,8 @@ static int virtio_pci_init_common(const struct device *dev)
 		return 1;
 	}
 
-	if (virtio_pci_read_cap(conf->pcie->bdf, VIRTIO_PCI_CAP_ISR_CFG, &vpc, sizeof(vpc))) {
-		if (!virtio_pci_map_cap(conf->pcie->bdf, &vpc, (void **)&data->isr_status)) {
+	if (virtio_pci_read_cap(&ep, VIRTIO_PCI_CAP_ISR_CFG, &vpc, sizeof(vpc))) {
+		if (!virtio_pci_map_cap(&ep, &vpc, (void **)&data->isr_status)) {
 			return 1;
 		}
 	} else {
@@ -465,10 +468,9 @@ static int virtio_pci_init_common(const struct device *dev)
 		return 1;
 	}
 
-	if (virtio_pci_read_cap(conf->pcie->bdf, VIRTIO_PCI_CAP_NOTIFY_CFG, &vpnc, sizeof(vpnc))) {
-		if (!virtio_pci_map_cap(
-				conf->pcie->bdf, (struct virtio_pci_cap *)&vpnc,
-				(void **)&data->notify_cfg)) {
+	if (virtio_pci_read_cap(&ep, VIRTIO_PCI_CAP_NOTIFY_CFG, &vpnc, sizeof(vpnc))) {
+		if (!virtio_pci_map_cap(&ep, (struct virtio_pci_cap *)&vpnc,
+					(void **)&data->notify_cfg)) {
 			return 1;
 		}
 		data->notify_off_multiplier = sys_le32_to_cpu(vpnc.notify_off_multiplier);
@@ -488,9 +490,8 @@ static int virtio_pci_init_common(const struct device *dev)
 	 * than one (its always one or zero virtio_devtype_config structs), so we are just trying to
 	 * read the first one
 	 */
-	if (virtio_pci_read_cap(conf->pcie->bdf, VIRTIO_PCI_CAP_DEVICE_CFG, &vpc, sizeof(vpc))) {
-		if (!virtio_pci_map_cap(
-				conf->pcie->bdf, &vpc, (void **)&data->device_specific_cfg)) {
+	if (virtio_pci_read_cap(&ep, VIRTIO_PCI_CAP_DEVICE_CFG, &vpc, sizeof(vpc))) {
+		if (!virtio_pci_map_cap(&ep, &vpc, (void **)&data->device_specific_cfg)) {
 			return 1;
 		}
 	} else {

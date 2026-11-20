@@ -339,8 +339,8 @@ static int nvme_controller_pcie_configure(const struct device *dev)
 		PCIE_BDF_TO_DEV(nvme_ctrlr_cfg->pcie->bdf),
 		PCIE_BDF_TO_FUNC(nvme_ctrlr_cfg->pcie->bdf));
 
-	if (!pcie_get_mbar(nvme_ctrlr_cfg->pcie->bdf,
-			   NVME_PCIE_BAR_IDX, &mbar_regs)) {
+	if (!pcie_get_mbar(PCIE_DEV_ENDPOINT(nvme_ctrlr_cfg->pcie), NVME_PCIE_BAR_IDX,
+			   &mbar_regs)) {
 		LOG_ERR("Could not get NVME registers");
 		return -EIO;
 	}
@@ -349,9 +349,8 @@ static int nvme_controller_pcie_configure(const struct device *dev)
 		   mbar_regs.size, K_MEM_CACHE_NONE);
 
 	/* Allocating vectors */
-	n_vectors = pcie_msi_vectors_allocate(nvme_ctrlr_cfg->pcie->bdf,
-					      CONFIG_NVME_INT_PRIORITY,
-					      nvme_ctrlr->vectors,
+	n_vectors = pcie_msi_vectors_allocate(PCIE_DEV_ENDPOINT(nvme_ctrlr_cfg->pcie),
+					      CONFIG_NVME_INT_PRIORITY, nvme_ctrlr->vectors,
 					      NVME_PCIE_MSIX_VECTORS);
 	if (n_vectors == 0) {
 		LOG_ERR("Could not allocate %u MSI-X vectors",
@@ -360,8 +359,8 @@ static int nvme_controller_pcie_configure(const struct device *dev)
 	}
 
 	/* Enabling MSI-X and the vectors */
-	if (!pcie_msi_enable(nvme_ctrlr_cfg->pcie->bdf,
-			     nvme_ctrlr->vectors, n_vectors, 0)) {
+	if (!pcie_msi_enable(PCIE_DEV_ENDPOINT(nvme_ctrlr_cfg->pcie), nvme_ctrlr->vectors,
+			     n_vectors, 0)) {
 		LOG_ERR("Could not enable MSI-X");
 		return -EIO;
 	}
