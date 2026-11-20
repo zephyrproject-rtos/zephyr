@@ -199,6 +199,11 @@ Boards
   The root compatible of the LPCXpresso54114 board is now ``nxp,lpc5411x`` instead of
   ``nxp,lpc54xxx``. (:github:`125465`)
 
+* On the Alif Ensemble RTSS and Balletto cores, :kconfig:option:`CONFIG_NUM_IRQS` now defaults
+  to the highest IRQ of the enabled devicetree nodes plus one, instead of 480. Applications that
+  connect a higher IRQ with :c:macro:`IRQ_CONNECT()` or :c:func:`irq_connect_dynamic` must set
+  :kconfig:option:`CONFIG_NUM_IRQS` explicitly.
+
 Device Drivers and Devicetree
 *****************************
 
