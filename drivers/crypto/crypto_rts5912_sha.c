@@ -8,7 +8,6 @@
 #define DT_DRV_COMPAT realtek_rts5912_sha
 
 #include <errno.h>
-#include <stddef.h>
 #include <string.h>
 #include <zephyr/init.h>
 #include <zephyr/crypto/crypto.h>
@@ -262,8 +261,11 @@ static int rts5912_hash_begin_session(const struct device *dev, struct hash_ctx 
 	case CRYPTO_HASH_ALGO_SHA224:
 	case CRYPTO_HASH_ALGO_SHA256:
 		k_mutex_lock(&(rts5912_sha256_ctx->crypto_rts5912_in_use), K_FOREVER);
-		memset((void *)(rts5912_sha256_ctx), 0x0,
-		       offsetof(struct rts5912_sha256_context, crypto_rts5912_in_use));
+		memset(rts5912_sha256_ctx->total, 0x0, sizeof(rts5912_sha256_ctx->total));
+		memset(rts5912_sha256_ctx->state, 0x0, sizeof(rts5912_sha256_ctx->state));
+		memset(rts5912_sha256_ctx->buffer, 0x0, sizeof(rts5912_sha256_ctx->buffer));
+		memset(rts5912_sha256_ctx->sha2_data_in_sram, 0x0,
+		       sizeof(rts5912_sha256_ctx->sha2_data_in_sram));
 		rts5912_sha256_ctx->is224 = (algo == CRYPTO_HASH_ALGO_SHA224);
 		k_mutex_unlock(&(rts5912_sha256_ctx->crypto_rts5912_in_use));
 		ctx->hash_hndlr = rts5912_sha256_handler;
