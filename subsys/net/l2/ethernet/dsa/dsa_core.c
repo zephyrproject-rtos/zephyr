@@ -27,11 +27,19 @@ int dsa_xmit(const struct device *dev, struct net_pkt *pkt)
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
 	struct net_if *iface = net_if_lookup_by_dev(dev);
 	struct net_if *iface_conduit = dsa_switch_ctx->iface_conduit;
-	const struct device *dev_conduit = net_if_get_device(iface_conduit);
-	const struct ethernet_driver_api *eth_api_conduit = dev_conduit->api;
+	const struct device *dev_conduit;
+	const struct ethernet_driver_api *eth_api_conduit;
 	struct net_pkt *dsa_pkt;
 	struct net_pkt *clone;
 	int ret;
+
+	/* No CPU port linked to a conduit: user ports are management-only */
+	if (iface_conduit == NULL) {
+		return -ENETDOWN;
+	}
+
+	dev_conduit = net_if_get_device(iface_conduit);
+	eth_api_conduit = dev_conduit->api;
 
 #ifdef CONFIG_NET_L2_PTP_TIMESTAMPING
 	/* Handle TX timestamp if defines */
