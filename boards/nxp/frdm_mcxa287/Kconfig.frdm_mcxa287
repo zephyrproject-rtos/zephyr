@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_MCXA287
+	select SOC_MCXA287
+	select SOC_PART_NUMBER_MCXA287VPN
