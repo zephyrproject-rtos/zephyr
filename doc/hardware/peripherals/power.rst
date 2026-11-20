@@ -10,6 +10,7 @@ Power management, charging, regulators, reset, and wake-up controllers.
 
    bc12.rst
    charger.rst
+   energy_meter.rst
    fuel_gauge.rst
    regulators.rst
    reset.rst
