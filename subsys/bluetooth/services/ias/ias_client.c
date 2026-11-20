@@ -131,6 +131,13 @@ static uint8_t bt_ias_prim_disc_cb(struct bt_conn *conn,
 
 	data = attr->user_data;
 
+	if (attr->handle == data->end_handle) {
+		LOG_WRN("IAS without characteristics");
+		discover_complete(conn, -ENOENT);
+
+		return BT_GATT_ITER_STOP;
+	}
+
 	client->discover.uuid = alert_lvl_uuid;
 	client->discover.start_handle = attr->handle + 1;
 	client->discover.end_handle = data->end_handle;
