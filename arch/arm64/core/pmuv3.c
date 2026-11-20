@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,6 +78,61 @@ const char *arch_pmu_event_name(uint32_t event)
 		}
 	}
 	return "UNKNOWN";
+}
+
+static uint32_t pmu_supported_events(void)
+{
+	uint64_t pmu_ver = (read_id_aa64dfr0_el1() >> 8U) & 0xFU;
+
+	if (pmu_ver == 0U || pmu_ver == 0xFU) {
+		return 0U;
+	}
+
+	/*
+	 * PMCEID0_EL0[31:0] reports support for common event IDs 0x00-0x1f.
+	 * Discovery exposes only supported entries in event_names[]. Events
+	 * covered by PMCEID1_EL0 or PMCEID0_EL0[63:32], and implementation-defined
+	 * events, are not enumerated.
+	 */
+	return (uint32_t)read_pmceid0_el0();
+}
+
+uint32_t arch_pmu_num_events(void)
+{
+	uint32_t supported = pmu_supported_events();
+	uint32_t count = 0U;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(event_names); i++) {
+		if ((supported & BIT(event_names[i].code)) != 0U) {
+			count++;
+		}
+	}
+	return count;
+}
+
+int arch_pmu_event_get(uint32_t index, struct pmu_event_info *info)
+{
+	uint32_t supported;
+
+	if (info == NULL) {
+		return -EINVAL;
+	}
+	supported = pmu_supported_events();
+	/* The index counts supported entries only, so skip unsupported table entries. */
+	for (size_t i = 0U; i < ARRAY_SIZE(event_names); i++) {
+		if ((supported & BIT(event_names[i].code)) == 0U) {
+			continue;
+		}
+		if (index == 0U) {
+			*info = (struct pmu_event_info){
+				.event = (pmu_evt_t)event_names[i].code,
+				.name = event_names[i].name,
+			};
+			return 0;
+		}
+		index--;
+	}
+	return -EINVAL;
 }
 
 /*

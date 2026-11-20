@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +41,10 @@ extern "C" {
 /**
  * @defgroup pmu PMU
  * @ingroup io_interfaces
+ * @version 0.1.0
+ *
+ * @note This API is experimental and may change in future releases.
+ *
  * @{
  */
 
@@ -49,6 +54,14 @@ struct pmu_counter_config {
 	pmu_evt_t event;
 	/** Enable this counter when configured */
 	bool enabled;
+};
+
+/** Information about a named event supported by the current CPU PMU. */
+struct pmu_event_info {
+	/** Architecture-specific selector accepted by pmu_counter_config(). */
+	pmu_evt_t event;
+	/** Architecture-defined event name, with static lifetime. */
+	const char *name;
 };
 
 /**
@@ -63,10 +76,10 @@ struct pmu_counter_config {
  * (for example @c pmu_evt_t in <zephyr/arch/arm64/pmuv3.h> when @c CONFIG_ARM64 is enabled).
  *
  * PMU is not initialized during kernel startup. Call @ref pmu_init() before
- * other @c pmu_*() functions on this CPU.
+ * other @c pmu_*() functions on this CPU, except the event discovery functions.
  *
  * Call once per logical CPU that will use counters, before any other
- * @c pmu_*() API on that CPU. Idempotent on success: later calls return
+ * counter API on that CPU. Idempotent on success: later calls return
  * @c 0 if this CPU already initialized successfully, or @c -ENOTSUP if this
  * CPU recorded that no PMU is available.
  *
@@ -86,6 +99,38 @@ int pmu_init(void);
 
 /** @return Number of event counters on this CPU, or 0 if PMU unavailable */
 uint32_t pmu_num_counters(void);
+
+/**
+ * @brief Return the number of named events supported by the current CPU PMU.
+ *
+ * Available when a PMU backend is enabled. Event discovery may be used
+ * before pmu_init() and does not change PMU state.
+ * Callers must have access to the PMU registers and remain on the same CPU
+ * throughout enumeration. Catalogs may differ between CPUs.
+ *
+ * @return Number of event records, or zero if the PMU is unavailable or has
+ *         no supported named events.
+ */
+uint32_t pmu_num_events(void);
+
+/**
+ * @brief Get information about a named event supported by the current CPU PMU.
+ *
+ * Available when a PMU backend is enabled. Indexes range from 0 to
+ * pmu_num_events() - 1 and identify positions in the supported event list.
+ * The hardware event ID is returned in @c info->event.
+ *
+ * Names have static lifetime. This function has the same CPU affinity and
+ * register-access requirements as pmu_num_events(), may be used before
+ * pmu_init(), and does not change PMU state.
+ *
+ * @param index Position in the supported event list, in the range [0, pmu_num_events()).
+ * @param info Caller-owned output storage. Must not be NULL.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Index outside the current CPU's supported event list or NULL output storage
+ */
+int pmu_event_get(uint32_t index, struct pmu_event_info *info);
 
 /**
  * @brief Fill @a info with PMU identification for the current logical CPU.

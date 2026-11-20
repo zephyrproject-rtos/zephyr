@@ -74,3 +74,14 @@ Graph example
 .. image:: images/graph_example.svg
    :align: center
    :alt: graph example
+
+Arm64 event counting sessions
+*****************************
+
+Enable ``CONFIG_ARM64_PMUV3`` and ``CONFIG_PROFILING_PERF_EVENT_PROVIDER_CPU`` to use real
+``cpuN`` counters. Set ``CONFIG_NUM_METAIRQ_PRIORITIES`` to at least one so PMU workers can
+preempt cooperative and scheduler-locked threads. Ordinary workloads must use priorities below
+the reserved meta-IRQ range. SMP applications also need ``CONFIG_SCHED_CPU_MASK``. The
+``sample.perf.arm64`` scenario enables recording and event counting commands on the Arm FVP.
+Other sample configurations exercise recording without a CPU counter provider.
+See :ref:`profiling-perf-provider-cpu` for the counter lifecycle and PMU ownership requirements.

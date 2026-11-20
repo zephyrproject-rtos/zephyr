@@ -15,6 +15,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "event/internal.h"
+
 /*
  * Return the number of captured frames, zero when the buffer is too small,
  * or a negative errno when the current sample should be skipped.
@@ -233,18 +235,25 @@ static void perf_dwork_handler(struct k_work *work)
 	} else {
 		shell_print(perf_data_ptr->sh, "Perf done!");
 	}
+
+	z_perf_session_release(PERF_SESSION_RECORD);
 }
 
 static int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 {
+	int ret;
+
+	z_perf_shell_lock();
 	if (k_work_delayable_is_pending(&perf_data.dwork)) {
 		shell_warn(sh, "Perf is running");
-		return -EINPROGRESS;
+		ret = -EINPROGRESS;
+		goto out;
 	}
 
 	if (perf_data.buf_full) {
 		shell_warn(sh, "Perf buffer is full");
-		return -ENOBUFS;
+		ret = -ENOBUFS;
+		goto out;
 	}
 	k_timeout_t duration = K_MSEC(strtoll(argv[1], NULL, 10));
 	k_timeout_t period = K_NSEC(1000000000 / strtoll(argv[2], NULL, 10));
@@ -255,6 +264,15 @@ static int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 		target_thread = (k_tid_t)strtoul(argv[3], NULL, 16);
 		shell_print(sh, "Tracing thread: %p", target_thread);
 	}
+
+	ret = z_perf_session_claim(PERF_SESSION_RECORD);
+	if (ret != 0) {
+		shell_warn(sh, "Perf is running");
+		ret = -EINPROGRESS;
+		goto out;
+	}
+
+	z_perf_stat_shell_clear_result();
 
 	perf_data.sh = sh;
 	perf_data.target_thread = target_thread;
@@ -273,42 +291,65 @@ static int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 
 	shell_print(sh, "Enabled perf");
 
-	return 0;
+out:
+	z_perf_shell_unlock();
+	return ret;
 }
 
 static int cmd_perf_clear(const struct shell *sh, size_t argc, char **argv)
 {
+	int ret = 0;
+
+	z_perf_shell_lock();
 	if (sh != NULL) {
-		if (k_work_delayable_is_pending(&perf_data.dwork)) {
+		if (z_perf_session_is_active() || k_work_delayable_is_pending(&perf_data.dwork)) {
 			shell_warn(sh, "Perf is running");
-			return -EINPROGRESS;
+			ret = -EINPROGRESS;
+			goto out;
 		}
 		shell_print(sh, "Perf buffer cleared");
 	}
 
 	perf_data.idx = 0;
 	perf_data.buf_full = false;
+	z_perf_stat_shell_clear_result();
 
-	return 0;
+out:
+	z_perf_shell_unlock();
+	return ret;
 }
 
 static int cmd_perf_info(const struct shell *sh, size_t argc, char **argv)
 {
-	if (k_work_delayable_is_pending(&perf_data.dwork)) {
+	z_perf_shell_lock();
+	if (z_perf_session_is_active() || k_work_delayable_is_pending(&perf_data.dwork)) {
 		shell_print(sh, "Perf is running");
 	}
 
-	shell_print(sh, "Perf buf: %zu/%d %s", perf_data.idx, CONFIG_PROFILING_PERF_BUFFER_SIZE,
-		    perf_data.buf_full ? "(full)" : "");
+	if (z_perf_stat_shell_has_result()) {
+		shell_print(sh, "Perf buffer: stat");
+	} else {
+		shell_print(sh, "Perf buf: %zu/%d %s", perf_data.idx,
+			    CONFIG_PROFILING_PERF_BUFFER_SIZE, perf_data.buf_full ? "(full)" : "");
+	}
 
+	z_perf_shell_unlock();
 	return 0;
 }
 
 static int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 {
-	if (k_work_delayable_is_pending(&perf_data.dwork)) {
+	int ret = 0;
+
+	z_perf_shell_lock();
+	if (z_perf_session_is_active() || k_work_delayable_is_pending(&perf_data.dwork)) {
 		shell_warn(sh, "Perf is running");
-		return -EINPROGRESS;
+		ret = -EINPROGRESS;
+		goto out;
+	}
+	if (z_perf_stat_shell_has_result()) {
+		ret = z_perf_stat_shell_print_result(sh, true);
+		goto out;
 	}
 
 	shell_print(sh, "Perf buf length %zu", perf_data.idx);
@@ -316,9 +357,11 @@ static int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 		shell_print(sh, "%016lx", perf_data.buf[i]);
 	}
 
-	cmd_perf_clear(NULL, 0, NULL);
+	ret = cmd_perf_clear(NULL, 0, NULL);
 
-	return 0;
+out:
+	z_perf_shell_unlock();
+	return ret;
 }
 
 #define CMD_HELP_RECORD                                                                            \
@@ -326,10 +369,9 @@ static int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 	"Usage: record <duration> <frequency> [thread_id]\n"                                       \
 	"  thread_id: optional thread ID in hex format to trace specific thread"
 
-SHELL_STATIC_SUBCMD_SET_CREATE(
-	m_sub_perf, SHELL_CMD_ARG(record, NULL, CMD_HELP_RECORD, cmd_perf_record, 3, 1),
-	SHELL_CMD_ARG(printbuf, NULL, "Print the perf buffer", cmd_perf_print, 0, 0),
-	SHELL_CMD_ARG(clear, NULL, "Clear the perf buffer", cmd_perf_clear, 0, 0),
-	SHELL_CMD_ARG(info, NULL, "Print the perf info", cmd_perf_info, 0, 0),
-	SHELL_SUBCMD_SET_END);
+SHELL_SUBCMD_SET_CREATE(m_sub_perf, (perf));
+SHELL_SUBCMD_ADD((perf), record, NULL, CMD_HELP_RECORD, cmd_perf_record, 3, 1);
+SHELL_SUBCMD_ADD((perf), printbuf, NULL, "Print the perf buffer", cmd_perf_print, 0, 0);
+SHELL_SUBCMD_ADD((perf), clear, NULL, "Clear the perf buffer", cmd_perf_clear, 0, 0);
+SHELL_SUBCMD_ADD((perf), info, NULL, "Print the perf info", cmd_perf_info, 0, 0);
 SHELL_CMD_ARG_REGISTER(perf, &m_sub_perf, "Lightweight profiler", NULL, 0, 0);
