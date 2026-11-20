@@ -158,6 +158,19 @@ config ETH_ROCKCHIP_DWC_ETHER_QOS
 	help
 	  This enables the Synopsys DesignWare MAC driver on Rockchip RK3588.
 
+config ETH_RENESAS_RZ_GMAC
+	bool "Driver for DWC Ethernet MAC-based Renesas RZ"
+	depends on SOC_SERIES_RZT2M
+	depends on DT_HAS_RENESAS_RZ_ETHERNET_GMAC_ENABLED
+	select ETH_DWC_ETHER_1000_CORE
+	select PINCTRL
+	select MDIO
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver on Renesas RZ
+	  SoCs, where the IP is named GMAC.
+
 config ETH_DWMAC_MMU
 	bool "Synopsys DesignWare MAC driver for MMU based platforms"
 	depends on CPU_HAS_MMU
@@ -175,6 +188,17 @@ config ETH_DWC_ETHER_1000_CORE_EDFE
 	default y if PTP_CLOCK_DWC_MAC
 	help
 	  Increases the descriptor size to 32 bytes.
+
+config ETH_DWC_ETHER_1000_CORE_PBL
+	int "DMA programmable burst length"
+	depends on ETH_DWC_ETHER_1000_CORE
+	range 1 32
+	default 16 if ETH_RENESAS_RZ_GMAC
+	default 32
+	help
+	  Maximum number of beats the DMA transfers in one burst, for both
+	  transmit and receive: 1, 2, 4, 8, 16 or 32. Lower it on platforms
+	  whose DMA does not support bursts of 32 beats.
 
 if ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 

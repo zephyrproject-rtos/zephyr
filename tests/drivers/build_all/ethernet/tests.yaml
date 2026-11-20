@@ -55,6 +55,7 @@ tests:
       - frdm_mcxa577/mcxa577/mii
       - mr_canhubk3
       - xmc47_relax_kit
+      - rzt2m_rsk/r9a07g075m24gbg/cr520
 
   # The board does not declare Ethernet support, its applications enable the
   # interface with an overlay, as boards/intel_socfpga_agilex5_socdk.overlay

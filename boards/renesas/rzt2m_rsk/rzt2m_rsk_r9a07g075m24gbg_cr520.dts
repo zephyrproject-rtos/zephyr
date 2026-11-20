@@ -191,3 +191,34 @@
 		};
 	};
 };
+
+&gpio20 {
+	phy_reset_hog: phy-reset-hog {
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_LOW>;
+		output-low;
+	};
+};
+
+&gmac {
+	phy-connection-type = "rgmii";
+	local-mac-address = [00 11 22 33 44 55];
+	phy-handle = <&phy0>;
+	pinctrl-0 = <&eth2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gmac_mdio {
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy0: ethernet-phy@2 {
+		compatible = "microchip,vsc8541";
+		reg = <2>;
+		reset-gpios = <&gpio20 7 GPIO_ACTIVE_LOW>;
+		microchip,interface-type = "rgmii";
+		status = "okay";
+	};
+};
