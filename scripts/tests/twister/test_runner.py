@@ -7,6 +7,7 @@ Tests for runner.py classes
 """
 
 import errno
+import hashlib
 import os
 import pathlib
 import re
@@ -2911,6 +2912,7 @@ def test_projectbuilder_gather_metrics(
     pb.options.create_rom_ram_report = False
     pb.options.cmake_only = cmake_only
     pb.calc_size = mock.Mock()
+    pb._get_artifacts = mock.Mock(return_value=[])
 
     pb.gather_metrics(instance_mock)
 
@@ -2922,6 +2924,39 @@ def test_projectbuilder_gather_metrics(
         assert instance_mock.metrics['used_rom'] == 0
         assert instance_mock.metrics['available_rom'] == 0
         assert instance_mock.metrics['available_ram'] == 0
+
+
+def test_projectbuilder_get_artifacts(mocked_jobserver, tmp_path):
+    zephyr_dir = tmp_path / 'zephyr'
+    zephyr_dir.mkdir()
+    (zephyr_dir / 'zephyr.elf').write_bytes(b'elf')
+    (zephyr_dir / 'zephyr.bin').write_bytes(b'bin file')
+    (zephyr_dir / 'runners.yaml').write_text(
+        'config:\n'
+        '  elf_file: zephyr.elf\n'
+        '  hex_file: zephyr.hex\n'
+        f'  bin_file: {zephyr_dir / "zephyr.bin"}\n'
+    )
+
+    instance_mock = mock.Mock()
+    instance_mock.build_dir = str(tmp_path)
+    instance_mock.sysbuild = False
+    instance_mock.platform.binaries = []
+
+    pb = ProjectBuilder(instance_mock, mock.Mock(), mocked_jobserver)
+
+    assert pb._get_artifacts() == [
+        {
+            'file': os.path.join('zephyr', 'zephyr.elf'),
+            'sha256': hashlib.sha256(b'elf').hexdigest(),
+            'size': 3,
+        },
+        {
+            'file': os.path.join('zephyr', 'zephyr.bin'),
+            'sha256': hashlib.sha256(b'bin file').hexdigest(),
+            'size': 8,
+        },
+    ]
 
 
 TESTDATA_16 = [

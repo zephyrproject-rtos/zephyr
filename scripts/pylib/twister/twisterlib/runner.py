@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import contextlib
+import hashlib
 import logging
 import multiprocessing as mp
 import os
@@ -1739,7 +1740,27 @@ class ProjectBuilder(FilterBuilder):
             instance.metrics["used_rom"] = 0
             instance.metrics["available_rom"] = 0
             instance.metrics["available_ram"] = 0
+        instance.metrics["artifacts"] = self._get_artifacts()
         return build_result
+
+    def _get_artifacts(self) -> list[dict]:
+        """
+        Return file name (relative to the build directory), size and SHA-256 of
+        each binary, taken before any cleanup removes them.
+        """
+        artifacts = []
+        for binary in self._get_binaries():
+            path = os.path.join(self.instance.build_dir, binary)
+            if os.path.isfile(path):
+                data = pathlib.Path(path).read_bytes()
+                artifacts.append(
+                    {
+                        "file": os.path.relpath(path, self.instance.build_dir),
+                        "sha256": hashlib.sha256(data).hexdigest(),
+                        "size": len(data),
+                    }
+                )
+        return artifacts
 
     def _cmake_cache_path(self) -> str:
         """Path to the CMakeCache.txt holding this instance's build variables.
