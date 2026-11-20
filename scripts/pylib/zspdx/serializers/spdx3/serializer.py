@@ -616,6 +616,16 @@ class SPDX3Serializer:
         self.component_elements[component.name] = package
         return package
 
+    @staticmethod
+    def _is_final_image(file_obj: SBOMFile) -> bool:
+        """Whether ``file_obj`` is the artifact of the application (final image) target."""
+        component = file_obj.component
+        return (
+            component is not None
+            and component.purpose == ComponentPurpose.APPLICATION
+            and component.target_build_file is file_obj
+        )
+
     def _create_software_file(self, file_obj: SBOMFile) -> spdx.software_File:
         """Convert SBOMFile to SPDX 3.0 software_File."""
         file_element = spdx.software_File()
@@ -624,8 +634,11 @@ class SPDX3Serializer:
         file_element.creationInfo = self.creation_info._id
         file_element.software_fileKind = spdx.software_FileKindType.file
 
-        # File purpose (default to file)
-        file_element.software_primaryPurpose = spdx.software_SoftwarePurpose.file
+        if self._is_final_image(file_obj):
+            file_element.software_primaryPurpose = spdx.software_SoftwarePurpose.executable
+            file_element.software_additionalPurpose.append(spdx.software_SoftwarePurpose.firmware)
+        else:
+            file_element.software_primaryPurpose = spdx.software_SoftwarePurpose.file
 
         # Copyright
         file_element.software_copyrightText = file_obj.copyright_text or NOASSERTION
