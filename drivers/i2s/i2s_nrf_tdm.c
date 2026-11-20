@@ -72,7 +72,8 @@ typedef struct {
 	uint32_t const *p_tx_buffer;
 	void *p_tx_mem_slab;
 	void *p_rx_mem_slab;
-	uint16_t buffer_size;
+	uint16_t tx_buffer_size;
+	uint16_t rx_buffer_size;
 } tdm_buffers_t;
 
 typedef void (*tdm_data_handler_t)(tdm_buffers_t const *p_released, uint32_t status);
@@ -288,21 +289,51 @@ static bool get_next_tx_buffer(struct tdm_drv_data *drv_data, tdm_buffers_t *buf
 	}
 	buffers->p_tx_buffer = buf.dmm_buf;
 	buffers->p_tx_mem_slab = buf.mem_block;
-	buffers->buffer_size = buf.size / sizeof(uint32_t);
+	buffers->tx_buffer_size = buf.size / sizeof(uint32_t);
 	return true;
+}
+
+static void rx_buffer_size_set(struct tdm_drv_data *drv_data, tdm_buffers_t *buffers)
+{
+	uint32_t txc = drv_data->tx.nrfx_cfg.channels;
+	uint32_t rxc = drv_data->rx.nrfx_cfg.channels;
+	uint8_t tx_enabled;
+	uint8_t rx_enabled;
+
+	/* Without TX, the RX block size alone controls how much is received. */
+	if (drv_data->active_dir == I2S_DIR_RX) {
+		buffers->rx_buffer_size = drv_data->rx.cfg.block_size / sizeof(uint32_t);
+		return;
+	}
+
+	/* TX and RX share one frame clock, so in duplex RX must receive the same
+	 * number of frames TX transmits, scaled by the ratio of enabled channels;
+	 * a full RX block would desync the directions on a partial TX write.
+	 */
+	tx_enabled = POPCOUNT(FIELD_GET(NRFX_TDM_TX_CHANNELS_MASK, txc));
+	rx_enabled = POPCOUNT(FIELD_GET(NRFX_TDM_RX_CHANNELS_MASK, rxc));
+	/* TX blocks that would not divide exactly were rejected on write or at the duplex start.
+	 * Only the 1-word buffer supplied when stopping, which is never transferred, can round.
+	 */
+	__ASSERT_NO_MSG(drv_data->stop || (buffers->tx_buffer_size * rx_enabled) % tx_enabled == 0);
+	buffers->rx_buffer_size = MAX(buffers->tx_buffer_size * rx_enabled / tx_enabled, 1);
 }
 
 static bool get_next_rx_buffer(struct tdm_drv_data *drv_data, tdm_buffers_t *buffers)
 {
 	const struct tdm_drv_cfg *drv_cfg = drv_data->drv_cfg;
-	int ret = k_mem_slab_alloc(drv_data->rx.cfg.mem_slab, &buffers->p_rx_mem_slab, K_NO_WAIT);
+	int ret;
 
+	/* The size must be known before the buffer is prepared for DMA. */
+	rx_buffer_size_set(drv_data, buffers);
+
+	ret = k_mem_slab_alloc(drv_data->rx.cfg.mem_slab, &buffers->p_rx_mem_slab, K_NO_WAIT);
 	if (ret < 0) {
 		LOG_ERR("Failed to allocate next RX buffer: %d", ret);
 		return false;
 	}
 	ret = dmm_buffer_in_prepare(drv_cfg->mem_reg, buffers->p_rx_mem_slab,
-				    buffers->buffer_size * sizeof(uint32_t),
+				    buffers->rx_buffer_size * sizeof(uint32_t),
 				    (void **)&buffers->p_rx_buffer);
 	if (ret < 0) {
 		LOG_ERR("Failed to prepare buffer: %d", ret);
@@ -367,9 +398,9 @@ static void tdm_start(struct tdm_drv_data *drv_data, tdm_buffers_t const *p_init
 
 	nrf_tdm_int_enable(p_reg,
 			   rxtx_mask | NRF_TDM_INT_STOPPED_MASK_MASK | NRF_TDM_INT_ABORTED_MASK);
-	nrf_tdm_tx_count_set(p_reg, p_initial_buffers->buffer_size);
+	nrf_tdm_tx_count_set(p_reg, p_initial_buffers->tx_buffer_size);
 	nrf_tdm_tx_buffer_set(p_reg, p_initial_buffers->p_tx_buffer);
-	nrf_tdm_rx_count_set(p_reg, p_initial_buffers->buffer_size);
+	nrf_tdm_rx_count_set(p_reg, p_initial_buffers->rx_buffer_size);
 	nrf_tdm_rx_buffer_set(p_reg, p_initial_buffers->p_rx_buffer);
 	nrf_tdm_transfer_direction_set(p_reg, dir);
 	nrf_tdm_task_trigger(p_reg, NRF_TDM_TASK_START);
@@ -393,8 +424,8 @@ static bool next_buffers_set(struct tdm_drv_data *drv_data, tdm_buffers_t const 
 		return false;
 	}
 
-	nrf_tdm_tx_count_set(p_reg, p_buffers->buffer_size);
-	nrf_tdm_rx_count_set(p_reg, p_buffers->buffer_size);
+	nrf_tdm_tx_count_set(p_reg, p_buffers->tx_buffer_size);
+	nrf_tdm_rx_count_set(p_reg, p_buffers->rx_buffer_size);
 	nrf_tdm_rx_buffer_set(p_reg, p_buffers->p_rx_buffer);
 	nrf_tdm_tx_buffer_set(p_reg, p_buffers->p_tx_buffer);
 
@@ -413,12 +444,6 @@ static bool supply_next_buffers(struct tdm_drv_data *drv_data, tdm_buffers_t *ne
 			drv_data->state = I2S_STATE_ERROR;
 			tdm_stop(drv_cfg->p_reg, true);
 			return false;
-		}
-		/* Set buffer size if there is no TX buffer (which effectively
-		 * controls how many bytes will be received).
-		 */
-		if (drv_data->active_dir == I2S_DIR_RX) {
-			next->buffer_size = drv_data->rx.cfg.block_size / sizeof(uint32_t);
 		}
 	}
 
@@ -589,8 +614,19 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	if (tdm_cfg->tdm.channel_disable_mask & ~BIT_MASK(tdm_cfg->channels)) {
+		LOG_ERR("channel_disable_mask 0x%x has bits outside channels=%u",
+			tdm_cfg->tdm.channel_disable_mask, tdm_cfg->channels);
+		return -EINVAL;
+	}
+
 	nrfx_cfg.num_of_channels = nrf_tdm_chan_num_get(tdm_cfg->channels + extra_channels);
-	chan_mask = BIT_MASK(tdm_cfg->channels);
+	chan_mask = BIT_MASK(tdm_cfg->channels) & ~tdm_cfg->tdm.channel_disable_mask;
+	if (chan_mask == 0) {
+		LOG_ERR("No channels enabled (channels=%u, channel_disable_mask=0x%x)",
+			tdm_cfg->channels, tdm_cfg->tdm.channel_disable_mask);
+		return -EINVAL;
+	}
 
 	if ((tdm_cfg->options & I2S_OPT_BIT_CLK_TARGET) &&
 	    (tdm_cfg->options & I2S_OPT_FRAME_CLK_TARGET)) {
@@ -687,6 +723,27 @@ static int tdm_nrf_read(const struct device *dev, void **mem_block, size_t *size
 	return ret;
 }
 
+/* In duplex, each TX block is paired with an RX transfer covering the same frames. Like any
+ * transfer, its size must be a multiple of 4 bytes and more than 8 bytes.
+ */
+static bool duplex_rx_size_check(const struct tdm_drv_data *drv_data, size_t tx_size)
+{
+	uint32_t txc = drv_data->tx.nrfx_cfg.channels;
+	uint32_t rxc = drv_data->rx.nrfx_cfg.channels;
+	uint8_t tx_enabled = POPCOUNT(FIELD_GET(NRFX_TDM_TX_CHANNELS_MASK, txc));
+	uint8_t rx_enabled = POPCOUNT(FIELD_GET(NRFX_TDM_RX_CHANNELS_MASK, rxc));
+	size_t rx_size = tx_size * rx_enabled / tx_enabled;
+
+	if ((rx_size * tx_enabled) != (tx_size * rx_enabled) || (rx_size % sizeof(uint32_t)) != 0 ||
+	    rx_size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
+		LOG_ERR("RX size for a %zu-byte TX block is not whole words over %u bytes", tx_size,
+			NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED);
+		return false;
+	}
+
+	return true;
+}
+
 static int tdm_nrf_write(const struct device *dev, void *mem_block, size_t size)
 {
 	struct tdm_drv_data *drv_data = dev->data;
@@ -713,6 +770,12 @@ static int tdm_nrf_write(const struct device *dev, void *mem_block, size_t size)
 	if ((size % sizeof(uint32_t)) != 0 || size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
 		LOG_ERR("This device can only write full 32-bit words greater than %u bytes.",
 			NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED);
+		return -EIO;
+	}
+
+	/* Blocks written before a duplex start are checked by the START trigger. */
+	if (drv_data->state == I2S_STATE_RUNNING && drv_data->active_dir == I2S_DIR_BOTH &&
+	    !duplex_rx_size_check(drv_data, size)) {
 		return -EIO;
 	}
 
@@ -771,15 +834,6 @@ static int start_transfer(struct tdm_drv_data *drv_data)
 		/* Failed to allocate next RX buffer */
 		ret = -ENOMEM;
 	} else {
-		/* It is necessary to set buffer size here only for I2S_DIR_RX,
-		 * because only then the get_next_tx_buffer() call in the if
-		 * condition above gets short-circuited.
-		 */
-		if (drv_data->active_dir == I2S_DIR_RX) {
-			initial_buffers.buffer_size =
-				drv_data->rx.cfg.block_size / sizeof(uint32_t);
-		}
-
 		drv_data->last_tx_buffer = initial_buffers.p_tx_buffer;
 		drv_data->last_tx_mem_slab = initial_buffers.p_tx_mem_slab;
 
@@ -794,14 +848,14 @@ static int start_transfer(struct tdm_drv_data *drv_data)
 		if (initial_buffers.p_tx_buffer) {
 			struct tdm_buf buf = {.mem_block = (void *)initial_buffers.p_tx_mem_slab,
 					      .dmm_buf = (void *)initial_buffers.p_tx_buffer,
-					      .size = initial_buffers.buffer_size *
+					      .size = initial_buffers.tx_buffer_size *
 						      sizeof(uint32_t)};
 			free_tx_buffer(drv_data, &buf);
 		}
 		if (initial_buffers.p_rx_buffer) {
 			struct tdm_buf buf = {.mem_block = initial_buffers.p_rx_mem_slab,
 					      .dmm_buf = (void *)initial_buffers.p_rx_buffer,
-					      .size = initial_buffers.buffer_size *
+					      .size = initial_buffers.rx_buffer_size *
 						      sizeof(uint32_t)};
 			free_rx_buffer(drv_data, &buf);
 		}
@@ -811,13 +865,28 @@ static int start_transfer(struct tdm_drv_data *drv_data)
 	return ret;
 }
 
-static bool channels_configuration_check(uint32_t tx, uint32_t rx)
+static bool channels_configuration_check(const struct stream_cfg *tx, const struct stream_cfg *rx)
 {
+	uint8_t tx_enabled = POPCOUNT(FIELD_GET(NRFX_TDM_TX_CHANNELS_MASK, tx->nrfx_cfg.channels));
+	uint8_t rx_enabled = POPCOUNT(FIELD_GET(NRFX_TDM_RX_CHANNELS_MASK, rx->nrfx_cfg.channels));
 
-	tx = FIELD_GET(NRFX_TDM_TX_CHANNELS_MASK, tx);
-	rx = FIELD_GET(NRFX_TDM_RX_CHANNELS_MASK, rx);
+	return tx->cfg.block_size * rx_enabled == rx->cfg.block_size * tx_enabled;
+}
 
-	return (tx == rx);
+/* The direction and the RX configuration are only final at start, so blocks queued before a
+ * duplex start are checked here.
+ */
+static bool duplex_tx_queue_check(struct tdm_drv_data *drv_data)
+{
+	struct tdm_buf buf;
+
+	for (uint32_t i = 0; k_msgq_peek_at(&drv_data->tx_queue, &buf, i) == 0; i++) {
+		if (!duplex_rx_size_check(drv_data, buf.size)) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 static void tdm_init(struct tdm_drv_data *drv_data, nrf_tdm_config_t const *p_config,
@@ -923,9 +992,8 @@ static int tdm_nrf_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 	}
 
 	if (dir == I2S_DIR_BOTH) {
-		if (!channels_configuration_check(drv_data->tx.nrfx_cfg.channels,
-						  drv_data->rx.nrfx_cfg.channels)) {
-			LOG_ERR("TX and RX channels configurations are different");
+		if (!channels_configuration_check(&drv_data->tx, &drv_data->rx)) {
+			LOG_ERR("TX and RX block sizes are not proportional to channel counts");
 			return -EIO;
 		}
 		/* The TX and RX channel masks are to be stored in a single TDM register.
@@ -933,12 +1001,12 @@ static int tdm_nrf_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		 * it must also contain the TX channel mask.
 		 */
 		uint32_t tx_rx_merged =
-			drv_data->tx.nrfx_cfg.channels | drv_data->rx.nrfx_cfg.channels;
+			(drv_data->tx.nrfx_cfg.channels & NRFX_TDM_TX_CHANNELS_MASK) |
+			(drv_data->rx.nrfx_cfg.channels & NRFX_TDM_RX_CHANNELS_MASK);
 		drv_data->tx.nrfx_cfg.channels = tx_rx_merged;
 		drv_data->rx.nrfx_cfg.channels = tx_rx_merged;
 		if (memcmp(&drv_data->tx.nrfx_cfg, &drv_data->rx.nrfx_cfg,
-			   sizeof(drv_data->rx.nrfx_cfg)) != 0 ||
-		    (drv_data->tx.cfg.block_size != drv_data->rx.cfg.block_size)) {
+			   sizeof(drv_data->rx.nrfx_cfg)) != 0) {
 			LOG_ERR("TX and RX configurations are different");
 			return -EIO;
 		}
@@ -981,6 +1049,9 @@ static int tdm_nrf_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 
 	switch (cmd) {
 	case I2S_TRIGGER_START:
+		if (dir == I2S_DIR_BOTH && !duplex_tx_queue_check(drv_data)) {
+			return -EIO;
+		}
 		drv_data->stop = false;
 		drv_data->discard_rx = false;
 		drv_data->active_dir = dir;
@@ -1026,7 +1097,7 @@ static void data_handler(const struct device *dev, const tdm_buffers_t *released
 	struct tdm_buf buf = {.mem_block = NULL, .dmm_buf = NULL, .size = 0};
 
 	if (released != NULL) {
-		buf.size = released->buffer_size * sizeof(uint32_t);
+		buf.size = released->tx_buffer_size * sizeof(uint32_t);
 	}
 
 	if (status & NRFX_TDM_STATUS_TRANSFER_STOPPED) {
@@ -1074,6 +1145,7 @@ static void data_handler(const struct device *dev, const tdm_buffers_t *released
 		return;
 	}
 	if (released->p_rx_buffer) {
+		buf.size = released->rx_buffer_size * sizeof(uint32_t);
 		buf.mem_block = (void *)released->p_rx_mem_slab;
 		buf.dmm_buf = (void *)released->p_rx_buffer;
 		if (drv_data->discard_rx) {
@@ -1130,7 +1202,7 @@ static void data_handler(const struct device *dev, const tdm_buffers_t *released
 				 */
 				next.p_tx_buffer = drv_data->last_tx_buffer;
 				next.p_tx_mem_slab = drv_data->last_tx_mem_slab;
-				next.buffer_size = 1;
+				next.tx_buffer_size = 1;
 			} else if (get_next_tx_buffer(drv_data, &next)) {
 				/* Next TX buffer successfully retrieved from
 				 * the queue, nothing more to do here.
@@ -1148,7 +1220,7 @@ static void data_handler(const struct device *dev, const tdm_buffers_t *released
 				 */
 				next.p_tx_buffer = drv_data->last_tx_buffer;
 				next.p_tx_mem_slab = drv_data->last_tx_mem_slab;
-				next.buffer_size = 1;
+				next.tx_buffer_size = 1;
 			} else {
 				/* Next TX buffer cannot be supplied now.
 				 * Defer it to when the user writes more data.
