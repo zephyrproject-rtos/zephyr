@@ -2276,7 +2276,7 @@ static struct net_buf *create_unsolicited_mdns_answer(struct net_if *iface,
 		}
 
 		net_buf_add_be16(answer, type);
-		net_buf_add_be16(answer, DNS_CLASS_IN);
+		net_buf_add_be16(answer, DNS_CLASS_IN | DNS_CLASS_FLUSH);
 		net_buf_add_be32(answer, ttl);
 
 		if (type == DNS_RR_TYPE_A) {
