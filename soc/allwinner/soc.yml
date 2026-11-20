@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: allwinner
+  series:
+  - name: v851s
+    socs:
+    - name: v851s_e907
+vendor: allwinner
