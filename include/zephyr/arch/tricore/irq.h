@@ -32,7 +32,7 @@ extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
 
-extern void z_tricore_irq_config(unsigned int irq, unsigned int prio, unsigned int flags);
+extern void z_tricore_irq_config(uint32_t irq, uint32_t prio, uint32_t flags);
 
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)                           \
 	{                                                                                          \

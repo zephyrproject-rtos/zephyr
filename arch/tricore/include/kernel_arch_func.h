@@ -40,6 +40,8 @@ static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
 	__asm("syscall " STRINGIFY(TRICORE_SYSCALL_SWITCH) ::"a"(to), "a"(from));
 }
 
+void z_tricore_fatal_error(uint32_t reason, const struct arch_esf *lower);
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
