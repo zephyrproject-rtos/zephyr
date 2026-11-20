@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Space Cubics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Everspin EM008LXQ 8-Mbit serial MRAM
+
+compatible: "everspin,em008lxq"
+
+include: everspin,emxxlx-common.yaml

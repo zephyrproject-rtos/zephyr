@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Space Cubics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Everspin EM032LXQ 32-Mbit serial MRAM
+
+compatible: "everspin,em032lxq"
+
+include: everspin,emxxlx-common.yaml
