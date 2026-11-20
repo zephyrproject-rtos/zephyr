@@ -177,6 +177,31 @@ static inline int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *bu
 }
 
 /**
+ * @brief Transmit data through pipe, blocking until all data is queued or timeout
+ *
+ * Repeatedly calls the transmit API and waits for the pipe to become idle whenever it cannot
+ * accept more data. Returns once all of @a buf has been placed in the pipe.
+ *
+ * @param pipe Pipe to transmit through
+ * @param buf Data to transmit
+ * @param size Number of bytes to transmit
+ * @param timeout Maximum total time to wait for the pipe to accept all data
+ *
+ * @retval 0 All data was placed in the pipe
+ * @retval -EPIPE Pipe is closed or was closed while waiting
+ * @retval -EAGAIN @a timeout expired before all data was placed in the pipe. Part of the data
+ *                 may already have been transmitted.
+ * @retval -errno Error reported by the pipe backend
+ *
+ * @warning This call blocks the calling thread, so it must not be used from an ISR, from
+ * a pipe callback, or from a workqueue used by the pipe backend. In particular, do not call
+ * it from the system workqueue when CONFIG_MODEM_DEDICATED_WORKQUEUE is disabled: backend
+ * progress and transmit-idle notifications require that queue to run.
+ */
+int modem_pipe_transmit_blocking(struct modem_pipe *pipe, const uint8_t *buf, size_t size,
+				 k_timeout_t timeout);
+
+/**
  * @brief Receive data through pipe
  *
  * @param pipe Pipe to receive from

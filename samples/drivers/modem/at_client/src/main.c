@@ -18,6 +18,7 @@
 #include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/modem/backend/uart.h>
 #include <zephyr/modem/pipe.h>
+#include <zephyr/sys/ring_buffer.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(at_client, CONFIG_MODEM_MODULES_LOG_LEVEL);
@@ -28,6 +29,8 @@ LOG_MODULE_REGISTER(at_client, CONFIG_MODEM_MODULES_LOG_LEVEL);
 #define UART_RX_BUF_SIZE    128
 #define UART_TX_BUF_SIZE    128
 #define CONSOLE_RX_BUF_SIZE 128
+#define CONSOLE_RING_SIZE   256
+#define MODEM_TX_TIMEOUT    K_SECONDS(1)
 
 /* Buffers for modem backend */
 struct modem_data {
@@ -44,6 +47,10 @@ static struct modem_data data;
 
 /* Console RX buffer for uart_pipe */
 static uint8_t buf_rx_console[CONSOLE_RX_BUF_SIZE];
+
+/* Hands console data from the uart_pipe callback (ISR) over to the main thread */
+RING_BUF_DECLARE(console_ring, CONSOLE_RING_SIZE);
+static K_SEM_DEFINE(console_data_sem, 0, 1);
 
 /* Callback when modem pipe receives data */
 static void modem_pipe_event_handler(struct modem_pipe *pipe, enum modem_pipe_event event,
@@ -103,21 +110,34 @@ static int init_modem_pipe(void)
 	return 0;
 }
 
-/* Console uart_pipe callback - receives data from console */
+/* Console uart_pipe callback - runs in ISR context, so only queue the data */
 static uint8_t *console_recv_cb(uint8_t *buf, size_t *off)
 {
-	int ret;
-
-	/* Data received from console, send directly to modem pipe */
 	if (*off > 0) {
-		ret = modem_pipe_transmit(data.uart_pipe, buf, *off);
-		if (ret < 0) {
-			LOG_ERR("Failed to transmit to modem: %d", ret);
+		if (ring_buf_put(&console_ring, buf, *off) < *off) {
+			LOG_WRN("Console data dropped");
 		}
+		k_sem_give(&console_data_sem);
 		*off = 0;
 	}
 
 	return buf;
+}
+
+/* Forward queued console data to the modem pipe, blocking as long as the pipe is full */
+static void forward_console_data(void)
+{
+	uint8_t *chunk;
+	uint32_t size;
+	int ret;
+
+	while ((size = ring_buf_get_ptr(&console_ring, &chunk, 0)) > 0) {
+		ret = modem_pipe_transmit_blocking(data.uart_pipe, chunk, size, MODEM_TX_TIMEOUT);
+		if (ret < 0) {
+			LOG_ERR("Failed to transmit to modem: %d", ret);
+		}
+		ring_buf_consume(&console_ring, size);
+	}
 }
 
 int main(void)
@@ -152,9 +172,9 @@ int main(void)
 	LOG_INF("Console <-> Modem communication established");
 	LOG_INF("Ready to forward AT commands");
 
-	/* Keep application running */
 	while (1) {
-		k_sleep(K_FOREVER);
+		k_sem_take(&console_data_sem, K_FOREVER);
+		forward_console_data();
 	}
 
 	return 0;
