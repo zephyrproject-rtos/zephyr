@@ -1,0 +1,50 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <allwinner/t153.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "xuantie,e907", "riscv";
+			reg = <0>;
+			device_type = "cpu";
+			interrupt-parent = <&clic>;
+			timebase-frequency = <24000000>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c",
+					       "zicsr", "zifencei", "xtheadcmo";
+			status = "okay";
+		};
+	};
+};
+
+&soc {
+	mtimer: timer@3000bff8 {
+		compatible = "riscv,machine-timer";
+		reg = <0x3000bff8 0x8>, <0x30004000 0x8>;
+		reg-names = "mtime", "mtimecmp";
+		interrupts-extended = <&clic 7 0>;
+		status = "disabled";
+	};
+
+	clic: interrupt-controller@30800000 {
+		compatible = "nuclei,eclic";
+		reg = <0x30800000 0x1400>;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <2>;
+		status = "disabled";
+	};
+};
+
+&uart3 {
+	interrupt-parent = <&clic>;
+	interrupts = <21 0>;
+	clock-frequency = <24000000>;
+};
