@@ -35,6 +35,7 @@ DEFAULT_OPENOCD_TELNET_PORT = 4444
 DEFAULT_OPENOCD_GDB_PORT = 3333
 DEFAULT_OPENOCD_RTT_PORT = 5555
 DEFAULT_OPENOCD_RESET_HALT_CMD = 'reset init'
+DEFAULT_OPENOCD_RESET_RUN_CMD = 'reset run'
 DEFAULT_OPENOCD_TARGET_HANDLE = "_TARGETNAME"
 
 def to_num(number):
@@ -66,7 +67,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_init=None, load=True,
                  target_handle=DEFAULT_OPENOCD_TARGET_HANDLE,
                  rtt_port=DEFAULT_OPENOCD_RTT_PORT, rtt_server=False,
-                 gdb_pre_debug=None):
+                 gdb_pre_debug=None, reset=True, reset_run_cmd=DEFAULT_OPENOCD_RESET_RUN_CMD):
         super().__init__(cfg)
 
         if not path.exists(cfg.board_dir):
@@ -136,6 +137,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.rtt_port = rtt_port
         self.rtt_server = rtt_server
         self.gdb_pre_debug = gdb_pre_debug or []
+        self.reset = reset
+        self.reset_run_cmd = reset_run_cmd
 
     @classmethod
     def name(cls):
@@ -144,8 +147,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
-                          dev_id=True, rtt=True, erase=True, skip_load=True, file=True,
-                          gdb_init=True)
+                          dev_id=True, rtt=True, erase=True, reset=True, skip_load=True,
+                          file=True, gdb_init=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -196,6 +199,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--cmd-post-verify', action='append',
                             help='''Command to run after verification;
                             may be given multiple times''')
+        parser.add_argument('--cmd-reset-run', default=DEFAULT_OPENOCD_RESET_RUN_CMD,
+                            help=f'''Command to run for resetting and running the target,
+                            defaults to "{DEFAULT_OPENOCD_RESET_RUN_CMD}"''')
         parser.add_argument('--verify', action='store_true',
                             help='if given, verify after flash')
         parser.add_argument('--verify-only', action='store_true',
@@ -239,6 +245,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             after loading the image during 'debug';
                             may be given multiple times''')
 
+        parser.set_defaults(reset=True)
+
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -270,7 +278,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             gdb_client_port=args.gdb_client_port, gdb_init=args.gdb_init,
             load=args.load, target_handle=args.target_handle,
             rtt_port=args.rtt_port, rtt_server=args.rtt_server,
-            gdb_pre_debug=args.gdb_pre_debug)
+            gdb_pre_debug=args.gdb_pre_debug, reset=args.reset,
+            reset_run_cmd=args.cmd_reset_run)
 
     def print_gdbserver_message(self):
         if not self.thread_info_enabled:
@@ -395,7 +404,13 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 verify_image = ['-c', 'verify_image ' + image_file]
                 post_verify_cmd = self._openocd_cmd(self.post_verify)
 
-            epilogue = ['-c', 'resume ' + ep_addr, '-c', 'shutdown']
+            epilogue = []
+            if self.reset:
+                if self.reset_run_cmd == DEFAULT_OPENOCD_RESET_RUN_CMD:
+                    epilogue = ['-c', 'resume ' + ep_addr]
+                else:
+                    epilogue = ['-c', self.reset_run_cmd]
+            epilogue += ['-c', 'shutdown']
 
         else:
             pre_load_cmd = self._openocd_cmd(self.pre_load)
@@ -427,7 +442,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                     verify_image = ['-c', self.reset_halt_cmd,
                                     '-c', f'{self.verify_cmd} {image_file}']
 
-            epilogue = ['-c', 'reset run', '-c', 'shutdown']
+            epilogue = []
+            if self.reset:
+                epilogue = ['-c', self.reset_run_cmd]
+            epilogue += ['-c', 'shutdown']
 
         cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                pre_init_cmd + self.init_arg + self.targets_arg +

@@ -12,3 +12,17 @@ board:
               cpucluster: m33_0
         - name: mcuboot
           cpucluster: m33_0
+runners:
+  run_once:
+    '--reset':
+      - runners:
+          - openocd
+        run: last
+        groups:
+          - boards:
+              - rpi_pico2/rp2350a/hazard3_0
+              - rpi_pico2/rp2350a/m33_0
+              - rpi_pico2/rp2350a/m33_0/mcuboot
+              - rpi_pico2/rp2350a/m33_0/w
+              - rpi_pico2/rp2350a/m33_0/w/mcuboot
+              - rpi_pico2/rp2350a/m33_1

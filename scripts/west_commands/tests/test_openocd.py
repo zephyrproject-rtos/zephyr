@@ -146,6 +146,33 @@ def test_no_dev_id_no_serial(runner_config):
     assert runner.serial == []
 
 
+@pytest.mark.parametrize(
+    'argv, expected_reset',
+    [
+        ([], True),
+        (['--reset'], True),
+        (['--no-reset'], False),
+    ],
+)
+def test_reset_option_sets_requested_state(argv, expected_reset, runner_config):
+    '''Reset is enabled by default; --reset/--no-reset set the requested state.'''
+    runner = create_from_args(runner_config, argv)
+    assert runner.reset is expected_reset
+
+
+@pytest.mark.parametrize(
+    'argv, expected_command',
+    [
+        ([], 'reset run'),
+        (['--cmd-reset-run', 'custom_reset_run'], 'custom_reset_run'),
+    ],
+)
+def test_cmd_reset_run_sets_final_flash_command(argv, expected_command, runner_config):
+    '''Use the default final flash command unless --cmd-reset-run overrides it.'''
+    runner = create_from_args(runner_config, argv)
+    assert runner.reset_run_cmd == expected_command
+
+
 #
 # --gdb-init commands are appended, in the order given, after the ones the
 # runner issues itself, so they cannot change the runner's default behavior.

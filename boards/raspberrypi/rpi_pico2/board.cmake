@@ -26,6 +26,12 @@ board_runner_args(openocd --cmd-pre-init "set_adapter_speed_if_not_set 5000")
 # Raspberry Pi fork of OpenOCD (https://github.com/raspberrypi/openocd).
 board_runner_args(openocd --gdb-pre-debug "monitor reset init")
 
+# The "cold_reset" OpenOCD command is specific to the rp2350 target in Raspberry
+# Pi's downstream fork of OpenOCD and resets everything except for the debug
+# port, including the power-on state machine (See RP2350 Datasheet Section 7.4).
+# This is required to reset the bootrom when flashing multi-core AMP images.
+board_runner_args(openocd --cmd-reset-run "cold_reset")
+
 board_runner_args(probe-rs "--chip=RP235x")
 
 board_runner_args(jlink "--device=RP2350_M33_0")

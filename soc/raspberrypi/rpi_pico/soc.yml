@@ -12,9 +12,28 @@ family:
       - name: m33
       - name: hazard3_0
       - name: m33_0
+      - name: m33_1
     - name: rp2350b
       cpuclusters:
       - name: hazard3
       - name: m33
       - name: hazard3_0
       - name: m33_0
+      - name: m33_1
+runners:
+  run_once:
+    '--reset':
+    - run: last
+      runners:
+      - openocd
+      groups:
+      - qualifiers:
+        - rp2350a/hazard3_0
+        - rp2350a/hazard3_1
+        - rp2350a/m33_0
+        - rp2350a/m33_1
+      - qualifiers:
+        - rp2350b/hazard3_0
+        - rp2350b/hazard3_1
+        - rp2350b/m33_0
+        - rp2350b/m33_1
