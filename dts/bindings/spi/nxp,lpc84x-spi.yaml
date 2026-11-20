@@ -1,0 +1,24 @@
+# Copyright (c) 2026, Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC84x SPI
+
+compatible: "nxp,lpc84x-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml, "nxp,lpc-spi.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-source:
+    type: string
+    enum: ["fro", "mainclk", "frg0", "frg1", "frodiv"]
+    default: "fro"
+    description: SPI clock source.

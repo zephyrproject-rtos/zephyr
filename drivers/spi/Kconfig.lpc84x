@@ -1,0 +1,20 @@
+# Copyright (c) 2026, Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_LPC84X
+	bool "LPC84x SPI driver"
+	default y
+	depends on DT_HAS_NXP_LPC84X_SPI_ENABLED && CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable the LPC84x SPI driver.
+
+config SPI_LPC84X_INTERRUPT
+	bool "Use interrupt-driven transfers for LPC84x SPI"
+	default n
+	depends on SPI_LPC84X
+	help
+	  When enabled, transfers use SPI_MasterTransferNonBlocking and
+	  the hardware IRQ instead of SPI_MasterTransferBlocking.
+	  The calling thread blocks on a semaphore until the ISR signals
+	  completion, so the Zephyr synchronous SPI API contract is preserved.
