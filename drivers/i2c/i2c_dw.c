@@ -684,6 +684,7 @@ static int i2c_dw_setup(const struct device *dev, uint16_t target_address)
 	uint32_t value;
 	union ic_con_register ic_con;
 	union ic_tar_register ic_tar;
+	union ic_comp_param_1_register ic_comp_param_1;
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
@@ -784,15 +785,26 @@ static int i2c_dw_setup(const struct device *dev, uint16_t target_address)
 	 */
 	write_rx_tl(0, reg_base);
 
-	/* Set TX fifo threshold level.
-	 * TX_EMPTY interrupt is triggered only when the
-	 * TX FIFO is truly empty. So that we can let
-	 * the controller do the transfers for longer period
-	 * before we need to fill the FIFO again. This may
-	 * cause some pauses during transfers, but this keeps
-	 * the device from interrupting often.
-	 */
-	write_tx_tl(0, reg_base);
+	if (IS_ENABLED(CONFIG_I2C_DW_EMPTYFIFO_HOLD_MASTER_EN)) {
+		/* Set TX fifo threshold level.
+		 * TX_EMPTY interrupt is triggered only when the
+		 * TX FIFO is truly empty. So that we can let
+		 * the controller do the transfers for longer period
+		 * before we need to fill the FIFO again. This may
+		 * cause some pauses during transfers, but this keeps
+		 * the device from interrupting often.
+		 */
+		write_tx_tl(0, reg_base);
+	} else {
+		ic_comp_param_1.raw = read_comp_param_1(reg_base);
+		value = ic_comp_param_1.bits.tx_buffer_depth + 1;
+		/* If the DW instance does not support holding SCL low
+		 * we must fill the TX FIFO before it becomes empty to avoid
+		 * generating a STOP condition during transfers. Set threshold
+		 * to 1/4 of the TX FIFO depth.
+		 */
+		write_tx_tl(value / 4, reg_base);
+	}
 
 	ic_tar.raw = read_tar(reg_base);
 
@@ -937,6 +949,7 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	uint8_t msg_left = num_msgs;
 	int ret;
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
+	union ic_interrupt_register intr_stat;
 
 	__ASSERT_NO_MSG(msgs);
 
@@ -1009,8 +1022,47 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	 */
 	pm_device_busy_set(dev);
 
-	dw->xfr_len = 0;
-	/* Process all the messages */
+	if (!IS_ENABLED(CONFIG_I2C_DW_EMPTYFIFO_HOLD_MASTER_EN)) {
+		/* Prefill the TX FIFO to avoid generating a stop condition
+		 * for short transfers.
+		 */
+		i2c_dw_prep_msg(dw, cur_msg);
+		intr_stat.raw = read_rawintr_stat(reg_base);
+		while (intr_stat.bits.tx_empty && msg_left > 0) {
+			if (dw->xfr_len == 0) {
+				i2c_dw_prep_msg(dw, cur_msg);
+			}
+			if ((dw->xfr_flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+				ret = i2c_dw_data_send(dev);
+				if (ret < 0) {
+					goto error;
+				}
+			} else {
+				i2c_dw_data_ask(dev);
+			}
+
+			if (intr_stat.bits.rx_full) {
+				i2c_dw_data_read(dev);
+			}
+
+			if (dw->xfr_len == 0) {
+				/* Load next message */
+				cur_msg++;
+				msg_left--;
+			}
+			intr_stat.raw = read_rawintr_stat(reg_base);
+		}
+
+		if (msg_left == 0) {
+			/* Wait for transfer to complete */
+			ret = i2c_dw_run_xfer(dev);
+		}
+	} else {
+		/* Reset xfr_len so first message is loaded */
+		dw->xfr_len = 0;
+	}
+
+	/* Process remaining messages */
 	while (msg_left > 0) {
 		if (dw->xfr_len == 0) {
 			i2c_dw_prep_msg(dw, cur_msg);
