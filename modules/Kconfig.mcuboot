@@ -449,6 +449,19 @@ config MCUBOOT_BOOT_MAX_ALIGN
 	  By default it's set to the maximum of the write block size of
 	  the chosen zephyr,flash node and 8.
 
+config MCUBOOT_LEGACY_SWAP_OVERHEAD
+	bool "Legacy (2.5 and earlier) swap overhead calculation"
+	depends on MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY || MCUBOOT_BOOTLOADER_MODE_RAM_LOAD || \
+		MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT || \
+		MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP || \
+		MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT
+	help
+	  MCUboot versions 2.5 and earlier wrongly include the size of a swap area in calculations,
+	  which limit the maximum size that an image in a slot can be and puts the status flags
+	  before this area. This Kconfig should only be enabled to retain compatibility with
+	  MCUboot/MCUboot images built against MCUboot 2.5 or older as it will reserve space that
+	  is never usable.
+
 config APP_LINK_WITH_MCUBOOT_BOOTUTIL
 	bool "Link 'app' with MCUboot bootutil library"
 	default y
