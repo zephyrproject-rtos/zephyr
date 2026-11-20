@@ -36,6 +36,21 @@ config BT_BR_MIN_ENC_KEY_SIZE
 	  This option sets the minimum encryption key size accepted during pairing
 	  for classic.
 
+config BT_BR_ALLOW_UNKNOWN_ENC_KEY_SIZE
+	bool "Accept BR/EDR encryption with an unknown key size"
+	depends on !BT_SMP_SC_ONLY
+	help
+	  Accept an encrypted BR/EDR link when the Controller does not support
+	  the HCI Read Encryption Key Size command, as some Bluetooth 2.1
+	  Controllers do not. The Host then cannot check the key size against
+	  BT_BR_MIN_ENC_KEY_SIZE: unless the Controller refuses short keys
+	  itself, an attacker can have the link encrypted with a key as short as
+	  one octet (KNOB, CVE-2019-9506). bt_conn_get_info() reports an
+	  encryption key size of 0 for such a link, and it never reaches
+	  security level 4.
+
+	  Without this option the Host disconnects such a link after encryption.
+
 config BT_MAX_SCO_CONN
 	int "Maximum number of simultaneous SCO connections"
 	default 1
