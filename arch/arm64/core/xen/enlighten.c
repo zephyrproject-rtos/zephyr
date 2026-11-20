@@ -7,6 +7,7 @@
 #include <xen/public/xen.h>
 #include <xen/public/memory.h>
 
+#include <kernel_internal.h>
 #include <zephyr/arch/arm64/hypercall.h>
 #include <zephyr/xen/events.h>
 #include <zephyr/xen/generic.h>
@@ -69,3 +70,10 @@ static int xen_enlighten_init(void)
 }
 
 SYS_INIT(xen_enlighten_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#ifdef CONFIG_HYPERVISOR_SECONDARY_CPU_INIT
+void z_hypervisor_secondary_cpu_init(void)
+{
+	xen_evtchn_secondary_cpu_init();
+}
+#endif /* CONFIG_HYPERVISOR_SECONDARY_CPU_INIT */
