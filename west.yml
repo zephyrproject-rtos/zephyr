@@ -325,7 +325,7 @@ manifest:
       revision: c9ffd4692de246eb911c7ba49b78a331b2c63c74
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: c43f34b93797e81fd0257c30004dcd0ae332ae51
+      revision: cc903e945cd1416213978f441704d4e066ca3bd7
       path: modules/crypto/mbedtls
       groups:
         - crypto
@@ -339,11 +339,6 @@ manifest:
       groups:
         - debug
       revision: 5a9d6055b62edc54566d6d0034d9daec91749b98
-    - name: mldsa-native
-      revision: 3fc19982839305d305071f0de0c540bc9c9bea8a
-      path: modules/crypto/mldsa-native
-      groups:
-        - crypto
     - name: nanopb
       revision: 0f6d088e777a33dd7b54297f137ef10d745c5da8
       path: modules/lib/nanopb
@@ -393,7 +388,7 @@ manifest:
         - testing
         - tee
     - name: tf-psa-crypto
-      revision: 765af96a20a2b408474dcd950372ba9af4d26b62
+      revision: 2fe4a69cb578123ec919f7a102ef417a6ef1cbd8
       path: modules/crypto/tf-psa-crypto
       groups:
         - crypto
@@ -408,7 +403,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 4e46beb1511b8dad77cd4b95aca3428ae25a7b44
+      revision: pull/247/head
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
