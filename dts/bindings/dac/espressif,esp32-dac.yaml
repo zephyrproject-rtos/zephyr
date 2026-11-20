@@ -18,6 +18,13 @@ description: |
       - GPIO17 as DAC channel 1
       - GPIO18 as DAC channel 2
 
+    ESP32-S31 pads
+      - GPIO4 as DAC channel 1
+      - GPIO5 as DAC channel 2
+
+    ESP32 and ESP32-S2 resolution is 8 bits. ESP32-S31 resolution is
+    12 bits.
+
     To enable the DAC peripheral it must be enabled in the board
     dts, or in subsequent overlay file.
 
@@ -27,8 +34,8 @@ description: |
 
     To specify the DAC channel to use, dts overlay must include
     properties 'dac-channel-id', which uses zero based channel index.
-    Variable 'dac-resolution' must be also specified, although ESP32
-    only supported resolution is 8bits.
+    Variable 'dac-resolution' must be also specified. Use 8 for ESP32
+    and ESP32-S2, and 12 for ESP32-S31.
 
           / {
             zephyr,user {
