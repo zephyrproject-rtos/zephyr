@@ -23,13 +23,6 @@
 	};
 };
 
-&cpuflpr_sram {
-	/* size must be increased due to booting from SRAM */
-	reg = <0x20028000 DT_SIZE_K(96)>;
-	ranges = <0x0 0x20028000 0x18000>;
-	status = "okay";
-};
-
 &cpuflpr_rram {
 	partitions {
 		ranges;

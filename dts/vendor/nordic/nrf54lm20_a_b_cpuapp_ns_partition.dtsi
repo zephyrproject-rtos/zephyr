@@ -10,7 +10,7 @@
  * - Upper 252 kB SRAM allocated to Non-Secure image (sram0_ns).
  *
  * nRF54LM20A and nRF54LM20B have 512 kB of volatile memory (SRAM),
- * but only 511 kB is available to use.
+ * but RAM from 0x2007fe40 up, which holds ProtectedRAM, is not usable.
  * Since TF-m requires 4kB page alignment we can only use a total of 508 kB.
  * This static layout needs to be the same with the upstream TF-M layout in the
  * header flash_layout.h of the relevant platform. Any updates in the layout
