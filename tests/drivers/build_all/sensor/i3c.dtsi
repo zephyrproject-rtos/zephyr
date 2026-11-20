@@ -34,7 +34,7 @@ test_i3c_lps28dfw: lps28dfw@300000803e0000003 {
 
 test_i3c_ilps22qs: ilps22qs@400000803e0000004 {
 	compatible = "st,ilps22qs";
-	reg = <0x3 0x00000803 0xe0000004>;
+	reg = <0x4 0x00000803 0xe0000004>;
 	assigned-address = <0x4>;
 };
 
@@ -85,7 +85,7 @@ test_i3c_bmm350: bmm350@900000803e0000009 {
 
 test_i3c_icm56686: icm56686@680000046a00000011 {
 	compatible = "invensense,icm56686";
-	reg = <0x68 0x0 0x0>;
+	reg = <0x68 0x0000046a 0x00000011>;
 	assigned-address = <0x9>;
 	int-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
 
