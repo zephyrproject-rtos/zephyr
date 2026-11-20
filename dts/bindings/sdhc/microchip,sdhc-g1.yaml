@@ -32,6 +32,21 @@ properties:
   interrupts:
     required: true
 
+  auto-cmd12:
+    type: boolean
+    description: |
+      Enable Auto CMD12 for multi-block transfers. The host controller
+      automatically issues CMD12 (stop transmission) after the last block.
+      Use this for cards that do not support CMD23.
+
+  auto-cmd23:
+    type: boolean
+    description: |
+      Enable Auto CMD23 for multi-block transfers. The host controller
+      automatically issues CMD23 (set block count) before the transfer.
+      Requires ADMA and card CMD23 support (SCR bit 33). Takes precedence
+      over auto-cmd12 if both are set.
+
   pinctrl-0:
     required: true
 
@@ -40,6 +55,13 @@ properties:
     description: |
       Names of the pinctrl states defined for this controller. Must include
       "default" matching pinctrl-0.
+
+  bus-width:
+    default: 4
+    description: |
+      SD bus width in bits. 1 for 1-bit, 4 for 4-bit. No 8-bit support in hardware.
+      By default 4-bit data line is enabled and can be adjusted based on the SDMMC
+      instance or hardware board design.
 
 examples:
   - |
@@ -54,7 +76,8 @@ examples:
                      <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC1_SLOW>;
             clock-names = "mclk", "gclk", "gclk-slow";
             min-bus-freq = <400000>;
-            max-bus-freq = <25000000>;
+            max-bus-freq = <50000000>;
+            auto-cmd23;
             pinctrl-0 = <&sdhc0_default>;
             pinctrl-names = "default";
             status = "okay";

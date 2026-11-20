@@ -19,6 +19,7 @@
 		zephyr,code-partition = &code_partition;
 		zephyr,console = &sercom5;
 		zephyr,shell-uart = &sercom5;
+		zephyr,sdhc = &sdhc0;
 	};
 
 	aliases {
@@ -26,6 +27,7 @@
 		led1 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		sdhc0 = &sdhc0;
 	};
 
 	leds {
@@ -153,28 +155,28 @@
 			pll-enable = <1>;
 			pll-on-demand-en = <0>;
 			pll-bandwidth-sel = "bwsel-1";
-			pll-src = "dfll48m";
-			pll-ref-division-factor = <12>;
-			pll-feedback-divider-factor = <240>;
+			pll-src = "xosc";
+			pll-ref-division-factor = <3>;
+			pll-feedback-divider-factor = <300>; /* VCO = 1200 MHz */
 			pll-freq-division-factor-int = <0>;
 			pll-freq-division-factor-rem = <0>;
 
 			pll0out0: pll0out0 {
 				subsystem = <CLOCK_MCHP_PLL0_ID_OUT0>;
-				pll-output-division-factor = <8>;
+				pll-output-division-factor = <10>; /* CPU 1200/10 = 120 MHz */
 				pll-output-en = <1>;
 			};
 
 			pll0out1: pll0out1 {
 				subsystem = <CLOCK_MCHP_PLL0_ID_OUT1>;
-				pll-output-division-factor = <20>; /* 960 MHz / 20 = 48 MHz */
+				pll-output-division-factor = <25>; /* For USBFS 1200/25 = 48 MHz */
 				pll-output-en = <1>;
 			};
 
 			pll0out2: pll0out2 {
 				subsystem = <CLOCK_MCHP_PLL0_ID_OUT2>;
-				pll-output-division-factor = <8>;
-				pll-output-en = <0>;
+				pll-output-division-factor = <12>; /* For SDHC 1200/12 = 100 MHz */
+				pll-output-en = <1>;
 			};
 
 			pll0out3: pll0out3 {
@@ -242,6 +244,36 @@
 			gclkgen-duty-50-50-en = <0>;
 			gclkgen-out-clock-signal = <0>;
 		};
+
+		/* Add GCLK for SDHC main clock - 100 MHz from PLL0_OUT2 */
+		gclkgen3 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN3>;
+			gclkgen-en = <1>;
+			gclkgen-run-in-standby-en = <0>;
+			gclkgen-ext-input-frequency = <0>;
+			gclkgen-src = "pll0_2";
+			gclkgen-output-off-val = "logic-level-0";
+			gclkgen-input-frequency = <0>;
+			gclkgen-div-select = "div-factor";
+			gclkgen-div-factor = <1>;
+			gclkgen-duty-50-50-en = <0>;
+			gclkgen-out-clock-signal = <0>;
+		};
+
+		/* Add GCLK for SDHC slow clock - 12 MHz from PLL0_OUT0 (120 MHz / 10) */
+		gclkgen4 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN4>;
+			gclkgen-en = <1>;
+			gclkgen-run-in-standby-en = <0>;
+			gclkgen-ext-input-frequency = <0>;
+			gclkgen-src = "pll0_0";
+			gclkgen-output-off-val = "logic-level-0";
+			gclkgen-input-frequency = <0>;
+			gclkgen-div-select = "div-factor";
+			gclkgen-div-factor = <10>;
+			gclkgen-duty-50-50-en = <0>;
+			gclkgen-out-clock-signal = <0>;
+		};
 	};
 
 	gclkperiph: gclkperiph {
@@ -262,7 +294,13 @@
 
 		sdhc0 {
 			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SDMMC0>;
-			gclkperiph-src = "gclk0";
+			gclkperiph-src = "gclk3";
+			gclkperiph-en = <1>;
+		};
+
+		sdhc0_slow {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SDMMC0_SLOW>;
+			gclkperiph-src = "gclk4";
 			gclkperiph-en = <1>;
 		};
 	};
@@ -283,6 +321,11 @@
 
 		usbhs0 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_USBHS_AHB>;
+			mclk-en = <1>;
+		};
+
+		sdhc0 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SDMMC0_AHB>;
 			mclk-en = <1>;
 		};
 	};
@@ -309,4 +352,19 @@
 	pinctrl-0 = <&sercom5_uart_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&sdhc0 {
+	compatible = "microchip,sdhc-g1";
+	pinctrl-0 = <&sdhc0_default>;
+	pinctrl-names = "default";
+	auto-cmd23;
+	auto-cmd12;
+	status = "okay";
+
+	disk {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };
