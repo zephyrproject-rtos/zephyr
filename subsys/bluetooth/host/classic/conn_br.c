@@ -50,6 +50,22 @@ void bt_sco_cleanup(struct bt_conn *sco_conn)
 	bt_conn_unref(sco_conn);
 }
 
+bool bt_conn_br_setup_abandoned(const struct bt_conn *conn)
+{
+	return conn->state == BT_CONN_INITIATING &&
+	       !atomic_test_bit(conn->flags, BT_CONN_BR_CREATE_PENDING) &&
+	       !atomic_test_bit(conn->flags, BT_CONN_BR_ACCEPT_PENDING);
+}
+
+void bt_conn_br_setup_cmd_failed(struct bt_conn *conn, int flag)
+{
+	atomic_clear_bit(conn->flags, flag);
+
+	if (bt_conn_br_setup_abandoned(conn)) {
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	}
+}
+
 struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 				  const struct bt_br_conn_param *param)
 {
@@ -61,8 +77,15 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 		return NULL;
 	}
 
+	/* Another call for the peer, or a connection request from it, either
+	 * finds the object or is found by the lookup
+	 */
+	k_sched_lock();
+
 	conn = bt_conn_lookup_addr_br(peer);
 	if (conn) {
+		k_sched_unlock();
+
 		switch (conn->state) {
 		case BT_CONN_INITIATING:
 		case BT_CONN_CONNECTED:
@@ -75,11 +98,20 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 
 	conn = bt_conn_add_br(peer);
 	if (!conn) {
+		k_sched_unlock();
 		return NULL;
 	}
 
+	conn->role = BT_CONN_ROLE_CENTRAL;
+	atomic_set_bit(conn->flags, BT_CONN_BR_CREATE_PENDING);
+	/* From here on the address lookup finds the connection */
+	bt_conn_set_state(conn, BT_CONN_INITIATING);
+
+	k_sched_unlock();
+
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
+		bt_conn_br_setup_cmd_failed(conn, BT_CONN_BR_CREATE_PENDING);
 		bt_conn_unref(conn);
 		return NULL;
 	}
@@ -94,10 +126,8 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 	cp->allow_role_switch = param->allow_role_switch ? 0x01 : 0x00;
 	cp->clock_offset = 0x0000; /* TODO used cached clock offset */
 
-	bt_conn_set_state(conn, BT_CONN_INITIATING);
-	conn->role = BT_CONN_ROLE_CENTRAL;
-
 	if (bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT, buf, NULL) < 0) {
+		bt_conn_br_setup_cmd_failed(conn, BT_CONN_BR_CREATE_PENDING);
 		bt_conn_unref(conn);
 		return NULL;
 	}
