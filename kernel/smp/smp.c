@@ -9,6 +9,7 @@
 #include <zephyr/llext/symbol.h>
 #include <kswap.h>
 #include <kernel_internal.h>
+#include <ksmp.h>
 
 static atomic_t global_lock;
 

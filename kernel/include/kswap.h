@@ -76,11 +76,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		z_sched_switch_spin(new_thread);
 		z_current_thread_set(new_thread);
 
-#if defined(CONFIG_TIMESLICING) && defined(CONFIG_SMP)
-		/* Uniprocessor builds start it in update_cache() */
-		z_time_slice_reset(new_thread);
-#endif /* CONFIG_TIMESLICING && CONFIG_SMP */
-
+		z_smp_slice_start(new_thread);
 		z_sched_spinlock_transfer_owner(new_thread);
 
 		arch_cohere_stacks(old_thread, NULL, new_thread);

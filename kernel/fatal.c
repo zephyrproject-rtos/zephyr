@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 
 #include <kernel_internal.h>
+#include <ksmp.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/exception.h>
@@ -17,73 +18,6 @@
 #include <zephyr/sys/reboot.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
-
-#ifdef CONFIG_SMP
-#define FATAL_NO_CPU           (-1)
-/* Time given to the other CPUs to park, in microseconds */
-#define FATAL_PAUSE_TIMEOUT_US 100000
-
-BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS < ATOMIC_BITS);
-
-/* CPU halting the system, FATAL_NO_CPU when none */
-static atomic_t fatal_cpu = ATOMIC_INIT(FATAL_NO_CPU);
-/* CPUs parked on behalf of fatal_cpu */
-static atomic_t paused_cpus;
-
-static bool paused_by_other_cpu(int cpu)
-{
-	atomic_val_t owner = atomic_get(&fatal_cpu);
-
-	return (owner != FATAL_NO_CPU) && (owner != cpu);
-}
-
-static FUNC_NORETURN void park(int cpu)
-{
-	(void)arch_irq_lock();
-	atomic_or(&paused_cpus, BIT(cpu));
-	for (;;) {
-		arch_spin_relax();
-	}
-}
-
-void z_fatal_pause_cpus(void)
-{
-	atomic_val_t others;
-	int cpu;
-
-	/* k_fatal_halt() may be called by a thread that could still change CPU */
-	(void)arch_irq_lock();
-	cpu = arch_curr_cpu()->id;
-	others = BIT_MASK(arch_num_cpus()) & ~BIT(cpu);
-
-	if (atomic_get(&fatal_cpu) == cpu) {
-		return;
-	}
-
-	if (!atomic_cas(&fatal_cpu, FATAL_NO_CPU, cpu)) {
-		park(cpu);
-	}
-
-#ifdef CONFIG_SCHED_IPI_SUPPORTED
-	arch_sched_broadcast_ipi();
-#endif
-	for (int i = 0; i < FATAL_PAUSE_TIMEOUT_US; i += 10) {
-		if ((atomic_get(&paused_cpus) & others) == others) {
-			break;
-		}
-		k_busy_wait(10);
-	}
-}
-
-void z_fatal_ipi(void)
-{
-	int cpu = arch_curr_cpu()->id;
-
-	if (paused_by_other_cpu(cpu)) {
-		park(cpu);
-	}
-}
-#endif /* CONFIG_SMP */
 
 /* LCOV_EXCL_START */
 FUNC_NORETURN __weak void arch_system_halt(unsigned int reason)
