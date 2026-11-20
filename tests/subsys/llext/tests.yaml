@@ -150,6 +150,13 @@ tests:
       # with no way to mark the region executable. Setting an unknown symbol to
       # 'n' is a no-op, so this is safe on the MMU arches.
       - CONFIG_PMP_DATA_EXECUTION_PREVENTION=n
+  llext.readonly_mmu.sharedlib:
+    filter: CONFIG_ARM64 and CONFIG_MMU
+    integration_platforms:
+      - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_TYPE_ELF_SHAREDLIB=y
   llext.readonly_mmu.memblk:
     arch_allow:
       - arm64
