@@ -1322,6 +1322,62 @@ ZTEST(smp, test_smp_inc_concurrency)
 			"total count %d is wrong(M)", global_cnt);
 }
 
+/* Timer used by test_smp_timer_cleanup_periodic_in_flight. */
+static struct k_timer cleanup_timer;
+static atomic_t cleanup_in_expiry;
+
+/* Expiry function that stays busy for 1 ms and flags while it runs. */
+static void cleanup_busy_expiry(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+
+	atomic_set(&cleanup_in_expiry, 1);
+	k_busy_wait(USEC_PER_MSEC);
+	atomic_set(&cleanup_in_expiry, 0);
+}
+
+/**
+ * @brief Verify that k_timer_cleanup() waits for a running expiry function.
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * A periodic timer's expiry function may be running on another CPU when the
+ * timer is cleaned up. k_timer_cleanup() must not return until that expiry
+ * function has completed, otherwise the timer object could be reused or freed
+ * while it is still in use.
+ *
+ * Test steps:
+ * - Start a 1 ms periodic timer whose expiry function busy-waits for 1 ms.
+ * - Wait up to 100 ms for the expiry function to be seen running.
+ * - Call k_timer_cleanup() and check that the expiry function is no longer
+ *   running.
+ * - Repeat 10 times.
+ *
+ * Expected result:
+ * - k_timer_cleanup() returns 0 and the expiry function has always completed
+ *   when it returns.
+ *
+ * @see k_timer_cleanup()
+ */
+ZTEST(smp, test_smp_timer_cleanup_periodic_in_flight)
+{
+	int64_t end;
+
+	for (int i = 0; i < 10; i++) {
+		k_timer_init(&cleanup_timer, cleanup_busy_expiry, NULL);
+		k_timer_start(&cleanup_timer, K_MSEC(1), K_MSEC(1));
+
+		end = k_uptime_get() + 100;
+		while ((atomic_get(&cleanup_in_expiry) == 0) && (k_uptime_get() < end)) {
+		}
+
+		zassert_equal(k_timer_cleanup(&cleanup_timer), 0);
+		zassert_equal(atomic_get(&cleanup_in_expiry), 0,
+			      "expiry function still running after k_timer_cleanup()");
+	}
+}
+
 /* Keep track of how many signals raised. */
 static unsigned int t_signal_raised;
 
