@@ -346,6 +346,17 @@ static int transceive(const struct device *dev,
 	nxp_flexio_unlock(config->flexio_dev);
 
 	ret = spi_context_wait_for_completion(&data->ctx);
+	if (ret != 0) {
+		/* Sync only. The SDK ISR returns early once the handle is idle. */
+		nxp_flexio_lock(config->flexio_dev);
+		nxp_flexio_irq_disable(config->flexio_dev);
+		FLEXIO_SPI_MasterTransferAbort(config->flexio_spi, &data->handle);
+		nxp_flexio_irq_enable(config->flexio_dev);
+		nxp_flexio_unlock(config->flexio_dev);
+
+		spi_context_cs_control(&data->ctx, false);
+		spi_context_clear_completion(&data->ctx);
+	}
 out:
 	spi_context_release(&data->ctx, ret);
 
