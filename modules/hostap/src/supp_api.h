@@ -295,6 +295,17 @@ int supplicant_get_rts_threshold(const struct device *dev, struct net_if *iface,
  * @return 0 if ok, < 0 if error
  */
 int supplicant_btm_query(const struct device *dev, struct net_if *iface, uint8_t reason);
+
+/** Send a WNM-Sleep Mode Request
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param iface Network interface to use
+ * @param params Enter or exit, and the WNM Sleep Interval to request
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_wnm_sleep(const struct device *dev, struct net_if *iface,
+			 struct wifi_wnm_sleep_params *params);
 #endif
 
 /** Send legacy roam
