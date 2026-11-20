@@ -2011,3 +2011,130 @@ class TestMentionCommentIsIdempotent:
 
         assert _reviewers_requested(pr) == ["inside_c"]
         assert _mentioned(pr) == ["outside_m"]
+
+
+# ---------------------------------------------------------------------------
+# Match specificity tie-breaking (issue #126374)
+# ---------------------------------------------------------------------------
+
+
+class _SpecificArea(_Area):
+    """Area stub with configurable per-path match_specificity."""
+
+    def __init__(self, name, specificity_map=None, **kwargs):
+        super().__init__(name, **kwargs)
+        self._specificity_map = specificity_map or {}
+
+    def match_specificity(self, path):
+        return self._specificity_map.get(path, (0, 0))
+
+
+class TestMatchSpecificity:
+    """When areas tie on file weight, the more specific path match wins."""
+
+    def test_exact_file_match_beats_directory_match(self):
+        """A direct file match (e.g. scripts/ci/check_compliance.py) takes
+        precedence over a broad directory match (e.g. scripts/ci/) even when
+        the broader area appears first in MAINTAINERS.yml."""
+        path = "scripts/ci/check_compliance.py"
+        ci_area = _SpecificArea(
+            "Continuous Integration",
+            maintainers=["ci_m"],
+            labels=["area: Continuous Integration"],
+            specificity_map={path: (1, len("scripts/ci/"))},
+        )
+        linters_area = _SpecificArea(
+            "Linters and Static Analyzers",
+            maintainers=["linter_m"],
+            labels=["area: Linters"],
+            specificity_map={path: (3, len(path))},
+        )
+        gh, args, mf, pr = _make_process_pr_harness({path: [ci_area, linters_area]})
+        sut.process_pr(gh, args, mf, 99)
+
+        assert _assignees_set(pr) == ["linter_m"]
+        assert "ci_m" in _reviewers_requested(pr)
+
+    def test_deeper_directory_beats_shallower_directory(self):
+        """Among directory matches with equal file count, the deeper prefix wins."""
+        path = "drivers/foo/bar/baz.c"
+        shallow = _SpecificArea(
+            "Area A",
+            maintainers=["shallow_m"],
+            specificity_map={path: (1, len("drivers/foo/"))},
+        )
+        deep = _SpecificArea(
+            "Area B",
+            maintainers=["deep_m"],
+            specificity_map={path: (1, len("drivers/foo/bar/"))},
+        )
+        gh, args, mf, pr = _make_process_pr_harness({path: [shallow, deep]})
+        sut.process_pr(gh, args, mf, 99)
+
+        assert _assignees_set(pr) == ["deep_m"]
+
+    def test_higher_file_count_still_beats_higher_specificity(self):
+        """Specificity only breaks ties; an area covering more files still wins."""
+        p1 = "scripts/ci/check_compliance.py"
+        p2 = "scripts/ci/twister_ignore.txt"
+        ci_area = _SpecificArea(
+            "Continuous Integration",
+            maintainers=["ci_m"],
+            specificity_map={p1: (1, len("scripts/ci/")), p2: (1, len("scripts/ci/"))},
+        )
+        linters_area = _SpecificArea(
+            "Linters and Static Analyzers",
+            maintainers=["linter_m"],
+            specificity_map={p1: (3, len(p1))},
+        )
+        gh, args, mf, pr = _make_process_pr_harness({p1: [ci_area, linters_area], p2: [ci_area]})
+        sut.process_pr(gh, args, mf, 99)
+
+        assert _assignees_set(pr) == ["ci_m"]
+
+    def test_author_sole_maintainer_of_specific_area_falls_back(self):
+        """If the PR author is the sole maintainer of the more specific area,
+        assignment falls back to the broader area's maintainer."""
+        path = "scripts/ci/check_compliance.py"
+        ci_area = _SpecificArea(
+            "Continuous Integration",
+            maintainers=["ci_m"],
+            specificity_map={path: (1, len("scripts/ci/"))},
+        )
+        linters_area = _SpecificArea(
+            "Linters and Static Analyzers",
+            maintainers=["linter_m"],
+            specificity_map={path: (3, len(path))},
+        )
+        gh, args, mf, pr = _make_process_pr_harness({path: [ci_area, linters_area]})
+        pr.user.login = "linter_m"
+        sut.process_pr(gh, args, mf, 99)
+
+        assert _assignees_set(pr) == ["ci_m"]
+
+    def test_file_glob_beats_directory_and_exact_beats_glob(self):
+        """Specificity tiers order as: exact file > file glob > directory prefix."""
+        path = "scripts/ci/check_compliance.py"
+        dir_area = _SpecificArea(
+            "Dir Area",
+            maintainers=["dir_m"],
+            specificity_map={path: (1, len("scripts/ci/"))},
+        )
+        glob_area = _SpecificArea(
+            "Glob Area",
+            maintainers=["glob_m"],
+            specificity_map={path: (2, len("scripts/ci/.py"))},
+        )
+        exact_area = _SpecificArea(
+            "Exact Area",
+            maintainers=["exact_m"],
+            specificity_map={path: (3, len(path))},
+        )
+
+        gh, args, mf, pr = _make_process_pr_harness({path: [dir_area, glob_area]})
+        sut.process_pr(gh, args, mf, 99)
+        assert _assignees_set(pr) == ["glob_m"]
+
+        gh, args, mf, pr = _make_process_pr_harness({path: [dir_area, glob_area, exact_area]})
+        sut.process_pr(gh, args, mf, 99)
+        assert _assignees_set(pr) == ["exact_m"]
