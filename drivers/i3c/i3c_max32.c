@@ -1754,7 +1754,7 @@ static int max32_i3c_pm_suspend(const struct device *dev)
 	}
 
 	ret = clock_control_off(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
-	if (ret) {
+	if (ret != 0 && ret != -ENOTSUP) {
 		return ret;
 	}
 
