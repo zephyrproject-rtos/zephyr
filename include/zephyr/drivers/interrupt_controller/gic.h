@@ -443,6 +443,24 @@ void arm_gic_secondary_init(void);
  */
 void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_list);
 
+/**
+ * @brief Raise SGI to one CPU selected by MPIDR affinity
+ *
+ * GICv1/v2 sends no SGI if the target affinity has no known CPU target mapping.
+ * Without SMP, only the calling CPU's mapping is known.
+ * Local requests use the requesting-CPU target filter when the CPU target
+ * registers read as zero.
+ *
+ * @param sgi_id      SGI ID 0 to 15
+ * @param target_aff  target affinity in MPIDR form
+ *
+ * @retval 0 SGI request written to the interrupt controller.
+ * @retval -EINVAL Invalid SGI ID.
+ * @retval -EINVAL GICv3 target Aff0 is outside the supported range 0 to 15.
+ * @retval -ENOENT GICv1/v2 target affinity has no known CPU target mapping.
+ */
+int gic_raise_sgi_by_affinity(unsigned int sgi_id, uint64_t target_aff);
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GIC_H_ */

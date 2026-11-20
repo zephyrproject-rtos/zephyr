@@ -11,13 +11,18 @@
  * NOTE: This driver implements the GICv1 and GICv2 interfaces.
  */
 
+#include <errno.h>
+
 #include <zephyr/device.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/sys/barrier.h>
+
+#include "intc_gic_cpu_targets.h"
 
 #if defined(CONFIG_GIC_V1)
 #define DT_DRV_COMPAT arm_gic_v1
@@ -26,13 +31,6 @@
 #else
 #error "Unknown GIC controller compatible for this configuration"
 #endif
-
-static const uint64_t cpu_mpid_list[] = {
-	DT_FOREACH_CPU_STATUS_OKAY_SEP(DT_REG_ADDR, (,))
-};
-
-BUILD_ASSERT(ARRAY_SIZE(cpu_mpid_list) >= CONFIG_MP_MAX_NUM_CPUS,
-		"The count of CPU Cores nodes in dts is less than CONFIG_MP_MAX_NUM_CPUS\n");
 
 /*
  * Read the current CPU's target mask from hardware.
@@ -44,6 +42,24 @@ static uint8_t gic_get_cpu_mask(void)
 {
 	return sys_read8(GICD_ITARGETSRn);
 }
+
+#if defined(CONFIG_SMP)
+static struct gic_cpu_target gic_cpu_targets[CONFIG_MP_MAX_NUM_CPUS];
+
+static void gic_register_cpu_target(void)
+{
+	unsigned int cpu = arch_curr_cpu()->id;
+
+	gic_cpu_target_register(&gic_cpu_targets[cpu], MPIDR_TO_CORE(GET_MPIDR()),
+				gic_get_cpu_mask());
+}
+
+static uint8_t gic_get_target_mask(uint64_t target_aff)
+{
+	return gic_cpu_target_mask(gic_cpu_targets, ARRAY_SIZE(gic_cpu_targets),
+				   MPIDR_TO_CORE(target_aff));
+}
+#endif
 
 void arm_gic_irq_enable(unsigned int irq)
 {
@@ -220,6 +236,66 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 	barrier_isync_fence_full();
 }
 
+int gic_raise_sgi_by_affinity(unsigned int sgi_id, uint64_t target_aff)
+{
+	uint8_t target_mask;
+
+	if (!GIC_IS_SGI(sgi_id)) {
+		return -EINVAL;
+	}
+
+#ifdef CONFIG_SMP
+	target_mask = gic_get_target_mask(target_aff);
+#else
+	/* Only the local CPU's affinity-to-target mapping is known without SMP. */
+	if (MPIDR_TO_CORE(target_aff) != MPIDR_TO_CORE(GET_MPIDR())) {
+		return -ENOENT;
+	}
+
+	target_mask = gic_get_cpu_mask();
+#endif
+
+	if (target_mask == 0U) {
+		if (MPIDR_TO_CORE(target_aff) != MPIDR_TO_CORE(GET_MPIDR())) {
+			return -ENOENT;
+		}
+
+		/* Single-interface implementations can make the CPU target registers RAZ. */
+		barrier_dsync_fence_full();
+		sys_write32(GICD_SGIR_TGTFILT_REQONLY | sgi_id, GICD_SGIR);
+		barrier_isync_fence_full();
+		return 0;
+	}
+
+	gic_raise_sgi(sgi_id, target_aff, target_mask);
+	return 0;
+}
+
+#if defined(CONFIG_SMP) && !defined(CONFIG_GIC_SAFE_CONFIG)
+static void gic_dist_add_cpu_target(void)
+{
+	static struct k_spinlock lock;
+	unsigned int gic_irqs, i;
+	uint32_t cpu_mask = gic_get_cpu_mask();
+	uint32_t reg_val;
+	k_spinlock_key_t key;
+
+	gic_irqs = sys_read32(GICD_TYPER) & 0x1fU;
+	gic_irqs = (gic_irqs + 1U) * 32U;
+	if (gic_irqs > 1020U) {
+		gic_irqs = 1020U;
+	}
+
+	reg_val = cpu_mask | (cpu_mask << 8U) | (cpu_mask << 16U) | (cpu_mask << 24U);
+	key = k_spin_lock(&lock);
+
+	for (i = GIC_SPI_INT_BASE; i < gic_irqs; i += 4U) {
+		sys_write32(sys_read32(GICD_ITARGETSRn + i) | reg_val, GICD_ITARGETSRn + i);
+	}
+	k_spin_unlock(&lock, key);
+}
+#endif
+
 static void gic_dist_init(void)
 {
 	unsigned int gic_irqs, i;
@@ -262,19 +338,13 @@ static void gic_dist_init(void)
 	reg_val = 0;
 #else
 	/*
-	 * In SMP mode, target SPIs to all CPUs.
-	 * Get the current CPU's hardware target mask from the GIC
-	 * and combine it with all CPUs from the device tree.
+	 * Target SPIs to the boot CPU. Each secondary CPU adds its
+	 * hardware target mask after its CPU interface is initialized.
 	 */
 	{
-		uint8_t cpu_mask = gic_get_cpu_mask();
-		unsigned int num_cpus = arch_num_cpus();
+		uint32_t cpu_mask = gic_get_cpu_mask();
 
-		for (i = 0; i < num_cpus; i++) {
-			cpu_mask |= BIT(cpu_mpid_list[i]);
-		}
-
-		reg_val = cpu_mask | (cpu_mask << 8) | (cpu_mask << 16) | (cpu_mask << 24);
+		reg_val = cpu_mask | (cpu_mask << 8U) | (cpu_mask << 16U) | (cpu_mask << 24U);
 	}
 #endif
 
@@ -367,6 +437,10 @@ int arm_gic_init(const struct device *dev)
 	/* Init CPU interface registers */
 	gic_cpu_init();
 
+#ifdef CONFIG_SMP
+	gic_register_cpu_target();
+#endif
+
 	return 0;
 }
 
@@ -378,5 +452,10 @@ void arm_gic_secondary_init(void)
 {
 	/* Init CPU interface registers for each secondary core */
 	gic_cpu_init();
+	gic_register_cpu_target();
+
+#ifndef CONFIG_GIC_SAFE_CONFIG
+	gic_dist_add_cpu_target();
+#endif
 }
 #endif
