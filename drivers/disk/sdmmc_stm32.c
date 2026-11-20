@@ -73,6 +73,34 @@ LOG_MODULE_REGISTER(stm32_sdmmc, CONFIG_SDMMC_LOG_LEVEL);
 #define SDMMC_BUS_WIDTH SDMMC_BUS_WIDE_8B
 #endif /* DT_INST_PROP(0, bus_width) */
 
+/* A write keeps an SD card busy for at most 250 ms, 500 ms for an SDXC card (SD Physical Layer
+ * Specification), longer than a read.
+ */
+#define STM32_SDMMC_BUSY_TIMEOUT K_MSEC(500)
+/* The longest erase the STM32Cube HAL waits for */
+#define STM32_SDMMC_ERASE_TIMEOUT K_SECONDS(63)
+#define STM32_SDMMC_STATUS_POLL_PERIOD K_USEC(100)
+
+#if defined(CONFIG_SDMMC_STM32_IDMA_BOUNCE_SIZE)
+/* The IDMA takes 32-bit word aligned addresses only (RM0433 55.10.17), and the cache maintenance
+ * around a transfer keeps the data next to the buffer intact only when the buffer is aligned to a
+ * cache line.
+ */
+#if defined(CONFIG_DCACHE) && (CONFIG_DCACHE_LINE_SIZE > 4)
+#define STM32_SDMMC_IDMA_ALIGN CONFIG_DCACHE_LINE_SIZE
+#else
+#define STM32_SDMMC_IDMA_ALIGN 4
+#endif
+
+#define STM32_SDMMC_SRAM_NODE DT_CHOSEN(zephyr_sram)
+
+BUILD_ASSERT((CONFIG_SDMMC_STM32_IDMA_BOUNCE_SIZE % BLOCKSIZE) == 0,
+	     "the IDMA bounce buffer must hold whole blocks");
+
+static uint8_t stm32_sdmmc_bounce[CONFIG_SDMMC_STM32_IDMA_BOUNCE_SIZE]
+	__aligned(STM32_SDMMC_IDMA_ALIGN);
+#endif /* CONFIG_SDMMC_STM32_IDMA_BOUNCE_SIZE */
+
 typedef void (*irq_config_func_t)(const struct device *dev);
 
 #if STM32_SDMMC_USE_DMA
@@ -97,6 +125,9 @@ struct stm32_sdmmc_priv {
 	irq_config_func_t irq_config;
 	struct k_sem thread_lock;
 	struct k_sem sync;
+#if defined(SDMMC_STA_BUSYD0END)
+	struct k_sem busy_end;
+#endif
 	HandleTypeDef hsd;
 	int status;
 	struct k_work work;
@@ -132,6 +163,17 @@ static void stm32_sdmmc_fc_enable(struct stm32_sdmmc_priv *priv)
 static void stm32_sdmmc_isr(const struct device *dev)
 {
 	struct stm32_sdmmc_priv *priv = dev->data;
+
+#if defined(SDMMC_STA_BUSYD0END)
+	MMC_TypeDef *sdmmcx = priv->hsd.Instance;
+
+	if (((sdmmcx->MASK & SDMMC_MASK_BUSYD0ENDIE) != 0U) &&
+	    ((sdmmcx->STA & SDMMC_STA_BUSYD0END) != 0U)) {
+		sdmmcx->MASK &= ~SDMMC_MASK_BUSYD0ENDIE;
+		sdmmcx->ICR = SDMMC_ICR_BUSYD0ENDC;
+		k_sem_give(&priv->busy_end);
+	}
+#endif
 
 #ifdef CONFIG_SDMMC_STM32_EMMC
 	HAL_MMC_IRQHandler(&priv->hsd);
@@ -508,6 +550,67 @@ static int stm32_sdmmc_is_card_in_transfer(HandleTypeDef *hsd)
 #endif
 }
 
+/*
+ * The card keeps SDMMC_D0 low after the R1b response of the CMD12 that ends a multiple block
+ * transfer, or of an erase, while it programs (RM0433 55.6.6); the DPSM itself waits for the busy
+ * that follows each data block.
+ */
+static int stm32_sdmmc_wait_busy_end(struct stm32_sdmmc_priv *priv, k_timeout_t timeout)
+{
+#if defined(SDMMC_STA_BUSYD0END)
+	MMC_TypeDef *sdmmcx = priv->hsd.Instance;
+	unsigned int key;
+	int err = 0;
+
+	k_sem_reset(&priv->busy_end);
+
+	/* the HAL interrupt handler writes MASK too */
+	key = irq_lock();
+	sdmmcx->ICR = SDMMC_ICR_BUSYD0ENDC;
+	sdmmcx->MASK |= SDMMC_MASK_BUSYD0ENDIE;
+	irq_unlock(key);
+
+	/* read after enabling the interrupt, so that a busy ending meanwhile raises it */
+	if ((sdmmcx->STA & SDMMC_STA_BUSYD0) != 0U) {
+		err = k_sem_take(&priv->busy_end, timeout);
+	}
+
+	key = irq_lock();
+	sdmmcx->MASK &= ~SDMMC_MASK_BUSYD0ENDIE;
+	irq_unlock(key);
+
+	return (err == 0) ? 0 : -ETIMEDOUT;
+#else
+	ARG_UNUSED(priv);
+	ARG_UNUSED(timeout);
+
+	return 0;
+#endif
+}
+
+static int stm32_sdmmc_wait_transfer_state(struct stm32_sdmmc_priv *priv, k_timeout_t timeout)
+{
+	const k_timepoint_t end = sys_timepoint_calc(timeout);
+	int err;
+
+	err = stm32_sdmmc_wait_busy_end(priv, timeout);
+	if (err != 0) {
+		LOG_ERR("card busy for too long");
+		return err;
+	}
+
+	while (!stm32_sdmmc_is_card_in_transfer(&priv->hsd)) {
+		if (sys_timepoint_expired(end)) {
+			LOG_ERR("card not back in transfer state");
+			return -ETIMEDOUT;
+		}
+
+		k_sleep(STM32_SDMMC_STATUS_POLL_PERIOD);
+	}
+
+	return 0;
+}
+
 static int stm32_sdmmc_read_blocks(HandleTypeDef *hsd, uint8_t *data_buf,
 				   uint32_t start_sector, uint32_t num_sector)
 {
@@ -539,15 +642,10 @@ static int stm32_sdmmc_read_blocks(HandleTypeDef *hsd, uint8_t *data_buf,
 	return 0;
 }
 
-static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
-				   uint32_t start_sector, uint32_t num_sector)
+static int stm32_sdmmc_read(struct stm32_sdmmc_priv *priv, uint8_t *data_buf,
+			    uint32_t start_sector, uint32_t num_sector)
 {
-	const struct device *dev = disk->dev;
-	struct stm32_sdmmc_priv *priv = dev->data;
 	int err;
-
-	k_sem_take(&priv->thread_lock, K_FOREVER);
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 #if STM32_SDMMC_USE_DMA_SHARED
 	/* Initialise the shared DMA channel for the current direction */
@@ -597,12 +695,9 @@ static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
 		goto end;
 	}
 
-	while (!stm32_sdmmc_is_card_in_transfer(&priv->hsd)) {
-	}
+	err = stm32_sdmmc_wait_transfer_state(priv, STM32_SDMMC_BUSY_TIMEOUT);
 
 end:
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-	k_sem_give(&priv->thread_lock);
 	return err;
 }
 
@@ -638,16 +733,10 @@ static int stm32_sdmmc_write_blocks(HandleTypeDef *hsd,
 	return 0;
 }
 
-static int stm32_sdmmc_access_write(struct disk_info *disk,
-				    const uint8_t *data_buf,
-				    uint32_t start_sector, uint32_t num_sector)
+static int stm32_sdmmc_write(struct stm32_sdmmc_priv *priv, const uint8_t *data_buf,
+			     uint32_t start_sector, uint32_t num_sector)
 {
-	const struct device *dev = disk->dev;
-	struct stm32_sdmmc_priv *priv = dev->data;
 	int err;
-
-	k_sem_take(&priv->thread_lock, K_FOREVER);
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 #if STM32_SDMMC_USE_DMA_SHARED
 	/* Initialise the shared DMA channel for the current direction */
@@ -683,10 +772,116 @@ static int stm32_sdmmc_access_write(struct disk_info *disk,
 		goto end;
 	}
 
-	while (!stm32_sdmmc_is_card_in_transfer(&priv->hsd)) {
-	}
+	err = stm32_sdmmc_wait_transfer_state(priv, STM32_SDMMC_BUSY_TIMEOUT);
 
 end:
+	return err;
+}
+
+#if defined(CONFIG_SDMMC_STM32_IDMA_BOUNCE_SIZE)
+/*
+ * The IDMA reaches part of the memory map only: on STM32H7, the AXI SRAM but neither the DTCM nor
+ * SRAM1 to SRAM4 (RM0433 2.1.6). The bounce buffer is in the zephyr,sram chosen memory.
+ */
+static bool stm32_sdmmc_idma_can_use(const void *buf, size_t len)
+{
+	const uintptr_t start = (uintptr_t)buf;
+	const uintptr_t sram_start = DT_REG_ADDR(STM32_SDMMC_SRAM_NODE);
+	const uintptr_t sram_end = sram_start + DT_REG_SIZE(STM32_SDMMC_SRAM_NODE);
+
+	return IS_ALIGNED(start, STM32_SDMMC_IDMA_ALIGN) && (start >= sram_start) &&
+	       (start < sram_end) && (len <= (sram_end - start));
+}
+
+static int stm32_sdmmc_read_bounce(struct stm32_sdmmc_priv *priv, uint8_t *data_buf,
+				   uint32_t start_sector, uint32_t num_sector)
+{
+	while (num_sector > 0U) {
+		const uint32_t count = MIN(num_sector, sizeof(stm32_sdmmc_bounce) / BLOCKSIZE);
+		int err = stm32_sdmmc_read(priv, stm32_sdmmc_bounce, start_sector, count);
+
+		if (err != 0) {
+			return err;
+		}
+
+		memcpy(data_buf, stm32_sdmmc_bounce, count * BLOCKSIZE);
+		data_buf += count * BLOCKSIZE;
+		start_sector += count;
+		num_sector -= count;
+	}
+
+	return 0;
+}
+
+static int stm32_sdmmc_write_bounce(struct stm32_sdmmc_priv *priv, const uint8_t *data_buf,
+				    uint32_t start_sector, uint32_t num_sector)
+{
+	while (num_sector > 0U) {
+		const uint32_t count = MIN(num_sector, sizeof(stm32_sdmmc_bounce) / BLOCKSIZE);
+		int err;
+
+		memcpy(stm32_sdmmc_bounce, data_buf, count * BLOCKSIZE);
+
+		err = stm32_sdmmc_write(priv, stm32_sdmmc_bounce, start_sector, count);
+		if (err != 0) {
+			return err;
+		}
+
+		data_buf += count * BLOCKSIZE;
+		start_sector += count;
+		num_sector -= count;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_SDMMC_STM32_IDMA_BOUNCE_SIZE */
+
+static int stm32_sdmmc_access_read(struct disk_info *disk, uint8_t *data_buf,
+				   uint32_t start_sector, uint32_t num_sector)
+{
+	const struct device *dev = disk->dev;
+	struct stm32_sdmmc_priv *priv = dev->data;
+	int err;
+
+	k_sem_take(&priv->thread_lock, K_FOREVER);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+#if defined(CONFIG_SDMMC_STM32_IDMA_BOUNCE_SIZE)
+	if (!stm32_sdmmc_idma_can_use(data_buf, BLOCKSIZE * num_sector)) {
+		err = stm32_sdmmc_read_bounce(priv, data_buf, start_sector, num_sector);
+	} else {
+		err = stm32_sdmmc_read(priv, data_buf, start_sector, num_sector);
+	}
+#else
+	err = stm32_sdmmc_read(priv, data_buf, start_sector, num_sector);
+#endif
+
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	k_sem_give(&priv->thread_lock);
+	return err;
+}
+
+static int stm32_sdmmc_access_write(struct disk_info *disk,
+				    const uint8_t *data_buf,
+				    uint32_t start_sector, uint32_t num_sector)
+{
+	const struct device *dev = disk->dev;
+	struct stm32_sdmmc_priv *priv = dev->data;
+	int err;
+
+	k_sem_take(&priv->thread_lock, K_FOREVER);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+#if defined(CONFIG_SDMMC_STM32_IDMA_BOUNCE_SIZE)
+	if (!stm32_sdmmc_idma_can_use(data_buf, BLOCKSIZE * num_sector)) {
+		err = stm32_sdmmc_write_bounce(priv, data_buf, start_sector, num_sector);
+	} else {
+		err = stm32_sdmmc_write(priv, data_buf, start_sector, num_sector);
+	}
+#else
+	err = stm32_sdmmc_write(priv, data_buf, start_sector, num_sector);
+#endif
+
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	k_sem_give(&priv->thread_lock);
 	return err;
@@ -712,8 +907,7 @@ static int stm32_sdmmc_access_erase(struct disk_info *disk, uint32_t sector, uin
 		goto end;
 	}
 
-	while (!stm32_sdmmc_is_card_in_transfer(&priv->hsd)) {
-	}
+	err = stm32_sdmmc_wait_transfer_state(priv, STM32_SDMMC_ERASE_TIMEOUT);
 
 end:
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -941,6 +1135,9 @@ static int disk_stm32_sdmmc_init(const struct device *dev)
 	/* Initialize semaphores */
 	k_sem_init(&priv->thread_lock, 1, 1);
 	k_sem_init(&priv->sync, 0, 1);
+#if defined(SDMMC_STA_BUSYD0END)
+	k_sem_init(&priv->busy_end, 0, 1);
+#endif
 
 #if !defined(CONFIG_SDMMC_STM32_EMMC)
 	k_work_init(&priv->work, stm32_sdmmc_cd_handler);
