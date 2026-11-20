@@ -9,3 +9,6 @@ common:
     - host
 tests:
   bluetooth.host_l2cap_br_sig: {}
+  bluetooth.host_l2cap_br_sig.enhanced_retransmission:
+    extra_configs:
+      - CONFIG_BT_L2CAP_ENH_RET=y
