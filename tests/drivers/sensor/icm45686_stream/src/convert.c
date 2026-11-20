@@ -76,4 +76,41 @@ ZTEST(icm45686_convert, test_gyro_rads_full_scale)
 	zassert_within(urads, -906577, 1);
 }
 
+ZTEST(icm45686_convert, test_accel_reg_to_fs)
+{
+	static const struct {
+		uint8_t fs;
+		int64_t g;
+	} ranges[] = {
+		{ICM45686_DT_ACCEL_FS_32, 32}, {ICM45686_DT_ACCEL_FS_16, 16},
+		{ICM45686_DT_ACCEL_FS_8, 8},   {ICM45686_DT_ACCEL_FS_4, 4},
+		{ICM45686_DT_ACCEL_FS_2, 2},
+	};
+
+	ARRAY_FOR_EACH(ranges, i) {
+		struct sensor_value val;
+		int64_t want_ums = ranges[i].g * SENSOR_G;
+
+		icm45686_accel_reg_to_fs(ranges[i].fs, &val);
+
+		zassert_equal(val.val1, want_ums / 1000000, "%lld g", ranges[i].g);
+		zassert_equal(val.val2, want_ums % 1000000, "%lld g", ranges[i].g);
+	}
+}
+
+ZTEST(icm45686_convert, test_gyro_reg_to_fs)
+{
+	ARRAY_FOR_EACH(gyro_ranges, i) {
+		struct sensor_value val;
+
+		icm45686_gyro_reg_to_fs(gyro_ranges[i].fs, &val);
+
+		double got = (double)val.val1 * 1000000.0 + (double)val.val2;
+		double want = expected_urads(&gyro_ranges[i], 32768, false);
+
+		zassert_within(got, want, 1.0, "%u mdps: got %lld urad/s, want %lld",
+			       gyro_ranges[i].mdps, (long long)got, (long long)want);
+	}
+}
+
 ZTEST_SUITE(icm45686_convert, NULL, NULL, NULL, NULL, NULL);

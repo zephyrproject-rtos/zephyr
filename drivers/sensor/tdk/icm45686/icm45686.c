@@ -123,6 +123,28 @@ static int icm45686_attr_get(const struct device *dev, enum sensor_channel chan,
 	__ASSERT_NO_MSG(val != NULL);
 
 	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+		if (attr == SENSOR_ATTR_FULL_SCALE) {
+			icm45686_accel_reg_to_fs(cfg->settings.accel.fs, val);
+		} else {
+			LOG_ERR("Unsupported attribute");
+			res = -EINVAL;
+		}
+		break;
+	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_GYRO_XYZ:
+		if (attr == SENSOR_ATTR_FULL_SCALE) {
+			icm45686_gyro_reg_to_fs(cfg->settings.gyro.fs, val);
+		} else {
+			LOG_ERR("Unsupported attribute");
+			res = -EINVAL;
+		}
+		break;
 	case SENSOR_CHAN_APEX_MOTION:
 		if (attr == SENSOR_ATTR_CONFIGURATION) {
 			val->val1 = cfg->apex;
