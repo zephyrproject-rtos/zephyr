@@ -18,6 +18,7 @@ supported:
   - hwinfo
   - i2c
   - pinctrl
+  - pwm
   - reset
   - spi
   - uart
