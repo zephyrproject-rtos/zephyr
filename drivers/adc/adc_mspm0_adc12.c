@@ -484,7 +484,7 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 	case ADC_REF_INTERNAL:
 		data->channel_cfg[ch].vrsel = ADC12_MEMCTL_VRSEL_VAL_INTREF;
 
-		if ((data->vref_flags & EXT_VREF) || !(config->vref_config)) {
+		if ((data->vref_flags & EXT_VREF) || !device_is_ready(config->vref_config)) {
 			ret = -EINVAL;
 			goto unlock;
 		}
@@ -500,7 +500,7 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 	case ADC_REF_EXTERNAL0:
 		data->channel_cfg[ch].vrsel = ADC12_MEMCTL_VRSEL_VAL_EXTREF;
 
-		if ((data->vref_flags & INT_VREF) || !(config->vref_config)) {
+		if ((data->vref_flags & INT_VREF) || !device_is_ready(config->vref_config)) {
 			ret = -EINVAL;
 			goto unlock;
 		}
