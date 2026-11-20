@@ -124,26 +124,28 @@ int tsl2540_trigger_set(const struct device *dev, const struct sensor_trigger *t
 
 	const struct i2c_dt_spec *i2c_spec = &config->i2c_spec;
 
-	ret = i2c_reg_update_byte_dt(i2c_spec, TSL2540_INTENAB_ADDR,
-					TSL2540_INTENAB_MASK, TSL2540_INTENAB_CONF);
-	if (ret) {
-		LOG_ERR("%#x: I/O error: %d", TSL2540_INTENAB_ADDR, ret);
-		return -EIO;
-	}
-
-	ret = i2c_reg_update_byte_dt(i2c_spec, TSL2540_CFG3_ADDR,
-					TSL2540_CFG3_MASK, TSL2540_CFG3_CONF);
-	if (ret) {
-		LOG_ERR("%#x: I/O error: %d", TSL2540_CFG3_ADDR, ret);
-		return -EIO;
-	}
-
 	k_sem_take(&data->sem, K_FOREVER);
 
 	data->als_handler = handler;
 	data->als_trigger = trig;
 
 	if (handler != NULL) {
+		ret = i2c_reg_update_byte_dt(i2c_spec, TSL2540_INTENAB_ADDR,
+					     TSL2540_INTENAB_MASK, TSL2540_INTENAB_CONF);
+		if (ret) {
+			LOG_ERR("%#x: I/O error: %d", TSL2540_INTENAB_ADDR, ret);
+			k_sem_give(&data->sem);
+			return -EIO;
+		}
+
+		ret = i2c_reg_update_byte_dt(i2c_spec, TSL2540_CFG3_ADDR,
+					     TSL2540_CFG3_MASK, TSL2540_CFG3_CONF);
+		if (ret) {
+			LOG_ERR("%#x: I/O error: %d", TSL2540_CFG3_ADDR, ret);
+			k_sem_give(&data->sem);
+			return -EIO;
+		}
+
 		tsl2540_setup_int(dev, true);
 
 		/* Check whether already asserted */
@@ -151,6 +153,17 @@ int tsl2540_trigger_set(const struct device *dev, const struct sensor_trigger *t
 
 		if (pv > 0) {
 			tsl2540_handle_int(dev);
+		}
+	} else {
+		tsl2540_setup_int(dev, false);
+
+		/* Only clear AIEN: CFG3 also holds the enable mode set through attributes */
+		ret = i2c_reg_update_byte_dt(i2c_spec, TSL2540_INTENAB_ADDR,
+					     TSL2540_INTENAB_MASK, 0);
+		if (ret) {
+			LOG_ERR("%#x: I/O error: %d", TSL2540_INTENAB_ADDR, ret);
+			k_sem_give(&data->sem);
+			return -EIO;
 		}
 	}
 
