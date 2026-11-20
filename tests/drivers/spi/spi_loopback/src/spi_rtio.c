@@ -509,6 +509,32 @@ static int spi_asymmetric_null_buffers(struct rtio_iodev *spi_iodev)
 	return 0;
 }
 
+/* the second transaction starts from the completion of the first one */
+static int spi_queued_transactions(struct rtio_iodev *spi_iodev)
+{
+	struct rtio_sqe *sqe;
+	int err;
+
+	for (int i = 0; i < 2; i++) {
+		sqe = rtio_sqe_acquire(&r);
+		rtio_sqe_prep_transceive(sqe, spi_iodev, RTIO_PRIO_NORM, buffer_tx, buffer_rx,
+					 BUF_SIZE, NULL);
+		sqe->flags |= RTIO_SQE_TRANSACTION;
+		sqe = rtio_sqe_acquire(&r);
+		rtio_sqe_prep_transceive(sqe, spi_iodev, RTIO_PRIO_NORM, buffer2_tx, buffer2_rx,
+					 BUF2_SIZE, NULL);
+	}
+
+	LOG_INF("Start queued transactions");
+	err = spi_rtio_wait_and_drain(&r, 4);
+	zassert_ok(err, "Queued transactions failed with error %d", err);
+	zassert_mem_equal(buffer_tx, buffer_rx, BUF_SIZE, "Buffer contents are different");
+	zassert_mem_equal(buffer2_tx, buffer2_rx, BUF2_SIZE, "Buffer 2 contents are different");
+	LOG_INF("Passed queued transactions test");
+
+	return 0;
+}
+
 ZTEST(spi_loopback_rtio, test_spi_loopback_rtio)
 {
 
@@ -519,6 +545,7 @@ ZTEST(spi_loopback_rtio, test_spi_loopback_rtio)
 	LOG_INF("SPI test slow config");
 
 	if (spi_complete_multiple(&spi_slow) ||
+	    spi_queued_transactions(&spi_slow) ||
 	    spi_complete_loop(&spi_slow) ||
 	    spi_null_tx_buf(&spi_slow) ||
 	    spi_rx_half_start(&spi_slow) ||
@@ -534,6 +561,7 @@ ZTEST(spi_loopback_rtio, test_spi_loopback_rtio)
 	LOG_INF("SPI test fast config");
 
 	if (spi_complete_multiple(&spi_fast) ||
+	    spi_queued_transactions(&spi_fast) ||
 	    spi_complete_loop(&spi_fast) ||
 	    spi_null_tx_buf(&spi_fast) ||
 	    spi_rx_half_start(&spi_fast) ||
