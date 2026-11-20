@@ -180,6 +180,26 @@ static inline void z_smp_switch_handle_clear(struct k_thread *thread)
  */
 void z_smp_switch_requeue(struct k_thread *old_thread);
 
+/* Set up the timer of a secondary CPU, implemented by the timer driver. */
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+void smp_timer_init(void);
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
+
+/* Park the other CPUs before halting on a fatal error.
+ *
+ * Only one CPU halts the system: a CPU that calls this while another CPU is
+ * halting parks for good. The other CPUs are parked through the scheduler IPI;
+ * a CPU that keeps interrupts locked is given up on after a timeout.
+ *
+ * Interrupts are locked on return.
+ */
+void z_fatal_pause_cpus(void);
+
+/* Park this CPU while another CPU halts the system. Called from the
+ * scheduler IPI handler.
+ */
+void z_fatal_ipi(void);
+
 #else /* !CONFIG_SMP */
 
 static inline void z_smp_arch_init(void)
@@ -260,6 +280,10 @@ static inline void z_smp_switch_handle_clear(struct k_thread *thread)
 static inline void z_smp_switch_requeue(struct k_thread *old_thread)
 {
 	ARG_UNUSED(old_thread);
+}
+
+static inline void z_fatal_pause_cpus(void)
+{
 }
 
 #endif /* CONFIG_SMP */
