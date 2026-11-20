@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
@@ -39,6 +40,10 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 
 #define IFX_SPI_RSLT_TRANSFER_ERROR (-2)
 #define IFX_SPI_RSLT_CLOCK_ERROR    (-3)
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(sck_gpios)
+#define IFX_SPI_HAS_SCK_GPIOS 1
+#endif
 
 #if CY_SCB_DRV_VERSION_MINOR >= 20 && defined(COMPONENT_CAT1) && CY_SCB_DRV_VERSION_MAJOR == 3
 #define IFX_SPI_ASYMM_PDL_FUNC_AVAIL
@@ -68,6 +73,10 @@ typedef void (*ifx_cat1_spi_event_callback_t)(void *callback_arg, uint32_t event
 struct ifx_cat1_spi_config {
 	CySCB_Type *reg_addr;
 	const struct pinctrl_dev_config *pcfg;
+#ifdef IFX_SPI_HAS_SCK_GPIOS
+	/* Optional read-back of the controller SCK pin (sck-gpios). */
+	struct gpio_dt_spec sck;
+#endif
 	cy_stc_scb_spi_config_t scb_spi_config;
 	cy_cb_scb_spi_handle_events_t spi_handle_events_func;
 	en_clk_dst_t clk_dst;
@@ -136,6 +145,7 @@ void ifx_cat1_spi_register_callback(const struct device *dev,
 				    ifx_cat1_spi_event_callback_t callback, void *callback_arg);
 void spi_free(const struct device *dev);
 cy_rslt_t spi_set_frequency(const struct device *dev, uint32_t hz);
+static int ifx_cat1_spi_wait_sck_idle(const struct device *dev);
 static void spi_irq_handler(const struct device *dev);
 static void ifx_cat1_spi_cb_wrapper(const struct device *dev, uint32_t event);
 cy_rslt_t ifx_cat1_spi_transfer_async(const struct device *dev, const uint8_t *tx, size_t tx_length,
@@ -561,6 +571,13 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		return result;
 	}
 
+	/* Runs on every transfer: the SCB may also have been re-enabled without spi_config(). */
+	result = ifx_cat1_spi_wait_sck_idle(dev);
+	if (result) {
+		spi_context_release(ctx, result);
+		return result;
+	}
+
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, data->dfs_value);
 	spi_context_cs_control(ctx, true);
 
@@ -734,6 +751,12 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef IFX_SPI_HAS_SCK_GPIOS
+	if ((config->sck.port != NULL) && !gpio_is_ready_dt(&config->sck)) {
+		return -ENODEV;
+	}
+#endif
+
 	/* Configure chip select (controller) */
 	spi_context_cs_configure_all(&data->ctx);
 
@@ -774,6 +797,12 @@ static int ifx_cat1_spi_init(const struct device *dev)
 #define PERI_INFO(n) .clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),
 #else
 #define PERI_INFO(n)
+#endif
+
+#ifdef IFX_SPI_HAS_SCK_GPIOS
+#define SPI_SCK_GPIOS_INIT(n) .sck = GPIO_DT_SPEC_INST_GET_OR(n, sck_gpios, {0}),
+#else
+#define SPI_SCK_GPIOS_INIT(n)
 #endif
 
 /* Account for spelling error in older version of the PDL */
@@ -834,6 +863,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 	static struct ifx_cat1_spi_config spi_cat1_config_##n = {                                  \
 		.reg_addr = (CySCB_Type *)DT_INST_REG_ADDR(n),                                     \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		SPI_SCK_GPIOS_INIT(n)                                                              \
 		.cs_oversample_cnt = DT_INST_PROP_LEN_OR(n, oversample, 0),                        \
 		.cs_oversample = DT_INST_PROP_OR(n, oversample, {0}),                              \
 		.scb_spi_config =                                                                  \
@@ -1094,6 +1124,41 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 	}
 
 	return result;
+}
+
+/*
+ * After the SCB is enabled, its SCK output takes a while to settle at the CPOL idle level.
+ * With a GPIO chip select the peripheral is selected by software, so asserting CS before SCK
+ * has settled lets the peripheral see the late SCK transition as a clock edge. When sck-gpios
+ * is given, wait for the SCK pin to read CPOL; the timeout only guards against an unreadable
+ * pin.
+ */
+#define IFX_SPI_SCK_IDLE_TIMEOUT_US 10000
+
+static int ifx_cat1_spi_wait_sck_idle(const struct device *dev)
+{
+#ifdef IFX_SPI_HAS_SCK_GPIOS
+	const struct ifx_cat1_spi_config *const config = dev->config;
+	struct ifx_cat1_spi_data *const data = dev->data;
+	int idle;
+
+	if (data->is_peripheral || (config->sck.port == NULL)) {
+		return 0;
+	}
+
+	idle = ((data->clk_mode == CY_SCB_SPI_CPHA0_CPOL1) ||
+		(data->clk_mode == CY_SCB_SPI_CPHA1_CPOL1)) ? 1 : 0;
+
+	if (!WAIT_FOR(gpio_pin_get_raw(config->sck.port, config->sck.pin) == idle,
+		      IFX_SPI_SCK_IDLE_TIMEOUT_US, k_busy_wait(1))) {
+		LOG_ERR("SCK did not reach idle level");
+		return -ETIMEDOUT;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif /* IFX_SPI_HAS_SCK_GPIOS */
+
+	return 0;
 }
 
 cy_rslt_t spi_set_frequency(const struct device *dev, uint32_t hz)
