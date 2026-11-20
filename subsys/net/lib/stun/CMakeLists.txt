@@ -7,3 +7,4 @@ zephyr_library()
 zephyr_library_sources(stun.c)
 
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)

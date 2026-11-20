@@ -12,6 +12,8 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_ESP32_MESH_IP
   src/esp_wifi_mesh_netif.c
   )
 
+zephyr_library_link_libraries_ifdef(CONFIG_ESP32_WIFI_MBEDTLS_CRYPTO mbedtls)
+
 if(CONFIG_WIFI_ESP32 AND CONFIG_ESP_WIFI_HEAP_SYSTEM AND NOT CONFIG_HEAP_MEM_POOL_IGNORE_MIN)
   # Default of CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM, covered by HEAP_MEM_POOL_ADD_SIZE_ESP_WIFI
   set(esp_wifi_default_static_rx 10)
