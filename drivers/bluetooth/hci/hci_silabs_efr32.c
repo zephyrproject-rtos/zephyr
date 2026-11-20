@@ -15,44 +15,43 @@
 #include <sl_rail.h>
 #include <soc_radio.h>
 
-#define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bt_hci_driver_efr32);
+LOG_MODULE_REGISTER(bt_hci_driver_efr32, CONFIG_BT_HCI_DRIVER_LOG_LEVEL);
 
 #define DT_DRV_COMPAT silabs_bt_hci_efr32
 
-#if defined(CONFIG_BT_MAX_CONN)
-#define MAX_CONN CONFIG_BT_MAX_CONN
-#else
-#define MAX_CONN 0
-#endif
+struct efr_hci_data {
+	struct bt_hci_driver_data common;
 
-#if defined(CONFIG_BT_CTLR_RL_SIZE)
-#define CTLR_RL_SIZE CONFIG_BT_CTLR_RL_SIZE
-#else
-#define CTLR_RL_SIZE 0
-#endif
+	struct k_thread ll_thread;
+	struct k_thread rx_thread;
 
-static K_KERNEL_STACK_DEFINE(slz_ll_stack, CONFIG_BT_SILABS_EFR32_LINK_LAYER_STACK_SIZE);
-static struct k_thread slz_ll_thread;
+	/* Given when ll_events holds events for the link layer thread */
+	struct k_sem ll_sem;
 
-static K_KERNEL_STACK_DEFINE(slz_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
-static struct k_thread slz_rx_thread;
+	/* Events mask for Link Layer */
+	atomic_t ll_events;
 
-/* Semaphore for Link Layer */
-K_SEM_DEFINE(slz_ll_sem, 0, 1);
+	/* HCI packet from the Controller, valid until sl_btctrl_hci_transmit_complete() */
+	struct {
+		const uint8_t *data;
+		int16_t len;
+	} rx_pkt;
 
-/* Events mask for Link Layer */
-static atomic_t sli_btctrl_events;
+	/* Given when rx_pkt holds a packet for the HCI RX thread */
+	struct k_sem rx_sem;
 
-/* HCI packet from the Controller, valid until sl_btctrl_hci_transmit_complete() */
-static struct {
-	const uint8_t *data;
-	int16_t len;
-} slz_rx_pkt;
+	K_KERNEL_STACK_MEMBER(ll_stack, CONFIG_BT_SILABS_EFR32_LINK_LAYER_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
+};
 
-/* Given when slz_rx_pkt holds a packet for the HCI RX thread */
-static K_SEM_DEFINE(slz_rx_sem, 0, 1);
+/* Interface with the Silicon Labs Controller library. The library references or defines the
+ * symbols below by name, so they keep the names it expects instead of the efr_hci_ prefix.
+ */
+
+/* FIXME: these functions should come from the SiSDK headers! */
+int16_t BTLE_LL_SetMaxPower(int16_t power);
+bool sli_pending_btctrl_events(void);
 
 const struct {
 	uint32_t buffer_memory_size;
@@ -60,12 +59,49 @@ const struct {
 	.buffer_memory_size = CONFIG_BT_SILABS_EFR32_BUFFER_MEMORY,
 };
 
-/* FIXME: these functions should come from the SiSDK headers! */
-int16_t BTLE_LL_SetMaxPower(int16_t power);
-bool sli_pending_btctrl_events(void);
+/* Called by the Controller, in the link layer thread, to pass an HCI packet (H4 packet type
+ * first) to the Host. That thread must not wait for Host buffers: the HCI RX thread copies the
+ * packet and then calls sl_btctrl_hci_transmit_complete(); until then the Controller keeps data
+ * unchanged and holds back its next packet. Returns 0, also for a packet that the HCI RX thread
+ * then drops.
+ */
+uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
+{
+	struct efr_hci_data *hci = DEVICE_DT_INST_GET(0)->data;
 
-static bool slz_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8_t *params,
-				   int16_t params_len)
+	hci->rx_pkt.data = data;
+	hci->rx_pkt.len = len;
+	k_sem_give(&hci->rx_sem);
+
+	return 0;
+}
+
+/* Called by the Controller when it has link layer work pending, such as radio events, scheduler
+ * requests or HCI commands. Wakes up the link layer thread, which passes the events to
+ * sl_btctrl_process_events().
+ */
+void sl_btctrl_raise_events(uint32_t events)
+{
+	struct efr_hci_data *hci = DEVICE_DT_INST_GET(0)->data;
+
+	atomic_or(&hci->ll_events, events);
+	k_sem_give(&hci->ll_sem);
+}
+
+bool sli_pending_btctrl_events(void)
+{
+	return false; /* TODO: check if this should really return false! */
+}
+
+void sli_btctrl_events_init(void)
+{
+	struct efr_hci_data *hci = DEVICE_DT_INST_GET(0)->data;
+
+	atomic_clear(&hci->ll_events);
+}
+
+static bool efr_hci_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8_t *params,
+				       int16_t params_len)
 {
 	switch (hdr->evt) {
 	case BT_HCI_EVT_LE_META_EVENT: {
@@ -108,7 +144,7 @@ static bool slz_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8
 	}
 }
 
-static struct net_buf *slz_bt_recv_evt(const uint8_t *data, const uint16_t len)
+static struct net_buf *efr_hci_recv_evt(const uint8_t *data, const uint16_t len)
 {
 	struct net_buf *buf;
 	bool discardable;
@@ -122,7 +158,7 @@ static struct net_buf *slz_bt_recv_evt(const uint8_t *data, const uint16_t len)
 		return NULL;
 	}
 
-	discardable = slz_is_evt_discardable(hdr, params, params_len);
+	discardable = efr_hci_is_evt_discardable(hdr, params, params_len);
 	buf = bt_buf_get_evt(hdr->evt, discardable, discardable ? K_NO_WAIT : K_FOREVER);
 	if (!buf) {
 		LOG_DBG("Discardable buffer pool full, ignoring event");
@@ -141,7 +177,7 @@ static struct net_buf *slz_bt_recv_evt(const uint8_t *data, const uint16_t len)
 	return buf;
 }
 
-static struct net_buf *slz_bt_recv_acl(const uint8_t *data, const uint16_t len)
+static struct net_buf *efr_hci_recv_acl(const uint8_t *data, const uint16_t len)
 {
 	struct net_buf *buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 	size_t buf_tailroom = net_buf_tailroom(buf);
@@ -157,7 +193,7 @@ static struct net_buf *slz_bt_recv_acl(const uint8_t *data, const uint16_t len)
 	return buf;
 }
 
-static struct net_buf *slz_bt_recv_pkt(const uint8_t *data, int16_t len)
+static struct net_buf *efr_hci_recv_pkt(const uint8_t *data, int16_t len)
 {
 	uint8_t packet_type;
 
@@ -175,37 +211,16 @@ static struct net_buf *slz_bt_recv_pkt(const uint8_t *data, int16_t len)
 
 	switch (packet_type) {
 	case BT_HCI_H4_EVT:
-		return slz_bt_recv_evt(data, len);
+		return efr_hci_recv_evt(data, len);
 	case BT_HCI_H4_ACL:
-		return slz_bt_recv_acl(data, len);
+		return efr_hci_recv_acl(data, len);
 	default:
 		LOG_ERR("Unknown HCI type: %d", packet_type);
 		return NULL;
 	}
 }
 
-/**
- * @brief Transmit HCI message using the currently used transport layer.
- * The HCI calls this function to transmit a full HCI message.
- * @param[in] data Packet type followed by HCI packet data.
- * @param[in] len Length of the `data` parameter
- * @return 0, also for a packet that the HCI RX thread then drops.
- */
-uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
-{
-	/* Called in the link layer thread (slz_ll_thread), which must not wait for Host
-	 * buffers. The HCI RX thread copies the packet and then calls
-	 * sl_btctrl_hci_transmit_complete(); until then the Controller keeps data unchanged
-	 * and holds back its next packet.
-	 */
-	slz_rx_pkt.data = data;
-	slz_rx_pkt.len = len;
-	k_sem_give(&slz_rx_sem);
-
-	return 0;
-}
-
-static int slz_bt_send(const struct device *dev, struct net_buf *buf)
+static int efr_hci_send(const struct device *dev, struct net_buf *buf)
 {
 	int rv;
 
@@ -227,24 +242,27 @@ static int slz_bt_send(const struct device *dev, struct net_buf *buf)
  * or an HCI event to pass upstairs. The sl_btctrl_process_events function call will
  * take care of all of them, and add HCI events to the HCI queue when applicable.
  */
-static void slz_ll_thread_func(void *p1, void *p2, void *p3)
+static void efr_hci_ll_thread_func(void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(p1);
+	const struct device *dev = p1;
+	struct efr_hci_data *hci = dev->data;
+
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
 	while (true) {
 		uint32_t events;
 
-		k_sem_take(&slz_ll_sem, K_FOREVER);
-		events = atomic_clear(&sli_btctrl_events);
+		k_sem_take(&hci->ll_sem, K_FOREVER);
+		events = atomic_clear(&hci->ll_events);
 		sl_btctrl_process_events(events);
 	}
 }
 
-static void slz_rx_thread_func(void *p1, void *p2, void *p3)
+static void efr_hci_rx_thread_func(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
+	struct efr_hci_data *hci = dev->data;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -252,9 +270,9 @@ static void slz_rx_thread_func(void *p1, void *p2, void *p3)
 	while (true) {
 		struct net_buf *buf;
 
-		(void)k_sem_take(&slz_rx_sem, K_FOREVER);
-		buf = slz_bt_recv_pkt(slz_rx_pkt.data, slz_rx_pkt.len);
-		/* From here on the Controller may hand over its next packet in slz_rx_pkt */
+		(void)k_sem_take(&hci->rx_sem, K_FOREVER);
+		buf = efr_hci_recv_pkt(hci->rx_pkt.data, hci->rx_pkt.len);
+		/* From here on the Controller may hand over its next packet in rx_pkt */
 		sl_btctrl_hci_transmit_complete(0);
 
 		if (buf != NULL) {
@@ -263,7 +281,7 @@ static void slz_rx_thread_func(void *p1, void *p2, void *p3)
 	}
 }
 
-static void slz_set_tx_power(int16_t max_power_dbm)
+static void efr_hci_set_tx_power(int16_t max_power_dbm)
 {
 	const int16_t max_power_cbm = max_power_dbm * 10;
 	const int16_t actual_max_power_cbm = BTLE_LL_SetMaxPower(max_power_cbm);
@@ -275,37 +293,36 @@ static void slz_set_tx_power(int16_t max_power_dbm)
 	}
 }
 
-static int slz_bt_open(const struct device *dev)
+static int efr_hci_open(const struct device *dev)
 {
+	struct efr_hci_data *hci = dev->data;
 	int ret;
 	sl_status_t sl_status;
-
-	ARG_UNUSED(dev);
 
 	BUILD_ASSERT(CONFIG_NUM_METAIRQ_PRIORITIES > 0,
 		     "Config NUM_METAIRQ_PRIORITIES must be greater than 0");
 	BUILD_ASSERT(CONFIG_BT_SILABS_EFR32_LL_THREAD_PRIO < CONFIG_NUM_METAIRQ_PRIORITIES,
 		     "Config BT_SILABS_EFR32_LL_THREAD_PRIO must be a meta-IRQ priority");
 
-	/* slz_bt_close() and a failed open stop the threads before sl_btctrl_deinit(), so events
-	 * raised in between by sl_btctrl_raise_events() and a packet handed over in slz_rx_pkt can
+	/* efr_hci_close() and a failed open stop the threads before sl_btctrl_deinit(), so events
+	 * raised in between by sl_btctrl_raise_events() and a packet handed over in rx_pkt can
 	 * be left over. Drop them: the LL thread starts before sl_btctrl_init() and would pass
 	 * stale events to sl_btctrl_process_events() on a deinitialized Controller, and the HCI RX
 	 * thread would complete a packet that the new Controller never sent.
 	 */
-	k_sem_reset(&slz_ll_sem);
-	(void)atomic_clear(&sli_btctrl_events);
-	k_sem_reset(&slz_rx_sem);
+	k_sem_reset(&hci->ll_sem);
+	(void)atomic_clear(&hci->ll_events);
+	k_sem_reset(&hci->rx_sem);
 
-	k_thread_create(&slz_ll_thread, slz_ll_stack, K_KERNEL_STACK_SIZEOF(slz_ll_stack),
-			slz_ll_thread_func, NULL, NULL, NULL,
+	k_thread_create(&hci->ll_thread, hci->ll_stack, K_KERNEL_STACK_SIZEOF(hci->ll_stack),
+			efr_hci_ll_thread_func, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_SILABS_EFR32_LL_THREAD_PRIO), 0, K_NO_WAIT);
-	k_thread_name_set(&slz_ll_thread, "EFR32 LL");
+	k_thread_name_set(&hci->ll_thread, "EFR32 LL");
 
-	k_thread_create(&slz_rx_thread, slz_rx_stack, K_KERNEL_STACK_SIZEOF(slz_rx_stack),
-			slz_rx_thread_func, (void *)dev, NULL, NULL,
+	k_thread_create(&hci->rx_thread, hci->rx_stack, K_KERNEL_STACK_SIZEOF(hci->rx_stack),
+			efr_hci_rx_thread_func, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
-	k_thread_name_set(&slz_rx_thread, "EFR32 HCI RX");
+	k_thread_name_set(&hci->rx_thread, "EFR32 HCI RX");
 
 	sl_rail_util_pa_init();
 
@@ -317,7 +334,7 @@ static int slz_bt_open(const struct device *dev)
 		goto deinit;
 	}
 
-	slz_set_tx_power(CONFIG_BT_CTLR_TX_PWR_ANTENNA);
+	efr_hci_set_tx_power(CONFIG_BT_CTLR_TX_PWR_ANTENNA);
 
 	if (IS_ENABLED(CONFIG_PM)) {
 		sl_rail_timer_sync_config_t timer_sync_config = SL_RAIL_TIMER_SYNC_DEFAULT;
@@ -347,17 +364,19 @@ static int slz_bt_open(const struct device *dev)
 
 	return 0;
 deinit:
-	k_thread_abort(&slz_ll_thread);
-	k_thread_abort(&slz_rx_thread);
+	k_thread_abort(&hci->ll_thread);
+	k_thread_abort(&hci->rx_thread);
 
 	sl_btctrl_deinit(); /* No-op if controller initialization failed */
 	return ret;
 }
 
-static int slz_bt_close(const struct device *dev)
+static int efr_hci_close(const struct device *dev)
 {
-	k_thread_abort(&slz_ll_thread);
-	k_thread_abort(&slz_rx_thread);
+	struct efr_hci_data *hci = dev->data;
+
+	k_thread_abort(&hci->ll_thread);
+	k_thread_abort(&hci->rx_thread);
 
 	sl_btctrl_deinit();
 
@@ -366,35 +385,27 @@ static int slz_bt_close(const struct device *dev)
 	return 0;
 }
 
-bool sli_pending_btctrl_events(void)
+static int efr_hci_init(const struct device *dev)
 {
-	return false; /* TODO: check if this should really return false! */
-}
+	struct efr_hci_data *hci = dev->data;
 
-void sli_btctrl_events_init(void)
-{
-	atomic_clear(&sli_btctrl_events);
-}
+	(void)k_sem_init(&hci->ll_sem, 0, 1);
+	(void)k_sem_init(&hci->rx_sem, 0, 1);
 
-/* Store event flags and increment the LL semaphore */
-void sl_btctrl_raise_events(uint32_t events)
-{
-	atomic_or(&sli_btctrl_events, events);
-	k_sem_give(&slz_ll_sem);
+	return 0;
 }
 
 static DEVICE_API(bt_hci, drv) = {
-	.open           = slz_bt_open,
-	.close          = slz_bt_close,
-	.send           = slz_bt_send,
+	.open           = efr_hci_open,
+	.close          = efr_hci_close,
+	.send           = efr_hci_send,
 };
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct bt_hci_driver_data hci_data_##inst = { \
-	}; \
+	static struct efr_hci_data hci_data_##inst;                                                \
 	static const struct bt_hci_driver_config hci_config_##inst =                               \
 		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, &hci_config_##inst,              \
+	DEVICE_DT_INST_DEFINE(inst, efr_hci_init, NULL, &hci_data_##inst, &hci_config_##inst,      \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported right now */
