@@ -480,7 +480,6 @@ static void ocpp_session_set_resp(struct ocpp_info *ctx, struct ocpp_session *sh
 
 static int ocpp_process_server_msg(struct ocpp_info *ctx)
 {
-	ocpp_msg_fp_t fn;
 	struct ocpp_session *sh = NULL;
 	struct ocpp_upstream_info *ui = &ctx->ui;
 	char *buf, *tmp;
@@ -518,8 +517,6 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		return -EINVAL;
 	}
 
-	fn = ctx->pfn[pdu];
-
 	switch (pdu) {
 	char skey[CISTR50 + 1];
 
@@ -527,7 +524,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 	{
 		struct boot_notif binfo;
 
-		ret = fn(ui->recv_buf, &binfo);
+		ret = ctx->pfn->bootnotif(ui->recv_buf, &binfo);
 		if (ret == 0 && sh != NULL) {
 			ocpp_session_set_resp(ctx, sh, binfo.status, NULL);
 			ctx->hb_sec = binfo.interval;
@@ -543,7 +540,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 			break;
 		}
 
-		ret = fn(ui->recv_buf, &idinfo);
+		ret = ctx->pfn->authorize(ui->recv_buf, &idinfo);
 		if (ret == 0) {
 			ocpp_session_set_resp(ctx, sh, idinfo.auth_status, NULL);
 		}
@@ -556,7 +553,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 			break;
 		}
 
-		ret = fn(ui->recv_buf, &idtxn, &idinfo);
+		ret = ctx->pfn->start_txn(ui->recv_buf, &idtxn, &idinfo);
 		if (ret == 0) {
 			ocpp_session_set_resp(ctx, sh, idinfo.auth_status, &idtxn);
 		}
@@ -565,7 +562,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 	case PDU_GET_CONFIGURATION:
 		memset(skey, 0, sizeof(skey));
 
-		ret = fn(ui->recv_buf, skey);
+		ret = ctx->pfn->getconfig(ui->recv_buf, skey);
 		if (ret != 0) {
 			break;
 		}
@@ -588,7 +585,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		char sval[CISTR500 + 1] = {0};
 
 		memset(skey, 0, sizeof(skey));
-		ret = fn(ui->recv_buf, skey, sval);
+		ret = ctx->pfn->changeconfig(ui->recv_buf, skey, sval);
 		if (ret < 0) {
 			break;
 		}
@@ -604,8 +601,8 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
 		msg.msgtype = PDU_REMOTE_START_TRANSACTION;
 
-		ret = fn(ui->recv_buf, &msg.usr.start_charge.id_con,
-			 msg.usr.start_charge.idtag);
+		ret = ctx->pfn->remote_start_txn(ui->recv_buf, &msg.usr.start_charge.id_con,
+						 msg.usr.start_charge.idtag);
 		if (ret < 0) {
 			break;
 		}
@@ -617,7 +614,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
 		msg.msgtype = PDU_REMOTE_STOP_TRANSACTION;
 
-		ret = fn(ui->recv_buf, &idtxn);
+		ret = ctx->pfn->remote_stop_txn(ui->recv_buf, &idtxn);
 		if (ret < 0) {
 			break;
 		}
@@ -629,7 +626,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
 		msg.msgtype = PDU_UNLOCK_CONNECTOR;
 
-		ret = fn(ui->recv_buf, &msg.usr.unlock_con.id_con);
+		ret = ctx->pfn->unlock_connector(ui->recv_buf, &msg.usr.unlock_con.id_con);
 		if (ret < 0) {
 			break;
 		}
@@ -641,7 +638,7 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
 		msg.msgtype = PDU_RESET;
 
-		ret = fn(ui->recv_buf, &msg.usr.reset.type);
+		ret = ctx->pfn->reset(ui->recv_buf, &msg.usr.reset.type);
 		ocpp_reset(ctx, ret < 0 ? NULL : &msg, uid);
 		break;
 
@@ -649,8 +646,8 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
 		msg.msgtype = PDU_CHANGE_AVAILABILITY;
 
-		ret = fn(ui->recv_buf, &msg.usr.change_avail.id_con,
-			 &msg.usr.change_avail.type);
+		ret = ctx->pfn->change_availability(ui->recv_buf, &msg.usr.change_avail.id_con,
+						    &msg.usr.change_avail.type);
 		ocpp_change_availability(ctx, ret < 0 ? NULL : &msg, uid);
 		break;
 
@@ -662,9 +659,9 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
 		msg.msgtype = PDU_DATA_TRANSFER;
 
-		ret = fn(ui->recv_buf, &msg.usr.data_transfer.vendor_id,
-			 &msg.usr.data_transfer.msg_id,
-			 &msg.usr.data_transfer.data);
+		ret = ctx->pfn->data_transfer(ui->recv_buf, &msg.usr.data_transfer.vendor_id,
+					      &msg.usr.data_transfer.msg_id,
+					      &msg.usr.data_transfer.data);
 		ocpp_data_transfer(ctx, ret < 0 ? NULL : &msg, uid);
 		break;
 

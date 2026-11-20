@@ -46,8 +46,8 @@ struct json_common_payload_field {
 };
 
 struct json_common_payload_field_str {
-	char *val1;
-	char *val2;
+	const char *val1;
+	const char *val2;
 };
 
 struct json_ocpp_bootnotif_msg {
@@ -70,9 +70,9 @@ struct json_ocpp_meter_val_msg {
 		char *timestamp;
 
 		struct json_ocpp_sample_val {
-			char *measurand;
+			const char *measurand;
 			char *value;
-			char *unit;
+			const char *unit;
 		} sampled_value[1];
 		size_t sampled_value_len;
 	} meter_value[1];
@@ -98,8 +98,8 @@ struct json_ocpp_start_txn_msg {
 
 struct json_ocpp_status_notif_msg {
 	int connector_id;
-	char *error_code;
-	char *status;
+	const char *error_code;
+	const char *status;
 	char *timestamp;
 };
 
