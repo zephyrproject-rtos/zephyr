@@ -16,6 +16,9 @@
 #include <zephyr/arch/exception.h>
 #include <kernel_arch_data.h>
 #include <zephyr/logging/log.h>
+#ifdef CONFIG_ARM_SYSTEM_HALT_WFI
+#include <cmsis_core.h>
+#endif
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 extern void z_arm_unwind_stack(const struct arch_esf *esf);
@@ -188,5 +191,24 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 
 	z_arm_fatal_error(K_ERR_KERNEL_OOPS, &oops_esf);
 	CODE_UNREACHABLE;
+}
+#endif
+
+#ifdef CONFIG_ARM_SYSTEM_HALT_WFI
+FUNC_NORETURN void arch_system_halt(unsigned int reason)
+{
+	ARG_UNUSED(reason);
+
+	(void)arch_irq_lock();
+	for (;;) {
+		/*
+		 * Wait in WFI rather than spin, so the core draws less power
+		 * and reports itself idle to whatever supervises it. A pending
+		 * interrupt can end a WFI even with interrupts locked, so
+		 * wait again rather than return.
+		 */
+		__DSB();
+		__WFI();
+	}
 }
 #endif
