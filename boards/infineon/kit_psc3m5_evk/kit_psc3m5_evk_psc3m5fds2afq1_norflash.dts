@@ -97,6 +97,6 @@ spi5: &scb5 {
  * peripheral clock.
  */
 &clk_hf4 {
-	source-path = <IFX_CLK_HF_IN_CLKPATH0>;
+	clocks = <&fll>;
 	status = "okay";
 };

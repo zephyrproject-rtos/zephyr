@@ -24,13 +24,26 @@
 /** Low-frequency clock type */
 #define IFX_CLK_LF  2
 
+#define IFX_CLK_OSC 3
+
 /** Infineon clock specifier */
 struct ifx_clk {
 	/** Clock type */
 	uint8_t clk;
 	/** Clock ID */
-	uint8_t clk_id;
+	uint16_t clk_id;
 };
+
+#define IFX_CLK_TYPE(node_id)						\
+	(DT_NODE_HAS_COMPAT(node_id, infineon_clk_hf) ? IFX_CLK_HF :	\
+	 DT_NODE_HAS_COMPAT(node_id, infineon_clk_osc) ? IFX_CLK_OSC :	\
+	 IFX_CLK_PLL)
+
+#define IFX_CLK_DT_SPEC_GET(node_id)					\
+	{								\
+		.clk = IFX_CLK_TYPE(node_id),				\
+		.clk_id = DT_REG_ADDR(node_id),				\
+	}
 
 /** Infineon peripheral clock specifier */
 struct ifx_clk_peri {

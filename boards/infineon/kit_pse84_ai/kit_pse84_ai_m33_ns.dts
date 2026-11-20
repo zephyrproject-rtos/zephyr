@@ -34,11 +34,7 @@
 	};
 };
 
-&clk_iho {
-	status = "disabled";
-};
-
-&clk_pilo {
+&clocks {
 	status = "disabled";
 };
 

@@ -40,6 +40,10 @@
 	};
 };
 
+&clocks {
+	status = "disabled";
+};
+
 &mcwdt1 {
 	status = "okay";
 };

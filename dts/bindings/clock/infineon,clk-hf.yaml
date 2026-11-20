@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon SRSS high frequency root clock
+
+description: |
+  CLK_HF root. reg is the root number.
+
+  clocks is an FLL or PLL node, or the IMO (MXS22SRSS: IHO) node to
+  use the direct mux. An okay root is configured at init and is not
+  changed afterwards.
+
+  clock-div is 1, 2, 4 or 8 on MXS40SRSS and 1 to 16 on MXS40SSRSS and
+  MXS22SRSS.
+
+compatible: "infineon,clk-hf"
+
+include: [base.yaml, fixed-factor-clock.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  infineon,max-frequency:
+    type: int
+    description: Datasheet limit in Hz.
