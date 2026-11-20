@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #include <zephyr/net/socket_offload.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
+#include <zephyr/net/conn_mgr_connectivity_impl.h>
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/dns_resolve.h>
 #include "conn_mgr_private.h"
@@ -52,6 +53,9 @@ static struct net_if *last_blame_ipv6;
 
 /* Last reported DNS readiness */
 static bool last_dns_ready;
+
+/* Tracks whether any untracked iface is up */
+static bool last_any_untracked_up;
 
 /* Readiness gain counter, 0 until the first gain and skipping 0 on wrap, and its value at
  * the last gain of each flag, indexed by flag bit. 0 in flag_gain_seq means never gained.
@@ -147,16 +151,34 @@ static void conn_mgr_mon_dns_snapshot(void)
 }
 
 /**
+ * @brief Check whether the IP state of an interface is not visible to us.
+ *
+ * Offloaded sockets without a connectivity binding might carry traffic without the iface
+ * getting any IP address, for example, nRF91 modem sockets without the LTE net_if.
+ *
+ * @param idx - index (in iface_states) of the iface to check.
+ * @retval true if the iface IP state is not visible.
+ */
+static bool conn_mgr_mon_iface_untracked(int idx)
+{
+	struct net_if *iface = conn_mgr_mon_get_if_by_index(idx);
+
+	return net_if_is_socket_offloaded(iface) && (conn_mgr_if_get_binding(iface) == NULL);
+}
+
+/**
  * @brief Check whether an interface provides name resolution.
  *
  * @param idx - index (in iface_states) of the iface to check.
+ * @param is_untracked_up - true if the iface is untracked and up.
  * @retval true if a DNS server can be reached through the iface.
  */
-static bool conn_mgr_mon_iface_has_dns(int idx)
+static bool conn_mgr_mon_iface_has_dns(int idx, bool is_untracked_up)
 {
 	uint32_t families;
 
-	if ((iface_states[idx] & CONN_MGR_IF_READY) && socket_offload_dns_is_enabled()) {
+	if (((iface_states[idx] & CONN_MGR_IF_READY) || is_untracked_up) &&
+	    socket_offload_dns_is_enabled()) {
 		/* Name resolution is offloaded and its servers are not visible to us */
 		return true;
 	}
@@ -217,6 +239,11 @@ static uint32_t conn_mgr_mon_ready_flags(void)
 		flags |= CONN_MGR_READY_IPV6;
 	}
 
+	/* Readiness of an untracked iface is unknown, so report both families */
+	if (last_any_untracked_up) {
+		flags |= CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6;
+	}
+
 	if ((flags & (CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6)) != 0U) {
 		flags |= CONN_MGR_READY_IP_ANY;
 	}
@@ -242,6 +269,7 @@ static void conn_mgr_mon_handle_update(void)
 	bool was_ipv6_ready;
 	bool was_ipv4_ready;
 	bool is_ignored;
+	bool is_untracked_up;
 	uint64_t mgmt_event;
 	int ready_count = 0;
 	int ready_count_ipv4 = 0;
@@ -254,6 +282,7 @@ static void conn_mgr_mon_handle_update(void)
 	struct net_if *blame_ipv4 = NULL;
 	struct net_if *blame_ipv6 = NULL;
 	bool dns_ready = false;
+	bool any_untracked_up = false;
 	uint32_t prev_gain_seq;
 
 	conn_mgr_mon_dns_snapshot();
@@ -323,10 +352,22 @@ static void conn_mgr_mon_handle_update(void)
 		/* Update readiness state flags with the (possibly) new values */
 		conn_mgr_mon_set_ready(idx, is_l4_ready, is_ipv4_ready, is_ipv6_ready);
 
-		if (conn_mgr_mon_iface_has_dns(idx)) {
+		is_untracked_up = is_oper_up && !is_ignored && conn_mgr_mon_iface_untracked(idx);
+		if (is_untracked_up) {
+			any_untracked_up = true;
+		}
+
+		if (conn_mgr_mon_iface_has_dns(idx, is_untracked_up)) {
 			dns_ready = true;
 		}
 	}
+
+	/* Wake readiness waiters when an untracked iface comes up */
+	if (any_untracked_up && !last_any_untracked_up) {
+		conn_mgr_mon_record_gain(CONN_MGR_READY_IPV4);
+		conn_mgr_mon_record_gain(CONN_MGR_READY_IPV6);
+	}
+	last_any_untracked_up = any_untracked_up;
 
 	/* If the total number of ready ifaces changed, possibly send an event */
 	if (ready_count != last_ready_count) {
