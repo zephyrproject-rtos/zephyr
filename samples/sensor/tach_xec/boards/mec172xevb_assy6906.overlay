@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * TACH0 is already enabled with its input routed to GPIO050 by the board
+ * devicetree, so only the fan dependent properties are set here.
+ */
+&tach0 {
+	tach-edges = <5>;
+	pulses-per-round = <2>;
+};
