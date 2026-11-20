@@ -1,0 +1,18 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_L2CAP_APPL
+	bool
+	default y
+	help
+	  This symbol is a config macro.
+
+if BT_L2CAP_APPL
+
+module = BT_L2CAP_APPL
+module-str = "Bluetooth L2CAP application"
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BT_L2CAP_APPL
+
+source "Kconfig.zephyr"

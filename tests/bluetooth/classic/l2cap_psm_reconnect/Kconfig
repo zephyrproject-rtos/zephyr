@@ -1,0 +1,10 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config L2CAP_CHAN_MAX_COUNT
+	int "L2CAP_CHAN_MAX_COUNT"
+	default 1
+	help
+	  This symbol is a config macro.
+
+source "Kconfig.zephyr"
