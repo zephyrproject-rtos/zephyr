@@ -56,7 +56,9 @@ config LOG_RATELIMIT
 	  When enabled, provides rate-limited logging macros that prevent
 	  log flooding when messages are generated frequently. Rate limiting
 	  is per-macro-call-site, meaning each unique call has its own
-	  independent rate limit.
+	  independent rate limit. A state can be passed explicitly with the
+	  LOG_*_RATELIMIT_STATE() macros to rate limit each object instance
+	  independently when several instances share a call site.
 
 if LOG_RATELIMIT
 
