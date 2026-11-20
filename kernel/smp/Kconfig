@@ -20,6 +20,16 @@ config MP_MAX_NUM_CPUS
 
 if SMP
 
+config HYPERVISOR_SECONDARY_CPU_INIT
+	bool
+	help
+	  Run hypervisor-specific initialization on each secondary CPU.
+	  The hook runs before the CPU reports ready, waits for the start
+	  signal, or initializes its dummy thread and timer. It runs on
+	  every secondary CPU entry, including resume. Implementations
+	  must handle repeated calls. If initialization fails, they must
+	  not return because the hook cannot report an error.
+
 config SCHED_IPI_SUPPORTED
 	bool
 	select EVENTS
