@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon MCPASS v3 standalone 12-bit DAC with an integrated output buffer.
+  Each node represents one of the two independent hardware DAC instances
+  and exposes channel 0. These are separate from the 10-bit CSG DACs.
+
+  The driver supports direct writes to the buffered pin output. Channel
+  configuration must select 12-bit resolution and zephyr,buffered.
+  Unbuffered output, zephyr,internal, waveform generation and the companion
+  comparator are not supported. The reference is fixed to VDDA; external
+  reference selection is not supported. The driver loads factory trims from SFLASH.
+
+compatible: "infineon,hppass-dac-v3"
+
+include: dac-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+  power-mode:
+    type: int
+    default: 2
+    enum: [0, 1, 2, 3]
+    description: |
+      Output buffer power mode. Higher modes provide higher drive strength
+      at increased power consumption. The default selects mode 2.
+
+io-channel-cells:
+  - output

@@ -16,6 +16,7 @@ supported:
   - adc
   - can
   - counter
+  - dac
   - gpio
   - i2c
   - uart
