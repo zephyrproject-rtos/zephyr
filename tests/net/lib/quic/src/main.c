@@ -9402,6 +9402,91 @@ ZTEST(net_socket_quic, test_554_application_close_reaches_the_peer)
 	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
 }
 
+/* The application packet number of an endpoint once it stopped sending */
+static uint64_t settled_tx_pn(struct quic_endpoint *ep)
+{
+	uint64_t sent;
+
+	for (int i = 0; i < 20; i++) {
+		sent = ep->tx_pn.application;
+		k_msleep(100);
+		if (ep->tx_pn.application == sent) {
+			return sent;
+		}
+	}
+
+	zassert_unreachable("The endpoint keeps sending packets");
+
+	return 0;
+}
+
+ZTEST(net_socket_quic, test_560_nothing_is_sent_after_the_peer_closed)
+{
+	uint8_t ping = QUIC_FRAME_TYPE_PING;
+	struct reset_test_peers peers;
+	struct quic_peer_close close;
+	struct quic_endpoint *client_ep;
+	struct quic_endpoint *server_ep;
+	struct k_work_sync sync;
+	uint64_t sent;
+	int ret;
+
+	reset_test_connect(&peers, "127.0.0.1:54363", "127.0.0.1:19963");
+
+	/* Hold both endpoints: the client to read its packet number once
+	 * the connection is gone, the server to send on after it closed.
+	 */
+	client_ep = quic_test_sock_endpoint(peers.client_sock);
+	atomic_inc(&client_ep->refcount);
+	server_ep = quic_test_sock_endpoint(peers.server_conn);
+	atomic_inc(&server_ep->refcount);
+
+	ret = zsock_close(peers.server_stream);
+	zassert_ok(ret, "Failed to close the server stream (%d)", -errno);
+
+	/* What the server sent so far is acknowledged before it closes */
+	sent = settled_tx_pn(client_ep);
+
+	ret = quic_connection_close(peers.server_conn);
+	zassert_ok(ret, "Failed to close the server connection (%d)", ret);
+
+	wait_for_peer_close(peers.client_sock, &close);
+
+	/* RFC 9000 ch. 10.2.2: the connection of the client is draining, so
+	 * the packet that closed it is not acknowledged.
+	 */
+	zexpect_equal(settled_tx_pn(client_ep), sent, "The close of the peer was acknowledged");
+	sent = client_ep->tx_pn.application;
+
+	/* Nor is a packet that arrives after it */
+	ret = quic_send_packet(server_ep, QUIC_SECRET_LEVEL_APPLICATION, &ping, sizeof(ping));
+	zassert_ok(ret, "Failed to send a packet after the close (%d)", ret);
+	zexpect_equal(settled_tx_pn(client_ep), sent, "A packet after the close was acknowledged");
+	sent = client_ep->tx_pn.application;
+
+	quic_test_endpoint_unref(server_ep);
+
+	/* A probe timeout sends no probe */
+	k_work_reschedule(&client_ep->recovery.pto_work, K_NO_WAIT);
+	k_work_flush_delayable(&client_ep->recovery.pto_work, &sync);
+	zexpect_equal(client_ep->tx_pn.application, sent, "A probe was sent to a peer that closed");
+	sent = client_ep->tx_pn.application;
+
+	ret = zsock_close(peers.client_stream);
+	zassert_ok(ret, "Failed to close the client stream (%d)", -errno);
+
+	/* Closing the connection sends no CONNECTION_CLOSE */
+	ret = quic_connection_close(peers.client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+
+	zexpect_equal(client_ep->tx_pn.application, sent, "A close was sent to a peer that closed");
+
+	quic_test_endpoint_unref(client_ep);
+
+	ret = quic_connection_close(peers.server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
 static void log_stream_cb(struct quic_stream *stream, void *user_data)
 {
 	ARG_UNUSED(user_data);
