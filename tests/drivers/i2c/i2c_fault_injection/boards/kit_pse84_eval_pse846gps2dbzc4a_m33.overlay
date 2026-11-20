@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * KIT_PSE84_EVAL for the I2C fault injection suite (pins from kit user guide
+ * 002-39007 Rev. *B, Table 2).
+ *
+ * Controller under test: i2c0 on P8[0] SCL and P8[1] SDA.
+ *
+ * i2c_bus_fault fixture, either of:
+ *   - J3.5 (P16[2]) to J3.10 (SCL), and J3.3 (P16[3]) to J3.9 (SDA)
+ *   - J9.5 (P16[2]) to J17.5 (SCL), and J9.3 (P16[3]) to J17.6 (SDA)
+ *
+ * P16[2] and P16[3] are also the Arduino SPI MISO and CS pins, so fit no SPI
+ * shield while they are wired.  The board's BMI270 answers on i2c0, so use
+ * bus_fault here rather than bus_fault.shield.cy15framkit_001.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		i2c-dut = &i2c0;
+	};
+
+	zephyr,user {
+		scl-gpios = <&gpio_prt16 2 GPIO_ACTIVE_HIGH>;
+		sda-gpios = <&gpio_prt16 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/* Enables CONFIG_I2C_INFINEON_BUS_RECOVERY for the recovery tests. */
+&i2c0 {
+	scl-gpios = <&gpio_prt8 0 GPIO_OPEN_DRAIN>;
+	sda-gpios = <&gpio_prt8 1 GPIO_OPEN_DRAIN>;
+};
