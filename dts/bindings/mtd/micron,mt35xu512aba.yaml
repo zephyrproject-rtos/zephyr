@@ -1,0 +1,8 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Micron MT35XU512ABA Octal SPI NOR flash
+
+compatible: "micron,mt35xu512aba"
+
+include: soc-nv-flash.yaml
