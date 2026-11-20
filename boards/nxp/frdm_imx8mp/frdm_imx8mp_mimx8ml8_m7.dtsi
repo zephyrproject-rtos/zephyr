@@ -1,0 +1,77 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-FileCopyrightText: Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com> */
+
+#include <nxp/imx/nxp_imx8ml_m7.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include "frdm_imx8mp-pinctrl.dtsi"
+
+/ {
+	model = "NXP FRDM-IMX8MPLUS Cortex-M7";
+	compatible = "fsl,frdm-imx8mp", "fsl,imx8mp";
+
+	aliases {
+		led0 = &status_led;
+	};
+
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		status_led: status-led {
+			label = "Green status LED";
+			gpios = <&gpio_exp_a 14 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
+		};
+	};
+};
+
+&ecspi2 {
+	cs-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&ecspi2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+
+	gpio_exp_a: gpio@20 {
+		compatible = "nxp,pcal6416";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+		no-auto-reset;
+		status = "disabled";
+	};
+};
+
+&i2c3 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mailbox0 {
+	status = "okay";
+};
+
+&uart4 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
