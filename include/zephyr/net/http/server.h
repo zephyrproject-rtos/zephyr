@@ -370,12 +370,19 @@ enum http1_parser_state {
 #define HTTP_SERVER_INITIAL_WINDOW_SIZE 65536
 #define HTTP_SERVER_WS_MAX_SEC_KEY_LEN 32
 #define HTTP_SERVER_WS_MAX_SEC_PROTOCOL_LEN 64
+/* Room for eight settings, base64url encoded without padding */
+#define HTTP_SERVER_HTTP2_SETTINGS_MAX_LEN 64
 
 /** @brief HTTP/2 stream representation. */
 struct http2_stream_ctx {
 	int stream_id; /**< Stream identifier. */
 	enum http2_stream_state stream_state; /**< Stream state. */
 	int window_size; /**< Stream-level window size. */
+
+	/** Stream-level window for sending, as advertised by the peer. It can be
+	 *  negative (@rfc{9113,section-6.9.2}).
+	 */
+	int64_t send_window_size;
 
 	/** Currently processed resource detail. */
 	struct http_resource_detail *current_detail;
@@ -476,6 +483,12 @@ struct http_client_ctx {
 	/** Connection-level window size. */
 	int window_size;
 
+	/** Connection-level window for sending, as advertised by the peer. */
+	int64_t send_window_size;
+
+	/** Initial stream-level window for sending, the peer's SETTINGS_INITIAL_WINDOW_SIZE. */
+	uint32_t peer_initial_window_size;
+
 	/** Server state for the associated client. */
 	enum http_server_state server_state;
 
@@ -551,6 +564,15 @@ struct http_client_ctx {
 	IF_ENABLED(CONFIG_WEBSOCKET,
 		   (char ws_sec_protocol[HTTP_SERVER_WS_MAX_SEC_PROTOCOL_LEN]));
 
+	/** Value of the HTTP2-Settings header of an h2c upgrade request, not
+	 *  NUL-terminated (@rfc{7540,section-3.2.1}).
+	 */
+	IF_ENABLED(CONFIG_HTTP_SERVER_VERSION_2,
+		   (char http2_settings[HTTP_SERVER_HTTP2_SETTINGS_MAX_LEN]));
+
+	/** Length of the HTTP2-Settings header value. */
+	uint8_t http2_settings_len;
+
 	/** Client supported compression. */
 	IF_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION, (uint8_t supported_compression));
 
@@ -619,6 +641,15 @@ struct http_client_ctx {
 
 	/** Flag indicating Websocket subprotocol list is being processed. */
 	bool websocket_sec_protocol_next : 1;
+
+	/** Flag indicating the HTTP2-Settings header value is being processed. */
+	bool http2_settings_next : 1;
+
+	/** Flag indicating the request has an HTTP2-Settings header. */
+	bool http2_settings_present : 1;
+
+	/** Flag indicating the HTTP2-Settings header is repeated or too long. */
+	bool http2_settings_invalid : 1;
 
 	/** Flag indicating accept encoding is being processed. */
 	IF_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION, (bool accept_encoding_next: 1));

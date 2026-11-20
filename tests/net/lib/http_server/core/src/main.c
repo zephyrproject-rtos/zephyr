@@ -93,6 +93,17 @@ BUILD_ASSERT(sizeof(long_payload) - 1 > CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE,
 #define TEST_HTTP2_PUSH_PROMISE \
 	0x00, 0x00, 0x04, 0x05, 0x04, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
 	0x00, 0x00, 0x00, 0x02
+#define TEST_BE32(value) \
+	(((value) >> 24) & 0xffU), (((value) >> 16) & 0xffU), (((value) >> 8) & 0xffU), \
+	((value) & 0xffU)
+/* A SETTINGS frame with one setting */
+#define TEST_HTTP2_SETTING(id, value) \
+	0x00, 0x00, 0x06, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, (id), TEST_BE32(value)
+#define TEST_HTTP2_WINDOW_UPDATE(stream_id, increment) \
+	0x00, 0x00, 0x04, 0x08, 0x00, 0x00, 0x00, 0x00, (stream_id), TEST_BE32(increment)
+/* Flow-control window limits of RFC 9113, Section 6.9 */
+#define TEST_HTTP2_INITIAL_WINDOW 65535U
+#define TEST_HTTP2_MAX_WINDOW     0x7fffffffU
 #define TEST_HTTP2_GOAWAY \
 	0x00, 0x00, 0x08, 0x07, 0x00, 0x00, 0x00, 0x00, \
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -3243,6 +3254,518 @@ ZTEST(server_function_tests, test_http2_header_table_size_update_before_ack)
 	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
 	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_PAYLOAD,
 				strlen(TEST_STATIC_PAYLOAD), HTTP2_FLAG_END_STREAM);
+}
+
+/* A frame that breaks a rule of SETTINGS or of flow control is a connection
+ * error and ends the connection.
+ */
+static void common_verify_http2_connection_error(const uint8_t *request, size_t request_len)
+{
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request, request_len, 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+
+	do {
+		ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+		zassert_not_equal(ret, -1, "recv() failed (%d)", errno);
+	} while (ret > 0);
+
+	zassert_equal(ret, 0, "Connection should've been closed");
+}
+
+ZTEST(server_function_tests, test_http2_settings_on_stream)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, TEST_STREAM_ID_1,
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_settings_ack_with_payload)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		0x00, 0x00, 0x06, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x03, 0x00, 0x00, 0x00, 0x64,
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_settings_partial_setting)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		0x00, 0x00, 0x05, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x03, 0x00, 0x00, 0x00,
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_settings_enable_push_invalid)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_SETTING(HTTP2_SETTINGS_ENABLE_PUSH, 2U),
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_settings_initial_window_too_large)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_SETTING(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, TEST_HTTP2_MAX_WINDOW + 1U),
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_settings_max_frame_size_too_small)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_SETTING(HTTP2_SETTINGS_MAX_FRAME_SIZE, 16383U),
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_settings_max_frame_size_too_large)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_SETTING(HTTP2_SETTINGS_MAX_FRAME_SIZE, 0x1000000U),
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+/* Values at the limits and unknown settings are accepted */
+ZTEST(server_function_tests, test_http2_settings_valid)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		0x00, 0x00, 0x24, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, HTTP2_SETTINGS_ENABLE_PUSH, TEST_BE32(0U),
+		0x00, HTTP2_SETTINGS_ENABLE_PUSH, TEST_BE32(1U),
+		0x00, HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, TEST_BE32(TEST_HTTP2_MAX_WINDOW),
+		0x00, HTTP2_SETTINGS_MAX_FRAME_SIZE, TEST_BE32(16384U),
+		0x00, HTTP2_SETTINGS_MAX_FRAME_SIZE, TEST_BE32(0xffffffU),
+		0xab, 0xcd, TEST_BE32(0xffffffffU),
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request, sizeof(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_PAYLOAD,
+				strlen(TEST_STATIC_PAYLOAD), HTTP2_FLAG_END_STREAM);
+}
+
+ZTEST(server_function_tests, test_http2_window_update_length)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		0x00, 0x00, 0x05, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x01, 0x00,
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_window_update_zero)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_WINDOW_UPDATE(0x00, 0U),
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_window_update_zero_on_stream)
+{
+	/* The request body is still expected on the stream */
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_WINDOW_UPDATE(TEST_STREAM_ID_1, 0U),
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_window_update_overflow)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_WINDOW_UPDATE(0x00, TEST_HTTP2_MAX_WINDOW - TEST_HTTP2_INITIAL_WINDOW),
+		TEST_HTTP2_WINDOW_UPDATE(0x00, 1U),
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_window_update_overflow_on_stream)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_WINDOW_UPDATE(TEST_STREAM_ID_1,
+					 TEST_HTTP2_MAX_WINDOW - TEST_HTTP2_INITIAL_WINDOW + 1U),
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+/* A larger initial window applies to the open streams, and must not take
+ * them past the maximum.
+ */
+ZTEST(server_function_tests, test_http2_settings_initial_window_overflow)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_WINDOW_UPDATE(TEST_STREAM_ID_1, 1U),
+		TEST_HTTP2_SETTING(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, TEST_HTTP2_MAX_WINDOW),
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+/* Windows raised exactly to the maximum, on the connection, on a stream and
+ * through the initial window, keep the connection up.
+ */
+ZTEST(server_function_tests, test_http2_window_update_to_max)
+{
+	static const uint8_t request_window_update[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_WINDOW_UPDATE(0x00, TEST_HTTP2_MAX_WINDOW - TEST_HTTP2_INITIAL_WINDOW),
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_WINDOW_UPDATE(TEST_STREAM_ID_1,
+					 TEST_HTTP2_MAX_WINDOW - TEST_HTTP2_INITIAL_WINDOW),
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_post_request(request_window_update,
+						 sizeof(request_window_update));
+}
+
+/* A dynamic POST with one SETTINGS frame of the client besides the first one */
+static void common_verify_http2_dynamic_post_settings(const uint8_t *request, size_t request_len)
+{
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request, request_len, 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+ZTEST(server_function_tests, test_http2_settings_initial_window_to_max)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_SETTING(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, TEST_HTTP2_MAX_WINDOW),
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_post_settings(request, sizeof(request));
+}
+
+/* A larger initial window raises the window of an open stream */
+ZTEST(server_function_tests, test_http2_settings_initial_window_raised)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_SETTING(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, TEST_HTTP2_MAX_WINDOW),
+		TEST_HTTP2_WINDOW_UPDATE(TEST_STREAM_ID_1, 1U),
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+	};
+
+	common_verify_http2_connection_error(request, sizeof(request));
+}
+
+/* A smaller initial window lowers the window of an open stream */
+ZTEST(server_function_tests, test_http2_settings_initial_window_lowered)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_SETTING(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, 0U),
+		TEST_HTTP2_WINDOW_UPDATE(TEST_STREAM_ID_1, TEST_HTTP2_MAX_WINDOW),
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_post_settings(request, sizeof(request));
+}
+
+/* A stream opened after a SETTINGS_INITIAL_WINDOW_SIZE starts with that window */
+ZTEST(server_function_tests, test_http2_settings_initial_window_new_stream)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_SETTING(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, 0U),
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_WINDOW_UPDATE(TEST_STREAM_ID_1, TEST_HTTP2_MAX_WINDOW),
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_dynamic_post_settings(request, sizeof(request));
+}
+
+/* The data the server sent counts against the connection window: after a
+ * response, the peer can raise the window by that much more without going
+ * past the maximum. A WINDOW_UPDATE on the finished stream is not an error.
+ */
+ZTEST(server_function_tests, test_http2_window_update_after_response)
+{
+	static const uint8_t request_get[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_ROOT_STREAM_1,
+	};
+	static const uint8_t request_window_update[] = {
+		TEST_HTTP2_WINDOW_UPDATE(0x00, TEST_HTTP2_MAX_WINDOW - TEST_HTTP2_INITIAL_WINDOW +
+					       sizeof(TEST_STATIC_PAYLOAD) - 1U),
+		TEST_HTTP2_WINDOW_UPDATE(TEST_STREAM_ID_1, TEST_HTTP2_MAX_WINDOW),
+		TEST_HTTP2_HEADERS_GET_INDEX_STREAM_2,
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_get, sizeof(request_get), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_PAYLOAD,
+				strlen(TEST_STATIC_PAYLOAD), HTTP2_FLAG_END_STREAM);
+
+	ret = zsock_send(client_fd, request_window_update, sizeof(request_window_update), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_2, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_2, NULL, 0, HTTP2_FLAG_END_STREAM);
+}
+
+/* The settings of an h2c upgrade come in its HTTP2-Settings header. After an
+ * initial window of 0 there, a client can raise a stream window to the
+ * maximum. The header is longer than the shared header buffer.
+ */
+ZTEST(server_function_tests, test_http1_upgrade_settings_initial_window)
+{
+	static const char http1_request[] =
+		"GET / HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		/* SETTINGS_HEADER_TABLE_SIZE 4096, SETTINGS_ENABLE_PUSH 0,
+		 * SETTINGS_MAX_CONCURRENT_STREAMS 100, SETTINGS_INITIAL_WINDOW_SIZE 0,
+		 * SETTINGS_MAX_FRAME_SIZE 16384, SETTINGS_MAX_HEADER_LIST_SIZE 8192
+		 */
+		"HTTP2-Settings: AAEAABAAAAIAAAAAAAMAAABkAAQAAAAAAAUAAEAAAAYAACAA\r\n"
+		"\r\n";
+	static const uint8_t http2_request[] = {
+		TEST_HTTP2_MAGIC,
+		/* A SETTINGS frame with no settings */
+		0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_WINDOW_UPDATE(TEST_STREAM_ID_1, TEST_HTTP2_MAX_WINDOW),
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	BUILD_ASSERT(sizeof("AAEAABAAAAIAAAAAAAMAAABkAAQAAAAAAAUAAEAAAAYAACAA") >
+		     CONFIG_HTTP_SERVER_MAX_HEADER_LEN);
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http1_switching_protocols(&offset);
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, UPGRADE_STREAM_ID, TEST_STATIC_PAYLOAD,
+				strlen(TEST_STATIC_PAYLOAD), HTTP2_FLAG_END_STREAM);
+
+	ret = zsock_send(client_fd, http2_request, sizeof(http2_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+
+	zassert_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+/* An h2c upgrade without exactly one valid HTTP2-Settings header is ignored,
+ * and the request is served over HTTP/1.1.
+ */
+static void common_verify_http1_upgrade_settings_ignored(const char *settings)
+{
+	static const char expected_response[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/html\r\n"
+						"Content-Length: 13\r\n"
+						"\r\n"
+						TEST_STATIC_PAYLOAD;
+	char request[256];
+	int len;
+
+	len = snprintk(request, sizeof(request),
+		       "GET / HTTP/1.1\r\n"
+		       "Host: 127.0.0.1:8080\r\n"
+		       "Connection: Upgrade, HTTP2-Settings\r\n"
+		       "Upgrade: h2c\r\n"
+		       "%s"
+		       "\r\n",
+		       settings);
+	zassert_true(len > 0 && len < sizeof(request), "Request does not fit");
+
+	test_http1_upgrade_ignored(request, expected_response);
+}
+
+ZTEST(server_function_tests, test_http1_upgrade_settings_missing)
+{
+	common_verify_http1_upgrade_settings_ignored("");
+}
+
+/* SETTINGS_MAX_CONCURRENT_STREAMS 100, base64url encoded */
+#define TEST_UPGRADE_SETTING "AAMAAABk"
+
+ZTEST(server_function_tests, test_http1_upgrade_settings_repeated)
+{
+	common_verify_http1_upgrade_settings_ignored(
+		"HTTP2-Settings: " TEST_UPGRADE_SETTING "\r\n"
+		"HTTP2-Settings: " TEST_UPGRADE_SETTING "\r\n");
+}
+
+/* SETTINGS_INITIAL_WINDOW_SIZE 2^31 */
+ZTEST(server_function_tests, test_http1_upgrade_settings_invalid_value)
+{
+	common_verify_http1_upgrade_settings_ignored("HTTP2-Settings: AASAAAAA\r\n");
+}
+
+/* Four bytes, not a whole setting */
+ZTEST(server_function_tests, test_http1_upgrade_settings_partial_setting)
+{
+	common_verify_http1_upgrade_settings_ignored("HTTP2-Settings: AAQAAA\r\n");
+}
+
+/* A valid setting, but in the standard base64 alphabet */
+ZTEST(server_function_tests, test_http1_upgrade_settings_not_base64url)
+{
+	common_verify_http1_upgrade_settings_ignored("HTTP2-Settings: AAQA+///\r\n");
+}
+
+/* Nine settings, one more than the server keeps */
+ZTEST(server_function_tests, test_http1_upgrade_settings_too_long)
+{
+	common_verify_http1_upgrade_settings_ignored(
+		"HTTP2-Settings: "
+		TEST_UPGRADE_SETTING TEST_UPGRADE_SETTING TEST_UPGRADE_SETTING
+		TEST_UPGRADE_SETTING TEST_UPGRADE_SETTING TEST_UPGRADE_SETTING
+		TEST_UPGRADE_SETTING TEST_UPGRADE_SETTING TEST_UPGRADE_SETTING
+		"\r\n");
 }
 
 /* A header block the server refuses to decode: the stream gets a 500 and the

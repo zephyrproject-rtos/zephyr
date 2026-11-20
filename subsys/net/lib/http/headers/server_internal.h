@@ -17,6 +17,13 @@
 #include <zephyr/net/http/frame.h>
 
 #define INVALID_SOCK -1
+
+/* Largest SETTINGS_MAX_FRAME_SIZE value (RFC 9113, Section 6.5.2) */
+#define HTTP2_MAX_FRAME_SIZE_LIMIT 16777215U
+
+/* Initial and largest flow-control window (RFC 9113, Section 6.9) */
+#define HTTP2_INITIAL_WINDOW_SIZE 65535
+#define HTTP2_MAX_WINDOW_SIZE     0x7fffffff
 /* Stream helper consumed or intentionally ignored the fd. */
 #define H3_STREAM_IGNORED 1
 
@@ -35,6 +42,7 @@ int handle_http_frame_data(struct http_client_ctx *client);
 int handle_http_frame_padding(struct http_client_ctx *client);
 int handle_http1_request(struct http_client_ctx *client);
 int handle_http1_to_http2_upgrade(struct http_client_ctx *client);
+int http2_apply_upgrade_settings(struct http_client_ctx *client, const char *value, size_t len);
 int handle_http1_to_websocket_upgrade(struct http_client_ctx *client);
 void http_server_release_client(struct http_client_ctx *client);
 

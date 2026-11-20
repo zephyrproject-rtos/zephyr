@@ -64,6 +64,7 @@ enum http2_frame_type {
 #define HTTP2_PRIORITY_FRAME_LEN 5
 #define HTTP2_RST_STREAM_FRAME_LEN 4
 #define HTTP2_PING_FRAME_LEN 8
+#define HTTP2_WINDOW_UPDATE_FRAME_LEN 4
 
 /* Error code in RST_STREAM (RFC 9113, Section 7). */
 #define HTTP2_ERROR_REFUSED_STREAM 0x7
