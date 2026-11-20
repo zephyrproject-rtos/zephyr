@@ -374,7 +374,7 @@ uint8_t bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 	sec_err = sco_server_check_security(sco_conn->sco.acl);
 	if (BT_HCI_ERR_SUCCESS != sec_err) {
 		LOG_DBG("Insufficient security %u", sec_err);
-		bt_sco_cleanup(sco_conn);
+		bt_sco_cleanup(bt_conn_take(&sco_conn));
 		return sec_err;
 	}
 
@@ -397,7 +397,7 @@ uint8_t bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 			chan->sco = NULL;
 		}
 
-		bt_sco_cleanup(sco_conn);
+		bt_sco_cleanup(bt_conn_take(&sco_conn));
 		return BT_HCI_ERR_UNSPECIFIED;
 	}
 
