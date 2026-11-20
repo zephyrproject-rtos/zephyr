@@ -33,9 +33,15 @@ set(ARCH ${CONFIG_ARCH})
 string(TOUPPER "${ARCH}" arch_upper)
 
 if(NOT ARCH)
+  if("${ZEPHYR_BASE}/boards/common/stub.dts" IN_LIST DTS_SOURCE)
+    string(CONCAT arch_hint
+      "\nThe build uses the empty devicetree. Check BOARD=${BOARD}/${BOARD_QUALIFIERS} "
+      "and its devicetree (.dts) file."
+    )
+  endif()
   message(FATAL_ERROR "ARCH not defined. Check that BOARD=${BOARD}, is selecting "
           "an appropriate SoC in Kconfig, SoC=${CONFIG_SOC}, and that the SoC "
-          "is selecting the correct architecture."
+          "is selecting the correct architecture.${arch_hint}"
   )
 endif()
 
