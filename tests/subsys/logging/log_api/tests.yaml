@@ -182,6 +182,13 @@ tests:
       - CONFIG_LOG_MODE_OVERFLOW=n
       - CONFIG_CPP=y
 
+  logging.deferred.api.tagged_args_cpp:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+      - CONFIG_CPP=y
+
   logging.deferred.api.static_filter_cpp:
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y

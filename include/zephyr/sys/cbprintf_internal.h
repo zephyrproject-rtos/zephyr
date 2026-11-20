@@ -919,16 +919,16 @@ do { \
  * C++ argument reference back to its basic type.
  */
 #define Z_CBPRINTF_ARG_REMOVE_QUAL(arg) \
-	z_cbprintf_cxx_remove_cv < \
-		z_cbprintf_cxx_remove_reference < decltype(arg) > ::type \
+	typename z_cbprintf_cxx_remove_cv < \
+		typename z_cbprintf_cxx_remove_reference < decltype(arg) > ::type \
 	> ::type
 
 /*
  * Get the type of elements in an array.
  */
 #define Z_CBPRINTF_CXX_ARG_ARRAY_TYPE(arg) \
-	z_cbprintf_cxx_remove_cv < \
-		z_cbprintf_cxx_remove_extent < decltype(arg) > ::type \
+	typename z_cbprintf_cxx_remove_cv < \
+		typename z_cbprintf_cxx_remove_extent < decltype(arg) > ::type \
 	> ::type
 
 /*
