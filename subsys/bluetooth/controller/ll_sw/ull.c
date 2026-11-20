@@ -473,6 +473,12 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define BT_CTLR_CONN_ISO_STREAMS 0
 #endif
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+#define BT_CTLR_CIS_ESTAB_LINKS CONFIG_BT_CTLR_CONN_ISO_STREAMS
+#else
+#define BT_CTLR_CIS_ESTAB_LINKS 0U
+#endif
+
 #define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * \
 			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE + \
 			   BT_CTLR_ADV_SET + BT_CTLR_SCAN_SYNC_SET))
@@ -523,7 +529,7 @@ static struct {
 	 (RX_CNT + 2 + BT_CTLR_MAX_CONN + BT_CTLR_ADV_SET +                    \
 	  (BT_CTLR_ADV_ISO_SET * 2) + (BT_CTLR_SCAN_SYNC_SET * 2) +            \
 	  (BT_CTLR_SCAN_SYNC_ISO_SET * 2) + BT_CTLR_CONN_ISO_STREAMS +         \
-	  (IQ_REPORT_CNT)))
+	  BT_CTLR_CIS_ESTAB_LINKS + (IQ_REPORT_CNT)))
 static struct {
 	uint16_t quota_pdu; /* Number of un-utilized buffers */
 
@@ -1673,10 +1679,6 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_CIS_REQUEST:
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
-		case NODE_RX_TYPE_CIS_ESTABLISHED:
-#endif /* CONFIG_BT_CTLR_CONN_ISO */
-
 #if defined(CONFIG_BT_CTLR_SCA_UPDATE)
 		case NODE_RX_TYPE_REQ_PEER_SCA_COMPLETE:
 #endif /* CONFIG_BT_CTLR_SCA_UPDATE */
@@ -1694,6 +1696,33 @@ void ll_rx_mem_release(void **node_rx)
 			ll_rx_link_quota_inc();
 			ll_rx_release(rx_free);
 			break;
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+		case NODE_RX_TYPE_CIS_ESTABLISHED:
+		{
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+			struct ll_conn_iso_stream *cis = rx_free->rx_ftr.param;
+			struct node_rx_conn_iso_estab *est = (void *)rx_free->pdu;
+
+			if (est->central && (cis != NULL) &&
+			    (cis->node_rx_estab.rx.hdr.type == NODE_RX_TYPE_NONE) &&
+			    (cis->node_rx_estab.rx.hdr.link != NULL)) {
+				/* Procedure used its own node; free the unused reserved link */
+				ll_rx_link_release(cis->node_rx_estab.rx.hdr.link);
+				cis->node_rx_estab.rx.hdr.link = NULL;
+			}
+
+			if ((cis != NULL) && (rx_free == &cis->node_rx_estab.rx)) {
+				rx_free->hdr.next = NULL;
+				rx_free->hdr.type = NODE_RX_TYPE_NONE;
+				break;
+			}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
+			ll_rx_link_quota_inc();
+			ll_rx_release(rx_free);
+		}
+		break;
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 #if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
