@@ -274,3 +274,27 @@ tests:
       - CONFIG_DCACHE=y
       - CONFIG_I2C_RTIO=y
     extra_args: EXTRA_DTC_OVERLAY_FILE="stm32_no_dma.overlay"
+  drivers.i2c.target_api.single_role.deinit:
+    platform_allow: &nrf_platform_allow
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpuppr
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lv10dk/nrf54lv10a/cpuapp
+      - nrf54lv10dk/nrf54lv10a/cpuapp/ns
+      - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
+      - nrf7120dk/nrf7120/cpuapp/ns
+      - ophelia4ev/nrf54l15/cpuapp
+    integration_platforms: &nrf_integration_platforms
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_configs:
+      - CONFIG_DEVICE_DEINIT_SUPPORT=y
+  drivers.i2c.target_api.single_role.deinit_rtio:
+    platform_allow: *nrf_platform_allow
+    integration_platforms: *nrf_integration_platforms
+    extra_configs:
+      - CONFIG_DEVICE_DEINIT_SUPPORT=y
+      - CONFIG_I2C_RTIO=y

@@ -26,6 +26,13 @@
 #define TEST_DATA_SIZE	MIN(CONFIG_I2C_TEST_DATA_MAX_SIZE, \
 			    MIN(DT_PROP(NODE_EP0, size), DT_PROP(NODE_EP1, size)))
 
+#define TRANSFER_TIMEOUT_THRESHOLD_MS CONFIG_I2C_TEST_TRANSFER_TIMEOUT_THRESHOLD_MS
+#define TRANSFER_TIMEOUT_MS CONFIG_I2C_TRANSFER_TIMEOUT_MS
+
+#if CONFIG_I2C_TRANSFER_TIMEOUT_SUPPORTED
+BUILD_ASSERT(TRANSFER_TIMEOUT_THRESHOLD_MS < TRANSFER_TIMEOUT_MS);
+#endif /* CONFIG_I2C_TRANSFER_TIMEOUT_SUPPORTED */
+
 static uint8_t eeprom_0_data[TEST_DATA_SIZE];
 static uint8_t eeprom_1_data[TEST_DATA_SIZE];
 static uint8_t i2c_buffer[TEST_DATA_SIZE];
@@ -233,6 +240,58 @@ ZTEST(i2c_eeprom_target, test_deinit)
 	zassert_ok(device_init(i2c_0));
 	zassert_ok(device_init(i2c_1));
 }
+
+#if CONFIG_I2C_TRANSFER_TIMEOUT_SUPPORTED
+ZTEST(i2c_eeprom_target, test_timeout)
+{
+	const struct device *const i2c_0 = DEVICE_DT_GET(DT_BUS(NODE_EP0));
+	const struct device *const i2c_1 = DEVICE_DT_GET(DT_BUS(NODE_EP1));
+	const struct gpio_dt_spec sda_pin_0 =
+		GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), sda0_gpios, {});
+	const struct gpio_dt_spec scl_pin_0 =
+		GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), scl0_gpios, {});
+	int ret;
+	uint8_t buf[4] = {0};
+	int64_t uptime_start_ms;
+	int64_t transfer_duration_ms;
+
+	if (i2c_0 == i2c_1) {
+		TC_PRINT("  GPIO loopback required\n");
+		ztest_test_skip();
+	}
+
+	if (scl_pin_0.port == NULL || sda_pin_0.port == NULL) {
+		TC_PRINT("  EP0 bus SCL or SDA gpios not specified in zephyr,user\n");
+		ztest_test_skip();
+	}
+
+	ret = device_deinit(i2c_0);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("  EP0 bus device deinit not supported\n");
+		ztest_test_skip();
+	}
+
+	zassert_ok(ret);
+
+	/* Simulate "stuck" bus by generating start condition and holding SDA */
+	zassert_ok(gpio_pin_configure_dt(&scl_pin_0, GPIO_INPUT));
+	k_msleep(1);
+	zassert_ok(gpio_pin_configure_dt(&sda_pin_0, GPIO_OUTPUT_INACTIVE));
+	k_msleep(1);
+
+	uptime_start_ms = k_uptime_get();
+	ret = i2c_write(i2c_1, &buf[0], sizeof(buf), 10);
+	transfer_duration_ms = k_uptime_get() - uptime_start_ms;
+	zassert_equal(ret, -ETIMEDOUT, "I2C write should have failed due to \"stuck\" SDA line");
+	zassert_within(transfer_duration_ms, TRANSFER_TIMEOUT_MS, TRANSFER_TIMEOUT_THRESHOLD_MS);
+
+	/* Release "stuck" bus by generating stop condition */
+	zassert_ok(gpio_pin_configure_dt(&sda_pin_0, GPIO_INPUT));
+	k_msleep(1);
+
+	zassert_ok(device_init(i2c_0));
+}
+#endif /* CONFIG_I2C_TRANSFER_TIMEOUT_SUPPORTED */
 
 ZTEST(i2c_eeprom_target, test_eeprom_target)
 {
