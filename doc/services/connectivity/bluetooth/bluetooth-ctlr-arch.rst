@@ -246,6 +246,13 @@ Miscellaneous unit test concepts
 Lower Link Layer
 ****************
 
+LLL implementations with a page of their own:
+
+.. toctree::
+   :maxdepth: 1
+
+   bluetooth-ctlr-bsim-lll.rst
+
 LLL Execution
 =============
 
@@ -258,15 +265,6 @@ LLL Resume
 .. image:: img/ctlr_exec_lll_resume_top.png
 
 .. image:: img/ctlr_exec_lll_resume_bottom.png
-
-
-LLL Implementations
-===================
-
-.. toctree::
-   :maxdepth: 1
-
-   bluetooth-ctlr-bsim-lll.rst
 
 
 Bare metal utilities
