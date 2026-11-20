@@ -89,4 +89,18 @@
 				 <PA15L_GMAC_GRXER>;
 		};
 	};
+
+	can0_default: can0_default {
+		group1 {
+			pinmux = <PA22I_CAN0_TX>,
+				 <PA23I_CAN0_RX>;
+		};
+	};
+
+	can1_default: can1_default {
+		group1 {
+			pinmux = <PB14H_CAN1_TX>,
+				 <PB15H_CAN1_RX>;
+		};
+	};
 };
