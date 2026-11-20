@@ -1022,7 +1022,7 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 	i2c_xfer_stats(dev, msgs, num_msgs);
 
 	if (IS_ENABLED(CONFIG_I2C_DUMP_MESSAGES)) {
-		i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, true);
+		i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, res == 0);
 	}
 
 	return res;
