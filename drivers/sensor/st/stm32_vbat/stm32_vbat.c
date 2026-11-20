@@ -8,6 +8,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/dt-bindings/adc/stm32_adc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device_runtime.h>
 #include <stm32_ll_adc.h>
@@ -32,52 +33,11 @@ struct stm32_vbat_data {
 
 struct stm32_vbat_config {
 	int ratio;
-	void (*enable_channel)(ADC_TypeDef *adc);
-	void (*disable_channel)(ADC_TypeDef *adc);
 };
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_vbat)
-static void stm32_vbat_enable_vbatsensor_channel(ADC_TypeDef *adc)
-{
-	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
-
-	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
-					path | LL_ADC_PATH_INTERNAL_VBAT);
-}
-
-static void stm32_vbat_disable_vbatsensor_channel(ADC_TypeDef *adc)
-{
-	const uint32_t path = LL_ADC_GetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc));
-
-	LL_ADC_SetCommonPathInternalCh(STM32_ADC_COMMON_INSTANCE(adc),
-					path & ~LL_ADC_PATH_INTERNAL_VBAT);
-}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_vbat) */
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_vddcore)
-static void stm32_vbat_enable_vddcore_channel(ADC_TypeDef *adc)
-{
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	LL_ADC_EnableChannelVDDcore(adc);
-#else /* CONFIG_SOC_SERIES_STM32H5X */
-	LL_ADC_SetPathInternalChAdd(adc, LL_ADC_PATH_INTERNAL_VDDCORE);
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
-}
-
-static void stm32_vbat_disable_vddcore_channel(ADC_TypeDef *adc)
-{
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	LL_ADC_DisableChannelVDDcore(adc);
-#else /* CONFIG_SOC_SERIES_STM32H5X */
-	LL_ADC_SetPathInternalChRem(adc, LL_ADC_PATH_INTERNAL_VDDCORE);
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
-}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_vddcore) */
 
 static int stm32_vbat_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct stm32_vbat_data *data = dev->data;
-	__maybe_unused const struct stm32_vbat_config *cfg = dev->config;
 	struct adc_sequence *sp = &data->adc_seq;
 	int rc;
 
@@ -88,27 +48,21 @@ static int stm32_vbat_sample_fetch(const struct device *dev, enum sensor_channel
 	k_mutex_lock(&data->mutex, K_FOREVER);
 	pm_device_runtime_get(data->adc);
 
-#ifndef CONFIG_STM32_VBAT_INJECTED
-	rc = adc_channel_setup(data->adc, &data->adc_cfg);
+	if (!IS_ENABLED(CONFIG_STM32_VBAT_INJECTED)) {
+		rc = adc_channel_setup(data->adc, &data->adc_cfg);
 
-	if (rc != 0) {
-		LOG_DBG("Setup AIN%u got %d", data->adc_cfg.channel_id, rc);
-		goto unlock;
+		if (rc != 0) {
+			LOG_DBG("Setup AIN%u got %d", data->adc_cfg.channel_id, rc);
+			goto unlock;
+		}
 	}
-
-	cfg->enable_channel(data->adc_base);
-#endif /* CONFIG_STM32_VBAT_INJECTED */
 
 	rc = adc_read(data->adc, sp);
 	if (rc == 0) {
 		data->raw = data->sample_buffer;
 	}
 
-#ifndef CONFIG_STM32_VBAT_INJECTED
-	cfg->disable_channel(data->adc_base);
-
 unlock:
-#endif /* CONFIG_STM32_VBAT_INJECTED */
 	pm_device_runtime_put(data->adc);
 	k_mutex_unlock(&data->mutex);
 
@@ -140,7 +94,6 @@ static DEVICE_API(sensor, stm32_vbat_driver_api) = {
 static int stm32_vbat_init(const struct device *dev)
 {
 	struct stm32_vbat_data *data = dev->data;
-	__maybe_unused const struct stm32_vbat_config *cfg = dev->config;
 	struct adc_sequence *asp = &data->adc_seq;
 
 	k_mutex_init(&data->mutex);
@@ -165,16 +118,14 @@ static int stm32_vbat_init(const struct device *dev)
 #endif /* CONFIG_STM32_VBAT_INJECTED */
 	};
 
-#ifdef CONFIG_STM32_VBAT_INJECTED
-	int rc = adc_channel_setup(data->adc, &data->adc_cfg);
+	if (IS_ENABLED(CONFIG_STM32_VBAT_INJECTED)) {
+		int rc = adc_channel_setup(data->adc, &data->adc_cfg);
 
-	if (rc != 0) {
-		LOG_DBG("Setup AIN%u got %d", data->adc_cfg.channel_id, rc);
-		return rc;
+		if (rc != 0) {
+			LOG_DBG("Setup AIN%u got %d", data->adc_cfg.channel_id, rc);
+			return rc;
+		}
 	}
-
-	cfg->enable_channel(data->adc_base);
-#endif /* CONFIG_STM32_VBAT_INJECTED */
 
 	return 0;
 }
@@ -196,20 +147,17 @@ static int stm32_vbat_init(const struct device *dev)
 			.acquisition_time = ADC_ACQ_TIME_MAX,					\
 			.channel_id = DT_IO_CHANNELS_INPUT(node_id),				\
 			.differential = 0,							\
+			COND_CASE_1(								\
+				DT_NODE_HAS_COMPAT(node_id, st_stm32_vbat),			\
+				(.internal_channel = STM32_ADC_INTERNAL_CHANNEL_VBAT),		\
+				DT_NODE_HAS_COMPAT(node_id, st_stm32_vddcore),			\
+				(.internal_channel = STM32_ADC_INTERNAL_CHANNEL_VDDCORE),	\
+				(.internal_channel = STM32_ADC_INTERNAL_CHANNEL_NONE))		\
 		},										\
 	};											\
 												\
 	static const struct stm32_vbat_config CONCAT(stm32_vbat_dev_config_, ord) = {		\
 		.ratio = DT_PROP_OR(node_id, ratio, 1),						\
-		COND_CASE_1(									\
-			DT_NODE_HAS_COMPAT(node_id, st_stm32_vbat),				\
-				(.enable_channel = stm32_vbat_enable_vbatsensor_channel,	\
-				.disable_channel = stm32_vbat_disable_vbatsensor_channel,),	\
-			DT_NODE_HAS_COMPAT(node_id, st_stm32_vddcore),				\
-				(.enable_channel = stm32_vbat_enable_vddcore_channel,		\
-				.disable_channel = stm32_vbat_disable_vddcore_channel,),	\
-			(.enable_channel = NULL,						\
-			.disable_channel = NULL,))						\
 	};											\
 												\
 	SENSOR_DEVICE_DT_DEFINE(node_id, stm32_vbat_init, NULL,					\
