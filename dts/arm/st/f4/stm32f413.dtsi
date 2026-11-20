@@ -98,6 +98,10 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+
+				sai1_a_mclk: mclk {
+					#clock-cells = <0>;
+				};
 			};
 
 			sai1_b: sai1b@40015824 {
@@ -106,6 +110,10 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+
+				sai1_b_mclk: mclk {
+					#clock-cells = <0>;
+				};
 			};
 		};
 
