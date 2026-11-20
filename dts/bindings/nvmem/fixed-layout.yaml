@@ -44,3 +44,12 @@ child-binding:
     read-only:
       type: boolean
       description: Set this property if the cell is read-only.
+
+    zephyr,reversed-byte-order:
+      type: boolean
+      description: |
+        Set this property if the cell is stored in reversed byte order,
+        for example a MAC address with its last octet at the lowest
+        offset. The NVMEM API reverses the bytes on read and write, so
+        consumers always see the same byte order, with offsets relative
+        to the reversed contents.

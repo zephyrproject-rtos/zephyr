@@ -6,8 +6,8 @@
 / {
 	test_consumer0: test-consumer0 {
 		compatible = "vnd,nvmem-consumer";
-		nvmem-cells = <&cell0>, <&cell10>;
-		nvmem-cell-names = "cell0", "cell10";
+		nvmem-cells = <&cell0>, <&cell10>, <&cell20>;
+		nvmem-cell-names = "cell0", "cell10", "cell20";
 	};
 };
 
@@ -26,6 +26,12 @@
 			reg = <0x10 0x10>;
 			read-only;
 			#nvmem-cell-cells = <0>;
+		};
+
+		cell20: cell@20 {
+			reg = <0x20 0x18>;
+			#nvmem-cell-cells = <0>;
+			zephyr,reversed-byte-order;
 		};
 	};
 };
