@@ -393,6 +393,17 @@ Relevant devicetree node labels:
 
 - ``zephyr_i2c``
 
+zephyr_i2s
+----------
+
+These are I2S pins of a board without a standard connector for I2S, wired by hand to a breakout
+such as an I2S amplifier or microphone. The board labels the I2S controller "zephyr_i2s" and
+gives it the pin configuration of these pins, but leaves it disabled: the shield enables it.
+
+Relevant devicetree node labels:
+
+- ``zephyr_i2s``
+
 ST M.2 serial memory connector
 ------------------------------
 

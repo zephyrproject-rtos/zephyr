@@ -178,6 +178,11 @@
 	};
 };
 
+zephyr_i2s: &i2s0 {
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+};
+
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
