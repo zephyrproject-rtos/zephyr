@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Hamza Bahri
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_STM32
+	bool "STM32 USB_DRD_FS host controller driver [EXPERIMENTAL]"
+	default y
+	depends on DT_HAS_ST_STM32_USB_ENABLED
+	# Only the USB_DRD_FS flavour of st,stm32-usb has host channels.
+	depends on SOC_SERIES_STM32H5X
+	select EXPERIMENTAL
+	select EVENTS
+	select USE_STM32_LL_USB
+	select USE_STM32_HAL_HCD
+	select STM32_USB_COMMON
+	select PINCTRL
+	help
+	  STM32 USB host controller driver for the USB_DRD_FS controller,
+	  built on the STM32Cube HAL HCD. Full-speed and low-speed devices,
+	  control, bulk and interrupt transfers; isochronous is not supported.
