@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Kevin Ahr <kevin@kevinbot.net>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32H743_CAN_HS
+	select SOC_STM32H743XX
