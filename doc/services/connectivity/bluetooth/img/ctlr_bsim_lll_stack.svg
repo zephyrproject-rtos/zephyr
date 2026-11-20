@@ -40,7 +40,7 @@
 
   <rect class="d-box" x="150" y="178" width="480" height="44" rx="4"/>
   <text class="d-t" x="164" y="197">LLL prepare pipeline</text>
-  <text class="d-f" x="164" y="213">ll_sw/lll_prepare_pipeline.c (shared, moved out of nordic)</text>
+  <text class="d-f" x="164" y="213">ll_sw/shared/lll/lll_prepare_pipeline.c (shared)</text>
 
   <rect class="d-new" x="150" y="260" width="480" height="44" rx="4"/>
   <text class="d-t" x="164" y="279">LLL roles</text>
