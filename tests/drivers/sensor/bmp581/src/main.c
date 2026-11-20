@@ -127,16 +127,37 @@ static uint8_t get_reg(const struct emul *target, uint8_t reg)
 
 static void check_attr_odr(const struct device *dev, const struct emul *target)
 {
-	const struct sensor_value odr = {.val1 = 0x0A};
-	uint8_t before = get_reg(target, BMP5_REG_ODR_CONFIG);
-	uint8_t reg;
+	const struct bmp581_data *data = dev->data;
+	const struct {
+		struct sensor_value frequency;
+		uint8_t encoding;
+	} cases[] = {
+		{{50, 0}, BMP581_DT_ODR_50_HZ},
+		{{100, 200000}, BMP581_DT_ODR_100_2_HZ},
+		{{218, 500000}, BMP581_DT_ODR_218_5_HZ},
+		{{240, 0}, BMP581_DT_ODR_240_HZ},
+		{{1, 0}, BMP581_DT_ODR_1_HZ},
+		{{0, 500000}, BMP581_DT_ODR_0_5_HZ},
+		{{0, 250000}, BMP581_DT_ODR_0_250_HZ},
+		{{0, 125000}, BMP581_DT_ODR_0_125_HZ},
+		{{0, 125001}, BMP581_DT_ODR_0_250_HZ},
+		{{0, 1}, BMP581_DT_ODR_0_125_HZ},
+	};
 
-	zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &odr));
+	for (size_t i = 0U; i < ARRAY_SIZE(cases); i++) {
+		uint8_t before = get_reg(target, BMP5_REG_ODR_CONFIG);
+		uint8_t reg;
 
-	reg = get_reg(target, BMP5_REG_ODR_CONFIG);
-	/* ODR is bits [6:2]; verify setting and check adjacent bits are preserved */
-	zassert_equal(BMP5_GET_BITSLICE(reg, BMP5_ODR), 0x0A);
-	zassert_equal(reg & ~BMP5_ODR_MSK, before & ~BMP5_ODR_MSK);
+		zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY,
+					  &cases[i].frequency));
+
+		reg = get_reg(target, BMP5_REG_ODR_CONFIG);
+		zassert_equal(BMP5_GET_BITSLICE(reg, BMP5_ODR), cases[i].encoding,
+			      "Unexpected ODR for %d.%06d Hz", cases[i].frequency.val1,
+			      cases[i].frequency.val2);
+		zassert_equal(reg & ~BMP5_ODR_MSK, before & ~BMP5_ODR_MSK);
+		zassert_equal(data->osr_odr_press_config.odr, cases[i].encoding);
+	}
 }
 
 ZTEST_F(bmp581, test_i2c_attr_odr_reg)
@@ -147,6 +168,41 @@ ZTEST_F(bmp581, test_i2c_attr_odr_reg)
 ZTEST_F(bmp581, test_spi_attr_odr_reg)
 {
 	check_attr_odr(fixture->spi_dev, fixture->spi_target);
+}
+
+static void check_invalid_frequency(const struct device *dev, const struct emul *target)
+{
+	const struct bmp581_data *data = dev->data;
+	const struct sensor_value frequencies[] = {
+		{0, 0},
+		{-1, 0},
+		{0, -1},
+		{240, 1},
+		{241, 0},
+		{INT32_MAX, 0},
+	};
+	const struct sensor_value valid = {.val1 = 50};
+	uint8_t before;
+
+	zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &valid));
+	before = get_reg(target, BMP5_REG_ODR_CONFIG);
+
+	for (size_t i = 0U; i < ARRAY_SIZE(frequencies); i++) {
+		zassert_equal(sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY,
+					     &frequencies[i]), -EINVAL);
+		zassert_equal(get_reg(target, BMP5_REG_ODR_CONFIG), before);
+		zassert_equal(data->osr_odr_press_config.odr, BMP581_DT_ODR_50_HZ);
+	}
+}
+
+ZTEST_F(bmp581, test_i2c_invalid_sampling_frequency)
+{
+	check_invalid_frequency(fixture->i2c_dev, fixture->i2c_target);
+}
+
+ZTEST_F(bmp581, test_spi_invalid_sampling_frequency)
+{
+	check_invalid_frequency(fixture->spi_dev, fixture->spi_target);
 }
 
 ZTEST_F(bmp581, test_emul_get_reg_invalid)

@@ -363,6 +363,18 @@ static int set_osr_config(const struct sensor_value *osr, enum sensor_channel ch
 
 static int set_odr_config(const struct sensor_value *odr, const struct device *dev)
 {
+	/* ODR_CONFIG encodings in descending frequency order, in microhertz. */
+	static const uint32_t odr_microhz[] = {
+		240000000U, 218537000U, 199111000U, 179200000U,
+		160000000U, 149333000U, 140000000U, 129855000U,
+		120000000U, 110164000U, 100299000U, 89600000U,
+		80000000U, 70000000U, 60000000U, 50056000U,
+		45025000U, 40000000U, 35000000U, 30000000U,
+		25005000U, 20000000U, 15000000U, 10000000U,
+		5000000U, 4000000U, 3000000U, 2000000U,
+		1000000U, 500000U, 250000U, 125000U,
+	};
+
 	CHECKIF(odr == NULL || dev == NULL) {
 		return -EINVAL;
 	}
@@ -371,14 +383,28 @@ static int set_odr_config(const struct sensor_value *odr, const struct device *d
 	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
 	int ret = 0;
 	uint8_t odr_val = 0;
+	int64_t frequency = sensor_value_to_micro(odr);
+	uint8_t odr_index = 0U;
+
+	if (frequency <= 0 || frequency > odr_microhz[0]) {
+		return -EINVAL;
+	}
+
+	/* Select the lowest supported frequency at least as high as requested. */
+	while (odr_index + 1U < ARRAY_SIZE(odr_microhz) &&
+	       frequency <= odr_microhz[odr_index + 1U]) {
+		odr_index++;
+	}
 
 	ret = bmp581_reg_read_rtio(&conf->bus, BMP5_REG_ODR_CONFIG, &odr_val, 1);
 	if (ret != BMP5_OK) {
 		return ret;
 	}
-	odr_val = BMP5_SET_BITSLICE(odr_val, BMP5_ODR, odr->val1);
+	odr_val = BMP5_SET_BITSLICE(odr_val, BMP5_ODR, odr_index);
 	ret = bmp581_reg_write_rtio(&conf->bus, BMP5_REG_ODR_CONFIG, &odr_val, 1);
-	get_osr_odr_press_config(&drv->osr_odr_press_config, dev);
+	if (ret == BMP5_OK) {
+		drv->osr_odr_press_config.odr = odr_index;
+	}
 
 	return ret;
 }
