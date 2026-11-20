@@ -478,6 +478,14 @@ static void *z_object_alloc(enum k_objects otype, size_t size)
 		return NULL;
 	}
 
+	/* Driver objects are always static devices created at build time */
+	if ((otype == K_OBJ_DRIVER_ANY) ||
+	    ((otype >= K_OBJ_DRIVER_FIRST) && (otype <= K_OBJ_DRIVER_LAST))) {
+		LOG_ERR("forbidden object type '%s' requested",
+			otype_to_str(otype));
+		return NULL;
+	}
+
 	switch (otype) {
 	case K_OBJ_THREAD:
 		if (!thread_idx_alloc(&tidx)) {
