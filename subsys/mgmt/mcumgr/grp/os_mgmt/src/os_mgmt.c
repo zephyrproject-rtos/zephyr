@@ -59,7 +59,7 @@
 #endif
 
 #ifdef CONFIG_MCUMGR_GRP_OS_RESET_BOOT_MODE
-#include <zephyr/retention/bootmode.h>
+#include <zephyr/bootmode.h>
 #include <limits.h>
 #endif
 
