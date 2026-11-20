@@ -1,0 +1,145 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  External asynchronous SRAM (or SRAM-like FPGA) attached to one chip select
+  of the NXP AHB SRAM Controller.
+
+  The node's "reg" is the memory-mapped window the chip select maps the device
+  into: up to 128 KB that the core reads and writes directly -- for example,
+  0x25000000 for CS0 and 0x25020000 for CS1 on i.MX RT266x.
+
+  Timings are given in nanoseconds, one property per register field of this
+  chip select. All of them are required.
+
+compatible: "nxp,ahb-sramc-sram"
+
+include: [base.yaml, "zephyr,memory-common.yaml"]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Memory-mapped window of the chip select that carries this device.
+
+  cs:
+    type: int
+    required: true
+    min: 0
+    description: |
+      Chip-select index this device is wired to.
+
+  ce-setup-time-ns:
+    type: int
+    required: true
+    description: |
+      Time CE# is asserted before the access starts (CFG0_CS[CES]). May be 0.
+
+  ce-hold-time-ns:
+    type: int
+    required: true
+    description: |
+      Time CE# stays asserted after the access ends (CFG0_CS[CEH]). May be 0.
+
+  address-setup-time-ns:
+    type: int
+    required: true
+    description: |
+      Time the address is driven before the access strobe (CFG0_CS[AS]).
+      May be 0, except in admux mode where the hardware always inserts one
+      clock cycle.
+
+  address-hold-time-ns:
+    type: int
+    required: true
+    description: |
+      Time the address is held after its setup phase (CFG0_CS[AH]). The
+      field counts from one granularity period, so 0 selects that minimum.
+
+  turnaround-time-ns:
+    type: int
+    required: true
+    description: |
+      Dead time during which neither the controller nor the device drives
+      the data lines (CFG0_CS[TA]). The field counts from one granularity
+      period, so 0 selects that minimum.
+
+  write-enable-low-time-ns:
+    type: int
+    required: true
+    description: |
+      WE# asserted time, which is the write pulse width (CFG1_CS[WEL]).
+      Counts from one granularity period, so 0 selects that minimum.
+
+  write-enable-high-time-ns:
+    type: int
+    required: true
+    description: |
+      WE# deasserted time between writes (CFG1_CS[WEH]). Counts from one
+      granularity period, so 0 selects that minimum.
+
+  read-enable-low-time-ns:
+    type: int
+    required: true
+    description: |
+      OE# asserted time, which has to cover the part's access time
+      (CFG1_CS[REL]). Counts from one granularity period, so 0 selects that
+      minimum.
+
+  read-enable-high-time-ns:
+    type: int
+    required: true
+    description: |
+      OE# deasserted time between reads (CFG1_CS[REH]). Counts from one
+      granularity period, so 0 selects that minimum.
+
+  wait-pin:
+    type: int
+    min: 0
+    max: 3
+    description: |
+      Index of the SRAMC_WP wait pin this device drives. Setting it enables
+      wait-state monitoring for this chip select (CFG0_CS[WM_EN] and
+      [WP_MUX]) and makes wait-mode required; omit it for a device that does
+      not use a wait signal.
+
+  wait-mode:
+    type: int
+    enum: [0, 1, 2, 4, 5, 6]
+    description: |
+      What ends a wait state (CFG0_CS[WM_SEL]). The numbers are the register
+      encoding, the same values as the MCUXpresso SDK's sramc_wait_mode_t:
+      - 0 kSRAMC_WaitMode_Level (wait pin level alone)
+      - 1 kSRAMC_WaitMode_LevelAndCounter (level and counter must both end)
+      - 2 kSRAMC_WaitMode_LevelOrCounter (either one ends the wait)
+      - 4 kSRAMC_WaitMode_Edge (wait pin edge alone)
+      - 5 kSRAMC_WaitMode_EdgeAndCounter (edge and counter must both end)
+      - 6 kSRAMC_WaitMode_EdgeOrCounter (either one ends the wait)
+
+  wait-active-high:
+    type: boolean
+    description: |
+      The wait pin is asserted high (CFG0_CS[WP_POL]). Omit it for a
+      low-asserted wait pin. Ignored unless wait-pin is set.
+
+examples:
+  - |
+    &sramc {
+        status = "okay";
+
+        ext_sram0: sram@25000000 {
+            compatible = "nxp,ahb-sramc-sram";
+            reg = <0x25000000 DT_SIZE_K(128)>;
+            cs = <0>;
+
+            ce-setup-time-ns = <0>;
+            ce-hold-time-ns = <0>;
+            address-setup-time-ns = <10>;
+            address-hold-time-ns = <5>;
+            turnaround-time-ns = <10>;
+            write-enable-low-time-ns = <45>;
+            write-enable-high-time-ns = <10>;
+            read-enable-low-time-ns = <55>;
+            read-enable-high-time-ns = <10>;
+        };
+    };

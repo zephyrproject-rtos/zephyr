@@ -13,3 +13,14 @@ tests:
       - mimxrt1180_evk/mimxrt1189/cm7
     integration_platforms:
       - mimxrt1180_evk/mimxrt1189/cm33
+
+  # NXP AHB SRAM Controller (AHB_SRAMC) is a different device from nxp_sramc:
+  # it has its own peripheral, each chip select has a corresponding pair of
+  # timing registers, and it uses the HAL from the sramc_1 component in the SDK.
+  # This test covers the controller (nxp,ahb-sramc) and the device driver
+  # (nxp,ahb-sramc-sram).
+  drivers.memc.nxp_ahb_sramc.build:
+    platform_allow:
+      - mimxrt2660_evk/mimxrt2663/cm85
+    integration_platforms:
+      - mimxrt2660_evk/mimxrt2663/cm85
