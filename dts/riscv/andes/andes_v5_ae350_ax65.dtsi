@@ -7,6 +7,10 @@
 #include <riscv/andes/andes_v5_ae350.dtsi>
 
 / {
+	chosen {
+		andestech,ipi-plic = &plic_sw;
+	};
+
 	cpus {
 		cpu1: cpu@1 {
 			compatible = "andestech,ax65", "andestech,andescore-v5", "riscv";
