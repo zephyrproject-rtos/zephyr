@@ -724,7 +724,11 @@ static int wifi_neighbor_rep_complete(uint64_t mgmt_request, struct net_if *ifac
 		return -ENETDOWN;
 	}
 
-	for (int i = 0; i < roaming_params.neighbor_rep.neighbor_cnt; i++) {
+	/* The scan request holds fewer channels than the neighbor list when
+	 * CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL is below MAX_NEIGHBOR_AP_LIMIT.
+	 */
+	for (size_t i = 0; i < ARRAY_SIZE(params.band_chan) &&
+			   i < (size_t)roaming_params.neighbor_rep.neighbor_cnt; i++) {
 		params.band_chan[i].channel = roaming_params.neighbor_rep.neighbor_ap[i].channel;
 		params.band_chan[i].band = wifi_utils_chan_to_band(params.band_chan[i].channel);
 	}

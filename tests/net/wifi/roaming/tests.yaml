@@ -1,0 +1,11 @@
+tests:
+  net.wifi.roaming:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_ASAN=y
+    tags:
+      - wifi
+      - net

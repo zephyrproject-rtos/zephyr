@@ -2017,7 +2017,7 @@ int supplicant_11k_neighbor_request(const struct device *dev, struct net_if *ifa
 int supplicant_candidate_scan(const struct device *dev __unused, struct net_if *iface,
 			      struct wifi_scan_params *params)
 {
-	int i = 0;
+	size_t i = 0;
 	char cmd[SUPPLICANT_CANDIDATE_SCAN_CMD_BUF_SIZE] = {0};
 	char *pos = cmd;
 	char *end = pos + SUPPLICANT_CANDIDATE_SCAN_CMD_BUF_SIZE;
@@ -2059,8 +2059,10 @@ int supplicant_candidate_scan(const struct device *dev __unused, struct net_if *
 		first = false;
 	}
 
-	/* Add neighbor report channels, skipping duplicates */
-	while (params->band_chan[i].channel) {
+	/* Add neighbor report channels, skipping duplicates. The list ends at
+	 * the first zero channel or at the end of the array, whichever is first.
+	 */
+	while (i < ARRAY_SIZE(params->band_chan) && params->band_chan[i].channel != 0U) {
 		freq = chan_to_freq(params->band_chan[i].channel);
 		i++;
 		if (freq <= 0) {
