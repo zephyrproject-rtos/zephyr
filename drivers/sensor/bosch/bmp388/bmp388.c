@@ -215,6 +215,45 @@ static int bmp388_attr_set(const struct device *dev,
 	return ret;
 }
 
+#ifdef CONFIG_BMP388_FORCED_MODE
+static int bmp388_forced_measurement(const struct device *dev)
+{
+	struct bmp388_data *bmp3xx = dev->data;
+	k_timepoint_t timeout;
+	uint32_t conv_us;
+	uint8_t status;
+	int ret;
+
+	/* Start a single measurement, sensor returns to sleep mode afterwards */
+	ret = bmp388_reg_write(dev, BMP388_REG_PWR_CTRL, BMP388_PWR_CTRL_FORCED);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Typical conversion time (datasheet section 3.9.2) */
+	conv_us = 234 + (392 + (2000 << bmp3xx->osr_pressure)) +
+		  (313 + (2000 << bmp3xx->osr_temp));
+	k_sleep(K_USEC(conv_us));
+
+	/* Maximum conversion time is ~15% longer than typical, allow double */
+	timeout = sys_timepoint_calc(K_USEC(conv_us));
+	do {
+		ret = bmp388_reg_read(dev, BMP388_REG_STATUS, &status, 1);
+		if (ret < 0) {
+			return ret;
+		}
+		if ((status & (BMP388_STATUS_DRDY_PRESS | BMP388_STATUS_DRDY_TEMP)) ==
+		    (BMP388_STATUS_DRDY_PRESS | BMP388_STATUS_DRDY_TEMP)) {
+			return 0;
+		}
+		k_sleep(K_USEC(500));
+	} while (!sys_timepoint_expired(timeout));
+
+	LOG_ERR("Forced measurement timed out");
+	return -ETIMEDOUT;
+}
+#endif /* CONFIG_BMP388_FORCED_MODE */
+
 static int bmp388_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
@@ -226,6 +265,12 @@ static int bmp388_sample_fetch(const struct device *dev,
 
 	pm_device_busy_set(dev);
 
+#ifdef CONFIG_BMP388_FORCED_MODE
+	ret = bmp388_forced_measurement(dev);
+	if (ret < 0) {
+		goto error;
+	}
+#else
 	/* Wait for status to indicate that data is ready. */
 	raw[0] = 0U;
 	while ((raw[0] & BMP388_STATUS_DRDY_PRESS) == 0U) {
@@ -234,6 +279,7 @@ static int bmp388_sample_fetch(const struct device *dev,
 			goto error;
 		}
 	}
+#endif /* CONFIG_BMP388_FORCED_MODE */
 
 	ret = bmp388_reg_read(dev,
 			  BMP388_REG_DATA0,
@@ -419,7 +465,9 @@ static int bmp388_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		reg_val = BMP388_PWR_CTRL_MODE_NORMAL;
+		/* Sensor sleeps between measurements in forced mode */
+		reg_val = IS_ENABLED(CONFIG_BMP388_FORCED_MODE) ? BMP388_PWR_CTRL_MODE_SLEEP
+								: BMP388_PWR_CTRL_MODE_NORMAL;
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		reg_val = BMP388_PWR_CTRL_MODE_SLEEP;
@@ -505,10 +553,11 @@ static int bmp388_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Enable sensors and normal mode*/
+	/* Enable sensors and normal mode (sleep mode until fetch in forced mode) */
 	if (bmp388_reg_write(dev,
 			     BMP388_REG_PWR_CTRL,
-			     BMP388_PWR_CTRL_ON) < 0) {
+			     IS_ENABLED(CONFIG_BMP388_FORCED_MODE) ? BMP388_PWR_CTRL_IDLE
+								   : BMP388_PWR_CTRL_ON) < 0) {
 		LOG_ERR("Failed to enable sensors.");
 		return -EIO;
 	}
@@ -557,27 +606,33 @@ static int bmp388_init(const struct device *dev)
 #define BMP388_INT_CFG(inst)
 #endif
 
-#define BMP3XX_INST(inst, chipid)\
-	static struct bmp388_data bmp388_data_##inst##chipid = {\
+#define BMP3XX_INST(inst, variant, chipid)\
+	static struct bmp388_data bmp388_data_##variant##_##inst = {\
 		.odr = DT_INST_ENUM_IDX(inst, odr),\
 		.osr_pressure = DT_INST_ENUM_IDX(inst, osr_press),\
 		.osr_temp = DT_INST_ENUM_IDX(inst, osr_temp),\
 		.chip_id = chipid,\
 	};\
-	static const struct bmp388_config bmp388_config_##inst##chipid = {\
+	static const struct bmp388_config bmp388_config_##variant##_##inst = {\
 		BMP388_BUS_CFG(inst)\
 		BMP388_INT_CFG(inst)\
 		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),\
 	};\
 	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmp388_init, PM_DEVICE_DT_INST_GET(inst),\
-				    &bmp388_data_##inst##chipid, &bmp388_config_##inst##chipid,\
+				    &bmp388_data_##variant##_##inst,\
+				    &bmp388_config_##variant##_##inst,\
 					POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &bmp388_api);
 
 #define DT_DRV_COMPAT bosch_bmp388
-DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, BMP388_ID)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, bmp388, BMP388_ID)
 #undef DT_DRV_COMPAT
 
 #define DT_DRV_COMPAT bosch_bmp390
-DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, BMP390_ID)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, bmp390, BMP390_ID)
+#undef DT_DRV_COMPAT
+
+/* BMP384 shares the BMP388 chip ID */
+#define DT_DRV_COMPAT bosch_bmp384
+DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, bmp384, BMP388_ID)
 #undef DT_DRV_COMPAT
