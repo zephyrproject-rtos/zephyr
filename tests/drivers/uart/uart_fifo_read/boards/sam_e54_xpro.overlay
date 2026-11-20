@@ -1,0 +1,7 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect PC22 (TX) to PC23 (RX); the console uses SERCOM2. */
+dut: &sercom1 {};
