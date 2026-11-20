@@ -1,0 +1,202 @@
+common:
+  tags: applet
+  platform_exclude:
+    # platforms with active LLEXT issues
+    - numaker_pfm_m487        # See #63167
+    - s32z2xxdc2/s32z270/rtu0 # See commit 18a0660
+    - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
+  integration_platforms:
+    - qemu_cortex_a9          # ARM Cortex-A9 (ARMv7-A ISA)
+    - qemu_cortex_r5          # ARM Cortex-R5 (ARMv7-R ISA)
+    - mps2/an383              # ARM Cortex-M0+ (ARMv6-M ISA)
+    - mps2/an385              # ARM Cortex-M3 (ARMv7-M ISA)
+    - mps2/an521/cpu0         # ARM Cortex-M33 (ARMv8-M ISA)
+    - qemu_riscv32/qemu_virt_riscv32 # RISC-V RV32 ISA
+  # Worst case measured across the scenarios below is applet.llext.writable on
+  # qemu_xtensa/dc233c at ~164 kB, and applet.llext.readonly.mpu on mps2/an385
+  # at ~155 kB flash / ~91 kB RAM. The applet slot heap, the extension heap and
+  # the six thread stacks dominate.
+  min_ram: 192
+  min_flash: 192
+  # The concurrency cases park threads in applet_join() and poll around them,
+  # which is slow under emulation.
+  timeout: 180
+  extra_conf_files:
+    - prj.conf
+
+tests:
+  applet.build:
+    build_only: true
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp # ARM Cortex-A53 SMP (ARMv8-A ISA)
+      - qemu_xtensa/dc233c      # Xtensa ISA
+      - qemu_arc/qemu_arc_em    # ARC EM ISA
+      - qemu_x86                # x86 (Atom) ISA
+
+  applet.native:
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp # ARM Cortex-A53 SMP (ARMv8-A ISA)
+      - qemu_xtensa/dc233c      # Xtensa ISA
+      - qemu_arc/qemu_arc_em    # ARC EM ISA
+      - qemu_x86                # x86 (Atom) ISA
+  applet.native.mpu.userspace:
+    filter: CONFIG_MPU and CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp # ARM Cortex-A53 SMP (ARMv8-A ISA)
+      - qemu_xtensa/dc233c      # Xtensa ISA
+      - qemu_arc/qemu_arc_em    # ARC EM ISA
+      - qemu_x86                # x86 (Atom) ISA
+    extra_configs:
+      - CONFIG_USERSPACE=y
+  applet.native.mmu:
+    filter: CONFIG_MMU or CONFIG_RISCV_PMP and not CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp # ARM Cortex-A53 SMP (ARMv8-A ISA)
+      - qemu_xtensa/dc233c      # Xtensa ISA
+      - qemu_arc/qemu_arc_em    # ARC EM ISA
+      - qemu_x86                # x86 (Atom) ISA
+  applet.native.mmu.userspace:
+    filter: (CONFIG_MMU or CONFIG_RISCV_PMP) and CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp # ARM Cortex-A53 SMP (ARMv8-A ISA)
+      - qemu_xtensa/dc233c      # Xtensa ISA
+      - qemu_arc/qemu_arc_em    # ARC EM ISA
+      - qemu_x86                # x86 (Atom) ISA
+    extra_configs:
+      - CONFIG_USERSPACE=y
+
+  # CONFIG_APPLET_FATAL_HANDLER replaces the suite's own
+  # k_sys_fatal_error_handler(), so the fault cases need their own scenarios.
+  applet.native.fatal:
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    ignore_faults: true
+    extra_conf_files: ['no_mem_protection.conf']
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp # ARM Cortex-A53 SMP (ARMv8-A ISA)
+      - qemu_xtensa/dc233c      # Xtensa ISA
+      - qemu_arc/qemu_arc_em    # ARC EM ISA
+      - qemu_x86                # x86 (Atom) ISA
+    extra_configs:
+      - CONFIG_APPLET_FATAL_HANDLER=y
+  applet.native.fatal.userspace:
+    filter: (CONFIG_MPU or CONFIG_MMU) and CONFIG_ARCH_HAS_USERSPACE
+    ignore_faults: true
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp # ARM Cortex-A53 SMP (ARMv8-A ISA)
+      - qemu_xtensa/dc233c      # Xtensa ISA
+      - qemu_arc/qemu_arc_em    # ARC EM ISA
+      - qemu_x86                # x86 (Atom) ISA
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_APPLET_FATAL_HANDLER=y
+
+  # APPLET_HALT_ON_FAULT_SYSTEM ends in k_fatal_halt(), so the image never
+  # returns to ztest and there is nothing to report a verdict. The console
+  # harness matches the handler's output instead. The build runs the
+  # applet_halt_system suite only, so it stays quick.
+  applet.native.fatal.halt_system:
+    harness: console
+    ignore_faults: true
+    ignore_qemu_crash: true
+    timeout: 60
+    arch_exclude:
+      - posix
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp # ARM Cortex-A53 SMP (ARMv8-A ISA)
+      - qemu_xtensa/dc233c      # Xtensa ISA
+      - qemu_arc/qemu_arc_em    # ARC EM ISA
+      - qemu_x86                # x86 (Atom) ISA
+    extra_configs:
+      - CONFIG_APPLET_FATAL_HANDLER=y
+      - CONFIG_TEST_APPLET_HALT_SYSTEM=y
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "ZEPHYR FATAL ERROR \\d+: Kernel oops"
+        - "applet 'halt-system': fatal error \\d+ in thread .*halting system"
+
+  applet.llext.readonly:
+    arch_allow:               # Xtensa needs writable storage
+      - arm
+      - riscv
+      - arc
+      - x86
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    integration_platforms:
+      - qemu_arc/qemu_arc_em    # ARC EM ISA
+      - qemu_x86                # x86 (Atom) ISA
+    extra_configs:
+      - CONFIG_LLEXT=y
+      - CONFIG_LLEXT_VENEERS=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+  applet.llext.readonly.mpu:
+    arch_allow:
+      - arm # Xtensa needs writable storage
+      - arc
+      - riscv
+    # LLEXT rounds its regions to LLEXT_PAGE_SIZE, hardcoded to 32 in
+    # subsys/llext/llext_mem.h for Arm MPUs, but the Cortex-R52 on this board
+    # sets CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE=64. Every region is then
+    # misaligned, mpu_partition_is_valid() rejects it ("Partition N: coherence
+    # check failed") and the kernel panics while programming the applet domain.
+    platform_exclude:
+      - mps3/an536/cpu0
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - qemu_arc/qemu_arc_em    # ARC EM ISA
+      - qemu_riscv32/qemu_virt_riscv32 # RISC-V RV32 ISA
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_LLEXT=y
+      - CONFIG_LLEXT_VENEERS=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      # LLEXT text lives in RAM, which the locked catch-all PMP entry DEP
+      # installs makes non-executable, and locked entries bind machine mode
+      # too. Setting an unknown symbol to 'n' is a no-op on Arm and ARC.
+      - CONFIG_PMP_DATA_EXECUTION_PREVENTION=n
+      # Two applets are loaded at once and MPU regions must be naturally
+      # aligned, so the default 8 kB heap is not enough on ARC.
+      - CONFIG_LLEXT_HEAP_SIZE=32
+  applet.llext.readonly.mmu:
+    arch_allow:
+      - arm64
+      - arm
+      - riscv
+      - x86
+    platform_exclude:
+      - qemu_x86_tiny/atom       # See #105603
+    filter: CONFIG_MMU or CONFIG_RISCV_PMP
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp # ARM Cortex-A53 SMP (ARMv8-A ISA)
+      - qemu_x86                # x86 (Atom) ISA
+    extra_configs:
+      - CONFIG_LLEXT=y
+      - CONFIG_LLEXT_HEAP_SIZE=128 # qemu_cortex_a9 requires larger heap
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      # On RISC-V (no MMU, no userspace) LLEXT copies code into RAM and runs it
+      # in machine mode, so the loaded text region must stay executable. DEP
+      # installs a locked catch-all PMP entry that makes all RAM non-executable
+      # with no way to mark the region executable. Setting an unknown symbol to
+      # 'n' is a no-op, so this is safe on the MMU arches.
+      - CONFIG_PMP_DATA_EXECUTION_PREVENTION=n
+  applet.llext.writable:
+    arch_allow:
+      - arm
+      - xtensa
+      - riscv
+      - arc
+      - x86
+    integration_platforms:
+      - qemu_xtensa/dc233c      # Xtensa ISA
+      - esp32_devkitc/esp32/procpu # Xtensa ISA
+      - qemu_arc/qemu_arc_em    # ARC EM ISA
+      - qemu_x86                # x86 (Atom) ISA
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
