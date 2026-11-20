@@ -3,3 +3,10 @@ description: STM32G0 flash controller
 compatible: "st,stm32g0-flash-controller"
 
 include: flash-controller.yaml
+
+properties:
+  st,single-bank:
+    type: boolean
+    description: |
+      The flash memory is configured as a single bank (DUAL_BANK option bit
+      cleared) on a device that supports both single- and dual-bank modes.

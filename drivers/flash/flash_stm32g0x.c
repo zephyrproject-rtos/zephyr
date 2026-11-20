@@ -21,12 +21,17 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "flash_stm32.h"
 
-
 /* FLASH_DBANK_SUPPORT is defined in the HAL for all G0Bx and G0C1 SoCs,
- * while only those with 256KiB and 512KiB Flash have two banks.
+ * whatever their flash size. Those with 128KiB run their flash as a single
+ * bank, those with 512KiB as two banks, and those with 256KiB as one or two
+ * banks, as their DUAL_BANK option bit selects.
  */
-#if defined(FLASH_DBANK_SUPPORT) && (CONFIG_FLASH_SIZE > (128))
+#if defined(FLASH_DBANK_SUPPORT) && !defined(CONFIG_FLASH_STM32G0_SINGLE_BANK)
 #define STM32G0_DBANK_SUPPORT
+#endif
+
+#if (CONFIG_FLASH_SIZE > 256) && DT_PROP_OR(DT_NODELABEL(flash), st_single_bank, 0)
+#warning "st,single-bank is ignored, devices with 512KiB of flash always run two banks"
 #endif
 
 #if defined(STM32G0_DBANK_SUPPORT)
@@ -288,10 +293,14 @@ void flash_stm32_page_layout(const struct device *dev,
 /* Override weak function */
 int  flash_stm32_check_configuration(void)
 {
-#if defined(STM32G0_DBANK_SUPPORT) && (CONFIG_FLASH_SIZE == 256)
-	/* Single bank mode not supported on dual bank SoCs with 256kiB flash */
-	if ((FLASH->OPTR & FLASH_OPTR_DUAL_BANK) == 0) {
-		LOG_ERR("Single bank configuration not supported by the driver");
+#if defined(FLASH_DBANK_SUPPORT) && (CONFIG_FLASH_SIZE == (256))
+	/* DUAL_BANK only takes effect on the 256KiB devices */
+	bool single_bank = (FLASH->OPTR & FLASH_OPTR_DUAL_BANK) == 0;
+
+	if (single_bank != IS_ENABLED(CONFIG_FLASH_STM32G0_SINGLE_BANK)) {
+		LOG_ERR("DUAL_BANK option bit is %s but st,single-bank is %s",
+			single_bank ? "clear" : "set",
+			IS_ENABLED(CONFIG_FLASH_STM32G0_SINGLE_BANK) ? "set" : "absent");
 		return -ENOTSUP;
 	}
 #endif
