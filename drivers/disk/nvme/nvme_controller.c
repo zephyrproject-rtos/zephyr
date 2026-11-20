@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(nvme, CONFIG_NVME_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 
-#include <soc.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 
@@ -344,6 +343,8 @@ static int nvme_controller_pcie_configure(const struct device *dev)
 		LOG_ERR("Could not get NVME registers");
 		return -EIO;
 	}
+
+	pcie_set_cmd(nvme_ctrlr_cfg->pcie->bdf, PCIE_CONF_CMDSTAT_MEM, true);
 
 	device_map(DEVICE_MMIO_RAM_PTR(dev), mbar_regs.phys_addr,
 		   mbar_regs.size, K_MEM_CACHE_NONE);
