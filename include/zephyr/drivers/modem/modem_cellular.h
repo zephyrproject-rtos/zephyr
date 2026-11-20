@@ -154,6 +154,10 @@ struct modem_cellular_data {
 	struct modem_chat chat;
 	uint8_t chat_receive_buf[CONFIG_MODEM_CELLULAR_CHAT_BUFFER_SIZE];
 	uint8_t *chat_argv[32];
+	struct modem_chat dial_chat;
+	uint8_t dial_chat_receive_buf[CONFIG_MODEM_CELLULAR_CHAT_BUFFER_SIZE];
+	uint8_t *dial_chat_argv[32];
+	bool dial_deregistered;
 	uint8_t script_failure_counter;
 	uint8_t recovery_count;
 

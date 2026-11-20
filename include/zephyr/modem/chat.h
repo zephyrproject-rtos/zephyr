@@ -466,7 +466,7 @@ bool modem_chat_is_running(struct modem_chat *chat);
  * @param chat Chat instance
  * @param script Script to run
  * @returns 0 if script successfully started
- * @returns -EBUSY if a script is currently running
+ * @returns -EBUSY if a script is currently running or the chat is being released
  * @returns -EPERM if modem pipe is not attached
  * @returns -EINVAL if arguments or script is invalid
  * @note Script runs asynchronously until complete or aborted.
@@ -478,7 +478,7 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
  * @param chat Chat instance
  * @param script Script to run
  * @returns 0 if successful
- * @returns -EBUSY if a script is currently running
+ * @returns -EBUSY if a script is currently running or the chat is being released
  * @returns -EPERM if modem pipe is not attached
  * @returns -EINVAL if arguments or script is invalid
  * @note Script runs until complete or aborted.
@@ -491,7 +491,7 @@ int modem_chat_run_script(struct modem_chat *chat, const struct modem_chat_scrip
  * @param chat Chat instance
  * @param script Script to run
  * @returns 0 if script successfully started
- * @returns -EBUSY if a script is currently running
+ * @returns -EBUSY if a script is currently running or the chat is being released
  * @returns -EPERM if modem pipe is not attached
  * @returns -EINVAL if arguments or script is invalid
  */
