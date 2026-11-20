@@ -67,6 +67,9 @@ struct posix_thread {
 	/* Signal mask */
 	sigset_t sigset;
 
+	/* A joiner owns retval until it has consumed the exit status. */
+	bool joining;
+
 	/* Queue ID (internal-only) */
 	uint8_t qid;
 };
