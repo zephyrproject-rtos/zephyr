@@ -148,6 +148,42 @@ bool npf_remove_rule(struct npf_rule_list *rules, struct npf_rule *rule);
  */
 bool npf_remove_all_rules(struct npf_rule_list *rules);
 
+/** Type of the packet filter rule. */
+enum npf_rule_type {
+	NPF_RULE_TYPE_UNKNOWN = 0,   /**< Unknown rule type */
+	NPF_RULE_TYPE_SEND,          /**< Rule for outgoing packets */
+	NPF_RULE_TYPE_RECV,          /**< Rule for incoming packets */
+	NPF_RULE_TYPE_LOCAL_IN_RECV, /**< Rule for local incoming packets */
+	NPF_RULE_TYPE_IPV4_RECV,     /**< Rule for IPv4 incoming packets */
+	NPF_RULE_TYPE_IPV6_RECV,     /**< Rule for IPv6 incoming packets */
+};
+
+/**
+ * @typedef npf_rule_cb_t
+ * @brief Callback used while iterating over network packet filter rules.
+ *
+ * @param rule Pointer to current network packet filter rule
+ * @param type Type of the rule (rx, tx, local_in, IPv4 or IPv6)
+ * @param user_data A valid pointer to user data or NULL
+ */
+typedef void (*npf_rule_cb_t)(struct npf_rule *rule,
+			      enum npf_rule_type type,
+			      void *user_data);
+
+/**
+ * @brief Go through all the network packet filter rules and call callback
+ * for each of them.
+ *
+ * @param cb User-supplied callback function to call
+ * @param user_data User specified data
+ */
+void npf_rules_foreach(npf_rule_cb_t cb, void *user_data);
+
+/** @cond INTERNAL_HIDDEN */
+const char *npf_test_get_str(struct npf_test *test, char *buf,
+			     size_t len);
+/** @endcond */
+
 /** @cond INTERNAL_HIDDEN */
 
 /* convenience shortcuts */
@@ -244,6 +280,42 @@ bool npf_remove_all_rules(struct npf_rule_list *rules);
 		.tests = { FOR_EACH(Z_NPF_TEST_ADDR, (,), __VA_ARGS__) }, \
 	}
 
+/**
+ * @brief Statically define one packet filter rule that sets the packet priority
+ *
+ * This creates a rule from a variable amount of filter conditions. Unlike a
+ * rule created with NPF_RULE(), it does not determine the fate of the packet:
+ * if all conditions are true, the priority of the packet is set to
+ * @p _priority and the next rule in the list is evaluated.
+ *
+ * A priority rule does not end the evaluation. If no later rule in the list
+ * matches, the packet is dropped, so the list needs a terminating rule such as
+ * @ref npf_default_ok, as in the example below.
+ *
+ * Example:
+ *
+ * @code{.c}
+ *
+ *     static NPF_ETH_TYPE_MATCH(is_ptp, NET_ETH_PTYPE_PTP);
+ *
+ *     static NPF_PRIORITY(priority_nc, NET_PRIORITY_NC, is_ptp);
+ *
+ *     void install_my_filter(void)
+ *     {
+ *         npf_append_recv_rule(&priority_nc);
+ *         npf_append_recv_rule(&npf_default_ok);
+ *     }
+ *
+ * @endcode
+ *
+ * The above would accept all packets and give the PTP packets the network
+ * control priority.
+ *
+ * @param _name Name for this rule.
+ * @param _priority Priority of the packet if all conditions are true, one of
+ *                  @ref net_priority.
+ * @param ... List of conditions for this rule.
+ */
 #define NPF_PRIORITY(_name, _priority, ...)				\
 	struct npf_rule _name = {					\
 		.result = NET_CONTINUE,					\
@@ -399,64 +471,49 @@ extern npf_test_fn_t npf_size_inbounds;
 			    .test.type = NPF_TEST_TYPE_SIZE_BOUNDS,)) \
 	}
 
+/**
+ * @typedef npf_local_in_fn_t
+ *
+ * @brief Function that is called to get the verdict what should happen to
+ * the network packet.
+ *
+ * @param pkt Pointer to the network packet to be evaluated
+ * @param user_data A valid pointer to user data or NULL
+ *
+ * @return True if the packet matches, false otherwise
+ */
+typedef bool (npf_local_in_fn_t)(struct net_pkt *pkt, void *user_data);
+
 /** @cond INTERNAL_HIDDEN */
 
-struct npf_test_ip {
-	struct npf_test test;
-	uint8_t addr_family;
-	void *ipaddr;
-	uint32_t ipaddr_num;
-};
+extern npf_test_fn_t npf_local_in_match;
 
-extern npf_test_fn_t npf_ip_src_addr_match;
-extern npf_test_fn_t npf_ip_src_addr_unmatch;
+struct npf_test_local_in {
+	struct npf_test test;
+	npf_local_in_fn_t *fn; /* local_in hook function */
+	void *user_data;       /* optional user data */
+};
 
 /** @endcond */
 
 /**
- * @brief Statically define a "ip address allowlist" packet filter condition
+ * @brief Statically define a "local_in match" packet filter condition
  *
- * This tests if the packet source ip address matches any of the ip
- * addresses contained in the provided set.
- *
- * @param _name Name of the condition
- * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
- * <tt>struct net_in6_addr</tt> items to test against
- * @param _ip_addr_num number of IP addresses in the array
- * @param _af Addresses family type (NET_AF_INET / NET_AF_INET6) in the array
- */
-#define NPF_IP_SRC_ADDR_ALLOWLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
-	struct npf_test_ip _name = {					\
-		.addr_family = _af,					\
-		.ipaddr = (_ip_addr_array),				\
-		.ipaddr_num = _ip_addr_num,				\
-		.test.fn = npf_ip_src_addr_match,			\
-		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
-			   (.test.name = "ip src allow",		\
-			    .test.type = NPF_TEST_TYPE_IP_SRC_ADDR_ALLOWLIST,)) \
-	}
-
-/**
- * @brief Statically define a "ip address blocklist" packet filter condition
- *
- * This tests if the packet source ip address matches any of the ip
- * addresses contained in the provided set.
+ * This condition is only available if
+ * @kconfig{CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK} is enabled.
  *
  * @param _name Name of the condition
- * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
- * <tt>struct net_in6_addr</tt> items to test against
- * @param _ip_addr_num number of IP addresses in the array
- * @param _af Addresses family type (NET_AF_INET / NET_AF_INET6) in the array
+ * @param _handler Function to call for the local_in hook
+ * @param _user_data Optional user data pointer passed to the handler
  */
-#define NPF_IP_SRC_ADDR_BLOCKLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
-	struct npf_test_ip _name = {					\
-		.addr_family = _af,					\
-		.ipaddr = (_ip_addr_array),				\
-		.ipaddr_num = _ip_addr_num,				\
-		.test.fn = npf_ip_src_addr_unmatch,			\
+#define NPF_LOCAL_IN_MATCH(_name, _handler, _user_data)			\
+	struct npf_test_local_in _name = {				\
+		.test.fn = npf_local_in_match,				\
+		.fn = (_handler),					\
+		.user_data = (_user_data),				\
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
-			   (.test.name = "ip src block",		\
-			    .test.type = NPF_TEST_TYPE_IP_SRC_ADDR_BLOCKLIST,)) \
+			   (.test.name = "local_in",			\
+			    .test.type = NPF_TEST_TYPE_LOCAL_IN_MATCH,)) \
 	}
 
 /** @} */
@@ -683,83 +740,75 @@ extern npf_test_fn_t npf_eth_vlan_type_unmatch;
 			    .test.type = NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH,)) \
 	}
 
+/** @} */
+
 /**
- * @typedef npf_local_in_fn_t
- *
- * @brief Function that is called to get the verdict what should happen to
- * the network packet.
- *
- * @param pkt Pointer to the network packet to be evaluated
- * @param user_data A valid pointer to user data or NULL
- *
- * @return True if the packet matches, false otherwise
+ * @defgroup npf_ip_cond IP Filter Conditions
+ * @ingroup net_pkt_filter
+ * @since 3.5
+ * @version 0.8.0
+ * @{
  */
-typedef bool (npf_local_in_fn_t)(struct net_pkt *pkt, void *user_data);
 
 /** @cond INTERNAL_HIDDEN */
 
-extern npf_test_fn_t npf_local_in_match;
-
-struct npf_test_local_in {
+struct npf_test_ip {
 	struct npf_test test;
-	npf_local_in_fn_t *fn; /* local_in hook function */
-	void *user_data;       /* optional user data */
+	uint8_t addr_family;
+	void *ipaddr;
+	uint32_t ipaddr_num;
 };
+
+extern npf_test_fn_t npf_ip_src_addr_match;
+extern npf_test_fn_t npf_ip_src_addr_unmatch;
 
 /** @endcond */
 
 /**
- * @brief Statically define a "local_in match" packet filter condition
+ * @brief Statically define a "ip address allowlist" packet filter condition
+ *
+ * This tests if the packet source ip address matches any of the ip
+ * addresses contained in the provided set.
  *
  * @param _name Name of the condition
- * @param _handler Function to call for the local_in hook
- * @param _user_data Optional user data pointer passed to the handler
+ * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
+ * <tt>struct net_in6_addr</tt> items to test against
+ * @param _ip_addr_num number of IP addresses in the array
+ * @param _af Addresses family type (NET_AF_INET / NET_AF_INET6) in the array
  */
-#define NPF_LOCAL_IN_MATCH(_name, _handler, _user_data)			\
-	struct npf_test_local_in _name = {				\
-		.test.fn = npf_local_in_match,				\
-		.fn = (_handler),					\
-		.user_data = (_user_data),				\
+#define NPF_IP_SRC_ADDR_ALLOWLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
+	struct npf_test_ip _name = {					\
+		.addr_family = _af,					\
+		.ipaddr = (_ip_addr_array),				\
+		.ipaddr_num = _ip_addr_num,				\
+		.test.fn = npf_ip_src_addr_match,			\
 		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
-			   (.test.name = "local_in",			\
-			    .test.type = NPF_TEST_TYPE_LOCAL_IN_MATCH,)) \
+			   (.test.name = "ip src allow",		\
+			    .test.type = NPF_TEST_TYPE_IP_SRC_ADDR_ALLOWLIST,)) \
 	}
 
-/** Type of the packet filter rule. */
-enum npf_rule_type {
-	NPF_RULE_TYPE_UNKNOWN = 0,   /**< Unknown rule type */
-	NPF_RULE_TYPE_SEND,          /**< Rule for outgoing packets */
-	NPF_RULE_TYPE_RECV,          /**< Rule for incoming packets */
-	NPF_RULE_TYPE_LOCAL_IN_RECV, /**< Rule for local incoming packets */
-	NPF_RULE_TYPE_IPV4_RECV,     /**< Rule for IPv4 incoming packets */
-	NPF_RULE_TYPE_IPV6_RECV,     /**< Rule for IPv6 incoming packets */
-};
-
 /**
- * @typedef npf_rule_cb_t
- * @brief Callback used while iterating over network packet filter rules.
+ * @brief Statically define a "ip address blocklist" packet filter condition
  *
- * @param rule Pointer to current network packet filter rule
- * @param type Type of the rule (rx, tx, local_in, IPv4 or IPv6)
- * @param user_data A valid pointer to user data or NULL
- */
-typedef void (*npf_rule_cb_t)(struct npf_rule *rule,
-			      enum npf_rule_type type,
-			      void *user_data);
-
-/**
- * @brief Go through all the network packet filter rules and call callback
- * for each of them.
+ * This tests if the packet source ip address matches any of the ip
+ * addresses contained in the provided set.
  *
- * @param cb User-supplied callback function to call
- * @param user_data User specified data
+ * @param _name Name of the condition
+ * @param _ip_addr_array Array of <tt>struct net_in_addr</tt> or
+ * <tt>struct net_in6_addr</tt> items to test against
+ * @param _ip_addr_num number of IP addresses in the array
+ * @param _af Addresses family type (NET_AF_INET / NET_AF_INET6) in the array
  */
-void npf_rules_foreach(npf_rule_cb_t cb, void *user_data);
-
-/** @cond INTERNAL_HIDDEN */
-const char *npf_test_get_str(struct npf_test *test, char *buf,
-			     size_t len);
-/** @endcond */
+#define NPF_IP_SRC_ADDR_BLOCKLIST(_name, _ip_addr_array, _ip_addr_num, _af) \
+	struct npf_test_ip _name = {					\
+		.addr_family = _af,					\
+		.ipaddr = (_ip_addr_array),				\
+		.ipaddr_num = _ip_addr_num,				\
+		.test.fn = npf_ip_src_addr_unmatch,			\
+		IF_ENABLED(NPF_TEST_ENABLE_NAME,			\
+			   (.test.name = "ip src block",		\
+			    .test.type = NPF_TEST_TYPE_IP_SRC_ADDR_BLOCKLIST,)) \
+	}
 
 /** @} */
 
