@@ -153,6 +153,42 @@ bool npf_remove_rule(struct npf_rule_list *rules, struct npf_rule *rule);
  */
 bool npf_remove_all_rules(struct npf_rule_list *rules);
 
+/** Type of the packet filter rule. */
+enum npf_rule_type {
+	NPF_RULE_TYPE_UNKNOWN = 0,   /**< Unknown rule type */
+	NPF_RULE_TYPE_SEND,          /**< Rule for outgoing packets */
+	NPF_RULE_TYPE_RECV,          /**< Rule for incoming packets */
+	NPF_RULE_TYPE_LOCAL_IN_RECV, /**< Rule for local incoming packets */
+	NPF_RULE_TYPE_IPV4_RECV,     /**< Rule for IPv4 incoming packets */
+	NPF_RULE_TYPE_IPV6_RECV,     /**< Rule for IPv6 incoming packets */
+};
+
+/**
+ * @typedef npf_rule_cb_t
+ * @brief Callback used while iterating over network packet filter rules.
+ *
+ * @param rule Pointer to current network packet filter rule
+ * @param type Type of the rule (rx, tx, local_in, IPv4 or IPv6)
+ * @param user_data A valid pointer to user data or NULL
+ */
+typedef void (*npf_rule_cb_t)(struct npf_rule *rule,
+			      enum npf_rule_type type,
+			      void *user_data);
+
+/**
+ * @brief Go through all the network packet filter rules and call callback
+ * for each of them.
+ *
+ * @param cb User-supplied callback function to call
+ * @param user_data User specified data
+ */
+void npf_rules_foreach(npf_rule_cb_t cb, void *user_data);
+
+/** @cond INTERNAL_HIDDEN */
+const char *npf_test_get_str(struct npf_test *test, char *buf,
+			     size_t len);
+/** @endcond */
+
 /** @cond INTERNAL_HIDDEN */
 
 /* convenience shortcuts */
@@ -669,42 +705,6 @@ extern npf_test_fn_t npf_eth_vlan_type_unmatch;
 			   (.test.name = "!eth vlan type",		\
 			    .test.type = NPF_TEST_TYPE_ETH_VLAN_TYPE_UNMATCH,)) \
 	}
-
-/** Type of the packet filter rule. */
-enum npf_rule_type {
-	NPF_RULE_TYPE_UNKNOWN = 0,   /**< Unknown rule type */
-	NPF_RULE_TYPE_SEND,          /**< Rule for outgoing packets */
-	NPF_RULE_TYPE_RECV,          /**< Rule for incoming packets */
-	NPF_RULE_TYPE_LOCAL_IN_RECV, /**< Rule for local incoming packets */
-	NPF_RULE_TYPE_IPV4_RECV,     /**< Rule for IPv4 incoming packets */
-	NPF_RULE_TYPE_IPV6_RECV,     /**< Rule for IPv6 incoming packets */
-};
-
-/**
- * @typedef npf_rule_cb_t
- * @brief Callback used while iterating over network packet filter rules.
- *
- * @param rule Pointer to current network packet filter rule
- * @param type Type of the rule (rx, tx, local_in, IPv4 or IPv6)
- * @param user_data A valid pointer to user data or NULL
- */
-typedef void (*npf_rule_cb_t)(struct npf_rule *rule,
-			      enum npf_rule_type type,
-			      void *user_data);
-
-/**
- * @brief Go through all the network packet filter rules and call callback
- * for each of them.
- *
- * @param cb User-supplied callback function to call
- * @param user_data User specified data
- */
-void npf_rules_foreach(npf_rule_cb_t cb, void *user_data);
-
-/** @cond INTERNAL_HIDDEN */
-const char *npf_test_get_str(struct npf_test *test, char *buf,
-			     size_t len);
-/** @endcond */
 
 /** @} */
 
