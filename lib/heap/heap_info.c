@@ -73,5 +73,9 @@ static void heap_print_info(struct z_heap *h, bool dump_chunks)
 
 void sys_heap_print_info(struct sys_heap *heap, bool dump_chunks)
 {
+	if (heap->heap == NULL) {
+		return;
+	}
+
 	heap_print_info(heap->heap, dump_chunks);
 }
