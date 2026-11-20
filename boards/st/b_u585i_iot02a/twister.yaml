@@ -20,6 +20,7 @@ supported:
   - i2c
   - memc
   - nvs
+  - opamp
   - pwm
   - rtc
   - spi
