@@ -45,6 +45,8 @@ struct btp_bap_unicast_stream {
 	struct bt_audio_codec_cfg codec_cfg;
 	bool already_sent;
 	bool in_use;
+	/* Receiver Start Ready is done by the CAP Unicast Audio Start procedure */
+	bool cap_start_pending;
 };
 
 struct btp_bap_unicast_connection {
