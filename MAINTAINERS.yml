@@ -7224,6 +7224,13 @@ West:
   labels:
     - "area: Storage"
 
+"West project: h264swdec":
+  status: maintained
+  maintainers:
+    - chemag
+  files:
+    - modules/h264swdec/
+
 "West project: hal_adi":
   status: maintained
   maintainers:

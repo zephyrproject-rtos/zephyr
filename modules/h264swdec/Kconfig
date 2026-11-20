@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_H264SWDEC_MODULE
+	bool
+
+menuconfig H264SWDEC
+	bool "h264swdec software H.264 decoder"
+	depends on ZEPHYR_H264SWDEC_MODULE
+	help
+	  Software H.264 decoder from the h264swdec module, for Baseline and
+	  Constrained Baseline streams such as those WebRTC peers send. It
+	  outputs planar YUV 4:2:0 pictures and allocates from a dedicated
+	  heap.
+
+if H264SWDEC
+
+config H264SWDEC_HEAP_SIZE
+	int "Decoder heap size, in bytes"
+	default 3145728
+	help
+	  Size of the dedicated heap the decoder allocates its picture
+	  buffers from. 384 KiB holds a 320x240 stream with one reference
+	  picture.
+
+config H264SWDEC_MAX_FRAME_WIDTH
+	int "Largest accepted picture width, in pixels"
+	default 4080
+
+config H264SWDEC_MAX_FRAME_HEIGHT
+	int "Largest accepted picture height, in pixels"
+	default 4080
+
+config H264SWDEC_MAX_FRAME_SIZE
+	int "Largest accepted picture area, in pixels"
+	default 8388608
+	help
+	  The decoder rejects sequence parameter sets that exceed any of the
+	  three limits before allocating memory for them.
+
+module = H264SWDEC
+module-str = h264swdec
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # H264SWDEC
