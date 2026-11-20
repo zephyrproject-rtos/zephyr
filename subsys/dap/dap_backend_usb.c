@@ -20,10 +20,15 @@ LOG_MODULE_REGISTER(dap_usb, CONFIG_DAP_LOG_LEVEL);
 
 static uint8_t response_buf[512];
 
-NET_BUF_POOL_FIXED_DEFINE(dap_func_pool,
-			  1, 0, sizeof(struct udc_buf_info), NULL);
+#define DAP_NUM_BUFFERS	CONFIG_DAP_BACKEND_USB_BUF_COUNT
+#define DAP_BUF_STRIDE	UDC_ROUND_UP(512)
 
-UDC_STATIC_BUF_DEFINE(dap_func_buf, 512);
+NET_BUF_POOL_FIXED_DEFINE(dap_func_pool,
+			  DAP_NUM_BUFFERS, 0, sizeof(struct udc_buf_info), NULL);
+
+UDC_STATIC_BUF_DEFINE(dap_func_buf, DAP_NUM_BUFFERS * DAP_BUF_STRIDE);
+
+static uint32_t buf_idx;
 
 struct dap_func_desc {
 	struct usb_if_descriptor if0;
@@ -139,11 +144,14 @@ struct net_buf *dap_func_buf_alloc(struct usbd_class_data *const c_data,
 		size = 64U;
 	}
 
-	buf = net_buf_alloc_with_data(&dap_func_pool, dap_func_buf, size, K_NO_WAIT);
-	net_buf_reset(buf);
+	buf = net_buf_alloc_with_data(&dap_func_pool,
+				      dap_func_buf +
+				      (buf_idx++ % DAP_NUM_BUFFERS) * DAP_BUF_STRIDE,
+				      size, K_NO_WAIT);
 	if (!buf) {
 		return NULL;
 	}
+	net_buf_reset(buf);
 
 	bi = udc_get_buf_info(buf);
 	memset(bi, 0, sizeof(struct udc_buf_info));
@@ -167,15 +175,23 @@ static void dap_func_enable(struct usbd_class_data *const c_data)
 			dap_link_set_pkt_size(data->dap_link_ctx, 64);
 		}
 
-		buf = dap_func_buf_alloc(c_data, dap_func_get_bulk_out(c_data));
-		if (buf == NULL) {
-			LOG_ERR("Failed to allocate buffer");
-			return;
-		}
+		/* Queue several OUT buffers so the host can stream request
+		 * packets while the previous one is being executed; responses
+		 * are produced in arrival order because execution is
+		 * serialized in this callback.
+		 */
+		buf_idx = 0;
+		for (int i = 0; i < DAP_NUM_BUFFERS; i++) {
+			buf = dap_func_buf_alloc(c_data, dap_func_get_bulk_out(c_data));
+			if (buf == NULL) {
+				LOG_ERR("Failed to allocate buffer");
+				return;
+			}
 
-		if (usbd_ep_enqueue(c_data, buf)) {
-			LOG_ERR("Failed to enqueue buffer");
-			usbd_ep_buf_free(uds_ctx, buf);
+			if (usbd_ep_enqueue(c_data, buf)) {
+				LOG_ERR("Failed to enqueue buffer");
+				usbd_ep_buf_free(uds_ctx, buf);
+			}
 		}
 	}
 }
