@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - counter
+tests:
+  drivers.counter.gpio:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
