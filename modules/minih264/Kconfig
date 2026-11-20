@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_MINIH264_MODULE
+	bool
+
+config MINIH264
+	bool "MiniH264 software H.264 encoder"
+	depends on ZEPHYR_MINIH264_MODULE
+	help
+	  Software H.264 encoder from the minih264 module. It produces
+	  Baseline profile streams with CAVLC entropy coding from planar
+	  YUV 4:2:0 frames, and needs no hardware acceleration. The build
+	  disables the denoiser, threading and the SVC extension.

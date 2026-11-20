@@ -334,6 +334,10 @@ manifest:
       path: bootloader/mcuboot
       groups:
         - bootloader
+    - name: minih264
+      url: https://github.com/chemag/minih264
+      revision: ba2a573ecbdea643244d499b3af847539632f889
+      path: modules/lib/minih264
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:

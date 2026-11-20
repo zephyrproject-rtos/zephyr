@@ -7766,6 +7766,13 @@ West:
     - boot.with_mcumgr
     - bootloader.mcuboot
 
+"West project: minih264":
+  status: maintained
+  maintainers:
+    - chemag
+  files:
+    - modules/minih264/
+
 "West project: mipi-sys-t":
   status: odd fixes
   collaborators:
