@@ -479,7 +479,7 @@ static int bme680_pm_control(const struct device *dev, enum pm_device_action act
 
 static int bme680_init(const struct device *dev)
 {
-#if BME680_BUS_SPI || defined(CONFIG_SENSOR_ASYNC_API)
+#ifdef CONFIG_SENSOR_ASYNC_API
 	struct bme680_data *data = dev->data;
 #endif
 	int err;
