@@ -1550,10 +1550,14 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			bt_conn_unref(conn);
 			break;
 		case BT_CONN_INITIATING_FILTER_LIST:
-			/* this indicates LE Create Connection with filter
-			 * policy has been stopped. This can only be triggered
-			 * by the application, so don't notify.
+			/* LE Create Connection with filter policy has been
+			 * stopped, by the application or, with conn->err set,
+			 * because the Host could not restart it.
 			 */
+			if (conn->err != 0U) {
+				notify_connected(conn);
+			}
+
 			bt_conn_unref(conn);
 			break;
 		case BT_CONN_ADV_CONNECTABLE:

@@ -613,7 +613,7 @@ static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 	}
 }
 
-static void le_update_private_addr(void)
+static int le_update_private_addr(void)
 {
 	struct bt_le_ext_adv *adv = NULL;
 	bool adv_enabled = false;
@@ -662,12 +662,12 @@ static void le_update_private_addr(void)
 	} else {
 		err = bt_id_set_private_addr(id);
 	}
-	if (err) {
+	if (err != 0) {
+		/* The roles paused above resume with their current address */
 		LOG_WRN("Failed to update RPA address (%d)", err);
-		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) && adv != NULL &&
+	if (err == 0 && IS_ENABLED(CONFIG_BT_BROADCASTER) && adv != NULL &&
 	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
 		/* The legacy advertiser advertises with the device-wide
 		 * random address that was just refreshed.
@@ -691,9 +691,11 @@ static void le_update_private_addr(void)
 		bt_le_scan_set_enable(BT_HCI_LE_SCAN_ENABLE);
 	}
 #endif
+
+	return err;
 }
 
-static void le_force_rpa_timeout(void)
+static int le_force_rpa_timeout(void)
 {
 #if defined(CONFIG_BT_PRIVACY)
 	struct k_work_sync sync;
@@ -702,7 +704,8 @@ static void le_force_rpa_timeout(void)
 #endif
 	(void)le_adv_rpa_timeout();
 	le_rpa_invalidate();
-	le_update_private_addr();
+
+	return le_update_private_addr();
 }
 
 #if defined(CONFIG_BT_PRIVACY)
@@ -742,7 +745,7 @@ static void rpa_timeout(struct k_work *work)
 		}
 	}
 
-	le_update_private_addr();
+	(void)le_update_private_addr();
 }
 #endif /* CONFIG_BT_PRIVACY */
 
@@ -1990,7 +1993,7 @@ int bt_id_set_create_conn_own_addr(bool use_filter, uint8_t *own_addr_type)
 			/* Force new RPA timeout so that RPA timeout is not
 			 * triggered while direct initiator is active.
 			 */
-			le_force_rpa_timeout();
+			(void)le_force_rpa_timeout();
 		}
 
 		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
@@ -2352,6 +2355,32 @@ int bt_br_oob_get_local(struct bt_br_oob *oob)
 }
 #endif /* CONFIG_BT_CLASSIC */
 
+#if defined(CONFIG_BT_PRIVACY)
+int bt_le_rotate_rpa(void)
+{
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
+		struct bt_conn *conn;
+
+		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_SCAN_BEFORE_INITIATING);
+		if (conn != NULL) {
+			/* The initiator for a peer found by scanning is being
+			 * started, and the connection is not yet in the
+			 * initiating state that a cancelled initiator restarts
+			 * from.
+			 */
+			bt_conn_unref(conn);
+			return -EBUSY;
+		}
+	}
+
+	return le_force_rpa_timeout();
+}
+#endif /* defined(CONFIG_BT_PRIVACY) */
+
 int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 {
 	struct bt_le_ext_adv *adv = NULL;
@@ -2420,7 +2449,7 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 			return -EINVAL;
 		}
 
-		le_force_rpa_timeout();
+		(void)le_force_rpa_timeout();
 
 		bt_addr_le_copy_addr(&oob->addr, &bt_dev.random_addr, BT_ADDR_LE_RANDOM);
 	} else {
@@ -2477,7 +2506,7 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 				}
 			}
 
-			le_force_rpa_timeout();
+			(void)le_force_rpa_timeout();
 		}
 
 		bt_addr_le_copy(&oob->addr, &adv->adv_addr);
