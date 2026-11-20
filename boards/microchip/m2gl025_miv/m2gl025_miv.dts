@@ -25,7 +25,3 @@
 	clock-frequency = <66000000>;
 	status = "okay";
 };
-
-&mtimer {
-	clock-frequency = <4000000>;
-};

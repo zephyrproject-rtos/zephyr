@@ -6,6 +6,8 @@
 
 /dts-v1/;
 
+#include <freq.h>
+
 / {
 	model = "SC-OBC Module V1 IGLOO2 Mi-V";
 
@@ -23,6 +25,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(25)>;
 
 		cpu@0 {
 			compatible = "microchip,miv", "riscv";
@@ -71,7 +74,6 @@
 			reg = <0x1200bff8 0x8 0x12004000 0x8>;
 			interrupts-extended = <&hlic 7>;
 			reg-names = "mtime", "mtimecmp";
-			clock-frequency = <25000000>;
 		};
 
 		tcm0: memory@20000000 {
