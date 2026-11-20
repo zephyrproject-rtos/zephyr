@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * mikroe_i2c_to_spi_click: loopback on spi_click (I2C -> SC18IS602B).
+ * Jumper MOSI to MISO on the Click extra SPI header (SS0).
+ * CONFIG_SPI_LOOPBACK_MODE_LOOP stays n (bridge does not support SPI_MODE_LOOP).
+ *
+ * mikrobus_spi (SoC SPI3) is disabled: this test only uses spi_click; loopback
+ * is on the Click header, not the mikroBUS SPI pins.
+ */
+
+&spi_click {
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <115000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <461000>;
+	};
+};
+
+&mikrobus_spi {
+	status = "disabled";
+};
