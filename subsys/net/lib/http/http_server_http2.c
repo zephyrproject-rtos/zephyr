@@ -533,7 +533,6 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 		.bitmask_of_supported_http_methods =
 			static_fs_detail->common.bitmask_of_supported_http_methods,
 		.content_type = content_type,
-		.path_len = static_fs_detail->common.path_len,
 		.type = static_fs_detail->common.type,
 	};
 	enum http_compression chosen_compression = 0;
@@ -703,7 +702,7 @@ static int dynamic_get_del_opts_req_v2(struct http_resource_detail_dynamic *dyna
 	}
 
 	/* Start of GET params */
-	ptr = &client->url_buffer[dynamic_detail->common.path_len];
+	ptr = &client->url_buffer[http_server_path_len_without_query(client->url_buffer)];
 	len = strlen(ptr);
 	status = HTTP_SERVER_REQUEST_DATA_FINAL;
 
@@ -1273,8 +1272,6 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 
 	detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
 	if (detail != NULL) {
-		detail->path_len = path_len;
-
 		if (detail->type == HTTP_RESOURCE_TYPE_STATIC) {
 			ret = handle_http2_static_resource(
 				(struct http_resource_detail_static *)detail,
@@ -1895,8 +1892,6 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 
 	detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
 	if (detail != NULL) {
-		detail->path_len = path_len;
-
 		if (detail->type == HTTP_RESOURCE_TYPE_STATIC) {
 			ret = handle_http2_static_resource(
 				(struct http_resource_detail_static *)detail,
