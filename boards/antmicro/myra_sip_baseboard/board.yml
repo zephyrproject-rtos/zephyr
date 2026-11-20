@@ -3,4 +3,4 @@ board:
   full_name: Myra SiP Baseboard
   vendor: antmicro
   socs:
-    - name: myra
+    - name: stm32g491xx
