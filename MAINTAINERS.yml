@@ -248,6 +248,7 @@ ADI Platforms:
     - dts/vendor/adi/
     - include/zephyr/drivers/misc/tmc6460/
     - samples/drivers/misc/tmc6460/
+    - samples/shields/adi_lsmspg/
     - soc/adi/
   files-regex:
     - ^drivers/(adc|dac|gpio|mfd|regulator)/.*adp?\d+
