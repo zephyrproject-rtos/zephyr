@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&phy_pwr {
+	status = "okay";
+};
+
+&mipi_tx_dphy_reg {
+	status = "okay";
+};
+
+&mipi_rx_dphy_reg {
+	status = "okay";
+};
+
+&mipi_pll_dphy_reg {
+	status = "okay";
+};
+
+&ldo_phy_reg {
+	status = "okay";
+};
+
+&usb_phy_reg {
+	status = "okay";
+};

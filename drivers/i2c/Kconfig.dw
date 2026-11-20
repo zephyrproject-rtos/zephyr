@@ -54,4 +54,11 @@ config I2C_DW_IC_CLK_FREQ_OPTIMIZATION
 	  Enable this option only if your hardware IP supports this specific latency
 	  reduction feature.
 
+config I2C_DW_EMPTYFIFO_HOLD_MASTER_EN
+	bool "DW Instance supports holding SCL low when FIFO is empty"
+	default y
+	help
+	  Enable this option if the DW I2C instance is configured to hold the
+	  SCL line low when the FIFO is empty (if DATA_CMD register is 10 bits).
+
 endif # I2C_DW

@@ -117,6 +117,33 @@
 			reg-names = "pinctrl", "lpgpio_pinctrl";
 		};
 
+		/* PHY power switches in the VBAT PWR_CTRL register */
+		phy_pwr: regulator@1a609008 {
+			compatible = "alif,ensemble-phy-regulator";
+			reg = <0x1a609008 0x4>;
+			status = "disabled";
+
+			mipi_tx_dphy_reg: mipi-tx-dphy {
+				en-offset = <0>;
+			};
+
+			mipi_rx_dphy_reg: mipi-rx-dphy {
+				en-offset = <4>;
+			};
+
+			mipi_pll_dphy_reg: mipi-pll-dphy {
+				en-offset = <8>;
+			};
+
+			ldo_phy_reg: ldo-phy {
+				en-offset = <12>;
+			};
+
+			usb_phy_reg: usb-phy {
+				en-offset = <16>;
+			};
+		};
+
 		/*
 		 * LPTIMER channels. All channels share one 4 KB register block
 		 * at 0x42001000, each occupying a 0x14 byte slice of it.
@@ -353,6 +380,32 @@
 			clocks = <&clockctrl ALIF_UART5_SYST_PCLK>;
 			reg-shift = <2>;
 			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		cdc200: cdc200@49031000 {
+			compatible = "tes,cdc-2.1";
+			reg = <0x49031000 0x1000>;
+
+			clocks = <&clockctrl ALIF_DPI_CLK>, <&clockctrl ALIF_CDC200_PIX_SYST_ACLK>;
+			clock-names = "dpi-clk-en", "pixel-clk";
+			status = "disabled";
+		};
+
+		mipi_dsi: mipi-dsi@49032000 {
+			compatible = "alif,mipi-dsi";
+			reg = <0x49032000 0x1000>,
+			      <0x4903f000 0x40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg-names = "dsi_regs", "clkctl_regs";
+			dpi-in = <&cdc200>;
+			clocks = <&clockctrl ALIF_DSI_CLK>, <&clockctrl ALIF_CDC200_PIX_SYST_ACLK>,
+				 <&clockctrl ALIF_MIPI_TXDPHY_CLK>,
+				 <&clockctrl ALIF_MIPI_PLLREF_CLK>,
+				 <&clockctrl ALIF_MIPI_BYPASS_CLK>;
+			clock-names = "pclk", "pixel-clk", "dphy-cfgclk",
+				      "dphy-clkin", "dphy-clkext";
 			status = "disabled";
 		};
 	};

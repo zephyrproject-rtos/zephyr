@@ -276,6 +276,7 @@ flextechakt	FlextechAKT
 flysky	FlySky
 fobe	FoBE Studio
 focaltech	FocalTech Systems Co.,Ltd
+focuslcds	Focus LCDs, Inc.
 framework	Framework Computer, Inc.
 franzininho	Franzininho
 frida	Shenzhen Frida LCD Co., Ltd.
@@ -745,6 +746,7 @@ telink	Telink Semiconductor
 telit	Telit Cinterion
 tempo	Tempo Semiconductor
 terasic	Terasic Inc.
+tes	TES Electronic Solutions
 tfc	Three Five Corp
 thine	THine Electronics, Inc.
 thingyjp	thingy.jp

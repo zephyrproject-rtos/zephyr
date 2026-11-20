@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2024 - 2026 Renesas Electronics Corporation
+ * SPDX-FileCopyrightText: Copyright 2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,185 +8,196 @@
 #include "display_ili9806e_dsi.h"
 #include "display_ili98xx_dsi.h"
 
+#include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
+
+#define DT_DRV_COMPAT ilitek_ili9806e
+
 LOG_MODULE_REGISTER(display_ili9806e_dsi, CONFIG_DISPLAY_LOG_LEVEL);
 
 static const struct ili98xx_dsi_cmd ili9806e_init_cmds[] = {
 	/* Change to Page 1 CMD */
-	{.reg = 0xff, .cmd_len = 5, .cmd = {0xFF, 0x98, 0x06, 0x04, 0x01}},
+	{.reg = ILI98XX_DSI_ENEXTC, .cmd_len = 5, .cmd = {0xFF, 0x98, 0x06, 0x04, 0x01}},
 	/* Output SDA */
-	{.reg = 0x08, .cmd_len = 1, .cmd = {0x10}},
+	{.reg = ILI9806E_IFMODE_1, .cmd_len = 1, .cmd = {0x10}},
 	/* DE = 1 Active */
-	{.reg = 0x21, .cmd_len = 1, .cmd = {0x01}},
+	{.reg = ILI9806E_DISCTRL2, .cmd_len = 1, .cmd = {0x01}},
 	/* Resolution setting 480 X 800 */
-	{.reg = 0x30, .cmd_len = 1, .cmd = {0x01}},
+	{.reg = ILI9806E_RESCTRL, .cmd_len = 1, .cmd = {0x01}},
 	/* Inversion setting */
-	{.reg = 0x31, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI98XX_DSI_INVTR, .cmd_len = 1, .cmd = {0x00}},
 	/* BT 15 */
-	{.reg = 0x40, .cmd_len = 1, .cmd = {0x14}},
+	{.reg = ILI9806E_PWCTRL_1, .cmd_len = 1, .cmd = {0x14}},
 	/* avdd +5.2v,avee-5.2v */
-	{.reg = 0x41, .cmd_len = 1, .cmd = {0x33}},
+	{.reg = ILI9806E_PWCTRL_2, .cmd_len = 1, .cmd = {0x33}},
 	/* VGL=DDVDL+VCL-VCIP,VGH=2DDVDH-DDVDL */
-	{.reg = 0x42, .cmd_len = 1, .cmd = {0x02}},
+	{.reg = ILI9806E_PWCTRL_3, .cmd_len = 1, .cmd = {0x02}},
 	/* Set VGH clamp level */
-	{.reg = 0x43, .cmd_len = 1, .cmd = {0x09}},
+	{.reg = ILI9806E_PWCTRL_4, .cmd_len = 1, .cmd = {0x09}},
 	/* Set VGL clamp level */
-	{.reg = 0x44, .cmd_len = 1, .cmd = {0x06}},
+	{.reg = ILI9806E_PWCTRL_5, .cmd_len = 1, .cmd = {0x06}},
 	/* Set VREG1 */
-	{.reg = 0x50, .cmd_len = 1, .cmd = {0x70}},
+	{.reg = ILI98XX_DSI_VREG1, .cmd_len = 1, .cmd = {0x70}},
 	/* Set VREG2 */
-	{.reg = 0x51, .cmd_len = 1, .cmd = {0x70}},
+	{.reg = ILI98XX_DSI_VREG2, .cmd_len = 1, .cmd = {0x70}},
 	/* Flicker MSB */
-	{.reg = 0x52, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI98XX_DSI_VCM1_MSB, .cmd_len = 1, .cmd = {0x00}},
 	/* Flicker LSB */
-	{.reg = 0x53, .cmd_len = 1, .cmd = {0x48}},
+	{.reg = ILI98XX_DSI_VCM1_LSB, .cmd_len = 1, .cmd = {0x48}},
 	/* Timing Adjust */
-	{.reg = 0x60, .cmd_len = 1, .cmd = {0x07}},
-	{.reg = 0x61, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x62, .cmd_len = 1, .cmd = {0x08}},
-	{.reg = 0x63, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI98XX_DSI_SOURCE_TIMING_ADJUST_1, .cmd_len = 1, .cmd = {0x07}},
+	{.reg = ILI98XX_DSI_SOURCE_TIMING_ADJUST_2, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI98XX_DSI_SOURCE_TIMING_ADJUST_3, .cmd_len = 1, .cmd = {0x08}},
+	{.reg = ILI98XX_DSI_SOURCE_TIMING_ADJUST_4, .cmd_len = 1, .cmd = {0x00}},
 	/* Positive Gamma Control 1 */
-	{.reg = 0xa0, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI98XX_DSI_PGAMCTRL1, .cmd_len = 1, .cmd = {0x00}},
 	/* Positive Gamma Control 2 */
-	{.reg = 0xa1, .cmd_len = 1, .cmd = {0x03}},
+	{.reg = ILI98XX_DSI_PGAMCTRL2, .cmd_len = 1, .cmd = {0x03}},
 	/* Positive Gamma Control 3 */
-	{.reg = 0xa2, .cmd_len = 1, .cmd = {0x09}},
+	{.reg = ILI98XX_DSI_PGAMCTRL3, .cmd_len = 1, .cmd = {0x09}},
 	/* Positive Gamma Control 4 */
-	{.reg = 0xa3, .cmd_len = 1, .cmd = {0x0d}},
+	{.reg = ILI98XX_DSI_PGAMCTRL4, .cmd_len = 1, .cmd = {0x0d}},
 	/* Positive Gamma Control 5 */
-	{.reg = 0xa4, .cmd_len = 1, .cmd = {0x06}},
+	{.reg = ILI98XX_DSI_PGAMCTRL5, .cmd_len = 1, .cmd = {0x06}},
 	/* Positive Gamma Control 6 */
-	{.reg = 0xa5, .cmd_len = 1, .cmd = {0x16}},
+	{.reg = ILI98XX_DSI_PGAMCTRL6, .cmd_len = 1, .cmd = {0x16}},
 	/* Positive Gamma Control 7 */
-	{.reg = 0xa6, .cmd_len = 1, .cmd = {0x09}},
+	{.reg = ILI98XX_DSI_PGAMCTRL7, .cmd_len = 1, .cmd = {0x09}},
 	/* Positive Gamma Control 8 */
-	{.reg = 0xa7, .cmd_len = 1, .cmd = {0x08}},
+	{.reg = ILI98XX_DSI_PGAMCTRL8, .cmd_len = 1, .cmd = {0x08}},
 	/* Positive Gamma Control 9 */
-	{.reg = 0xa8, .cmd_len = 1, .cmd = {0x03}},
+	{.reg = ILI98XX_DSI_PGAMCTRL9, .cmd_len = 1, .cmd = {0x03}},
 	/* Positive Gamma Control 10 */
-	{.reg = 0xa9, .cmd_len = 1, .cmd = {0x07}},
+	{.reg = ILI98XX_DSI_PGAMCTRL10, .cmd_len = 1, .cmd = {0x07}},
 	/* Positive Gamma Control 11 */
-	{.reg = 0xaa, .cmd_len = 1, .cmd = {0x06}},
+	{.reg = ILI98XX_DSI_PGAMCTRL11, .cmd_len = 1, .cmd = {0x06}},
 	/* Positive Gamma Control 12 */
-	{.reg = 0xab, .cmd_len = 1, .cmd = {0x05}},
+	{.reg = ILI98XX_DSI_PGAMCTRL12, .cmd_len = 1, .cmd = {0x05}},
 	/* Positive Gamma Control 13 */
-	{.reg = 0xac, .cmd_len = 1, .cmd = {0x0d}},
+	{.reg = ILI98XX_DSI_PGAMCTRL13, .cmd_len = 1, .cmd = {0x0d}},
 	/* Positive Gamma Control 14 */
-	{.reg = 0xad, .cmd_len = 1, .cmd = {0x2c}},
+	{.reg = ILI98XX_DSI_PGAMCTRL14, .cmd_len = 1, .cmd = {0x2c}},
 	/* Positive Gamma Control 15 */
-	{.reg = 0xae, .cmd_len = 1, .cmd = {0x26}},
+	{.reg = ILI98XX_DSI_PGAMCTRL15, .cmd_len = 1, .cmd = {0x26}},
 	/* Positive Gamma Control 16 */
-	{.reg = 0xaf, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI98XX_DSI_PGAMCTRL16, .cmd_len = 1, .cmd = {0x00}},
 	/* Negative Gamma Correction 1 */
-	{.reg = 0xc0, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI98XX_DSI_NGAMCTRL1, .cmd_len = 1, .cmd = {0x00}},
 	/* Negative Gamma Correction 2 */
-	{.reg = 0xc1, .cmd_len = 1, .cmd = {0x04}},
+	{.reg = ILI98XX_DSI_NGAMCTRL2, .cmd_len = 1, .cmd = {0x04}},
 	/* Negative Gamma Correction 3 */
-	{.reg = 0xc2, .cmd_len = 1, .cmd = {0x0b}},
+	{.reg = ILI98XX_DSI_NGAMCTRL3, .cmd_len = 1, .cmd = {0x0b}},
 	/* Negative Gamma Correction 4 */
-	{.reg = 0xc3, .cmd_len = 1, .cmd = {0x0f}},
+	{.reg = ILI98XX_DSI_NGAMCTRL4, .cmd_len = 1, .cmd = {0x0f}},
 	/* Negative Gamma Correction 5 */
-	{.reg = 0xc4, .cmd_len = 1, .cmd = {0x09}},
+	{.reg = ILI98XX_DSI_NGAMCTRL5, .cmd_len = 1, .cmd = {0x09}},
 	/* Negative Gamma Correction 6 */
-	{.reg = 0xc5, .cmd_len = 1, .cmd = {0x18}},
+	{.reg = ILI98XX_DSI_NGAMCTRL6, .cmd_len = 1, .cmd = {0x18}},
 	/* Negative Gamma Correction 7 */
-	{.reg = 0xc6, .cmd_len = 1, .cmd = {0x07}},
+	{.reg = ILI98XX_DSI_NGAMCTRL7, .cmd_len = 1, .cmd = {0x07}},
 	/* Negative Gamma Correction 8 */
-	{.reg = 0xc7, .cmd_len = 1, .cmd = {0x08}},
+	{.reg = ILI98XX_DSI_NGAMCTRL8, .cmd_len = 1, .cmd = {0x08}},
 	/* Negative Gamma Correction 9 */
-	{.reg = 0xc8, .cmd_len = 1, .cmd = {0x05}},
+	{.reg = ILI98XX_DSI_NGAMCTRL9, .cmd_len = 1, .cmd = {0x05}},
 	/* Negative Gamma Correction 10 */
-	{.reg = 0xc9, .cmd_len = 1, .cmd = {0x09}},
+	{.reg = ILI98XX_DSI_NGAMCTRL10, .cmd_len = 1, .cmd = {0x09}},
 	/* Negative Gamma Correction 11 */
-	{.reg = 0xca, .cmd_len = 1, .cmd = {0x07}},
+	{.reg = ILI98XX_DSI_NGAMCTRL11, .cmd_len = 1, .cmd = {0x07}},
 	/* Negative Gamma Correction 12 */
-	{.reg = 0xcb, .cmd_len = 1, .cmd = {0x05}},
+	{.reg = ILI98XX_DSI_NGAMCTRL12, .cmd_len = 1, .cmd = {0x05}},
 	/* Negative Gamma Correction 13 */
-	{.reg = 0xcc, .cmd_len = 1, .cmd = {0x0c}},
+	{.reg = ILI98XX_DSI_NGAMCTRL13, .cmd_len = 1, .cmd = {0x0c}},
 	/* Negative Gamma Correction 14 */
-	{.reg = 0xcd, .cmd_len = 1, .cmd = {0x2d}},
+	{.reg = ILI98XX_DSI_NGAMCTRL14, .cmd_len = 1, .cmd = {0x2d}},
 	/* Negative Gamma Correction 15 */
-	{.reg = 0xce, .cmd_len = 1, .cmd = {0x28}},
+	{.reg = ILI98XX_DSI_NGAMCTRL15, .cmd_len = 1, .cmd = {0x28}},
 	/* Negative Gamma Correction 16 */
-	{.reg = 0xcf, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI98XX_DSI_NGAMCTRL16, .cmd_len = 1, .cmd = {0x00}},
 
 	/* Change to Page 6 CMD for GIP timing */
-	{.reg = 0xff, .cmd_len = 5, .cmd = {0xFF, 0x98, 0x06, 0x04, 0x06}},
+	{.reg = ILI98XX_DSI_ENEXTC, .cmd_len = 5, .cmd = {0xFF, 0x98, 0x06, 0x04, 0x06}},
 	/* GIP Control 1 */
-	{.reg = 0x00, .cmd_len = 1, .cmd = {0x21}},
-	{.reg = 0x01, .cmd_len = 1, .cmd = {0x09}},
-	{.reg = 0x02, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x03, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x04, .cmd_len = 1, .cmd = {0x01}},
-	{.reg = 0x05, .cmd_len = 1, .cmd = {0x01}},
-	{.reg = 0x06, .cmd_len = 1, .cmd = {0x80}},
-	{.reg = 0x07, .cmd_len = 1, .cmd = {0x05}},
-	{.reg = 0x08, .cmd_len = 1, .cmd = {0x02}},
-	{.reg = 0x09, .cmd_len = 1, .cmd = {0x80}},
-	{.reg = 0x0a, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x0b, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x0c, .cmd_len = 1, .cmd = {0x0a}},
-	{.reg = 0x0d, .cmd_len = 1, .cmd = {0x0a}},
-	{.reg = 0x0e, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x0f, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x10, .cmd_len = 1, .cmd = {0xe0}},
-	{.reg = 0x11, .cmd_len = 1, .cmd = {0xe4}},
-	{.reg = 0x12, .cmd_len = 1, .cmd = {0x04}},
-	{.reg = 0x13, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x14, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x15, .cmd_len = 1, .cmd = {0xc0}},
-	{.reg = 0x16, .cmd_len = 1, .cmd = {0x08}},
-	{.reg = 0x17, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x18, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x19, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x1a, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x1b, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x1c, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x1d, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_00, .cmd_len = 1, .cmd = {0x21}},
+	{.reg = ILI9806E_GIPCTRL1_01, .cmd_len = 1, .cmd = {0x09}},
+	{.reg = ILI9806E_GIPCTRL1_02, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_03, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_04, .cmd_len = 1, .cmd = {0x01}},
+	{.reg = ILI9806E_GIPCTRL1_05, .cmd_len = 1, .cmd = {0x01}},
+	{.reg = ILI9806E_GIPCTRL1_06, .cmd_len = 1, .cmd = {0x80}},
+	{.reg = ILI9806E_GIPCTRL1_07, .cmd_len = 1, .cmd = {0x05}},
+	{.reg = ILI9806E_GIPCTRL1_08, .cmd_len = 1, .cmd = {0x02}},
+	{.reg = ILI9806E_GIPCTRL1_09, .cmd_len = 1, .cmd = {0x80}},
+	{.reg = ILI9806E_GIPCTRL1_0A, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_0B, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_0C, .cmd_len = 1, .cmd = {0x0a}},
+	{.reg = ILI9806E_GIPCTRL1_0D, .cmd_len = 1, .cmd = {0x0a}},
+	{.reg = ILI9806E_GIPCTRL1_0E, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_0F, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_10, .cmd_len = 1, .cmd = {0xe0}},
+	{.reg = ILI9806E_GIPCTRL1_11, .cmd_len = 1, .cmd = {0xe4}},
+	{.reg = ILI9806E_GIPCTRL1_12, .cmd_len = 1, .cmd = {0x04}},
+	{.reg = ILI9806E_GIPCTRL1_13, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_14, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_15, .cmd_len = 1, .cmd = {0xc0}},
+	{.reg = ILI9806E_GIPCTRL1_16, .cmd_len = 1, .cmd = {0x08}},
+	{.reg = ILI9806E_GIPCTRL1_17, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_18, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_19, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_1A, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_1B, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_1C, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL1_1D, .cmd_len = 1, .cmd = {0x00}},
 	/* GIP Control 2 */
-	{.reg = 0x20, .cmd_len = 1, .cmd = {0x01}},
-	{.reg = 0x21, .cmd_len = 1, .cmd = {0x23}},
-	{.reg = 0x22, .cmd_len = 1, .cmd = {0x45}},
-	{.reg = 0x23, .cmd_len = 1, .cmd = {0x67}},
-	{.reg = 0x24, .cmd_len = 1, .cmd = {0x01}},
-	{.reg = 0x25, .cmd_len = 1, .cmd = {0x23}},
-	{.reg = 0x26, .cmd_len = 1, .cmd = {0x45}},
-	{.reg = 0x27, .cmd_len = 1, .cmd = {0x67}},
+	{.reg = ILI9806E_GIPCTRL2_20, .cmd_len = 1, .cmd = {0x01}},
+	{.reg = ILI9806E_GIPCTRL2_21, .cmd_len = 1, .cmd = {0x23}},
+	{.reg = ILI9806E_GIPCTRL2_22, .cmd_len = 1, .cmd = {0x45}},
+	{.reg = ILI9806E_GIPCTRL2_23, .cmd_len = 1, .cmd = {0x67}},
+	{.reg = ILI9806E_GIPCTRL2_24, .cmd_len = 1, .cmd = {0x01}},
+	{.reg = ILI9806E_GIPCTRL2_25, .cmd_len = 1, .cmd = {0x23}},
+	{.reg = ILI9806E_GIPCTRL2_26, .cmd_len = 1, .cmd = {0x45}},
+	{.reg = ILI9806E_GIPCTRL2_27, .cmd_len = 1, .cmd = {0x67}},
 	/* GIP Control 3 */
-	{.reg = 0x30, .cmd_len = 1, .cmd = {0x01}},
-	{.reg = 0x31, .cmd_len = 1, .cmd = {0x11}},
-	{.reg = 0x32, .cmd_len = 1, .cmd = {0x00}},
-	{.reg = 0x33, .cmd_len = 1, .cmd = {0xee}},
-	{.reg = 0x34, .cmd_len = 1, .cmd = {0xff}},
-	{.reg = 0x35, .cmd_len = 1, .cmd = {0xcb}},
-	{.reg = 0x36, .cmd_len = 1, .cmd = {0xda}},
-	{.reg = 0x37, .cmd_len = 1, .cmd = {0xad}},
-	{.reg = 0x38, .cmd_len = 1, .cmd = {0xbc}},
-	{.reg = 0x39, .cmd_len = 1, .cmd = {0x76}},
-	{.reg = 0x3a, .cmd_len = 1, .cmd = {0x67}},
-	{.reg = 0x3b, .cmd_len = 1, .cmd = {0x22}},
-	{.reg = 0x3c, .cmd_len = 1, .cmd = {0x22}},
-	{.reg = 0x3d, .cmd_len = 1, .cmd = {0x22}},
-	{.reg = 0x3e, .cmd_len = 1, .cmd = {0x22}},
-	{.reg = 0x3f, .cmd_len = 1, .cmd = {0x22}},
-	{.reg = 0x40, .cmd_len = 1, .cmd = {0x22}},
+	{.reg = ILI9806E_GIPCTRL3_30, .cmd_len = 1, .cmd = {0x01}},
+	{.reg = ILI9806E_GIPCTRL3_31, .cmd_len = 1, .cmd = {0x11}},
+	{.reg = ILI9806E_GIPCTRL3_32, .cmd_len = 1, .cmd = {0x00}},
+	{.reg = ILI9806E_GIPCTRL3_33, .cmd_len = 1, .cmd = {0xee}},
+	{.reg = ILI9806E_GIPCTRL3_34, .cmd_len = 1, .cmd = {0xff}},
+	{.reg = ILI9806E_GIPCTRL3_35, .cmd_len = 1, .cmd = {0xcb}},
+	{.reg = ILI9806E_GIPCTRL3_36, .cmd_len = 1, .cmd = {0xda}},
+	{.reg = ILI9806E_GIPCTRL3_37, .cmd_len = 1, .cmd = {0xad}},
+	{.reg = ILI9806E_GIPCTRL3_38, .cmd_len = 1, .cmd = {0xbc}},
+	{.reg = ILI9806E_GIPCTRL3_39, .cmd_len = 1, .cmd = {0x76}},
+	{.reg = ILI9806E_GIPCTRL3_3A, .cmd_len = 1, .cmd = {0x67}},
+	{.reg = ILI9806E_GIPCTRL3_3B, .cmd_len = 1, .cmd = {0x22}},
+	{.reg = ILI9806E_GIPCTRL3_3C, .cmd_len = 1, .cmd = {0x22}},
+	{.reg = ILI9806E_GIPCTRL3_3D, .cmd_len = 1, .cmd = {0x22}},
+	{.reg = ILI9806E_GIPCTRL3_3E, .cmd_len = 1, .cmd = {0x22}},
+	{.reg = ILI9806E_GIPCTRL3_3F, .cmd_len = 1, .cmd = {0x22}},
+	{.reg = ILI9806E_GIPCTRL3_40, .cmd_len = 1, .cmd = {0x22}},
 	/* GOUT VGLO Control */
-	{.reg = 0x53, .cmd_len = 1, .cmd = {0x10}},
-	{.reg = 0x54, .cmd_len = 1, .cmd = {0x10}},
+	{.reg = ILI9806E_GVLOCTRL, .cmd_len = 1, .cmd = {0x10}},
+	{.reg = ILI9806E_GVHOCTRL, .cmd_len = 1, .cmd = {0x10}},
 	/* Change to Page 7 CMD for Normal command */
-	{.reg = 0xff, .cmd_len = 5, .cmd = {0xff, 0x98, 0x06, 0x04, 0x07}},
+	{.reg = ILI98XX_DSI_ENEXTC, .cmd_len = 5, .cmd = {0xff, 0x98, 0x06, 0x04, 0x07}},
 	/* VREG1/2OUT ENABLE */
-	{.reg = 0x18, .cmd_len = 1, .cmd = {0x1d}},
-	{.reg = 0x26, .cmd_len = 1, .cmd = {0xb2}},
-	{.reg = 0x02, .cmd_len = 1, .cmd = {0x77}},
-	{.reg = 0xe1, .cmd_len = 1, .cmd = {0x79}},
-	{.reg = 0x17, .cmd_len = 1, .cmd = {0x22}},
+	{.reg = ILI9806E_VREG12EN, .cmd_len = 1, .cmd = {0x1d}},
+	{.reg = ILI9806E_P7_REG_26, .cmd_len = 1, .cmd = {0xb2}},
+	{.reg = ILI9806E_P7_REG_02, .cmd_len = 1, .cmd = {0x77}},
+	{.reg = ILI9806E_P7_REG_E1, .cmd_len = 1, .cmd = {0x79}},
+	{.reg = ILI9806E_VGLREGEN, .cmd_len = 1, .cmd = {0x22}},
 	/* Change to Page 0 CMD for Normal command */
-	{.reg = 0xff, .cmd_len = 5, .cmd = {0xff, 0x98, 0x06, 0x04, 0x00}},
+	{.reg = ILI98XX_DSI_ENEXTC, .cmd_len = 5, .cmd = {0xff, 0x98, 0x06, 0x04, 0x00}},
 };
 
-int ili9806e_dsi_regs_init(const struct device *dev)
+static int ili9806e_dsi_regs_init(const struct device *dev)
 {
 	return ili98xx_dsi_write_sequence(dev, ili9806e_init_cmds, ARRAY_SIZE(ili9806e_init_cmds));
 }
+
+ILI98XX_DSI_API_DEFINE(ili98xx_dsi_api)
+
+#define ILI9806E_DSI_INIT(inst) \
+	ILI98XX_DSI_INIT(DT_DRV_INST(inst), ili9806e_dsi_regs_init, ili98xx_dsi_api)
+
+DT_INST_FOREACH_STATUS_OKAY(ILI9806E_DSI_INIT)

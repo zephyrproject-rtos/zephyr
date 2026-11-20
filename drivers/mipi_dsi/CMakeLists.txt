@@ -11,3 +11,5 @@ zephyr_sources_ifdef(CONFIG_MIPI_DSI_RENESAS_RZ dsi_renesas_rz.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DSI_STM32 dsi_stm32.c)
 zephyr_sources_ifdef(CONFIG_MIPI_DSI_TEST dsi_test.c)
 # zephyr-keep-sorted-stop
+
+add_subdirectory_ifdef(CONFIG_MIPI_DSI_DW designware)

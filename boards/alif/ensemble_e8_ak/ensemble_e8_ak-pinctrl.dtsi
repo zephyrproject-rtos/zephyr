@@ -56,6 +56,13 @@
 		};
 	};
 
+	gpio6_default: gpio6_default {
+		group0 {
+			/* P6_1 used to drive display backlight */
+			pinmux = <PIN_P6_1__GPIO>;
+		};
+	};
+
 	gpio7_default: gpio7_default {
 		group0 {
 			/* Multicolor LED0: green on P7_4 */
@@ -81,6 +88,15 @@
 				 <PIN_P15_4__LPGPIO>;
 			input-enable;
 			bias-pull-up;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group0 {
+			pinmux = <PIN_P7_2__I2C1_SDA_C>,
+				 <PIN_P7_3__I2C1_SCL_C>;
+			input-enable;
+			drive-strength = <12>;
 		};
 	};
 };

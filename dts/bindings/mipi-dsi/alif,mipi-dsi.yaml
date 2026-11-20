@@ -1,0 +1,26 @@
+# Copyright (C) 2024 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Alif implementation of designware MIPI DSI host controller with
+  integrated Synopsys MIPI D-PHY.
+
+compatible: "alif,mipi-dsi"
+
+include:
+  - mipi-dsi-host.yaml
+  - snps,designware-dsi.yaml
+
+properties:
+  ldo-phy:
+    required: true
+    description: "LDO PHY regulator"
+    type: phandle
+  tx-dphy:
+    required: true
+    description: "TX D-PHY controller"
+    type: phandle
+  pll-dphy:
+    required: true
+    description: "PLL D-PHY controller"
+    type: phandle
