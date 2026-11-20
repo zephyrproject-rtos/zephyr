@@ -1284,6 +1284,24 @@ static struct bt_le_ext_adv_cb adv_callbacks = {
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* CONFIG_BT_EXT_ADV */
 
+/* Safe to call more than once: registering a callback twice is rejected
+ * by the stack and leaves the existing registration in place.
+ */
+static void bt_shell_setup(void)
+{
+	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		bt_le_oob_set_legacy_flag(true);
+	}
+
+#if defined(CONFIG_BT_OBSERVER)
+	(void)bt_le_scan_cb_register(&scan_callbacks);
+#endif
+
+#if defined(CONFIG_BT_SMP)
+	(void)bt_conn_auth_info_cb_register(&auth_info_cb);
+#endif /* CONFIG_BT_SMP */
+}
+
 static void bt_ready(int err)
 {
 	if (err) {
@@ -1298,21 +1316,9 @@ static void bt_ready(int err)
 		bt_shell_print("Settings Loaded");
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
-		bt_le_oob_set_legacy_flag(true);
-	}
-
-#if defined(CONFIG_BT_OBSERVER)
-	bt_le_scan_cb_register(&scan_callbacks);
-#endif
-
 #if defined(CONFIG_BT_CONN)
 	default_conn = NULL;
 #endif /* CONFIG_BT_CONN */
-
-#if defined(CONFIG_BT_SMP)
-	bt_conn_auth_info_cb_register(&auth_info_cb);
-#endif /* CONFIG_BT_SMP */
 }
 
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
@@ -1333,14 +1339,20 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
+	bt_shell_setup();
+
+	err = bt_enable(sync ? NULL : bt_ready);
+
+	if (err == -EALREADY && bt_is_ready()) {
+		/* Settings are left to whoever enabled Bluetooth */
+		shell_print(sh, "Bluetooth already enabled");
+		return 0;
+	}
+
 	if (sync) {
-		err = bt_enable(NULL);
 		bt_ready(err);
-	} else {
-		err = bt_enable(bt_ready);
-		if (err) {
-			shell_error(sh, "Bluetooth init failed (err %d)", err);
-		}
+	} else if (err != 0) {
+		shell_error(sh, "Bluetooth init failed (err %d)", err);
 	}
 
 	return err;
