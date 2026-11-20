@@ -65,16 +65,22 @@ static const char *const dump_field_names[] = {
 	[MPIPE_CAPS_NUM_CHANNELS] = "channels",
 	[MPIPE_CAPS_INTERLEAVED] = "interleaved",
 	[MPIPE_CAPS_FRAME_INTERVAL] = "frame-interval",
+	[MPIPE_CAPS_TENSOR_TYPE] = "tensor-type",
+	[MPIPE_CAPS_RESULTS_TYPE] = "results-type",
 };
 /* clang-format on */
 BUILD_ASSERT(ARRAY_SIZE(dump_field_names) == MPIPE_CAPS_END,
 	     "A caps field identifier has no name in dump_field_names");
 
+/* clang-format off */
 static const char *const dump_media_names[] = {
 	[MPIPE_MEDIA_UNKNOWN] = "unknown",
 	[MPIPE_MEDIA_AUDIO_PCM] = "audio/pcm",
 	[MPIPE_MEDIA_VIDEO] = "video",
+	[MPIPE_MEDIA_TENSOR] = "tensor",
+	[MPIPE_MEDIA_NN_RESULTS] = "nn-results",
 };
+/* clang-format on */
 BUILD_ASSERT(ARRAY_SIZE(dump_media_names) == MPIPE_MEDIA_END,
 	     "A media type has no name in dump_media_names");
 
