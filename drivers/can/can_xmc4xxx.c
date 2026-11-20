@@ -605,6 +605,11 @@ static void can_xmc4xxx_rx_fifo_handler(const struct device *dev, struct can_xmc
 
 		frame.dlc = FIELD_GET(CAN_MO_MOFCR_DLC_Msk, mo_tail->MOFCR);
 
+		/* A classical CAN frame with a DLC greater than 8 carries 8 data bytes */
+		if (frame.dlc > CAN_MAX_DLC) {
+			frame.dlc = CAN_MAX_DLC;
+		}
+
 		if (!is_rtr) {
 			memcpy(&frame.data[0], (void *)&mo_tail->MODATAL, sizeof(uint32_t));
 			memcpy(&frame.data[4], (void *)&mo_tail->MODATAH, sizeof(uint32_t));

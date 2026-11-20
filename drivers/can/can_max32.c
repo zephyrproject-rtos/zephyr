@@ -108,7 +108,12 @@ static void can_max32_convert_req_to_canframe(const mxc_can_req_t *req, struct c
 
 	msg->dlc = info->dlc;
 
-	int dlc_bytes = MIN(CAN_MAX_DLEN, can_dlc_to_bytes(info->dlc));
+	/* A classical CAN frame with a DLC greater than 8 carries 8 data bytes */
+	if (msg->dlc > CAN_MAX_DLC) {
+		msg->dlc = CAN_MAX_DLC;
+	}
+
+	int dlc_bytes = MIN(CAN_MAX_DLEN, can_dlc_to_bytes(msg->dlc));
 
 	memcpy(msg->data, req->data, dlc_bytes * sizeof(uint8_t));
 }

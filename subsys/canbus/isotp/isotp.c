@@ -58,6 +58,15 @@ static inline void prepare_filter(struct can_filter *filter, struct isotp_msg_id
 }
 
 /*
+ * Classical CAN frames carry at most 8 data bytes. DLC values 9 to 15 are only
+ * mapped to longer data lengths for CAN FD frames.
+ */
+static inline bool frame_dlc_is_valid(const struct can_frame *frame)
+{
+	return (frame->flags & CAN_FRAME_FDF) != 0U || frame->dlc <= CAN_MAX_DLC;
+}
+
+/*
  * Wake every context that is waiting for a buffer
  */
 static void receive_pool_free(struct net_buf *buf)
@@ -384,6 +393,11 @@ static void process_ff_sf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 	uint32_t rx_sa;		/* ISO-TP fixed source address (if used) */
 	uint8_t can_dl = can_dlc_to_bytes(frame->dlc);
 
+	if (!frame_dlc_is_valid(frame)) {
+		LOG_INF("FF/SF DLC invalid. Ignore");
+		return;
+	}
+
 	if ((rctx->rx_addr.flags & ISOTP_MSG_EXT_ADDR) != 0) {
 		if (frame->data[index++] != rctx->rx_addr.ext_addr) {
 			return;
@@ -488,6 +502,12 @@ static void process_cf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 	uint8_t index = 0U;
 	uint32_t data_len;
 	uint8_t can_dl = can_dlc_to_bytes(frame->dlc);
+
+	if (!frame_dlc_is_valid(frame)) {
+		LOG_ERR("CF DLC invalid");
+		receive_report_error(rctx, ISOTP_N_ERROR);
+		return;
+	}
 
 	if ((rctx->rx_addr.flags & ISOTP_MSG_EXT_ADDR) != 0) {
 		/* A frame without payload cannot carry the address extension */
