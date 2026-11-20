@@ -99,6 +99,12 @@ NVMEM-provided MAC address with prefix
 
 MAC address can be retrieved from a non-volatile memory, typically an EEPROM, thanks
 to the :ref:`NVMEM API<nvmem>`.
+Fixed-layout NVMEM cells containing a 48-bit MAC address can declare their byte
+order with ``zephyr,byte-order = "little-endian"`` or ``zephyr,byte-order = "big-endian"``.
+The default is ``"raw"``, preserving the bytes as stored in the NVMEM cell.
+Cells declaring little-endian or big-endian byte order must contain exactly six
+bytes; otherwise, :c:func:`net_eth_mac_load` returns ``-EINVAL``. Raw cells can
+contain only the suffix to append to ``zephyr,mac-address-prefix``.
 
 .. code-block:: devicetree
 

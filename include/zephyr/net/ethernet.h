@@ -1494,9 +1494,10 @@ struct net_eth_mac_config {
  * @param cfg The MAC address configuration.
  * @param mac_addr The resulting MAC address buffer, needs a size of @ref NET_ETH_ADDR_LEN bytes.
  *
+ * @retval 0 If successful.
+ * @retval -EINVAL Non-raw NVMEM cell size is not @ref NET_ETH_ADDR_LEN bytes.
  * @retval -ENODATA No MAC address configuration data is loaded.
  * @retval <0 Negative errno code if failure.
- * @retval 0 If successful.
  */
 static inline int net_eth_mac_load(const struct net_eth_mac_config *cfg, uint8_t *mac_addr)
 {
@@ -1520,6 +1521,39 @@ static inline int net_eth_mac_load(const struct net_eth_mac_config *cfg, uint8_t
 
 #if defined(CONFIG_NVMEM)
 	if (cfg->type == NET_ETH_MAC_NVMEM) {
+		if (cfg->cell.byte_order != NVMEM_CELL_BYTE_ORDER_RAW &&
+		    cfg->cell.size != NET_ETH_ADDR_LEN) {
+			return -EINVAL;
+		}
+
+		if (cfg->addr_len <= NET_ETH_ADDR_LEN && cfg->cell.size == NET_ETH_ADDR_LEN) {
+			uint64_t val = 0;
+			uint8_t mac[NET_ETH_ADDR_LEN];
+			int ret;
+
+			switch (cfg->cell.byte_order) {
+			case NVMEM_CELL_BYTE_ORDER_LITTLE_ENDIAN:
+				ret = nvmem_cell_read_le48(&cfg->cell, &val, 0);
+				break;
+			case NVMEM_CELL_BYTE_ORDER_BIG_ENDIAN:
+				ret = nvmem_cell_read_be48(&cfg->cell, &val, 0);
+				break;
+			case NVMEM_CELL_BYTE_ORDER_RAW:
+			default:
+				return nvmem_cell_read(&cfg->cell, &mac_addr[cfg->addr_len], 0,
+						       NET_ETH_ADDR_LEN - cfg->addr_len);
+			}
+
+			if (ret < 0) {
+				return ret;
+			}
+
+			sys_put_be48(val, mac);
+			memcpy(&mac_addr[cfg->addr_len], &mac[cfg->addr_len],
+			       NET_ETH_ADDR_LEN - cfg->addr_len);
+			return 0;
+		}
+
 		return nvmem_cell_read(&cfg->cell, &mac_addr[cfg->addr_len], 0,
 				       NET_ETH_ADDR_LEN - cfg->addr_len);
 	}

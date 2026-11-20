@@ -32,6 +32,18 @@ extern "C" {
 #endif
 
 /**
+ * @brief Byte order metadata for NVMEM cell consumers.
+ */
+enum nvmem_cell_byte_order {
+	/** Return the contents unchanged. */
+	NVMEM_CELL_BYTE_ORDER_RAW,
+	/** Interpret the contents as little-endian data. */
+	NVMEM_CELL_BYTE_ORDER_LITTLE_ENDIAN,
+	/** Interpret the contents as big-endian data. */
+	NVMEM_CELL_BYTE_ORDER_BIG_ENDIAN,
+};
+
+/**
  * @brief Non-Volatile Memory cell representation.
  */
 struct nvmem_cell {
@@ -45,9 +57,17 @@ struct nvmem_cell {
 	size_t size;
 	/** Indicator if the NVMEM cell is read-write or read-only */
 	bool read_only;
+	/** Byte order metadata; does not change NVMEM read or write operations. */
+	enum nvmem_cell_byte_order byte_order;
 
 	/* @endcond */
 };
+
+/** @cond INTERNAL_HIDDEN */
+#define Z_NVMEM_CELL_BYTE_ORDER_raw           NVMEM_CELL_BYTE_ORDER_RAW
+#define Z_NVMEM_CELL_BYTE_ORDER_little_endian NVMEM_CELL_BYTE_ORDER_LITTLE_ENDIAN
+#define Z_NVMEM_CELL_BYTE_ORDER_big_endian    NVMEM_CELL_BYTE_ORDER_BIG_ENDIAN
+/** @endcond */
 
 /**
  * @brief Get a static initializer for a struct nvmem_cell.
@@ -99,6 +119,8 @@ struct nvmem_cell {
 		.offset = DT_REG_ADDR(node_id),                                                    \
 		.size = DT_REG_SIZE(node_id),                                                      \
 		.read_only = DT_PROP(node_id, read_only),                                          \
+		.byte_order = UTIL_CAT(Z_NVMEM_CELL_BYTE_ORDER_,                                   \
+				       DT_STRING_TOKEN_OR(node_id, zephyr_byte_order, raw)),       \
 	}
 
 /**
