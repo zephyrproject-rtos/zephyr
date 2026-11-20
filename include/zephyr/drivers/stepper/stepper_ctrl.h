@@ -262,6 +262,10 @@ static inline int z_impl_stepper_ctrl_get_actual_position(const struct device *d
 /**
  * @brief Set the callback function to be called when a stepper motion controller event occurs
  *
+ * @details The callback is invoked from thread context. GPIO stepper motion controllers
+ * built with @kconfig{CONFIG_STEPPER_CTRL_ISR_SAFE_EVENTS} disabled may invoke it from ISR
+ * context instead.
+ *
  * @param dev pointer to the device structure for the driver instance.
  * @param callback Callback function to be called when a stepper motion controller event occurs
  * passing NULL will disable the callback

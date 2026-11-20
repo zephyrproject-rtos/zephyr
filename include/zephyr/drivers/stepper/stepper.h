@@ -246,6 +246,8 @@ static inline int z_impl_stepper_get_micro_step_res(const struct device *dev,
 /**
  * @brief Set the callback function to be called when a stepper_event occurs
  *
+ * @details The callback is invoked from thread context.
+ *
  * @param dev pointer to the device structure for the driver instance.
  * @param callback Callback function to be called when a stepper_event occurs
  * passing NULL will disable the callback
