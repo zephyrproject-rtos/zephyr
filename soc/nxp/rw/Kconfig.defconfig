@@ -1,7 +1,10 @@
-# Copyright 2022-2024 NXP
+# Copyright 2022-2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_RW6XX
+
+config WUC_INIT_PRIORITY
+	default 0
 
 config ROM_START_OFFSET
 	default 0x1300 if NXP_RW6XX_BOOT_HEADER

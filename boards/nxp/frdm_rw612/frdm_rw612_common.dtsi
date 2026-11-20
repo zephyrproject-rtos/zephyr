@@ -110,6 +110,7 @@
 
 &flexcomm3 {
 	compatible = "nxp,lpc-usart";
+	wakeup-ctrls = <&wuc 17>;
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm3_usart>;
 	pinctrl-names = "default";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 NXP
+ * Copyright (c) 2021, 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <limits.h>
 
 #include <zephyr/init.h>
+#include <zephyr/drivers/wuc.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/timer/system_timer_lpm.h>
 #include <zephyr/drivers/timer/nxp_os_timer.h>
@@ -493,7 +494,13 @@ static int sys_clock_driver_init(void)
 #endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
 
 #if (DT_INST_PROP(0, wakeup_source))
+#if DT_INST_NODE_HAS_PROP(0, wakeup_ctrls)
+	const struct wuc_dt_spec wakeup = WUC_DT_SPEC_INST_GET(0);
+
+	return wuc_enable_wakeup_source_dt(&wakeup);
+#else
 	NXP_ENABLE_WAKEUP_SIGNAL(DT_INST_IRQN(0));
+#endif
 #endif
 	return 0;
 }

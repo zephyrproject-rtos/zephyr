@@ -1,5 +1,5 @@
 #
-# Copyright 2022-2025 NXP
+# Copyright 2022-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -30,6 +30,7 @@ supported:
   - usb_device
   - usb_host
   - watchdog
+  - wuc
   - netif:eth
   - netif:openthread
 vendor: nxp
