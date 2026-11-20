@@ -37,7 +37,14 @@ LOG_MODULE_REGISTER(flash_nrf_mram, CONFIG_FLASH_LOG_LEVEL);
 
 #define SOC_NRF_MRAM_BANK_11_ADDRESS (DT_REG_ADDR(DT_NODELABEL(mram11)))
 
+#if defined(CONFIG_HAS_IRONSIDE_SE) && defined(IRONSIDE_SE_BOOT_REPORT)
+#define HAS_IRONSIDE_VERSION
+#if defined(CONFIG_SOC_SERIES_NRF54H)
 #define IRONSIDE_SE_SUPPORT_READY_VER IRONSIDE_SE_V23_1_2_21
+#elif defined(CONFIG_SOC_SERIES_NRF92)
+#define IRONSIDE_SE_SUPPORT_READY_VER IRONSIDE_SE_V23_5_0_28
+#endif
+#endif
 
 BUILD_ASSERT(MRAM_START > 0, "nordic,mram: start address expected to be non-zero");
 BUILD_ASSERT((WRITE_BLOCK_SIZE % MRAM_WORD_SIZE) == 0,
@@ -63,6 +70,7 @@ struct nrf_mram_data_t {
  * @retval 0 Read completed without BusFault.
  * @retval non-zero BusFault was observed during the read.
  */
+#if defined(CONFIG_CPU_CORTEX_M)
 static uint32_t nrf_mram_detect_corrupt_word(uint32_t addr)
 {
 	uint32_t rdata;
@@ -101,7 +109,115 @@ static uint32_t nrf_mram_detect_corrupt_word(uint32_t addr)
 
 	return faulted;    /* 0 = read succeeded, non-zero = bus fault occurred */
 }
+#else
+static uint32_t nrf_mram_detect_corrupt_word(uint32_t addr)
+{
+	ARG_UNUSED(addr);
 
+	/* Corruption detection not implemented for non-Cortex-M CPUs */
+	return 0;
+}
+#endif /* CONFIG_CPU_CORTEX_M */
+
+#if defined(CONFIG_NRF_MRAM_CHECK_READY_BIT) || defined(CONFIG_NRF_MRAM_CHECK_READYNEXT_BIT)
+static inline NRF_MRAMC_Type *nrf_mram_ctrl(uint32_t addr)
+{
+	return (addr < SOC_NRF_MRAM_BANK_11_ADDRESS) ? NRF_MRAMC110 : NRF_MRAMC111;
+}
+
+static int nrf_mram_poll(volatile const uint32_t *reg)
+{
+	if (WAIT_FOR(*reg != 0U, CONFIG_NRF_MRAM_READY_TIMEOUT_US, NULL)) {
+		return 0;
+	}
+
+	return -ETIMEDOUT;
+}
+#endif
+
+#if defined(CONFIG_NRF_MRAM_CHECK_READY_BIT)
+static inline int nrf_mram_wait_ready(const struct device *dev, uint32_t addr)
+{
+	const struct nrf_mram_data_t *mram_data = dev->data;
+
+	if (mram_data->ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
+		return nrf_mram_poll(&nrf_mram_ctrl(addr)->READY);
+	}
+
+	return 0;
+}
+#else
+static inline int nrf_mram_wait_ready(const struct device *dev, uint32_t addr)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(addr);
+
+	return 0;
+}
+#endif
+
+#if defined(CONFIG_NRF_MRAM_CHECK_READYNEXT_BIT)
+static inline int nrf_mram_wait_write_done(const struct device *dev, uint32_t addr)
+{
+	const struct nrf_mram_data_t *mram_data = dev->data;
+	int ret = 0;
+
+	if (mram_data->ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
+		barrier_dsync_fence_full();
+
+		ret = nrf_mram_poll(&nrf_mram_ctrl(addr)->READYNEXT);
+
+		if (ret) {
+			return ret;
+		}
+
+#if defined(CONFIG_NRF_MRAM_CHECK_READY_BIT)
+		ret = nrf_mram_wait_ready(dev, addr);
+#endif
+	}
+
+	return ret;
+}
+#else
+static inline int nrf_mram_wait_write_done(const struct device *dev, uint32_t addr)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(addr);
+
+	return 0;
+}
+#endif
+
+static int nrf_mram_write_prepare(void)
+{
+#if defined(CONFIG_NRF_MRAM_CHECK_READY_BIT) || defined(CONFIG_NRF_MRAM_CHECK_READYNEXT_BIT)
+#if defined(CONFIG_MRAM_LATENCY)
+	int rc = mram_no_latency_sync_request();
+
+	if (rc) {
+		LOG_ERR("Failed to request no-latency mode for MRAM write %d", rc);
+		return -EIO;
+	}
+#endif
+#endif
+
+	return 0;
+}
+
+static int nrf_mram_write_release(void)
+{
+#if defined(CONFIG_NRF_MRAM_CHECK_READY_BIT) || defined(CONFIG_NRF_MRAM_CHECK_READYNEXT_BIT)
+#if defined(CONFIG_MRAM_LATENCY)
+	int rc = mram_no_latency_sync_release();
+
+	if (rc) {
+		LOG_ERR("Failed to release no-latency mode for MRAM write %d", rc);
+		return -EIO;
+	}
+#endif
+#endif
+	return 0;
+}
 
 /**
  * Write data to an aligned MRAM word and verify the write succeeded.
@@ -110,6 +226,7 @@ static uint32_t nrf_mram_detect_corrupt_word(uint32_t addr)
  * to confirm the write did not leave a corrupted word. The operation is retried
  * up to CONFIG_NRF_MRAM_MAX_RETRIES times before returning an error.
  *
+ * @param dev   Pointer to the device structure for the MRAM controller.
  * @param addr  Destination address. Must be aligned to MRAM_WORD_SIZE (16 bytes).
  * @param data  Pointer to the source data buffer.
  * @param len   Number of bytes to write. Must be a multiple of MRAM_WORD_SIZE.
@@ -117,9 +234,11 @@ static uint32_t nrf_mram_detect_corrupt_word(uint32_t addr)
  * @retval 0       Write succeeded and no corruption was detected.
  * @retval -EIO    Write failed after all retries.
  */
-static int nrf_mram_write_and_verify_word(uint32_t addr, const void *data, size_t len)
+static int nrf_mram_write_and_verify_word(const struct device *dev, uint32_t addr, const void *data,
+					  size_t len)
 {
 	uint8_t retries = CONFIG_NRF_MRAM_MAX_RETRIES;
+	int ret;
 
 	while (retries--) {
 		/* Check if data address is aligned to 4 bytes */
@@ -133,9 +252,15 @@ static int nrf_mram_write_and_verify_word(uint32_t addr, const void *data, size_
 			memcpy((void *)addr, data, len);
 		}
 
+		ret = nrf_mram_wait_write_done(dev, addr);
+		if (ret) {
+			return ret;
+		}
+
 		if (!nrf_mram_detect_corrupt_word(addr)) {
 			return 0;
 		}
+
 		LOG_ERR("MRAM write verification failed at address 0x%x, retrying... (%u retries "
 			"left)",
 			addr, retries);
@@ -152,23 +277,32 @@ static int nrf_mram_write_and_verify_word(uint32_t addr, const void *data, size_
  * a corrupted word. The operation is retried up to CONFIG_NRF_MRAM_MAX_RETRIES
  * times before returning an error.
  *
+ * @param dev   Pointer to the device structure for the MRAM controller.
  * @param addr  Destination address. Must be aligned to MRAM_WORD_SIZE (16 bytes).
  * @param len   Number of bytes to erase. Must be a multiple of MRAM_WORD_SIZE.
  *
  * @retval 0       Erase succeeded and no corruption was detected.
  * @retval -EIO    Erase failed after all retries.
  */
-static int nrf_mram_erase_and_verify_word(uint32_t addr, size_t len)
+static int nrf_mram_erase_and_verify_word(const struct device *dev, uint32_t addr, size_t len)
 {
 	uint8_t retries = CONFIG_NRF_MRAM_MAX_RETRIES;
+	int ret;
 
 	while (retries--) {
 		for (size_t i = 0; i < len / 4; i++) {
 			((uint32_t *)addr)[i] = 0xffffffffU;
 		}
+
+		ret = nrf_mram_wait_write_done(dev, addr);
+		if (ret) {
+			return ret;
+		}
+
 		if (!nrf_mram_detect_corrupt_word(addr)) {
 			return 0;
 		}
+
 		LOG_ERR("MRAM erase verification failed at address 0x%x, retrying... (%u retries "
 			"left)",
 			addr, retries);
@@ -176,28 +310,6 @@ static int nrf_mram_erase_and_verify_word(uint32_t addr, size_t len)
 
 	return -EIO;
 }
-
-#if defined(CONFIG_MRAM_LATENCY) && defined(CONFIG_SOC_SERIES_NRF54H)
-static inline bool nrf_mram_ready(uint32_t addr, uint32_t ironside_se_ver)
-{
-	if (ironside_se_ver < IRONSIDE_SE_SUPPORT_READY_VER) {
-		return true;
-	}
-
-	if (addr < SOC_NRF_MRAM_BANK_11_ADDRESS) {
-		return (bool)NRF_MRAMC110->READY;
-	} else {
-		return (bool)NRF_MRAMC111->READY;
-	}
-}
-#else
-static inline bool nrf_mram_ready(uint32_t addr, uint32_t ironside_se_ver)
-{
-	ARG_UNUSED(addr);
-	ARG_UNUSED(ironside_se_ver);
-	return true;
-}
-#endif
 
 /**
  * @param[in,out] offset      Relative offset into memory, from the driver API.
@@ -245,7 +357,6 @@ static int nrf_mram_read(const struct device *dev, off_t offset, void *data, siz
 static int nrf_mram_write(const struct device *dev, off_t offset, const void *data, size_t len)
 {
 	struct nrf_mram_data_t *nrf_mram_data = dev->data;
-	uint32_t ironside_se_ver = nrf_mram_data->ironside_se_ver;
 	int ret = 0;
 
 	const uintptr_t addr = validate_and_map_addr(offset, len, true);
@@ -258,44 +369,25 @@ static int nrf_mram_write(const struct device *dev, off_t offset, const void *da
 
 	k_mutex_lock(&nrf_mram_data->nrf_mram_mutex, K_FOREVER);
 
-	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
-#if defined(CONFIG_MRAM_LATENCY)
-		int rc = mram_no_latency_sync_request();
-
-		if (rc) {
-			LOG_ERR("Failed to request no-latency mode for MRAM write");
-			ret = -EIO;
-			goto unlock;
-		}
-#endif
+	ret = nrf_mram_write_prepare();
+	if (ret) {
+		goto unlock;
 	}
 
 	for (uint32_t i = 0; i < (len / MRAM_WORD_SIZE); i++) {
-		while (!nrf_mram_ready(addr + (i * MRAM_WORD_SIZE), ironside_se_ver)) {
-			/* Wait until MRAM controller is ready */
-		}
-		ret = nrf_mram_write_and_verify_word(
-			addr + (i * MRAM_WORD_SIZE),
-			(void *)((uintptr_t)data + (i * MRAM_WORD_SIZE)), MRAM_WORD_SIZE);
-		if (ret) {
-			goto latency_release;
+		if (nrf_mram_wait_ready(dev, addr + (i * MRAM_WORD_SIZE))) {
+			goto release;
+		} else {
+			ret = nrf_mram_write_and_verify_word(
+				dev, addr + (i * MRAM_WORD_SIZE),
+				(void *)((uintptr_t)data + (i * MRAM_WORD_SIZE)), MRAM_WORD_SIZE);
 		}
 	}
 
-latency_release:
-	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
-#if defined(CONFIG_MRAM_LATENCY)
-		int rc = mram_no_latency_sync_release();
+release:
+	ret = nrf_mram_write_release();
 
-		if (rc) {
-			LOG_ERR("Failed to release no-latency mode for MRAM write");
-			ret = -EIO;
-		}
-#endif
-	}
-#if defined(CONFIG_MRAM_LATENCY)
 unlock:
-#endif
 	k_mutex_unlock(&nrf_mram_data->nrf_mram_mutex);
 	return ret;
 }
@@ -303,7 +395,6 @@ unlock:
 static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 {
 	struct nrf_mram_data_t *nrf_mram_data = dev->data;
-	uint32_t ironside_se_ver = nrf_mram_data->ironside_se_ver;
 	int ret = 0;
 
 	const uintptr_t addr = validate_and_map_addr(offset, size, true);
@@ -317,42 +408,25 @@ static int nrf_mram_erase(const struct device *dev, off_t offset, size_t size)
 	k_mutex_lock(&nrf_mram_data->nrf_mram_mutex, K_FOREVER);
 
 	/* Ensure that the mramc banks are powered on */
-	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
-#if defined(CONFIG_MRAM_LATENCY)
-		int rc = mram_no_latency_sync_request();
-
-		if (rc) {
-			LOG_ERR("Failed to request no-latency mode for MRAM erase");
-			ret = -EIO;
-			goto unlock;
-		}
-#endif
+	ret = nrf_mram_write_prepare();
+	if (ret) {
+		goto unlock;
 	}
 
 	for (uint32_t i = 0; i < (size / MRAM_WORD_SIZE); i++) {
-		while (!nrf_mram_ready(addr + (i * MRAM_WORD_SIZE), ironside_se_ver)) {
-			/* Wait until MRAM controller is ready */
-		}
-		ret = nrf_mram_erase_and_verify_word(addr + (i * MRAM_WORD_SIZE), MRAM_WORD_SIZE);
-		if (ret) {
-			goto latency_release;
+		if (nrf_mram_wait_ready(dev, addr + (i * MRAM_WORD_SIZE))) {
+			goto release;
+		} else {
+			ret = nrf_mram_erase_and_verify_word(dev,
+							     addr + (i * MRAM_WORD_SIZE),
+							     MRAM_WORD_SIZE);
 		}
 	}
 
-latency_release:
-	if (ironside_se_ver >= IRONSIDE_SE_SUPPORT_READY_VER) {
-#if defined(CONFIG_MRAM_LATENCY)
-		int rc = mram_no_latency_sync_release();
+release:
+	ret = nrf_mram_write_release();
 
-		if (rc) {
-			LOG_ERR("Failed to release no-latency mode for MRAM erase");
-			ret = -EIO;
-		}
-#endif
-	}
-#if defined(CONFIG_MRAM_LATENCY)
 unlock:
-#endif
 	k_mutex_unlock(&nrf_mram_data->nrf_mram_mutex);
 	return ret;
 }
@@ -411,12 +485,11 @@ static DEVICE_API(flash, nrf_mram_api) = {
 static int nrf_mram_init(const struct device *dev)
 {
 	struct nrf_mram_data_t *nrf_mram_data = dev->data;
-#if defined(CONFIG_HAS_IRONSIDE_SE) && defined(IRONSIDE_SE_BOOT_REPORT)
+
+#if defined(HAS_IRONSIDE_VERSION)
 	nrf_mram_data->ironside_se_ver = IRONSIDE_SE_BOOT_REPORT->ironside_se_version_int;
-#else
-	nrf_mram_data->ironside_se_ver = 0;
-#endif
 	LOG_DBG("Ironside SE version: %u", nrf_mram_data->ironside_se_ver);
+#endif
 
 	k_mutex_init(&nrf_mram_data->nrf_mram_mutex);
 
