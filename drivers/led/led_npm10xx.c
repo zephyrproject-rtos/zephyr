@@ -55,6 +55,7 @@ enum led_npm10xx_blink_mode {
 };
 
 enum led_npm10xx_state {
+	LED_UNKNOWN,
 	LED_OFF,
 	LED_ON,
 	LED_PWM,
@@ -66,6 +67,8 @@ struct led_npm10xx_node {
 	struct led_info info;
 	enum led_npm10xx_mode mode;
 	uint8_t current;
+	uint8_t default_state;
+	uint8_t default_brightness;
 };
 
 struct led_npm10xx_config {
@@ -191,11 +194,6 @@ static int led_npm10xx_set_brightness(const struct device *dev, uint32_t led, ui
 		return -EINVAL;
 	}
 
-	if (config->leds[led].mode == MODE_ERROR) {
-		LOG_ERR("LED mode \"error\" has no brightness control");
-		return -EINVAL;
-	}
-
 	if (config->leds[led].mode == MODE_HOST && data->led_state[led] != LED_BLINK &&
 	    (value == 0 || (value == LED_BRIGHTNESS_MAX && !config->phase_shift))) {
 		return led_npm10xx_on_off(dev, led, value == LED_BRIGHTNESS_MAX);
@@ -207,7 +205,7 @@ static int led_npm10xx_set_brightness(const struct device *dev, uint32_t led, ui
 		return ret;
 	}
 
-	if (data->led_state[led] == LED_OFF || data->led_state[led] == LED_ON) {
+	if (data->led_state[led] <= LED_ON) {
 		ret = i2c_reg_write_byte_dt(&config->i2c,
 					    NPM10_LEDDRV_MODE0 + config->leds[led].info.index,
 					    LEDDRV_MODE_SEL_PWM);
@@ -223,7 +221,8 @@ static int led_npm10xx_init(const struct device *dev)
 {
 	int ret;
 	uint8_t mode;
-	uint8_t cfg = 0U;
+	uint8_t idx;
+	uint8_t cfg;
 	const struct led_npm10xx_config *config = dev->config;
 	struct led_npm10xx_data *data = dev->data;
 
@@ -232,39 +231,100 @@ static int led_npm10xx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/* apply global config first to avoid glitches when initialising state/brightness */
+	cfg = FIELD_PREP(LEDDRV_CONFIG_RGB, config->phase_shift) |
+	      FIELD_PREP(LEDDRV_CONFIG_LOOP, config->blink_mode == BLINK_LOOP) |
+	      FIELD_PREP(LEDDRV_CONFIG_DOUBLE, config->blink_mode == BLINK_TWICE) |
+	      FIELD_PREP(LEDDRV_CONFIG_PWMFREQ_MASK, config->pwm_freq);
+
 	for (size_t i = 0; i < config->leds_num; i++) {
-		ret = mfd_npm10xx_pin_configure(config->mfd, config->leds[i].info.index,
-						NPM10_PIN_LED, 0U);
+		idx = config->leds[i].info.index;
+		cfg |= config->leds[i].current << idx;
+	}
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_LEDDRV_CONFIG, cfg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (size_t i = 0; i < config->leds_num; i++) {
+		idx = config->leds[i].info.index;
+
+		ret = mfd_npm10xx_pin_configure(config->mfd, idx, NPM10_PIN_LED, 0U);
 		if (ret < 0) {
-			LOG_ERR("Failed to configure pin %u for LED usage",
-				config->leds[i].info.index);
+			LOG_ERR("Failed to configure pin %u for LED usage", idx);
 			return ret;
 		}
 
-		/* current is part of the global config */
-		cfg |= config->leds[i].current << config->leds[i].info.index;
-
 		if (config->leds[i].mode == MODE_HOST) {
-			mode = LEDDRV_MODE_SEL_OFF;
-			data->led_state[i] = LED_OFF;
+			if (config->leds[i].default_state == LED_DEFAULT_STATE_KEEP) {
+				ret = i2c_reg_read_byte_dt(&config->i2c, NPM10_LEDDRV_MODE0 + idx,
+							   &mode);
+				if (ret < 0) {
+					return ret;
+				}
+
+				switch (mode) {
+				case LEDDRV_MODE_SEL_OFF:
+					data->led_state[i] = LED_OFF;
+					break;
+				case LEDDRV_MODE_SEL_ON:
+					data->led_state[i] = LED_ON;
+					break;
+				case LEDDRV_MODE_SEL_CHARGE:
+				case LEDDRV_MODE_SEL_ERROR:
+				case LEDDRV_MODE_SEL_VBUS:
+					/* assume "off" when switching from an automatic mode */
+					ret = led_npm10xx_on_off(dev, i, false);
+					if (ret < 0) {
+						return ret;
+					}
+					break;
+				case LEDDRV_MODE_SEL_PWM:
+					data->led_state[i] = LED_PWM;
+					break;
+				case LEDDRV_MODE_SEL_BLINK:
+					data->led_state[i] = LED_BLINK;
+					break;
+				default:
+					LOG_ERR("Read invalid mode 0x%02X on LED%zu", mode, i);
+					return -EIO;
+				}
+			}
+
+			if (data->led_state[i] != LED_OFF) {
+				/* apply default-brightness to the LEDs that are kept lit or have
+				 * default-state set to "on"
+				 */
+				ret = led_npm10xx_set_brightness(
+					dev, i,
+					config->leds[i].default_state == LED_DEFAULT_STATE_OFF
+						? 0U
+						: config->leds[i].default_brightness);
+				if (ret < 0) {
+					return ret;
+				}
+			}
 		} else {
 			mode = config->leds[i].mode + 1;
 			data->led_state[i] = LED_AUTO;
+
+			ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_LEDDRV_MODE0 + idx, mode);
+			if (ret < 0) {
+				return ret;
+			}
+
+			ret = led_npm10xx_set_brightness(dev, i,
+							 config->leds[i].default_brightness);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
-		ret = i2c_reg_write_byte_dt(&config->i2c,
-					    NPM10_LEDDRV_MODE0 + config->leds[i].info.index, mode);
-		if (ret < 0) {
-			return ret;
-		}
+		__ASSERT_NO_MSG(data->led_state[i] != LED_UNKNOWN);
 	}
 
-	cfg |= FIELD_PREP(LEDDRV_CONFIG_RGB, config->phase_shift) |
-	       FIELD_PREP(LEDDRV_CONFIG_LOOP, config->blink_mode == BLINK_LOOP) |
-	       FIELD_PREP(LEDDRV_CONFIG_DOUBLE, config->blink_mode == BLINK_TWICE) |
-	       FIELD_PREP(LEDDRV_CONFIG_PWMFREQ_MASK, config->pwm_freq);
-
-	return i2c_reg_write_byte_dt(&config->i2c, NPM10_LEDDRV_CONFIG, cfg);
+	return 0;
 }
 
 static DEVICE_API(led, led_npm10xx_api) = {
@@ -282,6 +342,8 @@ static DEVICE_API(led, led_npm10xx_api) = {
 			},                                                                         \
 		.mode = DT_ENUM_IDX(led_node, led_mode),                                           \
 		.current = DT_ENUM_IDX(led_node, drive_current_ma),                                \
+		.default_state = DT_ENUM_IDX(led_node, default_state),                             \
+		.default_brightness = DT_PROP(led_node, default_brightness),                       \
 	},
 
 #define LED_NPM10XX_DEFINE(n)                                                                      \
