@@ -1,0 +1,14 @@
+common:
+  tags:
+    - kernel
+    - security
+    - userspace
+tests:
+  kernel.memory_protection.mem_domain_inherit:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude:
+      - posix
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
+      - qemu_riscv32e/qemu_virt_riscv32e
