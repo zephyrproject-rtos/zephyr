@@ -1035,10 +1035,12 @@ static int uart_silabs_configure(const struct device *dev,
 	struct uart_silabs_data *data = dev->data;
 	USART_OVS_TypeDef ovs;
 	uint32_t ref_freq;
+	unsigned int key;
+	uint32_t ien;
 	int err;
 
 #ifdef CONFIG_UART_SILABS_USART_ASYNC
-	if (data->dma_rx.enabled || data->dma_tx.enabled) {
+	if (data->dma_rx.enabled || data->dma_tx.buffer_length) {
 		return -EBUSY;
 	}
 #endif
@@ -1082,9 +1084,16 @@ static int uart_silabs_configure(const struct device *dev,
 	uart_silabs_irq_tx_abort_drain(dev);
 #endif
 
+	key = irq_lock();
+	ien = base->IEN;
+	base->IEN = 0;
+	irq_unlock(key);
+
 	USART_Enable(base, usartDisable);
 
 	uart_silabs_configure_peripheral(dev, ref_freq, ovs, true);
+
+	base->IEN = ien;
 
 	return 0;
 };
