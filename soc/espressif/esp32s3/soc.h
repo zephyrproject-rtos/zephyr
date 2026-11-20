@@ -19,7 +19,6 @@
 #include <stdbool.h>
 #include <zephyr/arch/xtensa/arch.h>
 
-#include <xtensa/core-macros.h>
 #include <esp_attr.h>
 #include <esp_private/esp_clk.h>
 
