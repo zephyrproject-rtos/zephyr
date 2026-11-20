@@ -6,3 +6,17 @@ project(nrf_qspi_nor)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+
+if(CONFIG_TEST_SOC_FLASH_NRF_PREEMPT)
+  target_sources(app PRIVATE src/nrf/soc_flash_nrf.c)
+  target_link_options(app PUBLIC
+    -Wl,--wrap=nrfx_nvmc_word_write
+    -Wl,--wrap=nrfx_nvmc_page_erase
+  )
+  if(CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE)
+    target_link_options(app PUBLIC -Wl,--wrap=nrfx_nvmc_page_partial_erase_continue)
+  endif()
+  if(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
+    target_link_options(app PUBLIC -Wl,--wrap=nrfx_nvmc_bytes_write)
+  endif()
+endif()
