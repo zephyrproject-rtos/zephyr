@@ -1,0 +1,120 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/g4/stm32g4.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32g414", "st,stm32g4", "simple-bus";
+
+		spi3: spi@40003c00 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40003c00 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
+			interrupts = <51 0>;
+			st,spi-data-width = "full-4-to-16-bit";
+			status = "disabled";
+		};
+
+		i2c3: i2c@40007800 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40007800 0x400>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 30)>;
+			interrupts = <92 0>, <93 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		uart5: serial@40005000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
+			resets = <&rctl STM32_RESET(APB1L, 20)>;
+			interrupts = <53 0>;
+			status = "disabled";
+		};
+
+		comp5: comparator@40010210 {
+			compatible = "st,stm32g4-comp", "st,stm32-comp";
+			reg = <0x40010210 0x4>;
+			interrupts = <65 0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+			st,exti-line = <31>;
+			status = "disabled";
+		};
+
+		comp6: comparator@40010214 {
+			compatible = "st,stm32g4-comp", "st,stm32-comp";
+			reg = <0x40010214 0x4>;
+			interrupts = <65 0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+			st,exti-line = <32>;
+			status = "disabled";
+		};
+
+		comp7: comparator@40010218 {
+			compatible = "st,stm32g4-comp", "st,stm32-comp";
+			reg = <0x40010218 0x4>;
+			interrupts = <66 0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+			st,exti-line = <33>;
+			status = "disabled";
+		};
+
+		dma1: dma@40020000 {
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>, <17 0>, <96 0>;
+			dma-requests = <8>;
+		};
+
+		dma2: dma@40020400 {
+			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <97 0>, <98 0>, <99 0>;
+			dma-requests = <8>;
+			dma-offset = <8>;
+		};
+
+		dmamux1: dmamux@40020800 {
+			dma-channels = <16>;
+		};
+
+		dac2: dac@50000c00 {
+			compatible = "st,stm32-dac";
+			reg = <0x50000c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		dac4: dac@50001400 {
+			compatible = "st,stm32-dac";
+			reg = <0x50001400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 19)>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		aes: crypto@50060000 {
+			compatible = "st,stm32-aes";
+			reg = <0x50060000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 24)>;
+			resets = <&rctl STM32_RESET(AHB2, 24)>;
+			interrupts = <85 0>;
+			status = "disabled";
+		};
+	};
+
+	smbus3: smbus3 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c3>;
+		status = "disabled";
+	};
+};
