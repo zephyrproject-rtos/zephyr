@@ -565,6 +565,18 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_MEMC_MCUX_EMC)
+	if ((uint32_t)sub_system == MCUX_EMC_CLK) {
+		CLOCK_EnableClock(kCLOCK_Emc);
+	}
+#endif
+
+#if defined(CONFIG_DISPLAY_MCUX_LCDC)
+	if ((uint32_t)sub_system == MCUX_LCD_CLK) {
+		CLOCK_EnableClock(kCLOCK_Lcd);
+	}
+#endif
+
 	return 0;
 }
 
@@ -1291,6 +1303,18 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	case MCUX_EQDC1_CLK:
 		/* EQDC is clocked from the AHB/bus clock on MCXA */
 		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
+		break;
+#endif
+
+#if defined(CONFIG_DISPLAY_MCUX_LCDC)
+	case MCUX_LCD_CLK:
+		*rate = CLOCK_GetLcdClkFreq();
+		break;
+#endif
+
+#if defined(CONFIG_MEMC_MCUX_EMC)
+	case MCUX_EMC_CLK:
+		*rate = CLOCK_GetEmcClkFreq();
 		break;
 #endif
 	}

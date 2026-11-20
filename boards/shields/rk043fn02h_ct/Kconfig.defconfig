@@ -31,4 +31,6 @@ config LV_Z_VDB_ALIGN
 
 endif # LVGL
 
+orsource "boards/*.defconfig"
+
 endif # SHIELD_RK043FN02H_CT

@@ -148,6 +148,15 @@ __weak void clock_init(void)
 			(CPU_FREQ / FSL_FEATURE_SDIF_MAX_SOURCE_CLOCK) + 1U, true);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lcdc), nxp_lpc_lcdc, okay)
+	/*
+	 * LCD controller source clock: the main clock, undivided. The LCDC
+	 * divides it down to the panel pixel clock itself.
+	 */
+	CLOCK_AttachClk(kMAIN_CLK_to_LCD_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivLcdClk, 1U, true);
+#endif
+
 	/*
 	 * The M_CAN functional clock is the core clock divided by CANnCLKDIV,
 	 * which is halted out of reset. Divide by 11 -> 20 MHz at a 220 MHz

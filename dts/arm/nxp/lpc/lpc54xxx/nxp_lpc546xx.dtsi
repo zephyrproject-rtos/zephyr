@@ -259,6 +259,23 @@
 			status = "disabled";
 		};
 
+		emc: emc@40081000 {
+			compatible = "nxp,lpc-emc";
+			reg = <0x40081000 0x1000>;
+			clocks = <&syscon MCUX_EMC_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		lcdc: display-controller@40083000 {
+			compatible = "nxp,lpc-lcdc";
+			reg = <0x40083000 0x1000>;
+			interrupts = <53 0>;
+			clocks = <&syscon MCUX_LCD_CLK>;
+			status = "disabled";
+		};
+
 		usbfs: usbfs@40084000 {
 			compatible = "nxp,lpcip3511";
 			reg = <0x40084000 0x1000>;
