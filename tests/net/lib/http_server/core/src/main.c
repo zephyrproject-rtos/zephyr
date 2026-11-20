@@ -649,15 +649,15 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 
 	case DYNAMIC_RESPONSE_HEADERS_VARIANT_204:
 		response_ctx->status = HTTP_204_NO_CONTENT;
-		response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
-		response_ctx->body_len = strlen(response_ctx->body);
+		response_ctx->body = (const uint8_t *)TEST_DYNAMIC_GET_PAYLOAD;
+		response_ctx->body_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
 		response_ctx->final_chunk = true;
 		break;
 
 	case DYNAMIC_RESPONSE_HEADERS_VARIANT_304:
 		response_ctx->status = HTTP_304_NOT_MODIFIED;
-		response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
-		response_ctx->body_len = strlen(response_ctx->body);
+		response_ctx->body = (const uint8_t *)TEST_DYNAMIC_GET_PAYLOAD;
+		response_ctx->body_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
 		response_ctx->final_chunk = true;
 		break;
 
@@ -687,8 +687,8 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 			request_continuation = true;
 		} else {
 			/* Send body in subsequent callback */
-			response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
-			response_ctx->body_len = strlen(response_ctx->body);
+			response_ctx->body = (const uint8_t *)TEST_DYNAMIC_GET_PAYLOAD;
+			response_ctx->body_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
 			response_ctx->final_chunk = true;
 			request_continuation = false;
 		}
@@ -697,8 +697,8 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 	case DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_COMBINED:
 		response_ctx->headers = extra_headers;
 		response_ctx->header_count = ARRAY_SIZE(extra_headers);
-		response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
-		response_ctx->body_len = strlen(response_ctx->body);
+		response_ctx->body = (const uint8_t *)TEST_DYNAMIC_GET_PAYLOAD;
+		response_ctx->body_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
 		response_ctx->final_chunk = true;
 		break;
 
@@ -708,7 +708,7 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 			size_t send_len = (offset == 0) ? strlen(TEST_LONG_PAYLOAD_CHUNK_1)
 							: strlen(TEST_LONG_PAYLOAD_CHUNK_2);
 
-			response_ctx->body = long_payload + offset;
+			response_ctx->body = (const uint8_t *)(long_payload + offset);
 			response_ctx->body_len = send_len;
 			offset += send_len;
 
@@ -736,15 +736,15 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 	case DYNAMIC_RESPONSE_HEADERS_VARIANT_LONG_HEADERS:
 		response_ctx->headers = long_headers;
 		response_ctx->header_count = ARRAY_SIZE(long_headers);
-		response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
-		response_ctx->body_len = strlen(response_ctx->body);
+		response_ctx->body = (const uint8_t *)TEST_DYNAMIC_GET_PAYLOAD;
+		response_ctx->body_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
 		response_ctx->final_chunk = true;
 		break;
 
 	case DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_EARLY:
 		if (status == HTTP_SERVER_REQUEST_DATA_MORE) {
-			response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
-			response_ctx->body_len = strlen(response_ctx->body);
+			response_ctx->body = (const uint8_t *)TEST_DYNAMIC_GET_PAYLOAD;
+			response_ctx->body_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
 		}
 		break;
 
@@ -765,8 +765,8 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 		if (status == HTTP_SERVER_REQUEST_DATA_MORE) {
 			response_ctx->status = HTTP_204_NO_CONTENT;
 		} else {
-			response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
-			response_ctx->body_len = strlen(response_ctx->body);
+			response_ctx->body = (const uint8_t *)TEST_DYNAMIC_GET_PAYLOAD;
+			response_ctx->body_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
 			response_ctx->final_chunk = true;
 		}
 		break;
@@ -1174,9 +1174,8 @@ static void expect_http2_headers_frame(size_t *offset, int stream_id, uint8_t fl
 }
 
 /* "payload" may be NULL to skip data frame content validation. */
-static void expect_http2_data_frame(size_t *offset, int stream_id,
-				    const uint8_t *payload, size_t payload_len,
-				    uint8_t flags)
+static void expect_http2_data_frame(size_t *offset, int stream_id, const char *payload,
+				    size_t payload_len, uint8_t flags)
 {
 	struct http2_frame frame;
 
@@ -2039,7 +2038,7 @@ ZTEST(server_function_tests, test_http2_dynamic_post)
 }
 
 /* Common code to verify POST/PUT/PATCH */
-static void common_verify_http1_dynamic_upgrade_post(const uint8_t *method)
+static void common_verify_http1_dynamic_upgrade_post(const char *method)
 {
 	static const char http1_request[] =
 		" /dynamic HTTP/1.1\r\n"
@@ -2201,7 +2200,7 @@ ZTEST(server_function_tests, test_http1_dynamic_upgrade_post_chunked_last_read)
 }
 
 /* Common code to verify POST/PUT/PATCH */
-static void common_verify_http1_dynamic_post(const uint8_t *method)
+static void common_verify_http1_dynamic_post(const char *method)
 {
 	static const char http1_request[] =
 		" /dynamic HTTP/1.1\r\n"
