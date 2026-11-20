@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ * Copyright (c) 2026 RAKwireless Technology Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,17 +43,21 @@ LOG_MODULE_REGISTER(mb85rsxx, CONFIG_EEPROM_LOG_LEVEL);
 #define EEPROM_MB85RSXX_CON_CODE	0x7FU
 
 /*
- * MB85RSXX product ID (2 bytes); first byte provides memory size, so let's use a mask later when
- * checking it
+ * Product ID, 1st and 2nd byte. Bits 7:5 of the 1st byte are "proprietary use",
+ * bits 4:0 the density code; a zero bit in id1_mask ignores that bit of the 1st byte.
  */
-#define EEPROM_MB85RSXX_PROD_ID1_MB85RS2MT	0x20U
-#define EEPROM_MB85RSXX_PROD_ID1_MB85RS2MTA	0x48U
-#define EEPROM_MB85RSXX_PROD_ID2	        0x03U
-#define EEPROM_MB85RSXX_PROD_MASK	        GENMASK(7, 5)
+struct eeprom_mb85rsxx_prod_id {
+	uint8_t id1;
+	uint8_t id1_mask;
+	uint8_t id2;
+};
 
-/* MB85RS64V (64 Kbit) product ID */
-#define EEPROM_MB85RSXX_PROD_ID1_MB85RS64V	0x03U
-#define EEPROM_MB85RSXX_PROD_ID2_MB85RS64V	0x02U
+static const struct eeprom_mb85rsxx_prod_id eeprom_mb85rsxx_prod_ids[] = {
+	{0x03U, 0xFFU, 0x02U},         /* MB85RS64V */
+	{0x20U, GENMASK(7, 5), 0x03U}, /* MB85RSxxT, any density */
+	{0x48U, 0xFFU, 0x03U},         /* MB85RS2MTA */
+	{0x49U, 0xFFU, 0x03U},         /* MB85RS4MT */
+};
 
 /* Up to 512 Kbit the address is 2 bytes, above that 3 */
 #define EEPROM_MB85RSXX_CMD_LEN(config)		((config)->size > 0x10000 ? 4U : 3U)
@@ -235,6 +240,24 @@ static size_t eeprom_mb85rsxx_size(const struct device *dev)
 	return config->size;
 }
 
+static bool eeprom_mb85rsxx_id_supported(const uint8_t id[4])
+{
+	if ((id[0] != EEPROM_MB85RSXX_MAN_ID) || (id[1] != EEPROM_MB85RSXX_CON_CODE)) {
+		return false;
+	}
+
+	ARRAY_FOR_EACH_PTR(eeprom_mb85rsxx_prod_ids, pid) {
+		const bool id1_match = (id[2] & pid->id1_mask) == pid->id1;
+		const bool id2_match = id[3] == pid->id2;
+
+		if (id1_match && id2_match) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static int eeprom_mb85rsxx_rdid(const struct device *dev)
 {
 	const struct eeprom_mb85rsxx_config *config = dev->config;
@@ -274,13 +297,7 @@ static int eeprom_mb85rsxx_rdid(const struct device *dev)
 		return err;
 	}
 
-	/* Validate Manufacturer ID and Product ID */
-	if (id[0] != EEPROM_MB85RSXX_MAN_ID || id[1] != EEPROM_MB85RSXX_CON_CODE ||
-		(((((id[2] & EEPROM_MB85RSXX_PROD_MASK) != EEPROM_MB85RSXX_PROD_ID1_MB85RS2MT) &&
-		   (id[2] != EEPROM_MB85RSXX_PROD_ID1_MB85RS2MTA)) ||
-		  id[3] != EEPROM_MB85RSXX_PROD_ID2) &&
-		 (id[2] != EEPROM_MB85RSXX_PROD_ID1_MB85RS64V ||
-		  id[3] != EEPROM_MB85RSXX_PROD_ID2_MB85RS64V))) {
+	if (!eeprom_mb85rsxx_id_supported(id)) {
 		LOG_ERR("invalid device ID: %02X %02X %02X %02X", id[0], id[1], id[2], id[3]);
 		return -EIO;
 	}
