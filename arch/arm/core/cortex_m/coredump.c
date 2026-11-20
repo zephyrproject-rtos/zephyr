@@ -8,7 +8,13 @@
 #include <zephyr/debug/coredump.h>
 #include <zephyr/kernel/thread.h>
 
-#define ARCH_HDR_VER 3
+#define ARCH_HDR_VER 4
+
+/* Layout of the frame at the switch handle of a suspended thread */
+#define SWITCH_FRAME_VALID  BIT(0)
+#define SWITCH_FRAME_FPU    BIT(1)
+#define SWITCH_FRAME_PSPLIM BIT(2)
+#define SWITCH_FRAME_VPR    BIT(3)
 
 uint32_t z_arm_coredump_fault_sp;
 
@@ -38,6 +44,7 @@ struct arm_arch_block {
 		uint32_t	callee_saved_valid;   /* non-zero if offset is valid */
 		uint32_t	callee_saved_offset;  /* offsetof(k_thread, callee_saved) */
 	} callee;
+	uint32_t switch_frame; /* SWITCH_FRAME_* flags, zero without USE_SWITCH */
 } __packed;
 
 /*
@@ -95,6 +102,13 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 		arch_blk.callee.callee_saved_offset = offsetof(struct k_thread, callee_saved);
 	}
 #endif
+
+	if (IS_ENABLED(CONFIG_USE_SWITCH)) {
+		arch_blk.switch_frame = SWITCH_FRAME_VALID |
+			(IS_ENABLED(CONFIG_FPU) ? SWITCH_FRAME_FPU : 0U) |
+			(IS_ENABLED(CONFIG_BUILTIN_STACK_GUARD) ? SWITCH_FRAME_PSPLIM : 0U) |
+			(IS_ENABLED(CONFIG_ARMV8_1_M_MVEI) ? SWITCH_FRAME_VPR : 0U);
+	}
 
 	/* Send for output */
 	coredump_buffer_output((uint8_t *)&hdr, sizeof(hdr));
