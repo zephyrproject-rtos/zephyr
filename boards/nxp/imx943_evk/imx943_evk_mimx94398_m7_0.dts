@@ -13,6 +13,10 @@
 	compatible = "nxp,imx943_evk";
 	model = "NXP i.MX943 EVK board";
 
+	aliases {
+		watchdog0 = &wdog5;
+	};
+
 	chosen {
 		zephyr,flash = &itcm;
 		zephyr,sram = &dtcm;
@@ -53,5 +57,9 @@
 };
 
 &tstmr2 {
+	status = "okay";
+};
+
+&wdog5 {
 	status = "okay";
 };

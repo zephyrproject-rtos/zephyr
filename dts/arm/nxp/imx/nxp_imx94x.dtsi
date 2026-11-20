@@ -443,6 +443,17 @@
 			status = "disabled";
 		};
 
+		wdog6: watchdog@427e0000 {
+			compatible = "nxp,wdog32";
+			reg = <0x427e0000 0x1000>;
+			interrupts = <93 0>;
+			clocks = <&scmi_clk IMX943_CLK_32K>;
+			clock-names = "clksrc1";
+			clk-source = <1>;
+			clk-divider = <1>;
+			status = "disabled";
+		};
+
 		gpt_hw_timer2: gpt@428a0000 {
 			compatible = "nxp,gpt-hw-timer";
 			reg = <0x428a0000 0x4000>;
@@ -813,6 +824,17 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
+			status = "disabled";
+		};
+
+		wdog7: watchdog@4d0e0000 {
+			compatible = "nxp,wdog32";
+			reg = <0x4d0e0000 0x1000>;
+			interrupts = <94 0>;
+			clocks = <&scmi_clk IMX943_CLK_32K>;
+			clock-names = "clksrc1";
+			clk-source = <1>;
+			clk-divider = <1>;
 			status = "disabled";
 		};
 
