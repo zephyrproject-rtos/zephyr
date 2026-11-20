@@ -936,6 +936,7 @@ int bt_hid_device_connect(struct bt_conn *conn, struct bt_hid_device **hid)
 
 	inst->state = BT_HID_STATE_CTRL_CONNECTING;
 	atomic_set_bit(&inst->flags, BT_HID_DEVICE_FLAG_CTRL_ATTACHED);
+	*hid = inst;
 
 	err = bt_l2cap_chan_connect(conn, &inst->ctrl_session.br_chan.chan, BT_L2CAP_PSM_HID_CTRL);
 	if (err != 0) {
@@ -945,10 +946,10 @@ int bt_hid_device_connect(struct bt_conn *conn, struct bt_hid_device **hid)
 		 */
 		atomic_clear_bit(&inst->flags, BT_HID_DEVICE_FLAG_CTRL_ATTACHED);
 		bt_hid_device_cleanup(inst);
+		*hid = NULL;
 		return err;
 	}
 
-	*hid = inst;
 	return 0;
 }
 
