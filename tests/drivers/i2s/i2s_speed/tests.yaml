@@ -51,6 +51,25 @@ tests:
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
 
+  # STM32 H7 (st,stm32h7-i2s) with two I2S nodes wired back to back, see
+  # boards/<board>.overlay. The DMA writes the blocks, so cores with a data cache
+  # need them non-cacheable. Add a board to platform_allow with its pins in
+  # boards/<board>.overlay; a board without a data cache needs a scenario without
+  # the nocache config.
+  drivers.i2s.speed.gpio_loopback.stm32.i2s.h7.separate.nocache:
+    tags:
+      - drivers
+      - i2s
+    filter: dt_compat_enabled("st,stm32h7-i2s")
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    extra_configs:
+      - CONFIG_I2S_TEST_SEPARATE_DEVICES=y
+      - CONFIG_NOCACHE_MEMORY=y
+    platform_allow:
+      - nucleo_h745zi_q/stm32h745xx/m7
+
   drivers.i2s.speed.legacy:
     depends_on: i2s
     tags:
