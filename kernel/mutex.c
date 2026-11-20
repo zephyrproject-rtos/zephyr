@@ -197,6 +197,27 @@ static int32_t held_mutexes_highest_waiter_prio(struct k_thread *thread,
 	}
 	return prio;
 }
+
+/*
+ * Set a thread's base priority while preserving any priority boost required
+ * by mutexes it currently holds. mutex_lock protects orig_prio and the
+ * held_mutexes list; the scheduler lock is acquired inside the priority
+ * recalculation, following the same lock order as mutex lock/unlock.
+ */
+bool z_mutex_thread_priority_set(struct k_thread *thread, int prio)
+{
+	k_spinlock_key_t key = k_spin_lock(&mutex_lock);
+
+	thread->orig_prio = prio;
+	prio = held_mutexes_highest_waiter_prio(thread, prio);
+
+	bool need_sched = z_thread_prio_set(thread, prio);
+
+	k_spin_unlock(&mutex_lock, key);
+
+	return need_sched;
+}
+
 #endif
 
 int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)

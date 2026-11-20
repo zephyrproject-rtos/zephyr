@@ -1649,7 +1649,11 @@ void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 	 */
 	Z_ASSERT_VALID_PRIO(prio, NULL);
 
+#if Z_MUTEX_PI_ENABLED
+	bool need_sched = z_mutex_thread_priority_set((struct k_thread *)thread, prio);
+#else
 	bool need_sched = z_thread_prio_set((struct k_thread *)thread, prio);
+#endif
 
 	if ((need_sched) && (IS_ENABLED(CONFIG_SMP) ||
 			     (_current->base.sched_locked == 0U))) {
