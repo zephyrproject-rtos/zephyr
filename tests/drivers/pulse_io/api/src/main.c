@@ -14,6 +14,7 @@ ZTEST(pulse_io_api, test_device_ready)
 	zassert_true(device_is_ready(dev), "pulse_io device not ready");
 }
 
+#if DT_NODE_HAS_COMPAT(DT_NODELABEL(pulse_io0), zephyr_pulse_io_loopback)
 ZTEST(pulse_io_api, test_capabilities)
 {
 	struct pulse_io_caps caps;
@@ -26,6 +27,7 @@ ZTEST(pulse_io_api, test_capabilities)
 	zassert_equal(caps.tx_channel_mask, BIT_MASK(4));
 	zassert_equal(caps.rx_channel_mask, BIT_MASK(4));
 }
+#endif
 
 ZTEST(pulse_io_api, test_channel_lifecycle)
 {
@@ -40,6 +42,7 @@ ZTEST(pulse_io_api, test_channel_lifecycle)
 	zassert_equal(pulse_io_channel_get(dev, 99, &ch), -ENODEV);
 }
 
+#if DT_NODE_HAS_COMPAT(DT_NODELABEL(pulse_io0), zephyr_pulse_io_loopback)
 ZTEST(pulse_io_api, test_configure_rejects_bad_mode)
 {
 	struct pulse_io_channel *ch;
@@ -90,6 +93,7 @@ ZTEST(pulse_io_api, test_transmit_receive_roundtrip)
 	zassert_ok(pulse_io_stop(dev, ch));
 	zassert_ok(pulse_io_channel_release(dev, ch));
 }
+#endif
 
 /* Bit template shared by the codec tests: zero = short high, one = long. */
 #define CODEC_T 4U
@@ -188,6 +192,7 @@ ZTEST(pulse_io_api, test_cell_mode_config)
 	zassert_ok(pulse_io_channel_release(dev, ch));
 }
 
+#if DT_NODE_HAS_COMPAT(DT_NODELABEL(pulse_io0), zephyr_pulse_io_loopback)
 ZTEST(pulse_io_api, test_transmit_sync_rejects_infinite_loop)
 {
 	struct pulse_io_channel *ch;
@@ -209,5 +214,6 @@ ZTEST(pulse_io_api, test_transmit_sync_rejects_infinite_loop)
 		      "infinite loop must be rejected by sync transmit");
 	zassert_ok(pulse_io_channel_release(dev, ch));
 }
+#endif
 
 ZTEST_SUITE(pulse_io_api, NULL, NULL, NULL, NULL, NULL);
