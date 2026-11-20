@@ -91,6 +91,67 @@ if(CONFIG_ARM64 AND CONFIG_THREAD_LOCAL_STORAGE)
   generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/tls.llext
     ${ZEPHYR_BINARY_DIR}/include/generated/tls.inc
   )
+
+  # The same extension with the HI12 addend moved past 2**24, which is outside
+  # the range AAELF64 defines for R_AARCH64_TLSLE_ADD_TPREL_HI12, so loading it
+  # has to be refused.
+  set(tls_oob_bin ${PROJECT_BINARY_DIR}/llext/tls_oob.llext)
+  add_custom_command(
+    OUTPUT ${tls_oob_bin}
+    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tprel_oob.py
+            ${PROJECT_BINARY_DIR}/llext/tls.llext ${tls_oob_bin}
+    DEPENDS ${PROJECT_BINARY_DIR}/llext/tls.llext
+            ${PROJECT_SOURCE_DIR}/tprel_oob.py
+  )
+  generate_inc_file_for_target(app ${tls_oob_bin}
+    ${ZEPHYR_BINARY_DIR}/include/generated/tls_oob.inc
+  )
+
+  # And one where the addend is untouched but the symbol value wraps the unsigned
+  # offset back below 2**24, so only bounding the operands before the addition
+  # catches it.
+  set(tls_wrap_bin ${PROJECT_BINARY_DIR}/llext/tls_wrap.llext)
+  add_custom_command(
+    OUTPUT ${tls_wrap_bin}
+    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tprel_oob.py
+            --wrap-symbol errno
+            ${PROJECT_BINARY_DIR}/llext/tls.llext ${tls_wrap_bin}
+    DEPENDS ${PROJECT_BINARY_DIR}/llext/tls.llext
+            ${PROJECT_SOURCE_DIR}/tprel_oob.py
+  )
+  generate_inc_file_for_target(app ${tls_wrap_bin}
+    ${ZEPHYR_BINARY_DIR}/include/generated/tls_wrap.inc
+  )
+
+  # And one where both operands stay inside the checked range and only their sum
+  # crosses 2**24, so the guard on the computed offset is the one that fires.
+  set(tls_sum_bin ${PROJECT_BINARY_DIR}/llext/tls_sum.llext)
+  add_custom_command(
+    OUTPUT ${tls_sum_bin}
+    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tprel_oob.py
+            --sum-only
+            ${PROJECT_BINARY_DIR}/llext/tls.llext ${tls_sum_bin}
+    DEPENDS ${PROJECT_BINARY_DIR}/llext/tls.llext
+            ${PROJECT_SOURCE_DIR}/tprel_oob.py
+  )
+  generate_inc_file_for_target(app ${tls_sum_bin}
+    ${ZEPHYR_BINARY_DIR}/include/generated/tls_sum.inc
+  )
+
+  # And one where both operands stay inside the checked range and the offset
+  # lands on -1, which is the signed side of the same guard.
+  set(tls_neg_bin ${PROJECT_BINARY_DIR}/llext/tls_neg.llext)
+  add_custom_command(
+    OUTPUT ${tls_neg_bin}
+    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tprel_oob.py
+            --negative
+            ${PROJECT_BINARY_DIR}/llext/tls.llext ${tls_neg_bin}
+    DEPENDS ${PROJECT_BINARY_DIR}/llext/tls.llext
+            ${PROJECT_SOURCE_DIR}/tprel_oob.py
+  )
+  generate_inc_file_for_target(app ${tls_neg_bin}
+    ${ZEPHYR_BINARY_DIR}/include/generated/tls_neg.inc
+  )
 endif()
 
 if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT)
