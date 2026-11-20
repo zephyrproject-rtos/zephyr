@@ -1760,3 +1760,8 @@ test_i2c_adxl373: adxl373@e4 {
 	reg = <0xe4>;
 	int1-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_ictx53xx: ictx53xx@e5 {
+	compatible = "invensense,ictx53xx";
+	reg = <0xe5>;
+};
