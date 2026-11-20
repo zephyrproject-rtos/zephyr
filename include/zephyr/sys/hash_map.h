@@ -13,6 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_SYS_HASH_MAP_H_
 #define ZEPHYR_INCLUDE_SYS_HASH_MAP_H_
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -186,6 +187,10 @@ static inline void sys_hashmap_clear(struct sys_hashmap *map, sys_hashmap_callba
 static inline int sys_hashmap_insert(struct sys_hashmap *map, uint64_t key, uint64_t value,
 				     uint64_t *old_value)
 {
+	if (map->data->size >= map->config->max_size && !map->api->get(map, key, NULL)) {
+		return -ENOSPC;
+	}
+
 	return map->api->insert(map, key, value, old_value);
 }
 
