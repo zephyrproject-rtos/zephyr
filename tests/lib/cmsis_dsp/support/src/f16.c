@@ -68,7 +68,7 @@ static void test_arm_fill_f16(size_t length)
 	/* Validate output */
 	for (index = 0; index < length; index++) {
 		zassert_equal(
-			output[index], val, ASSERT_MSG_INCORRECT_COMP_RESULT);
+			(float)output[index], (float)val, ASSERT_MSG_INCORRECT_COMP_RESULT);
 	}
 
 	/* Free output buffer */
