@@ -255,6 +255,19 @@ void test_get_stored_dump_size(int size_expected)
 	}
 }
 
+#ifdef CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY
+static int copy_stored_dump(off_t offset, uint8_t *buffer, size_t length)
+{
+	struct coredump_cmd_copy_arg copy = {
+		.offset = offset,
+		.buffer = buffer,
+		.length = length,
+	};
+
+	return coredump_cmd(COREDUMP_CMD_COPY_STORED_DUMP, &copy);
+}
+#endif
+
 /* Execute tests in exact sequence with the stored core dump. */
 
 ZTEST(coredump_backends, test_coredump_0_ready) {
@@ -269,6 +282,21 @@ ZTEST(coredump_backends, test_coredump_1_stored) {
 ZTEST(coredump_backends, test_coredump_2_size) {
 	test_get_stored_dump_size(CONFIG_TEST_STORED_DUMP_SIZE);
 }
+
+#ifdef CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY
+ZTEST(coredump_backends, test_coredump_3_copy_bounds) {
+	static uint8_t buf[CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE + 1];
+	const off_t size = CONFIG_DEBUG_COREDUMP_BACKEND_IN_MEMORY_SIZE;
+
+	/* The whole dump area can be copied, but nothing past it */
+	zassert_true(copy_stored_dump(0, buf, size) >= 0);
+	zassert_true(copy_stored_dump(size - 1, buf, 1) >= 0);
+	zassert_equal(copy_stored_dump(0, buf, size + 1), -EINVAL);
+	zassert_equal(copy_stored_dump(size, buf, 1), -EINVAL);
+	zassert_equal(copy_stored_dump(-1, buf, 1), -EINVAL);
+	zassert_equal(copy_stored_dump(1, buf, SIZE_MAX), -EINVAL);
+}
+#endif
 
 ZTEST(coredump_backends, test_coredump_3_verify) {
 	test_verify_stored_dump();
