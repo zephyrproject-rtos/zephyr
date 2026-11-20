@@ -24,3 +24,7 @@ tests:
   net.socket.tls.no_dtls_cid:
     extra_configs:
       - CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID=n
+  net.socket.tls.dtls_three_sessions:
+    extra_configs:
+      - CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS=6
+      - CONFIG_MBEDTLS_HEAP_SIZE=45000
