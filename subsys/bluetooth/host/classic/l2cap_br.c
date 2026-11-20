@@ -1139,13 +1139,14 @@ static void l2cap_br_retry_handler(struct k_work *work);
 static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 			      bt_l2cap_chan_destroy_t destroy)
 {
-	struct bt_l2cap_br_chan *ch = l2cap_br_chan_alloc_cid(conn, chan);
+	struct bt_l2cap_br_chan *ch = BR_CHAN(chan);
 
-	if (!ch) {
-		LOG_WRN("Unable to allocate L2CAP CID");
-		return false;
+	/* CID allocation failure still runs teardown without attaching conn. */
+	ARRAY_FOR_EACH_PTR(ch->flags, flag) {
+		atomic_clear(flag);
 	}
-
+	chan->conn = NULL;
+	chan->destroy = destroy;
 	sys_slist_init(&ch->_pdu_tx_queue);
 
 	/* All dynamic channels have the destroy handler which makes sure that
@@ -1161,6 +1162,11 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	k_work_init_delayable(&ch->ret_work, l2cap_br_ret_timeout);
 	k_work_init_delayable(&ch->monitor_work, l2cap_br_monitor_timeout);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
+	if (l2cap_br_chan_alloc_cid(conn, chan) == NULL) {
+		LOG_WRN("Unable to allocate L2CAP CID");
+		return false;
+	}
+
 	bt_l2cap_chan_add(conn, chan, destroy);
 
 	return true;
