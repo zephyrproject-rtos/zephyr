@@ -197,10 +197,21 @@ int z_impl_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 
 	timeout = timespec_to_timeout(&duration, NULL);
 	end = sys_timepoint_calc(timeout);
-	do {
-		(void)k_sleep(timeout);
+	for (;;) {
+		/* k_sleep_ticks() reports at most INT32_MAX ticks, and relative
+		 * timeouts get one extra tick of round-up, so only trust a zero
+		 * return for sleeps shorter than INT32_MAX ticks.
+		 */
+		const bool trust_zero = timeout.ticks < (k_ticks_t)INT32_MAX;
+
+		if ((k_sleep_ticks(timeout) == 0) && trust_zero) {
+			break;
+		}
 		timeout = sys_timepoint_timeout(end);
-	} while (!K_TIMEOUT_EQ(timeout, K_NO_WAIT));
+		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			break;
+		}
+	}
 
 	if (update_rmtp) {
 		*rmtp = (struct timespec){
