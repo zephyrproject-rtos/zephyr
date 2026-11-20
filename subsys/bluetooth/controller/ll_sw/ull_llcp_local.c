@@ -684,6 +684,64 @@ void llcp_lr_terminate(struct ll_conn *conn)
 	lr_set_state(conn, LR_STATE_IDLE);
 }
 
+/* Whether the procedure has fixed an instant at which the peer changes the
+ * PHY, the connection parameters or the channel map.
+ */
+static bool lr_awaits_instant(struct proc_ctx *ctx)
+{
+	bool awaits_instant;
+
+	switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_PHY)
+	case PROC_PHY_UPDATE:
+		awaits_instant = llcp_lp_pu_awaiting_instant(ctx);
+		break;
+#endif /* CONFIG_BT_CTLR_PHY */
+	case PROC_CONN_UPDATE:
+	case PROC_CONN_PARAM_REQ:
+		awaits_instant = llcp_lp_cu_awaiting_instant(ctx);
+		break;
+#if defined(CONFIG_BT_CENTRAL)
+	case PROC_CHAN_MAP_UPDATE:
+		awaits_instant = llcp_lp_chmu_awaiting_instant(ctx);
+		break;
+#endif /* CONFIG_BT_CENTRAL */
+	default:
+		awaits_instant = false;
+		break;
+	}
+
+	return awaits_instant;
+}
+
+void llcp_lr_terminate_keep_instant(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx = llcp_lr_peek(conn);
+
+	if ((ctx == NULL) || !lr_awaits_instant(ctx)) {
+		llcp_lr_terminate(conn);
+		return;
+	}
+
+	/* The procedure applies the change at the instant, as the peer does,
+	 * and the termination runs after it. Flush the procedures queued
+	 * behind it.
+	 */
+	ctx = lr_dequeue(conn);
+	llcp_lr_flush_procedures(conn);
+	llcp_lr_enqueue(conn, ctx);
+}
+
+bool llcp_shared_data_lock(void)
+{
+	return shared_data_access_lock() != 0U;
+}
+
+void llcp_shared_data_unlock(bool key)
+{
+	shared_data_access_unlock(key);
+}
+
 #ifdef ZTEST_UNITTEST
 
 bool llcp_lr_is_disconnected(struct ll_conn *conn)

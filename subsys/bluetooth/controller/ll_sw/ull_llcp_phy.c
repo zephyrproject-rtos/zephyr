@@ -925,7 +925,9 @@ void llcp_lp_pu_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 bool llcp_lp_pu_awaiting_instant(struct proc_ctx *ctx)
 {
-	return (ctx->state == LP_PU_STATE_WAIT_INSTANT);
+	/* The peer may have received the LL_PHY_UPDATE_IND before its ack */
+	return (ctx->state == LP_PU_STATE_WAIT_TX_ACK_PHY_UPDATE_IND) ||
+	       (ctx->state == LP_PU_STATE_WAIT_INSTANT);
 }
 
 /*
@@ -1345,5 +1347,7 @@ void llcp_rp_pu_tx_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 bool llcp_rp_pu_awaiting_instant(struct proc_ctx *ctx)
 {
-	return (ctx->state == RP_PU_STATE_WAIT_INSTANT);
+	/* The peer may have received the LL_PHY_UPDATE_IND before its ack */
+	return (ctx->state == RP_PU_STATE_WAIT_TX_ACK_PHY_UPDATE_IND) ||
+	       (ctx->state == RP_PU_STATE_WAIT_INSTANT);
 }

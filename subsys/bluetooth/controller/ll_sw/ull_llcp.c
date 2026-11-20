@@ -542,6 +542,21 @@ void ull_cp_prt_reload_set(struct ll_conn *conn, uint32_t conn_intv_us)
 	conn->llcp.prt_reload = RADIO_CONN_EVENTS((40U * 1000U * 1000U), conn_intv_us);
 }
 
+static void prt_rescale(uint16_t *expire, uint32_t old_intv_us, uint32_t new_intv_us)
+{
+	if (*expire != 0U) {
+		const uint64_t left_us = (uint64_t)*expire * old_intv_us;
+
+		*expire = (uint16_t)MIN(DIV_ROUND_UP(left_us, new_intv_us), UINT16_MAX);
+	}
+}
+
+void ull_cp_prt_rescale(struct ll_conn *conn, uint32_t old_intv_us, uint32_t new_intv_us)
+{
+	prt_rescale(&conn->llcp.local.prt_expire, old_intv_us, new_intv_us);
+	prt_rescale(&conn->llcp.remote.prt_expire, old_intv_us, new_intv_us);
+}
+
 void ull_cp_run(struct ll_conn *conn)
 {
 	llcp_rr_run(conn);
@@ -765,11 +780,31 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8
 uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 {
 	struct proc_ctx *ctx;
+	bool key;
 
-	llcp_lr_terminate(conn);
-	llcp_rr_terminate(conn);
+	/* A procedure that has fixed an instant keeps running: the peer
+	 * changes the PHY, the connection parameters or the channel map at
+	 * the instant, and the connection is lost if the LL_TERMINATE_IND
+	 * has not got through by then. The lock keeps the procedure from
+	 * completing between the check and the flush.
+	 */
+	key = llcp_shared_data_lock();
+	llcp_lr_terminate_keep_instant(conn);
+	llcp_rr_terminate_keep_instant(conn);
+	llcp_shared_data_unlock(key);
 
 	ctx = llcp_create_local_procedure(PROC_TERMINATE);
+	if (ctx == NULL) {
+		/* The contexts are shared by all connections. Without a free
+		 * one, the termination takes the one of the kept procedure.
+		 */
+		key = llcp_shared_data_lock();
+		llcp_lr_terminate(conn);
+		llcp_shared_data_unlock(key);
+
+		ctx = llcp_create_local_procedure(PROC_TERMINATE);
+	}
+
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
