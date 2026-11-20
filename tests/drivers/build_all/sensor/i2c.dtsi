@@ -1760,3 +1760,8 @@ test_i2c_adxl373: adxl373@e4 {
 	reg = <0xe4>;
 	int1-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_sths34pf80: sths34pf80@e5 {
+	compatible = "st,sths34pf80";
+	reg = <0xe5>;
+};
