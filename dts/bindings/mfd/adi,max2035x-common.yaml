@@ -1,0 +1,166 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties for the Analog Devices MAX20356/MAX20358 wearable PMIC.
+
+  Subsystems are exposed as child nodes (regulator, charger, gpio, watchdog),
+  each with its own compatible.
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      Host GPIO connected to the PMIC INTB pin (open-drain, active-low). When
+      present, the driver uses INTB as an interrupt trigger source: it decodes
+      the pending Int0-5/Status0-4 sources and dispatches registered callbacks.
+      When absent, the driver operates in a poll-only fallback.
+
+  spi-dvs:
+    type: phandle
+    description: |
+      SPI controller wired to MPC0/MPC1/MPC2 (CS/SCLK/DIN) for SPI dynamic
+      voltage scaling (DVS Mode 2). Required only when a buck child selects
+      adi,dvs-mode = "spi".
+
+  adi,buck1-pgood-int-gpios:
+    type: phandle-array
+    description: |
+      Host GPIO wired to the MPC pin that Buck1 power-good is routed to (via
+      mfd_max20356_mpc_int_route()). When present, a transition on this line
+      dispatches the MAX20356_EVT_DVS_DONE event group. Independent of int-gpios
+      (the buck-PGOOD/USBOK interrupts assert on MPC pins, not on INTB).
+
+  adi,buck2-pgood-int-gpios:
+    type: phandle-array
+    description: |
+      Host GPIO wired to the MPC pin that Buck2 power-good is routed to. A
+      transition dispatches MAX20356_EVT_DVS_DONE. See adi,buck1-pgood-int-gpios.
+
+  adi,buck3-pgood-int-gpios:
+    type: phandle-array
+    description: |
+      Host GPIO wired to the MPC pin that Buck3 power-good is routed to. A
+      transition dispatches MAX20356_EVT_DVS_DONE. See adi,buck1-pgood-int-gpios.
+
+  adi,usbok-int-gpios:
+    type: phandle-array
+    description: |
+      Host GPIO wired to the MPC pin that the USBOK status is routed to. A
+      transition dispatches the MAX20356_EVT_USB event group. See
+      adi,buck1-pgood-int-gpios.
+
+  adi,intb-unmasked-in-shutdown:
+    type: boolean
+    description: |
+      Leave INTB unmasked during shutdown (PwrCfg.INTBootMsk = 1). When absent
+      INTB is masked during shutdown (OTP default), which prevents the INTB line
+      from locking up the application processor while the PMIC powers down.
+
+  adi,stay-on:
+    type: boolean
+    description: |
+      Set PwrCfg.StayOn at init to keep the part powered on (StayOn = 1). The
+      hardware requires this within 5s of power-on or it shuts down and returns
+      to the power-off condition; the bit has no effect once already set. Only
+      set this when the driver, rather than the application, owns the keep-alive
+      handshake.
+
+  adi,active-discharge-constant:
+    type: boolean
+    description: |
+      Discharge a disabled block's output constantly rather than for 50ms
+      (MiscFunctions.MiscFunc[0] = 1). When absent the OTP default (50ms pulse)
+      is kept. Only applies to blocks that have active discharge enabled.
+
+  adi,rtc-ldo-off:
+    type: boolean
+    description: |
+      Turn the RTC-LDO feature off (MiscFunctions.MiscFunc[1] = 1). When absent
+      the OTP default (RTC-LDO on) is kept.
+
+  adi,factory-mode-disabled:
+    type: boolean
+    description: |
+      Disable factory mode (MiscFunctions.MiscFunc[2] = 1). When absent the OTP
+      default (factory mode enabled) is kept.
+
+  adi,ivmon-high-impedance:
+    type: boolean
+    description: |
+      Force the IVMON monitor-mux output high-impedance at init (MONCfg.MONHiZ =
+      1); effective while the mux is disabled (MONCtr = 0000). When absent the OTP
+      default is kept. Runtime channel selection via mfd_max20356_mon_select()
+      does not change this bit.
+
+  adi,input-current-limit-milliamp:
+    type: int
+    enum: [90, 150, 200, 300, 400, 450, 1000, 1500]
+    description: |
+      CHGIN programmable input current limit (ILimCtrl1.ILimCntl). Selects the
+      steady-state input current limit in mA.
+
+  adi,input-current-limit-max-milliamp:
+    type: int
+    enum: [90, 150, 200, 300, 400, 450, 1000, 1500]
+    description: |
+      CHGIN input overcurrent limit during the blanking time
+      (ILimCtrl1.ILimMax).
+
+  adi,input-current-limit-blanking-microsec:
+    type: int
+    enum: [50, 500, 1000, 10000]
+    description: |
+      CHGIN input current-limiter blanking time (ILimCtrl1.ILimBlank), in
+      microseconds.
+
+  adi,sys-discharge-in-recovery:
+    type: boolean
+    description: |
+      Enable SYS discharge in battery recovery mode (ILimCtrl2.SysDSCEn).
+
+  adi,sys-min-voltage-microvolt:
+    type: int
+    enum: [3300000, 3400000, 3500000, 3600000, 3700000, 3800000, 3900000,
+           4000000, 4100000, 4200000, 4300000, 4400000, 4500000, 4600000,
+           4700000, 4800000]
+    description: |
+      SYS minimum regulated voltage (ILimCtrl2.SysMinVlt), 3.3V..4.8V in 0.1V
+      steps.
+
+  adi,sys-uvlo-threshold-microvolt:
+    type: int
+    enum: [2750000, 2900000, 3000000, 3200000]
+    description: |
+      SYS UVLO falling threshold (DropCtrl.SysUVLOThSel). Typical VSYS-falling
+      thresholds: 2.75V, 2.90V, 3.00V, 3.20V.
+
+  adi,power-reset-config:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    description: |
+      Power reset configuration (BootCfg.PwrRstCfg[3:0]), selecting how the
+      device turns on, off, and resets. Use the MAX20356_PWRRSTCFG_* macros from
+      <zephyr/dt-bindings/mfd/max20356.h>.
+
+  adi,soft-reset-keeps-registers:
+    type: boolean
+    description: |
+      Hold (rather than reset) registers on a soft reset (BootCfg.SftRstCfg).
+
+  adi,boot-delay-milliseconds:
+    type: int
+    enum: [80, 120, 220, 420]
+    description: |
+      Boot delay the sequencing engine waits before enabling features with
+      sequence bits 010, 011, 100 (BootCfg.BootDly[1:0]), in milliseconds.
+
+  adi,sys-uvlo-auto-retry:
+    type: boolean
+    description: |
+      Enable SYS UVLO automatic retry (BootCfg.ChgAlwTry).
