@@ -306,6 +306,32 @@ FM_Cmd_Status_t FM_MutexRelease(void)
 	return error;
 }
 
+
+static int stm32_flash_fm_init(void)
+{
+	struct k_work_queue_config flash_mngr_cfg = {.name = "flash manager thread"};
+
+	k_work_queue_init(&flash_mngr_work_q);
+	k_work_queue_start(&flash_mngr_work_q, flash_mngr_work_area,
+				K_THREAD_STACK_SIZEOF(flash_mngr_work_area),
+				K_PRIO_COOP(CONFIG_STM32WBA_FLASH_MNGR_THREAD_PRIO),
+				&flash_mngr_cfg);
+
+	k_work_init(&fm_work, &FM_BackgroundProcess_Entry);
+
+	/* Init the Flash Manager module */
+	FM_Init();
+
+	/* Enable flash driver system flag */
+	FD_SetStatus(FD_FLASHACCESS_RFTS, LL_FLASH_DISABLE);
+	FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_ENABLE);
+	FD_SetStatus(FD_FLASHACCESS_SYSTEM, LL_FLASH_ENABLE);
+
+	return 0;
+}
+
+SYS_INIT(stm32_flash_fm_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
 static DEVICE_API(flash, flash_stm32_api) = {
 	.erase = flash_stm32_erase,
 #ifndef CONFIG_FLASH_STM32_ACCEPT_UNALIGNED_WRITES
@@ -323,27 +349,9 @@ static DEVICE_API(flash, flash_stm32_api) = {
 
 static int stm32_flash_init(const struct device *dev)
 {
-	struct k_work_queue_config flash_mngr_cfg = {.name = "flash manager thread"};
-
 	k_sem_init(&FLASH_STM32_PRIV(dev)->sem, 1, 1);
 
 	LOG_DBG("Flash initialized. BS: %zu", flash_stm32_parameters.write_block_size);
-
-	k_work_queue_init(&flash_mngr_work_q);
-	k_work_queue_start(&flash_mngr_work_q, flash_mngr_work_area,
-				K_THREAD_STACK_SIZEOF(flash_mngr_work_area),
-				K_PRIO_COOP(CONFIG_STM32WBA_FLASH_MNGR_THREAD_PRIO),
-				&flash_mngr_cfg);
-
-	k_work_init(&fm_work, &FM_BackgroundProcess_Entry);
-
-	/* Init the Flash Manager module */
-	FM_Init();
-
-	/* Enable flash driver system flag */
-	FD_SetStatus(FD_FLASHACCESS_RFTS, LL_FLASH_DISABLE);
-	FD_SetStatus(FD_FLASHACCESS_RFTS_BYPASS, LL_FLASH_ENABLE);
-	FD_SetStatus(FD_FLASHACCESS_SYSTEM, LL_FLASH_ENABLE);
 
 #if ((CONFIG_FLASH_LOG_LEVEL >= LOG_LEVEL_DBG) && CONFIG_FLASH_PAGE_LAYOUT)
 	const struct flash_pages_layout *layout;
