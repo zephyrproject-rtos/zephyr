@@ -747,13 +747,20 @@ Networking
   :kconfig:option:`CONFIG_NET_DEDICATED_WORKQUEUE` restores the previous behavior and saves the
   thread and its stack.
 
+* :c:func:`zsock_poll` on a DTLS server socket now wakes for its handshake retransmission timer,
+  so that the server retransmits without the caller polling with a timeout. A DTLS server whose
+  handshake stalls can now report ``POLLHUP`` once its session expires
+  (:kconfig:option:`CONFIG_NET_SOCKETS_DTLS_TIMEOUT`), not only when the next datagram arrives.
+
 * With :kconfig:option:`CONFIG_NET_SOCKETS_ENABLE_DTLS` and
   :kconfig:option:`CONFIG_MBEDTLS_SSL_SRV_C` enabled, :c:func:`zsock_poll` now has room for one
   more ``struct k_poll_event`` per TLS context
   (:kconfig:option:`CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS`, at most
   :kconfig:option:`CONFIG_ZVFS_POLL_MAX`), so that a DTLS server socket can take a second one.
   Each thread that calls it or :c:func:`zsock_select` needs that many times
-  ``sizeof(struct k_poll_event)`` more stack.
+  ``sizeof(struct k_poll_event)`` more stack. A DTLS server socket listed more than once in one
+  :c:func:`zsock_poll` call takes a second entry for each listing, which can leave no entry for a
+  later descriptor, and the call then fails with ``ENOMEM``.
 
 * Network interface driver APIs are now device API classes. Out-of-tree network drivers must define
   their API instances with :c:macro:`DEVICE_API` and use the renamed structs:

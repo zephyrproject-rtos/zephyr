@@ -10,6 +10,7 @@
 #include <zephyr/net/coap_service.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/tls_credentials.h>
 
 static int coap_method1(struct coap_resource *resource, struct coap_packet *request,
 			struct net_sockaddr *addr, net_socklen_t addr_len)
@@ -43,9 +44,13 @@ COAP_RESOURCE_DEFINE(resource_0, service_A, {
 	.put = coap_method2,
 });
 
+static int coap_ping_get(struct coap_resource *resource, struct coap_packet *request,
+			 struct net_sockaddr *addr, net_socklen_t addr_len);
+
 static const char * const resource_1_path[] = { "res1", NULL };
 COAP_RESOURCE_DEFINE(resource_1, service_A, {
 	.path = resource_1_path,
+	.get = coap_ping_get,
 	.post = coap_method1,
 });
 
@@ -513,5 +518,124 @@ ZTEST(coap_service, test_ipv4_request_gets_reply)
 
 	zsock_close(sock);
 }
+
+#ifdef CONFIG_NET_SOCKETS_ENABLE_DTLS
+#define SERVICE_WAIT_TRIES 100U
+#define SERVICE_WAIT_MS 10U
+#define PING_REPLY_TIMEOUT_MS 1000U
+
+static const uint8_t service_C_psk[] = { 0x01, 0x02, 0x03, 0x04 };
+static const char service_C_psk_id[] = "coap_server_test";
+
+static void wait_for_service(const struct coap_service *service, int running)
+{
+	for (unsigned int i = 0U;
+	     (i < SERVICE_WAIT_TRIES) && (coap_service_is_running(service) != running); i++) {
+		(void)k_sleep(K_MSEC(SERVICE_WAIT_MS));
+	}
+}
+
+static bool ping_service_A(int sock, int timeout_ms)
+{
+	struct net_sockaddr_in6 dst = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(4242),
+	};
+	struct zsock_pollfd pfd = {
+		.fd = sock,
+		.events = ZSOCK_POLLIN,
+	};
+	struct coap_packet request;
+	uint8_t buf[64];
+	uint8_t rsp[64];
+	ssize_t len;
+
+	if (zsock_inet_pton(NET_AF_INET6, "::1", &dst.sin6_addr) != 1) {
+		return false;
+	}
+
+	if (coap_packet_init(&request, buf, sizeof(buf), COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_GET, coap_next_id()) != 0) {
+		return false;
+	}
+
+	if (coap_packet_append_option(&request, COAP_OPTION_URI_PATH, "res1", 4) != 0) {
+		return false;
+	}
+
+	if (zsock_sendto(sock, request.data, request.offset, 0, (struct net_sockaddr *)&dst,
+			 sizeof(dst)) != request.offset) {
+		return false;
+	}
+
+	if (zsock_poll(&pfd, 1, timeout_ms) != 1) {
+		return false;
+	}
+
+	len = zsock_recv(sock, rsp, sizeof(rsp), 0);
+	if (len < 4) {
+		return false;
+	}
+
+	return rsp[1] == COAP_RESPONSE_CODE_CONTENT;
+}
+
+ZTEST(coap_service, test_dtls_service_in_full_poll_set)
+{
+	struct net_if *iface = net_if_get_default();
+	struct net_in_addr service_C_addr;
+	bool addr_added;
+	bool replied = false;
+	int psk_ret;
+	int psk_id_ret;
+	int stop_D_ret;
+	int start_ret;
+	int stop_ret;
+	int restart_ret;
+	int sock;
+
+	zassert_equal(zsock_inet_pton(NET_AF_INET, "192.168.1.1", &service_C_addr), 1);
+	addr_added = net_if_ipv4_addr_add(iface, &service_C_addr, NET_ADDR_MANUAL, 0) != NULL;
+	psk_ret = tls_credential_add(sec_tag_list[0], TLS_CREDENTIAL_PSK, service_C_psk,
+				     sizeof(service_C_psk));
+	psk_id_ret = tls_credential_add(sec_tag_list[0], TLS_CREDENTIAL_PSK_ID, service_C_psk_id,
+					strlen(service_C_psk_id));
+
+	sock = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+
+	wait_for_service(&service_A, 1);
+	wait_for_service(&service_D, 1);
+	stop_D_ret = coap_service_stop(&service_D);
+	start_ret = coap_service_start(&service_C);
+	wait_for_service(&service_C, 1);
+	if (sock >= 0) {
+		replied = ping_service_A(sock, PING_REPLY_TIMEOUT_MS);
+	}
+
+	stop_ret = coap_service_stop(&service_C);
+
+	if (sock >= 0) {
+		(void)zsock_close(sock);
+	}
+
+	restart_ret = coap_service_start(&service_D);
+	if (addr_added) {
+		(void)net_if_ipv4_addr_rm(iface, &service_C_addr);
+	}
+
+	(void)tls_credential_delete(sec_tag_list[0], TLS_CREDENTIAL_PSK_ID);
+	(void)tls_credential_delete(sec_tag_list[0], TLS_CREDENTIAL_PSK);
+
+	zexpect_true(addr_added, "adding the address of service_C failed");
+	zexpect_ok(psk_ret);
+	zexpect_ok(psk_id_ret);
+	zexpect_true(sock >= 0, "socket() failed");
+	zexpect_ok(stop_D_ret);
+	zexpect_ok(start_ret);
+	zexpect_true(replied, "the plain service beside a DTLS service did not reply");
+	zexpect_ok(stop_ret);
+	zexpect_ok(restart_ret);
+}
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 ZTEST_SUITE(coap_service, NULL, NULL, NULL, NULL, NULL);
