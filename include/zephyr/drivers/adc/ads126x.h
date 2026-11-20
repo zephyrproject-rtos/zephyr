@@ -28,6 +28,23 @@ extern "C" {
 
 /**
  * @brief ADS126X analog multiplexer input selection.
+ *
+ * Values for the @c input_positive and @c input_negative members of struct adc_channel_cfg. A
+ * single-ended channel measures @c input_positive with respect to AINCOM, a differential channel
+ * measures @c input_positive - @c input_negative.
+ *
+ * @code{.c}
+ * struct adc_channel_cfg cfg = {
+ *     .channel_id = 0,
+ *     .gain = ADC_GAIN_1,
+ *     .reference = ADC_REF_INTERNAL,
+ *     .acquisition_time = ADC_ACQ_TIME_DEFAULT,
+ *     .differential = false,
+ *     .input_positive = ADS126X_MUX_AIN3,
+ * };
+ *
+ * adc_channel_setup(dev, &cfg);
+ * @endcode
  */
 enum ads126x_mux_input {
 	/** Analog input AIN0 */
@@ -78,38 +95,6 @@ enum ads126x_mux_input {
 	/** Open input selection */
 	ADS126X_MUX_OPEN = 0x0F,
 };
-
-/**
- * @brief Configure ADS126x ADC inputs at runtime.
- *
- * Single-ended:
- *
- *     input_positive = ADS126X_MUX_AIN3
- *     differential   = false
- *
- *     Measures AIN3 with respect to AINCOM.
- *
- * Differential:
- *
- *     input_positive = ADS126X_MUX_AIN3
- *     input_negative = ADS126X_MUX_AIN4
- *     differential   = true
- *
- *     Measures AIN3 - AIN4.
- *
- * Example:
- *
- *     struct adc_channel_cfg cfg = {
- *         .channel_id = 0,
- *         .gain = ADC_GAIN_1,
- *         .reference = ADC_REF_INTERNAL,
- *         .acquisition_time = ADC_ACQ_TIME_DEFAULT,
- *         .differential = false,
- *         .input_positive = ADS126X_MUX_AIN3,
- *     };
- *
- *     adc_channel_setup(dev, &cfg);
- */
 
 /**
  * @}
