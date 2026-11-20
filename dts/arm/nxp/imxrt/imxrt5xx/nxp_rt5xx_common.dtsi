@@ -693,6 +693,14 @@
 		status = "okay";
 	};
 
+	acmp: cmp@139000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x139000 0x1000>;
+		interrupts = <24 0>;
+		clocks = <&clkctl1 MCUX_LPCMP0_CLK>;
+		status = "disabled";
+	};
+
 	lpadc0: adc@13a000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x13a000 0x304>;

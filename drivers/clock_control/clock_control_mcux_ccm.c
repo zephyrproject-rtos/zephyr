@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2024-2025 NXP
+ * Copyright 2017, 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -177,6 +177,15 @@ static const clock_ip_name_t xbar_clocks[] = {
 };
 #endif
 
+#if defined(CONFIG_COMPARATOR_NXP_CMP) && defined(CONFIG_SOC_SERIES_IMXRT10XX)
+static const clock_ip_name_t acmp_clocks[] = {
+	kCLOCK_Acmp1,
+	kCLOCK_Acmp2,
+	kCLOCK_Acmp3,
+	kCLOCK_Acmp4,
+};
+#endif
+
 static int mcux_ccm_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
 {
@@ -236,6 +245,15 @@ static int mcux_ccm_on(const struct device *dev,
 	case IMX_CCM_XBAR2_CLK:
 	case IMX_CCM_XBAR3_CLK:
 		CLOCK_EnableClock(xbar_clocks[instance]);
+		return 0;
+#endif
+
+#if defined(CONFIG_COMPARATOR_NXP_CMP) && defined(CONFIG_SOC_SERIES_IMXRT10XX)
+	case IMX_CCM_ACMP1_CLK:
+	case IMX_CCM_ACMP2_CLK:
+	case IMX_CCM_ACMP3_CLK:
+	case IMX_CCM_ACMP4_CLK:
+		CLOCK_EnableClock(acmp_clocks[instance]);
 		return 0;
 #endif
 
@@ -316,6 +334,15 @@ static int mcux_ccm_off(const struct device *dev,
 	case IMX_CCM_XBAR2_CLK:
 	case IMX_CCM_XBAR3_CLK:
 		CLOCK_DisableClock(xbar_clocks[instance]);
+		return 0;
+#endif
+
+#if defined(CONFIG_COMPARATOR_NXP_CMP) && defined(CONFIG_SOC_SERIES_IMXRT10XX)
+	case IMX_CCM_ACMP1_CLK:
+	case IMX_CCM_ACMP2_CLK:
+	case IMX_CCM_ACMP3_CLK:
+	case IMX_CCM_ACMP4_CLK:
+		CLOCK_DisableClock(acmp_clocks[instance]);
 		return 0;
 #endif
 

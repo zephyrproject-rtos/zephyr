@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2023-2025 NXP
+ * Copyright 2017, 2023-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -131,6 +131,38 @@
 				reg = <3>;
 				status = "disabled";
 			};
+		};
+
+		acmp1: cmp@40094000 {
+			compatible = "nxp,cmp";
+			reg = <0x40094000 0x8>;
+			interrupts = <123 0>;
+			clocks = <&ccm IMX_CCM_ACMP1_CLK 0 0>;
+			status = "disabled";
+		};
+
+		acmp2: cmp@40094008 {
+			compatible = "nxp,cmp";
+			reg = <0x40094008 0x8>;
+			interrupts = <124 0>;
+			clocks = <&ccm IMX_CCM_ACMP2_CLK 0 0>;
+			status = "disabled";
+		};
+
+		acmp3: cmp@40094010 {
+			compatible = "nxp,cmp";
+			reg = <0x40094010 0x8>;
+			interrupts = <125 0>;
+			clocks = <&ccm IMX_CCM_ACMP3_CLK 0 0>;
+			status = "disabled";
+		};
+
+		acmp4: cmp@40094018 {
+			compatible = "nxp,cmp";
+			reg = <0x40094018 0x8>;
+			interrupts = <126 0>;
+			clocks = <&ccm IMX_CCM_ACMP4_CLK 0 0>;
+			status = "disabled";
 		};
 
 		iomuxcgpr: iomuxcgpr@400ac000 {

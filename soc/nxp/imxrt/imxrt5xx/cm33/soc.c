@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023, NXP
+ * Copyright 2022-2023, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -389,6 +389,16 @@ void __weak rt5xx_clock_init(void)
 
 	RESET_ClearPeripheralReset(kSMART_DMA_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_Smartdma);
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(acmp), nxp_kinetis_acmp, okay)
+	CLOCK_AttachClk(kMAIN_CLK_to_ACMP_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivAcmpClk, 2);
+	POWER_DisablePD(kPDRUNCFG_PD_ACMP);
+	POWER_ApplyPD();
+	RESET_PeripheralReset(kACMP0_RST_SHIFT_RSTn);
+	/* Make sure ACMP voltage reference available */
+	POWER_SetAnalogBuffer(true);
 #endif
 
 #if CONFIG_DSP_BACKEND_POWERQUAD

@@ -1,0 +1,43 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/*
+ * GPIO_AD_B1_03 (J22-8) looped back to ACMP1 input GPIO_AD_B1_01 (J23-5).
+ */
+
+/ {
+	aliases {
+		test-comp = &acmp1;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	pinmux_acmp1: pinmux_acmp1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_b1_01_acmp1_in0>;
+			bias-disable;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+};
+
+&acmp1 {
+	pinctrl-0 = <&pinmux_acmp1>;
+	pinctrl-names = "default";
+
+	positive-mux-input = "IN0";
+	negative-mux-input = "IN7";	/* DAC output = VDD / 2 */
+	dac-vref-source = "VIN2";
+	dac-value = <31>;
+	status = "okay";
+};
