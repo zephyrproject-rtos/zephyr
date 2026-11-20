@@ -711,6 +711,21 @@ static inline bool z_arm_is_pc_valid(uintptr_t pc)
 }
 #endif
 
+/* A stack limit violation suppresses the stacking of the exception
+ * context, so the ESF of an escalated stack overflow holds stale data.
+ * Probing its PC for a synchronous SVC then reads an arbitrary address:
+ * the BusFault it raises is latched and masks the stack overflow, and an
+ * unaligned or device access locks the core up.
+ */
+static inline bool z_arm_is_escalated_stack_overflow(void)
+{
+#if defined(CONFIG_ARMV8_M_MAINLINE)
+	return (SCB->CFSR & SCB_CFSR_STKOF_Msk) != 0;
+#else
+	return false;
+#endif /* CONFIG_ARMV8_M_MAINLINE */
+}
+
 /**
  *
  * @brief Dump hard fault information
@@ -754,7 +769,9 @@ static uint32_t hard_fault(struct arch_esf *esf, bool *recoverable, bool non_sec
 		PR_EXC("  Debug event");
 	} else if ((SCB->HFSR & SCB_HFSR_FORCED_Msk) != 0) {
 		PR_EXC("  Fault escalation (see below)");
-		if (z_arm_is_synchronous_svc(esf)) {
+		if (z_arm_is_escalated_stack_overflow()) {
+			reason = usage_fault(esf);
+		} else if (z_arm_is_synchronous_svc(esf)) {
 			PR_EXC("ARCH_EXCEPT with reason %x\n", esf->basic.r0);
 			reason = esf->basic.r0;
 		} else if ((SCB->CFSR & SCB_CFSR_MEMFAULTSR_Msk) != 0) {
