@@ -481,6 +481,68 @@ void z_reschedule_irqlock(uint32_t key)
 	}
 }
 
+#ifdef CONFIG_USE_SWITCH
+static ALWAYS_INLINE int swap_switch(unsigned int key, bool release_global_lock)
+{
+	struct k_thread *old_thread = _current;
+	struct k_thread *new_thread;
+
+	old_thread->swap_retval = -EAGAIN;
+
+#ifdef CONFIG_SMP
+	new_thread = z_swap_next_thread();
+#else
+	new_thread = _kernel.ready_q.cache;
+#endif
+
+	if (new_thread != old_thread) {
+		z_sched_usage_switch(new_thread);
+		z_smp_swap_prepare(new_thread, release_global_lock);
+		z_thread_mark_switched_out();
+		z_sched_switch_spin(new_thread);
+		z_current_thread_set(new_thread);
+
+#if defined(CONFIG_TIMESLICING) && defined(CONFIG_SMP)
+		/* Uniprocessor builds start it in update_cache() */
+		z_time_slice_reset(new_thread);
+#endif /* CONFIG_TIMESLICING && CONFIG_SMP */
+
+		z_sched_spinlock_transfer_owner(new_thread);
+
+		arch_cohere_stacks(old_thread, NULL, new_thread);
+		z_smp_switch_requeue(old_thread);
+
+		void *newsh = new_thread->switch_handle;
+
+		z_smp_switch_handle_clear(new_thread);
+		z_sched_spinlock_release();
+		arch_switch(newsh, &old_thread->switch_handle);
+	} else {
+		z_sched_spinlock_release();
+	}
+
+	if (release_global_lock) {
+		irq_unlock(key);
+	} else {
+		arch_irq_unlock(key);
+	}
+
+	return _current->swap_retval;
+}
+
+#ifdef CONFIG_SMP
+int z_swap_switch(unsigned int key, bool release_global_lock)
+{
+	return swap_switch(key, release_global_lock);
+}
+#else
+int z_swap_switch_up(unsigned int key)
+{
+	return swap_switch(key, false);
+}
+#endif
+#endif /* CONFIG_USE_SWITCH */
+
 #if defined(CONFIG_USE_SWITCH) && !defined(CONFIG_SMP)
 void *z_get_next_switch_handle(void *interrupted)
 {

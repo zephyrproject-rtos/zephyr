@@ -30,24 +30,34 @@ extern void z_check_stack_sentinel(void);
  * Needed for SMP, where the scheduler requires spinlocking that we
  * don't want to have to do in per-architecture assembly.
  *
- * Note that is_spinlock is a compile-time construct which will be
- * optimized out when this function is expanded.
+ * do_swap() is inlined in each caller to resolve the lock handling at
+ * compile time, as is_spinlock and often lock are constants. The rest
+ * is done by z_swap_switch(), called with the scheduler spinlock held.
+ * release_global_lock tells z_swap_switch() to release the SMP global
+ * irq_lock() of the outgoing thread.
  */
-static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
-					  struct k_spinlock *lock,
-					  bool is_spinlock)
-{
-	struct k_thread *new_thread, *old_thread;
+#ifdef CONFIG_SMP
+int z_swap_switch(unsigned int key, bool release_global_lock);
+#else
+/* Uniprocessor builds have no global lock to release. Dropping the
+ * argument saves each caller from setting it up.
+ */
+int z_swap_switch_up(unsigned int key);
+#define z_swap_switch(key, release_global_lock) z_swap_switch_up(key)
+#endif
 
+static ALWAYS_INLINE int do_swap(unsigned int key,
+				 struct k_spinlock *lock,
+				 bool is_spinlock)
+{
 #ifdef CONFIG_SPIN_VALIDATE
 	z_assert_can_swap(key, lock);
 #endif /* CONFIG_SPIN_VALIDATE */
 
-	old_thread = _current;
-
+	/* A sentinel failure aborts the thread, which takes the scheduler
+	 * spinlock, so check before taking it.
+	 */
 	z_check_stack_sentinel();
-
-	old_thread->swap_retval = -EAGAIN;
 
 	/* We always take the scheduler spinlock if we don't already
 	 * have it.  We "release" other spinlocks here.  But we never
@@ -63,45 +73,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		}
 	}
 
-#ifdef CONFIG_SMP
-	new_thread = z_swap_next_thread();
-#else
-	new_thread = _kernel.ready_q.cache;
-#endif
-
-	if (new_thread != old_thread) {
-		z_sched_usage_switch(new_thread);
-		z_smp_swap_prepare(new_thread, !is_spinlock);
-		z_thread_mark_switched_out();
-		z_sched_switch_spin(new_thread);
-		z_current_thread_set(new_thread);
-
-#if defined(CONFIG_TIMESLICING) && defined(CONFIG_SMP)
-		/* Uniprocessor builds start it in update_cache() */
-		z_time_slice_reset(new_thread);
-#endif /* CONFIG_TIMESLICING && CONFIG_SMP */
-
-		z_sched_spinlock_transfer_owner(new_thread);
-
-		arch_cohere_stacks(old_thread, NULL, new_thread);
-		z_smp_switch_requeue(old_thread);
-
-		void *newsh = new_thread->switch_handle;
-
-		z_smp_switch_handle_clear(new_thread);
-		z_sched_spinlock_release();
-		arch_switch(newsh, &old_thread->switch_handle);
-	} else {
-		z_sched_spinlock_release();
-	}
-
-	if (is_spinlock) {
-		arch_irq_unlock(key);
-	} else {
-		irq_unlock(key);
-	}
-
-	return _current->swap_retval;
+	return z_swap_switch(key, !is_spinlock);
 }
 
 static inline int z_swap_irqlock(unsigned int key)
