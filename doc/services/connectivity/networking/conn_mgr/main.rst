@@ -110,6 +110,9 @@ Usage
 
 Connectivity monitoring is enabled if the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER` Kconfig option is enabled.
 
+Connectivity monitoring tracks as many ifaces as there are IP configurations: the larger of :kconfig:option:`CONFIG_NET_IF_MAX_IPV4_COUNT` and :kconfig:option:`CONFIG_NET_IF_MAX_IPV6_COUNT` (of the enabled IP versions).
+Ifaces beyond that number are not monitored and do not count towards readiness; a warning is logged at boot if there are more ifaces.
+
 To receive connectivity updates, create and register a listener for the :c:macro:`NET_EVENT_L4_CONNECTED` and :c:macro:`NET_EVENT_L4_DISCONNECTED` :ref:`network management <net_mgmt_interface>` events:
 
 .. code-block:: c
