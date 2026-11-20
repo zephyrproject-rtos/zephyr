@@ -410,6 +410,16 @@ static int broadcast_reception_stop_rem_src(struct bt_cap_common_proc *active_pr
 	return err;
 }
 
+/* A removed receive state is also considered stopped, as the server or another client may have
+ * removed it before or during the procedure
+ */
+static void broadcast_reception_stop_src_removed(struct cap_broadcast_reception_stop *stop_param)
+{
+	stop_param->stopped_recvd = true;
+	stop_param->removed_recvd = true;
+	stop_param->waiting_for_notification = false;
+}
+
 static void cap_commander_ba_add_src_cb(struct bt_conn *conn, int err)
 {
 	struct bt_cap_common_proc *active_proc = bt_cap_common_get_active_proc();
@@ -826,8 +836,7 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 		stop_param = &proc_param->broadcast_reception_stop;
 
 		if (state == NULL && !stop_param->removed_recvd) {
-			stop_param->removed_recvd = true;
-			stop_param->waiting_for_notification = false;
+			broadcast_reception_stop_src_removed(stop_param);
 		} else if (state != NULL && state->src_id == stop_param->src_id &&
 			   state->pa_sync_state != BT_BAP_PA_STATE_SYNCED && !big_synced &&
 			   !stop_param->stopped_recvd) {
@@ -924,6 +933,20 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 		   subproc_type == BT_CAP_COMMON_SUBPROC_TYPE_STOP_SRC) {
 		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_REM_SRC);
 
+		/* Some sources may already have been removed */
+		broadcast_reception_update_proc_done_cnt(active_proc);
+
+		/* Treat all done members as being initiated after a `bt_cap_common_set_subproc` so
+		 * that `bt_cap_common_proc_is_done` call will treat the done ones correctly
+		 */
+		active_proc->proc_initiated_cnt = active_proc->proc_done_cnt;
+
+		if (bt_cap_common_proc_is_done()) {
+			cap_commander_proc_complete(active_proc);
+
+			return;
+		}
+
 		proc_param = broadcast_reception_get_next_proc_param(active_proc);
 		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
 
@@ -991,7 +1014,12 @@ static void cap_commander_ba_rem_src_cb(struct bt_conn *conn, int err)
 	__ASSERT_NO_MSG(stop_param->write_pending);
 	stop_param->write_pending = false;
 
-	if (err != 0) {
+	if (err == BT_BAP_BASS_ERR_INVALID_SRC_ID) {
+		/* The source has already been removed, e.g. by the server or another client */
+		LOG_DBG("Conn %p source ID 0x%02X already removed", (void *)conn,
+			stop_param->src_id);
+		broadcast_reception_stop_src_removed(stop_param);
+	} else if (err != 0) {
 		LOG_DBG("Failed removing source: %d", err);
 
 		bt_cap_common_abort_proc(conn, err);
@@ -1062,7 +1090,12 @@ static void cap_commander_ba_mod_src_cb(struct bt_conn *conn, int err)
 	__ASSERT_NO_MSG(stop_param->write_pending);
 	stop_param->write_pending = false;
 
-	if (err != 0) {
+	if (err == BT_BAP_BASS_ERR_INVALID_SRC_ID) {
+		/* The source has already been removed, e.g. by the server or another client */
+		LOG_DBG("Conn %p source ID 0x%02X already removed", (void *)conn,
+			stop_param->src_id);
+		broadcast_reception_stop_src_removed(stop_param);
+	} else if (err != 0) {
 		LOG_DBG("Failed to modify source on %p: %d", conn, err);
 
 		bt_cap_common_abort_proc(conn, err);
@@ -1111,6 +1144,13 @@ static void cap_commander_ba_mod_src_cb(struct bt_conn *conn, int err)
 		 * haven't received empty (removed) receive states yet after setting the new
 		 * subproc
 		 */
+		broadcast_reception_update_proc_done_cnt(active_proc);
+
+		/* Treat all done members as being initiated after a `bt_cap_common_set_subproc` so
+		 * that `bt_cap_common_proc_is_done` call will treat the done ones correctly
+		 */
+		active_proc->proc_initiated_cnt = active_proc->proc_done_cnt;
+
 		if (!bt_cap_common_proc_is_done()) {
 			proc_param = broadcast_reception_get_next_proc_param(active_proc);
 			__ASSERT(proc_param != NULL,
