@@ -479,7 +479,14 @@ static bool tx_buffer_timeout_supported(struct test_context *ctx)
 		return false;
 	}
 	if (ret == 0) {
-		ipc_service_drop_tx_buffer(&ctx->ep, buf);
+		ret = ipc_service_drop_tx_buffer(&ctx->ep, buf);
+		if (ret == -ENOTSUP) {
+			/*
+			 * test_get_tx_buffer_timeout needs drop to release a held buffer
+			 * while the timed get waits, so skip it.
+			 */
+			return false;
+		}
 	}
 
 	return true;

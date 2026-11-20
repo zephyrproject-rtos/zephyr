@@ -48,6 +48,7 @@ tests:
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpuapp
+      - ek_ra8p1/r7ka8p1kflcac/cm85
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpuapp
