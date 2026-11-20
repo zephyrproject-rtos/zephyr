@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	smbus0: smbus0 {
+		compatible = "zephyr,smbus-i2c";
+		i2c = <&i2c0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		pmbus@40 {
+			compatible = "zephyr,pmbus";
+			reg = <0x40>;
+		};
+	};
+};

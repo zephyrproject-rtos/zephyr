@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SENSOR_PMBUS
+	bool "Generic PMBus sensor"
+	default y
+	depends on DT_HAS_ZEPHYR_PMBUS_ENABLED
+	depends on SMBUS
+	select PMBUS
+	help
+	  Enable the generic driver reading the standard telemetry commands of
+	  a PMBus device.
