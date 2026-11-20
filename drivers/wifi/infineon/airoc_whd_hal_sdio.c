@@ -267,8 +267,10 @@ whd_result_t whd_bus_sdio_register_oob_intr(whd_driver_t whd_driver)
 {
 #if DT_INST_NODE_HAS_PROP(0, wifi_host_wake_gpios)
 	int ret;
-	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct airoc_wifi_data *data = dev->data;
+	/* No DT device is defined for this instance under WPA supplicant
+	 * (NET_DEVICE_INIT_INSTANCE), so DEVICE_DT_GET can't be used here.
+	 */
+	struct airoc_wifi_data *data = &airoc_wifi_dev_data;
 
 	/* Get OOB pin info */
 	const whd_oob_config_t *oob_config = &whd_driver->bus_priv->sdio_config.oob_config;

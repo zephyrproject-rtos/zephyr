@@ -66,8 +66,11 @@ config WHD_DISABLE_SDIO_PULLUP_DURING_SPI_SLEEP
 
 config IFX_WIFI_SOFTAP_SUPPORT
 	bool
+	depends on WIFI_NM_WPA_SUPPLICANT
 	help
-	  Enable WiFi SoftAP support in the driver
+	  Enable WiFi SoftAP support in the wpa_supplicant driver ops. The
+	  raw, non-supplicant airoc_mgmt_ap_enable() path does not depend
+	  on this symbol.
 
 config AIROC_WIFI_CUSTOM
 	bool "Custom CYW43xx device/module"
