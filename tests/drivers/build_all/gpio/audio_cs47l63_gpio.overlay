@@ -1,0 +1,45 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			cs-gpios = <&test_gpio 0 0>;
+
+			test_spi_cs47l63: cs47l63@0 {
+				compatible = "cirrus,cs47l63";
+				status = "okay";
+				reg = <0x00>;
+				spi-max-frequency = <8000000>;
+				reset-gpios = <&test_gpio 1 GPIO_ACTIVE_LOW>;
+
+				test_spi_cs47l63_gpio: gpio {
+					compatible = "cirrus,cs47l63-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <12>;
+				};
+			};
+		};
+	};
+};
