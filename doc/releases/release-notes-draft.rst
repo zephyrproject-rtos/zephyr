@@ -38,6 +38,13 @@ Security Vulnerability Related
   removed APIs and options, boards, shields, drivers and samples are generated
   into the change inventory at release time.
 
+Kernel
+******
+
+* A custom :c:func:`k_sys_fatal_error_handler` can restart the faulting thread instead of
+  halting the system: :c:func:`k_thread_restart_schedule` re-creates the thread from the system
+  workqueue once it has been aborted. See :ref:`fatal_thread_restart`.
+
 Libraries / Subsystems
 **********************
 

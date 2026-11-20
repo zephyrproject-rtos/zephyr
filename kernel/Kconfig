@@ -389,6 +389,38 @@ config NONZERO_SPINLOCK_SIZE
 	  non-zero size (such as if used in an array). It is automatically
 	  selected when using C++.
 
+config THREAD_RESTART_ON_FATAL_ERROR
+	bool "Thread restart on fatal error [EXPERIMENTAL]"
+	depends on MULTITHREADING && SYS_CLOCK_EXISTS
+	select EXPERIMENTAL
+	help
+	  Provide k_thread_restart_schedule(), which a custom
+	  k_sys_fatal_error_handler() can call to re-create the faulting
+	  thread from the system workqueue after it has been aborted.
+
+if THREAD_RESTART_ON_FATAL_ERROR
+
+config THREAD_RESTART_ON_FATAL_ERROR_POLL_MIN_MS
+	int "Default initial poll interval for the faulting thread to exit"
+	default 1
+	range 1 1000
+	help
+	  Default initial interval, in milliseconds, at which the restart
+	  work item polls for the aborted thread to exit. The interval
+	  doubles on each attempt. Can be overridden per descriptor with
+	  k_thread_restart_poll_set().
+
+config THREAD_RESTART_ON_FATAL_ERROR_POLL_MAX_MS
+	int "Default maximum poll interval for the faulting thread to exit"
+	default 100
+	range THREAD_RESTART_ON_FATAL_ERROR_POLL_MIN_MS 10000
+	help
+	  Default upper bound, in milliseconds, of the poll interval
+	  backoff. Can be overridden per descriptor with
+	  k_thread_restart_poll_set().
+
+endif # THREAD_RESTART_ON_FATAL_ERROR
+
 endmenu
 
 menu "Kernel Debugging and Metrics"
