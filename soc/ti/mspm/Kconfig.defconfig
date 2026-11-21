@@ -23,4 +23,15 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYSCON_INIT_PRIORITY
 	default 20 if CLOCK_CONTROL_MSPM0
 
+if CPU_HAS_ICACHE
+
+configdefault CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+endif # CPU_HAS_ICACHE
+
 endif # SOC_FAMILY_TI_MSPM
