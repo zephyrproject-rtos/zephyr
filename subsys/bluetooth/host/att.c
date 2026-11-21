@@ -2355,20 +2355,6 @@ static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		return BT_GATT_ITER_STOP;
 	}
 
-	/* Check if attribute requires handler to accept the data */
-	if (!(attr->perm & BT_GATT_PERM_PREPARE_WRITE)) {
-		goto append;
-	}
-
-	/* Write attribute value to check if device is authorized */
-	write = attr->write(data->conn, attr, data->value, data->len,
-			    data->offset, BT_GATT_WRITE_FLAG_PREPARE);
-	if (write != 0) {
-		data->err = err_to_att(write);
-		return BT_GATT_ITER_STOP;
-	}
-
-append:
 	if (sys_slist_len(&data->att->prep_queue) >= (size_t)PREP_QUEUE_MAX) {
 		LOG_WRN_RATELIMIT("Per-connection prepare queue limit (%d) reached for %s",
 				  PREP_QUEUE_MAX, bt_conn_dst_str(data->conn));
@@ -2383,6 +2369,21 @@ append:
 		return BT_GATT_ITER_STOP;
 	}
 
+	/* Check if attribute requires handler to accept the data */
+	if (!(attr->perm & BT_GATT_PERM_PREPARE_WRITE)) {
+		goto append;
+	}
+
+	/* Write attribute value to check if device is authorized */
+	write = attr->write(data->conn, attr, data->value, data->len,
+			    data->offset, BT_GATT_WRITE_FLAG_PREPARE);
+	if (write != 0) {
+		net_buf_drop(&data->buf);
+		data->err = err_to_att(write);
+		return BT_GATT_ITER_STOP;
+	}
+
+append:
 	attr_data = net_buf_user_data(data->buf);
 	attr_data->handle = handle;
 	attr_data->offset = data->offset;
@@ -2522,6 +2523,7 @@ static uint8_t exec_write_reassemble(uint16_t handle, uint16_t offset,
 
 static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 {
+	bool prepared = !sys_slist_is_empty(&chan->att->prep_queue);
 	struct net_buf *buf;
 
 	if (flags != BT_ATT_FLAG_EXEC) {
@@ -2529,6 +2531,10 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 		 * discarded, the queue is cleared and the response is sent.
 		 */
 		net_buf_slist_purge(&chan->att->prep_queue);
+		if (prepared) {
+			bt_gatt_execute_write_ended(att_chan_get_conn(chan),
+						    BT_GATT_EXECUTE_WRITE_CANCELLED, 0U);
+		}
 		goto rsp;
 	}
 
@@ -2562,6 +2568,8 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 			/* Discard queued buffers */
 			net_buf_unref(buf);
 			net_buf_slist_purge(&chan->att->prep_queue);
+			bt_gatt_execute_write_ended(att_chan_get_conn(chan),
+						    BT_GATT_EXECUTE_WRITE_FAILED, err);
 			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
 				     handle, err);
 			return 0;
@@ -2575,9 +2583,16 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 			 * and only an Error Response is sent.
 			 */
 			net_buf_slist_purge(&chan->att->prep_queue);
+			bt_gatt_execute_write_ended(att_chan_get_conn(chan),
+						    BT_GATT_EXECUTE_WRITE_FAILED, err);
 			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ, handle, err);
 			return 0;
 		}
+	}
+
+	if (prepared) {
+		bt_gatt_execute_write_ended(att_chan_get_conn(chan), BT_GATT_EXECUTE_WRITE_WRITTEN,
+					    0U);
 	}
 
 rsp:
