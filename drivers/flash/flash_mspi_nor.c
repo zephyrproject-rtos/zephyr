@@ -973,6 +973,37 @@ static int exit_dpd(const struct device *const dev)
 }
 #endif /* WITH_DPD */
 
+#if defined(WITH_ULBPR)
+/* Clear the block protection that some chips (e.g. SST26VF) set at power-up */
+static int global_unlock(const struct device *dev)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	int rc;
+
+	rc = cmd_wren(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	set_up_xfer(dev, MSPI_TX, dev_config->control_xfer_mode);
+	rc = perform_xfer(dev, SPI_NOR_CMD_ULBPR);
+	if (rc < 0) {
+		LOG_ERR("%s failed: %d", __func__, rc);
+		return rc;
+	}
+
+	/* ULBPR does not reset the write enable latch, so clear it. */
+	set_up_xfer(dev, MSPI_TX, dev_config->control_xfer_mode);
+	rc = perform_xfer(dev, SPI_NOR_CMD_WRDI);
+	if (rc < 0) {
+		LOG_ERR("%s: WRDI failed: %d", __func__, rc);
+		return rc;
+	}
+
+	return 0;
+}
+#endif /* WITH_ULBPR */
+
 static int dev_pm_action_cb(const struct device *dev,
 			    enum pm_device_action action)
 {
@@ -1993,6 +2024,15 @@ static int flash_chip_init(const struct device *dev)
 		}
 	}
 
+#if defined(WITH_ULBPR)
+	if (dev_config->requires_ulbpr) {
+		rc = global_unlock(dev);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+#endif
+
 #if defined(CONFIG_MSPI_MEMMAP)
 	/* Enable XIP access for this chip if specified so in DT. */
 	if (dev_config->memmap_cfg.enable) {
@@ -2288,6 +2328,7 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		IO_MODE_FLAGS(DT_INST_ENUM_IDX(inst, mspi_io_mode)),		\
 		.initial_soft_reset = DT_INST_PROP(inst, initial_soft_reset),	\
 		.has_dpd = DT_INST_PROP(inst, has_dpd),				\
+		.requires_ulbpr = DT_INST_PROP(inst, requires_ulbpr),		\
 		.uses_runtime_sfdp = DT_INST_PROP(inst, use_runtime_sfdp),	\
 		.control_xfer_mode = FLASH_MSPI_NOR_CONTROL_XFER_MODE,		\
 		.data_xfer_mode = FLASH_MSPI_NOR_DATA_XFER_MODE,		\
