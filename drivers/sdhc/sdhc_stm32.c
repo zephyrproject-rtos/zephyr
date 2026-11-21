@@ -1822,15 +1822,33 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 			goto end;
 		}
 
-		/* Calculate clock divider
-		 * Formula: clock_div = PeripheralClock / (2 * DesiredClock)
+		/*
+		 * Bus clock = kernel clock / (2 * CLKDIV), or the kernel clock
+		 * itself for CLKDIV = 0. Round the divider up so the bus clock
+		 * never exceeds the requested one.
 		 */
-		uint32_t clock_div = data->sdmmc_clk / (2U * ios->clock);
+		uint32_t clock_div;
+		uint32_t bus_clk;
+
+		if (data->sdmmc_clk <= ios->clock) {
+			clock_div = 0U;
+			bus_clk = data->sdmmc_clk;
+		} else {
+			clock_div = DIV_ROUND_UP(data->sdmmc_clk, 2U * ios->clock);
+			if (clock_div > (SDMMC_CLKCR_CLKDIV >> SDMMC_CLKCR_CLKDIV_Pos)) {
+				LOG_ERR("Clock %u Hz too low for kernel clock %u Hz", ios->clock,
+					data->sdmmc_clk);
+				res = -EINVAL;
+				goto end;
+			}
+			bus_clk = data->sdmmc_clk / (2U * clock_div);
+		}
 
 		stm32_reg_modify_bits(&instance->CLKCR, SDMMC_CLKCR_CLKDIV, clock_div);
 
 		host_io->clock = ios->clock;
-		LOG_DBG("Clock set to %d", ios->clock);
+		LOG_DBG("Clock set to %u Hz (requested %u Hz, CLKDIV %u)", bus_clk, ios->clock,
+			clock_div);
 	}
 
 	if (ios->power_mode == SDHC_POWER_OFF) {
