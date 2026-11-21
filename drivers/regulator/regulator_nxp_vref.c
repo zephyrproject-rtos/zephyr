@@ -30,19 +30,47 @@ LOG_MODULE_REGISTER(nxp_vref, CONFIG_REGULATOR_LOG_LEVEL);
 #define NXP_VREF_TRIM_MASK      VREF_UTRIM_VREFTRIM_MASK
 #define NXP_VREF_TRIM_SHIFT     VREF_UTRIM_VREFTRIM_SHIFT
 #define NXP_VREF_TRIM_IS_FACTORY 1
-static const struct linear_range utrim_range =
-	LINEAR_RANGE_INIT(1200000 - (0x20 * 667), 667U, 0x0U, 0x3FU);
+static const struct linear_range utrim_ranges[] = {
+	LINEAR_RANGE_INIT(1200000 - (0x20 * 667), 667U, 0x0U, 0x3FU),
+};
 #else
 #define NXP_VREF_TRIM_MASK      VREF_UTRIM_TRIM2V1_MASK
 #define NXP_VREF_TRIM_SHIFT     VREF_UTRIM_TRIM2V1_SHIFT
 #define NXP_VREF_TRIM_IS_FACTORY 0
-static const struct linear_range utrim_range = LINEAR_RANGE_INIT(1000000, 100000U, 0x0U, 0xBU);
+static const struct linear_range utrim_ranges[] = {
+#if defined(FSL_FEATURE_VREF_SUPPORT_2V5) && FSL_FEATURE_VREF_SUPPORT_2V5
+	LINEAR_RANGE_INIT(1000000, 250000U, 0x0U, 0x2U),
+	LINEAR_RANGE_INIT(1800000, 0U, 0x3U, 0x3U),
+	LINEAR_RANGE_INIT(2048000, 0U, 0x4U, 0x4U),
+	LINEAR_RANGE_INIT(2500000, 0U, 0x5U, 0x5U),
+#else
+	LINEAR_RANGE_INIT(1000000, 100000U, 0x0U, 0xBU),
 #endif
+};
+#endif
+
+#if defined(FSL_FEATURE_VREF_HAS_LPBGEN) && (FSL_FEATURE_VREF_HAS_LPBGEN == 0)
+#define NXP_VREF_BIAS_MASK VREF_CSR_IBIAS_EN_MASK
+#else
+#define NXP_VREF_BIAS_MASK VREF_CSR_LPBGEN_MASK
+#endif
+
+#if defined(FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER) && (FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER == 0)
+#define NXP_VREF_LP_BUFFER_MASK 0U
+#else
+#define NXP_VREF_LP_BUFFER_MASK VREF_CSR_LPBG_BUF_EN_MASK
+#endif
+
+#define NXP_VREF_ENABLE_MASK (VREF_CSR_HCBGEN_MASK | VREF_CSR_BUF21EN_MASK | \
+			     NXP_VREF_BIAS_MASK | NXP_VREF_LP_BUFFER_MASK)
+#define NXP_VREF_CONFIG_MASK (VREF_CSR_ICOMPEN_MASK | VREF_CSR_CHOPEN_MASK | VREF_CSR_REGEN_MASK)
 
 struct regulator_nxp_vref_data {
 	struct regulator_common_data common;
 	uint16_t trim;
+	regulator_mode_t mode;
 	bool trim_set;
+	bool enabled;
 };
 
 struct regulator_nxp_vref_config {
@@ -57,17 +85,42 @@ struct regulator_nxp_vref_config {
 	clock_control_subsys_t clock_subsys;
 };
 
-static int regulator_nxp_vref_enable(const struct device *dev)
+static void regulator_nxp_vref_disable_hw(const struct device *dev)
+{
+	const struct regulator_nxp_vref_config *config = dev->config;
+
+	/*
+	 * Disable HC Bandgap, bias, Buf21, and (where present) the LP
+	 * Bandgap Buffer to achieve "Off" mode of VREF.
+	 */
+	config->base->CSR &= ~NXP_VREF_ENABLE_MASK;
+}
+
+static void regulator_nxp_vref_apply_mode(const struct device *dev)
+{
+	const struct regulator_nxp_vref_config *config = dev->config;
+	const struct regulator_nxp_vref_data *data = dev->data;
+	uint32_t csr = config->base->CSR;
+
+	csr &= ~(VREF_CSR_HI_PWR_LV_MASK | VREF_CSR_BUF21EN_MASK);
+	if (data->mode != NXP_VREF_MODE_STANDBY) {
+		csr |= VREF_CSR_BUF21EN_MASK;
+	}
+	if (data->mode == NXP_VREF_MODE_HIGH_POWER) {
+		csr |= VREF_CSR_HI_PWR_LV_MASK;
+	}
+	config->base->CSR = csr;
+	k_busy_wait(config->buf_start_delay);
+}
+
+static int regulator_nxp_vref_enable_hw(const struct device *dev)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
 
 	volatile uint32_t *const csr = &base->CSR;
 
-	*csr |= VREF_CSR_LPBGEN_MASK;
-#if !(defined(FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER) && (FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER == 0))
-	*csr |= VREF_CSR_LPBG_BUF_EN_MASK;
-#endif
+	*csr |= NXP_VREF_BIAS_MASK | NXP_VREF_LP_BUFFER_MASK;
 
 	/* Wait for bandgap startup */
 	k_busy_wait(config->bg_start_time);
@@ -80,96 +133,91 @@ static int regulator_nxp_vref_enable(const struct device *dev)
 		;
 	}
 
+	regulator_nxp_vref_apply_mode(dev);
 	return 0;
+}
+
+static int regulator_nxp_vref_enable(const struct device *dev)
+{
+	struct regulator_nxp_vref_data *data = dev->data;
+	int ret = regulator_nxp_vref_enable_hw(dev);
+
+	if (ret == 0) {
+		data->enabled = true;
+	}
+	return ret;
 }
 
 static int regulator_nxp_vref_disable(const struct device *dev)
 {
-	const struct regulator_nxp_vref_config *config = dev->config;
-	VREF_Type *const base = config->base;
+	struct regulator_nxp_vref_data *data = dev->data;
 
-	/*
-	 * Disable HC Bandgap, LP Bandgap, Buf21, and (where present) the LP
-	 * Bandgap Buffer to achieve "Off" mode of VREF.
-	 */
-	base->CSR &= ~(VREF_CSR_BUF21EN_MASK | VREF_CSR_HCBGEN_MASK | VREF_CSR_LPBGEN_MASK
-#if !(defined(FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER) && (FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER == 0))
-		       | VREF_CSR_LPBG_BUF_EN_MASK
-#endif
-	);
-
+	regulator_nxp_vref_disable_hw(dev);
+	data->enabled = false;
 	return 0;
 }
 
 static int regulator_nxp_vref_set_mode(const struct device *dev, regulator_mode_t mode)
 {
-	const struct regulator_nxp_vref_config *config = dev->config;
-	VREF_Type *const base = config->base;
-	uint32_t csr = base->CSR;
+	struct regulator_nxp_vref_data *data = dev->data;
 
-	if (mode == NXP_VREF_MODE_STANDBY) {
-		csr &= ~(VREF_CSR_HI_PWR_LV_MASK | VREF_CSR_BUF21EN_MASK);
-	} else if (mode == NXP_VREF_MODE_LOW_POWER) {
-		csr &= ~VREF_CSR_HI_PWR_LV_MASK;
-		csr |= VREF_CSR_BUF21EN_MASK;
-	} else if (mode == NXP_VREF_MODE_HIGH_POWER) {
-		csr |= (VREF_CSR_HI_PWR_LV_MASK | VREF_CSR_BUF21EN_MASK);
-	} else {
+	if (mode != NXP_VREF_MODE_STANDBY && mode != NXP_VREF_MODE_LOW_POWER &&
+	    mode != NXP_VREF_MODE_HIGH_POWER) {
 		return -EINVAL;
 	}
-
-	base->CSR = csr;
-
-	k_busy_wait(config->buf_start_delay);
-
+	data->mode = mode;
+	if (data->enabled) {
+		regulator_nxp_vref_apply_mode(dev);
+	}
 	return 0;
 }
 
 static int regulator_nxp_vref_get_mode(const struct device *dev, regulator_mode_t *mode)
 {
-	const struct regulator_nxp_vref_config *config = dev->config;
-	VREF_Type *const base = config->base;
-	uint32_t csr = base->CSR;
+	const struct regulator_nxp_vref_data *data = dev->data;
 
-	/* Check bits to determine mode */
-	if ((csr & VREF_CSR_HI_PWR_LV_MASK) && (csr & VREF_CSR_BUF21EN_MASK)) {
-		*mode = NXP_VREF_MODE_HIGH_POWER;
-	} else if (csr & VREF_CSR_BUF21EN_MASK) {
-		*mode = NXP_VREF_MODE_LOW_POWER;
-	} else {
-		*mode = NXP_VREF_MODE_STANDBY;
-	}
-
+	*mode = data->mode;
 	return 0;
 }
 
-static inline unsigned int regulator_nxp_vref_count_voltages(const struct device *dev)
+static unsigned int regulator_nxp_vref_count_voltages(const struct device *dev)
 {
-	return linear_range_values_count(&utrim_range);
+	ARG_UNUSED(dev);
+	return linear_range_group_values_count(utrim_ranges, ARRAY_SIZE(utrim_ranges));
 }
 
 static int regulator_nxp_vref_list_voltage(const struct device *dev, unsigned int idx,
 					   int32_t *volt_uv)
 {
-	return linear_range_get_value(&utrim_range, idx, volt_uv);
+	ARG_UNUSED(dev);
+	if (idx > UINT16_MAX) {
+		return -EINVAL;
+	}
+	return linear_range_group_get_value(utrim_ranges, ARRAY_SIZE(utrim_ranges), idx, volt_uv);
 }
 
 static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	struct regulator_nxp_vref_data *data = dev->data;
-	VREF_Type *const base = config->base;
+	int32_t voltage;
 	uint16_t idx;
 	int ret;
 
-	ret = linear_range_get_win_index(&utrim_range, min_uv, max_uv, &idx);
-	if (ret < 0) {
+	if (min_uv > max_uv) {
+		return -EINVAL;
+	}
+	ret = linear_range_group_get_win_index(utrim_ranges, ARRAY_SIZE(utrim_ranges),
+					      min_uv, max_uv, &idx);
+	if (ret < 0 && ret != -ERANGE) {
 		return ret;
 	}
-
-	base->UTRIM = (base->UTRIM & ~NXP_VREF_TRIM_MASK) |
-		      (((uint32_t)idx << NXP_VREF_TRIM_SHIFT) & NXP_VREF_TRIM_MASK);
-
+	ret = linear_range_group_get_value(utrim_ranges, ARRAY_SIZE(utrim_ranges), idx, &voltage);
+	if (ret < 0 || voltage < min_uv || voltage > max_uv) {
+		return -EINVAL;
+	}
+	config->base->UTRIM = (config->base->UTRIM & ~NXP_VREF_TRIM_MASK) |
+			     (((uint32_t)idx << NXP_VREF_TRIM_SHIFT) & NXP_VREF_TRIM_MASK);
 	data->trim = idx;
 	data->trim_set = true;
 
@@ -179,14 +227,13 @@ static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_
 static int regulator_nxp_vref_get_voltage(const struct device *dev, int32_t *volt_uv)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
-	VREF_Type *const base = config->base;
 	uint16_t idx;
 	int ret;
 
 	/* Linear range index is the register value */
-	idx = (base->UTRIM & NXP_VREF_TRIM_MASK) >> NXP_VREF_TRIM_SHIFT;
+	idx = (config->base->UTRIM & NXP_VREF_TRIM_MASK) >> NXP_VREF_TRIM_SHIFT;
 
-	ret = linear_range_get_value(&utrim_range, idx, volt_uv);
+	ret = linear_range_group_get_value(utrim_ranges, ARRAY_SIZE(utrim_ranges), idx, volt_uv);
 
 	return ret;
 }
@@ -229,10 +276,7 @@ static int regulator_nxp_vref_configure_hw(const struct device *dev)
 		}
 	}
 
-	ret = regulator_nxp_vref_disable(dev);
-	if (ret < 0) {
-		return ret;
-	}
+	regulator_nxp_vref_disable_hw(dev);
 
 	if (config->current_compensation_en) {
 		base->CSR |= VREF_CSR_ICOMPEN_MASK;
@@ -297,9 +341,11 @@ static int regulator_nxp_vref_pm_action(const struct device *dev, enum pm_device
 
 static int regulator_nxp_vref_init(const struct device *dev)
 {
+	struct regulator_nxp_vref_data *data = dev->data;
 	int ret;
 
 	regulator_common_data_init(dev);
+	data->mode = NXP_VREF_MODE_STANDBY;
 
 	ret = pm_device_driver_init(dev, regulator_nxp_vref_pm_action);
 	if (ret < 0) {

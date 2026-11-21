@@ -23,6 +23,7 @@ tests:
       - mcx_n9xx_evk/mcxn947/cpu0
       - frdm_mcxn236
       - frdm_mcxw71
+      - frdm_mcxa577
     harness_config:
       fixture: gpio_loopback
   drivers.regulator.voltage.rpi_pico_vreg:
