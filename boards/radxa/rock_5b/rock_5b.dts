@@ -12,3 +12,7 @@
 	compatible = "radxa,rock-5b", "rockchip,rk3588";
 	model = "Radxa ROCK 5B";
 };
+
+&rk3588_otp {
+	status = "okay";
+};
