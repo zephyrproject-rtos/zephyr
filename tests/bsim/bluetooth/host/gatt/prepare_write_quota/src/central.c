@@ -145,6 +145,49 @@ static int prepare_write(struct prep_write *pw)
 	return rsp_err;
 }
 
+static void execute_write_rsp(struct bt_conn *c, int err, const void *pdu, uint16_t length,
+			      void *user_data)
+{
+	ARG_UNUSED(c);
+	ARG_UNUSED(pdu);
+	ARG_UNUSED(length);
+	ARG_UNUSED(user_data);
+
+	rsp_err = err;
+	SET_FLAG(flag_rsp);
+}
+
+/* Send one Execute Write Request with the given flags and return the ATT error
+ * code of the response.
+ */
+static int execute_write(uint8_t flags)
+{
+	struct bt_att_exec_write_req *req_pdu;
+	struct bt_att_req *req;
+	int err;
+
+	req = bt_att_req_alloc(BT_ATT_TIMEOUT);
+	TEST_ASSERT(req != NULL, "Failed to allocate ATT request");
+
+	req->func = execute_write_rsp;
+
+	req->buf = bt_att_create_pdu(conn, BT_ATT_OP_EXEC_WRITE_REQ, sizeof(*req_pdu));
+	TEST_ASSERT(req->buf != NULL, "Failed to allocate ATT PDU");
+	bt_att_set_tx_meta_data(req->buf, NULL, NULL, BT_ATT_CHAN_OPT_UNENHANCED_ONLY);
+
+	req_pdu = net_buf_add(req->buf, sizeof(*req_pdu));
+	req_pdu->flags = flags;
+
+	UNSET_FLAG(flag_rsp);
+
+	err = bt_att_req_send(conn, req);
+	TEST_ASSERT(err == 0, "Failed to send Execute Write Request (err %d)", err);
+
+	WAIT_FOR_FLAG(flag_rsp);
+
+	return rsp_err;
+}
+
 void holder_procedure(void)
 {
 	static uint8_t chunk[PREP_CHUNK_SIZE];
@@ -236,4 +279,119 @@ void writer_procedure(void)
 	bk_sync_send();
 
 	TEST_PASS("writer");
+}
+
+/* Lets the server check the step that ended, and waits until it has */
+static void step_done(void)
+{
+	bk_sync_send();
+	bk_sync_wait();
+}
+
+void executer_procedure(void)
+{
+	static uint8_t chunk[PREP_CHUNK_SIZE];
+	static uint8_t value[CHRC_SIZE];
+	struct prep_write pw = { .value = chunk, .len = sizeof(chunk) };
+	uint16_t handle, prep_handle, prep_end_handle;
+	int err;
+
+	TEST_START("executer");
+
+	err = bk_sync_init();
+	TEST_ASSERT(err == 0, "Sync init failed");
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "bt_enable failed (err %d)", err);
+
+	handle = connect_and_find_chrc();
+	err = bt_testlib_gatt_discover_characteristic(&prep_handle, &prep_end_handle, NULL, conn,
+						      TEST_PREP_CHRC_UUID, handle + 1,
+						      BT_ATT_LAST_ATTRIBUTE_HANDLE);
+	TEST_ASSERT(err == 0, "Characteristic discovery failed (err %d)", err);
+
+	pw.handle = handle;
+	(void)memset(chunk, DISCARDED_FILL, sizeof(chunk));
+
+	/* Two values are prepared and then cancelled */
+	for (unsigned int i = 0; i < 2; i++) {
+		pw.offset = (uint16_t)(i * PREP_CHUNK_SIZE);
+
+		err = prepare_write(&pw);
+		TEST_ASSERT(err == 0, "Prepare write failed with ATT error 0x%02x", err);
+	}
+
+	err = execute_write(BT_ATT_FLAG_CANCEL);
+	TEST_ASSERT(err == 0, "Cancel failed with ATT error 0x%02x", err);
+	step_done();
+
+	/* Nothing is prepared now, so there is nothing to tell */
+	err = execute_write(BT_ATT_FLAG_CANCEL);
+	TEST_ASSERT(err == 0, "Cancel of an empty queue failed with ATT error 0x%02x", err);
+	step_done();
+
+	/* Two values with a gap between their offsets cannot be written */
+	for (unsigned int i = 0; i < 2; i++) {
+		pw.offset = (uint16_t)(i * 2U * PREP_CHUNK_SIZE);
+
+		err = prepare_write(&pw);
+		TEST_ASSERT(err == 0, "Prepare write failed with ATT error 0x%02x", err);
+	}
+
+	err = execute_write(BT_ATT_FLAG_EXEC);
+	TEST_ASSERT(err == BT_ATT_ERR_INVALID_OFFSET, "Execute write returned 0x%02x, want 0x%02x",
+		    err, BT_ATT_ERR_INVALID_OFFSET);
+	step_done();
+
+	/* The write method fails the first value, so the one after it is
+	 * discarded unwritten
+	 */
+	pw.offset = 0U;
+	pw.handle = prep_handle;
+	err = prepare_write(&pw);
+	TEST_ASSERT(err == 0, "Prepare write failed with ATT error 0x%02x", err);
+
+	pw.handle = handle;
+	err = prepare_write(&pw);
+	TEST_ASSERT(err == 0, "Prepare write failed with ATT error 0x%02x", err);
+
+	err = execute_write(BT_ATT_FLAG_EXEC);
+	TEST_ASSERT(err == EXEC_FAIL_ERR, "Execute write returned 0x%02x, want 0x%02x", err,
+		    EXEC_FAIL_ERR);
+	step_done();
+
+	/* The queue is filled, and the value it has no room for is rejected
+	 * before the write method sees it
+	 */
+	pw.handle = prep_handle;
+	for (unsigned int i = 0; i < PREP_QUOTA; i++) {
+		pw.offset = (uint16_t)(i * PREP_CHUNK_SIZE);
+
+		err = prepare_write(&pw);
+		TEST_ASSERT(err == 0, "Prepare write failed with ATT error 0x%02x", err);
+	}
+
+	pw.offset = (uint16_t)(PREP_QUOTA * PREP_CHUNK_SIZE);
+	err = prepare_write(&pw);
+	TEST_ASSERT(err == BT_ATT_ERR_PREPARE_QUEUE_FULL,
+		    "Prepare write past the limit returned 0x%02x, want 0x%02x", err,
+		    BT_ATT_ERR_PREPARE_QUEUE_FULL);
+
+	err = execute_write(BT_ATT_FLAG_CANCEL);
+	TEST_ASSERT(err == 0, "Cancel failed with ATT error 0x%02x", err);
+	step_done();
+
+	/* A long write that is executed is written, and whole, which it would
+	 * not be if the discarded values were still queued
+	 */
+	writer_value_fill(value, sizeof(value));
+	err = bt_testlib_att_write(conn, BT_ATT_CHAN_OPT_UNENHANCED_ONLY, handle, value,
+				   sizeof(value));
+	TEST_ASSERT(err == BT_ATT_ERR_SUCCESS, "Long write failed with ATT error 0x%02x", err);
+
+	disconnect_expected = true;
+	err = bt_testlib_disconnect(&conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	TEST_ASSERT(err == 0, "Disconnect failed (err %d)", err);
+
+	TEST_PASS("executer");
 }

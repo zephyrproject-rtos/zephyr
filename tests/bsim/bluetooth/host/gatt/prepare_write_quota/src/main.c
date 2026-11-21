@@ -37,6 +37,16 @@ static const struct bst_test_instance entrypoints[] = {
 		.test_delete_f = test_end_cb,
 		.test_main_f = writer_procedure,
 	},
+	{
+		.test_id = "execute_server",
+		.test_delete_f = test_end_cb,
+		.test_main_f = execute_server_procedure,
+	},
+	{
+		.test_id = "executer",
+		.test_delete_f = test_end_cb,
+		.test_main_f = executer_procedure,
+	},
 	BSTEST_END_MARKER,
 };
 
