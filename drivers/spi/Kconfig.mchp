@@ -30,6 +30,27 @@ config SPI_MCHP_QSPI_G1
 	  SPI controller, for example for a serial NOR flash through the
 	  jedec,spi-nor driver.
 
+config SPI_MCHP_QSPI_G1_DMA
+	bool "DMA transfers for the Microchip G1 QSPI controller"
+	default y
+	depends on SPI_MCHP_QSPI_G1
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_QSPI_G1_SPI),dmas)
+	select DMA
+	help
+	  Use two DMAC channels, given by the dmas property, for transfers of
+	  at least SPI_MCHP_QSPI_G1_DMA_THRESHOLD bytes. Instances without
+	  dmas, and shorter transfers, stay polled.
+
+config SPI_MCHP_QSPI_G1_DMA_THRESHOLD
+	int "Minimum chunk length for a DMA transfer"
+	default 32
+	range 1 65535
+	depends on SPI_MCHP_QSPI_G1_DMA
+	help
+	  Chunks shorter than this, such as flash commands and addresses, are
+	  shifted by the CPU: setting up two DMA channels costs more than it
+	  saves on a few bytes.
+
 config SPI_MCHP_SERCOM
 	bool
 	help

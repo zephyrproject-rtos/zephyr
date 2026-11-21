@@ -12,6 +12,8 @@ description: |
   hardware CS line unless cs-gpios is set. The serial memory mode (dual
   and quad I/O, memory-mapped reads) is not used.
 
+  Transfers are polled, or use two DMAC channels when dmas is set.
+
   The serial clock is CLK_QSPI_AHB (the CPU clock) divided by 1 to 256.
   Keep spi-max-frequency within the QSPI electrical specifications of the
   SoC data sheet.
@@ -21,6 +23,8 @@ examples:
     &qspi {
       pinctrl-0 = <&qspi_default>;
       pinctrl-names = "default";
+      dmas = <&dmac 0 84>, <&dmac 1 83>;
+      dma-names = "tx", "rx";
       status = "okay";
 
       flash@0 {
@@ -51,3 +55,13 @@ properties:
     description: |
       "mclk-apb" for the APB bus clock, "mclk-ahb" for the AHB clock that
       also drives the baud rate generator.
+
+  dmas:
+    description: |
+      Optional TX and RX DMA specifiers: the DMAC phandle, the channel
+      number and the peripheral trigger source (QSPI TX is 84, QSPI RX is
+      83 on PIC32CX SG).
+
+  dma-names:
+    description: |
+      Required if dmas is set: "tx" and "rx", matching dmas.
