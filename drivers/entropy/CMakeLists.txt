@@ -12,6 +12,7 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_USERSPACE entropy_handlers.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_AESC_PRNG entropy_aesc_prng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_AMBIQ_PUF_TRNG entropy_ambiq_puf_trng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_AMEBA_TRNG entropy_ameba.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_ARM64_RNG entropy_arm64.c)
