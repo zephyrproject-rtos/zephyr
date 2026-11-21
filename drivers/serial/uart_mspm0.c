@@ -24,6 +24,7 @@ struct uart_mspm0_config {
 	UART_Regs *regs;
 	const struct mspm0_sys_clock *clock_subsys;
 	const struct pinctrl_dev_config *pinctrl;
+	bool disable_rx;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 	/* UART FIFO thresholds */
@@ -52,6 +53,10 @@ struct uart_mspm0_data {
 static int uart_mspm0_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_mspm0_config *config = dev->config;
+
+	if (config->disable_rx) {
+		return -ENOTSUP;
+	}
 
 	if (DL_UART_Main_receiveDataCheck(config->regs, c) == false) {
 		return -1;
@@ -308,6 +313,10 @@ static int uart_mspm0_fifo_read(const struct device *dev,
 {
 	const struct uart_mspm0_config *config = dev->config;
 
+	if (config->disable_rx) {
+		return -ENOTSUP;
+	}
+
 	return (int)DL_UART_Main_drainRXFIFO(config->regs, rx_data, size);
 }
 
@@ -529,6 +538,7 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 		.regs = (UART_Regs *)DT_INST_REG_ADDR(index),					\
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(index),				\
 		.clock_subsys = &mspm0_uart_sys_clock##index,					\
+		.disable_rx = DT_INST_PROP(index, disable_rx),					\
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,					\
 			   (.irq_config_func = uart_mspm0_##index##_irq_register,))		\
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,					\
@@ -544,7 +554,9 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 		 },										\
 		.current_speed = DT_INST_PROP(index, current_speed),				\
 		.uart_config = {.mode = DL_UART_MAIN_MODE_NORMAL,				\
-				.direction = DL_UART_MAIN_DIRECTION_TX_RX,			\
+				.direction = (DT_INST_PROP(index, disable_rx)			\
+					      ? DL_UART_MAIN_DIRECTION_TX			\
+					      : DL_UART_MAIN_DIRECTION_TX_RX),			\
 				.flowControl = (DT_INST_PROP(index, hw_flow_control)		\
 						? DL_UART_MAIN_FLOW_CONTROL_RTS_CTS		\
 						: DL_UART_MAIN_FLOW_CONTROL_NONE),		\
