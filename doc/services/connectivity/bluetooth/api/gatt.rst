@@ -90,6 +90,14 @@ operation don't require a response :c:func:`bt_gatt_write_without_response`
 or :c:func:`bt_gatt_write_without_response_cb` APIs can be used, with the
 later working similarly to :c:func:`bt_gatt_notify_cb`.
 
+For a reliable write (Core Specification 7.0 Vol 3 Part G, Section 4.9.5), give
+each value to :c:func:`bt_gatt_prepare_write` with a :c:struct:`bt_gatt_reliable_write`
+the application owns for the whole procedure. Each value is prepared on the
+server and its response checked, but no write happens until the application
+commits or cancels them with :c:func:`bt_gatt_execute_write`. The host cancels
+the write on its own if a value fails to prepare. Only one reliable write, or
+one long write, uses a connection at a time; the others wait.
+
 Subscriptions to notification and indication can be initiated with use of
 :c:func:`bt_gatt_subscribe` API which takes
 :c:struct:`bt_gatt_subscribe_params` as parameters. Multiple subscriptions to

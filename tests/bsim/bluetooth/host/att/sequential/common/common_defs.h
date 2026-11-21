@@ -12,3 +12,4 @@
  * database: it responds to whatever handle it is given.
  */
 #define LONG_WRITE_HANDLE 0x0020U
+#define LONG_WRITE_HANDLE_2 0x0030U

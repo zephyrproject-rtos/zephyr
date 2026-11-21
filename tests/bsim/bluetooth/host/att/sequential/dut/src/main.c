@@ -374,6 +374,777 @@ void test_procedure_1(void)
 	TEST_PASS("DUT done");
 }
 
+static void two_done(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	TEST_ASSERT(err == 0, "Long write failed (err %d)", err);
+	(void)atomic_inc(&nwrites);
+}
+
+void test_procedure_2(void)
+{
+	static uint8_t va[40], vb[40];
+	static struct bt_gatt_write_params pa, pb;
+	int err;
+
+	for (size_t i = 0U; i < sizeof(va); i++) {
+		va[i] = (uint8_t)(0xa0U + (i & 0x0fU));
+		vb[i] = (uint8_t)(0xb0U + (i & 0x0fU));
+	}
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * Core v7.0 Vol 3 Part F 3.4.6 shared prepare queue
+	 *
+	 * Two long writes to different handles are started on one connection
+	 * without waiting for the first to finish. The server keeps one
+	 * prepare queue per connection, so the host has to write one of them
+	 * completely, Execute Write and all, before it prepares the other.
+	 *
+	 * [verdict]
+	 * - the tester never sees the two handles' prepares interleave
+	 * - neither params can be given again while its write is in use
+	 */
+	connect();
+
+	pa = (struct bt_gatt_write_params){
+		.func = two_done, .handle = LONG_WRITE_HANDLE, .data = va, .length = sizeof(va)};
+	pb = (struct bt_gatt_write_params){
+		.func = two_done, .handle = LONG_WRITE_HANDLE_2, .data = vb, .length = sizeof(vb)};
+
+	err = bt_gatt_write(dconn, &pa);
+	TEST_ASSERT(err == 0, "Failed to start the first long write (err %d)", err);
+	err = bt_gatt_write(dconn, &pb);
+	TEST_ASSERT(err == 0, "Failed to start the second long write (err %d)", err);
+
+	/* The first one is being sent, the second one waits */
+	err = bt_gatt_write(dconn, &pa);
+	TEST_ASSERT(err == -EBUSY, "Giving the first long write again returned %d", err);
+	err = bt_gatt_write(dconn, &pb);
+	TEST_ASSERT(err == -EBUSY, "Giving the second long write again returned %d", err);
+
+	WAIT_FOR_VAL(nwrites, 2);
+
+	TEST_PASS("DUT done");
+}
+
+static uint8_t pe_err[2];
+static atomic_t pe_done;
+
+static void pe_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	atomic_val_t i = atomic_get(&pe_done);
+
+	TEST_ASSERT((size_t)i < ARRAY_SIZE(pe_err), "Unexpected write callback");
+	pe_err[i] = err;
+	(void)atomic_inc(&pe_done);
+}
+
+void test_procedure_3(void)
+{
+	static uint8_t va[40], vb[40];
+	static struct bt_gatt_write_params pa, pb;
+	int err;
+
+	for (size_t i = 0U; i < sizeof(va); i++) {
+		va[i] = (uint8_t)i;
+		vb[i] = (uint8_t)(0x40U + i);
+	}
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * Issue #117590: a long write rejected part-way must clear the
+	 * server's prepare queue so the next long write is not appended to it.
+	 *
+	 * [verdict]
+	 * - the first write reports the server error, the second succeeds
+	 */
+	connect();
+
+	pa = (struct bt_gatt_write_params){
+		.func = pe_cb, .handle = LONG_WRITE_HANDLE, .data = va, .length = sizeof(va)};
+	pb = (struct bt_gatt_write_params){
+		.func = pe_cb, .handle = LONG_WRITE_HANDLE, .data = vb, .length = sizeof(vb)};
+
+	err = bt_gatt_write(dconn, &pa);
+	TEST_ASSERT(err == 0, "Failed to start the first long write (err %d)", err);
+	err = bt_gatt_write(dconn, &pb);
+	TEST_ASSERT(err == 0, "Failed to start the second long write (err %d)", err);
+
+	WAIT_FOR_VAL(pe_done, 2);
+
+	TEST_ASSERT(pe_err[0] == BT_ATT_ERR_PREPARE_QUEUE_FULL,
+		    "The rejected write reported 0x%02x, want 0x%02x", pe_err[0],
+		    BT_ATT_ERR_PREPARE_QUEUE_FULL);
+	TEST_ASSERT(pe_err[1] == 0, "The second write failed (err %u)", pe_err[1]);
+
+	TEST_PASS("DUT done");
+}
+
+static atomic_t rel_prepared;
+static atomic_t rel_executed;
+static uint8_t rel_exec_err;
+
+static void rel_prepared_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	TEST_ASSERT(err == 0, "Reliable prepare failed (err %d)", err);
+	(void)atomic_inc(&rel_prepared);
+}
+
+static void rel_exec_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_reliable_write *write)
+{
+	rel_exec_err = err;
+	(void)atomic_inc(&rel_executed);
+}
+
+void test_procedure_4(void)
+{
+	static uint8_t va[4] = {1, 2, 3, 4};
+	static uint8_t vb[4] = {5, 6, 7, 8};
+	static struct bt_gatt_reliable_write write = {.func = rel_exec_cb};
+	static struct bt_gatt_write_params pa, pb;
+	int err;
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * Core v7.0 Vol 3 Part G 4.9.5 Characteristic Value Reliable Writes
+	 *
+	 * Prepare two values with bt_gatt_prepare_write(), then commit
+	 * them with one bt_gatt_execute_write(). No Execute Write is sent
+	 * until the application asks for it.
+	 *
+	 * [verdict]
+	 * - both values are prepared, then one committing Execute Write
+	 */
+	connect();
+
+	pa = (struct bt_gatt_write_params){.func = rel_prepared_cb,
+					   .handle = LONG_WRITE_HANDLE,
+					   .data = va,
+					   .length = sizeof(va)};
+	pb = (struct bt_gatt_write_params){.func = rel_prepared_cb,
+					   .handle = LONG_WRITE_HANDLE_2,
+					   .data = vb,
+					   .length = sizeof(vb)};
+
+	err = bt_gatt_prepare_write(dconn, &write, &pa);
+	TEST_ASSERT(err == 0, "First reliable prepare failed (err %d)", err);
+	WAIT_FOR_VAL(rel_prepared, 1);
+
+	err = bt_gatt_prepare_write(dconn, &write, &pb);
+	TEST_ASSERT(err == 0, "Second reliable prepare failed (err %d)", err);
+	WAIT_FOR_VAL(rel_prepared, 2);
+
+	err = bt_gatt_execute_write(dconn, &write, true);
+	TEST_ASSERT(err == 0, "Execute write failed (err %d)", err);
+	WAIT_FOR_VAL(rel_executed, 1);
+	TEST_ASSERT(rel_exec_err == 0, "Execute write reported err %u", rel_exec_err);
+
+	/* A second session, cancelled this time. The first one consumed pa. */
+	pa = (struct bt_gatt_write_params){.func = rel_prepared_cb,
+					   .handle = LONG_WRITE_HANDLE,
+					   .data = va,
+					   .length = sizeof(va)};
+	err = bt_gatt_prepare_write(dconn, &write, &pa);
+	TEST_ASSERT(err == 0, "Reliable prepare (cancel case) failed (err %d)", err);
+	WAIT_FOR_VAL(rel_prepared, 3);
+
+	err = bt_gatt_execute_write(dconn, &write, false);
+	TEST_ASSERT(err == 0, "Cancel write failed (err %d)", err);
+	WAIT_FOR_VAL(rel_executed, 2);
+	TEST_ASSERT(rel_exec_err == 0, "Cancel reported err %u", rel_exec_err);
+
+	TEST_PASS("DUT done");
+}
+
+static atomic_t rq_long_done;
+static atomic_t rq_prepared;
+static atomic_t rq_executed;
+static uint8_t rq_exec_err;
+
+static void rq_long_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	TEST_ASSERT(err == 0, "Long write failed (err %d)", err);
+	(void)atomic_inc(&rq_long_done);
+}
+
+static void rq_prepared_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	TEST_ASSERT(err == 0, "Waiting reliable prepare failed (err %d)", err);
+	(void)atomic_inc(&rq_prepared);
+}
+
+static void rq_exec_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_reliable_write *write)
+{
+	rq_exec_err = err;
+	(void)atomic_inc(&rq_executed);
+}
+
+void test_procedure_5(void)
+{
+	static uint8_t va[40];
+	static uint8_t vb[4] = {1, 2, 3, 4};
+	static struct bt_gatt_reliable_write write = {.func = rq_exec_cb};
+	static struct bt_gatt_write_params pa, pb;
+	int err;
+
+	for (size_t i = 0U; i < sizeof(va); i++) {
+		va[i] = (uint8_t)i;
+	}
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * A reliable write value given while a long write owns the prepare
+	 * queue waits, and its session starts once the long write is done.
+	 *
+	 * [verdict]
+	 * - the value is prepared after the long write, then committed
+	 */
+	connect();
+
+	pa = (struct bt_gatt_write_params){
+		.func = rq_long_cb, .handle = LONG_WRITE_HANDLE, .data = va, .length = sizeof(va)};
+	pb = (struct bt_gatt_write_params){.func = rq_prepared_cb,
+					   .handle = LONG_WRITE_HANDLE_2,
+					   .data = vb,
+					   .length = sizeof(vb)};
+
+	err = bt_gatt_write(dconn, &pa);
+	TEST_ASSERT(err == 0, "Failed to start the long write (err %d)", err);
+	err = bt_gatt_prepare_write(dconn, &write, &pb);
+	TEST_ASSERT(err == 0, "Reliable prepare failed (err %d)", err);
+
+	WAIT_FOR_VAL(rq_prepared, 1);
+	TEST_ASSERT(atomic_get(&rq_long_done) == 1, "The value was prepared before the long write");
+
+	err = bt_gatt_execute_write(dconn, &write, true);
+	TEST_ASSERT(err == 0, "Execute write failed (err %d)", err);
+	WAIT_FOR_VAL(rq_executed, 1);
+	TEST_ASSERT(rq_exec_err == 0, "Execute write reported err %u", rq_exec_err);
+
+	TEST_PASS("DUT done");
+}
+
+enum {
+	RR_FIRST,
+	RR_REJECTED,
+	RR_LONG,
+	RR_COUNT,
+};
+
+static atomic_t rr_done;
+static uint8_t rr_err[RR_COUNT];
+
+static void rr_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	atomic_val_t i = atomic_get(&rr_done);
+
+	TEST_ASSERT((size_t)i < ARRAY_SIZE(rr_err), "Unexpected write callback");
+	rr_err[i] = err;
+	(void)atomic_inc(&rr_done);
+}
+
+static void rr_exec_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_reliable_write *write)
+{
+	TEST_FAIL("The ended reliable write was executed (err %u)", err);
+}
+
+void test_procedure_6(void)
+{
+	static uint8_t v1[4] = {1, 2, 3, 4};
+	static uint8_t v2[4] = {5, 6, 7, 8};
+	static uint8_t vl[40];
+	static struct bt_gatt_reliable_write write = {.func = rr_exec_cb};
+	static struct bt_gatt_write_params p1, p2, pl;
+	int err;
+
+	for (size_t i = 0U; i < sizeof(vl); i++) {
+		vl[i] = (uint8_t)i;
+	}
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * Core v7.0 Vol 3 Part G 4.9.5 Characteristic Value Reliable Writes
+	 *
+	 * The server rejects the second value of a reliable write. The write
+	 * ends: the host cancels the first value, which the server holds.
+	 *
+	 * [verdict]
+	 * - the rejected value reports the server error
+	 * - the first value is cancelled and the write cannot be executed
+	 * - a long write afterwards succeeds
+	 */
+	connect();
+
+	p1 = (struct bt_gatt_write_params){
+		.func = rr_cb, .handle = LONG_WRITE_HANDLE, .data = v1, .length = sizeof(v1)};
+	p2 = (struct bt_gatt_write_params){
+		.func = rr_cb, .handle = LONG_WRITE_HANDLE_2, .data = v2, .length = sizeof(v2)};
+	pl = (struct bt_gatt_write_params){
+		.func = rr_cb, .handle = LONG_WRITE_HANDLE, .data = vl, .length = sizeof(vl)};
+
+	err = bt_gatt_prepare_write(dconn, &write, &p1);
+	TEST_ASSERT(err == 0, "First reliable prepare failed (err %d)", err);
+	WAIT_FOR_VAL(rr_done, 1);
+	TEST_ASSERT(rr_err[RR_FIRST] == 0, "The first value reported err %u", rr_err[RR_FIRST]);
+
+	err = bt_gatt_prepare_write(dconn, &write, &p2);
+	TEST_ASSERT(err == 0, "Second reliable prepare failed (err %d)", err);
+	WAIT_FOR_VAL(rr_done, 2);
+	TEST_ASSERT(rr_err[RR_REJECTED] == BT_ATT_ERR_PREPARE_QUEUE_FULL,
+		    "The rejected value reported 0x%02x, want 0x%02x", rr_err[RR_REJECTED],
+		    BT_ATT_ERR_PREPARE_QUEUE_FULL);
+
+	err = bt_gatt_execute_write(dconn, &write, true);
+	TEST_ASSERT(err == -EINVAL, "Execute write of the ended write returned %d", err);
+
+	err = bt_gatt_write(dconn, &pl);
+	TEST_ASSERT(err == 0, "Failed to start the long write (err %d)", err);
+	WAIT_FOR_VAL(rr_done, 3);
+	TEST_ASSERT(rr_err[RR_LONG] == 0, "The long write reported err %u", rr_err[RR_LONG]);
+
+	TEST_PASS("DUT done");
+}
+
+static atomic_t cw_done;
+static atomic_t cw_cancelled;
+static uint8_t cw_cancel_err;
+
+static void cw_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	TEST_ASSERT(err == 0, "Long write failed (err %d)", err);
+	(void)atomic_inc(&cw_done);
+}
+
+static void cw_cancel_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	cw_cancel_err = err;
+	(void)atomic_inc(&cw_cancelled);
+}
+
+void test_procedure_7(void)
+{
+	static uint8_t va[40], vb[40];
+	static struct bt_gatt_write_params pa, pb, pc;
+	int err;
+
+	for (size_t i = 0U; i < sizeof(va); i++) {
+		va[i] = (uint8_t)(0xa0U + (i & 0x0fU));
+		vb[i] = (uint8_t)(0xb0U + (i & 0x0fU));
+	}
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * bt_gatt_cancel() completes a long write that waits for the prepare
+	 * queue, as it completes one with a request in flight.
+	 *
+	 * [verdict]
+	 * - the waiting write reports BT_ATT_ERR_UNLIKELY once cancelled
+	 * - it is never sent; the writes before and after it are
+	 */
+	connect();
+
+	pa = (struct bt_gatt_write_params){
+		.func = cw_cb, .handle = LONG_WRITE_HANDLE, .data = va, .length = sizeof(va)};
+	pb = (struct bt_gatt_write_params){.func = cw_cancel_cb,
+					   .handle = LONG_WRITE_HANDLE_2,
+					   .data = vb,
+					   .length = sizeof(vb)};
+	pc = (struct bt_gatt_write_params){
+		.func = cw_cb, .handle = LONG_WRITE_HANDLE_2, .data = vb, .length = sizeof(vb)};
+
+	err = bt_gatt_write(dconn, &pa);
+	TEST_ASSERT(err == 0, "Failed to start the first long write (err %d)", err);
+	err = bt_gatt_write(dconn, &pb);
+	TEST_ASSERT(err == 0, "Failed to start the second long write (err %d)", err);
+
+	bt_gatt_cancel(dconn, &pb);
+	TEST_ASSERT(atomic_get(&cw_cancelled) == 1, "The waiting write was not completed");
+	TEST_ASSERT(cw_cancel_err == BT_ATT_ERR_UNLIKELY, "The waiting write reported 0x%02x",
+		    cw_cancel_err);
+
+	err = bt_gatt_write(dconn, &pc);
+	TEST_ASSERT(err == 0, "Failed to start the third long write (err %d)", err);
+
+	WAIT_FOR_VAL(cw_done, 2);
+	TEST_ASSERT(atomic_get(&cw_cancelled) == 1, "The cancelled write reported again");
+
+	TEST_PASS("DUT done");
+}
+
+enum {
+	RD_FAILED,
+	RD_DROPPED,
+	RD_LONG,
+	RD_COUNT,
+};
+
+static atomic_t rd_done;
+static uint8_t rd_err[RD_COUNT];
+
+static void rd_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	atomic_val_t i = atomic_get(&rd_done);
+
+	TEST_ASSERT((size_t)i < ARRAY_SIZE(rd_err), "Unexpected write callback");
+	rd_err[i] = err;
+	(void)atomic_inc(&rd_done);
+}
+
+static void rd_exec_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_reliable_write *write)
+{
+	TEST_FAIL("The failed reliable write was executed (err %u)", err);
+}
+
+void test_procedure_8(void)
+{
+	static uint8_t v1[40];
+	static uint8_t v2[4] = {5, 6, 7, 8};
+	static uint8_t vl[40];
+	static struct bt_gatt_reliable_write write = {.func = rd_exec_cb};
+	static struct bt_gatt_write_params p1, p2, pl;
+	int err;
+
+	for (size_t i = 0U; i < sizeof(v1); i++) {
+		v1[i] = (uint8_t)i;
+		vl[i] = (uint8_t)(0x40U + i);
+	}
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * Core v7.0 Vol 3 Part G 4.9.5 Characteristic Value Reliable Writes
+	 *
+	 * Two values of a reliable write are given at once, and the server
+	 * rejects the second Prepare Write Request of the first one. The
+	 * write ends, so the value that waits is not sent.
+	 *
+	 * [verdict]
+	 * - the first value reports the server error, then the waiting one
+	 *   BT_ATT_ERR_UNLIKELY, and the write cannot be executed
+	 * - a long write afterwards succeeds
+	 */
+	connect();
+
+	p1 = (struct bt_gatt_write_params){
+		.func = rd_cb, .handle = LONG_WRITE_HANDLE, .data = v1, .length = sizeof(v1)};
+	p2 = (struct bt_gatt_write_params){
+		.func = rd_cb, .handle = LONG_WRITE_HANDLE_2, .data = v2, .length = sizeof(v2)};
+	pl = (struct bt_gatt_write_params){
+		.func = rd_cb, .handle = LONG_WRITE_HANDLE, .data = vl, .length = sizeof(vl)};
+
+	err = bt_gatt_prepare_write(dconn, &write, &p1);
+	TEST_ASSERT(err == 0, "First reliable prepare failed (err %d)", err);
+	err = bt_gatt_prepare_write(dconn, &write, &p2);
+	TEST_ASSERT(err == 0, "Second reliable prepare failed (err %d)", err);
+
+	WAIT_FOR_VAL(rd_done, 2);
+	TEST_ASSERT(rd_err[RD_FAILED] == BT_ATT_ERR_PREPARE_QUEUE_FULL,
+		    "The rejected value reported 0x%02x, want 0x%02x", rd_err[RD_FAILED],
+		    BT_ATT_ERR_PREPARE_QUEUE_FULL);
+	TEST_ASSERT(rd_err[RD_DROPPED] == BT_ATT_ERR_UNLIKELY,
+		    "The waiting value reported 0x%02x, want 0x%02x", rd_err[RD_DROPPED],
+		    BT_ATT_ERR_UNLIKELY);
+
+	err = bt_gatt_execute_write(dconn, &write, true);
+	TEST_ASSERT(err == -EINVAL, "Execute write of the ended write returned %d", err);
+
+	err = bt_gatt_write(dconn, &pl);
+	TEST_ASSERT(err == 0, "Failed to start the long write (err %d)", err);
+	WAIT_FOR_VAL(rd_done, 3);
+	TEST_ASSERT(rd_err[RD_LONG] == 0, "The long write reported err %u", rd_err[RD_LONG]);
+
+	TEST_PASS("DUT done");
+}
+
+static atomic_t rc_done;
+static uint8_t rc_err[2];
+
+static void rc_exec_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_reliable_write *write)
+{
+	TEST_FAIL("The failed reliable write was executed (err %u)", err);
+}
+
+static struct bt_gatt_reliable_write rc_write = {.func = rc_exec_cb};
+
+static void rc_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	atomic_val_t i = atomic_get(&rc_done);
+
+	TEST_ASSERT((size_t)i < ARRAY_SIZE(rc_err), "Unexpected write callback");
+	rc_err[i] = err;
+	(void)atomic_inc(&rc_done);
+
+	/* The write has ended for the application, which may reuse it */
+	if (i == 0) {
+		(void)memset(&rc_write, 0, sizeof(rc_write));
+		rc_write.func = rc_exec_cb;
+	}
+}
+
+void test_procedure_9(void)
+{
+	static uint8_t va[4] = {1, 2, 3, 4};
+	static uint8_t vb[4] = {5, 6, 7, 8};
+	static struct bt_gatt_write_params pa, pb;
+	int err;
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * bt_gatt_cancel() on a value of a reliable write that waits fails the
+	 * write, as a value the server rejects does.
+	 *
+	 * [verdict]
+	 * - the cancelled value reports BT_ATT_ERR_UNLIKELY, then the value in
+	 *   flight once the server's copy is cancelled
+	 * - the write cannot be executed
+	 * - the host does not rely on the write once the cancelled value has
+	 *   reported, when the application reuses it
+	 */
+	connect();
+
+	pa = (struct bt_gatt_write_params){
+		.func = rc_cb, .handle = LONG_WRITE_HANDLE, .data = va, .length = sizeof(va)};
+	pb = (struct bt_gatt_write_params){
+		.func = rc_cb, .handle = LONG_WRITE_HANDLE_2, .data = vb, .length = sizeof(vb)};
+
+	err = bt_gatt_prepare_write(dconn, &rc_write, &pa);
+	TEST_ASSERT(err == 0, "First reliable prepare failed (err %d)", err);
+	err = bt_gatt_prepare_write(dconn, &rc_write, &pb);
+	TEST_ASSERT(err == 0, "Second reliable prepare failed (err %d)", err);
+
+	bt_gatt_cancel(dconn, &pb);
+	TEST_ASSERT(atomic_get(&rc_done) == 1, "The waiting value was not completed");
+	TEST_ASSERT(rc_err[0] == BT_ATT_ERR_UNLIKELY, "The waiting value reported 0x%02x",
+		    rc_err[0]);
+
+	err = bt_gatt_execute_write(dconn, &rc_write, true);
+	TEST_ASSERT(err == -EBUSY, "Execute write while the cancel runs returned %d", err);
+
+	WAIT_FOR_VAL(rc_done, 2);
+	TEST_ASSERT(rc_err[1] == BT_ATT_ERR_UNLIKELY, "The value in flight reported 0x%02x",
+		    rc_err[1]);
+
+	err = bt_gatt_execute_write(dconn, &rc_write, true);
+	TEST_ASSERT(err == -EINVAL, "Execute write of the failed write returned %d", err);
+
+	TEST_PASS("DUT done");
+}
+
+enum {
+	RI_FIRST,
+	RI_CANCELLED,
+	RI_LONG,
+	RI_COUNT,
+};
+
+static struct bt_gatt_write_params ri_params[RI_COUNT];
+static atomic_t ri_done;
+static uint8_t ri_err[RI_COUNT];
+
+static void ri_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	size_t i = (size_t)(params - ri_params);
+
+	TEST_ASSERT(i < ARRAY_SIZE(ri_params), "Unexpected write callback");
+	ri_err[i] = err;
+	(void)atomic_inc(&ri_done);
+
+	/* The first value is prepared, so nothing of the session is in flight */
+	if ((i == RI_FIRST) && (err == 0U)) {
+		bt_gatt_cancel(conn, &ri_params[RI_CANCELLED]);
+	}
+}
+
+static void ri_exec_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_reliable_write *write)
+{
+	TEST_FAIL("The failed reliable write was executed (err %u)", err);
+}
+
+void test_procedure_10(void)
+{
+	static uint8_t va[4] = {1, 2, 3, 4};
+	static uint8_t vb[4] = {5, 6, 7, 8};
+	static uint8_t vc[40];
+	static struct bt_gatt_reliable_write write = {.func = ri_exec_cb};
+	int err;
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * bt_gatt_cancel() on a waiting value of a reliable write, from the
+	 * callback of the value before it, when nothing of the write is in
+	 * flight, fails the write.
+	 *
+	 * [verdict]
+	 * - the cancelled value reports BT_ATT_ERR_UNLIKELY
+	 * - the server's copy of the first value is cancelled, and a long
+	 *   write given afterwards is written
+	 * - the write cannot be executed
+	 */
+	connect();
+
+	ri_params[RI_FIRST] = (struct bt_gatt_write_params){
+		.func = ri_cb, .handle = LONG_WRITE_HANDLE, .data = va, .length = sizeof(va)};
+	ri_params[RI_CANCELLED] = (struct bt_gatt_write_params){
+		.func = ri_cb, .handle = LONG_WRITE_HANDLE_2, .data = vb, .length = sizeof(vb)};
+	ri_params[RI_LONG] = (struct bt_gatt_write_params){
+		.func = ri_cb, .handle = LONG_WRITE_HANDLE, .data = vc, .length = sizeof(vc)};
+
+	err = bt_gatt_prepare_write(dconn, &write, &ri_params[RI_FIRST]);
+	TEST_ASSERT(err == 0, "First reliable prepare failed (err %d)", err);
+	err = bt_gatt_prepare_write(dconn, &write, &ri_params[RI_CANCELLED]);
+	TEST_ASSERT(err == 0, "Second reliable prepare failed (err %d)", err);
+
+	WAIT_FOR_VAL(ri_done, 2);
+	TEST_ASSERT(ri_err[RI_FIRST] == 0, "The first value reported 0x%02x", ri_err[RI_FIRST]);
+	TEST_ASSERT(ri_err[RI_CANCELLED] == BT_ATT_ERR_UNLIKELY,
+		    "The cancelled value reported 0x%02x", ri_err[RI_CANCELLED]);
+
+	err = bt_gatt_write(dconn, &ri_params[RI_LONG]);
+	TEST_ASSERT(err == 0, "Failed to start the long write (err %d)", err);
+	WAIT_FOR_VAL(ri_done, 3);
+	TEST_ASSERT(ri_err[RI_LONG] == 0, "The long write reported 0x%02x", ri_err[RI_LONG]);
+
+	err = bt_gatt_execute_write(dconn, &write, true);
+	TEST_ASSERT(err == -EINVAL, "Execute write of the failed write returned %d", err);
+
+	TEST_PASS("DUT done");
+}
+
+static atomic_t re_done;
+static uint8_t re_err;
+
+static void re_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	re_err = err;
+	(void)atomic_inc(&re_done);
+}
+
+static void re_exec_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_reliable_write *write)
+{
+	TEST_FAIL("A reliable write with a wrong echo was executed (err %u)", err);
+}
+
+void test_procedure_11(void)
+{
+	static uint8_t va[4] = {1, 2, 3, 4};
+	static uint8_t vc[40];
+	static struct bt_gatt_reliable_write write = {.func = re_exec_cb};
+	static struct bt_gatt_write_params params;
+	int err;
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * Core v7.0 Vol 3 Part G 4.9.5: a reliable write value whose echo is not
+	 * what was sent cancels the write. The tester echoes another handle,
+	 * then one octet less.
+	 *
+	 * [verdict]
+	 * - each value reports BT_ATT_ERR_INVALID_PDU and its write cannot be
+	 *   executed
+	 * - a long write given afterwards is written
+	 */
+	connect();
+
+	for (int i = 0; i < 2; i++) {
+		params = (struct bt_gatt_write_params){.func = re_cb,
+						       .handle = LONG_WRITE_HANDLE,
+						       .data = va,
+						       .length = sizeof(va)};
+
+		err = bt_gatt_prepare_write(dconn, &write, &params);
+		TEST_ASSERT(err == 0, "Reliable prepare failed (err %d)", err);
+		WAIT_FOR_VAL(re_done, i + 1);
+		TEST_ASSERT(re_err == BT_ATT_ERR_INVALID_PDU,
+			    "The value reported 0x%02x, want 0x%02x", re_err,
+			    BT_ATT_ERR_INVALID_PDU);
+
+		err = bt_gatt_execute_write(dconn, &write, true);
+		TEST_ASSERT(err == -EINVAL, "Execute write of the failed write returned %d", err);
+	}
+
+	params = (struct bt_gatt_write_params){
+		.func = re_cb, .handle = LONG_WRITE_HANDLE, .data = vc, .length = sizeof(vc)};
+	err = bt_gatt_write(dconn, &params);
+	TEST_ASSERT(err == 0, "Failed to start the long write (err %d)", err);
+	WAIT_FOR_VAL(re_done, 3);
+	TEST_ASSERT(re_err == 0, "The long write reported 0x%02x", re_err);
+
+	TEST_PASS("DUT done");
+}
+
+static atomic_t lf_done;
+static uint8_t lf_err[2];
+
+static void lf_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	atomic_val_t i = atomic_get(&lf_done);
+
+	TEST_ASSERT((size_t)i < ARRAY_SIZE(lf_err), "Unexpected write callback");
+	lf_err[i] = err;
+	(void)atomic_inc(&lf_done);
+}
+
+void test_procedure_12(void)
+{
+	static uint8_t va[40];
+	static uint8_t vb[40];
+	static struct bt_gatt_write_params pa, pb;
+	int err;
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * bt_gatt_cancel() on a long write whose first Prepare Write Request is
+	 * in flight cancels what the server may have queued of it, so the next
+	 * long write is not written together with it.
+	 *
+	 * [verdict]
+	 * - the cancelled write reports BT_ATT_ERR_UNLIKELY
+	 * - the server gets a cancel before the next long write is executed
+	 */
+	connect();
+
+	pa = (struct bt_gatt_write_params){
+		.func = lf_cb, .handle = LONG_WRITE_HANDLE, .data = va, .length = sizeof(va)};
+	pb = (struct bt_gatt_write_params){
+		.func = lf_cb, .handle = LONG_WRITE_HANDLE_2, .data = vb, .length = sizeof(vb)};
+
+	err = bt_gatt_write(dconn, &pa);
+	TEST_ASSERT(err == 0, "Failed to start the long write (err %d)", err);
+	bt_gatt_cancel(dconn, &pa);
+
+	WAIT_FOR_VAL(lf_done, 1);
+	TEST_ASSERT(lf_err[0] == BT_ATT_ERR_UNLIKELY, "The cancelled write reported 0x%02x",
+		    lf_err[0]);
+
+	err = bt_gatt_write(dconn, &pb);
+	TEST_ASSERT(err == 0, "Failed to start the second long write (err %d)", err);
+	WAIT_FOR_VAL(lf_done, 2);
+	TEST_ASSERT(lf_err[1] == 0, "The second long write reported 0x%02x", lf_err[1]);
+
+	TEST_PASS("DUT done");
+}
+
 static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "dut",
@@ -382,6 +1153,50 @@ static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "dut_long_write_echo",
 		.test_main_f = test_procedure_1,
+	},
+	{
+		.test_id = "dut_long_write_serialised",
+		.test_main_f = test_procedure_2,
+	},
+	{
+		.test_id = "dut_long_write_prep_error",
+		.test_main_f = test_procedure_3,
+	},
+	{
+		.test_id = "dut_reliable_write",
+		.test_main_f = test_procedure_4,
+	},
+	{
+		.test_id = "dut_reliable_write_queued",
+		.test_main_f = test_procedure_5,
+	},
+	{
+		.test_id = "dut_reliable_write_rejected",
+		.test_main_f = test_procedure_6,
+	},
+	{
+		.test_id = "dut_long_write_cancel_waiting",
+		.test_main_f = test_procedure_7,
+	},
+	{
+		.test_id = "dut_reliable_write_dropped",
+		.test_main_f = test_procedure_8,
+	},
+	{
+		.test_id = "dut_reliable_write_cancel_waiting",
+		.test_main_f = test_procedure_9,
+	},
+	{
+		.test_id = "dut_reliable_write_cancel_idle",
+		.test_main_f = test_procedure_10,
+	},
+	{
+		.test_id = "dut_reliable_write_bad_echo",
+		.test_main_f = test_procedure_11,
+	},
+	{
+		.test_id = "dut_long_write_cancel_in_flight",
+		.test_main_f = test_procedure_12,
 	},
 	BSTEST_END_MARKER,
 };
