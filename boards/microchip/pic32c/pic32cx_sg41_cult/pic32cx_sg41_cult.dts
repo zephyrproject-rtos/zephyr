@@ -32,6 +32,7 @@
 		pwm-led0 = &pwm_led0;
 		rtc = &rtc;
 		eeprom-0 = &eeprom;
+		spi-flash0 = &sst26vf064b;
 	};
 
 	leds {
@@ -399,4 +400,25 @@ i2c0: &sercom6 {
 
 &trng {
 	status = "okay";
+};
+
+&qspi {
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/*
+	 * The driver runs the QSPI in single-line SPI mode, so DATA2 (WP#)
+	 * and DATA3 (HOLD#) are driven as GPIOs.
+	 */
+	sst26vf064b: flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <60000000>;
+		size = <0x4000000>;
+		jedec-id = [bf 26 43];
+		wp-gpios = <&porta 10 GPIO_ACTIVE_LOW>;
+		hold-gpios = <&porta 11 GPIO_ACTIVE_LOW>;
+		requires-ulbpr;
+	};
 };
