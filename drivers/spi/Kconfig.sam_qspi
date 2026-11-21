@@ -10,3 +10,25 @@ config SPI_SAM_QSPI
 	  Use the QSPI controller of the SAM E70/S70/V70/V71 and PIC32CZ CA70/MC70
 	  as a single-line SPI controller, for example for a serial NOR flash
 	  through the jedec,spi-nor driver.
+
+config SPI_SAM_QSPI_DMA
+	bool "DMA transfers for the Atmel SAM QSPI controller"
+	default y
+	depends on SPI_SAM_QSPI
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ATMEL_SAM_QSPI),dmas)
+	select DMA
+	help
+	  Use two XDMAC channels, given by the dmas property, for transfers of
+	  at least SPI_SAM_QSPI_DMA_THRESHOLD bytes. Instances without dmas,
+	  and shorter transfers, stay polled. With the data cache enabled, only
+	  the whole cache lines of a receive buffer go through DMA.
+
+config SPI_SAM_QSPI_DMA_THRESHOLD
+	int "Minimum chunk length for a DMA transfer"
+	default 32
+	range 1 $(UINT16_MAX)
+	depends on SPI_SAM_QSPI_DMA
+	help
+	  Chunks shorter than this, such as flash commands and addresses, are
+	  shifted by the CPU: setting up two DMA channels costs more than it
+	  saves on a few bytes.

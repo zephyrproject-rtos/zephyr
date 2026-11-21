@@ -9,11 +9,15 @@ description: |
   controller. The chip select is the hardware QCS line unless cs-gpios
   is set.
 
+  Transfers are polled, or use two XDMAC channels when dmas is set.
+
 examples:
   - |
     &qspi {
       pinctrl-0 = <&qspi_default>;
       pinctrl-names = "default";
+      dmas = <&xdmac 3 5>, <&xdmac 4 6>;
+      dma-names = "tx", "rx";
       status = "okay";
 
       flash@0 {
@@ -43,3 +47,13 @@ properties:
 
   clocks:
     required: true
+
+  dmas:
+    description: |
+      Optional TX and RX DMA specifiers: the XDMAC phandle, the channel
+      number and the peripheral ID (DMA_PERID_QSPI_TX and DMA_PERID_QSPI_RX
+      from dt-bindings/dma/atmel_samx7x_dma.h).
+
+  dma-names:
+    description: |
+      Required if dmas is set: "tx" and "rx", matching dmas.
