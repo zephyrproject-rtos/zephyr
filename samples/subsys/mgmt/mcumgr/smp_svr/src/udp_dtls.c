@@ -37,6 +37,21 @@ int setup_udp_dtls(void)
 
 	if (rc < 0) {
 		LOG_ERR("Failed to register private key: %d", rc);
+		return rc;
+	}
+
+	/* The server certificate is self-signed: with client authentication, it also
+	 * serves as the CA, and a client that holds the same certificate and key is
+	 * accepted.
+	 */
+	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_CLIENT_AUTH)) {
+		rc = tls_credential_add(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_TLS_TAG,
+					TLS_CREDENTIAL_CA_CERTIFICATE, server_certificate,
+					sizeof(server_certificate));
+
+		if (rc < 0) {
+			LOG_ERR("Failed to register CA certificate: %d", rc);
+		}
 	}
 
 	return rc;
