@@ -20,6 +20,16 @@ config SPI_MCHP_FLEXCOM_DMA_DRIVEN
 	  This enables DMA driven transfers for the SPI peripheral.
 	  Requires DMA controller and dmas property in device tree.
 
+config SPI_MCHP_QSPI_G1
+	bool "Microchip G1 QSPI controller in SPI mode"
+	default y
+	depends on DT_HAS_MICROCHIP_QSPI_G1_SPI_ENABLED
+	select PINCTRL
+	help
+	  Use the G1 QSPI controller (PIC32CX SG, SAM D5x/E5x) as a single-line
+	  SPI controller, for example for a serial NOR flash through the
+	  jedec,spi-nor driver.
+
 config SPI_MCHP_SERCOM
 	bool
 	help

@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip G1 QSPI controller in SPI mode
+
+  Group G1 QSPI includes the following hardware peripherals:
+    - module name="QSPI" id="U2008"
+
+  The driver runs the controller in SPI mode (CTRLB.MODE = 0), as a
+  single-line SPI controller with 8-bit words. The chip select is the
+  hardware CS line unless cs-gpios is set. The serial memory mode (dual
+  and quad I/O, memory-mapped reads) is not used.
+
+  The serial clock is CLK_QSPI_AHB (the CPU clock) divided by 1 to 256.
+  Keep spi-max-frequency within the QSPI electrical specifications of the
+  SoC data sheet.
+
+examples:
+  - |
+    &qspi {
+      pinctrl-0 = <&qspi_default>;
+      pinctrl-names = "default";
+      status = "okay";
+
+      flash@0 {
+        compatible = "jedec,spi-nor";
+        reg = <0>;
+        spi-max-frequency = <24000000>;
+      };
+    };
+
+compatible: "microchip,qspi-g1-spi"
+
+include:
+  - name: spi-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      "mclk-apb" for the APB bus clock, "mclk-ahb" for the AHB clock that
+      also drives the baud rate generator.
