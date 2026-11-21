@@ -41,6 +41,8 @@ source "subsys/net/lib/quic/Kconfig"
 
 source "subsys/net/lib/stun/Kconfig"
 
+source "subsys/net/lib/ice/Kconfig"
+
 endmenu
 
 menu "Network Libraries"
