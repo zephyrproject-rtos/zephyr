@@ -46,6 +46,12 @@ config SOC_RP2350A_M33_1
 	help
 	  Use the RP2350A with CPU1 as a Cortex-M33 core.
 
+config SOC_RP2350A_M33_SMP
+	bool
+	select SOC_RP2350A
+	help
+	  Use the RP2350A with both Cortex-M33 cores running one SMP image.
+
 config SOC_RP2350B
 	bool
 	select SOC_SERIES_RP2350
@@ -81,6 +87,12 @@ config SOC_RP2350B_M33_1
 	select SOC_RP2350B
 	help
 	  Use the RP2350B with CPU1 as a Cortex-M33 core.
+
+config SOC_RP2350B_M33_SMP
+	bool
+	select SOC_RP2350B
+	help
+	  Use the RP2350B with both Cortex-M33 cores running one SMP image.
 
 config SOC
 	default "rp2350a" if SOC_RP2350A

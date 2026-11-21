@@ -49,6 +49,9 @@ config SOC_RP2350A_M33_1
 	select ARMV8_M_DSP
 	select SOC_FAMILY_RPI_PICO_CPU1
 
+config SOC_RP2350A_M33_SMP
+	select SOC_RP2350_M33_SMP
+
 config SOC_RP2350B_HAZARD3
 	select DEPRECATED
 
@@ -83,6 +86,26 @@ config SOC_RP2350B_M33_1
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select SOC_FAMILY_RPI_PICO_CPU1
+
+config SOC_RP2350B_M33_SMP
+	select SOC_RP2350_M33_SMP
+
+config SOC_RP2350_M33_SMP
+	bool
+	help
+	  Both Cortex-M33 cores of an RP2350 run one SMP image.
+	select ARM
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select SOC_PER_CORE_INIT_HOOK if MP_MAX_NUM_CPUS > 1
+	select SCHED_IPI_SUPPORTED if SMP
+	select ARCH_HAS_DIRECTED_IPIS if SMP
 
 if SOC_SERIES_RP2350
 
