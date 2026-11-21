@@ -248,6 +248,18 @@ static int create_socket(enum proto_type proto, int *sock)
 		LOG_ERR("Failed to set DTLS role secure option: %d", errno);
 		return err;
 	}
+
+	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_CLIENT_AUTH)) {
+		int peer_verify = ZSOCK_TLS_PEER_VERIFY_REQUIRED;
+
+		err = zsock_setsockopt(tmp_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_PEER_VERIFY, &peer_verify,
+				       sizeof(peer_verify));
+
+		if (err < 0) {
+			LOG_ERR("Failed to set DTLS peer verify secure option: %d", errno);
+			return err;
+		}
+	}
 #endif
 
 	if (zsock_bind(tmp_sock, addr, addr_len) < 0) {
@@ -386,6 +398,17 @@ int smp_udp_open(void)
 	if (rc == -ENOENT) {
 		LOG_ERR("Missing DTLS private key credential");
 		return rc;
+	}
+
+	if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_CLIENT_AUTH)) {
+		len = 0;
+		rc = tls_credential_get(CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_TLS_TAG,
+					TLS_CREDENTIAL_CA_CERTIFICATE, NULL, &len);
+
+		if (rc == -ENOENT) {
+			LOG_ERR("Missing DTLS CA certificate credential");
+			return rc;
+		}
 	}
 #endif
 

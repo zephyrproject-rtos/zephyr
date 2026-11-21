@@ -104,6 +104,12 @@ Libraries / Subsystems
     multicast class C session started, instead of always reverting to class A.
     The current class can be read with :c:func:`lorawan_get_class`.
 
+* MCUmgr
+
+  * The UDP SMP transport can require a client certificate on its DTLS connections
+    (:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_CLIENT_AUTH`), so that only clients
+    signed by the CA the application provides can send SMP commands.
+
 * Mbed TLS
 
   * :kconfig:option:`CONFIG_MBEDTLS_SSL_CLI_C`
