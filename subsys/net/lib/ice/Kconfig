@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ICE_LITE
+	bool "ICE-lite agent [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select STUN
+	select CSPRNG_NEEDED
+	help
+	  Lite implementation of ICE (RFC 8445): answers the connectivity
+	  checks of a full ICE agent and reports the address it nominates.
+	  The agent does no I/O.
+
+if ICE_LITE
+
+config ICE_LITE_UFRAG_LEN
+	int "Length of the username fragment"
+	default 8
+	range 4 256
+	help
+	  Number of characters of the username fragment of an agent, 6 bits of
+	  randomness each. RFC 8445 section 5.3 asks for 24 bits at least, 4
+	  characters, and the SDP grammar allows 256 at most.
+
+config ICE_LITE_PWD_LEN
+	int "Length of the password"
+	default 24
+	range 22 32
+	help
+	  Number of characters of the password of an agent, 6 bits of
+	  randomness each. RFC 8445 section 5.3 asks for 128 bits at least, 22
+	  characters. The password is the HMAC key of the integrity checks, and
+	  a PSA key slot holds 32 bytes when the key material is stored
+	  statically (MBEDTLS_PSA_STATIC_KEY_SLOTS), hence the upper bound.
+
+module = ICE_LITE
+module-dep = NET_LOG
+module-str = Log level for ICE-lite
+module-help = Enable the log of the ICE-lite agent.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # ICE_LITE

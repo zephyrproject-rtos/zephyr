@@ -14,6 +14,7 @@ Protocols
    ftp_client
    http_client
    http_server
+   ice_lite
    lwm2m
    mcp
    mqtt

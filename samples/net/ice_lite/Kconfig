@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_SAMPLE_ICE_LITE_PORT
+	int "UDP port of the host candidate"
+	default 5000
+	range 1 65535
+	help
+	  UDP port the sample answers connectivity checks on.
+
+source "samples/net/common/Kconfig"
+source "Kconfig.zephyr"
