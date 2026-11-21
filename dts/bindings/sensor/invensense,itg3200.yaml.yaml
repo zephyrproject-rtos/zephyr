@@ -1,0 +1,62 @@
+# Copyright (c) 2026 NBuiLe
+# SPDX-License-Identifier: Apache-2.0
+
+description: InvenSense ITG-3200 3-Axis Digital Gyroscope
+
+compatible: "invensense,itg3200"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  smplrt-div:
+    type: int
+    default: 9
+    description: |
+      Sample Rate Divider (SMPLRT_DIV register 0x15).
+      Sample Rate = Internal_Sample_Rate / (1 + SMPLRT_DIV).
+      Default is 9 (1kHz / 10 = 100 Hz).
+
+  fs-sel:
+    type: int
+    default: 3
+    enum:
+      - 3
+    description: |
+      Full-Scale Range selection (DLPF_FS bits [4:3]).
+      Must be set to 3 (+/- 2000 deg/sec) for proper operation per datasheet.
+
+  dlpf-cfg:
+    type: int
+    default: 3
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+    description: |
+      Digital Low-Pass Filter bandwidth configuration (DLPF_FS bits [2:0]):
+      - 0: 256 Hz (8 kHz Internal_Sample_Rate)
+      - 1: 188 Hz (1 kHz Internal_Sample_Rate)
+      - 2: 98 Hz (1 kHz Internal_Sample_Rate)
+      - 3: 42 Hz (1 kHz Internal_Sample_Rate, default)
+      - 4: 20 Hz (1 kHz Internal_Sample_Rate)
+      - 5: 10 Hz (1 kHz Internal_Sample_Rate)
+      - 6: 5 Hz (1 kHz Internal_Sample_Rate)
+      Note: Value 7 is reserved by datasheet and excluded.
+
+  int-cfg:
+    type: int
+    default: 0
+    description: |
+      Interrupt configuration register value (INT_CFG register 0x17).
+      Default is 0x00 (interrupts disabled, polling mode).
+
+  pwr-mgm:
+    type: int
+    default: 1
+    description: |
+      Power Management register value (PWR_MGM register 0x3E).
+      Default is 0x01 (PLL with X Gyro reference, recommended by datasheet).
