@@ -71,6 +71,15 @@
 			status = "okay";
 		};
 
+		timer0: timer@f0026000 {
+			compatible = "aesc,timer";
+			reg = <0xf0026000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <1 1>;
+			resolution = <16>;
+			status = "disabled";
+		};
+
 		/* RISC-V Platform-level interrupt controller */
 		plic: interrupt-controller@f0800000 {
 			compatible = "sifive,plic-1.0.0";
