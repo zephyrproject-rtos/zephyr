@@ -52,7 +52,7 @@ static int max30210_thread_cb(const struct device *dev)
 		data->a_fifo_full_handler(dev, data->a_fifo_full_trigger);
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_EDGE_FALLING);
+	ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		LOG_ERR("Failed to reconfigure GPIO interrupt: %d\n", ret);
 		return -EFAULT;
@@ -257,7 +257,7 @@ int max30210_trigger_set(const struct device *dev, const struct sensor_trigger *
 		LOG_ERR("Failed to read STATUS register: %d\n", ret);
 		return ret;
 	}
-	ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_EDGE_FALLING);
+	ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure GPIO interrupt: %d\n", ret);
 		return ret;
@@ -297,7 +297,7 @@ int max30210_init_interrupt(const struct device *dev)
 		return ret;
 	}
 
-	ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_EDGE_FALLING);
+	ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure GPIO interrupt: %d\n", ret);
 		return ret;
