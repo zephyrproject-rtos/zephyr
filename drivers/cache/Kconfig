@@ -31,6 +31,7 @@ source "drivers/cache/Kconfig.nxp_syscon_lpcac"
 source "drivers/cache/Kconfig.nxp_xcache"
 source "drivers/cache/Kconfig.siwx91x"
 source "drivers/cache/Kconfig.stm32"
+source "drivers/cache/Kconfig.ti_mspm0"
 # zephyr-keep-sorted-stop
 
 endif # CACHE
