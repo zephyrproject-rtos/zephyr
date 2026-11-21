@@ -44,6 +44,7 @@
 #define SYSCTL_BORTHRESHOLD_OFFSET   0x1308 /**< BOR threshold selection */
 #define SYSCTL_LFXTCTL_OFFSET        0x1314 /**< LFXT and LFCLK control */
 #define SYSCTL_EXLFCTL_OFFSET        0x1318 /**< LFCLK_IN control */
+#define SYSCTL_SHUTDNSTORE0_OFFSET   0x1400 /**< Shutdown storage memory 0 */
 
 #define SYSCTL_XTALCR_OFFSET 0x1474 /**< XTAL control */
 #define SYSCTL_X1CNT_OFFSET  0x147C /**< X1 oscillator activity counter */

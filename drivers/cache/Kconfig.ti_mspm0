@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_TI_MSPM0
+	bool "TI MSPM0 CPUSS cache driver"
+	default y
+	depends on SOC_SERIES_MSPM0G || SOC_SERIES_MSPM0L
+	depends on EXTERNAL_CACHE
+	depends on SYSCON
+	depends on $(dt_nodelabel_enabled,cpuss)
+	depends on $(dt_nodelabel_enabled,sysctl)
+	select CACHE_HAS_DRIVER
+	help
+	  Driver for the prefetch and cache logic of the MSPM0 CPU subsystem, which caches
+	  instruction and literal fetches from flash. It is handled as an instruction cache;
+	  invalidating it also drops the cached literals.
