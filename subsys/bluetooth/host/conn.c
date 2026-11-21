@@ -2864,12 +2864,16 @@ uint8_t bt_conn_enc_key_size(const struct bt_conn *conn)
 
 #if defined(CONFIG_BT_CLASSIC)
 	if (bt_conn_is_br(conn)) {
-		return conn->br.link_key ? conn->br.link_key->enc_key_size : 0;
+		const struct bt_keys_link_key *link_key = conn->br.link_key;
+
+		return link_key != NULL ? link_key->enc_key_size : 0U;
 	}
 #endif /* CONFIG_BT_CLASSIC */
 
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
-		return conn->le.keys ? conn->le.keys->enc_size : 0;
+		const struct bt_keys *keys = conn->le.keys;
+
+		return keys != NULL ? keys->enc_size : 0U;
 	}
 
 	return 0;
@@ -3242,7 +3246,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
 
 	switch (conn->type) {
-	case BT_CONN_TYPE_LE:
+	case BT_CONN_TYPE_LE: {
 		info->le.dst = &conn->le.dst;
 		info->le.src = &bt_dev.id_addr[conn->id];
 		if (conn->role == BT_HCI_ROLE_CENTRAL) {
@@ -3267,13 +3271,18 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #if defined(CONFIG_BT_SUBRATING)
 		info->le.subrate = &conn->le.subrate;
 #endif
-		if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_SC)) {
-			info->security.flags |= BT_SECURITY_FLAG_SC;
-		}
-		if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_OOB)) {
-			info->security.flags |= BT_SECURITY_FLAG_OOB;
+		const struct bt_keys *keys = conn->le.keys;
+
+		if (keys != NULL) {
+			if ((keys->flags & BT_KEYS_SC) != 0U) {
+				info->security.flags |= BT_SECURITY_FLAG_SC;
+			}
+			if ((keys->flags & BT_KEYS_OOB) != 0U) {
+				info->security.flags |= BT_SECURITY_FLAG_OOB;
+			}
 		}
 		return 0;
+	}
 #if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
 		info->br.dst = &conn->br.dst;
@@ -3284,13 +3293,15 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 		return 0;
 #endif
 #if defined(CONFIG_BT_ISO)
-	case BT_CONN_TYPE_ISO:
+	case BT_CONN_TYPE_ISO: {
 #if defined(CONFIG_BT_ISO_UNICAST)
+		const struct bt_conn *acl = conn->iso.acl;
+
 		if ((conn->iso.info.type == BT_ISO_CHAN_TYPE_CENTRAL ||
 		     conn->iso.info.type == BT_ISO_CHAN_TYPE_PERIPHERAL) &&
-		    conn->iso.acl != NULL) {
-			info->le.dst = &conn->iso.acl->le.dst;
-			info->le.src = &bt_dev.id_addr[conn->iso.acl->id];
+		    acl != NULL) {
+			info->le.dst = &acl->le.dst;
+			info->le.src = &bt_dev.id_addr[acl->id];
 		} else {
 			info->le.src = BT_ADDR_LE_NONE;
 			info->le.dst = BT_ADDR_LE_NONE;
@@ -3300,6 +3311,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 		info->le.dst = BT_ADDR_LE_NONE;
 #endif /* CONFIG_BT_ISO_UNICAST */
 		return 0;
+	}
 #endif /* CONFIG_BT_ISO */
 	default:
 		break;
