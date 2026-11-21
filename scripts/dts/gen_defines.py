@@ -28,11 +28,16 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree', 
 import edtlib_logger
 from devicetree import edtlib
 
+# Set by main() from the command line; used to shorten paths in the header.
+ZEPHYR_BASE = None
+WEST_TOPDIR = None
+
 
 def main():
     global header_file
     global flash_area_num
     global ZEPHYR_BASE
+    global WEST_TOPDIR
 
     args = parse_args()
 
@@ -44,6 +49,9 @@ def main():
         ZEPHYR_BASE = pathlib.Path(base_path)
     else:
         ZEPHYR_BASE = pathlib.Path(__file__).resolve().parents[2]
+
+    if args.west_topdir:
+        WEST_TOPDIR = pathlib.Path(args.west_topdir)
 
     with open(args.edt_pickle, 'rb') as f:
         edt = pickle.load(f)
@@ -171,6 +179,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--deps-out", help="path to dependencies file to output")
     parser.add_argument("--edt-pickle", help="path to read pickled edtlib.EDT object from")
     parser.add_argument("--zephyr-base", help="path to zephyr base")
+    parser.add_argument(
+        "--west-topdir",
+        help="path to the west topdir; paths below it are shortened to $WEST_TOPDIR in the header",
+    )
 
     return parser.parse_args()
 
@@ -253,17 +265,25 @@ Binding (compatible = {node.matching_compat}):
 
 def relativize(path) -> str | None:
     # If 'path' is within $ZEPHYR_BASE, returns it relative to $ZEPHYR_BASE,
-    # with a "$ZEPHYR_BASE/..." hint at the start of the string. Otherwise,
-    # returns 'path' unchanged.
+    # with a "$ZEPHYR_BASE/..." hint at the start of the string. Otherwise, if
+    # it is within the west topdir, returns it relative to the topdir with a
+    # "$WEST_TOPDIR/..." hint. Otherwise, returns 'path' unchanged.
+    #
+    # Bindings directories of modules outside the Zephyr tree live under the
+    # west topdir. Shortening them keeps the generated header identical for
+    # every checkout of the same workspace, which lets ccache reuse the objects
+    # across workspace copies.
 
-    if ZEPHYR_BASE is None:
-        return path
+    for base, hint in ((ZEPHYR_BASE, "$ZEPHYR_BASE"), (WEST_TOPDIR, "$WEST_TOPDIR")):
+        if base is None:
+            continue
 
-    try:
-        return str("$ZEPHYR_BASE" / pathlib.Path(path).relative_to(ZEPHYR_BASE))
-    except ValueError:
-        # Not within ZEPHYR_BASE
-        return path
+        try:
+            return str(hint / pathlib.Path(path).relative_to(base))
+        except ValueError:
+            continue
+
+    return path
 
 
 def write_idents_and_existence(node: edtlib.Node) -> None:
