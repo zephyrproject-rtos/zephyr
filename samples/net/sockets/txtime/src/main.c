@@ -140,13 +140,26 @@ static void rx(void *p1, void *p2, void *p3)
 	struct sockaddr src;
 	socklen_t addr_len = data->peer_addr_len;
 	ssize_t len = 0;
+	ssize_t ret;
 
 	while (true) {
-		len += recvfrom(data->sock, recv_buf, sizeof(recv_buf), 0,
-				&src, &addr_len);
+		ret = recvfrom(data->sock, recv_buf, sizeof(recv_buf), 0,
+			       &src, &addr_len);
+		if (ret < 0) {
+			break;
+		}
+
+		len += ret;
 		if (!(len % (100 * 1024))) {
 			LOG_DBG("Received %zd kb data", len / 1024);
 		}
+	}
+}
+
+static void stop_thread(k_tid_t tid)
+{
+	if (k_thread_join(tid, K_SECONDS(1)) != 0) {
+		k_thread_abort(tid);
 	}
 }
 
@@ -655,11 +668,12 @@ int main(void)
 
 	LOG_INF("Stopping...");
 
-	k_thread_abort(tx_tid);
-	k_thread_abort(rx_tid);
-
 	if (peer_data.sock >= 0) {
 		(void)close(peer_data.sock);
 	}
+
+	stop_thread(tx_tid);
+	stop_thread(rx_tid);
+
 	return 0;
 }

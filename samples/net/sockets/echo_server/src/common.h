@@ -40,6 +40,7 @@ struct data {
 
 	struct {
 		int sock;
+		int stop_fd;
 		char recv_buffer[RECV_BUFFER_SIZE];
 		uint32_t counter;
 		atomic_t bytes_received;
