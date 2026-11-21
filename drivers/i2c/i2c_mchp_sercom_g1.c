@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(i2c_mchp_sercom_g1, CONFIG_I2C_LOG_LEVEL);
 #include "i2c-priv.h"
 
 #define I2C_BAUD_MAX          0xFFU
-#define I2C_BAUD_LOW_HIGH_MAX 382U
 
 /*
  * Maximum Rise Time (tRISE) with CLOAD = 30 pF for I2C pins
@@ -273,20 +272,17 @@ static bool i2c_baudrate_calc(uint32_t bitrate, uint32_t sys_clock_rate, uint32_
 		baud_offset = ((sys_clock_rate * I2C_TRISE_DEFAULT_NS) / 1000000000U) + 10U;
 	}
 
-	if (bitrate <= I2C_BITRATE_FAST) {
-		/* For I2C clock speed up to 400 kHz, the value of BAUD<7:0>
-		 * determines both SCL_L and SCL_H with SCL_L = SCL_H
+	if (bitrate <= I2C_BITRATE_STANDARD) {
+		/* In Standard mode, the value of BAUD<7:0> determines both SCL_L
+		 * and SCL_H with SCL_L = SCL_H
 		 */
 		baud_min = 2U;
-		baud_max = I2C_BAUD_MAX * 2U;
 	} else {
-		/* To maintain the ratio of SCL_L:SCL_H to 2:1, the max value of
-		 * BAUD_LOW<15:8>:BAUD<7:0> can be 0xFF:0x7F. Hence BAUD_LOW + BAUD
-		 * can not exceed 255+127 = 382
-		 */
+		/* BAUDLOW<15:8> determines SCL_L and BAUD<7:0> SCL_H: both non-zero */
 		baud_min = 4U;
-		baud_max = I2C_BAUD_LOW_HIGH_MAX - 1U;
 	}
+	/* Both halves are 8-bit fields */
+	baud_max = I2C_BAUD_MAX * 2U;
 
 	/* Tested before the subtraction below, which would otherwise wrap */
 	if ((sys_clock_rate / bitrate) < (baud_offset + baud_min)) {
@@ -303,11 +299,25 @@ static bool i2c_baudrate_calc(uint32_t bitrate, uint32_t sys_clock_rate, uint32_
 		return false;
 	}
 
-	if (bitrate <= I2C_BITRATE_FAST) {
+	if (bitrate <= I2C_BITRATE_STANDARD) {
 		*baud_val = baud_value / 2U;
 	} else {
-		/* For Fm+ mode, I2C SCL_L:SCL_H to 2:1 */
-		*baud_val = ((((baud_value * 2U) / 3U) << 8U) | (baud_value / 3U));
+		/*
+		 * Fm, Fm+ and Hs: SCL_L:SCL_H = 2:1. A 1:1 ratio at 400 kHz gives
+		 * SCL_L of about 1.23 us, below the 1.3 us minimum of Fast mode.
+		 * As in i2c_sam0.c, the rounding remainder goes to SCL_L. With a
+		 * very fast reference clock, SCL_L is capped at the 8-bit field and
+		 * the ratio is lower.
+		 */
+		uint32_t baud_high = baud_value / 3U;
+		uint32_t baud_low = baud_value - baud_high;
+
+		if (baud_low > I2C_BAUD_MAX) {
+			baud_low = I2C_BAUD_MAX;
+			baud_high = baud_value - baud_low;
+		}
+
+		*baud_val = (baud_low << 8U) | baud_high;
 	}
 
 	return true;
