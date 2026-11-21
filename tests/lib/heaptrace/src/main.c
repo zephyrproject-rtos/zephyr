@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/sys/heaptrace.h>
+#include <zephyr/linker/linker-defs.h>
 #include <string.h>
 
 #define TEST_HEAP_ID 0xDEAD
@@ -366,24 +367,65 @@ ZTEST(lib_heaptrace, test_heaptrace_heap_boundaries)
 }
 
 /* Backtrace capture: when CONFIG_HEAPTRACE_BACKTRACE is enabled,
- * the recorded backtrace depth must be > 0.
+ * the recorded backtrace must reproduce the real call chain.
  */
+#ifdef CONFIG_HEAPTRACE_BACKTRACE
+static uintptr_t bt_caller_ret;
+
+/*
+ * Non-leaf on purpose: the compiler keeps a frame for it, so the return
+ * address captured here is one that a correctly unwound frame chain must
+ * contain. With HEAPTRACE_BACKTRACE_SKIP=0 no infrastructure frame is
+ * dropped, so the address is guaranteed to be inside the captured window.
+ */
+static void __noinline backtrace_alloc(void)
+{
+	bt_caller_ret = (uintptr_t)__builtin_return_address(0);
+	heaptrace_alloc((void *)0x7000, 64, TEST_HEAP_ID);
+}
+#endif
+
 static bool test_backtrace_cb(const struct heaptrace_record_info *info, void *user_data)
 {
 	bool *f = (bool *)user_data;
 
-	if (info->ptr == (void *)0x7000) {
-#ifdef CONFIG_HEAPTRACE_BACKTRACE
-		/* The backtrace variant enables frame pointers and sets
-		 * HEAPTRACE_BACKTRACE_SKIP=0, so the stack walk must capture
-		 * at least one frame.
-		 */
-		zassert_true(info->bt_depth > 0, "backtrace must capture at least one frame");
-#else
-		zassert_equal(info->bt_depth, 0, "bt_depth must be 0 when backtrace is disabled");
-#endif
-		*f = true;
+	if (info->ptr != (void *)0x7000) {
+		return true;
 	}
+
+#ifdef CONFIG_HEAPTRACE_BACKTRACE
+	bool found_caller = false;
+
+	/* The backtrace variant enables frame pointers and sets
+	 * HEAPTRACE_BACKTRACE_SKIP=0, so the stack walk must capture at
+	 * least one frame.
+	 */
+	zassert_true(info->bt_depth > 0, "backtrace must capture at least one frame");
+	zassert_not_null(info->bt_buf, "backtrace buffer must not be NULL");
+
+	for (int i = 0; i < info->bt_depth; i++) {
+		uintptr_t addr = info->bt_buf[i];
+
+		/* Every frame must be a real code address, no stack garbage. */
+		zassert_true(addr >= (uintptr_t)__text_region_start &&
+				     addr < (uintptr_t)__text_region_end,
+			     "frame %d (0x%lx) is outside the text region", i,
+			     (unsigned long)addr);
+
+		if (addr == bt_caller_ret) {
+			found_caller = true;
+		}
+	}
+
+	/* Cross-check against the compiler's own frame pointer: the address
+	 * the callee would return to must show up in the walked chain.
+	 */
+	zassert_true(found_caller, "backtrace must contain the caller return address 0x%lx",
+		     (unsigned long)bt_caller_ret);
+#else
+	zassert_equal(info->bt_depth, 0, "bt_depth must be 0 when backtrace is disabled");
+#endif
+	*f = true;
 	return true;
 }
 
@@ -393,7 +435,11 @@ ZTEST(lib_heaptrace, test_heaptrace_backtrace)
 
 	heaptrace_reset();
 
+#ifdef CONFIG_HEAPTRACE_BACKTRACE
+	backtrace_alloc();
+#else
 	heaptrace_alloc((void *)0x7000, 64, TEST_HEAP_ID);
+#endif
 
 	heaptrace_foreach_record(test_backtrace_cb, &found);
 

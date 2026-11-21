@@ -6,10 +6,15 @@ tests:
     integration_platforms:
       - qemu_x86
   libraries.heaptrace.backtrace:
-    # Requires arch_stack_walk() support for a thread with a NULL esf: x86
-    # returns immediately in that case, RISC-V unwinds the current thread.
-    platform_allow: qemu_riscv32
+    # Requires arch_stack_walk() support for a thread with a NULL esf:
+    # RISC-V and x86 unwind the current thread, other arches may not.
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+      - qemu_riscv32
     integration_platforms:
+      - qemu_x86
+      - qemu_x86_64
       - qemu_riscv32
     extra_configs:
       - CONFIG_HEAPTRACE_BACKTRACE=y
