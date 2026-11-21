@@ -990,15 +990,15 @@ static int max30210_pm_action(const struct device *dev, enum pm_device_action ac
 
 			restore_ret = max30210_reg_write(dev, TEMP_CONVERT, data->pm_temp_convert);
 			if (restore_ret < 0) {
-				LOG_ERR("Failed to restore conversion mode after suspend failure: %d",
-					restore_ret);
+				LOG_ERR("Failed to restore conversion mode after suspend "
+					"failure: %d", restore_ret);
 			}
 
 			restore_ret = max30210_reg_write(dev, PIN_CONFIG, data->pm_pin_config);
 
 			if (restore_ret < 0) {
-				LOG_ERR("Failed to restore pin configuration after suspend failure: %d",
-					restore_ret);
+				LOG_ERR("Failed to restore pin configuration after suspend "
+					"failure: %d", restore_ret);
 			}
 			return ret;
 		}
@@ -1025,9 +1025,8 @@ static int max30210_pm_action(const struct device *dev, enum pm_device_action ac
 					max30210_reg_update(dev, PIN_CONFIG, EXT_CVT_EN_MASK, 0);
 
 				if (disable_ret < 0) {
-					LOG_ERR("Failed to disable external conversion after resume "
-						"failure: %d",
-						disable_ret);
+					LOG_ERR("Failed to disable external conversion after "
+						"resume failure: %d", disable_ret);
 				}
 			}
 			return ret;
@@ -1042,11 +1041,11 @@ static int max30210_pm_action(const struct device *dev, enum pm_device_action ac
 }
 #endif /* CONFIG_PM_DEVICE */
 
-#define MAX30210_CONFIG(inst)                                                                      \
+#define MAX30210_CONFIG(inst)                                                                \
 	.pdb_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, pdb_gpios, {0}),                                \
-	.external_conversion = DT_INST_PROP_OR(inst, external_conversion, false),                   \
-	.external_conversion_edge =                                                                 \
-		DT_INST_ENUM_IDX_OR(inst, external_conversion_active_edge, 0),                      \
+	.external_conversion = DT_INST_PROP_OR(inst, external_conversion, false),                  \
+	.external_conversion_edge =                                                               \
+		DT_INST_ENUM_IDX_OR(inst, external_conversion_active_edge, 0),                    \
 	.fifo_watermark = DT_INST_PROP_OR(inst, fifo_watermark, 32),                             \
 	.sampling_rate = DT_INST_PROP_OR(inst, sampling_rate, 0),                                  \
 	.hi_trip_count = DT_INST_PROP(inst, hi_trip_count),                                        \
@@ -1083,8 +1082,8 @@ static DEVICE_API(sensor, max30210_driver_api) = {
 			    (.interrupt_gpio =			\
 					GPIO_DT_SPEC_INST_GET_OR( \
 					inst, interrupt_gpios, {0}),)) };        \
-	PM_DEVICE_DT_INST_DEFINE(inst, max30210_pm_action);                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &max30210_init, PM_DEVICE_DT_INST_GET(inst),              \
+	PM_DEVICE_DT_INST_DEFINE(inst, max30210_pm_action);                                      \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &max30210_init, PM_DEVICE_DT_INST_GET(inst),           \
 				     &max30210_prv_data_##inst,                                  \
 				     &max30210_config_##inst, POST_KERNEL,                         \
 				     CONFIG_SENSOR_INIT_PRIORITY, &max30210_driver_api);

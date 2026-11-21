@@ -6,7 +6,10 @@
 
 #include "max30210.h"
 
+#include <zephyr/logging/log.h>
 #include <zephyr/ztest.h>
+
+LOG_MODULE_REGISTER(MAX30210, CONFIG_SENSOR_LOG_LEVEL);
 
 struct fifo_buffer {
 	struct max30210_fifo_data header;
@@ -66,8 +69,14 @@ static void check_batch(uint64_t period_ns, uint16_t max_count)
 			zassert_equal(decoded->header.base_timestamp_ns +
 					      decoded->readings[i].timestamp_delta,
 				      first_timestamp + (start + i) * period_ns);
-			zassert_equal(decoded->readings[i].temperature,
-				      degrees * (INT64_C(1) << (31 - decoded->shift)));
+			int64_t expected_temp = degrees * (INT64_C(1) << (31 - decoded->shift));
+
+			zassert_equal(decoded->readings[i].temperature, expected_temp,
+				      "sample %u: raw %d, decoded %d, expected %lld",
+				      (unsigned int)(start + i),
+				      degrees * MAX30210_TEMP_COUNTS_PER_C,
+				      decoded->readings[i].temperature,
+				      (long long)expected_temp);
 		}
 	}
 	zassert_equal(decoder->decode((const uint8_t *)&buffer, temperature, &fit, max_count,

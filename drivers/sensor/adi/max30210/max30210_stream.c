@@ -142,7 +142,7 @@ void max30210_stream_process(const struct device *dev, uint8_t status)
 		data->stream_sqe = NULL;
 		ret = max30210_reg_update(dev, INTERRUPT_ENABLE, FIFO_FULL_EN_MASK, 0);
 		if (ret < 0) {
-			LOG_ERR("Failed to disable FIFO interrupt after stream cancellation: %d", ret);
+			LOG_ERR("Failed to disable FIFO interrupt after cancellation: %d", ret);
 		}
 		return;
 	}
