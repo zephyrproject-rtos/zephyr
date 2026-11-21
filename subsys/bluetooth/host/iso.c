@@ -3162,9 +3162,8 @@ static int hci_le_terminate_big(struct bt_iso_big *big)
 
 static int hci_le_big_sync_term(struct bt_iso_big *big)
 {
-	/* The BIG is cleaned up when the BIG Sync Established event of a BIG
-	 * sync that is cancelled by this command is received, which can be
-	 * before the response to the command is handled here.
+	/* An event handled before the response to the command, such as LE BIG
+	 * Sync Lost, can clean up the BIG.
 	 */
 	const uint8_t big_handle = big->handle;
 	struct bt_hci_cp_le_big_terminate_sync *req;
@@ -3287,6 +3286,16 @@ void hci_le_big_sync_established(struct net_buf *buf)
 	struct bt_iso_chan *bis;
 	struct bt_iso_big *big;
 	int i;
+
+	if (evt->status == BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
+		/* The BIG sync was cancelled by LE BIG Terminate Sync. bt_iso_big_terminate()
+		 * cleans up the BIG when the command has completed, which can be before this
+		 * event is handled, and the BIG may then already be in use by another BIG sync.
+		 */
+		LOG_DBG("BIG[%u] sync cancelled", evt->big_handle);
+
+		return;
+	}
 
 	if (evt->big_handle >= ARRAY_SIZE(bigs)) {
 		LOG_WRN("Invalid BIG handle");
