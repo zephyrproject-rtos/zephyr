@@ -100,7 +100,7 @@ static int spi_sam_configure(const struct device *dev,
 	uint32_t spi_mr = 0U, spi_csr = 0U;
 	uint16_t spi_csr_idx = spi_cs_is_gpio(config) ? 0 : config->peripheral;
 	uint8_t word_size = SPI_WORD_SIZE_GET(config->operation);
-	int div;
+	uint32_t scbr;
 
 	if (spi_context_configured(&data->ctx, config)) {
 		return 0;
@@ -146,10 +146,17 @@ static int spi_sam_configure(const struct device *dev,
 	}
 	spi_csr |= SPI_CSR_BITS(word_size - 8);
 
-	/* Use the requested or next highest possible frequency */
-	div = SOC_ATMEL_SAM_MCK_FREQ_HZ / config->frequency;
-	div = CLAMP(div, 1, UINT8_MAX);
-	spi_csr |= SPI_CSR_SCBR(div);
+	if (config->frequency == 0U) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Use the highest frequency that does not exceed the requested one, or the
+	 * slowest one when the request is below MCK / 255.
+	 */
+	scbr = DIV_ROUND_UP(SOC_ATMEL_SAM_MCK_FREQ_HZ, config->frequency);
+	scbr = CLAMP(scbr, 1U, UINT8_MAX);
+	spi_csr |= SPI_CSR_SCBR(scbr);
 
 	regs->SPI_CR = SPI_CR_SPIDIS; /* Disable SPI */
 	regs->SPI_MR = spi_mr;
