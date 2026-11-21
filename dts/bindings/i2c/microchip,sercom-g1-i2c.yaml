@@ -30,6 +30,27 @@ properties:
   clock-names:
     required: true
 
+  scl-gpios:
+    type: phandle-array
+    description: |
+      GPIO of the SCL pin, used for bus recovery only. The driver drives the
+      line low or releases it as an input, so the bus needs external pull-ups.
+      Requires CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY.
+
+  sda-gpios:
+    type: phandle-array
+    description: |
+      GPIO of the SDA pin, used for bus recovery only. The driver drives the
+      line low or releases it as an input, so the bus needs external pull-ups.
+      Requires CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY.
+
+  recover-bus-on-init:
+    type: boolean
+    description: |
+      Recover the I2C bus during driver initialization, in case a target
+      still holds SDA low, for example a battery-backed RTC after a reset
+      of the SoC in the middle of a read. Requires scl-gpios and sda-gpios.
+
   run-in-standby-en:
     type: int
     enum:

@@ -16,6 +16,10 @@
 #endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
+#if defined(CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY)
+#include <zephyr/drivers/gpio.h>
+#include "i2c_bitbang.h"
+#endif /* CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY */
 
 LOG_MODULE_REGISTER(i2c_mchp_sercom_g1, CONFIG_I2C_LOG_LEVEL);
 
@@ -91,6 +95,11 @@ struct i2c_mchp_dev_config {
 #endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
 	uint32_t bitrate;
 	uint8_t run_in_standby;
+#if defined(CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY)
+	struct gpio_dt_spec scl;
+	struct gpio_dt_spec sda;
+	bool recover_bus_on_init;
+#endif /* CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY */
 };
 
 struct i2c_mchp_dev_data {
@@ -1399,17 +1408,121 @@ static int i2c_mchp_transfer_cb(const struct device *dev, struct i2c_msg *msgs, 
 }
 #endif /* CONFIG_I2C_CALLBACK */
 
-/* Performs I2C bus recovery: force bus state to IDLE and re-init synchronization primitives */
+/* Configures controller mode and speed; called with the lock held */
+static int i2c_configure_locked(const struct device *dev, uint32_t config)
+{
+	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
+	int ret;
+
+	i2c_enable(dev, false);
+
+	if ((config & I2C_MODE_CONTROLLER) != 0) {
+		i2c_setup_controller_mode(dev);
+	}
+
+	ret = i2c_apply_speed(dev, config);
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->dev_config = config;
+	i2c_enable(dev, true);
+	i2c_set_bus_idle(dev);
+
+	return 0;
+}
+
+#if defined(CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY)
+/*
+ * The PORT has no open-drain mode: drive the line low, or release it to its
+ * external pull-up by making it an input.
+ */
+static void i2c_gpio_set_line(const struct gpio_dt_spec *line, int state)
+{
+	gpio_flags_t flags = (state != 0) ? GPIO_INPUT : GPIO_OUTPUT_LOW;
+
+	(void)gpio_pin_configure(line->port, line->pin, flags);
+}
+
+static void i2c_gpio_set_scl(void *io_context, int state)
+{
+	const struct i2c_mchp_dev_config *cfg = io_context;
+
+	i2c_gpio_set_line(&cfg->scl, state);
+}
+
+static void i2c_gpio_set_sda(void *io_context, int state)
+{
+	const struct i2c_mchp_dev_config *cfg = io_context;
+
+	i2c_gpio_set_line(&cfg->sda, state);
+}
+
+static int i2c_gpio_get_sda(void *io_context)
+{
+	const struct i2c_mchp_dev_config *cfg = io_context;
+
+	return (gpio_pin_get_raw(cfg->sda.port, cfg->sda.pin) > 0) ? 1 : 0;
+}
+
+/* Clocks SCL from GPIO until a target that holds SDA low releases it */
+static int i2c_gpio_recover(const struct device *dev)
+{
+	const struct i2c_mchp_dev_config *cfg = DEV_CFG(dev);
+	static const struct i2c_bitbang_io io = {
+		.set_scl = i2c_gpio_set_scl,
+		.set_sda = i2c_gpio_set_sda,
+		.get_sda = i2c_gpio_get_sda,
+	};
+	struct i2c_bitbang bitbang;
+	int ret;
+
+	if ((cfg->scl.port == NULL) || (cfg->sda.port == NULL)) {
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(&cfg->scl) || !gpio_is_ready_dt(&cfg->sda)) {
+		LOG_ERR("SCL/SDA GPIO not ready");
+		return -EIO;
+	}
+
+	i2c_gpio_set_line(&cfg->scl, 1);
+	i2c_gpio_set_line(&cfg->sda, 1);
+
+	i2c_bitbang_init(&bitbang, &io, (void *)cfg);
+	ret = i2c_bitbang_recover_bus(&bitbang);
+	if (ret != 0) {
+		LOG_ERR("SDA still held low after bus recovery");
+	}
+
+	return ret;
+}
+#endif /* CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY */
+
+/*
+ * Performs I2C bus recovery: resets the peripheral, clocks SCL from GPIO when
+ * scl-gpios and sda-gpios are set, then restores the controller configuration.
+ */
 static int i2c_mchp_recover(const struct device *dev)
 {
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
 	const struct i2c_mchp_dev_config *cfg = DEV_CFG(dev);
+	int recover_ret = 0;
 	int ret;
+
+	if (data->target_mode) {
+		return -EBUSY;
+	}
 
 	k_sem_take(&data->lock, K_FOREVER);
 
-	i2c_enable(dev, false);
+	/* A protocol violation can hang the host state machine: only SWRST clears it */
 	I2CM(dev).SERCOM_INTENCLR = SERCOM_I2CM_INTENCLR_Msk;
+	i2c_reset(dev);
+
+#if defined(CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY)
+	recover_ret = i2c_gpio_recover(dev);
+#endif /* CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY */
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
@@ -1420,12 +1533,12 @@ static int i2c_mchp_recover(const struct device *dev)
 
 	k_sem_reset(&data->sync_sem);
 
-	i2c_enable(dev, true);
-	i2c_set_bus_idle(dev);
+	i2c_set_runstandby(dev);
+	ret = i2c_configure_locked(dev, data->dev_config);
 
 	k_sem_give(&data->lock);
 
-	return 0;
+	return (ret != 0) ? ret : recover_ret;
 }
 
 /* Gets current I2C device configuration */
@@ -1459,24 +1572,10 @@ static int i2c_mchp_configure(const struct device *dev, uint32_t config)
 	}
 
 	k_sem_take(&data->lock, K_FOREVER);
-	i2c_enable(dev, false);
-
-	if ((config & I2C_MODE_CONTROLLER) != 0) {
-		i2c_setup_controller_mode(dev);
-	}
-
-	ret = i2c_apply_speed(dev, config);
-	if (ret != 0) {
-		k_sem_give(&data->lock);
-		return ret;
-	}
-
-	data->dev_config = config;
-	i2c_enable(dev, true);
-	i2c_set_bus_idle(dev);
-
+	ret = i2c_configure_locked(dev, config);
 	k_sem_give(&data->lock);
-	return 0;
+
+	return ret;
 }
 
 #if defined(CONFIG_I2C_TARGET)
@@ -1595,6 +1694,16 @@ static int i2c_mchp_init(const struct device *dev)
 		return ret;
 	}
 
+#if defined(CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY)
+	/* A target reset in the middle of a read can still hold SDA low */
+	if (cfg->recover_bus_on_init) {
+		ret = i2c_mchp_recover(dev);
+		if (ret != 0) {
+			LOG_WRN("Bus recovery failed: %d", ret);
+		}
+	}
+#endif /* CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY */
+
 #if defined(CONFIG_I2C_MCHP_DMA_DRIVEN)
 	data->dev = dev;
 
@@ -1686,6 +1795,26 @@ static DEVICE_API(i2c, i2c_mchp_api) = {
 #define I2C_MCHP_DMA_INIT(n)
 #endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
 
+#if defined(CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY)
+#define I2C_MCHP_RECOVERY_INIT(n)                                                                  \
+	.scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),                                        \
+	.sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),                                        \
+	.recover_bus_on_init = DT_INST_PROP(n, recover_bus_on_init),
+#else
+#define I2C_MCHP_RECOVERY_INIT(n)
+#endif /* CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY */
+
+#define I2C_MCHP_RECOVERY_CHECK(n)                                                                 \
+	BUILD_ASSERT(!DT_INST_PROP(n, recover_bus_on_init) ||                                      \
+			     (DT_INST_NODE_HAS_PROP(n, scl_gpios) &&                               \
+			      DT_INST_NODE_HAS_PROP(n, sda_gpios)),                                \
+		     "I2C node " DT_NODE_FULL_NAME(DT_DRV_INST(n))                                 \
+		     " has recover-bus-on-init but is missing scl-gpios or sda-gpios");          \
+	BUILD_ASSERT(!DT_INST_PROP(n, recover_bus_on_init) ||                                      \
+			     IS_ENABLED(CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY),                   \
+		     "I2C node " DT_NODE_FULL_NAME(DT_DRV_INST(n))                                 \
+		     " has recover-bus-on-init but CONFIG_I2C_MCHP_SERCOM_G1_BUS_RECOVERY is off")
+
 #define I2C_MCHP_CONFIG_INIT(n)                                                                    \
 	static const struct i2c_mchp_dev_config i2c_mchp_cfg_##n = {                               \
 		.regs = (sercom_registers_t *)DT_INST_REG_ADDR(n),                                 \
@@ -1693,9 +1822,10 @@ static DEVICE_API(i2c, i2c_mchp_api) = {
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 		.irq_config_func = i2c_mchp_irq_config_##n,                                        \
 		.run_in_standby = DT_INST_PROP(n, run_in_standby_en),                              \
-		I2C_MCHP_CLOCK_INIT(n) I2C_MCHP_DMA_INIT(n)}
+		I2C_MCHP_CLOCK_INIT(n) I2C_MCHP_DMA_INIT(n) I2C_MCHP_RECOVERY_INIT(n)}
 
 #define I2C_MCHP_DEVICE_INIT(n)                                                                    \
+	I2C_MCHP_RECOVERY_CHECK(n);                                                                \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static void i2c_mchp_irq_config_##n(const struct device *dev);                             \
 	I2C_MCHP_CONFIG_INIT(n);                                                                   \
