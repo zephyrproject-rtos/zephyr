@@ -379,6 +379,9 @@ struct bmi270_data {
 	bool fifo_job_queued;
 	bool fifo_job_processing;
 	bool fifo_configured;
+	/* Stream that last armed the FIFO, and the sensor config its FIFO setup assumed. */
+	struct rtio_iodev_sqe *last_stream_sqe;
+	uint32_t fifo_cfg_sig;
 #endif /* CONFIG_BMI270_STREAM */
 };
 
