@@ -124,8 +124,8 @@ class Systems:
         try:
             with open(socs_file) as f:
                 socs_yaml = f.read()
-        except FileNotFoundError as e:
-            sys.exit(f'ERROR: socs.yml file not found: {socs_file.as_posix()}', e)
+        except FileNotFoundError:
+            sys.exit(f'ERROR: socs.yml file not found: {socs_file.as_posix()}')
 
         return Systems(str(socs_file.parent), socs_yaml)
 
