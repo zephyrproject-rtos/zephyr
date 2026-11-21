@@ -97,6 +97,11 @@
 	riscv,ndev = <8>;
 };
 
+&timer0 {
+	clocks = <&clkctrl HYDROGEN_CLK_SYSTEM>;
+	status = "okay";
+};
+
 &uart0 {
 	clocks = <&clkctrl HYDROGEN_CLK_SYSTEM>;
 	current-speed = <115200>;
