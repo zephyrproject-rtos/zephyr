@@ -48,6 +48,16 @@
 			device_type = "memory";
 		};
 
+		sdio1: mmc@1000fff000 {
+			compatible = "brcm,bcm2712-sdhci";
+			reg = <0x10 0x00fff000 0x260>,
+			      <0x10 0x00fff400 0x200>;
+			reg-names = "host", "cfg";
+			clocks = <&clk_emmc2>;
+			interrupts = <GIC_SPI 273 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
 		mbox0: mbox@107c013880 {
 			compatible = "brcm,bcm2711-mbox";
 			reg = <0x10 0x7c013880 0x40>;
@@ -108,6 +118,12 @@
 	};
 
 	clocks {
+		clk_emmc2: clk-emmc2 {
+			compatible = "fixed-clock";
+			clock-frequency = <200000000>;
+			#clock-cells = <0>;
+		};
+
 		clk_uart: clk_uart {
 			compatible = "fixed-clock";
 			clock-frequency = <44236800>;
