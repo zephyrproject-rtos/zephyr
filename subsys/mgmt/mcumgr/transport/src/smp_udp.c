@@ -104,7 +104,12 @@ static int smp_udp4_tx(struct net_buf *nb)
 	int ret;
 	struct net_sockaddr *addr = net_buf_user_data(nb);
 
-	ret = zsock_sendto(smp_udp_configs.ipv4.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
+	/* The reply goes to the IPv4 peer with the length of its address: a DTLS
+	 * server socket matches the session by the exact address length, and
+	 * sizeof(struct net_sockaddr) is larger than an IPv4 address.
+	 */
+	ret = zsock_sendto(smp_udp_configs.ipv4.sock, nb->data, nb->len, 0, addr,
+			   sizeof(struct net_sockaddr_in));
 
 	if (ret < 0) {
 		if (errno == ENOMEM) {
@@ -128,7 +133,8 @@ static int smp_udp6_tx(struct net_buf *nb)
 	int ret;
 	struct net_sockaddr *addr = net_buf_user_data(nb);
 
-	ret = zsock_sendto(smp_udp_configs.ipv6.sock, nb->data, nb->len, 0, addr, sizeof(*addr));
+	ret = zsock_sendto(smp_udp_configs.ipv6.sock, nb->data, nb->len, 0, addr,
+			   sizeof(struct net_sockaddr_in6));
 
 	if (ret < 0) {
 		if (errno == ENOMEM) {
