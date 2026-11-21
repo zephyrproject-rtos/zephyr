@@ -6235,6 +6235,18 @@ void bt_gatt_att_max_mtu_changed(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 	}
 }
 
+void bt_gatt_execute_write_ended(struct bt_conn *conn,
+				 enum bt_gatt_execute_write_outcome outcome, uint8_t att_err)
+{
+	struct bt_gatt_cb *cb, *tmp;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&callback_list, cb, tmp, node) {
+		if (cb->execute_write_ended != NULL) {
+			cb->execute_write_ended(conn, outcome, att_err);
+		}
+	}
+}
+
 /* Central Address Resolution characteristic value (Core 6.3, Vol 3, Part C,
  * 12.4).
  */
