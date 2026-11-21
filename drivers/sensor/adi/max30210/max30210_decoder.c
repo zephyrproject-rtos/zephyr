@@ -45,7 +45,7 @@ static int max30210_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 	const uint8_t *fifo = (const uint8_t *)(fifo_data + 1);
 	struct sensor_q31_data *out = (struct sensor_q31_data *)data_out;
 	uint16_t count;
-	uint64_t max_timestamp_delta;
+	uint64_t timestamp_offset;
 
 	if (chan_spec.chan_type != SENSOR_CHAN_AMBIENT_TEMP || chan_spec.chan_idx != 0) {
 		return -ENOTSUP;
@@ -57,23 +57,28 @@ static int max30210_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 		return -ENODATA;
 	}
 
-	max_timestamp_delta = (uint64_t)(fifo_data->sample_count - 1) *
-			      fifo_data->sample_period_ns;
-	if (max_timestamp_delta > UINT32_MAX) {
-		LOG_ERR("FIFO timestamp span exceeds sensor decoder range");
+	timestamp_offset = (uint64_t)(fifo_data->sample_count - 1 - *fit) *
+			   fifo_data->sample_period_ns;
+	if (timestamp_offset > fifo_data->timestamp_ns) {
+		LOG_ERR("FIFO samples predate the timestamp origin");
 		return -ERANGE;
 	}
 
 	count = MIN(max_count, fifo_data->sample_count - *fit);
-	out->header.base_timestamp_ns = fifo_data->timestamp_ns - max_timestamp_delta;
-	out->header.reading_count = count;
+	out->header.base_timestamp_ns = fifo_data->timestamp_ns - timestamp_offset;
 	out->shift = MAX30210_TEMP_Q31_SHIFT;
 
 	for (uint16_t i = 0; i < count; i++) {
 		uint16_t sample_index = *fit + i;
 		const uint8_t *sample = fifo + sample_index * MAX30210_BYTES_PER_SAMPLE;
 		int32_t raw_temp = sign_extend(sys_get_be16(sample + 1), 15);
-		uint64_t timestamp_delta = (uint64_t)sample_index * fifo_data->sample_period_ns;
+		uint64_t timestamp_delta = (uint64_t)i * fifo_data->sample_period_ns;
+
+		/* Continue long batches on the next decode call with a new timestamp base. */
+		if (timestamp_delta > UINT32_MAX) {
+			count = i;
+			break;
+		}
 
 		out->readings[i].timestamp_delta = (uint32_t)timestamp_delta;
 		out->readings[i].temperature =
@@ -82,6 +87,7 @@ static int max30210_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 				MAX30210_TEMP_COUNTS_PER_C);
 	}
 
+	out->header.reading_count = count;
 	*fit += count;
 	return count;
 }
