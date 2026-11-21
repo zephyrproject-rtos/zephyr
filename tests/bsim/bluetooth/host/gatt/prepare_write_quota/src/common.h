@@ -22,6 +22,12 @@
 #define TEST_CHRC_UUID                                                                             \
 	BT_UUID_DECLARE_128(0x6b, 0x4d, 0x0e, 0x2a, 0x9a, 0x07, 0x4c, 0x1e, 0x93, 0x52, 0x1b,      \
 			    0x2f, 0xd7, 0x81, 0x00, 0x01)
+/* A characteristic with BT_GATT_PERM_PREPARE_WRITE whose write method fails each
+ * executed value
+ */
+#define TEST_PREP_CHRC_UUID                                                                        \
+	BT_UUID_DECLARE_128(0x6b, 0x4d, 0x0e, 0x2a, 0x9a, 0x07, 0x4c, 0x1e, 0x93, 0x52, 0x1b,      \
+			    0x2f, 0xd7, 0x81, 0x00, 0x02)
 
 /* Prepare write buffers the server lets one connection hold: the explicit
  * CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN, or else the equal share of the pool.
@@ -52,6 +58,14 @@
 /* Octet the holder's prepare writes are filled with, unlike the writer's value */
 #define HOLDER_FILL 0xffU
 
+/* Octet the executer's prepare writes are filled with, unlike the writer's value */
+#define DISCARDED_FILL 0xa5U
+
+/* Application error the write method of TEST_PREP_CHRC_UUID returns for an
+ * executed value
+ */
+#define EXEC_FAIL_ERR 0x80
+
 /* The value the writer writes and the server expects: 1, 2, 3, ... */
 static inline void writer_value_fill(uint8_t *value, size_t len)
 {
@@ -63,5 +77,7 @@ static inline void writer_value_fill(uint8_t *value, size_t len)
 void server_procedure(void);
 void holder_procedure(void);
 void writer_procedure(void);
+void execute_server_procedure(void);
+void executer_procedure(void);
 
 #endif /* ZEPHYR_TESTS_BSIM_BLUETOOTH_HOST_GATT_PREPARE_WRITE_QUOTA_SRC_COMMON_H_ */
