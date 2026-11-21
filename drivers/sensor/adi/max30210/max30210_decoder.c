@@ -43,6 +43,7 @@ static int max30210_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 {
 	const struct max30210_fifo_data *fifo_data = (const struct max30210_fifo_data *)buffer;
 	const uint8_t *fifo = (const uint8_t *)(fifo_data + 1);
+	const uint8_t *sample;
 	struct sensor_q31_data *out = (struct sensor_q31_data *)data_out;
 	uint16_t count;
 	uint64_t timestamp_offset;
@@ -68,9 +69,8 @@ static int max30210_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 	out->header.base_timestamp_ns = fifo_data->timestamp_ns - timestamp_offset;
 	out->shift = MAX30210_TEMP_Q31_SHIFT;
 
-	for (uint16_t i = 0; i < count; i++) {
-		uint16_t sample_index = *fit + i;
-		const uint8_t *sample = fifo + sample_index * MAX30210_BYTES_PER_SAMPLE;
+	sample = fifo + *fit * MAX30210_BYTES_PER_SAMPLE;
+	for (uint16_t i = 0; i < count; i++, sample += MAX30210_BYTES_PER_SAMPLE) {
 		int32_t raw_temp = sign_extend(sys_get_be16(sample + 1), 15);
 		uint64_t timestamp_delta = (uint64_t)i * fifo_data->sample_period_ns;
 
