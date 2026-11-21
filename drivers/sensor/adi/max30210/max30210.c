@@ -125,7 +125,13 @@ static inline void max30210_temp_to_bytes(int32_t temp_mc, uint8_t *msb, uint8_t
  */
 static int max30210_attr_set_continuous_conversion_mode(const struct device *dev)
 {
+	const struct max30210_config *config = dev->config;
 	int ret;
+
+	if (config->external_conversion) {
+		LOG_ERR("Continuous conversion is unavailable in external conversion mode");
+		return -ENOTSUP;
+	}
 
 	ret = max30210_reg_write(dev, TEMP_CONVERT, 0X03);
 	if (ret < 0) {
@@ -836,6 +842,29 @@ static int max30210_probe(const struct device *dev)
 	if (config->init_start) {
 		return max30210_attr_set_continuous_conversion_mode(dev);
 	}
+
+	if (config->external_conversion) {
+		ret = max30210_reg_update(dev, TEMP_CONVERT,
+					  AUTO_MODE_MASK | CONVERT_T_MASK, 0);
+		if (ret < 0) {
+			LOG_ERR("Failed to select standby for external conversion: %d", ret);
+			return ret;
+		}
+
+		ret = max30210_reg_update(dev, PIN_CONFIG, EXT_CVT_ICFG_MASK,
+					  config->external_conversion_edge);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure external conversion edge: %d", ret);
+			return ret;
+		}
+
+		ret = max30210_reg_update(dev, PIN_CONFIG, EXT_CVT_EN_MASK, 1);
+		if (ret < 0) {
+			LOG_ERR("Failed to enable external conversion: %d", ret);
+			return ret;
+		}
+	}
+
 	return 0;
 }
 
@@ -851,6 +880,11 @@ static int max30210_init(const struct device *dev)
 	uint8_t part_id;
 	uint8_t status;
 	int ret;
+
+	if (config->external_conversion && config->init_start) {
+		LOG_ERR("External and continuous conversion modes are mutually exclusive");
+		return -EINVAL;
+	}
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
 		return -ENODEV;
@@ -934,10 +968,36 @@ static int max30210_pm_action(const struct device *dev, enum pm_device_action ac
 			return ret;
 		}
 
+		ret = max30210_reg_read(dev, PIN_CONFIG, &data->pm_pin_config, 1);
+		if (ret < 0) {
+			LOG_ERR("Failed to read pin configuration before suspend: %d", ret);
+			return ret;
+		}
+
+		ret = max30210_reg_update(dev, PIN_CONFIG, EXT_CVT_EN_MASK, 0);
+		if (ret < 0) {
+			LOG_ERR("Failed to disable external conversion for suspend: %d", ret);
+			return ret;
+		}
+
 		ret = max30210_reg_update(dev, TEMP_CONVERT,
 					  AUTO_MODE_MASK | CONVERT_T_MASK, 0);
 		if (ret < 0) {
 			LOG_ERR("Failed to enter standby mode: %d", ret);
+			int restore_ret;
+
+			restore_ret = max30210_reg_write(dev, TEMP_CONVERT, data->pm_temp_convert);
+			if (restore_ret < 0) {
+				LOG_ERR("Failed to restore conversion mode after suspend failure: %d",
+					restore_ret);
+			}
+
+			restore_ret = max30210_reg_write(dev, PIN_CONFIG, data->pm_pin_config);
+
+			if (restore_ret < 0) {
+				LOG_ERR("Failed to restore pin configuration after suspend failure: %d",
+					restore_ret);
+			}
 			return ret;
 		}
 
@@ -949,9 +1009,25 @@ static int max30210_pm_action(const struct device *dev, enum pm_device_action ac
 			return 0;
 		}
 
+		ret = max30210_reg_write(dev, PIN_CONFIG, data->pm_pin_config);
+		if (ret < 0) {
+			LOG_ERR("Failed to restore pin configuration: %d", ret);
+			return ret;
+		}
+
 		ret = max30210_reg_write(dev, TEMP_CONVERT, data->pm_temp_convert);
 		if (ret < 0) {
 			LOG_ERR("Failed to restore conversion mode: %d", ret);
+			if (data->pm_pin_config & EXT_CVT_EN_MASK) {
+				int disable_ret =
+					max30210_reg_update(dev, PIN_CONFIG, EXT_CVT_EN_MASK, 0);
+
+				if (disable_ret < 0) {
+					LOG_ERR("Failed to disable external conversion after resume "
+						"failure: %d",
+						disable_ret);
+				}
+			}
 			return ret;
 		}
 
@@ -966,6 +1042,9 @@ static int max30210_pm_action(const struct device *dev, enum pm_device_action ac
 
 #define MAX30210_CONFIG(inst)                                                                      \
 	.pdb_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, pdb_gpios, {0}),                                \
+	.external_conversion = DT_INST_PROP_OR(inst, external_conversion, false),                   \
+	.external_conversion_edge =                                                                 \
+		DT_INST_ENUM_IDX_OR(inst, external_conversion_active_edge, 0),                      \
 	.sampling_rate = DT_INST_PROP_OR(inst, sampling_rate, 0),                                  \
 	.hi_trip_count = DT_INST_PROP(inst, hi_trip_count),                                        \
 	.lo_trip_count = DT_INST_PROP(inst, lo_trip_count),                                        \

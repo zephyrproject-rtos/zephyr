@@ -193,6 +193,8 @@
 struct max30210_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec pdb_gpio;
+	bool external_conversion;
+	uint8_t external_conversion_edge;
 
 #if defined(CONFIG_MAX30210_TRIGGER)
 	struct gpio_dt_spec interrupt_gpio; /* GPIO for interrupt */
@@ -217,6 +219,7 @@ struct max30210_data {
 	uint8_t ovf_counter;
 #ifdef CONFIG_PM_DEVICE
 	uint8_t pm_temp_convert;
+	uint8_t pm_pin_config;
 	bool pm_suspended;
 #endif
 
