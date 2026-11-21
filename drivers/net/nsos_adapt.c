@@ -747,6 +747,64 @@ int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags_mid,
 	return ret;
 }
 
+int nsos_adapt_recvmsg(int fd, struct nsos_mid_msghdr *msg_mid, int flags_mid)
+{
+	struct sockaddr_storage addr_storage;
+	struct sockaddr *addr = (struct sockaddr *)&addr_storage;
+	struct msghdr msg;
+	struct iovec *msg_iov;
+	int flags;
+	int ret;
+
+	flags = socket_flags_from_nsos_mid(flags_mid);
+	if (flags < 0) {
+		return flags;
+	}
+
+	msg_iov = calloc(msg_mid->msg_iovlen, sizeof(*msg_iov));
+	if (msg_iov == NULL) {
+		return -NSI_ERRNO_MID_ENOMEM;
+	}
+
+	for (size_t i = 0; i < msg_mid->msg_iovlen; i++) {
+		msg_iov[i].iov_base = msg_mid->msg_iov[i].iov_base;
+		msg_iov[i].iov_len = msg_mid->msg_iov[i].iov_len;
+	}
+
+	/* Ancillary data is not translated: none is delivered. */
+	msg.msg_name = (msg_mid->msg_name != NULL) ? addr : NULL;
+	msg.msg_namelen = (msg_mid->msg_name != NULL) ? sizeof(addr_storage) : 0U;
+	msg.msg_iov = msg_iov;
+	msg.msg_iovlen = msg_mid->msg_iovlen;
+	msg.msg_control = NULL;
+	msg.msg_controllen = 0;
+	msg.msg_flags = 0;
+
+	ret = recvmsg(fd, &msg, flags);
+	if (ret < 0) {
+		ret = -nsi_errno_to_mid(errno);
+		goto free_msg_iov;
+	}
+
+	/* The datagram is already consumed: an address the adapter cannot convert is
+	 * reported as no address rather than as an error.
+	 */
+	if (msg_mid->msg_name != NULL) {
+		if (sockaddr_to_nsos_mid(addr, msg.msg_namelen, msg_mid->msg_name,
+					 &msg_mid->msg_namelen) != 0) {
+			msg_mid->msg_namelen = 0;
+		}
+	}
+
+	msg_mid->msg_controllen = 0;
+	msg_mid->msg_flags = ((msg.msg_flags & MSG_TRUNC) != 0) ? NSOS_MID_MSG_TRUNC : 0;
+
+free_msg_iov:
+	free(msg_iov);
+
+	return ret;
+}
+
 static int nsos_adapt_getsockopt_int(int fd, int level, int optname,
 				     void *optval, size_t *nsos_mid_optlen)
 {

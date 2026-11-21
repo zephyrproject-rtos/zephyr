@@ -1060,8 +1060,75 @@ return_ret:
 
 static ssize_t nsos_recvmsg(void *obj, struct net_msghdr *msg, int flags)
 {
-	errno = ENOTSUP;
-	return -1;
+	struct nsos_socket *sock = obj;
+	struct nsos_mid_sockaddr_storage addr_storage_mid;
+	struct nsos_mid_sockaddr *addr_mid = (struct nsos_mid_sockaddr *)&addr_storage_mid;
+	struct nsos_mid_msghdr msg_mid;
+	struct nsos_mid_iovec *msg_iov;
+	int flags_mid;
+	int ret;
+
+	ret = socket_flags_to_nsos_mid(flags);
+	if (ret < 0) {
+		goto return_ret;
+	}
+
+	flags_mid = ret;
+
+	msg_iov = nsi_host_calloc(msg->msg_iovlen, sizeof(*msg_iov));
+	if (msg_iov == NULL) {
+		ret = -NSI_ERRNO_MID_ENOMEM;
+		goto return_ret;
+	}
+
+	for (size_t i = 0; i < msg->msg_iovlen; i++) {
+		msg_iov[i].iov_base = msg->msg_iov[i].iov_base;
+		msg_iov[i].iov_len = msg->msg_iov[i].iov_len;
+	}
+
+	msg_mid.msg_name = (msg->msg_name != NULL) ? addr_mid : NULL;
+	msg_mid.msg_namelen = (msg->msg_name != NULL) ? sizeof(addr_storage_mid) : 0U;
+	msg_mid.msg_iov = msg_iov;
+	msg_mid.msg_iovlen = msg->msg_iovlen;
+	msg_mid.msg_control = NULL;
+	msg_mid.msg_controllen = 0;
+	msg_mid.msg_flags = 0;
+
+	ret = nsos_poll_if_blocking(sock, ZSOCK_POLLIN, sock->recv_timeout, flags);
+	if (ret < 0) {
+		goto free_msg_iov;
+	}
+
+	ret = nsos_adapt_recvmsg(sock->poll.mid.fd, &msg_mid, flags_mid);
+	if (ret < 0) {
+		goto free_msg_iov;
+	}
+
+	if (msg->msg_name != NULL) {
+		if (msg_mid.msg_namelen == 0) {
+			msg->msg_namelen = 0;
+		} else if (sockaddr_from_nsos_mid(msg->msg_name, &msg->msg_namelen,
+						  addr_mid, msg_mid.msg_namelen) < 0) {
+			msg->msg_namelen = 0;
+		} else {
+			/* Peer address converted. */
+		}
+	}
+
+	/* No ancillary data comes from the host. */
+	msg->msg_controllen = 0;
+	msg->msg_flags = ((msg_mid.msg_flags & NSOS_MID_MSG_TRUNC) != 0) ? ZSOCK_MSG_TRUNC : 0;
+
+free_msg_iov:
+	nsi_host_free(msg_iov);
+
+return_ret:
+	if (ret < 0) {
+		errno = nsi_errno_from_mid(-ret);
+		return -1;
+	}
+
+	return ret;
 }
 
 static int socket_type_from_nsos_mid(int type_mid, int *type)
