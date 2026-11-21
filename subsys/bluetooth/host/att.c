@@ -2523,6 +2523,7 @@ static uint8_t exec_write_reassemble(uint16_t handle, uint16_t offset,
 
 static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 {
+	bool prepared = !sys_slist_is_empty(&chan->att->prep_queue);
 	struct net_buf *buf;
 
 	if (flags != BT_ATT_FLAG_EXEC) {
@@ -2530,6 +2531,10 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 		 * discarded, the queue is cleared and the response is sent.
 		 */
 		net_buf_slist_purge(&chan->att->prep_queue);
+		if (prepared) {
+			bt_gatt_execute_write_ended(att_chan_get_conn(chan),
+						    BT_GATT_EXECUTE_WRITE_CANCELLED, 0U);
+		}
 		goto rsp;
 	}
 
@@ -2563,6 +2568,8 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 			/* Discard queued buffers */
 			net_buf_unref(buf);
 			net_buf_slist_purge(&chan->att->prep_queue);
+			bt_gatt_execute_write_ended(att_chan_get_conn(chan),
+						    BT_GATT_EXECUTE_WRITE_FAILED, err);
 			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
 				     handle, err);
 			return 0;
@@ -2576,9 +2583,16 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 			 * and only an Error Response is sent.
 			 */
 			net_buf_slist_purge(&chan->att->prep_queue);
+			bt_gatt_execute_write_ended(att_chan_get_conn(chan),
+						    BT_GATT_EXECUTE_WRITE_FAILED, err);
 			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ, handle, err);
 			return 0;
 		}
+	}
+
+	if (prepared) {
+		bt_gatt_execute_write_ended(att_chan_get_conn(chan), BT_GATT_EXECUTE_WRITE_WRITTEN,
+					    0U);
 	}
 
 rsp:

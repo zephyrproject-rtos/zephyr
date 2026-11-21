@@ -17,7 +17,7 @@
  *          information, see @ref bt_gatt_client and @ref bt_gatt_server.
  * @defgroup bt_gatt Generic Attribute Profile (GATT)
  * @since 1.0
- * @version 1.0.2
+ * @version 1.1.0
  * @ingroup bluetooth
  * @{
  */
@@ -403,6 +403,25 @@ struct bt_gatt_include {
 	uint16_t end_handle;
 };
 
+/** Outcome of an Execute Write Request, see @ref bt_gatt_cb.execute_write_ended */
+enum bt_gatt_execute_write_outcome {
+	/** All the prepared values were written. */
+	BT_GATT_EXECUTE_WRITE_WRITTEN,
+	/** The client cancelled the prepared values, so none was written. */
+	BT_GATT_EXECUTE_WRITE_CANCELLED,
+	/** Writing a value failed and the values after it were discarded
+	 *  (Core Specification 7.0 Vol 3 Part F 3.4.6.3).
+	 *
+	 *  Any error of the write step fails it: an invalid offset or length
+	 *  when the values are put together, the permissions, the
+	 *  authorization, a missing attribute, Database Out Of Sync, or an
+	 *  error or a wrong length returned by the write method. The values
+	 *  before it stay written, and a write method that returned an error
+	 *  may already have changed its attribute.
+	 */
+	BT_GATT_EXECUTE_WRITE_FAILED,
+};
+
 /** @brief GATT callback structure. */
 struct bt_gatt_cb {
 	/** @brief The maximum ATT MTU on a connection has changed.
@@ -415,6 +434,30 @@ struct bt_gatt_cb {
 	 *  @param rx Updated RX ATT MTU.
 	 */
 	void (*att_mtu_updated)(struct bt_conn *conn, uint16_t tx, uint16_t rx);
+
+	/** @brief An Execute Write Request of the client ended.
+	 *
+	 *  Called once for each Execute Write Request of a client that had
+	 *  prepared values with Prepare Write Requests, which needs
+	 *  @kconfig{CONFIG_BT_ATT_PREPARE_COUNT}, after the host has written or
+	 *  discarded the values and before it responds. An application that
+	 *  keeps a copy of the prepared values learns here what became of them.
+	 *
+	 *  It only reports the outcome: the response is already decided. To fail
+	 *  the request, the write method returns an error when it is called with
+	 *  @ref BT_GATT_WRITE_FLAG_EXECUTE.
+	 *
+	 *  It is not called for an Execute Write Request with no prepared
+	 *  values, or when the connection is lost, see
+	 *  @ref bt_conn_cb.disconnected.
+	 *
+	 *  @param conn    Connection object.
+	 *  @param outcome What became of the prepared values.
+	 *  @param att_err ATT error code of the Error Response for
+	 *                 @ref BT_GATT_EXECUTE_WRITE_FAILED, 0 otherwise.
+	 */
+	void (*execute_write_ended)(struct bt_conn *conn,
+				    enum bt_gatt_execute_write_outcome outcome, uint8_t att_err);
 
 	/** @cond INTERNAL_HIDDEN
 	 *  Field used for list handling.
