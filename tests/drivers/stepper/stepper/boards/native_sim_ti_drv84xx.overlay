@@ -13,6 +13,7 @@
 
 	ti_drv84xx: ti_drv84xx {
 		compatible = "ti,drv84xx";
+		fault-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
 		sleep-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		en-gpios = <&gpio2 1 0>;
 		m0-gpios = <&gpio3 0 0>;
