@@ -3162,6 +3162,11 @@ static int hci_le_terminate_big(struct bt_iso_big *big)
 
 static int hci_le_big_sync_term(struct bt_iso_big *big)
 {
+	/* The BIG is cleaned up when the BIG Sync Established event of a BIG
+	 * sync that is cancelled by this command is received, which can be
+	 * before the response to the command is handled here.
+	 */
+	const uint8_t big_handle = big->handle;
 	struct bt_hci_cp_le_big_terminate_sync *req;
 	struct bt_hci_rp_le_big_terminate_sync *evt;
 	struct net_buf *buf;
@@ -3174,14 +3179,14 @@ static int hci_le_big_sync_term(struct bt_iso_big *big)
 	}
 
 	req = net_buf_add(buf, sizeof(*req));
-	req->big_handle = big->handle;
+	req->big_handle = big_handle;
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_BIG_TERMINATE_SYNC, buf, &rsp);
 	if (err) {
 		return err;
 	}
 
 	evt = (struct bt_hci_rp_le_big_terminate_sync *)rsp->data;
-	if (evt->status || (evt->big_handle != big->handle)) {
+	if (evt->status || (evt->big_handle != big_handle)) {
 		err = -EIO;
 	}
 
