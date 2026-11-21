@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Michael Hope
 # SPDX-License-Identifier: Apache-2.0
 
-description: WCH CH32V00x Systick
+description: WCH QingKe SysTick
 
 compatible: "wch,systick"
 

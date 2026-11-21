@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  WCH CH32V10x SysTick. Its counter and compare value are eight byte-wide
+  registers, unlike the SysTick of the other QingKe cores.
+
+compatible: "wch,systick-ch32v10x"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
