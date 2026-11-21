@@ -177,6 +177,12 @@ included. The ``smp_svr`` sample comes in different flavours.
          :gen-args: -DEXTRA_CONF_FILE="udp-dtls.conf"
          :compact:
 
+      The DTLS server presents the sample certificate from ``certificates``. With
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_CLIENT_AUTH` it also requires a client
+      certificate signed by the CA added to the TLS tag; the sample adds its own self-signed
+      certificate as the CA, so a client that presents the same certificate and key is
+      accepted and any other client is refused.
+
 Flashing the sample image
 *************************
 
