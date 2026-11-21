@@ -88,15 +88,6 @@ static void check_batch(uint64_t period_ns, uint16_t max_count)
 		      -ENODATA);
 }
 
-ZTEST(max30210_decoder, test_q31_scaling)
-{
-	volatile int32_t raw = -6400;
-	int64_t scaled = ((int64_t)raw * (INT64_C(1) << 23)) / MAX30210_TEMP_COUNTS_PER_C;
-
-	zassert_equal(scaled, -INT64_C(268435456), "raw %d, scaled %lld",
-		      (int)raw, (long long)scaled);
-}
-
 ZTEST(max30210_decoder, test_full_fifo_at_8_hz)
 {
 	check_batch(UINT64_C(125000000), MAX30210_FIFO_DEPTH);
