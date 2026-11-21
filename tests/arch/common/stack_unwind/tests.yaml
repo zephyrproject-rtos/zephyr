@@ -76,6 +76,19 @@ tests:
         - "E: call trace:"
         - "E:      0: \\w+"
         - "E:      1: \\w+"
+  # Unwind from a normal thread context (no exception frame) and check that
+  # the caller chain is reported in the right order.
+  arch.common.stack_unwind.x86_thread:
+    arch_allow: x86
+    extra_args: EXTRA_CFLAGS=-DSTACK_UNWIND_THREAD_TEST
+    extra_configs:
+      - CONFIG_OMIT_FRAME_POINTER=n
+      - CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT=y
+      - CONFIG_ZTEST=y
+    integration_platforms:
+      - qemu_x86
+      - qemu_x86_64
+    harness: ztest
   arch.common.stack_unwind.arm64:
     arch_allow:
       - arm64

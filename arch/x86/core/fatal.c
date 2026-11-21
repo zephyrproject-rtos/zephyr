@@ -125,7 +125,8 @@ struct stack_frame {
 };
 
 static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,
-					  const struct arch_esf *esf, int max_frames)
+			    const struct k_thread *thread, const struct arch_esf *esf,
+			    int max_frames)
 {
 	uintptr_t base_ptr;
 	uint16_t cs;
@@ -139,7 +140,25 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,
 		base_ptr = esf->ebp;
 #endif /* CONFIG_X86_64 */
 		cs = esf->cs;
+	} else if ((thread == NULL) || (thread == _current)) {
+		/*
+		 * No exception frame: unwind the current thread starting from
+		 * this function's own frame. ARCH_HAS_STACKWALK depends on
+		 * !OMIT_FRAME_POINTER, so the frame pointer chain below is the
+		 * same one the compiler relies on in the esf case.
+		 *
+		 * cs = 0 makes z_x86_check_stack_bounds() select the stack we
+		 * are running on: the interrupt stack in ISR context, the
+		 * privilege elevation stack for a user thread in a syscall,
+		 * and the thread stack otherwise.
+		 */
+		base_ptr = (uintptr_t)__builtin_frame_address(0);
+		cs = 0U;
 	} else {
+		/*
+		 * Unwinding another thread is not supported: the bounds check
+		 * below always validates against _current's stack.
+		 */
 		return;
 	}
 
@@ -185,9 +204,7 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,
 void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 		     const struct k_thread *thread, const struct arch_esf *esf)
 {
-	ARG_UNUSED(thread);
-
-	walk_stackframe(callback_fn, cookie, esf,
+	walk_stackframe(callback_fn, cookie, thread, esf,
 			CONFIG_ARCH_STACKWALK_MAX_FRAMES);
 }
 #endif /* CONFIG_ARCH_STACKWALK */
@@ -210,7 +227,8 @@ static ALWAYS_INLINE void unwind_stack(const struct arch_esf *esf)
 {
 	int i = 0;
 
-	walk_stackframe(print_trace_address, &i, esf, CONFIG_ARCH_STACKWALK_MAX_FRAMES);
+	walk_stackframe(print_trace_address, &i, NULL, esf,
+			CONFIG_ARCH_STACKWALK_MAX_FRAMES);
 }
 #endif /* CONFIG_EXCEPTION_STACK_TRACE */
 
