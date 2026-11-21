@@ -64,6 +64,9 @@ static void check_batch(uint64_t period_ns, uint16_t max_count)
 			      first_timestamp + start * period_ns);
 		for (int i = 0; i < count; i++) {
 			int32_t degrees = (int32_t)start + i - 32;
+			const uint8_t *sample =
+				&buffer.samples[(start + i) * MAX30210_BYTES_PER_SAMPLE];
+			int32_t raw = sign_extend(sys_get_be16(sample + 1), 15);
 
 			zassert_equal(decoded->readings[i].timestamp_delta, i * period_ns);
 			zassert_equal(decoded->header.base_timestamp_ns +
@@ -72,9 +75,10 @@ static void check_batch(uint64_t period_ns, uint16_t max_count)
 			int64_t expected_temp = degrees * (INT64_C(1) << (31 - decoded->shift));
 
 			zassert_equal(decoded->readings[i].temperature, expected_temp,
-				      "sample %u: raw %d, decoded %d, expected %lld",
-				      (unsigned int)(start + i),
-				      degrees * MAX30210_TEMP_COUNTS_PER_C,
+				      "sample %u: bytes %02x %02x %02x, raw %d, decoded %d, "
+				      "expected %lld",
+				      (unsigned int)(start + i), sample[0], sample[1], sample[2],
+				      raw,
 				      decoded->readings[i].temperature,
 				      (long long)expected_temp);
 		}
@@ -82,6 +86,15 @@ static void check_batch(uint64_t period_ns, uint16_t max_count)
 	zassert_equal(decoder->decode((const uint8_t *)&buffer, temperature, &fit, max_count,
 				     decoded),
 		      -ENODATA);
+}
+
+ZTEST(max30210_decoder, test_q31_scaling)
+{
+	volatile int32_t raw = -6400;
+	int64_t scaled = ((int64_t)raw * (INT64_C(1) << 23)) / MAX30210_TEMP_COUNTS_PER_C;
+
+	zassert_equal(scaled, -INT64_C(268435456), "raw %d, scaled %lld",
+		      (int)raw, (long long)scaled);
 }
 
 ZTEST(max30210_decoder, test_full_fifo_at_8_hz)
