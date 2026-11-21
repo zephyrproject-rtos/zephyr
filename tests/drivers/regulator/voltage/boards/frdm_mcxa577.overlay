@@ -1,0 +1,50 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
+#include <zephyr/dt-bindings/regulator/nxp_vref.h>
+
+/*
+ * VREF_OUT is internally connected to ADC0 CH7A.
+ * Connect a 220 nF capacitor between P2_7 and GND before running.
+ */
+
+/ {
+	resources: resources {
+		compatible = "test-regulator-voltage";
+		regulators = <&vref>;
+		tolerance-microvolt = <20000>;
+		set-read-delay-ms = <1>;
+		adc-avg-count = <10>;
+		io-channels = <&lpadc0 0>;
+		min-microvolt = <1000000>;
+		max-microvolt = <2500000>;
+	};
+};
+
+&vref {
+	regulator-initial-mode = <NXP_VREF_MODE_HIGH_POWER>;
+	status = "okay";
+};
+
+&lpadc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	voltage-ref = <2>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		/* The SDK board example uses 3.26 V for VDD_ANA.
+		 * Measure VDD_ANA and adjust this value for the board under test.
+		 */
+		zephyr,vref-mv = <3260>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 131)>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH7A>;
+	};
+};
