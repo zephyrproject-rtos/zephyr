@@ -34,9 +34,9 @@ fi
 
 # Then the TLS version
 if [ -n "$zephyr_overlay" ]; then
-	overlay="${zephyr_overlay};overlay-tls.conf"
+	overlay="${zephyr_overlay};tls.conf"
 else
-	overlay="-DEXTRA_CONF_FILE=overlay-tls.conf"
+	overlay="-DEXTRA_CONF_FILE=tls.conf"
 fi
 
 start_configuration || return $?

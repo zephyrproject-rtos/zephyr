@@ -70,9 +70,9 @@
 /*
  * RT700-EVK board cm33_cpu1 uses OS timer as the kernel timer
  * In case we need to switch to SYSTICK timer, then
- * replace &os_timer with &systick
+ * replace &ostimer1 with &systick
  */
-&os_timer_cpu1 {
+&ostimer1 {
 	wakeup-source;
 	status = "okay";
 };
@@ -142,6 +142,15 @@
 };
 
 &sema420 {
+	domain-id = <5>;
+	status = "okay";
+};
+
+/* SEMA42_3: sense domain (VDD2_SENSE), pairs with MU3 for cpu1 <-> HiFi1.
+ * Clock gate and reset must be released here because the DSP devicetree
+ * has no access to clkctl1/rstctl1.
+ */
+&sema423 {
 	domain-id = <5>;
 	status = "okay";
 };

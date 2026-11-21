@@ -7,6 +7,6 @@ project(websocket)
 target_include_directories(app PRIVATE
   ${ZEPHYR_BASE}/subsys/net/lib/websocket
 )
-target_sources(app PRIVATE src/handshake.c)
+target_sources(app PRIVATE src/handshake.c src/poll_offload.c)
 target_sources_ifdef(CONFIG_NET_TEST app PRIVATE src/main.c)
 target_sources_ifndef(CONFIG_NET_TEST app PRIVATE src/loopback.c)

@@ -83,6 +83,19 @@
 				channels = <2>;
 				status = "disabled";
 			};
+
+			pwmg8: pwmg8 {
+				compatible = "ti,mspm0-timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		iwdt: iwdt@40095300 {
+			compatible = "ti,mspm0-iwdt";
+			reg = <0x40095300 0x100>;
+			clock-frequency = <32768>;
+			status = "disabled";
 		};
 
 		crc: crc@40440000 {
@@ -117,6 +130,12 @@
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
 				channels = <4>;
+				status = "disabled";
+			};
+
+			pwma0: pwma0 {
+				compatible = "ti,mspm0-timer-pwm";
+				#pwm-cells = <3>;
 				status = "disabled";
 			};
 		};

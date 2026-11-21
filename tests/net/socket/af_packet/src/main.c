@@ -14,11 +14,14 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_context.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_pkt.h>
 #include <zephyr/net/ptp_time.h>
+#include <zephyr/sys/fdtable.h>
 
 /* This test suite verifies that NET_AF_PACKET sockets behave according to well known behaviors.
  * Note, that this is not well standardized and relies on behaviors known from Linux or FreeBSD.
@@ -738,6 +741,94 @@ static void prepare_test_dst_lladdr(struct net_sockaddr_ll *ll_dst, uint16_t pro
 	if (iface != NULL) {
 		ll_dst->sll_ifindex = net_if_get_by_iface(iface);
 	}
+}
+
+#define TEST_ETH_P_EXPERIMENTAL 0x88b5
+
+static enum net_verdict test_packet_recv(struct net_if *iface, uint16_t ptype,
+					struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ptype);
+
+	net_pkt_set_family(pkt, NET_AF_UNSPEC);
+	return NET_CONTINUE;
+}
+
+ETH_NET_L3_REGISTER(TEST_EAPOL, NET_ETH_PTYPE_EAPOL, test_packet_recv);
+ETH_NET_L3_REGISTER(TEST_EXPERIMENTAL, TEST_ETH_P_EXPERIMENTAL, test_packet_recv);
+
+static bool packet_test_dormant;
+
+static void test_send_dormant(int type, uint16_t proto)
+{
+	struct net_sockaddr_ll dst;
+	uint16_t len;
+	int ret;
+	int error;
+
+	prepare_packet_socket(&packet_sock_1, ud.second, type,
+			      type == NET_SOCK_RAW ? 0 : net_htons(proto));
+	prepare_packet_socket(&packet_sock_2, ud.first, NET_SOCK_DGRAM, net_htons(proto));
+	prepare_test_dst_lladdr(&dst, proto, lladdr1, ud.second);
+	prepare_test_packet(type, proto, lladdr2, lladdr1, &len);
+
+	packet_test_dormant = true;
+	net_if_dormant_on(ud.first);
+	net_if_dormant_on(ud.second);
+
+	zassert_ok(net_if_down(ud.second));
+	ret = zsock_sendto(packet_sock_1, tx_buf, len, 0,
+			   (struct net_sockaddr *)&dst, sizeof(dst));
+	error = errno;
+	zassert_ok(net_if_up(ud.second));
+	zassert_equal(ret, -1, "Send should fail while administratively down");
+	zassert_equal(error, ENETDOWN);
+
+	net_if_carrier_off(ud.second);
+	zassert_false(net_if_is_carrier_ok(ud.second));
+	ret = zsock_sendto(packet_sock_1, tx_buf, len, 0,
+			   (struct net_sockaddr *)&dst, sizeof(dst));
+	error = errno;
+	net_if_carrier_on(ud.second);
+	zassert_equal(ret, -1, "Send should fail without carrier");
+	zassert_equal(error, ENETDOWN);
+	ret = zsock_recv(packet_sock_2, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, -1, "Rejected frame should not reach the peer");
+	zassert_equal(errno, EAGAIN);
+
+	net_if_flag_set(ud.second, NET_IF_SUSPENDED);
+	ret = zsock_sendto(packet_sock_1, tx_buf, len, 0,
+			   (struct net_sockaddr *)&dst, sizeof(dst));
+	error = errno;
+	net_if_flag_clear(ud.second, NET_IF_SUSPENDED);
+	zassert_equal(ret, -1, "Send should fail while suspended");
+	zassert_equal(error, ENETDOWN);
+
+	ret = zsock_sendto(packet_sock_1, tx_buf, len, 0,
+			   (struct net_sockaddr *)&dst, sizeof(dst));
+	zassert_equal(ret, len, "Dormant packet send failed (%d)", errno);
+
+	ret = zsock_recv(packet_sock_2, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, sizeof(test_payload), "Dormant packet receive failed (%d)", errno);
+	zassert_mem_equal(rx_buf, test_payload, sizeof(test_payload));
+	zassert_false(net_if_is_up(ud.first));
+	zassert_false(net_if_is_up(ud.second));
+}
+
+ZTEST(socket_packet, test_dgram_eapol_dormant)
+{
+	test_send_dormant(NET_SOCK_DGRAM, NET_ETH_PTYPE_EAPOL);
+}
+
+ZTEST(socket_packet, test_dgram_experimental_dormant)
+{
+	test_send_dormant(NET_SOCK_DGRAM, TEST_ETH_P_EXPERIMENTAL);
+}
+
+ZTEST(socket_packet, test_raw_experimental_dormant)
+{
+	test_send_dormant(NET_SOCK_RAW, TEST_ETH_P_EXPERIMENTAL);
 }
 
 static void test_sendto_common(int sock_type, int proto, bool do_bind,
@@ -2278,6 +2369,12 @@ static void test_after(void *arg)
 
 	eth_filter_ret = 0;
 
+	if (packet_test_dormant) {
+		net_if_dormant_off(ud.first);
+		net_if_dormant_off(ud.second);
+		packet_test_dormant = false;
+	}
+
 	test_sockets_close();
 }
 
@@ -2293,3 +2390,111 @@ static void *test_setup(void)
 }
 
 ZTEST_SUITE(socket_packet, NULL, test_setup, NULL, test_after, NULL);
+
+static K_THREAD_STACK_DEFINE(close_thread_stack, 2048);
+static struct k_thread close_thread;
+static K_MUTEX_DEFINE(recv_cb_lock);
+static K_SEM_DEFINE(recv_cb_locked, 0, 1);
+static K_SEM_DEFINE(recv_cb_entered, 0, 1);
+static int recv_cb_entered_ret;
+static int close_ret;
+
+static void locking_recv_cb(struct net_context *ctx, struct net_pkt *pkt,
+			    union net_ip_header *ip_hdr,
+			    union net_proto_header *proto_hdr, int status,
+			    void *user_data)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(ip_hdr);
+	ARG_UNUSED(proto_hdr);
+	ARG_UNUSED(status);
+	ARG_UNUSED(user_data);
+
+	k_sem_give(&recv_cb_entered);
+
+	(void)k_mutex_lock(&recv_cb_lock, K_FOREVER);
+	(void)k_mutex_unlock(&recv_cb_lock);
+
+	net_pkt_unref(pkt);
+}
+
+static void close_thread_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	(void)k_mutex_lock(&recv_cb_lock, K_FOREVER);
+	k_sem_give(&recv_cb_locked);
+
+	recv_cb_entered_ret = k_sem_take(&recv_cb_entered, K_SECONDS(1));
+	close_ret = zsock_close(POINTER_TO_INT(p1));
+
+	(void)k_mutex_unlock(&recv_cb_lock);
+}
+
+/* Close a packet socket while a packet is being delivered to it. The packet
+ * socket callback takes no lock, so the test installs a receive callback
+ * that waits for a lock the closing thread holds, as the inet socket
+ * callback does with the descriptor lock. Delivery must not hold the
+ * connection lock that close() takes to unregister the socket. A deadlock
+ * leaves the stack wedged, so this runs in its own suite, after the others,
+ * and leaves the sockets open when it fails.
+ */
+ZTEST(socket_packet_close, test_raw_sock_close_during_delivery)
+{
+	struct net_sockaddr_ll ll_dst;
+	struct net_context *ctx;
+	struct k_mem_slab *rx;
+	uint32_t rx_free;
+	uint16_t pkt_len;
+	int tx_sock;
+	int rx_sock;
+	int ret;
+
+	setup_packet_socket(&tx_sock, NET_SOCK_RAW, 0);
+	prepare_test_packet(NET_SOCK_RAW, ETH_P_IP, lladdr2, lladdr1, &pkt_len);
+	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr1, ud.second);
+	prepare_packet_socket(&rx_sock, ud.first, NET_SOCK_RAW, net_htons(ETH_P_ALL));
+
+	ctx = zvfs_get_fd_obj(rx_sock, NULL, 0);
+	zassert_not_null(ctx, "No context for socket %d", rx_sock);
+
+	ret = net_context_recv(ctx, locking_recv_cb, K_NO_WAIT, NULL);
+	zassert_ok(ret, "Cannot set the receive callback (%d)", ret);
+
+	net_pkt_get_info(&rx, NULL, NULL, NULL);
+	rx_free = k_mem_slab_num_free_get(rx);
+
+	k_thread_create(&close_thread, close_thread_stack,
+			K_THREAD_STACK_SIZEOF(close_thread_stack), close_thread_fn,
+			INT_TO_POINTER(rx_sock), NULL, NULL,
+			K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+	zassert_ok(k_sem_take(&recv_cb_locked, K_SECONDS(1)),
+		   "Closing thread did not start");
+
+	/* The RX thread delivers this to the packet socket, where the receive
+	 * callback waits for the lock. The closing thread then closes the
+	 * socket, still holding the lock.
+	 */
+	ret = zsock_sendto(tx_sock, tx_buf, pkt_len, 0,
+			   (struct net_sockaddr *)&ll_dst,
+			   sizeof(struct net_sockaddr_ll));
+	zassert_equal(ret, pkt_len, "Failed to send (%d)", errno);
+
+	ret = k_thread_join(&close_thread, K_SECONDS(2));
+	zassert_ok(ret, "close() deadlocked with packet socket delivery");
+	zassert_ok(recv_cb_entered_ret, "Packet not delivered to the socket");
+	zassert_ok(close_ret, "Closing packet socket failed");
+
+	zassert_ok(zsock_close(tx_sock), "Closing packet socket failed (%d)", errno);
+
+	/* With a TX thread, the ICMP port unreachable reply to the test packet
+	 * can still hold an RX packet in the fake driver here.
+	 */
+	zassert_true(WAIT_FOR(k_mem_slab_num_free_get(rx) == rx_free, USEC_PER_SEC,
+			      k_msleep(1)),
+		     "RX packet leaked (%u free, expected %u)",
+		     k_mem_slab_num_free_get(rx), rx_free);
+}
+
+ZTEST_SUITE(socket_packet_close, NULL, test_setup, NULL, NULL, NULL);

@@ -3,7 +3,7 @@
 
 config FUEL_GAUGE_LTC2941
 	depends on DT_HAS_ADI_LTC2941_ENABLED
-	bool "LTC2941 Fuel Gauge"
+	bool "LTC2941 fuel gauge driver"
 	default y
 	select I2C
 	help

@@ -74,8 +74,8 @@ long semihost_read(long fd, void *buf, long len)
 	long ret;
 
 	ret = semihost_exec(SEMIHOST_READ, &args);
-	/* EOF condition */
-	if (ret == len) {
+	/* No bytes read or a host error. */
+	if ((ret < 0) || (ret == len)) {
 		ret = -EIO;
 	}
 	/* All bytes read */

@@ -64,6 +64,8 @@ static struct mqtt_test_ctx {
 	size_t reply_before_connack_len;
 	bool ping_resp_handled;
 	bool publish_handled;
+	int publish_error;
+	bool publish_error_expected;
 	bool puback_handled;
 	bool pubcomp_handled;
 	bool suback_handled;
@@ -88,6 +90,9 @@ static const uint8_t connect_ack_reply_5_0[] = {
 static const uint8_t ping_resp_reply[] = {
 	MQTT_PKT_TYPE_PINGRSP, 0,
 };
+
+/* A type-0 fixed header is never valid in a server-to-client stream. */
+static const uint8_t type_zero_packet[] = { 0x00, 0x00 };
 
 static const uint8_t puback_reply_template[] = {
 	MQTT_PKT_TYPE_PUBACK, 0x02, 0, 0,
@@ -562,6 +567,11 @@ static void mqtt_evt_handler(struct mqtt_client *const client,
 		break;
 
 	case MQTT_EVT_PUBLISH:
+		if (test_ctx.publish_error_expected) {
+			test_ctx.publish_error = evt->result;
+			break;
+		}
+
 		publish_handler(client, evt);
 
 		if (evt->param.publish.message.topic.qos == MQTT_QOS_1_AT_LEAST_ONCE) {
@@ -1079,6 +1089,104 @@ ZTEST(mqtt_client, test_mqtt_second_connack_5_0)
 		      "Unexpected DISCONNECT reason code 0x%02x", test_ctx.disconnect_reason);
 }
 
+static void test_unexpected_type_after_connack(void)
+{
+	int ret;
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected");
+
+	test_send_reply(type_zero_packet, sizeof(type_zero_packet));
+
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -EBADMSG,
+		      "Unexpected packet type after CONNACK should be a protocol error (%d)",
+		      ret);
+	zexpect_false(test_ctx.connected, "MQTT client should have closed the connection");
+
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -ENOTCONN, "MQTT client should no longer be connected (%d)", ret);
+}
+
+static void test_unexpected_type_claims_body(void)
+{
+	int ret;
+
+	/* A type-0 header claiming a 64-byte body that never arrives: the
+	 * packet type must be rejected before the claimed body is waited
+	 * for, which the previous dispatcher placement did not do.
+	 */
+	static const uint8_t hdr[] = { 0x00, 0x40 };
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected");
+
+	test_send_reply(hdr, sizeof(hdr));
+
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -EBADMSG, "Expected -EBADMSG (%d)", ret);
+	zexpect_false(test_ctx.connected, "MQTT client should have closed the connection");
+}
+
+ZTEST(mqtt_client, test_mqtt_unexpected_type_claims_body)
+{
+	test_unexpected_type_claims_body();
+}
+
+ZTEST(mqtt_client, test_mqtt_unexpected_type_after_connack)
+{
+	test_unexpected_type_after_connack();
+}
+
+ZTEST(mqtt_client, test_mqtt_unexpected_type_after_connack_5_0)
+{
+	if (!IS_ENABLED(CONFIG_MQTT_VERSION_5_0)) {
+		ztest_test_skip();
+	}
+
+	client_ctx.protocol_version = MQTT_VERSION_5_0;
+
+	test_unexpected_type_after_connack();
+
+	/* MQTT 5.0 4.13.1: the client says why before closing the connection. */
+	broker_process(MQTT_PKT_TYPE_DISCONNECT);
+	zexpect_equal(test_ctx.disconnect_reason, MQTT_DISCONNECT_PROTOCOL_ERROR,
+		      "Unexpected DISCONNECT reason code 0x%02x", test_ctx.disconnect_reason);
+
+	broker_destroy();
+	clear_client_fds();
+	k_msleep(10);
+	broker_init();
+
+	/* A Remaining Length larger than rx_buf must be rejected with the
+	 * same Protocol Error before the body is waited for: with the check
+	 * after the body read, this arrived as Packet Too Large (0x95).
+	 */
+	static const uint8_t hdr_over_buf[] = { 0x00, 0xE8, 0x07 };
+	int ret;
+
+	client_ctx.protocol_version = MQTT_VERSION_5_0;
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected");
+
+	test_send_reply(hdr_over_buf, sizeof(hdr_over_buf));
+
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -EBADMSG,
+		      "Unexpected packet type with oversized body should be a protocol error (%d)",
+		      ret);
+	zexpect_false(test_ctx.connected, "MQTT client should have closed the connection");
+
+	/* MQTT 5.0 4.13.1: the client says why before closing the connection. */
+	broker_process(MQTT_PKT_TYPE_DISCONNECT);
+	zexpect_equal(test_ctx.disconnect_reason, MQTT_DISCONNECT_PROTOCOL_ERROR,
+		      "Unexpected DISCONNECT reason code 0x%02x", test_ctx.disconnect_reason);
+}
+
 ZTEST(mqtt_client, test_mqtt_packet_before_connack)
 {
 	int ret;
@@ -1098,6 +1206,124 @@ ZTEST(mqtt_client, test_mqtt_packet_before_connack)
 
 	ret = mqtt_input(&client_ctx);
 	zexpect_equal(ret, -ENOTCONN, "MQTT client should no longer be connected (%d)", ret);
+}
+
+/* MQTT 5.0 PUBLISH, QoS 0, topic "t", Topic Alias 0xffff: above
+ * CONFIG_MQTT_TOPIC_ALIAS_MAX, so the client disconnects with 0x94.
+ */
+static const uint8_t publish_bad_alias_5_0[] = {
+	MQTT_PKT_TYPE_PUBLISH, 0x07, 0x00, 0x01, 't', 0x03, 0x23, 0xff, 0xff,
+};
+
+ZTEST(mqtt_client, test_mqtt_disconnect_reason_reset_on_reconnect)
+{
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_MQTT_VERSION_5_0)) {
+		ztest_test_skip();
+	}
+
+	client_ctx.protocol_version = MQTT_VERSION_5_0;
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected");
+	test_ctx.publish_error_expected = true;
+	test_send_reply(publish_bad_alias_5_0, sizeof(publish_bad_alias_5_0));
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -EBADMSG, "Invalid topic alias should be an error (%d)", ret);
+	zexpect_equal(test_ctx.publish_error, -EBADMSG, "PUBLISH event result %d",
+		      test_ctx.publish_error);
+	test_ctx.publish_error_expected = false;
+	broker_process(MQTT_PKT_TYPE_DISCONNECT);
+	zexpect_equal(test_ctx.disconnect_reason, MQTT_DISCONNECT_TOPIC_ALIAS_INVALID,
+		      "Unexpected first DISCONNECT reason code 0x%02x",
+		      test_ctx.disconnect_reason);
+
+	broker_destroy();
+	clear_client_fds();
+	k_msleep(10);
+	broker_init();
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected again");
+	test_send_reply(connect_ack_reply_5_0, sizeof(connect_ack_reply_5_0));
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -EBADMSG, "Second CONNACK should be a protocol error (%d)", ret);
+	broker_process(MQTT_PKT_TYPE_DISCONNECT);
+	zexpect_equal(test_ctx.disconnect_reason, MQTT_DISCONNECT_PROTOCOL_ERROR,
+		      "Second DISCONNECT reason 0x%02x, previous session leaked",
+		      test_ctx.disconnect_reason);
+}
+
+/* MQTT 5.0 PUBLISH, QoS 0, topic "t", Topic Alias 1: the broker teaches
+ * alias 1 for topic "t".
+ */
+static const uint8_t publish_alias_1_5_0[] = {
+	MQTT_PKT_TYPE_PUBLISH, 0x07, 0x00, 0x01, 't', 0x03, 0x23, 0x00, 0x01,
+};
+
+/* MQTT 5.0 PUBLISH, QoS 0, zero-length topic, Topic Alias 1: legal only if
+ * the receiver already knows alias 1 on this connection.
+ */
+static const uint8_t publish_alias_only_5_0[] = {
+	MQTT_PKT_TYPE_PUBLISH, 0x06, 0x00, 0x00, 0x03, 0x23, 0x00, 0x01,
+};
+
+ZTEST(mqtt_client, test_mqtt_topic_alias_reset_on_reconnect)
+{
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_MQTT_VERSION_5_0)) {
+		ztest_test_skip();
+	}
+
+	client_ctx.protocol_version = MQTT_VERSION_5_0;
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected");
+	test_send_reply(publish_alias_1_5_0, sizeof(publish_alias_1_5_0));
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zassert_ok(ret, "Teaching PUBLISH should be handled (%d)", ret);
+	zassert_true(test_ctx.publish_handled, "Teaching PUBLISH should be delivered");
+
+	/* The alias-only form resolves against the alias learned above. */
+	test_ctx.publish_handled = false;
+	test_send_reply(publish_alias_only_5_0, sizeof(publish_alias_only_5_0));
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zassert_ok(ret, "Alias-only PUBLISH should resolve on this connection (%d)",
+		   ret);
+	zassert_true(test_ctx.publish_handled, "Alias-only PUBLISH should be delivered");
+
+	/* Reconnect on the same client instance: topic alias mappings exist
+	 * only for the lifetime of the network connection and must not
+	 * survive it.
+	 */
+	mqtt_abort(&client_ctx);
+	broker_destroy();
+	clear_client_fds();
+	k_msleep(10);
+	broker_init();
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected again");
+	test_ctx.publish_error_expected = true;
+	test_send_reply(publish_alias_only_5_0, sizeof(publish_alias_only_5_0));
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -EBADMSG,
+		      "Alias learned on a previous connection must be an error (%d)",
+		      ret);
+	zexpect_equal(test_ctx.publish_error, -EBADMSG, "PUBLISH event result %d",
+		      test_ctx.publish_error);
+	test_ctx.publish_error_expected = false;
+	broker_process(MQTT_PKT_TYPE_DISCONNECT);
+	zexpect_equal(test_ctx.disconnect_reason, MQTT_DISCONNECT_PROTOCOL_ERROR,
+		      "DISCONNECT reason 0x%02x after reconnect, previous connection leaked",
+		      test_ctx.disconnect_reason);
 }
 
 static void mqtt_tests_before(void *fixture)

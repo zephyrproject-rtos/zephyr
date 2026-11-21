@@ -13,7 +13,7 @@ tests:
     harness: net
     depends_on: netif
     extra_args:
-      - EXTRA_CONF_FILE="overlay-tls13.conf"
+      - EXTRA_CONF_FILE="tls13.conf"
       - USE_DUMMY_CREDS=1
     tags:
       - net

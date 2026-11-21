@@ -39,7 +39,7 @@ Example building for :zephyr:board:`native_sim`:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/capture
    :board: native_sim
-   :gen-args: -DEXTRA_CONF_FILE=overlay-tunnel.conf
+   :gen-args: -DEXTRA_CONF_FILE=tunnel.conf
    :goals: build
    :compact:
 

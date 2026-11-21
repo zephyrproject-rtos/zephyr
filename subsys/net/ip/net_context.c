@@ -3356,8 +3356,16 @@ static int context_sendto(struct net_context *context,
 #endif /* CONFIG_NET_UDP_OPTIONS */
 
 	iface = net_context_get_iface(context);
-	if (iface && !net_if_is_up(iface)) {
-		return -ENETDOWN;
+	if (iface != NULL) {
+		/* Packet sockets can send before the link is operational. */
+		bool up = (family == NET_AF_PACKET) ?
+			  (net_if_is_admin_up(iface) && net_if_is_carrier_ok(iface) &&
+			   !net_if_flag_is_set(iface, NET_IF_SUSPENDED)) :
+			  net_if_is_up(iface);
+
+		if (!up) {
+			return -ENETDOWN;
+		}
 	}
 
 	context->send_cb = cb;
@@ -4104,7 +4112,13 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 	net_context_recv_cb_t recv_cb;
 	enum net_verdict verdict = NET_DROP;
 
-	NET_ASSERT(context);
+	/* The connection is unregistered if the context was released after
+	 * the connection layer selected it.
+	 */
+	if (context == NULL) {
+		return NET_DROP;
+	}
+
 	NET_ASSERT(net_pkt_iface(pkt));
 
 	k_mutex_lock(&context->lock, K_FOREVER);
@@ -4251,22 +4265,30 @@ static enum net_verdict net_context_raw_packet_received(
 					void *user_data)
 {
 	struct net_context *context = find_context(conn);
+	net_context_recv_cb_t recv_cb;
 
-	NET_ASSERT(context);
+	/* The connection is unregistered if the context was released after
+	 * the connection layer selected it.
+	 */
+	if (context == NULL) {
+		return NET_DROP;
+	}
+
 	NET_ASSERT(net_pkt_iface(pkt));
 
 	/* If there is no callback registered, then we can only drop
-	 * the packet.
+	 * the packet. Read the callback once, as close() can clear it
+	 * concurrently.
 	 */
-
-	if (!context->recv_cb) {
+	recv_cb = context->recv_cb;
+	if (recv_cb == NULL) {
 		return NET_DROP;
 	}
 
 	net_context_set_iface(context, net_pkt_iface(pkt));
 	net_pkt_set_context(pkt, context);
 
-	context->recv_cb(context, pkt, ip_hdr, proto_hdr, 0, user_data);
+	recv_cb(context, pkt, ip_hdr, proto_hdr, 0, user_data);
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	k_sem_give(&context->recv_data_wait);

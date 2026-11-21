@@ -1421,6 +1421,9 @@ int stun_add_software(struct stun_builder *builder, const char *sw)
 	if (sw == NULL) {
 		return -EINVAL;
 	}
+	if (!utf8_is_valid(sw, strlen(sw))) {
+		return -EINVAL;
+	}
 	if (!utf8_within_char_limit(sw)) {
 		return -EINVAL;
 	}
@@ -1435,6 +1438,9 @@ int stun_add_username(struct stun_builder *builder, const char *username)
 		return rc;
 	}
 	if (username == NULL) {
+		return -EINVAL;
+	}
+	if (!utf8_is_valid(username, strlen(username))) {
 		return -EINVAL;
 	}
 	if (strlen(username) > STUN_USERNAME_MAX_LEN) {
@@ -1543,6 +1549,9 @@ int stun_add_error_code(struct stun_builder *builder, uint16_t code, const char 
 		return -EINVAL;
 	}
 	if (reason != NULL) {
+		if (!utf8_is_valid(reason, reason_len)) {
+			return -EINVAL;
+		}
 		if (!utf8_within_char_limit(reason)) {
 			return -EINVAL;
 		}

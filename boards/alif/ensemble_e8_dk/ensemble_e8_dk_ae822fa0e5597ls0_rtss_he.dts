@@ -11,6 +11,7 @@
 #include <alif/ensemble/common/ensemble_rtss_he.dtsi>
 #include "ensemble_e8_dk-pinctrl.dtsi"
 #include "ensemble_e8_dk_common.dtsi"
+#include "ensemble_e8_dk_rtss_mram.dtsi"
 
 / {
 	compatible = "alif,ensemble-e8-dk-ae822fa0e5597ls0-rtss-he";

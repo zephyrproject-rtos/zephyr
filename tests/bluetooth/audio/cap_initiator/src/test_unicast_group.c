@@ -31,7 +31,7 @@
 #include "audio/bap_endpoint.h"
 #include "test_common.h"
 
-BUILD_ASSERT(CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT % 2 == 0,
+BUILD_ASSERT(CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT % 2 == 0,
 	     "Tests expect an even number of streams");
 
 struct cap_initiator_test_unicast_group_fixture {
@@ -54,7 +54,7 @@ static void *cap_initiator_test_unicast_group_setup(void)
 static void cap_initiator_test_unicast_group_before(void *f)
 {
 	const size_t max_pair_params =
-		(size_t)(CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT / 2);
+		(size_t)(CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT / 2);
 	struct cap_initiator_test_unicast_group_fixture *fixture = f;
 	struct bt_cap_unicast_group_stream_pair_param *pair_params;
 	struct bt_cap_unicast_group_stream_param *stream_params;
@@ -71,17 +71,17 @@ static void cap_initiator_test_unicast_group_before(void *f)
 		calloc(sizeof(struct bt_cap_unicast_group_stream_pair_param), max_pair_params);
 	zassert_not_null(pair_params);
 	stream_params = calloc(sizeof(struct bt_cap_unicast_group_stream_param),
-			       CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
+			       CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT);
 	zassert_not_null(stream_params);
-	cap_streams = calloc(sizeof(struct bt_cap_stream),
-			     CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
+	cap_streams =
+		calloc(sizeof(struct bt_cap_stream), CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT);
 	zassert_not_null(cap_streams);
 	fixture->qos_cfg = calloc(sizeof(struct bt_bap_qos_cfg), 1);
 	zassert_not_null(fixture->qos_cfg);
 
 	*fixture->qos_cfg = BT_BAP_QOS_CFG_UNFRAMED(10000u, 40u, 2u, 10u, 40000u); /* 16_2_1 */
 
-	while (str_cnt < CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT &&
+	while (str_cnt < CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT &&
 	       pair_cnt < max_pair_params) {
 		stream_params[str_cnt].stream = &cap_streams[str_cnt];
 		stream_params[str_cnt].qos_cfg = fixture->qos_cfg;
@@ -214,7 +214,7 @@ static ZTEST_F(cap_initiator_test_unicast_group,
 {
 	int err = 0;
 
-	fixture->group_param->params_count = CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT + 1;
+	fixture->group_param->params_count = CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT + 1;
 
 	err = bt_cap_unicast_group_create(fixture->group_param, &fixture->unicast_group);
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);

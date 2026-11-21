@@ -47,6 +47,8 @@ static struct ocpp_msg_table pdu_msg_table[] = {
 	FILL_PDU_TABLE(PDU_CHANGE_AVAILABILITY, "ChangeAvailability"),
 	FILL_PDU_TABLE(PDU_UNLOCK_CONNECTOR, "UnlockConnector"),
 	FILL_PDU_TABLE(PDU_RESET, "Reset"),
+	FILL_PDU_TABLE(PDU_STATUS_NOTIFICATION, "StatusNotification"),
+	FILL_PDU_TABLE(PDU_DATA_TRANSFER, "DataTransfer"),
 };
 
 const char *ocpp_get_pdu_literal(enum ocpp_pdu_msg pdu)
@@ -121,6 +123,18 @@ static int ocpp_ws_connect_cb(int ws_sock, struct http_request *req,
 	return 0;
 }
 
+int ocpp_notify_user(struct ocpp_info *ctx, enum ocpp_notify_reason reason,
+		     union ocpp_io_value *io)
+{
+	int ret;
+
+	k_mutex_lock(&ctx->cblock, K_FOREVER);
+	ret = ctx->cb(reason, io, ctx->user_data);
+	k_mutex_unlock(&ctx->cblock);
+
+	return ret;
+}
+
 static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 {
 	int ret;
@@ -152,9 +166,19 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 #endif
 	}
 
+	/* The websocket sends its close frame on tcpsock, so drop it before
+	 * the fd is closed and handed out again to the new socket.
+	 */
+	k_mutex_lock(&ui->ws_txlock, K_FOREVER);
+	if (ui->wssock >= 0) {
+		websocket_disconnect(ui->wssock);
+		ui->wssock = -1;
+	}
+
 	if (ui->tcpsock >= 0) {
 		zsock_close(ui->tcpsock);
 	}
+	k_mutex_unlock(&ui->ws_txlock);
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	ui->tcpsock = zsock_socket(ui->csi.sa_family, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_3);
@@ -197,11 +221,6 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 		return ret;
 	}
 
-	if (ui->wssock >= 0) {
-		websocket_disconnect(ui->wssock);
-		ui->wssock = -1;
-	}
-
 	if (ui->wssock < 0) {
 		char buf[128];
 		char const *optional_hdr[] = {
@@ -222,7 +241,9 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 			LOG_ERR("Websocket connect fail %d", ret);
 			return ret;
 		}
+		k_mutex_lock(&ui->ws_txlock, K_FOREVER);
 		ui->wssock = ret;
+		k_mutex_unlock(&ui->ws_txlock);
 	}
 
 	LOG_DBG("WS connect success %d", ui->wssock);
@@ -300,8 +321,8 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 					bool active;
 
 					io.meter_val.mes = i;
-					ret = ctx->cb(OCPP_USR_GET_METER_VALUE,
-						      &io, ctx->user_data);
+					ret = ocpp_notify_user(ctx, OCPP_USR_GET_METER_VALUE,
+							       &io);
 					if (ret < 0) {
 						continue;
 					}
@@ -343,15 +364,15 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 			break;
 
 		case PDU_REMOTE_START_TRANSACTION:
-			ctx->cb(OCPP_USR_START_CHARGING, &msg.usr, ctx->user_data);
+			ocpp_notify_user(ctx, OCPP_USR_START_CHARGING, &msg.usr);
 			break;
 
 		case PDU_REMOTE_STOP_TRANSACTION:
-			ctx->cb(OCPP_USR_STOP_CHARGING, &msg.usr, ctx->user_data);
+			ocpp_notify_user(ctx, OCPP_USR_STOP_CHARGING, &msg.usr);
 			break;
 
 		case PDU_UNLOCK_CONNECTOR:
-			ctx->cb(OCPP_USR_UNLOCK_CONNECTOR, &msg.usr, ctx->user_data);
+			ocpp_notify_user(ctx, OCPP_USR_UNLOCK_CONNECTOR, &msg.usr);
 			break;
 
 		default:
@@ -532,6 +553,37 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		ocpp_unlock_connector(ctx, &msg, uid);
 		break;
 
+	case PDU_RESET:
+		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
+		msg.msgtype = PDU_RESET;
+
+		ret = fn(ui->recv_buf, &msg.usr.reset.type);
+		ocpp_reset(ctx, ret < 0 ? NULL : &msg, uid);
+		break;
+
+	case PDU_CHANGE_AVAILABILITY:
+		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
+		msg.msgtype = PDU_CHANGE_AVAILABILITY;
+
+		ret = fn(ui->recv_buf, &msg.usr.change_avail.id_con,
+			 &msg.usr.change_avail.type);
+		ocpp_change_availability(ctx, ret < 0 ? NULL : &msg, uid);
+		break;
+
+	case PDU_CLEAR_CACHE:
+		ocpp_clear_cache(ctx, uid);
+		break;
+
+	case PDU_DATA_TRANSFER:
+		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
+		msg.msgtype = PDU_DATA_TRANSFER;
+
+		ret = fn(ui->recv_buf, &msg.usr.data_transfer.vendor_id,
+			 &msg.usr.data_transfer.msg_id,
+			 &msg.usr.data_transfer.data);
+		ocpp_data_transfer(ctx, ret < 0 ? NULL : &msg, uid);
+		break;
+
 	case PDU_METER_VALUES:
 	default:
 		break;
@@ -549,6 +601,8 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 	struct ocpp_info *ctx = p1;
 	struct ocpp_upstream_info *ui = &ctx->ui;
 	struct zsock_pollfd tcpfd;
+	union ocpp_keyval *val;
+	int64_t last_ping = 0;
 	int ret;
 	uint8_t retry_cnt = 0;
 
@@ -566,9 +620,26 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 				if (ret != 0) {
 					continue;
 				}
+				last_ping = k_uptime_get();
 			} else {
 				/* delay reconnection attempt */
 				k_msleep(200);
+				continue;
+			}
+		}
+
+		/* Keep the link alive with a websocket ping at the configured
+		 * interval. An idle connection can be dropped silently by a NAT
+		 * or the server, and poll() does not report that. A failed ping
+		 * tells us the link is gone so we can reconnect.
+		 */
+		val = ocpp_get_key_val(CFG_WEBSOCK_PING_INTERVAL);
+		if (val != NULL && val->ival > 0 &&
+		    (k_uptime_get() - last_ping) >= ((int64_t)val->ival * MSEC_PER_SEC)) {
+			ret = ocpp_ws_send(ctx, NULL, 0, WEBSOCKET_OPCODE_PING, 100);
+			last_ping = k_uptime_get();
+			if (ret < 0) {
+				ctx->is_cs_offline = true;
 				continue;
 			}
 		}
@@ -606,9 +677,8 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 			}
 
 			if (msg_type & WEBSOCKET_FLAG_PING) {
-				websocket_send_msg(ctx->ui.wssock, NULL, 0,
-						   WEBSOCKET_OPCODE_PONG, true,
-						   true, 100);
+				ocpp_ws_send(ctx, NULL, 0,
+					     WEBSOCKET_OPCODE_PONG, 100);
 			} else if (msg_type & WEBSOCKET_FLAG_CLOSE) {
 				ctx->is_cs_offline = true;
 			} else {
@@ -643,6 +713,7 @@ int ocpp_upstream_init(struct ocpp_info *ctx, struct ocpp_cs_info *csi)
 	ui->tcpsock = -1;
 
 	k_mutex_init(&ui->ws_sndlock);
+	k_mutex_init(&ui->ws_txlock);
 	k_poll_signal_init(&ui->ws_rspsig);
 	ui->wssock = -1;
 
@@ -807,6 +878,7 @@ int ocpp_init(struct ocpp_cp_info *cpi,
 
 	gctx = ctx;
 	k_mutex_init(&ctx->ilock);
+	k_mutex_init(&ctx->cblock);
 	sys_slist_init(&ctx->slist);
 	ocpp_parser_init(&ctx->cfn, &ctx->pfn);
 

@@ -42,8 +42,8 @@ Samples
 * :zephyr:code-sample:`usb-hid-mouse`
 
 * :zephyr:code-sample:`zperf` To build the sample for the device support,
-  set the configuration overlay file
-  ``-DEXTRA_CONF_FILE=overlay-usbd.conf`` and devicetree overlay file
+  set the extra config file
+  ``-DEXTRA_CONF_FILE=usbd.conf`` and devicetree overlay file
   ``-DDTC_OVERLAY_FILE=usbd_cdc_ecm.overlay`` either directly or via ``west``.
 
 .. _usb_device_next_howto_configure:

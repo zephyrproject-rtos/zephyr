@@ -349,6 +349,21 @@ static void IRAM_ATTR i2s_esp32_legacy_dma_quiesce(const struct device *dev)
 }
 #endif /* !SOC_GDMA_SUPPORTED */
 
+#if I2S_ESP32_IS_DIR_EN(tx)
+/*
+ * When set, tx_stop_en stops BCLK and WS while the TX FIFO is empty.
+ * v2 resets it to 1. v1 resets it to 0.
+ */
+static inline void i2s_esp32_set_tx_stop_en(const i2s_hal_context_t *hal, bool enable)
+{
+#if SOC_I2S_HW_VERSION_1
+	i2s_ll_tx_stop_on_fifo_empty(hal->dev, enable);
+#else
+	hal->dev->tx_conf.tx_stop_en = enable;
+#endif /* SOC_I2S_HW_VERSION_1 */
+}
+#endif /* I2S_ESP32_IS_DIR_EN(tx) */
+
 #if I2S_ESP32_IS_DIR_EN(rx)
 
 #if SOC_GDMA_SUPPORTED
@@ -506,21 +521,6 @@ static void IRAM_ATTR i2s_esp32_rx_handler(void *arg)
 }
 
 #endif /* !SOC_GDMA_SUPPORTED */
-
-#if I2S_ESP32_IS_DIR_EN(tx)
-/*
- * When set, tx_stop_en stops BCLK and WS while the TX FIFO is empty.
- * v2 resets it to 1. v1 resets it to 0.
- */
-static void i2s_esp32_set_tx_stop_en(const i2s_hal_context_t *hal, bool enable)
-{
-#if SOC_I2S_HW_VERSION_1
-	i2s_ll_tx_stop_on_fifo_empty(hal->dev, enable);
-#else
-	hal->dev->tx_conf.tx_stop_en = enable;
-#endif /* SOC_I2S_HW_VERSION_1 */
-}
-#endif /* I2S_ESP32_IS_DIR_EN(tx) */
 
 static int i2s_esp32_rx_start_transfer(const struct device *dev)
 {

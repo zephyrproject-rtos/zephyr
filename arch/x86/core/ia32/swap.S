@@ -28,7 +28,7 @@
 	GTEXT(z_x86_thread_entry_wrapper)
 	GTEXT(_x86_user_thread_entry_wrapper)
 
-#ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
+#ifdef CONFIG_HW_SHADOW_STACK_ALLOW_REUSE
 	GTEXT(arch_shadow_stack_reset)
 #endif
 

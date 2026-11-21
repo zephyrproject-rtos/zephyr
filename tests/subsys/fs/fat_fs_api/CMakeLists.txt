@@ -26,3 +26,6 @@ endif()
 target_sources_ifdef(CONFIG_FS_FATFS_REENTRANT app PRIVATE
   src/test_fat_file_reentrant.c
 )
+target_sources_ifdef(CONFIG_DT_HAS_ZEPHYR_FSTAB_FATFS_ENABLED app PRIVATE
+  src/test_fat_fstab.c
+)

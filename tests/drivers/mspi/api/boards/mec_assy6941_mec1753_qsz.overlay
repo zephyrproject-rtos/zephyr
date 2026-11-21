@@ -18,7 +18,6 @@
 
 &gpspi1 {
 	compatible = "microchip,xec-gpspi-v2-controller";
-	status = "okay";
 	dmas = <&dmac 14 DMA_MCHP_XEC_TRIG_SRC_GPSPI1_TX>,
 	       <&dmac 15 DMA_MCHP_XEC_TRIG_SRC_GPSPI1_RX>;
 	dma-names = "tx", "rx";
@@ -30,6 +29,7 @@
 	clock-frequency = <DT_FREQ_M(24)>;
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
 	duplex = "MSPI_HALF_DUPLEX";
+	status = "okay";
 
 	mspi_device: mspi_device@0 {
 		compatible = "zephyr,emul-device-mspi";

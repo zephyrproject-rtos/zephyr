@@ -261,12 +261,18 @@ svc_from_user:
 	b	inv
 
 oops:
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	z_arm64_save_exception_info sp
+#endif
 	mov	x0, sp
 	b	z_arm64_do_kernel_oops
 
 inv:
 	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
 	mov	x1, sp
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	z_arm64_save_exception_info sp
+#endif
 	bl	z_arm64_fatal_error
 
 	/* Return here only in case of recoverable error */

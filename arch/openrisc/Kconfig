@@ -24,4 +24,22 @@ config GEN_SW_ISR_TABLE
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP
 
+config OPENRISC_SOC_IRQ_DISPATCH
+	bool
+	depends on GEN_SW_ISR_TABLE
+	help
+	  Selected by SoCs whose external interrupt controller is not the
+	  core PIC. The external interrupt exception calls
+	  z_soc_irq_dispatch() instead of reading PICSR, and irq_enable(),
+	  irq_disable() and irq_is_enabled() call z_soc_irq_enable(),
+	  z_soc_irq_disable() and z_soc_irq_is_enabled(). PICMR is not used.
+
+config OPENRISC_SOC_NUM_IRQS
+	int "Number of SoC interrupt lines"
+	default 32
+	depends on OPENRISC_SOC_IRQ_DISPATCH
+	help
+	  Number of interrupt lines handled by the SoC dispatcher. This is
+	  the size of the software ISR table.
+
 endmenu

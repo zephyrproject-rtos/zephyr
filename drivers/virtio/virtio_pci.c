@@ -85,6 +85,7 @@ struct virtio_pci_common_cfg {
 struct virtio_pci_data {
 	volatile struct virtio_pci_common_cfg *common_cfg;
 	void *device_specific_cfg;
+	size_t dev_cfg_len;
 	volatile uint8_t *isr_status;
 	volatile uint8_t *notify_cfg;
 	uint32_t notify_off_multiplier;
@@ -189,9 +190,16 @@ static void virtio_pci_reset(const struct device *dev)
 	}
 }
 
+struct virtq *virtio_pci_get_virtqueue(const struct device *dev, uint16_t queue_idx);
+
 static void virtio_pci_notify_queue(const struct device *dev, uint16_t queue_idx)
 {
 	struct virtio_pci_data *data = dev->data;
+	struct virtq *vq = virtio_pci_get_virtqueue(dev, queue_idx);
+
+	if (vq != NULL && !virtq_notification_needed(vq)) {
+		return;
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&data->notify_lock);
 
@@ -331,9 +339,8 @@ static bool virtio_pci_map_cap(pcie_bdf_t bdf, struct virtio_pci_cap *cap, void 
 	assert(mbar.phys_addr + cap->offset + cap->length <= mbar.phys_addr + mbar.size);
 
 #ifdef CONFIG_MMU
-	k_mem_map_phys_bare(
-		(uint8_t **)virt_ptr, mbar.phys_addr + cap->offset, cap->length, K_MEM_PERM_RW
-	);
+	k_mem_map_phys_bare((uint8_t **)virt_ptr, mbar.phys_addr + cap->offset,
+			    cap->length, K_MEM_PERM_RW | K_MEM_CACHE_NONE);
 #else
 	*virt_ptr = (void *)(mbar.phys_addr + cap->offset);
 #endif
@@ -486,8 +493,11 @@ static int virtio_pci_init_common(const struct device *dev)
 				conf->pcie->bdf, &vpc, (void **)&data->device_specific_cfg)) {
 			return 1;
 		}
+
+		data->dev_cfg_len = vpc.length;
 	} else {
 		data->device_specific_cfg = NULL;
+		data->dev_cfg_len = 0;
 		LOG_INF(
 			"no VIRTIO_PCI_CAP_DEVICE_CFG for the device with id 0x%x and bdf 0x%x",
 			conf->pcie->id,
@@ -552,9 +562,13 @@ struct virtq *virtio_pci_get_virtqueue(const struct device *dev, uint16_t queue_
 	return queue_idx < data->virtqueue_count ? &data->virtqueues[queue_idx] : NULL;
 }
 
-void *virtio_pci_get_device_specific_config(const struct device *dev)
+void *virtio_pci_get_device_specific_config(const struct device *dev, size_t *len)
 {
 	struct virtio_pci_data *data = dev->data;
+
+	if (len != NULL) {
+		*len = data->dev_cfg_len;
+	}
 
 	return data->device_specific_cfg;
 }

@@ -37,6 +37,9 @@ config I2C
 config BOARD_BL5340_DVK
 	select USE_DT_CODE_PARTITION if BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
 
+configdefault BUILD_WITH_TFM
+	default y if BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
+
 config BT_HCI_IPC
 	default y if BT_HCI
 

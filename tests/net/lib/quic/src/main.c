@@ -7001,6 +7001,7 @@ static void link_test_stream(struct quic_stream *stream, struct quic_context *ct
 	k_mutex_init(&stream->cond.data_available);
 	k_condvar_init(&stream->cond.recv);
 	k_poll_signal_init(&stream->recv.signal);
+	k_mutex_init(&stream->tx_lock);
 
 	sys_slist_append(&ctx->streams, &stream->node);
 }
@@ -8007,6 +8008,424 @@ ZTEST(net_socket_quic, test_543_ack_and_loss_keep_stream_references)
 
 	ret = quic_connection_close(sock);
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_527_reset_stream_final_size_is_fixed)
+{
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54372");
+	ep->is_server = true;
+	link_test_stream(&stream, ctx, ep, 0);
+	/* A lookup takes a reference, so the stream needs one of its own */
+	atomic_set(&stream.refcount, 1);
+
+	/* 100 bytes are queued for sending. The send of the last 40 is
+	 * under way and not counted in bytes_sent yet, but the peer can
+	 * get them: the final size must cover them, and so must the
+	 * connection flow control count.
+	 */
+	stream.tx_buf.base_offset = 0U;
+	stream.tx_buf.len = 100U;
+	stream.bytes_sent = 60U;
+	ep->tx_fc.bytes_sent = 60U;
+
+	quic_test_reset_final_size = UINT64_MAX;
+	ret = stop_sending_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STOP_SENDING handling failed (%d)", ret);
+	zexpect_true(stream.tx_reset, "Stream not reset");
+	zexpect_equal(quic_test_reset_final_size, 100U,
+		      "Final size %" PRIu64 " is not the end of the queued data",
+		      quic_test_reset_final_size);
+	zexpect_equal(stream.bytes_sent, 100U,
+		      "Stream counts %" PRIu64 " bytes sent, not the final size",
+		      stream.bytes_sent);
+	zexpect_equal(ep->tx_fc.bytes_sent, 100U,
+		      "Connection counts %" PRIu64 " bytes sent, not the final size",
+		      ep->tx_fc.bytes_sent);
+
+	/* The peer acknowledges part of the data. A repeated STOP_SENDING
+	 * gets the same final size and counts nothing again.
+	 */
+	stream.tx_buf.base_offset = 60U;
+	stream.tx_buf.len = 40U;
+
+	quic_test_reset_final_size = UINT64_MAX;
+	ret = stop_sending_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STOP_SENDING handling failed (%d)", ret);
+	zexpect_equal(quic_test_reset_final_size, 100U,
+		      "Final size changed to %" PRIu64 " on a repeated reset",
+		      quic_test_reset_final_size);
+	zexpect_equal(ep->tx_fc.bytes_sent, 100U,
+		      "Repeated reset changed the connection count to %" PRIu64,
+		      ep->tx_fc.bytes_sent);
+
+	zexpect_equal(atomic_get(&stream.refcount), 1, "Stream reference not given back");
+	unlink_test_stream(&stream, ctx);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_548_reset_during_rejected_early_data_replay)
+{
+	static struct quic_stream stream;
+	struct quic_endpoint *ep;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
+		ztest_test_skip();
+	}
+
+	ep = reset_test_ep(&test_ep_a);
+	ctx = open_test_listener(&sock, "127.0.0.1:54393");
+	link_test_stream(&stream, ctx, ep, 0);
+	/* A lookup takes a reference, so the stream needs one of its own */
+	atomic_set(&stream.refcount, 1);
+
+	/* 100 bytes and a FIN went out in rejected 0-RTT packets. The
+	 * rejection rolls the sent counters back, and the data stays
+	 * queued for the replay.
+	 */
+	stream.tx_buf.base_offset = 0U;
+	stream.tx_buf.len = 100U;
+	stream.bytes_sent = 100U;
+	stream.replay_fin_pending = true;
+	ep->tx_fc.bytes_sent = 100U;
+	ep->tx_fc.max_data = 1000U;
+
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	ret = quic_prepare_rejected_early_data_replay(ep);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	zassert_ok(ret, "Replay preparation failed (%d)", ret);
+	zassert_equal(stream.bytes_sent, 0U, "Sent count not rolled back");
+
+	/* STOP_SENDING arrives before the replay. The final size covers
+	 * the queued data, so the connection counts all of it as sent.
+	 */
+	quic_test_reset_final_size = UINT64_MAX;
+	ret = stop_sending_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STOP_SENDING handling failed (%d)", ret);
+	zexpect_equal(quic_test_reset_final_size, 100U,
+		      "Final size %" PRIu64 " is not the end of the queued data",
+		      quic_test_reset_final_size);
+	zexpect_equal(ep->tx_fc.bytes_sent, 100U,
+		      "Connection counts %" PRIu64 " bytes sent, the peer counts 100",
+		      ep->tx_fc.bytes_sent);
+
+	/* The replay skips the reset stream without an error, which would
+	 * stop the replay of the streams after it, and sends no FIN.
+	 */
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	ret = quic_replay_rejected_early_data(ep);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	zexpect_ok(ret, "Replay stopped at the reset stream (%d)", ret);
+	zexpect_false(stream.replay_fin_pending, "FIN still pending on a reset stream");
+	zexpect_equal(ep->tx_fc.bytes_sent, 100U,
+		      "Replay changed the connection count to %" PRIu64,
+		      ep->tx_fc.bytes_sent);
+
+	zexpect_equal(atomic_get(&stream.refcount), 1, "Stream reference not given back");
+	unlink_test_stream(&stream, ctx);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_549_stream_shutdown_failure_sets_errno)
+{
+	struct quic_stream *stream;
+	int ret;
+
+	multi_server_start();
+	multi_client_connect(0);
+
+	stream = zvfs_get_fd_obj(multi_client_stream[0], NULL, 0);
+	zassert_not_null(stream, "No stream behind fd %d", multi_client_stream[0]);
+
+	/* The sending half was reset, so no FIN can be sent */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	stream->tx_reset = true;
+	k_mutex_unlock(&stream->tx_lock);
+
+	/* A failed shutdown() returns -1 and sets errno, as for any socket */
+	errno = 0;
+	ret = zsock_shutdown(multi_client_stream[0], ZSOCK_SHUT_WR);
+	zexpect_equal(ret, -1, "shutdown() returned %d", ret);
+	zexpect_equal(errno, EPIPE, "shutdown() set errno to %d", errno);
+
+	multi_server_stop(1);
+}
+
+ZTEST(net_socket_quic, test_503_close_notifies_only_its_connection)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx_a;
+	struct quic_context *ctx_b;
+	int sock_a;
+	int sock_b;
+	int ret;
+
+	ctx_a = open_test_listener(&sock_a, "127.0.0.1:54355");
+	ctx_b = open_test_listener(&sock_b, "127.0.0.1:54356");
+
+	/* Use the contexts as connections. The endpoint belongs to the
+	 * first one only.
+	 */
+	ctx_a->is_listening = false;
+	ctx_b->is_listening = false;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx_a->endpoints, &ep->node);
+	k_sem_reset(&ctx_a->incoming.stream_sem);
+	k_sem_reset(&ctx_b->incoming.stream_sem);
+	ctx_b->error_code = 0;
+
+	quic_endpoint_notify_streams_closed(ep);
+
+	zexpect_equal(k_sem_count_get(&ctx_a->incoming.stream_sem), 1,
+		      "The connection of the endpoint was not woken");
+	zexpect_equal(ctx_a->error_code, -ECONNRESET, "Wrong error %d", ctx_a->error_code);
+	zexpect_true(ctx_a->closed, "The connection of the endpoint was not closed");
+
+	zexpect_equal(k_sem_count_get(&ctx_b->incoming.stream_sem), 0,
+		      "Another connection was woken");
+	zexpect_equal(ctx_b->error_code, 0, "Another connection got error %d", ctx_b->error_code);
+	zexpect_false(ctx_b->closed, "Another connection was closed");
+
+	(void)sys_slist_find_and_remove(&ctx_a->endpoints, &ep->node);
+	ctx_a->is_listening = true;
+	ctx_b->is_listening = true;
+
+	ret = quic_connection_close(sock_a);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock_a, -errno);
+	ret = quic_connection_close(sock_b);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock_b, -errno);
+}
+
+ZTEST(net_socket_quic, test_531_failed_connection_leaves_its_listener_open)
+{
+	static struct quic_stream waiting;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54381");
+
+	/* A connection of the listener that is not accepted yet, with a
+	 * stream the peer opened, goes away.
+	 */
+	ep->is_server = true;
+	ep->parent = ctx->listen;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&waiting, ctx, ep, 0);
+	k_sem_reset(&ctx->incoming.stream_sem);
+	ctx->error_code = 0;
+
+	quic_endpoint_notify_streams_closed(ep);
+
+	zexpect_is_null(waiting.ep, "The stream of the connection was not notified");
+	zexpect_equal(ctx->error_code, 0, "The listener got error %d", ctx->error_code);
+	zexpect_false(ctx->closed, "The listener was closed");
+	zexpect_equal(k_sem_count_get(&ctx->incoming.stream_sem), 0, "The listener was woken");
+
+	/* Its own endpoint going away closes the listener */
+	quic_endpoint_notify_streams_closed(ctx->listen);
+
+	zexpect_equal(ctx->error_code, -ECONNRESET, "Wrong error %d", ctx->error_code);
+	zexpect_true(ctx->closed, "The listener was not closed");
+
+	unlink_test_stream(&waiting, ctx);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ctx->error_code = 0;
+	ctx->closed = false;
+	ep->parent = NULL;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_504_closed_connection_hangs_up_with_streams_waiting)
+{
+	static struct quic_stream waiting;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct zsock_pollfd pfd;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54357");
+
+	/* Use the context as a connection whose peer opened a stream that
+	 * is not accepted yet, and then closed the connection.
+	 */
+	ctx->is_listening = false;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&waiting, ctx, ep, 3);
+	k_fifo_put(&ctx->incoming.stream_q, &waiting);
+	ctx->closed = true;
+
+	pfd.fd = sock;
+	pfd.events = ZSOCK_POLLIN;
+	pfd.revents = 0;
+	ret = zsock_poll(&pfd, 1, 0);
+	zexpect_equal(ret, 1, "poll() returned %d", ret);
+	zexpect_true((pfd.revents & ZSOCK_POLLIN) != 0, "The waiting stream is not reported");
+	zexpect_true((pfd.revents & ZSOCK_POLLHUP) != 0, "The hang-up is not reported");
+
+	(void)k_fifo_get(&ctx->incoming.stream_q, K_NO_WAIT);
+	unlink_test_stream(&waiting, ctx);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ctx->closed = false;
+	ctx->is_listening = true;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_506_orphan_release_keeps_a_held_endpoint)
+{
+	struct net_sockaddr_in remote = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4433),
+		.sin_addr = { { { 192, 0, 2, 1 } } },
+	};
+	struct quic_endpoint *ep;
+
+	/* A client endpoint that is on no connection, as left behind by a
+	 * failed open
+	 */
+	ep = quic_test_endpoint_alloc();
+	zassert_not_null(ep, "Cannot allocate an endpoint");
+	ep->is_server = false;
+	ep->handshake.completed = true;
+	ep->sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(ep->sock >= 0, "Cannot create a socket (%d)", errno);
+	memcpy(&ep->remote_addr, &remote, sizeof(remote));
+
+	/* Someone else, such as the receive path in the middle of a packet,
+	 * holds the endpoint too.
+	 */
+	atomic_inc(&ep->refcount);
+
+	quic_release_orphan_client_endpoints((struct net_sockaddr *)&remote);
+	zexpect_equal(atomic_get(&ep->refcount), 1,
+		      "The reference of another holder was dropped");
+
+	quic_release_orphan_client_endpoints((struct net_sockaddr *)&remote);
+	zexpect_equal(atomic_get(&ep->refcount), 1, "The list reference was dropped twice");
+
+	/* Let the other holder go as well */
+	ep->list_ref_dropped = false;
+	quic_release_orphan_client_endpoints((struct net_sockaddr *)&remote);
+	zexpect_equal(atomic_get(&ep->refcount), 0, "The endpoint was not released");
+}
+
+ZTEST(net_socket_quic, test_523_orphan_release_leaves_a_closing_context_alone)
+{
+	struct net_sockaddr_in remote = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4433),
+		.sin_addr = { { { 192, 0, 2, 2 } } },
+	};
+	struct quic_endpoint *ep;
+	struct quic_context *ctx;
+	atomic_val_t ctx_ref;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54367");
+
+	/* A client endpoint on a context, held also by the receive path */
+	ep = quic_test_endpoint_alloc();
+	zassert_not_null(ep, "Cannot allocate an endpoint");
+	ep->is_server = false;
+	ep->handshake.completed = true;
+	ep->sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(ep->sock >= 0, "Cannot create a socket (%d)", errno);
+	memcpy(&ep->remote_addr, &remote, sizeof(remote));
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	atomic_inc(&ep->refcount);
+
+	/* The context is being released: its reference count has reached
+	 * zero, but its teardown has not taken the locks yet. The endpoint
+	 * is still on its list and not an orphan.
+	 */
+	ctx_ref = atomic_get(&ctx->refcount);
+	atomic_set(&ctx->refcount, 0);
+	quic_release_orphan_client_endpoints((struct net_sockaddr *)&remote);
+	atomic_set(&ctx->refcount, ctx_ref);
+
+	zexpect_false(ep->list_ref_dropped, "List reference taken from a closing context");
+	zexpect_equal(atomic_get(&ep->refcount), 2, "Reference dropped by the orphan cleanup");
+
+	/* The teardown drops the list reference, once */
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+	zexpect_equal(atomic_get(&ep->refcount), 1,
+		      "The reference of the receive path was dropped too");
+
+	/* Let the receive path go */
+	quic_test_endpoint_unref(ep);
+}
+
+ZTEST(net_socket_quic, test_536_timeout_drops_the_list_reference_once)
+{
+	struct net_sockaddr_in remote = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4433),
+		.sin_addr = { { { 192, 0, 2, 3 } } },
+	};
+	struct quic_endpoint *ep;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54374");
+
+	/* A client endpoint on a context, held also by the receive path */
+	ep = quic_test_endpoint_alloc();
+	zassert_not_null(ep, "Cannot allocate an endpoint");
+	ep->is_server = false;
+	ep->handshake.completed = true;
+	ep->sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(ep->sock >= 0, "Cannot create a socket (%d)", errno);
+	memcpy(&ep->remote_addr, &remote, sizeof(remote));
+	atomic_inc(&ep->refcount);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	/* Nothing has been received for longer than the idle timeout */
+	ep->idle.idle_timeout_disabled = false;
+	ep->idle.negotiated_timeout_ms = 1U;
+	ep->idle.last_rx_time = 1;
+
+	quic_test_check_idle_timeouts();
+	zexpect_true(ep->list_ref_dropped, "The timeout did not mark the list reference");
+	zexpect_equal(atomic_get(&ep->refcount), 1,
+		      "The timeout did not drop the list reference alone");
+
+	/* The teardown unlinks the endpoint and leaves the reference of the
+	 * receive path alone
+	 */
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+	zexpect_equal(atomic_get(&ep->refcount), 1,
+		      "The teardown dropped the list reference again");
+
+	/* The endpoint is still expired, a later check leaves it alone too */
+	quic_test_check_idle_timeouts();
+	zexpect_equal(atomic_get(&ep->refcount), 1,
+		      "A later timeout check dropped another reference");
+
+	/* Let the receive path go */
+	quic_test_endpoint_unref(ep);
 }
 
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)

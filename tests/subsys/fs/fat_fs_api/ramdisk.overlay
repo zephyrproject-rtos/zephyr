@@ -11,4 +11,15 @@
 		sector-size = <512>;
 		sector-count = <128>;
 	};
+
+	fstab {
+		compatible = "zephyr,fstab";
+
+		test_fstab: test-fstab {
+			compatible = "zephyr,fstab,fatfs";
+			mount-point = "/RAM:";
+			disk-access;
+			no-format;
+		};
+	};
 };

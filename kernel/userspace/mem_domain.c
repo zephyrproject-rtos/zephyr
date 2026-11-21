@@ -116,6 +116,22 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 	sys_dlist_init(&domain->thread_mem_domain_list);
 #endif /* CONFIG_MEM_DOMAIN_HAS_THREAD_LIST */
 
+	/* Check the partitions before arch_mem_domain_init(), which may
+	 * allocate page tables and link the domain into an architecture
+	 * list that an error return here would leave behind.
+	 */
+	for (uint32_t i = 0U; i < num_parts; i++) {
+		CHECKIF(!check_add_partition(domain, parts[i])) {
+			LOG_ERR("invalid partition index %d (%p)",
+				i, parts[i]);
+			ret = -EINVAL;
+			goto unlock_out;
+		}
+
+		domain->partitions[i] = *parts[i];
+		domain->num_partitions++;
+	}
+
 #ifdef CONFIG_ARCH_MEM_DOMAIN_DATA
 	ret = arch_mem_domain_init(domain);
 
@@ -126,29 +142,17 @@ int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 		goto unlock_out;
 	}
 #endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
-	if (num_parts != 0U) {
-		uint32_t i;
 
-		for (i = 0U; i < num_parts; i++) {
-			CHECKIF(!check_add_partition(domain, parts[i])) {
-				LOG_ERR("invalid partition index %d (%p)",
-					i, parts[i]);
-				ret = -EINVAL;
-				goto unlock_out;
-			}
-
-			domain->partitions[i] = *parts[i];
-			domain->num_partitions++;
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
-			int ret2 = arch_mem_domain_partition_add(domain, i);
+	for (uint32_t i = 0U; i < num_parts; i++) {
+		int ret2 = arch_mem_domain_partition_add(domain, i);
 
-			ARG_UNUSED(ret2);
-			CHECKIF(ret2 != 0) {
-				ret = ret2;
-			}
-#endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
+		ARG_UNUSED(ret2);
+		CHECKIF(ret2 != 0) {
+			ret = ret2;
 		}
 	}
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
 
 unlock_out:
 	k_spin_unlock(&z_mem_domain_lock, key);

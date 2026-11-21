@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT microchip_mpfs_spi
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/spi.h>
 #include "spi_rtio.h"
 #include <zephyr/sys/sys_io.h>
@@ -108,7 +109,9 @@ LOG_MODULE_REGISTER(mss_spi, CONFIG_SPI_LOG_LEVEL);
 struct mss_spi_config {
 	mm_reg_t base;
 	uint8_t clk_gen;
-	int clock_freq;
+	uint32_t clock_freq;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 #if MSS_SPI_RESET_ENABLED
 	struct reset_dt_spec reset_spec;
 #endif
@@ -191,7 +194,6 @@ static inline void mss_spi_readwr_fifo(const struct device *dev)
 	const struct mss_spi_config *cfg = dev->config;
 	struct mss_spi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
-	struct mss_spi_transfer *xfer = &data->xfer;
 	uint32_t rx_raw = 0;
 	uint32_t data8, transfer_idx = 0;
 	int count;
@@ -257,14 +259,22 @@ static inline void mss_spi_deactivate_cs(const struct mss_spi_config *cfg)
 static inline int mss_spi_clk_gen_set(const struct mss_spi_config *cfg,
 				      const struct spi_config *spi_cfg)
 {
-	uint32_t idx, clkrate, val = 0, speed;
+	uint32_t idx, clkrate, val = 0, speed, pclk = 0;
 
-	if (spi_cfg->frequency > cfg->clock_freq) {
-		speed = cfg->clock_freq / 2;
+	if (cfg->clock_freq != 0U) {
+		pclk = cfg->clock_freq;
+	} else {
+		if (device_is_ready(cfg->clock_dev)) {
+			clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, &pclk);
+		}
+	}
+
+	if (spi_cfg->frequency > pclk) {
+		speed = pclk / 2;
 	}
 
 	for (idx = 1; idx < 16; idx++) {
-		clkrate = cfg->clock_freq / (2 * idx);
+		clkrate = pclk / (2 * idx);
 		if (clkrate <= spi_cfg->frequency) {
 			val = idx;
 			break;
@@ -478,7 +488,17 @@ static DEVICE_API(spi, mss_spi_driver_api) = {
                                                                                                    \
 	static const struct mss_spi_config mss_spi_config_##n = {                                  \
 		.base = DT_INST_REG_ADDR(n),                                                       \
-		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clock_frequency), (                           \
+				.clock_freq = DT_INST_PROP(n, clock_frequency),                    \
+				.clock_dev = NULL,                                                 \
+				.clock_subsys = NULL,                                              \
+			), (                                                                       \
+				.clock_freq = 0,                                                   \
+				.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                \
+				.clock_subsys = (clock_control_subsys_t) DT_INST_PHA(              \
+								n, clocks, clkid),                 \
+			)                                                                          \
+		)                                                                                  \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                                       \
 			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                                \
 	};                                                                                         \

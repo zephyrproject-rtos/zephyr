@@ -104,7 +104,11 @@ has ``user_data_size`` bytes of it, returned by
 The last argument of the pool definition is an optional destroy
 callback. When the last reference to a buffer is released, the callback
 is called instead of returning the buffer to the pool, and it must
-eventually call :c:func:`net_buf_destroy` to return it.
+eventually call :c:func:`net_buf_destroy` to return it. A callback that
+has a new use for the buffer calls :c:func:`net_buf_reuse` instead, right
+away or after it has set the buffer aside, which hands the buffer back as if
+it had just been allocated, without another allocator of the pool getting it
+first.
 
 The buffers have native support for being passed through k_fifo kernel
 objects. Use :c:func:`k_fifo_put` and :c:func:`k_fifo_get` to pass buffer

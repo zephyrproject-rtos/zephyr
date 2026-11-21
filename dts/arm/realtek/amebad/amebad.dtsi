@@ -125,6 +125,15 @@
 			status = "disabled";
 		};
 
+		uart0: serial@40004000 {
+			compatible = "realtek,ameba-uart";
+			reg = <0x40004000 0x60>;
+			clocks = <&rcc AMEBA_UART0_CLK>;
+			interrupts = <34 0>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
 		spi1: spi@4000e000 {
 			compatible = "realtek,ameba-spi";
 			reg = <0x4000e000 0x100>;
@@ -132,15 +141,6 @@
 			clocks = <&rcc AMEBA_SPI1_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		uart0: serial@40004000 {
-			compatible = "realtek,ameba-uart";
-			reg = <0x40004000 0x60>;
-			clocks = <&rcc AMEBA_UART0_CLK>;
-			interrupts = <34 0>;
-			current-speed = <115200>;
 			status = "disabled";
 		};
 

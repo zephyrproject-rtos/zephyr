@@ -22,12 +22,13 @@
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
-/* Dynamic table size an HPACK decoder has to accept until its own
- * SETTINGS_HEADER_TABLE_SIZE is acknowledged (RFC 7541, Section 6.3).
- */
-#define HTTP2_DEFAULT_HEADER_TABLE_SIZE 4096U
-
 #include "headers/server_internal.h"
+
+/* Largest frame payload every peer accepts, the initial value of
+ * SETTINGS_MAX_FRAME_SIZE (RFC 9113, 6.5.2). A larger value advertised by the
+ * peer is not used.
+ */
+#define HTTP2_DEFAULT_MAX_FRAME_SIZE 16384U
 
 static const char content_404[] = {
 #ifdef INCLUDE_HTML_CONTENT
@@ -240,22 +241,37 @@ static int send_data_frame(struct http_client_ctx *client, const char *payload,
 	uint8_t frame_header[HTTP2_FRAME_HEADER_SIZE];
 	int ret;
 
-	encode_frame_header(frame_header, length, HTTP2_DATA_FRAME,
-			    is_header_flag_set(flags, HTTP2_FLAG_END_STREAM) ?
-			    HTTP2_FLAG_END_STREAM : 0,
-			    stream_id);
+	if (payload == NULL) {
+		length = 0;
+	}
 
-	ret = http_server_sendall(client, frame_header, sizeof(frame_header));
-	if (ret < 0) {
-		LOG_DBG("Cannot write to socket (%d)", ret);
-	} else {
-		if (payload != NULL && length > 0) {
-			ret = http_server_sendall(client, payload, length);
+	/* An empty payload is still sent as one frame, it may carry END_STREAM */
+	do {
+		size_t frame_len = MIN(length, HTTP2_DEFAULT_MAX_FRAME_SIZE);
+		bool last = (frame_len == length);
+
+		encode_frame_header(frame_header, frame_len, HTTP2_DATA_FRAME,
+				    (last && is_header_flag_set(flags, HTTP2_FLAG_END_STREAM)) ?
+				    HTTP2_FLAG_END_STREAM : 0,
+				    stream_id);
+
+		ret = http_server_sendall(client, frame_header, sizeof(frame_header));
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+			break;
+		}
+
+		if (frame_len > 0) {
+			ret = http_server_sendall(client, payload, frame_len);
 			if (ret < 0) {
 				LOG_DBG("Cannot write to socket (%d)", ret);
+				break;
 			}
+
+			payload += frame_len;
+			length -= frame_len;
 		}
-	}
+	} while (length > 0);
 
 	return ret;
 }
@@ -295,6 +311,25 @@ int send_settings_frame(struct http_client_ctx *client, bool ack)
 	}
 
 	ret = http_server_sendall(client, settings_frame, len);
+	if (ret < 0) {
+		LOG_DBG("Cannot write to socket (%d)", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int send_rst_stream_frame(struct http_client_ctx *client, uint32_t stream_id,
+				 uint32_t error_code)
+{
+	uint8_t rst_stream_frame[HTTP2_FRAME_HEADER_SIZE + HTTP2_RST_STREAM_FRAME_LEN];
+	int ret;
+
+	encode_frame_header(rst_stream_frame, HTTP2_RST_STREAM_FRAME_LEN, HTTP2_RST_STREAM_FRAME, 0,
+			    stream_id);
+	sys_put_be32(error_code, rst_stream_frame + HTTP2_FRAME_HEADER_SIZE);
+
+	ret = http_server_sendall(client, rst_stream_frame, sizeof(rst_stream_frame));
 	if (ret < 0) {
 		LOG_DBG("Cannot write to socket (%d)", ret);
 		return ret;
@@ -478,6 +513,14 @@ out:
 }
 
 #if defined(CONFIG_FILE_SYSTEM)
+/* File data sent per DATA frame, the chunk size of the HTTP/1 handler */
+#if CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE > 0
+#define HTTP2_STATIC_FS_CHUNK_SIZE                                                                 \
+	MIN(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE, HTTP2_DEFAULT_MAX_FRAME_SIZE)
+#else
+#define HTTP2_STATIC_FS_CHUNK_SIZE 64
+#endif
+
 static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
 					   struct http2_frame *frame,
 					   struct http_client_ctx *client)
@@ -497,7 +540,8 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	int len;
 	int remaining;
 	size_t file_size;
-	char tmp[64];
+	/* Frame header and file data, sent together */
+	uint8_t tmp[HTTP2_FRAME_HEADER_SIZE + HTTP2_STATIC_FS_CHUNK_SIZE];
 
 	if (client->method != HTTP_GET) {
 		return send_http2_405(client, frame);
@@ -508,33 +552,20 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	}
 
 	/* get filename and content-type from url */
-	len = http_server_path_len_without_query(client->url_buffer);
-	if (len == 1) {
-		/* url is just the leading slash, use index.html as filename */
-		snprintk(fname, sizeof(fname), "%s/index.html", static_fs_detail->fs_path);
-	} else {
-		http_server_get_content_type_from_extension(client->url_buffer, content_type,
-							    sizeof(content_type));
-		snprintk(fname, sizeof(fname), "%s%.*s", static_fs_detail->fs_path, len,
-			 client->url_buffer);
-	}
-
-	/* open file, if it exists */
 #ifdef CONFIG_HTTP_SERVER_COMPRESSION
-	ret = http_server_find_file(fname, sizeof(fname), &file_size,
-					client->supported_compression, &chosen_compression);
+	ret = http_server_find_static_fs_file(static_fs_detail, client->url_buffer, fname,
+					      sizeof(fname), content_type, sizeof(content_type),
+					      &file_size, client->supported_compression,
+					      &chosen_compression);
 #else
-	ret = http_server_find_file(fname, sizeof(fname), &file_size, 0, NULL);
+	ret = http_server_find_static_fs_file(static_fs_detail, client->url_buffer, fname,
+					      sizeof(fname), content_type, sizeof(content_type),
+					      &file_size, 0, NULL);
 #endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 	if (ret < 0) {
 		LOG_ERR("fs_stat %s: %d", fname, ret);
 
-		ret = send_headers_frame(client, HTTP_404_NOT_FOUND, frame->stream_identifier, NULL,
-					 0, NULL, 0);
-		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
-		}
-		return ret;
+		return send_http2_404(client, frame);
 	}
 	fs_file_t_init(&file);
 	ret = fs_open(&file, fname, FS_O_READ);
@@ -561,7 +592,8 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	/* read and send file */
 	remaining = file_size;
 	while (remaining > 0) {
-		len = fs_read(&file, tmp, sizeof(tmp));
+		len = fs_read(&file, tmp + HTTP2_FRAME_HEADER_SIZE,
+			      MIN(remaining, HTTP2_STATIC_FS_CHUNK_SIZE));
 		if (len < 0) {
 			LOG_ERR("Filesystem read error (%d)", len);
 			ret = len;
@@ -575,8 +607,10 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 		}
 
 		remaining -= len;
-		ret = send_data_frame(client, tmp, len, frame->stream_identifier,
-				      (remaining > 0) ? 0 : HTTP2_FLAG_END_STREAM);
+		encode_frame_header(tmp, len, HTTP2_DATA_FRAME,
+				    (remaining > 0) ? 0 : HTTP2_FLAG_END_STREAM,
+				    frame->stream_identifier);
+		ret = http_server_sendall(client, tmp, HTTP2_FRAME_HEADER_SIZE + len);
 		if (ret < 0) {
 			LOG_DBG("Cannot write to socket (%d)", ret);
 			goto out;
@@ -743,8 +777,7 @@ static int dynamic_post_put_req_v2(struct http_resource_detail_dynamic *dynamic_
 		client->data_len -= data_len;
 	}
 
-	if (frame->length == 0 && is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM) &&
-	    !headers_only) {
+	if (frame->length == 0 && is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
 		status = HTTP_SERVER_REQUEST_DATA_FINAL;
 	} else {
 		status = HTTP_SERVER_REQUEST_DATA_MORE;
@@ -788,37 +821,34 @@ static int dynamic_post_put_req_v2(struct http_resource_detail_dynamic *dynamic_
 	}
 
 	/* At end of stream, ensure response is sent and terminated */
-	if (frame->length == 0 && !client->current_stream->end_stream_sent &&
-	    is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
-		if (client->current_stream->headers_sent) {
-			ret = send_data_frame(client, NULL, 0, frame->stream_identifier,
-					      HTTP2_FLAG_END_STREAM);
-		} else {
-			memset(&response_ctx, 0, sizeof(response_ctx));
-			response_ctx.final_chunk = true;
-			ret = http2_dynamic_response(client, frame, &response_ctx,
-						     HTTP_SERVER_REQUEST_DATA_FINAL,
-						     dynamic_detail);
-		}
+	if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
+		if (!client->current_stream->end_stream_sent) {
+			if (client->current_stream->headers_sent) {
+				ret = send_data_frame(client, NULL, 0, frame->stream_identifier,
+						      HTTP2_FLAG_END_STREAM);
+			} else {
+				memset(&response_ctx, 0, sizeof(response_ctx));
+				response_ctx.final_chunk = true;
+				ret = http2_dynamic_response(client, frame, &response_ctx,
+							     HTTP_SERVER_REQUEST_DATA_FINAL,
+							     dynamic_detail);
+			}
 
-		if (ret < 0) {
-			LOG_DBG("Cannot send last frame (%d)", ret);
-			return ret;
-		}
-
-		client->current_stream->end_stream_sent = true;
-
-		if (http_response_is_final(&response_ctx, status) &&
-		    status == HTTP_SERVER_REQUEST_DATA_FINAL) {
-			ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE,
-						 &request_ctx, &response_ctx,
-						 dynamic_detail->user_data);
 			if (ret < 0) {
+				LOG_DBG("Cannot send last frame (%d)", ret);
 				return ret;
 			}
 
-			dynamic_detail->holder = NULL;
+			client->current_stream->end_stream_sent = true;
 		}
+
+		ret = dynamic_detail->cb(client, HTTP_SERVER_TRANSACTION_COMPLETE, &request_ctx,
+					 &response_ctx, dynamic_detail->user_data);
+		if (ret < 0) {
+			return ret;
+		}
+
+		dynamic_detail->holder = NULL;
 	}
 
 	return ret;
@@ -983,12 +1013,15 @@ static int enter_http_frame_headers_state(struct http_client_ctx *client)
 	}
 
 	client->current_stream = stream;
+	client->hpack_unresolved = false;
 
 	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_END_HEADERS)) {
 		client->expect_continuation = true;
 	} else {
 		client->expect_continuation = false;
 	}
+
+	client->headers_end_stream = is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM);
 
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
 		/* Reset header capture state for new headers frame */
@@ -1018,6 +1051,16 @@ static int enter_http_frame_continuation_state(struct http_client_ctx *client)
 		return -ENOENT;
 	}
 
+	/* The frame is processed by the HEADERS handler. END_HEADERS is the
+	 * only flag defined for a CONTINUATION frame, the others are ignored
+	 * (RFC 9113, Section 4.1), and END_STREAM is the one of the HEADERS
+	 * frame that started the header block.
+	 */
+	frame->flags &= HTTP2_FLAG_END_HEADERS;
+	if (client->headers_end_stream) {
+		frame->flags |= HTTP2_FLAG_END_STREAM;
+	}
+
 	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_END_HEADERS)) {
 		client->expect_continuation = true;
 	} else {
@@ -1039,6 +1082,39 @@ static int enter_http_frame_window_update_state(struct http_client_ctx *client)
 static int enter_http_frame_priority_state(struct http_client_ctx *client)
 {
 	client->server_state = HTTP_SERVER_FRAME_PRIORITY_STATE;
+
+	return 0;
+}
+
+static int enter_http_frame_ping_state(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+
+	if (frame->stream_identifier != 0) {
+		LOG_DBG("PING frame on stream %u", frame->stream_identifier);
+		return -EBADMSG;
+	}
+
+	if (frame->length != HTTP2_PING_FRAME_LEN) {
+		LOG_DBG("Invalid PING frame length %u", frame->length);
+		return -EBADMSG;
+	}
+
+	client->server_state = HTTP_SERVER_FRAME_PING_STATE;
+
+	return 0;
+}
+
+static int enter_http_frame_unknown_state(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+
+	LOG_DBG("Ignoring frame of unknown type 0x%02x", frame->type);
+
+	/* Without a payload the frame is over with its header. */
+	if (frame->length > 0) {
+		client->server_state = HTTP_SERVER_FRAME_UNKNOWN_STATE;
+	}
 
 	return 0;
 }
@@ -1105,8 +1181,18 @@ int handle_http_frame_header(struct http_client_ctx *client)
 		return enter_http_frame_goaway_state(client);
 	case HTTP2_PRIORITY_FRAME:
 		return enter_http_frame_priority_state(client);
-	default:
+	case HTTP2_PING_FRAME:
+		return enter_http_frame_ping_state(client);
+	case HTTP2_PUSH_PROMISE_FRAME:
+		/* A client cannot push, this is a connection error (RFC 9113,
+		 * Section 8.4).
+		 */
 		return enter_http_done_state(client);
+	default:
+		/* Frames of unknown types are ignored and discarded (RFC 9113,
+		 * Section 4.1).
+		 */
+		return enter_http_frame_unknown_state(client);
 	}
 
 	return 0;
@@ -1126,6 +1212,7 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 	struct http_resource_detail *detail;
 	struct http2_stream_ctx *stream;
 	bool new_request = false;
+	bool finished = false;
 	size_t discard_len;
 	int path_len;
 	int ret;
@@ -1204,6 +1291,13 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 			}
 #endif
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
+			/* With captured headers, a request with no body left is
+			 * already finished by the headers call.
+			 */
+			finished = IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) &&
+				   frame->length == 0 &&
+				   is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM);
+
 			ret = handle_http2_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,
 				frame, client);
@@ -1222,7 +1316,7 @@ request_body:
 	/* A dynamic resource accepting a POST, PUT or PATCH request receives
 	 * the body. Otherwise the body is discarded.
 	 */
-	if (stream->current_detail != NULL) {
+	if (stream->current_detail != NULL && !finished) {
 		ret = dynamic_post_put_req_v2(
 			(struct http_resource_detail_dynamic *)stream->current_detail, client,
 			false);
@@ -1595,7 +1689,9 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 		goto out;
 	}
 
-	if (client->current_stream->current_detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
+	/* Already answered by dynamic_post_put_req_v2() with the captured headers */
+	if (client->current_stream->current_detail->type == HTTP_RESOURCE_TYPE_DYNAMIC &&
+	    !client->current_stream->end_stream_sent) {
 		struct http_resource_detail_dynamic *dynamic_detail =
 			(struct http_resource_detail_dynamic *)
 				client->current_stream->current_detail;
@@ -1681,7 +1777,24 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		struct http_hpack_header_buf *header = &client->header_field;
 		size_t datalen = MIN(client->data_len, frame->length);
 
-		ret = http_hpack_decode_header(client->cursor, datalen, header);
+		/* Until the client has acknowledged the server's table size of
+		 * 0, it may add entries to a dynamic table of the protocol
+		 * default size and refer to them (RFC 7541, Section 4.2). A
+		 * client that found the pool empty gets no table later: the
+		 * entries it added meanwhile would be missing from it.
+		 */
+		if (client->hpack_table == NULL && !client->settings_acked &&
+		    !client->hpack_table_missed &&
+		    http_hpack_entry_adds_to_table(client->cursor, datalen)) {
+			client->hpack_table = http_hpack_dynamic_table_alloc();
+			if (client->hpack_table == NULL) {
+				LOG_DBG("No HPACK dynamic table free for the client");
+				client->hpack_table_missed = true;
+			}
+		}
+
+		ret = http_hpack_decode_header(client->cursor, datalen, header,
+					       client->hpack_table);
 		if (ret <= 0) {
 			if (ret == -EAGAIN) {
 				ret = handle_incomplete_http_header(client);
@@ -1711,8 +1824,8 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 			 * client acknowledges that, the protocol default is the
 			 * limit (RFC 7541, Section 6.3). No field to process.
 			 */
-			uint32_t limit = client->settings_acked ? 0U :
-							  HTTP2_DEFAULT_HEADER_TABLE_SIZE;
+			uint32_t limit =
+				client->settings_acked ? 0U : HTTP_HPACK_DYNAMIC_TABLE_SIZE;
 
 			if (header->table_size > limit) {
 				LOG_ERR("Dynamic table size update above the limit");
@@ -1720,6 +1833,25 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 				goto error;
 			}
 
+			continue;
+		}
+
+		if (header->unresolved) {
+			if (client->settings_acked) {
+				/* The table size is 0 since the ack, so the
+				 * index is beyond both tables: a decoding error
+				 * (RFC 7541, Section 2.3.3), which ends the
+				 * connection (RFC 9113, Section 4.3).
+				 */
+				LOG_ERR("Dynamic table reference after the table size update");
+				ret = -EBADMSG;
+				goto error;
+			}
+
+			/* Decoded for its length only, the stream is refused
+			 * once the block is complete.
+			 */
+			client->hpack_unresolved = true;
 			continue;
 		}
 
@@ -1742,6 +1874,23 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		/* More headers to come in the continuation frame. */
 		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 		return 0;
+	}
+
+	if (client->hpack_unresolved) {
+		/* The client used a dynamic table the server could not give
+		 * it. The stream is refused, the client retries it once it has
+		 * seen the server's SETTINGS.
+		 */
+		LOG_DBG("Refusing stream %u, no HPACK dynamic table", frame->stream_identifier);
+
+		ret = send_rst_stream_frame(client, frame->stream_identifier,
+					    HTTP2_ERROR_REFUSED_STREAM);
+		if (ret < 0) {
+			goto error;
+		}
+
+		release_http_stream_context(client, frame->stream_identifier);
+		goto out;
 	}
 
 	detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
@@ -1786,6 +1935,7 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		}
 	}
 
+out:
 	if (frame->padding_len > 0) {
 		client->server_state = HTTP_SERVER_FRAME_PADDING_STATE;
 	} else {
@@ -1824,6 +1974,65 @@ int handle_http_frame_priority(struct http_client_ctx *client)
 	client->cursor += HTTP2_PRIORITY_FRAME_LEN;
 
 	client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
+
+	return 0;
+}
+
+int handle_http_frame_ping(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+	uint8_t ping_ack[HTTP2_FRAME_HEADER_SIZE + HTTP2_PING_FRAME_LEN];
+	int ret;
+
+	LOG_DBG("HTTP_SERVER_FRAME_PING_STATE");
+
+	if (client->data_len < HTTP2_PING_FRAME_LEN) {
+		return -EAGAIN;
+	}
+
+	/* A PING is answered with the same payload, an acknowledgment is not
+	 * answered (RFC 9113, Section 6.7).
+	 */
+	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_PING_ACK)) {
+		encode_frame_header(ping_ack, HTTP2_PING_FRAME_LEN, HTTP2_PING_FRAME,
+				    HTTP2_FLAG_PING_ACK, 0);
+		memcpy(&ping_ack[HTTP2_FRAME_HEADER_SIZE], client->cursor, HTTP2_PING_FRAME_LEN);
+
+		ret = http_server_sendall(client, ping_ack, sizeof(ping_ack));
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+			return ret;
+		}
+	}
+
+	client->data_len -= HTTP2_PING_FRAME_LEN;
+	client->cursor += HTTP2_PING_FRAME_LEN;
+
+	client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
+
+	return 0;
+}
+
+int handle_http_frame_unknown(struct http_client_ctx *client)
+{
+	struct http2_frame *frame = &client->current_frame;
+	size_t bytes_consumed;
+
+	LOG_DBG("HTTP_SERVER_FRAME_UNKNOWN_STATE");
+
+	if (client->data_len == 0) {
+		return -EAGAIN;
+	}
+
+	/* The payload may arrive in several reads. */
+	bytes_consumed = MIN(client->data_len, (size_t)frame->length);
+	client->data_len -= bytes_consumed;
+	client->cursor += bytes_consumed;
+	frame->length -= (uint32_t)bytes_consumed;
+
+	if (frame->length == 0) {
+		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
+	}
 
 	return 0;
 }
@@ -1885,6 +2094,12 @@ int handle_http_frame_settings(struct http_client_ctx *client)
 
 	if (is_header_flag_set(frame->flags, HTTP2_FLAG_SETTINGS_ACK)) {
 		client->settings_acked = true;
+
+		/* Every header block from now on is encoded for a table size
+		 * of 0, so the table can go back to the pool.
+		 */
+		http_hpack_dynamic_table_free(client->hpack_table);
+		client->hpack_table = NULL;
 	} else {
 		int ret;
 

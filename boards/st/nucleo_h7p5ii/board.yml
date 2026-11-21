@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: nucleo_h7p5ii
+  full_name: Nucleo H7P5II
+  vendor: st
+  socs:
+    - name: stm32h7p5xx

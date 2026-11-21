@@ -1,0 +1,38 @@
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_CORSTONE1000
+	bool
+	help
+	  Enable support for Arm Corstone1000 Family
+
+config SOC_SERIES_CORSTONE1000
+	bool
+	select SOC_FAMILY_CORSTONE1000
+	help
+	  Enable support for Arm Corstone1000 Series
+
+config SOC_CORSTONE1000
+	bool
+	select SOC_SERIES_CORSTONE1000
+
+config SOC_CORSTONE1000_EXTSYS
+	bool
+	select SOC_CORSTONE1000
+	help
+	  ARM Cortex-M3 External System on Corstone1000
+
+config SOC_CORSTONE1000_A35
+	bool
+	select SOC_CORSTONE1000
+	help
+	  ARM Cortex-A35 on Corstone1000
+
+config SOC_FAMILY
+	default "corstone1000" if SOC_FAMILY_CORSTONE1000
+
+config SOC_SERIES
+	default "corstone1000" if SOC_SERIES_CORSTONE1000
+
+config SOC
+	default "corstone1000" if SOC_CORSTONE1000

@@ -765,6 +765,13 @@ static int read_jedec_id(const struct device *dev, uint8_t *id)
 	uint8_t id_even[JESD216_READ_ID_LEN + 1] = {0};
 	int rc;
 
+#ifdef CONFIG_FLASH_MSPI_NOR_QUIRK_DDR_JEDEC_ID
+	if (in_ddr(dev) && (dev_config->quirks != NULL) &&
+	    (dev_config->quirks->read_jedec_id_ddr != NULL)) {
+		return dev_config->quirks->read_jedec_id_ddr(dev, id);
+	}
+#endif
+
 	set_up_xfer(dev, MSPI_RX, dev_config->control_xfer_mode);
 	if (in_octal_io(dev)) {
 		dev_data->xfer.rx_dummy    = dev_data->cmd_info.rdid_dummy;
@@ -1328,11 +1335,11 @@ static void sfdp_process_bfp(const struct device *dev,
 		if (data_rate == MSPI_DATA_RATE_S_D_D) {
 			read_cmd_bf = bfp->dw10[12] >> 16;
 		}
-		break;
 		/* 1S-2S-2S */
 		if (data_rate == MSPI_DATA_RATE_SINGLE) {
 			read_cmd_bf = bfp->dw4 >> 16;
 		}
+		break;
 	case MSPI_IO_MODE_DUAL_1_1_2:
 		/* 1S-1S-2S */
 		if (data_rate == MSPI_DATA_RATE_SINGLE) {

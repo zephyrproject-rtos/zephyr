@@ -118,7 +118,7 @@ config SIWX91X_FIRMWARE_UPGRADE_SHELL
 	  completes.
 
 	  To get support for HTTPS, user has to enable support for TLS. Usually,
-	  overlays files provided by http_client (samples/net/sockets/http_client/overlay-tls.conf)
+	  the extra config file provided by http_client (samples/net/sockets/http_client/tls.conf)
 	  should work.
 
 endif

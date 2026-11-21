@@ -68,10 +68,10 @@ There are a few ways to configure the application:
    * - :file:`prj.conf`
      - Default config: Secure MQTT, dynamic IP address (DHCP)
 
-   * - :file:`overlay-static.conf`
+   * - :file:`static.conf`
      - Secure MQTT, static IP address
 
-   * - :file:`overlay-static-insecure.conf`
+   * - :file:`static-insecure.conf`
      - Unsecure MQTT, static IP address
 
 **Default Config:**
@@ -112,7 +112,7 @@ to securely connect to an MQTT broker using TLS 1.2.
 
 **Static IP Config:**
 
-Use the :file:`overlay-static.conf` Kconfig overlay to disable DHCP and use
+Use the :file:`static.conf` extra config file to disable DHCP and use
 a static IP address config.
 The device, gateway, and DNS server IP addresses should be set according to
 your local network configuration.
@@ -120,16 +120,16 @@ your local network configuration.
 .. zephyr-app-commands::
 	 :zephyr-app: samples/net/secure_mqtt_sensor_actuator
 	 :board: adi_eval_adin1110ebz
-	 :conf: "prj.conf overlay-static.conf"
+	 :conf: "prj.conf static.conf"
 	 :goals: build
 	 :compact:
 
 **Static IP/Unsecure MQTT Config:**
 
-Use the :file:`overlay-static-insecure.conf` Kconfig overlay to disable TLS and DHCP.
+Use the :file:`static-insecure.conf` extra config file to disable TLS and DHCP.
 This config requires connecting to a locally hosted Mosquitto MQTT broker.
 
-- In :file:`overlay-static-insecure.conf`, set the IP address of the board and the Mosquitto
+- In :file:`static-insecure.conf`, set the IP address of the board and the Mosquitto
   broker (i.e. IP address of Ethernet port on host PC). These addresses should be in the
   same subnet e.g. 192.0.2.1 and 192.0.2.2.
 - On your host PC, install Mosquitto.
@@ -152,7 +152,7 @@ This config requires connecting to a locally hosted Mosquitto MQTT broker.
 .. zephyr-app-commands::
 	 :zephyr-app: samples/net/secure_mqtt_sensor_actuator
 	 :board: adi_eval_adin1110ebz
-	 :conf: "prj.conf overlay-static-insecure.conf"
+	 :conf: "prj.conf static-insecure.conf"
 	 :goals: build
 	 :compact:
 

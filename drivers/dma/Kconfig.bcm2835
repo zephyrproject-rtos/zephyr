@@ -1,0 +1,26 @@
+# Broadcom BCM2835 DMA controller
+#
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_BCM2835
+	bool "Broadcom BCM2835 DMA controller driver"
+	default y
+	depends on DT_HAS_BRCM_BCM2835_DMA_ENABLED
+	select CACHE_MANAGEMENT
+	help
+	  Driver for the DMA controller of the BCM2835, BCM2710 and BCM2711
+	  SoCs. The engine is not cache coherent: the driver cleans its
+	  control blocks, callers maintain their data buffers.
+
+if DMA_BCM2835
+
+config DMA_BCM2835_MAX_CBS_PER_CHANNEL
+	int "Maximum DMA control blocks per channel"
+	default 4
+	range 1 32
+	help
+	  Depth of the control block chain of a channel. Single-block
+	  transfers need 1, cyclic rings need more.
+
+endif # DMA_BCM2835

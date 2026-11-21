@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Deere & Company
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon TLE927x VCC2 regulator.
+
+  VCC2 is a fixed 5 V LDO, there is no voltage setting in silicon.
+
+  regulator-initial-mode and regulator-allowed-modes take the
+  TLE927X_VCC2_MODE_* values from <zephyr/dt-bindings/regulator/tle927x.h> and
+  select which SBC modes the rail stays on in.
+
+  Note: on boards where VCC2 supplies the VCAN pin, VCC2 must be on before the
+  CAN transceiver is switched to Normal mode (datasheet 8.2.4), so such boards
+  should set regulator-boot-on.
+
+compatible: "infineon,tle927x-vcc2"
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+      - regulator-boot-on
+      - regulator-boot-off
+      - regulator-always-on
+      - regulator-initial-mode
+      - regulator-allowed-modes
+      - startup-delay-us
+      - off-on-delay-us
+
+on-bus: tle927x

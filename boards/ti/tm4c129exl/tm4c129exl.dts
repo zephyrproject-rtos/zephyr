@@ -43,8 +43,8 @@
 };
 
 / {
-	model = "TI Tiva C Series TM4C129EXL LaunchPad";
 	compatible = "ti,tm4c129exl";
+	model = "TI Tiva C Series TM4C129EXL LaunchPad";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -58,24 +58,24 @@
  * on-board ICDI (In-Circuit Debug Interface) virtual serial port.
  */
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_rx_pa0 &uart0_tx_pa1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* UART1 RX/TX on PB0/PB1, exposed at X11 pads 58/60 */
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_rx_pb0 &uart1_tx_pb1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* UART2 RX/TX on PD4/PD5, exposed at X11 pads 40/38 */
 &uart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart2_rx_pd4 &uart2_tx_pd5>;
 	pinctrl-names = "default";
+	status = "okay";
 };

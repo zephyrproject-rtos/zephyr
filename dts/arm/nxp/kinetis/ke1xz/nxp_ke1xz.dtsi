@@ -339,6 +339,22 @@
 			status = "disabled";
 		};
 
+		trgmux0: trgmux@40062000 {
+			compatible = "nxp,trgmux";
+			reg = <0x40062000 0x1000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
+		};
+
+		trgmux1: trgmux@40063000 {
+			compatible = "nxp,trgmux";
+			reg = <0x40063000 0x1000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
+		};
+
 		scg: scg@40064000 {
 			compatible = "nxp,kinetis-scg";
 			reg = <0x40064000 0x1000>;

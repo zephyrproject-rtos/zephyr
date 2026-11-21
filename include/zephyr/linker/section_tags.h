@@ -31,10 +31,6 @@
 #if defined(CONFIG_ARM)
 #define __kinetis_flash_config_section __in_section_unique(_KINETIS_FLASH_CONFIG_SECTION_NAME)
 #define __ti_ccfg_section Z_GENERIC_SECTION(_TI_CCFG_SECTION_NAME)
-#define __itcm_section Z_GENERIC_SECTION(_ITCM_SECTION_NAME)
-#define __dtcm_data_section Z_GENERIC_SECTION(_DTCM_DATA_SECTION_NAME)
-#define __dtcm_bss_section Z_GENERIC_SECTION(_DTCM_BSS_SECTION_NAME)
-#define __dtcm_noinit_section Z_GENERIC_SECTION(_DTCM_NOINIT_SECTION_NAME)
 #define __ocm_data_section Z_GENERIC_SECTION(_OCM_DATA_SECTION_NAME)
 #define __ocm_bss_section Z_GENERIC_SECTION(_OCM_BSS_SECTION_NAME)
 #define __imx_boot_conf_section Z_GENERIC_SECTION(_IMX_BOOT_CONF_SECTION_NAME)
@@ -52,6 +48,12 @@
 #define __ccm_bss_section __dtcm_bss_section __DEPRECATED_MACRO
 #define __ccm_noinit_section __dtcm_noinit_section __DEPRECATED_MACRO
 #endif /* CONFIG_ARM */
+
+/* TCM sections tags */
+#define __itcm_section Z_GENERIC_SECTION(_ITCM_SECTION_NAME)
+#define __dtcm_data_section Z_GENERIC_SECTION(_DTCM_DATA_SECTION_NAME)
+#define __dtcm_bss_section Z_GENERIC_SECTION(_DTCM_BSS_SECTION_NAME)
+#define __dtcm_noinit_section Z_GENERIC_SECTION(_DTCM_NOINIT_SECTION_NAME)
 
 #if defined(CONFIG_NOCACHE_MEMORY)
 #define __nocache __in_section_unique(_NOCACHE_SECTION_NAME)

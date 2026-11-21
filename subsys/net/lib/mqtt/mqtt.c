@@ -26,6 +26,20 @@ static void client_reset(struct mqtt_client *client)
 	client->internal.last_activity = 0U;
 	client->internal.rx_buf_datalen = 0U;
 	client->internal.remaining_payload = 0U;
+	/* The reason describes the session that just ended; a later error on
+	 * a reconnecting client must map its own reason again. No-op on
+	 * builds without MQTT 5.0 support.
+	 */
+	set_disconnect_reason(client, MQTT_DISCONNECT_NORMAL);
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	/* Topic alias mappings exist only for the lifetime of the network
+	 * connection (MQTT 5.0 section 3.3.2.3.4 [MQTT-3.3.2-7]): a
+	 * reconnected client must not resolve alias-only PUBLISHes against
+	 * topics the previous connection's broker configured.
+	 */
+	memset(client->internal.topic_aliases, 0,
+	       sizeof(client->internal.topic_aliases));
+#endif
 }
 
 /** @brief Initialize tx buffer. */

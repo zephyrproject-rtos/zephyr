@@ -9,7 +9,7 @@
 	hy4245: hy4245@55 {
 		compatible = "hycon,hy4245";
 		reg = <0x55>;
-		status = "okay";
 		unseal-keys = <0x12345678 0x9abcdef0>;
+		status = "okay";
 	};
 };

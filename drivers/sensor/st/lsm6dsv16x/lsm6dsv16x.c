@@ -509,6 +509,39 @@ static int lsm6dsv16x_gyro_self_test(const struct device *dev)
 }
 #endif
 
+static int lsm6dsv16x_config(const struct device *dev,
+				enum sensor_channel chan,
+				enum sensor_attribute attr,
+				const struct sensor_value *val)
+{
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
+#endif
+
+	switch (attr) {
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	case SENSOR_ATTR_FIFO_WATERMARK:
+		/*
+		 * FIFO watermark can be changed dynamically, but must be done before
+		 * starting a new stream request.
+		 */
+
+		if ((val->val1 < 0) ||
+		    (val->val1 > 255)) {
+			return -EINVAL;
+		}
+
+		lsm6dsv16x->fifo_watermark = val->val1;
+		break;
+#endif
+	default:
+		LOG_DBG("Attribute not supported.");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int lsm6dsv16x_accel_config(const struct device *dev,
 				enum sensor_channel chan,
 				enum sensor_attribute attr,
@@ -673,6 +706,8 @@ static int lsm6dsv16x_attr_set(const struct device *dev,
 	case SENSOR_CHAN_GBIAS_XYZ:
 		return lsm6dsv16x_gbias_config(dev, chan, attr, val);
 #endif /* CONFIG_LSM6DSV16X_STREAM */
+	case SENSOR_CHAN_ALL:
+		return lsm6dsv16x_config(dev, chan, attr, val);
 	default:
 		LOG_WRN("attr_set() not supported on this channel.");
 		return -ENOTSUP;
@@ -714,6 +749,30 @@ static int lsm6dsv16x_accel_wake_duration_get(const struct device *dev, struct s
 
 	val->val1 = thresholds.duration;
 	val->val2 = 0;
+
+	return 0;
+}
+
+static int lsm6dsv16x_get_config(const struct device *dev,
+				enum sensor_channel chan,
+				enum sensor_attribute attr,
+				struct sensor_value *val)
+{
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
+#endif
+
+	switch (attr) {
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	case SENSOR_ATTR_FIFO_WATERMARK:
+		val->val1 = lsm6dsv16x->fifo_watermark;
+		val->val2 = 0;
+		break;
+#endif
+	default:
+		LOG_DBG("Attribute not supported.");
+		return -ENOTSUP;
+	}
 
 	return 0;
 }
@@ -873,6 +932,8 @@ static int lsm6dsv16x_attr_get(const struct device *dev, enum sensor_channel cha
 	case SENSOR_CHAN_GBIAS_XYZ:
 		return lsm6dsv16x_gbias_get_config(dev, chan, attr, val);
 #endif /* CONFIG_LSM6DSV16X_STREAM */
+	case SENSOR_CHAN_ALL:
+		return lsm6dsv16x_get_config(dev, chan, attr, val);
 	default:
 		LOG_WRN("attr_get() not supported on this channel.");
 		return -ENOTSUP;
@@ -1440,6 +1501,14 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 		LOG_ERR("failed to set gyroscope odr %d", odr);
 		return -EIO;
 	}
+
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	/*
+	 * At this stage just save the FIFO watermark defined in DT.
+	 * It can be changed dynamically later on.
+	 */
+	lsm6dsv16x->fifo_watermark = cfg->fifo_wtm;
+#endif
 
 #if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	if (IS_ENABLED(CONFIG_LSM6DSV16X_STREAM) && (ON_I3C_BUS(cfg))) {

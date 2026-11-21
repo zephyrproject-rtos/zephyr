@@ -15,7 +15,7 @@ if(CONFIG_SOC_SERIES_ESP32)
   set(ESPRESSIF_QEMU_MACHINE esp32)
   set(ESPRESSIF_QEMU_EFUSE_DRIVER nvram.esp32.efuse)
   # Default QEMU efuses report ESP32 rev 0; Zephyr aborts below ECO3 unless
-  # CONFIG_ESP32_USE_UNSUPPORTED_REVISION is set. Provide the ECO3 efuse
+  # CONFIG_SOC_ESP32_USE_UNSUPPORTED_REVISION is set. Provide the ECO3 efuse
   # image documented by Espressif so the guest reports v3.0 automatically.
   # https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/esp32/README.md#emulating-esp32-eco3
   set(ESPRESSIF_QEMU_EXTRA_FLAGS "")
@@ -39,15 +39,15 @@ else()
   message(FATAL_ERROR "Espressif QEMU: unsupported SoC series")
 endif()
 
-# PSRAM: derive QEMU -m from CONFIG_ESP_SPIRAM_SIZE (board DT psram0 → Kconfig).
-if(CONFIG_ESP_SPIRAM)
-  if(CONFIG_ESP_SPIRAM_SIZE LESS_EQUAL 0)
+# PSRAM: derive QEMU -m from CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE (board DT psram0 → Kconfig).
+if(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM)
+  if(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE LESS_EQUAL 0)
     message(WARNING
-      "Espressif QEMU: CONFIG_ESP_SPIRAM is set but CONFIG_ESP_SPIRAM_SIZE is 0; "
+      "Espressif QEMU: CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM is set but CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE is 0; "
       "check psram0 size in the board device tree.")
   else()
-    math(EXPR _psram_mb "${CONFIG_ESP_SPIRAM_SIZE} / 1048576")
-    math(EXPR _psram_remainder "${CONFIG_ESP_SPIRAM_SIZE} % 1048576")
+    math(EXPR _psram_mb "${CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE} / 1048576")
+    math(EXPR _psram_remainder "${CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE} % 1048576")
     set(_psram_valid_sizes 2 4)
     if(CONFIG_SOC_SERIES_ESP32S3)
       list(APPEND _psram_valid_sizes 8 16 32)
@@ -55,26 +55,26 @@ if(CONFIG_ESP_SPIRAM)
     list(FIND _psram_valid_sizes "${_psram_mb}" _psram_size_index)
     if(NOT _psram_remainder EQUAL 0)
       message(FATAL_ERROR
-        "Espressif QEMU: CONFIG_ESP_SPIRAM_SIZE=${CONFIG_ESP_SPIRAM_SIZE} is "
+        "Espressif QEMU: CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE=${CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE} is "
         "not a whole number of MiB.")
     elseif(_psram_size_index EQUAL -1)
       message(FATAL_ERROR
         "Espressif QEMU: PSRAM -m${_psram_mb}M is unsupported "
         "(QEMU documents ESP32: 2M/4M; ESP32-S3: 2M/4M/8M/16M/32M). "
         "Override psram0 size for the /qemu board or sample overlay "
-        "(CONFIG_ESP_SPIRAM_SIZE=${CONFIG_ESP_SPIRAM_SIZE}).")
+        "(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE=${CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE}).")
     endif()
     list(APPEND ESPRESSIF_QEMU_EXTRA_FLAGS "-m;${_psram_mb}M")
     message(STATUS
       "Espressif QEMU: PSRAM -m${_psram_mb}M "
-      "(CONFIG_ESP_SPIRAM_SIZE=${CONFIG_ESP_SPIRAM_SIZE} bytes, from board DT psram0)")
+      "(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE=${CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE} bytes, from board DT psram0)")
   endif()
 endif()
 
-if(CONFIG_ESP_SPIRAM AND CONFIG_SOC_SERIES_ESP32S3 AND CONFIG_SPIRAM_MODE_OCT)
+if(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM AND CONFIG_SOC_SERIES_ESP32S3 AND CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_OCT)
   list(APPEND ESPRESSIF_QEMU_EXTRA_FLAGS
     "-global;driver=ssi_psram,property=is_octal,value=true")
-  message(STATUS "Espressif QEMU: octal PSRAM (CONFIG_SPIRAM_MODE_OCT)")
+  message(STATUS "Espressif QEMU: octal PSRAM (CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_OCT)")
 endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/espressif_qemu/efuse.cmake)

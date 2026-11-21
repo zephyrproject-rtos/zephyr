@@ -572,6 +572,14 @@ static void tcp_new_reno_init(struct tcp *conn)
 	tcp_new_reno_log(conn, "init");
 }
 
+static void tcp_new_reno_timeout(struct tcp *conn)
+{
+	conn->ca.ssthresh = MAX(conn_mss(conn) * 2, conn->unacked_len / 2);
+	conn->ca.cwnd = conn_mss(conn);
+	tcp_new_reno_log(conn, "timeout");
+}
+
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 static void tcp_new_reno_fast_retransmit(struct tcp *conn)
 {
 	if (conn->ca.pending_fast_retransmit_bytes == 0) {
@@ -583,13 +591,6 @@ static void tcp_new_reno_fast_retransmit(struct tcp *conn)
 	}
 }
 
-static void tcp_new_reno_timeout(struct tcp *conn)
-{
-	conn->ca.ssthresh = MAX(conn_mss(conn) * 2, conn->unacked_len / 2);
-	conn->ca.cwnd = conn_mss(conn);
-	tcp_new_reno_log(conn, "timeout");
-}
-
 /* For every duplicate ack increment the cwnd by mss */
 static void tcp_new_reno_dup_ack(struct tcp *conn)
 {
@@ -599,6 +600,7 @@ static void tcp_new_reno_dup_ack(struct tcp *conn)
 	conn->ca.cwnd = MIN(new_win, NET_TCP_MAX_WINDOW);
 	tcp_new_reno_log(conn, "dup_ack");
 }
+#endif /* CONFIG_NET_TCP_FAST_RETRANSMIT */
 
 static void tcp_new_reno_pkts_acked(struct tcp *conn, uint32_t acked_len)
 {
@@ -631,20 +633,22 @@ static void tcp_ca_init(struct tcp *conn)
 	tcp_new_reno_init(conn);
 }
 
-static void tcp_ca_fast_retransmit(struct tcp *conn)
-{
-	tcp_new_reno_fast_retransmit(conn);
-}
-
 static void tcp_ca_timeout(struct tcp *conn)
 {
 	tcp_new_reno_timeout(conn);
+}
+
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+static void tcp_ca_fast_retransmit(struct tcp *conn)
+{
+	tcp_new_reno_fast_retransmit(conn);
 }
 
 static void tcp_ca_dup_ack(struct tcp *conn)
 {
 	tcp_new_reno_dup_ack(conn);
 }
+#endif /* CONFIG_NET_TCP_FAST_RETRANSMIT */
 
 static void tcp_ca_pkts_acked(struct tcp *conn, uint32_t acked_len)
 {
@@ -654,11 +658,13 @@ static void tcp_ca_pkts_acked(struct tcp *conn, uint32_t acked_len)
 
 static void tcp_ca_init(struct tcp *conn) { }
 
-static void tcp_ca_fast_retransmit(struct tcp *conn) { }
-
 static void tcp_ca_timeout(struct tcp *conn) { }
 
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+static void tcp_ca_fast_retransmit(struct tcp *conn) { }
+
 static void tcp_ca_dup_ack(struct tcp *conn) { }
+#endif /* CONFIG_NET_TCP_FAST_RETRANSMIT */
 
 static void tcp_ca_pkts_acked(struct tcp *conn, uint32_t acked_len) { }
 
@@ -1266,8 +1272,10 @@ static bool tcp_should_ack_immediately(struct tcp *conn, bool psh)
 		return true;
 	}
 
-	/* RFC 813: interactive/small-window heuristic. */
-	if (!tcp_short_window(conn) && psh) {
+	/* RFC 813: interactive/small-window heuristic, unless TCP_QUICKACK
+	 * was turned off to let a reply carry the ACK.
+	 */
+	if (!conn->delay_psh_ack && !tcp_short_window(conn) && psh) {
 		return true;
 	}
 
@@ -1540,6 +1548,41 @@ static int get_tcp_nodelay(struct tcp *conn, void *value, uint32_t *len)
 	if (len) {
 		*len = sizeof(int);
 	}
+	return 0;
+}
+
+static int set_tcp_quickack(struct tcp *conn, const void *value, uint32_t len)
+{
+	int quickack;
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	quickack = *(int *)value;
+
+	if ((quickack < 0) || (quickack > 1)) {
+		return -EINVAL;
+	}
+
+	conn->delay_psh_ack = (quickack == 0);
+
+	/* Like Linux, turning the option on sends a delayed ACK at once */
+	if (quickack == 1 && k_work_delayable_is_pending(&conn->ack_timer)) {
+		tcp_out(conn, ACK);
+	}
+
+	return 0;
+}
+
+static int get_tcp_quickack(struct tcp *conn, void *value, uint32_t *len)
+{
+	*((int *)value) = conn->delay_psh_ack ? 0 : 1;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
 	return 0;
 }
 
@@ -1873,6 +1916,10 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, size_t data_len, uint32_
 	if (flags & ACK) {
 		conn->recv_win_sent = conn->recv_win;
 		conn->recv_since_ack = 0;
+		/* This segment ACKs all the data received so far, so a
+		 * delayed ACK still pending would only repeat it.
+		 */
+		k_work_cancel_delayable(&conn->ack_timer);
 	}
 
 	if (is_destination_local(pkt)) {
@@ -2540,6 +2587,7 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->send_win_max = MAX(tcp_tx_window, (uint32_t)NET_IPV6_MTU);
 	conn->send_win = conn->send_win_max;
 	conn->tcp_nodelay = false;
+	conn->delay_psh_ack = false;
 	conn->addr_ref_done = false;
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 	conn->dup_ack_cnt = 0;
@@ -4980,6 +5028,9 @@ int net_tcp_set_option(struct net_context *context,
 	case TCP_OPT_KEEPCNT:
 		ret = set_tcp_keep_cnt(conn, value, len);
 		break;
+	case TCP_OPT_QUICKACK:
+		ret = set_tcp_quickack(conn, value, len);
+		break;
 	}
 
 	k_mutex_unlock(&conn->lock);
@@ -5016,6 +5067,9 @@ int net_tcp_get_option(struct net_context *context,
 		break;
 	case TCP_OPT_KEEPCNT:
 		ret = get_tcp_keep_cnt(conn, value, len);
+		break;
+	case TCP_OPT_QUICKACK:
+		ret = get_tcp_quickack(conn, value, len);
 		break;
 	}
 

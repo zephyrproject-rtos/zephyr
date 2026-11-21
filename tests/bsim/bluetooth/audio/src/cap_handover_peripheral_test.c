@@ -730,8 +730,8 @@ static void init(void)
 
 static void pa_sync_create(void)
 {
+	const uint8_t max_attempts = 5U;
 	struct bt_le_per_adv_sync_param create_params = {0};
-	int err;
 
 	bt_addr_le_copy(&create_params.addr, &cached_recv_state->addr);
 	create_params.options = BT_LE_PER_ADV_SYNC_OPT_NONE;
@@ -739,14 +739,31 @@ static void pa_sync_create(void)
 	create_params.skip = PA_SYNC_SKIP;
 	create_params.timeout = interval_to_sync_timeout(cached_pa_interval);
 
-	err = bt_le_per_adv_sync_create(&create_params, &pa_sync);
-	if (err != 0) {
-		FAIL("Could not create Broadcast PA sync: %d\n", err);
-		return;
+	/* The sync is not established when the Controller misses the first periodic advertising
+	 * events. Create it again then, like an application would.
+	 */
+	for (uint8_t attempt = 1U; attempt <= max_attempts; attempt++) {
+		int err;
+
+		UNSET_FLAG(flag_pa_sync_lost);
+
+		err = bt_le_per_adv_sync_create(&create_params, &pa_sync);
+		if (err != 0) {
+			FAIL("Could not create Broadcast PA sync: %d\n", err);
+			return;
+		}
+
+		LOG_DBG("Waiting for PA sync");
+		WAIT_FOR_COND(TEST_FLAG(flag_pa_synced) || TEST_FLAG(flag_pa_sync_lost));
+
+		if (TEST_FLAG(flag_pa_synced)) {
+			return;
+		}
+
+		LOG_DBG("PA sync not established at attempt %u", attempt);
 	}
 
-	LOG_DBG("Waiting for PA sync");
-	WAIT_FOR_FLAG(flag_pa_synced);
+	FAIL("PA sync not established in %u attempts\n", max_attempts);
 }
 
 static void create_and_sync_sink(void)

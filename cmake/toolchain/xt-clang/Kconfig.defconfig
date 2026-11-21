@@ -3,3 +3,6 @@
 
 config TOOLCHAIN_HAS_CRT_CTOR_MARKERS
 	default y
+
+config XTENSA_LIBC_SUPPORTED
+	default y

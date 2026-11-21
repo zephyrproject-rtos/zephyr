@@ -500,6 +500,7 @@ static int virtio_blk_dev_init(const struct device *dev)
 	const struct virtio_blk_drv_config *cfg = dev->config;
 	struct virtio_blk_data *data = dev->data;
 	const uint8_t *dev_cfg_bytes;
+	size_t dev_cfg_len;
 	struct virtq *vq;
 	bool have_blk_size = false;
 	bool have_seg_max = false;
@@ -549,9 +550,14 @@ static int virtio_blk_dev_init(const struct device *dev)
 		return ret;
 	}
 
-	dev_cfg_bytes = virtio_get_device_specific_config(cfg->vdev);
+	dev_cfg_bytes = virtio_get_device_specific_config(cfg->vdev, &dev_cfg_len);
 	if (dev_cfg_bytes == NULL) {
 		LOG_ERR("missing device-specific configuration");
+		return -ENODEV;
+	}
+
+	if (dev_cfg_len < offsetof(struct virtio_blk_config, capacity) + sizeof(data->capacity)) {
+		LOG_ERR("device-specific configuration too short for capacity");
 		return -ENODEV;
 	}
 
@@ -563,6 +569,11 @@ static int virtio_blk_dev_init(const struct device *dev)
 	 * and status byte use separate descriptors.
 	 */
 	if (have_seg_max) {
+		if (dev_cfg_len < offsetof(struct virtio_blk_config, seg_max) + sizeof(seg_max)) {
+			LOG_ERR("device-specific configuration too short for seg_max");
+			return -ENODEV;
+		}
+
 		seg_max = sys_get_le32(dev_cfg_bytes + offsetof(struct virtio_blk_config, seg_max));
 		if (seg_max == 0U) {
 			LOG_ERR("unsupported seg_max %u", seg_max);
@@ -582,6 +593,12 @@ static int virtio_blk_dev_init(const struct device *dev)
 	 * sectors via sectors_per_block.
 	 */
 	if (have_blk_size) {
+		if (dev_cfg_len < offsetof(struct virtio_blk_config, blk_size) +
+				  sizeof(sector_size)) {
+			LOG_ERR("device-specific configuration too short for blk_size");
+			return -ENODEV;
+		}
+
 		sector_size =
 			sys_get_le32(dev_cfg_bytes + offsetof(struct virtio_blk_config, blk_size));
 	}

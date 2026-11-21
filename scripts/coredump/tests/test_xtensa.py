@@ -32,7 +32,8 @@ def make_stub(xtensa, soc, toolchain, version=2, extra=b"", extra_valid=0):
 
 @pytest.mark.parametrize("soc,toolchain", [(1, 1), (2, 1), (3, 1), (3, 2), (4, 1), (5, 1), (6, 1)])
 @pytest.mark.parametrize(
-    "version,extra_valid", [(1, 0), (2, 0), (3, 0), (3, 1), (3, 1 << 17), (3, (1 << 18) - 1)]
+    "version,extra_valid",
+    [(1, 0), (2, 0), (3, 0), (3, 1), (3, 1 << 17), (3, (1 << 18) - 1), (3, (1 << 26) - 1)],
 )
 def test_registers(xtensa, soc, toolchain, version, extra_valid):
     soc = xtensa.XtensaSoc(soc)
@@ -86,7 +87,7 @@ def test_invalid_extra_length(xtensa, extra):
         )
 
 
-@pytest.mark.parametrize("bit", [18, 31])
+@pytest.mark.parametrize("bit", [26, 31])
 def test_unknown_extra_slot(xtensa, bit):
     with pytest.raises(ValueError, match="Unknown Xtensa extra register slots"):
         make_stub(
@@ -112,26 +113,37 @@ def test_truncated_validity_bitmap(xtensa):
 
 
 @pytest.mark.parametrize(
-    "soc,toolchain,threadptr,epc1,excsave1,epc1_offset",
+    "soc,toolchain,threadptr,epc1,excsave1,interrupt,intenable,epc1_offset,interrupt_offset",
     [
-        (1, 1, None, 51, 65, 204),
-        (2, 1, 74, 116, 130, 464),
-        (3, 1, 75, 121, 135, 564),
-        (3, 2, 0x3E7, 0x2B1, 0x2D1, None),
-        (4, 1, 71, 82, 96, 328),
-        (5, 1, 74, 139, 153, 532),
-        (6, 1, 43, 66, 80, 264),
+        (1, 1, None, 51, 65, 72, 75, 204, 288),
+        (2, 1, 74, 116, 130, 138, 141, 464, 552),
+        (3, 1, 75, 121, 135, 143, 146, 564, 652),
+        (3, 2, 0x3E7, 0x2B1, 0x2D1, 0x2E2, 0x2E4, None, None),
+        (4, 1, 71, 82, 96, 104, 107, 328, 416),
+        (5, 1, 74, 139, 153, 161, 164, 532, 740),
+        (6, 1, 43, 66, 80, 88, 91, 264, 352),
     ],
 )
-def test_gdb_extra_packets(xtensa, soc, toolchain, threadptr, epc1, excsave1, epc1_offset):
+def test_gdb_extra_packets(
+    xtensa,
+    soc,
+    toolchain,
+    threadptr,
+    epc1,
+    excsave1,
+    interrupt,
+    intenable,
+    epc1_offset,
+    interrupt_offset,
+):
     # GDB numbers and packet offsets come from the public toolchain xtensa-config.c files.
     stub = make_stub(
         xtensa,
         xtensa.XtensaSoc(soc),
         xtensa.XtensaToolchain(toolchain),
         3,
-        struct.pack("<5I", 7, 0x80, 0, 0x12345678, 0x87654321),
-        (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 17),
+        struct.pack("<8I", 7, 0x80, 0, 0x12345678, 0x87654321, 0x400, 0x440, 0x2),
+        (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 17) | (1 << 18) | (1 << 19) | (1 << 20),
     )
     packets = []
     stub.put_gdb_packet = packets.append
@@ -139,6 +151,12 @@ def test_gdb_extra_packets(xtensa, soc, toolchain, threadptr, epc1, excsave1, ep
     assert packets.pop() == b"78563412"
     stub.handle_register_single_read_packet(f"p{excsave1:x}".encode())
     assert packets.pop() == b"21436587"
+    stub.handle_register_single_read_packet(f"p{interrupt:x}".encode())
+    assert packets.pop() == b"00040000"
+    stub.handle_register_single_read_packet(f"p{intenable:x}".encode())
+    assert packets.pop() == b"40040000"
+    # Banked interrupt registers are decoded but have no GDB register number.
+    assert stub.extra_registers["INTERRUPT1"] == 0x2
     if threadptr is not None:
         stub.handle_register_single_read_packet(f"p{threadptr:x}".encode())
         assert packets.pop() == b"00000000"
@@ -160,6 +178,10 @@ def test_gdb_extra_packets(xtensa, soc, toolchain, threadptr, epc1, excsave1, ep
         assert packet[(epc1_offset + 4) * 2 : (epc1_offset + 8) * 2] == b"xxxxxxxx"
     if threadptr is not None and threadptr * 8 < len(packet):
         assert packet[threadptr * 8 : (threadptr + 1) * 8] == b"00000000"
+    if interrupt_offset is not None and interrupt_offset * 2 < len(packet):
+        assert packet.find(b"00040000") == interrupt_offset * 2
+    else:
+        assert b"00040000" not in packet
 
 
 @pytest.mark.parametrize("version", [1, 2, 3])

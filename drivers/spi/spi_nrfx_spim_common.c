@@ -481,7 +481,7 @@ int spi_nrfx_spim_common_configure(const struct device *dev, const struct spi_co
 {
 	struct spi_nrfx_common_data *dev_data = dev->data;
 	const struct spi_nrfx_common_config *dev_config = dev->config;
-	nrfx_spim_config_t spim_cfg;
+	nrfx_spim_config_t spim_cfg = {0};
 	int ret;
 
 	if (dev_data->configured && spi_config_equal(&dev_data->spi_cfg, spi_cfg)) {

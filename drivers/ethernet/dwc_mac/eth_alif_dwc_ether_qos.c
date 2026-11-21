@@ -116,6 +116,10 @@ int dwmac_platform_init(const struct device *dev)
 
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;
+#ifdef CONFIG_MMU
+	p->tx_descs_phys = (struct dwmac_dma_desc *)k_mem_phys_addr(dwmac_tx_descs);
+	p->rx_descs_phys = (struct dwmac_dma_desc *)k_mem_phys_addr(dwmac_rx_descs);
+#endif
 
 	/* basic configuration for this platform */
 	DWMAC_REG_WRITE(MAC_CONF, MAC_CONF_PS | MAC_CONF_FES | MAC_CONF_DM);

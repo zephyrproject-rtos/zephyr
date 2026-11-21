@@ -37,8 +37,10 @@ struct net_nbr_lladdr {
 #define NET_NBR_LLADDR_INIT(_name, _count)	\
 	struct net_nbr_lladdr _name[_count] = { }
 
-/* Alignment needed for various parts of the neighbor definition */
-#define __net_nbr_align __aligned(sizeof(int))
+/* Alignment needed for various parts of the neighbor definition. The
+ * neighbor data holds 64-bit fields, such as in struct net_ipv6_nbr_data.
+ */
+#define __net_nbr_align sizeof(int64_t)
 
 /* The neighbor node generic data. There can be sub-system specific
  * data at the end of the node.
@@ -68,19 +70,20 @@ struct net_nbr {
 	/** Start of the data storage. Not to be accessed directly
 	 *  (the data pointer should be used instead).
 	 */
-	uint8_t __nbr[] __net_nbr_align;
+	uint8_t __nbr[] __aligned(__net_nbr_align);
 };
 
 /* This is an array of struct net_nbr + some additional data */
 #define NET_NBR_POOL_INIT(_name, _count, _size, _remove)		\
 	struct {							\
 		struct net_nbr nbr;					\
-		uint8_t data[ROUND_UP(_size, 4)] __net_nbr_align;	\
+		uint8_t data[ROUND_UP(_size, __net_nbr_align)]		\
+			__aligned(__net_nbr_align);			\
 	} _name[_count] = {						\
 		[0 ... (_count - 1)] = { .nbr = {			\
 			.idx = NET_NBR_LLADDR_UNKNOWN,			\
 			.remove = _remove,				\
-			.size = ROUND_UP(_size, 4) } },			\
+			.size = ROUND_UP(_size, __net_nbr_align) } },	\
 	}
 
 struct net_nbr_table {

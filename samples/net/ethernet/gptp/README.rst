@@ -152,13 +152,13 @@ If you set :kconfig:option:`CONFIG_NET_GPTP_NUM_PORTS` larger than 1, then gPTP 
 will create multiple TSN ports. This configuration is currently only supported
 in native_sim board. The number of ``zephyr,native-tap`` interfaces defined in
 devicetree must match :kconfig:option:`CONFIG_NET_GPTP_NUM_PORTS`. For two ports,
-build with :file:`overlay-multiport.conf` and :file:`overlay-multiport.overlay`,
+build with :file:`multiport.conf` and :file:`multiport.overlay`,
 which add a second TAP interface:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/ethernet/gptp
    :board: native_sim
-   :gen-args: -DEXTRA_CONF_FILE=overlay-multiport.conf -DEXTRA_DTC_OVERLAY_FILE=overlay-multiport.overlay
+   :gen-args: -DEXTRA_CONF_FILE=multiport.conf -DEXTRA_DTC_OVERLAY_FILE=multiport.overlay
    :goals: build
    :compact:
 
@@ -202,13 +202,13 @@ Static timeReceiver Setup
 On networks built after the IEEE 802.1AS automotive profile the bridge sends
 Sync and Follow_Up but no Announce messages, so the default stack never
 selects a time receiver port. Build the sample with the
-:zephyr_file:`samples/net/ethernet/gptp/overlay-static-time-receiver.conf`
-overlay to pin the port to the time-receiver role instead:
+:zephyr_file:`samples/net/ethernet/gptp/static-time-receiver.conf`
+extra config file to pin the port to the time-receiver role instead:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/ethernet/gptp
    :board: <board to use>
-   :conf: "prj.conf overlay-static-time-receiver.conf"
+   :conf: "prj.conf static-time-receiver.conf"
    :goals: build
    :compact:
 

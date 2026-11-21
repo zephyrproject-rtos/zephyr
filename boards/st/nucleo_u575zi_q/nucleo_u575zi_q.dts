@@ -98,6 +98,7 @@
 		compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
 		reg = <0>;
 		mspi-max-frequency = <DT_FREQ_M(50)>;
+		st,mem-type = "macronix";
 
 		status = "disabled";
 	};

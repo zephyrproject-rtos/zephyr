@@ -102,16 +102,16 @@ typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
 #define STM32_PCD_PHY_EMBEDDED_HS	PCD_PHY_UTMI
 #endif /* CONFIG_STM32_HAL2 */
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-#define DT_DRV_COMPAT st_stm32_otghs
-#define UDC_STM32_IRQ_NAME     otghs
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
-#define DT_DRV_COMPAT st_stm32_otgfs
-#define UDC_STM32_IRQ_NAME     otgfs
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
-#define DT_DRV_COMPAT st_stm32_usb
-#define UDC_STM32_IRQ_NAME     usb
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
+#define UDC_STM32_TARGET_IP_OTG		1
+#endif /* st_stm32_otghs || st_stm32_otgfs */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+#define UDC_STM32_TARGET_IP_ST		1
 #endif
+
+#if defined(UDC_STM32_TARGET_IP_OTG) && defined(UDC_STM32_TARGET_IP_ST)
+#error "SoCs with both OTG and ST USB IP are not supported"
+#endif /* UDC_STM32_TARGET_IP_OTG && UDC_STM32_TARGET_IP_ST */
 
 /*
  * Returns the 'PCD_PHY_Module' value for 'usb_node', which
@@ -294,7 +294,7 @@ static stm32_status_t hal_udc_set_endpoint_receive(stm32_pcd_handle_t *hpcd, uin
 #endif /* CONFIG_STM32_HAL2 */
 }
 
-#if defined(USB) || defined(USB_DRD_FS)
+#if defined(UDC_STM32_TARGET_IP_ST)
 static stm32_status_t hal_udc_pma_config(stm32_pcd_handle_t *hpcd, uint16_t ep_addr,
 					 uint16_t ep_kind, uint32_t pma_address)
 {
@@ -304,7 +304,7 @@ static stm32_status_t hal_udc_pma_config(stm32_pcd_handle_t *hpcd, uint16_t ep_a
 	return HAL_PCDEx_PMAConfig(hpcd, ep_addr, ep_kind, pma_address);
 #endif /* CONFIG_STM32_HAL2 */
 }
-#endif /* USB || USB_DRD_FS */
+#endif /* UDC_STM32_TARGET_IP_ST */
 
 static stm32_status_t hal_udc_set_device_address(stm32_pcd_handle_t *hpcd, uint8_t address)
 {
@@ -878,12 +878,7 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-/*
- * NOTE: This will no longer work if a new SoC contains
- * both an instance of the ST USB IP and an instance of
- * of the ST OTGFS or ST OTGHS USB IPs.
- */
-#if defined(USB) || defined(USB_DRD_FS)
+#if defined(UDC_STM32_TARGET_IP_ST)
 static inline void udc_stm32_mem_init(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -956,7 +951,7 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 
 	return 0;
 }
-#else
+#else /* UDC_STM32_TARGET_IP_ST */
 /*
  * Replacement for HAL_PCDEx_SetTxFiFo() which allows configuring
  * each endpoint's TxFIFO at an arbitrary location in USB SRAM.
@@ -1087,7 +1082,7 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 
 	return 0;
 }
-#endif
+#endif /* UDC_STM32_TARGET_IP_ST */
 
 /* Initializes ep_cfg->addr and ep_cfg->caps (except caps.mps) */
 static void udc_stm32_init_ep_addr_caps(struct udc_ep_config *ep_cfg, uint8_t ep_addr)
@@ -1106,12 +1101,12 @@ static void udc_stm32_init_ep_addr_caps(struct udc_ep_config *ep_cfg, uint8_t ep
 	if (ep_idx == 0u) {
 		ep_cfg->caps.control = 1;
 	} else {
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+#if defined(UDC_STM32_TARGET_IP_OTG)
 		/* OTG IP: non-control endpoints can be used in any mode */
 		ep_cfg->caps.bulk = 1;
 		ep_cfg->caps.interrupt = 1;
 		ep_cfg->caps.iso = 1;
-#else /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb) */
+#else /* UDC_STM32_TARGET_IP_OTG */
 		/*
 		 * ST USB IP non-control endpoints allocation:
 		 *  - first ISO_OUT_EP_NUM accept isochronous OUT only
@@ -1132,7 +1127,7 @@ static void udc_stm32_init_ep_addr_caps(struct udc_ep_config *ep_cfg, uint8_t ep
 			ep_cfg->caps.bulk = 1;
 			ep_cfg->caps.interrupt = 1;
 		}
-#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb) */
+#endif /* UDC_STM32_TARGET_IP_OTG */
 	}
 }
 
@@ -1365,7 +1360,7 @@ static int udc_stm32_host_wakeup(const struct device *dev)
 	}
 
 	/* Must be active from 1ms to 15ms as per reference manual. */
-	k_sleep(K_MSEC(2));
+	k_msleep(2);
 
 	status = hal_udc_remote_wakeup_stop(&priv->pcd);
 	if (status != HAL_OK) {
@@ -1539,16 +1534,14 @@ static int udc_stm32_ep_dequeue(const struct device *dev,
 	LOG_DBG("Dequeue ep 0x%02x", ep_cfg->addr);
 
 	/* TODO: abort OUT endpoints on OTG IP (needs HAL fix?) */
-	if (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb) ||
-	    USB_EP_DIR_IS_IN(ep_cfg->addr)) {
+	if (IS_ENABLED(UDC_STM32_TARGET_IP_ST) || USB_EP_DIR_IS_IN(ep_cfg->addr)) {
 		status = hal_udc_abort_endpoint_transfer(&priv->pcd, ep_cfg->addr);
 		if (status != HAL_OK) {
 			LOG_ERR("Failed to abort endpoint 0x%02x", ep_cfg->addr);
 		}
 	}
 
-	if (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb) ||
-	    USB_EP_DIR_IS_IN(ep_cfg->addr)) {
+	if (IS_ENABLED(UDC_STM32_TARGET_IP_ST) || USB_EP_DIR_IS_IN(ep_cfg->addr)) {
 		/*
 		 * On ST USB IP, there is no restriction on flush.
 		 * On ST OTG_FS/OTG_HS, the TxFIFOs are per-endpoint

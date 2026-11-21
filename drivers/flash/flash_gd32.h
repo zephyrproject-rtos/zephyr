@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 BrainCo Inc.
+ * Copyright (c) 2026 GigaDevice Semiconductor Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +27,8 @@ typedef uint32_t flash_prg_t;
 typedef uint16_t flash_prg_t;
 #elif (1 == SOC_NV_FLASH_PRG_SIZE)
 typedef uint8_t flash_prg_t;
+#elif (8 == SOC_NV_FLASH_PRG_SIZE)
+/* Double-word FMC programs through two 32-bit writes, so flash_prg_t is not defined. */
 #else
 #error "Invalid write-block-size value in FMC DTS"
 #endif

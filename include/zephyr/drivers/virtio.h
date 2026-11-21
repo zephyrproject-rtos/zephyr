@@ -61,7 +61,7 @@ typedef void (*virtio_api_notify_virtqueue)(const struct device *dev, uint16_t q
  * @brief Type definition of VIRTIO API function for getting the device specific config.
  * See virtio_get_device_specific_config() for argument descriptions.
  */
-typedef void *(*virtio_api_get_device_specific_config)(const struct device *dev);
+typedef void *(*virtio_api_get_device_specific_config)(const struct device *dev, size_t *len);
 
 /**
  * @brief Type definition of VIRTIO API function for reading a device feature bit.
@@ -136,7 +136,9 @@ static inline struct virtq *virtio_get_virtqueue(const struct device *dev, uint1
  *
  * Note that according to spec 2.7.13.3 the device may access the buffers as soon
  * as the avail->idx is increased, which is done by virtq_add_buffer_chain, so the
- * device may access the buffers even without notifying it with virtio_notify_virtqueue
+ * device may access the buffers even without notifying it with virtio_notify_virtqueue.
+ * The notification is skipped while the device has suppressed notifications for the
+ * virtqueue, see virtq_notification_needed().
  *
  * @param dev virtio device it operates on
  * @param queue_idx virtqueue to be notified
@@ -150,11 +152,13 @@ static inline void virtio_notify_virtqueue(const struct device *dev, uint16_t qu
  * Returns device specific config
  *
  * @param dev virtio device it operates on
+ * @param len where to store the length of the device specific config in bytes,
+ *            set to 0 if the config is not present; may be NULL
  * @return pointer to the device specific config or NULL if its not present
  */
-static inline void *virtio_get_device_specific_config(const struct device *dev)
+static inline void *virtio_get_device_specific_config(const struct device *dev, size_t *len)
 {
-	return DEVICE_API_GET(virtio, dev)->get_device_specific_config(dev);
+	return DEVICE_API_GET(virtio, dev)->get_device_specific_config(dev, len);
 }
 
 /**

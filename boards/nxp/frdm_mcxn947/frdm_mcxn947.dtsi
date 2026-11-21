@@ -245,7 +245,7 @@ arduino_serial: &flexcomm2_lpuart2 {};
  * to use as the system timer can be controlled through
  * Kconfig option based on application requirements.
  */
-&os_timer {
+&ostimer0 {
 	status = "okay";
 };
 
@@ -377,6 +377,11 @@ arduino_serial: &flexcomm2_lpuart2 {};
 
 &dac0 {
 	pinctrl-0 = <&pinmux_dac0>;
+	pinctrl-names = "default";
+};
+
+&micfil {
+	pinctrl-0 = <&pinmux_micfil>;
 	pinctrl-names = "default";
 };
 

@@ -19,11 +19,11 @@ tests:
   sample.boards.espressif.spiram.octal_80m:
     platform_allow: esp32s3_devkitc/esp32s3/procpu
     extra_configs:
-      - CONFIG_SPIRAM_SPEED_80M=y
-      - CONFIG_SPIRAM_MODE_OCT=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_80M=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_OCT=y
   sample.boards.espressif.spiram.octal_flash:
     platform_allow: esp32s3_devkitc/esp32s3/procpu
     build_only: true
     extra_configs:
-      - CONFIG_SPIRAM_MODE_OCT=y
-      - CONFIG_ESPTOOLPY_OCT_FLASH=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_OCT=y
+      - CONFIG_SOC_ESP32S3_FLASH_OCTAL=y

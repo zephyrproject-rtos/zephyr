@@ -209,7 +209,7 @@ void test_so_bindtodevice(int sock_c, int sock_s, struct net_sockaddr *peer_addr
 	const struct device *dev2 = device_get_binding(DEV2_NAME);
 #endif
 
-	uint8_t send_buf[32];
+	char send_buf[32];
 	uint8_t recv_buf[sizeof(send_buf)] = { 0 };
 
 	ret = zsock_bind(sock_s, bind_addr, bind_addrlen);

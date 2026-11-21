@@ -43,6 +43,7 @@ struct virtio_mmio_data {
 
 struct virtio_mmio_config {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
+	size_t dev_cfg_len;
 };
 
 static inline uint32_t virtio_mmio_read32(const struct device *dev, uint32_t offset)
@@ -98,6 +99,11 @@ struct virtq *virtio_mmio_get_virtqueue(const struct device *dev, uint16_t queue
 static void virtio_mmio_notify_queue(const struct device *dev, uint16_t queue_idx)
 {
 	struct virtio_mmio_data *data = dev->data;
+	struct virtq *vq = virtio_mmio_get_virtqueue(dev, queue_idx);
+
+	if (vq != NULL && !virtq_notification_needed(vq)) {
+		return;
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&data->notify_lock);
 
@@ -106,11 +112,16 @@ static void virtio_mmio_notify_queue(const struct device *dev, uint16_t queue_id
 	k_spin_unlock(&data->notify_lock, key);
 }
 
-static void *virtio_mmio_get_device_specific_config(const struct device *dev)
+static void *virtio_mmio_get_device_specific_config(const struct device *dev, size_t *len)
 {
+	const struct virtio_mmio_config *cfg = DEV_CFG(dev);
 	const mem_addr_t reg = DEVICE_MMIO_NAMED_GET(dev, reg_base) + VIRTIO_MMIO_CONFIG;
 
 	barrier_dmem_fence_full();
+
+	if (len != NULL) {
+		*len = cfg->dev_cfg_len;
+	}
 
 	return (void *)reg;
 }
@@ -329,9 +340,12 @@ static int virtio_mmio_init_common(const struct device *dev)
 };
 
 #define VIRTIO_MMIO_DEFINE(inst)                                                                   \
+	BUILD_ASSERT(DT_INST_REG_SIZE(inst) >= VIRTIO_MMIO_CONFIG,                                 \
+		     "virtio-mmio reg region too small for config space");                         \
 	static struct virtio_mmio_data virtio_mmio_data##inst;                                     \
 	static struct virtio_mmio_config virtio_mmio_config##inst = {                              \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(inst)),                           \
+		.dev_cfg_len = DT_INST_REG_SIZE(inst) - VIRTIO_MMIO_CONFIG,            \
 	};                                                                                         \
 	static int virtio_mmio_init##inst(const struct device *dev)                                \
 	{                                                                                          \

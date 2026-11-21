@@ -99,7 +99,7 @@ config ASSERT_NO_MSG_INFO
 # ASSERT_NO_MSG_INFO and ASSERT_NO_FILE_INFO map to Terse; a disabled or level-0
 # ASSERT leaves it Off. The level stays overridable from prj.conf via the choice
 # below.
-choice
+choice ASSERT_MODULE_DEFAULT_LEVEL_CHOICE
 	prompt "Assertion level for the DEFAULT assert module"
 	depends on ASSERT
 	default ASSERT_MODULE_DEFAULT_LEVEL_OFF if ASSERT_LEVEL = 0

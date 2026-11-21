@@ -392,10 +392,9 @@ static int i2c_ctrl_recovery(const struct device *dev)
 
 static int i2c_ctrl_wait_completion(const struct device *dev)
 {
-	const struct i2c_ctrl_config *const config = dev->config;
 	struct i2c_ctrl_data *const data = dev->data;
 
-	if (k_sem_take(&data->sync_sem, config->transfer_timeout) == 0) {
+	if (k_sem_take(&data->sync_sem, data->transfer_timeout) == 0) {
 		return data->trans_err;
 	} else {
 		return -ETIMEDOUT;
@@ -732,14 +731,14 @@ void npcx_i2c_ctrl_mutex_lock(const struct device *i2c_dev)
 {
 	struct i2c_ctrl_data *const data = i2c_dev->data;
 
-	k_sem_take(&data->lock_sem, K_FOREVER);
+	(void)k_mutex_lock(&data->lock_mutex, K_FOREVER);
 }
 
 void npcx_i2c_ctrl_mutex_unlock(const struct device *i2c_dev)
 {
 	struct i2c_ctrl_data *const data = i2c_dev->data;
 
-	k_sem_give(&data->lock_sem);
+	(void)k_mutex_unlock(&data->lock_mutex);
 }
 
 int npcx_i2c_ctrl_configure(const struct device *i2c_dev, uint32_t dev_config)
@@ -1040,7 +1039,7 @@ static void i2c_target_wk_isr(const struct device *dev, struct npcx_wui *wui)
 #endif /* CONFIG_I2C_TARGET */
 
 int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs, uint8_t num_msgs,
-			   uint16_t addr, uint8_t port)
+			   uint16_t addr, uint8_t port, k_timeout_t timeout)
 {
 	struct i2c_ctrl_data *const data = i2c_dev->data;
 	int ret = 0;
@@ -1080,6 +1079,7 @@ int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs, u
 
 	/* Start i2c transaction */
 	data->port = port;
+	data->transfer_timeout = timeout;
 	data->trans_err = 0;
 	data->addr = addr;
 
@@ -1196,7 +1196,7 @@ static int i2c_ctrl_init(const struct device *dev)
 #endif /* CONFIG_I2C_TARGET */
 
 	/* initialize mutex and semaphore for i2c/smb controller */
-	k_sem_init(&data->lock_sem, 1, 1);
+	k_mutex_init(&data->lock_mutex);
 	k_sem_init(&data->sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	/* Initialize driver status machine */
@@ -1232,7 +1232,6 @@ static int i2c_ctrl_init(const struct device *dev)
 		.base = DT_INST_REG_ADDR(inst),                                                    \
 		.irq = DT_INST_IRQN(inst),                                                         \
 		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                                             \
-		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(inst),                            \
 		IF_ENABLED(CONFIG_I2C_TARGET, (                                                    \
 			.smb_wui = NPCX_DT_WUI_ITEM_BY_NAME(inst, smb_wui),                        \
 			.wakeup_source = DT_INST_PROP_OR(inst, wakeup_source, 0)                   \

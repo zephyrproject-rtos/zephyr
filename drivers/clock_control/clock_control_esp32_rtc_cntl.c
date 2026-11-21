@@ -171,15 +171,17 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 		clock_init_done = true;
 	}
 
-#if CONFIG_ESP_CONSOLE_UART_NUM >= 0
-	esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+#if CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM >= 0
+	esp_rom_output_tx_wait_idle(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM);
 
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
 	if (cpu_cfg->clk_src == SOC_CPU_CLK_SRC_XTAL) {
-		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_XTAL);
-		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
-				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, cpu_cfg->xtal_freq * MHZ(1));
-		esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				 UART_SCLK_XTAL);
+		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				     CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_BAUDRATE,
+				     cpu_cfg->xtal_freq * MHZ(1));
+		esp_rom_output_tx_wait_idle(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM);
 	}
 #endif
 #else
@@ -202,26 +204,29 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 				old_config.freq_mhz);
 	irq_unlock(key);
 
-#if defined(CONFIG_ESP_CONSOLE_UART)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART)
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
 	if (cpu_cfg->clk_src == SOC_CPU_CLK_SRC_PLL) {
 		uint32_t uart_sclk_freq;
 
 		esp_clk_tree_src_get_freq_hz(
 			UART_SCLK_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &uart_sclk_freq);
-		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_DEFAULT);
-		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
-				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_sclk_freq);
+		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				 UART_SCLK_DEFAULT);
+		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				     CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_BAUDRATE,
+				     uart_sclk_freq);
 	}
 #else
 	soc_module_clk_t uart_sclk;
 	uint32_t uart_clock_src_hz;
 
-	uart_ll_get_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), &uart_sclk);
+	uart_ll_get_sclk(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM), &uart_sclk);
 	if (esp_clk_tree_src_get_freq_hz(uart_sclk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
 					 &uart_clock_src_hz) == ESP_OK) {
-		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
-				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_clock_src_hz);
+		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				     CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_BAUDRATE,
+				     uart_clock_src_hz);
 	}
 #endif
 #endif

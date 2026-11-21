@@ -222,8 +222,7 @@ static void tx_isr(void)
 	len = uart_fifo_fill(hci_uart_dev, buf->data, buf->len);
 	net_buf_pull(buf, len);
 	if (!buf->len) {
-		net_buf_unref(buf);
-		buf = NULL;
+		net_buf_drop(&buf);
 	}
 }
 

@@ -539,6 +539,13 @@ ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 			      struct net_sockaddr *src_addr, net_socklen_t *addrlen)
 {
+	union {
+		struct net_sockaddr_storage storage;
+#ifdef CONFIG_NET_SOCKETS_NET_MGMT
+		struct net_sockaddr_nm mgmt;
+#endif
+	} addr_copy;
+	net_socklen_t addr_capacity;
 	net_socklen_t addrlen_copy;
 	ssize_t ret;
 
@@ -547,19 +554,32 @@ ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 		return -1;
 	}
 
-	if (addrlen) {
-		K_OOPS(k_usermode_from_copy(&addrlen_copy, addrlen,
-					sizeof(net_socklen_t)));
+	if (src_addr == NULL || addrlen == NULL) {
+		return z_impl_zsock_recvfrom(sock, buf, max_len, flags, NULL, NULL);
 	}
-	K_OOPS(src_addr && K_SYSCALL_MEMORY_WRITE(src_addr, addrlen_copy));
 
-	ret = z_impl_zsock_recvfrom(sock, (void *)buf, max_len, flags,
-				   (struct net_sockaddr *)src_addr,
-				   addrlen ? &addrlen_copy : NULL);
+	K_OOPS(k_usermode_from_copy(&addr_capacity, addrlen, sizeof(addr_capacity)));
+	addr_capacity = MIN(addr_capacity, sizeof(addr_copy));
+	if (addr_capacity > 0U) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(src_addr, addr_capacity));
+	}
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(addrlen, sizeof(*addrlen)));
 
-	if (addrlen) {
-		K_OOPS(k_usermode_to_copy(addrlen, &addrlen_copy,
-				      sizeof(net_socklen_t)));
+	(void)memset(&addr_copy, 0, sizeof(addr_copy));
+	addrlen_copy = addr_capacity;
+	ret = z_impl_zsock_recvfrom(sock, buf, max_len, flags,
+				   net_sad(&addr_copy.storage), &addrlen_copy);
+
+	/* Some socket implementations leave the source address and length untouched. */
+	if (ret >= 0 && (addrlen_copy != addr_capacity ||
+			 addr_copy.storage.ss_family != NET_AF_UNSPEC)) {
+		size_t copy_len = MIN(addrlen_copy, addr_capacity);
+
+		if (copy_len > 0U) {
+			K_OOPS(k_usermode_to_copy(src_addr, &addr_copy, copy_len));
+		}
+
+		K_OOPS(k_usermode_to_copy(addrlen, &addrlen_copy, sizeof(addrlen_copy)));
 	}
 
 	return ret;
@@ -587,12 +607,15 @@ ssize_t z_impl_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 {
 	struct net_msghdr msg_copy;
+	struct net_sockaddr_storage name_copy;
 	struct net_iovec *user_iov;
 	void *user_name;
 	void *user_control;
 	size_t msg_iov_size;
 	size_t iovlen;
+	size_t control_len;
 	size_t i;
+	net_socklen_t name_capacity;
 	int ret;
 
 	if (msg == NULL) {
@@ -617,6 +640,8 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 	user_name = msg_copy.msg_name;
 	user_control = msg_copy.msg_control;
 	iovlen = msg_copy.msg_iovlen;
+	control_len = msg_copy.msg_controllen;
+	name_capacity = MIN(msg_copy.msg_namelen, sizeof(name_copy));
 
 	msg_copy.msg_name = NULL;
 	msg_copy.msg_control = NULL;
@@ -654,18 +679,20 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 		msg_copy.msg_iov[i].iov_len = elem.iov_len;
 	}
 
-	if (msg_copy.msg_namelen > 0) {
+	if (name_capacity > 0U) {
 		if (user_name == NULL) {
 			errno = EINVAL;
 			goto fail;
 		}
 
-		msg_copy.msg_name = k_usermode_alloc_from_copy(user_name,
-							   msg_copy.msg_namelen);
-		if (msg_copy.msg_name == NULL) {
-			errno = ENOMEM;
+		if (K_SYSCALL_MEMORY_WRITE(user_name, name_capacity)) {
+			errno = EFAULT;
 			goto fail;
 		}
+
+		(void)memset(&name_copy, 0, sizeof(name_copy));
+		msg_copy.msg_name = &name_copy;
+		msg_copy.msg_namelen = name_capacity;
 	}
 
 	if (msg_copy.msg_controllen > 0) {
@@ -689,16 +716,26 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 	 * received.
 	 */
 	if (ret > 0) {
-		if (msg_copy.msg_name != NULL) {
-			K_OOPS(k_usermode_to_copy(user_name,
-						  msg_copy.msg_name,
-						  msg_copy.msg_namelen));
+		if (name_capacity > 0U) {
+			size_t copy_len = MIN(msg_copy.msg_namelen, name_capacity);
+
+			if (copy_len > 0U) {
+				K_OOPS(k_usermode_to_copy(user_name, &name_copy, copy_len));
+			}
+
 			K_OOPS(k_usermode_to_copy(&msg->msg_namelen,
 						  &msg_copy.msg_namelen,
 						  sizeof(msg->msg_namelen)));
 		}
 
 		if (msg_copy.msg_control != NULL) {
+			/* The control data cannot be longer than the buffer
+			 * that was allocated for it.
+			 */
+			if (msg_copy.msg_controllen > control_len) {
+				msg_copy.msg_controllen = control_len;
+			}
+
 			K_OOPS(k_usermode_to_copy(user_control,
 						  msg_copy.msg_control,
 						  msg_copy.msg_controllen));
@@ -747,7 +784,6 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 					  sizeof(msg->msg_flags)));
 	}
 
-	k_free(msg_copy.msg_name);
 	k_free(msg_copy.msg_control);
 
 	/* Note that we need to free according to original iovlen */
@@ -760,10 +796,6 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 	return ret;
 
 fail:
-	if (msg_copy.msg_name) {
-		k_free(msg_copy.msg_name);
-	}
-
 	if (msg_copy.msg_control) {
 		k_free(msg_copy.msg_control);
 	}
@@ -936,12 +968,13 @@ int z_impl_zsock_getsockopt(int sock, int level, int optname,
 int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
 			    void *optval, net_socklen_t *optlen)
 {
+	net_socklen_t user_optlen;
 	net_socklen_t kernel_optlen;
 	void *kernel_optval;
 	int ret;
 
-	K_OOPS(k_usermode_from_copy(&kernel_optlen, optlen,
-		sizeof(net_socklen_t)));
+	K_OOPS(k_usermode_from_copy(&user_optlen, optlen, sizeof(user_optlen)));
+	kernel_optlen = user_optlen;
 
 	if (K_SYSCALL_MEMORY_WRITE(optval, kernel_optlen)) {
 		errno = -EPERM;
@@ -954,6 +987,11 @@ int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
 
 	ret = z_impl_zsock_getsockopt(sock, level, optname,
 				      kernel_optval, &kernel_optlen);
+
+	/* The option value cannot be longer than the buffer that was
+	 * allocated for it.
+	 */
+	kernel_optlen = MIN(kernel_optlen, user_optlen);
 
 	K_OOPS(k_usermode_to_copy((void *)optval, kernel_optval, kernel_optlen));
 	K_OOPS(k_usermode_to_copy((void *)optlen, &kernel_optlen,

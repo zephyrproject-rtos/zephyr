@@ -16,12 +16,40 @@ a Binding request to a server, and the server answers with the address the
 request came from. Interactive Connectivity Establishment (ICE, :rfc:`8445`)
 and TURN (:rfc:`8656`) use the same messages.
 
-The STUN library is a message codec. It parses received messages and builds
-messages to send, with the attributes that ICE adds, and it computes and
-verifies the MESSAGE-INTEGRITY, MESSAGE-INTEGRITY-SHA256 and FINGERPRINT
-attributes. The library does no I/O and keeps no state: every function works on
-buffers of the caller. The application owns the socket, generates the
-transaction ids and retransmits its requests.
+The base of the STUN library is a message codec. It parses received messages
+and builds messages to send, with the attributes that ICE adds, and it computes
+and verifies the MESSAGE-INTEGRITY, MESSAGE-INTEGRITY-SHA256 and FINGERPRINT
+attributes. The codec does no I/O and keeps no state: every function works on
+buffers of the caller. An application that uses the codec alone owns the
+socket, generates the transaction ids and retransmits its requests.
+
+The library comes in layers. The codec is usable alone; the Binding transaction
+and the socket client are enabled together:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 30 45
+
+   * - Layer
+     - Kconfig option
+     - What it does
+   * - Message codec
+     - :kconfig:option:`CONFIG_STUN`
+     - Parses and builds messages, with the attributes of ICE, and computes
+       MESSAGE-INTEGRITY, MESSAGE-INTEGRITY-SHA256 and FINGERPRINT.
+   * - Binding transaction
+     - :kconfig:option:`CONFIG_STUN_CLIENT`
+     - One Binding request, its retransmissions and the response. No I/O and
+       no clock either: the caller sends what it is told to send, feeds in what
+       it receives and says what time it is.
+   * - Socket client
+     - :kconfig:option:`CONFIG_STUN_CLIENT`
+     - Blocking calls that run a transaction over a UDP socket and return the
+       address the server saw.
+
+An application that only wants to know its public address uses the socket
+client. A protocol that shares its socket with STUN, as ICE does, uses the
+transaction and the codec and does the I/O itself.
 
 .. note::
 
@@ -51,15 +79,149 @@ Address families
    functions return ``-EAFNOSUPPORT`` for such an address, and the message
    still parses.
 
+Binding transaction and socket client
+   :kconfig:option:`CONFIG_STUN_CLIENT`, which needs
+   :kconfig:option:`CONFIG_NET_SOCKETS` and :kconfig:option:`CONFIG_NET_UDP`.
+   The transaction id of a request has to be unpredictable, so the client
+   depends on a cryptographically secure random number generator. A server
+   given by host name needs :kconfig:option:`CONFIG_DNS_RESOLVER`; a literal
+   address does not. :kconfig:option:`CONFIG_STUN_CLIENT_SOFTWARE` is what the
+   requests carry in SOFTWARE.
+
+Retransmission schedule
+   The parameters of :rfc:`8489` section 6.2.1 for every Binding transaction of
+   the build: :kconfig:option:`CONFIG_STUN_BINDING_RTO_MS`, the initial
+   retransmission timeout (500 ms by default, 500 to 60000),
+   :kconfig:option:`CONFIG_STUN_BINDING_MAX_TRANSMITS`, Rc, the number of
+   times the request is sent (7 by default, 1 to 16), and
+   :kconfig:option:`CONFIG_STUN_BINDING_FINAL_WAIT_RTO`, Rm, the wait after
+   the last transmission in initial timeouts (16 by default, 1 to 255).
+
 Logging
    :kconfig:option:`CONFIG_STUN_LOG_LEVEL_DBG` and its siblings, available
    under :kconfig:option:`CONFIG_NET_LOG`. Why a received message was refused
    is logged at the debug level only, so that traffic from the network cannot
-   fill the log. Errors are logged for failures of the PSA Crypto backend. Keys
+   fill the log. Errors are logged for failures of the PSA Crypto backend and of
+   the random number generator the client takes its transaction ids from. Keys
    and integrity values are never logged.
 
 Usage
 *****
+
+Finding out the public address
+==============================
+
+:c:func:`stun_client_simple` resolves the server, opens a UDP socket, connects
+it to the server, so that the socket receives only the datagrams of the server,
+asks, and closes the socket:
+
+.. code-block:: c
+
+   #include <zephyr/net/stun_client.h>
+
+   struct net_sockaddr_storage mapped;
+   int rc;
+
+   /* Port 0 is the default port of STUN, 3478; wait 5 seconds at most. */
+   rc = stun_client_simple("stun.example.org", 0, 5000, &mapped);
+   if (rc == 0) {
+           /* mapped is the address the server saw the request come from */
+   }
+
+A name that resolves to several addresses, an IPv4 and an IPv6 one for example,
+is asked at one address after another until one of them answers. The time is
+for the whole call: each address gets an equal part of what is left of it, so an
+address that fails at once leaves its part to the others. With no time given,
+0, each address is asked for as long as the retransmission schedule lasts.
+
+The address tells the public IP address of the device. The port belongs to the
+socket of that one request, which is closed by the time the call returns. To
+learn the address and port that peers can reach a socket of the application at,
+ask from that very socket with :c:func:`stun_client_query`:
+
+.. code-block:: c
+
+   rc = stun_client_query(sock, &server, sizeof(struct net_sockaddr_in), 5000,
+                          &mapped);
+
+For the duration of the call the socket belongs to the transaction: datagrams
+that are not the answer of the server are received and dropped.
+
+The request is retransmitted as :rfc:`8489` section 6.2.1 has it: with the
+default configuration after 0.5, 1.5, 3.5 seconds and so on, for 39.5 seconds in
+all unless the caller sets a shorter time.
+
+The :zephyr:code-sample:`stun-client` sample shows the client in an
+application.
+
+Sharing the socket
+==================
+
+The Binding transaction is for a socket that carries other traffic too. The
+application sends and receives; the transaction says what to send, when to come
+back, and whether a datagram that arrived is its answer:
+
+.. code-block:: c
+
+   static struct stun_binding txn;
+
+   /* Do what the transaction wants done now. */
+   static void run(void)
+   {
+           struct stun_txn_step step;
+
+           while (stun_binding_next_step(&txn, k_uptime_get_32(), &step) == 0) {
+                   switch (step.action) {
+                   case STUN_TXN_SEND:
+                           send_datagram(step.tx, step.tx_len);
+                           continue;
+                   case STUN_TXN_WAIT:
+                           /* run() is to be called again at that time */
+                           set_timer(step.wait_until_ms);
+                           return;
+                   case STUN_TXN_DONE:
+                           /* txn.mapped is the address the server saw */
+                           return;
+                   default:
+                           /* STUN_TXN_FAILED: txn.fail says why */
+                           return;
+                   }
+           }
+   }
+
+   void start(const struct net_sockaddr *server)
+   {
+           uint8_t txid[STUN_TXID_SIZE];
+           struct stun_txn_step step;
+
+           if (sys_csrand_get(txid, sizeof(txid)) != 0) {
+                   return;
+           }
+           if (stun_binding_start(&txn, server, txid, "my-app", k_uptime_get_32(),
+                                  &step) == 0) {
+                   send_datagram(step.tx, step.tx_len);
+                   run();
+           }
+   }
+
+   /* For every datagram, before the other protocols on the socket see it. */
+   bool on_datagram(const struct net_sockaddr *from, const uint8_t *buf, size_t len)
+   {
+           if (!stun_binding_is_response(&txn, buf, len)) {
+                   return false;
+           }
+           (void)stun_binding_on_datagram(&txn, from, buf, len);
+           run();
+           return true;
+   }
+
+A response is accepted only if it comes from the address the request went to
+and carries the transaction id of the request; whatever else arrives changes
+nothing.
+
+The library keeps nothing of a transaction outside its ``struct stun_binding``:
+no timer and no reference to it. To give up a transaction that is in flight,
+zero the structure; it is then ready for :c:func:`stun_binding_start` again.
 
 Receiving a message
 ===================
@@ -211,8 +373,14 @@ Limitations
 
 The following is not part of the library:
 
-* Transport. The library does not send or receive datagrams, retransmit
-  requests or match responses to them.
+* Transactions other than a Binding request without credentials. The
+  transaction builds its request with SOFTWARE and FINGERPRINT only; a request
+  that carries USERNAME and MESSAGE-INTEGRITY, such as an ICE connectivity
+  check, is built with the codec and retransmitted by the application.
+* Retransmission parameters of a single transaction. The initial timeout, Rc
+  and Rm are set with Kconfig options only, for all the transactions of the
+  build; a transaction cannot be started with its own, and the timeout is
+  neither measured nor remembered per server.
 * ICE and TURN. The codec has the attributes of ICE; :c:func:`stun_add_attr` and
   :c:func:`stun_find_attr` carry those of other STUN usages as raw values, and
   :c:func:`stun_add_xor_address` and :c:func:`stun_get_xor_address` the ones in
@@ -229,9 +397,14 @@ Testing
 *******
 
 The tests under :zephyr_file:`tests/net/lib/stun/` check the codec against the
-sample messages of :rfc:`5769` and of :rfc:`8489` Appendix B.1.
+sample messages of :rfc:`5769` and of :rfc:`8489` Appendix B.1, and the Binding
+transaction against the retransmission schedule of :rfc:`8489` section 6.2.1.
+The tests under :zephyr_file:`tests/net/lib/stun_client/` run the socket client
+against a server on the loopback interface.
 
 API Reference
 *************
 
 .. doxygengroup:: stun
+
+.. doxygengroup:: stun_client

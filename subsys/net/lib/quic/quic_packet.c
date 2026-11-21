@@ -27,6 +27,7 @@ struct quic_reply_budget {
 
 #if defined(CONFIG_NET_TEST)
 uint16_t quic_test_reply_budget_spent;
+uint64_t quic_test_reset_final_size;
 #endif
 
 static bool quic_reply_budget_take(struct quic_reply_budget *budget)
@@ -475,7 +476,8 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 
 static int quic_send_reset_stream(struct quic_endpoint *ep,
 				  uint64_t stream_id,
-				  uint64_t error_code)
+				  uint64_t error_code,
+				  uint64_t final_size)
 {
 	uint8_t frame[32];
 	int pos = 0;
@@ -495,11 +497,16 @@ static int quic_send_reset_stream(struct quic_endpoint *ep,
 	}
 	pos += n;
 
-	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, 0 /* final_size */);
+	/* The final size of the stream (RFC 9000 ch. 4.5) */
+	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, final_size);
 	if (n <= 0) {
 		return -EINVAL;
 	}
 	pos += n;
+
+#if defined(CONFIG_NET_TEST)
+	quic_test_reset_final_size = final_size;
+#endif
 
 	NET_DBG("[EP:%p/%d] Sending RESET_STREAM: stream=%" PRIu64
 		" error=0x%" PRIx64,
@@ -554,7 +561,9 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 {
 	uint64_t stream_id, error_code;
 	struct quic_stream *stream;
+	uint64_t final_size;
 	bool local_init;
+	bool repeated;
 	bool is_uni;
 	int pos = 1;
 	int ret;
@@ -633,16 +642,45 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 		}
 	}
 
-	if (stream != NULL && stream->tx_reset) {
-		if (quic_reply_budget_take(budget)) {
-			quic_send_reset_stream(ep, stream_id, error_code);
-		}
-	} else if (stream != NULL) {
-		/* Send RESET_STREAM, our TX side is being abandoned */
-		quic_send_reset_stream(ep, stream_id, error_code);
+	if (stream == NULL) {
+		return pos;
+	}
 
-		/* Mark TX side as reset so future sends return an error */
+	/* The final size is fixed by the first reset: the end of the data
+	 * queued for sending by then, which can be more than bytes_sent while
+	 * a send is under way or a rejected 0-RTT replay is pending. The send
+	 * paths check tx_reset under the same lock before they queue or
+	 * replay data, so nothing is sent past the final size, and every
+	 * RESET_STREAM for the stream carries the same value.
+	 *
+	 * The peer counts the final size against connection flow control
+	 * (RFC 9000 ch. 4.5), so the sent counters are raised to it here and
+	 * the send paths leave them alone once the stream is reset.
+	 */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+
+	repeated = stream->tx_reset;
+	if (!repeated) {
 		stream->tx_reset = true;
+		stream->tx_final_size = stream->tx_buf.base_offset + stream->tx_buf.len;
+
+		if (stream->tx_final_size > stream->bytes_sent) {
+			ep->tx_fc.bytes_sent += stream->tx_final_size - stream->bytes_sent;
+			stream->bytes_sent = stream->tx_final_size;
+		}
+	}
+
+	final_size = stream->tx_final_size;
+
+	k_mutex_unlock(&stream->tx_lock);
+
+	if (repeated) {
+		if (quic_reply_budget_take(budget)) {
+			quic_send_reset_stream(ep, stream_id, error_code, final_size);
+		}
+	} else {
+		/* Send RESET_STREAM, our TX side is being abandoned */
+		quic_send_reset_stream(ep, stream_id, error_code, final_size);
 
 		/*
 		 * Wake any thread blocked in zsock_recv() or waiting on

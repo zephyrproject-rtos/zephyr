@@ -720,6 +720,108 @@ ZTEST(poll_api_1cpu, test_poll_cancel_main_high_prio)
 	test_poll_cancel(false);
 }
 
+#define CANCEL_POLL_TIMEOUT_MS 2000
+#define CANCEL_POLL_SETTLE_MS 20
+#define CANCEL_POLL_WAIT_MS (CANCEL_POLL_TIMEOUT_MS + 1000)
+
+struct cancel_poll_waiter {
+	struct k_poll_event event;
+	int rc;
+};
+
+static struct k_fifo cancel_all_fifo;
+static struct cancel_poll_waiter cancel_poll_waiters[2];
+static struct k_thread cancel_poll_threads[2];
+static K_THREAD_STACK_ARRAY_DEFINE(cancel_poll_stacks, 2, STACK_SIZE);
+
+static void cancel_poll_waiter_thread(void *p1, void *p2, void *p3)
+{
+	struct cancel_poll_waiter *waiter = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_poll_event_init(&waiter->event, K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+			  K_POLL_MODE_NOTIFY_ONLY, &cancel_all_fifo);
+	waiter->rc = k_poll(&waiter->event, 1, K_MSEC(CANCEL_POLL_TIMEOUT_MS));
+}
+
+ZTEST(poll_api, test_poll_cancel_wakes_every_waiter)
+{
+	k_fifo_init(&cancel_all_fifo);
+
+	for (size_t i = 0; i < ARRAY_SIZE(cancel_poll_waiters); i++) {
+		cancel_poll_waiters[i].rc = -EINVAL;
+		(void)k_thread_create(&cancel_poll_threads[i], cancel_poll_stacks[i],
+				      K_THREAD_STACK_SIZEOF(cancel_poll_stacks[i]),
+				      cancel_poll_waiter_thread, &cancel_poll_waiters[i], NULL,
+				      NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	}
+
+	(void)k_sleep(K_MSEC(CANCEL_POLL_SETTLE_MS));
+	k_fifo_cancel_wait(&cancel_all_fifo);
+
+	for (size_t i = 0; i < ARRAY_SIZE(cancel_poll_threads); i++) {
+		zassert_equal(k_thread_join(&cancel_poll_threads[i], K_FOREVER), 0);
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(cancel_poll_waiters); i++) {
+		zassert_equal(cancel_poll_waiters[i].rc, -EINTR, "waiter %zu", i);
+		zassert_equal(cancel_poll_waiters[i].event.state, K_POLL_STATE_CANCELLED,
+			      "waiter %zu", i);
+	}
+}
+
+struct cancel_work_poll {
+	struct k_work_poll work;
+	struct k_poll_event event;
+	struct k_sem done;
+	int result;
+};
+
+static struct cancel_work_poll cancel_work_polls[2];
+
+static void cancel_work_poll_handler(struct k_work *work)
+{
+	struct k_work_poll *pwork = CONTAINER_OF(work, struct k_work_poll, work);
+	struct cancel_work_poll *item = CONTAINER_OF(pwork, struct cancel_work_poll, work);
+
+	item->result = pwork->poll_result;
+	k_sem_give(&item->done);
+}
+
+ZTEST(poll_api, test_poll_cancel_submits_every_work_poll)
+{
+	int rc[ARRAY_SIZE(cancel_work_polls)];
+
+	k_fifo_init(&cancel_all_fifo);
+
+	for (size_t i = 0; i < ARRAY_SIZE(cancel_work_polls); i++) {
+		struct cancel_work_poll *item = &cancel_work_polls[i];
+
+		item->result = -EINVAL;
+		zassert_ok(k_sem_init(&item->done, 0, 1));
+		k_work_poll_init(&item->work, cancel_work_poll_handler);
+		k_poll_event_init(&item->event, K_POLL_TYPE_FIFO_DATA_AVAILABLE,
+				  K_POLL_MODE_NOTIFY_ONLY, &cancel_all_fifo);
+		zassert_ok(k_work_poll_submit(&item->work, &item->event, 1,
+					      K_MSEC(CANCEL_POLL_TIMEOUT_MS)));
+	}
+
+	k_fifo_cancel_wait(&cancel_all_fifo);
+
+	for (size_t i = 0; i < ARRAY_SIZE(cancel_work_polls); i++) {
+		rc[i] = k_sem_take(&cancel_work_polls[i].done, K_MSEC(CANCEL_POLL_WAIT_MS));
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(cancel_work_polls); i++) {
+		zassert_equal(rc[i], 0, "item %zu", i);
+		zassert_equal(cancel_work_polls[i].result, 0, "item %zu", i);
+		zassert_equal(cancel_work_polls[i].event.state, K_POLL_STATE_CANCELLED,
+			      "item %zu", i);
+	}
+}
+
 /* verify multiple pollers */
 static K_SEM_DEFINE(multi_sem, 0, 1);
 

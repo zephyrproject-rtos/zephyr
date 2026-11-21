@@ -114,6 +114,17 @@ static inline bool queue_handle_poll_events(struct k_queue *queue, uint32_t stat
 #endif /* CONFIG_POLL */
 }
 
+static inline bool queue_cancel_poll_events(struct k_queue *queue)
+{
+#ifdef CONFIG_POLL
+	return z_handle_obj_poll_events_all(&queue->poll_events, K_POLL_STATE_CANCELLED);
+#else
+	ARG_UNUSED(queue);
+
+	return false;
+#endif /* CONFIG_POLL */
+}
+
 void z_impl_k_queue_cancel_wait(struct k_queue *queue)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_queue, cancel_wait, queue);
@@ -125,7 +136,7 @@ void z_impl_k_queue_cancel_wait(struct k_queue *queue)
 		resched = true;
 	}
 
-	resched = queue_handle_poll_events(queue, K_POLL_STATE_CANCELLED) || resched;
+	resched = queue_cancel_poll_events(queue) || resched;
 
 	if (resched) {
 		z_reschedule(&queue->lock, key);
@@ -416,7 +427,7 @@ bool k_queue_unique_append(struct k_queue *queue, void *data)
 	sys_sfnode_t *test;
 
 	SYS_SFLIST_FOR_EACH_NODE(&queue->data_q, test) {
-		if (test == (sys_sfnode_t *) data) {
+		if (z_queue_node_peek(test, false) == data) {
 			k_spin_unlock(&queue->lock, key);
 			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, unique_append, queue, false);
 

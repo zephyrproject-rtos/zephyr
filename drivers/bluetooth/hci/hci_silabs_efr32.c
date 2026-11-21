@@ -45,8 +45,14 @@ K_SEM_DEFINE(slz_ll_sem, 0, 1);
 /* Events mask for Link Layer */
 static atomic_t sli_btctrl_events;
 
-/* FIFO for received HCI packets */
-static struct k_fifo slz_rx_fifo;
+/* HCI packet from the Controller, valid until sl_btctrl_hci_transmit_complete() */
+static struct {
+	const uint8_t *data;
+	int16_t len;
+} slz_rx_pkt;
+
+/* Given when slz_rx_pkt holds a packet for the HCI RX thread */
+static K_SEM_DEFINE(slz_rx_sem, 0, 1);
 
 const struct {
 	uint32_t buffer_memory_size;
@@ -151,23 +157,15 @@ static struct net_buf *slz_bt_recv_acl(const uint8_t *data, const uint16_t len)
 	return buf;
 }
 
-/**
- * @brief Transmit HCI message using the currently used transport layer.
- * The HCI calls this function to transmit a full HCI message.
- * @param[in] data Packet type followed by HCI packet data.
- * @param[in] len Length of the `data` parameter
- * @return 0 - on success, or non-zero on failure.
- */
-uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
+static struct net_buf *slz_bt_recv_pkt(const uint8_t *data, int16_t len)
 {
-	struct net_buf *buf;
 	uint8_t packet_type;
 
 	LOG_HEXDUMP_DBG(data, len, "host packet data:");
 
 	if (len < 1) {
 		LOG_ERR("HCI packet type is missing");
-		return -EINVAL;
+		return NULL;
 	}
 
 	packet_type = data[0];
@@ -177,21 +175,32 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 
 	switch (packet_type) {
 	case BT_HCI_H4_EVT:
-		buf = slz_bt_recv_evt(data, len);
-		break;
+		return slz_bt_recv_evt(data, len);
 	case BT_HCI_H4_ACL:
-		buf = slz_bt_recv_acl(data, len);
-		break;
+		return slz_bt_recv_acl(data, len);
 	default:
 		LOG_ERR("Unknown HCI type: %d", packet_type);
-		return -EINVAL;
+		return NULL;
 	}
+}
 
-	if (buf) {
-		k_fifo_put(&slz_rx_fifo, buf);
-	}
-
-	sl_btctrl_hci_transmit_complete(0);
+/**
+ * @brief Transmit HCI message using the currently used transport layer.
+ * The HCI calls this function to transmit a full HCI message.
+ * @param[in] data Packet type followed by HCI packet data.
+ * @param[in] len Length of the `data` parameter
+ * @return 0, also for a packet that the HCI RX thread then drops.
+ */
+uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
+{
+	/* Called in the link layer thread (slz_ll_thread), which must not wait for Host
+	 * buffers. The HCI RX thread copies the packet and then calls
+	 * sl_btctrl_hci_transmit_complete(); until then the Controller keeps data unchanged
+	 * and holds back its next packet.
+	 */
+	slz_rx_pkt.data = data;
+	slz_rx_pkt.len = len;
+	k_sem_give(&slz_rx_sem);
 
 	return 0;
 }
@@ -241,9 +250,16 @@ static void slz_rx_thread_func(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	while (true) {
-		struct net_buf *buf = k_fifo_get(&slz_rx_fifo, K_FOREVER);
+		struct net_buf *buf;
 
-		bt_hci_recv(dev, buf);
+		(void)k_sem_take(&slz_rx_sem, K_FOREVER);
+		buf = slz_bt_recv_pkt(slz_rx_pkt.data, slz_rx_pkt.len);
+		/* From here on the Controller may hand over its next packet in slz_rx_pkt */
+		sl_btctrl_hci_transmit_complete(0);
+
+		if (buf != NULL) {
+			bt_hci_recv(dev, buf);
+		}
 	}
 }
 
@@ -271,7 +287,15 @@ static int slz_bt_open(const struct device *dev)
 	BUILD_ASSERT(CONFIG_BT_SILABS_EFR32_LL_THREAD_PRIO < CONFIG_NUM_METAIRQ_PRIORITIES,
 		     "Config BT_SILABS_EFR32_LL_THREAD_PRIO must be a meta-IRQ priority");
 
-	k_fifo_init(&slz_rx_fifo);
+	/* slz_bt_close() and a failed open stop the threads before sl_btctrl_deinit(), so events
+	 * raised in between by sl_btctrl_raise_events() and a packet handed over in slz_rx_pkt can
+	 * be left over. Drop them: the LL thread starts before sl_btctrl_init() and would pass
+	 * stale events to sl_btctrl_process_events() on a deinitialized Controller, and the HCI RX
+	 * thread would complete a packet that the new Controller never sent.
+	 */
+	k_sem_reset(&slz_ll_sem);
+	(void)atomic_clear(&sli_btctrl_events);
+	k_sem_reset(&slz_rx_sem);
 
 	k_thread_create(&slz_ll_thread, slz_ll_stack, K_KERNEL_STACK_SIZEOF(slz_ll_stack),
 			slz_ll_thread_func, NULL, NULL, NULL,
@@ -323,6 +347,9 @@ static int slz_bt_open(const struct device *dev)
 
 	return 0;
 deinit:
+	k_thread_abort(&slz_ll_thread);
+	k_thread_abort(&slz_rx_thread);
+
 	sl_btctrl_deinit(); /* No-op if controller initialization failed */
 	return ret;
 }

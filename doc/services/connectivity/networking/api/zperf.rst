@@ -150,7 +150,7 @@ Points to keep in mind when comparing with iPerf 2:
 * A test takes a control connection and a data stream on each end, and closed connections linger
   in TIME_WAIT for a while after each test. Allow for them in
   :kconfig:option:`CONFIG_NET_MAX_CONTEXTS` and :kconfig:option:`CONFIG_NET_MAX_CONN`, as the
-  sample's ``overlay-iperf3.conf`` does.
+  sample's ``iperf3.conf`` does.
 
 Session Management
 ******************

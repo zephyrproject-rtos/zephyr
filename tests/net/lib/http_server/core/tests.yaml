@@ -12,12 +12,24 @@ common:
     - qemu_x86
 tests:
   net.http.server.core: {}
+  net.http.server.core.no_hpack_table:
+    extra_configs:
+      - CONFIG_HTTP_SERVER_HPACK_DYNAMIC_TABLE_COUNT=0
   net.http.server.static.fs:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
     platform_allow:
       - native_sim
       - qemu_x86
+  net.http.server.static.fs.min_response_size:
+    # The smallest chunks the static fs handlers send a file in.
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
+    platform_allow:
+      - native_sim
+      - qemu_x86
+    extra_configs:
+      - CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE=0
   net.http.server.websocket:
     # Without NET_TEST, other QEMU boards connect to a host network that the
     # test does not have.

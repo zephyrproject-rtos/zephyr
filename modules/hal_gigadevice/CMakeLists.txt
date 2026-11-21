@@ -1,4 +1,5 @@
 # Copyright (c) 2021 ATL-Electronics
+# Copyright (c) 2026 GigaDevice Semiconductor Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_HAS_GD32_HAL)
@@ -29,6 +30,11 @@ if(${CONFIG_GD32_HXTAL_8MHZ})
 elseif(${CONFIG_GD32_HXTAL_25MHZ})
   zephyr_compile_definitions(HXTAL_VALUE=25000000 HXTAL_VALUE_8M=25000000)
 endif()
+
+  # Series with a DTS-configured clock tree take HXTAL_VALUE from devicetree
+  if(CONFIG_GD32_HXTAL_DT_FREQ)
+    zephyr_compile_definitions(HXTAL_VALUE=${CONFIG_GD32_HXTAL_DT_FREQ})
+  endif()
 
   if((CONFIG_SOC_GD32F405 OR CONFIG_SOC_GD32F407) AND CONFIG_GD32_HXTAL_8MHZ)
     zephyr_compile_definitions(__SYSTEM_CLOCK_168M_PLL_8M_HXTAL=168000000)
@@ -66,6 +72,7 @@ zephyr_library_sources(${gd32_soc_sys_dir}/source/system_${CONFIG_SOC_SERIES}.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_ADC      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_adc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_BKP      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_bkp.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_CAN      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_can.c)
+  zephyr_library_sources_ifdef(CONFIG_USE_GD32_CAU      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_cau.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_CMP      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_cmp.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_CEC      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_cec.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_CRC      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_crc.c)
@@ -80,13 +87,16 @@ zephyr_library_sources_ifdef(CONFIG_USE_GD32_EXTI     ${gd32_std_src_dir}/${CONF
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_FMC      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_fmc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_FWDGT    ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_fwdgt.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_GPIO     ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_gpio.c)
+  zephyr_library_sources_ifdef(CONFIG_USE_GD32_HAU      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_hau.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_I2C      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_IPA      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_ipa.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_IREF     ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_iref.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_MISC     ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_misc.c)
+  zephyr_library_sources_ifdef(CONFIG_USE_GD32_PKCAU    ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_pkcau.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_PMU      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_pmu.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_RCU      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_rcu.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_RTC      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_rtc.c)
+  zephyr_library_sources_ifdef(CONFIG_USE_GD32_SAI      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_sai.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_SDIO     ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_sdio.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_SHRTIMER ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_shrtimer.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_SPI      ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_spi.c)
@@ -99,4 +109,11 @@ zephyr_library_sources_ifdef(CONFIG_USE_GD32_TSI      ${gd32_std_src_dir}/${CONF
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_USART    ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_usart.c)
 zephyr_library_sources_ifdef(CONFIG_USE_GD32_WWDGT    ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_wwdgt.c)
 
+  # GD32F527 HAL splits the CAU and HAU algorithms out of the base sources
+  if(CONFIG_SOC_SERIES_GD32F527)
+    zephyr_library_sources_ifdef(CONFIG_USE_GD32_CAU ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_cau_aes.c)
+    zephyr_library_sources_ifdef(CONFIG_USE_GD32_CAU ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_cau_des.c)
+    zephyr_library_sources_ifdef(CONFIG_USE_GD32_CAU ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_cau_tdes.c)
+    zephyr_library_sources_ifdef(CONFIG_USE_GD32_HAU ${gd32_std_src_dir}/${CONFIG_SOC_SERIES}_hau_sha_md5.c)
+  endif()
 endif()

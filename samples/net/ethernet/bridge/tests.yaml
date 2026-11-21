@@ -16,7 +16,7 @@ tests:
     depends_on: eth
   sample.net.bridge.rstp:
     build_only: true
-    extra_args: EXTRA_CONF_FILE=overlay-rstp.conf
+    extra_args: EXTRA_CONF_FILE=rstp.conf
     platform_allow:
       - native_sim
       - native_sim/native/64

@@ -327,7 +327,7 @@ class CheckPatch(ComplianceTest):
     """
 
     name = "Checkpatch"
-    doc = zephyr_doc_detail_builder("/contribute/guidelines.html#coding-style")
+    doc = zephyr_doc_detail_builder("/contribute/style/index.html#checkpatch")
 
     def run(self):
         checkpatch = ZEPHYR_BASE / 'scripts' / 'checkpatch.pl'
@@ -442,7 +442,7 @@ class ClangFormatCheck(ComplianceTest):
     """
 
     name = "ClangFormat"
-    doc = zephyr_doc_detail_builder("/contribute/guidelines.html#clang-format")
+    doc = zephyr_doc_detail_builder("/contribute/style/index.html#clang-format")
 
     def _process_patch_error(self, file: str, patch: unidiff.PatchedFile):
         for hunk in patch:
@@ -1988,7 +1988,7 @@ class Nits(ComplianceTest):
     """
 
     name = "Nits"
-    doc = zephyr_doc_detail_builder("/contribute/guidelines.html#coding-style")
+    doc = zephyr_doc_detail_builder("/contribute/style/index.html")
 
     def run(self):
         # Loop through added/modified files
@@ -2817,7 +2817,8 @@ class PythonCompatCheck(ComplianceTest):
         ] + py_files
         try:
             result = subprocess.run(cmd, check=False, capture_output=True, cwd=GIT_TOP)
-        except Exception as ex:
+        except Exception as ex:  # noqa: BLE001
+            # blind-except + check=False!? FIXME
             self.error(f"Failed to run vermin: {ex}")
         output = result.stdout.decode("utf-8")
         failed = False
@@ -3223,7 +3224,8 @@ def _run_test(testcase):
         # Let Ctrl-C (SIGINT) abort the whole run instead of being turned into
         # a failure for the current check.
         raise
-    except BaseException:
+    except BaseException:  # noqa: BLE001
+        # Even ruff >= 0.16 cannot understand: test.failure({traceback})
         test.failure(f"An exception occurred in {test.name}:\n{traceback.format_exc()}")
     return test
 

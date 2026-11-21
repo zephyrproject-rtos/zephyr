@@ -516,6 +516,7 @@ static void spi_dma_enable_requests(SPI_TypeDef *spi)
 	}
 }
 
+#ifndef CONFIG_SPI_RTIO
 static void spi_stm32_dma_tx_done(const struct device *dev)
 {
 	const struct spi_stm32_config *cfg = dev->config;
@@ -526,6 +527,7 @@ static void spi_stm32_dma_tx_done(const struct device *dev)
 	}
 #endif /* SPI_SR_FTLVL */
 }
+#endif /* !CONFIG_SPI_RTIO */
 
 static void spi_stm32_dma_rx_done(const struct device *dev, const struct spi_config *config)
 {
@@ -1180,16 +1182,13 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 		tx_cfg->dest_data_size   = tx_cfg->dest_burst_length   = dfs;
 
 		spi_dma_enable_requests(spi);
-		LL_SPI_Enable(spi);
 		spi_stm32_cs_control(dev, true);
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		LL_SPI_StartMasterTransfer(spi);
-#endif /* st_stm32h7_spi */
 
 		data->status_flags = 0;
 		data->tx_len = data->ctx.tx_len;
 		data->rx_len = data->ctx.rx_len;
 
+		/* Arm the DMA, then enable the SPI, see transceive_dma() */
 		if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
 			dma_len = spi_context_max_continuous_chunk(&data->ctx);
 			ret = spi_dma_move_buffers(dev, dma_len);
@@ -1203,7 +1202,15 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 		if (ret != 0) {
 			LOG_ERR("Failed to start SPI DMA transfer");
 			spi_stm32_iodev_complete(dev, -EIO);
+			return;
 		}
+
+		LL_SPI_Enable(spi);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
+			LL_SPI_StartMasterTransfer(spi);
+		}
+#endif /* st_stm32h7_spi */
 
 		return;
 	}
@@ -1394,6 +1401,11 @@ static void spi_stm32_complete(const struct device *dev, int status)
 #endif /* compat st_stm32_spi_fifo*/
 
 	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+#ifdef SPI_SR_FTLVL
+		/* Disable procedure: the TX FIFO empties before BSY is checked */
+		while ((LL_SPI_GetTxFIFOLevel(spi) != 0U) && LL_SPI_IsEnabled(spi)) {
+		}
+#endif /* SPI_SR_FTLVL */
 		while (ll_spi_is_busy(spi) && LL_SPI_IsEnabled(spi)) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 			uint32_t width = SPI_WORD_SIZE_GET(data->ctx.config->operation);
@@ -1940,49 +1952,81 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 #if defined(CONFIG_SPI_STM32_DMA)
 #if !defined(CONFIG_SPI_RTIO)
 
-#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
 #define SPI_STM32_DMA_TIMEOUT_MIN_MS 1000U
 
-/* Count at half the frequency: the prescaler gives an SCK above half the requested one */
-static __noinline k_timeout_t spi_stm32_dma_timeout(const struct device *dev)
+/* Clocks per frame on the wire, idle clocks between frames (midi-clock) included */
+static inline uint32_t spi_stm32_frame_clocks(const struct device *dev,
+					      const struct spi_config *config)
 {
+	uint32_t clocks = SPI_WORD_SIZE_GET(config->operation);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	const struct spi_stm32_config *cfg = dev->config;
-	struct spi_stm32_data *data = dev->data;
-	const struct spi_config *config = data->ctx.config;
-	uint64_t frames = MAX(data->tx_len, data->rx_len);
-	uint32_t frame_clocks = SPI_WORD_SIZE_GET(config->operation) + cfg->midi_clocks;
-	uint64_t timeout_ms = SPI_STM32_DMA_TIMEOUT_MIN_MS;
 
-	if (config->frequency >= 2U) {
-		uint64_t wire_ms =
-			DIV_ROUND_UP(frames * frame_clocks * MSEC_PER_SEC, config->frequency / 2U);
+	clocks += cfg->midi_clocks;
+#else
+	ARG_UNUSED(dev);
+#endif /* st_stm32h7_spi */
 
-		timeout_ms = MAX(timeout_ms, wire_ms + CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE);
+	return clocks;
+}
+
+/* Longest time on the wire, in ms, whose timeout (plus the tolerance) still fits in K_MSEC() */
+#define SPI_STM32_DMA_WIRE_MS_MAX (INT32_MAX - CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE)
+
+/*
+ * Count at half the requested SCK: the prescaler gives an SCK above half of it, unless the
+ * requested SCK is above the fastest SCK. In 32 bits: the rate is rounded down to whole clocks
+ * per ms (or the period up to whole ms), which only lengthens the timeout.
+ */
+static __noinline k_timeout_t spi_stm32_dma_timeout(const struct spi_config *config,
+						    uint32_t frames, uint32_t frame_clocks)
+{
+	const uint32_t half_freq = config->frequency / 2U;
+	uint32_t wire_ms;
+
+	if (half_freq >= MSEC_PER_SEC) {
+		const uint32_t clocks_per_ms = half_freq / MSEC_PER_SEC;
+		/* ceil(frames * frame_clocks / clocks_per_ms) without a product that overflows */
+		const uint32_t whole = frames / clocks_per_ms;
+		const uint32_t part = frames % clocks_per_ms;
+
+		/* part < clocks_per_ms, so wire_ms <= (whole + 1) * frame_clocks */
+		if (whole >= SPI_STM32_DMA_WIRE_MS_MAX / frame_clocks) {
+			return K_MSEC(INT32_MAX);
+		}
+		wire_ms = whole * frame_clocks + DIV_ROUND_UP(part * frame_clocks, clocks_per_ms);
+	} else {
+		const uint32_t ms_per_clock = DIV_ROUND_UP(MSEC_PER_SEC, MAX(half_freq, 1U));
+
+		if (frames > SPI_STM32_DMA_WIRE_MS_MAX / ms_per_clock / frame_clocks) {
+			return K_MSEC(INT32_MAX);
+		}
+		wire_ms = frames * frame_clocks * ms_per_clock;
 	}
 
-	return K_MSEC(MIN(timeout_ms, INT32_MAX));
+	return K_MSEC(MAX(wire_ms + CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE,
+			  SPI_STM32_DMA_TIMEOUT_MIN_MS));
 }
 
 /*
- * At most 0.5 s on the wire at half the frequency and at most 0.5 s of tolerance: the 1 s
+ * At most 0.5 s on the wire at half the requested SCK and at most 0.5 s of tolerance: the 1 s
  * minimum. spi_stm32_dma_timeout() stays out of line, off the path of short transfers.
  */
 static inline k_timeout_t spi_stm32_dma_wait_timeout(const struct device *dev)
 {
-	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
 	const struct spi_config *config = data->ctx.config;
-	uint64_t clocks = (uint64_t)MAX(data->tx_len, data->rx_len) *
-			  (SPI_WORD_SIZE_GET(config->operation) + cfg->midi_clocks);
+	const uint32_t frames = MAX(data->tx_len, data->rx_len);
+	const uint32_t frame_clocks = spi_stm32_frame_clocks(dev, config);
 
 	if ((CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE <= 500) &&
-	    (clocks <= (config->frequency / 4U))) {
+	    (frames <= (config->frequency / 4U) / frame_clocks)) {
 		return K_MSEC(SPI_STM32_DMA_TIMEOUT_MIN_MS);
 	}
 
-	return spi_stm32_dma_timeout(dev);
+	return spi_stm32_dma_timeout(config, frames, frame_clocks);
 }
-#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 
 static int wait_dma_rx_tx_done(const struct device *dev)
 {
@@ -1997,11 +2041,7 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	if (IS_ENABLED(CONFIG_SPI_PERIPHERAL) && spi_context_is_peripheral(&data->ctx)) {
 		timeout = K_FOREVER;
 	} else {
-#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
 		timeout = spi_stm32_dma_wait_timeout(dev);
-#else
-		timeout = K_MSEC(1000);
-#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 	}
 
 #ifdef CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND
@@ -2155,7 +2195,7 @@ static void dma_callback_async(const struct device *spi_dev, uint32_t channel, i
 			LOG_DBG("DMA Tx transfer is done");
 		}
 
-		spi_stm32_dma_tx_done(spi_dev);
+		/* Never wait for the TX FIFO here: SPE may still be clear */
 		data->status_flags |= SPI_STM32_DMA_TX_DONE_FLAG;
 	} else if (channel == data->dma_rx.channel) {
 		/* this part of the transfer ends */
@@ -2304,13 +2344,7 @@ static int transceive_dma(const struct device *dev,
 
 	/* Set request before enabling (otherwise SPI CFG1 reg may be write protected) */
 	spi_dma_enable_requests(spi);
-	LL_SPI_Enable(spi);
 	spi_stm32_cs_control(dev, true);
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
-		LL_SPI_StartMasterTransfer(spi);
-	}
-#endif /* st_stm32h7_spi */
 
 	do {
 		data->status_flags = 0;
@@ -2324,6 +2358,25 @@ static int transceive_dma(const struct device *dev,
 		} else {
 			data->rx_len = data->ctx.rx_len;
 			ret = spi_dma_move_rx_buffers(dev, data->rx_len);
+		}
+
+		if (ret != 0) {
+			break;
+		}
+
+		/*
+		 * Set SPE only once the DMA is armed: once SPE is set, the
+		 * controller drives MOSI whether or not a frame has arrived, which
+		 * stretches the first bit on the wire. Later chunks find the SPI
+		 * enabled.
+		 */
+		if (!LL_SPI_IsEnabled(spi)) {
+			LL_SPI_Enable(spi);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+			if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
+				LL_SPI_StartMasterTransfer(spi);
+			}
+#endif /* st_stm32h7_spi */
 		}
 
 #ifdef CONFIG_SPI_ASYNC
@@ -2726,7 +2779,7 @@ static int spi_stm32_init(const struct device *dev)
 #define STM32_SPI_IRQ_HANDLER(id)
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
-#define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)		\
+#define SPI_DMA_CHANNEL_INIT(index, dir, src_dev, dest_dev)			\
 	.dma_dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),		\
 	.channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),		\
 	.dma_cfg = {								\
@@ -2756,16 +2809,16 @@ static int spi_stm32_init(const struct device *dev)
 
 
 #ifdef CONFIG_SPI_STM32_DMA
-#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)				\
+#define SPI_DMA_CHANNEL(id, dir, src, dest)					\
 	.dma_##dir = {								\
 		COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, dir),			\
-			    (SPI_DMA_CHANNEL_INIT(id, dir, DIR, src, dest)),	\
+			    (SPI_DMA_CHANNEL_INIT(id, dir, src, dest)),		\
 			    (NULL))						\
 		},
 #define SPI_DMA_STATUS_SEM(id)							\
 	.status_sem = Z_SEM_INITIALIZER(spi_stm32_dev_data_##id.status_sem, 0, 1),
 #else
-#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)
+#define SPI_DMA_CHANNEL(id, dir, src, dest)
 #define SPI_DMA_STATUS_SEM(id)
 #endif /* CONFIG_SPI_STM32_DMA */
 
@@ -2815,8 +2868,8 @@ static int spi_stm32_init(const struct device *dev)
 	static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_##id, ctx),		\
 		SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_##id, ctx),		\
-		SPI_DMA_CHANNEL(id, rx, RX, PERIPHERAL, MEMORY)			\
-		SPI_DMA_CHANNEL(id, tx, TX, MEMORY, PERIPHERAL)			\
+		SPI_DMA_CHANNEL(id, rx, PERIPHERAL, MEMORY)			\
+		SPI_DMA_CHANNEL(id, tx, MEMORY, PERIPHERAL)			\
 		SPI_DMA_STATUS_SEM(id)						\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)		\
 		IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &spi_stm32_rtio_##id,))\

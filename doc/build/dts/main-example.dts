@@ -19,10 +19,10 @@
 	soc {
 		i2c1: i2c@40002000 {
 			compatible = "vnd,soc-i2c";
-			label = "I2C_1";
 			reg = <0x40002000 0x1000>;
-			status = "okay";
+			label = "I2C_1";
 			clock-frequency = <100000>;
+			status = "okay";
 		};
 	};
 };

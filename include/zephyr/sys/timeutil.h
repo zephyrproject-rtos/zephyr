@@ -443,6 +443,13 @@ static inline bool timespec_add(struct timespec *a, const struct timespec *b)
 	__ASSERT_NO_MSG((a != NULL) && timespec_is_valid(a));
 	__ASSERT_NO_MSG((b != NULL) && timespec_is_valid(b));
 
+	if (a->tv_sec < 0 && b->tv_sec < 0 && a->tv_sec == SYS_TIME_T_MIN - b->tv_sec - 1 &&
+	    a->tv_nsec + b->tv_nsec >= (long)NSEC_PER_SEC) {
+		a->tv_sec = SYS_TIME_T_MIN;
+		a->tv_nsec += b->tv_nsec - (long)NSEC_PER_SEC;
+		return true;
+	}
+
 #if defined(CONFIG_SPEED_OPTIMIZATIONS) && HAS_BUILTIN(__builtin_add_overflow)
 
 	return !__builtin_add_overflow(a->tv_sec, b->tv_sec, &a->tv_sec) &&
@@ -484,6 +491,12 @@ static inline bool timespec_add(struct timespec *a, const struct timespec *b)
 static inline bool timespec_negate(struct timespec *ts)
 {
 	__ASSERT_NO_MSG((ts != NULL) && timespec_is_valid(ts));
+
+	if ((ts->tv_sec == SYS_TIME_T_MIN) && (ts->tv_nsec > 0)) {
+		ts->tv_sec = SYS_TIME_T_MAX;
+		ts->tv_nsec = (long)NSEC_PER_SEC - ts->tv_nsec;
+		return true;
+	}
 
 #if defined(CONFIG_SPEED_OPTIMIZATIONS) && HAS_BUILTIN(__builtin_sub_overflow)
 

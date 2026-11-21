@@ -7,6 +7,7 @@
 
 #include <zephyr/drivers/gnss.h>
 #include <zephyr/drivers/gnss/gnss_publish.h>
+#include <zephyr/sys/util.h>
 
 #include "gnss_ubx_common.h"
 
@@ -53,6 +54,24 @@ void gnss_ubx_common_pvt_callback(struct modem_ubx *ubx, const struct ubx_frame 
 		}
 	}
 
+	struct gnss_time utc = { 0 };
+
+	const uint8_t req_valid = UBX_NAV_PVT_VALID_DATE |
+				  UBX_NAV_PVT_VALID_TIME |
+				  UBX_NAV_PVT_VALID_UTC_TOD;
+
+	if ((nav_pvt->time.valid & req_valid) == req_valid) {
+		int32_t ms = (nav_pvt->time.second * 1000) +
+			     DIV_ROUND_CLOSEST(nav_pvt->time.nano, 1000000);
+
+		utc.hour = nav_pvt->time.hour;
+		utc.minute = nav_pvt->time.minute;
+		utc.millisecond = (uint16_t)CLAMP(ms, 0, 60999);
+		utc.month_day = nav_pvt->time.day;
+		utc.month = nav_pvt->time.month;
+		utc.century_year = (uint8_t)(nav_pvt->time.year % 100);
+	}
+
 	struct gnss_data gnss_data = {
 		.info = {
 			.satellites_cnt = nav_pvt->nav.num_sv,
@@ -71,15 +90,7 @@ void gnss_ubx_common_pvt_callback(struct modem_ubx *ubx, const struct ubx_frame 
 			.speed = nav_pvt->nav.ground_speed,
 			.altitude = nav_pvt->nav.hmsl,
 		},
-		.utc = {
-			.hour = nav_pvt->time.hour,
-			.minute = nav_pvt->time.minute,
-			.millisecond = (nav_pvt->time.second * 1000) +
-					(nav_pvt->time.nano / 1000000),
-			.month_day = nav_pvt->time.day,
-			.month = nav_pvt->time.month,
-			.century_year = (nav_pvt->time.year % 100),
-		},
+		.utc = utc,
 	};
 
 	gnss_publish_data(dev, &gnss_data);

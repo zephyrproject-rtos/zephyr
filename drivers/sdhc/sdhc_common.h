@@ -21,6 +21,36 @@
 #include <zephyr/drivers/sdhc.h>
 
 /**
+ * @name UHS-I bus speed modes of the sd-uhs-modes property
+ * @{
+ */
+#define SDHC_COMMON_SD_UHS_SDR50  BIT(0) /**< SDR50 */
+#define SDHC_COMMON_SD_UHS_DDR50  BIT(1) /**< DDR50 */
+#define SDHC_COMMON_SD_UHS_SDR104 BIT(2) /**< SDR104 */
+/** All UHS-I bus speed modes */
+#define SDHC_COMMON_SD_UHS_ALL                                                                     \
+	(SDHC_COMMON_SD_UHS_SDR50 | SDHC_COMMON_SD_UHS_DDR50 | SDHC_COMMON_SD_UHS_SDR104)
+/** @} */
+
+/** @cond INTERNAL_HIDDEN */
+#define SDHC_COMMON_SD_UHS_MODE_DT_INST(n, mode, bit)                                              \
+	(DT_INST_ENUM_HAS_VALUE(n, sd_uhs_modes, mode) ? (bit) : 0)
+/** @endcond */
+
+/**
+ * @brief UHS-I bus speed modes allowed by the sd-uhs-modes property of an instance
+ *
+ * @param n DT instance number.
+ * @return Bitmask of SDHC_COMMON_SD_UHS_* values, all modes if the property is absent.
+ */
+#define SDHC_COMMON_SD_UHS_MODES_DT_INST(n)                                                        \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, sd_uhs_modes),                                        \
+		    ((SDHC_COMMON_SD_UHS_MODE_DT_INST(n, sdr50, SDHC_COMMON_SD_UHS_SDR50) |       \
+		      SDHC_COMMON_SD_UHS_MODE_DT_INST(n, ddr50, SDHC_COMMON_SD_UHS_DDR50) |       \
+		      SDHC_COMMON_SD_UHS_MODE_DT_INST(n, sdr104, SDHC_COMMON_SD_UHS_SDR104))),    \
+		    (SDHC_COMMON_SD_UHS_ALL))
+
+/**
  * @brief SD host controller common configuration
  */
 struct sdhc_common_config {
@@ -31,6 +61,7 @@ struct sdhc_common_config {
 	uint32_t max_bus_freq;          /**< Max bus frequency (Hz) */
 	uint32_t power_delay_ms;        /**< Delay for power up */
 	uint8_t bus_width;              /**< Data bus width */
+	uint8_t sd_uhs_modes;           /**< Allowed UHS-I modes (SDHC_COMMON_SD_UHS_*) */
 	bool mmc_hs200_1_8v;            /**< HS200 support */
 	bool mmc_hs400_1_8v;            /**< HS400 support */
 	bool mmc_hs400_enhanced_strobe; /**< HS400 enhanced strobe mode support */
@@ -48,6 +79,7 @@ struct sdhc_common_config {
 		.max_bus_freq = DT_INST_PROP(n, max_bus_freq),                           \
 		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                       \
 		.bus_width = DT_INST_PROP_OR(n, bus_width, 1),                           \
+		.sd_uhs_modes = SDHC_COMMON_SD_UHS_MODES_DT_INST(n),                     \
 		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),                       \
 		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                       \
 		.mmc_hs400_enhanced_strobe = DT_INST_PROP(n, mmc_hs400_enhanced_strobe), \
@@ -115,5 +147,17 @@ static inline const char *sdhc_timing_mode_str(enum sdhc_timing_mode timing)
  * @param cfg   DT-derived configuration for the host controller.
  */
 void sdhc_common_dt_props_init(struct sdhc_host_props *props, const struct sdhc_common_config *cfg);
+
+/**
+ * @brief Restrict host capabilities with DT-derived configuration.
+ *
+ * Clears the UHS-I bus speed modes in @p caps that @p cfg does not allow.
+ * Call it after the host capabilities are read from the controller.
+ *
+ * @param caps Host capabilities to restrict.
+ * @param cfg  DT-derived configuration for the host controller.
+ */
+void sdhc_common_dt_caps_restrict(struct sdhc_host_caps *caps,
+				  const struct sdhc_common_config *cfg);
 
 #endif /* ZEPHYR_DRIVERS_SDHC_SDHC_COMMON_H_ */

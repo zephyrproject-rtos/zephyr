@@ -152,6 +152,17 @@ static ssize_t znet_mgmt_recvfrom(struct net_mgmt_socket *mgmt, void *buf,
 	size_t info_len;
 	int ret;
 
+	if (addrlen == NULL) {
+		/* As for the other address families, no address without addrlen */
+		nm_addr = NULL;
+	}
+
+	/* Check before waiting, so that no event is consumed and then dropped */
+	if (nm_addr != NULL && *addrlen < sizeof(*nm_addr)) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	if (flags & ZSOCK_MSG_DONTWAIT) {
 		timeout = K_NO_WAIT;
 	}
@@ -200,6 +211,8 @@ again:
 		nm_addr->nm_pid = mgmt->pid;
 		nm_addr->nm_family = NET_AF_NET_MGMT;
 		nm_addr->nm_mask = raised_event;
+
+		*addrlen = sizeof(*nm_addr);
 	}
 
 	if (info) {

@@ -514,6 +514,13 @@ static int sx126x_add_reg_to_retention(const struct device *dev, uint16_t addr)
 	return sx126x_hal_write_regs(dev, SX126X_REG_RETENTION_LIST, buf, sizeof(buf));
 }
 
+static int sx126x_clear_device_errors(const struct device *dev)
+{
+	const uint8_t buf[2] = {0};
+
+	return sx126x_hal_write_cmd(dev, SX126X_CMD_CLR_DEVICE_ERRORS, buf, sizeof(buf));
+}
+
 static int sx126x_chip_init(const struct device *dev)
 {
 	const struct sx126x_hal_config *config = dev->config;
@@ -539,6 +546,13 @@ static int sx126x_chip_init(const struct device *dev)
 						   config->tcxo_startup_delay_ms);
 		if (ret < 0) {
 			LOG_ERR("Set TCXO failed: %d", ret);
+			return ret;
+		}
+
+		/* A TCXO leaves XOSC_START_ERR latched after reset. */
+		ret = sx126x_clear_device_errors(dev);
+		if (ret < 0) {
+			LOG_ERR("Clear device errors failed: %d", ret);
 			return ret;
 		}
 
@@ -706,6 +720,7 @@ int sx126x_set_sleep(const struct device *dev)
 
 static int sx126x_ensure_ready(const struct device *dev)
 {
+	const struct sx126x_hal_config *config = dev->config;
 	int ret;
 
 	/* Re-enable DIO1 interrupt */
@@ -728,6 +743,11 @@ static int sx126x_ensure_ready(const struct device *dev)
 	ret = sx126x_hal_wakeup(dev);
 	if (ret < 0) {
 		return ret;
+	}
+
+	/* Clear TCXO startup errors before starting a new radio operation. */
+	if (config->dio3_tcxo_enable) {
+		return sx126x_clear_device_errors(dev);
 	}
 
 	return 0;

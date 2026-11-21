@@ -13,7 +13,7 @@ static bool process_msg_from_buffer(const struct shell *sh);
 
 int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx)
 {
-	z_shell_print_stream(ctx, data, length);
+	z_shell_print_stream(ctx, (const char *)data, length);
 	return length;
 }
 

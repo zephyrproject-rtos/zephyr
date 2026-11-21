@@ -75,7 +75,7 @@ tests:
     # Writing MIP does not pend Espressif CPU interrupt lines.
     filter: >
       not CONFIG_TRUSTED_EXECUTION_NONSECURE and not CONFIG_RISCV_S_MODE
-      and not CONFIG_SOC_FAMILY_ESPRESSIF_ESP32
+      and not CONFIG_SOC_FAMILY_ESPRESSIF
   arch.shared_interrupt.lto: &shared-interrupt-lto
     platform_exclude:
       # excluded because of failures during test_prevent_interruption
@@ -118,7 +118,7 @@ tests:
     filter: >
       not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
       and not CONFIG_CODE_DATA_RELOCATION and not CONFIG_RISCV_S_MODE
-      and not CONFIG_SOC_FAMILY_ESPRESSIF_ESP32
+      and not CONFIG_SOC_FAMILY_ESPRESSIF
   arch.shared_interrupt.lto.speed:
     <<: *shared-interrupt-lto
     extra_configs:

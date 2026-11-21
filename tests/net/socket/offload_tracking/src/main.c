@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <string.h>
 
 #include <zephyr/logging/log.h>
@@ -31,6 +32,8 @@ static int offload_type;
 static int offload_proto;
 static int offload_obj;
 static int test_sock = -1;
+static bool offload_poll_called;
+static int offload_poll_nfds;
 
 /* Local binding the mock engine recorded, echoed back through getsockname(). */
 static struct net_sockaddr_storage offload_bound_addr;
@@ -109,9 +112,38 @@ static int offload_getsockopt(void *obj, int level, int optname, void *optval,
 	return 0;
 }
 
+/* poll_prepare returns -EXDEV, so poll() on a native TLS socket layered on
+ * the mock goes through the TLS poll offload wrapper, which then calls
+ * poll_offload here.
+ */
+static int offload_poll_prepare(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev,
+				struct k_poll_event *pev_end)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(pfd);
+	ARG_UNUSED(pev);
+	ARG_UNUSED(pev_end);
+
+	return -EXDEV;
+}
+
+static int offload_poll_offload(void *obj, struct zvfs_pollfd *fds, int nfds, int timeout)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(fds);
+	ARG_UNUSED(timeout);
+
+	offload_poll_nfds = nfds;
+	offload_poll_called = true;
+
+	return 0;
+}
+
 static const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.fd_vtable = {
 			.close2 = offload_close,
+			.poll_prepare = offload_poll_prepare,
+			.poll_offload = offload_poll_offload,
 		},
 	.bind = offload_bind,
 	.getsockopt = offload_getsockopt,
@@ -434,3 +466,63 @@ ZTEST(net_socket_offload_tracking, test_ephemeral_port_tracked)
 
 ZTEST_SUITE(net_socket_offload_tracking, NULL, NULL, offload_tracking_before,
 	    offload_tracking_after, NULL);
+
+static void prepare_poll_fds(struct zsock_pollfd *fds, size_t count)
+{
+	for (size_t i = 0; i < count; i++) {
+		fds[i].fd = -1;
+		fds[i].events = 0;
+		fds[i].revents = 0;
+	}
+
+	fds[0].fd = test_sock;
+	fds[0].events = ZSOCK_POLLOUT;
+}
+
+/* poll() on native TLS over an offloaded transport passes up to
+ * CONFIG_ZVFS_POLL_MAX entries to the offloaded poll.
+ */
+ZTEST(net_socket_offload_poll, test_tls_poll_max_nfds)
+{
+	struct zsock_pollfd fds[CONFIG_ZVFS_POLL_MAX];
+	int ret;
+
+	prepare_poll_fds(fds, ARRAY_SIZE(fds));
+
+	ret = zsock_poll(fds, ARRAY_SIZE(fds), 0);
+	zassert_equal(ret, 0, "poll() failed (%d, errno %d)", ret, errno);
+	zassert_true(offload_poll_called, "Offloaded poll was not called");
+	zassert_equal(offload_poll_nfds, ARRAY_SIZE(fds), "Wrong nfds passed to offload");
+	zassert_equal(fds[0].fd, test_sock, "Descriptor was not restored");
+}
+
+/* One entry more than CONFIG_ZVFS_POLL_MAX fails with EINVAL before the
+ * offloaded poll is called or the caller's descriptors are touched.
+ */
+ZTEST(net_socket_offload_poll, test_tls_poll_nfds_too_large)
+{
+	struct zsock_pollfd fds[CONFIG_ZVFS_POLL_MAX + 1];
+	int ret;
+
+	prepare_poll_fds(fds, ARRAY_SIZE(fds));
+
+	ret = zsock_poll(fds, ARRAY_SIZE(fds), 0);
+	zassert_equal(ret, -1, "poll() should fail");
+	zassert_equal(errno, EINVAL, "Wrong errno (%d)", errno);
+	zassert_false(offload_poll_called, "Offloaded poll should not be called");
+	zassert_equal(fds[0].fd, test_sock, "Descriptor was modified");
+}
+
+static void offload_poll_before(void *dummy)
+{
+	offload_tracking_before(dummy);
+
+	offload_poll_called = false;
+	offload_poll_nfds = 0;
+
+	test_sock = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_2);
+	zassert_true(test_sock >= 0, "socket() failed (errno %d)", errno);
+	zassert_true(offload_socket_created, "TLS transport was not offloaded");
+}
+
+ZTEST_SUITE(net_socket_offload_poll, NULL, NULL, offload_poll_before, offload_tracking_after, NULL);

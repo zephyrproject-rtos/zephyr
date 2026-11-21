@@ -41,6 +41,15 @@ Security Vulnerability Related
 Libraries / Subsystems
 **********************
 
+* Architectures
+
+  * arm64: the x19-x28 callee-saved registers are now captured in the exception
+    stack frame on the paths that may dump or unwind it (synchronous faults,
+    SError, kernel oops and syscall entry) and are included in the coredump
+    architecture block, version 3, when
+    :kconfig:option:`CONFIG_EXTRA_EXCEPTION_INFO` is enabled. The gdbstub
+    coredump decoder was updated accordingly.
+
 * Bluetooth
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
@@ -75,6 +84,11 @@ Libraries / Subsystems
   * The native backend now supports the AS923 region
     (:kconfig:option:`CONFIG_LORAWAN_REGION_AS923`).
 
+* Mbed TLS
+
+  * :kconfig:option:`CONFIG_MBEDTLS_SSL_CLI_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_SSL_SRV_C`
+
 * Networking
 
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client
@@ -86,6 +100,9 @@ Libraries / Subsystems
     longer held back by the client's delayed acknowledgements. Applications that
     prefer Nagle's algorithm can disable
     :kconfig:option:`CONFIG_HTTP_SERVER_TCP_NODELAY`.
+  * HTTP server: HTTPS services no longer run the TLS handshake inside ``accept()``. A client that
+    opens a connection and then stalls its handshake used to stop the whole server, HTTP services
+    included, for up to :kconfig:option:`CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT` per connection.
   * The connection manager tracks name resolution readiness, see
     :ref:`conn_mgr_monitoring_dns`: :c:macro:`NET_EVENT_L4_DNS_READY`,
     :c:macro:`NET_EVENT_L4_DNS_LOST` and :c:func:`conn_mgr_dns_is_ready`.
@@ -104,7 +121,8 @@ Libraries / Subsystems
     preference of IPv4, see the :ref:`migration guide <migration_4.6>`.
   * Added the :ref:`STUN <stun_interface>` library, a codec for the messages of
     :rfc:`8489` with the attributes of ICE (:rfc:`8445`): parsing, building,
-    MESSAGE-INTEGRITY, FINGERPRINT and the address attributes.
+    MESSAGE-INTEGRITY, FINGERPRINT and the address attributes. A device finds out
+    its public address with the Binding transaction or the blocking socket client.
 
   * Ethernet bridge
 
@@ -140,6 +158,11 @@ Libraries / Subsystems
 
   * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
     (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
+
+* USB Type-C
+
+  * Dual-role ports can prefer the Sink role through the Try.SNK and TryWait.SRC states
+    (:kconfig:option:`CONFIG_USBC_CSM_DRP_TRY_SNK`).
 
 * Utilities
 
@@ -184,10 +207,20 @@ Devicetree
 Other notable changes
 *********************
 
+* Architectures
+
+  * ARM Cortex-A/R: with :kconfig:option:`CONFIG_USE_SWITCH`, ISRs run in SYS mode and nested
+    interrupts use the interrupt stack, which fixes return address corruption by a nested IRQ
+    (:github:`122601`).
+
 * Bluetooth
 
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
+
+* Hardware information
+
+  * NXP RW61x hwinfo reports PM4 wakeup resets as :c:macro:`RESET_LOW_POWER_WAKE`.
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write

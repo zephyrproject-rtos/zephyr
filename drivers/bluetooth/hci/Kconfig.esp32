@@ -629,7 +629,7 @@ config ESP32_BT_LE_SLEEP_ENABLE
 	bool "BLE sleep mode"
 	depends on PM && TICKLESS_KERNEL
 	default y
-	select MAC_BB_PD if SOC_SERIES_ESP32C6
+	select ESP32_MAC_BB_PD if SOC_SERIES_ESP32C6
 	help
 	  Allow controller to enter low-power sleep during idle periods.
 

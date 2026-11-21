@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Zephyr authors
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -125,7 +126,9 @@ extern "C" {
 #define PROCESSOR_NAME "cortex-a32"
 #endif
 #elif defined(CONFIG_ARM64)
-#if defined(CONFIG_CPU_CORTEX_A53)
+#if defined(CONFIG_CPU_CORTEX_A35)
+#define PROCESSOR_NAME "cortex-a35"
+#elif defined(CONFIG_CPU_CORTEX_A53)
 #define PROCESSOR_NAME "cortex-a53"
 #elif defined(CONFIG_CPU_CORTEX_A55)
 #define PROCESSOR_NAME "cortex-a55"

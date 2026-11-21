@@ -21,7 +21,7 @@ appcpu_iram_end = USER_IRAM_END - APPCPU_DRAM_SIZE;
 appcpu_iram_org = appcpu_iram_end - APPCPU_IRAM_SIZE;
 appcpu_iram_len = APPCPU_IRAM_SIZE;
 
-appcpu_dram_org = SRAM1_DRAM_USER_START;
+appcpu_dram_org = APPCPU_DRAM_ORG;
 appcpu_dram_len = APPCPU_DRAM_SIZE;
 
 /* Aliases */
@@ -73,7 +73,7 @@ PROVIDE(_memmap_vecbase_reset = 0x40000450);
 PROVIDE(_memmap_reset_vector = 0x40000400);
 
 /* Heap size calculations for APPCPU */
-_heap_sentry = BOOTLOADER_DRAM_SEG_START + APPCPU_DRAM_SIZE;
+_heap_sentry = appcpu_dram_org + appcpu_dram_len;
 _libc_heap_size = _heap_sentry - _end;
 
 SECTIONS
@@ -111,7 +111,7 @@ SECTIONS
      */
     LONG(ADDR(.dram0.data))
     LONG(LOADADDR(.dram0.data))
-    LONG(_data_end - _data_start)
+    LONG(_data_end - ADDR(.dram0.data))
   } > metadata
 
   #include <zephyr/linker/rel-sections.ld>
@@ -494,3 +494,6 @@ SECTIONS
 
 ASSERT(((_iram_end - ORIGIN(iram0_1_seg)) <= LENGTH(iram0_1_seg)),
           "IRAM0 segment data does not fit.")
+
+ASSERT((ORIGIN(dram0_1_seg) + LENGTH(dram0_1_seg)) <= SRAM1_DRAM_END,
+       "APPCPU DRAM does not fit in SRAM1.")

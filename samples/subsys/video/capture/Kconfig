@@ -9,27 +9,27 @@ config VIDEO_SOURCE_CROP_LEFT
 	int "Crop area left value"
 	default 0
 	help
-	   Left value of the crop area within the video source.
+	  Left value of the crop area within the video source.
 
 config VIDEO_SOURCE_CROP_TOP
 	int "Crop area top value"
 	default 0
 	help
-	   Top value of the crop area within the video source.
+	  Top value of the crop area within the video source.
 
 config VIDEO_SOURCE_CROP_WIDTH
 	int "Crop area width value"
 	default 0
 	help
-	   Width value of the crop area within the video source.
-	   If set to 0, the crop is not applied.
+	  Width value of the crop area within the video source.
+	  If set to 0, the crop is not applied.
 
 config VIDEO_SOURCE_CROP_HEIGHT
 	int "Crop area height value"
 	default 0
 	help
-	   Height value of the crop area within the video source.
-	   If set to 0, the crop is not applied.
+	  Height value of the crop area within the video source.
+	  If set to 0, the crop is not applied.
 
 config VIDEO_FRAME_HEIGHT
 	int "Height of the video frame"
@@ -66,8 +66,7 @@ config VIDEO_CAM_NUM_BUFS
 	  The rest of the buffer pool will be used for other purposes such as transformation.
 
 choice VIDEO_TRANSFORM
-	prompt "Video transform implementation"
-	bool
+	bool "Video transform implementation"
 	optional
 	help
 	  The captured frame will go through m2m transforms defined in a separate .c file.

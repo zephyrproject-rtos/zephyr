@@ -79,7 +79,7 @@ enum bt_gmap_ugg_feat {
 	 * @brief Support for receiving at least two channels of audio, each in a separate CIS
 	 *
 	 * Requires @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT} > 1 and
-	 * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT} > 1
+	 * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT} > 1
 	 */
 	BT_GMAP_UGG_FEAT_MULTISINK = BIT(2U),
 };

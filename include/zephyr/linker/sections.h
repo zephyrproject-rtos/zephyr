@@ -47,15 +47,15 @@
 #define _KINETIS_FLASH_CONFIG_SECTION_NAME  kinetis_flash_config
 #define _TI_CCFG_SECTION_NAME	        .ti_ccfg
 
-#define _ITCM_SECTION_NAME		.itcm
-
-#define _DTCM_DATA_SECTION_NAME	        .dtcm_data
-#define _DTCM_BSS_SECTION_NAME		.dtcm_bss
-#define _DTCM_NOINIT_SECTION_NAME	.dtcm_noinit
-
 #define _OCM_DATA_SECTION_NAME	        .ocm_data
 #define _OCM_BSS_SECTION_NAME		.ocm_bss
 #endif
+
+/* TCM sections */
+#define _ITCM_SECTION_NAME		.itcm
+#define _DTCM_DATA_SECTION_NAME	        .dtcm_data
+#define _DTCM_BSS_SECTION_NAME		.dtcm_bss
+#define _DTCM_NOINIT_SECTION_NAME	.dtcm_noinit
 
 #define _IMX_BOOT_CONF_SECTION_NAME	.boot_hdr.conf
 #define _IMX_BOOT_DATA_SECTION_NAME	.boot_hdr.data

@@ -7,10 +7,34 @@
 #include <zephyr/ztest.h>
 #include <soc.h>
 #include <stm32_bitops.h>
+#include <stm32h7xx_ll_pwr.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 LOG_MODULE_REGISTER(test);
+
+#define PWRC_NODE    DT_INST(0, st_stm32h7_pwr)
+#define VOS          DT_PROP_OR(PWRC_NODE, voltage_scale, 0)
+#define EXPECTED_VOS (uint32_t)CONCAT(LL_PWR_REGU_VOLTAGE_SCALE, VOS)
+
+ZTEST(stm32_syclck_config, test_vos_config)
+{
+	uint32_t vos = LL_PWR_GetRegulVoltageScaling();
+
+	zassert_equal(EXPECTED_VOS, vos, "Expected voltage scale: %u. Actual voltage scale: %u",
+		      EXPECTED_VOS, vos);
+
+#if defined(SYSCFG_PWRCR_ODEN)
+	if (VOS == 0) {
+		zassert_true((SYSCFG->PWRCR & SYSCFG_PWRCR_ODEN) != 0U,
+				"ODEN bit not set for VOS0");
+	} else {
+		zassert_true((SYSCFG->PWRCR & SYSCFG_PWRCR_ODEN) == 0U,
+				"ODEN bit set for non-VOS0 scale");
+	}
+#endif
+}
 
 ZTEST(stm32_syclck_config, test_sysclk_freq)
 {

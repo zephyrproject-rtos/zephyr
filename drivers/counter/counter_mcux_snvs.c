@@ -252,6 +252,7 @@ void mcux_snvs_isr(const struct device *dev)
 		}
 	}
 
+#ifdef MCUX_SNVS_SRTC
 	if (SNVS_SRTC_GET_ALARM_FLAGS(config->base)) {
 		/* Clear alarm flag */
 		SNVS_SRTC_CLEAR_ALARM_FLAGS(config->base);
@@ -262,6 +263,7 @@ void mcux_snvs_isr(const struct device *dev)
 			cb(dev, 1, current, data->alarm_lp_srtc_user_data);
 		}
 	}
+#endif
 }
 
 int mcux_snvs_rtc_set(const struct device *dev, uint32_t ticks)
