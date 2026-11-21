@@ -348,6 +348,12 @@ function(dts_gen_defines)
     ${EXTRA_GEN_DEFINES_ARGS}
   )
 
+  # Shorten bindings paths of modules outside the Zephyr tree to $WEST_TOPDIR
+  # so that the generated header does not depend on where the workspace lives.
+  if(WEST_TOPDIR)
+    list(APPEND cmd_gen_defines --west-topdir ${WEST_TOPDIR})
+  endif()
+
   execute_process(
     COMMAND ${cmd_gen_defines}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
