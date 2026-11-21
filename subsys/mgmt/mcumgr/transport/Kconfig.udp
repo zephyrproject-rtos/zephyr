@@ -85,6 +85,15 @@ config MCUMGR_TRANSPORT_UDP_DTLS_TLS_TAG
 	  The TLS tag which the application must add the certificates to before starting the UDP
 	  transport.
 
+config MCUMGR_TRANSPORT_UDP_DTLS_CLIENT_AUTH
+	bool "Require a client certificate"
+	depends on MCUMGR_TRANSPORT_UDP_DTLS
+	help
+	  Accept only clients that present a certificate signed by the CA certificate the
+	  application adds to the TLS tag, as TLS_CREDENTIAL_CA_CERTIFICATE, before starting the
+	  transport. Without this option any client that completes the DTLS handshake can send
+	  SMP commands.
+
 config MCUMGR_TRANSPORT_UDP_AUTOMATIC_INIT
 	bool "UDP SMP autostart"
 	default y

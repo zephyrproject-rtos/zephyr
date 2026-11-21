@@ -84,6 +84,12 @@ Libraries / Subsystems
   * The native backend now supports the AS923 region
     (:kconfig:option:`CONFIG_LORAWAN_REGION_AS923`).
 
+* MCUmgr
+
+  * The UDP SMP transport can require a client certificate on its DTLS connections
+    (:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_CLIENT_AUTH`), so that only clients
+    signed by the CA the application provides can send SMP commands.
+
 * Mbed TLS
 
   * :kconfig:option:`CONFIG_MBEDTLS_SSL_CLI_C`
