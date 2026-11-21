@@ -44,6 +44,13 @@ config MAX30210_TRIGGER_OWN_THREAD
 
 endchoice # MAX30210_TRIGGER_MODE
 
+config MAX30210_STREAM
+	bool "Use streaming mode"
+	depends on MAX30210_TRIGGER_GLOBAL_THREAD || MAX30210_TRIGGER_OWN_THREAD
+	select SENSOR_ASYNC_API
+	help
+	  Enable FIFO batch reads through Zephyr's asynchronous sensor streaming API.
+
 if MAX30210_TRIGGER_OWN_THREAD
 
 config MAX30210_THREAD_PRIORITY

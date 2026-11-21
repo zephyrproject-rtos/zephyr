@@ -45,6 +45,15 @@ properties:
       The INT1 pin defaults to active low when produced by the sensor. The property value should
       ensure the flags properly describe the signal that is presented to the driver.
 
+  fifo-watermark:
+    type: int
+    default: 32
+    min: 1
+    max: 64
+    description: |
+      Number of temperature samples to collect before the FIFO watermark
+      interrupt is asserted. The FIFO is 64 samples deep.
+
   sampling-rate:
     type: int
     description: |

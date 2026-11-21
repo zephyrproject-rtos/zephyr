@@ -43,6 +43,11 @@ static int max30210_thread_cb(const struct device *dev)
 	if (data->temp_rdy_handler && (status & TEMP_RDY_MASK)) {
 		data->temp_rdy_handler(dev, data->temp_rdy_trigger);
 	}
+#ifdef CONFIG_MAX30210_STREAM
+	if (data->stream_sqe && (status & FIFO_FULL_MASK)) {
+		max30210_stream_process(dev, status);
+	}
+#endif
 	if (data->a_fifo_full_handler && (status & FIFO_FULL_MASK)) {
 		data->a_fifo_full_handler(dev, data->a_fifo_full_trigger);
 	}

@@ -298,6 +298,8 @@ static int max30210_attr_set_sampling_frequency(const struct device *dev,
 		LOG_ERR("Failed to set SAMPLING FREQUENCY: %d\n", ret);
 		return ret;
 	}
+
+	((struct max30210_data *)dev->data)->sampling_rate = sampling_rate;
 	return 0;
 }
 
@@ -1045,6 +1047,7 @@ static int max30210_pm_action(const struct device *dev, enum pm_device_action ac
 	.external_conversion = DT_INST_PROP_OR(inst, external_conversion, false),                   \
 	.external_conversion_edge =                                                                 \
 		DT_INST_ENUM_IDX_OR(inst, external_conversion_active_edge, 0),                      \
+	.fifo_watermark = DT_INST_PROP_OR(inst, fifo_watermark, 32),                             \
 	.sampling_rate = DT_INST_PROP_OR(inst, sampling_rate, 0),                                  \
 	.hi_trip_count = DT_INST_PROP(inst, hi_trip_count),                                        \
 	.lo_trip_count = DT_INST_PROP(inst, lo_trip_count),                                        \
@@ -1063,10 +1066,16 @@ static DEVICE_API(sensor, max30210_driver_api) = {
 #ifdef CONFIG_MAX30210_TRIGGER
 	.trigger_set = max30210_trigger_set,
 #endif
+#ifdef CONFIG_MAX30210_STREAM
+	.submit = max30210_submit,
+	.get_decoder = max30210_get_decoder,
+#endif
 };
 
 #define MAX30210_DEFINE(inst)                                                                      \
-	static struct max30210_data max30210_prv_data_##inst;                                      \
+	static struct max30210_data max30210_prv_data_##inst = {                                  \
+		.sampling_rate = DT_INST_PROP_OR(inst, sampling_rate, 0),                          \
+	};                                                                                         \
 	static const struct max30210_config max30210_config_##inst = {                             \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		MAX30210_CONFIG(inst),                                                             \
