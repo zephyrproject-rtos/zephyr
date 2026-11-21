@@ -6,7 +6,7 @@
 
 #include "max30210.h"
 
-#include <zephyr/drivers/sensor_clock.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
@@ -35,6 +35,7 @@ void max30210_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	const struct max30210_config *config = dev->config;
 	struct max30210_data *data = dev->data;
 	bool has_fifo_trigger = false;
+	bool has_watermark_trigger = false;
 	int ret;
 
 	if (!read_config->is_streaming) {
@@ -60,6 +61,9 @@ void max30210_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 			rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
 			return;
 		}
+		if (trigger == SENSOR_TRIG_FIFO_WATERMARK) {
+			has_watermark_trigger = true;
+		}
 		if (opt != SENSOR_STREAM_DATA_INCLUDE && opt != SENSOR_STREAM_DATA_NOP &&
 		    opt != SENSOR_STREAM_DATA_DROP) {
 			rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
@@ -73,8 +77,11 @@ void max30210_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 		return;
 	}
 
+	uint8_t fifo_watermark = has_watermark_trigger ? config->fifo_watermark :
+							 MAX30210_FIFO_DEPTH;
+
 	ret = max30210_reg_update(dev, FIFO_CONFIG_1, FIFO_A_FULL_MASK,
-				  MAX30210_FIFO_DEPTH - config->fifo_watermark);
+				  MAX30210_FIFO_DEPTH - fifo_watermark);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure FIFO watermark: %d", ret);
 		rtio_iodev_sqe_err(iodev_sqe, ret);
@@ -124,7 +131,6 @@ void max30210_stream_process(const struct device *dev, uint8_t status)
 	uint8_t overflow_count;
 	uint8_t *buf;
 	uint32_t buf_len;
-	uint64_t cycles;
 	size_t fifo_bytes = 0;
 	int ret;
 
@@ -158,13 +164,6 @@ void max30210_stream_process(const struct device *dev, uint8_t status)
 	if (fifo_count == 0 || fifo_count > MAX30210_FIFO_DEPTH) {
 		LOG_ERR("Invalid FIFO data count: %u", fifo_count);
 		max30210_stream_error(dev, -EIO);
-		return;
-	}
-
-	ret = sensor_clock_get_cycles(&cycles);
-	if (ret != 0) {
-		LOG_ERR("Failed to read sensor clock: %d", ret);
-		max30210_stream_error(dev, ret);
 		return;
 	}
 
@@ -214,10 +213,11 @@ void max30210_stream_process(const struct device *dev, uint8_t status)
 	}
 
 	fifo_data = (struct max30210_fifo_data *)buf;
-	fifo_data->timestamp_ns = sensor_clock_cycles_to_ns(cycles);
+	fifo_data->timestamp_ns = k_ticks_to_ns_floor64(k_uptime_ticks());
 	fifo_data->sample_period_ns = UINT64_C(64000000000) >> data->sampling_rate;
 	fifo_data->sample_count =
 		(fifo_trigger->opt == SENSOR_STREAM_DATA_INCLUDE) ? fifo_count : 0;
+	fifo_data->fifo_count = fifo_count;
 	fifo_data->status = status;
 
 	if (fifo_trigger->opt == SENSOR_STREAM_DATA_INCLUDE) {

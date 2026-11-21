@@ -275,6 +275,7 @@ struct max30210_fifo_data {
 	uint64_t timestamp_ns;
 	uint64_t sample_period_ns;
 	uint16_t sample_count;
+	uint8_t fifo_count;
 	uint8_t status;
 };
 

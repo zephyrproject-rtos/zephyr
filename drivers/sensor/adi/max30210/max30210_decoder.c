@@ -18,7 +18,7 @@ static int max30210_decoder_get_frame_count(const uint8_t *buffer,
 {
 	const struct max30210_fifo_data *fifo_data = (const struct max30210_fifo_data *)buffer;
 
-	if (chan_spec.chan_type != SENSOR_CHAN_AMBIENT_TEMP) {
+	if (chan_spec.chan_type != SENSOR_CHAN_AMBIENT_TEMP || chan_spec.chan_idx != 0) {
 		return -ENOTSUP;
 	}
 
@@ -29,7 +29,7 @@ static int max30210_decoder_get_frame_count(const uint8_t *buffer,
 static int max30210_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_t *base_size,
 					  size_t *frame_size)
 {
-	if (chan_spec.chan_type != SENSOR_CHAN_AMBIENT_TEMP) {
+	if (chan_spec.chan_type != SENSOR_CHAN_AMBIENT_TEMP || chan_spec.chan_idx != 0) {
 		return -ENOTSUP;
 	}
 
@@ -47,7 +47,7 @@ static int max30210_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 	uint16_t count;
 	uint64_t max_timestamp_delta;
 
-	if (chan_spec.chan_type != SENSOR_CHAN_AMBIENT_TEMP) {
+	if (chan_spec.chan_type != SENSOR_CHAN_AMBIENT_TEMP || chan_spec.chan_idx != 0) {
 		return -ENOTSUP;
 	}
 	if (max_count == 0) {
@@ -93,6 +93,8 @@ static bool max30210_decoder_has_trigger(const uint8_t *buffer,
 
 	switch (trigger) {
 	case SENSOR_TRIG_FIFO_FULL:
+		return (fifo_data->status & FIFO_FULL_MASK) != 0 &&
+		       fifo_data->fifo_count == MAX30210_FIFO_DEPTH;
 	case SENSOR_TRIG_FIFO_WATERMARK:
 		return (fifo_data->status & FIFO_FULL_MASK) != 0;
 	default:
