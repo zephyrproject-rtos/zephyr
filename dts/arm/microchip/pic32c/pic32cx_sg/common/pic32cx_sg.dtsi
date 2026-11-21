@@ -444,6 +444,18 @@
 			status = "disabled";
 		};
 
+		qspi: spi@42003400 {
+			compatible = "microchip,qspi-g1-spi";
+			reg = <0x42003400 0x48>;
+			interrupts = <134 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_QSPI>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_QSPI>;
+			clock-names = "mclk-apb", "mclk-ahb";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		sercom4: sercom@43000000 {
 			compatible = "microchip,sercom-g1";
 			reg = <0x43000000 0x29>;
