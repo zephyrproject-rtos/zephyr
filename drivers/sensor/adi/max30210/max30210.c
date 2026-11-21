@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/sensor.h>
 #include "max30210.h"
 #include <zephyr/drivers/i2c.h>
@@ -915,6 +916,54 @@ static int max30210_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int max30210_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct max30210_data *data = dev->data;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (data->pm_suspended) {
+			return 0;
+		}
+
+		ret = max30210_reg_read(dev, TEMP_CONVERT, &data->pm_temp_convert, 1);
+		if (ret < 0) {
+			LOG_ERR("Failed to read conversion mode before suspend: %d", ret);
+			return ret;
+		}
+
+		ret = max30210_reg_update(dev, TEMP_CONVERT,
+					  AUTO_MODE_MASK | CONVERT_T_MASK, 0);
+		if (ret < 0) {
+			LOG_ERR("Failed to enter standby mode: %d", ret);
+			return ret;
+		}
+
+		data->pm_suspended = true;
+		return 0;
+
+	case PM_DEVICE_ACTION_RESUME:
+		if (!data->pm_suspended) {
+			return 0;
+		}
+
+		ret = max30210_reg_write(dev, TEMP_CONVERT, data->pm_temp_convert);
+		if (ret < 0) {
+			LOG_ERR("Failed to restore conversion mode: %d", ret);
+			return ret;
+		}
+
+		data->pm_suspended = false;
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #define MAX30210_CONFIG(inst)                                                                      \
 	.pdb_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, pdb_gpios, {0}),                                \
 	.sampling_rate = DT_INST_PROP_OR(inst, sampling_rate, 0),                                  \
@@ -946,7 +995,9 @@ static DEVICE_API(sensor, max30210_driver_api) = {
 			    (.interrupt_gpio =			\
 					GPIO_DT_SPEC_INST_GET_OR( \
 					inst, interrupt_gpios, {0}),)) };        \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &max30210_init, NULL, &max30210_prv_data_##inst,        \
+	PM_DEVICE_DT_INST_DEFINE(inst, max30210_pm_action);                                         \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, &max30210_init, PM_DEVICE_DT_INST_GET(inst),              \
+				     &max30210_prv_data_##inst,                                  \
 				     &max30210_config_##inst, POST_KERNEL,                         \
 				     CONFIG_SENSOR_INIT_PRIORITY, &max30210_driver_api);
 

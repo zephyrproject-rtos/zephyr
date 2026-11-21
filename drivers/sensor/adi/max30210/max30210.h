@@ -215,6 +215,10 @@ struct max30210_data {
 	uint8_t int_status;
 	uint8_t fifo_data;
 	uint8_t ovf_counter;
+#ifdef CONFIG_PM_DEVICE
+	uint8_t pm_temp_convert;
+	bool pm_suspended;
+#endif
 
 	/** Temperature Configuration */
 	uint16_t temp_alarm_high_setup;
