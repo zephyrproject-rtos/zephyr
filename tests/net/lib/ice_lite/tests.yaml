@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+common:
+  tags:
+    - net
+    - ice
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  net.ice_lite: {}
+  net.ice_lite.no_ipv6:
+    extra_configs:
+      - CONFIG_NET_IPV6=n
+  net.ice_lite.shortest_credentials:
+    extra_configs:
+      - CONFIG_ICE_LITE_UFRAG_LEN=4
+      - CONFIG_ICE_LITE_PWD_LEN=22
+  net.ice_lite.longest_credentials:
+    extra_configs:
+      - CONFIG_ICE_LITE_UFRAG_LEN=256
+      - CONFIG_ICE_LITE_PWD_LEN=32
