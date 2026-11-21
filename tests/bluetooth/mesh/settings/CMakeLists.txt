@@ -15,9 +15,9 @@ target_include_directories(app
   PRIVATE
   ${ZEPHYR_BASE}/subsys/bluetooth/mesh
   ${ZEPHYR_BASE}/subsys/bluetooth
-  ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/include
-  ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include/
-  ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/dispatch/include/
+  ${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/include
+  ${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include/
+  ${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/dispatch/include/
 )
 
 # The two timeouts must differ, otherwise the deadlines the tests distinguish collapse.
