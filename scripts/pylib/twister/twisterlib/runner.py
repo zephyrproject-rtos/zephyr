@@ -1861,7 +1861,8 @@ class ProjectBuilder(FilterBuilder):
         """
         if self.instance.handler.type_str == "device":
             hwmgr = HardwareReservationManager(
-                self.env.hwm, self.instance.platform.name, self.testsuite.harness_config
+                self.env.hwm, self.instance.platform.name, self.testsuite.harness_config,
+                self.env.options.device_rtt
             )
             try:
                 hwmgr.reserve_duts()
@@ -1871,6 +1872,12 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.hardware_id = "+".join(
                         [str(dut.id) for dut in self.instance.reserved_duts]
                     )
+                # Enable RTT only on the first DUT. In case of Multi-DUT that is the
+                # main DUT. Also, RTT always requires flashing before connecting to
+                # work properly.
+                if self.options.device_rtt:
+                    self.instance.reserved_duts[0].use_rtt = True
+                    self.instance.reserved_duts[0].flash_before = True
                 yield True
             except TwisterException as error:
                 self.instance.status = TwisterStatus.FAIL
@@ -2019,9 +2026,17 @@ class TwisterRunner:
         else:
             self.jobs = mp.cpu_count()
 
+        forced_jobs = self.options.jobs
+        if len(self.env.hwm.duts) > 1 and self.options.device_rtt:
+            logger.warning("RTT is set as communication transport and more than one "
+                "DUT was found, limiting number of jobs to 1")
+            self.jobs = 1
+            # Also keep a GNU make jobserver from raising the number of jobs.
+            forced_jobs = 1
+
         if sys.platform == "linux":
             if os.name == 'posix':
-                self.jobserver = GNUMakeJobClient.from_environ(jobs=self.options.jobs)
+                self.jobserver = GNUMakeJobClient.from_environ(jobs=forced_jobs)
                 if not self.jobserver:
                     # One job server serves every build, so any suite counts
                     cmake_args = list(self.options.extra_args)

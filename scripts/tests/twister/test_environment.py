@@ -49,9 +49,9 @@ TESTDATA_1 = [
             '--device-serial',
             'dummy',
         ],
-        'When --device-testing is used with --device-serial' \
-        ' or --device-serial-pty, exactly one platform must' \
-        ' be specified'
+        'When --device-testing is used with --device-serial,' \
+        ' --device-serial-pty or --device-rtt without --hardware-map,' \
+        ' exactly one platform must be specified'
     ),
     (
         None,
@@ -66,9 +66,21 @@ TESTDATA_1 = [
             '--platform',
             'dummy_platform2'
         ],
-        'When --device-testing is used with --device-serial' \
-        ' or --device-serial-pty, exactly one platform must' \
-        ' be specified'
+        'When --device-testing is used with --device-serial,' \
+        ' --device-serial-pty or --device-rtt without --hardware-map,' \
+        ' exactly one platform must be specified'
+    ),
+    (
+        None,
+        None,
+        None,
+        [
+            '--device-testing',
+            '--device-rtt',
+        ],
+        'When --device-testing is used with --device-serial,' \
+        ' --device-serial-pty or --device-rtt without --hardware-map,' \
+        ' exactly one platform must be specified'
     ),
 # Note the underscore.
     (
@@ -116,6 +128,7 @@ TESTDATA_1 = [
         'valgrind without executable',
         'device serial without platform',
         'device serial with multiple platforms',
+        'device rtt without platform',
         'device flash with test without device testing',
         'shuffle-tests-seed without shuffle-tests',
         'unrecognised argument',

@@ -116,8 +116,14 @@ def duts(unlaunched_duts: list[DeviceAdapter]) -> Generator[list[DeviceAdapter],
 def get_ready_shell(dut: DeviceAdapter) -> Shell:
     """Return ready to use shell interface"""
     shell = Shell(dut, timeout=20.0)
+
+    if dut.device_config.serial_configs[0].rtt_config:
+        symbol = 'CONFIG_SHELL_PROMPT_RTT'
+    else:
+        symbol = 'CONFIG_SHELL_PROMPT_UART'
+
     if prompt := find_in_config(Path(dut.device_config.app_build_dir) / 'zephyr' / '.config',
-                                'CONFIG_SHELL_PROMPT_UART'):
+                                symbol):
         shell.prompt = prompt
     logger.info('Wait for prompt')
     if not shell.wait_for_prompt():
