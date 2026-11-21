@@ -17,6 +17,14 @@ properties:
   pinctrl-names:
     required: true
 
+  disable-rx:
+    type: boolean
+    description: |
+      Leave the receiver disabled, for a UART without an RX pin. Without an RX
+      pin the receiver input stays low: the receiver sees a break that never
+      ends and keeps asserting its asynchronous fast clock request, which
+      prevents the device from entering STANDBY.
+
   clk-div:
     type: int
     default: 1
