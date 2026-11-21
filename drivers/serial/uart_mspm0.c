@@ -205,6 +205,7 @@ struct uart_mspm0_config {
 	/* Clock configuration */
 	uint32_t clk_sel;
 	uint32_t clk_div;
+	bool disable_rx;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 	/* UART FIFO thresholds */
@@ -272,14 +273,17 @@ static inline void uart_mspm0_set_clock(mspm0_uart_regs *regs, uint32_t clk_sel,
 
 /* Configure line control: parity, word length, stop bits */
 static void uart_mspm0_configure_line(mspm0_uart_regs *regs, uint32_t parity, uint32_t word_length,
-				      uint32_t stop_bits, uint32_t flow_control)
+				      uint32_t stop_bits, uint32_t flow_control, bool disable_rx)
 {
-	uint32_t ctl0 = UART_CTL0_MODE_UART | UART_CTL0_RXE_ENABLE | UART_CTL0_TXE_ENABLE |
-			UART_CTL0_FEN_ENABLE |
+	uint32_t ctl0 = UART_CTL0_MODE_UART | UART_CTL0_TXE_ENABLE | UART_CTL0_FEN_ENABLE |
 			(flow_control & (UART_CTL0_RTSEN_MASK | UART_CTL0_CTSEN_MASK));
 
 	uint32_t lcrh = (parity & (UART_LCRH_PEN_MASK | UART_LCRH_EPS_MASK | UART_LCRH_SPS_MASK)) |
 			(word_length & UART_LCRH_WLEN_MASK) | (stop_bits & UART_LCRH_STP2_MASK);
+
+	if (!disable_rx) {
+		ctl0 |= UART_CTL0_RXE_ENABLE;
+	}
 
 	regs->ctl0 = ctl0;
 	regs->lcrh = lcrh;
@@ -329,6 +333,10 @@ static int uart_mspm0_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_mspm0_config *config = dev->config;
 	mspm0_uart_regs *regs = config->regs;
+
+	if (config->disable_rx) {
+		return -ENOTSUP;
+	}
 
 	if ((regs->stat & UART_STAT_RXFE_MASK) != 0U) {
 		return -1;
@@ -385,7 +393,7 @@ static int uart_mspm0_install_configuration(const struct device *dev)
 	/* Configure line control */
 	uart_mspm0_configure_line(config->regs, data->uart_config.parity,
 				  data->uart_config.word_length, data->uart_config.stop_bits,
-				  data->uart_config.flow_control);
+				  data->uart_config.flow_control, config->disable_rx);
 
 	/* Get source clock rate */
 	ret = clock_control_get_rate(clk_dev, (struct mspm0_sys_clock *)config->clock_subsys,
@@ -613,6 +621,10 @@ static int uart_mspm0_fifo_read(const struct device *dev, uint8_t *rx_data, cons
 	const struct uart_mspm0_config *config = dev->config;
 	int count = 0;
 
+	if (config->disable_rx) {
+		return -ENOTSUP;
+	}
+
 	while (count < size && ((config->regs->stat & UART_STAT_RXFE_MASK) == 0)) {
 		rx_data[count] = (uint8_t)(config->regs->rxdata & 0xFF);
 		count++;
@@ -839,6 +851,7 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 		.clock_subsys = &mspm0_uart_sys_clock##index,                                   \
 		.clk_sel = MSPM0_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(index, clk)),        \
 		.clk_div = MSPM0_CLK_DIV_REG(index),                                            \
+		.disable_rx = DT_INST_PROP(index, disable_rx),                                  \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                        \
 			   (.irq_config_func = uart_mspm0_##index##_irq_register,))             \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                        \
