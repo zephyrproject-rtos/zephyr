@@ -155,6 +155,7 @@ int nsos_adapt_sendto(int fd, const void *buf, size_t len, int flags_mid,
 int nsos_adapt_sendmsg(int fd, const struct nsos_mid_msghdr *msg_mid, int flags_mid);
 int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags_mid,
 			struct nsos_mid_sockaddr *addr, size_t *addrlen);
+int nsos_adapt_recvmsg(int fd, struct nsos_mid_msghdr *msg_mid, int flags_mid);
 int nsos_adapt_getsockopt(int fd, int level, int optname,
 			  void *optval, size_t *optlen);
 int nsos_adapt_setsockopt(int fd, int level, int optname,
