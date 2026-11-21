@@ -82,7 +82,7 @@ static int spi_sam0_configure(const struct device *dev,
 	SERCOM_SPI_CTRLC_Type ctrlc = {.reg = 0};
 	SERCOM_SPI_LENGTH_Type length = {.reg = 0};
 #endif
-	int div;
+	uint32_t baud = 0U;
 
 	if (spi_context_configured(&data->ctx, config)) {
 		return 0;
@@ -130,9 +130,19 @@ static int spi_sam0_configure(const struct device *dev,
 	/* 8 bits per transfer */
 	ctrlb.bit.CHSIZE = 0;
 
-	/* Use the requested or next highest possible frequency */
-	div = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / config->frequency) / 2U - 1;
-	div = CLAMP(div, 0, UINT8_MAX);
+	if (config->frequency == 0U) {
+		return -EINVAL;
+	}
+
+	/*
+	 * SCK = GCLK0 / (2 * (BAUD + 1)): use the highest frequency that does not exceed
+	 * the requested one. A request at or above GCLK0 / 2 gets the fastest SCK, and a
+	 * request below the slowest SCK gets the slowest one.
+	 */
+	if (config->frequency < (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 2U)) {
+		baud = DIV_ROUND_UP(SOC_ATMEL_SAM0_GCLK0_FREQ_HZ, 2U * config->frequency) - 1U;
+	}
+	baud = MIN(baud, UINT8_MAX);
 
 #ifdef SERCOM_SPI_CTRLC_MASK
 	/* LENGTH.LEN must only be enabled when CTRLC.bit.DATA32B is enabled.
@@ -145,7 +155,7 @@ static int spi_sam0_configure(const struct device *dev,
 #endif
 
 	/* Update the configuration only if it has changed */
-	if (regs->CTRLA.reg != ctrla.reg || regs->CTRLB.reg != ctrlb.reg || regs->BAUD.reg != div
+	if (regs->CTRLA.reg != ctrla.reg || regs->CTRLB.reg != ctrlb.reg || regs->BAUD.reg != baud
 #ifdef SERCOM_SPI_CTRLC_MASK
 		|| regs->LENGTH.reg != length.reg || regs->CTRLC.reg != ctrlc.reg
 #endif
@@ -154,7 +164,7 @@ static int spi_sam0_configure(const struct device *dev,
 		wait_synchronization(regs);
 		regs->CTRLB = ctrlb;
 		wait_synchronization(regs);
-		regs->BAUD.reg = div;
+		regs->BAUD.reg = baud;
 		wait_synchronization(regs);
 		regs->CTRLA = ctrla;
 		wait_synchronization(regs);
