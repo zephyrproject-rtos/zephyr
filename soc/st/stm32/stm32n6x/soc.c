@@ -27,7 +27,8 @@ extern char _vector_start[];
 void *g_pfnVectors = (void *)_vector_start;
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm)) &&                                             \
-	!DT_SAME_NODE(DT_CHOSEN(zephyr_itcm), DT_CHOSEN(zephyr_flash))
+	!DT_SAME_NODE(DT_CHOSEN(zephyr_itcm), DT_CHOSEN(zephyr_flash)) &&                          \
+	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #define ITCM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_itcm))
 #define ITCM_END  (DT_REG_ADDR(DT_CHOSEN(zephyr_itcm)) + DT_REG_SIZE(DT_CHOSEN(zephyr_itcm)))
 
@@ -35,7 +36,8 @@ BUILD_ASSERT((ITCM_BASE & __alignof__(uint32_t)) == 0, "ITCM start address must 
 BUILD_ASSERT((ITCM_END & __alignof__(uint32_t)) == 0, "ITCM size must be 32-bit aligned");
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) &&                                             \
-	!DT_SAME_NODE(DT_CHOSEN(zephyr_dtcm), DT_CHOSEN(zephyr_sram))
+	!DT_SAME_NODE(DT_CHOSEN(zephyr_dtcm), DT_CHOSEN(zephyr_sram)) &&                           \
+	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #define DTCM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm))
 #define DTCM_END  (DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm)) + DT_REG_SIZE(DT_CHOSEN(zephyr_dtcm)))
 
@@ -54,6 +56,9 @@ void soc_reset_hook(void)
 	 * protection on STM32 MCUs" Rev. 9, section 4.1.1: write
 	 * an arbitrary value (0 in this case) to the entire TCM
 	 * using ECC data word-sized writes.
+	 *
+	 * When Zephyr runs in the non-secure state, initializing the
+	 * TCMs is the responsibility of the secure firmware.
 	 */
 #ifdef ITCM_BASE
 	volatile uint32_t *itcm_start = (void *)ITCM_BASE;
