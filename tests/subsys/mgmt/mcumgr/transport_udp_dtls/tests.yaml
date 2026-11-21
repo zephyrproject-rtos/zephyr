@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+common:
+  tags:
+    - mcumgr
+    - net
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  mgmt.mcumgr.transport.udp_dtls.client_auth: {}
+  mgmt.mcumgr.transport.udp_dtls:
+    extra_configs:
+      - CONFIG_MCUMGR_TRANSPORT_UDP_DTLS_CLIENT_AUTH=n
