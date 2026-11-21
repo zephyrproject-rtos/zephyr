@@ -12,7 +12,43 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RK3588_CRU_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RK3588_CRU_H_
 
+/* Rate sources of the peripheral clocks */
+#define PLL_CPLL     5
+#define PLL_GPLL     6
+#define CLK_150M_SRC 224
+#define CLK_200M_SRC 225
+
+/* GPIO banks, except GPIO0 at the end of the numbering */
+#define PCLK_GPIO1        115
+#define DBCLK_GPIO1       116
+#define PCLK_GPIO2        117
+#define DBCLK_GPIO2       118
+#define PCLK_GPIO3        119
+#define DBCLK_GPIO3       120
+#define PCLK_GPIO4        121
+#define DBCLK_GPIO4       122
+
+/* SPI controllers */
+#define PCLK_SPI0         146
+#define PCLK_SPI1         147
+#define PCLK_SPI2         148
+#define PCLK_SPI3         149
+#define PCLK_SPI4         150
+#define CLK_SPI0          151
+#define CLK_SPI1          152
+#define CLK_SPI2          153
+#define CLK_SPI3          154
+#define CLK_SPI4          155
+
 #define MCLK_GMAC0_OUT    248
+
+/* eMMC controller */
+#define HCLK_EMMC         298
+#define ACLK_EMMC         299
+#define CCLK_EMMC         300
+#define BCLK_EMMC         301
+#define TMCLK_EMMC        302
+
 #define CLK_GMAC0_PTP_REF 308
 #define CLK_GMAC1_PTP_REF 309
 #define CLK_GMAC_125M     310
@@ -21,6 +57,21 @@
 #define PCLK_GMAC1        345
 #define ACLK_GMAC0        349
 #define ACLK_GMAC1        350
+
+/* USB 3.0 OTG0 controller */
+#define ACLK_USB3OTG0     402
+#define SUSPEND_CLK_USB3OTG0 403
+#define REF_CLK_USB3OTG0  404
+
+#define PCLK_GPIO0        625
+#define DBCLK_GPIO0       626
+
+/* USB 2.0 PHY of the USB 3.0 OTG0 controller */
+#define CLK_USB2PHY_HDPTXRXPHY_REF 672
+
+/* SD card drive and sample phase clocks; the driver gates them only. */
+#define SCLK_SDMMC_DRV    685
+#define SCLK_SDMMC_SAMPLE 686
 
 /**
  * @defgroup rk3588_clock RK3588 SCMI clock identifiers
