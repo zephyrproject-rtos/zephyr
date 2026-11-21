@@ -2355,20 +2355,6 @@ static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 		return BT_GATT_ITER_STOP;
 	}
 
-	/* Check if attribute requires handler to accept the data */
-	if (!(attr->perm & BT_GATT_PERM_PREPARE_WRITE)) {
-		goto append;
-	}
-
-	/* Write attribute value to check if device is authorized */
-	write = attr->write(data->conn, attr, data->value, data->len,
-			    data->offset, BT_GATT_WRITE_FLAG_PREPARE);
-	if (write != 0) {
-		data->err = err_to_att(write);
-		return BT_GATT_ITER_STOP;
-	}
-
-append:
 	if (sys_slist_len(&data->att->prep_queue) >= (size_t)PREP_QUEUE_MAX) {
 		LOG_WRN_RATELIMIT("Per-connection prepare queue limit (%d) reached for %s",
 				  PREP_QUEUE_MAX, bt_conn_dst_str(data->conn));
@@ -2383,6 +2369,21 @@ append:
 		return BT_GATT_ITER_STOP;
 	}
 
+	/* Check if attribute requires handler to accept the data */
+	if (!(attr->perm & BT_GATT_PERM_PREPARE_WRITE)) {
+		goto append;
+	}
+
+	/* Write attribute value to check if device is authorized */
+	write = attr->write(data->conn, attr, data->value, data->len,
+			    data->offset, BT_GATT_WRITE_FLAG_PREPARE);
+	if (write != 0) {
+		net_buf_drop(&data->buf);
+		data->err = err_to_att(write);
+		return BT_GATT_ITER_STOP;
+	}
+
+append:
 	attr_data = net_buf_user_data(data->buf);
 	attr_data->handle = handle;
 	attr_data->offset = data->offset;
