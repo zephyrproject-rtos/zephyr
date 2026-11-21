@@ -43,6 +43,8 @@ model holding the plain model, used when ``CONFIG_TAINT_BLOBS_TFLM_ETHOSU=n``, a
 one Vela-compiled variant per NPU configuration:
 
 * Arm Ethos-U55 NPU with 128 MACs (``CONFIG_ETHOS_U55_128``), such as Corstone-300
+* Arm Ethos-U85 NPU with 256 MACs (``CONFIG_ETHOS_U85_256``), such as
+  Corstone-1000-A320
 
 The Vela-compiled variants use the ``Shared_Sram`` memory mode. Other NPU
 configurations or memory modes need an entry in ``NPU_CONFIGS`` or a change to

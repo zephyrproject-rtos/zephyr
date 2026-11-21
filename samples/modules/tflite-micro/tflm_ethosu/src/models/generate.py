@@ -43,6 +43,7 @@ from ethosu.vela.tflite.TensorType import TensorType
 # Kconfig symbol, Vela accelerator config and Vela system config
 NPU_CONFIGS = [
     ("CONFIG_ETHOS_U55_128", "ethos-u55-128", "Ethos_U55_High_End_Embedded"),
+    ("CONFIG_ETHOS_U85_256", "ethos-u85-256", "Ethos_U85_SYS_DRAM_Mid"),
 ]
 MEMORY_MODE = "Shared_Sram"
 
