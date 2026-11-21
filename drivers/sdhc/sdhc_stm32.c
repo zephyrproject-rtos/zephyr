@@ -1261,8 +1261,13 @@ static int sdhc_stm32_find_scr(struct sdhc_command *cmd, SDMMC_TypeDef *instance
 	/* Clear all the static flags */
 	__SDMMC_CLEAR_FLAG(instance, SDMMC_STATIC_DATA_FLAGS);
 
-	scr[0] = sys_cpu_to_be32(tempscr[1]);
-	scr[1] = sys_cpu_to_be32(tempscr[0]);
+	/*
+	 * The SD stack expects the SCR as the 8 bytes in the order the card sent
+	 * them (it decodes them with sys_be32_to_cpu()). The FIFO returns the
+	 * first received byte in bits 7:0 of each word.
+	 */
+	sys_put_le32(tempscr[0], (uint8_t *)&scr[0]);
+	sys_put_le32(tempscr[1], (uint8_t *)&scr[1]);
 
 	return 0;
 }
