@@ -405,6 +405,8 @@ i2c0: &sercom6 {
 &qspi {
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-names = "default";
+	dmas = <&dmac 6 0x53>, <&dmac 5 0x54>;
+	dma-names = "rx", "tx";
 	status = "okay";
 
 	/*
