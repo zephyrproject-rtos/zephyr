@@ -1161,7 +1161,11 @@ static int spi_nor_write_protection_set(const struct device *dev,
 	if (IS_ENABLED(ANY_INST_REQUIRES_ULBPR)
 	    && DEV_CFG(dev)->requires_ulbpr_exist
 	    && !write_protect) {
-		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
+		/* ULBPR is ignored unless the write enable latch is set. */
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+		if (ret == 0) {
+			ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
+		}
 	}
 
 #if ANY_INST_HAS_WP_GPIOS
