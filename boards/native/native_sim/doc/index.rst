@@ -306,10 +306,96 @@ Peripherals
 
 Here are more details on the peripherals that are currently provided with this board:
 
+.. grid:: 1
+   :class-container: sd-index-grid
+   :gutter: 0
+
+   .. grid-item-card:: Audio and video
+      :class-card: sd-index-card
+
+      .. rst-class:: sd-index-watermark
+
+      :material-twotone:`videocam;7em`
+
+      * :ref:`Digital microphone (DMIC) <nsim_per_dmic>`
+      * :ref:`Display driver <nsim_per_disp_sdl>`
+      * :ref:`Inter-IC sound (I2S) <nsim_per_i2s>`
+      * :ref:`Video capture driver <nsim_per_video_fifo>`
+
+   .. grid-item-card:: Buses
+      :class-card: sd-index-card
+
+      .. rst-class:: sd-index-watermark
+
+      :material-twotone:`cable;7em`
+
+      * :ref:`CAN controller <nsim_per_can>`
+      * :ref:`I2C controller <nsim_per_i2c>`
+      * :ref:`UART/Serial <nsim_per_uart>`
+
+        * :ref:`PTY driver <native_ptty_uart>`
+        * :ref:`TTY driver <native_tty_uart>`
+
+      * :ref:`USB controller <nsim_per_usb>`
+
+   .. grid-item-card:: Core
+      :class-card: sd-index-card
+
+      .. rst-class:: sd-index-watermark
+
+      :material-twotone:`memory;7em`
+
+      * :ref:`Clock, timer and system tick model <nsim_per_timer>`
+      * :ref:`Entropy device <nsim_per_entr>`
+      * :ref:`Interrupt controller <nsim_per_intc>`
+      * :ref:`Real time clock <nsim_per_rtc>`
+
+   .. grid-item-card:: Input, sensors and indicators
+      :class-card: sd-index-card
+
+      .. rst-class:: sd-index-watermark
+
+      :material-twotone:`sensors;7em`
+
+      * :ref:`Fuel gauge <nsim_per_fuel_gauge>`
+      * :ref:`Input events <nsim_per_input>`
+
+        * :ref:`evdev driver <nsim_per_input_evdev>`
+        * :ref:`Input SDL touch <nsim_per_input_sdl_touch>`
+
+      * :ref:`LED device <nsim_per_led>`
+      * :ref:`Temperature sensor <native_linux_temp_sensor>`
+
+   .. grid-item-card:: Networking and wireless
+      :class-card: sd-index-card
+
+      .. rst-class:: sd-index-watermark
+
+      :material-twotone:`lan;7em`
+
+      * :ref:`Bluetooth controller <nsim_bt_host_cont>`
+      * :ref:`Ethernet driver <nsim_per_ethe>`
+      * :ref:`Offloaded sockets driver <nsim_per_offloaded_sockets>`
+      * :ref:`Wi-Fi driver <nsim_per_wifi>`
+
+   .. grid-item-card:: Storage
+      :class-card: sd-index-card
+
+      .. rst-class:: sd-index-watermark
+
+      :material-twotone:`sd_card;7em`
+
+      * :ref:`EEPROM simulator <nsim_per_eeprom>`
+      * :ref:`Flash simulator <nsim_per_flash_simu>`
+
+.. _nsim_per_intc:
+
 **Interrupt controller**
   A simple yet generic interrupt controller is provided. It can nest interrupts
   and provides interrupt priorities. Interrupts can be individually masked or
   unmasked. SW interrupts are also supported.
+
+.. _nsim_per_timer:
 
 **Clock, timer and system tick model**
   This model provides the system tick timer. By default
@@ -317,6 +403,8 @@ Here are more details on the peripherals that are currently provided with this b
 
   Please refer to the section `About time in native_sim`_ for more
   information.
+
+.. _nsim_per_uart:
 
 **UART/Serial**
    Two optional native UART drivers are available:
@@ -331,6 +419,8 @@ Here are more details on the peripherals that are currently provided with this b
       (eg. USB to UART dongles). For more information refer to the section
       `TTY UART`_.
 
+.. _nsim_per_dmic:
+
 **Digital microphone (DMIC)**
   A file-backed DMIC driver is available for native_sim. It reads PCM sample
   data from a binary file on the host file system and presents it through the
@@ -344,6 +434,8 @@ Here are more details on the peripherals that are currently provided with this b
 
   If the configured host input file does not exist, the driver prints a warning
   from the native simulator runner side and provides zeroes (silence).
+
+.. _nsim_per_i2s:
 
 **Inter-IC sound (I2S)**
   An I2S driver which can be configured for RX, TX, or both directions. It
@@ -385,6 +477,8 @@ Here are more details on the peripherals that are currently provided with this b
      $ sudo apt update
      $ sudo apt install pkg-config libasound2-dev:i386
      $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+
+.. _nsim_per_rtc:
 
 **Real time clock**
   The real time clock model provides a model of a constantly powered clock.
@@ -661,7 +755,7 @@ Here are more details on the peripherals that are currently provided with this b
   rate-limited writer such as ``ffmpeg -re``: an unpaced one is read as fast as
   the application returns buffers.
 
-.. _nsim_per_flash_simu:
+.. _nsim_per_eeprom:
 
 **EEPROM simulator**
   The EEPROM simulator can also be used in the native targets. In these, you have the added feature
@@ -669,6 +763,8 @@ Here are more details on the peripherals that are currently provided with this b
   By default this is kept in the file :file:`eeprom.bin` in the current working directory, but you
   can select the location of this file and its name with the command line parameter ``--eeprom``.
   Some more information can be found in :ref:`the emulators page <emul_eeprom_simu_brief>`.
+
+.. _nsim_per_flash_simu:
 
 **Flash simulator**
   The flash simulator can also be used in the native targets. In these, you have the option to keep
@@ -688,8 +784,12 @@ Here are more details on the peripherals that are currently provided with this b
   The flash content can be accessed from the host system, as explained in the
   `Host (FUSE) filesystem access`_ section.
 
+.. _nsim_per_input:
+
 **Input events**
   Two optional native input drivers are available:
+
+  .. _nsim_per_input_evdev:
 
   **evdev driver**
     A driver is provided to read input events from a Linux evdev input device and
@@ -708,6 +808,8 @@ Here are more details on the peripherals that are currently provided with this b
     which evdev device node has to be used, for example
     ``zephyr.exe --evdev=/dev/input/event0``.
 
+  .. _nsim_per_input_sdl_touch:
+
   **Input SDL touch**
     This driver emulates a touch panel input using the SDL library. It can be enabled with
     :kconfig:option:`CONFIG_INPUT_SDL_TOUCH` and configured with the device tree binding
@@ -715,6 +817,8 @@ Here are more details on the peripherals that are currently provided with this b
 
     More information on using SDL and the Display driver can be found in
     :ref:`its section <nsim_per_disp_sdl>`.
+
+.. _nsim_per_can:
 
 **CAN controller**
   It is possible to use a host CAN controller with the native SocketCAN Linux driver. It can be
@@ -727,6 +831,8 @@ Here are more details on the peripherals that are currently provided with this b
   to use the specified interface.
 
   SocketCAN support can be enabled by using the :ref:`snippet-socketcan-native-sim`.
+
+.. _nsim_per_i2c:
 
 **I2C controller**
   Drives real devices on a host I2C adapter through its Linux i2c-dev node, see
@@ -760,6 +866,8 @@ Here are more details on the peripherals that are currently provided with this b
   Transfers run on a host thread while simulated time goes on. Their end is seen up to one real
   time period late, so use a short period (``--rt-period=1e-3``).
 
+.. _nsim_per_fuel_gauge:
+
 **Fuel gauge**
 
   A fuel gauge driver is available for reading battery properties from a Linux
@@ -781,6 +889,8 @@ Here are more details on the peripherals that are currently provided with this b
   The ``--fuel-gauge-path=<path>`` command line option overrides the devicetree path, for
   example to read a directory holding the attribute files of a fake power supply on a host
   without a battery. The directory must contain a ``type`` file reading ``Battery``.
+
+.. _nsim_per_led:
 
 **LED device**
   Implements a Zephyr LED device backed by a Linux LED. You configure which
