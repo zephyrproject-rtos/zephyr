@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config VIDEO_NATIVE_SIM_FIFO
-	bool "Native simulator host FIFO video source"
+	bool "Native simulator host FIFO and V4L2 video source"
 	default y
 	depends on DT_HAS_ZEPHYR_NATIVE_SIM_VIDEO_FIFO_ENABLED
 	depends on NATIVE_LIBRARY
 	select NATIVE_USE_NSI_ERRNO
+	select NATIVE_SIMULATOR_PREFER_REAL_TIME
 	help
 	  Enable a video capture device reading raw frames from a named pipe
-	  (FIFO) on the host filesystem. A host process such as ffmpeg feeds the
-	  FIFO.
+	  (FIFO) fed by a host process such as ffmpeg, or capturing them from
+	  a host V4L2 device.

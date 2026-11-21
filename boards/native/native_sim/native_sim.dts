@@ -250,6 +250,13 @@
 		status = "okay";
 	};
 
+	video_fifo: video-fifo {
+		compatible = "zephyr,native-sim-video-fifo";
+		/* Host V4L2 device or FIFO; override it with --video-fifo=<path> */
+		fifo-path = "/dev/video0";
+		status = "disabled";
+	};
+
 	dma: dma {
 		compatible = "zephyr,dma-emul";
 		#dma-cells = <1>;
