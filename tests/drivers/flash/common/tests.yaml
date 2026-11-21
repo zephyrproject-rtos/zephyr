@@ -342,6 +342,15 @@ tests:
       - SHIELD=mikroe_flash_8_click
       - DTC_OVERLAY_FILE="./boards/mikroe_flash_8_click.overlay"
       - EXTRA_CONF_FILE="./boards/mikroe_flash_8_click.conf"
+  drivers.flash.common.spi_nand.mikroe_flash_15_click:
+    harness_config:
+      fixture: mikroe_flash_15_click
+    platform_allow:
+      - ek_ra8m1
+    extra_args:
+      - SHIELD=mikroe_flash_15_click
+      - DTC_OVERLAY_FILE="./boards/mikroe_flash_15_click.overlay"
+      - EXTRA_CONF_FILE="./boards/mikroe_flash_15_click.conf"
   drivers.flash.common.spi_nand.w25n01gv:
     harness_config:
       fixture: w25n01gv
