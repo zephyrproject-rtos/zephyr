@@ -12,6 +12,9 @@ at, and prints the answer: the public address of the device, the one it has on
 the outside of the NAT of its network. One call does it,
 :c:func:`stun_client_simple`.
 
+The sample also enables the ``net stun`` commands of the network shell, with
+which other servers can be asked while it runs.
+
 See :ref:`stun_interface` for the library, and for what an application does to
 learn the address of a socket of its own.
 
@@ -73,6 +76,15 @@ Sample Output
    [00:00:07.620,000] <inf> net_stun_sample: Network ready
    [00:00:07.620,000] <inf> net_stun_sample: Asking stun.cloudflare.com port 3478
    [00:00:07.680,000] <inf> net_stun_sample: Public address: 203.0.113.7
+
+The shell asks any other server, and shows the port of the request as well:
+
+.. code-block:: console
+
+   uart:~$ net stun server stun.example.org
+   STUN server: stun.example.org port 3478
+   uart:~$ net stun query
+   Mapped address: 203.0.113.7:54321
 
 If no answer comes, the sample says so after the time
 ``CONFIG_NET_SAMPLE_STUN_TIMEOUT_MS`` allows, 5 seconds by default. A firewall

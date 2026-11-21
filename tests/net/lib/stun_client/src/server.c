@@ -122,14 +122,15 @@ static size_t make_response(uint8_t *out, size_t cap, const uint8_t *txid, uint1
 static void send_noise(int sock, const struct stun_msg *req, const struct net_sockaddr *from,
 		       net_socklen_t from_len)
 {
-	static const uint8_t kNotStun[24] = {0x80, 0x60, 0x12, 0x34};
+	/* The first bytes of an RTP packet (version 2, payload type 96), then zeros. */
+	static const uint8_t not_stun[24] = {0x80, 0x60, 0x12, 0x34};
 	uint8_t other_txid[STUN_TXID_SIZE];
 	struct net_sockaddr_storage lie = {0};
 	uint8_t out[128];
 	size_t len;
 
 	set_loopback(net_sad(&lie), from->sa_family, LIE_PORT);
-	(void)zsock_sendto(sock, kNotStun, sizeof(kNotStun), 0, from, from_len);
+	(void)zsock_sendto(sock, not_stun, sizeof(not_stun), 0, from, from_len);
 
 	memcpy(other_txid, req->txid, sizeof(other_txid));
 	other_txid[0] ^= 0x01;
@@ -185,14 +186,15 @@ static void send_oversized(int sock, const struct stun_msg *req, const struct ne
 static void serve_dns(int sock)
 {
 	/* DUAL_HOST as DNS writes it: every label after its length, then the root. */
-	static const uint8_t kName[] = {4, 'd', 'u', 'a', 'l', 4, 't', 'e', 's', 't', 0};
-	static const uint8_t kV4[sizeof(struct net_in_addr)] = {127, 0, 0, 1};
-	static const uint8_t kV6[sizeof(struct net_in6_addr)] = {[15] = 1};
-	const size_t question_len = DNS_HEADER_SIZE + sizeof(kName) + DNS_QUESTION_TAIL;
+	static const uint8_t name[] = {4, 'd', 'u', 'a', 'l', 4, 't', 'e', 's', 't', 0};
+	static const uint8_t loopback4[sizeof(struct net_in_addr)] = {127, 0, 0, 1};
+	/* The address ::1: every byte zero but the last. */
+	static const uint8_t loopback6[sizeof(struct net_in6_addr)] = {[15] = 1};
+	const size_t question_len = DNS_HEADER_SIZE + sizeof(name) + DNS_QUESTION_TAIL;
 	struct net_sockaddr_storage from = {0};
 	net_socklen_t from_len = sizeof(from);
-	uint8_t msg[DNS_HEADER_SIZE + sizeof(kName) + DNS_QUESTION_TAIL + DNS_RECORD_HEAD +
-		    sizeof(kV6)];
+	uint8_t msg[DNS_HEADER_SIZE + sizeof(name) + DNS_QUESTION_TAIL + DNS_RECORD_HEAD +
+		    sizeof(loopback6)];
 	const uint8_t *rdata = NULL;
 	uint16_t type = 0U;
 	size_t rdlen = 0U;
@@ -207,14 +209,14 @@ static void serve_dns(int sock)
 	}
 	len = (size_t)n;
 
-	if (len == question_len && memcmp(&msg[DNS_HEADER_SIZE], kName, sizeof(kName)) == 0) {
-		type = sys_get_be16(&msg[DNS_HEADER_SIZE + sizeof(kName)]);
+	if (len == question_len && memcmp(&msg[DNS_HEADER_SIZE], name, sizeof(name)) == 0) {
+		type = sys_get_be16(&msg[DNS_HEADER_SIZE + sizeof(name)]);
 		if (type == DNS_TYPE_A) {
-			rdata = kV4;
-			rdlen = sizeof(kV4);
+			rdata = loopback4;
+			rdlen = sizeof(loopback4);
 		} else if (type == DNS_TYPE_AAAA) {
-			rdata = kV6;
-			rdlen = sizeof(kV6);
+			rdata = loopback6;
+			rdlen = sizeof(loopback6);
 		}
 	}
 

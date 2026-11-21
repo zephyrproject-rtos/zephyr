@@ -83,6 +83,8 @@ The following net-shell commands are implemented:
    "net ssh_key", "SSH key generation/removing/saving/loading support. Only available if
    :kconfig:option:`CONFIG_SSH_CLIENT` or :kconfig:option:`CONFIG_SSH_SERVER` is set."
    "net stats", "Show network statistics."
+   "net stun", "Set a STUN server and ask it for the public address of the device.
+   Only available if :kconfig:option:`CONFIG_STUN_SHELL` is set."
    "net suspend", "Suspend a network interface if network power management is enabled."
    "net tcp", "Connect/send data/close TCP connection. Only available if
    :kconfig:option:`CONFIG_NET_TCP` is set."
