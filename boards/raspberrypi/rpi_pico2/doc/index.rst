@@ -10,9 +10,10 @@ The RP2350 SoC has two cores. Each core can run either an ARM Cortex-M33
 processor or a Hazard3 RISC-V processor. Zephyr supports builds targeting either
 architecture for core 0.
 
-Zephyr also supports running both cores with the M33 processor in an AMP
-configuration. Zephyr does not yet support Hazard3-Hazard3 nor heterogeneous
-M33-Hazard3 multicore configurations.
+Zephyr also supports running both cores with the M33 processor, either in an AMP
+configuration (see `Multi-Core AMP (Cortex-M33)`_) or as one SMP image with the
+``rp2350a/m33_smp`` target (see `SMP`_). Zephyr does not yet support
+Hazard3-Hazard3 nor heterogeneous M33-Hazard3 multicore configurations.
 
 Hardware
 ********
@@ -82,6 +83,29 @@ the :zephyr:code-sample:`sysbuild_hello_world` application.
    The ``rpi_pico2/rp2350a/m33_1`` board target cannot be built standalone.
    It must be built as part of a sysbuild configuration launched by the main
    board target.
+
+SMP
+===
+
+The ``rpi_pico2/rp2350a/m33_smp`` board target runs a single Zephyr image on both
+Cortex-M33 cores (:kconfig:option:`CONFIG_SMP`). Core 0 starts core 1 through the
+bootrom launch protocol, the scheduler IPI is a SIO doorbell interrupt, and the
+system timer is TIMER1 instead of SysTick so that both cores read the same clock.
+
+Limitations:
+
+* The flash driver is not available, because writing or erasing flash while the
+  other core executes from flash is not safe.
+* The NVIC is per core. Device interrupts are enabled on core 0 during
+  initialization; calling ``irq_enable()`` from a thread that runs on core 1
+  enables the interrupt on core 1 only. Drivers that enable or disable their
+  interrupt at runtime are affected: the USB device controller
+  (``usbd_enable()`` / ``usbd_disable()``) and the mailbox driver
+  (``mbox_set_enabled()``). Call these from a thread pinned to core 0.
+* The USB serial number differs from the one of a single core image on the same
+  board: :kconfig:option:`CONFIG_HWINFO_RPI_PICO_CHIP_ID` is enabled by default,
+  because reading the flash unique ID is not safe while the other core runs.
+* Userspace is not supported.
 
 Wi-Fi Firmware Setup
 =====================

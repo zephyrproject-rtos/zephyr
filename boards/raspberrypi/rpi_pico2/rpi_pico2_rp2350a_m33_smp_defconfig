@@ -1,0 +1,20 @@
+# Same as the single-core Cortex-M33 board, with both cores in one image.
+# The flash driver is not SMP safe, see FLASH_RPI_PICO.
+CONFIG_BUILD_OUTPUT_HEX=y
+CONFIG_BUILD_OUTPUT_UF2=y
+CONFIG_CLOCK_CONTROL=y
+CONFIG_CONSOLE=y
+CONFIG_GPIO=y
+CONFIG_RESET=y
+CONFIG_SERIAL=y
+CONFIG_UART_CONSOLE=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+CONFIG_USE_DT_CODE_PARTITION=y
+
+CONFIG_USE_SWITCH=y
+CONFIG_SMP=y
+CONFIG_MP_MAX_NUM_CPUS=2
+
+# Core 1 enters reset.S straight from the bootrom with unknown CONTROL, MSPLIM
+# and PSPLIM; this makes reset.S clear them before the stack is used.
+CONFIG_INIT_ARCH_HW_AT_BOOT=y

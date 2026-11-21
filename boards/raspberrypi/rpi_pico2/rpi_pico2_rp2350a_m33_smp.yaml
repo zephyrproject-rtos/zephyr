@@ -1,0 +1,21 @@
+identifier: rpi_pico2/rp2350a/m33_smp
+name: Raspberry Pi Pico 2 (Cortex-M33, SMP)
+type: mcu
+arch: arm
+flash: 4096
+ram: 520
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock
+  - gpio
+  - smp
+  - uart
+  - usbd
+  - watchdog
+testing:
+  ignore_tags:
+    - bluetooth
+    - net
+vendor: raspberrypi
