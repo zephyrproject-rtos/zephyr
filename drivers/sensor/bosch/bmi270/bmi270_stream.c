@@ -133,6 +133,17 @@ static inline uint16_t gyr_odr_reg_to_hz(uint8_t odr_reg)
 	}
 }
 
+/*
+ * Pack the settings that fix the FIFO frame layout and scaling. A FIFO that was
+ * filled under a different signature cannot be decoded under the current one.
+ */
+static inline uint32_t fifo_cfg_signature(const struct bmi270_data *data)
+{
+	return (uint32_t)data->acc_odr | ((uint32_t)data->gyr_odr << 8) |
+	       ((uint32_t)data->acc_range << 16) |
+	       ((uint32_t)gyr_fullscale_dps_to_decoder_idx(data->gyr_range) << 24);
+}
+
 static inline void stream_error(const struct device *dev, struct bmi270_data *data,
 				struct rtio_iodev_sqe *iodev_sqe, int err)
 {
@@ -801,8 +812,27 @@ void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 
 	/*
 	 * RTIO_SQE_MULTISHOT re-invokes this submit() on every FIFO cycle, not just at
-	 * stream start, so only run the one-time FIFO/INT-map/flush setup once.
+	 * stream start, so the FIFO/INT-map/flush setup must not run on every call:
+	 * flushing between cycles would drop samples.
+	 *
+	 * rtio_sqe_cancel() never calls into the driver, so a cancelled stream leaves
+	 * fifo_configured set with old frames in the FIFO and the INT latch set. Treat
+	 * the call as a new stream, and redo the setup, if any of these holds:
+	 *  - streaming_sqe is still set: a cycle was armed but never completed,
+	 *    which only a cancel or abort leaves behind. Normal completion clears it
+	 *    before RTIO resubmits.
+	 *  - this is a different SQE from the one that last armed the FIFO.
+	 *  - the ODR or range changed, so the FIFO content no longer matches the
+	 *    configuration the decoder will use.
 	 */
+	if (data->fifo_configured &&
+	    ((data->streaming_sqe != NULL) || (data->last_stream_sqe != iodev_sqe) ||
+	     (data->fifo_cfg_sig != fifo_cfg_signature(data)))) {
+		bmi270_fifo_job_abort(dev); /* drops queued jobs, clears fifo_configured */
+		data->fifo_drain_len = 0U;
+		data->streaming_sqe = NULL;
+	}
+
 	if (!data->fifo_configured) {
 		data->fifo_watermark_bytes = fifo_watermark_bytes();
 
@@ -841,6 +871,7 @@ void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 			return;
 		}
 
+		data->fifo_cfg_sig = fifo_cfg_signature(data);
 		data->fifo_configured = true;
 
 		LOG_DBG("Stream submitted (wm %u bytes, pin=%d)", data->fifo_watermark_bytes,
@@ -849,11 +880,21 @@ void bmi270_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iodev
 
 	/* Re-arm on every call: bmi270_try_submit_fifo_irq() disables this on every IRQ. */
 	data->streaming_sqe = iodev_sqe;
+	data->last_stream_sqe = iodev_sqe;
 	ret = gpio_pin_interrupt_configure_dt(fifo_pin_submit, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
 		data->streaming_sqe = NULL;
 		rtio_iodev_sqe_err(iodev_sqe, ret);
 		return;
+	}
+
+	/*
+	 * An edge interrupt cannot see a line that went active before it was armed.
+	 * If the FIFO crossed the watermark in that window, no further edge comes and
+	 * the stream stalls, so service it now.
+	 */
+	if (gpio_pin_get_dt(fifo_pin_submit) > 0) {
+		bmi270_stream_submit_fifo_job(dev);
 	}
 
 #if defined(CONFIG_BMI270_FIFO_POLL_FALLBACK)
