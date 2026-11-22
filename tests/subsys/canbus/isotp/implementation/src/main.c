@@ -408,6 +408,102 @@ ZTEST(isotp_implementation, test_buffer_allocation_wait)
 	isotp_unbind(&recv_ctx);
 }
 
+static K_SEM_DEFINE(reuse_cb_sem, 0, 1);
+static int reuse_cb_calls;
+
+static void send_reuse_cb(int error_nr, void *arg)
+{
+	int ret;
+
+	zassert_equal(error_nr, ISOTP_N_OK, "Sending failed (%d)", error_nr);
+	reuse_cb_calls++;
+
+	if (reuse_cb_calls == 1) {
+		/* Reusing send_ctx from its completion callback must not have
+		 * its new state overwritten by send_state_machine().
+		 */
+		ret = isotp_send(&send_ctx, can_dev, random_data, 60,
+				 &rx_addr, &tx_addr, send_reuse_cb, arg);
+		zassert_equal(ret, ISOTP_N_OK, "Re-send in callback failed (%d)", ret);
+	} else {
+		k_sem_give(&reuse_cb_sem);
+	}
+}
+
+ZTEST(isotp_implementation, test_send_ctx_reuse_in_cb)
+{
+	int ret;
+
+	reuse_cb_calls = 0;
+	k_sem_reset(&reuse_cb_sem);
+
+	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr, &fc_opts,
+			 K_NO_WAIT);
+	zassert_equal(ret, 0, "Binding failed (%d)", ret);
+
+	ret = isotp_send(&send_ctx, can_dev, random_data, DATA_SIZE_SF,
+			 &rx_addr, &tx_addr, send_reuse_cb, NULL);
+	zassert_equal(ret, ISOTP_N_OK, "Initial send failed (%d)", ret);
+
+	get_sf(&recv_ctx);
+	receive_test_data(&recv_ctx, random_data, 60, 0);
+
+	ret = k_sem_take(&reuse_cb_sem, K_MSEC(1000));
+	zassert_equal(ret, 0, "Second transfer completion callback timed out");
+	zassert_equal(reuse_cb_calls, 2, "Expected 2 completion callbacks");
+
+	isotp_unbind(&recv_ctx);
+}
+
+#if defined(CONFIG_ISOTP_ENABLE_CONTEXT_BUFFERS) && defined(CONFIG_ISOTP_USE_TX_BUF)
+static K_SEM_DEFINE(buf_cb_sem, 0, 1);
+static int buf_cb_calls;
+
+static void send_buf_reuse_cb(int error_nr, void *arg)
+{
+	int ret;
+
+	zassert_equal(error_nr, ISOTP_N_OK, "Buffered send failed (%d)", error_nr);
+	buf_cb_calls++;
+
+	if (buf_cb_calls == 1) {
+		ret = isotp_send_buf(can_dev, random_data, 60,
+				     &rx_addr, &tx_addr, send_buf_reuse_cb, arg,
+				     K_NO_WAIT);
+		zassert_equal(ret, ISOTP_N_OK,
+			      "Buffered re-send in callback failed (%d)", ret);
+	} else {
+		k_sem_give(&buf_cb_sem);
+	}
+}
+
+ZTEST(isotp_implementation, test_send_buf_reuse_in_cb)
+{
+	int ret;
+
+	buf_cb_calls = 0;
+	k_sem_reset(&buf_cb_sem);
+
+	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr, &fc_opts,
+			 K_NO_WAIT);
+	zassert_equal(ret, 0, "Binding failed (%d)", ret);
+
+	ret = isotp_send_buf(can_dev, random_data, DATA_SIZE_SF,
+			     &rx_addr, &tx_addr, send_buf_reuse_cb, NULL,
+			     K_NO_WAIT);
+	zassert_equal(ret, ISOTP_N_OK, "Initial buffered send failed (%d)", ret);
+
+	get_sf(&recv_ctx);
+	receive_test_data(&recv_ctx, random_data, 60, 0);
+
+	ret = k_sem_take(&buf_cb_sem, K_MSEC(1000));
+	zassert_equal(ret, 0, "Second buffered transfer completion timed out");
+	zassert_equal(buf_cb_calls, 2, "Expected 2 buffered completion callbacks");
+
+	isotp_unbind(&recv_ctx);
+}
+#endif
+
 void *isotp_implementation_setup(void)
 {
 	int ret;
