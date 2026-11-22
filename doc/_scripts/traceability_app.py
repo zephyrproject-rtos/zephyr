@@ -652,7 +652,8 @@ def make_handler(app, html):
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__,
-                                formatter_class=argparse.RawDescriptionHelpFormatter)
+                                formatter_class=argparse.RawDescriptionHelpFormatter,
+                                allow_abbrev=False)
     p.add_argument("--json", default="doc/_build/html/needs.json")
     p.add_argument("--twister", default="twister.json")
     p.add_argument("--matrix", default="test_matrix.json")
