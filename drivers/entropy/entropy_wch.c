@@ -13,8 +13,13 @@ LOG_MODULE_REGISTER(entropy, CONFIG_ENTROPY_LOG_LEVEL);
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 
 #include <hal_ch32fun.h>
+
+/* Upper bound on one DRDY wait. */
+#define ENTROPY_WCH_TIMEOUT_US 1000
 
 struct entropy_wch_config {
 	RNG_TypeDef *regs;
@@ -22,25 +27,42 @@ struct entropy_wch_config {
 	uint8_t clk_id;
 };
 
-static inline uint32_t entropy_wch_get_u32(const struct device *dev)
+static int entropy_wch_get_u32(const struct device *dev, uint32_t *word)
 {
 	const struct entropy_wch_config *config = dev->config;
+	RNG_TypeDef *regs = config->regs;
+	uint32_t sr;
 
-	if (!(config->regs->SR & RNG_SR_DRDY)) {
-		LOG_WRN("Invalid RNG Data");
-		return 0;
+	if (!WAIT_FOR((regs->SR & (RNG_SR_DRDY | RNG_SR_SEIS | RNG_SR_CEIS)) != 0,
+		      ENTROPY_WCH_TIMEOUT_US, k_busy_wait(1))) {
+		LOG_ERR("RNG timeout");
+		return -ETIMEDOUT;
 	}
 
-	return config->regs->DR;
+	sr = regs->SR;
+	if (sr & (RNG_SR_SEIS | RNG_SR_CEIS)) {
+		LOG_ERR("RNG error, SR 0x%08x", sr);
+		regs->SR = sr & ~(RNG_SR_SEIS | RNG_SR_CEIS);
+		return -EIO;
+	}
+
+	*word = regs->DR;
+	return 0;
 }
 
 static int entropy_wch_get_entropy(const struct device *dev, uint8_t *buf, uint16_t len)
 {
 	uint8_t *buf_bytes = buf;
+	uint32_t word;
+	int ret;
 
 	while (len > 0) {
-		uint32_t word = entropy_wch_get_u32(dev);
 		uint32_t to_copy = MIN(sizeof(word), len);
+
+		ret = entropy_wch_get_u32(dev, &word);
+		if (ret < 0) {
+			return ret;
+		}
 
 		memcpy(buf_bytes, &word, to_copy);
 		buf_bytes += to_copy;
