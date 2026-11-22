@@ -346,6 +346,7 @@ static K_MUTEX_DEFINE(dtls_helper_buf_lock);
 
 /* A global pool of TLS contexts. */
 static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
+static uint32_t tls_context_generation[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
 K_MEM_SLAB_DEFINE_STATIC_TYPE(tls_session_contexts, struct tls_session_context,
 			      CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS);
 
@@ -833,6 +834,7 @@ static int tls_release(struct tls_context *tls)
 		tls_session_free(session_ctx);
 	}
 
+	tls_context_generation[ARRAY_INDEX(tls_contexts, tls)]++;
 	tls->is_used = false;
 
 	return 0;
@@ -3567,6 +3569,9 @@ error:
 int ztls_accept_ctx(struct tls_context *parent, struct net_sockaddr *addr,
 		    net_socklen_t *addrlen)
 {
+	struct k_mutex *lock = parent->lock;
+	uint32_t generation = tls_context_generation[ARRAY_INDEX(tls_contexts, parent)];
+	int parent_sock = parent->sock;
 	struct tls_context *child = NULL;
 	int ret, err, fd, sock;
 
@@ -3581,9 +3586,21 @@ int ztls_accept_ctx(struct tls_context *parent, struct net_sockaddr *addr,
 	}
 
 
-	k_mutex_unlock(parent->lock);
-	sock = zsock_accept(parent->sock, addr, addrlen);
-	k_mutex_lock(parent->lock, K_FOREVER);
+	ret = k_mutex_unlock(lock);
+	if (ret < 0) {
+		zvfs_free_fd(fd);
+		errno = -ret;
+		return -1;
+	}
+
+	sock = zsock_accept(parent_sock, addr, addrlen);
+	(void)k_mutex_lock(lock, K_FOREVER);
+
+	if (generation != tls_context_generation[ARRAY_INDEX(tls_contexts, parent)]) {
+		ret = -EINTR;
+		goto error;
+	}
+
 	if (sock < 0) {
 		ret = -errno;
 		goto error;
