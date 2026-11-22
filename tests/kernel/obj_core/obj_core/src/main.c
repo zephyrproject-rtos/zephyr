@@ -998,5 +998,21 @@ ZTEST(obj_core, test_obj_core_walk_callback)
 	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex1)), 1);
 }
 
+/**
+ * @brief Verify looking up an unknown object type reports no type.
+ *
+ * @details
+ * k_obj_type_find() walks the registered object types; an identifier no
+ * type was registered with must produce no object type.
+ *
+ * @see k_obj_type_find()
+ * @verifies ZEP-SRS-35-14
+ */
+ZTEST(obj_core, test_obj_core_unknown_type)
+{
+	zassert_is_null(k_obj_type_find(K_OBJ_TYPE_ID_GEN("ZZZ_")),
+			"found an object type never registered");
+}
+
 ZTEST_SUITE(obj_core, NULL, NULL,
 	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
