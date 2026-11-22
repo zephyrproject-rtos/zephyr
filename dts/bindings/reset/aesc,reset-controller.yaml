@@ -1,0 +1,29 @@
+#
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Aesc Silicon Reset Controller
+
+description: |
+  Reset controller for the ElemRV platform. Software requests a reset of one
+  or more reset domains; each requested domain is held in reset for a delay
+  defined by the SoC and released afterwards. A domain cannot be held in reset
+  by software.
+
+  The reset specifier is the zero-based domain index, e.g. HYDROGEN_RESET_SYSTEM.
+
+compatible: "aesc,reset-controller"
+
+include: [reset-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#reset-cells":
+    const: 1
+
+reset-cells:
+  - id
