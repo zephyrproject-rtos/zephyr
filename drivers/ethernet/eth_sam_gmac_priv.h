@@ -231,6 +231,8 @@ struct gmac_queue {
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 	struct sys_ringq tx_frag_list;
+	/** Frames handed to the GMAC and not released yet */
+	uint32_t tx_frames_pending;
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	struct sys_ringq tx_frames;
 #endif
