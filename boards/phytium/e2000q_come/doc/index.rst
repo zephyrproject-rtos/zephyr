@@ -21,6 +21,7 @@ The E2000Q (PE2204) provides:
 * ARM GICv3 interrupt controller with ITS
 * ARM architected timer (50 MHz)
 * PL011 UARTs
+* PCIe host controller
 
 Supported Features
 ==================
@@ -35,6 +36,31 @@ Serial Port
 
 The console is UART1 at ``0x2800d000``, driven at 115200 8N1. It is used both
 as the Zephyr console and as the shell UART.
+
+PCI Express
+===========
+
+The PCIe host uses the generic ECAM driver. The boot firmware must configure
+the root ports, PHYs and address translation windows before starting Zephyr.
+Zephyr enumerates the bus hierarchy and assigns BARs and bridge windows.
+Both the single-core and SMP board targets support PCIe.
+
+Enable :kconfig:option:`CONFIG_PCIE` in the application. To inspect devices
+with the shell, also enable :kconfig:option:`CONFIG_SHELL` and
+:kconfig:option:`CONFIG_PCIE_SHELL`, then run ``pcie ls``.
+
+The host provides an I/O window at CPU address ``0x50000000``, a 32-bit
+memory window at ``0x58000000``, and a 64-bit prefetchable memory window at
+``0x1000000000``. I/O bus addresses are translated through the I/O window;
+memory bus addresses match CPU physical addresses.
+
+Enable :kconfig:option:`CONFIG_PCIE_MSI` and
+:kconfig:option:`CONFIG_PCIE_MSI_MULTI_VECTOR` for the MSI vector allocation
+APIs. MSI support also enables the GICv3 ITS and reserves interrupt table
+entries for LPIs. Devices using MSI-X additionally need
+:kconfig:option:`CONFIG_PCIE_MSI_X`.
+The devicetree interrupt map routes INTx pins A through D to GIC SPIs 4
+through 7 for statically described PCIe devices.
 
 Programming and Debugging
 *************************

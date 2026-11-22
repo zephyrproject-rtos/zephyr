@@ -8,4 +8,5 @@ toolchain:
 ram: 524288
 supported:
   - uart
+  - pcie
 vendor: phytium

@@ -15,7 +15,12 @@
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram0;
+		zephyr,pcie-controller = &pcie0;
 	};
+};
+
+&pcie0 {
+	status = "okay";
 };
 
 &uart1 {

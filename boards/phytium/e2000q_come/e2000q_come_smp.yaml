@@ -12,3 +12,4 @@ ram: 524288
 supported:
   - smp
   - uart
+  - pcie
