@@ -251,13 +251,11 @@ int pthread_condattr_init(pthread_condattr_t *att)
 	if (att == NULL) {
 		return EINVAL;
 	}
-	if (attr->initialized) {
-		LOG_DBG("%s %s initialized", "attribute", "already");
-		return EINVAL;
-	}
 
-	attr->clock = CLOCK_REALTIME;
-	attr->initialized = true;
+	*attr = (struct posix_condattr){
+		.clock = CLOCK_REALTIME,
+		.initialized = true,
+	};
 
 	return 0;
 }

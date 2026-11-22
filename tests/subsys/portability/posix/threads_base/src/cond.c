@@ -5,6 +5,7 @@
  */
 
 #include <pthread.h>
+#include <string.h>
 
 #include <zephyr/ztest.h>
 
@@ -45,6 +46,21 @@ ZTEST(cond, test_cond_resource_leak)
 		zassert_ok(pthread_cond_init(&cond, NULL), "failed to init cond %zu", i);
 		zassert_ok(pthread_cond_destroy(&cond), "failed to destroy cond %zu", i);
 	}
+}
+
+ZTEST(cond, test_pthread_condattr_init_overwrites_prior_contents)
+{
+	pthread_condattr_t att;
+	pthread_cond_t cond;
+
+	memset(&att, 0xff, sizeof(att));
+
+	zassert_ok(pthread_condattr_init(&att));
+
+	zassert_ok(pthread_cond_init(&cond, &att));
+	zassert_ok(pthread_cond_destroy(&cond));
+
+	zassert_ok(pthread_condattr_destroy(&att));
 }
 
 ZTEST(cond, test_pthread_condattr)
