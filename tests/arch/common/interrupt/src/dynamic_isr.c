@@ -44,7 +44,6 @@ struct _isr_table_entry _sw_isr_table[];
  *
  * @see arch_irq_connect_dynamic()
  * @verifies ZEP-SRS-7-5
- * @verifies ZEP-SRS-7-5
  * @verifies ZEP-SRS-7-6
  * @verifies ZEP-SRS-7-10
  * @verifies ZEP-SRS-7-11
