@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP LPC SHA engine.
+
+  The block computes SHA-1 and SHA-256. Only SHA-256 is reachable through the
+  Zephyr crypto API, which has no SHA-1 algorithm.
+
+compatible: "nxp,lpc-sha"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
