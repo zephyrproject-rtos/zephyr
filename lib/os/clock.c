@@ -28,6 +28,20 @@
 static struct timespec rt_clock_offset;
 static struct k_spinlock rt_clock_offset_lock;
 
+#if defined(CONFIG_USERSPACE) && !defined(CONFIG_SYS_CLOCK_EXISTS)
+/*
+ * kernel/timeout.c holds the regular marshaller and is not built without a
+ * system clock, yet a user thread calling k_uptime_ticks() still traps into
+ * z_mrsh_k_uptime_ticks(). Provide the verifier and marshaller here; the
+ * implementation is the inline shim in kernel.h.
+ */
+static inline int64_t z_vrfy_k_uptime_ticks(void)
+{
+	return z_impl_k_uptime_ticks();
+}
+#include <zephyr/syscalls/k_uptime_ticks_mrsh.c>
+#endif /* CONFIG_USERSPACE && !CONFIG_SYS_CLOCK_EXISTS */
+
 static bool is_valid_clock_id(int clock_id)
 {
 	switch (clock_id) {
