@@ -67,6 +67,15 @@
 	status = "okay";
 };
 
+zephyr_udc0: &usb0 {
+	power-domains = <&usb_hcd>;
+	status = "okay";
+};
+
+&usb_hcd {
+	zephyr,pm-device-runtime-auto;
+};
+
 &gpio0_0 {
 	status = "okay";
 };
