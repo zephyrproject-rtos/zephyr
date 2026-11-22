@@ -215,30 +215,39 @@ ZTEST_USER(timer_api, test_timer_duration_period)
  *
  * @details A timer initialized at run time with k_timer_init() must start
  * out inactive -- no expiries recorded and no time remaining -- and be
- * immediately usable: starting it as a one-shot makes it expire once.
+ * immediately usable: starting it as a one-shot invokes the expiry function
+ * set at initialization, and stopping it while running invokes the stop
+ * function set at initialization.
  *
  * @ingroup kernel_timer_tests
  *
  * @see k_timer_init()
  * @see k_timer_start()
+ * @see k_timer_stop()
  * @see k_timer_status_get()
  */
 ZTEST(timer_api, test_timer_init_runtime)
 {
 	static struct k_timer runtime_timer;
 
-	k_timer_init(&runtime_timer, NULL, NULL);
+	init_timer_data();
+	k_timer_init(&runtime_timer, period0_expire, duration_stop);
 
 	/* freshly initialized: inactive, no expiries */
 	zassert_equal(k_timer_status_get(&runtime_timer), 0);
 	zassert_equal(k_timer_remaining_get(&runtime_timer), 0);
 
-	/* immediately usable as a one-shot timer */
+	/* immediately usable as a one-shot timer, calling the expiry fn */
 	k_timer_start(&runtime_timer, K_MSEC(DURATION), K_NO_WAIT);
 	busy_wait_ms(DURATION + 50);
 	zassert_equal(k_timer_status_get(&runtime_timer), 1);
+	zassert_equal(tdata.expire_cnt, 1);
+	zassert_equal(tdata.stop_cnt, 0);
 
+	/* stopping the running timer calls the stop fn */
+	k_timer_start(&runtime_timer, K_MSEC(DURATION), K_NO_WAIT);
 	k_timer_stop(&runtime_timer);
+	zassert_equal(tdata.stop_cnt, 1);
 }
 
 /**
