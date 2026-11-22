@@ -431,12 +431,17 @@ int sam_xdmac_transfer_start(const struct device *dev, uint32_t channel)
 		return -EBUSY;
 	}
 
+	/*
+	 * Before enabling the channel: a short transfer can complete, and its
+	 * interrupt set the state back to configured, before this function
+	 * resumes.
+	 */
+	dev_data->dma_channels[channel].state = DMA_STATE_RUNNING;
+
 	/* Enable channel interrupt */
 	xdmac->XDMAC_GIE = XDMAC_GIE_IE0 << channel;
 	/* Enable channel */
 	xdmac->XDMAC_GE = XDMAC_GE_EN0 << channel;
-
-	dev_data->dma_channels[channel].state = DMA_STATE_RUNNING;
 
 	return 0;
 }
@@ -459,10 +464,10 @@ int sam_xdmac_transfer_stop(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	/* Check if the channel is enabled */
-	if (!(xdmac->XDMAC_GS & (XDMAC_GS_ST0 << channel))) {
-		return 0;
-	}
+	/*
+	 * Also for a channel that already completed: its interrupt may still be
+	 * pending, and its state is only reset here or by that interrupt.
+	 */
 
 	/* Disable channel */
 	xdmac->XDMAC_GD = XDMAC_GD_DI0 << channel;
