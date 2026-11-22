@@ -41,6 +41,11 @@ ZTEST(buffer_alloc_failure, test_returns_enomem_when_pool_is_exhausted)
 	zassert_not_null(second);
 	zbus_chan_set_msg_sub_pool(&exhausted_pool_chan, &exhausted_pool);
 
+	zassert_ok(zbus_chan_claim(&exhausted_pool_chan, K_NO_WAIT));
+	*(int *)zbus_chan_msg(&exhausted_pool_chan) = 0;
+	zassert_ok(zbus_chan_finish(&exhausted_pool_chan));
+	listener_calls = 0;
+
 	zassert_equal(zbus_chan_pub(&exhausted_pool_chan, &msg, K_NO_WAIT), -ENOMEM);
 	zassert_equal(zbus_chan_notify(&exhausted_pool_chan, K_NO_WAIT), -ENOMEM);
 	zassert_equal(listener_calls, 0);
