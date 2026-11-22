@@ -20,7 +20,6 @@
 #include <zephyr/toolchain.h>
 
 #include <lc3.h>
-#include <sys/errno.h>
 #include <math.h>
 
 #include "stream_lc3.h"
