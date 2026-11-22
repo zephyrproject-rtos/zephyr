@@ -1130,3 +1130,51 @@ static ZTEST(bt_host_ncp, test_dropped_packets_not_reported)
 	test_conn = NULL;
 }
 #endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_GATT_CLIENT */
+
+ZTEST_SUITE(bt_recv_buf, NULL, NULL, before, NULL, NULL);
+
+/* An event that the Host only logs, one byte into its buffer so that the
+ * headroom counts.
+ */
+static struct net_buf *overflow_evt_create(void)
+{
+	struct net_buf *buf;
+
+	buf = bt_buf_get_evt(BT_HCI_EVT_DATA_BUF_OVERFLOW, false, K_FOREVER);
+	net_buf_reset(buf);
+	net_buf_reserve(buf, 1U);
+	(void)net_buf_add_u8(buf, BT_HCI_H4_EVT);
+	evt_create(buf, BT_HCI_EVT_DATA_BUF_OVERFLOW, sizeof(struct bt_hci_evt_data_buf_overflow));
+	(void)net_buf_add_u8(buf, BT_OVERFLOW_LINK_ACL);
+
+	return buf;
+}
+
+/* The Host takes neither a buffer that holds more than its capacity, as a
+ * driver that copies a packet without checking the tailroom leaves it, nor an
+ * empty one, and the driver keeps them. A buffer full to its end is taken.
+ * Lowering the capacity stands in for writing past the buffer.
+ */
+static ZTEST(bt_recv_buf, test_invalid_buf_rejected)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct net_buf *buf;
+	int err;
+
+	buf = overflow_evt_create();
+	buf->size = net_buf_headroom(buf) + buf->len - 1U;
+	err = bt_hci_recv_err(dev, buf);
+	zassert_equal(err, -EINVAL, "Overrun buffer taken (err %d)", err);
+	zassert_equal(buf->ref, 1U, "Reference count %u", buf->ref);
+
+	net_buf_reset(buf);
+	err = bt_hci_recv_err(dev, buf);
+	zassert_equal(err, -EINVAL, "Empty buffer taken (err %d)", err);
+	zassert_equal(buf->ref, 1U, "Reference count %u", buf->ref);
+	net_buf_unref(buf);
+
+	buf = overflow_evt_create();
+	buf->size = net_buf_headroom(buf) + buf->len;
+	err = bt_hci_recv_err(dev, buf);
+	zassert_ok(err, "Full buffer not taken (err %d)", err);
+}
