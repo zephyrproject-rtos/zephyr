@@ -251,6 +251,7 @@
 				data-mode = "relative";
 				primary-tap-enable;
 				secondary-tap-enable;
+				scroll-enable;
 				swap-xy;
 			};
 
