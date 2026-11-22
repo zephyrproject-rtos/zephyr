@@ -10,6 +10,13 @@
 #include <zephyr/sys/heap_listener.h>
 #include <inttypes.h>
 
+/**
+ * @defgroup lib_heap_tests Sys Heap Allocator Tests
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 /* Guess at a value for heap size based on available memory on the
  * platform, with workarounds.
  */
@@ -152,10 +159,18 @@ static void log_result(size_t sz, struct z_heap_stress_result *r)
 		 r->total_frees, avg, (int) sz, avg_pct);
 }
 
-/* Do a heavy test over a small heap, with many iterations that need
- * to reuse memory repeatedly.  Target 50% fill, as that setting tends
- * to prevent runaway fragmentation and most allocations continue to
- * succeed in steady state.
+/**
+ * @brief Stress a small heap with many allocate and free operations.
+ *
+ * @details
+ * Runs the stress harness over a small heap at a 50% fill target. Every
+ * allocation checks sys_heap_usable_size() against the block size the
+ * allocator must have produced, and the heap is validated after each
+ * operation.
+ *
+ * @ingroup lib_heap_tests
+ * @see sys_heap_usable_size()
+ * @verifies ZEP-SRS-9-22
  */
 ZTEST(lib_heap, test_small_heap)
 {
@@ -203,10 +218,17 @@ ZTEST(lib_heap, test_fragmentation)
 	log_result(SMALL_HEAP_SZ, &result);
 }
 
-/* The heap block format changes for heaps with more than 2^15 chunks,
- * so test that case too.  This can be too large to iterate over
- * exhaustively with good performance, so the relative operation count
- * and fragmentation is going to be lower.
+/**
+ * @brief Stress a heap large enough to use the big-heap block format.
+ *
+ * @details
+ * The heap block format changes for heaps with more than 2^15 chunks, so
+ * run the same stress harness, including the sys_heap_usable_size() check
+ * on every allocation, over a heap in that range.
+ *
+ * @ingroup lib_heap_tests
+ * @see sys_heap_usable_size()
+ * @verifies ZEP-SRS-9-22
  */
 ZTEST(lib_heap, test_big_heap)
 {
@@ -373,6 +395,22 @@ static void heap_free_cb(uintptr_t heap_id, void *mem, size_t bytes)
 }
 #endif /* CONFIG_SYS_HEAP_LISTENER */
 
+/**
+ * @brief Verify heap event listener registration and notification.
+ *
+ * @details
+ * Registers allocation and free listeners for one heap, checks each
+ * allocation and release reports the heap identifier and the affected
+ * block to the registered callback, then checks an unregistered listener
+ * is no longer notified.
+ *
+ * @ingroup lib_heap_tests
+ * @see heap_listener_register()
+ * @see heap_listener_unregister()
+ * @verifies ZEP-SRS-9-23
+ * @verifies ZEP-SRS-9-24
+ * @verifies ZEP-SRS-9-25
+ */
 ZTEST(lib_heap, test_heap_listeners)
 {
 #ifdef CONFIG_SYS_HEAP_LISTENER
@@ -438,9 +476,19 @@ ZTEST(lib_heap, test_heap_listeners)
 		      "Heap allocated pointer mismatched: %p != %p",
 		      listener_mem, mem);
 
-	/* Clean up */
+	/* Unregistered listeners are no longer notified */
 	heap_listener_unregister(&heap_event_alloc);
 	heap_listener_unregister(&heap_event_free);
+
+	listener_mem = NULL;
+	mem = sys_heap_alloc(&listener_heap, 32U);
+	zassert_not_null(mem, "allocation failed");
+	zassert_is_null(listener_mem,
+			"unregistered alloc listener was notified");
+
+	sys_heap_free(&listener_heap, mem);
+	zassert_is_null(listener_mem,
+			"unregistered free listener was notified");
 
 #else /* CONFIG_SYS_HEAP_LISTENER */
 	ztest_test_skip();
@@ -495,6 +543,18 @@ ZTEST(lib_heap, test_heap_overhead)
 	}
 }
 
+/**
+ * @brief Verify the largest allocatable block query tracks heap usage.
+ *
+ * @details
+ * Checks sys_heap_get_largest_free_block() rejects null arguments, reports
+ * a non-zero size on a fresh heap, a smaller size while a block is
+ * allocated, and at least the original size after the block is freed.
+ *
+ * @ingroup lib_heap_tests
+ * @see sys_heap_get_largest_free_block()
+ * @verifies ZEP-SRS-9-21
+ */
 ZTEST(lib_heap, test_largest_free_block)
 {
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
@@ -537,6 +597,73 @@ ZTEST(lib_heap, test_largest_free_block)
 
 	zassert_true(after >= before,
 		     "largest free block should recover");
+#else
+	ztest_test_skip();
+#endif
+}
+
+/**
+ * @brief Verify the heap runtime statistics and the maximum reset.
+ *
+ * @details
+ * On a fresh heap nothing is allocated and the whole arena is free. After
+ * two allocations the allocated byte count grows and the maximum tracks
+ * it; after freeing one block the maximum stays at the peak until
+ * sys_heap_runtime_stats_reset_max() lowers it to the current allocation.
+ *
+ * @ingroup lib_heap_tests
+ * @see sys_heap_runtime_stats_get()
+ * @see sys_heap_runtime_stats_reset_max()
+ * @verifies ZEP-SRS-9-19
+ * @verifies ZEP-SRS-9-20
+ */
+ZTEST(lib_heap, test_runtime_stats)
+{
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	struct sys_memory_stats stats;
+	struct sys_heap heap;
+	size_t peak;
+	void *p1, *p2;
+
+	sys_heap_init(&heap, alignedmem, sizeof(alignedmem));
+
+	zassert_equal(sys_heap_runtime_stats_get(NULL, &stats), -EINVAL);
+	zassert_equal(sys_heap_runtime_stats_get(&heap, NULL), -EINVAL);
+	zassert_equal(sys_heap_runtime_stats_reset_max(NULL), -EINVAL);
+
+	zassert_ok(sys_heap_runtime_stats_get(&heap, &stats));
+	zassert_equal(stats.allocated_bytes, 0, "fresh heap has allocations");
+	zassert_equal(stats.max_allocated_bytes, 0,
+		      "fresh heap has an allocation maximum");
+	zassert_true(stats.free_bytes > 0, "fresh heap reports no free memory");
+
+	p1 = sys_heap_alloc(&heap, 64);
+	p2 = sys_heap_alloc(&heap, 128);
+	zassert_not_null(p1, "allocation failed");
+	zassert_not_null(p2, "allocation failed");
+
+	zassert_ok(sys_heap_runtime_stats_get(&heap, &stats));
+	zassert_true(stats.allocated_bytes >= 64 + 128,
+		     "allocated bytes below the outstanding allocations");
+	zassert_equal(stats.max_allocated_bytes, stats.allocated_bytes,
+		      "maximum does not track the only allocations");
+	peak = stats.max_allocated_bytes;
+
+	sys_heap_free(&heap, p2);
+
+	zassert_ok(sys_heap_runtime_stats_get(&heap, &stats));
+	zassert_true(stats.allocated_bytes < peak,
+		     "free did not lower the allocated byte count");
+	zassert_equal(stats.max_allocated_bytes, peak,
+		      "maximum dropped without a reset");
+
+	zassert_ok(sys_heap_runtime_stats_reset_max(&heap));
+
+	zassert_ok(sys_heap_runtime_stats_get(&heap, &stats));
+	zassert_equal(stats.max_allocated_bytes, stats.allocated_bytes,
+		      "reset did not lower the maximum to the current usage");
+
+	sys_heap_free(&heap, p1);
 #else
 	ztest_test_skip();
 #endif
