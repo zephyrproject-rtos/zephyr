@@ -1,0 +1,18 @@
+# Copyright (c) 2026 StructCore Embedded
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  depends_on: netif
+  tags:
+    - net
+    - snmp
+tests:
+  net.snmp:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+    integration_platforms:
+      - native_sim/native/64
+    harness: ztest
