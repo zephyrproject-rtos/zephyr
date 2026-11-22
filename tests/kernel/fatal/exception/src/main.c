@@ -573,6 +573,7 @@ ZTEST(fatal_exception, test_fatal_except_reason_negative)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-8-12
  * @verifies ZEP-SRS-16-10
  */
 ZTEST(fatal_exception, test_fatal_stack_sentinel_timer)
@@ -598,6 +599,7 @@ ZTEST(fatal_exception, test_fatal_stack_sentinel_timer)
  *
  * @see k_sys_fatal_error_handler()
  * @ingroup kernel_fatal_tests
+ * @verifies ZEP-SRS-8-12
  * @verifies ZEP-SRS-16-10
  */
 ZTEST(fatal_exception, test_fatal_stack_sentinel_swap)
