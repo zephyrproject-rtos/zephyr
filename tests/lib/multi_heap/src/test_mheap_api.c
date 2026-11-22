@@ -407,6 +407,30 @@ void *multi_heap_choice(struct sys_multi_heap *mheap, void *cfg,
 	return sys_heap_aligned_alloc(h, align, size);
 }
 
+/**
+ * @brief Verify heap group creation, allocation routing and reallocation.
+ *
+ * @details
+ * Builds a heap group from several heaps, each added with its backing
+ * memory as user data. Allocations carry the serving heap's index as the
+ * per-allocation configuration, and the choice function must route each
+ * one to that heap: every block is checked to land in the right memory,
+ * and the group record looked up from the block reports the serving heap
+ * and its user data. Freed blocks return to their heap and can be
+ * allocated again, reallocation keeps the block contents, and an aligned
+ * allocation honors the requested alignment.
+ *
+ * @ingroup k_heap_api_tests
+ * @see sys_multi_heap_init()
+ * @see sys_multi_heap_add_heap()
+ * @see sys_multi_heap_aligned_alloc()
+ * @verifies ZEP-SRS-9-30
+ * @verifies ZEP-SRS-9-31
+ * @verifies ZEP-SRS-9-32
+ * @verifies ZEP-SRS-9-33
+ * @verifies ZEP-SRS-9-34
+ * @verifies ZEP-SRS-9-35
+ */
 ZTEST(mheap_api, test_multi_heap)
 {
 	char *blocks[N_MULTI_HEAPS];
@@ -414,13 +438,16 @@ ZTEST(mheap_api, test_multi_heap)
 	sys_multi_heap_init(&multi_heap, multi_heap_choice);
 	for (int i = 0; i < N_MULTI_HEAPS; i++) {
 		sys_heap_init(&mheaps[i], &heap_mem[i][0], MHEAP_BYTES);
-		sys_multi_heap_add_heap(&multi_heap, &mheaps[i], NULL);
+		sys_multi_heap_add_heap(&multi_heap, &mheaps[i],
+					&heap_mem[i][0]);
 	}
 
 	/* Allocate half the buffer from each heap, make sure it works
 	 * and that the pointer is in the correct memory
 	 */
 	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		const struct sys_multi_heap_rec *rec;
+
 		blocks[i] = sys_multi_heap_alloc(&multi_heap, (void *)(long)i,
 						 MHEAP_BYTES / 2);
 
@@ -428,6 +455,12 @@ ZTEST(mheap_api, test_multi_heap)
 		zassert_true(blocks[i] >= &heap_mem[i][0] &&
 			     blocks[i] < &heap_mem[i+1][0],
 			     "allocation not in correct heap");
+
+		rec = sys_multi_heap_get_heap(&multi_heap, blocks[i]);
+		zassert_equal(rec->heap, &mheaps[i],
+			      "block not recorded against the serving heap");
+		zassert_equal(rec->user_data, &heap_mem[i][0],
+			      "heap record lost the user data");
 
 		void *ptr = sys_multi_heap_realloc(&multi_heap, (void *)(long)i,
 			blocks[i], MHEAP_BYTES / 2);
@@ -448,16 +481,38 @@ ZTEST(mheap_api, test_multi_heap)
 		sys_multi_heap_free(&multi_heap, blocks[i]);
 	}
 
+	/* Aligned allocation honors the alignment and the heap choice */
+	for (int i = 0; i < N_MULTI_HEAPS; i++) {
+		void *ap = sys_multi_heap_aligned_alloc(&multi_heap,
+							(void *)(long)i, 16,
+							MHEAP_BYTES / 4);
+
+		zassert_not_null(ap, "aligned allocation failed");
+		zassert_equal(((uintptr_t)ap) % 16, 0,
+			      "allocation not aligned");
+		zassert_true((char *)ap >= &heap_mem[i][0] &&
+			     (char *)ap < &heap_mem[i+1][0],
+			     "aligned allocation not in correct heap");
+		sys_multi_heap_free(&multi_heap, ap);
+	}
+
 	/* Allocate again to make sure they're still valid */
 	for (int i = 0; i < N_MULTI_HEAPS; i++) {
 		blocks[i] = sys_multi_heap_alloc(&multi_heap, (void *)(long)i,
 						 MHEAP_BYTES / 2);
 		zassert_not_null(blocks[i], "final re-allocation failed");
 
-		/* Allocating smaller buffer should stay within */
+		/* Allocating smaller buffer should stay within, with the
+		 * remaining contents preserved
+		 */
+		memset(blocks[i], 0x5a + i, MHEAP_BYTES / 4);
 		void *ptr = sys_multi_heap_realloc(&multi_heap, (void *)(long)i,
 						   blocks[i], MHEAP_BYTES / 4);
 		zassert_equal(ptr, blocks[i], "realloc should return same value");
+		for (int j = 0; j < MHEAP_BYTES / 4; j++) {
+			zassert_equal(blocks[i][j], (char)(0x5a + i),
+				      "realloc lost the block contents");
+		}
 
 		ptr = sys_multi_heap_alloc(&multi_heap, (void *)(long)i,
 					   MHEAP_BYTES / 4);
