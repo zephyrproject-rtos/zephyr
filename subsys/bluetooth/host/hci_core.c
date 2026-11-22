@@ -4857,8 +4857,20 @@ static void rx_queue_put(struct net_buf *buf)
 
 static int bt_recv_unsafe(struct net_buf *buf)
 {
+	uint8_t type;
+
+	/* An empty buffer carries no packet type, and one longer than its
+	 * capacity has been overrun by the driver. ACL and ISO reassembly must
+	 * not append to the latter: net_buf_tailroom() wraps around for such a
+	 * buffer and lets every further fragment extend the overrun.
+	 */
+	if (buf->len == 0U || net_buf_headroom(buf) + buf->len > buf->size) {
+		LOG_ERR("Invalid RX buffer from HCI driver (len %u size %u)", buf->len, buf->size);
+		return -EINVAL;
+	}
+
 	/* Don't pull the type, since we still need it in the rx queue */
-	uint8_t type = buf->data[0];
+	type = buf->data[0];
 
 	bt_monitor_send(bt_monitor_opcode(type, BT_MONITOR_RX), buf->data + 1, buf->len - 1);
 
