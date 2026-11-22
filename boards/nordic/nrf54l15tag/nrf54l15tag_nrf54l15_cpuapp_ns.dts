@@ -17,8 +17,6 @@
 	compatible = "nordic,nrf54l15tag_nrf54l15-cpuapp";
 	model = "Nordic nRF54L15 TAG nRF54L15 Application MCU";
 
-	/delete-node/ rng;
-
 	psa_rng: psa-rng {
 		status = "okay";
 	};

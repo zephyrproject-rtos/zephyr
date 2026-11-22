@@ -1,0 +1,32 @@
+# Copyright (c) 2026 Embeint Pty Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic CRACEN cryptographic accelerator
+
+  The CRACEN peripheral contains the CryptoMaster (symmetric cryptography DMA
+  engine), the RNG (true random number generator) and the PKE/IKG (public key
+  engine) modules. The device instance owns initialisation of the nrfx CRACEN
+  library, and arbitrates access to the hardware between its users, such as
+  the "nordic,nrf-cracen-ctrdrbg" entropy driver, which must be a child node.
+
+compatible: "nordic,nrf-cracen"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      CRACEN wrapper and CRACENCORE register blocks.
+
+  reg-names:
+    required: true
+    enum:
+      - "wrapper"
+      - "core"
+    description: |
+      Must be "wrapper" and "core".
+
+  interrupts:
+    required: true
