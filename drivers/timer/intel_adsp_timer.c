@@ -13,6 +13,8 @@
 #include <adsp_interrupt.h>
 #include <zephyr/irq.h>
 
+#include <intel_adsp_io.h>
+
 #define DT_DRV_COMPAT intel_adsp_timer
 
 /**
@@ -41,7 +43,6 @@ BUILD_ASSERT(COMPARATOR_IDX >= 0 && COMPARATOR_IDX <= 1);
 
 #define DSPWCTCS_ADDR (SYSCON_REG_ADDR + ADSP_DSPWCTCS_OFFSET)
 #define DSPWCT0C_LO_ADDR (SYSCON_REG_ADDR + ADSP_DSPWCT0C_OFFSET)
-#define DSPWCT0C_HI_ADDR (SYSCON_REG_ADDR + ADSP_DSPWCT0C_OFFSET + 4)
 #define DSPWC_LO_ADDR (SYSCON_REG_ADDR + ADSP_DSPWC_OFFSET)
 #define DSPWC_HI_ADDR (SYSCON_REG_ADDR + ADSP_DSPWC_OFFSET + 4)
 
@@ -55,8 +56,7 @@ static void set_compare(uint64_t time)
 	sys_write32(sys_read32(DSPWCTCS_ADDR) & (~DSP_WCT_CS_TA(COMPARATOR_IDX)),
 			SYSCON_REG_ADDR + ADSP_DSPWCTCS_OFFSET);
 
-	sys_write32((uint32_t)time, DSPWCT0C_LO_ADDR);
-	sys_write32((uint32_t)(time >> 32), DSPWCT0C_HI_ADDR);
+	intel_adsp_write64(time, DSPWCT0C_LO_ADDR);
 
 	/* Arm the timer */
 	sys_write32(sys_read32(DSPWCTCS_ADDR) | (DSP_WCT_CS_TA(COMPARATOR_IDX)),
@@ -65,6 +65,9 @@ static void set_compare(uint64_t time)
 
 static uint64_t count(void)
 {
+#if defined(CONFIG_INTEL_ADSP_HIFI_64BIT_MMIO)
+	return intel_adsp_read64(DSPWC_LO_ADDR);
+#else
 	/* The count register is 64 bits, but we're a 32 bit CPU that
 	 * can only read four bytes at a time, so a bit of care is
 	 * needed to prevent racing against a wraparound of the low
@@ -79,6 +82,7 @@ static uint64_t count(void)
 		hi1 = sys_read32(DSPWC_HI_ADDR);
 	} while (hi0 != hi1);
 	return (((uint64_t)hi0) << 32) | lo;
+#endif
 }
 
 static uint32_t count32(void)
