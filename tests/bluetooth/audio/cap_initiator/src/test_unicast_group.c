@@ -486,6 +486,28 @@ static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_ge
 	zassert_not_null(cap_info.unicast_group);
 }
 
+static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_sca_forwarding)
+{
+	struct bt_cap_unicast_group_info cap_info;
+	int err;
+
+	fixture->group_param->sca = BT_GAP_SCA_31_50;
+	err = bt_cap_unicast_group_create(fixture->group_param, &fixture->unicast_group);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_cap_unicast_group_get_info(fixture->unicast_group, &cap_info);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+	zassert_equal(cap_info.unicast_group->cig_param.sca, BT_GAP_SCA_31_50);
+
+	fixture->group_param->sca = BT_GAP_SCA_0_20;
+	err = bt_cap_unicast_group_reconfig(fixture->unicast_group, fixture->group_param);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_cap_unicast_group_get_info(fixture->unicast_group, &cap_info);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+	zassert_equal(cap_info.unicast_group->cig_param.sca, BT_GAP_SCA_0_20);
+}
+
 static ZTEST_F(cap_initiator_test_unicast_group,
 	       test_initiator_unicast_group_get_info_inval_null_group)
 {
