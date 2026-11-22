@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# SOC Packages for Infineon PSOC4HVPA-SPM 1.0 series MCUs
+config SOC_PACKAGE_PSOC4HVPASPM10_48_QFN
+	bool
+	help
+	  48-pin QFN package
+
+# Hardware configuration for PSOC4HVPA-SPM 1.0 series
+config SOC_SERIES_PSOC4HVPASPM10
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	select BUILD_OUTPUT_HEX
+	select BUILD_OUTPUT_BIN
+	select DYNAMIC_INTERRUPTS
+	select SOC_EARLY_INIT_HOOK
+	select SOC_EARLY_RESET_HOOK
+	select CPU_CORTEX_M_HAS_SYSTICK
+
+config SOC_CY8C4147LDE_HV504
+	select SOC_PACKAGE_PSOC4HVPASPM10_48_QFN
+
+config SOC_CY8C4147LDE_HV534
+	select SOC_PACKAGE_PSOC4HVPASPM10_48_QFN
+
+config SOC_CY8C4147LDE_HV604
+	select SOC_PACKAGE_PSOC4HVPASPM10_48_QFN
+
+config SOC_CY8C4147LDE_HV634
+	select SOC_PACKAGE_PSOC4HVPASPM10_48_QFN
+
+config SOC_CY8C4147LDE_HV704
+	select SOC_PACKAGE_PSOC4HVPASPM10_48_QFN
+
+config SOC_CY8C4147LDE_HV734
+	select SOC_PACKAGE_PSOC4HVPASPM10_48_QFN
