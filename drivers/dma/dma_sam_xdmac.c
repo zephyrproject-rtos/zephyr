@@ -90,6 +90,77 @@ static void sam_xdmac_isr(const struct device *dev)
 	}
 }
 
+#if defined(CONFIG_SOC_SERIES_SAMX7X) && DT_NODE_EXISTS(DT_NODELABEL(sram0))
+/*
+ * The internal SRAM has two bus matrix ports. Interface 0 reaches one of them,
+ * shared only with the ICM. Interface 1 reaches the other one, shared with the
+ * GMAC, USB, ISI, MediaLB and CAN DMA, and is the only interface to the
+ * peripherals and to the internal flash. The memory side of a peripheral
+ * transfer in SRAM goes through interface 0, so that the other DMA hosts do
+ * not delay it: a late read of a receive holding register loses data.
+ */
+static bool sam_xdmac_in_sram(uint32_t addr)
+{
+	return (addr >= DT_REG_ADDR(DT_NODELABEL(sram0))) &&
+	       ((addr - DT_REG_ADDR(DT_NODELABEL(sram0))) < DT_REG_SIZE(DT_NODELABEL(sram0)));
+}
+
+/* Bus interfaces for a channel configured with cc, from the transfer addresses */
+static uint32_t sam_xdmac_cc_if(uint32_t cc, uint32_t src, uint32_t dst)
+{
+	uint32_t cc_if = XDMAC_CC_SIF_AHB_IF1 | XDMAC_CC_DIF_AHB_IF1;
+
+	if ((cc & XDMAC_CC_TYPE_Msk) != XDMAC_CC_TYPE_PER_TRAN) {
+		/* Memory to memory */
+	} else if ((cc & XDMAC_CC_DSYNC_Msk) == XDMAC_CC_DSYNC_PER2MEM) {
+		if (sam_xdmac_in_sram(dst)) {
+			cc_if = XDMAC_CC_SIF_AHB_IF1 | XDMAC_CC_DIF_AHB_IF0;
+		}
+	} else if (sam_xdmac_in_sram(src)) {
+		cc_if = XDMAC_CC_SIF_AHB_IF0 | XDMAC_CC_DIF_AHB_IF1;
+	} else {
+		/* Memory outside the SRAM */
+	}
+
+	return cc_if;
+}
+
+static void sam_xdmac_update_if(const struct device *dev, uint32_t channel, uint32_t src,
+				uint32_t dst)
+{
+	const struct sam_xdmac_dev_cfg *const dev_cfg = dev->config;
+	uint32_t cc = dev_cfg->regs->XDMAC_CHID[channel].XDMAC_CC;
+
+	cc &= ~(XDMAC_CC_SIF_Msk | XDMAC_CC_DIF_Msk);
+	dev_cfg->regs->XDMAC_CHID[channel].XDMAC_CC = cc | sam_xdmac_cc_if(cc, src, dst);
+}
+#else
+static uint32_t sam_xdmac_cc_if(uint32_t cc, uint32_t src, uint32_t dst)
+{
+	ARG_UNUSED(cc);
+	ARG_UNUSED(src);
+	ARG_UNUSED(dst);
+
+	return 0U
+#ifdef XDMAC_CC_SIF_AHB_IF1
+	       | XDMAC_CC_SIF_AHB_IF1
+#endif
+#ifdef XDMAC_CC_DIF_AHB_IF1
+	       | XDMAC_CC_DIF_AHB_IF1
+#endif
+		;
+}
+
+static void sam_xdmac_update_if(const struct device *dev, uint32_t channel, uint32_t src,
+				uint32_t dst)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(channel);
+	ARG_UNUSED(src);
+	ARG_UNUSED(dst);
+}
+#endif
+
 int sam_xdmac_channel_configure(const struct device *dev, uint32_t channel,
 				struct sam_xdmac_channel_config *param)
 {
@@ -285,14 +356,9 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	channel_cfg.cfg |= XDMAC_CC_DWIDTH(data_size) |
-#ifdef XDMAC_CC_SIF_AHB_IF1
-			   XDMAC_CC_SIF_AHB_IF1 |
-#endif
-#ifdef XDMAC_CC_DIF_AHB_IF1
-			   XDMAC_CC_DIF_AHB_IF1 |
-#endif
-			   XDMAC_CC_PERID(cfg->dma_slot);
+	channel_cfg.cfg |= XDMAC_CC_DWIDTH(data_size) | XDMAC_CC_PERID(cfg->dma_slot);
+	channel_cfg.cfg |= sam_xdmac_cc_if(channel_cfg.cfg, cfg->head_block->source_address,
+					   cfg->head_block->dest_address);
 	channel_cfg.ds_msp = 0U;
 	channel_cfg.sus = 0U;
 	channel_cfg.dus = 0U;
@@ -327,8 +393,17 @@ static int sam_xdmac_transfer_reload(const struct device *dev, uint32_t channel,
 		.da = dst,
 		.ublen = size >> dev_data->dma_channels[channel].data_size,
 	};
+	int ret;
 
-	return sam_xdmac_transfer_configure(dev, channel, &transfer_cfg);
+	ret = sam_xdmac_transfer_configure(dev, channel, &transfer_cfg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* The new buffers may need other bus interfaces */
+	sam_xdmac_update_if(dev, channel, src, dst);
+
+	return 0;
 }
 
 int sam_xdmac_transfer_start(const struct device *dev, uint32_t channel)
