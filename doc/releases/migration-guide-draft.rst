@@ -49,6 +49,10 @@ Kernel
   waiting on it, not only the first. Code that treated a cancel as addressed to one waiter must
   re-check its own condition.
 
+* :c:func:`k_timer_stop()` now returns ``int`` instead of ``void``. It returns ``0`` when the
+  timer was running and stopped, or ``-EALREADY`` if the timer was not running. Applications
+  can check the return value to report whether the timer was running. (:github:`125820`)
+
 * ``z_clock_hw_cycles_per_sec`` can no longer be assigned. Timer drivers and SoC code that set the
   system timer frequency at run time must call ``z_sys_clock_hw_cycles_per_sec_set()`` instead.
 

@@ -333,18 +333,18 @@ static inline void z_vrfy_k_timer_start(struct k_timer *timer,
 #include <zephyr/syscalls/k_timer_start_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-void z_impl_k_timer_stop(struct k_timer *timer)
+int z_impl_k_timer_stop(struct k_timer *timer)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 
 	if (!timer_armed(timer)) {
-		/* Not started, already stopped, or its last expiry was
-		 * delivered. Nothing to stop.
+		/* Not started, already stopped, or last one-shot expiry
+		 * disarmed it. Nothing to stop.
 		 */
 		k_spin_unlock(&timer_lock, key);
-		return;
+		return -EALREADY;
 	}
 
 	/* The stop wins over any expiry not yet delivered: a handler in
@@ -368,8 +368,7 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		k_spin_unlock(&timer_lock, key);
-		return;
-
+		return 0;
 	}
 
 	struct k_thread *pending_thread = z_unpend1_no_timeout(&timer->wait_q);
@@ -380,13 +379,15 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 	} else {
 		k_spin_unlock(&timer_lock, key);
 	}
+
+	return 0;
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_timer_stop(struct k_timer *timer)
+static inline int z_vrfy_k_timer_stop(struct k_timer *timer)
 {
 	K_OOPS(K_SYSCALL_OBJ(timer, K_OBJ_TIMER));
-	z_impl_k_timer_stop(timer);
+	return z_impl_k_timer_stop(timer);
 }
 #include <zephyr/syscalls/k_timer_stop_mrsh.c>
 #endif /* CONFIG_USERSPACE */

@@ -2045,9 +2045,12 @@ __syscall void k_timer_start(struct k_timer *timer,
  *
  * @isr_ok
  *
- * @param timer     Address of timer.
+ * @param timer Address of timer.
+ *
+ * @retval 0 Timer was running and was stopped.
+ * @retval -EALREADY Timer was not running.
  */
-__syscall void k_timer_stop(struct k_timer *timer);
+__syscall int k_timer_stop(struct k_timer *timer);
 
 /**
  * @brief Read timer status.
