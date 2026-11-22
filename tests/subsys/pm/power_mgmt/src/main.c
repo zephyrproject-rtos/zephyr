@@ -707,6 +707,57 @@ ZTEST(power_management_1cpu, test_force_state)
 	k_sleep(K_SECONDS(1U));
 }
 
+static int errdev_pm_action(const struct device *dev,
+			    enum pm_device_action action)
+{
+	return 0;
+}
+
+PM_DEVICE_DEFINE(errdev, errdev_pm_action);
+
+/* Software-only device used for the action error path checks */
+DEVICE_DEFINE(errdev, "errdev_pm", NULL, PM_DEVICE_GET(errdev), NULL, NULL,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+/**
+ * @brief Verify the device action error returns.
+ *
+ * @details
+ * Running an action whose target state the device is already in must
+ * report the device is already in that state, and running an action
+ * whose source state does not match the device's current state must
+ * report the transition is not supported, without invoking the device.
+ *
+ * @see pm_device_action_run()
+ *
+ * @ingroup power_tests
+ * @verifies ZEP-SRS-13-33
+ * @verifies ZEP-SRS-13-34
+ */
+ZTEST(power_management_1cpu, test_device_action_run_errors)
+{
+	const struct device *dev = DEVICE_GET(errdev);
+	enum pm_device_state state;
+
+	zassert_ok(pm_device_state_get(dev, &state));
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+
+	/* Already active: resuming reports the state is already reached */
+	zassert_equal(pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME),
+		      -EALREADY);
+
+	/* Turning on expects the off state: unsupported from active */
+	zassert_equal(pm_device_action_run(dev, PM_DEVICE_ACTION_TURN_ON),
+		      -ENOTSUP);
+
+	zassert_ok(pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND));
+	zassert_equal(pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND),
+		      -EALREADY);
+
+	/* Restore the active state */
+	zassert_ok(pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME));
+}
+
 ZTEST(power_management_1cpu, test_device_without_pm)
 {
 	pm_device_busy_set(device_e);
