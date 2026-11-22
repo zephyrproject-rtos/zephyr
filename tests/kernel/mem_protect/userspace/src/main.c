@@ -408,6 +408,7 @@ ZTEST_USER(userspace, test_userspace_disable_mmu_mpu)
  *
  * @verifies ZEP-SRS-8-1
  * @verifies ZEP-SRS-8-3
+ * @verifies ZEP-SRS-8-32
  */
 ZTEST_USER(userspace, test_userspace_read_kernram)
 {
@@ -441,6 +442,7 @@ ZTEST_USER(userspace, test_userspace_read_kernram)
  *
  * @verifies ZEP-SRS-8-1
  * @verifies ZEP-SRS-8-3
+ * @verifies ZEP-SRS-8-32
  */
 ZTEST_USER(userspace, test_userspace_write_kernram)
 {
