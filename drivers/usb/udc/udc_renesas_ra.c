@@ -234,6 +234,8 @@ static void udc_event_xfer_complete(const struct device *dev, struct udc_renesas
 			net_buf_add(buf, len);
 		}
 		udc_submit_ep_event(dev, buf, 0);
+		/* In case a buffer was enqueued while this transfer was running */
+		udc_event_xfer_next(dev, ep);
 	}
 
 	return;
