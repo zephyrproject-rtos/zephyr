@@ -113,7 +113,7 @@ static void i2c_ameba_isr(const struct device *dev)
 
 #ifdef CONFIG_I2C_ASYNC_API
 static void i2c_ameba_dma_tx_cb(const struct device *dma_dev, void *user_data, uint32_t channel,
-			 int status)
+				int status)
 {
 	struct device *dev = user_data;
 	struct i2c_ameba_data *data = dev->data;
@@ -140,7 +140,7 @@ static void i2c_ameba_dma_tx_cb(const struct device *dma_dev, void *user_data, u
 }
 
 static void i2c_ameba_dma_rx_cb(const struct device *dma_dev, void *user_data, uint32_t channel,
-			 int status)
+				int status)
 {
 	struct device *dev = user_data;
 	struct i2c_ameba_data *data = dev->data;
@@ -216,8 +216,7 @@ static int i2c_tx_dma_config(const struct device *dev, uint8_t *pdata, uint32_t 
 	i2c_dma->buffer = pdata;
 	i2c_dma->buffer_length = length;
 
-	dma_config(i2c_dma->dma_dev, i2c_dma->dma_channel, &(i2c_dma->dma_cfg));
-	return 0;
+	return dma_config(i2c_dma->dma_dev, i2c_dma->dma_channel, &(i2c_dma->dma_cfg));
 }
 
 static int i2c_rx_dma_config(const struct device *dev, uint8_t *pdata, uint32_t length)
@@ -458,8 +457,8 @@ static int i2c_ameba_validate_msgs(struct i2c_msg *msgs, uint8_t num_msgs)
 	return 0;
 }
 
-static int i2c_ameba_transfer(const struct device *dev, struct i2c_msg *msgs,
-			      uint8_t num_msgs, uint16_t addr)
+static int i2c_ameba_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+			      uint16_t addr)
 {
 	struct i2c_ameba_data *data = dev->data;
 	const struct i2c_ameba_config *config = dev->config;
@@ -511,8 +510,12 @@ static int i2c_ameba_transfer(const struct device *dev, struct i2c_msg *msgs,
 		I2C_Cmd(i2c, ENABLE);
 		if (data->controller_mode == 1) {
 			if ((data->current->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-				i2c_send_dma_controller(dev, data->current->buf,
-							data->current->len);
+				err = i2c_send_dma_controller(dev, data->current->buf,
+							      data->current->len);
+				if (err < 0) {
+					I2C_Cmd(i2c, DISABLE);
+					return err;
+				}
 				while (data->flag_dma_done == 0) {
 				}
 			} else {
@@ -523,7 +526,12 @@ static int i2c_ameba_transfer(const struct device *dev, struct i2c_msg *msgs,
 			}
 		} else {
 			if ((data->current->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-				i2c_send_dma_target(dev, data->current->buf, data->current->len);
+				err = i2c_send_dma_target(dev, data->current->buf,
+							  data->current->len);
+				if (err < 0) {
+					I2C_Cmd(i2c, DISABLE);
+					return err;
+				}
 				while (data->flag_dma_done == 0) {
 				}
 			} else {
