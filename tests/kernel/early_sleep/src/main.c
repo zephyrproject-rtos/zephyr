@@ -64,10 +64,10 @@ static int test_early_sleep_app(void)
 
 SYS_INIT(test_early_sleep_app, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-/*
+/**
  * @brief Test early sleep functionality
  *
- * @ingroup kernel_sleep_tests
+ * @ingroup tests_kernel_sleep
  *
  * This test verifies that k_sleep() can be used to put the calling thread to
  * sleep for a specified number of ticks during system initialization.  In this
@@ -77,6 +77,9 @@ SYS_INIT(test_early_sleep_app, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
  * Note: We can not call k_sleep() during PRE_KERNEL1 or PRE_KERNEL2 level
  * because the core kernel objects and devices initialization happens at these
  * levels.
+ *
+ * @see k_sleep()
+ * @verifies ZEP-SRS-28-19
  */
 ZTEST(earlysleep, test_early_sleep)
 {

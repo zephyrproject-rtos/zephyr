@@ -230,6 +230,7 @@ static void sleep_abs_timeout_return(void)
  * @verifies ZEP-SRS-28-8
  * @verifies ZEP-SRS-28-10
  * @verifies ZEP-SRS-28-11
+ * @verifies ZEP-SRS-28-16
  */
 ZTEST(sleep, test_sleep)
 {

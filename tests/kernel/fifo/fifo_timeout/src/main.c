@@ -493,6 +493,7 @@ ZTEST(fifo_timeout_1cpu, test_timeout_fifo_thread)
  *
  * @see k_fifo_get()
  * @verifies ZEP-SRS-24-7
+ * @verifies ZEP-SRS-28-20
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_fifo)
 {
@@ -524,6 +525,7 @@ ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_fifo)
  *
  * @see k_fifo_get()
  * @verifies ZEP-SRS-24-7
+ * @verifies ZEP-SRS-28-20
  */
 ZTEST(fifo_timeout_1cpu, test_timeout_threads_pend_on_dual_fifos)
 {
