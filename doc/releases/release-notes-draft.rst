@@ -79,6 +79,13 @@ Libraries / Subsystems
     :c:member:`i3c_config_controller.tcas_ps` and the ``tcas-ps`` controller
     Devicetree property.
 
+* Kernel
+
+  * Added the :ref:`call offloader <call_offloading>` (:kconfig:option:`CONFIG_CALL_OFFLOADER`),
+    a synchronous, priority-inheriting worker pool that runs stack-hungry functions on dedicated
+    worker stacks via :c:func:`call_offloader_dispatch` and :c:macro:`CALL_OFFLOADER_WRAP` so
+    calling threads do not each have to reserve the worst-case stack depth.
+
 * LoRaWAN
 
   * The native backend now supports the AS923 region
