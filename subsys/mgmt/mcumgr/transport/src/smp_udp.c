@@ -168,8 +168,9 @@ static void smp_udp_ud_init(struct net_buf *nb, void *priv)
 	struct net_sockaddr *ud = net_buf_user_data(nb);
 	const struct net_sockaddr *addr = priv;
 
-	if (addr) {
-		memcpy(ud, addr, sizeof(*addr));
+	if (addr != NULL) {
+		/* The address may be smaller than the storage, copy its family's size */
+		memcpy(ud, addr, MIN(net_family2size(addr->sa_family), sizeof(*ud)));
 	}
 }
 
