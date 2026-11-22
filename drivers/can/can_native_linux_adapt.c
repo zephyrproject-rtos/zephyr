@@ -35,6 +35,7 @@
 #endif
 
 #include "can_native_linux_adapt.h"
+#include "nsi_errno.h"
 
 #ifndef CANFD_FDF
 /* Linux kernels before v5.14 do not define CANFD_FDF */
@@ -143,6 +144,17 @@ int linux_socketcan_read_data(int fd, void *buf, size_t buf_len, bool *msg_confi
 	}
 
 	return ret;
+}
+
+int linux_socketcan_write_data(int fd, const void *buf, size_t buf_len)
+{
+	int ret = (int)send(fd, buf, buf_len, MSG_DONTWAIT);
+
+	if (ret < 0) {
+		return -nsi_errno_to_mid(errno);
+	}
+
+	return (size_t)ret == buf_len ? 0 : -NSI_ERRNO_MID_EIO;
 }
 
 int linux_socketcan_set_mode_fd(int fd, bool mode_fd)

@@ -21,6 +21,7 @@
 #include <zephyr/sys/util.h>
 
 #include "can_native_linux_adapt.h"
+#include "nsi_errno.h"
 #include "nsi_host_trampolines.h"
 
 LOG_MODULE_REGISTER(can_native_linux, CONFIG_CAN_LOG_LEVEL);
@@ -188,9 +189,17 @@ static int can_native_linux_send(const struct device *dev, const struct can_fram
 	data->tx_callback = callback;
 	data->tx_user_data = user_data;
 
-	ret = nsi_host_write(data->dev_fd, &sframe, mtu);
+	ret = linux_socketcan_write_data(data->dev_fd, &sframe, mtu);
 	if (ret < 0) {
-		LOG_ERR("Cannot send CAN data len %d (%d)", sframe.len, -errno);
+		data->tx_callback = NULL;
+		data->tx_user_data = NULL;
+		k_sem_give(&data->tx_idle);
+		if (ret == -NSI_ERRNO_MID_ENOBUFS || ret == -NSI_ERRNO_MID_EAGAIN) {
+			LOG_DBG("SocketCAN TX queue full (%d)", ret);
+			return -EAGAIN;
+		}
+		LOG_ERR("Cannot send CAN data len %d (%d)", sframe.len, ret);
+		return -EIO;
 	}
 
 	return 0;
