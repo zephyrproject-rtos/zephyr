@@ -91,7 +91,7 @@ static inline void trigger_irq(int irq)
 	uint64_t mpidr = GET_MPIDR();
 	uint8_t aff0 = MPIDR_AFFLVL(mpidr, 0);
 
-	gic_raise_sgi(irq, mpidr, BIT(aff0));
+	gic_raise_sgi(irq, mpidr, BIT(aff0 & GICV3_SGI_AFF0_BLOCK_MASK));
 #endif
 }
 
