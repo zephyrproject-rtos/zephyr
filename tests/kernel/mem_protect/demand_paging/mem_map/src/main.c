@@ -252,6 +252,7 @@ static void touch_anon_pages(bool zig, bool zag)
  * @see k_mem_num_pagefaults_get()
  * @verifies ZEP-SRS-36-8
  * @verifies ZEP-SRS-36-9
+ * @verifies ZEP-SRS-36-18
  */
 ZTEST(demand_paging, test_touch_anon_pages)
 {
@@ -656,6 +657,7 @@ ZTEST(demand_paging_stat, test_backing_store_capacity)
  * @see k_mem_paging_stats_get()
  * @see k_mem_paging_thread_stats_get()
  * @verifies ZEP-SRS-36-13
+ * @verifies ZEP-SRS-36-18
  */
 ZTEST_USER(demand_paging_stat, test_user_get_stats)
 {
@@ -736,6 +738,7 @@ static bool print_histogram(struct k_mem_paging_histogram_t *hist)
  * @see k_mem_paging_histogram_backing_store_page_in_get()
  * @see k_mem_paging_histogram_backing_store_page_out_get()
  * @verifies ZEP-SRS-36-14
+ * @verifies ZEP-SRS-36-19
  */
 ZTEST_USER(demand_paging_stat, test_user_get_hist)
 {
