@@ -317,6 +317,24 @@ Comparator
   :zephyr_file:`tests/drivers/comparator/gpio_loopback` test provides an example of the comparator
   API. (:github:`124232`).
 
+Entropy
+=======
+
+* On the Nordic nRF54L05/10/15, nRF54LM20, nRF54LV10A and nRF7120 SoCs, the
+  :dtcompatible:`nordic,nrf-cracen-ctrdrbg` ``rng`` node is now a child of the new
+  :dtcompatible:`nordic,nrf-cracen` ``cracen`` node, which only exists in the secure address map.
+  The ``rng`` label is unchanged, but references to the node by path (``/rng``) must be updated
+  to use ``&rng``. As the node no longer exists in non-secure builds, non-secure board files no
+  longer need ``/delete-node/ rng;``, which can be removed, and must not reference ``&rng``; they
+  should select a :dtcompatible:`zephyr,psa-crypto-rng` node as ``zephyr,entropy`` instead.
+
+* Initialisation of the nrfx CRACEN library and arbitration of access to the CRACEN hardware have
+  moved from the entropy driver to the new :kconfig:option:`CONFIG_NORDIC_CRACEN` driver. It is
+  enabled by default whenever the ``rng`` node is enabled. To use the CRACEN exclusively from the
+  PSA crypto CRACEN driver, disable ``&rng`` and select ``psa_rng`` as ``zephyr,entropy``, as
+  before. Application code that accesses the CRACEN through nrfx directly while ``rng`` is enabled
+  must wrap each access in :c:func:`nordic_cracen_acquire` and :c:func:`nordic_cracen_release`.
+
 Ethernet
 ========
 
