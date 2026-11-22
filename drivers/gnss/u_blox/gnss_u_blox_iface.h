@@ -110,4 +110,19 @@ int u_blox_iface_msg_send(const struct device *dev, const struct ubx_frame *req,
 int u_blox_iface_msg_payload_send(const struct device *dev, uint8_t class_id, uint8_t msg_id,
 				  const uint8_t *payload, size_t payload_size, bool wait_for_ack);
 
+/**
+ * @brief GNSS API get_device_info implementation for u-blox receivers.
+ *
+ * Polls UBX-MON-VER for the firmware and hardware versions.
+ *
+ * @param[in] dev	GNSS device instance.
+ * @param[in] type	Type of information to get.
+ * @param[out] info	Destination string buffer.
+ * @param[in] size	Size of @a info in bytes.
+ *
+ * @return 0 on success, -ENODATA for unsupported types, negative errno on failure.
+ */
+int u_blox_iface_get_device_info(const struct device *dev, enum gnss_device_info_type type,
+				 char *info, size_t size);
+
 #endif /* _GNSS_U_BLOX_IFACE_H_ */
