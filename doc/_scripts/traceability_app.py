@@ -262,7 +262,7 @@ def resolve_impl_symbols(source, symbols):
     Returns {sym: [{"file", "a", "b", "variant"}, ...]}.
     """
     sources = {}
-    for rel in source.list(["kernel/*.c", "kernel/**/*.c", "include/zephyr/kernel.h",
+    for rel in source.list(["kernel/*.c", "kernel/**/*.c", "include/zephyr/*.h",
                             "include/zephyr/kernel/**/*.h", "include/zephyr/sys/**/*.h"]):
         text = source.read(rel)
         if text is not None:
