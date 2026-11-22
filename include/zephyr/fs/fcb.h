@@ -164,6 +164,9 @@ struct fcb {
 /**
  * Initialize FCB instance.
  *
+ * If power was lost while an entry was being written, the incomplete entry
+ * is ignored and new entries are written to the next sector.
+ *
  * @param[in] f_area_id ID of flash area where fcb storage resides.
  * @param[in,out] fcbp  FCB instance structure.
  *

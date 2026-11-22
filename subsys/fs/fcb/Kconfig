@@ -17,6 +17,10 @@ config FCB
 
 if FCB
 
+module = FCB
+module-str = fcb
+source "subsys/logging/Kconfig.template.log_config"
+
 config FCB_ALLOW_FIXED_ENDMARKER
 	bool "Allow FCB instances to have a fixed endmarker"
 	help

@@ -15,6 +15,9 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/fs/fcb.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(fcb, CONFIG_FCB_LOG_LEVEL);
 
 uint8_t fcb_get_align(const struct fcb *fcbp)
 {
@@ -175,6 +178,23 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 			break;
 		}
 	}
+
+	if (rc == 0) {
+		uint8_t buf[2];
+
+		/* A power cut can leave a half written entry at the end of the log.
+		 * Flash can't be written over it, so mark the sector as full: the next
+		 * fcb_append() starts a new sector, and the rest of this one stays
+		 * unused until it is rotated.
+		 */
+		if (fcb_flash_read(fcbp, fcbp->f_active.fe_sector, fcbp->f_active.fe_elem_off, buf,
+				   sizeof(buf)) == 0 &&
+		    (buf[0] != fcbp->f_erase_value || buf[1] != fcbp->f_erase_value)) {
+			LOG_WRN("Incomplete entry in sector at 0x%lx, using a new sector",
+				(long)fcbp->f_active.fe_sector->fs_off);
+			fcbp->f_active.fe_elem_off = fcbp->f_active.fe_sector->fs_size;
+		}
+	}
 	k_mutex_init(&fcbp->f_mtx);
 	return rc;
 }
@@ -249,6 +269,10 @@ int fcb_get_len(const struct fcb *fcbp, uint8_t *buf, uint16_t *len)
 
 		buf1_xor = buf[1] ^ ~fcbp->f_erase_value;
 		*len = (uint16_t)((buf0_xor & 0x7f) | ((uint16_t)buf1_xor << 7));
+		if (*len > FCB_MAX_LEN) {
+			/* Second byte never written, e.g. power cut: treat as end of data */
+			return -ENOTSUP;
+		}
 		rc = 2;
 	} else {
 		*len = (uint16_t)(buf0_xor);
