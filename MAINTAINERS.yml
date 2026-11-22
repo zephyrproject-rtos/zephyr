@@ -3854,6 +3854,22 @@ JSON Web Token:
   tests:
     - libraries.encoding
 
+KNX:
+  status: maintained
+  maintainers:
+    - condo4
+  files:
+    - subsys/knx/
+    - drivers/knx/
+    - include/zephyr/knx/
+    - dts/bindings/knx/
+    - doc/services/connectivity/knx/
+    - tests/subsys/knx/
+  labels:
+    - "area: KNX"
+  tests:
+    - knx
+
 Kconfig:
   status: maintained
   maintainers:
