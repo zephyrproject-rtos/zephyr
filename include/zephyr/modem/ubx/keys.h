@@ -2362,8 +2362,18 @@ enum ubx_key_pm {
 	UBX_KEY_PM_POSUPDATEPERIOD = 0x40d00002,
 	/** Acquisition period used if the receiver previously failed to achieve a position fix. */
 	UBX_KEY_PM_ACQPERIOD = 0x40d00003,
+	/** Position update period grid offset relative to GPS start of week. */
+	UBX_KEY_PM_GRIDOFFSET = 0x40d00004,
+	/** Time to stay in Tracking state. */
+	UBX_KEY_PM_ONTIME = 0x30d00005,
+	/** Minimum time to spend in Acquisition state */
+	UBX_KEY_PM_MINACQTIME = 0x20d00006,
 	/** Maximum time to spend in Acquisition state */
 	UBX_KEY_PM_MAXACQTIME = 0x20d00007,
+	/** Keep trying to acquire a fix instead of entering the inactive state. */
+	UBX_KEY_PM_DONOTENTEROFF = 0x10d00008,
+	/** Wait for time fix OK instead of fix OK before starting ONTIME. */
+	UBX_KEY_PM_WAITTIMEFIX = 0x10d00009,
 	/** Update ephemeris regularly. */
 	UBX_KEY_PM_UPDATEEPH = 0x10d0000a,
 	/** EXTINT pin select */

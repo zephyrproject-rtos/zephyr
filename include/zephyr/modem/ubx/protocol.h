@@ -184,6 +184,26 @@ enum ubx_msg_id_mon {
 	UBX_MSG_ID_MON_GNSS = 0x28,
 };
 
+enum ubx_msg_id_rxm {
+	UBX_MSG_ID_RXM_PMREQ = 0x41,
+};
+
+#define UBX_RXM_PMREQ_FLAGS_BACKUP BIT(1)
+#define UBX_RXM_PMREQ_FLAGS_FORCE  BIT(2)
+
+#define UBX_RXM_PMREQ_WAKEUP_UARTRX  BIT(3)
+#define UBX_RXM_PMREQ_WAKEUP_EXTINT0 BIT(5)
+#define UBX_RXM_PMREQ_WAKEUP_EXTINT1 BIT(6)
+#define UBX_RXM_PMREQ_WAKEUP_SPICS   BIT(7)
+
+struct ubx_rxm_pmreq {
+	uint8_t version;
+	uint8_t reserved[3];
+	uint32_t duration_ms; /* 0: until woken up by a wakeup source */
+	uint32_t flags;       /* See UBX_RXM_PMREQ_FLAGS_* */
+	uint32_t wakeup_sources; /* See UBX_RXM_PMREQ_WAKEUP_* */
+} __packed;
+
 struct ubx_ack {
 	uint8_t class;
 	uint8_t id;
@@ -306,6 +326,11 @@ enum ubx_cfg_val_ver {
 	UBX_CFG_VAL_VER_SIMPLE = 0,
 	UBX_CFG_VAL_VER_TRANSACTION = 1,
 };
+
+/* Configuration layers of UBX-CFG-VALSET */
+#define UBX_CFG_VAL_LAYER_RAM   BIT(0)
+#define UBX_CFG_VAL_LAYER_BBR   BIT(1)
+#define UBX_CFG_VAL_LAYER_FLASH BIT(2)
 
 struct ubx_cfg_val_hdr {
 	uint8_t ver; /* See ubx_cfg_val_ver */
