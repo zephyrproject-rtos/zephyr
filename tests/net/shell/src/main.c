@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/udp.h>
 #include <zephyr/random/random.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_dummy.h>
 
 #include "ipv4.h"
 #include "ipv6.h"
@@ -183,6 +184,10 @@ static void *test_setup(void)
 		zassert_true(0, "exiting");
 	}
 
+	/* The output of a command is captured only once the shell runs. */
+	zassert_true(WAIT_FOR(shell_ready(shell_backend_dummy_get_ptr()), 1000000, k_msleep(10)),
+		     "Dummy shell backend not ready");
+
 	return NULL;
 }
 
@@ -206,6 +211,48 @@ ZTEST(net_shell_test_suite, test_net_shell)
 
 	ret = shell_execute_cmd(NULL, "net arp flush");
 	zexpect_equal(ret, 0, "");
+}
+
+/* Return value of a command called with "--help": the shell prints the help
+ * itself, unless help option parsing is off and the option reaches the handler.
+ */
+#define HELP_RET (IS_ENABLED(CONFIG_SHELL_HELP_OPT_PARSE) ? SHELL_CMD_HELP_PRINTED : -ENOEXEC)
+
+static int exec_cmd(const char *cmd)
+{
+	shell_backend_dummy_clear_output(shell_backend_dummy_get_ptr());
+
+	return shell_execute_cmd(NULL, cmd);
+}
+
+static bool output_has(const char *str)
+{
+	size_t len;
+	const char *out = shell_backend_dummy_get_output(shell_backend_dummy_get_ptr(), &len);
+
+	return strstr(out, str) != NULL;
+}
+
+ZTEST(net_shell_test_suite, test_net_shell_pkt)
+{
+	int ret;
+
+	ret = exec_cmd("net pkt --help");
+	zexpect_equal(ret, HELP_RET, "net pkt --help (%d)", ret);
+	zexpect_true(output_has(IS_ENABLED(CONFIG_SHELL_HELP_OPT_PARSE) ? "Usage: pkt"
+									: "Invalid ptr value"),
+		     "");
+
+	ret = exec_cmd("net pkt");
+	zexpect_equal(ret, -EINVAL, "net pkt (%d)", ret);
+
+	ret = exec_cmd("net pkt xyz");
+	zexpect_equal(ret, -ENOEXEC, "net pkt xyz (%d)", ret);
+	zexpect_true(output_has("Invalid ptr value"), "");
+
+	ret = exec_cmd("net pkt 0x10");
+	zexpect_equal(ret, -ENOEXEC, "net pkt 0x10 (%d)", ret);
+	zexpect_true(output_has("not recognized as net_pkt"), "");
 }
 
 ZTEST(net_shell_test_suite, test_net_shell_http_get_url_too_long)

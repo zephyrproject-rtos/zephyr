@@ -172,13 +172,6 @@ static int cmd_net_pkt(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_pkt,
-	SHELL_CMD(--help, NULL,
-		  SHELL_HELP("Print information about given net_pkt", "<ptr in hex>"),
-		  cmd_net_pkt),
-	SHELL_SUBCMD_SET_END
-);
-
-SHELL_SUBCMD_ADD((net), pkt, &net_cmd_pkt,
-		 "net_pkt information.",
+SHELL_SUBCMD_ADD((net), pkt, NULL,
+		 SHELL_HELP("Print information about given net_pkt", "<ptr in hex>"),
 		 cmd_net_pkt, 2, 0);
