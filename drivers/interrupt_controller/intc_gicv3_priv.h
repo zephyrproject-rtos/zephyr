@@ -275,6 +275,17 @@
 #define MASK_SET(__val, __basename) (((__val) & __basename##_MASK) << __basename##_SHIFT)
 #define MASK_GET(__reg, __basename) (((__reg) >> __basename##_SHIFT) & __basename##_MASK)
 
+/* Return true when both the Distributor and CPU interface implement RSS. */
+bool gicv3_rss_supported(uint32_t gicd_typer, uint32_t icc_ctlr);
+
+/*
+ * Encode ICC_SGI1R for the target PE. Returns false when the target needs a
+ * non-zero range selector but RSS is not supported; the caller must not write
+ * ICC_SGI1R in that case.
+ */
+bool gicv3_sgi_encode(uint64_t target_aff, uint16_t target_list, unsigned int sgi_id,
+		      bool rss_supported, uint64_t *sgi_val);
+
 #ifdef CONFIG_GIC_V3_ITS
 void its_rdist_map(void);
 void its_rdist_invall(void);

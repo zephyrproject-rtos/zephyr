@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  arch_allow: arm64
+  tags:
+    - drivers
+    - interrupt
+  platform_allow:
+    - qemu_cortex_a53
+  integration_platforms:
+    - qemu_cortex_a53
+
+tests:
+  drivers.interrupt_controller.intc_gicv3.default: {}
+  drivers.interrupt_controller.intc_gicv3.no_assert:
+    extra_configs:
+      - CONFIG_ASSERT=n
