@@ -250,6 +250,7 @@
 				data-ready-gpios = <&test_gpio 0 0>;
 				data-mode = "relative";
 				primary-tap-enable;
+				secondary-tap-enable;
 				swap-xy;
 			};
 

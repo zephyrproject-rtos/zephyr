@@ -182,6 +182,7 @@ struct pinnacle_config {
 	bool invert_x;
 	bool invert_y;
 	bool primary_tap_enabled;
+	bool secondary_tap_enabled;
 	bool swap_xy;
 
 	uint16_t active_range_x_min;
@@ -203,6 +204,7 @@ union pinnacle_sample {
 		int16_t rel_x;
 		int16_t rel_y;
 		bool btn_primary;
+		bool btn_secondary;
 	};
 };
 
@@ -569,6 +571,9 @@ static void pinnacle_decode_sample(const struct device *dev, uint8_t *rx,
 	if (config->relative_mode) {
 		if (config->primary_tap_enabled) {
 			sample->btn_primary = (rx[0] & BIT(0)) == BIT(0);
+			if (config->secondary_tap_enabled) {
+				sample->btn_secondary = (rx[0] & BIT(1)) == BIT(1);
+			}
 		}
 		sample->rel_x = ((rx[0] & BIT(4)) == BIT(4)) ? -(256 - rx[1]) : rx[1];
 		sample->rel_y = ((rx[0] & BIT(5)) == BIT(5)) ? -(256 - rx[2]) : rx[2];
@@ -663,8 +668,11 @@ static int pinnacle_handle_interrupt(const struct device *dev)
 		input_report_rel(dev, INPUT_REL_Y, sample->rel_y, !config->primary_tap_enabled,
 				 K_FOREVER);
 		if (config->primary_tap_enabled) {
-			input_report_key(dev, INPUT_BTN_TOUCH, sample->btn_primary, true,
-					 K_FOREVER);
+			input_report_key(dev, INPUT_BTN_TOUCH, sample->btn_primary,
+					 !config->secondary_tap_enabled, K_FOREVER);
+		}
+		if (config->secondary_tap_enabled) {
+			input_report_key(dev, INPUT_BTN_1, sample->btn_secondary, true, K_FOREVER);
 		}
 	} else {
 		if (config->clipping_enabled && !pinnacle_is_idle_sample(sample)) {
@@ -817,8 +825,10 @@ static int pinnacle_init(const struct device *dev)
 	/* Relative mode features */
 	if (config->relative_mode) {
 		value = (PINNACLE_FEED_CONFIG2_GLIDE_EXTEND_DISABLE |
-			 PINNACLE_FEED_CONFIG2_SCROLL_DISABLE |
-			 PINNACLE_FEED_CONFIG2_SECONDARY_TAP_DISABLE);
+			 PINNACLE_FEED_CONFIG2_SCROLL_DISABLE);
+		if (!config->secondary_tap_enabled) {
+			value |= PINNACLE_FEED_CONFIG2_SECONDARY_TAP_DISABLE;
+		}
 		if (config->swap_xy) {
 			value |= PINNACLE_FEED_CONFIG2_SWAP_X_AND_Y;
 		}
@@ -915,6 +925,7 @@ static int pinnacle_init(const struct device *dev)
 		.invert_x = DT_INST_PROP(inst, invert_x),                                          \
 		.invert_y = DT_INST_PROP(inst, invert_y),                                          \
 		.primary_tap_enabled = DT_INST_PROP(inst, primary_tap_enable),                     \
+		.secondary_tap_enabled = DT_INST_PROP(inst, secondary_tap_enable),                 \
 		.swap_xy = DT_INST_PROP(inst, swap_xy),                                            \
 	};                                                                                         \
 	static struct pinnacle_data pinnacle_data_##inst;                                          \
@@ -926,6 +937,10 @@ static int pinnacle_init(const struct device *dev)
 		     "active-range-x-min must be less than active-range-x-max");                   \
 	BUILD_ASSERT(DT_INST_PROP(inst, active_range_y_min) <                                      \
 			     DT_INST_PROP(inst, active_range_y_max),                               \
-		     "active_range-y-min must be less than active_range-y-max");
+		     "active_range-y-min must be less than active_range-y-max");                   \
+	BUILD_ASSERT(!DT_INST_PROP(inst, secondary_tap_enable) ||                                  \
+			     (DT_INST_PROP(inst, primary_tap_enable) &&                            \
+			      DT_INST_ENUM_HAS_VALUE(inst, data_mode, relative)),                  \
+		     "secondary-tap-enable requires primary-tap-enable in relative mode");
 
 DT_INST_FOREACH_STATUS_OKAY(PINNACLE_DEFINE)
