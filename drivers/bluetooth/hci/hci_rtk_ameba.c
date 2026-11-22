@@ -43,8 +43,8 @@ static void zephyr_recv(struct hci_rx_packet_t *pkt)
 		goto end;
 	}
 
-	if (buf->size < pkt->len) {
-		LOG_ERR("buf too small: size=%u pkt_len=%u", buf->size, pkt->len);
+	if (net_buf_tailroom(buf) < pkt->len) {
+		LOG_ERR("buf too small: tailroom=%zu pkt_len=%u", net_buf_tailroom(buf), pkt->len);
 		net_buf_unref(buf);
 		goto end;
 	}
