@@ -38,6 +38,7 @@ struct sdma_channel_data {
 	struct dma_config *dma_cfg;
 	uint32_t event_source; /* DMA REQ number that trigger this channel */
 	struct dma_status stat;
+	bool started; /* between start() and stop(); reported as dma_status.busy */
 
 	void *arg; /* argument passed to user-defined DMA callback */
 	dma_callback_t cb; /* user-defined callback for DMA transfer completion */
@@ -55,6 +56,7 @@ static int dma_nxp_sdma_init_stat(struct sdma_channel_data *chan_data)
 {
 	chan_data->stat.read_position = 0;
 	chan_data->stat.write_position = 0;
+	chan_data->stat.total_copied = 0;
 
 	switch (chan_data->direction) {
 	case MEMORY_TO_PERIPHERAL:
@@ -203,6 +205,7 @@ void dma_nxp_sdma_callback(sdma_handle_t *handle, void *userData, bool TransferD
 	default:
 		break;
 	}
+	chan_data->stat.total_copied += xfer_size;
 
 	/* prepare next BD for transfer */
 	bd = &chan_data->bd_pool[bdIndex];
@@ -350,6 +353,7 @@ static int dma_nxp_sdma_start(const struct device *dev, uint32_t channel)
 	chan_data = &dev_data->chan[channel];
 
 	SDMA_SetChannelPriority(dev_cfg->base, channel, DMA_NXP_SDMA_CHAN_DEFAULT_PRIO);
+	chan_data->started = true;
 	SDMA_StartChannelSoftware(dev_cfg->base, channel);
 
 	return 0;
@@ -368,6 +372,7 @@ static int dma_nxp_sdma_stop(const struct device *dev, uint32_t channel)
 	chan_data = &dev_data->chan[channel];
 
 	SDMA_StopTransfer(&chan_data->handle);
+	chan_data->started = false;
 	return 0;
 }
 
@@ -378,11 +383,20 @@ static int dma_nxp_sdma_get_status(const struct device *dev, uint32_t channel,
 	struct sdma_channel_data *chan_data;
 	unsigned int key;
 
+	if (channel >= FSL_FEATURE_SDMA_MODULE_CHANNEL || stat == NULL) {
+		return -EINVAL;
+	}
+
 	chan_data = &dev_data->chan[channel];
 
 	key = irq_lock();
+	stat->busy = chan_data->started;
+	stat->dir = chan_data->direction;
 	stat->free = chan_data->stat.free;
 	stat->pending_length = chan_data->stat.pending_length;
+	stat->read_position = chan_data->stat.read_position;
+	stat->write_position = chan_data->stat.write_position;
+	stat->total_copied = chan_data->stat.total_copied;
 	irq_unlock(key);
 
 	return 0;
