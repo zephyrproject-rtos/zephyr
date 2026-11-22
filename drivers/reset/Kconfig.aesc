@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_AESC
+	bool "Aesc Silicon reset controller driver"
+	default y
+	depends on DT_HAS_AESC_RESET_CONTROLLER_ENABLED
+	help
+	  Enable the Aesc Silicon reset controller driver. The IP core only
+	  supports pulsing a reset domain, so reset_line_assert() and
+	  reset_line_deassert() are not implemented. reset_line_toggle() and
+	  reset_status() require IP version 1.1.0 or newer.
