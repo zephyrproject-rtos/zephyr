@@ -156,7 +156,7 @@ ZTEST(no_multithreading, test_no_multithreading_irq_lock)
  *
  * @see k_cpu_idle()
  * @see k_timer_start()
- * @verifies ZEP-SRS-13-14
+ * @verifies ZEP-SRS-41-1
  */
 ZTEST(no_multithreading, test_no_multithreading_cpu_idle)
 {

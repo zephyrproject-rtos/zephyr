@@ -332,7 +332,7 @@ CPU Idling
 ##########
 
 .. design:: DESIGN-CPU-IDLE CPU Idling
-   :fulfills: ZEP-SRS-13-14
+   :fulfills: ZEP-SRS-41-1
 
 Although normally reserved for the idle thread, in certain special
 applications, a thread might want to make the CPU idle.
