@@ -2195,6 +2195,7 @@ ZTEST(work_1cpu, test_workq_1cpu_queue_no_yield)
  * @see k_work_busy_get()
  * @see k_work_submit()
  * @verifies ZEP-SRS-38-10
+ * @verifies ZEP-SRS-38-12
  * @verifies ZEP-SRS-38-33
  */
 ZTEST(work_1cpu, test_workq_1cpu_system_queue)

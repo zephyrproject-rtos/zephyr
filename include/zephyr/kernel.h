@@ -5029,7 +5029,6 @@ int k_work_reschedule_for_queue(struct k_work_q *queue,
  * @return as with k_work_reschedule_for_queue().
  *
  * @satisfies ZEP-SRS-38-23
- * @satisfies ZEP-SRS-38-49
  */
 int k_work_reschedule(struct k_work_delayable *dwork,
 				     k_timeout_t delay);
