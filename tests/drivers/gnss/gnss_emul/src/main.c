@@ -158,4 +158,28 @@ ZTEST(gnss_emul, test_callback_behaviour)
 	zassert_equal(-EAGAIN, k_sem_take(&gnss_data_published, K_SECONDS(5)));
 }
 
+ZTEST(gnss_emul, test_device_info)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_ALIAS(gnss));
+	char info[16];
+
+	zassert_equal(0, gnss_get_device_info(dev, GNSS_DEVICE_INFO_FW_VERSION, info,
+					      sizeof(info)));
+	zassert_str_equal("1.0.0", info);
+
+	zassert_equal(0, gnss_get_device_info(dev, GNSS_DEVICE_INFO_MANUFACTURER, info,
+					      sizeof(info)));
+	zassert_str_equal("Zephyr", info);
+
+	/* Truncated to the buffer, zero-terminated */
+	zassert_equal(0, gnss_get_device_info(dev, GNSS_DEVICE_INFO_FW_VERSION, info, 4));
+	zassert_str_equal("1.0", info);
+
+	zassert_equal(-ENODATA, gnss_get_device_info(dev, GNSS_DEVICE_INFO_HW_VERSION, info,
+						     sizeof(info)));
+	zassert_equal(-EINVAL, gnss_get_device_info(dev, GNSS_DEVICE_INFO_FW_VERSION, NULL,
+						    sizeof(info)));
+	zassert_equal(-EINVAL, gnss_get_device_info(dev, GNSS_DEVICE_INFO_FW_VERSION, info, 0));
+}
+
 ZTEST_SUITE(gnss_emul, NULL, NULL, NULL, NULL, NULL);

@@ -17,7 +17,7 @@
  * @brief Interfaces for Global Navigation Satellite System (GNSS) receivers.
  * @defgroup gnss_interface GNSS
  * @since 3.6
- * @version 0.8.0
+ * @version 0.9.0
  * @ingroup io_interfaces
  * @{
  */
@@ -155,6 +155,16 @@ struct gnss_time {
 	uint8_t century_year;
 };
 
+/** GNSS device information types */
+enum gnss_device_info_type {
+	/** Firmware version */
+	GNSS_DEVICE_INFO_FW_VERSION,
+	/** Hardware version */
+	GNSS_DEVICE_INFO_HW_VERSION,
+	/** Manufacturer */
+	GNSS_DEVICE_INFO_MANUFACTURER,
+};
+
 /**
  * @def_driverbackendgroup{GNSS,gnss_interface}
  * @{
@@ -191,6 +201,10 @@ typedef int (*gnss_get_supported_systems_t)(const struct device *dev, gnss_syste
 
 /** API for getting timestamp of last PPS pulse */
 typedef int (*gnss_get_latest_timepulse_t)(const struct device *dev, k_ticks_t *timestamp);
+
+/** API for getting device information */
+typedef int (*gnss_get_device_info_t)(const struct device *dev, enum gnss_device_info_type type,
+				      char *info, size_t size);
 
 /**
  * @driver_ops{GNSS}
@@ -236,6 +250,10 @@ __subsystem struct gnss_driver_api {
 	 * @driver_ops_optional @copybrief gnss_get_latest_timepulse
 	 */
 	gnss_get_latest_timepulse_t get_latest_timepulse;
+	/**
+	 * @driver_ops_optional @copybrief gnss_get_device_info
+	 */
+	gnss_get_device_info_t get_device_info;
 };
 /**
  * @}
@@ -534,6 +552,42 @@ static inline int z_impl_gnss_get_latest_timepulse(const struct device *dev,
 	}
 
 	return api->get_latest_timepulse(dev, timestamp);
+}
+
+/**
+ * @brief Get device information
+ *
+ * Copies the requested information as a zero-terminated string, truncated to fit @p info.
+ *
+ * @param dev Device instance
+ * @param type Type of information to get
+ * @param info Destination string buffer
+ * @param size Size of @p info in bytes
+ *
+ * @retval 0 if successful
+ * @retval -ENOSYS if driver does not support API
+ * @retval -EINVAL if @p info is NULL or @p size is 0
+ * @retval -ENODATA if the device does not provide the requested information
+ * @retval -errno negative errno code on other failures
+ */
+__syscall int gnss_get_device_info(const struct device *dev, enum gnss_device_info_type type,
+				   char *info, size_t size);
+
+static inline int z_impl_gnss_get_device_info(const struct device *dev,
+					      enum gnss_device_info_type type, char *info,
+					      size_t size)
+{
+	const struct gnss_driver_api *api = DEVICE_API_GET(gnss, dev);
+
+	if (api->get_device_info == NULL) {
+		return -ENOSYS;
+	}
+
+	if ((info == NULL) || (size == 0U)) {
+		return -EINVAL;
+	}
+
+	return api->get_device_info(dev, type, info, size);
 }
 
 /**
