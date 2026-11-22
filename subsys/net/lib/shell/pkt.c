@@ -80,24 +80,18 @@ static bool is_pkt_ptr_valid(const void *ptr)
 	return false;
 }
 
+BUILD_ASSERT(sizeof(unsigned long) == sizeof(uintptr_t),
+	     "unsigned long must hold a pointer");
+
 static struct net_pkt *get_net_pkt(const char *ptr_str)
 {
-	uint8_t buf[sizeof(intptr_t)];
-	intptr_t ptr = 0;
-	size_t len;
-	int i;
+	unsigned long ptr;
+	int err = 0;
 
-	if (ptr_str[0] == '0' && ptr_str[1] == 'x') {
-		ptr_str += 2;
-	}
-
-	len = hex2bin(ptr_str, strlen(ptr_str), buf, sizeof(buf));
-	if (!len) {
+	/* strtoul() takes an optional "0x" prefix with base 16. */
+	ptr = shell_strtoul(ptr_str, 16, &err);
+	if (err != 0 || ptr == 0) {
 		return NULL;
-	}
-
-	for (i = len - 1; i >= 0; i--) {
-		ptr |= buf[i] << 8 * (len - 1 - i);
 	}
 
 	return (struct net_pkt *)ptr;
