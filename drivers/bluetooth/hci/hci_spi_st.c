@@ -407,9 +407,12 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1)
 	if (buf) {
-		/* Buffer already allocated, waiting to complete event reception */
-		net_buf_add_mem(buf, msg, MIN(size, len - buf->len));
-		if (buf->len >= len) {
+		/* Buffer already allocated, waiting to complete event reception.
+		 * It also holds the HCI packet indicator, which len does not
+		 * count.
+		 */
+		net_buf_add_mem(buf, msg, MIN(size, len - (buf->len - 1)));
+		if (buf->len - 1 >= len) {
 			return 0;
 		} else {
 			return -EINPROGRESS;
