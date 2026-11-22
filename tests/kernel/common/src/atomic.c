@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/irq_offload.h>
 
 /* convenience macro - return either 64-bit or 32-bit value */
 #define ATOMIC_WORD(val_if_64, val_if_32)                                                          \
@@ -60,6 +61,11 @@ atomic_t total_atomic;
  * - Each call returns the target's previous value and the target holds the
  *   expected post-operation value.
  *
+ * The suite runs both on platforms whose native atomic instructions back
+ * these operations and on platforms that select the interrupt-locking C
+ * implementation, so passing verifies whichever implementation the
+ * platform builds.
+ *
  * @see atomic_cas(), atomic_add(), atomic_sub(),
  * atomic_inc(), atomic_dec(), atomic_get(), atomic_set(),
  * atomic_clear(), atomic_or(), atomic_and(), atomic_xor(),
@@ -68,6 +74,8 @@ atomic_t total_atomic;
  * ATOMIC_DEFINE
  *
  * @verifies ZEP-SRS-19-1
+ * @verifies ZEP-SRS-26-7
+ * @verifies ZEP-SRS-26-8
  * @verifies ZEP-SRS-26-9
  * @verifies ZEP-SRS-26-10
  * @verifies ZEP-SRS-26-11
@@ -374,6 +382,51 @@ ZTEST(atomic, test_threads_access_atomic)
 
 	zassert_true(total_atomic == (TEST_CYCLE * THREADS_NUM),
 		"atomic counting failure");
+}
+
+static void atomic_isr_handler(const void *param)
+{
+	atomic_t *shared = (atomic_t *)(uintptr_t)param;
+
+	atomic_inc(shared);
+}
+
+/**
+ * @brief Verify atomic operations from an ISR interleaved with a thread.
+ *
+ * @ingroup kernel_atomic_ops_tests
+ *
+ * @details
+ * A thread and an interrupt handler take turns operating on the same
+ * atomic variable: the thread increments it, then triggers an interrupt
+ * whose handler increments it again. Every increment from both contexts
+ * must be reflected in the final value.
+ *
+ * Test steps:
+ * - Clear the shared atomic variable.
+ * - In a loop, increment it in thread context and once more from an
+ *   interrupt handler through irq_offload().
+ *
+ * Expected result:
+ * - The shared atomic equals twice the loop count.
+ *
+ * @see atomic_inc()
+ * @see irq_offload()
+ * @verifies ZEP-SRS-26-40
+ */
+ZTEST(atomic, test_atomic_from_isr)
+{
+	static atomic_t shared;
+
+	atomic_clear(&shared);
+
+	for (int i = 0; i < TEST_CYCLE; i++) {
+		atomic_inc(&shared);
+		irq_offload(atomic_isr_handler, (const void *)&shared);
+	}
+
+	zassert_equal(atomic_get(&shared), 2 * TEST_CYCLE,
+		      "increments from thread and ISR were lost");
 }
 
 /**
