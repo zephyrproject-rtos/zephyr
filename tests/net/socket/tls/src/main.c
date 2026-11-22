@@ -1050,6 +1050,195 @@ ZTEST(net_socket_tls, test_close_while_recv)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+#define STOP_TEST_RCVTIMEO_S 2
+#define STOP_TEST_POLL_TIMEOUT_MS 2000
+#define STOP_TEST_WAKE_LIMIT_MS (STOP_TEST_RCVTIMEO_S * MSEC_PER_SEC / 2)
+#define STOPPER_JOIN_TIMEOUT K_SECONDS(STOP_TEST_RCVTIMEO_S + 1)
+#define STOPPER_STACK_SIZE 4096U
+#define STOPPER_PRIORITY (CONFIG_ZTEST_THREAD_PRIORITY - 1)
+
+static K_THREAD_STACK_DEFINE(stopper_stack, STOPPER_STACK_SIZE);
+static struct k_thread stopper_thread;
+static bool stopper_started;
+static int stopper_ret;
+static int stopper_errno;
+static int reopened_sock = -1;
+
+static void stopper_close(void *p1, void *p2, void *p3)
+{
+	int *sock = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_thread_priority_set(k_current_get(), STOPPER_PRIORITY);
+	stopper_ret = zsock_close(*sock);
+	stopper_errno = errno;
+	*sock = -1;
+}
+
+static void stopper_close_and_reopen(void *p1, void *p2, void *p3)
+{
+	stopper_close(p1, p2, p3);
+
+	reopened_sock = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_DTLS_1_2);
+}
+
+static void test_set_stop_rcvtimeo(int sock)
+{
+	struct timeval optval = {
+		.tv_sec = STOP_TEST_RCVTIMEO_S,
+	};
+
+	zassert_ok(zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &optval,
+				    sizeof(optval)),
+		   "setsockopt() failed (%d)", errno);
+}
+
+static void test_expect_early_wake(uint32_t timestamp)
+{
+	uint32_t elapsed = k_uptime_get_32() - timestamp;
+
+	zexpect_true(elapsed < STOP_TEST_WAKE_LIMIT_MS,
+		     "zsock_recv() returned only after %u ms", elapsed);
+}
+
+static void test_start_stopper(k_thread_entry_t stop_fn, int *sock)
+{
+	(void)k_thread_create(&stopper_thread, stopper_stack, K_THREAD_STACK_SIZEOF(stopper_stack),
+			      stop_fn, sock, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0,
+			      K_NO_WAIT);
+	stopper_started = true;
+}
+
+static void test_join_stopper(void)
+{
+	zassert_ok(k_thread_join(&stopper_thread, STOPPER_JOIN_TIMEOUT),
+		   "Stop call did not return");
+	zexpect_ok(stopper_ret, "Stop call failed (%d)", stopper_errno);
+}
+
+static void test_stop_while_recv(int *sock, k_thread_entry_t stop_fn, ssize_t expected_ret,
+				 int expected_errno)
+{
+	uint8_t rx_buf;
+	uint32_t timestamp;
+	ssize_t ret;
+	int err;
+
+	test_set_stop_rcvtimeo(*sock);
+	test_start_stopper(stop_fn, sock);
+
+	timestamp = k_uptime_get_32();
+	ret = zsock_recv(*sock, &rx_buf, sizeof(rx_buf), 0);
+	err = errno;
+	test_expect_early_wake(timestamp);
+
+	test_join_stopper();
+	zexpect_equal(ret, expected_ret, "Unexpected zsock_recv() result: %zd", ret);
+	if (ret < 0) {
+		zexpect_equal(err, expected_errno, "Unexpected errno value: %d", err);
+	}
+}
+
+ZTEST(net_socket_tls, test_close_while_recv_closer_first)
+{
+	test_prepare_tls_connection(NET_AF_INET6);
+
+	test_stop_while_recv(&new_sock, stopper_close, -1, EINTR);
+
+	test_sockets_close();
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_close_while_recv_waitall_partial)
+{
+	struct zsock_pollfd fds = {
+		.events = ZSOCK_POLLIN,
+	};
+	uint8_t rx_buf[2];
+	uint8_t tx_buf = 0;
+	uint32_t timestamp;
+	ssize_t ret;
+
+	test_prepare_tls_connection(NET_AF_INET6);
+	test_set_stop_rcvtimeo(new_sock);
+
+	test_send(c_sock, &tx_buf, sizeof(tx_buf), 0);
+	fds.fd = new_sock;
+	zassert_equal(zsock_poll(&fds, 1, STOP_TEST_POLL_TIMEOUT_MS), 1,
+		      "poll() did not report data");
+
+	test_start_stopper(stopper_close, &new_sock);
+
+	timestamp = k_uptime_get_32();
+	ret = zsock_recv(fds.fd, rx_buf, sizeof(rx_buf), ZSOCK_MSG_WAITALL);
+	test_expect_early_wake(timestamp);
+
+	test_join_stopper();
+	zexpect_equal(ret, sizeof(tx_buf), "Unexpected zsock_recv() result: %zd, errno %d", ret,
+		      errno);
+
+	test_sockets_close();
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST(net_socket_tls, test_dtls_server_close_while_recv)
+{
+	test_prepare_dtls_connection(NET_AF_INET6);
+
+	test_stop_while_recv(&s_sock, stopper_close, -1, EINTR);
+}
+
+ZTEST(net_socket_tls, test_dtls_client_close_while_recv)
+{
+	test_prepare_dtls_connection(NET_AF_INET6);
+
+	test_stop_while_recv(&c_sock, stopper_close, -1, EINTR);
+}
+
+ZTEST(net_socket_tls, test_dtls_server_close_while_recv_slot_reused)
+{
+	struct net_sockaddr_in6 addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = NET_IN6ADDR_LOOPBACK_INIT,
+	};
+
+	test_prepare_dtls_connection(NET_AF_INET6);
+
+	test_stop_while_recv(&s_sock, stopper_close_and_reopen, -1, EINTR);
+
+	zassert_true(reopened_sock >= 0, "socket() failed");
+	test_bind(reopened_sock, (struct net_sockaddr *)&addr, sizeof(addr));
+	test_close(reopened_sock);
+	reopened_sock = -1;
+}
+
+ZTEST(net_socket_tls, test_dtls_server_close_while_recv_closer_last)
+{
+	struct close_data close_work_data;
+	uint8_t rx_buf;
+	uint32_t timestamp;
+	ssize_t ret;
+
+	test_prepare_dtls_connection(NET_AF_INET6);
+	test_set_stop_rcvtimeo(s_sock);
+
+	k_work_init_delayable(&close_work_data.work, close_work);
+	close_work_data.fd = &s_sock;
+	test_work_reschedule(&close_work_data.work, K_NO_WAIT);
+
+	timestamp = k_uptime_get_32();
+	ret = zsock_recv(s_sock, &rx_buf, sizeof(rx_buf), 0);
+	test_expect_early_wake(timestamp);
+	zexpect_equal(ret, -1, "zsock_recv() did not return error");
+	zexpect_equal(errno, EINTR, "Unexpected errno value: %d", errno);
+
+	test_work_wait(&close_work_data.work);
+}
+
 ZTEST(net_socket_tls, test_connect_timeout)
 {
 	struct net_sockaddr_in6 c_saddr;
@@ -3818,6 +4007,16 @@ static void *tls_tests_setup(void)
 static void tls_tests_after(void *arg)
 {
 	ARG_UNUSED(arg);
+
+	if (stopper_started) {
+		(void)k_thread_join(&stopper_thread, K_FOREVER);
+		stopper_started = false;
+	}
+
+	if (reopened_sock >= 0) {
+		test_close(reopened_sock);
+		reopened_sock = -1;
+	}
 
 	test_sockets_close();
 }
