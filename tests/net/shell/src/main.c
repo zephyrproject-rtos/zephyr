@@ -253,6 +253,24 @@ ZTEST(net_shell_test_suite, test_net_shell_pkt)
 	ret = exec_cmd("net pkt 0x10");
 	zexpect_equal(ret, -ENOEXEC, "net pkt 0x10 (%d)", ret);
 	zexpect_true(output_has("not recognized as net_pkt"), "");
+
+	/* A real packet is found, with or without the "0x" prefix, whatever
+	 * the width of a pointer.
+	 */
+	static const char *const formats[] = {"net pkt 0x%lx", "net pkt %lx"};
+	struct net_pkt *pkt = net_pkt_alloc(K_NO_WAIT);
+	char cmd[32];
+
+	zassert_not_null(pkt, "Cannot allocate a net_pkt");
+
+	ARRAY_FOR_EACH(formats, i) {
+		snprintk(cmd, sizeof(cmd), formats[i], (unsigned long)(uintptr_t)pkt);
+		ret = exec_cmd(cmd);
+		zexpect_equal(ret, 0, "%s (%d)", cmd, ret);
+		zexpect_true(output_has("buffer chain"), "%s", cmd);
+	}
+
+	net_pkt_unref(pkt);
 }
 
 static void expect_ping_error(const char *cmd, const char *msg)
