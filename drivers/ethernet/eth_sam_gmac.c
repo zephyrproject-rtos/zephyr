@@ -61,6 +61,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/gptp.h>
 #include <zephyr/irq.h>
 
+#if defined(CONFIG_DCACHE)
+/*
+ * Data buffers are invalidated around RX DMA: each one must cover whole cache
+ * lines, or the invalidate discards data the CPU wrote to a neighboring buffer.
+ */
+BUILD_ASSERT((CONFIG_NET_BUF_ALIGNMENT % CONFIG_DCACHE_LINE_SIZE) == 0 &&
+		     CONFIG_NET_BUF_ALIGNMENT != 0,
+	     "CONFIG_NET_BUF_ALIGNMENT must be a multiple of the data cache line size");
+BUILD_ASSERT((CONFIG_NET_BUF_DATA_SIZE % CONFIG_DCACHE_LINE_SIZE) == 0,
+	     "CONFIG_NET_BUF_DATA_SIZE must be a multiple of the data cache line size");
+#endif
+
 #if defined(__DCACHE_PRESENT) || defined(CONFIG_DCACHE)
 static bool dcache_enabled;
 
@@ -410,6 +422,9 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 		}
 
 		rx_frag_list[i] = rx_buf;
+
+		/* No dirty line of the buffer may be written back over DMA data */
+		dcache_invalidate((uint32_t)rx_buf->data, rx_buf->size);
 
 		rx_buf_addr = rx_buf->data;
 		__ASSERT(!((uint32_t)rx_buf_addr & ~GMAC_RXW0_ADDR),
@@ -1258,6 +1273,8 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 				last_frag = frag;
 				frag = new_frag;
 				rx_frag_list[tail] = frag;
+				/* No dirty line may be written back over DMA data */
+				dcache_invalidate((uint32_t)frag->data, frag->size);
 			}
 		}
 

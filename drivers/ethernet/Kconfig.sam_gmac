@@ -59,6 +59,10 @@ config ETH_SAM_GMAC_FORCED_QUEUE
 	  Which queue to force the routing to. This affects both the TX and RX queues
 	  setup.
 
+# The driver invalidates whole cache lines of RX data buffers
+configdefault NET_BUF_ALIGNMENT
+	default DCACHE_LINE_SIZE if DCACHE
+
 config ETH_SAM_GMAC_BUF_RX_COUNT
 	int "Network RX buffers preallocated by the SAM ETH driver"
 	default 12
