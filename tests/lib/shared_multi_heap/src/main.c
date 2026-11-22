@@ -15,6 +15,13 @@
 
 #include <zephyr/multi_heap/shared_multi_heap.h>
 
+/**
+ * @defgroup shared_multi_heap_tests Shared Multi-Heap Tests
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 #define DT_DRV_COMPAT		zephyr_memory_region
 
 #define SMH_DT_MEM_UNKNOWN_DEFAULT DT_MEM_ARCH_ATTR_UNKNOWN
@@ -115,6 +122,23 @@ static void *shared_multi_heap_setup(void)
 	return NULL;
 }
 
+/**
+ * @brief Verify shared pool initialization and allocation by attribute.
+ *
+ * @details
+ * The pool is initialized once in the suite setup, so a second
+ * shared_multi_heap_pool_init() must report the pool exists. Every
+ * allocation must come from a region whose capability attribute matches
+ * the request: small and large cacheable requests land in the cacheable
+ * regions that fit them, non-cacheable requests land in the non-cacheable
+ * region, and oversized, zero-sized or unknown-attribute requests fail.
+ *
+ * @ingroup shared_multi_heap_tests
+ * @see shared_multi_heap_pool_init()
+ * @see shared_multi_heap_alloc()
+ * @verifies ZEP-SRS-9-36
+ * @verifies ZEP-SRS-9-38
+ */
 ZTEST(shared_multi_heap, test_shared_multi_heap)
 {
 	struct region_map *reg_map;
@@ -188,6 +212,50 @@ ZTEST(shared_multi_heap, test_shared_multi_heap)
 	/* Request a non-existent attribute */
 	block = shared_multi_heap_alloc(MAX_SHARED_MULTI_HEAP_ATTR, 0x100);
 	zassert_is_null(block, "wrong attribute accepted as valid");
+}
+
+/**
+ * @brief Verify aligned allocation, reallocation and release on the pool.
+ *
+ * @details
+ * Allocates a cacheable block with an explicit alignment and checks the
+ * placement, fills it, grows it with shared_multi_heap_realloc() and
+ * checks the original bytes survive the resize, then releases it and
+ * checks the memory can be allocated again.
+ *
+ * @ingroup shared_multi_heap_tests
+ * @see shared_multi_heap_aligned_alloc()
+ * @see shared_multi_heap_realloc()
+ * @see shared_multi_heap_free()
+ * @verifies ZEP-SRS-9-39
+ * @verifies ZEP-SRS-9-40
+ * @verifies ZEP-SRS-9-41
+ */
+ZTEST(shared_multi_heap, test_shared_multi_heap_realloc)
+{
+	uint8_t *block, *grown;
+
+	block = shared_multi_heap_aligned_alloc(SMH_REG_ATTR_CACHEABLE,
+						64, 0x40);
+	zassert_not_null(block, "aligned allocation failed");
+	zassert_equal(((uintptr_t)block) % 64, 0, "allocation not aligned");
+
+	memset(block, 0xa5, 0x40);
+
+	grown = shared_multi_heap_realloc(SMH_REG_ATTR_CACHEABLE, block,
+					  0x100);
+	zassert_not_null(grown, "reallocation failed");
+	for (size_t i = 0; i < 0x40; i++) {
+		zassert_equal(grown[i], 0xa5,
+			      "realloc lost the block contents");
+	}
+
+	shared_multi_heap_free(grown);
+
+	/* The released memory serves new allocations again */
+	block = shared_multi_heap_alloc(SMH_REG_ATTR_CACHEABLE, 0x100);
+	zassert_not_null(block, "allocation after free failed");
+	shared_multi_heap_free(block);
 }
 
 #define STRESS_THREADS    4

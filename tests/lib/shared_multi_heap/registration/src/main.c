@@ -8,6 +8,19 @@
 #include <zephyr/sys/multi_heap.h>
 #include <zephyr/ztest.h>
 
+/**
+ * @brief Verify run-time region registration up to the pool capacity.
+ *
+ * @details
+ * Adds the maximum number of regions to the shared pool at run time,
+ * alternating capability attributes, checks one region past the capacity
+ * is rejected with -ENOMEM and never serves allocations, and checks the
+ * registered regions serve allocations for both attributes.
+ *
+ * @ingroup shared_multi_heap_tests
+ * @see shared_multi_heap_add()
+ * @verifies ZEP-SRS-9-37
+ */
 ZTEST(shared_multi_heap_registration, test_total_capacity)
 {
 	static uint8_t heap_mem[MAX_MULTI_HEAPS + 1U][256] __aligned(8);
