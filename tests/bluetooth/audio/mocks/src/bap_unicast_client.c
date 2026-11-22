@@ -872,6 +872,8 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 		return -EINVAL;
 	}
 
+	unicast_group->cig_param.packing = param->packing;
+
 	/* Update the stream and group parameters */
 	for (size_t i = 0U; i < param->params_count; i++) {
 		struct bt_bap_unicast_group_stream_pair_param *stream_param = &param->params[i];
