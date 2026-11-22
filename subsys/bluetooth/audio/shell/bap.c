@@ -1662,7 +1662,6 @@ static int set_group_param(
 			struct bt_bap_unicast_group_stream_param *stream_param;
 
 			stream_param = &stream_params[cnt];
-
 			stream_param->stream = stream;
 			if (stream_dir(stream) == BT_AUDIO_DIR_SINK) {
 				stream_param->qos = &uni_stream->qos;
@@ -1684,26 +1683,25 @@ static int set_group_param(
 		return -ENOEXEC;
 	}
 
-	group_param->packing = BT_ISO_PACKING_SEQUENTIAL;
 	group_param->params = pair_param;
 	group_param->params_count = MAX(source_cnt, sink_cnt);
 
 	return 0;
 }
 
-static int create_unicast_group(const struct shell *sh)
+static int create_unicast_group(const struct shell *sh,
+				struct bt_bap_unicast_group_param *group_param)
 {
 	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)] = {0};
 	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)] = {0};
-	struct bt_bap_unicast_group_param group_param = {0};
 	int err;
 
-	err = set_group_param(sh, &group_param, pair_param, stream_params);
+	err = set_group_param(sh, group_param, pair_param, stream_params);
 	if (err != 0) {
 		return err;
 	}
 
-	err = bt_bap_unicast_group_create(&group_param, &default_unicast_group.bap_group);
+	err = bt_bap_unicast_group_create(group_param, &default_unicast_group.bap_group);
 	if (err != 0) {
 		shell_error(sh, "Unable to create default unicast group: %d", err);
 
@@ -1713,19 +1711,19 @@ static int create_unicast_group(const struct shell *sh)
 	return 0;
 }
 
-static int reconfig_unicast_group(const struct shell *sh)
+static int reconfig_unicast_group(const struct shell *sh,
+				  struct bt_bap_unicast_group_param *group_param)
 {
 	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)] = {0};
 	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)] = {0};
-	struct bt_bap_unicast_group_param group_param = {0};
 	int err;
 
-	err = set_group_param(sh, &group_param, pair_param, stream_params);
+	err = set_group_param(sh, group_param, pair_param, stream_params);
 	if (err != 0) {
 		return err;
 	}
 
-	err = bt_bap_unicast_group_reconfig(default_unicast_group.bap_group, &group_param);
+	err = bt_bap_unicast_group_reconfig(default_unicast_group.bap_group, group_param);
 	if (err != 0) {
 		shell_error(sh, "Unable to create default unicast group: %d", err);
 
@@ -1737,10 +1735,73 @@ static int reconfig_unicast_group(const struct shell *sh)
 
 static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 {
+	struct bt_bap_unicast_group_param group_param = {
+		.packing = BT_ISO_PACKING_SEQUENTIAL,
+	};
 	int err;
 
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
+	for (size_t argn = 1U; argn < argc; argn++) {
+		const char *arg = argv[argn];
+		unsigned long val;
+
+		if (++argn == argc) {
+			shell_help(sh);
+
+			return SHELL_CMD_HELP_PRINTED;
+		}
+
+		err = 0;
+		val = shell_strtoul(argv[argn], 0, &err);
+
+		if (strcmp(arg, "packing") == 0) {
+			if (val > BT_ISO_PACKING_INTERLEAVED) {
+				err = -EINVAL;
+			}
+
+			group_param.packing = (uint8_t)val;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+		} else if (strcmp(arg, "iso_interval") == 0) {
+			if (!IN_RANGE(val, BT_ISO_ISO_INTERVAL_MIN, BT_ISO_ISO_INTERVAL_MAX)) {
+				err = -EINVAL;
+			}
+
+			group_param.iso_interval = (uint16_t)val;
+		} else if (strcmp(arg, "c_to_p_ft") == 0) {
+			if (!IN_RANGE(val, BT_ISO_FT_MIN, BT_ISO_FT_MAX)) {
+				err = -EINVAL;
+			}
+
+			group_param.c_to_p_ft = (uint8_t)val;
+		} else if (strcmp(arg, "p_to_c_ft") == 0) {
+			if (!IN_RANGE(val, BT_ISO_FT_MIN, BT_ISO_FT_MAX)) {
+				err = -EINVAL;
+			}
+
+			group_param.p_to_c_ft = (uint8_t)val;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+		} else {
+			shell_error(sh, "Invalid argument: %s", arg);
+			shell_help(sh);
+
+			return -ENOEXEC;
+		}
+
+		if (err != 0) {
+			shell_error(sh, "Failed to parse argument: %s: %s (%d)", arg, argv[argn],
+				    err);
+
+			return -ENOEXEC;
+		}
+	}
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	if ((group_param.iso_interval != 0U) != (group_param.c_to_p_ft != 0U) ||
+	    (group_param.iso_interval != 0U) != (group_param.p_to_c_ft != 0U)) {
+		shell_error(sh, "iso_interval, c_to_p_ft and p_to_c_ft must be set together");
+
+		return -EINVAL;
+	}
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	if (default_stream == NULL) {
 		shell_print(sh, "No stream selected");
@@ -1759,12 +1820,12 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (default_unicast_group.bap_group == NULL) {
-		err = create_unicast_group(sh);
+		err = create_unicast_group(sh, &group_param);
 		if (err != 0) {
 			return err;
 		}
 	} else {
-		err = reconfig_unicast_group(sh);
+		err = reconfig_unicast_group(sh, &group_param);
 		if (err != 0) {
 			return err;
 		}
@@ -4260,7 +4321,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "<direction: sink, source> <index> [loc <loc_bits>] [preset <preset_name>]",
 		      cmd_config, 3, 4),
 	SHELL_CMD_ARG(connect, NULL, "Connect the CIS of the stream", cmd_connect, 1, 0),
-	SHELL_CMD_ARG(qos, NULL, "Send QoS configure for Unicast Group", cmd_qos, 1, 0),
+	SHELL_CMD_ARG(qos, NULL,
+		      "Send QoS configure for Unicast Group" HELP_UNICAST_GROUP,
+		      cmd_qos, 1, IS_ENABLED(CONFIG_BT_ISO_TEST_PARAMS) ? 8 : 2),
 	SHELL_CMD_ARG(enable, NULL, "[context]", cmd_enable, 1, 1),
 	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
 	SHELL_CMD_ARG(list, NULL, NULL, cmd_list, 1, 0),

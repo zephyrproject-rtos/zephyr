@@ -176,6 +176,12 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 	}
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
+	if (default_unicast_group.bap_group != NULL && !default_unicast_group.is_cap) {
+		shell_error(sh, "Cannot perform action on BAP unicast group");
+
+		return -ENOEXEC;
+	}
+
 	(void)memset(cap_initiator_audio_start_stream_params, 0,
 		     sizeof(cap_initiator_audio_start_stream_params));
 	(void)memset(cap_initiator_unicast_group_stream_params, 0,
@@ -186,6 +192,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 		     sizeof(cap_initiator_unicast_group_pair_params));
 	(void)memset(&cap_initiator_unicast_group_param, 0,
 		     sizeof(cap_initiator_unicast_group_param));
+	cap_initiator_unicast_group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
 
 	cap_initiator_unicast_audio_start_param.type = BT_CAP_SET_TYPE_AD_HOC;
 
@@ -227,6 +234,69 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 				 */
 				conn_cnt = MIN(conn_cnt, ARRAY_SIZE(connected_conns));
 			}
+		} else if (strcmp(arg, "packing") == 0) {
+			unsigned long val;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			val = shell_strtoul(argv[argn], 0, &err);
+			if (err == 0 && val > BT_ISO_PACKING_INTERLEAVED) {
+				err = -EINVAL;
+			}
+
+			cap_initiator_unicast_group_param.packing = (uint8_t)val;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+		} else if (strcmp(arg, "iso_interval") == 0) {
+			unsigned long val;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			val = shell_strtoul(argv[argn], 0, &err);
+			if (err == 0 &&
+			    !IN_RANGE(val, BT_ISO_ISO_INTERVAL_MIN, BT_ISO_ISO_INTERVAL_MAX)) {
+				err = -EINVAL;
+			}
+
+			cap_initiator_unicast_group_param.iso_interval = (uint16_t)val;
+		} else if (strcmp(arg, "c_to_p_ft") == 0) {
+			unsigned long val;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			val = shell_strtoul(argv[argn], 0, &err);
+			if (err == 0 && !IN_RANGE(val, BT_ISO_FT_MIN, BT_ISO_FT_MAX)) {
+				err = -EINVAL;
+			}
+
+			cap_initiator_unicast_group_param.c_to_p_ft = (uint8_t)val;
+		} else if (strcmp(arg, "p_to_c_ft") == 0) {
+			unsigned long val;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			val = shell_strtoul(argv[argn], 0, &err);
+			if (err == 0 && !IN_RANGE(val, BT_ISO_FT_MIN, BT_ISO_FT_MAX)) {
+				err = -EINVAL;
+			}
+
+			cap_initiator_unicast_group_param.p_to_c_ft = (uint8_t)val;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 		} else {
 			shell_help(sh);
 
@@ -240,6 +310,17 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 			return err;
 		}
 	}
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	if ((cap_initiator_unicast_group_param.iso_interval != 0U) !=
+		    (cap_initiator_unicast_group_param.c_to_p_ft != 0U) ||
+	    (cap_initiator_unicast_group_param.iso_interval != 0U) !=
+		    (cap_initiator_unicast_group_param.p_to_c_ft != 0U)) {
+		shell_error(sh, "iso_interval, c_to_p_ft and p_to_c_ft must be set together");
+
+		return -EINVAL;
+	}
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	if ((source_cnt + sink_cnt) * conn_cnt > ARRAY_SIZE(unicast_streams)) {
 		shell_error(sh, "Cannot start %zu sinks and %zu sources (max %zu)", sink_cnt,
@@ -348,7 +429,6 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 
 	cap_initiator_unicast_audio_start_param.count = stream_cnt;
 
-	cap_initiator_unicast_group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
 	cap_initiator_unicast_group_param.params_count = pair_cnt;
 	cap_initiator_unicast_group_param.params = cap_initiator_unicast_group_pair_params;
 
@@ -362,6 +442,14 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 		}
 
 		default_unicast_group.is_cap = true;
+	} else {
+		err = bt_cap_unicast_group_reconfig(default_unicast_group.cap_group,
+						    &cap_initiator_unicast_group_param);
+		if (err != 0) {
+			shell_error(sh, "Failed to reconfigure group: %d", err);
+
+			return -ENOEXEC;
+		}
 	}
 
 	shell_print(sh, "Starting %zu streams", cap_initiator_unicast_audio_start_param.count);
@@ -857,6 +945,7 @@ static int cap_ac_create_unicast_group(const struct cap_unicast_ac_param *param,
 	}
 
 	cap_initiator_unicast_group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+
 	cap_initiator_unicast_group_param.params = cap_initiator_unicast_group_pair_params;
 	cap_initiator_unicast_group_param.params_count = pair_cnt;
 
@@ -1911,8 +2000,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(unicast_start, NULL,
 		      "Unicast Start [csip] [sinks <cnt> (default 1)] "
 		      "[sources <cnt> (default 1)] "
-		      "[conns (<cnt> | all) (default 1)]",
-		      cmd_cap_initiator_unicast_start, 1, 7),
+		      "[conns (<cnt> | all) (default 1)]" HELP_UNICAST_GROUP,
+		      cmd_cap_initiator_unicast_start, 1,
+		      IS_ENABLED(CONFIG_BT_ISO_TEST_PARAMS) ? 15 : 9),
 	SHELL_CMD_ARG(unicast_list, NULL, "Unicast list streams", cmd_cap_initiator_unicast_list, 1,
 		      0),
 	SHELL_CMD_ARG(unicast_update, NULL, "Unicast Update <all | stream [stream [stream...]]>",

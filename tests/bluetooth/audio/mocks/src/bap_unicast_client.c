@@ -220,6 +220,12 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 				bt_bap_unicast_client_qos_from_group(stream, &stream->ep->qos);
 
 			__ASSERT(err == 0, "%d", err);
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+			/* ASE QoS status does not contain the CIS test parameters */
+			stream->ep->qos.max_pdu = 0U;
+			stream->ep->qos.burst_number = 0U;
+			stream->ep->qos.num_subevents = 0U;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 			stream->qos = &stream->ep->qos;
 
 			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next,
