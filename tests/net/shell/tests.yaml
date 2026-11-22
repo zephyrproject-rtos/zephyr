@@ -6,6 +6,14 @@ tests:
     tags:
       - net
       - net-shell
+  net.shell.getopt:
+    min_ram: 20
+    tags:
+      - net
+      - net-shell
+    extra_configs:
+      # Turns off SHELL_HELP_OPT_PARSE, so "-h" and "--help" reach the commands.
+      - CONFIG_SHELL_GETOPT=y
   net.shell.http_client:
     min_ram: 32
     tags:
