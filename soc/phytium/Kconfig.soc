@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_PHYTIUM
+	bool
+
+config SOC_FAMILY
+	default "phytium" if SOC_FAMILY_PHYTIUM
+
+rsource "*/Kconfig.soc"

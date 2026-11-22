@@ -573,6 +573,7 @@ phicomm	PHICOMM Co., Ltd.
 philips	Koninklijke Philips N.V.
 phosense	Beijing Phosense Electronic Technology Co., Ltd.
 phytec	PHYTEC
+phytium	Phytium Technology Co., Ltd.
 picochip	Picochip Ltd
 pimoroni	Pimoroni Ltd.
 pine64	Pine64

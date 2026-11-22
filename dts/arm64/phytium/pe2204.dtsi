@@ -1,0 +1,148 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	/*
+	 * E2000Q (PE2204) integrates two FTC664 cores (clusters 0 and 1) and
+	 * two FTC310 cores (cluster 2). Both are ARMv8-A compliant.
+	 */
+	cpus {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "phytium,ftc664", "arm,armv8";
+			reg = <0x0 0x0>;
+			device_type = "cpu";
+			enable-method = "psci";
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
+		};
+
+		cpu@100 {
+			compatible = "phytium,ftc664", "arm,armv8";
+			reg = <0x0 0x100>;
+			device_type = "cpu";
+			enable-method = "psci";
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
+		};
+
+		cpu@200 {
+			compatible = "phytium,ftc310", "arm,armv8";
+			reg = <0x0 0x200>;
+			device_type = "cpu";
+			enable-method = "psci";
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
+		};
+
+		cpu@201 {
+			compatible = "phytium,ftc310", "arm,armv8";
+			reg = <0x0 0x201>;
+			device_type = "cpu";
+			enable-method = "psci";
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <DT_FREQ_M(50)>;
+	};
+
+	uartclk: apb-pclk {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(100)>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		ranges;
+		#address-cells = <2>;
+		#size-cells = <2>;
+		interrupt-parent = <&gic>;
+
+		uart0: uart@2800c000 {
+			compatible = "arm,pl011";
+			reg = <0x0 0x2800c000 0x0 0x1000>;
+			interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			clocks = <&uartclk>;
+			status = "disabled";
+		};
+
+		uart1: uart@2800d000 {
+			compatible = "arm,pl011";
+			reg = <0x0 0x2800d000 0x0 0x1000>;
+			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			clocks = <&uartclk>;
+			status = "disabled";
+		};
+
+		uart2: uart@2800e000 {
+			compatible = "arm,pl011";
+			reg = <0x0 0x2800e000 0x0 0x1000>;
+			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			clocks = <&uartclk>;
+			status = "disabled";
+		};
+
+		uart3: uart@2800f000 {
+			compatible = "arm,pl011";
+			reg = <0x0 0x2800f000 0x0 0x1000>;
+			interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			clocks = <&uartclk>;
+			status = "disabled";
+		};
+
+		gic: interrupt-controller@30800000 {
+			compatible = "arm,gic-v3", "arm,gic";
+			reg = <0x0 0x30800000 0x0 0x20000>,  /* GICD */
+			      <0x0 0x30880000 0x0 0x80000>;  /* GICR */
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			#address-cells = <2>;
+			#size-cells = <2>;
+			status = "okay";
+
+			its: its@30820000 {
+				compatible = "arm,gic-v3-its";
+				reg = <0x0 0x30820000 0x0 0x20000>;
+				msi-controller;
+			};
+		};
+	};
+
+	/* First 1 MiB of DDR is reserved for the secure firmware */
+	sram0: memory@80100000 {
+		compatible = "mmio-sram";
+		reg = <0x0 0x80100000 0x0 DT_SIZE_M(512)>;
+		device_type = "memory";
+	};
+};

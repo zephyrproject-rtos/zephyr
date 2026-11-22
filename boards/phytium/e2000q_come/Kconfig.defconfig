@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_E2000Q_COME
+
+choice ARM64_VA_BITS
+	default ARM64_VA_BITS_42
+endchoice
+
+choice ARM64_PA_BITS
+	default ARM64_PA_BITS_42
+endchoice
+
+endif # BOARD_E2000Q_COME
