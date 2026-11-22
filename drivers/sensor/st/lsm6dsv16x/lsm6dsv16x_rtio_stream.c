@@ -92,6 +92,8 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	lsm6dsv16x_sflp_data_rate_t sflp_odr = LSM6DSV16X_SFLP_120Hz;
 	lsm6dsv16x_fifo_sflp_raw_t sflp_fifo = { 0 };
 	lsm6dsv16x_sflp_gbias_t gbias;
+	uint8_t accel_odr = lsm6dsv16x->accel_freq;
+	uint8_t gyro_odr = lsm6dsv16x->gyro_freq;
 
 	/* disable FIFO as first thing */
 	lsm6dsv16x_fifo_mode_set(ctx, LSM6DSV16X_BYPASS_MODE);
@@ -189,8 +191,8 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	lsm6dsv16x_sflp_game_gbias_set(ctx, &gbias);
 
 	/* restore accel/gyro odr to saved values */
-	lsm6dsv16x_accel_set_odr_raw(dev, lsm6dsv16x->accel_freq);
-	lsm6dsv16x_gyro_set_odr_raw(dev, lsm6dsv16x->gyro_freq);
+	lsm6dsv16x_accel_set_odr_raw(dev, accel_odr);
+	lsm6dsv16x_gyro_set_odr_raw(dev, gyro_odr);
 
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 	lsm6dsv16x_fifo_sh_batch_slave_set(ctx, 1, PROPERTY_ENABLE);
