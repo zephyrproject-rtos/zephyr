@@ -41,9 +41,10 @@ static void thread_alloc_heap(void *p1, void *p2, void *p3)
 
 	zassert_is_null(p, "k_heap_alloc should fail but did not");
 
-	p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, timeout);
+	/* The aligned allocator takes the same timeout */
+	p = (char *)k_heap_aligned_alloc(&k_heap_test, 8, ALLOC_SIZE_2, timeout);
 
-	zassert_not_null(p, "k_heap_alloc failed to allocate memory");
+	zassert_not_null(p, "k_heap_aligned_alloc failed to allocate memory");
 
 	k_heap_free(&k_heap_test, p);
 }
@@ -228,11 +229,14 @@ ZTEST(k_heap_api, test_kheap_alloc_in_isr_nowait)
  *
  * @details In main thread alloc a buffer from the heap, then run the
  * child thread. If there isn't enough space in the heap, the child thread
- * will wait timeout long until main thread free the buffer to heap.
+ * will wait timeout long until main thread free the buffer to heap. The
+ * child thread waits through k_heap_aligned_alloc(), which accepts the
+ * same timeout as k_heap_alloc().
  *
  * @ingroup k_heap_api_tests
  *
  * @see k_heap_alloc()
+ * @see k_heap_aligned_alloc()
  * @see k_heap_free()
  */
 ZTEST(k_heap_api, test_k_heap_alloc_pending)
