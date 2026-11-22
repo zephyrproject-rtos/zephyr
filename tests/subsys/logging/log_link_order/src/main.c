@@ -156,6 +156,7 @@ ZTEST(log_link_order, test_log_only_local)
  *
  * @see z_log_msg_enqueue()
  * @ingroup logging_tests
+ * @verifies ZEP-SRS-11-29
  */
 ZTEST(log_link_order, test_log_local_unordered)
 {
@@ -212,6 +213,7 @@ ZTEST(log_link_order, test_log_local_unordered)
  * @see z_log_msg_enqueue()
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-26
+ * @verifies ZEP-SRS-11-29
  */
 ZTEST(log_link_order, test_log_one_remote_ordering)
 {
