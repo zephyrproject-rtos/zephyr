@@ -63,6 +63,12 @@ Libraries / Subsystems
     replaces the removed ``media_proxy_`` API, see the :ref:`migration guide
     <migration_4.6>`.
 
+* Crypto
+
+  * :ref:`PSA Crypto <psa_crypto>` calls can be offloaded to a shared worker thread pool with
+    :kconfig:option:`CONFIG_CALL_OFFLOADER_PSA`, so calling threads do not each need to size
+    their stack for the deepest cryptographic operation they perform.
+
 * Display
 
   * Display timings can be read and set at runtime with
