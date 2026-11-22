@@ -359,6 +359,7 @@ static void start_test_queues(void)
  * @see k_work_queue_init()
  * @see k_work_queue_start()
  * @see k_thread_name_get()
+ * @verifies ZEP-SRS-38-1
  * @verifies ZEP-SRS-38-29
  * @verifies ZEP-SRS-38-30
  */
@@ -380,6 +381,7 @@ ZTEST(work, test_workq_queue_start_config)
 	}
 
 	/* A NULL name is accepted and leaves the thread name empty. */
+	k_work_queue_init(&invalid_test_queue);
 	zassert_equal(invalid_test_queue.flags, 0);
 	k_work_queue_start(&invalid_test_queue, invalid_test_stack, STACK_SIZE,
 			    PREEMPT_PRIORITY, &cfg);
@@ -449,7 +451,6 @@ ZTEST(work, test_workq_submit_null_queue)
  * @see k_work_busy_get()
  * @see k_work_is_pending()
  * @see k_work_submit_to_queue()
- * @verifies ZEP-SRS-38-1
  * @verifies ZEP-SRS-38-9
  * @verifies ZEP-SRS-38-11
  * @verifies ZEP-SRS-38-13
