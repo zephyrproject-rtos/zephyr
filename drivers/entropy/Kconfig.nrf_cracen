@@ -5,8 +5,8 @@ config ENTROPY_NRF_CRACEN_CTR_DRBG
 	bool "nRF entropy driver based on the CRACEN CTR_DRBG driver"
 	default y
 	depends on DT_HAS_NORDIC_NRF_CRACEN_CTRDRBG_ENABLED
+	depends on NORDIC_CRACEN
 	select ENTROPY_HAS_DRIVER
-	select NRFX_CRACEN
 	help
 	  This option enables the CRACEN based entropy driver, based on the nrfx CRACEN CTR_DRBG
 	  random driver.

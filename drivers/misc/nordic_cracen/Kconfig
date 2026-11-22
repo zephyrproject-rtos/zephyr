@@ -1,0 +1,65 @@
+# Copyright (c) 2026 Embeint Pty Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config NORDIC_CRACEN
+	bool "Nordic CRACEN peripheral"
+	default y if DT_HAS_NORDIC_NRF_CRACEN_CTRDRBG_ENABLED
+	depends on DT_HAS_NORDIC_NRF_CRACEN_ENABLED
+	select NRFX_CRACEN
+	help
+	  Nordic CRACEN peripheral driver. Initialises the nrfx CRACEN library
+	  and synchronises access to the CRACEN hardware between its users.
+
+	  Enabled by default only when a CRACEN user, such as the CTR_DRBG
+	  entropy node, is enabled in devicetree. Disabling all CRACEN user nodes
+	  in devicetree, or disabling this option, leaves the CRACEN hardware
+	  untouched by Zephyr, for example so that it can be used exclusively by
+	  the PSA crypto CRACEN driver.
+
+if NORDIC_CRACEN
+
+config NORDIC_CRACEN_INIT_PRIORITY
+	int "Nordic CRACEN init priority"
+	default 40
+	help
+	  Initialisation priority of the CRACEN peripheral. Must be lower than
+	  the priorities of the CRACEN users, such as ENTROPY_INIT_PRIORITY.
+	  This is checked at build time by the users.
+
+choice NORDIC_CRACEN_SYNC
+	prompt "CRACEN access synchronisation"
+	default NORDIC_CRACEN_SYNC_NONE if !MULTITHREADING
+	default NORDIC_CRACEN_SYNC_IRQ_LOCK
+
+config NORDIC_CRACEN_SYNC_NONE
+	bool "None"
+	help
+	  Perform no synchronisation when the CRACEN is acquired. The
+	  application must guarantee that the CRACEN is never used from more
+	  than one context at a time, for example by never using it from
+	  interrupt context when multithreading is disabled.
+
+config NORDIC_CRACEN_SYNC_IRQ_LOCK
+	bool "Interrupt lock"
+	help
+	  Lock interrupts while the CRACEN is in use. Access is possible from
+	  any context, including interrupts and before the kernel has started,
+	  at the cost of interrupt latency for the duration of each operation.
+
+config NORDIC_CRACEN_SYNC_SEMAPHORE
+	bool "Semaphore"
+	depends on MULTITHREADING
+	help
+	  Take a semaphore while the CRACEN is in use. Interrupts remain enabled
+	  during CRACEN operations. Access from interrupt context, or before the
+	  kernel has started, fails with -EBUSY if the CRACEN is in use.
+
+	  Waiting is not possible in these contexts, as the CRACEN can only be
+	  held by the thread that was interrupted, so the failure occurs even
+	  when a caller requests ENTROPY_BUSYWAIT. Only select this option if
+	  every user of the CRACEN from interrupt context, such as a Bluetooth
+	  controller requesting entropy, handles these errors.
+
+endchoice
+
+endif # NORDIC_CRACEN
