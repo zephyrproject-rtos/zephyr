@@ -195,9 +195,15 @@ ZTEST_USER(stack_usage, test_single_stack_play)
 
 /**
  * @brief Verify data passing between threads using dual stack
+ *
+ * @details Two threads push to and pop from the same pair of stack
+ * objects concurrently, item by item, and the received data must match
+ * what the peer pushed.
+ *
  * @see k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  * @verifies ZEP-SRS-30-5
  * @verifies ZEP-SRS-30-6
+ * @verifies ZEP-SRS-30-8
  */
 ZTEST_USER(stack_usage_1cpu, test_dual_stack_play)
 {
@@ -226,9 +232,15 @@ ZTEST_USER(stack_usage_1cpu, test_dual_stack_play)
 
 /**
  * @brief Verify data passing between thread and ISR
+ *
+ * @details An ISR and a thread push to and pop from the same stack
+ * objects, and the received data must match what the other context
+ * pushed.
+ *
  * @see k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  * @verifies ZEP-SRS-30-5
  * @verifies ZEP-SRS-30-6
+ * @verifies ZEP-SRS-30-8
  */
 ZTEST(stack_usage_1cpu, test_isr_stack_play)
 {
