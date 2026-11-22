@@ -1,0 +1,14 @@
+common:
+  depends_on: netif
+  harness: ztest
+  tags:
+    - shell
+    - net
+    - websocket
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  shell.backend.websocket: {}
