@@ -344,6 +344,7 @@ ZTEST(threads_scheduling, test_time_slicing_disable_preemptible)
  *
  * @ingroup tests_kernel_sched
  * @verifies ZEP-SRS-2-16
+ * @verifies ZEP-SRS-2-25
  */
 ZTEST(threads_scheduling, test_lock_preemptible)
 {
@@ -365,6 +366,53 @@ ZTEST(threads_scheduling, test_lock_preemptible)
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tdata[i].executed == 1);
 	}
+	/* restore environment */
+	teardown_threads();
+}
+
+/**
+ * @brief Verify the scheduler lock survives the thread becoming unready.
+ *
+ * @details A thread that locked the scheduler sleeps, so other threads
+ * may run while it is unready. Once it resumes, the lock must still be
+ * in effect: newly spawned higher- and equal-priority preemptible
+ * threads must not run until the thread unlocks the scheduler.
+ *
+ * @see k_sched_lock(), k_sched_unlock()
+ *
+ * @ingroup tests_kernel_sched
+ * @verifies ZEP-SRS-2-26
+ */
+ZTEST(threads_scheduling, test_lock_resumed_preemptible)
+{
+	/* set current thread to a preemptible priority */
+	init_prio = 0;
+	setup_threads();
+
+	k_sched_lock();
+
+	/* become unready while holding the scheduler lock */
+	k_sleep(K_MSEC(100));
+
+	/* resumed: the scheduler lock must still be in effect */
+	spawn_threads(0);
+	k_busy_wait(100000);
+
+	/* checkpoint: no threads get executed */
+	for (int i = 0; i < THREADS_NUM; i++) {
+		zassert_true(tdata[i].executed == 0);
+	}
+
+	k_sched_unlock();
+
+	/* ensure threads of equal priority can run */
+	k_yield();
+
+	/* checkpoint: higher and equal threads get executed */
+	zassert_true(tdata[0].executed == 1);
+	zassert_true(tdata[1].executed == 1);
+	zassert_true(tdata[2].executed == 0);
+
 	/* restore environment */
 	teardown_threads();
 }
