@@ -460,8 +460,10 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 			net_buf_unref(buf);
 			return -ENOMEM;
 		}
-		/* Skip the first byte (HCI packet indicator) */
-		size = size - 1;
+		/* Skip the first byte (HCI packet indicator), and take no more
+		 * than the event that the buffer was checked for.
+		 */
+		size = MIN(size - 1, len);
 		net_buf_add_mem(buf, &msg[1], size);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_hci_spi_v1)
 		if (size < len) {
