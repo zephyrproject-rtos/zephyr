@@ -69,6 +69,21 @@ int u_blox_iface_init(const struct device *dev, const struct modem_ubx_match *un
 		      size_t unsol_size, bool valset_supported);
 
 /**
+ * @brief Re-establish communication at the desired baudrate.
+ *
+ * Polls the receiver at the desired baudrate. If it does not answer, switches the receiver
+ * from the initial baudrate to the desired one. Used after the receiver lost its RAM
+ * configuration, for instance when waking up from backup mode.
+ *
+ * @param[in] dev		GNSS device instance.
+ * @param[in] valset_supported	Use UBX-CFG-VALSET when true to configure the baudrate,
+ *				otherwise use the legacy UBX-CFG-PRT.
+ *
+ * @return 0 on success, negative errno on failure.
+ */
+int u_blox_iface_resync(const struct device *dev, bool valset_supported);
+
+/**
  * @brief Send a UBX formatted request and retrieve the response.
  *
  * @param[in] dev		GNSS device instance.

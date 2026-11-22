@@ -224,27 +224,13 @@ static int reset_modem(const struct device *dev)
 }
 #endif
 
-int u_blox_iface_init(const struct device *dev, const struct modem_ubx_match *unsol,
-		      size_t unsol_size, bool valset_supported)
+int u_blox_iface_resync(const struct device *dev, bool valset_supported)
 {
 	int err;
 	struct u_blox_iface_data *data = dev->data;
-	const struct u_blox_iface_config *cfg = dev->config;
 	uint8_t mon_ver_buf[UBX_FRAME_SZ(0)];
 	int mon_ver_len;
 	struct ubx_mon_ver ver;
-
-	init_match(data, dev);
-
-#ifdef CONFIG_GNSS_U_BLOX_RESET_ON_INIT
-	reset_modem(dev);
-#endif
-
-	err = init_modem(data, cfg, unsol, unsol_size);
-	if (err < 0) {
-		LOG_ERR("Failed to initialize modem: %d", err);
-		return err;
-	}
 
 	mon_ver_len = ubx_frame_encode(UBX_CLASS_ID_MON, UBX_MSG_ID_MON_VER,
 			NULL, 0, mon_ver_buf, sizeof(mon_ver_buf));
@@ -274,6 +260,28 @@ int u_blox_iface_init(const struct device *dev, const struct modem_ubx_match *un
 	}
 
 	return 0;
+}
+
+int u_blox_iface_init(const struct device *dev, const struct modem_ubx_match *unsol,
+		      size_t unsol_size, bool valset_supported)
+{
+	int err;
+	struct u_blox_iface_data *data = dev->data;
+	const struct u_blox_iface_config *cfg = dev->config;
+
+	init_match(data, dev);
+
+#ifdef CONFIG_GNSS_U_BLOX_RESET_ON_INIT
+	reset_modem(dev);
+#endif
+
+	err = init_modem(data, cfg, unsol, unsol_size);
+	if (err < 0) {
+		LOG_ERR("Failed to initialize modem: %d", err);
+		return err;
+	}
+
+	return u_blox_iface_resync(dev, valset_supported);
 }
 
 int u_blox_iface_msg_get(const struct device *dev, const struct ubx_frame *req,

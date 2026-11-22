@@ -1,10 +1,90 @@
 # Copyright (c) 2026 CampOS
 # SPDX-License-Identifier: Apache-2.0
 
-description: U-BLOX M10 GNSS Module
+description: |
+  U-BLOX M10 GNSS Module
+
+  When the receiver can enter backup on its own (power-save-mode other than
+  "full", extint-backup or extint-inactivity-timeout-ms), the driver stores
+  its receiver configuration in both the RAM and the battery-backed RAM (BBR)
+  layers, as the receiver restarts from BBR when it leaves backup.
 
 compatible: "u-blox,m10"
 
 include:
   - uart-device.yaml
   - u-blox,common.yaml
+
+properties:
+  extint-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the receiver's EXTINT input. The GPIO's active level
+      must be the receiver's "high" level, normally GPIO_ACTIVE_HIGH.
+      The driver drives it active during initialization, keeping the
+      receiver awake, and applications set it with
+      gnss_u_blox_m10_set_extint(). With device power management, the driver
+      selects EXTINT as the wakeup source on suspend and generates two edges
+      on it on resume. Without this property, the driver wakes the receiver
+      through UART RX activity instead.
+
+  extint-wake:
+    type: boolean
+    description: |
+      Keep the receiver awake while EXTINT is high (CFG-PM-EXTINTWAKE).
+      Requires extint-gpios.
+
+  extint-backup:
+    type: boolean
+    description: |
+      Put the receiver into backup mode while EXTINT is low
+      (CFG-PM-EXTINTBACKUP). With extint-wake, the host controls the
+      receiver's power state through EXTINT. Requires extint-gpios.
+
+  extint-inactivity-timeout-ms:
+    type: int
+    default: 0
+    description: |
+      Put the receiver into backup mode when EXTINT does not change for
+      longer than this time (CFG-PM-EXTINTINACTIVE and
+      CFG-PM-EXTINTINACTIVITY). 0 disables it. Requires extint-gpios.
+
+  power-save-mode:
+    type: string
+    default: "full"
+    enum:
+      - "full"
+      - "psmoo"
+      - "psmct"
+    description: |
+      Receiver mode of operation (CFG-PM-OPERATEMODE): continuous operation,
+      power save ON/OFF operation or power save cyclic tracking.
+
+  psm-update-period-seconds:
+    type: int
+    default: 10
+    description: |
+      Time between position fix attempts in ON/OFF operation
+      (CFG-PM-POSUPDATEPERIOD). 0 or at least 5. With 0, the receiver only
+      wakes up on a wakeup event, such as an EXTINT edge.
+
+  psm-acquisition-period-seconds:
+    type: int
+    default: 10
+    description: |
+      Time between acquisition attempts after a failed fix attempt
+      (CFG-PM-ACQPERIOD). With 0, the receiver only retries on a wakeup event.
+
+  psm-on-time-seconds:
+    type: int
+    default: 0
+    description: |
+      Time the receiver stays in tracking state and outputs fixes
+      (CFG-PM-ONTIME). With 0, it returns to inactive right after a fix.
+
+  psm-max-acquisition-time-seconds:
+    type: int
+    default: 0
+    description: |
+      Maximum time spent in acquisition state (CFG-PM-MAXACQTIME), up to 255.
+      0 disables the bound.
