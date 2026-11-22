@@ -2213,6 +2213,16 @@ int k_timer_cleanup(struct k_timer *timer);
  */
 __syscall int64_t k_uptime_ticks(void);
 
+#ifndef CONFIG_SYS_CLOCK_EXISTS
+/* The syscall and its wrapper are declared unconditionally; report zero
+ * uptime when the kernel keeps no clock.
+ */
+static inline int64_t z_impl_k_uptime_ticks(void)
+{
+	return 0;
+}
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
+
 /**
  * @brief Get system uptime.
  *
