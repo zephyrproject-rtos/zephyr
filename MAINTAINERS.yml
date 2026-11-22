@@ -7201,6 +7201,8 @@ West:
     - modules/cmsis-nn/
   labels:
     - "area: CMSIS-NN"
+  tests:
+    - libraries.cmsis_nn
 
 "West project: cmsis_6":
   status: maintained
