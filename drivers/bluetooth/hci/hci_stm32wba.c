@@ -178,8 +178,8 @@ static int treat_acl(const uint8_t *data, size_t len, const uint8_t *ext_data,
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	buf_tailroom = net_buf_tailroom(buf);
-	if (buf_tailroom < len) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
+	if (buf_tailroom < ext_len) {
+		LOG_ERR("Not enough space in buffer %zu/%zu", ext_len, buf_tailroom);
 		net_buf_unref(buf);
 		return -EMSGSIZE;
 	}
@@ -223,8 +223,8 @@ static int treat_iso(const uint8_t *data, size_t len, const uint8_t *ext_data,
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	buf_tailroom = net_buf_tailroom(buf);
-	if (buf_tailroom < len) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
+	if (buf_tailroom < ext_len) {
+		LOG_ERR("Not enough space in buffer %zu/%zu", ext_len, buf_tailroom);
 		net_buf_unref(buf);
 		return -EMSGSIZE;
 	}
