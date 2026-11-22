@@ -45,7 +45,7 @@ static int nrf_cracen_cracen_init(const struct device *dev)
 {
 	(void)dev;
 
-	return nrfx_cracen_ctr_drbg_init();
+	return nrfx_cracen_init();
 }
 
 static DEVICE_API(entropy, nrf_cracen_api_funcs) = {
