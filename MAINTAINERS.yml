@@ -5221,6 +5221,26 @@ Networking:
     - sample.net.ptp
     - net.ptp
 
+"Networking: SNMP":
+  status: maintained
+  maintainers:
+    - dowhile98
+  files:
+    - doc/services/connectivity/networking/api/snmp.rst
+    - include/zephyr/net/snmp.h
+    - include/zephyr/net/snmp/
+    - subsys/net/lib/snmp/
+    - samples/net/snmp_agent/
+    - samples/net/snmp_agent_v3/
+    - tests/net/lib/snmp/
+  labels:
+    - "area: Networking"
+    - "area: SNMP"
+  tests:
+    - net.snmp
+    - sample.net.snmp
+    - sample.net.snmp_v3
+
 "Networking: Wi-Fi":
   status: maintained
   maintainers:
