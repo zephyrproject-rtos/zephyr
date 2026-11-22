@@ -14,9 +14,6 @@ config GPIO
 	default y if SOC_MK22F51212
 
 config NUM_IRQS
-	default 74
-
-config NUM_IRQS
 	default 81 if SOC_MK22F12
 	default 74 if SOC_MK22F51212
 
