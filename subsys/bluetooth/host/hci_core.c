@@ -4936,6 +4936,14 @@ static int bt_recv(const struct device *dev, struct net_buf *buf)
 	ARG_UNUSED(dev);
 	int err;
 
+	/* A driver delivers a packet that lies within its buffer and starts with
+	 * its type. The ACL and ISO reassembly append to the buffer of a first
+	 * fragment and rely on net_buf_tailroom(), which wraps around when len
+	 * exceeds the capacity.
+	 */
+	__ASSERT(net_buf_is_valid(buf) && buf->len > 0U,
+		 "Invalid RX buffer from the HCI driver (len %u size %u)", buf->len, buf->size);
+
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_ENABLING)) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_CTLR_RX);
 	}
