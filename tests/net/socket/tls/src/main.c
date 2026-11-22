@@ -1239,6 +1239,90 @@ ZTEST(net_socket_tls, test_dtls_server_close_while_recv_closer_last)
 	test_work_wait(&close_work_data.work);
 }
 
+static void stopper_shutdown_rd(void *p1, void *p2, void *p3)
+{
+	int *sock = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_thread_priority_set(k_current_get(), STOPPER_PRIORITY);
+	stopper_ret = zsock_shutdown(*sock, ZSOCK_SHUT_RD);
+	stopper_errno = errno;
+}
+
+static void test_eof_after_shutdown_rd(int sock)
+{
+	struct zsock_pollfd fds = {
+		.fd = sock,
+		.events = ZSOCK_POLLIN,
+	};
+	uint8_t rx_buf;
+	ssize_t ret;
+
+	ret = zsock_poll(&fds, 1, STOP_TEST_POLL_TIMEOUT_MS);
+	zexpect_equal(ret, 1, "Unexpected zsock_poll() result: %zd", ret);
+	zexpect_true((fds.revents & ZSOCK_POLLIN) != 0, "Unexpected revents 0x%x", fds.revents);
+
+	ret = zsock_recv(sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zexpect_equal(ret, 0, "Unexpected zsock_recv() result: %zd, errno %d", ret, errno);
+}
+
+ZTEST(net_socket_tls, test_dtls_server_shutdown_rd_while_recv)
+{
+	test_prepare_dtls_connection(NET_AF_INET6);
+
+	test_stop_while_recv(&s_sock, stopper_shutdown_rd, 0, 0);
+	test_eof_after_shutdown_rd(s_sock);
+}
+
+ZTEST(net_socket_tls, test_dtls_client_shutdown_rd_while_recv)
+{
+	test_prepare_dtls_connection(NET_AF_INET6);
+
+	test_stop_while_recv(&c_sock, stopper_shutdown_rd, 0, 0);
+	test_eof_after_shutdown_rd(c_sock);
+}
+
+ZTEST(net_socket_tls, test_dtls_server_shutdown_rd_no_session)
+{
+	struct net_sockaddr_in6 s_saddr;
+	int role = ZSOCK_TLS_DTLS_ROLE_SERVER;
+
+	prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &s_sock, &s_saddr, NET_IPPROTO_DTLS_1_2);
+	test_config_psk(s_sock, -1);
+	zassert_ok(zsock_setsockopt(s_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_DTLS_ROLE, &role,
+				    sizeof(role)),
+		   "setsockopt() failed (%d)", errno);
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	zassert_ok(zsock_shutdown(s_sock, ZSOCK_SHUT_RD), "shutdown() failed (%d)", errno);
+	test_eof_after_shutdown_rd(s_sock);
+}
+
+ZTEST(net_socket_tls, test_dtls_client_shutdown_rd_unconnected)
+{
+	struct net_sockaddr_in6 c_saddr;
+	struct zsock_pollfd fds = {
+		.events = ZSOCK_POLLIN,
+	};
+	uint8_t rx_buf;
+	ssize_t ret;
+
+	prepare_sock_dtls_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr, NET_IPPROTO_DTLS_1_2);
+	test_config_psk(-1, c_sock);
+
+	zassert_ok(zsock_shutdown(c_sock, ZSOCK_SHUT_RD), "shutdown() failed (%d)", errno);
+
+	fds.fd = c_sock;
+	ret = zsock_poll(&fds, 1, STOP_TEST_POLL_TIMEOUT_MS);
+	zexpect_equal(ret, 1, "Unexpected zsock_poll() result: %zd", ret);
+	zexpect_true((fds.revents & ZSOCK_POLLHUP) != 0, "Unexpected revents 0x%x", fds.revents);
+
+	ret = zsock_recv(c_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zexpect_equal(ret, 0, "Unexpected zsock_recv() result: %zd, errno %d", ret, errno);
+}
+
 ZTEST(net_socket_tls, test_connect_timeout)
 {
 	struct net_sockaddr_in6 c_saddr;
