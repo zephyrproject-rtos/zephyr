@@ -88,13 +88,13 @@ int cpp_semaphore::wait(void)
  * count is greater than zero, it is decremented. The function
  * waits for timeout specified
  *
- * @param timeout the specified timeout in ticks
+ * @param timeout the specified timeout in milliseconds
  *
  * @return 1 if semaphore is available, 0 if timed out
  */
 int cpp_semaphore::wait(int timeout)
 {
-	return k_sem_take(&_sema_internal, K_MSEC(timeout));
+	return k_sem_take(&_sema_internal, K_MSEC(timeout)) == 0 ? 1 : 0;
 }
 
 /**
