@@ -615,6 +615,16 @@
 			};
 		};
 
+#ifndef USE_NON_SECURE_ADDRESS_MAP
+		cracen: crypto@50059000 {
+			compatible = "nordic,nrf-cracen";
+			reg = <0x50059000 0x1000>, <0x50010000 0x1000>;
+			reg-names = "wrapper", "core";
+			interrupts = <89 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
+		};
+#endif
+
 		rram_controller: rram-controller@5004e000 {
 			compatible = "nordic,rram-controller";
 			reg = <0x5004e000 0x1000>;

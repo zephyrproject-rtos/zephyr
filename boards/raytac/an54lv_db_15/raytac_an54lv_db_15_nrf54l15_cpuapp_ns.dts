@@ -22,8 +22,6 @@
 		zephyr,entropy = &psa_rng;
 	};
 
-	/delete-node/ rng;
-
 	psa_rng: psa-rng {
 		status = "okay";
 	};

@@ -9,6 +9,9 @@ description: |
     would attempt to use the CRACEN HW exclusively; When that is enabled, zephyr,psa-crypto-rng
     should be selected instead.
 
+    The node must be a child of the "nordic,nrf-cracen" peripheral node, which initialises the
+    CRACEN library and synchronises access to the hardware.
+
 compatible: "nordic,nrf-cracen-ctrdrbg"
 
 include: base.yaml
