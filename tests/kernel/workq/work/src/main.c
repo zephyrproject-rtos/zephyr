@@ -382,6 +382,7 @@ ZTEST(work, test_workq_queue_start_config)
 	}
 
 	/* A NULL name is accepted and leaves the thread name empty. */
+	k_work_queue_init(&invalid_test_queue);
 	zassert_equal(invalid_test_queue.flags, 0);
 	k_work_queue_start(&invalid_test_queue, invalid_test_stack, STACK_SIZE,
 			    PREEMPT_PRIORITY, &cfg);
