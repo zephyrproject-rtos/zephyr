@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -346,6 +347,11 @@ static K_MUTEX_DEFINE(dtls_helper_buf_lock);
 
 /* A global pool of TLS contexts. */
 static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
+/* Incremented on every tls_release(), so a thread that waited without the
+ * lock can tell its context was closed even if the slot was reused. Kept
+ * outside struct tls_context because tls_alloc() clears the struct.
+ */
+static uint32_t tls_context_generation[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
 K_MEM_SLAB_DEFINE_STATIC_TYPE(tls_session_contexts, struct tls_session_context,
 			      CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS);
 
@@ -833,6 +839,7 @@ static int tls_release(struct tls_context *tls)
 		tls_session_free(session_ctx);
 	}
 
+	tls_context_generation[ARRAY_INDEX(tls_contexts, tls)]++;
 	tls->is_used = false;
 
 	return 0;
@@ -1140,6 +1147,27 @@ static int wait_for_reason(int sock, int timeout, int reason)
 	k_msleep(TLS_WAIT_MS);
 
 	return 0;
+}
+
+#define TLS_WAIT_CTX_RELEASED INT_MIN
+
+static int tls_wait_unlocked(struct tls_context *ctx, int timeout, int reason)
+{
+	struct k_mutex *lock = ctx->lock;
+	uint32_t generation = tls_context_generation[ARRAY_INDEX(tls_contexts, ctx)];
+	int sock = ctx->sock;
+	int ret;
+
+	(void)k_mutex_unlock(lock);
+
+	ret = wait_for_reason(sock, timeout, reason);
+	(void)k_mutex_lock(lock, K_FOREVER);
+
+	if (generation != tls_context_generation[ARRAY_INDEX(tls_contexts, ctx)]) {
+		return TLS_WAIT_CTX_RELEASED;
+	}
+
+	return ret;
 }
 
 static bool is_blocking(int sock, int flags)
@@ -2215,9 +2243,10 @@ static int tls_deferred_handshake(struct tls_context *ctx, k_timeout_t timeout)
 			return -EAGAIN;
 		}
 
-		k_mutex_unlock(ctx->lock);
-		ret = wait_for_reason(ctx->sock, timeout_to_ms(&timeout), ctx->handshake_want);
-		k_mutex_lock(ctx->lock, K_FOREVER);
+		ret = tls_wait_unlocked(ctx, timeout_to_ms(&timeout), ctx->handshake_want);
+		if (ret == TLS_WAIT_CTX_RELEASED) {
+			return -EINTR;
+		}
 
 		if (ret != 0) {
 			return ret;
@@ -4054,13 +4083,18 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 				timeout_ms = timeout_to_ms(&timeout);
 
 				/* Block. */
-				k_mutex_unlock(ctx->lock);
-				ret = wait_for_reason(ctx->sock, timeout_ms, ret);
-				k_mutex_lock(ctx->lock, K_FOREVER);
-
+				ret = tls_wait_unlocked(ctx, timeout_ms, ret);
 				if (ret == 0) {
 					/* Retry. */
 					continue;
+				}
+
+				if (ret == TLS_WAIT_CTX_RELEASED) {
+					if (recv_len > 0U) {
+						return recv_len;
+					}
+
+					ret = -EINTR;
 				}
 			} else {
 				NET_ERR("TLS recv error: -%x", -ret);
@@ -4160,13 +4194,12 @@ static ssize_t recvfrom_dtls_common(struct tls_context *ctx, void *buf,
 				}
 
 				/* Block. */
-				k_mutex_unlock(ctx->lock);
-				ret = wait_for_reason(ctx->sock, timeout_ms, ret);
-				k_mutex_lock(ctx->lock, K_FOREVER);
-
+				ret = tls_wait_unlocked(ctx, timeout_ms, ret);
 				if (ret == 0) {
 					/* Retry. */
 					continue;
+				} else if (ret == TLS_WAIT_CTX_RELEASED) {
+					return ret;
 				} else {
 					return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 				}
@@ -4228,6 +4261,11 @@ static ssize_t recvfrom_dtls_client(struct tls_context *ctx, void *buf,
 	ret = recvfrom_dtls_common(ctx, buf, max_len, flags, src_addr, addrlen);
 	if (ret >= 0) {
 		return ret;
+	}
+
+	if (ret == TLS_WAIT_CTX_RELEASED) {
+		ret = -EINTR;
+		goto error;
 	}
 
 	switch (ret) {
@@ -4350,6 +4388,11 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 					   src_addr, addrlen);
 		if (ret >= 0) {
 			return ret;
+		}
+
+		if (ret == TLS_WAIT_CTX_RELEASED) {
+			ret = -EINTR;
+			break;
 		}
 
 		switch (ret) {
