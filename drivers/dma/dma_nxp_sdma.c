@@ -183,6 +183,40 @@ int sdma_set_peripheral_type(struct dma_config *config, sdma_peripheral_t *type)
 	return 0;
 }
 
+static int dma_nxp_sdma_validate_config(struct dma_config *config, sdma_peripheral_t *peripheral)
+{
+	struct dma_block_config *block_cfg = config->head_block;
+	uint32_t i;
+
+	if (config->channel_direction != MEMORY_TO_PERIPHERAL &&
+	    config->channel_direction != PERIPHERAL_TO_MEMORY) {
+		LOG_ERR("%s: unsupported direction %d", __func__, config->channel_direction);
+		return -EINVAL;
+	}
+
+	if (config->block_count == 0 || config->block_count > DMA_NXP_SDMA_BD_COUNT) {
+		LOG_ERR("%s: unsupported block count %u", __func__, config->block_count);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < config->block_count; i++) {
+		/* a BD holds a 16-bit byte count */
+		if (block_cfg == NULL || block_cfg->block_size == 0 ||
+		    block_cfg->block_size > UINT16_MAX) {
+			LOG_ERR("%s: invalid block %u", __func__, i);
+			return -EINVAL;
+		}
+		block_cfg = block_cfg->next_block;
+	}
+
+	if (sdma_set_peripheral_type(config, peripheral) < 0) {
+		LOG_ERR("%s: failed to set peripheral type", __func__);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 void dma_nxp_sdma_callback(sdma_handle_t *handle, void *userData, bool TransferDone,
 			   uint32_t bdIndex)
 {
@@ -279,11 +313,17 @@ static int dma_nxp_sdma_config(const struct device *dev, uint32_t channel,
 	struct sdma_dev_data *dev_data = dev->data;
 	struct sdma_channel_data *chan_data;
 	struct dma_block_config *block_cfg;
+	sdma_peripheral_t peripheral;
 	int ret;
 
-	if (channel >= FSL_FEATURE_SDMA_MODULE_CHANNEL) {
+	if (channel >= FSL_FEATURE_SDMA_MODULE_CHANNEL || config == NULL) {
 		LOG_ERR("sdma_config() invalid channel %d", channel);
 		return -EINVAL;
+	}
+
+	ret = dma_nxp_sdma_validate_config(config, &peripheral);
+	if (ret < 0) {
+		return ret;
 	}
 
 	dma_nxp_sdma_channel_init(dev, channel);
@@ -297,11 +337,7 @@ static int dma_nxp_sdma_config(const struct device *dev, uint32_t channel,
 
 	sdma_set_transfer_type(config, &chan_data->transfer_cfg.type);
 
-	ret = sdma_set_peripheral_type(config, &chan_data->peripheral);
-	if (ret < 0) {
-		LOG_ERR("%s: failed to set peripheral type", __func__);
-		return ret;
-	}
+	chan_data->peripheral = peripheral;
 
 	if (chan_data->peripheral == kSDMA_PeripheralMultiFifoPDM) {
 		unsigned int n_fifos = 4; /* TODO: make this configurable */
