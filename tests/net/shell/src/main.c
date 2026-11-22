@@ -255,6 +255,38 @@ ZTEST(net_shell_test_suite, test_net_shell_pkt)
 	zexpect_true(output_has("not recognized as net_pkt"), "");
 }
 
+static void expect_ping_error(const char *cmd, const char *msg)
+{
+	int ret = exec_cmd(cmd);
+
+	zexpect_equal(ret, -ENOEXEC, "%s (%d)", cmd, ret);
+	zexpect_true(output_has(msg), "%s: no \"%s\"", cmd, msg);
+}
+
+ZTEST(net_shell_test_suite, test_net_shell_ping)
+{
+	int ret;
+
+	/* "ping" is a host argument, not a subcommand. */
+	expect_ping_error("net ping ping", "Invalid IP address");
+	expect_ping_error("net ping -c 3 ping", "Invalid IP address");
+	expect_ping_error("net ping 999.1.1.1", "Invalid IP address");
+
+	ret = exec_cmd("net ping --help");
+	zexpect_equal(ret, HELP_RET, "net ping --help (%d)", ret);
+	zexpect_true(output_has(IS_ENABLED(CONFIG_SHELL_HELP_OPT_PARSE) ? "Usage: ping"
+									: "Unrecognized argument"),
+		     "");
+
+	ret = exec_cmd("net ping");
+	zexpect_equal(ret, -EINVAL, "net ping (%d)", ret);
+
+	expect_ping_error("net ping -q", "Target host missing");
+	expect_ping_error("net ping -x 192.0.2.9", "Unrecognized argument");
+	expect_ping_error("net ping -c", "Parse error");
+	expect_ping_error("net ping -I 99 192.0.2.9", "Parse error");
+}
+
 ZTEST(net_shell_test_suite, test_net_shell_http_get_url_too_long)
 {
 	static char cmd[CONFIG_SHELL_CMD_BUFF_SIZE];

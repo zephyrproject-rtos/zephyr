@@ -579,7 +579,7 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 					handle_ipv6_echo_reply);
 		if (ret < 0) {
 			PR_WARNING("Cannot initialize ICMP context for %s\n", "IPv6");
-			return 0;
+			return -ENOEXEC;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_addr_pton(NET_AF_INET, host, &ping_ctx.addr4.sin_addr) == 0) {
@@ -589,11 +589,11 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 					handle_ipv4_echo_reply);
 		if (ret < 0) {
 			PR_WARNING("Cannot initialize ICMP context for %s\n", "IPv4");
-			return 0;
+			return -ENOEXEC;
 		}
 	} else {
 		PR_WARNING("Invalid IP address\n");
-		return 0;
+		return -ENOEXEC;
 	}
 
 	ping_ctx.iface = ping_select_iface(iface_idx, &ping_ctx.addr);
@@ -607,15 +607,8 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 #endif
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(
-	net_cmd_ping,
-	SHELL_CMD(ping, NULL,
-		  SHELL_HELP("Send ICMPv4 or ICMPv6 Echo-Request to a network host",
-			     "[-c <count>] [-i <interval ms>] [-I <iface index>]\n"
-			     "[-Q <tos>] [-s <payload size>] [-p <priority>] [-q] <host>"),
-		  cmd_net_ping),
-	SHELL_SUBCMD_SET_END);
-
-SHELL_SUBCMD_ADD((net), ping, &net_cmd_ping,
-		 "Ping a network host.",
+SHELL_SUBCMD_ADD((net), ping, NULL,
+		 SHELL_HELP("Send ICMPv4 or ICMPv6 Echo-Request to a network host",
+			    "[-c <count>] [-i <interval ms>] [-I <iface index>]\n"
+			    "[-Q <tos>] [-s <payload size>] [-p <priority>] [-q] <host>"),
 		 cmd_net_ping, 2, 12);
