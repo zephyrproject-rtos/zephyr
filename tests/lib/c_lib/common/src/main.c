@@ -59,7 +59,9 @@
  * destination array).  That's exactly the case we're testing, so turn
  * it off.
  */
+#ifndef __DOXYGEN__
 TOOLCHAIN_DISABLE_GCC_WARNING(TOOLCHAIN_WARNING_STRINGOP_TRUNCATION)
+#endif
 
 ZTEST_SUITE(libc_common, NULL, NULL, NULL, NULL, NULL);
 
