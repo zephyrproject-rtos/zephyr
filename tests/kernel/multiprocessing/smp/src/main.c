@@ -488,19 +488,21 @@ ZTEST(smp, test_smp_coop_resched_threads)
  *
  * Test steps:
  * - Spawn one preemptible thread per CPU, each with a higher priority than the
- *   previous one.
+ *   previous one and none with a CPU set specified.
  * - Spin until all spawned threads have terminated.
  * - Check the per-thread "executed" flag of every spawned thread.
  * - Abort the spawned threads and clean up.
  *
  * Expected result:
- * - Every spawned preemptible thread executes.
+ * - Every spawned preemptible thread executes: with no CPU set specified,
+ *   each thread is eligible for, and picked up by, whichever CPU is free.
  *
  * @see K_PRIO_PREEMPT()
  * @see k_thread_create()
  *
  * @verifies ZEP-SRS-34-1
  * @verifies ZEP-SRS-34-10
+ * @verifies ZEP-SRS-34-21
  */
 ZTEST(smp, test_smp_preempt_resched_threads)
 {
