@@ -30,8 +30,6 @@
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
-#include <sys/errno.h>
-
 #include "audio/bap_endpoint.h"
 #include "audio/bap_iso.h"
 #include "cap_initiator.h"

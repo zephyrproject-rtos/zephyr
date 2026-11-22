@@ -11,7 +11,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <sys/errno.h>
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
