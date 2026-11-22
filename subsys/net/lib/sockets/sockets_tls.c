@@ -218,6 +218,8 @@ __net_socket struct tls_context {
 	 */
 	bool accept_deferred : 1;
 
+	bool is_rx_shutdown : 1;
+
 	/* TLS sessions associated with this socket. In most cases there will
 	 * be one session allocated per TLS context. DTLS server is an exception,
 	 * which can have multiple TLS sessions allocated at the same time.
@@ -1150,6 +1152,7 @@ static int wait_for_reason(int sock, int timeout, int reason)
 }
 
 #define TLS_WAIT_CTX_RELEASED INT_MIN
+#define TLS_WAIT_RX_SHUTDOWN (INT_MIN + 1)
 
 static int tls_wait_unlocked(struct tls_context *ctx, int timeout, int reason)
 {
@@ -1165,6 +1168,10 @@ static int tls_wait_unlocked(struct tls_context *ctx, int timeout, int reason)
 
 	if (generation != tls_context_generation[ARRAY_INDEX(tls_contexts, ctx)]) {
 		return TLS_WAIT_CTX_RELEASED;
+	}
+
+	if (ctx->is_rx_shutdown) {
+		return TLS_WAIT_RX_SHUTDOWN;
 	}
 
 	return ret;
@@ -4198,7 +4205,8 @@ static ssize_t recvfrom_dtls_common(struct tls_context *ctx, void *buf,
 				if (ret == 0) {
 					/* Retry. */
 					continue;
-				} else if (ret == TLS_WAIT_CTX_RELEASED) {
+				} else if ((ret == TLS_WAIT_CTX_RELEASED) ||
+					   (ret == TLS_WAIT_RX_SHUTDOWN)) {
 					return ret;
 				} else {
 					return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
@@ -4253,6 +4261,10 @@ static ssize_t recvfrom_dtls_client(struct tls_context *ctx, void *buf,
 {
 	int ret;
 
+	if (ctx->is_rx_shutdown) {
+		return 0;
+	}
+
 	if (!is_handshake_complete(ctx->active_session)) {
 		ret = -ENOTCONN;
 		goto error;
@@ -4266,6 +4278,10 @@ static ssize_t recvfrom_dtls_client(struct tls_context *ctx, void *buf,
 	if (ret == TLS_WAIT_CTX_RELEASED) {
 		ret = -EINTR;
 		goto error;
+	}
+
+	if (ret == TLS_WAIT_RX_SHUTDOWN) {
+		return 0;
 	}
 
 	switch (ret) {
@@ -4325,6 +4341,10 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 	int ret;
 	bool repeat;
 	k_timeout_t timeout;
+
+	if (ctx->is_rx_shutdown) {
+		return 0;
+	}
 
 	if (!ctx->is_initialized) {
 		ret = tls_mbedtls_init(ctx, true);
@@ -4393,6 +4413,10 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 		if (ret == TLS_WAIT_CTX_RELEASED) {
 			ret = -EINTR;
 			break;
+		}
+
+		if (ret == TLS_WAIT_RX_SHUTDOWN) {
+			return 0;
 		}
 
 		switch (ret) {
@@ -5006,6 +5030,11 @@ static int dtls_update_pollin(int fd, struct tls_context *ctx,
 			      struct zsock_pollfd *pfd)
 {
 	int ret;
+
+	if (ctx->is_rx_shutdown) {
+		pfd->revents |= ZSOCK_POLLIN;
+		goto next;
+	}
 
 	/* Already had DTLS data to read on socket. */
 	if (mbedtls_ssl_get_bytes_avail(&ctx->active_session->ssl) > 0) {
@@ -5722,8 +5751,14 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 static int tls_sock_shutdown_vmeth(void *obj, int how)
 {
 	struct tls_context *ctx = obj;
+	int ret;
 
-	return zsock_shutdown(ctx->sock, how);
+	ret = zsock_shutdown(ctx->sock, how);
+	if ((ret == 0) && (how != ZSOCK_SHUT_WR) && (ctx->type == NET_SOCK_DGRAM)) {
+		ctx->is_rx_shutdown = true;
+	}
+
+	return ret;
 }
 
 static int tls_sock_bind_vmeth(void *obj, const struct net_sockaddr *addr,
