@@ -89,6 +89,8 @@ struct sys_multi_heap {
  * @param heap A sys_multi_heap to initialize
  * @param choice_fn A sys_multi_heap_fn_t callback used to select
  *                  heaps at allocation time
+ *
+ * @satisfies ZEP-SRS-9-30
  */
 void sys_multi_heap_init(struct sys_multi_heap *heap,
 			 sys_multi_heap_fn_t choice_fn);
@@ -104,6 +106,8 @@ void sys_multi_heap_init(struct sys_multi_heap *heap,
  * @param mheap A sys_multi_heap to which to add a heap
  * @param heap The heap to add
  * @param user_data pointer to any data for the heap
+ *
+ * @satisfies ZEP-SRS-9-31
  */
 void sys_multi_heap_add_heap(struct sys_multi_heap *mheap, struct sys_heap *heap, void *user_data);
 
@@ -119,6 +123,8 @@ void sys_multi_heap_add_heap(struct sys_multi_heap *mheap, struct sys_heap *heap
  * @param cfg Opaque configuration parameter, as for sys_multi_heap_fn_t
  * @param bytes Requested size of the allocation, in bytes
  * @return A valid pointer to heap memory, or NULL if no memory is available
+ *
+ * @satisfies ZEP-SRS-9-32
  */
 void *sys_multi_heap_alloc(struct sys_multi_heap *mheap, void *cfg, size_t bytes);
 
@@ -134,6 +140,8 @@ void *sys_multi_heap_alloc(struct sys_multi_heap *mheap, void *cfg, size_t bytes
  * @param align Power of two alignment for the returned pointer, in bytes
  * @param bytes Requested size of the allocation, in bytes
  * @return A valid pointer to heap memory, or NULL if no memory is available
+ *
+ * @satisfies ZEP-SRS-9-33
  */
 void *sys_multi_heap_aligned_alloc(struct sys_multi_heap *mheap,
 				   void *cfg, size_t align, size_t bytes);
@@ -165,6 +173,8 @@ const struct sys_multi_heap_rec *sys_multi_heap_get_heap(const struct sys_multi_
  *
  * @param mheap Multi heap pointer
  * @param block Block to free, must be a pointer to a block allocated by sys_multi_heap_alloc
+ *
+ * @satisfies ZEP-SRS-9-34
  */
 void sys_multi_heap_free(struct sys_multi_heap *mheap, void *block);
 
@@ -187,6 +197,8 @@ void sys_multi_heap_free(struct sys_multi_heap *mheap, void *block);
  * @param align Alignment in bytes, must be a power of two
  * @param bytes Number of bytes requested for the new block
  * @return Pointer to memory the caller can now use, or NULL
+ *
+ * @satisfies ZEP-SRS-9-35
  */
 void *sys_multi_heap_aligned_realloc(struct sys_multi_heap *mheap, void *cfg,
 				     void *ptr, size_t align, size_t bytes);

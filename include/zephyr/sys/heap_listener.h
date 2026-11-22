@@ -121,6 +121,8 @@ struct heap_listener {
  * different heap implementations upon certain events related to the heap usage.
  *
  * @param listener Pointer to the heap_listener object
+ *
+ * @satisfies ZEP-SRS-9-23
  */
 void heap_listener_register(struct heap_listener *listener);
 
@@ -132,6 +134,8 @@ void heap_listener_register(struct heap_listener *listener);
  * heap usage.
  *
  * @param listener Pointer to the heap_listener object
+ *
+ * @satisfies ZEP-SRS-9-24
  */
 void heap_listener_unregister(struct heap_listener *listener);
 
@@ -144,6 +148,8 @@ void heap_listener_unregister(struct heap_listener *listener);
  * @param heap_id Heap identifier
  * @param mem Pointer to the allocated memory
  * @param bytes Size of allocated memory
+ *
+ * @satisfies ZEP-SRS-9-25
  */
 void heap_listener_notify_alloc(uintptr_t heap_id, void *mem, size_t bytes);
 
@@ -156,6 +162,8 @@ void heap_listener_notify_alloc(uintptr_t heap_id, void *mem, size_t bytes);
  * @param heap_id Heap identifier
  * @param mem Pointer to the freed memory
  * @param bytes Size of freed memory
+ *
+ * @satisfies ZEP-SRS-9-25
  */
 void heap_listener_notify_free(uintptr_t heap_id, void *mem, size_t bytes);
 
@@ -168,6 +176,8 @@ void heap_listener_notify_free(uintptr_t heap_id, void *mem, size_t bytes);
  * @param heap_id Heap identifier
  * @param old_heap_end Address of the heap end before the change
  * @param new_heap_end Address of the heap end after the change
+ *
+ * @satisfies ZEP-SRS-9-25
  */
 void heap_listener_notify_resize(uintptr_t heap_id, void *old_heap_end, void *new_heap_end);
 

@@ -117,6 +117,8 @@ struct shared_multi_heap_region {
  * @retval 0		on success.
  * @retval -EALREADY	when the pool was already inited.
  * @retval other	errno codes
+ *
+ * @satisfies ZEP-SRS-9-36
  */
 int shared_multi_heap_pool_init(void);
 
@@ -132,6 +134,8 @@ int shared_multi_heap_pool_init(void);
  *
  * @retval ptr		a valid pointer to heap memory.
  * @retval err		NULL if no memory is available.
+ *
+ * @satisfies ZEP-SRS-9-38
  */
 void *shared_multi_heap_alloc(enum shared_multi_heap_attr attr, size_t bytes);
 
@@ -148,6 +152,8 @@ void *shared_multi_heap_alloc(enum shared_multi_heap_attr attr, size_t bytes);
  *
  * @retval ptr		a valid pointer to heap memory.
  * @retval err		NULL if no memory is available.
+ *
+ * @satisfies ZEP-SRS-9-39
  */
 void *shared_multi_heap_aligned_alloc(enum shared_multi_heap_attr attr,
 				      size_t align, size_t bytes);
@@ -162,6 +168,8 @@ void *shared_multi_heap_aligned_alloc(enum shared_multi_heap_attr attr,
  * @param block		block to free, must be a pointer to a block allocated
  *			by shared_multi_heap_alloc or
  *			shared_multi_heap_aligned_alloc.
+ *
+ * @satisfies ZEP-SRS-9-41
  */
 void shared_multi_heap_free(void *block);
 
@@ -177,6 +185,8 @@ void shared_multi_heap_free(void *block);
  * @retval -EINVAL	when the region attribute is out-of-bound.
  * @retval -ENOMEM	when there are no more heaps available.
  * @retval other	errno codes
+ *
+ * @satisfies ZEP-SRS-9-37
  */
 int shared_multi_heap_add(struct shared_multi_heap_region *region, void *user_data);
 
@@ -201,6 +211,8 @@ int shared_multi_heap_add(struct shared_multi_heap_region *region, void *user_da
  *
  * @retval newptr	a valid pointer to a new heap memory block of size bytes.
  * @retval err		NULL if no memory is available.
+ *
+ * @satisfies ZEP-SRS-9-40
  */
 void *shared_multi_heap_realloc(enum shared_multi_heap_attr attr, void *ptr, size_t bytes);
 

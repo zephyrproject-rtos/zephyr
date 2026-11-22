@@ -88,6 +88,8 @@ struct z_heap_stress_result {
  * @param heap Pointer to specified sys_heap
  * @param stats Pointer to struct to copy statistics into
  * @return -EINVAL if null pointers, otherwise 0
+ *
+ * @satisfies ZEP-SRS-9-19
  */
 int sys_heap_runtime_stats_get(struct sys_heap *heap,
 		struct sys_memory_stats *stats);
@@ -100,6 +102,8 @@ int sys_heap_runtime_stats_get(struct sys_heap *heap,
  *
  * @param heap Pointer to sys_heap
  * @return -EINVAL if null pointer was passed, otherwise 0
+ *
+ * @satisfies ZEP-SRS-9-20
  */
 int sys_heap_runtime_stats_reset_max(struct sys_heap *heap);
 
@@ -113,6 +117,8 @@ int sys_heap_runtime_stats_reset_max(struct sys_heap *heap);
  * @param heap Pointer to specified sys_heap
  * @param bytes Pointer to size_t to store the result in
  * @return -EINVAL if null pointers, otherwise 0
+ *
+ * @satisfies ZEP-SRS-9-21
  */
 int sys_heap_get_largest_free_block(struct sys_heap *heap, size_t *bytes);
 
@@ -237,6 +243,8 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
  * @param heap Heap containing the block
  * @param mem Pointer to memory allocated from this heap
  * @return Size in bytes of the memory region
+ *
+ * @satisfies ZEP-SRS-9-22
  */
 size_t sys_heap_usable_size(struct sys_heap *heap, void *mem);
 
