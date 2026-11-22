@@ -286,6 +286,9 @@ static inline void copy_hdr(struct bt_sf32lb_data *hci)
 
 static void reset_rx(struct bt_sf32lb_data *hci)
 {
+	/* A discarded packet leaves its buffer behind */
+	net_buf_drop(&hci->rx.buf);
+
 	hci->rx.type = BT_HCI_H4_NONE;
 	hci->rx.remaining = 0U;
 	hci->rx.have_hdr = false;
@@ -469,7 +472,7 @@ static inline void read_header(const struct device *dev)
 	}
 
 	if (hci->rx.have_hdr && hci->rx.buf != NULL) {
-		if (hci->rx.remaining > net_buf_tailroom(hci->rx.buf)) {
+		if (hci->rx.remaining + hci->rx.hdr_len > net_buf_tailroom(hci->rx.buf)) {
 			LOG_ERR("Not enough space in buffer");
 			hci->rx.discard = hci->rx.remaining;
 			reset_rx(hci);
