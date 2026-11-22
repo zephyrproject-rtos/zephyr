@@ -165,6 +165,9 @@ static inline void copy_hdr(struct net_buf *buf)
 
 static void reset_rx(void)
 {
+	/* A discarded packet leaves its buffer behind */
+	net_buf_drop(&rx.buf);
+
 	rx.type = BT_HCI_H4_NONE;
 	rx.remaining = 0U;
 	rx.have_hdr = false;
