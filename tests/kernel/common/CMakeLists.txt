@@ -21,6 +21,7 @@ target_sources(app PRIVATE
   src/errno.c
   src/boot_delay.c
   src/pow2.c
+  src/sys_init.c
 )
 
 target_sources_ifdef(
