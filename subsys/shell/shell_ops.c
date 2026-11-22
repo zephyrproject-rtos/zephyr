@@ -407,11 +407,20 @@ void z_shell_print_cmd(const struct shell *sh)
 	int beg_offset = 0;
 	int end_offset = 0;
 	int cmd_width = z_shell_strlen(sh->ctx->cmd_buff);
-	int adjust = sh->ctx->vt100_ctx.cons.name_len;
+	int line_width = sh->ctx->vt100_ctx.cons.terminal_wid -
+			 sh->ctx->vt100_ctx.cons.name_len;
 	char ch;
 
-	while (cmd_width > sh->ctx->vt100_ctx.cons.terminal_wid - adjust) {
-		end_offset += sh->ctx->vt100_ctx.cons.terminal_wid - adjust;
+	/* Clamp the usable width to at least one column. When the terminal
+	 * is narrower than the prompt, the difference is negative and would
+	 * drive the wrapping offsets out of bounds.
+	 */
+	if (line_width < 1) {
+		line_width = 1;
+	}
+
+	while (cmd_width > line_width) {
+		end_offset += line_width;
 		ch = sh->ctx->cmd_buff[end_offset];
 		sh->ctx->cmd_buff[end_offset] = '\0';
 
@@ -424,9 +433,14 @@ void z_shell_print_cmd(const struct shell *sh)
 		}
 
 		sh->ctx->cmd_buff[end_offset] = ch;
-		cmd_width -= (sh->ctx->vt100_ctx.cons.terminal_wid - adjust);
+		cmd_width -= line_width;
 		beg_offset = end_offset;
-		adjust = 0;
+
+		/* Lines after the first one start at column 0. */
+		line_width = sh->ctx->vt100_ctx.cons.terminal_wid;
+		if (line_width < 1) {
+			line_width = 1;
+		}
 	}
 	if (cmd_width > 0) {
 		if (z_flag_obscure_get(sh)) {

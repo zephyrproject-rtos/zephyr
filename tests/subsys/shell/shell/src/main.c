@@ -872,6 +872,38 @@ ZTEST(sh, test_cmd_concurrent_fprintf)
 	shell_backend_dummy_clear_output(sh);
 }
 
+ZTEST(sh, test_narrow_terminal_print_cmd)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	uint16_t saved_terminal_wid;
+	uint8_t saved_name_len;
+
+	test_shell_reset_state(sh);
+
+	/*
+	 * Simulate a terminal narrower than the prompt (3 columns for the
+	 * 8-character default prompt). With the original z_shell_print_cmd()
+	 * the usable width terminal_wid - name_len is negative, which drives
+	 * the wrapping offsets out of bounds on cmd_buff. Under a UBSAN build
+	 * the original code reports "index -5 out of bounds for char [256]";
+	 * the fixed code clamps the width and must run clean.
+	 */
+	saved_terminal_wid = sh->ctx->vt100_ctx.cons.terminal_wid;
+	saved_name_len = sh->ctx->vt100_ctx.cons.name_len;
+	sh->ctx->vt100_ctx.cons.terminal_wid = 3;
+	sh->ctx->vt100_ctx.cons.name_len = 8;
+
+	/* Typing any command triggers a prompt + command reprint. */
+	test_shell_push_input(sh, "help\n");
+
+	/* Restore shared console state so later tests keep their geometry. */
+	sh->ctx->vt100_ctx.cons.terminal_wid = saved_terminal_wid;
+	sh->ctx->vt100_ctx.cons.name_len = saved_name_len;
+
+	shell_backend_dummy_clear_output(sh);
+	shell_backend_dummy_clear_input(sh);
+}
+
 static void *shell_setup(void)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
