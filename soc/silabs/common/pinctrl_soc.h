@@ -32,12 +32,29 @@ extern "C" {
 
 #if CONFIG_PINCTRL_SILABS_DBUS
 
+/** Mask for the position of the enable bit */
+#define SILABS_PINCTRL_DBUS_ENABLE_BIT_MASK  GENMASK(5, 0)
+/** Mask for the type of pin enable or disable */
+#define SILABS_PINCTRL_DBUS_ENABLE_TYPE_MASK GENMASK(7, 6)
+
+/** Pin has no enable bit */
+#define SILABS_PINCTRL_DBUS_NO_ENABLE     0U
+/** Pin is used for analog (ABUS) */
+#define SILABS_PINCTRL_DBUS_ANALOG        1U
+/** Pin has enable bit and it should be disabled */
+#define SILABS_PINCTRL_DBUS_ROUTE_DISABLE 2U
+/** Pin has enable bit and it should be enabled */
+#define SILABS_PINCTRL_DBUS_ROUTE_ENABLE  3U
+
+/** Route offset sentinel value */
+#define SILABS_PINCTRL_DBUS_NO_ROUTE 0xFFU
+
 /** Type for Silabs pin using DBUS. */
 typedef struct pinctrl_soc_pin {
 	uint16_t base_offset;
 	uint8_t port;
 	uint8_t pin;
-	uint8_t en_bit;
+	uint8_t enable;
 	uint8_t route_offset;
 	uint8_t mode;
 	uint8_t dout;
@@ -70,14 +87,19 @@ typedef struct pinctrl_soc_pin {
 		 FIELD_GET(SILABS_PINCTRL_PERIPH_BASE_MASK, DT_PROP_BY_IDX(node, prop, idx)),      \
 	 .port = FIELD_GET(SILABS_PINCTRL_GPIO_PORT_MASK, DT_PROP_BY_IDX(node, prop, idx)),        \
 	 .pin = FIELD_GET(SILABS_PINCTRL_GPIO_PIN_MASK, DT_PROP_BY_IDX(node, prop, idx)),          \
-	 .en_bit =                                                                                 \
-		 (FIELD_GET(SILABS_PINCTRL_HAVE_EN_MASK, DT_PROP_BY_IDX(node, prop, idx))          \
-			  ? FIELD_GET(SILABS_PINCTRL_EN_BIT_MASK, DT_PROP_BY_IDX(node, prop, idx)) \
-			  : SILABS_PINCTRL_UNUSED),                                                \
+	 .enable = (FIELD_GET(SILABS_PINCTRL_HAVE_EN_MASK, DT_PROP_BY_IDX(node, prop, idx))        \
+			    ? FIELD_PREP(SILABS_PINCTRL_DBUS_ENABLE_TYPE_MASK,                     \
+					 DT_PROP(node, silabs_route_disable)                       \
+						 ? SILABS_PINCTRL_DBUS_ROUTE_DISABLE               \
+						 : SILABS_PINCTRL_DBUS_ROUTE_ENABLE) |             \
+				      FIELD_GET(SILABS_PINCTRL_EN_BIT_MASK,                        \
+						DT_PROP_BY_IDX(node, prop, idx))                   \
+			    : FIELD_PREP(SILABS_PINCTRL_DBUS_ENABLE_TYPE_MASK,                     \
+					 SILABS_PINCTRL_DBUS_NO_ENABLE)),                          \
 	 .route_offset =                                                                           \
 		 (FIELD_GET(SILABS_PINCTRL_HAVE_ROUTE_MASK, DT_PROP_BY_IDX(node, prop, idx))       \
 			  ? FIELD_GET(SILABS_PINCTRL_ROUTE_MASK, DT_PROP_BY_IDX(node, prop, idx))  \
-			  : SILABS_PINCTRL_UNUSED),                                                \
+			  : SILABS_PINCTRL_DBUS_NO_ROUTE),                                         \
 	 .mode = Z_PINCTRL_SILABS_MODE_INIT(node),                                                 \
 	 .dout = Z_PINCTRL_SILABS_DOUT_INIT(node)},
 
@@ -87,7 +109,8 @@ typedef struct pinctrl_soc_pin {
 			FIELD_GET(SILABS_PINCTRL_ABUS_BUS_MASK, DT_PROP_BY_IDX(node, prop, idx)),  \
 		.route_offset = FIELD_GET(SILABS_PINCTRL_ABUS_PERIPH_MASK,                         \
 					  DT_PROP_BY_IDX(node, prop, idx)),                        \
-		.en_bit = SILABS_PINCTRL_ANALOG,                                                   \
+		.enable = FIELD_PREP(SILABS_PINCTRL_DBUS_ENABLE_TYPE_MASK,                         \
+				     SILABS_PINCTRL_DBUS_ANALOG),                                  \
 		.mode = FIELD_GET(SILABS_PINCTRL_ABUS_PARITY_MASK,                                 \
 				  DT_PROP_BY_IDX(node, prop, idx)),                                \
 	},
