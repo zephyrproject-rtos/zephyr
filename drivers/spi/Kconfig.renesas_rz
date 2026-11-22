@@ -73,7 +73,8 @@ config SPI_RENESAS_RZ_DMA
 			       || SOC_SERIES_RZN2L
 
 	select USE_RZ_FSP_DMAC_B if SOC_SERIES_RZV2N \
-			         || SOC_SERIES_RZV2H
+				|| SOC_SERIES_RZV2H \
+				|| SOC_SERIES_RZG3E
 	help
 	  Enable the SPI DMA mode for SPI instances
 
