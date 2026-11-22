@@ -17,6 +17,7 @@ Network APIs
    net_context.rst
    promiscuous.rst
    sntp.rst
+   snmp.rst
    socks5.rst
    trickle.rst
    websocket.rst
