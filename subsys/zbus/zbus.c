@@ -409,9 +409,6 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 
 	buf = _zbus_create_net_buf(pool, zbus_chan_msg_size(chan), sys_timepoint_timeout(end_time));
 
-	_ZBUS_ASSERT(buf != NULL, "net_buf zbus_msg_subscribers_pool is "
-				  "unavailable or heap is full");
-
 	if (buf == NULL) {
 		return -ENOMEM;
 	}

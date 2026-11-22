@@ -708,6 +708,9 @@ static inline int zbus_async_listener_set_work_queue(const struct zbus_observer 
  *
  * This routine publishes a message to a channel.
  *
+ * @note The channel message is updated before observer delivery. If the initial message buffer
+ * cannot be allocated, no observers are notified, but the channel message remains updated.
+ *
  * @param chan The channel's reference.
  * @param msg Reference to the message where the publish function copies the channel's
  * message data from.
@@ -719,6 +722,7 @@ static inline int zbus_async_listener_set_work_queue(const struct zbus_observer 
  * observers could not receive the notification.
  * @retval -EBUSY The channel is busy.
  * @retval -EAGAIN Waiting period timed out.
+ * @retval -ENOMEM A message buffer could not be allocated within the waiting period.
  * @retval -EFAULT A parameter is incorrect, the notification could not be sent to one or more
  * observer, or the function context is invalid (inside an ISR). The function only returns this
  * value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
@@ -796,7 +800,8 @@ int zbus_chan_finish(const struct zbus_channel *chan);
  * @retval 0 Channel notified.
  * @retval -EBUSY The channel's semaphore returned without waiting.
  * @retval -EAGAIN Timeout to take the channel's semaphore.
- * @retval -ENOMEM There is not more buffer on the message buffers pool.
+ * @retval -ENOMEM A message buffer could not be allocated within the waiting period.
+ * If the initial message buffer cannot be allocated, no observers are notified.
  * @retval -EFAULT A parameter is incorrect, the notification could not be sent to one or more
  * observer, or the function context is invalid (inside an ISR). The function only returns this
  * value when the @kconfig{CONFIG_ZBUS_ASSERT_MOCK} is enabled.
