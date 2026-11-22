@@ -1322,9 +1322,188 @@ struct bt_cap_initiator_broadcast_stream_param
 struct bt_cap_initiator_broadcast_subgroup_param cap_initiator_broadcast_subgroup_param;
 struct bt_cap_initiator_broadcast_create_param cap_initiator_broadcast_create_param;
 
+static int cmd_broadcast_create(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_cap_initiator_broadcast_stream_param
+		stream_params[ARRAY_SIZE(broadcast_source_streams)] = {0};
+	struct bt_cap_initiator_broadcast_subgroup_param subgroup_param = {
+		.stream_count = ARRAY_SIZE(stream_params),
+		.stream_params = stream_params,
+	};
+	struct bt_cap_initiator_broadcast_create_param create_param = {
+		.subgroup_count = 1U,
+		.subgroup_params = &subgroup_param,
+		.packing = BT_ISO_PACKING_SEQUENTIAL,
+	};
+	const struct named_lc3_preset *named_preset = &default_broadcast_source_preset;
+	uint32_t broadcast_id = 0U;
+	int err;
+
+	if (default_source.cap_source != NULL) {
+		shell_error(sh, "Broadcast source already created");
+
+		return -ENOEXEC;
+	}
+
+	if (default_source.handover_in_progress) {
+		shell_error(sh, "CAP Handover in progress");
+
+		return -ENOEXEC;
+	}
+
+	for (size_t argn = 1U; argn < argc; argn++) {
+		const char *arg = argv[argn];
+
+		if (strcmp(arg, "enc") == 0) {
+			size_t bcode_len;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			bcode_len = hex2bin(argv[argn], strlen(argv[argn]),
+					    create_param.broadcast_code,
+					    sizeof(create_param.broadcast_code));
+			if (bcode_len != sizeof(create_param.broadcast_code)) {
+				shell_error(sh, "Invalid Broadcast Code Length: %zu", bcode_len);
+
+				return -EINVAL;
+			}
+
+			create_param.encryption = true;
+		} else if (strcmp(arg, "preset") == 0) {
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			named_preset = bap_get_named_preset(false, BT_AUDIO_DIR_SOURCE, argv[argn]);
+			if (named_preset == NULL) {
+				shell_error(sh, "Unable to parse named_preset %s", argv[argn]);
+
+				return -EINVAL;
+			}
+		} else if (strcmp(arg, "packing") == 0) {
+			unsigned long val;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			err = 0;
+			val = shell_strtoul(argv[argn], 0, &err);
+			if (err != 0 || val > BT_ISO_PACKING_INTERLEAVED) {
+				shell_error(sh, "Invalid packing: %s", argv[argn]);
+
+				return -ENOEXEC;
+			}
+
+			create_param.packing = (uint8_t)val;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+		} else if (strcmp(arg, "iso_interval") == 0) {
+			unsigned long val;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			err = 0;
+			val = shell_strtoul(argv[argn], 0, &err);
+			if (err != 0 ||
+			    !IN_RANGE(val, BT_ISO_ISO_INTERVAL_MIN, BT_ISO_ISO_INTERVAL_MAX)) {
+				shell_error(sh, "Invalid iso_interval: %s", argv[argn]);
+
+				return -ENOEXEC;
+			}
+
+			create_param.iso_interval = (uint16_t)val;
+		} else if (strcmp(arg, "irc") == 0) {
+			unsigned long val;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			err = 0;
+			val = shell_strtoul(argv[argn], 0, &err);
+			if (err != 0 || !IN_RANGE(val, BT_ISO_IRC_MIN, BT_ISO_IRC_MAX)) {
+				shell_error(sh, "Invalid irc: %s", argv[argn]);
+
+				return -ENOEXEC;
+			}
+
+			create_param.irc = (uint8_t)val;
+		} else if (strcmp(arg, "pto") == 0) {
+			unsigned long val;
+
+			if (++argn == argc) {
+				shell_help(sh);
+
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			err = 0;
+			val = shell_strtoul(argv[argn], 0, &err);
+			if (err != 0 || val > BT_ISO_PTO_MAX) {
+				shell_error(sh, "Invalid pto: %s", argv[argn]);
+
+				return -ENOEXEC;
+			}
+
+			create_param.pto = (uint8_t)val;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+		} else {
+			shell_error(sh, "Invalid argument: %s", arg);
+			shell_help(sh);
+
+			return -ENOEXEC;
+		}
+	}
+
+	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	if (err != 0) {
+		shell_error(sh, "Unable to generate broadcast ID: %d", err);
+
+		return err;
+	}
+
+	copy_broadcast_source_preset(&default_source, named_preset);
+	for (size_t i = 0U; i < ARRAY_SIZE(stream_params); i++) {
+		stream_params[i].stream = &broadcast_source_streams[i].stream;
+	}
+
+	subgroup_param.codec_cfg = &default_source.codec_cfg;
+	create_param.qos = &default_source.qos;
+
+	err = bt_cap_initiator_broadcast_audio_create(&create_param, &default_source.cap_source);
+	if (err != 0) {
+		shell_error(sh, "Unable to create broadcast source: %d", err);
+		default_source.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+
+		return err;
+	}
+
+	default_source.is_cap = true;
+	default_source.broadcast_id = broadcast_id;
+	shell_print(sh, "CAP Broadcast source created: preset %s, broadcast_id 0x%06X",
+		    named_preset->name, broadcast_id);
+
+	return 0;
+}
+
 static int cmd_broadcast_start(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+	struct bt_le_ext_adv_info adv_info;
 	int err;
 
 	ARG_UNUSED(argc);
@@ -1348,6 +1527,13 @@ static int cmd_broadcast_start(const struct shell *sh, size_t argc, char *argv[]
 		return -ENOEXEC;
 	}
 
+	err = bt_le_ext_adv_get_info(adv, &adv_info);
+	if (err != 0) {
+		shell_error(sh, "Failed to get adv info: %d", err);
+
+		return -ENOEXEC;
+	}
+
 	err = bt_cap_initiator_broadcast_audio_start(default_source.cap_source,
 						     adv_sets[selected_adv]);
 	if (err != 0) {
@@ -1355,6 +1541,9 @@ static int cmd_broadcast_start(const struct shell *sh, size_t argc, char *argv[]
 
 		return -ENOEXEC;
 	}
+
+	default_source.addr_type = adv_info.addr->type;
+	default_source.adv_sid = adv_info.sid;
 
 	return 0;
 }
@@ -1630,6 +1819,7 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 	cap_initiator_broadcast_create_param.subgroup_params =
 		&cap_initiator_broadcast_subgroup_param;
 	cap_initiator_broadcast_create_param.qos = &default_source.qos;
+	cap_initiator_broadcast_create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
 
 	err = bt_cap_initiator_broadcast_audio_create(&cap_initiator_broadcast_create_param,
 						      &default_source.cap_source);
@@ -1701,6 +1891,18 @@ static int cmd_cap_initiator(const struct shell *sh, size_t argc, char **argv)
 
 	return -ENOEXEC;
 }
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+#define HELP_CIG_TEST_PARAMS \
+	" [iso_interval <interval>] [c_to_p_ft <ft>] [p_to_c_ft <ft>]"
+#define HELP_BIG_TEST_PARAMS " [iso_interval <interval>] [irc <irc>] [pto <pto>]"
+#else
+#define HELP_CIG_TEST_PARAMS ""
+#define HELP_BIG_TEST_PARAMS ""
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+#define HELP_UNICAST_GROUP " [packing <packing>]" HELP_CIG_TEST_PARAMS
+#define HELP_BROADCAST_CREATE \
+	"[preset <preset_name>] [enc <broadcast_code>] [packing <packing>]" HELP_BIG_TEST_PARAMS
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	cap_initiator_cmds,
@@ -1774,6 +1976,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #endif /* UNICAST_SINK_SUPPORTED && UNICAST_SRC_SUPPORTED */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	SHELL_CMD_ARG(broadcast_create, NULL, HELP_BROADCAST_CREATE,
+		      cmd_broadcast_create, 1, IS_ENABLED(CONFIG_BT_ISO_TEST_PARAMS) ? 12 : 6),
 	SHELL_CMD_ARG(broadcast_start, NULL, "", cmd_broadcast_start, 1, 0),
 	SHELL_CMD_ARG(broadcast_update, NULL, "<meta>", cmd_broadcast_update, 2, 0),
 	SHELL_CMD_ARG(broadcast_stop, NULL, "", cmd_broadcast_stop, 1, 0),
