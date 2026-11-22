@@ -173,12 +173,15 @@ void yield_worker(void *p1, void *p2, void *p3)
  * - Sleep and verify all threads ran.
  *
  * Expected result:
- * - Every thread runs, confirming yield rotates among equal peers.
+ * - Every thread runs, confirming yield rotates among equal peers: threads
+ *   with equal static priority and equal deadlines are treated as threads of
+ *   equal priority.
  *
  * @ingroup tests_kernel_sched
  *
  * @see k_yield()
  * @verifies ZEP-SRS-2-15
+ * @verifies ZEP-SRS-2-24
  */
 ZTEST(suite_deadline, test_yield)
 {
