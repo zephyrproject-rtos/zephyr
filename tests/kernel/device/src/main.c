@@ -845,6 +845,7 @@ ZTEST_USER(device, test_device_is_ready_null_user)
  * @see device_deinit
  * @ingroup kernel_device_tests
  * @verifies ZEP-SRS-14-10
+ * @verifies ZEP-SRS-14-30
  */
 ZTEST(device, test_deinit_not_supported)
 {
@@ -865,6 +866,94 @@ static int dummy_deinit(const struct device *dev)
 /* A device with de-initialization function */
 DEVICE_DEINIT_DEFINE(dummy_deinit, DUMMY_DEINIT, NULL, dummy_deinit, NULL, NULL, NULL, POST_KERNEL,
 		     CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+static int dummy_deinit_fail_ret;
+
+static int dummy_failing_deinit(const struct device *dev)
+{
+	return dummy_deinit_fail_ret;
+}
+
+/* A device whose de-initialization result the test controls */
+DEVICE_DEINIT_DEFINE(dummy_deinit_fail, "dummy_deinit_fail", NULL, dummy_failing_deinit, NULL,
+		     NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+/**
+ * @brief Test that a failed de-initialization leaves the device ready
+ *
+ * @details Verify device_deinit() returns the de-initialization
+ * function's error and the device stays in the ready state, and that a
+ * later successful de-initialization takes it out of that state.
+ *
+ * @see device_deinit
+ * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-28
+ */
+ZTEST(device, test_deinit_failure_keeps_ready)
+{
+	const struct device *dev = device_get_binding("dummy_deinit_fail");
+	int ret;
+
+	zassert_not_null(dev);
+	zassert_true(device_is_ready(dev));
+
+	dummy_deinit_fail_ret = -EBUSY;
+	ret = device_deinit(dev);
+	zassert_equal(ret, -EBUSY, "device_deinit should report the failure");
+	zassert_true(device_is_ready(dev),
+		     "failed deinit should leave the device ready");
+
+	dummy_deinit_fail_ret = 0;
+	ret = device_deinit(dev);
+	zassert_equal(ret, 0, "device_deinit should succeed");
+	zassert_false(device_is_ready(dev),
+		      "deinitialized device should not be ready");
+}
+
+/**
+ * @brief Test build-time device references by devicetree compatible
+ *
+ * @details Three enabled devices share the fakedomain compatible, so the
+ * arbitrary- and single-device reference macros must both return one of
+ * them, and the arbitrary-device macro must return no reference for a
+ * compatible without an enabled device.
+ *
+ * @see DEVICE_DT_GET_ANY
+ * @see DEVICE_DT_GET_ONE
+ * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-14
+ * @verifies ZEP-SRS-14-23
+ * @verifies ZEP-SRS-14-29
+ * @verifies ZEP-SRS-14-31
+ */
+ZTEST(device, test_device_get_by_compatible)
+{
+	const struct device *any = DEVICE_DT_GET_ANY(fakedomain);
+	const struct device *one = DEVICE_DT_GET_ONE(fakedomain);
+	const struct device *const candidates[] = {
+		DEVICE_DT_GET(DT_NODELABEL(fakedomain_0)),
+		DEVICE_DT_GET(DT_NODELABEL(fakedomain_1)),
+		DEVICE_DT_GET(DT_NODELABEL(fakedomain_2)),
+	};
+	bool any_matches = false;
+	bool one_matches = false;
+
+	zassert_not_null(any, "no device for an enabled compatible");
+	zassert_not_null(one, "no device for an enabled compatible");
+
+	for (size_t i = 0; i < ARRAY_SIZE(candidates); i++) {
+		any_matches = any_matches || (any == candidates[i]);
+		one_matches = one_matches || (one == candidates[i]);
+	}
+	zassert_true(any_matches,
+		     "reference is not one of the matching devices");
+	zassert_true(one_matches,
+		     "reference is not one of the matching devices");
+
+	/* No enabled device has this compatible */
+	zassert_is_null(DEVICE_DT_GET_ANY(fakedomain_absent),
+			"got a reference for an absent compatible");
+}
 
 /**
  * @brief Test de-initializing a device at runtime
