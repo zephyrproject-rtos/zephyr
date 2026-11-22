@@ -497,6 +497,8 @@ ZTEST(mem_protect_domain, test_mem_domain_migration)
  * -# Try to add overlap_part to the memory domain. When adding the new
  *  partition to the memory domain the system will assert that new partition
  *  overlaps with the existing partition ro_part .
+ * -# Try to initialize a new memory domain with both overlapping partitions
+ *  in its partition array and check that the initialization is rejected too.
  *
  * Expected Test Result:
  * - Must happen an assertion error indicating that the new partition overlaps
@@ -512,16 +514,25 @@ ZTEST(mem_protect_domain, test_mem_domain_migration)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_mem_domain_add_partition()
+ * @see k_mem_domain_init()
  * @verifies ZEP-SRS-8-21
  * @verifies ZEP-SRS-8-29
  */
 ZTEST(mem_protect_domain, test_mem_part_overlap)
 {
+	static struct k_mem_domain overlap_domain;
+	struct k_mem_partition *overlap_parts[] = { &ro_part, &overlap_part };
+
 	set_fault_valid(false);
 
 	zassert_not_equal(
 		k_mem_domain_add_partition(&test_domain, &overlap_part),
 		0, "should fail to add memory partition");
+
+	zassert_not_equal(
+		k_mem_domain_init(&overlap_domain, ARRAY_SIZE(overlap_parts),
+				  overlap_parts),
+		0, "should fail to initialize with overlapping partitions");
 }
 
 extern struct k_spinlock z_mem_domain_lock;
