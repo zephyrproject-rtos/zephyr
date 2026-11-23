@@ -2,6 +2,7 @@
  *
  * Copyright (c) 2023 STMicroelectronics
  * Copyright (c) 2025 8tronix GmbH
+ * Copyright (c) 2026 Dotcom IoT LLP
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -31,12 +32,12 @@
 #define LIS2DU12_DIS_BIT 0x00
 
 /* Accel sensor sensitivity grain is 61 ug/LSB */
-#define GAIN_UNIT_XL	(61LL)
+#define GAIN_UNIT_XL (61LL)
 
 /* Wake-up duration raw grain is ODR_times (sample periods) */
 #define LIS2DU12_WAKUP_DUR_SAMPLES_MAX 15
 
-#define SENSOR_G_DOUBLE	(SENSOR_G / 1000000.0)
+#define SENSOR_G_DOUBLE (SENSOR_G / 1000000.0)
 
 struct lis2du12_config {
 	stmdev_ctx_t ctx;
@@ -72,7 +73,7 @@ struct lis2du12_data {
 	const struct device *dev;
 	int16_t acc[3];
 	uint32_t acc_gain; /* in ug/LSB */
-	uint8_t accel_fs; /* in g */
+	uint8_t accel_fs;  /* in g */
 
 #ifdef CONFIG_LIS2DU12_TRIGGER
 	atomic_t trig_flags;
@@ -93,10 +94,22 @@ struct lis2du12_data {
 #endif /* CONFIG_LIS2DU12_TRIGGER */
 };
 
+struct lis2du12_encoded_data {
+	struct {
+		uint64_t timestamp;
+		uint8_t accel_fs;
+	} header;
+	int16_t acc[3];
+} __attribute__((__packed__));
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+void lis2du12_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+int lis2du12_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+#endif
+
 #ifdef CONFIG_LIS2DU12_TRIGGER
-int lis2du12_trigger_set(const struct device *dev,
-			const struct sensor_trigger *trig,
-			sensor_trigger_handler_t handler);
+int lis2du12_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			 sensor_trigger_handler_t handler);
 
 int lis2du12_init_interrupt(const struct device *dev);
 

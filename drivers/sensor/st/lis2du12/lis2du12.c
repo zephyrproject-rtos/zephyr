@@ -2,6 +2,7 @@
  *
  * Copyright (c) 2023 STMicroelectronics
  * Copyright (c) 2025 8tronix GmbH
+ * Copyright (c) 2026 Dotcom IoT LLP
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -319,6 +320,10 @@ static DEVICE_API(sensor, lis2du12_driver_api) = {
 #endif
 	.sample_fetch = lis2du12_sample_fetch,
 	.channel_get = lis2du12_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = lis2du12_submit,
+	.get_decoder = lis2du12_get_decoder,
+#endif
 };
 
 static int lis2du12_init_chip(const struct device *dev)
