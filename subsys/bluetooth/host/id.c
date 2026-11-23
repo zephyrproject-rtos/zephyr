@@ -351,12 +351,13 @@ static void le_rpa_timeout_submit(void)
 	le_rpa_timeout_update();
 #endif
 
-	/* 0 means already pending: that timer keeps its recorded timeout */
 	ret = bt_work_schedule(&bt_dev.rpa_update, K_SECONDS(timeout));
 	if (ret < 0) {
 		LOG_ERR("Failed to schedule the RPA update: %d", ret);
 	} else if (ret > 0) {
 		bt_dev.rpa_update_timeout = timeout;
+	} else {
+		/* Already pending: that timer keeps its recorded timeout */
 	}
 }
 
