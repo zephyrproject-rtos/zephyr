@@ -1,0 +1,9 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: mikroe_relay_2_click
+  full_name: Relay 2 Click
+  vendor: mikroe
+  supported_features:
+    - relay

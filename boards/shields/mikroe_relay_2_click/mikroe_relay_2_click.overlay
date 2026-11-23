@@ -1,0 +1,22 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
+/ {
+	/* Relay1, load on CN1 */
+	mikroe_relay_2_click_relay1: relay-1 {
+		compatible = "zephyr,gpio-relay";
+		gpios = <&mikrobus_header MIKROBUS_PWM GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	/* Relay2, load on CN2 */
+	mikroe_relay_2_click_relay2: relay-2 {
+		compatible = "zephyr,gpio-relay";
+		gpios = <&mikrobus_header MIKROBUS_AN GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
