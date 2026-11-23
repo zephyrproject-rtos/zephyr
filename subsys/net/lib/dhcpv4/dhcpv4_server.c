@@ -1746,6 +1746,13 @@ int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 		goto error;
 	}
 
+	/* Not fatal, stacks without the option may not require it */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BROADCAST, &(int){ 1 },
+			       sizeof(int));
+	if (ret < 0) {
+		LOG_DBG("Failed to set SO_BROADCAST, %d", -errno);
+	}
+
 	ret = zsock_bind(sock, (struct net_sockaddr *)&addr, sizeof(addr));
 	if (ret < 0) {
 		ret = -errno;
