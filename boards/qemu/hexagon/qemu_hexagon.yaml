@@ -18,17 +18,6 @@ testing:
     - net
     - bluetooth
     - cpp
-  only_tags:
-    - cbprintf
-    - cmsis_rtos
-    - heap
-    - introduction
-    - log_api
-    - log_output
-    - logging
-    - mipi-sys-t
-    - security
-    - smf
 supported:
   - uart
 vendor: qemu
