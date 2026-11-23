@@ -149,6 +149,7 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 			 * which the zeroed user data would name.
 			 */
 			rx->index = BT_CONN_INDEX_INVALID;
+			rx->handle = UINT16_MAX;
 		}
 	}
 #else

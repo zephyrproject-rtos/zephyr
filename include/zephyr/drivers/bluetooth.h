@@ -89,6 +89,12 @@ enum {
 	 * advertising for the end of the new advertising.
 	 */
 	BT_HCI_QUIRK_NO_ADV_TERM_ON_DIR_TIMEOUT = BIT(3),
+	/** The Controller does not free the Controller to Host flow control
+	 * credits of a connection when the connection closes. The Host reports
+	 * completed packets for every ACL buffer whose handle it has read, also
+	 * after the connection is gone.
+	 */
+	BT_HCI_QUIRK_FC_CLOSED_CONN_CREDITS = BIT(4),
 };
 
 #define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) \
