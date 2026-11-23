@@ -235,6 +235,56 @@ void z_arm64_fpu_enter_exc(void)
 }
 
 /*
+ * Return the upper bound of the stack the interrupted context was using, or 0
+ * if it cannot be established from its stack pointer.
+ *
+ * Simulating a STR Q is only safe once we know where the targeted stack ends.
+ * The trap may have interrupted an IRQ handler running on the per-CPU IRQ
+ * stack, kernel code running on the current thread stack, or a syscall
+ * handler running on the privileged stack of a user thread.
+ */
+static uintptr_t stack_top_from_sp(uintptr_t sp)
+{
+	/* z_init_cpu() records the end of the per-CPU IRQ stack buffer. */
+	uintptr_t irq_stack_top = (uintptr_t)_current_cpu->irq_stack;
+	uintptr_t irq_stack_start = irq_stack_top - CONFIG_ISR_STACK_SIZE;
+#ifdef CONFIG_USERSPACE
+	/* arch_user_mode_enter() sets SP_EL1 to the top of this area. */
+	uintptr_t priv_stack_top = (uintptr_t)_current->stack_obj + ARCH_THREAD_STACK_RESERVED;
+	uintptr_t priv_stack_start = priv_stack_top - CONFIG_PRIVILEGED_STACK_SIZE;
+#endif
+#ifdef CONFIG_THREAD_STACK_INFO
+	uintptr_t stack_start = (uintptr_t)_current->stack_info.start;
+	uintptr_t stack_top = stack_start + _current->stack_info.size -
+			      _current->stack_info.delta;
+#endif
+
+	/*
+	 * Interrupt handlers, including the ones entered through irq_offload(),
+	 * run on the per-CPU IRQ stack.
+	 */
+	if ((sp >= irq_stack_start) && (sp < irq_stack_top)) {
+		return irq_stack_top;
+	}
+
+#ifdef CONFIG_USERSPACE
+	/* A syscall handler runs on the privileged stack of the thread. */
+	if ((sp >= priv_stack_start) && (sp < priv_stack_top)) {
+		return priv_stack_top;
+	}
+#endif
+
+#ifdef CONFIG_THREAD_STACK_INFO
+	/* Kernel code interrupted while running on the thread stack. */
+	if ((sp >= stack_start) && (sp < stack_top)) {
+		return stack_top;
+	}
+#endif
+
+	return 0U;
+}
+
+/*
  * Simulate some FPU store instructions.
  *
  * In many cases, the FPU trap is triggered by va_start() that copies
@@ -261,6 +311,22 @@ static bool simulate_str_q_insn(struct arch_esf *esf)
 	uint32_t *pc = (uint32_t *)esf->elr;
 	/* The original (interrupted) sp is the top of the esf structure */
 	uintptr_t sp = (uintptr_t)esf + sizeof(*esf);
+	uintptr_t stack_top = stack_top_from_sp(sp);
+	uintptr_t remaining;
+
+	/*
+	 * Without a known stack bound there is no way to tell whether the
+	 * emulated stores would stay on the interrupted stack, so leave the
+	 * access to the regular FPU trap path.
+	 */
+	if (stack_top == 0U) {
+		return false;
+	}
+
+	remaining = stack_top - sp;
+	if (remaining < sizeof(__int128)) {
+		return false;
+	}
 
 	for (;;) {
 		uint32_t insn = *pc;
@@ -277,9 +343,21 @@ static bool simulate_str_q_insn(struct arch_esf *esf)
 		}
 
 		uint32_t pimm = (insn >> 10) & 0xfff;
+		size_t offset = (size_t)pimm * 16U;
+
+		/*
+		 * Stop at the first store that would leave the stack, leaving
+		 * the trap to be handled normally at the interrupted PC.
+		 * Compare the offset against the space left instead of adding
+		 * it to sp so that the bound check cannot wrap around, and let
+		 * a store ending exactly at the top of the stack through.
+		 */
+		if (offset > (remaining - sizeof(__int128))) {
+			break;
+		}
 
 		/* Zero the location as the above STR would have done */
-		*(__int128 *)(sp + pimm * 16) = 0;
+		*(__int128 *)(sp + offset) = 0;
 
 		/* move to the next instruction */
 		pc++;
