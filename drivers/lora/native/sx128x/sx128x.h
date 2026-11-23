@@ -31,6 +31,13 @@ struct sx128x_data {
 	/* Uptime until which the timer of a stopped duty cycle may still fire */
 	int64_t timer_idle_at;
 	uint8_t tx_base;
+	uint8_t tx_len;
+	struct {
+		uint8_t buf[SX128X_MAX_PAYLOAD_LEN];
+		uint8_t len;
+		uint8_t base;
+		bool in_chip;
+	} tx_next;
 
 	struct k_work_delayable irq_poll_work;
 };

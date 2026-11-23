@@ -49,6 +49,19 @@ LOG_MODULE_REGISTER(sx128x, CONFIG_LORA_LOG_LEVEL);
 #define SX128X_IRQ_TXRX                                                                            \
 	(SX128X_IRQ_TX_DONE | SX128X_IRQ_RX_DONE | SX128X_IRQ_RX_TX_TIMEOUT | SX128X_IRQ_RX_ERROR)
 
+/*
+ * Draining a reception is several SPI transactions (interrupt status, clear,
+ * buffer status, payload read), and in continuous receive they have to finish
+ * before the next packet lands at the same buffer offset, a few hundred
+ * microseconds later with GFSK at 2 Mb/s. The system workqueue is shared
+ * with everything else in the application, so it can be arbitrarily late; use
+ * a dedicated cooperative thread instead, so the only things that can delay a
+ * reception are interrupts and higher-priority threads.
+ */
+static K_THREAD_STACK_DEFINE(sx128x_irq_stack, CONFIG_LORA_SX128X_NATIVE_IRQ_THREAD_STACK_SIZE);
+static struct k_work_q sx128x_irq_workq;
+static bool sx128x_irq_workq_started;
+
 /* SX128X SetTxParams power field is an offset from -18 dBm. */
 #define SX128X_TX_POWER_MIN_DBM -18
 #define SX128X_TX_POWER_MAX_DBM 13
@@ -332,7 +345,7 @@ static int sx128x_set_tx(const struct device *dev, uint32_t timeout_ms)
 	return ret;
 }
 
-/* Without a timeout, listen for one packet */
+/* Without a timeout, listen for one packet or, if so configured, continuously */
 static int sx128x_set_rx(const struct device *dev, uint32_t timeout_ms)
 {
 	const struct sx128x_hal_config *config = dev->config;
@@ -341,6 +354,9 @@ static int sx128x_set_rx(const struct device *dev, uint32_t timeout_ms)
 	int ret;
 
 	sx128x_encode_timeout(timeout_ms, buf);
+	if (sys_get_be16(&buf[1]) == 0 && IS_ENABLED(CONFIG_LORA_SX128X_NATIVE_RX_CONTINUOUS)) {
+		sys_put_be16(SX128X_RX_CONTINUOUS, &buf[1]);
+	}
 	ret = sx128x_spi_write_cmd(dev, SX128X_CMD_SET_RX, buf, 3);
 	if (ret == 0 && config->irq.port == NULL) {
 		k_work_reschedule(&data->irq_poll_work, SX128X_IRQ_POLL_INTERVAL);
@@ -452,6 +468,16 @@ static int sx128x_chip_init(const struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Clear IRQ failed: %d", ret);
 		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_LORA_SX128X_NATIVE_AUTO_FS)) {
+		uint8_t enable = 1;
+
+		ret = sx128x_spi_write_cmd(dev, SX128X_CMD_SET_AUTO_FS, &enable, 1);
+		if (ret < 0) {
+			LOG_ERR("Set AutoFS failed: %d", ret);
+			return ret;
+		}
 	}
 
 	/*
@@ -762,8 +788,56 @@ static int sx128x_tx_start(const struct device *dev, const uint8_t *buf, uint32_
 		sx128x_set_rf_path(dev, true, true);
 		ret = sx128x_set_tx(dev, sx128x_tx_timeout_ms(dev, (uint8_t)len));
 	}
-	if (ret < 0) {
+	if (ret == 0) {
+		((struct sx128x_data *)dev->data)->tx_len = (uint8_t)len;
+	} else {
 		((struct sx128x_data *)dev->data)->aborted = true;
+	}
+	return ret;
+}
+
+static int sx128x_tx_enqueue(const struct device *dev, const uint8_t *buf, uint32_t len)
+{
+	struct sx128x_data *data = dev->data;
+
+	data->tx_next.len = (uint8_t)len;
+	data->tx_next.base = 0;
+	data->tx_next.in_chip = false;
+	if (data->tx_len <= 128 && len <= 128) {
+		uint8_t base = data->tx_base == 0 ? 128 : 0;
+		int ret = sx128x_spi_write_buffer(dev, base, buf, len);
+
+		if (ret < 0) {
+			return ret;
+		}
+		data->tx_next.base = base;
+		data->tx_next.in_chip = true;
+	} else {
+		memcpy(data->tx_next.buf, buf, len);
+	}
+	return 0;
+}
+
+static int sx128x_tx_continue(const struct device *dev)
+{
+	struct sx128x_data *data = dev->data;
+	int ret;
+
+	ret = sx128x_set_tx_base(dev, data->tx_next.base);
+	if (ret == 0 && !data->tx_next.in_chip) {
+		ret = sx128x_spi_write_buffer(dev, data->tx_next.base,
+					      data->tx_next.buf, data->tx_next.len);
+	}
+	if (ret == 0) {
+		ret = sx128x_set_modem_packet_params(dev, data->tx_next.len);
+	}
+	if (ret == 0) {
+		ret = sx128x_set_tx(dev, sx128x_tx_timeout_ms(dev, data->tx_next.len));
+	}
+	if (ret == 0) {
+		data->tx_len = data->tx_next.len;
+	} else {
+		data->aborted = true;
 	}
 	return ret;
 }
@@ -1003,6 +1077,8 @@ static const struct lora_radio_ops sx128x_radio_ops = {
 	.irq_cad_done = SX128X_IRQ_CAD_DONE,
 	.irq_cad_detected = SX128X_IRQ_CAD_DETECTED,
 	.sleeps = false,
+	.rx_rearm_before_callback = true,
+	.rx_continuous = IS_ENABLED(CONFIG_LORA_SX128X_NATIVE_RX_CONTINUOUS),
 	.wake = sx128x_wake,
 	.sleep = sx128x_sleep,
 	.stop = sx128x_stop,
@@ -1010,6 +1086,8 @@ static const struct lora_radio_ops sx128x_radio_ops = {
 	.irq_rearm = sx128x_irq_rearm,
 	.tx_check = sx128x_tx_check,
 	.tx_start = sx128x_tx_start,
+	.tx_enqueue = sx128x_tx_enqueue,
+	.tx_continue = sx128x_tx_continue,
 	.cad_start = sx128x_cad_start,
 	.rx_prepare = sx128x_rx_prepare,
 	.rx_start = sx128x_rx_start,
@@ -1025,6 +1103,15 @@ static int sx128x_init(const struct device *dev)
 
 	lora_radio_init(dev);
 	k_work_init_delayable(&data->irq_poll_work, sx128x_irq_poll_work_handler);
+	if (!sx128x_irq_workq_started) {
+		struct k_work_queue_config cfg = {.name = "sx128x_irq", .no_yield = true};
+
+		k_work_queue_start(&sx128x_irq_workq, sx128x_irq_stack,
+				   K_THREAD_STACK_SIZEOF(sx128x_irq_stack),
+				   K_PRIO_COOP(CONFIG_LORA_SX128X_NATIVE_IRQ_THREAD_PRIO), &cfg);
+		sx128x_irq_workq_started = true;
+	}
+	data->radio.irq_workq = &sx128x_irq_workq;
 	data->tx_base = UINT8_MAX;
 	ret = sx128x_hal_init(dev);
 	if (ret < 0) {
