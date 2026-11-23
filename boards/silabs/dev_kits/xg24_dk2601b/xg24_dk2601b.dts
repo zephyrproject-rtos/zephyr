@@ -253,10 +253,8 @@
 	};
 
 	bmp384: bmp384@77 {
-		compatible = "bosch,bmp388";
+		compatible = "bosch,bmp384";
 		reg = <0x77>;
-		odr = "50";
-		osr-press = <4>;
 		osr-temp = <2>;
 	};
 };
