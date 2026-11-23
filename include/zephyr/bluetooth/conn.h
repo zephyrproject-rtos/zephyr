@@ -2210,6 +2210,17 @@ struct bt_conn_br_cb {
 	 *  @param packet_type New packet type bitmask.
 	 */
 	void (*packet_type_changed)(struct bt_conn *conn, uint8_t status, uint16_t packet_type);
+
+	/** @brief The maximum slot count for local BR/EDR transmission has changed.
+	 *
+	 *  This callback reports the maximum number of slots permitted for
+	 *  Baseband packets transmitted by the local Controller. It does not
+	 *  change the HCI ACL data packet length or the L2CAP MTU.
+	 *
+	 *  @param conn Connection object.
+	 *  @param max_slots Maximum number of slots: 1, 3 or 5.
+	 */
+	void (*max_slots_changed)(struct bt_conn *conn, uint8_t max_slots);
 };
 
 /** @brief Synthetic error value for an L2CAP Connection Parameter Update

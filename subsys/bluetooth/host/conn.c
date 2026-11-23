@@ -2191,6 +2191,21 @@ void bt_conn_br_role_changed(struct bt_conn *conn, uint8_t status)
 	}
 }
 
+void bt_conn_br_max_slots_changed(struct bt_conn *conn, uint8_t max_slots)
+{
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
+		if (callback->br.max_slots_changed != NULL) {
+			callback->br.max_slots_changed(conn, max_slots);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->br.max_slots_changed != NULL) {
+			cb->br.max_slots_changed(conn, max_slots);
+		}
+	}
+}
+
 void bt_conn_br_packet_type_changed(struct bt_conn *conn, uint8_t status, uint16_t packet_type)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {

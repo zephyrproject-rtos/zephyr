@@ -1207,6 +1207,13 @@ static void le_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
 }
 #endif
 
+#if defined(CONFIG_BT_CLASSIC)
+static void br_max_slots_changed(struct bt_conn *conn, uint8_t max_slots)
+{
+	bt_shell_print("Max slots changed: %s max_slots %u", bt_conn_dst_str(conn), max_slots);
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
@@ -1254,6 +1261,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 #if defined(CONFIG_BT_CLASSIC)
 	.br.role_changed = br_role_changed,
 	.br.packet_type_changed = br_packet_type_changed,
+	.br.max_slots_changed = br_max_slots_changed,
 #endif
 };
 #endif /* CONFIG_BT_CONN */
