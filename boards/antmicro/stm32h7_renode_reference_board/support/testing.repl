@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* On-chip peripherals for tests that do not use the external sensors. */
+using "platforms/cpus/stm32h753.repl"
+
+nvic:
+    systickFrequency: 480000000
+
+usart2:
+    frequency: 200000000
+
+usart3:
+    frequency: 200000000
