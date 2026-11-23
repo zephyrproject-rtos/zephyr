@@ -20,7 +20,7 @@ Hardware
 - Three user LEDs, target reset, ISP and interrupt/user buttons
 - Expansion options based on Arduino UNO and PMOD, plus additional expansion
   port pins
-- 8MB SPIFI serial flash, 128Mb SDRAM
+- 128Mb SPIFI serial flash, 128Mb SDRAM
 - 10/100 Mbps Ethernet, full-speed and high-speed USB, CAN
 
 More information can be found here:

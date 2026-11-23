@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP LPC SPIFI controller
+
+description: |
+  The SPIFI block on the LPC546xx family drives one serial
+  flash device with single, dual or quad data lines.
+
+  reg lists two regions selected by reg-names:
+    - "control": the SPIFI register block
+    - "memory": the memory-mapped flash window
+
+compatible: "nxp,lpc-spifi"
+
+include: [base.yaml, pinctrl-device.yaml, reset-device.yaml, mspi-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-frequency:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
