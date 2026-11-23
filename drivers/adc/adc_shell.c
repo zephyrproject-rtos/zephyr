@@ -74,6 +74,11 @@ static struct adc_hdl {
 	DT_FOREACH_CLASS_STATUS_OKAY(adc, ADC_HDL_LIST_ENTRY)
 };
 
+union adc_sample {
+	int16_t s16;
+	int32_t s32;
+};
+
 static struct adc_hdl *get_adc(const char *device_label)
 {
 	for (int i = 0; i < ARRAY_SIZE(adc_list); i++) {
@@ -85,6 +90,15 @@ static struct adc_hdl *get_adc(const char *device_label)
 	/* This will never happen because ADC was prompted by shell */
 	__ASSERT_NO_MSG(false);
 	return NULL;
+}
+
+static int32_t get_sample_val(uint8_t resolution, union adc_sample sample)
+{
+	/*
+	 * No clear API contract, most drivers follow this rule but some drivers use int32_t for 16
+	 * bit resolution.
+	 */
+	return resolution > 16 ? sample.s32 : sample.s16;
 }
 
 static int cmd_adc_ch_id(const struct shell *sh, size_t argc, char **argv)
@@ -307,7 +321,7 @@ static struct {
 	const struct shell *sh;
 	const struct device *dev;
 	struct adc_sequence sequence;
-	int16_t sample;
+	union adc_sample sample;
 	k_timeout_t period;
 	bool thread_started; /* thread object has been created; needs a join before reuse */
 	atomic_t running;
@@ -334,7 +348,8 @@ static void adc_periodic_read_thread(void *p1, void *p2, void *p3)
 			break;
 		}
 
-		shell_print(adc_periodic.sh, "read: %i", adc_periodic.sample);
+		shell_print(adc_periodic.sh, "read: %d",
+			    get_sample_val(adc_periodic.sequence.resolution, adc_periodic.sample));
 	}
 
 	atomic_clear(&adc_periodic.running);
@@ -354,13 +369,12 @@ static void adc_shell_read_bypass_cb(const struct shell *sh, uint8_t *data, size
 	k_sem_give(&adc_periodic_stop);
 }
 
-#define BUFFER_SIZE 1
 static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 {
 	uint8_t adc_channel_id = strtol(argv[1], NULL, 10);
 	/* -1 index of adc label name */
 	struct adc_hdl *adc = get_adc(argv[-1]);
-	int16_t m_sample_buffer[BUFFER_SIZE];
+	union adc_sample sample;
 	int retval;
 
 	if (!device_is_ready(adc->dev)) {
@@ -371,14 +385,14 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 	adc->channel_config.channel_id = adc_channel_id;
 	const struct adc_sequence sequence = {
 		.channels	= BIT(adc->channel_config.channel_id),
-		.buffer		= m_sample_buffer,
-		.buffer_size	= sizeof(m_sample_buffer),
+		.buffer		= &sample,
+		.buffer_size	= sizeof(sample),
 		.resolution	= adc->resolution,
 	};
 
 	retval = adc_read(adc->dev, &sequence);
 	if (retval >= 0) {
-		shell_print(sh, "read: %i", m_sample_buffer[0]);
+		shell_print(sh, "read: %d", get_sample_val(adc->resolution, sample));
 	}
 
 	if (argc == 2) { /* One-time print; Non-periodic */
