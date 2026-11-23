@@ -256,6 +256,9 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 	ret = dma_stm32_zcfg_to_halcfg(dma->dev, &hal_dma_cfg, &handle->Init,
 				       DMA_ADDR_ADJ_NO_CHANGE, DMA_ADDR_ADJ_INCREMENT);
 	if (ret < 0) {
+		__maybe_unused int stop_ret = dma_stop(dma->dev, dma->channel);
+
+		__ASSERT(stop_ret == 0, "DMA channel index corrupted");
 		return ret;
 	}
 
@@ -276,6 +279,8 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 
 	return ret;
 }
+
+static int stm32_sdmmc_dma_deinit(struct stm32_sdmmc_priv *priv);
 
 static int stm32_sdmmc_dma_init(struct stm32_sdmmc_priv *priv)
 {
@@ -299,21 +304,28 @@ static int stm32_sdmmc_dma_init(struct stm32_sdmmc_priv *priv)
 	}
 	__HAL_LINKDMA(&priv->hsd, hdmatx, priv->dma_tx_handle);
 	if (HAL_DMA_Init(&priv->dma_tx_handle) != HAL_OK) {
-		return -EIO;
+		err = -EIO;
+		goto error;
 	}
 
 	err = stm32_sdmmc_configure_dma(&priv->dma_rx_handle, &priv->dma_rx);
 	if (err) {
 		LOG_ERR("failed to init rx dma");
-		return err;
+		goto error;
 	}
 	__HAL_LINKDMA(&priv->hsd, hdmarx, priv->dma_rx_handle);
 	if (HAL_DMA_Init(&priv->dma_rx_handle) != HAL_OK) {
-		return -EIO;
+		err = -EIO;
+		goto error;
 	}
 #endif /* STM32_SDMMC_USE_DMA_SHARED */
 
 	return err;
+#if !STM32_SDMMC_USE_DMA_SHARED
+error:
+	stm32_sdmmc_dma_deinit(priv);
+	return err;
+#endif
 }
 
 static int stm32_sdmmc_dma_deinit(struct stm32_sdmmc_priv *priv)
@@ -336,15 +348,21 @@ static int stm32_sdmmc_dma_deinit(struct stm32_sdmmc_priv *priv)
 	struct sdmmc_dma_stream *dma_rx = &priv->dma_rx;
 	HAL_StatusTypeDef __maybe_unused hal_ret;
 
-	ret = dma_stop(dma_tx->dev, dma_tx->channel);
-	__ASSERT(ret == 0, "TX DMA channel index corrupted");
-	hal_ret = HAL_DMA_DeInit(&priv->dma_tx_handle);
-	__ASSERT_NO_MSG(hal_ret == HAL_OK);
+	if (priv->dma_tx_handle.Instance != NULL) {
+		ret = dma_stop(dma_tx->dev, dma_tx->channel);
+		__ASSERT(ret == 0, "TX DMA channel index corrupted");
+		hal_ret = HAL_DMA_DeInit(&priv->dma_tx_handle);
+		__ASSERT_NO_MSG(hal_ret == HAL_OK);
+		priv->dma_tx_handle.Instance = NULL;
+	}
 
-	ret = dma_stop(dma_rx->dev, dma_rx->channel);
-	__ASSERT(ret == 0, "RX DMA channel index corrupted");
-	hal_ret = HAL_DMA_DeInit(&priv->dma_rx_handle);
-	__ASSERT_NO_MSG(hal_ret == HAL_OK);
+	if (priv->dma_rx_handle.Instance != NULL) {
+		ret = dma_stop(dma_rx->dev, dma_rx->channel);
+		__ASSERT(ret == 0, "RX DMA channel index corrupted");
+		hal_ret = HAL_DMA_DeInit(&priv->dma_rx_handle);
+		__ASSERT_NO_MSG(hal_ret == HAL_OK);
+		priv->dma_rx_handle.Instance = NULL;
+	}
 #endif
 	return 0;
 }
@@ -408,13 +426,13 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 	err = stm32_sdmmc_clock_enable(priv);
 	if (err) {
 		LOG_ERR("failed to init clocks");
-		goto error;
+		goto error_dma;
 	}
 
 	err = reset_line_toggle_dt(&priv->reset);
 	if (err) {
 		LOG_ERR("failed to reset peripheral");
-		goto error;
+		goto error_dma;
 	}
 
 #ifdef CONFIG_SDMMC_STM32_EMMC
@@ -425,7 +443,7 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("failed to init stm32_sdmmc (ErrorCode 0x%X)", priv->hsd.ErrorCode);
 		err = -EIO;
-		goto error;
+		goto error_dma;
 	}
 
 	if (SDMMC_BUS_WIDTH != SDMMC_BUS_WIDE_1B) {
@@ -439,7 +457,7 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 			LOG_ERR("failed to configure wide bus operation (ErrorCode 0x%X)",
 				priv->hsd.ErrorCode);
 			err = -EIO;
-			goto error;
+			goto error_dma;
 		}
 	}
 
@@ -449,6 +467,10 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 
 	priv->status = DISK_STATUS_OK;
 	return 0;
+error_dma:
+#if STM32_SDMMC_USE_DMA
+	stm32_sdmmc_dma_deinit(priv);
+#endif
 error:
 #if !defined(CONFIG_SDMMC_STM32_EMMC)
 	stm32_sdmmc_card_detect_uninit(priv);
