@@ -310,6 +310,19 @@ int lwan_region_rx1_params(const struct lwan_ctx *ctx, uint32_t tx_freq,
 			   uint8_t tx_dr, uint8_t offset, uint32_t *rx1_freq,
 			   struct lwan_dr_params *p);
 
+/**
+ * @brief Lowest datarate the region accepts for an uplink right now.
+ *
+ * A band that caps how long a device may hold the channel leaves its
+ * slowest datarates without a payload while that cap is in force, so the
+ * floor moves with the dwell time a TxParamSetupReq set. The lookup walks
+ * up from DR0 and returns the first datarate the region takes.
+ *
+ * @param ctx LoRaWAN context.
+ * @return Lowest usable datarate, or DR0 if the region takes none.
+ */
+uint8_t lwan_region_min_dr(const struct lwan_ctx *ctx);
+
 /* Returns NULL if the region is not supported by this backend */
 const struct lwan_region_ops *lwan_region_get(enum lorawan_region region);
 

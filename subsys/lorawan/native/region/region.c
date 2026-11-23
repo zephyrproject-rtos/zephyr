@@ -73,6 +73,21 @@ int lwan_region_tx_params(const struct lwan_ctx *ctx, uint8_t dr,
 	return ret;
 }
 
+uint8_t lwan_region_min_dr(const struct lwan_ctx *ctx)
+{
+	for (uint8_t dr = LORAWAN_DR_0; dr <= LORAWAN_DR_15; dr++) {
+		struct lwan_dr_params p;
+		int8_t power;
+
+		if (lwan_region_tx_params(ctx, dr, ctx->mac.tx_power_idx, &p,
+					  &power) == 0) {
+			return dr;
+		}
+	}
+
+	return LORAWAN_DR_0;
+}
+
 int lwan_region_rx1_params(const struct lwan_ctx *ctx, uint32_t tx_freq,
 			   uint8_t tx_dr, uint8_t offset, uint32_t *rx1_freq,
 			   struct lwan_dr_params *p)
