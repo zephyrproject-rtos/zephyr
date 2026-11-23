@@ -414,6 +414,8 @@ void prl_set_default_pd_revision(const struct device *dev)
 	data->rev[PD_PACKET_PRIME_PRIME] = PD_REV30;
 	data->rev[PD_PACKET_DEBUG_PRIME] = PD_REV30;
 	data->rev[PD_PACKET_DEBUG_PRIME_PRIME] = PD_REV30;
+
+	(void)tcpc_set_pd_rev(data->tcpc, data->rev[PD_PACKET_SOP]);
 }
 
 /**
@@ -533,6 +535,16 @@ void prl_set_rev(const struct device *dev, const enum pd_packet_type type,
 	struct usbc_port_data *data = dev->data;
 
 	data->rev[type] = rev;
+
+	/*
+	 * A TCPCI part stamps the Specification Revision into the GoodCRC it
+	 * generates on its own, so its Message Header Info register has to
+	 * track what was negotiated. Drivers that do not implement this
+	 * return -ENOSYS and are left as they were.
+	 */
+	if (type == PD_PACKET_SOP) {
+		(void)tcpc_set_pd_rev(data->tcpc, rev);
+	}
 }
 
 /**
