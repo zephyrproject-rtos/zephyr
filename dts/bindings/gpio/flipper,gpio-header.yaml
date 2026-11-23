@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: GPIO pins exposed on the Flipper Zero GPIO header
+
+description: |
+    The Flipper Zero exposes an 18-pin GPIO header on its top edge. This
+    binding provides a nexus mapping where the parent index is the pin number
+    of the header, as printed on the device. Power and ground pins have no
+    GPIO and are not mapped.
+
+    Pin  Signal           Pin  Signal
+     1   5V                10  PA14 (SWCLK)
+     2   PA7               11  GND
+     3   PA6               12  PA13 (SWDIO)
+     4   PA4               13  PB6 (USART1 TX)
+     5   PB3               14  PB7 (USART1 RX)
+     6   PB2               15  PC1
+     7   PC3               16  PC0
+     8   GND               17  PB14 (1-Wire)
+     9   3V3               18  GND
+
+    PA13 and PA14 carry the serial wire debug interface after reset, and
+    PB6 and PB7 carry USART1, which can be configured as a serial console.
+
+compatible: "flipper,gpio-header"
+
+include: [gpio-nexus.yaml, base.yaml]
