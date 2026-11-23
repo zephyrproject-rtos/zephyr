@@ -726,7 +726,6 @@ int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags_mid,
 	socklen_t addrlen = sizeof(addr_storage);
 	int flags;
 	int ret;
-	int err;
 
 	flags = socket_flags_from_nsos_mid(flags_mid);
 	if (flags < 0) {
@@ -739,9 +738,11 @@ int nsos_adapt_recvfrom(int fd, void *buf, size_t len, int flags_mid,
 		return -nsi_errno_to_mid(errno);
 	}
 
-	err = sockaddr_to_nsos_mid(addr, addrlen, addr_mid, addrlen_mid);
-	if (err) {
-		return err;
+	/* The datagram is already consumed: an address the adapter cannot convert is
+	 * reported as no address rather than as an error.
+	 */
+	if (sockaddr_to_nsos_mid(addr, addrlen, addr_mid, addrlen_mid) != 0) {
+		*addrlen_mid = 0;
 	}
 
 	return ret;
