@@ -1151,22 +1151,40 @@ static int wait_for_reason(int sock, int timeout, int reason)
 	return 0;
 }
 
+struct tls_unlock_state {
+	struct k_mutex *lock;
+	uint32_t generation;
+	int sock;
+};
+
+static void tls_unlock(struct tls_context *ctx, struct tls_unlock_state *state)
+{
+	state->lock = ctx->lock;
+	state->generation = tls_context_generation[ARRAY_INDEX(tls_contexts, ctx)];
+	state->sock = ctx->sock;
+
+	(void)k_mutex_unlock(state->lock);
+}
+
+static bool tls_relock(struct tls_context *ctx, const struct tls_unlock_state *state)
+{
+	(void)k_mutex_lock(state->lock, K_FOREVER);
+
+	return state->generation != tls_context_generation[ARRAY_INDEX(tls_contexts, ctx)];
+}
+
 #define TLS_WAIT_CTX_RELEASED INT_MIN
 #define TLS_WAIT_RX_SHUTDOWN (INT_MIN + 1)
 
 static int tls_wait_unlocked(struct tls_context *ctx, int timeout, int reason)
 {
-	struct k_mutex *lock = ctx->lock;
-	uint32_t generation = tls_context_generation[ARRAY_INDEX(tls_contexts, ctx)];
-	int sock = ctx->sock;
+	struct tls_unlock_state state;
 	int ret;
 
-	(void)k_mutex_unlock(lock);
+	tls_unlock(ctx, &state);
+	ret = wait_for_reason(state.sock, timeout, reason);
 
-	ret = wait_for_reason(sock, timeout, reason);
-	(void)k_mutex_lock(lock, K_FOREVER);
-
-	if (generation != tls_context_generation[ARRAY_INDEX(tls_contexts, ctx)]) {
+	if (tls_relock(ctx, &state)) {
 		return TLS_WAIT_CTX_RELEASED;
 	}
 
@@ -3604,6 +3622,7 @@ int ztls_accept_ctx(struct tls_context *parent, struct net_sockaddr *addr,
 		    net_socklen_t *addrlen)
 {
 	struct tls_context *child = NULL;
+	struct tls_unlock_state state;
 	int ret, err, fd, sock;
 
 	if (!TLS_ROLE_SERVER_SUPPORTED) {
@@ -3617,9 +3636,14 @@ int ztls_accept_ctx(struct tls_context *parent, struct net_sockaddr *addr,
 	}
 
 
-	k_mutex_unlock(parent->lock);
-	sock = zsock_accept(parent->sock, addr, addrlen);
-	k_mutex_lock(parent->lock, K_FOREVER);
+	tls_unlock(parent, &state);
+	sock = zsock_accept(state.sock, addr, addrlen);
+
+	if (tls_relock(parent, &state)) {
+		ret = -EINTR;
+		goto error;
+	}
+
 	if (sock < 0) {
 		ret = -errno;
 		goto error;
