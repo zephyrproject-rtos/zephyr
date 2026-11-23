@@ -66,7 +66,6 @@ struct dhcpv4_server_probe_ctx {
 struct dhcpv4_server_ctx {
 	struct net_if *iface;
 	int sock;
-	struct k_work_delayable timeout_work;
 	struct dhcpv4_addr_slot addr_pool[CONFIG_NET_DHCPV4_SERVER_ADDR_COUNT];
 	struct net_in_addr base_addr;
 	struct net_in_addr server_addr;
@@ -88,6 +87,17 @@ static net_dhcpv4_server_provider_cb_t address_provider_callback;
 static struct dhcpv4_server_ctx server_ctx[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static struct zsock_pollfd fds[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static K_MUTEX_DEFINE(server_lock);
+
+/* The lease timers are kept outside of server_ctx, so that clearing a context
+ * does not touch a timer whose handler may still be running. They are
+ * initialised once, in net_dhcpv4_server_init().
+ */
+static struct k_work_delayable server_timeout_work[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
+
+static struct k_work_delayable *server_timeout_work_get(struct dhcpv4_server_ctx *ctx)
+{
+	return &server_timeout_work[ctx - server_ctx];
+}
 
 static void reset_slot(struct dhcpv4_addr_slot *slot)
 {
@@ -119,9 +129,9 @@ static void dhcpv4_server_timeout_recalc(struct dhcpv4_server_ctx *ctx)
 
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		LOG_DBG("No more addresses, canceling timer");
-		k_work_cancel_delayable(&ctx->timeout_work);
+		k_work_cancel_delayable(server_timeout_work_get(ctx));
 	} else {
-		k_work_reschedule(&ctx->timeout_work, timeout);
+		k_work_reschedule(server_timeout_work_get(ctx), timeout);
 	}
 }
 
@@ -1032,9 +1042,12 @@ static bool dhcpv4_server_is_slot_probed(struct dhcpv4_server_ctx *ctx,
 #define dhcpv4_server_is_slot_probed(...) (false)
 #endif /* defined(DHCPV4_SERVER_ICMP_PROBE) */
 
-static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
-				   struct dhcp_msg *msg, uint8_t *options,
-				   uint8_t optlen)
+/* Kept out of line, so that its stack frame is not added to the one of
+ * dhcpv4_server_cb(), which already holds the receive buffer.
+ */
+static __noinline void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
+					      struct dhcp_msg *msg, uint8_t *options,
+					      uint8_t optlen)
 {
 	struct dhcpv4_parameter_request_list params = { 0 };
 	struct dhcpv4_addr_slot *selected = NULL;
@@ -1517,10 +1530,16 @@ static void dhcpv4_handle_inform(struct dhcpv4_server_ctx *ctx,
 static void dhcpv4_server_timeout(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct dhcpv4_server_ctx *ctx =
-		CONTAINER_OF(dwork, struct dhcpv4_server_ctx, timeout_work);
+	struct dhcpv4_server_ctx *ctx = &server_ctx[dwork - server_timeout_work];
 
 	k_mutex_lock(&server_lock, K_FOREVER);
+
+	/* The server may have been stopped while the handler waited for the
+	 * lock.
+	 */
+	if (ctx->iface == NULL) {
+		goto out;
+	}
 
 	for (int i = 0; i < ARRAY_SIZE(ctx->addr_pool); i++) {
 		struct dhcpv4_addr_slot *slot = &ctx->addr_pool[i];
@@ -1546,11 +1565,12 @@ static void dhcpv4_server_timeout(struct k_work *work)
 
 	dhcpv4_server_timeout_recalc(ctx);
 
+out:
 	k_mutex_unlock(&server_lock);
 }
 
-static void dhcpv4_process_data(struct dhcpv4_server_ctx *ctx, uint8_t *data,
-				size_t datalen)
+static void dhcpv4_process_data(struct dhcpv4_server_ctx *ctx, int sock,
+				uint8_t *data, size_t datalen)
 {
 	struct dhcp_msg *msg;
 	uint8_t msgtype;
@@ -1588,6 +1608,13 @@ static void dhcpv4_process_data(struct dhcpv4_server_ctx *ctx, uint8_t *data,
 
 	k_mutex_lock(&server_lock, K_FOREVER);
 
+	/* The server may have been stopped, and the context reused by another
+	 * server, while this message waited for the lock.
+	 */
+	if (ctx->iface == NULL || ctx->sock != sock) {
+		goto out;
+	}
+
 	switch (msgtype) {
 	case NET_DHCPV4_MSG_TYPE_DISCOVER:
 		dhcpv4_handle_discover(ctx, msg, data, datalen);
@@ -1613,6 +1640,7 @@ static void dhcpv4_process_data(struct dhcpv4_server_ctx *ctx, uint8_t *data,
 		break;
 	}
 
+out:
 	k_mutex_unlock(&server_lock);
 }
 
@@ -1623,7 +1651,8 @@ static void dhcpv4_server_cb(struct net_socket_service_event *evt)
 	int ret;
 
 	for (int i = 0; i < ARRAY_SIZE(server_ctx); i++) {
-		if (server_ctx[i].sock == evt->event.fd) {
+		if (server_ctx[i].iface != NULL &&
+		    server_ctx[i].sock == evt->event.fd) {
 			ctx = &server_ctx[i];
 			break;
 		}
@@ -1656,7 +1685,7 @@ static void dhcpv4_server_cb(struct net_socket_service_event *evt)
 		return;
 	}
 
-	dhcpv4_process_data(ctx, recv_buf, ret);
+	dhcpv4_process_data(ctx, evt->event.fd, recv_buf, ret);
 }
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(dhcpv4_server, dhcpv4_server_cb,
@@ -1769,9 +1798,6 @@ int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 	server_ctx[slot].base_addr = *base_addr;
 	server_ctx[slot].netmask = netmask;
 
-	k_work_init_delayable(&server_ctx[slot].timeout_work,
-			      dhcpv4_server_timeout);
-
 	LOG_DBG("Started DHCPv4 server, address pool:");
 	for (int i = 0; i < ARRAY_SIZE(server_ctx[slot].addr_pool); i++) {
 		reset_slot(&server_ctx[slot].addr_pool[i]);
@@ -1817,7 +1843,6 @@ error:
 
 int net_dhcpv4_server_stop(struct net_if *iface)
 {
-	struct k_work_sync sync;
 	int slot = -1;
 	int ret = 0;
 	bool service_stop = true;
@@ -1844,7 +1869,12 @@ int net_dhcpv4_server_stop(struct net_if *iface)
 	(void)zsock_close(server_ctx[slot].sock);
 
 	dhcpv4_server_probing_deinit(&server_ctx[slot]);
-	k_work_cancel_delayable_sync(&server_ctx[slot].timeout_work, &sync);
+
+	/* The timer handler takes the server lock, so it cannot be waited for
+	 * here. A handler that is already running finds the context cleared,
+	 * or in use by a server started after this stop.
+	 */
+	k_work_cancel_delayable(server_timeout_work_get(&server_ctx[slot]));
 
 	memset(&server_ctx[slot], 0, sizeof(server_ctx[slot]));
 
@@ -1986,5 +2016,9 @@ void net_dhcpv4_server_init(void)
 
 	for (int i = 0; i < ARRAY_SIZE(fds); i++) {
 		fds[i].fd = -1;
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(server_timeout_work); i++) {
+		k_work_init_delayable(&server_timeout_work[i], dhcpv4_server_timeout);
 	}
 }
