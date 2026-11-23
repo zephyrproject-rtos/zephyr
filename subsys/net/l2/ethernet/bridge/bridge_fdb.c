@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(net_eth_bridge_fdb, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #include <zephyr/net/ethernet_bridge_fdb.h>
 
 #include "bridge_internal.h"
+#include "net_private.h"
 
 /* FDB table */
 static sys_slist_t fdb_entries = SYS_SLIST_STATIC_INIT(&fdb_entries);
@@ -276,7 +277,7 @@ static void fdb_ageing_handler(struct k_work *work)
 	k_mutex_unlock(&fdb_lock);
 
 	if (dynamic_left) {
-		(void)k_work_schedule(&fdb_ageing_work, K_SECONDS(1));
+		(void)net_work_schedule(&fdb_ageing_work, K_SECONDS(1));
 	}
 }
 
@@ -331,7 +332,7 @@ void eth_bridge_fdb_learn(struct net_if *bridge, struct net_eth_addr *mac, struc
 	fdb_count++;
 
 	/* Does nothing when the ageing work is already scheduled */
-	(void)k_work_schedule(&fdb_ageing_work, K_SECONDS(1));
+	(void)net_work_schedule(&fdb_ageing_work, K_SECONDS(1));
 
 	NET_DBG("FDB entry learned: %02x:%02x:%02x:%02x:%02x:%02x -> iface %d", mac->addr[0],
 		mac->addr[1], mac->addr[2], mac->addr[3], mac->addr[4], mac->addr[5],
