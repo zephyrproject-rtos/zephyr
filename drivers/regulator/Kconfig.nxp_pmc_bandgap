@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_NXP_PMC_BANDGAP
+	bool "NXP PMC bandgap buffer driver"
+	default y
+	depends on DT_HAS_NXP_PMC_BANDGAP_BUFFER_ENABLED
+	help
+	  Enable the NXP Kinetis-style PMC buffered bandgap output driver.
+
+config REGULATOR_NXP_PMC_BANDGAP_INIT_PRIORITY
+	int "NXP PMC bandgap buffer driver init priority"
+	default 45
+	depends on REGULATOR_NXP_PMC_BANDGAP
+	help
+	  Init priority for the NXP PMC buffered bandgap output.
