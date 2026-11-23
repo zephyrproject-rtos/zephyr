@@ -30,3 +30,12 @@ properties:
     description: |
       Set to enable burst mode for the MIPI-DSI interface. If not present,
       burst mode will be disabled.
+
+  init-seq-name:
+    type: string
+    required: true
+    description: |
+      The name of the initialization sequence to be used for the display panel.
+      A function with the signature
+      int <init-seq-name>_dsi_regs_init(const struct device *dev); should be
+      implemented to match this property.

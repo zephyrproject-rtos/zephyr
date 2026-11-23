@@ -275,6 +275,14 @@ Comparator
   :zephyr_file:`tests/drivers/comparator/gpio_loopback` test provides an example of the comparator
   API. (:github:`124232`).
 
+Display
+=======
+
+* Boards using :dtcompatible:`ilitek,ili9881c` or :dtcompatible:`ilitek,ili9806e`
+  now need to supply the required ``init-seq-name`` property. For existing users of
+  the ili9881c, this should be set to ``"rtkapplcdms02001be"``. For the ili9806e, it
+  should be set to ``"rtkmipilcdb00000be"``.
+
 Ethernet
 ========
 

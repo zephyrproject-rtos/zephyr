@@ -37,6 +37,7 @@
 		width = <720>;
 		data-lanes = <4>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+		init-seq-name = "rtkapplcdms02001be";
 		status = "okay";
 	};
 };

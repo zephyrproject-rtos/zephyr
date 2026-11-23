@@ -11,3 +11,8 @@ description: |
 compatible: "ilitek,ili9806e"
 
 include: ilitek,ili98xx-dsi.yaml
+
+properties:
+  init-seq-name:
+    enum:
+      - "rtkmipilcdb00000be"

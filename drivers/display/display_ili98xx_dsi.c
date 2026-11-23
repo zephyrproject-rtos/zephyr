@@ -247,7 +247,11 @@ static int ili98xx_dsi_init(const struct device *dev)
 
 #define INST_DT_ILI98XX_DSI(n, t) DT_INST(n, ilitek_ili##t)
 
+#define INST_DT_ILI98XX_INIT_SEQ(n, t) \
+	CONCAT(DT_STRING_TOKEN(INST_DT_ILI98XX_DSI(n, t), init_seq_name), _dsi_regs_init)
+
 #define ILI98XX_DSI_INIT(n, t)                                                                     \
+	extern int INST_DT_ILI98XX_INIT_SEQ(n, t)(const struct device *dev);                       \
 	static const struct ili98xx_dsi_config ili##t##_dsi_config_##n = {                         \
 		.mipi_dsi = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI98XX_DSI(n, t))),                   \
 		.reset = GPIO_DT_SPEC_GET_OR(INST_DT_ILI98XX_DSI(n, t), reset_gpios, {0}),         \
@@ -262,7 +266,7 @@ static int ili98xx_dsi_init(const struct device *dev)
 				(MIPI_DSI_MODE_LPM), (0)) |                                        \
 			COND_CODE_1(DT_PROP(INST_DT_ILI98XX_DSI(n, t), burst_mode),                \
 				(MIPI_DSI_MODE_VIDEO_BURST), (0)),                                 \
-		.regs_init_fn = ili##t##_dsi_regs_init,                                            \
+		.regs_init_fn = INST_DT_ILI98XX_INIT_SEQ(n, t),                                    \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_DEFINE(INST_DT_ILI98XX_DSI(n, t), ili98xx_dsi_init, NULL, NULL,                  \
@@ -273,11 +277,9 @@ static int ili98xx_dsi_init(const struct device *dev)
 	LISTIFY(DT_NUM_INST_STATUS_OKAY(ilitek_ili##t), ILI98XX_DSI_INIT, (;), t)
 
 #ifdef CONFIG_ILI9806E_DSI
-#include "display_ili9806e_dsi.h"
 DT_INST_FOREACH_ILI98XX_DSI_STATUS_OKAY(9806e);
 #endif
 
 #ifdef CONFIG_ILI9881C_DSI
-#include "display_ili9881c_dsi.h"
 DT_INST_FOREACH_ILI98XX_DSI_STATUS_OKAY(9881c);
 #endif

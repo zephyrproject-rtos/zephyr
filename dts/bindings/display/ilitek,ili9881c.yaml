@@ -11,3 +11,8 @@ description: |
 compatible: "ilitek,ili9881c"
 
 include: ilitek,ili98xx-dsi.yaml
+
+properties:
+  init-seq-name:
+    enum:
+      - "rtkapplcdms02001be"
