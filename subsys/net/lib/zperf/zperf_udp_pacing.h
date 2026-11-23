@@ -3,55 +3,40 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Rate control for the zperf UDP senders */
+/* Rate control for the zperf senders */
 
 #ifndef ZPERF_UDP_PACING_H_
 #define ZPERF_UDP_PACING_H_
 
 #include <zephyr/kernel.h>
 
-#define USECS_PER_TICK (Z_HZ_us / Z_HZ_ticks)
-#if (USECS_PER_TICK >= 1000)
-#define ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
-#endif
-
-#ifdef ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
-struct compensate_ctx {
-	int period;
-	int64_t period_start;
-	int packet_duration_us;
-	int actual_pkts;
-	int compensate;
-};
-#endif
-
 struct zperf_udp_pacer {
-	/* Time between two packets at the requested rate, in ticks */
-	uint32_t packet_duration;
-	/* Delay to wait after the current packet, in ticks */
-	uint32_t delay;
-	/* When the previous packet was sent */
-	int64_t last_loop_time;
-#ifdef ZPERF_UDP_UPLOAD_CLOCK_COMPENSATE
-	struct compensate_ctx ctx;
-#endif
+	/* Packet duration in ticks multiplied by USEC_PER_SEC. */
+	uint64_t period;
+	/* Maximum catch-up debt: one packet interval, rounded up, at least one tick. */
+	int64_t catch_up_ticks;
+	/* Fractional tick numerator, with denominator USEC_PER_SEC. */
+	uint32_t fraction;
+	/* Integer part of the cumulative ideal deadline. */
+	int64_t next_tick;
+	/* Ideal deadline rounded up once, after accumulating fractions. */
+	int64_t deadline;
 };
 
 /**
  * Prepare to send packets of the given duration, starting at @p start_time
- * (in ticks).
+ * (in ticks). A zero duration disables rate limiting.
  */
 void zperf_udp_pacer_init(struct zperf_udp_pacer *pacer, uint32_t packet_duration_us,
 			  int64_t start_time);
 
 /**
- * Account for a packet about to be sent at @p loop_time (in ticks) and
- * return how many ticks to wait after sending it. The drift correction
- * applied is stored in @p adjust, for logging.
+ * Account for a packet about to be sent at @p loop_time (in ticks).
+ * Update the cumulative deadline used by zperf_udp_pacer_wait().
  */
-int zperf_udp_pacer_next(struct zperf_udp_pacer *pacer, int64_t loop_time, int32_t *adjust);
+void zperf_udp_pacer_next(struct zperf_udp_pacer *pacer, int64_t loop_time);
 
-/** Wait the delay zperf_udp_pacer_next() returned for the packet just sent. */
-void zperf_udp_pacer_wait(int delay);
+/** Wait until the next packet deadline, but not past @p end_time (absolute ticks). */
+void zperf_udp_pacer_wait(const struct zperf_udp_pacer *pacer, int64_t end_time);
 
 #endif /* ZPERF_UDP_PACING_H_ */

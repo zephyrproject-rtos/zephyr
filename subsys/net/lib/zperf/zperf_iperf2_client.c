@@ -177,11 +177,11 @@ static int udp_upload(int sock, int port,
 	uint32_t nb_packets = 0U;
 	uint64_t usecs64;
 	int64_t start_time, end_time;
+	int64_t loop_time;
 	int64_t print_time;
 	uint32_t print_period;
 	bool is_mcast_pkt = false;
 	int ret;
-	int compensate_delay;
 
 	if (packet_size > PACKET_SIZE_MAX) {
 		NET_WARN("Packet size too large! max size: %u", PACKET_SIZE_MAX);
@@ -203,17 +203,18 @@ static int udp_upload(int sock, int port,
 	/* Default data payload */
 	(void)memset(udp_sample_packet, 'z', sizeof(udp_sample_packet));
 
-	do {
+	while (true) {
 		struct zperf_udp_datagram *datagram;
 		struct zperf_client_hdr_v1 *hdr;
 		uint32_t secs, usecs;
-		int64_t loop_time;
-		int32_t adjust;
 
 		/* Timestamp */
 		loop_time = k_uptime_ticks();
+		if (loop_time >= end_time) {
+			break;
+		}
 
-		compensate_delay = zperf_udp_pacer_next(&pacer, loop_time, &adjust);
+		zperf_udp_pacer_next(&pacer, loop_time);
 
 		usecs64 = param->unix_offset_us + k_ticks_to_us_floor64(loop_time - start_time);
 		secs = usecs64 / USEC_PER_SEC;
@@ -258,16 +259,14 @@ static int udp_upload(int sock, int port,
 
 		if (IS_ENABLED(CONFIG_NET_ZPERF_LOG_LEVEL_DBG)) {
 			if (print_time >= loop_time) {
-				NET_DBG("nb_packets=%u\tdelay=%u\tadjust=%d",
-					nb_packets, (unsigned int)compensate_delay,
-					(int)adjust);
+				NET_DBG("nb_packets=%u", nb_packets);
 				print_time += print_period;
 			}
 		}
 
 		/* Wait */
-		zperf_udp_pacer_wait(compensate_delay);
-	} while (pacer.last_loop_time < end_time);
+		zperf_udp_pacer_wait(&pacer, end_time);
+	}
 
 	end_time = k_uptime_ticks();
 	usecs64 = param->unix_offset_us + k_ticks_to_us_floor64(end_time - start_time);

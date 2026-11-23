@@ -269,6 +269,7 @@ static int send_udp(int sock, const struct zperf_upload_params *param, uint32_t 
 	uint64_t data_offset = 0U;
 	int64_t start_time;
 	int64_t end_time;
+	int64_t loop_time;
 	int ret;
 
 	start_time = k_uptime_ticks();
@@ -277,13 +278,13 @@ static int send_udp(int sock, const struct zperf_upload_params *param, uint32_t 
 
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
-	do {
-		int64_t loop_time = k_uptime_ticks();
-		int64_t remaining;
-		int32_t adjust;
-		int delay;
+	while (true) {
+		loop_time = k_uptime_ticks();
+		if (loop_time >= end_time) {
+			break;
+		}
 
-		delay = zperf_udp_pacer_next(&pacer, loop_time, &adjust);
+		zperf_udp_pacer_next(&pacer, loop_time);
 
 		zperf_iperf3_udp_hdr_put(sample_packet,
 					 param->unix_offset_us +
@@ -304,14 +305,8 @@ static int send_udp(int sock, const struct zperf_upload_params *param, uint32_t 
 		stats->packets++;
 		stats->bytes += packet_size;
 
-		/* At a coarse tick rate the rate control sends in bursts and
-		 * makes up for them with long waits. Do not let one run past
-		 * the end of the test.
-		 */
-		remaining = end_time - k_uptime_ticks();
-		delay = CLAMP(remaining, 0, delay);
-		zperf_udp_pacer_wait(delay);
-	} while (pacer.last_loop_time < end_time);
+		zperf_udp_pacer_wait(&pacer, end_time);
+	}
 
 	stats->packet_size = packet_size;
 	stats->duration_us = k_ticks_to_us_ceil64(k_uptime_ticks() - start_time);
