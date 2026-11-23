@@ -6,6 +6,7 @@ import asyncio
 import logging
 import sys
 
+from bt_classic_common import device_power_on
 from bumble.core import (
     BT_ADVANCED_AUDIO_DISTRIBUTION_SERVICE,
     BT_AUDIO_SINK_SERVICE,
@@ -341,15 +342,6 @@ async def wait_for_shell_response(dut, message):
         logger.error(f'{e}!', exc_info=True)
         raise e
     return found, lines
-
-
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
 
 
 async def sdp_ssa_discover_no_record(hci_port, shell, dut, address) -> None:

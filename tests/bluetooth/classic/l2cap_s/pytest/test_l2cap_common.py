@@ -5,7 +5,6 @@
 import asyncio
 import logging
 
-from bumble.core import BT_BR_EDR_TRANSPORT
 from bumble.hci import (
     HCI_CONNECTION_REJECTED_DUE_TO_LIMITED_RESOURCES_ERROR,
 )
@@ -30,15 +29,6 @@ class Delegate(PairingDelegate):
             io_capability,
         )
         self.dut = dut
-
-
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
 
 
 async def wait_for_shell_response(dut, message, max_time=10):
@@ -75,17 +65,6 @@ async def send_cmd_to_iut(shell, dut, cmd, parse=None, max_time=10):
     logger.info(f'{lines}')
     assert found is True
     return lines
-
-
-async def bumble_acl_connect(shell, dut, device, target_address):
-    connection = None
-    try:
-        connection = await device.connect(target_address, transport=BT_BR_EDR_TRANSPORT)
-        logger.info(f'=== Connected to {connection.peer_address}!')
-    except Exception as e:
-        logger.error(f'Fail to connect to {target_address}!')
-        raise e
-    return connection
 
 
 async def bumble_acl_disconnect(shell, dut, device, connection):

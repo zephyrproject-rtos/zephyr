@@ -4,6 +4,7 @@
 import asyncio
 import sys
 
+from bt_classic_common import device_power_on
 from bumble.device import Device
 from bumble.hci import (
     Address,
@@ -24,7 +25,6 @@ from test_l2cap_common import (
     bumble_acl_connect,
     bumble_acl_disconnect,
     bumble_l2cap_disconnect,
-    device_power_on,
     logger,
     send_cmd_to_iut,
     wait_for_shell_response,

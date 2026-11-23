@@ -5,24 +5,21 @@
 
 import asyncio
 import logging
-import re
 import sys
 
-from bumble.core import (
-    BT_BR_EDR_TRANSPORT,
-    ProtocolError,
-    UnreachableError,
-)
-from bumble.device import (
-    Device,
-    host_event_handler,
-    with_connection_from_address,
+from bt_classic_common import (
+    SmpDevice,
+    bumble_acl_connect,
+    bumble_l2cap_br_connect,
+    check_shell_response,
+    device_power_on,
+    l2cap_server_psm,
+    sm_passkey_confirm,
+    wait_for_shell_response,
 )
 from bumble.hci import (
     HCI_REMOTE_USER_TERMINATED_CONNECTION_ERROR,
     Address,
-    HCI_User_Confirmation_Request_Negative_Reply_Command,
-    HCI_User_Confirmation_Request_Reply_Command,
     HCI_Write_Page_Timeout_Command,
 )
 from bumble.l2cap import ClassicChannelSpec
@@ -35,83 +32,15 @@ from bumble.smp import (
 )
 from bumble.snoop import BtSnooper
 from bumble.transport import open_transport_or_link
-from bumble.utils import AsyncRunner
 from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
 
-l2cap_server_psm = 0x1001
 
 JUST_WORKS = 0
 PASSKEY_ENTRY = 1
 PASSKEY_DISPLAY = 2
 PASSKEY_CONFIRM = 3
-
-
-# power on dongle
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
-
-
-def check_shell_response(lines: list[str], regex: str) -> bool:
-    found = False
-    try:
-        for line in lines:
-            if re.search(regex, line):
-                found = True
-                break
-    except Exception as e:
-        logger.error(f'{e}!', exc_info=True)
-        raise e
-
-    return found
-
-
-def search_messages(result, messages, read_lines):
-    for message in messages:
-        for line in read_lines:
-            if re.search(message, line):
-                result[message] = True
-                if False not in result.values():
-                    return True
-                break
-
-    return False
-
-
-async def wait_for_shell_response(dut, regex: list[str] | str, max_wait_sec=10):
-    found = False
-    lines = []
-
-    logger.debug('wait_for_shell_response')
-
-    messages = [regex] if isinstance(regex, str) else regex
-    result = dict.fromkeys(messages, False)
-
-    try:
-        for _ in range(0, max_wait_sec):
-            read_lines = dut.readlines(print_output=True)
-            lines += read_lines
-            for line in read_lines:
-                logger.debug(f'DUT response: {str(line)}')
-
-            found = search_messages(result, messages, read_lines)
-            if found is True:
-                break
-            await asyncio.sleep(1)
-    except Exception as e:
-        logger.error(f'{e}!', exc_info=True)
-        raise e
-
-    for key in result:
-        logger.debug(f'Expected DUT response: "{key}", Matched: {result[key]}')
-
-    return found, lines
 
 
 async def send_cmd_to_iut(shell, dut, cmd, parse=None):
@@ -124,136 +53,6 @@ async def send_cmd_to_iut(shell, dut, cmd, parse=None):
     assert found is True
 
     return lines
-
-
-async def bumble_acl_connect(shell, dut, device, target_address):
-    connection = None
-    try:
-        connection = await device.connect(target_address, transport=BT_BR_EDR_TRANSPORT)
-        logger.info(f'=== Connected to {connection.peer_address}!')
-    except Exception as e:
-        logger.error(f'Fail to connect to {target_address}!')
-        raise e
-
-    return connection
-
-
-async def bumble_l2cap_br_connect(connection):
-    channel = None
-    chan_conn_res = 'success'
-    try:
-        channel = await connection.create_l2cap_channel(
-            spec=ClassicChannelSpec(psm=l2cap_server_psm)
-        )
-    except BaseException as e:
-        if isinstance(e, asyncio.exceptions.CancelledError):
-            chan_conn_res = e.args[0]
-            logger.info(
-                f'Fail to create L2CAP channel, exception type: {type(e)}, reason: {chan_conn_res}'
-            )
-            await asyncio.sleep(1)  # Added to avoid transport lost with PTS dongle
-        elif isinstance(e, ProtocolError):
-            chan_conn_res = e.error_name
-            logger.info(
-                f'Fail to create L2CAP channel, exception type: {type(e)}, reason: {chan_conn_res}'
-            )
-        else:
-            chan_conn_res = 'unexpected error'
-            raise e
-
-    return channel, chan_conn_res
-
-
-# Override methods in Device class
-class SmpDevice(Device):
-    # [Classic only]
-    @host_event_handler
-    @with_connection_from_address
-    def on_authentication_user_confirmation_request(self, connection, code) -> None:
-        # Ask what the pairing config should be for this connection
-        pairing_config = self.pairing_config_factory(connection)
-        io_capability = pairing_config.delegate.classic_io_capability
-        peer_io_capability = connection.peer_pairing_io_capability
-
-        async def confirm() -> bool:
-            # Ask the user to confirm the pairing, without display
-            return await pairing_config.delegate.confirm()
-
-        async def auto_confirm() -> bool:
-            # Ask the user to auto-confirm the pairing, without display
-            return await pairing_config.delegate.confirm(auto=True)
-
-        async def display_confirm() -> bool:
-            # Display the code and ask the user to compare
-            return await pairing_config.delegate.compare_numbers(code, digits=6)
-
-        async def display_auto_confirm() -> bool:
-            # Display the code to the user and ask the delegate to auto-confirm
-            await pairing_config.delegate.display_number(code, digits=6)
-            return await pairing_config.delegate.confirm(auto=True)
-
-        async def na() -> bool:
-            raise UnreachableError()
-
-        # See Bluetooth spec @ Vol 3, Part C 5.2.2.6
-        methods = {
-            SMP_DISPLAY_ONLY_IO_CAPABILITY: {
-                SMP_DISPLAY_ONLY_IO_CAPABILITY: display_auto_confirm,
-                SMP_DISPLAY_YES_NO_IO_CAPABILITY: display_confirm,
-                SMP_KEYBOARD_ONLY_IO_CAPABILITY: na,
-                SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
-            },
-            SMP_DISPLAY_YES_NO_IO_CAPABILITY: {
-                SMP_DISPLAY_ONLY_IO_CAPABILITY: display_auto_confirm,
-                SMP_DISPLAY_YES_NO_IO_CAPABILITY: display_confirm,
-                SMP_KEYBOARD_ONLY_IO_CAPABILITY: na,
-                SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
-            },
-            SMP_KEYBOARD_ONLY_IO_CAPABILITY: {
-                SMP_DISPLAY_ONLY_IO_CAPABILITY: na,
-                SMP_DISPLAY_YES_NO_IO_CAPABILITY: auto_confirm,
-                SMP_KEYBOARD_ONLY_IO_CAPABILITY: na,
-                SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
-            },
-            SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: {
-                SMP_DISPLAY_ONLY_IO_CAPABILITY: confirm,
-                SMP_DISPLAY_YES_NO_IO_CAPABILITY: confirm,
-                SMP_KEYBOARD_ONLY_IO_CAPABILITY: auto_confirm,
-                SMP_NO_INPUT_NO_OUTPUT_IO_CAPABILITY: auto_confirm,
-            },
-        }
-
-        method = methods[peer_io_capability][io_capability]
-
-        async def reply() -> None:
-            try:
-                if await connection.abort_on('disconnection', method()):
-                    await self.host.send_command(
-                        HCI_User_Confirmation_Request_Reply_Command(bd_addr=connection.peer_address)
-                    )
-                    return
-            except Exception as error:
-                logger.warning(f'exception while confirming: {error}')
-
-            await self.host.send_command(
-                HCI_User_Confirmation_Request_Negative_Reply_Command(
-                    bd_addr=connection.peer_address
-                )
-            )
-
-        AsyncRunner.spawn(reply())
-
-    # [Classic only]
-    @host_event_handler
-    @with_connection_from_address
-    def on_authentication_user_passkey_notification(self, connection, passkey):
-        # Ask what the pairing config should be for this connection
-        pairing_config = self.pairing_config_factory(connection)
-
-        # Show the passkey to the user
-        connection.abort_on(
-            'disconnection', pairing_config.delegate.display_number(passkey, digits=6)
-        )
 
 
 def sm_get_pairing_method(local_sec, local_io_cap, remote_sec, remote_io_cap):
@@ -269,29 +68,6 @@ def sm_get_pairing_method(local_sec, local_io_cap, remote_sec, remote_io_cap):
         method = JUST_WORKS
 
     return method
-
-
-async def sm_passkey_confirm(shell, dut, number, digits):
-    logger.debug(f'Passkey shown on Bumble: {number}')
-
-    passkey = 0
-    regex = r"Confirm passkey for .*?: (?P<passkey>\d{6})"
-    found, lines = await wait_for_shell_response(dut, regex)
-    if found is True:
-        for line in lines:
-            searched = re.search(regex, line)
-            if searched:
-                passkey = int(searched.group("passkey"))
-                break
-
-    logger.debug(f'Passkey shown on DUT: {passkey}')
-    if number == passkey:
-        logger.info('Passkey matched')
-        shell.exec_command("bt auth-passkey-confirm")
-        return True
-    else:
-        logger.info('Passkey not matched')
-        return False
 
 
 async def sm_io_cap_init(hci_port, shell, dut, address, snoop_file, dut_sec, dut_io_cap) -> None:

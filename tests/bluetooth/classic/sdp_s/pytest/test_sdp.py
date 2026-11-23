@@ -5,6 +5,7 @@
 import asyncio
 import logging
 
+from bt_classic_common import device_power_on
 from bumble.core import (
     BT_BR_EDR_TRANSPORT,
     BT_L2CAP_PROTOCOL_ID,
@@ -26,15 +27,6 @@ from bumble.transport import open_transport_or_link
 from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
-
-
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
 
 
 class discovery_listener(Device.Listener):
