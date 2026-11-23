@@ -405,6 +405,14 @@
 			status = "disabled";
 		};
 
+		pmc: pmc@4007d000 {
+			reg = <0x4007d000 0x1000>;
+
+			bandgap_buffer: bandgap-buffer {
+				compatible = "nxp,pmc-bandgap-buffer";
+			};
+		};
+
 		smc: smc@4007e000 {
 			compatible = "nxp,smc";
 			reg = <0x4007e000 0x1000>;
