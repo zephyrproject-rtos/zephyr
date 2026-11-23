@@ -361,6 +361,29 @@ void usbc_set_policy_cb_notify(const struct device *dev, const policy_cb_notify_
 	data->policy_cb_notify = policy_cb_notify;
 }
 
+void usbc_set_policy_cb_ext_msg_received(const struct device *dev,
+					 const policy_cb_ext_msg_received_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_ext_msg_received = cb;
+}
+
+int usbc_send_ext_msg(const struct device *dev, const enum pd_ext_msg_type type,
+		      const uint8_t *data, const uint32_t len)
+{
+#ifdef CONFIG_USBC_CHUNKING
+	return prl_send_ext_data_msg(dev, PD_PACKET_SOP, type, data, len);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(type);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 /**
  * @brief Set the callback for the Device Policy Manager policy change notify
  */

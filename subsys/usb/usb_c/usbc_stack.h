@@ -139,6 +139,13 @@ struct usbc_port_data {
 	bool (*policy_cb_wait_notify)(const struct device *dev,
 				      const enum usbc_policy_wait_t policy_notify);
 
+	/**
+	 * Callback delivering a received Extended Message to the DPM
+	 */
+	bool (*policy_cb_ext_msg_received)(const struct device *dev,
+					   const enum pd_ext_msg_type type, const uint8_t *data,
+					   const uint32_t len);
+
 #ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
 	/**
 	 * Callback used by the Policy Engine to get the Sink Capabilities
