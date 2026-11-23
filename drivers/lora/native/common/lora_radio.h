@@ -14,7 +14,7 @@
 
 /*
  * The radio is woken when an operation claims it and put to rest when the
- * operation ends. An operation the radio refuses to start, or a duty cycle it
+ * operation ends. An operation the radio refuses to start, or a reception it
  * fails to resume, ends at once. A call that finds the radio claimed returns
  * -EBUSY, except during a configuration: that one holds the lock for as long
  * as it runs, so the call waits for it and is checked against what it set.
