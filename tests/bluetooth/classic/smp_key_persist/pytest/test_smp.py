@@ -8,6 +8,7 @@ import logging
 import re
 import sys
 
+from bt_classic_common import device_power_on
 from bumble.core import (
     BT_BR_EDR_TRANSPORT,
 )
@@ -28,16 +29,6 @@ from bumble.transport import open_transport_or_link
 from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
-
-
-# power on dongle
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
 
 
 async def wait_for_shell_response(dut, regex: list[str] | str, max_wait_sec=10):

@@ -5,7 +5,7 @@ import asyncio
 import logging
 import sys
 
-from bumble import hci
+from bt_classic_common import device_power_on, set_limited_discoverable
 from bumble.core import DeviceClass
 from bumble.device import Device
 from bumble.hci import Address, HCI_Write_Page_Timeout_Command
@@ -14,15 +14,6 @@ from bumble.transport import open_transport_or_link
 from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
-
-
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
 
 
 # wait for shell response
@@ -85,45 +76,6 @@ async def send_cmd_to_iut(
         lines = ''
     assert found is expect_to_find_resp
     return lines
-
-
-# set limited discoverab mode of dongle
-async def set_limited_discoverable(device, discoverable=True):
-    # Read current class of device
-    response = await device.send_command(
-        hci.HCI_Command(
-            op_code=0x0C23,  # Read Class of Device
-            parameters=b'',
-        )
-    )
-    current_cod = response.return_parameters.class_of_device
-
-    if discoverable:
-        # set Limited Discoverable Mode (bit 13)
-        new_cod = (current_cod | 0x2000).to_bytes(3, byteorder='little')
-        # Limited Inquiry Access Code(LIAC) = 0x9E8B00
-        iac = hci.HCI_LIMITED_DEDICATED_INQUIRY_LAP.to_bytes(3, byteorder='little')
-    else:
-        mask = ~0x2000
-        new_cod = (current_cod & mask).to_bytes(3, byteorder='little')
-        # General Inquiry Access Code(GIAC) = 0x9E8B33
-        iac = hci.HCI_GENERAL_INQUIRY_LAP.to_bytes(3, byteorder='little')
-
-    await device.send_command(
-        hci.HCI_Command(
-            op_code=0x0C24,  # Write Class of Device
-            parameters=new_cod,
-        )
-    )
-
-    await device.send_command(
-        hci.HCI_Command(
-            op_code=0x0C3A,  # Write Current IAC LAP
-            parameters=bytes([0x01]) + iac,  # num_current_iac=1, iac_lap
-        )
-    )
-
-    device.discoverable = discoverable
 
 
 # dongle listener for receiving scan results

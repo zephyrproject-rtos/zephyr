@@ -6,6 +6,7 @@ import asyncio
 import logging
 import sys
 
+from bt_classic_common import bumble_acl_connect, device_power_on
 from bumble.a2dp import (
     SbcMediaCodecInformation,
 )
@@ -32,7 +33,6 @@ from bumble.core import (
     BT_ADVANCED_AUDIO_DISTRIBUTION_SERVICE,
     BT_AUDIO_SOURCE_SERVICE,
     BT_AVDTP_PROTOCOL_ID,
-    BT_BR_EDR_TRANSPORT,
     BT_L2CAP_PROTOCOL_ID,
     InvalidStateError,
     ProtocolError,
@@ -60,15 +60,6 @@ from bumble.transport import open_transport_or_link
 from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
-
-
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
 
 
 async def wait_for_shell_response(dut, message, max_time=10):
@@ -106,17 +97,6 @@ async def send_cmd_to_iut(shell, dut, cmd, parse=None, max_time=10):
     logger.info(f'{lines}')
     assert found is True
     return lines
-
-
-async def bumble_acl_connect(shell, dut, device, target_address):
-    connection = None
-    try:
-        connection = await device.connect(target_address, transport=BT_BR_EDR_TRANSPORT)
-        logger.info(f'=== Connected to {connection.peer_address}!')
-    except Exception as e:
-        logger.error(f'Fail to connect to {target_address}!')
-        raise e
-    return connection
 
 
 async def bumble_acl_disconnect(shell, dut, device, connection):

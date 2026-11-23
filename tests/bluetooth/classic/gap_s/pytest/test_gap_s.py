@@ -5,24 +5,15 @@ import asyncio
 import logging
 import sys
 
-from bumble import hci
+from bt_classic_common import device_power_on, start_limited_discovery
 from bumble.core import BT_BR_EDR_TRANSPORT, DeviceClass
-from bumble.device import DEVICE_DEFAULT_INQUIRY_LENGTH, Device
+from bumble.device import Device
 from bumble.hci import Address, HCI_Write_Page_Timeout_Command
 from bumble.snoop import BtSnooper
 from bumble.transport import open_transport_or_link
 from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
-
-
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
 
 
 # wait for shell response
@@ -85,28 +76,6 @@ async def send_cmd_to_iut(
         lines = ''
     assert found is expect_to_find_resp
     return lines
-
-
-# dongle limited discovery
-async def start_limited_discovery(device):
-    await device.send_command(
-        hci.HCI_Write_Inquiry_Mode_Command(inquiry_mode=hci.HCI_EXTENDED_INQUIRY_MODE),
-        check_result=True,
-    )
-
-    response = await device.send_command(
-        hci.HCI_Inquiry_Command(
-            lap=hci.HCI_LIMITED_DEDICATED_INQUIRY_LAP,
-            inquiry_length=DEVICE_DEFAULT_INQUIRY_LENGTH,
-            num_responses=0,  # Unlimited number of responses.
-        )
-    )
-    if response.status != hci.HCI_Command_Status_Event.PENDING:
-        device.discovering = False
-        raise hci.HCI_StatusError(response)
-
-    device.auto_restart_inquiry = False
-    device.discovering = True
 
 
 # device listener for receiving scan results

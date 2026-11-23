@@ -9,6 +9,9 @@ tests:
       - hid
     harness: pytest
     harness_config:
+      pytest_root:
+        - pytest
+        - ../common
       pytest_dut_scope: session
       fixture: usb_hci
     extra_args:

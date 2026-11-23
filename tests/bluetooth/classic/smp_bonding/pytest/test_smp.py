@@ -5,9 +5,14 @@
 
 import asyncio
 import logging
-import re
 import sys
 
+from bt_classic_common import (
+    check_shell_response,
+    device_power_on,
+    l2cap_server_psm,
+    wait_for_shell_response,
+)
 from bumble.core import (
     BT_BR_EDR_TRANSPORT,
 )
@@ -24,74 +29,6 @@ from twister_harness import DeviceAdapter, Shell
 
 logger = logging.getLogger(__name__)
 
-l2cap_server_psm = 0x1001
-
-
-# power on dongle
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
-
-
-def check_shell_response(lines: list[str], regex: str) -> bool:
-    found = False
-    try:
-        for line in lines:
-            if re.search(regex, line):
-                found = True
-                break
-    except Exception as e:
-        logger.error(f'{e}!', exc_info=True)
-        raise e
-
-    return found
-
-
-def search_messages(result, messages, read_lines):
-    for message in messages:
-        for line in read_lines:
-            if re.search(message, line):
-                result[message] = True
-                if False not in result.values():
-                    return True
-                break
-
-    return False
-
-
-async def wait_for_shell_response(dut, regex: list[str] | str, max_wait_sec=10):
-    found = False
-    lines = []
-
-    logger.debug('wait_for_shell_response')
-
-    messages = [regex] if isinstance(regex, str) else regex
-    result = dict.fromkeys(messages, False)
-
-    try:
-        for _ in range(0, max_wait_sec):
-            read_lines = dut.readlines(print_output=True)
-            lines += read_lines
-            for line in read_lines:
-                logger.debug(f'DUT response: {str(line)}')
-
-            found = search_messages(result, messages, read_lines)
-            if found is True:
-                break
-            await asyncio.sleep(1)
-    except Exception as e:
-        logger.error(f'{e}!', exc_info=True)
-        raise e
-
-    for key in result:
-        logger.debug(f'Expected DUT response: "{key}", Matched: {result[key]}')
-
-    return found, lines
-
 
 async def send_cmd_to_iut(shell, dut, cmd, parse=None):
     shell.exec_command(cmd)
@@ -103,17 +40,6 @@ async def send_cmd_to_iut(shell, dut, cmd, parse=None):
     assert found is True
 
     return lines
-
-
-async def bumble_acl_connect(shell, dut, device, target_address):
-    connection = None
-    try:
-        connection = await device.connect(target_address, transport=BT_BR_EDR_TRANSPORT)
-        logger.info(f'=== Connected to {connection.peer_address}!')
-    except Exception as e:
-        logger.error(f'Fail to connect to {target_address}!')
-        raise e
-    return connection
 
 
 async def sm_bonding_init_001(hci_port, shell, dut, address, snoop_file) -> None:

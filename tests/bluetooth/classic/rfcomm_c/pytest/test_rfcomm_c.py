@@ -8,9 +8,9 @@ import sys
 
 import bumble
 import rfcomm_utility
-from bumble import hci
+from bt_classic_common import device_power_on
 from bumble.core import BT_BR_EDR_TRANSPORT, DeviceClass, InvalidStateError
-from bumble.device import DEVICE_DEFAULT_INQUIRY_LENGTH, Device
+from bumble.device import Device
 from bumble.hci import Address, HCI_Write_Page_Timeout_Command
 from bumble.rfcomm import DLC, RFCOMM_MCC_PN, MccType, RFCOMM_Frame, Server
 from bumble.snoop import BtSnooper
@@ -25,16 +25,6 @@ dlc_9 = None
 dlc_7 = None
 rfcomm_mux = None
 original_dlc_accept_api = DLC.accept
-
-
-# power on dongle
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
 
 
 # wait for shell response
@@ -103,67 +93,6 @@ async def send_cmd_to_iut(
         found = True
     assert found is expect_to_find_resp
     return lines
-
-
-# set limited discoverab mode of dongle
-async def set_limited_discoverable(device, discoverable=True):
-    # Read current class of device
-    response = await device.send_command(
-        hci.HCI_Command(
-            op_code=0x0C23,  # Read Class of Device
-            parameters=b'',
-        )
-    )
-    current_cod = response.return_parameters.class_of_device
-
-    if discoverable:
-        # set Limited Discoverable Mode (bit 13)
-        new_cod = (current_cod | 0x2000).to_bytes(3, byteorder='little')
-        # Limited Inquiry Access Code(LIAC) = 0x9E8B00
-        iac = hci.HCI_LIMITED_DEDICATED_INQUIRY_LAP.to_bytes(3, byteorder='little')
-    else:
-        mask = ~0x2000
-        new_cod = (current_cod & mask).to_bytes(3, byteorder='little')
-        # General Inquiry Access Code(GIAC) = 0x9E8B33
-        iac = hci.HCI_GENERAL_INQUIRY_LAP.to_bytes(3, byteorder='little')
-
-    await device.send_command(
-        hci.HCI_Command(
-            op_code=0x0C24,  # Write Class of Device
-            parameters=new_cod,
-        )
-    )
-
-    await device.send_command(
-        hci.HCI_Command(
-            op_code=0x0C3A,  # Write Current IAC LAP
-            parameters=bytes([0x01]) + iac,  # num_current_iac=1, iac_lap
-        )
-    )
-
-    device.discoverable = discoverable
-
-
-# dongle limited discovery
-async def start_limited_discovery(device):
-    await device.send_command(
-        hci.HCI_Write_Inquiry_Mode_Command(inquiry_mode=hci.HCI_EXTENDED_INQUIRY_MODE),
-        check_result=True,
-    )
-
-    response = await device.send_command(
-        hci.HCI_Inquiry_Command(
-            lap=hci.HCI_LIMITED_DEDICATED_INQUIRY_LAP,
-            inquiry_length=DEVICE_DEFAULT_INQUIRY_LENGTH,
-            num_responses=0,  # Unlimited number of responses.
-        )
-    )
-    if response.status != hci.HCI_Command_Status_Event.PENDING:
-        device.discovering = False
-        raise hci.HCI_StatusError(response)
-
-    device.auto_restart_inquiry = False
-    device.discovering = True
 
 
 # device listener for receiving scan results

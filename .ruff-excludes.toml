@@ -775,52 +775,19 @@
 "./soc/silabs/silabs_sim3/sim3u/gen_crossbar_config.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
 ]
-"./tests/bluetooth/classic/a2dp_sink/pytest/test_a2dp.py" = [
-    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
-]
-"./tests/bluetooth/classic/a2dp_source/pytest/test_a2dp.py" = [
-    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
-]
 "./tests/bluetooth/classic/bumble/common/controllers.py" = [
-    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
-]
-"./tests/bluetooth/classic/gap_c/pytest/test_gap_c.py" = [
     "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
 "./tests/bluetooth/classic/gap_s/pytest/test_gap_s.py" = [
     "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
-"./tests/bluetooth/classic/l2cap_c/pytest/test_l2cap_common.py" = [
-    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
-]
-"./tests/bluetooth/classic/l2cap_s/pytest/test_l2cap_common.py" = [
-    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
-]
-"./tests/bluetooth/classic/rfcomm_c/pytest/test_rfcomm_c.py" = [
-    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
-]
 "./tests/bluetooth/classic/rfcomm_s/pytest/test_rfcomm_s.py" = [
-    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
-]
-"./tests/bluetooth/classic/sdp_c/pytest/test_sdp.py" = [
-    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
-]
-"./tests/bluetooth/classic/sdp_s/pytest/test_sdp.py" = [
     "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
 "./tests/bluetooth/classic/smp_bonding/pytest/test_smp.py" = [
     "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
-"./tests/bluetooth/classic/smp_general/pytest/test_smp.py" = [
-    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
-]
-"./tests/bluetooth/classic/smp_io_cap/pytest/test_smp.py" = [
-    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
-]
 "./tests/bluetooth/classic/smp_key_persist/pytest/test_smp.py" = [
-    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
-]
-"./tests/bluetooth/classic/smp_sc_only/pytest/test_smp.py" = [
     "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
 "./tests/kernel/timer/timer_behavior/pytest/saleae_logic2.py" = [

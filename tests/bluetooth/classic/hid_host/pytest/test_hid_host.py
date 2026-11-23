@@ -21,6 +21,7 @@ import asyncio
 import contextlib
 import logging
 
+from bt_classic_common import device_power_on
 from bumble.core import (
     BT_BR_EDR_TRANSPORT,
     BT_HIDP_PROTOCOL_ID,
@@ -167,15 +168,6 @@ SDP_SERVICE_RECORDS_HID = {
         ServiceAttribute(SDP_ATTR_HID_BOOT_DEVICE, DataElement.boolean(True)),
     ]
 }
-
-
-async def device_power_on(device) -> None:
-    while True:
-        try:
-            await device.power_on()
-            break
-        except Exception:
-            continue
 
 
 async def wait_for_shell_response(dut, message, max_time=10):
