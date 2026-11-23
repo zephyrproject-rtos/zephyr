@@ -588,8 +588,35 @@ static uint16_t get_sop_star_header(const struct device *dev)
 	header.specification_revision = data->rev[prl_tx->emsg.type];
 	header.port_power_role = is_sop_packet ? pe_get_power_role(dev) : pe_get_cable_plug(dev);
 	header.message_id = prl_tx->msg_id_counter[prl_tx->emsg.type];
-	header.number_of_data_objects = PD_CONVERT_BYTES_TO_PD_HEADER_COUNT(prl_tx->emsg.len);
-	header.extended = false;
+
+	/*
+	 * A caller marks an Extended Message by setting the extended bit in
+	 * emsg.header before queueing it. Every other field is regenerated
+	 * here, so that bit is the only part of the caller's header that
+	 * survives. emsg.data then holds the two byte Extended Message Header
+	 * followed by the payload, and emsg.len covers both.
+	 */
+	header.extended = prl_tx->emsg.header.extended;
+
+	if (header.extended) {
+		/*
+		 * Extended Messages are padded out to a whole number of data
+		 * objects. tcpci_tcpm_transmit_data() takes its byte count
+		 * from this field rather than from emsg.len, so the padding
+		 * has to be counted here and the bytes themselves zeroed.
+		 */
+		uint32_t objects = DIV_ROUND_UP(prl_tx->emsg.len, sizeof(uint32_t));
+		uint32_t padded = objects * sizeof(uint32_t);
+
+		if (padded > prl_tx->emsg.len && padded <= sizeof(prl_tx->emsg.data)) {
+			memset(&prl_tx->emsg.data[prl_tx->emsg.len], 0, padded - prl_tx->emsg.len);
+		}
+
+		header.number_of_data_objects = objects;
+	} else {
+		header.number_of_data_objects =
+			PD_CONVERT_BYTES_TO_PD_HEADER_COUNT(prl_tx->emsg.len);
+	}
 
 	return header.raw_value;
 }
