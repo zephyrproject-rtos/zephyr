@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 #include "zperf_internal.h"
 #include "zperf_session.h"
-#include "zperf_udp_pacing.h"
+#include "zperf_pacing.h"
 
 #if defined(CONFIG_NET_UDP)
 
@@ -172,7 +172,7 @@ static int udp_upload(int sock, int port,
 	uint32_t packet_size = param->packet_size;
 	uint32_t rate_in_kbps = param->rate_kbps;
 	uint32_t packet_duration_us = zperf_packet_duration(packet_size, rate_in_kbps);
-	struct zperf_udp_pacer pacer;
+	struct zperf_pacer pacer;
 	uint64_t data_offset = 0U;
 	uint32_t nb_packets = 0U;
 	uint64_t usecs64;
@@ -193,7 +193,7 @@ static int udp_upload(int sock, int port,
 
 	/* Start the loop */
 	start_time = k_uptime_ticks();
-	zperf_udp_pacer_init(&pacer, packet_duration_us, start_time);
+	zperf_pacer_init(&pacer, packet_duration_us, start_time);
 	end_time = start_time + k_ms_to_ticks_ceil64(duration_in_ms);
 
 	/* Print log every seconds */
@@ -214,7 +214,7 @@ static int udp_upload(int sock, int port,
 			break;
 		}
 
-		zperf_udp_pacer_next(&pacer, loop_time);
+		zperf_pacer_next(&pacer, loop_time);
 
 		usecs64 = param->unix_offset_us + k_ticks_to_us_floor64(loop_time - start_time);
 		secs = usecs64 / USEC_PER_SEC;
@@ -265,7 +265,7 @@ static int udp_upload(int sock, int port,
 		}
 
 		/* Wait */
-		zperf_udp_pacer_wait(&pacer, end_time);
+		zperf_pacer_wait(&pacer, end_time);
 	}
 
 	end_time = k_uptime_ticks();

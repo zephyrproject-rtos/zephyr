@@ -25,7 +25,7 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 
 #include "zperf_internal.h"
 #include "zperf_iperf3.h"
-#include "zperf_udp_pacing.h"
+#include "zperf_pacing.h"
 
 /* How long to wait for the server on the control connection */
 #define CTRL_TIMEOUT_MS 10000
@@ -265,7 +265,7 @@ static int send_udp(int sock, const struct zperf_upload_params *param, uint32_t 
 	/* A rate of 0 means as fast as possible */
 	uint32_t packet_duration_us = (param->rate_kbps != 0U) ?
 		zperf_packet_duration(packet_size, param->rate_kbps) : 0U;
-	struct zperf_udp_pacer pacer;
+	struct zperf_pacer pacer;
 	uint64_t data_offset = 0U;
 	int64_t start_time;
 	int64_t end_time;
@@ -274,7 +274,7 @@ static int send_udp(int sock, const struct zperf_upload_params *param, uint32_t 
 
 	start_time = k_uptime_ticks();
 	end_time = start_time + k_ms_to_ticks_ceil64(param->duration_ms);
-	zperf_udp_pacer_init(&pacer, packet_duration_us, start_time);
+	zperf_pacer_init(&pacer, packet_duration_us, start_time);
 
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
@@ -284,7 +284,7 @@ static int send_udp(int sock, const struct zperf_upload_params *param, uint32_t 
 			break;
 		}
 
-		zperf_udp_pacer_next(&pacer, loop_time);
+		zperf_pacer_next(&pacer, loop_time);
 
 		zperf_iperf3_udp_hdr_put(sample_packet,
 					 param->unix_offset_us +
@@ -305,7 +305,7 @@ static int send_udp(int sock, const struct zperf_upload_params *param, uint32_t 
 		stats->packets++;
 		stats->bytes += packet_size;
 
-		zperf_udp_pacer_wait(&pacer, end_time);
+		zperf_pacer_wait(&pacer, end_time);
 	}
 
 	stats->packet_size = packet_size;

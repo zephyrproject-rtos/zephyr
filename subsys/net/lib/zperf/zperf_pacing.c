@@ -9,9 +9,9 @@
 #include <limits.h>
 #include <zephyr/kernel.h>
 
-#include "zperf_udp_pacing.h"
+#include "zperf_pacing.h"
 
-void zperf_udp_pacer_init(struct zperf_udp_pacer *pacer, uint32_t packet_duration_us, int64_t start_time)
+void zperf_pacer_init(struct zperf_pacer *pacer, uint32_t packet_duration_us, int64_t start_time)
 {
 	uint64_t packet_ticks;
 
@@ -29,7 +29,7 @@ void zperf_udp_pacer_init(struct zperf_udp_pacer *pacer, uint32_t packet_duratio
 	pacer->deadline = start_time;
 }
 
-void zperf_udp_pacer_next(struct zperf_udp_pacer *pacer, int64_t loop_time)
+void zperf_pacer_next(struct zperf_pacer *pacer, int64_t loop_time)
 {
 	uint64_t interval;
 
@@ -56,7 +56,7 @@ void zperf_udp_pacer_next(struct zperf_udp_pacer *pacer, int64_t loop_time)
 
 }
 
-void zperf_udp_pacer_wait(const struct zperf_udp_pacer *pacer, int64_t end_time)
+void zperf_pacer_wait(const struct zperf_pacer *pacer, int64_t end_time)
 {
 #if defined(CONFIG_ARCH_POSIX)
 	ARG_UNUSED(pacer);
