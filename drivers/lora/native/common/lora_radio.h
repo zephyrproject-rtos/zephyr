@@ -74,6 +74,9 @@ struct lora_radio_ops {
 
 	/* Emit an unmodulated carrier */
 	int (*cw_start)(const struct device *dev, uint32_t frequency, int8_t tx_power);
+
+	/* Optional. Signal level as it is now, asked for during a plain reception only. */
+	int (*rssi)(const struct device *dev, int16_t *rssi);
 };
 
 /* Constant part of a radio. Must be the first member of the driver config. */
@@ -143,5 +146,6 @@ int lora_radio_recv_duty_cycle_async(const struct device *dev, k_timeout_t rx_pe
 				     k_timeout_t sleep_period, lora_recv_cb cb, void *user_data);
 int lora_radio_test_cw(const struct device *dev, uint32_t frequency, int8_t tx_power,
 		       uint16_t duration);
+int lora_radio_rssi(const struct device *dev, int16_t *rssi);
 
 #endif /* ZEPHYR_DRIVERS_LORA_NATIVE_COMMON_LORA_RADIO_H_ */

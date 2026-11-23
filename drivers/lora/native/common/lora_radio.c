@@ -544,3 +544,27 @@ unlock:
 
 	return ret;
 }
+
+int lora_radio_rssi(const struct device *dev, int16_t *rssi)
+{
+	const struct lora_radio_config *config = dev->config;
+	struct lora_radio_data *data = dev->data;
+	int ret;
+
+	if (config->ops->rssi == NULL) {
+		return -ENOSYS;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	/* Not in a duty cycle: the radio is asleep for most of it */
+	if (data->op == LORA_RADIO_OP_RX) {
+		ret = config->ops->rssi(dev, rssi);
+	} else {
+		ret = -EBUSY;
+	}
+
+	k_mutex_unlock(&data->lock);
+
+	return ret;
+}
