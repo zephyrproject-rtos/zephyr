@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(spi_stm32, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
 #include "spi_rtio.h"
+#include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
@@ -1872,8 +1873,26 @@ static inline uint32_t spi_stm32_frame_clocks(const struct device *dev,
 	return clocks;
 }
 
-/* Longest time on the wire, in ms, whose timeout (plus the tolerance) still fits in K_MSEC() */
-#define SPI_STM32_DMA_WIRE_MS_MAX (INT32_MAX - CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE)
+/*
+ * Longest timeout in ms that fits in K_MSEC() without overflowing INT32_MAX or 32-bit kernel
+ * timeout accounting (SYS_CLOCK_MAX_WAIT) when CONFIG_TIMEOUT_64BIT is disabled.
+ */
+#define SPI_STM32_DMA_TIMEOUT_MAX_MS                                                               \
+	(IS_ENABLED(CONFIG_TIMEOUT_64BIT)                                                          \
+		 ? (uint32_t)INT32_MAX                                                             \
+		 : (uint32_t)MIN((uint64_t)INT32_MAX, k_ticks_to_ms_floor64(SYS_CLOCK_MAX_WAIT)))
+
+/*
+ * Longest time on the wire, in ms, whose timeout (plus the tolerance) still fits in K_MSEC().
+ * If CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE is larger than the longest time on the wire,
+ * all timeouts become SPI_STM32_DMA_TIMEOUT_MAX_MS and this expands to zero, allowing
+ * the driver to build correctly.
+ */
+#define SPI_STM32_DMA_WIRE_MS_MAX                                                                  \
+	((SPI_STM32_DMA_TIMEOUT_MAX_MS > (uint32_t)CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE)        \
+		 ? (SPI_STM32_DMA_TIMEOUT_MAX_MS -                                                 \
+		    (uint32_t)CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE)                             \
+		 : 0U)
 
 /*
  * Count at half the requested SCK: the prescaler gives an SCK above half of it, unless the
@@ -1886,6 +1905,10 @@ static __noinline k_timeout_t spi_stm32_dma_timeout(const struct spi_config *con
 	const uint32_t half_freq = config->frequency / 2U;
 	uint32_t wire_ms;
 
+	if (SPI_STM32_DMA_WIRE_MS_MAX == 0U) {
+		return K_MSEC(SPI_STM32_DMA_TIMEOUT_MAX_MS);
+	}
+
 	if (half_freq >= MSEC_PER_SEC) {
 		const uint32_t clocks_per_ms = half_freq / MSEC_PER_SEC;
 		/* ceil(frames * frame_clocks / clocks_per_ms) without a product that overflows */
@@ -1894,20 +1917,20 @@ static __noinline k_timeout_t spi_stm32_dma_timeout(const struct spi_config *con
 
 		/* part < clocks_per_ms, so wire_ms <= (whole + 1) * frame_clocks */
 		if (whole >= SPI_STM32_DMA_WIRE_MS_MAX / frame_clocks) {
-			return K_MSEC(INT32_MAX);
+			return K_MSEC(SPI_STM32_DMA_TIMEOUT_MAX_MS);
 		}
 		wire_ms = whole * frame_clocks + DIV_ROUND_UP(part * frame_clocks, clocks_per_ms);
 	} else {
 		const uint32_t ms_per_clock = DIV_ROUND_UP(MSEC_PER_SEC, MAX(half_freq, 1U));
 
 		if (frames > SPI_STM32_DMA_WIRE_MS_MAX / ms_per_clock / frame_clocks) {
-			return K_MSEC(INT32_MAX);
+			return K_MSEC(SPI_STM32_DMA_TIMEOUT_MAX_MS);
 		}
 		wire_ms = frames * frame_clocks * ms_per_clock;
 	}
 
 	return K_MSEC(MAX(wire_ms + CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE,
-			  SPI_STM32_DMA_TIMEOUT_MIN_MS));
+			  MIN(SPI_STM32_DMA_TIMEOUT_MIN_MS, SPI_STM32_DMA_TIMEOUT_MAX_MS)));
 }
 
 /*
