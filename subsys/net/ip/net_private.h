@@ -29,6 +29,13 @@
  */
 K_DEDICATED_WORK_QUEUE_DECLARE(net, NET);
 
+#if defined(CONFIG_NET_DEDICATED_WORKQUEUE)
+/* The dedicated networking work queue, for code that needs the queue itself,
+ * such as its thread.
+ */
+struct k_work_q *net_work_queue_get(void);
+#endif
+
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 
 #include <zephyr/net/net_event.h>

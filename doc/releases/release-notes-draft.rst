@@ -116,6 +116,8 @@ Libraries / Subsystems
     Neighbor Discovery, address conflict detection or DNS timeouts, and the stack no longer holds
     up other system work queue users. See :kconfig:option:`CONFIG_NET_DEDICATED_WORKQUEUE` and the
     :ref:`migration guide <migration_4.6>`.
+  * Network management event callbacks can run on the networking work queue instead of a thread of
+    their own, :kconfig:option:`CONFIG_NET_MGMT_EVENT_NET_WORKQUEUE`, which saves that thread.
   * The connection manager tracks name resolution readiness, see
     :ref:`conn_mgr_monitoring_dns`: :c:macro:`NET_EVENT_L4_DNS_READY`,
     :c:macro:`NET_EVENT_L4_DNS_LOST` and :c:func:`conn_mgr_dns_is_ready`.
