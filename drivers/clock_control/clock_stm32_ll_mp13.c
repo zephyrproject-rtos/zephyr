@@ -40,7 +40,14 @@ int enabled_clock(uint32_t src_clk)
 	    (src_clk == STM32_SRC_PLL4_R && IS_ENABLED(STM32_PLL4_R_ENABLED)) ||
 	    (src_clk == STM32_SRC_TIMPCLK1) ||
 	    (src_clk == STM32_SRC_TIMPCLK2) ||
-	    (src_clk == STM32_SRC_TIMPCLK6)) {
+	    (src_clk == STM32_SRC_TIMPCLK6) ||
+	    (src_clk == STM32_SRC_PCLK1) ||
+	    (src_clk == STM32_SRC_PCLK2) ||
+	    (src_clk == STM32_SRC_PCLK3) ||
+	    (src_clk == STM32_SRC_PCLK4) ||
+	    (src_clk == STM32_SRC_PCLK5) ||
+	    (src_clk == STM32_SRC_PCLK6) ||
+	    (src_clk == STM32_SRC_HCLK6)) {
 		return 0;
 	}
 
@@ -174,125 +181,322 @@ static int stm32_clock_control_get_eth_domain_rate(uint32_t enr, uint32_t *rate)
 	return ret;
 }
 
+/**
+ * @brief Frequency of PLL output @p src and readiness of its PLL
+ *
+ * @return false if @p src is not a PLL output
+ */
+static bool get_pll_output(uint32_t src, uint32_t *rate, bool *ready)
+{
+	LL_PLL_ClocksTypeDef pll_clocks = {0};
+	bool is_pll = true;
+
+	switch (src) {
+	case STM32_SRC_PLL1_P:
+		LL_RCC_GetPLL1ClockFreq(&pll_clocks);
+		*ready = (LL_RCC_PLL1_IsReady() == 1U);
+		break;
+	case STM32_SRC_PLL2_P:
+	case STM32_SRC_PLL2_Q:
+	case STM32_SRC_PLL2_R:
+		LL_RCC_GetPLL2ClockFreq(&pll_clocks);
+		*ready = (LL_RCC_PLL2_IsReady() == 1U);
+		break;
+	case STM32_SRC_PLL3_P:
+	case STM32_SRC_PLL3_Q:
+	case STM32_SRC_PLL3_R:
+		LL_RCC_GetPLL3ClockFreq(&pll_clocks);
+		*ready = (LL_RCC_PLL3_IsReady() == 1U);
+		break;
+	case STM32_SRC_PLL4_P:
+	case STM32_SRC_PLL4_Q:
+	case STM32_SRC_PLL4_R:
+		LL_RCC_GetPLL4ClockFreq(&pll_clocks);
+		*ready = (LL_RCC_PLL4_IsReady() == 1U);
+		break;
+	default:
+		is_pll = false;
+		break;
+	}
+
+	if (is_pll) {
+		switch (src) {
+		case STM32_SRC_PLL1_P:
+		case STM32_SRC_PLL2_P:
+		case STM32_SRC_PLL3_P:
+		case STM32_SRC_PLL4_P:
+			*rate = pll_clocks.PLL_P_Frequency;
+			break;
+		case STM32_SRC_PLL2_Q:
+		case STM32_SRC_PLL3_Q:
+		case STM32_SRC_PLL4_Q:
+			*rate = pll_clocks.PLL_Q_Frequency;
+			break;
+		default:
+			*rate = pll_clocks.PLL_R_Frequency;
+			break;
+		}
+	}
+
+	return is_pll;
+}
+
+static bool source_is_ready(uint32_t src)
+{
+	uint32_t rate;
+	bool ready;
+
+	if (get_pll_output(src, &rate, &ready)) {
+		/* The PLL is locked and the output divider is enabled */
+		ready = ready && (rate != 0U);
+	} else {
+		switch (src) {
+		case STM32_SRC_TIMPCLK1:
+		case STM32_SRC_TIMPCLK2:
+		case STM32_SRC_TIMPCLK6:
+		case STM32_SRC_PCLK1:
+		case STM32_SRC_PCLK2:
+		case STM32_SRC_PCLK3:
+		case STM32_SRC_PCLK4:
+		case STM32_SRC_PCLK5:
+		case STM32_SRC_PCLK6:
+		case STM32_SRC_HCLK6:
+			/* Bus clocks run as long as the system does */
+			ready = true;
+			break;
+		case STM32_SRC_HSE:
+			ready = (LL_RCC_HSE_IsReady() == 1U);
+			break;
+		case STM32_SRC_HSI:
+			ready = (LL_RCC_HSI_IsReady() == 1U);
+			break;
+		case STM32_SRC_LSE:
+			ready = (LL_RCC_LSE_IsReady() == 1U);
+			break;
+		case STM32_SRC_LSI:
+			ready = (LL_RCC_LSI_IsReady() == 1U);
+			break;
+		default:
+			ready = false;
+			break;
+		}
+	}
+
+	return ready;
+}
+
+/** @brief Frequency of bus clock @p src */
+static uint32_t get_bus_rate(uint32_t src)
+{
+	LL_RCC_ClocksTypeDef clocks;
+	uint32_t rate;
+
+	LL_RCC_GetSystemClocksFreq(&clocks);
+
+	switch (src) {
+	case STM32_SRC_PCLK1:
+		rate = clocks.PCLK1_Frequency;
+		break;
+	case STM32_SRC_PCLK2:
+		rate = clocks.PCLK2_Frequency;
+		break;
+	case STM32_SRC_PCLK3:
+		rate = clocks.PCLK3_Frequency;
+		break;
+	case STM32_SRC_PCLK4:
+		rate = clocks.PCLK4_Frequency;
+		break;
+	case STM32_SRC_PCLK5:
+		rate = clocks.PCLK5_Frequency;
+		break;
+	case STM32_SRC_PCLK6:
+		rate = clocks.PCLK6_Frequency;
+		break;
+	case STM32_SRC_HCLK6:
+		rate = clocks.HCLK6_Frequency;
+		break;
+	default:
+		rate = 0U;
+		break;
+	}
+
+	return rate;
+}
+
+/** @brief Frequency of clock source @p src */
+static int get_source_rate(uint32_t src, uint32_t *rate)
+{
+	bool pll_ready;
+	int ret = 0;
+
+	if (get_pll_output(src, rate, &pll_ready)) {
+		/* A PLL output that is not running gives an error rather than a zero rate */
+		if (*rate == 0U) {
+			ret = -EIO;
+		}
+	} else {
+		switch (src) {
+		case STM32_SRC_HSE:
+			*rate = HSE_VALUE;
+			break;
+		case STM32_SRC_HSI:
+			*rate = HSI_VALUE >> LL_RCC_HSI_GetDivider();
+			break;
+		case STM32_SRC_LSE:
+			*rate = LSE_VALUE;
+			break;
+		case STM32_SRC_LSI:
+			*rate = LSI_VALUE;
+			break;
+		case STM32_SRC_TIMPCLK1:
+			*rate = LL_RCC_GetTIMGClockFreq(LL_RCC_TIMG1PRES);
+			break;
+		case STM32_SRC_TIMPCLK2:
+			*rate = LL_RCC_GetTIMGClockFreq(LL_RCC_TIMG2PRES);
+			break;
+		case STM32_SRC_TIMPCLK6:
+			*rate = LL_RCC_GetTIMGClockFreq(LL_RCC_TIMG3PRES);
+			break;
+		case STM32_SRC_PCLK1:
+		case STM32_SRC_PCLK2:
+		case STM32_SRC_PCLK3:
+		case STM32_SRC_PCLK4:
+		case STM32_SRC_PCLK5:
+		case STM32_SRC_PCLK6:
+		case STM32_SRC_HCLK6:
+			*rate = get_bus_rate(src);
+			break;
+		default:
+			ret = -ENOTSUP;
+			break;
+		}
+	}
+
+	return ret;
+}
+
 static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 					       clock_control_subsys_t sub_system, uint32_t *rate)
 {
-	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
+	const struct stm32_pclken *pclken = (const struct stm32_pclken *)sub_system;
 	LL_RCC_ClocksTypeDef clocks;
+	int ret = 0;
 
 	ARG_UNUSED(dev);
 
-	switch (pclken->bus) {
-	case STM32_CLOCK_BUS_APB1:
-		switch (pclken->enr) {
-		case LL_APB1_GRP1_PERIPH_UART4:
-			*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART4_CLKSOURCE);
+	if ((pclken->bus < (uint32_t)STM32_PERIPH_BUS_MIN) &&
+	    (STM32_DT_CLKSEL_REG_GET(pclken->enr) == (uint32_t)ETH12CKSELR_REG)) {
+		/* Ethernet kernel and PTP clocks, resolved from their actual selection */
+		ret = stm32_clock_control_get_eth_domain_rate(pclken->enr, rate);
+	} else {
+		switch (pclken->bus) {
+		case STM32_CLOCK_BUS_APB1:
+			switch (pclken->enr) {
+			case LL_APB1_GRP1_PERIPH_UART4:
+				*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART4_CLKSOURCE);
+				break;
+			case LL_APB1_GRP1_PERIPH_USART3:
+			case LL_APB1_GRP1_PERIPH_UART5:
+				*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART35_CLKSOURCE);
+				break;
+			case LL_APB1_GRP1_PERIPH_UART7:
+			case LL_APB1_GRP1_PERIPH_UART8:
+				*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART78_CLKSOURCE);
+				break;
+			case LL_APB1_GRP1_PERIPH_I2C1:
+			case LL_APB1_GRP1_PERIPH_I2C2:
+				*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C12_CLKSOURCE);
+				break;
+			case LL_APB1_GRP1_PERIPH_SPI2:
+				*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI23_CLKSOURCE);
+				break;
+			case LL_APB1_GRP1_PERIPH_SPI3:
+				*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI23_CLKSOURCE);
+				break;
+			default:
+				return -ENOTSUP;
+			}
 			break;
-		case LL_APB1_GRP1_PERIPH_USART3:
-		case LL_APB1_GRP1_PERIPH_UART5:
-			*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART35_CLKSOURCE);
+		case STM32_CLOCK_BUS_APB2:
+			switch (pclken->enr) {
+			case LL_APB2_GRP1_PERIPH_SPI1:
+				*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI1_CLKSOURCE);
+				break;
+			case LL_APB2_GRP1_PERIPH_USART6:
+				*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART6_CLKSOURCE);
+				break;
+			default:
+				return -ENOTSUP;
+			}
 			break;
-		case LL_APB1_GRP1_PERIPH_UART7:
-		case LL_APB1_GRP1_PERIPH_UART8:
-			*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART78_CLKSOURCE);
-			break;
-		case LL_APB1_GRP1_PERIPH_I2C1:
-		case LL_APB1_GRP1_PERIPH_I2C2:
-			*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C12_CLKSOURCE);
-			break;
-		case LL_APB1_GRP1_PERIPH_SPI2:
-			*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI23_CLKSOURCE);
-			break;
-		case LL_APB1_GRP1_PERIPH_SPI3:
-			*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI23_CLKSOURCE);
-			break;
-		default:
-			return -ENOTSUP;
-		}
-		break;
-	case STM32_CLOCK_BUS_APB2:
-		switch (pclken->enr) {
-		case LL_APB2_GRP1_PERIPH_SPI1:
-			*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI1_CLKSOURCE);
-			break;
-		case LL_APB2_GRP1_PERIPH_USART6:
-			*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART6_CLKSOURCE);
-			break;
-		default:
-			return -ENOTSUP;
-		}
-		break;
-	case STM32_CLOCK_BUS_APB5:
-		switch (pclken->enr) {
-		case LL_APB5_GRP1_PERIPH_BSEC: {
-			LL_RCC_ClocksTypeDef rcc_clocks;
+		case STM32_CLOCK_BUS_APB5:
+			switch (pclken->enr) {
+			case LL_APB5_GRP1_PERIPH_BSEC: {
+				LL_RCC_ClocksTypeDef rcc_clocks;
 
-			LL_RCC_GetSystemClocksFreq(&rcc_clocks);
-			*rate = rcc_clocks.PCLK5_Frequency;
+				LL_RCC_GetSystemClocksFreq(&rcc_clocks);
+				*rate = rcc_clocks.PCLK5_Frequency;
+				break;
+			}
+			default:
+				return -ENOTSUP;
+			}
 			break;
-		}
+		case STM32_CLOCK_BUS_APB6:
+			switch (pclken->enr) {
+			case LL_APB6_GRP1_PERIPH_USART1:
+				*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART1_CLKSOURCE);
+				break;
+			case LL_APB6_GRP1_PERIPH_USART2:
+				*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART2_CLKSOURCE);
+				break;
+			case LL_APB6_GRP1_PERIPH_I2C3:
+				*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C3_CLKSOURCE);
+				break;
+			case LL_APB6_GRP1_PERIPH_I2C4:
+				*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C4_CLKSOURCE);
+				break;
+			case LL_APB6_GRP1_PERIPH_I2C5:
+				*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C5_CLKSOURCE);
+				break;
+			case LL_APB6_GRP1_PERIPH_SPI4:
+				*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI4_CLKSOURCE);
+				break;
+			case LL_APB6_GRP1_PERIPH_SPI5:
+				*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI5_CLKSOURCE);
+				break;
+			default:
+				return -ENOTSUP;
+			}
+			break;
+		case STM32_CLOCK_BUS_AHB6:
+			switch (pclken->enr) {
+			case LL_AHB6_GRP1_PERIPH_ETH1MAC:
+			case LL_AHB6_GRP1_PERIPH_ETH2MAC:
+				LL_RCC_GetSystemClocksFreq(&clocks);
+				*rate = clocks.HCLK6_Frequency;
+				break;
+			case LL_AHB6_GRP1_PERIPH_ETH1CK:
+				return stm32_clock_control_get_eth_rate(LL_RCC_ETH1_CLKSOURCE,
+									 rate);
+			case LL_AHB6_GRP1_PERIPH_ETH2CK:
+				return stm32_clock_control_get_eth_rate(LL_RCC_ETH2_CLKSOURCE,
+									 rate);
+			default:
+				return -ENOTSUP;
+			}
+			break;
 		default:
-			return -ENOTSUP;
+			ret = get_source_rate(pclken->bus, rate);
+			break;
 		}
-		break;
-	case STM32_CLOCK_BUS_APB6:
-		switch (pclken->enr) {
-		case LL_APB6_GRP1_PERIPH_USART1:
-			*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART1_CLKSOURCE);
-			break;
-		case LL_APB6_GRP1_PERIPH_USART2:
-			*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART2_CLKSOURCE);
-			break;
-		case LL_APB6_GRP1_PERIPH_I2C3:
-			*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C3_CLKSOURCE);
-			break;
-		case LL_APB6_GRP1_PERIPH_I2C4:
-			*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C4_CLKSOURCE);
-			break;
-		case LL_APB6_GRP1_PERIPH_I2C5:
-			*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C5_CLKSOURCE);
-			break;
-		case LL_APB6_GRP1_PERIPH_SPI4:
-			*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI4_CLKSOURCE);
-			break;
-		case LL_APB6_GRP1_PERIPH_SPI5:
-			*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI5_CLKSOURCE);
-			break;
-		default:
-			return -ENOTSUP;
-		}
-		break;
-	case STM32_CLOCK_BUS_AHB6:
-		switch (pclken->enr) {
-		case LL_AHB6_GRP1_PERIPH_ETH1MAC:
-		case LL_AHB6_GRP1_PERIPH_ETH2MAC:
-			LL_RCC_GetSystemClocksFreq(&clocks);
-			*rate = clocks.HCLK6_Frequency;
-			break;
-		case LL_AHB6_GRP1_PERIPH_ETH1CK:
-			return stm32_clock_control_get_eth_rate(LL_RCC_ETH1_CLKSOURCE, rate);
-		case LL_AHB6_GRP1_PERIPH_ETH2CK:
-			return stm32_clock_control_get_eth_rate(LL_RCC_ETH2_CLKSOURCE, rate);
-		default:
-			return -ENOTSUP;
-		}
-		break;
-	case STM32_SRC_PLL3_Q:
-	case STM32_SRC_PLL4_P:
-		return stm32_clock_control_get_eth_domain_rate(pclken->enr, rate);
-	case STM32_SRC_TIMPCLK1:
-		*rate = LL_RCC_GetTIMGClockFreq(LL_RCC_TIMG1PRES);
-		break;
-	case STM32_SRC_TIMPCLK2:
-		*rate = LL_RCC_GetTIMGClockFreq(LL_RCC_TIMG2PRES);
-		break;
-	case STM32_SRC_TIMPCLK6:
-		*rate = LL_RCC_GetTIMGClockFreq(LL_RCC_TIMG3PRES);
-		break;
-	default:
-		return -ENOTSUP;
 	}
-	return 0;
+
+	if ((ret == 0) && (pclken->div != 0U)) {
+		*rate /= ((uint32_t)pclken->div + 1U);
+	}
+
+	return ret;
 }
 
 static enum clock_control_status stm32_clock_control_get_status(const struct device *dev,
@@ -310,14 +514,10 @@ static enum clock_control_status stm32_clock_control_get_status(const struct dev
 		} else {
 			return CLOCK_CONTROL_STATUS_OFF;
 		}
-	} else {
-		/* Domain clock sources */
-		if (enabled_clock(pclken->bus) == 0) {
-			return CLOCK_CONTROL_STATUS_ON;
-		} else {
-			return CLOCK_CONTROL_STATUS_OFF;
-		}
 	}
+
+	/* Domain clock sources */
+	return source_is_ready(pclken->bus) ? CLOCK_CONTROL_STATUS_ON : CLOCK_CONTROL_STATUS_OFF;
 }
 
 static DEVICE_API(clock_control, stm32_clock_control_api) = {
