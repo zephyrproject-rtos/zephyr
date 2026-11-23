@@ -675,7 +675,7 @@ enum smf_state_result pe_snk_get_source_cap_run(void *obj)
 		 */
 		header = prl_rx->emsg.header;
 
-		if (received_control_message(dev, header, PD_DATA_SOURCE_CAP)) {
+		if (received_data_message(dev, header, PD_DATA_SOURCE_CAP)) {
 			pe_set_state(dev, PE_SNK_EVALUATE_CAPABILITY);
 		}
 	}
