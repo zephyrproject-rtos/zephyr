@@ -217,7 +217,8 @@
 			reg = <0x4000b000 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 11)>,
+				 <&rcc STM32_SRC_PLL4_P SPI23_SEL(0)>;
 			interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
@@ -230,7 +231,8 @@
 			reg = <0x4000c000 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 12)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 12)>,
+				 <&rcc STM32_SRC_PLL4_P SPI23_SEL(0)>;
 			interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
@@ -241,7 +243,8 @@
 		usart3: serial@4000f000 {
 			compatible = "st,stm32-uart";
 			reg = <0x4000f000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 15)>,
+				 <&rcc STM32_SRC_PCLK1 UART35_SEL(0)>;
 			resets = <&rctl STM32_RESET(APB1, 15)>;
 			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
@@ -250,7 +253,8 @@
 		uart4: serial@40010000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40010000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 16)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 16)>,
+				 <&rcc STM32_SRC_PCLK1 UART4_SEL(0)>;
 			resets = <&rctl STM32_RESET(APB1, 16)>;
 			interrupts = <GIC_SPI 53 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
@@ -259,7 +263,8 @@
 		uart5: serial@40011000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40011000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 17)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 17)>,
+				 <&rcc STM32_SRC_PCLK1 UART35_SEL(0)>;
 			resets = <&rctl STM32_RESET(APB1, 17)>;
 			interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
@@ -271,7 +276,8 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 21)>,
+				 <&rcc STM32_SRC_PCLK1 I2C12_SEL(0)>;
 			interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 33 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "event", "error";
@@ -284,7 +290,8 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22)>,
+				 <&rcc STM32_SRC_PCLK1 I2C12_SEL(0)>;
 			interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "event", "error";
@@ -294,7 +301,8 @@
 		uart7: serial@40018000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40018000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 18)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 18)>,
+				 <&rcc STM32_SRC_PCLK1 UART78_SEL(0)>;
 			resets = <&rctl STM32_RESET(APB1, 18)>;
 			interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
@@ -303,7 +311,8 @@
 		uart8: serial@40019000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40019000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 19)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 19)>,
+				 <&rcc STM32_SRC_PCLK1 UART78_SEL(0)>;
 			resets = <&rctl STM32_RESET(APB1, 19)>;
 			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
@@ -376,7 +385,8 @@
 		usart6: serial@44003000 {
 			compatible = "st,stm32-uart";
 			reg = <0x44003000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 13)>,
+				 <&rcc STM32_SRC_PCLK2 UART6_SEL(0)>;
 			resets = <&rctl STM32_RESET(APB2, 13)>;
 			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
@@ -387,7 +397,8 @@
 			reg = <0x44004000 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB2, 8)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 8)>,
+				 <&rcc STM32_SRC_PLL4_P SPI1_SEL(0)>;
 			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
@@ -447,7 +458,8 @@
 		usart1: serial@4c000000 {
 			compatible = "st,stm32-uart";
 			reg = <0x4c000000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB6, 0)>;
+			clocks = <&rcc STM32_CLOCK(APB6, 0)>,
+				 <&rcc STM32_SRC_PCLK6 UART1_SEL(0)>;
 			resets = <&rctl STM32_RESET(APB6, 0)>;
 			interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
@@ -456,7 +468,8 @@
 		usart2: serial@4c001000 {
 			compatible = "st,stm32-uart";
 			reg = <0x4c001000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB6, 1)>;
+			clocks = <&rcc STM32_CLOCK(APB6, 1)>,
+				 <&rcc STM32_SRC_PCLK6 UART2_SEL(0)>;
 			resets = <&rctl STM32_RESET(APB6, 1)>;
 			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
@@ -467,7 +480,8 @@
 			reg = <0x4c002000 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB6, 2)>;
+			clocks = <&rcc STM32_CLOCK(APB6, 2)>,
+				 <&rcc STM32_SRC_PCLK6 SPI4_SEL(0)>;
 			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
@@ -480,7 +494,8 @@
 			reg = <0x4c003000 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB6, 3)>;
+			clocks = <&rcc STM32_CLOCK(APB6, 3)>,
+				 <&rcc STM32_SRC_PCLK6 SPI5_SEL(0)>;
 			interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;
@@ -494,7 +509,8 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB6, 4)>;
+			clocks = <&rcc STM32_CLOCK(APB6, 4)>,
+				 <&rcc STM32_SRC_PCLK6 I2C3_SEL(0)>;
 			interrupts = <GIC_SPI 73 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 74 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "event", "error";
@@ -507,7 +523,8 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB6, 5)>;
+			clocks = <&rcc STM32_CLOCK(APB6, 5)>,
+				 <&rcc STM32_SRC_PCLK6 I2C4_SEL(0)>;
 			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 94 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "event", "error";
@@ -520,7 +537,8 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB6, 6)>;
+			clocks = <&rcc STM32_CLOCK(APB6, 6)>,
+				 <&rcc STM32_SRC_PCLK6 I2C5_SEL(0)>;
 			interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 115 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "event", "error";

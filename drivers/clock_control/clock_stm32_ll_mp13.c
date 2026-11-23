@@ -379,8 +379,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 					       clock_control_subsys_t sub_system, uint32_t *rate)
 {
 	const struct stm32_pclken *pclken = (const struct stm32_pclken *)sub_system;
-	LL_RCC_ClocksTypeDef clocks;
-	int ret = 0;
+	int ret;
 
 	ARG_UNUSED(dev);
 
@@ -390,100 +389,23 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		ret = stm32_clock_control_get_eth_domain_rate(pclken->enr, rate);
 	} else {
 		switch (pclken->bus) {
-		case STM32_CLOCK_BUS_APB1:
-			switch (pclken->enr) {
-			case LL_APB1_GRP1_PERIPH_UART4:
-				*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART4_CLKSOURCE);
-				break;
-			case LL_APB1_GRP1_PERIPH_USART3:
-			case LL_APB1_GRP1_PERIPH_UART5:
-				*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART35_CLKSOURCE);
-				break;
-			case LL_APB1_GRP1_PERIPH_UART7:
-			case LL_APB1_GRP1_PERIPH_UART8:
-				*rate = LL_RCC_GetUARTClockFreq(LL_RCC_UART78_CLKSOURCE);
-				break;
-			case LL_APB1_GRP1_PERIPH_I2C1:
-			case LL_APB1_GRP1_PERIPH_I2C2:
-				*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C12_CLKSOURCE);
-				break;
-			case LL_APB1_GRP1_PERIPH_SPI2:
-				*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI23_CLKSOURCE);
-				break;
-			case LL_APB1_GRP1_PERIPH_SPI3:
-				*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI23_CLKSOURCE);
-				break;
-			default:
-				return -ENOTSUP;
-			}
-			break;
-		case STM32_CLOCK_BUS_APB2:
-			switch (pclken->enr) {
-			case LL_APB2_GRP1_PERIPH_SPI1:
-				*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI1_CLKSOURCE);
-				break;
-			case LL_APB2_GRP1_PERIPH_USART6:
-				*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART6_CLKSOURCE);
-				break;
-			default:
-				return -ENOTSUP;
-			}
-			break;
 		case STM32_CLOCK_BUS_APB5:
-			switch (pclken->enr) {
-			case LL_APB5_GRP1_PERIPH_BSEC: {
-				LL_RCC_ClocksTypeDef rcc_clocks;
-
-				LL_RCC_GetSystemClocksFreq(&rcc_clocks);
-				*rate = rcc_clocks.PCLK5_Frequency;
-				break;
-			}
-			default:
-				return -ENOTSUP;
-			}
-			break;
-		case STM32_CLOCK_BUS_APB6:
-			switch (pclken->enr) {
-			case LL_APB6_GRP1_PERIPH_USART1:
-				*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART1_CLKSOURCE);
-				break;
-			case LL_APB6_GRP1_PERIPH_USART2:
-				*rate = LL_RCC_GetUARTClockFreq(LL_RCC_USART2_CLKSOURCE);
-				break;
-			case LL_APB6_GRP1_PERIPH_I2C3:
-				*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C3_CLKSOURCE);
-				break;
-			case LL_APB6_GRP1_PERIPH_I2C4:
-				*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C4_CLKSOURCE);
-				break;
-			case LL_APB6_GRP1_PERIPH_I2C5:
-				*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C5_CLKSOURCE);
-				break;
-			case LL_APB6_GRP1_PERIPH_SPI4:
-				*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI4_CLKSOURCE);
-				break;
-			case LL_APB6_GRP1_PERIPH_SPI5:
-				*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI5_CLKSOURCE);
-				break;
-			default:
-				return -ENOTSUP;
+			/* The BSEC has no kernel clock, it runs on pclk5 */
+			if (pclken->enr == LL_APB5_GRP1_PERIPH_BSEC) {
+				*rate = get_bus_rate(STM32_SRC_PCLK5);
+				ret = 0;
+			} else {
+				ret = -ENOTSUP;
 			}
 			break;
 		case STM32_CLOCK_BUS_AHB6:
-			switch (pclken->enr) {
-			case LL_AHB6_GRP1_PERIPH_ETH1MAC:
-			case LL_AHB6_GRP1_PERIPH_ETH2MAC:
-				LL_RCC_GetSystemClocksFreq(&clocks);
-				*rate = clocks.HCLK6_Frequency;
-				break;
-			case LL_AHB6_GRP1_PERIPH_ETH1CK:
-				return stm32_clock_control_get_eth_rate(LL_RCC_ETH1_CLKSOURCE,
-									 rate);
-			case LL_AHB6_GRP1_PERIPH_ETH2CK:
-				return stm32_clock_control_get_eth_rate(LL_RCC_ETH2_CLKSOURCE,
-									 rate);
-			default:
-				return -ENOTSUP;
+			/* The ethernet MAC bus interfaces run on hclk6 */
+			if ((pclken->enr == LL_AHB6_GRP1_PERIPH_ETH1MAC) ||
+			    (pclken->enr == LL_AHB6_GRP1_PERIPH_ETH2MAC)) {
+				*rate = get_bus_rate(STM32_SRC_HCLK6);
+				ret = 0;
+			} else {
+				ret = -ENOTSUP;
 			}
 			break;
 		default:
