@@ -48,6 +48,9 @@ tests:
   net.socket.udp.v4_mapping_to_v6_enabled:
     extra_configs:
       - CONFIG_NET_IPV4_MAPPING_TO_IPV6=y
+  net.socket.udp.broadcast_off:
+    extra_configs:
+      - CONFIG_NET_INITIAL_SO_BROADCAST=n
   net.socket.udp.udp_options:
     extra_configs:
       - CONFIG_NET_UDP_OPTIONS=y
