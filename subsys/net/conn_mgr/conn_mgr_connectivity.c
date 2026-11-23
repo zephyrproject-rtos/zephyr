@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(conn_mgr_conn, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/net/conn_mgr_connectivity_impl.h>
 #include "conn_mgr_private.h"
+#include "net_private.h"
 
 int conn_mgr_if_connect(struct net_if *iface)
 {
@@ -287,7 +288,7 @@ void conn_mgr_if_used(struct net_if *iface)
 	if (binding->idle_timeout == CONN_MGR_IF_NO_TIMEOUT) {
 		return;
 	}
-	k_work_reschedule(&binding->idle_worker, K_SECONDS(binding->idle_timeout));
+	net_work_reschedule(&binding->idle_worker, K_SECONDS(binding->idle_timeout));
 }
 
 /* Automated behavior handling */
@@ -370,7 +371,7 @@ static void conn_mgr_conn_handle_iface_up(struct net_if *iface)
 	}
 
 	/* Start the idle timeout */
-	k_work_reschedule(&binding->idle_worker, K_SECONDS(idle_timeout));
+	net_work_reschedule(&binding->idle_worker, K_SECONDS(idle_timeout));
 }
 
 /**
