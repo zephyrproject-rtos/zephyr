@@ -4,7 +4,7 @@
 
 config FLASH_RPI_PICO
 	bool "Raspberry Pi Pico flash driver"
-	default y if !SMP || MP_MAX_NUM_CPUS = 1
+	default y if !SMP || MP_MAX_NUM_CPUS = 1 || RPI_PICO_SMP_FLASH_PARK
 	depends on DT_HAS_RASPBERRYPI_PICO_FLASH_CONTROLLER_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
@@ -13,10 +13,14 @@ config FLASH_RPI_PICO
 	help
 	  Enable Raspberry Pi Pico flash driver.
 
-	  This driver is not safe with SMP on more than one CPU: write and erase
-	  only lock interrupts on the calling core, while the other core keeps
-	  executing from flash. It is therefore not enabled by default in that
-	  case, and the build fails if it is enabled anyway.
+	  With SMP on more than one CPU the other core keeps executing from flash
+	  while the flash is being written or erased, so the driver needs the SoC
+	  to park it in RAM (RPI_PICO_SMP_FLASH_PARK) and the build fails without
+	  it. The other core is parked for each page written and each erase unit.
+	  Writing and erasing are then only possible from threads, not from
+	  interrupt handlers (they return -EWOULDBLOCK), and when the other core
+	  cannot be parked in time (-EBUSY) a write or erase may have been done in
+	  part. With SMP on one CPU the driver works as without SMP.
 
 config FLASH_RPI_PICO_READ_UNTRANSLATED
 	bool "Use untranslated window for flash reads"
@@ -35,3 +39,48 @@ config FLASH_RPI_PICO_LOCK_IRQS
 	  so this is required whenever the application executes from flash. A
 	  RAM-linked application only needs it if an interrupt handler reads a
 	  memory-mapped flash partition.
+
+	  With SMP this option has no effect: the calling core always has its
+	  interrupts locked while the other core is parked
+	  (RPI_PICO_SMP_FLASH_PARK).
+
+choice RPI_PICO_SMP_FLASH_PARK_ERASE_UNIT
+	prompt "Erase unit between which the other core is released"
+	default RPI_PICO_SMP_FLASH_PARK_ERASE_SECTOR
+	depends on FLASH_RPI_PICO && SMP
+	help
+	  The other core is parked while one unit is erased. A smaller unit
+	  stops both cores for a shorter time, a larger one erases a big area
+	  in less total time.
+
+config RPI_PICO_SMP_FLASH_PARK_ERASE_SECTOR
+	bool "Sector (4 KiB)"
+	help
+	  Park for one sector erase at a time, typically about 45 ms.
+
+config RPI_PICO_SMP_FLASH_PARK_ERASE_BLOCK
+	bool "Block (64 KiB) where aligned"
+	help
+	  Park for one 64 KiB block erase at a time where the range allows it,
+	  typically about 150 ms and up to 2 s. The ends of an unaligned range
+	  are still erased sector by sector.
+
+endchoice
+
+config RPI_PICO_SMP_FLASH_PARK_GAP_US
+	int "Pause between two parked units of one write or erase (microseconds)"
+	default 300
+	range 0 10000
+	depends on FLASH_RPI_PICO && SMP
+	help
+	  Between two pages of a write, and between two erase units of an erase,
+	  the calling thread sleeps for this time with the other core running.
+	  Core 0 takes the interrupts that came in while it was stopped (the
+	  system timer among them, and only core 0 receives them), and a thread
+	  of the other core that was woken by them gets to run before the other
+	  core is parked again. Without it a thread there that sleeps and polls
+	  (a data acquisition thread, for example) may get no time during a long
+	  erase made of many units, even though the core runs between the units.
+
+	  The value is rounded up to the system tick. Every unit of a call but
+	  the last adds this time to the duration of the call. 0 does not pause.
