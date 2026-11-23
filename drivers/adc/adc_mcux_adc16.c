@@ -388,6 +388,11 @@ static void mcux_adc16_isr(const struct device *dev)
 	if (data->channels) {
 		mcux_adc16_start_channel(dev);
 	} else {
+		/*
+		 * Disable the channel before handing control back to the context,
+		 * which may immediately start the next sampling.
+		 */
+		base->SC1[channel_group] = ADC_SC1_ADCH_MASK;
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 }
