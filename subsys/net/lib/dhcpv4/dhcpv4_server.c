@@ -56,7 +56,6 @@ struct dhcpv4_parameter_request_list {
 };
 
 struct dhcpv4_server_probe_ctx {
-	struct net_icmp_ctx icmp_ctx;
 	struct dhcp_msg discovery;
 	struct dhcpv4_parameter_request_list params;
 	struct dhcpv4_client_id client_id;
@@ -98,6 +97,15 @@ static struct k_work_delayable *server_timeout_work_get(struct dhcpv4_server_ctx
 {
 	return &server_timeout_work[ctx - server_ctx];
 }
+
+#if defined(DHCPV4_SERVER_ICMP_PROBE)
+/* The ICMP code calls echo_reply_handler() with its own lock held, and the
+ * handler takes server_lock. Registering or removing an ICMP context takes the
+ * ICMP lock, so it must not be done with server_lock held. The contexts are
+ * registered once at init, one per server instance, and stay registered.
+ */
+static struct net_icmp_ctx probe_icmp_ctx[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
+#endif
 
 static void reset_slot(struct dhcpv4_addr_slot *slot)
 {
@@ -879,9 +887,9 @@ static int dhcpv4_probe_address(struct dhcpv4_server_ctx *ctx,
 	};
 	int ret;
 
-	ret = net_icmp_send_echo_request(&ctx->probe_ctx.icmp_ctx, ctx->iface,
-					 (struct net_sockaddr *)&dest_addr,
-					 NULL, ctx);
+	ret = net_icmp_send_echo_request(&probe_icmp_ctx[ARRAY_INDEX(server_ctx, ctx)],
+					 ctx->iface, (struct net_sockaddr *)&dest_addr,
+					 NULL, NULL);
 	if (ret < 0) {
 		LOG_ERR("Failed to send ICMP probe");
 	}
@@ -895,19 +903,21 @@ static enum net_verdict echo_reply_handler(struct net_icmp_ctx *icmp_ctx,
 					   struct net_icmp_hdr *icmp_hdr,
 					   void *user_data)
 {
-	struct dhcpv4_server_ctx *ctx = user_data;
+	struct dhcpv4_server_ctx *ctx =
+		&server_ctx[ARRAY_INDEX(probe_icmp_ctx, icmp_ctx)];
 	struct dhcpv4_server_probe_ctx *probe_ctx;
 	struct dhcpv4_addr_slot *new_slot = NULL;
 	struct net_in_addr peer_addr;
 
-	ARG_UNUSED(icmp_ctx);
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(ip_hdr);
 	ARG_UNUSED(icmp_hdr);
+	ARG_UNUSED(user_data);
 
 	k_mutex_lock(&server_lock, K_FOREVER);
 
-	if (ctx == NULL) {
+	/* The handler stays registered while the instance is not running. */
+	if (ctx->iface == NULL) {
 		goto out;
 	}
 
@@ -973,16 +983,18 @@ out:
 	return NET_CONTINUE;
 }
 
-static int dhcpv4_server_probing_init(struct dhcpv4_server_ctx *ctx)
+static void dhcpv4_server_probing_init(void)
 {
-	return net_icmp_init_ctx(&ctx->probe_ctx.icmp_ctx, NET_AF_INET,
-				 NET_ICMPV4_ECHO_REPLY, 0,
-				 echo_reply_handler);
-}
+	int ret;
 
-static void dhcpv4_server_probing_deinit(struct dhcpv4_server_ctx *ctx)
-{
-	(void)net_icmp_cleanup_ctx(&ctx->probe_ctx.icmp_ctx);
+	for (int i = 0; i < ARRAY_SIZE(probe_icmp_ctx); i++) {
+		ret = net_icmp_init_ctx(&probe_icmp_ctx[i], NET_AF_INET,
+					NET_ICMPV4_ECHO_REPLY, 0,
+					echo_reply_handler);
+		if (ret < 0) {
+			LOG_ERR("Failed to register probe handler, %d", ret);
+		}
+	}
 }
 
 static int dhcpv4_server_probe_setup(struct dhcpv4_server_ctx *ctx,
@@ -1035,8 +1047,7 @@ static bool dhcpv4_server_is_slot_probed(struct dhcpv4_server_ctx *ctx,
 	return (ctx->probe_ctx.slot == slot);
 }
 #else /* defined(DHCPV4_SERVER_ICMP_PROBE) */
-#define dhcpv4_server_probing_init(...) (0)
-#define dhcpv4_server_probing_deinit(...)
+#define dhcpv4_server_probing_init(...)
 #define dhcpv4_server_probe_setup(...) (-ENOTSUP)
 #define dhcpv4_server_probe_timeout(...)
 #define dhcpv4_server_is_slot_probed(...) (false)
@@ -1809,17 +1820,10 @@ int net_dhcpv4_server_start(struct net_if *iface, struct net_in_addr *base_addr)
 		LOG_DBG("\t%2d: %s", i, net_sprint_ipv4_addr(&temp_addr));
 	}
 
-	ret = dhcpv4_server_probing_init(&server_ctx[slot]);
-	if (ret < 0) {
-		LOG_ERR("Failed to register probe handler, %d", ret);
-		goto cleanup;
-	}
-
 	ret = net_socket_service_register(&dhcpv4_server, fds, ARRAY_SIZE(fds),
 					  NULL);
 	if (ret < 0) {
 		LOG_ERR("Failed to register socket service, %d", ret);
-		dhcpv4_server_probing_deinit(&server_ctx[slot]);
 		goto cleanup;
 	}
 
@@ -1867,8 +1871,6 @@ int net_dhcpv4_server_stop(struct net_if *iface)
 
 	fds[slot].fd = -1;
 	(void)zsock_close(server_ctx[slot].sock);
-
-	dhcpv4_server_probing_deinit(&server_ctx[slot]);
 
 	/* The timer handler takes the server lock, so it cannot be waited for
 	 * here. A handler that is already running finds the context cleared,
@@ -2021,4 +2023,6 @@ void net_dhcpv4_server_init(void)
 	for (int i = 0; i < ARRAY_SIZE(server_timeout_work); i++) {
 		k_work_init_delayable(&server_timeout_work[i], dhcpv4_server_timeout);
 	}
+
+	dhcpv4_server_probing_init();
 }
