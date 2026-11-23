@@ -265,8 +265,11 @@ enum smf_state_result tc_attached_snk_run(void *obj)
 	struct usbc_port_data *data = dev->data;
 	const struct device *vbus = data->vbus;
 
-	/* Detach detection */
-	if (usbc_vbus_check_level(vbus, TC_VBUS_REMOVED)) {
+	/*
+	 * Detach detection. A Source may take VBUS away during a Hard Reset
+	 * while the partner stays attached, so that does not count.
+	 */
+	if (!pe_is_hard_reset_in_progress(dev) && usbc_vbus_check_level(vbus, TC_VBUS_REMOVED)) {
 		usbc_vbus_enable(vbus, false);
 		tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
 		return SMF_EVENT_PROPAGATE;

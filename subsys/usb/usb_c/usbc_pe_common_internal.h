@@ -252,6 +252,8 @@ struct policy_engine {
 	struct usbc_timer_t pd_t_ps_transition;
 	/** tSinkRequest timer */
 	struct usbc_timer_t pd_t_sink_request;
+	/** How long a Hard Reset may keep VBUS away */
+	struct usbc_timer_t pd_t_hard_reset_vbus;
 #endif
 #ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 	/** tTypeCSendSourceCap timer */
@@ -587,6 +589,17 @@ void pe_invalidate_explicit_contract(const struct device *dev);
  * @param dev Pointer to the device structure for the driver instance
  */
 bool pe_dpm_initiated_ams(const struct device *dev);
+
+/**
+ * @brief Checks if a Sink is inside a Hard Reset, from its start until a new
+ *	  contract or until the Source has used all the time it is allowed to
+ *	  bring VBUS back.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ *
+ * @retval true if VBUS may be missing because of a Hard Reset
+ */
+bool pe_is_hard_reset_in_progress(const struct device *dev);
 
 /**
  * @brief Get the current data role

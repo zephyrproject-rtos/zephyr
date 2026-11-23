@@ -190,6 +190,14 @@ extern "C" {
 #define PD_T_SAFE_5V_MAX_MS  275
 
 /**
+ * @brief Time a Source keeps VBUS at vSafe0V during a Hard Reset, maximum,
+ *	  in milliseconds.
+ *	  See the Source Electrical Parameters table
+ *	  Parameter Name: tSrcRecover
+ */
+#define PD_T_SRC_RECOVER_MAX_MS 1000
+
+/**
  * @brief Time to wait for TCPC to complete transmit
  */
 #define PD_T_TX_TIMEOUT_MS 100
