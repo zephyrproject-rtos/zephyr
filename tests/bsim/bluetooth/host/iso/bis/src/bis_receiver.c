@@ -9,10 +9,12 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/util.h>
 
 #include "babblekit/flags.h"
@@ -321,6 +323,24 @@ static void sync_big(struct bt_le_per_adv_sync *sync, uint8_t cnt, struct bt_iso
 	WAIT_FOR_FLAG(flag_iso_connected);
 }
 
+/* Neither the Host nor the Controller may keep an ISO RX buffer once the BIG sync is lost, also
+ * not the buffer of an SDU that was received in part.
+ */
+static void check_iso_rx_bufs_free(void)
+{
+	struct net_buf *bufs[CONFIG_BT_ISO_RX_BUF_COUNT];
+
+	ARRAY_FOR_EACH(bufs, i) {
+		bufs[i] = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+		TEST_ASSERT(bufs[i] != NULL, "Only %zu of %zu ISO RX buffers are free", i,
+			    ARRAY_SIZE(bufs));
+	}
+
+	ARRAY_FOR_EACH(bufs, i) {
+		net_buf_unref(bufs[i]);
+	}
+}
+
 static void test_main(void)
 {
 	struct bt_le_per_adv_sync *sync;
@@ -338,6 +358,8 @@ static void test_main(void)
 	LOG_INF("Waiting for sync lost");
 	WAIT_FOR_FLAG_UNSET(flag_pa_synced);
 	WAIT_FOR_FLAG_UNSET(flag_iso_connected);
+
+	check_iso_rx_bufs_free();
 
 	TEST_PASS("Test passed");
 }
