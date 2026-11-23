@@ -9,4 +9,6 @@
 
 #include <cmsis_core_m_defaults.h>
 
+#include "soc_peripheral_delay.h"
+
 #endif /* _AM13E_SOC_H */

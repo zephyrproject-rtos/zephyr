@@ -15,3 +15,10 @@ config SOC_AM13E23019
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select CLOCK_CONTROL
+
+# AM13E TRM section 3.3.6 Perpheral Enable suggests waiting at least 4 ULPCLK
+# cycles after power enable. ULPCLK can be MCLK/4, so the safest option will
+# be 16 cycles.
+config MSPM0_PERIPH_STARTUP_DELAY
+	int
+	default 16
