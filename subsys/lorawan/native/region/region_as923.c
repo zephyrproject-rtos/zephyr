@@ -83,6 +83,26 @@ static const struct lwan_dr_params as923_dr_table[] = {
 #define AS923_DR_COUNT ARRAY_SIZE(as923_dr_table)
 
 /*
+ * The same datarates under the 400 ms uplink dwell time a TxParamSetupReq can
+ * impose. Table 72 leaves DR0 and DR1 without a payload in its
+ * UplinkDwellTime = 1 column, so the table starts at DR2 and the lookup
+ * refuses anything below it. Unlike AU915 the band names no boot state for
+ * the limit, so it is in force only once the command says so.
+ */
+#define AS923_UL_DWELL_DR_MIN 2
+
+static const struct lwan_dr_params as923_ul_dwell_dr_table[] = {
+	[0] = {.sf = SF_10, .bw = BW_125_KHZ, .max_payload = 11},
+	[1] = {.sf = SF_9, .bw = BW_125_KHZ, .max_payload = 53},
+	[2] = {.sf = SF_8, .bw = BW_125_KHZ, .max_payload = 125},
+	[3] = {.sf = SF_7, .bw = BW_125_KHZ, .max_payload = 222},
+	[4] = {.sf = SF_7, .bw = BW_250_KHZ, .max_payload = 222},
+};
+
+#define AS923_UL_DWELL_DR_MAX                                                                      \
+	(AS923_UL_DWELL_DR_MIN + ARRAY_SIZE(as923_ul_dwell_dr_table) - 1)
+
+/*
  * RX1 downlink datarate for DownlinkDwellTime = 0 (RP002-1.0.5, Table 74),
  * indexed by uplink datarate then by RX1DROffset.
  *
@@ -102,6 +122,23 @@ static const uint8_t as923_rx1_dr[AS923_DR_COUNT][AS923_MAX_RX1_DR_OFFSET + 1] =
 	[4] = { 4, 3, 2, 1, 0, 0, 5, 6 },
 	[5] = { 5, 4, 3, 2, 1, 0, 6, 7 },
 	[6] = { 6, 5, 4, 3, 2, 1, 7, 7 },
+};
+/* clang-format on */
+
+/*
+ * The same mapping for DownlinkDwellTime = 1 (Table 75). It is not Table 74
+ * shifted: the limit lifts the floor of every row to DR2, which is the
+ * slowest downlink that carries a payload under it.
+ */
+/* clang-format off */
+static const uint8_t as923_dl_dwell_rx1_dr[AS923_DR_COUNT][AS923_MAX_RX1_DR_OFFSET + 1] = {
+	[0] = { 2, 2, 2, 2, 2, 2, 2, 2 },
+	[1] = { 2, 2, 2, 2, 2, 2, 2, 3 },
+	[2] = { 2, 2, 2, 2, 2, 2, 3, 4 },
+	[3] = { 3, 2, 2, 2, 2, 2, 4, 5 },
+	[4] = { 4, 3, 2, 2, 2, 2, 5, 6 },
+	[5] = { 5, 4, 3, 2, 2, 2, 6, 7 },
+	[6] = { 6, 5, 4, 3, 2, 2, 7, 7 },
 };
 /* clang-format on */
 
@@ -143,24 +180,44 @@ static int as923_get_default_channels(struct lwan_channel *ch, size_t *count)
 	return 0;
 }
 
+/*
+ * RP002-1.0.5 Table 70: index 0 is the band's maximum EIRP and each further
+ * index drops 2 dB.
+ */
+static int8_t as923_power_dbm(uint8_t tx_power_idx)
+{
+	/* An index past the table steps the power down no further than its end. */
+	uint8_t idx = MIN(tx_power_idx, AS923_MAX_TX_POWER_IDX);
+
+	return AS923_MAX_EIRP_DBM - (int8_t)(2 * idx);
+}
+
 static int as923_get_tx_params(uint8_t dr, uint8_t tx_power_idx, struct lwan_dr_params *p,
 			       int8_t *power_dbm)
 {
-	uint8_t idx;
-
 	if (dr >= AS923_DR_COUNT) {
 		return -EINVAL;
 	}
 
-	/* Defensive clamp — validate_tx_power() is the authoritative check. */
-	idx = MIN(tx_power_idx, AS923_MAX_TX_POWER_IDX);
-
 	*p = as923_dr_table[dr];
-	*power_dbm = AS923_MAX_EIRP_DBM - (int8_t)(2 * idx);
+	*power_dbm = as923_power_dbm(tx_power_idx);
 	return 0;
 }
 
-static int as923_get_rx1_params(uint32_t tx_freq, uint8_t tx_dr, uint8_t offset, uint32_t *rx1_freq,
+static int as923_get_dwell_tx_params(uint8_t dr, uint8_t tx_power_idx, struct lwan_dr_params *p,
+				     int8_t *power_dbm)
+{
+	if (dr < AS923_UL_DWELL_DR_MIN || dr > AS923_UL_DWELL_DR_MAX) {
+		return -EINVAL;
+	}
+
+	*p = as923_ul_dwell_dr_table[dr - AS923_UL_DWELL_DR_MIN];
+	*power_dbm = as923_power_dbm(tx_power_idx);
+	return 0;
+}
+
+static int as923_rx1_from_table(const uint8_t table[AS923_DR_COUNT][AS923_MAX_RX1_DR_OFFSET + 1],
+				uint32_t tx_freq, uint8_t tx_dr, uint8_t offset, uint32_t *rx1_freq,
 				struct lwan_dr_params *p)
 {
 	uint8_t rx1_dr;
@@ -172,7 +229,7 @@ static int as923_get_rx1_params(uint32_t tx_freq, uint8_t tx_dr, uint8_t offset,
 	/* AS923: RX1 frequency = TX frequency */
 	*rx1_freq = tx_freq;
 
-	rx1_dr = as923_rx1_dr[tx_dr][offset];
+	rx1_dr = table[tx_dr][offset];
 
 	/*
 	 * The table reaches DR7, which this region does not carry. Refusing
@@ -184,8 +241,26 @@ static int as923_get_rx1_params(uint32_t tx_freq, uint8_t tx_dr, uint8_t offset,
 		return -EINVAL;
 	}
 
+	/*
+	 * 3.10.6 has the device hold the downlink payload limit at the
+	 * DownlinkDwellTime = 0 value whatever the setting, so that a frame
+	 * the regulator does allow is never discarded. Only the datarate the
+	 * window opens on moves with the limit.
+	 */
 	*p = as923_dr_table[rx1_dr];
 	return 0;
+}
+
+static int as923_get_rx1_params(uint32_t tx_freq, uint8_t tx_dr, uint8_t offset, uint32_t *rx1_freq,
+				struct lwan_dr_params *p)
+{
+	return as923_rx1_from_table(as923_rx1_dr, tx_freq, tx_dr, offset, rx1_freq, p);
+}
+
+static int as923_get_dwell_rx1_params(uint32_t tx_freq, uint8_t tx_dr, uint8_t offset,
+				      uint32_t *rx1_freq, struct lwan_dr_params *p)
+{
+	return as923_rx1_from_table(as923_dl_dwell_rx1_dr, tx_freq, tx_dr, offset, rx1_freq, p);
 }
 
 static int as923_get_rx2_params(uint8_t dr, uint32_t *freq, struct lwan_dr_params *p)
@@ -517,9 +592,12 @@ static void as923_record_tx(uint32_t freq, uint32_t airtime_ms)
 
 const struct lwan_region_ops as923_ops = {
 	.default_rx2_dr = AS923_RX2_DR,
+	.max_eirp_dbm = AS923_MAX_EIRP_DBM,
 	.get_default_channels = as923_get_default_channels,
 	.get_tx_params = as923_get_tx_params,
 	.get_rx1_params = as923_get_rx1_params,
+	.get_dwell_tx_params = as923_get_dwell_tx_params,
+	.get_dwell_rx1_params = as923_get_dwell_rx1_params,
 	.get_rx2_params = as923_get_rx2_params,
 	.validate_dl_settings = as923_validate_dl_settings,
 	.apply_cflist = as923_apply_cflist,
