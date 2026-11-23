@@ -254,4 +254,28 @@ ZTEST(nsos, test_recvfrom_connected)
 	zassert_ok(zsock_close(listener));
 }
 
+ZTEST(nsos, test_so_broadcast)
+{
+	int optval;
+	net_socklen_t optlen = sizeof(optval);
+	int sock;
+
+	sock = udp_socket();
+
+	zassert_ok(zsock_getsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BROADCAST, &optval,
+				    &optlen), "getsockopt() failed (%d)", errno);
+	zassert_equal(optval, 0);
+
+	optval = 1;
+	zassert_ok(zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BROADCAST, &optval,
+				    sizeof(optval)), "setsockopt() failed (%d)", errno);
+
+	optval = 0;
+	zassert_ok(zsock_getsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BROADCAST, &optval,
+				    &optlen), "getsockopt() failed (%d)", errno);
+	zassert_not_equal(optval, 0);
+
+	zassert_ok(zsock_close(sock));
+}
+
 ZTEST_SUITE(nsos, NULL, NULL, NULL, NULL, NULL);

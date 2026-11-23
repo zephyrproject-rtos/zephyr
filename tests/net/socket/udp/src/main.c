@@ -1815,6 +1815,9 @@ static ZTEST_BMEM struct sys_sem wait_data;
 static struct net_if *eth_iface;
 static struct net_if *lo0;
 static ZTEST_BMEM bool test_started;
+static bool bcast_test_started;
+static struct net_in_addr bcast_test_dst;
+static K_SEM_DEFINE(bcast_sent, 0, 1);
 static ZTEST_BMEM bool test_failed;
 static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
@@ -1848,12 +1851,46 @@ static void eth_fake_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
+/* Match the datagram sent by test_so_broadcast */
+static bool is_test_broadcast(struct net_pkt *pkt)
+{
+	struct {
+		struct net_eth_hdr eth;
+		struct net_ipv4_hdr ip;
+		struct net_udp_hdr udp;
+		uint8_t payload[sizeof(TEST_STR_SMALL) - 1];
+	} __packed frame;
+
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_read(pkt, &frame, sizeof(frame)) < 0) {
+		return false;
+	}
+
+	return net_eth_is_addr_broadcast(&frame.eth.dst) &&
+	       net_ntohs(frame.eth.type) == NET_ETH_PTYPE_IP &&
+	       frame.ip.vhl == 0x45 &&
+	       frame.ip.proto == NET_IPPROTO_UDP &&
+	       net_ipv4_addr_cmp_raw(frame.ip.dst, bcast_test_dst.s4_addr) &&
+	       net_ntohs(frame.udp.dst_port) == SERVER_PORT &&
+	       net_ntohs(frame.udp.len) == sizeof(frame.udp) + sizeof(frame.payload) &&
+	       memcmp(frame.payload, TEST_STR_SMALL, sizeof(frame.payload)) == 0;
+}
+
 static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 {
 	net_time_t txtime;
 
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pkt);
+
+	if (bcast_test_started) {
+		if (is_test_broadcast(pkt)) {
+			k_sem_give(&bcast_sent);
+		}
+
+		return 0;
+	}
 
 	if (!test_started) {
 		return 0;
@@ -1893,6 +1930,268 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		lo0 = iface;
 		net_if_set_default(iface);
 	}
+}
+
+enum bcast_send {
+	BCAST_SENDTO,
+	BCAST_SENDMSG,
+	BCAST_SEND_CONNECTED,
+	BCAST_SENDMSG_CONNECTED,
+};
+
+static void test_broadcast_send(int sock, enum bcast_send how, const struct net_in_addr *dst,
+				bool allowed)
+{
+	struct net_sockaddr_in bcast_addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(SERVER_PORT),
+		.sin_addr = *dst,
+	};
+	struct net_iovec io_vector = {
+		.iov_base = TEST_STR_SMALL,
+		.iov_len = strlen(TEST_STR_SMALL),
+	};
+	struct net_msghdr msg = {
+		.msg_iov = &io_vector,
+		.msg_iovlen = 1,
+	};
+	int rv;
+
+	bcast_test_dst = *dst;
+
+	switch (how) {
+	case BCAST_SENDTO:
+		rv = zsock_sendto(sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0,
+				  (struct net_sockaddr *)&bcast_addr, sizeof(bcast_addr));
+		break;
+	case BCAST_SENDMSG:
+		msg.msg_name = &bcast_addr;
+		msg.msg_namelen = sizeof(bcast_addr);
+		__fallthrough;
+	case BCAST_SENDMSG_CONNECTED:
+		rv = zsock_sendmsg(sock, &msg, 0);
+		break;
+	case BCAST_SEND_CONNECTED:
+		rv = zsock_send(sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+		break;
+	default:
+		zassert_unreachable();
+		return;
+	}
+
+	if (allowed) {
+		zexpect_equal(rv, strlen(TEST_STR_SMALL), "send %d failed (%d)", how, errno);
+
+		rv = k_sem_take(&bcast_sent, WAIT_TIME);
+		zexpect_equal(rv, 0, "broadcast %d not sent to the network", how);
+	} else {
+		zexpect_equal(rv, -1, "send %d succeeded", how);
+		zexpect_equal(errno, EACCES, "wrong errno (%d)", errno);
+
+		rv = k_sem_take(&bcast_sent, K_MSEC(50));
+		zexpect_equal(rv, -EAGAIN, "broadcast %d sent to the network", how);
+	}
+}
+
+static void test_broadcast_flag(int sock, int flag)
+{
+	int optval = flag;
+	net_socklen_t optsize = sizeof(optval);
+	int rv;
+
+	rv = zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BROADCAST, &optval,
+			      sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	optval = !flag;
+	rv = zsock_getsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BROADCAST, &optval, &optsize);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, flag, "broadcast flag not updated");
+}
+
+static int test_broadcast_socket(void)
+{
+	struct net_sockaddr_in bind_addr = {
+		.sin_family = NET_AF_INET,
+		.sin_addr = my_addr2,
+	};
+	int sock, rv;
+
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "socket open failed");
+
+	/* Send from the Ethernet interface, loopback carries no broadcast */
+	rv = zsock_bind(sock, (struct net_sockaddr *)&bind_addr, sizeof(bind_addr));
+	zassert_equal(rv, 0, "bind failed (%d)", errno);
+
+	return sock;
+}
+
+static void test_broadcast_unconnected(const struct net_in_addr *dst)
+{
+	bool initial = IS_ENABLED(CONFIG_NET_INITIAL_SO_BROADCAST);
+	int sock = test_broadcast_socket();
+
+	test_broadcast_send(sock, BCAST_SENDTO, dst, initial);
+	test_broadcast_send(sock, BCAST_SENDMSG, dst, initial);
+
+	test_broadcast_flag(sock, 0);
+	test_broadcast_send(sock, BCAST_SENDTO, dst, false);
+	test_broadcast_send(sock, BCAST_SENDMSG, dst, false);
+
+	test_broadcast_flag(sock, 1);
+	test_broadcast_send(sock, BCAST_SENDTO, dst, true);
+	test_broadcast_send(sock, BCAST_SENDMSG, dst, true);
+
+	zassert_ok(zsock_close(sock), "close failed");
+}
+
+static void test_broadcast_connect(int sock, const struct net_in_addr *dst, int expected_errno)
+{
+	struct net_sockaddr_in bcast_addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(SERVER_PORT),
+		.sin_addr = *dst,
+	};
+	int rv;
+
+	rv = zsock_connect(sock, (struct net_sockaddr *)&bcast_addr, sizeof(bcast_addr));
+
+	if (expected_errno == 0) {
+		zassert_equal(rv, 0, "connect failed (%d)", errno);
+	} else {
+		zassert_equal(rv, -1, "connect succeeded");
+		zassert_equal(errno, expected_errno, "wrong errno (%d)", errno);
+	}
+}
+
+static void test_broadcast_connected(const struct net_in_addr *dst)
+{
+	int sock = test_broadcast_socket();
+
+	test_broadcast_flag(sock, 0);
+	test_broadcast_connect(sock, dst, EACCES);
+
+	test_broadcast_flag(sock, 1);
+	test_broadcast_connect(sock, dst, 0);
+	test_broadcast_send(sock, BCAST_SEND_CONNECTED, dst, true);
+	test_broadcast_send(sock, BCAST_SENDMSG_CONNECTED, dst, true);
+
+	/* The flag also applies to a socket that is already connected */
+	test_broadcast_flag(sock, 0);
+	test_broadcast_send(sock, BCAST_SEND_CONNECTED, dst, false);
+	test_broadcast_send(sock, BCAST_SENDMSG_CONNECTED, dst, false);
+
+	zassert_ok(zsock_close(sock), "close failed");
+}
+
+/* The interface of an unbound socket is not known, so the subnet broadcast
+ * address of any interface is refused.
+ */
+static void test_broadcast_unbound(const struct net_in_addr *subnet_bcast)
+{
+	int sock;
+
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "socket open failed");
+
+	test_broadcast_flag(sock, 0);
+	test_broadcast_connect(sock, net_ipv4_broadcast_address(), EACCES);
+	test_broadcast_connect(sock, subnet_bcast, EACCES);
+
+	zassert_ok(zsock_close(sock), "close failed");
+}
+
+/* The subnet broadcast address of the Ethernet interface is an ordinary
+ * address for a socket that sends through the loopback interface.
+ */
+static void test_broadcast_other_iface(const struct net_in_addr *subnet_bcast)
+{
+	struct net_sockaddr_in bind_addr = {
+		.sin_family = NET_AF_INET,
+		.sin_addr = NET_INADDR_LOOPBACK_INIT,
+	};
+	int sock, rv;
+
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "socket open failed");
+
+	rv = zsock_bind(sock, (struct net_sockaddr *)&bind_addr, sizeof(bind_addr));
+	zassert_equal(rv, 0, "bind failed (%d)", errno);
+
+	test_broadcast_flag(sock, 0);
+	test_broadcast_connect(sock, net_ipv4_broadcast_address(), EACCES);
+	test_broadcast_connect(sock, subnet_bcast, 0);
+
+	rv = zsock_send(sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+	zassert_equal(rv, strlen(TEST_STR_SMALL), "send failed (%d)", errno);
+
+	zassert_ok(zsock_close(sock), "close failed");
+}
+
+static void test_broadcast_mapped(const struct net_in_addr *dst)
+{
+	struct net_sockaddr_in6 mapped_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(SERVER_PORT),
+	};
+	int sock, rv;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+		return;
+	}
+
+	net_ipv6_addr_create_v4_mapped(dst, &mapped_addr.sin6_addr);
+
+	sock = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "socket open failed");
+
+	test_broadcast_flag(sock, 0);
+
+	rv = zsock_connect(sock, (struct net_sockaddr *)&mapped_addr, sizeof(mapped_addr));
+	zassert_equal(rv, -1, "connect succeeded");
+	zassert_equal(errno, EACCES, "wrong errno (%d)", errno);
+
+	rv = zsock_sendto(sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0,
+			  (struct net_sockaddr *)&mapped_addr, sizeof(mapped_addr));
+	zassert_equal(rv, -1, "sendto succeeded");
+	zassert_equal(errno, EACCES, "wrong errno (%d)", errno);
+
+	zassert_ok(zsock_close(sock), "close failed");
+}
+
+ZTEST(net_socket_udp, test_so_broadcast)
+{
+	/* my_addr2 has the default /24 netmask */
+	struct net_in_addr subnet_bcast = { { { 192, 0, 2, 255 } } };
+	int sock, rv;
+	int optval;
+	net_socklen_t optsize = sizeof(optval);
+
+	BUILD_ASSERT(CONFIG_NET_IPV4_DEFAULT_NETMASK == 24);
+
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "socket open failed");
+
+	rv = zsock_getsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BROADCAST, &optval, &optsize);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, IS_ENABLED(CONFIG_NET_INITIAL_SO_BROADCAST),
+		      "wrong broadcast flag on a new socket");
+	zassert_equal(optsize, sizeof(optval), "getsockopt got invalid size");
+
+	zassert_ok(zsock_close(sock), "close failed");
+
+	k_sem_reset(&bcast_sent);
+	bcast_test_started = true;
+
+	test_broadcast_unconnected(net_ipv4_broadcast_address());
+	test_broadcast_unconnected(&subnet_bcast);
+	test_broadcast_connected(net_ipv4_broadcast_address());
+	test_broadcast_connected(&subnet_bcast);
+	test_broadcast_unbound(&subnet_bcast);
+	test_broadcast_other_iface(&subnet_bcast);
+	test_broadcast_mapped(net_ipv4_broadcast_address());
+	test_broadcast_mapped(&subnet_bcast);
 }
 
 ZTEST_USER(net_socket_udp, test_v6_sendmsg_with_txtime)
@@ -4934,6 +5233,8 @@ ZTEST(net_socket_udp, test_v6_rebinding)
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
+
+	bcast_test_started = false;
 
 	for (int i = 0; i < ZVFS_OPEN_SIZE; ++i) {
 		(void)zsock_close(i);
