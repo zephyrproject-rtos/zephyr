@@ -275,6 +275,26 @@ enum smf_state_result tc_attached_snk_run(void *obj)
 		return SMF_EVENT_PROPAGATE;
 	}
 
+	/*
+	 * Rp gone from both CC pins for tPDDebounce is a detach too. It is the
+	 * one that still works when VBUS does not go away: a board that passes
+	 * its input through to another port can hold its own VBUS up, fed
+	 * backwards, after the Source has been unplugged. A Hard Reset leaves
+	 * Rp in place.
+	 */
+	if (tcpc_is_cc_open(tc->cc1, tc->cc2)) {
+		if (!usbc_timer_running(&tc->tc_t_pd_debounce)) {
+			usbc_timer_start(&tc->tc_t_pd_debounce);
+		} else if (usbc_timer_expired(&tc->tc_t_pd_debounce)) {
+			LOG_INF("Rp gone from CC");
+			usbc_vbus_enable(vbus, false);
+			tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
+			return SMF_EVENT_PROPAGATE;
+		}
+	} else {
+		usbc_timer_stop(&tc->tc_t_pd_debounce);
+	}
+
 	/* Run Sink Power Sub-State if not in an explicit contract */
 	if (pe_is_explicit_contract(dev) == false) {
 		sink_power_sub_states(dev);
@@ -291,6 +311,8 @@ void tc_attached_snk_exit(void *obj)
 	const struct device *dev = tc->dev;
 	struct usbc_port_data *data = dev->data;
 	int ret;
+
+	usbc_timer_stop(&tc->tc_t_pd_debounce);
 
 	/* Disable PD */
 	tc_pd_enable(dev, false);
