@@ -2269,8 +2269,14 @@ static void ch_schedule_interrupt(const struct device *dev,
 {
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	struct uhc_transfer *const xfer = ch->xfer;
+	uint16_t interval = xfer->interval;
 	uint32_t hfnum;
 	uint16_t current_frame;
+
+	if (ch->do_split) {
+		/* For the High-speed microframes */
+		interval *= 8U;
+	}
 
 	hfnum = sys_read32((mem_addr_t)&base->hfnum);
 	current_frame = usb_dwc2_get_hfnum_frnum(hfnum);
@@ -2289,9 +2295,7 @@ static void ch_schedule_interrupt(const struct device *dev,
 		 * preserve periodic phase by using the polling interval
 		 * and mark the channel for periodic transfer in the closest SOF
 		 */
-
-		/* TODO: Consider the High-speed microframes as well, only Full-speed for now */
-		ch->data->scheduled_frame = (ch->data->scheduled_frame + xfer->interval) &
+		ch->data->scheduled_frame = (ch->data->scheduled_frame + interval) &
 					     PERIODIC_FRAME_MASK;
 		ch->data->periodic_scheduled = true;
 	}
