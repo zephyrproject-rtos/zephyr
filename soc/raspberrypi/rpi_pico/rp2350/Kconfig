@@ -127,4 +127,44 @@ config RPI_PICO_SIGNING_KEY
 	  to produce a signed ELF file. If this is not provided west sign
 	  cannot be used.
 
+config RPI_PICO_SMP_FLASH_PARK
+	bool "Park the other core in RAM while flash is written or erased"
+	default y
+	depends on SOC_SERIES_RP2350 && SMP && MP_MAX_NUM_CPUS > 1
+	help
+	  Writing or erasing the flash takes the XIP interface away from both
+	  cores. This option adds rp2350_smp_park_other() and
+	  rp2350_smp_unpark_other(), which stop the other core in a loop in RAM
+	  with all of its interrupts masked. It uses doorbell 1 of the SIO; doorbell
+	  0 is the scheduler IPI. The flash driver needs it with SMP.
+
+if RPI_PICO_SMP_FLASH_PARK
+
+config RPI_PICO_SMP_FLASH_PARK_SHORT_WAIT_US
+	int "Time to wait for the other core to park before trying again (microseconds)"
+	default 100
+	range 10 10000
+	help
+	  The other core may be waiting for this one with its interrupts masked,
+	  for example in the cross-CPU abort of a thread. After this time the
+	  request is withdrawn and this core takes the interrupts that are
+	  pending for it before the request is made again.
+
+config RPI_PICO_SMP_FLASH_PARK_TIMEOUT_MS
+	int "Total time to try to park the other core before giving up (milliseconds)"
+	default 100
+	range 1 60000
+	help
+	  The flash driver gives up with -EBUSY when the other core cannot be
+	  parked in this time. It applies to each page written and each erase
+	  unit, not to a whole write or erase call.
+
+config RPI_PICO_SMP_FLASH_PARK_DIAG
+	bool "Count parking requests (for tests)"
+	help
+	  Exposes rp2350_smp_park_stats. Not for production images: it adds a
+	  read of TIMER1 to the loop of the parked core.
+
+endif # RPI_PICO_SMP_FLASH_PARK
+
 endif # SOC_SERIES_RP2350
