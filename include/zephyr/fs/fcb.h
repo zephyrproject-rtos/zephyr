@@ -165,7 +165,10 @@ struct fcb {
  * Initialize FCB instance.
  *
  * If power was lost while an entry was being written, the incomplete entry
- * is ignored and new entries are written to the next sector.
+ * is ignored and new entries are written to the next sector. If power was
+ * lost while a new sector header was being written, or while fcb_rotate()
+ * was erasing the oldest sector, that sector is treated as unused and erased
+ * before it is used again.
  *
  * @param[in] f_area_id ID of flash area where fcb storage resides.
  * @param[in,out] fcbp  FCB instance structure.

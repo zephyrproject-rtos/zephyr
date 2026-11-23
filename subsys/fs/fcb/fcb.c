@@ -100,6 +100,7 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 	uint8_t align;
 	int oldest = -1, newest = -1;
 	struct flash_sector *oldest_sector = NULL, *newest_sector = NULL;
+	struct flash_sector *torn_sector = NULL;
 	struct fcb_disk_area fda;
 	const struct flash_parameters *fparam;
 
@@ -129,6 +130,11 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 	for (i = 0; i < fcbp->f_sector_cnt; i++) {
 		sector = &fcbp->f_sectors[i];
 		rc = fcb_sector_hdr_read(fcbp, sector, &fda);
+		if (rc == -ENOMSG && torn_sector == NULL) {
+			/* Maybe a header cut short by a power cut, checked below */
+			torn_sector = sector;
+			continue;
+		}
 		if (rc < 0) {
 			return rc;
 		}
@@ -147,6 +153,20 @@ int fcb_init(int f_area_id, struct fcb *fcbp)
 			oldest = fda.fd_id;
 			oldest_sector = sector;
 		}
+	}
+
+	/* A power cut can leave a bad header in two places: right after the
+	 * newest sector (new header being written) or right before the oldest
+	 * one (fcb_rotate() erase cut short). That sector is treated as unused
+	 * and erased before it is used again.
+	 */
+	if (torn_sector != NULL) {
+		if (oldest < 0 || (torn_sector != fcb_getnext_sector(fcbp, newest_sector) &&
+				   fcb_getnext_sector(fcbp, torn_sector) != oldest_sector)) {
+			return -ENOMSG;
+		}
+		LOG_WRN("Incomplete header in sector at 0x%lx, treating it as unused",
+			(long)torn_sector->fs_off);
 	}
 
 	/* fcb_sector_hdr_init needs the alignment to be able to write */
@@ -292,6 +312,14 @@ int fcb_sector_hdr_init(struct fcb *fcbp, struct flash_sector *sector, uint16_t 
 		uint8_t raw[WRITE_ALIGNMENT_BUFFER_SIZE];
 	} buf;
 	int rc;
+
+	/* Erase what is left of a header torn by a power cut */
+	if (fcb_sector_hdr_read(fcbp, sector, NULL) == -ENOMSG) {
+		rc = fcb_erase_sector(fcbp, sector);
+		if (rc != 0) {
+			return rc;
+		}
+	}
 
 	memset(&buf, fcbp->f_erase_value, sizeof(buf));
 
