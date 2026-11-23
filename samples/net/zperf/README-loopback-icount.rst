@@ -121,11 +121,6 @@ A few non-obvious points are baked into :file:`loopback-icount.conf`:
   the sender's context, so the entire receive path (and the blocking client
   upload) nests on the caller's stack. The main and networking thread stacks are
   enlarged; otherwise the guest overflows its stack and faults at boot.
-- **Tick rate.** The tick rate is raised to 10 kHz. At the default 100 Hz,
-  ``USECS_PER_TICK >= 1000`` compiles in the UDP uploader's clock-compensation
-  path, which divides by the per-packet duration. With the unlimited rate that
-  duration is zero, so a >1 kHz tick both avoids the division-by-zero and gives
-  fine-grained pacing.
 - **Near-MTU packet size and the MSS caveat.** The extra config file raises the loopback
   MTU (:kconfig:option:`CONFIG_NET_LOOPBACK_MTU`) to 1280 and lifts zperf's own
   packet ceiling (:kconfig:option:`CONFIG_NET_ZPERF_MAX_PACKET_SIZE`) above the
