@@ -15,6 +15,6 @@
 
 #include <cmsis_core_m_defaults.h>
 
-void msp_delay_peripheral_startup(void);
+#include "soc_peripheral_delay.h"
 
 #endif /* _MSPM0_SOC_H */
