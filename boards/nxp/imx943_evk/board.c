@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,8 +10,8 @@
 
 static int board_init(void)
 {
-#if defined(CONFIG_ETH_NXP_IMX_NETC) && (DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(netc)) != 0) \
-	&& !defined(CONFIG_CPU_CORTEX_A)
+#if defined(CONFIG_ETH_NXP_IMX_NETC) && DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_netc_psi) && \
+	!defined(CONFIG_CPU_CORTEX_A)
 	/*
 	 * PCS(Physical Coding Sublayer) protocols on link0-5,
 	 * xxxx xxxx xxxx xxx1: 1G SGMII
