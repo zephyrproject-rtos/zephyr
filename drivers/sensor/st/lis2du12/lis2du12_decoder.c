@@ -1,4 +1,4 @@
-/* ST Microelectronics LIS2DU12 sensor read and decoder
+/* ST Microelectronics LIS2DU12 / MIS2DU12 sensor read and decoder
  *
  * Copyright (c) 2026 Dotcom IoT LLP
  * Copyright (c) 2026 Milan Pipaliya <milan.pipaliya@dnkmail.in>
@@ -7,8 +7,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT st_lis2du12
-
 #include "lis2du12.h"
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor_clock.h>
@@ -16,13 +14,6 @@
 
 LOG_MODULE_DECLARE(LIS2DU12, CONFIG_SENSOR_LOG_LEVEL);
 
-/*
- * Shift values for 2G, 4G, 8G, 16G full-scale ranges in m/s^2 (q31_t format):
- * 2G  = 19.6133 m/s^2  -> shift = 5 (max 32)
- * 4G  = 39.2266 m/s^2  -> shift = 6 (max 64)
- * 8G  = 78.4532 m/s^2  -> shift = 7 (max 128)
- * 16G = 156.9064 m/s^2 -> shift = 8 (max 256)
- */
 static const int8_t lis2du12_accel_shift[] = {
 	5, /* FS_2G */
 	6, /* FS_4G */
@@ -51,15 +42,12 @@ void lis2du12_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	const struct sensor_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
 	const struct lis2du12_config *cfg = dev->config;
 	struct lis2du12_data *data = dev->data;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint32_t min_buf_len = sizeof(struct lis2du12_encoded_data);
 	struct lis2du12_encoded_data *edata;
 	uint8_t *buf;
 	uint32_t buf_len;
 	uint64_t cycles;
 	int16_t acc[3];
-	lis2du12_data_t xl_data;
-	lis2du12_md_t md;
 	int rc;
 
 	if (read_cfg->is_streaming) {
@@ -86,16 +74,10 @@ void lis2du12_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 	edata->header.accel_fs = data->accel_fs;
 
-	md.fs = cfg->accel_range;
-	if (lis2du12_data_get(ctx, &md, &xl_data) < 0) {
-		LOG_ERR("Failed to read sample");
+	if (cfg->chip_api->read_raw(dev, acc) < 0) {
 		rtio_iodev_sqe_err(iodev_sqe, -EIO);
 		return;
 	}
-
-	edata->acc[0] = xl_data.xl.raw[0];
-	edata->acc[1] = xl_data.xl.raw[1];
-	edata->acc[2] = xl_data.xl.raw[2];
 
 	edata->acc[0] = acc[0];
 	edata->acc[1] = acc[1];
@@ -191,16 +173,48 @@ static int lis2du12_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 	}
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_lis2du12)
+#define DT_DRV_COMPAT st_lis2du12
 SENSOR_DECODER_API_DT_DEFINE() = {
 	.get_frame_count = lis2du12_decoder_get_frame_count,
 	.get_size_info = lis2du12_decoder_get_size_info,
 	.decode = lis2du12_decoder_decode,
 };
+#undef DT_DRV_COMPAT
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_mis2du12)
+#define DT_DRV_COMPAT st_mis2du12
+SENSOR_DECODER_API_DT_DEFINE() = {
+	.get_frame_count = lis2du12_decoder_get_frame_count,
+	.get_size_info = lis2du12_decoder_get_size_info,
+	.decode = lis2du12_decoder_decode,
+};
+#undef DT_DRV_COMPAT
+#endif
 
 int lis2du12_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder)
 {
-	ARG_UNUSED(dev);
-	*decoder = &SENSOR_DECODER_NAME();
+	const struct lis2du12_config *cfg = dev->config;
 
-	return 0;
+#if DT_HAS_COMPAT_STATUS_OKAY(st_lis2du12)
+	if (cfg->chip_type == LIS2DU12_CHIP_LIS2DU12) {
+#define DT_DRV_COMPAT st_lis2du12
+		*decoder = &SENSOR_DECODER_NAME();
+#undef DT_DRV_COMPAT
+		return 0;
+	}
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_mis2du12)
+	if (cfg->chip_type == LIS2DU12_CHIP_MIS2DU12) {
+#define DT_DRV_COMPAT st_mis2du12
+		*decoder = &SENSOR_DECODER_NAME();
+#undef DT_DRV_COMPAT
+		return 0;
+	}
+#endif
+
+	ARG_UNUSED(cfg);
+	return -ENOTSUP;
 }
