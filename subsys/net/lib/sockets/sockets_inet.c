@@ -1997,17 +1997,18 @@ static int ipv4_multicast_if(struct net_context *ctx, const void *optval,
 		return 0;
 	}
 
-	/* setsockopt() can accept either struct ip_mreqn or
-	 * struct ip_mreq. We need to handle both cases.
+	/* setsockopt() can accept struct ip_mreqn, struct ip_mreq, or
+	 * a bare struct in_addr. We need to handle all three cases.
 	 */
 	if (optval == NULL || (optlen != sizeof(struct net_ip_mreqn) &&
-			       optlen != sizeof(struct net_ip_mreq))) {
+			       optlen != sizeof(struct net_ip_mreq) &&
+			       optlen != sizeof(struct net_in_addr))) {
 		errno = EINVAL;
 		return -1;
 	}
 
 	if (optlen == sizeof(struct net_ip_mreqn)) {
-		struct net_ip_mreqn *mreqn = (struct net_ip_mreqn *)optval;
+		const struct net_ip_mreqn *mreqn = (const struct net_ip_mreqn *)optval;
 
 		if (mreqn->imr_ifindex != 0) {
 			iface = net_if_get_by_index(mreqn->imr_ifindex);
@@ -2022,12 +2023,18 @@ static int ipv4_multicast_if(struct net_context *ctx, const void *optval,
 			}
 		}
 	} else {
-		struct net_ip_mreq *mreq = (struct net_ip_mreq *)optval;
+		const struct net_in_addr *addr;
 
-		if (mreq->imr_interface.s_addr != NET_INADDR_ANY) {
+		if (optlen == sizeof(struct net_ip_mreq)) {
+			addr = &((const struct net_ip_mreq *)optval)->imr_interface;
+		} else {
+			addr = (const struct net_in_addr *)optval;
+		}
+
+		if (addr->s_addr != NET_INADDR_ANY) {
 			struct net_if_addr *ifaddr;
 
-			ifaddr = net_if_ipv4_addr_lookup(&mreq->imr_interface, &iface);
+			ifaddr = net_if_ipv4_addr_lookup(addr, &iface);
 			if (ifaddr == NULL) {
 				errno = ENOENT;
 				return -1;
@@ -2605,27 +2612,47 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 static int ipv4_multicast_group(struct net_context *ctx, const void *optval,
 				net_socklen_t optlen, bool do_join)
 {
-	struct net_ip_mreqn *mreqn;
-	struct net_if *iface;
-	int ifindex, ret;
+	const struct net_in_addr *multiaddr;
+	const struct net_in_addr *if_addr;
+	struct net_if *iface = NULL;
+	int ifindex = 0;
+	int ret;
 
-	if (optval == NULL || optlen != sizeof(struct net_ip_mreqn)) {
+	if (optval == NULL || (optlen != sizeof(struct net_ip_mreqn) &&
+			       optlen != sizeof(struct net_ip_mreq))) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	mreqn = (struct net_ip_mreqn *)optval;
+	if (optlen == sizeof(struct net_ip_mreqn)) {
+		const struct net_ip_mreqn *mreqn = (const struct net_ip_mreqn *)optval;
 
-	if (mreqn->imr_multiaddr.s_addr == NET_INADDR_ANY) {
-		errno = EINVAL;
-		return -1;
-	}
-
-	if (mreqn->imr_ifindex != 0) {
-		iface = net_if_get_by_index(mreqn->imr_ifindex);
+		multiaddr = &mreqn->imr_multiaddr;
+		if_addr = &mreqn->imr_address;
+		ifindex = mreqn->imr_ifindex;
 	} else {
-		ifindex = net_if_ipv4_addr_lookup_by_index(&mreqn->imr_address);
+		const struct net_ip_mreq *mreq = (const struct net_ip_mreq *)optval;
+
+		multiaddr = &mreq->imr_multiaddr;
+		if_addr = &mreq->imr_interface;
+	}
+
+	if (multiaddr->s_addr == NET_INADDR_ANY) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (ifindex != 0) {
 		iface = net_if_get_by_index(ifindex);
+	} else if (if_addr->s_addr != NET_INADDR_ANY) {
+		ifindex = net_if_ipv4_addr_lookup_by_index(if_addr);
+		iface = net_if_get_by_index(ifindex);
+	}
+
+	if (iface == NULL && do_join &&
+	    (ifindex != 0 || if_addr->s_addr != NET_INADDR_ANY)) {
+		errno = ENODEV;
+		return -1;
 	}
 
 	if (iface == NULL) {
@@ -2645,9 +2672,9 @@ static int ipv4_multicast_group(struct net_context *ctx, const void *optval,
 	}
 
 	if (do_join) {
-		ret = net_ipv4_igmp_join(iface, &mreqn->imr_multiaddr, NULL);
+		ret = net_ipv4_igmp_join(iface, multiaddr, NULL);
 	} else {
-		ret = net_ipv4_igmp_leave(iface, &mreqn->imr_multiaddr);
+		ret = net_ipv4_igmp_leave(iface, multiaddr);
 	}
 
 	if (ret == -ENETDOWN) {

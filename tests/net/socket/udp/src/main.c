@@ -3971,6 +3971,199 @@ ZTEST(net_socket_udp, test_ipv4_multicast_ifindex)
 	zexpect_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1,
 			  "wrong data");
 
+	/* Clear multicast interface using a bare struct net_in_addr (INADDR_ANY) */
+	addr.s_addr = NET_INADDR_ANY;
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &addr, sizeof(addr));
+	zexpect_equal(ret, 0, "setsockopt(IP_MULTICAST_IF, in_addr ANY) failed (%d)", errno);
+
+	optlen = sizeof(addr);
+	ret = zsock_getsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &addr, &optlen);
+	zexpect_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zexpect_equal(optlen, sizeof(addr), "getsockopt optlen (%d)", optlen);
+	zexpect_equal(net_if_ipv4_addr_lookup_by_index(&addr),
+		      net_if_get_by_iface(net_if_get_default()),
+		      "expected default interface after reset");
+
+	/* Unknown address for IP_MULTICAST_IF with in_addr must return ENOENT */
+	zassert_equal(zsock_inet_pton(NET_AF_INET, "192.0.2.250", &addr), 1,
+		      "inet_pton failed");
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &addr, sizeof(addr));
+	zexpect_equal(ret, -1, "expected failure for unknown in_addr");
+	zexpect_equal(errno, ENOENT, "expected ENOENT, got %d", errno);
+
+	/* Set multicast interface using a bare struct net_in_addr */
+	ifaddr = net_if_ipv4_addr_get_first_by_index(net_if_get_by_iface(net_if_get_default()));
+	zassert_not_null(ifaddr, "No address found for default interface");
+	addr.s_addr = ifaddr->address.in_addr.s_addr;
+
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &addr, sizeof(addr));
+	zexpect_equal(ret, 0, "setsockopt(IP_MULTICAST_IF, in_addr) failed (%d)", errno);
+
+	optlen = sizeof(addr);
+	memset(&addr, 0, sizeof(addr));
+	ret = zsock_getsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &addr, &optlen);
+	zexpect_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zexpect_equal(addr.s_addr, ifaddr->address.in_addr.s_addr,
+		      "getsockopt iface address mismatch");
+
+	/* Invalid optlen and NULL optval for IP_MULTICAST_IF must return EINVAL */
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &addr, sizeof(addr) - 1);
+	zexpect_equal(ret, -1, "expected failure for short optlen");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &mreqn, sizeof(mreqn) + 1);
+	zexpect_equal(ret, -1, "expected failure for oversized optlen");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       NULL, sizeof(addr));
+	zexpect_equal(ret, -1, "expected failure for NULL optval");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	/* Select non-default (eth_iface) interface using a bare struct net_in_addr */
+	zassert_not_equal(eth_iface, net_if_get_default(),
+			  "eth_iface must differ from default interface");
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &my_addr2, sizeof(my_addr2));
+	zexpect_equal(ret, 0, "setsockopt(IP_MULTICAST_IF, eth in_addr) failed (%d)", errno);
+
+	optlen = sizeof(addr);
+	memset(&addr, 0, sizeof(addr));
+	ret = zsock_getsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &addr, &optlen);
+	zexpect_equal(ret, 0, "getsockopt failed (%d)", errno);
+	zexpect_equal(addr.s_addr, my_addr2.s_addr,
+		      "expected eth_iface address");
+	zexpect_equal(net_if_ipv4_addr_lookup_by_index(&addr),
+		      net_if_get_by_iface(eth_iface),
+		      "expected eth_iface index");
+
+	/* Restore default interface via in_addr for the multicast traffic test below */
+	addr.s_addr = ifaddr->address.in_addr.s_addr;
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &addr, sizeof(addr));
+	zexpect_equal(ret, 0, "setsockopt(IP_MULTICAST_IF, default in_addr) failed (%d)", errno);
+
+	/* Drop and re-join my_mcast_addr2 on non-default eth_iface via ip_mreq */
+	{
+		struct net_if *mcast_iface = eth_iface;
+
+		memset(&mreq, 0, sizeof(mreq));
+		mreq.imr_multiaddr = my_mcast_addr2;
+		mreq.imr_interface = my_addr2;
+
+		ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_DROP_MEMBERSHIP,
+				       &mreq, sizeof(mreq));
+		zexpect_equal(ret, 0, "setsockopt(IP_DROP_MEMBERSHIP, eth ip_mreq) failed (%d)",
+			      errno);
+		zexpect_is_null(net_if_ipv4_maddr_lookup(&my_mcast_addr2, &mcast_iface),
+				"multicast group still present on eth_iface after drop");
+
+		ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+				       &mreq, sizeof(mreq));
+		zexpect_equal(ret, 0, "setsockopt(IP_ADD_MEMBERSHIP, eth ip_mreq) failed (%d)",
+			      errno);
+		mcast_iface = eth_iface;
+		zexpect_not_null(net_if_ipv4_maddr_lookup(&my_mcast_addr2, &mcast_iface),
+				 "multicast group not joined on eth_iface");
+	}
+
+	/* Invalid optlen and NULL optval for IP_ADD/DROP_MEMBERSHIP must return EINVAL */
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &addr, sizeof(addr));
+	zexpect_equal(ret, -1, "expected failure for in_addr optlen on IP_ADD_MEMBERSHIP");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_DROP_MEMBERSHIP,
+			       &mreq, sizeof(mreq) - 1);
+	zexpect_equal(ret, -1, "expected failure for short optlen on IP_DROP_MEMBERSHIP");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &mreqn, sizeof(mreqn) + 1);
+	zexpect_equal(ret, -1, "expected failure for oversized optlen on IP_ADD_MEMBERSHIP");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       NULL, sizeof(mreq));
+	zexpect_equal(ret, -1, "expected failure for NULL optval on IP_ADD_MEMBERSHIP");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_DROP_MEMBERSHIP,
+			       NULL, sizeof(mreq));
+	zexpect_equal(ret, -1, "expected failure for NULL optval on IP_DROP_MEMBERSHIP");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	/* Drop and re-join multicast group using struct net_ip_mreq */
+	memset(&mreq, 0, sizeof(mreq));
+	mreq.imr_multiaddr = my_mcast_addr2;
+	mreq.imr_interface.s_addr = ifaddr->address.in_addr.s_addr;
+
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_DROP_MEMBERSHIP,
+			       &mreq, sizeof(mreq));
+	zexpect_equal(ret, 0, "setsockopt(IP_DROP_MEMBERSHIP, ip_mreq) failed (%d)", errno);
+
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &mreq, sizeof(mreq));
+	zexpect_equal(ret, 0, "setsockopt(IP_ADD_MEMBERSHIP, ip_mreq) failed (%d)", errno);
+
+	/* Also verify ip_mreq with INADDR_ANY interface and invalid multiaddr */
+	mreq.imr_interface.s_addr = NET_INADDR_ANY;
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_DROP_MEMBERSHIP,
+			       &mreq, sizeof(mreq));
+	zexpect_equal(ret, 0, "setsockopt(IP_DROP_MEMBERSHIP, ip_mreq ANY) failed (%d)", errno);
+
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &mreq, sizeof(mreq));
+	zexpect_equal(ret, 0, "setsockopt(IP_ADD_MEMBERSHIP, ip_mreq ANY) failed (%d)", errno);
+
+	mreq.imr_multiaddr.s_addr = NET_INADDR_ANY;
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &mreq, sizeof(mreq));
+	zexpect_equal(ret, -1, "expected failure for INADDR_ANY multiaddr");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	/* An interface address that is not local must not fall back to another interface */
+	mreq.imr_multiaddr = my_mcast_addr2;
+	zassert_equal(zsock_inet_pton(NET_AF_INET, "192.0.2.250", &mreq.imr_interface), 1,
+		      "inet_pton failed");
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &mreq, sizeof(mreq));
+	zexpect_equal(ret, -1, "expected failure for unknown interface address");
+	zexpect_equal(errno, ENODEV, "expected ENODEV, got %d", errno);
+
+	/* A nonexistent interface index must also fail with ENODEV on join */
+	memset(&mreqn_join, 0, sizeof(mreqn_join));
+	mreqn_join.imr_multiaddr = my_mcast_addr2;
+	mreqn_join.imr_ifindex = 99;
+	ret = zsock_setsockopt(server_sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &mreqn_join, sizeof(mreqn_join));
+	zexpect_equal(ret, -1, "expected failure for unknown ifindex");
+	zexpect_equal(errno, ENODEV, "expected ENODEV, got %d", errno);
+
+	/* Verify multicast traffic still flows after ip_mreq join + in_addr MULTICAST_IF */
+	ret = zsock_sendto(sock, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1, 0,
+			   (struct net_sockaddr *)&dst_addr, sizeof(dst_addr));
+	zexpect_equal(ret, STRLEN(TEST_STR_SMALL),
+		      "invalid send len (was %d expected %zu) (%d)",
+		      ret, STRLEN(TEST_STR_SMALL), -errno);
+
+	addrlen = sizeof(saddr4);
+	ret = zsock_recvfrom(server_sock, rx_buf, sizeof(rx_buf),
+			     0, (struct net_sockaddr *)&saddr4, &addrlen);
+	zexpect_true(ret >= 0, "recvfrom fail");
+	zexpect_equal(ret, strlen(TEST_STR_SMALL),
+		      "unexpected received bytes");
+	zexpect_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(TEST_STR_SMALL) - 1,
+			  "wrong data");
+
 	ret = zsock_close(sock);
 	zassert_equal(ret, 0, "Cannot close socket (%d)", -errno);
 

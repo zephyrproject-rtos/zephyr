@@ -1499,17 +1499,29 @@ static int nsos_setsockopt(void *obj, int level, int optname, const void *optval
 			return nsos_setsockopt_int(sock, NSOS_MID_IPPROTO_IP,
 						   NSOS_MID_IP_MULTICAST_LOOP, optval, optlen);
 		case ZSOCK_IP_ADD_MEMBERSHIP: {
-			const struct net_ip_mreqn *zmreqn = optval;
 			struct nsos_mid_ip_mreqn mreqn = {0};
 
-			if (optlen != sizeof(*zmreqn)) {
+			if (optval == NULL || (optlen != sizeof(struct net_ip_mreqn) &&
+					       optlen != sizeof(struct net_ip_mreq))) {
 				errno = EINVAL;
 				return -1;
 			}
 
-			memcpy(mreqn.imr_multiaddr, &zmreqn->imr_multiaddr,
-			       sizeof(mreqn.imr_multiaddr));
-			memcpy(mreqn.imr_address, &zmreqn->imr_address, sizeof(mreqn.imr_address));
+			if (optlen == sizeof(struct net_ip_mreqn)) {
+				const struct net_ip_mreqn *zmreqn = optval;
+
+				memcpy(mreqn.imr_multiaddr, &zmreqn->imr_multiaddr,
+				       sizeof(mreqn.imr_multiaddr));
+				memcpy(mreqn.imr_address, &zmreqn->imr_address,
+				       sizeof(mreqn.imr_address));
+			} else {
+				const struct net_ip_mreq *zmreq = optval;
+
+				memcpy(mreqn.imr_multiaddr, &zmreq->imr_multiaddr,
+				       sizeof(mreqn.imr_multiaddr));
+				memcpy(mreqn.imr_address, &zmreq->imr_interface,
+				       sizeof(mreqn.imr_address));
+			}
 			/* Pin the join to the represented host interface. */
 			mreqn.imr_ifindex = nsos_host_ifindex();
 
@@ -1521,7 +1533,8 @@ static int nsos_setsockopt(void *obj, int level, int optname, const void *optval
 			struct nsos_mid_ip_mreqn mreqn = {0};
 
 			if (optval == NULL || (optlen != sizeof(struct net_ip_mreqn) &&
-					       optlen != sizeof(struct net_ip_mreq))) {
+					       optlen != sizeof(struct net_ip_mreq) &&
+					       optlen != sizeof(struct net_in_addr))) {
 				errno = EINVAL;
 				return -1;
 			}
