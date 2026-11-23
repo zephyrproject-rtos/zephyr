@@ -218,6 +218,11 @@ Here are the conventions:
 - If the test takes over 6 seconds, set ``EXECUTE_TIMEOUT`` to a value that is at least 5 times
   bigger than the measured run-time.
 - Do not set ``EXECUTE_TIMEOUT`` to a value lower than the default.
+- End the simulation as soon as the test has passed instead of running until ``-sim_length``, and
+  simulate only as much traffic as the test checks. On the nRF bsim boards a device that exits
+  ends the whole simulation by default; a device that the others no longer need can call
+  ``bsim_set_terminate_on_exit(false)``, or be run with ``-disconnect_on_exit=1``, and exit when
+  it is done.
 - Tests should not be overly verbose: less than a hundred lines are expected on the outputs. Do make
   use of ``LOG_DBG()`` extensively, but don't enable the ``DBG`` log level by default.
 - Test scripts that use the Physical layer simulation are expected to pass any extra parameters
