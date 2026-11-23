@@ -209,6 +209,7 @@ static int crc_stm32_update(const struct device *dev, struct crc_ctx *ctx, const
 			(uintptr_t)buffer, (uintptr_t)&config->base->DR, bufsize);
 		if (ret != 0) {
 			LOG_ERR("dma_reload() failed: %d", ret);
+			crc_stm32_release(dev, ctx);
 			return ret;
 		}
 
@@ -217,10 +218,7 @@ static int crc_stm32_update(const struct device *dev, struct crc_ctx *ctx, const
 
 		if (data->dma_transfer_status != DMA_STATUS_COMPLETE) {
 			LOG_ERR("DMA transfer failure (status=%d)", data->dma_transfer_status);
-
-			/* Abort CRC computation and release device in case of failure */
 			crc_stm32_release(dev, ctx);
-
 			return -EIO;
 		}
 
