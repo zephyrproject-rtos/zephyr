@@ -1,0 +1,153 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+include: spi-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Pin connected to the modem's typically active-low RESET signal.
+
+  busy-gpios:
+    type: phandle-array
+    description: |
+      Pin connected to the modem's typically active-high BUSY signal.
+
+  irq-gpios:
+    type: phandle-array
+    description: |
+      Pin connected to the modem's typically active-high IRQ Pin.
+
+  dio-functions:
+    type: string-array
+    min-len: 7
+    max-len: 7
+    enum:
+      - "NONE"
+      - "IRQ"
+      - "RFSW"
+      - "RESERVED_0"
+      - "RESERVED_1"
+      - "GPIO_LOW"
+      - "GPIO_HIGH"
+      - "HF_OUT"
+      - "LF_OUT"
+      - "TX_TRIGGER"
+      - "RX_TRIGGER"
+    description: |
+      Function to use for DIOs, from DIO5 to DIO11.
+      - NONE: No function, Hi-Z.
+      - IRQ: Use as IRQ pin. Only one of these must be used for this driver.
+      - RFSW: Use as a RF Switch pin.
+      - RESERVED_0: Unused pin function ID.
+      - RESERVED_1: Unused pin function ID.
+      - GPIO_LOW: Set pin low.
+      - GPIO_HIGH: Set pin high.
+      - HF_OUT: Output the HF clock on this pin.
+      - LF_OUT: Output the LF clock on this pin. Only DIO7 to 11 support this.
+      - TX_TRIGGER: Triggers SetTx with the default timeout when switched high.
+      - RX_TRIGGER: Triggers SetRx with the default timeout when switched high.
+
+  dio-sleep-pulls:
+    type: string-array
+    min-len: 7
+    max-len: 7
+    enum:
+      - "NONE"
+      - "DOWN"
+      - "UP"
+      - "AUTO"
+    description: |
+      The pull applied to each pin when entering sleep, from DIO5 to DIO11.
+      DIO5 only supports UP.
+
+  tcxo-voltage:
+    type: int
+    default: 0
+    enum:
+      - 1600
+      - 1700
+      - 1800
+      - 2200
+      - 2400
+      - 2700
+      - 3000
+      - 3300
+      - 0
+    description: |
+      TCXO voltage in mV, except 0 where TCXO is disabled.
+      The default is no TCXO is used.
+
+  lf-clk:
+    type: string
+    default: "RC"
+    enum:
+      - "RC"
+      - "RESERVED"
+      - "DIO11"
+    description: |
+      Low frequency clock source for the radio.
+      - RC: 32.768KHz RC Oscillator.
+      - RESERVED: Unused ID.
+      - DIO11: 32.768KHz Signal on DIO11.
+      Using the RC is by far the most common so it is default.
+
+  tcxo-power-startup-delay-ms:
+    type: int
+    default: 5
+    min: 1
+    max: 1500
+    description: |
+      Startup delay to let the TCXO stabilize after TCXO power on. 5 ms is usually sufficient.
+
+  rfsw-standby:
+    type: int
+    default: 0
+    description: |
+      RF switch state in standby mode.
+      - A[0]: DIO5
+      - A[1]: DIO6
+      - A[2]: DIO7
+      - A[3]: DIO8
+      - A[4]: DIO9
+      - A[5]: DIO10
+      - A[6]: DIO11
+      Defines which RFSW GPIOs are set high (bit set) or low (bit unset) in the mode.
+      Pins used in any mode must be configured as RFSW in dio-functions.
+
+  rfsw-rx-lf:
+    type: int
+    default: 0
+    description: RF switch state in sub-GHz RX mode. See rfsw-standby.
+
+  rfsw-tx-lf:
+    type: int
+    default: 0
+    description: RF switch state in sub-GHz TX mode. See rfsw-standby.
+
+  rfsw-rx-hf:
+    type: int
+    default: 0
+    description: RF switch state in high-frequency, RX mode. See rfsw-standby.
+
+  rfsw-tx-hf:
+    type: int
+    default: 0
+    description: RF switch state in high-frequency TX mode. See rfsw-standby.
+
+  use-simo:
+    type: boolean
+    description: Use SIMO regulator instead of LDO (RegMode = 2, SIMO_NORMAL).
+
+  force-ldro:
+    type: boolean
+    description: |
+      Force usage of Low Data Rate Optimization even in cases where the symbol time is shorter than
+      16.38ms. Useful for designs using no TCXO or with bad heat dissipation.
+
+  rx-boosted:
+    type: boolean
+    description: |
+      Enable RX boosted mode, which increases the power consumption of
+      RX mode by ~1.2mA in exchange for ~0.5 to ~1dB sensitivity improvement.
