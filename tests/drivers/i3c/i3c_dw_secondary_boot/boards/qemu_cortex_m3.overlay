@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 Mark Tamas
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_fixed_clk: test-fixed-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <200000000>;
+		#clock-cells = <0>;
+	};
+
+	i3c1: i3c@cccccccc {
+		compatible = "snps,designware-i3c";
+		reg = <0xcccccccc 0x400>;
+		#address-cells = <3>;
+		#size-cells = <0>;
+		interrupt-parent = <&nvic>;
+		interrupts = <8 1>;
+		clocks = <&test_fixed_clk>;
+		i3c-scl-hz = <12500000>;
+		i2c-scl-hz = <400000>;
+
+		secondary;
+		static-address = <0x5a>;
+		tgt-pid = <0x0246 0x456789ab>;
+		bcr = <0x66>;
+		dcr = <0x5a>;
+	};
+};

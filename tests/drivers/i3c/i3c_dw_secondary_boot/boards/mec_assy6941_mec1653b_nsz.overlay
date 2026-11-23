@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 Mark Tamas
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i3c0 {
+	pinctrl-0 = <&i3c00_scl_target_gpio140 &i3c00_sda_target_gpio132>;
+	pinctrl-names = "default";
+
+	secondary;
+	static-address = <0x5a>;
+	tgt-pid = <0x0246 0x456789ab>;
+	bcr = <0x66>;
+	dcr = <0x5a>;
+	status = "okay";
+};
