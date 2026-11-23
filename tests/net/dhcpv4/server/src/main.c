@@ -1046,6 +1046,85 @@ ZTEST(dhcpv4_server_tests, test_icmp_probe)
 	verify_address_after_probe();
 }
 
+#define STOPPER_STACK_SIZE 2048
+
+static K_THREAD_STACK_DEFINE(stopper_stack, STOPPER_STACK_SIZE);
+static struct k_thread stopper_thread;
+static K_SEM_DEFINE(stopper_go, 0, 1);
+static K_SEM_DEFINE(stopper_done, 0, 1);
+static int stopper_ret;
+
+static void stopper_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sem_take(&stopper_go, K_FOREVER);
+	stopper_ret = net_dhcpv4_server_stop(test_ctx.iface);
+	k_sem_give(&stopper_done);
+}
+
+static void hold_lock_until_timer_blocked_cb(struct net_if *iface,
+					     struct dhcpv4_addr_slot *lease,
+					     void *user_data)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(lease);
+	ARG_UNUSED(user_data);
+
+	/* The lease expires while the server lock is held here, so the lease
+	 * timer handler blocks on the lock.
+	 */
+	k_msleep(1000 + 100);
+
+	/* The stopper has a higher priority than the work queue, so it gets the
+	 * lock before the timer handler once the lock is released.
+	 */
+	k_sem_give(&stopper_go);
+	k_msleep(100);
+}
+
+/* Verify that stopping the server does not hang when the lease timer handler
+ * is waiting for the server lock.
+ */
+ZTEST(dhcpv4_server_tests, test_stop_with_timer_handler_waiting)
+{
+	struct test_lease_count count;
+	int ret;
+
+	test_ctx.lease_time = 1;
+	client_get_lease(true);
+
+	k_sem_reset(&stopper_go);
+	k_sem_reset(&stopper_done);
+	stopper_ret = -EINPROGRESS;
+
+	k_thread_create(&stopper_thread, stopper_stack,
+			K_THREAD_STACK_SIZEOF(stopper_stack), stopper_fn,
+			NULL, NULL, NULL, K_PRIO_COOP(0), 0, K_NO_WAIT);
+
+	ret = net_dhcpv4_server_foreach_lease(test_ctx.iface,
+					      hold_lock_until_timer_blocked_cb,
+					      NULL);
+	zassert_ok(ret, "Failed to iterate leases");
+
+	ret = k_sem_take(&stopper_done, K_SECONDS(5));
+	zassert_ok(ret, "Server stop did not complete");
+	zexpect_ok(stopper_ret, "Server stop failed");
+
+	ret = k_thread_join(&stopper_thread, K_SECONDS(1));
+	zexpect_ok(ret, "Stopper thread did not exit");
+
+	ret = net_dhcpv4_server_foreach_lease(test_ctx.iface, lease_count_cb,
+					      &count);
+	zexpect_equal(ret, -ENOENT, "Server still running after stop");
+
+	/* The slot can be used again after the stop. */
+	ret = net_dhcpv4_server_start(test_ctx.iface, &test_base_addr);
+	zexpect_ok(ret, "Failed to restart server");
+}
+
 /* Verify that the DHCP server can start and validate input properly. */
 ZTEST(dhcpv4_server_tests_no_init, test_initialization)
 {
