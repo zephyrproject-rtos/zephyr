@@ -37,6 +37,9 @@ struct dma_emul_xfer_desc {
 struct dma_emul_work {
 	const struct device *dev;
 	uint32_t channel;
+	uint32_t owner;
+	uint32_t generation;
+	bool pending;
 	struct k_work work;
 };
 
@@ -63,7 +66,8 @@ struct dma_emul_data {
 	atomic_t *channels_atomic;
 	struct k_spinlock lock;
 	struct k_work_q work_q;
-	struct dma_emul_work work;
+	struct dma_emul_work *work;
+	uint32_t next_generation;
 };
 
 static void dma_emul_work_handler(struct k_work *work);
@@ -113,6 +117,41 @@ static void dma_emul_set_channel_state(const struct device *dev, uint32_t channe
 	__ASSERT_NO_MSG(state >= DMA_EMUL_CHANNEL_UNUSED && state <= DMA_EMUL_CHANNEL_STOPPED);
 
 	config->xfer[channel].config._reserved = state;
+}
+
+static void dma_emul_release_channel(const struct device *dev, uint32_t owner, uint32_t generation,
+				     uint32_t channel)
+{
+	struct dma_emul_data *data = dev->data;
+	struct dma_emul_work *work;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->lock);
+	work = &data->work[channel];
+	if (work->pending && work->owner == owner && work->generation == generation) {
+		dma_emul_set_channel_state(dev, channel, DMA_EMUL_CHANNEL_STOPPED);
+		work->pending = false;
+	}
+	k_spin_unlock(&data->lock, key);
+}
+
+static void dma_emul_release_generation(const struct device *dev, uint32_t owner,
+					uint32_t generation)
+{
+	const struct dma_emul_config *config = dev->config;
+	struct dma_emul_data *data = dev->data;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->lock);
+	for (uint32_t channel = 0U; channel < config->num_channels; channel++) {
+		struct dma_emul_work *work = &data->work[channel];
+
+		if (work->pending && work->owner == owner && work->generation == generation) {
+			dma_emul_set_channel_state(dev, channel, DMA_EMUL_CHANNEL_STOPPED);
+			work->pending = false;
+		}
+	}
+	k_spin_unlock(&data->lock, key);
 }
 
 static const char *dma_emul_xfer_config_to_string(const struct dma_config *cfg)
@@ -193,6 +232,7 @@ static void dma_emul_work_handler(struct k_work *work)
 	size_t i;
 	size_t bytes;
 	uint32_t channel;
+	uint32_t generation;
 	k_spinlock_key_t key;
 	struct dma_block_config block;
 	struct dma_config xfer_config;
@@ -204,6 +244,9 @@ static void dma_emul_work_handler(struct k_work *work)
 	const struct dma_emul_config *config = dev->config;
 
 	channel = dma_work->channel;
+	key = k_spin_lock(&data->lock);
+	generation = dma_work->generation;
+	k_spin_unlock(&data->lock, key);
 
 	do {
 		key = k_spin_lock(&data->lock);
@@ -243,6 +286,8 @@ static void dma_emul_work_handler(struct k_work *work)
 
 				if (state == DMA_EMUL_CHANNEL_STOPPED) {
 					LOG_DBG("asynchronously canceled");
+					dma_emul_release_generation(dev, dma_work->channel,
+								    generation);
 					if (!xfer_config.error_callback_dis) {
 						xfer_config.dma_callback(dev, xfer_config.user_data,
 									 channel, -ECANCELED);
@@ -264,9 +309,7 @@ static void dma_emul_work_handler(struct k_work *work)
 			}
 		}
 
-		key = k_spin_lock(&data->lock);
-		dma_emul_set_channel_state(dev, channel, DMA_EMUL_CHANNEL_STOPPED);
-		k_spin_unlock(&data->lock, key);
+		dma_emul_release_channel(dev, dma_work->channel, generation, channel);
 
 		/* FIXME: tests/drivers/dma/chan_blen_transfer/ does not set complete_callback_en */
 		if (true) {
@@ -375,6 +418,10 @@ static int dma_emul_configure(const struct device *dev, uint32_t channel,
 	switch (state) {
 	case DMA_EMUL_CHANNEL_UNUSED:
 	case DMA_EMUL_CHANNEL_STOPPED:
+		if (data->work[channel].pending) {
+			ret = -EBUSY;
+			break;
+		}
 		/* copy the configuration into the driver */
 		memcpy(&xfer->config, xfer_config, sizeof(xfer->config));
 
@@ -399,63 +446,33 @@ static int dma_emul_configure(const struct device *dev, uint32_t channel,
 	return ret;
 }
 
-static int dma_emul_start(const struct device *dev, uint32_t channel);
-
-static int dma_emul_reload(const struct device *dev, uint32_t channel, dma_addr_t src,
-			   dma_addr_t dst, size_t size)
+static int dma_emul_start_locked(const struct device *dev, uint32_t channel, bool *submit,
+				 uint32_t *generation)
 {
-	const struct dma_emul_config *config = dev->config;
 	struct dma_emul_data *data = dev->data;
-	struct dma_block_config *block;
-	k_spinlock_key_t key;
-
-	if (channel >= config->num_channels) {
-		return -EINVAL;
-	}
-
-	/* The work handler reads these under data->lock; start() takes it itself. */
-	key = k_spin_lock(&data->lock);
-	block = &config->block[channel * config->num_requests +
-			       config->xfer[channel].config.dma_slot];
-	block->source_address = src;
-	block->dest_address = dst;
-	block->block_size = size;
-	config->xfer[channel].config.block_count = 1;
-
-	dma_emul_set_channel_state(dev, channel, DMA_EMUL_CHANNEL_LOADED);
-	k_spin_unlock(&data->lock, key);
-
-	return dma_emul_start(dev, channel);
-}
-
-static int dma_emul_start(const struct device *dev, uint32_t channel)
-{
-	int ret = 0;
-	k_spinlock_key_t key;
+	const struct dma_emul_config *config = dev->config;
 	enum dma_emul_channel_state state;
-	struct dma_emul_xfer_desc *xfer;
 	struct dma_config *xfer_config;
-	struct dma_emul_data *data = dev->data;
-	const struct dma_emul_config *config = dev->config;
+	uint32_t claimed = 0U;
+	uint32_t owner = channel;
 
-	LOG_DBG("%s(channel: %u)", __func__, channel);
-
-	if (channel >= config->num_channels) {
-		return -EINVAL;
-	}
-
-	key = k_spin_lock(&data->lock);
-	xfer = &config->xfer[channel];
 	state = dma_emul_get_channel_state(dev, channel);
 	switch (state) {
 	case DMA_EMUL_CHANNEL_STARTED:
-		/* start after being started already is a no-op */
-		break;
+		return 0;
 	case DMA_EMUL_CHANNEL_LOADED:
 	case DMA_EMUL_CHANNEL_STOPPED:
-		data->work.channel = channel;
 		while (true) {
-			dma_emul_set_channel_state(dev, channel, DMA_EMUL_CHANNEL_STARTED);
+			if (channel >= config->num_channels || (claimed & BIT(channel)) != 0U) {
+				return -EINVAL;
+			}
+			state = dma_emul_get_channel_state(dev, channel);
+			if ((state != DMA_EMUL_CHANNEL_LOADED &&
+			     state != DMA_EMUL_CHANNEL_STOPPED) ||
+			    data->work[channel].pending) {
+				return -EBUSY;
+			}
+			claimed |= BIT(channel);
 
 			xfer_config = &config->xfer[channel].config;
 			if (xfer_config->source_chaining_en || xfer_config->dest_chaining_en) {
@@ -466,15 +483,111 @@ static int dma_emul_start(const struct device *dev, uint32_t channel)
 				break;
 			}
 		}
-		ret = k_work_submit_to_queue(&data->work_q, &data->work.work);
-		ret = (ret < 0) ? ret : 0;
-		break;
+		*generation = ++data->next_generation;
+		if (*generation == 0U) {
+			*generation = ++data->next_generation;
+		}
+		for (channel = 0U; channel < config->num_channels; channel++) {
+			if ((claimed & BIT(channel)) != 0U) {
+				dma_emul_set_channel_state(dev, channel, DMA_EMUL_CHANNEL_STARTED);
+				data->work[channel].owner = owner;
+				data->work[channel].generation = *generation;
+				data->work[channel].pending = true;
+			}
+		}
+		*submit = true;
+		return 0;
 	default:
 		LOG_ERR("attempt to start dma in invalid state %d", state);
-		ret = -EIO;
-		break;
+		return -EIO;
+	}
+}
+
+static int dma_emul_submit_work(const struct device *dev, uint32_t channel, uint32_t generation)
+{
+	struct dma_emul_data *data = dev->data;
+	int ret;
+
+	ret = k_work_submit_to_queue(&data->work_q, &data->work[channel].work);
+	if (ret >= 0) {
+		return 0;
+	}
+
+	dma_emul_release_generation(dev, channel, generation);
+
+	return ret;
+}
+
+static int dma_emul_reload(const struct device *dev, uint32_t channel, dma_addr_t src,
+			   dma_addr_t dst, size_t size)
+{
+	const struct dma_emul_config *config = dev->config;
+	struct dma_emul_data *data = dev->data;
+	struct dma_block_config *block;
+	struct dma_block_config saved_block;
+	enum dma_emul_channel_state state;
+	k_spinlock_key_t key;
+	bool submit = false;
+	uint32_t generation;
+	uint32_t saved_block_count;
+	int ret = 0;
+
+	if (channel >= config->num_channels) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&data->lock);
+	state = dma_emul_get_channel_state(dev, channel);
+	if (state == DMA_EMUL_CHANNEL_STARTED || data->work[channel].pending) {
+		ret = -EBUSY;
+	} else {
+		block = &config->block[channel * config->num_requests +
+				       config->xfer[channel].config.dma_slot];
+		saved_block = *block;
+		saved_block_count = config->xfer[channel].config.block_count;
+		block->source_address = src;
+		block->dest_address = dst;
+		block->block_size = size;
+		config->xfer[channel].config.block_count = 1;
+
+		dma_emul_set_channel_state(dev, channel, DMA_EMUL_CHANNEL_LOADED);
+		ret = dma_emul_start_locked(dev, channel, &submit, &generation);
+		if (ret < 0) {
+			*block = saved_block;
+			config->xfer[channel].config.block_count = saved_block_count;
+			dma_emul_set_channel_state(dev, channel, state);
+		}
 	}
 	k_spin_unlock(&data->lock, key);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return submit ? dma_emul_submit_work(dev, channel, generation) : 0;
+}
+
+static int dma_emul_start(const struct device *dev, uint32_t channel)
+{
+	int ret = 0;
+	k_spinlock_key_t key;
+	struct dma_emul_data *data = dev->data;
+	const struct dma_emul_config *config = dev->config;
+	bool submit = false;
+	uint32_t generation;
+
+	LOG_DBG("%s(channel: %u)", __func__, channel);
+
+	if (channel >= config->num_channels) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&data->lock);
+	ret = dma_emul_start_locked(dev, channel, &submit, &generation);
+	k_spin_unlock(&data->lock, key);
+
+	if (submit) {
+		ret = dma_emul_submit_work(dev, channel, generation);
+	}
 
 	return ret;
 }
@@ -580,13 +693,16 @@ static int dma_emul_init(const struct device *dev)
 	struct dma_emul_data *data = dev->data;
 	const struct dma_emul_config *config = dev->config;
 
-	data->work.dev = dev;
 	data->dma_ctx.magic = DMA_MAGIC;
 	data->dma_ctx.dma_channels = config->num_channels;
 	data->dma_ctx.atomic = data->channels_atomic;
 
 	k_work_queue_init(&data->work_q);
-	k_work_init(&data->work.work, dma_emul_work_handler);
+	for (size_t i = 0; i < config->num_channels; i++) {
+		data->work[i].dev = dev;
+		data->work[i].channel = i;
+		k_work_init(&data->work[i].work, dma_emul_work_handler);
+	}
 	k_work_queue_start(&data->work_q, config->work_q_stack, config->work_q_stack_size,
 			   config->work_q_priority, NULL);
 
@@ -626,6 +742,7 @@ static int dma_emul_init(const struct device *dev)
 	static struct dma_block_config                                                             \
 		dma_emul_block_config_##_inst[DMA_EMUL_INST_NUM_CHANNELS(_inst) *                  \
 					      DMA_EMUL_INST_NUM_REQUESTS(_inst)];                  \
+	static struct dma_emul_work dma_emul_work_##_inst[DMA_EMUL_INST_NUM_CHANNELS(_inst)];      \
                                                                                                    \
 	static const struct dma_emul_config dma_emul_config_##_inst = {                            \
 		.channel_mask = DMA_EMUL_INST_CHANNEL_MASK(_inst),                                 \
@@ -646,6 +763,7 @@ static int dma_emul_init(const struct device *dev)
                                                                                                    \
 	static struct dma_emul_data dma_emul_data_##_inst = {                                      \
 		.channels_atomic = dma_emul_channels_atomic_##_inst,                               \
+		.work = dma_emul_work_##_inst,                                                     \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(_inst, dma_emul_pm_device_pm_action);                             \
