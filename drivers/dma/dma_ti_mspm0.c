@@ -69,7 +69,11 @@ LOG_MODULE_REGISTER(ti_mspm0_dma, CONFIG_DMA_LOG_LEVEL);
 #define DMA_MSPM0_PREIRQ_HALF    0x7U
 
 /* dmatctl bits (per-channel, dmatctl[n]) */
+#ifdef CONFIG_SOC_SERIES_AM13E
+#define DMA_MSPM0_TCTL_DMATSEL  GENMASK(6, 0)
+#else
 #define DMA_MSPM0_TCTL_DMATSEL  GENMASK(5, 0)
+#endif
 #define DMA_MSPM0_TCTL_DMATINT  BIT(7)
 #define DMA_MSPM0_TCTL_SWREQ    0x0U
 
