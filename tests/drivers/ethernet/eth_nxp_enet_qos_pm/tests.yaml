@@ -1,0 +1,11 @@
+tests:
+  drivers.ethernet.nxp_enet_qos.pm:
+    tags:
+      - ethernet
+      - pm
+    depends_on:
+      - eth
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+    integration_platforms:
+      - frdm_mcxn947/mcxn947/cpu0
