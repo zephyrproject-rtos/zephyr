@@ -5958,6 +5958,7 @@ Rockchip Platforms:
     - dts/arm/rockchip/
     - dts/arm64/rockchip/
     - soc/rockchip/
+    - boards/radxa/radxa_zero_3e/
     - drivers/*/*rk35*
     - drivers/*/*rockchip*
     - drivers/*/*/*rockchip*
