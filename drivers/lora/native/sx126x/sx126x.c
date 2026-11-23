@@ -831,7 +831,10 @@ static int sx126x_get_and_clear_irq(const struct device *dev, uint32_t *irq)
 	LOG_DBG("IRQ status: 0x%04x", irq_status);
 
 	/* Clear handled IRQs */
-	sx126x_clear_irq_status(dev, irq_status);
+	ret = sx126x_clear_irq_status(dev, irq_status);
+	if (ret < 0) {
+		return ret;
+	}
 
 	*irq = irq_status;
 
