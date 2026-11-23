@@ -776,6 +776,149 @@
 				display-timing = <&test_adv7535_timing>;
 				status = "okay";
 			};
+
+			test_ili9806e_mw405: ili9806e@c {
+				compatible = "ilitek,ili9806e";
+				reg = <0xc>;
+				reset-gpios = <&test_gpio 0 0>;
+				bl-gpios = <&test_gpio 0 0>;
+				data-lanes = <2>;
+				width = <480>;
+				height = <800>;
+				pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+				init-seq = [
+					    /* Change to Page 1 */
+					    ff 05 ff 98 06 04 01
+					    08 01 10  /* SDO always output without tri-state */
+					    20 01 00
+					    21 01 01  /* DE Active High */
+					    30 01 02  /* Resolution 480 X 800 */
+					    31 01 00  /* Column Inversion */
+					    40 01 14  /* DDVDH/DDVDL voltage control */
+					    41 01 22  /* avdd +5.0V, avee -5.0V*/
+					    /* VGL=DDVDH+VCIP -DDVDL, VGH=2DDVDL-VCIP */
+					    42 01 02
+					    43 01 84  /* Set VGH Clamp level = 12.5 V */
+					    44 01 8a  /* Set VGL Clamp level = -12.5 V */
+					    50 01 78  /* Positive Gamma VREG1OUT = 4.5 V */
+					    51 01 78  /* Negative Gamma VREG2OUT = -4.5 V */
+					    52 01 00
+					    53 01 2b  /* VCOM = -0.7250 V (regs 0x52~0x53)*/
+					    54 01 00
+					    55 01 2b  /* VCOM voltage factor */
+					    60 01 07
+					    61 01 06
+					    62 01 06
+					    63 01 04
+					    /* Positive Gamma Control */
+					    a0 01 00
+					    a1 01 0b
+					    a2 01 19
+					    a3 01 10
+					    a4 01 06
+					    a5 01 0f
+					    a6 01 09
+					    a7 01 06
+					    a8 01 0c
+					    a9 01 0e
+					    aa 01 16
+					    ab 01 0d
+					    ac 01 15
+					    ad 01 0f
+					    ae 01 11
+					    af 01 00
+					    /* Negative Gamma Control */
+					    c0 01 00
+					    c1 01 24
+					    c2 01 29
+					    c3 01 0c
+					    c4 01 07
+					    c5 01 03
+					    c6 01 03
+					    c7 01 03
+					    c8 01 03
+					    c9 01 09
+					    ca 01 0d
+					    cb 01 01
+					    cc 01 06
+					    cd 01 1b
+					    ce 01 08
+					    cf 01 00
+
+					    /* Change to Page 6 */
+					    ff 05 ff 98 06 04 06
+					    /* GIP (Gate driver in Panel) timing */
+					    00 01 20
+					    01 01 04
+					    02 01 00
+					    03 01 00
+					    04 01 01
+					    05 01 01
+					    06 01 88
+					    07 01 04
+					    08 01 01
+					    09 01 90
+					    0a 01 03
+					    0b 01 01
+					    0c 01 01
+					    0d 01 01
+					    0e 01 00
+					    0f 01 00
+					    10 01 55
+					    11 01 53
+					    12 01 01
+					    13 01 0d
+					    14 01 0d
+					    15 01 43
+					    16 01 0b
+					    17 01 00
+					    18 01 00
+					    19 01 00
+					    1a 01 00
+					    1b 01 00
+					    1c 01 00
+					    1d 01 00
+					    20 01 01
+					    21 01 23
+					    22 01 45
+					    23 01 67
+					    24 01 01
+					    25 01 23
+					    26 01 45
+					    27 01 67
+					    30 01 02
+					    31 01 22
+					    32 01 11
+					    33 01 aa
+					    34 01 bb
+					    35 01 66
+					    36 01 00
+					    37 01 22
+					    38 01 22
+					    39 01 22
+					    3a 01 22
+					    3b 01 22
+					    3c 01 22
+					    3d 01 22
+					    3e 01 22
+					    3f 01 22
+					    40 01 22
+
+					    /* Change to Page 5 */
+					    ff 05 ff 98 06 04 05
+					    /* Backlight Control */
+					    09 01 fc
+					    /* Light Adaptive backlight control ON, Enable SRE function,
+					     * Backlight LED ON
+					     */
+					    07 01 bc
+
+					    /* Change to Page 0 */
+					    ff 05 ff 98 06 04 00
+					    /* MADCTL: RGB order, no horizontal/vertical flip */
+					    36 01 00];
+				status = "okay";
+			};
 		};
 
 		test_led_strip_matrix {
