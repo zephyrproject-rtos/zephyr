@@ -10,6 +10,12 @@ tests:
       - native_sim
       - native_sim/native/64
     extra_args: "CONFIG_GPIO=y"
+  drivers.adc.async.build:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_ADC_ASYNC=y
   drivers.adc.cc32xx.build:
     platform_allow: cc3220sf_launchxl
   drivers.adc.ite.it8xxx2.build:
