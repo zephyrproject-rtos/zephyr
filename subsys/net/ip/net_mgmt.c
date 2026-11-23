@@ -77,6 +77,8 @@ static uint64_t mgmt_current_event;
 static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
 				   const void *info, size_t length)
 {
+	k_timeout_t timeout = K_MSEC(CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT);
+
 #ifndef CONFIG_NET_MGMT_EVENT_INFO
 	ARG_UNUSED(info);
 	ARG_UNUSED(length);
@@ -104,8 +106,14 @@ static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
 	new_event.event = mgmt_event;
 	new_event.iface = iface;
 
-	if (k_msgq_put(&event_msgq, &new_event,
-		K_MSEC(CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT)) != 0) {
+	/* Only the thread of the work queue that delivers the events makes
+	 * room in the queue, so it does not wait for room itself.
+	 */
+	if (k_work_queue_thread_get(mgmt_work_q) == k_current_get()) {
+		timeout = K_NO_WAIT;
+	}
+
+	if (k_msgq_put(&event_msgq, &new_event, timeout) != 0) {
 		NET_WARN("Failure to push event (0x%" PRIx64 "), "
 			 "handling (0x%" PRIx64 ", %s), "
 			 "try increasing the 'CONFIG_NET_MGMT_EVENT_QUEUE_SIZE' "
