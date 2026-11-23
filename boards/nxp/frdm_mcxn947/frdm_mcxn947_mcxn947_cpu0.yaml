@@ -39,6 +39,7 @@ supported:
   - tsi
   - usb_device
   - usbd
+  - usbh
   - video
   - watchdog
   - edac
