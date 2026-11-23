@@ -986,6 +986,45 @@ static enum smf_state_result pe_suspend_run(void *obj)
 }
 
 /**
+ * @brief Returns true if the port is attached as a Source.
+ */
+static bool pe_is_source(const struct device *dev)
+{
+	return IS_ENABLED(CONFIG_USBC_CSM_SUPPORTS_SOURCE) &&
+	       pe_get_power_role(dev) == TC_ROLE_SOURCE;
+}
+
+/**
+ * @brief Leaves a Soft Reset that completed.
+ *
+ * The Soft Reset states are shared by both power roles. Once the Soft Reset
+ * completes, a Source sends its capabilities and a Sink waits for them.
+ */
+static void pe_soft_reset_complete(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+
+	/*
+	 * The Soft Reset was the AMS. Left set, this flag has the Protocol
+	 * Layer of a Source hold every message of the renegotiation for
+	 * tSinkTx, as if each started a new AMS, and the Accept then misses
+	 * the Sink's SenderResponseTimer.
+	 */
+	atomic_clear_bit(data->pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
+
+	pe_set_state(dev,
+		     pe_is_source(dev) ? PE_SRC_SEND_CAPABILITIES : PE_SNK_WAIT_FOR_CAPABILITIES);
+}
+
+/**
+ * @brief Leaves a Soft Reset that failed, with a Hard Reset.
+ */
+static void pe_soft_reset_failed(const struct device *dev)
+{
+	pe_set_state(dev, pe_is_source(dev) ? PE_SRC_HARD_RESET : PE_SNK_HARD_RESET);
+}
+
+/**
  * @brief The PE_SOFT_RESET state has two embedded states
  *	  that handle sending an accept message.
  */
@@ -1034,7 +1073,7 @@ static enum smf_state_result pe_soft_reset_run(void *obj)
 		 *      1: Accept message sent to SOP
 		 */
 		if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE)) {
-			pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
+			pe_soft_reset_complete(dev);
 		} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
 			/*
 			 * The Policy Engine Shall transition to the
@@ -1042,7 +1081,7 @@ static enum smf_state_result pe_soft_reset_run(void *obj)
 			 *      1: Protocol Layer indicates that a
 			 *         transmission error has occurred.
 			 */
-			pe_set_state(dev, PE_SNK_HARD_RESET);
+			pe_soft_reset_failed(dev);
 		}
 		break;
 	}
@@ -1058,7 +1097,7 @@ static void pe_send_soft_reset_entry(void *obj)
 	struct policy_engine *pe = (struct policy_engine *)obj;
 	const struct device *dev = pe->dev;
 
-	LOG_INF("PE_SNK_Send_Soft_Reset");
+	LOG_INF("PE_Send_Soft_Reset");
 
 	/* Reset Protocol Layer */
 	prl_reset(dev);
@@ -1099,7 +1138,7 @@ static enum smf_state_result pe_send_soft_reset_run(void *obj)
 		header = prl_rx->emsg.header;
 
 		if (received_control_message(dev, header, PD_CTRL_ACCEPT)) {
-			pe_set_state(dev, PE_SNK_WAIT_FOR_CAPABILITIES);
+			pe_soft_reset_complete(dev);
 		}
 	} else if (atomic_test_and_clear_bit(pe->flags, PE_FLAGS_PROTOCOL_ERROR)) {
 		/*
@@ -1107,7 +1146,7 @@ static enum smf_state_result pe_send_soft_reset_run(void *obj)
 		 *      1: A SenderResponseTimer timeout occurs (Handled in Super State)
 		 *      2: Or the Protocol Layer indicates that a transmission error has occurred
 		 */
-		pe_set_state(dev, PE_SNK_HARD_RESET);
+		pe_soft_reset_failed(dev);
 	}
 	return SMF_EVENT_PROPAGATE;
 }
@@ -1257,7 +1296,7 @@ static enum smf_state_result pe_sender_response_run(void *obj)
 		 * depending on the current Data Role
 		 */
 		case PE_SEND_SOFT_RESET:
-			pe_set_state(dev, PE_SNK_HARD_RESET);
+			pe_soft_reset_failed(dev);
 			break;
 		case PE_DRS_SEND_SWAP:
 			pe_set_ready_state(dev);
