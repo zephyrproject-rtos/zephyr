@@ -943,28 +943,65 @@ static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16]
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_RL, buf, NULL);
 }
 
-/* Peer identities whose resolving list removal was deferred */
+/* Peer identities whose resolving list removal was deferred.
+ *
+ * The host lock (bt_dev_lock()) protects this queue and the state of the keys, so that a
+ * deferred update is handed over to bt_id_pending_keys_update() exactly once. The update itself
+ * sends HCI commands and is done without the lock.
+ */
 static bt_addr_le_t pending_id_del_addrs[CONFIG_BT_MAX_PAIRED];
 static size_t pending_id_del_count;
 
 static bool id_del(const bt_addr_le_t *addr, struct bt_keys *keys);
 
+static void keys_state_set(struct bt_keys *keys, uint8_t bits)
+{
+	bt_dev_lock();
+	keys->state |= bits;
+	bt_dev_unlock();
+}
+
+static void keys_state_clear(struct bt_keys *keys, uint8_t bits)
+{
+	bt_dev_lock();
+	keys->state &= ~bits;
+	bt_dev_unlock();
+}
+
 static void pending_id_update(struct bt_keys *keys, void *data)
 {
-	if (keys->state & BT_KEYS_ID_PENDING_ADD) {
-		keys->state &= ~BT_KEYS_ID_PENDING_ADD;
+	bool pending;
+
+	bt_dev_lock();
+	pending = (keys->state & BT_KEYS_ID_PENDING_ADD) != 0U;
+	keys->state &= ~BT_KEYS_ID_PENDING_ADD;
+	bt_dev_unlock();
+
+	if (pending) {
 		bt_id_add(keys);
 	}
+}
+
+static bool pending_id_del_get(bt_addr_le_t *addr)
+{
+	bool found;
+
+	bt_dev_lock();
+	found = pending_id_del_count > 0U;
+	if (found) {
+		pending_id_del_count--;
+		bt_addr_le_copy(addr, &pending_id_del_addrs[pending_id_del_count]);
+	}
+	bt_dev_unlock();
+
+	return found;
 }
 
 static void pending_id_del_update(void)
 {
 	bt_addr_le_t addr;
 
-	while (pending_id_del_count > 0U) {
-		pending_id_del_count--;
-		bt_addr_le_copy(&addr, &pending_id_del_addrs[pending_id_del_count]);
-
+	while (pending_id_del_get(&addr)) {
 		if (!id_del(&addr, NULL)) {
 			break;
 		}
@@ -973,8 +1010,13 @@ static void pending_id_del_update(void)
 
 void bt_id_pending_keys_update_set(struct bt_keys *keys, uint8_t flag)
 {
+	keys_state_set(keys, flag);
+
+	/* Set after the state of the keys, so that a concurrent bt_id_pending_keys_update()
+	 * cannot clear the flag and then miss the keys: if it does not find them, the flag is
+	 * set once more here for the next one.
+	 */
 	atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
-	keys->state |= flag;
 }
 
 void bt_id_pending_keys_update(void)
@@ -1070,7 +1112,7 @@ void bt_id_add(struct bt_keys *keys)
 	/* Nothing to be done if host-side resolving is used */
 	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		bt_dev.le.rl_entries++;
-		keys->state |= BT_KEYS_ID_ADDED;
+		keys_state_set(keys, BT_KEYS_ID_ADDED);
 		return;
 	}
 
@@ -1143,7 +1185,7 @@ void bt_id_add(struct bt_keys *keys)
 		}
 
 		bt_dev.le.rl_entries++;
-		keys->state |= BT_KEYS_ID_ADDED;
+		keys_state_set(keys, BT_KEYS_ID_ADDED);
 
 		goto done;
 	}
@@ -1155,7 +1197,7 @@ void bt_id_add(struct bt_keys *keys)
 	}
 
 	bt_dev.le.rl_entries++;
-	keys->state |= BT_KEYS_ID_ADDED;
+	keys_state_set(keys, BT_KEYS_ID_ADDED);
 
 	/*
 	 * According to Core Spec. 5.0 Vol 1, Part A 5.4.5 Privacy Feature
@@ -1218,6 +1260,8 @@ static int hci_id_del(const bt_addr_le_t *addr)
 
 static void pending_id_del_set(const bt_addr_le_t *addr, struct bt_keys *keys)
 {
+	bt_dev_lock();
+
 	__ASSERT_NO_MSG(pending_id_del_count < ARRAY_SIZE(pending_id_del_addrs));
 
 	if (pending_id_del_count < ARRAY_SIZE(pending_id_del_addrs)) {
@@ -1231,6 +1275,9 @@ static void pending_id_del_set(const bt_addr_le_t *addr, struct bt_keys *keys)
 		keys->state &= ~BT_KEYS_ID_ADDED;
 	}
 
+	bt_dev_unlock();
+
+	/* Set after the address is queued, as in bt_id_pending_keys_update_set() */
 	atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
 }
 
@@ -1248,7 +1295,7 @@ static bool id_del(const bt_addr_le_t *addr, struct bt_keys *keys)
 			bt_dev.le.rl_entries--;
 		}
 		if (keys != NULL) {
-			keys->state &= ~BT_KEYS_ID_ADDED;
+			keys_state_clear(keys, BT_KEYS_ID_ADDED);
 		}
 		return true;
 	}
@@ -1302,11 +1349,13 @@ static bool id_del(const bt_addr_le_t *addr, struct bt_keys *keys)
 	if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		bt_dev.le.rl_entries--;
 		if (keys != NULL) {
-			keys->state &= ~BT_KEYS_ID_ADDED;
+			keys_state_clear(keys, BT_KEYS_ID_ADDED);
 		}
 		/* The rebuilt list holds none of the queued removals */
+		bt_dev_lock();
 		bt_dev.le.rl_entries -= (uint8_t)pending_id_del_count;
 		pending_id_del_count = 0U;
+		bt_dev_unlock();
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    IS_ENABLED(CONFIG_BT_PRIVACY)) {
 			bt_keys_foreach_type(BT_KEYS_ALL, keys_add_id, NULL);
@@ -1324,7 +1373,7 @@ static bool id_del(const bt_addr_le_t *addr, struct bt_keys *keys)
 
 	bt_dev.le.rl_entries--;
 	if (keys != NULL) {
-		keys->state &= ~BT_KEYS_ID_ADDED;
+		keys_state_clear(keys, BT_KEYS_ID_ADDED);
 	}
 
 done:
@@ -2563,7 +2612,9 @@ int bt_id_init(void)
 	int err;
 
 #if defined(CONFIG_BT_SMP)
+	bt_dev_lock();
 	pending_id_del_count = 0U;
+	bt_dev_unlock();
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
