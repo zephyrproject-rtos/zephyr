@@ -1,6 +1,4 @@
 common:
-  platform_key:
-    - arch
   min_ram: 32
   timeout: 300
   tags:
