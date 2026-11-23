@@ -279,9 +279,8 @@ int lora_radio_configure(const struct device *dev, lora_radio_config_fn fn, cons
 	}
 
 	ret = fn(dev, cfg);
-	if (ret >= 0) {
-		data->configured = true;
-	}
+	/* A configuration that failed may have left the radio half set up */
+	data->configured = (ret >= 0);
 
 	lora_radio_op_end(dev, 0);
 
