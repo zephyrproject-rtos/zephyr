@@ -350,7 +350,10 @@ static inline int z_impl_peci_disable(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  * @param msg Structure representing a PECI transaction.
  *
- * @return 0 on success, negative errno value on failure.
+ * @retval 0 on success.
+ * @retval -EINVAL if a buffer's buf is NULL but its len carries data
+ *         (see struct peci_buf).
+ * @return negative errno value on other failures.
  */
 
 __syscall int peci_transfer(const struct device *dev, struct peci_msg *msg);

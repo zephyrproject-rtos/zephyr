@@ -250,6 +250,11 @@ static int peci_it8xxx2_transfer(const struct device *dev, struct peci_msg *msg)
 
 	ret_code = 0;
 
+	if (((peci_tx_buf->len > 1U) && (peci_tx_buf->buf == NULL)) ||
+	    ((peci_rx_buf->len > 0U) && (peci_rx_buf->buf == NULL))) {
+		return -EINVAL;
+	}
+
 	if (!(peci_regs->HOCTLR & PECIHEN)) {
 		LOG_ERR("[PECI] Please call the peci_enable() first.\r\n");
 		return -ECONNREFUSED;

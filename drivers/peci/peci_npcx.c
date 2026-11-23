@@ -151,7 +151,9 @@ static int peci_npcx_transfer(const struct device *dev, struct peci_msg *msg)
 	k_sem_take(&data->lock, K_FOREVER);
 
 	if (peci_tx_buf->len > PECI_NPCX_MAX_TX_BUF_LEN ||
-	    peci_rx_buf->len > PECI_NPCX_MAX_RX_BUF_LEN) {
+	    peci_rx_buf->len > PECI_NPCX_MAX_RX_BUF_LEN ||
+	    ((peci_tx_buf->len > 1U) && (peci_tx_buf->buf == NULL)) ||
+	    ((peci_rx_buf->len > 0U) && (peci_rx_buf->buf == NULL))) {
 		ret = -EINVAL;
 		goto out;
 	}

@@ -404,6 +404,7 @@ static int espi_peci_receive(const struct device *dev, struct peci_msg *msg)
  *
  * @retval 0 on success.
  * @retval -ENODEV if the device/transport is not enabled.
+ * @retval -EINVAL if a buffer is NULL but its length carries data.
  * @return negative errno code on failure.
  *
  * @note If the device is not enabled, this currently returns 0 without doing
@@ -417,6 +418,11 @@ int espi_peci_transfer(const struct device *dev, struct peci_msg *msg)
 
 	if (!data->enabled) {
 		return -ENODEV;
+	}
+
+	if (((msg->tx_buffer.len > 1U) && (msg->tx_buffer.buf == NULL)) ||
+	    ((msg->rx_buffer.len > 0U) && (msg->rx_buffer.buf == NULL))) {
+		return -EINVAL;
 	}
 
 	ret = espi_peci_send(dev, msg);
