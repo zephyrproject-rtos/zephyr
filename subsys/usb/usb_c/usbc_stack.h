@@ -88,6 +88,10 @@ struct usbc_port_data {
 	struct protocol_layer_tx_t *prl_tx;
 	/** Protocol Hard Reset Layer state machine object */
 	struct protocol_hard_reset_t *prl_hr;
+#ifdef CONFIG_USBC_CHUNKING
+	/** Chunked Rx Handler state machine object */
+	struct protocol_layer_rch_t *prl_rch;
+#endif
 	/** Enables or Disables the Protocol Layer state machine */
 	bool prl_enabled;
 	/** The state of the Protocol Layer state machine */

@@ -34,6 +34,39 @@ struct protocol_layer_rx_t {
 	struct pd_msg emsg;
 };
 
+#ifdef CONFIG_USBC_CHUNKING
+/**
+ * @brief Chunked Rx Handler State Machine Object
+ *
+ * Reassembles a Chunked Extended Message arriving as a sequence of chunks,
+ * each of which carries at most PD_MAX_EXTENDED_MSG_CHUNK_LEN payload bytes.
+ * See Chunked Rx Handler, USB PD Specification Revision 3.1, 6.11.2.1.2.
+ */
+struct protocol_layer_rch_t {
+	/** state machine context */
+	struct smf_ctx ctx;
+	/** Port device */
+	const struct device *dev;
+	/** state machine flags */
+	atomic_t flags;
+	/** Chunk Number expected in the next chunk */
+	uint16_t chunk_number_expected;
+	/** Payload bytes reassembled so far */
+	uint32_t num_bytes_received;
+	/** Message type of the extended message being reassembled */
+	uint8_t msg_type;
+	/** Packet type of the extended message being reassembled */
+	enum pd_packet_type pkt_type;
+	/** Reassembly buffer, copied to prl_rx->emsg once complete */
+	struct pd_msg emsg;
+
+	/* Timers */
+
+	/** tChunkSenderResponse timer */
+	struct usbc_timer_t pd_t_chunk_sender_response;
+};
+#endif /* CONFIG_USBC_CHUNKING */
+
 /**
  * @brief Message Transmission State Machine Object
  */

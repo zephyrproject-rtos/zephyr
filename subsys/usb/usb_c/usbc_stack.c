@@ -55,6 +55,8 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 	static struct protocol_layer_rx_t prl_rx_##inst;                                           \
 	static struct protocol_layer_tx_t prl_tx_##inst;                                           \
 	static struct protocol_hard_reset_t prl_hr_##inst;                                         \
+	IF_ENABLED(CONFIG_USBC_CHUNKING,                                                           \
+		   (static struct protocol_layer_rch_t prl_rch_##inst;))                           \
                                                                                                    \
 	static void run_usbc_##inst(void *port_dev, void *unused1, void *unused2)                  \
 	{                                                                                          \
@@ -78,6 +80,7 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 		.tc = &tc_##inst,                                                                  \
 		.pe = &pe_##inst,                                                                  \
 		.prl_rx = &prl_rx_##inst,                                                          \
+		IF_ENABLED(CONFIG_USBC_CHUNKING, (.prl_rch = &prl_rch_##inst,))                    \
 		.prl_tx = &prl_tx_##inst,                                                          \
 		.prl_hr = &prl_hr_##inst,                                                          \
 		.tcpc = DEVICE_DT_GET(DT_INST_PROP(inst, tcpc)),                                   \
