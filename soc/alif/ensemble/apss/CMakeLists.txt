@@ -3,3 +3,4 @@
 
 zephyr_include_directories(.)
 zephyr_sources(mmu_regions.c)
+zephyr_sources_ifdef(CONFIG_ENSEMBLE_APSS_SECURE soc.c)

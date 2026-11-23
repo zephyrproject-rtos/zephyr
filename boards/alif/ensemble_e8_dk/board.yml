@@ -11,3 +11,5 @@ board:
       cpucluster: rtss_he
     - name: sram
       cpucluster: rtss_hp
+    - name: smp
+      cpucluster: apss

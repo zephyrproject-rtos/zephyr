@@ -41,6 +41,8 @@ The following board identifiers are supported:
 +--------------------------------------------------+-------------+----------+
 | ``ensemble_e8_dk/ae822fa0e5597ls0/apss``         | E8          | APSS     |
 +--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae822fa0e5597ls0/apss/smp``     | E8          | APSS     |
++--------------------------------------------------+-------------+----------+
 
 More information about the board can be found at the
 `Ensemble E8 DevKit Product Page`_.
@@ -170,8 +172,9 @@ Building and flashing for the Application Processor (APSS):
 
 .. note::
 
-   On the APSS (Cortex-A32) cluster, Zephyr boots in the Non-Secure state,
-   with Arm Trusted Firmware-A (TF-A) acting as the first-stage bootloader
+   With the ``ensemble_e8_dk/ae822fa0e5597ls0/apss`` target, Zephyr boots
+   in the Non-Secure state on one Cortex-A32 core, with Arm Trusted
+   Firmware-A (TF-A) acting as the first-stage bootloader
    that initializes the system and hands off to the Zephyr image.
    The TF-A port for the Ensemble APSS cluster is not yet available upstream
    and is currently maintained in Alif's public repository:
@@ -188,6 +191,15 @@ Building and flashing for the Application Processor (APSS):
 .. code-block:: console
 
    west flash --bl32-bin=<path to bl32.bin>
+
+The ``apss/smp`` variant runs Zephyr on both Cortex-A32 cores in the Secure
+state, with no TF-A: the Secure Enclave starts both cores at the Zephyr image
+entry. ``west flash`` needs no BL32 image for it:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: ensemble_e8_dk/ae822fa0e5597ls0/apss/smp
+   :goals: build flash
 
 Debugging
 =========

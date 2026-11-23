@@ -84,6 +84,20 @@ config AARCH32_ARMV8_A
 	  based on a Memory Management Unit (MMU) and supports the A32 and T32
 	  instruction sets.
 
+config CPU_CORTEX_A32_SMPEN
+	bool "Set Cortex-A32 CPUECTLR.SMPEN"
+	depends on CPU_CORTEX_A32
+	depends on ARM_AARCH32_MMU
+	help
+	  Set the SMPEN bit of the Cortex-A32 CPU Extended Control Register
+	  (CPUECTLR) on every core, before the MMU set-up enables its data
+	  cache, so that the cache takes part in the cluster's coherency. The
+	  Cortex-A32 TRM requires this even with a single core.
+
+	  Enable it when Zephyr is the first software to run on the core, in
+	  Secure state. Leave it disabled when firmware such as Trusted
+	  Firmware-A runs first and sets it.
+
 config AARCH32_ARMV8_A_MONITOR_INIT
 	bool "Perform Monitor mode initialization at reset"
 	depends on AARCH32_ARMV8_A
@@ -95,7 +109,8 @@ config AARCH32_ARMV8_A_MONITOR_INIT
 	  On ARMv8-A AArch32 platforms booting bare-metal without Trusted
 	  Firmware-A, the core resets into Secure SVC mode. Certain system
 	  registers are only accessible from Monitor mode, such as ICC_MSRE
-	  (enables GICv3 CPU interface system register access). This option
+	  (enables GICv3 CPU interface system register access) and CNTVOFF
+	  (the virtual counter offset, which is set to zero). This option
 	  briefly switches to Monitor mode at reset to configure such
 	  registers before returning to SVC. This block executes on every
 	  cpu at reset, before the SMP voting.
@@ -320,3 +335,19 @@ endif # CPU_AARCH32_CORTEX_R
 
 config TEST_EXTRA_STACK_SIZE
 	default 1024 if SMP
+
+config ARM_SMP_FIXED_BOOT_CPU
+	bool "Boot on the first CPU node, without a voting lock"
+	depends on CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R
+	help
+	  Make the core of the first CPU node in the devicetree the primary
+	  core, instead of electing one with a voting lock at reset. The other
+	  cores wait until the kernel starts them, so booting does not depend
+	  on .data being initialized before the cores leave reset.
+
+	  Enable it for XIP images on SoCs that start every core at the image
+	  entry, or that start the secondary cores with PM_CPU_OPS; on the
+	  latter, the core that boots must be the first CPU node. On SoCs that
+	  start every core at reset, it also lets an image built for fewer
+	  cores, such as one with MP_MAX_NUM_CPUS set to 1, run on the first
+	  MP_MAX_NUM_CPUS CPU nodes only: the other cores stay parked.

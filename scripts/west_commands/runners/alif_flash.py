@@ -131,12 +131,21 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
         else:
             raise ValueError("Unknown build core")
 
+        # An APSS image built to run in Secure state is booted without BL32
+        secure = toc_entry == "A32_APP" and self.build_conf.getboolean(
+            'CONFIG_ENSEMBLE_APSS_SECURE'
+        )
+        bl32_bin = self.bl32_bin
+        if secure and bl32_bin:
+            self.logger.warning("Image runs in Secure state, ignoring --bl32-bin")
+            bl32_bin = None
+
         shutil.copy(self.cfg.bin_file, self.tools_dir / self.images_dir / 'zephyr.bin')
-        if self.bl32_bin:
-            shutil.copy(self.bl32_bin, self.tools_dir / self.images_dir / 'bl32.bin')
+        if bl32_bin:
+            shutil.copy(bl32_bin, self.tools_dir / self.images_dir / 'bl32.bin')
 
         # Prepare json to create AToC.
-        self.prepare_json(toc_entry, fls_addr, fls_size, self.bl32_bin, self.bl32_base)
+        self.prepare_json(toc_entry, fls_addr, fls_size, bl32_bin, self.bl32_base, secure)
 
         # Generate ToC. The SE tools resolve their files relative to the
         # working directory.
@@ -196,7 +205,7 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
                 "re-run tools-config in the Alif SE tools directory"
             )
 
-    def prepare_json(self, toc_entry, fls_addr, fls_size, bl32_bin, bl32_base):
+    def prepare_json(self, toc_entry, fls_addr, fls_size, bl32_bin, bl32_base, secure=False):
         """Prepare JSON for ToC generation."""
         cfg_ip_path = self.tools_dir / self.cfg_ip_file
         cfg_op_path = self.tools_dir / self.cfg_op_file
@@ -216,7 +225,7 @@ class AlifImageBinaryRunner(ZephyrBinaryRunner):
         else:
             raise NotImplementedError(f'Unsupported address base 0x{fls_addr:x} to write')
 
-        if toc_entry == "A32_APP":
+        if toc_entry == "A32_APP" and not secure:
             # TF-A binary also required for APSS core, error if not provided
             if not bl32_bin or not bl32_bin.is_file():
                 raise ValueError("BL32 binary is required for APSS core, supply with --bl32-bin")

@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ensemble_e8_dk/ae822fa0e5597ls0/apss/smp
+name: Alif Ensemble E8 DevKit AE822FA0E5597LS0 APSS (Secure, SMP)
+type: mcu
+arch: arm
+vendor: alif
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - netif:eth
+  - ptp_clock
+  - smp

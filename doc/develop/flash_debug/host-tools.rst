@@ -63,7 +63,9 @@ Flash with:
 a value without the ``/dev/`` prefix is expanded to ``/dev/tty<value>``, so ``USB0`` selects
 ``/dev/ttyUSB0``. Options for ``app-write-mram`` are passed with
 ``--tool-opt``, for example ``--tool-opt="-b 55000"`` to override the baud rate. Images for the
-Cortex-A32 APSS cores also need a BL32 image built with Alif's TF-A, passed with ``--bl32-bin``.
+Cortex-A32 APSS cores also need a BL32 image built with Alif's TF-A, passed with ``--bl32-bin``,
+unless they are built to run in Secure state (:kconfig:option:`CONFIG_ENSEMBLE_APSS_SECURE`): the
+Secure Enclave then boots the Zephyr image directly.
 
 Refer to the `Alif Security Toolkit User Guide`_ for details on the tools.
 
