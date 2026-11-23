@@ -54,6 +54,11 @@ bool source_dpm_requests(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 	struct policy_engine *pe = data->pe;
 
+	/* Requests common to both power roles, as sink_dpm_requests() does */
+	if (common_dpm_requests(dev)) {
+		return true;
+	}
+
 	if (pe->dpm_request == REQUEST_GET_SNK_CAPS) {
 		atomic_set_bit(pe->flags, PE_FLAGS_DPM_INITIATED_AMS);
 		pe_set_state(dev, PE_GET_SINK_CAP);
