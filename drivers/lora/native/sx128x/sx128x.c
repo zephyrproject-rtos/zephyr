@@ -1,0 +1,1125 @@
+/*
+ * Copyright (c) 2026 Giuseppe Fabiano <gfabiano40@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Native driver for the Semtech SX1280/SX1281 2.4 GHz transceivers, with
+ * the LoRa modem and, under CONFIG_LORA_GFSK, the GFSK one.
+ *
+ * No sleep-mode support yet: the chip stays in STDBY_RC between operations.
+ */
+
+#include <string.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/lora.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/math_extras.h>
+
+#include "sx128x.h"
+#include "sx128x_gfsk.h"
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(sx128x, CONFIG_LORA_LOG_LEVEL);
+
+/* SetTx/SetRx PeriodBase: use the 1 ms unit throughout for simplicity. */
+#define SX128X_PERIOD_BASE_1MS      0x02
+#define SX128X_PERIOD_BASE_4MS      0x03
+/*
+ * The radio abandons a transmission that takes twice its time on air plus
+ * this; the host waits the same margin again before assuming the interrupt
+ * was lost.
+ */
+#define SX128X_TX_TIMEOUT_MARGIN_MS 100
+#define SX128X_RX_CONTINUOUS        0xFFFF
+#define SX128X_IRQ_POLL_INTERVAL    K_MSEC(1)
+
+/*
+ * A corrupted LoRa header raises HeaderError without RxDone or RxTimeout and
+ * leaves the receiver stuck (datasheet errata 16.2), so it is handled like a
+ * CRC error.
+ */
+#define SX128X_IRQ_RX_ERROR (SX128X_IRQ_CRC_ERROR | SX128X_IRQ_HEADER_ERROR)
+
+/*
+ * One mask for transmit and receive: TX_DONE cannot fire while receiving,
+ * and keeping the mask unchanged lets sx128x_set_dio_irq_params() skip the
+ * SPI command on every RX/TX turnaround.
+ */
+#define SX128X_IRQ_TXRX                                                                            \
+	(SX128X_IRQ_TX_DONE | SX128X_IRQ_RX_DONE | SX128X_IRQ_RX_TX_TIMEOUT | SX128X_IRQ_RX_ERROR)
+
+/* SX128X SetTxParams power field is an offset from -18 dBm. */
+#define SX128X_TX_POWER_MIN_DBM -18
+#define SX128X_TX_POWER_MAX_DBM 13
+
+static int bandwidth_to_reg(enum lora_signal_bandwidth bw, uint8_t *reg)
+{
+	/*
+	 * The SX128X's 2.4 GHz LoRa mode only supports these four
+	 * bandwidths. lora.h's enum values already anticipate this (the
+	 * *_KHZ names are nominal; the SX128X's real bandwidths are
+	 * 203.125/406.25/812.5/1625 kHz).
+	 */
+	switch (bw) {
+	case BW_200_KHZ:
+		*reg = SX128X_LORA_BW_203;
+		return 0;
+	case BW_400_KHZ:
+		*reg = SX128X_LORA_BW_406;
+		return 0;
+	case BW_800_KHZ:
+		*reg = SX128X_LORA_BW_812;
+		return 0;
+	case BW_1600_KHZ:
+		*reg = SX128X_LORA_BW_1625;
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int validate_config(const struct lora_modem_config *config)
+{
+	uint8_t bw_reg;
+
+	if (config == NULL) {
+		return -EINVAL;
+	}
+
+	if (bandwidth_to_reg(config->bandwidth, &bw_reg) < 0) {
+		LOG_ERR("Unsupported bandwidth for SX128X: %d", config->bandwidth);
+		return -EINVAL;
+	}
+
+	if (config->datarate < SF_5 || config->datarate > SF_12) {
+		LOG_ERR("Unsupported spreading factor: %d", config->datarate);
+		return -EINVAL;
+	}
+	if (config->frequency < SX128X_FREQ_MIN_HZ || config->frequency > SX128X_FREQ_MAX_HZ ||
+	    config->coding_rate < CR_4_5 || config->coding_rate > CR_4_8 ||
+	    config->preamble_len == 0 || config->cad.mode < LORA_CAD_MODE_NONE ||
+	    config->cad.mode > LORA_CAD_MODE_LBT) {
+		return -EINVAL;
+	}
+	if (config->cad.detection_minimum != 0) {
+		return -ENOTSUP;
+	}
+	switch ((int)config->cad.symbol_num) {
+	case 0:
+	case LORA_CAD_SYMB_1:
+	case LORA_CAD_SYMB_2:
+	case LORA_CAD_SYMB_4:
+	case LORA_CAD_SYMB_8:
+	case LORA_CAD_SYMB_16:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static uint8_t encode_preamble_len(uint16_t symbols)
+{
+	uint8_t exponent = 0;
+	uint32_t mant = symbols ? symbols : 1;
+
+	while (mant > 15 && exponent < 15) {
+		mant = (mant + 1) / 2;
+		exponent++;
+	}
+
+	return (uint8_t)((exponent << 4) | MIN(mant, 15));
+}
+
+static int sx128x_set_standby(const struct device *dev, uint8_t mode)
+{
+	const struct sx128x_hal_config *config = dev->config;
+	struct sx128x_data *data = dev->data;
+	int ret;
+
+	ret = sx128x_spi_write_cmd(dev, SX128X_CMD_SET_STANDBY, &mode, 1);
+
+	/*
+	 * Whatever was running may have latched an interrupt no one handles.
+	 * The global IRQ mask always equals the DIO mask, so a latched flag
+	 * holds the DIO line high: with the line low there is nothing to
+	 * clear, and the next operation can skip ClearIrqStatus.
+	 */
+	if (config->irq.port == NULL || gpio_pin_get_dt(&config->irq) != 0) {
+		data->irq_clean = false;
+	}
+
+	return ret;
+}
+
+static int sx128x_set_regulator_mode(const struct device *dev, uint8_t mode)
+{
+	return sx128x_spi_write_cmd(dev, SX128X_CMD_SET_REGULATOR_MODE, &mode, 1);
+}
+
+static int sx128x_set_buffer_base_address(const struct device *dev, uint8_t tx_base,
+					  uint8_t rx_base)
+{
+	uint8_t buf[2] = {tx_base, rx_base};
+
+	return sx128x_spi_write_cmd(dev, SX128X_CMD_SET_BUFFER_BASE_ADDRESS, buf, 2);
+}
+
+int sx128x_set_packet_type(const struct device *dev, uint8_t type)
+{
+	return sx128x_spi_write_cmd(dev, SX128X_CMD_SET_PACKET_TYPE, &type, 1);
+}
+
+static int sx128x_set_dio_irq_params(const struct device *dev, uint16_t irq_mask)
+{
+	const struct sx128x_hal_config *config = dev->config;
+	struct sx128x_data *data = dev->data;
+	uint8_t buf[8] = {0};
+	int ret;
+
+	if (data->irq_mask_valid && data->irq_mask == irq_mask) {
+		return 0;
+	}
+
+	sys_put_be16(irq_mask, &buf[0]);
+	if (config->irq.port != NULL) {
+		/* SetDioIrqParams: global mask, then DIO1/2/3 masks. */
+		sys_put_be16(irq_mask, &buf[2 * config->irq_dio]);
+	}
+
+	ret = sx128x_spi_write_cmd(dev, SX128X_CMD_SET_DIO_IRQ_PARAMS, buf, 8);
+	data->irq_mask = irq_mask;
+	data->irq_mask_valid = ret == 0;
+
+	return ret;
+}
+
+static int sx128x_clear_irq_status(const struct device *dev, uint16_t mask)
+{
+	uint8_t buf[2];
+
+	sys_put_be16(mask, buf);
+	return sx128x_spi_write_cmd(dev, SX128X_CMD_CLEAR_IRQ_STATUS, buf, 2);
+}
+
+/*
+ * The interrupt handler clears every flag it reads, so after an operation
+ * that ran to completion nothing is latched and the next one can skip this
+ * command. Anything left over would hold the DIO line high and swallow the
+ * edge of the next interrupt.
+ */
+static int sx128x_clear_stale_irqs(const struct device *dev)
+{
+	struct sx128x_data *data = dev->data;
+	int ret;
+
+	if (data->irq_clean) {
+		return 0;
+	}
+
+	ret = sx128x_clear_irq_status(dev, SX128X_IRQ_ALL);
+	data->irq_clean = ret == 0;
+
+	return ret;
+}
+
+static int sx128x_get_irq_status(const struct device *dev, uint16_t *status)
+{
+	uint8_t buf[2];
+	int ret;
+
+	ret = sx128x_spi_read_cmd(dev, SX128X_CMD_GET_IRQ_STATUS, buf, 2);
+	if (ret == 0) {
+		*status = sys_get_be16(buf);
+	}
+
+	return ret;
+}
+
+static int sx128x_set_rf_frequency(const struct device *dev, uint32_t freq_hz)
+{
+	uint32_t freq_reg =
+		(uint32_t)(((uint64_t)freq_hz << SX128X_FREQ_STEP_SHIFT) / SX128X_XTAL_FREQ_HZ);
+	uint8_t buf[3];
+
+	sys_put_be24(freq_reg, buf);
+	return sx128x_spi_write_cmd(dev, SX128X_CMD_SET_RF_FREQUENCY, buf, 3);
+}
+
+static int sx128x_set_modulation_params(const struct device *dev, uint8_t sf, uint8_t bw,
+					uint8_t cr)
+{
+	uint8_t buf[3] = {sf, bw, cr};
+
+	return sx128x_spi_write_cmd(dev, SX128X_CMD_SET_MODULATION_PARAMS, buf, 3);
+}
+
+static int sx128x_set_packet_params(const struct device *dev, uint16_t preamble_symbols,
+				    uint8_t header_type, uint8_t payload_len, uint8_t crc_mode,
+				    uint8_t iq)
+{
+	uint8_t buf[7] = {
+		encode_preamble_len(preamble_symbols),
+		header_type,
+		payload_len,
+		crc_mode,
+		iq,
+		0x00,
+		0x00,
+	};
+
+	return sx128x_spi_write_cmd(dev, SX128X_CMD_SET_PACKET_PARAMS, buf, 7);
+}
+
+static int sx128x_set_tx_params(const struct device *dev, int8_t power_dbm, uint8_t ramp)
+{
+	const struct sx128x_hal_config *hal = dev->config;
+	int8_t power = power_dbm;
+	uint8_t buf[2];
+
+	if (hal->tx_power_max_valid && power > hal->tx_power_max_dbm) {
+		LOG_WRN("Requested TX power %d dBm exceeds board limit %d dBm "
+			"(external PA/FEM), clamping",
+			power_dbm, hal->tx_power_max_dbm);
+		power = hal->tx_power_max_dbm;
+	}
+
+	power = CLAMP(power, SX128X_TX_POWER_MIN_DBM, SX128X_TX_POWER_MAX_DBM);
+
+	buf[0] = (uint8_t)(power - SX128X_TX_POWER_MIN_DBM);
+	buf[1] = ramp;
+	return sx128x_spi_write_cmd(dev, SX128X_CMD_SET_TX_PARAMS, buf, 2);
+}
+
+/*
+ * SetTx and SetRx take a 16-bit count of a period base. Use 1 ms steps while
+ * they reach, 4 ms steps up to about 262 s, and beyond that no timeout in
+ * the radio at all: the host's own wait then ends the operation. A count of
+ * 0 means no timeout, and for SetRx 0xFFFF means continuous receive.
+ */
+static void sx128x_encode_timeout(uint32_t timeout_ms, uint8_t buf[3])
+{
+	uint32_t count;
+
+	if (timeout_ms < SX128X_RX_CONTINUOUS) {
+		buf[0] = SX128X_PERIOD_BASE_1MS;
+		count = timeout_ms;
+	} else if (DIV_ROUND_UP(timeout_ms, 4U) < SX128X_RX_CONTINUOUS) {
+		buf[0] = SX128X_PERIOD_BASE_4MS;
+		count = DIV_ROUND_UP(timeout_ms, 4U);
+	} else {
+		buf[0] = SX128X_PERIOD_BASE_1MS;
+		count = 0;
+	}
+
+	sys_put_be16((uint16_t)count, &buf[1]);
+}
+
+static int sx128x_set_tx(const struct device *dev, uint32_t timeout_ms)
+{
+	const struct sx128x_hal_config *config = dev->config;
+	struct sx128x_data *data = dev->data;
+	uint8_t buf[3];
+	int ret;
+
+	sx128x_encode_timeout(timeout_ms, buf);
+	ret = sx128x_spi_write_cmd(dev, SX128X_CMD_SET_TX, buf, 3);
+	if (ret == 0 && config->irq.port == NULL) {
+		k_work_reschedule(&data->irq_poll_work, SX128X_IRQ_POLL_INTERVAL);
+	}
+	return ret;
+}
+
+/* Without a timeout, listen for one packet */
+static int sx128x_set_rx(const struct device *dev, uint32_t timeout_ms)
+{
+	const struct sx128x_hal_config *config = dev->config;
+	struct sx128x_data *data = dev->data;
+	uint8_t buf[3];
+	int ret;
+
+	sx128x_encode_timeout(timeout_ms, buf);
+	ret = sx128x_spi_write_cmd(dev, SX128X_CMD_SET_RX, buf, 3);
+	if (ret == 0 && config->irq.port == NULL) {
+		k_work_reschedule(&data->irq_poll_work, SX128X_IRQ_POLL_INTERVAL);
+	}
+	return ret;
+}
+
+static int sx128x_get_rx_buffer_status(const struct device *dev, uint8_t *payload_len,
+				       uint8_t *offset)
+{
+	uint8_t buf[2];
+	int ret;
+
+	ret = sx128x_spi_read_cmd(dev, SX128X_CMD_GET_RX_BUFFER_STATUS, buf, 2);
+	if (ret == 0) {
+		*payload_len = buf[0];
+		*offset = buf[1];
+	}
+
+	return ret;
+}
+
+static bool sx128x_is_gfsk(const struct device *dev)
+{
+	const struct sx128x_data *data = dev->data;
+
+	return IS_ENABLED(CONFIG_LORA_GFSK) && data->gfsk;
+}
+
+static int sx128x_get_packet_status(const struct device *dev, int16_t *rssi, int8_t *snr)
+{
+	uint8_t buf[5];
+	int ret;
+
+	ret = sx128x_spi_read_cmd(dev, SX128X_CMD_GET_PACKET_STATUS, buf, sizeof(buf));
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* rssiSync is -value/2 dBm. LoRa puts it first and follows it with
+	 * the SNR in quarter dB; GFSK has an RFU byte first and no SNR
+	 * (datasheet Table 11-65).
+	 */
+	if (sx128x_is_gfsk(dev)) {
+		*rssi = -((int16_t)buf[1]) / 2;
+		*snr = 0;
+	} else {
+		*rssi = -((int16_t)buf[0]) / 2;
+		*snr = ((int8_t)buf[1]) / 4;
+	}
+
+	return 0;
+}
+
+static void sx128x_set_rf_path(const struct device *dev, bool enable, bool tx)
+{
+	sx128x_spi_set_rf_switch(dev, enable, tx);
+}
+
+static int sx128x_chip_init(const struct device *dev)
+{
+	const struct sx128x_hal_config *hal = dev->config;
+	int ret;
+	uint16_t irq_mask;
+
+	ret = sx128x_hal_reset(dev);
+	if (ret < 0) {
+		if (hal->reset.port == NULL) {
+			LOG_ERR("Power-on startup failed: BUSY did not go low (%d)", ret);
+		} else {
+			LOG_ERR("Reset failed: %d", ret);
+		}
+		return ret;
+	}
+
+	ret = sx128x_set_standby(dev, SX128X_STDBY_RC);
+	if (ret < 0) {
+		LOG_ERR("Set standby failed: %d", ret);
+		return ret;
+	}
+
+	ret = sx128x_set_regulator_mode(dev, hal->regulator_ldo ? SX128X_REGULATOR_LDO
+								: SX128X_REGULATOR_DCDC);
+	if (ret < 0) {
+		LOG_ERR("Set regulator failed: %d", ret);
+		return ret;
+	}
+
+	ret = sx128x_set_buffer_base_address(dev, 0x00, 0x00);
+	if (ret < 0) {
+		LOG_ERR("Set buffer base failed: %d", ret);
+		return ret;
+	}
+
+	ret = sx128x_set_packet_type(dev, SX128X_PACKET_TYPE_LORA);
+	if (ret < 0) {
+		LOG_ERR("Set packet type failed: %d", ret);
+		return ret;
+	}
+
+	irq_mask = SX128X_IRQ_TXRX;
+	ret = sx128x_set_dio_irq_params(dev, irq_mask);
+	if (ret < 0) {
+		LOG_ERR("Set IRQ params failed: %d", ret);
+		return ret;
+	}
+
+	ret = sx128x_clear_stale_irqs(dev);
+	if (ret < 0) {
+		LOG_ERR("Clear IRQ failed: %d", ret);
+		return ret;
+	}
+
+	/*
+	 * Read the packet type back as a proof of SPI communication: MISO stuck
+	 * low or high reads as 0x00 or 0xFF, neither of them LoRa
+	 */
+	uint8_t packet_type = 0xFF;
+
+	ret = sx128x_spi_read_cmd(dev, SX128X_CMD_GET_PACKET_TYPE, &packet_type, 1);
+	if (ret < 0 || packet_type != SX128X_PACKET_TYPE_LORA) {
+		LOG_ERR("Packet type readback failed: ret=%d type=0x%02x", ret, packet_type);
+		return ret < 0 ? ret : -EIO;
+	}
+
+	LOG_INF("SX128X initialized");
+	return 0;
+}
+
+static uint32_t sx128x_lora_airtime(const struct device *dev, uint32_t data_len);
+static int sx128x_set_modem_packet_params(const struct device *dev, uint8_t payload_len);
+static int sx128x_set_tx_base(const struct device *dev, uint8_t base);
+
+int sx128x_config_carrier(const struct device *dev, uint32_t frequency, int8_t tx_power)
+{
+	int ret;
+
+	ret = sx128x_set_rf_frequency(dev, frequency);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return sx128x_set_tx_params(dev, tx_power, SX128X_TX_RAMP_20_US);
+}
+
+static int sx128x_set_lora_sync_word(const struct device *dev,
+				     const struct lora_modem_config *config)
+{
+	uint16_t sync_word;
+	uint8_t buf[2];
+
+	if (config->sync_word != 0) {
+		/* Same nibble layout as the SX126x, and as the other backends */
+		sync_word = 0x0404 | ((config->sync_word & 0xF0) << 8) |
+			    ((config->sync_word & 0x0F) << 4);
+	} else {
+		sync_word = config->public_network ? SX128X_LORA_SYNC_WORD_PUBLIC
+						   : SX128X_LORA_SYNC_WORD_PRIVATE;
+	}
+
+	sys_put_be16(sync_word, buf);
+	return sx128x_spi_write_regs(dev, SX128X_REG_LORA_SYNC_WORD, buf, 2);
+}
+
+static int sx128x_apply_lora_config(const struct device *dev, const void *arg)
+{
+	const struct lora_modem_config *config = arg;
+	struct sx128x_data *data = dev->data;
+	uint8_t bw_reg = 0;
+	uint8_t sf_config;
+	uint8_t freq_error = 0x01;
+	int ret;
+
+	ret = validate_config(config);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->packet_params_valid = false;
+	data->irq_mask_valid = false;
+	data->tx_base = UINT8_MAX;
+	data->irq_clean = false;
+
+	ret = sx128x_set_packet_type(dev, SX128X_PACKET_TYPE_LORA);
+	if (ret == 0) {
+		ret = sx128x_config_carrier(dev, config->frequency, config->tx_power);
+	}
+	if (ret == 0) {
+		ret = bandwidth_to_reg(config->bandwidth, &bw_reg);
+	}
+	if (ret == 0) {
+		ret = sx128x_set_modulation_params(dev, (uint8_t)(config->datarate << 4),
+					   bw_reg, (uint8_t)config->coding_rate);
+	}
+	if (ret == 0) {
+		sf_config = config->datarate <= SF_6 ? 0x1E :
+			    config->datarate <= SF_8 ? 0x37 : 0x32;
+		ret = sx128x_spi_write_regs(dev, SX128X_REG_LORA_SF_CONFIG, &sf_config, 1);
+	}
+	if (ret == 0) {
+		ret = sx128x_spi_write_regs(dev, SX128X_REG_LORA_FREQ_ERROR, &freq_error, 1);
+	}
+	if (ret == 0) {
+		ret = sx128x_set_lora_sync_word(dev, config);
+	}
+	if (ret == 0) {
+		data->config = *config;
+		data->gfsk = false;
+	}
+	return ret;
+}
+
+static int sx128x_lora_config(const struct device *dev, const struct lora_modem_config *config)
+{
+	return lora_radio_configure(dev, sx128x_apply_lora_config, config);
+}
+
+static int sx128x_set_lora_packet_params(const struct device *dev, uint8_t payload_len)
+{
+	struct sx128x_data *data = dev->data;
+
+	/* With an implicit header the length is fixed, for TX and RX alike */
+	if (data->config.explicit_header_disable) {
+		return sx128x_set_packet_params(
+			dev, data->config.preamble_len, SX128X_LORA_HEADER_IMPLICIT,
+			data->config.implicit_packet_length,
+			data->config.packet_crc_disable ? SX128X_LORA_CRC_OFF : SX128X_LORA_CRC_ON,
+			data->config.iq_inverted ? SX128X_LORA_IQ_INVERTED : SX128X_LORA_IQ_STD);
+	}
+
+	return sx128x_set_packet_params(
+		dev, data->config.preamble_len, SX128X_LORA_HEADER_EXPLICIT, payload_len,
+		data->config.packet_crc_disable ? SX128X_LORA_CRC_OFF : SX128X_LORA_CRC_ON,
+		data->config.iq_inverted ? SX128X_LORA_IQ_INVERTED : SX128X_LORA_IQ_STD);
+}
+
+/* Packet parameters for whichever modem the radio was last set up for */
+static int sx128x_set_modem_packet_params(const struct device *dev, uint8_t payload_len)
+{
+	struct sx128x_data *data = dev->data;
+	int ret;
+
+	if (data->packet_params_valid && data->packet_params_len == payload_len) {
+		return 0;
+	}
+
+	if (sx128x_is_gfsk(dev)) {
+		ret = sx128x_set_gfsk_packet_params(dev, &data->gfsk_config, payload_len);
+	} else {
+		ret = sx128x_set_lora_packet_params(dev, payload_len);
+	}
+
+	data->packet_params_len = payload_len;
+	data->packet_params_valid = ret == 0;
+
+	return ret;
+}
+
+static int sx128x_set_tx_base(const struct device *dev, uint8_t base)
+{
+	struct sx128x_data *data = dev->data;
+	int ret;
+
+	if (data->tx_base == base) {
+		return 0;
+	}
+
+	/* Receptions always start at offset 0 */
+	ret = sx128x_set_buffer_base_address(dev, base, 0x00);
+	if (ret == 0) {
+		data->tx_base = base;
+	}
+
+	return ret;
+}
+
+static uint32_t sx128x_tx_timeout_ms(const struct device *dev, uint8_t len)
+{
+	return 2U * sx128x_lora_airtime(dev, len) + SX128X_TX_TIMEOUT_MARGIN_MS;
+}
+
+static int sx128x_wake(const struct device *dev)
+{
+	struct sx128x_data *data = dev->data;
+	int64_t left = data->timer_idle_at - k_uptime_get();
+
+	/* Let the timer of a stopped duty cycle run out first, see sx128x_sleep() */
+	if (left > 0) {
+		k_msleep((int32_t)left);
+	}
+
+	data->aborted = false;
+	return 0;
+}
+
+static int sx128x_sleep(const struct device *dev)
+{
+	struct sx128x_data *data = dev->data;
+	int ret;
+
+	if (data->radio.op == LORA_RADIO_OP_RX_DUTY_CYCLE) {
+		uint8_t disable = 0;
+
+		ret = sx128x_spi_wakeup(dev);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = sx128x_set_standby(dev, SX128X_STDBY_RC);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = sx128x_spi_write_cmd(dev, SX128X_CMD_SET_LONG_PREAMBLE, &disable, 1);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/*
+		 * Standby stops the duty cycle but not the timer of its current
+		 * window: if it runs out during the next operation, the chip
+		 * ends that one with a timeout. Keep the radio idle until then,
+		 * with a margin for the RC oscillator the timer runs on.
+		 */
+		uint32_t window = MAX(data->radio.duty_cycle.rx_ms,
+				      data->radio.duty_cycle.sleep_ms);
+
+		data->timer_idle_at = k_uptime_get() + window + window / 4 + 1;
+	}
+	sx128x_set_rf_path(dev, false, false);
+	if (data->radio.op == LORA_RADIO_OP_TX && !data->aborted) {
+		return 0;
+	}
+	return sx128x_set_standby(dev, SX128X_STDBY_RC);
+}
+
+static int sx128x_stop(const struct device *dev, enum lora_radio_op op)
+{
+	struct sx128x_data *data = dev->data;
+
+	ARG_UNUSED(op);
+	data->aborted = true;
+	return 0;
+}
+
+static int sx128x_irq_get(const struct device *dev, uint32_t *irq)
+{
+	struct sx128x_data *data = dev->data;
+	uint16_t status = 0;
+	int ret;
+
+	ret = sx128x_get_irq_status(dev, &status);
+	if (ret < 0) {
+		return ret;
+	}
+	if (status != 0) {
+		ret = sx128x_clear_irq_status(dev, status);
+		data->irq_clean = ret == 0;
+		if (ret < 0) {
+			return ret;
+		}
+	}
+	*irq = status;
+	return 0;
+}
+
+static void sx128x_irq_rearm(const struct device *dev)
+{
+	if (sx128x_hal_irq_active(dev) > 0) {
+		lora_radio_irq(dev);
+	}
+}
+
+static void sx128x_irq_poll_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct sx128x_data *data = CONTAINER_OF(dwork, struct sx128x_data, irq_poll_work);
+
+	if (data->radio.op != LORA_RADIO_OP_NONE) {
+		lora_radio_irq(data->radio.dev);
+		k_work_reschedule(&data->irq_poll_work, SX128X_IRQ_POLL_INTERVAL);
+	}
+}
+
+static int sx128x_tx_check(const struct device *dev, uint32_t len)
+{
+	struct sx128x_data *data = dev->data;
+
+	if (len > SX128X_MAX_PAYLOAD_LEN) {
+		return -EINVAL;
+	}
+	if (sx128x_is_gfsk(dev) && data->gfsk_config.fixed_len &&
+	    len != data->gfsk_config.payload_len) {
+		return -EINVAL;
+	}
+	if (!sx128x_is_gfsk(dev) && data->config.explicit_header_disable &&
+	    len != data->config.implicit_packet_length) {
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static int sx128x_tx_start(const struct device *dev, const uint8_t *buf, uint32_t len)
+{
+	int ret;
+
+	ret = sx128x_set_dio_irq_params(dev, SX128X_IRQ_TXRX);
+	if (ret == 0) {
+		ret = sx128x_clear_stale_irqs(dev);
+	}
+	if (ret == 0) {
+		ret = sx128x_set_modem_packet_params(dev, (uint8_t)len);
+	}
+	if (ret == 0) {
+		ret = sx128x_set_tx_base(dev, 0);
+	}
+	if (ret == 0) {
+		ret = sx128x_spi_write_buffer(dev, 0, buf, len);
+	}
+	if (ret == 0) {
+		sx128x_set_rf_path(dev, true, true);
+		ret = sx128x_set_tx(dev, sx128x_tx_timeout_ms(dev, (uint8_t)len));
+	}
+	if (ret < 0) {
+		((struct sx128x_data *)dev->data)->aborted = true;
+	}
+	return ret;
+}
+
+static int sx128x_rx_prepare(const struct device *dev)
+{
+	int ret = sx128x_set_dio_irq_params(dev, SX128X_IRQ_TXRX);
+
+	if (ret == 0) {
+		ret = sx128x_clear_stale_irqs(dev);
+	}
+	if (ret == 0) {
+		ret = sx128x_set_modem_packet_params(dev, SX128X_MAX_PAYLOAD_LEN);
+	}
+	if (ret == 0) {
+		sx128x_set_rf_path(dev, true, false);
+	}
+	return ret;
+}
+
+static int sx128x_rx_start(const struct device *dev, uint32_t timeout_ms)
+{
+	return sx128x_set_rx(dev, timeout_ms);
+}
+
+static int sx128x_rx_duty_cycle_start(const struct device *dev, uint32_t rx_ms,
+				      uint32_t sleep_ms)
+{
+	const struct sx128x_hal_config *hal = dev->config;
+	uint8_t params[5];
+	uint8_t enable = 1;
+	uint32_t step;
+	int ret;
+
+	if (hal->irq.port == NULL || rx_ms == 0 || sleep_ms == 0 ||
+	    rx_ms > 262140 || sleep_ms > 262140) {
+		return -EINVAL;
+	}
+	if (sx128x_is_gfsk(dev)) {
+		return -ENOTSUP;
+	}
+	ret = sx128x_set_dio_irq_params(dev, SX128X_IRQ_RX_DONE | SX128X_IRQ_RX_ERROR);
+	if (ret == 0) {
+		ret = sx128x_spi_write_cmd(dev, SX128X_CMD_SET_LONG_PREAMBLE, &enable, 1);
+	}
+	if (ret < 0) {
+		return ret;
+	}
+	step = MAX(rx_ms, sleep_ms) > UINT16_MAX ? 4U : 1U;
+	params[0] = step == 4U ? SX128X_PERIOD_BASE_4MS : SX128X_PERIOD_BASE_1MS;
+	sys_put_be16(DIV_ROUND_UP(rx_ms, step), &params[1]);
+	sys_put_be16(DIV_ROUND_UP(sleep_ms, step), &params[3]);
+	return sx128x_spi_write_cmd(dev, SX128X_CMD_SET_RX_DUTY_CYCLE, params, sizeof(params));
+}
+
+static int sx128x_rx_read(const struct device *dev, uint32_t irq, uint8_t *buf,
+			  uint8_t size, int16_t *rssi, int8_t *snr)
+{
+	struct sx128x_data *data = dev->data;
+	uint8_t len = 0, offset = 0;
+	int ret;
+
+	if ((irq & SX128X_IRQ_RX_ERROR) != 0) {
+		return -EIO;
+	}
+	ret = sx128x_get_rx_buffer_status(dev, &len, &offset);
+	if (ret < 0) {
+		return ret;
+	}
+	if (!sx128x_is_gfsk(dev) && data->config.explicit_header_disable) {
+		len = data->config.implicit_packet_length;
+	}
+	len = MIN(len, size);
+	ret = sx128x_spi_read_buffer(dev, offset, buf, len);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = sx128x_get_packet_status(dev, rssi, snr);
+	return ret < 0 ? ret : len;
+}
+
+static int sx128x_cw_start(const struct device *dev, uint32_t frequency, int8_t tx_power)
+{
+	int ret = sx128x_config_carrier(dev, frequency, tx_power);
+
+	if (ret == 0) {
+		sx128x_set_rf_path(dev, true, true);
+		ret = sx128x_spi_write_cmd(dev, SX128X_CMD_SET_TX_CONTINUOUS_WAVE, NULL, 0);
+	}
+	return ret;
+}
+
+static int sx128x_cad_start(const struct device *dev)
+{
+	struct sx128x_data *data = dev->data;
+	uint8_t symbols = data->config.cad.symbol_num ? data->config.cad.symbol_num : 2;
+	uint8_t cad_param = (uint8_t)(u32_count_trailing_zeros(symbols) << 5);
+	uint8_t peak = data->config.cad.detection_peak;
+	int ret;
+
+	if (sx128x_is_gfsk(dev)) {
+		return -ENOTSUP;
+	}
+	ret = sx128x_clear_stale_irqs(dev);
+	if (ret == 0) {
+		ret = sx128x_set_dio_irq_params(dev, SX128X_IRQ_CAD_DONE | SX128X_IRQ_CAD_DETECTED);
+	}
+	if (ret == 0) {
+		/* SetPacketType leaves the IQ inverted, which no standard preamble matches */
+		ret = sx128x_set_modem_packet_params(dev, SX128X_MAX_PAYLOAD_LEN);
+	}
+	if (ret == 0) {
+		ret = sx128x_spi_write_cmd(dev, SX128X_CMD_SET_CAD_PARAMS, &cad_param, 1);
+	}
+	if (ret == 0 && peak != 0) {
+		ret = sx128x_spi_write_regs(dev, SX128X_REG_LORA_CAD_PEAK, &peak, 1);
+	}
+	if (ret == 0) {
+		sx128x_set_rf_path(dev, true, false);
+		ret = sx128x_spi_write_cmd(dev, SX128X_CMD_SET_CAD, NULL, 0);
+	}
+	if (ret == 0 && ((const struct sx128x_hal_config *)dev->config)->irq.port == NULL) {
+		k_work_reschedule(&data->irq_poll_work, SX128X_IRQ_POLL_INTERVAL);
+	}
+	return ret;
+}
+
+static k_timeout_t sx128x_cad_timeout(const struct lora_modem_config *config)
+{
+	uint32_t symbols = config->cad.symbol_num ? config->cad.symbol_num : 2;
+	uint32_t duration_ms =
+		DIV_ROUND_UP(symbols * (1U << config->datarate), (uint32_t)config->bandwidth);
+
+	return K_MSEC(duration_ms + 20);
+}
+
+static int sx128x_lora_send(const struct device *dev, uint8_t *buf, uint32_t len)
+{
+	struct sx128x_data *data = dev->data;
+	int ret;
+
+	if (!sx128x_is_gfsk(dev) && data->config.cad.mode == LORA_CAD_MODE_LBT) {
+		ret = lora_radio_cad(dev, sx128x_cad_timeout(&data->config));
+		if (ret != 0) {
+			return ret > 0 ? -EBUSY : ret;
+		}
+	}
+	return lora_radio_send(dev, buf, len);
+}
+
+static int sx128x_lora_send_async(const struct device *dev, uint8_t *buf, uint32_t len,
+				  struct k_poll_signal *async)
+{
+	struct sx128x_data *data = dev->data;
+	int ret;
+
+	if (!sx128x_is_gfsk(dev) && data->config.cad.mode == LORA_CAD_MODE_LBT) {
+		ret = lora_radio_cad(dev, sx128x_cad_timeout(&data->config));
+		if (ret > 0) {
+			if (async != NULL) {
+				k_poll_signal_raise(async, -EBUSY);
+				return 0;
+			}
+			return -EBUSY;
+		}
+		if (ret < 0) {
+			return ret;
+		}
+	}
+	return lora_radio_send_async(dev, buf, len, async);
+}
+
+static int sx128x_lora_recv(const struct device *dev, uint8_t *buf, uint8_t size,
+			    k_timeout_t timeout, int16_t *rssi, int8_t *snr)
+{
+	struct sx128x_data *data = dev->data;
+	int ret;
+
+	if (!sx128x_is_gfsk(dev) && data->config.cad.mode == LORA_CAD_MODE_RX) {
+		ret = lora_radio_cad(dev, sx128x_cad_timeout(&data->config));
+		if (ret <= 0) {
+			return ret;
+		}
+	}
+	return lora_radio_recv(dev, buf, size, timeout, rssi, snr);
+}
+
+static uint32_t sx128x_lora_airtime(const struct device *dev, uint32_t data_len)
+{
+	struct sx128x_data *data = dev->data;
+	uint32_t bw_hz, preamble;
+
+	if (!data->radio.configured) {
+		return 0;
+	}
+
+	if (sx128x_is_gfsk(dev)) {
+		return lora_radio_gfsk_airtime_ms(&data->gfsk_config, data_len,
+					      SX128X_GFSK_HEADER_BITS);
+	}
+
+	switch (data->config.bandwidth) {
+	case BW_200_KHZ:
+		bw_hz = 203125;
+		break;
+	case BW_400_KHZ:
+		bw_hz = 406250;
+		break;
+	case BW_800_KHZ:
+		bw_hz = 812500;
+		break;
+	case BW_1600_KHZ:
+		bw_hz = 1625000;
+		break;
+	default:
+		return 0;
+	}
+
+	/* The radio sends the preamble it can encode, which may be longer */
+	preamble = encode_preamble_len(data->config.preamble_len);
+	preamble = (preamble & 0x0F) << (preamble >> 4);
+
+	/*
+	 * Above SF10 the payload takes SF - 2 bits per symbol, as with the low
+	 * data rate optimization of the sub-GHz parts (datasheet 7.4.4.1)
+	 */
+	return lora_radio_lora_airtime_ms(bw_hz, data->config.datarate, data->config.coding_rate,
+					  preamble, data->config.datarate > SF_10,
+					  !data->config.explicit_header_disable,
+					  !data->config.packet_crc_disable, data_len);
+}
+
+static const struct lora_radio_ops sx128x_radio_ops = {
+	.irq_tx_done = SX128X_IRQ_TX_DONE,
+	.irq_rx_done = SX128X_IRQ_RX_DONE | SX128X_IRQ_HEADER_ERROR,
+	.irq_timeout = SX128X_IRQ_RX_TX_TIMEOUT,
+	.irq_cad_done = SX128X_IRQ_CAD_DONE,
+	.irq_cad_detected = SX128X_IRQ_CAD_DETECTED,
+	.sleeps = false,
+	.wake = sx128x_wake,
+	.sleep = sx128x_sleep,
+	.stop = sx128x_stop,
+	.irq_get = sx128x_irq_get,
+	.irq_rearm = sx128x_irq_rearm,
+	.tx_check = sx128x_tx_check,
+	.tx_start = sx128x_tx_start,
+	.cad_start = sx128x_cad_start,
+	.rx_prepare = sx128x_rx_prepare,
+	.rx_start = sx128x_rx_start,
+	.rx_duty_cycle_start = sx128x_rx_duty_cycle_start,
+	.rx_read = sx128x_rx_read,
+	.cw_start = sx128x_cw_start,
+};
+
+static int sx128x_init(const struct device *dev)
+{
+	struct sx128x_data *data = dev->data;
+	int ret;
+
+	lora_radio_init(dev);
+	k_work_init_delayable(&data->irq_poll_work, sx128x_irq_poll_work_handler);
+	data->tx_base = UINT8_MAX;
+	ret = sx128x_hal_init(dev);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = sx128x_hal_set_irq_callback(dev, lora_radio_irq);
+	if (ret < 0) {
+		return ret;
+	}
+	return sx128x_chip_init(dev);
+}
+
+static int sx128x_lora_rssi(const struct device *dev, int16_t *rssi)
+{
+	struct sx128x_data *data = dev->data;
+	uint8_t raw;
+	int ret;
+
+	k_mutex_lock(&data->radio.lock, K_FOREVER);
+
+	/* Between duty-cycle windows the chip sleeps, and a command would wake it */
+	if (data->radio.op == LORA_RADIO_OP_RX_DUTY_CYCLE) {
+		ret = -EBUSY;
+		goto unlock;
+	}
+
+	ret = sx128x_spi_read_cmd(dev, SX128X_CMD_GET_RSSI_INST, &raw, 1);
+	if (ret == 0) {
+		/* RSSI is -value/2 dBm */
+		*rssi = -((int16_t)raw) / 2;
+	}
+
+unlock:
+	k_mutex_unlock(&data->radio.lock);
+
+	return ret;
+}
+
+static DEVICE_API(lora, sx128x_lora_api) = {
+	.config = sx128x_lora_config,
+#ifdef CONFIG_LORA_GFSK
+	.config_gfsk = sx128x_lora_config_gfsk,
+#endif
+	.send = sx128x_lora_send,
+	.send_async = sx128x_lora_send_async,
+	.recv = sx128x_lora_recv,
+	.recv_async = lora_radio_recv_async,
+	.cad = lora_radio_cad,
+	.cad_async = lora_radio_cad_async,
+	.recv_duty_cycle = lora_radio_recv_duty_cycle,
+	.recv_duty_cycle_async = lora_radio_recv_duty_cycle_async,
+	.rssi = sx128x_lora_rssi,
+	.airtime = sx128x_lora_airtime,
+	.test_cw = lora_radio_test_cw,
+};
+BUILD_ASSERT(offsetof(struct sx128x_hal_config, radio) == 0);
+BUILD_ASSERT(offsetof(struct sx128x_data, radio) == 0);
+
+/* Radio IRQs go to the lowest-numbered DIO wired to the host */
+#define SX128X_IRQ_DIO(inst)                                                                       \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, dio1_gpios), (1),                                  \
+		    (COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, dio2_gpios), (2),                     \
+				 (COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, dio3_gpios), (3), (0))))))
+
+#define SX128X_IRQ_GPIO(inst)                                                                      \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, dio1_gpios),                                       \
+		    (GPIO_DT_SPEC_INST_GET(inst, dio1_gpios)),                                     \
+		    (COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, dio2_gpios),                          \
+				 (GPIO_DT_SPEC_INST_GET(inst, dio2_gpios)),                        \
+				 (GPIO_DT_SPEC_INST_GET_OR(inst, dio3_gpios, {0})))))
+
+#define SX128X_INIT(inst, model)                                                                   \
+	static struct sx128x_data sx128x_data_##model##_##inst;                                    \
+                                                                                                   \
+	static const struct sx128x_hal_config sx128x_config_##model##_##inst = {                   \
+		.radio = { .ops = &sx128x_radio_ops },                                         \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),             \
+		.tx_enable = GPIO_DT_SPEC_INST_GET_OR(inst, tx_enable_gpios, {0}),                 \
+		.rx_enable = GPIO_DT_SPEC_INST_GET_OR(inst, rx_enable_gpios, {0}),                 \
+		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                         \
+		.busy = GPIO_DT_SPEC_INST_GET(inst, busy_gpios),                                   \
+		.irq = SX128X_IRQ_GPIO(inst),                                                      \
+		.irq_dio = SX128X_IRQ_DIO(inst),                                                   \
+		.tx_power_max_valid = DT_INST_NODE_HAS_PROP(inst, tx_power_max_dbm),               \
+		.tx_power_max_dbm = (int8_t)DT_INST_PROP_OR(inst, tx_power_max_dbm, 0),            \
+		.regulator_ldo = DT_INST_PROP(inst, regulator_ldo),                                \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, sx128x_init, NULL, &sx128x_data_##model##_##inst,              \
+			      &sx128x_config_##model##_##inst, POST_KERNEL,                        \
+			      CONFIG_LORA_INIT_PRIORITY, &sx128x_lora_api);
+
+#define DT_DRV_COMPAT semtech_sx1280
+DT_INST_FOREACH_STATUS_OKAY_VARGS(SX128X_INIT, sx1280)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT semtech_sx1281
+DT_INST_FOREACH_STATUS_OKAY_VARGS(SX128X_INIT, sx1281)

@@ -7,4 +7,5 @@ zephyr_sources_ifdef(CONFIG_LORA_FAKE lora_fake.c)
 add_subdirectory_ifdef(CONFIG_LORA_LR11XX_NATIVE lr11xx)
 add_subdirectory_ifdef(CONFIG_LORA_NATIVE_RADIO common)
 add_subdirectory_ifdef(CONFIG_LORA_SX126X_NATIVE sx126x)
+add_subdirectory_ifdef(CONFIG_LORA_SX128X_NATIVE sx128x)
 # zephyr-keep-sorted-stop

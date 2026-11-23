@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Giuseppe Fabiano <gfabiano40@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config LORA_SX128X_NATIVE
+	bool "Semtech SX128x native driver (experimental)"
+	default y
+	depends on LORA_MODULE_BACKEND_NATIVE
+	depends on DT_HAS_SEMTECH_SX1280_ENABLED || DT_HAS_SEMTECH_SX1281_ENABLED
+	select SPI
+	select GPIO
+	select LORA_HAS_GFSK_MODEM
+	select LORA_HAS_RSSI
+	select LORA_NATIVE_RADIO
+	help
+	  Driver for the Semtech SX1280 and SX1281 2.4 GHz transceivers,
+	  talking to the chip over SPI directly. LoRa is always available;
+	  the GFSK modem is added by LORA_GFSK.
