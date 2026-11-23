@@ -104,12 +104,15 @@
 }
 
 /* The title of a block is the link of its first paragraph, stretched over the whole block. */
+.zstack p:first-child > a.reference {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
 .zstack p:first-child > a.reference,
 .zstack p:first-child > a.reference:visited,
 .zstack p:first-child > a.reference:hover {
     color: var(--zstack-color);
-    font-size: 1rem;
-    font-weight: 700;
 }
 
 .zstack p:first-child > a.reference::after {
