@@ -55,6 +55,8 @@
 		erase-block-size = <DT_SIZE_K(4)>;
 
 		spi-bus-mode = <4>;
+		sf-wrap-mode = <3>;
+		sf-wrap-length = <4096>;
 		sf-pad = <1>;
 		jedec-id = [c8 60 16];
 		use-sfdp;

@@ -83,6 +83,8 @@
 		erase-block-size = <DT_SIZE_K(4)>;
 
 		spi-bus-mode = <4>;
+		sf-wrap-mode = <2>;
+		sf-wrap-length = <32>;
 		sf-pad = <2>;
 		jedec-id = [ef 40 17];
 

@@ -2370,8 +2370,8 @@ static __ramfunc void flash_bflb_set_io_delays(struct flash_bflb_bank_data *data
 #if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) \
 	|| defined(CONFIG_SOC_SERIES_BL616CL)
 
-/* Set buffer mode and alignment ?
- * len in bytes
+/* Set buffer mode and alignment?
+ * len is the hardware index for the wrap length in bytes:
  * 0: 8
  * 1: 16
  * 2: 32
@@ -2993,23 +2993,10 @@ static __ramfunc int flash_bflb_init(const struct device *dev)
 		}
 	}
 
-#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
-	/* Copy what the SDK does here since the role is unclear
-	 * but effects (it breaks when this is not good values) are apparent
-	 */
-	if (data->cfg.auto_spi_mode == BUS_QIO) {
-		flash_bflb_set_cmds(data, 2, 2);
-	} else {
-		flash_bflb_set_cmds(data, 1, 6);
-	}
-/* BL616CL does not enjoy the same values despite SDK using the same */
-#elif defined(CONFIG_SOC_SERIES_BL616CL)
-	if (data->cfg.auto_spi_mode == BUS_QIO) {
-		flash_bflb_set_cmds(data, 3, 9);
-	} else {
-		/* Initial value */
-		flash_bflb_set_cmds(data, 1, 9);
-	}
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) || \
+	defined(CONFIG_SOC_SERIES_BL616CL)
+	flash_bflb_set_cmds(data, (uint8_t)data->cfg.sf_wrap_mode,
+			    data->cfg.sf_wrap_length_index);
 #endif
 
 exit_nxip_bad:
@@ -3087,6 +3074,8 @@ static DEVICE_API(flash, flash_bflb_api) = {
 	.cfg.auto_spi_mode = DT_PROP(_n, spi_bus_mode),					\
 	.cfg.manual_spi_mode = BUS_NIO,							\
 	.cfg.use_qpi = DT_PROP_OR(_n, use_qpi, false),					\
+	.cfg.sf_wrap_mode = DT_PROP(_n, sf_wrap_mode),					\
+	.cfg.sf_wrap_length_index = DT_ENUM_IDX(_n, sf_wrap_length),			\
 	.cfg.cmd.auto_read = DT_PROP_OR(_n, read_command, 0),				\
 	.cfg.cmd.auto_read_dmycy = DT_PROP_OR(_n, read_dummy_cycles, 0),		\
 	.cfg.cmd.auto_write = DT_PROP_OR(_n, write_command, 0),				\
