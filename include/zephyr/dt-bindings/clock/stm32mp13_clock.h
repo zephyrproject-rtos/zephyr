@@ -33,6 +33,15 @@
 #define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
 #define STM32_SRC_TIMPCLK6	(STM32_SRC_TIMPCLK2 + 1)
 
+/** Bus clocks a peripheral kernel clock may be derived from. */
+#define STM32_SRC_PCLK1		0x013U
+#define STM32_SRC_PCLK2		0x014U
+#define STM32_SRC_PCLK3		0x015U
+#define STM32_SRC_PCLK4		0x016U
+#define STM32_SRC_PCLK5		0x017U
+#define STM32_SRC_PCLK6		0x018U
+#define STM32_SRC_HCLK6		0x019U
+
 /** Bus clocks */
 #define STM32_CLOCK_BUS_APB1    0x700
 #define STM32_CLOCK_BUS_APB2    0x708
