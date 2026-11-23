@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <skeleton.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	soc {
+		compatible = "simple-bus";
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-parent = <&intc>;
+
+		ostm0: timer@ffbf0000 {
+			compatible = "renesas,rh850-ostm";
+			reg = <0xffbf0000 0x40>;
+			status = "disabled";
+		};
+
+		intc: interrupt-controller@fffc4000 {
+			compatible = "renesas,rh850-intc";
+			reg = <0xfffc4000 0x280>, <0xfff80000 0x8000>;
+			reg-names = "intc1", "intc2";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+		};
+	};
+
+	lram0: memory@fdc00000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "LRAM0";
+	};
+};

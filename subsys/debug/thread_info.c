@@ -109,6 +109,8 @@ const size_t _kernel_thread_info_offsets[] = {
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = THREAD_INFO_UNIMPLEMENTED,
 #elif defined(CONFIG_TRICORE)
 	[THREAD_INFO_OFFSET_T_STACK_PTR] = THREAD_INFO_UNIMPLEMENTED,
+#elif defined(CONFIG_RH850)
+	[THREAD_INFO_OFFSET_T_STACK_PTR] = offsetof(struct k_thread, switch_handle),
 #else
 	/* Use a special value so that OpenOCD knows that obtaining the stack
 	 * pointer is not possible on this particular architecture.

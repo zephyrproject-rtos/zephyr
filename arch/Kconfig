@@ -216,6 +216,21 @@ config TRICORE
 	help
 	  TriCore architecture
 
+config RH850
+	bool
+	select ARCH_IS_SET
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ARCH_SUPPORTS_ROM_START
+	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
+	imply XIP
+	imply FPU
+	imply FPU_SHARING
+	help
+	  Renesas RH850 architecture
+
 config ARCH_POSIX
 	bool
 	select ARCH_IS_SET
@@ -356,7 +371,8 @@ config XIP
 	  option disabled.
 
 
-if ARC || ARM || ARM64 || X86 || RISCV || RX || OPENRISC || ARCH_POSIX || HEXAGON || TRICORE
+if ARC || ARM || ARM64 || X86 || RISCV || RX || OPENRISC || ARCH_POSIX || HEXAGON || TRICORE || \
+	RH850
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash

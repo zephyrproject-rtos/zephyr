@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/rh850.dtsi>
+
+/ {
+	cpus {
+		cpu0: cpu@0 {
+			compatible = "renesas,rh850-g4mh", "renesas,rh850";
+			reg = <0>;
+		};
+	};
+};

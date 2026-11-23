@@ -49,6 +49,9 @@ ARCHS = {
     "riscv": {
         "kconfig": "CONFIG_RISCV",
     },
+    "rh850": {
+        "kconfig": "CONFIG_RH850",
+    },
     "rx": {
         "kconfig": "CONFIG_RX",
     },
