@@ -15,9 +15,10 @@
 #define TX_PARAM_DL_DWELL	BIT(5)
 #define TX_PARAM_UL_DWELL	BIT(4)
 
-/* A region that caps the dwell time, and one that does not. The lookups
- * are never called here: only their presence decides whether the command
- * is taken.
+/*
+ * A region that caps the dwell time, and one that does not. Their presence
+ * decides whether the command is taken; the floored pair below also gives
+ * the lookups an answer, so the datarate floor is visible.
  */
 static int stub_tx_params(uint8_t dr, uint8_t tx_power_idx, struct lwan_dr_params *p,
 			  int8_t *power_dbm)
@@ -72,6 +73,26 @@ static const struct lwan_region_ops eirp_ops = {
 	.get_tx_params = eirp_tx_params,
 	.get_rx1_params = stub_rx1_params,
 	.get_dwell_tx_params = eirp_tx_params,
+	.get_dwell_rx1_params = stub_rx1_params,
+};
+
+/* Datarate the floored region refuses below while the cap is in force */
+#define FLOORED_DWELL_MIN_DR 2
+
+static int floored_dwell_tx_params(uint8_t dr, uint8_t tx_power_idx, struct lwan_dr_params *p,
+				   int8_t *power_dbm)
+{
+	if (dr < FLOORED_DWELL_MIN_DR) {
+		return -EINVAL;
+	}
+
+	return stub_tx_params(dr, tx_power_idx, p, power_dbm);
+}
+
+static const struct lwan_region_ops floored_ops = {
+	.get_tx_params = stub_tx_params,
+	.get_rx1_params = stub_rx1_params,
+	.get_dwell_tx_params = floored_dwell_tx_params,
 	.get_dwell_rx1_params = stub_rx1_params,
 };
 
@@ -248,6 +269,49 @@ ZTEST(lorawan_native_mac, test_answer_goes_out_before_a_request)
 	len = mac_cmd_build_ul_fopts(&ctx, fopts, sizeof(fopts));
 	zassert_equal(len, 2);
 	zassert_equal(fopts[0], CID_TX_PARAM_SETUP, "the answer did not go first");
+}
+
+ZTEST(lorawan_native_mac, test_min_datarate_follows_the_dwell_time)
+{
+	ctx.region = &floored_ops;
+
+	zassert_equal(lwan_region_min_dr(&ctx), 0,
+		      "no cap in force, DR0 carries a payload");
+
+	ctx.mac.ul_dwell_time = true;
+	zassert_equal(lwan_region_min_dr(&ctx), FLOORED_DWELL_MIN_DR,
+		      "the cap leaves DR0 and DR1 without a payload");
+}
+
+ZTEST(lorawan_native_mac, test_min_datarate_of_an_uncapped_region)
+{
+	ctx.region = &uncapped_ops;
+	ctx.mac.ul_dwell_time = true;
+
+	/* No dwell lookup to route to, so the plain one answers. */
+	zassert_equal(lwan_region_min_dr(&ctx), 0);
+}
+
+ZTEST(lorawan_native_mac, test_a_dwell_cap_raises_the_datarate)
+{
+	ctx.region = &floored_ops;
+	ctx.current_dr = LORAWAN_DR_0;
+
+	feed(TX_PARAM_UL_DWELL);
+
+	zassert_equal(ctx.current_dr, FLOORED_DWELL_MIN_DR,
+		      "a session on DR0 cannot transmit under the cap");
+}
+
+ZTEST(lorawan_native_mac, test_lifting_a_dwell_cap_leaves_the_datarate)
+{
+	ctx.region = &floored_ops;
+	ctx.current_dr = LORAWAN_DR_5;
+
+	feed(0);
+
+	zassert_equal(ctx.current_dr, LORAWAN_DR_5,
+		      "lifting the cap only widens the choice");
 }
 
 ZTEST_SUITE(lorawan_native_mac, NULL, NULL, before, NULL, NULL);
