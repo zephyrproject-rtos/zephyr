@@ -75,6 +75,7 @@ static void lora_radio_op_end(const struct device *dev, int status)
 
 	config->ops->sleep(dev);
 	data->op = LORA_RADIO_OP_NONE;
+	data->ops_ended++;
 
 	if (async != NULL) {
 		k_poll_signal_raise(async, status);
@@ -163,6 +164,7 @@ static void lora_radio_rx_done(const struct device *dev, uint32_t irq_status)
 	struct lora_radio_waiter *waiter = data->waiter;
 	lora_recv_cb cb = data->rx_cb;
 	void *user_data = data->rx_cb_user_data;
+	uint32_t ended = data->ops_ended;
 	int16_t rssi = 0;
 	int8_t snr = 0;
 	int len;
@@ -198,8 +200,8 @@ static void lora_radio_rx_done(const struct device *dev, uint32_t irq_status)
 		k_mutex_lock(&data->lock, K_FOREVER);
 	}
 
-	/* Restart reception unless the callback stopped it */
-	if (data->rx_cb != NULL) {
+	/* Restart the reception unless the callback ended it, even to start another */
+	if (data->ops_ended == ended) {
 		lora_radio_rx_restart(dev);
 	}
 }
