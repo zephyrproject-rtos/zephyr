@@ -33,9 +33,9 @@ enum lora_radio_op {
 /*
  * What the operation handling needs from a radio. Everything is called with
  * the lock held. The radio is claimed and awake by then, except that wake()
- * is what wakes it for the claim, tx_check() comes before the claim and must
- * not talk to the radio, and a radio that does not sleep gets irq_get() with
- * nothing in flight too.
+ * is what wakes it for the claim, tx_check() and airtime() come without the
+ * claim and must not talk to the radio, and a radio that does not sleep gets
+ * irq_get() with nothing in flight too.
  */
 struct lora_radio_ops {
 	/* Interrupt status bits, as irq_get() reports them */
@@ -74,6 +74,9 @@ struct lora_radio_ops {
 
 	/* Emit an unmodulated carrier */
 	int (*cw_start)(const struct device *dev, uint32_t frequency, int8_t tx_power);
+
+	/* Time on air, in ms, of len bytes as the radio is configured */
+	uint32_t (*airtime)(const struct device *dev, uint32_t len);
 
 	/* Optional. Signal level as it is now, asked for during a plain reception only. */
 	int (*rssi)(const struct device *dev, int16_t *rssi);
@@ -147,5 +150,6 @@ int lora_radio_recv_duty_cycle_async(const struct device *dev, k_timeout_t rx_pe
 int lora_radio_test_cw(const struct device *dev, uint32_t frequency, int8_t tx_power,
 		       uint16_t duration);
 int lora_radio_rssi(const struct device *dev, int16_t *rssi);
+uint32_t lora_radio_airtime(const struct device *dev, uint32_t data_len);
 
 #endif /* ZEPHYR_DRIVERS_LORA_NATIVE_COMMON_LORA_RADIO_H_ */
