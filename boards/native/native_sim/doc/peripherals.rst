@@ -196,15 +196,23 @@ LSB-justified in 32-bit samples.
 This requires the ALSA development library on the host, which has to match
 the word size of the image: the 32-bit version for the default ``native_sim``
 target and the 64-bit version for :ref:`64bit native_sim<native_sim32_64>`
-builds. On a Debian/Ubuntu host ``libasound2-dev`` provides the 64-bit
-library; the 32-bit one is installed, and found by ``pkg-config``, with:
++builds.
 
-.. code-block:: console
+.. dropdown:: Installing the ALSA library (Debian/Ubuntu)
+   :icon: package
 
-   $ sudo dpkg --add-architecture i386
-   $ sudo apt update
-   $ sudo apt install pkg-config libasound2-dev:i386
-   $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+   .. code-block:: console
+      :caption: 32-bit (default ``native_sim``)
+
+      $ sudo dpkg --add-architecture i386
+      $ sudo apt update
+      $ sudo apt install pkg-config libasound2-dev:i386
+      $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+
+   .. code-block:: console
+      :caption: 64-bit (``native_sim/native/64``)
+
+      $ sudo apt install pkg-config libasound2-dev
 
 .. _nsim_per_rtc:
 
@@ -311,21 +319,24 @@ and ``--wifi-mac-addr=<mac>`` options.
 
 The build links the host ``libnl``, which has to match the word size of the
 image. The default 32-bit ``native_sim`` target requires the 32-bit ``libnl``
-development libraries; on a Debian/Ubuntu host:
+development libraries, while :ref:`64bit native_sim<native_sim32_64>` builds
+need the 64-bit version instead.
 
-.. code-block:: console
+.. dropdown:: Installing the libnl libraries (Debian/Ubuntu)
+   :icon: package
 
-   $ sudo dpkg --add-architecture i386
-   $ sudo apt update
-   $ sudo apt install gcc-multilib pkg-config libnl-3-dev:i386 libnl-genl-3-dev:i386
-   $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+   .. code-block:: console
+      :caption: 32-bit (default ``native_sim``)
 
-For :ref:`64bit native_sim<native_sim32_64>` builds the 64-bit version is
-needed instead:
+      $ sudo dpkg --add-architecture i386
+      $ sudo apt update
+      $ sudo apt install gcc-multilib pkg-config libnl-3-dev:i386 libnl-genl-3-dev:i386
+      $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
 
-.. code-block:: console
+   .. code-block:: console
+      :caption: 64-bit (``native_sim/native/64``)
 
-   $ sudo apt install pkg-config libnl-3-dev libnl-genl-3-dev
+      $ sudo apt install pkg-config libnl-3-dev libnl-genl-3-dev
 
 The simulated radio and the access points it connects to are created on the
 host with the ``net-setup.sh`` script and the ``zwifi`` configuration from the
@@ -402,16 +413,23 @@ the `SDL2`_ development library on the host machine. For
 :ref:`64bit native_sim<native_sim32_64>` builds you need to have the 64bit version installed.
 You may also need to set ``pkg-config`` to correctly pickup the SDL2 install path.
 
-On Ubuntu the package is ``libsdl2-dev`` whose 64bit version is likely installed by default.
-On an Ubuntu 18.04 host system, you can install the ``pkg-config`` and the 32bit
-``libsdl2-dev:i386`` packages, and configure the pkg-config search path with these commands:
+.. dropdown:: Installing the SDL2 library (Debian/Ubuntu)
+   :icon: package
 
-.. code-block:: console
+   On Ubuntu the package is ``libsdl2-dev``, whose 64bit version is likely installed by default.
 
-   $ sudo dpkg --add-architecture i386
-   $ sudo apt update
-   $ sudo apt-get install pkg-config libsdl2-dev:i386
-   $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+   .. code-block:: console
+      :caption: 32-bit (default ``native_sim``)
+
+      $ sudo dpkg --add-architecture i386
+      $ sudo apt update
+      $ sudo apt-get install pkg-config libsdl2-dev:i386
+      $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+
+   .. code-block:: console
+      :caption: 64-bit (``native_sim/native/64``)
+
+      $ sudo apt-get install pkg-config libsdl2-dev
 
 .. _SDL2:
    https://www.libsdl.org
