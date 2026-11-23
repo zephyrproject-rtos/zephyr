@@ -54,3 +54,15 @@ ZTEST(time_units, test_z_tmcvt_for_overflow)
 	zassert_equal(562949953430175ULL,
 		      z_tmcvt(UINT64_MAX / to_hz + 1, from_hz, to_hz, true, false, false, false));
 }
+
+ZTEST(time_units, test_z_tmcvt_int_mul_32_overflow)
+{
+	/*
+	 * Ensure signed int inputs whose scaled 32-bit result exceeds INT32_MAX
+	 * (yet fits in uint32_t, or wraps modulo 2^32) convert in unsigned
+	 * 32-bit arithmetic without signed integer overflow.
+	 */
+	zassert_equal(3000000000U, z_tmcvt(300000000, 1000, 10000, true, true, true, false));
+	zassert_equal((uint32_t)((uint32_t)INT32_MAX * 10U),
+		      z_tmcvt(INT32_MAX, 1000, 10000, true, true, true, false));
+}
