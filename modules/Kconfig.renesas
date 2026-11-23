@@ -564,4 +564,8 @@ config USE_RX_FSP_SCI_B_UART
 	help
 	  Enable RX FSP SCI-B UART driver
 
+config USE_RX_FSP_GPT
+	bool
+	help
+	  Enable RX FSP GPT driver
 endif # HAS_RENESAS_RX_FSP
