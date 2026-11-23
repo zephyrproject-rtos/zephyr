@@ -14,6 +14,7 @@
 
 config MCUMGR_TRANSPORT_WORKQUEUE_STACK_SIZE
 	int "MCUmgr transport workqueue stack size"
+	default 3072 if 64BIT
 	default 2048
 	help
 	  Stack size of the MCUmgr for transport subsystem work queue.
