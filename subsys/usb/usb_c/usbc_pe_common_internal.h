@@ -103,6 +103,10 @@ enum usbc_pe_state {
 	/** PE_Send_Not_Supported */
 	PE_SEND_NOT_SUPPORTED,
 #ifdef CONFIG_USBC_CSM_DRP
+	/** PE_PRS_SRC_SNK_Send_Swap */
+	PE_PRS_SRC_SNK_SEND_SWAP,
+	/** PE_PRS_SNK_SRC_Send_Swap */
+	PE_PRS_SNK_SRC_SEND_SWAP,
 	/** PE_PRS_SRC_SNK_Evaluate_Swap */
 	PE_PRS_SRC_SNK_EVALUATE_SWAP,
 	/** PE_PRS_SRC_SNK_Transition_to_off */

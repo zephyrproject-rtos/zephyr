@@ -51,6 +51,14 @@ bool common_dpm_requests(const struct device *dev)
 		if (pe->dpm_request == REQUEST_PE_DR_SWAP) {
 			pe_set_state(dev, PE_DRS_SEND_SWAP);
 			return true;
+#ifdef CONFIG_USBC_CSM_DRP
+		} else if (pe->dpm_request == REQUEST_PE_PR_SWAP) {
+			/* Which family applies depends on the role being left. */
+			pe_set_state(dev, (pe->power_role == TC_ROLE_SOURCE)
+						  ? PE_PRS_SRC_SNK_SEND_SWAP
+						  : PE_PRS_SNK_SRC_SEND_SWAP);
+			return true;
+#endif /* CONFIG_USBC_CSM_DRP */
 		} else if (pe->dpm_request == REQUEST_PE_SOFT_RESET_SEND) {
 			pe_set_state(dev, PE_SEND_SOFT_RESET);
 			return true;
@@ -792,17 +800,68 @@ bool policy_change_src_caps(const struct device *dev)
 
 #endif /* CONFIG_USBC_CSM_SUPPORTS_SOURCE */
 
+#ifdef CONFIG_USBC_CSM_DRP
+/**
+ * @brief PE_PRS_SRC_SNK_Send_Swap and PE_PRS_SNK_SRC_Send_Swap
+ *
+ * The initiating half. Both directions are identical up to which state the
+ * Accept leads into, so they share a run handler. The SenderResponseTimer is
+ * handled by the parent state, which returns to Ready on expiry.
+ */
+static void pe_prs_send_swap_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	LOG_INF("PE_PRS_Send_Swap");
+
+	pe_send_ctrl_msg(dev, PD_PACKET_SOP, PD_CTRL_PR_SWAP);
+}
+
+static enum smf_state_result pe_prs_send_swap_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+	struct usbc_port_data *data = dev->data;
+	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
+	bool from_source = (pe_get_state(dev) == PE_PRS_SRC_SNK_SEND_SWAP);
+	union pd_header header;
+
+	if (!atomic_test_and_clear_bit(pe->flags, PE_FLAGS_MSG_RECEIVED)) {
+		return SMF_EVENT_PROPAGATE;
+	}
+
+	header = prl_rx->emsg.header;
+
+	if (received_control_message(dev, header, PD_CTRL_ACCEPT)) {
+		/*
+		 * Only now, because until the partner agrees nothing has
+		 * moved and the Type-C layer must keep behaving normally.
+		 */
+		atomic_set_bit(pe->flags, PE_FLAGS_PR_SWAP_IN_PROGRESS);
+		pe_set_state(dev, from_source ? PE_PRS_SRC_SNK_TRANSITION_TO_OFF
+					      : PE_PRS_SNK_SRC_TRANSITION_TO_OFF);
+	} else if (received_control_message(dev, header, PD_CTRL_REJECT) ||
+		   received_control_message(dev, header, PD_CTRL_WAIT)) {
+		policy_notify(dev, MSG_REJECTED_RECEIVED);
+		pe_set_state(dev, from_source ? PE_SRC_READY : PE_SNK_READY);
+	} else {
+		pe_set_state(dev, from_source ? PE_SRC_READY : PE_SNK_READY);
+	}
+
+	return SMF_EVENT_PROPAGATE;
+}
+
 /*
- * Power Role Swap, PD 3.1 8.3.3.6. Responder only: these are reached when the
- * partner sends PR_Swap, and nothing here originates one. That is deliberate:
- * it sidesteps the question of both ends asking at once.
+ * Power Role Swap, PD 3.1 8.3.3.6. These are reached when the partner sends
+ * PR_Swap, or from PE_PRS_SRC_SNK_Send_Swap or PE_PRS_SNK_SRC_Send_Swap once
+ * the partner has accepted ours.
  *
  * The sequence runs with PE_FLAGS_PR_SWAP_IN_PROGRESS set throughout, because
  * it takes VBUS away and crosses the terminations over while the partner stays
  * attached, which the Type-C layer would otherwise read as a detach.
  */
 
-#ifdef CONFIG_USBC_CSM_DRP
 /**
  * @brief PE_PRS_SRC_SNK_Evaluate_Swap Entry state
  *
@@ -1528,6 +1587,20 @@ static enum smf_state_result pe_sender_response_run(void *obj)
 		 * Handle Sender Response Timeouts
 		 */
 		switch (current_state) {
+#ifdef CONFIG_USBC_CSM_DRP
+		/*
+		 * A Power Role Swap the partner never answered. Nothing has
+		 * moved yet, so returning to Ready is enough.
+		 */
+		case PE_PRS_SRC_SNK_SEND_SWAP:
+			LOG_INF("no answer to PR_Swap");
+			pe_set_state(dev, PE_SRC_READY);
+			break;
+		case PE_PRS_SNK_SRC_SEND_SWAP:
+			LOG_INF("no answer to PR_Swap");
+			pe_set_state(dev, PE_SNK_READY);
+			break;
+#endif /* CONFIG_USBC_CSM_DRP */
 #ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
 		/* Sink states */
 		case PE_SNK_SELECT_CAPABILITY:
@@ -1784,6 +1857,18 @@ static const struct smf_state pe_states[PE_STATE_COUNT] = {
 		NULL,
 		NULL),
 #ifdef CONFIG_USBC_CSM_DRP
+	[PE_PRS_SRC_SNK_SEND_SWAP] = SMF_CREATE_STATE(
+		pe_prs_send_swap_entry,
+		pe_prs_send_swap_run,
+		NULL,
+		&pe_states[PE_SENDER_RESPONSE_PARENT],
+		NULL),
+	[PE_PRS_SNK_SRC_SEND_SWAP] = SMF_CREATE_STATE(
+		pe_prs_send_swap_entry,
+		pe_prs_send_swap_run,
+		NULL,
+		&pe_states[PE_SENDER_RESPONSE_PARENT],
+		NULL),
 	[PE_PRS_SRC_SNK_EVALUATE_SWAP] = SMF_CREATE_STATE(
 		pe_prs_src_snk_evaluate_swap_entry,
 		pe_prs_src_snk_evaluate_swap_run,
