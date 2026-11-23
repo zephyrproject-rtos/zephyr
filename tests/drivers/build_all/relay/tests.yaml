@@ -11,3 +11,12 @@ tests:
     integration_platforms:
       - native_sim
       - qemu_x86
+  drivers.relay.build.mikroe_relay_2_click:
+    build_only: true
+    tags:
+      - drivers
+      - relay
+      - shield
+    platform_allow:
+      - ek_ra8m1
+    extra_args: SHIELD=mikroe_relay_2_click
