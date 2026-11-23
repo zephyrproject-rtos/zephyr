@@ -20,6 +20,9 @@
 /* An RPA is considered new for this long after its timeout was started. */
 #define BT_ID_RPA_NEW_TIME_MS 500U
 
+/* bt_id_rpa_is_new() subtracts it from the RPA timeout, which is at least 1 s */
+BUILD_ASSERT(BT_ID_RPA_NEW_TIME_MS < MSEC_PER_SEC);
+
 static inline bool bt_id_rpa_is_new(void)
 {
 #if defined(CONFIG_BT_PRIVACY)
