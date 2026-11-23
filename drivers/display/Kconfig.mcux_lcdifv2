@@ -18,6 +18,9 @@ config MCUX_LCDIFV2_FB_NUM
 	help
 	  Number of framebuffers to allocate in LCDIFV2 driver. Driver allocated
 	  framebuffers are required to support partial display updates.
+	  Partial writes with frame_incomplete set are accumulated until the
+	  final write submits the framebuffer for display. Cache maintenance
+	  covers the updated area of each partial write.
 	  The driver has been validated to support 0 through 2 framebuffers.
 	  Note that hardware will likely perform best if zero driver
 	  framebuffers are allocated by the driver, and the application

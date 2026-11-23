@@ -55,7 +55,16 @@ struct nxp_dcif_data {
 	uint32_t fb_bytes;
 	/* Index of next active framebuffer */
 	uint8_t next_idx;
+	/* The next framebuffer contains an unfinished partial update. */
+	bool draw_pending;
 };
+
+static void nxp_dcif_flush_rows(uint8_t *row, size_t row_bytes, size_t pitch_bytes, uint16_t height)
+{
+	if (IS_ENABLED(CONFIG_NXP_DCIF_MAINTAIN_CACHE) && (height > 0U)) {
+		sys_cache_data_flush_range(row, ((size_t)(height - 1U) * pitch_bytes) + row_bytes);
+	}
+}
 
 static int nxp_dcif_write(const struct device *dev, const uint16_t x, const uint16_t y,
 			   const struct display_buffer_descriptor *desc, const void *buf)
@@ -65,6 +74,7 @@ static int nxp_dcif_write(const struct device *dev, const uint16_t x, const uint
 	uint32_t h_idx;
 	const uint8_t *src;
 	uint8_t *dst;
+	uint8_t *row;
 
 	__ASSERT((data->pixel_bytes * desc->pitch * desc->height) <= desc->buf_size,
 		 "Input buffer too small");
@@ -76,12 +86,17 @@ static int nxp_dcif_write(const struct device *dev, const uint16_t x, const uint
 		/* We can use the display buffer directly, without copying */
 		LOG_DBG("Setting FB from %p->%p", (void *)data->active_fb, (void *)buf);
 		data->active_fb = buf;
+		data->draw_pending = false;
+
+		if (IS_ENABLED(CONFIG_NXP_DCIF_MAINTAIN_CACHE)) {
+			sys_cache_data_flush_range((void *)data->active_fb, data->fb_bytes);
+		}
 	} else {
 		/* We must use partial framebuffer copy */
 		if (CONFIG_NXP_DCIF_FB_NUM == 0) {
 			LOG_ERR("Partial display refresh requires driver framebuffers");
 			return -ENOTSUP;
-		} else if (data->active_fb != data->fb[data->next_idx]) {
+		} else if (!data->draw_pending && (data->active_fb != data->fb[data->next_idx])) {
 			/*
 			 * Copy the entirety of the current framebuffer to new
 			 * buffer, since we are changing the active buffer address
@@ -89,17 +104,25 @@ static int nxp_dcif_write(const struct device *dev, const uint16_t x, const uint
 			src = data->active_fb;
 			dst = data->fb[data->next_idx];
 			memcpy(dst, src, data->fb_bytes);
+
+			if (IS_ENABLED(CONFIG_NXP_DCIF_MAINTAIN_CACHE)) {
+				sys_cache_data_flush_range(dst, data->fb_bytes);
+			}
 		}
 		/* Write the display update to the active framebuffer */
 		src = buf;
-		dst = data->fb[data->next_idx];
-		dst += data->pixel_bytes * x + (y * data->pitch_bytes);
+		row = data->fb[data->next_idx];
+		row += data->pixel_bytes * x + (y * data->pitch_bytes);
+		dst = row;
 
 		for (h_idx = 0; h_idx < desc->height; h_idx++) {
 			memcpy(dst, src, data->pixel_bytes * desc->width);
 			src += data->pixel_bytes * desc->pitch;
 			dst += data->pitch_bytes;
 		}
+
+		nxp_dcif_flush_rows(row, (size_t)data->pixel_bytes * desc->width, data->pitch_bytes,
+				    desc->height);
 
 		if (data->format == kDCIF_LayerPixelFormatNV12) {
 			/*
@@ -110,25 +133,30 @@ static int nxp_dcif_write(const struct device *dev, const uint16_t x, const uint
 			__ASSERT(((x % 2) == 0) && ((y % 2) == 0), "NV12 requires even x/y");
 
 			src = (const uint8_t *)buf + desc->pitch * desc->height;
-			dst = data->fb[data->next_idx];
-			dst += data->pitch_bytes * config->output_config.height;
-			dst += data->pixel_bytes * x + ((y / 2) * data->pitch_bytes);
+			row = data->fb[data->next_idx];
+			row += data->pitch_bytes * config->output_config.height;
+			row += data->pixel_bytes * x + ((y / 2) * data->pitch_bytes);
+			dst = row;
 
 			for (h_idx = 0; h_idx < desc->height / 2; h_idx++) {
 				memcpy(dst, src, data->pixel_bytes * desc->width);
 				src += data->pixel_bytes * desc->pitch;
 				dst += data->pitch_bytes;
 			}
+
+			nxp_dcif_flush_rows(row, (size_t)data->pixel_bytes * desc->width,
+					    data->pitch_bytes, desc->height / 2U);
+		}
+
+		data->draw_pending = desc->frame_incomplete;
+		if (data->draw_pending) {
+			return 0;
 		}
 
 		LOG_DBG("Setting FB from %p->%p", (void *)data->active_fb,
 			(void *)data->fb[data->next_idx]);
 		/* Set new active framebuffer */
 		data->active_fb = data->fb[data->next_idx];
-	}
-
-	if (IS_ENABLED(CONFIG_NXP_DCIF_MAINTAIN_CACHE)) {
-		sys_cache_data_flush_range((void *)data->active_fb, data->fb_bytes);
 	}
 
 	k_sem_reset(&data->sem);
@@ -277,6 +305,7 @@ static int nxp_dcif_set_pixel_format(const struct device *dev,
 		data->fb[i] = config->fb_ptr + (data->fb_bytes * i);
 	}
 	data->active_fb = config->fb_ptr;
+	data->draw_pending = false;
 
 	/* Clear the framebuffer since the frame size may be larger. */
 	memset(config->fb_ptr, 0, data->fb_bytes * CONFIG_NXP_DCIF_FB_NUM);
