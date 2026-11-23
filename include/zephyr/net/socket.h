@@ -1002,7 +1002,13 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 #define ZSOCK_SO_ERROR 4
 /** Bypass normal routing and send directly to host (ignored, for compatibility) */
 #define ZSOCK_SO_DONTROUTE 5
-/** Transmission of broadcast messages is supported (ignored, for compatibility) */
+/**
+ * Permit sending to a broadcast address. In the native stack, sending or
+ * connecting to an IPv4 broadcast address fails with EACCES while the flag is
+ * cleared. A new socket starts with the flag set, unless
+ * @kconfig{CONFIG_NET_INITIAL_SO_BROADCAST} is disabled. Offloaded sockets
+ * may start with the flag cleared.
+ */
 #define ZSOCK_SO_BROADCAST 6
 
 /** Size of socket send buffer */

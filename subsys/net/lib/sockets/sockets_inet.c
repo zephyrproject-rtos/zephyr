@@ -2262,6 +2262,16 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 			break;
 
+		case ZSOCK_SO_BROADCAST:
+			ret = net_context_get_option(ctx, NET_OPT_BROADCAST,
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
+
 		case ZSOCK_SO_REUSEPORT:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_REUSEPORT)) {
 				ret = net_context_get_option(ctx,
@@ -2829,6 +2839,16 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			}
 
 			break;
+
+		case ZSOCK_SO_BROADCAST:
+			ret = net_context_set_option(ctx, NET_OPT_BROADCAST,
+						     optval, optlen);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
 
 		case ZSOCK_SO_REUSEPORT:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_REUSEPORT)) {

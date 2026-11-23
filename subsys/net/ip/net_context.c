@@ -586,6 +586,8 @@ int net_context_get(net_sa_family_t family, enum net_sock_type type, uint16_t pr
 		contexts[i].options.ipv4_mcast_loop =
 			IS_ENABLED(CONFIG_NET_INITIAL_IPV4_MCAST_LOOP);
 #endif
+		contexts[i].options.broadcast =
+			IS_ENABLED(CONFIG_NET_INITIAL_SO_BROADCAST);
 		if (IS_ENABLED(CONFIG_NET_IP)) {
 			(void)memset(&contexts[i].remote_storage, 0,
 				     sizeof(contexts[i].remote_storage));
@@ -1497,6 +1499,17 @@ static bool ipv4_dst_is_turned_around(const struct net_in_addr *dst)
 	       (net_ipv4_is_addr_loopback(dst) || net_ipv4_is_my_addr(dst));
 }
 
+/* Check whether the socket may not send to the address because it is a
+ * broadcast address and SO_BROADCAST is cleared. An address is a subnet
+ * broadcast only on the interface the packet leaves through. Every interface
+ * is checked when that interface is not known yet (iface is NULL).
+ */
+static bool broadcast_refused(struct net_context *context, struct net_if *iface,
+			      const struct net_in_addr *addr)
+{
+	return !context->options.broadcast && net_ipv4_is_addr_bcast(iface, addr);
+}
+
 int net_context_connect(struct net_context *context,
 			const struct net_sockaddr *addr,
 			net_socklen_t addrlen,
@@ -1570,6 +1583,17 @@ int net_context_connect(struct net_context *context,
 		    net_ipv6_is_addr_mcast(&net_sin6(addr)->sin6_addr)) {
 			ret = -EADDRNOTAVAIL;
 			goto unlock;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6) &&
+		    net_ipv6_addr_is_v4_mapped(&net_sin6(addr)->sin6_addr)) {
+			const struct net_in_addr *mapped = (const struct net_in_addr *)
+				&net_sin6(addr)->sin6_addr.s6_addr32[3];
+
+			if (broadcast_refused(context, net_context_get_iface(context), mapped)) {
+				ret = -EACCES;
+				goto unlock;
+			}
 		}
 
 		ret = get_zone_iface(context, net_sin6(addr), &zone_iface);
@@ -1655,6 +1679,11 @@ int net_context_connect(struct net_context *context,
 		    (net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) ||
 		     net_ipv4_is_addr_bcast(iface, &net_sin(addr)->sin_addr))) {
 			ret = -EADDRNOTAVAIL;
+			goto unlock;
+		}
+
+		if (broadcast_refused(context, iface, &net_sin(addr)->sin_addr)) {
+			ret = -EACCES;
 			goto unlock;
 		}
 
@@ -2151,6 +2180,12 @@ static int get_context_reuseaddr(struct net_context *context,
 
 	return -ENOTSUP;
 #endif
+}
+
+static int get_context_broadcast(struct net_context *context,
+				 void *value, uint32_t *len)
+{
+	return get_bool_option(context->options.broadcast, value, len);
 }
 
 static int get_context_reuseport(struct net_context *context,
@@ -3266,6 +3301,12 @@ static int context_sendto(struct net_context *context,
 				iface = net_if_ipv4_select_src_iface(&addr4->sin_addr);
 				net_context_set_iface(context, iface);
 			}
+		}
+
+		if (broadcast_refused(context,
+				      iface != NULL ? iface : net_context_get_iface(context),
+				      &addr4->sin_addr)) {
+			return -EACCES;
 		}
 
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && family == NET_AF_PACKET) {
@@ -4920,6 +4961,12 @@ static int set_context_reuseaddr(struct net_context *context,
 #endif
 }
 
+static int set_context_broadcast(struct net_context *context,
+				 const void *value, uint32_t len)
+{
+	return set_bool_option(&context->options.broadcast, value, len);
+}
+
 static int set_context_reuseport(struct net_context *context,
 				 const void *value, uint32_t len)
 {
@@ -5494,6 +5541,9 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_REUSEPORT:
 		ret = set_context_reuseport(context, value, len);
 		break;
+	case NET_OPT_BROADCAST:
+		ret = set_context_broadcast(context, value, len);
+		break;
 	case NET_OPT_IPV6_V6ONLY:
 		ret = set_context_ipv6_v6only(context, value, len);
 		break;
@@ -5628,6 +5678,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_REUSEPORT:
 		ret = get_context_reuseport(context, value, len);
+		break;
+	case NET_OPT_BROADCAST:
+		ret = get_context_broadcast(context, value, len);
 		break;
 	case NET_OPT_IPV6_V6ONLY:
 		ret = get_context_ipv6_v6only(context, value, len);
