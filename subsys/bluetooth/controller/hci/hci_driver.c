@@ -217,6 +217,13 @@ isoal_status_t sink_sdu_write_hci(void *dbuf,
 
 	return ISOAL_STATUS_OK;
 }
+
+void sink_sdu_free_hci(const struct isoal_sink *sink_ctx, const struct isoal_sdu_buffer *sdu_buffer)
+{
+	ARG_UNUSED(sink_ctx);
+
+	net_buf_unref(sdu_buffer->dbuf);
+}
 #endif /* CONFIG_BT_CTLR_ISO */
 
 #if defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)

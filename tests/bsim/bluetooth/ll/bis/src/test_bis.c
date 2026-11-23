@@ -134,7 +134,8 @@ static isoal_status_t test_sink_sdu_write(void *dbuf,
 bool ll_data_path_sink_create(uint16_t handle, struct ll_iso_datapath *datapath,
 			      isoal_sink_sdu_alloc_cb *sdu_alloc,
 			      isoal_sink_sdu_emit_cb *sdu_emit,
-			      isoal_sink_sdu_write_cb *sdu_write)
+			      isoal_sink_sdu_write_cb *sdu_write,
+			      isoal_sink_sdu_free_cb *sdu_free)
 {
 	ARG_UNUSED(handle);
 	ARG_UNUSED(datapath);
@@ -142,6 +143,7 @@ bool ll_data_path_sink_create(uint16_t handle, struct ll_iso_datapath *datapath,
 	*sdu_alloc = test_sink_sdu_alloc;
 	*sdu_emit  = test_sink_sdu_emit;
 	*sdu_write = test_sink_sdu_write;
+	*sdu_free  = NULL;
 
 	printk("VS data path sink created\n");
 	return true;

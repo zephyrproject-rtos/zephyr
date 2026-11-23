@@ -236,6 +236,10 @@ custom_sink_sdu_write_test(void *dbuf, const size_t sdu_written,
 		      _expected,                                                                   \
 		      sink_sdu_write_test_fake.call_count)
 
+FAKE_VOID_FUNC(sink_sdu_free_test,
+	       const struct isoal_sink *,
+	       const struct isoal_sdu_buffer *);
+
 /**
  * RX common setup before running tests
  * @param f Input configuration parameters
@@ -250,6 +254,7 @@ static void isoal_test_rx_common_before(void *f)
 	RESET_FAKE(sink_sdu_write_test);
 	RESET_FAKE(sink_sdu_emit_test);
 	RESET_FAKE(sink_sdu_emit_test_handler);
+	RESET_FAKE(sink_sdu_free_test);
 
 	FFF_RESET_HISTORY();
 
@@ -434,6 +439,7 @@ static isoal_sink_handle_t basic_rx_test_setup(uint16_t handle,
 				sink_sdu_alloc_test,
 				sink_sdu_emit_test,
 				sink_sdu_write_test,
+				sink_sdu_free_test,
 				&sink_hdl);
 	zassert_equal(err, ISOAL_STATUS_OK, "err = 0x%02x", err);
 
@@ -528,6 +534,7 @@ ZTEST(test_rx_basics, test_sink_isoal_test_create_destroy)
 						sink_sdu_alloc_test,
 						sink_sdu_emit_test,
 						sink_sdu_write_test,
+						sink_sdu_free_test,
 						&sink_hdl[i]);
 
 			zassert_equal(isoal_global.sink_allocated[sink_hdl[i]],
@@ -656,6 +663,7 @@ ZTEST(test_rx_basics, test_sink_isoal_test_create_err)
 					sink_sdu_alloc_test,
 					sink_sdu_emit_test,
 					sink_sdu_write_test,
+					sink_sdu_free_test,
 					&sink_hdl[i]);
 
 		zassert_equal(res,
@@ -677,6 +685,7 @@ ZTEST(test_rx_basics, test_sink_isoal_test_create_err)
 				sink_sdu_alloc_test,
 				sink_sdu_emit_test,
 				sink_sdu_write_test,
+				sink_sdu_free_test,
 				&sink_hdl[CONFIG_BT_CTLR_ISOAL_SINKS]);
 
 	zassert_equal(res,
