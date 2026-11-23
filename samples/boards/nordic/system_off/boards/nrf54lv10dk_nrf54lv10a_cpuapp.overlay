@@ -5,6 +5,10 @@
  */
 
 / {
+	aliases {
+		retainedmemdevice = &retainedmem0;
+	};
+
 	cpuapp_sram@2002ec00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x2002ec00 DT_SIZE_K(4)>;
@@ -16,16 +20,11 @@
 			status = "okay";
 		};
 	};
-
-	aliases {
-		retainedmemdevice = &retainedmem0;
-	};
 };
 
-&cpuapp_sram {
+&cpuapp_sram_app {
 	/* Shrink SRAM size to avoid overlap with retained memory region:
-	 * 191 - 4 = 187 = 0x2ec00
+	 * 191 - 4 = 187KB = 0x2ec00
 	 */
-	reg = <0x20000000 DT_SIZE_K(187)>;
-	ranges = <0x0 0x20000000 0x2ec00>;
+	reg = <0x60 (DT_SIZE_K(187) - 0x60)>;
 };

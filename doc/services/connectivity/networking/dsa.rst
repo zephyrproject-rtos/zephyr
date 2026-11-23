@@ -54,8 +54,8 @@ For RX path, put ``dsa_recv()`` at beginning of ``net_recv_data()`` in ``subsys/
 to handle first for untagging and re-directing interface.
 
 For TX path, the switch interfaces register as standard ethernet devices with ``dsa_xmit()``
-as ``ethernet_api->send``. The ``dsa_xmit()`` processes the tagging and re-directing to conduit
-port work.
+as ``ethernet_driver_api->send``. The ``dsa_xmit()`` processes the tagging and re-directing to
+conduit port work.
 
 DSA device driver support
 *************************

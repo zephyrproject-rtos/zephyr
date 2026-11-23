@@ -19,6 +19,7 @@
 		green-pwm-led = &green_pwm_led;
 		red-pwm-led = &red_pwm_led;
 		sw0 = &user_button_0;
+		wakeup-button = &user_button_0;
 	};
 
 	chosen {
@@ -45,15 +46,15 @@
 	pwmleds {
 		compatible = "pwm-leds";
 
-		blue_pwm_led: pwm_led_0 {
+		red_pwm_led: pwm_led_0 {
 			pwms = <&tpm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 
-		green_pwm_led: pwm_led_1 {
+		blue_pwm_led: pwm_led_1 {
 			pwms = <&tpm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 
-		red_pwm_led: pwm_led_2 {
+		green_pwm_led: pwm_led_2 {
 			pwms = <&tpm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
@@ -64,6 +65,8 @@
 		user_button_0: button_0 {
 			label = "User SW2";
 			gpios = <&gpioc 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			/* SW2 wakes via WUU external pin 11. */
+			wakeup-ctrls = <&wuu NXP_WUU_PIN_11_FALLING_INT>;
 			zephyr,code = <INPUT_KEY_0>;
 			status = "okay";
 		};

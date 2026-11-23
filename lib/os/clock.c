@@ -14,6 +14,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/clock.h>
+#include <zephyr/sys/div64.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/timeutil.h>
 #include <zephyr/toolchain.h>
 
@@ -40,8 +42,8 @@ static bool is_valid_clock_id(int clock_id)
 
 static void timespec_from_ticks(uint64_t ticks, struct timespec *ts)
 {
-	uint64_t elapsed_secs = ticks / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-	uint64_t nremainder = ticks % CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	uint64_t elapsed_secs = sys_div64_u32_const(ticks, CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	uint64_t nremainder = sys_mod64_u32_const(ticks, CONFIG_SYS_CLOCK_TICKS_PER_SEC);
 
 	*ts = (struct timespec){
 		.tv_sec = (time_t)elapsed_secs,
@@ -183,11 +185,11 @@ int z_impl_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 
 	/* sleep for relative time duration */
 	if ((sizeof(rqtp->tv_sec) == sizeof(int64_t)) &&
-	    unlikely(rqtp->tv_sec >= (time_t)(UINT64_MAX / NSEC_PER_SEC))) {
+	    unlikely(duration.tv_sec >= (time_t)(UINT64_MAX / NSEC_PER_SEC))) {
 		uint64_t ns = (uint64_t)k_sleep(K_SECONDS(duration.tv_sec - 1)) * NSEC_PER_MSEC;
 		struct timespec rem = {
-			.tv_sec = (time_t)(ns / NSEC_PER_SEC),
-			.tv_nsec = ns % NSEC_PER_SEC,
+			.tv_sec = (time_t)sys_div64_u32_const(ns, NSEC_PER_SEC),
+			.tv_nsec = sys_mod64_u32_const(ns, NSEC_PER_SEC),
 		};
 
 		duration.tv_sec = 1;
@@ -225,6 +227,45 @@ int z_vrfy_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 }
 #include <zephyr/syscalls/sys_clock_nanosleep_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+k_timepoint_t sys_timepoint_calc(k_timeout_t timeout)
+{
+	k_timepoint_t timepoint;
+
+	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		timepoint.tick = UINT64_MAX;
+	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		timepoint.tick = 0;
+	} else {
+		k_ticks_t dt = timeout.ticks;
+
+		if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
+			timepoint.tick = k_uptime_ticks() + max(1, dt);
+		} else {
+			timepoint.tick = Z_TICK_ABS(dt);
+		}
+	}
+
+	return timepoint;
+}
+
+k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint)
+{
+	uint64_t now, remaining;
+
+	if (timepoint.tick == UINT64_MAX) {
+		return K_FOREVER;
+	}
+	if (timepoint.tick == 0) {
+		return K_NO_WAIT;
+	}
+
+	now = k_uptime_ticks();
+	remaining = (timepoint.tick > now) ? (timepoint.tick - now) : 0;
+	return K_TICKS(remaining);
+}
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 #ifdef CONFIG_ZTEST
 #include <zephyr/ztest.h>

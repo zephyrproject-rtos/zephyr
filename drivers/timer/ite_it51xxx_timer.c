@@ -107,6 +107,10 @@ static uint32_t read_timer_obser(enum ext_timer_idx timer_idx)
 	uint32_t obser;
 	__unused uint8_t etnpsr;
 
+	if (!IS_ENABLED(CONFIG_SOC_IT51526AW) && !IS_ENABLED(CONFIG_SOC_IT51526BW)) {
+		return sys_read32(timer_base + TIMER_ETNCNTOLR(timer_idx));
+	}
+
 	/* Critical section */
 	unsigned int key = irq_lock();
 

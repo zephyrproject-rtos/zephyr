@@ -33,6 +33,7 @@ struct stream {
 	const struct device *dma_dev;
 	uint32_t channel;
 	struct dma_config cfg;
+	struct dma_block_config blk_cfg;
 };
 
 struct video_stm32_dcmi_ctrls {
@@ -180,19 +181,18 @@ static int stm32_dma_init(const struct device *dev)
 	dma_cfg->dma_slot = DMA_REQUEST_DCMI;
 	dma_cfg->channel_direction = PERIPHERAL_TO_MEMORY;
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
+	/* Only the v1 nodes carry the features cell holding the FIFO threshold. */
+	dma->blk_cfg.fifo_mode_control =
+		STM32_DMA_FEATURES_FIFO_THRESHOLD(DT_INST_DMAS_CELL_BY_IDX(0, 0, features));
+	dma_cfg->head_block = &dma->blk_cfg;
+#endif
+
 	ret = dma_stm32_zcfg_to_halcfg(dma->dma_dev, dma_cfg, &hdma.Init,
 				       DMA_ADDR_ADJ_NO_CHANGE, DMA_ADDR_ADJ_INCREMENT);
 	if (ret < 0) {
 		return ret;
 	}
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
-	if (STM32_DMA_FEATURES_FIFO_THRESHOLD(DT_INST_DMAS_CELL_BY_IDX(0, 0, features)) ==
-	    DMA_FIFO_THRESHOLD_FULL) {
-		hdma.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
-		hdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-	}
-#endif
 
 	hdma.Instance = STM32_DMA_GET_INSTANCE(dma->reg, dma->channel);
 

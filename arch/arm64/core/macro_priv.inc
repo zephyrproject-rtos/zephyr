@@ -52,6 +52,31 @@
 	and	\xreg0, \xreg0, #TPIDRROEL0_CURR_CPU
 .endm
 
+/*
+ * Copy the callee-saved registers (x19-x28) into the exception stack frame
+ * pointed by xreg.
+ *
+ * Being callee-saved registers, their values are untouched by the exception
+ * entry and are still live in the registers at any point of the exception
+ * handling path, so this is used only on the paths that may dump or unwind
+ * the frame (synchronous faults, SError, kernel oops, syscall entry) instead
+ * of on every exception entry. x18 and lr are caller-saved and are always
+ * stored by the exception entry macro.
+ *
+ * This is a macro and not a function on purpose: a function call would
+ * clobber lr, which tail-called paths such as the branch to
+ * z_arm64_do_kernel_oops() return through when z_fatal_error() recovers.
+ */
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+.macro z_arm64_save_exception_info xreg
+	stp	x19, x20, [\xreg, ___esf_t_x19_x20_OFFSET]
+	stp	x21, x22, [\xreg, ___esf_t_x21_x22_OFFSET]
+	stp	x23, x24, [\xreg, ___esf_t_x23_x24_OFFSET]
+	stp	x25, x26, [\xreg, ___esf_t_x25_x26_OFFSET]
+	stp	x27, x28, [\xreg, ___esf_t_x27_x28_OFFSET]
+.endm
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* _MACRO_PRIV_INC_ */

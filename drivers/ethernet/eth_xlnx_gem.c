@@ -79,7 +79,7 @@ static void eth_xlnx_gem_phy_cb(const struct device *phy,
 				struct phy_link_state *state,
 				void *eth_dev);
 
-static const struct ethernet_api eth_xlnx_gem_apis = {
+static DEVICE_API(ethernet, eth_xlnx_gem_apis) = {
 	.iface_api.init   = eth_xlnx_gem_iface_init,
 	.get_capabilities = eth_xlnx_gem_get_capabilities,
 	.get_phy	  = eth_xlnx_gem_get_phy,
@@ -475,11 +475,6 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	reg_val |= ETH_XLNX_GEM_NWCTRL_STARTTX_BIT;
 	sys_write32(reg_val, DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_NWCTRL_OFFSET);
 
-#ifdef CONFIG_NET_STATISTICS_ETHERNET
-	dev_data->stats.bytes.sent += tx_data_length;
-	dev_data->stats.pkts.tx++;
-#endif
-
 	/* Block until TX has completed */
 	sem_status = k_sem_take(&dev_data->tx_done_sem, K_MSEC(100));
 	if (sem_status < 0) {
@@ -655,9 +650,10 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:
 		if (!dev_conf->disable_rx_chksum_offload) {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
-						 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
-						 ETHERNET_CHECKSUM_SUPPORT_TCP |
-						 ETHERNET_CHECKSUM_SUPPORT_UDP;
+						 ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP;
 		} else {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_NONE;
 		}
@@ -665,9 +661,10 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
 	case ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT:
 		if (!dev_conf->disable_tx_chksum_offload) {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
-						 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
-						 ETHERNET_CHECKSUM_SUPPORT_TCP |
-						 ETHERNET_CHECKSUM_SUPPORT_UDP;
+						 ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP;
 		} else {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_NONE;
 		}
@@ -1438,12 +1435,6 @@ static void eth_xlnx_gem_handle_rx_pending(const struct device *dev)
 					dev->name);
 				net_pkt_unref(pkt);
 			}
-#ifdef CONFIG_NET_STATISTICS_ETHERNET
-			else {
-				dev_data->stats.bytes.received += rx_data_length;
-				dev_data->stats.pkts.rx++;
-			}
-#endif
 		}
 	}
 

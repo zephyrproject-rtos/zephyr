@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for the Microchip MCP3550/1/3 22-bit delta-sigma ADCs
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

@@ -104,11 +104,11 @@
 };
 
 &pll2 {
-	div-m = <1>;
-	mul-n = <10>;
-	div-p = <1>;
-	div-q = <1>;
-	div-r = <1>;
+	div-m = <4>;
+	mul-n = <120>;
+	div-p = <2>;
+	div-q = <3>;
+	div-r = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
@@ -193,7 +193,9 @@
 		     &eth_rxd1_pc5
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
-		     &eth_txd1_pb13>;
+		     &eth_txd1_pb13
+		     &eth_mdio_pa2
+		     &eth_mdc_pc1>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
@@ -201,8 +203,6 @@
 };
 
 &mdio {
-	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
-	pinctrl-names = "default";
 	status = "okay";
 
 	eth_phy: ethernet-phy@0 {

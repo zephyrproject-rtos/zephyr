@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - hwinfo
+    - reboot
+  depends_on: hwinfo
+  platform_allow:
+    - mimxrt2660_evk/mimxrt2663/cm85
+  integration_platforms:
+    - mimxrt2660_evk/mimxrt2663/cm85
+  harness: ztest
+  expect_reboot: true
+  timeout: 120
+
+tests:
+  boards.mimxrt2660evk.hwinfo.reset_cause: {}
+  boards.mimxrt2660evk.hwinfo.reset_cause.cold:
+    extra_configs:
+      - CONFIG_TEST_RESET_CAUSE_COLD=y

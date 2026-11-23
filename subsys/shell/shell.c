@@ -248,7 +248,7 @@ static void history_handle(const struct shell *sh, bool up)
 
 	/* Start by checking if history is not empty. */
 	history_mode = z_shell_history_get(sh->history, up,
-					   sh->ctx->cmd_buff, &len);
+					   (uint8_t *)sh->ctx->cmd_buff, &len);
 
 	/* On exiting history mode print backed up command. */
 	if (!history_mode) {
@@ -1079,7 +1079,7 @@ static int execute(const struct shell *sh)
 
 	if (IS_ENABLED(CONFIG_SHELL_HISTORY)) {
 		z_shell_cmd_trim(sh);
-		history_put(sh, sh->ctx->cmd_buff,
+		history_put(sh, (uint8_t *)sh->ctx->cmd_buff,
 			    sh->ctx->cmd_buff_len);
 	}
 
@@ -1157,17 +1157,12 @@ static int execute(const struct shell *sh)
 
 			status = z_shell_wildcard_process(sh, entry,
 							  argvp[0]);
-			/* Wildcard character found but there is no matching
-			 * command.
+			/* An argument without a wildcard character, or with a
+			 * pattern that matches no command, is processed as a
+			 * normal argument and reaches the handler as typed.
 			 */
-			if (status == SHELL_WILDCARD_CMD_NO_MATCH_FOUND) {
-				break;
-			}
-
-			/* Wildcard character was not found function can process
-			 * argument.
-			 */
-			if (status != SHELL_WILDCARD_NOT_FOUND) {
+			if ((status != SHELL_WILDCARD_NOT_FOUND) &&
+			    (status != SHELL_WILDCARD_CMD_NO_MATCH_FOUND)) {
 				++cmd_lvl;
 				wildcard_found = true;
 				continue;
@@ -1198,6 +1193,23 @@ static int execute(const struct shell *sh)
 				z_shell_fprintf(sh, SHELL_ERROR,
 						"%s%s\n", argv[0],
 						SHELL_MSG_CMD_NOT_FOUND);
+			}
+
+			/* Unknown subcommand and no handler to pass it to as
+			 * an argument.
+			 */
+			if ((cmd_lvl > 0) && (has_last_handler == false) &&
+			    (sh->ctx->active_cmd.handler == NULL)) {
+				if (IS_ENABLED(CONFIG_SHELL_MSG_CMD_NOT_FOUND)) {
+					z_shell_fprintf(sh, SHELL_ERROR,
+							"%s%s\n", argvp[-1],
+							SHELL_MSG_CMD_NOT_FOUND);
+				}
+				if (IS_ENABLED(CONFIG_SHELL_HELP) && (help_entry.help != NULL)) {
+					sh->ctx->active_cmd = help_entry;
+					shell_internal_help_print(sh);
+				}
+				return -ENOEXEC;
 			}
 
 			/* last handler found - no need to search commands in
@@ -1692,15 +1704,23 @@ static void transport_evt_handler(enum shell_transport_evt evt_type, void *ctx)
 static void shell_log_process(const struct shell *sh)
 {
 	bool processed = false;
+	bool prompt_drawn = false;
 	bool readline_active = sh->ctx->readline_state == SHELL_READLINE_ACTIVE;
+
+	if (!sh->ctx->bypass &&
+	    !IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) &&
+	    !readline_active) {
+		z_shell_cmd_line_erase(sh);
+	}
 
 	do {
 		if (!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 			if (readline_active) {
 				z_cursor_restore(sh);
 				z_clear_eos(sh);
-			} else if (!sh->ctx->bypass) {
+			} else if (!sh->ctx->bypass && prompt_drawn) {
 				z_shell_cmd_line_erase(sh);
+				prompt_drawn = false;
 			}
 
 			processed = z_shell_log_backend_process(
@@ -1715,18 +1735,23 @@ static void shell_log_process(const struct shell *sh)
 			}
 			z_shell_print_cmd(sh);
 			z_shell_op_cursor_position_synchronize(sh);
-		} else if (!sh->ctx->bypass) {
+		} else if (!sh->ctx->bypass &&
+			    processed &&
+			    (sh->ctx->cmd_buff_len > 0)) {
+			/* User is typing: reprint the prompt after each log
+			 * message and give the input a chance to arrive.
+			 */
 			z_shell_print_prompt_and_cmd(sh);
-		}
-
-		/* Arbitrary delay added to ensure that prompt is
-		 * readable and can be used to enter further commands.
-		 */
-		if (sh->ctx->cmd_buff_len) {
+			prompt_drawn = true;
 			k_msleep(15);
 		}
 
 	} while (processed && !k_event_test(&sh->ctx->signal_event, SHELL_SIGNAL_RXRDY));
+
+	/* Redraw the prompt once after a log batch is fully drained. */
+	if (!sh->ctx->bypass && !readline_active && !prompt_drawn) {
+		z_shell_print_prompt_and_cmd(sh);
+	}
 }
 
 static int instance_init(const struct shell *sh,
@@ -1742,7 +1767,7 @@ static int instance_init(const struct shell *sh,
 	}
 
 	k_event_init(&sh->ctx->signal_event);
-	k_sem_init(&sh->ctx->lock_sem, 1, 1);
+	k_mutex_init(&sh->ctx->lock_mtx);
 
 	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
 		sh->stats->log_lost_cnt = 0;
@@ -2404,8 +2429,11 @@ static int cmd_help(const struct shell *sh, size_t argc, char **argv)
 
 	if (IS_ENABLED(CONFIG_SHELL_HELP)) {
 		/* For NULL argument function will print all root commands */
+		z_shell_lock(sh);
 		z_shell_help_subcmd_print(sh, NULL,
 					 "\nAvailable commands:\n");
+		z_transport_buffer_flush(sh);
+		z_shell_unlock(sh);
 	} else {
 		const struct shell_static_entry *entry;
 		size_t idx = 0;

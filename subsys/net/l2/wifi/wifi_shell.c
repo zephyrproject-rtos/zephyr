@@ -5362,7 +5362,7 @@ static int wifi_bgscan_args_to_params(const struct shell *sh, size_t argc, char 
 	static const struct sys_getopt_option long_options[] = {
 		{"type", sys_getopt_required_argument, 0, 't'},
 		{"short-interval", sys_getopt_required_argument, 0, 's'},
-		{"rss-threshold", sys_getopt_required_argument, 0, 'r'},
+		{"rssi-threshold", sys_getopt_required_argument, 0, 'r'},
 		{"long-interval", sys_getopt_required_argument, 0, 'l'},
 		{"btm-queries", sys_getopt_required_argument, 0, 'b'},
 		{"iface", sys_getopt_required_argument, 0, 'i'},
@@ -5653,7 +5653,7 @@ SHELL_SUBCMD_ADD((wifi), bgscan, NULL,
 			    "[-b, --btm-queries <val>] : BTM queries before scanning "
 			    "(default: disabled)"),
 		 cmd_wifi_set_bgscan,
-		 2, 6);
+		 2, 11);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN */
 
 SHELL_SUBCMD_ADD((wifi), bss_max_idle_period, NULL,

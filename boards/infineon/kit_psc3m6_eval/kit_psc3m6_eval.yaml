@@ -13,11 +13,22 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - can
+  - counter
   - gpio
+  - i2c
   - uart
   - clock_control
   - pinctrl
+  - dma
+  - pwm
   - rtc
   - watchdog
+  - spi
+  - comparator
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
 vendor: infineon

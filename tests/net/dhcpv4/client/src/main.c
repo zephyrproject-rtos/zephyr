@@ -307,10 +307,16 @@ static const unsigned char ack_no_dns[] = {
 
 static const struct net_in_addr server_addr = { { { 192, 0, 2, 1 } } };
 /* The address the replies carry as the server identifier, which is the one
- * a client in REQUESTING expects a NAK to come from.
+ * a client in REQUESTING expects a NAK to name.
  */
 static const struct net_in_addr server_id_addr = { { { 10, 184, 9, 1 } } };
 static const struct net_in_addr client_addr = { { { 255, 255, 255, 255 } } };
+/* A relay agent between the server and the client, which sends the replies
+ * it relays from its own address.
+ */
+static const struct net_in_addr relay_addr = { { { 10, 184, 9, 254 } } };
+/* Another server on the same network, which no offer names. */
+static const struct net_in_addr other_server_id_addr = { { { 10, 184, 9, 2 } } };
 
 #define SERVER_PORT		67
 #define CLIENT_PORT		68
@@ -365,6 +371,11 @@ static uint8_t init_reboot_request_count;
 static bool short_lease;
 static bool drop_requests;
 static bool nak_requests;
+/* The IP source of a NAK and the server identifier it carries. A NULL
+ * identifier leaves the option out.
+ */
+static const struct net_in_addr *nak_src_addr;
+static const struct net_in_addr *nak_server_id;
 static bool no_router_option;
 static bool zero_router_option;
 /* Whether the handler for the leased address going away starts or stops the
@@ -475,6 +486,8 @@ static void dhcp_test_reset_iface(struct net_if *iface)
 	short_lease = false;
 	drop_requests = false;
 	nak_requests = false;
+	nak_src_addr = &server_id_addr;
+	nak_server_id = &server_id_addr;
 	no_router_option = false;
 	zero_router_option = false;
 	renewal_reply = RENEWAL_ACK;
@@ -734,15 +747,15 @@ static struct net_pkt *prepare_dhcp_nak(struct net_if *iface, uint32_t xid)
 	uint8_t empty_buf[SIZE_OF_FILE] = { 0 };
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_alloc_with_buffer(iface, DHCPV4_MESSAGE_SIZE, NET_AF_INET,
-					NET_IPPROTO_UDP, K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, DHCPV4_MESSAGE_SIZE + DHCPV4_OLV_MSG_SERVER_ID,
+					NET_AF_INET, NET_IPPROTO_UDP, K_FOREVER);
 	if (pkt == NULL) {
 		return NULL;
 	}
 
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
-	if (net_ipv4_create(pkt, &server_id_addr, &client_addr) ||
+	if (net_ipv4_create(pkt, nak_src_addr, &client_addr) ||
 	    net_udp_create(pkt, net_htons(SERVER_PORT), net_htons(CLIENT_PORT))) {
 		goto fail;
 	}
@@ -760,8 +773,18 @@ static struct net_pkt *prepare_dhcp_nak(struct net_if *iface, uint32_t xid)
 	    net_pkt_write(pkt, cookie, sizeof(cookie)) ||
 	    net_pkt_write_u8(pkt, DHCPV4_OPTIONS_MSG_TYPE) ||
 	    net_pkt_write_u8(pkt, 1) ||
-	    net_pkt_write_u8(pkt, NET_DHCPV4_MSG_TYPE_NAK) ||
-	    net_pkt_write_u8(pkt, DHCPV4_OPTIONS_END)) {
+	    net_pkt_write_u8(pkt, NET_DHCPV4_MSG_TYPE_NAK)) {
+		goto fail;
+	}
+
+	if (nak_server_id != NULL &&
+	    (net_pkt_write_u8(pkt, DHCPV4_OPTIONS_SERVER_ID) ||
+	     net_pkt_write_u8(pkt, sizeof(*nak_server_id)) ||
+	     net_pkt_write(pkt, nak_server_id->s4_addr, sizeof(*nak_server_id)))) {
+		goto fail;
+	}
+
+	if (net_pkt_write_u8(pkt, DHCPV4_OPTIONS_END)) {
 		goto fail;
 	}
 
@@ -1092,7 +1115,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 struct net_dhcpv4_context net_dhcpv4_context_data;
 
-static struct dummy_api net_dhcpv4_if_api = {
+static DEVICE_API(dummy, net_dhcpv4_if_api) = {
 	.iface_api.init = net_dhcpv4_iface_init,
 	.send = tester_send,
 };
@@ -1646,11 +1669,14 @@ ZTEST(dhcpv4_tests, test_init_reboot_dns_after_iface_down)
  */
 ZTEST(dhcpv4_tests, test_discover_retransmission_keeps_xid)
 {
-	/* Long enough for two retransmissions: the backoff is four seconds,
-	 * then eight, plus a second of randomisation each. native_sim
-	 * fast-forwards idle time, so this costs no wall clock.
+	/* Long enough for two retransmissions after the initial delay: the
+	 * backoff is four seconds, then eight, plus a second of randomisation
+	 * each, and one more second so the last discover does not race the
+	 * end of the sleep. native_sim fast-forwards idle time, so this costs
+	 * no wall clock.
 	 */
-	const k_timeout_t settle = K_SECONDS(4 + 8 + 4);
+	const k_timeout_t settle = K_SECONDS(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX +
+					     (4 + 1) + (8 + 1) + 1);
 	struct net_if *iface;
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
@@ -1996,6 +2022,70 @@ ZTEST(dhcpv4_tests, test_nak_to_request_paces_the_restart)
 	zassert_true(discovers_seen > seen, "Client did not restart after the delay");
 
 	net_dhcpv4_stop(iface);
+}
+
+/* Refuse every request with a NAK from @p src carrying @p server_id, and
+ * check whether the client restarts with a discover. An ignored NAK leaves
+ * the client retransmitting the request, and it gives up only after
+ * DHCPV4_MAX_NUMBER_OF_ATTEMPTS, well after the restart delay.
+ */
+static void check_nak_to_request(const struct net_in_addr *src,
+				 const struct net_in_addr *server_id, bool restart_expected)
+{
+	struct net_if *iface;
+	uint32_t evt;
+	int seen;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	nak_requests = true;
+	nak_src_addr = src;
+	nak_server_id = server_id;
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait(&events, EVT_DHCP_NAK, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_NAK, "Request was not refused %08x", evt);
+
+	seen = discovers_seen;
+
+	k_sleep(K_SECONDS(DHCPV4_RESTART_DELAY + 4));
+
+	if (restart_expected) {
+		zexpect_true(discovers_seen > seen, "Client did not restart after the NAK");
+	} else {
+		zexpect_equal(discovers_seen, seen, "Client restarted on a NAK it should ignore");
+		zexpect_equal(iface->config.dhcpv4.state, NET_DHCPV4_REQUESTING,
+			      "Client left REQUESTING, state %s",
+			      net_dhcpv4_state_name(iface->config.dhcpv4.state));
+	}
+
+	net_dhcpv4_stop(iface);
+}
+
+/* A relay agent forwards the NAK from its own address. The server identifier
+ * still names the server the client requested from, so the client restarts.
+ */
+ZTEST(dhcpv4_tests, test_relayed_nak_to_request_restarts)
+{
+	check_nak_to_request(&relay_addr, &server_id_addr, true);
+}
+
+/* A NAK whose server identifier names another server is not an answer to
+ * the request, even when its IP source is the requested server's address.
+ */
+ZTEST(dhcpv4_tests, test_nak_from_other_server_id_is_ignored)
+{
+	check_nak_to_request(&server_id_addr, &other_server_id_addr, false);
+}
+
+/* Without a server identifier, the IP source decides whether the NAK comes
+ * from the requested server.
+ */
+ZTEST(dhcpv4_tests, test_nak_without_server_id_matches_the_source)
+{
+	check_nak_to_request(&server_id_addr, NULL, true);
 }
 
 /* The lease's router replaces a gateway that was already there, and giving
@@ -2391,6 +2481,147 @@ ZTEST(dhcpv4_tests, test_renewal_keeps_the_lease)
 			 "A renewal took the address off the interface");
 	zassert_not_equal(net_if_ipv4_get_gw(iface).s_addr, NET_INADDR_ANY,
 			  "A renewal took the gateway away");
+
+	net_dhcpv4_stop(iface);
+}
+
+static K_SEM_DEFINE(if_down_entered, 0, 1);
+static K_SEM_DEFINE(if_down_release, 0, 1);
+static bool hold_if_down;
+
+/* Holds the thread raising the interface down event inside the event
+ * delivery, after the network stack has taken its locks for it.
+ */
+static void if_down_hold_cb(uint64_t mgmt_event, struct net_if *iface, void *info,
+			    size_t info_length, void *user_data)
+{
+	ARG_UNUSED(mgmt_event);
+	ARG_UNUSED(iface);
+	ARG_UNUSED(info);
+	ARG_UNUSED(info_length);
+	ARG_UNUSED(user_data);
+
+	if (!hold_if_down) {
+		return;
+	}
+
+	hold_if_down = false;
+	k_sem_give(&if_down_entered);
+	(void)k_sem_take(&if_down_release, K_SECONDS(5));
+}
+
+/* Sorted ahead of the client's own handler. */
+NET_MGMT_REGISTER_EVENT_HANDLER(a_if_down_hold, NET_EVENT_IF_DOWN, if_down_hold_cb, NULL);
+
+#define LOCK_ORDER_STACK_SIZE 2048
+
+static K_THREAD_STACK_DEFINE(if_down_stack, LOCK_ORDER_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(dhcp_stop_stack, LOCK_ORDER_STACK_SIZE);
+static struct k_thread if_down_thread;
+static struct k_thread dhcp_stop_thread;
+
+static void if_down_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	(void)net_if_down(p1);
+}
+
+static void dhcp_stop_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	net_dhcpv4_stop(p1);
+}
+
+/* An interface down event delivered in the thread raising it while another
+ * thread stops the client, which raises events of its own, must not leave
+ * the two threads waiting for each other.
+ */
+ZTEST(dhcpv4_tests, test_if_down_while_stopping_does_not_deadlock)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	if (!IS_ENABLED(CONFIG_NET_MGMT_EVENT_DIRECT)) {
+		ztest_test_skip();
+	}
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait_all(&events, EVT_DHCP_BOUND | EVT_ADDR_ADD, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_BOUND | EVT_ADDR_ADD, "Missing DHCP bound %08x", evt);
+
+	hold_if_down = true;
+
+	k_thread_create(&if_down_thread, if_down_stack, K_THREAD_STACK_SIZEOF(if_down_stack),
+			if_down_entry, iface, NULL, NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	zassert_ok(k_sem_take(&if_down_entered, K_SECONDS(1)),
+		   "Interface down event not delivered");
+
+	k_thread_create(&dhcp_stop_thread, dhcp_stop_stack, K_THREAD_STACK_SIZEOF(dhcp_stop_stack),
+			dhcp_stop_entry, iface, NULL, NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+
+	/* Let the stop run as far as it gets. */
+	k_sleep(K_MSEC(100));
+	k_sem_give(&if_down_release);
+
+	zassert_ok(k_thread_join(&dhcp_stop_thread, K_SECONDS(2)),
+		   "Stopping the client did not complete");
+	zassert_ok(k_thread_join(&if_down_thread, K_SECONDS(2)),
+		   "Bringing the interface down did not complete");
+
+	zexpect_equal(iface->config.dhcpv4.state, NET_DHCPV4_DISABLED,
+		      "Client in state %s after stop",
+		      net_dhcpv4_state_name(iface->config.dhcpv4.state));
+	zexpect_is_null(net_if_ipv4_addr_lookup_by_iface(iface, &leased_addr),
+			"Leased address still on the interface");
+}
+
+/* A conflict on the leased address makes the client give the lease up and
+ * start over; a conflict on any other address is not the client's.
+ */
+ZTEST(dhcpv4_tests, test_acd_conflict_on_the_lease_starts_over)
+{
+	const struct net_in_addr other_addr = { { { 10, 237, 72, 159 } } };
+	struct net_if *iface;
+	uint32_t evt;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4_ACD)) {
+		ztest_test_skip();
+	}
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait_all(&events, EVT_DHCP_BOUND | EVT_ADDR_ADD, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_BOUND | EVT_ADDR_ADD, "Missing DHCP bound %08x", evt);
+
+	k_event_set(&events, 0U);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ACD_CONFLICT, iface, &other_addr,
+					sizeof(other_addr));
+
+	evt = k_event_wait(&events, EVT_ADDR_DEL, false, K_SECONDS(2));
+	zexpect_equal(evt, 0U, "A conflict on another address gave the lease up");
+	zexpect_equal(iface->config.dhcpv4.state, NET_DHCPV4_BOUND,
+		      "Client in state %s after a conflict on another address",
+		      net_dhcpv4_state_name(iface->config.dhcpv4.state));
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ACD_CONFLICT, iface, &leased_addr,
+					sizeof(leased_addr));
+
+	evt = k_event_wait(&events, EVT_ADDR_DEL, false, K_SECONDS(2));
+	zexpect_equal(evt, EVT_ADDR_DEL, "A conflict on the lease left it on the interface");
+	zexpect_not_equal(iface->config.dhcpv4.state, NET_DHCPV4_BOUND,
+			  "Client still bound after a conflict on the lease");
 
 	net_dhcpv4_stop(iface);
 }

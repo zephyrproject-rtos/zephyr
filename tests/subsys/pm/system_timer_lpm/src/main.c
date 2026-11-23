@@ -104,7 +104,7 @@ ZTEST(system_timer_lpm, test_timekeeping_accuracy)
 				 requested, elapsed[i], entries[i]);
 		} else if (above) {
 			TC_PRINT("requested %u ms, elapsed %lld ms, wakeups %d "
-				 "(expected 1)\n",
+				 "(expected >= 1)\n",
 				 requested, elapsed[i], entries[i]);
 		} else {
 			TC_PRINT("requested %u ms, elapsed %lld ms, wakeups %d "
@@ -123,17 +123,21 @@ ZTEST(system_timer_lpm, test_timekeeping_accuracy)
 			      "%d exits",
 			      requested, entries[i], exits[i]);
 
-		/* None below the threshold; exactly one above. */
+		/* None below the threshold; at least one above. Another interrupt
+		 * (e.g. a console TX complete) can legitimately wake the CPU and
+		 * idle then enters again, so more than one balanced entry is fine;
+		 * timekeeping is checked by the elapsed time above.
+		 */
 		if (below) {
 			zassert_equal(entries[i], 0,
 				      "%u ms sleep made %d low-power entries, "
 				      "expected none",
 				      requested, entries[i]);
 		} else if (above) {
-			zassert_equal(entries[i], 1,
-				      "%u ms sleep made %d low-power entries, "
-				      "expected exactly 1",
-				      requested, entries[i]);
+			zassert_true(entries[i] >= 1,
+				     "%u ms sleep made %d low-power entries, "
+				     "expected at least 1",
+				     requested, entries[i]);
 		}
 
 		total_wakeups += entries[i];

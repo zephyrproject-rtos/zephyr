@@ -96,16 +96,62 @@ extern "C" {
 	VIDEO_FOREACH_BAYER_NON_PACKED(X, __VA_ARGS__)
 
 /**
+ * @brief Repeat a macro for every Bayer BGGR padded format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_BGGR_PADDED(X, ...)					\
+	X(VIDEO_PIX_FMT_SBGGR8P16, __VA_ARGS__)
+
+/**
+ * @brief Repeat a macro for every Bayer GBRG padded format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_GBRG_PADDED(X, ...)					\
+	X(VIDEO_PIX_FMT_SGBRG8P16, __VA_ARGS__)
+
+/**
+ * @brief Repeat a macro for every Bayer GRBG padded format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_GRBG_PADDED(X, ...)					\
+	X(VIDEO_PIX_FMT_SGRBG8P16, __VA_ARGS__)
+
+/**
+ * @brief Repeat a macro for every Bayer RGGB padded format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_RGGB_PADDED(X, ...)					\
+	X(VIDEO_PIX_FMT_SRGGB8P16, __VA_ARGS__)
+
+/**
  * @brief Repeat a macro for every Bayer padded format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
  *
  * @param X macro to replicate
  * @param ... extra parameters
  */
 #define VIDEO_FOREACH_BAYER_PADDED(X, ...)					\
-	X(VIDEO_PIX_FMT_SBGGR8P16, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGBRG8P16, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGRBG8P16, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SRGGB8P16, __VA_ARGS__)
+	VIDEO_FOREACH_BAYER_BGGR_PADDED(X, __VA_ARGS__)				\
+	VIDEO_FOREACH_BAYER_GBRG_PADDED(X, __VA_ARGS__)				\
+	VIDEO_FOREACH_BAYER_GRBG_PADDED(X, __VA_ARGS__)				\
+	VIDEO_FOREACH_BAYER_RGGB_PADDED(X, __VA_ARGS__)
 
 /**
  * 8-bit bayer format, split in two 4-bit blocks each zero-padded, little endian.
@@ -148,26 +194,70 @@ extern "C" {
 #define VIDEO_PIX_FMT_SRGGB8P16 VIDEO_FOURCC('p', 'R', '8', '2')
 
 /**
+ * @brief Repeat a macro for every Bayer BGGR MIPI-packed format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_BGGR_MIPI_PACKED(X, ...)				\
+	X(VIDEO_PIX_FMT_SBGGR10P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SBGGR12P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SBGGR14P, __VA_ARGS__)
+
+/**
+ * @brief Repeat a macro for every Bayer GBRG MIPI-packed format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_GBRG_MIPI_PACKED(X, ...)				\
+	X(VIDEO_PIX_FMT_SGBRG10P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG12P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG14P, __VA_ARGS__)
+
+/**
+ * @brief Repeat a macro for every Bayer GRBG MIPI-packed format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_GRBG_MIPI_PACKED(X, ...)				\
+	X(VIDEO_PIX_FMT_SGRBG10P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG12P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG14P, __VA_ARGS__)
+
+/**
+ * @brief Repeat a macro for every Bayer RGGB MIPI-packed format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_RGGB_MIPI_PACKED(X, ...)				\
+	X(VIDEO_PIX_FMT_SRGGB10P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB12P, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB14P, __VA_ARGS__)
+
+/**
  * @brief Repeat a macro for every Bayer MIPI-packed format, passed as first parameter
  *
- * A red, green, blue channel for every pixel, other than 8-bit per pixel.
+ * Either a red, green or blue channel for every pixel.
  *
  * @param X macro to replicate
  * @param ... extra parameters
  */
 #define VIDEO_FOREACH_BAYER_MIPI_PACKED(X, ...)					\
-	X(VIDEO_PIX_FMT_SBGGR10P, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGBRG10P, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGRBG10P, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SRGGB10P, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SBGGR12P, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGBRG12P, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGRBG12P, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SRGGB12P, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SBGGR14P, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGBRG14P, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGRBG14P, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SRGGB14P, __VA_ARGS__)
+	VIDEO_FOREACH_BAYER_BGGR_MIPI_PACKED(X, __VA_ARGS__)			\
+	VIDEO_FOREACH_BAYER_GBRG_MIPI_PACKED(X, __VA_ARGS__)			\
+	VIDEO_FOREACH_BAYER_GRBG_MIPI_PACKED(X, __VA_ARGS__)			\
+	VIDEO_FOREACH_BAYER_RGGB_MIPI_PACKED(X, __VA_ARGS__)
 
 /**
  * @code{.unparsed}
@@ -278,33 +368,78 @@ extern "C" {
 #define VIDEO_PIX_FMT_SRGGB14P VIDEO_FOURCC('p', 'R', 'E', 'E')
 
 /**
+ * @brief Repeat a macro for every Bayer BGGR non-packed format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_BGGR_NON_PACKED(X, ...)				\
+	X(VIDEO_PIX_FMT_SBGGR8, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SBGGR10, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SBGGR12, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SBGGR14, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SBGGR16, __VA_ARGS__)
+
+/**
+ * @brief Repeat a macro for every Bayer GBRG non-packed format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_GBRG_NON_PACKED(X, ...)				\
+	X(VIDEO_PIX_FMT_SGBRG8, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG10, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG12, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG14, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGBRG16, __VA_ARGS__)
+
+/**
+ * @brief Repeat a macro for every Bayer GRBG non-packed format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_GRBG_NON_PACKED(X, ...)				\
+	X(VIDEO_PIX_FMT_SGRBG8, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG10, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG12, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG14, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SGRBG16, __VA_ARGS__)
+
+/**
+ * @brief Repeat a macro for every Bayer RGGB non-packed format, passed as first parameter
+ *
+ * Either a red, green or blue channel for every pixel.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_BAYER_RGGB_NON_PACKED(X, ...)				\
+	X(VIDEO_PIX_FMT_SRGGB8, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB10, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB12, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB14, __VA_ARGS__)					\
+	X(VIDEO_PIX_FMT_SRGGB16, __VA_ARGS__)
+
+/**
  * @brief Repeat a macro for every Bayer non-packed format, passed as first parameter
  *
- * A red, green, blue channel for every pixel, other than 8-bit per pixel.
+ * Either a red, green or blue channel for every pixel.
  *
  * @param X macro to replicate
  * @param ... extra parameters
  */
 #define VIDEO_FOREACH_BAYER_NON_PACKED(X, ...)					\
-	X(VIDEO_PIX_FMT_SBGGR8, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGBRG8, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGRBG8, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SRGGB8, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGBRG10, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGRBG10, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SRGGB10, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SBGGR12, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGBRG12, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGRBG12, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SRGGB12, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SBGGR14, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGBRG14, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGRBG14, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SRGGB14, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SBGGR16, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGBRG16, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SGRBG16, __VA_ARGS__)					\
-	X(VIDEO_PIX_FMT_SRGGB16, __VA_ARGS__)
+	VIDEO_FOREACH_BAYER_BGGR_NON_PACKED(X, __VA_ARGS__)			\
+	VIDEO_FOREACH_BAYER_GBRG_NON_PACKED(X, __VA_ARGS__)			\
+	VIDEO_FOREACH_BAYER_GRBG_NON_PACKED(X, __VA_ARGS__)			\
+	VIDEO_FOREACH_BAYER_RGGB_NON_PACKED(X, __VA_ARGS__)
 
 /**
  * @code{.unparsed}
@@ -635,10 +770,11 @@ extern "C" {
  * @param X macro to replicate
  * @param ... extra parameters
  */
-#define VIDEO_FOREACH_RGB(X, ...)						\
-	VIDEO_FOREACH_RGB_PACKED(X, __VA_ARGS__)				\
-	VIDEO_FOREACH_RGB_NON_PACKED(X, __VA_ARGS__)				\
-	VIDEO_FOREACH_RGB_ALPHA(X, __VA_ARGS__)					\
+#define VIDEO_FOREACH_RGB(X, ...)                                                                  \
+	VIDEO_FOREACH_RGB_PACKED(X, __VA_ARGS__)                                                   \
+	VIDEO_FOREACH_RGB_NON_PACKED(X, __VA_ARGS__)                                               \
+	VIDEO_FOREACH_RGB_FULL_PLANAR(X, __VA_ARGS__)                                              \
+	VIDEO_FOREACH_RGB_ALPHA(X, __VA_ARGS__)                                                    \
 	VIDEO_FOREACH_RGB_PADDED(X, __VA_ARGS__)
 
 /**
@@ -704,6 +840,31 @@ extern "C" {
  * @endcode
  */
 #define VIDEO_PIX_FMT_RGB24 VIDEO_FOURCC('R', 'G', 'B', '3')
+
+/**
+ * @brief Repeat a macro for every RGB Full-Planar format, passed as first parameter
+ *
+ * Red, green and blue channels are stored as separate planes.
+ *
+ * @param X macro to replicate
+ * @param ... extra parameters
+ */
+#define VIDEO_FOREACH_RGB_FULL_PLANAR(X, ...) X(VIDEO_PIX_FMT_RGB24PLANAR, __VA_ARGS__)
+
+/**
+ * Three full-resolution planes of width x height bytes each, 8 bits per component per pixel.
+ * The order of planes is red, green, blue.
+ *
+ * @code{.unparsed}
+ * | Rrrrrrrr | Rrrrrrrr | ... |
+ * | ... |
+ * | Gggggggg | Gggggggg | ... |
+ * | ... |
+ * | Bbbbbbbb | Bbbbbbbb | ... |
+ * | ... |
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_RGB24PLANAR VIDEO_FOURCC('R', 'G', '3', 'P')
 
 /**
  * @brief Repeat a macro for every RGB alpha format, passed as first parameter
@@ -1225,6 +1386,50 @@ extern "C" {
 	   VIDEO_FOREACH_GRAYSCALE_MIPI_PACKED(_VIDEO_FMT_OR_EQ, pixfmt))
 
 /**
+ * @brief Test if a fourcc is a Bayer BGGR format
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define VIDEO_FMT_IS_BAYER_BGGR(pixfmt)						\
+	(0 VIDEO_FOREACH_BAYER_BGGR_MIPI_PACKED(_VIDEO_FMT_OR_EQ, pixfmt)	\
+	   VIDEO_FOREACH_BAYER_BGGR_NON_PACKED(_VIDEO_FMT_OR_EQ, pixfmt)	\
+	   VIDEO_FOREACH_BAYER_BGGR_PADDED(_VIDEO_FMT_OR_EQ, pixfmt))
+
+/**
+ * @brief Test if a fourcc is a Bayer GBRG format
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define VIDEO_FMT_IS_BAYER_GBRG(pixfmt)						\
+	(0 VIDEO_FOREACH_BAYER_GBRG_MIPI_PACKED(_VIDEO_FMT_OR_EQ, pixfmt)	\
+	   VIDEO_FOREACH_BAYER_GBRG_NON_PACKED(_VIDEO_FMT_OR_EQ, pixfmt)	\
+	   VIDEO_FOREACH_BAYER_GBRG_PADDED(_VIDEO_FMT_OR_EQ, pixfmt))
+
+/**
+ * @brief Test if a fourcc is a Bayer GRBG format
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define VIDEO_FMT_IS_BAYER_GRBG(pixfmt)						\
+	(0 VIDEO_FOREACH_BAYER_GRBG_MIPI_PACKED(_VIDEO_FMT_OR_EQ, pixfmt)	\
+	   VIDEO_FOREACH_BAYER_GRBG_NON_PACKED(_VIDEO_FMT_OR_EQ, pixfmt)	\
+	   VIDEO_FOREACH_BAYER_GRBG_PADDED(_VIDEO_FMT_OR_EQ, pixfmt))
+
+/**
+ * @brief Test if a fourcc is a Bayer RGGB format
+ *
+ * @param pixfmt FourCC of the pixel format to test
+ * @return Whether the format is known to match this category
+ */
+#define VIDEO_FMT_IS_BAYER_RGGB(pixfmt)						\
+	(0 VIDEO_FOREACH_BAYER_RGGB_MIPI_PACKED(_VIDEO_FMT_OR_EQ, pixfmt)	\
+	   VIDEO_FOREACH_BAYER_RGGB_NON_PACKED(_VIDEO_FMT_OR_EQ, pixfmt)	\
+	   VIDEO_FOREACH_BAYER_RGGB_PADDED(_VIDEO_FMT_OR_EQ, pixfmt))
+
+/**
  * @brief Test if a fourcc is any of the MIPI-packed formats
  *
  * @param pixfmt FourCC of the pixel format to test
@@ -1249,8 +1454,9 @@ extern "C" {
  * @param pixfmt FourCC of the pixel format to test
  * @return Whether the format is known to match this category
  */
-#define VIDEO_FMT_IS_FULL_PLANAR(pixfmt)					\
-	(0 VIDEO_FOREACH_YUV_FULL_PLANAR(_VIDEO_FMT_OR_EQ, pixfmt))
+#define VIDEO_FMT_IS_FULL_PLANAR(pixfmt)                                                           \
+	(0 VIDEO_FOREACH_YUV_FULL_PLANAR(_VIDEO_FMT_OR_EQ, pixfmt)                                 \
+		 VIDEO_FOREACH_RGB_FULL_PLANAR(_VIDEO_FMT_OR_EQ, pixfmt))
 
 /**
  * @brief Get number of bits per pixel of a pixel format
@@ -1326,6 +1532,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 		return 16;
 	case VIDEO_PIX_FMT_BGR24:
 	case VIDEO_PIX_FMT_RGB24:
+	case VIDEO_PIX_FMT_RGB24PLANAR:
 	case VIDEO_PIX_FMT_NV24:
 	case VIDEO_PIX_FMT_NV42:
 	case VIDEO_PIX_FMT_YUV24:

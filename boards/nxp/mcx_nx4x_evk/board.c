@@ -209,7 +209,7 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM9);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer0))
 	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
 #endif
 
@@ -247,6 +247,14 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_to_DAC1);
 
 	CLOCK_EnableClock(kCLOCK_Dac1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dac2))
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac2);
+	CLOCK_SetClkDiv(kCLOCK_DivDac2Clk, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_DAC2);
+
+	CLOCK_EnableClock(kCLOCK_Dac2);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))

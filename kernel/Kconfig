@@ -1130,6 +1130,13 @@ config KERNEL_WHOLE_ARCHIVE
 	  This option forces every object file in the libkernel.a archive
 	  to be included, rather than searching the archive for required object files.
 
+config TOOLCHAIN_HAS_CRT_CTOR_MARKERS
+	bool
+	help
+	  The toolchain's crtbegin.o and crtend.o contain boundary markers
+	  in their .ctors sections. Exclude these sections when collecting
+	  callable initializers.
+
 config TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
 	# As of today, we don't know of any toolchains that don't create
 	# either .ctors or .init_array sections containing initializer

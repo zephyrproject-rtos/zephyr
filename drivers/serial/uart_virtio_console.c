@@ -284,7 +284,7 @@ static void virtconsole_control_recv_cb(void *priv, uint32_t len)
 				(data->rx_ctlbuf[i].port) < VIRTIO_CONSOLE_MAX_PORTS);
 			break;
 		case VIRTIO_CONSOLE_DEVICE_REMOVE: {
-			int port = data->rx_ctlbuf[i].port;
+			uint32_t port = data->rx_ctlbuf[i].port;
 
 			if ((port < VIRTIO_CONSOLE_MAX_PORTS) &&
 			    IS_BIT_SET(data->console_ports, port)) {
@@ -297,15 +297,18 @@ static void virtconsole_control_recv_cb(void *priv, uint32_t len)
 			break;
 		}
 		case VIRTIO_CONSOLE_CONSOLE_PORT: {
-			int port = data->rx_ctlbuf[i].port;
+			uint32_t port = data->rx_ctlbuf[i].port;
 
-			if ((port < VIRTIO_CONSOLE_MAX_PORTS) &&
-			    !IS_BIT_SET(data->console_ports, port)) {
+			if (port >= VIRTIO_CONSOLE_MAX_PORTS) {
+				LOG_WRN("device requested invalid console port %u", port);
+				break;
+			}
+
+			if (!IS_BIT_SET(data->console_ports, port)) {
 				data->console_ports |= BIT(port);
 				data->n_console_ports++;
 			}
-			virtconsole_send_control_msg(data->dev, data->rx_ctlbuf[i].port,
-						     VIRTIO_CONSOLE_PORT_OPEN, 1);
+			virtconsole_send_control_msg(data->dev, port, VIRTIO_CONSOLE_PORT_OPEN, 1);
 
 			if (atomic_test_bit(&data->flags, RX_IRQ_ENABLED)) {
 				if (!atomic_test_bit(&(data->rx_started), port)) {
@@ -511,12 +514,13 @@ static int virtconsole_init(const struct device *dev)
 		data->rx_cb_data[i].data = data;
 		data->rx_cb_data[i].port = i;
 	}
+	size_t devcfg_len;
 	size_t n_queues = 2;
 
 	__maybe_unused bool multiport =
 		virtio_read_device_feature_bit(config->vdev, VIRTIO_CONSOLE_F_MULTIPORT);
 
-	data->virtio_devcfg = virtio_get_device_specific_config(config->vdev);
+	data->virtio_devcfg = virtio_get_device_specific_config(config->vdev, &devcfg_len);
 
 	if (data->virtio_devcfg == NULL) {
 		LOG_WRN("could not get device-specific config");
@@ -526,6 +530,13 @@ static int virtconsole_init(const struct device *dev)
 #endif
 	}
 #ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
+	if (multiport &&
+	    devcfg_len < offsetof(struct _virtio_console_config, max_nr_ports) +
+			  sizeof(data->virtio_devcfg->max_nr_ports)) {
+		LOG_WRN("device-specific config too short for multiport");
+		multiport = false;
+	}
+
 	if (multiport) {
 		if (virtio_write_driver_feature_bit(config->vdev, VIRTIO_CONSOLE_F_MULTIPORT, 1)) {
 			multiport = false;

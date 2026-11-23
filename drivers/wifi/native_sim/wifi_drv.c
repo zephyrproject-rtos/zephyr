@@ -66,7 +66,7 @@ static struct wifi_mgmt_ops wifi_mgmt_ops = {
 };
 
 /* Normal network interface API */
-static const struct net_wifi_mgmt_offload wifi_if_api = {
+static DEVICE_API(wifi_native, wifi_if_api) = {
 	.wifi_iface.iface_api.init = wifi_if_init,
 	.wifi_iface.start = wifi_if_start,
 	.wifi_iface.stop = wifi_if_stop,

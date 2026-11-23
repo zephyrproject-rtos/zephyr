@@ -30,6 +30,12 @@ static const struct icm4268x_reg_val_pair table_accel_shift_to_reg[][5] = {
 		{.val = 6, .reg = ICM42686_DT_ACCEL_FS_4},
 		{.val = 5, .reg = ICM42686_DT_ACCEL_FS_2},
 	},
+	[ICM4268X_VARIANT_IIM42653] = {
+		{.val = 9, .reg = IIM42653_DT_ACCEL_FS_32},
+		{.val = 8, .reg = IIM42653_DT_ACCEL_FS_16},
+		{.val = 7, .reg = IIM42653_DT_ACCEL_FS_8},
+		{.val = 6, .reg = IIM42653_DT_ACCEL_FS_4},
+	},
 };
 
 static const struct icm4268x_reg_val_pair table_gyro_shift_to_reg[][8] = {
@@ -52,6 +58,16 @@ static const struct icm4268x_reg_val_pair table_gyro_shift_to_reg[][8] = {
 		{.val = 2,  .reg = ICM42686_DT_GYRO_FS_125},
 		{.val = 1,   .reg = ICM42686_DT_GYRO_FS_62_5},
 		{.val = 0,   .reg = ICM42686_DT_GYRO_FS_31_25},
+	},
+	[ICM4268X_VARIANT_IIM42653] = {
+		{.val = 7, .reg = IIM42653_DT_GYRO_FS_4000},
+		{.val = 6, .reg = IIM42653_DT_GYRO_FS_2000},
+		{.val = 5, .reg = IIM42653_DT_GYRO_FS_1000},
+		{.val = 4,  .reg = IIM42653_DT_GYRO_FS_500},
+		{.val = 3,  .reg = IIM42653_DT_GYRO_FS_250},
+		{.val = 2,  .reg = IIM42653_DT_GYRO_FS_125},
+		{.val = 1,   .reg = IIM42653_DT_GYRO_FS_62_5},
+		{.val = 0,   .reg = IIM42653_DT_GYRO_FS_31_25},
 	},
 };
 
@@ -243,12 +259,11 @@ static inline q31_t icm4268x_read_temperature_from_packet(const uint8_t *pkt)
 			temperature = (int8_t)pkt[0x7];
 		}
 
-		int64_t sensitivity = 207;
-		int64_t temperature100 = (temperature * 100) + (25 * sensitivity);
+		int32_t sensitivity = 207;
+		int32_t temperature100 = (temperature * 100) + (25 * sensitivity);
 
 		whole = temperature100 / sensitivity;
-		fraction =
-			((temperature100 - whole * sensitivity) * INT64_C(1000000)) / sensitivity;
+		fraction = (temperature100 - whole * sensitivity) * 1000000 / sensitivity;
 	}
 	__ASSERT_NO_MSG(whole >= -512 && whole <= 511);
 	return (q31_t)(((int64_t)whole << 22) + (((int64_t)fraction << 22) / INT64_C(1000000)));

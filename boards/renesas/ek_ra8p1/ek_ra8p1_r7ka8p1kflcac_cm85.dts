@@ -270,3 +270,47 @@ arducam_ffc_40pin_dvp_xclk: &cam_clock {};
 	interrupt-names = "dat", "err";
 	status = "okay";
 };
+
+/*
+ * Audio codec (U14), left disabled: J41, fitted by default, routes P405/P406
+ * to the codec instead of the parallel camera.
+ */
+&pwm2 {
+	pinctrl-0 = <&pwm2_default>;
+	pinctrl-names = "default";
+	interrupts = <32 1>, <33 1>;
+	interrupt-names = "gtioca", "overflow";
+
+	/*
+	 * GTIOC2A (PD06): codec MCLK and SSIE audio clock. 300 MHz / 24 gives
+	 * 12.5 MHz, 1.7 % above 256 * 48 kHz; 12.288 MHz would mean moving the
+	 * PLL shared with the display and USB.
+	 */
+	audio_clock: pwmclock {
+		compatible = "pwm-clock";
+		#clock-cells = <1>;
+		clock-frequency = <12500000>;
+		pwms = <&pwm2 0 PWM_HZ(12500000) PWM_POLARITY_NORMAL>;
+		status = "disabled";
+	};
+};
+
+&i2s0 {
+	pinctrl-0 = <&ssie0_default>;
+	pinctrl-names = "default";
+	interrupts = <34 1>, <35 1>, <36 1>;
+	interrupt-names = "ssi_txi", "ssi_rxi", "ssi_if";
+	clocks = <&pclkb MSTPC 8>, <&audio_clock 0>;
+	clock-names = "pclk", "audio-clock";
+};
+
+&iic1 {
+	audio_codec: da7212@1a {
+		compatible = "dlg,da7212";
+		reg = <0x1a>;
+		clocks = <&audio_clock 0>;
+		clock-names = "mclk";
+		clock-source = "MCLK";
+		status = "disabled";
+	};
+};

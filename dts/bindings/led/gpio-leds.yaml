@@ -8,6 +8,8 @@ description: |
 
 compatible: "gpio-leds"
 
+class: led
+
 child-binding:
   description: GPIO LED child node
 

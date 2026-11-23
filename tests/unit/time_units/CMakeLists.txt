@@ -8,3 +8,6 @@ project(time_units)
 
 FILE(GLOB app_sources *.c)
 target_sources(testbinary PRIVATE ${app_sources})
+target_sources(testbinary PRIVATE ${ZEPHYR_BASE}/lib/os/div64.c)
+# The reciprocal is only derived when the optimizer folds it.
+set_source_files_properties(reciprocal.c PROPERTIES COMPILE_OPTIONS -Os)

@@ -263,7 +263,7 @@ class BinaryHandler(Handler):
 
         self.seed = None
         self.extra_test_args = None
-        self.line = b""
+        self.line = ""
         self.binary: str | None = None
 
     def try_kill_process_by_pid(self):
@@ -291,13 +291,12 @@ class BinaryHandler(Handler):
                 reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
                 reader_t.start()
                 reader_t.join(this_timeout)
-                if not reader_t.is_alive() and self.line != b"":
-                    line_decoded = self.line.decode('utf-8', "replace")
-                    stripped_line = line_decoded.rstrip()
+                if not reader_t.is_alive() and self.line != "":
+                    stripped_line = self.line.rstrip()
                     if stripped_line.endswith(suffix):
                         stripped_line = stripped_line[:-len(suffix)].rstrip()
                     logger.debug(f"OUTPUT: {stripped_line}")
-                    log_out_fp.write(strip_ansi_sequences(line_decoded))
+                    log_out_fp.write(strip_ansi_sequences(self.line))
                     log_out_fp.flush()
                     harness.handle(stripped_line)
                     # A harness status means the run reached a verdict; a
@@ -433,7 +432,7 @@ class BinaryHandler(Handler):
         stdin = subprocess.DEVNULL if console_ui_active() else None
         with open(stderr_log, "w+") as stderr_log_fp, subprocess.Popen(
             command, stdin=stdin, stdout=subprocess.PIPE, stderr=stderr_log_fp,
-            cwd=self.build_dir, env=env
+            cwd=self.build_dir, env=env, text=True, encoding="utf-8", errors="replace"
         ) as proc:
             logger.debug(f"Spawning BinaryHandler Thread for {self.name}")
             t = threading.Thread(target=self._output_handler, args=(proc, harness,), daemon=True)

@@ -35,6 +35,7 @@ if(CONFIG_PERCEPIO_TRACERECORDER)
     ${TRACERECORDER_DIR}/trcStreamingRecorder.c
     ${TRACERECORDER_DIR}/trcString.c
     ${TRACERECORDER_DIR}/trcTask.c
+    ${TRACERECORDER_DIR}/trcTaskMonitor.c
     ${TRACERECORDER_DIR}/trcTimestamp.c
     ${TRACERECORDER_DIR}/trcDependency.c
     ${TRACERECORDER_DIR}/trcRunnable.c
@@ -117,22 +118,27 @@ if(CONFIG_PERCEPIO_TRACERECORDER)
 
 endif()
 
-if(CONFIG_PERCEPIO_DFM)
+if(CONFIG_PERCEPIO_DFM OR CONFIG_PERCEPIO_DFM_STUB_INCLUDED)
 
   set(DFM_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/DFM)
 
-  zephyr_library_sources(
+  zephyr_library_sources_ifdef(
+    CONFIG_PERCEPIO_DFM
     ${DFM_DIR}/dfm.c
     ${DFM_DIR}/dfmAlert.c
     ${DFM_DIR}/dfmCloud.c
     ${DFM_DIR}/dfmEntry.c
     ${DFM_DIR}/dfmRetainedMemory.c
     ${DFM_DIR}/dfmSession.c
+    ${DFM_DIR}/dfmStopwatch.c
     ${DFM_DIR}/dfmStorage.c
+    ${DFM_DIR}/dfmTaskMonitor.c
+    ${DFM_DIR}/dfmUtility.c
     ${DFM_DIR}/kernelports/Zephyr/dfmKernelPort.c
   )
 
-  if(CONFIG_PERCEPIO_DFM_CFG_STORAGEPORT_NONE)
+  # This part is also included if the stub api is selected
+  if(CONFIG_PERCEPIO_DFM_CFG_STORAGEPORT_NONE OR CONFIG_PERCEPIO_DFM_STUB_INCLUDED)
     zephyr_library_sources(
       ${DFM_DIR}/storageports/Dummy/dfmStoragePort.c
     )
@@ -162,7 +168,8 @@ if(CONFIG_PERCEPIO_DFM)
     )
   endif()
 
-  if(CONFIG_PERCEPIO_DFM_CFG_CLOUDPORT_NONE)
+  # This part is also included if the stub api is selected
+  if(CONFIG_PERCEPIO_DFM_CFG_CLOUDPORT_NONE OR CONFIG_PERCEPIO_DFM_STUB_INCLUDED)
     zephyr_library_sources(
       ${DFM_DIR}/cloudports/Dummy/dfmCloudPort.c
     )

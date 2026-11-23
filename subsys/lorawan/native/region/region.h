@@ -39,6 +39,16 @@ struct lwan_dr_params {
 
 struct lwan_region_ops {
 	/**
+	 * @brief Datarate the RX2 window uses until a Join-Accept names one.
+	 *
+	 * The network picks the RX2 datarate in the Join-Accept, but the
+	 * window that receives the Join-Accept itself opens before that, on
+	 * whatever the region calls its default. Leaving the field out means
+	 * DR0, which is the default the regions that want DR0 already have.
+	 */
+	uint8_t default_rx2_dr;
+
+	/**
 	 * @brief Get the default channels for this region.
 	 *
 	 * @param ch Output channel array.
@@ -157,7 +167,8 @@ struct lwan_region_ops {
 	 * @param ch Channel array.
 	 * @param count Number of channels.
 	 * @param freq Output: selected frequency.
-	 * @param dr Output: selected datarate index.
+	 * @param dr Output (on success or -ENOBUFS): datarate index the
+	 *           join request will use.
 	 * @param delay_ms Output (only on -ENOBUFS): ms until the earliest
 	 *                 matching channel opens.  Not touched on success
 	 *                 or -ENOENT.

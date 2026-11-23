@@ -18,7 +18,7 @@
  * @brief Interfaces for display controllers.
  * @defgroup display_interface Display
  * @since 1.14
- * @version 0.10.0
+ * @version 0.11.0
  * @ingroup io_interfaces
  * @{
  *
@@ -266,6 +266,34 @@ enum display_pixel_format {
 	 * which is what makes it worth writing pictures out in.
 	 */
 	PIXEL_FORMAT_YUYV = BIT(15),
+
+	/**
+	 * @brief 2-plane YUV 4:2:0 format.
+	 *
+	 * A full-resolution Y (luma) plane followed immediately by a
+	 * half-resolution, interleaved U/V (chroma) plane.
+	 * The chroma plane is subsampled by 2 in each direction, thus the
+	 * frame size shall be even in width and height.
+	 *
+	 * Below shows how data are organized in memory, for a 4x2 image.
+	 * Each row of the U/V plane has lower-half padding to keep consistent
+	 * pitch value with the Y plane.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   | Byte 2   | Byte 3   |
+	 *   7......0   7......0   7......0   7......0
+	 * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | (row 0, Y plane)
+	 *   Byte 4   | Byte 5   | Byte 6   | Byte 7   |
+	 *   7......0   7......0   7......0   7......0
+	 * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | (row 1, Y plane)
+	 *   Byte 8   | Byte 9   | Byte 10   | Byte 11   |
+	 *   7......0   7......0   7......0   7......0
+	 * | Uuuuuuuu | Vvvvvvvv | Xxxxxxxx | Xxxxxxxx | (row 0, interleaved U/V plane)
+	 *   7......0   7......0   7......0   7......0
+	 * | Uuuuuuuu | Vvvvvvvv | Xxxxxxxx | Xxxxxxxx | (row 1, interleaved U/V plane)
+	 * @endcode
+	 */
+	PIXEL_FORMAT_NV12 = BIT(16),
 };
 
 /**
@@ -291,7 +319,8 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U) +			\
 	(((fmt & PIXEL_FORMAT_I_4) >> 13) * 4U) +				\
 	(((fmt & PIXEL_FORMAT_L_4) >> 14) * 4U) +				\
-	(((fmt & PIXEL_FORMAT_YUYV) >> 15) * 16U))
+	(((fmt & PIXEL_FORMAT_YUYV) >> 15) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_NV12) >> 16) * 16U))
 
 /**
  * @brief Display screen information
@@ -367,6 +396,34 @@ struct display_capabilities {
 	/** Color palette supported by the display, indexed by pixel value */
 	struct display_palette_color color_palette[CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE];
 #endif /* defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__) */
+};
+
+/** @brief Structure holding display timings. */
+struct display_timing {
+	/** Horizontal active video. */
+	uint32_t hactive;
+	/** Vertical active video. */
+	uint32_t vactive;
+	/** Horizontal sync length. */
+	uint32_t hsync_len;
+	/** Horizontal front porch. */
+	uint32_t hfront_porch;
+	/** Horizontal back porch. */
+	uint32_t hback_porch;
+	/** Vertical sync length. */
+	uint32_t vsync_len;
+	/** Vertical front porch. */
+	uint32_t vfront_porch;
+	/** Vertical back porch. */
+	uint32_t vback_porch;
+	/** Horizontal sync active high. */
+	bool hsync_active;
+	/** Vertical sync active high. */
+	bool vsync_active;
+	/** Data enable active high. */
+	bool de_active;
+	/** Pixel clock active high. */
+	bool pixelclk_active;
 };
 
 /** @brief Structure to describe display data buffer layout */
@@ -528,6 +585,20 @@ typedef int (*display_set_orientation_api)(const struct device *dev,
 					   orientation);
 
 /**
+ * @brief Callback API to set the timings used by the display.
+ * See display_set_timing() for argument description
+ */
+typedef int (*display_set_timing_api)(const struct device *dev,
+				      const struct display_timing *timing);
+
+/**
+ * @brief Callback API to get the timings used by the display.
+ * See display_get_timing() for argument description
+ */
+typedef int (*display_get_timing_api)(const struct device *dev,
+				      struct display_timing *timing);
+
+/**
  * @brief Callback API to register display event callback.
  * See @ref display_register_event_cb for argument description
  */
@@ -590,6 +661,14 @@ __subsystem struct display_driver_api {
 	 * @driver_ops_optional @copybrief display_set_orientation
 	 */
 	display_set_orientation_api set_orientation;
+	/**
+	 * @driver_ops_optional @copybrief display_set_timing
+	 */
+	display_set_timing_api set_timing;
+	/**
+	 * @driver_ops_optional @copybrief display_get_timing
+	 */
+	display_get_timing_api get_timing;
 	/**
 	 * @driver_ops_optional @copybrief display_register_event_cb
 	 */
@@ -861,6 +940,60 @@ static inline int display_set_orientation(const struct device *dev,
 	}
 
 	return api->set_orientation(dev, orientation);
+}
+
+/**
+ * @brief Set display timings
+ *
+ * Sets the active area and display timings. Timings can be set at any time
+ * after the device is initialized. Whether they take effect immediately or
+ * are deferred (e.g. to the next frame) is driver specific. Devicetree
+ * timings, if any, are the default and are restored on reset or
+ * re-initialization.
+ *
+ * @param dev Pointer to device structure
+ * @param timing Timings to be used by display
+ *
+ * @return 0 on success else negative errno code.
+ * @retval -ENOSYS Not implemented.
+ * @retval -EINVAL Invalid timings.
+ * @retval -ENOMEM Active area does not fit the preallocated frame buffer.
+ * @retval -EIO Reconfig failure.
+ */
+static inline int display_set_timing(const struct device *dev,
+				     const struct display_timing *timing)
+{
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
+
+	if (api->set_timing == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_timing(dev, timing);
+}
+
+/**
+ * @brief Get display timings
+ *
+ * Gets the timings currently used by the display.
+ *
+ * @param dev Pointer to device structure
+ * @param timing Pointer to timings structure to be filled
+ *
+ * @return 0 on success else negative errno code.
+ * @retval -ENOSYS Not implemented.
+ * @retval -ENODATA No timings set.
+ */
+static inline int display_get_timing(const struct device *dev,
+				     struct display_timing *timing)
+{
+	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
+
+	if (api->get_timing == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_timing(dev, timing);
 }
 
 /**

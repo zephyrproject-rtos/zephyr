@@ -118,7 +118,7 @@ static int dummy_dev_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static struct dummy_api dummy_api_funcs = {
+static DEVICE_API(dummy, dummy_api_funcs) = {
 	.iface_api.init = dummy_iface_init,
 	.send = dummy_dev_send,
 };

@@ -27,6 +27,10 @@
 struct spi_nand_config {
 	/* Devicetree SPI configuration */
 	struct spi_dt_spec spi;
+	/* Optional WP# pin, held inactive */
+	struct gpio_dt_spec wp;
+	/* Optional HOLD# pin, held inactive */
+	struct gpio_dt_spec hold;
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	/* Flash page layout can be determined from devicetree. */
 	struct flash_pages_layout layout;
@@ -57,6 +61,8 @@ struct spi_nand_config {
 	uint8_t addr_block_shift;
 	/* Number of bits used for plane selection */
 	uint8_t plane_addr_bits;
+	/* Page address of the ONFI parameter page in the OTP area */
+	uint8_t parameter_page;
 	/* Expected JEDEC ID, from jedec-id property */
 	const uint8_t *jedec_id;
 	/* Length of the JEDEC ID */
@@ -104,13 +110,20 @@ struct spi_nand_data {
 LOG_MODULE_REGISTER(spi_nand, CONFIG_FLASH_LOG_LEVEL);
 
 /* Everything necessary to acquire owning access to the device. */
-static void acquire_device(const struct device *dev)
+static int acquire_device(const struct device *dev)
 {
 	const struct spi_nand_config *config = dev->config;
 	struct spi_nand_data *const data = dev->data;
+	int ret;
 
 	k_sem_take(&data->sem, K_FOREVER);
-	(void)pm_device_runtime_get(config->spi.bus);
+	ret = pm_device_runtime_get(config->spi.bus);
+	if (ret != 0) {
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(config->spi.bus, ret);
+		k_sem_give(&data->sem);
+	}
+
+	return ret;
 }
 
 /* Everything necessary to release access to the device. */
@@ -423,7 +436,7 @@ static int spi_nand_read(const struct device *dev, off_t addr, void *dest, size_
 	uint16_t page_offset;
 	uint16_t bytes_to_end;
 	uint16_t bytes_to_read;
-	int ret = 0;
+	int ret;
 
 	if (size == 0) {
 		/* No work to do */
@@ -435,7 +448,10 @@ static int spi_nand_read(const struct device *dev, off_t addr, void *dest, size_
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	ret = acquire_device(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	while (size > 0) {
 		page_address = addr >> config->addr_page_shift;
@@ -481,7 +497,7 @@ static int spi_nand_write(const struct device *dev, off_t addr, const void *src,
 						    : 0;
 	uint32_t page_address;
 	uint8_t status;
-	int ret = 0;
+	int ret;
 
 	if (size == 0) {
 		/* No work to do */
@@ -501,7 +517,10 @@ static int spi_nand_write(const struct device *dev, off_t addr, const void *src,
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	ret = acquire_device(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	while (size > 0) {
 		/* Enable write operation */
@@ -557,7 +576,7 @@ static int spi_nand_erase(const struct device *dev, off_t addr, size_t size)
 	const struct spi_nand_config *config = dev->config;
 	uint32_t page_address;
 	uint8_t status;
-	int ret = 0;
+	int ret;
 
 	if (size == 0) {
 		/* No work to do */
@@ -577,7 +596,10 @@ static int spi_nand_erase(const struct device *dev, off_t addr, size_t size)
 		return -EINVAL;
 	}
 
-	acquire_device(dev);
+	ret = acquire_device(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	while (size > 0) {
 		/* Enable write (erase) operation */
@@ -830,7 +852,10 @@ static int spi_nand_ex_op(const struct device *dev, uint16_t code, const uintptr
 {
 	int ret;
 
-	acquire_device(dev);
+	ret = acquire_device(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	switch (code) {
 	case FLASH_EX_OP_RESET:
@@ -913,7 +938,7 @@ static int onfi_parameters_load(const struct device *dev)
 	}
 
 	/* Load parameter info into cache (ignoring ECC errors) */
-	ret = spi_nand_page_read_to_cache(dev, 1);
+	ret = spi_nand_page_read_to_cache(dev, config->parameter_page);
 	if ((ret != 0) && (ret != -EBADMSG)) {
 		return ret;
 	}
@@ -1008,7 +1033,10 @@ static int spi_nand_configure(const struct device *dev)
 		return -ENODEV;
 	}
 
-	acquire_device(dev);
+	ret = acquire_device(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	/* Soft RESET chip and wait until ready again */
 	ret = spi_nand_reset(dev);
@@ -1075,6 +1103,20 @@ static int spi_nand_pm_control(const struct device *dev, enum pm_device_action a
 	return rc;
 }
 
+/* Drive an optional control pin of the device to its inactive level */
+static int spi_nand_gpio_deassert(const struct gpio_dt_spec *gpio)
+{
+	if (gpio->port == NULL) {
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(gpio)) {
+		return -ENODEV;
+	}
+
+	return gpio_pin_configure_dt(gpio, GPIO_OUTPUT_INACTIVE);
+}
+
 /**
  * @brief Initialize and configure the flash
  *
@@ -1083,9 +1125,25 @@ static int spi_nand_pm_control(const struct device *dev, enum pm_device_action a
  */
 static int spi_nand_init(const struct device *dev)
 {
+	const struct spi_nand_config *config = dev->config;
 	struct spi_nand_data *const data = dev->data;
+	int ret;
 
 	k_sem_init(&data->sem, 1, K_SEM_MAX_LIMIT);
+
+	/* An active HOLD# pauses the communication with the device, an active WP# can
+	 * lock its block protection bits
+	 */
+	ret = spi_nand_gpio_deassert(&config->wp);
+	if (ret != 0) {
+		LOG_ERR("WP# GPIO configuration failed (%d)", ret);
+		return ret;
+	}
+	ret = spi_nand_gpio_deassert(&config->hold);
+	if (ret != 0) {
+		LOG_ERR("HOLD# GPIO configuration failed (%d)", ret);
+		return ret;
+	}
 
 	return pm_device_driver_init(dev, spi_nand_pm_control);
 }
@@ -1145,6 +1203,8 @@ static DEVICE_API(flash, spi_nand_api) = {
                                                                                                    \
 	static const struct spi_nand_config spi_nand_##idx##_config = {                            \
 		.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8)),                                 \
+		.wp = GPIO_DT_SPEC_INST_GET_OR(idx, wp_gpios, {0}),                                \
+		.hold = GPIO_DT_SPEC_INST_GET_OR(idx, hold_gpios, {0}),                            \
 		.parameters = &spi_nand_##idx##_parameters,                                        \
 		.flash_size = DT_INST_PROP(idx, size_bytes),                                       \
 		.block_size = DT_INST_PROP(idx, erase_block_size),                                 \
@@ -1157,6 +1217,7 @@ static DEVICE_API(flash, spi_nand_api) = {
 		.addr_block_shift = LOG2(DT_INST_PROP(idx, erase_block_size)),                     \
 		.plane_addr_bits =                                                                 \
 			LOG2(DT_INST_PROP(idx, size_bytes) / DT_INST_PROP(idx, plane_bytes)),      \
+		.parameter_page = DT_INST_PROP(idx, parameter_page_address),                       \
 		.jedec_id = spi_nand_##idx##_jedec_id,                                             \
 		.jedec_id_len = ARRAY_SIZE(spi_nand_##idx##_jedec_id),                             \
 		.has_program_plane_select = DT_INST_PROP(idx, has_program_plane_select),           \

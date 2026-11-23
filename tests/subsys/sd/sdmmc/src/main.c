@@ -39,6 +39,44 @@ ZTEST(sd_stack, test_0_init)
 
 	ret = sd_init(sdhc_dev, &card);
 	zassert_equal(ret, 0, "Card initialization failed");
+	if (!card.host_props.is_spi && card.host_props.bus_4_bit_support &&
+	    (card.flags & SD_4BITS_WIDTH) != 0U) {
+		zassert_equal(
+			card.bus_io.bus_width, SDHC_BUS_WIDTH4BIT,
+			"Card and host support 4-bit operation but initialization left 1 bit");
+	}
+}
+
+/* Erase blocks 5 through 10. Blocks 4 and 11 must stay intact. */
+ZTEST(sd_stack, test_erase_range)
+{
+	int ret;
+	uint8_t erased;
+
+	memset(buf, 0xA5, 8 * SECTOR_SIZE);
+	ret = sdmmc_write_blocks(&card, buf, 4, 8);
+	zassert_equal(ret, 0, "Pattern write failed");
+
+	ret = sdmmc_erase_blocks(&card, 5, 6);
+	zassert_equal(ret, 0, "Erase failed");
+
+	memset(buf, 0, 8 * SECTOR_SIZE);
+	ret = sdmmc_read_blocks(&card, buf, 4, 8);
+	zassert_equal(ret, 0, "Read after erase failed");
+
+	for (int i = 0; i < SECTOR_SIZE; i++) {
+		zassert_equal(buf[i], 0xA5, "Block 4 was erased");
+	}
+	for (int i = 7 * SECTOR_SIZE; i < 8 * SECTOR_SIZE; i++) {
+		zassert_equal(buf[i], 0xA5, "Block 11 was erased");
+	}
+
+	erased = buf[SECTOR_SIZE];
+	zassert_true(erased == 0x00 || erased == 0xFF,
+		     "Erased byte is 0x%02x", erased);
+	for (int i = SECTOR_SIZE; i < 7 * SECTOR_SIZE; i++) {
+		zassert_equal(buf[i], erased, "Erased range is not uniform");
+	}
 }
 
 /* Verify that SD stack returns valid IOCTL values */
@@ -259,6 +297,18 @@ ZTEST(sd_stack, test_card_config)
 	} else {
 		zassert_unreachable("Card spec is unknown value");
 	}
+}
+
+/* Verify consecutive GO_IDLE_STATE commands succeed. */
+ZTEST(sd_stack, test_double_reset)
+{
+	int ret;
+
+	ret = sd_init(sdhc_dev, &card);
+	zassert_equal(ret, 0, "Card initialization failed");
+
+	ret = sd_init(sdhc_dev, &card);
+	zassert_equal(ret, 0, "Card re-initialization failed");
 }
 
 ZTEST_SUITE(sd_stack, NULL, NULL, NULL, NULL, NULL);

@@ -16,6 +16,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_TIMER_SYSTEM_TIMER_LPM_H_
 #define ZEPHYR_INCLUDE_DRIVERS_TIMER_SYSTEM_TIMER_LPM_H_
 
+#include <zephyr/devicetree.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -36,6 +37,14 @@ extern "C" {
  * by the system timer subsystem.
  * @{
  */
+
+/**
+ * @brief Devicetree node identifier of the system timer low-power companion
+ *
+ * Selects the node referenced by the zephyr,system-timer-companion chosen property.
+ * Use DT_NODE_EXISTS() to check whether the selected node exists.
+ */
+#define SYSTEM_TIMER_COMPANION_NODE DT_CHOSEN(zephyr_system_timer_companion)
 
 /**
  * @brief Low-power companion initialization hook

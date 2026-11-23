@@ -19,59 +19,59 @@ if SOC_SERIES_ESP32P4
 
 menu "Cache config"
 
-choice ESP32_CACHE_L2_SIZE_CHOICE
+choice SOC_ESP32P4_CACHE_L2_SIZE_CHOICE
 	prompt "L2 cache size"
-	default ESP32_CACHE_L2_128KB
+	default SOC_ESP32P4_CACHE_L2_128KB
 	help
 	  L2 cache size to be set on application startup. The L2 cache is
 	  carved out of HP SRAM, so a larger cache reduces usable SRAM.
 
-config ESP32_CACHE_L2_128KB
+config SOC_ESP32P4_CACHE_L2_128KB
 	bool "128KB"
 
-config ESP32_CACHE_L2_256KB
+config SOC_ESP32P4_CACHE_L2_256KB
 	bool "256KB"
 
-config ESP32_CACHE_L2_512KB
+config SOC_ESP32P4_CACHE_L2_512KB
 	bool "512KB"
 
 endchoice
 
-config ESP32_CACHE_L2_SIZE
+config SOC_ESP32P4_CACHE_L2_SIZE
 	hex
-	default 0x20000 if ESP32_CACHE_L2_128KB
-	default 0x40000 if ESP32_CACHE_L2_256KB
-	default 0x80000 if ESP32_CACHE_L2_512KB
+	default 0x20000 if SOC_ESP32P4_CACHE_L2_128KB
+	default 0x40000 if SOC_ESP32P4_CACHE_L2_256KB
+	default 0x80000 if SOC_ESP32P4_CACHE_L2_512KB
 
-choice ESP32_CACHE_L2_LINE_SIZE_CHOICE
+choice SOC_ESP32P4_CACHE_L2_LINE_SIZE_CHOICE
 	prompt "L2 cache line size"
-	default ESP32_CACHE_L2_LINE_64B if ESP32_CACHE_L2_128KB
-	default ESP32_CACHE_L2_LINE_64B if ESP32_CACHE_L2_256KB
-	default ESP32_CACHE_L2_LINE_128B if ESP32_CACHE_L2_512KB
+	default SOC_ESP32P4_CACHE_L2_LINE_64B if SOC_ESP32P4_CACHE_L2_128KB
+	default SOC_ESP32P4_CACHE_L2_LINE_64B if SOC_ESP32P4_CACHE_L2_256KB
+	default SOC_ESP32P4_CACHE_L2_LINE_128B if SOC_ESP32P4_CACHE_L2_512KB
 	help
 	  L2 cache line size to be set on application startup. 64B lines
 	  are only valid for 128KB and 256KB cache sizes; the 512KB cache
 	  is fixed to 128B lines.
 
-config ESP32_CACHE_L2_LINE_64B
+config SOC_ESP32P4_CACHE_L2_LINE_64B
 	bool "64 Bytes"
-	depends on ESP32_CACHE_L2_128KB || ESP32_CACHE_L2_256KB
+	depends on SOC_ESP32P4_CACHE_L2_128KB || SOC_ESP32P4_CACHE_L2_256KB
 
-config ESP32_CACHE_L2_LINE_128B
+config SOC_ESP32P4_CACHE_L2_LINE_128B
 	bool "128 Bytes"
 
 endchoice
 
-config ESP32_CACHE_L2_LINE_SIZE
+config SOC_ESP32P4_CACHE_L2_LINE_SIZE
 	int
-	default 64 if ESP32_CACHE_L2_LINE_64B
-	default 128 if ESP32_CACHE_L2_LINE_128B
+	default 64 if SOC_ESP32P4_CACHE_L2_LINE_64B
+	default 128 if SOC_ESP32P4_CACHE_L2_LINE_128B
 
 endmenu # Cache config
 
 rsource "Kconfig.caps"
 
-config ESP32P4_EMAC
+config SOC_ESP32P4_EMAC
 	bool
 	default y if ETH_ESP32
 	default y if ETH_ESP32_DWC_ETHER_1000

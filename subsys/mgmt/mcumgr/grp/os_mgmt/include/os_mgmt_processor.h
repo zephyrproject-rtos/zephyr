@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Zephyr authors
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -125,7 +126,9 @@ extern "C" {
 #define PROCESSOR_NAME "cortex-a32"
 #endif
 #elif defined(CONFIG_ARM64)
-#if defined(CONFIG_CPU_CORTEX_A53)
+#if defined(CONFIG_CPU_CORTEX_A35)
+#define PROCESSOR_NAME "cortex-a35"
+#elif defined(CONFIG_CPU_CORTEX_A53)
 #define PROCESSOR_NAME "cortex-a53"
 #elif defined(CONFIG_CPU_CORTEX_A55)
 #define PROCESSOR_NAME "cortex-a55"
@@ -139,10 +142,12 @@ extern "C" {
 #define PROCESSOR_NAME "cortex-a76"
 #elif defined(CONFIG_CPU_CORTEX_A78)
 #define PROCESSOR_NAME "cortex-a78"
-#elif defined(CONFIG_CPU_CORTEX_A510)
-#define PROCESSOR_NAME "cortex-a510"
 #elif defined(CONFIG_CPU_CORTEX_A320)
 #define PROCESSOR_NAME "cortex-a320"
+#elif defined(CONFIG_CPU_CORTEX_A510)
+#define PROCESSOR_NAME "cortex-a510"
+#elif defined(CONFIG_CPU_CORTEX_A520)
+#define PROCESSOR_NAME "cortex-a520"
 #elif defined(CONFIG_CPU_CORTEX_A720)
 #define PROCESSOR_NAME "cortex-a720"
 #elif defined(CONFIG_CPU_CORTEX_R82)
@@ -194,6 +199,8 @@ extern "C" {
 #define PROCESSOR_NAME "openrisc"
 #elif defined(CONFIG_TRICORE)
 #define PROCESSOR_NAME "tricore"
+#elif defined(CONFIG_HEXAGON)
+#define PROCESSOR_NAME "hexagon"
 #endif
 
 #if defined(CONFIG_ARCH_POSIX)

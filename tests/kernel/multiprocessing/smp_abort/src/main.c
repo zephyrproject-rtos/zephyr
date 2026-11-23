@@ -21,7 +21,6 @@ struct k_thread thread[NUM_THREADS];
 
 struct isr_args {
 	volatile bool *sync;
-	volatile bool *wait;
 	struct k_thread *target;
 };
 
@@ -35,7 +34,15 @@ static void isr(const void *args)
 
 	*(var->sync) = true;            /* Flag that ISR is in progress */
 
-	while (*(var->wait) == false) { /* Wait upon dependent CPU */
+	/*
+	 * Wait until every ISR is in progress. An ISR that only waited for
+	 * the next one may complete its k_thread_abort() call and return
+	 * before the last thread is scheduled, and its own thread is then
+	 * never aborted.
+	 */
+	for (unsigned int i = 0; i < NUM_THREADS; i++) {
+		while (sync[i] == false) {
+		}
 	}
 
 	k_thread_abort(var->target);    /* Abort thread on another CPU */
@@ -62,6 +69,37 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	zassert_true(false, "Thread %u did not abort!", index);
 }
 
+/**
+ * @brief Verify that circular cross-CPU thread aborts from ISRs do not
+ *        deadlock.
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * Aborting a thread that is running on another CPU makes the aborting CPU wait
+ * for that thread to be switched out. If every CPU simultaneously aborts the
+ * thread interrupted on the next CPU, the wait becomes circular and a naive
+ * implementation deadlocks. The test sets up exactly that ring: one thread per
+ * CPU, each entering an ISR that waits for every thread to reach its own
+ * ISR before aborting the next thread.
+ *
+ * Test steps:
+ * - Build the abort ring so thread i aborts thread i+1, wrapping around at
+ *   the last thread.
+ * - Create one thread per CPU at a priority above the test thread; each thread
+ *   immediately invokes an ISR through irq_offload().
+ * - In each ISR, flag that it is in progress, spin until every ISR is in
+ *   progress, call k_thread_abort() on the next thread, then delay so the
+ *   other CPUs reach their abort call too.
+ * - Join every thread from the test thread.
+ *
+ * Expected result:
+ * - All threads are aborted and joined, and no thread returns from its ISR
+ *   into its entry point.
+ *
+ * @see k_thread_abort()
+ * @see irq_offload()
+ */
 ZTEST(smp_abort, test_smp_thread_abort_deadlock)
 {
 	unsigned int  i;
@@ -71,15 +109,14 @@ ZTEST(smp_abort, test_smp_thread_abort_deadlock)
 
 	/*
 	 * Each thread will run on its own CPU and invoke an ISR.
-	 * Each ISR will wait until the next thread enters its ISR
-	 * before attempting to abort that thread. This ensures that
+	 * Each ISR will wait until every thread enters its ISR
+	 * before attempting to abort the next thread. This ensures that
 	 * we have a scenario where each CPU is attempting to abort
 	 * the active thread that was interrupted by an ISR.
 	 */
 
 	for (i = 0; i < NUM_THREADS; i++) {
 		isr_args[i].sync = &sync[i];
-		isr_args[i].wait = &sync[(i + 1) % NUM_THREADS];
 		isr_args[i].target = &thread[(i + 1) % NUM_THREADS];
 	}
 

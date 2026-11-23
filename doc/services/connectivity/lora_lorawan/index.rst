@@ -29,8 +29,8 @@ Zephyr provides two LoRaWAN backend implementations:
 
 * **Native**: A Zephyr-idiomatic LoRaWAN 1.0.x Class A implementation that
   talks directly to the LoRa radio driver without external dependencies.
-  Currently supports the EU868 region.  Selected with
-  :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`.
+  Currently supports the AS923, EU868, KR920 and US915 regions.  Selected
+  with :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`.
 
 .. note::
 

@@ -421,6 +421,31 @@ ZTEST(http_service, test_HTTP_RESOURCE_DEFAULT)
 	zassert_equal(res, RES(0), "Resource mismatch");
 }
 
+ZTEST(http_service, test_HTTP_RESOURCE_DEFAULT_TYPE)
+{
+	struct http_service_desc service = service_E;
+	struct http_resource_detail *res;
+	int len;
+
+	/* A fallback resource that is not a WebSocket one is not used for a WebSocket request */
+	len = 0;
+	res = get_resource_detail(&service, NON_EXISTING_PATH, &len, true);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+
+	/* A WebSocket fallback resource is used only for a WebSocket request */
+	service.res_fallback = DETAIL(2);
+
+	res = CHECK_PATH(service, NON_EXISTING_PATH, &len);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+
+	len = 0;
+	res = get_resource_detail(&service, NON_EXISTING_PATH, &len, true);
+	zassert_equal(res, RES(2), "Resource mismatch");
+	zassert_equal(len, strlen(NON_EXISTING_PATH), "Length incorrect");
+}
+
 extern void http_server_get_content_type_from_extension(char *url, char *content_type,
 							size_t content_type_size);
 
@@ -527,13 +552,20 @@ ZTEST(http_service, test_HTTP_SERVER_REMOVE_DOT_SEGMENTS)
 	ASSERT_NORMALIZE("/../foo", "/foo");
 	ASSERT_NORMALIZE("/a/../../b", "/b");
 
-	/* Query and fragment portions are preserved verbatim. */
+	/* The query portion is preserved verbatim. */
 	ASSERT_NORMALIZE("/foo?bar=1", "/foo?bar=1");
 	ASSERT_NORMALIZE("/foo/../bar?x=1", "/bar?x=1");
 	ASSERT_NORMALIZE("/foo/.?x=1", "/foo/?x=1");
 	ASSERT_NORMALIZE("/foo/..?x=1", "/?x=1");
-	ASSERT_NORMALIZE("/foo#frag", "/foo#frag");
-	ASSERT_NORMALIZE("/foo/../bar#frag", "/bar#frag");
+
+	/* A fragment is dropped. */
+	ASSERT_NORMALIZE("/foo#frag", "/foo");
+	ASSERT_NORMALIZE("/foo/../bar#frag", "/bar");
+	ASSERT_NORMALIZE("/foo#/../bar", "/foo");
+	ASSERT_NORMALIZE("/foo/#", "/foo/");
+	ASSERT_NORMALIZE("/foo?x=1#frag", "/foo?x=1");
+	ASSERT_NORMALIZE("/foo?x=1#/../bar", "/foo?x=1");
+	ASSERT_NORMALIZE("#frag", "");
 }
 
 ZTEST_SUITE(http_service, NULL, NULL, NULL, NULL, NULL);

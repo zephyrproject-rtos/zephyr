@@ -15,4 +15,4 @@ tests:
     extra_configs:
       - CONFIG_POSIX_API=y
   sample.net.sockets.big_http_download.ci:
-    extra_args: EXTRA_CONF_FILE=overlay-ci.conf
+    extra_args: EXTRA_CONF_FILE=ci.conf

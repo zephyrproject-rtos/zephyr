@@ -33,7 +33,6 @@ these references:
 
 - `MCX E24x Series Microcontrollers Website`_
 - `FRDM-MCXE247 Website`_
-- `FRDM-MCXE247 Quick Reference Guide`_
 - `FRDM-MCXE247 Getting Started`_
 
 Supported Features
@@ -79,6 +78,26 @@ PORTB/GPIOB, PORTC/GPIOC, PORTD/GPIOD, and PORTE/GPIOE).
 | PTE5  | FLEXCAN0    | CAN0 TX                   |
 +-------+-------------+---------------------------+
 | PTE4  | FLEXCAN0    | CAN0 RX                   |
++-------+-------------+---------------------------+
+| PTC0  | RMII_RXD1   | Ethernet (LAN8741A PHY)   |
++-------+-------------+---------------------------+
+| PTC1  | RMII_RXD0   | Ethernet (LAN8741A PHY)   |
++-------+-------------+---------------------------+
+| PTC17 | RMII_RX_DV  | Ethernet (LAN8741A PHY)   |
++-------+-------------+---------------------------+
+| PTC2  | RMII_TXD0   | Ethernet (LAN8741A PHY)   |
++-------+-------------+---------------------------+
+| PTD7  | RMII_TXD1   | Ethernet (LAN8741A PHY)   |
++-------+-------------+---------------------------+
+| PTD12 | RMII_TX_EN  | Ethernet (LAN8741A PHY)   |
++-------+-------------+---------------------------+
+| PTD11 | RMII_TX_CLK | Ethernet 50 MHz REF_CLK   |
++-------+-------------+---------------------------+
+| PTB4  | MII_MDIO    | Ethernet PHY management   |
++-------+-------------+---------------------------+
+| PTE8  | MII_MDC     | Ethernet PHY management   |
++-------+-------------+---------------------------+
+| PTC3  | GPIO        | Ethernet PHY reset        |
 +-------+-------------+---------------------------+
 
 System Clock
@@ -207,9 +226,6 @@ exercise the flash with the MSPI flash sample
 
 .. _FRDM-MCXE247 Website:
    https://www.nxp.com/design/design-center/development-boards-and-designs/FRDM-MCXE247
-
-.. _FRDM-MCXE247 Quick Reference Guide:
-   https://www.nxp.com/docs/en/quick-reference-guide/MCXE247QSG.pdf
 
 .. _FRDM-MCXE247 Getting Started:
    https://www.nxp.com/document/guide/getting-started-with-the-frdm-mcxe247-board:GS-FRDM-MCXE247

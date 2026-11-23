@@ -26,7 +26,7 @@ tests:
     tags:
       - net
     extra_args:
-      - EXTRA_CONF_FILE="overlay-iperf3.conf"
+      - EXTRA_CONF_FILE="iperf3.conf"
   sample.net.zperf.loopback_icount:
     harness: console
     platform_allow:
@@ -42,7 +42,7 @@ tests:
       # different absolute numbers, so keep separate baseline files for each.
       - net-perf
     extra_args:
-      - EXTRA_CONF_FILE="overlay-loopback.conf;overlay-loopback-icount.conf"
+      - EXTRA_CONF_FILE="loopback.conf;loopback-icount.conf"
     harness_config:
       type: one_line
       regex:
@@ -65,7 +65,7 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - "coming up"
+        - "(coming up|IPv4 address:|IPv6 address:)"
     integration_platforms:
       - stm32h573i_dk
     extra_configs:
@@ -77,7 +77,7 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - "coming up"
+        - "(coming up|IPv4 address:|IPv6 address:)"
     platform_allow:
       - nucleo_h563zi
       - nucleo_h743zi
@@ -112,7 +112,7 @@ tests:
   sample.net.zperf.usbd_cdc_ecm:
     harness: net
     extra_args:
-      - EXTRA_CONF_FILE="overlay-usbd.conf"
+      - EXTRA_CONF_FILE="usbd.conf"
       - DTC_OVERLAY_FILE="usbd_cdc_ecm.overlay"
     platform_allow:
       - nrf52840dk/nrf52840
@@ -125,7 +125,7 @@ tests:
   sample.net.zperf.usbd_cdc_ncm:
     harness: net
     extra_args:
-      - EXTRA_CONF_FILE="overlay-usbd.conf"
+      - EXTRA_CONF_FILE="usbd.conf"
       - DTC_OVERLAY_FILE="usbd_cdc_ncm.overlay"
     platform_allow:
       - nrf52840dk/nrf52840
@@ -147,14 +147,15 @@ tests:
       - arduino_spi
       - arduino_gpio
   sample.net.zperf.nxp_enet1g:
-    extra_args: EXTRA_DTC_OVERLAY_FILE="nxp,enet1g.overlay"
+    extra_args:
+      EXTRA_DTC_OVERLAY_FILE="nxp,enet1g.overlay;mimxrt1170_evk_mimxrt1176_cm7_sram_dtcm.overlay"
     tags:
       - net
       - zperf
     platform_allow:
       - mimxrt1170_evk/mimxrt1176/cm7
   sample.net.zperf.802154.subg:
-    extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
+    extra_args: EXTRA_CONF_FILE="802154-subg.conf"
     tags:
       - net
     platform_allow:
@@ -184,3 +185,12 @@ tests:
       - CONFIG_NET_SOCKETS_PACKET=y
       - CONFIG_NET_ZPERF_RAW_TX=y
     platform_allow: nrf7002dk/nrf5340/cpuapp
+  sample.net.zperf.esp32s3_devkitc_n8r8:
+    build_only: true
+    tags:
+      - net
+    platform_allow: esp32s3_devkitc/esp32s3/procpu
+    extra_args:
+      - FILE_SUFFIX=n8r8
+    extra_configs:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y

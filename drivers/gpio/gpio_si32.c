@@ -40,6 +40,7 @@ static int gpio_si32_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 
 	/* Simultaneous input & output mode not supported */
 	if (((flags & GPIO_INPUT) != 0) && ((flags & GPIO_OUTPUT) != 0)) {
+		irq_unlock(key);
 		return -ENOTSUP;
 	}
 

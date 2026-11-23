@@ -69,6 +69,28 @@ static void test_service(struct k_work *work)
 	k_sleep(K_MSEC(10));
 }
 
+static int self_calls;
+static int pair_calls;
+
+/* A handler may schedule itself again from inside the dispatch loop */
+static void self_service(struct k_work *work)
+{
+	self_calls++;
+	if (self_calls < 3) {
+		(void)lwm2m_engine_call_now(self_service);
+	}
+}
+
+static void pair_service_a(struct k_work *work)
+{
+	pair_calls++;
+}
+
+static void pair_service_b(struct k_work *work)
+{
+	pair_calls++;
+}
+
 static void setup(void *data)
 {
 #if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
@@ -84,6 +106,7 @@ static void setup(void *data)
 	FFF_RESET_HISTORY();
 
 	clear_socket_events();
+	clear_zero_timeout_polls();
 	lwm2m_get_res_buf_fake.custom_fake = lwm2m_get_res_buf_custom_fake;
 	find_msg_fake.custom_fake = find_msg_custom_fake;
 	lwm2m_get_engine_obj_field_fake.custom_fake = lwm2m_get_engine_obj_field_custom_fake;
@@ -110,6 +133,8 @@ ZTEST(lwm2m_engine, test_start_stop)
 
 	ret = lwm2m_engine_start(&ctx);
 	zassert_equal(ret, 0);
+	zassert_equal(lwm2m_engine_dedup_clear_fake.call_count, 1,
+		      "Request cache not cleared on socket start");
 
 	struct lwm2m_ctx **eng_ctx = lwm2m_sock_ctx();
 	int nfds = lwm2m_sock_nfds();
@@ -173,6 +198,55 @@ ZTEST(lwm2m_engine, test_engine_add_service)
 	zassert_equal(ret, 0);
 }
 
+ZTEST(lwm2m_engine, test_service_dispatch)
+{
+	int ret;
+	struct lwm2m_ctx ctx;
+
+	(void)memset(&ctx, 0x0, sizeof(ctx));
+
+	k_mutex_init(&ctx.lock);
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
+	ctx.load_credentials = NULL;
+
+	self_calls = 0;
+	pair_calls = 0;
+
+	ret = lwm2m_engine_start(&ctx);
+	zassert_equal(ret, 0);
+
+	/* Two services due at once, and one that reschedules itself twice */
+	ret = lwm2m_engine_call_now(pair_service_a);
+	zassert_equal(ret, 0);
+	ret = lwm2m_engine_call_now(pair_service_b);
+	zassert_equal(ret, 0);
+	ret = lwm2m_engine_call_now(self_service);
+	zassert_equal(ret, 0);
+
+	k_sleep(K_MSEC(200));
+	zassert_equal(pair_calls, 2);
+	zassert_equal(self_calls, 3);
+
+	/* A one-shot service is gone once it ran; a removed service is not found */
+	ret = lwm2m_engine_update_service_period(pair_service_a, 0);
+	zassert_equal(ret, -ENOENT);
+
+	/* A periodic service can be rescheduled and removed from another thread.
+	 * The one-shot is due far enough away that it cannot run before it is removed.
+	 */
+	ret = lwm2m_engine_add_service(test_service, 1000);
+	zassert_equal(ret, 0);
+	ret = lwm2m_engine_call_at(test_service, k_uptime_get() + 10000);
+	zassert_equal(ret, 0);
+	ret = lwm2m_engine_update_service_period(test_service, 0);
+	zassert_equal(ret, 1);
+	ret = lwm2m_engine_update_service_period(test_service, 0);
+	zassert_equal(ret, -ENOENT);
+
+	ret = lwm2m_engine_stop(&ctx);
+	zassert_equal(ret, 0);
+}
+
 ZTEST(lwm2m_engine, test_no_sa_family)
 {
 	int ret;
@@ -205,6 +279,8 @@ ZTEST(lwm2m_engine, test_connect_fail)
 	z_impl_zsock_connect_fake.return_val = -1;
 	ret = lwm2m_engine_start(&ctx);
 	zassert_equal(ret, -ENETDOWN);
+	zassert_equal(lwm2m_engine_dedup_clear_fake.call_count, 0,
+		      "Request cache cleared without a connected socket");
 	lwm2m_engine_stop(&ctx);
 }
 
@@ -262,6 +338,153 @@ ZTEST(lwm2m_engine, test_check_notifications)
 	zassert_equal(generate_notify_message_fake.call_count, 1, "Notify message not generated");
 	zassert_equal(engine_observe_shedule_next_event_fake.call_count, 1,
 		      "Next observe event not scheduled");
+}
+
+static int64_t schedule_next_event_custom_fake(struct observe_node *obs, uint16_t srv_obj_inst,
+					       const int64_t timestamp)
+{
+	return timestamp + 10000;
+}
+
+/* Run the engine for 1 s with the given observations and check how many
+ * times it polled with a zero timeout.
+ */
+static void run_observations(struct observe_node *obs, size_t count, uint32_t zero_polls)
+{
+	int ret;
+	struct lwm2m_ctx ctx;
+
+	(void)memset(&ctx, 0x0, sizeof(ctx));
+
+	k_mutex_init(&ctx.lock);
+	ctx.sock_fd = -1;
+	ctx.load_credentials = NULL;
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
+	sys_slist_init(&ctx.observer);
+	for (size_t i = 0; i < count; i++) {
+		sys_slist_append(&ctx.observer, &obs[i].node);
+	}
+
+	lwm2m_rd_client_is_registred_fake.return_val = true;
+	ret = lwm2m_engine_start(&ctx);
+	zassert_equal(ret, 0);
+	k_sleep(K_MSEC(1000));
+	ret = lwm2m_engine_stop(&ctx);
+	zassert_equal(ret, 0);
+	/* Let the engine thread finish an iteration that may still use ctx */
+	k_sleep(K_MSEC(50));
+	zassert_equal(get_zero_timeout_polls(), zero_polls, "Engine busy-polled %u times",
+		      get_zero_timeout_polls());
+}
+
+static size_t notify_calls_for(struct observe_node *obs)
+{
+	size_t calls = 0;
+
+	for (size_t i = 0; i < MIN(generate_notify_message_fake.call_count, FFF_ARG_HISTORY_LEN);
+	     i++) {
+		if (generate_notify_message_fake.arg1_history[i] == obs) {
+			calls++;
+		}
+	}
+
+	return calls;
+}
+
+ZTEST(lwm2m_engine, test_check_notifications_no_free_message)
+{
+	struct observe_node obs;
+
+	(void)memset(&obs, 0x0, sizeof(obs));
+	obs.last_timestamp = k_uptime_get();
+	obs.event_timestamp = k_uptime_get() + 1U;
+
+	generate_notify_message_fake.return_val = -EAGAIN;
+	run_observations(&obs, 1, 0);
+	zassert_true(generate_notify_message_fake.call_count > 1, "Notify not retried");
+	zassert_equal(engine_observe_shedule_next_event_fake.call_count, 0,
+		      "Observe event rescheduled without a notification");
+}
+
+ZTEST(lwm2m_engine, test_check_notifications_no_free_message_two_due)
+{
+	struct observe_node obs[2];
+	int64_t now = k_uptime_get();
+
+	(void)memset(obs, 0x0, sizeof(obs));
+	for (size_t i = 0; i < ARRAY_SIZE(obs); i++) {
+		obs[i].last_timestamp = now;
+		obs[i].event_timestamp = now + 1U;
+	}
+
+	/* Neither observation can be served, both wait for a free message */
+	generate_notify_message_fake.return_val = -EAGAIN;
+	run_observations(obs, ARRAY_SIZE(obs), 0);
+	zassert_true(notify_calls_for(&obs[0]) > 1, "Notify not retried");
+	zassert_equal(notify_calls_for(&obs[1]), 0, "Second observation tried without a message");
+	zassert_equal(engine_observe_shedule_next_event_fake.call_count, 0,
+		      "Observe event rescheduled without a notification");
+}
+
+ZTEST(lwm2m_engine, test_check_notifications_build_error)
+{
+	struct observe_node obs[2];
+	int ret_seq[] = {-ENOMEM, 0};
+	int64_t now = k_uptime_get();
+
+	(void)memset(obs, 0x0, sizeof(obs));
+	for (size_t i = 0; i < ARRAY_SIZE(obs); i++) {
+		obs[i].last_timestamp = now;
+		obs[i].event_timestamp = now + 1U;
+	}
+
+	/* First observation cannot be built, the second one must still be served */
+	SET_RETURN_SEQ(generate_notify_message, ret_seq, ARRAY_SIZE(ret_seq));
+	engine_observe_shedule_next_event_fake.custom_fake = schedule_next_event_custom_fake;
+	run_observations(obs, ARRAY_SIZE(obs), 0);
+	zassert_equal(notify_calls_for(&obs[0]), 1, "Failed notify retried");
+	zassert_equal(notify_calls_for(&obs[1]), 1, "Second observation not served");
+	zassert_true(obs[0].event_timestamp > k_uptime_get(), "Failed observe not rescheduled");
+	zassert_true(obs[1].event_timestamp > k_uptime_get(), "Served observe not rescheduled");
+}
+
+ZTEST(lwm2m_engine, test_check_notifications_two_due)
+{
+	struct observe_node obs[2];
+	int64_t now = k_uptime_get();
+
+	(void)memset(obs, 0x0, sizeof(obs));
+	for (size_t i = 0; i < ARRAY_SIZE(obs); i++) {
+		obs[i].last_timestamp = now;
+		obs[i].event_timestamp = now + 1U;
+	}
+
+	/* One notification per pass, the second observation forces an immediate re-run */
+	engine_observe_shedule_next_event_fake.custom_fake = schedule_next_event_custom_fake;
+	run_observations(obs, ARRAY_SIZE(obs), 1);
+	zassert_equal(generate_notify_message_fake.call_count, 2, "Unexpected notify count %u",
+		      generate_notify_message_fake.call_count);
+	zassert_equal_ptr(generate_notify_message_fake.arg1_history[0], &obs[0]);
+	zassert_equal_ptr(generate_notify_message_fake.arg1_history[1], &obs[1]);
+	zassert_true(obs[0].event_timestamp > k_uptime_get(), "First observe not rescheduled");
+	zassert_true(obs[1].event_timestamp > k_uptime_get(), "Second observe not rescheduled");
+}
+
+ZTEST(lwm2m_engine, test_check_notifications_active_notify)
+{
+	struct observe_node obs;
+	struct lwm2m_message msg;
+
+	/* Due long ago, previous notification still unacknowledged */
+	(void)memset(&obs, 0x0, sizeof(obs));
+	obs.last_timestamp = 1;
+	obs.event_timestamp = 1;
+	obs.active_notify = &msg;
+
+	run_observations(&obs, 1, 0);
+	zassert_equal(generate_notify_message_fake.call_count, 0,
+		      "Notify generated while previous one is active");
+	zassert_true(obs.event_timestamp > 1, "Observe event not rescheduled");
 }
 
 ZTEST(lwm2m_engine, test_push_queued_buffers)

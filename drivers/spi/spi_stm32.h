@@ -53,6 +53,8 @@ struct spi_stm32_config {
 #define SPI_STM32_DMA_TX_DONE_FLAG	0x04
 #define SPI_STM32_DMA_DONE_FLAG	\
 	(SPI_STM32_DMA_RX_DONE_FLAG | SPI_STM32_DMA_TX_DONE_FLAG)
+/* MASRX suspend with the RX FIFO still full: the waiting thread releases it */
+#define SPI_STM32_DMA_SUSPEND_FLAG	0x08
 
 #define SPI_STM32_DMA_TX	0x01
 #define SPI_STM32_DMA_RX	0x02

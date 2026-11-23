@@ -33,6 +33,7 @@
 		gip-ed = [ed ab 89 76 54 01 ff ff ff ff ff ff 10 45 67 98 ba];
 		pvgamctrl = [b0 40 c9 91 0d 12 07 02 09 09 1f 04 50 0f e4 29 df];
 		nvgamctrl = [b1 40 cb d0 11 92 07 00 08 07 1c 06 53 12 63 eb df];
+		reset-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
 		status = "okay";
 
 		display-timings {
@@ -43,7 +44,7 @@
 			pixelclk-active = <0>;
 			hback-porch = <6>;
 			hsync-len = <8>;
-			hfront-porch = <1>;
+			hfront-porch = <16>;
 			vback-porch = <40>;
 			vsync-len = <32>;
 			vfront-porch = <8>;

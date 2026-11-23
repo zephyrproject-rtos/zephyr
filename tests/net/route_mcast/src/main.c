@@ -248,17 +248,17 @@ struct net_route_mcast_iface_cfg net_route_data_if1;
 struct net_route_mcast_iface_cfg net_route_data_if2;
 struct net_route_mcast_iface_cfg net_route_data_if3;
 
-static struct dummy_api net_route_mcast_if_api_1 = {
+static DEVICE_API(dummy, net_route_mcast_if_api_1) = {
 	.iface_api.init = net_route_mcast_iface_init1,
 	.send = iface_send,
 };
 
-static struct dummy_api net_route_mcast_if_api_2 = {
+static DEVICE_API(dummy, net_route_mcast_if_api_2) = {
 	.iface_api.init = net_route_mcast_iface_init2,
 	.send = iface_send,
 };
 
-static struct dummy_api net_route_mcast_if_api_3 = {
+static DEVICE_API(dummy, net_route_mcast_if_api_3) = {
 	.iface_api.init = net_route_mcast_iface_init3,
 	.send = iface_send,
 };
@@ -497,8 +497,6 @@ static void test_route_mcast_scenario1(void)
 		zassert_true(0, "failed to receive initial packet!");
 	}
 	k_sleep(WAIT_TIME);
-	net_pkt_unref(pkt1);
-
 
 	zassert_true(iface_2_forwarded, "iface_2 did not forward");
 	zassert_false(iface_1_forwarded, "iface_1 forwarded");
@@ -518,7 +516,6 @@ static void test_route_mcast_scenario1(void)
 		zassert_true(0, "failed to receive initial packet!");
 	}
 	k_sleep(WAIT_TIME);
-	net_pkt_unref(pkt2);
 	active_scenario.is_active = false;
 	zassert_true(iface_2_forwarded, "iface_2 did not forward");
 	zassert_false(iface_1_forwarded, "iface_1 forwarded");
@@ -559,7 +556,6 @@ static void test_route_mcast_scenario2(void)
 		zassert_true(0, "failed to receive initial packet!");
 	}
 	k_sleep(WAIT_TIME);
-	net_pkt_unref(pkt);
 
 	zassert_false(iface_1_forwarded, "iface_1 forwarded");
 	zassert_false(iface_2_forwarded, "iface_2 forwarded");
@@ -578,7 +574,6 @@ static void test_route_mcast_scenario2(void)
 	}
 	k_sleep(WAIT_TIME);
 	active_scenario.is_active = false;
-	net_pkt_unref(pkt2);
 
 	zassert_true(iface_1_forwarded, "iface_1 did not forward");
 	zassert_false(iface_2_forwarded, "iface_2 forwarded");
@@ -615,7 +610,6 @@ static void test_route_mcast_scenario3(void)
 		zassert_true(0, "failed to receive initial packet!");
 	}
 	k_sleep(WAIT_TIME);
-	net_pkt_unref(pkt);
 	active_scenario.is_active = false;
 
 	zassert_true(iface_1_forwarded, "iface_1 did not forward");
@@ -635,7 +629,6 @@ static void test_route_mcast_scenario3(void)
 		zassert_true(0, "failed to receive initial packet!");
 	}
 	k_sleep(WAIT_TIME);
-	net_pkt_unref(pkt2);
 	active_scenario.is_active = false;
 
 	zassert_true(iface_1_forwarded, "iface_1 did not forward");
@@ -657,7 +650,6 @@ static void test_route_mcast_scenario3(void)
 		zassert_true(0, "failed to receive initial packet!");
 	}
 	k_sleep(WAIT_TIME);
-	net_pkt_unref(pkt3);
 	active_scenario.is_active = false;
 
 	zassert_false(iface_1_forwarded, "iface_1 forwarded");
@@ -701,7 +693,6 @@ void test_route_mcast_multiple_route_ifaces(void)
 		zassert_true(0, "failed to receive initial packet!");
 	}
 	k_sleep(WAIT_TIME);
-	net_pkt_unref(pkt);
 	active_scenario.is_active = false;
 
 	zassert_true(iface_2_forwarded, "iface_2 did not forward");
@@ -727,7 +718,6 @@ void test_route_mcast_multiple_route_ifaces(void)
 		zassert_true(0, "failed to receive initial packet!");
 	}
 	k_sleep(WAIT_TIME);
-	net_pkt_unref(pkt2);
 	active_scenario.is_active = false;
 
 	zassert_true(iface_2_forwarded, "iface_2 did not forward");
@@ -750,7 +740,6 @@ void test_route_mcast_multiple_route_ifaces(void)
 		zassert_true(0, "failed to receive initial packet!");
 	}
 	k_sleep(WAIT_TIME);
-	net_pkt_unref(pkt3);
 	active_scenario.is_active = false;
 
 	zassert_true(iface_2_forwarded, "iface_2 did not forward");

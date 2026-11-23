@@ -6,6 +6,7 @@ common:
     - nrf54lm20dk/nrf54lm20a/cpuapp/ns
     - nrf54lm20dk/nrf54lm20b/cpuapp/ns
     - nrf7120dk/nrf7120/cpuapp/ns
+    - nrf7120dk/nrf7120e/cpuapp/ns
     - mps2/an521/cpu0/ns
   platform_exclude:
     - lpcxpresso55s69/lpc55s69/cpu0/ns

@@ -49,10 +49,22 @@ static sys_slist_t dhcpv4_ifaces;
 static void dhcpv4_timeout(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(timeout_work, dhcpv4_timeout);
 
-static struct net_mgmt_event_callback mgmt4_if_cb;
-#if defined(CONFIG_NET_IPV4_ACD)
-static struct net_mgmt_event_callback mgmt4_acd_cb;
-#endif
+/* Network event handlers can run in the thread raising the event, with the
+ * locks it holds for it, while the client raises events and calls into the
+ * interface with lock held. The handlers therefore only record the event
+ * under pending_lock and leave acting on it to event_work. The requested
+ * address is written under both locks, so that the address conflict
+ * handler can read it under pending_lock.
+ */
+#define DHCPV4_EVENT_IF_DOWN      BIT(0)
+#define DHCPV4_EVENT_IF_UP        BIT(1)
+#define DHCPV4_EVENT_ACD_FAILED   BIT(2)
+#define DHCPV4_EVENT_ACD_CONFLICT BIT(3)
+#define DHCPV4_EVENT_ACD          (DHCPV4_EVENT_ACD_FAILED | DHCPV4_EVENT_ACD_CONFLICT)
+
+static struct k_spinlock pending_lock;
+static void dhcpv4_event_work(struct k_work *work);
+static K_WORK_DEFINE(event_work, dhcpv4_event_work);
 
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 static sys_slist_t option_callbacks = SYS_SLIST_STATIC_INIT(&option_callbacks);
@@ -691,7 +703,7 @@ fail:
 	/* Nothing was sent, so try again after a short random delay. */
 	return sys_rand8_get() %
 			(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
-			 DHCPV4_INITIAL_DELAY_MIN) +
+			 DHCPV4_INITIAL_DELAY_MIN + 1U) +
 			DHCPV4_INITIAL_DELAY_MIN;
 }
 
@@ -721,6 +733,39 @@ fail:
 	if (pkt) {
 		net_pkt_unref(pkt);
 	}
+}
+
+/* A conflict reported on the address being replaced no longer concerns the
+ * client. Must be invoked with lock held.
+ */
+static void dhcpv4_set_requested_ip(struct net_if *iface, const struct net_in_addr *addr)
+{
+	K_SPINLOCK(&pending_lock) {
+		iface->config.dhcpv4.requested_ip = *addr;
+		iface->config.dhcpv4.pending_events &= (uint8_t)~DHCPV4_EVENT_ACD;
+	}
+}
+
+/* Take @p events off those pending and return the ones that were. */
+static uint8_t dhcpv4_take_events(struct net_if *iface, uint8_t events)
+{
+	uint8_t taken = 0U;
+
+	K_SPINLOCK(&pending_lock) {
+		taken = iface->config.dhcpv4.pending_events & events;
+		iface->config.dhcpv4.pending_events &= (uint8_t)~events;
+	}
+
+	return taken;
+}
+
+static void dhcpv4_post_events(struct net_if *iface, uint8_t events)
+{
+	K_SPINLOCK(&pending_lock) {
+		iface->config.dhcpv4.pending_events |= events;
+	}
+
+	(void)k_work_submit(&event_work);
 }
 
 /* The leased address sits on the interface for as long as the client is in
@@ -845,7 +890,7 @@ static void dhcpv4_enter_selecting(struct net_if *iface)
 	 * so, because a handler for what it raises can start the client.
 	 */
 	addr = iface->config.dhcpv4.requested_ip;
-	iface->config.dhcpv4.requested_ip.s_addr = NET_INADDR_ANY;
+	dhcpv4_set_requested_ip(iface, net_ipv4_unspecified_address());
 
 	dhcpv4_leave_lease(iface, NET_DHCPV4_SELECTING, &addr);
 }
@@ -873,13 +918,15 @@ static uint32_t dhcpv4_restart_with_discover(struct net_if *iface)
 
 static void dhcpv4_enter_requesting(struct net_if *iface, struct dhcp_msg *msg)
 {
+	struct net_in_addr offered;
+
 	iface->config.dhcpv4.attempts = 0U;
 	iface->config.dhcpv4.state = NET_DHCPV4_REQUESTING;
 	NET_DBG("enter state=%s",
 		net_dhcpv4_state_name(iface->config.dhcpv4.state));
 
-	memcpy(iface->config.dhcpv4.requested_ip.s4_addr,
-	       msg->yiaddr, sizeof(msg->yiaddr));
+	memcpy(offered.s4_addr, msg->yiaddr, sizeof(msg->yiaddr));
+	dhcpv4_set_requested_ip(iface, &offered);
 
 	dhcpv4_send_request(iface);
 }
@@ -1148,15 +1195,20 @@ static int dhcpv4_parse_option_vendor(struct net_pkt *pkt, struct net_if *iface,
 #endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC */
 
 /*
- * Read the message type without applying any options or invoking callbacks.
- * Option 53 need not be the first option, so inspect the complete option list.
+ * Read the message type and the server identifier without applying any
+ * options or invoking callbacks. Option 53 need not be the first option, so
+ * inspect the complete option list. The server identifier is optional here;
+ * server_id_found tells whether it was present.
  */
-static bool dhcpv4_get_msg_type(struct net_pkt *pkt, enum net_dhcpv4_msg_type *msg_type)
+static bool dhcpv4_get_msg_type(struct net_pkt *pkt, enum net_dhcpv4_msg_type *msg_type,
+				struct net_in_addr *server_id, bool *server_id_found)
 {
 	struct net_pkt_cursor backup;
 	uint8_t cookie[sizeof(magic_cookie)];
 	uint8_t type, length, value;
 	bool found = false;
+
+	*server_id_found = false;
 
 	net_pkt_cursor_backup(pkt, &backup);
 
@@ -1186,6 +1238,12 @@ static bool dhcpv4_get_msg_type(struct net_pkt *pkt, enum net_dhcpv4_msg_type *m
 
 			*msg_type = value;
 			found = true;
+		} else if (type == DHCPV4_OPTIONS_SERVER_ID && length == sizeof(*server_id)) {
+			if (net_pkt_read(pkt, server_id->s4_addr, length) != 0) {
+				return false;
+			}
+
+			*server_id_found = true;
 		} else if (net_pkt_skip(pkt, length) != 0) {
 			return false;
 		}
@@ -1770,28 +1828,25 @@ static void dhcpv4_handle_msg_nak(struct net_if *iface)
 		break;
 	case NET_DHCPV4_INIT:
 	case NET_DHCPV4_SELECTING:
-	case NET_DHCPV4_REQUESTING:
-		if (memcmp(&iface->config.dhcpv4.request_server_addr,
-			   &iface->config.dhcpv4.response_src_addr,
-			   sizeof(iface->config.dhcpv4.request_server_addr)) == 0) {
-			bool requesting = iface->config.dhcpv4.state ==
-					  NET_DHCPV4_REQUESTING;
+	case NET_DHCPV4_REQUESTING: {
+		/* dhcpv4_reply_is_expected() lets only a NAK from the
+		 * requesting server through in these states.
+		 */
+		bool requesting = iface->config.dhcpv4.state == NET_DHCPV4_REQUESTING;
 
-			LOG_DBG("NAK from requesting server %s, restart config",
-				net_sprint_ipv4_addr(&iface->config.dhcpv4.request_server_addr));
-			/* A server that offers and then refuses would otherwise
-			 * drive a discover loop as fast as it answers. A NAK in
-			 * the other two states leaves the discover the client
-			 * already has in flight to its own schedule.
-			 */
-			if (dhcpv4_entered_selecting(iface) && requesting) {
-				(void)dhcpv4_set_restart_timeout(&iface->config.dhcpv4);
-			}
-		} else {
-			LOG_DBG("NAK from non-requesting server %s, ignore it",
-				net_sprint_ipv4_addr(&iface->config.dhcpv4.response_src_addr));
+		LOG_DBG("NAK from requesting server %s, restart config",
+			net_sprint_ipv4_addr(&iface->config.dhcpv4.request_server_addr));
+		/* A server that offers and then refuses would otherwise
+		 * drive a discover loop as fast as it answers. A NAK in
+		 * the other two states leaves the discover the client
+		 * already has in flight to its own schedule.
+		 */
+		if (dhcpv4_entered_selecting(iface) && requesting) {
+			(void)dhcpv4_set_restart_timeout(&iface->config.dhcpv4);
 		}
+
 		break;
+	}
 	case NET_DHCPV4_BOUND:
 	case NET_DHCPV4_DECLINE:
 	/* A stopped client has no exchange to restart. */
@@ -1836,9 +1891,13 @@ static void dhcpv4_handle_reply(struct net_if *iface,
 /*
  * Must be invoked with lock held, before parsing options with side effects.
  * Keep this consistent with the OFFER, ACK and NAK handlers above.
+ *
+ * A NAK names its sender in the server identifier option. The IP source is
+ * a relay agent's address when the NAK was relayed, so it is compared only
+ * when the server identifier is missing.
  */
 static bool dhcpv4_reply_is_expected(struct net_if *iface, enum net_dhcpv4_msg_type msg_type,
-				     const uint8_t *src_addr)
+				     const uint8_t *src_addr, const struct net_in_addr *server_id)
 {
 	enum net_dhcpv4_state state = iface->config.dhcpv4.state;
 
@@ -1858,6 +1917,11 @@ static bool dhcpv4_reply_is_expected(struct net_if *iface, enum net_dhcpv4_msg_t
 			return false;
 		}
 
+		if (server_id != NULL) {
+			return net_ipv4_addr_cmp(&iface->config.dhcpv4.request_server_addr,
+						 server_id);
+		}
+
 		return memcmp(iface->config.dhcpv4.request_server_addr.s4_addr, src_addr,
 			      sizeof(struct net_in_addr)) == 0;
 	default:
@@ -1874,6 +1938,8 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	NET_PKT_DATA_ACCESS_DEFINE(dhcp_access, struct dhcp_msg);
 	enum net_verdict verdict = NET_DROP;
 	enum net_dhcpv4_msg_type msg_type = 0;
+	struct net_in_addr server_id;
+	bool server_id_found;
 	struct dhcp_msg *msg;
 	struct net_if *iface;
 	int ret;
@@ -1959,12 +2025,13 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		goto drop;
 	}
 
-	if (!dhcpv4_get_msg_type(pkt, &msg_type)) {
+	if (!dhcpv4_get_msg_type(pkt, &msg_type, &server_id, &server_id_found)) {
 		NET_DBG("Invalid DHCPv4 message type or option list");
 		goto drop;
 	}
 
-	if (!dhcpv4_reply_is_expected(iface, msg_type, ip_hdr->ipv4->src)) {
+	if (!dhcpv4_reply_is_expected(iface, msg_type, ip_hdr->ipv4->src,
+				      server_id_found ? &server_id : NULL)) {
 		NET_DBG("Ignore reply state=%s msg=%s",
 			net_dhcpv4_state_name(iface->config.dhcpv4.state),
 			net_dhcpv4_msg_type_name(msg_type));
@@ -1990,35 +2057,39 @@ drop:
 	return verdict;
 }
 
-static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
-				       uint64_t mgmt_event, struct net_if *iface)
+/* Must be invoked with lock held. */
+static void dhcpv4_handle_conflict(struct net_if *iface, bool remove_addr)
 {
-	sys_snode_t *node = NULL;
+	NET_DBG("Conflict on DHCP assigned address %s, starting over",
+		net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
 
-	switch (mgmt_event) {
-#ifdef CONFIG_NET_DHCPV4_RESTART_ON_IF_UP
-	case NET_EVENT_IF_UP:
-		break;
-#endif /* CONFIG_NET_DHCPV4_RESTART_ON_IF_UP */
-	case NET_EVENT_IF_DOWN:
-		break;
-	default:
-		return;
+	iface->config.dhcpv4.state = NET_DHCPV4_DECLINE;
+
+	dhcpv4_drop_config(iface);
+
+	if (remove_addr) {
+		/* Need to remove address explicitly in this case. */
+		dhcpv4_remove_addr(iface, &iface->config.dhcpv4.requested_ip);
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
-
-	SYS_SLIST_FOR_EACH_NODE(&dhcpv4_ifaces, node) {
-		if (node == &iface->config.dhcpv4.node) {
-			break;
-		}
+	/* A callback on what the line above raised can have taken the client
+	 * elsewhere, and then there is no decline left to send.
+	 */
+	if (iface->config.dhcpv4.state == NET_DHCPV4_DECLINE) {
+		dhcpv4_immediate_timeout(&iface->config.dhcpv4);
 	}
+}
 
-	if (node == NULL) {
-		goto out;
-	}
+/* Act on the events recorded for @p iface, each taken just before it is
+ * acted on: a callback on what one of them raises can stop the client,
+ * which drops the rest.
+ * Must be invoked with lock held.
+ */
+static void dhcpv4_handle_events(struct net_if *iface)
+{
+	uint8_t events;
 
-	if (mgmt_event == NET_EVENT_IF_DOWN) {
+	if (dhcpv4_take_events(iface, DHCPV4_EVENT_IF_DOWN) != 0U) {
 		NET_DBG("Interface %p going down", iface);
 
 		if (dhcpv4_has_bound_addr(iface)) {
@@ -2036,78 +2107,111 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 					   : NET_DHCPV4_INIT,
 					   &iface->config.dhcpv4.requested_ip);
 		}
-	} else if (IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) &&
-		   (mgmt_event == NET_EVENT_IF_UP)) {
+	}
+
+	/* An interface that went down again since has nothing to send on. */
+	if (dhcpv4_take_events(iface, DHCPV4_EVENT_IF_UP) != 0U && net_if_is_up(iface)) {
 		NET_DBG("Interface %p coming up", iface);
 
-		/* We should not call dhcpv4_send_request() directly here as
-		 * the CONFIG_NET_MGMT_EVENT_STACK_SIZE is not large
-		 * enough. Instead we can force a request timeout
-		 * which will then call dhcpv4_send_request() automatically.
-		 */
+		/* The timeout handler sends the request. */
 		dhcpv4_immediate_timeout(&iface->config.dhcpv4);
 	}
 
-out:
-	k_mutex_unlock(&lock);
+	if (IS_ENABLED(CONFIG_NET_IPV4_ACD)) {
+		events = dhcpv4_take_events(iface, DHCPV4_EVENT_ACD);
+		if (events != 0U) {
+			dhcpv4_handle_conflict(iface, (events & DHCPV4_EVENT_ACD_CONFLICT) != 0U);
+		}
+	}
 }
 
-#if defined(CONFIG_NET_IPV4_ACD)
-static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
-				     uint64_t mgmt_event, struct net_if *iface)
+static void dhcpv4_event_work(struct k_work *work)
 {
-	sys_snode_t *node = NULL;
-	struct net_in_addr *addr;
+	struct net_if_dhcpv4 *current, *next;
 
-	if (mgmt_event != NET_EVENT_IPV4_ACD_FAILED &&
-	    mgmt_event != NET_EVENT_IPV4_ACD_CONFLICT) {
-		return;
-	}
-
-	if (cb->info_length != sizeof(struct net_in_addr)) {
-		return;
-	}
-
-	addr = (struct net_in_addr *)cb->info;
+	ARG_UNUSED(work);
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_NODE(&dhcpv4_ifaces, node) {
-		if (node == &iface->config.dhcpv4.node) {
-			break;
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&dhcpv4_ifaces, current, next, node) {
+		struct net_if *iface = CONTAINER_OF(
+			CONTAINER_OF(current, struct net_if_config, dhcpv4),
+			struct net_if, config);
+
+		dhcpv4_handle_events(iface);
+	}
+
+	k_mutex_unlock(&lock);
+}
+
+static void dhcpv4_iface_event_handler(uint64_t mgmt_event, struct net_if *iface,
+				       void *info __unused, size_t info_length __unused,
+				       void *user_data __unused)
+{
+	switch (mgmt_event) {
+#ifdef CONFIG_NET_DHCPV4_RESTART_ON_IF_UP
+	case NET_EVENT_IF_UP:
+		dhcpv4_post_events(iface, DHCPV4_EVENT_IF_UP);
+		break;
+#endif /* CONFIG_NET_DHCPV4_RESTART_ON_IF_UP */
+	case NET_EVENT_IF_DOWN:
+		dhcpv4_post_events(iface, DHCPV4_EVENT_IF_DOWN);
+		break;
+	default:
+		break;
+	}
+}
+
+/* Catch network interface UP or DOWN events and renew the address
+ * if interface is coming back up again.
+ */
+NET_MGMT_REGISTER_EVENT_HANDLER(dhcpv4_iface_events,
+				IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) ?
+				(NET_EVENT_IF_UP | NET_EVENT_IF_DOWN) : NET_EVENT_IF_DOWN,
+				dhcpv4_iface_event_handler, NULL);
+
+#if defined(CONFIG_NET_IPV4_ACD)
+static void dhcpv4_acd_event_handler(uint64_t mgmt_event, struct net_if *iface,
+				     void *info, size_t info_length,
+				     void *user_data __unused)
+{
+	uint8_t event;
+	bool requested = false;
+
+	switch (mgmt_event) {
+	case NET_EVENT_IPV4_ACD_FAILED:
+		event = DHCPV4_EVENT_ACD_FAILED;
+		break;
+	case NET_EVENT_IPV4_ACD_CONFLICT:
+		event = DHCPV4_EVENT_ACD_CONFLICT;
+		break;
+	default:
+		return;
+	}
+
+	if (info_length != sizeof(struct net_in_addr)) {
+		return;
+	}
+
+	/* Compared and recorded in one go, so that a conflict is never
+	 * recorded for an address the client has since moved away from.
+	 */
+	K_SPINLOCK(&pending_lock) {
+		requested = net_ipv4_addr_cmp(&iface->config.dhcpv4.requested_ip,
+					      (const struct net_in_addr *)info);
+		if (requested) {
+			iface->config.dhcpv4.pending_events |= event;
 		}
 	}
 
-	if (node == NULL) {
-		goto out;
+	if (requested) {
+		(void)k_work_submit(&event_work);
 	}
-
-	if (!net_ipv4_addr_cmp(&iface->config.dhcpv4.requested_ip, addr)) {
-		goto out;
-	}
-
-	NET_DBG("Conflict on DHCP assigned address %s, starting over",
-		net_sprint_ipv4_addr(addr));
-
-	iface->config.dhcpv4.state = NET_DHCPV4_DECLINE;
-
-	dhcpv4_drop_config(iface);
-
-	if (mgmt_event == NET_EVENT_IPV4_ACD_CONFLICT) {
-		/* Need to remove address explicitly in this case. */
-		dhcpv4_remove_addr(iface, &iface->config.dhcpv4.requested_ip);
-	}
-
-	/* A callback on what the line above raised can have taken the client
-	 * elsewhere, and then there is no decline left to send.
-	 */
-	if (iface->config.dhcpv4.state == NET_DHCPV4_DECLINE) {
-		dhcpv4_immediate_timeout(&iface->config.dhcpv4);
-	}
-
-out:
-	k_mutex_unlock(&lock);
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(dhcpv4_acd_events,
+				NET_EVENT_IPV4_ACD_FAILED | NET_EVENT_IPV4_ACD_CONFLICT,
+				dhcpv4_acd_event_handler, NULL);
 #endif /* CONFIG_NET_IPV4_ACD */
 
 const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
@@ -2196,17 +2300,13 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 			entropy = sys_rand8_get();
 
 			timeout = entropy % (CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
-					DHCPV4_INITIAL_DELAY_MIN) + DHCPV4_INITIAL_DELAY_MIN;
+					DHCPV4_INITIAL_DELAY_MIN + 1U) + DHCPV4_INITIAL_DELAY_MIN;
 		}
 
 		NET_DBG("wait timeout=%us", timeout);
 
-		if (sys_slist_is_empty(&dhcpv4_ifaces)) {
-			net_mgmt_add_event_callback(&mgmt4_if_cb);
-#if defined(CONFIG_NET_IPV4_ACD)
-			net_mgmt_add_event_callback(&mgmt4_acd_cb);
-#endif
-		}
+		/* Events from before the start are not this client's. */
+		(void)dhcpv4_take_events(iface, UINT8_MAX);
 
 		sys_slist_append(&dhcpv4_ifaces,
 				 &iface->config.dhcpv4.node);
@@ -2322,16 +2422,13 @@ void net_dhcpv4_stop(struct net_if *iface)
 		 */
 		sys_slist_find_and_remove(&dhcpv4_ifaces,
 					  &iface->config.dhcpv4.node);
+		(void)dhcpv4_take_events(iface, UINT8_MAX);
 
 		if (sys_slist_is_empty(&dhcpv4_ifaces)) {
 			/* Best effort cancel.  Handler is safe to invoke if
 			 * cancellation is unsuccessful.
 			 */
 			(void)k_work_cancel_delayable(&timeout_work);
-			net_mgmt_del_event_callback(&mgmt4_if_cb);
-#if defined(CONFIG_NET_IPV4_ACD)
-			net_mgmt_del_event_callback(&mgmt4_acd_cb);
-#endif
 		}
 
 		dhcpv4_leave_lease(iface, NET_DHCPV4_DISABLED,
@@ -2363,7 +2460,7 @@ int net_dhcpv4_set_reboot_hint(struct net_if *iface,
 	if (iface->config.dhcpv4.state != NET_DHCPV4_DISABLED) {
 		ret = -EBUSY;
 	} else {
-		iface->config.dhcpv4.requested_ip = *requested_ip;
+		dhcpv4_set_requested_ip(iface, requested_ip);
 	}
 
 	k_mutex_unlock(&lock);
@@ -2373,9 +2470,6 @@ int net_dhcpv4_set_reboot_hint(struct net_if *iface,
 
 int net_dhcpv4_init(void)
 {
-	uint64_t events =
-		IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) ?
-		(NET_EVENT_IF_UP | NET_EVENT_IF_DOWN) : NET_EVENT_IF_DOWN;
 	struct net_sockaddr_storage local_addr_storage = { 0 };
 	struct net_sockaddr *local_addr = net_sad(&local_addr_storage);
 	int ret;
@@ -2397,17 +2491,6 @@ int net_dhcpv4_init(void)
 		NET_DBG("UDP callback registration failed");
 		return ret;
 	}
-
-	/* Catch network interface UP or DOWN events and renew the address
-	 * if interface is coming back up again.
-	 */
-	net_mgmt_init_event_callback(&mgmt4_if_cb, dhcpv4_iface_event_handler,
-				     events);
-#if defined(CONFIG_NET_IPV4_ACD)
-	net_mgmt_init_event_callback(&mgmt4_acd_cb, dhcpv4_acd_event_handler,
-				     NET_EVENT_IPV4_ACD_FAILED |
-				     NET_EVENT_IPV4_ACD_CONFLICT);
-#endif
 
 	return 0;
 }

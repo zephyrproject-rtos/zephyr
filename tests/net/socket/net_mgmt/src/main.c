@@ -229,7 +229,7 @@ static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev 
 	       ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES;
 }
 
-static struct ethernet_api eth_fake_api_funcs = {
+static DEVICE_API(ethernet, eth_fake_api_funcs) = {
 	.iface_api.init = eth_fake_iface_init,
 
 	.get_capabilities = eth_fake_get_capabilities,
@@ -485,6 +485,40 @@ ZTEST(net_socket_net_mgmt, test_net_mgmt_catch_failure_kernel)
 ZTEST_USER(net_socket_net_mgmt, test_net_mgmt_catch_failure_user)
 {
 	test_net_mgmt_catch_events_failure();
+}
+
+/* recvfrom() with an addrlen too short for a net_sockaddr_nm fails without
+ * waiting for an event and leaves src_addr untouched.
+ */
+static void test_net_mgmt_recvfrom_short_addrlen(void)
+{
+	struct net_sockaddr_nm event_addr;
+	struct net_sockaddr_nm unchanged;
+	net_socklen_t event_addr_len = sizeof(event_addr) - 1U;
+	uint8_t buf[MAX_BUF_LEN];
+	int ret;
+	int err;
+
+	(void)memset(&event_addr, 0xaa, sizeof(event_addr));
+	(void)memset(&unchanged, 0xaa, sizeof(unchanged));
+
+	ret = zsock_recvfrom(fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT,
+			     (struct net_sockaddr *)&event_addr,
+			     &event_addr_len);
+	err = errno;
+	zassert_equal(ret, -1, "recvfrom should fail (was %d)", ret);
+	zassert_equal(err, EINVAL, "unexpected errno (%d)", err);
+	zassert_mem_equal(&event_addr, &unchanged, sizeof(event_addr), "src_addr was written");
+}
+
+ZTEST(net_socket_net_mgmt, test_net_mgmt_recvfrom_short_addrlen_kernel)
+{
+	test_net_mgmt_recvfrom_short_addrlen();
+}
+
+ZTEST_USER(net_socket_net_mgmt, test_net_mgmt_recvfrom_short_addrlen_user)
+{
+	test_net_mgmt_recvfrom_short_addrlen();
 }
 
 ZTEST(net_socket_net_mgmt, test_net_mgmt_cleanup)

@@ -113,7 +113,7 @@ static int dhcpv4_fuzz_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static struct dummy_api dhcpv4_fuzz_if_api = {
+static DEVICE_API(dummy, dhcpv4_fuzz_if_api) = {
 	.iface_api.init = dhcpv4_fuzz_iface_init,
 	.send = dhcpv4_fuzz_send,
 };

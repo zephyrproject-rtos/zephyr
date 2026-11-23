@@ -35,11 +35,18 @@
 BUILD_ASSERT(sizeof(struct fw_resource_table) <= RSC_TABLE_SIZE);
 #endif
 
+#if defined(CONFIG_RAM_CONSOLE_BUFFER_SECTION)
+BUILD_ASSERT(DT_REG_ADDR(DT_CHOSEN(zephyr_ram_console)) <= UINT32_MAX,
+	     "The trace entry holds a 32-bit device address");
+#elif defined(CONFIG_RAM_CONSOLE) && defined(CONFIG_64BIT)
+#error "RAM console trace entry needs a zephyr,ram-console chosen node on 64-bit"
+#endif
+
 extern char ram_console_buf[];
 
 #define __resource Z_GENERIC_SECTION(.resource_table)
 
-static struct fw_resource_table __resource resource_table = RESOURCE_TABLE_INIT;
+static struct fw_resource_table __resource __used resource_table = RESOURCE_TABLE_INIT;
 
 void rsc_table_get(void **table_ptr, int *length)
 {

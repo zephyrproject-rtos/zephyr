@@ -398,8 +398,8 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, 1U);
 #endif
 
-#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer_cpu0)) || \
-		DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer_cpu1)))
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer0)) || \
+		DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer1)))
 	CLOCK_AttachClk(kLPOSC_to_OSTIMER);
 	CLOCK_SetClkDiv(kCLOCK_DivOstimerClk, 1U);
 #endif

@@ -177,11 +177,18 @@ static void input_virtio_setup_abs_scaling(const struct device *dev)
 {
 	const struct input_virtio_config *cfg = dev->config;
 	struct input_virtio_data *data = dev->data;
+	size_t devcfg_len;
 	volatile struct virtio_input_config *devcfg =
-		virtio_get_device_specific_config(cfg->vdev);
+		virtio_get_device_specific_config(cfg->vdev, &devcfg_len);
 	struct display_capabilities caps;
 
 	if (cfg->display == NULL || devcfg == NULL) {
+		return;
+	}
+
+	if (devcfg_len < offsetof(struct virtio_input_config, u.abs.max) +
+			  sizeof(devcfg->u.abs.max)) {
+		LOG_WRN("device-specific config too short for absolute axis info");
 		return;
 	}
 

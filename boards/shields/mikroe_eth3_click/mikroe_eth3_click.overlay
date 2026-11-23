@@ -2,6 +2,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 &mikrobus_spi {
 	status = "okay";
 
@@ -10,6 +12,6 @@
 		reg = <0x0>;
 		local-mac-address = [00 00 00 01 02 03];
 		spi-max-frequency = <30000000>;
-		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;	/* INT */
+		int-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_LOW>;	/* INT */
 	};
 };

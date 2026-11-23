@@ -177,7 +177,6 @@ endif
 config FLASH_EX_OP_ENABLED
 	bool "API for extended flash operations"
 	depends on FLASH_HAS_EX_OP
-	default n
 	help
 	  Enables flash extended operations API. It can be used to perform
 	  non-standard operations e.g. manipulating flash protection.
@@ -193,6 +192,7 @@ config FLASH_INIT_PRIORITY
 # zephyr-keep-sorted-start
 source "drivers/flash/Kconfig.adi_max32_spixf"
 source "drivers/flash/Kconfig.aesc"
+source "drivers/flash/Kconfig.alif"
 source "drivers/flash/Kconfig.ambiq"
 source "drivers/flash/Kconfig.ameba"
 source "drivers/flash/Kconfig.andes"

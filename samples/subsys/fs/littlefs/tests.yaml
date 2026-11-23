@@ -33,6 +33,8 @@ tests:
       - s32z2xxdc2@D/s32z270/rtu1
       - s32k5xxcvb/s32k566/m7
       - s32k5xxcvb/s32k566/r52
+      - ensemble_e8_dk/ae822fa0e5597ls0/rtss_he
+      - ensemble_e8_dk/ae822fa0e5597ls0/rtss_hp
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.filesystem.littlefs.blk:

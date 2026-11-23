@@ -18,5 +18,11 @@
 
 #define _thread_offset_to_swap_return_value                                                        \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_swap_return_value_OFFSET)
+#define _thread_offset_to_arch_flags \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_flags_OFFSET)
+#ifdef CONFIG_HW_STACK_PROTECTION
+#define _thread_offset_to_framelimit \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_framelimit_OFFSET)
+#endif
 
 #endif /* ZEPHYR_ARCH_HEXAGON_INCLUDE_OFFSETS_SHORT_ARCH_H_ */

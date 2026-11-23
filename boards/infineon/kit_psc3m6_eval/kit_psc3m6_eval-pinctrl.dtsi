@@ -31,3 +31,35 @@
 &p5_3_can1_ttcan_tx {
 	drive-push-pull;
 };
+
+/* I2C pin drive modes */
+&p9_0_scb0_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p9_2_scb0_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};
+
+/* Arduino SPI pin drive modes */
+&p7_1_scb2_spi_m_mosi {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+&p7_2_scb2_spi_m_miso {
+	drive-strength = "full";
+	input-enable;
+};
+
+&p7_0_scb2_spi_m_clk {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+/* PWM (TCPWM0_6) pin drive mode */
+&p5_0_pwm0_6 {
+	drive-push-pull;
+};

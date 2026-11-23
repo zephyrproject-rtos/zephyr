@@ -77,9 +77,32 @@
 		};
 	};
 
-	psci {
-		compatible = "arm,psci-0.2", "arm,psci";
-		method = "smc";
+	firmware {
+		psci {
+			compatible = "arm,psci-1.1";
+			method = "smc";
+		};
+
+		scmi: scmi {
+			compatible = "arm,scmi-smc";
+			shmem = <&scmi_shmem>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			arm,smc-id = <0x82000010>;
+
+			scmi_clk: protocol@14 {
+				compatible = "arm,scmi-clock";
+				reg = <0x14>;
+				#clock-cells = <1>;
+			};
+
+			scmi_reset: protocol@16 {
+				compatible = "arm,scmi-reset";
+				reg = <0x16>;
+				#reset-cells = <1>;
+			};
+		};
 	};
 
 	timer {
@@ -89,6 +112,19 @@
 			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
+	};
+
+	sram@10f000 {
+		compatible = "mmio-sram";
+		reg = <0x0010f000 0x100>;
+		ranges = <0x0 0x0010f000 0x100>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		scmi_shmem: sram@0 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x0 0x100>;
+		};
 	};
 
 	sys_grf: syscon@fd58c000 {
@@ -212,4 +248,24 @@
 		reg-shift = <2>;
 		status = "disabled";
 	};
+
+	uart4: serial@feb70000 {
+		compatible = "rockchip,rk3588-uart", "snps,dw-apb-uart", "ns16550";
+		reg = <0xfeb70000 0x100>;
+		interrupts = <GIC_SPI 335 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		reg-shift = <2>;
+		/* Supply clock-frequency or clocks and current-speed before enabling. */
+		status = "disabled";
+	};
+
+	uart7: serial@feba0000 {
+		compatible = "rockchip,rk3588-uart", "snps,dw-apb-uart", "ns16550";
+		reg = <0xfeba0000 0x100>;
+		interrupts = <GIC_SPI 338 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		reg-shift = <2>;
+		/* Supply clock-frequency or clocks and current-speed before enabling. */
+		status = "disabled";
+	};
 };
+
+#include "rk3588-pinctrl.dtsi"

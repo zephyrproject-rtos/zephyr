@@ -534,6 +534,21 @@ struct net_if_dhcpv6 {
 	/** Retransmission counter. */
 	uint8_t retransmissions;
 
+	/** Rebind after link recovery uses Confirm retransmission parameters. */
+	bool rebind_on_link_change : 1;
+
+	/** Client was started automatically by a Router Advertisement. */
+	bool auto_started : 1;
+
+	/** Automatic start disabled by an explicit stop. */
+	bool auto_start_disabled : 1;
+
+	/** M flag of the latest Router Advertisement. */
+	bool ra_managed : 1;
+
+	/** O flag of the latest Router Advertisement. */
+	bool ra_other : 1;
+
 	/** Transaction ID for current exchange. */
 	uint8_t tid[DHCPV6_TID_SIZE];
 
@@ -655,6 +670,9 @@ struct net_if_dhcpv4 {
 
 	/** Number of attempts made for REQUEST and RENEWAL messages */
 	uint8_t attempts;
+
+	/** Network events received and not yet acted on */
+	uint8_t pending_events;
 
 	/** Gateway the client installed, unspecified if it installed none */
 	struct net_in_addr gw;
@@ -1742,8 +1760,19 @@ struct net_if_addr *net_if_ipv6_addr_lookup_by_iface_raw(struct net_if *iface,
  *
  * @return Pointer to interface address, NULL if not found.
  */
+#if defined(CONFIG_NET_IPV6)
 struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
 						     const struct net_in6_addr *addr);
+#else
+static inline struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(
+	struct net_if *iface, const struct net_in6_addr *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return NULL;
+}
+#endif
 
 /**
  * @brief Check if this IPv6 address belongs to one of the interface indices.
@@ -2702,8 +2731,19 @@ struct net_if_addr *net_if_ipv4_addr_lookup_by_iface_raw(struct net_if *iface,
  *
  * @return Pointer to interface address, NULL if not found.
  */
+#if defined(CONFIG_NET_IPV4)
 struct net_if_addr *net_if_ipv4_addr_lookup_by_iface(struct net_if *iface,
 						     const struct net_in_addr *addr);
+#else
+static inline struct net_if_addr *net_if_ipv4_addr_lookup_by_iface(
+	struct net_if *iface, const struct net_in_addr *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return NULL;
+}
+#endif
 
 /**
  * @brief Add a IPv4 address to an interface
@@ -3249,12 +3289,13 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 #define NET_IF_CHECKSUM_NONE_BIT			0
 #define NET_IF_CHECKSUM_IPV4_HEADER_BIT			BIT(0)
 #define NET_IF_CHECKSUM_IPV4_ICMP_BIT			BIT(1)
+#define NET_IF_CHECKSUM_IPV4_TCP_BIT			BIT(2)
+#define NET_IF_CHECKSUM_IPV4_UDP_BIT			BIT(3)
 /* Space for future protocols and restrictions for IPV4 */
-#define NET_IF_CHECKSUM_IPV6_HEADER_BIT			BIT(10)
 #define NET_IF_CHECKSUM_IPV6_ICMP_BIT			BIT(11)
+#define NET_IF_CHECKSUM_IPV6_TCP_BIT			BIT(12)
+#define NET_IF_CHECKSUM_IPV6_UDP_BIT			BIT(13)
 /* Space for future protocols and restrictions for IPV6 */
-#define NET_IF_CHECKSUM_TCP_BIT				BIT(21)
-#define NET_IF_CHECKSUM_UDP_BIT				BIT(22)
 
 /** @endcond */
 
@@ -3265,21 +3306,17 @@ enum net_if_checksum_type {
 	/** Interface supports IP version 4 header checksum calculation */
 	NET_IF_CHECKSUM_IPV4_HEADER = NET_IF_CHECKSUM_IPV4_HEADER_BIT,
 	/** Interface supports checksum calculation for TCP payload in IPv4 */
-	NET_IF_CHECKSUM_IPV4_TCP    = NET_IF_CHECKSUM_IPV4_HEADER_BIT |
-				      NET_IF_CHECKSUM_TCP_BIT,
+	NET_IF_CHECKSUM_IPV4_TCP    = NET_IF_CHECKSUM_IPV4_TCP_BIT,
 	/** Interface supports checksum calculation for UDP payload in IPv4 */
-	NET_IF_CHECKSUM_IPV4_UDP    = NET_IF_CHECKSUM_IPV4_HEADER_BIT |
-				      NET_IF_CHECKSUM_UDP_BIT,
+	NET_IF_CHECKSUM_IPV4_UDP    = NET_IF_CHECKSUM_IPV4_UDP_BIT,
 	/** Interface supports checksum calculation for ICMP4 payload in IPv4 */
 	NET_IF_CHECKSUM_IPV4_ICMP   = NET_IF_CHECKSUM_IPV4_ICMP_BIT,
-	/** Interface supports IP version 6 header checksum calculation */
-	NET_IF_CHECKSUM_IPV6_HEADER = NET_IF_CHECKSUM_IPV6_HEADER_BIT,
+	/** @deprecated IPv6 has no header checksum. No interface advertises this. */
+	NET_IF_CHECKSUM_IPV6_HEADER __deprecated = BIT(10),
 	/** Interface supports checksum calculation for TCP payload in IPv6 */
-	NET_IF_CHECKSUM_IPV6_TCP    = NET_IF_CHECKSUM_IPV6_HEADER_BIT |
-				      NET_IF_CHECKSUM_TCP_BIT,
+	NET_IF_CHECKSUM_IPV6_TCP    = NET_IF_CHECKSUM_IPV6_TCP_BIT,
 	/** Interface supports checksum calculation for UDP payload in IPv6 */
-	NET_IF_CHECKSUM_IPV6_UDP    = NET_IF_CHECKSUM_IPV6_HEADER_BIT |
-				      NET_IF_CHECKSUM_UDP_BIT,
+	NET_IF_CHECKSUM_IPV6_UDP    = NET_IF_CHECKSUM_IPV6_UDP_BIT,
 	/** Interface supports checksum calculation for ICMP6 payload in IPv6 */
 	NET_IF_CHECKSUM_IPV6_ICMP   = NET_IF_CHECKSUM_IPV6_ICMP_BIT
 };
@@ -3758,7 +3795,7 @@ int net_if_set_name(struct net_if *iface, const char *buf);
 int net_if_get_by_name(const char *name);
 
 /** @cond INTERNAL_HIDDEN */
-struct net_if_api {
+__subsystem struct net_if_driver_api {
 	void (*init)(struct net_if *iface);
 };
 

@@ -53,14 +53,14 @@ jobs:
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: zephyr/scripts/requirements-actions.txt
 
       - name: Set up the Zephyr workspace
-        uses: zephyrproject-rtos/action-zephyr-setup@be8136a8bba01580485d98b7ad2d32477c36a49a # v1.0.15
+        uses: zephyrproject-rtos/action-zephyr-setup@cc223fe61661d8573c1cd3f95f72f90cce729ae9 # v1.0.16
         with:
           app-path: zephyr
           # native_sim builds with the host compiler; the SDK is installed for

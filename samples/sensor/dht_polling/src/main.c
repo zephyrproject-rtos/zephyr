@@ -31,9 +31,9 @@ static const struct device *const sensors[] = {LISTIFY(10, DHT_DEVICE, ())};
 LISTIFY(10, DHT_IODEV, (;));
 
 #define DHT_IODEV_REF(i, _)                                                   \
-	COND_CODE_1(DT_NODE_EXISTS(DHT_ALIAS(i)), (CONCAT(&dht_iodev, i)), (NULL))
+	IF_ENABLED(DT_NODE_EXISTS(DHT_ALIAS(i)), (CONCAT(&dht_iodev, i),))
 
-static struct rtio_iodev *dht_iodev[] = { LISTIFY(10, DHT_IODEV_REF, (,)) };
+static struct rtio_iodev *dht_iodev[] = {LISTIFY(10, DHT_IODEV_REF, ())};
 
 RTIO_DEFINE(dht_ctx, 1, 1);
 
@@ -50,7 +50,7 @@ int main(void)
 
 	while (1) {
 		for (size_t i = 0; i < ARRAY_SIZE(sensors); i++) {
-			struct device *dev = (struct device *) sensors[i];
+			const struct device *dev = sensors[i];
 
 			uint8_t buf[128];
 
@@ -73,20 +73,31 @@ int main(void)
 			uint32_t temp_fit = 0;
 			struct sensor_q31_data temp_data = {0};
 
-			decoder->decode(buf,
-					(struct sensor_chan_spec) {SENSOR_CHAN_AMBIENT_TEMP, 0},
-					&temp_fit, 1, &temp_data);
+			rc = decoder->decode(buf,
+					     (struct sensor_chan_spec){SENSOR_CHAN_AMBIENT_TEMP, 0},
+					     &temp_fit, 1, &temp_data);
+
+			if (rc != 1) {
+				printk("%s: temperature decode failed: %d\n", dev->name, rc);
+				return rc;
+			}
 
 			uint32_t hum_fit = 0;
 			struct sensor_q31_data hum_data = {0};
 
-			decoder->decode(buf,
-					(struct sensor_chan_spec) {SENSOR_CHAN_HUMIDITY, 0},
-					&hum_fit, 1, &hum_data);
+			rc = decoder->decode(buf,
+					     (struct sensor_chan_spec){SENSOR_CHAN_HUMIDITY, 0},
+					     &hum_fit, 1, &hum_data);
 
-			printk("%16s: temp is %s%d.%d °C humidity is %s%d.%d %%RH\n", dev->name,
-				PRIq_arg(temp_data.readings[0].temperature, 2, temp_data.shift),
-				PRIq_arg(hum_data.readings[0].humidity, 2, hum_data.shift));
+			if (rc != 1) {
+				printk("%s: humidity decode failed: %d\n", dev->name, rc);
+				return rc;
+			}
+
+			printk("%16s: temp is %" PRIq(2) " °C humidity is %" PRIq(2) " %%RH\n",
+			       dev->name,
+			       PRIq_arg(temp_data.readings[0].temperature, 2, temp_data.shift),
+			       PRIq_arg(hum_data.readings[0].humidity, 2, hum_data.shift));
 		}
 		k_msleep(1000);
 	}

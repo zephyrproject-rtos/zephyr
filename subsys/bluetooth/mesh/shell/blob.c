@@ -10,6 +10,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/mesh/shell.h>
+#include <zephyr/sys/bitmap.h>
 
 #include "common/bt_shell_private.h"
 #include "utils.h"
@@ -104,10 +105,10 @@ static void blob_cli_caps(struct bt_mesh_blob_cli *cli,
 
 	bt_shell_print("Mesh BLOB: capabilities:");
 	bt_shell_print("\tMax BLOB size: %u bytes", caps->max_size);
-	bt_shell_print("\tBlock size: %u-%u (%u-%u bytes)",
+	bt_shell_print("\tBlock size: %u-%u (%llu-%llu bytes)",
 		       caps->min_block_size_log, caps->max_block_size_log,
-		       1 << caps->min_block_size_log,
-		       1 << caps->max_block_size_log);
+		       BIT64(caps->min_block_size_log),
+		       BIT64(caps->max_block_size_log));
 	bt_shell_print("\tMax chunks: %u", caps->max_chunks);
 	bt_shell_print("\tChunk size: %u", caps->max_chunk_size);
 	bt_shell_print("\tMTU size: %u", caps->mtu_size);
@@ -126,22 +127,24 @@ static void blob_cli_end(struct bt_mesh_blob_cli *cli,
 
 static uint8_t get_progress(const struct bt_mesh_blob_xfer_info *info)
 {
-	uint8_t total_blocks;
-	uint8_t blocks_not_rxed = 0;
+	uint32_t total_blocks;
+	uint32_t blocks_not_rxed;
 
-	total_blocks = DIV_ROUND_UP(info->size, 1U << info->block_size_log);
+	if (info->missing_blocks == NULL) {
+		return 0;
+	}
+
+	/* The block size can be 2^32, so compute the block count in 64 bits. */
+	total_blocks = DIV_ROUND_UP((uint64_t)info->size, BIT64(info->block_size_log));
 
 	if (total_blocks == 0) {
 		return 0;
 	}
 
-	for (int i = 0; i < total_blocks; i++) {
-		if (info->missing_blocks[i / 8] & (1 << (i % 8))) {
-			blocks_not_rxed++;
-		}
-	}
+	blocks_not_rxed = sys_bitmap_count_set(info->missing_blocks, total_blocks);
 
-	return (100U * (total_blocks - blocks_not_rxed)) / total_blocks;
+	/* 100 times the block count does not fit in 32 bits. */
+	return (100ULL * (total_blocks - blocks_not_rxed)) / total_blocks;
 }
 
 static void xfer_progress(struct bt_mesh_blob_cli *cli,
@@ -271,6 +274,30 @@ static int cmd_flash_stream_unset(const struct shell *sh, size_t argc, char *arg
 
 static const struct bt_mesh_model *mod_cli;
 
+/* The Firmware Update Client contains a BLOB Transfer Client with its own
+ * callbacks. Only a BLOB Transfer Client with the shell callbacks can be used.
+ */
+static bool blob_cli_has_shell_cb(const struct bt_mesh_model *mod)
+{
+	return ((struct bt_mesh_blob_cli *)mod->rt->user_data)->cb == &blob_cli_handlers;
+}
+
+static bool blob_cli_usable(const struct shell *sh)
+{
+	if (!mod_cli && !bt_mesh_shell_mdl_match_get(BT_MESH_MODEL_ID_BLOB_CLI,
+						     blob_cli_has_shell_cb, &mod_cli)) {
+		shell_error(sh, "No BLOB Transfer Client with shell callbacks found");
+		return false;
+	}
+
+	if (!blob_cli_has_shell_cb(mod_cli)) {
+		shell_error(sh, "BLOB Transfer Client is in use by another model");
+		return false;
+	}
+
+	return true;
+}
+
 static void blob_cli_inputs_prepare(uint16_t group)
 {
 	int i;
@@ -299,11 +326,11 @@ static int cmd_tx(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t group;
 	int err = 0;
 
-	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+	if (!blob_cli_usable(sh)) {
 		return -ENODEV;
 	}
 
-	blob_cli_xfer.xfer.id = shell_strtoul(argv[1], 0, &err);
+	blob_cli_xfer.xfer.id = shell_strtoull(argv[1], 0, &err);
 	blob_cli_xfer.xfer.size = shell_strtoul(argv[2], 0, &err);
 	blob_cli_xfer.xfer.block_size_log = shell_strtoul(argv[3], 0, &err);
 	blob_cli_xfer.xfer.chunk_size = shell_strtoul(argv[4], 0, &err);
@@ -342,8 +369,8 @@ static int cmd_tx(const struct shell *sh, size_t argc, char *argv[])
 	blob_cli_inputs_prepare(group);
 
 	shell_print(sh,
-		    "Sending transfer 0x%x (mode: %s, %u bytes) to 0x%04x",
-		    (uint32_t)blob_cli_xfer.xfer.id,
+		    "Sending transfer 0x%llx (mode: %s, %u bytes) to 0x%04x",
+		    (unsigned long long)blob_cli_xfer.xfer.id,
 		    blob_cli_xfer.xfer.mode == BT_MESH_BLOB_XFER_MODE_PUSH ?
 			    "push" :
 			    "pull",
@@ -389,7 +416,7 @@ static int cmd_caps(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t group;
 	int err = 0;
 
-	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+	if (!blob_cli_usable(sh)) {
 		return -ENODEV;
 	}
 
@@ -431,7 +458,7 @@ static int cmd_caps(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_tx_cancel(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
-	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+	if (!blob_cli_usable(sh)) {
 		return -ENODEV;
 	}
 
@@ -444,9 +471,9 @@ static int cmd_tx_cancel(const struct shell *sh, size_t argc,
 static int cmd_tx_get(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint16_t group;
-	int err;
+	int err = 0;
 
-	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+	if (!blob_cli_usable(sh)) {
 		return -ENODEV;
 	}
 
@@ -454,6 +481,11 @@ static int cmd_tx_get(const struct shell *sh, size_t argc, char *argv[])
 		group = shell_strtoul(argv[1], 0, &err);
 	} else {
 		group = BT_MESH_ADDR_UNASSIGNED;
+	}
+
+	if (err) {
+		shell_warn(sh, "Unable to parse input string argument");
+		return err;
 	}
 
 	if (!blob_cli_xfer.target_count) {
@@ -475,7 +507,7 @@ static int cmd_tx_get(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_tx_suspend(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
-	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+	if (!blob_cli_usable(sh)) {
 		return -ENODEV;
 	}
 
@@ -487,7 +519,7 @@ static int cmd_tx_suspend(const struct shell *sh, size_t argc,
 
 static int cmd_tx_resume(const struct shell *sh, size_t argc, char *argv[])
 {
-	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+	if (!blob_cli_usable(sh)) {
 		return -ENODEV;
 	}
 
@@ -506,14 +538,14 @@ static const struct bt_mesh_model *mod_srv;
 static int cmd_rx(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint16_t timeout_base;
-	uint32_t id;
+	uint64_t id;
 	int err = 0;
 
 	if (!mod_srv && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_SRV, &mod_srv)) {
 		return -ENODEV;
 	}
 
-	id = shell_strtoul(argv[1], 0, &err);
+	id = shell_strtoull(argv[1], 0, &err);
 	blob_rx_sum = 0;
 
 	if (argc > 2) {
@@ -527,7 +559,7 @@ static int cmd_rx(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	shell_print(sh, "Receive BLOB 0x%x", id);
+	shell_print(sh, "Receive BLOB 0x%llx", (unsigned long long)id);
 	err = bt_mesh_blob_srv_recv((struct bt_mesh_blob_srv *)mod_srv->rt->user_data,
 				    id, bt_mesh_shell_blob_io, BT_MESH_TTL_MAX, timeout_base);
 	if (err) {

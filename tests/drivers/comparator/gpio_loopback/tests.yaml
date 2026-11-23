@@ -27,6 +27,7 @@ tests:
       - frdm_mcxe247
       - frdm_imxrt1186/mimxrt1186/cm33
       - frdm_imxrt1186/mimxrt1186/cm7
+      - mimxrt2660_evk/mimxrt2663/cm85
   drivers.comparator.gpio_loopback.nrf_comp:
     extra_args:
       - FILE_SUFFIX="nrf_comp"
@@ -40,7 +41,9 @@ tests:
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp/ns
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
       - nrf7120dk/nrf7120/cpuapp/ns
+      - nrf7120dk/nrf7120e/cpuapp/ns
       - ophelia4ev/nrf54l15/cpuapp
   drivers.comparator.gpio_loopback.nrf_lpcomp:
     extra_args:
@@ -55,7 +58,9 @@ tests:
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp/ns
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
       - nrf7120dk/nrf7120/cpuapp/ns
+      - nrf7120dk/nrf7120e/cpuapp/ns
       - ophelia4ev/nrf54l15/cpuapp
   drivers.comparator.gpio_loopback.stm32_comp:
     platform_allow:
@@ -97,6 +102,7 @@ tests:
   drivers.comparator.gpio_loopback.infineon_lpcomp:
     platform_allow:
       - kit_psc3m5_evk
+      - kit_psc3m6_eval/psc3m6ges3ahq1
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m55
       - kit_pse84_ai/pse846gps2dbzc4a/m33
@@ -110,6 +116,7 @@ tests:
     platform_allow:
       - esp32p4x_function_ev_board/esp32p4/hpcore
       - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c61_devkitc/esp32c61
       - esp32h2_devkitm/esp32h2
   drivers.comparator.gpio_loopback.infineon_csg:
     extra_args:

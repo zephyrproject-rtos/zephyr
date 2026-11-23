@@ -6,6 +6,8 @@ description: |
 
 compatible: "zephyr,native-linux-leds"
 
+class: led
+
 child-binding:
   description: Linux LED child node
 

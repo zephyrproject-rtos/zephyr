@@ -1,0 +1,214 @@
+/*
+ * Copyright (c) 2026 ID8 Engineering AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
+
+/*
+ * Pinctrl routes for the default mikroBUS™ serial mappings.
+ *
+ * mikroBUS™ 1 uses serial block 2 (uart2 / i2c2 / spi2) and mikroBUS™ 2 uses
+ * serial block 3 (uart3 / i2c3 / spi3). Application overlays should enable
+ * the needed function while respecting the nRF9151 mux rule that uartX/i2cX/
+ * spiX share the same hardware block for each X.
+ */
+
+&pinctrl {
+	/* Debug / AT / console UART0: TX P0.27, RX P0.26 */
+	uart0_default: uart0_default {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 27)>;
+		};
+
+		group2 {
+			psels = <NRF_PSEL(UART_RX, 0, 26)>;
+			bias-pull-up;
+		};
+	};
+
+	uart0_sleep: uart0_sleep {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 27)>,
+				<NRF_PSEL(UART_RX, 0, 26)>;
+			low-power-enable;
+		};
+	};
+
+	system_led_spi_default: system_led_spi_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 24)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 18)>,
+				<NRF_PSEL(SPIM_MISO, 0, 25)>;
+			nordic,drive-mode = <NRF_DRIVE_H0H1>;
+		};
+	};
+
+	system_led_spi_sleep: system_led_spi_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 24)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 18)>,
+				<NRF_PSEL(SPIM_MISO, 0, 25)>;
+			low-power-enable;
+		};
+	};
+
+	pmic_i2c_default: pmic_i2c_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+				<NRF_PSEL(TWIM_SCL, 0, 31)>;
+		};
+	};
+
+	pmic_i2c_sleep: pmic_i2c_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 30)>,
+				<NRF_PSEL(TWIM_SCL, 0, 31)>;
+			low-power-enable;
+		};
+	};
+
+	mikrobus_1_uart_default: mikrobus_1_uart_default {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 12)>;
+		};
+
+		group2 {
+			psels = <NRF_PSEL(UART_RX, 0, 13)>;
+			bias-pull-up;
+		};
+	};
+
+	mikrobus_1_uart_sleep: mikrobus_1_uart_sleep {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 12)>,
+				<NRF_PSEL(UART_RX, 0, 13)>;
+			low-power-enable;
+		};
+	};
+
+	mikrobus_2_uart_default: mikrobus_2_uart_default {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 10)>;
+		};
+
+		group2 {
+			psels = <NRF_PSEL(UART_RX, 0, 11)>;
+			bias-pull-up;
+		};
+	};
+
+	mikrobus_2_uart_sleep: mikrobus_2_uart_sleep {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 10)>,
+				<NRF_PSEL(UART_RX, 0, 11)>;
+			low-power-enable;
+		};
+	};
+
+	mikrobus_1_i2c_default: mikrobus_1_i2c_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 22)>,
+				<NRF_PSEL(TWIM_SCL, 0, 23)>;
+		};
+	};
+
+	mikrobus_1_i2c_sleep: mikrobus_1_i2c_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 22)>,
+				<NRF_PSEL(TWIM_SCL, 0, 23)>;
+			low-power-enable;
+		};
+	};
+
+	mikrobus_2_i2c_default: mikrobus_2_i2c_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 9)>,
+				<NRF_PSEL(TWIM_SCL, 0, 8)>;
+		};
+	};
+
+	mikrobus_2_i2c_sleep: mikrobus_2_i2c_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 9)>,
+				<NRF_PSEL(TWIM_SCL, 0, 8)>;
+			low-power-enable;
+		};
+	};
+
+	mikrobus_1_spi_default: mikrobus_1_spi_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 29)>,
+				<NRF_PSEL(SPIM_MISO, 0, 28)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 21)>;
+			nordic,drive-mode = <NRF_DRIVE_H0H1>;
+		};
+	};
+
+	mikrobus_1_spi_sleep: mikrobus_1_spi_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 29)>,
+				<NRF_PSEL(SPIM_MISO, 0, 28)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 21)>;
+			low-power-enable;
+		};
+	};
+
+	mikrobus_2_spi_default: mikrobus_2_spi_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 6)>,
+				<NRF_PSEL(SPIM_MISO, 0, 5)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 4)>;
+			nordic,drive-mode = <NRF_DRIVE_H0H1>;
+		};
+	};
+
+	mikrobus_2_spi_sleep: mikrobus_2_spi_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 6)>,
+				<NRF_PSEL(SPIM_MISO, 0, 5)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 4)>;
+			low-power-enable;
+		};
+	};
+
+	mikrobus_1_pwm_default: mikrobus_1_pwm_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 17)>;
+		};
+	};
+
+	mikrobus_1_pwm_sleep: mikrobus_1_pwm_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 17)>;
+			low-power-enable;
+		};
+	};
+
+	mikrobus_2_pwm_default: mikrobus_2_pwm_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 3)>;
+		};
+	};
+
+	mikrobus_2_pwm_sleep: mikrobus_2_pwm_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 3)>;
+			low-power-enable;
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 19)>;
+		};
+	};
+
+	pwm1_sleep: pwm1_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 19)>;
+			low-power-enable;
+		};
+	};
+};

@@ -27,6 +27,7 @@ struct quic_reply_budget {
 
 #if defined(CONFIG_NET_TEST)
 uint16_t quic_test_reply_budget_spent;
+uint64_t quic_test_reset_final_size;
 #endif
 
 static bool quic_reply_budget_take(struct quic_reply_budget *budget)
@@ -188,6 +189,22 @@ ZTESTABLE_STATIC int quic_validate_frame_type(uint8_t frame_type,
 	}
 }
 
+/* Give back the slot of the stream limit that a peer stream took when it
+ * never opened. The total goes back too: it feeds the limit handed out for
+ * STREAMS_BLOCKED, so retransmissions of such a stream would otherwise grow
+ * the advertised limit without bound.
+ */
+static void quic_stream_limit_give_back(struct quic_endpoint *ep, bool is_bidi)
+{
+	if (is_bidi && ep->rx_sl.open_bidi > 0) {
+		ep->rx_sl.open_bidi--;
+		ep->rx_sl.total_bidi--;
+	} else if (!is_bidi && ep->rx_sl.open_uni > 0) {
+		ep->rx_sl.open_uni--;
+		ep->rx_sl.total_uni--;
+	}
+}
+
 /*
  * Handle STREAM frame (frame types 0x08 - 0x0f)
  *
@@ -321,20 +338,10 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		stream = quic_create_stream_from_peer(conn, ep, stream_id);
 		if (stream == NULL) {
 			/* Pool exhausted, roll back the counters we just
-			 * incremented. The total must go back too: no stream
-			 * ever opened, and the totals feed the limit handed
-			 * out for STREAMS_BLOCKED, so retransmissions of an
-			 * unallocatable stream would otherwise grow the
-			 * advertised limit without bound.
+			 * incremented.
 			 */
 			if (peer_init) {
-				if (is_bidi && ep->rx_sl.open_bidi > 0) {
-					ep->rx_sl.open_bidi--;
-					ep->rx_sl.total_bidi--;
-				} else if (!is_bidi && ep->rx_sl.open_uni > 0) {
-					ep->rx_sl.open_uni--;
-					ep->rx_sl.total_uni--;
-				}
+				quic_stream_limit_give_back(ep, is_bidi);
 			}
 
 			NET_DBG("[CO:%p/%d] Failed to create stream %" PRIu64,
@@ -345,13 +352,32 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		sys_slist_find_and_remove(&conn->streams, &stream->node);
 		sys_slist_prepend(&conn->streams, &stream->node);
 
-		/* Queue for accept() call */
-		k_fifo_put(&conn->incoming.stream_q, stream);
+		/* The reference of the new stream goes to the accept queue,
+		 * where the application can take the stream and close it at
+		 * once. Keep one until the data of this frame is delivered.
+		 */
+		quic_stream_ref(stream);
+
+		/* Queue for accept() call. The socket can be closed while
+		 * the stream was set up, and the stream is released then.
+		 */
+		if (!quic_ctx_queue_incoming_stream(conn, stream)) {
+			/* The stream was released without its endpoint, so
+			 * its release gave nothing back to the stream limit.
+			 * The frame is consumed: an error would drop the rest
+			 * of the packet and the peer would send it again.
+			 */
+			if (peer_init) {
+				quic_stream_limit_give_back(ep, is_bidi);
+			}
+
+			*consumed = pos + data_len;
+			ret = pos + data_len;
+			goto out;
+		}
 
 		NET_DBG("[CO:%p/%d] Queued new incoming stream %" PRIu64 " for accept on sock %d",
 			conn, quic_get_by_conn(conn), stream_id, conn->sock);
-
-		k_sem_give(&conn->incoming.stream_sem);
 
 		k_yield();
 	}
@@ -364,7 +390,7 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		 */
 		NET_DBG("[CO:%p/%d] Failed to deliver stream data: %d",
 			conn, quic_get_by_conn(conn), ret);
-		return ret;
+		goto out;
 	}
 
 	if (level == QUIC_SECRET_LEVEL_EARLY) {
@@ -381,8 +407,12 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	}
 
 	*consumed = pos + data_len;
+	ret = pos + data_len;
 
-	return pos + data_len;
+out:
+	quic_stream_unref(stream);
+
+	return ret;
 }
 
 /*
@@ -437,6 +467,8 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 		NET_DBG("[ST:%p/%d] RESET_STREAM: woke blocked readers on "
 			"stream %" PRIu64, stream, quic_get_by_stream(stream),
 			stream_id);
+
+		quic_stream_unref(stream);
 	}
 
 	return pos;
@@ -444,7 +476,8 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 
 static int quic_send_reset_stream(struct quic_endpoint *ep,
 				  uint64_t stream_id,
-				  uint64_t error_code)
+				  uint64_t error_code,
+				  uint64_t final_size)
 {
 	uint8_t frame[32];
 	int pos = 0;
@@ -464,11 +497,16 @@ static int quic_send_reset_stream(struct quic_endpoint *ep,
 	}
 	pos += n;
 
-	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, 0 /* final_size */);
+	/* The final size of the stream (RFC 9000 ch. 4.5) */
+	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, final_size);
 	if (n <= 0) {
 		return -EINVAL;
 	}
 	pos += n;
+
+#if defined(CONFIG_NET_TEST)
+	quic_test_reset_final_size = final_size;
+#endif
 
 	NET_DBG("[EP:%p/%d] Sending RESET_STREAM: stream=%" PRIu64
 		" error=0x%" PRIx64,
@@ -523,7 +561,9 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 {
 	uint64_t stream_id, error_code;
 	struct quic_stream *stream;
+	uint64_t final_size;
 	bool local_init;
+	bool repeated;
 	bool is_uni;
 	int pos = 1;
 	int ret;
@@ -602,16 +642,45 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 		}
 	}
 
-	if (stream != NULL && stream->tx_reset) {
-		if (quic_reply_budget_take(budget)) {
-			quic_send_reset_stream(ep, stream_id, error_code);
-		}
-	} else if (stream != NULL) {
-		/* Send RESET_STREAM, our TX side is being abandoned */
-		quic_send_reset_stream(ep, stream_id, error_code);
+	if (stream == NULL) {
+		return pos;
+	}
 
-		/* Mark TX side as reset so future sends return an error */
+	/* The final size is fixed by the first reset: the end of the data
+	 * queued for sending by then, which can be more than bytes_sent while
+	 * a send is under way or a rejected 0-RTT replay is pending. The send
+	 * paths check tx_reset under the same lock before they queue or
+	 * replay data, so nothing is sent past the final size, and every
+	 * RESET_STREAM for the stream carries the same value.
+	 *
+	 * The peer counts the final size against connection flow control
+	 * (RFC 9000 ch. 4.5), so the sent counters are raised to it here and
+	 * the send paths leave them alone once the stream is reset.
+	 */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+
+	repeated = stream->tx_reset;
+	if (!repeated) {
 		stream->tx_reset = true;
+		stream->tx_final_size = stream->tx_buf.base_offset + stream->tx_buf.len;
+
+		if (stream->tx_final_size > stream->bytes_sent) {
+			ep->tx_fc.bytes_sent += stream->tx_final_size - stream->bytes_sent;
+			stream->bytes_sent = stream->tx_final_size;
+		}
+	}
+
+	final_size = stream->tx_final_size;
+
+	k_mutex_unlock(&stream->tx_lock);
+
+	if (repeated) {
+		if (quic_reply_budget_take(budget)) {
+			quic_send_reset_stream(ep, stream_id, error_code, final_size);
+		}
+	} else {
+		/* Send RESET_STREAM, our TX side is being abandoned */
+		quic_send_reset_stream(ep, stream_id, error_code, final_size);
 
 		/*
 		 * Wake any thread blocked in zsock_recv() or waiting on
@@ -626,6 +695,10 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 		NET_DBG("[ST:%p/%d] STOP_SENDING: sent RESET_STREAM and woke "
 			"stream %" PRIu64,
 			stream, quic_get_by_stream(stream), stream_id);
+	}
+
+	if (stream != NULL) {
+		quic_stream_unref(stream);
 	}
 
 	return pos;
@@ -746,6 +819,8 @@ static int handle_max_stream_data_frame(struct quic_endpoint *ep,
 				(void)quic_replay_rejected_early_data(ep);
 			}
 		}
+
+		quic_stream_unref(stream);
 	} else {
 		NET_DBG("[EP:%p/%d] MAX_STREAM_DATA: stream=%" PRIu64
 			" not found, max=%" PRIu64,
@@ -981,10 +1056,15 @@ static int handle_stream_data_blocked_frame(struct quic_endpoint *ep,
 
 	/* Find the stream and send MAX_STREAM_DATA */
 	stream = quic_find_stream_by_id(ep, stream_id);
-	if (stream != NULL && stream->local_max_data > max_stream_data &&
-	    quic_reply_budget_take(budget)) {
+	if (stream == NULL) {
+		return pos;
+	}
+
+	if (stream->local_max_data > max_stream_data && quic_reply_budget_take(budget)) {
 		quic_send_max_stream_data(ep, stream);
 	}
+
+	quic_stream_unref(stream);
 
 	return pos;
 }

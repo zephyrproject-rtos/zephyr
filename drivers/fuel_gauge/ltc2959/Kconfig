@@ -4,7 +4,7 @@
 
 config FUEL_GAUGE_LTC2959
 	depends on DT_HAS_ADI_LTC2959_ENABLED
-	bool "LTC2959 Fuel Gauge"
+	bool "LTC2959 fuel gauge driver"
 	default y
 	select I2C
 	help

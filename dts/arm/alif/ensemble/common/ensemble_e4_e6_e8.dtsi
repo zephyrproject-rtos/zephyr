@@ -27,6 +27,42 @@
 		status = "disabled";
 	};
 
+	eth: ethernet@48100000 {
+		compatible = "alif,ensemble-eth", "snps,dwmac";
+		reg = <0x48100000 0x2000>;
+		clocks = <&clockctrl ALIF_ETH_RMII_REFCLK>,
+			 <&clockctrl ALIF_ETH_RMII_CLK>,
+			 <&clockctrl ALIF_ETH_SYST_HCLK>,
+			 <&clockctrl ALIF_ETH_PTP_100M_CLK>;
+		clock-names = "rmii-src", "rmii", "csr", "ptp";
+		phy-connection-type = "rmii";
+		status = "disabled";
+
+		mdio: mdio {
+			compatible = "snps,dwmac-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		ptp_clock: ptp-clock {
+			compatible = "snps,dwmac-ptp-clock";
+			status = "disabled";
+		};
+	};
+
+	spi3: spi@48106000 {
+		compatible = "snps,designware-spi";
+		reg = <0x48106000 0x1000>;
+		clocks = <&clockctrl ALIF_SPI_SYST_HCLK>;
+		clock-frequency = <DT_FREQ_M(200)>;
+		fifo-depth = <16>;
+		max-xfer-size = <32>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
 	gpio9: gpio@49009000 {
 		compatible = "snps,designware-gpio";
 		reg = <0x49009000 0x1000>;
@@ -131,6 +167,24 @@
 		reg-shift = <2>;
 		current-speed = <115200>;
 		status = "disabled";
+	};
+
+	mram_flash: flash-controller@80000000 {
+		compatible = "alif,mram-flash-controller";
+		reg = <0x80000000 DT_SIZE_K(5632)>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mram: flash@80000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x80000000 DT_SIZE_K(5632)>;
+			ranges = <0x0 0x80000000 DT_SIZE_K(5632)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			erase-block-size = <4096>;
+			write-block-size = <16>;
+		};
 	};
 };
 

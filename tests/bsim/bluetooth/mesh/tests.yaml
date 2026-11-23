@@ -218,6 +218,15 @@ tests:
       - application: bluetooth.mesh.bsim.image.low_lat
       - application: bluetooth.mesh.bsim.image.lpn_scan_on
 
+  bluetooth.mesh.bsim.gatt_srv:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - tests_scripts/gatt_srv
+    required_applications:
+      - application: bluetooth.mesh.bsim.image.gatt
+
   bluetooth.mesh.bsim.heartbeat:
     build: false
     harness_config:

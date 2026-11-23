@@ -10,6 +10,10 @@ using sysbus
 mach create $name
 machine LoadPlatformDescription @platforms/boards/mpfs-icicle-kit.repl
 
+# Remove sysbus.DDR_CTRLR as it is incorrectly mapped on 0x3e001000 which is actually
+# MSS PLL
+machine UnregisterFromParent sysbus.DDR_CTRLR
+
 showAnalyzer mmuart0
 e51 PerformanceInMips 80
 
@@ -19,8 +23,41 @@ u54_2 IsHalted true
 u54_3 IsHalted true
 u54_4 IsHalted true
 
+machine LoadPlatformDescriptionFromString
+"""
+MSS_PLL: Memory.MappedMemory @ sysbus 0x3e001000
+    size: 0x1000
+"""
+
 macro reset
 """
+    # This intent to mimic the initial PLL configuration performed by HSS (FSBL)
+    # PLL_CTRL: power, reference divider, and output dividers 0-3 enabled;
+    # RF clock select, reset-on-lock, and BYPASS_GO_B set.
+    sysbus WriteDoubleWord 0x3e001004 0x020010FF
+    # PLL_REF_FB: reference divider set to FBCLK
+    sysbus WriteDoubleWord 0x3e001008 0x00000500
+    # PLL_FRACN: fractional-N and fractional DAC disabled.
+    sysbus WriteDoubleWord 0x3e00100C 0x00000000
+    # PLL_DIV_0_1: output 0 and 1 post-dividers set to 1.
+    sysbus WriteDoubleWord 0x3e001010 0x01000100
+    # PLL_DIV_2_3: output 2 post-divider set to 3; output 3 post-divider set to 1.
+    sysbus WriteDoubleWord 0x3e001014 0x01000300
+    # PLL_CTRL2: IREF_TOGGLE set; lock counter set to 8.
+    sysbus WriteDoubleWord 0x3e001018 0x00001020
+    # PLL_CAL: deskew count set to 6 and calibration input set to 0xD;
+    # deskew calibration enable and bypass are clear.
+    sysbus WriteDoubleWord 0x3e00101C 0x00000D06
+    # PLL_PHADJ: sync-reference-divider controls enabled; phase adjustment configured.
+    sysbus WriteDoubleWord 0x3e001020 0x00004003
+    # SSCG_REG_0: fractional spread-spectrum parameters cleared.
+    sysbus WriteDoubleWord 0x3e001024 0x00000000
+    # SSCG_REG_1: downspread and spread-spectrum mode cleared.
+    sysbus WriteDoubleWord 0x3e001028 0x00000000
+    # SSCG_REG_2: integer divider input set to 0x60.
+    sysbus WriteDoubleWord 0x3e00102C 0x00000060
+    # SSCG_REG_3: SSE_B set, leaving spread-spectrum modulation disabled.
+    sysbus WriteDoubleWord 0x3e001030 0x00000001
     sysbus LoadELF $elf
 """
 runMacro $reset

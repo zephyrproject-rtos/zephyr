@@ -16,6 +16,7 @@ source "subsys/logging/Kconfig.template.log_config"
 config VIDEO_SHELL
 	bool "Video shell"
 	depends on SHELL
+	select GETOPT
 	help
 	  This shell provides control and query commands for video drivers.
 

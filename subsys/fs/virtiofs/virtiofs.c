@@ -188,7 +188,9 @@ static uint16_t virtiofs_queue_enum_cb(uint16_t queue_idx, uint16_t max_size, vo
 
 int virtiofs_init(const struct device *dev, struct fuse_init_out *response)
 {
-	struct virtio_fs_config *fs_config = virtio_get_device_specific_config(dev);
+	size_t devcfg_len;
+	struct virtio_fs_config *fs_config =
+		virtio_get_device_specific_config(dev, &devcfg_len);
 	struct fuse_init_req req;
 	int ret = 0;
 
@@ -196,6 +198,13 @@ int virtiofs_init(const struct device *dev, struct fuse_init_out *response)
 		LOG_ERR("no virtio_fs_config present");
 		return -ENXIO;
 	}
+
+	if (devcfg_len < offsetof(struct virtio_fs_config, num_request_queues) +
+			  sizeof(fs_config->num_request_queues)) {
+		LOG_ERR("virtio_fs_config too short");
+		return -ENXIO;
+	}
+
 	if (fs_config->num_request_queues < 1) {
 		/* this shouldn't ever happen */
 		LOG_ERR("no request queue present");
@@ -582,6 +591,12 @@ int virtiofs_write(
 		return valid_ret;
 	}
 
+	if (req.write_out.size > size) {
+		LOG_ERR("FUSE_WRITE response size 0x%x invalid for request %u", req.write_out.size,
+			size);
+		return -EIO;
+	}
+
 #ifdef CONFIG_VIRTIOFS_DEBUG
 	fuse_dump_write_out(&req.write_out);
 #endif
@@ -842,6 +857,18 @@ int virtiofs_readdir(
 
 	if (valid_ret != 0) {
 		return valid_ret;
+	}
+
+	/*
+	 * out_header.len is host-controlled; guard against underflow (smaller
+	 * than the header) and against returning more bytes than the dirent and
+	 * name buffers can hold.
+	 */
+	if (req.out_header.len < sizeof(req.out_header) ||
+	    (req.out_header.len - sizeof(req.out_header)) > dirent_size + name_size) {
+		LOG_ERR("FUSE_READDIR response length 0x%x invalid for buffers %u",
+			req.out_header.len, dirent_size + name_size);
+		return -EIO;
 	}
 
 	return req.out_header.len - sizeof(req.out_header);

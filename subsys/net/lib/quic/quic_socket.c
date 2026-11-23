@@ -153,6 +153,7 @@ static int quic_connection_init(struct quic_context *ctx,
 
 fail:
 	sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ep->list_ref_dropped = true;
 
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
@@ -541,6 +542,77 @@ static void quic_ctx_drain_incoming_streams(struct quic_context *ctx)
 	}
 }
 
+/*
+ * The application closes the socket of a context, so nothing is accepted on
+ * it any more. Release the streams and the connections that were handed over
+ * to it but not accepted yet: each holds a reference to a context. The flag is
+ * set under contexts_lock, where a connection is handed over and a stream is
+ * queued, so that either the hand-over or the queueing sees it or the
+ * connection or stream is taken here. The connections taken are marked the
+ * same way, as nobody accepts their streams either.
+ */
+static void quic_ctx_release_unaccepted(struct quic_context *ctx)
+{
+	struct quic_context *waiting[CONFIG_QUIC_MAX_CONTEXTS];
+	size_t waiting_count = 0;
+
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+
+	ctx->accept_closed = true;
+
+	while (waiting_count < ARRAY_SIZE(waiting)) {
+		waiting[waiting_count] = k_fifo_get(&ctx->pending.accept_q, K_NO_WAIT);
+		if (waiting[waiting_count] == NULL) {
+			break;
+		}
+
+		waiting[waiting_count]->accept_closed = true;
+		waiting_count++;
+	}
+
+	k_mutex_unlock(&contexts_lock);
+
+	quic_ctx_drain_incoming_streams(ctx);
+
+	for (size_t i = 0; i < waiting_count; i++) {
+		NET_DBG("[CO:%p/%d] Releasing connection that was not accepted",
+			waiting[i], quic_get_by_conn(waiting[i]));
+		quic_ctx_drain_incoming_streams(waiting[i]);
+		quic_context_unref(waiting[i]);
+	}
+}
+
+/* Queue a stream the peer opened for accept(). Returns false when nothing is
+ * accepted on the context any more; the stream is released then, as the
+ * release of the queue would have done. Otherwise a stream queued after that
+ * release would keep the context referenced for good.
+ */
+ZTESTABLE_STATIC bool quic_ctx_queue_incoming_stream(struct quic_context *ctx,
+						     struct quic_stream *stream)
+{
+	bool queued = false;
+
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+
+	if (!ctx->accept_closed) {
+		k_fifo_put(&ctx->incoming.stream_q, stream);
+		k_sem_give(&ctx->incoming.stream_sem);
+		queued = true;
+	}
+
+	k_mutex_unlock(&contexts_lock);
+
+	if (!queued) {
+		NET_DBG("[CO:%p/%d] Releasing stream %" PRIu64 " that nobody accepts",
+			ctx, quic_get_by_conn(ctx), stream->id);
+
+		stream->ep = NULL;
+		quic_stream_unref(stream);
+	}
+
+	return queued;
+}
+
 static int quic_ctx_close_vmeth(void *obj)
 {
 	struct quic_context *ctx = obj;
@@ -565,11 +637,7 @@ static int quic_ctx_close_vmeth(void *obj)
 	 */
 	ctx->sock = -1;
 
-	/*
-	 * Release any unaccepted incoming streams. Each holds a context ref;
-	 * without this, ctx->refcount stays elevated and the context leaks.
-	 */
-	quic_ctx_drain_incoming_streams(ctx);
+	quic_ctx_release_unaccepted(ctx);
 
 	quic_context_unref(ctx);
 
@@ -703,54 +771,32 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 		}
 	}
 
-	/* Report POLLHUP when the connection has been closed (no endpoints
-	 * remain). This allows upper layers (e.g. the HTTP server) to
-	 * immediately detect and clean up stale connections instead of
-	 * waiting for an inactivity timer. POLLHUP is always reported
-	 * regardless of the requested events, per POSIX semantics.
+	/* Report POLLHUP when the connection has been closed: no endpoints
+	 * remain, or the connection was closed while streams the peer opened
+	 * are still waiting to be accepted. Those make the socket readable
+	 * too, so the hang-up would otherwise not show until they are taken.
+	 * This allows upper layers (e.g. the HTTP server) to immediately
+	 * detect and clean up stale connections instead of waiting for an
+	 * inactivity timer. POLLHUP is always reported regardless of the
+	 * requested events, per POSIX semantics.
 	 */
-	if (quic_ctx_is_eof(ctx)) {
+	if (quic_ctx_is_eof(ctx) || (!ctx->is_listening && ctx->closed)) {
 		pfd->revents |= ZSOCK_POLLHUP;
 	}
 
 	return 0;
 }
 
-static int quic_ctx_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int quic_ctx_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
 {
-	struct quic_context *ctx = obj;
+	return quic_conn_poll_prepare_ctx(obj, pfd, pev, pev_end);
+}
 
-	switch (request) {
-	case ZFD_IOCTL_POLL_OFFLOAD:
-		return -ENOTSUP;
-
-	case ZFD_IOCTL_POLL_PREPARE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-		struct k_poll_event *pev_end;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
-
-		return quic_conn_poll_prepare_ctx(ctx, pfd, pev, pev_end);
-	}
-
-	case ZFD_IOCTL_POLL_UPDATE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-
-		return quic_conn_poll_update_ctx(ctx, pfd, pev);
-	}
-
-	default:
-		break;
-	}
-
-	return 0;
+static int quic_ctx_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev)
+{
+	return quic_conn_poll_update_ctx(obj, pfd, pev);
 }
 
 static bool quic_stream_can_send(struct quic_stream *stream)
@@ -887,41 +933,31 @@ static int quic_stream_poll_update(struct quic_stream *stream,
 	return 0;
 }
 
-static int quic_stream_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int quic_stream_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev, struct k_poll_event *pev_end)
 {
-	struct quic_stream *stream = obj;
+	return quic_stream_poll_prepare(obj, pfd, pev, pev_end);
+}
+
+static int quic_stream_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd,
+			struct k_poll_event **pev)
+{
+	return quic_stream_poll_update(obj, pfd, pev);
+}
+
+static int quic_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(args);
 
 	switch (request) {
-	case ZFD_IOCTL_POLL_OFFLOAD:
-		return -ENOTSUP;
-
-	case ZFD_IOCTL_POLL_PREPARE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-		struct k_poll_event *pev_end;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
-
-		return quic_stream_poll_prepare(stream, pfd, pev, pev_end);
-	}
-
-	case ZFD_IOCTL_POLL_UPDATE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-
-		return quic_stream_poll_update(stream, pfd, pev);
-	}
+	case ZFD_IOCTL_SET_LOCK:
+		return 0;
 
 	default:
-		break;
+		errno = EOPNOTSUPP;
+		return -1;
 	}
-
-	return 0;
 }
 
 /*
@@ -991,7 +1027,19 @@ static int quic_send_stream_fin(struct quic_stream *stream, struct quic_endpoint
 	enum quic_secret_level level;
 	size_t frame_len = 0;
 	uint64_t sent_pn;
+	bool reset;
 	int ret;
+
+	/* RESET_STREAM fixed the final size already, and a FIN cannot change
+	 * it (RFC 9000 ch. 4.5)
+	 */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	reset = stream->tx_reset;
+	k_mutex_unlock(&stream->tx_lock);
+
+	if (reset) {
+		return -EPIPE;
+	}
 
 	/*
 	 * STREAM frame type bits:
@@ -1088,6 +1136,14 @@ static ssize_t quic_stream_replay_pending_data(struct quic_stream *stream)
 	if (state == STATE_RESET_SENT || state == STATE_DATA_READ) {
 		return -EPIPE;
 	}
+
+	/* No data is replayed on a stream that RESET_STREAM ended */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	if (stream->tx_reset) {
+		k_mutex_unlock(&stream->tx_lock);
+		return -EPIPE;
+	}
+	k_mutex_unlock(&stream->tx_lock);
 
 	if (stream->bytes_sent < tx->base_offset ||
 	    stream->bytes_sent > tx->base_offset + tx->len) {
@@ -1186,8 +1242,14 @@ static ssize_t quic_stream_replay_pending_data(struct quic_stream *stream)
 		return ret;
 	}
 
-	stream->bytes_sent += to_send;
-	ep->tx_fc.bytes_sent += to_send;
+	/* A reset counted the data in its final size already */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	if (!stream->tx_reset) {
+		stream->bytes_sent += to_send;
+		ep->tx_fc.bytes_sent += to_send;
+	}
+	k_mutex_unlock(&stream->tx_lock);
+
 	quic_annotate_sent_stream(ep, level, sent_pn, stream->id, this_offset,
 				  (uint16_t)to_send, false);
 
@@ -1251,15 +1313,25 @@ int quic_replay_rejected_early_data(struct quic_endpoint *ep)
 			continue;
 		}
 
+		ret = 0;
 		while (stream->bytes_sent < stream->tx_buf.base_offset + stream->tx_buf.len) {
 			ret = quic_stream_replay_pending_data(stream);
-			if (ret == -EAGAIN) {
+			if (ret == -EAGAIN || ret == -EPIPE) {
 				break;
 			}
 
 			if (ret < 0) {
 				return ret;
 			}
+		}
+
+		/* A reset stream has nothing left to replay and gets no FIN.
+		 * It is skipped, so that it does not hold up the streams after
+		 * it.
+		 */
+		if (ret == -EPIPE) {
+			stream->replay_fin_pending = false;
+			continue;
 		}
 
 		if (!stream->replay_fin_pending ||
@@ -1272,7 +1344,7 @@ int quic_replay_rejected_early_data(struct quic_endpoint *ep)
 			continue;
 		}
 
-		if (ret < 0) {
+		if (ret < 0 && ret != -EPIPE) {
 			return ret;
 		}
 
@@ -1402,6 +1474,15 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 
 	/* Also limit by TX retransmit buffer space */
 	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+
+	/* No data is sent at or beyond the final size of a RESET_STREAM
+	 * (RFC 9000 ch. 4.5)
+	 */
+	if (stream->tx_reset) {
+		k_mutex_unlock(&stream->tx_lock);
+		return -EPIPE;
+	}
+
 	tx = &stream->tx_buf;
 	tx_free = sizeof(tx->data) - tx->len;
 
@@ -1471,9 +1552,16 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	frame_len += to_send;
 
 	/* Copy into retransmit buffer before sending. If the send fails the
-	 * data stays here for PTO / loss detection retransmission.
+	 * data stays here for PTO / loss detection retransmission. A reset
+	 * takes its final size from the end of this buffer, so data is not
+	 * queued once the stream is reset.
 	 */
 	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	if (stream->tx_reset) {
+		k_mutex_unlock(&stream->tx_lock);
+		return -EPIPE;
+	}
+
 	memcpy(&tx->data[tx->len], buf, to_send);
 	tx->len += to_send;
 	k_mutex_unlock(&stream->tx_lock);
@@ -1481,9 +1569,12 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	/* Send the packet */
 	ret = quic_send_packet_with_pn(ep, level, frame, frame_len, &sent_pn);
 	if (ret < 0) {
-		/* Roll back TX buffer on send failure */
+		/* Roll back TX buffer on send failure. Data that a reset
+		 * has counted in its final size stays in the buffer, and the
+		 * reset counted it as sent already.
+		 */
 		k_mutex_lock(&stream->tx_lock, K_FOREVER);
-		if (stream->bytes_sent == this_offset) {
+		if (!stream->tx_reset && stream->bytes_sent == this_offset) {
 			size_t buf_off = (size_t)(this_offset - tx->base_offset);
 
 			if (buf_off < tx->len && buf_off + to_send <= tx->len) {
@@ -1502,9 +1593,15 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 		return ret;
 	}
 
-	/* Update flow control tracking */
-	stream->bytes_sent += to_send;
-	ep->tx_fc.bytes_sent += to_send;
+	/* Update flow control tracking, unless a reset counted the data in
+	 * its final size already
+	 */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	if (!stream->tx_reset) {
+		stream->bytes_sent += to_send;
+		ep->tx_fc.bytes_sent += to_send;
+	}
+	k_mutex_unlock(&stream->tx_lock);
 
 	/* Annotate the sent_pkt ring-buffer entry with stream frame info
 	 * so loss detection knows what to retransmit.
@@ -1804,6 +1901,10 @@ static int quic_connection_accept(struct quic_context *listen_ctx,
 
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {
+		/* Streams moved to the connection before it was accepted hold
+		 * references to it, so release them with the connection.
+		 */
+		quic_ctx_release_unaccepted(child_ctx);
 		quic_context_unref(child_ctx);
 		return -ENOSPC;
 	}
@@ -2222,10 +2323,12 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 {
 	struct quic_stream *stream = obj;
 	struct quic_endpoint *ep;
+	int wr_ret = 0;
 	int ret = 0;
 
 	if (!PART_OF_ARRAY(streams, stream)) {
-		return -EINVAL;
+		errno = EINVAL;
+		return -1;
 	}
 
 	/* One endpoint, held by a reference, is used for everything that is
@@ -2258,18 +2361,27 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 		    state != STATE_RESET_RECVD &&
 		    state != STATE_RESET_READ) {
 			ret = quic_send_stream_fin(stream, ep);
-			if (ret < 0) {
+			if (ret == -EPIPE) {
+				/* RESET_STREAM ended the sending half, no FIN is
+				 * sent and the state stays. The receiving half is
+				 * still shut down below, and the error is returned.
+				 */
+				wr_ret = ret;
+				ret = 0;
+				NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): no FIN after a reset",
+					stream, quic_get_by_stream(stream));
+			} else if (ret < 0) {
 				NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): FIN send failed (%d)",
 					stream, quic_get_by_stream(stream), ret);
 				goto out;
+			} else {
+				/* Advance state so that close does not send a second FIN */
+				smf_set_state(SMF_CTX(&stream->state.ctx),
+					      &quic_stream_bidirectional_states[STATE_DATA_SENT]);
+
+				NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): FIN sent on stream %" PRIu64,
+					stream, quic_get_by_stream(stream), stream->id);
 			}
-
-			/* Advance state so quic_stream_close_vmeth won't send a second FIN */
-			smf_set_state(SMF_CTX(&stream->state.ctx),
-				      &quic_stream_bidirectional_states[STATE_DATA_SENT]);
-
-			NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): FIN sent on stream %" PRIu64,
-				stream, quic_get_by_stream(stream), stream->id);
 		} else {
 			NET_DBG("[ST:%p/%d] shutdown(SHUT_WR): FIN already sent (state=%d)",
 				stream, quic_get_by_stream(stream), state);
@@ -2319,13 +2431,25 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 out:
 	quic_endpoint_unref(ep);
 
-	return ret;
+	if (ret >= 0 && wr_ret < 0) {
+		ret = wr_ret;
+	}
+
+	/* zsock_shutdown() returns the result as it is: -1 and errno */
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	return 0;
 }
 
 static const struct socket_op_vtable quic_ctx_fd_op_vtable = {
 	.fd_vtable = {
 		.close = quic_ctx_close_vmeth,
-		.ioctl = quic_ctx_ioctl_vmeth,
+		.ioctl = quic_ioctl_vmeth,
+		.poll_prepare = quic_ctx_poll_prepare_vmeth,
+		.poll_update = quic_ctx_poll_update_vmeth,
 	},
 	.accept = quic_accept_ctx,
 	.getsockopt = quic_getsockopt_ctx,
@@ -2337,7 +2461,9 @@ static const struct socket_op_vtable quic_stream_fd_op_vtable = {
 		.read = quic_stream_read_vmeth,
 		.write = quic_stream_write_vmeth,
 		.close = quic_stream_close_vmeth,
-		.ioctl = quic_stream_ioctl_vmeth,
+		.ioctl = quic_ioctl_vmeth,
+		.poll_prepare = quic_stream_poll_prepare_vmeth,
+		.poll_update = quic_stream_poll_update_vmeth,
 	},
 	.sendto = quic_stream_sendto_ctx,
 	.recvfrom = quic_stream_recvfrom_ctx,
@@ -2439,12 +2565,13 @@ int quic_connection_close(int sock)
 	}
 
 	/*
-	 * Release any peer-initiated streams that were received but never
-	 * accepted via zsock_accept(). Each holds a context reference; without
-	 * this the context refcount stays elevated and quic_context_unref()
-	 * below never reaches zero, leaving the context pool slot occupied.
+	 * Release any peer-initiated streams and connections that were
+	 * received but never accepted via zsock_accept(). Each holds a context
+	 * reference; without this the context refcount stays elevated and
+	 * quic_context_unref() below never reaches zero, leaving the context
+	 * pool slot occupied.
 	 */
-	quic_ctx_drain_incoming_streams(ctx);
+	quic_ctx_release_unaccepted(ctx);
 
 	(void)sock_obj_core_dealloc(ctx->sock);
 	quic_context_unref(ctx);

@@ -36,6 +36,9 @@ tests:
   drivers.can.build_all.max32:
     platform_allow:
       - max32662evkit
+  drivers.can.build_all.mchp_mcan_g1:
+    platform_allow:
+      - pic32cm_gc00_cpro
   drivers.can.build_all.mcp2515:
     extra_configs:
       - CONFIG_CAN_MCUX_FLEXCAN=n
@@ -116,3 +119,10 @@ tests:
   drivers.can.build_all.xmc4xxx:
     platform_allow:
       - xmc47_relax_kit
+  # Test definition for CAN transceiver drivers.
+  drivers.can.build_all.transceivers:
+    extra_dtc_overlay_files:
+      - transceivers.overlay
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

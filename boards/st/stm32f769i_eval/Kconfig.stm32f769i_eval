@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32F769I_EVAL
+	select SOC_STM32F769XX

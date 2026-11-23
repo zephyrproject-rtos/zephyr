@@ -16,7 +16,7 @@ config NXP_SIUL2_EIRQ_EXT_INTERRUPTS_MAX
 	int
 	default 8 if SOC_SERIES_S32ZE
 	default 16 if SOC_SERIES_S32K5
-	default 32 if SOC_SERIES_S32K3 || SOC_SERIES_MCXE31X
+	default 32 if SOC_SERIES_S32K3 || SOC_SERIES_MCXE31X || SOC_SERIES_MCXE32X
 	help
 	  Number of SIUL2 external interrupts per controller. This is a SoC
 	  integration option.

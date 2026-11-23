@@ -22,6 +22,11 @@ tests:
   net.dhcpv4_client.direct_events:
     extra_configs:
       - CONFIG_NET_MGMT_EVENT_DIRECT=y
+  net.dhcpv4_client.acd_direct_events:
+    extra_configs:
+      - CONFIG_NET_L2_ETHERNET=y
+      - CONFIG_NET_IPV4_ACD=y
+      - CONFIG_NET_MGMT_EVENT_DIRECT=y
   net.dhcpv4_client.ignored_options:
     extra_configs:
       - CONFIG_NET_DHCPV4_OPTION_PRINT_IGNORED=y

@@ -17,9 +17,6 @@ config SOC_SERIES_NRF52
 	select HAS_POWEROFF
 	select SOC_EARLY_INIT_HOOK
 
-config SOC_SERIES_NRF52X
-	select DEPRECATED
-
 config SOC_NRF52832
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
@@ -101,5 +98,9 @@ config NRF52_ANOMALY_219_WORKAROUND
 	  Due to Anomaly 219 the low period of SCL clock is too short to meet
 	  the I2C specification at 400 kHz. This workaround configures the I2C
 	  frequency to 390 kHz instead of 400 kHz.
+
+config NRF52_ANOMALY_132_WORKAROUND
+	bool
+	default y if SOC_NRF52832_QFAB || SOC_NRF52832_QFAA  || SOC_NRF52832_CIAA
 
 endif # SOC_SERIES_NRF52

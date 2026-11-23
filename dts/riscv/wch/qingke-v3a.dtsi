@@ -46,7 +46,7 @@
 		};
 
 		systick: systimer@e000f000 {
-			compatible = "wch,systick";
+			compatible = "wch,systick-ch32v10x";
 			reg = <0xe000f000 0x10>;
 			interrupt-parent = <&pfic>;
 			interrupts = <12>;

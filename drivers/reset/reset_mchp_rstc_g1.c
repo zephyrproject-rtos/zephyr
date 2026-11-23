@@ -13,7 +13,7 @@
 #define DT_DRV_COMPAT microchip_rstc_g1_reset
 
 /* Maximum number of reset lines supported by the controller */
-#define MCHP_RST_LINE_MAX 8
+#define MCHP_RST_LINE_MAX RSTC_G1_RCAUSE_LINE_MAX
 
 struct reset_mchp_config {
 	rstc_registers_t *regs;
@@ -25,7 +25,7 @@ struct reset_mchp_config {
  * This function checks if the specified reset line is currently asserted.
  *
  * @param[in]  dev	Pointer to the device structure for the driver instance.
- * @param[in]  id	 Reset line ID (0-7).
+ * @param[in]  id	 Reset line ID.
  * @param[out] status Pointer to a variable to store the status (1 = asserted, 0 = not asserted).
  *
  * @retval 0		On success.
@@ -34,7 +34,7 @@ struct reset_mchp_config {
 static int reset_mchp_status(const struct device *dev, uint32_t id, uint8_t *status)
 {
 	int ret = 0;
-	uint8_t rcause = 0;
+	uint16_t rcause = 0;
 
 	if (id >= MCHP_RST_LINE_MAX) {
 		ret = -EINVAL;

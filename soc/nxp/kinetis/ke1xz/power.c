@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 Vestas Wind Systems A/S
- * Copyright 2021, 2024-2025 NXP
+ * Copyright 2021, 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include <zephyr/pm/pm.h>
 #include <soc.h>
 
-LOG_MODULE_DECLARE(power, CONFIG_PM_LOG_LEVEL);
+LOG_MODULE_REGISTER(power, CONFIG_PM_LOG_LEVEL);
 
 #ifdef CONFIG_XIP
 __ramfunc static void wait_for_flash_prefetch_and_wfi(void)

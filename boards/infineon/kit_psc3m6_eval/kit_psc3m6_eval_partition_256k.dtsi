@@ -1,0 +1,54 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Reference partition layout for 256 KB flash PSC3M6 devices.
+ *
+ * Note: kit_psc3m6_eval uses a 512 KB flash SoC (kit_psc3m6_eval_partition_512k.dtsi).
+ * This file is not included by default, but is provided as an example layout
+ * for custom boards with 256 KB flash.
+ *
+ * Layout: Two 120 KB application slots + a 16 KB storage partition, 256 KB total.
+ */
+/ {
+	reserved-memory {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sram0_s: sram0_s@34000000 {
+			/* Secure image SRAM */
+			reg = <0x34000000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(120)>;
+			label = "slot0";
+		};
+
+		slot1_partition: partition@1e000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x1e000 DT_SIZE_K(120)>;
+			label = "slot1";
+		};
+
+		storage_partition: partition@3c000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x3c000 DT_SIZE_K(16)>;
+			label = "storage";
+		};
+	};
+};

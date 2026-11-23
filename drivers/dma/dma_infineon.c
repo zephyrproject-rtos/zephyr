@@ -344,6 +344,7 @@ static int ifx_cat1_dma_configure(const struct device *dev, uint32_t channel,
 			/* allocate new descriptor */
 			if (_dma_alloc_descriptor((void **)&descriptor)) {
 				LOG_ERR("Can't allocate new descriptor");
+				irq_unlock(key);
 				return -EINVAL;
 			}
 
@@ -395,6 +396,7 @@ static int ifx_cat1_dma_configure(const struct device *dev, uint32_t channel,
 	/* Initialize channel */
 	dma_status = Cy_DMA_Channel_Init(cfg->regs, channel, &channel_config);
 	if (dma_status != CY_DMA_SUCCESS) {
+		irq_unlock(key);
 		return -EIO;
 	}
 

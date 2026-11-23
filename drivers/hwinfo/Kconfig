@@ -28,6 +28,7 @@ config HWINFO_SHELL
 # zephyr-keep-sorted-start
 rsource "Kconfig.ambiq"
 rsource "Kconfig.andes"
+rsource "Kconfig.bcm283x"
 rsource "Kconfig.bflb"
 rsource "Kconfig.cc13xx_cc26xx"
 rsource "Kconfig.cc23x0"
@@ -55,6 +56,7 @@ rsource "Kconfig.sam_rstc"
 rsource "Kconfig.silabs"
 rsource "Kconfig.smartbond"
 rsource "Kconfig.stm32"
+rsource "Kconfig.tle927x"
 rsource "Kconfig.wch"
 # zephyr-keep-sorted-stop
 

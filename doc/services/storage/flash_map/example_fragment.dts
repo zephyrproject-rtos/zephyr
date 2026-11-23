@@ -11,9 +11,9 @@
 				ranges = <0x0 0x0 0x100000>;
 
 				partitions {
+					ranges;
 					#address-cells = <1>;
 					#size-cells = <1>;
-					ranges;
 
 					boot_partition: partition@0 {
 						compatible = "zephyr.mapped-partition";

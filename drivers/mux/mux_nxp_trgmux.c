@@ -22,12 +22,20 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+#include <zephyr/drivers/clock_control.h>
+#endif
+
 #include <fsl_trgmux.h>
 
 LOG_MODULE_REGISTER(mux_nxp_trgmux, CONFIG_MUX_LOG_LEVEL);
 
 struct mux_nxp_trgmux_config {
 	TRGMUX_Type *base;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
+#endif
 };
 
 static int mux_nxp_trgmux_set(const struct device *dev,
@@ -76,12 +84,47 @@ static DEVICE_API(mux_control, mux_nxp_trgmux_driver_api) = {
 	.get_state = mux_nxp_trgmux_get_state,
 };
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+/* Some SoCs (e.g. MCXE31x) gate the TRGMUX register interface behind a
+ * peripheral clock, and touching TRGCFG while it is gated raises a bus
+ * fault. Where TRGMUX is ungated the node carries no clocks property and
+ * clock_dev stays NULL, so this init is a no-op.
+ */
+static int mux_nxp_trgmux_init(const struct device *dev)
+{
+	const struct mux_nxp_trgmux_config *cfg = dev->config;
+
+	if (cfg->clock_dev == NULL) {
+		return 0;
+	}
+
+	if (!device_is_ready(cfg->clock_dev)) {
+		LOG_ERR_DEVICE_NOT_READY(cfg->clock_dev);
+		return -ENODEV;
+	}
+
+	return clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+}
+
+#define MUX_NXP_TRGMUX_INIT_FN mux_nxp_trgmux_init
+
+#define MUX_NXP_TRGMUX_CLOCK_CFG(n)                                            \
+	.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),             \
+		(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),              \
+	.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),          \
+		((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)), (0)),
+#else
+#define MUX_NXP_TRGMUX_INIT_FN     NULL
+#define MUX_NXP_TRGMUX_CLOCK_CFG(n)
+#endif
+
 #define MUX_NXP_TRGMUX_INIT(n)                                       \
 	static const struct mux_nxp_trgmux_config                    \
 		mux_nxp_trgmux_cfg_##n = {                           \
 			.base = (TRGMUX_Type *)DT_INST_REG_ADDR(n),  \
+			MUX_NXP_TRGMUX_CLOCK_CFG(n)                  \
 		};                                                   \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL,                         \
+	DEVICE_DT_INST_DEFINE(n, MUX_NXP_TRGMUX_INIT_FN, NULL,       \
 			      NULL, &mux_nxp_trgmux_cfg_##n,         \
 			      POST_KERNEL, CONFIG_MUX_INIT_PRIORITY, \
 			      &mux_nxp_trgmux_driver_api);

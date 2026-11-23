@@ -15,7 +15,12 @@ toolchain:
   - gnuarmemb
 supported:
   - counter
+  - crc
   - gpio
+  - hwinfo
+  - netif:eth
+  - ptp_clock
+  - pwm
   - uart
   - watchdog
 vendor: nxp

@@ -169,7 +169,7 @@ static void seesaw_gamepad_poll(struct k_work *work)
 	}
 
 reschedule:
-	k_work_reschedule(dwork, K_MSEC(cfg->polling_interval_ms));
+	input_work_reschedule(dwork, K_MSEC(cfg->polling_interval_ms));
 }
 
 static int seesaw_gamepad_init(const struct device *dev)
@@ -241,7 +241,7 @@ static int seesaw_gamepad_init(const struct device *dev)
 	}
 
 	k_work_init_delayable(&data->work, seesaw_gamepad_poll);
-	k_work_reschedule(&data->work, K_MSEC(cfg->polling_interval_ms));
+	input_work_reschedule(&data->work, K_MSEC(cfg->polling_interval_ms));
 
 	return 0;
 }

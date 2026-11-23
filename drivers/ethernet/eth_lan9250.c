@@ -872,7 +872,7 @@ static int lan9250_set_config(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct ethernet_api api_funcs = {
+static DEVICE_API(ethernet, api_funcs) = {
 	.iface_api.init = lan9250_iface_init,
 	.get_capabilities = lan9250_get_capabilities,
 	.set_config = lan9250_set_config,

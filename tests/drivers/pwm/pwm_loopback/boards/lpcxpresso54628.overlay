@@ -1,0 +1,41 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/*
+ * To run this test, connect J13 pin 15 (Arduino D0, P3_26, SCT0_OUT0) to
+ * J13 pin 9 (Arduino D3, P4_5, SCT0_GPI6).
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&sc_timer 0 0 PWM_POLARITY_NORMAL>,
+		       <&sc_timer 1 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	pinmux_sctimer0: pinmux_sctimer0 {
+		group0 {
+			pinmux = <SCT0_OUT0_PIO3_26>,
+				 <SCT0_IN1_PIO4_5>;
+			slew-rate = "standard";
+		};
+	};
+};
+
+&sc_timer {
+	pinctrl-0 = <&pinmux_sctimer0>;
+	pinctrl-names = "default";
+	/* Route SCT input 1 from SCT0_GPI6 (kINPUTMUX_SctGpi6ToSct0). */
+	mux-states = <&inputmux0 1 6>;
+	status = "okay";
+};
+
+&inputmux0 {
+	status = "okay";
+};

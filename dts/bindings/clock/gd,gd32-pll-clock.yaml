@@ -1,0 +1,75 @@
+# Copyright (c) 2026 GigaDevice Semiconductor Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: GigaDevice GD32 Main PLL Clock
+
+description: |
+  GigaDevice GD32 main PLL clock node.
+
+  This node models the main PLL used to generate the system clock. It takes
+  the hxtal (gd,gd32-hxtal-clock) or irc16m (fixed-clock) node as input
+  clock, and produces a single output clock (PLL_P).
+
+  This binding applies to GD32 series that expose a dedicated RCU_PLL
+  register with PSC/N/P/Q fields, such as GD32F527.
+
+  The output frequency is computed as:
+
+    f(CK_PLLP) = f(VCO clock) / PLLP
+
+      with f(VCO clock) = f(PLL input clock) / PLLPSC * PLLN
+
+  The PLL input clock source is selected by the "clocks" property: the
+  hxtal node selects HXTAL, the irc16m node selects IRC16M.
+  This maps to the RCU_PLLSRC_* bit in RCU_PLL.
+
+  Property mapping to rcu_pll_config() arguments:
+    pll-psc  : PLL VCO source clock prescaler (2..63)
+    pll-n    : PLL VCO clock multiplication factor (64..500)
+    pll-p    : PLLP output division factor (2, 4, 6, 8)
+    pll-q    : PLLQ output division factor (2..15)
+
+compatible: "gd,gd32-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    required: true
+    description: |
+      PLL input clock source. Reference the hxtal node (HXTAL) or the
+      irc16m node (IRC16M).
+
+  pll-psc:
+    type: int
+    required: true
+    description: PLL VCO source clock prescaler.
+    min: 2
+    max: 63
+
+  pll-n:
+    type: int
+    required: true
+    description: PLL VCO clock multiplication factor.
+    min: 64
+    max: 500
+
+  pll-p:
+    type: int
+    required: true
+    description: PLLP output frequency division factor.
+    enum:
+      - 2
+      - 4
+      - 6
+      - 8
+
+  pll-q:
+    type: int
+    required: true
+    description: PLLQ output frequency division factor.
+    min: 2
+    max: 15

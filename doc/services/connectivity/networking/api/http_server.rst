@@ -317,6 +317,29 @@ content type text/html.
 
     HTTP_SERVER_CONTENT_TYPE(json, "application/json")
 
+A single-page application handles its routes in the browser, so a reload or a
+deep link requests paths such as ``/settings/network`` that have no file of
+their own. Set ``fallback_file`` to serve the application's entry page for
+them instead of a 404:
+
+.. code-block:: c
+
+    struct http_resource_detail_static_fs static_fs_resource_detail = {
+        .common = {
+            .type                              = HTTP_RESOURCE_TYPE_STATIC_FS,
+            .bitmask_of_supported_http_methods = BIT(HTTP_GET),
+        },
+        .fs_path = "/lfs1/www",
+        .fallback_file = "index.html",
+    };
+
+The fallback file, located under ``fs_path``, is served when the requested file
+does not exist and the last segment of the path has no file extension. A path
+that names a directory counts as missing too. A missing file with an
+extension, such as ``/assets/missing.js``, is still answered with 404.
+The service level ``_res_fallback`` does not cover this case, because the
+static filesystem resource already matches the path.
+
 When serving files from a static filesystem, the response chunk size can be configured
 using the :kconfig:option:`CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE` Kconfig option.
 This determines the size of individual chunks when transmitting file content to clients.

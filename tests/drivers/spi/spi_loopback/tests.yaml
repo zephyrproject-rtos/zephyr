@@ -13,6 +13,13 @@ tests:
   drivers.spi.loopback: {}
   drivers.spi.loopback.internal:
     filter: CONFIG_SPI_LOOPBACK_MODE_LOOP
+  drivers.spi.loopback.deinit_busy:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    extra_configs:
+      - CONFIG_SPI_LOOPBACK_TEST_BUSY_DEINIT=y
   drivers.spi.loopback.lpspi.dma:
     filter: DT_HAS_NXP_LPSPI_ENABLED and DT_HAS_NXP_MCUX_EDMA_ENABLED
     extra_configs:
@@ -41,6 +48,17 @@ tests:
       - sam_e54_xpro
       - pic32cx_sg41_cult
       - pic32cm_gc00_cpro
+      - pic32cz_ca80_cult
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+      - esp8684_devkitm
+      - pic32cm_jh01_cpro
     integration_platforms:
       - robokit1
   drivers.spi.mcux_dspi_dma.loopback:
@@ -65,6 +83,8 @@ tests:
       - sam_e54_xpro
       - pic32cx_sg41_cult
       - pic32cm_gc00_cpro
+      - pic32cz_ca80_cult
+      - pic32cm_jh01_cpro
   drivers.spi.stm32_spi_dma.loopback:
     extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma.conf"
     platform_allow:
@@ -85,12 +105,30 @@ tests:
       - nucleo_h753zi
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_u083rc
       - nucleo_u385rg_q
       - stm32h573i_dk
       - stm32n6570_dk/stm32n657xx/sb
       - stm32u083c_dk
     integration_platforms:
       - nucleo_g474re
+  drivers.spi.stm32_spi_dma_cached_memory.loopback:
+    extra_args: EXTRA_CONF_FILE="stm32-spi-dma-cached-memory.conf"
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_u575zi_q
+    integration_platforms:
+      - b_u585i_iot02a
+  drivers.spi.stm32_spi_dma_cached_memory_polling.loopback:
+    extra_args: EXTRA_CONF_FILE="stm32-spi-dma-cached-memory-polling.conf"
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_u575zi_q
+  drivers.spi.stm32_spi_dma_cached_memory_auto_suspend.loopback:
+    extra_args: EXTRA_CONF_FILE="stm32-spi-dma-cached-memory-auto-suspend.conf"
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_u575zi_q
   drivers.spi.stm32_spi_dma_dt_nocache_mem.loopback:
     # this test case is for when nocache memory region is defined in DT
     # using `zephyr,memory-attr = < DT_MEM_ARM_MPU_RAM_NOCACHE)>`
@@ -121,6 +159,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
+      - nucleo_u083rc
       - nucleo_u385rg_q
       - nucleo_wba55cg
       - nucleo_wb55rg
@@ -148,6 +187,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
+      - nucleo_u083rc
       - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_wl55jc
@@ -173,6 +213,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
+      - nucleo_u083rc
       - nucleo_wba55cg
       - nucleo_wb55rg
       - nucleo_wl55jc
@@ -354,6 +395,8 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
+      - nrf7120dk/nrf7120/cpuapp/ns
       - ophelia4ev/nrf54l15/cpuapp
   drivers.spi.nrf54l_16mhz:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_16mhz.overlay"

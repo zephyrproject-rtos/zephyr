@@ -44,16 +44,8 @@ zephyr_library_sources_ifdef(
   tbs_client.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_MPL
-  mpl.c
-  )
-zephyr_library_sources_ifdef(
   CONFIG_BT_MCC
   mcc.c
-  )
-zephyr_library_sources_ifdef(
-  CONFIG_BT_MCS
-  media_controller.c
   )
 zephyr_library_sources_ifdef(
   CONFIG_BT_HAS_PRESET_SUPPORT
@@ -103,6 +95,10 @@ zephyr_library_sources_ifdef(
 zephyr_library_sources_ifdef(
   CONFIG_BT_BAP_BROADCAST_ASSISTANT
   bap_broadcast_assistant.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_BAP_BROADCAST_SINK
+  bap_broadcast_sink.c
   )
 zephyr_library_sources_ifdef(
   CONFIG_BT_PBP

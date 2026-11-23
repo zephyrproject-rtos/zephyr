@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ti_hdc
-
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
@@ -54,8 +53,14 @@ static int ti_hdc_sample_fetch(const struct device *dev,
 	if (cfg->drdy.port) {
 		k_sem_take(&drv_data->data_sem, K_FOREVER);
 	} else {
-		/* wait for the conversion to finish */
-		k_msleep(HDC_CONVERSION_TIME);
+		/* wait for the conversion to finish or use clock stretching */
+		if (cfg->variant == TI_HDC_CHT8305) {
+			if (cfg->disable_clock_stretching) {
+				k_msleep(CHT8305_CONVERSION_TIME);
+			}
+		} else {
+			k_msleep(HDC_CONVERSION_TIME);
+		}
 	}
 
 	if (i2c_read_dt(&cfg->i2c, buf, 4) < 0) {
@@ -107,11 +112,27 @@ static DEVICE_API(sensor, ti_hdc_driver_api) = {
 
 static uint16_t read16(const struct i2c_dt_spec *i2c, uint8_t d)
 {
-	uint8_t buf[2];
+	uint8_t buf[2] = {0};
+
 	if (i2c_burst_read_dt(i2c, d, (uint8_t *)buf, 2) < 0) {
 		LOG_ERR("Error reading register.");
 	}
-	return (buf[0] << 8 | buf[1]);
+	return sys_get_be16(buf);
+}
+
+static int write16(const struct i2c_dt_spec *i2c, uint8_t d, uint16_t v)
+{
+	int ret;
+	uint8_t buf[3];
+
+	buf[0] = d;
+	sys_put_be16(v, &buf[1]);
+
+	ret = i2c_write_dt(i2c, buf, 3);
+	if (ret < 0) {
+		LOG_ERR("Error writing register.");
+	}
+	return ret;
 }
 
 static int ti_hdc_init(const struct device *dev)
@@ -124,14 +145,34 @@ static int ti_hdc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (read16(&cfg->i2c, TI_HDC_REG_MANUFID) != TI_HDC_MANUFID) {
+	tmp = read16(&cfg->i2c, TI_HDC_REG_MANUFID);
+	if (tmp != (cfg->variant == TI_HDC_CHT8305 ? CHT8305_MANUFID : TI_HDC_MANUFID)) {
 		LOG_ERR("Failed to get correct manufacturer ID");
 		return -EINVAL;
 	}
 	tmp = read16(&cfg->i2c, TI_HDC_REG_DEVICEID);
-	if (tmp != TI_HDC1000_DEVID && tmp != TI_HDC1050_DEVID) {
+	if (tmp != TI_HDC1000_DEVID && tmp != TI_HDC1050_DEVID && tmp != CHT8305_DEVID) {
 		LOG_ERR("Unsupported device ID");
 		return -EINVAL;
+	}
+
+	tmp = read16(&cfg->i2c, TI_HDC_REG_CONFIG);
+	if (cfg->variant == TI_HDC_CHT8305) {
+		if (cfg->disable_clock_stretching) {
+			tmp &= ~CHT8305_REG_CONFIG_CLKSTR;
+		} else {
+			tmp |= CHT8305_REG_CONFIG_CLKSTR;
+		}
+	}
+	if (cfg->heater) {
+		tmp |= TI_HDC_REG_CONFIG_HEATER;
+	} else {
+		tmp &= ~TI_HDC_REG_CONFIG_HEATER;
+	}
+	tmp |= TI_HDC_REG_CONFIG_MODE;
+	if (write16(&cfg->i2c, TI_HDC_REG_CONFIG, tmp) < 0) {
+		LOG_ERR("Failed to configure sensor");
+		return -EIO;
 	}
 
 	if (cfg->drdy.port) {
@@ -166,16 +207,21 @@ static int ti_hdc_init(const struct device *dev)
 	return 0;
 }
 
-#define TI_HDC_DEFINE(inst)								\
-	static struct ti_hdc_data ti_hdc_data_##inst;					\
-											\
-	static const struct ti_hdc_config ti_hdc_config_##inst = {			\
-		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
-		.drdy = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),		\
-	};										\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ti_hdc_init, NULL,				\
-			      &ti_hdc_data_##inst, &ti_hdc_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &ti_hdc_driver_api);		\
+#define TI_HDC_DEFINE(nodeid, variant_in)							\
+	static struct ti_hdc_data ti_hdc_data_##nodeid;						\
+												\
+	static const struct ti_hdc_config ti_hdc_config_##nodeid = {				\
+		.i2c = I2C_DT_SPEC_GET(nodeid),							\
+		.drdy = GPIO_DT_SPEC_GET_OR(nodeid, drdy_gpios, { 0 }),				\
+		.variant = variant_in,								\
+		.heater = DT_PROP(nodeid, heater),						\
+		.disable_clock_stretching =							\
+			DT_PROP_OR(nodeid, disable_clock_stretching, false)			\
+	};											\
+												\
+	SENSOR_DEVICE_DT_DEFINE(nodeid, ti_hdc_init, NULL,					\
+			      &ti_hdc_data_##nodeid, &ti_hdc_config_##nodeid, POST_KERNEL,	\
+			      CONFIG_SENSOR_INIT_PRIORITY, &ti_hdc_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(TI_HDC_DEFINE)
+DT_FOREACH_STATUS_OKAY_VARGS(ti_hdc, TI_HDC_DEFINE, TI_HDC_HDC)
+DT_FOREACH_STATUS_OKAY_VARGS(sensylink_cht8305, TI_HDC_DEFINE, TI_HDC_CHT8305)

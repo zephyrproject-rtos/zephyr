@@ -298,7 +298,7 @@ static struct net_pkt *eth_rx(const struct device *dev)
 			    ETH_DMARXDESC_FRAME_LENGTHSHIFT) -
 			   sizeof(uint32_t); /* This discards CRC (checked by hardware) */
 
-	pkt = net_pkt_rx_alloc_with_buffer(data->iface, total_len, AF_UNSPEC, 0, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(data->iface, total_len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (pkt == 0U) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
@@ -565,9 +565,6 @@ static enum ethernet_hw_caps eth_wch_get_capabilities(const struct device *dev _
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	       | ETHERNET_PROMISC_MODE
 #endif
-#if defined(CONFIG_NET_LLDP)
-	       | ETHERNET_LLDP
-#endif
 		;
 }
 
@@ -696,7 +693,7 @@ static int eth_wch_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ethernet_api eth_api = {
+static DEVICE_API(ethernet, eth_api) = {
 	.iface_api.init = eth_wch_iface_init,
 	.get_capabilities = eth_wch_get_capabilities,
 	.set_config = eth_wch_set_config,

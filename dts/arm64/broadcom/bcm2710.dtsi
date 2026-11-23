@@ -23,15 +23,44 @@
 	interrupt-parent = <&armctrl_intc>;
 
 	cpus {
+		enable-method = "spin-table";
+		i-cache-line-size = <64>;
+		d-cache-line-size = <64>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		/*
+		 * armstub8 parks the secondary cores in a WFE loop and
+		 * polls a per-core release word at 0xd8 + reg * 8; the
+		 * spin-table pm_cpu_ops backend writes the entry point
+		 * there and issues SEV.
+		 */
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-a53";
 			reg = <0>;
 			device_type = "cpu";
-			i-cache-line-size = <64>;
-			d-cache-line-size = <64>;
+			cpu-release-addr = <0x0 0x000000d8>;
+		};
+
+		cpu@1 {
+			compatible = "arm,cortex-a53";
+			reg = <1>;
+			device_type = "cpu";
+			cpu-release-addr = <0x0 0x000000e0>;
+		};
+
+		cpu@2 {
+			compatible = "arm,cortex-a53";
+			reg = <2>;
+			device_type = "cpu";
+			cpu-release-addr = <0x0 0x000000e8>;
+		};
+
+		cpu@3 {
+			compatible = "arm,cortex-a53";
+			reg = <3>;
+			device_type = "cpu";
+			cpu-release-addr = <0x0 0x000000f0>;
 		};
 	};
 
@@ -61,6 +90,25 @@
 	};
 
 	soc {
+		dma-ranges = <0xc0000000 0x0 0x3f000000>,
+			     <0x7e000000 0x3f000000 0x01000000>;
+
+		dma: dma@3f007000 {
+			compatible = "brcm,bcm2835-dma";
+			reg = <0x3f007000 0xf00>;
+			interrupts = <BCM2835_IRQ_DMA(4) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(5) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(8) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(9) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(10) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA_SHARED IRQ_TYPE_LEVEL 0>;
+			#dma-cells = <1>;
+			dma-channels = <16>;
+			dma-buf-addr-alignment = <64>;
+			brcm,dma-channel-mask = <0x7f30>;
+			status = "disabled";
+		};
+
 		armctrl_intc: interrupt-controller@3f00b200 {
 			compatible = "brcm,bcm2835-armctrl-ic";
 			reg = <0x3f00b200 0x200>;
@@ -119,6 +167,15 @@
 			interrupts = <BCM2835_IRQ_UART IRQ_TYPE_LEVEL 0>;
 			interrupt-names = "uart0";
 			clocks = <&clk_uart>;
+			status = "disabled";
+		};
+
+		sdhost: mmc@3f202000 {
+			compatible = "brcm,bcm2835-sdhost";
+			reg = <0x3f202000 0x100>;
+			interrupts = <BCM2835_IRQ_SDHOST IRQ_TYPE_LEVEL 0>;
+			clock-frequency = <DT_FREQ_M(250)>;
+			bus-width = <4>;
 			status = "disabled";
 		};
 

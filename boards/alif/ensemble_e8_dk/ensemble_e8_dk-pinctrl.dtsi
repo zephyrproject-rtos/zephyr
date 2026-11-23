@@ -80,6 +80,46 @@
 		};
 	};
 
+	eth_default: eth_default {
+		group0 {
+			/* RMII transmit and MDIO clock to the RTL8201FR PHY */
+			pinmux = <PIN_P6_0__ETH_TXD0_A>,
+				 <PIN_P10_5__ETH_TXD1_B>,
+				 <PIN_P10_6__ETH_TXEN_B>,
+				 <PIN_P11_2__ETH_MDC_B>;
+			drive-strength = <12>;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			/* From the PHY: the 50 MHz reference clock and the receive signals */
+			pinmux = <PIN_P11_0__ETH_REFCLK_B>,
+				 <PIN_P11_3__ETH_RXD0_B>,
+				 <PIN_P11_4__ETH_RXD1_B>,
+				 <PIN_P11_5__ETH_CRS_DV_B>;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <PIN_P11_1__ETH_MDIO_B>;
+			input-enable;
+			drive-strength = <12>;
+			slew-rate = "fast";
+		};
+	};
+
+	spi3_default: spi3_default {
+		group0 {
+			pinmux = <PIN_P12_4__SPI3_MISO_A>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P12_5__SPI3_MOSI_A>,
+				 <PIN_P12_6__SPI3_SCLK_A>;
+		};
+	};
+
 	gpio6_default: gpio6_default {
 		group0 {
 			/* Multicolor LED1: red on P6_2, green on P6_4, blue on P6_6 */
@@ -96,11 +136,23 @@
 		};
 	};
 
+	gpio8_default: gpio8_default {
+		group0 {
+			/* mikroBUS INT on P8_1 */
+			pinmux = <PIN_P8_1__GPIO>;
+			input-enable;
+		};
+	};
+
 	gpio12_default: gpio12_default {
 		group0 {
-			/* Multicolor LED0: blue on P12_0, red on P12_3 */
+			/*
+			 * Multicolor LED0: blue on P12_0, red on P12_3.
+			 * P12_7 is the mikroBUS chip select.
+			 */
 			pinmux = <PIN_P12_0__GPIO>,
-				 <PIN_P12_3__GPIO>;
+				 <PIN_P12_3__GPIO>,
+				 <PIN_P12_7__GPIO>;
 		};
 	};
 

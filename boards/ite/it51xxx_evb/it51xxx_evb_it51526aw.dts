@@ -16,6 +16,7 @@
 	model = "IT51XXX EV-Board";
 
 	aliases {
+		adc = &adc0;
 		i2c-0 = &i2c0;
 		led0 = &led0;
 		watchdog0 = &twd0;
@@ -94,6 +95,12 @@
 
 &adc0 {
 	pinctrl-0 = <&adc0_ch3_gpi3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dac0 {
+	pinctrl-0 = <&dac0_ch0_gpj0_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };

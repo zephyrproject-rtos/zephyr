@@ -13,6 +13,7 @@ For specific Bluetooth functionality see also the following shell documentation
 
    shell/audio/bap.rst
    shell/audio/bap_broadcast_assistant.rst
+   shell/audio/bap_broadcast_sink.rst
    shell/audio/bap_scan_delegator.rst
    shell/audio/cap.rst
    shell/audio/ccp.rst
@@ -28,6 +29,7 @@ For specific Bluetooth functionality see also the following shell documentation
    shell/classic/hfp.rst
    shell/classic/l2cap.rst
    shell/classic/map.rst
+   shell/classic/opp.rst
    shell/classic/pbap.rst
    shell/classic/spp.rst
    shell/host/gap.rst

@@ -26,8 +26,8 @@ static bool use_cache(uint32_t flags)
 static void test_spsc_pbuf_flags(uint32_t flags)
 {
 	static uint8_t memory_area[216] __aligned(MAX(Z_SPSC_PBUF_DCACHE_LINE, 4));
-	static uint8_t rbuf[198];
-	static uint8_t message[20] = {'a'};
+	static char rbuf[198];
+	static char message[20] = {'a'};
 	struct spsc_pbuf *ib;
 	int rlen;
 	int wlen;

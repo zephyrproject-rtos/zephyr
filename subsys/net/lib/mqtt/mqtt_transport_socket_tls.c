@@ -131,6 +131,15 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 		}
 	}
 
+	if (tls_config->session_cache != ZSOCK_TLS_SESSION_CACHE_DISABLED) {
+		ret = zsock_setsockopt(client->transport.tls.sock, ZSOCK_SOL_TLS,
+				       ZSOCK_TLS_SESSION_CACHE, &tls_config->session_cache,
+				       sizeof(tls_config->session_cache));
+		if (ret < 0) {
+			goto error;
+		}
+	}
+
 	size_t peer_addr_size = sizeof(struct net_sockaddr_in6);
 
 	if (broker->sa_family == NET_AF_INET) {

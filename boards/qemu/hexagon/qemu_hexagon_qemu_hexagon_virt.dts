@@ -64,6 +64,21 @@
 		};
 	};
 
+	/*
+	 * H2 hypervisor's own code and data (not Zephyr-owned memory).
+	 * Declared here so arch/hexagon/core/hvm_event_vectors.S can
+	 * derive its guest-mode identity mapping from devicetree.
+	 */
+	reserved-memory {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		hvm_kernel: hvm-kernel@9b800000 {
+			reg = <0x9b800000 DT_SIZE_M(8)>;
+		};
+	};
+
 	/* PL011 UART provided by QEMU virt machine */
 	uart0: uart@10000000 {
 		compatible = "arm,pl011", "arm,primecell";

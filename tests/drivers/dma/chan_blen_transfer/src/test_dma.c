@@ -199,3 +199,151 @@ LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_BURST8_TESTS, ())
 
 LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_BURST16_TESTS, ())
 #endif
+
+#if CONFIG_DMA_TRANSFER_LONG_BLOCK_SIZE > 0 || CONFIG_DMA_TRANSFER_OVERSIZE_BLOCK_SIZE > 0
+/* One block, one-byte data and bursts, so the block size is the loop count. */
+static void one_block_config(struct dma_config *cfg, struct dma_block_config *blk, uintptr_t src,
+			     uintptr_t dst, uint32_t size)
+{
+	*cfg = (struct dma_config){0};
+	*blk = (struct dma_block_config){0};
+
+	cfg->channel_direction = MEMORY_TO_MEMORY;
+	cfg->source_data_size = 1U;
+	cfg->dest_data_size = 1U;
+	cfg->source_burst_length = 1U;
+	cfg->dest_burst_length = 1U;
+	cfg->dma_callback = test_done;
+	cfg->user_data = &transfer_end_sem;
+	cfg->block_count = 1U;
+	cfg->head_block = blk;
+#ifdef CONFIG_DMA_MCUX_TEST_SLOT_START
+	cfg->dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
+#endif
+
+	blk->block_size = size;
+	blk->source_address = src;
+	blk->dest_address = dst;
+}
+#endif
+
+#if CONFIG_DMA_TRANSFER_LONG_BLOCK_SIZE > 0
+static void run_dma_m2m_long_block_test(const struct device *dma, uint32_t chan)
+{
+	struct dma_config cfg;
+	struct dma_block_config blk;
+
+	zassert_true(device_is_ready(dma), "%s not ready", dma->name);
+
+	for (size_t i = 0; i < LONG_BUF_SIZE; i++) {
+		long_tx_data[i] = (uint8_t)(i * 7U + (i >> 8));
+	}
+	(void)memset(long_rx_data, 0, LONG_BUF_SIZE);
+	(void)memset(long_rx_data + LONG_BUF_SIZE, 0xA5, GUARD_BUF_SIZE);
+
+	one_block_config(&cfg, &blk, (uintptr_t)long_tx_data, (uintptr_t)long_rx_data,
+			 LONG_BUF_SIZE);
+	zassert_ok(dma_config(dma, chan, &cfg), "%s chan %u: config failed", dma->name, chan);
+
+	k_sem_reset(&transfer_end_sem);
+	sys_cache_data_flush_range(long_tx_data, LONG_BUF_SIZE);
+	sys_cache_data_flush_and_invd_range(long_rx_data, LONG_BUF_SIZE + GUARD_BUF_SIZE);
+
+	zassert_ok(dma_start(dma, chan), "%s chan %u: start failed", dma->name, chan);
+	if (k_sem_take(&transfer_end_sem, K_MSEC(2000)) != 0) {
+		(void)dma_stop(dma, chan);
+		zassert_unreachable("%s chan %u: callback not called", dma->name, chan);
+	}
+	zassert_equal(dma_complete_status, DMA_STATUS_COMPLETE, "%s chan %u: status %d", dma->name,
+		      chan, dma_complete_status);
+
+	sys_cache_data_invd_range(long_rx_data, LONG_BUF_SIZE + GUARD_BUF_SIZE);
+	zassert_mem_equal(long_rx_data, long_tx_data, LONG_BUF_SIZE, "%s chan %u: data mismatch",
+			  dma->name, chan);
+	zassert_false(check_overflow_buffer(long_rx_data + LONG_BUF_SIZE, GUARD_BUF_SIZE),
+		      "%s chan %u: guard overwritten", dma->name, chan);
+
+	struct dma_status status;
+
+	zassert_ok(dma_get_status(dma, chan, &status), "%s chan %u: get_status failed", dma->name,
+		   chan);
+	zassert_false(status.busy, "%s chan %u: still busy after completion", dma->name, chan);
+
+#ifdef CONFIG_DMA_TRANSFER_LONG_BLOCK_RELOAD
+	zassert_equal(dma_reload(dma, chan, (uintptr_t)long_tx_data, (uintptr_t)long_rx_data,
+				 LONG_BUF_SIZE),
+		      -EINVAL, "%s chan %u: long reload not rejected", dma->name, chan);
+
+	/*
+	 * A short reload after the long block must run alone. A channel left
+	 * holding the finished last piece runs that again first, and signals
+	 * completion before the reload has been copied.
+	 */
+	(void)memset(rx_data, 0, TEST_BUF_SIZE);
+	(void)memset(rx_data + TEST_BUF_SIZE, 0xA5, GUARD_BUF_SIZE);
+	sys_cache_data_flush_range(tx_data, TEST_BUF_SIZE);
+	sys_cache_data_flush_and_invd_range(rx_data, TEST_BUF_SIZE + GUARD_BUF_SIZE);
+	k_sem_reset(&transfer_end_sem);
+
+	zassert_ok(dma_reload(dma, chan, (uintptr_t)tx_data, (uintptr_t)rx_data, TEST_BUF_SIZE),
+		   "%s chan %u: short reload failed", dma->name, chan);
+	zassert_ok(dma_start(dma, chan), "%s chan %u: start after reload failed", dma->name, chan);
+	if (k_sem_take(&transfer_end_sem, K_MSEC(2000)) != 0) {
+		(void)dma_stop(dma, chan);
+		zassert_unreachable("%s chan %u: reload callback not called", dma->name, chan);
+	}
+	zassert_equal(dma_complete_status, DMA_STATUS_COMPLETE, "%s chan %u: reload status %d",
+		      dma->name, chan, dma_complete_status);
+
+	sys_cache_data_invd_range(rx_data, TEST_BUF_SIZE + GUARD_BUF_SIZE);
+	zassert_mem_equal(rx_data, tx_data, TEST_BUF_SIZE, "%s chan %u: reload data mismatch",
+			  dma->name, chan);
+	zassert_false(check_overflow_buffer(rx_data + TEST_BUF_SIZE, GUARD_BUF_SIZE),
+		      "%s chan %u: reload guard overwritten", dma->name, chan);
+	(void)dma_stop(dma, chan);
+#endif
+}
+
+#define DEFINE_DMA_M2M_LONG_BLOCK_TESTS(idx, _)                                                    \
+	ZTEST(dma_m2m, test_dma##idx##_m2m_chan0_long_block)                                       \
+	{                                                                                          \
+		run_dma_m2m_long_block_test(dma_test_devs[idx], CONFIG_DMA_TRANSFER_CHANNEL_NR_0); \
+	}
+
+LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_LONG_BLOCK_TESTS, ())
+#endif
+
+#if CONFIG_DMA_TRANSFER_OVERSIZE_BLOCK_SIZE > 0
+static void run_dma_m2m_oversize_block_test(const struct device *dma, uint32_t chan)
+{
+	struct dma_config cfg;
+	struct dma_block_config blk;
+	unsigned int key;
+	int ret;
+
+	zassert_true(device_is_ready(dma), "%s not ready", dma->name);
+
+	/* Rejected before anything is queued, so the small buffers are enough. */
+	one_block_config(&cfg, &blk, (uintptr_t)tx_data, (uintptr_t)rx_data,
+			 CONFIG_DMA_TRANSFER_OVERSIZE_BLOCK_SIZE);
+	ret = dma_config(dma, chan, &cfg);
+
+	key = irq_lock();
+	irq_unlock(key);
+	zassert_true(arch_irq_unlocked(key), "%s chan %u: config returned with interrupts locked",
+		     dma->name, chan);
+	zassert_equal(ret, -EINVAL, "%s chan %u: config returned %d", dma->name, chan, ret);
+
+	zassert_equal(test_task(dma, chan, 8), TC_PASS,
+		      "%s chan %u: transfer after a rejected config failed", dma->name, chan);
+}
+
+#define DEFINE_DMA_M2M_OVERSIZE_BLOCK_TESTS(idx, _)                                                \
+	ZTEST(dma_m2m, test_dma##idx##_m2m_chan0_oversize_block)                                   \
+	{                                                                                          \
+		run_dma_m2m_oversize_block_test(dma_test_devs[idx],                                \
+						CONFIG_DMA_TRANSFER_CHANNEL_NR_0);                 \
+	}
+
+LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_OVERSIZE_BLOCK_TESTS, ())
+#endif

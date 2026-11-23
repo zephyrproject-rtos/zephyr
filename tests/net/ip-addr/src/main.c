@@ -158,7 +158,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 struct net_test_context net_test_context_data;
 
-static struct dummy_api net_test_if_api = {
+static DEVICE_API(dummy, net_test_if_api) = {
 	.iface_api.init = net_test_iface_init,
 	.send = tester_send,
 };

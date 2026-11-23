@@ -72,7 +72,6 @@ config THREAD_ANALYZER_RUN_UNLOCKED
 
 config THREAD_ANALYZER_STACK_SAFETY
 	bool "Thread analysis includes thread runtime stack safety check"
-	default n
 	select THREAD_RUNTIME_STACK_SAFETY
 	help
 	  If enabled, the stack usage analysis is enhanced by calling a customizable handler
@@ -108,6 +107,7 @@ config THREAD_ANALYZER_AUTO_INTERVAL
 config THREAD_ANALYZER_AUTO_STACK_SIZE
 	int "Stack size for the periodic thread analysis thread"
 	default 2048 if THREAD_ANALYZER_USE_LOG && LOG_MODE_IMMEDIATE && NO_OPTIMIZATIONS
+	default 2048 if TRACING
 	default 1024
 
 config THREAD_ANALYZER_AUTO_THREAD_PRIORITY_OVERRIDE

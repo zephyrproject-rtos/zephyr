@@ -647,9 +647,6 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 		return ret;
 	}
 
-	eth_stats_update_bytes_rx(iface, fsize_real);
-	eth_stats_update_pkts_rx(iface);
-
 	return ret;
 }
 
@@ -1221,15 +1218,25 @@ static void adin2111_port_iface_init(struct net_if *iface)
 	}
 }
 
-static enum ethernet_hw_caps adin2111_port_get_capabilities(const struct device *dev __unused,
+static enum ethernet_hw_caps adin2111_port_get_capabilities(const struct device *dev,
 							    struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_10BASE |
+	const struct adin2111_port_config *cfg = dev->config;
+	const struct adin2111_config *adin_cfg = cfg->adin->config;
+	enum ethernet_hw_caps caps;
+
+	caps = ETHERNET_LINK_10BASE |
 		ETHERNET_HW_FILTERING
-#if defined(CONFIG_NET_LLDP)
-		| ETHERNET_LLDP
-#endif
 		| ETHERNET_PROMISC_MODE;
+
+	/* The two ports forward frames with an unknown destination to each
+	 * other, see the CONFIG2 setup in adin2111_init()
+	 */
+	if (adin_cfg->id == ADIN2111_MAC) {
+		caps |= ETHERNET_HW_PORT_FORWARDING;
+	}
+
+	return caps;
 }
 
 static int adin2111_port_set_config(const struct device *dev,
@@ -1511,7 +1518,7 @@ static int adin2111_init(const struct device *dev)
 	return ret;
 }
 
-static const struct ethernet_api adin2111_port_api = {
+static DEVICE_API(ethernet, adin2111_port_api) = {
 	.iface_api.init = adin2111_port_iface_init,
 	.get_capabilities = adin2111_port_get_capabilities,
 	.set_config = adin2111_port_set_config,

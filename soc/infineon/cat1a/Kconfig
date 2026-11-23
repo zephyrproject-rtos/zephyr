@@ -16,6 +16,9 @@ config SOC_FAMILY_PSOC6
 	select BUILD_OUTPUT_HEX
 	select USE_INFINEON_LEGACY_HAL
 	select SOC_EARLY_INIT_HOOK
+	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED if PM
+	select HAS_POWEROFF if PM
 
 config SOC_FAMILY_PSOC6_LEGACY
 	select ARM
@@ -65,5 +68,13 @@ config SOC_PSOC6_CM0P_IMAGE_ROM_SIZE
 config SOC_PSOC6_CM0P_IMAGE_RAM_SIZE
 	hex
 	default 0x2000 if SOC_PSOC6_CM0P_IMAGE_SLEEP
+
+config SOC_PSOC6_LPM_TIMER
+	bool
+	default y if SYSTEM_TIMER_LPM_COMPANION_HOOKS
+	select USE_INFINEON_LPTIMER
+	help
+	  Use the MCWDT as the SysTick low-power companion. It is clocked from
+	  CLK_LF, so it keeps counting through DeepSleep where SysTick stops.
 
 endif # SOC_FAMILY_PSOC6

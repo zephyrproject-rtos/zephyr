@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_NV3031B
+	bool "NV3031B display driver"
+	default y
+	depends on DT_HAS_NEWVISION_NV3031B_ENABLED
+	select SPI
+	select GPIO
+	select LED if $(dt_compat_any_has_prop,$(DT_COMPAT_NEWVISION_NV3031B),backlight-leds)
+	help
+	  Enable the NV3031B LCD controller using single-data-line transfers
+	  over its QSPI interface. Supports RGB565 with swapped bytes,
+	  rotation, display blanking, and optional LED backlight control.
+
+	  When using backlight LEDs, set DISPLAY_INIT_PRIORITY so the display
+	  initializes after the backlight LED controllers.

@@ -48,6 +48,15 @@
 		(void)k_sleep(K_MSEC(1));                                                          \
 	}
 
+/* Block until `_flag` is true or `_timeout` (a k_timeout_t) has passed. Check the outcome with
+ * IS_FLAG_SET().
+ */
+#define WAIT_FOR_FLAG_TIMEOUT(_flag, _timeout)                                                     \
+	for (k_timepoint_t _end = sys_timepoint_calc(_timeout);                                    \
+	     !(bool)atomic_get(&_flag) && !sys_timepoint_expired(_end);) {                         \
+		(void)k_sleep(K_MSEC(1));                                                          \
+	}
+
 /* Block until `flag` is false */
 #define WAIT_FOR_FLAG_UNSET(flag)                                                                  \
 	while ((bool)atomic_get(&flag)) {                                                          \

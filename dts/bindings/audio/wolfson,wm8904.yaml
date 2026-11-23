@@ -23,16 +23,32 @@ properties:
     enum:
       - "MCLK"
       - "FLL"
-  fs-ratio:
+  fll-sysclk-fs-ratio:
     type: int
     default: 256
     enum: [64, 128, 192, 256, 384, 512, 768, 1024, 1408, 1536]
     description: |
-      This property is intended for platforms where the MCLK frequency is
-      not directly available to the driver.
-      On such platforms, the driver assumes the MCLK frequency to be equal
-      to (fs-ratio * <sample rate>), where the sample rate comes from the
-      audio codec configuration provided at runtime.
+      SYSCLK to sample rate ratio used when "clock-source" is set to "FLL".
+      The driver configures the FLL to generate a target SYSCLK frequency
+      of (fll-sysclk-fs-ratio * <sample rate>), where the sample rate comes
+      from the audio codec configuration provided at runtime. The FLL
+      reference is the MCLK input described by "clocks".
+      This property is ignored when "clock-source" is set to "MCLK".
+  clocks:
+    type: phandle-array
+    required: true
+    description: |
+      Phandle to the clock supplying the codec's MCLK pin. When
+      "clock-source" is set to "FLL", this clock also acts as the FLL
+      reference clock. If the clock is not backed by a real clock
+      controller, a "fixed-clock" node can be used to describe its
+      frequency.
+  clock-names:
+    type: string-array
+    required: true
+    description: Must contain "mclk" matching the MCLK input
+    enum:
+      - mclk
   input-pga-select:
     type: int
     enum: [1, 2, 3]
@@ -40,6 +56,19 @@ properties:
       Selects the WM8904 input PGA source channel.
       Only single-ended input mode is supported.
       On the 32-pin QFN package, only channels 1 and 2 are supported.
+  input-pga-volume:
+    type: int
+    default: 5
+    min: 0
+    max: 31
+    description: |
+      Static analog input PGA gain value, applied to the input PGA.
+      Used to set fixed input gain staging to match the sensitivity
+      of the connected microphone or line-in source.
+
+      Valid range is 0 to 31 (5-bit register, 0x00-0x1F / 00000b-11111b),
+      corresponding to an analog gain range of -1.5 dB to +28.3 dB in
+      ~0.96 dB steps.
   wolfson,mic-bias-voltage:
     type: string
     description: |

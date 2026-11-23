@@ -596,7 +596,7 @@ static void bflb_ieee802154_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
-static const struct ieee802154_radio_api bflb_ieee802154_radio_api = {
+static DEVICE_API(ieee802154_radio, bflb_ieee802154_radio_api) = {
 	.iface_api.init = bflb_ieee802154_iface_init,
 	.get_capabilities = bflb_ieee802154_get_capabilities,
 	.cca = bflb_ieee802154_cca,

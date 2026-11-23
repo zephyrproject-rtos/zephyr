@@ -16,7 +16,7 @@
  * @brief Definitions for Ethernet bridge FDB
  * @defgroup eth_bridge_fdb Ethernet bridge FDB
  * @since 4.4
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup networking
  * @{
  */
@@ -44,6 +44,10 @@ struct eth_bridge_fdb_entry {
 	struct net_if *iface;
 	/** Entry flags */
 	uint8_t flags;
+	/** Uptime in seconds when a frame from @ref mac was last received.
+	 *  Used to age out dynamic entries.
+	 */
+	uint32_t last_seen;
 	/** Linked list node */
 	sys_snode_t node;
 };

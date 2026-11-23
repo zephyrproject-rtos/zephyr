@@ -130,12 +130,12 @@ static int test_receiver(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static struct dummy_api send_if_api = {
+static DEVICE_API(dummy, send_if_api) = {
 	.iface_api.init = test_iface_init,
 	.send = test_sender,
 };
 
-static struct dummy_api recv_if_api = {
+static DEVICE_API(dummy, recv_if_api) = {
 	.iface_api.init = test_iface_init,
 	.send = test_receiver,
 };
@@ -417,7 +417,7 @@ static enum offloaded_net_if_types offload_get_type(void)
 	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
 }
 
-static const struct net_wifi_mgmt_offload offload_api = {
+static DEVICE_API(wifi_offload, offload_api) = {
 	.wifi_iface.iface_api.init = offload_iface_init,
 	.wifi_iface.get_type = offload_get_type,
 };

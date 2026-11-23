@@ -80,22 +80,22 @@ static int offload_impl_enable(const struct net_if *iface, bool enabled)
 }
 
 /* Net-dev APIs for L2s with offloaded sockets, with and without .enable */
-static struct offloaded_if_api sock_offloaded_impl_api = {
+static DEVICE_API(offloaded_if, sock_offloaded_impl_api) = {
 	.iface_api.init = sock_offload_l2_iface_init,
 	.enable = offload_impl_enable
 };
 
-static struct offloaded_if_api sock_offloaded_no_impl_api = {
+static DEVICE_API(offloaded_if, sock_offloaded_no_impl_api) = {
 	.iface_api.init = sock_offload_l2_iface_init
 };
 
 /* Net-dev APIs for L2s that are net-offloaded, with and without .enable */
-static struct offloaded_if_api net_offloaded_impl_api = {
+static DEVICE_API(offloaded_if, net_offloaded_impl_api) = {
 	.iface_api.init = net_offload_l2_iface_init,
 	.enable = offload_impl_enable
 };
 
-static struct offloaded_if_api net_offloaded_no_impl_api = {
+static DEVICE_API(offloaded_if, net_offloaded_no_impl_api) = {
 	.iface_api.init = net_offload_l2_iface_init
 };
 

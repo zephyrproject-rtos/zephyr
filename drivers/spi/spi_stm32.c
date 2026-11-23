@@ -369,6 +369,11 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf, s
 		blk_cfg->source_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+		if (stm32_buf_is_cached((uintptr_t)buf, len)) {
+			sys_cache_data_flush_range((void *)buf, len);
+		}
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 		blk_cfg->source_address = (uint32_t)buf;
 		if (data->dma_tx.src_addr_increment) {
 			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
@@ -426,6 +431,12 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf, size_t 
 		blk_cfg->dest_address = (uint32_t)&dummy_rx_tx_buffer;
 		blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	} else {
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+		/* Clean too: the TX buffer may share these lines and is cleaned only later */
+		if (stm32_buf_is_cached((uintptr_t)buf, len)) {
+			sys_cache_data_flush_and_invd_range(buf, len);
+		}
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 		blk_cfg->dest_address = (uint32_t)buf;
 		if (data->dma_rx.dst_addr_increment) {
 			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
@@ -505,6 +516,7 @@ static void spi_dma_enable_requests(SPI_TypeDef *spi)
 	}
 }
 
+#ifndef CONFIG_SPI_RTIO
 static void spi_stm32_dma_tx_done(const struct device *dev)
 {
 	const struct spi_stm32_config *cfg = dev->config;
@@ -515,6 +527,7 @@ static void spi_stm32_dma_tx_done(const struct device *dev)
 	}
 #endif /* SPI_SR_FTLVL */
 }
+#endif /* !CONFIG_SPI_RTIO */
 
 static void spi_stm32_dma_rx_done(const struct device *dev, const struct spi_config *config)
 {
@@ -542,6 +555,16 @@ static void spi_stm32_dma_rx_done(const struct device *dev, const struct spi_con
 #endif /* CONFIG_SPI_STM32_ERRATA_BUSY */
 
 #ifndef CONFIG_SPI_RTIO
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+	if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX) {
+		size_t rx_bytes = data->rx_len * dfs;
+
+		if ((data->ctx.rx_buf != NULL) &&
+		    stm32_buf_is_cached((uintptr_t)data->ctx.rx_buf, rx_bytes)) {
+			sys_cache_data_invd_range(data->ctx.rx_buf, rx_bytes);
+		}
+	}
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 	if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
 		spi_context_update_tx(&data->ctx, dfs, data->tx_len);
 		spi_context_update_rx(&data->ctx, dfs, data->rx_len);
@@ -666,6 +689,16 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 
 	return 0;
 }
+
+#if defined(CONFIG_SPI_STM32_DMA_CACHED_MEMORY) && defined(CONFIG_SPI_STM32_INTERRUPT)
+#define SPI_STM32_SUSP_SPIN_US 5U
+
+/* With DMA the FIFO threshold is one frame: RXP clears once the FIFO is empty */
+static bool spi_stm32_rx_fifo_drained(SPI_TypeDef *spi, uint32_t us)
+{
+	return WAIT_FOR(!LL_SPI_IsActiveFlag_RXP(spi), us, NULL);
+}
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY && CONFIG_SPI_STM32_INTERRUPT */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 static void spi_stm32_send_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
@@ -1050,16 +1083,13 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 		tx_cfg->dest_data_size   = tx_cfg->dest_burst_length   = dfs;
 
 		spi_dma_enable_requests(spi);
-		LL_SPI_Enable(spi);
 		spi_stm32_cs_control(dev, true);
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		LL_SPI_StartMasterTransfer(spi);
-#endif /* st_stm32h7_spi */
 
 		data->status_flags = 0;
 		data->tx_len = data->ctx.tx_len;
 		data->rx_len = data->ctx.rx_len;
 
+		/* Arm the DMA, then enable the SPI, see transceive_dma() */
 		if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
 			dma_len = spi_context_max_continuous_chunk(&data->ctx);
 			ret = spi_dma_move_buffers(dev, dma_len);
@@ -1073,7 +1103,15 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 		if (ret != 0) {
 			LOG_ERR("Failed to start SPI DMA transfer");
 			spi_stm32_iodev_complete(dev, -EIO);
+			return;
 		}
+
+		LL_SPI_Enable(spi);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
+			LL_SPI_StartMasterTransfer(spi);
+		}
+#endif /* st_stm32h7_spi */
 
 		return;
 	}
@@ -1184,7 +1222,6 @@ static int spi_stm32_half_duplex_switch_direction(const struct device *dev)
 		ll_set_transfer_size(spi, data->rx_len);
 		ll_set_transfer_direction(spi, STM32_SPI_HALF_DUPLEX_RX);
 		LL_SPI_Enable(spi);
-		spi_stm32_cs_control(dev, true);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		LL_SPI_StartMasterTransfer(spi);
@@ -1223,6 +1260,9 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	const struct spi_stm32_config *cfg = dev->config;
 	SPI_TypeDef *spi = cfg->spi;
 	struct spi_stm32_data *data = dev->data;
+	bool will_switch_direction = (status == 0) &&
+				     (ll_get_transfer_direction(spi) != STM32_SPI_FULL_DUPLEX) &&
+				     spi_stm32_transfer_ongoing(data);
 
 #ifdef CONFIG_SPI_RTIO
 #if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
@@ -1262,6 +1302,11 @@ static void spi_stm32_complete(const struct device *dev, int status)
 #endif /* compat st_stm32_spi_fifo*/
 
 	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+#ifdef SPI_SR_FTLVL
+		/* Disable procedure: the TX FIFO empties before BSY is checked */
+		while ((LL_SPI_GetTxFIFOLevel(spi) != 0U) && LL_SPI_IsEnabled(spi)) {
+		}
+#endif /* SPI_SR_FTLVL */
 		while (ll_spi_is_busy(spi) && LL_SPI_IsEnabled(spi)) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 			uint32_t width = SPI_WORD_SIZE_GET(data->ctx.config->operation);
@@ -1277,9 +1322,24 @@ static void spi_stm32_complete(const struct device *dev, int status)
 			if (STM32_SPI_HALF_DUPLEX_RX == ll_get_transfer_direction(spi)) {
 				ll_disable_spi(spi);
 			}
+#ifdef CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND
+			/* MASRX suspend holds TXC back; RXP still set means the RX DMA gave up */
+			if (LL_SPI_IsActiveFlag_SUSP(spi) && LL_SPI_IsActiveMasterTransfer(spi)) {
+				if (LL_SPI_IsActiveFlag_RXP(spi)) {
+					ll_disable_spi(spi);
+				} else {
+					LL_SPI_ClearFlag_SUSP(spi);
+				}
+			}
+#endif /* CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND */
 		}
 
-		spi_stm32_cs_control(dev, false);
+		/* Half-duplex master TX->RX keeps the transfer ongoing: hold a GPIO CS
+		 * asserted across the direction switch instead of toggling it.
+		 */
+		if (!will_switch_direction) {
+			spi_stm32_cs_control(dev, false);
+		}
 	}
 
 	/* BSY flag is cleared when MODF flag is raised */
@@ -1290,6 +1350,9 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	LL_SPI_ClearFlag_OVR(spi);
 	ll_clear_txtf_flag(spi);
 	ll_clear_eot_flag(spi);
+#ifdef CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND
+	LL_SPI_ClearFlag_SUSP(spi);
+#endif /* CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND */
 	ll_set_transfer_size(spi, 0);
 
 #ifdef CONFIG_SPI_PERIPHERAL
@@ -1316,8 +1379,7 @@ static void spi_stm32_complete(const struct device *dev, int status)
 #endif /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 	}
 
-	if (ll_get_transfer_direction(spi) != STM32_SPI_FULL_DUPLEX &&
-	    spi_stm32_transfer_ongoing(data)) {
+	if (will_switch_direction) {
 		spi_stm32_half_duplex_switch_direction(dev);
 	} else {
 		spi_context_complete(&data->ctx, dev, status);
@@ -1346,6 +1408,55 @@ static void spi_stm32_isr(const struct device *dev)
 	if (!LL_SPI_IsEnabled(spi)) {
 		return;
 	}
+
+#ifdef CONFIG_SPI_STM32_DMA_CACHED_MEMORY
+	/*
+	 * A DMA transfer, told by TXDMAEN/RXDMAEN: transceive_dma() clears them at its end even
+	 * with SPE kept on, which the STM32U5 allows (RM0456, SPI_CFG1).
+	 */
+	if (LL_SPI_IsEnabledDMAReq_RX(spi) || LL_SPI_IsEnabledDMAReq_TX(spi)) {
+		if (spi_stm32_get_err(spi) != 0) {
+			ll_disable_int_errors(spi);
+			if (IS_ENABLED(CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND)) {
+				/* TXC stays set: EOTIE would re-enter until the thread runs */
+				ll_disable_int_eot(spi);
+			}
+			data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
+			k_sem_give(&data->status_sem);
+			return;
+		}
+		/* EOTIE covers SUSP and TXC too; only enabled with MASRX (transceive_dma) */
+		if (IS_ENABLED(CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND) &&
+		    LL_SPI_IsEnabledIT_EOT(spi)) {
+			struct dma_status tx_status;
+			struct dma_status rx_status;
+
+			if (LL_SPI_IsActiveFlag_SUSP(spi) && LL_SPI_IsActiveMasterTransfer(spi)) {
+				/* Resuming before the RX DMA has drained the FIFO would overrun */
+				if (spi_stm32_rx_fifo_drained(spi, SPI_STM32_SUSP_SPIN_US)) {
+					LL_SPI_ClearFlag_SUSP(spi);
+				} else {
+					LL_SPI_DisableIT_EOT(spi);
+					data->status_flags |= SPI_STM32_DMA_SUSPEND_FLAG;
+					k_sem_give(&data->status_sem);
+				}
+			} else if (LL_SPI_IsActiveFlag_TXC(spi) &&
+				   dma_get_status(data->dma_tx.dma_dev, data->dma_tx.channel,
+						  &tx_status) == 0 &&
+				   tx_status.pending_length == 0U &&
+				   dma_get_status(data->dma_rx.dma_dev, data->dma_rx.channel,
+						  &rx_status) == 0 &&
+				   rx_status.pending_length == 0U) {
+				/*
+				 * TXC stays set. Not before the RX DMA is done: a suspend on the
+				 * last frames still needs this interrupt.
+				 */
+				LL_SPI_DisableIT_EOT(spi);
+			}
+		}
+		return;
+	}
+#endif /* CONFIG_SPI_STM32_DMA_CACHED_MEMORY */
 
 	if (!spi_stm32_transfer_ongoing(data)) {
 		if (ll_rx_is_not_empty(spi)) {
@@ -1742,6 +1853,82 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 #if defined(CONFIG_SPI_STM32_DMA)
 #if !defined(CONFIG_SPI_RTIO)
 
+#define SPI_STM32_DMA_TIMEOUT_MIN_MS 1000U
+
+/* Clocks per frame on the wire, idle clocks between frames (midi-clock) included */
+static inline uint32_t spi_stm32_frame_clocks(const struct device *dev,
+					      const struct spi_config *config)
+{
+	uint32_t clocks = SPI_WORD_SIZE_GET(config->operation);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	const struct spi_stm32_config *cfg = dev->config;
+
+	clocks += cfg->midi_clocks;
+#else
+	ARG_UNUSED(dev);
+#endif /* st_stm32h7_spi */
+
+	return clocks;
+}
+
+/* Longest time on the wire, in ms, whose timeout (plus the tolerance) still fits in K_MSEC() */
+#define SPI_STM32_DMA_WIRE_MS_MAX (INT32_MAX - CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE)
+
+/*
+ * Count at half the requested SCK: the prescaler gives an SCK above half of it, unless the
+ * requested SCK is above the fastest SCK. In 32 bits: the rate is rounded down to whole clocks
+ * per ms (or the period up to whole ms), which only lengthens the timeout.
+ */
+static __noinline k_timeout_t spi_stm32_dma_timeout(const struct spi_config *config,
+						    uint32_t frames, uint32_t frame_clocks)
+{
+	const uint32_t half_freq = config->frequency / 2U;
+	uint32_t wire_ms;
+
+	if (half_freq >= MSEC_PER_SEC) {
+		const uint32_t clocks_per_ms = half_freq / MSEC_PER_SEC;
+		/* ceil(frames * frame_clocks / clocks_per_ms) without a product that overflows */
+		const uint32_t whole = frames / clocks_per_ms;
+		const uint32_t part = frames % clocks_per_ms;
+
+		/* part < clocks_per_ms, so wire_ms <= (whole + 1) * frame_clocks */
+		if (whole >= SPI_STM32_DMA_WIRE_MS_MAX / frame_clocks) {
+			return K_MSEC(INT32_MAX);
+		}
+		wire_ms = whole * frame_clocks + DIV_ROUND_UP(part * frame_clocks, clocks_per_ms);
+	} else {
+		const uint32_t ms_per_clock = DIV_ROUND_UP(MSEC_PER_SEC, MAX(half_freq, 1U));
+
+		if (frames > SPI_STM32_DMA_WIRE_MS_MAX / ms_per_clock / frame_clocks) {
+			return K_MSEC(INT32_MAX);
+		}
+		wire_ms = frames * frame_clocks * ms_per_clock;
+	}
+
+	return K_MSEC(MAX(wire_ms + CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE,
+			  SPI_STM32_DMA_TIMEOUT_MIN_MS));
+}
+
+/*
+ * At most 0.5 s on the wire at half the requested SCK and at most 0.5 s of tolerance: the 1 s
+ * minimum. spi_stm32_dma_timeout() stays out of line, off the path of short transfers.
+ */
+static inline k_timeout_t spi_stm32_dma_wait_timeout(const struct device *dev)
+{
+	struct spi_stm32_data *data = dev->data;
+	const struct spi_config *config = data->ctx.config;
+	const uint32_t frames = MAX(data->tx_len, data->rx_len);
+	const uint32_t frame_clocks = spi_stm32_frame_clocks(dev, config);
+
+	if ((CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE <= 500) &&
+	    (frames <= (config->frequency / 4U) / frame_clocks)) {
+		return K_MSEC(SPI_STM32_DMA_TIMEOUT_MIN_MS);
+	}
+
+	return spi_stm32_dma_timeout(config, frames, frame_clocks);
+}
+
 static int wait_dma_rx_tx_done(const struct device *dev)
 {
 	struct spi_stm32_data *data = dev->data;
@@ -1755,18 +1942,66 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	if (IS_ENABLED(CONFIG_SPI_PERIPHERAL) && spi_context_is_peripheral(&data->ctx)) {
 		timeout = K_FOREVER;
 	} else {
-		timeout = K_MSEC(1000);
+		timeout = spi_stm32_dma_wait_timeout(dev);
 	}
 
+#ifdef CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND
+	/* One deadline for the whole transfer, however often the thread is woken */
+	const k_timepoint_t end = sys_timepoint_calc(timeout);
+#endif /* CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND */
+
 	while (1) {
+#ifdef CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND
+		res = k_sem_take(&data->status_sem, sys_timepoint_timeout(end));
+#else
 		res = k_sem_take(&data->status_sem, timeout);
+#endif /* CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND */
 		if (res != 0) {
+			if (IS_ENABLED(CONFIG_SPI_STM32_DMA_CACHED_MEMORY)) {
+				/*
+				 * Without the error interrupt an overrun only shows up as this
+				 * timeout
+				 */
+				const struct spi_stm32_config *cfg = dev->config;
+				int err = spi_stm32_get_err(cfg->spi);
+
+				if (err != 0) {
+					return err;
+				}
+				LOG_ERR("SPI DMA transfer timed out");
+			}
+#ifdef CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND
+			/* k_sem_take() says -EBUSY for the K_NO_WAIT of a passed deadline */
+			return -EAGAIN;
+#else
 			return res;
+#endif /* CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND */
 		}
 
 		if ((data->status_flags & SPI_STM32_DMA_ERROR_FLAG) != 0U) {
 			return -EIO;
 		}
+
+#ifdef CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND
+		if ((data->status_flags & SPI_STM32_DMA_SUSPEND_FLAG) != 0U) {
+			const struct spi_stm32_config *scfg = dev->config;
+
+			/* Handed over by spi_stm32_isr(): resume once the RX FIFO is drained */
+			while (!spi_stm32_rx_fifo_drained(scfg->spi, 10U) &&
+			       !sys_timepoint_expired(end)) {
+				k_yield();
+			}
+			if (!LL_SPI_IsActiveFlag_RXP(scfg->spi)) {
+				unsigned int key = irq_lock();
+
+				data->status_flags &= ~SPI_STM32_DMA_SUSPEND_FLAG;
+				LL_SPI_ClearFlag_SUSP(scfg->spi);
+				LL_SPI_EnableIT_EOT(scfg->spi);
+				irq_unlock(key);
+			}
+			/* Both DMAs may be done by now: status_sem (limit 1) merged their gives */
+		}
+#endif /* CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND */
 
 		if ((data->status_flags & SPI_STM32_DMA_DONE_FLAG) == SPI_STM32_DMA_DONE_FLAG) {
 			return 0;
@@ -1776,7 +2011,27 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	return res;
 }
 
-#ifdef CONFIG_DCACHE
+#if defined(CONFIG_SPI_STM32_DMA_CACHED_MEMORY)
+/* Check if a buffer of @bufs is in cached memory and not aligned on the cache line size */
+static bool spi_stm32_buf_is_cached_unaligned(const struct spi_buf_set *bufs)
+{
+	if (bufs == NULL) {
+		return false;
+	}
+
+	for (size_t i = 0; i < bufs->count; i++) {
+		const uintptr_t buf = (uintptr_t)bufs->buffers[i].buf;
+		const size_t len = bufs->buffers[i].len;
+
+		if ((buf != 0U) && stm32_buf_is_cached(buf, len) &&
+		    !stm32_buf_is_cache_line_aligned(buf, len)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+#elif defined(CONFIG_DCACHE)
 static bool is_dummy_buffer(const struct spi_buf *buf)
 {
 	return buf->buf == NULL;
@@ -1841,7 +2096,7 @@ static void dma_callback_async(const struct device *spi_dev, uint32_t channel, i
 			LOG_DBG("DMA Tx transfer is done");
 		}
 
-		spi_stm32_dma_tx_done(spi_dev);
+		/* Never wait for the TX FIFO here: SPE may still be clear */
 		data->status_flags |= SPI_STM32_DMA_TX_DONE_FLAG;
 	} else if (channel == data->dma_rx.channel) {
 		/* this part of the transfer ends */
@@ -1972,15 +2227,25 @@ static int transceive_dma(const struct device *dev,
 	tx_cfg->source_data_size = tx_cfg->source_burst_length = dfs;
 	tx_cfg->dest_data_size = tx_cfg->dest_burst_length = dfs;
 
+#ifdef CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND
+	/*
+	 * Synchronous controller transfers only, where the ISR or the waiting thread releases the
+	 * suspend. Not below 8-bit frames: MASRX may clock out bits of the next frame (RM0456).
+	 */
+	bool rx_auto_suspend = (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) &&
+			       (SPI_WORD_SIZE_GET(config->operation) >= 8U);
+
+#ifdef CONFIG_SPI_ASYNC
+	rx_auto_suspend = rx_auto_suspend && !data->ctx.asynchronous;
+#endif /* CONFIG_SPI_ASYNC */
+	if (rx_auto_suspend) {
+		LL_SPI_EnableMasterRxAutoSuspend(spi);
+	}
+#endif /* CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND */
+
 	/* Set request before enabling (otherwise SPI CFG1 reg may be write protected) */
 	spi_dma_enable_requests(spi);
-	LL_SPI_Enable(spi);
 	spi_stm32_cs_control(dev, true);
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
-		LL_SPI_StartMasterTransfer(spi);
-	}
-#endif /* st_stm32h7_spi */
 
 	do {
 		data->status_flags = 0;
@@ -1996,11 +2261,42 @@ static int transceive_dma(const struct device *dev,
 			ret = spi_dma_move_rx_buffers(dev, data->rx_len);
 		}
 
+		if (ret != 0) {
+			break;
+		}
+
+		/*
+		 * Set SPE only once the DMA is armed: once SPE is set, the
+		 * controller drives MOSI whether or not a frame has arrived, which
+		 * stretches the first bit on the wire. Later chunks find the SPI
+		 * enabled.
+		 */
+		if (!LL_SPI_IsEnabled(spi)) {
+			LL_SPI_Enable(spi);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+			if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
+				LL_SPI_StartMasterTransfer(spi);
+			}
+#endif /* st_stm32h7_spi */
+		}
+
 #ifdef CONFIG_SPI_ASYNC
 		if (data->ctx.asynchronous) {
 			return spi_context_wait_for_completion(&data->ctx);
 		}
 #endif /* CONFIG_SPI_ASYNC */
+
+		if (IS_ENABLED(CONFIG_SPI_STM32_DMA_CACHED_MEMORY) &&
+		    IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT)) {
+			/* An error flagged before this point fires as soon as it is enabled */
+			ll_enable_int_errors(spi);
+		}
+#ifdef CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND
+		if (rx_auto_suspend) {
+			/* Brings SUSP (and TXC) to spi_stm32_isr() to release a MASRX suspend */
+			LL_SPI_EnableIT_EOT(spi);
+		}
+#endif /* CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND */
 
 		ret = wait_dma_rx_tx_done(dev);
 		if (ret != 0) {
@@ -2043,6 +2339,9 @@ static int transceive_dma(const struct device *dev,
 	/* The Config. Reg. on some mcus is write un-protected when SPI is disabled */
 	LL_SPI_DisableDMAReq_TX(spi);
 	LL_SPI_DisableDMAReq_RX(spi);
+#ifdef CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND
+	LL_SPI_DisableMasterRxAutoSuspend(spi);
+#endif /* CONFIG_SPI_STM32_DMA_RX_AUTO_SUSPEND */
 
 	err = dma_stop(data->dma_rx.dma_dev, data->dma_rx.channel);
 	if (err != 0) {
@@ -2093,7 +2392,15 @@ static int transceive(const struct device *dev,
 		return 0;
 	}
 
-#if defined(CONFIG_DCACHE) && defined(CONFIG_SPI_STM32_DMA) && !defined(CONFIG_SPI_RTIO)
+#if defined(CONFIG_SPI_STM32_DMA_CACHED_MEMORY)
+	/* Invalidating a shared cache line would discard the CPU's writes to its other data */
+	if (use_dma && spi_stm32_buf_is_cached_unaligned(rx_bufs)) {
+		LOG_WRN_ONCE("SPI DMA needs cached RX buffers whose start and length are "
+			     "multiples of the data cache line size, falling back to %s mode",
+			     IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT) ? "interrupt" : "polling");
+		use_dma = false;
+	}
+#elif defined(CONFIG_DCACHE) && defined(CONFIG_SPI_STM32_DMA) && !defined(CONFIG_SPI_RTIO)
 	if (use_dma &&
 	    ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 	     (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs)))) {
@@ -2115,10 +2422,6 @@ static int transceive(const struct device *dev,
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
 	spi_stm32_pm_policy_state_lock_get(dev);
-
-	/* Make sure DXP and EOT interrupts are disabled before starting the transfer */
-	ll_disable_int_dxp(spi);
-	ll_disable_int_eot(spi);
 
 #ifdef CONFIG_SPI_RTIO
 	ret = spi_rtio_transceive(data->rtio_ctx, config, tx_bufs, rx_bufs);
@@ -2146,6 +2449,10 @@ static int transceive(const struct device *dev,
 
 #ifdef CONFIG_SPI_STM32_DMA
 	if (use_dma) {
+		/* Make sure DXP and EOT interrupts are disabled before starting the transfer */
+		ll_disable_int_dxp(spi);
+		ll_disable_int_eot(spi);
+
 		ret = transceive_dma(dev, config);
 		goto end;
 	}
@@ -2170,11 +2477,15 @@ static int transceive(const struct device *dev,
 			ret = spi_stm32_shift_frames(spi, data);
 
 			if (ret == 0 &&
-			    ((dir == STM32_SPI_HALF_DUPLEX_TX && mode == LL_SPI_MODE_MASTER
-			      && data->tx_len == 0) ||
-			     (dir == STM32_SPI_HALF_DUPLEX_RX && mode == LL_SPI_MODE_SLAVE
-			      && data->rx_len == 0))) {
-				ret = spi_stm32_half_duplex_switch_direction(dev);
+			    ((dir == STM32_SPI_HALF_DUPLEX_TX && mode == LL_SPI_MODE_MASTER &&
+			      data->tx_len == 0 && spi_context_rx_on(&data->ctx)) ||
+			     (dir == STM32_SPI_HALF_DUPLEX_RX && mode == LL_SPI_MODE_SLAVE &&
+			      data->rx_len == 0 && spi_context_tx_on(&data->ctx)))) {
+				/* First half-duplex phase done: spi_stm32_complete() waits for
+				 * the transfer to finish then switches direction, reusing the
+				 * same completion path as interrupt mode.
+				 */
+				spi_stm32_complete(dev, ret);
 				dir = ll_get_transfer_direction(spi);
 			}
 		}
@@ -2369,7 +2680,7 @@ static int spi_stm32_init(const struct device *dev)
 #define STM32_SPI_IRQ_HANDLER(id)
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
-#define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)		\
+#define SPI_DMA_CHANNEL_INIT(index, dir, src_dev, dest_dev)			\
 	.dma_dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),		\
 	.channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),		\
 	.dma_cfg = {								\
@@ -2399,16 +2710,16 @@ static int spi_stm32_init(const struct device *dev)
 
 
 #ifdef CONFIG_SPI_STM32_DMA
-#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)				\
+#define SPI_DMA_CHANNEL(id, dir, src, dest)					\
 	.dma_##dir = {								\
 		COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, dir),			\
-			    (SPI_DMA_CHANNEL_INIT(id, dir, DIR, src, dest)),	\
+			    (SPI_DMA_CHANNEL_INIT(id, dir, src, dest)),		\
 			    (NULL))						\
 		},
 #define SPI_DMA_STATUS_SEM(id)							\
 	.status_sem = Z_SEM_INITIALIZER(spi_stm32_dev_data_##id.status_sem, 0, 1),
 #else
-#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)
+#define SPI_DMA_CHANNEL(id, dir, src, dest)
 #define SPI_DMA_STATUS_SEM(id)
 #endif /* CONFIG_SPI_STM32_DMA */
 
@@ -2458,8 +2769,8 @@ static int spi_stm32_init(const struct device *dev)
 	static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_##id, ctx),		\
 		SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_##id, ctx),		\
-		SPI_DMA_CHANNEL(id, rx, RX, PERIPHERAL, MEMORY)			\
-		SPI_DMA_CHANNEL(id, tx, TX, MEMORY, PERIPHERAL)			\
+		SPI_DMA_CHANNEL(id, rx, PERIPHERAL, MEMORY)			\
+		SPI_DMA_CHANNEL(id, tx, MEMORY, PERIPHERAL)			\
 		SPI_DMA_STATUS_SEM(id)						\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)		\
 		IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &spi_stm32_rtio_##id,))\

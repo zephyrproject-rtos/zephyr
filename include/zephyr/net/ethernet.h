@@ -181,17 +181,8 @@ enum ethernet_hw_caps {
 	/** MAC address filtering supported */
 	ETHERNET_HW_FILTERING		= BIT(12),
 
-	/** Link Layer Discovery Protocol supported */
-	ETHERNET_LLDP			= BIT(13),
-
 	/** VLAN Tag stripping */
 	ETHERNET_HW_VLAN_TAG_STRIP	= BIT(14),
-
-	/** DSA switch user port */
-	ETHERNET_DSA_USER_PORT		= BIT(15),
-
-	/** DSA switch conduit port */
-	ETHERNET_DSA_CONDUIT_PORT	= BIT(16),
 
 	/** IEEE 802.1Qbv (scheduled traffic) supported */
 	ETHERNET_QBV			= BIT(17),
@@ -204,17 +195,32 @@ enum ethernet_hw_caps {
 
 	/** TX-Injection supported */
 	ETHERNET_TXINJECTION_MODE	= BIT(20),
+
+	/** The device forwards frames between its ports in hardware */
+	ETHERNET_HW_PORT_FORWARDING	= BIT(21),
+
+	/** The device applies a spanning tree port state to its hardware
+	 *  forwarding and passes BPDUs to the host, see
+	 *  @ref ethernet_stp_port_state.
+	 */
+	ETHERNET_HW_STP_PORT_STATE	= BIT(22),
+};
+
+/** DSA port type of an Ethernet interface */
+enum dsa_port_type {
+	/** Not a DSA port */
+	NON_DSA_PORT,
+	/** Ethernet interface connected to the CPU port of a DSA switch */
+	DSA_CONDUIT_PORT,
+	/** DSA switch user port */
+	DSA_USER_PORT,
+	/** DSA switch CPU port */
+	DSA_CPU_PORT,
+	/** DSA switch port connected to another DSA switch */
+	DSA_PORT,
 };
 
 /** @cond INTERNAL_HIDDEN */
-
-enum dsa_port_type {
-	NON_DSA_PORT,
-	DSA_CONDUIT_PORT,
-	DSA_USER_PORT,
-	DSA_CPU_PORT,
-	DSA_PORT,
-};
 
 enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_MAC_ADDRESS,
@@ -230,6 +236,8 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT,
 	ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT,
 	ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM,
+	ETHERNET_CONFIG_TYPE_STP_PORT_STATE,
+	ETHERNET_CONFIG_TYPE_FDB_FLUSH,
 };
 
 enum ethernet_qav_param_type {
@@ -500,16 +508,37 @@ enum ethernet_checksum_support {
 	ETHERNET_CHECKSUM_SUPPORT_NONE			= NET_IF_CHECKSUM_NONE_BIT,
 	/** Device supports checksum offloading for the IPv4 header */
 	ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER		= NET_IF_CHECKSUM_IPV4_HEADER_BIT,
-	/** Device supports checksum offloading for ICMPv4 payload (implies IPv4 header) */
+	/** Device supports checksum offloading for ICMPv4 payload */
 	ETHERNET_CHECKSUM_SUPPORT_IPV4_ICMP		= NET_IF_CHECKSUM_IPV4_ICMP_BIT,
-	/** Device supports checksum offloading for the IPv6 header */
-	ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER		= NET_IF_CHECKSUM_IPV6_HEADER_BIT,
-	/** Device supports checksum offloading for ICMPv6 payload (implies IPv6 header) */
+	/** Device supports checksum offloading for TCP payload in IPv4 */
+	ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP		= NET_IF_CHECKSUM_IPV4_TCP_BIT,
+	/** Device supports checksum offloading for UDP payload in IPv4 */
+	ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP		= NET_IF_CHECKSUM_IPV4_UDP_BIT,
+	/** Device supports checksum offloading for ICMPv6 payload */
 	ETHERNET_CHECKSUM_SUPPORT_IPV6_ICMP		= NET_IF_CHECKSUM_IPV6_ICMP_BIT,
-	/** Device supports TCP checksum offloading for all supported IP protocols */
-	ETHERNET_CHECKSUM_SUPPORT_TCP			= NET_IF_CHECKSUM_TCP_BIT,
-	/** Device supports UDP checksum offloading for all supported IP protocols */
-	ETHERNET_CHECKSUM_SUPPORT_UDP			= NET_IF_CHECKSUM_UDP_BIT,
+	/** Device supports checksum offloading for TCP payload in IPv6 */
+	ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP		= NET_IF_CHECKSUM_IPV6_TCP_BIT,
+	/** Device supports checksum offloading for UDP payload in IPv6 */
+	ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP		= NET_IF_CHECKSUM_IPV6_UDP_BIT,
+};
+
+/**
+ * @brief Spanning tree state of a port that forwards in hardware
+ *
+ * The Ethernet bridge sets it with ETHERNET_CONFIG_TYPE_STP_PORT_STATE on a
+ * port whose device reports ETHERNET_HW_STP_PORT_STATE, and asks the device
+ * to remove the addresses it learned on the port with
+ * ETHERNET_CONFIG_TYPE_FDB_FLUSH. In every state the device passes the BPDUs
+ * received on the port to the host and sends the ones the host gives it.
+ * A port not under the spanning tree protocol is in the forwarding state.
+ */
+enum ethernet_stp_port_state {
+	/** Neither learn source addresses nor forward frames */
+	ETHERNET_STP_PORT_STATE_DISCARDING,
+	/** Learn source addresses, do not forward frames */
+	ETHERNET_STP_PORT_STATE_LEARNING,
+	/** Learn source addresses and forward frames */
+	ETHERNET_STP_PORT_STATE_FORWARDING,
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -534,6 +563,8 @@ struct ethernet_config {
 		struct ethernet_filter filter;
 
 		uint16_t extra_tx_pkt_headroom;
+
+		enum ethernet_stp_port_state stp_port_state;
 	} /**< Value for the selected Ethernet configuration type */;
 };
 
@@ -550,12 +581,12 @@ enum ethernet_stats_type {
 };
 
 /** Ethernet L2 API operations. */
-struct ethernet_api {
+__subsystem struct ethernet_driver_api {
 	/**
-	 * The net_if_api must be placed in first position in this
+	 * The net_if_driver_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/** Collect optional ethernet specific statistics. This pointer
 	 * should be set by driver if statistics needs to be collected
@@ -619,10 +650,7 @@ struct ethernet_api {
 
 /** @cond INTERNAL_HIDDEN */
 
-/* Make sure that the network interface API is properly setup inside
- * Ethernet API struct (it is the first one).
- */
-BUILD_ASSERT(offsetof(struct ethernet_api, iface_api) == 0);
+DEVICE_API_EXTENDS(ethernet, net_if, iface_api);
 
 struct net_eth_hdr {
 	struct net_eth_addr dst;
@@ -682,6 +710,9 @@ struct ethernet_context {
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
 	struct net_if *bridge;
+
+	/* Index of this interface in the port table of its bridge */
+	uint8_t bridge_port;
 #endif
 
 	/** Carrier ON/OFF handler worker. This is used to create
@@ -1061,27 +1092,38 @@ static inline
 enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
-	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
+	const struct ethernet_driver_api *api;
+
+	NET_ASSERT(dev != NULL);
+
+	api = (const struct ethernet_driver_api *)dev->api;
+	if (api->get_capabilities == NULL) {
+		return (enum ethernet_hw_caps)0;
+	}
+
+	return api->get_capabilities(dev, iface);
+}
+
+/**
+ * @brief Return the DSA port type of an Ethernet interface.
+ *
+ * @param iface Network interface
+ *
+ * @return DSA port type, NON_DSA_PORT if DSA is disabled
+ */
+static inline enum dsa_port_type net_eth_get_dsa_port_type(struct net_if *iface)
+{
 #if defined(CONFIG_NET_DSA)
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
 	NET_ASSERT(eth_ctx != NULL);
 
-	if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
-		caps = ETHERNET_DSA_CONDUIT_PORT;
-	} else if (eth_ctx->dsa_port == DSA_USER_PORT) {
-		caps = ETHERNET_DSA_USER_PORT;
-	}
+	return eth_ctx->dsa_port;
+#else
+	ARG_UNUSED(iface);
+
+	return NON_DSA_PORT;
 #endif
-	NET_ASSERT(dev != NULL);
-
-	api = (const struct ethernet_api *)dev->api;
-	if (api == NULL || api->get_capabilities == NULL) {
-		return caps;
-	}
-
-	return (enum ethernet_hw_caps)(caps | api->get_capabilities(dev, iface));
 }
 
 /**
@@ -1098,11 +1140,11 @@ int net_eth_get_hw_config(struct net_if *iface, enum ethernet_config_type type,
 			 struct ethernet_config *config)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *eth;
+	const struct ethernet_driver_api *eth;
 
 	NET_ASSERT(dev != NULL);
 
-	eth = (const struct ethernet_api *)dev->api;
+	eth = (const struct ethernet_driver_api *)dev->api;
 
 	NET_ASSERT(eth != NULL);
 

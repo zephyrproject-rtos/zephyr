@@ -98,25 +98,43 @@ config NET_TCP_RETRY_COUNT
 	  Should a retransmission timeout occur, the receive callback is
 	  called with -ETIMEDOUT error code and the context is dereferenced.
 
+config NET_TCP_WINDOW_SCALE
+	bool "TCP window scaling (RFC 7323)"
+	help
+	  Offer the window scale option in SYN and SYN-ACK segments. When the
+	  peer offers it too, send and receive windows above 64 KB can be used,
+	  which a single connection needs to fill a fast link with a round
+	  trip time of more than a few milliseconds.
+	  The windows are still limited by NET_TCP_MAX_SEND_WINDOW_SIZE,
+	  NET_TCP_MAX_RECV_WINDOW_SIZE, SO_SNDBUF and SO_RCVBUF, and by
+	  default they are derived from the number of network buffers, so
+	  the buffers have to be sized for the window. The receive window
+	  scale is chosen when the connection is opened, so SO_RCVBUF has to
+	  be set before connect() or listen() to get a window above 64 KB.
+
 config NET_TCP_MAX_SEND_WINDOW_SIZE
 	int "Maximum sending window size to use"
 	default 0
-	range 0 $(UINT16_MAX)
+	range 0 $(UINT16_MAX) if !NET_TCP_WINDOW_SCALE
+	range 0 1073725440
 	help
 	  This value affects how the TCP selects the maximum sending window
 	  size. The default value 0 lets the TCP stack select the value
 	  according to amount of network buffers configured in the system.
+	  Values above 65535 need NET_TCP_WINDOW_SCALE.
 
 config NET_TCP_MAX_RECV_WINDOW_SIZE
 	int "Maximum receive window size to use"
 	default 0
-	range 0 $(UINT16_MAX)
+	range 0 $(UINT16_MAX) if !NET_TCP_WINDOW_SCALE
+	range 0 1073725440
 	help
 	  This value defines the maximum TCP receive window size. Increasing
 	  this value can improve connection throughput, but requires more
 	  receive buffers available in the system for efficient operation.
 	  The default value 0 lets the TCP stack select the value
 	  according to amount of network buffers configured in the system.
+	  Values above 65535 need NET_TCP_WINDOW_SCALE.
 
 config NET_TCP_RECV_QUEUE_TIMEOUT
 	int "How long to queue received data (in ms)"

@@ -148,11 +148,11 @@
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
 			reg = <0x0 0x2000000 0x0 0x10000>;
-			interrupts-extended = <&hlic0 3 &hlic0 7
-					       &hlic1 3 &hlic1 7
-					       &hlic2 3 &hlic2 7
-					       &hlic3 3 &hlic3 7
-					       &hlic4 3 &hlic4 7>;
+			interrupts-extended = <&hlic0 3
+					       &hlic1 3
+					       &hlic2 3
+					       &hlic3 3
+					       &hlic4 3>;
 		};
 
 		mtimer: timer@200bff8 {

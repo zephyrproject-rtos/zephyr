@@ -1,0 +1,14 @@
+common:
+  tags:
+    - drivers
+    - sdhc
+    - sdio
+    - emul
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  harness: ztest
+  filter: dt_alias_exists("sdhc0")
+
+tests:
+  sd.sdio.emul.ops: {}

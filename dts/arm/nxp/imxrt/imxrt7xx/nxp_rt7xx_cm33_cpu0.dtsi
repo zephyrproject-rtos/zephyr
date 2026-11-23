@@ -1265,7 +1265,7 @@
 		status = "disabled";
 	};
 
-	os_timer_cpu0: timer@207000 {
+	os_timer_cpu0: ostimer0: timer@207000 {
 		compatible = "nxp,os-timer";
 		reg = <0x207000 0x1000>;
 		interrupts = <34 0>;

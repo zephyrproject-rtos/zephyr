@@ -340,6 +340,27 @@ config LWM2M_ENGINE_MAX_REPLIES
 	help
 	  Set the maximum reply objects for the LwM2M library client
 
+config LWM2M_COAP_DEDUP_CACHE_SIZE
+	int "Number of cached CoAP request exchanges"
+	default 8
+	range 0 $(UINT8_MAX)
+	help
+	  Number of handled Confirmable requests remembered per context so
+	  that a retransmitted request is answered with the same response
+	  instead of being processed again (RFC 7252 section 4.5). Each
+	  entry holds the message ID and a short response. The size should
+	  cover the number of requests the server sends concurrently. Set
+	  to 0 to disable deduplication.
+
+config LWM2M_COAP_DEDUP_LIFETIME
+	int "Lifetime of a cached CoAP request exchange (seconds)"
+	default 247
+	range 1 3600
+	depends on LWM2M_COAP_DEDUP_CACHE_SIZE > 0
+	help
+	  Time after which a cached request is forgotten. The default is
+	  EXCHANGE_LIFETIME from RFC 7252 section 4.8.2.
+
 config LWM2M_ENGINE_MAX_OBSERVER
 	int "Maximum # of observable LwM2M resources"
 	default 10
@@ -396,6 +417,27 @@ config LWM2M_COAP_ENCODE_BUFFER_SIZE
 	help
 	  Size of buffers for serializing big LwM2M CoAP messages that need to be
 	  split into blocks for sending.
+
+config LWM2M_COAP_ENCODE_BUFFER_SECTION_NAME
+	string "Linker section of the encode buffers"
+	help
+	  Name of the linker section the LWM2M_NUM_OUTPUT_BLOCK_CONTEXT + 1
+	  buffers of LWM2M_COAP_ENCODE_BUFFER_SIZE bytes are placed in, for
+	  instance to move them to external RAM. If empty, they are in .noinit.
+	  A section the SoC linker script already maps can be used directly
+	  (".ext_ram.bss.lwm2m_encode_buffer" places them in the PSRAM of an
+	  Espressif SoC); any other name needs a linker script rule. The
+	  compiler emits a section whose name does not start with .bss or
+	  .noinit as PROGBITS, so that rule should mark the output section
+	  NOLOAD, or the buffers end up in the image. The memory slab is then
+	  initialized when the LwM2M engine starts, at the APPLICATION init
+	  level, so the section must be usable by then and must not be cleared
+	  afterwards.
+
+config LWM2M_COAP_ENCODE_BUFFER_CUSTOM_SECTION
+	def_bool LWM2M_COAP_ENCODE_BUFFER_SECTION_NAME != ""
+	help
+	  The encode buffers are in LWM2M_COAP_ENCODE_BUFFER_SECTION_NAME.
 
 config LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
 	int "Maximum # of LwM2M block contexts used for outgoing messages"
@@ -658,6 +700,18 @@ config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR
 	depends on LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
 	help
 	  Network address of the CoAP proxy server.
+
+config LWM2M_FIRMWARE_UPDATE_PUSH_TIMEOUT
+	int "Firmware push transfer timeout"
+	default 180
+	range 0 $(UINT32_MAX)
+	help
+	  Time in seconds the Firmware Update object waits for the next block
+	  of a block-wise write to the Package resource. When it passes, the
+	  download is given up: the State goes back to Idle, the Update Result
+	  is set to 4 (connection lost) and the cancel callback is called, so
+	  the server can retry by push or by pull. Set it above the server's
+	  CoAP retransmission window. 0 disables the timeout.
 
 endif # LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
 

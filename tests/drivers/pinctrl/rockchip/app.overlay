@@ -1,0 +1,36 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rockchip-rk3588.h>
+
+/ {
+	test_consumer: test-consumer {
+		compatible = "vnd,rockchip-rk3588-pinctrl-test";
+		pinctrl-0 = <&test_state_a &test_state_b>;
+		pinctrl-names = "default";
+	};
+
+	pinctrl: pinctrl@10000 {
+		compatible = "rockchip,rk3588-pinctrl";
+		reg = <0x10000 0x10000>;
+		status = "okay";
+
+		test_state_a: test-state-a {
+			group1 {
+				pinmux = <RK3588_PINMUX(0, 0, 0)>;
+			};
+
+			group2 {
+				pinmux = <RK3588_PINMUX(0, 1, 0)>;
+			};
+		};
+
+		test_state_b: test-state-b {
+			group1 {
+				pinmux = <RK3588_PINMUX(0, 2, 0)>;
+			};
+		};
+	};
+};

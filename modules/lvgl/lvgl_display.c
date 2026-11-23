@@ -10,6 +10,9 @@
 
 #include "lvgl_display.h"
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
+
 #ifdef CONFIG_LV_Z_FLUSH_THREAD
 
 /* There can be up to DISPLAY_COUNT flush events at the same time*/
@@ -116,6 +119,11 @@ int set_lvgl_rendering_cb(lv_display_t *display)
 #ifdef CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER
 	case PIXEL_FORMAT_MONO01:
 	case PIXEL_FORMAT_MONO10:
+		if (!IS_MONOCHROME_DISPLAY) {
+			LOG_ERR("Monochrome display needs CONFIG_LV_COLOR_FORMAT_I1");
+			err = -ENOTSUP;
+			break;
+		}
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_I1);
 		lv_display_set_flush_cb(display, lvgl_flush_cb_mono);
 		lv_display_add_event_cb(display, lvgl_rounder_cb_mono, LV_EVENT_INVALIDATE_AREA,

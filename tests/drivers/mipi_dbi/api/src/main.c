@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/gpio/gpio_emul.h>
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/ztest.h>
 
@@ -68,6 +69,30 @@ ZTEST(mipi_dbi_api, test_mipi_dbi_command_write_cmd_only)
 		}
 	}
 }
+
+#if DT_NODE_HAS_COMPAT(DT_NODELABEL(mipi_dbi), zephyr_mipi_dbi_bitbang)
+ZTEST(mipi_dbi_api, test_mipi_dbi_bitbang_data_levels)
+{
+	static const struct gpio_dt_spec data[] = {
+		DT_FOREACH_PROP_ELEM_SEP(DT_NODELABEL(mipi_dbi), data_gpios,
+					 GPIO_DT_SPEC_GET_BY_IDX, (,))};
+	static const uint8_t values[] = {0xa5, 0x5a, 0x00, 0xff, 0x01, 0x80};
+	struct mipi_dbi_config config = {.mode = MIPI_DBI_MODE_8080_BUS_8_BIT};
+
+	for (int i = 0; i < ARRAY_SIZE(values); ++i) {
+		int ret = mipi_dbi_command_write(devices[0], &config, values[i], NULL, 0);
+
+		zassert_equal(ret, 0, "Expected 0 but was %d", ret);
+		for (int j = 0; j < ARRAY_SIZE(data); ++j) {
+			int expected = ((values[i] >> j) & 1) ^
+				       ((data[j].dt_flags & GPIO_ACTIVE_LOW) != 0);
+
+			zassert_equal(gpio_emul_output_get_dt(&data[j]), expected,
+				      "value 0x%02x data line %d", values[i], j);
+		}
+	}
+}
+#endif
 
 ZTEST(mipi_dbi_api, test_mipi_dbi_write_display)
 {

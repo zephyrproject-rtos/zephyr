@@ -1,4 +1,5 @@
 # Copyright (C) 2026, Savoir-faire Linux, Inc.
+# Copyright (c) 2026 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config ADV7535
@@ -6,6 +7,7 @@ config ADV7535
 	default y
 	select I2C
 	select MIPI_DSI
+	select GPIO
 	depends on DT_HAS_ADI_ADV7535_ENABLED
 	help
 	  Initialize an ADV7535 for an RGB888 video mode and attach it to a
@@ -18,5 +20,19 @@ config ADV7535_INIT_PRIORITY
 	default 90
 	help
 	  Must be later than the MIPI DSI host initialization priority.
+
+config ADV7535_THREAD_PRIORITY
+	int "Driver internal thread priority"
+	default -1 if COOP_ENABLED
+	default 0
+	help
+	  Priority of the thread used to handle ADV7535 interrupts.
+	  Defaults to the lowest priority cooperative thread.
+
+config ADV7535_THREAD_STACK_SIZE
+	int "Driver internal thread stack size"
+	default 1024
+	help
+	  Size of the stack used in the driver.
 
 endif

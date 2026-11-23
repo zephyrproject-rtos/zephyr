@@ -56,10 +56,12 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define HW_CAP_DEVICE_ROLE_SEC_MASTER 0x3 /* dual-role       */
 #define HW_CAP_DEVICE_ROLE_SLAVE      0x4 /* target only     */
 
-/* Dual-role rejects SIR/MR via the reject registers; controller-only uses the DAT
- * entry (databook Table 2-1).
+/* SIR/MR reject registers are defined by both IC_DEVICE_ROLE and IC_HAS_IBI_DATA != 1
+ * - the latter we can't directly probe.  Flag if we could have these registers based
+ * on role, so at run-time it can be determined if we actually do. See databook
+ * sections 5.2.13/5.2.14
  */
-#define DW_IBI_REJECT_VIA_REG(role) ((role) == HW_CAP_DEVICE_ROLE_SEC_MASTER)
+#define DW_IBI_REJECT_REG_MAY_EXIST(role) ((role) == HW_CAP_DEVICE_ROLE_SEC_MASTER)
 /* BUS_AVAILABLE_TIME/BUS_IDLE_TIMING exist for 1 < IC_DEVICE_ROLE < 5. */
 #define DW_HAS_BUS_IDLE(role)                                                                      \
 	((role) == HW_CAP_DEVICE_ROLE_SEC_MASTER || (role) == HW_CAP_DEVICE_ROLE_SLAVE)
@@ -145,7 +147,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define IBI_QUEUE_CTRL     0x24
 #define IBI_MR_REQ_REJECT  0x2C
 #define IBI_SIR_REQ_REJECT 0x30
-#define IBI_SIR_REQ_ID(x)  ((((x) & GENMASK(6, 5)) >> 5) + ((x) & GENMASK(4, 0)))
+#define IBI_SIR_REQ_ID(x)  (((((x) & GENMASK(6, 5)) >> 5) + ((x) & GENMASK(4, 0))) % 32U)
 #define IBI_REQ_REJECT_ALL GENMASK(31, 0)
 
 #define RESET_CTRL            0x34
@@ -232,8 +234,14 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define SLV_MIPI_ID_VALUE_SLV_MIPI_MFG_ID_MASK GENMASK(15, 1)
 #define SLV_MIPI_ID_VALUE_SLV_MIPI_MFG_ID(x)   ((x) & SLV_MIPI_ID_VALUE_SLV_MIPI_MFG_ID_MASK)
 #define SLV_MIPI_ID_VALUE_SLV_PROV_ID_SEL      BIT(0)
+/* The register's lower half is PID[47:32]: MFG ID in [15:1], type selector in [0]. */
+#define SLV_MIPI_ID_VALUE_PID_HI_MASK          GENMASK(15, 0)
 
 #define SLV_PID_VALUE 0x74
+
+/* Halves of the 48-bit PID, as split across SLV_MIPI_ID_VALUE and SLV_PID_VALUE. */
+#define I3C_PID_HI_MASK GENMASK64(47, 32)
+#define I3C_PID_LO_MASK GENMASK64(31, 0)
 
 #define SLV_CHAR_CTRL                      0x78
 #define SLV_CHAR_CTRL_MAX_DATA_SPEED_LIMIT BIT(0)
@@ -377,7 +385,6 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define I3C_BUS_I2C_FM_TLOW_MIN_NS  1300
 #define I3C_BUS_I2C_FMP_TLOW_MIN_NS 500
 #define I3C_BUS_THIGH_MAX_NS        41
-#define I3C_BUS_TCAS_PS             38400
 #define I3C_PERIOD_NS               1000000000ULL
 #define I3C_PERIOD_PS               (I3C_PERIOD_NS * 1000ULL)
 
@@ -471,6 +478,9 @@ struct dw_i3c_data {
 
 	/* IC_DEVICE_ROLE, cached from HW_CAPABILITY */
 	uint8_t role;
+
+	/* IBI_SIR/MR_REQ_REJECT are implemented, probed once at init */
+	bool ibi_reject_via_reg;
 
 	/* fifo depth is in words (32b) */
 	uint8_t ibififodepth;
@@ -700,6 +710,26 @@ static void dw_i3c_intr_disable(const struct device *dev, uint32_t bits)
 	sys_write32(mask, dw_i3c_regs(dev) + INTR_STATUS_EN);
 	sys_write32(mask, dw_i3c_regs(dev) + INTR_SIGNAL_EN);
 }
+
+#ifdef CONFIG_I3C_TARGET
+/**
+ * @brief Drop RX bytes left in the FIFO at dynamic address assignment.
+ *
+ * Any unsupported CCC carrying a payload will accumulate in the RX FIFO -
+ * it should be discarded as no transfer will claim it.
+ *
+ * @param dev Pointer to the I3C device structure.
+ */
+static void dw_i3c_target_flush_rx_residue(const struct device *dev)
+{
+	uint32_t rx_lvl = DATA_BUFFER_STATUS_LEVEL_RX(
+		sys_read32(dw_i3c_regs(dev) + DATA_BUFFER_STATUS_LEVEL));
+
+	while (rx_lvl-- > 0U) {
+		(void)sys_read32(dw_i3c_regs(dev) + RX_TX_DATA_PORT);
+	}
+}
+#endif /* CONFIG_I3C_TARGET */
 
 /**
  * @brief Enqueue pending commands into the Command Queue as space allows.
@@ -1519,7 +1549,6 @@ static int dw_i3c_controller_ibi_crr_response(struct i3c_device_desc *target, bo
 static int i3c_dw_endis_ibi(const struct device *dev, struct i3c_device_desc *target, bool en)
 {
 	struct dw_i3c_data *data = dev->data;
-	uint32_t role = data->role;
 	uint32_t bitpos, sir_con;
 	struct i3c_ccc_events i3c_events;
 	int ret;
@@ -1548,7 +1577,7 @@ static int i3c_dw_endis_ibi(const struct device *dev, struct i3c_device_desc *ta
 	/* The DAT entry carries the IBI payload flag and SIR gating for every role;
 	 * a secondary controller gates SIR again in IBI_SIR_REQ_REJECT.
 	 */
-	if (DW_IBI_REJECT_VIA_REG(role)) {
+	if (data->ibi_reject_via_reg) {
 		sir_con = sys_read32(dw_i3c_regs(dev) + IBI_SIR_REQ_REJECT);
 		/* Map dynamic address to its SIR reject-bit position. */
 		bitpos = IBI_SIR_REQ_ID(target->dynamic_addr);
@@ -1808,6 +1837,11 @@ static int dw_i3c_target_ibi_raise_tir(const struct device *dev, struct i3c_ibi 
 	/* wait for SLV_IBI_RESP update */
 	status = k_sem_take(&data->ibi_sts_sem, K_MSEC(100));
 	if (status != 0) {
+		/* The request stays armed here and the IP keeps re-arbitrating for it;
+		 * SLV_INTR_REQ.SIR is not writable once in flight, so there is nothing
+		 * the target can withdraw.
+		 */
+		LOG_WRN("%s: no IBI TIR status within timeout", dev->name);
 		return -ETIMEDOUT;
 	}
 
@@ -1975,6 +2009,7 @@ static int i3c_dw_irq(const struct device *dev)
 #endif /* CONFIG_I3C_USE_IBI */
 		/* DA has been assigned, could happen after a IBI HJ request */
 		if (status & INTR_DYN_ADDR_ASSGN_STAT) {
+			dw_i3c_target_flush_rx_residue(dev);
 #ifdef CONFIG_I3C_USE_IBI
 			k_sem_give(&data->sem_hj);
 #endif /* CONFIG_I3C_USE_IBI */
@@ -2048,7 +2083,7 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 	struct dw_i3c_data *data = dev->data;
 	uint32_t core_rate, scl_timing, bus_free;
 #ifdef CONFIG_I3C_CONTROLLER
-	uint32_t hcnt, lcnt, fmlcnt, fmplcnt, free_cnt, i2c_scl_hz, tlow_min_ns;
+	uint32_t hcnt, lcnt, fmlcnt, fmplcnt, tcas_ps, tcas_cnt, i2c_scl_hz, tlow_min_ns;
 #endif /* CONFIG_I3C_CONTROLLER */
 
 	if (clock_control_get_rate(config->clock, config->clock_subsys, &core_rate) != 0) {
@@ -2060,8 +2095,19 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 
 	__ASSERT((ctrl_cfg != NULL), "Controller configuration should not be NULL");
 
+	if (ctrl_cfg->scl.i3c == 0U) {
+		LOG_ERR("%s: I3C SCL rate not set", dev->name);
+		return -EINVAL;
+	}
+
 	if (ctrl_cfg->scl_od_min.low_ns < I3C_OD_TLOW_MIN_NS) {
 		LOG_ERR("%s: Open Drain Low Period is out of range", dev->name);
+		return -EINVAL;
+	}
+
+	tcas_ps = ctrl_cfg->tcas_ps;
+	if (!IN_RANGE(tcas_ps, I3C_BUS_TCAS_MIN_PS, I3C_BUS_TCAS_MAX_PS)) {
+		LOG_ERR("%s: tCAS is out of range", dev->name);
 		return -EINVAL;
 	}
 
@@ -2137,21 +2183,22 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 
 	bus_free = sys_read32(dw_i3c_regs(dev) + BUS_FREE_TIMING);
 	bus_free &= ~BUS_I3C_MST_FREE_MASK;
+
+	tcas_cnt = DIV_ROUND_UP(tcas_ps * (uint64_t)core_rate, I3C_PERIOD_PS);
+
 	if (data->mode != I3C_BUS_MODE_PURE) {
 		/*
-		 * Mixed bus: Set bus free timing to match tLOW of I2C timing. If any i2c devices
-		 * only support fast mode, then it to the tLOW of that, otherwise set to the tLOW
-		 * of fast mode plus.
+		 * Mixed bus: MST_FREE is I2C tLOW. Use FM tLOW if any attached
+		 * I2C device is FM-only, otherwise FM+. Take the larger of that
+		 * and requested tCAS because DW fuses tCAS into the same count.
 		 */
-		bus_free |= BUS_I3C_MST_FREE(i3c_any_i2c_fast_mode(&config->common.dev_list)
-						     ? fmlcnt
-						     : fmplcnt);
+		lcnt = i3c_any_i2c_fast_mode(&config->common.dev_list) ? fmlcnt : fmplcnt;
+		bus_free |= BUS_I3C_MST_FREE(MAX(lcnt, tcas_cnt));
 		sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) | DEV_CTRL_I2C_SLAVE_PRESENT,
 			    dw_i3c_regs(dev) + DEVICE_CTRL);
 	} else {
-		/* Pure bus: Set bus free timing to t_cas of 38.4ns */
-		free_cnt = DIV_ROUND_UP(I3C_BUS_TCAS_PS * (uint64_t)core_rate, I3C_PERIOD_PS);
-		bus_free |= BUS_I3C_MST_FREE(free_cnt);
+		/* Pure bus: MST_FREE times tCAS / tCBP / Sr / STOP-to-START. */
+		bus_free |= BUS_I3C_MST_FREE(tcas_cnt);
 		sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) &
 				~DEV_CTRL_I2C_SLAVE_PRESENT, dw_i3c_regs(dev) + DEVICE_CTRL);
 	}
@@ -2813,10 +2860,11 @@ static int dw_i3c_config_get(const struct device *dev, enum i3c_config_type type
 		target_config->supported_hdr = SLV_CHAR_CTRL_HDR_CAP(reg);
 
 		reg = sys_read32(dw_i3c_regs(dev) + SLV_MIPI_ID_VALUE);
-		target_config->pid = ((uint64_t)reg) << 32;
+		target_config->pid = FIELD_PREP(I3C_PID_HI_MASK,
+						FIELD_GET(SLV_MIPI_ID_VALUE_PID_HI_MASK, reg));
 		target_config->pid_random = (bool)!!(reg & SLV_MIPI_ID_VALUE_SLV_PROV_ID_SEL);
 		reg = sys_read32(dw_i3c_regs(dev) + SLV_PID_VALUE);
-		target_config->pid |= reg;
+		target_config->pid |= FIELD_PREP(I3C_PID_LO_MASK, reg);
 
 		target_config->enabled = !dw_i3c_is_current_controller(dev);
 #else
@@ -2901,10 +2949,11 @@ static int dw_i3c_configure(const struct device *dev, enum i3c_config_type type,
 		val = sys_read32(dw_i3c_regs(dev) + SLV_MIPI_ID_VALUE);
 		val &= ~(SLV_MIPI_ID_VALUE_SLV_MIPI_MFG_ID_MASK |
 			 SLV_MIPI_ID_VALUE_SLV_PROV_ID_SEL);
-		val |= (uint32_t)(target_cfg->pid >> 16);
+		val |= (uint32_t)FIELD_PREP(SLV_MIPI_ID_VALUE_PID_HI_MASK,
+					    FIELD_GET(I3C_PID_HI_MASK, target_cfg->pid));
 		sys_write32(val, dw_i3c_regs(dev) + SLV_MIPI_ID_VALUE);
 
-		val = (uint32_t)(target_cfg->pid & 0xFFFFFFFF);
+		val = (uint32_t)FIELD_GET(I3C_PID_LO_MASK, target_cfg->pid);
 		sys_write32(val, dw_i3c_regs(dev) + SLV_PID_VALUE);
 #else
 		return -ENOTSUP;
@@ -3260,10 +3309,12 @@ static int dw_i3c_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	/* disable ibi (dual-role rejects via these regs */
-	if (DW_IBI_REJECT_VIA_REG(role)) {
+	/* Reject every SIR/MR by default; the readback says whether that took. */
+	if (DW_IBI_REJECT_REG_MAY_EXIST(role)) {
 		sys_write32(IBI_REQ_REJECT_ALL, dw_i3c_regs(dev) + IBI_SIR_REQ_REJECT);
 		sys_write32(IBI_REQ_REJECT_ALL, dw_i3c_regs(dev) + IBI_MR_REQ_REJECT);
+		data->ibi_reject_via_reg =
+			sys_read32(dw_i3c_regs(dev) + IBI_SIR_REQ_REJECT) == IBI_REQ_REJECT_ALL;
 	}
 
 	/* disable hot-join */
@@ -3411,6 +3462,7 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                   \
 		.common.ctrl_config.scl_od_min.high_ns = DT_INST_PROP(n, od_thigh_min_ns),         \
 		.common.ctrl_config.scl_od_min.low_ns = DT_INST_PROP(n, od_tlow_min_ns),           \
+		.common.ctrl_config.tcas_ps = DT_INST_PROP(n, tcas_ps),                            \
 	};                                                                                         \
 	static const struct dw_i3c_config dw_i3c_cfg_##n = {                                       \
 		DEVICE_MMIO_NAMED_ROM_INIT(regs, DT_DRV_INST(n)),                                  \
@@ -3490,6 +3542,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_HAS_MCHP_MEC_I3C),
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                   \
 		.common.ctrl_config.scl_od_min.high_ns = DT_INST_PROP(n, od_thigh_min_ns),         \
 		.common.ctrl_config.scl_od_min.low_ns = DT_INST_PROP(n, od_tlow_min_ns),           \
+		.common.ctrl_config.tcas_ps = DT_INST_PROP(n, tcas_ps),                            \
 	};                                                                                         \
 	static const struct dw_i3c_config xec_i3c_cfg_##n = {                                      \
 		DEVICE_MMIO_NAMED_ROM_INIT(regs, DT_DRV_INST(n)),                                  \

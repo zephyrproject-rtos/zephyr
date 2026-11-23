@@ -24,7 +24,7 @@ extern "C" {
  * @brief Network buffer library
  * @defgroup net_buf Network Buffer Library
  * @since 1.0
- * @version 1.1.0
+ * @version 1.4.0
  * @ingroup os_services
  *
  * The functions that add, push, pull or remove data check with an assertion
@@ -1074,12 +1074,13 @@ struct net_buf {
 	 * ref/unref; `ref`, `flags`, `pool_id` and `user_data_size` are
 	 * byte-level views into the same storage.
 	 *
-	 * atomic_inc/dec on ref_word add/subtract 1 to/from the whole
-	 * word, but because the byte-struct layout below places `ref`
-	 * at the least-significant byte of `ref_word` regardless of
-	 * endianness, and because the ref count never overflows past
-	 * 254 (already implicit in its uint8_t domain), only the ref
-	 * byte changes -- the other three bytes are untouched.
+	 * Incrementing and decrementing ref_word adds or subtracts 1
+	 * to/from the whole word, but because the byte-struct layout
+	 * below places `ref` at the least-significant byte of `ref_word`
+	 * regardless of endianness, and because net_buf_ref() leaves a
+	 * count of 255 alone and net_buf_unref() a count of 255 or 0,
+	 * only the ref byte changes -- the other three bytes are
+	 * untouched.
 	 *
 	 * On 32-bit architectures atomic_t is 4 bytes and the byte
 	 * struct fills the slot exactly. On 64-bit, atomic_t is 8 bytes;
@@ -1648,6 +1649,36 @@ static inline void net_buf_destroy(struct net_buf *buf)
 }
 
 /**
+ * @brief Take a buffer back into use instead of destroying it
+ *
+ * This helper is only intended for a buffer that a custom destroy callback was
+ * called for, in place of net_buf_destroy(): in the callback itself, or later,
+ * when the callback has set the buffer aside instead of destroying it. The
+ * buffer does not return to its pool, where another allocator could get it
+ * first.
+ *
+ * The buffer is left as net_buf_alloc() returns one: reset, without
+ * fragments, with zeroed user data and with one reference, which the caller
+ * owns. It keeps its data area.
+ *
+ * A buffer with external data, see net_buf_alloc_with_data(), cannot be
+ * taken back into use: the data belongs to the user that passed it in. Its
+ * destroy callback has to call net_buf_destroy().
+ *
+ * The pointer passed in is set to NULL, as net_buf_take() does with a
+ * reference that moves: the returned reference is the only way to the buffer
+ * from here on, so the caller is left without a pointer that it could still
+ * destroy.
+ *
+ * @param orig Pointer to the buffer pointer that the destroy callback was
+ *             called with, or that it set aside. Will be set to NULL on
+ *             return.
+ *
+ * @return The buffer, with one reference that the caller owns.
+ */
+struct net_buf *__must_check net_buf_reuse(struct net_buf **orig);
+
+/**
  * @brief Reset buffer
  *
  * Reset buffer data and flags so it can be reused for other purposes.
@@ -1669,9 +1700,10 @@ void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve);
 /**
  * @brief Put a buffer into a list
  *
- * The list is modified under a spinlock that net_buf_slist_put() and
- * net_buf_slist_get() share, so a list that is only accessed through these
- * two functions can be used from several threads and from interrupt handlers.
+ * The list is modified under a spinlock that net_buf_slist_put(),
+ * net_buf_slist_get() and net_buf_slist_purge() share, so a list that is only
+ * accessed through these functions can be used from several threads and from
+ * interrupt handlers.
  *
  * @param list Which list to append the buffer to.
  * @param buf Buffer.
@@ -1690,9 +1722,42 @@ void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf);
 struct net_buf * __must_check net_buf_slist_get(sys_slist_t *list);
 
 /**
+ * @brief Unreference all buffers in a list.
+ *
+ * The list is emptied in one step under the same spinlock as in
+ * net_buf_slist_put(), and the buffers are unreferenced after the spinlock has
+ * been released, so buffers put into the list meanwhile stay in it.
+ *
+ * @param list Which list to purge.
+ */
+#if defined(CONFIG_NET_BUF_LOG)
+void net_buf_slist_purge_debug(sys_slist_t *list, const char *func, int line);
+#define net_buf_slist_purge(_list) net_buf_slist_purge_debug(_list, __func__, __LINE__)
+#else
+void net_buf_slist_purge(sys_slist_t *list);
+#endif
+
+/**
+ * @brief Unreference all buffers in a FIFO.
+ *
+ * Buffers are taken from the FIFO until it is empty, so buffers put into it
+ * meanwhile are unreferenced as well.
+ *
+ * @param fifo Which FIFO to purge.
+ */
+#if defined(CONFIG_NET_BUF_LOG)
+void net_buf_fifo_purge_debug(struct k_fifo *fifo, const char *func, int line);
+#define net_buf_fifo_purge(_fifo) net_buf_fifo_purge_debug(_fifo, __func__, __LINE__)
+#else
+void net_buf_fifo_purge(struct k_fifo *fifo);
+#endif
+
+/**
  * @brief Decrements the reference count of a buffer.
  *
  * The buffer is put back into the pool if the reference count reaches zero.
+ * A saturated reference count (see net_buf_ref()) is left as it is, and the
+ * buffer is not put back.
  *
  * @param buf A valid pointer on a buffer
  */
@@ -1707,6 +1772,9 @@ void net_buf_unref(struct net_buf *buf);
 /**
  * @brief Increment the reference count of a buffer.
  *
+ * The reference count tracks up to 254 references. At 255 it saturates: it
+ * no longer changes, and the buffer is never put back into its pool.
+ *
  * @param buf A valid pointer on a buffer
  *
  * @return the buffer newly referenced
@@ -1718,6 +1786,11 @@ struct net_buf * __must_check net_buf_ref(struct net_buf *buf);
  *
  * This performs an atomic exchange on @p orig. setting it to NULL and
  * returning the previous value.
+ *
+ * The exchange guarantees that when several contexts take or drop the same
+ * pointer at the same time, only one of them gets the buffer. Where no other
+ * context can access @p orig, net_buf_take_plain() moves the pointer at no
+ * cost.
  *
  * Use it where ownership of the reference moves, so that the previous owner
  * is left without a pointer to a buffer it no longer owns:
@@ -1739,6 +1812,36 @@ struct net_buf * __must_check net_buf_ref(struct net_buf *buf);
 static inline struct net_buf *__must_check net_buf_take(struct net_buf **orig)
 {
 	return (struct net_buf *)atomic_ptr_clear((atomic_ptr_t *)orig);
+}
+
+/**
+ * @brief Move a buffer pointer without an atomic exchange.
+ *
+ * Same as net_buf_take(), but @p orig is read and set to NULL with plain
+ * accesses. Use it where no other context can access @p orig at the same
+ * time: a local variable, or a field that only the caller's context uses or
+ * that the caller protects with a lock. The compiler then drops the store
+ * when the pointer is not read again, so the move costs no code:
+ *
+ * @code{.c}
+ * k_fifo_put(&tx_queue, net_buf_take_plain(&buf));
+ * @endcode
+ *
+ * As with net_buf_take(), passing `net_buf_take_plain(&buf)` as an argument
+ * is only correct for calls that always take ownership.
+ *
+ * @param orig Pointer to the buffer pointer to transfer. Will be set to NULL
+ *		on return.
+ *
+ * @return The buffer originally pointed to by @p orig
+ */
+static inline struct net_buf *__must_check net_buf_take_plain(struct net_buf **orig)
+{
+	struct net_buf *buf = *orig;
+
+	*orig = NULL;
+
+	return buf;
 }
 
 /** @brief Drop a buffer reference and clear the pointer.

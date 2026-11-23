@@ -41,6 +41,31 @@ ZTEST(sys_util, test_wait_for)
 	zassert_true(end-start >= expected, "wait for 1ms");
 }
 
+static bool wait_for_preempted_expr(int *cnt, int target_cnt, uint32_t busy_wait_us)
+{
+	k_busy_wait(busy_wait_us);
+	return ++(*cnt) == target_cnt;
+}
+
+/**
+ * @brief Test wait_for re-evaluates expr on timeout after preemption
+ *
+ * @see WAIT_FOR()
+ */
+ZTEST(sys_util, test_wait_for_preempted)
+{
+	const uint32_t timeout_us = 100;
+	const uint32_t preempt_us = timeout_us * 2;
+	int i = 0;
+
+	zassert_true(WAIT_FOR(wait_for_preempted_expr(&i, 2, preempt_us), timeout_us, NULL));
+	zassert_equal(i, 2);
+
+	i = 0;
+	zassert_false(WAIT_FOR(wait_for_preempted_expr(&i, 3, preempt_us), timeout_us, NULL));
+	zassert_equal(i, 2);
+}
+
 /**
  * @brief Test NUM_VA_ARGS works as expected with typical use cases
  *
@@ -98,5 +123,39 @@ ZTEST(sys_util, test_WRITE_BIT)
  * @{
  * @}
  */
+
+ZTEST(sys_util, test_gcd_mixed_sign)
+{
+	int32_t a = -12;
+	uint32_t b = 8;
+
+	zexpect_equal(sys_gcd(0U, -15), 15U);
+	zexpect_equal(sys_gcd(-15, 0U), 15U);
+	zexpect_equal(sys_gcd(0, UINT32_MAX), UINT32_MAX);
+	zexpect_equal(sys_gcd(UINT32_MAX, 0), UINT32_MAX);
+	zexpect_equal(sys_gcd(15U, -15), 15U);
+	zexpect_equal(sys_gcd(-15, 15U), 15U);
+	zexpect_equal(sys_gcd(INT32_MIN, UINT32_MAX), 1U);
+	zexpect_equal(sys_gcd(UINT32_MAX, INT32_MIN), 1U);
+	zexpect_equal(sys_gcd(a++, b++), 4U);
+	zexpect_equal(a, -11);
+	zexpect_equal(b, 9U);
+}
+
+ZTEST(sys_util, test_lcm_mixed_sign)
+{
+	int32_t a = -12;
+	uint32_t b = 8;
+
+	zexpect_equal(sys_lcm(5U, -15), 15U);
+	zexpect_equal(sys_lcm(-15, 5U), 15U);
+	zexpect_equal(sys_lcm(1, UINT32_MAX), UINT32_MAX);
+	zexpect_equal(sys_lcm(UINT32_MAX, 1), UINT32_MAX);
+	zexpect_equal(sys_lcm(0U, -15), 0U);
+	zexpect_equal(sys_lcm(-15, 0U), 0U);
+	zexpect_equal(sys_lcm(a++, b++), 24U);
+	zexpect_equal(a, -11);
+	zexpect_equal(b, 9U);
+}
 
 ZTEST_SUITE(sys_util, NULL, NULL, NULL, NULL, NULL);

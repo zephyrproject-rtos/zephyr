@@ -926,7 +926,6 @@ static int uart_ns16550_init(const struct device *dev)
 	__maybe_unused struct uart_ns16550_dev_data *data = dev->data;
 	const struct uart_ns16550_dev_config *dev_cfg = dev->config;
 	__maybe_unused int ret;
-	uint8_t c;
 
 	ARG_UNUSED(dev_cfg);
 
@@ -1010,10 +1009,6 @@ static int uart_ns16550_init(const struct device *dev)
 #ifdef CONFIG_UART_NS16550_BCM283X_AUX
 	ns16550_outbyte(dev_cfg, MDR1(dev), (MDR1_RX_EN | MDR1_TX_EN));
 #endif
-
-	/* clear the port */
-	(void)ns16550_read_char(dev, &c);
-	ns16550_outbyte(dev_cfg, FCR(dev), (FCR_RCVRCLR | FCR_XMITCLR));
 
 	return pm_device_driver_init(dev, uart_ns16550_pm_action);
 }

@@ -8,9 +8,9 @@
 #include <fsl_clock.h>
 #include <fsl_spc.h>
 #include <soc.h>
-#if defined(CONFIG_UDC_NXP_EHCI)
-#define SCG_TRIM_UNLOCK_KEY     0x5a5a0001U
-#define BOARD_XTAL_FREQ_HZ      24000000U
+#if defined(CONFIG_UDC_NXP_EHCI) || defined(CONFIG_UHC_NXP_EHCI)
+#define SCG_TRIM_UNLOCK_KEY 0x5a5a0001U
+#define BOARD_XTAL_FREQ_HZ  24000000U
 #endif
 
 /* Core clock frequency: 200MHz from PLL */
@@ -278,7 +278,7 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kPll1ClkDiv_to_CTIMER4);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer0))
 	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
 #endif
 
@@ -351,8 +351,12 @@ void board_early_init_hook(void)
 	/* Connect ENET to internal TENBASET_PHY0 */
 	SYSCON->ENET_CTRL = SYSCON_ENET_CTRL_PHY_SEL(1) | SYSCON_ENET_CTRL_PHY_INTF(0);
 #else
-	/* Connect ENET to external PHY over RMII */
-	SYSCON->ENET_CTRL = SYSCON_ENET_CTRL_PHY_SEL(0) | SYSCON_ENET_CTRL_PHY_INTF(1);
+	/*
+	 * Connect ENET to external PHY over MII (Rev B pilot board).
+	 * PHY_INTF: 0 = MII, 1 = RMII. MII avoids ERR053383, under which
+	 * ENET can intermittently fail to receive in RMII mode.
+	 */
+	SYSCON->ENET_CTRL = SYSCON_ENET_CTRL_PHY_SEL(0) | SYSCON_ENET_CTRL_PHY_INTF(0);
 #endif
 #endif
 
@@ -401,7 +405,8 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateTSI0);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && defined(CONFIG_UDC_NXP_EHCI)
+#if ((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && defined(CONFIG_UDC_NXP_EHCI)) ||              \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbh0)) && defined(CONFIG_UHC_NXP_EHCI)))
 	/* Voltage delay for USB LDO ramp-up */
 	SPC0->ACTIVE_VDELAY = 0x0500;
 	SPC0->ACTIVE_CFG |= SPC_ACTIVE_CFG_CORELDO_VDD_DS_MASK;

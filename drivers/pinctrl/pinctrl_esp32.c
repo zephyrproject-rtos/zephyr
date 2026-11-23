@@ -110,6 +110,9 @@ static int esp32_pin_apply_config(uint32_t pin, uint32_t flags)
 	} else if (flags & ESP32_PULL_DOWN_FLAG) {
 		gpio_ll_pullup_dis(&GPIO, pin);
 		gpio_ll_pulldown_en(&GPIO, pin);
+	} else if (flags & ESP32_NO_PULL_FLAG) {
+		gpio_ll_pullup_dis(&GPIO, pin);
+		gpio_ll_pulldown_dis(&GPIO, pin);
 	}
 
 	if (flags & ESP32_DIR_OUT_FLAG) {
@@ -170,6 +173,9 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 	}
 
 	switch (ESP32_PIN_BIAS(pin_cfg)) {
+	case ESP32_NO_PULL:
+		flags |= ESP32_NO_PULL_FLAG;
+		break;
 	case ESP32_PULL_UP:
 		flags |= ESP32_PULL_UP_FLAG;
 		break;
@@ -226,6 +232,10 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 		flags |= ESP32_SLEEP_HOLD_FLAG;
 	}
 
+	if (ESP32_PIN_OUT_INV(pin_cfg) == ESP32_PIN_OUT_INV_EN) {
+		flags |= ESP32_OUT_INV_FLAG;
+	}
+
 	if (flags & ESP32_PIN_OUT_HIGH_FLAG) {
 		gpio_dev_t *const gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
 
@@ -253,7 +263,7 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 	esp32_pin_apply_config(pin_num, flags);
 
 	if (flags & ESP32_DIR_OUT_FLAG) {
-		esp_rom_gpio_matrix_out(pin_num, sig_out, 0, 0);
+		esp_rom_gpio_matrix_out(pin_num, sig_out, (flags & ESP32_OUT_INV_FLAG) != 0U, 0);
 	}
 
 	if (flags & ESP32_DIR_INP_FLAG) {

@@ -95,7 +95,7 @@ interface 2 to be written to capture interface 4, which in turn then capsulates
 the packets and tunnels them to peer via the Ethernet interface 3.
 
 The above IP addresses might change if you change the addresses in the
-sample :zephyr_file:`samples/net/capture/overlay-tunnel.conf` file.
+sample :zephyr_file:`samples/net/capture/tunnel.conf` file.
 
 Sample usage
 ************

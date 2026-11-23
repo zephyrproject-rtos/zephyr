@@ -38,7 +38,6 @@
 LOG_MODULE_REGISTER(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
 
 #define RX_SETUP_MARGIN_MS	50
-#define RX2_DELAY_OFFSET_MS	1000
 #define RX_TIMEOUT_MARGIN_MS	100
 
 /* PHY frame overhead: MHDR(1) + FHDR(7) + FPort(1) + MIC(4) */
@@ -246,7 +245,8 @@ static void mac_do_set_channels_mask(struct lwan_ctx *ctx,
 
 	for (size_t i = 0; i < ctx->channel_count; i++) {
 		uint16_t word = mask_req->channels_mask[i / 16];
-		bool enabled = (word & BIT(i % 16)) != 0;
+		bool enabled = ctx->channels[i].frequency != 0 &&
+			       (word & BIT(i % 16)) != 0;
 
 		ctx->channels[i].enabled = enabled;
 	}
@@ -290,6 +290,36 @@ static void mac_do_link_check(struct lwan_ctx *ctx,
 	mac_do_send(ctx, &send_msg);
 }
 
+static void mac_do_join_airtime(struct lwan_ctx *ctx,
+				const struct lwan_req *req)
+{
+	struct lwan_dr_params tx_dr;
+	uint32_t tx_freq;
+	int32_t delay_ms;
+	uint8_t tx_dr_idx;
+	int8_t tx_power;
+	int ret;
+
+	/* Determine the datarate of the join request. The datarate is still reported when
+	 * every join channel is currently duty-cycle blocked.
+	 */
+	ret = ctx->region->select_join_channel(ctx->channels, ctx->channel_count, &tx_freq,
+					       &tx_dr_idx, &delay_ms);
+	if ((ret != 0) && (ret != -ENOBUFS)) {
+		engine_signal_result(req, ret);
+		return;
+	}
+
+	/* Get the transmit parameters */
+	ret = ctx->region->get_tx_params(tx_dr_idx, ctx->mac.tx_power_idx, &tx_dr, &tx_power);
+	if (ret == 0) {
+		/* Get the airtime for the join request packet */
+		ret = radio_airtime_params(tx_dr.sf, tx_dr.bw, sizeof(struct pkt_join_request));
+	}
+
+	engine_signal_result(req, ret);
+}
+
 void mac_process_req(struct lwan_ctx *ctx, const struct lwan_req *req)
 {
 	switch (req->type) {
@@ -313,6 +343,9 @@ void mac_process_req(struct lwan_ctx *ctx, const struct lwan_req *req)
 		break;
 	case LWAN_REQ_LINK_CHECK:
 		mac_do_link_check(ctx, req);
+		break;
+	case LWAN_REQ_JOIN_AIRTIME:
+		mac_do_join_airtime(ctx, req);
 		break;
 	default:
 		LOG_WRN("Unknown request type: %d", req->type);

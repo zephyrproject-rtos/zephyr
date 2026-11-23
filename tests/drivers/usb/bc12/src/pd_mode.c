@@ -5,8 +5,7 @@
  */
 
 /**
- * @defgroup driver_bc12_tests
- * @ingroup all_tests
+ * @addtogroup driver_bc12_tests
  * @{
  * @defgroup t_bc12_portable_device
  * @brief TestPurpose: Verify BC1.2 devices in portable device mode.

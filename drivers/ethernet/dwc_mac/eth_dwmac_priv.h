@@ -283,7 +283,7 @@ void dwmac_platform_link_speed_changed(const struct device *dev, enum phy_link_s
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 const struct device *dwmac_get_ptp_clock(const struct device *dev, struct net_if *iface);
 #endif
-extern const struct ethernet_api dwmac_api;
+extern const struct ethernet_driver_api dwmac_api;
 
 /*
  * MAC Register Definitions
@@ -640,6 +640,11 @@ extern const struct ethernet_api dwmac_api;
 /* 17.1.52 */
 
 #define MAC_DEBUG				0x0114
+
+#define MAC_DEBUG_TFCSTS			GENMASK(18, 17)
+#define MAC_DEBUG_TPESTS			BIT(16)
+#define MAC_DEBUG_RFCFCSTS			GENMASK(2, 1)
+#define MAC_DEBUG_RPESTS			BIT(0)
 
 /* 17.1.53 */
 
@@ -1020,6 +1025,10 @@ extern const struct ethernet_api dwmac_api;
 
 #define MTL_TXQn_DEBUG(n)			(0x0d08 + 0x40 * (n))
 
+#define MTL_TXQn_DEBUG_TXQSTS			BIT(4)
+#define MTL_TXQn_DEBUG_TRCSTS			GENMASK(2, 1)
+#define MTL_TXQn_DEBUG_TRCSTS_READ		1U
+
 /* 17.4.4 */
 
 #define MTL_TXQn_ETS_CTRL(n)			(0x0d10 + 0x40 * (n))
@@ -1069,6 +1078,9 @@ extern const struct ethernet_api dwmac_api;
 /* 17.3.9, 17.4.13 */
 
 #define MTL_RXQn_DEBUG(n)			(0x0d38 + 0x40 * (n))
+
+#define MTL_RXQn_DEBUG_PRXQ			GENMASK(29, 16)
+#define MTL_RXQn_DEBUG_RXQSTS			GENMASK(5, 4)
 
 /* 17.3.10, 17.4.14 */
 
@@ -1132,6 +1144,9 @@ extern const struct ethernet_api dwmac_api;
 /* 17.5.4 */
 
 #define DMA_DEBUG_STATUS0			0x100c
+
+#define DMA_DEBUG_STATUS0_TPS0			GENMASK(15, 12)
+#define DMA_DEBUG_STATUS0_TPS0_STOPPED		0U
 
 /* 17.5.5 */
 
@@ -1348,6 +1363,8 @@ extern const struct ethernet_api dwmac_api;
 #define TDES3_THL				GENMASK(22, 19)
 #define TDES3_TSE				BIT(18)
 #define TDES3_CIC				GENMASK(17, 16)
+/* Checksum Insertion Control: IPv4 header checksum only */
+#define TDES3_CIC_IP_HDR			FIELD_PREP(TDES3_CIC, 1)
 #define TDES3_TPL				GENMASK(17, 0)
 #define TDES3_FL				GENMASK(14, 0)
 

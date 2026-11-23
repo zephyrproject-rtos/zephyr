@@ -30,7 +30,7 @@
 					     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT
 
 struct btp_bap_unicast_group {
-	struct bt_bap_qos_cfg qos[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	struct bt_bap_qos_cfg qos[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT];
 	struct bt_bap_unicast_group *cig;
 	uint8_t cig_id;
 	bool in_use;

@@ -11,7 +11,6 @@
  */
 
 #include <string.h>
-#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
@@ -21,6 +20,7 @@
 #include <ipi.h>
 #include <zephyr/init.h>
 #include <zephyr/arch/arm64/mm.h>
+#include <zephyr/arch/cache.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/exception.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
@@ -129,8 +129,16 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		/* store mpid last as this is our synchronization point */
 		arm64_cpu_boot_params.mpid = cpu_mpid;
 
-		sys_cache_data_flush_range((void *)&arm64_cpu_boot_params,
-					  sizeof(arm64_cpu_boot_params));
+		/*
+		 * The secondary core starts with the MMU and the data cache
+		 * disabled, so the parameters have to reach the point of
+		 * coherency before it is released.
+		 */
+		if (arch_dcache_flush_range((void *)&arm64_cpu_boot_params,
+					    sizeof(arm64_cpu_boot_params)) != 0) {
+			printk("Failed to clean the boot parameters to memory\n");
+			k_panic();
+		}
 
 		if (pm_cpu_on(cpu_mpid, (uint64_t)&__start)) {
 			printk("Failed to boot secondary CPU core %d (MPID:%#llx)\n",
@@ -179,6 +187,7 @@ FUNC_NORETURN void arch_secondary_cpu_init(void)
 #endif
 
 #ifdef CONFIG_SMP
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	arm_gic_secondary_init();
 
 	irq_enable(SGI_SCHED_IPI);
@@ -191,6 +200,14 @@ FUNC_NORETURN void arch_secondary_cpu_init(void)
 #ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
 	irq_enable(SGI_COREDUMP_FREEZE_IPI);
 #endif
+#else
+	/*
+	 * No GIC (e.g. BCM2710/BCM2836 ARM-local intc). Per-core IPI setup
+	 * is done by the SoC in soc_per_core_init_hook() below and the
+	 * per-core timer by smp_timer_init(); the scheduler IPI is raised
+	 * via the SoC mailbox path in send_ipi().
+	 */
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 #endif
 
 	soc_per_core_init_hook();
@@ -215,6 +232,17 @@ FUNC_NORETURN void arch_secondary_cpu_init(void)
 
 #ifdef CONFIG_SMP
 
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+/*
+ * The mem-cfg IPI has no custom-intc transport: delivering it as a
+ * scheduler IPI would leave the other cores' page tables stale, so
+ * refuse the combination outright rather than misbehave at runtime.
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_USERSPACE),
+	     "CONFIG_USERSPACE needs the mem-cfg IPI, which has no "
+	     "custom interrupt controller transport yet");
+#endif
+
 static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 {
 	uint64_t mpidr = MPIDR_TO_CORE(GET_MPIDR());
@@ -237,11 +265,22 @@ static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 		}
 
 		aff0 = MPIDR_AFFLVL(target_mpidr, 0);
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 		gic_raise_sgi(ipi, target_mpidr, 1 << aff0);
+#else
+		ARG_UNUSED(aff0);
+		/*
+		 * Only the scheduler IPI is routed through the SoC hook.
+		 * CONFIG_USERSPACE's mem-cfg IPI has no custom-intc
+		 * transport yet.
+		 */
+		__ASSERT(ipi == SGI_SCHED_IPI, "unsupported IPI %u", ipi);
+		soc_sched_ipi(target_mpidr);
+#endif
 	}
 }
 
-void sched_ipi_handler(const void *unused)
+void z_arm64_sched_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -280,12 +319,20 @@ void z_arm64_mem_cfg_ipi(void)
 #endif
 
 #ifdef CONFIG_FPU_SHARING
-void flush_fpu_ipi_handler(const void *unused)
+struct fpu_flush_request {
+	atomic_t pending;
+} Z_DCACHE_ALIGN_SMP;
+
+static struct fpu_flush_request fpu_flush_requests[CONFIG_MP_MAX_NUM_CPUS];
+
+void z_arm64_flush_fpu_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
 	disable_irq();
-	arch_flush_local_fpu();
+	if (atomic_clear(&fpu_flush_requests[_current_cpu->id].pending)) {
+		arch_flush_local_fpu();
+	}
 	/* no need to re-enable IRQs here */
 }
 
@@ -299,7 +346,14 @@ void arch_flush_fpu_ipi(unsigned int cpu)
 	}
 
 	aff0 = MPIDR_AFFLVL(mpidr, 0);
+	/* Publish before the SGI, including when the target has IRQs masked. */
+	atomic_set(&fpu_flush_requests[cpu].pending, 1);
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << aff0);
+#else
+	ARG_UNUSED(aff0);
+	soc_flush_fpu_ipi(mpidr);
+#endif
 }
 
 /*
@@ -311,8 +365,13 @@ void arch_flush_fpu_ipi(unsigned int cpu)
  */
 void arch_spin_relax(void)
 {
-	if (arm_gic_irq_is_pending(SGI_FPU_IPI)) {
-		arm_gic_irq_clear_pending(SGI_FPU_IPI);
+	atomic_t *pending = &fpu_flush_requests[_current_cpu->id].pending;
+
+	if (atomic_get(pending) && atomic_clear(pending)) {
+		/* Consume before flushing so concurrent requests stay visible.
+		 * Keep the SGI pending: clearing it could lose a newer request.
+		 * Its handler skips the flush if this path already serviced it.
+		 */
 		/*
 		 * We may not be in IRQ context here hence cannot use
 		 * arch_flush_local_fpu() directly.
@@ -324,6 +383,16 @@ void arch_spin_relax(void)
 
 #ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO) && !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+/*
+ * ISR entry for the coredump freeze SGI, defined in vector_table.S. Stores
+ * the live callee-saved registers into the interrupted context's ESF and
+ * tail-calls z_arm64_coredump_freeze_ipi_handler() (see both for why the
+ * capture cannot happen in C).
+ */
+extern void z_arm64_coredump_freeze_isr(const void *unused);
+#endif
+
 enum coredump_freeze_state {
 	FREEZE_IDLE = 0,
 	FREEZE_REQUESTED,
@@ -332,7 +401,6 @@ enum coredump_freeze_state {
 
 struct coredump_frozen_cpu {
 	struct arch_esf esf;
-	uint64_t x19_x29[11];	/* x19..x28, x29 (fp) */
 	uintptr_t sp;		/* pre-interrupt SP -- see capture site for why
 				 * this can't just be derived later from esf's
 				 * (by-then-copied) address
@@ -387,32 +455,19 @@ static atomic_t release_requested[CONFIG_MP_MAX_NUM_CPUS];
  * released. Runs as a normal interrupt handler, so whatever this CPU was
  * doing when interrupted stays exactly as it was -- including any lock it
  * held -- until we return from here via the standard exception-return path.
+ *
+ * With CONFIG_EXTRA_EXCEPTION_INFO the SGI is connected to
+ * z_arm64_coredump_freeze_isr() instead, which stores the live x19-x28 into
+ * the interrupted context's ESF before tail-calling this function: the C
+ * interrupt dispatch may reuse the callee-saved registers for its own
+ * locals, so they cannot be captured reliably from C.
  */
-static void coredump_freeze_ipi_handler(const void *unused)
+void z_arm64_coredump_freeze_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
 	unsigned int cpu = arch_curr_cpu()->id;
 	struct coredump_frozen_cpu *fc = &frozen_cpu[cpu];
-
-	/*
-	 * x19-x29 are guaranteed to still hold the exact values the
-	 * interrupted code had: every function called between the original
-	 * interruption and here (the ISR dispatch, the GIC driver call to
-	 * find the active IRQ, ...) must have preserved them as callee-saved
-	 * registers per AAPCS64.
-	 */
-	__asm__ volatile(
-		"stp x19, x20, [%0, #0]\n\t"
-		"stp x21, x22, [%0, #16]\n\t"
-		"stp x23, x24, [%0, #32]\n\t"
-		"stp x25, x26, [%0, #48]\n\t"
-		"stp x27, x28, [%0, #64]\n\t"
-		"str x29, [%0, #80]\n\t"
-		:
-		: "r" (fc->x19_x29)
-		: "memory"
-	);
 
 	/*
 	 * _isr_wrapper() always saves the pre-interrupt sp at a fixed slot
@@ -549,7 +604,6 @@ void arch_coredump_thaw_other_cpus(void)
 
 bool arm64_coredump_freeze_get_snapshot(unsigned int cpu,
 					 const struct arch_esf **esf,
-					 const uint64_t **x19_x29,
 					 uintptr_t *sp,
 					 struct k_thread **thread)
 {
@@ -558,7 +612,6 @@ bool arm64_coredump_freeze_get_snapshot(unsigned int cpu,
 	}
 
 	*esf = &frozen_cpu[cpu].esf;
-	*x19_x29 = frozen_cpu[cpu].x19_x29;
 	*sp = frozen_cpu[cpu].sp;
 	*thread = frozen_cpu[cpu].thread;
 
@@ -575,7 +628,8 @@ int arch_smp_init(void)
 	 * SGI0 is use for sched ipi, this might be changed to use Kconfig
 	 * option
 	 */
-	IRQ_CONNECT(SGI_SCHED_IPI, IRQ_DEFAULT_PRIORITY, sched_ipi_handler, NULL, 0);
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	IRQ_CONNECT(SGI_SCHED_IPI, IRQ_DEFAULT_PRIORITY, z_arm64_sched_ipi_handler, NULL, 0);
 	irq_enable(SGI_SCHED_IPI);
 
 #ifdef CONFIG_USERSPACE
@@ -584,14 +638,22 @@ int arch_smp_init(void)
 	irq_enable(SGI_MMCFG_IPI);
 #endif
 #ifdef CONFIG_FPU_SHARING
-	IRQ_CONNECT(SGI_FPU_IPI, IRQ_DEFAULT_PRIORITY, flush_fpu_ipi_handler, NULL, 0);
+	IRQ_CONNECT(SGI_FPU_IPI, IRQ_DEFAULT_PRIORITY, z_arm64_flush_fpu_ipi_handler, NULL, 0);
 	irq_enable(SGI_FPU_IPI);
 #endif
 #ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	IRQ_CONNECT(SGI_COREDUMP_FREEZE_IPI, SGI_COREDUMP_FREEZE_PRIO, z_arm64_coredump_freeze_isr,
+		    NULL, 0);
+#else
 	IRQ_CONNECT(SGI_COREDUMP_FREEZE_IPI, SGI_COREDUMP_FREEZE_PRIO,
-			coredump_freeze_ipi_handler, NULL, 0);
+		    z_arm64_coredump_freeze_ipi_handler, NULL, 0);
+#endif
 	irq_enable(SGI_COREDUMP_FREEZE_IPI);
 #endif
+#else
+	/* No GIC: the SoC connects its mailbox IPI to z_arm64_sched_ipi_handler. */
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 	return 0;
 }

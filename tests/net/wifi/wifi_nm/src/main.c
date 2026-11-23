@@ -74,7 +74,11 @@ static struct wifi_mgmt_ops wifi_mgmt_api = {
 	.scan		= wifi_scan,
 };
 
-static struct net_wifi_mgmt_offload api_funcs = {
+#if defined(CONFIG_WIFI_USE_NATIVE_NETWORKING)
+static DEVICE_API(wifi_native, api_funcs) = {
+#else
+static DEVICE_API(wifi_offload, api_funcs) = {
+#endif
 	.wifi_iface.iface_api.init = wifi_iface_init,
 	.wifi_mgmt_api = &wifi_mgmt_api,
 };

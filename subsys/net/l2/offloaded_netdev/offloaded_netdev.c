@@ -11,13 +11,13 @@
 static inline int offloaded_netdev_if_enable(struct net_if *iface, bool state)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct offloaded_if_api *off_if;
+	const struct offloaded_if_driver_api *off_if;
 
 	NET_ASSERT(dev != NULL);
 
 	off_if = dev->api;
 
-	if (!off_if || !(off_if->enable)) {
+	if (off_if->enable == NULL) {
 		return 0;
 	}
 

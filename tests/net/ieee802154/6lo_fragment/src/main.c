@@ -177,7 +177,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static struct dummy_api net_fragment_if_api = {
+static DEVICE_API(dummy, net_fragment_if_api) = {
 	.iface_api.init = net_fragment_iface_init,
 	.send = tester_send,
 };

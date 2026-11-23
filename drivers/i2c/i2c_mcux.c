@@ -308,6 +308,15 @@ static int i2c_mcux_transfer_cb(const struct device *dev, struct i2c_msg *msgs, 
 #endif /* CONFIG_I2C_CALLBACK */
 
 #ifdef CONFIG_I2C_TARGET
+/* Without start detection, the SDK reports each (repeated) start addressed
+ * to us as an address match event.
+ */
+#if defined(FSL_FEATURE_I2C_HAS_START_STOP_DETECT) && FSL_FEATURE_I2C_HAS_START_STOP_DETECT
+#define I2C_MCUX_TARGET_START_EVENT kI2C_SlaveStartEvent
+#else
+#define I2C_MCUX_TARGET_START_EVENT kI2C_SlaveAddressMatchEvent
+#endif
+
 static int i2c_mcux_target_start_handler(struct i2c_mcux_data *data, i2c_slave_transfer_t *transfer)
 {
 	const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
@@ -411,7 +420,7 @@ static void i2c_mcux_target_transfer_cb(I2C_Type *base, i2c_slave_transfer_t *tr
 	ARG_UNUSED(base);
 
 	switch (transfer->event) {
-	case kI2C_SlaveStartEvent:
+	case I2C_MCUX_TARGET_START_EVENT:
 		/* start or repeated start of a transfer */
 		ret = i2c_mcux_target_start_handler(data, transfer);
 		break;
@@ -477,7 +486,7 @@ static int i2c_mcux_target_register(const struct device *dev,
 	I2C_SlaveTransferCreateHandle(base, &data->target_handle, i2c_mcux_target_transfer_cb,
 				      (void *)dev);
 	I2C_SlaveTransferNonBlocking(base, &data->target_handle,
-				     kI2C_SlaveStartEvent | kI2C_SlaveCompletionEvent);
+				     I2C_MCUX_TARGET_START_EVENT | kI2C_SlaveCompletionEvent);
 
 	return 0;
 }

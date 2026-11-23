@@ -543,6 +543,11 @@ static void plic_irq_handler(const struct device *dev)
 	 * as IRQ number held by the claim_complete register is
 	 * cleared upon read.
 	 */
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	const uint32_t outer_irq = save_irq[cpu_id];
+	const struct device *outer_dev = save_dev[cpu_id];
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+
 	save_irq[cpu_id] = local_irq;
 	save_dev[cpu_id] = dev;
 
@@ -565,9 +570,30 @@ static void plic_irq_handler(const struct device *dev)
 	}
 #endif /* CONFIG_PLIC_SUPPORTS_TRIG_EDGE */
 
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	const mem_addr_t thres_addr = get_threshold_priority_addr(dev, cpu_id);
+	const uint32_t outer_thres = sys_read32(thres_addr);
+
+	/*
+	 * The PLIC only takes a source above the threshold, so raising it to
+	 * this source's priority lets only higher priority sources preempt.
+	 */
+	sys_write32(sys_read32(config->prio + local_irq * sizeof(uint32_t)), thres_addr);
+	arch_irq_unlock(RV_STATUS_IE);
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+
 	/* Call the corresponding IRQ handler in _sw_isr_table */
 	ite = &config->isr_table[local_irq];
 	ite->isr(ite->arg);
+
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/* Undo the above before completing, in the opposite order */
+	(void)arch_irq_lock();
+	sys_write32(outer_thres, thres_addr);
+
+	save_irq[cpu_id] = outer_irq;
+	save_dev[cpu_id] = outer_dev;
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 
 	/*
 	 * Write to claim_complete register to indicate to

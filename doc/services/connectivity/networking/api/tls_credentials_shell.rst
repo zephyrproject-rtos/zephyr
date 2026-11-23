@@ -220,6 +220,41 @@ After the list is printed, a final summary of the found credentials will be prin
 
 Where ``<N>`` is the number of credentials found, and is zero if none are found.
 
+On-Device Key Generation (``keygen``, ``keydel``, ``csr``, ``pubkey``)
+======================================================================
+
+Generate a private key on the device and a Certificate Signing Request (CSR) signed by it.
+The private key never leaves the device.
+These commands require :kconfig:option:`CONFIG_TLS_CREDENTIALS_KEYGEN`.
+
+Usage
+-----
+
+.. code-block:: console
+
+   cred keygen <SECTAG> [p256|p384]
+   cred csr <SECTAG> <SUBJECT>
+   cred pubkey <SECTAG>
+   cred keydel <SECTAG>
+
+- ``keygen`` creates the key and registers it for the sectag.
+  Without a type, the first enabled type is used, P-256 if it is enabled.
+  It fails if the sectag already has a private key.
+- ``csr`` prints the CSR as ``CSR: <base64 DER>`` followed by ``CSR generation complete``.
+  ``<SUBJECT>`` is an X.509 subject name, for example ``"CN=my-device,O=Nordic"``.
+- ``pubkey`` prints the public key as ``PUBKEY: <base64 DER SubjectPublicKeyInfo>`` followed by
+  ``Public key export complete``.
+  Compare it with the SubjectPublicKeyInfo of the installed device certificate to check that they
+  match.
+- ``keydel`` removes the registration of the key and destroys it.
+  It fails if the sectag has no generated key.
+
+A CSR with a long subject may not fit in the buffer of the shell.
+Increase :kconfig:option:`CONFIG_TLS_CREDENTIALS_SHELL_KEYGEN_CSR_BUF_SIZE` in that case.
+
+To rotate the key, delete it and generate a new one.
+The previously issued device certificate no longer matches the new key.
+
 .. _tls_credentials_shell_cred_types:
 
 Credential Types

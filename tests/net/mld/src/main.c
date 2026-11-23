@@ -350,7 +350,7 @@ static int tester_null_send(const struct device *dev, struct net_pkt *pkt)
 struct net_test_mld net_test_data;
 struct net_test_mld net_test_null_data;
 
-static struct dummy_api net_test_if_api = {
+static DEVICE_API(dummy, net_test_if_api) = {
 	.iface_api.init = net_test_iface_init,
 	.send = tester_send,
 };
@@ -365,7 +365,7 @@ static void init_null_iface(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static struct dummy_api net_test_null_if_api = {
+static DEVICE_API(dummy, net_test_null_if_api) = {
 	.iface_api.init = init_null_iface,
 	.send = tester_null_send,
 };

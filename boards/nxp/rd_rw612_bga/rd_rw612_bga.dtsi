@@ -138,6 +138,10 @@ arduino_i2c: &flexcomm2 {
 	status = "okay";
 };
 
+&ocotp {
+	status = "okay";
+};
+
 &hsgpio0 {
 	status = "okay";
 };
@@ -316,6 +320,10 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 	status = "okay";
 };
 
+&rtc {
+	status = "okay";
+};
+
 /* RTC is the wakeup source for PM modes 3,4 */
 &rtc_highres {
 	wakeup-source;
@@ -337,7 +345,7 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 };
 
 /* OS Timer is the wakeup source for PM mode 2 */
-&os_timer {
+&ostimer0 {
 	wakeup-source;
 	deep-sleep-counter = <&rtc_highres>;
 	status = "okay";

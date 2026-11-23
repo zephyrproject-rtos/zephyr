@@ -8,7 +8,7 @@ source "share/sysbuild/Kconfig"
 
 config REMOTE_BOARD
 	string "Remote board"
-	default "adp_xc7k/ae350" if $(BOARD) = "adp_xc7k"
+	default "adp_xc7k/ae350_a25" if $(BOARD) = "adp_xc7k"
 	default "bl54l15_dvk/nrf54l15/cpuflpr" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "bl54l15_dvk/nrf54l15/cpuapp"
 	default "ek_ra8p1/r7ka8p1kflcac/cm33" if $(BOARD) = "ek_ra8p1"
 	default "esp32_devkitc/esp32/appcpu" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "esp32_devkitc/esp32/procpu"
@@ -32,9 +32,11 @@ config REMOTE_BOARD
 	default "nrf54l15dk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15dk"
 	default "nrf54lm20dk/nrf54lm20a/cpuflpr" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "nrf54lm20dk/nrf54lm20a/cpuapp"
 	default "nrf54lm20dk/nrf54lm20b/cpuflpr" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "nrf54lm20dk/nrf54lm20b/cpuapp"
+	default "nrf54lv10dk/nrf54lv10a/cpuflpr" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "nrf54lv10dk/nrf54lv10a/cpuapp"
+	default "nrf7120dk/nrf7120/cpuflpr" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "nrf7120dk/nrf7120/cpuapp"
+	default "nrf7120dk/nrf7120e/cpuflpr" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "nrf7120dk/nrf7120e/cpuapp"
 	default "nucleo_h755zi_q/stm32h755xx/m4" if $(BOARD) = "nucleo_h755zi_q"
 	default "ophelia4ev/cpuflpr" if $(BOARD) = "ophelia4ev"
 	default "stm32h747i_disco/stm32h747xx/m4" if $(BOARD) = "stm32h747i_disco"
 	default "versal2_rpu" if SOC_AMD_VERSAL2_RPU
 	default "versalnet_rpu" if SOC_AMD_VERSALNET_RPU
-	default "nrf7120dk/nrf7120/cpuflpr" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "nrf7120dk/nrf7120/cpuapp"

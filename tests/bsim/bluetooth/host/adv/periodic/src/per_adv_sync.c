@@ -391,6 +391,64 @@ static void main_per_adv_unregister_sync_cb(void)
 	TEST_PASS("Periodic advertising sync callback unregister passed");
 }
 
+/* Sync to a chained train and terminate while the chain is in flight, walking the terminate
+ * instant across it (common.h). With one auxiliary context (BT_CTLR_SCAN_AUX_SET=1), a stranded
+ * context stops any later sync.
+ */
+
+static void main_per_adv_sync_term_leak(void)
+{
+	struct bt_le_per_adv_sync_param sync_create_param = { 0 };
+	struct bt_le_per_adv_sync *sync = NULL;
+	uint32_t offset_us = 0U;
+	int err;
+
+	common_init();
+	start_scan();
+
+	printk("Waiting for periodic advertising...\n");
+	WAIT_FOR_FLAG(flag_per_adv);
+	printk("Found periodic advertising.\n");
+
+	for (uint32_t i = 0U; i < TERM_LEAK_ITERATIONS; i++) {
+		printk("Sync/terminate iteration %u, terminate offset %u us\n", i, offset_us);
+
+		UNSET_FLAG(flag_per_adv_sync);
+		UNSET_FLAG(flag_per_adv_recv);
+		UNSET_FLAG(flag_per_adv_sync_lost);
+
+		bt_addr_le_copy(&sync_create_param.addr, &per_addr);
+		sync_create_param.options = 0;
+		sync_create_param.sid = per_sid;
+		sync_create_param.skip = 0;
+		sync_create_param.timeout = 0x0a;
+
+		err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
+		if (err != 0) {
+			TEST_FAIL("Iteration %u: failed to create sync: %d", i, err);
+		}
+
+		WAIT_FOR_FLAG_TIMEOUT(flag_per_adv_sync, K_MSEC(TERM_LEAK_TIMEOUT_MS));
+		if (!IS_FLAG_SET(flag_per_adv_sync)) {
+			TEST_FAIL("Iteration %u: periodic sync never established. An "
+				  "auxiliary context stranded by an earlier terminate is "
+				  "never released, so the pool stays empty.", i);
+		}
+
+		/* Walk the terminate instant across the chain reception */
+		(void)k_sleep(K_USEC(offset_us));
+		offset_us += TERM_LEAK_STEP_US;
+
+		err = bt_le_per_adv_sync_delete(sync);
+		if (err != 0) {
+			TEST_FAIL("Iteration %u: failed to delete sync: %d", i, err);
+		}
+		sync = NULL;
+	}
+
+	TEST_PASS("Periodic advertising sync terminate did not strand an auxiliary context");
+}
+
 static const struct bst_test_instance per_adv_sync[] = {
 	{
 		.test_id = "per_adv_sync",
@@ -432,6 +490,14 @@ static const struct bst_test_instance per_adv_sync[] = {
 			      "get unregistered. Test is used to verify that "
 			      "the sync callbacks can be properly unregistered.",
 		.test_main_f = main_per_adv_unregister_sync_cb
+	},
+	{
+		.test_id = "per_adv_sync_term_leak",
+		.test_descr = "Repeatedly sync to a chained periodic train and "
+			      "terminate while a chain is in flight, sweeping the "
+			      "terminate instant. Verifies that terminate does not "
+			      "strand an auxiliary context.",
+		.test_main_f = main_per_adv_sync_term_leak
 	},
 	BSTEST_END_MARKER
 };

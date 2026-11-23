@@ -32,6 +32,23 @@ config TLS_CREDENTIALS_SHELL_DIGEST_BUF_SIZE
 
 	   Also used to print error messages if digest generation fails.
 
+config TLS_CREDENTIALS_SHELL_KEYGEN
+	bool "Shell commands for on-device key and CSR generation"
+	depends on TLS_CREDENTIALS_KEYGEN
+	default y
+	help
+	  Add the keygen, keydel, csr and pubkey commands to the 'cred' shell command. The private
+	  key never leaves the device. The CSR and the public key are printed Base64 encoded.
+
+config TLS_CREDENTIALS_SHELL_KEYGEN_CSR_BUF_SIZE
+	int "Buffer for the CSR, in bytes"
+	depends on TLS_CREDENTIALS_SHELL_KEYGEN
+	default 512
+	help
+	  Size of the buffer for the DER CSR. The default fits a subject of about 40 characters
+	  in the worst case, and much longer subjects with few attributes. See
+	  TLS_CREDENTIAL_KEYGEN_CSR_SIZE() for a size that always fits.
+
 if TLS_CREDENTIALS_BACKEND_VOLATILE
 
 config HEAP_MEM_POOL_ADD_SIZE_TLS_CRED_SHELL

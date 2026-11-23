@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <freq.h>
 
 / {
@@ -15,14 +16,14 @@
 };
 
 &mikrobus_spi {
-	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
 
 	mcp2517fd_mikroe_mcp2517fd_click: can@0 {
 		compatible = "microchip,mcp251xfd";
 		reg = <0x0>;
 		spi-max-frequency = <DT_FREQ_M(18)>;
 		osc-freq = <DT_FREQ_M(40)>;
-		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		int-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_LOW>;
 		status = "okay";
 
 		can-transceiver {

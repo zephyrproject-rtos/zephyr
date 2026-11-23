@@ -226,7 +226,7 @@ static void init(void)
 		.recv = broadcast_scan_recv,
 	};
 	static struct bt_iso_chan_io_qos iso_rx = {
-		.sdu = CONFIG_BT_ISO_TX_MTU,
+		.sdu = CONFIG_BT_ISO_RX_MTU,
 	};
 	static struct bt_iso_chan_ops iso_ops = {
 		.recv = iso_recv,
@@ -336,6 +336,7 @@ static void test_main(void)
 	bk_sync_send();
 
 	LOG_INF("Waiting for sync lost");
+	WAIT_FOR_FLAG_UNSET(flag_pa_synced);
 	WAIT_FOR_FLAG_UNSET(flag_iso_connected);
 
 	TEST_PASS("Test passed");

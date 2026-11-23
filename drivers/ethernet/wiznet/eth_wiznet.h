@@ -54,7 +54,6 @@ struct wiznet_regs {
 };
 
 struct wiznet_chip_ops {
-	struct ethernet_api api;
 	int (*spi_read)(const struct device *dev, uint32_t addr, uint8_t *data, size_t len);
 	int (*spi_write)(const struct device *dev, uint32_t addr, uint8_t *data, size_t len);
 	int (*soft_reset)(const struct device *dev);
@@ -122,6 +121,8 @@ int wiznet_get_link_state(const struct device *dev, struct phy_link_state *state
 
 int wiznet_init(const struct device *dev);
 
+extern const struct ethernet_driver_api wiznet_api;
+
 #define WIZNET_DEVICE_DEFINE(node, init_fn, phy_api, chip_ops, chip_regs, reset_pulse,             \
 			     reset_delay)                                                          \
 	DEVICE_DECLARE(wiznet_phy_##node);                                                         \
@@ -146,7 +147,7 @@ int wiznet_init(const struct device *dev);
 	};                                                                                         \
 	ETH_NET_DEVICE_DT_DEFINE(node, init_fn, NULL, &wiznet_runtime_##node,                      \
 				 &wiznet_config_##node, CONFIG_ETH_INIT_PRIORITY,                  \
-				 &(chip_ops)->api, NET_ETH_MTU);                                   \
+				 &wiznet_api, NET_ETH_MTU);                                        \
 	DEVICE_DEFINE(wiznet_phy_##node, DEVICE_DT_NAME(node) "_phy", NULL, NULL,                  \
 		      &wiznet_runtime_##node, &wiznet_config_##node, POST_KERNEL,                  \
 		      CONFIG_ETH_INIT_PRIORITY, phy_api);

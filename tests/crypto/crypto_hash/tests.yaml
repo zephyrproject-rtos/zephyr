@@ -16,6 +16,7 @@ tests:
       - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitc
       - esp32c6_devkitc/esp32c6/hpcore
+      - esp32c61_devkitc
       - esp32h2_devkitm
       - sama7d65_curiosity
       - sama7g54_ek

@@ -73,18 +73,6 @@ extern "C" {
 /** Number of bits in a long long int. */
 #define BITS_PER_LONG_LONG (__CHAR_BIT__ * __SIZEOF_LONG_LONG__)
 
-/**
- * @brief Create a contiguous bitmask starting at bit position @p l
- *        and ending at position @p h.
- */
-#define GENMASK(h, l) (((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
-
-/**
- * @brief Create a contiguous 64-bit bitmask starting at bit position @p l
- *        and ending at position @p h.
- */
-#define GENMASK64(h, l) (((~0ULL) - (1ULL << (l)) + 1) & (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
-
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
 #define ZERO_OR_COMPILE_ERROR(cond) ((int)sizeof(char[1 - (2 * !(cond))]) - 1)
 
@@ -972,7 +960,7 @@ static inline size_t sys_count_bits(const void *value, size_t len)
  * @return The greatest common divisor of a and b, always returns an unsigned value.
  *         If one of the parameters is 0, returns the absolute value of the other parameter.
  */
-#define sys_gcd(a, b) ((((__typeof__(a))-1) < 0) ? sys_gcd_s(a, b) : sys_gcd_u(a, b))
+#define sys_gcd(a, b) sys_gcd_s(a, b)
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -999,7 +987,7 @@ static ALWAYS_INLINE uint32_t sys_gcd_u(uint32_t a, uint32_t b)
 	return b;
 }
 
-static ALWAYS_INLINE uint32_t sys_gcd_s(int32_t a, int32_t b)
+static ALWAYS_INLINE uint32_t sys_gcd_s(int64_t a, int64_t b)
 {
 	return sys_gcd_u(a < 0 ? -(uint32_t)a : (uint32_t)a, b < 0 ? -(uint32_t)b : (uint32_t)b);
 }
@@ -1016,7 +1004,7 @@ static ALWAYS_INLINE uint32_t sys_gcd_s(int32_t a, int32_t b)
  * @retval The least common multiple of a and b.
  * @retval 0 if either input is 0.
  */
-#define sys_lcm(a, b) ((((__typeof__(a))-1) < 0) ? sys_lcm_s(a, b) : sys_lcm_u(a, b))
+#define sys_lcm(a, b) sys_lcm_s(a, b)
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -1030,7 +1018,7 @@ static ALWAYS_INLINE uint64_t sys_lcm_u(uint32_t a, uint32_t b)
 	return (uint64_t)(a / sys_gcd_u(a, b)) * (uint64_t)b;
 }
 
-static ALWAYS_INLINE uint64_t sys_lcm_s(int32_t a, int32_t b)
+static ALWAYS_INLINE uint64_t sys_lcm_s(int64_t a, int64_t b)
 {
 	return sys_lcm_u(a < 0 ? -(uint32_t)a : (uint32_t)a, b < 0 ? -(uint32_t)b : (uint32_t)b);
 }
@@ -1104,11 +1092,15 @@ static ALWAYS_INLINE uint64_t sys_lcm_s(int32_t a, int32_t b)
 		uint32_t _wf_cycle_count = k_us_to_cyc_ceil32(timeout);                            \
 		uint32_t _wf_start = k_cycle_get_32();                                             \
 		bool _wf_ret;                                                                      \
-		while (!(_wf_ret = (expr)) &&                                                      \
-		       (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {                       \
+		do {                                                                               \
+			bool _wf_timed_out = (_wf_cycle_count <= (k_cycle_get_32() - _wf_start));  \
+			_wf_ret = (expr);                                                          \
+			if (_wf_ret || _wf_timed_out) {                                            \
+				break;                                                             \
+			}                                                                          \
 			({ delay_stmt; });                                                         \
 			Z_SPIN_DELAY(10);                                                          \
-		}                                                                                  \
+		} while (true);                                                                    \
 		(_wf_ret);                                                                         \
 	})
 

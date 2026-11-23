@@ -1,6 +1,7 @@
 tests:
   net.ethernet.l2_only:
     build_only: true
+    filter: not CONFIG_NET_OFFLOAD
     integration_platforms:
       - native_sim
     tags:

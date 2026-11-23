@@ -119,5 +119,138 @@
 		wui_i3c3_rstw: wui2-8-3 {
 			miwus = <&miwu2 7 3>; /* I3C3_RSTW */
 		};
+
+		/* MIWU table 3 */
+		/* MIWU group A */
+		wui_iog0: wui3-1-0 {
+			miwus = <&miwu3 0 0>; /* GPIOG0 */
+		};
+
+		wui_iog1: wui3-1-1 {
+			miwus = <&miwu3 0 1>; /* GPIOG1 */
+		};
+
+		wui_iog2: wui3-1-2 {
+			miwus = <&miwu3 0 2>; /* GPIOG2 */
+		};
+
+		wui_iog3: wui3-1-3 {
+			miwus = <&miwu3 0 3>; /* GPIOG3 */
+		};
+
+		wui_iog4: wui3-1-4 {
+			miwus = <&miwu3 0 4>; /* GPIOG4 */
+		};
+
+		wui_iog5: wui3-1-5 {
+			miwus = <&miwu3 0 5>; /* GPIOG5 */
+		};
+
+		wui_iog6: wui3-1-6 {
+			miwus = <&miwu3 0 6>; /* GPIOG6 */
+		};
+
+		wui_iog7: wui3-1-7 {
+			miwus = <&miwu3 0 7>; /* GPIOG7 */
+		};
+
+		/* MIWU group B */
+		wui_ioh0: wui3-2-0 {
+			miwus = <&miwu3 1 0>; /* GPIOH0 */
+		};
+
+		wui_ioh1: wui3-2-1 {
+			miwus = <&miwu3 1 1>; /* GPIOH1 */
+		};
+
+		wui_ioh2: wui3-2-2 {
+			miwus = <&miwu3 1 2>; /* GPIOH2 */
+		};
+
+		wui_ioh3: wui3-2-3 {
+			miwus = <&miwu3 1 3>; /* GPIOH3 */
+		};
+
+		wui_ioh4: wui3-2-4 {
+			miwus = <&miwu3 1 4>; /* GPIOH4 */
+		};
+
+		wui_ioh5: wui3-2-5 {
+			miwus = <&miwu3 1 5>; /* GPIOH5 */
+		};
+
+		wui_ioh6: wui3-2-6 {
+			miwus = <&miwu3 1 6>; /* GPIOH6 */
+		};
+
+		wui_ioh7: wui3-2-7 {
+			miwus = <&miwu3 1 7>; /* GPIOH7 */
+		};
+
+		/* MIWU group C */
+		wui_ioj0: wui3-3-0 {
+			miwus = <&miwu3 2 0>; /* GPIOJ0 */
+		};
+
+		wui_ioj1: wui3-3-1 {
+			miwus = <&miwu3 2 1>; /* GPIOJ1 */
+		};
+
+		wui_ioj2: wui3-3-2 {
+			miwus = <&miwu3 2 2>; /* GPIOJ2 */
+		};
+
+		wui_ioj3: wui3-3-3 {
+			miwus = <&miwu3 2 3>; /* GPIOJ3 */
+		};
+
+		wui_ioj4: wui3-3-4 {
+			miwus = <&miwu3 2 4>; /* GPIOJ4 */
+		};
+
+		wui_ioj5: wui3-3-5 {
+			miwus = <&miwu3 2 5>; /* GPIOJ5 */
+		};
+
+		wui_ioj6: wui3-3-6 {
+			miwus = <&miwu3 2 6>; /* GPIOJ6 */
+		};
+
+		wui_ioj7: wui3-3-7 {
+			miwus = <&miwu3 2 7>; /* GPIOJ7 */
+		};
+
+		/* MIWU group D */
+		wui_iok0: wui3-4-0 {
+			miwus = <&miwu3 3 0>; /* GPIOK0 */
+		};
+
+		wui_iok1: wui3-4-1 {
+			miwus = <&miwu3 3 1>; /* GPIOK1 */
+		};
+
+		wui_iok2: wui3-4-2 {
+			miwus = <&miwu3 3 2>; /* GPIOK2 */
+		};
+
+		wui_iok3: wui3-4-3 {
+			miwus = <&miwu3 3 3>; /* GPIOK3 */
+		};
+
+		wui_iok4: wui3-4-4 {
+			miwus = <&miwu3 3 4>; /* GPIOK4 */
+		};
+
+		wui_iok5: wui3-4-5 {
+			miwus = <&miwu3 3 5>; /* GPIOK5 */
+		};
+
+		wui_iok6: wui3-4-6 {
+			miwus = <&miwu3 3 6>; /* GPIOK6 */
+		};
+
+		wui_iok7: wui3-4-7 {
+			miwus = <&miwu3 3 7>; /* GPIOK7 */
+		};
 	};
 };

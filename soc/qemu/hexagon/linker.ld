@@ -53,7 +53,7 @@ SECTIONS
     }
 
     GROUP_START(ROMABLE_REGION)
-    __rom_region_start = .;
+    __rom_region_start = DT_REG_ADDR(DT_CHOSEN(zephyr_sram));
 
     /* Reset vector must be at the beginning */
     SECTION_PROLOGUE(.reset.__start,,)
@@ -293,7 +293,6 @@ SECTIONS
     /* Final section for deterministic sizing */
     SECTION_PROLOGUE(.last_section,,)
     {
-        _end = .;
         _image_end = .;
     } GROUP_LINK_IN(RAMABLE_REGION)
 }

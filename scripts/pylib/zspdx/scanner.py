@@ -127,8 +127,12 @@ def make_reuse_project(base_dir, file_paths):
     # letting Project.from_directory() search all of base_dir.
     root = Path(base_dir)
     dirs = {d for f in file_paths for d in Path(f).parents if d.is_relative_to(root)}
-    tomls = [ReuseTOML.from_file(d / "REUSE.toml") for d in dirs if (d / "REUSE.toml").is_file()]
-    global_licensing = NestedReuseTOML(reuse_tomls=tomls, source=str(root)) if tomls else None
+    tomls = [
+        ReuseTOML.from_file(d / "REUSE.toml", root) for d in dirs if (d / "REUSE.toml").is_file()
+    ]
+    global_licensing = (
+        NestedReuseTOML(reuse_tomls=tomls, source=str(root), root=root) if tomls else None
+    )
     return Project(
         root,
         vcs_strategy=Project._detect_vcs_strategy(root),
@@ -167,7 +171,8 @@ def get_reuse_info(project, file_path):
         # the reuse library returns these as sets, so sort them to keep the
         # generated SBOM reproducible across runs
         return sorted(licenses), sorted(copyrights)
-    except Exception:
+    except Exception:  # noqa: BLE001
+        # noqa not needed with ruff >= 0.16 + "exc_info"
         _logger.warning("Error getting REUSE info for %s", file_path, exc_info=True)
         return [], []
 
@@ -193,7 +198,8 @@ def scan_sbom_graph(cfg, sbom_graph):
                 reuse_project = make_reuse_project(
                     component.base_dir, [f.path for f in component.files.values()]
                 )
-            except Exception:
+            except Exception:  # noqa: BLE001
+                # noqa not needed with ruff >= 0.16 + "exc_info"
                 _logger.warning(
                     "Error building REUSE project for %s", component.base_dir, exc_info=True
                 )

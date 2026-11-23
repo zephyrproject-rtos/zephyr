@@ -735,11 +735,12 @@ void net_pkt_frag_unref(struct net_buf *frag)
 		/* A zero count must not be decremented, not even by an unref
 		 * racing with the last one: the borrow would go into the other
 		 * bytes of ref_word of a buffer that has already been freed.
+		 * A saturated count stays as it is, see net_buf_ref().
 		 */
 		do {
 			old_word = atomic_get(&frag->ref_word);
 			old_ref = (uint8_t)old_word;
-			if (old_ref == 0U) {
+			if ((old_ref == 0U) || (old_ref == UINT8_MAX)) {
 				break;
 			}
 		} while (!atomic_cas(&frag->ref_word, old_word, old_word - 1));
@@ -2434,16 +2435,27 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 		left -= rem;
 		if (left) {
 			memmove(c_op->pos, c_op->pos+rem, left);
-		} else {
-			struct net_buf *buf = pkt->buffer;
+		} else if (c_op->pos == c_op->buf->data) {
+			/* The whole fragment was pulled: remove it from the
+			 * chain and continue in the next one.
+			 */
+			struct net_buf *parent = NULL;
+			struct net_buf *next;
 
-			if (buf) {
-				pkt->buffer = buf->frags;
-				buf->frags = NULL;
-				net_pkt_frag_unref(buf);
+			if (c_op->buf != pkt->buffer) {
+				parent = pkt->buffer;
+				while (parent->frags != c_op->buf) {
+					parent = parent->frags;
+				}
 			}
 
-			net_pkt_cursor_init(pkt);
+			next = net_pkt_frag_del(pkt, parent, c_op->buf);
+			c_op->buf = next;
+			c_op->pos = (next != NULL) ? next->data : NULL;
+		} else {
+			/* The tail of the fragment was pulled. The cursor is
+			 * now at its end and moves on to the next fragment.
+			 */
 		}
 
 		length -= rem;

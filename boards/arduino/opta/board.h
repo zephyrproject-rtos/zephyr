@@ -9,6 +9,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define OPTA_OTP_MAGIC 0xB5
 
 #define OPTA_SERIAL_NUMBER_SIZE 24
@@ -35,5 +39,9 @@ struct __packed opta_board_info {
 const struct opta_board_info *const opta_get_board_info(void);
 
 const char *const opta_get_serial_number(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ARDUINO_OPTA_BOARD_H */

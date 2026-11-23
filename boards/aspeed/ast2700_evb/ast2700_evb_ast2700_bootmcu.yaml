@@ -1,0 +1,13 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ast2700_evb/ast2700/bootmcu
+name: Aspeed AST2700 BootMCU on Evaluation Board
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 244
+supported:
+  - serial
+vendor: aspeed

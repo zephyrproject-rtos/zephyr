@@ -8,6 +8,8 @@ toolchain:
   - gnuarmemb
 supported:
   - gpio
+  - netif:eth
   - serial
-ram: 32
+  - spi
+ram: 256
 flash: 3072

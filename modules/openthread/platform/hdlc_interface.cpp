@@ -55,7 +55,7 @@ HdlcInterface::HdlcInterface(const Url::Url &aRadioUrl)
 	is_device_ready = device_is_ready(radio_dev);
 	__ASSERT(is_device_ready == true, "Radio device is not ready");
 
-	hdlc_api = (struct hdlc_api *)radio_dev->api;
+	hdlc_api = (struct hdlc_driver_api *)radio_dev->api;
 	__ASSERT(hdlc_api != NULL, "Radio device initialization failed");
 }
 

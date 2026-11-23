@@ -30,6 +30,16 @@ tests:
       - native_sim
     integration_platforms:
       - native_sim
+  libraries.gui.lvgl.mem_monitor:
+    extra_configs:
+      - CONFIG_LV_Z_MEM_POOL_SYS_HEAP=y
+      - CONFIG_LV_Z_MEM_POOL_SIZE=98304
+      - CONFIG_SYS_HEAP_RUNTIME_STATS=y
+    platform_allow:
+      - native_sim/native/64
+      - native_sim
+    integration_platforms:
+      - native_sim
   libraries.gui.lvgl.16bit:
     extra_configs:
       - CONFIG_LV_Z_COLOR_FORMAT_RGB565=y

@@ -227,10 +227,6 @@ Sample Output
 
    <repeats endlessly>
 
-If using the shell, the capture will not start unless the Kconfig option
-:kconfig:option:`VIDEO_SHELL_AND_CAPTURE` is set. In both cases, the shell can be used to change
-parameters on the fly:
-
 .. code-block:: console
 
    uart:~$ video --help

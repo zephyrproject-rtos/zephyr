@@ -296,6 +296,14 @@ config NXP_IW611_MURATA_2DL_M2
 	  Detailed information about Type 2DL module you can find on
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2dl
 
+config NXP_IW611_EZURIO_NX611
+	bool "NXP IW611-EZURIO-NX611"
+	help
+	  Ezurio Sona NX611 is a small and very high performance module based
+	  on NXP IW611 combo chipset which supports Wi-Fi 802.11a/b/g/n/ac/ax +
+	  Bluetooth 5.4 BR/EDR/LE up to 600 Mbps PHY data rate on Wi-Fi and
+	  2Mbps PHY data rate on Bluetooth. Uses Ezurio-qualified firmware.
+
 config NXP_IW612_UBX_MAYA_W276_M2
 	bool "NXP IW612-UBX-MAYA-W276-M2"
 	help
@@ -519,7 +527,6 @@ menu "Wi-Fi Station Support"
 
 config NXP_WIFI_STA_AUTO_CONN
 	bool "Automatically starts STA connection"
-	default n
 	help
 	  This option enables Station auto connection support.
 
@@ -622,6 +629,12 @@ config NXP_WIFI_SCHED_SCAN_MIN_INTERVAL
 	help
 	  Minimum intreval in seconds of sched_scan plan.
 	  This is to save power for some use cases.
+
+config NXP_WIFI_BG_SCAN
+	bool "Background scan enable"
+	default y
+	help
+	  Enable background scan.
 endmenu
 
 config NXP_WIFI_WMM_UAPSD
@@ -927,6 +940,7 @@ config NXP_WIFI_UNII4_BAND_SUPPORT
 config NXP_WIFI_RECOVERY
 	bool "RECOVERY"
 	depends on NXP_RW610 || NXP_IW610 || NXP_IW61X || NXP_IW416
+	default y if NXP_IW416
 	help
 	  This option is used to enable wifi recovery support.
 
@@ -968,6 +982,11 @@ config WLAN_CALDATA_2ANT_LO_ISO
 	bool "Select 2ANT LOW ISOLATION"
 	help
 	  This option is used to select 2ANT Low Isolation Caldata.
+
+config WLAN_CALDATA_2ANT_HI_ISO_41DB
+	bool "Select 41DB 2ANT HIGH ISOLATION"
+	help
+	  This option is used to select 2ANT High Isolation Caldata of 41db.
 
 endif # NXP_IW61X
 

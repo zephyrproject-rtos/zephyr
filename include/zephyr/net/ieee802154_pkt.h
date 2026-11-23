@@ -59,7 +59,7 @@ struct net_pkt_cb_ieee802154 {
 #if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
 			/* The channel used for timed transmissions.
 			 *
-			 * Please refer to `ieee802154_radio_api::tx` documentation for
+			 * Please refer to `ieee802154_radio_driver_api::tx` documentation for
 			 * details.
 			 */
 			uint8_t txchannel;

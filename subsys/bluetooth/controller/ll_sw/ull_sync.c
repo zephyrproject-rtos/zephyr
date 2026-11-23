@@ -28,9 +28,9 @@
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_adv_types.h"
+#include "lll_adv_types.h"
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include "lll_adv_pdu.h"
 #include "lll_clock.h"
 #include "lll/lll_vendor.h"
 #include "lll_chan.h"
@@ -585,6 +585,16 @@ uint8_t ll_sync_terminate(uint16_t handle)
 		LL_ASSERT_DBG(!aux->parent);
 #endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 	}
+
+#if !defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+	/* Also stop any auxiliary context still parented to this sync that
+	 * lll_aux no longer references, as ull_scan_disable() does for a scan.
+	 */
+	err = ull_scan_aux_stop_by_parent(&sync->lll);
+	if (err != 0) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 
 #if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
 	/* Clean up node_rx_sync_estab if still present */

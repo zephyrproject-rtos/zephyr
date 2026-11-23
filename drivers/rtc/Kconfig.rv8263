@@ -8,4 +8,4 @@ config RTC_RV8263
 	depends on DT_HAS_MICROCRYSTAL_RV_8263_C8_ENABLED
 	select I2C
 	help
-		Micro Crystal RV-8263-C8 RTC driver.
+	  Micro Crystal RV-8263-C8 RTC driver.

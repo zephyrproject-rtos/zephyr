@@ -7,12 +7,31 @@ config TEST_EXTRA_STACK_SIZE
 config IDLE_STACK_SIZE
 	default 1024
 
+# Calls through printk() alone take over 1 KiB of stack, so the kernel
+# default of 1024 overflows main() in tests that log from it.
+config MAIN_STACK_SIZE
+	default 4096 if COVERAGE_GCOV
+	default 2048
+
 config PRIVILEGED_STACK_SIZE
 	# Sizes thread->arch.priv_stack, the kernel-side stack each K_USER
 	# thread uses for event/syscall handling (see arch_user_mode_enter()).
 	# 1024 was too small for some syscalls' C call depth; 2048 covers
 	# everything hit so far but is an empirical, not proven, bound.
+	# With HW_STACK_PROTECTION, 128 bytes at the bottom of this array
+	# are reserved as FRAMELIMIT headroom for an event frame.
 	default 2048
+
+config HEXAGON_USER_STACK_ENTRIES
+	int "Linear-map entries per user thread for its own stack"
+	depends on USERSPACE
+	default 8
+	help
+	  Each user thread's linear list maps its own stack ahead of its
+	  memory domain's partitions. A stack takes one entry for each aligned
+	  4KB, 16KB, 64KB, ... chunk in its decomposition. Eight entries cover
+	  any stack below 64KB. Part of a stack that does not fit faults on access.
+	  Each entry adds 8 bytes to struct k_thread.
 
 if CPU_HAS_MMU
 
@@ -26,5 +45,21 @@ config HEXAGON_MMU
 	  The HVM/H2 hypervisor maintains a single flat identity-mapped page
 	  table, so mappings require virt == phys and KERNEL_DIRECT_MAP is
 	  mandatory here.
+
+config HEXAGON_H2_KERNEL_BASE
+	hex "H2 hypervisor kernel image base address"
+	depends on HEXAGON_MMU
+	default 0x9b800000
+	help
+	  Guest-visible address of the H2 kernel image. The kernel's linear
+	  map keeps it mapped RWX for guest mode only. Must be 4MB-aligned.
+
+config HEXAGON_H2_KERNEL_SIZE
+	hex "H2 hypervisor kernel image size"
+	depends on HEXAGON_MMU
+	default 0x800000
+	help
+	  Size of the H2 kernel image window at HEXAGON_H2_KERNEL_BASE. Must
+	  be a non-zero multiple of 4MB, at most 16MB.
 
 endif # CPU_HAS_MMU

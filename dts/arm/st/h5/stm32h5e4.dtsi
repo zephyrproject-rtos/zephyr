@@ -121,6 +121,20 @@
 			};
 		};
 
+		rng: rng@420c0800 {
+			/* True RNG noise source is the default one */
+			/delete-property/ noise-source-control;
+			nist-config = <0x8451f00>;
+			health-test-config = <0xaac7>;
+		};
+
+		xspi1: spi@47001400 {
+			/* OCTOSPI instance has a XSPI IO manager */
+			clock-names = "xspix", "xspi-ker";
+			clocks = <&rcc STM32_CLOCK(AHB4, 20)>,
+				 <&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>;
+		};
+
 		xspi2: spi@47002400 {
 			/* OCTOSPI instance has a XSPI IO manager */
 			compatible = "st,stm32-xspi";
@@ -176,40 +190,26 @@
 		};
 	};
 
+	die_temp: dietemp {
+		io-channels = <&adc3 16>;
+	};
+
+	vbat: vbat {
+		io-channels = <&adc3 14>;
+	};
+
+	vddcore: vddcore {
+		io-channels = <&adc3 15>;
+	};
+
+	vref: vref {
+		io-channels = <&adc3 17>;
+	};
+
 	/delete-node/ usbphy;
 
 	otgfs_phy: otgfs-phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
 	};
-};
-
-&rng {
-	/* True RNG noise source is the default one */
-	/delete-property/ noise-source-control;
-	nist-config = <0x8451f00>;
-	health-test-config = <0xaac7>;
-};
-
-&die_temp {
-	io-channels = <&adc3 16>;
-};
-
-&vref {
-	io-channels = <&adc3 17>;
-};
-
-&vbat {
-	io-channels = <&adc3 14>;
-};
-
-&vddcore {
-	io-channels = <&adc3 15>;
-};
-
-&xspi1 {
-	/* OCTOSPI instance has a XSPI IO manager */
-	clock-names = "xspix", "xspi-ker";
-	clocks = <&rcc STM32_CLOCK(AHB4, 20)>,
-		 <&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>;
 };

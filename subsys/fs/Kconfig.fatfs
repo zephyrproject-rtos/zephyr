@@ -79,6 +79,18 @@ config FS_FATFS_NUM_FILES
 	  at compile-time.
 	  This affects use of fs_open on FAT type mounted file systems.
 
+config FS_FATFS_TINY
+	bool "Share the volume sector buffer with file objects"
+	default y
+	help
+	  Use the FatFs tiny configuration (FF_FS_TINY), where file objects do
+	  not have their own sector buffer and partial-sector file data goes
+	  through the volume window shared with FAT and directory access. This
+	  saves FS_FATFS_MAX_SS bytes per file object (FS_FATFS_NUM_FILES).
+	  Disabling it gives every file object its own sector buffer, which
+	  avoids reloading the shared window for small or unaligned file
+	  reads and writes.
+
 config FS_FATFS_NUM_DIRS
 	int "Maximum number of opened directories"
 	default 4
@@ -112,6 +124,15 @@ config FS_FATFS_EXTRA_NATIVE_API
 	   * `f_expand`
 	   * `f_findfirst`
 	   * `f_findnext`
+
+config FS_FATFS_FASTSEEK
+	bool "Fast seek support"
+	help
+	  Enable the FatFs fast seek feature (FF_USE_FASTSEEK). When a cluster
+	  link map table is attached to the native FIL object and created with
+	  f_lseek(fp, CREATE_LINKMAP), seeks and reads in that file no longer
+	  walk the FAT chain. This is native FatFs API without an equivalent in
+	  the Zephyr VFS API; files without a link map table are not affected.
 
 config FS_FATFS_LFN
 	bool "Long filenames (LFN)"

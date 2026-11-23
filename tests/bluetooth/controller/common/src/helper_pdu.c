@@ -409,6 +409,7 @@ void helper_node_encode_cte_rsp(struct node_rx_pdu *rx, void *param)
 	rx->rx_ftr.iq_report = (struct cte_conn_iq_report *)param;
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 void helper_pdu_encode_cis_req(struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_cis_req *p = param;
@@ -440,6 +441,7 @@ void helper_pdu_encode_cis_req(struct pdu_data *pdu, void *param)
 	memcpy(pdu->llctrl.cis_req.cis_offset_min, p->cis_offset_min, sizeof(p->cis_offset_min));
 	memcpy(pdu->llctrl.cis_req.cis_offset_max, p->cis_offset_max, sizeof(p->cis_offset_max));
 }
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 void helper_pdu_encode_cis_rsp(struct pdu_data *pdu, void *param)
 {
@@ -504,6 +506,7 @@ void helper_pdu_encode_sca_rsp(struct pdu_data *pdu, void *param)
 	pdu->llctrl.clock_accuracy_rsp.sca = p->sca;
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER) || defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
 void helper_pdu_encode_periodic_sync_ind(struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_periodic_sync_ind *p = param;
@@ -530,6 +533,7 @@ void helper_pdu_encode_periodic_sync_ind(struct pdu_data *pdu, void *param)
 
 	pdu->llctrl.periodic_sync_ind.sync_conn_event_count = p->sync_conn_event_count;
 }
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER || CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 void helper_pdu_verify_version_ind(const char *file, uint32_t line, struct pdu_data *pdu,
 				   void *param)
@@ -1136,6 +1140,7 @@ void helper_node_verify_cis_established(const char *file, uint32_t line, struct 
 		      "cis_handle mismatch.\nCalled at %s:%d\n", file, line);
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 void helper_pdu_verify_cis_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_cis_req *p = param;
@@ -1193,6 +1198,7 @@ void helper_pdu_verify_cis_req(const char *file, uint32_t line, struct pdu_data 
 			  sizeof(p->cis_offset_max),
 			  "cis_offset_max mismatch.\nCalled at %s:%d\n", file, line);
 }
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 void helper_pdu_verify_cis_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
@@ -1281,6 +1287,7 @@ void helper_pdu_verify_sca_rsp(const char *file, uint32_t line, struct pdu_data 
 		      "Not a LL_CLOCK_ACCURACY_RSP.\nCalled at %s:%d\n", file, line);
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER) || defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
 void helper_pdu_verify_periodic_sync_ind(const char *file, uint32_t line, struct pdu_data *pdu,
 					 void *param)
 {
@@ -1323,3 +1330,4 @@ void helper_pdu_verify_periodic_sync_ind(const char *file, uint32_t line, struct
 			  sizeof(p->adv_addr),
 			  "adv_addr mismatch.\nCalled at %s:%d\n", file, line);
 }
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER || CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */

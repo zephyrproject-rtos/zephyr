@@ -523,6 +523,26 @@ static int api_read(const struct device *dev, off_t addr, void *dest,
 	return 0;
 }
 
+#if defined(CONFIG_MSPI_MEMMAP)
+/* Page programs can be serviced through the memory mapped region when the
+ * controller has memory mapping enabled for this chip and writes are permitted
+ * there. This is optional, so a controller that cannot do it reports -ENOTSUP
+ * and the driver keeps using the regular data transfer mode afterwards.
+ */
+static enum mspi_xfer_mode page_program_xfer_mode(const struct device *dev)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	struct flash_mspi_nor_data *dev_data = dev->data;
+
+	if (dev_data->no_memmap_write || !dev_config->memmap_cfg.enable ||
+	    dev_config->memmap_cfg.permission != MSPI_MEMMAP_READ_WRITE) {
+		return dev_config->data_xfer_mode;
+	}
+
+	return MSPI_MEMMAP;
+}
+#endif /* CONFIG_MSPI_MEMMAP */
+
 static int api_write(const struct device *dev, off_t addr, const void *src,
 		     size_t size)
 {
@@ -550,15 +570,36 @@ static int api_write(const struct device *dev, off_t addr, const void *src,
 		uint16_t page_offset = (uint16_t)(addr % page_size);
 		uint16_t page_left = page_size - page_offset;
 		uint16_t to_write = (uint16_t)MIN(size, page_left);
+		enum mspi_xfer_mode xfer_mode = dev_config->data_xfer_mode;
+
+#if defined(CONFIG_MSPI_MEMMAP)
+		xfer_mode = page_program_xfer_mode(dev);
+#endif
 
 		if (cmd_wren(dev) < 0) {
 			break;
 		}
 
-		set_up_xfer_with_addr(dev, MSPI_TX, addr, dev_config->data_xfer_mode);
+		set_up_xfer_with_addr(dev, MSPI_TX, addr, xfer_mode);
 		dev_data->packet.data_buf  = (uint8_t *)src;
 		dev_data->packet.num_bytes = to_write;
 		rc = perform_xfer(dev, dev_data->cmd_info.pp_cmd);
+
+#if defined(CONFIG_MSPI_MEMMAP)
+		if ((rc == -ENOTSUP) && (xfer_mode == MSPI_MEMMAP)) {
+			/* The controller rejected the request before driving the
+			 * bus, so the write enable latch is still set and this page
+			 * can be retried right away.
+			 */
+			dev_data->no_memmap_write = true;
+
+			set_up_xfer_with_addr(dev, MSPI_TX, addr, dev_config->data_xfer_mode);
+			dev_data->packet.data_buf = (uint8_t *)src;
+			dev_data->packet.num_bytes = to_write;
+			rc = perform_xfer(dev, dev_data->cmd_info.pp_cmd);
+		}
+#endif
+
 		if (rc < 0) {
 			LOG_ERR("Page program xfer failed: %d", rc);
 			break;
@@ -723,6 +764,13 @@ static int read_jedec_id(const struct device *dev, uint8_t *id)
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	uint8_t id_even[JESD216_READ_ID_LEN + 1] = {0};
 	int rc;
+
+#ifdef CONFIG_FLASH_MSPI_NOR_QUIRK_DDR_JEDEC_ID
+	if (in_ddr(dev) && (dev_config->quirks != NULL) &&
+	    (dev_config->quirks->read_jedec_id_ddr != NULL)) {
+		return dev_config->quirks->read_jedec_id_ddr(dev, id);
+	}
+#endif
 
 	set_up_xfer(dev, MSPI_RX, dev_config->control_xfer_mode);
 	if (in_octal_io(dev)) {
@@ -1287,11 +1335,11 @@ static void sfdp_process_bfp(const struct device *dev,
 		if (data_rate == MSPI_DATA_RATE_S_D_D) {
 			read_cmd_bf = bfp->dw10[12] >> 16;
 		}
-		break;
 		/* 1S-2S-2S */
 		if (data_rate == MSPI_DATA_RATE_SINGLE) {
 			read_cmd_bf = bfp->dw4 >> 16;
 		}
+		break;
 	case MSPI_IO_MODE_DUAL_1_1_2:
 		/* 1S-1S-2S */
 		if (data_rate == MSPI_DATA_RATE_SINGLE) {

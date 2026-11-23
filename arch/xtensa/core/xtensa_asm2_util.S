@@ -161,6 +161,14 @@ _high_restore_done:
  */
 .global _restore_context
 _restore_context:
+#if defined(CONFIG_XTENSA_LIBC) && !defined(CONFIG_XTENSA_LIBC_DYNAMIC_REENT)
+	/* Update the reentrancy pointer for the new current thread */
+	rsr   a6, ZSR_CPU
+	l32i  a6, a6, ___cpu_t_current_OFFSET
+	addi  a6, a6, _thread_offset_to_reent
+	movi  a7, _reent_ptr
+	s32i  a6, a7, 0
+#endif
 	call0 xtensa_restore_high_regs
 
 	l32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
@@ -468,7 +476,8 @@ DEF_EXCINT XCHAL_NMILEVEL, _handle_excint, xtensa_nmi_c
 DEF_EXCINT XCHAL_DEBUGLEVEL, _handle_excint, xtensa_debugint_c
 #endif
 
-#ifdef CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE
+#if defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE) || \
+	defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
 #include "emulate_load_store.S"
 .pushsection .iram.text, "ax"
 _Level1RealVectorExtended:
@@ -488,7 +497,9 @@ _Level1RealVectorExtended:
 .pushsection .UserExceptionVector.text, "ax"
 .global _Level1RealVector
 _Level1RealVector:
-#endif /* CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE */
+#endif /* defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE) || \
+	* defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
+	*/
 	wsr a0, ZSR_A0SAVE
 	rsync
 	rsr.exccause a0
@@ -556,13 +567,16 @@ _syscall:
 #endif /* CONFIG_USERSPACE */
 .popsection
 
-#if defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE)
+#if defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE) || \
+	defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
 .pushsection .UserExceptionVector.text, "ax"
 .global _Level1RealVector
 _Level1RealVector:
 	j _Level1RealVectorExtended
 .popsection
-#endif /* CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE */
+#endif /* defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE) || \
+	* defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
+	*/
 
 /* In theory you can have levels up to 15, but known hardware only uses 7. */
 #if XCHAL_NMILEVEL > 7

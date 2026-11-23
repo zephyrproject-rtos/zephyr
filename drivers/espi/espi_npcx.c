@@ -247,7 +247,7 @@ static void espi_init_wui_callback(const struct device *dev,
 		miwu_dev_callback_handler_t handler)
 {
 	/* VW signal which has no wake-up input source */
-	if (wui->table == NPCX_MIWU_TABLE_NONE) {
+	if (npcx_miwu_wui_is_none(wui)) {
 		return;
 	}
 

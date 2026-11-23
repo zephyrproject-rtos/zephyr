@@ -19,4 +19,8 @@ supported:
   - pinctrl
   - i2c
   - dma
+  - spi
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
 vendor: infineon

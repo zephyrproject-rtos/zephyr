@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
+
 / {
 	aliases {
 		watchdog0 = &wdog_0;
@@ -39,13 +41,13 @@
 			sleep: sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-				exit-latency-us = <10>;
+				exit-latency-us = <140>;
 			};
 
 			deep_sleep: deep-sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
-				exit-latency-us = <11>;
+				exit-latency-us = <180>;
 			};
 		};
 
@@ -58,6 +60,19 @@
 
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
+	};
+
+	/*
+	 * Devices that lose their state in Deep Sleep. Deep Sleep keeps PD_MAIN
+	 * in retention, but only part of its logic has retention flops: the
+	 * peripherals without them are reset when it leaves retention (LPUART1,
+	 * TPM, LPSPI and LPI2C, for example), while the PORT pin configuration
+	 * is kept.
+	 */
+	deep_sleep_off_domain: deep-sleep-off-domain {
+		compatible = "power-domain-soc-state-change";
+		#power-domain-cells = <0>;
+		onoff-power-states = <&deep_sleep>;
 	};
 
 	hw_params: hw-params {
@@ -104,10 +119,51 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		ieee802154_eui64_ifr0: ieee802154-eui64@1002000 {
-			reg = <0x1002000 0x8>;
+		/* CFPA CUST_BD_ADDR (6 bytes, MSB first, 0xff when not provisioned) */
+		bd_addr_ifr0: bd-addr@1000150 {
+			reg = <0x1000150 0x6>;
 			#nvmem-cell-cells = <0>;
+			read-only;
+		};
+
+		/* CFPA CUST_802_15_4_MAC_ADDR0/1 (CFPA base 0x1000010 + 0x148) */
+		ieee802154_eui64_ifr0: ieee802154-eui64@1000158 {
+			reg = <0x1000158 0x8>;
+			#nvmem-cell-cells = <0>;
+			read-only;
 			status = "disabled";
+		};
+
+		/* CFPA XTAL32K trim: OSC32K XTAL_CAP_SEL / EXTAL_CAP_SEL (1 byte) */
+		xtal32k_trim_ifr0: xtal32k-trim@1000160 {
+			reg = <0x1000160 0x1>;
+			#nvmem-cell-cells = <0>;
+			read-only;
+		};
+
+		/* CFPA XTAL32M trim: RFMC XO_TEST CDAC (1 byte) */
+		xtal32m_trim_ifr0: xtal32m-trim@1000164 {
+			reg = <0x1000164 0x1>;
+			#nvmem-cell-cells = <0>;
+			read-only;
+		};
+	};
+
+	ifr1: flash@1100000 {
+		compatible = "nxp,mcxw-ifr";
+		reg = <0x1100000 DT_SIZE_K(8)>;
+		write-block-size = <16>;
+		erase-block-size = <DT_SIZE_K(8)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* NMPA fields - to be used if corresponding CFPA not provisioned */
+
+		/* NMPA factory BD_ADDR (6 bytes, MSB first) */
+		bd_addr_ifr1: bd-addr@1100a00 {
+			reg = <0x1100a00 0x6>;
+			#nvmem-cell-cells = <0>;
+			read-only;
 		};
 	};
 };
@@ -207,6 +263,7 @@
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		prescaler = <16>;
 		#pwm-cells = <3>;
+		power-domains = <&deep_sleep_off_domain>;
 		status = "disabled";
 	};
 
@@ -365,18 +422,24 @@
 		core-clock-frequency = <DT_FREQ_M(96)>;
 		enable-sosc;
 		sosc-freq = <DT_FREQ_M(32)>;
+		nvmem-cells = <&xtal32k_trim_ifr0>;
 		#clock-cells = <1>;
 	};
 
 	nbu: nbu {
 		compatible = "nxp,nbu";
+		nvmem-cells = <&xtal32m_trim_ifr0>;
 		interrupts = <92 2>;
 		interrupt-names = "nbu_rx_int";
+		rfmc-xo-cdac = <0x0a>;
+		rfmc-xo-isel = <0x0b>;
 		status = "okay";
 	};
 
 	hci: hci_ble {
 		compatible = "nxp,hci-ble";
+		/* Tried in order, first provisioned (not blank) cell is used */
+		nvmem-cells = <&bd_addr_ifr0>, <&bd_addr_ifr1>;
 		status = "okay";
 	};
 
@@ -424,6 +487,8 @@
 		clk-source = <0>;
 		prescale-glitch-filter-bypass;
 		resolution = <32>;
+		wakeup-source;
+		wakeup-ctrls = <&wuu_0 NXP_WUU_MODULE_1_INT>;
 		status = "disabled";
 	};
 
@@ -464,6 +529,12 @@
 			alarms-count = <1>;
 			status = "disabled";
 		};
+	};
+
+	regfile0: retained-memory@b000 {
+		compatible = "zephyr,retained-reg";
+		reg = <0xb000 0x20>;
+		status = "disabled";
 	};
 
 	wuu_0: system-modules@14000 {

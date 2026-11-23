@@ -82,22 +82,41 @@ static int decapsulate(const uint8_t *platform_key, size_t platform_key_len, uin
 	return 0;
 }
 
-static int verify(const uint8_t *key, const uint8_t *msg, size_t msg_len,
+/*
+ * Check pinUvAuthParam against HMAC-SHA-256(key, msg). The signature is
+ * the leftmost 16 bytes of the HMAC for protocol one and the whole HMAC
+ * for protocol two; any other length is rejected.
+ */
+static int verify(uint8_t protocol, const uint8_t *key, const uint8_t *msg, size_t msg_len,
 		  const uint8_t *pin_uv_auth_param, size_t pin_uv_auth_param_len)
 {
 	uint8_t mac[FIDO2_SHA256_SIZE];
+	size_t expected_len;
+	uint8_t diff = 0U;
 	int ret;
+
+	if (protocol == FIDO2_PIN_PROTOCOL_V1) {
+		expected_len = FIDO2_PIN_AUTH_SIZE_P1;
+	} else if (protocol == FIDO2_PIN_PROTOCOL_V2) {
+		expected_len = FIDO2_PIN_AUTH_SIZE_P2;
+	} else {
+		return -EINVAL;
+	}
+
+	if (pin_uv_auth_param_len != expected_len) {
+		return -EACCES;
+	}
 
 	ret = fido2_crypto_hmac_sha256(key, FIDO2_SHA256_SIZE, msg, msg_len, mac);
 	if (ret) {
 		return ret;
 	}
 
-	if (memcmp(mac, pin_uv_auth_param, pin_uv_auth_param_len) != 0) {
-		return -EACCES;
+	for (size_t i = 0; i < expected_len; i++) {
+		diff |= (uint8_t)(mac[i] ^ pin_uv_auth_param[i]);
 	}
 
-	return 0;
+	return (diff == 0U) ? 0 : -EACCES;
 }
 
 static int decrypt(uint8_t protocol, const uint8_t *ciphertext, size_t ciphertext_len,
@@ -209,7 +228,8 @@ int fido2_clientpin_pin_verify_pin_uv_auth_token(const uint8_t *msg, size_t msg_
 		return -EACCES;
 	}
 
-	return verify(pin_uv_auth_token, msg, msg_len, auth_param, auth_param_len);
+	return verify(pin_uv_auth_protocol, pin_uv_auth_token, msg, msg_len, auth_param,
+		      auth_param_len);
 }
 
 /* authenticatorClientPIN subCommands */
@@ -258,7 +278,8 @@ enum fido2_status fido2_clientpin_cmd_get_key_agreement(uint8_t *cbor_out, size_
 enum fido2_status fido2_clientpin_cmd_set_pin(uint8_t protocol, const uint8_t *platform_key,
 					      size_t platform_key_len, const uint8_t *new_pin_enc,
 					      size_t new_pin_enc_len,
-					      const uint8_t *pin_uv_auth_param)
+					      const uint8_t *pin_uv_auth_param,
+					      size_t pin_uv_auth_param_len)
 {
 	uint8_t padded_pin[FIDO2_PIN_PADDED_SIZE];
 	size_t padded_pin_len;
@@ -275,9 +296,8 @@ enum fido2_status fido2_clientpin_cmd_set_pin(uint8_t protocol, const uint8_t *p
 		return FIDO2_ERR_INVALID_PARAMETER;
 	}
 
-	ret = verify(shared_secret, new_pin_enc, new_pin_enc_len, pin_uv_auth_param,
-		     protocol == FIDO2_PIN_PROTOCOL_V1 ? FIDO2_PIN_AUTH_SIZE_P1
-						       : FIDO2_PIN_AUTH_SIZE_P2);
+	ret = verify(protocol, shared_secret, new_pin_enc, new_pin_enc_len, pin_uv_auth_param,
+		     pin_uv_auth_param_len);
 	if (ret) {
 		return FIDO2_ERR_PIN_AUTH_INVALID;
 	}
@@ -321,7 +341,8 @@ enum fido2_status fido2_clientpin_cmd_change_pin(uint8_t protocol, const uint8_t
 						 const uint8_t *pin_hash_enc,
 						 size_t pin_hash_enc_len,
 						 const uint8_t *new_pin_enc, size_t new_pin_enc_len,
-						 const uint8_t *pin_uv_auth_param)
+						 const uint8_t *pin_uv_auth_param,
+						 size_t pin_uv_auth_param_len)
 {
 	uint8_t pin_enc_w_hash_enc[FIDO2_PIN_ENC_MAX_SIZE + FIDO2_PIN_HASH_ENC_MAX_SIZE];
 	uint8_t pin_hash[FIDO2_PIN_HASH_SIZE];
@@ -357,10 +378,8 @@ enum fido2_status fido2_clientpin_cmd_change_pin(uint8_t protocol, const uint8_t
 	memcpy(pin_enc_w_hash_enc, new_pin_enc, new_pin_enc_len);
 	memcpy(pin_enc_w_hash_enc + new_pin_enc_len, pin_hash_enc, pin_hash_enc_len);
 
-	ret = verify(shared_secret, pin_enc_w_hash_enc, new_pin_enc_len + pin_hash_enc_len,
-		     pin_uv_auth_param,
-		     protocol == FIDO2_PIN_PROTOCOL_V1 ? FIDO2_PIN_AUTH_SIZE_P1
-						       : FIDO2_PIN_AUTH_SIZE_P2);
+	ret = verify(protocol, shared_secret, pin_enc_w_hash_enc,
+		     new_pin_enc_len + pin_hash_enc_len, pin_uv_auth_param, pin_uv_auth_param_len);
 	if (ret) {
 		return FIDO2_ERR_PIN_AUTH_INVALID;
 	}

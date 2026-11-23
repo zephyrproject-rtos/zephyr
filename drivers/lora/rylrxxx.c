@@ -24,12 +24,6 @@
 LOG_MODULE_REGISTER(rylr, CONFIG_LORA_LOG_LEVEL);
 
 #define RYLR_CMD_BAND_FORMAT                "AT+BAND=%u\r\n"
-#define RYLR_CMD_BAND_PARM_CHARS            9U
-#define RYLR_CMD_BAND_FORMAT_NUM_WILDCARDS  1U
-#define RYLR_CMD_BAND_FORMAT_WILDCARD_CHARS (RYLR_CMD_BAND_FORMAT_NUM_WILDCARDS * 2)
-#define RYLR_CMD_BAND_FORMAT_LEN_WITHOUT_WILDCARDS                                                 \
-	(sizeof(RYLR_CMD_BAND_FORMAT) - RYLR_CMD_BAND_FORMAT_WILDCARD_CHARS - 1)
-#define RYLR_CMD_BAND_LENGTH (RYLR_CMD_BAND_FORMAT_LEN_WITHOUT_WILDCARDS + RYLR_CMD_BAND_PARM_CHARS)
 
 #define RYLR_CMD_SEND_FORMAT                "AT+SEND=0,%u,%s\r\n"
 #define RYLR_CMD_SEND_FORMAT_NUM_WILDCARDS  2U
@@ -43,24 +37,8 @@ LOG_MODULE_REGISTER(rylr, CONFIG_LORA_LOG_LEVEL);
 	 RYLR_PAYLOAD_LENGTH_FIELD_CHARS(payload_len) + payload_len)
 
 #define RYLR_CMD_RF_SETTINGS_FORMAT                "AT+PARAMETER=%u,%u,%u,%u\r\n"
-#define RYLR_CMD_RF_SETTINGS_FORMAT_NUM_WILDCARDS  4U
-#define RYLR_CMD_RF_SETTINGS_FORMAT_WILDCARD_CHARS (RYLR_CMD_RF_SETTINGS_FORMAT_NUM_WILDCARDS * 2U)
-#define RYLR_CMD_RF_SETTINGS_FORMAT_LEN_WITHOUT_WILDCARDS                                          \
-	(sizeof(RYLR_CMD_RF_SETTINGS_FORMAT) - RYLR_CMD_RF_SETTINGS_FORMAT_WILDCARD_CHARS - 1)
-#define RYLR_CMD_RF_SETTINGS_FORMAT_PARAM_CHARS(spread_factor)                                     \
-	(RYLR_CMD_RF_SETTINGS_FORMAT_NUM_WILDCARDS - 1) + (spread_factor >= 10U ? 2U : 1U)
-#define RYLR_CMD_RF_SETTINGS_LEN(spread_factor)                                                    \
-	(RYLR_CMD_RF_SETTINGS_FORMAT_LEN_WITHOUT_WILDCARDS +                                       \
-	 RYLR_CMD_RF_SETTINGS_FORMAT_PARAM_CHARS(spread_factor))
 
 #define RYLR_CMD_POWER_FORMAT                "AT+CRFOP=%u\r\n"
-#define RYLR_CMD_POWER_FORMAT_NUM_WILDCARDS  1U
-#define RYLR_CMD_POWER_FORMAT_WILDCARD_CHARS (RYLR_CMD_POWER_FORMAT_NUM_WILDCARDS * 2U)
-#define RYLR_CMD_POWER_FORMAT_LEN_WITHOUT_WILDCARDS                                                \
-	(sizeof(RYLR_CMD_POWER_FORMAT) - RYLR_CMD_POWER_FORMAT_WILDCARD_CHARS - 1)
-#define RYLR_CMD_POWER_FORMAT_PARAM_CHARS(power) (power >= 10U ? 2U : 1U)
-#define RYLR_CMD_POWER_LEN(power)                                                                  \
-	(RYLR_CMD_POWER_FORMAT_LEN_WITHOUT_WILDCARDS + RYLR_CMD_POWER_FORMAT_PARAM_CHARS(power))
 
 #define RYLR_MAX_RESPONSE  256
 #define RYLR_MAX_MSG_BYTES 256
@@ -259,16 +237,28 @@ static int rylr_send_cmd_buffer(const struct device *dev)
 	return data->handler_error;
 }
 
-static int rylr_set_rf_band(const struct device *dev, uint32_t frequency)
+static int rylr_set_cmd_len(struct rylr_data *data, int len)
 {
-	struct rylr_data *data = dev->data;
-
-	if (sprintf(data->cmd_buffer, RYLR_CMD_BAND_FORMAT, frequency) != RYLR_CMD_BAND_LENGTH) {
-		LOG_ERR("could not create frequency string");
+	if ((len < 0) || ((size_t)len >= sizeof(data->cmd_buffer))) {
+		LOG_ERR("cmd does not fit in cmd buffer");
 		return -EINVAL;
 	}
 
-	data->curr_cmd_len = RYLR_CMD_BAND_LENGTH;
+	data->curr_cmd_len = (size_t)len;
+	return 0;
+}
+
+static int rylr_set_rf_band(const struct device *dev, uint32_t frequency)
+{
+	struct rylr_data *data = dev->data;
+	int err;
+
+	err = rylr_set_cmd_len(data, snprintf((char *)data->cmd_buffer, sizeof(data->cmd_buffer),
+					      RYLR_CMD_BAND_FORMAT, frequency));
+	if (err != 0) {
+		return err;
+	}
+
 	return rylr_send_cmd_buffer(dev);
 }
 
@@ -276,7 +266,7 @@ static int rylr_set_rf_parameters(const struct device *dev, uint32_t datarate, u
 				  uint32_t coding_rate, uint32_t preamble_length)
 {
 	struct rylr_data *data = dev->data;
-	size_t cmd_len;
+	int err;
 
 	if (datarate < 7 || datarate > 12) {
 		LOG_ERR("datarate/spread factor must be between 7 and 12 inclusive");
@@ -293,34 +283,33 @@ static int rylr_set_rf_parameters(const struct device *dev, uint32_t datarate, u
 		return -EINVAL;
 	}
 
-	cmd_len = sprintf(data->cmd_buffer, RYLR_CMD_RF_SETTINGS_FORMAT, datarate,
-			  rylr_get_bandwidth_index(bandwidth), coding_rate, preamble_length);
-	if (cmd_len != RYLR_CMD_RF_SETTINGS_LEN(datarate)) {
-		LOG_ERR("could not create rf settings string");
-		return -EINVAL;
+	err = rylr_set_cmd_len(data, snprintf((char *)data->cmd_buffer, sizeof(data->cmd_buffer),
+					      RYLR_CMD_RF_SETTINGS_FORMAT, datarate,
+					      rylr_get_bandwidth_index(bandwidth), coding_rate,
+					      preamble_length));
+	if (err != 0) {
+		return err;
 	}
 
-	data->curr_cmd_len = cmd_len;
 	return rylr_send_cmd_buffer(dev);
 }
 
 static int rylr_set_power(const struct device *dev, uint32_t power)
 {
 	struct rylr_data *data = dev->data;
-	size_t cmd_len;
+	int err;
 
 	if (power > 15) {
 		LOG_ERR("power cannot be greater than 15");
 		return -EINVAL;
 	}
 
-	cmd_len = RYLR_CMD_POWER_LEN(power);
-	if (sprintf(data->cmd_buffer, RYLR_CMD_POWER_FORMAT, power) != cmd_len) {
-		LOG_ERR("could not create power string");
-		return -EINVAL;
+	err = rylr_set_cmd_len(data, snprintf((char *)data->cmd_buffer, sizeof(data->cmd_buffer),
+					      RYLR_CMD_POWER_FORMAT, power));
+	if (err != 0) {
+		return err;
 	}
 
-	data->curr_cmd_len = cmd_len;
 	return rylr_send_cmd_buffer(dev);
 }
 

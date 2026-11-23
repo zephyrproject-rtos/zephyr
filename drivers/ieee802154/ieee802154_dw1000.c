@@ -1645,7 +1645,7 @@ static void dwt_iface_api_init(struct net_if *iface)
 	LOG_INF("Iface initialized");
 }
 
-static const struct ieee802154_radio_api dwt_radio_api = {
+static DEVICE_API(ieee802154_radio, dwt_radio_api) = {
 	.iface_api.init		= dwt_iface_api_init,
 
 	.get_capabilities	= dwt_get_capabilities,

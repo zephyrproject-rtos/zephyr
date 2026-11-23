@@ -50,6 +50,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <zephyr/cache.h>
+#include <string.h>
 #include <hal/uhci_ll.h>
 #if defined(CONFIG_SOC_SERIES_ESP32C5)
 #define UHCI0 UHCI
@@ -59,12 +60,16 @@
 #include <hal/dma_types.h>
 #include <esp_memory_utils.h>
 #include <soc/soc_caps.h>
+#if defined(SOC_AXI_GDMA_SUPPORTED)
+#include <hal/ahb_dma_ll.h>
+#endif
 #endif
 #include <soc/uart_struct.h>
 #include <hal/uart_ll.h>
 #include <hal/uart_hal.h>
 #include <hal/uart_types.h>
 #include <esp_clk_tree.h>
+#include <esp_private/esp_clk.h>
 #include <zephyr/drivers/pinctrl.h>
 
 #include <soc/uart_reg.h>
@@ -77,15 +82,17 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
-#ifdef CONFIG_PM
-#include <power.h>
+#if defined(CONFIG_PM)
+#include <hal/gpio_hal.h>
 #include <zephyr/drivers/pinctrl/pinctrl_esp32_common.h>
+#include <zephyr/init.h>
 #endif
 #include <errno.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
 
-#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_UART_SUPPORT_SLEEP_RETENTION
+#if CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP &&                         \
+	SOC_UART_SUPPORT_SLEEP_RETENTION
 #define UART_SLEEP_RETENTION_ENABLED 1
 #else
 #define UART_SLEEP_RETENTION_ENABLED 0
@@ -134,7 +141,7 @@ struct uart_esp32_async_data {
 	uint8_t *rx_next_buf;
 	size_t rx_len;
 	size_t rx_next_len;
-	size_t rx_timeout;
+	int32_t rx_timeout;
 	volatile size_t rx_counter;
 	size_t rx_offset;
 	uint32_t rx_generation;
@@ -185,6 +192,26 @@ struct uart_esp32_data {
 #define UART_RX_IDLE_THRESH (256U)
 /* Shorter RX idle time used to flush UHCI when async RX stops, in bit times */
 #define UART_RX_STOP_THRESH (2U * UART_MAX_FRAME_BITS)
+/* CONFIG_DCACHE_LINE_SIZE can be narrower than the line the cache really
+ * uses, so take the widest line in this build.
+ */
+#if defined(CONFIG_DCACHE)
+#if defined(CONFIG_SOC_ESP32P4_CACHE_L2_LINE_SIZE)
+#define UART_ESP32_SOC_CACHE_LINE CONFIG_SOC_ESP32P4_CACHE_L2_LINE_SIZE
+#elif defined(CONFIG_SOC_ESP32S3_DATA_CACHE_LINE_SIZE)
+#define UART_ESP32_SOC_CACHE_LINE CONFIG_SOC_ESP32S3_DATA_CACHE_LINE_SIZE
+#else
+#define UART_ESP32_SOC_CACHE_LINE 0
+#endif
+#define UART_ESP32_CACHE_LINE MAX(CONFIG_DCACHE_LINE_SIZE, UART_ESP32_SOC_CACHE_LINE)
+#endif
+#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                    \
+	defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
+/* UHCI ends a packet after its first byte when the UART core clock, the source
+ * clock after the baud rate prescaler, is slower than APB divided by this
+ */
+#define UART_UHCI_MAX_APB_TO_CORE_CLK (7U)
+#endif
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM
 static void uart_esp32_isr(void *arg);
@@ -423,6 +450,10 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	soc_module_clk_t src_clk;
 	uint32_t sclk_freq;
 	uint32_t inv_mask = 0;
+#if defined(CONFIG_UART_ASYNC_API) && defined(UART_UHCI_MAX_APB_TO_CORE_CLK)
+	uint32_t apb_freq;
+	uint32_t sclk_div;
+#endif
 
 	/*
 	 * On P4 and C61, switching UART clock source (e.g. XTAL to PLL_F80M)
@@ -446,6 +477,20 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 #elif !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
 	uart_hal_set_sclk(&data->hal, UART_SCLK_DEFAULT);
 #endif
+	uart_hal_get_sclk(&data->hal, &src_clk);
+	esp_clk_tree_src_get_freq_hz(src_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+
+#if defined(CONFIG_UART_ASYNC_API) && defined(UART_UHCI_MAX_APB_TO_CORE_CLK)
+	if (config->rx_dma_channel != 0xFF && cfg->baudrate != 0U) {
+		apb_freq = (uint32_t)esp_clk_apb_freq();
+		sclk_div = DIV_ROUND_UP(sclk_freq, (uint64_t)UART_CLKDIV_V * cfg->baudrate);
+		if ((uint64_t)sclk_freq * UART_UHCI_MAX_APB_TO_CORE_CLK <
+		    (uint64_t)apb_freq * sclk_div) {
+			return -ENOTSUP;
+		}
+	}
+#endif
+
 	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
 	uart_hal_set_txfifo_empty_thr(&data->hal, UART_TX_FIFO_THRESH);
 	uart_hal_rxfifo_rst(&data->hal);
@@ -512,8 +557,6 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 		return -ENOTSUP;
 	}
 
-	uart_hal_get_sclk(&data->hal, &src_clk);
-	esp_clk_tree_src_get_freq_hz(src_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
 	uart_hal_set_baudrate(&data->hal, cfg->baudrate, sclk_freq);
 
 	uart_hal_set_rx_timeout(&data->hal, 0x16);
@@ -675,7 +718,49 @@ static void uart_esp32_irq_callback_set(const struct device *dev, uart_irq_callb
 
 #ifdef CONFIG_UART_ASYNC_API
 
-static inline void uart_esp32_async_timer_start(struct k_work_delayable *work, size_t timeout)
+/* Invalidates the reported part of the RX buffer. The bytes outside the buffer
+ * that share its first and last cache line belong to the CPU, so they are
+ * saved across the invalidate.
+ */
+static void uart_esp32_async_rx_invd(struct uart_esp32_data *data, size_t offset, size_t len)
+{
+#if defined(CONFIG_DCACHE)
+	uintptr_t buf_start = (uintptr_t)data->async.rx_buf;
+	uintptr_t buf_end = buf_start + data->async.rx_len;
+	uintptr_t base = ROUND_DOWN(buf_start + offset, UART_ESP32_CACHE_LINE);
+	uintptr_t top = ROUND_UP(buf_start + offset + len, UART_ESP32_CACHE_LINE);
+	size_t head_len = (base < buf_start) ? (buf_start - base) : 0U;
+	size_t tail_len = (top > buf_end) ? (top - buf_end) : 0U;
+	uint8_t head[UART_ESP32_CACHE_LINE];
+	uint8_t tail[UART_ESP32_CACHE_LINE];
+
+	if (len == 0U) {
+		return;
+	}
+
+	if (head_len > 0U) {
+		memcpy(head, (void *)base, head_len);
+	}
+	if (tail_len > 0U) {
+		memcpy(tail, (void *)buf_end, tail_len);
+	}
+
+	sys_cache_data_invd_range((void *)base, top - base);
+
+	if (head_len > 0U) {
+		memcpy((void *)base, head, head_len);
+	}
+	if (tail_len > 0U) {
+		memcpy((void *)buf_end, tail, tail_len);
+	}
+#else
+	ARG_UNUSED(data);
+	ARG_UNUSED(offset);
+	ARG_UNUSED(len);
+#endif
+}
+
+static inline void uart_esp32_async_timer_start(struct k_work_delayable *work, int32_t timeout)
 {
 	if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
 		LOG_DBG("Async timer started for %d us", timeout);
@@ -684,7 +769,7 @@ static inline void uart_esp32_async_timer_start(struct k_work_delayable *work, s
 }
 
 #endif
-#if CONFIG_UART_ASYNC_API || CONFIG_UART_INTERRUPT_DRIVEN
+#if CONFIG_UART_INTERRUPT_DRIVEN
 
 static void uart_esp32_irq_rx_enable(const struct device *dev)
 {
@@ -695,6 +780,9 @@ static void uart_esp32_irq_rx_enable(const struct device *dev)
 	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL);
 	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
 }
+
+#endif
+#if CONFIG_UART_ASYNC_API || CONFIG_UART_INTERRUPT_DRIVEN
 
 static void uart_esp32_irq_rx_disable(const struct device *dev)
 {
@@ -742,11 +830,6 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 #endif
 
 #if CONFIG_UART_ASYNC_API
-	if (uart_intr_status & UART_INTR_RXFIFO_FULL) {
-		data->async.rx_counter++;
-		uart_esp32_async_timer_start(&data->async.rx_timeout_work, data->async.rx_timeout);
-	}
-
 	if ((uart_intr_status & UART_INTR_TX_DONE) && (data->async.tx_len != 0U)) {
 		if (!uart_hal_is_tx_idle(&data->hal)) {
 			uart_hal_ena_intr_mask(&data->hal, UART_INTR_TX_DONE);
@@ -794,8 +877,13 @@ static size_t uart_esp32_async_rx_position(const struct device *dev)
 	uintptr_t address;
 	size_t position;
 
+#if defined(SOC_AXI_GDMA_SUPPORTED)
+	desc = (dma_descriptor_t *)ahb_dma_ll_rx_get_success_eof_desc_addr(
+		dma_hal->ahb_dma_dev, config->rx_dma_channel / 2);
+#else
 	desc = (dma_descriptor_t *)gdma_ll_rx_get_success_eof_desc_addr(dma_hal->dev,
 									config->rx_dma_channel / 2);
+#endif
 	if (desc == NULL) {
 		return data->async.rx_len;
 	}
@@ -808,7 +896,13 @@ static size_t uart_esp32_async_rx_position(const struct device *dev)
 	 * The result is clamped to the buffer so a stale descriptor can never
 	 * make the caller underflow.
 	 */
+#if defined(SOC_NON_CACHEABLE_OFFSET_SRAM)
+	if ((uintptr_t)desc >= SOC_DRAM_LOW && (uintptr_t)desc < SOC_DRAM_HIGH) {
+		desc = (dma_descriptor_t *)((uintptr_t)desc + SOC_NON_CACHEABLE_OFFSET_SRAM);
+	}
+#else
 	sys_cache_data_invd_range(desc, sizeof(*desc));
+#endif
 	address = (uintptr_t)desc->buffer;
 	position = desc->dw0.length;
 	if (address >= base && address < base + data->async.rx_len &&
@@ -880,9 +974,6 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	if (data->async.rx_offset < data->async.rx_counter) {
 		size_t length = data->async.rx_counter - data->async.rx_offset;
 
-		sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
-						    length);
-
 		evt.type = UART_RX_RDY;
 		evt.data.rx.buf = data->async.rx_buf;
 		evt.data.rx.len = length;
@@ -897,10 +988,6 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 		}
 	}
 
-	/* EOF may precede the FIFO interrupt for bytes already reported. */
-	if (uart_hal_get_rxfifo_len(&data->hal) == 0U) {
-		uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_FULL);
-	}
 	data->async.rx_offset = 0;
 	data->async.rx_counter = 0;
 
@@ -939,6 +1026,7 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 #ifdef CONFIG_PM
 		uart_esp32_pm_policy_state_lock_put(uart_dev, RX_INT);
 #endif
+		k_work_cancel_delayable(&data->async.rx_timeout_work);
 		evt.type = UART_RX_DISABLED;
 		if (data->async.cb) {
 			data->async.cb(uart_dev, &evt, data->async.user_data);
@@ -949,6 +1037,7 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 			   data->async.rx_len);
 		dma_start(config->dma_dev, config->rx_dma_channel);
 		uhci_ll_rx_set_packet_threshold(data->uhci_dev, data->async.rx_len);
+		uart_esp32_async_timer_start(&data->async.rx_timeout_work, data->async.rx_timeout);
 	}
 
 	irq_unlock(key);
@@ -1073,8 +1162,7 @@ static void uart_esp32_async_rx_stop(struct k_work *work)
 	if (data->async.rx_offset < rx_count) {
 		size_t length = rx_count - data->async.rx_offset;
 
-		sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
-						    length);
+		uart_esp32_async_rx_invd(data, data->async.rx_offset, length);
 
 		evt.type = UART_RX_RDY;
 		evt.data.rx.buf = data->async.rx_buf;
@@ -1135,11 +1223,6 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 	size_t rx_count;
 	unsigned int key;
 
-	/*
-	 * Read DMA progress for timeout notifications. The FIFO interrupt
-	 * schedules this work, while its counter is retained for RX disable
-	 * before the open descriptor has written back its received length.
-	 */
 	if (dma_get_status(config->dma_dev, config->rx_dma_channel, &dma_status) == 0) {
 		rx_count = dma_status.total_copied;
 	} else {
@@ -1165,13 +1248,21 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 		rx_count = data->async.rx_len;
 	}
 
+	/* The timeout is an inactivity period: only report once the count has
+	 * stopped moving, and give the data another interval otherwise.
+	 */
+	if (rx_count != data->async.rx_counter) {
+		data->async.rx_counter = rx_count;
+		uart_esp32_async_timer_start(&data->async.rx_timeout_work, data->async.rx_timeout);
+		irq_unlock(key);
+		return;
+	}
+
 	if (rx_count > data->async.rx_offset) {
 		size_t length = rx_count - data->async.rx_offset;
 
-		sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
-						    length);
+		uart_esp32_async_rx_invd(data, data->async.rx_offset, length);
 
-		data->async.rx_counter = rx_count;
 		evt.type = UART_RX_RDY;
 		evt.data.rx.buf = data->async.rx_buf;
 		evt.data.rx.len = length;
@@ -1180,13 +1271,13 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 		if (data->async.cb) {
 			data->async.cb(data->uart_dev, &evt, data->async.user_data);
 		}
-		if (data->async.rx_generation != snapshot_generation) {
+		if (data->async.rx_generation != snapshot_generation || data->async.rx_stopping) {
 			irq_unlock(key);
 			return;
 		}
 	}
 
-	k_work_cancel_delayable(&data->async.rx_timeout_work);
+	uart_esp32_async_timer_start(&data->async.rx_timeout_work, data->async.rx_timeout);
 	irq_unlock(key);
 }
 
@@ -1216,7 +1307,7 @@ static bool uart_esp32_tx_dma_capable(const uint8_t *buf)
 		return true;
 	}
 
-#if defined(CONFIG_ESP_SPIRAM)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM)
 	if (esp_ptr_dma_ext_capable(buf)) {
 		return true;
 	}
@@ -1239,6 +1330,7 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 	struct dma_config dma_cfg = {0};
 	struct dma_block_config dma_blk = {0};
 	struct dma_status dma_status = {0};
+	uart_hw_flowcontrol_t hw_flow;
 	int err = 0;
 	unsigned int key = irq_lock();
 
@@ -1288,7 +1380,10 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 		goto unlock;
 	}
 
-	uart_esp32_async_timer_start(&data->async.tx_timeout_work, timeout);
+	uart_hal_get_hw_flow_ctrl(&data->hal, &hw_flow);
+	if (hw_flow == UART_HW_FLOWCTRL_CTS_RTS) {
+		uart_esp32_async_timer_start(&data->async.tx_timeout_work, timeout);
+	}
 
 #ifdef CONFIG_PM
 	uart_esp32_pm_policy_state_lock_get(dev, TX_ASYNC);
@@ -1393,28 +1488,12 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	}
 	data->async.rx_stopping = false;
 
-	/*
-	 * Enable interrupt on first receive byte so we can start async timer
-	 */
 	uart_hal_rxfifo_rst(&data->hal);
-	uart_hal_set_rxfifo_full_thr(&data->hal, 1);
-	uart_esp32_irq_rx_enable(dev);
 
 #ifdef CONFIG_PM
 	uart_esp32_pm_policy_state_lock_get(dev, RX_INT);
 #endif
-
-	err = dma_start(config->dma_dev, config->rx_dma_channel);
-	if (err) {
-		LOG_ERR("Error starting Rx DMA (%d)", err);
-		uart_esp32_irq_rx_disable(dev);
-#ifdef CONFIG_PM
-		uart_esp32_pm_policy_state_lock_put(dev, RX_INT);
-#endif
-		data->async.rx_buf = NULL;
-		data->async.rx_len = 0U;
-		goto unlock;
-	}
+	uart_esp32_async_timer_start(&data->async.rx_timeout_work, timeout);
 
 	uhci_ll_rx_set_packet_threshold(data->uhci_dev, len);
 
@@ -1432,6 +1511,18 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	} else {
 		data->uhci_dev->conf0.len_eof_en = 1;
 		data->uhci_dev->conf0.uart_idle_eof_en = 1;
+	}
+
+	err = dma_start(config->dma_dev, config->rx_dma_channel);
+	if (err) {
+		LOG_ERR("Error starting Rx DMA (%d)", err);
+#ifdef CONFIG_PM
+		uart_esp32_pm_policy_state_lock_put(dev, RX_INT);
+#endif
+		k_work_cancel_delayable(&data->async.rx_timeout_work);
+		data->async.rx_buf = NULL;
+		data->async.rx_len = 0U;
+		goto unlock;
 	}
 
 	/**
@@ -1501,7 +1592,7 @@ static esp_err_t uart_create_sleep_retention_cb(void *arg)
 
 static void uart_esp32_sleep_retention_init(int port)
 {
-	if (port == CONFIG_ESP_CONSOLE_UART_NUM) {
+	if (port == CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM) {
 		return;
 	}
 
@@ -1549,30 +1640,6 @@ static void uart_esp32_uhci_hw_init(const struct device *dev)
 }
 #endif
 
-#ifdef CONFIG_PM
-/*
- * Sleep switches every pad to its sleep configuration, which isolates
- * the pin and leaves it floating. With the UART RX line floating and
- * the peripheral still on, the receiver reads a constant low as a break
- * character and stores a null byte, while raising a pending interrupt
- * which stalls the driver/system on wake. Holding the pads keeps the
- * lines at their idle level, avoiding this problem.
- */
-static void uart_esp32_sleep_hold_pins(const struct device *dev)
-{
-	const struct uart_esp32_config *config = dev->config;
-	const struct pinctrl_state *state;
-
-	if (pinctrl_lookup_state(config->pcfg, PINCTRL_STATE_DEFAULT, &state) < 0) {
-		return;
-	}
-
-	for (uint8_t i = 0; i < state->pin_cnt; i++) {
-		esp32_sleep_gpio_hold_config(ESP32_PIN_NUM(state->pins[i].pinmux), true);
-	}
-}
-#endif
-
 static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct uart_esp32_config *config = dev->config;
@@ -1580,7 +1647,7 @@ static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action 
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-#if CONFIG_UART_ASYNC_API && CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if CONFIG_UART_ASYNC_API && CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 		/*
 		 * UHCI has no sleep-retention link and is reset when the peripheral
 		 * power domain is powered down. Re-apply configuration on wake.
@@ -1601,10 +1668,6 @@ static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action 
 			LOG_ERR("Failed to configure UART pins (%d)", ret);
 			return ret;
 		}
-
-#ifdef CONFIG_PM
-		uart_esp32_sleep_hold_pins(dev);
-#endif
 
 #if UART_SLEEP_RETENTION_ENABLED
 		struct uart_esp32_data *data = dev->data;
@@ -1766,3 +1829,39 @@ static DEVICE_API(uart, uart_esp32_api) = {
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_esp32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_UART_INIT);
+
+#if defined(CONFIG_PM)
+/*
+ * GPIO driver enables sleep pin isolate function at init, after UART runs.
+ * In order to properly exclude the UART pins from this functionality,
+ * we need to run switch disable after GPIO init, so at POST_KERNEL.
+ */
+static void uart_esp32_sleep_switch_dis(const struct pinctrl_dev_config *pcfg)
+{
+	const struct pinctrl_state *state;
+	gpio_hal_context_t gpio_hal = {.dev = GPIO_HAL_GET_HW(GPIO_PORT_0)};
+
+	if (pinctrl_lookup_state(pcfg, PINCTRL_STATE_DEFAULT, &state) < 0) {
+		return;
+	}
+
+	for (uint8_t i = 0; i < state->pin_cnt; i++) {
+		gpio_hal_sleep_sel_dis(&gpio_hal, ESP32_PIN_NUM(state->pins[i].pinmux));
+	}
+}
+
+#define UART_ESP32_SLEEP_SWITCH_DIS(inst)                                                          \
+	uart_esp32_sleep_switch_dis(PINCTRL_DT_INST_DEV_CONFIG_GET(inst));
+
+static int uart_esp32_sleep_switch_init(void)
+{
+	DT_INST_FOREACH_STATUS_OKAY(UART_ESP32_SLEEP_SWITCH_DIS);
+
+	return 0;
+}
+
+BUILD_ASSERT(CONFIG_SERIAL_INIT_PRIORITY > CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+	     "UART sleep switch must run after GPIO init");
+
+SYS_INIT(uart_esp32_sleep_switch_init, POST_KERNEL, CONFIG_SERIAL_INIT_PRIORITY);
+#endif

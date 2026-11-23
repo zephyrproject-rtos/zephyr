@@ -85,6 +85,7 @@ struct virtio_pci_common_cfg {
 struct virtio_pci_data {
 	volatile struct virtio_pci_common_cfg *common_cfg;
 	void *device_specific_cfg;
+	size_t dev_cfg_len;
 	volatile uint8_t *isr_status;
 	volatile uint8_t *notify_cfg;
 	uint32_t notify_off_multiplier;
@@ -123,15 +124,16 @@ static bool virtio_pci_read_cap(
 	pcie_bdf_t bdf, uint8_t cfg_type, void *cap_struct, size_t cap_struct_size)
 {
 	struct virtio_pci_cap tmp;
-	uint16_t status = (pcie_conf_read(bdf, STATUS_COMMAND_REG) & GENMASK(31, 16)) >> 16;
+	uint16_t status =
+		(sys_le32_to_cpu(pcie_conf_read(bdf, STATUS_COMMAND_REG)) & GENMASK(31, 16)) >> 16;
 
 	if (!(status & BIT(CABABILITY_LIST_VALID_BIT))) {
 		LOG_ERR("no capability list for device with bdf 0x%x", bdf);
 		return false;
 	}
 
-	uint32_t cap_ptr =
-		pcie_conf_read(bdf, CAPABILITIES_POINTER_REG) & CAPABILITIES_POINTER_MASK;
+	uint32_t cap_ptr = sys_le32_to_cpu(pcie_conf_read(bdf, CAPABILITIES_POINTER_REG)) &
+			   CAPABILITIES_POINTER_MASK;
 	uint32_t cap_off = cap_ptr / sizeof(uint32_t);
 
 	/*
@@ -153,10 +155,12 @@ static bool virtio_pci_read_cap(
 				(tmp.cap_len - sizeof(struct virtio_pci_cap)) / sizeof(uint32_t);
 			size_t extra_data_offset =
 				cap_off + sizeof(struct virtio_pci_cap) / sizeof(uint32_t);
-			uint32_t *extra_data =
-				(uint32_t *)((struct virtio_pci_cap *)cap_struct + 1);
+			struct virtio_pci_cap *cap = cap_struct;
+			uint32_t *extra_data = (uint32_t *)(cap + 1);
 
-			*(struct virtio_pci_cap *)cap_struct = tmp;
+			*cap = tmp;
+			cap->offset = sys_le32_to_cpu(cap->offset);
+			cap->length = sys_le32_to_cpu(cap->length);
 
 			for (int i = 0; i < extra_data_words; i++) {
 				extra_data[i] = pcie_conf_read(bdf, extra_data_offset + i);
@@ -186,9 +190,16 @@ static void virtio_pci_reset(const struct device *dev)
 	}
 }
 
+struct virtq *virtio_pci_get_virtqueue(const struct device *dev, uint16_t queue_idx);
+
 static void virtio_pci_notify_queue(const struct device *dev, uint16_t queue_idx)
 {
 	struct virtio_pci_data *data = dev->data;
+	struct virtq *vq = virtio_pci_get_virtqueue(dev, queue_idx);
+
+	if (vq != NULL && !virtq_notification_needed(vq)) {
+		return;
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&data->notify_lock);
 
@@ -220,10 +231,8 @@ static void virtio_pci_notify_queue(const struct device *dev, uint16_t queue_idx
  */
 static void virtio_pci_write64(uint64_t val, uint64_t *dst)
 {
-	uint64_t val_le = sys_cpu_to_le64(val);
-
-	((uint32_t *)dst)[0] = val_le & GENMASK64(31, 0);
-	((uint32_t *)dst)[1] = (val_le & GENMASK64(63, 32)) >> 32;
+	((uint32_t *)dst)[0] = sys_cpu_to_le32((uint32_t)val);
+	((uint32_t *)dst)[1] = sys_cpu_to_le32((uint32_t)(val >> 32));
 }
 
 static int virtio_pci_set_virtqueue(
@@ -330,9 +339,8 @@ static bool virtio_pci_map_cap(pcie_bdf_t bdf, struct virtio_pci_cap *cap, void 
 	assert(mbar.phys_addr + cap->offset + cap->length <= mbar.phys_addr + mbar.size);
 
 #ifdef CONFIG_MMU
-	k_mem_map_phys_bare(
-		(uint8_t **)virt_ptr, mbar.phys_addr + cap->offset, cap->length, K_MEM_PERM_RW
-	);
+	k_mem_map_phys_bare((uint8_t **)virt_ptr, mbar.phys_addr + cap->offset,
+			    cap->length, K_MEM_PERM_RW | K_MEM_CACHE_NONE);
 #else
 	*virt_ptr = (void *)(mbar.phys_addr + cap->offset);
 #endif
@@ -401,19 +409,19 @@ static int virtio_pci_write_driver_feature_bit_range_check(
 static bool virtio_pci_read_status_bit(const struct device *dev, int bit)
 {
 	struct virtio_pci_data *data = dev->data;
-	uint32_t mask = BIT(bit);
+	uint8_t mask = (uint8_t)BIT(bit);
 
 	barrier_dmem_fence_full();
-	return sys_le32_to_cpu(data->common_cfg->device_status) & mask;
+	return (data->common_cfg->device_status & mask) != 0U;
 }
 
 static void virtio_pci_write_status_bit(const struct device *dev, int bit)
 {
 	struct virtio_pci_data *data = dev->data;
-	uint32_t mask = BIT(bit);
+	uint8_t mask = (uint8_t)BIT(bit);
 
 	barrier_dmem_fence_full();
-	data->common_cfg->device_status |= sys_cpu_to_le32(mask);
+	data->common_cfg->device_status |= mask;
 }
 
 static int virtio_pci_init_common(const struct device *dev)
@@ -485,8 +493,11 @@ static int virtio_pci_init_common(const struct device *dev)
 				conf->pcie->bdf, &vpc, (void **)&data->device_specific_cfg)) {
 			return 1;
 		}
+
+		data->dev_cfg_len = vpc.length;
 	} else {
 		data->device_specific_cfg = NULL;
+		data->dev_cfg_len = 0;
 		LOG_INF(
 			"no VIRTIO_PCI_CAP_DEVICE_CFG for the device with id 0x%x and bdf 0x%x",
 			conf->pcie->id,
@@ -551,9 +562,13 @@ struct virtq *virtio_pci_get_virtqueue(const struct device *dev, uint16_t queue_
 	return queue_idx < data->virtqueue_count ? &data->virtqueues[queue_idx] : NULL;
 }
 
-void *virtio_pci_get_device_specific_config(const struct device *dev)
+void *virtio_pci_get_device_specific_config(const struct device *dev, size_t *len)
 {
 	struct virtio_pci_data *data = dev->data;
+
+	if (len != NULL) {
+		*len = data->dev_cfg_len;
+	}
 
 	return data->device_specific_cfg;
 }

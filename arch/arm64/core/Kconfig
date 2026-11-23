@@ -1,6 +1,7 @@
 # ARM64 core configuration options
 
 # Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config CPU_CORTEX_A
@@ -17,12 +18,14 @@ config CPU_CORTEX_A
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
 	select ARCH_HAS_PMU
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	select ARCH_SUPPORTS_COREDUMP_THREADS
 	# On SMP, threads on other CPUs may be actively running with a stale
 	# callee_saved.sp_elx, so THREAD_STACK_TOP cannot rely on the saved SP.
 	# Dump the full stack allocation instead (matches RISC-V and Xtensa).
 	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
-	select ARCH_SUPPORTS_COREDUMP_SMP_FREEZE if SMP && SYS_CLOCK_EXISTS
+	select ARCH_SUPPORTS_COREDUMP_SMP_FREEZE if SMP && SYS_CLOCK_EXISTS && \
+		!ARM_CUSTOM_INTERRUPT_CONTROLLER
 	imply FPU
 	imply FPU_SHARING
 	help
@@ -36,10 +39,19 @@ config CPU_AARCH64_CORTEX_R
 	select CPU_HAS_ICACHE
 	select ARCH_HAS_STACK_PROTECTION
 	select CPU_HAS_FPU
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	imply FPU
 	imply FPU_SHARING
 	help
 	  This option signifies the use of a CPU of the Cortex-R 64-bit family.
+
+config CPU_CORTEX_A35
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A35 CPU, which implements
+	  the ARMv8-A architecture.
 
 config CPU_CORTEX_A53
 	bool
@@ -99,6 +111,13 @@ config CPU_CORTEX_A510
 	  efficiency core implementing the ARMv9-A architecture. It provides
 	  power-efficient processing optimized for embedded applications with
 	  ARMv9-A features.
+
+config CPU_CORTEX_A520
+	bool
+	select CPU_CORTEX_A
+	select ARMV9_A
+	help
+	  This option signifies the use of a Cortex-A520 CPU
 
 config CPU_CORTEX_A320
 	bool
@@ -178,7 +197,6 @@ config KOBJECT_TEXT_AREA
 
 config WAIT_AT_RESET_VECTOR
 	bool "Wait at reset vector"
-	default n
 	help
 	  Spin at reset vector waiting for debugger to attach and resume
 	  execution

@@ -33,27 +33,27 @@ echo-server directory:
 - :file:`prj.conf`
   Generic config file, normally you should use this.
 
-- :file:`overlay-ot.conf`
-  This overlay config enables support for OpenThread.
+- :file:`ot.conf`
+  This extra config file enables support for OpenThread.
 
-- :file:`overlay-802154.conf`
-  This overlay config enables support for native IEEE 802.15.4 connectivity.
+- :file:`802154.conf`
+  This extra config file enables support for native IEEE 802.15.4 connectivity.
   Note, that by default IEEE 802.15.4 L2 uses unacknowledged communication. To
   improve connection reliability, acknowledgments can be enabled with shell
   command: ``ieee802154 ack set``.
 
-- :file:`overlay-qemu_802154.conf`
-  This overlay config enables support for two QEMU's when simulating
+- :file:`qemu_802154.conf`
+  This extra config file enables support for two QEMU's when simulating
   IEEE 802.15.4 network that are connected together.
 
-- :file:`overlay-tls.conf`
-  This overlay config enables support for TLS.
+- :file:`tls.conf`
+  This extra config file enables support for TLS.
 
-- :file:`overlay-tunnel.conf`
-  This overlay config enables support for IP tunneling.
+- :file:`tunnel.conf`
+  This extra config file enables support for IP tunneling.
 
-- :file:`overlay-vlan.conf`
-  This overlay config enables support for Virtual LAN.
+- :file:`vlan.conf`
+  This extra config file enables support for Virtual LAN.
   See :ref:`networking_samples_common` for details.
 
 Build echo-server sample application like this:
@@ -71,7 +71,7 @@ Example building for the nrf52840dk/nrf52840 with OpenThread support:
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: nrf52840dk/nrf52840
-   :conf: "prj.conf overlay-ot.conf"
+   :conf: "prj.conf ot.conf"
    :goals: run
    :compact:
 
@@ -81,7 +81,7 @@ Example building for the samr21_xpro with RF2XX driver support:
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: [samr21_xpro | sam4e_xpro | sam_v71_xult/samv71q21]
-   :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
+   :gen-args: -DEXTRA_CONF_FILE=802154.conf
    :goals: build flash
    :compact:
 
@@ -95,16 +95,16 @@ Enabling TLS support
 ====================
 
 Enable TLS support in the sample by building the project with the
-``overlay-tls.conf`` overlay file enabled, for example, using these commands:
+``tls.conf`` extra config file enabled, for example, using these commands:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
    :board: qemu_x86
-   :conf: "prj.conf overlay-tls.conf"
+   :conf: "prj.conf tls.conf"
    :goals: build
    :compact:
 
-An alternative way is to specify ``-DEXTRA_CONF_FILE=overlay-tls.conf`` when
+An alternative way is to specify ``-DEXTRA_CONF_FILE=tls.conf`` when
 running ``west build`` or ``cmake``.
 
 The certificate used by the sample can be found in the sample's ``src``

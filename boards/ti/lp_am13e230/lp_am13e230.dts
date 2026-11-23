@@ -16,5 +16,23 @@
 	chosen {
 		zephyr,sram = &sram0_1_2;
 		zephyr,flash = &flash0;
+		zephyr,crc = &crc;
 	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(200)>;
+};
+
+&mclk {
+	clocks = <&hsclk>;
+};
+
+&hsclk {
+	clocks = <&syspll>;
+	status = "okay";
+};
+
+&syspll {
+	status = "okay";
 };

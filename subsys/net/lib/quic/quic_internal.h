@@ -1014,6 +1014,13 @@ struct quic_endpoint {
 	 */
 	uint16_t max_tx_payload_size;
 
+	/** The reference held for the endpoint list of a context has been
+	 * dropped. References left are held by whoever is using the endpoint
+	 * at the moment. Not a bit field: it is written under contexts_lock,
+	 * the bits below are not.
+	 */
+	bool list_ref_dropped;
+
 	/** Is this endpoint in a server role.
 	 */
 	bool is_server : 1;
@@ -1172,8 +1179,14 @@ __net_socket struct quic_stream {
 		struct k_mutex data_available;
 	} cond;
 
-	/** Protects tx_buf, bytes_acked, and acked_ooo state. */
+	/** Protects tx_buf, bytes_acked, acked_ooo, tx_reset and tx_final_size. */
 	struct k_mutex tx_lock;
+
+	/** Final size sent in RESET_STREAM, fixed when tx_reset is set */
+	uint64_t tx_final_size;
+
+	/** TX side reset because peer sent STOP_SENDING */
+	bool tx_reset;
 
 	/** Receive buffer */
 	struct quic_stream_rx_buffer rx_buf;
@@ -1189,9 +1202,6 @@ __net_socket struct quic_stream {
 
 	/** Read half shut down via shutdown(SHUT_RD), discard incoming data */
 	bool read_closed : 1;
-
-	/** TX side reset because peer sent STOP_SENDING */
-	bool tx_reset : 1;
 
 	/** A rejected 0-RTT FIN must be replayed after queued data is resent. */
 	bool replay_fin_pending : 1;
@@ -1263,11 +1273,24 @@ __net_socket struct quic_context {
 	/** Error code to be passed to application when connection is closed. */
 	int error_code;
 
+	/** The connection was closed, by the peer or by its endpoint going
+	 * away. Reported as POLLHUP, whether or not streams are still waiting
+	 * to be accepted.
+	 */
+	bool closed;
+
 	/** Stream priority */
 	uint8_t stream_priority;
 
 	/** Streams connected to this context */
 	sys_slist_t streams;
+
+	/** Nothing is accepted on the context any more, neither connections
+	 * nor streams: the application closed the socket, or the connection
+	 * was never accepted. Written under contexts_lock, where connections
+	 * and streams are queued, so not a bit field.
+	 */
+	bool accept_closed;
 
 	/** Information whether this context is the listening one */
 	bool is_listening : 1;
@@ -1566,6 +1589,9 @@ bool quic_token_claim_nonce(const uint8_t *nonce, uint64_t expires_at_sec);
  * can observe the per-payload cap without reaching into the parser's stack.
  */
 extern uint16_t quic_test_reply_budget_spent;
+
+/* Final size of the last RESET_STREAM that was built */
+extern uint64_t quic_test_reset_final_size;
 void quic_token_cache_store(const struct net_sockaddr *remote_addr,
 			    const uint8_t *token, size_t token_len);
 size_t quic_token_cache_take(const struct net_sockaddr *remote_addr,
@@ -1581,6 +1607,8 @@ int process_long_header(struct quic_endpoint *ep,
 struct quic_stream *quic_find_stream(struct quic_context *ctx,
 				     struct quic_endpoint *ep,
 				     uint64_t stream_id);
+void quic_stream_unref_deferred(struct quic_stream *stream);
+extern struct k_work quic_stream_release_work;
 
 /* Server session-ticket cache helpers (single-use / freshness). */
 struct quic_server_ticket_entry;
@@ -1594,5 +1622,16 @@ bool tls_server_ticket_cache_lookup(const uint8_t *ticket, size_t ticket_len,
 void tls_server_ticket_cache_consume(const uint8_t *ticket, size_t ticket_len);
 bool tls_ticket_age_acceptable(uint64_t issued_at_ms, uint32_t ticket_age_add,
 			       uint32_t obfuscated_ticket_age, uint64_t now_ms);
+void quic_test_context_unref(struct quic_context *ctx);
+void quic_test_stream_unref(struct quic_stream *stream);
+void quic_test_streams_lock(bool lock);
+void quic_connection_accept_enqueue(struct quic_endpoint *child_ep);
+struct quic_stream *quic_get_stream(struct quic_context *conn);
+bool quic_ctx_queue_incoming_stream(struct quic_context *ctx, struct quic_stream *stream);
+void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep);
+void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr);
+struct quic_endpoint *quic_test_endpoint_alloc(void);
+void quic_test_endpoint_unref(struct quic_endpoint *ep);
+void quic_test_check_idle_timeouts(void);
 
 #endif /* CONFIG_NET_TEST */

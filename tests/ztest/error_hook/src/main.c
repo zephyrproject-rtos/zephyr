@@ -286,11 +286,13 @@ ZTEST_USER(error_hook_tests, test_catch_fatal_error)
 #if defined(CONFIG_USERSPACE)
 	run_trigger_thread(ZTEST_CATCH_FATAL_ACCESS);
 	run_trigger_thread(ZTEST_CATCH_FATAL_ILLEAGAL_INSTRUCTION);
-#if !defined(CONFIG_RISCV)
+#if !defined(CONFIG_RISCV) && !defined(CONFIG_HEXAGON)
 	/*
 	 * Because RISC-V Arch doesn't trigger exception for division-by-zero,
 	 * this test couldn't support RISC-V.
 	 * (RISC-V ISA Manual v2.2, Ch6.2 Division Operation)
+	 * Hexagon has no integer divide instruction; the compiler's runtime
+	 * divide routine doesn't trap on a zero divisor either.
 	 */
 	run_trigger_thread(ZTEST_CATCH_FATAL_DIVIDE_ZERO);
 #endif

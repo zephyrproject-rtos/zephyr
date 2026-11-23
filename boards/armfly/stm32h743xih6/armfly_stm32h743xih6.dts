@@ -467,13 +467,13 @@
 		     &eth_crs_dv_pa7
 		     &eth_tx_en_pg11
 		     &eth_txd0_pg13
-		     &eth_txd1_pb13>;
+		     &eth_txd1_pb13
+		     &eth_mdio_pa2
+		     &eth_mdc_pc1>;
 	status = "okay";
 };
 
 &mdio {
-	pinctrl-names = "default";
-	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	status = "okay";
 
 	eth_phy: ethernet-phy@1 {

@@ -51,16 +51,15 @@ void z_openrisc_enter_irq(unsigned int irq)
 void z_openrisc_handle_irqs(void)
 {
 #if defined(CONFIG_GEN_SW_ISR_TABLE)
-	uint32_t picsr;
+	if (IS_ENABLED(CONFIG_OPENRISC_SOC_IRQ_DISPATCH)) {
+		z_soc_irq_dispatch();
+	} else {
+		uint32_t picsr;
 
-	/* Iteratively process every interrupt flag */
-	while ((picsr = openrisc_read_spr(SPR_PICSR))) {
-		const unsigned int irq = find_lsb_set(picsr) - 1;
-
-		/* Clear interrupt flag */
-		openrisc_write_spr(SPR_PICSR, picsr & ~(1 << irq));
-
-		enter_irq(irq);
+		/* Iteratively process every interrupt flag */
+		while ((picsr = openrisc_read_spr(SPR_PICSR))) {
+			enter_irq(find_lsb_set(picsr) - 1);
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_STACK_SENTINEL)) {

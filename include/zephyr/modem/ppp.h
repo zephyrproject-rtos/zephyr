@@ -91,6 +91,8 @@ struct modem_ppp {
 
 	/* Allocated network packet being created */
 	struct net_pkt *rx_pkt;
+	/* FCS of the received header bytes not stored in rx_pkt */
+	uint16_t rx_pkt_fcs;
 
 	/* Packet being sent */
 	enum modem_ppp_transmit_state transmit_state;
@@ -105,6 +107,7 @@ struct modem_ppp {
 	/* Work */
 	struct k_work send_work;
 	struct k_work process_work;
+	struct k_work closed_work;
 
 #if defined(CONFIG_NET_STATISTICS_PPP)
 	struct net_stats_ppp stats;
@@ -179,7 +182,7 @@ int modem_ppp_init_internal(const struct device *dev);
  * @param _buf_size Size of partial PPP frame transmit and receive buffers
  */
 #define MODEM_DEV_PPP_DEFINE(_dev, _name, _init_iface, _mtu, _buf_size)                            \
-	extern const struct ppp_api modem_ppp_ppp_api;                                             \
+	extern const struct ppp_driver_api modem_ppp_ppp_api;                                      \
                                                                                                    \
 	static uint8_t _CONCAT(_name, _receive_buf)[_buf_size];                                    \
 	static uint8_t _CONCAT(_name, _transmit_buf)[_buf_size];                                   \

@@ -16,6 +16,7 @@
 #include <zephyr/pm/device.h>
 #include <string.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 
 #include <zephyr/drivers/sensor/lsm6dsvxxx.h>
@@ -508,6 +509,39 @@ static int lsm6dsv16x_gyro_self_test(const struct device *dev)
 }
 #endif
 
+static int lsm6dsv16x_config(const struct device *dev,
+				enum sensor_channel chan,
+				enum sensor_attribute attr,
+				const struct sensor_value *val)
+{
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
+#endif
+
+	switch (attr) {
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	case SENSOR_ATTR_FIFO_WATERMARK:
+		/*
+		 * FIFO watermark can be changed dynamically, but must be done before
+		 * starting a new stream request.
+		 */
+
+		if ((val->val1 < 0) ||
+		    (val->val1 > 255)) {
+			return -EINVAL;
+		}
+
+		lsm6dsv16x->fifo_watermark = val->val1;
+		break;
+#endif
+	default:
+		LOG_DBG("Attribute not supported.");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int lsm6dsv16x_accel_config(const struct device *dev,
 				enum sensor_channel chan,
 				enum sensor_attribute attr,
@@ -672,6 +706,8 @@ static int lsm6dsv16x_attr_set(const struct device *dev,
 	case SENSOR_CHAN_GBIAS_XYZ:
 		return lsm6dsv16x_gbias_config(dev, chan, attr, val);
 #endif /* CONFIG_LSM6DSV16X_STREAM */
+	case SENSOR_CHAN_ALL:
+		return lsm6dsv16x_config(dev, chan, attr, val);
 	default:
 		LOG_WRN("attr_set() not supported on this channel.");
 		return -ENOTSUP;
@@ -713,6 +749,30 @@ static int lsm6dsv16x_accel_wake_duration_get(const struct device *dev, struct s
 
 	val->val1 = thresholds.duration;
 	val->val2 = 0;
+
+	return 0;
+}
+
+static int lsm6dsv16x_get_config(const struct device *dev,
+				enum sensor_channel chan,
+				enum sensor_attribute attr,
+				struct sensor_value *val)
+{
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
+#endif
+
+	switch (attr) {
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	case SENSOR_ATTR_FIFO_WATERMARK:
+		val->val1 = lsm6dsv16x->fifo_watermark;
+		val->val2 = 0;
+		break;
+#endif
+	default:
+		LOG_DBG("Attribute not supported.");
+		return -ENOTSUP;
+	}
 
 	return 0;
 }
@@ -872,6 +932,8 @@ static int lsm6dsv16x_attr_get(const struct device *dev, enum sensor_channel cha
 	case SENSOR_CHAN_GBIAS_XYZ:
 		return lsm6dsv16x_gbias_get_config(dev, chan, attr, val);
 #endif /* CONFIG_LSM6DSV16X_STREAM */
+	case SENSOR_CHAN_ALL:
+		return lsm6dsv16x_get_config(dev, chan, attr, val);
 	default:
 		LOG_WRN("attr_get() not supported on this channel.");
 		return -ENOTSUP;
@@ -924,6 +986,46 @@ static int lsm6dsv16x_sample_fetch_temp(const struct device *dev)
 }
 #endif
 
+/*
+ * OUT_TEMP (0x20-0x21), the gyro outputs (0x22-0x27) and the accel outputs (0x28-0x2D) are
+ * contiguous, so read them all in one bus transfer. temp is only written when
+ * CONFIG_LSM6DSV16X_ENABLE_TEMP is set.
+ */
+int lsm6dsv16x_sample_fetch_all_raw(const struct device *dev, int16_t acc[3], int16_t gyro[3],
+				    int16_t *temp)
+{
+	const struct lsm6dsv16x_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+#if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
+	uint8_t buf[14];
+	const uint8_t reg = LSM6DSV16X_OUT_TEMP_L;
+#else
+	uint8_t buf[12];
+	const uint8_t reg = LSM6DSV16X_OUTX_L_G;
+#endif
+	const uint8_t *out = buf;
+	int ret;
+
+	ret = lsm6dsv16x_read_reg(ctx, reg, buf, sizeof(buf));
+	if (ret < 0) {
+		LOG_DBG("Failed to read sample");
+		return ret;
+	}
+
+#if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
+	*temp = (int16_t)sys_get_le16(out);
+	out += sizeof(uint16_t);
+#else
+	ARG_UNUSED(temp);
+#endif
+	for (size_t i = 0; i < 3; i++) {
+		gyro[i] = (int16_t)sys_get_le16(&out[2 * i]);
+		acc[i] = (int16_t)sys_get_le16(&out[6 + 2 * i]);
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 static int lsm6dsv16x_sample_fetch_shub(const struct device *dev)
 {
@@ -939,9 +1041,7 @@ static int lsm6dsv16x_sample_fetch_shub(const struct device *dev)
 static int lsm6dsv16x_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
-#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 	struct lsm6dsv16x_data *data = dev->data;
-#endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 	int ret = 0;
 
 	switch (chan) {
@@ -957,20 +1057,15 @@ static int lsm6dsv16x_sample_fetch(const struct device *dev,
 		break;
 #endif
 	case SENSOR_CHAN_ALL:
-		ret = lsm6dsv16x_sample_fetch_accel(dev);
-		if (ret != 0) {
-			break;
-		}
-		ret = lsm6dsv16x_sample_fetch_gyro(dev);
-		if (ret != 0) {
-			break;
-		}
 #if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
-		ret = lsm6dsv16x_sample_fetch_temp(dev);
+		ret = lsm6dsv16x_sample_fetch_all_raw(dev, data->acc, data->gyro,
+						      &data->temp_sample);
+#else
+		ret = lsm6dsv16x_sample_fetch_all_raw(dev, data->acc, data->gyro, NULL);
+#endif
 		if (ret != 0) {
 			break;
 		}
-#endif
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 		if (data->shub_inited) {
 			ret = lsm6dsv16x_sample_fetch_shub(dev);
@@ -1406,6 +1501,14 @@ static int lsm6dsv16x_init_chip(const struct device *dev)
 		LOG_ERR("failed to set gyroscope odr %d", odr);
 		return -EIO;
 	}
+
+#ifdef CONFIG_LSM6DSV16X_STREAM
+	/*
+	 * At this stage just save the FIFO watermark defined in DT.
+	 * It can be changed dynamically later on.
+	 */
+	lsm6dsv16x->fifo_watermark = cfg->fifo_wtm;
+#endif
 
 #if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	if (IS_ENABLED(CONFIG_LSM6DSV16X_STREAM) && (ON_I3C_BUS(cfg))) {

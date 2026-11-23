@@ -588,6 +588,36 @@ ZTEST(llext, test_reloc_offset_oob)
 }
 #endif
 
+#define LOAD_COUNT (1024)
+
+static LLEXT_CONST uint8_t failed_load_ext[] LLEXT_SECT ELF_ALIGN = {
+#include "hello_world.inc"
+};
+
+ZTEST(llext, test_failed_load_does_not_leak_memory)
+{
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+	int res;
+
+	for (int i = 0; i < LOAD_COUNT; i++) {
+		struct llext_buf_loader buf_loader =
+			LLEXT_BUF_LOADER(failed_load_ext, sizeof(failed_load_ext) / 2);
+
+		res = llext_load(&buf_loader.loader, "truncated", &ext, &ldr_parm);
+		zassert_true(res < 0, "truncated load %d should fail", i);
+		zassert_not_equal(res, -ENOMEM, "truncated load %d ran out of memory", i);
+		zassert_is_null(ext, "ext should be NULL after a failed load");
+	}
+
+	struct llext_buf_loader buf_loader =
+		LLEXT_BUF_LOADER(failed_load_ext, sizeof(failed_load_ext));
+
+	res = llext_load(&buf_loader.loader, "hello_world", &ext, &ldr_parm);
+	zassert_ok(res, "load after the failed loads should succeed, got %d", res);
+	llext_unload(&ext);
+}
+
 #if defined(CONFIG_LLEXT_STORAGE_WRITABLE)
 static LLEXT_CONST uint8_t find_section_ext[] LLEXT_SECT ELF_ALIGN = {
 	#include "find_section.inc"

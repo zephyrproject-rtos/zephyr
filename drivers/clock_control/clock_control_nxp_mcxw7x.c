@@ -7,6 +7,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/nvmem.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/dt-bindings/clock/nxp_mcxw7x_clock.h>
@@ -491,6 +493,82 @@ static struct mcxw_clock_control_config config = {
 	.sosc_freq = DT_INST_PROP(0, sosc_freq),
 	.core_clock_frequency = DT_INST_PROP(0, core_clock_frequency),
 };
+
+#if DT_INST_NODE_HAS_PROP(0, nvmem_cells) && defined(CONFIG_NVMEM_FLASH) &&                        \
+	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+/*
+ * The factory OSC32K trim lives in a non-volatile memory which is only readable once its
+ * provider is initialized. The capacitance values from the devicetree are applied at
+ * PRE_KERNEL_1 and refined here, at POST_KERNEL, when a valid trim is available. This
+ * requires the flash driver, hence CONFIG_FLASH, to be enabled by the application.
+ */
+/* Bit 7 of the stored byte flags the trim as valid, the capacitance value is in the low bits */
+#define MCXW_OSC32K_TRIM_VALID 0x80U
+#define MCXW_OSC32K_XTAL_TRIM_MAX                                                                  \
+	(CCM32K_OSC32K_CTRL_XTAL_CAP_SEL_MASK >> CCM32K_OSC32K_CTRL_XTAL_CAP_SEL_SHIFT)
+#define MCXW_OSC32K_EXTAL_TRIM_MAX                                                                 \
+	(CCM32K_OSC32K_CTRL_EXTAL_CAP_SEL_MASK >> CCM32K_OSC32K_CTRL_EXTAL_CAP_SEL_SHIFT)
+
+BUILD_ASSERT(MCXW_OSC32K_XTAL_TRIM_MAX == MCXW_OSC32K_EXTAL_TRIM_MAX,
+	     "XTAL and EXTAL capacitance fields must have the same width");
+BUILD_ASSERT(MCXW_OSC32K_XTAL_TRIM_MAX < MCXW_OSC32K_TRIM_VALID,
+	     "The capacitance fields must not overlap the trim valid flag");
+
+#if defined(CONFIG_FLASH_INIT_PRIORITY)
+BUILD_ASSERT(CONFIG_CLOCK_CONTROL_NXP_MCXW7X_IFR_TRIM_INIT_PRIORITY > CONFIG_FLASH_INIT_PRIORITY,
+	     "The OSC32K trim must be applied after the flash driver is initialized");
+#endif
+
+static int nxp_mcxw_clock_osc32k_ifr_trim(void)
+{
+	static const struct nvmem_cell trim_cell = NVMEM_CELL_GET_BY_IDX(DT_DRV_INST(0), 0);
+	uint8_t raw;
+	uint32_t trim;
+	uint32_t reg;
+	int ret;
+
+	if (config.osc32k_mode != kCCM32K_Enable32kHzCrystalOsc) {
+		return 0;
+	}
+
+	ret = nvmem_cell_read(&trim_cell, &raw, 0, sizeof(raw));
+	if (ret < 0) {
+		LOG_DBG("OSC32K trim not readable (%d), keeping devicetree values", ret);
+		return 0;
+	}
+
+	if (raw == 0xFFU) {
+		LOG_DBG("OSC32K trim not provisioned, keeping devicetree values");
+		return 0;
+	}
+
+	if ((raw & MCXW_OSC32K_TRIM_VALID) == 0U) {
+		LOG_DBG("OSC32K trim 0x%02x not valid, keeping devicetree values", raw);
+		return 0;
+	}
+
+	/* 0 is a valid capacitance selection */
+	trim = (uint32_t)raw & ~MCXW_OSC32K_TRIM_VALID;
+	if (trim > MCXW_OSC32K_XTAL_TRIM_MAX) {
+		LOG_DBG("OSC32K trim 0x%02x out of range, keeping devicetree values", raw);
+		return 0;
+	}
+
+	/* OSC32K stays enabled, the capacitance selection can be changed on the fly */
+	reg = CCM32K->OSC32K_CTRL;
+	reg &= ~(CCM32K_OSC32K_CTRL_XTAL_CAP_SEL_MASK | CCM32K_OSC32K_CTRL_EXTAL_CAP_SEL_MASK);
+	reg |= CCM32K_OSC32K_CTRL_XTAL_CAP_SEL(trim) | CCM32K_OSC32K_CTRL_EXTAL_CAP_SEL(trim);
+	CCM32K->OSC32K_CTRL = reg;
+	__DMB();
+
+	LOG_DBG("OSC32K trim 0x%02x applied (cap sel %u)", raw, trim);
+
+	return 0;
+}
+
+SYS_INIT(nxp_mcxw_clock_osc32k_ifr_trim, POST_KERNEL,
+	 CONFIG_CLOCK_CONTROL_NXP_MCXW7X_IFR_TRIM_INIT_PRIORITY);
+#endif /* nvmem-cells && CONFIG_NVMEM_FLASH && !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
 DEVICE_DT_INST_DEFINE(0, nxp_mcxw_clock_control_init, NULL, NULL, &config, PRE_KERNEL_1,
 		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &nxp_mcxw_clock_control_api);

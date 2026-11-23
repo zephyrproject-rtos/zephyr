@@ -11,3 +11,4 @@
 /delete-node/ &trng;
 /delete-node/ &flexcan1;
 /delete-node/ &usb;
+/delete-node/ &slcd;

@@ -75,6 +75,10 @@ enum stm32_dcmipp_state {
 #define STM32_DCMIPP_MAX_PIPE_DSIZE_FACTOR	8
 #define STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR (STM32_DCMIPP_MAX_PIPE_DEC_FACTOR * \
 					    STM32_DCMIPP_MAX_PIPE_DSIZE_FACTOR)
+
+/* Width of the demosaicing, downsize and YUV420 line buffers (RM0486) */
+#define STM32_DCMIPP_LINE_BUFFER_WIDTH	2688U
+
 struct stm32_dcmipp_pipe_data {
 	const struct device *dev;
 	uint32_t id;
@@ -299,7 +303,27 @@ static const struct stm32_dcmipp_input_fmt {
 	INPUT_FMT(SGRBG14P, RAW14, 14, RAW14), INPUT_FMT(SRGGB14P, RAW14, 14, RAW14),
 	INPUT_FMT(RGB565, RGB565, 8, RGB565),
 	INPUT_FMT(YUYV, YUV422, 8, YUV422_8),
+	INPUT_FMT(RGB24, RGB888, 8, RGB888),
 };
+
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+static uint32_t stm32_dcmipp_to_hal_bayer_type(uint32_t pixelformat)
+{
+	uint32_t hal_fmt;
+
+	if (VIDEO_FMT_IS_BAYER_BGGR(pixelformat)) {
+		hal_fmt = DCMIPP_RAWBAYER_BGGR;
+	} else if (VIDEO_FMT_IS_BAYER_RGGB(pixelformat)) {
+		hal_fmt = DCMIPP_RAWBAYER_RGGB;
+	} else if (VIDEO_FMT_IS_BAYER_GBRG(pixelformat)) {
+		hal_fmt = DCMIPP_RAWBAYER_GBRG;
+	} else {
+		hal_fmt = DCMIPP_RAWBAYER_GRBG;
+	}
+
+	return hal_fmt;
+}
+#endif
 
 static const struct stm32_dcmipp_input_fmt *stm32_dcmipp_get_input_info(uint32_t pixelformat)
 {
@@ -419,6 +443,8 @@ static int stm32_dcmipp_conf_csi(const struct device *dev, uint32_t dcmipp_csi_b
 	}
 
 	phy_bitrate /= MHZ(1);
+	/* CSI use DDR hence each lane bitrate is twice the frequency */
+	phy_bitrate *= 2;
 
 	for (i = 0; i < ARRAY_SIZE(stm32_dcmipp_bitrate); i++) {
 		if (stm32_dcmipp_bitrate[i].rate >= phy_bitrate) {
@@ -636,6 +662,56 @@ static void stm32_dcmipp_get_isp_decimation(struct stm32_dcmipp_data *dcmipp)
 		dcmipp->isp_dec_hratio = 1 << (ispdec_cfg.HRatio >> DCMIPP_P1DECR_HDEC_Pos);
 		dcmipp->isp_dec_vratio = 1 << (ispdec_cfg.VRatio >> DCMIPP_P1DECR_VDEC_Pos);
 	}
+}
+
+/*
+ * Decimate a raw Bayer frame wider than the demosaicing line buffers, unless the ISP
+ * initialization already did.
+ */
+static int stm32_dcmipp_fit_isp_width(struct stm32_dcmipp_data *dcmipp)
+{
+	DCMIPP_DecimationConfTypeDef ispdec_cfg;
+	HAL_StatusTypeDef hal_ret;
+	uint32_t factor = 2U;
+
+	if (!VIDEO_FMT_IS_BAYER(dcmipp->source_fmt.pixelformat) ||
+	    dcmipp->source_fmt.width / dcmipp->isp_dec_hratio <= STM32_DCMIPP_LINE_BUFFER_WIDTH) {
+		return 0;
+	}
+
+	while ((dcmipp->source_fmt.width / factor) > STM32_DCMIPP_LINE_BUFFER_WIDTH) {
+		factor *= 2U;
+	}
+
+	if (factor > STM32_DCMIPP_MAX_ISP_DEC_FACTOR) {
+		LOG_ERR("Raw Bayer input %u pixels wide: too wide for the ISP decimation",
+				dcmipp->source_fmt.width);
+		return -ENOTSUP;
+	}
+
+	ispdec_cfg.HRatio = __builtin_ctz(factor) << DCMIPP_P1DECR_HDEC_Pos;
+	ispdec_cfg.VRatio = __builtin_ctz(factor) << DCMIPP_P1DECR_VDEC_Pos;
+
+	hal_ret = HAL_DCMIPP_PIPE_SetISPDecimationConfig(&dcmipp->hdcmipp, DCMIPP_PIPE1,
+							 &ispdec_cfg);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("Failed to configure the ISP decimation");
+		return -EIO;
+	}
+
+	hal_ret = HAL_DCMIPP_PIPE_EnableISPDecimation(&dcmipp->hdcmipp, DCMIPP_PIPE1);
+	if (hal_ret != HAL_OK) {
+		LOG_ERR("Failed to enable the ISP decimation");
+		return -EIO;
+	}
+
+	dcmipp->isp_dec_hratio = factor;
+	dcmipp->isp_dec_vratio = factor;
+
+	LOG_DBG("Raw Bayer input %u pixels wide: ISP decimation of the frame by %d",
+		dcmipp->source_fmt.width, factor);
+
+	return 0;
 }
 #endif
 
@@ -1101,6 +1177,23 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		}
 
 		if (VIDEO_FMT_IS_BAYER(dcmipp->source_fmt.pixelformat)) {
+			DCMIPP_RawBayer2RGBConfTypeDef raw_bayer_cfg;
+
+			HAL_DCMIPP_PIPE_GetISPRawBayer2RGBConfig(&dcmipp->hdcmipp, DCMIPP_PIPE1,
+								 &raw_bayer_cfg);
+			raw_bayer_cfg.RawBayerType =
+				stm32_dcmipp_to_hal_bayer_type(dcmipp->source_fmt.pixelformat);
+
+			/* Configure demosaicing */
+			hal_ret = HAL_DCMIPP_PIPE_SetISPRawBayer2RGBConfig(&dcmipp->hdcmipp,
+									   DCMIPP_PIPE1,
+									   &raw_bayer_cfg);
+			if (hal_ret != HAL_OK) {
+				LOG_ERR("Failed to configure demosaicing");
+				ret = -EIO;
+				goto out;
+			}
+
 			/* Enable demosaicing if input format is Bayer */
 			hal_ret = HAL_DCMIPP_PIPE_EnableISPRawBayer2RGB(&dcmipp->hdcmipp,
 									DCMIPP_PIPE1);
@@ -1754,6 +1847,12 @@ static int stm32_dcmipp_init(const struct device *dev)
 	}
 
 	stm32_dcmipp_get_isp_decimation(dcmipp);
+
+	err = stm32_dcmipp_fit_isp_width(dcmipp);
+	if (err < 0) {
+		LOG_ERR("Failed to fit ISP width");
+		return err;
+	}
 #endif
 
 	LOG_DBG("%s initialized", dev->name);
@@ -1774,6 +1873,13 @@ static int stm32_dcmipp_pipe_init(const struct device *dev)
 	pipe->fmt.type = VIDEO_BUF_TYPE_OUTPUT;
 	pipe->fmt.width = dcmipp->source_fmt.width;
 	pipe->fmt.height = dcmipp->source_fmt.height;
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+	/* The pixel pipes receive the frame after the ISP decimation */
+	if (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2) {
+		pipe->fmt.width /= dcmipp->isp_dec_hratio;
+		pipe->fmt.height /= dcmipp->isp_dec_vratio;
+	}
+#endif
 	pipe->fmt.pixelformat = dcmipp->source_fmt.pixelformat;
 	pipe->crop.top = 0;
 	pipe->crop.left = 0;

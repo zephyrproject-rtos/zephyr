@@ -20,8 +20,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 96000000 if APIC_TIMER_TSC && SOC_INTEL_ISH_5_4_1
 	default 100000000 if APIC_TIMER_TSC && !SOC_INTEL_ISH_5_4_1
 
-config SRAM_OFFSET
-	hex
+configdefault SRAM_OFFSET
 	default 0x0
 
 # Target platforms are not PC-compatible

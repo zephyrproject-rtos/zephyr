@@ -100,7 +100,7 @@ static void renesas_ra_callback_adapter(touch_callback_args_t *p_args)
 	struct renesas_ra_ctsu_group_data *data = dev->data;
 
 	if (p_args->event == CTSU_EVENT_SCAN_COMPLETE) {
-		k_work_submit(&data->reading_work);
+		input_work_submit(&data->reading_work);
 	}
 
 	k_sem_give(&ctsu_data->scanning);

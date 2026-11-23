@@ -7,3 +7,14 @@ tests:
   drivers.mfd.build:
     platform_allow:
       - native_sim
+  drivers.mfd.build.tle927x_can:
+    extra_configs:
+      - CONFIG_CAN=y
+    platform_allow:
+      - native_sim
+  drivers.mfd.build.tle927x_hwinfo:
+    extra_configs:
+      - CONFIG_HWINFO=y
+      - CONFIG_HWINFO_NATIVE=n
+    platform_allow:
+      - native_sim

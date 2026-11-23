@@ -1729,6 +1729,11 @@ static int api_transceive(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (req->xfer_mode == MSPI_MEMMAP) {
+		LOG_DBG("Memory mapped transfers are not supported");
+		return -ENOTSUP;
+	}
+
 	if (req->async) {
 		if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 			LOG_ERR("Asynchronous transfers require multithreading");
@@ -2022,6 +2027,11 @@ static int dev_pm_action_cb(const struct device *dev,
 #endif
 		vendor_specific_resume(dev);
 
+		/* Make sure controller is disabled. Not done in dev_init() as the
+		 * core registers may be inaccessible until vendor_specific_resume().
+		 */
+		write_ssienr(dev, 0);
+
 		dev_data->suspended = false;
 
 		return 0;
@@ -2032,17 +2042,9 @@ static int dev_pm_action_cb(const struct device *dev,
 		bool xip_enabled = COND_CODE_1(CONFIG_MSPI_MEMMAP,
 					       (dev_data->xip_enabled != 0),
 					       (false));
+		int rc = 0;
 
-#if defined(CONFIG_PINCTRL)
-		const struct mspi_dw_config *dev_config = dev->config;
-		int rc = pinctrl_apply_state(dev_config->pcfg,
-					     PINCTRL_STATE_SLEEP);
 
-		if (rc < 0) {
-			LOG_ERR("Cannot apply sleep pins state (%d)", rc);
-			return rc;
-		}
-#endif
 #if defined(CONFIG_MULTITHREADING)
 		if (xip_enabled ||
 		    k_sem_take(&dev_data->ctx_lock, K_NO_WAIT) != 0) {
@@ -2053,15 +2055,25 @@ static int dev_pm_action_cb(const struct device *dev,
 			return -EBUSY;
 		}
 
-		dev_data->suspended = true;
+#if defined(CONFIG_PINCTRL)
+		const struct mspi_dw_config *dev_config = dev->config;
 
-		vendor_specific_suspend(dev);
+		rc = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_SLEEP);
+		if (rc < 0) {
+			LOG_ERR("Cannot apply sleep pins state (%d)", rc);
+		}
+#endif
+		if (rc >= 0) {
+			dev_data->suspended = true;
+
+			vendor_specific_suspend(dev);
+		}
 
 #if defined(CONFIG_MULTITHREADING)
 		k_sem_give(&dev_data->ctx_lock);
 #endif
 
-		return 0;
+		return rc;
 	}
 
 	return -ENOTSUP;
@@ -2124,15 +2136,7 @@ static int dev_init(const struct device *dev)
 	}
 #endif
 
-	rc = pm_device_driver_init(dev, dev_pm_action_cb);
-	if (rc < 0) {
-		return rc;
-	}
-
-	/* Make sure controller is disabled. */
-	write_ssienr(dev, 0);
-
-	return 0;
+	return pm_device_driver_init(dev, dev_pm_action_cb);
 }
 
 static DEVICE_API(mspi, drv_api) = {

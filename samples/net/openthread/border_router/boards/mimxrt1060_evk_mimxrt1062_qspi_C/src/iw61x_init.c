@@ -94,7 +94,7 @@ static void iw61x_bringup_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1); ARG_UNUSED(p2); ARG_UNUSED(p3);
 	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(OPENTHREAD));
-	const struct hdlc_api *api;
+	const struct hdlc_driver_api *api;
 	int err;
 
 	err = iw61x_wait_ready(K_SECONDS(IW61X_FW_READY_TIMEOUT));

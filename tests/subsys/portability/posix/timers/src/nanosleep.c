@@ -116,6 +116,25 @@ ZTEST(posix_timers, test_clock_nanosleep_errors_errno)
 	zassert_equal(rem.tv_nsec, 0, "actual: %d expected: %d", (int)rem.tv_nsec, 0);
 }
 
+ZTEST(posix_timers, test_clock_nanosleep_large_expired_deadline)
+{
+	struct timespec req = {.tv_sec = (time_t)(UINT64_MAX / NSEC_PER_SEC)};
+	struct timespec now = req;
+	int64_t start;
+	int64_t elapsed;
+
+	if (sizeof(time_t) < sizeof(int64_t)) {
+		ztest_test_skip();
+	}
+
+	now.tv_sec++;
+	zassert_ok(clock_settime(CLOCK_REALTIME, &now));
+	start = k_uptime_get();
+	zassert_ok(clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &req, NULL));
+	elapsed = k_uptime_get() - start;
+	zassert_true(elapsed < 500, "expired deadline slept for %lld ms", (long long)elapsed);
+}
+
 ZTEST(posix_timers, test_nanosleep_execution)
 {
 	/* sleep for 1ns */

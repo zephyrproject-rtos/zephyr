@@ -20,6 +20,9 @@
 #include "conn_mgr_private.h"
 #include "test_ifaces.h"
 #include <zephyr/net/net_ip.h>
+#if defined(CONFIG_DNS_RESOLVER)
+#include <zephyr/net/dns_resolve.h>
+#endif
 
 #include <zephyr/logging/log.h>
 
@@ -46,6 +49,8 @@
 #define TEST_EXPECT_L4_IPV4_DISCONNECTED NET_EVENT_L4_CMD_IPV4_DISCONNECTED
 #define TEST_EXPECT_L4_IF_CONNECTED      NET_EVENT_L4_CMD_IF_CONNECTED
 #define TEST_EXPECT_L4_IF_DISCONNECTED   NET_EVENT_L4_CMD_IF_DISCONNECTED
+#define TEST_EXPECT_L4_DNS_READY         NET_EVENT_L4_CMD_DNS_READY
+#define TEST_EXPECT_L4_DNS_LOST          NET_EVENT_L4_CMD_DNS_LOST
 
 #define TEST_EXPECT_CLEAR(event) (global_stats.expected_events &= ~event)
 
@@ -110,6 +115,11 @@ static struct test_stats {
 	int conn_count_iface;  /* connect */
 	int dconn_count_iface; /* disconnect */
 
+	/** Name resolution event counters */
+	int event_count_dns; /* any */
+	int conn_count_dns;  /* ready */
+	int dconn_count_dns; /* lost */
+
 	/** The iface blamed for the last disconnect event */
 	struct net_if *dconn_iface_gen;
 	struct net_if *dconn_iface_ipv4;
@@ -151,6 +161,10 @@ static void reset_stats(void)
 	global_stats.event_count_ipv6 = 0;
 	global_stats.dconn_iface_ipv6 = NULL;
 	global_stats.conn_iface_ipv6 = NULL;
+
+	global_stats.conn_count_dns = 0;
+	global_stats.dconn_count_dns = 0;
+	global_stats.event_count_dns = 0;
 
 	global_stats.expected_events = 0;
 
@@ -263,6 +277,29 @@ void iface_handler(struct net_mgmt_event_callback *cb, uint64_t event, struct ne
 	}
 }
 
+struct net_mgmt_event_callback dns_callback;
+
+void dns_handler(struct net_mgmt_event_callback *cb, uint64_t event, struct net_if *iface)
+{
+	if (event == NET_EVENT_L4_DNS_READY) {
+		k_mutex_lock(&stats_mutex, K_FOREVER);
+		global_stats.conn_count_dns += 1;
+		global_stats.event_count_dns += 1;
+		TEST_EXPECT_CLEAR(TEST_EXPECT_L4_DNS_READY);
+		k_mutex_unlock(&stats_mutex);
+	} else if (event == NET_EVENT_L4_DNS_LOST) {
+		k_mutex_lock(&stats_mutex, K_FOREVER);
+		global_stats.dconn_count_dns += 1;
+		global_stats.event_count_dns += 1;
+		TEST_EXPECT_CLEAR(TEST_EXPECT_L4_DNS_LOST);
+		k_mutex_unlock(&stats_mutex);
+	}
+
+	if (global_stats.expected_events == 0) {
+		k_sem_give(&event_sem);
+	}
+}
+
 static void wait_for_events(uint64_t event_mask, k_timeout_t timeout)
 {
 	k_mutex_lock(&stats_mutex, K_FOREVER);
@@ -298,13 +335,44 @@ static void *conn_mgr_setup(void)
 	);
 	net_mgmt_add_event_callback(&iface_callback);
 
+	net_mgmt_init_event_callback(
+		&dns_callback, dns_handler, NET_EVENT_L4_DNS_READY | NET_EVENT_L4_DNS_LOST
+	);
+	net_mgmt_add_event_callback(&dns_callback);
+
 	return NULL;
 }
 
+#if defined(CONFIG_DNS_RESOLVER)
+/**
+ * @brief Replace the servers of the default DNS context.
+ *
+ * @param server Server to configure, or NULL to remove all servers.
+ */
+static void test_dns_set_server(const char *server)
+{
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	const char *servers[2];
+
+	(void)dns_resolve_close(ctx);
+
+	if (server != NULL) {
+		servers[0] = server;
+		servers[1] = NULL;
+
+		zassert_ok(dns_resolve_reconfigure(ctx, servers, NULL, DNS_SOURCE_MANUAL),
+			   "Failed to configure DNS servers");
+	}
+}
+#endif
 
 static void conn_mgr_before(void *data)
 {
 	ARG_UNUSED(data);
+
+#if defined(CONFIG_DNS_RESOLVER)
+	test_dns_set_server(NULL);
+#endif
 
 	reset_test_iface(if_simp_a);
 	reset_test_iface(if_simp_b);
@@ -1321,5 +1389,390 @@ ZTEST(conn_mgr_monitor, test_cycle_states_simple_ipv64)
 {
 	cycle_iface_states(if_simp_a, IPV6_FIRST);
 }
+
+/* Polling reports the current state, and an unknown flag is rejected */
+ZTEST(conn_mgr_monitor, test_wait_ready_poll)
+{
+	uint32_t last_seen = 0U;
+
+	zassert_equal(conn_mgr_get_readiness(), 0U, "No flag should be set.");
+	zassert_equal(conn_mgr_wait_ready(BIT(4), NULL, K_NO_WAIT), -EINVAL,
+		      "An unknown flag should be rejected.");
+	zassert_equal(conn_mgr_wait_ready(0U, NULL, K_NO_WAIT), -EINVAL,
+		      "An empty mask should be rejected.");
+	zassert_equal(conn_mgr_wait_ready(CONN_MGR_READY_IP_ANY, NULL, K_NO_WAIT), -EAGAIN,
+		      "Network should not be ready.");
+	zassert_equal(conn_mgr_wait_ready(CONN_MGR_READY_IP_ANY, NULL, EVENT_WAIT_TIME_SHORT),
+		      -EAGAIN, "Network should not become ready.");
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, NULL, EVENT_WAIT_TIME),
+		   "IPv4 should become ready.");
+
+	zassert_equal(conn_mgr_get_readiness(), CONN_MGR_READY_IPV4 | CONN_MGR_READY_IP_ANY,
+		      "Only IPv4 should be ready.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, &last_seen, K_NO_WAIT),
+		   "A first wait should return once the mask is met.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IP_ANY, NULL, K_NO_WAIT),
+		   "One IP family should be enough for any.");
+	zassert_equal(conn_mgr_wait_ready(CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6, NULL,
+					  K_NO_WAIT),
+		      -EAGAIN, "Both IP families should be required.");
+	zassert_equal(conn_mgr_wait_ready(CONN_MGR_READY_IPV6, NULL, K_NO_WAIT), -EAGAIN,
+		      "IPv6 should not be ready.");
+	zassert_equal(conn_mgr_wait_ready(CONN_MGR_READY_IPV4 | CONN_MGR_READY_DNS, NULL,
+					  K_NO_WAIT),
+		      -EAGAIN, "Name resolution should not be ready.");
+}
+
+static void wait_ready_up_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	/* Checked by the waiter, which fails if the iface does not come up */
+	(void)net_if_up(if_simp_a);
+}
+
+/* Waiting blocks until the network becomes ready */
+ZTEST(conn_mgr_monitor, test_wait_ready_blocks)
+{
+	static K_WORK_DELAYABLE_DEFINE(up_work, wait_ready_up_handler);
+	const int64_t delay_ms = 100;
+	uint32_t last_seen = 0U;
+	int64_t start;
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, &last_seen, EVENT_WAIT_TIME_SHORT),
+		      -EAGAIN, "IPv4 should not be ready yet.");
+
+	start = k_uptime_get();
+	zassert_true(k_work_schedule(&up_work, K_MSEC(delay_ms)) >= 0,
+		     "Failed to schedule iface up.");
+
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, &last_seen, K_SECONDS(10)),
+		   "IPv4 should become ready.");
+	zassert_true(k_uptime_get() - start >= delay_ms, "Wait should have blocked.");
+	zassert_true(k_uptime_get() - start < 1000, "Wait should end once IPv4 is ready.");
+}
+
+static int wait_in_event_ret;
+static int poll_in_event_ret;
+
+static void wait_ready_event_handler(struct net_mgmt_event_callback *cb, uint64_t event,
+				     struct net_if *iface)
+{
+	ARG_UNUSED(cb);
+	ARG_UNUSED(event);
+	ARG_UNUSED(iface);
+
+	wait_in_event_ret = conn_mgr_wait_ready(CONN_MGR_READY_IPV4, NULL, K_MSEC(1));
+	poll_in_event_ret = conn_mgr_wait_ready(CONN_MGR_READY_IPV4, NULL, K_NO_WAIT);
+}
+
+/* Waiting in net_mgmt event context is rejected, polling is allowed */
+ZTEST(conn_mgr_monitor, test_wait_ready_event_context)
+{
+	static struct net_mgmt_event_callback cb;
+
+	wait_in_event_ret = 1;
+	poll_in_event_ret = 1;
+	net_mgmt_init_event_callback(&cb, wait_ready_event_handler, NET_EVENT_L4_IPV4_CONNECTED);
+	net_mgmt_add_event_callback(&cb);
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_IPV4_CONNECTED, EVENT_WAIT_TIME);
+	net_mgmt_del_event_callback(&cb);
+
+	zassert_equal(wait_in_event_ret, -EDEADLK, "Waiting in event context should fail.");
+	zassert_ok(poll_in_event_ret, "Polling in event context should succeed.");
+}
+
+#define RETRY_DELAY_MS 200
+
+/* Waits with a retry delay, true if the wait ended early on a gain */
+static bool wait_ends_early(uint32_t mask, uint32_t *last_seen)
+{
+	int64_t start = k_uptime_get();
+
+	zassert_ok(conn_mgr_wait_ready(mask, last_seen, K_MSEC(RETRY_DELAY_MS)),
+		   "The mask should be met.");
+
+	return k_uptime_get() - start < RETRY_DELAY_MS;
+}
+
+/* A retry wait ends early only once a requested flag became ready again */
+ZTEST(conn_mgr_monitor, test_wait_ready_change)
+{
+	uint32_t last_seen = 0U;
+	uint32_t any_seen;
+	uint32_t prev;
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, &last_seen, EVENT_WAIT_TIME),
+		   "IPv4 should become ready.");
+	any_seen = last_seen;
+
+	prev = last_seen;
+	zassert_false(wait_ends_early(CONN_MGR_READY_IPV4, &last_seen),
+		      "Nothing became ready since last_seen.");
+	zassert_equal(last_seen, prev, "last_seen should not change without a gain.");
+
+	/* Another family becoming ready is not a gain of IPv4, but one of any family */
+	net_if_ipv6_addr_add(if_simp_a, &test_ipv6_a, NET_ADDR_MANUAL, 0);
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV6, NULL, DAD_WAIT_TIME),
+		   "IPv6 should become ready.");
+	zassert_true(wait_ends_early(CONN_MGR_READY_IP_ANY, &any_seen),
+		     "IPv6 becoming ready should be a gain of any family.");
+	zassert_false(wait_ends_early(CONN_MGR_READY_IPV4, &last_seen),
+		      "IPv6 becoming ready should not end an IPv4 wait early.");
+
+	/* Another iface becoming ready for an already ready family is a gain */
+	net_if_ipv4_addr_add(if_simp_b, &test_ipv4_b, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_b), 0, "net_if_up should succeed for if_simp_b.");
+	zassert_true(wait_ends_early(CONN_MGR_READY_IPV4, &last_seen),
+		     "A second IPv4 iface should end the wait early.");
+	zassert_false(wait_ends_early(CONN_MGR_READY_IPV4, &last_seen),
+		      "last_seen should be updated on return.");
+
+	/* Losing and regaining IPv4 after the last wait is a gain */
+	zassert_equal(net_if_down(if_simp_b), 0, "net_if_down should succeed for if_simp_b.");
+	zassert_equal(net_if_down(if_simp_a), 0, "net_if_down should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_DISCONNECTED, EVENT_WAIT_TIME);
+	zassert_equal(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, &last_seen, EVENT_WAIT_TIME_SHORT),
+		      -EAGAIN, "Losing IPv4 should not satisfy the wait.");
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	zassert_true(wait_ends_early(CONN_MGR_READY_IPV4, &last_seen),
+		     "Regaining IPv4 should end the wait early.");
+}
+
+/* The ai_family is restricted only when a single IP family is ready */
+ZTEST(conn_mgr_monitor, test_get_ready_addr_family)
+{
+	zassert_equal(conn_mgr_get_ready_addr_family(), NET_AF_UNSPEC,
+		      "No family ready should give NET_AF_UNSPEC.");
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, NULL, EVENT_WAIT_TIME),
+		   "IPv4 should become ready.");
+	zassert_equal(conn_mgr_get_ready_addr_family(), NET_AF_INET,
+		      "Only IPv4 ready should give NET_AF_INET.");
+
+	net_if_ipv6_addr_add(if_simp_b, &test_ipv6_b, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_b), 0, "net_if_up should succeed for if_simp_b.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV6, NULL, EVENT_WAIT_TIME),
+		   "IPv6 should become ready.");
+	zassert_equal(conn_mgr_get_ready_addr_family(), NET_AF_UNSPEC,
+		      "Both families ready should give NET_AF_UNSPEC.");
+
+	zassert_equal(net_if_down(if_simp_a), 0, "net_if_down should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_IPV4_DISCONNECTED, EVENT_WAIT_TIME);
+	zassert_equal(conn_mgr_get_ready_addr_family(), NET_AF_INET6,
+		      "Only IPv6 ready should give NET_AF_INET6.");
+}
+
+/* L4 connectivity alone must not report name resolution as available */
+ZTEST(conn_mgr_monitor, test_dns_not_ready_without_servers)
+{
+	struct test_stats stats;
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	net_if_ipv6_addr_add(if_simp_a, &test_ipv6_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+
+	wait_for_events(TEST_EXPECT_L4_CONNECTED, DAD_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.conn_count_gen, 1, "NET_EVENT_L4_CONNECTED should be fired.");
+	zassert_equal(stats.event_count_dns, 0,
+		      "No name resolution events should be fired without DNS servers.");
+	zassert_false(conn_mgr_dns_is_ready(), "Name resolution should not be available.");
+}
+
+#if defined(CONFIG_DNS_RESOLVER)
+#define TEST_DNS_IPV4_SERVER "10.0.0.53"
+#define TEST_DNS_IPV6_SERVER "[2001:db8:1::53]:53"
+
+/* Name resolution follows DNS server configuration while the iface stays ready */
+ZTEST(conn_mgr_monitor, test_dns_server_add_remove)
+{
+	struct test_stats stats;
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_CONNECTED, EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.event_count_dns, 0, "No name resolution events expected yet.");
+
+	/* Add an IPv4 DNS server */
+	test_dns_set_server(TEST_DNS_IPV4_SERVER);
+	wait_for_events(TEST_EXPECT_L4_DNS_READY, EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.conn_count_dns, 1, "NET_EVENT_L4_DNS_READY should be fired.");
+	zassert_equal(stats.event_count_dns, 1, "Only NET_EVENT_L4_DNS_READY should be fired.");
+	zassert_equal(stats.event_count_gen, 0, "L4 connectivity should not change.");
+	zassert_true(conn_mgr_dns_is_ready(), "Name resolution should be available.");
+
+	/* Remove all DNS servers */
+	test_dns_set_server(NULL);
+	wait_for_events(TEST_EXPECT_L4_DNS_LOST, EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.dconn_count_dns, 1, "NET_EVENT_L4_DNS_LOST should be fired.");
+	zassert_equal(stats.event_count_dns, 1, "Only NET_EVENT_L4_DNS_LOST should be fired.");
+	zassert_equal(stats.event_count_gen, 0, "L4 connectivity should not change.");
+	zassert_false(conn_mgr_dns_is_ready(), "Name resolution should not be available.");
+}
+
+/* An IPv4 DNS server is useless on an IPv6-only iface, and vice versa */
+ZTEST(conn_mgr_monitor, test_dns_family_mismatch)
+{
+	struct test_stats stats;
+
+	test_dns_set_server(TEST_DNS_IPV4_SERVER);
+
+	/* IPv6-only iface: L4 connected, but the IPv4 DNS server is unreachable */
+	net_if_ipv6_addr_add(if_simp_a, &test_ipv6_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_CONNECTED, DAD_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.conn_count_gen, 1, "NET_EVENT_L4_CONNECTED should be fired.");
+	zassert_equal(stats.event_count_dns, 0,
+		      "IPv4 DNS server must not make an IPv6-only iface DNS-ready.");
+
+	/* Gaining IPv4 makes the server reachable */
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	wait_for_events(TEST_EXPECT_L4_DNS_READY, EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.conn_count_dns, 1, "NET_EVENT_L4_DNS_READY should be fired.");
+	zassert_equal(stats.event_count_dns, 1, "Only NET_EVENT_L4_DNS_READY should be fired.");
+
+	/* Losing IPv4 makes it unreachable again, while L4 stays connected over IPv6 */
+	net_if_ipv4_addr_rm(if_simp_a, &test_ipv4_a);
+	wait_for_events(TEST_EXPECT_L4_DNS_LOST, EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.dconn_count_dns, 1, "NET_EVENT_L4_DNS_LOST should be fired.");
+	zassert_equal(stats.event_count_dns, 1, "Only NET_EVENT_L4_DNS_LOST should be fired.");
+	zassert_equal(stats.event_count_gen, 0, "L4 connectivity should not change.");
+
+	/* An IPv6 DNS server is reachable over IPv6 */
+	test_dns_set_server(TEST_DNS_IPV6_SERVER);
+	wait_for_events(TEST_EXPECT_L4_DNS_READY, EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.conn_count_dns, 1, "NET_EVENT_L4_DNS_READY should be fired.");
+	zassert_equal(stats.event_count_dns, 1, "Only NET_EVENT_L4_DNS_READY should be fired.");
+}
+
+/* Taking the only ready iface down loses both L4 connectivity and name resolution */
+ZTEST(conn_mgr_monitor, test_dns_iface_down)
+{
+	struct test_stats stats;
+
+	test_dns_set_server(TEST_DNS_IPV6_SERVER);
+
+	net_if_ipv6_addr_add(if_simp_a, &test_ipv6_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_CONNECTED | TEST_EXPECT_L4_DNS_READY, DAD_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.conn_count_gen, 1, "NET_EVENT_L4_CONNECTED should be fired.");
+	zassert_equal(stats.conn_count_dns, 1, "NET_EVENT_L4_DNS_READY should be fired.");
+	zassert_equal(net_if_down(if_simp_a), 0, "net_if_down should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_DISCONNECTED | TEST_EXPECT_L4_DNS_LOST, EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.dconn_count_gen, 1, "NET_EVENT_L4_DISCONNECTED should be fired.");
+	zassert_equal(stats.dconn_count_dns, 1, "NET_EVENT_L4_DNS_LOST should be fired.");
+	zassert_equal(stats.event_count_dns, 1, "Only NET_EVENT_L4_DNS_LOST should be fired.");
+}
+
+/* A DNS server bound to an iface only counts when that iface is ready */
+ZTEST(conn_mgr_monitor, test_dns_bound_iface)
+{
+	struct test_stats stats;
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	struct net_sockaddr_in6 server = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(53),
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 1, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0x53 } } },
+	};
+	const struct net_sockaddr *servers_sa[] = { (struct net_sockaddr *)&server, NULL };
+	int interfaces[] = { net_if_get_by_iface(if_simp_b), 0 };
+
+	zassert_ok(dns_resolve_reconfigure_with_interfaces(ctx, NULL, servers_sa, interfaces,
+							   DNS_SOURCE_MANUAL),
+		   "Failed to configure DNS servers");
+
+	/* Ready iface is not the one the server is bound to */
+	net_if_ipv6_addr_add(if_simp_a, &test_ipv6_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_CONNECTED, DAD_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.event_count_dns, 0,
+		      "DNS server bound to another iface must not count.");
+
+	/* Bound iface becomes ready */
+	net_if_ipv6_addr_add(if_simp_b, &test_ipv6_b, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_b), 0, "net_if_up should succeed for if_simp_b.");
+	wait_for_events(TEST_EXPECT_L4_DNS_READY, DAD_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.conn_count_dns, 1, "NET_EVENT_L4_DNS_READY should be fired.");
+	/* Bound iface goes down, the other one remains ready */
+	zassert_equal(net_if_down(if_simp_b), 0, "net_if_down should succeed for if_simp_b.");
+	wait_for_events(TEST_EXPECT_L4_DNS_LOST, EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.dconn_count_dns, 1, "NET_EVENT_L4_DNS_LOST should be fired.");
+	zassert_equal(stats.event_count_gen, 0, "L4 connectivity should not change.");
+}
+
+/* Resending status also reports name resolution state */
+ZTEST(conn_mgr_monitor, test_dns_resend_status)
+{
+	struct test_stats stats;
+
+	test_dns_set_server(TEST_DNS_IPV4_SERVER);
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_CONNECTED | TEST_EXPECT_L4_DNS_READY, EVENT_WAIT_TIME);
+	(void)get_reset_stats();
+
+	conn_mgr_mon_resend_status();
+	wait_for_events(TEST_EXPECT_L4_CONNECTED | TEST_EXPECT_L4_DNS_READY, EVENT_WAIT_TIME);
+	stats = get_reset_stats();
+	zassert_equal(stats.conn_count_dns, 1, "NET_EVENT_L4_DNS_READY should be resent.");
+	zassert_equal(stats.event_count_dns, 1, "Only NET_EVENT_L4_DNS_READY should be resent.");
+}
+
+/* Waiting for name resolution follows DNS server configuration */
+ZTEST(conn_mgr_monitor, test_wait_ready_dns)
+{
+	const uint32_t mask = CONN_MGR_READY_IPV4 | CONN_MGR_READY_DNS;
+	uint32_t last_seen = 0U;
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, NULL, EVENT_WAIT_TIME),
+		   "IPv4 should become ready.");
+	zassert_equal(conn_mgr_wait_ready(mask, NULL, K_NO_WAIT), -EAGAIN,
+		      "Name resolution should not be ready without servers.");
+
+	test_dns_set_server(TEST_DNS_IPV4_SERVER);
+	zassert_ok(conn_mgr_wait_ready(mask, &last_seen, EVENT_WAIT_TIME),
+		   "Name resolution should be ready.");
+	zassert_equal(conn_mgr_get_readiness(), mask | CONN_MGR_READY_IP_ANY,
+		      "IPv4 and DNS should be ready.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_DNS, NULL, K_NO_WAIT),
+		   "DNS alone should not require an IP family flag.");
+
+	/* Losing and regaining name resolution is a gain, with IPv4 unchanged */
+	test_dns_set_server(NULL);
+	wait_for_events(TEST_EXPECT_L4_DNS_LOST, EVENT_WAIT_TIME);
+	zassert_equal(conn_mgr_wait_ready(mask, &last_seen, K_NO_WAIT), -EAGAIN,
+		      "Name resolution should not be ready.");
+	test_dns_set_server(TEST_DNS_IPV4_SERVER);
+	zassert_true(wait_ends_early(mask, &last_seen),
+		     "Regaining name resolution should end the wait early.");
+}
+#endif /* CONFIG_DNS_RESOLVER */
 
 ZTEST_SUITE(conn_mgr_monitor, NULL, conn_mgr_setup, conn_mgr_before, NULL, NULL);

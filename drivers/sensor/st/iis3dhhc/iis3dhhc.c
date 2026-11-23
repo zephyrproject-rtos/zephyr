@@ -24,12 +24,14 @@ static int iis3dhhc_sample_fetch(const struct device *dev,
 				 enum sensor_channel chan)
 {
 	struct iis3dhhc_data *data = dev->data;
+	const struct iis3dhhc_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int16_t raw_accel[3];
 	int32_t ret = 0;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ACCEL_XYZ || chan == SENSOR_CHAN_ALL);
 
-	ret = iis3dhhc_acceleration_raw_get(data->ctx, raw_accel);
+	ret = iis3dhhc_acceleration_raw_get(ctx, raw_accel);
 	if (ret == 0) {
 		data->acc[0] = raw_accel[0];
 		data->acc[1] = raw_accel[1];
@@ -101,7 +103,8 @@ static int iis3dhhc_channel_get(const struct device *dev,
 static int iis3dhhc_odr_set(const struct device *dev,
 			    const struct sensor_value *val)
 {
-	struct iis3dhhc_data *data = dev->data;
+	const struct iis3dhhc_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	iis3dhhc_norm_mod_en_t en;
 
 	switch (val->val1) {
@@ -115,7 +118,7 @@ static int iis3dhhc_odr_set(const struct device *dev,
 		return -EIO;
 	}
 
-	if (iis3dhhc_data_rate_set(data->ctx, en)) {
+	if (iis3dhhc_data_rate_set(ctx, en)) {
 		LOG_DBG("failed to set sampling rate");
 		return -EIO;
 	}
@@ -155,10 +158,11 @@ static DEVICE_API(sensor, iis3dhhc_api_funcs) = {
 
 static int iis3dhhc_init_chip(const struct device *dev)
 {
-	struct iis3dhhc_data *data = dev->data;
+	const struct iis3dhhc_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t chip_id, rst;
 
-	if (iis3dhhc_device_id_get(data->ctx, &chip_id) < 0) {
+	if (iis3dhhc_device_id_get(ctx, &chip_id) < 0) {
 		LOG_DBG("Failed reading chip id");
 		return -EIO;
 	}
@@ -171,23 +175,23 @@ static int iis3dhhc_init_chip(const struct device *dev)
 	/*
 	 *  Restore default configuration
 	 */
-	iis3dhhc_reset_set(data->ctx, PROPERTY_ENABLE);
+	iis3dhhc_reset_set(ctx, PROPERTY_ENABLE);
 	do {
-		iis3dhhc_reset_get(data->ctx, &rst);
+		iis3dhhc_reset_get(ctx, &rst);
 	} while (rst);
 
 	/* Enable Block Data Update */
-	iis3dhhc_block_data_update_set(data->ctx, PROPERTY_ENABLE);
+	iis3dhhc_block_data_update_set(ctx, PROPERTY_ENABLE);
 
 	/* Set Output Data Rate */
 #ifdef CONFIG_IIS3DHHC_NORM_MODE
-	iis3dhhc_data_rate_set(data->ctx, 1);
+	iis3dhhc_data_rate_set(ctx, 1);
 #else
-	iis3dhhc_data_rate_set(data->ctx, 0);
+	iis3dhhc_data_rate_set(ctx, 0);
 #endif
 
 	/* Enable temperature compensation */
-	iis3dhhc_offset_temp_comp_set(data->ctx, PROPERTY_ENABLE);
+	iis3dhhc_offset_temp_comp_set(ctx, PROPERTY_ENABLE);
 
 	return 0;
 }
@@ -196,12 +200,10 @@ static int iis3dhhc_init(const struct device *dev)
 {
 	const struct iis3dhhc_config * const config = dev->config;
 
-	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR_DEVICE_NOT_READY(config->spi.bus);
+	if (!spi_is_ready_dt(&config->stmemsc_cfg.spi)) {
+		LOG_ERR_DEVICE_NOT_READY(config->stmemsc_cfg.spi.bus);
 		return -ENODEV;
 	}
-
-	config->bus_init(dev);
 
 	if (iis3dhhc_init_chip(dev) < 0) {
 		LOG_DBG("Failed to initialize chip");
@@ -233,10 +235,12 @@ static int iis3dhhc_init(const struct device *dev)
 										  irq_gpios,	\
 										  1),))))	\
 												\
-		.bus_init = iis3dhhc_spi_init,							\
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER |			\
-					    SPI_MODE_CPOL | SPI_MODE_CPHA |			\
-					    SPI_WORD_SET(8)),					\
+		STMEMSC_CTX_SPI(&iis3dhhc_config_##inst.stmemsc_cfg),				\
+		.stmemsc_cfg = {								\
+			.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER |		\
+						    SPI_MODE_CPOL | SPI_MODE_CPHA |		\
+						    SPI_WORD_SET(8)),				\
+		},										\
 	};											\
 												\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis3dhhc_init, NULL,					\

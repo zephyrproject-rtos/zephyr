@@ -23,6 +23,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <hexagon_vm.h>
+#include <zephyr/devicetree.h>
 
 GTEXT(__start)
 GTEXT(__reset_handler)
@@ -49,7 +50,7 @@ GTEXT(_interrupt_handler)
  *   7       Interrupt
  */
 SECTION_FUNC(reset, __start)
-	.p2align 2
+	.p2align 8
 	/* 0: Reset */
 	jump #__reset_handler
 	/* 1: Machine check */
@@ -88,6 +89,10 @@ SECTION_FUNC(TEXT, __reset_handler)
 
 	/* Clear frame pointer */
 	r30 = #0
+
+	/* Disable FRAMELIMIT until the first thread switch loads c16. */
+	r0 = #0
+	c16 = r0
 
 	/*
 	 * Initialize BSS section BEFORE page table setup.
@@ -168,6 +173,17 @@ _hang:
 	jump #_hang
 
 #ifdef CONFIG_MMU
+#define HVM_KERNEL_BASE    DT_REG_ADDR(DT_NODELABEL(hvm_kernel))
+#define HVM_KERNEL_SIZE    DT_REG_SIZE(DT_NODELABEL(hvm_kernel))
+
+#define PHYS_ADDR_HI16(addr) (((addr) >> 16) & 0xFFFF)
+#define PHYS_ADDR_LO16(addr) ((addr) & 0xFFFF)
+#define PDE_OFFSET(addr)     (((addr) >> 22) * 4)
+
+#if (HVM_KERNEL_SIZE != 0x800000)
+#error "hvm_kernel devicetree node size must stay 8MB (two 4MB PDEs are hand-unrolled below)"
+#endif
+
 SECTION_FUNC(TEXT, _setup_page_table)
 	allocframe(#8)
 
@@ -225,26 +241,27 @@ _pte_loop:
 	} :endloop0
 
 _page_table_done:
-	/* Map PL011 UART device at 0x10000000 (PDE byte offset 0x100).
-	 * The shared bit bypasses H2's guestmap translation so the
-	 * guest physical address is used directly as the host address.
-	 * U is set as with the RAM mapping above: trap0 dispatch (e.g.
-	 * uart_poll_out()) runs at USER tier and needs it to access this page.
+#if DT_HAS_CHOSEN(zephyr_console)
+	/* Map the chosen console device. The shared bit bypasses H2's
+	 * guestmap translation so the guest physical address is used
+	 * directly as the host address. U is set because console output
+	 * runs at USER tier during trap0 dispatch.
 	 */
-	r0 = add(r5, #0x100)
-	r1.h = #0x1000
-	r1.l = #0x0000
+	r0 = add(r5, #HVM_CONSOLE_PDE_OFFSET)
+	r1.h = #(HVM_CONSOLE_MAP_BASE >> 16)
+	r1.l = #(HVM_CONSOLE_MAP_BASE & 0xffff)
 	r2 = #(__HVM_PTE_R | __HVM_PTE_W | __HVM_PTE_U | __HVM_PTE_SHARED)
 	r3 = #(__HEXAGON_C_DEV << 6)
 	r2 = or(r2, r3)
 	r2 = or(r2, #__HVM_PDE_S_4MB)
 	r1 = add(r1, r2)
 	memw(r0+#0) = r1
+#endif
 
-	/* Map H2 kernel at 0x9b800000 (PDE byte offset 0x9B8) */
-	r0 = add(r5, #0x9B8)
-	r1.h = #0x9b80
-	r1.l = #0x0000
+	/* Map H2 kernel code and data. */
+	r0 = add(r5, #PDE_OFFSET(HVM_KERNEL_BASE))
+	r1.h = #PHYS_ADDR_HI16(HVM_KERNEL_BASE)
+	r1.l = #PHYS_ADDR_LO16(HVM_KERNEL_BASE)
 	r2 = #(__HVM_PTE_R | __HVM_PTE_W | __HVM_PTE_X)
 	r3 = #(__HEXAGON_C_WB_L2 << 6)
 	r2 = or(r2, r3)
@@ -252,8 +269,8 @@ _page_table_done:
 	r1 = add(r1, r2)
 	memw(r0+#0) = r1
 
-	r1.h = #0x9bc0
-	r1.l = #0x0000
+	r1.h = #PHYS_ADDR_HI16(HVM_KERNEL_BASE + 0x400000)
+	r1.l = #PHYS_ADDR_LO16(HVM_KERNEL_BASE + 0x400000)
 	r1 = add(r1, r2)
 	memw(r0+#4) = r1
 

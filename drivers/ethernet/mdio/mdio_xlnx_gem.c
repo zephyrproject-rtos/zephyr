@@ -297,7 +297,7 @@ static DEVICE_API(mdio, xlnx_gem_mdio_api) = {
 };
 
 #define XLNX_GEM_MDIO_DEV_INIT(port)\
-	DEVICE_DT_INST_DEFINE(port, &xlnx_gem_mdio_initialize, NULL, NULL,\
+	DEVICE_DT_INST_DEFINE(port, xlnx_gem_mdio_initialize, NULL, NULL,\
 			      DEVICE_DT_GET(DT_INST_PARENT(port)), POST_KERNEL,\
 			      CONFIG_MDIO_INIT_PRIORITY, &xlnx_gem_mdio_api);
 

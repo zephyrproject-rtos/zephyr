@@ -24,10 +24,10 @@ config NUM_IRQS
 	default 167 if SOC_DIE_PSC3M6
 	default 140
 
-# MPU-based null-pointer dereferencing detection cannot be applied on PSC3M6 as
+# MPU-based null-pointer dereferencing detection cannot be applied on PSC3 as
 # the (0x0 - 0x400) is unmapped target.
 choice NULL_POINTER_EXCEPTION_DETECTION
-	default NULL_POINTER_EXCEPTION_DETECTION_NONE if SOC_DIE_PSC3M6
+	default NULL_POINTER_EXCEPTION_DETECTION_NONE
 endchoice
 
 # SysTick freezes in every deepsleep-class state (HF clocks stop; a DS-RAM warm

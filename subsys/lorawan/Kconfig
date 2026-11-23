@@ -21,7 +21,6 @@ menu "LoRaWAN Regions"
 
 config LORAWAN_REGION_AS923
 	bool "Asia 923MHz Frequency band"
-	depends on !LORA_MODULE_BACKEND_NATIVE
 
 config LORAWAN_REGION_AU915
 	bool "Australia 915MHz Frequency band"
@@ -53,13 +52,22 @@ config LORAWAN_REGION_IN865
 
 config LORAWAN_REGION_US915
 	bool "North America 915MHz Frequency band"
-	depends on !LORA_MODULE_BACKEND_NATIVE
 
 config LORAWAN_REGION_RU864
 	bool "Russia 864MHz Frequency band"
 	depends on !LORA_MODULE_BACKEND_NATIVE
 
 endmenu
+
+config LORAWAN_JOIN_BACKOFF_JITTER_PERCENT
+	int "Jitter percentage for each join request backoff"
+	depends on HAS_RANDOM_GENERATOR
+	range 1 100
+	default 20
+	help
+	  Randomise the backoff between join requests by a percentage of
+	  the base backoff to desynchronise devices across the network in
+	  the case of a synchronised failure.
 
 rsource "loramac-node/Kconfig"
 

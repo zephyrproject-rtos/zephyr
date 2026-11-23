@@ -151,6 +151,46 @@ ZTEST(coap, test_build_simple_pdu)
 			  "Invalid payload pointer");
 }
 
+ZTEST(coap, test_build_invalid_token)
+{
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	uint8_t token[COAP_TOKEN_MAX_LEN + 1] = { 0 };
+	int r;
+
+	/* Token length exceeding COAP_TOKEN_MAX_LEN (RFC 7252 Section 3) */
+	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE,
+			     COAP_VERSION_1, COAP_TYPE_CON,
+			     sizeof(token), token,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, -EINVAL,
+		      "Accepted token length exceeding COAP_TOKEN_MAX_LEN");
+
+	/* Non-zero token length with NULL token pointer */
+	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE,
+			     COAP_VERSION_1, COAP_TYPE_CON,
+			     4, NULL,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, -EINVAL,
+		      "Accepted non-zero token length with NULL token pointer");
+
+#if defined(CONFIG_COAP_OVER_RELIABLE_TRANSPORT)
+	/* TCP CoAP: Token length exceeding COAP_TOKEN_MAX_LEN (RFC 8323) */
+	r = coap_tcp_packet_init(&cpkt, data, COAP_BUF_SIZE,
+				 sizeof(token), token,
+				 COAP_METHOD_GET);
+	zassert_equal(r, -EINVAL,
+		      "Accepted TCP token length exceeding COAP_TOKEN_MAX_LEN");
+
+	/* TCP CoAP: Non-zero token length with NULL token pointer */
+	r = coap_tcp_packet_init(&cpkt, data, COAP_BUF_SIZE,
+				 4, NULL,
+				 COAP_METHOD_GET);
+	zassert_equal(r, -EINVAL,
+		      "Accepted TCP non-zero token length with NULL token pointer");
+#endif
+}
+
 /* No options, No payload */
 ZTEST(coap, test_parse_empty_pdu)
 {

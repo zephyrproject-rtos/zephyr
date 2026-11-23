@@ -74,6 +74,19 @@
 		};
 	};
 
+	/* On-board W25Q64JVSSIQ QSPI flash (U12), used in single-bit SPI mode */
+	pinmux_flexcomm6_lpspi: pinmux_flexcomm6_lpspi {
+		group0 {
+			pinmux = <FC6_P0_PIO3_20>,
+				 <FC6_P1_PIO3_21>,
+				 <FC6_P2_PIO3_22>,
+				 <FC6_P3_PIO3_23>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
 	pinmux_flexpwm1_pwm0: pinmux_flexpwm1_pwm0 {
 		group0 {
 			pinmux = <PWM1_A0_PIO3_12>,
@@ -193,14 +206,14 @@
 
 	pinmux_smartdma_camera: pinmux_smartdma_camera {
 		group0 {
-			pinmux = <EZH_PIO0_PIO1_4>,
-				 <EZH_PIO1_PIO1_5>,
-				 <EZH_PIO2_PIO1_6>,
-				 <EZH_PIO3_PIO1_7>,
-				 <EZH_PIO4_PIO1_8>,
-				 <EZH_PIO5_PIO1_9>,
-				 <EZH_PIO6_PIO1_10>,
-				 <EZH_PIO7_PIO1_11>,
+			pinmux = <SMARTDMA_PIO0_PIO1_4>,
+				 <SMARTDMA_PIO1_PIO1_5>,
+				 <SMARTDMA_PIO2_PIO1_6>,
+				 <SMARTDMA_PIO3_PIO1_7>,
+				 <SMARTDMA_PIO4_PIO1_8>,
+				 <SMARTDMA_PIO5_PIO1_9>,
+				 <SMARTDMA_PIO6_PIO1_10>,
+				 <SMARTDMA_PIO7_PIO1_11>,
 				 <PIO0_4>,
 				 <PIO0_5>,
 				 <PIO0_7>,

@@ -131,7 +131,7 @@ static DEVICE_API(mdio, mdio_wch_api) = {
 		.clk_id = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), mac, id),                   \
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                   \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &mdio_wch_init, NULL, &mdio_wch_data_##inst,                   \
+	DEVICE_DT_INST_DEFINE(inst, mdio_wch_init, NULL, &mdio_wch_data_##inst,                    \
 			      &mdio_wch_config_##inst, POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,     \
 			      &mdio_wch_api);
 

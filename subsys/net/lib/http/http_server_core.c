@@ -148,6 +148,16 @@ static int setup_h1_h2_socket(const struct http_service_desc *svc, int af,
 			return -errno;
 		}
 
+		/* Run the TLS handshake in the server loop rather than in
+		 * accept(), so that a client slow to complete it does not
+		 * hold up the other clients. Sockets that do not support it
+		 * keep the handshake in accept().
+		 */
+		if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_HANDSHAKE_ON_ACCEPT, &(int){0},
+				     sizeof(int)) < 0) {
+			LOG_DBG("%s: setsockopt(%s): %d", "h1/2", "TLS_HANDSHAKE_ON_ACCEPT", errno);
+		}
+
 #if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
 #if defined(CONFIG_HTTP_SERVER_VERSION_1) || defined(CONFIG_HTTP_SERVER_VERSION_2)
 		if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
@@ -501,6 +511,13 @@ static int accept_new_client(int server_fd)
 		return new_socket;
 	}
 
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_TCP_NODELAY)) {
+		if (zsock_setsockopt(new_socket, NET_IPPROTO_TCP, ZSOCK_TCP_NODELAY,
+				     &(int){1}, sizeof(int)) < 0) {
+			LOG_DBG("[%d] failed to set TCP_NODELAY (%d)", new_socket, errno);
+		}
+	}
+
 	const char * const addrstr =
 		net_sprint_addr(sa.ss_family, &net_sin((struct net_sockaddr *)&sa)->sin_addr);
 	LOG_DBG("New client from %s:%d", addrstr != NULL ? addrstr : "<unknown>",
@@ -600,6 +617,11 @@ void http_server_release_client(struct http_client_ctx *client)
 	(void)k_work_cancel_delayable(&client->inactivity_timer);
 
 	client_release_resources(client);
+
+#if defined(CONFIG_HTTP_SERVER_VERSION_2)
+	http_hpack_dynamic_table_free(client->hpack_table);
+	client->hpack_table = NULL;
+#endif
 
 	client->service->data->num_clients--;
 
@@ -749,6 +771,8 @@ static void init_client_ctx(struct http_client_ctx *client, const struct http_se
 	client->preface_sent = false;
 	client->settings_acked = false;
 	client->window_size = HTTP_SERVER_INITIAL_WINDOW_SIZE;
+	client->hpack_table = NULL;
+	client->hpack_table_missed = false;
 
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
 		client->is_h3 = false;
@@ -814,6 +838,23 @@ int enter_http_done_state(struct http_client_ctx *client)
 	return -EAGAIN;
 }
 
+/* An HTTP/2 DATA, HEADERS, CONTINUATION or SETTINGS frame without payload
+ * leaves nothing in the buffer once its header is parsed. It still has to be
+ * processed now: it may end the header block or the request, and the client
+ * may send nothing more until it is answered.
+ */
+static bool http2_empty_frame_pending(const struct http_client_ctx *client)
+{
+	if (!IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) || client->current_frame.length != 0) {
+		return false;
+	}
+
+	return client->server_state == HTTP_SERVER_FRAME_DATA_STATE ||
+	       client->server_state == HTTP_SERVER_FRAME_HEADERS_STATE ||
+	       client->server_state == HTTP_SERVER_FRAME_CONTINUATION_STATE ||
+	       client->server_state == HTTP_SERVER_FRAME_SETTINGS_STATE;
+}
+
 static int handle_http_request(struct http_client_ctx *client)
 {
 	int ret = -EINVAL;
@@ -865,6 +906,14 @@ static int handle_http_request(struct http_client_ctx *client)
 			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
 				handle_http_frame_priority(client) : -ENOTSUP;
 			break;
+		case HTTP_SERVER_FRAME_PING_STATE:
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+				handle_http_frame_ping(client) : -ENOTSUP;
+			break;
+		case HTTP_SERVER_FRAME_UNKNOWN_STATE:
+			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
+				handle_http_frame_unknown(client) : -ENOTSUP;
+			break;
 		case HTTP_SERVER_FRAME_PADDING_STATE:
 			ret = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) ?
 				handle_http_frame_padding(client) : -ENOTSUP;
@@ -876,7 +925,7 @@ static int handle_http_request(struct http_client_ctx *client)
 			ret = handle_http_done(client);
 			break;
 		}
-	} while (ret >= 0 && client->data_len > 0);
+	} while (ret >= 0 && (client->data_len > 0 || http2_empty_frame_pending(client)));
 
 	if (ret < 0 && ret != -EAGAIN) {
 		return ret;
@@ -1643,12 +1692,8 @@ int http_server_path_len_without_query(const char *path)
 	return len;
 }
 
-static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
+static bool skip_this(const struct http_resource_detail *detail, bool is_websocket)
 {
-	struct http_resource_detail *detail;
-
-	detail = (struct http_resource_detail *)resource->detail;
-
 	if (is_websocket) {
 		if (detail->type != HTTP_RESOURCE_TYPE_WEBSOCKET) {
 			return true;
@@ -1662,16 +1707,25 @@ static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
 	return false;
 }
 
-/* Resolves '.' / '..' in the path portion of the URL (everything before the first '?' or '#')
- * so the caller-visible buffer holds a canonical form. The query/fragment portion is preserved
- * unchanged. The output is always shorter or equal in length, so the in-place rewrite is safe.
+/* Drops a fragment, which is not part of a request target (RFC 9112 section 3.2.1), and resolves
+ * '.' / '..' in the path portion of the URL (everything before the first '?') so the
+ * caller-visible buffer holds a canonical form. The query portion is preserved unchanged. The
+ * output is always shorter or equal in length, so the in-place rewrite is safe.
  */
 void http_server_remove_dot_segments(char *path)
 {
+	char *fragment = strchr(path, '#');
 	char *in = path;
 	char *out = path;
-	char *query = strpbrk(path, "?#");
-	size_t qtail_len = (query != NULL) ? strlen(query) : 0;
+	char *query;
+	size_t qtail_len;
+
+	if (fragment != NULL) {
+		*fragment = '\0';
+	}
+
+	query = strchr(path, '?');
+	qtail_len = (query != NULL) ? strlen(query) : 0;
 
 	while ((*in != '\0') && (in != query)) {
 		if (in[0] == '.') {
@@ -1739,7 +1793,7 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 						 const char *path, int *path_len, bool is_websocket)
 {
 	HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
-		if (skip_this(resource, is_websocket)) {
+		if (skip_this(resource->detail, is_websocket)) {
 			continue;
 		}
 
@@ -1755,7 +1809,7 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
 			int ret;
 
-			if (skip_this(resource, is_websocket)) {
+			if (skip_this(resource->detail, is_websocket)) {
 				continue;
 			}
 
@@ -1767,7 +1821,7 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 		}
 	}
 
-	if (service->res_fallback != NULL) {
+	if (service->res_fallback != NULL && !skip_this(service->res_fallback, is_websocket)) {
 		*path_len = http_server_path_len_without_query(path);
 		return service->res_fallback;
 	}
@@ -1775,6 +1829,20 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 	NET_DBG("No match for %s", path);
 
 	return NULL;
+}
+
+/* Like fs_stat(), but only a regular file counts: a directory of that name
+ * is not something the server can serve.
+ */
+static int stat_file(const char *fname, struct fs_dirent *dirent)
+{
+	int ret = fs_stat(fname, dirent);
+
+	if ((ret == 0) && (dirent->type != FS_DIR_ENTRY_FILE)) {
+		return -ENOENT;
+	}
+
+	return ret;
 }
 
 int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
@@ -1788,7 +1856,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 		*chosen_compression = HTTP_NONE;
 		if (IS_BIT_SET(supported_compression, HTTP_BR)) {
 			snprintk(fname + len, fname_size - len, ".br");
-			ret = fs_stat(fname, &dirent);
+			ret = stat_file(fname, &dirent);
 			if (ret == 0) {
 				*chosen_compression = HTTP_BR;
 				goto return_filename;
@@ -1796,7 +1864,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 		}
 		if (IS_BIT_SET(supported_compression, HTTP_GZIP)) {
 			snprintk(fname + len, fname_size - len, ".gz");
-			ret = fs_stat(fname, &dirent);
+			ret = stat_file(fname, &dirent);
 			if (ret == 0) {
 				*chosen_compression = HTTP_GZIP;
 				goto return_filename;
@@ -1804,7 +1872,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 		}
 		if (IS_BIT_SET(supported_compression, HTTP_ZSTD)) {
 			snprintk(fname + len, fname_size - len, ".zst");
-			ret = fs_stat(fname, &dirent);
+			ret = stat_file(fname, &dirent);
 			if (ret == 0) {
 				*chosen_compression = HTTP_ZSTD;
 				goto return_filename;
@@ -1812,7 +1880,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 		}
 		if (IS_BIT_SET(supported_compression, HTTP_COMPRESS)) {
 			snprintk(fname + len, fname_size - len, ".lzw");
-			ret = fs_stat(fname, &dirent);
+			ret = stat_file(fname, &dirent);
 			if (ret == 0) {
 				*chosen_compression = HTTP_COMPRESS;
 				goto return_filename;
@@ -1820,7 +1888,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 		}
 		if (IS_BIT_SET(supported_compression, HTTP_DEFLATE)) {
 			snprintk(fname + len, fname_size - len, ".zz");
-			ret = fs_stat(fname, &dirent);
+			ret = stat_file(fname, &dirent);
 			if (ret == 0) {
 				*chosen_compression = HTTP_DEFLATE;
 				goto return_filename;
@@ -1829,7 +1897,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 		/* No compressed file found, try the original filename */
 		fname[len] = '\0';
 	}
-	ret = fs_stat(fname, &dirent);
+	ret = stat_file(fname, &dirent);
 	if (ret != 0) {
 		return -ENOENT;
 	}
@@ -1837,6 +1905,54 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 return_filename:
 	*file_size = dirent.size;
 	return ret;
+}
+
+static bool path_has_extension(const char *path, int len)
+{
+	for (int i = len - 1; i >= 0 && path[i] != '/'; i--) {
+		if (path[i] == '.') {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+int http_server_find_static_fs_file(const struct http_resource_detail_static_fs *static_fs_detail,
+				    char *url, char *fname, size_t fname_size, char *content_type,
+				    size_t content_type_size, size_t *file_size,
+				    uint8_t supported_compression,
+				    enum http_compression *chosen_compression)
+{
+	int len = http_server_path_len_without_query(url);
+	int ret;
+
+	if (len == 1) {
+		/* url is just the leading slash, use index.html as filename */
+		snprintk(fname, fname_size, "%s/index.html", static_fs_detail->fs_path);
+	} else {
+		http_server_get_content_type_from_extension(url, content_type, content_type_size);
+		snprintk(fname, fname_size, "%s%.*s", static_fs_detail->fs_path, len, url);
+	}
+
+	ret = http_server_find_file(fname, fname_size, file_size, supported_compression,
+				    chosen_compression);
+	if (ret == 0 || static_fs_detail->fallback_file == NULL || path_has_extension(url, len)) {
+		return ret;
+	}
+
+	/* A path without an extension is a client-side route, serve the fallback file.
+	 * A missing asset keeps its 404.
+	 */
+	snprintk(fname, fname_size, "%s/%s", static_fs_detail->fs_path,
+		 static_fs_detail->fallback_file);
+	strncpy(content_type, "text/html", content_type_size);
+	http_server_get_content_type_from_extension(fname, content_type, content_type_size);
+
+	NET_DBG("%.*s not found, serving %s", len, url, fname);
+
+	return http_server_find_file(fname, fname_size, file_size, supported_compression,
+				     chosen_compression);
 }
 
 void http_server_get_content_type_from_extension(char *url, char *content_type,
@@ -1962,6 +2078,28 @@ bool http_response_is_provided(struct http_response_ctx *rsp)
 {
 	if (rsp->status != 0 || rsp->header_count > 0 || rsp->body_len > 0) {
 		return true;
+	}
+
+	return false;
+}
+
+bool http_server_is_connection_specific_header(const char *name)
+{
+	/* Connection-specific fields that HTTP/2 and HTTP/3 forbid
+	 * (RFC 9113, Section 8.2.2 and RFC 9114, Section 4.2).
+	 */
+	static const char *const fields[] = {
+		"connection",
+		"keep-alive",
+		"proxy-connection",
+		"transfer-encoding",
+		"upgrade",
+	};
+
+	ARRAY_FOR_EACH(fields, i) {
+		if (strcasecmp(name, fields[i]) == 0) {
+			return true;
+		}
 	}
 
 	return false;

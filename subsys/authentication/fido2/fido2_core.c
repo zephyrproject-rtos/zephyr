@@ -808,7 +808,8 @@ static enum fido2_status handle_client_pin(uint8_t *cbor_in, size_t cbor_in_len,
 		return fido2_clientpin_cmd_set_pin(
 			cp_params.pin_uv_auth_protocol, cp_params.key_agreement,
 			cp_params.key_agreement_len, cp_params.new_pin_enc,
-			cp_params.new_pin_enc_len, cp_params.pin_uv_auth_param);
+			cp_params.new_pin_enc_len, cp_params.pin_uv_auth_param,
+			cp_params.pin_uv_auth_param_len);
 	case FIDO2_CLIENTPIN_CHANGE_PIN:
 		if (!cp_params.has_pin_uv_auth_protocol || !cp_params.has_pin_uv_auth_param ||
 		    !cp_params.has_new_pin_enc || !cp_params.has_pin_hash_enc ||
@@ -819,7 +820,8 @@ static enum fido2_status handle_client_pin(uint8_t *cbor_in, size_t cbor_in_len,
 			cp_params.pin_uv_auth_protocol, cp_params.key_agreement,
 			cp_params.key_agreement_len, cp_params.pin_hash_enc,
 			cp_params.pin_hash_enc_len, cp_params.new_pin_enc,
-			cp_params.new_pin_enc_len, cp_params.pin_uv_auth_param);
+			cp_params.new_pin_enc_len, cp_params.pin_uv_auth_param,
+			cp_params.pin_uv_auth_param_len);
 	case FIDO2_CLIENTPIN_GET_PIN_TOKEN: /* Backwards compatibility */
 		if (!cp_params.has_pin_uv_auth_protocol || !cp_params.has_key_agreement ||
 		    !cp_params.has_pin_hash_enc) {

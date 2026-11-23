@@ -139,6 +139,10 @@ static int virtnet_send(const struct device *dev, struct net_pkt *pkt)
 	struct virtnet_data *data = dev->data;
 	size_t len = net_pkt_get_len(pkt);
 
+	if (len > NET_ETH_MAX_FRAME_SIZE) {
+		return -EMSGSIZE;
+	}
+
 	if (net_pkt_read(pkt, data->txb + sizeof(struct _virtio_net_hdr), len)) {
 		LOG_ERR("could not read contents of packet to be sent");
 		return -EIO;
@@ -216,7 +220,7 @@ static int virtnet_dev_init(const struct device *dev)
 
 	(void)net_eth_mac_load(&config->mcfg, data->mac);
 
-	data->virtio_devcfg = virtio_get_device_specific_config(config->vdev);
+	data->virtio_devcfg = virtio_get_device_specific_config(config->vdev, NULL);
 	if (data->virtio_devcfg == NULL) {
 		LOG_ERR("could not get config struct");
 	}
@@ -232,7 +236,7 @@ static int virtnet_dev_init(const struct device *dev)
 	return 0;
 }
 
-static struct ethernet_api virtnet_api = {
+static DEVICE_API(ethernet, virtnet_api) = {
 	.iface_api.init = virtnet_if_init,
 	.get_capabilities = virtnet_get_capabilities,
 	.send = virtnet_send,

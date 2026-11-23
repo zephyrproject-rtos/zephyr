@@ -92,7 +92,7 @@ tests:
       - frdm_mcxa156
   drivers.adc.dma_espressif:
     extra_args:
-      - EXTRA_CONF_FILE="overlay-dma-esp32.conf"
+      - EXTRA_CONF_FILE="dma-esp32.conf"
     depends_on:
       - adc
     platform_allow:

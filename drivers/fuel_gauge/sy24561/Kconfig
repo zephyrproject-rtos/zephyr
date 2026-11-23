@@ -4,7 +4,7 @@
 # Zephyr sy24561 fuel-gauge device
 
 config SY24561
-	bool "SILERGY SY24561 fuel gauge"
+	bool "SILERGY SY24561 fuel gauge driver"
 	default y
 	depends on DT_HAS_SILERGY_SY24561_ENABLED
 	select I2C

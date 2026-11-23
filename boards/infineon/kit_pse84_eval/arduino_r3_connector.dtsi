@@ -1,0 +1,79 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Arduino UNO R3 connector on J1 to J4, per kit user guide 002-39007 Rev. *B,
+ * Figure 3 and the MCU pin table.
+ *
+ * Signal levels differ by pin:
+ *   - A0 to A5 (J2): 1.8 V only.
+ *   - D2 to D9: through the U19 TXS0108E auto-direction translator, which
+ *     carries internal pull-ups on both sides.
+ *   - D0, D1, D10 to D13: VDD_PERI, 3.3 V by default.
+ *   - D14 (SDA) and D15 (SCL): through the U11 bidirectional translator,
+ *     with 4.7 kOhm pull-ups to VDD_PERI on the header side.
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio_prt15 2 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio_prt15 3 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio_prt15 4 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio_prt15 5 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio_prt15 6 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio_prt15 7 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio_prt17 0 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio_prt17 1 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio_prt13 6 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio_prt11 3 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio_prt11 7 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio_prt11 5 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio_prt10 5 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio_prt11 1 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio_prt15 0 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio_prt10 7 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio_prt16 3 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio_prt16 1 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio_prt16 2 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio_prt16 0 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio_prt8 1 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio_prt8 0 0>;
+	};
+};
+
+arduino_i2c: &i2c0 {};
+
+/*
+ * SCB10 on D11 (MOSI), D12 (MISO) and D13 (SCK).  Left disabled; a shield
+ * enables it and supplies the chip select, normally on D10.
+ */
+arduino_spi: &scb10 {
+	compatible = "infineon,spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	clocks = <&peri0_group1_16bit_2>;
+
+	pinctrl-0 = <&p16_1_scb10_spi_m_mosi &p16_2_scb10_spi_m_miso &p16_0_scb10_spi_m_clk>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&peri0_group1_16bit_2 {
+	status = "okay";
+};
+
+/* A0 to A5 and D8 are on port 15. */
+&gpio_prt15 {
+	status = "okay";
+};

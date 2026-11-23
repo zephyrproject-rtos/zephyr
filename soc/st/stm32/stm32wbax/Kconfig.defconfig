@@ -15,9 +15,6 @@ choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
 
-config STM32_LPTIM_TIMER
-	default y if PM
-
 config BT_STM32WBA
 	select ENTROPY_GENERATOR
 	select USE_STM32_HAL_RAMCFG

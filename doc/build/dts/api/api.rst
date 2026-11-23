@@ -487,7 +487,7 @@ device.
      - Sets UART device used by the :ref:`gdbstub` subsystem
    * - zephyr,hdlc-rcp-if
      - Selects the radio device used by the OpenThread HDLC RCP interface.
-       This device must have :c:struct:`hdlc_api` as its ``api``.
+       This device must have :c:struct:`hdlc_driver_api` as its ``api``.
    * - zephyr,host-cmd-espi-backend
      - Refer to :ref:`ec_host_cmd_backend_api` API documentation.
    * - zephyr,host-cmd-shi-backend

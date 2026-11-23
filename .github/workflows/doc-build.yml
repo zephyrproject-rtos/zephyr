@@ -14,6 +14,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   DOXYGEN_VERSION: 1.17.0
   DOXYGEN_SHA256SUM: 75419ef4f446fc1c24ef12514b574e66e898ee6f527c6ae2ad84f91a905823c2
@@ -73,9 +77,6 @@ jobs:
       image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.4.20260912
       options: '--entrypoint /bin/bash'
     timeout-minutes: 60
-    concurrency:
-      group: doc-build-html-${{ github.ref }}
-      cancel-in-progress: true
 
     steps:
 
@@ -113,13 +114,6 @@ jobs:
 
     - name: Install Python packages required for documentation build
       run: |
-        # FIXME: The requirements files pin an unreleased reuse-tool change
-        #        (custom_properties) needed by the zephyr-licensing-exceptions::
-        #        directive. The snapshot reports the same version as the
-        #        release the CI image ships, so pip skips it unless reuse is
-        #        uninstalled first. Drop this and the pin once the API is in a
-        #        reuse release.
-        pip uninstall -y reuse
         pip install -r scripts/requirements-actions.txt --require-hashes
         pip install -r doc/requirements.txt --require-hashes
 
@@ -322,9 +316,6 @@ jobs:
       github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
-    concurrency:
-      group: doc-build-pdf-${{ github.ref }}
-      cancel-in-progress: true
 
     steps:
     - name: checkout
@@ -334,7 +325,7 @@ jobs:
         path: zephyr
 
     - name: Set up Python
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: 3.12
         cache: pip
@@ -357,7 +348,7 @@ jobs:
         echo "/opt/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
 
     - name: Setup Zephyr project
-      uses: zephyrproject-rtos/action-zephyr-setup@be8136a8bba01580485d98b7ad2d32477c36a49a # v1.0.15
+      uses: zephyrproject-rtos/action-zephyr-setup@cc223fe61661d8573c1cd3f95f72f90cce729ae9 # v1.0.16
       with:
         app-path: zephyr
         toolchains: 'arm-zephyr-eabi'

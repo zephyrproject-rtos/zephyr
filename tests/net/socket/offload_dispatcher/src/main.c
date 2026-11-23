@@ -300,7 +300,7 @@ static void offloaded_1_iface_init(struct net_if *iface)
 	net_if_socket_offload_set(iface, offload_1_socket);
 }
 
-static struct offloaded_if_api offloaded_1_if_api = {
+static DEVICE_API(offloaded_if, offloaded_1_if_api) = {
 	.iface_api.init = offloaded_1_iface_init,
 };
 
@@ -362,7 +362,7 @@ static void offloaded_2_iface_init(struct net_if *iface)
 	net_if_socket_offload_set(iface, offload_2_socket);
 }
 
-static struct offloaded_if_api offloaded_2_if_api = {
+static DEVICE_API(offloaded_if, offloaded_2_if_api) = {
 	.iface_api.init = offloaded_2_iface_init,
 };
 
@@ -392,7 +392,7 @@ static int dummy_native_dev_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static const struct dummy_api dummy_native_dev_api = {
+static DEVICE_API(dummy, dummy_native_dev_api) = {
 	.iface_api.init = dummy_native_iface_init,
 	.send = dummy_native_dev_send,
 };

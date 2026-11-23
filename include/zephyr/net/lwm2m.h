@@ -203,6 +203,26 @@ enum lwm2m_socket_states {
 	LWM2M_SOCKET_STATE_NO_DATA,	 /**< No more data is expected. */
 };
 
+/** @cond INTERNAL_HIDDEN */
+/** Largest response stored for deduplication. Responses without a payload
+ *  need at most 17 bytes: a 4-byte CoAP header, an 8-byte token and a
+ *  5-byte Block1 option. The remaining bytes keep the entry 4-byte aligned.
+ */
+#define LWM2M_COAP_DEDUP_RESPONSE_SIZE 20
+
+/** A handled Confirmable request, remembered to answer its retransmissions. */
+struct lwm2m_coap_dedup_entry {
+	uint32_t timestamp;
+	uint16_t mid;
+	bool in_use;
+	/** The request got an empty ACK and its response went out separately. */
+	bool acknowledged;
+	/** Length of the stored response, 0 when it did not fit. */
+	uint8_t response_len;
+	uint8_t response[LWM2M_COAP_DEDUP_RESPONSE_SIZE];
+};
+/** @endcond */
+
 /**
  * @brief LwM2M context structure to maintain information for a single
  * LwM2M connection.
@@ -223,6 +243,9 @@ struct lwm2m_ctx {
 	 */
 	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING + 1];
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES + 1];
+#if CONFIG_LWM2M_COAP_DEDUP_CACHE_SIZE > 0
+	struct lwm2m_coap_dedup_entry dedup_cache[CONFIG_LWM2M_COAP_DEDUP_CACHE_SIZE];
+#endif
 	sys_slist_t pending_sends;
 #if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	sys_slist_t queued_messages;
@@ -1328,7 +1351,12 @@ int lwm2m_register_delete_callback(uint16_t obj_id,
  * @brief Set data buffer for a resource
  *
  * Use this function to set the data buffer and flags for the specified LwM2M
- * resource.
+ * resource. The buffer replaces the storage the object provides and stays in
+ * use until it is replaced by another call, or until the resource instance or
+ * the object instance is deleted. A resource instance given a buffer other than
+ * the one it currently holds counts as application-supplied from then on, even
+ * if the object's own storage is set again later, and lwm2m_delete_res_inst()
+ * releases whatever buffer it holds.
  *
  * @param[in] path LwM2M path as a struct
  * @param[in] buffer_ptr Data buffer pointer
@@ -1391,7 +1419,14 @@ int lwm2m_create_res_inst(const struct lwm2m_obj_path *path);
 /**
  * @brief Delete a resource instance
  *
- * Use this function to remove an existing resource instance
+ * Use this function to remove an existing resource instance.
+ *
+ * The storage the object provides for the instance is kept and serves the next
+ * resource instance created in its place. A buffer set with lwm2m_set_res_buf()
+ * is released together with the data flags, so an instance created afterwards
+ * needs a new buffer before it can be written. A server Write that creates an
+ * instance in such a slot fails unless a pre-write callback supplies the
+ * buffer.
  *
  * @param[in] path LwM2M path as a struct
  *

@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI K3 SPINLOCK hardware spinlock controller (e.g. J722S SPINLOCK0).
+
+  Each LOCK_REG_j is acquired by reading it (0 means this read took the lock,
+  1 means it was already taken). Write 0 to release. Soft reset of the module
+  clears all locks and must not be performed while other initiators may hold one.
+
+compatible: "ti,k3-hwspinlock"
+
+include:
+  - name: base.yaml
+  - name: hwspinlock-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  num-locks:
+    description: |
+      Number of LOCK_REG entries implemented by this instance (J722S: 256).
+
+hwlock-cells:
+  - id
+
+examples:
+  - |
+    spinlock0: hwspinlock@2a000000 {
+        compatible = "ti,k3-hwspinlock";
+        reg = <0x2a000000 0x1000>;
+        #hwlock-cells = <1>;
+        num-locks = <256>;
+    };

@@ -60,7 +60,6 @@ config APDS9960_ENABLE_ALS
 
 config APDS9960_ENABLE_GESTURE
 	bool "Gesture Sense"
-	default n
 	help
 	  Enable Gesture Sense.
 

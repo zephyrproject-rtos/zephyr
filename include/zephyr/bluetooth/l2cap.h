@@ -15,7 +15,7 @@
  * @brief L2CAP
  * @defgroup bt_l2cap L2CAP
  * @since 1.0
- * @version 1.0.1
+ * @version 1.1.1
  * @ingroup bluetooth
  * @{
  */
@@ -304,6 +304,8 @@ struct bt_l2cap_le_chan {
 
 	struct k_work			rx_work;
 	struct k_fifo			rx_queue;
+	/* Calls bt_l2cap_chan_ops.status on behalf of the TX processor */
+	struct k_work			status_work;
 
 	bt_l2cap_chan_state_t		state;
 	/** Remote PSM to be connected */
@@ -313,6 +315,14 @@ struct bt_l2cap_le_chan {
 	/** Opcode of the pending request. Used to match responses with requests. */
 	uint8_t                         pending_req;
 	bt_security_t			required_sec_level;
+
+	/** @cond INTERNAL_HIDDEN */
+	/* Server that accepted this channel, NULL when the channel was
+	 * initiated locally. Keeps a reference to that server for as long as
+	 * the channel lives.
+	 */
+	struct bt_l2cap_server		*_server;
+	/** @endcond */
 
 	/* Response Timeout eXpired (RTX) timer */
 	struct k_work_delayable		rtx_work;
@@ -521,8 +531,8 @@ struct bt_l2cap_br_chan {
 	struct bt_l2cap_br_endpoint     rx;
 	/** Channel Transmission Endpoint */
 	struct bt_l2cap_br_endpoint     tx;
-	/* For internal use only */
-	atomic_t                        flags[1];
+	/** Channel flags, for internal use only */
+	ATOMIC_DEFINE(flags, 64);
 
 	bt_l2cap_chan_state_t           state;
 	/** Remote PSM to be connected */
@@ -879,6 +889,15 @@ struct bt_l2cap_server {
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_server *server,
 		      struct bt_l2cap_chan **chan);
 
+	/** @cond INTERNAL_HIDDEN */
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	/* References held on this server: one while a connection request for
+	 * it is being handled, and one per channel it accepted.
+	 */
+	atomic_t _refs;
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+	/** @endcond */
+
 	sys_snode_t node;
 };
 
@@ -897,11 +916,33 @@ struct bt_l2cap_server {
  *  a GATT service, and that's how L2CAP clients discover how to connect to
  *  the server.
  *
+ *  Registering a server that is already registered fails with @c -EALREADY.
+ *
  *  @param server Server structure.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_l2cap_server_register(struct bt_l2cap_server *server);
+
+/** @brief Unregister L2CAP server.
+ *
+ *  Unregister the L2CAP server for a PSM, making the PSM available for
+ *  registration again.
+ *
+ *  @note The call does not wait for the server to become idle: while a
+ *  connection request for this server is being handled, or channels it has
+ *  accepted are still connected, it fails with @c -EBUSY instead. This also
+ *  covers a call from the server's own callbacks.
+ *
+ *  @param server Server structure.
+ *
+ *  @retval 0 Success.
+ *  @retval -EINVAL @p server is NULL.
+ *  @retval -EBUSY A connection request for @p server is being handled, or
+ *                 channels it accepted are still connected.
+ *  @retval -ENOENT @p server was not registered.
+ */
+int bt_l2cap_server_unregister(struct bt_l2cap_server *server);
 
 /** @brief Register L2CAP server on BR/EDR oriented connection.
  *
@@ -1050,14 +1091,20 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
  *  Regarding to input parameter, to get details see reference description
  *  to bt_l2cap_chan_connect() API above.
  *
- *  @note For BR/EDR connections, this function does not wait for a signaling buffer. If signaling
- *  buffers are temporarily unavailable, the disconnection request will be retried asynchronously.
- *  The return value 0 indicates that the disconnection process has been successfully initiated,
- *  not that the disconnection request PDU has been sent.
+ *  @note This function does not wait for a signaling buffer. If signaling buffers are
+ *  temporarily unavailable, the disconnection request will be retried asynchronously, except in
+ *  the case of ``-ENOMEM`` below. The return value 0 indicates that the disconnection process has
+ *  been successfully initiated, not that the disconnection request PDU has been sent.
  *
  *  @param chan Channel object.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 Disconnection initiated.
+ *  @retval -ENOTCONN The channel has no connection.
+ *  @retval -EALREADY A BR/EDR channel is already being disconnected.
+ *  @retval -ENOMEM No buffer for the request of an LE channel that is not connected or that waits
+ *                  for the response to a request of its own. The channel is left as it is: a
+ *                  disconnection in progress continues, and otherwise the call can be repeated
+ *                  once the pending request has completed.
  */
 int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
 

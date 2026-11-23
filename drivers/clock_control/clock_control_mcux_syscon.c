@@ -15,6 +15,57 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
+#define MCUX_LPC546XX_ENET_RMII_REF_CLK_HZ 50000000U
+
+#if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
+#define MCUX_LPC_SYSCON_CTIMER_GATE(n) kCLOCK_GateCTIMER##n
+#elif defined(CONFIG_SOC_SERIES_LPC55XXX) || defined(CONFIG_SOC_FAMILY_MCXN) ||                    \
+	defined(CONFIG_SOC_SERIES_MCXW2XX)
+#define MCUX_LPC_SYSCON_CTIMER_GATE(n) kCLOCK_Timer##n
+#else
+/* LPC54xxx, RW6xx and the i.MX RT5xx/6xx/7xx parts name the same gate Ct32b. */
+#define MCUX_LPC_SYSCON_CTIMER_GATE(n) kCLOCK_Ct32b##n
+#endif
+
+#define MCUX_LPC_SYSCON_CTIMER_CASE(n)                                                             \
+	case MCUX_CTIMER##n##_CLK:                                                                 \
+		*gate = MCUX_LPC_SYSCON_CTIMER_GATE(n);                                            \
+		return true;
+
+static bool mcux_lpc_syscon_ctimer_gate(uint32_t clock_name, clock_ip_name_t *gate)
+{
+	switch (clock_name) {
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
+		MCUX_LPC_SYSCON_CTIMER_CASE(0)
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1))
+		MCUX_LPC_SYSCON_CTIMER_CASE(1)
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
+		MCUX_LPC_SYSCON_CTIMER_CASE(2)
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer3))
+		MCUX_LPC_SYSCON_CTIMER_CASE(3)
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer4))
+		MCUX_LPC_SYSCON_CTIMER_CASE(4)
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer5))
+		MCUX_LPC_SYSCON_CTIMER_CASE(5)
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer6))
+		MCUX_LPC_SYSCON_CTIMER_CASE(6)
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer7))
+		MCUX_LPC_SYSCON_CTIMER_CASE(7)
+#endif
+	}
+
+	return false;
+}
+#endif /* CONFIG_COUNTER_MCUX_CTIMER || CONFIG_PWM_MCUX_CTIMER */
+
 static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 					    clock_control_subsys_t sub_system)
 {
@@ -232,6 +283,8 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	if ((uint32_t)sub_system == MCUX_ENET_QOS_CLK) {
 #if defined(CONFIG_SOC_FAMILY_MCXA)
 		CLOCK_EnableClock(kCLOCK_GateENET0);
+#elif defined(CONFIG_SOC_SERIES_LPC54XXX)
+		CLOCK_EnableClock(kCLOCK_Eth);
 #else
 		CLOCK_EnableClock(kCLOCK_Enet);
 #endif /* defined(CONFIG_PINCTRL_NXP_PORT) */
@@ -502,6 +555,16 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
+	{
+		clock_ip_name_t gate;
+
+		if (mcux_lpc_syscon_ctimer_gate((uint32_t)sub_system, &gate)) {
+			CLOCK_EnableClock(gate);
+		}
+	}
+#endif
+
 	return 0;
 }
 
@@ -523,6 +586,28 @@ static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
 	}
 #endif
 #endif /* defined(CONFIG_COUNTER_NXP_MRT) */
+
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXN) || \
+	defined(CONFIG_SOC_FAMILY_MCXL) || defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	if ((uint32_t)sub_system == MCUX_FREQME_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
+		CLOCK_DisableClock(kCLOCK_GateFREQME);
+#elif defined(CONFIG_SOC_FAMILY_MCXN)
+		CLOCK_DisableClock(kCLOCK_Freqme);
+#else /* CONFIG_SOC_SERIES_IMXRT7XX */
+		CLOCK_DisableClock(kCLOCK_Freqme0);
+#endif
+	}
+#endif
+
+#if defined(CONFIG_SOC_SERIES_IMXRT6XX) || \
+	defined(CONFIG_SOC_SERIES_IMXRT5XX) || \
+	defined(CONFIG_SOC_SERIES_RW6XX)
+	if ((uint32_t)sub_system == MCUX_FREQME_CLK) {
+		CLOCK_DisableClock(kCLOCK_Freqme);
+	}
+#endif
+
 #if defined(CONFIG_EQDC_MCUX)
 	if ((uint32_t)sub_system == MCUX_EQDC_CLK ||
 	    (uint32_t)sub_system == MCUX_EQDC0_CLK) {
@@ -572,6 +657,16 @@ static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
 #else
 		CLOCK_DisableClock(kCLOCK_Opamp3);
 #endif
+	}
+#endif
+
+#if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
+	{
+		clock_ip_name_t gate;
+
+		if (mcux_lpc_syscon_ctimer_gate((uint32_t)sub_system, &gate)) {
+			CLOCK_DisableClock(gate);
+		}
 	}
 #endif
 
@@ -982,7 +1077,18 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS) || defined(CONFIG_ETH_NXP_DWC_ETHER_QOS)
 	case MCUX_ENET_QOS_PTP_CLK:
+#if !defined(CONFIG_SOC_SERIES_LPC54XXX)
 		*rate = CLOCK_GetEnetPtpRefClkFreq();
+#elif DT_ENUM_HAS_VALUE(DT_NODELABEL(enet), phy_connection_type, rmii)
+		/*
+		 * The timestamp logic of the LPC546xx runs from the reference
+		 * clock the PHY drives into the SoC, which RMII fixes at 50 MHz.
+		 * No clock mux or gate is involved.
+		 */
+		*rate = MCUX_LPC546XX_ENET_RMII_REF_CLK_HZ;
+#else
+		return -ENOTSUP;
+#endif
 		break;
 #endif
 

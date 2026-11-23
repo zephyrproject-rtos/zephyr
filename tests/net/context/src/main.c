@@ -1070,7 +1070,7 @@ out:
 
 struct net_context_test net_context_data;
 
-static struct dummy_api net_context_if_api = {
+static DEVICE_API(dummy, net_context_if_api) = {
 	.iface_api.init = net_context_iface_init,
 	.send = tester_send,
 };

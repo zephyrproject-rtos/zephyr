@@ -1,0 +1,104 @@
+/*
+ * Copyright (c) 2019, embedjournal.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,osdp-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led: led {
+			gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+			label = "LD";
+		};
+	};
+
+	aliases {
+		led0 = &led;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	mul = <9>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(72)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+	/* USBPRE not set: USB clock = 72 MHz / 1.5 = 48 MHz */
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	current-speed = <115200>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	current-speed = <115200>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_master_pa4 &spi1_sck_master_pa5
+		     &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&timers1 {
+	status = "okay";
+
+	pwm1: pwm {
+		pinctrl-0 = <&tim1_ch1_pwm_out_pa8>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc12_common {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pa0>;
+	pinctrl-names = "default";
+	status = "okay";
+};

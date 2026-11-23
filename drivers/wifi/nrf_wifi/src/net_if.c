@@ -32,10 +32,6 @@ LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 #include "wpa_supp_if.h"
 #include "net_if.h"
 
-#ifdef CONFIG_NRF70_STA_MODE
-static struct net_if_mcast_monitor mcast_monitor;
-#endif /* CONFIG_NRF70_STA_MODE */
-
 void nrf_wifi_set_iface_event_handler(void *os_vif_ctx,
 						struct nrf_wifi_umac_event_set_interface *event,
 						unsigned int event_len)
@@ -113,15 +109,11 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 		return;
 	}
 
-	if (rpu_ctx_zep->last_rpu_recovery_time_ms &&
-		((k_uptime_get() - rpu_ctx_zep->last_rpu_recovery_time_ms) <
-	    CONFIG_NRF_WIFI_RPU_RECOVERY_QUIET_PERIOD_MS)) {
+	if (!sys_timepoint_expired(rpu_ctx_zep->rpu_recovery_quiet_end)) {
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
-		LOG_ERR("%s: In quiet period (last_rpu_recovery_time_ms=%ld), ignoring",
-			__func__, rpu_ctx_zep->last_rpu_recovery_time_ms);
+		LOG_ERR("%s: In quiet period, ignoring", __func__);
 #else
-		LOG_DBG("%s: In quiet period (last_rpu_recovery_time_ms=%ld), ignoring",
-			__func__, rpu_ctx_zep->last_rpu_recovery_time_ms);
+		LOG_DBG("%s: In quiet period, ignoring", __func__);
 #endif
 		return;
 	}
@@ -133,19 +125,14 @@ static void nrf_wifi_rpu_recovery_work_handler(struct k_work *work)
 #endif
 	k_mutex_lock(&rpu_ctx_zep->rpu_lock, K_FOREVER);
 #if CONFIG_NRF_WIFI_RPU_RECOVERY_MAX_RETRIES > 0
-	if (!rpu_ctx_zep->last_rpu_recovery_time_ms ||
-		(k_uptime_get() - rpu_ctx_zep->last_rpu_recovery_time_ms) <
-	    CONFIG_NRF_WIFI_RPU_RECOVERY_RETRY_WINDOW_S * MSEC_PER_SEC) {
-		if (rpu_ctx_zep->rpu_recovery_retries >=
-		    CONFIG_NRF_WIFI_RPU_RECOVERY_MAX_RETRIES) {
-			LOG_ERR("%s: Maximum recovery retries reached, rebooting system",
-				__func__);
-			sys_reboot(SYS_REBOOT_COLD);
-		}
-		rpu_ctx_zep->rpu_recovery_retries++;
-	} else {
+	if (sys_timepoint_expired(rpu_ctx_zep->rpu_recovery_retry_window_end)) {
 		rpu_ctx_zep->rpu_recovery_retries = 0;
 	}
+	if (rpu_ctx_zep->rpu_recovery_retries >= CONFIG_NRF_WIFI_RPU_RECOVERY_MAX_RETRIES) {
+		LOG_ERR("%s: Maximum recovery retries reached, rebooting system", __func__);
+		sys_reboot(SYS_REBOOT_COLD);
+	}
+	rpu_ctx_zep->rpu_recovery_retries++;
 #endif
 	rpu_ctx_zep->rpu_recovery_in_progress = true;
 	rpu_ctx_zep->wdt_irq_received += hal_dev_ctx->wdt_irq_received;
@@ -190,7 +177,10 @@ static void nrf_wifi_rpu_recovery_bringup_work_handler(struct k_work *work)
 		LOG_ERR("%s: net_if_up failed: %d", __func__, ret);
 	}
 	rpu_ctx_zep->rpu_recovery_in_progress = false;
-	rpu_ctx_zep->last_rpu_recovery_time_ms = k_uptime_get();
+	rpu_ctx_zep->rpu_recovery_quiet_end =
+		sys_timepoint_calc(K_MSEC(CONFIG_NRF_WIFI_RPU_RECOVERY_QUIET_PERIOD_MS));
+	rpu_ctx_zep->rpu_recovery_retry_window_end =
+		sys_timepoint_calc(K_SECONDS(CONFIG_NRF_WIFI_RPU_RECOVERY_RETRY_WINDOW_S));
 	k_mutex_unlock(&rpu_ctx_zep->rpu_lock);
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY_DEBUG
 	LOG_ERR("%s: RPU recovery done", __func__);
@@ -383,6 +373,9 @@ enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev __unused,
 #endif
 #ifdef CONFIG_NRF70_PROMISC_DATA_RX
 	caps |= ETHERNET_PROMISC_MODE;
+#endif
+#ifdef CONFIG_NRF70_STA_MODE
+	caps |= ETHERNET_HW_FILTERING;
 #endif
 	return caps;
 }
@@ -647,81 +640,36 @@ out:
 }
 
 #ifdef CONFIG_NRF70_STA_MODE
-static void ip_maddr_event_handler(struct net_if *iface,
-	const struct net_addr *addr, bool is_joined)
+/* The caller holds vif_lock and has checked that the RPU context exists. */
+static int nrf_wifi_mcast_filter_set(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
+				     const struct net_eth_addr *mac_addr, bool add)
 {
-	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-	struct net_eth_addr mac_addr;
-	struct nrf_wifi_umac_mcast_cfg *mcast_info = NULL;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	struct nrf_wifi_umac_mcast_cfg mcast_info = { 0 };
 	enum nrf_wifi_status status;
-	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	int ret;
 
-	vif_ctx_zep = nrf_wifi_get_vif_ctx(iface);
-	if (!vif_ctx_zep) {
-		return;
-	}
+	mcast_info.type = add ? MCAST_ADDR_ADD : MCAST_ADDR_DEL;
+	memcpy(mcast_info.mac_addr, mac_addr->addr, NRF_WIFI_ETH_ADDR_LEN);
 
-	ret = k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
-	if (ret != 0) {
-		LOG_ERR("%s: Failed to lock vif_lock", __func__);
-		return;
-	}
-
-	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
-	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
-		LOG_DBG("%s: rpu_ctx_zep or rpu_ctx is NULL",
-			__func__);
-		goto unlock;
-	}
-
-	mcast_info = nrf_wifi_osal_mem_zalloc(sizeof(*mcast_info));
-
-	if (!mcast_info) {
-		LOG_ERR("%s: Unable to allocate memory of size %d "
-			"for mcast_info", __func__, sizeof(*mcast_info));
-		goto unlock;
-	}
-
-	switch (addr->family) {
-	case NET_AF_INET:
-		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &mac_addr);
-		break;
-	case NET_AF_INET6:
-		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
-		break;
-	default:
-		LOG_ERR("%s: Invalid address family %d", __func__, addr->family);
-		break;
-	}
-
-	if (is_joined) {
-		mcast_info->type = MCAST_ADDR_ADD;
-	} else {
-		mcast_info->type = MCAST_ADDR_DEL;
-	}
-
-	memcpy(((char *)(mcast_info->mac_addr)),
-		   &mac_addr,
-		   NRF_WIFI_ETH_ADDR_LEN);
-
-	status = nrf_wifi_sys_fmac_set_mcast_addr(rpu_ctx_zep->rpu_ctx,
-					      vif_ctx_zep->vif_idx,
-					      mcast_info);
-	if (status == NRF_WIFI_STATUS_FAIL) {
+	status = nrf_wifi_sys_fmac_set_mcast_addr(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx,
+						  &mcast_info);
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		char mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
 
-		LOG_ERR("%s: nrf_wifi_fmac_set_multicast failed	for"
-			" mac addr=%s",
-			__func__,
-			nrf_wifi_sprint_ll_addr_buf(mac_addr.addr,
-						   WIFI_MAC_ADDR_LEN,
-						   mac_string_buf,
-						   sizeof(mac_string_buf)));
+		LOG_ERR("%s: Failed to %s multicast filter %s", __func__, add ? "add" : "remove",
+			nrf_wifi_sprint_ll_addr_buf(mac_addr->addr, WIFI_MAC_ADDR_LEN,
+						    mac_string_buf, sizeof(mac_string_buf)));
+		return -EIO;
 	}
-unlock:
-	nrf_wifi_osal_mem_free(mcast_info);
-	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+
+	return 0;
+}
+
+static void nrf_wifi_mcast_replay_cb(struct net_if *iface __unused,
+				     const struct net_eth_mcast_addr *maddr, void *user_data)
+{
+	/* A failure is logged by the helper, the remaining groups are still programmed. */
+	(void)nrf_wifi_mcast_filter_set(user_data, &maddr->addr, true);
 }
 #endif /* CONFIG_NRF70_STA_MODE */
 
@@ -862,9 +810,6 @@ void nrf_wifi_if_init_zep(struct net_if *iface)
 	net_eth_carrier_on(iface);
 	net_if_dormant_on(iface);
 
-#ifdef CONFIG_NRF70_STA_MODE
-	net_if_mcast_mon_register(&mcast_monitor, iface, ip_maddr_event_handler);
-#endif /* CONFIG_NRF70_STA_MODE */
 #ifdef CONFIG_NRF70_DATA_TX
 	k_work_init(&vif_ctx_zep->nrf_wifi_net_iface_work,
 		    nrf_wifi_net_iface_work_handler);
@@ -1055,6 +1000,9 @@ int nrf_wifi_if_start_zep(const struct device *dev, struct net_if *iface)
 #ifdef CONFIG_NRF70_STA_MODE
 	nrf_wifi_wpa_supp_event_mac_chgd(vif_ctx_zep);
 
+	/* Groups joined while the interface was down are only tracked by the L2. */
+	net_eth_mcast_addr_foreach(iface, nrf_wifi_mcast_replay_cb, vif_ctx_zep);
+
 #ifdef CONFIG_NRF_WIFI_LOW_POWER
 	status = nrf_wifi_sys_fmac_set_power_save(rpu_ctx_zep->rpu_ctx,
 					      vif_ctx_zep->vif_idx,
@@ -1241,10 +1189,11 @@ int nrf_wifi_if_get_config_zep(const struct device *dev,
 	    type == ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT) {
 		config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
 					 ETHERNET_CHECKSUM_SUPPORT_IPV4_ICMP |
-					 ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
+					 ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP |
+					 ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP |
 					 ETHERNET_CHECKSUM_SUPPORT_IPV6_ICMP |
-					 ETHERNET_CHECKSUM_SUPPORT_TCP |
-					 ETHERNET_CHECKSUM_SUPPORT_UDP;
+					 ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP |
+					 ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP;
 	}
 #endif
 #ifdef CONFIG_NRF_WIFI_ZERO_COPY_TX
@@ -1303,6 +1252,26 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 		ret = 0;
 		goto unlock;
 	}
+
+#ifdef CONFIG_NRF70_STA_MODE
+	if (type == ETHERNET_CONFIG_TYPE_FILTER) {
+		if (config->filter.type != ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS) {
+			ret = -ENOTSUP;
+			goto unlock;
+		}
+
+		rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+		if (rpu_ctx_zep == NULL || rpu_ctx_zep->rpu_ctx == NULL) {
+			/* Programmed by nrf_wifi_if_start_zep() from the L2 list */
+			ret = 0;
+			goto unlock;
+		}
+
+		ret = nrf_wifi_mcast_filter_set(vif_ctx_zep, &config->filter.mac_address,
+						config->filter.set);
+		goto unlock;
+	}
+#endif /* CONFIG_NRF70_STA_MODE */
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {

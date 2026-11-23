@@ -432,8 +432,15 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 		desc->read.control1 = FIELD_PREP(0x3FFF, fragment->len);
 		desc->read.control2 = FIELD_PREP(0x7FFF, total_bytes);
 
+		/* The MAC computes the ICMPv4 checksum over the field as it is,
+		 * so a packet that carries its transport layer checksum already,
+		 * a forwarded one for example, gets the IPv4 header checksum only.
+		 */
 		if (frags_idx == 0) {
-			desc->read.control2 |= FIRST_DESCRIPTOR_FLAG | TX_CHECKSUM_INSERT_FLAG;
+			desc->read.control2 |= FIRST_DESCRIPTOR_FLAG |
+					       (net_pkt_is_chksum_done(pkt) ?
+							TX_CHECKSUM_INSERT_IP_HDR_FLAG :
+							TX_CHECKSUM_INSERT_FLAG);
 		}
 
 		/* if there are more fragments use buffer2 - ringbuffer mode */
@@ -570,8 +577,6 @@ static void tx_dma_done(const struct device *dev)
 		ARG_UNUSED(timestamp);
 #endif
 
-		eth_stats_update_pkts_tx(data->iface);
-
 		enet_qos_tx_free_pkt(pkt);
 	}
 
@@ -651,11 +656,11 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 	volatile union nxp_enet_qos_rx_desc *desc_arr = data->rx.descriptors;
 	uint32_t desc_idx = rx_data->next_desc_idx;
 	volatile union nxp_enet_qos_rx_desc *desc = &desc_arr[desc_idx];
-	struct net_pkt *pkt = NULL;
+	struct net_pkt *pkt = rx_data->pkt;
 	struct net_buf *new_buf;
 	struct net_buf *buf;
 	size_t pkt_len;
-	size_t processed_len;
+	size_t processed_len = rx_data->processed_len;
 
 	LOG_DBG("RX work start: %p", work);
 
@@ -663,7 +668,17 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 	 * DMA can use them for receiving again. We stop when we reach DMA owned part of ring.
 	 */
 	while (software_owns_descriptor(desc)) {
+		uint32_t status;
+
 		rx_data->next_desc_idx = (desc_idx + 1U) % NUM_RX_BUFDESC;
+		status = desc->write.control3;
+
+		if (pkt != NULL && (status & FIRST_DESCRIPTOR_FLAG) != 0U) {
+			/* A new frame resynchronizes an unterminated previous frame. */
+			net_pkt_unref(pkt);
+			pkt = NULL;
+			eth_stats_update_errors_rx(data->iface);
+		}
 
 		if (pkt == NULL) {
 			if ((desc->write.control3 & FIRST_DESCRIPTOR_FLAG) !=
@@ -701,14 +716,20 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 				desc_idx + 1U, NUM_RX_BUFDESC, pkt);
 		}
 
-		/* Read the cumulative length of data in this buffer and previous buffers (if any).
-		 * The complete length is in a descriptor with the last descriptor flag set.
-		 * The MAC strips CRC from Type packets, so the packet passed to upper layers
-		 * does not include the FCS.
+		/* PL is valid only on LD. All preceding single-buffer descriptors
+		 * contain RBSZ bytes, regardless of the intermediate PL bits.
+		 * CST strips the FCS from Type frames before DMA, so do not subtract
+		 * it again here. Bound incomplete assembly by the MAC frame limit.
 		 */
-		pkt_len = desc->write.control3 & DESC_RX_PKT_LEN;
-		if ((pkt_len < processed_len) ||
-			((pkt_len - processed_len) > ENET_QOS_RX_BUFFER_SIZE)) {
+		if ((status & LAST_DESCRIPTOR_FLAG) != 0U) {
+			pkt_len = status & DESC_RX_PKT_LEN;
+		} else {
+			pkt_len = processed_len + ENET_QOS_RX_BUFFER_SIZE;
+		}
+		if ((pkt_len <= processed_len) || (pkt_len > ENET_QOS_MAX_FRAME_LEN) ||
+		    ((pkt_len - processed_len) > ENET_QOS_RX_BUFFER_SIZE) ||
+		    (((status & LAST_DESCRIPTOR_FLAG) == 0U) &&
+		     (pkt_len >= ENET_QOS_MAX_FRAME_LEN))) {
 			LOG_WRN("Invalid packet length in descriptor: pkt_len=%u, processed_len=%u",
 				pkt_len, processed_len);
 			net_pkt_unref(pkt);
@@ -799,8 +820,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 				net_pkt_unref(pkt);
 				eth_stats_update_errors_rx(data->iface);
 			} else {
-				/* Record successfully received packet */
-				eth_stats_update_pkts_rx(data->iface);
+				/* The stack owns the packet now */
 			}
 			pkt = NULL;
 		}
@@ -816,15 +836,12 @@ next:
 		desc = &desc_arr[desc_idx];
 	}
 
-	if (pkt != NULL) {
-		/* Looped through descriptors without reaching the final
-		 * fragment of the packet, deallocate the incomplete one
-		 */
-		LOG_DBG("Incomplete packet received, cleaning up");
-		net_pkt_unref(pkt);
-		pkt = NULL;
-		eth_stats_update_errors_rx(data->iface);
-	}
+	/* An OWN descriptor is a scheduling boundary, not a malformed frame.
+	 * Retain detached fragments until LD or a new FD arrives. Do not wait
+	 * for DMA: a subsequent receive interrupt continues the assembly.
+	 */
+	rx_data->pkt = pkt;
+	rx_data->processed_len = pkt != NULL ? processed_len : 0U;
 
 	/* now that we updated the descriptors, resume in case we are suspended */
 	enet_qos_dma_rx_resume(dev);
@@ -1307,7 +1324,7 @@ static int eth_nxp_enet_qos_set_config(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct ethernet_api api_funcs = {
+static DEVICE_API(ethernet, api_funcs) = {
 	.iface_api.init = eth_nxp_enet_qos_iface_init,
 	.send = eth_nxp_enet_qos_tx,
 	.get_capabilities = eth_nxp_enet_qos_get_capabilities,

@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+# SPDX-License-Identifier: Apache-2.0
+common:
+  depends_on: netif
+  tags:
+    - net
+    - stun
+  min_ram: 64
+  min_flash: 256
+  integration_platforms:
+    - native_sim
+tests:
+  net.stun.client: {}
+  net.stun.client.ipv4_only:
+    extra_configs:
+      - CONFIG_NET_IPV6=n
+  net.stun.client.ipv6_only:
+    extra_configs:
+      - CONFIG_NET_IPV4=n
+  # With the resolver, and the server of the test answering its queries: a name
+  # that resolves to an IPv4 and an IPv6 address.
+  net.stun.client.dns:
+    extra_args:
+      - EXTRA_CONF_FILE="dns.conf"

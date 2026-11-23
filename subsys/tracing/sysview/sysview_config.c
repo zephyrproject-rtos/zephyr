@@ -95,7 +95,11 @@ static void send_task_list_cb(void)
 
 static U64 get_time_cb(void)
 {
-	return (U64)k_cycle_get_32();
+#ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+	return k_cyc_to_us_floor64(k_cycle_get_64());
+#else
+	return k_ticks_to_us_floor64(k_uptime_ticks());
+#endif
 }
 
 

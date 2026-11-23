@@ -85,6 +85,17 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		return -ENOBUFS;
 	}
 
+	/* The HAL sets full checksum insertion in every descriptor. The MAC
+	 * computes the ICMPv4 checksum over the field as it is, so a packet
+	 * that carries its transport layer checksum already, a forwarded one
+	 * for example, gets the IPv4 header checksum only.
+	 */
+	if (IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM)) {
+		MODIFY_REG(dma_tx_desc->Status, ETH_DMATXDESC_CIC,
+			   net_pkt_is_chksum_done(pkt) ? ETH_DMATXDESC_CIC_IPV4HEADER
+						       : ETH_DMATXDESC_CIC_TCPUDPICMP_FULL);
+	}
+
 	hal_ret = HAL_ETH_TransmitFrame(heth, total_len);
 
 	if (hal_ret != HAL_OK) {

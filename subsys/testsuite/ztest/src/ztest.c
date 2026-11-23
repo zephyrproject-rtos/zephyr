@@ -194,7 +194,6 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 {
 	struct k_thread *thread = arg1;
 	unsigned int idx = (unsigned int)(uintptr_t)arg2;
-	char tname[CONFIG_THREAD_MAX_NAME_LEN];
 
 	ARG_UNUSED(arg3);
 
@@ -234,10 +233,12 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 		mark_thread_unused(thread);
 	}
 
-	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-		snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "cpuhold%02d", idx);
-		k_thread_name_set(k_current_get(), tname);
-	}
+#if IS_ENABLED(CONFIG_THREAD_NAME)
+	char tname[CONFIG_THREAD_MAX_NAME_LEN];
+
+	snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "cpuhold%02d", idx);
+	k_thread_name_set(k_current_get(), tname);
+#endif /* CONFIG_THREAD_NAME */
 
 	uint32_t dt, start_ms = k_uptime_get_32();
 	unsigned int key = arch_irq_lock();

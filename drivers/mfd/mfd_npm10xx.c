@@ -37,6 +37,12 @@ LOG_MODULE_REGISTER(mfd_npm10xx, CONFIG_MFD_LOG_LEVEL);
 #define NPM10_GPIO_CTRL1  0xAAU
 #define NPM10_GPIO_CTRL2  0xABU
 
+/* MAIN.START register, write-protected, reset value from UICR */
+#define NPM10_MAIN_START 0x22U
+
+/* GPIO0..GPIO2 input buffer and pull-down excluded, one bit per pin */
+#define START_GPIO_EXCLUDE_MASK 0x38
+
 #define GPIO_CONFIG_INPUT  BIT(0)
 #define GPIO_CONFIG_OUTPUT BIT(1)
 #define GPIO_CONFIG_OPENDR BIT(2)
@@ -163,6 +169,8 @@ struct mfd_npm10xx_gpio_state {
 		uint8_t usage;
 		uint8_t config;
 	} pins[NPM10_PIN_NUM];
+	/* MAIN.START.GPIOx exclude bits (one per pin), write-protected so read once */
+	uint8_t input_excluded;
 };
 
 struct mfd_npm10xx_data {
@@ -552,6 +560,38 @@ static inline int pin_write_ctrl_reg(const struct i2c_dt_spec *i2c, uint8_t pin,
 	return i2c_reg_update_byte_dt(i2c, ctrl_reg, ctrl_mask, ctrl_val);
 }
 
+/*
+ * UICR can disconnect a pin's input buffer (and pull-down) regardless of GPIO.CONFIGx, which
+ * would make an input silently read a constant level. The register is read on first use.
+ */
+static int check_pin_input(const struct i2c_dt_spec *i2c, struct mfd_npm10xx_gpio_state *state,
+			   uint8_t pin, gpio_flags_t flags)
+{
+	uint8_t reg;
+	int ret;
+
+	if (state->input_excluded == UINT8_MAX) {
+		ret = i2c_reg_read_byte_dt(i2c, NPM10_MAIN_START, &reg);
+		if (ret < 0) {
+			return ret;
+		}
+
+		state->input_excluded = FIELD_GET(START_GPIO_EXCLUDE_MASK, reg);
+	}
+
+	if (!IS_BIT_SET(state->input_excluded, pin)) {
+		return 0;
+	}
+
+	if (flags & GPIO_OUTPUT) {
+		LOG_WRN("Pin %u input buffer is excluded in UICR, input reads are not valid", pin);
+		return 0;
+	}
+
+	LOG_ERR("Pin %u input buffer is excluded in UICR, cannot be used as input", pin);
+	return -ENOTSUP;
+}
+
 /* pin configuration for internal arbitration only - not part of the public API */
 int mfd_npm10xx_pin_configure(const struct device *dev, uint8_t pin, uint8_t usage,
 			      gpio_flags_t flags)
@@ -579,6 +619,13 @@ int mfd_npm10xx_pin_configure(const struct device *dev, uint8_t pin, uint8_t usa
 			data->gpio_state.pins[pin].usage);
 		ret = -EBUSY;
 		goto pin_cfg_unlock;
+	}
+
+	if (flags & GPIO_INPUT) {
+		ret = check_pin_input(&config->i2c, &data->gpio_state, pin, flags);
+		if (ret < 0) {
+			goto pin_cfg_unlock;
+		}
 	}
 
 	cfg = FIELD_PREP(GPIO_CONFIG_INPUT, !!(flags & GPIO_INPUT)) |
@@ -745,6 +792,8 @@ static int mfd_npm10xx_init(const struct device *dev)
 	(void)k_mutex_init(&data->slist_mutex);
 
 	(void)k_mutex_init(&data->gpio_state.lock);
+
+	data->gpio_state.input_excluded = UINT8_MAX;
 
 	ret = mfd_npm10xx_longpress_cfg(dev);
 	if (ret < 0) {

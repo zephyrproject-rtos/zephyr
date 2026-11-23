@@ -85,6 +85,8 @@ config NET_ETHERNET_BRIDGE_TXRX_DEBUG
 config NET_ETHERNET_BRIDGE_SHELL
 	bool "Ethernet Bridging management shell"
 	select NET_SHELL
+	select SHELL_GETOPT if NET_ETHERNET_BRIDGE_STP
+	select GETOPT_LONG if NET_ETHERNET_BRIDGE_STP
 	help
 	  Enables shell utility to manage bridge configuration interactively.
 
@@ -100,6 +102,43 @@ config NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES
 	range 1 $(UINT16_MAX)
 	help
 	  How many FDB (Forwarding database) entries supported.
+
+config NET_ETHERNET_BRIDGE_FDB_LEARNING
+	bool "Learn source MAC addresses into the FDB"
+	depends on NET_ETHERNET_BRIDGE_FDB
+	default y
+	help
+	  Learn the port of each source MAC address from received frames,
+	  so that a frame to a known destination is sent out of one port
+	  instead of being flooded. Learned entries are dynamic and never
+	  replace static ones. When the table is full nothing more is
+	  learned, and frames to unknown destinations are flooded.
+
+config NET_ETHERNET_BRIDGE_FDB_AGEING_TIME
+	int "Ageing time of learned FDB entries in seconds"
+	depends on NET_ETHERNET_BRIDGE_FDB_LEARNING
+	default 300
+	range 1 1000000
+	help
+	  A learned entry is removed when no frame from its address has been
+	  received for this long. Static entries do not age.
+
+config NET_ETHERNET_BRIDGE_STP
+	bool "Rapid Spanning Tree Protocol (RSTP) [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select NET_ETHERNET_BRIDGE_FDB
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	help
+	  Support the Rapid Spanning Tree Protocol, as specified in IEEE Std
+	  802.1Q-2014 Clause 13 and earlier in IEEE Std 802.1D-2004, on the
+	  bridge interfaces. It blocks the ports that would make a loop, and
+	  falls back to STP BPDUs on a port where an STP bridge is attached.
+	  The protocol runs on a bridge once eth_bridge_stp_enable() is
+	  called for it, and raises net_mgmt events when a port changes its
+	  role or state, the root bridge changes, or a topology change starts.
+	  Each bridge port takes about 230 bytes of RAM.
 
 module = NET_ETHERNET_BRIDGE
 module-dep = NET_LOG

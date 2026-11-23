@@ -1132,7 +1132,7 @@ config BT_ECC
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_ECC_SECP_R1_256
-	imply MBEDTLS_PSA_P256M_DRIVER_ENABLED if MBEDTLS_PSA_CRYPTO_C
+	imply MBEDTLS_PSA_P256M_DRIVER_ENABLED if PSA_CRYPTO_PROVIDER_MBEDTLS
 	help
 	  If this option is set, internal APIs will be available to perform ECDH operations through
 	  the long work queue (or system work queue). The operations are used e.g. by LE Secure
@@ -1142,10 +1142,14 @@ endif # BT_HCI_HOST
 
 config BT_HOST_CCM
 	bool "Host side AES-CCM module"
+	select PSA_CRYPTO
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_CCM
+	imply MBEDTLS_AES_ROM_TABLES if PSA_CRYPTO_PROVIDER_MBEDTLS
 	help
-	  Enables the software based AES-CCM engine in the host. Will use the
-	  controller's AES encryption functions if available, or BT_HOST_CRYPTO
-	  otherwise.
+	  Enables AES-CCM in the Bluetooth host using the PSA Crypto AEAD API.
+	  PSA Crypto must be initialized before the first call; with Mbed TLS
+	  as the provider, MBEDTLS_INIT does that at boot.
 
 config BT_PER_ADV_SYNC_BUF_SIZE
 	int "Maximum periodic advertising report size"

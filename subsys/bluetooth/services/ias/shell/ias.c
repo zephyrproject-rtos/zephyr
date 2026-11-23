@@ -55,7 +55,11 @@ static int cmd_ias_local_alert_stop(const struct shell *sh, size_t argc, char **
 
 static int cmd_ias(const struct shell *sh, size_t argc, char **argv)
 {
-	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
+	if (argc > 1) {
+		shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
+	} else {
+		shell_error(sh, "%s Missing subcommand", argv[0]);
+	}
 
 	return -ENOEXEC;
 }

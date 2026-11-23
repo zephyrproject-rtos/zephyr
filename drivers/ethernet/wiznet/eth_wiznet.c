@@ -452,13 +452,13 @@ int wiznet_init(const struct device *dev)
 	int err;
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("SPI master port %s not ready", cfg->spi.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->spi.bus);
 		return -EINVAL;
 	}
 
 	if (WIZNET_HAS_INTERRUPT(cfg)) {
 		if (!gpio_is_ready_dt(&cfg->interrupt)) {
-			LOG_ERR("GPIO port %s not ready", cfg->interrupt.port->name);
+			LOG_ERR_DEVICE_NOT_READY(cfg->interrupt.port);
 			return -EINVAL;
 		}
 
@@ -487,7 +487,7 @@ int wiznet_init(const struct device *dev)
 
 	if (cfg->reset.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->reset)) {
-			LOG_ERR("GPIO port %s not ready", cfg->reset.port->name);
+			LOG_ERR_DEVICE_NOT_READY(cfg->reset.port);
 			return -EINVAL;
 		}
 
@@ -515,3 +515,13 @@ int wiznet_init(const struct device *dev)
 
 	return 0;
 }
+
+DEVICE_API(ethernet, wiznet_api) = {
+	.iface_api.init = wiznet_iface_init,
+	.get_capabilities = wiznet_get_capabilities,
+	.set_config = wiznet_set_config,
+	.start = wiznet_hw_start,
+	.stop = wiznet_hw_stop,
+	.get_phy = wiznet_get_phy,
+	.send = wiznet_tx,
+};

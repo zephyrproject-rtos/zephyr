@@ -58,7 +58,7 @@ static void dummy_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 }
 
-static struct ieee802154_radio_api dummy_radio_api = {
+static DEVICE_API(ieee802154_radio, dummy_radio_api) = {
 	.iface_api.init	= dummy_iface_init,
 };
 

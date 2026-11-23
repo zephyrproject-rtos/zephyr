@@ -3,7 +3,7 @@
 
 menu "Ultra Low Power (ULP) Coprocessor"
 
-config ESP32_ULP_COPROC_ENABLED
+config SOC_FAMILY_ESPRESSIF_ULP_ENABLED
 	bool "Ultra Low Power (ULP) Coprocessor"
 	default y if SOC_ESP32C5_LPCORE || SOC_ESP32C6_LPCORE || SOC_ESP32P4_LPCORE || MBOX_ESP32
 	select SOC_LATE_INIT_HOOK if SOC_ESP32C5_HPCORE || SOC_ESP32C6_HPCORE || SOC_ESP32P4_HPCORE
@@ -11,94 +11,76 @@ config ESP32_ULP_COPROC_ENABLED
 	  Enable this feature if you plan to use the ULP Coprocessor.
 	  Once this option is enabled, further ULP co-processor configuration will appear in the menu.
 
-choice ESP32_ULP_COPROC_TYPE
+choice SOC_FAMILY_ESPRESSIF_ULP_TYPE
 	prompt "ULP Coprocessor type"
-	depends on ESP32_ULP_COPROC_ENABLED
-	default ESP32_ULP_COPROC_TYPE_LP_CORE if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32P4
+	depends on SOC_FAMILY_ESPRESSIF_ULP_ENABLED
+	default SOC_FAMILY_ESPRESSIF_ULP_TYPE_LP_CORE if SOC_SERIES_ESP32C5 || \
+		SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32P4
 	help
 	  Choose the ULP Coprocessor type: ULP FSM (Finite State Machine) or ULP RISC-V.
 
-config ESP32_ULP_COPROC_TYPE_FSM
+config SOC_FAMILY_ESPRESSIF_ULP_TYPE_FSM
 	bool "ULP FSM (Finite State Machine)"
 	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 
-config ESP32_ULP_COPROC_TYPE_RISCV
+config SOC_FAMILY_ESPRESSIF_ULP_TYPE_RISCV
 	bool "ULP RISC-V"
 	depends on SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 
-config ESP32_ULP_COPROC_TYPE_LP_CORE
+config SOC_FAMILY_ESPRESSIF_ULP_TYPE_LP_CORE
 	bool "LP core RISC-V"
 	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32P4
 endchoice
 
-config ESP32_ULP_COPROC_RESERVE_MEM
+config SOC_FAMILY_ESPRESSIF_ULP_RESERVE_MEM
 	hex
-	depends on ESP32_ULP_COPROC_ENABLED && (SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32P4 || SOC_ESP32C5_LPCORE || SOC_ESP32C6_LPCORE || SOC_ESP32P4_LPCORE)
+	depends on SOC_FAMILY_ESPRESSIF_ULP_ENABLED
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32P4 || \
+		SOC_ESP32C5_LPCORE || SOC_ESP32C6_LPCORE || SOC_ESP32P4_LPCORE
 	default $(dt_nodelabel_reg_size_hex,ulp_ram,0)
 	help
 	  LP SRAM reserved for ULP coprocessor firmware and data.
 	  Value is derived from the ulp_ram devicetree node size.
 
-choice ESP32_ULP_LP_CORE_WAKEUP_SOURCE
+choice SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_WAKEUP_SOURCE
 	prompt "LP core wakeup source"
-	depends on ESP32_ULP_COPROC_TYPE_LP_CORE
-	default ESP32_ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU
+	depends on SOC_FAMILY_ESPRESSIF_ULP_TYPE_LP_CORE
+	default SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU
 	help
 	  Select the wakeup source for the LP core.
 
-config ESP32_ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU
+config SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU
 	bool "HP CPU (single wakeup)"
 	help
 	  LP core is started once by the HP CPU.
 
-config ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER
+config SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER
 	bool "LP timer (periodic wakeup)"
 	help
 	  LP core wakes periodically from the LP timer.
 	  The sleep duration is configured by
-	  ESP32_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US.
+	  SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US.
 
-config ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_IO
+config SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_WAKEUP_SOURCE_LP_IO
 	bool "LP IO (GPIO interrupt)"
 	help
 	  LP core wakes on LP IO interrupt.
 
 endchoice
 
-config ESP32_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US
+config SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US
 	int "LP timer sleep duration (us)"
-	depends on ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER
+	depends on SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER
 	default 2000000
 	help
 	  Sleep duration in microseconds between LP core wakeups
 	  when using LP timer as wakeup source.
 
-menu "ULP RISC-V Settings"
-	depends on ESP32_ULP_COPROC_TYPE_RISCV
-
-config ESP32_ULP_RISCV_INTERRUPT_ENABLE
-	bool "ULP RISC-V interrupts"
-	help
-	  Turn on this setting to enabled interrupts on the ULP RISC-V core.
-
-endmenu
-
 menu "ULP Debugging Options"
 
-config ESP32_ULP_PANIC_OUTPUT_ENABLE
-	bool "Panic handler outputs to LP UART"
-	depends on ESP32_ULP_COPROC_TYPE_LP_CORE
-	help
-	  Set this option to enable panic handler functionality. If this option is
-	  enabled then the LP Core will output a panic dump over LP UART,
-	  similar to what the main core does. Output depends on LP UART already being
-	  initialized and configured.
-	  Disabling this option will reduce the LP core binary size by not
-	  linking in panic handler functionality.
-
-config ESP32_ULP_HP_UART_CONSOLE_PRINT
+config SOC_FAMILY_ESPRESSIF_ULP_HP_UART_CONSOLE_PRINT
 	bool "Route lp_core_printf to the console HP-UART"
-	depends on ESP32_ULP_COPROC_TYPE_LP_CORE
+	depends on SOC_FAMILY_ESPRESSIF_ULP_TYPE_LP_CORE
 	help
 	  Set this option to route lp_core_printf to the console HP-UART.
 	  This allows you to easily view print outputs from the LP core, without
@@ -115,9 +97,9 @@ config ESP32_ULP_HP_UART_CONSOLE_PRINT
 	  Due to these limitations it is only recommended to use this option for easy debugging.
 	  For more serious use-cases you should use the LP-UART.
 
-config ESP32_ULP_NORESET_UNDER_DEBUG
+config SOC_FAMILY_ESPRESSIF_ULP_NORESET_UNDER_DEBUG
 	bool "Avoid resetting LP core when debugger is attached"
-	depends on ESP32_ULP_COPROC_TYPE_LP_CORE
+	depends on SOC_FAMILY_ESPRESSIF_ULP_TYPE_LP_CORE
 	help
 	  Enable this feature to avoid resetting LP core in sleep mode when debugger is attached,
 	  otherwise configured HW breakpoints and dcsr.ebreak* bits will be missed.
@@ -125,9 +107,9 @@ config ESP32_ULP_NORESET_UNDER_DEBUG
 
 endmenu
 
-config ESP32_ULP_ROM_PRINT_ENABLE
+config SOC_FAMILY_ESPRESSIF_ULP_ROM_PRINT_ENABLE
 	bool "Print utilities from LP ROM"
-	depends on ESP32_ULP_COPROC_TYPE_LP_CORE
+	depends on SOC_FAMILY_ESPRESSIF_ULP_TYPE_LP_CORE
 	default y
 	help
 	  Set this option to enable printf functionality from LP ROM. This option
@@ -136,9 +118,9 @@ config ESP32_ULP_ROM_PRINT_ENABLE
 	  Note: For LP ROM prints to work properly, make sure that the LP core boots
 	  from the LP ROM.
 
-config ESP32_ULP_TRAP_WAKEUP
+config SOC_FAMILY_ESPRESSIF_ULP_TRAP_WAKEUP
 	bool "Wakeup HP-CPU when LP-core encounters an exception"
-	depends on ESP32_ULP_COPROC_TYPE_LP_CORE
+	depends on SOC_FAMILY_ESPRESSIF_ULP_TYPE_LP_CORE
 	default y
 	help
 	  Set this option to also trigger a wakeup signal to the HP-CPU when

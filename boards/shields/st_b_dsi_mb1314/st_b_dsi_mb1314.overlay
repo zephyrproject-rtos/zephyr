@@ -37,6 +37,7 @@
 
 	lp-rx-filter = <10000>;
 
+	st,ltdc = <&zephyr_lcd_controller>;
 	status = "okay";
 
 	rm67162_g1120b0mipi: rm67162@0 {
@@ -76,20 +77,6 @@
 	def-back-color-green = <0x0>;
 	def-back-color-blue = <0x0>;
 	status = "okay";
-
-	display-timings {
-		compatible = "zephyr,panel-timing";
-		de-active = <0>;
-		pixelclk-active = <0>;
-		hsync-active = <0>;
-		vsync-active = <0>;
-		hsync-len = <6>;
-		vsync-len = <1>;
-		hback-porch = <6>;
-		vback-porch = <1>;
-		hfront-porch = <6>;
-		vfront-porch = <1>;
-	};
 };
 
 &qsh_030_i2c {

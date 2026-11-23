@@ -186,7 +186,6 @@ if CLOCK_CONTROL_NRF_LFCLK || CLOCK_CONTROL_NRF
 
 config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 	bool "LF clock calibration"
-	depends on !SOC_SERIES_NRF91X
 	depends on $(dt_nodelabel_enabled,hfxo)
 	# The legacy driver takes the LF source from Kconfig, the new one from
 	# the lfclk devicetree node.

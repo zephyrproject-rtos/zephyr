@@ -52,12 +52,6 @@ FOR_EACH(DISPLAY_NODE_CLASS_ASSERT, (), LV_DISPLAYS_IDX_LIST)
 #define BUFFER_BITS_PER_PIXEL LV_COLOR_FORMAT_GET_BPP(LV_COLOR_FORMAT_DEFAULT)
 #endif
 
-#if (CONFIG_LV_Z_BITS_PER_PIXEL == 1) || defined(CONFIG_LV_COLOR_FORMAT_I1)
-#define IS_MONOCHROME_DISPLAY 1
-#else
-#define IS_MONOCHROME_DISPLAY 0
-#endif
-
 #define ALLOC_MONOCHROME_CONV_BUFFER                                                               \
 	UTIL_AND(IS_EQ(IS_MONOCHROME_DISPLAY, 1),                                                  \
 		 IS_EQ(CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER, 1))
@@ -358,11 +352,26 @@ void lv_mem_monitor_core(lv_mem_monitor_t *mon_p)
 
 #if CONFIG_LV_Z_MEM_POOL_SYS_HEAP
 	struct sys_memory_stats stats;
+	size_t biggest_free_block;
+	int ret;
 
-	lvgl_heap_stats(&stats);
+	ret = lvgl_heap_stats(&stats);
+	if (ret < 0) {
+		LOG_WRN("Failed to get lvgl heap stats (%d)", ret);
+		return;
+	}
+	mon_p->total_size = stats.allocated_bytes + stats.free_bytes;
 	mon_p->used_pct =
 		(stats.allocated_bytes * 100) / (stats.allocated_bytes + stats.free_bytes);
 	mon_p->max_used = stats.max_allocated_bytes;
+	mon_p->free_size = stats.free_bytes;
+	ret = lvgl_heap_get_largest_free_block(&biggest_free_block);
+	if (ret == 0) {
+		mon_p->free_biggest_size = biggest_free_block;
+		mon_p->frag_pct = stats.free_bytes
+					  ? 100 - ((biggest_free_block * 100) / stats.free_bytes)
+					  : 0;
+	}
 #else
 	LOG_WRN_ONCE("Memory statistics only supported for CONFIG_LV_Z_MEM_POOL_SYS_HEAP");
 #endif /* CONFIG_LV_Z_MEM_POOL_SYS_HEAP */

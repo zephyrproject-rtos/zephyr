@@ -277,6 +277,18 @@ int z_try_abort_timeout(struct _timeout *to)
 	return ret;
 }
 
+void z_timeout_wait_inflight_spin(const struct _timeout *to)
+{
+	/* Lockless: the announcing CPU clears the slot (under timeout_lock)
+	 * once the handler has returned. A stale read only costs another
+	 * round trip through z_try_abort_timeout().
+	 */
+	while (((uintptr_t)*(struct _timeout *volatile *)&inflight_timeout &
+		~INFLIGHT_SUPERSEDED_BIT) == (uintptr_t)to) {
+		arch_nop();
+	}
+}
+
 bool z_timeout_inflight_superseded(const struct _timeout *to)
 {
 	bool superseded = false;
@@ -470,43 +482,6 @@ static inline int64_t z_vrfy_k_uptime_ticks(void)
 }
 #include <zephyr/syscalls/k_uptime_ticks_mrsh.c>
 #endif /* CONFIG_USERSPACE */
-
-k_timepoint_t sys_timepoint_calc(k_timeout_t timeout)
-{
-	k_timepoint_t timepoint;
-
-	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		timepoint.tick = UINT64_MAX;
-	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		timepoint.tick = 0;
-	} else {
-		k_ticks_t dt = timeout.ticks;
-
-		if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
-			timepoint.tick = sys_clock_tick_get() + max(1, dt);
-		} else {
-			timepoint.tick = Z_TICK_ABS(dt);
-		}
-	}
-
-	return timepoint;
-}
-
-k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint)
-{
-	uint64_t now, remaining;
-
-	if (timepoint.tick == UINT64_MAX) {
-		return K_FOREVER;
-	}
-	if (timepoint.tick == 0) {
-		return K_NO_WAIT;
-	}
-
-	now = sys_clock_tick_get();
-	remaining = (timepoint.tick > now) ? (timepoint.tick - now) : 0;
-	return K_TICKS(remaining);
-}
 
 #ifdef CONFIG_ZTEST
 void z_impl_sys_clock_tick_set(uint64_t tick)

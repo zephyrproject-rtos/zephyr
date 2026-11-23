@@ -16,7 +16,7 @@ Features
 - Compatible with iPerf v2.0.10 and newer. For older versions, enable
   :kconfig:option:`CONFIG_NET_ZPERF_LEGACY_HEADER_COMPAT`.
 
-- Compatible with iperf3 instead when built with ``overlay-iperf3.conf``, which
+- Compatible with iperf3 instead when built with ``iperf3.conf``, which
   enables :kconfig:option:`CONFIG_NET_ZPERF_IPERF3`.
 
 - Client or server mode allowed without need to modify the source code.
@@ -49,7 +49,7 @@ Requirements
 ************
 
 - iPerf 2.0.10 or newer installed on the host machine, or iperf3 for a build
-  with ``overlay-iperf3.conf``
+  with ``iperf3.conf``
 - Supported board
 
 Depending on the network technology chosen, extra steps may be required
@@ -64,13 +64,13 @@ the library usage.
 iperf3
 ======
 
-To measure against iperf3 rather than iperf2, build with the iperf3 overlay.
+To measure against iperf3 rather than iperf2, build with the iperf3 extra config file.
 The zperf commands are the same, and the default port becomes 5201:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/zperf
    :board: <board>
-   :gen-args: -DEXTRA_CONF_FILE=overlay-iperf3.conf
+   :gen-args: -DEXTRA_CONF_FILE=iperf3.conf
    :goals: build flash
 
 Then ``zperf tcp download`` and ``zperf udp download`` answer ``iperf3 -c
@@ -89,3 +89,26 @@ Wi-Fi
 
 The IPv4 Wi-Fi support can be enabled in the sample with
 :ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.
+
+ESP32-S3-DevKitC-1 (N8R8)
+-------------------------
+
+``boards/esp32s3_devkitc_esp32s3_procpu_n8r8.conf`` and the matching
+devicetree overlay configure an :zephyr:board:`esp32s3_devkitc` with an N8R8
+module (8 MB quad-SPI flash, 8 MB octal PSRAM) for Wi-Fi TCP throughput:
+network buffers in PSRAM, QIO flash with a 32 KB instruction cache, 64 KB
+TCP windows and larger Wi-Fi aggregation windows. Select it with
+``FILE_SUFFIX``:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/zperf
+   :board: esp32s3_devkitc/esp32s3/procpu
+   :gen-args: -DFILE_SUFFIX=n8r8
+   :goals: build flash
+
+For other ESP32-S3 boards or modules, start from these files and check:
+
+- the ``psram0`` size must match the PSRAM fitted on the module; a larger
+  value is only warned about at boot and then corrupts memory;
+- ``CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_MODE_QIO`` must not be used with octal-flash
+  modules, for example ESP32-S3-WROOM-2.

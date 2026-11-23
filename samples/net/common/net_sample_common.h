@@ -4,17 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
+
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/quic.h>
 
-#if defined(CONFIG_NET_CONNECTION_MANAGER)
-void wait_for_network(void);
-#else
-static inline void wait_for_network(void) { }
-#endif /* CONFIG_NET_CONNECTION_MANAGER */
+/* True if host is a non-empty name, not an IP literal */
+static inline bool is_hostname(const char *host)
+{
+	struct net_sockaddr_storage addr = { 0 };
+
+	return host[0] != '\0' && !net_ipaddr_parse(host, strlen(host), net_sad(&addr));
+}
 
 #if defined(CONFIG_NET_VLAN)
 int init_vlan(void);

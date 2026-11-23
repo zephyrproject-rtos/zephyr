@@ -402,7 +402,6 @@ configdefault DCACHE_LINE_SIZE
 config ARC_DCACHE_REGION_OPERATIONS
 	bool "DCACHE region operations"
 	depends on CACHE_MANAGEMENT && DCACHE
-	default n
 	help
 	  Perform L1 data cache management operations by regions rather than line by line in a loop,
 	  improves performance of cache management operations.
@@ -410,7 +409,6 @@ config ARC_DCACHE_REGION_OPERATIONS
 config ARC_SLC
 	bool "System level cache"
 	depends on CACHE_MANAGEMENT && DCACHE && (CPU_HS4X || CPU_HS3X)
-	default n
 	help
 	  This option enables System Level Cache, and adds SLC support to the data cache management operations.
 

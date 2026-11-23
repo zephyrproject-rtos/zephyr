@@ -1,0 +1,71 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * RAK3400 pinout description, from the RAK3400 LoRa Module user guide
+ * V1.0, filed as FCC ID 2AF6B-RAK3400.
+ *
+ * The RAK3400 carries an nRF52840 and a BLE antenna only. It shares the
+ * RAK4630 footprint and pin map, but P20, P21 and P37 are reserved pads
+ * that reach no chip inside the module, so there is no SPI radio here.
+ *
+ * P1	- VBUS
+ * P2	- USB-
+ * P3	- USB+
+ * P4	- P0.13/I2C_SDA
+ * P5	- P0.14/I2C_SCL
+ * P6	- P0.15/UART2_RX
+ * P7	- P0.16/UART2_TX
+ * P8	- P0.17/UART2_DE
+ * P9	- P0.19/UART1_RX
+ * P10	- P0.20/UART1_TX
+ * P11	- P0.21/UART1_DE
+ * P12	- P0.10/NFC2
+ * P13	- P0.09/NFC1
+ *
+ * P14	- GND
+ * P15	- RF_BT
+ *
+ * P16	- GND
+ * P17	- NRF_RESET
+ * P18	- SWDCLK
+ * P19	- SWDIO
+ * P20	- VBAT_SX, reserved, not connected
+ * P21	- VBAT_IO_SX, reserved, not connected
+ * P22	- GND
+ *
+ * P23	- P0.24/I2C_SDA_2
+ * P24	- P0.25/I2C_SCL_2
+ * P25	- P1.01/SW1
+ * P26	- P1.02/SW2
+ * P27	- P1.03/LED1
+ * P28	- P1.04/LED2
+ * P29	- P0.03/QSPI_CLK
+ * P30	- P0.02/QSPI_DIO3
+ * P31	- P0.28/QSPI_DIO2
+ * P32	- P0.29/QSPI_DIO1
+ * P33	- P0.30/QSPI_DIO0
+ * P34	- P0.26/QSPI_CS
+ * P35	- GND
+ *
+ * P36	- GND
+ * P37	- RF_LoRa, reserved, not connected
+ * P38	- GND
+ * P39	- P0.31/AIN7
+ * P40	- P0.05/AIN3
+ * P41	- P0.04/AIN2
+ * P42	- GND
+ * P43	- VDD_NRF
+ * P44	- VBAT_NRF
+ */
+
+#include <nordic/nrf52840_qiaa.dtsi>
+#include <zephyr/dt-bindings/pinctrl/nrf-pinctrl.h>
+
+&reg0 {
+	status = "okay";
+};
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};

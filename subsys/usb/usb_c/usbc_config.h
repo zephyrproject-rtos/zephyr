@@ -35,4 +35,19 @@ BUILD_ASSERT(TC_T_DRP_SNK_MS >= TC_T_DRP_PW_MIN_MS && TC_T_DRP_SNK_MS <= TC_T_DR
 	     "DRP Sink time out of spec (dcSRC.DRP min * tDRP min … dcSRC.DRP max * tDRP max)");
 #endif /* CONFIG_USBC_CSM_DRP */
 
+#ifdef CONFIG_USBC_CSM_DRP_TRY_SNK
+/* Time to wait in Try.SNK for a Source and in TryWait.SRC for a Sink (milliseconds) */
+#define TC_T_DRP_TRY_MS CONFIG_USBC_DRP_TRY_MS
+
+BUILD_ASSERT(TC_T_DRP_TRY_MS >= TC_T_DRP_TRY_MIN_MS && TC_T_DRP_TRY_MS <= TC_T_DRP_TRY_MAX_MS,
+	     "tDRPTry out of spec (tDRPTry min … tDRPTry max)");
+
+/* Time to debounce CC in TryWait.SRC before attaching (milliseconds) */
+#define TC_T_TRY_CC_DEBOUNCE_MS CONFIG_USBC_TRY_CC_DEBOUNCE_MS
+
+BUILD_ASSERT(TC_T_TRY_CC_DEBOUNCE_MS >= TC_T_TRY_CC_DEBOUNCE_MIN_MS &&
+	     TC_T_TRY_CC_DEBOUNCE_MS <= TC_T_TRY_CC_DEBOUNCE_MAX_MS,
+	     "tTryCCDebounce out of spec (tTryCCDebounce min … tTryCCDebounce max)");
+#endif /* CONFIG_USBC_CSM_DRP_TRY_SNK */
+
 #endif /* ZEPHYR_SUBSYS_USBC_CONFIG_H_ */

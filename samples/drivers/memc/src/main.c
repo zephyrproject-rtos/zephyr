@@ -12,7 +12,14 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi)
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_semc_sdram)
+/* SDRAM on the NXP SEMC controller. The device implements the generic
+ * memc API, so sample_read()/sample_write() use memc_read()/memc_write().
+ */
+#define MEMC_DEV  DT_ALIAS(sram_ext)
+#define MEMC_BASE ((void *)DT_REG_ADDR(MEMC_DEV))
+#define MEMC_SIZE DT_REG_SIZE(MEMC_DEV)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi)
 /* Use memc API to get AHB base address for the device */
 #include "memc_mcux_flexspi.h"
 #define FLEXSPI_DEV DEVICE_DT_GET(DT_PARENT(DT_ALIAS(sram_ext)))
@@ -42,9 +49,10 @@ LOG_MODULE_REGISTER(main);
 #define MEMC_BASE DT_REG_ADDR_BY_IDX(MSPI_BUS, 1)
 #define MEMC_SIZE (DT_PROP(MEMC_DEV, size) / 8)
 #elif DT_HAS_COMPAT_STATUS_OKAY(silabs_siwx91x_qspi_memory)
-#define MEMC_DEV  DT_ALIAS(sram_ext)
-#define MEMC_BASE ((void *)DT_REG_ADDR(MEMC_DEV))
-#define MEMC_SIZE (DT_REG_SIZE(MEMC_DEV) / 8)
+#define PSRAM_NODE DT_ALIAS(psram0)
+#define MEMC_DEV DT_PARENT(PSRAM_NODE)
+#define MEMC_BASE ((void *)DT_REG_ADDR(PSRAM_NODE))
+#define MEMC_SIZE DT_REG_SIZE(PSRAM_NODE)
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_xspi_controller)
 #define MEMC_DEV DT_ALIAS(psram0)
 #define MSPI_BUS DT_BUS(MEMC_DEV)

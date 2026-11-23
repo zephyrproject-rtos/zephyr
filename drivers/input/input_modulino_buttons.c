@@ -55,7 +55,7 @@ static void modulino_buttons_handler(struct k_work *work)
 	memcpy(data->prev_state, &buf[1], sizeof(data->prev_state));
 
 out:
-	k_work_reschedule(dwork, K_MSEC(cfg->poll_period_ms));
+	input_work_reschedule(dwork, K_MSEC(cfg->poll_period_ms));
 }
 
 static int modulino_buttons_init(const struct device *dev)
@@ -71,7 +71,7 @@ static int modulino_buttons_init(const struct device *dev)
 	}
 
 	k_work_init_delayable(&data->poll_work, modulino_buttons_handler);
-	k_work_reschedule(&data->poll_work, K_MSEC(cfg->poll_period_ms));
+	input_work_reschedule(&data->poll_work, K_MSEC(cfg->poll_period_ms));
 
 	return 0;
 }

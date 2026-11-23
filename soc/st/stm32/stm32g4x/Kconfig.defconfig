@@ -27,8 +27,6 @@ if PM
 config PM_DEVICE
 	default y
 
-config STM32_LPTIM_TIMER
-	default y
 endif # PM
 
 config BUILD_OUTPUT_UF2_FAMILY_ID

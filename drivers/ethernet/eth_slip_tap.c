@@ -20,9 +20,6 @@ static enum ethernet_hw_caps eth_capabilities(const struct device *dev __unused,
 					      struct net_if *iface __unused)
 {
 	return ETHERNET_HW_VLAN
-#if defined(CONFIG_NET_LLDP)
-	       | ETHERNET_LLDP
-#endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	       | ETHERNET_PROMISC_MODE
 #endif
@@ -48,7 +45,7 @@ static int eth_slip_tap_set_config(const struct device *dev __unused,
 	return -ENOTSUP;
 }
 
-static const struct ethernet_api slip_if_api = {
+static DEVICE_API(ethernet, slip_if_api) = {
 	.iface_api.init = slip_iface_init,
 
 	.get_capabilities = eth_capabilities,

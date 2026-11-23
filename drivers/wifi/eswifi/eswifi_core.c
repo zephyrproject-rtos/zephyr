@@ -864,7 +864,7 @@ static const struct wifi_mgmt_ops eswifi_mgmt_api = {
 	.iface_status	= eswifi_mgmt_iface_status,
 };
 
-static const struct net_wifi_mgmt_offload eswifi_offload_api = {
+static DEVICE_API(wifi_offload, eswifi_offload_api) = {
 	.wifi_iface.iface_api.init = eswifi_iface_init,
 	.wifi_iface.get_type = eswifi_get_type,
 	.wifi_mgmt_api = &eswifi_mgmt_api,

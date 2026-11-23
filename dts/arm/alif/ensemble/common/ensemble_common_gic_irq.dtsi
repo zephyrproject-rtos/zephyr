@@ -165,6 +165,21 @@
 	interrupts = <GIC_SPI 122 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 };
 
+&spi0 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 126 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&spi1 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 127 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&spi2 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
 &lptimer0 {
 	interrupt-parent = <&gic>;
 	interrupts = <GIC_SPI 335 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;

@@ -298,10 +298,15 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 	Gmac_Ip_BufferType buf;
 	Gmac_Ip_TxInfoType tx_info;
 	Gmac_Ip_StatusType status;
+	/* The MAC computes the ICMPv4 checksum over the field as it is, so a
+	 * packet that carries its transport layer checksum already, a forwarded
+	 * one for example, gets the IPv4 header checksum only.
+	 */
 	Gmac_Ip_TxOptionsType tx_options = {
 		.NoInt = FALSE,
 		.CrcPadIns = GMAC_CRC_AND_PAD_INSERTION,
-		.ChecksumIns = GMAC_CHECKSUM_INSERTION_PROTO_PSEUDOH
+		.ChecksumIns = net_pkt_is_chksum_done(pkt) ? GMAC_CHECKSUM_INSERTION_IP
+							   : GMAC_CHECKSUM_INSERTION_PROTO_PSEUDOH
 	};
 
 	__ASSERT(pkt, "Packet pointer is NULL");
@@ -535,7 +540,7 @@ static void eth_nxp_s32_rx_irq(const struct device *dev)
 	GMAC_RxIRQHandler(cfg->instance, cfg->rx_ring_idx);
 }
 
-static const struct ethernet_api eth_api = {
+static DEVICE_API(ethernet, eth_api) = {
 	.iface_api.init = eth_nxp_s32_iface_init,
 	.get_capabilities = eth_nxp_s32_get_capabilities,
 	.get_phy = eth_nxp_s32_get_phy,

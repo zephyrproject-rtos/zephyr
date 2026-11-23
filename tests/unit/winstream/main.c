@@ -97,4 +97,30 @@ ZTEST(winstream, test_winstream)
 	}
 }
 
+ZTEST(winstream, test_sequence_rollover)
+{
+	struct sys_winstream *ws = sys_winstream_init(wsmem, sizeof(*ws) + 4);
+	uint32_t seq = UINT32_MAX;
+	char buf[3];
+
+	sys_winstream_write(ws, "abc", 3);
+	/* Full buffer state after UINT32_MAX bytes, with end == UINT32_MAX % 4. */
+	ws->seq = seq;
+
+	sys_winstream_write(ws, "d", 1);
+	zassert_equal(ws->seq, 0U);
+	zassert_equal(sys_winstream_read(ws, &seq, buf, 1), 1U);
+	zassert_equal(buf[0], 'd');
+	zassert_equal(seq, 0U);
+
+	sys_winstream_write(ws, "e", 1);
+	zassert_equal(sys_winstream_read(ws, &seq, buf, 1), 1U);
+	zassert_equal(buf[0], 'e');
+	zassert_equal(seq, 1U);
+
+	seq = UINT32_MAX - 1;
+	zassert_equal(sys_winstream_read(ws, &seq, buf, sizeof(buf)), sizeof(buf));
+	zassert_mem_equal(buf, "cde", sizeof(buf));
+}
+
 ZTEST_SUITE(winstream, NULL, NULL, NULL, NULL, NULL);

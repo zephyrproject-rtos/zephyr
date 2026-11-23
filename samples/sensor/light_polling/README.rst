@@ -31,7 +31,7 @@ Build and flash the sample as follows, changing ``nrf52dk/nrf52832`` to your boa
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/light_polling
-   :board: mikroe_clicker_ra4m1
+   :board: nrf52dk/nrf52832
    :goals: build flash
    :compact:
 

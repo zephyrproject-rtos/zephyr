@@ -21,7 +21,8 @@
  * This enumeration defines the possible reset causes as indicated by the
  * RSTC_RCAUSE register in the Microchip RSTC G1 reset controller.
  */
-#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC) ||                                          \
+	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA)
 enum rstc_g1_rcause {
 	RSTC_G1_RCAUSE_POR = 0,       /* Power-on Reset */
 	RSTC_G1_RCAUSE_PORCORE = 1,   /* Core Power-on Reset */
@@ -34,6 +35,9 @@ enum rstc_g1_rcause {
 	RSTC_G1_RCAUSE_BACKUP = 8,    /* Backup Reset */
 	RSTC_G1_RCAUSE_LOCKUP = 9     /* CPU Lockup Reset */
 };
+
+/** Number of reset-cause lines supported by this SoC family. */
+#define RSTC_G1_RCAUSE_LINE_MAX 10
 
 /** Reset-cause bits reported as RESET_BROWNOUT. */
 #define RSTC_G1_RCAUSE_BROWNOUT_MASK                                                               \
@@ -53,6 +57,9 @@ enum rstc_g1_rcause {
 
 /** Reset-cause bits reported as RESET_BROWNOUT. */
 #define RSTC_G1_RCAUSE_BROWNOUT_MASK (BIT(RSTC_G1_RCAUSE_BOD12) | BIT(RSTC_G1_RCAUSE_BOD33))
+
+/** Number of reset-cause lines supported by this SoC family. */
+#define RSTC_G1_RCAUSE_LINE_MAX      8
 #endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC */
 
 #ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH

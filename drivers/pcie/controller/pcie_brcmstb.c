@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #include <zephyr/kernel.h>
 #include <zephyr/math/ilog2.h>
 #include <zephyr/sys/device_mmio.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/drivers/pcie/controller.h>
@@ -391,14 +392,28 @@ static bool pcie_brcmstb_region_get_allocate_base(const struct device *dev, pcie
 static bool pcie_brcmstb_region_translate(const struct device *dev, pcie_bdf_t bdf, bool mem,
 					  bool mem64, uintptr_t bar_bus_addr, uintptr_t *bar_addr)
 {
-	struct pcie_brcmstb_data *data = dev->data;
-	enum pcie_region_type type;
+	const struct pcie_brcmstb_data *data = dev->data;
 
-	type = pcie_brcmstb_determine_region_type(dev, mem, mem64);
+	ARG_UNUSED(bdf);
+	ARG_UNUSED(mem64);
 
-	*bar_addr = data->regions[type].phys_start + (bar_bus_addr - data->regions[type].bus_start);
+	/* A 64-bit BAR may be assigned to the 32-bit memory window. */
+	for (size_t i = 0U; i < ARRAY_SIZE(data->regions); i++) {
+		const uintptr_t bus_start = data->regions[i].bus_start;
 
-	return true;
+		if ((mem && (i == (size_t)PCIE_REGION_IO)) ||
+		    (!mem && (i != (size_t)PCIE_REGION_IO))) {
+			continue;
+		}
+
+		if ((bar_bus_addr >= bus_start) &&
+		    ((bar_bus_addr - bus_start) < data->regions[i].size)) {
+			*bar_addr = data->regions[i].phys_start + (bar_bus_addr - bus_start);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static DEVICE_API(pcie_ctrl, pcie_brcmstb_api) = {

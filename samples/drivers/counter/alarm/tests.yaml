@@ -34,7 +34,10 @@ tests:
       - nrf54lv10dk/nrf54lv10a/cpuapp/ns
       - nrf54lv10dk/nrf54lv10a/cpuflpr
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
       - nrf9160dk/nrf9160
+      - nucode_nu40/nrf52840
+      - nucode_nu40/nrf52840/bare
       - sama7d65_curiosity
       - sama7g54_ek
       - samd20_xpro

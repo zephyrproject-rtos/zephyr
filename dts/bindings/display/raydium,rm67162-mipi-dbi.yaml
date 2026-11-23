@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Raydium RM67162 display controller on MIPI DBI bus
+
+description: |
+  The Raydium RM67162 is a 16.7M colors OLED controller.
+
+compatible: "raydium,rm67162"
+
+include: [mipi-dbi-spi-device.yaml, "raydium,rm67162-common.yaml"]
+
+properties:
+  mipi-mode:
+    required: true
+    description: |
+      MIPI DBI mode in use. The RM67162 has 3-wire and 4-wire SPI and an
+      8-bit 8080 bus interface. These definitions should match those in
+      dt-bindings/mipi_dbi/mipi_dbi.h
+
+  pixel-format:
+    type: int
+    default: 32
+    enum:
+      - 1 # PANEL_PIXEL_FORMAT_RGB_888
+      - 32 # PANEL_PIXEL_FORMAT_RGB_565X
+    description: |
+      Initial pixel format. The MIPI DBI interfaces of the controller are
+      byte wide and receive 16-bit pixels most significant byte first.

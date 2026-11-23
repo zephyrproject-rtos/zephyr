@@ -9,4 +9,5 @@ board:
       - name: "blue"
       - name: "black"
   socs:
+    - name: stm32f103x6
     - name: stm32f103x8

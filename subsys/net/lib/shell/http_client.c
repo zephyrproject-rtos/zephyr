@@ -144,7 +144,18 @@ static int http_client_url_parser(struct http_client_sh_ctx *ctx, const uint8_t 
 		PR_ERROR("URL path too long (max %zu bytes)\n", sizeof(ctx->url_fields.uri) - 1);
 		return ret;
 	} else if (ret < 0) {
-		memcpy(uri, "/", sizeof("/"));
+		/* An empty path is sent as "/", followed by the query if there is one. */
+		memcpy(uri, "/?", sizeof("/?"));
+
+		ret = http_client_url_fields_get(url, &purl, UF_QUERY, uri + 2,
+						 sizeof(ctx->url_fields.uri) - 2);
+		if (ret == -ENOBUFS) {
+			PR_ERROR("URL query too long (max %zu bytes)\n",
+				 sizeof(ctx->url_fields.uri) - 3);
+			return ret;
+		} else if (ret < 0) {
+			uri[1] = '\0';
+		}
 	}
 
 	return 0;

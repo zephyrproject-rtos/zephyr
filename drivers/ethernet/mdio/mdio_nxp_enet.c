@@ -259,7 +259,7 @@ static int nxp_enet_mdio_init(const struct device *dev)
 											\
 	static struct nxp_enet_mdio_data nxp_enet_mdio_data_##inst;			\
 											\
-	DEVICE_DT_INST_DEFINE(inst, &nxp_enet_mdio_init, NULL,				\
+	DEVICE_DT_INST_DEFINE(inst, nxp_enet_mdio_init, NULL,				\
 			      &nxp_enet_mdio_data_##inst, &nxp_enet_mdio_cfg_##inst,	\
 			      POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,			\
 			      &nxp_enet_mdio_api);

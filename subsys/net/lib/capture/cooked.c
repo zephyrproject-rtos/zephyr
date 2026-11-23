@@ -272,7 +272,7 @@ static int interface_get_config(struct net_if *iface,
 	return -ENOTSUP;
 }
 
-static const struct virtual_interface_api cooked_api = {
+static DEVICE_API(virtual_interface, cooked_api) = {
 	.iface_api.init = iface_init,
 
 	.start = interface_start,

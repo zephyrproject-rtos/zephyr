@@ -36,7 +36,7 @@ Current certs in :zephyr_file:`samples/net/cloud/mqtt_azure/src/digicert.cer` ar
 copied from `<https://github.com/Azure/azure-iot-sdk-c/blob/master/certs/certs.c>`_
 
 Configure the following Kconfig options based on your Azure Cloud IoT Hub
-in your own overlay config file:
+in your own extra config file:
 
 - ``SAMPLE_CLOUD_AZURE_USERNAME`` - Username field use::
 
@@ -62,19 +62,19 @@ of this sample application (i.e., :zephyr_file:`samples/net/cloud/mqtt_azure`) a
 .. zephyr-app-commands::
    :zephyr-app: samples/net/cloud/mqtt_azure
    :board: frdm_k64f
-   :conf: "prj.conf <overlay.conf>"
+   :conf: "prj.conf <extra.conf>"
    :goals: build flash
    :compact:
 
 Also this application can be tested with QEMU. This is described in
 :ref:`networking_with_qemu`. Set up Zephyr and NAT/masquerading on host
-to access Internet and use :file:`overlay-qemu_x86.conf`.
+to access Internet and use :file:`qemu_x86.conf`.
 DHCP support is not enabled with QEMU. It uses static IP addresses.
 
-Sample overlay file
-===================
+Sample extra config file
+========================
 
-This is the overlay template for Azure IoT hub and other details:
+This is the extra config file template for Azure IoT hub and other details:
 
 .. code-block:: cfg
 

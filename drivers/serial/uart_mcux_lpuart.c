@@ -108,6 +108,8 @@ struct mcux_lpuart_tx_dma_params {
 	size_t buf_len;
 	struct k_work_delayable timeout_work;
 	size_t timeout_us;
+	/* TX DMA is done; waiting for the frame to leave the shift register. */
+	bool wait_tx_complete;
 };
 
 struct mcux_lpuart_async_data {
@@ -118,6 +120,11 @@ struct mcux_lpuart_async_data {
 	size_t next_rx_buffer_len;
 	uart_callback_t user_callback;
 	void *user_data;
+	/* RX line errors the ISR cleared from STAT, reported by uart_err_check().
+	 * Dropped together with the STAT error flags when reception is enabled
+	 * or the LPUART is reinitialized.
+	 */
+	uint32_t rx_errors;
 };
 #endif
 
@@ -279,6 +286,15 @@ static int mcux_lpuart_err_check(const struct device *dev)
 					      kLPUART_ParityErrorFlag |
 					      kLPUART_FramingErrorFlag |
 						  kLPUART_NoiseErrorFlag);
+
+#if LPUART_ASYNC_ENABLE
+	struct mcux_lpuart_data *data = dev->data;
+	unsigned int key = irq_lock();
+
+	err |= data->async.rx_errors;
+	data->async.rx_errors = 0U;
+	irq_unlock(key);
+#endif
 
 	return err;
 }
@@ -790,7 +806,14 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg, uint3
 			return;
 		}
 
-		async_evt_tx_done(dev);
+		/* The DMA only filled the data register; the frame is still in the
+		 * shift register.  UART_TX_DONE means the buffer was transmitted,
+		 * so defer it to the transmission-complete interrupt.  Reporting it
+		 * here truncates the last frames for a caller that drives the line
+		 * right after, such as dropping an RS-485 driver enable.
+		 */
+		data->async.tx_dma_params.wait_tx_complete = true;
+		LPUART_EnableInterrupts(lpuart, kLPUART_TransmissionCompleteInterruptEnable);
 	} else if (channel == config->rx_dma_config.dma_channel) {
 		LOG_DBG("RX Channel");
 		struct mcux_lpuart_rx_dma_params *rx_dma_params = &data->async.rx_dma_params;
@@ -894,9 +917,9 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 		return get_status_result;
 	}
 
-	if (status.busy) {
+	if (status.busy || data->async.tx_dma_params.buf != NULL) {
 		irq_unlock(key);
-		LOG_DBG("UART TX busy (DMA ch %u)", config->tx_dma_config.dma_channel);
+		LOG_DBG("UART TX transfer still active");
 		return -EBUSY;
 	}
 
@@ -906,8 +929,6 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 
 	(void)sys_cache_data_flush_range((void *)buf, len);
 
-	data->async.tx_dma_params.buf = buf;
-	data->async.tx_dma_params.buf_len = len;
 	data->async.tx_dma_params.active_dma_block.source_address = (uint32_t)buf;
 	data->async.tx_dma_params.active_dma_block.dest_address =
 		LPUART_GetDataRegisterAddress(lpuart);
@@ -920,25 +941,33 @@ static int mcux_lpuart_tx(const struct device *dev, const uint8_t *buf, size_t l
 			 config->tx_dma_config.dma_channel,
 			 (struct dma_config *)&config->tx_dma_config.dma_cfg);
 
-	if (ret == 0) {
-		LOG_DBG("Starting UART DMA TX Ch %u", config->tx_dma_config.dma_channel);
-
-		ret = dma_start(config->tx_dma_config.dma_dev,
-				config->tx_dma_config.dma_channel);
-		LPUART_EnableTxDMA(lpuart, true);
-		if (ret != 0) {
-			LOG_ERR("Failed to start DMA(Tx) Ch %d",
-				config->tx_dma_config.dma_channel);
-		}
-
-		if (timeout_us > 0) {
-			async_timer_start(&data->async.tx_dma_params.timeout_work, timeout_us);
-		}
-	} else {
+	if (ret != 0) {
 		LOG_ERR("Error configuring UART DMA: %x", ret);
+		irq_unlock(key);
+		return ret;
+	}
+
+	LOG_DBG("Starting UART DMA TX Ch %u",
+		config->tx_dma_config.dma_channel);
+	ret = dma_start(config->tx_dma_config.dma_dev,
+			config->tx_dma_config.dma_channel);
+	if (ret != 0) {
+		LOG_ERR("Failed to start DMA(Tx) Ch %u (%d)",
+			config->tx_dma_config.dma_channel, ret);
+		irq_unlock(key);
+		return ret;
+	}
+
+	data->async.tx_dma_params.buf = buf;
+	data->async.tx_dma_params.buf_len = len;
+	LPUART_EnableTxDMA(lpuart, true);
+	if (timeout_us > 0 &&
+	    data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS) {
+		async_timer_start(&data->async.tx_dma_params.timeout_work,
+				  timeout_us);
 	}
 	irq_unlock(key);
-	return ret;
+	return 0;
 }
 
 static int mcux_lpuart_tx_abort(const struct device *dev)
@@ -946,8 +975,18 @@ static int mcux_lpuart_tx_abort(const struct device *dev)
 	struct mcux_lpuart_data *data = dev->data;
 	const struct mcux_lpuart_config *config = dev->config;
 	LPUART_Type *lpuart = get_base(dev);
+	unsigned int key = irq_lock();
+
+	if (data->async.tx_dma_params.buf == NULL) {
+		irq_unlock(key);
+		LOG_DBG("No active UART TX transfer to abort");
+		return -EFAULT;
+	}
 
 	LPUART_EnableTxDMA(lpuart, false);
+	/* An aborted transfer must not report TX_DONE from the armed TC. */
+	LPUART_DisableInterrupts(lpuart, kLPUART_TransmissionCompleteInterruptEnable);
+	data->async.tx_dma_params.wait_tx_complete = false;
 	(void)k_work_cancel_delayable(&data->async.tx_dma_params.timeout_work);
 	struct dma_status status;
 	const int get_status_result = dma_get_status(config->tx_dma_config.dma_dev,
@@ -969,8 +1008,15 @@ static int mcux_lpuart_tx_abort(const struct device *dev)
 			.data.tx.buf = data->async.tx_dma_params.buf,
 			.data.tx.len = bytes_transmitted
 		};
+
+		data->async.tx_dma_params.buf = NULL;
+		data->async.tx_dma_params.buf_len = 0U;
+		irq_unlock(key);
 		async_user_callback(dev, &tx_aborted_event);
+		return 0;
 	}
+
+	irq_unlock(key);
 	return ret;
 }
 
@@ -1028,6 +1074,8 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 	LPUART_ClearStatusFlags(get_base(dev), kLPUART_RxOverrunFlag | kLPUART_ParityErrorFlag |
 							kLPUART_FramingErrorFlag |
 							kLPUART_NoiseErrorFlag);
+	/* Errors of a previous reception do not apply to this one */
+	data->async.rx_errors = 0U;
 	LPUART_EnableRx(lpuart, true);
 	irq_unlock(key);
 	return ret;
@@ -1114,12 +1162,29 @@ static inline void mcux_lpuart_async_isr(const struct device *dev,
 					 struct mcux_lpuart_data *data,
 					 const struct mcux_lpuart_config *config,
 					 const uint32_t status) {
+	/* TC is cleared by hardware only on the next data register write, so it
+	 * has to be masked here or it re-fires.  The flag, not api_type, is the
+	 * guard: this ISR also runs for instances that never use the async API,
+	 * and uart_tx() without uart_callback_set() arms TC while api_type is
+	 * still LPUART_NONE, which would then never disarm it.
+	 */
+	if ((status & kLPUART_TransmissionCompleteFlag) != 0U &&
+	    data->async.tx_dma_params.wait_tx_complete) {
+		LPUART_DisableInterrupts(get_base(dev),
+					 kLPUART_TransmissionCompleteInterruptEnable);
+		data->async.tx_dma_params.wait_tx_complete = false;
+		async_evt_tx_done((struct device *)dev);
+	}
+
 	/*
-	 * Handle RX errors first — they stop reception, making idle-line
-	 * processing pointless.  Per the async UART API contract,
-	 * UART_RX_STOPPED must be followed by UART_RX_BUF_RELEASED (for
-	 * each buffer) and UART_RX_DISABLED.  mcux_lpuart_rx_disable()
-	 * provides that full teardown sequence.
+	 * Handle RX errors first. With CONFIG_UART_MCUX_LPUART_ASYNC_RX_STOP_ON_ERROR
+	 * they stop reception, making idle-line processing pointless. Per the async
+	 * UART API contract, UART_RX_STOPPED must be followed by UART_RX_BUF_RELEASED
+	 * (for each buffer) and UART_RX_DISABLED. mcux_lpuart_rx_disable() provides
+	 * that full teardown sequence.
+	 *
+	 * Otherwise only the flags are cleared. The receiver never stops on these
+	 * errors, but while STAT[OR] is set no further data is stored in the FIFO.
 	 */
 	if (status & (kLPUART_RxOverrunFlag | kLPUART_ParityErrorFlag |
 		      kLPUART_FramingErrorFlag | kLPUART_NoiseErrorFlag)) {
@@ -1143,6 +1208,7 @@ static inline void mcux_lpuart_async_isr(const struct device *dev,
 						      kLPUART_FramingErrorFlag |
 						      kLPUART_NoiseErrorFlag);
 
+#ifdef CONFIG_UART_MCUX_LPUART_ASYNC_RX_STOP_ON_ERROR
 		struct uart_event event = {
 			.type = UART_RX_STOPPED,
 			.data.rx_stop.reason = reason,
@@ -1150,6 +1216,9 @@ static inline void mcux_lpuart_async_isr(const struct device *dev,
 		async_user_callback(dev, &event);
 		mcux_lpuart_rx_disable(dev);
 		return;
+#else
+		data->async.rx_errors |= reason;
+#endif
 	}
 
 	if (status & kLPUART_IdleLineFlag) {
@@ -1325,6 +1394,13 @@ static int mcux_lpuart_configure_basic(const struct device *dev, const struct ua
 	/* Tx will be enabled manually after set tx-rts */
 	uart_config->enableTx = false;
 
+	/* Count the idle character from the stop bit, so trailing 1 data bits of the
+	 * last character are not taken as idle time. The async API uses the idle line
+	 * interrupt to end a reception.
+	 */
+	uart_config->rxIdleType = kLPUART_IdleTypeStopBit;
+	uart_config->rxIdleConfig = kLPUART_IdleCharacter1;
+
 	return 0;
 }
 
@@ -1342,8 +1418,6 @@ static int mcux_lpuart_configure_async(const struct device *dev)
 		return ret;
 	}
 
-	uart_config.rxIdleType = kLPUART_IdleTypeStopBit;
-	uart_config.rxIdleConfig = kLPUART_IdleCharacter1;
 	data->async.next_rx_buffer = NULL;
 	data->async.next_rx_buffer_len = 0;
 	data->async.uart_dev = dev;
@@ -1427,6 +1501,13 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 
 	LPUART_Init(get_base(dev), &uart_config, clock_freq);
 
+#if LPUART_ASYNC_ENABLE
+	/* LPUART_Init() clears the STAT error flags. Errors received with the
+	 * previous configuration do not apply to the new one.
+	 */
+	data->async.rx_errors = 0U;
+#endif
+
 #ifdef LPUART_HAS_MODEM
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485) {
 		/* Set the LPUART into RS485 mode (tx driver enable using RTS) */
@@ -1506,6 +1587,9 @@ static int mcux_lpuart_configure(const struct device *dev,
 		return -EBUSY;
 	}
 
+	/* LPUART_Init() resets the LPUART, which disables its interrupts */
+	uint32_t int_mask = LPUART_GetEnabledInterrupts(get_base(dev));
+
 	/* Disable Transmitter and Receiver */
 	get_base(dev)->CTRL &= ~(LPUART_CTRL_TE_MASK | LPUART_CTRL_RE_MASK);
 
@@ -1513,6 +1597,8 @@ static int mcux_lpuart_configure(const struct device *dev,
 	if (ret) {
 		return ret;
 	}
+
+	LPUART_EnableInterrupts(get_base(dev), int_mask);
 
 	/* wait for hardware init */
 	k_sleep(K_MSEC(1));

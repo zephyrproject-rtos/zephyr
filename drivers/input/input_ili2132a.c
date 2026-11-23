@@ -40,7 +40,7 @@ static void gpio_isr(const struct device *dev, struct gpio_callback *cb, uint32_
 {
 	struct ili2132a_data *data = CONTAINER_OF(cb, struct ili2132a_data, gpio_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 
 static void ili2132a_process(const struct device *dev)

@@ -13,6 +13,7 @@ if(CONFIG_LVGL)
   zephyr_library()
 
   zephyr_include_directories(${LVGL_DIR}/src/)
+  zephyr_include_directories(${LVGL_DIR}/include/)
   zephyr_include_directories(include)
 
   add_subdirectory_ifdef(CONFIG_LV_Z_USE_NEMA_GFX nemagfx)

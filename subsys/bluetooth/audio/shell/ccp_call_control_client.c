@@ -29,6 +29,10 @@ static struct bt_ccp_call_control_client *clients[CONFIG_BT_MAX_CONN];
 
 static struct bt_ccp_call_control_client *get_client_by_conn(const struct bt_conn *conn)
 {
+	if (conn == NULL) {
+		return NULL;
+	}
+
 	return clients[bt_conn_index(conn)];
 }
 

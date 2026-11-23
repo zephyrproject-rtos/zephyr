@@ -20,6 +20,7 @@ from twisterlib.runner import TwisterRunner
 from twisterlib.sidecars.virtiofs import VirtiofsSidecar
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
+from twisterlib.testsuitedata import HarnessConfig
 
 TESTDATA_PART_1 = [
     (False, False, "console", None, "qemu", False, [], (False, True)),
@@ -77,6 +78,7 @@ def test_check_build_or_run(
     run = testinstance.check_runnable(env.options, env.hwm)
     _, r = expected
     assert run == r
+    assert (testinstance.not_run_reason is None) == r
 
     # existing QEMU_BIN_PATH
     with mock.patch('os.environ', {'QEMU_BIN_PATH': '/tmp'}), \
@@ -90,6 +92,8 @@ def test_check_build_or_run(
          mock.patch('os.path.exists', return_value=False):
         run = testinstance.check_runnable(env.options, env.hwm)
         assert not run
+        if platform_sim == 'qemu':
+            assert testinstance.not_run_reason == "QEMU_BIN_PATH /invalid does not exist"
 
 def test_check_runnable_sidecar_host(class_testplan, all_testsuites_dict, platforms_list):
     """A sidecar whose host requirements are not met demotes the instance to build-only."""
@@ -118,6 +122,8 @@ def test_check_runnable_sidecar_host(class_testplan, all_testsuites_dict, platfo
 
     with mock.patch.object(VirtiofsSidecar, 'find_virtiofsd', return_value=None):
         assert not testinstance.check_runnable(env.options, env.hwm)
+        assert testinstance.not_run_reason == \
+            "Host requirements of the virtiofs sidecar not met"
 
     with mock.patch.object(VirtiofsSidecar, 'find_virtiofsd', return_value='/found'):
         assert testinstance.check_runnable(env.options, env.hwm)
@@ -722,3 +728,68 @@ def test_create_overlay_with_harness_config(class_testplan, all_testsuites_dict,
     platform = class_testplan.get_platform("demo_board_2")
     testinstance = TestInstance(testsuite, platform,'zephyr', class_testplan.env.outdir)
     assert testinstance.create_overlay(platform) == expected_content
+
+
+TESTDATA_10 = [
+    ({'build_only': True}, {}, "Test is build-only"),
+    ({'slow': True}, {}, "Slow test, run with --enable-slow"),
+    ({}, {'platform_sim': None}, "No simulator for this platform, run with --device-testing"),
+    ({'simulation_exclude': ['qemu']}, {}, "qemu simulator is excluded by the test"),
+    ({}, {'platform_sim': 'renode', 'sim_exec': 'renode-missing'},
+     "renode simulator executable renode-missing not found"),
+    ({'harness': 'pytest'}, {'platform_sim': 'renode'},
+     "pytest harness does not support renode"),
+    ({'harness_config': {'fixture': ['fixture_a', 'fixture_b']}}, {'fixtures': ['fixture_a']},
+     "Fixture not provided: fixture_b"),
+    ({'harness': 'unknown_harness'}, {}, "unknown_harness harness is not supported"),
+    ({}, {}, None),
+]
+@pytest.mark.parametrize(
+    "testsuite_attrs, run_options, expected_reason",
+    TESTDATA_10,
+    ids=['build only', 'slow', 'no simulator', 'simulation excluded',
+         'simulator executable missing', 'pytest harness', 'fixture missing',
+         'unsupported harness', 'runnable']
+)
+def test_check_runnable_not_run_reason(
+    class_testplan,
+    all_testsuites_dict,
+    platforms_list,
+    testsuite_attrs,
+    run_options,
+    expected_reason
+):
+    """The reason an instance cannot run is stored in not_run_reason."""
+    class_testplan.testsuites = all_testsuites_dict
+    testsuite = class_testplan.testsuites.get('test_a.check_1')
+    class_testplan.platforms = platforms_list
+    platform = class_testplan.get_platform("demo_board_2")
+    platform.type = 'sim'
+    platform_sim = run_options.get('platform_sim', 'qemu')
+    platform.simulators = [
+        Simulator({"name": platform_sim, "exec": run_options.get('sim_exec')})
+    ] if platform_sim else []
+    testsuite.harness = 'ztest'
+    testsuite.build_only = False
+    testsuite.slow = False
+    testsuite.simulation_exclude = []
+    testsuite.harness_config = HarnessConfig()
+    for attr, value in testsuite_attrs.items():
+        if attr == 'harness_config':
+            value = HarnessConfig.from_dict(value)
+        setattr(testsuite, attr, value)
+
+    testinstance = TestInstance(testsuite, platform, 'zephyr', class_testplan.env.outdir)
+    options = mock.Mock(
+        device_testing=False,
+        enable_slow=False,
+        fixture=run_options.get('fixtures', []),
+        filter="",
+        sim_name=platform_sim
+    )
+
+    with mock.patch('shutil.which', return_value=None):
+        run = testinstance.check_runnable(options, mock.Mock(duts=[]))
+
+    assert run == (expected_reason is None)
+    assert testinstance.not_run_reason == expected_reason

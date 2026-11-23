@@ -180,14 +180,14 @@ static void cap12xx_timer_handler(struct k_timer *poll_timer)
 {
 	struct cap12xx_data *data = CONTAINER_OF(poll_timer, struct cap12xx_data, poll_timer);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 
 static void cap12xx_isr_handler(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	struct cap12xx_data *data = CONTAINER_OF(cb, struct cap12xx_data, int_gpio_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 
 static int cap12xx_init(const struct device *dev)

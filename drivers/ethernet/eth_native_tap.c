@@ -432,9 +432,6 @@ static enum ethernet_hw_caps eth_native_tap_get_capabilities(const struct device
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
 #endif
-#if defined(CONFIG_NET_LLDP)
-		| ETHERNET_LLDP
-#endif
 		;
 }
 
@@ -495,7 +492,7 @@ static int set_config(const struct device *dev,
 	return ret;
 }
 
-static const struct ethernet_api eth_if_api = {
+static DEVICE_API(ethernet, eth_if_api) = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_native_tap_get_capabilities,

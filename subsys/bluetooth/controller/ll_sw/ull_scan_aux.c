@@ -33,9 +33,9 @@
 #include "lll_conn_iso.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
-#include "lll/lll_adv_types.h"
+#include "lll_adv_types.h"
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include "lll_adv_pdu.h"
 
 #include "ll_sw/ull_tx_queue.h"
 
@@ -194,6 +194,22 @@ static inline struct ll_sync_iso_set *
 #endif /* !CONFIG_BT_CTLR_SYNC_ISO */
 }
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
+
+static void anon_allow_set(struct node_rx_ftr *ftr, const struct ll_scan_set *scan)
+{
+#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC) && defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
+	/* Whether the scanner filter policy lets anonymous advertising be
+	 * reported is recorded now, as the scan parameters can change before
+	 * the report is generated. The Filter Accept List does not hold the
+	 * anonymous entry, so a scanner that uses the list reports none.
+	 */
+	ftr->anon_allow = (scan != NULL) &&
+			  ((scan->lll.filter_policy & SCAN_FP_FILTER) == 0U);
+#else
+	ARG_UNUSED(ftr);
+	ARG_UNUSED(scan);
+#endif /* CONFIG_BT_CTLR_SYNC_PERIODIC && CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
+}
 
 #if !defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
 void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
@@ -445,6 +461,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	ftr->extra = NULL;
 
 	ftr->aux_sched = 0U;
+
+	anon_allow_set(ftr, scan);
 
 	pdu = (void *)rx->pdu;
 	p = (void *)&pdu->adv_ext_ind;
@@ -940,8 +958,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		aux->rx_head = rx;
 	}
 
+	/* Initialize the window size for the Auxiliary PDU reception. */
+	lll_aux->window_size_us = window_size_us;
+	lll_aux->window_size_us += ((EVENT_TICKER_RES_MARGIN_US + EVENT_JITTER_US +
+				     window_widening_us) << 1);
+
 	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
-		EVENT_OVERHEAD_START_US + ready_delay_us +
+		EVENT_OVERHEAD_START_US + ready_delay_us + lll_aux->window_size_us +
 		PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll_aux->phy) +
 		EVENT_OVERHEAD_END_US);
 
@@ -952,11 +975,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		ticks_slot_overhead = 0U;
 	}
 	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
-
-	/* Initialize the window size for the Auxiliary PDU reception. */
-	lll_aux->window_size_us = window_size_us;
-	lll_aux->window_size_us += ((EVENT_TICKER_RES_MARGIN_US + EVENT_JITTER_US +
-				     window_widening_us) << 1);
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* disable ticker job, in order to chain yield and start to reduce
@@ -1370,6 +1388,35 @@ int ull_scan_aux_stop(struct ll_scan_aux_set *aux)
 	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH,
 			     0, &mfy);
 	LL_ASSERT_ERR(!ret);
+
+	return 0;
+}
+
+int ull_scan_aux_stop_by_parent(const void *parent)
+{
+	LL_ASSERT_DBG(parent != NULL);
+
+	for (uint8_t handle = 0U; handle < CONFIG_BT_CTLR_SCAN_AUX_SET; handle++) {
+		struct ll_scan_aux_set *aux = &ll_scan_aux_pool[handle];
+		void *aux_parent;
+		int err;
+
+		if (aux->parent != parent) {
+			continue;
+		}
+
+		err = ull_scan_aux_stop(aux);
+		if (err != 0 && err != -EALREADY) {
+			return err;
+		}
+
+		/* Use a local variable to assert on auxiliary context's release.
+		 * Under race condition a released aux context can be allocated for
+		 * reception of chain PDU of a periodic sync role.
+		 */
+		aux_parent = aux->parent;
+		LL_ASSERT_DBG(!aux_parent || (aux_parent != parent));
+	}
 
 	return 0;
 }
@@ -1884,6 +1931,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	ftr->extra = NULL;
 
 	ftr->aux_sched = 0U;
+
+	anon_allow_set(ftr, scan);
 
 	if (chain) {
 		chain->aux_sched = 0U;
@@ -2866,7 +2915,7 @@ static void chain_start_ticker(struct ll_scan_aux_chain *chain, bool replace)
 	ready_delay_us = lll_radio_rx_ready_delay_get(chain->lll.phy, PHY_FLAGS_S8);
 
 	scan_aux_set.ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
-		EVENT_OVERHEAD_START_US + ready_delay_us +
+		EVENT_OVERHEAD_START_US + ready_delay_us + chain->lll.window_size_us +
 		PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, chain->lll.phy) +
 		EVENT_OVERHEAD_END_US);
 

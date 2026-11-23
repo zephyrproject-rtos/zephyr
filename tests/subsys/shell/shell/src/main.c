@@ -117,13 +117,13 @@ ZTEST(sh, test_cmd_shell)
 {
 	test_shell_execute_cmd("shell -h", 1);
 	test_shell_execute_cmd("shell --help", 1);
-	test_shell_execute_cmd("shell dummy", 1);
-	test_shell_execute_cmd("shell dummy dummy", 1);
+	test_shell_execute_cmd("shell dummy", -ENOEXEC);
+	test_shell_execute_cmd("shell dummy dummy", -ENOEXEC);
 
 	/* subcommand: backspace_mode */
 	test_shell_execute_cmd("shell backspace_mode -h", 1);
 	test_shell_execute_cmd("shell backspace_mode --help", 1);
-	test_shell_execute_cmd("shell backspace_mode dummy", 1);
+	test_shell_execute_cmd("shell backspace_mode dummy", -ENOEXEC);
 
 	test_shell_execute_cmd("shell backspace_mode backspace", 0);
 	test_shell_execute_cmd("shell backspace_mode backspace -h", 1);
@@ -142,8 +142,8 @@ ZTEST(sh, test_cmd_shell)
 	/* subcommand: colors */
 	test_shell_execute_cmd("shell colors -h", 1);
 	test_shell_execute_cmd("shell colors --help", 1);
-	test_shell_execute_cmd("shell colors dummy", 1);
-	test_shell_execute_cmd("shell colors dummy dummy", 1);
+	test_shell_execute_cmd("shell colors dummy", -ENOEXEC);
+	test_shell_execute_cmd("shell colors dummy dummy", -ENOEXEC);
 
 	test_shell_execute_cmd("shell colors off", 0);
 	test_shell_execute_cmd("shell colors off -h", 1);
@@ -180,8 +180,8 @@ ZTEST(sh, test_cmd_shell)
 	test_shell_execute_cmd("shell stats", 1);
 	test_shell_execute_cmd("shell stats -h", 1);
 	test_shell_execute_cmd("shell stats --help", 1);
-	test_shell_execute_cmd("shell stats dummy", 1);
-	test_shell_execute_cmd("shell stats dummy dummy", 1);
+	test_shell_execute_cmd("shell stats dummy", -ENOEXEC);
+	test_shell_execute_cmd("shell stats dummy dummy", -ENOEXEC);
 
 	test_shell_execute_cmd("shell stats reset", 0);
 	test_shell_execute_cmd("shell stats reset -h", 1);
@@ -355,6 +355,14 @@ ZTEST(sh, test_shell_wildcards_dynamic)
 	test_shell_execute_cmd("test_dynamic d* c*", 2);
 }
 
+/* test that a pattern matching no command is passed to the handler as typed */
+ZTEST(sh, test_shell_wildcards_no_match)
+{
+	test_shell_execute_cmd("test_wildcard_literal x?y*", 1);
+	test_shell_execute_cmd("test_wildcard_literal \"x?y*\"", 1);
+	test_shell_execute_cmd("test_wildcard_literal xy", 0);
+}
+
 
 static int cmd_test_module(const struct shell *sh, size_t argc, char **argv)
 {
@@ -393,6 +401,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_test_shell_cmdl,
 	SHELL_SUBCMD_SET_END
 );
 SHELL_CMD_REGISTER(test_wildcard, &m_sub_test_shell_cmdl, NULL, cmd_wildcard);
+
+static int cmd_wildcard_literal(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+
+	return ((argc == 2U) && (strcmp(argv[1], "x?y*") == 0)) ? 1 : 0;
+}
+
+SHELL_CMD_ARG_REGISTER(test_wildcard_literal, NULL, NULL, cmd_wildcard_literal, 2, 0);
 
 
 static int cmd_dynamic(const struct shell *sh, size_t argc, char **argv)
@@ -468,7 +485,7 @@ ZTEST(sh, test_set_root_cmd)
 	err = shell_set_root_cmd("shell");
 	zassert_equal(err, 0, "Unexpected error %d", err);
 
-	test_shell_execute_cmd("shell colors", 1);
+	test_shell_execute_cmd("shell colors", -ENOEXEC);
 	test_shell_execute_cmd("colors on", 0);
 
 	err = shell_set_root_cmd(NULL);
@@ -792,10 +809,67 @@ ZTEST(sh, test_shell_readline_success)
 
 	/* Verify the result */
 	zassert_equal(readline_len, 5, "Expected 5 bytes read, got %d", readline_len);
-	zassert_str_equal(readline_buf, "hello", "Input mismatch: got '%s'", readline_buf);
+	zassert_str_equal((char *)readline_buf, "hello", "Input mismatch: got '%s'", readline_buf);
 
 	/* Clean up */
 	shell_backend_dummy_clear_input(sh);
+}
+
+ZTEST(sh, test_cmd_concurrent_fprintf)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	const char *cmd = "resize\n";
+	/* VT100 Cursor Position Report: ESC [ <row> ; <col> R (24 rows, 80 cols) */
+	const char *resp = "\033[24;80R";
+	const char *buf;
+	const char *restore_pos;
+	const char *conc_pos;
+	size_t size;
+	int ret;
+
+	test_shell_reset_state(sh);
+
+	ret = shell_backend_dummy_push_input(sh, cmd, strlen(cmd));
+	zassert_equal(ret, 0, "Failed to push input: %d", ret);
+
+	/*
+	 * Wait until the lower-priority shell_thread runs "resize" and sends
+	 * the cursor position query in cursor_position_get().
+	 */
+	zassert_true(WAIT_FOR(test_shell_output_contains(sh, "\033[6n"), 20000, k_msleep(1)),
+		     "Timed out waiting for cursor position query");
+
+	/* Queue the terminal cursor position response for cursor_position_get() */
+	ret = shell_backend_dummy_push_input(sh, resp, strlen(resp));
+	zassert_equal(ret, 0, "Failed to push response: %d", ret);
+
+	/*
+	 * Call shell_fprintf() from the higher-priority test thread while
+	 * shell_thread is mid-command. Because terminal_size_get() holds
+	 * z_shell_lock(), this call must block on lock_mtx, allowing
+	 * shell_thread to read the response, restore the cursor (\0338), and
+	 * unlock before "[CONCURRENT_FPRINTF]" is written.
+	 */
+	shell_fprintf(sh, SHELL_NORMAL, "[CONCURRENT_FPRINTF]\n");
+
+	/*
+	 * Wait for shell_thread to finish post-command prompt handling and
+	 * drain the RXRDY event from resp.
+	 */
+	zassert_true(WAIT_FOR((k_event_test(&sh->ctx->signal_event, SHELL_SIGNAL_RXRDY) == 0U) &&
+				      (sh->ctx->ctx.flags.processing == 0U),
+			      20000, k_msleep(1)),
+		     "Timed out waiting for shell_thread to finish command");
+
+	buf = shell_backend_dummy_get_output(sh, &size);
+	restore_pos = strstr(buf, "\0338");
+	conc_pos = strstr(buf, "[CONCURRENT_FPRINTF]");
+	zassert_not_null(restore_pos, "Expected cursor restore sequence in output");
+	zassert_not_null(conc_pos, "Expected concurrent fprintf output");
+	zassert_true(restore_pos < conc_pos,
+		     "Concurrent shell_fprintf interleaved before cursor restore in resize");
+
+	shell_backend_dummy_clear_output(sh);
 }
 
 static void *shell_setup(void)

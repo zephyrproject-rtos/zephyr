@@ -103,4 +103,7 @@ void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx);
 int ull_scan_aux_stop(void *parent);
 #else /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 int ull_scan_aux_stop(struct ll_scan_aux_set *aux);
+
+/* Helper function to stop every auxiliary scan context of a parent LLL context */
+int ull_scan_aux_stop_by_parent(const void *parent);
 #endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */

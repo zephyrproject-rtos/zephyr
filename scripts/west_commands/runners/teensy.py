@@ -7,7 +7,7 @@
 import os
 import subprocess
 
-from runners.core import ZephyrBinaryRunner
+from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 
 class TeensyBinaryRunner(ZephyrBinaryRunner):
@@ -25,6 +25,10 @@ class TeensyBinaryRunner(ZephyrBinaryRunner):
         return 'teensy'
 
     @classmethod
+    def capabilities(cls):
+        return RunnerCaps(commands={'flash'})
+
+    @classmethod
     def do_add_parser(cls, parser):
         parser.add_argument('--mcu', required=True,
                             help='Teensy mcu target')
@@ -40,8 +44,11 @@ class TeensyBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command):
         self.require(self.teensy_loader)
-        if command == 'flash':
-            self.flash()
+        match command:
+            case 'flash':
+                self.flash()
+            case _:
+                raise NotImplementedError(f"west {command} not implemented")
 
     def flash(self):
         if self.hex_name is not None and os.path.isfile(self.hex_name):

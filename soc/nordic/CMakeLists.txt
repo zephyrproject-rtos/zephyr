@@ -10,6 +10,7 @@ zephyr_library_sources(
   validate_base_addresses.c
   validate_binding_headers.c
   validate_enabled_instances.c
+  validate_sram_app.c
   )
 
 # Include dt-bindings headers into the build. This lets us validate all required

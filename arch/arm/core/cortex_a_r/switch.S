@@ -135,11 +135,17 @@ offload:
     add r3, r3, #1
     str r3, [r2, #___cpu_t_nested_OFFSET]
 
-    /* If not nested: switch to IRQ stack and save current sp on it. */
+    /*
+     * If not nested: switch to the IRQ stack and save current sp on it.
+     * Stay in SYS mode so that a nested IRQ does not clobber lr_irq.
+     */
     cmp r3, #1
     bhi 1f
     mov r0, sp
     cps #MODE_IRQ
+    mov r1, sp
+    cps #MODE_SYS
+    mov sp, r1
     push {r0}
 
 1:
@@ -157,6 +163,10 @@ _oops:
     mov r1, #0
     mov r2, #0
     bl z_do_kernel_oops
+    /* An oops normally does not return, but fatal error handling may
+     * return in test mode. Exit the exception in that case.
+     */
+    b z_arm_cortex_ar_exit_exc
 
 inv:
     mov r0, #0 /* K_ERR_CPU_EXCEPTION */

@@ -9,6 +9,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
+#include <zephyr/dt-bindings/clock/nxp_imxrt11xx_enet_timer.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -327,11 +328,12 @@
 		};
 
 		semc: semc0@400d4000 {
-			compatible = "nxp,imx-semc";
+			compatible = "nxp,semc";
 			reg = <0x400d4000 0x4000>;
 			interrupts = <132 0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "disabled";
 		};
 
 		pit1: pit@400d8000 {
@@ -1423,6 +1425,21 @@
 			arm_pll: clock {
 				compatible = "nxp,imxrt11xx-arm-pll";
 				#clock-cells = <0>;
+			};
+
+			/* Clock roots of the ENET 1588 timers: SYS_PLL1_DIV2 / 5 = 100 MHz */
+			enet_timer1_root: enet-timer1-root {
+				compatible = "nxp,imxrt11xx-enet-timer-root";
+				#clock-cells = <0>;
+				clock-mux = <IMXRT11XX_ENET_TIMER_SRC_SYS_PLL1_DIV2>;
+				clock-div = <5>;
+			};
+
+			enet_timer2_root: enet-timer2-root {
+				compatible = "nxp,imxrt11xx-enet-timer-root";
+				#clock-cells = <0>;
+				clock-mux = <IMXRT11XX_ENET_TIMER_SRC_SYS_PLL1_DIV2>;
+				clock-div = <5>;
 			};
 		};
 

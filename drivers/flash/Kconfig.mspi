@@ -111,12 +111,20 @@ config FLASH_MSPI_NOR_DMA_DATA_XFER
 config FLASH_MSPI_NOR_DMA_CONTROL_XFER
 	bool "Use DMA for Flash MSPI NOR control transfers"
 	depends on MSPI_DMA
-	default n
 	help
 	  Transfer mode for register reads/writes and command MSPI transactions.
 	  Since these are shorter transfers, it is generally recommended to use MSPI_PIO
 	  (programmed I/O) due to there being less overhead compared to setting up a
 	  DMA transfer.
+
+config FLASH_MSPI_NOR_QUIRK_DDR_JEDEC_ID
+	bool "Chip-specific JEDEC ID read in DDR mode"
+	default y if DT_HAS_MXICY_MX25U_ENABLED
+	help
+	  Read the JEDEC ID through a chip quirk when the flash is in a DDR
+	  mode. Macronix MX25U/MX25LM chips in octal DTR mode output each ID
+	  byte twice, so the generic read returns a wrong ID and the jedec-id
+	  check fails.
 
 endif # FLASH_MSPI_NOR
 

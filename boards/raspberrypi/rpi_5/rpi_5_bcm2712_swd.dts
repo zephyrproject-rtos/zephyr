@@ -5,7 +5,6 @@
  */
 
 #include "rpi_5_bcm2712.dts"
-#include "rpi_5_bcm2712_swd-pinctrl.dtsi"
 
 / {
 	chosen {

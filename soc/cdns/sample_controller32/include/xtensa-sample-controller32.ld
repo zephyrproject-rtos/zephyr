@@ -68,7 +68,7 @@ MEMORY
   iram0_18_seg : org = 0x400003C0, len = 0x40
   iram0_19_seg : org = 0x40000400, len = 0x1FC00
 #ifdef CONFIG_MPU
-  vec_helpers  : org = 0x40002400, len = (PHYS_ROM0_ADDR - 0x40002400)
+  vec_helpers  : org = 0x40002400, len = (0x40020000 - 0x40002400)
 #endif
   srom0_seg    : org = PHYS_ROM0_ADDR, len = PHYS_ROM0_SIZE
   RAM          : org = PHYS_RAM_ADDR, len = PHYS_RAM_SIZE
@@ -389,7 +389,9 @@ SECTIONS
      * There is almost 1MB space (due to TLB pinning) so we can
      * be generous.
      */
+#if !(defined(CONFIG_COVERAGE) && defined(CONFIG_USERSPACE))
     LIB_OBJ_FUNC_IN_SECT(libkernel.a,,*)
+#endif /* !(defined(CONFIG_COVERAGE) && defined(CONFIG_USERSPACE)) */
 
     LIB_OBJ_FUNC_IN_SECT(libdrivers__console.a,,*)
     LIB_OBJ_FUNC_IN_SECT(libdrivers__timer.a,,*)
@@ -447,6 +449,9 @@ SECTIONS
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
     *(.rodata1)
+#if defined(CONFIG_XTENSA_LIBC)
+    *(.clib.rodata)
+#endif
 
     . = ALIGN(4);
     #include <snippets-rodata.ld>
@@ -508,6 +513,10 @@ SECTIONS
     #include <snippets-rwdata.ld>
     . = ALIGN(4);
 
+#if defined(CONFIG_XTENSA_LIBC)
+    *(.clib.data)
+#endif
+
     MPU_SEGMENT_SIZE_ALIGN
 
     __data_end = ABSOLUTE(.);
@@ -541,6 +550,10 @@ SECTIONS
     *(.gnu.linkonce.b.*)
     *(COMMON)
     *(.sram.bss)
+#if defined(CONFIG_XTENSA_LIBC)
+    *(.clib.bss)
+    *(.clib.percpu.bss)
+#endif
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
 

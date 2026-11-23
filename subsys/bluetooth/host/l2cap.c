@@ -31,6 +31,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/clock.h>
+#include <zephyr/sys/zassert.h>
 #include <zephyr/toolchain.h>
 
 #include "buf_view.h"
@@ -40,6 +41,8 @@
 
 #define LOG_DBG_ENABLED IS_ENABLED(CONFIG_BT_L2CAP_LOG_LEVEL_DBG)
 LOG_MODULE_REGISTER(bt_l2cap, CONFIG_BT_L2CAP_LOG_LEVEL);
+
+ZASSERT_MODULE(DEFAULT);
 
 #define LE_CHAN_RTX(_w) CONTAINER_OF(k_work_delayable_from_work(_w), \
 				     struct bt_l2cap_le_chan, rtx_work)
@@ -69,13 +72,25 @@ LOG_MODULE_REGISTER(bt_l2cap, CONFIG_BT_L2CAP_LOG_LEVEL);
 
 #define L2CAP_CONN_TIMEOUT	K_SECONDS(CONFIG_BT_L2CAP_CONN_RTX_TIMEOUT)
 #define L2CAP_DISC_TIMEOUT	K_SECONDS(2)
-/** @brief Local L2CAP RTX (Response Timeout eXpired)
- *
- *  Specification-allowed range for the value of RTX is 1 to 60 seconds.
- */
-#define L2CAP_RTX_TIMEOUT	K_SECONDS(2)
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+/* Declared ahead: it allocates from disc_pool, whose destroy callback submits it */
+static void disc_work_handler(struct k_work *work);
+static K_WORK_DEFINE(disc_work, disc_work_handler);
+
+static void disc_destroy(struct net_buf *buf)
+{
+	int err;
+
+	net_buf_destroy(buf);
+
+	/* A Disconnection Request may be waiting for the buffer */
+	err = bt_work_submit(&disc_work);
+	if (err < 0) {
+		LOG_ERR("Unable to submit disc_work (err %d)", err);
+	}
+}
+
 /* Dedicated pool for disconnect buffers so they are guaranteed to be send
  * even in case of data congestion due to flooding.
  */
@@ -83,7 +98,7 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 			  BT_L2CAP_BUF_SIZE(
 				sizeof(struct bt_l2cap_sig_hdr) +
 				sizeof(struct bt_l2cap_disconn_req)),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, disc_destroy);
 
 #define ANY_OPCODE 0x100
 #define l2cap_lookup_ident(conn, ident, req_opcode)                                                \
@@ -166,8 +181,12 @@ static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 static struct bt_l2cap_le_chan *
 __l2cap_lookup_ident(struct bt_conn *conn, uint16_t ident, uint16_t req_opcode, bool remove)
 {
+	struct bt_l2cap_le_chan *found = NULL;
 	struct bt_l2cap_chan *chan;
 	sys_snode_t *prev = NULL;
+
+	/* chan_queue() checks this list under the host lock */
+	bt_dev_lock();
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
 		if ((BT_L2CAP_LE_CHAN(chan)->ident == ident) &&
@@ -177,13 +196,16 @@ __l2cap_lookup_ident(struct bt_conn *conn, uint16_t ident, uint16_t req_opcode, 
 				sys_slist_remove(&conn->channels, prev,
 						 &chan->node);
 			}
-			return BT_L2CAP_LE_CHAN(chan);
+			found = BT_L2CAP_LE_CHAN(chan);
+			break;
 		}
 
 		prev = &chan->node;
 	}
 
-	return NULL;
+	bt_dev_unlock();
+
+	return found;
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
@@ -192,14 +214,19 @@ void bt_l2cap_chan_remove(struct bt_conn *conn, struct bt_l2cap_chan *ch)
 	struct bt_l2cap_chan *chan;
 	sys_snode_t *prev = NULL;
 
+	/* chan_queue() checks this list under the host lock */
+	bt_dev_lock();
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
 		if (chan == ch) {
 			sys_slist_remove(&conn->channels, prev, &chan->node);
-			return;
+			break;
 		}
 
 		prev = &chan->node;
 	}
+
+	bt_dev_unlock();
 }
 
 const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state)
@@ -273,6 +300,13 @@ static void l2cap_chan_set_state(struct bt_l2cap_chan *chan, bt_l2cap_chan_state
 	BT_L2CAP_LE_CHAN(chan)->state = state;
 }
 #endif /* CONFIG_BT_L2CAP_LOG_LEVEL_DBG */
+
+static void l2cap_server_release(struct bt_l2cap_server *server)
+{
+	__maybe_unused atomic_val_t prev = atomic_dec(&server->_refs);
+
+	ZASSERT(prev > 0, "server %p reference underflow", server);
+}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 static void cancel_data_ready(struct bt_l2cap_le_chan *lechan);
@@ -284,6 +318,16 @@ static void l2cap_chan_del(struct bt_l2cap_chan *chan)
 	struct net_buf *buf;
 
 	LOG_DBG("conn %p chan %p", chan->conn, chan);
+
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	/* Release the channel from its server before the disconnected callback,
+	 * so that an application may unregister the server from there.
+	 */
+	if (le_chan->_server != NULL) {
+		l2cap_server_release(le_chan->_server);
+		le_chan->_server = NULL;
+	}
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 	if (!chan->conn) {
 		goto destroy;
@@ -338,8 +382,11 @@ static void l2cap_rtx_timeout(struct k_work *work)
 	bt_l2cap_chan_remove(conn, &chan->chan);
 	l2cap_chan_del(&chan->chan);
 
-	/* Remove other channels if pending on the same ident */
-	while ((chan = l2cap_remove_ident(conn, chan->ident, chan->pending_req))) {
+	/* Remove other channels if pending on the same ident. Ident 0 marks a
+	 * Disconnection Request that waits for a buffer, not a shared request.
+	 */
+	while (chan->ident != 0U &&
+	       (chan = l2cap_remove_ident(conn, chan->ident, chan->pending_req))) {
 		l2cap_chan_del(&chan->chan);
 	}
 }
@@ -358,15 +405,26 @@ static void l2cap_rx_process(struct k_work *work)
 		net_buf_unref(buf);
 	}
 }
+
+static void l2cap_status_process(struct k_work *work)
+{
+	struct bt_l2cap_le_chan *ch = CONTAINER_OF(work, struct bt_l2cap_le_chan, status_work);
+
+	ch->chan.ops->status(&ch->chan, ch->chan.status);
+}
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		       bt_l2cap_chan_destroy_t destroy)
 {
-	/* Attach channel to the connection */
+	/* Attach channel to the connection. Removals and chan_queue() hold
+	 * the host lock as well.
+	 */
+	bt_dev_lock();
 	sys_slist_append(&conn->channels, &chan->node);
 	chan->conn = conn;
 	chan->destroy = destroy;
+	bt_dev_unlock();
 
 	LOG_DBG("conn %p chan %p", conn, chan);
 }
@@ -382,6 +440,7 @@ static void init_le_chan_private(struct bt_l2cap_le_chan *le_chan)
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
 	le_chan->_sdu_len_done = 0;
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
+	le_chan->_server = NULL;
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 	memset(&le_chan->_pdu_ready, 0, sizeof(le_chan->_pdu_ready));
 	le_chan->_pdu_remaining = 0;
@@ -417,6 +476,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	 * always succeed.
 	 */
 	k_work_init_delayable(&le_chan->rtx_work, l2cap_rtx_timeout);
+	k_work_init(&le_chan->status_work, l2cap_status_process);
 
 	if (L2CAP_LE_CID_IS_DYN(le_chan->rx.cid)) {
 		k_work_init(&le_chan->rx_work, l2cap_rx_process);
@@ -496,16 +556,10 @@ static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
 					       uint16_t len)
 {
 	struct bt_l2cap_sig_hdr *hdr;
-	struct net_buf_pool *pool = NULL;
 	struct net_buf *buf;
 
-#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	if (code == BT_L2CAP_DISCONN_REQ) {
-		pool = &disc_pool;
-	}
-#endif
 	/* Don't wait more than the minimum RTX timeout of 2 seconds */
-	buf = bt_l2cap_create_pdu_timeout(pool, 0, L2CAP_RTX_TIMEOUT);
+	buf = bt_l2cap_create_pdu_timeout(NULL, 0, BT_L2CAP_RTX_TIMEOUT);
 	if (!buf) {
 		/* If it was not possible to allocate a buffer within the
 		 * timeout return NULL.
@@ -528,10 +582,16 @@ static struct net_buf *l2cap_create_le_sig_pdu(uint8_t code, uint8_t ident,
  */
 static int l2cap_send_sig(struct bt_conn *conn, struct net_buf *buf)
 {
-	struct bt_l2cap_chan *ch = bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_LE_SIG);
-	struct bt_l2cap_le_chan *chan = BT_L2CAP_LE_CHAN(ch);
+	int err = -ENOTCONN;
 
-	int err = bt_l2cap_send_pdu(chan, buf, NULL, NULL);
+	/* A caller on another thread may find the connection gone */
+	if (conn != NULL) {
+		struct bt_l2cap_chan *ch = bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_LE_SIG);
+
+		if (ch != NULL) {
+			err = bt_l2cap_send_pdu(BT_L2CAP_LE_CHAN(ch), buf, NULL, NULL);
+		}
+	}
 
 	if (err) {
 		net_buf_unref(buf);
@@ -737,6 +797,7 @@ struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
 static void raise_data_ready(struct bt_l2cap_le_chan *le_chan)
 {
 	__maybe_unused bool added;
+	struct bt_conn *conn;
 
 	/* The l2cap_data_ready list is only ever modified under the host
 	 * lock: here (append, any thread context), in cancel_data_ready()
@@ -745,21 +806,26 @@ static void raise_data_ready(struct bt_l2cap_le_chan *le_chan)
 	 */
 	bt_dev_lock();
 
-	if (!sys_slist_find(&le_chan->chan.conn->l2cap_data_ready,
-				 &le_chan->_pdu_ready, NULL)) {
-		sys_slist_append(&le_chan->chan.conn->l2cap_data_ready,
-				 &le_chan->_pdu_ready);
+	/* l2cap_chan_del() clears the connection of a channel it deletes */
+	conn = le_chan->chan.conn;
+	if (conn == NULL) {
+		bt_dev_unlock();
+		return;
+	}
+
+	if (!sys_slist_find(&conn->l2cap_data_ready, &le_chan->_pdu_ready, NULL)) {
+		sys_slist_append(&conn->l2cap_data_ready, &le_chan->_pdu_ready);
 
 		added = true;
 	} else {
 		added = false;
 	}
 
+	bt_conn_data_ready(conn);
+
 	bt_dev_unlock();
 
 	LOG_DBG("L2CAP channel %p data ready %s", le_chan, added ? "added" : "already added");
-
-	bt_conn_data_ready(le_chan->chan.conn);
 }
 
 static void lower_data_ready(struct bt_l2cap_le_chan *le_chan)
@@ -797,13 +863,36 @@ static void cancel_data_ready(struct bt_l2cap_le_chan *le_chan)
 	bt_dev_unlock();
 }
 
+/* Disconnection takes a channel off conn->channels, and shutdown marks it,
+ * under the host lock before draining the channel's queue: queue under the
+ * lock, and only on a channel that is still on the list and not shut down.
+ */
+static int chan_queue(struct bt_l2cap_le_chan *le_chan, struct net_buf **buf)
+{
+	struct bt_conn *conn;
+	int err = 0;
+
+	bt_dev_lock();
+
+	conn = le_chan->chan.conn;
+	if (conn == NULL || conn->state != BT_CONN_CONNECTED ||
+	    !sys_slist_find(&conn->channels, &le_chan->chan.node, NULL)) {
+		err = -ENOTCONN;
+	} else if (atomic_test_bit(le_chan->chan.status, BT_L2CAP_STATUS_SHUTDOWN)) {
+		err = -ESHUTDOWN;
+	} else {
+		k_fifo_put(&le_chan->tx_queue, net_buf_take(buf));
+		raise_data_ready(le_chan);
+	}
+
+	bt_dev_unlock();
+
+	return err;
+}
+
 int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 		      bt_conn_tx_cb_t cb, void *user_data)
 {
-	if (!le_chan->chan.conn || le_chan->chan.conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
-	}
-
 	if (pdu->ref != 1) {
 		/* The host may alter the buf contents when fragmenting. Higher
 		 * layers cannot expect the buf contents to stay intact. Extra
@@ -825,11 +914,7 @@ int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
 	make_closure(pdu->user_data, cb, user_data);
 	LOG_DBG("push: pdu %p len %d cb %p userdata %p", pdu, pdu->len, cb, user_data);
 
-	k_fifo_put(&le_chan->tx_queue, net_buf_take(&pdu));
-
-	raise_data_ready(le_chan); /* tis just a flag */
-
-	return 0;		/* look ma, no failures */
+	return chan_queue(le_chan, &pdu);
 }
 
 /* L2CAP channel wants to send a PDU */
@@ -875,7 +960,14 @@ static void chan_take_credit(struct bt_l2cap_le_chan *lechan)
 		atomic_clear_bit(lechan->chan.status, BT_L2CAP_STATUS_OUT);
 
 		if (lechan->chan.ops->status) {
-			lechan->chan.ops->status(&lechan->chan, lechan->chan.status);
+			/* Not called here: the TX processor holds the host lock,
+			 * and sends the HCI commands that the callback may wait for.
+			 */
+			int err = bt_work_submit(&lechan->status_work);
+
+			if (err < 0) {
+				LOG_ERR("Unable to submit status_work (err %d)", err);
+			}
 		}
 	}
 #endif
@@ -1237,9 +1329,12 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-struct bt_l2cap_server *bt_l2cap_server_lookup_psm(uint16_t psm)
+/* Caller must hold the host lock. */
+static struct bt_l2cap_server *l2cap_server_lookup_psm(uint16_t psm)
 {
 	struct bt_l2cap_server *server;
+
+	BT_DEV_LOCK_ASSERT();
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&servers, server, node) {
 		if (server->psm == psm) {
@@ -1250,36 +1345,85 @@ struct bt_l2cap_server *bt_l2cap_server_lookup_psm(uint16_t psm)
 	return NULL;
 }
 
+/* Caller must hold the host lock. */
+static bool l2cap_server_is_registered(const struct bt_l2cap_server *server)
+{
+	struct bt_l2cap_server *registered;
+
+	BT_DEV_LOCK_ASSERT();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&servers, registered, node) {
+		if (registered == server) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Take a reference to the server registered for @p psm, so that it cannot be
+ * unregistered while a connection request for it is being handled. The host
+ * lock is only held for the lookup, since accept() must not run under it.
+ */
+static struct bt_l2cap_server *l2cap_server_acquire(uint16_t psm)
+{
+	struct bt_l2cap_server *server;
+
+	bt_dev_lock();
+
+	server = l2cap_server_lookup_psm(psm);
+	if (server != NULL) {
+		(void)atomic_inc(&server->_refs);
+	}
+
+	bt_dev_unlock();
+
+	return server;
+}
+
 int bt_l2cap_server_register(struct bt_l2cap_server *server)
 {
+	int err = 0;
+
 	if (!server->accept) {
 		return -EINVAL;
+	}
+
+	bt_dev_lock();
+
+	if (l2cap_server_is_registered(server)) {
+		LOG_DBG("Server already registered");
+		err = -EALREADY;
+		goto unlock;
 	}
 
 	if (server->psm) {
 		if (server->psm < L2CAP_LE_PSM_FIXED_START ||
 		    server->psm > L2CAP_LE_PSM_DYN_END) {
-			return -EINVAL;
+			err = -EINVAL;
+			goto unlock;
 		}
 
 		/* Check if given PSM is already in use */
-		if (bt_l2cap_server_lookup_psm(server->psm)) {
+		if (l2cap_server_lookup_psm(server->psm) != NULL) {
 			LOG_DBG("PSM already registered");
-			return -EADDRINUSE;
+			err = -EADDRINUSE;
+			goto unlock;
 		}
 	} else {
 		uint16_t psm;
 
 		for (psm = L2CAP_LE_PSM_DYN_START;
 		     psm <= L2CAP_LE_PSM_DYN_END; psm++) {
-			if (!bt_l2cap_server_lookup_psm(psm)) {
+			if (l2cap_server_lookup_psm(psm) == NULL) {
 				break;
 			}
 		}
 
 		if (psm > L2CAP_LE_PSM_DYN_END) {
 			LOG_WRN("No free dynamic PSMs available");
-			return -EADDRNOTAVAIL;
+			err = -EADDRNOTAVAIL;
+			goto unlock;
 		}
 
 		LOG_DBG("Allocated PSM 0x%04x for new server", psm);
@@ -1287,7 +1431,8 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 	}
 
 	if (server->sec_level > BT_SECURITY_L4) {
-		return -EINVAL;
+		err = -EINVAL;
+		goto unlock;
 	} else if (server->sec_level < BT_SECURITY_L1) {
 		/* Level 0 is only applicable for BR/EDR */
 		server->sec_level = BT_SECURITY_L1;
@@ -1295,9 +1440,57 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 
 	LOG_DBG("PSM 0x%04x", server->psm);
 
+	/* The host owns the reference count while the server is registered:
+	 * initialize it here, since the application may reuse a struct that
+	 * it has previously unregistered, and is not required to
+	 * zero-initialize it.
+	 */
+	atomic_set(&server->_refs, 0);
+
 	sys_slist_append(&servers, &server->node);
 
-	return 0;
+unlock:
+	bt_dev_unlock();
+
+	return err;
+}
+
+int bt_l2cap_server_unregister(struct bt_l2cap_server *server)
+{
+	__maybe_unused bool removed;
+	atomic_val_t active;
+	int err = 0;
+
+	if (server == NULL) {
+		return -EINVAL;
+	}
+
+	bt_dev_lock();
+
+	if (!l2cap_server_is_registered(server)) {
+		err = -ENOENT;
+		goto unlock;
+	}
+
+	/* Non-zero while a connection request for this server is being
+	 * handled, or while channels it accepted are still connected.
+	 */
+	active = atomic_get(&server->_refs);
+	if (active != 0) {
+		LOG_DBG("PSM 0x%04x still in use (%ld)", server->psm, active);
+		err = -EBUSY;
+		goto unlock;
+	}
+
+	removed = sys_slist_find_and_remove(&servers, &server->node);
+	ZASSERT(removed, "server %p is registered but not on the list", server);
+
+	LOG_DBG("PSM 0x%04x unregistered", server->psm);
+
+unlock:
+	bt_dev_unlock();
+
+	return err;
 }
 
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
@@ -1407,7 +1600,6 @@ static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
 static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
-	struct net_buf *buf;
 
 	LOG_DBG("chan %p cid 0x%04x", le_chan, le_chan->rx.cid);
 
@@ -1426,15 +1618,14 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 		k_work_cancel_delayable(&le_chan->rtx_work);
 	}
 
-	/* Make sure the RX work is not left queued with a reference to a
-	 * channel object that may be freed or re-used after this call.
+	/* Make sure the RX and status work are not left queued with a reference
+	 * to a channel object that may be freed or re-used after this call.
 	 */
 	(void)k_work_cancel(&le_chan->rx_work);
+	(void)k_work_cancel(&le_chan->status_work);
 
 	/* Remove buffers on the SDU RX queue */
-	while ((buf = k_fifo_get(&le_chan->rx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&le_chan->rx_queue);
 
 	/* Destroy segmented SDU if it exists */
 	if (le_chan->_sdu) {
@@ -1519,10 +1710,13 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 		return BT_L2CAP_LE_ERR_NO_RESOURCES;
 	}
 
-	l2cap_chan_tx_give_credits(le_chan, credits);
-
 	/* Set channel PSM */
 	le_chan->psm = server->psm;
+
+	le_chan->_server = server;
+	(void)atomic_inc(&server->_refs);
+
+	l2cap_chan_tx_give_credits(le_chan, credits);
 
 	/* Update state */
 	l2cap_chan_set_state(*chan, BT_L2CAP_CONNECTED);
@@ -1557,13 +1751,39 @@ static uint16_t l2cap_check_security(struct bt_conn *conn,
 	return BT_L2CAP_LE_ERR_AUTHENTICATION;
 }
 
+/* Look up the server for @p psm and let it accept the channel. The reference
+ * taken by the lookup keeps the server from being unregistered until this
+ * request is done, without holding a lock across accept().
+ */
+static uint16_t l2cap_le_accept(struct bt_conn *conn, uint16_t psm, uint16_t scid, uint16_t mtu,
+				uint16_t mps, uint16_t credits, struct bt_l2cap_chan **chan)
+{
+	struct bt_l2cap_server *server;
+	uint16_t result;
+
+	/* Check if there is a server registered */
+	server = l2cap_server_acquire(psm);
+	if (server == NULL) {
+		return BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
+	}
+
+	/* Check if connection has minimum required security level */
+	result = l2cap_check_security(conn, server);
+	if (result == BT_L2CAP_LE_SUCCESS) {
+		result = l2cap_chan_accept(conn, server, scid, mtu, mps, credits, chan);
+	}
+
+	l2cap_server_release(server);
+
+	return result;
+}
+
 static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_le_chan *le_chan;
-	struct bt_l2cap_server *server;
 	struct bt_l2cap_le_conn_req *req = (void *)buf->data;
 	struct bt_l2cap_le_conn_rsp *rsp;
 	uint16_t psm, scid, mtu, mps, credits;
@@ -1602,21 +1822,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto rsp;
 	}
 
-	/* Check if there is a server registered */
-	server = bt_l2cap_server_lookup_psm(psm);
-	if (!server) {
-		result = BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
-		goto rsp;
-	}
-
-	/* Check if connection has minimum required security level */
-	result = l2cap_check_security(conn, server);
-	if (result != BT_L2CAP_LE_SUCCESS) {
-		goto rsp;
-	}
-
-	result = l2cap_chan_accept(conn, server, scid, mtu, mps, credits,
-				   &chan);
+	result = l2cap_le_accept(conn, psm, scid, mtu, mps, credits, &chan);
 	if (result != BT_L2CAP_LE_SUCCESS) {
 		goto rsp;
 	}
@@ -1697,9 +1903,11 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto response;
 	}
 
-	/* Check if there is a server registered */
-	server = bt_l2cap_server_lookup_psm(psm);
-	if (!server) {
+	/* Referenced until the last accept() has returned, as in
+	 * l2cap_le_accept().
+	 */
+	server = l2cap_server_acquire(psm);
+	if (server == NULL) {
 		result = BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
 		goto response;
 	}
@@ -1707,6 +1915,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	/* Check if connection has minimum required security level */
 	result = l2cap_check_security(conn, server);
 	if (result != BT_L2CAP_LE_SUCCESS) {
+		l2cap_server_release(server);
 		goto response;
 	}
 
@@ -1737,6 +1946,8 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			continue;
 		}
 	}
+
+	l2cap_server_release(server);
 
 response:
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_ECRED_CONN_RSP, ident,
@@ -1920,6 +2131,7 @@ static void le_ecred_reconf_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 static struct bt_l2cap_le_chan *l2cap_remove_rx_cid(struct bt_conn *conn,
 						    uint16_t cid)
 {
+	struct bt_l2cap_le_chan *found = NULL;
 	struct bt_l2cap_chan *chan;
 	sys_snode_t *prev = NULL;
 
@@ -1928,16 +2140,22 @@ static struct bt_l2cap_le_chan *l2cap_remove_rx_cid(struct bt_conn *conn,
 		return NULL;
 	}
 
+	/* chan_queue() checks this list under the host lock */
+	bt_dev_lock();
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
 		if (BT_L2CAP_LE_CHAN(chan)->rx.cid == cid) {
 			sys_slist_remove(&conn->channels, prev, &chan->node);
-			return BT_L2CAP_LE_CHAN(chan);
+			found = BT_L2CAP_LE_CHAN(chan);
+			break;
 		}
 
 		prev = &chan->node;
 	}
 
-	return NULL;
+	bt_dev_unlock();
+
+	return found;
 }
 
 static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
@@ -1974,6 +2192,8 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_DISCONN_RSP, ident,
 				      sizeof(*rsp));
 	if (!buf) {
+		/* The peer has stopped using the channel all the same */
+		l2cap_chan_del(&chan->chan);
 		return;
 	}
 
@@ -2448,11 +2668,15 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
-	struct net_buf *buf;
 
 	LOG_DBG("chan %p", chan);
 
+	/* chan_queue() checks this under the host lock, so an SDU is either
+	 * queued before it is set, and freed below, or refused
+	 */
+	bt_dev_lock();
 	atomic_set_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN);
+	bt_dev_unlock();
 
 	/* Destroy segmented SDU if it exists */
 	if (le_chan->_sdu) {
@@ -2461,14 +2685,10 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 	}
 
 	/* Remove buffers on the TX queue */
-	while ((buf = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&le_chan->tx_queue);
 
 	/* Remove buffers on the RX queue */
-	while ((buf = k_fifo_get(&le_chan->rx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&le_chan->rx_queue);
 
 	/* Update status */
 	if (chan->ops->status) {
@@ -2481,6 +2701,7 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 {
 	struct bt_l2cap_le_credits *ev;
 	struct net_buf *buf;
+	int err;
 
 	__ASSERT_NO_MSG(bt_l2cap_chan_get_state(&chan->chan) == BT_L2CAP_CONNECTED);
 
@@ -2488,9 +2709,11 @@ static void l2cap_chan_send_credits(struct bt_l2cap_le_chan *chan,
 				      sizeof(*ev));
 	if (!buf) {
 		LOG_ERR("Unable to send credits update");
-		/* Disconnect would probably not work either so the only
-		 * option left is to shutdown the channel.
-		 */
+		/* Without credits the peer would wait on the channel forever */
+		err = bt_l2cap_chan_disconnect(&chan->chan);
+		if (err != 0) {
+			LOG_ERR("Unable to disconnect (err %d)", err);
+		}
 		l2cap_chan_shutdown(&chan->chan);
 		return;
 	}
@@ -2840,6 +3063,11 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 				buf->len,
 				chan->rx.mps);
 			l2cap_chan_send_credits(chan, credits);
+		}
+
+		/* A channel that could not give the credits has dropped the SDU */
+		if (bt_l2cap_chan_get_state(&chan->chan) != BT_L2CAP_CONNECTED) {
+			return;
 		}
 
 		l2cap_chan_le_recv_seg(chan, buf);
@@ -3372,13 +3600,77 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	return l2cap_le_connect(conn, le_chan, psm);
 }
 
+/* Never waits for a buffer: disc_work_handler() sends a request that found none */
+static int l2cap_disconn_req(struct bt_l2cap_le_chan *le_chan)
+{
+	struct bt_l2cap_disconn_req *req;
+	struct bt_l2cap_sig_hdr *hdr;
+	struct net_buf *buf;
+
+	buf = bt_l2cap_create_pdu_timeout(&disc_pool, 0, K_NO_WAIT);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	le_chan->ident = get_ident();
+	le_chan->pending_req = BT_L2CAP_DISCONN_REQ;
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_DISCONN_REQ;
+	hdr->ident = le_chan->ident;
+	hdr->len = sys_cpu_to_le16(sizeof(*req));
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->dcid = sys_cpu_to_le16(le_chan->tx.cid);
+	req->scid = sys_cpu_to_le16(le_chan->rx.cid);
+
+	l2cap_chan_send_req(&le_chan->chan, buf, L2CAP_DISC_TIMEOUT);
+
+	return 0;
+}
+
+static void disc_req_send_waiting(struct bt_conn *conn, void *data)
+{
+	struct bt_l2cap_chan *chan;
+	bool *no_buf = data;
+
+	if (*no_buf || conn->state != BT_CONN_CONNECTED) {
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+
+		/* A request that waits for a buffer has no identifier yet */
+		if (!L2CAP_LE_CID_IS_DYN(le_chan->rx.cid) ||
+		    le_chan->state != BT_L2CAP_DISCONNECTING ||
+		    le_chan->pending_req != BT_L2CAP_DISCONN_REQ || le_chan->ident != 0U) {
+			continue;
+		}
+
+		if (l2cap_disconn_req(le_chan) != 0) {
+			*no_buf = true;
+			return;
+		}
+	}
+}
+
+static void disc_work_handler(struct k_work *work)
+{
+	bool no_buf = false;
+
+	ARG_UNUSED(work);
+
+	bt_dev_lock();
+	bt_conn_foreach(BT_CONN_TYPE_LE, disc_req_send_waiting, &no_buf);
+	bt_dev_unlock();
+}
+
 int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 {
 	struct bt_conn *conn = chan->conn;
-	struct net_buf *buf;
-	struct bt_l2cap_disconn_req *req;
 	struct bt_l2cap_le_chan *le_chan;
-	uint8_t ident;
+	int err = 0;
 
 	if (!conn) {
 		return -ENOTCONN;
@@ -3392,24 +3684,31 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 
 	LOG_DBG("chan %p scid 0x%04x dcid 0x%04x", chan, le_chan->rx.cid, le_chan->tx.cid);
 
-	ident = get_ident();
+	/* Held until the state is updated: disc_work_handler() must not miss a
+	 * request that starts to wait, and a concurrent call for the channel
+	 * must not mistake a request being sent for one that waits
+	 */
+	bt_dev_lock();
 
-	buf = l2cap_create_le_sig_pdu(BT_L2CAP_DISCONN_REQ, ident, sizeof(*req));
-	if (!buf) {
-		return -ENOMEM;
+	if (l2cap_disconn_req(le_chan) == 0) {
+		l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
+	} else if (le_chan->state != BT_L2CAP_CONNECTED ||
+		   k_work_delayable_is_pending(&le_chan->rtx_work)) {
+		/* Only a connected channel without a request of its own in
+		 * flight waits: any other keeps that request and its RTX timer
+		 */
+		err = -ENOMEM;
+	} else {
+		LOG_DBG("chan %p waits for a buffer", chan);
+
+		le_chan->ident = 0U;
+		le_chan->pending_req = BT_L2CAP_DISCONN_REQ;
+		l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
 	}
 
-	le_chan->ident = ident;
-	le_chan->pending_req = BT_L2CAP_DISCONN_REQ;
+	bt_dev_unlock();
 
-	req = net_buf_add(buf, sizeof(*req));
-	req->dcid = sys_cpu_to_le16(le_chan->tx.cid);
-	req->scid = sys_cpu_to_le16(le_chan->rx.cid);
-
-	l2cap_chan_send_req(chan, buf, L2CAP_DISC_TIMEOUT);
-	l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
-
-	return 0;
+	return err;
 }
 
 __maybe_unused static bool user_data_not_empty(const struct net_buf *buf)
@@ -3429,6 +3728,7 @@ __maybe_unused static bool user_data_not_empty(const struct net_buf *buf)
 static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_buf *buf)
 {
 	uint16_t sdu_len = buf->len;
+	int err;
 
 	LOG_DBG("chan %p buf %p", le_chan, buf);
 
@@ -3485,13 +3785,13 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 	 */
 	net_buf_push_le16(buf, sdu_len);
 
-	/* Put buffer on TX queue */
-	k_fifo_put(&le_chan->tx_queue, net_buf_take(&buf));
+	err = chan_queue(le_chan, &buf);
+	if (err != 0) {
+		/* The caller keeps the SDU as it was given */
+		(void)net_buf_pull_le16(buf);
+	}
 
-	/* Always process the queue in the same context */
-	raise_data_ready(le_chan);
-
-	return 0;
+	return err;
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
@@ -3506,6 +3806,8 @@ static void l2cap_fixed_chan_sent_cb(struct bt_conn *conn, void *user_data, int 
 
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
+	struct bt_conn *conn;
+
 	if (!buf || !chan) {
 		return -EINVAL;
 	}
@@ -3517,7 +3819,9 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	if (!chan->conn || chan->conn->state != BT_CONN_CONNECTED) {
+	/* Read once: disconnection clears it on another thread */
+	conn = chan->conn;
+	if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
@@ -3525,7 +3829,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -ESHUTDOWN;
 	}
 
-	if (bt_conn_is_br(chan->conn)) {
+	if (bt_conn_is_br(conn)) {
 		return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
 	}
 

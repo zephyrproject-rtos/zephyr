@@ -14,3 +14,12 @@ tests:
   net.mqtt.client.mqtt_5_0:
     extra_configs:
       - CONFIG_MQTT_VERSION_5_0=y
+  net.mqtt.client.tls:
+    min_ram: 64
+    platform_allow:
+      - native_sim
+      - qemu_x86
+    integration_platforms:
+      - native_sim
+    extra_conf_files:
+      - tls.conf

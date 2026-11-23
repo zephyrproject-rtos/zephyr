@@ -48,6 +48,8 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		CMC_SetClockMode(MCXN_CMC_ADDR, kCMC_GateCoreClock);
 		CMC_SetMAINPowerMode(MCXN_CMC_ADDR, kCMC_ActiveOrSleepMode);
 		CMC_SetWAKEPowerMode(MCXN_CMC_ADDR, kCMC_ActiveOrSleepMode);
+		/* Ensure the last CMC write completes before WFI (MCX N RM 38.7.1). */
+		(void)CMC_GetWAKEPowerMode(MCXN_CMC_ADDR);
 		enter_low_power();
 		break;
 
@@ -56,6 +58,8 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		CMC_SetClockMode(MCXN_CMC_ADDR, kCMC_GateAllSystemClocksEnterLowPowerMode);
 		CMC_SetMAINPowerMode(MCXN_CMC_ADDR, kCMC_DeepSleepMode);
 		CMC_SetWAKEPowerMode(MCXN_CMC_ADDR, kCMC_DeepSleepMode);
+		/* Ensure the last CMC write completes before WFI (MCX N RM 38.7.1). */
+		(void)CMC_GetWAKEPowerMode(MCXN_CMC_ADDR);
 		enter_low_power();
 		break;
 
@@ -64,6 +68,8 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		CMC_SetClockMode(MCXN_CMC_ADDR, kCMC_GateAllSystemClocksEnterLowPowerMode);
 		CMC_SetMAINPowerMode(MCXN_CMC_ADDR, kCMC_PowerDownMode);
 		CMC_SetWAKEPowerMode(MCXN_CMC_ADDR, kCMC_PowerDownMode);
+		/* Ensure the last CMC write completes before WFI (MCX N RM 38.7.1). */
+		(void)CMC_GetWAKEPowerMode(MCXN_CMC_ADDR);
 		enter_low_power();
 		break;
 

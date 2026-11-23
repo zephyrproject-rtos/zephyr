@@ -4,6 +4,9 @@
 zephyr_include_directories(.)
 zephyr_include_directories(../common)
 
+# Controller-mode setup for the DesignWare SSI instances
+zephyr_sources_ifdef(CONFIG_SPI_DW ssi.c)
+
 # Cluster-specific code for Cortex-M55 RTSS cores
 if(CONFIG_SOC_FAMILY_ENSEMBLE_RTSS)
   add_subdirectory(rtss)

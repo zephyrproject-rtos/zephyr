@@ -511,14 +511,6 @@ static struct net_stats_eth *eth_intel_igc_get_stats(const struct device *dev,
 	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 	struct net_stats_eth *stats = &data->stats;
 
-	stats->bytes.sent += sys_read32(data->base + INTEL_IGC_TOTL);
-	stats->bytes.received += sys_read32(data->base + INTEL_IGC_TORL);
-	stats->pkts.tx += sys_read32(data->base + INTEL_IGC_TPT);
-	stats->pkts.rx += sys_read32(data->base + INTEL_IGC_TPR);
-	stats->broadcast.tx += sys_read32(data->base + INTEL_IGC_BPTC);
-	stats->broadcast.rx += sys_read32(data->base + INTEL_IGC_BPRC);
-	stats->multicast.tx += sys_read32(data->base + INTEL_IGC_MPTC);
-	stats->multicast.rx += sys_read32(data->base + INTEL_IGC_MPRC);
 	stats->errors.rx += sys_read32(data->base + INTEL_IGC_RERC);
 	stats->error_details.rx_length_errors += sys_read32(data->base + INTEL_IGC_RLEC);
 	stats->error_details.rx_crc_errors += sys_read32(data->base + INTEL_IGC_CRCERRS);
@@ -1202,7 +1194,7 @@ static int eth_intel_igc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ethernet_api eth_api = {
+static DEVICE_API(ethernet, eth_api) = {
 	.iface_api.init = eth_intel_igc_iface_init,
 	.get_capabilities = eth_intel_igc_get_caps,
 	.set_config = eth_intel_igc_set_config,
@@ -1329,7 +1321,7 @@ static const struct ethernet_api eth_api = {
 	INTEL_IGC_SETUP_QUEUE_WORK(n);                                                             \
 	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_intel_igc_init, NULL, &eth_data_##n, &eth_cfg_##n,    \
 				      CONFIG_ETH_INIT_PRIORITY, &eth_api,                          \
-				      CONFIG_ETH_INTEL_IGC_NET_MTU);                               \
+				      NET_ETH_MTU);                                                \
 	INTEL_IGC_MAC_CONFIG_IRQ(n)
 
 DT_INST_FOREACH_STATUS_OKAY(INTEL_IGC_MAC_INIT)

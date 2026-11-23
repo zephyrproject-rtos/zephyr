@@ -7,4 +7,4 @@ config DAI_NXP_MICFIL
 	depends on DT_HAS_NXP_DAI_MICFIL_ENABLED
 	select PINCTRL
 	help
-		Select this to enable NXP PDM MICFIL driver.
+	  Select this to enable NXP PDM MICFIL driver.

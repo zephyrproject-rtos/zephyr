@@ -31,10 +31,22 @@ static void *pwm_clock_setup(void)
 		      "%s: devicetree clock rate mismatch. Expected %dHz Fetched %dHz",
 		      clk_dev->name, clock_rate_dt, clock_rate);
 
+	zassert_equal(clock_control_get_status(clk_dev, 0), CLOCK_CONTROL_STATUS_OFF,
+		      "%s: PWM clock should initially be off", clk_dev->name);
+
 	ret = clock_control_on(clk_dev, 0);
 	zassert_equal(0, ret, "%s: Unexpected err (%d) from clock_control_on", clk_dev->name, ret);
 
 	return NULL;
+}
+
+ZTEST(pwm_clock, test_clock_control_get_status)
+{
+	zassert_equal(clock_control_get_status(clk_dev, 0), CLOCK_CONTROL_STATUS_ON,
+		      "%s: PWM clock should be on", clk_dev->name);
+	zassert_equal(clock_control_get_status(clk_dev, (clock_control_subsys_t)1),
+		      CLOCK_CONTROL_STATUS_UNKNOWN, "%s: Invalid clock ID should return unknown",
+		      clk_dev->name);
 }
 
 ZTEST(pwm_clock, test_clock_control_get_rate)

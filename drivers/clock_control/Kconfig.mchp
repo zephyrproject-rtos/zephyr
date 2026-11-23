@@ -61,6 +61,22 @@ config CLOCK_CONTROL_MCHP_SMARTFUSION2
 	help
 	  Enable the read-only clock controller driver for Microchip SmartFusion2.
 
+config CLOCK_CONTROL_MPFS_PLL
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_MPFS_PLL_ENABLED
+	select CLOCK_CONTROL_MCHP_COMMON
+	help
+	  Enable clock controller driver for Microchip Polarfire family.
+
+config CLOCK_CONTROL_MPFS_CLK
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_MPFS_CLK_ENABLED
+	select CLOCK_CONTROL_MCHP_COMMON
+	help
+	  Enable clock controller driver for Microchip Polarfire family.
+
 if CLOCK_CONTROL_MCHP_COMMON
 
 config CLOCK_CONTROL_MCHP_CONFIG_BOOTUP
@@ -77,7 +93,6 @@ config CLOCK_CONTROL_MCHP_CONFIG_RUNTIME
 
 config CLOCK_CONTROL_MCHP_ASYNC_ON
 	bool "Async clock on"
-	default n
 	help
 	  This option enables async on API.
 
@@ -90,7 +105,6 @@ config CLOCK_CONTROL_MCHP_GET_RATE
 
 config CLOCK_CONTROL_MCHP_SET_RATE
 	bool "Set clock rate"
-	default n
 	depends on CLOCK_CONTROL_MCHP_GET_RATE
 	help
 	  This option enables set rate API. This may increase
@@ -98,7 +112,6 @@ config CLOCK_CONTROL_MCHP_SET_RATE
 
 config CLOCK_CONTROL_MCHP_GCLK_PINOUT
 	bool "Output the clock on  GCLK IO Pin"
-	default n
 	help
 	  This option enables the feature of outputting the clock on the gclk io pin.
 	  This may increase code size, depending on the depth of clock source hierarchy.

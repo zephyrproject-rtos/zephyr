@@ -3370,7 +3370,7 @@ static const struct sl_802154_config silabs_efr32_radio_cfg = {
 						 (0)),
 };
 
-static const struct ieee802154_radio_api silabs_efr32_radio_api = {
+static DEVICE_API(ieee802154_radio, silabs_efr32_radio_api) = {
 	.iface_api.init = silabs_efr32_iface_init,
 	.get_capabilities = silabs_efr32_get_capabilities,
 	.cca = silabs_efr32_cca,

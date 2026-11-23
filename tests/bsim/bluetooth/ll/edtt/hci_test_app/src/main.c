@@ -462,11 +462,8 @@ static void has_event(uint16_t size)
 static void le_flush_data(uint16_t size)
 {
 	uint16_t  response = sys_cpu_to_le16(CMD_LE_FLUSH_DATA_RSP);
-	struct net_buf *buf;
 
-	while ((buf = k_fifo_get(&data_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&data_queue);
 	read_excess_bytes(size);
 	size = 0;
 
@@ -579,11 +576,8 @@ static void le_data_write(uint16_t size)
 static void le_flush_iso_data(uint16_t size)
 {
 	uint16_t  response = sys_cpu_to_le16(CMD_LE_FLUSH_ISO_DATA_RSP);
-	struct net_buf *buf;
 
-	while ((buf = k_fifo_get(&iso_data_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&iso_data_queue);
 	read_excess_bytes(size);
 	size = 0;
 

@@ -47,6 +47,7 @@ struct mcux_lpi2c_config {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_t clock_cfg;
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 	uint32_t bus_idle_timeout_ns;
@@ -591,6 +592,13 @@ static int mcux_lpi2c_init(const struct device *dev)
 	}
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
+	if (config->clock_cfg != NULL) {
+		if (clock_control_configure(config->clock_dev,
+					    config->clock_cfg, NULL) != 0) {
+			return -EINVAL;
+		}
+	}
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
@@ -685,6 +693,10 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 		.clock_subsys = (clock_control_subsys_t)COND_CODE_1(	\
 			DT_PHA_HAS_CELL(DT_DRV_INST(n), clocks, name),	\
 			(DT_INST_CLOCKS_CELL(n, name)), (0U)),		\
+		.clock_cfg = (clock_control_subsys_t)COND_CODE_1(	\
+			DT_INST_CLOCKS_HAS_NAME(n, source),		\
+			(DT_INST_CLOCKS_CELL_BY_NAME(n, source, name)),	\
+			(0U)),						\
 		.irq_config_func = mcux_lpi2c_config_func_##n,		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\

@@ -17,6 +17,7 @@
 		mipi-dsi = &mipi_dsi;
 		watchdog0 = &wdog1;
 		i2s-codec-tx = &sai1;
+		memc0 = &sdram0;
 	};
 
 	chosen {
@@ -75,12 +76,6 @@
 		dac = <&dac>;
 		dac-channel-id = <0>;
 		dac-resolution = <12>;
-	};
-
-	sdram0: memory@80000000 {
-		reg = <0x80000000 DT_SIZE_M(64)>;
-		/* Winbond W9825G6KH-5I */
-		device_type = "memory";
 	};
 };
 

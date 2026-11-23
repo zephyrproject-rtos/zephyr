@@ -54,6 +54,20 @@ The IOCON controller can be used to configure the LPC54628 pins.
 | PIO2_2  | GPIO            | User LED3                  |
 +---------+-----------------+----------------------------+
 
+Ethernet
+========
+
+The board carries a Microchip LAN8720A 10/100 Mbit/s PHY on MDIO address 0,
+connected to the LPC54628 Ethernet MAC over RMII and to the RJ45 jack J4. The
+MAC is a Synopsys DesignWare Ethernet QoS core and is driven by the generic
+:zephyr_file:`drivers/ethernet/dwc_mac` driver. Jumpers JP11 and JP12 must be
+in their default Ethernet position; in the USB position they disconnect the
+RMII data lines.
+
+The PHY sources the 50 MHz RMII reference clock on its ``nINT/REFCLKO`` pin,
+so the PHY interrupt is not available and the driver polls the link state.
+The same clock drives the PTP timestamp counter.
+
 Programming and Debugging
 *************************
 

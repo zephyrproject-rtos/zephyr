@@ -14,6 +14,12 @@ static mm_reg_t ecpm_base = DT_REG_ADDR(DT_NODELABEL(ecpm));
 /* 0x03: PLL Control */
 #define ECPM_PLLCTRL 0x03
 
+#define IT51XXX_WDT_BASE DT_REG_ADDR(DT_NODELABEL(twd0))
+#define WDT01_ETWCFG     0x01
+#define EXT_WDT_KEY_EN   BIT(5)
+
+#define WDT07_EWDKEYR 0x07
+
 void chip_pll_ctrl(enum chip_pll_mode mode)
 {
 	volatile uint8_t _pll_ctrl __unused;
@@ -168,11 +174,22 @@ void soc_prep_hook(void)
 	gpio_regs->GPIO_GCR8 &= ~IT51XXX_GPIO_PWRSW2EN1;
 
 	/*
-	 * Disable this feature that can detect pre-define hardware target A, B, C through
-	 * I2C0, I2C1, I2C2 respectively. This is for debugging use, so it can be disabled
+	 * Disable this feature that can detect pre-define hardware target A, B through
+	 * I2C0, I2C1 respectively. This is for debugging use, so it can be disabled
 	 * to avoid illegal access.
 	 */
 	sys_write8(sys_read8(SMB_SADFPCTL) & ~SMB_HSAPE, SMB_SADFPCTL);
 	sys_write8(sys_read8(SMB_SBDFPCTL) & ~SMB_HSAPE, SMB_SBDFPCTL);
-	sys_write8(sys_read8(SMB_SCDFPCTL) & ~SMB_HSAPE, SMB_SCDFPCTL);
 }
+
+#ifdef CONFIG_REBOOT
+void sys_arch_reboot(int type)
+{
+	ARG_UNUSED(type);
+
+	/* write invalid key to watchdog module triggers reset */
+	sys_write8(sys_read8(IT51XXX_WDT_BASE + WDT01_ETWCFG) | EXT_WDT_KEY_EN,
+		   IT51XXX_WDT_BASE + WDT01_ETWCFG);
+	sys_write8(0, IT51XXX_WDT_BASE + WDT07_EWDKEYR);
+}
+#endif /* CONFIG_REBOOT */

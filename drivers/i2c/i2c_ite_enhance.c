@@ -838,7 +838,7 @@ static int enhanced_i2c_cq_isr(const struct device *dev)
 		}
 	} else {
 		/* Device 1 error have occurred. eg. nack, timeout... */
-		if (IT8XXX2_I2C_NST(base) & IT8XXX2_I2C_NST_ID_NACK) {
+		if ((IT8XXX2_I2C_NST(base) & IT8XXX2_I2C_NST_NACK_MASK) != 0U) {
 			data->err = E_HOSTA_ACK;
 		} else {
 			data->err = IT8XXX2_I2C_STR(base) &
@@ -1054,6 +1054,8 @@ static int i2c_enhance_transfer(const struct device *dev,
 	ret = i2c_parsing_return_value(dev);
 
 done:
+	/* Discard completion tokens before allowing the next transfer. */
+	k_sem_reset(&data->device_sync_sem);
 	/* Permit to enter power policy */
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	/* Unlock mutex of i2c controller */

@@ -208,6 +208,7 @@
 			interrupts = <17 0>;
 			clocks = <&pcc 0xe0 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <16>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
@@ -217,6 +218,7 @@
 			interrupts = <18 0>;
 			clocks = <&pcc 0xe4 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <16>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
@@ -226,6 +228,7 @@
 			interrupts = <19 0>;
 			clocks = <&pcc 0xe8 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			prescaler = <16>;
+			zephyr,disabling-power-states = <&stop &pstop1 &pstop2>;
 			status = "disabled";
 		};
 
@@ -333,6 +336,22 @@
 			reg = <0x40061000 0x6>;
 			interrupts = <28 0>;
 			clk-divider = <0x0>;
+			status = "disabled";
+		};
+
+		trgmux0: trgmux@40062000 {
+			compatible = "nxp,trgmux";
+			reg = <0x40062000 0x1000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
+		};
+
+		trgmux1: trgmux@40063000 {
+			compatible = "nxp,trgmux";
+			reg = <0x40063000 0x1000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
 			status = "disabled";
 		};
 

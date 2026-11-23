@@ -192,4 +192,64 @@ ZTEST_USER_F(lc709203f, test_set_get_single_prop)
 	zassert_equal(state_of_charge_alarm_get.state_of_charge_alarm_pct, test_value);
 }
 
+ZTEST_USER_F(lc709203f, test_state_of_charge_alarm_limits)
+{
+	uint8_t test_value = 100;
+
+	union fuel_gauge_prop_val state_of_charge_alarm_set = {
+		.state_of_charge_alarm_pct = test_value,
+	};
+	union fuel_gauge_prop_val state_of_charge_alarm_get;
+
+	zassert_ok(fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+				       state_of_charge_alarm_set));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+				       &state_of_charge_alarm_get));
+	zassert_equal(state_of_charge_alarm_get.state_of_charge_alarm_pct, test_value);
+
+	/* 0 disables the alarm on the LC709203F */
+	test_value = 0;
+	state_of_charge_alarm_set.state_of_charge_alarm_pct = test_value;
+
+	zassert_ok(fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+				       state_of_charge_alarm_set));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+				       &state_of_charge_alarm_get));
+	zassert_equal(state_of_charge_alarm_get.state_of_charge_alarm_pct, test_value);
+}
+
+ZTEST_USER_F(lc709203f, test_state_of_charge_alarm_rejects_invalid_values)
+{
+	const uint8_t initial_alarm_pct = 20;
+	int ret;
+
+	union fuel_gauge_prop_val state_of_charge_alarm_set = {
+		.state_of_charge_alarm_pct = initial_alarm_pct,
+	};
+	union fuel_gauge_prop_val state_of_charge_alarm_get;
+
+	zassert_ok(fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+				       state_of_charge_alarm_set));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+				       &state_of_charge_alarm_get));
+	zassert_equal(state_of_charge_alarm_get.state_of_charge_alarm_pct, initial_alarm_pct);
+
+	state_of_charge_alarm_set.state_of_charge_alarm_pct = 101;
+	ret = fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+				  state_of_charge_alarm_set);
+	zassert_equal(ret, -EINVAL);
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+				       &state_of_charge_alarm_get));
+	zassert_equal(state_of_charge_alarm_get.state_of_charge_alarm_pct, initial_alarm_pct);
+
+	/* Max uint8_t value, catches signedness issues in the range check */
+	state_of_charge_alarm_set.state_of_charge_alarm_pct = 255;
+	ret = fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+				  state_of_charge_alarm_set);
+	zassert_equal(ret, -EINVAL);
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+				       &state_of_charge_alarm_get));
+	zassert_equal(state_of_charge_alarm_get.state_of_charge_alarm_pct, initial_alarm_pct);
+}
+
 ZTEST_SUITE(lc709203f, NULL, lc709203f_setup, NULL, NULL, NULL);

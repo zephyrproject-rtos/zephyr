@@ -313,8 +313,6 @@ static void lcp_down(struct ppp_fsm *fsm)
 	/* The peer has to ask for compression again after renegotiation */
 	lcp_reset_peer_compression(ctx);
 
-	k_sem_give(&ctx->wait_ppp_link_down);
-
 	if (ctx->phase != PPP_DEAD) {
 		ppp_network_all_down(ctx);
 	}

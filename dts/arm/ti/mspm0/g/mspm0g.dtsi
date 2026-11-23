@@ -25,22 +25,30 @@
 		adc0: adc@40000000 {
 			compatible = "ti,mspm0-adc12";
 			reg = <0x40000000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			max-result-reg = <12>;
 			interrupts = <4 0>;
 			#io-channel-cells = <1>;
+			ti,num-channels = <16>;
 			status = "disabled";
 		};
 
 		adc1: adc@40002000 {
 			compatible = "ti,mspm0-adc12";
 			reg = <0x40002000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			max-result-reg = <12>;
 			interrupts = <5 0>;
 			#io-channel-cells = <1>;
+			ti,num-channels = <16>;
 			status = "disabled";
 		};
 
 		wdt1: wdt1@40082000 {
 			compatible = "ti,mspm0-watchdog";
 			reg = <0x40082000 0x2000>;
+			interrupts = <0 0>;
+			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
 			closed-window = <0>;
 			ti,watchdog-reset-action = <0>;
 			status = "disabled";
@@ -49,15 +57,15 @@
 		timg0: timg0@40084000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40084000 0x2000>;
-			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			interrupts = <16 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg0: counterg0 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				channels = <2>;
 				status = "disabled";
 			};
 		};
@@ -82,11 +90,17 @@
 			status = "disabled";
 		};
 
+		crc: crc@40440000 {
+			compatible = "ti,mspm0-crc";
+			reg = <0x40440000 0x2000>;
+			status = "disabled";
+		};
+
 		trng: trng@40444000 {
 			compatible = "ti,mspm0-trng";
 			reg = <0x40444000 0x2000>;
 			interrupts = <1 0>;
-			ti,clk-div = <1>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
 			status = "disabled";
 		};
 
@@ -101,7 +115,7 @@
 			reg = <0x40500000 0x2000>;
 			interrupts = <3 0>;
 			current-speed = <115200>;
-			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
 			clk-div = <1>;
 			status = "disabled";
 		};
@@ -113,7 +127,6 @@
 			interrupts = <18 0>;
 			ti,clk-prescaler = <0>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			pwma0: pwma0 {
 				compatible = "ti,mspm0-timer-pwm";
@@ -129,7 +142,6 @@
 			interrupts = <19 0>;
 			ti,clk-prescaler = <0>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			pwma1: pwma1 {
 				compatible = "ti,mspm0-timer-pwm";
@@ -142,14 +154,14 @@
 			compatible = "ti,mspm0-timer";
 			reg = <0x40868000 0x2000>;
 			interrupts = <17 0>;
-			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg6: counterg6 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				channels = <2>;
 				status = "disabled";
 			};
 		};
@@ -158,14 +170,14 @@
 			compatible = "ti,mspm0-timer";
 			reg = <0x4086a000 0x2000>;
 			interrupts = <20 0>;
-			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg7: counterg7 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				channels = <2>;
 				status = "disabled";
 			};
 		};
@@ -174,14 +186,14 @@
 			compatible = "ti,mspm0-timer";
 			reg = <0x40870000 0x2000>;
 			interrupts = <21 0>;
-			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
 			ti,clk-prescaler = <0>; /* None */
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg12: counterg12 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <32>;
+				channels = <2>;
 				status = "disabled";
 			};
 		};

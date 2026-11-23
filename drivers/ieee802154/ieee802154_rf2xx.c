@@ -179,8 +179,9 @@ static void rf2xx_trx_rx(const struct device *dev)
 		pkt_len = rx_buf[RX2XX_FRAME_PHR_INDEX];
 	}
 
-	if (!ctx->promiscuous && pkt_len < RX2XX_FRAME_MIN_PHR_SIZE) {
-		LOG_ERR("Invalid RX frame length");
+	if (pkt_len > RF2XX_MAX_PSDU_LENGTH ||
+	    (!ctx->promiscuous && pkt_len < RX2XX_FRAME_MIN_PHR_SIZE)) {
+		LOG_ERR("Invalid RX frame length %u", pkt_len);
 		return;
 	}
 
@@ -1079,7 +1080,7 @@ static void rf2xx_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
-static const struct ieee802154_radio_api rf2xx_radio_api = {
+static DEVICE_API(ieee802154_radio, rf2xx_radio_api) = {
 	.iface_api.init		= rf2xx_iface_init,
 
 	.get_capabilities	= rf2xx_get_capabilities,

@@ -288,19 +288,13 @@ static void l2cap_connected(struct bt_l2cap_chan *chan)
 static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
 #if defined(CONFIG_BT_L2CAP_RET_FC)
-	struct net_buf *buf;
 	struct l2cap_br_chan *br_chan = CONTAINER_OF(chan, struct l2cap_br_chan, chan.chan);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
 	bt_shell_print("Channel %p disconnected", chan);
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
-	do {
-		buf = k_fifo_get(&br_chan->l2cap_recv_fifo, K_NO_WAIT);
-		if (buf != NULL) {
-			net_buf_unref(buf);
-		}
-	} while (buf != NULL);
+	net_buf_fifo_purge(&br_chan->l2cap_recv_fifo);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 }
 

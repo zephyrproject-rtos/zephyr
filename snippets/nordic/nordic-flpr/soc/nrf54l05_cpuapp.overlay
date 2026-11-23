@@ -11,17 +11,17 @@
 			compatible = "mmio-sram";
 			reg = <0x2000fc00 DT_SIZE_K(32)>;
 			ranges = <0x0 0x2000fc00 DT_SIZE_K(32)>;
-			status = "reserved";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "reserved";
 		};
 	};
 };
 
 &ipc0 {
-	status = "okay";
 	tx-region = <&cpuapp_cpuflpr_ipc_shm>;
 	rx-region = <&cpuflpr_cpuapp_ipc_shm>;
+	status = "okay";
 };
 
 &uart30 {

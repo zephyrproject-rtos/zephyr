@@ -202,23 +202,6 @@ static int uart_litex_fifo_fill(const struct device *dev,
 		litex_write8(tx_data[i], config->rxtx_addr);
 	}
 
-#ifndef USES_RX_FIFO_RX_WE
-	/* LiteX uses EventSourceLevel for the UART since 22.09.2025,
-	 * where TX event is level triggered and pending is self-flushing,
-	 * so this is not needed anymore for new designs. When the dt property
-	 * rx-fifo-rx-we is set, we assume the design is new enough.
-	 */
-	if (litex_read8(config->txfull_addr)) {
-		/* only flush TX event if TX is really full */
-		litex_write8(UART_EV_TX, config->ev_pending_addr);
-
-		/* fallback if we maybe missed the TX interrupt */
-		while (!litex_read8(config->txfull_addr)) {
-			litex_write8(0, config->rxtx_addr);
-		}
-	}
-#endif
-
 	return i;
 }
 

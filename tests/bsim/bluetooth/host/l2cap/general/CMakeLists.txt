@@ -8,6 +8,9 @@ project(bsim_test_l2cap)
 add_subdirectory(${ZEPHYR_BASE}/tests/bsim/babblekit babblekit)
 target_link_libraries(app PRIVATE babblekit)
 
+add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/common/testlib testlib)
+target_link_libraries(app PRIVATE testlib)
+
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources} )
 

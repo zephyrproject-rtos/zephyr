@@ -8,8 +8,11 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
+      - nucleo_h7s3l8
       - stm32f769i_disco
       - stm32h7b3i_dk
+      - stm32h7s78_dk
       - stm32h573i_dk
       - stm32l562e_dk
       - b_u585i_iot02a

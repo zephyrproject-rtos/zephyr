@@ -173,10 +173,6 @@ static int lldp_check_iface(struct net_if *iface)
 		return -ENOENT;
 	}
 
-	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_LLDP)) {
-		return -ESRCH;
-	}
-
 	return 0;
 }
 

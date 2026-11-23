@@ -471,22 +471,22 @@ static int xilinx_axienet_get_config(const struct device *dev,
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:
 		if (dev_config->have_rx_csum_offload) {
-			config->chksum_support =
-				ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
-				ETHERNET_CHECKSUM_SUPPORT_TCP | ETHERNET_CHECKSUM_SUPPORT_UDP |
-				ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
-				ETHERNET_CHECKSUM_SUPPORT_TCP | ETHERNET_CHECKSUM_SUPPORT_UDP;
+			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP;
 		} else {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_NONE;
 		}
 		return 0;
 	case ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT:
 		if (dev_config->have_tx_csum_offload) {
-			config->chksum_support =
-				ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
-				ETHERNET_CHECKSUM_SUPPORT_TCP | ETHERNET_CHECKSUM_SUPPORT_UDP |
-				ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER |
-				ETHERNET_CHECKSUM_SUPPORT_TCP | ETHERNET_CHECKSUM_SUPPORT_UDP;
+			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV4_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV4_UDP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_TCP |
+						 ETHERNET_CHECKSUM_SUPPORT_IPV6_UDP;
 		} else {
 			config->chksum_support = ETHERNET_CHECKSUM_SUPPORT_NONE;
 		}
@@ -721,7 +721,7 @@ static int xilinx_axienet_start(const struct device *dev, struct net_if *iface _
 }
 
 /* TODO PTP, VLAN not supported yet */
-static const struct ethernet_api xilinx_axienet_api = {
+static DEVICE_API(ethernet, xilinx_axienet_api) = {
 	.iface_api.init = xilinx_axienet_iface_init,
 	.start            = xilinx_axienet_start,
 	.stop             = xilinx_axienet_stop,

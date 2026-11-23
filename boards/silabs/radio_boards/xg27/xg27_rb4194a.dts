@@ -19,6 +19,7 @@
 	model = "Silicon Labs xG27-RB4194A";
 
 	chosen {
+		zephyr,bt-c2h-uart = &usart1;
 		zephyr,bt-hci = &bt_hci_silabs;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &usart1;

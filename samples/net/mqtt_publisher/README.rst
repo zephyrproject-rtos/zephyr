@@ -144,7 +144,7 @@ MQTT v5.0 support
 =================
 
 The sample can be configured to use MQTT v5.0 instead of MQTT v3.1.1. To enable
-MQTT v5.0 in the sample, build it with ``-DEXTRA_CONF_FILE=overlay-mqtt-5.conf``
+MQTT v5.0 in the sample, build it with ``-DEXTRA_CONF_FILE=mqtt-5.conf``
 parameter. The sample should work with any broker supporting MQTT v5.0, however
 it was specifically tested with mosquitto version 2.0.21. Server side
 configuration in this particular case is the same as for MQTT v3.1.1.
@@ -178,7 +178,7 @@ try this sample with TLS enabled, by following these steps:
   i.e., the IP address of test.mosquitto.org ``"37.187.106.16"``
 - In :file:`src/main.c`, set TLS_SNI_HOSTNAME to ``"test.mosquitto.org"``
   to match the Common Name (CN) in the downloaded certificate.
-- Build the sample by specifying ``-DEXTRA_CONF_FILE=overlay-tls.conf``
+- Build the sample by specifying ``-DEXTRA_CONF_FILE=tls.conf``
   when running ``west build`` or ``cmake`` (or refer to the TLS offloading
   section below if your platform uses the offloading feature).
 - Flash the binary onto the device to run the sample:
@@ -191,16 +191,16 @@ TLS offloading
 ==============
 
 For boards that support this feature, TLS offloading is used by
-specifying ``-DEXTRA_CONF_FILE=overlay-tls-offload.conf`` when running ``west
+specifying ``-DEXTRA_CONF_FILE=tls-offload.conf`` when running ``west
 build`` or ``cmake``.
 
-Using this overlay enables TLS without bringing in mbedtls.
+Using this extra config file enables TLS without bringing in mbedtls.
 
 SOCKS5 proxy support
 ====================
 
 It is also possible to connect to the MQTT broker through a SOCKS5 proxy.
-To enable it, use ``-DEXTRA_CONF_FILE=overlay-socks5.conf`` when running ``west
+To enable it, use ``-DEXTRA_CONF_FILE=socks5.conf`` when running ``west
 build`` or  ``cmake``.
 
 By default, to make the testing easier, the proxy is expected to run on the
@@ -234,7 +234,7 @@ client's :c:func:`mqtt_publish` function and does not manage the client's
 connection lifecycle - this remains the application's responsibility.
 
 To enable the MQTT logging backend in the sample, build it with
-``-DEXTRA_CONF_FILE=overlay-log-backend-mqtt.conf`` parameter.
+``-DEXTRA_CONF_FILE=log-backend-mqtt.conf`` parameter.
 
 Key configuration options available:
 

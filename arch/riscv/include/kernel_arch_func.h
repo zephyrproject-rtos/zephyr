@@ -37,6 +37,15 @@ void z_riscv_custom_stack_guard_disable(void);
 bool z_riscv_custom_stack_guard_is_fault(struct arch_esf *esf);
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 
+#ifdef CONFIG_RISCV_HAS_CUSTOM_CHECK_RESCHEDULE
+/*
+ * Called from the ISR wrapper on the way back to thread context, when a
+ * reschedule is pending. @esf is the context the trap interrupted. Return
+ * false to resume it without rescheduling.
+ */
+bool z_riscv_custom_check_reschedule(const struct arch_esf *esf);
+#endif /* CONFIG_RISCV_HAS_CUSTOM_CHECK_RESCHEDULE */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

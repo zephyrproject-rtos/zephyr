@@ -261,6 +261,7 @@ facebook	Facebook (deprecated, use meta)
 fairphone	Fairphone B.V.
 fanke	FANKE Technology Co., Ltd.
 faraday	Faraday Technology Corporation
+fastbit	Fastbit Embedded Technologies
 fastrax	Fastrax Oy
 fcs	Fairchild Semiconductor
 feixin	Shenzhen Feixin Photoelectic Co., Ltd
@@ -343,6 +344,7 @@ iar	IAR Systems AB
 ibm	International Business Machines (IBM)
 iclegend	Iclegend Microelectronics Co., Ltd.
 icplus	IC Plus Corp.
+id8	ID8 Engineering AB
 idt	Integrated Device Technologies, Inc.
 ifi	Ingenieurburo Fur Ic-Technologie (I/F/I)
 ilitek	ILI Technology Corporation (ILITEK)
@@ -510,6 +512,7 @@ netsol	Netsol, CO., LTD
 netxeon	Shenzhen Netxeon Technology CO., LTD
 neweast	Guangdong Neweast Optoelectronics CO., LTD
 newhaven	Newhaven Display International
+newvision	New Vision Display (Shenzhen) Co., Ltd.
 nexbox	Nexbox
 nextthing	Next Thing Co.
 ni	National Instruments
@@ -694,6 +697,7 @@ sis	Silicon Integrated Systems Corp.
 sitronix	Sitronix Technology Corporation
 skyworks	Skyworks Solutions, Inc.
 smartlabs	SmartLabs LLC
+smartsens	SmartSens Technology (Shanghai) Co., Ltd.
 smsc	Standard Microsystems Corporation
 snps	Synopsys, Inc.
 sochip	Shenzhen SoChip Technology Co., Ltd.

@@ -42,9 +42,34 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			cpu-power-states = <&stop>;
+
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv7m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			stop: stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				/*
+				 * The worst case scenario for single core
+				 * STM32H7: 90us of maximum guaranteed wakeup
+				 * latency when using CSI oscillator on
+				 * STM32H723/33, 30us for voltage stabilization
+				 * when switching from SVOS5 VOS1 or VOS0,
+				 * 150us of maximum PLL lock time.
+				 */
+				exit-latency-us = <270>;
+				/*
+				 * Difficult to estimate accurately. With exit
+				 * latency significantly below 270us in most
+				 * cases, 0.5ms seems reasonable.
+				 */
+				min-residency-us = <500>;
 			};
 		};
 	};
@@ -773,7 +798,7 @@
 
 			sai1_a: sai1a@40015804 {
 				reg = <0x40015804 0x20>;
-				dmas = <&dma1 2 87 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+				dmas = <&dmamux1 0 87 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -781,7 +806,7 @@
 
 			sai1_b: sai1b@40015824 {
 				reg = <0x40015824 0x20>;
-				dmas = <&dma1 3 88 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+				dmas = <&dmamux1 1 88 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -942,6 +967,20 @@
 			};
 		};
 
+		usbotg_hs: usb@40040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x40040000 0x40000>;
+			interrupts = <74 0>, <75 0>, <76 0>, <77 0>;
+			interrupt-names = "ep1_out", "ep1_in", "wkup", "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <DT_SIZE_K(4)>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK(AHB1, 25)>,
+				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+			phys = <&otghs_fs_phy>;
+			status = "disabled";
+		};
+
 		dcmi: dcmi@48020000 {
 			compatible = "st,stm32-dcmi";
 			reg = <0x48020000 0x400>;
@@ -1061,7 +1100,6 @@
 			clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
 				 <&rcc STM32_SRC_PLL1_Q SDMMC_SEL(0)>;
 			resets = <&rctl STM32_RESET(AHB3, 16)>;
-			interrupt-names = "event";
 			interrupts = <49 0>;
 			status = "disabled";
 		};
@@ -1341,12 +1379,18 @@
 		};
 	};
 
+	otghs_fs_phy: otghs_fs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+	};
+
 	die_temp: dietemp {
 		compatible = "st,stm32-temp-cal";
 		nvmem-cells = <&ts_cal1_otp>, <&ts_cal2_otp>;
 		nvmem-cell-names = "TS_CAL1", "TS_CAL2";
 		ts-cal1-temp = <30>;
-		ts-cal2-temp = <110>;
+		/* Note: actual value is determined at runtime on STM32H742/H743/H750/H753 */
+		ts-cal2-temp = <130>;
 		ts-cal-vrefanalog = <3300>;
 		ts-cal-resolution = <16>;
 		io-channels = <&adc3 18>;

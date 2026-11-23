@@ -15,11 +15,16 @@
 LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_offload.h>
 #include <zephyr/internal/syscall_handler.h>
+
+#include "../../ip/route_ipv4.h"
+#include "../../ip/route_ipv6.h"
 
 #if defined(CONFIG_DNS_RESOLVER) || defined(CONFIG_NET_IP)
 #define ANY_RESOLVER
@@ -52,6 +57,10 @@ struct getaddrinfo_state {
 	uint16_t idx;
 	uint16_t port;
 	uint16_t dns_id;
+	/* Entries of the first queried family */
+	uint16_t first_count;
+	/* Slots the second family may take back from the first one */
+	uint16_t reserve;
 	struct zsock_addrinfo *ai_arr;
 };
 
@@ -74,8 +83,20 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 	}
 
 	if (state->idx >= AI_ARR_MAX) {
-		NET_DBG("getaddrinfo entries overflow");
-		return;
+		if (state->first_count <= AI_ARR_MAX - state->reserve) {
+			NET_DBG("getaddrinfo entries full, dropping address");
+			return;
+		}
+
+		/* Take back the last slot of the first family: move the entries
+		 * of the second family one slot towards the start of the array.
+		 * sort_results() fixes the self-pointers of the moved entries.
+		 */
+		memmove(&state->ai_arr[state->first_count - 1U],
+			&state->ai_arr[state->first_count],
+			(state->idx - state->first_count) * sizeof(state->ai_arr[0]));
+		state->first_count--;
+		state->idx--;
 	}
 
 	ai = &state->ai_arr[state->idx];
@@ -190,6 +211,213 @@ again:
 	return st;
 }
 
+static bool ipv6_dst_is_reachable(const struct net_in6_addr *dst)
+{
+	const struct net_in6_addr *src;
+	struct net_if *iface = NULL;
+
+	/* The loopback interface is always there */
+	if (net_ipv6_is_addr_loopback(dst)) {
+		return true;
+	}
+
+	/* We need a source address other than loopback */
+	src = net_if_ipv6_select_src_addr(NULL, dst);
+	if (src == NULL || net_ipv6_is_addr_unspecified(src) ||
+	    net_ipv6_is_addr_loopback(src)) {
+		return false;
+	}
+
+	/* Link-local destinations are on-link by definition */
+	if (net_ipv6_is_ll_addr(dst)) {
+		return true;
+	}
+
+	/* A link-local source cannot reach a global destination */
+	if (net_ipv6_is_ll_addr(src)) {
+		return false;
+	}
+
+	/* The destination matches an on-link prefix */
+	if (net_if_ipv6_addr_onlink(NULL, dst)) {
+		return true;
+	}
+
+	/* Links without ND or point-to-point links */
+	if (net_if_ipv6_addr_lookup(src, &iface) != NULL &&
+	    (net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND) ||
+	     net_if_flag_is_set(iface, NET_IF_POINTOPOINT))) {
+		return true;
+	}
+
+	/* Check for a route to the destination */
+	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTE) &&
+	    net_route_ipv6_lookup(NULL, dst) != NULL) {
+		return true;
+	}
+
+	/* Otherwise, we need a default router on any interface */
+	return net_if_ipv6_router_find_default(NULL, dst) != NULL;
+}
+
+/* Only interfaces that resolve the next hop with ARP need a gateway or a
+ * default router to send off-link: other L2s such as PPP hand off-link
+ * packets to the link as is.
+ */
+static bool ipv4_iface_uses_arp(struct net_if *iface)
+{
+	if (!IS_ENABLED(CONFIG_NET_ARP)) {
+		return false;
+	}
+
+	return (IS_ENABLED(CONFIG_NET_L2_ETHERNET) &&
+		net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) ||
+	       net_eth_is_vlan_interface(iface);
+}
+
+static bool ipv4_dst_is_reachable(const struct net_in_addr *dst)
+{
+	const struct net_in_addr *src;
+	struct net_if *iface = NULL;
+	struct net_in_addr gw;
+
+	/* The loopback interface is always there */
+	if (net_ipv4_is_addr_loopback(dst)) {
+		return true;
+	}
+
+	/* We need a source address other than loopback */
+	src = net_if_ipv4_select_src_addr(NULL, dst);
+	if (src == NULL || net_ipv4_is_addr_unspecified(src) ||
+	    net_ipv4_is_addr_loopback(src)) {
+		return false;
+	}
+
+	/* Link-local destinations are on-link by definition */
+	if (net_ipv4_is_ll_addr(dst)) {
+		return true;
+	}
+
+	/* A link-local source cannot reach a global destination */
+	if (net_ipv4_is_ll_addr(src)) {
+		return false;
+	}
+
+	if (net_if_ipv4_addr_lookup(src, &iface) == NULL) {
+		return false;
+	}
+
+	/* The destination is in the subnet of the source interface */
+	if (net_if_ipv4_addr_onlink(&iface, dst)) {
+		return true;
+	}
+
+	if (!ipv4_iface_uses_arp(iface)) {
+		return true;
+	}
+
+	/* Check for a route to the destination */
+	if (IS_ENABLED(CONFIG_NET_IPV4_ROUTE) &&
+	    net_route_ipv4_lookup(NULL, dst) != NULL) {
+		return true;
+	}
+
+	/* Otherwise, we need a gateway on the source interface or a default
+	 * router on any interface
+	 */
+	gw = net_if_ipv4_get_gw(iface);
+
+	return !net_ipv4_is_addr_unspecified(&gw) ||
+	       net_if_ipv4_router_find_default(NULL, dst) != NULL;
+}
+
+/* A destination is reachable if we have a source address for it, and it is
+ * either on-link or there is a default router for it.
+ */
+static bool dst_is_reachable(const struct zsock_addrinfo *ai)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV6) && ai->ai_family == NET_AF_INET6) {
+		return ipv6_dst_is_reachable(&net_sin6(ai->ai_addr)->sin6_addr);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && ai->ai_family == NET_AF_INET) {
+		return ipv4_dst_is_reachable(&net_sin(ai->ai_addr)->sin_addr);
+	}
+
+	return false;
+}
+
+struct dest_info {
+	int family;
+	bool reachable;
+};
+
+/* Compare two destinations as per a subset of RFC 6724 section 6. Returns
+ * a negative value if a is preferred, a positive value if b is preferred,
+ * 0 otherwise.
+ */
+static int compare_dests(const struct dest_info *a, const struct dest_info *b,
+			 int preferred_family)
+{
+	/* Rule 1: avoid unusable destinations */
+	if (a->reachable != b->reachable) {
+		return a->reachable ? -1 : 1;
+	}
+
+	/* Rule 6: prefer higher precedence */
+	if (a->family != b->family) {
+		return a->family == preferred_family ? -1 : 1;
+	}
+
+	return 0;
+}
+
+/* Order results as per a subset of RFC 6724 section 6. Rule #1: avoid
+ * unusable destinations. From rule #6: prioritize IPv6 over IPv4.
+ */
+static void sort_results(struct zsock_addrinfo *ai_arr, uint16_t count)
+{
+	const int preferred_family =
+		IS_ENABLED(CONFIG_NET_SOCKETS_DNS_PREFER_IPV4) ? NET_AF_INET : NET_AF_INET6;
+	struct dest_info info[AI_ARR_MAX];
+	struct zsock_addrinfo tmp;
+	struct dest_info tmp_info;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4) || !IS_ENABLED(CONFIG_NET_IPV6) || count < 2U) {
+		return;
+	}
+
+	__ASSERT_NO_MSG(count <= AI_ARR_MAX);
+
+	/* Prepare data for sorting */
+	for (uint16_t idx = 0U; idx < count; idx++) {
+		info[idx].family = ai_arr[idx].ai_family;
+		info[idx].reachable = dst_is_reachable(&ai_arr[idx]);
+	}
+
+	/* Stable insertion sort */
+	for (uint16_t idx = 1U; idx < count; idx++) {
+		for (uint16_t pos = idx;
+		     pos > 0U && compare_dests(&info[pos - 1U], &info[pos], preferred_family) > 0;
+		     pos--) {
+			tmp_info = info[pos];
+			info[pos] = info[pos - 1U];
+			info[pos - 1U] = tmp_info;
+
+			tmp = ai_arr[pos];
+			ai_arr[pos] = ai_arr[pos - 1U];
+			ai_arr[pos - 1U] = tmp;
+		}
+	}
+
+	/* Entries have self-pointers. Fix them after we moved them */
+	for (uint16_t idx = 0U; idx < count; idx++) {
+		ai_arr[idx].ai_addr = net_sad(&ai_arr[idx]._ai_addr);
+		ai_arr[idx].ai_canonname = ai_arr[idx]._ai_canonname;
+		ai_arr[idx].ai_next = &ai_arr[idx + 1U];
+	}
+}
+
 static int getaddrinfo_null_host(int port, const struct zsock_addrinfo *hints,
 				struct zsock_addrinfo *res)
 {
@@ -228,6 +456,19 @@ static int getaddrinfo_null_host(int port, const struct zsock_addrinfo *hints,
 	return 0;
 }
 
+/* Query one family, unless it is disabled or excluded by the hints */
+static int query_family(const char *host, int hints_family, int family,
+			struct getaddrinfo_state *state)
+{
+	if ((family == NET_AF_INET && !IS_ENABLED(CONFIG_NET_IPV4)) ||
+	    (family == NET_AF_INET6 && !IS_ENABLED(CONFIG_NET_IPV6)) ||
+	    (hints_family != NET_AF_UNSPEC && hints_family != family)) {
+		return DNS_EAI_ADDRFAMILY;
+	}
+
+	return exec_query(host, family, state);
+}
+
 int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 				       const struct zsock_addrinfo *hints,
 				       struct zsock_addrinfo *res)
@@ -235,7 +476,11 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	int family = NET_AF_UNSPEC;
 	int ai_flags = 0;
 	long int port = 0;
-	int st1 = DNS_EAI_ADDRFAMILY, st2 = DNS_EAI_ADDRFAMILY;
+	const int first = IS_ENABLED(CONFIG_NET_SOCKETS_DNS_PREFER_IPV4) ?
+			  NET_AF_INET : NET_AF_INET6;
+	const int second = first == NET_AF_INET6 ? NET_AF_INET : NET_AF_INET6;
+	int st1;
+	int st2;
 	struct net_sockaddr *ai_addr;
 	struct getaddrinfo_state ai_state;
 
@@ -278,26 +523,24 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	ai_state.port = net_htons(port);
 	ai_state.ai_arr = res;
 	ai_state.dns_id = 0;
+	ai_state.first_count = 0U;
+	ai_state.reserve = 0U;
 	k_sem_init(&ai_state.sem, 0, K_SEM_MAX_LIMIT);
 
-	/* If family is NET_AF_UNSPEC, then we query IPv4 address first
-	 * if IPv4 is enabled in the config.
+	/* The preferred family is queried first and may fill all slots.
+	 * Sorting is done after fetching both families.
 	 */
-	if ((family != NET_AF_INET6) && IS_ENABLED(CONFIG_NET_IPV4)) {
-		st1 = exec_query(host, NET_AF_INET, &ai_state);
-		if (st1 == DNS_EAI_AGAIN) {
-			return st1;
-		}
+	st1 = query_family(host, family, first, &ai_state);
+	if (st1 == DNS_EAI_AGAIN) {
+		return st1;
 	}
 
-	/* If family is NET_AF_UNSPEC, the IPv4 query has been already done
-	 * so we can do IPv6 query next if IPv6 is enabled in the config.
-	 */
-	if ((family != NET_AF_INET) && IS_ENABLED(CONFIG_NET_IPV6)) {
-		st2 = exec_query(host, NET_AF_INET6, &ai_state);
-		if (st2 == DNS_EAI_AGAIN) {
-			return st2;
-		}
+	/* The second family takes back up to half of the slots */
+	ai_state.first_count = ai_state.idx;
+	ai_state.reserve = AI_ARR_MAX / 2U;
+	st2 = query_family(host, family, second, &ai_state);
+	if (st2 == DNS_EAI_AGAIN) {
+		return st2;
 	}
 
 	for (uint16_t idx = 0; idx < ai_state.idx; idx++) {
@@ -306,11 +549,12 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	}
 
 	/* If both attempts failed, it's error */
-	if (st1 && st2) {
-		if (st1 != DNS_EAI_ADDRFAMILY) {
-			return st1;
-		}
-		return st2;
+	if (st1 != 0 && st2 != 0) {
+		return st1 != DNS_EAI_ADDRFAMILY ? st1 : st2;
+	}
+
+	if (family == NET_AF_UNSPEC) {
+		sort_results(ai_state.ai_arr, ai_state.idx);
 	}
 
 	/* Mark entry as last */

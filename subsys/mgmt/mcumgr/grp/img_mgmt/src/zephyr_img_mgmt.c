@@ -95,10 +95,12 @@ BUILD_ASSERT(PARTITION_EXISTS(SLOT14_PARTITION) &&
  * Determines if the specified area of flash is completely unwritten.
  *
  * @param	fa	pointer to flash area to scan
+ * @param	empty	pointer to boolean where emptiness result is stored
  *
- * @return	0 when not empty, 1 when empty, negative errno code on error.
+ * @return	0 on success, or positive IMG_MGMT_ERR_* code on error.
  */
-static int img_mgmt_flash_check_empty_inner(const struct flash_area *fa)
+static int img_mgmt_flash_check_empty_inner(const struct flash_area *fa,
+					    bool *empty)
 {
 	uint32_t data[16];
 	off_t addr;
@@ -130,29 +132,32 @@ static int img_mgmt_flash_check_empty_inner(const struct flash_area *fa)
 
 		for (i = 0; i < bytes_to_read / 4; i++) {
 			if (data[i] != erased_val_32) {
+				*empty = false;
 				return 0;
 			}
 		}
 	}
 
-	return 1;
+	*empty = true;
+	return 0;
 }
 
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
 /* Check if area is empty
  *
  * @param	fa_id	ID of flash area to scan.
+ * @param	empty	pointer to boolean where emptiness result is stored.
  *
- * @return	0 when not empty, 1 when empty, negative errno code on error.
+ * @return	0 on success, or positive IMG_MGMT_ERR_* code on error.
  */
-static int img_mgmt_flash_check_empty(uint8_t fa_id)
+static int img_mgmt_flash_check_empty(uint8_t fa_id, bool *empty)
 {
 	const struct flash_area *fa;
 	int rc;
 
 	rc = flash_area_open(fa_id, &fa);
 	if (rc == 0) {
-		rc = img_mgmt_flash_check_empty_inner(fa);
+		rc = img_mgmt_flash_check_empty_inner(fa, empty);
 
 		flash_area_close(fa);
 	} else {
@@ -173,7 +178,7 @@ static int img_mgmt_flash_check_empty(uint8_t fa_id)
 int
 img_mgmt_flash_area_id(int slot)
 {
-	uint8_t fa_id;
+	int fa_id;
 
 	switch (slot) {
 	case 0:
@@ -382,6 +387,7 @@ int img_mgmt_erase_slot(int slot)
 	const struct flash_area *fa;
 	int rc;
 	int area_id = img_mgmt_flash_area_id(slot);
+	bool empty;
 
 	if (area_id < 0) {
 		return IMG_MGMT_ERR_INVALID_SLOT;
@@ -394,20 +400,19 @@ int img_mgmt_erase_slot(int slot)
 		return IMG_MGMT_ERR_FLASH_OPEN_FAILED;
 	}
 
-	rc = img_mgmt_flash_check_empty_inner(fa);
+	rc = img_mgmt_flash_check_empty_inner(fa, &empty);
+	if (rc != 0) {
+		flash_area_close(fa);
+		return rc;
+	}
 
-	if (rc == 0) {
+	if (!empty) {
 		rc = flash_area_flatten(fa, 0, fa->fa_size);
 
 		if (rc != 0) {
 			LOG_ERR("Failed to erase flash area: %d", rc);
 			rc = IMG_MGMT_ERR_FLASH_ERASE_FAILED;
 		}
-	} else if (rc == 1) {
-		/* A return value of 1 indicates that the slot is already erased, thus
-		 * return a success code to the client
-		 */
-		rc = 0;
 	}
 
 	flash_area_close(fa);
@@ -865,13 +870,15 @@ skip_size_check:
 		}
 
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-		rc = img_mgmt_flash_check_empty(action->area_id);
-		if (rc < 0) {
+		bool empty;
+
+		rc = img_mgmt_flash_check_empty(action->area_id, &empty);
+		if (rc != 0) {
 			LOG_DBG("Flash check empty failed: %d", rc);
 			return rc;
 		}
 
-		action->erase = (rc == 0);
+		action->erase = !empty;
 #endif
 	} else {
 		/* Continuation of upload. */

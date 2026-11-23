@@ -302,22 +302,40 @@
 	};
 };
 
+/*
+ * Ethernet defaults to the on-SoC 10BASE-T1S PHY.
+ *
+ * The external 10/100 Mbit PHY is reached over MII and is available through the
+ * frdm_mcxa577/mcxa577/mii board variant.
+ */
+
 &enet {
-	pinctrl-0 = <&pinmux_enet_qos>;
+	pinctrl-0 = <&pinmux_t1s>;
 	pinctrl-names = "default";
-	phy-connection-type = "rmii";
-	phy-handle = <&phy>;
+	phy-connection-type = "internal";
+	phy-handle = <&t1s>;
 	zephyr,random-mac-address;
 	status = "okay";
 };
 
-&enet_mdio {
+&t1s {
+	plca-enable;
+	plca-node-id = <1>;
+	plca-node-count = <8>;
+	plca-burst-count = <0>;
+	plca-burst-timer = <0x80>;
+	plca-to-timer = <0x20>;
 	status = "okay";
+};
+
+/* External MII PHY and its MDIO bus: enabled by the mii board variant. */
+&enet_mdio {
+	status = "disabled";
 
 	phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
 		reg = <0>;
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -401,6 +419,11 @@
 };
 
 zephyr_udc0: &usb0 {
+	phy-handle = <&usbphy1>;
+	status = "okay";
+};
+
+zephyr_uhc0: &usbh0 {
 	phy-handle = <&usbphy1>;
 	status = "okay";
 };

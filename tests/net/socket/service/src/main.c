@@ -228,6 +228,7 @@ static int reconfig_mock_close(void *obj)
 	return 0;
 }
 
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
 static int reconfig_mock_ioctl(void *obj, unsigned int request, va_list args)
 {
 	struct reconfig_mock_fd *mock = obj;
@@ -272,6 +273,7 @@ static int reconfig_mock_ioctl(void *obj, unsigned int request, va_list args)
 		return -EOPNOTSUPP;
 	}
 }
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS)
 
 static const struct fd_op_vtable reconfig_mock_vtable = {
 	.close = reconfig_mock_close,
@@ -739,4 +741,454 @@ ZTEST(net_socket_service, test_reconfigure_from_callback)
 	zassert_equal(ret, 0, "close failed");
 }
 
+/* A server that restarts from its callback closes all its descriptors and
+ * opens new ones, which get the same numbers. The new registration then has
+ * the same fd and event mask as the old one, but the poll results still
+ * pending in the same round belong to the closed descriptors.
+ */
+#define RECONFIG_REUSE_MAX_HELD 8
+
+struct reconfig_reuse_state {
+	struct reconfig_mock_fd mock[2];
+	struct reconfig_mock_fd reopened[2];
+	struct zsock_pollfd pollfd[2];
+	int old_fd[2];
+	struct k_sem cb_sem;
+	int cb_count;
+	int cb_result;
+	/* Swap the fds one at a time instead of replacing the whole set */
+	bool single_fd;
+};
+
+/* New fds get the lowest free number, and earlier tests may leave free numbers
+ * below the closed one. Hold those temporarily so that the reopened fd gets
+ * the number that was just closed, as it would in a server with no other free
+ * fds.
+ */
+static int reconfig_mock_alloc_at(struct reconfig_mock_fd *mock, int number)
+{
+	int held[RECONFIG_REUSE_MAX_HELD];
+	int count = 0;
+	int fd;
+
+	fd = reconfig_mock_alloc(mock);
+	while ((fd >= 0) && (fd != number) && (count < ARRAY_SIZE(held))) {
+		held[count++] = fd;
+		fd = reconfig_mock_alloc(mock);
+	}
+
+	for (int i = 0; i < count; i++) {
+		(void)zvfs_close(held[i]);
+	}
+
+	return fd;
+}
+
+static void reconfig_reuse_handler(struct net_socket_service_event *pev)
+{
+	struct reconfig_reuse_state *state = pev->user_data;
+
+	state->cb_count++;
+	if (state->cb_count == 1) {
+		for (int i = 0; i < ARRAY_SIZE(state->pollfd); i++) {
+			if (state->single_fd) {
+				(void)net_socket_service_unregister_single_fd(pev->svc,
+									      state->pollfd[i].fd);
+			}
+
+			(void)zvfs_close(state->pollfd[i].fd);
+		}
+
+		for (int i = 0; i < ARRAY_SIZE(state->pollfd); i++) {
+			state->pollfd[i].fd =
+				reconfig_mock_alloc_at(&state->reopened[i], state->old_fd[i]);
+		}
+
+		if (state->single_fd) {
+			for (int i = 0; i < ARRAY_SIZE(state->pollfd); i++) {
+				state->cb_result = net_socket_service_register_single_fd(
+					pev->svc, &state->pollfd[i], state);
+				if (state->cb_result < 0) {
+					break;
+				}
+			}
+		} else {
+			state->cb_result = net_socket_service_register(
+				pev->svc, state->pollfd, ARRAY_SIZE(state->pollfd), state);
+		}
+	} else {
+		/* Only reachable if a stale poll result of a closed fd was
+		 * delivered; stop the callbacks so the test can fail cleanly.
+		 */
+		(void)net_socket_service_unregister(pev->svc);
+	}
+
+	k_sem_give(&state->cb_sem);
+}
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(reconfig_reuse_service, reconfig_reuse_handler, 2);
+
+static void reconfig_reuse_run(bool single_fd)
+{
+	static struct reconfig_reuse_state state;
+	int cb, sync, ret;
+
+	k_sem_init(&state.cb_sem, 0, UINT_MAX);
+	state.cb_count = 0;
+	state.cb_result = 0;
+	state.single_fd = single_fd;
+
+	for (int i = 0; i < ARRAY_SIZE(state.pollfd); i++) {
+		reconfig_mock_init(&state.mock[i]);
+		reconfig_mock_init(&state.reopened[i]);
+		state.pollfd[i].fd = reconfig_mock_alloc(&state.mock[i]);
+		state.pollfd[i].events = ZSOCK_POLLIN;
+		state.old_fd[i] = state.pollfd[i].fd;
+		zassert_true(state.pollfd[i].fd >= 0, "Cannot allocate fd (%d)",
+			     state.pollfd[i].fd);
+
+		/* Both fds are ready before the first poll round, so both are
+		 * reported by the same round.
+		 */
+		k_sem_give(&state.mock[i].readable);
+	}
+
+	ret = net_socket_service_register(&reconfig_reuse_service, state.pollfd,
+					  ARRAY_SIZE(state.pollfd), &state);
+	zassert_equal(ret, 0, "Cannot register service (%d)", ret);
+
+	cb = k_sem_take(&state.cb_sem, RECONFIG_TIMEOUT);
+	/* A stale result would be delivered before the next poll round, which
+	 * prepares the reopened fds.
+	 */
+	sync = (cb == 0) ? k_sem_take(&state.reopened[1].prepared, RECONFIG_TIMEOUT) : -ETIMEDOUT;
+
+	(void)net_socket_service_unregister(&reconfig_reuse_service);
+	for (int i = 0; i < ARRAY_SIZE(state.pollfd); i++) {
+		if (state.pollfd[i].fd >= 0) {
+			(void)zvfs_close(state.pollfd[i].fd);
+		}
+	}
+
+	zassert_ok(cb, "Timeout while waiting callback");
+	zassert_ok(state.cb_result, "Cannot register reopened fds (%d)", state.cb_result);
+	for (int i = 0; i < ARRAY_SIZE(state.pollfd); i++) {
+		zassert_equal(state.pollfd[i].fd, state.old_fd[i],
+			      "Reopened fd %d did not reuse the number %d", state.pollfd[i].fd,
+			      state.old_fd[i]);
+	}
+	zassert_equal(state.cb_count, 1, "Stale poll result of a closed fd was delivered");
+	zassert_ok(sync, "Reopened fds were not polled");
+}
+
+ZTEST(net_socket_service, test_reopen_reused_fds_from_callback)
+{
+	reconfig_reuse_run(false);
+}
+
+/* Same as above, but the callback swaps its sockets one at a time with
+ * net_socket_service_unregister_single_fd() and
+ * net_socket_service_register_single_fd().
+ */
+ZTEST(net_socket_service, test_reopen_reused_single_fds_from_callback)
+{
+	reconfig_reuse_run(true);
+}
+
 ZTEST_SUITE(net_socket_service, NULL, NULL, NULL, NULL, NULL);
+
+/* Each socket registered with net_socket_service_register_single_fd() carries
+ * its own user_data, which must be handed back to the callback when that
+ * socket is triggered.
+ */
+#define SINGLE_FD_COUNT 3
+#define SINGLE_FD_PORT  4250
+
+struct single_fd_ctx {
+	int fd;
+};
+
+static K_SEM_DEFINE(single_fd_sem, 0, 1);
+static struct single_fd_ctx *single_fd_received_ctx;
+static int single_fd_received_fd;
+
+static void single_fd_handler(struct net_socket_service_event *pev)
+{
+	single_fd_received_ctx = pev->user_data;
+	single_fd_received_fd = pev->event.fd;
+
+	/* Consume the datagram so the socket does not trigger again. */
+	reconfig_drain_udp(pev->event.fd);
+
+	k_sem_give(&single_fd_sem);
+}
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(single_fd_service, single_fd_handler, SINGLE_FD_COUNT);
+
+ZTEST(net_socket_service, test_register_single_fd_user_data)
+{
+	struct single_fd_ctx ctx[SINGLE_FD_COUNT];
+	struct net_sockaddr_in6 c_addr, s_addr[SINGLE_FD_COUNT];
+	struct zsock_pollfd pfd = {.events = ZSOCK_POLLIN};
+	int c_sock, ret;
+	ssize_t len;
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_addr);
+
+	for (int i = 0; i < SINGLE_FD_COUNT; i++) {
+		prepare_sock_udp_v6(MY_IPV6_ADDR, SINGLE_FD_PORT + i, &ctx[i].fd, &s_addr[i]);
+
+		ret = bind(ctx[i].fd, (struct net_sockaddr *)&s_addr[i], sizeof(s_addr[i]));
+		zassert_equal(ret, 0, "bind %d failed (%d)", i, -errno);
+
+		pfd.fd = ctx[i].fd;
+		ret = net_socket_service_register_single_fd(&single_fd_service, &pfd, &ctx[i]);
+		zassert_ok(ret, "Cannot register socket %d (%d)", i, ret);
+	}
+
+	/* Trigger the sockets in reverse order of registration so that a
+	 * callback returning the user_data of the wrong slot is detected.
+	 */
+	for (int i = SINGLE_FD_COUNT - 1; i >= 0; i--) {
+		single_fd_received_ctx = NULL;
+
+		len = sendto(c_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0,
+			     (struct net_sockaddr *)&s_addr[i], sizeof(s_addr[i]));
+		zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
+
+		ret = k_sem_take(&single_fd_sem, K_MSEC(WAIT_TIME));
+		zassert_ok(ret, "Timeout while waiting callback for socket %d", i);
+		zassert_equal(single_fd_received_fd, ctx[i].fd, "Callback for wrong socket");
+		zassert_equal_ptr(single_fd_received_ctx, &ctx[i],
+				  "Callback for socket %d returned the wrong ctx", i);
+	}
+
+	ret = net_socket_service_unregister(&single_fd_service);
+	zassert_ok(ret, "Cannot unregister service (%d)", ret);
+
+	for (int i = 0; i < SINGLE_FD_COUNT; i++) {
+		ret = close(ctx[i].fd);
+		zassert_equal(ret, 0, "close failed");
+	}
+
+	ret = close(c_sock);
+	zassert_equal(ret, 0, "close failed");
+}
+
+ZTEST(net_socket_service, test_unregister_single_fd)
+{
+	struct single_fd_ctx ctx[SINGLE_FD_COUNT];
+	struct net_sockaddr_in6 c_addr, s_addr[SINGLE_FD_COUNT];
+	struct zsock_pollfd pfd = {.events = ZSOCK_POLLIN};
+	int c_sock, ret;
+	ssize_t len;
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_addr);
+
+	for (int i = 0; i < SINGLE_FD_COUNT; i++) {
+		prepare_sock_udp_v6(MY_IPV6_ADDR, SINGLE_FD_PORT + i, &ctx[i].fd, &s_addr[i]);
+
+		ret = bind(ctx[i].fd, (struct net_sockaddr *)&s_addr[i], sizeof(s_addr[i]));
+		zassert_equal(ret, 0, "bind %d failed (%d)", i, -errno);
+
+		pfd.fd = ctx[i].fd;
+		ret = net_socket_service_register_single_fd(&single_fd_service, &pfd, &ctx[i]);
+		zassert_ok(ret, "Cannot register socket %d (%d)", i, ret);
+	}
+
+	ret = net_socket_service_unregister_single_fd(&single_fd_service, ctx[0].fd);
+	zassert_ok(ret, "Cannot unregister socket (%d)", ret);
+
+	/* Unregistering the same socket again fails. */
+	ret = net_socket_service_unregister_single_fd(&single_fd_service, ctx[0].fd);
+	zassert_equal(ret, -ENOENT, "Socket unregistered twice (%d)", ret);
+
+	/* Data on the unregistered socket must not invoke the callback. */
+	len = sendto(c_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0, (struct net_sockaddr *)&s_addr[0],
+		     sizeof(s_addr[0]));
+	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
+
+	ret = k_sem_take(&single_fd_sem, K_MSEC(WAIT_TIME));
+	zassert_equal(ret, -EAGAIN, "Callback for unregistered socket");
+
+	/* The other sockets are still serviced with their own ctx. */
+	for (int i = 1; i < SINGLE_FD_COUNT; i++) {
+		single_fd_received_ctx = NULL;
+
+		len = sendto(c_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0,
+			     (struct net_sockaddr *)&s_addr[i], sizeof(s_addr[i]));
+		zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
+
+		ret = k_sem_take(&single_fd_sem, K_MSEC(WAIT_TIME));
+		zassert_ok(ret, "Timeout while waiting callback for socket %d", i);
+		zassert_equal(single_fd_received_fd, ctx[i].fd, "Callback for wrong socket");
+		zassert_equal_ptr(single_fd_received_ctx, &ctx[i],
+				  "Callback for socket %d returned the wrong ctx", i);
+	}
+
+	ret = net_socket_service_unregister(&single_fd_service);
+	zassert_ok(ret, "Cannot unregister service (%d)", ret);
+
+	for (int i = 0; i < SINGLE_FD_COUNT; i++) {
+		ret = close(ctx[i].fd);
+		zassert_equal(ret, 0, "close failed");
+	}
+
+	ret = close(c_sock);
+	zassert_equal(ret, 0, "close failed");
+}
+
+ZTEST(net_socket_service, test_register_single_fd_full)
+{
+	struct single_fd_ctx ctx[SINGLE_FD_COUNT + 1];
+	struct net_sockaddr_in6 addr;
+	struct zsock_pollfd pfd = {.events = ZSOCK_POLLIN};
+	int ret;
+
+	for (int i = 0; i < ARRAY_SIZE(ctx); i++) {
+		prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &ctx[i].fd, &addr);
+	}
+
+	for (int i = 0; i < SINGLE_FD_COUNT; i++) {
+		pfd.fd = ctx[i].fd;
+		ret = net_socket_service_register_single_fd(&single_fd_service, &pfd, &ctx[i]);
+		zassert_ok(ret, "Cannot register socket %d (%d)", i, ret);
+	}
+
+	/* All slots are in use. */
+	pfd.fd = ctx[SINGLE_FD_COUNT].fd;
+	ret = net_socket_service_register_single_fd(&single_fd_service, &pfd,
+						    &ctx[SINGLE_FD_COUNT]);
+	zassert_equal(ret, -ENOMEM, "Registered more sockets than slots (%d)", ret);
+
+	/* Freeing a slot makes room for another socket. */
+	ret = net_socket_service_unregister_single_fd(&single_fd_service, ctx[0].fd);
+	zassert_ok(ret, "Cannot unregister socket (%d)", ret);
+
+	ret = net_socket_service_register_single_fd(&single_fd_service, &pfd,
+						    &ctx[SINGLE_FD_COUNT]);
+	zassert_ok(ret, "Freed slot was not reused (%d)", ret);
+
+	ret = net_socket_service_unregister(&single_fd_service);
+	zassert_ok(ret, "Cannot unregister service (%d)", ret);
+
+	for (int i = 0; i < ARRAY_SIZE(ctx); i++) {
+		ret = close(ctx[i].fd);
+		zassert_equal(ret, 0, "close failed");
+	}
+}
+
+ZTEST(net_socket_service, test_register_single_fd_invalid)
+{
+	static struct net_socket_service_desc unknown_service;
+	struct single_fd_ctx ctx;
+	struct net_sockaddr_in6 addr;
+	struct zsock_pollfd pfd = {.events = ZSOCK_POLLIN};
+	int ret;
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &ctx.fd, &addr);
+
+	ret = net_socket_service_register_single_fd(&single_fd_service, NULL, &ctx);
+	zassert_equal(ret, -EINVAL, "NULL pollfd accepted (%d)", ret);
+
+	pfd.fd = -1;
+	ret = net_socket_service_register_single_fd(&single_fd_service, &pfd, &ctx);
+	zassert_equal(ret, -EINVAL, "Negative fd accepted (%d)", ret);
+
+	pfd.fd = ctx.fd;
+	ret = net_socket_service_register_single_fd(&unknown_service, &pfd, &ctx);
+	zassert_equal(ret, -ENOENT, "Unknown service accepted (%d)", ret);
+
+	ret = net_socket_service_unregister_single_fd(&unknown_service, ctx.fd);
+	zassert_equal(ret, -ENOENT, "Unknown service accepted (%d)", ret);
+
+	/* A negative fd must not match a free slot. */
+	ret = net_socket_service_unregister_single_fd(&single_fd_service, -1);
+	zassert_equal(ret, -EINVAL, "Negative fd accepted (%d)", ret);
+
+	ret = net_socket_service_unregister_single_fd(&single_fd_service, ctx.fd);
+	zassert_equal(ret, -ENOENT, "Unregistered a socket never registered (%d)", ret);
+
+	ret = net_socket_service_register_single_fd(&single_fd_service, &pfd, &ctx);
+	zassert_ok(ret, "Cannot register socket (%d)", ret);
+
+	/* The same socket cannot be registered twice. */
+	ret = net_socket_service_register_single_fd(&single_fd_service, &pfd, &ctx);
+	zassert_equal(ret, -EEXIST, "Socket registered twice (%d)", ret);
+
+	ret = net_socket_service_unregister(&single_fd_service);
+	zassert_ok(ret, "Cannot unregister service (%d)", ret);
+
+	ret = close(ctx.fd);
+	zassert_equal(ret, 0, "close failed");
+}
+
+ZTEST(net_socket_service, test_register_single_fd_reuses_freed_slot)
+{
+	const struct net_socket_service_desc *svc = &single_fd_service;
+	struct single_fd_ctx ctx[SINGLE_FD_COUNT], new_ctx;
+	struct net_sockaddr_in6 c_addr, addr, new_addr;
+	struct zsock_pollfd pfd = {.events = ZSOCK_POLLIN};
+	int c_sock, ret;
+	ssize_t len;
+
+	/* Fill all three slots: socket i goes to slot i. */
+	for (int i = 0; i < ARRAY_SIZE(ctx); i++) {
+		prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &ctx[i].fd, &addr);
+
+		pfd.fd = ctx[i].fd;
+		ret = net_socket_service_register_single_fd(svc, &pfd, &ctx[i]);
+		zassert_ok(ret, "Cannot register socket %d (%d)", i, ret);
+		zassert_equal(svc->pev[i].event.fd, ctx[i].fd, "Socket %d not in slot %d", i, i);
+	}
+
+	/* Unregister only the second socket, freeing the second slot. */
+	ret = net_socket_service_unregister_single_fd(svc, ctx[1].fd);
+	zassert_ok(ret, "Cannot unregister socket (%d)", ret);
+	zassert_equal(svc->pev[1].event.fd, -1, "Second slot not freed");
+
+	/* The second socket is kept open, so the new socket gets a different fd. */
+	prepare_sock_udp_v6(MY_IPV6_ADDR, SINGLE_FD_PORT, &new_ctx.fd, &new_addr);
+
+	ret = bind(new_ctx.fd, (struct net_sockaddr *)&new_addr, sizeof(new_addr));
+	zassert_equal(ret, 0, "bind failed (%d)", -errno);
+
+	pfd.fd = new_ctx.fd;
+	ret = net_socket_service_register_single_fd(svc, &pfd, &new_ctx);
+	zassert_ok(ret, "Cannot register new socket (%d)", ret);
+
+	/* The new socket takes the freed second slot; the others are untouched. */
+	zassert_equal(svc->pev[1].event.fd, new_ctx.fd, "New socket not in the second slot");
+	zassert_equal_ptr(svc->pev[1].user_data, &new_ctx, "Wrong user_data in second slot");
+	zassert_equal(svc->pev[0].event.fd, ctx[0].fd, "First slot changed");
+	zassert_equal_ptr(svc->pev[0].user_data, &ctx[0], "First slot user_data changed");
+	zassert_equal(svc->pev[2].event.fd, ctx[2].fd, "Third slot changed");
+	zassert_equal_ptr(svc->pev[2].user_data, &ctx[2], "Third slot user_data changed");
+
+	/* Triggering the new socket returns its own ctx. */
+	single_fd_received_ctx = NULL;
+	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_addr);
+
+	len = sendto(c_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0, (struct net_sockaddr *)&new_addr,
+		     sizeof(new_addr));
+	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
+
+	ret = k_sem_take(&single_fd_sem, K_MSEC(WAIT_TIME));
+	zassert_ok(ret, "Timeout while waiting callback");
+	zassert_equal(single_fd_received_fd, new_ctx.fd, "Callback for wrong socket");
+	zassert_equal_ptr(single_fd_received_ctx, &new_ctx, "Callback returned the wrong ctx");
+
+	ret = net_socket_service_unregister(svc);
+	zassert_ok(ret, "Cannot unregister service (%d)", ret);
+
+	for (int i = 0; i < ARRAY_SIZE(ctx); i++) {
+		ret = close(ctx[i].fd);
+		zassert_equal(ret, 0, "close failed");
+	}
+
+	ret = close(new_ctx.fd);
+	zassert_equal(ret, 0, "close failed");
+
+	ret = close(c_sock);
+	zassert_equal(ret, 0, "close failed");
+}

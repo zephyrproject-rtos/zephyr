@@ -14,3 +14,12 @@ tests:
       regex:
         - "Unattached.SNK"
         - "Unattached.SRC"
+  sample.usbc.drp.try_snk:
+    depends_on: tcpc
+    tags:
+      - usbc
+      - drp
+    platform_allow: stm32g081b_eval
+    build_only: true
+    extra_configs:
+      - CONFIG_USBC_CSM_DRP_TRY_SNK=y

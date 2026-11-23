@@ -140,10 +140,7 @@ static struct k_poll_signal tx_queue_change =
 
 static void h5_reset_rx(void)
 {
-	if (h5.rx_buf) {
-		net_buf_unref(h5.rx_buf);
-		h5.rx_buf = NULL;
-	}
+	net_buf_drop(&h5.rx_buf);
 
 	h5.rx_state = START;
 }
@@ -396,8 +393,7 @@ static void h5_process_complete_packet(uint8_t *hdr)
 
 	process_unack();
 
-	buf = h5.rx_buf;
-	h5.rx_buf = NULL;
+	buf = net_buf_take(&h5.rx_buf);
 
 	switch (H5_HDR_PKT_TYPE(hdr)) {
 	case HCI_3WIRE_ACK_PKT:
@@ -680,7 +676,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 	LOG_DBG("");
 
 	while (true) {
-		struct net_buf *buf, *cache;
+		struct net_buf *buf;
 
 		buf = k_fifo_get(&h5.rx_queue, K_FOREVER);
 
@@ -688,15 +684,11 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 		if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
 			if (h5.link_state == ACTIVE) {
-				while ((cache = k_fifo_get(&h5.unack_queue, K_NO_WAIT))) {
-					net_buf_unref(cache);
-				}
+				net_buf_fifo_purge(&h5.unack_queue);
 
 				unack_queue_len = 0;
 
-				while ((cache = k_fifo_get(&h5.tx_queue, K_NO_WAIT))) {
-					net_buf_unref(cache);
-				}
+				net_buf_fifo_purge(&h5.tx_queue);
 
 				h5_reset_rx();
 

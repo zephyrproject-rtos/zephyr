@@ -63,7 +63,7 @@ void npcx_gpio_enable_io_pads(const struct device *dev, int pin)
 	const struct gpio_npcx_config *const config = dev->config;
 	const struct npcx_wui *io_wui = &config->wui_maps[pin];
 
-	if (io_wui->table == NPCX_MIWU_TABLE_NONE) {
+	if (npcx_miwu_wui_is_none(io_wui)) {
 		LOG_ERR("Cannot enable GPIO(%x, %d) pad", config->port, pin);
 		return;
 	}
@@ -82,7 +82,7 @@ void npcx_gpio_disable_io_pads(const struct device *dev, int pin)
 	const struct gpio_npcx_config *const config = dev->config;
 	const struct npcx_wui *io_wui = &config->wui_maps[pin];
 
-	if (io_wui->table == NPCX_MIWU_TABLE_NONE) {
+	if (npcx_miwu_wui_is_none(io_wui)) {
 		LOG_ERR("Cannot disable GPIO(%x, %d) pad", config->port, pin);
 		return;
 	}
@@ -289,7 +289,7 @@ static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
 {
 	const struct gpio_npcx_config *const config = dev->config;
 
-	if (config->wui_maps[pin].table == NPCX_MIWU_TABLE_NONE) {
+	if (npcx_miwu_wui_is_none(&config->wui_maps[pin])) {
 		LOG_ERR("Cannot configure GPIO(%x, %d)", config->port, pin);
 		return -EINVAL;
 	}
@@ -364,7 +364,7 @@ static int gpio_npcx_manage_callback(const struct device *dev,
 	}
 
 	/* Has the IO pin valid MIWU input source? */
-	if (config->wui_maps[pin].table == NPCX_MIWU_TABLE_NONE) {
+	if (npcx_miwu_wui_is_none(&config->wui_maps[pin])) {
 		LOG_ERR("Cannot manage GPIO(%x, %d) callback!", config->port,
 				pin);
 		return -EINVAL;

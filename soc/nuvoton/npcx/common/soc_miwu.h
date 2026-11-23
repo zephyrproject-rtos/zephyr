@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 
 #ifdef __cplusplus
@@ -20,8 +21,11 @@ enum miwu_table {
 	NPCX_MIWU_TABLE_0,
 	NPCX_MIWU_TABLE_1,
 	NPCX_MIWU_TABLE_2,
-	NPCX_MIWU_TABLE_COUNT
+	NPCX_MIWU_TABLE_3,
 };
+
+/* Number of MIWU modules enabled in devicetree */
+#define NPCX_MIWU_TABLE_COUNT DT_NUM_INST_STATUS_OKAY(nuvoton_npcx_miwu)
 
 enum miwu_group {
 	NPCX_MIWU_GROUP_1,
@@ -34,8 +38,6 @@ enum miwu_group {
 	NPCX_MIWU_GROUP_8,
 	NPCX_MIWU_GROUP_COUNT
 };
-
-#define NPCX_MIWU_TABLE_NONE NPCX_MIWU_TABLE_COUNT
 
 /* Interrupt modes supported by npcx miwu modules */
 enum miwu_int_mode {
@@ -63,10 +65,38 @@ enum {
  * of Multi-Input Wake-Up Unit (MIWU) modules.
  */
 struct npcx_wui {
-	uint8_t table:2; /** A source belongs to which MIWU table. */
-	uint8_t group:3; /** A source belongs to which group of MIWU table. */
-	uint8_t bit:3; /** A source belongs to which bit of MIWU group. */
+	union {
+		struct {
+			uint8_t table:2; /** A source belongs to which MIWU table. */
+			uint8_t group:3; /** A source belongs to which group of MIWU table. */
+			uint8_t bit:3; /** A source belongs to which bit of MIWU group. */
+		};
+		uint8_t raw; /** Raw value of table, group and bit fields */
+	};
 };
+
+/*
+ * Encoding of the pseudo wake-up input 'wui_none' (miwu_none group 7 bit 7).
+ * All bits of struct npcx_wui are set, so no MIWU module may use group 7 bit 7
+ * of table 3 as a real wake-up input.
+ */
+#define NPCX_MIWU_WUI_NONE_TABLE 3U
+#define NPCX_MIWU_WUI_NONE_GROUP 7U
+#define NPCX_MIWU_WUI_NONE_BIT   7U
+#define NPCX_MIWU_WUI_NONE       0xFFU
+
+/**
+ * @brief Check if a wake-up input source is the pseudo source 'wui_none'
+ *
+ * @param wui A pointer on wake-up input source
+ *
+ * @retval true The source has no wake-up input capability
+ * @retval false The source is a valid wake-up input
+ */
+static inline bool npcx_miwu_wui_is_none(const struct npcx_wui *wui)
+{
+	return wui->raw == NPCX_MIWU_WUI_NONE;
+}
 
 /**
  * Define npcx miwu driver callback handler signature for wake-up input source

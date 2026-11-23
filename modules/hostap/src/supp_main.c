@@ -806,6 +806,8 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 				os_free((char *)data->external_auth.bssid);
 				os_free((char *)data->external_auth.ssid);
 				os_free((char *)data->external_auth.mld_addr);
+			} else if (event_msg.event == EVENT_NAN_CLUSTER_JOIN) {
+				os_free((char *)data->nan_cluster_join_info.bssid);
 			}
 
 			os_free(event_msg.data);

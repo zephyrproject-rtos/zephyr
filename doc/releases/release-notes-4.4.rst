@@ -297,9 +297,9 @@ Deprecated APIs and options
 
   * Mesh
 
-    * The function :c:func:`bt_mesh_input_number` was deprecated. Applications should use
+    * The function ``bt_mesh_input_number()`` was deprecated. Applications should use
       :c:func:`bt_mesh_input_numeric` instead.
-    * The callback :c:member:`output_number` in :c:struct:`bt_mesh_prov` structure was deprecated.
+    * The callback ``output_number`` in :c:struct:`bt_mesh_prov` structure was deprecated.
       Applications should use :c:member:`output_numeric` callback instead.
     * The :kconfig:option:`CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE` option has been deprecated.
 
@@ -366,14 +366,14 @@ Deprecated APIs and options
 
   * NXP
 
-    * Deprecated the ``mcux_lpcmp`` driver (:zephyr_file:`drivers/sensor/nxp/mcux_lpcmp/mcux_lpcmp.c`). It is
-      currently scheduled to be removed in Zephyr 4.6, along with the ``mcux_lpcmp`` sample. (:github:`100998`).
+    * Deprecated the ``mcux_lpcmp`` driver. It is currently scheduled to be removed in Zephyr 4.6,
+      along with the ``mcux_lpcmp`` sample. (:github:`100998`).
 
 * Timer
 
   * The legacy Cortex-M SysTick low-power companion compatibility macros
     :c:macro:`z_cms_lptim_hook_on_lpm_entry` and :c:macro:`z_cms_lptim_hook_on_lpm_exit`,
-    along with the compatibility header :zephyr_file:`drivers/timer/cortex_m_systick.h`,
+    along with the compatibility header ``drivers/timer/cortex_m_systick.h``,
     have been deprecated. Out-of-tree SoC/platform code should migrate to
     :c:func:`z_sys_clock_lpm_enter`, :c:func:`z_sys_clock_lpm_exit`, and
     :zephyr_file:`include/zephyr/drivers/timer/system_timer_lpm.h`.

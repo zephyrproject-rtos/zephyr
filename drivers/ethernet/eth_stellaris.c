@@ -355,7 +355,7 @@ struct eth_stellaris_runtime eth_data = {
 	.tx_pos = 0,
 };
 
-static const struct ethernet_api eth_stellaris_apis = {
+static DEVICE_API(ethernet, eth_stellaris_apis) = {
 	.iface_api.init	= eth_stellaris_init,
 	.send =  eth_stellaris_send,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)

@@ -714,7 +714,7 @@ static int32_t i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg
 	if (k_sem_take(&data->device_sync_sem, cfg->transfer_timeout) != 0) {
 		LOG_DBG("%s: WRITE timeout", __func__);
 		i2c_stm32_reset(dev);
-		return -EIO;
+		return -ETIMEDOUT;
 	}
 
 	return msg_end(dev, next_msg_flags, __func__);
@@ -735,7 +735,7 @@ static int32_t i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
 	if (k_sem_take(&data->device_sync_sem, cfg->transfer_timeout) != 0) {
 		LOG_DBG("%s: READ timeout", __func__);
 		i2c_stm32_reset(dev);
-		return -EIO;
+		return -ETIMEDOUT;
 	}
 
 	return msg_end(dev, next_msg_flags, __func__);

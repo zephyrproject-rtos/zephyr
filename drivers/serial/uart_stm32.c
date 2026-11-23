@@ -230,6 +230,45 @@ static __maybe_unused void uart_stm32_rx_wakeup_lock_put(const struct device *de
 		uart_stm32_pm_policy_state_lock_put_unconditional();
 	}
 }
+
+/*
+ * The IDLE and RTO interrupts that end a reception can't wake the SoC from
+ * STOP, so the RX wake lock must be held from the first received byte. The
+ * WKUP interrupt only covers a reception that starts while the SoC is in
+ * STOP; arm RXNE as a one-shot start-of-reception interrupt for a reception
+ * that starts while the SoC is awake.
+ */
+static __maybe_unused void uart_stm32_rx_start_irq_arm(const struct device *dev)
+{
+	const struct uart_stm32_config *config = dev->config;
+	struct uart_stm32_data *data = dev->data;
+
+	if (config->wakeup_source && data->dma_rx.enabled) {
+		ll_usart_irq_rx_enable(config->usart);
+	}
+}
+
+/*
+ * DMA drains the receive register, so RXNE may already be clear by the time
+ * the ISR runs. Also look at the DMA position. If neither shows new data,
+ * the caller leaves RXNE armed and the next byte triggers it again.
+ */
+static __maybe_unused bool uart_stm32_rx_started(const struct device *dev)
+{
+	const struct uart_stm32_config *config = dev->config;
+	struct uart_stm32_data *data = dev->data;
+	struct dma_status stat;
+
+	if (ll_usart_is_active_rxne(config->usart)) {
+		return true;
+	}
+
+	if (dma_get_status(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &stat) != 0) {
+		return false;
+	}
+
+	return (data->dma_rx.buffer_length - stat.pending_length) != data->dma_rx.offset;
+}
 #endif /* CONFIG_UART_ASYNC_API */
 #endif /* CONFIG_PM */
 
@@ -1495,6 +1534,14 @@ static void uart_stm32_isr(const struct device *dev)
 	}
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#ifdef CONFIG_PM
+	/* Start of reception while awake. Don't touch the data, DMA owns it. */
+	if (data->dma_rx.enabled && ll_usart_is_enabled_rxne(usart) && uart_stm32_rx_started(dev)) {
+		ll_usart_irq_rx_disable(usart);
+		uart_stm32_rx_wakeup_lock_get(dev);
+	}
+#endif
+
 	if (LL_USART_IsEnabledIT_IDLE(usart) && LL_USART_IsActiveFlag_IDLE(usart)) {
 
 		LL_USART_ClearFlag_IDLE(usart);
@@ -1504,6 +1551,8 @@ static void uart_stm32_isr(const struct device *dev)
 #ifdef CONFIG_PM
 		/* Allow SoC to enter STOP mode now that RX is IDLE */
 		uart_stm32_rx_wakeup_lock_put(dev);
+		/* Re-arm before the flush: its callback may disable RX */
+		uart_stm32_rx_start_irq_arm(dev);
 #endif
 
 		if (data->dma_rx.timeout == 0) {
@@ -1537,6 +1586,8 @@ static void uart_stm32_isr(const struct device *dev)
 #ifdef CONFIG_PM
 		/* Allow SoC to enter STOP mode now that RX has timed out */
 		uart_stm32_rx_wakeup_lock_put(dev);
+		/* Re-arm before the flush: its callback may disable RX */
+		uart_stm32_rx_start_irq_arm(dev);
 #endif
 		uart_stm32_dma_rx_flush(dev);
 #endif /* HAS_RTO */
@@ -1657,6 +1708,12 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 
 	/* Disable error interrupt to prevent spurious ISRs when async RX is disabled */
 	LL_USART_DisableIT_ERROR(usart);
+
+	ll_usart_irq_rx_disable(usart);
+#ifdef CONFIG_PM
+	/* RX stopped before IDLE/RTO fired, e.g. mid-frame */
+	uart_stm32_rx_wakeup_lock_put(dev);
+#endif
 
 	uart_stm32_dma_rx_flush(dev);
 
@@ -2051,6 +2108,10 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 	uart_stm32_dma_rx_enable(dev);
 
 	set_timeout_itr(usart, data->uart_cfg->baudrate, timeout);
+
+#ifdef CONFIG_PM
+	uart_stm32_rx_start_irq_arm(dev);
+#endif
 
 	LL_USART_EnableIT_ERROR(usart);
 
@@ -2549,25 +2610,39 @@ static int uart_stm32_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static void uart_stm32_suspend_setup(const struct device *dev)
+static int uart_stm32_suspend_setup(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
 
 #ifdef USART_ISR_BUSY
 	/* Make sure that no USART transfer is on-going */
-	while (LL_USART_IsActiveFlag_BUSY(usart) == 1) {
+	if (!WAIT_FOR(LL_USART_IsActiveFlag_BUSY(usart) == 0, CONFIG_UART_STM32_SUSPEND_TIMEOUT_US,
+		      NULL)) {
+		LOG_ERR("%s: receiver busy, not suspending", dev->name);
+		return -EBUSY;
 	}
 #endif
-	while (LL_USART_IsActiveFlag_TC(usart) == 0) {
+
+	if (!WAIT_FOR(LL_USART_IsActiveFlag_TC(usart) == 1, CONFIG_UART_STM32_SUSPEND_TIMEOUT_US,
+		      NULL)) {
+		LOG_ERR("%s: transmission not complete, not suspending", dev->name);
+		return -EBUSY;
 	}
+
 #ifdef USART_ISR_REACK
 	/* Make sure that USART is ready for reception */
-	while (LL_USART_IsActiveFlag_REACK(usart) == 0) {
+	if (!WAIT_FOR(LL_USART_IsActiveFlag_REACK(usart) == 1, CONFIG_UART_STM32_SUSPEND_TIMEOUT_US,
+		      NULL)) {
+		LOG_ERR("%s: receiver not enabled, not suspending", dev->name);
+		return -EBUSY;
 	}
 #endif
+
 	/* Clear OVERRUN flag */
 	LL_USART_ClearFlag_ORE(usart);
+
+	return 0;
 }
 
 static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action action)
@@ -2614,7 +2689,11 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		uart_stm32_suspend_setup(dev);
+		err = uart_stm32_suspend_setup(dev);
+		if (err < 0) {
+			return err;
+		}
+
 		/* Stop device clock. Note: fixed clocks are not handled yet. */
 		err = clock_control_off(config->clock, (clock_control_subsys_t)&config->pclken[0]);
 		if (err < 0) {
@@ -2645,7 +2724,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 
 #ifdef CONFIG_UART_ASYNC_API
 /* src_dev and dest_dev should be 'MEMORY' or 'PERIPHERAL'. */
-#define UART_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)	\
+#define UART_DMA_CHANNEL_INIT(index, dir, src_dev, dest_dev)	        \
 	.dma_dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),	\
 	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),	\
 	.dma_cfg = {							\
@@ -2718,14 +2797,14 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM */
 
 #ifdef CONFIG_UART_ASYNC_API
-#define UART_DMA_CHANNEL(index, dir, DIR, src, dest)				\
+#define UART_DMA_CHANNEL(index, dir, src, dest)					\
 	.dma_##dir = {								\
 		COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),			\
-			 (UART_DMA_CHANNEL_INIT(index, dir, DIR, src, dest)),	\
+			 (UART_DMA_CHANNEL_INIT(index, dir, src, dest)),	\
 			 (NULL))						\
 	},
 #else
-#define UART_DMA_CHANNEL(index, dir, DIR, src, dest)
+#define UART_DMA_CHANNEL(index, dir, src, dest)
 #endif
 
 #ifdef CONFIG_PM
@@ -2869,8 +2948,8 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 										\
 	static struct uart_stm32_data uart_stm32_data_##index = {		\
 		.uart_cfg = &uart_cfg_##index,					\
-		UART_DMA_CHANNEL(index, rx, RX, PERIPHERAL, MEMORY)		\
-		UART_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)		\
+		UART_DMA_CHANNEL(index, rx, PERIPHERAL, MEMORY)			\
+		UART_DMA_CHANNEL(index, tx, MEMORY, PERIPHERAL)			\
 	};									\
 										\
 	PM_DEVICE_DT_INST_DEFINE(index, uart_stm32_pm_action);			\

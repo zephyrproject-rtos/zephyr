@@ -48,6 +48,14 @@ void z_thread_monitor_exit(struct k_thread *thread);
 
 void z_thread_abort(struct k_thread *thread);
 
+/* Undo a dead thread's kernel registrations; scheduler spinlock held */
+void z_thread_release(struct k_thread *thread);
+
+#ifdef CONFIG_THREAD_ABORT_HOOK
+/* Provided by the subsystem selecting CONFIG_THREAD_ABORT_HOOK */
+void thread_abort_hook(struct k_thread *thread);
+#endif /* CONFIG_THREAD_ABORT_HOOK */
+
 static inline void thread_schedule_new(struct k_thread *thread, k_timeout_t delay)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS

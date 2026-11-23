@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_ROUTE_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/virtual.h>
 
 #include "route_ipv4.h"
 #include "arp.h"
@@ -44,6 +45,13 @@ static struct net_in_addr onlink_input_dest = { .s4_addr = { 192, 0, 3, 60 } };
 static struct net_in_addr offlink_dest_addr = { .s4_addr = { 203, 0, 113, 200 } };
 static struct net_in_addr onlink_same_iface_dest = { .s4_addr = { 192, 0, 2, 50 } };
 static struct net_in_addr my_subnet_bcast = { .s4_addr = { 192, 0, 2, 255 } };
+/* Tunnel subnet of the VPN interface, and an off-link address (for example the VPN
+ * peer endpoint) that shares a longer prefix with the tunnel address than with the
+ * addresses of the Ethernet interfaces.
+ */
+static struct net_in_addr vpn_addr = { .s4_addr = { 10, 77, 0, 20 } };
+static struct net_in_addr vpn_peer_addr = { .s4_addr = { 10, 77, 0, 1 } };
+static struct net_in_addr vpn_endpoint_addr = { .s4_addr = { 11, 0, 0, 1 } };
 static struct net_eth_addr onlink_input_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x60 } };
 static struct net_eth_addr onlink_same_iface_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x50 } };
 static struct net_eth_addr gateway_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x10 } };
@@ -51,6 +59,7 @@ static struct net_eth_addr gateway_lladdr_alt = { { 0x02, 0x00, 0x5e, 0x00, 0x53
 
 static struct net_if *my_iface;
 static struct net_if *my_iface_alt;
+static struct net_if *vpn_iface;
 static struct net_route_entry *route_entry;
 static struct net_in_addr sent_ll_resolve_addr;
 static bool sent_ll_resolve_addr_set;
@@ -60,6 +69,7 @@ static bool sent_arp_request_seen;
 static struct net_if *sent_iface;
 static struct net_if *sent_orig_iface;
 static bool sent_forwarding;
+static bool sent_chksum_done;
 static uint8_t sent_ipv4_ttl;
 static bool sent_ipv4_chksum_ok;
 
@@ -165,6 +175,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	sent_iface = net_if_lookup_by_dev(dev);
 	sent_orig_iface = net_pkt_orig_iface(pkt);
 	sent_forwarding = net_pkt_forwarding(pkt);
+	sent_chksum_done = net_pkt_is_chksum_done(pkt);
 	sent_ll_proto_type = net_pkt_ll_proto_type(pkt);
 	sent_arp_request_seen = false;
 	sent_ipv4_ttl = sent_forwarding ? net_pkt_ipv4_ttl(pkt) : 0U;
@@ -239,7 +250,7 @@ static struct net_route_test net_route_data_alt = {
 	.mac_addr = { 0x00U, 0x00U, 0x5EU, 0x00U, 0x53U, 0x02U },
 };
 
-static struct ethernet_api net_route_if_api = {
+static DEVICE_API(ethernet, net_route_if_api) = {
 	.iface_api.init = net_route_iface_init,
 	.send = tester_send,
 };
@@ -260,6 +271,35 @@ NET_DEVICE_INIT_INSTANCE(net_route_test_alt, "net_route_test_alt", host_alt,
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			 &net_route_if_api, _ETH_L2_LAYER,
 			 _ETH_L2_CTX_TYPE, 127);
+
+static void vpn_iface_init(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+
+static enum virtual_interface_caps vpn_get_capabilities(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return VIRTUAL_INTERFACE_VPN;
+}
+
+static int vpn_send(struct net_if *iface, struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(pkt);
+
+	return -ENOTSUP;
+}
+
+static DEVICE_API(virtual_interface, vpn_iface_api) = {
+	.iface_api.init = vpn_iface_init,
+	.get_capabilities = vpn_get_capabilities,
+	.send = vpn_send,
+};
+
+NET_VIRTUAL_INTERFACE_INIT(net_route_test_vpn, "net_route_test_vpn", NULL, NULL, NULL, NULL,
+			   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &vpn_iface_api, NET_IPV4_MTU);
 
 static void test_init(void)
 {
@@ -283,6 +323,9 @@ static void test_init(void)
 	zassert_true(net_if_ipv4_set_netmask_by_addr(my_iface_alt, &my_addr_alt,
 						     &iface_netmask),
 		     "Cannot set alt IPv4 netmask");
+
+	vpn_iface = net_if_lookup_by_dev(DEVICE_GET(net_route_test_vpn));
+	zassert_not_null(vpn_iface, "VPN interface is NULL");
 
 	for (int i = 0; i < MAX_ROUTES; i++) {
 		dest_addresses[i].s4_addr[0] = 203U;
@@ -688,6 +731,60 @@ static void test_route_ipv4_select_src_iface_uses_explicit_route(void)
 	zassert_ok(net_route_ipv4_del(route), "Selection route del failed");
 }
 
+static void test_route_ipv4_select_src_vpn_iface(void)
+{
+	const struct net_in_addr *src_addr;
+	struct net_route_entry *route;
+	struct net_if_addr *ifaddr;
+	struct net_if *iface;
+
+	if (!net_if_is_up(vpn_iface)) {
+		zassert_ok(net_if_up(vpn_iface), "Cannot take VPN interface up");
+	}
+
+	ifaddr = net_if_ipv4_addr_add(vpn_iface, &vpn_addr, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Cannot add VPN IPv4 address");
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+	zassert_true(net_if_ipv4_set_netmask_by_addr(vpn_iface, &vpn_addr, &iface_netmask),
+		     "Cannot set VPN IPv4 netmask");
+
+	/* Neither a route nor a default router covers the destination, so
+	 * the tunnel address must not be selected for it.
+	 */
+	src_addr = net_if_ipv4_select_src_addr(NULL, &vpn_endpoint_addr);
+	zassert_false(src_addr == net_ipv4_unspecified_address(),
+		      "Source address selection failed");
+	zassert_false(net_ipv4_addr_cmp(src_addr, &vpn_addr),
+		      "Tunnel address selected for an off-link destination");
+
+	iface = net_if_ipv4_select_src_iface(&vpn_endpoint_addr);
+	zassert_not_equal(iface, vpn_iface, "VPN interface selected for an off-link destination");
+
+	/* The tunnel subnet is still reached through the VPN interface */
+	src_addr = net_if_ipv4_select_src_addr(NULL, &vpn_peer_addr);
+	zassert_true(net_ipv4_addr_cmp(src_addr, &vpn_addr),
+		     "Tunnel address not selected for the tunnel subnet");
+
+	iface = net_if_ipv4_select_src_iface(&vpn_peer_addr);
+	zassert_equal_ptr(iface, vpn_iface, "VPN interface not selected for the tunnel subnet");
+
+	/* An explicit route through the VPN interface still selects it */
+	route = net_route_ipv4_add(vpn_iface, &vpn_endpoint_addr, 32, NULL,
+				   NET_ROUTE_INFINITE_LIFETIME, NET_ROUTE_PREFERENCE_HIGH);
+	zassert_not_null(route, "VPN route add failed");
+
+	src_addr = net_if_ipv4_select_src_addr(NULL, &vpn_endpoint_addr);
+	zassert_true(net_ipv4_addr_cmp(src_addr, &vpn_addr),
+		     "Tunnel address not selected for a route through the VPN");
+
+	iface = net_if_ipv4_select_src_iface(&vpn_endpoint_addr);
+	zassert_equal_ptr(iface, vpn_iface,
+			  "VPN interface not selected for a route through the VPN");
+
+	zassert_ok(net_route_ipv4_del(route), "VPN route del failed");
+	zassert_true(net_if_ipv4_addr_rm(vpn_iface, &vpn_addr), "Cannot remove VPN IPv4 address");
+}
+
 static void test_route_ipv4_forward_packet_between_ifaces(void)
 {
 	struct net_route_entry *route;
@@ -939,6 +1036,7 @@ static void test_route_ipv4_forward_onlink_packet_between_ifaces(void)
 
 	zassert_true(sent_pkt_seen, "On-link forwarded packet not observed");
 	zassert_true(sent_forwarding, "On-link packet should be marked forwarded");
+	zexpect_true(sent_chksum_done, "Forwarded packet should keep its checksum");
 	zassert_equal_ptr(sent_iface, my_iface_alt,
 			  "On-link forwarded packet used wrong egress interface");
 	zassert_equal_ptr(sent_orig_iface, my_iface,
@@ -1118,6 +1216,7 @@ static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
 				  "On-link routed packet missing ingress interface");
 		zassert_true(sent_forwarding,
 			     "On-link routed packet should be marked forwarded");
+		zexpect_true(sent_chksum_done, "Forwarded packet should keep its checksum");
 		zassert_equal(sent_ipv4_ttl, 1U,
 			      "On-link routed packet should decrement TTL");
 	}
@@ -1145,6 +1244,7 @@ static void test_route_ipv4_input_onlink_same_iface(void)
 		zassert_equal_ptr(sent_iface, my_iface,
 				  "Routed packet used wrong egress interface");
 		zassert_true(sent_forwarding, "Routed packet should be marked forwarded");
+		zexpect_true(sent_chksum_done, "Forwarded packet should keep its checksum");
 		zassert_equal(sent_ipv4_ttl, 1U, "Routed packet should decrement TTL");
 	}
 
@@ -1177,6 +1277,7 @@ static void test_route_ipv4_input_default_router(void)
 		zassert_true(net_ipv4_addr_cmp(&sent_ll_resolve_addr, &gateway_addr),
 			     "Routed packet should go to the default router");
 		zassert_true(sent_forwarding, "Routed packet should be marked forwarded");
+		zexpect_true(sent_chksum_done, "Forwarded packet should keep its checksum");
 		zassert_equal(sent_ipv4_ttl, 1U, "Routed packet should decrement TTL");
 	}
 
@@ -1222,6 +1323,7 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv4_packet_multi_iface();
 	test_route_ipv4_host_route_overrides_normal_iface();
 	test_route_ipv4_select_src_iface_uses_explicit_route();
+	test_route_ipv4_select_src_vpn_iface();
 	test_route_ipv4_forward_ttl_expired_drops();
 	test_route_ipv4_forward_packet_between_ifaces();
 	test_route_ipv4_forward_hdr_options();

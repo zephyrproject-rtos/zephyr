@@ -224,7 +224,7 @@ struct hwspinlock_dt_spec {
  */
 struct hwspinlock_driver_config {
 	/** The number of hw spinlock supported by this driver */
-	uint8_t num_locks;
+	uint32_t num_locks;
 	/** Array of spinlocks that will be used to protect access to underlying
 	 * hardware.
 	 */
@@ -318,6 +318,10 @@ static inline int hw_spin_trylock(const struct device *dev, uint32_t id, k_spinl
 		return -ENOSYS;
 	}
 
+	if (id >= cfg->num_locks) {
+		return -EINVAL;
+	}
+
 	ret = k_spin_trylock(&cfg->locks[id], key);
 	if (ret) {
 		return ret;
@@ -362,6 +366,7 @@ static inline k_spinlock_key_t hw_spin_lock(const struct device *dev, uint32_t i
 	k_spinlock_key_t k;
 
 	__ASSERT(api->lock != NULL, "hwspinlock lock callback must be implemented");
+	__ASSERT(id < cfg->num_locks, "hwspinlock id out of range");
 
 	k = k_spin_lock(&cfg->locks[id]);
 	api->lock(dev, id);
@@ -385,6 +390,7 @@ static inline void hw_spin_unlock(const struct device *dev, uint32_t id, k_spinl
 	const struct hwspinlock_driver_config *const cfg = dev->config;
 
 	__ASSERT(api->unlock != NULL, "hwspinlock unlock callback must be implemented");
+	__ASSERT(id < cfg->num_locks, "hwspinlock id out of range");
 
 	api->unlock(dev, id);
 	k_spin_unlock(&cfg->locks[id], key);

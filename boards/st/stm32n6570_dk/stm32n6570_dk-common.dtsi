@@ -18,6 +18,7 @@
 	chosen {
 		spi-flash0 = &mx66uw1g45g;
 		zephyr,console = &usart1;
+		zephyr,dtcm = &dtcm;
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &axisram2;
 		zephyr,canbus = &fdcan1;
@@ -77,6 +78,13 @@
 			   <15 0 &gpioq 2 0>;
 	};
 
+	wm8904_fll_ref: sai1a-mclk {
+		compatible = "fixed-clock";
+		/* 1.536 GHz / 136 */
+		clock-frequency = <11294117>;
+		#clock-cells = <0>;
+	};
+
 	psram: memory@90000000 {
 		compatible = "zephyr,memory-region";
 		/*
@@ -123,6 +131,9 @@
 		compatible = "wolfson,wm8904";
 		reg = <0x1a>;
 		input-pga-select = <1>;
+		clocks = <&wm8904_fll_ref>;
+		clock-names = "mclk";
+		clock-source = "FLL";
 
 		wolfson,mic-bias-voltage = "avdd-9-10";
 		status = "okay";
@@ -558,7 +569,9 @@ zephyr_udc0: &usbotg_hs1 {
 		     &eth1_rgmii_rxd0_pf14
 		     &eth1_rgmii_rxd1_pf15
 		     &eth1_rgmii_txd2_pg3
-		     &eth1_rgmii_txd3_pg4>;
+		     &eth1_rgmii_txd3_pg4
+		     &eth1_mdio_pd12
+		     &eth1_mdc_pd1>;
 	pinctrl-names = "default";
 	phy-connection-type = "rgmii";
 	phy-handle = <&eth_phy>;
@@ -579,8 +592,6 @@ zephyr_udc0: &usbotg_hs1 {
 };
 
 &mdio {
-	pinctrl-0 = <&eth1_mdio_pd12 &eth1_mdc_pd1>;
-	pinctrl-names = "default";
 	status = "okay";
 
 	eth_phy: ethernet-phy@1 {

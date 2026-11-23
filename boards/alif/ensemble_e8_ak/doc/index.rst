@@ -20,15 +20,19 @@ Board Identifiers
 
 The following board identifiers are supported:
 
-+----------------------------------------------+-------------+----------+
-| Board Identifier                             | SoC Series  | Core     |
-+==============================================+=============+==========+
-| ``ensemble_e8_ak/ae822fa0e5597bs0/rtss_he``  | E8          | RTSS-HE  |
-+----------------------------------------------+-------------+----------+
-| ``ensemble_e8_ak/ae822fa0e5597bs0/rtss_hp``  | E8          | RTSS-HP  |
-+----------------------------------------------+-------------+----------+
-| ``ensemble_e8_ak/ae822fa0e5597bs0/apss``     | E8          | APSS     |
-+----------------------------------------------+-------------+----------+
++--------------------------------------------------+-------------+----------+
+| Board Identifier                                 | SoC Series  | Core     |
++==================================================+=============+==========+
+| ``ensemble_e8_ak/ae822fa0e5597bs0/rtss_he``      | E8          | RTSS-HE  |
++--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_ak/ae822fa0e5597bs0/rtss_he/sram`` | E8          | RTSS-HE  |
++--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_ak/ae822fa0e5597bs0/rtss_hp``      | E8          | RTSS-HP  |
++--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_ak/ae822fa0e5597bs0/rtss_hp/sram`` | E8          | RTSS-HP  |
++--------------------------------------------------+-------------+----------+
+| ``ensemble_e8_ak/ae822fa0e5597bs0/apss``         | E8          | APSS     |
++--------------------------------------------------+-------------+----------+
 
 Hardware
 ********
@@ -40,6 +44,7 @@ The Ensemble E8 AI/ML AppKit provides the following hardware features:
 - Micro SD card slot
 - High-Speed USB Host interface (Type-A)
 - High-Speed USB Device interface (Micro-AB)
+- 10/100 Mbit/s Ethernet
 - On-board J-Link debugger (``PRG USB``, High-Speed USB Device, Micro-AB)
 - 20-pin Arm CoreSight JTAG connector (1.27 mm)
 - ICM-42670-P: 3-axis accelerometer and gyroscope
@@ -59,6 +64,20 @@ Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
+
+Ethernet
+========
+
+The Ethernet MAC of the RTSS cores is enabled only in the ``sram`` variants of
+the board targets. The other targets use DTCM as ``zephyr,sram``, and Ethernet
+DMA to DTCM is not supported. The ``sram`` variants use a system SRAM as
+``zephyr,sram`` instead and enable the MAC, the MDIO bus, the PHY and the PTP
+hardware clock of the MAC:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dhcpv4_client
+   :board: ensemble_e8_ak/ae822fa0e5597bs0/rtss_he/sram
+   :goals: build
 
 Programming and Debugging
 *************************
@@ -93,12 +112,15 @@ slide switch ``SW4``:
 Flashing
 ========
 
-Alif Ensemble E8 AI/ML AppKit can be programmed using the Alif Security
-Toolkit (SETOOLS). Refer to the `Alif Software & Tools`_ page for the SETOOLS
-download and detailed instructions on using it to program the board.
+Alif Ensemble E8 AI/ML AppKit is programmed with ``west flash`` through the
+Alif Security Toolkit (SETOOLS), using the :ref:`alif_flash runner
+<runner_alif_flash>`. Set up SETOOLS as described there, move SW4 to the SE-UART
+position and connect the PRG USB connector to your host computer. Pass the
+SE-UART device with ``--port`` if it differs from the SETOOLS configuration.
+Move SW4 back to the console position after flashing.
 
-Alternatively, the board can be flashed with ``west flash`` using the on-board
-J-Link debugger. Connect a USB cable from your host computer to the
+Alternatively, the board can be flashed using a SEGGER J-Link debug probe with
+``west flash -r jlink``. Connect a USB cable from your host computer to the
 ``PRG USB`` connector. The sample application :zephyr:code-sample:`hello_world`
 is used for this example.
 
@@ -139,14 +161,19 @@ Building for the Application Processor (APSS):
    and is currently maintained in Alif's public repository:
    `Alif Trusted Firmware-A`_.
 
-   The resulting image is programmed and launched using the Alif Security
-   Toolkit (SETOOLS); the ``west flash`` and ``west debug`` runners are not
-   supported for the APSS target.
+   The ``alif_flash`` runner programs the TF-A BL32 image together with the
+   Zephyr image; pass the BL32 image with ``--bl32-bin``. ``--bl32-base``
+   may also need to  be set if the default value differs from the
+   base address your BL32 image was built for, IE ``bl32-base=0x80100000``
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: ensemble_e8_ak/ae822fa0e5597bs0/apss
    :goals: build
+
+.. code-block:: console
+
+   west flash --bl32-bin=<path to bl32.bin> --bl32-base=<link address of bl32>
 
 Debugging
 =========

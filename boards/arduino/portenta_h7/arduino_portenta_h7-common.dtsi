@@ -134,6 +134,15 @@ zephyr_i2c: &i2c1 {
 		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
 };
 
+/* VREF+ is the AREF pin, pulled up to 3.1 V on the board */
+&adc12_common {
+	vref-mv = <3100>;
+};
+
+&adc3_common {
+	vref-mv = <3100>;
+};
+
 &mailbox {
 	status = "okay";
 };
@@ -220,7 +229,9 @@ zephyr_i2c: &i2c1 {
 		     &eth_rxd1_pc5
 		     &eth_tx_en_pg11
 		     &eth_txd1_pg12
-		     &eth_txd0_pg13>;
+		     &eth_txd0_pg13
+		     &eth_mdio_pa2
+		     &eth_mdc_pc1>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
@@ -228,8 +239,6 @@ zephyr_i2c: &i2c1 {
 };
 
 &mdio {
-	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
-	pinctrl-names = "default";
 	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
@@ -247,7 +256,6 @@ sdhc: &sdmmc1 {
 	pwr-gpios = <&gpioj 1 GPIO_ACTIVE_HIGH>;
 	power-delay-ms = <50>;
 	interrupts = <49 0>;
-	interrupt-names = "event";
 	min-bus-freq = <DT_FREQ_K(400)>;
 	max-bus-freq = <DT_FREQ_M(208)>;
 	hw-flow-control;

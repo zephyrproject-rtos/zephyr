@@ -280,7 +280,7 @@ static const struct wifi_mgmt_ops simplelink_mgmt = {
 	.disconnect	= simplelink_mgmt_disconnect,
 };
 
-static const struct net_wifi_mgmt_offload simplelink_api = {
+static DEVICE_API(wifi_offload, simplelink_api) = {
 	.wifi_iface.iface_api.init = simplelink_iface_init,
 	.wifi_iface.get_type = simplelink_get_type,
 	.wifi_mgmt_api = &simplelink_mgmt,

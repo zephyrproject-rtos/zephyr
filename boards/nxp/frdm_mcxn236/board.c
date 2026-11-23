@@ -163,7 +163,13 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM5);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm6))
+	/* Configure input clock to be able to reach the datasheet specified SPI band rate. */
+	CLOCK_SetClkDiv(kCLOCK_DivFlexcom6Clk, 1u);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_FLEXCOMM6);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ostimer0))
 	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
 #endif
 
@@ -231,7 +237,9 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && (CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1_uhc))) && \
+	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI || CONFIG_UHC_NXP_EHCI)
 	SPC0->ACTIVE_VDELAY = 0x0500;
 	/* Change the power DCDC to 1.8v (By default, DCDC is 1.8V), CORELDO to 1.1v (By default,
 	 * CORELDO is 1.0V)

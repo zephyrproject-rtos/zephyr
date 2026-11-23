@@ -9,6 +9,8 @@ description: |
 
 compatible: "x-powers,axp192-led"
 
+class: led
+
 on-bus: axp192
 
 properties:

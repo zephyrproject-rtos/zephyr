@@ -10,7 +10,6 @@ config SOC_ARC_IOT
 
 config ARC_IOT_CUSTOM_CPU_IDLE
 	bool "Use custom CPU idle that skips sleep"
-	default n
 	depends on SOC_ARC_IOT
 	select ARCH_HAS_CUSTOM_CPU_IDLE
 	select ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE

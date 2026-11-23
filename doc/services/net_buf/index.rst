@@ -104,17 +104,23 @@ has ``user_data_size`` bytes of it, returned by
 The last argument of the pool definition is an optional destroy
 callback. When the last reference to a buffer is released, the callback
 is called instead of returning the buffer to the pool, and it must
-eventually call :c:func:`net_buf_destroy` to return it.
+eventually call :c:func:`net_buf_destroy` to return it. A callback that
+has a new use for the buffer calls :c:func:`net_buf_reuse` instead, right
+away or after it has set the buffer aside, which hands the buffer back as if
+it had just been allocated, without another allocator of the pool getting it
+first.
 
 The buffers have native support for being passed through k_fifo kernel
 objects. Use :c:func:`k_fifo_put` and :c:func:`k_fifo_get` to pass buffer
-from one thread to another.
+from one thread to another, and :c:func:`net_buf_fifo_purge` to unreference
+all buffers in a FIFO.
 
 Buffers can also be kept in a :c:type:`sys_slist_t` through their
 ``node`` field. :c:func:`net_buf_slist_put` and :c:func:`net_buf_slist_get`
-append and remove a buffer under a spinlock, so that a list can be shared
-between threads and interrupt handlers as long as every access to it goes
-through these two functions. Use them instead of
+append and remove a buffer, and :c:func:`net_buf_slist_purge` unreferences
+all buffers in a list. They modify the list under a spinlock, so that a list
+can be shared between threads and interrupt handlers as long as every
+access to it goes through these functions. Use them instead of
 :c:func:`sys_slist_append` and :c:func:`sys_slist_get` for such a list.
 A buffer has a single ``node`` field, so it can be in only one FIFO or
 list at a time, however many references to it exist.
@@ -372,13 +378,15 @@ takes ownership of the buffer, or releases it. After the move the
 previous owner must no longer use the buffer, unless it holds another
 reference of its own, acquired with :c:func:`net_buf_ref`.
 
-Two helpers operate on the pointer that holds a reference, so that the
+Three helpers operate on the pointer that holds a reference, so that the
 previous owner is left with ``NULL`` instead of a pointer to a buffer it
 no longer owns. :c:func:`net_buf_take` moves the reference out of the
-pointer, and :c:func:`net_buf_drop` releases it. :c:func:`net_buf_drop`
-is meant for a pointer that outlives the release, such as a structure
-member, or one that may already be ``NULL``. A local pointer that holds a
-reference as it goes out of scope only needs :c:func:`net_buf_unref`.
+pointer, :c:func:`net_buf_take_plain` does the same for a pointer that
+no other context can access, and :c:func:`net_buf_drop` releases it.
+:c:func:`net_buf_drop` is meant for a pointer that outlives the release,
+such as a structure member, or one that may already be ``NULL``. A local
+pointer that holds a reference as it goes out of scope only needs
+:c:func:`net_buf_unref`.
 
 A fragment chain is owned through its head. Each buffer in the chain
 owns a reference to the next fragment and releases it when the buffer
@@ -417,6 +425,12 @@ the same expression:
 Do this even where ``buf`` goes out of scope right after the call: a
 plain pointer argument looks the same as one that is only borrowed, while
 :c:func:`net_buf_take` shows at the call site that the reference moves.
+
+:c:func:`net_buf_take` is an atomic exchange, so that only one of several
+contexts taking or dropping the same pointer at the same time gets the
+buffer. Where no other context can access the pointer, such as a local
+variable, :c:func:`net_buf_take_plain` makes the same move with plain
+accesses, which the compiler drops when the pointer is not read again.
 
 Passing ``net_buf_take(&buf)`` as an argument only works for calls that
 always take ownership, such as :c:func:`k_fifo_put`,

@@ -71,7 +71,7 @@ _not_checking_user_context:
 	rsr a2, ZSR_A0SAVE
 	s32i a2, a0, ___xtensa_irq_bsa_t_a0_OFFSET
 	rsr.ps a2
-	movi a3, ~PS_OWB_MASK & ~PS_EXCM_MASK
+	movi a3, ~(PS_OWB_MASK | PS_EXCM_MASK | PS_INTLEVEL_MASK)
 	and a2, a2, a3
 	s32i a2, a0, ___xtensa_irq_bsa_t_ps_OFFSET
 
@@ -246,6 +246,16 @@ xtensa_userspace_enter:
 	 */
 	entry a1, 16
 
+	/* Mask interrupts while the register windows are spilled below.
+	 * SPILL_ALL_WINDOWS rotates WINDOWBASE, so an interrupt taken in
+	 * the middle of it would save its frame relative to the A1 of
+	 * whichever register window is visible at that moment, corrupting
+	 * the stack of the interrupted frames.
+	 *
+	 * Interrupts stay masked until the rfi below.
+	 */
+	rsil a0, 0xf
+
 	SPILL_ALL_WINDOWS
 
 	/* We have to switch to kernel stack before spill kernel data and
@@ -329,3 +339,50 @@ xtensa_userspace_enter:
 	movi a0, 0
 
 	rfi ZSR_RFI_LEVEL
+
+/*
+ * size_t xtensa_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ */
+.global xtensa_user_string_nlen
+.type xtensa_user_string_nlen, @function
+.align 4
+xtensa_user_string_nlen:
+	entry a1, 32
+
+	/* error value, set to -1. */
+	movi a5, -1
+	s32i a5, a4, 0
+
+	/* length count */
+	xor a5, a5, a5
+
+	/* This code might page fault */
+strlen_loop:
+.global xtensa_user_string_nlen_fault_start
+xtensa_user_string_nlen_fault_start:
+	l8ui a6, a2, 0 /* Current char */
+
+.global xtensa_user_string_nlen_fault_end
+xtensa_user_string_nlen_fault_end:
+	beqz a6, strlen_done
+	addi a5, a5, 1
+	addi a2, a2, 1
+	beq a5, a3, strlen_done
+	j strlen_loop
+
+strlen_done:
+	/* Set return value */
+	mov a2, a5
+
+	/* Set error value to 0 since we succeeded */
+	movi a5, 0x0
+	s32i a5, a4, 0
+
+	retw
+
+.global xtensa_user_string_nlen_fixup
+xtensa_user_string_nlen_fixup:
+	/* Return number of valid characters after a fault */
+	mov a2, a5
+
+	retw

@@ -12,6 +12,7 @@
 #include <zephyr/input/input_touch.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(chsc5x, CONFIG_INPUT_LOG_LEVEL);
 
@@ -60,6 +61,12 @@ enum {
 #define CHSC5X_EVENT_TYPE_TOUCH     0xFF
 #define CHSC5X_EVENT_TYPE_GESTURE   0xFE /* Not supported */
 
+#define CHSC5X_FINGER_NUMBER_MASK   GENMASK(3, 0)
+#define CHSC5X_TOUCH_ID_MASK        GENMASK(3, 0)
+#define CHSC5X_TOUCH_EVENT_MASK     GENMASK(7, 4)
+#define CHSC5X_TOUCH_ID_NONE        0x0F
+#define CHSC5X_TOUCH_EVENT_UP       0x04
+
 static void chsc5x_work_handler(struct k_work *work)
 {
 	struct chsc5x_data *data = CONTAINER_OF(work, struct chsc5x_data, work);
@@ -87,7 +94,20 @@ static void chsc5x_work_handler(struct k_work *work)
 		return;
 	}
 
-	is_pressed = (read_buffer[CHSC5X_OFFSET_TOUCH_EVENT] & 0x40) == 0U;
+	/* No points: all fingers lifted */
+	if (FIELD_GET(CHSC5X_FINGER_NUMBER_MASK, read_buffer[CHSC5X_OFFSET_FINGER_NUMBER]) == 0U) {
+		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
+		return;
+	}
+
+	/* Unused point slot, also seen as an all-0xFF report */
+	if (FIELD_GET(CHSC5X_TOUCH_ID_MASK, read_buffer[CHSC5X_OFFSET_TOUCH_EVENT]) ==
+	    CHSC5X_TOUCH_ID_NONE) {
+		return;
+	}
+
+	is_pressed = FIELD_GET(CHSC5X_TOUCH_EVENT_MASK, read_buffer[CHSC5X_OFFSET_TOUCH_EVENT]) !=
+		     CHSC5X_TOUCH_EVENT_UP;
 	col = read_buffer[CHSC5X_OFFSET_X_COORDINATE] +
 	      ((read_buffer[CHSC5X_OFFSET_XY_COORDINATE] & 0x0f) << 8);
 	row = read_buffer[CHSC5X_OFFSET_Y_COORDINATE] +
@@ -104,7 +124,7 @@ static void chsc5x_isr_handler(const struct device *dev, struct gpio_callback *c
 {
 	struct chsc5x_data *data = CONTAINER_OF(cb, struct chsc5x_data, int_gpio_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 
 #if defined(CONFIG_INPUT_CHSC5X_VERIFY_IC_TYPE)

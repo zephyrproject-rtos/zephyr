@@ -6,6 +6,8 @@
 
 #include <zephyr/zsr.h>
 
+#if defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE)
+
 .pushsection .iram.text, "ax"
 .global _EmulateLoadStore
 _EmulateLoadStore:
@@ -617,3 +619,5 @@ _HandleOut:
 	rfe
 
 .popsection
+
+#endif /* defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE) */

@@ -48,7 +48,7 @@ static int bench_cpu;
 static uint64_t __aligned(CACHE_LINE_SIZE) test_array[ARRAY_ELEMENTS];
 static uint32_t __aligned(CACHE_LINE_SIZE) random_indices[MEMORY_ITERATIONS];
 
-static struct pmu_counter_config counter_configs[PMU_MAX_COUNTERS];
+static struct pmu_counter_config counter_configs[CONFIG_PMU_MAX_COUNTERS];
 
 #define MEASURE_START()                                                                            \
 	pmu_counter_reset_all();                                                                   \

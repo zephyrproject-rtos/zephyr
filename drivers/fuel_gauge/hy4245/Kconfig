@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config HY4245
-	bool "HY4245 Fuel Gauge"
+	bool "HY4245 fuel gauge driver"
 	default y
 	depends on DT_HAS_HYCON_HY4245_ENABLED
 	select I2C

@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-ZTEST(timepoints, test_timepoint_api)
+ZTEST_USER(timepoints, test_timepoint_api)
 {
 	k_timepoint_t timepoint;
 	k_timeout_t timeout, remaining;

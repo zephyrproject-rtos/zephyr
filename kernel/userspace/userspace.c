@@ -722,10 +722,19 @@ static void unref_check(struct k_object *ko, uintptr_t index, bool locked)
 	 */
 	switch (ko->type) {
 	case K_OBJ_MSGQ:
-		(void)z_msgq_cleanup((struct k_msgq *)ko->name, locked);
+		/* Objects from k_object_alloc() are not zeroed: a queue that
+		 * was never initialized would have stale heap contents taken
+		 * for its flags and buffer, so only clean up initialized ones.
+		 */
+		if ((ko->flags & K_OBJ_FLAG_INITIALIZED) != 0U) {
+			(void)z_msgq_cleanup((struct k_msgq *)ko->name, locked);
+		}
 		break;
 	case K_OBJ_STACK:
-		(void)z_stack_cleanup((struct k_stack *)ko->name, locked);
+		/* Same as K_OBJ_MSGQ */
+		if ((ko->flags & K_OBJ_FLAG_INITIALIZED) != 0U) {
+			(void)z_stack_cleanup((struct k_stack *)ko->name, locked);
+		}
 		break;
 	case K_OBJ_TIMER:
 		/* k_timer_cleanup() does not check whether the timer has

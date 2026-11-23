@@ -68,7 +68,6 @@ config SPI_USE_HW_SS
 
 config SPI_RENESAS_RZ_DMA
 	bool "RZ SPI DMA Support"
-	default n
 	select SPI_RENESAS_RZ_INTERRUPT
 	select USE_RZ_FSP_DMAC if SOC_SERIES_RZT2L \
 			       || SOC_SERIES_RZT2M \

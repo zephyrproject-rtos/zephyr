@@ -20,6 +20,7 @@
 	aliases {
 		led0 = &led0;
 		pwm-led0 = &pwm_led0;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -29,6 +30,8 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,canbus = &canfd0;
+		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -54,18 +57,21 @@
 };
 
 &ulpclk {
-	clock-frequency = <DT_FREQ_M(40)>;
 	clk-div = <2>;
 };
 
 &mclk {
 	clock-frequency = <DT_FREQ_M(80)>;
+	clocks = <&hsclk>;
+};
+
+&hsclk {
 	clocks = <&syspll>;
+	status = "okay";
 };
 
 &canclk {
 	clocks = <&syspll>;
-	clock-frequency = <DT_FREQ_M(40)>;
 	status = "okay";
 };
 
@@ -117,13 +123,22 @@
 	status = "okay";
 };
 
+/*
+ * Slow TIMA0 to 39,062 Hz so LED PWM periods (20 ms - 1.68 s)
+ * fit in the 16-bit counter: 80 MHz / (div=8 * (prescaler+1)=256)
+ */
+&tima0 {
+	ti,clk-div = <8>;
+	ti,clk-prescaler = <255>;
+};
+
 &pwma0 {
 
 	pinctrl-0 = <&tima0_ccp0_pa0>;
 	pinctrl-names = "default";
 	ti,cc-index = <0>;
 	ti,pwm-mode = "EDGE_ALIGN";
-	ti,period = <1000>;
+	ti,period = <3906>; /* ~100 ms at 39,062 Hz */
 	status = "okay";
 };
 
@@ -160,5 +175,17 @@
 &vref0 {
 	pinctrl-0 = <&analog_pa23>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
+&wdt0 {
 	status = "okay";
 };

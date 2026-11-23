@@ -66,7 +66,7 @@ static struct k_spinlock nsos_polls_lock;
 
 static int nsos_socket_offload_init(const struct device *arg);
 
-static struct offloaded_if_api nsos_iface_offload_api;
+static DEVICE_API(offloaded_if, nsos_iface_offload_api);
 
 NET_DEVICE_OFFLOAD_INIT(nsos_socket, "nsos_socket",
 			nsos_socket_offload_init,
@@ -275,25 +275,31 @@ static ssize_t nsos_write(void *obj, const void *buf, size_t sz)
 static int nsos_close(void *obj)
 {
 	struct nsos_socket *sock = obj;
-	struct nsos_socket_poll *poll;
+	struct nsos_socket_poll *poll = &sock->poll;
 	k_spinlock_key_t key;
 	int ret;
 
-	ret = nsi_host_close(sock->poll.mid.fd);
-	if (ret < 0) {
-		errno = nsos_adapt_get_zephyr_errno();
-	}
-
+	/*
+	 * Drop a pending poll before the host descriptor is closed: closing it
+	 * removes it from epoll behind our back, the host can hand the same
+	 * number to the next socket, and the socket memory is freed below.
+	 */
 	key = k_spin_lock(&nsos_polls_lock);
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&nsos_polls, poll, node) {
-		if (poll == &sock->poll) {
-			poll->mid.revents = ZSOCK_POLLHUP;
-			poll->mid.cb(&poll->mid);
-		}
+	if (sys_dnode_is_linked(&poll->node)) {
+		nsos_adapt_poll_remove(&poll->mid);
+		sys_dlist_remove(&poll->node);
+
+		poll->mid.revents = ZSOCK_POLLHUP;
+		poll->mid.cb(&poll->mid);
 	}
 
 	k_spin_unlock(&nsos_polls_lock, key);
+
+	ret = nsi_host_close(poll->mid.fd);
+	if (ret < 0) {
+		errno = nsos_adapt_get_zephyr_errno();
+	}
 
 	nsi_host_free(sock);
 
@@ -396,36 +402,26 @@ static int nsos_poll_update(struct nsos_socket *sock, struct zsock_pollfd *pfd,
 	return 0;
 }
 
+static int nsos_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+				   struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	struct nsos_socket *sock = obj;
+
+	return nsos_poll_prepare(sock, pfd, pev, pev_end, &sock->poll);
+}
+
+static int nsos_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd, struct k_poll_event **pev)
+{
+	struct nsos_socket *sock = obj;
+
+	return nsos_poll_update(sock, pfd, pev, &sock->poll);
+}
+
 static int nsos_ioctl(void *obj, unsigned int request, va_list args)
 {
 	struct nsos_socket *sock = obj;
 
 	switch (request) {
-	case ZFD_IOCTL_POLL_PREPARE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-		struct k_poll_event *pev_end;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
-
-		return nsos_poll_prepare(obj, pfd, pev, pev_end, &sock->poll);
-	}
-
-	case ZFD_IOCTL_POLL_UPDATE: {
-		struct zsock_pollfd *pfd;
-		struct k_poll_event **pev;
-
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-
-		return nsos_poll_update(obj, pfd, pev, &sock->poll);
-	}
-
-	case ZFD_IOCTL_POLL_OFFLOAD:
-		return -EOPNOTSUPP;
-
 	case ZVFS_F_GETFL: {
 		int flags;
 
@@ -1643,6 +1639,8 @@ static const struct socket_op_vtable nsos_socket_fd_op_vtable = {
 		.write = nsos_write,
 		.close = nsos_close,
 		.ioctl = nsos_ioctl,
+		.poll_prepare = nsos_poll_prepare_vmeth,
+		.poll_update = nsos_poll_update_vmeth,
 	},
 	.bind = nsos_bind,
 	.connect = nsos_connect,
@@ -1912,6 +1910,10 @@ static void nsos_iface_api_init(struct net_if *iface)
 		 */
 		net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
 	}
+
+	if (IS_ENABLED(CONFIG_NET_NATIVE_OFFLOADED_SOCKETS_NO_AUTO_START)) {
+		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	}
 }
 
 /* The offloaded interface has no Zephyr-side addresses because the host stack
@@ -1996,7 +1998,7 @@ static int nsos_iface_enable(const struct net_if *iface, bool enabled)
 	return 0;
 }
 
-static struct offloaded_if_api nsos_iface_offload_api = {
+static DEVICE_API(offloaded_if, nsos_iface_offload_api) = {
 	.iface_api.init = nsos_iface_api_init,
 	.enable = nsos_iface_enable,
 };

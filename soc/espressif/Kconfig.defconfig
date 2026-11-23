@@ -1,8 +1,9 @@
 # Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_ESPRESSIF_ESP32
+if SOC_FAMILY_ESPRESSIF
 
+rsource "common/Kconfig.deprecated.defconfig"
 rsource "*/Kconfig.defconfig"
 
-endif # SOC_FAMILY_ESPRESSIF_ESP32
+endif # SOC_FAMILY_ESPRESSIF

@@ -503,7 +503,7 @@ enum ieee802154_hw_caps {
 	 *  `CONFIG_IEEE802154_SELECTIVE_TXCHANNEL` is set, otherwise the driver MUST
 	 *  NOT have this capability.
 	 *
-	 *  Please refer to the `ieee802154_radio_api::tx` documentation for details.
+	 *  Please refer to the `ieee802154_radio_driver_api::tx` documentation for details.
 	 */
 	IEEE802154_HW_SELECTIVE_TXCHANNEL = BIT(12),
 
@@ -518,7 +518,7 @@ enum ieee802154_hw_caps {
 /** @brief This and higher values are specific to the protocol- or driver-specific extensions. */
 #define IEEE802154_HW_CAPS_BITS_PRIV_START IEEE802154_HW_CAPS_BITS_COMMON_COUNT
 
-/** Filter type, see @ref ieee802154_radio_api::filter */
+/** Filter type, see @ref ieee802154_radio_driver_api::filter */
 enum ieee802154_filter_type {
 	IEEE802154_FILTER_TYPE_IEEE_ADDR,      /**< Address type filter */
 	IEEE802154_FILTER_TYPE_SHORT_ADDR,     /**< Short address type filter */
@@ -568,7 +568,7 @@ typedef void (*ieee802154_event_cb_t)(const struct device *dev,
 				      enum ieee802154_event evt,
 				      void *event_params);
 
-/** Filter value, see @ref ieee802154_radio_api::filter */
+/** Filter value, see @ref ieee802154_radio_driver_api::filter */
 struct ieee802154_filter {
 	union {
 		/** Extended address, in little endian */
@@ -1267,7 +1267,7 @@ struct ieee802154_config {
 /**
  * @brief IEEE 802.15.4 driver attributes.
  *
- * See @ref ieee802154_attr_value and @ref ieee802154_radio_api for usage
+ * See @ref ieee802154_attr_value and @ref ieee802154_radio_driver_api for usage
  * details.
  */
 enum ieee802154_attr {
@@ -1500,7 +1500,7 @@ static inline int ieee802154_attr_get_channel_page_and_range(
  * receiver to be disabled immediately until the configured reception time has
  * arrived.
  */
-struct ieee802154_radio_api {
+__subsystem struct ieee802154_radio_driver_api {
 	/**
 	 * @brief network interface API
 	 *
@@ -1508,7 +1508,7 @@ struct ieee802154_radio_api {
 	 * therefore mandatory to place it at the top of the driver API struct so
 	 * that it can be cast to a network interface.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/**
 	 * @brief Get the device driver capabilities.
@@ -1931,10 +1931,9 @@ struct ieee802154_radio_api {
 			struct ieee802154_attr_value *value);
 };
 
-/* Make sure that the network interface API is properly setup inside
- * IEEE 802.15.4 driver API struct (it is the first one).
- */
-BUILD_ASSERT(offsetof(struct ieee802154_radio_api, iface_api) == 0);
+/** @cond INTERNAL_HIDDEN */
+DEVICE_API_EXTENDS(ieee802154_radio, net_if, iface_api);
+/** @endcond */
 
 /** @} */
 

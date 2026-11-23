@@ -34,7 +34,6 @@ config SCHED_IPI_SUPPORTED
 config SCHED_IPI_CASCADE
 	bool "Use cascading IPIs to correct localized scheduling"
 	depends on SCHED_CPU_MASK && !SCHED_CPU_MASK_PIN_ONLY
-	default n
 	help
 	  Threads that are preempted by a local thread (a thread that is
 	  restricted by its CPU mask to execute on a subset of all CPUs) may
@@ -117,7 +116,6 @@ config TRACE_SCHED_IPI
 
 config IPI_OPTIMIZE
 	bool "Optimize IPI delivery"
-	default n
 	depends on SCHED_IPI_SUPPORTED && MP_MAX_NUM_CPUS>1
 	help
 	  When selected, the kernel will attempt to determine the minimum
@@ -135,7 +133,6 @@ config IPI_OPTIMIZE
 
 config IPI_OPTIMIZE_IDLE
 	bool "Send scheduling IPIs to one idle CPU"
-	default n
 	depends on IPI_OPTIMIZE && ARCH_HAS_DIRECTED_IPIS && MP_MAX_NUM_CPUS > 2
 	help
 	  When a thread becomes ready and can execute on one or more idle CPUs,

@@ -9,9 +9,9 @@
  * Include this file in the soc {} section in the relevant chip DTSI files
  */
 gpspi0: spi@40009400 {
+	reg = <0x40009400 0x80>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x40009400 0x80>;
 	interrupts = <92 2>;
 	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(18, 2)>;
 	pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 9)>;
@@ -19,9 +19,9 @@ gpspi0: spi@40009400 {
 };
 
 gpspi1: spi@40009480 {
+	reg = <0x40009480 0x80>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x40009480 0x80>;
 	interrupts = <94 2>;
 	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(18, 4)>;
 	pcr-scr = <MCHP_XEC_SCR_ENCODE(4, 22)>;

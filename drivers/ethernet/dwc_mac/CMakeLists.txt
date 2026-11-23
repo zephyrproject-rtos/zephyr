@@ -14,6 +14,7 @@ zephyr_library_sources_ifdef(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_PERFECT eth_d
 
 # Platform specific drivers
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_ETH_ALIF_DWC_ETHER_QOS eth_alif_dwc_ether_qos.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_DWMAC_MMU eth_dwmac_mmu.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_ESP32_DWC_ETHER_1000 eth_esp32_dwc_ether_1000.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_NUMAKER_DWC_ETHER_1000 eth_numaker_dwc_ether_1000.c)

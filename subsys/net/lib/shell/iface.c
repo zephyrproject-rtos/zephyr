@@ -62,10 +62,6 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 #endif
 	EC(ETHERNET_PRIORITY_QUEUES,      "Priority queues"),
 	EC(ETHERNET_HW_FILTERING,         "MAC address filtering"),
-#ifdef CONFIG_NET_DSA
-	EC(ETHERNET_DSA_USER_PORT,        "DSA user port"),
-	EC(ETHERNET_DSA_CONDUIT_PORT,     "DSA conduit port"),
-#endif
 	EC(ETHERNET_TXINJECTION_MODE,     "TX-Injection supported"),
 };
 
@@ -83,6 +79,16 @@ static void print_supported_ethernet_capabilities(
 #ifdef CONFIG_PTP_CLOCK
 	if (net_eth_get_ptp_clock(iface) != NULL) {
 		PR("\t%s\n", "IEEE 1588 PTP clock");
+	}
+#endif
+
+#ifdef CONFIG_NET_DSA
+	if (net_eth_get_dsa_port_type(iface) == DSA_USER_PORT) {
+		PR("\t%s\n", "DSA user port");
+	} else if (net_eth_get_dsa_port_type(iface) == DSA_CONDUIT_PORT) {
+		PR("\t%s\n", "DSA conduit port");
+	} else {
+		/* Not a DSA user or conduit port */
 	}
 #endif
 }
@@ -169,6 +175,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
+	struct net_linkaddr link_addr;
 	int ret;
 
 	ARG_UNUSED(ret); /* could be unused depending on config */
@@ -307,12 +314,12 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #endif /* CONFIG_NET_L2_VIRTUAL */
 
 	net_if_lock(iface);
-	if (net_if_get_link_addr(iface)->len > 0) {
-		PR("Link addr : %s\n",
-		   net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
-				      net_if_get_link_addr(iface)->len));
-	}
+	link_addr = *net_if_get_link_addr(iface);
 	net_if_unlock(iface);
+
+	if (link_addr.len > 0) {
+		PR("Link addr : %s\n", net_sprint_ll_addr(link_addr.addr, link_addr.len));
+	}
 
 	PR("MTU       : %d\n", net_if_get_mtu(iface));
 	PR("Flags     : %s\n", iface_flags2str(iface));
@@ -622,8 +629,6 @@ skip_ipv4:
 			   net_sprint_ipv4_addr(&iface->config.dhcpv4.server_id));
 			PR("DHCPv4 requested  : %s\n",
 			   net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
-			PR("DHCPv4 state      : %s\n",
-			   net_dhcpv4_state_name(iface->config.dhcpv4.state));
 			PR("DHCPv4 attempts   : %d\n",
 			   iface->config.dhcpv4.attempts);
 		}

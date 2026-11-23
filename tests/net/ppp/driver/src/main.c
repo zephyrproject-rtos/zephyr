@@ -1239,4 +1239,34 @@ ZTEST(net_ppp_test_suite, test_lcp_renegotiation_keeps_link)
 	lcp_test_teardown();
 }
 
+/* An interface without carrier goes down while LCP is still negotiating */
+ZTEST(net_ppp_test_suite, test_down_without_carrier_while_negotiating)
+{
+	struct ppp_context *ctx;
+	int ret;
+
+	net_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
+	zassert_not_null(net_iface, "PPP interface not found!");
+
+	ctx = net_if_l2_data(net_iface);
+
+	(void)net_if_up(net_iface);
+	k_sleep(K_MSEC(WAIT_TIME));
+
+	zassert_equal(ctx->lcp.fsm.state, PPP_REQUEST_SENT,
+		      "LCP in state %d, expected REQUEST_SENT", ctx->lcp.fsm.state);
+
+	net_if_carrier_off(net_iface);
+	k_sleep(K_MSEC(WAIT_TIME));
+
+	ret = net_if_down(net_iface);
+
+	zassert_ok(ret, "net_if_down returned %d", ret);
+	zassert_false(net_if_is_admin_up(net_iface), "Interface is still admin up");
+	zassert_equal(ctx->phase, PPP_DEAD, "Phase %d, expected DEAD", ctx->phase);
+
+	(void)net_if_up(net_iface);
+	k_sleep(K_MSEC(WAIT_TIME));
+}
+
 ZTEST_SUITE(net_ppp_test_suite, NULL, NULL, NULL, NULL, NULL);

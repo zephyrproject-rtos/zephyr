@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 NXP
+ * SPDX-FileCopyrightText: 2025-2026 NXP
  * SPDX-FileCopyrightText: 2026 CogniPilot Foundation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -172,9 +172,9 @@ mr_mcxn_t1_flexio_adc: &lpadc1 {};
 /*
  * The board uses SYSTICK as the kernel timer.
  * To switch to the OS timer instead, replace
- * &systick with &os_timer.
+ * &systick with &ostimer0.
  */
-&os_timer {
+&ostimer0 {
 	status = "disabled";
 };
 
@@ -210,16 +210,26 @@ mr_mcxn_t1_flexio_adc: &lpadc1 {};
 			label = "mcuboot";
 		};
 
+		/*
+		 * slot0 and slot1 partitions must be equal in size
+		 * for MCUboot swap upgrades.
+		 */
 		slot0_partition: partition@14000 {
 			compatible = "zephyr,mapped-partition";
-			reg = <0x00014000 DT_SIZE_K(984)>;
+			reg = <0x00014000 DT_SIZE_K(968)>;
 			label = "image-0";
 		};
 
-		slot1_partition: partition@10a000 {
+		slot1_partition: partition@106000 {
 			compatible = "zephyr,mapped-partition";
-			reg = <0x0010a000 DT_SIZE_K(984)>;
+			reg = <0x00106000 DT_SIZE_K(968)>;
 			label = "image-1";
+		};
+
+		storage_partition: partition@1f8000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x001f8000 DT_SIZE_K(32)>;
+			label = "storage";
 		};
 	};
 };

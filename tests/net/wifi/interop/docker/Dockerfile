@@ -11,8 +11,9 @@ FROM ghcr.io/zephyrproject-rtos/zephyr-build:latest
 
 USER root
 
-# Runtime tooling for the simulated radio + APs, plus the 32-bit libnl the
-# native_sim driver links against.
+# Runtime tooling for the simulated radio + APs, plus the 32-bit and 64-bit
+# libnl the native_sim driver links against (native_sim and
+# native_sim/native/64).
 RUN dpkg --add-architecture i386 && \
     apt-get update && apt-get install -y --no-install-recommends \
         iw \
@@ -20,6 +21,8 @@ RUN dpkg --add-architecture i386 && \
         dnsmasq \
         iproute2 \
         kmod \
+        libnl-3-dev \
+        libnl-genl-3-dev \
         libnl-3-dev:i386 \
         libnl-genl-3-dev:i386 \
         gcc-multilib \

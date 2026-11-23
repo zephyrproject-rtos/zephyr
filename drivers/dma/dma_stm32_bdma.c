@@ -651,8 +651,6 @@ int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *
 		return ret;
 	}
 
-	hal_config->SrcBurstLength = zephyr_config->source_burst_length;
-	hal_config->DestBurstLength = zephyr_config->dest_burst_length;
 	hal_config->Request = zephyr_config->dma_slot;
 
 #ifdef DMA_FIFOMODE_DISABLE
@@ -1000,6 +998,8 @@ static int bdma_stm32_stop(const struct device *dev, uint32_t id)
 
 	/* Repeated stop : return now if channel is already stopped */
 	if (!stm32_bdma_is_enabled_channel(bdma, id)) {
+		/* A channel configured but never started is released too */
+		channel->busy = false;
 		return 0;
 	}
 

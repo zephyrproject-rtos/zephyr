@@ -9,12 +9,6 @@ config SOC_SERIES_NRF51
 	help
 	  Enable support for NRF51 MCU series
 
-config SOC_SERIES_NRF51X
-	bool
-	select SOC_SERIES_NRF51
-	help
-	  Deprecated Kconfig, use SOC_SERIES_NRF51 instead
-
 config SOC_SERIES
 	default "nrf51" if SOC_SERIES_NRF51
 

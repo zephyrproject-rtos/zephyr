@@ -316,12 +316,20 @@ static DEVICE_API(clock_control, stm32_clock_control_api) = {
 	.configure = stm32_clock_control_configure,
 };
 
+static void set_voltage_scaling(uint32_t scale)
+{
+	LL_PWR_SetRegulVoltageScaling(scale);
+	/* Stop 1/2 exit leaves range 2: the clock must not be raised before range 1 is ready */
+	while (LL_PWR_GetRegulCurrentVOS() != scale) {
+	}
+}
+
 static void set_regu_voltage(uint32_t hclk_freq)
 {
 	if (hclk_freq <= MHZ(48)) {
-		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
+		set_voltage_scaling(LL_PWR_REGU_VOLTAGE_SCALE2);
 	} else {
-		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+		set_voltage_scaling(LL_PWR_REGU_VOLTAGE_SCALE1);
 	}
 }
 
@@ -457,9 +465,9 @@ static void set_up_fixed_clock_sources(void)
 		}
 
 		if (IN_RANGE(STM32_MSIS_RANGE, 0, 3)) {
-			LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+			set_voltage_scaling(LL_PWR_REGU_VOLTAGE_SCALE1);
 		} else {
-			LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
+			set_voltage_scaling(LL_PWR_REGU_VOLTAGE_SCALE2);
 		}
 
 		enable_epod_booster();
@@ -526,9 +534,9 @@ static void set_up_fixed_clock_sources(void)
 		}
 
 		if (IN_RANGE(STM32_MSIK_RANGE, 0, 3)) {
-			LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+			set_voltage_scaling(LL_PWR_REGU_VOLTAGE_SCALE1);
 		} else {
-			LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
+			set_voltage_scaling(LL_PWR_REGU_VOLTAGE_SCALE2);
 		}
 
 		enable_epod_booster();

@@ -16,6 +16,7 @@
 #include <hal/nrf_timer.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/minmax.h>
+#include <zephyr/sys/div64.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <soc.h>
@@ -323,7 +324,7 @@ struct uarte_nrfx_data {
 #define UARTE_CFG_FLAG_VOLATILE_BAUDRATE BIT(5)
 
 /* Formula for getting the baudrate settings is following:
- * 2^12 * floor(2^20 / round(f_PCLK / desired_baudrate)) where f_PCLK is a frequency that
+ * 2^12 * round(2^20 / round(f_PCLK / desired_baudrate)) where f_PCLK is a frequency that
  * drives the UARTE.
  *
  * @param f_pclk Frequency of the clock that drives the peripheral.
@@ -332,7 +333,7 @@ struct uarte_nrfx_data {
  * @return Baudrate setting to be written to the BAUDRATE register
  */
 #define UARTE_GET_CUSTOM_BAUDRATE(f_pclk, baudrate)                                                \
-	((BIT(20) / DIV_ROUND_CLOSEST(f_pclk, baudrate)) << 12)
+	(DIV_ROUND_CLOSEST(BIT(20), DIV_ROUND_CLOSEST(f_pclk, baudrate)) << 12)
 
 /* Macro for converting numerical baudrate to register value. It is convenient
  * to use this approach because for constant input it can calculate nrf setting
@@ -394,6 +395,7 @@ struct uarte_nrfx_config {
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	/* None-zero in case of high speed instances. Baudrate is adjusted by that ratio. */
 	uint32_t clock_freq;
+	bool use_baudrate_formula;
 #else
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 	uint32_t baudrate;
@@ -592,7 +594,7 @@ static int baudrate_set(const struct device *dev, uint32_t baudrate)
 	nrf_uarte_baudrate_t nrf_baudrate;
 
 	/* calculated baudrate divisor */
-	if (UARTE_ANY_HIGH_SPEED && (config->clock_freq > NRF_UARTE_BASE_FREQUENCY_16MHZ)) {
+	if (config->use_baudrate_formula) {
 		nrf_baudrate = UARTE_GET_CUSTOM_BAUDRATE(config->clock_freq, baudrate);
 	} else {
 		nrf_baudrate = NRF_BAUDRATE(baudrate);
@@ -1851,11 +1853,7 @@ static void notify_uart_rx_rdy(const struct device *dev, size_t len)
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 static uint32_t us_to_bauds(uint32_t baudrate, int32_t timeout)
 {
-	/* Divide baudrate by 1000 to avoid 64 bit division. This approach is not 100% accurate
-	 * but error is insignificant (within few bauds). Precise timeout my be more important
-	 * for higher baudrates but inaccuracy diminishes with higher baudrate.
-	 */
-	uint32_t bauds = ((baudrate / 1000) * timeout) / 1000;
+	uint32_t bauds = (uint32_t)sys_div64_u32_const((uint64_t)baudrate * timeout, 1000000);
 
 	return MIN(bauds, UARTE_FRAMETIMEOUT_COUNTERTOP_Msk);
 }
@@ -3308,9 +3306,6 @@ static int uarte_instance_deinit(const struct device *dev)
 
 #define UARTE_TIMER_REG(node) (NRF_TIMER_Type *)DT_REG_ADDR(node)
 
-#define UARTE_TIMER_NODE(idx) \
-	DT_NODELABEL(NRFX_CONCAT(timer, CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER))
-
 #define UARTE_TIMER_IRQN(idx) DT_IRQN(DT_PHANDLE(UARTE(idx), timer))
 
 #define UARTE_TIMER_IRQ_PRIO(idx) DT_IRQ(DT_PHANDLE(UARTE(idx), timer), priority)
@@ -3330,9 +3325,7 @@ static int uarte_instance_deinit(const struct device *dev)
 #define UARTE_COUNT_BYTES_WITH_TIMER_COMMON_CONFIG(idx)                            \
 	.timer_regs = COND_CODE_1(UARTE_USE_TIMER_PROP(idx),                       \
 		(UARTE_TIMER_REG(DT_PHANDLE(UARTE(idx), timer))),                  \
-		(COND_CODE_1(CONFIG_UART_##idx##_NRF_HW_ASYNC,                     \
-			(UARTE_TIMER_REG(UARTE_TIMER_NODE(idx))),                  \
-			(NULL)))),                                                 \
+		(NULL)),                                                           \
 	.uarte_irqn = DT_IRQN(UARTE(idx)),
 
 #define UARTE_COUNT_BYTES_WITH_TIMER_CONFIG(idx)					\
@@ -3435,14 +3428,15 @@ static int uarte_instance_deinit(const struct device *dev)
  * must have baudrate adjust to the ratio between UARTE clocking frequency and 16 MHz.
  * Additionally, >1Mbaud speeds are calculated using a formula.
  */
-#define UARTE_GET_BAUDRATE2(f_pclk, current_speed)					\
-	((f_pclk > NRF_UARTE_BASE_FREQUENCY_16MHZ) && (current_speed > 1000000)) ?	\
-		UARTE_GET_CUSTOM_BAUDRATE(f_pclk, current_speed) :			\
-		(NRF_BAUDRATE(current_speed) / UARTE_GET_BAUDRATE_DIV(f_pclk))
+#define UARTE_GET_BAUDRATE2(idx, f_pclk, current_speed)                                            \
+	!UARTE_PROP(idx, current_speed_is_enum)                                                    \
+	? UARTE_GET_CUSTOM_BAUDRATE(f_pclk, current_speed)                                         \
+	: (NRF_BAUDRATE(current_speed) / UARTE_GET_BAUDRATE_DIV(f_pclk))
 
 /* Convert DT current-speed to a value that is written to the BAUDRATE register. */
-#define UARTE_GET_BAUDRATE(idx) \
-	UARTE_GET_BAUDRATE2(NRF_PERIPH_GET_FREQUENCY(UARTE(idx)), UARTE_PROP(idx, current_speed))
+#define UARTE_GET_BAUDRATE(idx)                                                                    \
+	UARTE_GET_BAUDRATE2(idx, NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),                             \
+			    UARTE_PROP(idx, current_speed))
 
 /* Macro for setting nRF specific configuration structures. */
 #define UARTE_NRF_CONFIG(idx) {							\
@@ -3553,7 +3547,8 @@ static int uarte_instance_deinit(const struct device *dev)
 			      "Unsupported baudrate");))		       \
 	static MAYBE_CONST struct uarte_nrfx_config uarte_##idx##z_config = {  \
 		COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,		       \
-			(.clock_freq = NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),), \
+			(.clock_freq = NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),   \
+			.use_baudrate_formula = !UARTE_PROP(idx, current_speed_is_enum),),\
 		    (IF_ENABLED(UARTE_HAS_FRAME_TIMEOUT,		       \
 			(.baudrate = UARTE_PROP(idx, current_speed),))	       \
 		     .nrf_baudrate = UARTE_GET_BAUDRATE(idx),		       \

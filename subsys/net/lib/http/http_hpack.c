@@ -10,6 +10,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/hpack.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/sys/byteorder.h>
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -94,6 +95,185 @@ const struct hpack_table_entry *http_hpack_table_get(uint32_t key)
 	}
 
 	return &http_hpack_table_static[key];
+}
+
+/* The dynamic table pool. The server advertises a table size of 0, so a
+ * client needs a table only until it has acknowledged that, and a few tables
+ * serve all clients.
+ */
+#if HTTP_HPACK_DYNAMIC_TABLE_COUNT > 0
+static struct http_hpack_dynamic_table dynamic_tables[HTTP_HPACK_DYNAMIC_TABLE_COUNT];
+#endif
+
+/* Bytes in front of each entry's strings: name length and value length. */
+#define HPACK_DYNAMIC_ENTRY_HEADER_LEN 4
+
+struct http_hpack_dynamic_table *http_hpack_dynamic_table_alloc(void)
+{
+#if HTTP_HPACK_DYNAMIC_TABLE_COUNT > 0
+	ARRAY_FOR_EACH_PTR(dynamic_tables, table) {
+		if (table->in_use) {
+			continue;
+		}
+
+		table->data_len = 0;
+		table->count = 0;
+		table->size = 0;
+		table->max_size = HTTP_HPACK_DYNAMIC_TABLE_SIZE;
+		table->in_use = true;
+
+		return table;
+	}
+#endif
+
+	return NULL;
+}
+
+void http_hpack_dynamic_table_free(struct http_hpack_dynamic_table *table)
+{
+	if (table != NULL) {
+		table->in_use = false;
+	}
+}
+
+/* Entry at the given position counted from the oldest one. */
+static uint8_t *hpack_dynamic_entry(struct http_hpack_dynamic_table *table, uint32_t pos,
+				    uint16_t *name_len, uint16_t *value_len)
+{
+	uint8_t *entry = table->data;
+
+	NET_ASSERT(pos < table->count);
+
+	while (true) {
+		*name_len = sys_get_le16(entry);
+		*value_len = sys_get_le16(entry + sizeof(uint16_t));
+
+		if (pos == 0) {
+			return entry + HPACK_DYNAMIC_ENTRY_HEADER_LEN;
+		}
+
+		entry += HPACK_DYNAMIC_ENTRY_HEADER_LEN + *name_len + *value_len;
+		pos--;
+	}
+}
+
+static void hpack_dynamic_table_evict_to(struct http_hpack_dynamic_table *table, uint32_t max_size)
+{
+	while (table->size > max_size) {
+		uint16_t name_len, value_len;
+		uint16_t entry_len;
+
+		(void)hpack_dynamic_entry(table, 0, &name_len, &value_len);
+		entry_len = (uint16_t)(HPACK_DYNAMIC_ENTRY_HEADER_LEN + name_len + value_len);
+
+		memmove(table->data, table->data + entry_len, table->data_len - entry_len);
+		table->data_len -= entry_len;
+		table->count--;
+		table->size -= name_len + value_len + HTTP_HPACK_DYNAMIC_TABLE_ENTRY_OVERHEAD;
+	}
+}
+
+/* Adds the field as the newest entry and points the header at the copy
+ * in the table. An entry larger than the table empties it (RFC 7541,
+ * Section 4.4). name_in_table tells that the name is a dynamic table
+ * reference.
+ */
+static void hpack_dynamic_table_add(struct http_hpack_dynamic_table *table,
+				    struct http_hpack_header_buf *header, bool name_in_table)
+{
+	uint32_t entry_size = (uint32_t)(header->name_len + header->value_len +
+					 HTTP_HPACK_DYNAMIC_TABLE_ENTRY_OVERHEAD);
+	uint8_t *entry;
+
+	/* A name taken from the dynamic table does not survive the eviction
+	 * below, which moves the entries, so it goes to the decode buffer
+	 * like a Huffman string, with the same size limit.
+	 */
+	if (name_in_table) {
+		if (header->name_len > sizeof(header->buf) - header->datalen) {
+			header->oversized = true;
+			return;
+		}
+
+		memcpy(header->buf + header->datalen, header->name, header->name_len);
+		header->name = header->buf + header->datalen;
+		header->datalen += header->name_len;
+	}
+
+	if (entry_size > table->max_size) {
+		hpack_dynamic_table_evict_to(table, 0);
+		return;
+	}
+
+	hpack_dynamic_table_evict_to(table, table->max_size - entry_size);
+
+	/* The size accounting leaves room: every entry counts 32 bytes on
+	 * top of its strings and is stored with 4.
+	 */
+	entry = table->data + table->data_len;
+	sys_put_le16((uint16_t)header->name_len, entry);
+	sys_put_le16((uint16_t)header->value_len, entry + sizeof(uint16_t));
+	entry += HPACK_DYNAMIC_ENTRY_HEADER_LEN;
+	memcpy(entry, header->name, header->name_len);
+	memcpy(entry + header->name_len, header->value, header->value_len);
+
+	table->data_len +=
+		(uint16_t)(HPACK_DYNAMIC_ENTRY_HEADER_LEN + header->name_len + header->value_len);
+	table->count++;
+	table->size += entry_size;
+
+	header->name = entry;
+	header->value = entry + header->name_len;
+}
+
+/* Looks an index up in the static table and the dynamic table. Returns
+ * -EBADMSG for an index neither table has, -ENOENT for a dynamic table
+ * index while there is no table.
+ */
+static int hpack_resolve_index(uint32_t index, struct http_hpack_dynamic_table *table,
+			       struct http_hpack_header_buf *header)
+{
+	const struct hpack_table_entry *entry;
+	uint16_t name_len, value_len;
+	uint8_t *strings;
+	uint32_t pos;
+
+	if (index == 0) {
+		return -EBADMSG;
+	}
+
+	entry = http_hpack_table_get(index);
+	if (entry != NULL) {
+		if (entry->name == NULL) {
+			return -EBADMSG;
+		}
+
+		header->name = entry->name;
+		header->name_len = strlen(entry->name);
+		/* Static entries with an empty value store it as NULL. */
+		header->value = (entry->value != NULL) ? entry->value : "";
+		header->value_len = strlen(header->value);
+
+		return 0;
+	}
+
+	if (table == NULL) {
+		return -ENOENT;
+	}
+
+	/* The newest entry has the lowest dynamic index. */
+	pos = index - HTTP_HPACK_STATIC_TABLE_LAST_INDEX - 1;
+	if (pos >= table->count) {
+		return -EBADMSG;
+	}
+
+	strings = hpack_dynamic_entry(table, table->count - 1 - pos, &name_len, &value_len);
+	header->name = strings;
+	header->name_len = name_len;
+	header->value = strings + name_len;
+	header->value_len = value_len;
+
+	return 0;
 }
 
 static int http_hpack_find_index(struct http_hpack_header_buf *header,
@@ -295,11 +475,11 @@ static int hpack_string_decode(const uint8_t *buf, size_t datalen,
 }
 
 static int hpack_handle_indexed(const uint8_t *buf, size_t datalen,
-				struct http_hpack_header_buf *header)
+				struct http_hpack_header_buf *header,
+				struct http_hpack_dynamic_table *table)
 {
-	const struct hpack_table_entry *entry;
 	uint32_t index;
-	int ret;
+	int ret, len;
 
 	ret = hpack_integer_decode(buf, datalen, HPACK_PREFIX_LEN_INDEXED,
 				   &index);
@@ -307,31 +487,26 @@ static int hpack_handle_indexed(const uint8_t *buf, size_t datalen,
 		return ret;
 	}
 
-	if (index == 0) {
-		return -EBADMSG;
+	len = ret;
+
+	ret = hpack_resolve_index(index, table, header);
+	if (ret < 0 && ret != -ENOENT) {
+		return ret;
 	}
 
-	entry = http_hpack_table_get(index);
-	if (entry == NULL) {
-		return -EBADMSG;
+	if (ret == -ENOENT) {
+		header->unresolved = true;
+		header->name_len = 0;
+		header->value_len = 0;
 	}
 
-	if (entry->name == NULL) {
-		return -EBADMSG;
-	}
-
-	header->name = entry->name;
-	header->name_len = strlen(entry->name);
-	/* Static entries with an empty value store it as NULL. */
-	header->value = (entry->value != NULL) ? entry->value : "";
-	header->value_len = strlen(header->value);
-
-	return ret;
+	return len;
 }
 
 static int hpack_handle_literal(const uint8_t *buf, size_t datalen,
 				struct http_hpack_header_buf *header,
-				uint8_t prefix_len)
+				struct http_hpack_dynamic_table *table, uint8_t prefix_len,
+				bool add_to_table)
 {
 	uint32_t index;
 	int ret, len;
@@ -360,21 +535,18 @@ static int hpack_handle_literal(const uint8_t *buf, size_t datalen,
 		datalen -= ret;
 	} else {
 		/* Indexed name. */
-		const struct hpack_table_entry *entry;
-
-		entry = http_hpack_table_get(index);
-		if (entry == NULL) {
-			return -EBADMSG;
+		ret = hpack_resolve_index(index, table, header);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
 		}
 
-		if (entry->name == NULL) {
-			return -EBADMSG;
+		if (ret == -ENOENT) {
+			header->unresolved = true;
+			header->name_len = 0;
 		}
-
-		header->name = entry->name;
-		header->name_len = strlen(entry->name);
 	}
 
+	/* The value is consumed even when the name is unresolved. */
 	ret = hpack_string_decode(buf, datalen, HPACK_HEADER_VALUE, header);
 	if (ret < 0) {
 		return ret;
@@ -382,30 +554,42 @@ static int hpack_handle_literal(const uint8_t *buf, size_t datalen,
 
 	len += ret;
 
+	if (header->unresolved) {
+		header->value_len = 0;
+	} else if (add_to_table && table != NULL && !header->oversized) {
+		/* An oversized field is not stored: it ends the request, and
+		 * its decoded length is unknown.
+		 */
+		hpack_dynamic_table_add(table, header, index > HTTP_HPACK_STATIC_TABLE_LAST_INDEX);
+	} else {
+		/* Not added to the table. */
+	}
+
 	return len;
 }
 
 static int hpack_handle_literal_index(const uint8_t *buf, size_t datalen,
-			       struct http_hpack_header_buf *header)
+				      struct http_hpack_header_buf *header,
+				      struct http_hpack_dynamic_table *table)
 {
-	/* TODO Add dynamic table support, if needed. */
-
-	return hpack_handle_literal(buf, datalen, header,
-				    HPACK_PREFIX_LEN_LITERAL_INDEXING);
+	return hpack_handle_literal(buf, datalen, header, table, HPACK_PREFIX_LEN_LITERAL_INDEXING,
+				    true);
 }
 
 static int hpack_handle_literal_no_index(const uint8_t *buf, size_t datalen,
-				  struct http_hpack_header_buf *header)
+					 struct http_hpack_header_buf *header,
+					 struct http_hpack_dynamic_table *table)
 {
-	return hpack_handle_literal(buf, datalen, header,
-				    HPACK_PREFIX_LEN_LITERAL_NO_INDEXING);
+	return hpack_handle_literal(buf, datalen, header, table,
+				    HPACK_PREFIX_LEN_LITERAL_NO_INDEXING, false);
 }
 
-/* The size requested is reported to the caller, who knows what it has
- * advertised; no dynamic table is kept here.
+/* The size requested is applied to the table, if any, and reported to the
+ * caller, who knows what it has advertised.
  */
 static int hpack_handle_dynamic_size_update(const uint8_t *buf, size_t datalen,
-					    struct http_hpack_header_buf *header)
+					    struct http_hpack_header_buf *header,
+					    struct http_hpack_dynamic_table *table)
 {
 	uint32_t max_size;
 	int ret;
@@ -416,6 +600,15 @@ static int hpack_handle_dynamic_size_update(const uint8_t *buf, size_t datalen,
 		return ret;
 	}
 
+	if (table != NULL) {
+		if (max_size > HTTP_HPACK_DYNAMIC_TABLE_SIZE) {
+			return -EBADMSG;
+		}
+
+		table->max_size = max_size;
+		hpack_dynamic_table_evict_to(table, max_size);
+	}
+
 	header->type = HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE;
 	header->table_size = max_size;
 	header->name_len = 0;
@@ -424,8 +617,15 @@ static int hpack_handle_dynamic_size_update(const uint8_t *buf, size_t datalen,
 	return ret;
 }
 
+bool http_hpack_entry_adds_to_table(const uint8_t *buf, size_t datalen)
+{
+	return datalen > 0 &&
+	       (*buf & HPACK_PREFIX_LITERAL_INDEXING_MASK) == HPACK_PREFIX_LITERAL_INDEXING;
+}
+
 int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
-			     struct http_hpack_header_buf *header)
+			     struct http_hpack_header_buf *header,
+			     struct http_hpack_dynamic_table *table)
 {
 	uint8_t prefix;
 	int ret;
@@ -440,21 +640,22 @@ int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
 
 	header->type = HTTP_HPACK_ENTRY_FIELD;
 	header->oversized = false;
+	header->unresolved = false;
 	prefix = *buf;
 
 	if ((prefix & HPACK_PREFIX_INDEXED_MASK) == HPACK_PREFIX_INDEXED) {
-		ret = hpack_handle_indexed(buf, datalen, header);
+		ret = hpack_handle_indexed(buf, datalen, header, table);
 	} else if ((prefix & HPACK_PREFIX_LITERAL_INDEXING_MASK) ==
 		   HPACK_PREFIX_LITERAL_INDEXING) {
-		ret = hpack_handle_literal_index(buf, datalen, header);
+		ret = hpack_handle_literal_index(buf, datalen, header, table);
 	} else if (((prefix & HPACK_PREFIX_LITERAL_NO_INDEXING_MASK) ==
 		    HPACK_PREFIX_LITERAL_NO_INDEXING) ||
 		   ((prefix & HPACK_PREFIX_LITERAL_NEVER_INDEXED_MASK) ==
 		    HPACK_PREFIX_LITERAL_NEVER_INDEXED)) {
-		ret = hpack_handle_literal_no_index(buf, datalen, header);
+		ret = hpack_handle_literal_no_index(buf, datalen, header, table);
 	} else if ((prefix & HPACK_PREFIX_DYNAMIC_TABLE_SIZE_MASK) ==
 		   HPACK_PREFIX_DYNAMIC_TABLE_SIZE_UPDATE) {
-		ret = hpack_handle_dynamic_size_update(buf, datalen, header);
+		ret = hpack_handle_dynamic_size_update(buf, datalen, header, table);
 	} else {
 		ret = -EINVAL;
 	}

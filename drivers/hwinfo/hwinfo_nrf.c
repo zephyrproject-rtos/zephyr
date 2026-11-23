@@ -23,20 +23,21 @@
 #include <hal/nrf_ficr.h>
 #endif
 
-#if defined(CONFIG_HAS_IRONSIDE_SE) && (TARGET_IRONSIDE_SE_VERSION > IRONSIDE_SE_V23_0_2_17)
+#if defined(CONFIG_HAS_IRONSIDE_SE)
 #include <ironside/se/boot_report.h>
+#if defined(IRONSIDE_SE_APPLICATION_BOOT_REPORT_ADDRESS) && \
+	(TARGET_IRONSIDE_SE_VERSION > IRONSIDE_SE_V23_0_2_17)
 #define IRONSIDE_BOOT_REPORT \
 	(const struct ironside_se_boot_report *)IRONSIDE_SE_APPLICATION_BOOT_REPORT_ADDRESS
 #endif
-
-struct nrf_uid {
-	uint32_t id[2];
-};
+#endif
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
-	struct nrf_uid dev_id;
+#if NRF_FICR_HAS_DEVICE_ID || NRF_FICR_HAS_INFO_DEVICE_ID || \
+	NRF_FICR_HAS_DEVICE_ADDR || NRF_FICR_HAS_BLE_ADDR
 	uint32_t buf[2];
+	uint32_t dev_id[2];
 
 #if NRF_FICR_HAS_DEVICE_ID || NRF_FICR_HAS_INFO_DEVICE_ID
 	/* DEVICEID is accessible, use this */
@@ -46,7 +47,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	buf[0] = nrf_ficr_deviceid_get(NRF_FICR, 0);
 	buf[1] = nrf_ficr_deviceid_get(NRF_FICR, 1);
 #endif
-#elif NRF_FICR_HAS_DEVICE_ADDR || NRF_FICR_HAS_BLE_ADDR
+#else
 	/* DEVICEID is not accessible, use device/Bluetooth LE address instead.
 	 * Assume that it is always accessible from the non-secure image.
 	 */
@@ -58,32 +59,31 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	 */
 	buf[1] |= (nrf_ficr_er_get(NRF_FICR, 0) & 0xFF) << 16;
 	buf[1] |= (nrf_ficr_ir_get(NRF_FICR, 0) & 0xFF) << 24;
+#endif /* NRF_FICR_HAS_INFO_DEVICE_ID || NRF_FICR_HAS_INFO_DEVICE_ID */
+
+	dev_id[0] = sys_cpu_to_be32(buf[1]);
+	dev_id[1] = sys_cpu_to_be32(buf[0]);
+
+	if (length > sizeof(dev_id)) {
+		length = sizeof(dev_id);
+	}
+
+	memcpy(buffer, dev_id, length);
+
+	return length;
 #elif defined(IRONSIDE_BOOT_REPORT)
 	/* DEVICEID is not accessible, use Ironside SE boot report instead. */
 	const struct ironside_se_boot_report *report = IRONSIDE_BOOT_REPORT;
 
-	buf[0] = (report->device_info_uuid[0]) |
-		 (report->device_info_uuid[1] << 8) |
-		 (report->device_info_uuid[2] << 16) |
-		 ((uint32_t)report->device_info_uuid[3] << 24);
-	buf[1] = (report->device_info_uuid[4]) |
-		 (report->device_info_uuid[5] << 8) |
-		 (report->device_info_uuid[6] << 16) |
-		 ((uint32_t)report->device_info_uuid[7] << 24);
+	if (length > sizeof(report->device_info_uuid)) {
+		length = sizeof(report->device_info_uuid);
+	}
+	memcpy(buffer, report->device_info_uuid, length);
+
+	return length;
 #else
 #error "No suitable source for hwinfo device_id generation"
 #endif
-
-	dev_id.id[0] = sys_cpu_to_be32(buf[1]);
-	dev_id.id[1] = sys_cpu_to_be32(buf[0]);
-
-	if (length > sizeof(dev_id.id)) {
-		length = sizeof(dev_id.id);
-	}
-
-	memcpy(buffer, dev_id.id, length);
-
-	return length;
 }
 
 #if RESET_CAUSE_AVAILABLE

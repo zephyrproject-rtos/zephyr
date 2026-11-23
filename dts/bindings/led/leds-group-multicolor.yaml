@@ -11,6 +11,8 @@ compatible: "leds-group-multicolor"
 
 include: led-node.yaml
 
+class: led
+
 properties:
   leds:
     required: true

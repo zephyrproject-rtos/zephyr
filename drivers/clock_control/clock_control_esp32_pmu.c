@@ -218,7 +218,7 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 	 * at sleep entry to read stale values (0) and write an invalid
 	 * regulator bias which brown-outs the core.
 	 */
-#if !defined(CONFIG_SOC_ESP32_ENABLE_PVT)
+#if !defined(CONFIG_SOC_FAMILY_ESPRESSIF_ENABLE_PVT)
 	uint32_t hp_cali_dbias = get_act_hp_dbias();
 	uint32_t lp_cali_dbias = get_act_lp_dbias();
 
@@ -232,7 +232,7 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 			  hp_cali_dbias, PMU_HP_MODEM_HP_REGULATOR_DBIAS_S);
 	SET_PERI_REG_BITS(PMU_HP_SLEEP_LP_REGULATOR0_REG, PMU_HP_SLEEP_LP_REGULATOR_DBIAS,
 			  lp_cali_dbias, PMU_HP_SLEEP_LP_REGULATOR_DBIAS_S);
-#endif /* !CONFIG_SOC_ESP32_ENABLE_PVT */
+#endif /* !CONFIG_SOC_FAMILY_ESPRESSIF_ENABLE_PVT */
 
 #if !defined(CONFIG_SOC_SERIES_ESP32P4)
 	clk_ll_rc_fast_tick_conf();
@@ -258,14 +258,16 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 		clock_init_done = true;
 	}
 
-#if defined(CONFIG_ESP_CONSOLE_UART)
-	esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART)
+	esp_rom_output_tx_wait_idle(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM);
 
 	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_XTAL) {
-		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_XTAL);
-		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
-				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, cpu_cfg->xtal_freq * MHZ(1));
-		esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				 UART_SCLK_XTAL);
+		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				     CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_BAUDRATE,
+				     cpu_cfg->xtal_freq * MHZ(1));
+		esp_rom_output_tx_wait_idle(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM);
 	}
 #endif
 
@@ -344,6 +346,18 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 
 	unsigned int key = irq_lock();
 
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+	/* Leave the divided XTAL clock before the BBPLL is recalibrated */
+	if (new_config.source == SOC_CPU_CLK_SRC_PLL && old_config.source == SOC_CPU_CLK_SRC_XTAL &&
+	    old_config.div > 1) {
+		rtc_cpu_freq_config_t xtal_config;
+
+		if (rtc_clk_cpu_freq_mhz_to_config(cpu_cfg->xtal_freq, &xtal_config)) {
+			rtc_clk_cpu_freq_set_config(&xtal_config);
+		}
+	}
+#endif
+
 	rtc_clk_cpu_freq_set_config(&new_config);
 
 	esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * cpu_cfg->cpu_freq /
@@ -362,7 +376,7 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 	}
 #endif
 
-#if defined(CONFIG_ESP_CONSOLE_UART)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART)
 #if defined(CONFIG_SOC_SERIES_ESP32C61)
 	/* On C61 the BBPLL (and thus PLL_F80M) is transiently disabled later in
 	 * boot - e.g. the ocode calibration in pmu_init calls
@@ -372,9 +386,11 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 	 * uart_ll_update() completes and TX never stalls.
 	 */
 	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL) {
-		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_XTAL);
-		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
-				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, cpu_cfg->xtal_freq * MHZ(1));
+		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				 UART_SCLK_XTAL);
+		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				     CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_BAUDRATE,
+				     cpu_cfg->xtal_freq * MHZ(1));
 	}
 #elif defined(CONFIG_SOC_SERIES_ESP32P4)
 	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL) {
@@ -388,9 +404,11 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 		 */
 		uint32_t uart_sclk_freq = (uint32_t)rtc_clk_xtal_freq_get() * MHZ(1);
 
-		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_XTAL);
-		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
-				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_sclk_freq);
+		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				 UART_SCLK_XTAL);
+		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				     CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_BAUDRATE,
+				     uart_sclk_freq);
 	}
 #else
 	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL) {
@@ -401,9 +419,11 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 #if defined(CONFIG_SOC_SERIES_ESP32C5)
 		esp_clk_tree_enable_src(UART_SCLK_DEFAULT, true);
 #endif
-		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_DEFAULT);
-		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
-				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_sclk_freq);
+		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				 UART_SCLK_DEFAULT);
+		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM),
+				     CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_BAUDRATE,
+				     uart_sclk_freq);
 	}
 #endif
 #endif

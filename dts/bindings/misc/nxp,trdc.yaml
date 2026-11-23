@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Trusted Resource Domain Controller master assignments.
+
+  Each child represents one Master Domain Assignment Controller (MDAC),
+  not necessarily one peripheral or DMA channel. A child's reg is
+  the MDAC index within this TRDC instance. Masters that share an MDAC
+  must be represented by one child and cannot be assigned independently.
+  Valid MDAC indices and master mappings depend on the TRDC instance.
+
+  SoC devicetrees describe the masters and their default assignments as
+  children. Boards and applications may override a child's domain-id or
+  disable it to leave its assignment unchanged.
+
+compatible: "nxp,trdc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+child-binding:
+  description: One MDAC assignment for a non-core master or a group of shared non-core masters.
+  include:
+    - name: base.yaml
+      property-allowlist: [reg, status]
+  properties:
+    reg:
+      required: true
+      description: MDAC index within the parent TRDC, not a DMA channel number.
+
+    domain-id:
+      type: int
+      required: true
+      min: 0
+      max: 15
+      description: |
+        Domain ID assigned to this master. The ID must be supported by the
+        parent controller; the number of implemented domains depends on the SoC.

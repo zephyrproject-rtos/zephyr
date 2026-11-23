@@ -12,6 +12,7 @@ Ethernet
 
    mac_config.rst
    vlan.rst
+   ethernet_bridge.rst
    lldp.rst
    8021Qav.rst
 
@@ -32,6 +33,7 @@ Zephyr supports following Ethernet features:
 * MAC address filtering
 * :ref:`MAC address configuration <mac_address_config>`
 * :ref:`Virtual LANs <vlan_interface>`
+* :ref:`Bridging and the Rapid Spanning Tree Protocol <ethernet_bridge_interface>`
 * :ref:`Priority queues <traffic-class-support>`
 * :ref:`IEEE 802.1AS (gPTP) <gptp_interface>`
 * :ref:`IEEE 802.1Qav (credit based shaping) <8021Qav>`

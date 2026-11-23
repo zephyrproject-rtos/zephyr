@@ -44,6 +44,10 @@ cpusys_vevif: &cpusys_vevif_tx {};
 	ranges;
 };
 
+&cpuppr_vpr {
+	status = "okay";
+};
+
 &cpuppr_clic {
 	status = "okay";
 };

@@ -240,6 +240,13 @@
 		status = "okay";
 	};
 
+	ocotp: ocotp@a000 {
+		compatible = "nxp,rw6xx-ocotp";
+		reg = <0xa000 0x690>;
+		clocks = <&clkctl0 MCUX_SYSTEM_CLK>;
+		status = "disabled";
+	};
+
 	wwdt: watchdog@e000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0xe000 0x1000>;
@@ -704,7 +711,7 @@
 		};
 	};
 
-	os_timer: timers@13b000 {
+	os_timer: ostimer0: timers@13b000 {
 		compatible = "nxp,os-timer";
 		reg = <0x13b000 0x1000>;
 		interrupts = <41 0>;
@@ -774,6 +781,7 @@
 
 &flexspi {
 	compatible = "nxp,imx-flexspi";
+	ipeds;
 	interrupts = <42 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;

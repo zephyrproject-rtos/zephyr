@@ -1,0 +1,16 @@
+common:
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags:
+    - net
+    - socket
+    - tls
+    - tls_credentials
+tests:
+  net.socket.tls.keygen.tls1_2: {}
+  net.socket.tls.keygen.tls1_3:
+    extra_configs:
+      - CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_AES_128_GCM_SHA256=y
+      - CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED=y

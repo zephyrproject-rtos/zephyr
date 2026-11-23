@@ -41,6 +41,10 @@
 	load-capacitance-femtofarad = <15000>;
 };
 
+&regulators {
+	status = "okay";
+};
+
 &vregmain {
 	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
 	status = "okay";
@@ -90,10 +94,6 @@
 };
 
 &xo {
-	status = "okay";
-};
-
-&bt_hci_controller {
 	status = "okay";
 };
 

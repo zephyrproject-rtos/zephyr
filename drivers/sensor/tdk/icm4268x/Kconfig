@@ -62,6 +62,8 @@ config ICM4268X_STREAM
 	default y
 	depends on SPI_RTIO
 	depends on SENSOR_ASYNC_API
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM4268X),int-gpios)
 	help
 	  Use this config option to enable streaming sensor data via RTIO subsystem.
 

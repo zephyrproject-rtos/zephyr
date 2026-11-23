@@ -47,3 +47,8 @@
 };
 
 i3c_controller: &i3c1 {};
+
+/* i2c2 shares PB14 with i3c2_sda; disable it to avoid a pinctrl conflict */
+&i2c2 {
+	status = "disabled";
+};

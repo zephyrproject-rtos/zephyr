@@ -448,21 +448,24 @@ void net_if_stats_reset_all(void)
 static inline void init_iface(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct net_if_api *api;
+	const struct net_if_driver_api *api;
 
 	NET_ASSERT(dev != NULL);
+
+	/* The interface stays in the list when its device is not ready, and
+	 * code that walks all interfaces still takes these locks.
+	 */
+	k_mutex_init(&iface->lock);
+	k_mutex_init(&iface->tx_lock);
 
 	if (!device_is_ready(dev)) {
 		NET_ERR("Iface %p device not ready", iface);
 		return;
 	}
 
-	api = dev->api;
+	api = DEVICE_API_GET(net_if, dev);
 
-	if (!api || !api->init) {
-		NET_ERR("Iface %p driver API init NULL", iface);
-		return;
-	}
+	NET_ASSERT(api->init != NULL, "Iface %p driver API init NULL", iface);
 
 	/* By default IPv4 and IPv6 are enabled for a given network interface.
 	 * These can be turned off later if needed.
@@ -482,15 +485,40 @@ static inline void init_iface(struct net_if *iface)
 	k_object_init(iface);
 #endif
 
-	k_mutex_init(&iface->lock);
-	k_mutex_init(&iface->tx_lock);
-
 	api->init(iface);
 
 	net_ipv6_pe_init(iface);
 }
 
 #if defined(CONFIG_NET_NATIVE)
+#if defined(CONFIG_NET_LOOPBACK_FRAGMENT)
+/* Run only the fragmentation step of the IP send checks, so that a packet
+ * larger than the loopback MTU is fragmented and reassembled like on a real
+ * link. Raw IP sockets bypass the checks as they do on other interfaces.
+ */
+static enum net_verdict loopback_prepare_for_send(struct net_pkt *pkt,
+						  struct net_context *context)
+{
+	if (context != NULL && net_context_get_type(context) == NET_SOCK_RAW) {
+		return NET_OK;
+	}
+
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+	if (net_pkt_family(pkt) == NET_AF_INET6) {
+		return net_ipv6_prepare_for_send_fragment(pkt);
+	}
+#endif
+
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+	if (net_pkt_family(pkt) == NET_AF_INET) {
+		return net_ipv4_prepare_for_send_fragment(pkt);
+	}
+#endif
+
+	return NET_OK;
+}
+#endif /* CONFIG_NET_LOOPBACK_FRAGMENT */
+
 enum net_verdict net_if_try_send_data(struct net_if *iface, struct net_pkt *pkt,
 				      k_timeout_t timeout)
 {
@@ -548,6 +576,9 @@ enum net_verdict net_if_try_send_data(struct net_if *iface, struct net_pkt *pkt,
 	 * additional checks, so let the packet through.
 	 */
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
+#if defined(CONFIG_NET_LOOPBACK_FRAGMENT)
+		verdict = loopback_prepare_for_send(pkt, context);
+#endif
 		goto done;
 	}
 #endif
@@ -3841,10 +3872,9 @@ static bool use_public_address(bool prefer_public, bool is_temporary,
 }
 
 static struct net_in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
-						   const struct net_in6_addr *dst,
-						   uint8_t prefix_len,
-						   uint8_t *best_so_far,
-						   int flags)
+						       const struct net_in6_addr *dst,
+						       uint8_t prefix_len, uint8_t *best_so_far,
+						       int flags, bool vpn_subnet_only)
 {
 	enum net_addr_state addr_state = NET_ADDR_ANY_STATE;
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
@@ -3871,16 +3901,11 @@ static struct net_in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 			continue;
 		}
 
-		if (!IS_ENABLED(CONFIG_NET_IPV6_ROUTE) && IS_ENABLED(CONFIG_NET_VPN)) {
-			/* If the IPv6 routing is disabled, then do some extra checks which
-			 * try to route the packet to correct network interface. Preferably
-			 * the IP routing should direct the packet to correct interface so this
-			 * extra check is not needed. Without this the IPv6 packets might go
-			 * to VPN interface for subnets that are not on the same subnet as the
-			 * VPN interface which typically is not desired.
-			 *
-			 * For the VPN interface, we need to check if
-			 * address matches exactly the address of the interface.
+		if (IS_ENABLED(CONFIG_NET_VPN) && vpn_subnet_only) {
+			/* An address of a VPN interface is used only for destinations in
+			 * its own subnet. Without this, the longest prefix match can pick
+			 * the tunnel address for a destination on another network, the
+			 * VPN peer endpoint included, which typically is not desired.
 			 */
 #if defined(CONFIG_NET_NATIVE_IPV6)
 			if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
@@ -4076,20 +4101,20 @@ const struct net_in6_addr *net_if_ipv6_select_src_addr_hint(struct net_if *dst_i
 		}
 #endif /* CONFIG_NET_NATIVE_IPV6 */
 
-		/* If caller has supplied interface, then use that */
+		/* If caller has supplied interface, then use that. Otherwise,
+		 * as neither the caller nor the route table picked an
+		 * interface, a VPN interface address is no candidate outside
+		 * its own subnet.
+		 */
 		if (dst_iface) {
-			src = net_if_ipv6_get_best_match(dst_iface, dst,
-							 prefix_len,
-							 &best_match,
-							 flags);
+			src = net_if_ipv6_get_best_match(dst_iface, dst, prefix_len, &best_match,
+							 flags, !IS_ENABLED(CONFIG_NET_IPV6_ROUTE));
 		} else {
 			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct net_in6_addr *addr;
 
-				addr = net_if_ipv6_get_best_match(iface, dst,
-								  prefix_len,
-								  &best_match,
-								  flags);
+				addr = net_if_ipv6_get_best_match(iface, dst, prefix_len,
+								  &best_match, flags, true);
 				if (addr) {
 					src = addr;
 				}
@@ -4742,7 +4767,7 @@ static inline bool is_proper_ipv4_address(struct net_if_addr *addr)
 static struct net_in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 						      const struct net_in_addr *dst,
 						      uint8_t *best_so_far, bool ll,
-						      bool allow_loopback)
+						      bool allow_loopback, bool vpn_subnet_only)
 {
 	struct net_if_ipv4 *ipv4;
 	struct net_in_addr *src = NULL;
@@ -4775,16 +4800,11 @@ static struct net_in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 			continue;
 		}
 
-		if (!IS_ENABLED(CONFIG_NET_IPV4_ROUTE) && IS_ENABLED(CONFIG_NET_VPN)) {
-			/* If the IPv4 routing is disabled, then do some extra checks which
-			 * try to route the packet to correct network interface. Preferably
-			 * the IP routing should direct the packet to correct interface so this
-			 * extra check is not needed. Without this the IPv4 packets might go
-			 * to VPN interface for subnets that are not on the same subnet as the
-			 * VPN interface which typically is not desired.
-			 *
-			 * For the VPN interface, we need to check if the IPv4
-			 * address matches exactly the address of the interface.
+		if (IS_ENABLED(CONFIG_NET_VPN) && vpn_subnet_only) {
+			/* An address of a VPN interface is used only for destinations in
+			 * its own subnet. Without this, the longest prefix match can pick
+			 * the tunnel address for a destination on another network, the
+			 * VPN peer endpoint included, which typically is not desired.
 			 */
 			if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
 			    (net_virtual_get_iface_capabilities(iface) &
@@ -4901,16 +4921,21 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 
 	if (!net_ipv4_is_ll_addr(dst)) {
 
-		/* If caller has supplied interface, then use that */
+		/* If caller has supplied interface, then use that. Otherwise,
+		 * as neither the caller nor the route table picked an
+		 * interface, a VPN interface address is no candidate outside
+		 * its own subnet.
+		 */
 		if (dst_iface) {
 			src = net_if_ipv4_get_best_match(dst_iface, dst, &best_match, false,
-							 allow_loopback);
+							 allow_loopback,
+							 !IS_ENABLED(CONFIG_NET_IPV4_ROUTE));
 		} else {
 			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct net_in_addr *addr;
 
 				addr = net_if_ipv4_get_best_match(iface, dst, &best_match, false,
-								  allow_loopback);
+								  allow_loopback, true);
 				if (addr) {
 					src = addr;
 				}
@@ -4925,7 +4950,7 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 
 			STRUCT_SECTION_FOREACH(net_if, iface) {
 				addr = net_if_ipv4_get_best_match(iface, dst, &best_match, true,
-								  allow_loopback);
+								  allow_loopback, true);
 				if (addr) {
 					src = addr;
 				}
@@ -4936,7 +4961,7 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 			 * no better match on any other interface.
 			 */
 			addr = net_if_ipv4_get_best_match(net_if_get_default(), dst, &best_match,
-							  true, allow_loopback);
+							  true, allow_loopback, true);
 			if (addr) {
 				src = addr;
 			}
@@ -6799,20 +6824,6 @@ static void rejoin_multicast_groups(struct net_if *iface)
 
 static void notify_iface_up(struct net_if *iface)
 {
-	/* In many places it's assumed that link address was set with
-	 * net_if_set_link_addr(). Better check that now.
-	 */
-	if (IS_ENABLED(CONFIG_NET_L2_CANBUS_RAW) &&
-	    IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
-	    (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)))	{
-		/* CAN does not require link address. */
-	} else {
-		if (!net_if_is_offloaded(iface)) {
-			NET_ASSERT(net_if_get_link_addr(iface) != NULL &&
-				   net_if_get_link_addr(iface)->len > 0);
-		}
-	}
-
 	net_if_flag_set(iface, NET_IF_RUNNING);
 	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
 

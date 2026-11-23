@@ -41,24 +41,26 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
 static int tcp_max_timeout_ms;
-static int tcp_rx_window =
+static uint32_t tcp_rx_window =
 #if (CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE != 0)
 	CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE;
 #else
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
-	MIN((CONFIG_NET_BUF_RX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3, UINT16_MAX);
+	MIN((uint32_t)((CONFIG_NET_BUF_RX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3),
+	    NET_TCP_MAX_WINDOW);
 #else
-	MIN(CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE / 3, UINT16_MAX);
+	MIN((uint32_t)(CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE / 3), NET_TCP_MAX_WINDOW);
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 #endif
-static int tcp_tx_window =
+static uint32_t tcp_tx_window =
 #if (CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE != 0)
 	CONFIG_NET_TCP_MAX_SEND_WINDOW_SIZE;
 #else
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
-	MIN((CONFIG_NET_BUF_TX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3, UINT16_MAX);
+	MIN((uint32_t)((CONFIG_NET_BUF_TX_COUNT * CONFIG_NET_BUF_DATA_SIZE) / 3),
+	    NET_TCP_MAX_WINDOW);
 #else
-	MIN(CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE / 3, UINT16_MAX);
+	MIN((uint32_t)(CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE / 3), NET_TCP_MAX_WINDOW);
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 #endif
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
@@ -557,7 +559,7 @@ static void tcp_derive_rto(struct tcp *conn)
 
 static void tcp_new_reno_log(struct tcp *conn, char *step)
 {
-	NET_DBG("[%p] ca %s, cwnd=%d, ssthres=%d, fast_pend=%i",
+	NET_DBG("[%p] ca %s, cwnd=%u, ssthres=%u, fast_pend=%u",
 		conn, step, conn->ca.cwnd, conn->ca.ssthresh,
 		conn->ca.pending_fast_retransmit_bytes);
 }
@@ -570,6 +572,14 @@ static void tcp_new_reno_init(struct tcp *conn)
 	tcp_new_reno_log(conn, "init");
 }
 
+static void tcp_new_reno_timeout(struct tcp *conn)
+{
+	conn->ca.ssthresh = MAX(conn_mss(conn) * 2, conn->unacked_len / 2);
+	conn->ca.cwnd = conn_mss(conn);
+	tcp_new_reno_log(conn, "timeout");
+}
+
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 static void tcp_new_reno_fast_retransmit(struct tcp *conn)
 {
 	if (conn->ca.pending_fast_retransmit_bytes == 0) {
@@ -581,22 +591,16 @@ static void tcp_new_reno_fast_retransmit(struct tcp *conn)
 	}
 }
 
-static void tcp_new_reno_timeout(struct tcp *conn)
-{
-	conn->ca.ssthresh = MAX(conn_mss(conn) * 2, conn->unacked_len / 2);
-	conn->ca.cwnd = conn_mss(conn);
-	tcp_new_reno_log(conn, "timeout");
-}
-
 /* For every duplicate ack increment the cwnd by mss */
 static void tcp_new_reno_dup_ack(struct tcp *conn)
 {
 	int32_t new_win = conn->ca.cwnd;
 
 	new_win += conn_mss(conn);
-	conn->ca.cwnd = MIN(new_win, UINT16_MAX);
+	conn->ca.cwnd = MIN(new_win, NET_TCP_MAX_WINDOW);
 	tcp_new_reno_log(conn, "dup_ack");
 }
+#endif /* CONFIG_NET_TCP_FAST_RETRANSMIT */
 
 static void tcp_new_reno_pkts_acked(struct tcp *conn, uint32_t acked_len)
 {
@@ -610,7 +614,7 @@ static void tcp_new_reno_pkts_acked(struct tcp *conn, uint32_t acked_len)
 			/* Implement a div_ceil	to avoid rounding to 0 */
 			new_win += ((win_inc * win_inc) + conn->ca.cwnd - 1) / conn->ca.cwnd;
 		}
-		conn->ca.cwnd = MIN(new_win, UINT16_MAX);
+		conn->ca.cwnd = MIN(new_win, NET_TCP_MAX_WINDOW);
 	} else {
 		/* Check if it is still in fast recovery mode */
 		if (conn->ca.pending_fast_retransmit_bytes <= acked_len) {
@@ -629,20 +633,22 @@ static void tcp_ca_init(struct tcp *conn)
 	tcp_new_reno_init(conn);
 }
 
-static void tcp_ca_fast_retransmit(struct tcp *conn)
-{
-	tcp_new_reno_fast_retransmit(conn);
-}
-
 static void tcp_ca_timeout(struct tcp *conn)
 {
 	tcp_new_reno_timeout(conn);
+}
+
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+static void tcp_ca_fast_retransmit(struct tcp *conn)
+{
+	tcp_new_reno_fast_retransmit(conn);
 }
 
 static void tcp_ca_dup_ack(struct tcp *conn)
 {
 	tcp_new_reno_dup_ack(conn);
 }
+#endif /* CONFIG_NET_TCP_FAST_RETRANSMIT */
 
 static void tcp_ca_pkts_acked(struct tcp *conn, uint32_t acked_len)
 {
@@ -652,11 +658,13 @@ static void tcp_ca_pkts_acked(struct tcp *conn, uint32_t acked_len)
 
 static void tcp_ca_init(struct tcp *conn) { }
 
-static void tcp_ca_fast_retransmit(struct tcp *conn) { }
-
 static void tcp_ca_timeout(struct tcp *conn) { }
 
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+static void tcp_ca_fast_retransmit(struct tcp *conn) { }
+
 static void tcp_ca_dup_ack(struct tcp *conn) { }
+#endif /* CONFIG_NET_TCP_FAST_RETRANSMIT */
 
 static void tcp_ca_pkts_acked(struct tcp *conn, uint32_t acked_len) { }
 
@@ -1221,7 +1229,7 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 				goto end;
 			}
 
-			recv_options->window = opt;
+			recv_options->wnd_shift = options[2];
 			recv_options->wnd_found = true;
 			break;
 		case NET_TCP_SACK_PERM_OPT:
@@ -1264,8 +1272,10 @@ static bool tcp_should_ack_immediately(struct tcp *conn, bool psh)
 		return true;
 	}
 
-	/* RFC 813: interactive/small-window heuristic. */
-	if (!tcp_short_window(conn) && psh) {
+	/* RFC 813: interactive/small-window heuristic, unless TCP_QUICKACK
+	 * was turned off to let a reply carry the ACK.
+	 */
+	if (!conn->delay_psh_ack && !tcp_short_window(conn) && psh) {
 		return true;
 	}
 
@@ -1298,11 +1308,11 @@ static int tcp_update_recv_wnd(struct tcp *conn, int32_t delta)
 	bool short_win_before;
 	bool short_win_after;
 
-	new_win = conn->recv_win + delta;
+	new_win = (int32_t)conn->recv_win + delta;
 	if (new_win < 0) {
 		new_win = 0;
-	} else if (new_win > conn->recv_win_max) {
-		new_win = conn->recv_win_max;
+	} else if (new_win > (int32_t)conn->recv_win_max) {
+		new_win = (int32_t)conn->recv_win_max;
 	}
 
 	short_win_before = tcp_short_window(conn);
@@ -1434,6 +1444,37 @@ static int tcp_finalize_pkt(struct net_pkt *pkt)
 	return -EINVAL;
 }
 
+/* Window field of an outgoing segment. A SYN or SYN-ACK carries the window
+ * unscaled (RFC 7323 section 2.2). Other segments carry it right-shifted by
+ * the receive shift and rounded up, so the advertised right edge never moves
+ * left only because of the scale granularity (RFC 7323 section 2.4).
+ */
+static uint16_t tcp_adv_win(struct tcp *conn, uint8_t flags)
+{
+	uint32_t win;
+	uint32_t edge;
+
+	if ((flags & SYN) != 0) {
+		return (uint16_t)MIN(conn->recv_win, UINT16_MAX);
+	}
+
+	if (conn->recv_win_shift == 0U) {
+		return (uint16_t)MIN(conn->recv_win, UINT16_MAX);
+	}
+
+	win = DIV_ROUND_UP(conn->recv_win, 1U << conn->recv_win_shift);
+	win = MIN(win, UINT16_MAX);
+
+	if ((flags & ACK) != 0) {
+		edge = conn->ack + (win << conn->recv_win_shift);
+		if (net_tcp_seq_cmp(edge, conn->recv_adv_edge) > 0) {
+			conn->recv_adv_edge = edge;
+		}
+	}
+
+	return (uint16_t)win;
+}
+
 static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, uint8_t flags,
 			  uint32_t seq)
 {
@@ -1452,7 +1493,7 @@ static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, uint8_t flags,
 	th->th_off = 5 + (tcp_send_options_len(conn) / 4U);
 
 	UNALIGNED_PUT(flags, &th->th_flags);
-	UNALIGNED_PUT(net_htons(conn->recv_win), UNALIGNED_MEMBER_ADDR(th, th_win));
+	UNALIGNED_PUT(net_htons(tcp_adv_win(conn, flags)), UNALIGNED_MEMBER_ADDR(th, th_win));
 	UNALIGNED_PUT(net_htonl(seq), UNALIGNED_MEMBER_ADDR(th, th_seq));
 
 	if (ACK & flags) {
@@ -1510,6 +1551,41 @@ static int get_tcp_nodelay(struct tcp *conn, void *value, uint32_t *len)
 	return 0;
 }
 
+static int set_tcp_quickack(struct tcp *conn, const void *value, uint32_t len)
+{
+	int quickack;
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	quickack = *(int *)value;
+
+	if ((quickack < 0) || (quickack > 1)) {
+		return -EINVAL;
+	}
+
+	conn->delay_psh_ack = (quickack == 0);
+
+	/* Like Linux, turning the option on sends a delayed ACK at once */
+	if (quickack == 1 && k_work_delayable_is_pending(&conn->ack_timer)) {
+		tcp_out(conn, ACK);
+	}
+
+	return 0;
+}
+
+static int get_tcp_quickack(struct tcp *conn, void *value, uint32_t *len)
+{
+	*((int *)value) = conn->delay_psh_ack ? 0 : 1;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
+	return 0;
+}
+
 static int net_tcp_set_mss_opt(struct tcp *conn, struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(mss_opt_access, struct tcp_mss_option);
@@ -1539,6 +1615,10 @@ static uint8_t tcp_send_options_len(struct tcp *conn)
 
 	if (conn->send_options.mss_found) {
 		len += NET_TCP_MSS_SIZE + 2;
+	}
+
+	if (conn->send_options.wnd_found) {
+		len += NET_TCP_NOP_SIZE + NET_TCP_WINDOW_SCALE_SIZE;
 	}
 
 	if (conn->send_options.sack_perm_found) {
@@ -1610,6 +1690,32 @@ static int net_tcp_set_sack_perm_opt(struct net_pkt *pkt)
 	opt->len = NET_TCP_SACK_PERM_SIZE;
 
 	return net_pkt_set_data(pkt, &sack_opt_access);
+}
+
+struct tcp_wnd_scale_option {
+	uint8_t nop;
+	uint8_t kind;
+	uint8_t len;
+	uint8_t shift;
+} __packed;
+
+static int net_tcp_set_wnd_scale_opt(struct tcp *conn, struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(wnd_scale_access, struct tcp_wnd_scale_option);
+	struct tcp_wnd_scale_option *opt;
+
+	opt = net_pkt_get_data(pkt, &wnd_scale_access);
+	if (opt == NULL) {
+		return -ENOBUFS;
+	}
+
+	/* The NOP keeps the option list aligned to a 4 byte word. */
+	opt->nop = NET_TCP_NOP_OPT;
+	opt->kind = NET_TCP_WINDOW_SCALE_OPT;
+	opt->len = NET_TCP_WINDOW_SCALE_SIZE;
+	opt->shift = conn->recv_win_shift;
+
+	return net_pkt_set_data(pkt, &wnd_scale_access);
 }
 
 static bool is_destination_local(struct net_pkt *pkt)
@@ -1775,6 +1881,14 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, size_t data_len, uint32_
 		}
 	}
 
+	if (conn->send_options.wnd_found) {
+		ret = net_tcp_set_wnd_scale_opt(conn, pkt);
+		if (ret < 0) {
+			tcp_pkt_unref(pkt);
+			goto out;
+		}
+	}
+
 	if (data_len > 0) {
 		/* Copy the payload right after the headers, without
 		 * consuming the send queue: the queued data is dropped
@@ -1802,6 +1916,10 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, size_t data_len, uint32_
 	if (flags & ACK) {
 		conn->recv_win_sent = conn->recv_win;
 		conn->recv_since_ack = 0;
+		/* This segment ACKs all the data received so far, so a
+		 * delayed ACK still pending would only repeat it.
+		 */
+		k_work_cancel_delayable(&conn->ack_timer);
 	}
 
 	if (is_destination_local(pkt)) {
@@ -1822,6 +1940,77 @@ out:
 static void tcp_out(struct tcp *conn, uint8_t flags)
 {
 	(void)tcp_out_ext(conn, flags, 0 /* no data */, conn->seq + conn->unacked_len);
+}
+
+/* Send a SYN or SYN-ACK. The handshake options go on every one of them,
+ * retransmissions included, as the peer may only receive a retransmitted one.
+ */
+static int tcp_out_syn(struct tcp *conn, uint8_t flags, uint32_t seq)
+{
+	int ret;
+
+	conn->send_options.mss_found = true;
+	if ((flags & ACK) != 0) {
+		conn->send_options.sack_perm_found = conn->sack_perm;
+		conn->send_options.wnd_found = conn->win_scale;
+	} else {
+		conn->send_options.sack_perm_found = tcp_sack_supported();
+		conn->send_options.wnd_found = IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE);
+	}
+
+	ret = tcp_out_ext(conn, flags, 0, seq);
+
+	conn->send_options.mss_found = false;
+	conn->send_options.sack_perm_found = false;
+	conn->send_options.wnd_found = false;
+
+	return ret;
+}
+
+/* Smallest shift count that fits the window in the 16 bit window field.
+ * tcp_adv_win() rounds the scaled window up, so the rounded value has to fit.
+ */
+static uint8_t tcp_win_shift(uint32_t win)
+{
+	uint8_t shift = 0U;
+
+	while (shift < NET_TCP_MAX_WINDOW_SHIFT &&
+	       DIV_ROUND_UP(win, 1U << shift) > UINT16_MAX) {
+		shift++;
+	}
+
+	return shift;
+}
+
+/* Decide on window scaling once the peer's SYN or SYN-ACK has arrived. Both
+ * SYN segments must carry the option to enable scaling in either direction
+ * (RFC 7323 section 2.2), otherwise both shift counts are zero and the
+ * receive window has to fit the 16 bit field. recv_win_shift holds the shift
+ * count of our own SYN or SYN-ACK.
+ */
+static void tcp_win_scale_negotiate(struct tcp *conn)
+{
+	conn->win_scale = IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE) && conn->recv_options.wnd_found;
+
+	if (!conn->win_scale) {
+		conn->send_win_shift = 0U;
+		conn->recv_win_shift = 0U;
+		conn->recv_win_max = MIN(conn->recv_win_max, UINT16_MAX);
+		conn->recv_win = MIN(conn->recv_win, conn->recv_win_max);
+		return;
+	}
+
+	if (conn->recv_options.wnd_shift > NET_TCP_MAX_WINDOW_SHIFT) {
+		NET_DBG("[%p] Window scale shift %u above %u, using %u", conn,
+			conn->recv_options.wnd_shift, NET_TCP_MAX_WINDOW_SHIFT,
+			NET_TCP_MAX_WINDOW_SHIFT);
+		conn->send_win_shift = NET_TCP_MAX_WINDOW_SHIFT;
+	} else {
+		conn->send_win_shift = conn->recv_options.wnd_shift;
+	}
+
+	/* The window of our SYN or SYN-ACK was not scaled */
+	conn->recv_adv_edge = conn->ack + MIN(conn->recv_win, UINT16_MAX);
 }
 
 static int tcp_pkt_pull(struct net_pkt *pkt, size_t len, size_t total)
@@ -2135,10 +2324,10 @@ static void tcp_resend_data(struct k_work *work)
 
 	switch (conn->state) {
 	case TCP_SYN_SENT:
-		(void)tcp_out_ext(conn, SYN, 0, conn->seq - 1);
+		(void)tcp_out_syn(conn, SYN, conn->seq - 1);
 		break;
 	case TCP_SYN_RECEIVED:
-		(void)tcp_out_ext(conn, SYN | ACK, 0, conn->seq - 1);
+		(void)tcp_out_syn(conn, SYN | ACK, conn->seq - 1);
 		break;
 	case TCP_ESTABLISHED:
 	case TCP_CLOSE_WAIT:
@@ -2395,9 +2584,10 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->recv_win_max = tcp_rx_window;
 	conn->recv_win = conn->recv_win_max;
 	conn->recv_win_sent = conn->recv_win_max;
-	conn->send_win_max = MAX(tcp_tx_window, NET_IPV6_MTU);
+	conn->send_win_max = MAX(tcp_tx_window, (uint32_t)NET_IPV6_MTU);
 	conn->send_win = conn->send_win_max;
 	conn->tcp_nodelay = false;
+	conn->delay_psh_ack = false;
 	conn->addr_ref_done = false;
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 	conn->dup_ack_cnt = 0;
@@ -2406,7 +2596,7 @@ static struct tcp *tcp_conn_alloc(void)
 	/* Initially set the congestion window at its max size, since only the MSS
 	 * is available as soon as the connection is established
 	 */
-	conn->ca.cwnd = UINT16_MAX;
+	conn->ca.cwnd = NET_TCP_MAX_WINDOW;
 #endif
 
 	/* The ISN value will be set when we get the connection attempt or
@@ -2542,6 +2732,17 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 		}
 
 		conn->accepted_conn = conn_old;
+
+		/* The buffer sizes set on the listener apply to the
+		 * connections it accepts. tcp_in() applies them before the
+		 * SYN-ACK is sent.
+		 */
+#if defined(CONFIG_NET_CONTEXT_RCVBUF)
+		conn->context->options.rcvbuf = conn_old->context->options.rcvbuf;
+#endif
+#if defined(CONFIG_NET_CONTEXT_SNDBUF)
+		conn->context->options.sndbuf = conn_old->context->options.sndbuf;
+#endif
 	}
 in:
 	if (conn) {
@@ -2828,25 +3029,46 @@ err:
  *	-------	--------	-----------------------------------------------
  *	  0	  0		SEG.SEQ = RCV.NXT
  *	  0	 >0		RCV.NXT =< SEG.SEQ < RCV.NXT+RCV.WND
+ *			     or SEG.SEQ = RCV.NXT+RCV.WND for an ACK
+ *			     without SYN, FIN or RST
  *	 >0	  0		not acceptable
  *	 >0	 >0		RCV.NXT =< SEG.SEQ < RCV.NXT+RCV.WND
  *			     or RCV.NXT =< SEG.SEQ+SEG.LEN-1 <RCV.NXT+RCV.WND
  */
 static bool tcp_validate_seq(struct tcp *conn, struct tcphdr *hdr, size_t len)
 {
+	uint32_t wnd_end;
+
 	if ((conn->state == TCP_LISTEN) || (conn->state == TCP_SYN_SENT)) {
 		return true;
 	}
 
-	if (conn->recv_win > 0) {
+	/* With a scaled window, a segment is in window if it is within any
+	 * window advertised so far (RFC 7323 section 2.4).
+	 */
+	wnd_end = conn->ack + conn->recv_win;
+	if (conn->recv_win_shift > 0U && net_tcp_seq_cmp(conn->recv_adv_edge, wnd_end) > 0) {
+		wnd_end = conn->recv_adv_edge;
+	}
+
+	if (wnd_end != conn->ack) {
 		if (len == 0) {
+			int32_t right = net_tcp_seq_cmp(th_seq(hdr), wnd_end);
+
+			/* Accept an ACK at the right edge, as a peer that has sent
+			 * the whole window uses that SEQ (Linux and BSD do the same).
+			 * SYN and FIN would fall outside the window; a RST must be
+			 * inside it.
+			 */
 			return ((net_tcp_seq_cmp(th_seq(hdr), conn->ack) >= 0) &&
-				(net_tcp_seq_cmp(th_seq(hdr), conn->ack + conn->recv_win) < 0));
+				((right < 0) ||
+				 ((right == 0) &&
+				  ((th_flags(hdr) & (ACK | SYN | FIN | RST)) == ACK))));
 		}
 		return (((net_tcp_seq_cmp(th_seq(hdr), conn->ack) >= 0) &&
-			 (net_tcp_seq_cmp(th_seq(hdr), conn->ack + conn->recv_win) < 0)) ||
+			 (net_tcp_seq_cmp(th_seq(hdr), wnd_end) < 0)) ||
 			((net_tcp_seq_cmp(th_seq(hdr) + len - 1, conn->ack) >= 0) &&
-			 (net_tcp_seq_cmp(th_seq(hdr) + len - 1, conn->ack + conn->recv_win) < 0)));
+			 (net_tcp_seq_cmp(th_seq(hdr) + len - 1, wnd_end) < 0)));
 	}
 
 	if (len == 0) {
@@ -3126,7 +3348,7 @@ static void tcp_check_sock_options(struct tcp *conn)
 					     &rcvbuf_opt, NULL);
 	}
 
-	if (sndbuf_opt > 0 && sndbuf_opt != conn->send_win_max) {
+	if (sndbuf_opt > 0 && (uint32_t)sndbuf_opt != conn->send_win_max) {
 		k_mutex_lock(&conn->lock, K_FOREVER);
 
 		conn->send_win_max = sndbuf_opt;
@@ -3137,16 +3359,27 @@ static void tcp_check_sock_options(struct tcp *conn)
 		k_mutex_unlock(&conn->lock);
 	}
 
-	if (rcvbuf_opt > 0 && rcvbuf_opt != conn->recv_win_max) {
-		int diff;
+	if (rcvbuf_opt > 0) {
+		uint32_t rcvbuf = (uint32_t)rcvbuf_opt;
 
-		k_mutex_lock(&conn->lock, K_FOREVER);
+		/* Once the SYN is sent the window scale is fixed, and the
+		 * window has to fit the 16 bit field shifted by it.
+		 */
+		if (conn->state != TCP_LISTEN) {
+			rcvbuf = MIN(rcvbuf, (uint32_t)UINT16_MAX << conn->recv_win_shift);
+		}
 
-		diff = rcvbuf_opt - conn->recv_win_max;
-		conn->recv_win_max = rcvbuf_opt;
-		tcp_update_recv_wnd(conn, diff);
+		if (rcvbuf != conn->recv_win_max) {
+			int diff;
 
-		k_mutex_unlock(&conn->lock);
+			k_mutex_lock(&conn->lock, K_FOREVER);
+
+			diff = (int)rcvbuf - (int)conn->recv_win_max;
+			conn->recv_win_max = rcvbuf;
+			tcp_update_recv_wnd(conn, diff);
+
+			k_mutex_unlock(&conn->lock);
+		}
 	}
 }
 
@@ -3306,7 +3539,12 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 	}
 
 	/* Both the seqnum and the acknum are valid, then do processing. */
+	/* The window of a SYN or SYN-ACK is never scaled */
 	conn->send_win = net_ntohs(th_win(th));
+	if ((th_flags(th) & SYN) == 0) {
+		conn->send_win <<= conn->send_win_shift;
+	}
+
 	if (conn->send_win > conn->send_win_max) {
 		NET_DBG("[%p] Lowering send window from %u to %u",
 			conn, conn->send_win, conn->send_win_max);
@@ -3340,17 +3578,13 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				tcp_backlog_dec(conn->accepted_conn);
 			}
 
-			/* Make sure our MSS is also sent in the ACK */
-			conn->send_options.mss_found = true;
-			conn->send_options.sack_perm_found =
-				tcp_sack_supported() &&
+			conn->sack_perm = tcp_sack_supported() &&
 				conn->recv_options.sack_perm_found;
-			conn->sack_perm = conn->send_options.sack_perm_found;
 			conn->isn_peer = th_seq(th);
 			conn_ack(conn, th_seq(th) + 1); /* capture peer's isn */
-			tcp_out(conn, SYN | ACK);
-			conn->send_options.mss_found = false;
-			conn->send_options.sack_perm_found = false;
+			conn->recv_win_shift = tcp_win_shift(conn->recv_win_max);
+			tcp_win_scale_negotiate(conn);
+			(void)tcp_out_syn(conn, SYN | ACK, conn->seq);
 			conn_seq(conn, + 1);
 			next = TCP_SYN_RECEIVED;
 
@@ -3482,6 +3716,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				conn->recv_options.sack_perm_found;
 			conn->isn_peer = th_seq(th);
 			conn_ack(conn, th_seq(th) + 1);
+			tcp_win_scale_negotiate(conn);
 			if (len) {
 				verdict = tcp_data_get(conn, pkt, &len);
 				if (verdict == NET_OK) {
@@ -3926,6 +4161,7 @@ out:
 
 		if (connection_ok) {
 			conn->in_connect = false;
+			conn->connect_done = true;
 			if (conn->connect_cb) {
 				conn->connect_cb(conn->context, 0, conn->context->user_data);
 
@@ -4238,17 +4474,16 @@ static int tcp_start_handshake(struct tcp *conn)
 	/* Start the connection handshake */
 	k_mutex_lock(&conn->lock, K_FOREVER);
 	tcp_check_sock_options(conn);
-	conn->send_options.mss_found = true;
-	conn->send_options.sack_perm_found = tcp_sack_supported();
-	ret = tcp_out_ext(conn, SYN, 0 /* no data */, conn->seq);
+	if (IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE)) {
+		conn->recv_win_shift = tcp_win_shift(conn->recv_win_max);
+	}
+	ret = tcp_out_syn(conn, SYN, conn->seq);
 	if (ret < 0) {
 		k_mutex_unlock(&conn->lock);
 		return ret;
 	}
 	tcp_setup_retransmission(conn);
 
-	conn->send_options.mss_found = false;
-	conn->send_options.sack_perm_found = false;
 	conn_seq(conn, + 1);
 	conn_state(conn, TCP_SYN_SENT);
 	tcp_conn_ref(conn);
@@ -4388,6 +4623,7 @@ int net_tcp_connect(struct net_context *context,
 	 * a TCP connection to be established
 	 */
 	conn->in_connect = true;
+	conn->connect_done = false;
 
 	conn->isn = conn->seq;
 
@@ -4396,21 +4632,21 @@ int net_tcp_connect(struct net_context *context,
 		goto out;
 	}
 
-	if (conn->state == TCP_UNUSED || conn->state == TCP_CLOSED) {
+	if (!conn->connect_done && (conn->state == TCP_UNUSED || conn->state == TCP_CLOSED)) {
 		if (conn->rst_received) {
 			ret = -ECONNREFUSED;
 		} else {
 			ret = -ENOTCONN;
 		}
 		goto out;
-	} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) && conn->state != TCP_ESTABLISHED) {
+	} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) && !conn->connect_done) {
 		ret = -EINPROGRESS;
 		goto out;
 	}
 
 	(void)k_sem_take(&conn->connect_sem, timeout);
 
-	if (conn->state != TCP_ESTABLISHED) {
+	if (!conn->connect_done) {
 		if (conn->in_connect) {
 			conn->in_connect = false;
 			tcp_conn_close(conn, -ETIMEDOUT);
@@ -4792,6 +5028,9 @@ int net_tcp_set_option(struct net_context *context,
 	case TCP_OPT_KEEPCNT:
 		ret = set_tcp_keep_cnt(conn, value, len);
 		break;
+	case TCP_OPT_QUICKACK:
+		ret = set_tcp_quickack(conn, value, len);
+		break;
 	}
 
 	k_mutex_unlock(&conn->lock);
@@ -4828,6 +5067,9 @@ int net_tcp_get_option(struct net_context *context,
 		break;
 	case TCP_OPT_KEEPCNT:
 		ret = get_tcp_keep_cnt(conn, value, len);
+		break;
+	case TCP_OPT_QUICKACK:
+		ret = get_tcp_quickack(conn, value, len);
 		break;
 	}
 
