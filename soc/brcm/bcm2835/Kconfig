@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_BCM2835
+	select ARM
+	select CPU_ARM1176JZF_S
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER
+	select CLOCK_CONTROL_FIXED_RATE_CLOCK if DT_HAS_FIXED_CLOCK_ENABLED
+	select KERNEL_DIRECT_MAP if MMU
