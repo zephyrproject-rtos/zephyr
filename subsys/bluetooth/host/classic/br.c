@@ -759,6 +759,29 @@ void bt_hci_role_change(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+void bt_hci_max_slots_change(struct net_buf *buf)
+{
+	struct bt_hci_evt_max_slots_change *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	uint8_t max_slots = evt->lmp_max_slots;
+	struct bt_conn *conn;
+
+	if (max_slots != 1U && max_slots != 3U && max_slots != 5U) {
+		LOG_ERR("Invalid max slots %u for handle %u", max_slots, handle);
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
+	if (conn == NULL) {
+		LOG_ERR("Can't find conn for handle %u", handle);
+		return;
+	}
+
+	LOG_DBG("handle %u max slots %u", handle, max_slots);
+
+	bt_conn_unref(conn);
+}
+
 void bt_hci_conn_pkt_type_changed(struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_pkt_type_changed *evt = (void *)buf->data;
