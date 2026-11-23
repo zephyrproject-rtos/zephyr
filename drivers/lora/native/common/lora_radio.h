@@ -96,6 +96,8 @@ struct lora_radio_data {
 	/* Guards the operation state and the operations' exchanges with the radio */
 	struct k_mutex lock;
 	enum lora_radio_op op;
+	/* How many operations have ended, to tell one from the next */
+	uint32_t ops_ended;
 	bool configured;
 	/* Interrupts of an ended operation are still to be cleared */
 	bool irq_stale;
