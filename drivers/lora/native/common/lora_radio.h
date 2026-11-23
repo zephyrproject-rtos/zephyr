@@ -97,6 +97,8 @@ struct lora_radio_data {
 	struct k_mutex lock;
 	enum lora_radio_op op;
 	bool configured;
+	/* Interrupts of an ended operation are still to be cleared */
+	bool irq_stale;
 
 	struct lora_radio_waiter *waiter;
 

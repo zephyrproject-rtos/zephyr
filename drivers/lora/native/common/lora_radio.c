@@ -30,6 +30,7 @@ static int lora_radio_op_begin(const struct device *dev, enum lora_radio_op op)
 {
 	const struct lora_radio_config *config = dev->config;
 	struct lora_radio_data *data = dev->data;
+	uint32_t stale;
 	int ret;
 
 	if (data->op != LORA_RADIO_OP_NONE) {
@@ -39,6 +40,17 @@ static int lora_radio_op_begin(const struct device *dev, enum lora_radio_op op)
 	ret = config->ops->wake(dev);
 	if (ret < 0) {
 		return ret;
+	}
+
+	/* Interrupts an earlier operation left behind are not this one's */
+	if (data->irq_stale) {
+		ret = config->ops->irq_get(dev, &stale);
+		if (ret < 0) {
+			config->ops->sleep(dev);
+			return ret;
+		}
+
+		data->irq_stale = false;
 	}
 
 	data->op = op;
@@ -77,8 +89,11 @@ static void lora_radio_op_abort(const struct device *dev, int status)
 {
 	const struct lora_radio_config *config = dev->config;
 	struct lora_radio_data *data = dev->data;
+	uint32_t stale;
 
 	config->ops->stop(dev, data->op);
+	/* What it raised meanwhile must not be taken for the next operation's */
+	data->irq_stale = (config->ops->irq_get(dev, &stale) < 0);
 	lora_radio_op_end(dev, status);
 }
 
@@ -205,6 +220,8 @@ static void lora_radio_irq_work_handler(struct k_work *work)
 		/* How the operation went is unknown. CW is ended by its own caller. */
 		if (data->op != LORA_RADIO_OP_NONE && data->op != LORA_RADIO_OP_CW) {
 			lora_radio_op_abort(dev, ret);
+		} else {
+			data->irq_stale = true;
 		}
 		goto unlock;
 	}
