@@ -252,6 +252,19 @@
 			status = "disabled";
 		};
 
+		sdhc0: sdhc@458a0000 {
+			compatible = "microchip,sdhc-g1";
+			reg = <0x458a0000 0x238>;
+			interrupts = <211 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SDHC0_AHB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC0_CORE>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC0_SLOW>;
+			clock-names = "mclk", "gclk", "gclk_slow";
+			min-bus-freq = <400000>;
+			max-bus-freq = <50000000>;
+			status = "disabled";
+		};
+
 		sercom0: sercom@46000000 {
 			compatible = "microchip,sercom-g1";
 			reg = <0x46000000 0x36>;

@@ -73,6 +73,19 @@
 			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
+
+		sdhc1: sdhc@460a0000 {
+			compatible = "microchip,sdhc-g1";
+			reg = <0x460a0000 0x238>;
+			interrupts = <212 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_SDHC1_AHB>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC1_CORE>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC1_SLOW>;
+			clock-names = "mclk", "gclk", "gclk_slow";
+			min-bus-freq = <400000>;
+			max-bus-freq = <50000000>;
+			status = "disabled";
+		};
 	};
 };
 

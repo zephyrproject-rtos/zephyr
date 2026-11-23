@@ -42,4 +42,17 @@
 				 <PA14B_ADC2_AIN0>;	/* PA14, ADC1 positive (differential) */
 		};
 	};
+
+	sdhc1_default: sdmmc1_default {
+		group1 {
+			pinmux = <PC28I_SDMMC1_SDCD>,
+				 <PC27I_SDMMC1_SDWP>,
+				 <PG3I_SDMMC1_SDCMD>,
+				 <PC30I_SDMMC1_SDCK>,
+				 <PC31I_SDMMC1_SDDAT0>,
+				 <PG0I_SDMMC1_SDDAT1>,
+				 <PG1I_SDMMC1_SDDAT2>,
+				 <PG2I_SDMMC1_SDDAT3>;
+		};
+	};
 };
