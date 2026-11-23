@@ -114,8 +114,9 @@ config NRF_ACL_FLASH_REGION_SIZE
 choice NRF_APPROTECT_HANDLING
 	bool "AP-Protect handling"
 	depends on SOC_SERIES_NRF52 || SOC_SERIES_NRF53 || SOC_NRF54L_CPUAPP_COMMON || \
-		   SOC_SERIES_NRF91
-	default NRF_APPROTECT_DISABLE if SOC_NRF54L_CPUAPP_COMMON
+			SOC_SERIES_NRF71_CPUAPP_COMMON || SOC_SERIES_NRF91
+	default NRF_APPROTECT_DISABLE if SOC_NRF54L_CPUAPP_COMMON || \
+		SOC_SERIES_NRF71_CPUAPP_COMMON
 	default NRF_APPROTECT_USE_UICR
 	help
 	  Specifies how the SystemInit() function handles the AP-Protect
@@ -126,7 +127,7 @@ choice NRF_APPROTECT_HANDLING
 
 config NRF_APPROTECT_DISABLE
 	bool "Disable"
-	depends on SOC_NRF54L_CPUAPP_COMMON
+	depends on SOC_NRF54L_CPUAPP_COMMON || SOC_SERIES_NRF71_CPUAPP_COMMON
 	help
 	  When this option is selected, the SystemInit() disables
 	  the AP-Protect mechanism and allows for debugging.
@@ -160,8 +161,10 @@ endchoice
 
 choice NRF_SECURE_APPROTECT_HANDLING
 	bool "Secure AP-Protect handling"
-	depends on SOC_NRF5340_CPUAPP || SOC_NRF54L_CPUAPP_COMMON || SOC_SERIES_NRF91
-	default NRF_SECURE_APPROTECT_DISABLE if SOC_NRF54L_CPUAPP_COMMON
+	depends on SOC_NRF5340_CPUAPP || SOC_NRF54L_CPUAPP_COMMON || \
+			SOC_SERIES_NRF71_CPUAPP_COMMON || SOC_SERIES_NRF91
+	default NRF_SECURE_APPROTECT_DISABLE if SOC_NRF54L_CPUAPP_COMMON || \
+		SOC_SERIES_NRF71_CPUAPP_COMMON
 	default NRF_SECURE_APPROTECT_USE_UICR
 	help
 	  Specifies how the SystemInit() function handles the Secure
@@ -172,7 +175,7 @@ choice NRF_SECURE_APPROTECT_HANDLING
 
 config NRF_SECURE_APPROTECT_DISABLE
 	bool "Disable"
-	depends on SOC_NRF54L_CPUAPP_COMMON
+	depends on SOC_NRF54L_CPUAPP_COMMON || SOC_SERIES_NRF71_CPUAPP_COMMON
 	help
 	  When this option is selected, the SystemInit() disables
 	  the Secure AP-Protect mechanism. This allows debugging of the Secure
