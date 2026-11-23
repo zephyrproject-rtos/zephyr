@@ -754,6 +754,45 @@ static void rpa_timeout(struct k_work *work)
 
 	le_update_private_addr();
 }
+
+void bt_id_enc_failed(const struct bt_conn *conn)
+{
+	int err;
+
+	/* Not after bt_disable(), which an application may call from the
+	 * callback that told it about the failure.
+	 */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY) || !bt_conn_is_le(conn) ||
+	    !(bt_addr_le_is_rpa(&conn->le.init_addr) || bt_addr_le_is_rpa(&conn->le.resp_addr))) {
+		return;
+	}
+
+	/* The current RPAs have to be discarded (Core Specification 7.0,
+	 * Vol 3, Part C, 10.6). Expire the RPA timeout now: rpa_timeout()
+	 * invalidates them and gives the roles that are running new ones.
+	 */
+	err = bt_work_reschedule(&bt_dev.rpa_update, K_NO_WAIT);
+	if (err < 0) {
+		LOG_ERR("Failed to schedule the RPA update: %d", err);
+	}
+}
+
+#if defined(CONFIG_BT_CONN)
+static void id_conn_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	/* A MIC failure on a link that is not encrypted is a failed start of
+	 * its encryption, which the Controller reports in no other way (Core
+	 * Specification 7.0, Vol 6, Part B, 5.1.3.1).
+	 */
+	if (reason == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL && conn->encrypt == 0U) {
+		bt_id_enc_failed(conn);
+	}
+}
+
+BT_CONN_CB_DEFINE(id_conn_cb) = {
+	.disconnected = id_conn_disconnected,
+};
+#endif /* CONFIG_BT_CONN */
 #endif /* CONFIG_BT_PRIVACY */
 
 bool bt_id_scan_random_addr_check(void)

@@ -2557,6 +2557,9 @@ static void hci_encrypt_change(struct net_buf *buf)
 	if (status) {
 		bt_conn_security_changed(conn, status,
 					 bt_security_err_get(status));
+		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+			bt_id_enc_failed(conn);
+		}
 		bt_conn_unref(conn);
 		return;
 	}
@@ -2639,6 +2642,9 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 	if (status) {
 		bt_conn_security_changed(conn, status,
 					 bt_security_err_get(status));
+		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+			bt_id_enc_failed(conn);
+		}
 		bt_conn_unref(conn);
 		return;
 	}
@@ -2793,6 +2799,9 @@ static void le_ltk_request(struct net_buf *buf)
 		le_ltk_reply(handle, ltk);
 	} else {
 		le_ltk_neg_reply(handle);
+		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+			bt_id_enc_failed(conn);
+		}
 	}
 
 	bt_conn_unref(conn);
