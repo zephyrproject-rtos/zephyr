@@ -43,15 +43,8 @@ struct usbc_port_config {
 	k_thread_stack_t *stack;
 };
 
-/**
- * @brief Request FIFO
- */
-struct request_value {
-	/** First word is reserved for use by FIFO */
-	void *fifo_reserved;
-	/** Request value */
-	int32_t val;
-};
+/** Requests a port can have queued before usbc_request() refuses more */
+#define USBC_REQUEST_QUEUE_DEPTH 8
 
 /**
  * @brief Port data
@@ -104,10 +97,10 @@ struct usbc_port_data {
 	/** Power Path Controller device on this port */
 	const struct device *ppc;
 
-	/** Device Policy Manager Request FIFO */
-	struct k_fifo request_fifo;
-	/** Device Policy manager Request */
-	struct request_value request;
+	/** Device Policy Manager requests, by value */
+	struct k_msgq request_msgq;
+	/** Storage for request_msgq */
+	int32_t request_buf[USBC_REQUEST_QUEUE_DEPTH];
 
 	/** Bypass next sleep and request one more iteration of the USB-C state machines */
 	bool bypass_next_sleep;
