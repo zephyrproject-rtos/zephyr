@@ -86,9 +86,10 @@ extern void bflb_ble_irq_setup(void);
  * Allocate an event net_buf and stamp the HCI event header.
  *
  * Uses K_NO_WAIT because the caller may be in ISR context. Returns NULL if
- * the pool is exhausted.
+ * the pool is exhausted, or if an event with payload_len bytes of parameters
+ * does not fit in the buffer.
  */
-static struct net_buf *bflb_evt_alloc(uint8_t evt, uint8_t payload_len)
+static struct net_buf *bflb_evt_alloc(uint8_t evt, size_t payload_len)
 {
 	struct net_buf *buf;
 	struct bt_hci_evt_hdr *hdr;
@@ -98,9 +99,15 @@ static struct net_buf *bflb_evt_alloc(uint8_t evt, uint8_t payload_len)
 		return NULL;
 	}
 
+	if (payload_len > UINT8_MAX || sizeof(*hdr) + payload_len > net_buf_tailroom(buf)) {
+		LOG_ERR("Event 0x%02x too long for buffer: %zu", evt, payload_len);
+		net_buf_unref(buf);
+		return NULL;
+	}
+
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->evt = evt;
-	hdr->len = payload_len;
+	hdr->len = (uint8_t)payload_len;
 
 	return buf;
 }
