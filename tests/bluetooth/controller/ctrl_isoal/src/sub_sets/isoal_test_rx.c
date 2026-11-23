@@ -241,12 +241,61 @@ FAKE_VOID_FUNC(sink_sdu_free_test,
 	       const struct isoal_sdu_buffer *);
 
 /**
+ * This handler is called by custom_sink_sdu_free_test with the buffer to free. The tests are
+ * asserting on that buffer, since sink_sdu_free_test() is called with a pointer into the sink,
+ * which is cleared after the call, this additional fake is used to store the history of the
+ * buffers.
+ */
+FAKE_VOID_FUNC(sink_sdu_free_test_handler, void *);
+
+/**
+ * Callback test fixture to be provided for RX sink creation. Frees an SDU
+ * buffer that is not emitted.
+ * @param[in]  sink_ctx   Sink context provided by ISO-AL
+ * @param[in]  sdu_buffer SDU buffer to free
+ */
+static void custom_sink_sdu_free_test(const struct isoal_sink *sink_ctx,
+				      const struct isoal_sdu_buffer *sdu_buffer)
+{
+	ARG_UNUSED(sink_ctx);
+
+	isoal_test_debug_trace_func_call(__func__, "IN");
+
+	zassert_not_null(sdu_buffer, NULL);
+	sink_sdu_free_test_handler(sdu_buffer->dbuf);
+}
+
+#define ZASSERT_ISOAL_SDU_FREE_TEST(_typ, _sink, _dbuf)                                            \
+	zassert_equal_ptr(_sink,                                                                   \
+			  sink_sdu_free_test_fake.arg0_##_typ,                                     \
+			  "\t\tExpected free sink at %p, got %p.",                                 \
+			  _sink,                                                                   \
+			  sink_sdu_free_test_fake.arg0_##_typ);                                    \
+	zassert_equal_ptr(_dbuf,                                                                   \
+			  sink_sdu_free_test_handler_fake.arg0_##_typ,                             \
+			  "\t\tExpected free of SDU data buffer at %p, got %p.",                   \
+			  _dbuf,                                                                   \
+			  sink_sdu_free_test_handler_fake.arg0_##_typ)
+
+#define ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(_expected)                                          \
+	zassert_equal(_expected,                                                                   \
+		      sink_sdu_free_test_fake.call_count,                                          \
+		      "Expected free called %u times, actual %u.",                                 \
+		      _expected,                                                                   \
+		      sink_sdu_free_test_fake.call_count)
+
+/**
  * RX common setup before running tests
  * @param f Input configuration parameters
  */
 static void isoal_test_rx_common_before(void *f)
 {
 	ARG_UNUSED(f);
+
+	/* Free the SDU buffers that the previous test left in its sinks, so that they are not
+	 * counted in this test.
+	 */
+	(void)isoal_reset();
 
 	custom_sink_sdu_alloc_test_output_buffer.buffer_size = 0;
 	custom_sink_sdu_alloc_test_output_buffer.pos = 0;
@@ -255,12 +304,14 @@ static void isoal_test_rx_common_before(void *f)
 	RESET_FAKE(sink_sdu_emit_test);
 	RESET_FAKE(sink_sdu_emit_test_handler);
 	RESET_FAKE(sink_sdu_free_test);
+	RESET_FAKE(sink_sdu_free_test_handler);
 
 	FFF_RESET_HISTORY();
 
 	sink_sdu_alloc_test_fake.custom_fake = custom_sink_sdu_alloc_test;
 	sink_sdu_write_test_fake.custom_fake = custom_sink_sdu_write_test;
 	sink_sdu_emit_test_fake.custom_fake = custom_sink_sdu_emit_test;
+	sink_sdu_free_test_fake.custom_fake = custom_sink_sdu_free_test;
 }
 
 /**
@@ -784,6 +835,390 @@ ZTEST(test_rx_basics, test_sink_disable)
 	err = isoal_rx_pdu_recombine(sink_hdl, &rx_pdu_meta_buf.pdu_meta);
 
 	zassert_equal(err, ISOAL_STATUS_OK, "err = 0x%02x", err);
+}
+
+/* PDUs for each SDU in the tests of the SDU free callback: more than one, so that an SDU stays in
+ * production after its first PDU.
+ */
+#define SDU_FREE_TEST_BN             3U
+/* Payload number of the first PDU of an SDU in these tests, a multiple of SDU_FREE_TEST_BN */
+#define SDU_FREE_TEST_PAYLOAD_NUMBER 3000U
+/* Payload length of the first PDU of an SDU in these tests, and the size of an SDU buffer that
+ * this PDU fills.
+ */
+#define SDU_FREE_TEST_PDU_LEN        23U
+/* Payload length of the second PDU of an SDU, which leaves room in an SDU buffer of
+ * SDU_FREE_TEST_PDU_LEN.
+ */
+#define SDU_FREE_TEST_PDU_LEN_SHORT  10U
+
+/**
+ * Setup of a single sink that takes SDU_FREE_TEST_BN unframed PDUs for each SDU
+ * @return Newly created sink handle
+ */
+static isoal_sink_handle_t sdu_free_rx_test_setup(void)
+{
+	/* One ISO interval for each SDU */
+	const uint8_t iso_interval_int = 1U;
+	const uint32_t sdu_interval = iso_interval_int * ISO_INT_UNIT_US;
+
+	sink_sdu_alloc_test_fake.return_val = ISOAL_STATUS_OK;
+	sink_sdu_write_test_fake.return_val = ISOAL_STATUS_OK;
+	sink_sdu_emit_test_fake.return_val = ISOAL_STATUS_OK;
+
+	/* Handle, flush timeout and delays as in the other tests: they have no effect on what
+	 * these tests check.
+	 */
+	return basic_rx_test_setup(0xADAD,                /* Handle */
+				   ISOAL_ROLE_PERIPHERAL, /* Role */
+				   false,                 /* Framed */
+				   SDU_FREE_TEST_BN,      /* BN */
+				   1U,                    /* FT */
+				   sdu_interval,          /* SDU Interval */
+				   iso_interval_int,      /* ISO Interval */
+				   sdu_interval - 200U,   /* Stream Sync Delay */
+				   sdu_interval - 50U);   /* Group Sync Delay */
+}
+
+/**
+ * Pass a valid unframed PDU to a sink
+ * @param sink_hdl       Handle of the sink
+ * @param llid           LLID of the PDU
+ * @param payload_number Payload number of the PDU
+ * @param length         Length of the PDU payload
+ */
+static void sdu_free_rx_test_recombine(isoal_sink_handle_t sink_hdl,
+				       uint8_t llid,
+				       uint64_t payload_number,
+				       uint8_t length)
+{
+	struct rx_pdu_meta_buffer rx_pdu_meta_buf;
+	uint8_t testdata[TEST_RX_PDU_PAYLOAD_MAX];
+	isoal_status_t err;
+
+	isoal_test_init_rx_pdu_buffer(&rx_pdu_meta_buf);
+	init_test_data_buffer(testdata, length);
+	isoal_test_create_unframed_pdu(llid,
+				       testdata,
+				       length,
+				       payload_number,
+				       9249U, /* Timestamp, as in the other tests */
+				       ISOAL_PDU_STATUS_VALID,
+				       &rx_pdu_meta_buf.pdu_meta);
+
+	err = isoal_rx_pdu_recombine(sink_hdl, &rx_pdu_meta_buf.pdu_meta);
+
+	zassert_equal(err, ISOAL_STATUS_OK, "err = 0x%02x", err);
+}
+
+/**
+ * Test Suite  :   RX basic test
+ *
+ * Test that destroying a sink frees the buffer of the SDU in production.
+ *
+ * Expected Sequence:
+ * -- Event 1: PDU0 Valid  SDU 0 Unframed Start
+ *             Sink destroyed
+ *                  -----> SDU 0                 (Freed)
+ */
+static ZTEST(test_rx_basics, test_sink_destroy_sdu_in_production)
+{
+	struct rx_sdu_frag_buffer rx_sdu_frag_buf;
+	struct isoal_sdu_buffer sdu_buffer;
+	isoal_sink_handle_t sink_hdl;
+
+	isoal_test_init_rx_sdu_buffer(&rx_sdu_frag_buf);
+	sdu_buffer.dbuf = &rx_sdu_frag_buf;
+	sdu_buffer.size = TEST_RX_SDU_FRAG_PAYLOAD_MAX;
+	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
+
+	sink_hdl = sdu_free_rx_test_setup();
+
+	sdu_free_rx_test_recombine(sink_hdl,
+				   PDU_BIS_LLID_START_CONTINUE,
+				   SDU_FREE_TEST_PAYLOAD_NUMBER,
+				   SDU_FREE_TEST_PDU_LEN);
+
+	/* SDU should be allocated and in production */
+	ZASSERT_ISOAL_SDU_ALLOC_TEST_CALL_COUNT(1);
+	ZASSERT_ISOAL_SDU_EMIT_TEST_CALL_COUNT(0);
+	ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(0);
+
+	isoal_sink_destroy(sink_hdl);
+
+	/* SDU should be freed and not emitted */
+	ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(1);
+	ZASSERT_ISOAL_SDU_FREE_TEST(val,
+				    &isoal_global.sink_state[sink_hdl], /* Sink */
+				    sdu_buffer.dbuf);                   /* Buffer */
+	ZASSERT_ISOAL_SDU_EMIT_TEST_CALL_COUNT(0);
+
+	zassert_equal(isoal_global.sink_allocated[sink_hdl],
+		      ISOAL_ALLOC_STATE_FREE,
+		      "Sink destruction failed!");
+}
+
+/**
+ * Test Suite  :   RX basic test
+ *
+ * Test that destroying a sink frees the buffers of an SDU that takes more than
+ * one buffer. The buffer of the first fragment is freed only if the sink kept
+ * it, which depends on the buffering of SDU fragments.
+ *
+ * Expected Sequence:
+ * -- Event 1: PDU0 Valid  SDU 0 Unframed Start  (Fills the first buffer)
+ *             PDU1 Valid  SDU 0 Unframed Cont.
+ *             Sink destroyed
+ *                  -----> SDU 0                 (Freed)
+ */
+static ZTEST(test_rx_basics, test_sink_destroy_sdu_fragments)
+{
+	struct rx_sdu_frag_buffer rx_sdu_frag_buf[2];
+	struct isoal_sdu_buffer sdu_buffer[2];
+	isoal_sink_handle_t sink_hdl;
+
+	ARRAY_FOR_EACH(sdu_buffer, i) {
+		isoal_test_init_rx_sdu_buffer(&rx_sdu_frag_buf[i]);
+		sdu_buffer[i].dbuf = &rx_sdu_frag_buf[i];
+		sdu_buffer[i].size = SDU_FREE_TEST_PDU_LEN;
+		push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer[i]);
+	}
+
+	sink_hdl = sdu_free_rx_test_setup();
+
+	sdu_free_rx_test_recombine(sink_hdl,
+				   PDU_BIS_LLID_START_CONTINUE,
+				   SDU_FREE_TEST_PAYLOAD_NUMBER,
+				   SDU_FREE_TEST_PDU_LEN);
+	sdu_free_rx_test_recombine(sink_hdl,
+				   PDU_BIS_LLID_START_CONTINUE,
+				   SDU_FREE_TEST_PAYLOAD_NUMBER + 1U,
+				   SDU_FREE_TEST_PDU_LEN_SHORT);
+
+	/* Both fragments should be allocated */
+	ZASSERT_ISOAL_SDU_ALLOC_TEST_CALL_COUNT(2);
+	ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(0);
+
+#if defined(ISOAL_BUFFER_RX_SDUS_ENABLE)
+	/* First fragment should be kept */
+	ZASSERT_ISOAL_SDU_EMIT_TEST_CALL_COUNT(0);
+
+	isoal_sink_destroy(sink_hdl);
+
+	/* Both fragments should be freed */
+	ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(2);
+	ZASSERT_ISOAL_SDU_FREE_TEST(history[0],
+				    &isoal_global.sink_state[sink_hdl], /* Sink */
+				    sdu_buffer[0].dbuf);                /* Buffer */
+	ZASSERT_ISOAL_SDU_FREE_TEST(history[1],
+				    &isoal_global.sink_state[sink_hdl], /* Sink */
+				    sdu_buffer[1].dbuf);                /* Buffer */
+	ZASSERT_ISOAL_SDU_EMIT_TEST_CALL_COUNT(0);
+#else /* !ISOAL_BUFFER_RX_SDUS_ENABLE */
+	/* First fragment should be emitted */
+	ZASSERT_ISOAL_SDU_EMIT_TEST_CALL_COUNT(1);
+
+	isoal_sink_destroy(sink_hdl);
+
+	/* Second fragment should be freed */
+	ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(1);
+	ZASSERT_ISOAL_SDU_FREE_TEST(val,
+				    &isoal_global.sink_state[sink_hdl], /* Sink */
+				    sdu_buffer[1].dbuf);                /* Buffer */
+	ZASSERT_ISOAL_SDU_EMIT_TEST_CALL_COUNT(1);
+#endif /* !ISOAL_BUFFER_RX_SDUS_ENABLE */
+}
+
+/**
+ * Test Suite  :   RX basic test
+ *
+ * Test that destroying a sink does not free the buffer of an emitted SDU.
+ *
+ * Expected Sequence:
+ * -- Event 1: PDU0 Valid  SDU 0 Unframed Single
+ *                  -----> SDU 0 Valid           (Released)
+ *             Sink destroyed
+ */
+static ZTEST(test_rx_basics, test_sink_destroy_sdu_emitted)
+{
+	struct rx_sdu_frag_buffer rx_sdu_frag_buf;
+	struct isoal_sdu_buffer sdu_buffer;
+	isoal_sink_handle_t sink_hdl;
+
+	isoal_test_init_rx_sdu_buffer(&rx_sdu_frag_buf);
+	sdu_buffer.dbuf = &rx_sdu_frag_buf;
+	sdu_buffer.size = TEST_RX_SDU_FRAG_PAYLOAD_MAX;
+	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
+
+	sink_hdl = sdu_free_rx_test_setup();
+
+	sdu_free_rx_test_recombine(sink_hdl,
+				   PDU_BIS_LLID_COMPLETE_END,
+				   SDU_FREE_TEST_PAYLOAD_NUMBER,
+				   SDU_FREE_TEST_PDU_LEN);
+
+	/* SDU should be emitted */
+	ZASSERT_ISOAL_SDU_ALLOC_TEST_CALL_COUNT(1);
+	ZASSERT_ISOAL_SDU_EMIT_TEST_CALL_COUNT(1);
+
+	isoal_sink_destroy(sink_hdl);
+
+	/* SDU should not be freed */
+	ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(0);
+}
+
+/**
+ * Callback test fixture for a sink that is destroyed while it emits an SDU, as a release of the
+ * sink from another context during the emit callback does.
+ * @param[in]  sink_ctx  Sink context provided by ISO-AL
+ * @param[in]  sdu_frag  SDU fragment to be emitted
+ * @param[in]  sdu       Status of the SDU to be emitted
+ * @return               Status of operation
+ */
+static isoal_status_t
+custom_sink_sdu_emit_destroy_test(const struct isoal_sink *sink_ctx,
+				  const struct isoal_emitted_sdu_frag *sdu_frag,
+				  const struct isoal_emitted_sdu *sdu)
+{
+	ARGS_UNUSED(sdu_frag, sdu);
+
+	isoal_sink_destroy((isoal_sink_handle_t)ARRAY_INDEX(isoal_global.sink_state, sink_ctx));
+
+	return sink_sdu_emit_test_fake.return_val;
+}
+
+/**
+ * Test Suite  :   RX basic test
+ *
+ * Test that a sink which is destroyed during the emit callback does not free
+ * the buffer of the SDU that it emits.
+ *
+ * Expected Sequence:
+ * -- Event 1: PDU0 Valid  SDU 0 Unframed Single
+ *                  -----> SDU 0 Valid           (Released)
+ *                         Sink destroyed in the emit callback
+ */
+static ZTEST(test_rx_basics, test_sink_destroy_in_sdu_emit)
+{
+	struct rx_sdu_frag_buffer rx_sdu_frag_buf;
+	struct isoal_sdu_buffer sdu_buffer;
+	isoal_sink_handle_t sink_hdl;
+
+	isoal_test_init_rx_sdu_buffer(&rx_sdu_frag_buf);
+	sdu_buffer.dbuf = &rx_sdu_frag_buf;
+	sdu_buffer.size = TEST_RX_SDU_FRAG_PAYLOAD_MAX;
+	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
+
+	sink_hdl = sdu_free_rx_test_setup();
+	sink_sdu_emit_test_fake.custom_fake = custom_sink_sdu_emit_destroy_test;
+
+	sdu_free_rx_test_recombine(sink_hdl,
+				   PDU_BIS_LLID_COMPLETE_END,
+				   SDU_FREE_TEST_PAYLOAD_NUMBER,
+				   SDU_FREE_TEST_PDU_LEN);
+
+	/* SDU should be emitted and not freed */
+	ZASSERT_ISOAL_SDU_EMIT_TEST_CALL_COUNT(1);
+	ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(0);
+
+	zassert_equal(isoal_global.sink_allocated[sink_hdl],
+		      ISOAL_ALLOC_STATE_FREE,
+		      "Sink destruction failed!");
+}
+
+/**
+ * Test Suite  :   RX basic test
+ *
+ * Test that enabling a sink again frees the buffer of the SDU in production.
+ *
+ * Expected Sequence:
+ * -- Event 1: PDU0 Valid  SDU 0 Unframed Start
+ *             Sink disabled and enabled
+ *                  -----> SDU 0                 (Freed)
+ */
+static ZTEST(test_rx_basics, test_sink_enable_sdu_in_production)
+{
+	struct rx_sdu_frag_buffer rx_sdu_frag_buf;
+	struct isoal_sdu_buffer sdu_buffer;
+	isoal_sink_handle_t sink_hdl;
+
+	isoal_test_init_rx_sdu_buffer(&rx_sdu_frag_buf);
+	sdu_buffer.dbuf = &rx_sdu_frag_buf;
+	sdu_buffer.size = TEST_RX_SDU_FRAG_PAYLOAD_MAX;
+	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
+
+	sink_hdl = sdu_free_rx_test_setup();
+
+	sdu_free_rx_test_recombine(sink_hdl,
+				   PDU_BIS_LLID_START_CONTINUE,
+				   SDU_FREE_TEST_PAYLOAD_NUMBER,
+				   SDU_FREE_TEST_PDU_LEN);
+
+	isoal_sink_disable(sink_hdl);
+
+	/* SDU should stay in production */
+	ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(0);
+
+	isoal_sink_enable(sink_hdl);
+
+	/* SDU should be freed and not emitted */
+	ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(1);
+	ZASSERT_ISOAL_SDU_FREE_TEST(val,
+				    &isoal_global.sink_state[sink_hdl], /* Sink */
+				    sdu_buffer.dbuf);                   /* Buffer */
+	ZASSERT_ISOAL_SDU_EMIT_TEST_CALL_COUNT(0);
+
+	isoal_sink_destroy(sink_hdl);
+
+	/* SDU should not be freed again */
+	ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(1);
+}
+
+/**
+ * Test Suite  :   RX basic test
+ *
+ * Test that a reset frees the buffer of the SDU in production.
+ *
+ * Expected Sequence:
+ * -- Event 1: PDU0 Valid  SDU 0 Unframed Start
+ *             ISO-AL reset
+ *                  -----> SDU 0                 (Freed)
+ */
+static ZTEST(test_rx_basics, test_sink_reset_sdu_in_production)
+{
+	struct rx_sdu_frag_buffer rx_sdu_frag_buf;
+	struct isoal_sdu_buffer sdu_buffer;
+	isoal_sink_handle_t sink_hdl;
+	isoal_status_t err;
+
+	isoal_test_init_rx_sdu_buffer(&rx_sdu_frag_buf);
+	sdu_buffer.dbuf = &rx_sdu_frag_buf;
+	sdu_buffer.size = TEST_RX_SDU_FRAG_PAYLOAD_MAX;
+	push_custom_sink_sdu_alloc_test_output_buffer(&sdu_buffer);
+
+	sink_hdl = sdu_free_rx_test_setup();
+
+	sdu_free_rx_test_recombine(sink_hdl,
+				   PDU_BIS_LLID_START_CONTINUE,
+				   SDU_FREE_TEST_PAYLOAD_NUMBER,
+				   SDU_FREE_TEST_PDU_LEN);
+
+	ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(0);
+
+	err = isoal_reset();
+
+	zassert_equal(err, ISOAL_STATUS_OK, "err = 0x%02x", err);
+
+	/* SDU should be freed and not emitted */
+	ZASSERT_ISOAL_SDU_FREE_TEST_CALL_COUNT(1);
+	ZASSERT_ISOAL_SDU_FREE_TEST(val,
+				    &isoal_global.sink_state[sink_hdl], /* Sink */
+				    sdu_buffer.dbuf);                   /* Buffer */
+	ZASSERT_ISOAL_SDU_EMIT_TEST_CALL_COUNT(0);
+
+	zassert_equal(isoal_global.sink_allocated[sink_hdl],
+		      ISOAL_ALLOC_STATE_FREE,
+		      "Sink reset failed!");
 }
 
 /**
