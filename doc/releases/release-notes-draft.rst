@@ -229,6 +229,12 @@ Other notable changes
     interrupts use the interrupt stack, which fixes return address corruption by a nested IRQ
     (:github:`122601`).
 
+* Arm Cortex-A/R
+
+  * FPU sharing is supported on SMP Cortex-A/R systems.
+  * Userspace is supported on SMP Cortex-R systems.
+  * Context switches are faster, and the context switch code is smaller.
+
 * Bluetooth
 
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,

@@ -24,12 +24,16 @@
 #define _thread_offset_to_preempt_float \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_preempt_float_OFFSET)
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R) ||                \
+	defined(CONFIG_CPU_AARCH32_ARMV6)
 #define _thread_offset_to_exception_depth \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_exception_depth_OFFSET)
 
 #define _cpu_offset_to_exc_depth \
 	(___cpu_t_arch_OFFSET + ___cpu_arch_t_exc_depth_OFFSET)
+
+#define _cpu_offset_to_fpu_owner \
+	(___cpu_t_arch_OFFSET + ___cpu_arch_t_fpu_owner_OFFSET)
 
 #if defined(CONFIG_ARM_TRACK_ACTIVE_IRQ)
 #define _cpu_offset_to_active_irq \
@@ -37,7 +41,7 @@
 #endif
 #endif
 
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_CPU_CORTEX_M) && (defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING))
 #define _thread_offset_to_mode \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_mode_OFFSET)
 #endif

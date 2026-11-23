@@ -57,9 +57,10 @@ tests:
       - cdns_swerv/s400/pmp/whisper
       - cdns_swerv/s420/whisper
       - cdns_swerv/s420/64/whisper
-      # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
-      # interrupt controller pair in interrupt_util.h yet.
+      # No trigger_irq implementation for the BCM283x interrupt
+      # controllers in interrupt_util.h yet.
       - rpi_zero_2w
+      - rpi_zero_w
       # No trigger_irq implementation for the Microchip AIC in
       # interrupt_util.h yet.
       - sama5d27_som1_ek1
@@ -93,9 +94,10 @@ tests:
       # On it8xxx2_evb, current trigger_irq implementation of RISC-V architecture
       # does not trigger interrupts
       - it8xxx2_evb
-      # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
-      # interrupt controller pair in interrupt_util.h yet.
+      # No trigger_irq implementation for the BCM283x interrupt
+      # controllers in interrupt_util.h yet.
       - rpi_zero_2w
+      - rpi_zero_w
       # No trigger_irq implementation for the Microchip AIC in
       # interrupt_util.h yet.
       - sama5d27_som1_ek1
