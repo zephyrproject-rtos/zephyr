@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+/ {
+	compatible = "canaan,kendryte-k230";
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(27)>;
+
+		cpu0: cpu@0 {
+			compatible = "thead,c908", "riscv";
+			reg = <0>;
+			device_type = "cpu";
+			mmu-type = "riscv,sv39";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c",
+					       "zicsr", "zifencei", "zicntr";
+			riscv,privilege-modes = "m", "u";
+			status = "okay";
+
+			hlic0: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		ranges;
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		uart0: serial@91400000 {
+			compatible = "snps,dw-apb-uart", "ns16550";
+			reg = <0x0 0x91400000 0x0 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <16 1>;
+			clock-frequency = <DT_FREQ_M(50)>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart1: serial@91401000 {
+			compatible = "snps,dw-apb-uart", "ns16550";
+			reg = <0x0 0x91401000 0x0 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <17 1>;
+			clock-frequency = <DT_FREQ_M(50)>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart2: serial@91402000 {
+			compatible = "snps,dw-apb-uart", "ns16550";
+			reg = <0x0 0x91402000 0x0 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <18 1>;
+			clock-frequency = <DT_FREQ_M(50)>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart3: serial@91403000 {
+			compatible = "snps,dw-apb-uart", "ns16550";
+			reg = <0x0 0x91403000 0x0 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <19 1>;
+			clock-frequency = <DT_FREQ_M(50)>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		uart4: serial@91404000 {
+			compatible = "snps,dw-apb-uart", "ns16550";
+			reg = <0x0 0x91404000 0x0 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <20 1>;
+			clock-frequency = <DT_FREQ_M(50)>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		plic: interrupt-controller@f00000000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0xf 0x00000000 0x0 0x00400000>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic0 11 &hlic0 9>;
+			riscv,max-priority = <7>;
+			riscv,ndev = <208>;
+		};
+
+		clint: clint@f04000000 {
+			compatible = "sifive,clint0";
+			reg = <0xf 0x04000000 0x0 0x00010000>;
+			interrupts-extended = <&hlic0 3>;
+		};
+
+		mtimer: timer@f0400bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0xf 0x0400bff8 0x0 0x8
+			       0xf 0x04004000 0x0 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&hlic0 7>;
+			no-64bit-mmio;
+		};
+	};
+
+	sram: memory@80200000 {
+		reg = <0x0 0x80200000 0x0 0x00200000>;
+		device_type = "memory";
+	};
+};

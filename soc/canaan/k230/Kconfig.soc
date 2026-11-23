@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_K230
+	bool
+	help
+	  Canaan Kendryte K230
+
+config SOC_K230_C908
+	bool
+	select SOC_K230
+	help
+	  Canaan Kendryte K230 little core (XuanTie C908)
+
+config SOC
+	default "k230" if SOC_K230

@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_K230_C908
+	select RISCV
+	select CPU_THEAD_C908
+	select RISCV_HAS_PLIC
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
