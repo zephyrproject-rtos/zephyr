@@ -2497,7 +2497,7 @@ int bt_unpair(uint8_t id, const bt_addr_le_t *addr)
 
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_LE_ENCRYPTION) || defined(CONFIG_BT_CLASSIC)
 enum bt_security_err bt_security_err_get(uint8_t hci_err)
 {
 	switch (hci_err) {
@@ -2517,9 +2517,9 @@ enum bt_security_err bt_security_err_get(uint8_t hci_err)
 		return BT_SECURITY_ERR_UNSPECIFIED;
 	}
 }
-#endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC) */
+#endif /* defined(CONFIG_BT_LE_ENCRYPTION) || defined(CONFIG_BT_CLASSIC) */
 
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_LE_ENCRYPTION)
 static bool update_sec_level(struct bt_conn *conn)
 {
 	if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
@@ -2535,9 +2535,9 @@ static bool update_sec_level(struct bt_conn *conn)
 
 	return !(conn->required_sec_level > conn->sec_level);
 }
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_LE_ENCRYPTION */
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_LE_ENCRYPTION) || defined(CONFIG_BT_CLASSIC)
 static void hci_encrypt_change(struct net_buf *buf)
 {
 	struct bt_hci_evt_encrypt_change *evt = (void *)buf->data;
@@ -2569,7 +2569,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 
 	conn->encrypt = evt->encrypt;
 
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_LE_ENCRYPTION)
 	if (bt_conn_is_le(conn)) {
 		/*
 		 * we update keys properties only on successful encryption to
@@ -2579,7 +2579,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 		 * update. This is done only for LE transport, for BR/EDR keys
 		 * are updated on HCI 'Link Key Notification Event'
 		 */
-		if (conn->encrypt) {
+		if (IS_ENABLED(CONFIG_BT_SMP) && conn->encrypt) {
 			bt_smp_update_keys(conn);
 		}
 
@@ -2587,7 +2587,7 @@ static void hci_encrypt_change(struct net_buf *buf)
 			status = BT_HCI_ERR_AUTH_FAIL;
 		}
 	}
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_LE_ENCRYPTION */
 #if defined(CONFIG_BT_CLASSIC)
 	if (bt_conn_is_br(conn)) {
 		if (!bt_br_update_sec_level(conn)) {
@@ -2649,15 +2649,17 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 	 * updated on HCI 'Link Key Notification Event', therefore update here
 	 * only security level based on available keys and encryption state.
 	 */
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_LE_ENCRYPTION)
 	if (bt_conn_is_le(conn)) {
-		bt_smp_update_keys(conn);
+		if (IS_ENABLED(CONFIG_BT_SMP)) {
+			bt_smp_update_keys(conn);
+		}
 
 		if (!update_sec_level(conn)) {
 			status = BT_HCI_ERR_AUTH_FAIL;
 		}
 	}
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_LE_ENCRYPTION */
 #if defined(CONFIG_BT_CLASSIC)
 	if (bt_conn_is_br(conn)) {
 		if (!bt_br_update_sec_level(conn)) {
@@ -2686,7 +2688,7 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 }
-#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
+#endif /* CONFIG_BT_LE_ENCRYPTION || CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_REMOTE_VERSION)
 static void bt_hci_evt_read_remote_version_complete(struct net_buf *buf)
@@ -2730,7 +2732,7 @@ static void hci_hardware_error(struct net_buf *buf)
 	LOG_ERR("Hardware error, hardware code: %d", evt->hardware_code);
 }
 
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_LE_ENCRYPTION)
 static void le_ltk_neg_reply(uint16_t handle)
 {
 	struct bt_hci_cp_le_ltk_req_neg_reply *cp;
@@ -2774,6 +2776,7 @@ static void le_ltk_request(struct net_buf *buf)
 	uint16_t handle;
 	uint8_t ltk[16];
 	uint64_t rand_value;
+	bool reply = false;
 	uint16_t ediv;
 
 	handle = sys_le16_to_cpu(evt->handle);
@@ -2789,7 +2792,11 @@ static void le_ltk_request(struct net_buf *buf)
 	(void)memcpy(&rand_value, evt->rand, sizeof(rand_value));
 	(void)memcpy(&ediv, evt->ediv, sizeof(ediv));
 
-	if (bt_smp_request_ltk(conn, rand_value, ediv, ltk)) {
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
+		reply = bt_smp_request_ltk(conn, rand_value, ediv, ltk);
+	}
+
+	if (reply) {
 		le_ltk_reply(handle, ltk);
 	} else {
 		le_ltk_neg_reply(handle);
@@ -2797,7 +2804,7 @@ static void le_ltk_request(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 }
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_LE_ENCRYPTION */
 
 static void hci_reset_complete(void)
 {
@@ -3247,10 +3254,10 @@ static const struct event_handler meta_events[] = {
 		      sizeof(struct bt_hci_evt_le_phy_update_complete)),
 #endif /* CONFIG_BT_PHY_UPDATE */
 #endif /* CONFIG_BT_CONN */
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_LE_ENCRYPTION)
 	EVENT_HANDLER(BT_HCI_EVT_LE_LTK_REQUEST, le_ltk_request,
 		      sizeof(struct bt_hci_evt_le_ltk_request)),
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_LE_ENCRYPTION */
 #if defined(CONFIG_BT_EXT_ADV)
 #if defined(CONFIG_BT_BROADCASTER)
 	EVENT_HANDLER(BT_HCI_EVT_LE_ADV_SET_TERMINATED, bt_hci_le_adv_set_terminated,
@@ -3477,13 +3484,13 @@ static const struct event_handler normal_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_DISCONN_COMPLETE, hci_disconn_complete,
 		      sizeof(struct bt_hci_evt_disconn_complete)),
 #endif /* CONFIG_BT_CONN */
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_LE_ENCRYPTION) || defined(CONFIG_BT_CLASSIC)
 	EVENT_HANDLER(BT_HCI_EVT_ENCRYPT_CHANGE, hci_encrypt_change,
 		      sizeof(struct bt_hci_evt_encrypt_change)),
 	EVENT_HANDLER(BT_HCI_EVT_ENCRYPT_KEY_REFRESH_COMPLETE,
 		      hci_encrypt_key_refresh_complete,
 		      sizeof(struct bt_hci_evt_encrypt_key_refresh_complete)),
-#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
+#endif /* CONFIG_BT_LE_ENCRYPTION || CONFIG_BT_CLASSIC */
 #if defined(CONFIG_BT_REMOTE_VERSION)
 	EVENT_HANDLER(BT_HCI_EVT_REMOTE_VERSION_INFO,
 		      bt_hci_evt_read_remote_version_complete,
@@ -4032,7 +4039,7 @@ static int le_set_event_mask(void)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP) &&
+	if (IS_ENABLED(CONFIG_BT_LE_ENCRYPTION) &&
 	    BT_FEAT_LE_ENCR(bt_dev.le.features)) {
 		mask |= BT_EVT_MASK_LE_LTK_REQUEST;
 	}
@@ -4426,7 +4433,7 @@ static int set_event_mask(void)
 		mask |= BT_EVT_MASK_REMOTE_VERSION_INFO;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP) &&
+	if (IS_ENABLED(CONFIG_BT_LE_ENCRYPTION) &&
 	    BT_FEAT_LE_ENCR(bt_dev.le.features)) {
 		mask |= BT_EVT_MASK_ENCRYPT_CHANGE;
 		mask |= BT_EVT_MASK_ENCRYPT_KEY_REFRESH_COMPLETE;

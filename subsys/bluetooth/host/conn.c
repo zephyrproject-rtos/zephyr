@@ -2825,6 +2825,9 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 	}
 }
 
+#endif /* CONFIG_BT_SMP */
+
+#if defined(CONFIG_BT_LE_ENCRYPTION)
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 				uint8_t ediv[2], const uint8_t *ltk, size_t len)
 {
@@ -2852,9 +2855,9 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_START_ENCRYPTION, buf, NULL);
 }
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_LE_ENCRYPTION */
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_LE_ENCRYPTION) || defined(CONFIG_BT_CLASSIC)
 uint8_t bt_conn_enc_key_size(const struct bt_conn *conn)
 {
 	if (!bt_conn_is_le(conn) && !bt_conn_is_br(conn)) {
@@ -3007,7 +3010,7 @@ bt_security_t bt_conn_get_security(const struct bt_conn *conn)
 {
 	return BT_SECURITY_L1;
 }
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_LE_ENCRYPTION || CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)
 
@@ -3068,10 +3071,10 @@ struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer)
 
 	conn->id = id;
 	bt_addr_le_copy(&conn->le.dst, peer);
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_LE_ENCRYPTION)
 	conn->sec_level = BT_SECURITY_L1;
 	conn->required_sec_level = BT_SECURITY_L1;
-#endif /* CONFIG_BT_SMP */
+#endif /* CONFIG_BT_LE_ENCRYPTION */
 	conn->type = BT_CONN_TYPE_LE;
 	conn->tx_data_pull = l2cap_data_pull;
 	conn->get_and_clear_cb = acl_get_and_clear_cb;
@@ -3239,11 +3242,11 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 	info->state = conn_internal_to_public_state(conn->state);
 	info->security.flags = 0;
 	info->security.level = bt_conn_get_security(conn);
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_LE_ENCRYPTION) || defined(CONFIG_BT_CLASSIC)
 	info->security.enc_key_size = bt_conn_enc_key_size(conn);
 #else
 	info->security.enc_key_size = 0;
-#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
+#endif /* CONFIG_BT_LE_ENCRYPTION || CONFIG_BT_CLASSIC */
 
 	switch (conn->type) {
 	case BT_CONN_TYPE_LE:

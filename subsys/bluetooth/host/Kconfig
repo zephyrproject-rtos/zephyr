@@ -472,8 +472,15 @@ config BT_REMOTE_INFO
 	  established and the application will be notified when this information
 	  is available through the remote_info_available connection callback.
 
+config BT_LE_ENCRYPTION
+	bool
+	help
+	  Encryption of LE connections and the connection security level. Selected by the
+	  options that can provide a key.
+
 config BT_SMP
 	bool "Security Manager Protocol support"
+	select BT_LE_ENCRYPTION
 	select BT_CRYPTO
 	select BT_RPA
 	select BT_ECC if !BT_SMP_OOB_LEGACY_PAIR_ONLY

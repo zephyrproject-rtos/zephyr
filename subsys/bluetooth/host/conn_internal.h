@@ -231,11 +231,11 @@ struct bt_conn {
 	/* Which local identity address this connection uses */
 	uint8_t                    id;
 
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_LE_ENCRYPTION) || defined(CONFIG_BT_CLASSIC)
 	bt_security_t		sec_level;
 	bt_security_t		required_sec_level;
 	uint8_t			encrypt;
-#endif /* CONFIG_BT_SMP || CONFIG_BT_CLASSIC */
+#endif /* CONFIG_BT_LE_ENCRYPTION || CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
 	/**
