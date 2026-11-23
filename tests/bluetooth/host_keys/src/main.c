@@ -55,6 +55,17 @@ static const bt_addr_le_t peer_extra = {
 static uint8_t rl_adds[NUM_PEERS];
 static uint8_t rl_rejects[NUM_PEERS];
 
+/* Resolving list commands seen for peer_extra */
+static uint8_t extra_rl_adds;
+static uint8_t extra_rl_removes;
+
+/* Extended scan enables accepted, the duration of the latest one and the status that
+ * the next ones complete with
+ */
+static uint8_t ext_scan_enables;
+static uint16_t ext_scan_duration;
+static uint8_t ext_scan_enable_status;
+
 struct cmd_handler {
 	uint16_t opcode;
 	uint8_t len;
@@ -162,6 +173,9 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt, ui
 	rp->status = BT_HCI_ERR_SUCCESS;
 	(void)memset(rp->features, 0, sizeof(rp->features));
 	rp->features[0] = BIT(BT_LE_FEAT_BIT_PRIVACY);
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		rp->features[BT_LE_FEAT_BIT_EXT_ADV / 8] |= BIT(BT_LE_FEAT_BIT_EXT_ADV % 8);
+	}
 }
 
 static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt, uint8_t len,
@@ -215,6 +229,10 @@ static void le_add_dev_to_rl(struct net_buf *buf, struct net_buf **evt, uint8_t 
 	rp = cmd_complete(evt, sizeof(*rp), opcode);
 	rp->status = BT_HCI_ERR_SUCCESS;
 
+	if (bt_addr_le_eq(&cp->peer_id_addr, &peer_extra)) {
+		extra_rl_adds++;
+	}
+
 	for (size_t i = 0U; i < NUM_PEERS; i++) {
 		if (!bt_addr_le_eq(&cp->peer_id_addr, &peers[i])) {
 			continue;
@@ -227,6 +245,40 @@ static void le_add_dev_to_rl(struct net_buf *buf, struct net_buf **evt, uint8_t 
 			rl_rejects[i]++;
 			rp->status = BT_HCI_ERR_INVALID_PARAM;
 		}
+	}
+}
+
+static void le_rem_dev_from_rl(struct net_buf *buf, struct net_buf **evt, uint8_t len,
+			       uint16_t opcode)
+{
+	const struct bt_hci_cp_le_rem_dev_from_rl *cp = (void *)buf->data;
+
+	if (bt_addr_le_eq(&cp->peer_id_addr, &peer_extra)) {
+		extra_rl_removes++;
+	}
+
+	generic_success(buf, evt, len, opcode);
+}
+
+static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt, uint8_t len,
+				   uint16_t opcode)
+{
+	const struct bt_hci_cp_le_set_ext_scan_enable *cp = (void *)buf->data;
+	struct bt_hci_evt_cc_status *rp;
+
+	ARG_UNUSED(len);
+
+	rp = cmd_complete(evt, sizeof(*rp), opcode);
+	rp->status = BT_HCI_ERR_SUCCESS;
+
+	if (cp->enable != BT_HCI_LE_SCAN_ENABLE) {
+		return;
+	}
+
+	rp->status = ext_scan_enable_status;
+	if (rp->status == BT_HCI_ERR_SUCCESS) {
+		ext_scan_enables++;
+		ext_scan_duration = sys_le16_to_cpu(cp->duration);
 	}
 }
 
@@ -275,6 +327,16 @@ static const struct cmd_handler cmds[] = {
 		BT_HCI_OP_LE_ADD_DEV_TO_RL,
 		sizeof(struct bt_hci_evt_cc_status),
 		le_add_dev_to_rl,
+	},
+	{
+		BT_HCI_OP_LE_REM_DEV_FROM_RL,
+		sizeof(struct bt_hci_evt_cc_status),
+		le_rem_dev_from_rl,
+	},
+	{
+		BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE,
+		sizeof(struct bt_hci_evt_cc_status),
+		le_set_ext_scan_enable,
 	},
 };
 
@@ -988,3 +1050,187 @@ static ZTEST(bt_keys_oldest, test_aging_counter_is_stored)
 	zassert_ok(settings_delete(name));
 }
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
+
+#if defined(CONFIG_BT_EXT_ADV) && defined(CONFIG_BT_OBSERVER)
+/* Resolving list updates during a scan limited by a timeout. An update means
+ * pausing the scanner, which can only be enabled again with a new duration, so
+ * the update has to wait until the limited scan has ended.
+ */
+
+static K_SEM_DEFINE(scan_timeout_sem, 0, 1);
+
+static void scan_timeout_cb(void)
+{
+	k_sem_give(&scan_timeout_sem);
+}
+
+static struct bt_le_scan_cb scan_cb = {
+	.timeout = scan_timeout_cb,
+};
+
+static void *limited_scan_setup(void)
+{
+	int err;
+
+	err = bt_enable(NULL);
+	zassert_true(err == 0 || err == -EALREADY, "bt_enable failed (%d)", err);
+	zassert_ok(settings_load());
+
+	err = bt_le_scan_cb_register(&scan_cb);
+	zassert_ok(err, "Failed to register the scan callbacks (%d)", err);
+
+	return NULL;
+}
+
+static struct bt_keys *extra_peer_keys(void)
+{
+	struct bt_keys *keys;
+
+	keys = bt_keys_get_type(BT_KEYS_IRK, BT_ID_DEFAULT, &peer_extra);
+	zassert_not_null(keys, "No room for the peer's keys");
+	(void)memset(keys->irk.val, 0xA5, sizeof(keys->irk.val));
+
+	return keys;
+}
+
+static const struct bt_le_scan_param limited_scan_param = {
+	.type = BT_LE_SCAN_TYPE_PASSIVE,
+	.options = BT_LE_SCAN_OPT_NONE,
+	.interval = BT_GAP_SCAN_FAST_INTERVAL,
+	.window = BT_GAP_SCAN_FAST_WINDOW,
+	.timeout = 1000U,
+};
+
+static void limited_scan_start(void)
+{
+	zassert_ok(bt_le_scan_start(&limited_scan_param, NULL), "Failed to start the limited scan");
+	zassert_equal(ext_scan_duration, limited_scan_param.timeout,
+		      "Scan enabled with duration %u", ext_scan_duration);
+}
+
+/* End the limited scan the way the Controller does when the duration is over */
+static void limited_scan_timeout(void)
+{
+	struct net_buf *buf = bt_buf_get_evt(BT_HCI_EVT_LE_META_EVENT, false, K_FOREVER);
+	struct bt_hci_evt_le_meta_event *mev;
+
+	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*mev));
+	mev = net_buf_add(buf, sizeof(*mev));
+	mev->subevent = BT_HCI_EVT_LE_SCAN_TIMEOUT;
+
+	bt_hci_recv(DEVICE_DT_GET(DT_DRV_INST(0)), buf);
+	zassert_ok(k_sem_take(&scan_timeout_sem, K_SECONDS(1)), "No scan timeout callback");
+}
+
+/* A failed test must not leave its scan running for the next one */
+static void limited_scan_after(void *fixture)
+{
+	int err;
+
+	ARG_UNUSED(fixture);
+
+	ext_scan_enable_status = BT_HCI_ERR_SUCCESS;
+	err = bt_le_scan_stop();
+	zassert_true(err == 0 || err == -EALREADY, "Failed to stop scanning (%d)", err);
+}
+
+static void limited_scan_teardown(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	bt_le_scan_cb_unregister(&scan_cb);
+	zassert_ok(bt_disable(), "bt_disable() failed");
+}
+
+ZTEST_SUITE(bt_keys_limited_scan, NULL, limited_scan_setup, reset_key_pool, limited_scan_after,
+	    limited_scan_teardown);
+
+static ZTEST(bt_keys_limited_scan, test_id_add_waits_for_scan_end)
+{
+	struct bt_keys *keys = extra_peer_keys();
+	uint8_t enables;
+	uint8_t adds = extra_rl_adds;
+
+	limited_scan_start();
+	enables = ext_scan_enables;
+
+	bt_id_add(keys);
+
+	zassert_equal(ext_scan_enables, enables, "The limited scan was restarted");
+	zassert_equal(extra_rl_adds, adds, "The IRK was added during the limited scan");
+	zassert_equal(keys->state & BT_KEYS_ID_ADDED, 0U);
+
+	limited_scan_timeout();
+
+	zassert_equal(ext_scan_enables, enables, "The scanner was enabled after the timeout");
+	zassert_equal(extra_rl_adds, adds + 1U, "%d adds after the limited scan",
+		      extra_rl_adds - adds);
+	zassert_not_equal(keys->state & BT_KEYS_ID_ADDED, 0U, "The IRK was never added");
+
+	zassert_ok(bt_unpair(BT_ID_DEFAULT, &peer_extra));
+}
+
+static ZTEST(bt_keys_limited_scan, test_id_add_waits_for_scan_stop)
+{
+	struct bt_keys *keys = extra_peer_keys();
+	uint8_t enables;
+	uint8_t adds = extra_rl_adds;
+
+	limited_scan_start();
+	enables = ext_scan_enables;
+
+	bt_id_add(keys);
+	zassert_ok(bt_le_scan_stop(), "Failed to stop the limited scan");
+
+	zassert_equal(ext_scan_enables, enables, "The scanner was enabled while being stopped");
+	zassert_equal(extra_rl_adds, adds + 1U, "%d adds after the limited scan",
+		      extra_rl_adds - adds);
+
+	zassert_ok(bt_unpair(BT_ID_DEFAULT, &peer_extra));
+}
+
+static ZTEST(bt_keys_limited_scan, test_id_add_after_failed_limited_scan)
+{
+	struct bt_keys *keys = extra_peer_keys();
+	uint8_t adds = extra_rl_adds;
+	int err;
+
+	ext_scan_enable_status = BT_HCI_ERR_CMD_DISALLOWED;
+	err = bt_le_scan_start(&limited_scan_param, NULL);
+	ext_scan_enable_status = BT_HCI_ERR_SUCCESS;
+	zassert_not_equal(err, 0, "The limited scan started");
+
+	/* A scan without a timeout never ends by itself, so nothing may wait for it */
+	zassert_ok(bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL), "Failed to start scanning");
+	bt_id_add(keys);
+	zassert_equal(extra_rl_adds, adds + 1U, "%d adds during a scan without a timeout",
+		      extra_rl_adds - adds);
+
+	zassert_ok(bt_le_scan_stop(), "Failed to stop scanning");
+	zassert_ok(bt_unpair(BT_ID_DEFAULT, &peer_extra));
+}
+
+static ZTEST(bt_keys_limited_scan, test_id_del_waits_for_scan_end)
+{
+	struct bt_keys *keys = extra_peer_keys();
+	uint8_t enables;
+	uint8_t removes = extra_rl_removes;
+
+	bt_id_add(keys);
+	zassert_not_equal(keys->state & BT_KEYS_ID_ADDED, 0U, "The IRK was never added");
+
+	limited_scan_start();
+	enables = ext_scan_enables;
+
+	zassert_ok(bt_unpair(BT_ID_DEFAULT, &peer_extra));
+
+	zassert_equal(ext_scan_enables, enables, "The limited scan was restarted");
+	zassert_equal(extra_rl_removes, removes, "The IRK was removed during the limited scan");
+
+	limited_scan_timeout();
+
+	zassert_equal(ext_scan_enables, enables, "The scanner was enabled after the timeout");
+	zassert_equal(extra_rl_removes, removes + 1U, "%d removes after the limited scan",
+		      extra_rl_removes - removes);
+}
+#endif /* CONFIG_BT_EXT_ADV && CONFIG_BT_OBSERVER */
