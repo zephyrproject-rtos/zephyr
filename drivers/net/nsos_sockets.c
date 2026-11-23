@@ -1267,8 +1267,8 @@ static int nsos_getsockopt_int(struct nsos_socket *sock, int nsos_mid_level, int
 		return -1;
 	}
 
-	err = nsos_adapt_getsockopt(sock->poll.mid.fd, NSOS_MID_SOL_SOCKET,
-				    NSOS_MID_SO_KEEPALIVE, optval, &nsos_mid_optlen);
+	err = nsos_adapt_getsockopt(sock->poll.mid.fd, nsos_mid_level,
+				    nsos_mid_optname, optval, &nsos_mid_optlen);
 	if (err) {
 		errno = nsi_errno_from_mid(-err);
 		return -1;
