@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensirion SGP41 VOC and NOx gas sensor
+compatible: "sensirion,sgp41"
+include: [sensor-device.yaml, i2c-device.yaml]
+properties:
+  enable-selftest:
+    type: boolean
+    description: |
+      Run the on-chip self-test during driver initialisation.
+      The self-test takes approximately 320 ms to complete.
