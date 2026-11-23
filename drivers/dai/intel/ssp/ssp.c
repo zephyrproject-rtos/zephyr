@@ -5,6 +5,7 @@
  */
 
 #include <errno.h>
+#include <zephyr/sys/sys_io_non_atomic.h>
 #include <zephyr/sys/util_macro.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -120,6 +121,15 @@ static void dai_ssp_update_bits(struct dai_intel_ssp *dp, uint32_t reg, uint32_t
 	LOG_DBG("base %x, reg %x, mask %x, value %x", dai_base(dp), reg, mask, val);
 
 	sys_write32((sys_read32(dest) & (~mask)) | (val & mask), dest);
+}
+
+static inline void dai_ssp_write64(uint64_t data, mem_addr_t addr)
+{
+#if defined(CONFIG_INTEL_ADSP_HIFI_64BIT_MMIO)
+	sys_write64(data, addr);
+#else
+	sys_write64_lo_hi(data, addr);
+#endif
 }
 
 #if SSP_IP_VER == SSP_IP_VER_1_0
@@ -1731,11 +1741,11 @@ static int dai_ssp_set_config_tplg(struct dai_intel_ssp *dp, const struct dai_co
 
 #if SSP_IP_VER > SSP_IP_VER_2_0
 	for (uint32_t idx = 0; idx < I2SIPCMC; ++idx) {
-		sys_write64(sstsa, dai_base(dp) + SSMODyTSA(idx));
+		dai_ssp_write64(sstsa, dai_base(dp) + SSMODyTSA(idx));
 	}
 
 	for (uint32_t idx = 0; idx < I2SOPCMC; ++idx) {
-		sys_write64(ssrsa, dai_base(dp) + SSMIDyTSA(idx));
+		dai_ssp_write64(ssrsa, dai_base(dp) + SSMIDyTSA(idx));
 	}
 #else
 	sys_write32(sstsa, dai_base(dp) + SSTSA);
@@ -2102,11 +2112,11 @@ static void dai_ssp_set_reg_config(struct dai_intel_ssp *dp, const struct dai_co
 	sys_write32(regs->sscto, dai_base(dp) + SSTO);
 
 	for (uint32_t idx = 0; idx < I2SIPCMC; ++idx) {
-		sys_write64(regs->ssmidytsa[idx], dai_base(dp) + SSMIDyTSA(idx));
+		dai_ssp_write64(regs->ssmidytsa[idx], dai_base(dp) + SSMIDyTSA(idx));
 	}
 
 	for (uint32_t idx = 0; idx < I2SOPCMC; ++idx) {
-		sys_write64(regs->ssmodytsa[idx], dai_base(dp) + SSMODyTSA(idx));
+		dai_ssp_write64(regs->ssmodytsa[idx], dai_base(dp) + SSMODyTSA(idx));
 	}
 
 	LOG_INF(" sscr0 = 0x%08x, sscr1 = 0x%08x, ssto = 0x%08x, sspsp = 0x%0x",

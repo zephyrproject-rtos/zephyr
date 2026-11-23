@@ -87,7 +87,7 @@ static void write_flash_block(const void *src, uint32_t offset)
 	for (uint32_t i = 0; i < FLASH_STM32_WRITE_BLOCK_SIZE; i += sizeof(uint64_t)) {
 		uint64_t dw = sys_get_le64((const uint8_t *)src + i);
 
-		sys_write64(dw, FLASH_STM32_BASE_ADDRESS + offset + i);
+		*(volatile uint64_t *)(FLASH_STM32_BASE_ADDRESS + offset + i) = dw;
 	}
 }
 
