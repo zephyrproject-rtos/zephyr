@@ -163,6 +163,8 @@ config USBC_LOG_PD_MSG_NAMES
 	  debugging, but the message name tables result in a larger code
 	  size.
 
+rsource "pdfu/Kconfig"
+
 module = USBC_STACK
 module-str = usbc stack
 source "subsys/logging/Kconfig.template.log_config"

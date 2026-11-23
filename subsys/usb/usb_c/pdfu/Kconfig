@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Meta Platforms, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_PDFU_RESPONDER
+	bool "USB PD Firmware Update responder"
+	depends on USBC_CHUNKING
+	help
+	  The PDFU Responder role from the USB Power Delivery Firmware Update
+	  Specification, Revision 1.0: the device being updated. Firmware
+	  arrives over the PD connection as Extended Messages, so chunking is
+	  required. Storage and identity are left to the application, through
+	  struct pdfu_ops in <zephyr/usb_c/pdfu.h>.
+
+if USBC_PDFU_RESPONDER
+
+module = USBC_PDFU
+module-str = usbc pdfu
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBC_PDFU_RESPONDER
