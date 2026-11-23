@@ -1095,7 +1095,7 @@ static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len)
 	return (t_preamble_us + t_payload_us + 500) / 1000;
 }
 
-static int sx126x_lora_rssi(const struct device *dev, int16_t *rssi)
+static int sx126x_get_rssi_inst(const struct device *dev, int16_t *rssi)
 {
 	uint8_t buf[1];
 	int ret;
@@ -1150,6 +1150,7 @@ static const struct lora_radio_ops sx126x_radio_ops = {
 	.rx_duty_cycle_start = sx126x_set_rx_duty_cycle,
 	.rx_read = sx126x_read_packet,
 	.cw_start = sx126x_start_cw,
+	.rssi = sx126x_get_rssi_inst,
 };
 
 static DEVICE_API(lora, sx126x_lora_api) = {
@@ -1165,7 +1166,7 @@ static DEVICE_API(lora, sx126x_lora_api) = {
 	.recv_duty_cycle_async = lora_radio_recv_duty_cycle_async,
 	.airtime = sx126x_lora_airtime,
 	.test_cw = lora_radio_test_cw,
-	.rssi = sx126x_lora_rssi,
+	.rssi = lora_radio_rssi,
 };
 
 #ifdef CONFIG_PM_DEVICE
