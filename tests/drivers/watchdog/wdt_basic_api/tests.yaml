@@ -82,6 +82,7 @@ tests:
     extra_configs:
       - CONFIG_DCACHE=n
     platform_allow:
+      - nucleo_g564re
       - nucleo_h7s3l8
       - stm32h7s78_dk
       - nucleo_h753zi
@@ -99,6 +100,7 @@ tests:
       - nucleo_f746zg
       - nucleo_g071rb
       - nucleo_g474re
+      - nucleo_g564re
       - nucleo_l073rz
       - nucleo_l152re
       - nucleo_l4r5zi
