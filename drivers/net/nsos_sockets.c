@@ -625,6 +625,39 @@ static int sockaddr_from_nsos_mid(struct net_sockaddr *addr, net_socklen_t *addr
 
 		return 0;
 	}
+	case NSOS_MID_AF_UNIX: {
+		const struct nsos_mid_sockaddr_un *addr_un_mid =
+			(const struct nsos_mid_sockaddr_un *)addr_mid;
+		struct net_sockaddr_un addr_un;
+
+		memset(&addr_un, 0, sizeof(addr_un));
+		addr_un.sun_family = NET_AF_UNIX;
+		memcpy(addr_un.sun_path, addr_un_mid->sun_path,
+		       MIN(sizeof(addr_un.sun_path), sizeof(addr_un_mid->sun_path)));
+
+		memcpy(addr, &addr_un, MIN(*addrlen, sizeof(addr_un)));
+		*addrlen = sizeof(addr_un);
+
+		return 0;
+	}
+	case NSOS_MID_AF_PACKET: {
+		const struct nsos_mid_sockaddr_ll *addr_ll_mid =
+			(const struct nsos_mid_sockaddr_ll *)addr_mid;
+		struct net_sockaddr_ll addr_ll;
+
+		addr_ll.sll_family = NET_AF_PACKET;
+		addr_ll.sll_protocol = addr_ll_mid->sll_protocol;
+		addr_ll.sll_ifindex = addr_ll_mid->sll_ifindex;
+		addr_ll.sll_hatype = addr_ll_mid->sll_hatype;
+		addr_ll.sll_pkttype = addr_ll_mid->sll_pkttype;
+		addr_ll.sll_halen = addr_ll_mid->sll_halen;
+		memcpy(addr_ll.sll_addr, addr_ll_mid->sll_addr, sizeof(addr_ll.sll_addr));
+
+		memcpy(addr, &addr_ll, MIN(*addrlen, sizeof(addr_ll)));
+		*addrlen = sizeof(addr_ll);
+
+		return 0;
+	}
 	}
 
 	return -NSI_ERRNO_MID_EINVAL;

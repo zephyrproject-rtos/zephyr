@@ -411,11 +411,20 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 		struct nsos_mid_sockaddr_un *addr_un_mid =
 			(struct nsos_mid_sockaddr_un *)addr_mid;
 		const struct sockaddr_un *addr_un = (const struct sockaddr_un *)addr;
+		size_t path_len = 0;
+
+		/* The host writes only the bytes addrlen covers; the rest is stale. */
+		if (addrlen > offsetof(struct sockaddr_un, sun_path)) {
+			path_len = addrlen - offsetof(struct sockaddr_un, sun_path);
+		}
+		if (path_len > sizeof(addr_un_mid->sun_path)) {
+			path_len = sizeof(addr_un_mid->sun_path);
+		}
 
 		if (addr_un_mid) {
 			addr_un_mid->sun_family = NSOS_MID_AF_UNIX;
-			memcpy(addr_un_mid->sun_path, addr_un->sun_path,
-			       sizeof(addr_un_mid->sun_path));
+			memset(addr_un_mid->sun_path, 0, sizeof(addr_un_mid->sun_path));
+			memcpy(addr_un_mid->sun_path, addr_un->sun_path, path_len);
 		}
 
 		if (addrlen_mid) {
@@ -433,6 +442,11 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 			addr_ll_mid->sll_family = NSOS_MID_AF_PACKET;
 			addr_ll_mid->sll_protocol = addr_ll->sll_protocol;
 			addr_ll_mid->sll_ifindex = addr_ll->sll_ifindex;
+			addr_ll_mid->sll_hatype = addr_ll->sll_hatype;
+			addr_ll_mid->sll_pkttype = addr_ll->sll_pkttype;
+			addr_ll_mid->sll_halen = addr_ll->sll_halen;
+			memcpy(addr_ll_mid->sll_addr, addr_ll->sll_addr,
+			       sizeof(addr_ll_mid->sll_addr));
 		}
 
 		if (addrlen_mid) {
