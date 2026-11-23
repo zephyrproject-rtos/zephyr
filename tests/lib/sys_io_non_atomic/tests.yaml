@@ -1,0 +1,6 @@
+tests:
+  libraries.sys_io_non_atomic:
+    tags: sys_io
+    integration_platforms:
+      - native_sim
+      - qemu_malta/qemu_malta/be
