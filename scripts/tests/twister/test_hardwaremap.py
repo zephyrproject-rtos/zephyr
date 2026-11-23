@@ -11,6 +11,8 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+import yaml
+from jsonschema.exceptions import ValidationError
 from twisterlib.hardwaremap import DUT, HardwareMap
 
 
@@ -301,6 +303,7 @@ def test_hardwaremap_load():
     hm = HardwareMap(options=mock.Mock())
     hm.options.device_flash_timeout = 30
     hm.options.device_flash_with_test = False
+    hm.options.skip_hwmap_schema_check = False
 
     with mock.patch('builtins.open', mock_open):
         hm.load(map_filename)
@@ -338,6 +341,76 @@ def test_hardwaremap_load():
     for dut in hm.duts:
         assert dut.id in expected
         assert all([getattr(dut, k) == v for k, v in expected[dut.id].items()])
+
+
+@pytest.mark.parametrize('skip_schema_check', [False, True])
+def test_hardwaremap_load_unknown_properties(tmp_path, caplog, skip_schema_check):
+    dut = {
+        'id': 'id0',
+        'platform': 'p0',
+        'product': 'pr0',
+        'runner': 'r0',
+        'connected': True,
+        'serial': 'dummy',
+        'future_property': 'value',
+        'another_property': True,
+    }
+    map_file = tmp_path / 'hardware-map.yaml'
+    map_file.write_text(yaml.safe_dump([dut]), encoding='utf-8')
+    hm = HardwareMap(options=mock.Mock(
+        skip_hwmap_schema_check=skip_schema_check,
+        device_flash_timeout=30,
+        device_flash_with_test=False,
+        flash_before=False,
+    ))
+
+    if not skip_schema_check:
+        with pytest.raises(ValidationError, match='Additional properties'):
+            hm.load(map_file)
+        assert not hm.duts
+        return
+
+    filtered = hm._load_without_schema(map_file)
+    assert filtered == [{
+        key: value for key, value in dut.items()
+        if key not in ('future_property', 'another_property')
+    }]
+    caplog.clear()
+    hm.load(map_file)
+
+    assert len(hm.duts) == 1
+    assert hm.duts[0].id == 'id0'
+    assert hm.duts[0].platform == 'p0'
+    assert hm.duts[0].serial == 'dummy'
+    warnings = [record.message for record in caplog.records if record.levelname == 'WARNING']
+    assert warnings == [
+        f"Ignoring unsupported hardware-map property '{name}' in '{map_file}' entry 0"
+        for name in ('another_property', 'future_property')
+    ]
+
+
+@pytest.mark.parametrize('contents, message', [
+    ('', 'must be a list'),
+    ('platform: p0\n', 'must be a list'),
+    ('- not-a-mapping\n', 'must be a mapping'),
+    ('- null\n', 'must be a mapping'),
+])
+def test_hardwaremap_load_relaxed_invalid_structure(tmp_path, contents, message):
+    map_file = tmp_path / 'hardware-map.yaml'
+    map_file.write_text(contents, encoding='utf-8')
+    hm = HardwareMap(options=mock.Mock(skip_hwmap_schema_check=True))
+
+    with pytest.raises(ValueError, match=message):
+        hm.load(map_file)
+
+
+def test_hardwaremap_load_relaxed_invalid_yaml(tmp_path):
+    map_file = tmp_path / 'hardware-map.yaml'
+    map_file.write_text('- platform: [\n', encoding='utf-8')
+    hm = HardwareMap(options=mock.Mock(skip_hwmap_schema_check=True))
+
+    with pytest.raises(yaml.YAMLError):
+        hm.load(map_file)
 
 
 TESTDATA_4 = [

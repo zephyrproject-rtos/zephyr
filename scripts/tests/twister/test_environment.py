@@ -162,6 +162,19 @@ def test_parse_arguments_errors(
     assert expected_error in ' '.join(caplog.text.split())
 
 
+@pytest.mark.parametrize('skip_schema_check', [False, True])
+def test_parse_arguments_hardware_map_schema_check(skip_schema_check):
+    args = ['--device-testing', '--hardware-map', 'hardware-map.yaml']
+    if skip_schema_check:
+        args.append('--skip-hwmap-schema-check')
+
+    parser = twisterlib.environment.add_parse_arguments()
+    options = twisterlib.environment.parse_arguments(parser, args)
+
+    assert options.hardware_map == 'hardware-map.yaml'
+    assert options.skip_hwmap_schema_check is skip_schema_check
+
+
 def test_parse_arguments_errors_size():
     """`options.size` is not an error, rather a different functionality."""
 
