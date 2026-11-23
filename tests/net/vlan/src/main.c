@@ -1121,7 +1121,11 @@ ZTEST(net_vlan, test_vlan_mcast_filter)
 		ztest_test_skip();
 	}
 
-	iface = vlan_interfaces[0];
+	ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_1);
+	zassert_ok(ret, "Cannot enable %d (%d)", VLAN_TAG_1, ret);
+
+	iface = net_eth_get_vlan_iface(eth_interfaces[0], VLAN_TAG_1);
+	zassert_not_null(iface, "No VLAN interface for %d", VLAN_TAG_1);
 	main_iface = net_eth_get_vlan_main(iface);
 	zassert_not_null(main_iface, "No main interface for the VLAN one");
 
@@ -1325,4 +1329,18 @@ ZTEST(net_vlan, test_vlan_truncated_header)
 	}
 }
 
-ZTEST_SUITE(net_vlan, NULL, setup, NULL, NULL, NULL);
+/* Every test starts without VLANs on the first Ethernet interface. */
+static void net_vlan_after(void *fixture)
+{
+	static const uint16_t tags[] = {
+		VLAN_TAG_1, VLAN_TAG_2, VLAN_TAG_3, VLAN_TAG_4, VLAN_TAG_5, VLAN_TAG_6, VLAN_TAG_7,
+	};
+
+	ARG_UNUSED(fixture);
+
+	ARRAY_FOR_EACH(tags, i) {
+		(void)net_eth_vlan_disable(eth_interfaces[0], tags[i]);
+	}
+}
+
+ZTEST_SUITE(net_vlan, NULL, setup, NULL, net_vlan_after, NULL);
