@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Arkadiusz Grzelka
+#
+# SPDX-License-Identifier: Apache-2.0
+
+include: usb-ep.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  maximum-speed:
+    type: string
+    description: |
+      Highest speed the controller advertises. "full-speed" leaves
+      POWER.HSEN clear; "high-speed" sets it. Omitted means full speed:
+      which speed a port may run at is a property of the connector and
+      its routing, not of the controller, so a board that has not said
+      so gets the slower of the two rather than the faster.
