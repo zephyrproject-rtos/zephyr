@@ -1,0 +1,12 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_SOC_FATAL_CPU_PARK_HOOK
+	bool "Provide a soc_fatal_cpu_park_hook() implementation"
+	default y
+	depends on SMP
+	select SOC_FATAL_CPU_PARK_HOOK
+	help
+	  Enable the park hook and build the test implementation of it.
