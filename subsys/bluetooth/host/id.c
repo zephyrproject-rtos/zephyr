@@ -1019,9 +1019,39 @@ void bt_id_pending_keys_update_set(struct bt_keys *keys, uint8_t flag)
 	atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
 }
 
+/* Whether an advertiser or a scan that is limited by a timeout is running. Updating the resolving
+ * list would pause it, and it could only be enabled again with a new duration.
+ */
+static bool limited_role_enabled(void)
+{
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) && IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		bool adv_enabled = false;
+
+		bt_le_ext_adv_foreach(adv_is_limited_enabled, &adv_enabled);
+		if (adv_enabled) {
+			return true;
+		}
+	}
+
+	return IS_ENABLED(CONFIG_BT_OBSERVER) && IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	       atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
+	       atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED);
+}
+
 void bt_id_pending_keys_update(void)
 {
-	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
+	bool pending;
+
+	/* The host lock makes this wait for a bt_id_add() or bt_id_del() that has found a limited
+	 * advertiser or scan and is about to queue its update. An advertiser or scan that ends
+	 * clears its limited flag before it calls this function, so such an update is either
+	 * queued by now or no longer waits for that role.
+	 */
+	bt_dev_lock();
+	pending = atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_ID_PENDING);
+	bt_dev_unlock();
+
+	if (pending) {
 		pending_id_del_update();
 
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
@@ -1103,6 +1133,7 @@ void bt_id_add(struct bt_keys *keys)
 	struct bt_conn *conn;
 	int err;
 	bool enable_controller_res = true;
+	bool deferred;
 
 	LOG_DBG("addr %s", bt_addr_le_str(&keys->addr));
 
@@ -1123,27 +1154,23 @@ void bt_id_add(struct bt_keys *keys)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
-	    IS_ENABLED(CONFIG_BT_EXT_ADV)) {
-		bool adv_enabled = false;
+	/* Checked and queued under the host lock, see bt_id_pending_keys_update(): the update
+	 * is either queued before the end of the limited advertiser or scan does the pending
+	 * ones, or it finds that role ended and is done here.
+	 */
+	bt_dev_lock();
+	deferred = limited_role_enabled();
+	if (deferred) {
+		bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
+	}
+	bt_dev_unlock();
 
-		bt_le_ext_adv_foreach(adv_is_limited_enabled, &adv_enabled);
-		if (adv_enabled) {
-			bt_id_pending_keys_update_set(keys,
-						   BT_KEYS_ID_PENDING_ADD);
-			return;
-		}
+	if (deferred) {
+		return;
 	}
 
 #if defined(CONFIG_BT_OBSERVER)
 	bool scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
-
-	/* Pausing the scanner would drop the remaining duration of a limited scan */
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && scan_enabled &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED)) {
-		bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
-		return;
-	}
 #endif
 
 	pending_id_del_update();
@@ -1284,6 +1311,7 @@ static void pending_id_del_set(const bt_addr_le_t *addr, struct bt_keys *keys)
 static bool id_del(const bt_addr_le_t *addr, struct bt_keys *keys)
 {
 	struct bt_conn *conn;
+	bool deferred;
 	int err;
 
 	LOG_DBG("addr %s", bt_addr_le_str(addr));
@@ -1307,26 +1335,20 @@ static bool id_del(const bt_addr_le_t *addr, struct bt_keys *keys)
 		return false;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
-	    IS_ENABLED(CONFIG_BT_EXT_ADV)) {
-		bool adv_enabled = false;
+	/* Checked and queued under the host lock, as in bt_id_add() */
+	bt_dev_lock();
+	deferred = limited_role_enabled();
+	if (deferred) {
+		pending_id_del_set(addr, keys);
+	}
+	bt_dev_unlock();
 
-		bt_le_ext_adv_foreach(adv_is_limited_enabled, &adv_enabled);
-		if (adv_enabled) {
-			pending_id_del_set(addr, keys);
-			return false;
-		}
+	if (deferred) {
+		return false;
 	}
 
 #if defined(CONFIG_BT_OBSERVER)
 	bool scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
-
-	/* Pausing the scanner would drop the remaining duration of a limited scan */
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && scan_enabled &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED)) {
-		pending_id_del_set(addr, keys);
-		return false;
-	}
 #endif /* CONFIG_BT_OBSERVER */
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
