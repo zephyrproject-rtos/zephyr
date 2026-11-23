@@ -1927,6 +1927,10 @@ static void add_static_network_config(struct add_stored_network_arg *arg)
 	creds.header.type = WIFI_SECURITY_TYPE_PSK_SHA256;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_SAE)
 	creds.header.type = WIFI_SECURITY_TYPE_SAE;
+#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_SAE_H2E)
+	creds.header.type = WIFI_SECURITY_TYPE_SAE_H2E;
+#elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_SAE_AUTO)
+	creds.header.type = WIFI_SECURITY_TYPE_SAE_AUTO;
 #elif defined(CONFIG_WIFI_CREDENTIALS_STATIC_TYPE_WPA_PSK)
 	creds.header.type = WIFI_SECURITY_TYPE_WPA_PSK;
 #else

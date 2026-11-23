@@ -53,6 +53,8 @@ static void print_network_info(void *cb_arg, const char *ssid, size_t ssid_len)
 	if (creds.header.type == WIFI_SECURITY_TYPE_PSK ||
 	    creds.header.type == WIFI_SECURITY_TYPE_PSK_SHA256 ||
 	    creds.header.type == WIFI_SECURITY_TYPE_SAE ||
+	    creds.header.type == WIFI_SECURITY_TYPE_SAE_H2E ||
+	    creds.header.type == WIFI_SECURITY_TYPE_SAE_AUTO ||
 	    creds.header.type == WIFI_SECURITY_TYPE_WPA_PSK) {
 		shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT,
 			      ", password: \"%.*s\", password_len: %d", (int)creds.password_len,

@@ -329,7 +329,9 @@ int wifi_credentials_set_personal(const char *ssid, size_t ssid_len, enum wifi_s
 	case WIFI_SECURITY_TYPE_PSK:
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
 	case WIFI_SECURITY_TYPE_WPA_PSK:
-	case WIFI_SECURITY_TYPE_SAE: {
+	case WIFI_SECURITY_TYPE_SAE:
+	case WIFI_SECURITY_TYPE_SAE_H2E:
+	case WIFI_SECURITY_TYPE_SAE_AUTO: {
 		struct wifi_credentials_personal *header_personal =
 			(struct wifi_credentials_personal *)buf;
 
@@ -402,7 +404,9 @@ int wifi_credentials_get_by_ssid_personal(const char *ssid, size_t ssid_len,
 	case WIFI_SECURITY_TYPE_PSK:
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
 	case WIFI_SECURITY_TYPE_WPA_PSK:
-	case WIFI_SECURITY_TYPE_SAE: {
+	case WIFI_SECURITY_TYPE_SAE:
+	case WIFI_SECURITY_TYPE_SAE_H2E:
+	case WIFI_SECURITY_TYPE_SAE_AUTO: {
 		struct wifi_credentials_personal *header_personal =
 			(struct wifi_credentials_personal *)buf;
 

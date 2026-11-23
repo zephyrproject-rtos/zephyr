@@ -151,7 +151,17 @@ config WIFI_CREDENTIALS_STATIC_TYPE_PSK_SHA256
 	bool "WPA2-PSK-SHA256"
 
 config WIFI_CREDENTIALS_STATIC_TYPE_SAE
-	bool "SAE"
+	bool "SAE (hunting-and-pecking)"
+
+config WIFI_CREDENTIALS_STATIC_TYPE_SAE_H2E
+	bool "SAE (hash-to-element)"
+	help
+	  WPA3-SAE using hash-to-element (H2E) only. Required for 6 GHz networks.
+
+config WIFI_CREDENTIALS_STATIC_TYPE_SAE_AUTO
+	bool "SAE (hunting-and-pecking and hash-to-element)"
+	help
+	  WPA3-SAE with both hunting-and-pecking and hash-to-element enabled.
 
 config WIFI_CREDENTIALS_STATIC_TYPE_WPA_PSK
 	bool "WPA-PSK"
