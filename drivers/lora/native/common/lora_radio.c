@@ -201,7 +201,11 @@ static void lora_radio_irq_work_handler(struct k_work *work)
 
 	ret = ops->irq_get(dev, &irq_status);
 	if (ret < 0) {
-		LOG_ERR("Failed to get IRQ status");
+		LOG_ERR("Failed to get IRQ status: %d", ret);
+		/* How the operation went is unknown. CW is ended by its own caller. */
+		if (data->op != LORA_RADIO_OP_NONE && data->op != LORA_RADIO_OP_CW) {
+			lora_radio_op_abort(dev, ret);
+		}
 		goto unlock;
 	}
 
