@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Chip select is the GPIO5 pin (P36, PMOD0 pin 8). The SPI signals are the PMOD0 RSPI ch0 pins.
+ */
+
+spibb0: &spi0 {
+	cs-gpios = <&gpio3 6 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};

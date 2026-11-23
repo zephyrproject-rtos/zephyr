@@ -116,7 +116,7 @@ static void i2c_rz_riic_controller_tmoi_isr(const struct device *dev)
 	riic_master_tmoi_isr((void *)data->riic_controller_ext_cfg->tmoi_irq);
 }
 
-#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#if defined(CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT)
 #define RZ_INTC_BASE DT_REG_ADDR(DT_NODELABEL(intc))
 
 #ifdef CONFIG_CPU_CORTEX_M33
@@ -143,7 +143,7 @@ static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
 	reg_val |= FIELD_PREP(REG_INTSEL_SPIk_SEL_MASK(irq), event);
 	REG_INTSEL_WRITE(irq, reg_val);
 }
-#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
+#endif /* CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT */
 
 #elif defined(CONFIG_I2C_RENESAS_RZ_IIC)
 void iic_master_rxi_isr(void);
@@ -593,7 +593,7 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 	} while (0)
 
 #if defined(CONFIG_I2C_RENESAS_RZ_RIIC)
-#if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
+#if defined(CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT)
 #define I2C_RZ_CONNECT_IRQ_SELECT(index)                                                           \
 	do {                                                                                       \
 		intc_connect_irq_event(DT_INST_IRQ_BY_NAME(index, txi, irq),                       \
@@ -603,7 +603,7 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 	} while (0)
 #else
 #define I2C_RZ_CONNECT_IRQ_SELECT(index)
-#endif /* CONFIG_SOC_SERIES_RZV2H || CONFIG_SOC_SERIES_RZV2N */
+#endif /* CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT */
 
 #define I2C_RZ_CONFIG_FUNC(index)                                                                  \
 	I2C_RZ_CONNECT_IRQ_SELECT(index);                                                          \
