@@ -342,7 +342,7 @@ static inline struct frag_cache *set_reass_cache(struct net_pkt *pkt, uint16_t s
 		cache[i].tag = tag;
 		cache[i].used = true;
 
-		k_work_reschedule(&cache[i].timer, FRAG_REASSEMBLY_TIMEOUT);
+		net_work_reschedule(&cache[i].timer, FRAG_REASSEMBLY_TIMEOUT);
 		return &cache[i];
 	}
 
