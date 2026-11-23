@@ -1,5 +1,8 @@
-# Copyright 2025 NXP
+# SPDX-FileCopyrightText: Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
+
+configdefault ETH_DRIVER
+	default y
 
 if SOC_MIMX94398_A55
 
@@ -29,9 +32,6 @@ config CLOCK_CONTROL_INIT_PRIORITY
 	default 31 if SOC_MIMX94398_A55
 
 # Enlarge default networking stack
-configdefault ETH_DRIVER
-	default y
-
 configdefault NET_TX_STACK_SIZE
 	default 8192
 
