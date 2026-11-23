@@ -1395,6 +1395,10 @@ static int nsos_getsockopt(void *obj, int level, int optname,
 			return nsos_getsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_REUSEPORT,
 						   optval, optlen);
+		case ZSOCK_SO_BROADCAST:
+			return nsos_getsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_BROADCAST,
+						   optval, optlen);
 		case ZSOCK_SO_KEEPALIVE:
 			return nsos_getsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_KEEPALIVE,
@@ -1565,6 +1569,10 @@ static int nsos_setsockopt(void *obj, int level, int optname, const void *optval
 		case ZSOCK_SO_REUSEPORT:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_REUSEPORT,
+						   optval, optlen);
+		case ZSOCK_SO_BROADCAST:
+			return nsos_setsockopt_int(sock,
+						   NSOS_MID_SOL_SOCKET, NSOS_MID_SO_BROADCAST,
 						   optval, optlen);
 		case ZSOCK_SO_LINGER:
 			return nsos_setsockopt_int(sock,

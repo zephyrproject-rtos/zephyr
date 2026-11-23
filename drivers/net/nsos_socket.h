@@ -28,7 +28,7 @@
 #define NSOS_MID_SO_ERROR 4
 /** Bypass normal routing and send directly to host (ignored, for compatibility) */
 #define NSOS_MID_SO_DONTROUTE 5
-/** Transmission of broadcast messages is supported (ignored, for compatibility) */
+/** Permit sending to a broadcast address, enforced by the host */
 #define NSOS_MID_SO_BROADCAST 6
 
 /** Size of socket send buffer */
