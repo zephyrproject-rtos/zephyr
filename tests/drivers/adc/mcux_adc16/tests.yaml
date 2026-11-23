@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.adc.mcux_adc16.isr:
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    tags:
+      - adc
+      - drivers
