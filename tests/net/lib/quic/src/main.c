@@ -8695,6 +8695,100 @@ ZTEST(net_socket_quic, test_519_listener_kept_by_its_connections_is_not_taken_ov
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+ZTEST(net_socket_quic, test_559_closed_listener_starts_no_connection)
+{
+	static const char addr_str[] = "127.0.0.1:54396";
+	static const uint8_t version[] = { 0x00, 0x00, 0x00, 0x01 };
+	static const uint8_t dcid[] = { 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f, 0x60, 0x61 };
+	static const uint8_t scid[] = { 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78 };
+	struct net_sockaddr_in src_addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4447),
+	};
+	uint8_t packet[32 + CONFIG_QUIC_TOKEN_MAX_LEN];
+	uint8_t token[CONFIG_QUIC_TOKEN_MAX_LEN];
+	struct quic_token_validation validation;
+	struct quic_long_header_info info;
+	struct quic_endpoint *listener;
+	struct quic_context *ctx;
+	size_t token_len;
+	size_t len = 0;
+	int sock;
+	int ret;
+
+	ret = net_addr_pton(NET_AF_INET, REMOTE_ADDR_IPV4, &src_addr.sin_addr);
+	zassert_ok(ret, "Cannot parse %s (%d)", REMOTE_ADDR_IPV4, ret);
+
+	/* The Initial packet that a client sends again after a Retry. Its
+	 * token passes the address validation, so a listener that is open
+	 * starts a connection for it.
+	 */
+	ret = quic_build_address_token(QUIC_TOKEN_RETRY, (struct net_sockaddr *)&src_addr,
+				       dcid, sizeof(dcid), token, sizeof(token), &token_len);
+	zassert_ok(ret, "Cannot build a Retry token (%d)", ret);
+
+	packet[len++] = 0xc0; /* Long header, Initial packet */
+	memcpy(&packet[len], version, sizeof(version));
+	len += sizeof(version);
+	packet[len++] = sizeof(dcid);
+	memcpy(&packet[len], dcid, sizeof(dcid));
+	len += sizeof(dcid);
+	packet[len++] = sizeof(scid);
+	memcpy(&packet[len], scid, sizeof(scid));
+	len += sizeof(scid);
+	packet[len++] = 0x40 | (token_len >> 8); /* Token length, 2 byte varint */
+	packet[len++] = token_len & 0xff;
+	memcpy(&packet[len], token, token_len);
+	len += token_len;
+	packet[len++] = 0x01; /* Length: the packet number only */
+	packet[len++] = 0x00; /* Packet number */
+
+	ret = quic_parse_long_header(&info, packet, len);
+	zassert_ok(ret, "Long header parse failed (%d)", ret);
+
+	ctx = open_test_listener(&sock, addr_str);
+	listener = ctx->listen;
+	zassert_not_null(listener, "No listener");
+
+	/* A connection still holds the listener as its parent when the
+	 * listening socket is closed
+	 */
+	atomic_inc(&listener->refcount);
+	held_listener = listener;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+	zassert_equal(atomic_get(&listener->refcount), 1,
+		      "Listener not kept by its connection alone");
+
+	/* The UDP socket of the listener is still open, so the packet of a
+	 * new client reaches it
+	 */
+	ret = process_long_header(listener, (struct net_sockaddr *)&src_addr,
+				  sizeof(src_addr), &info, 1200);
+	zexpect_equal(ret, 1, "Initial packet on a closed listener not dropped (%d)", ret);
+	zexpect_equal(atomic_get(&listener->refcount), 1,
+		      "A closed listener started a connection");
+
+	/* The token is still unused: the packet was turned away before its
+	 * address validation, not by it
+	 */
+	ret = quic_validate_address_token((struct net_sockaddr *)&src_addr,
+					  token, token_len, &validation);
+	zexpect_ok(ret, "The token of the dropped packet was used (%d)", ret);
+
+	/* Once the connection lets the listener go, the address is free */
+	held_listener = NULL;
+	quic_test_endpoint_unref(listener);
+	zexpect_equal(atomic_get(&listener->refcount), 0, "Listener not released");
+
+	ctx = open_test_listener(&sock, addr_str);
+	zexpect_not_null(ctx->listen, "No listener");
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 ZTEST(net_socket_quic, test_536_timeout_drops_the_list_reference_once)
 {
 	struct net_sockaddr_in remote = {
