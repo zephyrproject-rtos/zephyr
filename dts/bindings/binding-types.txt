@@ -117,6 +117,7 @@ pulse-io	Pulse IO
 pwm	PWM (Pulse Width Modulation)
 qspi	QSPI (Quad Serial Peripheral Interface)
 regulator	Regulator
+relay	Relay
 reserved-memory	Reserved memory
 reset	Reset controller
 retained_mem	Retained memory
