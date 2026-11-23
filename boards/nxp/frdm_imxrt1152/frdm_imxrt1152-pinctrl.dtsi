@@ -99,15 +99,4 @@
 			input-enable;
 		};
 	};
-
-	pinmux_lpi2c4: pinmux_lpi2c4 {
-		group0 {
-			pinmux = <&iomuxc_gpio_disp_b2_12_lpi2c4_scl>,
-				 <&iomuxc_gpio_disp_b2_13_lpi2c4_sda>;
-			drive-strength = "normal";
-			drive-open-drain;
-			slew-rate = "fast";
-			input-enable;
-		};
-	};
 };
