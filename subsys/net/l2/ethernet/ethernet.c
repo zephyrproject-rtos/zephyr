@@ -189,6 +189,22 @@ static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 	return (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN_TAG_STRIP);
 }
 
+/* A priority-tagged frame carries the null VLAN ID (VID 0): its tag holds only
+ * priority information and no VLAN identifier (IEEE 802.1Q, Table 9-2), so
+ * the frame belongs to the interface itself. It is received even when no
+ * VLAN is enabled on that interface.
+ */
+static bool eth_is_priority_tagged(struct net_pkt *pkt)
+{
+	struct net_eth_vlan_hdr *hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+
+	if (pkt->buffer->len < sizeof(struct net_eth_vlan_hdr)) {
+		return false;
+	}
+
+	return net_eth_vlan_get_vid(net_ntohs(hdr_vlan->vlan.tci)) == NET_VLAN_TAG_PRIORITY;
+}
+
 #if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 /* Drop packet if it has broadcast destination MAC address but the IP
  * address is not multicast or broadcast address. See RFC 1122 ch 3.3.6
@@ -577,7 +593,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	type = net_ntohs(hdr->type);
 
 	if (IS_ENABLED(CONFIG_NET_VLAN) && type == NET_ETH_PTYPE_VLAN) {
-		if (net_eth_is_vlan_enabled(ctx, iface) &&
+		if ((net_eth_is_vlan_enabled(ctx, iface) || eth_is_priority_tagged(pkt)) &&
 		    !eth_is_vlan_tag_stripped(iface)) {
 			struct net_eth_vlan_hdr *hdr_vlan =
 				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
