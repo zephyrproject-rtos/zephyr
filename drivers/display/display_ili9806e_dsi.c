@@ -12,7 +12,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_ili9806e_dsi, CONFIG_DISPLAY_LOG_LEVEL);
 
-static const struct ili98xx_dsi_cmd ili9806e_init_cmds[] = {
+static const struct ili98xx_dsi_cmd rtkmipilcdb00000be_init_cmds[] = {
 	/* Change to Page 1 CMD */
 	{.reg = ILI98XX_DSI_ENEXTC, .cmd_len = 5, .cmd = {0xFF, 0x98, 0x06, 0x04, 0x01}},
 	/* Output SDA */
@@ -186,7 +186,8 @@ static const struct ili98xx_dsi_cmd ili9806e_init_cmds[] = {
 	{.reg = ILI98XX_DSI_ENEXTC, .cmd_len = 5, .cmd = {0xff, 0x98, 0x06, 0x04, 0x00}},
 };
 
-int ili9806e_dsi_regs_init(const struct device *dev)
+int rtkmipilcdb00000be_dsi_regs_init(const struct device *dev)
 {
-	return ili98xx_dsi_write_sequence(dev, ili9806e_init_cmds, ARRAY_SIZE(ili9806e_init_cmds));
+	return ili98xx_dsi_write_sequence(dev, rtkmipilcdb00000be_init_cmds,
+					  ARRAY_SIZE(rtkmipilcdb00000be_init_cmds));
 }

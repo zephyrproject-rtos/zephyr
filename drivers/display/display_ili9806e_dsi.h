@@ -103,12 +103,4 @@
 #define ILI9806E_P7_REG_26 0x26
 #define ILI9806E_P7_REG_E1 0xE1
 
-/**
- * @brief Run the ILI9806E power-on command sequence.
- *
- * @param dev ILI9806E device instance
- * @return 0 on success, errno otherwise.
- */
-int ili9806e_dsi_regs_init(const struct device *dev);
-
 #endif /* ZEPHYR_DRIVERS_DISPLAY_ILITEK_ILI9806E_H_ */

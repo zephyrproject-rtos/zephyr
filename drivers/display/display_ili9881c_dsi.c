@@ -4,14 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "display_ili9881c_dsi.h"
 #include "display_ili98xx_dsi.h"
 
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_ili9881c_dsi, CONFIG_DISPLAY_LOG_LEVEL);
 
-static const struct ili98xx_dsi_cmd ili9881c_init_cmds[] = {
+static const struct ili98xx_dsi_cmd rtkapplcdms02001be_init_cmds[] = {
 	/* Change to Page 3 CMD */
 	{.reg = 0xFF, .cmd_len = 3, .cmd = {0x98, 0x81, 0x03}},
 	/* GIP_1 */
@@ -222,7 +221,8 @@ static const struct ili98xx_dsi_cmd ili9881c_init_cmds[] = {
 	{.reg = 0xFF, .cmd_len = 3, .cmd = {0x98, 0x81, 0x00}},
 };
 
-int ili9881c_dsi_regs_init(const struct device *dev)
+int rtkapplcdms02001be_dsi_regs_init(const struct device *dev)
 {
-	return ili98xx_dsi_write_sequence(dev, ili9881c_init_cmds, ARRAY_SIZE(ili9881c_init_cmds));
+	return ili98xx_dsi_write_sequence(dev, rtkapplcdms02001be_init_cmds,
+					  ARRAY_SIZE(rtkapplcdms02001be_init_cmds));
 }
