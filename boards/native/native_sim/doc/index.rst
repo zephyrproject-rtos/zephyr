@@ -869,7 +869,6 @@ Here are more details on the peripherals that are currently provided with this b
 .. _nsim_per_fuel_gauge:
 
 **Fuel gauge**
-
   A fuel gauge driver is available for reading battery properties from a Linux
   power_supply sysfs device on the host through the Zephyr fuel gauge API. It can
   be enabled with :kconfig:option:`CONFIG_NATIVE_LINUX_FUEL_GAUGE` and
