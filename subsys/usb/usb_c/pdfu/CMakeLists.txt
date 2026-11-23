@@ -3,3 +3,4 @@
 
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_USBC_PDFU_RESPONDER pdfu_responder.c)
+zephyr_library_sources_ifdef(CONFIG_USBC_PDFU_INITIATOR pdfu_initiator.c)
