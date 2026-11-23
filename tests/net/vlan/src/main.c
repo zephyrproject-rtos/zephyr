@@ -54,6 +54,12 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #define VLAN_TAG_6 600
 #define VLAN_TAG_7 700
 
+/* Priority 5, VID 0 */
+#define PRIORITY_TAG_TCI 0xa000
+
+/* IEEE 802 local experimental EtherType */
+#define LOCAL_EXPERIMENTAL_PTYPE 0x88b5
+
 #define NET_ETH_MAX_COUNT 2
 
 #define MY_IPV6_ADDR "2001:db8:200::2"
@@ -130,6 +136,7 @@ static struct net_if *test_iface;
 static bool test_failed;
 static bool test_started;
 static bool expecting_vlan_tag_0;
+static bool expecting_priority_tag;
 
 static K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
@@ -173,6 +180,22 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_context *context = dev->data;
 	int ret;
+
+	if (expecting_priority_tag && (net_pkt_ll_proto_type(pkt) == LOCAL_EXPERIMENTAL_PTYPE)) {
+		struct net_eth_vlan_hdr *hdr = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+
+		expecting_priority_tag = false;
+		if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_RESERVE_HEADER)) {
+			zassert_is_null(pkt->buffer->frags, "Header in a separate fragment");
+		}
+
+		zassert_equal(net_ntohs(hdr->vlan.tpid), NET_ETH_PTYPE_VLAN, "Frame sent untagged");
+		zassert_equal(net_ntohs(hdr->vlan.tci), PRIORITY_TAG_TCI, "Invalid TCI 0x%04x",
+			      net_ntohs(hdr->vlan.tci));
+
+		k_sem_give(&wait_data);
+		return 0;
+	}
 
 	if (expecting_vlan_tag_0) {
 		uint8_t reply[sizeof(icmpv6_echo_reply) - sizeof(struct net_eth_hdr)];
@@ -1241,6 +1264,74 @@ ZTEST(net_vlan, test_vlan_tag_0)
 
 	zassert_false(expecting_vlan_tag_0, "VLAN tag 0 not received");
 	zassert_equal(test_iface, eth_interfaces[0], "Wrong interface");
+}
+
+/* A priority-tagged frame carries no VLAN identifier, so it reaches the
+ * Ethernet interface even when no VLAN is enabled there.
+ */
+ZTEST(net_vlan, test_vlan_tag_0_recv_without_vlan)
+{
+	struct net_if *iface = eth_interfaces[0];
+	struct eth_context *context;
+	struct net_pkt *pkt;
+	int ret;
+
+	if (NET_VLAN_MAX_COUNT == 0) {
+		/* Without VLAN interfaces, test_vlan_tag_0 covers this case. */
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_false(net_eth_is_vlan_enabled(net_if_l2_data(iface), iface), "A VLAN is enabled");
+
+	context = net_if_get_device(iface)->data;
+
+	/* Set the receiving mac address of the example packet */
+	memcpy(&icmpv6_echo_request[0], context->mac_addr, 6);
+
+	ret = add_peer_neighbor(iface, &peer_addr, &icmpv6_echo_request[0]);
+	zassert_true(ret, "Cannot add neighbor");
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(icmpv6_echo_request), NET_AF_INET6,
+					   NET_IPPROTO_ICMPV6, K_NO_WAIT);
+	zassert_not_null(pkt, "Cannot allocate pkt");
+
+	ret = net_pkt_write(pkt, icmpv6_echo_request, sizeof(icmpv6_echo_request));
+	zassert_equal(ret, 0, "Cannot write to pkt");
+
+	expecting_vlan_tag_0 = true;
+	test_iface = NULL;
+
+	ret = net_recv_data(iface, pkt);
+	zassert_false(ret < 0, "Cannot receive data (%d)", ret);
+
+	zassert_ok(k_sem_take(&wait_data, WAIT_TIME), "No reply to the priority-tagged frame");
+	zassert_false(expecting_vlan_tag_0, "VLAN tag 0 not received");
+	zassert_equal(test_iface, iface, "Wrong interface");
+}
+
+/* A packet with VLAN tag 0 leaves the Ethernet interface priority-tagged, even
+ * when no VLAN is enabled there.
+ */
+ZTEST(net_vlan, test_vlan_tag_0_send_without_vlan)
+{
+	static const uint8_t dst[NET_ETH_ADDR_LEN] = {0x00, 0x00, 0x5e, 0x00, 0x53, 0xff};
+	struct net_if *iface = eth_interfaces[0];
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(iface, 4, NET_AF_UNSPEC, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "Cannot allocate pkt");
+
+	net_pkt_set_ll_proto_type(pkt, LOCAL_EXPERIMENTAL_PTYPE);
+	(void)net_linkaddr_set(net_pkt_lladdr_src(pkt), net_if_get_link_addr(iface)->addr,
+			       NET_ETH_ADDR_LEN);
+	(void)net_linkaddr_set(net_pkt_lladdr_dst(pkt), dst, NET_ETH_ADDR_LEN);
+	net_pkt_set_vlan_tci(pkt, PRIORITY_TAG_TCI);
+	zassert_ok(net_pkt_memset(pkt, 0, 4), "Cannot write to pkt");
+
+	expecting_priority_tag = true;
+	zassert_ok(net_send_data(pkt), "Cannot send data");
+	zassert_ok(k_sem_take(&wait_data, WAIT_TIME), "Priority-tagged frame not sent");
 }
 
 /* Feed a frame that carries the VLAN ethertype but is too short to hold the
