@@ -342,6 +342,12 @@ static int broadcast_ip_address(struct net_in_addr *ip_addr)
 		return -1;
 	}
 
+	/* Not fatal, stacks without the option may not require it */
+	if (zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BROADCAST, &(int){ 1 },
+			     sizeof(int)) < 0) {
+		LOG_DBG("Failed to set SO_BROADCAST : %d", errno);
+	}
+
 	broadcast.sin_addr.s_addr = net_htonl(NET_INADDR_BROADCAST);
 	broadcast.sin_port = net_htons(LATMON_NET_PORT);
 	broadcast.sin_family = NET_AF_INET;
