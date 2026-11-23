@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Meta Platforms, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# The roles are built without the USB-C stack, so their log level is set here.
+module = USBC_PDFU
+module-str = usbc pdfu
+source "subsys/logging/Kconfig.template.log_config"
+
+source "Kconfig.zephyr"
