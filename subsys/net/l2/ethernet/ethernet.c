@@ -191,8 +191,8 @@ static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 
 /* A priority-tagged frame carries the null VLAN ID (VID 0): its tag holds only
  * priority information and no VLAN identifier (IEEE 802.1Q, Table 9-2), so
- * the frame belongs to the interface itself. It is received even when no
- * VLAN is enabled on that interface.
+ * the frame belongs to the interface itself. It is received and sent even
+ * when no VLAN is enabled on that interface.
  */
 static bool eth_is_priority_tagged(struct net_pkt *pkt)
 {
@@ -864,18 +864,7 @@ static inline size_t get_reserve_ll_header_size(bool is_vlan)
 		return 0U;
 	}
 
-#if defined(CONFIG_NET_VLAN) && (CONFIG_NET_VLAN_COUNT == 0)
-	/* When CONFIG_NET_VLAN_COUNT = 0, priority-tagged
-	 * frames are supported on the main Ethernet interface.
-	 */
-	is_vlan = true;
-#endif
-
-	if (is_vlan) {
-		return sizeof(struct net_eth_vlan_hdr);
-	} else {
-		return sizeof(struct net_eth_hdr);
-	}
+	return is_vlan ? sizeof(struct net_eth_vlan_hdr) : sizeof(struct net_eth_hdr);
 }
 
 static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
@@ -888,9 +877,9 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	size_t hdr_len;
 	bool is_vlan;
 
-	is_vlan = IS_ENABLED(CONFIG_NET_VLAN) &&
-		net_eth_is_vlan_enabled(ctx, iface) &&
-		net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC;
+	is_vlan = IS_ENABLED(CONFIG_NET_VLAN) && (net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC) &&
+		  (net_eth_is_vlan_enabled(ctx, iface) ||
+		   (net_pkt_vlan_tag(pkt) == NET_VLAN_TAG_PRIORITY));
 
 	reserve_ll_header = get_reserve_ll_header_size(is_vlan);
 	if ((reserve_ll_header > 0) && (reserve_ll_header <= net_buf_headroom(pkt->buffer))) {
@@ -1215,7 +1204,10 @@ static int ethernet_l2_alloc(struct net_if *iface, struct net_pkt *pkt,
 			     size_t size, enum net_ip_protocol proto,
 			     k_timeout_t timeout)
 {
-	size_t reserve = get_reserve_ll_header_size(false);
+	/* Any packet of the main Ethernet interface can be sent
+	 * priority-tagged, so leave room for a VLAN header.
+	 */
+	size_t reserve = get_reserve_ll_header_size(IS_ENABLED(CONFIG_NET_VLAN));
 	struct ethernet_config config;
 
 	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_EXTRA_TX_PKT_HEADROOM) &&
