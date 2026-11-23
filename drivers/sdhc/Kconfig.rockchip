@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 Seunghoon Park
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_ROCKCHIP_DW_MSHC
+	bool "Rockchip RK3568 SD/MMC host controller driver"
+	default y
+	depends on DT_HAS_ROCKCHIP_RK3568_DW_MSHC_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select SYSCON
+	help
+	  Enable the driver for the DesignWare Mobile Storage Host Controller
+	  found on the Rockchip RK3568 and RK3566 SoCs. SD cards at 3.3 V
+	  (default and high speed) on a 1-bit or 4-bit bus are supported.
+	  Data is moved with the CPU through the controller FIFO and the
+	  controller is polled.
