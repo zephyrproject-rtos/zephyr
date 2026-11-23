@@ -69,9 +69,11 @@ static void lora_radio_op_end(const struct device *dev, int status)
 	struct lora_radio_data *data = dev->data;
 	struct lora_radio_waiter *waiter = data->waiter;
 	struct k_poll_signal *async = data->tx_async_signal;
+	struct k_poll_signal *queued = data->queued_tx_signal;
 
 	data->waiter = NULL;
 	data->tx_async_signal = NULL;
+	data->queued_tx_signal = NULL;
 	data->rx_cb = NULL;
 	data->rx_cb_user_data = NULL;
 	data->cad_cb = NULL;
@@ -83,6 +85,9 @@ static void lora_radio_op_end(const struct device *dev, int status)
 
 	if (async != NULL) {
 		k_poll_signal_raise(async, status);
+	}
+	if (queued != NULL) {
+		k_poll_signal_raise(queued, -ECANCELED);
 	}
 
 	if (waiter != NULL) {
@@ -173,6 +178,7 @@ static void lora_radio_rx_done(const struct device *dev, uint32_t irq_status)
 	int16_t rssi = 0;
 	int8_t snr = 0;
 	int len;
+	bool rearmed = false;
 
 	len = config->ops->rx_read(dev, irq_status, data->rx_buf, sizeof(data->rx_buf),
 				   &rssi, &snr);
@@ -198,6 +204,14 @@ static void lora_radio_rx_done(const struct device *dev, uint32_t irq_status)
 	}
 
 	/* Async mode: deliver valid packets, drop errors silently */
+	if (len > 0 && data->op == LORA_RADIO_OP_RX) {
+		if (config->ops->rx_continuous) {
+			rearmed = true;
+		} else if (config->ops->rx_rearm_before_callback) {
+			lora_radio_rx_restart(dev);
+			rearmed = true;
+		}
+	}
 	if (len > 0) {
 		/* Unlocked: the callback may call back into the driver */
 		k_mutex_unlock(&data->lock);
@@ -205,8 +219,8 @@ static void lora_radio_rx_done(const struct device *dev, uint32_t irq_status)
 		k_mutex_lock(&data->lock, K_FOREVER);
 	}
 
-	/* Restart the reception unless the callback ended it, even to start another */
-	if (data->ops_ended == ended) {
+	/* Restart the reception unless it was rearmed or the callback ended it */
+	if (!rearmed && data->ops_ended == ended) {
 		lora_radio_rx_restart(dev);
 	}
 }
@@ -256,7 +270,30 @@ static void lora_radio_irq_work_handler(struct k_work *work)
 		break;
 	case LORA_RADIO_OP_TX:
 		if ((irq_status & ops->irq_tx_done) != 0) {
-			lora_radio_op_end(dev, 0);
+			if (data->queued_tx_signal != NULL && ops->tx_continue != NULL) {
+				ret = ops->tx_continue(dev);
+				if (ret == 0) {
+					struct k_poll_signal *done = data->tx_async_signal;
+					struct lora_radio_waiter *waiter = data->waiter;
+
+					data->tx_async_signal = data->queued_tx_signal;
+					data->queued_tx_signal = NULL;
+					data->waiter = NULL;
+					if (done != NULL) {
+						k_poll_signal_raise(done, 0);
+					}
+					if (waiter != NULL) {
+						waiter->status = 0;
+						k_sem_give(&waiter->done);
+					}
+				} else {
+					k_poll_signal_raise(data->queued_tx_signal, ret);
+					data->queued_tx_signal = NULL;
+					lora_radio_op_end(dev, 0);
+				}
+			} else {
+				lora_radio_op_end(dev, 0);
+			}
 		} else if ((irq_status & ops->irq_timeout) != 0) {
 			lora_radio_op_end(dev, -ETIMEDOUT);
 		}
@@ -296,7 +333,11 @@ void lora_radio_irq(const struct device *dev)
 {
 	struct lora_radio_data *data = dev->data;
 
-	k_work_submit(&data->irq_work);
+	if (data->irq_workq != NULL) {
+		k_work_submit_to_queue(data->irq_workq, &data->irq_work);
+	} else {
+		k_work_submit(&data->irq_work);
+	}
 }
 
 void lora_radio_init(const struct device *dev)
@@ -362,6 +403,14 @@ static int lora_radio_tx_start(const struct device *dev,
 		if (ret < 0) {
 			goto unlock;
 		}
+	}
+	if (data->op == LORA_RADIO_OP_TX && async != NULL &&
+	    config->ops->tx_enqueue != NULL && data->queued_tx_signal == NULL) {
+		ret = config->ops->tx_enqueue(dev, data_buf, data_len);
+		if (ret == 0) {
+			data->queued_tx_signal = async;
+		}
+		goto unlock;
 	}
 
 	ret = lora_radio_op_begin(dev, LORA_RADIO_OP_TX);

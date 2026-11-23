@@ -48,6 +48,16 @@ struct lora_radio_ops {
 
 	/* The radio sleeps between operations and takes no command then */
 	bool sleeps;
+	/*
+	 * An asynchronous reception goes on by itself after a packet, so
+	 * rx_start() is only called again after a failed one
+	 */
+	bool rx_continuous;
+	/*
+	 * Restart an asynchronous reception before handing the packet to the
+	 * callback rather than after, so the radio is deaf for less time
+	 */
+	bool rx_rearm_before_callback;
 
 	/* Get the radio ready to take commands */
 	int (*wake)(const struct device *dev);
@@ -64,6 +74,13 @@ struct lora_radio_ops {
 	/* Optional. Whether the radio can send len bytes as it is configured. */
 	int (*tx_check)(const struct device *dev, uint32_t len);
 	int (*tx_start)(const struct device *dev, const uint8_t *buf, uint32_t len);
+
+	/*
+	 * Optional. Take the next frame while a transmission is in flight,
+	 * and send it from the TX done interrupt with tx_continue().
+	 */
+	int (*tx_enqueue)(const struct device *dev, const uint8_t *buf, uint32_t len);
+	int (*tx_continue)(const struct device *dev);
 
 	/* Optional. Listen once for a LoRa preamble. */
 	int (*cad_start)(const struct device *dev);
@@ -125,6 +142,8 @@ struct lora_radio_data {
 
 	/* Async TX signal */
 	struct k_poll_signal *tx_async_signal;
+	/* Signal of the frame queued behind the one on air */
+	struct k_poll_signal *queued_tx_signal;
 
 	/* Async CAD callback */
 	lora_cad_cb cad_cb;
@@ -132,6 +151,8 @@ struct lora_radio_data {
 
 	/* Deferred work for interrupt handling */
 	struct k_work irq_work;
+	/* Queue the work runs on, the system one when NULL */
+	struct k_work_q *irq_workq;
 };
 
 void lora_radio_init(const struct device *dev);
