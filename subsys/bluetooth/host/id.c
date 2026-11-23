@@ -1096,9 +1096,11 @@ void bt_id_add(struct bt_keys *keys)
 #if defined(CONFIG_BT_OBSERVER)
 	bool scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
 
+	/* Pausing the scanner would drop the remaining duration of a limited scan */
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && scan_enabled &&
 	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED)) {
 		bt_id_pending_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
+		return;
 	}
 #endif
 
@@ -1271,6 +1273,13 @@ static bool id_del(const bt_addr_le_t *addr, struct bt_keys *keys)
 
 #if defined(CONFIG_BT_OBSERVER)
 	bool scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
+
+	/* Pausing the scanner would drop the remaining duration of a limited scan */
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && scan_enabled &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED)) {
+		pending_id_del_set(addr, keys);
+		return false;
+	}
 #endif /* CONFIG_BT_OBSERVER */
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
