@@ -568,3 +568,20 @@ int lora_radio_rssi(const struct device *dev, int16_t *rssi)
 
 	return ret;
 }
+
+uint32_t lora_radio_airtime(const struct device *dev, uint32_t data_len)
+{
+	const struct lora_radio_config *config = dev->config;
+	struct lora_radio_data *data = dev->data;
+	uint32_t airtime = 0;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	if (data->configured) {
+		airtime = config->ops->airtime(dev, data_len);
+	}
+
+	k_mutex_unlock(&data->lock);
+
+	return airtime;
+}
