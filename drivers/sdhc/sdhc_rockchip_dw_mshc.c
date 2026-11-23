@@ -13,8 +13,9 @@
  *
  * Scope: SD cards on a 1-bit or 4-bit bus at 3.3 V, default and high speed
  * (up to 50 MHz). There is no 1.8 V signalling, UHS mode, tuning or eMMC
- * support. The controller is polled and data is moved by the CPU through
- * the FIFO.
+ * support. The controller is polled. Data is moved by the CPU through the
+ * FIFO, or by the internal DMA controller of the host controller when
+ * CONFIG_SDHC_ROCKCHIP_DW_MSHC_IDMAC is enabled and the buffer allows it.
  *
  * Pin muxing, the card power supply, the controller bus clock gate and the
  * card clock phase are assumed to have been set up by the boot loader.
@@ -25,13 +26,16 @@
 #include <errno.h>
 #include <string.h>
 
+#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/drivers/syscon.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sd/sd_spec.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
@@ -60,12 +64,39 @@ LOG_MODULE_REGISTER(sdhc_rockchip_dw_mshc, CONFIG_SDHC_LOG_LEVEL);
 #define MSHC_FIFOTH  0x04c
 #define MSHC_CDETECT 0x050
 #define MSHC_UHSREG  0x074
+#define MSHC_BMOD    0x080
+#define MSHC_PLDMND  0x084
+#define MSHC_DBADDR  0x088
+#define MSHC_IDSTS   0x08c
 #define MSHC_FIFO    0x200
 
 /* SDMMC_CTRL */
 #define CTRL_CONTROLLER_RESET BIT(0)
 #define CTRL_FIFO_RESET       BIT(1)
 #define CTRL_DMA_RESET        BIT(2)
+#define CTRL_DMA_ENABLE       BIT(5)
+#define CTRL_USE_INTERNAL_DMA BIT(25)
+
+/* SDMMC_BMOD */
+#define BMOD_SOFT_RESET  BIT(0)
+#define BMOD_FIXED_BURST BIT(1)
+#define BMOD_DMA_ENABLE  BIT(7)
+
+/* SDMMC_IDSTS (write 1 to clear) */
+#define IDSTS_FBE BIT(2)
+#define IDSTS_CES BIT(5)
+#define IDSTS_ALL 0x3ffU
+
+/* Internal DMA descriptor, chain mode (TRM "Internal DMA Controller") */
+#define DES0_OWN BIT(31)
+#define DES0_CH  BIT(4)
+#define DES0_FS  BIT(3)
+#define DES0_LD  BIT(2)
+
+#define DW_IDMAC_DESC_COUNT 64
+#define DW_IDMAC_CHUNK_SIZE 4096
+/* Keep the descriptors out of cache lines shared with other data. */
+#define DW_IDMAC_DESC_ALIGN 64
 
 /* SDMMC_CLKENA */
 #define CLKENA_ENABLE    BIT(0)
@@ -164,9 +195,17 @@ static const struct dw_mshc_clk_choice dw_mshc_clk_choices[] = {
 	{50000000, 3}, /* 100 MHz PLL branch */
 };
 
+struct dw_idmac_desc {
+	uint32_t des0; /* control and status */
+	uint32_t des1; /* buffer 1 size in bits [12:0] */
+	uint32_t des2; /* buffer 1 address */
+	uint32_t des3; /* next descriptor address (chain mode) */
+};
+
 struct dw_mshc_config {
 	DEVICE_MMIO_ROM;
 	const struct device *cru;
+	struct dw_idmac_desc *desc;
 	uint32_t fifo_depth;
 	uint32_t min_freq;
 	uint32_t max_freq;
@@ -582,6 +621,195 @@ static int dw_pio_xfer(const struct device *dev, struct sdhc_data *data, bool is
 	}
 }
 
+#ifdef CONFIG_SDHC_ROCKCHIP_DW_MSHC_IDMAC
+/*
+ * Internal DMA controller support.
+ *
+ * The descriptors form a chain of DW_IDMAC_DESC_COUNT entries that each
+ * cover up to DW_IDMAC_CHUNK_SIZE bytes. The whole chain is written before
+ * the command is issued and is not touched by the CPU until the transfer is
+ * over, so the descriptors can share cache lines: the CPU cleans them once
+ * before the transfer and only invalidates them afterwards to see the OWN
+ * bits the controller cleared.
+ */
+
+/*
+ * The descriptors and the DMA engine use physical addresses, the CPU uses
+ * the virtual ones. This is only valid for the permanent mapping of RAM,
+ * which is what dw_idmac_eligible() checks. The descriptor fields are 32
+ * bits wide, so a physical address of 4 GiB or more cannot be used.
+ */
+static inline uint64_t dw_idmac_phys(const void *virt)
+{
+	return (uint64_t)K_MEM_PHYS_ADDR((uintptr_t)virt);
+}
+
+static bool dw_idmac_eligible(const struct dw_mshc_config *cfg, const struct sdhc_data *data)
+{
+	size_t bytes = (size_t)data->block_size * data->blocks;
+	uintptr_t addr = (uintptr_t)data->data;
+	size_t align = MAX(sys_cache_data_line_size_get(), sizeof(uint32_t));
+
+	if (bytes > (size_t)DW_IDMAC_DESC_COUNT * DW_IDMAC_CHUNK_SIZE) {
+		return false;
+	}
+	/* Cache maintenance works on whole lines, so the buffer must too. */
+	if ((addr % align) != 0U || (bytes % align) != 0U) {
+		return false;
+	}
+	/* Only RAM that is mapped by the kernel can be translated. */
+	if (!IS_SRAM_ADDRESS(dw_idmac_phys(data->data)) ||
+	    !IS_SRAM_ADDRESS(dw_idmac_phys(data->data) + bytes - 1U)) {
+		return false;
+	}
+	/* The descriptors hold 32-bit physical addresses. */
+	if ((dw_idmac_phys(data->data) + bytes) > UINT32_MAX ||
+	    (dw_idmac_phys(cfg->desc) + sizeof(struct dw_idmac_desc) * DW_IDMAC_DESC_COUNT) >
+		    UINT32_MAX) {
+		return false;
+	}
+
+	return true;
+}
+
+static int dw_idmac_start(const struct device *dev, struct sdhc_data *data, bool is_write)
+{
+	const struct dw_mshc_config *cfg = dev->config;
+	size_t bytes = (size_t)data->block_size * data->blocks;
+	size_t chunks = DIV_ROUND_UP(bytes, DW_IDMAC_CHUNK_SIZE);
+	uint32_t buf = (uint32_t)dw_idmac_phys(data->data);
+	uint32_t desc_phys = (uint32_t)dw_idmac_phys(cfg->desc);
+	int ret;
+
+	/* A read must not meet a dirty line that is evicted over the DMA data. */
+	if (is_write) {
+		(void)sys_cache_data_flush_range(data->data, bytes);
+	} else {
+		(void)sys_cache_data_flush_and_invd_range(data->data, bytes);
+	}
+
+	dw_wr(dev, MSHC_BMOD, BMOD_SOFT_RESET);
+	ret = dw_wait(dev, MSHC_BMOD, BMOD_SOFT_RESET, 0, DW_RESET_TIMEOUT_MS);
+	if (ret != 0) {
+		return ret;
+	}
+	dw_wr(dev, MSHC_IDSTS, IDSTS_ALL);
+
+	for (size_t i = 0; i < chunks; i++) {
+		struct dw_idmac_desc *d = &cfg->desc[i];
+		size_t len = MIN(bytes - i * DW_IDMAC_CHUNK_SIZE, (size_t)DW_IDMAC_CHUNK_SIZE);
+
+		d->des0 = DES0_OWN | DES0_CH | (i == 0U ? DES0_FS : 0U) |
+			  (i == chunks - 1U ? DES0_LD : 0U);
+		d->des1 = len;
+		d->des2 = buf + i * DW_IDMAC_CHUNK_SIZE;
+		d->des3 = desc_phys + ((i + 1U) % chunks) * sizeof(struct dw_idmac_desc);
+	}
+	(void)sys_cache_data_flush_range(cfg->desc, chunks * sizeof(struct dw_idmac_desc));
+	barrier_dsync_fence_full();
+
+	dw_wr(dev, MSHC_DBADDR, desc_phys);
+	dw_wr(dev, MSHC_CTRL, dw_rd(dev, MSHC_CTRL) | CTRL_DMA_ENABLE | CTRL_USE_INTERNAL_DMA);
+	dw_wr(dev, MSHC_BMOD, BMOD_DMA_ENABLE | BMOD_FIXED_BURST);
+
+	return 0;
+}
+
+static void dw_idmac_stop(const struct device *dev, bool failed)
+{
+	dw_wr(dev, MSHC_CTRL, dw_rd(dev, MSHC_CTRL) & ~(CTRL_DMA_ENABLE | CTRL_USE_INTERNAL_DMA));
+	dw_wr(dev, MSHC_BMOD, 0);
+	dw_wr(dev, MSHC_IDSTS, IDSTS_ALL);
+	if (failed) {
+		(void)dw_reset_bits(dev, CTRL_DMA_RESET | CTRL_FIFO_RESET);
+	}
+}
+
+/*
+ * The transfer is over when the card side has finished (DTO) and the DMA
+ * controller handed the last descriptor back: on a read it may still be
+ * moving the end of the FIFO to memory when DTO is set.
+ */
+static int dw_idmac_wait(const struct device *dev, struct sdhc_data *data, bool is_write)
+{
+	const struct dw_mshc_config *cfg = dev->config;
+	size_t bytes = (size_t)data->block_size * data->blocks;
+	size_t chunks = DIV_ROUND_UP(bytes, DW_IDMAC_CHUNK_SIZE);
+	struct dw_idmac_desc *last = &cfg->desc[chunks - 1U];
+	int tmo_ms = (data->timeout_ms > 0 ? data->timeout_ms : DW_DEFAULT_DATA_TMO_MS) +
+		     DW_PER_BLOCK_TMO_MS * (int)data->blocks;
+	int64_t end = k_uptime_ticks() + k_ms_to_ticks_ceil64(tmo_ms);
+	bool dto_seen = false;
+
+	for (;;) {
+		uint32_t st = dw_rd(dev, MSHC_RINTSTS);
+		uint32_t ids = dw_rd(dev, MSHC_IDSTS);
+
+		if ((st & INT_DATA_ERR) != 0U || (ids & (IDSTS_FBE | IDSTS_CES)) != 0U) {
+			LOG_ERR("data error, RINTSTS 0x%08x IDSTS 0x%08x", st, ids);
+			return -EIO;
+		}
+		if ((st & INT_DATA_TMO) != 0U) {
+			LOG_ERR("data timeout, RINTSTS 0x%08x", st);
+			return -ETIMEDOUT;
+		}
+		if ((st & INT_DTO) != 0U) {
+			dto_seen = true;
+		}
+
+		if (dto_seen) {
+			(void)sys_cache_data_invd_range(last, sizeof(*last));
+			if ((last->des0 & DES0_OWN) == 0U) {
+				break;
+			}
+		}
+		if (k_uptime_ticks() >= end) {
+			LOG_ERR("DMA transfer timeout, RINTSTS 0x%08x IDSTS 0x%08x", st, ids);
+			return -ETIMEDOUT;
+		}
+		k_busy_wait(1);
+	}
+
+	if (!is_write) {
+		(void)sys_cache_data_invd_range(data->data, bytes);
+	}
+
+	return 0;
+}
+#else
+static inline bool dw_idmac_eligible(const struct dw_mshc_config *cfg, const struct sdhc_data *data)
+{
+	ARG_UNUSED(cfg);
+	ARG_UNUSED(data);
+
+	return false;
+}
+
+static inline int dw_idmac_start(const struct device *dev, struct sdhc_data *data, bool is_write)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(data);
+	ARG_UNUSED(is_write);
+
+	return -ENOTSUP;
+}
+
+static inline int dw_idmac_wait(const struct device *dev, struct sdhc_data *data, bool is_write)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(data);
+	ARG_UNUSED(is_write);
+
+	return -ENOTSUP;
+}
+
+static inline void dw_idmac_stop(const struct device *dev, bool failed)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(failed);
+}
+#endif /* CONFIG_SDHC_ROCKCHIP_DW_MSHC_IDMAC */
+
 static int dw_mshc_request_once(const struct device *dev, struct sdhc_command *cmd,
 				struct sdhc_data *data)
 {
@@ -590,6 +818,8 @@ static int dw_mshc_request_once(const struct device *dev, struct sdhc_command *c
 	uint32_t flags = (cmd->opcode & CMD_INDEX_MASK) | CMD_USE_HOLD_REG;
 	bool is_write = false;
 	bool auto_stop = false;
+	bool dma_active = false;
+	bool use_dma = false;
 	uint32_t st;
 	int tmo_ms;
 	int ret;
@@ -613,6 +843,7 @@ static int dw_mshc_request_once(const struct device *dev, struct sdhc_command *c
 		if (auto_stop) {
 			flags |= CMD_SEND_AUTO_STOP;
 		}
+		use_dma = dw_idmac_eligible(dev->config, data);
 	}
 
 	flags |= dw_response_flags(cmd->response_type);
@@ -646,6 +877,14 @@ static int dw_mshc_request_once(const struct device *dev, struct sdhc_command *c
 		ret = dw_reset_bits(dev, CTRL_FIFO_RESET);
 		if (ret != 0) {
 			goto out;
+		}
+		if (use_dma) {
+			/* The DMA must be armed before the command is written. */
+			dma_active = true;
+			ret = dw_idmac_start(dev, data, is_write);
+			if (ret != 0) {
+				goto fail;
+			}
 		}
 	}
 
@@ -698,7 +937,15 @@ static int dw_mshc_request_once(const struct device *dev, struct sdhc_command *c
 	}
 
 	if (data != NULL) {
-		ret = dw_pio_xfer(dev, data, is_write);
+		if (use_dma) {
+			ret = dw_idmac_wait(dev, data, is_write);
+			if (ret == 0) {
+				dw_idmac_stop(dev, false);
+				dma_active = false;
+			}
+		} else {
+			ret = dw_pio_xfer(dev, data, is_write);
+		}
 		if (ret != 0) {
 			goto fail;
 		}
@@ -745,6 +992,9 @@ static int dw_mshc_request_once(const struct device *dev, struct sdhc_command *c
 	return 0;
 
 fail:
+	if (dma_active) {
+		dw_idmac_stop(dev, true);
+	}
 	dw_recover(dev, data != NULL);
 out:
 	k_mutex_unlock(&drv->lock);
@@ -811,14 +1061,26 @@ static DEVICE_API(sdhc, dw_mshc_api) = {
 	.get_host_props = dw_mshc_get_host_props,
 };
 
+#ifdef CONFIG_SDHC_ROCKCHIP_DW_MSHC_IDMAC
+#define DW_MSHC_IDMAC_DEFINE(n)                                                                    \
+	static struct dw_idmac_desc dw_idmac_desc_##n[DW_IDMAC_DESC_COUNT]                         \
+		__aligned(DW_IDMAC_DESC_ALIGN);
+#define DW_MSHC_IDMAC_DESC(n) dw_idmac_desc_##n
+#else
+#define DW_MSHC_IDMAC_DEFINE(n)
+#define DW_MSHC_IDMAC_DESC(n) NULL
+#endif
+
 #define DW_MSHC_INIT(n)                                                                            \
 	BUILD_ASSERT(DT_INST_PROP(n, fifo_depth) >= 16, "fifo-depth is too small");                \
 	BUILD_ASSERT(DT_INST_PROP_OR(n, bus_width, 4) == 1 ||                                      \
 			     DT_INST_PROP_OR(n, bus_width, 4) == 4,                                \
 		     "bus-width must be 1 or 4");                                                  \
+	DW_MSHC_IDMAC_DEFINE(n)                                                                    \
 	static const struct dw_mshc_config dw_mshc_cfg_##n = {                                     \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.cru = DEVICE_DT_GET(DT_INST_PHANDLE(n, rockchip_cru)),                            \
+		.desc = DW_MSHC_IDMAC_DESC(n),                                                     \
 		.fifo_depth = DT_INST_PROP(n, fifo_depth),                                         \
 		.min_freq = DT_INST_PROP(n, min_bus_freq),                                         \
 		.max_freq = DT_INST_PROP(n, max_bus_freq),                                         \
