@@ -11,6 +11,8 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/cache.h>
+#include <zephyr/sys/util.h>
 #if defined(CONFIG_SOC_ACP_7_X)
 #include <acp7x_fw_scratch_mem.h>
 #include <acp7x_chip_offsets.h>
@@ -145,11 +147,15 @@ static int acp_dma_dmic_config(const struct device *dev, uint32_t channel, struc
 				return -EINVAL;
 			}
 		}
-		timeperiod_ms = dmic_rngbuff_size /
-				(acp_initsilence.num_chs * acp_initsilence.samplerate_khz *
-				 acp_initsilence.bytes_per_sample * 2);
-		acp_initsilence.silence_cnt = DMIC_SETTLING_TIME_MS / timeperiod_ms;
-		acp_initsilence.numfilterbuffers = DMIC_SMOOTH_TIME_MS / timeperiod_ms;
+		timeperiod_ms = acp_initsilence.num_chs * acp_initsilence.samplerate_khz *
+			       acp_initsilence.bytes_per_sample;
+		if (!timeperiod_ms || dmic_rngbuff_size < 2) {
+			return -EINVAL;
+		}
+		acp_initsilence.silence_cnt =
+			DIV_ROUND_UP(DMIC_SETTLING_TIME_MS * timeperiod_ms, dmic_rngbuff_size / 2);
+		acp_initsilence.numfilterbuffers =
+			DIV_ROUND_UP(DMIC_SMOOTH_TIME_MS * timeperiod_ms, dmic_rngbuff_size / 2);
 		LOG_DBG("config: silence_cnt=%u numfilterbuf=%u", acp_initsilence.silence_cnt,
 			acp_initsilence.numfilterbuffers);
 		break;
@@ -163,48 +169,56 @@ static int acp_dmic_dma_reload(const struct device *dev, uint32_t channel, uint3
 			       uint32_t dst, size_t bytes)
 {
 	ARG_UNUSED(dev);
+	ARG_UNUSED(channel);
 	ARG_UNUSED(src);
 	ARG_UNUSED(dst);
+	ARG_UNUSED(bytes);
 
-	LOG_DBG("reload: ch=%u bytes=%zu silence_incr=%u", channel, bytes,
-		acp_initsilence.silence_incr);
+	return 0;
+}
+
+/*
+ * Mute, then fade in, the first buffers captured after DMA start to hide the DMIC
+ * start-up transient. It must run on a half buffer that the DMA has just completed and
+ * that the DAI has not consumed yet, so it is called from get_status() and not from
+ * reload(), which the DAI calls after it has already copied the data out (and also with
+ * zero bytes on every empty LL tick).
+ */
+static void acp_dmic_apply_initial_silence(uint32_t half_idx)
+{
+	const uint32_t half = dmic_rngbuff_size / 2;
+	char *half_addr = acp_initsilence.dmic_rngbuff_addr1 + (half_idx * half);
 	uint32_t i;
 	uint32_t j;
-	int numsamples;
-	char *dmic_rngbuff_addr2 = acp_initsilence.dmic_rngbuff_addr1;
 
 	if (acp_initsilence.silence_incr < acp_initsilence.silence_cnt) {
-		if (acp_initsilence.silence_incr & 1) {
-			dmic_rngbuff_addr2 =
-				acp_initsilence.dmic_rngbuff_addr1 + (dmic_rngbuff_size / 2);
-		}
-		LOG_DBG("reload: applying silence fill");
-		for (i = 0; i < (dmic_rngbuff_size / 2); i++) {
-			dmic_rngbuff_addr2[i] = 0;
-		}
-		acp_initsilence.silence_incr++;
+		memset(half_addr, 0, half);
 	} else if (acp_initsilence.silence_incr <
 		   acp_initsilence.silence_cnt + acp_initsilence.numfilterbuffers) {
-		LOG_DBG("reload: smooth ramp coeff=%u", acp_initsilence.coeff);
-		numsamples = (dmic_rngbuff_size / 2) /
-			     (acp_initsilence.num_chs * acp_initsilence.bytes_per_sample);
-		if (acp_initsilence.silence_incr & 1) {
-			dmic_rngbuff_addr2 =
-				acp_initsilence.dmic_rngbuff_addr1 + (dmic_rngbuff_size / 2);
-		}
-		acp_initsilence.dmic_rngbuff_iaddr = (int *)dmic_rngbuff_addr2;
-		for (i = 0; i < numsamples * acp_initsilence.num_chs;
-		     i += acp_initsilence.num_chs, acp_initsilence.coeff++) {
-			for (j = 0; j < acp_initsilence.num_chs; j++) {
-				acp_initsilence.dmic_rngbuff_iaddr[i + j] =
-					(acp_initsilence.dmic_rngbuff_iaddr[i + j] /
-					 (numsamples * acp_initsilence.numfilterbuffers)) *
-					acp_initsilence.coeff;
+		const uint32_t chs = acp_initsilence.num_chs;
+		const uint32_t numsamples = half / (chs * acp_initsilence.bytes_per_sample);
+		const int64_t total = (int64_t)numsamples * acp_initsilence.numfilterbuffers;
+		int32_t *samples = (int32_t *)half_addr;
+
+		/* drop stale cache lines left by the silence fill; the DMA has rewritten them */
+		sys_cache_data_invd_range(half_addr, half);
+		for (i = 0; i < numsamples; i++, acp_initsilence.coeff++) {
+			for (j = 0; j < chs; j++) {
+				samples[i * chs + j] = (int32_t)(((int64_t)samples[i * chs + j] *
+								  acp_initsilence.coeff) / total);
 			}
 		}
-		acp_initsilence.silence_incr++;
+	} else {
+		return;
 	}
-	return 0;
+
+	/*
+	 * The DAI invalidates the ring buffer before reading it, so the write must reach memory.
+	 * Also drop the lines so they cannot hide, or later overwrite, the data the DMA writes
+	 * into this half on its next lap.
+	 */
+	sys_cache_data_flush_and_invd_range(half_addr, half);
+	acp_initsilence.silence_incr++;
 }
 
 static int acp_dma_dmic_start(const struct device *dev, uint32_t channel)
@@ -522,6 +536,7 @@ static int acp_dmic_dma_get_status(const struct device *dev, uint32_t channel,
 	LOG_DBG("get_status: pending=%u", stat->pending_length);
 	LOG_DBG("get_status: curr=%llu prev=%llu", dmic_curr_rx_pos, ctx->prev_pos);
 	if (stat->pending_length >= (dmic_rngbuff_size / 2)) {
+		acp_dmic_apply_initial_silence((ctx->prev_pos / (dmic_rngbuff_size / 2)) & 1);
 		ctx->prev_pos += (dmic_rngbuff_size / 2);
 	} else {
 		stat->pending_length = 0;

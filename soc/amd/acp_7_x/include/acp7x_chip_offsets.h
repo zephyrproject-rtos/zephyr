@@ -939,7 +939,7 @@
 #define ACP_ACLK_CLK_SEL                         0x3
 #define ACP_INTERNAL_CLK_SEL                     0x0
 #define ACP_DRAM_ADDR_TRNS                       0x01000000
-#define DMIC_SETTLING_TIME_MS                    360
+#define DMIC_SETTLING_TIME_MS                    40
 #define DMIC_SMOOTH_TIME_MS                      40
 /* MAX number of DMA descriptors */
 #define MAX_NUM_DMA_DESC_DSCR                    64
