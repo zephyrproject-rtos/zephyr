@@ -823,6 +823,57 @@ static int port_resume(const struct device *const dev)
 	return ret;
 }
 
+static void ch_schedule_interrupt(const struct device *dev,
+				  struct uhc_dwc2_channel *const ch)
+{
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
+	struct uhc_transfer *const xfer = ch->xfer;
+	uint16_t interval = xfer->interval;
+	uint32_t hfnum;
+	uint16_t current_frame;
+
+	/*
+	 * TODO: Refactor with adding an argument "periods", that represents
+	 * number of missed polling intervals: ch_schedule_interrupt(dev, ch, 1U);
+	 * Use it in port_sof().
+	 */
+	if (ch->do_split) {
+		interval *= 8U;
+	}
+
+	hfnum = sys_read32((mem_addr_t)&base->hfnum);
+	current_frame = usb_dwc2_get_hfnum_frnum(hfnum);
+
+	if (!ch->data->periodic_initialized) {
+		/*
+		 * We don't start the interrupt transfer immediately,
+		 * just schedule at the next frame (1U) for direct conntection and
+		 * at the next 3rd frame (3U), when device is behing the High-speed hub.
+		 */
+		ch->data->scheduled_frame = (current_frame + (ch->do_split ? 3U : 1U)) &
+					    PERIODIC_FRAME_MASK;
+
+		if (ch->do_split) {
+			/* Align the initial SSPLIT to Y0. */
+			ch->data->scheduled_frame =
+				ROUND_UP(ch->data->scheduled_frame, 8U) &
+				PERIODIC_FRAME_MASK;
+		}
+
+		ch->data->periodic_initialized = true;
+	} else {
+		/*
+		 * The interrupt transfer is already active,
+		 * preserve periodic phase by using the polling interval
+		 * and mark the channel for periodic transfer in the closest SOF
+		 */
+		ch->data->scheduled_frame =
+			(ch->data->scheduled_frame + interval) &
+			PERIODIC_FRAME_MASK;
+		ch->data->periodic_start_pending = true;
+	}
+}
+
 static void ch_rewind(const struct device *dev, struct uhc_dwc2_channel *const ch)
 {
 	ARG_UNUSED(dev);
@@ -878,13 +929,26 @@ static void ch_enable(const struct device *dev, struct uhc_dwc2_channel *const c
 			 * CSPLIT, the TT's valid response window can expired.
 			 * We need to respect the permitted window, in this
 			 * matters, add the warning with some appropriate delay
-			 * to catch the problem appearance.
+			 * to catch the problem appearance. Use (5U) as a permitted
+			 * window.
 			 */
 			if (elapsed > 5U) {
+				if (ch->xfer->type == USB_EP_TYPE_INTERRUPT &&
+				USB_EP_DIR_IS_IN(ch->xfer->ep)) {
+					/*
+					 * The CSPLIT response window has expired.
+					 * Abandon this polling attempt and schedule
+					 * a fresh SSPLIT at the next interval.
+					 */
+					ch->split_state = UHC_DWC2_SPLIT_SSPLIT;
+					ch_schedule_interrupt(dev, ch);
+					return;
+				}
 				/*
-				 * TODO: Revisit this check when implementing periodic split
-				 * transactions. The current threshold is not validated for
-				 * CONTROL/BULK transfers and must not be treated as a timeout.
+				 * TODO: We do not need to enable the channel after
+				 * detecting an expired CSPLIT.
+				 * Return to this and change it to error, after having
+				 * reliable reproduction mechanism.
 				 */
 				LOG_WRN("CSPLIT late, elapsed %u", elapsed);
 			}
@@ -2257,57 +2321,6 @@ static void ch_start_bulk(const struct device *dev,
 	ch->dma_addr = dma_addr;
 
 	ch_enable(dev, ch);
-}
-
-static void ch_schedule_interrupt(const struct device *dev,
-				  struct uhc_dwc2_channel *const ch)
-{
-	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
-	struct uhc_transfer *const xfer = ch->xfer;
-	uint16_t interval = xfer->interval;
-	uint32_t hfnum;
-	uint16_t current_frame;
-
-	/*
-	 * TODO: Refactor with adding an argument "periods", that represents
-	 * number of missed polling intervals: ch_schedule_interrupt(dev, ch, 1U);
-	 * Use it in port_sof().
-	 */
-	if (ch->do_split) {
-		interval *= 8U;
-	}
-
-	hfnum = sys_read32((mem_addr_t)&base->hfnum);
-	current_frame = usb_dwc2_get_hfnum_frnum(hfnum);
-
-	if (!ch->data->periodic_initialized) {
-		/*
-		 * We don't start the interrupt transfer immediately,
-		 * just schedule at the next frame (1U) for direct conntection and
-		 * at the next 3rd frame (3U), when device is behing the High-speed hub.
-		 */
-		ch->data->scheduled_frame = (current_frame + (ch->do_split ? 3U : 1U)) &
-					    PERIODIC_FRAME_MASK;
-
-		if (ch->do_split) {
-			/* Align the initial SSPLIT to Y0. */
-			ch->data->scheduled_frame =
-				ROUND_UP(ch->data->scheduled_frame, 8U) &
-				PERIODIC_FRAME_MASK;
-		}
-
-		ch->data->periodic_initialized = true;
-	} else {
-		/*
-		 * The interrupt transfer is already active,
-		 * preserve periodic phase by using the polling interval
-		 * and mark the channel for periodic transfer in the closest SOF
-		 */
-		ch->data->scheduled_frame =
-			(ch->data->scheduled_frame + interval) &
-			PERIODIC_FRAME_MASK;
-		ch->data->periodic_start_pending = true;
-	}
 }
 
 static void ch_start_interrupt(const struct device *dev,
