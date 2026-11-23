@@ -13,19 +13,17 @@
 
 
 /* @cond INTERNAL_HIDDEN */
-#define ZASSERT_IMPL_M(_module, _test, ...) \
-	ZASSERT_IMPL_LEVEL(ZASSERT_IMPL_MODULE_LEVEL(_module), (_test), ##__VA_ARGS__)
 /**
  * @brief Legacy assertion with an optional message.
  *
- * Compatibility shim for the historical __ASSERT() macro. It forwards to the
- * private ZASSERT_M() macro using the DEFAULT module, whose level is
+ * Compatibility shim for the historical __ASSERT() macro. It forwards to
+ * ZASSERT_IN() using the DEFAULT module, whose level is
  * CONFIG_ASSERT_MODULE_DEFAULT_LEVEL. New code should use ZASSERT() instead.
  *
  * @param test Condition to check. A fatal error is raised if it is false.
  * @param ...  Optional message format string followed by its arguments.
  */
-#define __ASSERT(test, ...)   ZASSERT_IMPL_M(DEFAULT, test, ##__VA_ARGS__)
+#define __ASSERT(test, ...)   ZASSERT_IN(DEFAULT, test, ##__VA_ARGS__)
 
 /**
  * @brief Legacy assertion with no message.
@@ -34,7 +32,7 @@
  *
  * @param test Condition to check. A fatal error is raised if it is false.
  */
-#define __ASSERT_NO_MSG(test) ZASSERT_IMPL_M(DEFAULT, test)
+#define __ASSERT_NO_MSG(test) ZASSERT_IN(DEFAULT, test)
 
 /**
  * @brief Print a formatted assertion message when verbose.

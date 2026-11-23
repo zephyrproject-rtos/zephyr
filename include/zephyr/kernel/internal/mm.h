@@ -98,7 +98,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <inttypes.h>
-#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/zassert.h>
 #include <zephyr/sys/mem_manage.h>
 
 /**
@@ -117,22 +117,24 @@ static inline uintptr_t k_mem_phys_addr(void *virt)
 	uintptr_t addr = (uintptr_t)virt;
 
 #if defined(CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK)
-	__ASSERT(sys_mm_is_virt_addr_in_range(virt),
-		 "address %p not in permanent mappings", virt);
+	ZASSERT_IN(KERNEL, sys_mm_is_virt_addr_in_range(virt),
+		   "address %p not in permanent mappings", virt);
 #elif defined(CONFIG_MMU)
 #if CONFIG_KERNEL_VM_BASE != 0
 	/* Skipped when the VM base is 0, where the comparison is always true and
 	 * some compilers warn about it (-Wtype-limits).
 	 */
-	__ASSERT(addr >= (uintptr_t)CONFIG_KERNEL_VM_BASE, "address %p below VM base", virt);
+	ZASSERT_IN(KERNEL, addr >= (uintptr_t)CONFIG_KERNEL_VM_BASE,
+		   "address %p below VM base", virt);
 #endif /* CONFIG_KERNEL_VM_BASE != 0 */
-	__ASSERT((addr - (uintptr_t)CONFIG_KERNEL_VM_BASE) < (uintptr_t)CONFIG_KERNEL_VM_SIZE,
-		 "address %p above VM limit", virt);
+	ZASSERT_IN(KERNEL,
+		   (addr - (uintptr_t)CONFIG_KERNEL_VM_BASE) < (uintptr_t)CONFIG_KERNEL_VM_SIZE,
+		   "address %p above VM limit", virt);
 #else
 	/* Should be identity-mapped */
-	__ASSERT(IS_SRAM_ADDRESS(addr),
-		 "physical address 0x%lx not in RAM",
-		 (unsigned long)addr);
+	ZASSERT_IN(KERNEL, IS_SRAM_ADDRESS(addr),
+		   "physical address 0x%lx not in RAM",
+		   (unsigned long)addr);
 #endif /* CONFIG_MMU */
 
 	/* TODO add assertion that this page is pinned to boot mapping,
@@ -156,11 +158,11 @@ static inline uintptr_t k_mem_phys_addr(void *virt)
 static inline void *k_mem_virt_addr(uintptr_t phys)
 {
 #if defined(CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK)
-	__ASSERT(sys_mm_is_phys_addr_in_range(phys),
-		"physical address 0x%lx not in RAM", (unsigned long)phys);
+	ZASSERT_IN(KERNEL, sys_mm_is_phys_addr_in_range(phys),
+		   "physical address 0x%lx not in RAM", (unsigned long)phys);
 #else
-	__ASSERT(IS_SRAM_ADDRESS(phys),
-		 "physical address 0x%lx not in RAM", (unsigned long)phys);
+	ZASSERT_IN(KERNEL, IS_SRAM_ADDRESS(phys),
+		   "physical address 0x%lx not in RAM", (unsigned long)phys);
 #endif /* CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK */
 
 	/* TODO add assertion that this page frame is pinned to boot mapping,
