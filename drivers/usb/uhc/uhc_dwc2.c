@@ -2273,8 +2273,12 @@ static void ch_schedule_interrupt(const struct device *dev,
 	uint32_t hfnum;
 	uint16_t current_frame;
 
+	/*
+	 * TODO: Refactor with adding an argument "periods", that represents
+	 * number of missed polling intervals: ch_schedule_interrupt(dev, ch, 1U);
+	 * Use it in port_sof().
+	 */
 	if (ch->do_split) {
-		/* For the High-speed microframes */
 		interval *= 8U;
 	}
 
@@ -2284,10 +2288,11 @@ static void ch_schedule_interrupt(const struct device *dev,
 	if (!ch->data->periodic_started) {
 		/*
 		 * We don't start the interrupt transfer immediately,
-		 * just schedule at the next frame
-		 * and calculate the parity in ch_start_interrupt()
+		 * just schedule at the next frame (1U) for direct conntection and
+		 * at the next 3rd frame (3U), when device is behing the High-speed hub.
 		 */
-		ch->data->scheduled_frame = (current_frame + 1U) & PERIODIC_FRAME_MASK;
+		ch->data->scheduled_frame = (current_frame + (ch->do_split ? 3U : 1U)) &
+					    PERIODIC_FRAME_MASK;
 		ch->data->periodic_started = true;
 	} else {
 		/*
@@ -2298,6 +2303,7 @@ static void ch_schedule_interrupt(const struct device *dev,
 		ch->data->scheduled_frame = (ch->data->scheduled_frame + interval) &
 					     PERIODIC_FRAME_MASK;
 		ch->data->periodic_scheduled = true;
+
 	}
 }
 
@@ -2353,9 +2359,6 @@ static void ch_start_interrupt(const struct device *dev,
 		 * Maybe need to adjust the schedule based on the current frame.
 		 */
 		ch_schedule_interrupt(dev, ch);
-
-		/* TODO: Emulate the situation, when we passed two frame intervals */
-
 		return;
 	}
 
@@ -2434,8 +2437,31 @@ static void port_sof(const struct device *dev)
 		next_frame = (usb_dwc2_get_hfnum_frnum(hfnum) + 1U) & PERIODIC_FRAME_MASK;
 
 		if (next_frame == ch->data->scheduled_frame) {
+			/* Start transfer */
 			ch->data->periodic_scheduled = false;
 			ch_start_interrupt(dev, ch);
+		} else if (periodic_frame_overrun(next_frame, ch->data->scheduled_frame)) {
+			/* Recover missed frame */
+			uint32_t interval = ch->xfer->interval;
+			uint16_t missed;
+
+			if (ch->do_split) {
+				interval *= 8U;
+			}
+
+			/*
+			 * Instead of simply adding one polling interval, advance
+			 * the schedule by enough intervals to reach the next opportunity.
+			 */
+			missed = (next_frame - ch->data->scheduled_frame) &
+				PERIODIC_FRAME_MASK;
+
+			ch->data->scheduled_frame =
+				(ch->data->scheduled_frame +
+				((missed / interval) + 1U) * interval) &
+				PERIODIC_FRAME_MASK;
+		} else {
+			/* Otherwise, wait for the scheduled frame. */
 		}
 	}
 }
@@ -2611,13 +2637,14 @@ static int validate_bulk_xfer(const struct uhc_transfer *xfer)
 			LOG_WRN("BULK IN buffer size %u is not a multiple of MPS %u; "
 				"DMA may exceed buffer capacity",
 				size, xfer->mps);
-
 			/*
 			 * TODO: The final BULK IN packet may require more DMA space
 			 * than the destination buffer provides. Consider using an
 			 * internal MPS-sized DMA temp buffer for the last packet, then
 			 * copying only the actual received bytes to xfer->buf to avoid
 			 * potential overflow and unaligned access.
+			 *
+			 * Might be removed after 110162 is merged.
 			 */
 		}
 	} else {
