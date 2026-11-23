@@ -296,6 +296,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define SLV_NACK_REQ_NACK_REQ_NACK 0x01
 
 #define DEVICE_CTRL_EXTENDED                           0xb0
+#define DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE_MASK   GENMASK(1, 0)
 #define DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE(x)     ((x) & GENMASK(1, 0))
 #define DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE_MASTER 0
 #define DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE_SLAVE  1
@@ -450,6 +451,14 @@ struct dw_i3c_config {
 
 	/* Clock control subsys related struct */
 	clock_control_subsys_t clock_subsys;
+
+	/* Boot as an I3C target when the hardware is dual-role (DT `secondary`). */
+	bool secondary;
+
+#ifdef CONFIG_I3C_TARGET
+	/* Target identity from devicetree, programmed at init when `secondary` is set. */
+	struct i3c_config_target tgt_identity;
+#endif
 
 	void (*irq_config_func)();
 
@@ -2877,6 +2886,51 @@ static int dw_i3c_config_get(const struct device *dev, enum i3c_config_type type
 	return ret;
 }
 
+#ifdef CONFIG_I3C_TARGET
+/*
+ * Program the registers that identify this device on the bus when it is
+ * enumerated by a primary controller: static address, provisioned ID and
+ * the BCR/DCR pair.  Shared by the target configure path and by init of a
+ * device that boots as a target (DT `secondary`).
+ */
+static void dw_i3c_set_target_identity(const struct device *dev,
+				       const struct i3c_config_target *target_cfg)
+{
+	uint32_t val;
+
+	/* set static address */
+	val = sys_read32(dw_i3c_regs(dev) + DEVICE_ADDR);
+	/* if static address is set to 0x00, then disable static_addr_en */
+	if (target_cfg->static_addr != 0x00) {
+		val |= DEVICE_ADDR_STATIC_ADDR_VALID;
+	} else {
+		val &= ~DEVICE_ADDR_STATIC_ADDR_VALID;
+	}
+	val &= ~DEVICE_ADDR_STATIC_MASK;
+	val |= DEVICE_ADDR_STATIC(target_cfg->static_addr);
+	sys_write32(val, dw_i3c_regs(dev) + DEVICE_ADDR);
+
+	val = sys_read32(dw_i3c_regs(dev) + SLV_CHAR_CTRL);
+	val &= ~(SLV_CHAR_CTRL_BCR_MASK | SLV_CHAR_CTRL_DCR_MASK);
+	/* Bridge identifier, offline capable, ibi_payload, ibi_request_capable can not be
+	 * written to in bcr
+	 */
+	val |= SLV_CHAR_CTRL_BCR(target_cfg->bcr);
+	val |= FIELD_PREP(SLV_CHAR_CTRL_DCR_MASK, target_cfg->dcr);
+	/* HDR CAPs is not settable */
+	sys_write32(val, dw_i3c_regs(dev) + SLV_CHAR_CTRL);
+
+	val = sys_read32(dw_i3c_regs(dev) + SLV_MIPI_ID_VALUE);
+	val &= ~(SLV_MIPI_ID_VALUE_SLV_MIPI_MFG_ID_MASK | SLV_MIPI_ID_VALUE_SLV_PROV_ID_SEL);
+	val |= (uint32_t)FIELD_PREP(SLV_MIPI_ID_VALUE_PID_HI_MASK,
+				    FIELD_GET(I3C_PID_HI_MASK, target_cfg->pid));
+	sys_write32(val, dw_i3c_regs(dev) + SLV_MIPI_ID_VALUE);
+
+	val = (uint32_t)FIELD_GET(I3C_PID_LO_MASK, target_cfg->pid);
+	sys_write32(val, dw_i3c_regs(dev) + SLV_PID_VALUE);
+}
+#endif /* CONFIG_I3C_TARGET */
+
 /**
  * @brief Configure I3C hardware.
  *
@@ -2924,37 +2978,7 @@ static int dw_i3c_configure(const struct device *dev, enum i3c_config_type type,
 		      (SLV_MAX_LEN_MRL(target_cfg->max_read_len) << 16);
 		sys_write32(val, dw_i3c_regs(dev) + SLV_MAX_LEN);
 
-		/* set static address */
-		val = sys_read32(dw_i3c_regs(dev) + DEVICE_ADDR);
-		/* if static address is set to 0x00, then disable static_addr_en */
-		if (target_cfg->static_addr != 0x00) {
-			val |= DEVICE_ADDR_STATIC_ADDR_VALID;
-		} else {
-			val &= ~DEVICE_ADDR_STATIC_ADDR_VALID;
-		}
-		val &= ~DEVICE_ADDR_STATIC_MASK;
-		val |= DEVICE_ADDR_STATIC(target_cfg->static_addr);
-		sys_write32(val, dw_i3c_regs(dev) + DEVICE_ADDR);
-
-		val = sys_read32(dw_i3c_regs(dev) + SLV_CHAR_CTRL);
-		val &= ~(SLV_CHAR_CTRL_BCR_MASK | SLV_CHAR_CTRL_DCR_MASK);
-		/* Bridge identifier, offline capable, ibi_payload, ibi_request_capable can not be
-		 * written to in bcr
-		 */
-		val |= SLV_CHAR_CTRL_BCR(target_cfg->bcr);
-		val |= FIELD_PREP(SLV_CHAR_CTRL_DCR_MASK, target_cfg->dcr);
-		/* HDR CAPs is not settable */
-		sys_write32(val, dw_i3c_regs(dev) + SLV_CHAR_CTRL);
-
-		val = sys_read32(dw_i3c_regs(dev) + SLV_MIPI_ID_VALUE);
-		val &= ~(SLV_MIPI_ID_VALUE_SLV_MIPI_MFG_ID_MASK |
-			 SLV_MIPI_ID_VALUE_SLV_PROV_ID_SEL);
-		val |= (uint32_t)FIELD_PREP(SLV_MIPI_ID_VALUE_PID_HI_MASK,
-					    FIELD_GET(I3C_PID_HI_MASK, target_cfg->pid));
-		sys_write32(val, dw_i3c_regs(dev) + SLV_MIPI_ID_VALUE);
-
-		val = (uint32_t)FIELD_GET(I3C_PID_LO_MASK, target_cfg->pid);
-		sys_write32(val, dw_i3c_regs(dev) + SLV_PID_VALUE);
+		dw_i3c_set_target_identity(dev, target_cfg);
 #else
 		return -ENOTSUP;
 #endif /* CONFIG_I3C_TARGET */
@@ -3293,8 +3317,28 @@ static int dw_i3c_init(const struct device *dev)
 		ctrl_config->is_secondary = true;
 		break;
 	case HW_CAP_DEVICE_ROLE_SEC_MASTER: {
-		/* dual-role: DEV_OPERATION_MODE selects the boot mode */
-		uint32_t device_ctrl_ext = sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL_EXTENDED);
+		uint32_t device_ctrl_ext;
+
+		/* dual-role: DEV_OPERATION_MODE selects the boot mode.  A
+		 * devicetree `secondary` request is programmed first so the
+		 * readback below observes the requested boot mode.
+		 */
+		if (config->secondary) {
+			device_ctrl_ext = sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL_EXTENDED);
+			device_ctrl_ext &= ~DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE_MASK;
+			device_ctrl_ext |= DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE_SLAVE;
+			sys_write32(device_ctrl_ext, dw_i3c_regs(dev) + DEVICE_CTRL_EXTENDED);
+		}
+
+		device_ctrl_ext = sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL_EXTENDED);
+
+		if (config->secondary && DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE(device_ctrl_ext) !=
+						 DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE_SLAVE) {
+			LOG_ERR("%s: secondary requested but DEV_OPERATION_MODE readback is "
+				"controller",
+				dev->name);
+			return -EIO;
+		}
 
 		ctrl_config->is_secondary =
 			(DEVICE_CTRL_EXTENDED_DEV_OPERATION_MODE(device_ctrl_ext) ==
@@ -3308,6 +3352,19 @@ static int dw_i3c_init(const struct device *dev)
 		__ASSERT(false, "unexpected DEVICE_ROLE_CONFIG 0x%x", role);
 		return -ENOTSUP;
 	}
+
+	LOG_DBG("%s: cached role 0x%x, secondary %s, booting as %s", dev->name, (unsigned int)role,
+		config->secondary ? "requested" : "not requested",
+		ctrl_config->is_secondary ? "target" : "controller");
+
+#ifdef CONFIG_I3C_TARGET
+	if (config->secondary && ctrl_config->is_secondary) {
+		/* Program the devicetree target identity so a primary
+		 * controller can enumerate this device.
+		 */
+		dw_i3c_set_target_identity(dev, &config->tgt_identity);
+	}
+#endif
 
 	/* Reject every SIR/MR by default; the readback says whether that took. */
 	if (DW_IBI_REJECT_REG_MAY_EXIST(role)) {
@@ -3448,7 +3505,28 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 #define I3C_DW_PINCTRL_INIT(n)
 #endif
 
+#define DT_INST_TGT_PID_PROP_OR(id, prop, idx)                                                     \
+	COND_CODE_1(DT_INST_PROP_HAS_IDX(id, prop, idx), (DT_INST_PROP_BY_IDX(id, prop, idx)), (0))
+#define DT_INST_TGT_PID_RAND_PROP_OR(id, prop, idx)                                                \
+	COND_CODE_1(DT_INST_PROP_HAS_IDX(id, prop, idx),                                           \
+		    IS_BIT_SET(DT_INST_PROP_BY_IDX(id, prop, 0), (idx)), (0))
+
+#define I3C_DW_TGT_IDENTITY_INIT(n)                                                                \
+		IF_ENABLED(CONFIG_I3C_TARGET,                                                      \
+			(.tgt_identity = {                                                         \
+				.static_addr = DT_INST_PROP_OR(n, static_address, 0),              \
+				.pid = ((uint64_t)DT_INST_TGT_PID_PROP_OR(n, tgt_pid, 0) << 32) |  \
+				       DT_INST_TGT_PID_PROP_OR(n, tgt_pid, 1),                     \
+				.pid_random = DT_INST_TGT_PID_RAND_PROP_OR(n, tgt_pid, 0),         \
+				.bcr = DT_INST_PROP_OR(n, bcr, 0),                                 \
+				.dcr = DT_INST_PROP_OR(n, dcr, 0),                                 \
+			},))
+
 #define DEFINE_DEVICE_FN(n)                                                                        \
+	BUILD_ASSERT(!DT_INST_PROP_OR(n, secondary, false) || IS_ENABLED(CONFIG_I3C_TARGET),       \
+		     "the `secondary` property requires CONFIG_I3C_TARGET");                       \
+	BUILD_ASSERT(!DT_INST_TGT_PID_RAND_PROP_OR(n, tgt_pid, 0),                                 \
+		     "the `tgt-pid` random ID selector (PID[32]) is not supported");               \
 	I3C_DW_IRQ_HANDLER(n)                                                                      \
 	I3C_DW_PINCTRL_DEFINE(n);                                                                  \
 	IF_ENABLED(CONFIG_I3C_CONTROLLER,                                                          \
@@ -3471,6 +3549,8 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 				((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, clkid)),           \
 				((clock_control_subsys_t)0)),                                      \
 		.irq_config_func = &i3c_dw_irq_config_##n,                                         \
+		.secondary = DT_INST_PROP_OR(n, secondary, false),                                 \
+		I3C_DW_TGT_IDENTITY_INIT(n)                                                        \
 		IF_ENABLED(CONFIG_I3C_CONTROLLER,                                                  \
 			(.common.dev_list.i3c = dw_i3c_device_array_##n,                           \
 			.common.dev_list.num_i3c = ARRAY_SIZE(dw_i3c_device_array_##n),            \
@@ -3524,6 +3604,10 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_HAS_MCHP_MEC_I3C),
 	}
 
 #define MCHP_I3C_DEVICE(n)                                                                         \
+	BUILD_ASSERT(!DT_INST_PROP_OR(n, secondary, false) || IS_ENABLED(CONFIG_I3C_TARGET),       \
+		     "the `secondary` property requires CONFIG_I3C_TARGET");                       \
+	BUILD_ASSERT(!DT_INST_TGT_PID_RAND_PROP_OR(n, tgt_pid, 0),                                 \
+		     "the `tgt-pid` random ID selector (PID[32]) is not supported");               \
 	MCHP_I3C_IRQ_HANDLER(n)                                                                    \
 	I3C_DW_PINCTRL_DEFINE(n);                                                                  \
 	static const union clock_mchp_xec_subsys xec_i3c_clk_subsys_##n = {                        \
@@ -3555,6 +3639,8 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_HAS_MCHP_MEC_I3C),
 						DT_INST_CLOCKS_CELL(n, bitpos)),                   \
 		.girq_id = MCHP_I3C_GIRQ(n),                                                       \
 		.girq_pos = MCHP_I3C_GIRQ_POS(n),                                                  \
+		.secondary = DT_INST_PROP_OR(n, secondary, false),                                 \
+		I3C_DW_TGT_IDENTITY_INIT(n)                                                        \
 		IF_ENABLED(CONFIG_I3C_CONTROLLER,                                     \
 			(.common.dev_list.i3c = xec_i3c_device_array_##n,                        \
 			.common.dev_list.num_i3c = ARRAY_SIZE(xec_i3c_device_array_##n),         \
