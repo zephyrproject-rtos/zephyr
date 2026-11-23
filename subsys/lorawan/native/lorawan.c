@@ -57,6 +57,7 @@ static void lwan_region_select(const struct lwan_region_ops *ops)
 
 	lwan_ctx.region = ops;
 	lwan_ctx.session.rx2_datarate = ops->default_rx2_dr;
+	lwan_ctx.current_dr = lwan_region_min_dr(&lwan_ctx);
 }
 
 static int lorawan_native_init(void)
@@ -283,7 +284,11 @@ int lorawan_set_datarate(enum lorawan_datarate dr)
 
 enum lorawan_datarate lorawan_get_min_datarate(void)
 {
-	return LORAWAN_DR_0;
+	if (lwan_ctx.region == NULL) {
+		return LORAWAN_DR_0;
+	}
+
+	return (enum lorawan_datarate)lwan_region_min_dr(&lwan_ctx);
 }
 
 void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,

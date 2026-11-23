@@ -109,6 +109,8 @@ static const int8_t mac_cmd_max_eirp_dbm[] = {
 
 static void mac_cmd_handle_tx_param_setup(struct lwan_ctx *ctx, uint8_t param)
 {
+	uint8_t min_dr;
+
 	if (ctx->region->get_dwell_tx_params == NULL) {
 		/* The region caps nothing, so it does not take this command
 		 * and does not answer it either.
@@ -121,6 +123,17 @@ static void mac_cmd_handle_tx_param_setup(struct lwan_ctx *ctx, uint8_t param)
 	ctx->mac.ul_dwell_time = (param & MAC_CMD_TX_PARAM_UL_DWELL) != 0U;
 	ctx->mac.max_eirp_dbm = mac_cmd_max_eirp_dbm[param & MAC_CMD_TX_PARAM_EIRP_MASK];
 	ctx->mac.tx_param_setup_ans_pending = true;
+
+	/*
+	 * Taking the cap on leaves the slowest datarates without a payload,
+	 * so a session sitting on one of them has to move up before the next
+	 * uplink. Taking the cap off only widens the choice.
+	 */
+	min_dr = lwan_region_min_dr(ctx);
+	if ((uint8_t)ctx->current_dr < min_dr) {
+		LOG_INF("Datarate raised to DR%u by the dwell time limit", min_dr);
+		ctx->current_dr = (enum lorawan_datarate)min_dr;
+	}
 
 	LOG_INF("TxParamSetup: ul_dwell=%u dl_dwell=%u max_eirp=%d dBm",
 		ctx->mac.ul_dwell_time, ctx->mac.dl_dwell_time, ctx->mac.max_eirp_dbm);
