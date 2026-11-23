@@ -1,0 +1,6 @@
+board:
+  name: flipper_zero
+  full_name: Flipper Zero
+  vendor: flipper
+  socs:
+    - name: stm32wb55xx

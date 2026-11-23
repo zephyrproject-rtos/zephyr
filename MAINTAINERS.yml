@@ -3449,6 +3449,16 @@ Filesystems:
     - filesystem
     - sample.filesystem
 
+Flipper Platforms:
+  status: maintained
+  maintainers:
+    - brgl
+  files:
+    - boards/flipper/
+    - dts/bindings/gpio/flipper,gpio-header.yaml
+  labels:
+    - "platform: Flipper"
+
 Formatted Output:
   status: maintained
   maintainers:
