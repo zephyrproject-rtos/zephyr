@@ -115,10 +115,10 @@ struct uhc_dwc2_channel_data {
 	uint8_t next_pid;
 	/* Next scheduled frame for the periodic transfer */
 	uint16_t scheduled_frame;
-	/* Periodic transfer has been queued and active */
-	bool periodic_started;
-	/* Periodic transfer has been scheduled and waiting for the SOF */
-	bool periodic_scheduled;
+	/* Initial polling schedule of periodic transfer has been established */
+	bool periodic_initialized;
+	/* Periodic transfer has a scheduled frame and is waiting for the driver to start it */
+	bool periodic_start_pending;
 };
 
 struct uhc_dwc2_split_info {
@@ -1964,11 +1964,6 @@ static int ch_claim(const struct device *const dev,
 		return -ENOMEM;
 	}
 
-	/* TODO: It is better to release the channel, when scheduled, flush for now */
-	ch->data->scheduled_frame = 0;
-	ch->data->periodic_started = false;
-	ch->data->periodic_scheduled = false;
-
 	priv->free_chs--;
 
 	*ch_p = ch;
@@ -2122,8 +2117,8 @@ static void ch_release(const struct device *dev, struct uhc_dwc2_channel *const 
 	ch->xfer = NULL;
 
 	ch->data->scheduled_frame = 0;
-	ch->data->periodic_started = false;
-	ch->data->periodic_scheduled = false;
+	ch->data->periodic_initialized = false;
+	ch->data->periodic_start_pending = false;
 	ch->data = NULL;
 
 	ch->halt_cancel = false;
@@ -2285,7 +2280,7 @@ static void ch_schedule_interrupt(const struct device *dev,
 	hfnum = sys_read32((mem_addr_t)&base->hfnum);
 	current_frame = usb_dwc2_get_hfnum_frnum(hfnum);
 
-	if (!ch->data->periodic_started) {
+	if (!ch->data->periodic_initialized) {
 		/*
 		 * We don't start the interrupt transfer immediately,
 		 * just schedule at the next frame (1U) for direct conntection and
@@ -2293,7 +2288,7 @@ static void ch_schedule_interrupt(const struct device *dev,
 		 */
 		ch->data->scheduled_frame = (current_frame + (ch->do_split ? 3U : 1U)) &
 					    PERIODIC_FRAME_MASK;
-		ch->data->periodic_started = true;
+		ch->data->periodic_initialized = true;
 	} else {
 		/*
 		 * The interrupt transfer is already active,
@@ -2302,7 +2297,7 @@ static void ch_schedule_interrupt(const struct device *dev,
 		 */
 		ch->data->scheduled_frame = (ch->data->scheduled_frame + interval) &
 					     PERIODIC_FRAME_MASK;
-		ch->data->periodic_scheduled = true;
+		ch->data->periodic_start_pending = true;
 
 	}
 }
@@ -2427,8 +2422,8 @@ static void port_sof(const struct device *dev)
 			continue;
 		}
 
-		/* Handle periodic transfers. */
-		if (!ch->data->periodic_scheduled) {
+		/* Handle periodic transfers if it is pending. */
+		if (!ch->data->periodic_start_pending) {
 			continue;
 		}
 
@@ -2438,7 +2433,7 @@ static void port_sof(const struct device *dev)
 
 		if (next_frame == ch->data->scheduled_frame) {
 			/* Start transfer */
-			ch->data->periodic_scheduled = false;
+			ch->data->periodic_start_pending = false;
 			ch_start_interrupt(dev, ch);
 		} else if (periodic_frame_overrun(next_frame, ch->data->scheduled_frame)) {
 			/* Recover missed frame */
