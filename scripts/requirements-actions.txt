@@ -1953,6 +1953,17 @@ tree-sitter==0.25.2 \
     --hash=sha256:fbb1706407c0e451c4f8cc016fec27d72d4b211fdd3173320b1ada7a6c74c3ac \
     --hash=sha256:fe43c158555da46723b28b52e058ad444195afd1db3ca7720c59a254544e9c20
     # via -r requirements-actions.in
+tree-sitter-c==0.24.2 \
+    --hash=sha256:1628584df0299b5a340aa63f8e67b6c97c91517f52fa7e7a4c557e40adb330a9 \
+    --hash=sha256:4a2f4371cd816cc3153458f69062135ebb2ea5f275ddd90494e5c823d778204a \
+    --hash=sha256:4d4579a8b54f0a442f903d88d3304cab77cd5c2031d4015baa4f2f8e15d6dcb7 \
+    --hash=sha256:5041ef67eb68ce6bc8bb0b1f8ef3a5585ce523dae0c7eec109ab0627dd75aede \
+    --hash=sha256:82842c5a5f2acd93f4de10038c33ac179c8979defc39376f990348d6289e933b \
+    --hash=sha256:97bc80a224d48215d4e6e6376bf30d114f4c317b8145ff1b02afe785d4ba7bdd \
+    --hash=sha256:abb549225091f7b25df2dd3a0143ece6e208f7055d8bcb4700b41ee79b9ef1e1 \
+    --hash=sha256:c098bedcd5ac86ff93fa734d51d1dd86aed40fd5ed7d634c7af11380a0469969 \
+    --hash=sha256:e2b42e8e22202c251f8629306f9321233542e07a6e01611b5fe83489272143eb
+    # via -r requirements-actions.in
 tree-sitter-cmake==0.7.2.post1 \
     --hash=sha256:64a3751ca67f37112821d67057b8de6ecab5c7e94d6053467a4b78ceab348640 \
     --hash=sha256:c1b7a754e17442087df3efccea6535a9f2a8c4b4bf558e31fd3caccd8d1ce830

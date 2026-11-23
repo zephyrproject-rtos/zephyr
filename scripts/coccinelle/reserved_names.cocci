@@ -2,8 +2,8 @@
 // https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_02.c
 //
 // Confidence: Moderate
-// Copyright: (C) 2020 Intel Corporation
 //
+// SPDX-FileCopyrightText: 2020 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
 
 virtual report
@@ -45,8 +45,8 @@ p << common_case.p;
 @@
 
 msg = "WARNING: Violation to rule 21.2 (Should not used a reserved identifier) - {}".format(v)
-with open("scripts/coccinelle/symbols.txt", "r") as fp:
-       symbols = fp.read().splitlines()
+with open("scripts/coding_guidelines/reserved_identifiers.txt", "r") as fp:
+       symbols = [l.strip() for l in fp if l.strip() and not l.startswith("#")]
        if v in symbols:
                coccilib.report.print_report(p[0], msg)
 
@@ -64,8 +64,8 @@ v << function_match.f;
 @@
 
 msg = "WARNING: Violation to rule 21.2 (Should not used a reserved identifier) - {}".format(v)
-with open("scripts/coccinelle/symbols.txt", "r") as fp:
-       symbols = fp.read().splitlines()
+with open("scripts/coding_guidelines/reserved_identifiers.txt", "r") as fp:
+       symbols = [l.strip() for l in fp if l.strip() and not l.startswith("#")]
        if v in symbols:
                coccilib.report.print_report(p[0], msg)
 
@@ -86,7 +86,7 @@ p << function_parameter.p;
 @@
 
 msg = "WARNING: Violation to rule 21.2 (Should not used a reserved identifier) - {}".format(v)
-with open("scripts/coccinelle/symbols.txt", "r") as fp:
-       symbols = fp.read().splitlines()
+with open("scripts/coding_guidelines/reserved_identifiers.txt", "r") as fp:
+       symbols = [l.strip() for l in fp if l.strip() and not l.startswith("#")]
        if v in symbols:
                coccilib.report.print_report(p[0], msg)

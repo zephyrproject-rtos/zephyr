@@ -1,3 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Identifiers reserved by the C standard library, one per line. Checked by
+# scripts/coding_guidelines/coding_guidelines.py (reserved-identifier) and
+# scripts/coccinelle/reserved_names.cocci.
+
 abort
 abs
 acos
