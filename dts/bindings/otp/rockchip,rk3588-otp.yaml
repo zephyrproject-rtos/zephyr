@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Rockchip RK3588 OTP
+
+description: |
+  Rockchip RK3588 One-Time Programmable memory controller.
+
+  This binding represents the OTP peripheral found on Rockchip RK3588 SoCs.
+  The OTP module provides access to on-chip fuse memory used to store
+  device-specific information such as CPU ID, calibration data, etc.
+
+  Fuse values can be exposed through nvmem-layout child nodes. The OTP API is
+  byte addressed while the controller reads 32-bit words; the driver handles
+  unaligned nvmem-layout child 'reg' offsets and read offsets/lengths
+  internally.
+
+compatible: "rockchip,rk3588-otp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+examples:
+  - |
+    rk3588_otp: otp@fecc0000 {
+            compatible = "rockchip,rk3588-otp";
+            reg = <0xfecc0000 0x400>;
+            status = "okay";
+
+            nvmem-layout {
+                    compatible = "fixed-layout";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    otp_id: id@7 {
+                            reg = <0x07 0x10>;
+                            #nvmem-cell-cells = <0>;
+                            read-only;
+                    };
+            };
+    };
