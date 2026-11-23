@@ -5793,18 +5793,22 @@ static struct quic_endpoint *alloc_endpoint(struct quic_context *ctx,
 }
 
 /* Create a server connection endpoint for the listener ep. The new endpoint
- * is returned with a reference that the caller must release.
+ * is returned in created with a reference that the caller must release.
+ * Returns -ESHUTDOWN if the listening socket of ep is closed and -ENOMEM if
+ * no endpoint is free.
  */
-static struct quic_endpoint *quic_endpoint_create(struct quic_endpoint *ep,
-						  const struct net_sockaddr *remote_addr,
-						  net_socklen_t addrlen,
-						  uint8_t *peer_cid,
-						  uint8_t peer_cid_len,
-						  uint8_t *my_cid,
-						  uint8_t my_cid_len)
+static int quic_endpoint_create(struct quic_endpoint *ep,
+				const struct net_sockaddr *remote_addr,
+				net_socklen_t addrlen,
+				uint8_t *peer_cid,
+				uint8_t peer_cid_len,
+				uint8_t *my_cid,
+				uint8_t my_cid_len,
+				struct quic_endpoint **created)
 {
 	struct quic_endpoint *new_ep;
 	struct quic_context *ctx;
+	int ret = 0;
 
 	/* Closing the listening context takes contexts_lock to remove the
 	 * endpoints on its list and drop their list references. Holding the
@@ -5814,6 +5818,14 @@ static struct quic_endpoint *quic_endpoint_create(struct quic_endpoint *ep,
 	 * dropping it would free the endpoint under the caller.
 	 */
 	k_mutex_lock(&contexts_lock, K_FOREVER);
+
+	/* The close sets list_ref_dropped under contexts_lock. The caller
+	 * checks it too, but without the lock held until here.
+	 */
+	if (ep->list_ref_dropped) {
+		k_mutex_unlock(&contexts_lock);
+		return -ESHUTDOWN;
+	}
 
 	ctx = quic_find_context(ep);
 
@@ -5883,11 +5895,14 @@ static struct quic_endpoint *quic_endpoint_create(struct quic_endpoint *ep,
 			new_ep, quic_get_by_ep(new_ep), new_ep->sock, quic_get_by_ep(ep), ep);
 	} else {
 		NET_DBG("[EP:%p/%d] Cannot allocate new endpoint", ep, quic_get_by_ep(ep));
+		ret = -ENOMEM;
 	}
 
 	k_mutex_unlock(&contexts_lock);
 
-	return new_ep;
+	*created = new_ep;
+
+	return ret;
 }
 
 static struct quic_endpoint *alloc_local_endpoint(struct quic_context *ctx,
@@ -9146,6 +9161,32 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 			goto out;
 		}
 
+		/* A listener whose listening socket is closed starts no new
+		 * connections. Nothing could accept them, and each one would
+		 * hold the listener, and so its address, until it times out.
+		 * The listener lives on only for the connections it had when
+		 * the socket was closed. The close sets list_ref_dropped
+		 * under contexts_lock. This check spares the Retry and the
+		 * token for a connection that cannot be accepted, and
+		 * quic_endpoint_create() checks again with the lock held
+		 * through the creation.
+		 */
+		if (ep->is_server && ep->parent == NULL) {
+			bool closed;
+
+			k_mutex_lock(&contexts_lock, K_FOREVER);
+			closed = ep->list_ref_dropped;
+			k_mutex_unlock(&contexts_lock);
+
+			if (closed) {
+				NET_DBG("[EP:%p/%d] Listener is closed, dropping Initial packet",
+					ep, quic_get_by_ep(ep));
+				QUIC_EP_STAT_INC(ep, drop_rx);
+				ret = 1;
+				goto out;
+			}
+		}
+
 		if (ptype == QUIC_PACKET_TYPE_INITIAL && ep->is_server) {
 			if (info->token_len == 0U) {
 				if (IS_ENABLED(CONFIG_QUIC_SERVER_RETRY)) {
@@ -9193,10 +9234,18 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 
 		NET_HEXDUMP_DBG(my_cid, my_cid_len, "Recipient generated CID:");
 
-		new_ep = quic_endpoint_create(ep, addr, addrlen,
-					      src_conn_id, src_conn_id_len,
-					      my_cid, my_cid_len);
-		if (new_ep == NULL) {
+		ret = quic_endpoint_create(ep, addr, addrlen,
+					   src_conn_id, src_conn_id_len,
+					   my_cid, my_cid_len, &new_ep);
+		if (ret == -ESHUTDOWN) {
+			NET_DBG("[EP:%p/%d] Listener is closed, dropping Initial packet",
+				ep, quic_get_by_ep(ep));
+			QUIC_EP_STAT_INC(ep, drop_rx);
+			ret = 1;
+			goto out;
+		}
+
+		if (ret < 0) {
 			NET_DBG("[EP:%p/%d] Cannot create new endpoint",
 				ep, quic_get_by_ep(ep));
 			QUIC_EP_STAT_INC(ep, alloc_failed);
