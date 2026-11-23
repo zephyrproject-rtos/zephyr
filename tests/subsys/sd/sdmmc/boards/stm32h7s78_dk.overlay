@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 EXALT Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sdhc0 = &sdhc;
+	};
+};
+
+&sdhc {
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <12>;
+	mul-n = <100>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	div-s = <2>;
+	div-t = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};

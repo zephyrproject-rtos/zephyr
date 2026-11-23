@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2018, Cypress
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <infineon/cat1a/legacy/psoc6.dtsi>
+
+/ {
+	cpus {
+		/delete-node/ cpu@0;
+
+		cpu@1 {
+			compatible = "arm,cortex-m4f";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

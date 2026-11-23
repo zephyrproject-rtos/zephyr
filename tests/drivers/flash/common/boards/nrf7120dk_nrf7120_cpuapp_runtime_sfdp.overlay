@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi00 {
+	status = "disabled";
+};
+
+&mspi00 {
+	status = "okay";
+};
+
+&mx25u25645g {
+	use-runtime-sfdp;
+	status = "okay";
+
+	/delete-property/ jedec-id;
+	/delete-property/ sfdp-bfp;
+	/delete-property/ sfdp-ff84;
+};

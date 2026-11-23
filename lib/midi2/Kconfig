@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Titouan Christophe
+# SPDX-License-Identifier: Apache-2.0
+
+menu "MIDI2"
+
+config MIDI2_UMP_STREAM_RESPONDER
+	bool "MIDI2 UMP Stream responder"
+	help
+	  Library to respond to UMP Stream discovery messages, as specified
+	  in "Universal MIDI Packet (UMP) Format and MIDI 2.0 Protocol"
+	  version 1.1.2 section 7.1: "UMP Stream Messages"
+
+endmenu

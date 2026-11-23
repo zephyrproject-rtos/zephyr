@@ -1,0 +1,33 @@
+# Copyright 2024-2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUX_ELS_PKC
+	bool "Build els_pkc"
+	depends on HAS_MCUX_ELS_PKC
+	default y if BUILD_WITH_TFM
+	default y if MBEDTLS_PSA_CRYPTO_C
+	help
+	  Include the els_pkc component from the NXP MCU SDK in the build.
+	  Enabled on SoCs that integrate the ELS PKC accelerator.
+
+config MCUX_ELS_PKC_TRNG_USE_ELS
+	bool
+	default y if SOC_FAMILY_MCXN || SOC_SERIES_IMXRT7XX
+	help
+	  Select the TRNG source used by els_pkc. Some platforms (e.g. MCXN
+	  and RT700 / MIMXRT7xx) have no standalone SA_TRNG peripheral and use
+	  the ELS internal TRNG (MCUXCL_FEATURE_TRNG_ELS). Others (e.g. RW61x)
+	  use the standalone SA_TRNG. When enabled, mcuxClTrng_ELS.c is built;
+	  otherwise mcuxClTrng_SA_TRNG.c is built.
+
+config MCUX_ELS_PKC_ENABLE_KEY_DERIVATION
+	bool
+	default y if SOC_SERIES_IMXRT7XX
+	help
+	  Build the key-derivation (HKDF/PBKDF2/NIST SP800-108/SP800-56C) and
+	  RSA key-type source files. These provide descriptor symbols
+	  (mcuxClKey_DerivationAlgorithmDescriptor_*,
+	  mcuxClKey_TypeDescriptor_derivationKey_variableLength,
+	  mcuxClKey_TypeDescriptor_Rsa_*) required by platforms such as
+	  RT700 / MIMXRT7xx. Platforms that do not use this feature set
+	  (e.g. MCXN, RW61x) leave this disabled.

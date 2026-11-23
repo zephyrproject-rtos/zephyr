@@ -1,0 +1,10 @@
+# Eurovibes STM32G431RB based Sertest NG board
+
+# Copyright (c) 2026 Benedikt Spranger
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EUROVIBES_STM32G431_SERTEST_NG
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_MINI_STM32H743

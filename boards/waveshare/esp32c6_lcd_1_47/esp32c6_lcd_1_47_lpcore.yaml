@@ -1,0 +1,19 @@
+identifier: esp32c6_lcd_1_47/esp32c6/lpcore
+name: ESP32-C6 LCD 1.47 LP Core
+vendor: waveshare
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - cpu
+  - uart
+  - serial
+testing:
+  only_tags:
+    - introduction
+  ignore_tags:
+    - kernel
+    - posix
+    - chre
+    - cpp

@@ -1,0 +1,66 @@
+/*
+ * Copyright 2024, 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+#include <freq.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <0>;
+			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(250)>;
+		};
+	};
+
+	itcm0: memory@580000 {
+		compatible = "mmio-sram";
+		reg = <0x580000 DT_SIZE_K(32)>;
+		device_type = "memory";
+	};
+
+	itcm1: memory@680000 {
+		compatible = "mmio-sram";
+		reg = <0x680000 DT_SIZE_K(512)>;
+		device_type = "memory";
+	};
+
+	dtcm: memory@20700000 {
+		compatible = "mmio-sram";
+		reg = <0x20700000 DT_SIZE_K(512)>;
+		device_type = "memory";
+	};
+
+	/* SEMA42_0: common domain (VDD1_COM), reachable from all cores.
+	 * Clock gate and reset live on clkctl3/rstctl3; cm33_cpu0 releases
+	 * them.
+	 */
+	sema420: hwspinlock@40206000 {
+		compatible = "nxp,sema42";
+		reg = <0x40206000 0x1000>;
+		#hwlock-cells = <1>;
+		num-locks = <64>;
+		status = "disabled";
+	};
+
+	/* SEMA42_3: sense domain (VDD2_SENSE), CPU1 <-> HiFi1. Pairs with MU3.
+	 * Clock gate and reset live on clkctl1/rstctl1, which cm33_cpu1 owns;
+	 * this DSP core has no syscon bus mapped, so only the register
+	 * window is declared here.
+	 */
+	sema423: hwspinlock@4031b000 {
+		compatible = "nxp,sema42";
+		reg = <0x4031b000 0x1000>;
+		#hwlock-cells = <1>;
+		num-locks = <64>;
+		status = "disabled";
+	};
+};

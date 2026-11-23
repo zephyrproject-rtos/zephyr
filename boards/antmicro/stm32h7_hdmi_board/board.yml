@@ -1,0 +1,6 @@
+board:
+  name: stm32h7_hdmi_board
+  full_name: STM32H7 HDMI Board
+  vendor: antmicro
+  socs:
+    - name: stm32h747xx

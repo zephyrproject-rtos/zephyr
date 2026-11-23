@@ -1,0 +1,8 @@
+set(BOARD_REVISIONS "ALL" "DEFAULT")
+if(NOT DEFINED BOARD_REVISION)
+  set(BOARD_REVISION "DEFAULT")
+else()
+  if(NOT BOARD_REVISION IN_LIST BOARD_REVISIONS)
+    message(FATAL_ERROR "${BOARD_REVISION} is not a valid revision for ai_m61_32s_kit Accepted revisions: ${BOARD_REVISIONS}")
+  endif()
+endif()

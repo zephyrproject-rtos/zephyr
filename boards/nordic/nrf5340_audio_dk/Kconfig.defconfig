@@ -1,0 +1,17 @@
+# nRF5340 Audio DK board configuration
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+configdefault HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+if BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP || BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP_NS
+
+configdefault BUILD_WITH_TFM
+	default y if BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP_NS
+
+configdefault BT_HCI_IPC
+	default y if BT_HCI
+
+endif # BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP || BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP_NS

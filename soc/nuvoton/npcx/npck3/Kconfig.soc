@@ -1,0 +1,22 @@
+# Nuvoton NPCK3 EC series
+
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NPCK3
+	bool
+	select NPCX_SOC_VARIANT_NPCKN
+	help
+	  Enable support for Nuvoton NPCK3 series
+
+config SOC_NPCK3M8K
+	bool
+	select SOC_SERIES_NPCK3
+	help
+	  NPCK3M8K
+
+config SOC_SERIES
+	default "npck3" if SOC_SERIES_NPCK3
+
+config SOC
+	default "npck3m8k" if SOC_NPCK3M8K

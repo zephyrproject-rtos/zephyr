@@ -1,0 +1,17 @@
+# MIMXRT685-AUD-EVK board
+
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT685_AUD_EVK_MIMXRT685S_CM33
+
+config NXP_IMXRT_BOOT_HEADER
+	default y if !BOOTLOADER_MCUBOOT
+
+config XTAL_SYS_CLK_HZ
+	default 24000000
+
+config SYSOSC_SETTLING_US
+	default 260
+
+endif # BOARD_MIMXRT685_AUD_EVK_MIMXRT685S_CM33

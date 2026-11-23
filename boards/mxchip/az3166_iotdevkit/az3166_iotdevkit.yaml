@@ -1,0 +1,12 @@
+identifier: az3166_iotdevkit
+name: MXChip AZ3166 IoT Devkit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - pwm
+  - spi
+  - i2c

@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2019 Linaro Limited.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect DIO21 to DIO22 to run this test */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio0 22 0>;
+		in-gpios = <&gpio0 21 0>;
+	};
+};

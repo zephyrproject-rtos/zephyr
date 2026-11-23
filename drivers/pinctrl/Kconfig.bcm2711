@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_BCM2711
+	bool "Broadcom BCM2711 pin controller driver"
+	default y
+	depends on DT_HAS_BRCM_BCM2711_PINCTRL_ENABLED
+	help
+	  Enables Broadcom BCM2711 pin controller driver

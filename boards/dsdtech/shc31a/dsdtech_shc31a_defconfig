@@ -1,0 +1,4 @@
+# Copyright (c) 2026 Base Power Company
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_ARM_MPU=y

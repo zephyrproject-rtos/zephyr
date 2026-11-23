@@ -1,0 +1,119 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_MCUX_CCM
+	bool "MCUX CCM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_CCM_ENABLED
+	help
+	  Enable support for mcux ccm driver.
+
+config CLOCK_CONTROL_MCUX_CCM_REV2
+	bool "MCUX CCM Rev 2 driver"
+	default y
+	depends on DT_HAS_NXP_IMX_CCM_REV2_ENABLED
+	help
+	  Enable support for mcux ccm rev 2 driver.
+
+config CLOCK_CONTROL_MCUX_MCG
+	bool "MCUX MCG driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_MCG_ENABLED
+	help
+	  Enable support for mcux mcg driver.
+
+config CLOCK_CONTROL_MCUX_PCC
+	bool "MCUX PCC driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_PCC_ENABLED
+	help
+	  Enable support for MCUX PCC driver.
+
+config CLOCK_CONTROL_MCUX_SCG
+	bool "MCUX SCG driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_SCG_ENABLED
+	help
+	  Enable support for mcux scg driver.
+
+config CLOCK_CONTROL_MCUX_SCG_K4
+	bool "MCUX driver for K4 Generation SCG"
+	default y
+	depends on DT_HAS_NXP_SCG_K4_ENABLED
+	help
+	  Enable support for SCG K4 driver
+
+config CLOCK_CONTROL_MCUX_SIM
+	bool "MCUX SIM driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_SIM_ENABLED
+	help
+	  Enable support for mcux sim driver.
+
+config CLOCK_CONTROL_MCUX_SYSCON
+	bool "MCUX LPC clock driver"
+	default y
+	depends on DT_HAS_NXP_LPC_SYSCON_ENABLED
+	select PINCTRL
+	help
+	  Enable support for mcux clock driver.
+
+config CLOCK_CONTROL_NXP_MC_CGM
+	bool "NXP MC_CGM clock driver"
+	default y
+	depends on DT_HAS_NXP_MC_CGM_ENABLED
+	help
+	  Enable support for NXP MC_CGM clock driver.
+
+config CLOCK_CONTROL_NXP_MCG_LITE
+	bool "NXP MCG-Lite driver"
+	default y
+	depends on DT_HAS_NXP_MCG_LITE_ENABLED
+	help
+	  Enable support for NXP MCG-Lite driver.
+
+config CLOCK_CONTROL_NXP_S32
+	bool "NXP S32 clock control driver"
+	default y
+	depends on DT_HAS_NXP_S32_CLOCK_ENABLED
+	help
+	  Enable support for NXP S32 clock control driver.
+
+if CLOCK_CONTROL_NXP_S32
+
+config CLOCK_CONTROL_NXP_S32_CLOCK_CONFIG_IDX
+	int
+	default 0
+	help
+	  This option specifies the zero-based index of the clock configuration
+	  used to initialize the SoC clocks.
+
+endif # CLOCK_CONTROL_NXP_S32
+
+config CLOCK_CONTROL_NXP_MCXW7X
+	bool "NXP MCXW7X clock control driver"
+	default y
+	depends on DT_HAS_NXP_MCXW7X_CLOCK_ENABLED
+	select NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_MCXW7X_CLOCK),nvmem-cells)
+	help
+	  Enable support for NXP MCXW7X clock control driver.
+
+config CLOCK_CONTROL_NXP_MCXW7X_IFR_TRIM_INIT_PRIORITY
+	int "MCXW7X OSC32K factory trim init priority"
+	default 51
+	depends on CLOCK_CONTROL_NXP_MCXW7X
+	help
+	  POST_KERNEL initialization priority of the step which applies the
+	  factory OSC32K trim read from non-volatile memory. It must be higher
+	  than the priority of the driver providing the NVMEM cell, for instance
+	  FLASH_INIT_PRIORITY.
+
+config CLOCK_CONTROL_MCUX_CCM_REV3
+	bool "MCUX CCM rev3 driver"
+	default y
+	depends on DT_HAS_NXP_IMX_CCM_REV3_ENABLED
+	help
+	  Enable support for the NXP i.MX CCM rev3 clock control driver. The
+	  peripheral clock specifier packs a gate and a clock-root identifier,
+	  and configurable clock roots are described as devicetree child nodes
+	  of the controller.

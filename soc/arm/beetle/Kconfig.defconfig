@@ -1,0 +1,15 @@
+# ARM LTD Beetle SoC configuration options
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_BEETLE
+
+config NUM_IRQS
+	default 45
+
+config CLOCK_CONTROL_INIT_PRIORITY
+	default 1
+	depends on CLOCK_CONTROL
+
+endif # SOC_SERIES_BEETLE

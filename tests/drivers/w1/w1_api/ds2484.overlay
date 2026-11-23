@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2022 Caspar Friedrich <c.s.w.friedrich@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_i2c {
+	status = "okay";
+
+	w1_0: w1@18 {
+		compatible = "maxim,ds2484";
+		reg = <0x18>;
+	};
+};
+
+#include "w1_devices.dtsi"

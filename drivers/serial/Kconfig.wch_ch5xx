@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_WCH_CH5XX
+	bool "WCH CH5xx UART driver"
+	default y
+	depends on DT_HAS_WCH_CH5XX_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  This option enables the UART driver for CH5xx SoC family.

@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2025 Syswonder
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm64/rockchip/rk3588.dtsi>
+#include <common/mem.h>
+
+/ {
+	compatible = "rockchip,rk3588";
+	model = "Firefly ROC-RK3588-PC";
+
+	chosen {
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,sram = &dram;
+	};
+
+	dram: memory@50000000 {
+		compatible = "mmio-sram";
+		reg = <0x50000000 DT_SIZE_M(1)>;
+		device_type = "memory";
+	};
+};
+
+&uart2 {
+	current-speed = <1500000>;
+	status = "okay";
+};
+
+&uart3 {
+	current-speed = <115200>;
+	status = "disabled";
+};
+
+&gmac0 {
+	phy-handle = <&rgmii_phy0>;
+	clock-in-out = "output";
+	tx-delay = <0x47>;
+	rx-delay = <0>;
+	zephyr,random-mac-address;
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+
+	rgmii_phy0: ethernet-phy@1 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x1>;
+		status = "okay";
+	};
+};
+
+&ptp_clock0 {
+	status = "okay";
+};

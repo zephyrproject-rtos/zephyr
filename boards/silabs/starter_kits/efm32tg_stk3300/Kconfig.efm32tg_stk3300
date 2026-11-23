@@ -1,0 +1,5 @@
+# Copyright (c) 2025, Lukas Woodtli
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EFM32TG_STK3300
+	select SOC_EFM32TG840F32

@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 NUCODE Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timer0 {
+	prescaler = <4>;
+	status = "okay";
+};
+
+&timer1 {
+	prescaler = <4>;
+	status = "okay";
+};
+
+&timer2 {
+	prescaler = <4>;
+	status = "okay";
+};
+
+&timer3 {
+	prescaler = <4>;
+	status = "okay";
+};
+
+&timer4 {
+	prescaler = <4>;
+	status = "okay";
+};
+
+&rtc0 {
+	ppi-wrap;
+	status = "okay";
+};
+
+&rtc2 {
+	ppi-wrap;
+	status = "okay";
+};

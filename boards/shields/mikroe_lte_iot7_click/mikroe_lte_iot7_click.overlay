@@ -1,0 +1,36 @@
+/* SPDX-FileCopyrightText: Copyright (c) 2026 ID8 Engineering AB */
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	chosen {
+		zephyr,modem-uart = &mikrobus_uart;
+	};
+
+	aliases {
+		modem = &modem;
+		modem-uart = &mikrobus_uart;
+	};
+
+	en_rts {
+		compatible = "regulator-fixed";
+		regulator-name = "enable-rts";
+		enable-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+	};
+};
+
+&mikrobus_uart {
+	current-speed = <115200>;
+	status = "okay";
+
+	modem: modem {
+		compatible = "u-blox,sara-r4";
+		mdm-power-gpios = <&mikrobus_header MIKROBUS_AN
+				   (GPIO_OPEN_SOURCE | GPIO_ACTIVE_HIGH)>;
+		mdm-reset-gpios = <&mikrobus_header MIKROBUS_RST
+				   (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		status = "okay";
+	};
+};

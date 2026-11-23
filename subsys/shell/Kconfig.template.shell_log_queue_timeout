@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config $(module)_LOG_MESSAGE_QUEUE_TIMEOUT
+	int "Log message drop timeout (in milliseconds)"
+	default $(default-timeout)
+	range -1 10000
+	help
+	  If queue with pending log messages is full, oldest log message is
+	  dropped if queue is still full after requested time (-1 is forever).
+	  Logger thread is blocked for that period, thus long timeout impacts
+	  other logger  backends and must be used with care.

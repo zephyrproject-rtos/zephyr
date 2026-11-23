@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - devicetree
+    - trdc
+  platform_allow:
+    - mimxrt2660_evk/mimxrt2663/cm85
+  integration_platforms:
+    - mimxrt2660_evk/mimxrt2663/cm85
+tests:
+  soc.nxp.imxrt266x.trdc.defaults: {}
+  soc.nxp.imxrt266x.trdc.overrides:
+    extra_args:
+      - DTC_OVERLAY_FILE=overrides.overlay

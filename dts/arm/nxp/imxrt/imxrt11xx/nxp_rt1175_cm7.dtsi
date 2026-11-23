@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SOC DTS for the i.MX RT1175 Cortex-M7 core */
+
+#include <nxp/imxrt/imxrt11xx/nxp_rt1170_cm7.dtsi>
+
+/*
+ * The RT1175 has no GPU2D, PXP, parallel CSI, eLCDIF, LCDIFv2,
+ * MIPI CSI or MIPI DSI compared to the RT1176: the whole DISPLAY power
+ * domain is absent.
+ */
+/delete-node/ &csi;
+/delete-node/ &lcdif;
+/delete-node/ &lcdifv2;
+/delete-node/ &pxp;
+/delete-node/ &mipi_dsi;
+/delete-node/ &mipi_csi2rx;
+
+/* RT1175 shares the RT1176 silicon: ARM PLL is set to 996MHz for this core */
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(996)>;
+};

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_E80_900MBL_01
+
+if LORA
+
+choice LORA_MODULE_BACKEND
+	default LORA_MODULE_BACKEND_NATIVE
+endchoice
+
+endif # LORA
+
+endif # BOARD_E80_900MBL_01

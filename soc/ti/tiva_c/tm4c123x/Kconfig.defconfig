@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Linumiz
+# Author: Sri Surya <srisurya@linumiz.com>
+
+# TI Tiva C TM4C123x Series defaults
+
+if SOC_SERIES_TM4C123X
+
+config NUM_IRQS
+	default 139
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(dt_nodelabel_path,sysclk),clock-frequency)
+
+endif # SOC_SERIES_TM4C123X

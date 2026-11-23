@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Katsuhiro Suzuki
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_HIFIVE_UNLEASHED
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+endif # BOARD_HIFIVE_UNLEASHED

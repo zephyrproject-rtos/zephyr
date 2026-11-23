@@ -1,0 +1,78 @@
+# Copyright Nordic Semiconductor ASA 2025-2026. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCUMGR_GRP_TRANSPORT
+	bool "MCUmgr handlers for transport management [EXPERIMENTAL]"
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3 if ZCBOR_CANONICAL
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_2
+	select EXPERIMENTAL
+	help
+	  Enables MCUmgr handlers for transport management.
+
+if MCUMGR_GRP_TRANSPORT
+
+config MCUMGR_GRP_TRANSPORT_LOCKING
+	bool "Semaphore locking"
+	default y
+	help
+	  If enabled, will prevent concurrent access of bridge variables with a semaphore. Can be
+	  disabled to reduce resource usage on systems where there will not be any concurrent
+	  resource usage.
+
+config MCUMGR_GRP_TRANSPORT_MAX_BRIDGES
+	int "Maximum bridges"
+	default 1
+	range 1 128
+	help
+	  The maximum number of concurrent bridges to support.
+
+	  Note that this is for the bridge infrastructure itself, individual transports may have
+	  lower limits on maximum numbers of concurrent bridges.
+
+choice MCUMGR_GRP_TRANSPORT_GROUP_ID_TYPE
+	prompt "Group ID type"
+	default MCUMGR_GRP_TRANSPORT_GROUP_ID_DEFAULT
+	help
+	  Specifies how the MCUmgr command group ID is defined.
+
+config MCUMGR_GRP_TRANSPORT_GROUP_ID_DEFAULT
+	bool "Default"
+	help
+	  Uses the global default transport group ID, which is universally compatible.
+
+config MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_VALUE
+	bool "Specify custom value"
+	help
+	  A Kconfig value will be used to set the transport group ID, which is custom to an
+	  application or a device.
+
+if MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_VALUE
+
+config MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_VALUE_GROUP_ID
+	int "Group ID"
+	range 64 65535
+	help
+	  The group index to use for the transport management group.
+
+endif # MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_VALUE
+
+config MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_FUNCTION
+	bool "Get from custom function"
+	help
+	  A function's return value will be used to set the transport group ID, which is custom
+	  to an application or a device.
+
+endchoice
+
+config MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS
+	bool
+	prompt "Info functions" if !MCUMGR_GRP_TRANSPORT_GROUP_ID_DEFAULT
+	default y
+	help
+	  Disabling this will remove the information functions which frees up resources on
+	  devices where the transport layout is static or already known, meaning that this will no
+	  longer comply with the transport management group specification, hence why it can only
+	  be disabled when using a custom group ID.
+
+endif # MCUMGR_GRP_TRANSPORT

@@ -1,0 +1,59 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADXL313 3-axis I2C accelerometer.
+  When setting the accelerometer DTS properties, include adxl313.h and use the
+  macros defined there.
+
+  SENSOR_ATTR_FULL_SCALE uses integer g via sensor_ms2_to_g(). Because ±0.5 g
+  cannot be represented as a non-zero integer g, pass a value that rounds to 0
+  (for example 0.5 g in m/s^2) to select the ±0.5 g range.
+
+compatible: "adi,adxl313"
+
+include: ["i2c-device.yaml", "sensor-device.yaml"]
+
+properties:
+  range:
+    type: int
+    default: 2
+    description: |
+      Accelerometer measurement range.
+      Default is ±2 g as a practical mid-range setting that covers ±1 g
+      gravity with margin for moderate dynamics. Override for higher
+      resolution (±0.5 g, the power-on reset value) or for ±4 g.
+    enum:
+      - 0 # ADXL313_DT_RANGE_0_5G
+      - 1 # ADXL313_DT_RANGE_1G
+      - 2 # ADXL313_DT_RANGE_2G
+      - 3 # ADXL313_DT_RANGE_4G
+
+  odr:
+    type: int
+    default: 10
+    description: |
+      Accelerometer sampling frequency (ODR). Default matches power-on reset
+      (100 Hz).
+    enum:
+      - 6  # ADXL313_DT_ODR_6_25
+      - 7  # ADXL313_DT_ODR_12_5
+      - 8  # ADXL313_DT_ODR_25
+      - 9  # ADXL313_DT_ODR_50
+      - 10 # ADXL313_DT_ODR_100
+      - 11 # ADXL313_DT_ODR_200
+      - 12 # ADXL313_DT_ODR_400
+      - 13 # ADXL313_DT_ODR_800
+      - 14 # ADXL313_DT_ODR_1600
+      - 15 # ADXL313_DT_ODR_3200
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/adxl313.h>
+
+    adxl313: adxl313@53 {
+      compatible = "adi,adxl313";
+      reg = <0x53>;
+      range = <ADXL313_DT_RANGE_2G>;
+      odr = <ADXL313_DT_ODR_100>;
+    };

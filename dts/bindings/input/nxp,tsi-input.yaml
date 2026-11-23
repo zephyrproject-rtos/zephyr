@@ -1,0 +1,61 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP TSI V6 Touch Sensing Input Device
+
+compatible: "nxp,tsi-input"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  channel-mask:
+    type: array
+    required: true
+    description: |
+      Bitmask of enabled TSI channels, one or more 32-bit words.
+      Word W (index W) covers channels [32*W .. 32*W + 31]; within a word,
+      bit N enables channel 32*W + N. A single word covers channels 0-31,
+      so <0x08> enables channel 3. Parts with more than 32 TSI channels
+      (e.g. MCXA577 with 70 channels) use additional words:
+      <word0 word1 word2> for channels 0-31, 32-63 and 64+.
+
+  input-codes:
+    type: array
+    description: |
+      Array of input codes corresponding to each enabled channels.
+      Use INPUT_KEY_* or INPUT_BTN_* codes from dt-bindings/input/input-event-codes.h
+
+  touch-threshold:
+    type: int
+    default: 100
+    description: |
+      Touch detection threshold (delta counts from baseline).
+      Can be positive or negative value depending on the baseline calculation.
+
+  release-threshold:
+    type: int
+    description: |
+      Release detection threshold (delta counts from baseline).
+      If not specified, defaults to touch-threshold / 2.
+      Should be less than touch-threshold to provide hysteresis.
+      Can be positive or negative value depending on the baseline calculation.
+
+  scan-period-ms:
+    type: int
+    default: 50
+    description: Scan period in milliseconds
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

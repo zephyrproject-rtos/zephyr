@@ -1,0 +1,52 @@
+# Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM0 family ADC
+
+compatible: "atmel,sam0-adc"
+
+include:
+  - name: adc-controller.yaml
+  - name: pinctrl-device.yaml
+  - name: atmel,assigned-clocks.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  atmel,assigned-clocks:
+    required: true
+
+  atmel,assigned-clock-names:
+    required: true
+
+  prescaler:
+    type: int
+    required: true
+    description: clock prescaler divisor applied to the generic clock
+
+  "#io-channel-cells":
+    const: 1
+
+  calib-offset:
+    type: int
+    description: |
+      bit position offset in NVM SW Calib for start of ADC0 BIASCOMP field.
+      This property is expected to be set on SAM{D,E}5x family of SoCs.
+      For ADC0 this should be 0, and for ADC1 this should be 14.
+    enum:
+      - 0
+      - 14
+
+io-channel-cells:
+  - input

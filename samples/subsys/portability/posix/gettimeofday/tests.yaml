@@ -1,0 +1,20 @@
+sample:
+  description: POSIX API gettimeofday() example (with SNTP)
+  name: gettimeofday
+common:
+  filter: ( CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+    and not CONFIG_SOC_FAMILY_INTEL_ADSP )
+  harness: net
+  min_ram: 32
+  min_flash: 96
+  tags:
+    - posix
+    - net
+tests:
+  sample.posix.gettimeofday:
+    harness: net
+    platform_exclude: s32k148_evb/s32k148
+  sample.posix.gettimeofday.s32k148_evb:
+    harness: net
+    extra_args: SHIELD=nxp_adtja1101
+    platform_allow: s32k148_evb/s32k148

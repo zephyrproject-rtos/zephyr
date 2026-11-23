@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_WCH_USART
+	bool "CH32V00x USART driver"
+	default y
+	depends on DT_HAS_WCH_USART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  This option enables the USART driver for CH32V00x SoC family.
+
+if UART_WCH_USART
+
+config UART_WCH_USART_RESET
+	bool "Reset USART peripheral before use"
+	depends on RESET
+	default y
+	help
+	  Reset the USART peripheral before use using the reset subsystem.
+
+endif

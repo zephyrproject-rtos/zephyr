@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Ian Wakely
+
+shield:
+  name: adafruit_ina228
+  full_name: Adafruit INA228 Power Monitor
+  vendor: adafruit
+  supported_features:
+    - sensor

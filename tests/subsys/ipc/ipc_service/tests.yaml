@@ -1,0 +1,8 @@
+# Copyright 2021 Carlo Caione 2021 <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  ipc.ipc_service:
+    tags: ipc_service
+    harness: ztest
+    platform_allow: qemu_cortex_a53

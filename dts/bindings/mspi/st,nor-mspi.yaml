@@ -1,0 +1,25 @@
+# Copyright (c) 2026 EXALT Technologies.
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 memory device on mspi bus
+
+compatible: "st,nor"
+
+include: jedec,nor-mspi.yaml
+
+properties:
+  st,mem-type:
+    type: string
+    enum:
+      - "micron"
+      - "macronix"
+      - "apmem"
+      - "macronix_ram"
+      - "hyperbus"
+      - "apmem_16bits"
+    required: true
+    description: |
+        Selects the memory type programmed into the controller MTYP field.
+
+        - "micron": Micron memories.
+        - "macronix": Macronix memories.

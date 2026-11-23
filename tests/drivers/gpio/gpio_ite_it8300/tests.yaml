@@ -1,0 +1,10 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.gpio.ite_it8300:
+    tags:
+      - drivers
+      - gpio
+    platform_allow:
+      - native_sim

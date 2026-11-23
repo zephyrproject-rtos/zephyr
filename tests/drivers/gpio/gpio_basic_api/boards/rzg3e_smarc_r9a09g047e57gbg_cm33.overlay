@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio6 4 GPIO_ACTIVE_HIGH>;
+		in-gpios = <&gpio6 6 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&tint20 {
+	status = "okay";
+};
+
+&gpio6 {
+	irqs = <&tint20 6>;
+	status = "okay";
+};

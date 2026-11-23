@@ -1,0 +1,45 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP MCX A series eSPI Target Attached Flash (TAF) controller.
+
+  This node is a child of the nxp,espi controller node. It shares the
+  parent's register block and hardware interrupt; the parent eSPI driver
+  owns the sole interrupt and forwards host flash requests to this driver
+  through an internal bridge. The TAF driver binds the standard
+  espi_saf_driver_api so it can interface with espi_saf_* upper layers.
+
+  Representation:
+
+    espi0: espi@1f000 {
+        compatible = "nxp,espi";
+        ...
+
+        espi_taf: espi-taf {
+            compatible = "nxp,espi-taf";
+            flash-dev = <&espi_taf_sim_flash>;
+            status = "okay";
+        };
+    };
+
+compatible: "nxp,espi-taf"
+
+include: [base.yaml]
+
+properties:
+  flash-dev:
+    type: phandle
+    required: true
+    description: |
+      Reference to the local flash device that backs Target Attached
+      Flash. Host-initiated read/write/erase requests over the eSPI
+      flash channel are serviced against this device.
+
+  max-read-size:
+    type: int
+    default: 64
+    description: |
+      Maximum completion payload size in bytes used when returning data
+      for host read requests. Bounded by the hardware port RAM buffer and
+      the OMFLEN length field.

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024-2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,system-timer-companion = &counter0;
+	};
+};
+
+&clk_ertco {
+	status = "okay";
+};
+
+&lptimer0 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_ERTCO>;
+	wakeup-source;
+	status = "okay";
+
+	counter0: counter {
+		wakeup-source;
+		status = "okay";
+	};
+};

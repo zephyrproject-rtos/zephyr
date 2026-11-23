@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Linumiz GmbH
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_MSPM0
+	bool "TI MSPM0 MCU family PWM driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_TIMER_PWM_ENABLED
+	select PINCTRL
+	help
+	  Enable TI MSPM0 MCU family PWM driver.

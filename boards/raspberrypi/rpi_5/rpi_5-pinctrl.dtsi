@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <broadcom/rp1_common-pinctrl.dtsi>
+
+&pinctrl {
+	/* Not yet implemented BCM2712 side pinctrl. Put a stub definition at this time. */
+	uart10_default: uart10_default {};
+};

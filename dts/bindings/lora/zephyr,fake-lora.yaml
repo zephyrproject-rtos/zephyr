@@ -1,0 +1,7 @@
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This binding provides a fake LoRa modem for use as either a stub or a mock in Zephyr tests.
+
+compatible: "zephyr,fake-lora"

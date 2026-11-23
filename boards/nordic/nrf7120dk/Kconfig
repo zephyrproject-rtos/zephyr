@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF7120DK
+	select SOC_NRF7120_DEVELOP_IN_NRF7120E if SOC_NRF7120

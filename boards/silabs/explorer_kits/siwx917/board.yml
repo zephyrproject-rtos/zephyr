@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+boards:
+  - name: siwx917_ek2708a
+    full_name: SiWx917Y Module Wi-Fi 6 and Bluetooth LE Explorer Kit (BRD2708A)
+    vendor: silabs
+    socs:
+      - name: siwg917y111mgaba

@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2025, FocalTech Systems CO.,Ltd
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/focaltech_ft9001_pinctrl.h>
+
+&pinctrl {
+	usart3_default: usart3_default {
+		group1 {
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SCICR_OFFSET, 25, 1)>,
+				 <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SCICR_OFFSET, 26, 1)>;
+		};
+
+		group2 {
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR3_OFFSET, 9, 0)>,
+				 <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR3_OFFSET, 12, 0)>;
+		};
+
+		group3 {
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR4_OFFSET, 24, 0)>,
+				 <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR4_OFFSET, 29, 0)>;
+		};
+	};
+
+	gint40_default: gint40_default {
+		group1 {
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR5_OFFSET, 15, 0)>;
+		};
+
+		group2 {
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR2_OFFSET, 8, 1)>;
+		};
+	};
+
+	gint41_default: gint41_default {
+		group1 {
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR5_OFFSET, 14, 0)>;
+		};
+
+		group2 {
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR2_OFFSET, 9, 1)>;
+		};
+	};
+
+	gint42_default: gint42_default {
+		group1 {
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR5_OFFSET, 13, 0)>;
+		};
+
+		group2 {
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR2_OFFSET, 10, 1)>;
+		};
+	};
+
+	gint43_default: gint43_default {
+		group1 {
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR5_OFFSET, 12, 0)>;
+		};
+
+		group2 {
+			pinmux = <FOCALTECH_PINMUX(FOCALTECH_IOCTRL_SWAPCR2_OFFSET, 11, 1)>;
+		};
+	};
+};

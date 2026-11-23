@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Console UART is unused (remote shell uses IPC only); disable the node and
+ * drop chosen references so the disabled UART is not selected as console.
+ */
+
+/ {
+	chosen {
+		/delete-property/ zephyr,console;
+		/delete-property/ zephyr,shell-uart;
+		/delete-property/ zephyr,uart-mcumgr;
+	};
+};
+
+&uart135 {
+	status = "disabled";
+};

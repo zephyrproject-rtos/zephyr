@@ -1,0 +1,38 @@
+.. zephyr:code-sample:: bluetooth_isochronous_receiver
+   :name: Synchronized Receiver
+   :relevant-api: bt_iso bluetooth
+
+   Use Bluetooth LE Synchronized Receiver functionality.
+
+Overview
+********
+
+A simple application demonstrating the Bluetooth Low Energy Synchronized
+Receiver functionality.
+
+Requirements
+************
+
+* BlueZ running on the host, or
+* A board with Bluetooth Low Energy 5.2 support
+* A Bluetooth Controller and board that supports setting
+  CONFIG_BT_CTLR_SYNC_ISO=y
+
+Building and Running
+********************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/iso_receive
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+After flashing, the sample starts scanning for an Isochronous Broadcaster automatically.
+
+Use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable
+required ISO feature support in Zephyr Bluetooth Controller on supported boards.
+
+Use the :zephyr:code-sample:`bluetooth_isochronous_broadcaster` sample on
+another board, which will start periodic advertising and create a BIG to which
+this sample will establish periodic advertising synchronization and synchronize
+to the Broadcast Isochronous Stream.

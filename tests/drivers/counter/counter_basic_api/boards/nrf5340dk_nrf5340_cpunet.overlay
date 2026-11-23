@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timer0 {
+	prescaler = <4>;
+	status = "okay";
+};
+
+&timer1 {
+	prescaler = <4>;
+	status = "okay";
+};
+
+&timer2 {
+	prescaler = <4>;
+	status = "okay";
+};

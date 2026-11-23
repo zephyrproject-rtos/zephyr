@@ -1,0 +1,8 @@
+/*
+ * Copyright 2022 HNU-ESNL
+ * Copyright 2022 openEuler SIG-Zephyr
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "roc_rk3568_pc.dts"

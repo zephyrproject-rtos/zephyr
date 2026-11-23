@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_VIRTUAL
+	bool "Virtual USB host controller driver"
+	select UVB
+	default y
+	depends on DT_HAS_ZEPHYR_UHC_VIRTUAL_ENABLED
+	help
+	  Virtual USB host controller driver.

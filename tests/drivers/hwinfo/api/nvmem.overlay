@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	hwinfo {
+		compatible = "zephyr,hwinfo-nvmem";
+		nvmem-cells = <&device_id_cell>, <&eui64_cell>;
+		nvmem-cell-names = "device-id", "eui64";
+	};
+};
+
+&eeprom0 {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		device_id_cell: device-id@0 {
+			reg = <0x0 0x10>;
+			#nvmem-cell-cells = <0>;
+		};
+
+		eui64_cell: eui64@10 {
+			reg = <0x10 0x8>;
+			#nvmem-cell-cells = <0>;
+		};
+	};
+};

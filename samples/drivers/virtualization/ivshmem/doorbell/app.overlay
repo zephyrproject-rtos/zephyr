@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2021 Intel Corporation
+ * Copyright (c) 2023 Huawei France Technologies SASU
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "boards/pcie_ivshmem.dtsi"

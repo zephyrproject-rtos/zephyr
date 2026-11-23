@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Caspar Friedrich <c.s.w.friedrich@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments TLA2021 Low-Power ADC
+
+compatible: "ti,tla2021"
+
+include: ti,tla202x-base.yaml

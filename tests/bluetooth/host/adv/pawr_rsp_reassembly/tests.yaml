@@ -1,0 +1,7 @@
+common:
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host.adv.pawr_rsp_reassembly:
+    type: unit

@@ -1,0 +1,19 @@
+sample:
+  description: Nanopb sample, with a simple proto buffer
+  name: Simple nanopb
+common:
+  modules:
+    - nanopb
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Your lucky number was 13!"
+tests:
+  sample.modules.nanopb:
+    tags:
+      - samples
+      - nanopb
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64

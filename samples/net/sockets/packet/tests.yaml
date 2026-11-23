@@ -1,0 +1,15 @@
+sample:
+  description: Packet socket sample
+  name: packet-socket
+tests:
+  sample.net.sockets.packet:
+    harness: net
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    tags:
+      - net
+      - sockets
+      - packet-socket

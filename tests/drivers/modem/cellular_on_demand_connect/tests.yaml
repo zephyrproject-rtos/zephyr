@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - modem
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.modem.cellular.on_demand_connect: {}
+  drivers.modem.cellular.on_demand_connect.early_admin_up:
+    extra_configs:
+      - CONFIG_TEST_ON_DEMAND_EARLY_ADMIN_UP=y
+  drivers.modem.cellular.on_demand_connect.disabled:
+    extra_configs:
+      - CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT=n

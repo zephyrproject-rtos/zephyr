@@ -1,0 +1,6 @@
+family:
+- name: microchip_miv
+  series:
+  - name: miv
+    socs:
+    - name: miv

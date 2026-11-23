@@ -1,0 +1,14 @@
+tests:
+  arch.common.ramfunc:
+    filter: CONFIG_ARCH_HAS_RAMFUNC_SUPPORT and not CONFIG_ARM_MPU_PXN
+    tags:
+      - arm
+      - userspace
+    arch_allow:
+      - arm
+      - riscv
+    platform_exclude:
+      - adp_xc7k/ae350_d25f/lm
+      - adp_xc7k/ae350_d23/clic/lm
+    extra_configs:
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0

@@ -1,0 +1,11 @@
+# EOS_S3 GPIO configuration options
+
+# Copyright (c) 2020 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_EOS_S3
+	bool "EOS_S3 GPIO driver"
+	default y
+	depends on DT_HAS_QUICKLOGIC_EOS_S3_GPIO_ENABLED
+	help
+	  Enable the EOS S3 gpio driver.

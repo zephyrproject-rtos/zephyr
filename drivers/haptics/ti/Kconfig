@@ -1,0 +1,6 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/haptics/ti/Kconfig.drv2605"
+# zephyr-keep-sorted-stop

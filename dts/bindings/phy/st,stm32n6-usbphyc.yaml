@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32N6 USB HS PHY controller (USBPHYC)
+
+description: |
+  USB High-Speed PHY control interface as found in STM32N6 series.
+  This control interface is located in a dedicated MMIO region.
+
+  NOTE: this compatible must NOT be used alongside "st,stm32-usbphyc"
+        as it indicates a completely separate programming model.
+
+compatible: "st,stm32n6-usbphyc"
+
+include: "st,stm32-usbphyc.yaml"
+
+properties:
+  reg:
+    required: true
+
+examples:
+  - |
+    /* In DTS for STM32N6-based board */
+    &usbphyc1 {
+      clocks = <&rcc STM32_CLOCK(AHB5, 27)>,
+               <&rcc STM32_SRC_HSE OTGPHY1_SEL(3)>;
+      clock-names = "gate", "mux";
+    };

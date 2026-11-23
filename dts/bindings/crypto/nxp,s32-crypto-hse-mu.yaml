@@ -1,0 +1,19 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP S32 HSE Messaging Unit. The Messaging Unit (MU) module facilitates communication between
+  HSE processor core and application processor core (e.g any of RTU core) on a chip.
+  Processors side-A inside the MU is accessible only by HSE core, whether side-B is accessible
+  by application core. To enable a dedicated MU instance for Crypto operation:
+    &mub0 {
+      status = "okay";
+    };
+
+compatible: "nxp,s32-crypto-hse-mu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

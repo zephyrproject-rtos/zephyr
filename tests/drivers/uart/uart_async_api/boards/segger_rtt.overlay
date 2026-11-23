@@ -1,0 +1,27 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	chosen {
+		zephyr,console = &rtt0;
+	};
+
+	dut: rtt0: rtt_chan0 {
+		compatible = "segger,rtt-uart";
+		status = "okay";
+	};
+
+	rtt1: rtt_chan1 {
+		compatible = "segger,rtt-uart";
+		status = "okay";
+	};
+
+	rtt2: rtt_chan2 {
+		compatible = "segger,rtt-uart";
+		status = "okay";
+	};
+
+	rtt3: rtt_chan3 {
+		compatible = "segger,rtt-uart";
+		status = "okay";
+	};
+};

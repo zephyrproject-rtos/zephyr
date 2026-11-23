@@ -1,0 +1,13 @@
+# Copyright 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+# Test values set by the snippet config overlays and tested by the test logic
+config TEST_FOO_VAL
+	int "Test value"
+	default 12
+	help
+	  This option's value should be overridden by sysbuild.

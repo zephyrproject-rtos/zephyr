@@ -1,0 +1,21 @@
+sample:
+  name: NXP SmartDMA memory-to-memory
+  description: >
+    Use the NXP SmartDMA coprocessor to perform a memory-to-memory
+    transfer through the Zephyr DMA API.
+tests:
+  sample.boards.nxp.smartdma_mem_to_mem:
+    platform_allow:
+      - mcx_n9xx_evk/mcxn947/cpu0
+      - mcx_n5xx_evk/mcxn547/cpu0
+    integration_platforms:
+      - mcx_n9xx_evk/mcxn947/cpu0
+      - mcx_n5xx_evk/mcxn547/cpu0
+    tags:
+      - dma
+      - smartdma
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Result check passed"

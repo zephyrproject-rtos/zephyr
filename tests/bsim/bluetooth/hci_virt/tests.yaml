@@ -1,0 +1,27 @@
+# Copyright 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - bluetooth
+  depends_on: bsim
+  platform_allow:
+    - nrf52_bsim/native
+  integration_platforms:
+    - nrf52_bsim/native
+  harness: bsim
+tests:
+  bluetooth.hci_virt.host:
+    build_only: true
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_hci_virt_host
+  bluetooth.hci_virt.gatt:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - tests_scripts/run.sh
+    required_applications:
+      - application: bluetooth.hci_virt.host
+      - application: sample.bluetooth.hci_virt
+        path: ${ZEPHYR_BASE}/samples/bluetooth/hci_virt

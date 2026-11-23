@@ -1,0 +1,6 @@
+board:
+  name: mcxw72_evk
+  full_name: MCXW72-EVK
+  vendor: nxp
+  socs:
+    - name: mcxw727c

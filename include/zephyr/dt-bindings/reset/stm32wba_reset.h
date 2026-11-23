@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @brief STM32 reset controller devicetree helper macros for STM32WBA
+ * @ingroup reset_controller_stm32
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_STM32WBA_RESET_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_STM32WBA_RESET_H_
+
+#include "stm32-common.h"
+
+/** @cond INTERNAL_HIDDEN */
+
+/* RCC bus reset register offset */
+#define STM32_RESET_BUS_AHB1  0x60
+#define STM32_RESET_BUS_AHB2  0x64
+#define STM32_RESET_BUS_AHB4  0x6C
+#define STM32_RESET_BUS_AHB5  0x70
+#define STM32_RESET_BUS_APB1L 0x74
+#define STM32_RESET_BUS_APB1H 0x78
+#define STM32_RESET_BUS_APB2  0x7C
+#define STM32_RESET_BUS_APB7  0x80
+
+/** @endcond */
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_RESET_STM32WBA_RESET_H_ */

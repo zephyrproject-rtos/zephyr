@@ -1,0 +1,5 @@
+description: Xilinx PS UART
+
+compatible: "xlnx,xuartps"
+
+include: "cdns,uart.yaml"

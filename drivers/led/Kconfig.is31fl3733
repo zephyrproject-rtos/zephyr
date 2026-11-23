@@ -1,0 +1,12 @@
+# Copyright 2023 Daniel DeGrasse <daniel@degrasse.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config IS31FL3733
+	bool "IS31FL3733 LED driver"
+	default y
+	depends on DT_HAS_ISSI_IS31FL3733_ENABLED
+	select I2C
+	help
+	  Enable LED driver for IS31FL3733.
+	  IS31FL3733 is a matrix LED driver, capable of a maximum of 3.29 mA
+	  per LED, or 42 mA total across all LEDs in the 12x16 dot matrix.

@@ -1,0 +1,34 @@
+#include "../../../boards/nrf54h20dk_nrf54h20_common.dtsi"
+
+&cpuapp_cpuppr_ipc {
+	compatible = "zephyr,ipc-icbmsg";
+	tx-blocks = <15>;
+	rx-blocks = <15>;
+	status = "okay";
+};
+
+&cpuppr_vevif {
+	status = "okay";
+};
+
+&cpuapp_bellboard {
+	status = "okay";
+};
+
+&dut {
+	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
+};
+
+&dut_aux {
+	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
+};
+
+&timer134 {
+	interrupt-parent = <&cpuppr_clic>;
+};
+
+&dppic135 {
+	child-owned-channels = <0>;
+};

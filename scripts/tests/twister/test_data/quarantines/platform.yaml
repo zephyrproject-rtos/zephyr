@@ -1,0 +1,3 @@
+- platforms:
+  - demo_board_3
+  comment: "all on board_3"

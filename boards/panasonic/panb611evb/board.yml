@@ -1,0 +1,48 @@
+board:
+  name: panb611evb
+  full_name: PAN B611 Evaluation Board
+  vendor: panasonic
+  socs:
+  - name: nrf54l15
+    variants:
+    - name: xip
+      cpucluster: cpuflpr
+    - name: ns
+      cpucluster: cpuapp
+runners:
+  run_once:
+    '--recover':
+    - runners:
+      - nrfjprog
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - panb611evb/nrf54l15/cpuapp
+        - panb611evb/nrf54l15/cpuapp/ns
+        - panb611evb/nrf54l15/cpuflpr
+        - panb611evb/nrf54l15/cpuflpr/xip
+    '--erase':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - panb611evb/nrf54l15/cpuapp
+        - panb611evb/nrf54l15/cpuapp/ns
+        - panb611evb/nrf54l15/cpuflpr
+        - panb611evb/nrf54l15/cpuflpr/xip
+    '--reset':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: last
+      groups:
+      - boards:
+        - panb611evb/nrf54l15/cpuapp
+        - panb611evb/nrf54l15/cpuapp/ns
+        - panb611evb/nrf54l15/cpuflpr
+        - panb611evb/nrf54l15/cpuflpr/xip

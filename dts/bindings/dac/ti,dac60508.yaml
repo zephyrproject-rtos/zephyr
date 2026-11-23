@@ -1,0 +1,8 @@
+# Copyright (c) 2020 M2I Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI DAC60508 12-bit DAC
+
+compatible: "ti,dac60508"
+
+include: ti,dacx0508-base.yaml

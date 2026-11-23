@@ -1,0 +1,62 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Draeger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example overlay for an LP5864 (4 scan lines × 18 sinks, 72 LED dots)
+ * connected to the Arduino-compatible I2C bus.
+ *
+ * The LP586x I2C address depends on hardware ADDR pin configuration.
+ * The 7-bit address format is [CA4:CA0][RA9:RA8] where CA[4:0] is set by
+ * the ADDR pins and RA[9:8] selects the register page (00 for page 0).
+ * Adjust the 'reg' value to match your hardware wiring.
+ *
+ * This example uses reg = <0x40>, corresponding to CA[4:0] = 0b10000.
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+&arduino_i2c {
+	lp5864@40 {
+		compatible = "ti,lp5864";
+		reg = <0x40>;
+
+		led_0 {
+			label = "LED LP5864 0";
+			index = <0>;
+			color-mapping = <LED_COLOR_ID_WHITE>;
+		};
+
+		led_1 {
+			label = "LED LP5864 1";
+			index = <1>;
+			color-mapping = <LED_COLOR_ID_WHITE>;
+		};
+
+		led_2 {
+			label = "LED LP5864 2";
+			index = <2>;
+			color-mapping = <LED_COLOR_ID_WHITE>;
+		};
+
+		led_3 {
+			label = "LED LP5864 3";
+			index = <3>;
+			color-mapping = <LED_COLOR_ID_WHITE>;
+		};
+
+		led_4 {
+			label = "LED LP5864 4";
+			index = <18>;
+			color-mapping = <LED_COLOR_ID_WHITE>;
+		};
+
+		led_5 {
+			label = "LED LP5864 5";
+			index = <19>;
+			color-mapping = <LED_COLOR_ID_WHITE>;
+		};
+	};
+};

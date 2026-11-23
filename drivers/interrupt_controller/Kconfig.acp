@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INTC_AMD_ACP
+	bool "AMD ACP interrupt controller driver"
+	default y
+	depends on DT_HAS_AMD_ACP_INTC_ENABLED
+	help
+	  Enable support for AMD Audio Co-Processor (ACP) interrupt controller.
+	  This driver manages interrupt handling for ACP 7.0 audio subsystem,
+	  supporting up to 9 interrupt sources including DMA, SoundWire, and
+	  other audio-related peripheral interrupts for AMD audio DSP.
+
+if INTC_AMD_ACP
+
+module = INTC_AMD_ACP
+module-str = intc_amd_acp
+source "subsys/logging/Kconfig.template.log_config"
+
+config INTC_AMD_ACP_INIT_PRIORITY
+	int "Initialization priority"
+	default 40
+	help
+	  ACP interrupt controller initialization priority.
+
+config INTC_AMD_ACP_ISR_TBL_OFFSET
+	int "Offset in the SW ISR table"
+	default 0
+	help
+	  This indicates the offset in the SW_ISR_TABLE beginning from where
+	  the ISRs for ACP interrupt controller are assigned.
+
+endif # INTC_AMD_ACP

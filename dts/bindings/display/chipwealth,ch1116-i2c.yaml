@@ -1,0 +1,11 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: CH1116 132x64 dot-matrix display controller on I2C bus
+
+description: |
+    The Chipwealth CH1116 is a monochrome OLED controller with a maximum 132x64 resolution.
+
+compatible: "chipwealth,ch1116"
+
+include: ["solomon,ssd1306-common.yaml", "i2c-device.yaml"]

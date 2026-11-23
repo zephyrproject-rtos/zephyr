@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP RESETCON (Reset Controller) reset cause flags.
+
+  The sticky reset status register (RSTSTAT_STICKY) accumulates every reset
+  source since it was last cleared, including the resets a low-power wakeup
+  ends in.
+
+compatible: "nxp,resetcon-hwinfo"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

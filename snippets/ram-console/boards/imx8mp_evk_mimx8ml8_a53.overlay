@@ -1,0 +1,17 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,ram-console = &snippet_ram_console;
+	};
+
+	snippet_ram_console: memory@c0100000 {
+		compatible = "zephyr,memory-region";
+		reg = <0xc0100000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RAM_CONSOLE";
+	};
+};

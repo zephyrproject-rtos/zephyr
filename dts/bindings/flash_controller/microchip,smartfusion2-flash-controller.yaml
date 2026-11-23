@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip SmartFusion2 embedded NVM controller
+
+compatible: "microchip,smartfusion2-flash-controller"
+
+include: flash-controller.yaml

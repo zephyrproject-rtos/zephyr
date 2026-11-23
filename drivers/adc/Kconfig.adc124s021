@@ -1,0 +1,27 @@
+# Copyright (c) 2026 RBZ Embedded Logics
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ADC124S021
+	bool "TI ADC124S021 ADC driver"
+	default y
+	depends on DT_HAS_TI_ADC124S021_ENABLED
+	select SPI
+	help
+	  Enable support for the Texas Instruments ADC124S021 4-channel,
+	  12-bit SPI ADC.
+
+if ADC_ADC124S021
+
+config ADC_ADC124S021_ACQUISITION_THREAD_STACK_SIZE
+	int "ADC124S021 acquisition thread stack size"
+	default 512
+	help
+	  Stack size for the ADC124S021 acquisition thread.
+
+config ADC_ADC124S021_ACQUISITION_THREAD_PRIO
+	int "ADC124S021 acquisition thread priority"
+	default 0
+	help
+	  Priority of the ADC124S021 acquisition thread.
+
+endif # ADC_ADC124S021

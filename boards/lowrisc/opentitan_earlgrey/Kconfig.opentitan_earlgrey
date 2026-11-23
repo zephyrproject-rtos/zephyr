@@ -1,0 +1,5 @@
+# Copyright (c) 2023 by Rivos Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OPENTITAN_EARLGREY
+	select SOC_OPENTITAN

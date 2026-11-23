@@ -1,0 +1,22 @@
+description: ARM MMIO32 GPIO
+
+compatible: "arm,mmio32-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ngpios:
+    required: true
+
+  "#gpio-cells":
+    const: 1
+
+  direction-input:
+    type: boolean
+    description: Marks this pin set as all input pins.
+
+gpio-cells:
+  - pin

@@ -1,0 +1,54 @@
+# Copyright (c) 2026 Zhaoming Li
+# SPDX-License-Identifier: Apache-2.0
+
+title: Memory-mapped latch GPIO controller
+
+description: |
+  GPIO controller backed by a memory-mapped output latch register.
+
+  Each GPIO line corresponds to one bit in the latch register. Writing a bit
+  drives the associated output and the value remains latched until another
+  write updates it. The hardware is output-only and may not provide a readable
+  register, so the driver keeps a software shadow of the last output value to
+  implement GPIO masked writes, set, clear, toggle, and readback operations.
+
+compatible: "gpio-mmio-latch"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ngpios:
+    required: true
+    description: |
+      Number of usable GPIO lines exposed by this latch port.
+      Must not exceed the register width in bits.
+
+  initial-output:
+    type: int
+    default: 0
+    description: |
+      Initial shadow/output value written to the latch during driver init.
+      The default writes 0 to the latch so all output bits start cleared.
+      Override this property if the board requires a different latch output
+      pattern during initialization.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
+
+examples:
+  - |
+    gpio_latch0: gpio@40000000 {
+        compatible = "gpio-mmio-latch";
+        reg = <0x40000000 0x4>;
+        gpio-controller;
+        #gpio-cells = <2>;
+        ngpios = <8>;
+        initial-output = <0x5a>;
+    };

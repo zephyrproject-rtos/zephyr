@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2022 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&w1_0 {
+	peripheral_1: dummy-peripheral-1 {
+		compatible = "vnd,w1-device";
+		family-code = <0x28>;
+		overdrive-speed;
+		status = "okay";
+	};
+
+	peripheral_2: dummy-peripheral-2 {
+		compatible = "vnd,w1-device";
+		family-code = <0x29>;
+		status = "okay";
+	};
+};

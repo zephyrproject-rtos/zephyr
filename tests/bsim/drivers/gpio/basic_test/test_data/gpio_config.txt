@@ -1,0 +1,9 @@
+# test_data/gpio_in.csv is passed from command line
+input_file   test_data/gpio_in.2.csv
+ input_file test_data/gpio_in.3.csv
+  # this indent is purposeful to test the configuration line parsing
+input_file test_data/gpio_in.4.csv#A comment
+input_file	test_data/gpio_in.5.csv    # A comment
+# And so is the tab, and different number of spaces
+short 0.5 0.6
+s	0.5 0.7

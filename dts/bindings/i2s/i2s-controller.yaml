@@ -1,0 +1,14 @@
+# Copyright (c) 2018, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for I2S controllers
+
+include: base.yaml
+
+bus: i2s
+
+properties:
+  "#address-cells":
+    const: 1
+  "#size-cells":
+    const: 0

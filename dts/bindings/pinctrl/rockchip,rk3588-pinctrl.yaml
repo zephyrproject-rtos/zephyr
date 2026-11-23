@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Rockchip RK3588 IOC pin controller.
+
+  The controller exposes pin multiplexing and pad configuration through one
+  64 KiB IOC window. Device tree pinctrl states use Zephyr's standard state
+  and group model.
+
+title: Rockchip RK3588 IOC pin controller
+
+compatible: "rockchip,rk3588-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: RK3588 pinctrl state.
+
+  child-binding:
+    description: Pins sharing the same configuration.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - input-enable
+          - input-disable
+          - input-schmitt-enable
+          - input-schmitt-disable
+
+    properties:
+      pinmux:
+        type: array
+        required: true
+        description: |
+          Encoded bank, bank-local pin, and mux function values created with
+          RK3588_PINMUX() from rockchip-rk3588.h.
+
+      rockchip,drive-strength-ohms:
+        type: int
+        enum: [25, 33, 40, 50, 66, 100]
+        description: |
+          Output driver impedance. RK3588 uses two distinct, non-linear
+          hardware encodings; only values defined by the TRM for the selected
+          pins are accepted.

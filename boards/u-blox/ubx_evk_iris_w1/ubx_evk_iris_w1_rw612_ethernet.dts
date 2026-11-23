@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2025 u-blox AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/rw/nxp_rw6xx.dtsi>
+#include "ubx_evk_iris_w1_common.dtsi"
+
+/*
+ * Ethernet variant for EVK-IRIS-W106-RW612 board
+ */
+
+&enet {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&enet_mac {
+	phy-handle = <&phy>;
+	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+	status = "okay";
+};
+
+&enet_mdio {
+	pinctrl-0 = <&pinmux_mdio>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: phy@2 {
+		compatible = "microchip,ksz8081";
+		reg = <2>;
+		reset-gpios = <&hsgpio1 23 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&hsgpio0 21 GPIO_ACTIVE_HIGH>;
+		microchip,interface-type = "rmii";
+		status = "okay";
+	};
+};
+
+/* XTAL is disconnected when using ethernet */
+&xtal32 {
+	status = "disabled";
+};

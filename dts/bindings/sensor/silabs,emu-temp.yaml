@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Martin Moya
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Silicon Labs Series 2 EMU internal die temperature sensor.
+
+  The Energy Management Unit (EMU) periodically samples the die temperature
+  (every ~250 ms) and stores the result in EMU_TEMP. The value is exposed
+  through the SENSOR_CHAN_DIE_TEMP channel in degrees Celsius. The sensor runs
+  autonomously in all energy modes except EM4.
+
+compatible: "silabs,emu-temp"
+
+include: sensor-device.yaml

@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Ivan Shautsou
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: esp32h2_supermini
+name: ESP32-H2-SUPERMINI
+type: mcu
+arch: riscv
+ram: 320
+flash: 4096
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - dma
+  - spi
+  - counter
+  - entropy
+  - i2s
+  - pwm
+  - netif:openthread
+  - crypto
+  - retained_mem
+  - zigbee
+vendor: others

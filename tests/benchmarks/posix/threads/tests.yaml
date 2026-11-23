@@ -1,0 +1,22 @@
+common:
+  tags:
+    - posix
+    - benchmark
+  min_ram: 64
+  arch_exclude:
+    - posix
+  integration_platforms:
+    - qemu_cortex_a53/qemu_cortex_a53/smp
+    - qemu_riscv64/qemu_virt_riscv64/smp
+    - qemu_riscv32/qemu_virt_riscv32/smp
+    - qemu_x86_64
+  harness: console
+  harness_config:
+    type: one_line
+    record:
+      regex:
+        - "(?P<api>.*), ALL, (?P<time>.*), (?P<threads>.*), (?P<cores>.*), (?P<rate>.*)"
+    regex:
+      - "PROJECT EXECUTION SUCCESSFUL"
+tests:
+  benchmark.posix.threads: {}

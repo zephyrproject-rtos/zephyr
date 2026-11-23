@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ti/j721e_mcu_r5.dtsi>
+
+/ {
+	chosen {
+		zephyr,system-timer = &mcu_timer0;
+	};
+};
+
+&mbox0 {
+	usr-id = <2>;
+	status = "okay";
+};
+
+&mcu_timer0 {
+	status = "okay";
+};

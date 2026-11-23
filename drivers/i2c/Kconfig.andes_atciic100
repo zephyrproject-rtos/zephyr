@@ -1,0 +1,13 @@
+# Kconfig Andes ATCIIC100 configuration option
+#
+# Copyright (c) 2022 Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config I2C_ANDES_ATCIIC100
+	bool "Andes ATCIIC100 I2C driver"
+	default y
+	depends on DT_HAS_ANDESTECH_ATCIIC100_ENABLED
+	help
+	  Enable driver for the Andes ATCIIC100 I2C controller.

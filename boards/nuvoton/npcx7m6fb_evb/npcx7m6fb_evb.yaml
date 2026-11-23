@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: npcx7m6fb_evb
+name: Nuvoton NPCX7M6FB EVB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 192
+supported:
+  - adc
+  - i2c

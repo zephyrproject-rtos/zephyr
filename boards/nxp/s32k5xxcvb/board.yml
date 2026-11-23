@@ -1,0 +1,6 @@
+board:
+  name: s32k5xxcvb
+  full_name: S32K5XXCVB
+  vendor: nxp
+  socs:
+    - name: s32k566

@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: flextechakt_t1susb/max32690/m4
+name: FlextechAKT T1SUSB M4
+vendor: flextechakt
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - serial
+  - i2c
+  - spi
+  - usbd
+  - eeprom
+  - trng
+  - dma
+  - counter
+  - netif:eth
+ram: 1024
+flash: 3072

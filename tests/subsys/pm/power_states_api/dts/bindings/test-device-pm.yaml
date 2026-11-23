@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml, pm.yaml]
+
+description: |
+  This binding provides resources required to build and run the
+  tests/subsys/pm/power_states_api test in Zephyr.
+
+compatible: "test-device-pm"

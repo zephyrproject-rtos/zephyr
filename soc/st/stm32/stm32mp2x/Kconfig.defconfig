@@ -1,0 +1,10 @@
+# STMicroelectronics STM32MP2 MPU series
+#
+# Copyright (C) 2025 Savoir-faire Linux, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32MP2X
+
+rsource "Kconfig.defconfig.stm32mp2*"
+
+endif # SOC_SERIES_STM32MP2X

@@ -1,0 +1,69 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 pin controller with "I/O synchronization"
+
+  Identical to the "regular" pin controller with "st,stm32-pinctrl" compatible,
+  with an additional "I/O synchronization" feature. This feature allows addition
+  of a programmable delay to the signal input or output path ("I/O delay"), and
+  synchronization of GPIO data with configuration clock edge(s) ("I/O retime").
+
+  This pin controller can be found on STM32N6 series.
+
+compatible: "st,stm32n6-pinctrl"
+
+include: "st,stm32-pinctrl.yaml"
+
+child-binding:
+  properties:
+    st,io-retime-edge:
+      type: string
+      description: |
+        Clock edges on which input/output should be retimed
+
+        If this property is present, I/O retiming is enabled,
+        and this property selects whether the input/output data
+        is retimed on rising, falling or both edges of clock.
+
+        If this property is not present, I/O retiming is disabled.
+      enum:
+        - "rising"
+        - "falling"
+        - "both"
+
+    st,io-delay-ps:
+      type: int
+      default: 0
+      description: |
+        Delay applied to input or output path (in picoseconds)
+
+        The default value matches hardware default, and allows to keep
+        the property unspecified on most pinctrl nodes which do not use
+        the I/O delay feature.
+      enum:
+        - 0
+        - 300
+        - 500
+        - 750
+        - 1000
+        - 1250
+        - 1500
+        - 1750
+        - 2000
+        - 2250
+        - 2500
+        - 2750
+        - 3000
+        - 3250
+
+    st,io-delay-path:
+      type: string
+      default: "output"
+      description: |
+        Direction in which the I/O delay should be applied
+
+        The default value corresponds to hardware default.
+      enum:
+        - "output"
+        - "input"

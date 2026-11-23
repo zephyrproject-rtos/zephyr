@@ -1,0 +1,12 @@
+# WCH entropy generator driver configuration
+
+# Copyright (c) 2025 James Bennion-Pedley
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_WCH_RNG
+	bool "WCH CH32 entropy number generator driver"
+	default y
+	depends on DT_HAS_WCH_RNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the entropy number generator for CH32 SoCs

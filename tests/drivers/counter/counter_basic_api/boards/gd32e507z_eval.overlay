@@ -1,0 +1,44 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ */
+
+&pwm0 {
+	status = "disabled";
+};
+
+&timer0 {
+	prescaler = <1999>;
+	status = "okay";
+};
+
+&timer1 {
+	prescaler = <1999>;
+	status = "okay";
+};
+
+&timer2 {
+	prescaler = <1999>;
+	status = "okay";
+};
+
+&timer3 {
+	prescaler = <1999>;
+	status = "okay";
+};
+
+&timer4 {
+	prescaler = <1999>;
+	status = "okay";
+};
+
+&timer5 {
+	prescaler = <1999>;
+	status = "okay";
+};
+
+&timer6 {
+	prescaler = <1999>;
+	status = "okay";
+};

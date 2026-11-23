@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2019 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <freq.h>
+#include "sample_controller.dtsi"
+
+/ {
+	compatible = "cdns,xtensa-sample-controller";
+	model = "xt-sim";
+
+	cpus {
+		timebase-frequency = <DT_FREQ_M(2)>;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <10000000>;
+};

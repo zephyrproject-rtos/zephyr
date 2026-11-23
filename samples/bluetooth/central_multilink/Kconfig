@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth: Central Multilink"
+
+config SAMPLE_CONN_ITERATIONS
+	int "Connection iterations"
+	range 0 255
+	default 0
+	help
+	  Number of times to connect and disconnect to peripheral_identity
+	  sample.
+
+source "Kconfig.zephyr"

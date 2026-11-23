@@ -1,0 +1,7 @@
+/ {
+	added-by-conf1 {};
+
+#ifdef CMAKE_DTS_CONFIGURE
+	cmake-dts-configure {};
+#endif /* CMAKE_DTS_CONFIGURE */
+};

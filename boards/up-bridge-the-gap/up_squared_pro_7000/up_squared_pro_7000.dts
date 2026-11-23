@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../../intel/adl/intel_adl.dts"
+
+/ {
+	compatible = "aaeon,up_squared_pro_7000";
+	model = "UP Squared Pro 7000 board";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+};
+
+&uart1 {
+	status = "okay";
+};

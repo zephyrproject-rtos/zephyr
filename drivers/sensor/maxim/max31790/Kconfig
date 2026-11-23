@@ -1,0 +1,25 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config MAX31790_SENSOR
+	bool "MAX31790 sensors"
+	default y
+	depends on MAX31790_FAN_SPEED || MAX31790_FAN_FAULT
+	help
+	  Enable sensors for the MAX31790 PWM controller.
+
+config MAX31790_FAN_SPEED
+	bool "MAX31790 fan speed sensor"
+	default y
+	depends on DT_HAS_MAXIM_MAX31790_FAN_SPEED_ENABLED
+	select MFD
+	help
+	  Enable driver for the MAX31790 fan speed sensor.
+
+config MAX31790_FAN_FAULT
+	bool "MAX31790 fan fault sensor"
+	default y
+	depends on DT_HAS_MAXIM_MAX31790_FAN_FAULT_ENABLED
+	select MFD
+	help
+	  Enable driver for the MAX31790 fan fault sensor.

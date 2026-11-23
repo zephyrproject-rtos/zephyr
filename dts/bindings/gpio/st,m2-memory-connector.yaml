@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: ST M.2 Key A Serial Memory Connector
+
+description: |
+  Non-power pins exposed on the ST M.2 Key A serial memory connector.
+
+  This connector reuses the M.2 Key A form factor for XSPI memories and
+  auxiliary interfaces such as I2C and SPI, as described in ST TN1618.
+
+  The binding provides a gpio-nexus style mapping for connector signals that
+  may be referenced from board DTS files and shield overlays.
+
+  Use M2MEM_CONNECTOR_* constants from
+  <zephyr/dt-bindings/gpio/m2-memory-connector.h> to refer to connector pins.
+
+  Power, ground, reserved, and key pins are intentionally omitted.
+
+compatible: "st,m2-memory-connector"
+
+include: [gpio-nexus.yaml, base.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

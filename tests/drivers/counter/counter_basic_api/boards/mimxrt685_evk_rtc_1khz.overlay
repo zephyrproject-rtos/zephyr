@@ -1,0 +1,3 @@
+&rtc_highres {
+	status = "okay";
+};

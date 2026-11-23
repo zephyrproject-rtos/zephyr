@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2011-2015 Wind River Systems, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/kernel.h>
+#include <zephyr/tracing/tracing.h>
+#include <zephyr/arch/cpu.h>
+
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
+void arch_cpu_idle(void)
+{
+#if defined(CONFIG_SYS_IDLE_HOOKS)
+	sys_trace_idle();
+#endif
+	__asm__ volatile (
+	    "sti\n\t"
+	    "hlt\n\t");
+
+#if defined(CONFIG_SYS_IDLE_HOOKS)
+	/* Interrupts are enabled across the halt, so the wake-up ISR has already
+	 * closed the idle window (see the ISR entry hook). This is only a
+	 * fallback for a wake-up that ran no ISR, and is a no-op otherwise.
+	 */
+	sys_trace_idle_exit();
+#endif
+}
+#endif
+
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
+void arch_cpu_atomic_idle(unsigned int key)
+{
+#if defined(CONFIG_SYS_IDLE_HOOKS)
+	sys_trace_idle();
+#endif
+
+	__asm__ volatile (
+	    "sti\n\t"
+	    /*
+	     * The following statement appears in "Intel 64 and IA-32
+	     * Architectures Software Developer's Manual", regarding the 'sti'
+	     * instruction:
+	     *
+	     * "After the IF flag is set, the processor begins responding to
+	     *    external, maskable interrupts after the next instruction is
+	     *    executed."
+	     *
+	     * Thus the IA-32 implementation of arch_cpu_atomic_idle() will
+	     * atomically re-enable interrupts and enter a low-power mode.
+	     */
+	    "hlt\n\t");
+
+	/* restore interrupt lockout state before returning to caller */
+	if ((key & 0x200U) == 0U) {
+		__asm__ volatile("cli");
+	}
+}
+#endif

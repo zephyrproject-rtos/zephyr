@@ -1,0 +1,14 @@
+identifier: crd40l26
+name: CRD40L26-POC-C
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - rtc
+ram: 96
+flash: 64
+vendor: cirrus

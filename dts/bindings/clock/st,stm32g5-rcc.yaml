@@ -1,0 +1,54 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32G5 RCC (Reset and Clock controller).
+
+description: |
+  This node controls system clock source selection and AHB/APB domain clocks
+  on STM32G5 series MCUs.
+
+  Refer to st,stm32-rcc.yaml for STM32 clock specifier details.
+
+compatible: "st,stm32g5-rcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Core clock frequency (rcc_cpu_ck) in Hz.
+
+  hpre:
+    type: int
+    required: true
+    enum: [1, 2, 4, 8, 16, 64, 128, 256, 512]
+    description: AHB prescaler (HPRE).
+
+  ppre1:
+    type: int
+    required: true
+    enum: [1, 2, 4, 8, 16]
+    description: APB1 prescaler (PPRE1).
+
+  ppre2:
+    type: int
+    required: true
+    enum: [1, 2, 4, 8, 16]
+    description: APB2 prescaler (PPRE2).
+
+  ppre3:
+    type: int
+    required: true
+    enum: [1, 2, 4, 8, 16]
+    description: APB3 prescaler (PPRE3).
+
+clock-cells:
+  - bus
+  - bits

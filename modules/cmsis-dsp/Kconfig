@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_CMSIS_DSP_MODULE
+	bool
+
+config CMSIS_DSP
+	bool "CMSIS-DSP Library Support"
+	help
+	  This option enables the CMSIS-DSP library.

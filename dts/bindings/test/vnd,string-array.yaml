@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Zephyr Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test string array property container
+
+compatible: "vnd,string-array"
+
+properties:
+  val:
+    type: string-array
+    required: true

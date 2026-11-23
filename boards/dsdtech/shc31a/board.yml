@@ -1,0 +1,6 @@
+board:
+  name: dsdtech_shc31a
+  full_name: SH-C31A
+  vendor: dsdtech
+  socs:
+    - name: stm32g431xx

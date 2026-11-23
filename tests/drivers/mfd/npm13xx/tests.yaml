@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - mfd
+  platform_allow:
+    - native_sim/native
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native
+    - native_sim/native/64
+tests:
+  drivers.mfd.npm13xx.callbacks: {}
+  drivers.mfd.npm13xx.callbacks.npm1304:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=npm1304.overlay

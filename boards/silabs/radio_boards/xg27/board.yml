@@ -1,0 +1,16 @@
+boards:
+  - name: bg27_rb4110b
+    full_name: EFR32BG27 2.4 GHz 4 dBm DCDC Buck CSP (BG27-RB4110B)
+    vendor: silabs
+    socs:
+      - name: efr32bg27c320f768gj39
+  - name: bg27_rb4111b
+    full_name: EFR32BG27 2.4 GHz 4 dBm DCDC Boost CSP (BG27-RB4111B)
+    vendor: silabs
+    socs:
+      - name: efr32bg27c320f768gj39
+  - name: xg27_rb4194a
+    full_name: EFR32xG27 2.4 GHz 8 dBm (xG27-RB4194A)
+    vendor: silabs
+    socs:
+      - name: efr32mg27c140f768im40

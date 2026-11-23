@@ -1,0 +1,33 @@
+# Texas Instruments Sitara AM62x-SK-A53 EVM
+#
+# Copyright (c) 2025 Texas Instruments Incorporated
+# Copyright (c) 2025 Dave Paul Joseph
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Zephyr Kernel Configuration
+CONFIG_XIP=n
+
+# Serial Driver
+CONFIG_SERIAL=y
+
+# Enable Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+
+# ARM Options
+CONFIG_AARCH64_IMAGE_HEADER=y
+CONFIG_ARMV8_A_NS=y
+CONFIG_ARM64_VA_BITS_36=y
+CONFIG_ARM64_PA_BITS_36=y
+
+# Cache Options
+CONFIG_CACHE_MANAGEMENT=y
+CONFIG_DCACHE_LINE_SIZE_DETECT=y
+CONFIG_ICACHE_LINE_SIZE_DETECT=y
+
+# Multicore Support
+CONFIG_SMP=y
+CONFIG_PM_CPU_OPS=y
+CONFIG_MP_MAX_NUM_CPUS=4

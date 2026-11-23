@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: numaker_m031ki
+name: NUVOTON NUMAKER-M031KI Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 96
+flash: 512
+supported:
+  - gpio
+  - uart
+vendor: nuvoton

@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2020 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	board_power: resources {
+		compatible = "intel,rvp-board-power";
+		pwrg-gpios = <MCHP_GPIO_DECODE_012 GPIO_ACTIVE_HIGH>;
+		rsm-gpios = <MCHP_GPIO_DECODE_054 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&espi_taf0 {
+	status = "okay";
+};
+
+/* Enable Target to Controller Virtual Wires GPIO 0 - 3 */
+&vw_t2c_gpio_0 {
+	reset-state = "1";
+	reset-source = "ESPI_RESET";
+	status = "okay";
+};
+
+&vw_t2c_gpio_1 {
+	reset-state = "1";
+	reset-source = "ESPI_RESET";
+	status = "okay";
+};
+
+&vw_t2c_gpio_2 {
+	reset-state = "1";
+	reset-source = "ESPI_RESET";
+	status = "okay";
+};
+
+&vw_t2c_gpio_3 {
+	reset-state = "1";
+	reset-source = "ESPI_RESET";
+	status = "okay";
+};
+
+&qspi0 {
+	clock-frequency = <24000000>;
+	status = "okay";
+};

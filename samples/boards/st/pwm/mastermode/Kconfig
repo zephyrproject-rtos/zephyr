@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Matthias Plöger <matze.ploeger@gmx.de>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Zephyr"
+source "Kconfig.zephyr"
+endmenu
+
+module = MAIN
+module-str = MAIN
+source "subsys/logging/Kconfig.template.log_config"

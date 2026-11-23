@@ -1,0 +1,8 @@
+# STM32 Minimum Development Board Configuration
+
+# Copyright (c) 2017, embedjournal.com
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32_MIN_DEV
+	select SOC_STM32F103X6 if BOARD_STM32_MIN_DEV_STM32F103X6
+	select SOC_STM32F103X8 if BOARD_STM32_MIN_DEV_STM32F103X8

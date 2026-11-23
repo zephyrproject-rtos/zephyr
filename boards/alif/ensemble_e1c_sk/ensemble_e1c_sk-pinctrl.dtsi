@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/alif-ensemble-e1c-pinctrl.h>
+
+&pinctrl {
+	uart2_default: uart2_default {
+		group0 {
+			pinmux = <PIN_P1_6__UART2_RX_A>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P1_7__UART2_TX_A>;
+		};
+	};
+
+	gpio4_default: gpio4_default {
+		group0 {
+			/* Multicolor LED0: blue on P4_3, green on P4_5, red on P4_7 */
+			pinmux = <PIN_P4_3__GPIO>,
+				 <PIN_P4_5__GPIO>,
+				 <PIN_P4_7__GPIO>;
+		};
+	};
+
+	lpgpio_default: lpgpio_default {
+		group0 {
+			/* User switch SW2, no external pull-up */
+			pinmux = <PIN_P15_0__LPGPIO>;
+			input-enable;
+			bias-pull-up;
+		};
+	};
+};

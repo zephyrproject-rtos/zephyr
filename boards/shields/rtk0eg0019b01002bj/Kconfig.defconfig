@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if INPUT_RENESAS_RA_CTSU
+
+config INPUT_RENESAS_RA_CTSU_NUM_SELF_ELEMENTS
+	default 12
+	depends on !INPUT_RENESAS_RA_QE_TOUCH_CFG
+
+endif # INPUT_RENESAS_RA_CTSU

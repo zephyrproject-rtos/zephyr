@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 Andrew Yong <me@ndoo.sg>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The 4+4 split with one active-low data pin, which the LUT must honor.
+ */
+
+#include "mipi_dbi_bitbang_native_sim_2port_split.overlay"
+
+&mipi_dbi {
+	data-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>, <&gpio1 1 GPIO_ACTIVE_HIGH>,
+		     <&gpio1 2 GPIO_ACTIVE_HIGH>, <&gpio1 3 GPIO_ACTIVE_HIGH>,
+		     <&gpio2 0 GPIO_ACTIVE_HIGH>, <&gpio2 1 GPIO_ACTIVE_LOW>,
+		     <&gpio2 2 GPIO_ACTIVE_HIGH>, <&gpio2 3 GPIO_ACTIVE_HIGH>;
+};

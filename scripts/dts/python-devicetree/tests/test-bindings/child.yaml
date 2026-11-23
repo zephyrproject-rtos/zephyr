@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+include: [grandchild-1.yaml, grandchild-2.yaml, grandchild-3.yaml]
+
+properties:
+  bar:
+    required: true
+    type: int

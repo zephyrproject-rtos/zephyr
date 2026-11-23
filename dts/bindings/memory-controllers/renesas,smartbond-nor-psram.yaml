@@ -1,0 +1,260 @@
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas Smartbond(tm) NOR/PSRAM controller
+
+include: base.yaml
+
+compatible: "renesas,smartbond-nor-psram"
+
+properties:
+  reg:
+    required: true
+
+  is-ram:
+    type: boolean
+    description: |
+      If present, the memory controller will be configured to drive PSRAM devices.
+
+  dev-size:
+    type: int
+    required: true
+    description: |
+      Memory size/capacity in bits.
+
+  dev-type:
+    type: int
+    required: true
+    description: |
+      Device type, part of device ID, used to verify the memory device used.
+
+  dev-density:
+    type: int
+    required: true
+    description: |
+      Device density, part of device ID, used to verify the memory device used.
+      [7:0] should reflect the density value itself and [15:8] should reflect
+      the mask that should be applied to the returned device ID value.
+      This is because part of its byte value might contain invalid bits.
+
+  dev-id:
+    type: int
+    required: true
+    description: |
+      Manufacturer ID, part of device ID, used to verify the memory device used.
+
+  reset-delay-us:
+    type: int
+    required: true
+    description: |
+      Time in microseconds (us) the memory device can accept the next command following a SW reset.
+
+  read-cs-idle-min-ns:
+    type: int
+    required: true
+    description: |
+      Min. time, in nanoseconds, the #CS line should remain inactive between
+      the transmission of two different instructions.
+
+  erase-cs-idle-min-ns:
+    type: int
+    description: |
+      Min. time, in nanoseconds, the #CS line should remain inactive after the execution
+      of a write enable, erase, erase suspend or erase resume instruction. This setting
+      is not used if is-ram property is present.
+
+  enter-qpi-cmd:
+    type: int
+    description: |
+      Command to enter the QPI mode supported by a memory device
+      (should be transmitted in single bus mode).
+
+  exit-qpi-cmd:
+    type: int
+    description: |
+      Command to exit the QPI mode supported by a memory device
+      (should be transmitted in quad bus mode).
+
+  enter-qpi-mode:
+    type: boolean
+    description: |
+      If present, the memory device will enter the QPI mode which typically reflects that
+      all bytes be sent in quad bus mode. It's a pre-requisite that read and write
+      commands, that should be read-cmd and write-cmd respectively, reflect the QPI mode.
+
+  read-cmd:
+    type: int
+    default: 0x03
+    description: |
+      Read command for single/burst read accesses in auto mode. Default value is the opcode
+      for single mode which is supported by all memory devices.
+
+  write-cmd:
+    type: int
+    default: 0x02
+    description: |
+      Write command for single/burst write accesses in auto mode. Default value is the opcode
+      for single mode which is supported by all memory devices.
+
+  clock-mode:
+    type: string
+    enum:
+      - "spi-mode0"
+      - "spi-mode3"
+    default: "spi-mode0"
+    description: |
+      Clock mode when #CS is idle/inactive
+
+      - Mode0: #CLK is low when #CS is inactive
+      - Mode3: #CLK is high when #CS is inactive
+
+      Mode0 is selected by default as it should be supported by all memory devices.
+
+  addr-range:
+    type: string
+    enum:
+      - "addr-range-24bit"
+      - "addr-range-32bit"
+    default: "addr-range-24bit"
+    description: |
+      Address size to use in auto mode. In 24-bit mode up to 16MB can be
+      accessed whilst in 32-bit mode up to 32MB can be accessed which is
+      the max. address space supported by QSPICx. Default value is 24-bit
+      mode which is supported by all memory devices.
+
+  clock-div:
+    type: int
+    description: |
+      Clock divider for QSPIC2 controller. The clock path of
+      this block is always DIV1 which reflects the current
+      system clock.
+
+  tcem-max-us:
+    type: int
+    description: |
+      If a non zero value is applied, then Tcem should be taken into
+      consideration by QSPIC2 so that it can split a burst read/write
+      access in case the total time exceeds the defined value
+      (at the cost of extra cycles required for re-sending the instruction,
+      address and dummy bytes, if any). This setting is meaningful only if
+      is-ram is present. This value reflects the max. time in microseconds
+      the #CS line can be driven low in a write/read burst access
+      (required for the auto-refresh mechanism, when supported).
+
+  dummy-bytes-count:
+    type: string
+    required: true
+    enum:
+      - "dummy-bytes-count0"
+      - "dummy-bytes-count1"
+      - "dummy-bytes-count2"
+      - "dummy-bytes-count4"
+    description: |
+      Number of dummy bytes to send for single/burst read access in auto mode.
+
+  extra-byte-enable:
+    type: boolean
+    description: |
+      If present, the extra byte will be sent after the dummy bytes, if any.
+      This should be useful if 3 dummy bytes are required. In such a case,
+      dummy-bytes-count should be set to 2.
+
+  extra-byte:
+    type: int
+    description: |
+      Extra byte to be sent, if extra-byte-enable is present.
+
+  rx-addr-mode:
+    type: string
+    enum:
+      - "single-spi"
+      - "dual-spi"
+      - "quad-spi"
+    default: "single-spi"
+    description: |
+      Describes the mode of SPI bus during the address phase for single/burst
+      read accesses in auto mode. Default value is single mode which should be
+      supported by all memory devices.
+
+  rx-inst-mode:
+    type: string
+    enum:
+      - "single-spi"
+      - "dual-spi"
+      - "quad-spi"
+    default: "single-spi"
+    description: |
+      Describes the mode of SPI bus during the instruction phase for single/burst
+      read accesses in auto mode. Default value is single mode which should be
+      supported by all memory devices.
+
+  rx-data-mode:
+    type: string
+    enum:
+      - "single-spi"
+      - "dual-spi"
+      - "quad-spi"
+    default: "single-spi"
+    description: |
+      Describes the mode of SPI bus during the data phase for single/burst
+      read accesses in auto mode. Default value is single mode which should
+      be supported by all memory devices.
+
+  rx-dummy-mode:
+    type: string
+    enum:
+      - "single-spi"
+      - "dual-spi"
+      - "quad-spi"
+    default: "single-spi"
+    description: |
+      Describes the mode of SPI bus during the dummy bytes phase for single/burst
+      read accesses in auto mode. The single mode should be supported by all
+      memory devices.
+
+  rx-extra-mode:
+    type: string
+    enum:
+      - "single-spi"
+      - "dual-spi"
+      - "quad-spi"
+    description: |
+      Describes the mode of SPI bus during the extra byte phase for single/burst
+      read accesses in auto mode. Default value is single mode which should be
+      supported by all memory devices.
+
+  tx-addr-mode:
+    type: string
+    enum:
+      - "single-spi"
+      - "dual-spi"
+      - "quad-spi"
+    default: "single-spi"
+    description: |
+      Describes the mode of SPI bus during the address phase for single/burst
+      write accesses in auto mode. Default value is single mode which should
+      be supported by all memory devices.
+
+  tx-inst-mode:
+    type: string
+    enum:
+      - "single-spi"
+      - "dual-spi"
+      - "quad-spi"
+    default: "single-spi"
+    description: |
+      Describes the mode of SPI bus during the instruction phase for single/burst
+      write accesses in auto mode. The single mode should be supported by all
+      memory devices.
+
+  tx-data-mode:
+    type: string
+    enum:
+      - "single-spi"
+      - "dual-spi"
+      - "quad-spi"
+    default: "single-spi"
+    description: |
+      Describes the mode of SPI bus during the data phase for single/burst
+      write accesses in auto mode. Default value is single mode which should
+      be supported by all memory devices.

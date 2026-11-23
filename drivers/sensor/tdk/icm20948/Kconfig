@@ -1,0 +1,73 @@
+# ICM20948 Nine-Axis Motion Tracking device configuration options
+#
+# Copyright (c) 2026 T3 Gemstone
+#	T3 Gemstone Developer Team <support@t3gemstone.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ICM20948
+	bool "ICM20948 Nine-Axis Motion Tracking Device"
+	default y
+	depends on DT_HAS_INVENSENSE_ICM20948_ENABLED
+	select SPI
+	help
+	  Enable driver for the InvenSense ICM20948 motion tracking device.
+
+if ICM20948
+
+choice
+	prompt "Trigger mode"
+	default ICM20948_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config ICM20948_TRIGGER_NONE
+	bool "No trigger"
+
+config ICM20948_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM20948),irq-gpios)
+	select ICM20948_TRIGGER
+
+config ICM20948_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM20948),irq-gpios)
+	select ICM20948_TRIGGER
+
+endchoice
+
+config ICM20948_TRIGGER
+	bool
+
+config ICM20948_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ICM20948_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of the thread the driver handles interrupts in.
+
+config ICM20948_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ICM20948_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of the thread the driver handles interrupts in.
+
+config EMUL_ICM20948
+	bool "Emulator for the ICM20948"
+	default y
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the ICM20948. Doing so allows
+	  exercising the driver without the device being present.
+
+config ICM20948_MAGN_EN
+	bool "Magnetometer enable"
+	default y
+	help
+	  Enable the AK09916 magnetometer that sits behind the auxiliary
+	  I2C bus of the device.
+
+endif # ICM20948

@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_XIP=n
+
+# Enable console
+CONFIG_CONSOLE=y
+
+# Segger RTT
+CONFIG_RTT_CONSOLE=y
+CONFIG_USE_SEGGER_RTT=y

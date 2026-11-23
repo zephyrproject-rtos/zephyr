@@ -1,0 +1,6 @@
+board:
+  name: zedboard
+  full_name: ZedBoard
+  vendor: digilent
+  socs:
+  - name: xc7z020

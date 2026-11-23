@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_INFINEON_HPPASS_CSG
+	bool "Infineon HPPASS CSG comparator driver"
+	default y
+	depends on DT_HAS_INFINEON_HPPASS_CSG_COMP_ENABLED
+	depends on MFD_INFINEON_HPPASS_CSG
+	help
+	  Enable the comparator driver for the Infineon HPPASS CSG
+	  block.  Each instance exposes the standard Zephyr comparator API
+	  for one CSG slice.  The CSG MFD parent owns the combined comparator
+	  interrupt and dispatches per-slice callbacks registered through
+	  this driver.
+
+config COMPARATOR_INFINEON_HPPASS_CSG_INIT_PRIORITY
+	int "Infineon HPPASS CSG comparator init priority"
+	default 50
+	depends on COMPARATOR_INFINEON_HPPASS_CSG
+	help
+	  Initialization priority for the per-slice comparator child driver.
+	  Must be higher (later) than CONFIG_MFD_INFINEON_HPPASS_CSG_INIT_PRIORITY
+	  so the CSG MFD parent is ready to accept callback registrations
+	  before this driver runs.

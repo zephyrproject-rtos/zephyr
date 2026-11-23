@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 Embeint Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	fake_lora: lora {
+		compatible = "zephyr,fake-lora";
+		status = "okay";
+	};
+};

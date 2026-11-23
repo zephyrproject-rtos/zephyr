@@ -1,0 +1,21 @@
+# Texas Instruments AM243x Launchpad
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright 2025 - 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+# XIP is deactivated for now since we have no flash support yet
+CONFIG_XIP=n
+
+# Serial Driver
+CONFIG_SERIAL=y
+
+# Enable Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# The ELF needs to have the exception vector at 0x0 so the SBL can load it
+# correctly after it is converted by the TI MCU+ SDK tools
+CONFIG_ROMSTART_RELOCATION_ROM=y
+CONFIG_ROMSTART_REGION_ADDRESS=0
+CONFIG_ROMSTART_REGION_SIZE=1

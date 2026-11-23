@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2025 Navimatix GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
+/ {
+	aliases {
+		stepper = &drv8424_mikroe_stepper_19_click;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	pca9538a_mikroe_stepper_19_click: pca9538a@70 {
+		compatible = "nxp,pca9538";
+
+		reg = <0x70>;
+
+		gpio-controller;
+		ngpios = <8>;
+		#gpio-cells = <2>;
+
+		gpio-reserved-ranges = <7 1>;
+
+		gpio-line-names = "M0",
+				  "M1",
+				  "DEC0",
+				  "DEC1",
+				  "TOFF",
+				  "STP",
+				  "DIR";
+		status = "okay";
+	};
+};
+
+/ {
+	drv8424_mikroe_stepper_19_click: drv8424 {
+		compatible = "ti,drv84xx";
+
+		dir-gpios = <&mikrobus_header MIKROBUS_AN 0>;
+		step-gpios = <&mikrobus_header MIKROBUS_PWM 0>;
+		sleep-gpios = <&mikrobus_header MIKROBUS_RST GPIO_ACTIVE_LOW>;
+		en-gpios = <&mikrobus_header MIKROBUS_CS 0>;
+		fault-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_LOW>;
+		m0-gpios = <&pca9538a_mikroe_stepper_19_click 0 0>;
+		m1-gpios = <&pca9538a_mikroe_stepper_19_click 1 0>;
+		status = "okay";
+	};
+};

@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_SMARTBOND
+	bool "Renesas SmartBond(tm) pinctrl driver"
+	default y
+	depends on DT_HAS_RENESAS_SMARTBOND_PINCTRL_ENABLED
+	help
+	  Enable pinctrl driver for Renesas SmartBond(tm) MCU family.

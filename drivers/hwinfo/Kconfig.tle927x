@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Deere & Company
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_TLE927X
+	bool "Infineon TLE927x SBC reset cause"
+	default y
+	depends on DT_HAS_INFINEON_TLE927X_HWINFO_ENABLED
+	select MFD
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable the hwinfo reset cause driver for the Infineon TLE927x System
+	  Basis Chip. The reset cause is decoded from the SUP_STAT, THERM_STAT
+	  and DEV_STAT registers, which the driver reads and clears at init.
+
+if HWINFO_TLE927X
+
+config HWINFO_TLE927X_INIT_PRIORITY
+	int "TLE927x hwinfo driver init priority"
+	default 76
+	help
+	  Init priority for the TLE927x hwinfo driver. It must be greater
+	  than MFD_TLE927X_INIT_PRIORITY and lower than the init priority of
+	  the other TLE927x child drivers.
+
+endif # HWINFO_TLE927X

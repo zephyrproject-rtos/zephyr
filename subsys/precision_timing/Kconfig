@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Philipp Steiner
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config PRECISION_TIMING
+	bool "Precision timing infrastructure"
+	select REQUIRES_FULL_LIBC
+	help
+	  Enable protocol-neutral precision time arithmetic, clock operations,
+	  and a reusable proportional-integral controller.
+
+	  The API is at experimental maturity as described by the Zephyr API
+	  lifecycle, so it may still change. The subsystem is a building block
+	  for protocols such as PTP and gPTP and does not change their maturity.
+
+if PRECISION_TIMING
+
+config PRECISION_TIMING_PI_KP
+	int "PI controller proportional gain in thousandths"
+	default 700
+	range 0 10000
+	help
+	  Proportional gain used by the PTP and gPTP clock PI controllers,
+	  expressed in thousandths. For example, 700 configures a gain of 0.7.
+
+	  The default is suitable for a Sync interval around one second.
+	  Shorter Sync intervals may require a smaller gain to avoid
+	  oscillation.
+
+config PRECISION_TIMING_PI_KI
+	int "PI controller integral gain in thousandths"
+	default 300
+	range 0 10000
+	help
+	  Integral gain used by the PTP and gPTP clock PI controllers,
+	  expressed in thousandths. For example, 300 configures a gain of 0.3.
+
+	  The default is suitable for a Sync interval around one second.
+	  Shorter Sync intervals may require a smaller gain to avoid
+	  oscillation.
+
+config PRECISION_TIMING_PI_INTEGRAL_LIMIT_PPM
+	int "PI controller integral term limit in ppm"
+	default 0
+	range 0 1000000
+	help
+	  Largest magnitude of the integral term of the PTP and gPTP clock PI
+	  controllers, in ppm. The integral term holds the estimate of the
+	  frequency error of the local clock, so the limit only needs to cover
+	  the tolerance of the oscillator with some margin. It stops the
+	  integral term from winding up while a large offset lasts.
+
+	  0 disables the limit.
+
+config PRECISION_TIMING_PI_OUTPUT_LIMIT_PPM
+	int "PI controller output limit in ppm"
+	default 0
+	range 0 1000000
+	help
+	  Largest magnitude of the rate correction requested by the PTP and
+	  gPTP clock PI controllers, in ppm. Set it below the largest rate
+	  correction the clock driver accepts, so that a large offset gives a
+	  correction at the limit instead of a request the driver rejects.
+	  While the output is at the limit, the integral term does not grow
+	  further.
+
+	  0 disables the limit.
+
+endif # PRECISION_TIMING

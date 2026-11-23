@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c130 {
+	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
+};
+
+&i2c131 {
+	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
+};

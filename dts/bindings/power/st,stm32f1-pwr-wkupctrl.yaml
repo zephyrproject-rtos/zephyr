@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32F1-like wake-up pins controller
+
+description: |
+  Control logic for wake-up pins found in STM32F1 and other series.
+
+  On series such as STM32F1, enabling a pin as wake-up pin forces it
+  into "input pull-down" mode and the polarity of wake-up pins is
+  fixed to "rising edge detection", unlike the implementation found
+  in other series where these parameters (PU/PD and polarity) can be
+  configured arbitrarily by software.
+
+  Note that the term "wake-up pin" is used instead of "wake-up line" in
+  this binding because each wake-up line in these series is hardwired
+  to a specific GPIO pin (no source selection is possible).
+
+compatible: "st,stm32f1-pwr-wkupctrl"
+
+include:
+  - name: "st,stm32-pwr-wkupctrl.yaml"
+    property-blocklist:
+      - st,has-multi-source-lines

@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: balletto_b1_sk
+  full_name: Alif Balletto B1 StartKit
+  vendor: alif
+  socs:
+  - name: ab1c1f4m51820ph0

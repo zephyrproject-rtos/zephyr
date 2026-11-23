@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_AMEBA
+	bool "AMEBA General Purpose DMA driver"
+	depends on DT_HAS_REALTEK_AMEBA_GDMA_ENABLED
+	default y
+	help
+	  General Purpose DMA for AMEBA series.
+
+if DMA_AMEBA
+
+config DMA_AMEBA_SCATTER_GATHER
+	bool "Ameba DMA scatter/gather support"
+	depends on SOC_SERIES_AMEBAG2
+	default y
+	help
+	  Enable DMA scatter/gather support on Ameba SoC
+
+config DMA_AMEBA_LLI
+	bool "AMEBA Linked List Mode"
+	help
+	  This option supports data block in the form of linked lists.
+
+config DMA_AMEBA_LLI_MAX_DESC
+	int "Maximal number of available DMA descriptors"
+	default 16
+	help
+	  Reserves memory for a maximal number of descriptors
+
+endif # DMA_AMEBA

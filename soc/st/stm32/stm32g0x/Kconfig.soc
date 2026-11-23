@@ -1,0 +1,75 @@
+# STMicroelectronics STM32G0 MCU line
+
+# Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
+# Copyright (c) 2019 STMicroelectronics
+# Copyright (c) 2020 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32G0X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32g0x" if SOC_SERIES_STM32G0X
+
+config SOC_STM32G030XX
+	bool
+	select SOC_SERIES_STM32G0X
+
+config SOC_STM32G031XX
+	bool
+	select SOC_SERIES_STM32G0X
+
+config SOC_STM32G041XX
+	bool
+	select SOC_SERIES_STM32G0X
+
+config SOC_STM32G050XX
+	bool
+	select SOC_SERIES_STM32G0X
+
+config SOC_STM32G051XX
+	bool
+	select SOC_SERIES_STM32G0X
+
+config SOC_STM32G061XX
+	bool
+	select SOC_SERIES_STM32G0X
+
+config SOC_STM32G070XX
+	bool
+	select SOC_SERIES_STM32G0X
+
+config SOC_STM32G071XX
+	bool
+	select SOC_SERIES_STM32G0X
+
+config SOC_STM32G081XX
+	bool
+	select SOC_SERIES_STM32G0X
+
+config SOC_STM32G0B0XX
+	bool
+	select SOC_SERIES_STM32G0X
+
+config SOC_STM32G0B1XX
+	bool
+	select SOC_SERIES_STM32G0X
+
+config SOC_STM32G0C1XX
+	bool
+	select SOC_SERIES_STM32G0X
+
+config SOC
+	default "stm32g030xx" if SOC_STM32G030XX
+	default "stm32g031xx" if SOC_STM32G031XX
+	default "stm32g041xx" if SOC_STM32G041XX
+	default "stm32g050xx" if SOC_STM32G050XX
+	default "stm32g051xx" if SOC_STM32G051XX
+	default "stm32g061xx" if SOC_STM32G061XX
+	default "stm32g070xx" if SOC_STM32G070XX
+	default "stm32g071xx" if SOC_STM32G071XX
+	default "stm32g081xx" if SOC_STM32G081XX
+	default "stm32g0b0xx" if SOC_STM32G0B0XX
+	default "stm32g0b1xx" if SOC_STM32G0B1XX
+	default "stm32g0c1xx" if SOC_STM32G0C1XX

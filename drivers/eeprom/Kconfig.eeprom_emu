@@ -1,0 +1,14 @@
+# Copyright (c) 2020 Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_EMULATOR
+	bool "Emulated EEPROM driver"
+	default y
+	depends on DT_HAS_ZEPHYR_EMU_EEPROM_ENABLED
+	select FLASH
+	help
+	  Enable emulated (on flash) EEPROM support. This mimics an external
+	  EEPROM on a flash partition. The number of writes that can be
+	  performed to the EEPROM is maximized by using a flash area that is
+	  larger than the EEPROM area and by storing only changes to the EEPROM
+	  data.

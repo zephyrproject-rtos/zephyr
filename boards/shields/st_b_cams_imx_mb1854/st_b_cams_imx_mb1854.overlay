@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/ {
+	chosen {
+		zephyr,camera = &csi_capture_port;
+	};
+
+	imx335_input_clock: imx335-input-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+};
+
+&csi_interface {
+	status = "okay";
+};
+
+&csi_ep_in {
+	remote-endpoint-label = "imx335_ep_out";
+	bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+	data-lanes = <1 2>;
+};
+
+&csi_i2c {
+	/* Use I2C Fast mode for faster sensor startup */
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+
+	imx335: camera@1a {
+		compatible = "sony,imx335";
+		reg = <0x1a>;
+		clocks = <&imx335_input_clock>;
+		reset-gpios = <&csi_connector CSI_IO0 GPIO_ACTIVE_LOW>;
+
+		port {
+			imx335_ep_out: endpoint {
+				remote-endpoint-label = "csi_ep_in";
+				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+				data-lanes = <1 2>;
+			};
+		};
+	};
+
+	vl53l5cx: sensor@29 {
+		compatible = "st,vl53l5cx";
+		reg = <0x29>;
+		friendly-name = "mb1854_vl53l5cx";
+	};
+};
+
+/* Power the camera module */
+&csi_gpio1_hog {
+	output-high;
+	status = "okay";
+};

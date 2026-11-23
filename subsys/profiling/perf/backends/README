@@ -1,0 +1,101 @@
+<!--
+Copyright (c) 2026 Picoheart Inc.
+Copyright (c) 2026 LiuQian.andy <liuqian.andy@picoheart.com>
+SPDX-License-Identifier: Apache-2.0
+-->
+# Perf Backend Architecture Limitations
+
+## Summary
+
+The perf subsystem can delegate stack unwinding to `arch_stack_walk()` on
+architectures where the ISR entry code builds a complete `struct arch_esf` and
+the walker validates frames against the **interrupted thread's** stack bounds.
+This is currently the case for RISC-V and ARM64 (Cortex-A in AArch64 mode).
+
+The architectures below cannot yet follow the same pattern because of
+arch-layer gaps.
+
+---
+
+## Cortex-M (ARMv7-M / ARMv8-M)
+
+`arch_stack_walk()` is implemented (`ARCH_HAS_STACKWALK` depends on
+`EXTRA_EXCEPTION_INFO && CPU_CORTEX_M`), but the walker requires
+`esf->extra_info.callee != NULL` to function (see
+`arch/arm/core/stacktrace.c:walk_stackframe()`). The `extra_info` struct is
+only populated on the **fault** path; the regular `_isr_wrapper` (C function in
+`arch/arm/core/cortex_m/isr_wrapper.c`) does not construct an esf or fill
+`extra_info.callee`.
+
+### What would be needed
+
+- Option A: Modify `_isr_wrapper` to construct a minimal `struct arch_esf`
+  from the hardware-pushed basic frame (available at PSP) and populate
+  `extra_info.callee = &_current->callee_saved`, then pass it to the ISR.
+  This would allow the perf backend to call `arch_stack_walk(cb, cookie,
+  _current, esf)`.
+
+- Option B: Refactor `walk_stackframe()` in `arch/arm/core/stacktrace.c` to
+  work without `extra_info.callee` when unwinding from a basic frame alone
+  (using `__get_PSP()` to locate the hardware-pushed frame and the EHABI
+  `.ARM.exidx` table for unwinding). This would also benefit other callers
+
+### Note
+
+Cortex-M uses EHABI unwinding tables (`.ARM.exidx`), not frame pointers.
+The unwind helpers (`unwind_one_frame`, etc.) are currently `static` in
+`arch/arm/core/stacktrace.c` and cannot be called from a backend module.
+
+---
+
+## Cortex-A/R (AArch32)
+
+There is **no** `arch_stack_walk()` implementation for Cortex-A/R.
+`ARCH_HAS_STACKWALK` is only set for `CPU_CORTEX_M` in
+`arch/arm/core/Kconfig`.
+
+The ISR entry macro `z_arm_cortex_ar_enter_exc` (in
+`arch/arm/core/cortex_a_r/macro_priv.inc`) only saves `r0-r3, r12, lr`
+(6 registers) onto the interrupted thread's stack — this is **not** a
+complete `struct arch_esf`, which requires `pc` and `xpsr` as well.
+The interrupted PC is available as `lr - 4` at entry but is not pushed.
+
+Additionally, there is no `FRAME_POINTER` support or fp (r7/r11) saving in
+the ISR entry path.
+
+### What would be needed
+
+1. Extend `z_arm_cortex_ar_enter_exc` to push a complete `struct arch_esf`
+   (including the interrupted PC from `lr - 4` and SPSR as xpsr). The TODO
+   comment in the macro already notes `EXTRA_EXCEPTION_INFO` is missing.
+
+2. Implement `arch_stack_walk()` for Cortex-A/R, gated on a new
+   `ARCH_HAS_STACKWALK` default under `CPU_AARCH32_CORTEX_A ||
+   CPU_AARCH32_CORTEX_R`.
+
+3. Save the frame pointer (r7 or r11 depending on AAPCS variant) in the
+   esf or make it recoverable, so the walker can traverse the frame chain.
+
+---
+
+## x86 (IA-32) and x86_64
+
+`arch_stack_walk()` exists and works correctly when given an esf from a
+fault handler. However, in ISR context the walker's stack bounds check
+(`z_x86_check_stack_bounds()` in `arch/x86/core/fatal.c`) detects
+`arch_is_in_isr()` and validates against the **IRQ stack** bounds rather
+than the interrupted thread's stack. Since the frame chain (starting from
+`esf->ebp` / `esf->rbp`) lives on the thread stack, the walker immediately
+fails the bounds check and stops.
+
+The current perf backends (`perf_x86.c`, `perf_x86_64.c`) work around this
+by implementing their own `valid_stack()` that checks
+`_current->stack_info` directly.
+
+### What would be needed
+
+- Refactor `z_x86_check_stack_bounds()` (or the `in_stack_bound` logic in
+  `arch_stack_walk`) to validate against the interrupted thread's stack
+  when an esf is provided, even in ISR context. This would allow the perf
+  backend to delegate to `arch_stack_walk()` the same way RISC-V and
+  ARM64 do.

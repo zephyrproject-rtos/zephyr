@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&uart1 {
+	current-speed = <38400>;
+	status = "okay";
+
+	dut: mtch9010 {
+		compatible = "microchip,mtch9010";
+
+		/* Device Configuration */
+		operating-mode = "MTCH9010_CONDUCTIVE";
+		extended-output-enable;
+		extended-output-format = "MTCH9010_OUTPUT_FORMAT_DELTA";
+		reference-value = <0>;
+		detect-value = <600>;
+		status = "okay";
+	};
+};

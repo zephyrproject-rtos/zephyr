@@ -1,0 +1,6 @@
+board:
+  name: mks_canable_v20
+  full_name: MKS CANable V2.0
+  vendor: makerbase
+  socs:
+    - name: stm32g431xx

@@ -1,0 +1,7 @@
+# aconno acn52832 board configuration
+
+# Copyright (c) 2023 Sven Herrmann <sven.herrmann@posteo.de>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ACN52832
+	select SOC_NRF52832_QFAA

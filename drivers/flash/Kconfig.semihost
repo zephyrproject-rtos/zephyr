@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Analog Devices, Inc.
+
+config FLASH_SEMIHOST
+	bool "Semihost file-backed flash driver"
+	default y
+	depends on DT_HAS_ZEPHYR_SEMIHOST_FLASH_ENABLED
+	depends on SEMIHOST
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable a flash driver backed by a file on the semihosting host.
+	  Suitable for QEMU targets. Flash data persists in the host file
+	  between runs.

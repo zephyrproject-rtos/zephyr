@@ -1,0 +1,30 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "frdm_mcxl255_mcxl255_cpu0.dtsi"
+
+/ {
+	compatible = "nxp,mcxl255", "nxp,mcx";
+	model = "NXP FRDM_MCXL255 board";
+};
+
+&aon_kpp0 {
+	pinctrl-0 = <&pinmux_aon_kpp0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&aon_lpadc0 {
+	pinctrl-0 = <&pinmux_aon_lpadc0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};

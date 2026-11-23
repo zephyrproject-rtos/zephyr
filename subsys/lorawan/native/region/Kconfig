@@ -1,0 +1,35 @@
+# Native LoRaWAN region configuration
+#
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if LORA_MODULE_BACKEND_NATIVE
+
+config LORAWAN_NATIVE_DUTY_CYCLE
+	bool "Enforce regional duty cycle limits"
+	help
+	  Enable per-sub-band duty cycle enforcement as required by
+	  ETSI regulations (e.g. EU868). When enabled, the stack
+	  tracks on-air time per sub-band and blocks channels whose
+	  off-time has not yet elapsed.
+
+	  Disable this option for testing or when duty cycle
+	  enforcement is handled externally.
+
+config LORAWAN_NATIVE_MAX_CHANNELS
+	int
+	default 72 if LORAWAN_REGION_US915
+	default 24 if LORAWAN_REGION_AS923
+	default 24 if LORAWAN_REGION_KR920
+	default 16
+	help
+	  Sizes the per-session channel table.  Not user-tunable: the value
+	  is dictated by the selected region(s): EU868 asks for 16 channels,
+	  AS923 and KR920 for 24, US915 for 72.  The lines are ordered largest
+	  plan first, because Kconfig takes the first default whose condition
+	  holds and a build with several regions has to size the table for the
+	  largest of them.  Regions with larger channel plans will extend this
+	  config with further 'default N if LORAWAN_REGION_X' lines when they
+	  land.
+
+endif # LORA_MODULE_BACKEND_NATIVE

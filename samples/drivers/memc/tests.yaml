@@ -1,0 +1,49 @@
+sample:
+  description: Memory controller sample
+  name: memc driver sample
+common:
+  tags: memc
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Read data matches written data"
+tests:
+  sample.drivers.memc:
+    filter: dt_alias_exists("sram-ext")
+    integration_platforms:
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1170_evk/mimxrt1176/cm7
+  sample.drivers.memc.mspi:
+    tags: mspi
+    filter: dt_alias_exists("psram0")
+    integration_platforms:
+      - apollo3p_evb
+      - apollo510_evb
+    platform_exclude:
+      - stm32h7s78_dk
+      - b_u585i_iot02a
+  sample.drivers.memc.nrf_mspi:
+    tags: mspi
+    filter: dt_alias_exists("psram0")
+    build_only: true
+    integration_platforms:
+      - nrf7120dk/nrf7120/cpuapp
+  sample.drivers.memc.silabs_qspi:
+    filter: dt_alias_exists("psram0")
+    platform_allow:
+      - siwx917_dk2605a
+      - siwx917_ek2708a
+      - siwx917_rb4342a
+    integration_platforms:
+      - siwx917_rb4342a
+  sample.drivers.memc.stm32_mspi:
+    tags: mspi
+    platform_allow:
+      - b_u585i_iot02a/stm32u585xx
+      - stm32h5f5j_dk
+      - stm32h7s78_dk
+    integration_platforms:
+      - b_u585i_iot02a/stm32u585xx
+      - stm32h7s78_dk

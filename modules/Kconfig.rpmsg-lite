@@ -1,0 +1,18 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# RPMSG-Lite compatibility Kconfig symbols
+#
+# Some CI compliance configurations load a reduced Kconfig tree where the
+# module-provided RPMSG-Lite Kconfig may not be visible. Provide minimal stub
+# symbols so other Kconfig files can safely reference/select them.
+#
+# Note: These are intentionally minimal (no prompts/defaults). When the real
+# RPMSG-Lite integration Kconfig is present, it will provide the user-facing
+# definitions.
+
+config RPMSGLITE
+	bool
+
+config RPMSGLITE_NS
+	bool

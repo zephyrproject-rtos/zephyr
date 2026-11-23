@@ -1,0 +1,6 @@
+shield:
+  name: waveshare_pico_ups_b
+  full_name: Waveshare Pico UPS-B shield
+  vendor: waveshare
+  supported_features:
+    - sensor

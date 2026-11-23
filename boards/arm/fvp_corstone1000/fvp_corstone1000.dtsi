@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2026 BayLibre SAS
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Common Device tree nodes for Arm Corstone-1000-<A320/A35> FVPs
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	chosen {
+		zephyr,sram = &dram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+	};
+
+	uartclk: apb-pclk {
+		compatible = "fixed-clock";
+		clock-frequency = <14745600>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		interrupt-parent = <&gic>;
+
+		uart0: uart@1a510000 {
+			compatible = "arm,pl011";
+			reg = <0x1a510000 0x1000>;
+			interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_32";
+			clocks = <&uartclk>;
+			status = "disabled";
+		};
+
+		dram0: memory@80000000 {
+			compatible = "mmio-dram";
+			reg = <0x80000000 DT_SIZE_G(2)>;
+		};
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+};

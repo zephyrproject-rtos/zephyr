@@ -1,0 +1,5 @@
+tests:
+  kernel.memory_slabs:
+    tags:
+      - kernel
+      - memory_slabs

@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		cpu@2 {
+			compatible = "intel,x86";
+			reg = <2>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
+			zephyr,deferred-start;
+		};
+
+		cpu@3 {
+			compatible = "intel,x86";
+			reg = <3>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
+			zephyr,deferred-start;
+		};
+	};
+};
+
+/* The board's second CPU must also be left for run-time start. */
+&{/cpus/cpu@1} {
+	zephyr,deferred-start;
+};

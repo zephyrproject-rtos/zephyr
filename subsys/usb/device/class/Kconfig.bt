@@ -1,0 +1,9 @@
+# Copyright (c) 2016 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config USB_DEVICE_BLUETOOTH
+	bool "USB Bluetooth Device Class support"
+	select BT
+	select BT_HCI_RAW
+	help
+	  USB Bluetooth device class support

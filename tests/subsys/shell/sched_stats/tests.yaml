@@ -1,0 +1,25 @@
+common:
+  tags:
+    - shell
+    - sched_stats
+  harness: ztest
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - qemu_x86
+    - qemu_cortex_a53
+    - qemu_cortex_a53/qemu_cortex_a53/smp
+  integration_platforms:
+    - native_sim
+tests:
+  shell.sched_stats:
+    extra_configs:
+      - CONFIG_INIT_STACKS=y
+      - CONFIG_THREAD_STACK_INFO=y
+  shell.sched_stats.no_stack_info:
+    extra_configs:
+      - CONFIG_INIT_STACKS=n
+      - CONFIG_THREAD_STACK_INFO=n
+  shell.sched_stats.reduced_integral:
+    extra_configs:
+      - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y

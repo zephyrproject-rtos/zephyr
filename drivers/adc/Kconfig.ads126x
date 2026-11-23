@@ -1,0 +1,18 @@
+# Copyright 2026 Sacra Systems Private Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ADS126X
+	bool "Texas Instruments ADS126x ADC"
+	default y
+	select ADC_CONFIGURABLE_INPUTS
+	depends on DT_HAS_TI_ADS1262_ENABLED || \
+	DT_HAS_TI_ADS1263_ENABLED
+	depends on SPI
+
+	help
+	  Enable support for the Texas Instruments ADS126x SPI ADC.
+
+	  Supported devices include:
+	  - ADS1262
+	  - ADS1263

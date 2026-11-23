@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2021 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dac1 {
+	pinctrl-0 = <&dac_out1_pa4>;
+	status = "okay";
+};

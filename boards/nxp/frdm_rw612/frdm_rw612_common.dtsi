@@ -1,0 +1,457 @@
+/*
+ * Copyright 2024-2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "frdm_rw612-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "nxp,frdm_rw612";
+
+	aliases {
+		led0 = &green_led;
+		watchdog0 = &wwdt;
+		usart-0 = &flexcomm3;
+		i2c-0 = &flexcomm2;
+		pwm-0 = &sctimer;
+		sw0 = &user_button_0;
+		ambient-temp0 = &p3t1755;
+	};
+
+	chosen {
+		zephyr,sram = &sram_data;
+		zephyr,flash = &w25q512jvfiq;
+		zephyr,console = &flexcomm3;
+		zephyr,shell-uart = &flexcomm3;
+		zephyr,flash-controller = &ext_flash_ctrl;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm3;
+		zephyr,bt-c2h-uart = &flexcomm3;
+		zephyr,crc = &crc;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led: led_1 {
+			gpios = <&hsgpio0 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_0: button_0 {
+			label = "User SW2";
+			gpios = <&hsgpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
+		};
+	};
+
+	nxp_lcd_pmod_connector: lcd-pmod-connector {
+		compatible = "nxp,lcd-pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xfffffff0>;
+		gpio-map-pass-thru = <0 0xf>;
+		gpio-map = <10 0 &hsgpio1 12 0>,  /* Pin 10, LCD and touch reset */
+			   <12 0 &hsgpio0 18 0>;  /* Pin 11, LCD touch INT */
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <MIKROBUS_AN 0 &hsgpio1 29 0>,
+			   <MIKROBUS_RST 0 &hsgpio0 19 0>,
+			   <MIKROBUS_CS 0 &hsgpio0 10 0>,
+			   <MIKROBUS_SCK 0 &hsgpio0 7 0>,
+			   <MIKROBUS_MISO 0 &hsgpio0 8 0>,
+			   <MIKROBUS_MOSI 0 &hsgpio0 9 0>,
+			   <MIKROBUS_PWM 0 &hsgpio0 1 0>,
+			   <MIKROBUS_INT 0 &hsgpio1 22 0>,
+			   <MIKROBUS_RX 0 &hsgpio0 2 0>,
+			   <MIKROBUS_TX 0 &hsgpio0 3 0>,
+			   <MIKROBUS_SCL 0 &hsgpio0 17 0>,
+			   <MIKROBUS_SDA 0 &hsgpio0 16 0>;
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &hsgpio1 10 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &hsgpio1 11 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &hsgpio1 13 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &hsgpio0 9 0>,   /* GPIO(D11), Not a RX */
+			   <ARDUINO_HEADER_R3_D1 0 &hsgpio0 8 0>,   /* GPIO(D12), Not a TX */
+			   <ARDUINO_HEADER_R3_D2 0 &hsgpio0 11 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &hsgpio0 15 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &hsgpio0 18 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &hsgpio0 27 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &hsgpio0 0 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &hsgpio0 20 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &hsgpio1 18 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &hsgpio1 20 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &hsgpio0 6 0>,  /* CS */
+			   <ARDUINO_HEADER_R3_D11 0 &hsgpio0 9 0>,  /* MOSI */
+			   <ARDUINO_HEADER_R3_D12 0 &hsgpio0 8 0>,  /* MISO */
+			   <ARDUINO_HEADER_R3_D13 0 &hsgpio0 7 0>,  /* SCK */
+			   <ARDUINO_HEADER_R3_D14 0 &hsgpio0 16 0>, /* SDA */
+			   <ARDUINO_HEADER_R3_D15 0 &hsgpio0 17 0>; /* SCL */
+	};
+};
+
+&flexcomm3 {
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm3_usart>;
+	pinctrl-names = "default";
+	wakeup-source;
+	status = "okay";
+};
+
+&flexcomm0 {
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&crc {
+	status = "okay";
+};
+
+&ocotp {
+	status = "okay";
+};
+
+mikrobus_serial: &flexcomm0 {};
+
+&hsgpio0 {
+	pinctrl-0 = <&pinmux_hsgpio0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&hsgpio1 {
+	pinctrl-0 = <&pinmux_hsgpio1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flexspi {
+	ahb-bufferable;
+	ahb-prefetch;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	ahb-boundary = "1024";
+	rx-clock-source = <1>;
+	rx-clock-source-b = <1>;
+	status = "okay";
+
+	/* Winbond external flash */
+	ext_flash_ctrl: flash-controller@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		reg = <0>;
+		ranges = <0x0 0x18000000 DT_SIZE_M(64)>;
+		size = <DT_SIZE_M(64 * 8)>;
+		power-domains = <&peripheral_domain>;
+		jedec-id = [ef 40 20];
+		spi-max-frequency = <DT_FREQ_M(104)>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
+
+		w25q512jvfiq: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			ranges;
+			erase-block-size = <4096>;
+			write-block-size = <1>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partitions {
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/*
+				 * Partition sizes must be aligned
+				 * to the flash memory sector size of 4KB.
+				 */
+				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00000000 DT_SIZE_K(128)>;
+					label = "mcuboot";
+				};
+
+				slot0_partition: partition@20000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00020000 DT_SIZE_M(3)>;
+					label = "image-0";
+				};
+
+				slot1_partition: partition@320000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00320000 DT_SIZE_M(3)>;
+					label = "image-1";
+				};
+
+				storage_partition: partition@620000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
+					label = "storage";
+				};
+			};
+		};
+	};
+
+	aps6404l: aps6404l@2 {
+		compatible = "nxp,imx-flexspi-aps6404l";
+		reg = <2>;
+		/* APS6404L is 8MB, 64MBit pSRAM */
+		size = <DT_SIZE_M(8 * 8)>;
+		spi-max-frequency = <DT_FREQ_M(109)>;
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <6>;
+		column-space = <0>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <0>;
+		/* PSRAM cannot be enabled while board is in default XIP
+		 * configuration, as it will conflict with flash chip.
+		 */
+		status = "disabled";
+	};
+
+	/*
+	 * Winbond W25N01GV NAND - FlexSPI PortB1 (CS2).
+	 * Pin-compatible alternative to aps6404l@2.
+	 * Mutually exclusive with aps6404l@2: enable at most one via overlay.
+	 */
+	w25n01gv: w25n01gv@2 {
+		compatible = "nxp,imx-flexspi-nand";
+		reg = <2>; /* PortB1 */
+
+		/* W25N01GVZEIG: 1 Gbit = 128 MiB; DT size is in bits */
+		size = <DT_SIZE_M(128 * 8)>;
+
+		spi-max-frequency = <DT_FREQ_M(104)>;
+		write-block-size = <2048>;
+		erase-block-size = <DT_SIZE_K(128)>;
+
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <6>;
+		column-space = <11>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <0>;
+		status = "disabled";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			nand_storage: partition@0 {
+				reg = <0x0 DT_SIZE_M(128)>;
+				label = "nand-storage";
+			};
+		};
+	};
+};
+
+&hci {
+	wakeup-source;
+	status = "okay";
+};
+
+&enet {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&enet_mac {
+	phy-handle = <&phy>;
+	phy-connection-type = "rmii";
+	nxp,unique-mac;
+	status = "okay";
+};
+
+&enet_mdio {
+	pinctrl-0 = <&pinmux_mdio>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: phy@2 {
+		compatible = "microchip,ksz8081";
+		reg = <2>;
+		reset-gpios = <&hsgpio0 21 GPIO_ACTIVE_LOW>;
+		int-gpios = <&hsgpio1 23 GPIO_ACTIVE_LOW>;
+		microchip,interface-type = "rmii";
+		status = "okay";
+	};
+};
+
+&wwdt {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&gdma {
+	status = "okay";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&pmu {
+	reset-causes-en = <PMU_RESET_CM33_LOCKUP>,
+			  <PMU_RESET_ITRC>,
+			  <PMU_RESET_AP_RESET>;
+};
+
+/* OS Timer is the wakeup source for PM mode 2 */
+&ostimer0 {
+	wakeup-source;
+	deep-sleep-counter = <&rtc_highres>;
+	status = "okay";
+};
+
+&systick {
+	status = "disabled";
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+};
+
+&sctimer {
+	pinctrl-0 = <&pinmux_pwm0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+/* RTC is the wakeup source for PM modes 3,4 */
+&rtc_highres {
+	wakeup-source;
+	status = "okay";
+};
+
+&nbu {
+	wakeup-source;
+	status = "okay";
+};
+
+&imu {
+	wakeup-source;
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
+
+/*
+ * the default resistors on the board breaks out the MOSI/MISO
+ * pins to the nets labelled "UART" which go to J1 2 and 4,
+ * but we are using it for spi mosi and miso here.
+ * SCK is on J2 6 as labelled.
+ */
+&flexcomm1 {
+	compatible = "nxp,lpc-spi";
+	pinctrl-0 = <&pinmux_flexcomm1_spi>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+};
+
+arduino_spi: &flexcomm1 {};
+
+mikrobus_spi: &flexcomm1 {};
+
+&flexcomm2 {
+	compatible = "nxp,lpc-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	p3t1755: p3t1755@48 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48>;
+		status = "okay";
+	};
+};
+
+arduino_i2c: &flexcomm2 {};
+
+mikrobus_i2c: &flexcomm2 {};
+
+zephyr_mipi_dbi_spi: &lcdic {
+	pinctrl-0 = <&pinmux_lcdic>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+nxp_pmod_touch_panel_i2c: &arduino_i2c {
+	status = "okay";
+};
+
+/* power-states properties:
+ * min-residency-us depends on use-case, and set by the board or app
+ * Idle mode maps to Power Mode 1
+ */
+&idle {
+	min-residency-us = <0>;
+};
+
+/* Suspend mode maps to Power Mode 2 */
+&suspend {
+	min-residency-us = <412>;
+};
+
+/* standby mode maps to Sleep/Power Mode 3 */
+&standby {
+	exit-latency-us = <13460>;
+	min-residency-us = <1690>;
+};
+
+&powerquad {
+	status = "okay";
+};

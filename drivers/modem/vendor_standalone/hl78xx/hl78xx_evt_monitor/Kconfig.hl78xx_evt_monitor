@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2025 Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HL78XX_EVT_MONITOR
+	bool "HL78XX AT notification monitor"
+
+if HL78XX_EVT_MONITOR
+
+config HL78XX_EVT_MONITOR_QUEUE_DEPTH
+	int "Deferred notification queue depth"
+	range 1 256
+	default 16
+	help
+	  Number of HL78xx event notifications that can be queued for deferred
+	  monitor dispatch in the system workqueue before new ones are dropped.
+	  A drop is logged at error level and counted; the count is readable
+	  through hl78xx_evt_monitor_dropped_count(). The driver dispatches
+	  several notifications in quick succession around registration, so
+	  keep the depth well above that burst. Direct runtime monitor dispatch
+	  does not use this queue.
+
+
+config HL78XX_EVT_MONITOR_MAX_INSTANCE_MONITORS
+	int "Maximum number of runtime HL78xx event monitors"
+	default 8
+	range 1 64
+	help
+	  Maximum number of runtime event monitors that can be registered.
+	  This bound allows event monitor dispatch to snapshot runtime monitors
+	  without allocating memory, including when dispatch is called from ISR
+	  context.
+
+config HL78XX_EVT_MONITOR_APP_INIT_PRIORITY
+	int "Sierra Wireless HL78XX event monitor app init priority"
+	default 0
+	help
+	  Sierra Wireless HL78XX event monitor app initialization priority.
+	  Do not mess with it unless you know what you are doing.
+
+module=HL78XX_EVT_MONITOR
+module-dep=LOG
+module-str= Event notification monitor library
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # HL78XX_EVT_MONITOR

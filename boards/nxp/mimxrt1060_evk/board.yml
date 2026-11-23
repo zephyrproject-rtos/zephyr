@@ -1,0 +1,16 @@
+boards:
+  - name: mimxrt1060_evk
+    full_name: MIMXRT1060-EVK
+    vendor: nxp
+    socs:
+      - name: mimxrt1062
+        variants:
+          - name: "qspi"
+          - name: "hyperflash"
+    revision:
+      format: "letter"
+      default: "C"
+      revisions:
+        - name: "A"
+        - name: "B"
+        - name: "C"

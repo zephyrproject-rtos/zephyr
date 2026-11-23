@@ -1,0 +1,10 @@
+identifier: stm32wba65i_dk1/stm32wba65xx/ns
+name: ST STM32WBA65I Discovery kit with TF-M and non-secure firmware
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 384
+flash: 512
+vendor: st

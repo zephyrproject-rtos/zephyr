@@ -1,0 +1,12 @@
+# Copyright (c) 2017, synopsys
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARC DCCM
+
+compatible: "arc,dccm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

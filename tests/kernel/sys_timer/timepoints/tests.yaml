@@ -1,0 +1,13 @@
+tests:
+  kernel.timer.timepoints:
+    tags:
+      - kernel
+      - timer
+  kernel.timer.timepoints.user:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+    tags:
+      - kernel
+      - timer
+      - userspace

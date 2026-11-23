@@ -1,0 +1,57 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP successive-approximation ADC (SAR ADC) controller.
+
+compatible: "nxp,sar-adc"
+
+include: [adc-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  has-external-channels:
+    type: boolean
+    description: |
+      Indicates whether this SAR ADC instance supports the External channel group
+      (group2: NCMR2/CEOCFR2/CIMR2/ECDR).
+      Some SoCs expose different capabilities per ADC instance.
+
+  overwrite:
+    type: boolean
+    description: |
+      Enable overwrite of conversion results when the result registers are full.
+
+  auto-clock-off:
+    type: boolean
+    description: |
+      Reduces power consumption by turning off the clock of the analog part of
+      ADC when it is in Idle state.
+
+  hw-average-support:
+    type: boolean
+    description: |
+      Indicates whether the ADC hardware supports averaging of conversion results.
+
+  conv-clk-freq-div-factor:
+    type: int
+    enum: [0, 1, 2, 3]
+    description: |
+      Select ADC conversion clock frequency division factor.
+      ADC conversion clock = ADC module clock ÷ (1 << conv-clk-freq-div-factor)
+      - 0: ADC module clock frequency
+      - 1: ADC module clock frequency divided by 2
+      - 2: ADC module clock frequency divided by 4
+      - 3: ADC module clock frequency divided by 8
+      NOTE: This property is not available on I.MX devices.
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

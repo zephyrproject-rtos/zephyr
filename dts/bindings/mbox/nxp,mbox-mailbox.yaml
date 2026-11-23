@@ -1,0 +1,37 @@
+description: |
+  NXP Mailbox Unit as Zephyr MBOX.
+
+  This NXP Mailbox driver implements Multi-Channel Inter-Processor Mailbox (MBOX) API
+  around NXP Inter-CPU Mailbox peripheral IP block.
+
+  The NXP Inter-CPU Mailbox provides up to thirty-two user defined interrupts.
+  This driver uses 4 interrupts for mbox signalling mode per each channel,
+  4 interrupts for mxbox data transfer mode per each channel and 24 as 3 bytes
+  for data.
+
+compatible: "nxp,mbox-mailbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  rx-channels:
+    type: int
+    enum: [1, 2, 3, 4]
+    description: |
+      Number of receive channels enabled on this instance.
+      Setting this value to N, will enable channels 0 to N-1, consecutively.
+      It should be set by the receiver core coupled with this Mailbox instance.
+
+      For example, if receiver A wants to Rx on channels 0 to 3, then A must
+      set rx-channels of mailbox as follows:
+
+        mbox {
+          rx-channels = <4>;
+          status = "okay";
+        };
+
+mbox-cells:
+  - channel

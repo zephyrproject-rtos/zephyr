@@ -1,0 +1,17 @@
+description: Bouffalo Lab SEC Engine SHA hardware accelerator
+
+compatible: "bflb,sec-eng-sha"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    type: string-array
+    required: true
+    description: Register names must include "sha" and "sec_eng".
+
+  interrupts:
+    required: true

@@ -1,0 +1,6 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_MCXA153
+	select SOC_MCXA153 if BOARD_FRDM_MCXA153
+	select SOC_PART_NUMBER_MCXA153VLH

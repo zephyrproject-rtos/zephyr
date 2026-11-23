@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test CPU Interrupt Controller
+
+compatible: "vnd,cpu-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 1
+
+interrupt-cells:
+  - irq

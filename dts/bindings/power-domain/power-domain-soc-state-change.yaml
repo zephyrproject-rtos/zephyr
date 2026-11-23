@@ -1,0 +1,23 @@
+# Copyright 2024-25 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This power domain will Turn On and Off devices when transitioning
+  in and out a specified Power State. Power States that trigger this
+  action is specified via the onoff-power-states property.
+
+compatible: "power-domain-soc-state-change"
+
+include: power-domain.yaml
+
+properties:
+  onoff-power-states:
+    type: phandles
+    description: |
+      List of power management states.
+      The registered devices will be turned off before the PM subsystem
+      enters these PM states. The devices will be turned on after the
+      PM subsystem exits these PM states.
+
+  "#power-domain-cells":
+    const: 0

@@ -1,0 +1,24 @@
+# Copyright (c) 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenISA Timer/PWM Module (TPM)
+
+compatible: "openisa,rv32m1-tpm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  # period in terms of nanoseconds
+  - period
+  - flags

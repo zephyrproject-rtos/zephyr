@@ -1,0 +1,6 @@
+board:
+  name: rzt2l_rsk
+  full_name: Renesas Starter Kit+ for RZ/T2L
+  vendor: renesas
+  socs:
+  - name: r9a07g074m04gbg

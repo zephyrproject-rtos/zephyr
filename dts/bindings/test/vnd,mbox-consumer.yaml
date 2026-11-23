@@ -1,0 +1,15 @@
+# Copyright (c) 2021, Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: VND MBOX consumer
+
+compatible: "vnd,mbox-consumer"
+
+include: base.yaml
+
+properties:
+  mboxes:
+    required: true
+
+  mbox-names:
+    required: true

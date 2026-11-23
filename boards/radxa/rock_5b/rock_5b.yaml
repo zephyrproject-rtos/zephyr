@@ -1,0 +1,10 @@
+identifier: rock_5b
+name: Radxa ROCK 5B
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 131072
+supported:
+  - serial

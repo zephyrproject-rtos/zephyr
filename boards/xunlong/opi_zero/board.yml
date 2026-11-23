@@ -1,0 +1,6 @@
+board:
+  name: opi_zero
+  full_name: Orange Pi Zero
+  vendor: xunlong
+  socs:
+  - name: sun8i_h3

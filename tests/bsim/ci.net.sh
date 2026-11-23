@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Copyright 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# This script runs the Babblesim CI networking tests.
+# It can also be run locally.
+
+export ZEPHYR_BASE="${ZEPHYR_BASE:-${PWD}}"
+cd ${ZEPHYR_BASE}
+
+set -uex
+
+TWISTER_OPTIONS="-vv --fixture bsim_multi_test --no-clean --force-color --inline-logs"
+
+${ZEPHYR_BASE}/scripts/twister -p nrf52_bsim -T tests/bsim/net/ ${TWISTER_OPTIONS} \
+  -O twister-out-net

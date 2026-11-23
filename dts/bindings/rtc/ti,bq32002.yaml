@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Marcin Lyda <elektromarcin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments BQ32002 Real-Time Clock
+
+compatible: "ti,bq32002"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+
+properties:
+  irq-frequency:
+    type: int
+    description: |
+      IRQ pin frequency
+
+      This field enables to select output frequency on IRQ pin.
+      1Hz frequency is periodically corrected by the configured calibration value,
+      while the 512Hz frequency is derived directly from the oscillator.
+
+    enum:
+      - 1
+      - 512

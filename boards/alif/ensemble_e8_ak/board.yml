@@ -1,0 +1,11 @@
+board:
+  name: ensemble_e8_ak
+  full_name: Alif Ensemble E8 AI/ML AppKit
+  vendor: alif
+  socs:
+  - name: ae822fa0e5597bs0
+    variants:
+    - name: sram
+      cpucluster: rtss_he
+    - name: sram
+      cpucluster: rtss_hp

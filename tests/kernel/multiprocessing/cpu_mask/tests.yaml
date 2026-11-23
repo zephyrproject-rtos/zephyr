@@ -1,0 +1,57 @@
+common:
+  timeout: 300
+tests:
+  kernel.multiprocessing.cpu_mask:
+    tags:
+      - kernel
+      - smp
+    filter: CONFIG_MP_MAX_NUM_CPUS > 1
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+
+  kernel.multiprocessing.cpu_mask.scalable:
+    tags:
+      - kernel
+      - smp
+    filter: CONFIG_MP_MAX_NUM_CPUS > 1
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_SCHED_SCALABLE=y
+
+  kernel.multiprocessing.cpu_mask.multiq:
+    tags:
+      - kernel
+      - smp
+    filter: CONFIG_MP_MAX_NUM_CPUS > 1
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_SCHED_MULTIQ=y
+
+  kernel.multiprocessing.cpu_mask.pin_only:
+    tags:
+      - kernel
+      - smp
+    filter: CONFIG_MP_MAX_NUM_CPUS > 1
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_SCHED_CPU_MASK_PIN_ONLY=y
+
+  kernel.multiprocessing.cpu_mask.pin_only.scalable:
+    tags:
+      - kernel
+      - smp
+    filter: CONFIG_MP_MAX_NUM_CPUS > 1
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_SCHED_CPU_MASK_PIN_ONLY=y
+      - CONFIG_SCHED_SCALABLE=y
+
+  kernel.multiprocessing.cpu_mask.pin_only.multiq:
+    tags:
+      - kernel
+      - smp
+    filter: CONFIG_MP_MAX_NUM_CPUS > 1
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_SCHED_CPU_MASK_PIN_ONLY=y
+      - CONFIG_SCHED_MULTIQ=y

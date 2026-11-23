@@ -1,0 +1,227 @@
+/** @file
+ * @brief HTTP HPACK
+ */
+
+/*
+ * Copyright (c) 2023 Emna Rekik
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_NET_HTTP_HPACK_H_
+#define ZEPHYR_INCLUDE_NET_HTTP_HPACK_H_
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+/**
+ * @brief HTTP HPACK
+ * @defgroup http_hpack HTTP HPACK
+ * @since 3.7
+ * @version 0.1.0
+ * @ingroup networking
+ * @{
+ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** @cond INTERNAL_HIDDEN */
+
+enum http_hpack_static_key {
+	HTTP_SERVER_HPACK_INVALID = 0,
+	HTTP_SERVER_HPACK_AUTHORITY = 1,
+	HTTP_SERVER_HPACK_METHOD_GET = 2,
+	HTTP_SERVER_HPACK_METHOD_POST = 3,
+	HTTP_SERVER_HPACK_PATH_ROOT = 4,
+	HTTP_SERVER_HPACK_PATH_INDEX = 5,
+	HTTP_SERVER_HPACK_SCHEME_HTTP = 6,
+	HTTP_SERVER_HPACK_SCHEME_HTTPS = 7,
+	HTTP_SERVER_HPACK_STATUS_200 = 8,
+	HTTP_SERVER_HPACK_STATUS_204 = 9,
+	HTTP_SERVER_HPACK_STATUS_206 = 10,
+	HTTP_SERVER_HPACK_STATUS_304 = 11,
+	HTTP_SERVER_HPACK_STATUS_400 = 12,
+	HTTP_SERVER_HPACK_STATUS_404 = 13,
+	HTTP_SERVER_HPACK_STATUS_500 = 14,
+	HTTP_SERVER_HPACK_ACCEPT_CHARSET = 15,
+	HTTP_SERVER_HPACK_ACCEPT_ENCODING = 16,
+	HTTP_SERVER_HPACK_ACCEPT_LANGUAGE = 17,
+	HTTP_SERVER_HPACK_ACCEPT_RANGES = 18,
+	HTTP_SERVER_HPACK_ACCEPT = 19,
+	HTTP_SERVER_HPACK_ACCESS_CONTROL_ALLOW_ORIGIN = 20,
+	HTTP_SERVER_HPACK_AGE = 21,
+	HTTP_SERVER_HPACK_ALLOW = 22,
+	HTTP_SERVER_HPACK_AUTHORIZATION = 23,
+	HTTP_SERVER_HPACK_CACHE_CONTROL = 24,
+	HTTP_SERVER_HPACK_CONTENT_DISPOSITION = 25,
+	HTTP_SERVER_HPACK_CONTENT_ENCODING = 26,
+	HTTP_SERVER_HPACK_CONTENT_LANGUAGE = 27,
+	HTTP_SERVER_HPACK_CONTENT_LENGTH = 28,
+	HTTP_SERVER_HPACK_CONTENT_LOCATION = 29,
+	HTTP_SERVER_HPACK_CONTENT_RANGE = 30,
+	HTTP_SERVER_HPACK_CONTENT_TYPE = 31,
+	HTTP_SERVER_HPACK_COOKIE = 32,
+	HTTP_SERVER_HPACK_DATE = 33,
+	HTTP_SERVER_HPACK_ETAG = 34,
+	HTTP_SERVER_HPACK_EXPECT = 35,
+	HTTP_SERVER_HPACK_EXPIRES = 36,
+	HTTP_SERVER_HPACK_FROM = 37,
+	HTTP_SERVER_HPACK_HOST = 38,
+	HTTP_SERVER_HPACK_IF_MATCH = 39,
+	HTTP_SERVER_HPACK_IF_MODIFIED_SINCE = 40,
+	HTTP_SERVER_HPACK_IF_NONE_MATCH = 41,
+	HTTP_SERVER_HPACK_IF_RANGE = 42,
+	HTTP_SERVER_HPACK_IF_UNMODIFIED_SINCE = 43,
+	HTTP_SERVER_HPACK_LAST_MODIFIED = 44,
+	HTTP_SERVER_HPACK_LINK = 45,
+	HTTP_SERVER_HPACK_LOCATION = 46,
+	HTTP_SERVER_HPACK_MAX_FORWARDS = 47,
+	HTTP_SERVER_HPACK_PROXY_AUTHENTICATE = 48,
+	HTTP_SERVER_HPACK_PROXY_AUTHORIZATION = 49,
+	HTTP_SERVER_HPACK_RANGE = 50,
+	HTTP_SERVER_HPACK_REFERER = 51,
+	HTTP_SERVER_HPACK_REFRESH = 52,
+	HTTP_SERVER_HPACK_RETRY_AFTER = 53,
+	HTTP_SERVER_HPACK_SERVER = 54,
+	HTTP_SERVER_HPACK_SET_COOKIE = 55,
+	HTTP_SERVER_HPACK_STRICT_TRANSPORT_SECURITY = 56,
+	HTTP_SERVER_HPACK_TRANSFER_ENCODING = 57,
+	HTTP_SERVER_HPACK_USER_AGENT = 58,
+	HTTP_SERVER_HPACK_VARY = 59,
+	HTTP_SERVER_HPACK_VIA = 60,
+	HTTP_SERVER_HPACK_WWW_AUTHENTICATE = 61,
+};
+
+/* TODO Kconfig */
+#define HTTP2_HEADER_FIELD_MAX_LEN 256
+
+/* Last index of the static table, the first index of the dynamic table is one above it. */
+#define HTTP_HPACK_STATIC_TABLE_LAST_INDEX HTTP_SERVER_HPACK_WWW_AUTHENTICATE
+
+/* Dynamic table size, in bytes, a decoder has to accept until its own
+ * SETTINGS_HEADER_TABLE_SIZE is acknowledged (RFC 7541, Section 4.2 and
+ * RFC 9113, Section 6.5.2).
+ */
+#define HTTP_HPACK_DYNAMIC_TABLE_SIZE 4096U
+
+/* Size of a dynamic table entry on top of its name and value (RFC 7541, Section 4.1). */
+#define HTTP_HPACK_DYNAMIC_TABLE_ENTRY_OVERHEAD 32U
+
+#if defined(CONFIG_HTTP_SERVER_HPACK_DYNAMIC_TABLE_COUNT)
+#define HTTP_HPACK_DYNAMIC_TABLE_COUNT CONFIG_HTTP_SERVER_HPACK_DYNAMIC_TABLE_COUNT
+#else
+#define HTTP_HPACK_DYNAMIC_TABLE_COUNT 0
+#endif
+
+#if defined(CONFIG_HTTP_SERVER)
+#define HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE CONFIG_HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE
+#else
+#define HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE 0
+#endif
+
+/** @endcond */
+
+/** Kind of HPACK entry decoded. */
+enum http_hpack_entry_type {
+	/** A header field. */
+	HTTP_HPACK_ENTRY_FIELD,
+	/** A dynamic table size update, carrying no field. */
+	HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE,
+};
+
+/** HTTP2 header field with decoding buffer. */
+struct http_hpack_header_buf {
+	/** Kind of the entry decoded last. */
+	enum http_hpack_entry_type type;
+
+	/** Dynamic table size requested by a size update entry. */
+	uint32_t table_size;
+
+	/** Whether a string of the field was larger than the decoding buffer
+	 *  and was dropped. The entry is consumed, but the field is not usable.
+	 */
+	bool oversized;
+
+	/** Whether the field referred to a dynamic table entry while the
+	 *  decoder has no dynamic table. The entry is consumed, but the field
+	 *  is not usable.
+	 */
+	bool unresolved;
+
+	/** A pointer to the decoded header field name. */
+	const char *name;
+
+	/** A pointer to the decoded header field value. */
+	const char *value;
+
+	/** Length of the decoded header field name. */
+	size_t name_len;
+
+	/** Length of the decoded header field value. */
+	size_t value_len;
+
+	/** Encoding/Decoding buffer. Used with Huffman encoding/decoding. */
+	uint8_t buf[HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE];
+
+	/** Length of the data in the decoding buffer. */
+	size_t datalen;
+};
+
+/** @cond INTERNAL_HIDDEN */
+
+/** HPACK decoder dynamic table (RFC 7541, Section 2.3.2). */
+struct http_hpack_dynamic_table {
+	/** Entries, oldest first. Each one is its name length and value
+	 *  length as two little-endian 16-bit values, then the name and
+	 *  the value.
+	 */
+	uint8_t data[HTTP_HPACK_DYNAMIC_TABLE_SIZE];
+	/** Bytes of data in use. */
+	uint16_t data_len;
+	/** Number of entries. */
+	uint16_t count;
+	/** Size of the entries as RFC 7541, Section 4.1 counts it. */
+	uint32_t size;
+	/** Current maximum size, set by dynamic table size updates. */
+	uint32_t max_size;
+	/** Whether the table is taken from the pool. */
+	bool in_use;
+};
+
+int http_hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
+			      uint8_t *buf, size_t buflen);
+int http_hpack_huffman_encode(const uint8_t *str, size_t str_len,
+			      uint8_t *buf, size_t buflen);
+/* Decodes one entry. table may be NULL, then a field referring to the
+ * dynamic table is consumed and reported as unresolved and a field to be
+ * added to the table is not stored.
+ */
+int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
+			     struct http_hpack_header_buf *header,
+			     struct http_hpack_dynamic_table *table);
+/* Whether the entry starting at buf adds a field to the dynamic table. */
+bool http_hpack_entry_adds_to_table(const uint8_t *buf, size_t datalen);
+/* Takes a table from the pool, NULL when none is free. */
+struct http_hpack_dynamic_table *http_hpack_dynamic_table_alloc(void);
+/* Returns a table to the pool. NULL is accepted. */
+void http_hpack_dynamic_table_free(struct http_hpack_dynamic_table *table);
+int http_hpack_encode_header(uint8_t *buf, size_t buflen,
+			     struct http_hpack_header_buf *header);
+int http_hpack_encode_field(uint8_t *buf, size_t buflen, struct http_hpack_header_buf *header,
+			    const char *name, const char *value);
+
+/** @endcond */
+
+#ifdef __cplusplus
+}
+#endif
+
+/**
+ * @}
+ */
+
+#endif /* ZEPHYR_INCLUDE_NET_HTTP_HPACK_H_ */

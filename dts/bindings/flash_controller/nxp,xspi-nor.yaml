@@ -1,0 +1,19 @@
+# Copyright 2024-2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP XSPI Flash Controller
+
+compatible: "nxp,xspi-nor"
+
+include: ["nxp,xspi-device.yaml", "jedec,jesd216.yaml"]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RESET# pin of the flash device.
+
+  initial-soft-reset:
+    type: boolean
+    description: |
+      Issue a software reset sequence at initialization.

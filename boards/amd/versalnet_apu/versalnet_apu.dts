@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2025, Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm64/xilinx/versalnet_a78.dtsi>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	adma_ref_clk: adma-ref-clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <450000000>;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <100000000>;
+};
+
+&soc {
+	sram0: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x0 0x0 0x0 DT_SIZE_M(2048)>;
+	};
+};
+
+&uart1 {
+	current-speed = <115200>;
+	clock-frequency = <100000000>;
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	clock-frequency = <100000000>;
+	status = "okay";
+};
+
+&adma0 {
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+	status = "okay";
+};
+
+&adma1 {
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+	status = "okay";
+};
+
+&adma2 {
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+	status = "okay";
+};
+
+&adma3 {
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+	status = "okay";
+};
+
+&adma4 {
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+	status = "okay";
+};
+
+&adma5 {
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+	status = "okay";
+};
+
+&adma6 {
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+	status = "okay";
+};
+
+&adma7 {
+	clocks = <&adma_ref_clk>, <&adma_ref_clk>;
+	status = "okay";
+};
+
+&ttc0_timer0 {
+	status = "okay";
+};
+
+&ttc0_timer1 {
+	status = "okay";
+};
+
+&ttc0_timer2 {
+	status = "okay";
+};

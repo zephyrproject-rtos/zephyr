@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic Global IPCT (Interprocessor Communication Transceiver)
+
+compatible: "nordic,nrf-ipct-global"
+
+include: ["nordic,nrf-ipct-common.yaml", "nordic,split-channels.yaml"]
+
+properties:
+  global-domain-id:
+    required: true
+    type: int
+    description: |
+      Global IPCT instances reside on specific buses within the Global Domain,
+      such as fast and slow, which have different IDs that do not match the
+      standard Global Domain ID presented in their address.

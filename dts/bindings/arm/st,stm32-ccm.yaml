@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 CCM (Core Coupled Memory)
+
+compatible: "st,stm32-ccm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

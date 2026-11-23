@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "$(ZEPHYR_BASE)/share/sysbuild/Kconfig"
+
+choice REMOTE_NRF54H20_CORE
+	prompt "Remote nRF54h20 core"
+	default REMOTE_NRF54H20_CPURAD_CORE
+	depends on SOC_NRF54H20_CPUAPP
+
+config REMOTE_NRF54H20_CPUPPR_CORE
+	bool "ppr core"
+
+config REMOTE_NRF54H20_CPURAD_CORE
+	bool "cpurad"
+
+endchoice
+
+config REMOTE_BOARD
+	string
+	default "$(BOARD)/nrf54h20/cpurad" if SOC_NRF54H20_CPUAPP && REMOTE_NRF54H20_CPURAD_CORE
+	default "$(BOARD)/nrf54h20/cpuppr/xip" if SOC_NRF54H20_CPUAPP && REMOTE_NRF54H20_CPUPPR_CORE

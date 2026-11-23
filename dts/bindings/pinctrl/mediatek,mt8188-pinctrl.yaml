@@ -1,0 +1,39 @@
+# Copyright (c) 2026 MediaTek Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MediaTek MT8188 pin controller.
+
+  A pin configuration state is described by a grandchild node holding a 'pinmux'
+  array.  Each entry encodes a pin number and the function selected on it, and is
+  built with the PINMUX_PIN_<n>__FUNC_<f> macros from
+  <zephyr/dt-bindings/pinctrl/mt8188-pinctrl.h>.
+
+  For example:
+
+    &pinctrl {
+            uart1_default: uart1_default {
+                    group1 {
+                            pinmux = <PINMUX_PIN_33__FUNC_O_UTXD1>,
+                                     <PINMUX_PIN_34__FUNC_I1_URXD1>;
+                    };
+            };
+    };
+
+compatible: "mediatek,mt8188-pinctrl"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  child-binding:
+    description: MT8188 pin configuration state.
+
+    properties:
+      pinmux:
+        type: array
+        required: true
+        description: Encoded pin and function pairs to apply for this state.

@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: Broadcom GENET (Gigabit Ethernet) Controller
+
+compatible: "brcm,genet"
+
+include: ethernet-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  phy-handle:
+    required: true
+
+  phy-connection-type:
+    const: "rgmii"

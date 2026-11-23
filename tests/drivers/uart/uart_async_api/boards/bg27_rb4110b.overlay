@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025, Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Connect EXP4 (PC3) and EXP6 (PC5) of the Expansion Pin header
+ */
+
+dut: &eusart0 {
+	compatible = "silabs,eusart-uart";
+	dmas = <&dma0 DMA_REQSEL_EUSART0TXFL>,
+	       <&dma0 DMA_REQSEL_EUSART0RXFL>;
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&eusart0_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+	/delete-property/ cs-gpios;
+};
+
+&dma0 {
+	status = "okay";
+};

@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2026 Sahaj Sarup
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-nano-header.h>
+
+/ {
+	arduino_nano_header: connector {
+		compatible = "arduino-nano-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_NANO_HEADER_D0 0 &ioport3 1 0>,  /* D0 / UART-RX */
+			   <ARDUINO_NANO_HEADER_D1 0 &ioport3 2 0>,  /* D1 / UART-TX */
+			   <ARDUINO_NANO_HEADER_D2 0 &ioport1 5 0>,  /* D2 */
+			   <ARDUINO_NANO_HEADER_D3 0 &ioport1 4 0>,  /* D3 */
+			   <ARDUINO_NANO_HEADER_D4 0 &ioport1 3 0>,   /* D4 */
+			   <ARDUINO_NANO_HEADER_D5 0 &ioport1 2 0>,   /* D5 */
+			   <ARDUINO_NANO_HEADER_D6 0 &ioport1 6 0>,   /* D6 */
+			   <ARDUINO_NANO_HEADER_D7 0 &ioport1 7 0>,   /* D7 */
+			   <ARDUINO_NANO_HEADER_D8 0 &ioport3 4 0>,  /* D8 */
+			   <ARDUINO_NANO_HEADER_D9 0 &ioport3 3 0>,  /* D9 */
+			   <ARDUINO_NANO_HEADER_D10 0 &ioport1 12 0>, /* D10 */
+			   <ARDUINO_NANO_HEADER_D11 0 &ioport1 9 0>, /* D11 / SPI-MOSI */
+			   <ARDUINO_NANO_HEADER_D12 0 &ioport1 10 0>, /* D12 / SPI-MISO */
+			   <ARDUINO_NANO_HEADER_D13 0 &ioport1 11 0>, /* D13 / SPI-SCK */
+			   <ARDUINO_NANO_HEADER_D14 0 &ioport0 14 0>,  /* D14 / A0 */
+			   <ARDUINO_NANO_HEADER_D15 0 &ioport0 0 0>,  /* D15 / A1 */
+			   <ARDUINO_NANO_HEADER_D16 0 &ioport0 1 0>, /* D16 / A2 */
+			   <ARDUINO_NANO_HEADER_D17 0 &ioport0 2 0>, /* D17 / A3 */
+			   <ARDUINO_NANO_HEADER_D18 0 &ioport1 1 0>,  /* D18 / A4 / I2C-SDA */
+			   <ARDUINO_NANO_HEADER_D19 0 &ioport1 0 0>,  /* D19 / A5 / I2C-SCL */
+			   <ARDUINO_NANO_HEADER_D20 0 &ioport0 4 0>,  /* D20 / A6 */
+			   <ARDUINO_NANO_HEADER_D21 0 &ioport0 3 0>;  /* D21 / A7 */
+	};
+
+	arduino_adc: analog-connector {
+		compatible = "arduino,nano-adc";
+		#io-channel-cells = <1>;
+		io-channel-map = <ARDUINO_NANO_HEADER_A0 &adc0 9>,        /* P009 = CH09 */
+				 <ARDUINO_NANO_HEADER_A1 &adc0 0>,        /* P000 = CH00 */
+				 <ARDUINO_NANO_HEADER_A2 &adc0 1>,        /* P001 = CH01 */
+				 <ARDUINO_NANO_HEADER_A3 &adc0 2>,        /* P002 = CH02 */
+				 <ARDUINO_NANO_HEADER_A4 &adc0 21>,       /* P101 = CH21 */
+				 <ARDUINO_NANO_HEADER_A5 &adc0 22>,       /* P100 = CH22 */
+				 <ARDUINO_NANO_HEADER_A6 &adc0 4>,        /* P104 = CH04 */
+				 <ARDUINO_NANO_HEADER_A7 &adc0 3>;        /* P103 = CH03 */
+	};
+
+	arduino_pwm: connector-pwm {
+		compatible = "arduino-header-pwm";
+		#pwm-cells = <3>;
+		pwm-map = <ARDUINO_NANO_HEADER_D2 0 0 &pwm1 0 0 0>,       /* P105 = GPT1_A */
+			  <ARDUINO_NANO_HEADER_D3 0 0 &pwm1 1 0 0>,       /* P104 = GPT1_B */
+			  <ARDUINO_NANO_HEADER_D4 0 0 &pwm2 0 0 0>,       /* P103 = GPT2 A */
+			  <ARDUINO_NANO_HEADER_D5 0 0 &pwm2 1 0 0>,       /* P102 = GPT2_B */
+			  <ARDUINO_NANO_HEADER_D6 0 0 &pwm0 1 0 0>,       /* P106 = GPT0_B */
+			  <ARDUINO_NANO_HEADER_D7 0 0 &pwm0 0 0 0>,       /* P107 = GPT0_A */
+			  <ARDUINO_NANO_HEADER_D8 0 0 &pwm7 0 0 0>,       /* P304 = GPT7_A */
+			  <ARDUINO_NANO_HEADER_D9 0 0 &pwm7 1 0 0>,       /* P303 = GPT7_B */
+			  <ARDUINO_NANO_HEADER_D10 0 0 &pwm3 1 0 0>,      /* P112 = GPT3_B */
+			  <ARDUINO_NANO_HEADER_D13 0 0 &pwm3 0 0 0>;      /* P111 = GPT3_A */
+		pwm-map-mask = <0xffffffff 0x0 0x0>;
+		pwm-map-pass-thru = <0x0 0xffffffff 0xffffffff>;
+	};
+};
+
+arduino_nano_i2c: &iic1 {};
+
+arduino_nano_spi: &spi1 {};
+
+arduino_nano_serial: &uart2 {};

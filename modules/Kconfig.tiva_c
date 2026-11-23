@@ -1,0 +1,103 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Linumiz
+# Author: Sri Surya <srisurya@linumiz.com>
+
+config HAS_TIVAWARE
+	bool
+
+config USE_TIVAWARE_ADC
+	bool
+
+config USE_TIVAWARE_AES
+	bool
+
+config USE_TIVAWARE_CAN
+	bool
+
+config USE_TIVAWARE_COMP
+	bool
+
+config USE_TIVAWARE_CPU
+	bool
+
+config USE_TIVAWARE_CRC
+	bool
+
+config USE_TIVAWARE_DES
+	bool
+
+config USE_TIVAWARE_EEPROM
+	bool
+
+config USE_TIVAWARE_EMAC
+	bool
+
+config USE_TIVAWARE_EPI
+	bool
+
+config USE_TIVAWARE_FLASH
+	bool
+
+config USE_TIVAWARE_FPU
+	bool
+
+config USE_TIVAWARE_GPIO
+	bool
+
+config USE_TIVAWARE_HIBERNATE
+	bool
+
+config USE_TIVAWARE_I2C
+	bool
+
+config USE_TIVAWARE_INTERRUPT
+	bool
+
+config USE_TIVAWARE_LCD
+	bool
+
+config USE_TIVAWARE_MPU
+	bool
+
+config USE_TIVAWARE_ONEWIRE
+	bool
+
+config USE_TIVAWARE_PWM
+	bool
+
+config USE_TIVAWARE_QEI
+	bool
+
+config USE_TIVAWARE_SHAMD5
+	bool
+
+config USE_TIVAWARE_SSI
+	bool
+
+config USE_TIVAWARE_SW_CRC
+	bool
+
+config USE_TIVAWARE_SYSCTL
+	bool
+
+config USE_TIVAWARE_SYSEXC
+	bool
+
+config USE_TIVAWARE_SYSTICK
+	bool
+
+config USE_TIVAWARE_TIMER
+	bool
+
+config USE_TIVAWARE_UART
+	bool
+
+config USE_TIVAWARE_UDMA
+	bool
+
+config USE_TIVAWARE_USB
+	bool
+
+config USE_TIVAWARE_WATCHDOG
+	bool

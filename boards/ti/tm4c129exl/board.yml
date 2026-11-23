@@ -1,0 +1,6 @@
+board:
+  name: tm4c129exl
+  full_name: TI Tiva C Series TM4C129E Crypto Connected LaunchPad
+  vendor: ti
+  socs:
+    - name: ti_tm4c129encpdt

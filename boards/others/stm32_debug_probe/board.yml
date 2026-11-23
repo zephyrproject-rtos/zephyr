@@ -1,0 +1,6 @@
+board:
+  name: stm32_debug_probe
+  full_name: STM32 Debug Probe
+  vendor: others
+  socs:
+    - name: stm32f103xb

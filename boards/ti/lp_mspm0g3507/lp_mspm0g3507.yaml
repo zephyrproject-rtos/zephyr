@@ -1,0 +1,24 @@
+identifier: lp_mspm0g3507
+name: TI MSPM0G3507 Launchpad
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 128
+supported:
+  - adc
+  - uart
+  - gpio
+  - can
+  - counter
+  - dac
+  - hwinfo
+  - pwm
+  - spi
+  - vref
+  - trng
+  - watchdog
+vendor: ti

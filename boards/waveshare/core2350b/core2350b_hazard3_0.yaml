@@ -1,0 +1,21 @@
+identifier: core2350b/rp2350b/hazard3_0
+name: Waveshare Core2350B (Hazard3)
+type: mcu
+arch: riscv
+flash: 16384
+ram: 520
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - clock
+  - counter
+  - dma
+  - entropy
+  - gpio
+  - hwinfo
+  - pwm
+  - spi
+  - uart
+  - usbd
+  - watchdog

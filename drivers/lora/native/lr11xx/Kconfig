@@ -1,0 +1,23 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config LORA_LR11XX_NATIVE
+	bool "Semtech LR11XX native driver (experimental)"
+	default y
+	depends on LORA_MODULE_BACKEND_NATIVE
+	depends on DT_HAS_SEMTECH_LR1121_ENABLED
+	select SPI
+	select GPIO
+	help
+	  Enable native driver for Semtech LR11xx LoRa transceivers.
+	  This is an experimental driver that does not depend on loramac-node
+	  or lora-basics-modem external modules.
+
+config LORA_LR11XX_NATIVE_SLEEP
+	bool "Sleep mode power management"
+	default y
+	depends on LORA_LR11XX_NATIVE
+	help
+	  Place the LR11xx radio into sleep mode when idle to reduce
+	  power consumption (~1.6 uA vs ~1.25 mA in standby). Disable
+	  to keep the radio in standby for faster response times.

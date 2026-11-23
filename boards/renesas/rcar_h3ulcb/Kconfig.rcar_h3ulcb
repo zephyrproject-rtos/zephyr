@@ -1,0 +1,6 @@
+# Copyright (c) 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RCAR_H3ULCB
+	select SOC_R8A77951_R7 if BOARD_RCAR_H3ULCB_R8A77951_R7
+	select SOC_R8A77951_A57 if BOARD_RCAR_H3ULCB_R8A77951_A57

@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7p/stm32h7p.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32h7p4", "st,stm32h7p", "simple-bus";
+	};
+};

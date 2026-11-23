@@ -1,0 +1,32 @@
+# Copyright 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config HAPTICS_CS40LXX
+	def_bool DT_HAS_CIRRUS_CS40L26_ENABLED || \
+		 DT_HAS_CIRRUS_CS40L27_ENABLED || \
+		 DT_HAS_CIRRUS_CS40L50_ENABLED || \
+		 DT_HAS_CIRRUS_CS40L51_ENABLED || \
+		 DT_HAS_CIRRUS_CS40L52_ENABLED || \
+		 DT_HAS_CIRRUS_CS40L53_ENABLED
+
+if HAPTICS_CS40LXX
+
+config HAPTICS_CS40LXX_I2C
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L26),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L27),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L50),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L51),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L52),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L53),i2c)
+	select I2C
+
+config HAPTICS_CS40LXX_SPI
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L26),spi) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L27),spi) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L50),spi) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L51),spi) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L52),spi) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L53),spi)
+	select SPI
+
+endif #HAPTICS_CS40LXX

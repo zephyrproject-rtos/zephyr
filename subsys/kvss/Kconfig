@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Nordic Semiconductor (ASA)
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Key-Value Storage Systems"
+
+rsource "nvs/Kconfig"
+rsource "zms/Kconfig"
+
+endmenu

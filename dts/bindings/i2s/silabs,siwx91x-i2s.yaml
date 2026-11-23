@@ -1,0 +1,29 @@
+description: Silabs siwx91x I2S (Inter-IC sound interface)
+
+compatible: "silabs,siwx91x-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  silabs,channel-group:
+    type: int
+    description: |
+        Each channel group within the I2S module consists of both transmit (TX) and
+        receive (RX) channels. The I2S0 interface supports two channel groups (0 and 1),
+        In contrast, the ULP_I2S interface is more constrained, offering only a single
+        channel group for its TX and RX operations.
+    required: true
+
+  silabs,max-channel-count:
+    type: int
+    description: |
+        Maximum channel count of I2S peripheral. "silabs,channel-group" attribute should
+        be always less than this value. This value is fixed for an instance
+        and not expected to change by user in any application overlay.
+    required: true

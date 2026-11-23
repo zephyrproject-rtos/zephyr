@@ -1,0 +1,60 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_NXP_EHCI
+	bool "NXP MCUX USB EHCI Device controller driver"
+	default y
+	depends on DT_HAS_NXP_EHCI_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	select PINCTRL
+	select NOCACHE_MEMORY if CPU_HAS_DCACHE
+	select DYNAMIC_INTERRUPTS if UHC_NXP_EHCI
+	select EVENTS
+	imply UDC_BUF_FORCE_NOCACHE
+
+	help
+	  NXP MCUX USB Device Controller Driver for EHCI.
+
+if UDC_NXP_EHCI
+
+config UDC_NXP_EHCI_THREAD_STACK_SIZE
+	int "NXP EHCI UDC driver internal thread stack size"
+	default 1024
+	help
+	  Stack size of the internal thread that processes controller events.
+
+config UDC_NXP_EHCI_THREAD_PRIORITY
+	int "NXP EHCI UDC driver internal thread priority"
+	default 8
+	help
+	  Cooperative priority of the internal thread that processes
+	  controller events.
+
+endif # UDC_NXP_EHCI
+
+config UDC_NXP_IP3511
+	bool "NXP MCUX USB IP3511 Device controller driver"
+	default y
+	depends on DT_HAS_NXP_LPCIP3511_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	select PINCTRL
+	select EVENTS
+	help
+	  NXP MCUX USB Device Controller Driver for IP3511.
+
+if UDC_NXP_IP3511
+
+config UDC_NXP_IP3511_THREAD_STACK_SIZE
+	int "NXP IP3511 UDC driver internal thread stack size"
+	default 1024
+	help
+	  Stack size of the internal thread that processes controller events.
+
+config UDC_NXP_IP3511_THREAD_PRIORITY
+	int "NXP IP3511 UDC driver internal thread priority"
+	default 8
+	help
+	  Cooperative priority of the internal thread that processes
+	  controller events.
+
+endif # UDC_NXP_IP3511

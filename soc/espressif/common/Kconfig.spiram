@@ -1,0 +1,249 @@
+# Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_ESP32 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32S2 || \
+	SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32P4
+
+ESP32_PSRAM0_NODE_PATH := $(dt_nodelabel_path,psram0)
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM
+	bool "Support for external, SPI-connected RAM"
+	help
+	  This enables support for an external SPI RAM chip, connected in
+	  parallel with the main SPI flash chip.
+
+	  ESP32 revisions below 3 have a PSRAM cache erratum that is not
+	  worked around, so CPU accesses to PSRAM can be corrupted when
+	  SOC_ESP32_USE_UNSUPPORTED_REVISION is used.
+
+configdefault SHARED_MULTI_HEAP
+	default y if SOC_FAMILY_ESPRESSIF_SPIRAM
+
+menu "SPI RAM config"
+	depends on SOC_FAMILY_ESPRESSIF_SPIRAM
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_HEAP_SIZE
+	int "Size of SPIRAM heap"
+	default 262128 if SYS_HEAP_SMALL_ONLY
+	default 1048576 if !SYS_HEAP_SMALL_ONLY
+	help
+	  Specify size of SPIRAM heap.
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_MEMTEST
+	bool "Run memory test on SPI RAM initialization"
+	help
+	  Runs a memory test on initialization.
+
+choice SOC_FAMILY_ESPRESSIF_SPIRAM_MODE
+	prompt "Mode (QUAD/OCT/HEX) of SPI RAM chip in use"
+	default SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_HEX if SOC_SERIES_ESP32P4
+	default SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_QUAD
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_QUAD
+	bool "Quad Mode PSRAM"
+	depends on !SOC_SERIES_ESP32P4
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_OCT
+	bool "Octal Mode PSRAM"
+	depends on SOC_SERIES_ESP32S3
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_HEX
+	bool "16-Line Mode PSRAM"
+	depends on SOC_SERIES_ESP32P4
+
+endchoice # SOC_FAMILY_ESPRESSIF_SPIRAM_MODE
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE
+	int "Size of SPIRAM part"
+	default $(dt_node_int_prop_int,$(ESP32_PSRAM0_NODE_PATH),size) if $(dt_nodelabel_enabled,psram0)
+	default 0
+	help
+	  Specify size of SPIRAM part.
+	  NOTE: In ESP32, if SPIRAM size is greater than 4MB,
+	  only lower 4MB can be allocated using k_malloc().
+
+choice SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED
+	prompt "Set RAM clock speed"
+	default SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_200M if SOC_SERIES_ESP32P4
+	default SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_40M
+	help
+	  Select the speed for the SPI RAM chip.
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_20M
+	bool "20MHz clock speed"
+	depends on SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32P4
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_26M
+	bool "26MHz clock speed"
+	depends on SOC_SERIES_ESP32S2
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_40M
+	bool "40MHz clock speed"
+	depends on !SOC_SERIES_ESP32P4
+	depends on !(SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_OCT && SOC_FAMILY_ESPRESSIF_FLASH_FREQ_120M)
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_80M
+	bool "80MHz clock speed"
+	depends on SOC_FAMILY_ESPRESSIF_FLASH_FREQ_80M || SOC_SERIES_ESP32P4
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_120M
+	bool "120MHz clock speed"
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32S3
+	depends on SOC_FAMILY_ESPRESSIF_FLASH_FREQ_120M
+	help
+	  Note that with octal PSRAM on ESP32-S3, 120 MHz runs in DDR mode
+	  and the timing point tuned at boot can drift with temperature,
+	  which can cause PSRAM read and write errors.
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_200M
+	bool "200MHz clock speed"
+	depends on SOC_SERIES_ESP32P4
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_250M
+	bool "250MHz clock speed"
+	depends on SOC_SERIES_ESP32P4 && SOC_ESP32P4_REV_MIN_FULL >= 300
+
+endchoice # SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED
+	int
+	default 250 if SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_250M
+	default 200 if SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_200M
+	default 120 if SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_120M
+	default 80 if SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_80M
+	default 40 if SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_40M
+	default 26 if SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_26M
+	default 20 if SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_20M
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_FETCH_INSTRUCTIONS
+	bool "Move Instructions in Flash to PSRAM"
+	depends on SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+	help
+	  If enabled, instructions in flash will be moved into PSRAM on startup.
+	  If SOC_FAMILY_ESPRESSIF_SPIRAM_RODATA is also enabled, code that requires
+	  execution during an SPI1 Flash operation can forgo being placed in IRAM, thus
+	  optimizing RAM usage (see External RAM documentation for more details).
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_RODATA
+	bool "Move Read-Only Data in Flash to PSRAM"
+	depends on SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+	help
+	  If enabled, rodata in flash will be moved into PSRAM on startup.
+	  If SOC_FAMILY_ESPRESSIF_SPIRAM_FETCH_INSTRUCTIONS is also enabled, code that
+	  requires execution during an SPI1 Flash operation can forgo being placed in IRAM,
+	  thus optimizing RAM usage (see External RAM documentation for more details).
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_ECC_ENABLE
+	bool "Allow enabling SPI RAM ECC"
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || \
+		(SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_OCT && SOC_SERIES_ESP32S3) || SOC_SERIES_ESP32P4
+	help
+	  Enable MSPI Error-Correcting Code function when accessing SPIRAM.
+	  If enabled, 1/16 of the SPI RAM total size will be reserved for
+	  error-correcting code (1/8 on ESP32-C5 and ESP32-C61).
+
+if SOC_SERIES_ESP32
+
+menu "PSRAM clock and cs IO for ESP32-DOWD"
+
+config SOC_ESP32_D0WD_PSRAM_CLK_IO
+	int "PSRAM CLK IO number"
+	range 0 33
+	default 17
+	help
+	  The PSRAM CLOCK IO can be any unused GPIO, user can config it based on hardware design. If user use
+	  1.8V flash and 1.8V psram, this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+config SOC_ESP32_D0WD_PSRAM_CS_IO
+	int "PSRAM CS IO number"
+	range 0 33
+	default 16
+	help
+	  The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design. If user use
+	  1.8V flash and 1.8V psram, this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+endmenu # PSRAM clock and cs IO for ESP32-DOWD
+
+menu "PSRAM clock and cs IO for ESP32-D2WD"
+
+config SOC_ESP32_D2WD_PSRAM_CLK_IO
+	int "PSRAM CLK IO number"
+	range 0 33
+	default 9
+	help
+	  User can config it based on hardware design. For ESP32-D2WD chip, the psram can only be 1.8V psram,
+	  so this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+config SOC_ESP32_D2WD_PSRAM_CS_IO
+	int "PSRAM CS IO number"
+	range 0 33
+	default 10
+	help
+	  User can config it based on hardware design. For ESP32-D2WD chip, the psram can only be 1.8V psram,
+	  so this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+endmenu # PSRAM clock and cs IO for ESP32-D2WD
+
+menu "PSRAM clock and cs IO for ESP32-PICO"
+
+config SOC_ESP32_PICO_PSRAM_CS_IO
+	int "PSRAM CS IO number"
+	range 0 33
+	default 10
+	help
+	  The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design.
+
+	  For ESP32-PICO chip, the psram share clock with flash, so user do not need to configure the clock
+	  IO For the reference hardware design, please refer to
+	  https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf
+
+endmenu # PSRAM clock and cs IO for ESP32-PICO
+
+config SOC_ESP32_SPIRAM_CUSTOM_SPIWP_SD3_PIN
+	bool "Use custom SPI PSRAM WP(SD3) Pin when flash pins set in eFuse (read help)"
+	depends on SOC_FAMILY_ESPRESSIF_FLASH_MODE_DIO || SOC_FAMILY_ESPRESSIF_FLASH_MODE_DOUT
+	help
+	  This setting is only used if the SPI flash pins have been overridden by setting the eFuses
+	  SPI_PAD_CONFIG_xxx, and the SPI flash mode is DIO or DOUT.
+
+	  When this is the case, the eFuse config only defines 3 of the 4 Quad I/O data pins. The WP pin (aka
+	  ESP32 pin "SD_DATA_3" or SPI flash pin "IO2") is not specified in eFuse. The psram only has QPI
+	  mode, so a WP pin setting is necessary.
+
+	  If this config item is set to N (default), the correct WP pin will be automatically used for any
+	  Espressif chip or module with integrated flash. If a custom setting is needed, set this config item
+	  to Y and specify the GPIO number connected to the WP pin.
+
+	  When flash mode is set to QIO or QOUT, the PSRAM WP pin will be set the same as the SPI Flash WP pin
+	  configured in the bootloader.
+
+config SOC_ESP32_SPIRAM_SPIWP_SD3_PIN
+	int "Custom SPI PSRAM WP(SD3) Pin"
+	depends on SOC_ESP32_SPIRAM_CUSTOM_SPIWP_SD3_PIN
+	range 0 33
+	default 7
+	help
+	  The option "Use custom SPI PSRAM WP(SD3) pin" must be set or this value is ignored
+
+	  If burning a customized set of SPI flash pins in eFuse and using DIO or DOUT mode for flash, set this
+	  value to the GPIO number of the SPIRAM WP pin.
+
+endif # SOC_SERIES_ESP32
+
+menu "Relocate BSS to PSRAM"
+	depends on SOC_FAMILY_ESPRESSIF_SPIRAM
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM_BSS_RELOC_LIBS_AND_OBJS
+	string "Libraries and objects to relocate BSS to PSRAM"
+	default ""
+	help
+	  Space-separated list of library or object file names (e.g. libfile.a or file.o).
+	  Their .bss segments will be placed in .ext_ram.data when
+	  CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM is enabled. Leave empty to not relocate any
+	  BSS.
+
+endmenu # Relocate BSS to PSRAM
+
+endmenu # SOC_FAMILY_ESPRESSIF_SPIRAM
+
+endif # SOC_SERIES_ESP32 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32P4

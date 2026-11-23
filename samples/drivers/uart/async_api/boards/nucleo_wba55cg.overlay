@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&rcc {
+	clocks = <&clk_hsi>;
+	clock-frequency = <DT_FREQ_M(32)>;
+};
+
+dut: &usart1 {
+	dmas = <&gpdma1 0 12 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 1 11 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+	fifo-enable;
+};
+
+&gpdma1 {
+	status = "okay";
+};

@@ -1,0 +1,23 @@
+# Copyright (c) 2026 David Paul-Beier
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Arasan SDHCI 8.9a host controller, as used for the Zynq-7000 PS SD/SDIO
+  controllers. The compatible follows the Linux zynq-7000.dtsi. It is driven
+  by the Xilinx SDHC driver with the Zynq-7000 configuration.
+
+compatible: "arasan,sdhci-8.9a"
+
+include: [sdhc.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  broken-cd:
+    type: boolean
+    description:
+      There is no card detection available; polling must be used.

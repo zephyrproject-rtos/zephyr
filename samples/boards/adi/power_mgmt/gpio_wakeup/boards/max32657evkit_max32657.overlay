@@ -1,0 +1,33 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 Analog Devices, Inc.
+ */
+
+/ {
+	buttons {
+		compatible = "gpio-keys";
+
+		wk_pin: wk_pin {
+			gpios = <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "WK";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&led1 {
+	status = "disabled";
+};
+
+&pb1 {
+	gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+};
+
+&sram0 {
+	adi,ram-bank-retained;
+};
+
+&uart0 {
+	zephyr,pm-device-runtime-auto;
+};

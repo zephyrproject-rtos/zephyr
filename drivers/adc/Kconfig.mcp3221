@@ -1,0 +1,32 @@
+# MCP3221 ADC configuration options
+
+# Copyright (c) 2026 Pierrick Curt
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_MCP3221
+	bool "MCP3221 driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP3221_ENABLED
+	select I2C
+	help
+	  Enable MCP3221 ADC driver.
+
+	  The MCP3221 is a 1-channel 12-bit A/D converter
+	  with I2C interface.
+
+if ADC_MCP3221
+
+config ADC_MCP3221_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 512
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+config ADC_MCP3221_ACQUISITION_THREAD_PRIO
+	int "Priority for the ADC data acquisition thread"
+	default 0
+	help
+	  Priority level for the internal ADC data acquisition thread.
+
+endif # ADC_MCP3221

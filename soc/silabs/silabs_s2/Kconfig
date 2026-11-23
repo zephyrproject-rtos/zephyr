@@ -1,0 +1,25 @@
+# Copyright (c) 2024 GARDENA GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_SILABS_S2
+
+config SOC_FAMILY_SILABS_S2
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select BUILD_OUTPUT_HEX
+	select SOC_PREP_HOOK
+	select SOC_EARLY_INIT_HOOK
+	select HAS_SILABS_SISDK
+	select PM_STATE_SET_IRQ_UNLOCKED
+
+config CRYPTO_ACC_GECKO_TRNG
+	bool
+	help
+	  Enable Entropy driver based on the CRYPTO_ACC module for Silicon Labs
+	  Gecko chips.
+
+rsource "*/Kconfig"
+
+config ARM_SECURE_FIRMWARE
+	default y
+
+endif

@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Würth Elektronik WSEN-ISDS-2536030320001 acceleration and gyroscope sensor with
+    integrated temperature sensor (I2C bus)
+
+compatible: "we,wsen-isds-2536030320001"
+
+include: ["i2c-device.yaml", "we,wsen-isds-2536030320001-common.yaml"]

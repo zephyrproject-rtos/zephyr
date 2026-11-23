@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2020, Antmicro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/xilinx/zynqmp_rpu.dtsi>
+#include "mercury_xu-pinctrl.dtsi"
+
+/ {
+	compatible = "enclustra,mercury_xu";
+	model = "Mercury XU";
+
+	sram0: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0 DT_SIZE_M(64)>;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	fpga0: fpga {
+		compatible = "xlnx,fpga";
+		status = "okay";
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	clock-frequency = <99999901>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&ttc0 {
+	clock-frequency = <5000000>;
+	status = "okay";
+};
+
+&psgpio {
+	status = "okay";
+};
+
+&flash0 {
+	reg = <0xc0000000 DT_SIZE_M(64)>;
+	ranges = <0x0 0xc0000000 DT_SIZE_M(64)>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+};

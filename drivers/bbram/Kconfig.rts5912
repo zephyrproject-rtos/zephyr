@@ -1,0 +1,9 @@
+# Copyright (c) 2025, Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+config BBRAM_RTS5912
+	bool "Realtek RTS5912 Battery-backed RAM drivers"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_BBRAM_ENABLED
+	help
+	  This option enables the BBRAM driver for Realtek RTS5912 of processors.

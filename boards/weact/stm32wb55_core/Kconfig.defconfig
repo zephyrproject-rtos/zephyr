@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Siratul Islam
+# SPDX-License-Identifier: Apache-2.0
+
+# STM32WB55 Core V1.0 board configuration
+
+if BOARD_WEACT_STM32WB55_CORE
+
+config BT_STM32_IPM
+	default y
+	depends on BT
+
+endif

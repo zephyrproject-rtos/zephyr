@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_MODULES_HAL_NORDIC_IRONSIDE_SE_INCLUDE_IRONSIDE_ZEPHYR_SE_GLUE_IMPL_H_
+#define ZEPHYR_MODULES_HAL_NORDIC_IRONSIDE_SE_INCLUDE_IRONSIDE_ZEPHYR_SE_GLUE_IMPL_H_
+
+#include <zephyr/toolchain.h>
+
+#ifndef IRONSIDE_SE_ALWAYS_INLINE
+#define IRONSIDE_SE_ALWAYS_INLINE ALWAYS_INLINE
+#endif
+
+#if defined(CONFIG_NRF_MPCCONF_API_IN_RAM)
+/* Place MPCCONF APIs in RAM by plugging in function attributes. */
+#define IRONSIDE_SE_MPCCONF_WRITE_FUNC_ATTR       __ramfunc
+#define IRONSIDE_SE_MPCCONF_FINISH_INIT_FUNC_ATTR __ramfunc
+#endif
+
+#endif /* ZEPHYR_MODULES_HAL_NORDIC_IRONSIDE_SE_INCLUDE_IRONSIDE_ZEPHYR_SE_GLUE_IMPL_H_ */

@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_WCH
+	bool "WCH I2C driver"
+	default y
+	depends on DT_HAS_WCH_I2C_ENABLED
+	select PINCTRL
+	help
+	  Enable I2C support on WCH platforms
+
+config I2C_WCH_XFER_TIMEOUT_MS
+	int "Set the transfer timeout in milliseconds"
+	depends on I2C_WCH
+	default 500

@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_STELLARIS
+	bool "Stellaris serial driver"
+	default y
+	depends on DT_HAS_TI_STELLARIS_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the Stellaris serial driver.
+	  This specific driver can be used for the serial hardware
+	  available at the Texas Instruments LM3S6965 board.

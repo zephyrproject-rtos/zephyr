@@ -1,0 +1,107 @@
+.. zephyr:board:: xg28_ek2705a
+
+Overview
+********
+
+The `EFR32xG28 Explorer Kit`_ is a small form factor development and evaluation platform based on
+the `EFR32xG28 System-on-Chip`_. The EFR32xG28 Explorer Kit is focused on rapid prototyping and
+concept creation of IoT applications for Sub-GHz and Bluetooth LE like Wi-SUN, Amazon Sidewalk,
+Z-Wave, Wireless M-Bus, and proprietary networks.
+
+.. _EFR32xG28 Explorer Kit:
+   https://www.silabs.com/development-tools/wireless/efr32xg28-explorer-kit
+
+.. _EFR32xG28 System-on-Chip:
+   https://www.silabs.com/wireless/z-wave/efr32zg28-z-wave-800-socs
+
+Hardware
+********
+
+- EFR32ZG28B312F1024IM48 SoC
+- CPU core: ARM Cortex®-M33 with FPU
+- Flash memory: 1024 kB
+- RAM: 256 kB
+- Transmit power: up to +10 dBm (2.4 GHz) and +14 dBm (sub-GHz)
+- Operation frequency: 2.4 GHz and sub-GHz
+- Crystals for HFXO (39 MHz) and LFXO (32.768 kHz) on the board
+
+For more information about the xG28 SoC and Explorer Kit, refer to these documents:
+
+- `EFR32xG28 Datasheet`_
+- `EFR32xG28 Reference Manual`_
+- `xG28-EK2705A User Guide`_
+
+.. _EFR32xG28 Datasheet:
+   https://www.silabs.com/documents/public/data-sheets/efr32zg28-datasheet.pdf
+
+.. _EFR32xG28 Reference Manual:
+   https://www.silabs.com/documents/public/reference-manuals/efr32xg28-rm.pdf
+
+.. _xG28-EK2705A User Guide:
+   https://www.silabs.com/documents/public/user-guides/ug559-xg28-ek2705a.pdf
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
+System Clock
+============
+
+The xG28 SoC is configured to use the HFRCODPLL oscillator at 78 MHz as the system clock,
+locked to the 39 MHz crystal oscillator.
+
+Serial Port
+===========
+
+The xG28 SoC has 1 USART and 3 EUSARTs.
+USART0 is connected to the board controller and is used for the console.
+
+Programming and Debugging
+*************************
+
+.. zephyr:board-supported-runners::
+
+Flashing
+========
+
+Connect the Explorer Kit to your host computer using the USB port.
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: xg28_ek2705a
+   :goals: flash
+
+Open a serial terminal (minicom, putty, etc.) with the following settings:
+
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
+
+Reset the board and you should see the following message in the terminal:
+
+.. code-block:: console
+
+   Hello World! xg28_ek2705a
+
+Bluetooth
+=========
+
+To use Bluetooth functionality as well as other wireless functionality, run the command
+below to retrieve necessary binary blobs from the Silicon Labs HAL repository.
+
+.. code-block:: console
+
+   west blobs fetch hal_silabs
+
+Then build the Zephyr kernel and a Bluetooth sample with the following
+command. The :zephyr:code-sample:`bluetooth_observer` sample application is used in
+this example.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/observer
+   :board: xg28_ek2705a
+   :goals: build

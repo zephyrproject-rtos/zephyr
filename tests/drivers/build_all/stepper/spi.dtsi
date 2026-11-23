@@ -1,0 +1,218 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ ****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ ****************************************
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+adi_tmc50xx: adi-tmc50xx@0 {
+	compatible = "adi,tmc50xx";
+	reg = <0x0>;
+	spi-max-frequency = <8000000>;
+	label = "tmc5041_0";
+
+	poscmp-enable;
+	test-mode;
+	lock-gconf;
+	clock-frequency = <16000000>; /* Internal/External Clock frequency */
+	status = "okay";
+
+	tmc50xx_0_stepper_driver: tmc50xx-0-stepper-driver {
+		compatible = "adi,tmc50xx-stepper-driver";
+		idx = <0>;
+		micro-step-res = <256>;
+		/* ADI TMC stallguard settings specific to TMC50XX */
+		stallguard2-threshold = <30>;
+	};
+
+	/* ADI TMC ramp generator as well as current settings */
+	tmc50xx_0_motion_controller: tmc50xx-0-motion-controller {
+		compatible = "adi,tmc50xx-stepper-ctrl";
+		idx = <0>;
+		vstart = <1000>;
+		vstop = <10>;
+		a1 = <10000>;
+		v1 = <50000>;
+		d1 = <14000>;
+		vmax = <900000>;
+		amax = <50000>;
+		dmax = <7000>;
+		tzerowait = <100>;
+		vhigh = <900000>;
+		vcoolthrs = <900000>;
+		ihold = <1>;
+		irun = <10>;
+		iholddelay = <1>;
+	};
+
+	tmc50xx_1_stepper_driver: tmc50xx-1-stepper-driver {
+		compatible = "adi,tmc50xx-stepper-driver";
+		idx = <1>;
+		micro-step-res = <256>;
+		/* ADI TMC stallguard settings specific to TMC50XX */
+		stallguard2-threshold = <9>;
+	};
+
+	tmc50xx_1_motion_controller: tmc50xx-1-motion-controller {
+		/* ADI TMC stallguard settings specific to TMC50XX */
+		compatible = "adi,tmc50xx-stepper-ctrl";
+		idx = <1>;
+
+		/* ADI TMC ramp generator as well as current settings */
+		vstart = <10>;
+		a1 = <20>;
+		v1 = <30>;
+		d1 = <40>;
+		vmax = <50>;
+		amax = <60>;
+		dmax = <70>;
+		tzerowait = <80>;
+		vhigh = <90>;
+		vcoolthrs = <100>;
+		ihold = <1>;
+		irun = <2>;
+		iholddelay = <3>;
+	};
+};
+
+adi_tmc51xx_1: adi-tmc51xx@1 {
+	compatible = "adi,tmc51xx";
+	reg = <0x01>;
+	spi-max-frequency = <8000000>;
+	label = "tmc5160_1";
+
+	en-pwm-mode;
+	test-mode;
+	shaft;
+	clock-frequency = <16000000>; /* Internal/External Clock frequency */
+	status = "okay";
+
+	tmc51xx_1_stepper_driver: tmc51xx_1_stepper_driver {
+		compatible = "adi,tmc51xx-stepper-driver";
+		micro-step-res = <256>;
+		/* ADI TMC stallguard settings specific to TMC51XX */
+		stallguard2-threshold = <9>;
+	};
+
+	/* common stepper controller settings */
+	tmc51xx_1_motion_controller: tmc51xx_1_motion_controller {
+		compatible = "adi,tmc51xx-stepper-ctrl";
+
+		/* ADI TMC ramp generator as well as current settings */
+		vstart = <10>;
+		a1 = <20>;
+		v1 = <30>;
+		d1 = <40>;
+		vmax = <50>;
+		amax = <60>;
+		dmax = <70>;
+		tzerowait = <80>;
+		thigh = <90>;
+		tcoolthrs = <100>;
+		tpwmthrs = <110>;
+		tpowerdown = <120>;
+		ihold = <1>;
+		irun = <2>;
+		iholddelay = <3>;
+	};
+};
+
+adi_tmc51xx_2: adi-tmc51xx@2 {
+	compatible = "adi,tmc51xx";
+	reg = <0x02>;
+	spi-max-frequency = <8000000>;
+	label = "tmc5160_2";
+
+	diag0-gpios = <&test_gpio 0x01 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>; /* DIAG pin @0x01 */
+
+	en-pwm-mode;
+	test-mode;
+	shaft;
+	clock-frequency = <16000000>; /* Internal/External Clock frequency */
+	status = "okay";
+
+	tmc51xx_2_stepper_driver: tmc51xx-2-stepper-driver {
+		compatible = "adi,tmc51xx-stepper-driver";
+		micro-step-res = <256>;
+		/* ADI TMC stallguard settings specific to TMC51XX */
+		stallguard2-threshold = <9>;
+	};
+
+	/* common stepper controller settings */
+	tmc51xx_2_motion_controller: tmc51xx-2-motion-controller {
+		compatible = "adi,tmc51xx-stepper-ctrl";
+
+		/* ADI TMC ramp generator as well as current settings */
+		vstart = <10>;
+		a1 = <20>;
+		v1 = <30>;
+		d1 = <40>;
+		vmax = <50>;
+		amax = <60>;
+		dmax = <70>;
+		tzerowait = <80>;
+		thigh = <90>;
+		tcoolthrs = <100>;
+		tpwmthrs = <110>;
+		tpowerdown = <120>;
+		ihold = <1>;
+		irun = <2>;
+		iholddelay = <3>;
+	};
+};
+
+adi_tmc522x: adi_tmc522x@3 {
+	compatible = "adi,tmc522x";
+	reg = <0x03>;
+	spi-max-frequency = <4000000>;
+
+	clock-frequency = <16000000>;
+	chopper-mode = "spreadcycle";
+	chm-mode = "spreadcycle";
+	status = "okay";
+
+	tmc522x_stepper_driver: tmc522x_stepper_driver {
+		compatible = "adi,tmc522x-stepper-driver";
+		idx = <0>;
+		micro-step-res = <16>;
+		stallguard2-threshold = <0>;
+
+		ihold = <16>;
+		irun = <31>;
+		irundelay = <4>;
+		iholddelay = <3>;
+		tpowerdown = <10>;
+
+		toff = <5>;
+		tbl = <3>;
+		hstrt = <7>;
+		hend = <3>;
+
+		fs-gain = <0>;
+		fs-sense = <0>;
+		global-scaler = <231>;
+	};
+
+	tmc522x_motion_controller: tmc522x_motion_controller {
+		compatible = "adi,tmc522x-stepper-ctrl";
+		idx = <0>;
+
+		vstart = <10>;
+		vstop = <10>;
+		v1 = <0>;
+		amax = <10000>;
+		vmax = <10000>;
+		dmax = <10000>;
+		d1 = <10000>;
+
+		a2 = <10000>;
+		v2 = <0>;
+		d2 = <10000>;
+	};
+};

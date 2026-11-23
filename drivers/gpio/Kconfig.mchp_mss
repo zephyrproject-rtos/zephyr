@@ -1,0 +1,11 @@
+# Microchip PolarFire SoC Icicle Kit GPIO configuration options
+
+# Copyright (c) 2022 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MCHP_MSS
+	bool "Microchip PolarFire SoC GPIO driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MPFS_GPIO_ENABLED
+	help
+	  Enable PolarFire SoC Icicle Kit GPIO driver.

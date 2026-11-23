@@ -1,0 +1,7 @@
+name: ti-io-exp
+
+boards:
+  /am62l_evm.*/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/am62l_evm.overlay
+      EXTRA_CONF_FILE: boards/am62l_evm.conf

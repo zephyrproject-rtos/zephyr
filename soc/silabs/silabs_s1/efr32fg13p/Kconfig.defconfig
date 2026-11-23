@@ -1,0 +1,10 @@
+# Copyright (c) 2018 Christian Taedcke
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFR32FG13P
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 45
+
+endif

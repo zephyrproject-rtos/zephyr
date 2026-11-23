@@ -1,0 +1,19 @@
+# Copyright (c) 2020 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TIMING_FUNCTIONS
+	bool "Timing Functions"
+	help
+	  When enabled, timing related functions are compiled. This is
+	  useful for gathering timing on code execution.
+
+config TIMING_FUNCTIONS_NEED_AT_BOOT
+	bool
+	select TIMING_FUNCTIONS
+	help
+	  Hidden option to indicate that timing functions need to be
+	  initialized at boot.
+
+	  To be selected by kernel and other subsystems which need
+	  to use timing functions.

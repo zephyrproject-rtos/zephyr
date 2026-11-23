@@ -1,0 +1,658 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT st_stm32_pwr_wkupctrl
+
+#include <soc.h>
+#include <stm32_bitops.h>
+#include <stm32_common.h>
+#include <stm32_gpio_shared.h>
+#include <stm32_ll_pwr.h>
+
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
+#include <zephyr/math/ilog2.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/types.h>
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(pwr_wkupctrl, CONFIG_SOC_LOG_LEVEL);
+
+/** Node identifier for the wake-up controller */
+#define WKUP_CTLR DT_DRV_INST(0)
+
+/** Maximum wake-up line index */
+#define MAX_WKUP_LINE_IDX DT_PROP(WKUP_CTLR, st_max_wkup_line_idx)
+
+/** Are wake-up lines wired to a source selection mux? */
+#define HAS_MUXED_WKUP_LINES DT_PROP(WKUP_CTLR, st_has_multi_source_lines)
+
+/** Can PWRC take over pull-up/pull-down management completely? */
+#define HAS_PWRC_FULL_PUPD_CONTROL DT_PROP(WKUP_CTLR, st_has_pwr_full_pupd)
+
+/**
+ * Is arbitrary pull-up/pull-down on wake-up pins supported?
+ *
+ * Yes on all series except STM32F1-like series where pins are
+ * forced in "input pull-down" mode, and STM32F7 series where
+ * the internal PU/PD resistors cannot be enabled in Standby.
+ */
+#define HAS_WKUP_PINS_PUPD							\
+	COND_CASE_1(								\
+		DT_NODE_HAS_COMPAT(WKUP_CTLR, st_stm32f1_pwr_wkupctrl), (0),	\
+		DT_NODE_HAS_COMPAT(WKUP_CTLR, st_stm32f7_pwr_wkupctrl), (0),	\
+									(1))
+
+/* --------------- */
+
+/**
+ * @brief Iterate over all GPIO pins in a property of a node's children.
+ *
+ * @param node_id Parent node identifier of the wake-up controller node
+ * @param gpio_prop_name Name of the GPIO property
+ * @param sep Separator to use between each iteration (between parentheses)
+ * @param fn Function-like macro called for each pin that accepts four arguments:
+ *	      fn(gpio_ctlr_node_id, gpio_pin, gpio_flags, child_node_reg_addr)
+ *
+ * @note Unlike the usual DT_FOREACH_*_SEP() macros, a separator is also added
+ *       after the last iteration.
+ */
+#define FOR_EACH_CHILD_NODE_GPIO(node_id, gpio_prop_name, fn, sep)		\
+	DT_FOREACH_CHILD_VARGS(node_id, FECNG_HELPER, gpio_prop_name, fn, sep)
+
+#define FECNG_HELPER(pin_node_id, prop, fn, sep)				\
+	IF_ENABLED(DT_NODE_HAS_PROP(pin_node_id, prop),				\
+		(DT_FOREACH_PROP_ELEM_SEP_VARGS(pin_node_id, prop,		\
+						FECNG_HELPER2, sep, fn)		\
+						__DEBRACKET sep))
+
+#define FECNG_HELPER2(pin_node_id, prop, idx, fn)				\
+	fn(DT_GPIO_CTLR_BY_IDX(pin_node_id, prop, idx),				\
+	   DT_GPIO_PIN_BY_IDX(pin_node_id, prop, idx),				\
+	   DT_GPIO_FLAGS_BY_IDX(pin_node_id, prop, idx),			\
+	   DT_REG_ADDR(pin_node_id))
+
+/**
+ * @brief Obtain the port index (STM32_PORTx) of a GPIO controller node.
+ * @param node_id Node identifier of the GPIO controller node.
+ * @return Port index
+ */
+#define GET_GPIO_PORT_BY_NODE(node_id)						\
+	FOR_EACH_IDX_FIXED_ARG(GGPBN_HELPER, (), DT_DEP_ORD(node_id),		\
+			       STM32_GPIO_PORTS_LIST_LWR)
+
+#define GGPBN_HELPER(idx, __suffix, target_ord)					\
+	IF_ENABLED(UTIL_AND(STM32_GPIO_PORT_DEVICE_IS_ACTIVE(__suffix),		\
+		IS_EQ(DT_DEP_ORD(DT_NODELABEL(gpio##__suffix)), target_ord)),	\
+		(CONCAT(STM32_PORT, GET_ARG_N(UTIL_INC(idx), STM32_GPIO_PORTS_LIST_UPR))))
+
+/**
+ * @brief Descriptor for one pin wired to a wake-up line.
+ */
+struct wkup_pin_desc {
+	/** Pin port index (STM32_PORTx) */
+	uint8_t port_idx;
+
+	/** Pin number */
+	gpio_pin_t pin_num;
+
+	/** Wake-up line index */
+	uint8_t line_idx;
+
+	/**
+	 * Wake-up line source selection for this pin.
+	 * (May be unused if not applicable to target)
+	 */
+	uint8_t src_select;
+};
+
+#if !DT_NODE_HAS_COMPAT(WKUP_CTLR, st_stm32f1_pwr_wkupctrl)
+static void ll_pwr_set_wake_up_line_polarity_low(uint32_t ll_wkup_line)
+{
+#if defined(CONFIG_SOC_SERIES_STM32U3X)
+	LL_PWR_SetWakeUpLinePolarityLow(ll_wkup_line);
+#else
+	LL_PWR_SetWakeUpPinPolarityLow(ll_wkup_line);
+#endif
+}
+
+static void ll_pwr_set_wake_up_line_polarity_high(uint32_t ll_wkup_line)
+{
+#if defined(CONFIG_SOC_SERIES_STM32U3X)
+	LL_PWR_SetWakeUpLinePolarityHigh(ll_wkup_line);
+#else
+	LL_PWR_SetWakeUpPinPolarityHigh(ll_wkup_line);
+#endif
+}
+#endif /* !DT_NODE_HAS_COMPAT(WKUP_CTLR, st_stm32f1_pwr_wkupctrl) */
+
+static void ll_pwr_enable_wake_up_line(uint32_t ll_wkup_line)
+{
+#if defined(CONFIG_SOC_SERIES_STM32U3X)
+	LL_PWR_EnableWakeUpLine(ll_wkup_line);
+#else
+	LL_PWR_EnableWakeUpPin(ll_wkup_line);
+#endif
+}
+
+__maybe_unused
+static bool ll_pwr_is_wake_up_line_enabled(uint32_t ll_wkup_line)
+{
+#if defined(CONFIG_SOC_SERIES_STM32U3X)
+	return !!LL_PWR_IsEnabledWakeUpLine(ll_wkup_line);
+#else
+	return !!LL_PWR_IsEnabledWakeUpPin(ll_wkup_line);
+#endif
+}
+
+/**
+ * @brief Checks if the wake-up flag for a given wake-up line is active.
+ * @param wkup_line_idx Wake-up line index (the `n` in `WKUPn`)
+ * @return true if wake-up line's flag is active, false otherwise.
+ *
+ * @internal
+ * This function replaces the <tt>LL_PWR_IsActiveFlag_WU<N>()</tt> family
+ * of functions which are cumbersome to use since there is one function
+ * per flag instead of a single one accepting a "line" parameter.
+ * @endinternal
+ */
+__maybe_unused
+static bool is_wake_up_line_flag_active(uint8_t wkup_line_idx)
+{
+#if DT_NODE_HAS_COMPAT(WKUP_CTLR, st_stm32f1_pwr_wkupctrl)
+	/* Special case for F1-like series: all lines share a single flag. */
+	return _FLD2VAL(PWR_CSR_WUF, stm32_reg_read(&PWR->CSR));
+#else /* PWR_CSR_WUF */
+	/*
+	 * All other series have one flag per wake-up line, which are
+	 * in increasing order starting from an arbitrary bit in the
+	 * corresponding status register.
+	 */
+#if defined(PWR_SR1_WUF1) /* C0-like series */
+	const uint32_t wuf = (stm32_reg_read(&PWR->SR1) >> PWR_SR1_WUF1_Pos);
+#elif defined(PWR_WUSR_WUF1) /* H5-like and U5-like series */
+	const uint32_t wuf = (stm32_reg_read(&PWR->WUSR) >> PWR_WUSR_WUF1_Pos);
+#elif defined(PWR_CSR2_WUPF1) /* F7 series */
+	const uint32_t wuf = (stm32_reg_read(&PWR->CSR2) >> PWR_CSR2_WUPF1_Pos);
+#elif defined(PWR_WKUPFR_WKUPF1) /* H7-like series */
+	const uint32_t wuf = (stm32_reg_read(&PWR->WKUPFR) >> PWR_WKUPFR_WKUPF1_Pos);
+#else
+#error "Missing wake-up pin support for this series"
+#endif /* PWR_SR1_WUF1 */
+
+	return !!((wuf >> (wkup_line_idx - 1)) & 0x1U);
+#endif /* PWR_CSR_WUF */
+}
+
+#if HAS_MUXED_WKUP_LINES
+/**
+ * @brief Set the signal source selection for a given wake-up line.
+ *
+ * @param wkup_line_idx Wake-up line index (the `n` in `WKUPn`)
+ * @param src_selection Source selection value
+ *
+ * @internal
+ * This is used instead of <tt>LL_PWR_SetWakeUpPinSignal<N>Selection()</tt>
+ * functions which are slow because they have to compute the wake-up line index
+ * (which we already know!) and cumbersome as there is one distinct function to
+ * select each of the possible sources, instead of a unique one which accepts a
+ * "source selection" parameter. As icing on the cake, the functions' names are
+ * different on STM32U3 so we would need #ifdef-pasta to use them too...
+ * Writing our own version using raw register accesses avoids all these issues.
+ *
+ * As of writing, a single implementation is sufficient as all series with multiple
+ * sources per wake-up line share the same register layout. This might need to be
+ * extended in the future.
+ * @endinternal
+ */
+static void set_wkup_line_source(uint32_t wkup_line_idx, uint8_t src_selection)
+{
+	const uint32_t wusel_width =  ilog2_compile_time_const_u32(PWR_WUCR3_WUSEL1_Msk + 1);
+	const uint32_t shift = ((wkup_line_idx - 1) * wusel_width) - PWR_WUCR3_WUSEL1_Pos;
+
+	stm32_reg_modify_bits(&PWR->WUCR3,
+			      PWR_WUCR3_WUSEL1_Msk << shift,
+			      src_selection << shift);
+}
+
+/**
+ * @brief Retrieves the source selection for a given wake-up line.
+ * @param wkup_line_idx Wake-up line index (the `n` in `WKUPn`)
+ * @return Source selection value for the specified wake-up line.
+ *
+ * @internal
+ * Replacement for <tt>LL_PWR_GetWakeUpPinSignalSelection()</tt>.
+ * See @ref set_wkup_line_source() for rationale.
+ * @endinternal
+ */
+__maybe_unused
+static uint8_t get_wake_up_line_source(uint8_t wkup_line_idx)
+{
+	const uint32_t bits_per_wusel = ilog2_compile_time_const_u32(PWR_WUCR3_WUSEL1_Msk + 1);
+	const uint32_t shift = ((wkup_line_idx - 1) * bits_per_wusel) - PWR_WUCR3_WUSEL1_Pos;
+	const uint32_t wucr3 = stm32_reg_read(&PWR->WUCR3);
+
+	return (uint8_t)((wucr3 >> shift) & (PWR_WUCR3_WUSEL1_Msk >> PWR_WUCR3_WUSEL1_Pos));
+}
+#endif /* HAS_MUXED_WKUP_LINES */
+
+#define WKUP_PIN_DESCRIPTOR_INIT(gpio_ctlr, _pin_num, flags, wkup_line_idx)	\
+	{									\
+		.port_idx = GET_GPIO_PORT_BY_NODE(gpio_ctlr),			\
+		.pin_num = _pin_num,						\
+		.line_idx = wkup_line_idx,					\
+		.src_select = flags & STM32_PWR_WKUP_LINE_SRC_MASK,		\
+	}
+
+static const struct wkup_pin_desc wkup_pins[] = {
+FOR_EACH_CHILD_NODE_GPIO(WKUP_CTLR, wkup_gpios, WKUP_PIN_DESCRIPTOR_INIT, (,))
+};
+
+/*
+ * Tracks whether interrupt dispatch is enabled for a given wake-up line.
+ * This is directly correlated to whether the corresponding interrupt for
+ * the associated pin is enabled at GPIO port controller level. The array
+ * is oversized by one element such that it can be directly indexed by
+ * wake-up line indexes. As a result, element [0] is never used.
+ *
+ * IMPLEMENTATION NOTE:
+ * The wake-up pins implementation historically didn't check whether
+ * a wake-up line was already configured, so you could configure two
+ * distinct pins mapped to the same WKUPn line without any warning or
+ * error. The new implementation warns when this happens because it
+ * is most likely an error, but we still allow it for backwards
+ * compatibility. In the future, we will probably make this forbidden.
+ * Interrupt dispatch is a new feature without historical constraints
+ * so we can forbid this from day 1: interrupt dispatch for a given
+ * line may only be controlled if you are calling on behalf of the
+ * pin which is configured as source of that wake-up line.
+ *
+ * This creates the possibility of a surprising behavior:
+ * (1) configure pin PAx as wake-up pin and enable its interrupt
+ *     (this enables interrupt dispatch for the corresponding WKUPn line)
+ * (2) configure another pin PBx *which also maps to WKUPn* as wake-up pin
+ *   (this changes the WKUPn source from PAx to PBx)
+ * (3) perform an S2RAM entry then trigger a wake-up event on PBx
+ * In this scenario, after wake-up, this module will dispatch an interrupt
+ * for pin PBx even though interrupts for that pin were never explicitly
+ * enabled. This is most likely harmless as there is probably no registered
+ * GPIO callback for PBx: it wouldn't make sense to register a GPIO callback
+ * for a pin whose interrupts are never enabled, and explicitly enabling
+ * (or disabling) interrupts for PBx will re-synchronize the state of this
+ * driver with that of the GPIO driver, preventing any spurious dispatch,
+ * so it is almost certain that the spurious dispatches will result in no
+ * GPIO callback being invoked (they merely waste some time).
+ *
+ * When source reconfiguration becomes forbidden, (2) will return an
+ * error instead of succeeding and this pitfall will cease to exist.
+ */
+static bool wkup_line_irq_dispatch_enabled[MAX_WKUP_LINE_IDX + 1];
+
+/**
+ * @brief Searches for the descriptor of a given wake-up pin.
+ *
+ * @param port_idx GPIO port index (STM32_PORTx)
+ * @param pin GPIO pin number
+ * @returns Pointer to the wake-up pin descriptor, or NULL if not found.
+ */
+static const struct wkup_pin_desc *search_pin_descriptor(uint32_t port_idx, gpio_pin_t pin_num)
+{
+	for (int i = 0; i < ARRAY_SIZE(wkup_pins); i++) {
+		const struct wkup_pin_desc *desc = &wkup_pins[i];
+
+		if ((desc->port_idx == port_idx) && (desc->pin_num == pin_num)) {
+			return desc;
+		}
+	}
+
+	return NULL;
+}
+
+/**
+ * @brief Searches for the descriptor of a given wake-up line.
+ *
+ * @param line_idx Wake-up line index (the `n` in `WKUPn`)
+ * @returns Pointer to the wake-up pin descriptor, or NULL if not found.
+ */
+__maybe_unused
+static const struct wkup_pin_desc *search_line_descriptor(uint8_t line_idx)
+{
+#if HAS_MUXED_WKUP_LINES
+	const uint8_t line_src = get_wake_up_line_source(line_idx);
+#endif /* HAS_MUXED_WKUP_LINES */
+
+	for (int i = 0; i < ARRAY_SIZE(wkup_pins); i++) {
+		const struct wkup_pin_desc *desc = &wkup_pins[i];
+
+		if (desc->line_idx != line_idx) {
+			continue;
+		}
+
+#if HAS_MUXED_WKUP_LINES
+		if (desc->src_select != line_src) {
+			continue;
+		}
+#endif /* HAS_MUXED_WKUP_LINES */
+
+		return desc;
+	}
+
+	return NULL;
+}
+
+/* ------------------ */
+
+static uint32_t wakeup_line_to_ll_val(uint8_t line_idx)
+{
+	uint32_t ll_wkup_line1;
+
+	/*
+	 * Across all series, LL_PWR_WAKEUP_PIN<n> is defined as an alias
+	 * for bit "WKUPEN<n>" or equivalent. WKUP1 seems "guaranteed" to
+	 * exist but not others; depending on the series, they are either
+	 * not defined because lower than the max, or because the series
+	 * has "holes" and a specific WKUP<n> line is not implemented.
+	 *
+	 * Due to registers layout, LL_PWR_WAKEUP_PIN<n> is always equal
+	 * to (LL_PWR_WAKEUP_PIN1 << (n-1)): compute the LL value using
+	 * this trick, which avoids both the footprint overhead of a LUT
+	 * and the #ifdef spaghetti needed to cope with impedance mismatch
+	 * across all series, while remaining portable since we do use
+	 * LL_PWR_WAKEUP_PIN1 as the base value.
+	 *
+	 * Note that we don't validate whether a given line index is valid
+	 * for the target or not (i.e., whether the WKUPEN<n> bit exists),
+	 * but the old implementation didn't either, and `line_idx` should
+	 * always correspond to a valid line if DT is properly written.
+	 */
+	__ASSERT(line_idx > 0 && line_idx <= MAX_WKUP_LINE_IDX,
+		"Invalid wake-up line index %d", line_idx);
+
+#if defined(CONFIG_STM32_HAL2)
+	ll_wkup_line1 = LL_PWR_WAKEUP_PIN_1;
+#elif defined(CONFIG_SOC_SERIES_STM32U3X)
+	ll_wkup_line1 = LL_PWR_WAKEUP_LINE1;
+#else /* CONFIG_STM32_HAL2 */
+	ll_wkup_line1 = LL_PWR_WAKEUP_PIN1;
+#endif /* CONFIG_STM32_HAL2 */
+
+	return ll_wkup_line1 << (line_idx - 1U);
+}
+
+static void configure_wkup_pin_pupd(const struct wkup_pin_desc *pin_desc, uint32_t port_idx,
+				    gpio_pin_t pin_num, gpio_flags_t pupd_flags)
+{
+#if !HAS_WKUP_PINS_PUPD
+	/*
+	 * No-op implementation for series without PU/PD control:
+	 * - STM32F7 series where PU/PD cannot be enabled in Standby mode
+	 * - STM32F0/F1/F2/F3/F4/L0/L1 series ("STM32F1-like") where wake-up
+	 *   pins are forced by hardware in input pull-down mode while enabled
+	 */
+	ARG_UNUSED(pin_desc);
+	ARG_UNUSED(port_idx);
+	ARG_UNUSED(pin_num);
+	ARG_UNUSED(pupd_flags);
+#elif defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/*
+	 * The STM32WBA series does not provide any direct way to control
+	 * the pull-up/pull-down applied to wake-up pins in Standby mode:
+	 * unlike the STM32U5-like series, which otherwise has an identical
+	 * register layout, it doesn't have GPIO pull-up/pull-down control
+	 * registers (PWR_PUCRx/PWR_PDCRx).
+	 *
+	 * However, we can indirectly enable a pull-up/pull-down in Standby
+	 * mode by using the STM32WBA series' "I/O retention" feature which,
+	 * when enabled for a pin, allows an internal PU/PD to be enabled by
+	 * hardware upon entry in Standby mode. Refer to the Reference Manuals
+	 * of STM32WBA products for more details about "I/O retention".
+	 *
+	 * Note: a few other series also have an "I/O retention" feature,
+	 * but these series also have a dedicated register which configures
+	 * the PU/PD for wake-up pins and has priority over I/O retention.
+	 * To work properly, these series should NOT use this code but instead
+	 * the common implementation found below which applies to all series
+	 * with a dedicated PU/PD register for wake-up pins. The I/O retention
+	 * feature described and handled here is exclusive to STM32WBA series,
+	 * so this code will in fact not even build for these other series.
+	 */
+	ARG_UNUSED(pin_desc);
+	(void)pupd_flags;
+
+	volatile uint32_t *const ioretenr_x = (&PWR->IORETENRA) + 2 * port_idx;
+	const uint32_t pin_bit = BIT(pin_num);
+
+	stm32_reg_set_bits(ioretenr_x, pin_bit);
+#elif HAS_PWRC_FULL_PUPD_CONTROL
+	/*
+	 * Series with full GPIO PU/PD control at PWR level:
+	 * - One register pair for each GPIO port: PWR_PUCRx + PWR_PDCRx
+	 *    - Enabled by bit APC in PWR_CR3 or PWR_APCR ("C0-like" / "U5-like")
+	 *    - Note: configuration in this register may conflict with GPIOx_PUPDR!
+	 * - Registers other than PUCRx/PDCRx are organized in two manners:
+	 *    - "C0-like": STM32C0/G0/G4/L4/L5/U0/WB/WL5/...
+	 *    - "U5-like": STM32U3/U5/...
+	 *   (Refer to Reference Manuals for details about the other registers)
+	 *
+	 * Note that the PUCRx/PDCRx registers are allocated contiguously for A~Z
+	 * regardless of which GPIO ports exist: the offset between PUCRA/PDCRA and
+	 * PUCRx/PDCRx is constant and identical in all series. On products where
+	 * certain GPIO ports don't exist, the corresponding PUCRx/PDCRx registers
+	 * simply don't exist (leaving a "reserved" hole in the PWR register map).
+	 */
+	ARG_UNUSED(pin_desc);
+
+	volatile uint32_t *const pucrx = &PWR->PUCRA + (port_idx * 2U);
+	volatile uint32_t *const pdcrx = pucrx + 1;
+	const uint32_t pin_bit = BIT(pin_num);
+
+	if (pupd_flags == GPIO_PULL_UP) {
+		stm32_reg_clear_bits(pdcrx, pin_bit);
+		stm32_reg_set_bits(pucrx, pin_bit);
+	} else if (pupd_flags == GPIO_PULL_DOWN) {
+		stm32_reg_clear_bits(pucrx, pin_bit);
+		stm32_reg_set_bits(pdcrx, pin_bit);
+	} else {
+		/* No pull-up nor pull-down requested */
+		stm32_reg_clear_bits(pucrx, pin_bit);
+		stm32_reg_clear_bits(pdcrx, pin_bit);
+	}
+#else
+	/*
+	 * Series with dedicated wake-up pins PU/PD control register:
+	 * - "H5-like" series (STM32C5/H5/...): PWR_WUCR.WUPPUPDn
+	 * - "H7-like" series (STM32H7/H7RS/N6/...): PWR_WKUPEPR.WKUPPUPDn
+	 */
+	ARG_UNUSED(port_idx);
+	ARG_UNUSED(pin_num);
+#if defined(PWR_WKUPEPR_WKUPPUPD1)
+	volatile uint32_t *const reg = &PWR->WKUPEPR;
+	const uint32_t base_shift = PWR_WKUPEPR_WKUPPUPD1_Pos;
+#elif defined(PWR_WUCR_WUPPUPD1)
+	volatile uint32_t *const reg = &PWR->WUCR;
+	const uint32_t base_shift = PWR_WUCR_WUPPUPD1_Pos;
+#else /* defined(PWR_WKUPEPR_WKUPPUPD1) */
+#error "Unsupported series"
+#endif /* defined(PWR_WKUPEPR_WKUPPUPD1) */
+
+	/*
+	 * "H5-like" and "H7-like" series work identically, with corresponding
+	 * field being two bits wide and using the same encoding as GPIOx_PUPDR:
+	 * 0b00 = none, 0b01 = pull-up and 0b10 = pull-down (0b11 is reserved)
+	 */
+	const uint32_t shift = base_shift + 2 * (pin_desc->line_idx - 1);
+	const uint32_t mask = 0x3U;
+	uint32_t pupdn;
+
+	if (pupd_flags == GPIO_PULL_UP) {
+		pupdn = 0x1U; /* 0b01 */
+	} else if (pupd_flags == GPIO_PULL_DOWN) {
+		pupdn = 0x2U; /* 0b10 */
+	} else {
+		pupdn = 0x0U;
+	}
+
+	stm32_reg_modify_bits(reg, mask << shift, pupdn << shift);
+#endif /* !HAS_WKUP_PINS_PUPD */
+}
+
+/*
+ * Exported functions / API entrypoints
+ */
+int stm32_pwrc_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t flags)
+{
+	const struct wkup_pin_desc *pin_desc = search_pin_descriptor(port_idx, pin);
+
+	if (pin_desc == NULL) {
+		return -ENODEV;
+	}
+
+	const uint32_t ll_wakeup_line = wakeup_line_to_ll_val(pin_desc->line_idx);
+
+	if (ll_pwr_is_wake_up_line_enabled(ll_wakeup_line)) {
+		bool display_info_message = true;
+
+#if HAS_MUXED_WKUP_LINES
+		const uint32_t active_source = get_wake_up_line_source(pin_desc->line_idx);
+
+		if (active_source != pin_desc->src_select) {
+			const struct wkup_pin_desc *old_pin_desc =
+				search_line_descriptor(pin_desc->line_idx);
+
+			if (old_pin_desc == NULL) {
+				LOG_WRN("Reconfiguring wake-up line %u from internal "
+					"source %u to GPIO%c pin %u",
+					pin_desc->line_idx, active_source,
+					'A' + pin_desc->port_idx, pin_desc->pin_num);
+			} else {
+				LOG_WRN("Reconfiguring wake-up line %u from GPIO%c "
+					"pin %u to GPIO%c pin %u",
+					pin_desc->line_idx,
+					'A' + old_pin_desc->port_idx, old_pin_desc->pin_num,
+					'A' + pin_desc->port_idx, pin_desc->pin_num);
+			}
+
+			display_info_message = false;
+		}
+#endif /* HAS_MUXED_WKUP_LINES */
+
+		if (display_info_message) {
+			LOG_INF("Reconfiguring wake-up line %u (GPIO%c pin %u)",
+				pin_desc->line_idx,
+				'A' + pin_desc->port_idx, pin_desc->pin_num);
+		}
+	}
+
+#if !DT_NODE_HAS_COMPAT(WKUP_CTLR, st_stm32f1_pwr_wkupctrl)
+	/* Polarity is configurable except on F1-like series */
+
+	if (flags & GPIO_ACTIVE_LOW) {
+		/* Falling-edge / low-level sensitivity */
+		ll_pwr_set_wake_up_line_polarity_low(ll_wakeup_line);
+	} else {
+		/* Rising-edge / high-level sensitivity */
+		ll_pwr_set_wake_up_line_polarity_high(ll_wakeup_line);
+	}
+#endif /* !DT_NODE_HAS_COMPAT(WKUP_CTLR, st_stm32f1_pwr_wkupctrl) */
+
+	configure_wkup_pin_pupd(pin_desc, port_idx, pin, flags & (GPIO_PULL_UP | GPIO_PULL_DOWN));
+#if HAS_MUXED_WKUP_LINES
+	set_wkup_line_source(pin_desc->line_idx, pin_desc->src_select);
+#endif /* HAS_MUXED_WKUP_LINES */
+
+	ll_pwr_enable_wake_up_line(ll_wakeup_line);
+
+	return 0;
+}
+
+#if defined(CONFIG_GPIO_STM32)
+int stm32_pwrc_set_wakeup_pin_irq_enabled(uint32_t port_idx, gpio_pin_t pin, bool enabled)
+{
+	const struct wkup_pin_desc *pin_desc = search_pin_descriptor(port_idx, pin);
+
+	if (pin_desc == NULL) {
+		return -ENODEV;
+	}
+
+#if HAS_MUXED_WKUP_LINES
+	const uint32_t active_source = get_wake_up_line_source(pin_desc->line_idx);
+
+	if (active_source != pin_desc->src_select) {
+		/* Wake-up line is not triggered by this pin */
+		LOG_ERR("Cannot enable wake-up pin interrupt for GPIO%c pin %u:",
+			'A' + pin_desc->port_idx, pin_desc->pin_num);
+		LOG_ERR("source of wake-up line %u should be %u but is currently %u.",
+			pin_desc->line_idx, pin_desc->src_select, active_source);
+		return -EBUSY;
+	}
+#endif /* HAS_MUXED_WKUP_LINES */
+
+	wkup_line_irq_dispatch_enabled[pin_desc->line_idx] = enabled;
+
+	return 0;
+}
+
+void stm32_pwrc_dispatch_wakeup_gpio_irqs(void)
+{
+	/*
+	 * Find wake-up pin lines which have been triggered and invoke
+	 * the corresponding callbacks registered at GPIO driver level.
+	 */
+	for (uint8_t line_idx = 1; line_idx <= MAX_WKUP_LINE_IDX; line_idx++) {
+		const uint32_t ll_line = wakeup_line_to_ll_val(line_idx);
+		const struct wkup_pin_desc *pin_desc;
+		struct gpio_stm32_data *gpio_data;
+		const struct device *gpio_port;
+
+		if (!wkup_line_irq_dispatch_enabled[line_idx]) {
+			LOG_DBG("Ignore WKUP%u: interrupt not enabled by SW", line_idx);
+			continue;
+		}
+
+		if (!ll_pwr_is_wake_up_line_enabled(ll_line)) {
+			LOG_DBG("Ignore WKUP%u: wake-up line not enabled", line_idx);
+			continue;
+		}
+
+		if (!is_wake_up_line_flag_active(line_idx)) {
+			LOG_DBG("Ignore WKUP%u: wake-up line flag not active", line_idx);
+			continue;
+		}
+
+		pin_desc = search_line_descriptor(line_idx);
+		if (pin_desc == NULL) {
+			/*
+			 * Could not find wake-up pin associated with the line.
+			 * This can happen on series with a mux if the line was
+			 * used with an internal source (maybe other cases?).
+			 */
+			LOG_DBG("Ignore WKUP%u: not associated to a pin", line_idx);
+			continue;
+		}
+
+		gpio_port = stm32_gpioport_get(pin_desc->port_idx);
+		if (gpio_port == NULL) {
+			LOG_ERR("Wake-up line %u pending, but GPIO%c doesn't exist?!",
+				line_idx, 'A' + pin_desc->port_idx);
+			continue;
+		}
+
+		LOG_DBG("Dispatching WKUP%u as interrupt on GPIO%c pin %u",
+			line_idx, 'A' + pin_desc->port_idx, pin_desc->pin_num);
+
+		gpio_data = gpio_port->data;
+		gpio_fire_callbacks(&gpio_data->cb, gpio_port, BIT(pin_desc->pin_num));
+
+		/*
+		 * NOTE: clearing wake-up flags is left as responsibility to SoC code.
+		 * This is usually done right before entry in a low-power mode.
+		 */
+	}
+}
+#endif /* CONFIG_GPIO_STM32 */

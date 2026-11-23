@@ -1,0 +1,5 @@
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_H743ZI
+	select SOC_STM32H743XX

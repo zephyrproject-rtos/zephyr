@@ -1,0 +1,250 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 CSIRO
+
+config KCONFIG_ARITHMETIC_ADD_10
+	int
+	default $(add, 10)
+
+config KCONFIG_ARITHMETIC_ADD_10_3
+	hex
+	default $(add_hex, 10, 3)
+
+config KCONFIG_ARITHMETIC_ADD_10_3_2
+	int
+	default $(add, 0xa, 3, 0b10)
+
+config KCONFIG_ARITHMETIC_SUB_10
+	int
+	default $(sub, 10)
+
+config KCONFIG_ARITHMETIC_SUB_10_3
+	hex
+	default $(sub_hex, 10, 3)
+
+config KCONFIG_ARITHMETIC_SUB_10_3_2
+	int
+	default $(sub, 0xa, 3, 0b10)
+
+config KCONFIG_ARITHMETIC_MUL_10
+	int
+	default $(mul, 10)
+
+config KCONFIG_ARITHMETIC_MUL_10_3
+	hex
+	default $(mul_hex, 10, 3)
+
+config KCONFIG_ARITHMETIC_MUL_10_3_2
+	int
+	default $(mul, 0xa, 3, 0b10)
+
+config KCONFIG_ARITHMETIC_DIV_10
+	int
+	default $(div, 10)
+
+config KCONFIG_ARITHMETIC_DIV_10_3
+	hex
+	default $(div_hex, 10, 3)
+
+config KCONFIG_ARITHMETIC_DIV_10_3_2
+	int
+	default $(div, 0xa, 3, 0b10)
+
+config KCONFIG_ARITHMETIC_MOD_10
+	int
+	default $(mod, 10)
+
+config KCONFIG_ARITHMETIC_MOD_10_3
+	hex
+	default $(mod_hex, 10, 3)
+
+config KCONFIG_ARITHMETIC_MOD_10_3_2
+	int
+	default $(mod, 0xa, 3, 0b10)
+
+config KCONFIG_ARITHMETIC_INC_1
+	int
+	default $(inc, 1)
+
+config KCONFIG_ARITHMETIC_INC_1_1
+	string
+	default "$(inc_hex, 1, 1)"
+
+config KCONFIG_ARITHMETIC_INC_INC_1_1
+	string
+	default "$(inc, $(inc_hex, 0x1, 0b1))"
+
+config KCONFIG_ARITHMETIC_DEC_1
+	int
+	default $(dec, 1)
+
+config KCONFIG_ARITHMETIC_DEC_1_1
+	string
+	default "$(dec_hex, 1, 1)"
+
+config KCONFIG_ARITHMETIC_DEC_DEC_1_1
+	string
+	default "$(dec, $(dec_hex, 0x1, 0b1))"
+
+config KCONFIG_ARITHMETIC_ADD_INC_1_1
+	int
+	default $(add, $(inc_hex, 1, 1))
+
+config KCONFIG_MIN_10
+	int
+	default $(min, 10)
+
+config KCONFIG_MIN_10_3
+	hex
+	default $(min_hex, 10, 3)
+
+config KCONFIG_MIN_10_3_2
+	int
+	default $(min, 0xa, 3, 0b10)
+
+config KCONFIG_MAX_10
+	int
+	default $(max, 10)
+
+config KCONFIG_MAX_10_3
+	hex
+	default $(max_hex, 10, 3)
+
+config KCONFIG_MAX_10_3_2
+	int
+	default $(max, 0xa, 3, 0b10)
+
+DT_COMPAT_VND_GPIO := vnd,gpio
+
+config KCONFIG_VND_GPIO_ENABLED_Y
+	bool
+	default $(dt_compat_enabled,$(DT_COMPAT_VND_GPIO))
+
+config KCONFIG_VND_GPIO_ENABLED_NUM_4
+	int
+	default $(dt_compat_enabled_num,$(DT_COMPAT_VND_GPIO))
+
+DT_COMPAT_VND_CAN_CONTROLLER := vnd,can-controller
+
+config KCONFIG_VND_CAN_CONTROLLER_ENABLED_NUM_2
+	int
+	default $(dt_compat_enabled_num,$(DT_COMPAT_VND_CAN_CONTROLLER))
+
+config KCONFIG_VND_CAN_CONTROLLER_ENABLED_Y
+	bool
+	default $(dt_compat_enabled,$(DT_COMPAT_VND_CAN_CONTROLLER))
+
+DT_COMPAT_VND_PWM := vnd,pwm
+
+config KCONFIG_VND_PWM_ENABLED_N
+	bool
+	default $(dt_compat_enabled,$(DT_COMPAT_VND_PWM))
+
+config KCONFIG_VND_PWM_ENABLED_NUM_0
+	int
+	default $(dt_compat_enabled_num,$(DT_COMPAT_VND_PWM))
+
+menu "dt_partition_mtd(..) test symbols"
+
+config KCONFIG_DT_MTD_INVALID_NODE
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,test_gpio_0))"
+
+config KCONFIG_DT_DUMMY_FLASH_PATH
+	string
+	default "$(dt_nodelabel_path,dummy_flash)"
+
+config KCONFIG_DT_MTD_DUMMY_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x0))"
+
+config KCONFIG_DT_MTD_DUMMY_1000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x1000))"
+
+config KCONFIG_DT_MTD_DUMMY_1000_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x1000_0x0))"
+
+config KCONFIG_DT_MTD_DUMMY_1000_800
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x1000_0x800))"
+
+config KCONFIG_DT_MTD_DUMMY_1000_800_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x1000_0x800_0x0))"
+
+config KCONFIG_DT_MTD_DUMMY_1000_800_400
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x1000_0x800_0x400))"
+
+config KCONFIG_DT_MTD_DUMMY_1000_1000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x1000_0x1000))"
+
+config KCONFIG_DT_MTD_DUMMY_3000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x3000))"
+
+config KCONFIG_DT_MTD_DUMMY_3000_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x3000_0x0))"
+
+config KCONFIG_DT_MTD_DUMMY_3000_800
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x3000_0x800))"
+
+config KCONFIG_DT_MTD_DUMMY_3000_800_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x3000_0x800_0x0))"
+
+config KCONFIG_DT_MTD_DUMMY_3000_800_400
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x3000_0x800_0x400))"
+
+config KCONFIG_DT_MTD_DUMMY_3000_1000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x3000_0x1000))"
+
+config KCONFIG_DT_MTD_DUMMY_4000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_0x4000))"
+
+config KCONFIG_DT_MTD_RANGE_FLASH_PATH
+	string
+	default "$(dt_nodelabel_path,dummy_range_flash)"
+
+config KCONFIG_DT_MTD_RANGE_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x0))"
+
+config KCONFIG_DT_MTD_RANGE_1000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x1000))"
+
+config KCONFIG_DT_MTD_RANGE_1000_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x1000_0x0))"
+
+config KCONFIG_DT_MTD_RANGE_1000_800
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x1000_0x800))"
+
+config KCONFIG_DT_MTD_RANGE_1000_800_0
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x1000_0x800_0x0))"
+
+config KCONFIG_DT_MTD_RANGE_1000_800_400
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x1000_0x800_0x400))"
+
+config KCONFIG_DT_MTD_RANGE_1000_1000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x1000_0x1000))"
+
+config KCONFIG_DT_MTD_RANGE_4000
+	string
+	default "$(dt_partition_mtd,$(dt_nodelabel_path,dummy_range_0x4000))"
+
+endmenu
+
+source "Kconfig.zephyr"

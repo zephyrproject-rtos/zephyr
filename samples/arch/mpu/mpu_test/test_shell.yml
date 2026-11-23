@@ -1,0 +1,4 @@
+- command: "mpu mtest 0"
+  expected: "The value is: 0x.*"
+- command: "mpu mtest 4"
+  expected: "The value is: 0x.*"

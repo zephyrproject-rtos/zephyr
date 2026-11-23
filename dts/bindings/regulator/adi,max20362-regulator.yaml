@@ -1,0 +1,152 @@
+# Copyright (c) 2025 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices MAX20362 PMIC
+
+  The PMIC has a bidirectional buck-boost converter, a CAP output and an LDO.
+  Each rail that is used must be defined as a child node, strictly following the
+  bboost, cap and ldo node names.
+
+compatible: "adi,max20362-regulator"
+
+include: [i2c-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  bat-bbin-vdrop:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Voltage drop from BAT to BBIN in millivolts. Refer to the macros from
+      <zephyr/dt-bindings/regulator/max20362.h>:
+      - 0: 55 mV  (MAX20362_BAT_BBIN_VDROP_55MV)
+      - 1: 100 mV (MAX20362_BAT_BBIN_VDROP_100MV)
+      - 2: 150 mV (MAX20362_BAT_BBIN_VDROP_150MV)
+      - 3: 200 mV (MAX20362_BAT_BBIN_VDROP_200MV)
+
+  dvs-src:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+    description: |
+      Interface for DVS. Refer to the macros from
+      <zephyr/dt-bindings/regulator/max20362.h>:
+      - 0: I2C         (MAX20362_DVS_SRC_I2C)
+      - 1: Pseudo-SPI  (MAX20362_DVS_SRC_PSEUDO_SPI)
+      - 2: Round-Robin (MAX20362_DVS_SRC_ROUND_ROBIN)
+
+  ldo-src:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+    description: |
+      LDO input source. If the source is buck-boost, the LDO control
+      can wait for the buck to be on before turning on the LDO.
+      Refer to the macros from <zephyr/dt-bindings/regulator/max20362.h>:
+      - 0: BBOUT (MAX20362_LDO_SRC_BBOUT)
+      - 1: CAP   (MAX20362_LDO_SRC_CAP)
+      - 2: BATT  (MAX20362_LDO_SRC_BATT)
+
+  rr-wrap:
+    type: boolean
+    description: |
+      Round-Robin wraps back to the first VSET after the last step instead of
+      stopping at the last value. Maps to DVS_CFG.RRWrap. Only used when
+      dvs-src = <MAX20362_DVS_SRC_ROUND_ROBIN>.
+
+  rr-clk-rising:
+    type: boolean
+    description: |
+      Round-Robin clock is active-high: the voltage updates on the rising edge.
+      When absent, the clock is active-low (falling edge). Maps to
+      RR_CFG1.RRClkPolarity. Only used when dvs-src is Round-Robin.
+
+  rr-timeout-reset:
+    type: boolean
+    description: |
+      Reset the Round-Robin pointer after a timeout. Maps to RR_CFG1.RRTimeoutRes.
+      Only used when dvs-src is Round-Robin.
+
+  rr-timeout:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+    description: |
+      Round-Robin timeout duration. Refer to the macros from
+      <zephyr/dt-bindings/regulator/max20362.h>:
+      - 0: disabled (MAX20362_RR_TIMEOUT_DISABLED)
+      - 1: 500 us   (MAX20362_RR_TIMEOUT_500US)
+      - 2: 1 ms     (MAX20362_RR_TIMEOUT_1MS)
+      - 3: 2 ms     (MAX20362_RR_TIMEOUT_2MS)
+      - 4: 4 ms     (MAX20362_RR_TIMEOUT_4MS)
+      - 5: 8 ms     (MAX20362_RR_TIMEOUT_8MS)
+      - 6: 16 ms    (MAX20362_RR_TIMEOUT_16MS)
+
+  rr-microvolt:
+    type: array
+    description: |
+      Round-Robin VSET table, in microvolts, in step order. Each value must fall
+      on the buck-boost output range. Provide between 1 and 20 entries; the
+      number of entries programs RR_CFG1.RRSize (steps = count - 1). Only used
+      when dvs-src = <MAX20362_DVS_SRC_ROUND_ROBIN>.
+
+child-binding:
+  description: |
+    Each rail that is used must be defined as a child node, strictly following
+    these node names, otherwise it will not be recognized:
+    - bboost
+    - cap
+    - ldo
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-init-microvolt
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-init-microamp
+        - regulator-max-microamp
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-initial-mode
+        - regulator-allowed-modes
+
+examples:
+  - |
+    max20362_regulators: max20362@68 {
+      compatible = "adi,max20362-regulator";
+      reg = <0x68>;
+      bat-bbin-vdrop = <0>;
+      dvs-src = <0>;
+      ldo-src = <1>;
+
+      bboost {
+        /* all properties for BBOOST */
+      };
+      cap {
+        /* all properties for CAP */
+      };
+      ldo {
+        /* all properties for LDO */
+      };
+    };

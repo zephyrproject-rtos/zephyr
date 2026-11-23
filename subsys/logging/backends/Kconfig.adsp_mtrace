@@ -1,0 +1,36 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_ADSP_MTRACE
+	bool "Intel ADSP mtrace backend"
+	depends on SOC_FAMILY_INTEL_ADSP
+	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
+	help
+	  Provide a logging backend which writes to SRAM window
+	  using the SOF Linux driver mtrace buffer layout.
+
+if LOG_BACKEND_ADSP_MTRACE
+
+backend = ADSP_MTRACE
+backend-str = adsp_mtrace
+source "subsys/logging/Kconfig.template.log_format_config"
+
+config LOG_MULTI_SLOT
+	bool "Use separate debug window slot per core for mtrace logging"
+	depends on SMP
+	depends on INTEL_ADSP_DEBUG_SLOT_MANAGER
+	depends on LOG_CORE_ID_PREFIX
+	help
+	  When enabled, each CPU core gets its own debug window slot for
+	  mtrace logging. This allows the host to read per-core log data
+	  from separate memory window slots.
+
+endif # LOG_BACKEND_ADSP_MTRACE
+
+config MTRACE_LOG_CACHE_BUF_SIZE
+	int "Number of bytes dedicated for the mtrace log cache buffer"
+	depends on LOG_BACKEND_ADSP_MTRACE
+	default 0
+	range 0 32768
+	help
+	  Number of bytes dedicated for the mtrace log cache buffer.

@@ -1,0 +1,146 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  One channel of the Renesas RA Pulse Density Modulation Interface (PDM-IF).
+
+  Each channel has its own data pin, filter chain and data buffer, and is
+  described by its own node. The chain is a sinc decimator, then a high pass
+  filter that removes the modulator's DC bias, then a compensation filter that
+  corrects the sinc filter's passband droop, then a half band low pass filter
+  that rejects what the final decimation would otherwise alias into the band.
+  Every coefficient below defaults to its register's reset value; together
+  those are the module's voice band setting, a 100 Hz high pass corner and a
+  7 kHz low pass corner, which is what capture at 16 kHz wants. A design
+  capturing at another rate wants a chain designed for it, which the hardware
+  manual does not tabulate. A channel samples its own PDMDATn pin on the
+  rising edge of PDM_CLKn, or the pin of the channel below it on the falling
+  edge, which is how two microphones sharing one data line are read.
+
+compatible: "renesas,ra-pdm"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    type: int
+    required: true
+    enum: [0, 1, 2]
+    description: |
+      PDM-IF channel this node describes, which selects the PDMDATn and
+      PDMCLKn pins it drives.
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      Must be "pclk" for the peripheral bus clock the module-stop bit belongs
+      to, followed by "pdmifclk" for the node supplying PDMIFCLK. The driver
+      divides the PDMIFCLK rate down to the microphone clock, so the second
+      entry has to carry a "clock-frequency".
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      Must be "dat" for the data reception interrupt and "err" for the error
+      detection interrupt of this channel.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  sinc-filter-order:
+    type: int
+    default: 4
+    enum: [1, 2, 3, 4]
+    description: |
+      Order of the sinc filter that decimates the one-bit stream. A higher
+      order rejects more of the modulator's shaped noise and needs more of the
+      twenty-bit output range for the filter's own gain. The default is the
+      reset value of the mode setting register.
+
+  falling-edge:
+    type: boolean
+    description: |
+      Sample the data pin of the channel below this one on the falling edge of
+      its clock, rather than this channel's own pin on the rising edge. A PDM
+      microphone whose select input is tied high drives the line on the falling
+      edge, so a pair sharing one line is read as this channel and the one
+      above it. Channel 0 reads channel 2's pin.
+
+  lpf-shift:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3]
+    description: |
+      Right shift applied to the low pass filter's input, in bits. Shifting
+      trades headroom for resolution where a loud microphone would otherwise
+      saturate the filter. The default is the reset value.
+
+  compensation-shift:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3]
+    description: |
+      Right shift applied to the compensation filter's input, in bits. The
+      default is the reset value.
+
+  hpf-shift:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3]
+    description: |
+      Right shift applied to the high pass filter's input, in bits. The
+      default is the reset value.
+
+  hpf-coefficient-s0:
+    type: int
+    default: 0x3F61
+    description: |
+      High pass filter s(0) coefficient, as 16-bit signed data with fourteen
+      fraction bits. The reset value puts the corner at 100 Hz.
+
+  hpf-coefficient-k1:
+    type: int
+    default: 0x3EC1
+    description: |
+      High pass filter k(1) coefficient, in the same format as s(0).
+
+  hpf-coefficients-h:
+    type: array
+    default: [0x4000, 0xC000]
+    description: |
+      The high pass filter's two h coefficients, h(0) and h(1).
+
+  compensation-coefficients:
+    type: array
+    default: [0x1FE8, 0x0039, 0x003C, 0x1E56, 0x01DC, 0x06E1,
+              0x01DC, 0x1E56, 0x003C, 0x0039, 0x1FE8]
+    description: |
+      The eleven h coefficients of the compensation filter, which flattens the
+      droop the sinc filter leaves across the passband.
+
+  lpf-coefficient-h0:
+    type: int
+    default: 0x0400
+    description: |
+      Centre coefficient of the half band low pass filter, which is also the
+      final decimation by two. The reset values put the corner at 7 kHz.
+
+  lpf-coefficients-h1:
+    type: array
+    default: [0x1FF8, 0x000A, 0x1FF0, 0x0018, 0x1FDC, 0x0034, 0x1FB3, 0x0076,
+              0x1F2E, 0x0289, 0x0289, 0x1F2E, 0x0076, 0x1FB3, 0x0034, 0x1FDC,
+              0x0018, 0x1FF0, 0x000A, 0x1FF8]
+    description: |
+      The twenty remaining coefficients of the half band low pass filter.

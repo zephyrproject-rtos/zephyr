@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2023, Synopsys, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nsim-smp.dtsi"
+#include "nsim-flat-mem.dtsi"
+
+/ {
+	compatible = "snps,nsim_hs";
+	model = "snps,nsim_hs";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "snps,arcv3-hs";
+			reg = <0>;
+			device_type = "cpu";
+		};
+
+		cpu@1 {
+			compatible = "snps,arcv3-hs";
+			reg = <1>;
+			device_type = "cpu";
+		};
+
+		cpu@2 {
+			compatible = "snps,arcv3-hs";
+			reg = <2>;
+			device_type = "cpu";
+		};
+
+		cpu@3 {
+			compatible = "snps,arcv3-hs";
+			reg = <3>;
+			device_type = "cpu";
+		};
+
+		cpu@4 {
+			compatible = "snps,arcv3-hs";
+			reg = <4>;
+			device_type = "cpu";
+		};
+
+		cpu@5 {
+			compatible = "snps,arcv3-hs";
+			reg = <5>;
+			device_type = "cpu";
+		};
+
+		cpu@6 {
+			compatible = "snps,arcv3-hs";
+			reg = <6>;
+			device_type = "cpu";
+		};
+
+		cpu@7 {
+			compatible = "snps,arcv3-hs";
+			reg = <7>;
+			device_type = "cpu";
+		};
+
+		cpu@8 {
+			compatible = "snps,arcv3-hs";
+			reg = <8>;
+			device_type = "cpu";
+		};
+
+		cpu@9 {
+			compatible = "snps,arcv3-hs";
+			reg = <9>;
+			device_type = "cpu";
+		};
+
+		cpu@a {
+			compatible = "snps,arcv3-hs";
+			reg = <10>;
+			device_type = "cpu";
+		};
+
+		cpu@b {
+			compatible = "snps,arcv3-hs";
+			reg = <11>;
+			device_type = "cpu";
+		};
+	};
+};

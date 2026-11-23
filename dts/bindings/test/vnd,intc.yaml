@@ -1,0 +1,19 @@
+# Copyright (c) 2020 Linaro Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test Interrupt Controller
+
+compatible: "vnd,intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority

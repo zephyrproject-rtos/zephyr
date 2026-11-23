@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2017, embedjournal.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	compatible = "stm32_min_dev_blue", "st,stm32f103c8";
+	model = "STM32 Minimum Development Board (Blue)";
+
+	leds {
+		led: led {
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+};

@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP KW41Z IEEE 802.15.4 node
+
+compatible: "nxp,kw41z-ieee802154"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

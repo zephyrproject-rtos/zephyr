@@ -1,0 +1,11 @@
+# Copyright (c) 2024, Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  atmel,assigned-clocks:
+    type: phandle-array
+    description: Assigned-clock information
+
+  atmel,assigned-clock-names:
+    type: string-array
+    description: Name of each assigned-clock

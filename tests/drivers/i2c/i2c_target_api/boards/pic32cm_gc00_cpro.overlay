@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect EXT1 (J400): Pin 11 (PD1) to Pin 5 (PC0) SDA, Pin 12 (PD0) to Pin 6 (PC1) SCL */
+
+&pinctrl {
+	sercom0_i2c_default: sercom0_i2c_default {
+		group1 {
+			pinmux = <PC0D_SERCOM0_PAD0>,  /* SDA */
+				 <PC1D_SERCOM0_PAD1>;  /* SCL */
+		};
+	};
+};
+
+&sercom0 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom0_i2c_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+/* sercom1 already defined in board DTS as i2c0 */
+&i2c0 {
+	eeprom1: eeprom@58 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x58>;
+		size = <256>;
+	};
+};

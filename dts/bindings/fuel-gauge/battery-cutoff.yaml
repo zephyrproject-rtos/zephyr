@@ -1,0 +1,29 @@
+#
+# Copyright 2023 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+
+  Properties for fuel-gauges that may control battery cutoff, this is common in SBS-compliant or
+  similarly smart battery fuel gauges.
+
+  Note: These properties are to be used with meaningful defaults in fuel gauge ICs that can cut off
+  their associated battery from the system. See the default fuel gauge SBS Gauge compatible as an
+  example.
+
+properties:
+  battery-cutoff-support:
+    description: |
+      Helper prop that indicates whether this device can cutoff the battery; this is also often
+      referred to as ship or sleep mode.
+    type: boolean
+  battery-cutoff-reg-addr:
+    description: |
+       Address of register to receive cutoff payload for battery cutoff.
+    type: int
+  battery-cutoff-payload:
+    description: |
+       Payload to write to cutoff battery register. This must be array of maximum 2 integers.
+    type: array

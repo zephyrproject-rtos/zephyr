@@ -1,0 +1,17 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Slow internal RC oscillator
+
+compatible: "nxp,sirc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  standby-enable:
+    type: boolean
+    description: |
+      Keep the SIRC running in Standby mode.

@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <infineon/cat1a/legacy/psoc6-pinctrl.dtsi>
+
+/* Configure pin control bias mode for uart5 pins */
+&p5_1_scb5_uart_tx {
+	drive-push-pull;
+};
+
+&p5_0_scb5_uart_rx {
+	input-enable;
+};
+
+&p9_1_scb2_uart_tx {
+	drive-push-pull;
+};
+
+&p9_0_scb2_uart_rx {
+	input-enable;
+};
+
+&p13_1_scb6_uart_tx {
+	drive-push-pull;
+};
+
+&p13_0_scb6_uart_rx {
+	input-enable;
+};
+
+/* Configure pin control bias mode for SPI pins */
+&p12_0_scb6_spi_m_mosi {
+	drive-push-pull;
+};
+
+&p12_1_scb6_spi_m_miso {
+	input-enable;
+};
+
+&p12_2_scb6_spi_m_clk {
+	drive-push-pull;
+};

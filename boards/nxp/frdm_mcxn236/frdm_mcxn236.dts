@@ -1,0 +1,68 @@
+/*
+ * Copyright 2024-2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/mcx/mcxn/nxp_mcxn236.dtsi>
+#include "frdm_mcxn236.dtsi"
+
+/ {
+	compatible = "nxp,mcxn236", "nxp,mcx";
+	model = "NXP FRDM_N236 board";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm4_lpuart4;
+		zephyr,console = &flexcomm4_lpuart4;
+		zephyr,shell-uart = &flexcomm4_lpuart4;
+		zephyr,canbus = &flexcan1;
+		zephyr,edac = &erm0;
+		zephyr,system-timer-companion = &lptmr0;
+		zephyr,crc = &crc;
+	};
+};
+
+&flash {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 8KB.
+		 */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 DT_SIZE_K(80)>;
+			label = "mcuboot";
+		};
+
+		/* For the MCUBoot "upgrade only" method,
+		 * the slot sizes must be equal.
+		 */
+		slot0_partition: partition@14000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00014000 DT_SIZE_K(440)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@84000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0084000 DT_SIZE_K(440)>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@f0000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x000f0000 DT_SIZE_K(64)>;
+			label = "storage";
+		};
+	};
+};

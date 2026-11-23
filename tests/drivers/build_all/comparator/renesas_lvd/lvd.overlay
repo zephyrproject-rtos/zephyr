@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lvd1 {
+	lvd-action = "maskable-interrupt";
+	voltage-level = <3>;
+	interrupts = <90 12>;
+	interrupt-names = "lvd";
+	lvd-trigger = "falling";
+	reset-negation-timing = <1>;
+	status = "okay";
+};

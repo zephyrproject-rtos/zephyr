@@ -1,0 +1,146 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @brief Devicetree pin control helpers for Renesas RZ/A3M
+ * @ingroup pinctrl_rza
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZA3M_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZA3M_H_
+
+/**
+ * @addtogroup renesas_pinctrl Renesas pin control helpers
+ * @ingroup devicetree-pinctrl
+ */
+
+/**
+ * @defgroup pinctrl_rza Renesas RZ/A pin control helpers
+ * @brief Macros for pin control configuration of Renesas RZ/A SoCs
+ * @ingroup renesas_pinctrl
+ *
+ * General-purpose pins are configured with the RZA_PINMUX() macro, which takes
+ * three fields:
+ *
+ * - @c port — the port identifier, one of the @c PORT_* values.
+ * - @c pin — the pin number within that port.
+ * - @c func — the alternate-function number selecting the peripheral signal
+ *   routed to the pin, taken from the SoC's Pin Function Controller table; it
+ *   has no symbolic macro and is passed as a plain integer.
+ *
+ * Dedicated-function pins that sit outside the general-purpose port matrix are
+ * referenced directly through their @c BSP_IO_* identifiers, covering debug
+ * (@c BSP_IO_NMI, @c BSP_IO_TMS_SWDIO), audio clocks, SD/MMC,
+ * QSPI and octal-memory flash, RIIC (I2C) and watchdog overflow.
+ *
+ * An optional digital noise filter can be applied to a pin group with
+ * RZA_FILTER_SET(), built from a stage count (@c RZA_FILNUM_*) and a sampling
+ * clock divider (@c RZA_FILCLKSEL_*).
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rza3m.h>
+ *
+ * &pinctrl {
+ *         scif0_default: scif0_default {
+ *                 device-pinmux {
+ *                         pinmux = <RZA_PINMUX(PORT_08, 1, 5)>,
+ *                                  <RZA_PINMUX(PORT_08, 2, 5)>;
+ *                         bias-pull-up;
+ *                         renesas,filter =
+ *                                 RZA_FILTER_SET(RZA_FILNUM_8_STAGE, RZA_FILCLKSEL_DIV_18000);
+ *                 };
+ *         };
+ * };
+ * @endcode
+ *
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
+#define PORT_00 0x0F00 /**< IO port 0 */
+#define PORT_01 0x1000 /**< IO port 1 */
+#define PORT_02 0x1100 /**< IO port 2 */
+#define PORT_03 0x1200 /**< IO port 3 */
+#define PORT_04 0x1300 /**< IO port 4 */
+#define PORT_05 0x1400 /**< IO port 5 */
+#define PORT_06 0x1500 /**< IO port 6 */
+#define PORT_07 0x1600 /**< IO port 7 */
+#define PORT_08 0x1700 /**< IO port 8 */
+#define PORT_09 0x1800 /**< IO port 9 */
+#define PORT_10 0x1900 /**< IO port 10 */
+#define PORT_11 0x1A00 /**< IO port 11 */
+#define PORT_12 0x1B00 /**< IO port 12 */
+#define PORT_20 0x0000 /**< IO port 20 */
+#define PORT_21 0x0100 /**< IO port 21 */
+#define PORT_22 0x0300 /**< IO port 22 */
+#define PORT_23 0x0400 /**< IO port 23 */
+
+/** @endcond */
+
+/**
+ * @brief Create an encoded value containing port/pin/function information.
+ *
+ * @param port Port identifier (PORT_00..PORT_23).
+ * @param pin Pin number within the port.
+ * @param func Pin function selector.
+ *
+ * @return Encoded pinmux value.
+ */
+#define RZA_PINMUX(port, pin, func) (port | pin | (((func) - 1) << 4))
+
+/** @cond INTERNAL_HIDDEN */
+
+#define BSP_IO_NMI            0xFFFF0001 /**< NMI */
+#define BSP_IO_TMS_SWDIO      0xFFFF0200 /**< TMS_SWDIO */
+#define BSP_IO_SD0_CLK        0xFFFF0400 /**< SD0_CLK */
+#define BSP_IO_QSPI0_SPCLK    0xFFFF0500 /**< QSPI0_SPCLK */
+#define BSP_IO_QSPI0_IO0      0xFFFF0501 /**< QSPI0_IO0 */
+#define BSP_IO_QSPI0_IO1      0xFFFF0502 /**< QSPI0_IO1 */
+#define BSP_IO_QSPI0_SSL      0xFFFF0505 /**< QSPI0_SSL */
+#define BSP_IO_WDTOVF_PERROUT 0xFFFF0600 /**< WDTOVF_PERROUT */
+#define BSP_IO_RIIC0_SDA      0xFFFF0700 /**< RIIC0_SDA */
+#define BSP_IO_RIIC0_SCL      0xFFFF0701 /**< RIIC0_SCL */
+
+/** @endcond */
+
+/**
+ * @name Renesas RZ/A digital noise filter options
+ *
+ * Set the number of filter stages (FILNUM) and the sampling clock divider
+ * (FILCLKSEL).
+ * @{
+ */
+
+#define RZA_FILNUM_4_STAGE  0 /**< FILNUM: 4-stage filter */
+#define RZA_FILNUM_8_STAGE  1 /**< FILNUM: 8-stage filter */
+#define RZA_FILNUM_12_STAGE 2 /**< FILNUM: 12-stage filter */
+#define RZA_FILNUM_16_STAGE 3 /**< FILNUM: 16-stage filter */
+
+#define RZA_FILCLKSEL_NOT_DIV   0 /**< FILCLKSEL: Not divided */
+#define RZA_FILCLKSEL_DIV_9000  1 /**< FILCLKSEL: Divided by 9000 */
+#define RZA_FILCLKSEL_DIV_18000 2 /**< FILCLKSEL: Divided by 18000 */
+#define RZA_FILCLKSEL_DIV_36000 3 /**< FILCLKSEL: Divided by 36000 */
+
+/** @} */
+
+/**
+ * @brief Encode filter stage count and clock selection into one configuration value.
+ *
+ * Encoding:
+ * - bits [3:2] = FILNUM (masked to 2 bits)
+ * - bits [1:0] = FILCLKSEL (masked to 2 bits)
+ *
+ * @param filnum Filter stage selection (RZA_FILNUM_*).
+ * @param filclksel Filter clock selection (RZA_FILCLKSEL_*).
+ *
+ * @return Encoded filter configuration value.
+ */
+#define RZA_FILTER_SET(filnum, filclksel) ((((filnum) & 0x3) << 0x2) | ((filclksel) & 0x3))
+
+/** @} */
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZA3M_H_ */

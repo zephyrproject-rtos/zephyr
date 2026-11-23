@@ -1,0 +1,37 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32G5 PLL
+
+description: |
+  STM32G5 devices have PLL1 and, on supported devices, PLL2. Each PLL uses
+  HSI or HSE as its input, with an M prescaler and an integer or fractional N
+  multiplier to generate the VCO clock. P, Q and R dividers produce the PLL
+  outputs. The R output feeds an additional divider for IC1 or IC2.
+
+  The VCO and PLL output frequencies are given by:
+
+    f(VCO) = f(PLL input) / M * (N + FRACN / 8192)
+    f(PLLx_P) = f(VCO) / P
+    f(PLLx_Q) = f(VCO) / Q
+    f(PLLx_R) = f(VCO) / R
+
+  The intermediate clocks are derived from the corresponding R output:
+
+    f(IC1) = f(PLL1_R) / ICLK1DIV
+    f(IC2) = f(PLL2_R) / ICLK2DIV
+
+  The iclk-div property selects a division ratio of 3 or 5 for each PLL.
+
+compatible: "st,stm32g5-pll-clock"
+
+include: st,stm32u5-pll-clock.yaml
+
+properties:
+  iclk-div:
+    type: int
+    default: 5
+    enum: [3, 5]
+    description: |
+      Additional division ratio for the PLL intermediate clock output (PLLx_R).
+      STM32G5 supports only division by 3 or 5.

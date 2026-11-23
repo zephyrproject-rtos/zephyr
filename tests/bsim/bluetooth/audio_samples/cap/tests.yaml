@@ -1,0 +1,33 @@
+common:
+  tags:
+    - bluetooth
+  depends_on: bsim
+  platform_allow:
+    - nrf52_bsim
+    - nrf5340bsim/nrf5340/cpuapp
+    - nrf54l15bsim/nrf54l15/cpuapp
+  harness: bsim
+  build: false
+
+tests:
+  bluetooth.audio_samples.bsim.cap.broadcast:
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - tests_scripts/cap_broadcast.sh
+    required_applications:
+      - application: bluetooth.audio_samples.bsim.cap.initiator.broadcast
+        path: initiator
+      - application: bluetooth.audio_samples.bsim.cap.acceptor.broadcast
+        path: acceptor
+
+  bluetooth.audio_samples.bsim.cap.unicast:
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - tests_scripts/cap_unicast.sh
+    required_applications:
+      - application: bluetooth.audio_samples.bsim.cap.initiator.unicast
+        path: initiator
+      - application: bluetooth.audio_samples.bsim.cap.acceptor.unicast
+        path: acceptor

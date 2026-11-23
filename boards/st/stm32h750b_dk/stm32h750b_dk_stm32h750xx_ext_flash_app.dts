@@ -1,0 +1,64 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32h750b_dk-common.dtsi"
+
+/ {
+	compatible = "st,stm32h750b-dk";
+	model = "STMicroelectronics STM32H750B DISCOVERY KIT";
+
+	chosen {
+		zephyr,flash = &ext_flash;
+		zephyr,flash-controller = &ext_flash_ctrl;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flash0 {
+	status = "okay";
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Flash has 128KB sector size */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+			label = "mcuboot";
+		};
+	};
+};
+
+&ext_flash {
+	status = "okay";
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_M(60)>; /* 60MB */
+			label = "image-0";
+		};
+
+		slot1_partition: partition@3c00000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x3c00000 DT_SIZE_M(60)>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@7800000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x7800000 DT_SIZE_M(8)>;
+			label = "storage";
+		};
+	};
+};

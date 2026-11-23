@@ -1,0 +1,23 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Awinic AW88298 smart audio power amplifier
+
+include: [i2c-device.yaml]
+
+compatible: "awinic,aw88298"
+
+properties:
+  reg:
+    required: true
+
+  reset-gpios:
+    type: phandle-array
+    description:
+      GPIO connected to the controller RSTN pin.
+
+  int-gpios:
+    type: phandle-array
+    description:
+      GPIO connected to the controller INTN pin.

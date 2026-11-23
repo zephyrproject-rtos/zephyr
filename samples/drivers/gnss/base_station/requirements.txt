@@ -1,0 +1,3 @@
+pyubx2>=1.2.53
+pyrtcm>=1.1.8
+pyserial>=3.5

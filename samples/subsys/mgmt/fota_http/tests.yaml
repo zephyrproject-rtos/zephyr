@@ -1,0 +1,30 @@
+common:
+  harness: net
+  tags:
+    - net
+    - dfu
+  build_only: true
+  sysbuild: true
+  platform_allow:
+    - esp32c5_devkitc/esp32c5/hpcore
+    - frdm_k64f
+  integration_platforms:
+    - frdm_k64f
+sample:
+  description: Firmware Over-the-Air over HTTP
+  name: fota_http
+tests:
+  sample.mgmt.fota_http.default: {}
+  sample.mgmt.fota_http.tls:
+    extra_args:
+      - EXTRA_CONF_FILE="tls.conf"
+  sample.mgmt.fota_http.resume:
+    extra_args:
+      - EXTRA_CONF_FILE="resume.conf"
+  sample.mgmt.fota_http.checks:
+    extra_configs:
+      - CONFIG_FOTA_HTTP_REJECT_DOWNGRADE=y
+      - CONFIG_FOTA_HTTP_SHA256_CHECK=y
+  sample.mgmt.fota_http.auto:
+    extra_configs:
+      - CONFIG_SAMPLE_FOTA_HTTP_AUTO_URL="http://192.0.2.1:8000/zephyr.signed.bin"

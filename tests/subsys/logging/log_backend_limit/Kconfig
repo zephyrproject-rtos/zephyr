@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Jacob Beningo
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_NUM_BACKENDS
+	int "Number of test backends"
+	default 8 if LOG_FRONTEND
+	default 9
+	help
+	  Must equal LOG_FILTERS_MAX_BACKENDS: 32-bit filter word of 3-bit
+	  slots, minus the aggregated slot, minus the frontend slot if present.
+
+source "Kconfig.zephyr"

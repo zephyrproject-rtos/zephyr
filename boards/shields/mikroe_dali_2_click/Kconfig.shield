@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 sevenlab engineering GmbH
+
+config SHIELD_MIKROE_DALI_2_CLICK
+	def_bool $(shields_list_contains,mikroe_dali_2_click)

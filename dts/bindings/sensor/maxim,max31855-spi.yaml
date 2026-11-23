@@ -1,0 +1,8 @@
+# Copyright (c) 2020, Christian Hirsch
+# SPDX-License-Identifier: Apache-2.0
+
+description: MAX31855 SPI-based cold-junction compensated thermocouple-to-digital converter.
+
+compatible: "maxim,max31855"
+
+include: [sensor-device.yaml, spi-device.yaml]

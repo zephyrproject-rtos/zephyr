@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# diffconfig.py - a tool to compare .config files.
+#
+# originally written in 2006 by Matt Mackall
+#  (at least, this was in his bloatwatch source code)
+# last worked on 2008 by Tim Bird
+#
+
+import os
+import sys
+
+
+def usage():
+    print("""Usage: diffconfig.py [-h] [-m] [<config1> <config2>]
+
+Diffconfig is a simple utility for comparing two .config files.
+Using standard diff to compare .config files often includes extraneous and
+distracting information.  This utility produces sorted output with only the
+changes in configuration values between the two files.
+
+Added and removed items are shown with a leading plus or minus, respectively.
+Changed items show the old and new values on a single line.
+
+If -m is specified, then output will be in "merge" style, which has the
+changed and new values in kernel config option format.
+
+If no config files are specified, .config and .config.old are used.
+
+Example usage:
+ $ diffconfig.py .config config-with-some-changes
+-EXT2_FS_XATTR  n
+-EXT2_FS_XIP  n
+ CRAMFS  n -> y
+ EXT2_FS  y -> n
+ LOG_BUF_SHIFT  14 -> 16
+ PRINTK_TIME  n -> y
+""")
+    sys.exit(0)
+
+
+# returns a dictionary of name/value pairs for config items in the file
+def readconfig(config_file):
+    d = {}
+    for line in config_file:
+        line = line[:-1]
+        if line[:7] == "CONFIG_":
+            name, val = line[7:].split("=", 1)
+            d[name] = val
+        if line[-11:] == " is not set":
+            d[line[9:-11]] = "n"
+    return d
+
+
+def print_config(op, config, value, new_value, merge_style):
+    if merge_style:
+        if new_value:
+            if new_value == "n":
+                print(f"# CONFIG_{config} is not set")
+            else:
+                print(f"CONFIG_{config}={new_value}")
+    else:
+        if op == "-":
+            print(f"-{config} {value}")
+        elif op == "+":
+            print(f"+{config} {new_value}")
+        else:
+            print(f" {config} {value} -> {new_value}")
+
+
+def main():
+    # parse command line args
+    if "-h" in sys.argv or "--help" in sys.argv:
+        usage()
+
+    merge_style = 0
+    if "-m" in sys.argv:
+        merge_style = 1
+        sys.argv.remove("-m")
+
+    argc = len(sys.argv)
+    if argc not in [1, 3]:
+        print("Error: incorrect number of arguments or unrecognized option")
+        usage()
+
+    if argc == 1:
+        # if no filenames given, assume .config and .config.old
+        build_dir = ""
+        if "KBUILD_OUTPUT" in os.environ:
+            build_dir = os.environ["KBUILD_OUTPUT"] + "/"
+        configa_filename = build_dir + ".config.old"
+        configb_filename = build_dir + ".config"
+    else:
+        configa_filename = sys.argv[1]
+        configb_filename = sys.argv[2]
+
+    try:
+        with open(configa_filename) as configa_file:
+            a = readconfig(configa_file)
+        with open(configb_filename) as configb_file:
+            b = readconfig(configb_file)
+    except OSError as err:
+        print(f"I/O error[{err.args[0]}]: {err.args[1]}\n")
+        usage()
+
+    # print items in a but not b (accumulate, sort and print)
+    old = []
+    for config in a:
+        if config not in b:
+            old.append(config)
+    old.sort()
+    for config in old:
+        print_config("-", config, a[config], None, merge_style)
+        del a[config]
+
+    # print items that changed (accumulate, sort, and print)
+    changed = []
+    for config in a:
+        if a[config] != b[config]:
+            changed.append(config)
+        else:
+            del b[config]
+    changed.sort()
+    for config in changed:
+        print_config("->", config, a[config], b[config], merge_style)
+        del b[config]
+
+    # now print items in b but not in a
+    # (items from b that were in a were removed above)
+    new = sorted(b.keys())
+    for config in new:
+        print_config("+", config, None, b[config], merge_style)
+
+
+main()

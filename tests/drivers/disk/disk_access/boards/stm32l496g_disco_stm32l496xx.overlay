@@ -1,0 +1,7 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&sdmmc1 {
+	/* Channel 5 request 7 on DMA2 */
+	dmas = <&dma2 5 7 STM32_DMA_PRIORITY_HIGH>;
+	dma-names = "txrx";
+};

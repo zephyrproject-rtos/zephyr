@@ -1,0 +1,294 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SGI_PKC
+	bool "NXP SGI PKC Cryptographic Library"
+	depends on HAS_MCUX_SGI_PKC
+	help
+	  Enable NXP SGI PKC (Secure Gateway Interface - Public Key Cryptography)
+	  cryptographic library support.
+
+if SGI_PKC
+
+config SGI_PKC_PLATFORM_MCXA
+	def_bool y if SOC_MCXA266 || SOC_MCXA366
+	help
+	  Automatically enabled for MCXA2xx/MCXA3xx SoCs.
+	  Selects mcxa2xx platform include directories.
+
+config SGI_PKC_PLATFORM_MCXA5
+	def_bool y if SOC_MCXA577
+	help
+	  Automatically enabled for MCXA5xx SoCs.
+	  Selects mcxa5xx platform include directories.
+
+config SGI_PKC_PLATFORM_MCXL
+	def_bool y if SOC_MCXL255
+	help
+	  Automatically enabled for MCXL2xx SoCs.
+	  Selects mcxl2xx platform include directories.
+
+config SGI_PKC_PLATFORM_MCXW
+	def_bool y if SOC_MCXW70AC
+	help
+	  Automatically enabled for MCXW7xx (W70/KW43) SoCs.
+	  Selects mcxw7x platform include directories.
+
+config SGI_PKC_CORE
+	bool
+	default y
+	help
+	  Core component providing basic functionality.
+
+config SGI_PKC_TOOLCHAIN
+	bool
+	default y
+	help
+	  Toolchain specific definitions and macros.
+
+config SGI_PKC_PRE_PROCESSOR
+	bool
+	default y
+	help
+	  CSSL C Pre-Processor component.
+
+config SGI_PKC_DATA_INTEGRITY
+	bool
+	default y
+	help
+	  CSSL Data Integrity component.
+
+config SGI_PKC_FLOW_PROTECTION
+	bool
+	default y
+	help
+	  CSSL Flow Protection component.
+
+config SGI_PKC_PARAM_INTEGRITY
+	bool
+	default y
+	help
+	  CSSL Parameter Integrity component.
+
+config SGI_PKC_SECURE_COUNTER
+	bool
+	default y
+	help
+	  CSSL Secure Counter component.
+
+config SGI_PKC_MEMORY
+	bool
+	default y
+	help
+	  Memory operations component (including CSSL Memory).
+
+config SGI_PKC_BUFFER
+	bool
+	default y
+	help
+	  Buffer management component.
+
+config SGI_PKC_SESSION
+	bool
+	default y
+	help
+	  Session management component.
+
+config SGI_PKC_RESOURCE
+	bool
+	default y
+	help
+	  Resource management component.
+
+config SGI_PKC_PKC
+	bool
+	default y
+	help
+	  PKC (Public Key Cryptography) engine component.
+
+config SGI_PKC_SGI
+	bool
+	default y
+	help
+	  SGI (Secure Gateway Interface) driver component.
+
+config SGI_PKC_DMA
+	bool
+	default y
+	help
+	  DMA operations component.
+
+# Cryptographic Components
+config SGI_PKC_AES
+	bool
+	default y
+	help
+	  AES cryptographic component.
+
+config SGI_PKC_CIPHER
+	bool
+	default y
+	help
+	  Cipher operations component.
+
+config SGI_PKC_CIPHER_MODES
+	bool
+	default y
+	help
+	  Cipher modes (ECB, CBC, CTR) component.
+
+config SGI_PKC_AEAD
+	bool
+	default y
+	help
+	  AEAD (Authenticated Encryption with Associated Data) component.
+
+config SGI_PKC_AEAD_MODES
+	bool
+	default y
+	help
+	  AEAD modes (CCM, GCM) component.
+
+config SGI_PKC_HASH
+	bool
+	default y
+	help
+	  Hash operations component.
+
+config SGI_PKC_HASHMODES
+	bool
+	default y
+	help
+	  Hash modes (SHA-224, SHA-256, SHA-384, SHA-512) component.
+
+config SGI_PKC_MAC
+	bool
+	default y
+	help
+	  MAC (Message Authentication Code) component.
+
+config SGI_PKC_MAC_MODES
+	bool
+	default y
+	help
+	  MAC modes (CMAC, GMAC, CBC-MAC) component.
+
+config SGI_PKC_HMAC
+	bool
+	default y
+	help
+	  HMAC (Hash-based Message Authentication Code) component.
+
+config SGI_PKC_PADDING
+	bool
+	default y
+	help
+	  Padding schemes component.
+
+# Public Key Cryptography Components
+config SGI_PKC_ECC
+	bool
+	default y
+	help
+	  ECC (Elliptic Curve Cryptography) component.
+
+config SGI_PKC_RSA
+	bool
+	default y
+	help
+	  RSA cryptographic component.
+
+config SGI_PKC_FFDH
+	bool
+	default y
+	depends on SGI_PKC_PLATFORM_MCXA
+	help
+	  FFDH (Finite Field Diffie-Hellman) component.
+	  Only available on MCXA2xx platforms (no mcxa5xx platform headers).
+
+config SGI_PKC_SIGNATURE
+	bool
+	default y
+	help
+	  Digital signature component.
+
+config SGI_PKC_KEY
+	bool
+	default y
+	help
+	  Key management component.
+
+config SGI_PKC_MATH
+	bool
+	default y
+	help
+	  Mathematical operations component for PKC.
+
+# Random Number Generation Components
+config SGI_PKC_RANDOM
+	bool
+	default y
+	help
+	  Random number generation component.
+
+config SGI_PKC_RANDOM_MODES
+	bool
+	default y
+	help
+	  Random modes (CTR-DRBG) component.
+
+config SGI_PKC_PRNG
+	bool
+	default y
+	help
+	  PRNG (Pseudo Random Number Generator) component.
+
+config SGI_PKC_CSSL_PRNG
+	bool
+	default y
+	help
+	  CSSL PRNG component.
+
+config SGI_PKC_TRNG
+	bool
+	default y
+	help
+	  TRNG (True Random Number Generator) component.
+
+config SGI_PKC_KDF_MODES
+	bool
+	default y
+	depends on SGI_PKC_PLATFORM_MCXA5
+	help
+	  KDF modes (HKDF, SP800-108, SP800-56C, PBKDF2) component.
+	  Only available on MCXA5xx platforms.
+
+config SGI_PKC_XOF
+	bool
+	default y
+	depends on SGI_PKC_PLATFORM_MCXA5
+	help
+	  XOF (Extendable Output Function) component.
+
+config SGI_PKC_XOF_MODES
+	bool
+	default y
+	depends on SGI_PKC_PLATFORM_MCXA5
+	help
+	  XOF modes (SHAKE-128, SHAKE-256) component.
+	  Only available on MCXA5xx platforms.
+
+# Utility Components
+config SGI_PKC_CRC
+	bool
+	default y
+	help
+	  CRC (Cyclic Redundancy Check) component.
+
+config SGI_PKC_GLIKEY
+	bool
+	default y
+	help
+	  Glikey component for key management.
+
+endif # SGI_PKC

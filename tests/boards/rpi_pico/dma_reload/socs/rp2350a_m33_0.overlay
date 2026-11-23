@@ -1,0 +1,13 @@
+/*
+ * Copyright 2026 Robin Sachsenweger Ballantyne <makenenjoy@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+loopback_pio: &pio1 {
+	status = "okay";
+};
+
+tst_dma0: &dma {
+	status = "okay";
+};

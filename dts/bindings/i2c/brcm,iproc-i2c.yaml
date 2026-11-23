@@ -1,0 +1,16 @@
+# Copyright 2020 Broadcom
+# Copyright 2024 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: Broadcom iProc I2C controller
+
+compatible: "brcm,iproc-i2c"
+
+include: i2c-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

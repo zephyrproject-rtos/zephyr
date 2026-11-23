@@ -1,0 +1,44 @@
+# STMicroelectronics STM32U3 MCU series
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32U3X
+
+# BL2 implementation not available yet
+config TFM_BL2_NOT_SUPPORTED
+	default y
+
+config STM32_INT_FLASH_SECURE_BASE_ADDRESS
+	default 0x0c000000
+
+configdefault CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+if STM32_STOP3_LP_MODE
+
+configdefault COUNTER
+	default y
+
+configdefault COUNTER_RTC_STM32_SUBSECONDS
+	default y
+
+configdefault STM32_LPTIM_STDBY_TIMER
+	default y
+
+configdefault TICKLESS_KERNEL
+	default y
+
+configdefault COUNTER_RTC_STM32_SAVE_VALUE_BETWEEN_RESETS
+	default y
+
+configdefault IDLE_STACK_SIZE
+	default 512
+
+endif # STM32_STOP3_LP_MODE
+
+endif # SOC_SERIES_STM32U3X

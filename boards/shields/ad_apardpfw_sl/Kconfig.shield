@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_AD_APARDPFW_SL
+	def_bool $(shields_list_contains,ad_apardpfw_sl)
+	depends on DT_HAS_ADI_ADIN2111_ENABLED
+	help
+	  AD-APARDPFW-SL 10BASE-T1L power forwarder shield with ADIN2111
+	  Ethernet switch. Requires board-specific SPI configuration
+	  (see boards/apard32690_max32690_m4.overlay for an example).
+	  This shield is not compatible with Arduino R3 boards.

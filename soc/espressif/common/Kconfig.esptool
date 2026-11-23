@@ -1,0 +1,156 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ESPRESSIF
+
+config SOC_ESP32S3_FLASH_OCTAL
+	bool "Use Octal Flash"
+	depends on SOC_SERIES_ESP32S3
+	help
+	  Enable only when the board actually mounts an octal (OPI) flash chip.
+	  This selects OPI flash mode and tuned DTR sample timing. Flash and
+	  PSRAM line modes are independent: most octal-PSRAM modules (such as
+	  N8R8 and N16R8) pair octal PSRAM with quad flash, so leave this
+	  disabled unless the flash chip itself is octal.
+
+config SOC_ESP32S3_FLASH_MODE_AUTO_DETECT
+	depends on SOC_SERIES_ESP32S3
+	bool "Choose flash mode automatically (please read help)"
+	default y
+	help
+	  This config option helps decide whether flash is Quad or Octal, but please note some limitations:
+
+	  1. If the flash chip is an Octal one, even if one of "QIO", "QOUT", "DIO", "DOUT" options is
+	      selected in `SOC_FAMILY_ESPRESSIF_FLASH_MODE`, our code will
+	      automatically change the mode to "OPI" and the sample mode will be STR.
+	  2. If the flash chip is a Quad one, even if "OPI" is selected in
+	     `SOC_FAMILY_ESPRESSIF_FLASH_MODE`, our code will automatically change
+	     the mode to "DIO".
+	  3. Please do not rely on this option when you are pretty sure that you are using Octal flash,
+	     please enable `SOC_ESP32S3_FLASH_OCTAL` option, then you can choose `DTR` sample mode
+	     in `SOC_FAMILY_ESPRESSIF_FLASH_SAMPLE_MODE`. Otherwise, only `STR` mode is available.
+	  4. Enabling this feature reduces available internal RAM size (around 900 bytes).
+	     If your IRAM space is insufficient and you're aware of your flash type,
+	     disable this option and select corresponding flash type options.
+
+choice SOC_FAMILY_ESPRESSIF_FLASH_MODE
+	prompt "Flash SPI mode"
+	default SOC_FAMILY_ESPRESSIF_FLASH_MODE_DIO
+	default SOC_FAMILY_ESPRESSIF_FLASH_MODE_OPI if SOC_ESP32S3_FLASH_OCTAL
+	help
+	  Mode the flash chip is flashed in, as well as the default mode for the
+	  binary to run in.
+
+config SOC_FAMILY_ESPRESSIF_FLASH_MODE_QIO
+	bool "QIO"
+	depends on !SOC_ESP32S3_FLASH_OCTAL
+
+config SOC_FAMILY_ESPRESSIF_FLASH_MODE_QOUT
+	bool "QOUT"
+	depends on !SOC_ESP32S3_FLASH_OCTAL
+
+config SOC_FAMILY_ESPRESSIF_FLASH_MODE_DIO
+	bool "DIO"
+	depends on !SOC_ESP32S3_FLASH_OCTAL
+
+config SOC_FAMILY_ESPRESSIF_FLASH_MODE_DOUT
+	bool "DOUT"
+	depends on !SOC_ESP32S3_FLASH_OCTAL
+
+config SOC_FAMILY_ESPRESSIF_FLASH_MODE_OPI
+	bool "OPI"
+	depends on SOC_ESP32S3_FLASH_OCTAL
+
+endchoice # SOC_FAMILY_ESPRESSIF_FLASH_MODE
+
+choice SOC_FAMILY_ESPRESSIF_FLASH_SAMPLE_MODE
+	prompt "Flash Sampling Mode"
+	default SOC_FAMILY_ESPRESSIF_FLASH_SAMPLE_MODE_DTR if SOC_ESP32S3_FLASH_OCTAL
+	default SOC_FAMILY_ESPRESSIF_FLASH_SAMPLE_MODE_STR if !SOC_ESP32S3_FLASH_OCTAL
+
+config SOC_FAMILY_ESPRESSIF_FLASH_SAMPLE_MODE_STR
+	bool "STR Mode"
+
+config SOC_FAMILY_ESPRESSIF_FLASH_SAMPLE_MODE_DTR
+	bool "DTR Mode"
+	depends on SOC_ESP32S3_FLASH_OCTAL
+
+endchoice # SOC_FAMILY_ESPRESSIF_FLASH_SAMPLE_MODE
+
+config SOC_FAMILY_ESPRESSIF_FLASH_MODE
+	string
+	default "dio" if SOC_FAMILY_ESPRESSIF_FLASH_MODE_QIO
+	default "dio" if SOC_FAMILY_ESPRESSIF_FLASH_MODE_QOUT
+	default "dio" if SOC_FAMILY_ESPRESSIF_FLASH_MODE_DIO
+	default "dout" if SOC_FAMILY_ESPRESSIF_FLASH_MODE_DOUT
+	# The 1st and 2nd bootloader doesn't support opi mode,
+	# using fastrd instead. For now the ESPTOOL doesn't support
+	# fasted (see ESPTOOL-274), using dout instead. In ROM the flash mode
+	# information get from efuse, so don't care this dout choice.
+	default "dout" if SOC_FAMILY_ESPRESSIF_FLASH_MODE_OPI
+
+choice SOC_FAMILY_ESPRESSIF_FLASH_FREQ
+	prompt "Flash SPI speed"
+	default SOC_FAMILY_ESPRESSIF_FLASH_FREQ_40M if SOC_SERIES_ESP32
+	default SOC_FAMILY_ESPRESSIF_FLASH_FREQ_48M if SOC_SERIES_ESP32H2
+	default SOC_FAMILY_ESPRESSIF_FLASH_FREQ_60M if SOC_SERIES_ESP32C2
+	default SOC_FAMILY_ESPRESSIF_FLASH_FREQ_80M if SOC_FAMILY_ESPRESSIF_FLASH_FREQ_80M_DEFAULT
+
+config SOC_FAMILY_ESPRESSIF_FLASH_FREQ_120M
+	bool "120 MHz"
+	select SOC_ESP32S3_SPI_FLASH_HPM_ENABLE if SOC_SERIES_ESP32S3
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S3
+	depends on SOC_FAMILY_ESPRESSIF_FLASH_SAMPLE_MODE_STR
+	help
+	  - Flash 120 MHz SDR mode is stable.
+	  - Flash 120 MHz DDR mode is an experimental feature, it works when
+	  the temperature is stable.
+
+	  Risks:
+	  If your chip powers on at a certain temperature, then after the temperature
+	  increases or decreases by approximately 20 Celsius degrees (depending on the
+	  chip), the program will crash randomly.
+
+config SOC_FAMILY_ESPRESSIF_FLASH_FREQ_80M
+	bool "80 MHz"
+
+config SOC_FAMILY_ESPRESSIF_FLASH_FREQ_60M
+	bool "60 MHz"
+
+config SOC_FAMILY_ESPRESSIF_FLASH_FREQ_48M
+	bool "48 MHz"
+
+config SOC_FAMILY_ESPRESSIF_FLASH_FREQ_40M
+	bool "40 MHz"
+
+config SOC_FAMILY_ESPRESSIF_FLASH_FREQ_26M
+	bool "26 MHz"
+	depends on !SOC_SERIES_ESP32S3
+
+config SOC_FAMILY_ESPRESSIF_FLASH_FREQ_20M
+	bool "20 MHz"
+
+endchoice # SOC_FAMILY_ESPRESSIF_FLASH_FREQ
+
+config SOC_FAMILY_ESPRESSIF_FLASH_FREQ_80M_DEFAULT
+	bool
+	default y if SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32C3 || \
+		SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32C61 || \
+		SOC_SERIES_ESP32P4
+	help
+	  This is an invisible item, used to define the targets that defaults to use 80MHz Flash SPI speed.
+
+config SOC_FAMILY_ESPRESSIF_FLASH_FREQ
+	string
+	# On some of the ESP chips, max boot frequency would be equal to (or even lower than) 80m.
+	# We currently define this to `80m`.
+	default '80m' if SOC_FAMILY_ESPRESSIF_FLASH_FREQ_120M
+	default '80m' if SOC_FAMILY_ESPRESSIF_FLASH_FREQ_80M
+	default '60m' if SOC_FAMILY_ESPRESSIF_FLASH_FREQ_60M
+	default '48m' if SOC_FAMILY_ESPRESSIF_FLASH_FREQ_48M
+	default '40m' if SOC_FAMILY_ESPRESSIF_FLASH_FREQ_40M
+	default '26m' if SOC_FAMILY_ESPRESSIF_FLASH_FREQ_26M
+	default '20m' if SOC_FAMILY_ESPRESSIF_FLASH_FREQ_20M
+	default '20m' # if no clock can match in bin headers, go with minimal.
+
+endif # SOC_FAMILY_ESPRESSIF

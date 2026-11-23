@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		mspi0 = &xspi1;
+	};
+};
+
+&ext_flash_ctrl {
+	/* Allow Rd and Wr in MemoryMapped mode (permission = 0) */
+	memmap-config = <1 0 DT_SIZE_M(64) 0>;
+};

@@ -1,0 +1,25 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		gnss = &gnss;
+	};
+};
+
+&lpuart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+
+	gnss: u_blox_m10 {
+		compatible = "u-blox,m8";
+		initial-baudrate = <115200>;
+		status = "okay";
+	};
+};

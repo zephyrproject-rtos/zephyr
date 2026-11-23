@@ -1,0 +1,203 @@
+/*
+ * Copyright (c) 2015 Wind River Systems, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_KERNEL_INCLUDE_TIMEOUT_Q_H_
+#define ZEPHYR_KERNEL_INCLUDE_TIMEOUT_Q_H_
+
+/**
+ * @file
+ * @brief timeout queue for threads on kernel objects
+ */
+
+#include <zephyr/kernel.h>
+
+#include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+
+/*
+ * Per-node timeout helpers (Kconfig choice TIMEOUT_BACKEND).
+ *
+ * z_init_timeout() and z_is_inactive_timeout() operate on a single
+ * struct _timeout and are needed tree-wide (timer.c, work.c, poll.c, ...),
+ * so they live here and depend only on the chosen backend's struct _timeout
+ * fields (see kernel_structs.h). The queue itself (the z_timeout_q_*()
+ * operations and the backend instance) is private to kernel/timeout.c, which
+ * includes the matching backend implementation header directly.
+ */
+#if defined(CONFIG_TIMEOUT_BACKEND_MINHEAP)
+
+static inline void z_init_timeout(struct _timeout *to)
+{
+	to->heap_handle.idx = 0U;
+	to->abs_ticks = 0;
+}
+
+static inline bool z_is_inactive_timeout(const struct _timeout *to)
+{
+	return to->heap_handle.idx == 0U;
+}
+
+#elif defined(CONFIG_TIMEOUT_BACKEND_WHEEL)
+
+static inline void z_init_timeout(struct _timeout *to)
+{
+	sys_dnode_init(&to->node);
+	to->flags = 0U;
+	to->dticks = 0;
+}
+
+static inline bool z_is_inactive_timeout(const struct _timeout *to)
+{
+	return !sys_dnode_is_linked(&to->node);
+}
+
+#elif defined(CONFIG_TIMEOUT_BACKEND_SKIPLIST)
+
+static inline void z_init_timeout(struct _timeout *to)
+{
+	uint8_t i;
+
+	to->height = 0;
+	to->abs_ticks = 0;
+
+	for (i = 0; i < CONFIG_TIMEOUT_SKIPLIST_MAX_LEVEL; i++) {
+		to->forward[i] = NULL;
+	}
+}
+
+static inline bool z_is_inactive_timeout(const struct _timeout *to)
+{
+	return to->height == 0;
+}
+
+#else /* CONFIG_TIMEOUT_BACKEND_DLIST or _BUCKET */
+
+static inline void z_init_timeout(struct _timeout *to)
+{
+	sys_dnode_init(&to->node);
+	to->dticks = 0;
+}
+
+static inline bool z_is_inactive_timeout(const struct _timeout *to)
+{
+	return !sys_dnode_is_linked(&to->node);
+}
+
+#endif
+
+/* Adds the timeout to the queue.
+ *
+ * @return Absolute tick value when timeout will expire.
+ */
+k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout);
+
+/* Attempt to abort a timeout. Safe to use for callers that need to be
+ * certain the handler is not in flight (e.g. when about to free the
+ * timeout's storage), as long as the caller is prepared to drop any
+ * locks the handler may need and retry.
+ *
+ * Returns:
+ *   0       — the timeout was active and has been removed from the queue.
+ *   -EINVAL — the timeout was not active (never linked, already done, or
+ *             a same-CPU IRQ aborted while the handler was paused on this
+ *             CPU; in that case the in-flight slot is marked superseded
+ *             so handlers that need to bail may check via
+ *             z_timeout_inflight_superseded()).
+ *   -EAGAIN — the handler is currently in flight on another CPU. A copy it
+ *             re-queued, if any, has been removed. A short arch_spin_relax()
+ *             has already been done before this return.
+ *
+ * Callers that must not proceed while the handler runs (e.g. before freeing
+ * the timeout) drop any lock the handler may need, wait with
+ * z_timeout_wait_inflight() and call again on -EAGAIN; after any other
+ * return the handler is not in flight on another CPU. Callers that only need
+ * the timeout cancelled may ignore -EAGAIN.
+ */
+int z_try_abort_timeout(struct _timeout *to);
+
+void z_timeout_wait_inflight_spin(const struct _timeout *to);
+
+/* Wait, holding no locks, until @to is no longer in flight on another CPU.
+ *
+ * For the -EAGAIN retry loops around z_try_abort_timeout(). The in-flight
+ * handler usually needs the very lock the caller just dropped (the
+ * scheduler's for a thread timeout), and spinlocks are not fair: a caller
+ * that drops it and takes it straight back can win every time against the
+ * handler spinning in k_spin_lock() on the announcing CPU, which livelocks
+ * that CPU inside the timer interrupt. Waiting here first lets the handler
+ * take the lock and finish. Ticket spinlocks are FIFO, so the handler,
+ * already holding an earlier ticket, gets the lock first and there is
+ * nothing to wait for.
+ */
+static inline void z_timeout_wait_inflight(const struct _timeout *to)
+{
+	if (IS_ENABLED(CONFIG_SMP) && !IS_ENABLED(CONFIG_TICKET_SPINLOCKS)) {
+		z_timeout_wait_inflight_spin(to);
+	}
+}
+
+/* True if @to is the currently in-flight timeout and a same-CPU aborter
+ * has marked the slot as superseded. Handlers with non-idempotent side
+ * effects (e.g. z_thread_timeout()) should call this at entry, after
+ * taking their own lock, and bail if it returns true.
+ */
+bool z_timeout_inflight_superseded(const struct _timeout *to);
+
+static inline void z_init_thread_timeout(struct _thread_base *thread_base)
+{
+	z_init_timeout(&thread_base->timeout);
+}
+
+extern void z_thread_timeout(struct _timeout *timeout);
+
+static inline k_ticks_t z_add_thread_timeout(struct k_thread *thread, k_timeout_t ticks)
+{
+	return z_add_timeout(&thread->base.timeout, z_thread_timeout, ticks);
+}
+
+static inline int z_try_abort_thread_timeout(struct k_thread *thread)
+{
+	return z_try_abort_timeout(&thread->base.timeout);
+}
+
+static inline void z_wait_thread_timeout_inflight(struct k_thread *thread)
+{
+	z_timeout_wait_inflight(&thread->base.timeout);
+}
+
+uint32_t z_get_next_timeout_expiry(void);
+
+k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
+
+#else
+
+/* Stubs when !CONFIG_SYS_CLOCK_EXISTS */
+#define z_init_thread_timeout(thread_base) do {} while (false)
+#define z_try_abort_thread_timeout(to) 0
+#define z_wait_thread_timeout_inflight(thread) do {} while (false)
+#define z_is_inactive_timeout(to) 1
+#define z_get_next_timeout_expiry() ((uint32_t) K_TICKS_FOREVER)
+#define z_set_timeout_expiry(ticks, is_idle) do {} while (false)
+
+static inline k_ticks_t z_add_thread_timeout(struct k_thread *thread, k_timeout_t ticks)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(ticks);
+	return 0;
+}
+
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ZEPHYR_KERNEL_INCLUDE_TIMEOUT_Q_H_ */

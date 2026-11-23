@@ -1,0 +1,60 @@
+/* Copyright (c) 2024 sensry.io */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+#include <sensry/ganymed-sy1xx.dtsi>
+#include "ganymed_bob_sy120-pinctrl.dtsi"
+
+/ {
+	aliases {
+		led0 = &led_0;
+		led1 = &led_1;
+	};
+
+	chosen {
+		zephyr,code-partition = &l2_ram_text;
+		zephyr,sram = &l2_ram_data;
+		zephyr,shell-uart = &uart0;
+		zephyr,console = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_0: led_0 {
+			gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+			label = "USERLED0";
+		};
+
+		led_1: led_1 {
+			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+			label = "USERLED1";
+		};
+	};
+};
+
+&mdio0 {
+
+	pinctrl-0 = <&mdio_clk &mdio_io>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	pyh0: phy@0 {
+		compatible = "microchip,vsc8541";
+		reg = <0x0>;
+
+		reset-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+
+		microchip,interface-type = "rgmii";
+		status = "okay";
+	};
+};
+
+&eth0 {
+	phy-handle = <&pyh0>;
+	zephyr,random-mac-address;
+	status = "okay";
+};

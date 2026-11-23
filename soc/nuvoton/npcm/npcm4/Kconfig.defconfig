@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_NPCM4
+
+config NUM_IRQS
+	default 82
+
+config ROM_START_OFFSET
+	default 0x600 if XIP
+	default 0x0   if !XIP
+
+endif # SOC_SERIES_NPCM4

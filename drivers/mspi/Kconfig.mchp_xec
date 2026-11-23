@@ -1,0 +1,60 @@
+# Microchip XEC MSPI driver configuration
+#
+# Copyright (c) 2026 Microchip Technology Inc. and its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_MCHP_XEC_QMSPI
+	bool "Microchip XEC QMSPI MSPI controller driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_QMSPI_CONTROLLER_ENABLED
+	select PINCTRL
+	select PINCTRL_KEEP_SLEEP_STATE
+	help
+	  Enable MSPI driver for Microchip MEC174x/MEC175x/MEC165xB QMSPI controller.
+	  Supports PIO transfers using descriptors and the 8-byte TX/RX FIFOs.
+	  Uses register definitions from
+	  soc/microchip/mec/common/reg/mec_qmspi.h.
+
+	  Pin assignments are board-specific; add QMSPI pinctrl nodes to
+	  the board DTS and reference them via pinctrl-0 on the qspi0 node.
+
+if MSPI_MCHP_XEC_QMSPI
+
+config MSPI_MCHP_XEC_QMSPI_LDMA
+	bool "QMSPI Local-DMA data path"
+	default y
+	depends on MSPI_DMA
+	help
+	  Use the QMSPI controller's three TX and three RX Local-DMA channels
+	  for command, address, and data phases when an MSPI request specifies
+	  xfer_mode=MSPI_DMA. Length-override on each channel drives the byte
+	  count, bypassing the descriptor 15-bit NQUNITS limit.
+
+	  When this is disabled, MSPI_DMA requests are rejected and only the
+	  PIO (FIFO) path is built.
+
+endif # MSPI_MCHP_XEC_QMSPI
+
+config MSPI_MCHP_XEC_GPSPI_V2
+	bool "Microchip XEC GPSPI MSPI driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_GPSPI_V2_CONTROLLER_ENABLED
+	select PINCTRL
+	select PINCTRL_KEEP_SLEEP_STATE
+	help
+	  Enable MSPI master driver for the Microchip MEC174x/MEC175x/MEC165xB
+	  GPSPI block (compatible "microchip,xec-gpspi-v2").
+
+	  Features:
+	    - Standard (1-bit) and Dual (2-bit) wire modes
+	    - All four CPOL/CPHA combinations (mspi_cpp_mode 0..3)
+	    - 16-bit clock divider (up to clock_frequency / 2 bit-rate)
+	    - Hardware chip-enable on CE0 / CE1 with programmable
+	      CS_TIMING (assert / deassert / inter-frame gap)
+	    - Synchronous and asynchronous transceive on both
+	      MSPI_PIO and MSPI_DMA paths
+
+	  Returns -ENOTSUP for: DDR data rate, Quad / split-line io_modes,
+	  active-high CE, big-endian transfers, dqs_enable, op_mode
+	  peripheral, and per-packet total > 0x7FFF bytes
+	  (CONTROL.XFR_LENGTH limit).

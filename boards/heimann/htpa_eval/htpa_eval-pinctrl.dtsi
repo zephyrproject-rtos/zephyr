@@ -1,0 +1,195 @@
+/*
+ * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2026 sensry.io
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/same70q-pinctrl.h>
+
+&pinctrl {
+	afec0_default: afec0_default {	/* ADCL - J502 */
+		group1 {
+			pinmux = <PD30X_AFE0_AD0>,
+				 <PA19X_AFE0_AD8>,
+				 <PA17X_AFE0_AD6>;
+		};
+	};
+
+	afec1_default: afec1_default {	/* ADCH - J504 */
+		group1 {
+			pinmux = <PC31X_AFE1_AD6>;
+		};
+	};
+
+	gmac_rmii: gmac_rmii {
+		group1 {
+			pinmux = <PD0A_GMAC_GTXCK>,
+				 <PD1A_GMAC_GTXEN>,
+				 <PD2A_GMAC_GTX0>,
+				 <PD3A_GMAC_GTX1>,
+				 <PD4A_GMAC_GRXDV>,
+				 <PD5A_GMAC_GRX0>,
+				 <PD6A_GMAC_GRX1>,
+				 <PD7A_GMAC_GRXER>;
+		};
+	};
+
+	mdio_default: mdio_default {
+		group1 {
+			pinmux = <PD8A_GMAC_GMDC>,
+				 <PD9A_GMAC_GMDIO>;
+		};
+	};
+
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PA0A_PWMC0_PWMH0>,
+				 <PC19B_PWMC0_PWMH2>,
+				 <PD26A_PWMC0_PWML2>;
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <PD20B_SPI0_MISO>,
+				 <PD21B_SPI0_MOSI>,
+				 <PD22B_SPI0_SPCK>,
+				 <PD25B_SPI0_NPCS1>,
+				 <PD27B_SPI0_NPCS3>;
+		};
+	};
+
+	qdec0_default: qdec0_default {
+		group1 {
+			pinmux = <PA0B_TC0_TIOA0>,
+				 <PA1B_TC0_TIOB0>;
+		};
+	};
+
+	qdec1_default: qdec1_default {
+		group1 {
+			pinmux = <PC23B_TC1_TIOA3>,
+				 <PC24B_TC1_TIOB3>;
+		};
+	};
+
+	qdec2_default: qdec2_default {
+		group1 {
+			pinmux = <PC5B_TC2_TIOA6>,
+				 <PC6B_TC2_TIOB6>;
+		};
+	};
+
+	qdec3_default: qdec3_default {
+		group1 {
+			pinmux = <PE0B_TC3_TIOA9>,
+				 <PE1B_TC3_TIOB9>;
+		};
+	};
+
+	twihs0_default: twihs0_default {
+		group1 {
+			pinmux = <PA4A_TWI0_TWCK>,
+				 <PA3A_TWI0_TWD>;
+		};
+	};
+
+	twihs2_default: twihs2_default {
+		group1 {
+			pinmux = <PD28C_TWI2_TWCK>,
+				 <PD27C_TWI2_TWD>;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <PA9A_UART0_RXD>,
+				 <PA10A_UART0_TXD>;
+		};
+	};
+
+	uart3_default: uart3_default {
+		group1 {
+			pinmux = <PD28A_UART3_RXD>,
+				 <PD30A_UART3_TXD>;
+		};
+	};
+
+	uart4_default: uart4_default {
+		group1 {
+			pinmux = <PD19C_UART4_TXD>,
+				 <PD18C_UART4_RXD>;
+		};
+	};
+
+	usart0_hw_ctrl_flow_clk: usart0_hw_ctrl_flow_clk {
+		group1 {
+			pinmux = <PB0C_USART0_RXD>,
+				 <PB3C_USART0_RTS>;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <PB1C_USART0_TXD>,
+				 <PB2C_USART0_CTS>,
+				 <PB13C_USART0_SCK>;
+		};
+	};
+
+	hsmci_default: hsmci_default {
+		group1 {
+			pinmux = <PA28C_HSMCI_MCCDA>,
+				 <PA25D_HSMCI_MCCK>,
+				 <PA30C_HSMCI_MCDA0>,
+				 <PA31C_HSMCI_MCDA1>,
+				 <PA26C_HSMCI_MCDA2>,
+				 <PA27C_HSMCI_MCDA3>;
+		};
+	};
+
+	smc_default: smc_default {
+		group1 {
+			pinmux = <PC14A_EBI_NCS0>,
+				 <PC18A_EBI_A0_NBS0>,
+				 <PD15C_EBI_NWR1_NBS1>,
+				 <PC11A_EBI_NRD>,
+				 <PC8A_EBI_NWE_NWR0>,
+				 <PC0A_EBI_D0>,
+				 <PC1A_EBI_D1>,
+				 <PC2A_EBI_D2>,
+				 <PC3A_EBI_D3>,
+				 <PC4A_EBI_D4>,
+				 <PC5A_EBI_D5>,
+				 <PC6A_EBI_D6>,
+				 <PC7A_EBI_D7>,
+				 <PE0A_EBI_D8>,
+				 <PE1A_EBI_D9>,
+				 <PE2A_EBI_D10>,
+				 <PE3A_EBI_D11>,
+				 <PE4A_EBI_D12>,
+				 <PE5A_EBI_D13>,
+				 <PA15A_EBI_D14>,
+				 <PA16A_EBI_D15>,
+				 <PC19A_EBI_A1>,
+				 <PC20A_EBI_A2>,
+				 <PC21A_EBI_A3>,
+				 <PC22A_EBI_A4>,
+				 <PC23A_EBI_A5>,
+				 <PC24A_EBI_A6>,
+				 <PC25A_EBI_A7>,
+				 <PC26A_EBI_A8>,
+				 <PC27A_EBI_A9>,
+				 <PC28A_EBI_A10>,
+				 <PC29A_EBI_A11>,
+				 <PC30A_EBI_A12>,
+				 <PC31A_EBI_A13>,
+				 <PA18C_EBI_A14>,
+				 <PA19C_EBI_A15>,
+				 <PA20C_EBI_A16_BA0>,
+				 <PA0C_EBI_A17_BA1>,
+				 <PA1C_EBI_A18>,
+				 <PA23C_EBI_A19>;
+		};
+	};
+};

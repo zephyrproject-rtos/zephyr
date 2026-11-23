@@ -1,0 +1,11 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&rtc130 {
+	fixed-top;
+	status = "okay";
+};
+
+&rtc131 {
+	fixed-top;
+	status = "okay";
+};

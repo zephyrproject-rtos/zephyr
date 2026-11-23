@@ -1,0 +1,27 @@
+$ make run
+
+[QEMU] CPU: qemu32
+Running test suite test_timer_api
+tc_start() - test_timer_duration_period
+===================================================================
+PASS - test_timer_duration_period.
+tc_start() - test_timer_period_0
+===================================================================
+PASS - test_timer_period_0.
+tc_start() - test_timer_expirefn_null
+===================================================================
+PASS - test_timer_expirefn_null.
+tc_start() - test_timer_status_get
+===================================================================
+PASS - test_timer_status_get.
+tc_start() - test_timer_status_get_anytime
+===================================================================
+PASS - test_timer_status_get_anytime.
+tc_start() - test_timer_status_sync
+===================================================================
+PASS - test_timer_status_sync.
+tc_start() - test_timer_k_define
+===================================================================
+PASS - test_timer_k_define.
+===================================================================
+PROJECT EXECUTION SUCCESSFUL

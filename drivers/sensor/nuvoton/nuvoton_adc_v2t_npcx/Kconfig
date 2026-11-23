@@ -1,0 +1,14 @@
+#  ADC V2T NPCX driver configuration options
+
+# Copyright (c) 2025 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_V2T_NPCX
+	bool "Nuvoton NPCX ADC V2T enable"
+	default y
+	depends on ADC_NPCX
+	depends on DT_HAS_NUVOTON_NPCX_ADC_V2T_ENABLED
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NUVOTON_NPCX_ADC_V2T),support-npckn-v1,True)
+	help
+	  This option enables the ADC V2T (voltage to temperature)
+	  driver.

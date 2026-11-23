@@ -1,0 +1,46 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_DRIVER_COUNTER_MCUX_LPC_RTC_HIGHRES
+	bool "tests the nxp_lpc_rtc_highres compatible driver"
+	default y if COUNTER_MCUX_LPC_RTC_HIGHRES
+	help
+	  tests the nxp_lpc_rtc_highres compatible driver
+
+config TEST_DRIVER_COUNTER_TOLERANCE
+	int "Counter ticks tolerance (%)"
+	default 10
+	help
+	  Error tolerance used in counter driver tests.
+	  A number of ticks is estimated and counter is tested against systimer,
+	  to verify accuracy. Tolerance is a percentage of deviation allowed for
+	  the number of expected ticks.
+
+config TEST_GUARD_PERIOD_US
+	int "Guard Period in us"
+	default 16000 if COUNTER_MCHP_RTC_G1
+	default 200
+	help
+	  Guard period in us
+
+config TEST_PROCESSING_LIMIT_US
+	int "Processing limit in us"
+	default 20000 if COUNTER_MCHP_RTC_G1
+	default 1000
+	help
+	  Processing limit in us
+
+config TEST_COUNTER_SHORT_RELATIVE_ALARM_ITERATIONS
+	int "Iterations for the short relative alarm test (slow counters)"
+	range 1 1000
+	default 10
+	help
+	  Number of set-alarm/wait iterations performed by
+	  test_short_relative_alarm for low-frequency (< 1000 Hz) counter
+	  instances only; high-frequency counters always use the full 100
+	  iterations. Each iteration busy-waits a few counter ticks, so on a
+	  slow counter (e.g. a 1 Hz RTC) a large value makes the test run for
+	  minutes and risk the test timeout. The default keeps slow-counter
+	  coverage while bounding runtime.
+
+source "Kconfig.zephyr"

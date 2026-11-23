@@ -1,0 +1,8 @@
+identifier: te0950
+name: Trenz Electronic TE0950 Versal AI Edge RPU
+arch: arm
+toolchain:
+  - zephyr
+vendor: trenz
+supported:
+  - uart

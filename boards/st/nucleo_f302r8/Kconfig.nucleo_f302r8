@@ -1,0 +1,5 @@
+# Copyright (c) 2018 Seitz & Associates
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_F302R8
+	select SOC_STM32F302X8

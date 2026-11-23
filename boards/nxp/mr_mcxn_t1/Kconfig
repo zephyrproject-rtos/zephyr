@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2025 NXP
+# SPDX-FileCopyrightText: 2026 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MR_MCXN_T1
+	select BOARD_EARLY_INIT_HOOK

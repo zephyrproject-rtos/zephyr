@@ -1,0 +1,11 @@
+# Copyright 2023 Calian Ltd.  All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_XILINX_AXI
+	bool "Xilinx AXI I2C driver"
+	default y
+	depends on DT_HAS_XLNX_XPS_IIC_2_00_A_ENABLED || DT_HAS_XLNX_XPS_IIC_2_1_ENABLED
+	select EVENTS
+	help
+	  Enable the Xilinx AXI IIC Bus Interface driver.
+	  This is an FPGA logic core as described by Xilinx document PG090.

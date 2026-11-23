@@ -1,0 +1,6 @@
+# Copyright (c) 2021, Sateesh Kotapati
+# Copyright (c) 2026 Ezurio LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LYRA_24_DVK_P10
+	select SOC_BGM240PB22VNA

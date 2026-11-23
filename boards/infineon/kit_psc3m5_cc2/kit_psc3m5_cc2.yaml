@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: kit_psc3m5_cc2
+name: The Infineon PSOC™ Control C3M5 Connectivity Card 2 (KIT_PSC3M5_CC2)
+type: mcu
+arch: arm
+ram: 64
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - can
+  - gpio
+  - spi
+  - uart
+  - timer
+  - watchdog
+vendor: infineon

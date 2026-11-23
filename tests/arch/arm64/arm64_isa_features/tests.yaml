@@ -1,0 +1,8 @@
+common:
+  arch_allow: arm64
+  tags: arm64
+
+tests:
+  arch.arm64.isa_features:
+    integration_platforms:
+      - fvp_base_revc_2xaem/v9a

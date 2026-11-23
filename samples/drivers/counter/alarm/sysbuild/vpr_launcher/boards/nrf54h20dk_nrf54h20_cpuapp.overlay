@@ -1,0 +1,11 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&timer120 {
+	interrupt-parent = <&cpuflpr_clic>;
+	status = "reserved";
+};
+
+&timer130 {
+	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
+};

@@ -1,0 +1,17 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BFLB_TSEN
+	bool "Bouffalo Lab internal temperature sensor (TSEN)"
+	default y
+	depends on DT_HAS_BFLB_TSEN_ENABLED
+	select ADC
+	help
+	  Enable the driver for the internal die temperature sensor (TSEN)
+	  on Bouffalo Lab SoCs.
+
+	  TSEN is an internal GPADC input; no external pins are used. The
+	  driver acquires two sample phases (TSVBE_LOW toggled) via the
+	  BFLB ADC driver and converts the difference to a temperature in
+	  deg C using a fixed slope plus a calibration offset read from
+	  efuse when available.

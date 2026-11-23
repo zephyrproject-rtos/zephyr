@@ -1,0 +1,27 @@
+description: |
+    The BMP581 is a Barometric pressure sensor on I3C. See more info at:
+    https://www.bosch-sensortec.com/products/environmental-sensors/pressure-sensors/bmp581/
+
+    When setting the sensor DTS properties, make sure to include
+    bmp581.h and use the macros defined there.
+
+compatible: "bosch,bmp581"
+
+include: ["i3c-device.yaml", "bosch,bmp581-common.yaml"]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/bmp581.h>
+
+    &i3c0 {
+        bmp581: bmp581@460000000000000046 {
+            compatible = "bosch,bmp581";
+            reg = <0x46 0x00 0x46>;
+            odr = <BMP581_DT_ODR_50_HZ>;
+            press-osr = <BMP581_DT_OVERSAMPLING_8X>;
+            temp-osr = <BMP581_DT_OVERSAMPLING_4X>;
+            press-iir = <BMP581_DT_IIR_FILTER_COEFF_7>;
+            temp-iir = <BMP581_DT_IIR_FILTER_COEFF_3>;
+            power-mode = <BMP581_DT_MODE_NORMAL>;
+        };
+    };

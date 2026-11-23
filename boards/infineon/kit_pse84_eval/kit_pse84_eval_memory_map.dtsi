@@ -1,0 +1,304 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * kit_pse84_eval memory map.
+ *
+ * =========================================================================
+ * SRAM (1 MB)
+ *   0x34000000  ext-boot reserved            4 kB
+ *   0x34001000  CM33-S <-> secure enclave    4 kB
+ *   0x34002000  CM33-S code                212 kB   M33SCODE
+ *   0x34037000  CM33-S data                132 kB
+ *   0x24058000  CM33-NS code               404 kB   M33CODE
+ *   0x240bd000  CM33-NS data               256 kB
+ *   0x340fd000  CM33-S alloc shared          4 kB   SHARED_MEMORY_SEC
+ *   0x240fe000  CM33-NS alloc shared         4 kB   SHARED_MEMORY_M33
+ *   0x240ff000  CM55 alloc shared            4 kB   SHARED_MEMORY_M55
+ *
+ * SoCMEM (5 MB)
+ *   0x26100000  CM55 data                  256 kB
+ *
+ * RRAM (512 kB)
+ *   0x220000000  ext-boot reserved   68 kB
+ *   0x220011000  MCUboot bootloader 256 kB  boot_partition
+ *   0x220051000  storage             72 kB
+ *   0x220063000  security reserved  116 kB
+ *
+ * External QSPI flash (16 MB) - ONE physical device, four bus windows onto
+ * the SAME bytes at the SAME offsets. Only the window base differs, so the
+ * same partition offset appears once per view it is exposed in:
+ *
+ *   CBUS-NS  0x08000000  flash0        NSPE run-time  (zephyr,flash for NS)
+ *   CBUS-S   0x18000000  flash0_s      SPE + MCUboot  (zephyr,flash for S)
+ *   SAHB-NS  0x60000000  flash0_sahb   CM55 run-time  (zephyr,flash for M55)
+ *   SAHB-S   0x70000000  (not in DTS)  secure programming alias
+ *
+ *   offset    size     CBUS-NS(flash0)   CBUS-S(flash0_s)   SAHB(flash0_sahb)
+ *   0x000000  1.00 MB  storage_partition -                  -
+ *   0x100000  2.25 MB  -                 m33s_xip           -
+ *   0x340000  1.75 MB  m33_xip           -                  -
+ *   0x580000  1.50 MB  -                 -                  m55_xip
+ *   0x700000  2.25 MB  -                 m33s_upgrade       -
+ *   0x940000  1.75 MB  m33_upgrade       -                  -
+ *   0xb00000  1.50 MB  -                 -                  m55_upgrade
+ *
+ * CM33 images link for CBUS and are programmed at SAHB; the constant
+ * 0x58000000 CBUS -> SAHB delta is applied at flash time by
+ * CONFIG_BUILD_OUTPUT_ADJUST_LMA. CONFIG_ROM_START_OFFSET reserves the
+ * 0x400 image header (extended-boot or MCUboot) in every case.
+ *
+ * MCUboot image-numbering labels. MCUboot maps image 0 -> slot0/slot1,
+ * image 1 -> slot2/slot3, image 2 -> slot4/slot5:
+ *   - slot0/slot1 are relative (the image being signed now), so they are
+ *     bound per-build in kit_pse84_eval_m33.dts (Secure) /
+ *     kit_pse84_eval_m33_ns.dts (NS) / kit_pse84_eval_m55.dts.
+ *   - slot2..slot5 are absolute and shared and only the MCUboot bootloader
+ *     consumes them, so they are attached to the role-labelled nodes
+ *     (m33_xip/upgrade, m55_xip/upgrade) in the bootloader overlay
+ *     kit_pse84_eval_mcuboot_bl.overlay rather than here.
+ *   - slot0_ns_partition / slot1_ns_partition are consumed only by the
+ *     Non-Secure build (Zephyr's TF-M integration looks them up by name,
+ *     dt_nodelabel ... REQUIRED, to size the Non-Secure image), so they are
+ *     attached to the m33_xip/m33_upgrade nodes in kit_pse84_eval_m33_ns.dts
+ *     rather than here. Their Secure counterpart slot0_partition is likewise
+ *     supplied per-build by the board files.
+ * =========================================================================
+ */
+
+/ {
+	reserved-memory {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		m33_code: memory@24058000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x24058000 DT_SIZE_K(404)>;
+			zephyr,memory-region = "M33CODE";
+		};
+
+		m33_data: memory@240bd000 {
+			reg = <0x240bd000 DT_SIZE_K(256)>;
+		};
+
+		m33_allocatable_shared: memory@240fe000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x240fe000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "M33SHARED";
+		};
+
+		m55_allocatable_shared: memory@240ff000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x240ff000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "M55SHARED";
+		};
+
+		m55_data: memory@26100000 {
+			reg = <0x26100000 DT_SIZE_K(256)>;
+		};
+
+		extended_boot_sram_reserved: memory@34000000 {
+			reg = <0x34000000 DT_SIZE_K(4)>;
+		};
+
+		m33s_shared: memory@34001000 {
+			reg = <0x34001000 DT_SIZE_K(4)>;
+		};
+
+		m33s_code: memory@34002000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x34002000 DT_SIZE_K(212)>;
+			zephyr,memory-region = "M33SCODE";
+		};
+
+		m33s_data: memory@34037000 {
+			reg = <0x34037000 DT_SIZE_K(132)>;
+		};
+
+		m33s_allocatable_shared: memory@340fd000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x340fd000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "SECSHARED";
+		};
+	};
+
+	rram_controller: rram_controller@42200000 {
+		compatible = "infineon,rram-controller";
+		reg = <0x42200000 0x10000>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
+
+		rram0: rram0@22000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x22000000 DT_SIZE_K(512)>;
+			ranges = <0x0 0x22000000 DT_SIZE_K(512)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			write-block-size = <16>;
+			erase-block-size = <16>;
+			status = "okay";
+
+			partitions {
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				reserved_extended_boot: reserved@0 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x0 0x11000>;
+					label = "reserved-extended-boot";
+					read-only;
+				};
+
+				boot_partition: boot_partition@11000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x11000 0x40000>;
+					label = "mcuboot";
+					read-only;
+				};
+
+				storage_partition_rram: storage_rram@51000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x51000 0x12000>;
+					label = "storage-rram";
+				};
+
+				reserved_security: reserved@63000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x63000 0x1d000>;
+					label = "reserved-security";
+					read-only;
+				};
+			};
+		};
+	};
+
+	flash_controller: flash_controller@44460000 {
+		compatible = "infineon,qspi-flash";
+		reg = <0x44460000 0x20000>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		pinctrl-0 = <&p1_0_smif0_data0 &p1_1_smif0_data1
+			     &p1_2_smif0_data2 &p1_3_smif0_data3
+			     &p2_0_smif0_select1>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		/* CBUS non-secure view of external flash.
+		 * Used as zephyr,flash for NS builds.
+		 * The base address is 0x08000000.
+		 */
+		flash0: flash0@8000000 {
+			compatible = "soc-nv-flash", "infineon,s25fs128s";
+			reg = <0x08000000 DT_SIZE_M(16)>;
+			ranges = <0x0 0x08000000 DT_SIZE_M(16)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			write-block-size = <16>;
+			erase-block-size = <65536>;
+
+			partitions {
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				storage_partition: storage@0 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x0 DT_SIZE_M(1)>;
+					label = "storage";
+				};
+
+				m33_xip: partition@340000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x340000 0x1c0000>;
+					label = "image-2";
+				};
+
+				m33_upgrade: partition@940000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x940000 0x1c0000>;
+					label = "image-3";
+				};
+			};
+		};
+
+		/* CBUS secure view of the same external flash.
+		 * Used as zephyr,flash for S builds.
+		 * The base address is 0x18000000.
+		 * This is the same physical device as flash0, accessed
+		 * through the secure CBUS alias for instruction-cached
+		 * execution in secure mode.
+		 */
+		flash0_s: flash0_s@18000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x18000000 DT_SIZE_M(16)>;
+			ranges = <0x0 0x18000000 DT_SIZE_M(16)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			write-block-size = <16>;
+			erase-block-size = <65536>;
+
+			partitions {
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				m33s_xip: partition@100000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x100000 0x240000>;
+					label = "image-0";
+				};
+
+				m33s_upgrade: partition@700000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x700000 0x240000>;
+					label = "image-1";
+				};
+			};
+		};
+
+		/* SAHB view of the same external flash.
+		 * Used as zephyr,flash for CM55 builds.
+		 * The base address is 0x60000000.
+		 * This is the same physical device as flash0, accessed
+		 * through the SAHB alias as cm55 does not have
+		 * instruction-cached execution for external flash.
+		 */
+		flash0_sahb: flash0_sahb@60000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x60000000 DT_SIZE_M(16)>;
+			ranges = <0x0 0x60000000 DT_SIZE_M(16)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			write-block-size = <16>;
+			erase-block-size = <65536>;
+
+			partitions {
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				m55_xip: partition@580000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x580000 0x180000>;
+					label = "image-4";
+				};
+
+				m55_upgrade: partition@b00000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0xb00000 0x180000>;
+					label = "image-5";
+				};
+			};
+		};
+	};
+};

@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) 2018, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mimxrt1060_evk.dtsi"
+
+/ {
+	chosen {
+		zephyr,flash-controller = &ext_flash_ctrl;
+		zephyr,flash = &s26ks512s0;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flexspi {
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(64)>;
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	ahb-bufferable;
+	ahb-cacheable;
+	sck-differential-clock;
+	combination-mode;
+	rx-clock-source = <3>;
+	status = "okay";
+
+	ext_flash_ctrl: flash-controller@0 {
+		compatible = "nxp,imx-flexspi-hyperflash";
+		reg = <0>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(64)>;
+		size = <DT_SIZE_M(64*8)>;
+		spi-max-frequency = <DT_FREQ_M(166)>;
+		word-addressable;
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <1>;
+		column-space = <3>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <20>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
+
+		s26ks512s0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			ranges;
+			erase-block-size = <DT_SIZE_K(256)>;
+			write-block-size = <16>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partitions {
+
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/*
+				 * Partition sizes must be aligned
+				 * to the flash memory sector size of 256KB.
+				 */
+				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00000000 DT_SIZE_K(256)>;
+					label = "mcuboot";
+				};
+
+				slot0_partition: partition@40000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00040000 DT_SIZE_M(3)>;
+					label = "image-0";
+				};
+
+				slot1_partition: partition@340000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00340000 DT_SIZE_M(3)>;
+					label = "image-1";
+				};
+
+				storage_partition: partition@640000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00640000 (DT_SIZE_M(58) - DT_SIZE_K(256))>;
+					label = "storage";
+				};
+			};
+		};
+	};
+};

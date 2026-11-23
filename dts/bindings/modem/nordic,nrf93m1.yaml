@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF93M1 module
+
+compatible: "nordic,nrf93m1"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]
+
+  mdm-power-gpios:
+    type: phandle-array
+    required: true

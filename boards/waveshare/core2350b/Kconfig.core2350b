@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-FileCopyrightText: Copyright (c) 2026 Fabrizio Carlassara (iomico)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CORE2350B
+	select SOC_RP2350B_HAZARD3_0 if BOARD_CORE2350B_RP2350B_HAZARD3_0
+	select SOC_RP2350B_M33_0 if BOARD_CORE2350B_RP2350B_M33_0

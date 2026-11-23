@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Filter inherited property specifications
+# up to the grandchild-binding level.
+
+include:
+  - name: simple_inherit.yaml
+    property-allowlist: [prop-1]
+    child-binding:
+      property-allowlist: [child-prop-1]
+      child-binding:
+        property-allowlist: [grandchild-prop-1]

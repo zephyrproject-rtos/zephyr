@@ -1,0 +1,7 @@
+# nRF9161 DK NRF9161 board configuration
+
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF9161DK
+	select SOC_NRF9161_LACA

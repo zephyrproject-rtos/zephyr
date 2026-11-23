@@ -1,0 +1,13 @@
+# Copyright (c) 2017, 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_XTENSA_DC233C
+	bool
+
+config SOC
+	default "dc233c" if SOC_XTENSA_DC233C
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "dc233c" if SOC_XTENSA_DC233C

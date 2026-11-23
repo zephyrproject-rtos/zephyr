@@ -1,0 +1,23 @@
+/*
+ * Copyright 2024, 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imxrt700_hifi1.dtsi>
+
+/ {
+	compatible = "nxp,mimxrt798s";
+	model = "NXP MIMXRT700-EVK HiFi1 DSP";
+
+	chosen {
+		zephyr,sram = &dtcm;
+	};
+};
+
+&sema423 {
+	domain-id = <8>;
+	status = "okay";
+};

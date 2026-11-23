@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32C61
+	select RISCV
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select RISCV_PMP if !MCUBOOT
+	select DYNAMIC_INTERRUPTS
+	select CLOCK_CONTROL
+	select PINCTRL
+	select HAS_ESPRESSIF_HAL
+	select CPU_HAS_DCACHE
+	select HAS_PM
+	select HAS_POWEROFF
+
+if SOC_SERIES_ESP32C61
+
+rsource "Kconfig.caps"
+
+config SOC_ESP32C61_REV_MIN_FULL
+	int
+	default 100 if SOC_ESP32C61_REV_1_0
+	default 101 if SOC_ESP32C61_REV_1_1
+	default 100
+	help
+	  Minimum supported ESP32-C61 chip revision in major * 100 + minor
+	  format, matching what efuse_hal_chip_revision() returns at runtime.
+	  Derived from the SOC_ESP32C61_REV_* symbol the board selects;
+	  defaults to v1.0 (100), the floor of the family.
+
+endif # SOC_SERIES_ESP32C61

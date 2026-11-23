@@ -1,0 +1,18 @@
+# I2C EEPROM Target configuration options
+
+# Copyright (c) 2017 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_EEPROM_TARGET
+	bool "I2C Target EEPROM driver"
+	default y
+	depends on DT_HAS_ZEPHYR_I2C_TARGET_EEPROM_ENABLED
+	select I2C_TARGET_REGSET_LIB
+	help
+	  Enable virtual I2C Target EEPROM driver
+
+config I2C_EEPROM_TARGET_RUNTIME_ADDR
+	bool "Set I2C Target EEPROM Address at Runtime"
+	depends on I2C_EEPROM_TARGET
+	help
+	  Enable changing virtual I2C Target EEPROM device address at runtime

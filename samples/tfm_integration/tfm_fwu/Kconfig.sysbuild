@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config SAMPLE_TFM_FWU_COMPONENT_ID
+	int "PSA FWU component ID to update"
+	default 1
+	help
+	  The PSA Firmware Update component ID that the application
+	  operates on.
+
+config SAMPLE_TFM_MCUBOOT_SIGNATURE_TYPE
+	string "The signature type used to sign the secure and non-secure firmware images."
+	default "EC-P256"
+	help
+	  The signature type used for TF-M MCUboot.
+
+config SAMPLE_TFM_MCUBOOT_ENCRYPTION
+	bool "Image encryption in BL2"
+	help
+	  Build the swapped application as an encrypted image.
+
+if SAMPLE_TFM_MCUBOOT_ENCRYPTION
+
+choice SAMPLE_TFM_MCUBOOT_ENCRYPTION_KEY_WRAP_SCHEME
+	prompt "Image encryption key-wrapping scheme"
+	default SAMPLE_TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
+	help
+	  Selects the algorithm that wraps the per-image AES key.
+
+config SAMPLE_TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
+	bool "RSA-OAEP"
+
+endchoice
+
+config SAMPLE_TFM_MCUBOOT_ENCRYPTION_KEY_LEN
+	int "Image encryption AES key length"
+	default 128
+	help
+	  Length in bits of the AES key used to encrypt the image payload.
+	  Valid values are 128 and 256.
+
+endif # SAMPLE_TFM_MCUBOOT_ENCRYPTION

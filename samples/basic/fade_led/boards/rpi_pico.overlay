@@ -1,0 +1,10 @@
+/ {
+	pwm_leds {
+		status = "okay";
+	};
+};
+
+&pwm {
+	divider-int-4 = <255>;
+	status = "okay";
+};

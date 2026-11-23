@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Shontal Biton
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XG28_RB4401C
+	select SOC_EFR32ZG28B322F1024IM68

@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		retainedmemdevice = &retainedmem0;
+	};
+
+	cpuapp_sram@2002ec00 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2002ec00 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
+
+		retainedmem0: retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+		};
+	};
+};
+
+&cpuapp_sram_app {
+	/* Shrink SRAM size to avoid overlap with retained memory region:
+	 * 191 - 4 = 187KB = 0x2ec00
+	 */
+	reg = <0x60 (DT_SIZE_K(187) - 0x60)>;
+};

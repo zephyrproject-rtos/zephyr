@@ -1,0 +1,6 @@
+board:
+  name: rzv2n_evk
+  full_name: RZ/V2N Evaluation Board Kit
+  vendor: renesas
+  socs:
+  - name: r9a09g056n48gbg

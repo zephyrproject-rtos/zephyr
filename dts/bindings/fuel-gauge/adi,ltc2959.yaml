@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Nathan Winslow <natelostintimeandspace@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices LTC2959 ultra-low-power battery fuel gauge.
+
+compatible: "adi,ltc2959"
+
+include: [base.yaml, i2c-device.yaml, fuel-gauge.yaml]
+
+properties:
+  reg:
+    required: true
+
+  rsense-milliohms:
+    type: int
+    required: true
+    description: |
+      Sensor resistor value in milliohms. Connected to SENSEP or SENSEN on the IC.
+      NOTE: The datasheet uses a default value of 50 milliOhm

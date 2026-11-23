@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Aesc pin controller.
+
+  The Aesc pin controller is a simple digital multiplexer that selects
+  between input sources for each pin. Configuration is defined in child
+  nodes, each specifying a pinmux property as a pair of <pin, function>.
+
+  Available mux functions:
+    - AESC_PINMUX_MUX0
+    - AESC_PINMUX_MUX1
+
+  Example: configuring pins 4 and 5 with different mux selections:
+
+    #include <zephyr/dt-bindings/pinctrl/aesc-pinctrl.h>
+
+    &pinctrl {
+      uart0_rx_default: uart0_rx_default {
+        pinmux = <4 AESC_PINMUX_MUX0>;
+      };
+      uart0_tx_default: uart0_tx_default {
+        pinmux = <5 AESC_PINMUX_MUX1>;
+      };
+    };
+
+compatible: "aesc,pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    Each child node defines the mux configuration for a single pin.
+    The pinmux property takes a pair of <pin_number, mux_function>.
+
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        A pair of <pin, function> where pin is the pin index and
+        function is one of the AESC_PINMUX_MUX* constants defined
+        in dt-bindings/pinctrl/aesc-pinctrl.h.

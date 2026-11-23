@@ -1,0 +1,7 @@
+# Holyiot 25008 board configuration
+
+# SPDX-FileCopyrightText: Copyright (c) 2025 Clunky Machines
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_HOLYIOT_25008
+	select SOC_NRF54L15_CPUAPP if BOARD_HOLYIOT_25008_NRF54L15_CPUAPP

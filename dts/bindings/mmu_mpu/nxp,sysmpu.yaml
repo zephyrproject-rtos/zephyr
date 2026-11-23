@@ -1,0 +1,12 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP System Memory Protection Unit (SYSMPU)
+
+compatible: "nxp,sysmpu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_MAX32
+	bool "ADI MAX32 cache controller driver"
+	default y
+	select CACHE_HAS_DRIVER
+	depends on SOC_FAMILY_MAX32
+	help
+	  Enable the ADI MAX32 cache controller driver.

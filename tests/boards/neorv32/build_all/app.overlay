@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gpio {
+	ngpios = <32>;
+	status = "okay";
+};
+
+&gptmr {
+	prescaler = <2>;
+	status = "okay";
+};
+
+&pwm {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <19200>;
+	status = "okay";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+};

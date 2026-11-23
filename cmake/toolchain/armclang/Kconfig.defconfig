@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config MINIMAL_LIBC_SUPPORTED
+	bool
+
+config PICOLIBC_SUPPORTED
+	default n

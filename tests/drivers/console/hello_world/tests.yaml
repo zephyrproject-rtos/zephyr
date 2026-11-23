@@ -1,0 +1,29 @@
+common:
+  tags:
+    - drivers
+    - console
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Hello World from Console"
+
+tests:
+  drivers.console.uart:
+    tags:
+      - drivers
+      - console
+      - uart
+    filter: CONFIG_UART_CONSOLE
+  drivers.console.semihost:
+    tags:
+      - drivers
+      - console
+      - semihost
+    arch_allow:
+      - arm
+      - arm64
+      - riscv
+    platform_type:
+      - qemu
+    extra_args: CONF_FILE=prj_semihost.conf

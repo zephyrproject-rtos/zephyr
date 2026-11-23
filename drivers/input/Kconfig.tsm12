@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig INPUT_TSM12
+	bool "TSM12 capacitive touch sensor"
+	default y
+	depends on DT_HAS_ADSEMI_TSM12_ENABLED
+	select I2C
+	help
+	  Enable driver for the AD Semiconductor TSM12 12-channel capacitive
+	  touch sensor and register-compatible parts such as the Si12T.
+
+if INPUT_TSM12
+
+config INPUT_TSM12_PERIOD_MS
+	int "Sample period"
+	default 50
+	help
+	  Sample period in milliseconds. Instances without int-gpios are
+	  polled continuously; instances with int-gpios are polled only while
+	  a channel is touched, to detect the release.
+
+endif # INPUT_TSM12

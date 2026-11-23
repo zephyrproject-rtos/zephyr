@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		retainedmemdevice = &retainedmem0;
+	};
+
+	cpuapp_sram@2002e000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2002e000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
+
+		retainedmem0: retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+		};
+	};
+};
+
+&cpuapp_sram_app {
+	/* Shrink SRAM to avoid overlap with retained memory region. The SRAM ends at
+	 * DT_SIZE_K(184), and starts at 0x60 after the KMU push area, so the size is that
+	 * end offset minus 0x60.
+	 */
+	reg = <0x60 (DT_SIZE_K(184) - 0x60)>;
+};

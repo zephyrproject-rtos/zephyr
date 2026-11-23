@@ -1,0 +1,6 @@
+board:
+  name: nucleo_c5a3zg
+  full_name: Nucleo C5A3ZG
+  vendor: st
+  socs:
+    - name: stm32c5a3xx

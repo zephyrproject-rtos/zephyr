@@ -1,0 +1,36 @@
+# Copyright (c) 2023 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BINDESC_DEFINE_HOST_INFO
+	bool "Host info binary descriptors"
+	help
+	  Add the host info binary descriptors
+
+if BINDESC_DEFINE_HOST_INFO
+
+config BINDESC_HOST_NAME
+	bool "Host name"
+	help
+	  The name of the host that the image was compiled on
+
+config BINDESC_C_COMPILER_NAME
+	bool "C compiler name"
+	help
+	  The C compiler name, such as "GNU"
+
+config BINDESC_C_COMPILER_VERSION
+	bool "C compiler version"
+	help
+	  The C compiler version, such as "12.3.0"
+
+config BINDESC_CXX_COMPILER_NAME
+	bool "C++ compiler name"
+	help
+	  The C++ compiler name, such as "GNU"
+
+config BINDESC_CXX_COMPILER_VERSION
+	bool "C++ compiler version"
+	help
+	  The C++ compiler version, such as "12.3.0"
+
+endif # BINDESC_DEFINE_HOST_INFO

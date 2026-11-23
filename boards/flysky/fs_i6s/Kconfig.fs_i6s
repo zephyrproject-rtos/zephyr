@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Sahaj Sarup
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FS_I6S
+	select SOC_STM32F072XB

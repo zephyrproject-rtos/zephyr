@@ -1,0 +1,17 @@
+tests:
+  bluetooth.classic.bumble.acl_conn:
+    tags:
+      - bluetooth
+    platform_allow:
+      - native_sim
+    harness: ztest
+    timeout: 120
+    sidecar: bumble
+    sidecar_config:
+      bumble:
+        addresses:
+          - "00:00:01:00:00:01"
+          - "00:00:01:00:00:02"
+        devices:
+          - '--peer_bd_address={addr1} -test=acl_central::test_01_connect'
+          - '--peer_bd_address={addr0} -test=acl_peripheral::test_01_connect'

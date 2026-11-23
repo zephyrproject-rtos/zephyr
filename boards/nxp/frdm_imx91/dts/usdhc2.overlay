@@ -1,0 +1,27 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sdhc0 = &usdhc2;
+	};
+};
+
+&usdhc1 {
+	status = "disabled";
+
+	mmc {
+		status = "disabled";
+	};
+};
+
+&usdhc2 {
+	status = "okay";
+
+	sdmmc {
+		status = "okay";
+	};
+};

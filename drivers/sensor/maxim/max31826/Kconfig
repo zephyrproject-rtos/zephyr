@@ -1,0 +1,13 @@
+# MAX31826 1-Wire temperature sensor configuration options
+
+# Copyright (c) 2022 Thomas Stranger
+# Copyright (c) 2026 Foss Analytical A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config MAX31826
+	bool "MAX31826 1-Wire Temperature Sensor"
+	default y
+	depends on DT_HAS_MAXIM_MAX31826_ENABLED
+	depends on W1_NET
+	help
+	  Enable driver for the MAX31826 1-Wire temperature sensor.

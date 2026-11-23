@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Deep Power Down only retains RAMA on MCXN, so point zephyr,sram at RAMA1-RAMA3
+ * (24 KB at 0x20002000, clear of the boot ROM scratch in RAMA0). The retained
+ * cycle counter (.noinit) then lands in RAM the VBAT LDO keeps alive across the
+ * system-off wake reset.
+ */
+&sram0 {
+	reg = <0x20002000 0x6000>;
+};

@@ -1,0 +1,18 @@
+&eeprom0 {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mac_address: mac_address@0 {
+			reg = <0x0 6>;
+			#nvmem-cell-cells = <0>;
+			read-only;
+		};
+
+		calibration_data: calibration_data@6 {
+			reg = <0x6 100>;
+			#nvmem-cell-cells = <0>;
+		};
+	};
+};

@@ -1,0 +1,9 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: ast2700_evb
+  full_name: AST2700 Evaluation Board
+  vendor: aspeed
+  socs:
+    - name: ast2700

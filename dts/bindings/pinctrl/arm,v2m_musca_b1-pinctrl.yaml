@@ -1,0 +1,44 @@
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The Arm Musca-B1 pin controller manages the selection of pin functions/properties.
+
+    The relevant node has the 'pinctrl' node label set, and can thus be modified as follows:
+
+      &pinctrl {
+              /* your modifications here */
+      };
+
+    Device pin configurations are placed in child nodes, as seen below:
+      &pinctrl {
+        uart0_default: uart0_default {
+            group1 {
+                pinmux = <UART0_TXD_EXP>;
+            };
+
+            group2 {
+                pinmux = <UART0_RXD_EXP>;
+                input-enable;
+        };
+      };
+
+compatible: "arm,v2m_musca_b1-pinctrl"
+include: base.yaml
+
+child-binding:
+  description: |
+    Definitions for a pinctrl state
+
+  child-binding:
+    include:
+      - name: pincfg-node.yaml
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. Each
+          element of the array is an integer constructed from the
+          pin number and the alternative function of the pin.

@@ -1,0 +1,139 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <infineon/edge/mpns/pse846gps2dbzc4a.dtsi>
+#include <infineon/edge/pse84/pse84.cm33.dtsi>
+#include <infineon/edge/pse84/system_clocks.dtsi>
+
+#include "kit_pse84_eval_common.dtsi"
+#include "kit_pse84_eval_memory_map.dtsi"
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	compatible = "kit_pse84_eval";
+	model = "kit_pse84_eval";
+
+	aliases {
+		led0 = &led_red;
+		led1 = &led_green;
+		led2 = &led_blue;
+	};
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &m33_xip;
+		zephyr,sram = &m33_data;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,bt-hci = &bt_hci_uart;
+	};
+};
+
+/*
+ * Bind the relative MCUboot slot0_partition/slot1_partition labels to
+ * the Non-Secure image slots so the stock cmake/mcuboot.cmake signing
+ * script sizes the Non-Secure image against its own slot (0x1c0000)
+ * rather than the Secure slot.
+ *
+ * The slot0_ns_partition/slot1_ns_partition labels are attached here too
+ * (rather than in the shared memory map) because only the Non-Secure
+ * build consumes them: Zephyr's TF-M integration looks them up by name
+ * (dt_nodelabel ... REQUIRED) to size the Non-Secure image, and the DFU /
+ * mcumgr image-management subsystems reference them at run time.
+ */
+&flash0 {
+	partitions {
+		slot0_ns_partition: slot0_partition: partition@340000 {};
+
+		slot1_ns_partition: slot1_partition: partition@940000 {};
+	};
+};
+
+&clk_iho {
+	status = "disabled";
+};
+
+&clk_pilo {
+	status = "disabled";
+};
+
+/* watchdog0 is a secure-owned resource; disable it in the non-secure build. */
+&watchdog0 {
+	status = "disabled";
+};
+
+&mcwdt0 {
+	status = "okay";
+};
+
+&peri1_group2_8bit_0 {
+	clock-div = <2>;
+	status = "okay";
+};
+
+&sdhc0 {
+
+	/* SDIO pins */
+	pinctrl-0 = <&p21_0_sdhc0_card_cmd &p12_0_sdhc0_clk_card &p12_1_sdhc0_card_dat_3to0
+		     &p12_2_sdhc0_card_dat_3to0 &p12_4_sdhc0_card_dat_3to0
+		     &p12_5_sdhc0_card_dat_3to0>;
+	pinctrl-names = "default";
+
+	clocks = <&peri1_group2_8bit_0>;
+	bus-width = <4>;
+	max-bus-freq = <50000000>;
+	min-bus-freq = <400000>;
+	power-delay-ms = <1000>;
+	no-1-8-v;
+	status = "okay";
+
+	/* Wi-Fi configuration */
+	airoc-wifi {
+		compatible = "infineon,airoc-wifi";
+
+		/* Wi-Fi control gpios */
+		wifi-reg-on-gpios = <&gpio_prt11 6 GPIO_ACTIVE_HIGH>;
+		wifi-host-wake-gpios = <&gpio_prt11 4 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
+
+&peri0_group1_16_5bit_0 {
+	clock-div = <1>;
+	status = "okay";
+};
+
+uart4: &scb4 {
+	compatible = "infineon,uart";
+
+	current-speed = <115200>;
+
+	clocks = <&peri0_group1_16_5bit_0>;
+
+	/* HCI-UART pins */
+	pinctrl-0 = <&p10_1_scb4_uart_tx &p10_0_scb4_uart_rx &p10_3_scb4_uart_rts
+		     &p10_2_scb4_uart_cts>;
+	pinctrl-names = "default";
+
+	/* HW Flow control must be enabled for HCI H4 */
+	hw-flow-control;
+	status = "okay";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+
+		cyw55513 {
+			compatible = "infineon,bt-hci-uart";
+			bt-reg-on-gpios = <&gpio_prt11 0 GPIO_ACTIVE_HIGH>;
+			fw-download-speed = <115200>;
+			hci-operation-speed = <115200>;
+			status = "okay";
+		};
+	};
+};

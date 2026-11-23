@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2025 Benjamin Cabé <benjamin@zephyrproject.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
+/ {
+	aliases {
+		modem = &modem;
+		modem-uart = &mikrobus_serial;
+	};
+
+	en_rts {
+		compatible = "regulator-fixed";
+		regulator-name = "enable-rts";
+		enable-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+	};
+};
+
+&mikrobus_serial {
+	current-speed = <115200>;
+	status = "okay";
+
+	modem: modem {
+		compatible = "sqn,gm02s";
+		mdm-wake-gpios = <&mikrobus_header MIKROBUS_AN
+				  (GPIO_OPEN_SOURCE | GPIO_ACTIVE_HIGH)>;
+		mdm-reset-gpios = <&mikrobus_header MIKROBUS_RST
+				   (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		status = "okay";
+	};
+};

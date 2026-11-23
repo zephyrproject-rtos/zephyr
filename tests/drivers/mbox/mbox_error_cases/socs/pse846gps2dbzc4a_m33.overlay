@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ipc0 {
+	status = "okay";
+};
+
+/ {
+	mbox0: mbox {
+		compatible = "infineon,mbox";
+		#mbox-cells = <1>;
+		interrupt-parent = <&nvic>;
+		ipc-configs = <&ipc0 4 3>, <&ipc0 5 4>, <&ipc0 6 5>;
+		interrupts = <73 4>, <74 4>, <75 4>;
+		status = "okay";
+	};
+
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+
+		/* Channels 0 and 1 exist; channel 5 is out of range (invalid). */
+		mboxes = <&mbox0 0>, <&mbox0 5>, <&mbox0 1>, <&mbox0 5>;
+		mbox-names = "remote_valid", "remote_incorrect",
+			     "local_valid", "local_incorrect";
+	};
+};

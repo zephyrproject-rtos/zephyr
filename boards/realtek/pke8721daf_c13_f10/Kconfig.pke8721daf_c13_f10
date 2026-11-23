@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PKE8721DAF_C13_F10
+	select SOC_RTL8721DX

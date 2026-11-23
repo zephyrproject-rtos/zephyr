@@ -1,0 +1,31 @@
+# Copyright (c) 2025, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32N6 CPU Clock.
+
+  Describes the STM32N6 CPU clock multiplexer. On STM32N6, this is the CPU
+  clock that feeds the SysTick.
+
+  For instance:
+  &cpusw {
+    clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
+    clock-frequency = <DT_FREQ_M(600)>;
+    status = "okay";
+  };
+
+compatible: "st,stm32n6-cpu-clock-mux"
+
+include:
+  - name: base.yaml
+    property-allowlist:
+      - status
+      - compatible
+      - clocks
+
+properties:
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      default frequency in Hz for CPU clock (sysa_ck/sys_cpu_ck)

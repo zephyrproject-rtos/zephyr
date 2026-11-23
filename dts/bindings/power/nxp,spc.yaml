@@ -1,0 +1,32 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP System Power Control (SPC)
+
+compatible: "nxp,spc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  wakeup-delay:
+    type: int
+    description: |
+      Number of SPC timer clock cycles written to the 16-bit LPWKUP_DELAY
+      field. When LP_CFG and ACTIVE_CFG select different VDD_CORE levels,
+      this value must meet the chip-specific minimum for the regulator and
+      voltage transition described in the reference manual. Board power
+      policies must increase this value if needed for a different transition
+      or an external PMIC/switch controlled by SPC_LPREQ; use the larger of
+      the regulator and external-device delays.
+
+  active-dcdc-output-microvolt:
+    type: int
+    description: |
+      Active-mode DCDC regulator output voltage, in microvolts.
+      Legal values are SoC-specific; the SoC power init validates the
+      configured value against the levels the DCDC can actually produce.
+      When this property is absent, the SoC leaves the active-mode DCDC
+      output voltage untouched.

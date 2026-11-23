@@ -1,0 +1,93 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "cy8ckit_041s_max-pinctrl.dtsi"
+
+/ {
+	aliases {
+		watchdog0 = &watchdog0;
+	};
+};
+
+/*
+ * SCB2 is the only SCB on the Arduino SPI pins (port 10), so the console uses
+ * SCB1, which also drives the KitProg3 USB-UART pins P0.4 and P0.5.
+ */
+uart1: &scb1 {
+	compatible = "infineon,uart";
+	current-speed = <115200>;
+	clocks = <&peri_clk_div1>;
+	pinctrl-0 = <&p0_5_scb1_uart_tx &p0_4_scb1_uart_rx>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/*
+ * P1.0 (SCL) and P1.1 (SDA) reach the Arduino header and the KitProg3
+ * USB-I2C bridge.
+ *
+ * Note: the I2C driver sets SCB0's divider from the bus speed, so no other
+ * peripheral may share it.
+ */
+i2c0: &scb0 {
+	compatible = "infineon,i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	clocks = <&peri_clk_div5>;
+
+	pinctrl-0 = <&p1_0_scb0_i2c_scl &p1_1_scb0_i2c_sda>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpio_prt1 0 GPIO_OPEN_DRAIN>;
+	sda-gpios = <&gpio_prt1 1 GPIO_OPEN_DRAIN>;
+	status = "okay";
+};
+
+&peri_clk_div0 {
+	status = "okay";
+};
+
+&peri_clk_div1 {
+	status = "okay";
+};
+
+&peri_clk_div2 {
+	status = "okay";
+};
+
+&peri_clk_div3 {
+	clock-div = <11500>;
+	status = "okay";
+};
+
+&peri_clk_div4 {
+	clock-div = <4>;
+	status = "okay";
+};
+
+&peri_clk_div5 {
+	status = "okay";
+};
+
+&gpio_prt1 {
+	status = "okay";
+};
+
+&gpio_prt2 {
+	status = "okay";
+};
+
+&gpio_prt7 {
+	status = "okay";
+};
+
+&watchdog0 {
+	status = "okay";
+};
+
+#include "arduino_r3_connector.dtsi"

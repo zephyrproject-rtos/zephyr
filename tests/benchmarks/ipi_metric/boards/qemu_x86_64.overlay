@@ -1,0 +1,15 @@
+/ {
+	cpus {
+		cpu@2 {
+			compatible = "intel,x86_64";
+			reg = <2>;
+			device_type = "cpu";
+		};
+
+		cpu@3 {
+			compatible = "intel,x86_64";
+			reg = <3>;
+			device_type = "cpu";
+		};
+	};
+};

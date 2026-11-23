@@ -1,0 +1,58 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect PB22 to PD13 and PB21 to PD14 */
+
+dut: &sercom3 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom3_uart_default>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
+
+dut_aux: &sercom1 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	current-speed = <115200>;
+
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom1_uart_default>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
+
+&pinctrl {
+	sercom3_uart_default: sercom3_uart_default {
+		group1 {
+			pinmux = <PB21C_SERCOM3_PAD0>,
+				 <PB22C_SERCOM3_PAD1>;
+		};
+	};
+
+	sercom1_uart_default: sercom1_uart_default {
+		group1 {
+			pinmux = <PD13C_SERCOM1_PAD0>,
+				 <PD14C_SERCOM1_PAD1>;
+		};
+	};
+};

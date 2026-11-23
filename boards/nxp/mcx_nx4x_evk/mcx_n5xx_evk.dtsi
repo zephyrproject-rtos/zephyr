@@ -1,0 +1,18 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mcx_nx4x_evk.dtsi"
+#include "mcx_n5xx_evk-pinctrl.dtsi"
+
+&micfil {
+	pinctrl-0 = <&pinmux_micfil>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&otpc {
+	status = "okay";
+};

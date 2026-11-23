@@ -1,0 +1,87 @@
+/*
+ * Copyright 2020 NXP
+ * Copyright 2022 HNU-ESNL
+ * Copyright 2022 openEuler SIG-Zephyr
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	compatible = "rockchip,rk3568";
+	#address-cells = <1>;
+	#size-cells = <1>;
+	interrupt-parent = <&gic>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(24)>;
+
+		cpu@0 {
+			compatible = "arm,cortex-a55";
+			reg = <0x000>;
+			device_type = "cpu";
+			enable-method = "psci";
+		};
+
+		cpu@100 {
+			compatible = "arm,cortex-a55";
+			reg = <0x100>;
+			device_type = "cpu";
+			enable-method = "psci";
+		};
+
+		cpu@200 {
+			compatible = "arm,cortex-a55";
+			reg = <0x200>;
+			device_type = "cpu";
+			enable-method = "psci";
+		};
+
+		cpu@300 {
+			compatible = "arm,cortex-a55";
+			reg = <0x300>;
+			device_type = "cpu";
+			enable-method = "psci";
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2", "arm,psci";
+		method = "smc";
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	gic: interrupt-controller@fd400000 {
+		compatible = "arm,gic-v3", "arm,gic";
+
+		reg = <0xfd400000 0x10000>, /* GICD */
+		      <0xfd460000 0xc0000>; /* GICR */
+		#address-cells = <1>;
+		#interrupt-cells = <4>;
+		interrupt-controller;
+		status = "okay";
+	};
+
+	uart2: serial@fe660000 {
+		compatible = "rockchip,rk3568-uart", "ns16550";
+		reg = <0xfe660000 0x10000>;
+		interrupts = <GIC_SPI 118 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <12000000>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+};

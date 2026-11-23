@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2026 Gail Rojas <gailroco@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <arm/armv7-m.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(48)>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	flash0: serial-flash@0 {
+		compatible = "serial-flash";
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <48000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		uart0: uart@40001000 {
+			compatible = "ti,msp432p4xx-uart";
+			reg = <0x40001000 0x400>;
+			interrupts = <16 0>;
+			clocks = <&sysclk>;
+			status = "disabled";
+		};
+
+		adc0: adc@40012000 {
+			compatible = "ti,msp432p4xx-adc";
+			reg = <0x40012000 0x1000>;
+			interrupts = <24 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

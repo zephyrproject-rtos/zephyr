@@ -1,0 +1,122 @@
+# Copyright (c) 2025 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: MAX30210, a high-accuracy digital temperature sensor from Analog Devices.
+
+compatible: "adi,max30210"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupt-gpios:
+    type: phandle-array
+    description: |
+      The INT1 pin defaults to active low when produced by the sensor. The property value should
+      ensure the flags properly describe the signal that is presented to the driver.
+
+  sampling-rate:
+    type: int
+    description: |
+      The sampling rate of the sensor in Hz. This value is used to configure the sensor's internal
+      sampling rate. If not specified, the driver will use a default value of 0.015625 Hz
+      which is also the reset value.
+    default: 0x00
+    enum:
+      - 0x0  # 0.015625 Hz
+      - 0x1  # 0.03125 Hz
+      - 0x2  # 0.0625 Hz
+      - 0x3  # 0.125 Hz
+      - 0x4  # 0.25 Hz
+      - 0x5  # 0.5 Hz
+      - 0x6  # 1 Hz
+      - 0x7  # 2 Hz
+      - 0x8  # 4 Hz
+      - 0x9  # 8 Hz
+
+  alarm-high-setup:
+    type: int
+    description: |
+      The high temperature threshold for the sensor in degrees Celsius. When the temperature
+      exceeds this threshold, the INT1 pin will be asserted. The value is represented as a
+      signed 16-bit integer in two's complement format, with a resolution of 0.005 degrees Celsius.
+      Usage: input a temperature in millidegrees Celsius (e.g., 25000 for 25.000°C), and the driver
+      will convert it to the appropriate register value. Default value is equivalent is 163.835°C
+      which is equivalent to the reset value (0x7FFF) for ALARM_HI register.
+    default: 163835 # 163.835°C
+
+  alarm-low-setup:
+    type: int
+    description: |
+      The low temperature threshold for the sensor in degrees Celsius. When the temperature
+      falls below this threshold, the INT1 pin will be asserted. The value is represented as a
+      signed 16-bit integer in two's complement format, with a resolution of 0.005 degrees Celsius.
+      Usage: input a temperature in millidegrees Celsius (e.g., 25000 for 25.000°C), and the driver
+      will convert it to the appropriate register value. Default value is equivalent is -163.840°C
+      which is equivalent to the reset value (0x8000) for ALARM_LO register.
+    default: -163840 # -163.840°C
+
+  inc-fast-thresh:
+    type: int
+    description: |
+      The increment threshold between samples. If the temperature increments
+      by more than N x 5 m°C between samples, the INT1 pin will be asserted
+      when interrupts are enabled. The default value is 0, which represents 0 m°C
+      and corresponds to the device register reset value.
+    default: 0
+
+  dec-fast-thresh:
+    type: int
+    description: |
+      The decrement threshold between samples. If the temperature decrements
+      by more than N x 5 m°C between samples, the INT1 pin will be asserted
+      when interrupts are enabled. The default value is 0, which represents 0 m°C
+      and corresponds to the device register reset value.
+    default: 0
+
+  hi-trip-count:
+    type: int
+    description: |
+      The number of trip counts exceeding the high temperature threshold that must occur
+      to assert required to assert the TEMP_HI alarm on the INT1 pin. Default value is 1
+      which equates to a single sample exceeding the high temperature threshold and corresponds
+      to the device register reset value.
+    default: 1
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+
+  lo-trip-count:
+    type: int
+    description: |
+      The number of trip counts below the low temperature threshold that must occur
+      to assert required to assert the TEMP_LO alarm on the INT1 pin. Default value is 1
+      which equates to a single sample below the low temperature threshold and corresponds
+      to the device register reset value.
+    default: 1
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+
+  hi-trip-non-consecutive:
+    type: boolean
+    description: |
+      If true, the high temperature threshold trip count is non-consecutive.
+
+  lo-trip-non-consecutive:
+    type: boolean
+    description: |
+      If true, the low temperature threshold trip count is non-consecutive.
+
+  start-continuous-conversion:
+    type: boolean
+    description: |
+      If true, the sensor will start temperature conversions immediately after initialization.
+      If false, the sensor will remain in standby mode until explicitly started by the driver.

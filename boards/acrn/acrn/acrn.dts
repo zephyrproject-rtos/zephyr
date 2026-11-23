@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2019 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include <mem.h>
+
+#define DT_DRAM_SIZE	DT_SIZE_K(8192)
+#define DT_DRAM_BASE	0
+
+#include <intel/atom.dtsi>
+
+/ {
+	compatible = "acrn";
+	model = "ACRN";
+
+	cpus {
+		timebase-frequency = <DT_FREQ_M(25)>;
+
+		cpu@1 {
+			compatible = "intel,x86_64";
+			reg = <1>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
+		};
+	};
+
+	aliases {
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+	};
+
+	chosen {
+		zephyr,sram = &dram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	pcie0: pcie0 {
+		compatible = "pcie-controller";
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		acpi-hid = "PNP0A08";
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&cpu {
+	compatible = "intel,x86_64";
+};

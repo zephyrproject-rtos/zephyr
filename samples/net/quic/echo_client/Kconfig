@@ -1,0 +1,9 @@
+# Private config options for Quic echo-client sample app
+
+# Copyright (c) 2026 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking Quic echo-client sample application"
+
+source "samples/net/common/Kconfig"
+source "Kconfig.zephyr"

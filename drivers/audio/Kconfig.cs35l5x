@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig AUDIO_CODEC_CS35L5X
+	bool "Cirrus Logic CS35L5X codec support"
+	default y
+	depends on DT_HAS_CIRRUS_CS35L56_ENABLED || \
+				DT_HAS_CIRRUS_CS35L57_ENABLED
+	help
+	  Enable driver for CS35L5X family of smart amplifiers
+
+if AUDIO_CODEC_CS35L5X
+
+config AUDIO_CODEC_CS35L5X_RESET
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L56),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L57),reset-gpios)
+	select GPIO
+
+config AUDIO_CODEC_CS35L5X_REGULATOR
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L56),vdd-p-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L57),vdd-p-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L56),vdd-io-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L57),vdd-io-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L56),vdd-a-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L57),vdd-a-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L56),vdd-b-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L57),vdd-b-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L56),vdd-amp-supply) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS35L57),vdd-amp-supply)
+	select REGULATOR
+
+config AUDIO_CODEC_CS35L5X_INIT_PRIORITY
+	int "CS35L5X audio codec init priority"
+	default 60
+	help
+	  Init priority for the CS35L5X audio codec driver. It must be
+	  greater than the init priority for the bound regulator init
+	  priority.
+
+endif # AUDIO_CODEC_CS35L5X

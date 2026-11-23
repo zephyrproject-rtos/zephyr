@@ -1,0 +1,7 @@
+# Copyright (c) 2023 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BEAGLEV_FIRE
+	select SOC_POLARFIRE_U54 if BOARD_BEAGLEV_FIRE_POLARFIRE_U54 || \
+				       BOARD_BEAGLEV_FIRE_POLARFIRE_U54_SMP
+	select SOC_POLARFIRE_E51 if BOARD_BEAGLEV_FIRE_POLARFIRE_E51

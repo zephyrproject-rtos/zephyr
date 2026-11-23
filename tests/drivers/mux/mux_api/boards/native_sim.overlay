@@ -1,0 +1,36 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * GPIO-based mux fixture for the mux_api suite on native_sim. Three GPIO
+ * lines on the emulated controller form a 3-bit select bus (values 0..7),
+ * exercising the generic set / get_state / state_apply paths without real
+ * hardware. A fourth GPIO acts as an enable line so the disconnect path is
+ * exercised too; the test observes it via gpio_emul_output_get_dt().
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	mux0: mux-controller {
+		compatible = "gpio-mux";
+		#mux-control-cells = <0>;
+		#mux-state-cells = <1>;
+		mux-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 1 GPIO_ACTIVE_HIGH>,
+			    <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	mux_consumer: mux-consumer {
+		compatible = "vnd,mux-consumer-test";
+		/* control: no addressing (0 cells) - driven at runtime and read back.
+		 * state:   default select value 5, baked in DT and read back after apply.
+		 */
+		mux-controls = <&mux0>;
+		mux-states = <&mux0 5>;
+		status = "okay";
+	};
+};

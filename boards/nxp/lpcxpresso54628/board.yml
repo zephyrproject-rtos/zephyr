@@ -1,0 +1,6 @@
+board:
+  name: lpcxpresso54628
+  full_name: LPCXpresso54628
+  vendor: nxp
+  socs:
+    - name: lpc54628

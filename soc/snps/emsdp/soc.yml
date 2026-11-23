@@ -1,0 +1,10 @@
+series:
+- name: emsdp
+  socs:
+  - name: emsdp_em4
+  - name: emsdp_em5d
+  - name: emsdp_em6
+  - name: emsdp_em7d
+  - name: emsdp_em7d_esp
+  - name: emsdp_em9d
+  - name: emsdp_em11d

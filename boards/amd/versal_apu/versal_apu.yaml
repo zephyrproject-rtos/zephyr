@@ -1,0 +1,10 @@
+identifier: versal_apu
+name: AMD Development board for Versal APU
+arch: arm64
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: amd

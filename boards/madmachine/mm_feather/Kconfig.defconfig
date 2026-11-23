@@ -1,0 +1,15 @@
+# MM-FEATHER board
+
+# Copyright (c) 2021, MADMACHINE LIMITED
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MM_FEATHER
+
+config DEVICE_CONFIGURATION_DATA
+	default y
+
+config NXP_IMX_EXTERNAL_SDRAM
+	default y
+
+endif # BOARD_MM_FEATHER

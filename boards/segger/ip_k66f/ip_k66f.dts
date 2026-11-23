@@ -1,0 +1,162 @@
+/*
+ * Copyright (c) 2020 DENX Software Engineering GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/kinetis/k6x/nxp_k66.dtsi>
+
+#include "ip_k66f-pinctrl.dtsi"
+
+/ {
+	compatible = "nxp,mk66f18", "nxp,k66f", "nxp,k6x";
+	model = "SEGGER MK66F IP Switch board";
+
+	aliases {
+		led0 = &red0_led;
+		led2 = &red2_led;
+		dsa-spi = &spi1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red0_led: led_0 {
+			gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+
+		red2_led: led_2 {
+			gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+};
+
+&{/cpus} {
+	timebase-frequency = <DT_FREQ_M(180)>;
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
+&sim {
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_RTC>;
+
+	bus_clk {
+		clock-div = <3>;
+	};
+
+	flash_clk {
+		clock-div = <7>;
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 0x00010000>;
+			label = "mcuboot";
+			read-only;
+		};
+
+		/*
+		 * The flash starting at 0x00010000 and ending at
+		 * 0x0001ffff (sectors 16-31) is reserved for use
+		 * by the application.
+		 */
+		storage_partition: partition@1e000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0001e000 0x00002000>;
+			label = "storage";
+		};
+
+		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00020000 0x00060000>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00080000 0x00060000>;
+			label = "image-1";
+		};
+
+		scratch_partition: partition@e0000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x000e0000 0x00020000>;
+			label = "image-scratch";
+		};
+	};
+};
+
+&enet {
+	pinctrl-0 = <&enet_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&enet_mac {
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	status = "okay";
+};
+
+&enet_mdio {
+	pinctrl-0 = <&enet_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: phy@0 {
+		compatible = "ethernet-phy-fixed-link";
+		reg = <0>;
+		default-speeds = "100BASE Full-Duplex";
+		status = "okay";
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+
+	clock-frequency = <44000000>;
+	cs-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};

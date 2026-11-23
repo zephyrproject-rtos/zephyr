@@ -1,0 +1,16 @@
+tests:
+  boards.native_sim.reset_hw_info:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "(.*)Booting Zephyr OS build(.*)"
+        - "This seems like the first start => Resetting"
+        - "(.*)Booting Zephyr OS build(.*)"
+        - "Booted after SOFTWARE reset => we are done"

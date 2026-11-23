@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Junho Lee <junho@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO Banks on RP1 peripheral controller
+
+compatible: "raspberrypi,rp1-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

@@ -1,0 +1,24 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Nuvoton, NuMaker Ethernet controller
+
+compatible: "nuvoton,numaker-ethernet"
+
+include:
+  - name: snps,dwmac.yaml
+  - name: reset-device.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  resets:
+    required: true
+
+  clocks:
+    required: true

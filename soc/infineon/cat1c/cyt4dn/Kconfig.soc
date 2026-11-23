@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# SOC series
+config SOC_SERIES_CYT4DN
+	bool
+	select SOC_FAMILY_INFINEON_CAT1C
+
+# SOC
+config SOC_CYT4DNJBZS
+	bool
+	select SOC_SERIES_CYT4DN
+
+# CPU clusters
+config SOC_CYT4DNJBZS_M0P
+	bool
+	select SOC_CYT4DNJBZS
+
+config SOC_CYT4DNJBZS_M7_0
+	bool
+	select SOC_CYT4DNJBZS
+
+config SOC_CYT4DNJBZS_M7_1
+	bool
+	select SOC_CYT4DNJBZS
+
+config SOC_SERIES
+	default "cyt4dn" if SOC_SERIES_CYT4DN
+
+config SOC
+	default "cyt4dnjbzs" if SOC_CYT4DNJBZS

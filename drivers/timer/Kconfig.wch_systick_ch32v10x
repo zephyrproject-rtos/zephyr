@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+config WCH_SYSTICK_CH32V10X
+	bool "WCH CH32V10x SysTick timer"
+	default y
+	depends on DT_HAS_WCH_SYSTICK_CH32V10X_ENABLED
+	help
+	  This module implements the system timer for the CH32V10x QingKe V3A
+	  SysTick, a ticking-only driver.

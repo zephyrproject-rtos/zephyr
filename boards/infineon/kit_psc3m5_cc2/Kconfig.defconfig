@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_KIT_PSC3M5_CC2
+
+config ARM_MPU
+	default y
+
+config HW_STACK_PROTECTION
+	default y
+
+config GPIO
+	default y
+
+config CLOCK_CONTROL
+	default y
+
+config CONSOLE
+	default y
+
+config UART_CONSOLE
+	default y
+
+config SERIAL
+	default y
+
+endif # BOARD_KIT_PSC3M5_CC2

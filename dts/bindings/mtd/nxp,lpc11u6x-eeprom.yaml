@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC11U6X on-chip EEPROM node
+
+compatible: "nxp,lpc11u6x-eeprom"
+
+include: eeprom-base.yaml

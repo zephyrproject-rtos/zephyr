@@ -1,0 +1,91 @@
+/*
+ * Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "reel_board_nrf52840_2-pinctrl.dtsi"
+
+/ {
+	compatible = "phytec,reel_board_v2";
+	model = "reel board v2";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,display = &ssd16xx;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi1>;
+		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ssd16xx: ssd16xxfb@0 {
+			compatible = "gooddisplay,gdeh0213b72", "solomon,ssd1675a";
+			reg = <0>;
+			mipi-max-frequency = <4000000>;
+			width = <250>;
+			height = <122>;
+			busy-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+			tssv = <0x80>;
+
+			/* Full refresh with the waveform stored in the panel OTP */
+			full {
+				/delete-property/ gdv;
+				/delete-property/ sdv;
+				/delete-property/ vcom;
+				/delete-property/ dummy-line;
+				/delete-property/ gate-line-width;
+				/delete-property/ lut;
+				border-waveform = <0x03>;
+			};
+
+			partial {
+				gdv = [15];
+				sdv = [41 a8 32];
+				vcom = <0x26>;
+				border-waveform = <0x01>;
+				dummy-line = <0x30>;
+				gate-line-width = <0x0a>;
+				lut = [00 00 00 00 00 00 00 /* LUT0: BB: VS0..6 */
+				       80 00 00 00 00 00 00 /* LUT1: BW: VS0..6 */
+				       40 00 00 00 00 00 00 /* LUT2: WB: VS0..6 */
+				       80 00 00 00 00 00 00 /* LUT3: WW: VS0..6 */
+				       00 00 00 00 00 00 00 /* LUT4: VCOM: VS0..6 */
+				       0a 00 00 00 04 /* TP0A TP0B TP0C TP0D RP0 */
+				       00 00 00 00 00 /* TP1A TP1B TP1C TP1D RP1 */
+				       00 00 00 00 00 /* TP2A TP2B TP2C TP2D RP2 */
+				       00 00 00 00 00 /* TP3A TP3B TP3C TP3D RP3 */
+				       00 00 00 00 00 /* TP4A TP4B TP4C TP4D RP4 */
+				       00 00 00 00 00 /* TP5A TP5B TP5C TP5D RP5 */
+				       00 00 00 00 00 /* TP6A TP6B TP6C TP6D RP6 */];
+			};
+		};
+	};
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spim";
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+};

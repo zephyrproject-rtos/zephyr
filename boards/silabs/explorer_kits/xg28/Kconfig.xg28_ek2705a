@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XG28_EK2705A
+	select SOC_EFR32ZG28B312F1024IM48

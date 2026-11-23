@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2020 Cobham Gaisler AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <skeleton.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(40)>;
+
+		cpu0: cpu@0 {
+			compatible = "gaisler,leon3";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		compatible = "gaisler,leon3-soc", "simple-bus";
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-parent = <&irqmp>;
+
+		uart0: apbuart@80000100 {
+			compatible = "gaisler,apbuart";
+			reg = <0x80000100 0x100>;
+			interrupts = <2>;
+			status = "disabled";
+		};
+
+		irqmp: irqmp0@80000200 {
+			compatible = "gaisler,irqmp";
+			reg = <0x80000200 0x100>;
+			eirq = <0>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+		};
+
+		timer0: gptimer@80000300 {
+			compatible = "gaisler,gptimer";
+			reg = <0x80000300 0x100>;
+			interrupts = <8>;
+		};
+	};
+
+	ram0: memory@40000000 {
+		compatible = "mmio-sram";
+		reg = <0x40000000 0x40000000>;
+	};
+};

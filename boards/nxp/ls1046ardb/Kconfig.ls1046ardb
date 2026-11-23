@@ -1,0 +1,8 @@
+#
+# Copyright 2021,2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_LS1046ARDB
+	select SOC_LS1046A
+	select SOC_PART_NUMBER_LS1046A

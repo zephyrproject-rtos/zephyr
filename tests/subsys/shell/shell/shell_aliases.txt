@@ -1,0 +1,5 @@
+zzcmd=test_shell_cmd
+colorset="shell colors"
+statscmd="shell stats"
+shell=test_shell_cmd
+cmd1=test_shell_cmd

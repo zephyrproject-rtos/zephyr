@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Lucy Wong
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CH32V103EVT
+	select SOC_CH32V103

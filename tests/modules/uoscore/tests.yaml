@@ -1,0 +1,15 @@
+tests:
+  libraries.uoscore:
+    min_flash: 240
+    modules:
+      - uoscore-uedhoc
+    tags:
+      - net
+      - crypto
+      - uoscore
+      - uoscore-uedhoc
+    integration_platforms:
+      - qemu_x86
+    platform_exclude:
+      - imx95_var_dart/mimx9596/m7
+      - imx95_var_dart/mimx9596/a55

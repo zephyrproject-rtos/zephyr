@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_RV32M1
+	bool "RV32M1 pin controller driver"
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_PINMUX_ENABLED
+	help
+	  Enable the RV32M1 pin controller driver.
+
+config PINCTRL_RV32M1_INIT_PRIORITY
+	int "RV32M1 initialization priority"
+	default 35
+	depends on PINCTRL_RV32M1
+	help
+	  RV32M1 pin controller initialization priority.

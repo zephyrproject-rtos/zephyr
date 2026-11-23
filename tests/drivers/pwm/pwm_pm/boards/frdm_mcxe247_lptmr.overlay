@@ -1,0 +1,22 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * With CONFIG_PM=y the SoC enters STOP whenever no lock holds it back, and
+ * SysTick does not run there. MCXE24x leaves lptmr0 disabled and not marked
+ * as a wake-up source, so enable it as the system timer companion or nothing
+ * ends the sleep.
+ */
+&lptmr0 {
+	wakeup-source;
+	status = "okay";
+};
+
+/ {
+	chosen {
+		zephyr,system-timer-companion = &lptmr0;
+	};
+};

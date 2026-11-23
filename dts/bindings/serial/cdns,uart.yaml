@@ -1,0 +1,14 @@
+# *************************************************************************
+# Copyright 2022 Meta Platforms, Inc. and its affiliates.
+# SPDX-License-Identifier: Apache-2.0
+# *************************************************************************
+
+description: This binding gives a base representation of the CADENCE UART IP6528
+
+compatible: "cdns,uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true

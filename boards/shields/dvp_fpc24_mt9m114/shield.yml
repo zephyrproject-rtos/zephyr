@@ -1,0 +1,6 @@
+shield:
+  name: dvp_fpc24_mt9m114
+  full_name: DVP FPC-24 MT9M114 Camera Module
+  vendor: aptina
+  supported_features:
+    - video

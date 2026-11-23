@@ -1,0 +1,84 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for debug features.
+
+rules:
+  ASSERT:
+    value: n
+    profiles: [strict]
+    rationale: |
+      A failed __ASSERT() prints the expression and its source location and by default triggers a
+      fatal error, so an assertion an attacker can reach both discloses internals and halts the
+      device.
+    references: [CWE-209, CWE-617]
+
+  DEBUG:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Builds the kernel without optimization, so the binary maps closely to its source and is
+      correspondingly easier to read and single-step.
+    references: [CWE-489]
+
+  DEBUG_COREDUMP:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Core dumps copy RAM contents, potentially including keys and other secrets, to a console or
+      flash partition where an attacker with device access can retrieve them.
+    references: [CWE-528]
+
+  DEBUG_THREAD_INFO:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Exports kernel-internal thread bookkeeping for debuggers and awareness tools, mapping out
+      exactly the structures an attacker wants to locate.
+    references: [CWE-200]
+
+  EARLY_CONSOLE:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Routes diagnostic output to the console from the earliest boot stages, exposing boot-time
+      internals to anyone watching the port.
+    references: [CWE-200]
+
+  GDBSTUB:
+    value: n
+    profiles: [strict]
+    rationale: |
+      A GDB stub gives whoever reaches its transport full remote control of the target: memory
+      read/write, register access and execution control.
+    references: [CWE-489]
+
+  OVERRIDE_FRAME_POINTER_DEFAULT:
+    value: y
+    rationale: |
+      Makes frame pointer usage an explicit build decision instead of inheriting whatever the
+      compiler's optimization level picks, keeping the stack layout of release builds deterministic
+      and reviewable.
+
+  PRINTK:
+    value: n
+    profiles: [strict]
+    rationale: |
+      printk output goes straight to the console; leaving it enabled in production leaks whatever
+      diagnostic messages remain in the code.
+    references: [CWE-532]
+
+  STACK_SENTINEL:
+    value: y
+    rationale: |
+      Places a software sentinel value at the end of each thread stack and checks it at context
+      switches, catching overflows on hardware without MPU/MMU stack protection.
+    references: [CWE-121, CWE-787]
+
+  THREAD_ANALYZER:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Periodically prints per-thread stack usage and CPU statistics, broadcasting a map of the
+      system's runtime structure.
+    references: [CWE-200]

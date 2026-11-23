@@ -1,0 +1,5 @@
+common:
+  tags: boards
+tests:
+  boards.intel_adsp.mm:
+    platform_allow: intel_adsp/cavs25

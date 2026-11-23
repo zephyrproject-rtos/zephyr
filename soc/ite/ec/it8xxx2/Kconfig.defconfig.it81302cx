@@ -1,0 +1,12 @@
+# Copyright (c) 2022 ITE Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_IT81302CX
+
+config ILM_MAX_SIZE
+	default 60
+
+config SOC_IT8XXX2_GPIO_GROUP_K_L_DEFAULT_PULL_DOWN
+	default n
+
+endif

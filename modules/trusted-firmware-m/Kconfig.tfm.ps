@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if TFM_PARTITION_PROTECTED_STORAGE
+
+config TFM_PS_ROLLBACK_PROTECTION
+	bool "Rollback protection"
+	default y
+	help
+	  Enable rollback protection for the Protected Storage partition.
+
+endif # TFM_PARTITION_PROTECTED_STORAGE

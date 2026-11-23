@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2026 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	grove_header1: grove_header1 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 1 0>, /* RX */
+			   <1 0 &gpio0 0 0>; /* TX */
+	};
+
+	grove_header2: grove_header2 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 5 0>,
+			   <1 0 &gpio0 4 0>;
+	};
+
+	grove_header3: grove_header3 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 26 0>, /* ADC0 */
+			   <1 0 &gpio0 6 0>;
+	};
+
+	grove_header4: grove_header4 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 27 0>, /* ADC1 */
+			   <1 0 &gpio0 7 0>;
+	};
+
+	grove_header5: grove_header5 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 29 0>, /* ADC3 */
+			   <1 0 &gpio0 28 0>; /* ADC2 */
+	};
+
+	grove_header6: grove_header6 {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 21 0>, /* SCL */
+			   <1 0 &gpio0 20 0>; /* SDA */
+	};
+
+	stemma_connector: stemma_connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 21 0>, /* SCL */
+			   <1 0 &gpio0 20 0>; /* SDA */
+	};
+};

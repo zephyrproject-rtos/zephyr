@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Abstract Pulse IO controller.
+
+  Vendor-specific compatibles include this binding. Children that consume
+  one channel reference the controller via a "pulse-ios" phandle-array
+  and a single cell that selects the channel index.
+
+properties:
+  "#pulse-io-cells":
+    type: int
+    required: true
+    const: 1
+    description: |
+      Number of cells in a pulse-ios specifier. Must be 1; the single
+      cell selects the channel index on the controller.
+
+pulse-io-cells:
+  - channel

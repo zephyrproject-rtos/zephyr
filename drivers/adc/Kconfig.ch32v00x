@@ -1,0 +1,9 @@
+# Copyright (c) Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_CH32V00X
+	bool "WCH CH32V00x ADC Driver"
+	default y
+	depends on DT_HAS_WCH_ADC_ENABLED
+	help
+	  Enable the WCH CH32V00x family Analog-to-Digital Converter (ADC) driver.

@@ -1,0 +1,47 @@
+# Copyright (c) 2019, Intel Corporation
+# Copyright (c) 2021, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC ADC
+
+compatible: "microchip,xec-adc"
+
+include:
+  - name: adc-controller.yaml
+  - name: pinctrl-device.yaml
+  - name: microchip,dmec-ecia-girq.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+  pcr-scr:
+    type: int
+    required: true
+    description: |
+      ADC Power Clock Reset(PCR) peripheral index and bit position
+
+  clktime:
+    type: int
+    required: true
+    description: ADC clock high & low time count value <1:255>
+
+  channels:
+    type: int
+    required: true
+    description: Number of ADC channels supported by SoC
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+io-channel-cells:
+  - input

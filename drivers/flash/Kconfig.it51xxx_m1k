@@ -1,0 +1,26 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_ITE_IT51XXX_M1K
+	bool "ITE IT51XXX manual flash 1k driver"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_MANUAL_FLASH_1K_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select PINCTRL
+	select FLASH_HAS_EX_OP
+	help
+	  The flash M1K driver supports read (up to 1K), write (1K), and erase (4K)
+	  operations. Accessible flash regions include internal e-Flash or external
+	  SPI flash via FSCE# or FSCE1#
+
+if SOC_FLASH_ITE_IT51XXX_M1K
+
+config FLASH_IT51XXX_M1K_SHARED_REGS
+	bool
+	default y if SOC_IT51526AW || SOC_IT51526BW
+	help
+	  The M1K engine shares lower bound address registers between program and
+	  erase operations. These variants also use a two-bit read command field.
+
+endif # SOC_FLASH_ITE_IT51XXX_M1K

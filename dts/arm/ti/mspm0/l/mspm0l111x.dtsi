@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2025 Texas Instruments
+ * Copyright (c) 2025 Linumiz GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <ti/mspm0/l/mspm0l.dtsi>
+
+/ {
+	soc {
+		sram0: memory@20000000 {
+			reg = <0x20000000 DT_SIZE_K(16)>;
+		};
+
+		timg0: timg0@40084000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40084000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <16 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+
+			counterg0: counterg0 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		timg8: timg8@40090000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40090000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <2 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+
+			counterg8: counterg8 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		trng: trng@40444000 {
+			compatible = "ti,mspm0-trng";
+			reg = <0x40444000 0x2000>;
+			interrupts = <1 0>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			status = "disabled";
+		};
+
+		timg1: timg1@40486000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40486000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <22 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+
+			counterg1: counterg1 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				channels = <2>;
+				status = "disabled";
+			};
+		};
+
+		tima0: tima0@40860000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40860000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			interrupts = <18 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+
+			pwma0: pwma0 {
+				compatible = "ti,mspm0-timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&rtc {
+	ti,rtc-x;
+};

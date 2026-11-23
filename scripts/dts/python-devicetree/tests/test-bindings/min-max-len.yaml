@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Property min-len/max-len range test
+
+compatible: "min-max-len"
+
+properties:
+  array-with-min-len:
+    type: array
+    min-len: 2
+
+  array-with-max-len:
+    type: array
+    max-len: 4
+
+  array-with-range-len:
+    type: array
+    min-len: 2
+    max-len: 4
+
+  string-array-with-range-len:
+    type: string-array
+    min-len: 1
+    max-len: 3
+
+  uint8-array-with-range-len:
+    type: uint8-array
+    min-len: 2
+    max-len: 4

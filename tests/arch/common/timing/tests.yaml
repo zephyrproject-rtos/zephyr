@@ -1,0 +1,24 @@
+common:
+  filter: CONFIG_ARCH_HAS_TIMING_FUNCTIONS
+  platform_type:
+    - mcu
+    - native
+tests:
+  arch.common.timing:
+    tags:
+      - timing
+      - arch
+    extra_args:
+      - platform:nrf54h20:CONFIG_DEBUG_DRIVER=y
+      - platform:nrf54h20:DTC_OVERLAY_FILE=nrf_coresight.overlay
+      - platform:nrf92:CONFIG_DEBUG_DRIVER=y
+      - platform:nrf92:DTC_OVERLAY_FILE=nrf_coresight.overlay
+  arch.common.timing.smp:
+    filter: CONFIG_SMP and CONFIG_MP_MAX_NUM_CPUS > 1
+    tags:
+      - timing
+      - arch
+      - smp
+    extra_configs:
+      - CONFIG_SCHED_SIMPLE=y
+      - CONFIG_SCHED_CPU_MASK=y

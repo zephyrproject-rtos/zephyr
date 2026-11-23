@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic Local IPCT (Interprocessor Communication Transceiver)
+
+compatible: "nordic,nrf-ipct-local"
+
+include: "nordic,nrf-ipct-common.yaml"
+
+properties:
+  interrupts:
+    required: true

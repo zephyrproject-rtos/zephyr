@@ -1,0 +1,9 @@
+&pwm_led0 {
+	status = "okay";
+};
+
+&pwm {
+	divider-frac-4 = <15>;
+	divider-int-4 = <255>;
+	status = "okay";
+};

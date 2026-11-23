@@ -1,0 +1,10 @@
+# BeagleBoard.org PocketBeagle 2 Industrial
+#
+# Copyright (c) 2026 BeagleBoard.org Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_POCKETBEAGLE_2_INDUSTRIAL
+	select SOC_AM6254_A53 if BOARD_POCKETBEAGLE_2_INDUSTRIAL_AM6254_A53
+	select SOC_AM6254_M4 if BOARD_POCKETBEAGLE_2_INDUSTRIAL_AM6254_M4
+	select SOC_MSPM0L1105 if BOARD_POCKETBEAGLE_2_INDUSTRIAL_MSPM0L1105

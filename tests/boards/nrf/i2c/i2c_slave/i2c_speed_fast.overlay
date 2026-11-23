@@ -1,0 +1,8 @@
+/*
+ * Copyright 2025 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dut_twim {
+	clock-frequency = <I2C_BITRATE_FAST>;
+};

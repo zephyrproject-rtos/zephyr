@@ -1,0 +1,8 @@
+family:
+  - name: intel_ish
+    series:
+      - name: intel_ish5
+        socs:
+          - name: intel_ish_5_4_1
+          - name: intel_ish_5_6_0
+          - name: intel_ish_5_8_0

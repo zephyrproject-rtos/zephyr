@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A configuration for MCTP bindings to an I2C target with GPIO.
+
+compatible: "zephyr,mctp-i2c-gpio-target"
+
+properties:
+  i2c:
+    type: phandle
+    description: |
+      I2C peripheral that is used as an MCTP bus with the target mode API.
+
+  i2c-addr:
+    type: int
+    description: |
+      I2C address of endpoint
+
+  endpoint-id:
+    type: int
+    description: |
+      MCTP endpoint id
+
+  endpoint-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the endpoint.

@@ -1,0 +1,301 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 Nordic Semiconductor ASA
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<div class="zms-calculator available-space-calculator">
+    <div class="zms-calculator__header">
+        <button type="button" class="btn btn-neutral" aria-controls="zms-space-advanced-container" aria-expanded="false" onclick="spaceToggleAdvanced(this)">Advanced mode</button>
+    </div>
+    <p>Calculate the available storage space for your ZMS configuration.</p>
+
+    <div id="zms-space-advanced-container" class="admonition note" style="display: none;">
+        <p class="admonition-title">Advanced mode</p>
+        <p id="zms-space-advanced-help"></p>
+        <label for="zms-space-advanced-entries" title="One entry per line as ID:data (hexadecimal data). Used instead of the simple average data size/count fields to model a real, mixed data set.">Entries (ID:data per line):</label>
+        <textarea id="zms-space-advanced-entries" rows="6"></textarea>
+    </div>
+
+    <div class="zms-grid">
+        <div>
+            <label for="zms-space-write-block-size" title="Smallest number of bytes the flash can write in a single operation (the device write-block-size). Check your flash/DTS.">Write Block Size (bytes):</label>
+            <input type="number" id="zms-space-write-block-size" value="1" min="1" step="1">
+        </div>
+
+        <div>
+            <label for="zms-space-flash-type" title="Choose 'No Explicit Erase' for RRAM/MRAM that can be rewritten in place, or 'Explicit Erase Required' for NOR flash that must be erased in blocks before rewriting.">Flash Type:</label>
+            <select id="zms-space-flash-type" onchange="spaceToggleEraseBlockSize('zms-space')">
+                <option value="no-erase">No Explicit Erase (RRAM/MRAM)</option>
+                <option value="explicit-erase">Explicit Erase Required (NOR Flash)</option>
+            </select>
+        </div>
+
+        <div id="zms-space-erase-block-container" style="display: none;">
+            <label for="zms-space-erase-block-size" title="For NOR flash, the smallest region that can be erased at once (the erase-block-size, e.g. 4096). The sector size must be a multiple of this value.">Erase Block Size (bytes):</label>
+            <input type="number" id="zms-space-erase-block-size" value="4096" min="256" step="256">
+        </div>
+
+        <div>
+            <label for="zms-space-sector-size" title="Size of one ZMS sector. Must be at least 5 ATEs, aligned to the write block size, and (for NOR flash) a multiple of the erase block size.">Sector Size (bytes):</label>
+            <input type="number" id="zms-space-sector-size" value="1024" min="256" step="256">
+        </div>
+
+        <div>
+            <label for="zms-space-sector-count" title="How many sectors the ZMS partition contains (minimum 2). One sector is always reserved for garbage collection, so usable space is (count - 1) sectors.">Number of Sectors:</label>
+            <input type="number" id="zms-space-sector-count" value="4" min="2" max="100">
+        </div>
+
+        <div id="zms-space-data-size-container">
+            <label for="zms-space-data-size" title="Average payload size of a single stored item, in bytes (not counting ZMS metadata). Use the typical size of the values you store.">Average Data Size (bytes):</label>
+            <input type="number" id="zms-space-data-size" value="8" min="1" max="65536">
+        </div>
+
+        <div id="zms-space-data-count-container">
+            <label for="zms-space-data-count" title="How many distinct items (unique IDs) you store at the same time. Together with average data size this estimates the total effective data set.">Number of Data Items:</label>
+            <input type="number" id="zms-space-data-count" value="1" min="1" max="10000">
+        </div>
+
+        <div>
+            <label for="zms-space-use-settings" title="Select 'Yes' if you access ZMS through the Settings subsystem. Each setting then uses extra entries (name, value and a linked-list node), which increases storage usage.">Use with Settings Subsystem:</label>
+            <select id="zms-space-use-settings" onchange="spaceToggleSettingsOptions('zms-space')">
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+            </select>
+        </div>
+
+        <div id="zms-space-settings-path-container" style="display: none;">
+            <label for="zms-space-avg-path-size" title="Average length of a settings key/path string, in bytes (e.g. 'bt/cf' or '/data/key1'). Only used when storing through the Settings subsystem.">Average Path Size (bytes):</label>
+            <input type="number" id="zms-space-avg-path-size" value="16" min="1" max="256">
+        </div>
+
+        <div id="zms-space-id-type-container">
+            <label for="zms-space-id-type" title="Width of the ZMS entry ID. 32-bit IDs store up to 8 bytes of data inside the ATE; 64-bit IDs store up to 4 bytes inline. Match this to your CONFIG_ZMS_ID_64BIT setting.">ID Type:</label>
+            <select id="zms-space-id-type">
+                <option value="32">32-bit</option>
+                <option value="64">64-bit</option>
+            </select>
+        </div>
+    </div>
+
+    <button type="button" class="btn btn-primary" onclick="calculateAvailableSpace()">Calculate Available Space</button>
+
+    <div id="zms-space-results" style="display: none;">
+        <div id="zms-space-results-content" class="zms-results-grid"></div>
+    </div>
+
+    <div id="zms-space-errors" style="display: none;"></div>
+</div>
+
+<script>
+function spaceToggleAdvanced(button) {
+    const isVisible = zmsIsElementVisible('zms-space-advanced-container');
+    zmsSetElementVisible('zms-space-advanced-container', !isVisible);
+
+    zmsSetElementVisible('zms-space-data-size-container', isVisible);
+    zmsSetElementVisible('zms-space-data-count-container', isVisible);
+
+    if (button) {
+        button.setAttribute('aria-expanded', String(!isVisible));
+    }
+
+    spaceUpdateSettingsVisibility();
+    spaceUpdateAdvancedHelp();
+}
+
+function spaceIsAdvancedEnabled() {
+    return zmsIsElementVisible('zms-space-advanced-container');
+}
+
+function spaceToggleEraseBlockSize(prefix) {
+    const flashType = document.getElementById(prefix + '-flash-type').value;
+    zmsSetElementVisible(prefix + '-erase-block-container', flashType === 'explicit-erase');
+}
+
+function spaceToggleSettingsOptions(prefix) {
+    if (prefix === 'zms-space') {
+        spaceUpdateSettingsVisibility();
+        spaceUpdateAdvancedHelp();
+    }
+}
+
+function spaceUpdateSettingsVisibility() {
+    const useSettings = document.getElementById('zms-space-use-settings').value === 'yes';
+    const advanced = spaceIsAdvancedEnabled();
+    zmsSyncSettingsUi('zms-space', useSettings, advanced);
+}
+
+function spaceUpdateAdvancedHelp() {
+    const useSettings = document.getElementById('zms-space-use-settings').value === 'yes';
+    const help = document.getElementById('zms-space-advanced-help');
+    zmsRenderAdvancedHelp(help, useSettings, '/data/key1:010203');
+}
+
+function validateSpaceInputs() {
+    const errors = [];
+
+    const writeBlockSize = parseInt(document.getElementById('zms-space-write-block-size').value);
+    const sectorSize = parseInt(document.getElementById('zms-space-sector-size').value);
+    const sectorCount = parseInt(document.getElementById('zms-space-sector-count').value);
+    const advanced = spaceIsAdvancedEnabled();
+    const dataSize = parseInt(document.getElementById('zms-space-data-size').value);
+    const dataCount = parseInt(document.getElementById('zms-space-data-count').value);
+    const useSettings = document.getElementById('zms-space-use-settings').value === 'yes';
+    const flashType = document.getElementById('zms-space-flash-type').value;
+    const eraseBlockSize = flashType === 'explicit-erase' ?
+        parseInt(document.getElementById('zms-space-erase-block-size').value) : NaN;
+
+    zmsValidatePositiveNumber(errors, writeBlockSize, 'Write block size must be greater than 0');
+    zmsValidatePositiveNumber(errors, sectorSize, 'Sector size must be greater than 0');
+    zmsValidateMinimumNumber(errors, sectorCount, 2, 'Number of sectors must be at least 2');
+    if (!advanced) {
+        zmsValidatePositiveNumber(errors, dataSize, 'Average data size must be greater than 0');
+        zmsValidatePositiveNumber(errors, dataCount, 'Number of data items must be greater than 0');
+    }
+
+    if (useSettings && !advanced) {
+        const avgPathSize = parseInt(document.getElementById('zms-space-avg-path-size').value);
+        zmsValidatePositiveNumber(errors, avgPathSize, 'Average path size must be greater than 0');
+    }
+
+    zmsValidateSectorConstraints(errors, sectorSize, writeBlockSize, flashType, eraseBlockSize);
+
+    return errors;
+}
+
+function calculateAvailableSpace() {
+    const errors = validateSpaceInputs();
+    const errorsDiv = document.getElementById('zms-space-errors');
+
+    if (errors.length > 0) {
+        zmsRenderValidationErrors(errorsDiv, errors);
+        errorsDiv.style.display = 'block';
+        document.getElementById('zms-space-results').style.display = 'none';
+        return;
+    }
+
+    errorsDiv.style.display = 'none';
+
+    const writeBlockSize = parseInt(document.getElementById('zms-space-write-block-size').value);
+    const sectorSize = parseInt(document.getElementById('zms-space-sector-size').value);
+    const sectorCount = parseInt(document.getElementById('zms-space-sector-count').value);
+    let dataSize = parseInt(document.getElementById('zms-space-data-size').value);
+    let dataCount = parseInt(document.getElementById('zms-space-data-count').value);
+    const useSettings = document.getElementById('zms-space-use-settings').value === 'yes';
+    const avgPathSize = useSettings ? parseInt(document.getElementById('zms-space-avg-path-size').value) : 0;
+    const idType = useSettings ? 32 : parseInt(document.getElementById('zms-space-id-type').value);
+
+    const BASE_ATE_SIZE = 16;
+    const ATE_SIZE = zmsRoundUpToMultiple(BASE_ATE_SIZE, writeBlockSize);
+    const HEADER_SIZE = 5 * ATE_SIZE;
+    const roundedDataSize = zmsRoundUpToMultiple(dataSize, writeBlockSize);
+
+    const sectorEffectiveSize = sectorSize - HEADER_SIZE;
+
+    const dataInsideATE = idType === 64 ? 4 : 8;
+
+    let advancedInfo = null;
+    if (spaceIsAdvancedEnabled()) {
+        const parsedEntries = zmsParseAdvancedEntriesFromTextarea('zms-space-advanced-entries', useSettings);
+        if (!parsedEntries.ok) {
+            zmsRenderValidationErrors(errorsDiv, [parsedEntries.error]);
+            errorsDiv.style.display = 'block';
+            document.getElementById('zms-space-results').style.display = 'none';
+            return;
+        }
+
+        const entryDataBytes = parsedEntries.entries.map(entry => entry.dataBytes);
+        const totalDataBytes = entryDataBytes.reduce((sum, value) => sum + value, 0);
+        const entryEffectiveSizes = parsedEntries.entries.map(entry =>
+            zmsEntryEffectiveSize(entry, useSettings, writeBlockSize, ATE_SIZE, avgPathSize, dataInsideATE));
+        const totalEffectiveSize = entryEffectiveSizes.reduce((sum, value) => sum + value, 0);
+
+        dataCount = parsedEntries.entries.length;
+        dataSize = Math.max(1, Math.ceil(totalDataBytes / dataCount));
+
+        advancedInfo = {
+            totalDataBytes: totalDataBytes,
+            totalEffectiveSize: totalEffectiveSize,
+            averageEffectiveSize: Math.max(1, Math.ceil(totalEffectiveSize / dataCount)),
+            entriesCount: dataCount
+        };
+    }
+
+    let effectiveDataSize;
+    if (advancedInfo) {
+        effectiveDataSize = advancedInfo.averageEffectiveSize;
+    } else if (useSettings) {
+        effectiveDataSize = zmsEntryEffectiveSize({ dataBytes: dataSize, pathBytes: avgPathSize }, true, writeBlockSize, ATE_SIZE, avgPathSize, dataInsideATE);
+    } else {
+        effectiveDataSize = dataSize <= dataInsideATE ? ATE_SIZE : ATE_SIZE + roundedDataSize;
+    }
+
+    const availableSectors = sectorCount - 1;
+    const totalAvailableSpace = sectorEffectiveSize * availableSectors;
+    const itemsPerSector = Math.floor(sectorEffectiveSize / effectiveDataSize);
+    if (itemsPerSector < 1) {
+        zmsRenderValidationErrors(errorsDiv, [`Effective entry size (${effectiveDataSize} bytes) exceeds sector effective size (${sectorEffectiveSize} bytes)`]);
+        errorsDiv.style.display = 'block';
+        document.getElementById('zms-space-results').style.display = 'none';
+        return;
+    }
+    const totalItemsThatCanFit = itemsPerSector * availableSectors;
+    const totalDataCapacity = totalItemsThatCanFit * dataSize;
+    const occupiedStorageUsed = advancedInfo ? advancedInfo.totalEffectiveSize : (effectiveDataSize * dataCount);
+    const occupiedDataBytes = advancedInfo ? advancedInfo.totalDataBytes : (dataSize * dataCount);
+    const totalStorageUsedPercent = totalAvailableSpace > 0 ? (occupiedStorageUsed / totalAvailableSpace) * 100 : 0;
+    const storageEfficiency = occupiedStorageUsed > 0 ? (occupiedDataBytes / occupiedStorageUsed) * 100 : 0;
+    const itemsThatCanFit = Math.min(dataCount, totalItemsThatCanFit);
+    const actualDataCapacity = itemsThatCanFit * dataSize;
+    const actualStorageUsed = itemsThatCanFit * effectiveDataSize;
+
+    const resultsDiv = document.getElementById('zms-space-results');
+    const resultsContent = document.getElementById('zms-space-results-content');
+
+    zmsClearElement(resultsContent);
+    if (occupiedStorageUsed > totalAvailableSpace) {
+        zmsAppendAdmonition(resultsContent, 'danger', 'Error', 'Total Storage Requirement exceeds the total available storage size. Increase the storage size or reduce the effective data set.');
+    } else if (occupiedStorageUsed > (totalAvailableSpace / 2)) {
+        zmsAppendAdmonition(resultsContent, 'warning', 'Warning', 'Effective data occupies more than 50% of the available storage size. The storage should be dimensioned so that effective data occupies less than 50% of available storage.');
+    }
+
+    zmsRenderModeSummary(resultsContent, useSettings, advancedInfo, writeBlockSize, avgPathSize);
+
+    zmsAppendLabeledLine(resultsContent, 'Storage layout', '');
+    zmsAppendLabeledLine(resultsContent, 'Write Block Size', writeBlockSize + ' bytes', 'Smallest number of bytes that can be written to the storage in a single operation.');
+    zmsAppendLabeledLine(resultsContent, 'ATE Size (rounded)', ATE_SIZE + ' bytes', 'Size of one Allocation Table Entry (the metadata record for each item), rounded up to a multiple of the write block size.');
+    zmsAppendLabeledLine(resultsContent, 'Header Size', HEADER_SIZE + ' bytes (5 × ' + ATE_SIZE + ')', 'Per-sector overhead reserved for ZMS metadata (5 ATEs per sector).');
+    zmsAppendLabeledLine(resultsContent, 'Sector Effective Size', sectorEffectiveSize + ' bytes', 'Usable space in one sector after subtracting the header overhead.');
+    zmsAppendLabeledLine(resultsContent, 'Available Sectors for Data', availableSectors + ' (' + sectorCount + ' total - 1 for GC)', 'Number of sectors usable for data; one sector is always reserved for garbage collection.');
+    zmsAppendLabeledLine(resultsContent, 'Total Available Space', totalAvailableSpace.toLocaleString() + ' bytes', 'Total usable storage across all data sectors (sector effective size × available sectors).');
+
+    zmsAppendDivider(resultsContent);
+    zmsAppendLabeledLine(resultsContent, 'Capacity for your data', '');
+    zmsAppendLabeledLine(resultsContent, 'Storage Per Item (with metadata)', effectiveDataSize + ' bytes' + (advancedInfo ? ' (average from parsed lines)' : ''), 'Total storage consumed by a single item after rounding and including its ATE metadata.');
+    zmsAppendLabeledLine(resultsContent, 'Items per Sector', String(itemsPerSector), 'How many items fit in one sector (sector effective size ÷ storage per item).');
+    zmsAppendLabeledLine(resultsContent, 'Total Items That Can Fit', totalItemsThatCanFit.toLocaleString(), 'Maximum number of items that fit across all available sectors.');
+    zmsAppendLabeledLine(resultsContent, 'Total Data Storage Capacity', totalDataCapacity.toLocaleString() + ' bytes', 'Total user data (excluding metadata) that can be stored.');
+    zmsAppendLabeledLine(resultsContent, 'Total Storage Requirement', occupiedStorageUsed.toLocaleString() + ' bytes (' + totalStorageUsedPercent.toFixed(1) + '% of total available space)', 'Storage consumed by your full data set, including ATE metadata.');
+    zmsAppendLabeledLine(resultsContent, 'Storage Efficiency', storageEfficiency.toFixed(1) + '%', 'Share of consumed storage that holds actual user data (data bytes ÷ storage requirement).');
+    zmsAppendDivider(resultsContent);
+    zmsAppendLabeledLine(resultsContent, 'For Your Requested ' + dataCount + ' Items', '');
+    zmsAppendBullets(resultsContent, [
+        'Items that can fit: ' + itemsThatCanFit.toLocaleString(),
+        (advancedInfo ? 'Requested data bytes' : 'Actual data capacity') + ': ' + (advancedInfo ? advancedInfo.totalDataBytes : actualDataCapacity).toLocaleString() + ' bytes',
+        (advancedInfo ? 'Requested storage used' : 'Actual storage used') + ': ' + (advancedInfo ? advancedInfo.totalEffectiveSize : actualStorageUsed).toLocaleString() + ' bytes'
+    ]);
+    if (dataCount > totalItemsThatCanFit) {
+        zmsAppendAdmonition(resultsContent, 'warning', 'Warning', 'Only ' + totalItemsThatCanFit.toLocaleString() + ' of ' + dataCount.toLocaleString() + ' requested items can fit in the available space.');
+    }
+
+    resultsDiv.style.display = 'block';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    zmsBindEnterToCalculate('#zms-space-write-block-size, #zms-space-flash-type, #zms-space-erase-block-size, #zms-space-sector-size, #zms-space-sector-count, #zms-space-data-size, #zms-space-data-count, #zms-space-use-settings, #zms-space-avg-path-size, #zms-space-id-type, #zms-space-advanced-entries', calculateAvailableSpace);
+
+    document.getElementById('zms-space-data-size-container').style.display = 'block';
+    document.getElementById('zms-space-data-count-container').style.display = 'block';
+    spaceUpdateSettingsVisibility();
+    spaceUpdateAdvancedHelp();
+});
+</script>

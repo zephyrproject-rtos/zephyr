@@ -1,0 +1,73 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP FlexIO LCD controller
+
+compatible: "nxp,mipi-dbi-flexio-lcdif"
+
+include: [mipi-dbi-controller.yaml, base.yaml, pinctrl-device.yaml, mux-consumer.yaml]
+
+properties:
+  mux-states:
+    description: |
+      Optional INPUTMUX route needed by some SmartDMA back-ends to connect
+      the FlexIO IRQ to a SmartDMA trigger input, given as
+      <&inputmuxN index connection>. "connection" is the numeric value of
+      the inputmux_connection_t enum from the SoC's fsl_inputmux_connections.h
+      that routes the FlexIO IRQ to the SmartDMA trigger (e.g.
+      kINPUTMUX_FlexioIrqToSmartdma0Trigger). Leave unset on back-ends/SoCs
+      that need no such route.
+
+  shifters-count:
+    type: int
+    required: true
+    description: |
+      Number of FlexIO shifters needed.
+
+  timers-count:
+    type: int
+    required: true
+    description: |
+      Number of FlexIO timers needed.
+
+  enwr-pin:
+    type: int
+    required: true
+    description: |
+      Pin select for WR(8080 mode), EN(6800 mode).
+
+  rd-pin:
+    type: int
+    description: |
+      Pin select for RD(8080 mode), not used in 6800 mode.
+
+  data-pin-start:
+    type: int
+    required: true
+    description: |
+      Start index of the data pin.
+
+  cs-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      CS Pin
+      GPIO to drive the CS pin.
+
+  rs-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      RS Pin
+      GPIO to drive the RS pin.
+
+  rdwr-gpios:
+    type: phandle-array
+    description: |
+      RDWR Pin
+      GPIO to drive the RDWR pin. This is required for Motorola 68K bus.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin.

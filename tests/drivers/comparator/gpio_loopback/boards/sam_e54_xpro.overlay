@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * PA4 looped back to PA5
+ */
+
+/ {
+	aliases {
+		test-comp = &ac;
+	};
+
+	zephyr,user {
+		test-gpios = <&porta 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&porta {
+	status = "okay";
+};
+
+&ac {
+	comparator-channel = <0>;
+	positive-mux-input = "pin0";
+	negative-mux-input = "bandgap";
+	run-standby;
+	hysteresis-enable;
+	hysteresis-level = "hyst150";
+	filter-length = "maj5";
+	// single-shot-mode;
+
+	/* Assign pinctrl for PA04 */
+	pinctrl-0 = <&pinctrl_ac>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
+
+&pinctrl {
+	pinctrl_ac: ac_pins {
+		group1 {
+			pinmux = <PA4B_AC_AIN0>;  /* PA5B_AC_AIN1 */
+		};
+	};
+};

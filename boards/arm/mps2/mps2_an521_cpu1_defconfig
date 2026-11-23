@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2018-2019 Linaro Limited
+# Copyright (c) 2021 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_RUNTIME_NMI=y
+CONFIG_ARM_MPU=y
+CONFIG_QEMU_ICOUNT_SHIFT=7
+
+# GPIOs
+CONFIG_GPIO=y
+
+# Serial
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y

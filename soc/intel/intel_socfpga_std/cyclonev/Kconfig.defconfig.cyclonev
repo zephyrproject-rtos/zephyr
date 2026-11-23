@@ -1,0 +1,9 @@
+# Copyright (c) 2022-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_CYCLONEV
+
+config NUM_IRQS
+	default 211
+
+endif

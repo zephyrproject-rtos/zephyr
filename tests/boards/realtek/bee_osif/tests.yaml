@@ -1,0 +1,8 @@
+tests:
+  boards.realtek.bee_osif:
+    tags: realtek_osif
+    platform_allow:
+      - rtl87x2g_evb_a/rtl8762gkh
+      - rtl87x2g_evb_a/rtl8762gku
+      - rtl87x2g_evb_a/rtl8762grh
+      - rtl87x2g_evb_a/rtl8762gru

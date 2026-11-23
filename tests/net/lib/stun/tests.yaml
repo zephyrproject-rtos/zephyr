@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+# SPDX-License-Identifier: Apache-2.0
+common:
+  tags:
+    - net
+    - stun
+  min_ram: 128
+  min_flash: 192
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  net.stun: {}
+  net.stun.no_ipv6:
+    extra_configs:
+      - CONFIG_NET_IPV6=n
+  net.stun.no_client:
+    extra_configs:
+      - CONFIG_STUN_CLIENT=n
+  net.stun.binding_single_transmit:
+    extra_configs:
+      - CONFIG_STUN_BINDING_MAX_TRANSMITS=1
+  net.stun.binding_short_schedule:
+    extra_configs:
+      - CONFIG_STUN_BINDING_RTO_MS=1000
+      - CONFIG_STUN_BINDING_MAX_TRANSMITS=3
+      - CONFIG_STUN_BINDING_FINAL_WAIT_RTO=5

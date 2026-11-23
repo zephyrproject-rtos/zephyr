@@ -1,0 +1,23 @@
+common:
+  tags:
+    - bluetooth
+  depends_on: bsim
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.scan.ext_filter_policy:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_scan_ext_filter_policy_prj_conf
+      tests_scripts:
+        - tests_scripts/ext_filter_policy.sh
+  bluetooth.host.scan.ext_filter_policy.ext_adv:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_scan_ext_filter_policy_prj_ext_adv_conf
+      tests_scripts:
+        - tests_scripts/ext_filter_policy_ext_adv.sh
+    extra_args:
+      EXTRA_CONF_FILE=prj_ext_adv.conf

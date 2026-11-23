@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_RA_SECOND_CORE_LAUNCHER_IMAGE
+	default y if SOC_R7KA8P1KFLCAC_CM33
+
+config RA_SECOND_CORE_LAUNCHER_NAME
+	default "cm85"

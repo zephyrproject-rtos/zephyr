@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic Global DPPIC
+  (Distributed Programmable Peripheral Interconnect Controller)
+
+  Updated DPPIC binding set for Nordic products that have global DPPIC instances
+  with inter-bridge functionality. These instances also have split-ownership
+  of its channels and channel groups.
+
+compatible: "nordic,nrf-dppic-global"
+
+include:
+  - "nordic,nrf-dppic.yaml"
+  - "nordic,nrf-dppic-links.yaml"
+  - "nordic,split-channels.yaml"
+  - "nordic,split-channel-groups.yaml"

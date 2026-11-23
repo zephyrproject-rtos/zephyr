@@ -1,0 +1,42 @@
+# Copyright (c) 2025 JUMO GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Levetop LT7680 display controller
+
+compatible: "levetop,lt7680"
+
+include: [spi-device.yaml, display-controller.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Chip-select index on the SPI bus.
+
+  x-offset:
+    type: int
+    required: true
+    description: The column offset in pixels of the LCD to the controller memory
+
+  y-offset:
+    type: int
+    required: true
+    description: The row offset in pixels of the LCD to the controller memory
+
+  reset-gpios:
+    type: phandle-array
+    description: GPIO specifier for the reset pin of the display. The pin is active low.
+
+  reset-delay-ms:
+    type: int
+    default: 100
+    description: |
+      Time in milliseconds to hold the display in reset after asserting the reset pin.
+
+  rotation:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 180
+    description: |
+      Display rotation clockwise in degrees. Defaults to 0, display default.

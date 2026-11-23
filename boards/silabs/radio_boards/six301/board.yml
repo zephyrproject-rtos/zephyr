@@ -1,0 +1,6 @@
+boards:
+  - name: sixg301_rb4407a
+    full_name: SixG301 +10 dBm, 4 MB Flash Radio Board
+    vendor: silabs
+    socs:
+      - name: simg301m104lil

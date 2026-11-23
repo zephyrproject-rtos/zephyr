@@ -1,0 +1,43 @@
+# Copyright 2024-2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# HW acceleration configs for psa-crypto-driver.
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
+	bool "Build psa_crypto_driver for els_pkc"
+	depends on MBEDTLS_PSA_CRYPTO_C && MCUX_ELS_PKC
+	default y
+	help
+	  Include the psa_crypto_driver component from the NXP MCU SDK in the
+	  build. This provides an abstraction on top of the els_pkc component
+	  in order to be able to access the hardware acceleration offered by
+	  els_pkc from mbedtls via the mbedtls psa_crypto_driver_wrapper.
+	  Enabled by default on SoCs that integrate the ELS PKC accelerator.
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
+	bool "Threading support in psa-crypto-driver"
+	depends on MCUX_ELS_PKC && MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
+	default n if BUILD_WITH_TFM
+	help
+	  Enables threading support in psa-crypto-driver component.
+
+config MCUX_PSA_CRYPTO_DRIVER_USE_ELS_PKC_SHA1
+	bool "Use of SHA1 from els-pkc via psa-crypto-driver"
+	depends on MCUX_ELS_PKC && MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
+	help
+	  Enables use of SHA1 from els-pkc via psa-crypto-driver component.
+
+config PSA_CRYPTO_DRIVER_SGI_PKC
+	bool "SGI PKC support in psa-crypto-driver"
+	depends on MBEDTLS_PSA_CRYPTO_C && HAS_MCUX_SGI_PKC
+	select SGI_PKC
+	default y
+	help
+	  Enables SGI PKC support in psa-crypto-driver component.
+	  Enabled by default on SoCs that integrate the SGI PKC accelerator.
+
+config PSA_CRYPTO_DRIVER_THREAD_EN
+	bool "PSA Crypto Thread"
+	depends on MBEDTLS_PSA_CRYPTO_C
+	help
+	  Enables PSA_CRYPTO_THREAD.

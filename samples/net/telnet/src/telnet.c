@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2017 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(net_telnet_sample, LOG_LEVEL_DBG);
+
+#include <zephyr/kernel.h>
+#include <zephyr/linker/sections.h>
+#include <errno.h>
+#include <stdio.h>
+
+#include <zephyr/net/net_core.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_mgmt.h>
+
+#include <zephyr/net/conn_mgr_monitor.h>
+#include "net_sample_common.h"
+
+#if defined(CONFIG_NET_IPV6)
+#define MCAST_IP6ADDR "ff84::2"
+
+static void setup_ipv6(void)
+{
+	struct net_in6_addr addr;
+	struct net_if *iface = net_if_get_default();
+
+	if (iface == NULL) {
+		LOG_ERR("Default interface not found");
+		return;
+	}
+
+	if (net_addr_pton(NET_AF_INET6, MCAST_IP6ADDR, &addr)) {
+		LOG_ERR("Invalid address: %s", MCAST_IP6ADDR);
+		return;
+	}
+
+	net_if_ipv6_maddr_add(iface, &addr);
+}
+#else
+#define setup_ipv6(...)
+#endif /* CONFIG_NET_IPV6 */
+
+int main(void)
+{
+	LOG_INF("Starting Telnet sample");
+
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(CONN_MGR_READY_IP_ANY, NULL, K_FOREVER);
+	LOG_INF("Network ready");
+	setup_ipv6();
+	return 0;
+}

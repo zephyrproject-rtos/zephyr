@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026, Jonas Berg
+
+shield:
+  name: adafruit_hts221
+  full_name: Adafruit HTS221 Temperature and Humidity Sensor Shield
+  vendor: adafruit
+  supported_features:
+    - sensor

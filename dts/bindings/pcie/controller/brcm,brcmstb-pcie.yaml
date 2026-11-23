@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Junho Lee <junho@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: BRCMSTB PCIe controller
+
+compatible: "brcm,brcmstb-pcie"
+
+include: [base.yaml, pcie-controller.yaml]
+
+properties:
+  reg:
+    required: true

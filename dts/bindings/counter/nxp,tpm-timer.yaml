@@ -1,0 +1,42 @@
+# Copyright 2023-2024, 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Timer/PWM Module (TPM) used as timer
+
+  A TPM channel can also timestamp an edge on its TPMx_CHn pad (input capture).
+  The capture input is the pad itself, so the pad must be muxed to the channel
+  through the pinctrl "default" state, and the channel number in a
+  "counter-captures" phandle-array selects which pad is sampled.
+
+compatible: "nxp,tpm-timer"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+    description: Input clock prescaler
+
+counter-capture-cells:
+  - channel
+  - flags

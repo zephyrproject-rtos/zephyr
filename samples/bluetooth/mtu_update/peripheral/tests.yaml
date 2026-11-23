@@ -1,0 +1,12 @@
+sample:
+  name: Bluetooth Peripheral MTU Update
+tests:
+  sample.bluetooth.peripheral_mtu_update:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52_bsim
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3

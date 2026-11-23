@@ -1,0 +1,6 @@
+board:
+  name: shrike_fi
+  full_name: Shrike-fi
+  vendor: vicharak
+  socs:
+  - name: esp32s3

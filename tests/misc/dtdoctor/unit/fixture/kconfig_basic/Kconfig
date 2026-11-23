@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Standalone Kconfig tree parsed through dtdoctor_analyzer.setup_kconfig() with
+# ZEPHYR_BASE pointing at this directory. DT_HAS_* symbols are generated Kconfig
+# in real builds; they are declared manually here.
+
+config DTD_SERIAL
+	bool "Serial driver support"
+
+config DTD_UART
+	bool "Vendor foo UART driver"
+	default y
+	depends on DTD_SERIAL && DT_HAS_VND_FOO_DEVICE_ENABLED
+
+config DTD_SPECIAL_CORE
+	bool "Special core support"
+
+config DTD_SPECIAL_DRIVER
+	bool "Vendor foo special driver"
+	default y
+	depends on DTD_SPECIAL_CORE && DT_HAS_VND_FOO_SPECIAL_ENABLED
+
+config DTD_BARE_DRIVER
+	bool "Driver whose only dependency is the DT_HAS symbol"
+	default y
+	depends on DT_HAS_VND_BARE_DEVICE_ENABLED
+
+config DT_HAS_VND_FOO_DEVICE_ENABLED
+	def_bool y
+
+config DT_HAS_VND_FOO_SPECIAL_ENABLED
+	def_bool y
+
+config DT_HAS_VND_BARE_DEVICE_ENABLED
+	def_bool y

@@ -1,0 +1,27 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,sram = &dtcm;
+	};
+
+	aliases {
+		i2s-codec-rx = &sai1;
+		pcm-rxtx = &sai3;
+	};
+};
+
+&sai1 {
+	mclk-output;
+	nxp,rx-sync-mode;
+	status = "okay";
+};
+
+&sai3 {
+	nxp,rx-sync-mode;
+	status = "okay";
+};

@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Antmicro
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_POLARFIRE_U54
+
+config MP_MAX_NUM_CPUS
+	default 4
+
+endif

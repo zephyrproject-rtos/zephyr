@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test node depending on another device through a phandle
+
+compatible: "vnd,consumer"
+
+properties:
+  friend:
+    type: phandle
+    description: phandle to the device this node depends on

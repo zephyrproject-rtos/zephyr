@@ -1,0 +1,18 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LPCXPRESSO54628
+
+configdefault ETH_DRIVER
+	default y
+
+if FXOS8700
+
+# The on-board MMA8652FC has no magnetometer.
+choice FXOS8700_MODE
+	default FXOS8700_MODE_ACCEL
+endchoice
+
+endif # FXOS8700
+
+endif # BOARD_LPCXPRESSO54628

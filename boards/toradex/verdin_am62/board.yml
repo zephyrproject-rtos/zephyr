@@ -1,0 +1,6 @@
+board:
+  name: verdin_am62
+  full_name: Verdin AM62
+  vendor: toradex
+  socs:
+  - name: am6234

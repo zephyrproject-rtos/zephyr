@@ -1,0 +1,13 @@
+# LPC LPC54XXX MCU line
+
+# Copyright (c) 2017, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_LPC54XXX
+	bool
+	select SOC_FAMILY_LPC
+
+config SOC_SERIES
+	default "lpc54xxx" if SOC_SERIES_LPC54XXX
+
+rsource "*/Kconfig.soc"

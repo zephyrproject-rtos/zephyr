@@ -1,0 +1,12 @@
+# MAX42500 WDT configuration
+
+# Copyright (C) 2025 Analog Devices, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_ADI_MAX42500
+	bool "ADI MAX42500 Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_ADI_MAX42500_WATCHDOG_ENABLED
+	select I2C
+	help
+	  Enable WDT driver for ADI MAX42500.

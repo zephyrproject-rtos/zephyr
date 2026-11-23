@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2018 - 2020 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+/ {
+	compatible = "litex,vexriscv", "litex-dev";
+	#address-cells = <1>;
+	#size-cells = <1>;
+	model = "litex,vexriscv";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clock-frequency = <DT_FREQ_M(100)>;
+		timebase-frequency = <DT_FREQ_M(100)>;
+		riscv,isa-base = "rv32i";
+		riscv,isa-extensions = "i", "m", "zicsr", "zifencei";
+
+		cpu0: cpu@0 {
+			compatible = "litex,vexriscv-standard", "spinalhdl,vexriscv", "riscv";
+			reg = <0>;
+			device_type = "cpu";
+			status = "okay";
+		};
+	};
+
+	soc {
+		compatible = "litex,vexriscv";
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		intc0: interrupt-controller@bc0 {
+			compatible = "litex,vexriscv-intc0";
+			reg = <0xbc0 0x4 0xfc0 0x4>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "irq_mask", "irq_pending";
+			riscv,max-priority = <7>;
+		};
+	};
+};

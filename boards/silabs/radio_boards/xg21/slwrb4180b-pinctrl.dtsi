@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 Capgemini
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/silabs/xg21-pinctrl.h>
+
+&pinctrl {
+	iadc0_default: iadc0_default {
+		group0 {
+			silabs,analog-bus = <ABUS_AEVEN0_IADC0>;
+		};
+	};
+
+	timer0_pwm_default: timer0_pwm_default {
+		group0 {
+			pins = <TIMER0_CC0_PD2>;
+			drive-push-pull;
+			output-low;
+		};
+	};
+};

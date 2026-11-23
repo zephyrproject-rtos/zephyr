@@ -1,0 +1,19 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio0 6 0>;
+		in-gpios = <&gpio0 7 0>;
+	};
+};
+
+&gpio0 {
+	sense-edge-mask = <0x60>;
+	status = "okay";
+};
+
+&gpiote130 {
+	owned-channels = <0 1>;
+	status = "okay";
+};

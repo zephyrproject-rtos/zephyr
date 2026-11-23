@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00080000 0x00080000>;
+			label = "image-1";
+		};
+	};
+};

@@ -1,0 +1,282 @@
+/*
+ * Copyright (c) 2025 Texas Instruments
+ * Copyright (c) 2025 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <zephyr/dt-bindings/regulator/mspm0_vref.h>
+#include <freq.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+			device_type = "cpu";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cpu-power-states = <&run0 &run1 &run2
+					    &stop0 &stop1 &stop2
+					    &stdby0 &stdby1>;
+		};
+
+		power-states {
+			run0: runsleep0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				substate-id = <1>;
+			};
+
+			run1: runsleep1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				substate-id = <2>;
+			};
+
+			run2: runsleep2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				substate-id = <3>;
+			};
+
+			stop0: stop0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+			};
+
+			stop1: stop1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+			};
+
+			stop2: stop2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <3>;
+			};
+
+			stdby0: standby0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				substate-id = <1>;
+			};
+
+			stdby1: standby1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				substate-id = <2>;
+			};
+		};
+	};
+
+	ckm: clock-module {
+		compatible = "ti,mspm0-ckm";
+		#clock-cells = <1>;
+		sysctl = <&sysctl>;
+		cpuss = <&cpuss>;
+		factoryregion = <&factoryregion>;
+	};
+
+	clocks: clocks {
+		hfclk: hfclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		hsclk: hsclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		lfclk: lfclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			clocks = <&lfosc>;
+		};
+
+		ulpclk: ulpclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+		};
+
+		mclk: mclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			/* read by SYS_CLOCK_HW_CYCLES_PER_SEC's Kconfig default */
+			clock-frequency = <DT_FREQ_M(32)>;
+			clocks = <&sysosc>;
+		};
+
+		mfpclk: mfpclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			clocks = <&sysosc>;
+			status = "disabled";
+		};
+
+		canclk: canclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	oscillators: oscillators {
+		hfxt: hfxt {
+			compatible = "ti,mspm0-osc";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "disabled";
+		};
+
+		lfxt: lfxt {
+			compatible = "ti,mspm0-osc";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "disabled";
+		};
+
+		lfosc: lfosc {
+			compatible = "ti,mspm0-osc";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+		};
+
+		sysosc: sysosc {
+			compatible = "ti,mspm0-osc";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		vref0: vref@40030000 {
+			compatible = "ti,mspm0-vref";
+			reg = <0x40030000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_BUSCLK>;
+			off-on-delay-us = <200>;
+			regulator-uv = <1400000>;
+			regulator-allowed-modes = <MSPM0_VREF_MODE_NORMAL>,
+						  <MSPM0_VREF_MODE_SHMODE>;
+			ti,clk-div = <0x1>;
+			ti,sample-cycles = <10>;
+			ti,hold-cycles = <40>;
+			status = "disabled";
+		};
+
+		wdt0: wdt0@40080000 {
+			compatible = "ti,mspm0-watchdog";
+			reg = <0x40080000 0x2000>;
+			interrupts = <0 0>;
+			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+			closed-window = <0>;
+			ti,watchdog-reset-action = <1>;
+			status = "disabled";
+		};
+
+		rtc: rtc@40094000 {
+			compatible = "ti,mspm0-rtc";
+			reg = <0x40094000 0x2000>;
+			interrupts = <30 0>;
+			alarms-count = <2>;
+			status = "disabled";
+		};
+
+		gpioa: gpio@400a0000 {
+			compatible = "ti,mspm0-gpio";
+			reg = <0x400a0000 0x2000>;
+			interrupts = <1 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpiob: gpio@400a2000 {
+			compatible = "ti,mspm0-gpio";
+			reg = <0x400a2000 0x2000>;
+			interrupts = <1 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		sysctl: syscon@400af000 {
+			compatible = "syscon";
+			reg = <0x400af000 0x2000>;
+		};
+
+		flashctl: flash-controller@400cd000 {
+			compatible = "ti,mspm0-flash-controller";
+			reg = <0x400cd000 0x2000>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				erase-block-size = <1024>;
+				write-block-size = <8>;
+			};
+		};
+
+		uart0: uart@40108000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x40108000 0x2000>;
+			interrupts = <15 0>;
+			current-speed = <115200>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clk-div = <1>;
+			status = "disabled";
+		};
+
+		cpuss: syscon@40400000 {
+			compatible = "syscon";
+			reg = <0x40400000 0x2000>;
+		};
+
+		pinctrl: pin-controller@40428000 {
+			compatible = "ti,mspm0-pinctrl";
+			reg = <0x40428000 0x2000>;
+		};
+
+		dma: dma@4042a000 {
+			compatible = "ti,mspm0-dma";
+			reg = <0x4042a000 0x2000>;
+			interrupts = <31 0>;
+			#dma-cells = <2>;
+			dma-channels = <7>;
+			status = "disabled";
+		};
+
+		spi0: spi@40468000 {
+			compatible = "ti,mspm0-spi";
+			reg = <0x40468000 0x2000>;
+			status = "disabled";
+		};
+
+		factoryregion: syscon@41c40000 {
+			compatible = "syscon";
+			reg = <0x41c40000 0x400>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

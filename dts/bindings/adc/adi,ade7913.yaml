@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog Devices ADE7913 3-channel SPI ADC
+
+compatible: "adi,ade7913"
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+on-bus: spi
+
+properties:
+  "#io-channel-cells":
+    const: 1
+  spi-max-frequency:
+    type: int
+    min: 250000
+    max: 5600000
+  clk-out-enable:
+    type: boolean
+    description: |
+      Enable Clk-Out Signal to enable driving other ADE7913 ADCs.
+      - true: Enable Clk-Out Signal
+      - false: By default Data_Ready_N goes low for 64 Clk cycles when Data is Ready
+  clock-frequency:
+    type: int
+    enum:
+      - 8000
+      - 4000
+      - 2000
+      - 1000
+    description: "ADC Frequency Configuration"
+
+io-channel-cells:
+  - input

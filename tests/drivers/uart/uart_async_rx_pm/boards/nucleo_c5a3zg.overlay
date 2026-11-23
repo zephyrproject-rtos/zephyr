@@ -1,0 +1,22 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1>;
+};
+
+dut: &usart2 {
+	/* Connect PD5 (TX) to PD6 (RX). */
+	clocks = <&rcc STM32_CLOCK(APB1, 17)>,
+		 <&rcc STM32_SRC_HSIK USART2_SEL(2)>;
+	current-speed = <19200>;
+	wakeup-source;
+	dmas = <&lpdma1 0 15 STM32_DMA_PERIPH_TX>,
+	       <&lpdma1 1 14 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+};

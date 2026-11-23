@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+grove_serial: &stmod_serial {};
+
+esp_01_serial: &stmod_serial {};
+
+/*
+ * Hardware flow control stays disabled here. Boards may still include CTS/RTS
+ * pins in stmod_serial pinctrl-0 so enabling it only requires a user overlay
+ * that adds hw-flow-control.
+ */
+mikrobus_serial: &stmod_serial {};

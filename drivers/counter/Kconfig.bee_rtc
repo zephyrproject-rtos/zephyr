@@ -1,0 +1,10 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_BEE_RTC
+	bool "Realtek Bee series counter RTC driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_COUNTER_RTC_ENABLED
+	select HAL_REALTEK_BEE_RTC
+	help
+	  This option enables the counter RTC driver for Realtek Bee SoCs.

@@ -1,0 +1,411 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_SOC_ARM_REALTEK_RTS5817_DLINK_SYS_REG_H_
+#define ZEPHYR_SOC_ARM_REALTEK_RTS5817_DLINK_SYS_REG_H_
+
+#include <zephyr/sys/util.h>
+
+#define R_PHY_RST_CTRL        0x000
+#define R_DLINK_PG_CTRL       0x004
+#define R_DLINK_IN_OUT_CTRL   0x008
+#define R_SLEEP_IN_OUT_CTRL   0x00C
+#define R_SUSPEND_IN_OUT_CTRL 0x010
+#define R_EXIT_FLAG           0x014
+#define R_NX_MODE             0x018
+#define R_FORCE_OFF_CTRL      0x01C
+#define R_SIG_DETECT_CTRL     0x020
+#define R_SENSOR_INT_CFG      0x024
+#define R_SENSOR_INT_FLAG     0x028
+#define R_AL_CACHE_CTRL       0x02C
+#define R_SPI_REMAP_OFFSET    0x030
+#define R_FORCE_MCU_RST_CNT   0x034
+#define R_POWER_STATE         0x038
+#define R_DLINK_SCRATCH0      0x03C
+#define R_DLINK_SCRATCH1      0x040
+#define R_DLINK_SCRATCH2      0x044
+#define R_DLINK_SCRATCH3      0x048
+#define R_AL_PG_EN            0x04C
+#define R_AL_RCOSC_CFG        0x050
+#define R_AL_PG_CNT0          0x054
+#define R_AL_PG_CNT1          0x058
+#define R_AL_SIE_STATE        0x05C
+#define R_RC_DEGLITCH_CFG     0x060
+#define R_AL_REXT_CFG         0x064
+#define R_AL_DUMMY0           0x068
+#define R_AL_DUMMY1           0x06C
+#define R_AL_GPIO_VALUE       0x070
+#define R_AL_GPIO_CFG         0x074
+#define R_AL_GPIO_IRQ_EN      0x078
+#define R_AL_GPIO_IRQ         0x07C
+#define R_AL_SENSOR_RST_CTL   0x080
+#define R_AL_SENSOR_SCS_N_CTL 0x084
+#define R_FW_WAKEUP_TRIG      0x088
+#define R_GPIO_SVIO_CFG       0x08C
+#define R_INITVTOR            0x090
+#define R_RC_TIMER_CFG        0x094
+#define R_CHIP_SRAM_PG        0x098
+#define R_CHIP_RESET          0x100
+#define R_INITVTOR_CACHE      0x104
+#define R_CACHE_SPI_COMMAND   0x108
+#define R_WORK_MODE           0x10C
+#define R_FORCE_SCAN_MODE     0x110
+#define R_SHDN_SVIO_CTRL      0x114
+#define R_SRAM_PCUT           0x118
+#define R_AL_PUF_AUTOLOAD     0x11C
+#define R_AL_PG_CNT2          0x120
+
+/* Bits of R_DLINK_PG_CTRL (0X0004) */
+#define CFG_DLINK_PG_EN_MASK       BIT(0)
+#define CFG_HW_WAKEUP_EN_MASK      BIT(1)
+#define CFG_SLEEP_PG_EN_MASK       BIT(2)
+#define CFG_USB_SPI_MODE_MASK      BIT(3)
+#define HW_AUTO_CLR_SU_INT_EN_MASK BIT(4)
+#define CFG_PWD_VALUE_MASK         BIT(5)
+#define CFG_PWD_EN_MASK            BIT(6)
+#define CFG_PDOWN_VALUE_MASK       BIT(7)
+#define CFG_PDOWN_EN_MASK          BIT(8)
+#define CFG_BG_OFF_VALUE_MASK      BIT(9)
+#define CFG_BG_OFF_EN_MASK         BIT(10)
+#define CFG_REGPWD_VALUE_MASK      BIT(11)
+#define CFG_REGPWD_EN_MASK         BIT(12)
+#define CFG_REGRC_VALUE_MASK       BIT(13)
+#define CFG_REGRC_EN_MASK          BIT(14)
+#define CFG_REGOSC_VALUE_MASK      BIT(15)
+#define CFG_REGOSC_EN_MASK         BIT(16)
+#define CFG_XTAL_VALUE_MASK        BIT(17)
+#define CFG_XTAL_EN_MASK           BIT(18)
+#define RST_RC_PRE_MASK            BIT(19)
+#define CFG_RST_RC_VALUE_MASK      BIT(20)
+#define CFG_RST_RC_MASK            BIT(21)
+#define POW_RC_PRE_MASK            BIT(22)
+#define CFG_POW_RC_VALUE_MASK      BIT(23)
+#define CFG_POW_RC_MASK            BIT(24)
+#define CFG_BIAS_VALUE_MASK        BIT(25)
+#define CFG_BIAS_EN_MASK           BIT(26)
+#define CFG_POW_USB2_VALUE_MASK    BIT(27)
+#define CFG_POW_USB2_MASK          BIT(28)
+#define CFG_PLLEN_VALUE_MASK       BIT(29)
+#define CFG_PLLEN_MASK             BIT(30)
+#define CFG_USB2_PG_EN_MASK        BIT(31)
+
+/* Bits of R_SLEEP_IN_OUT_CTRL (0X000C) and R_SUSPEND_IN_OUT_CTRL (0X0010) */
+#define SLEEP_FW_ENTER_EN_MASK    BIT(0)
+#define GPIO2_EXIT_EN_MASK        BIT(1)
+#define GPIO1_EXIT_EN_MASK        BIT(2)
+#define GPIO0_EXIT_EN_MASK        BIT(3)
+#define SVIO_EXIT_EN_MASK         BIT(4)
+#define SENSORCS_EXIT_EN_MASK     BIT(5)
+#define WAKEUP2_EXIT_EN_MASK      BIT(6)
+#define WAKEUP1_EXIT_EN_MASK      BIT(7)
+#define EXIT_EN_OFFSET            1
+#define EXIT_EN_MASK              GENMASK(7, 1)
+#define GPIO2_EXIT_MODE_OFFSET    8
+#define GPIO2_EXIT_MODE_MASK      GENMASK(9, 8)
+#define GPIO1_EXIT_MODE_OFFSET    10
+#define GPIO1_EXIT_MODE_MASK      GENMASK(11, 10)
+#define GPIO0_EXIT_MODE_OFFSET    12
+#define GPIO0_EXIT_MODE_MASK      GENMASK(13, 12)
+#define SVIO_EXIT_MODE_OFFSET     14
+#define SVIO_EXIT_MODE_MASK       GENMASK(15, 14)
+#define SENSORCS_EXIT_MODE_OFFSET 16
+#define SENSORCS_EXIT_MODE_MASK   GENMASK(17, 16)
+#define WAKEUP2_EXIT_MODE_OFFSET  18
+#define WAKEUP2_EXIT_MODE_MASK    GENMASK(19, 18)
+#define WAKEUP1_EXIT_MODE_OFFSET  20
+#define WAKEUP1_EXIT_MODE_MASK    GENMASK(21, 20)
+#define EXIT_MODE_OFFSET          8
+#define EXIT_MODE_MASK            GENMASK(21, 8)
+
+/* Bits of R_EXIT_FLAG (0X0014) */
+#define SLEEP_GPIO2_EXIT_FLAG_MASK      BIT(0)
+#define SLEEP_GPIO1_EXIT_FLAG_MASK      BIT(1)
+#define SLEEP_GPIO0_EXIT_FLAG_MASK      BIT(2)
+#define SLEEP_SVIO_EXIT_FLAG_MASK       BIT(3)
+#define SLEEP_SENSORCS_EXIT_FLAG_MASK   BIT(4)
+#define SLEEP_WAKEUP2_EXIT_FLAG_MASK    BIT(5)
+#define SLEEP_WAKEUP1_EXIT_FLAG_MASK    BIT(6)
+#define SLEEP_EXIT_FLAG_OFFSET          0
+#define SLEEP_EXIT_FLAG_MASK            GENMASK(6, 0)
+#define SUSPEND_GPIO2_EXIT_FLAG_MASK    BIT(16)
+#define SUSPEND_GPIO1_EXIT_FLAG_MASK    BIT(17)
+#define SUSPEND_GPIO0_EXIT_FLAG_MASK    BIT(18)
+#define SUSPEND_SVIO_EXIT_FLAG_MASK     BIT(19)
+#define SUSPEND_SENSORCS_EXIT_FLAG_MASK BIT(20)
+#define SUSPEND_WAKEUP2_EXIT_FLAG_MASK  BIT(21)
+#define SUSPEND_WAKEUP1_EXIT_FLAG_MASK  BIT(22)
+#define SUSPEND_EXIT_FLAG_OFFSET        16
+#define SUSPEND_EXIT_FLAG_MASK          GENMASK(22, 16)
+#define PAD_EXIT_FLAG_CLR_PRE_MASK      BIT(31)
+
+/* Bits of R_NX_MODE (0X0018) */
+#define FW_CLOCK_MODE_SEL_MASK BIT(0)
+#define FORCE_NXTAL_MODE_MASK  BIT(1)
+#define FW_CFG_LC_RC_EN_MASK   BIT(2)
+#define REG_XTAL_FREE_MASK     BIT(3)
+#define NXTAL_MODE_MASK        BIT(4)
+#define NON_XTAL_SEL_MASK      BIT(5)
+
+/* Bits of R_SENSOR_INT_CFG (0X0024) */
+#define IE_SENSOR_INT_MASK           BIT(0)
+#define I_SENSOR_PRIORITY_MASK       BIT(1)
+#define CFG_SENSOR_INT_POS_EN_OFFSET 2
+#define CFG_SENSOR_INT_POS_EN_MASK   GENMASK(3, 2)
+#define CFG_SENSOR_INT_NEG_EN_OFFSET 4
+#define CFG_SENSOR_INT_NEG_EN_MASK   GENMASK(5, 4)
+
+/* Bits of R_SENSOR_INT_FLAG (0X0028) */
+#define I_SENSOR_INTF_FALL_OFFSET       0
+#define I_SENSOR_INTF_FALL_MASK         GENMASK(1, 0)
+#define I_SENSOR_INTF_RISE_OFFSET       2
+#define I_SENSOR_INTF_RISE_MASK         GENMASK(3, 2)
+#define I_SENSOR_INTF_OFFSET            4
+#define I_SENSOR_INTF_MASK              GENMASK(5, 4)
+#define SENSOR_SCS_N_GPIO_INT_FALL_MASK BIT(6)
+#define SENSOR_SCS_N_GPIO_INT_RISE_MASK BIT(7)
+#define GPIO_SVIO_INT_FALL_MASK         BIT(8)
+#define GPIO_SVIO_INT_RISE_MASK         BIT(9)
+#define SENSOR_RSTN_GPIO_INT_FALL_MASK  BIT(10)
+#define SENSOR_RSTN_GPIO_INT_RISE_MASK  BIT(11)
+#define WAKE_UP_I_OFFSET                16
+#define WAKE_UP_I_MASK                  GENMASK(17, 16)
+
+/* Bits of R_POWER_STATE (0X0038) */
+#define POWER_STATE_SET_EN_MASK BIT(0)
+#define POWER_STATE_OFFSET      1
+#define POWER_STATE_MASK        GENMASK(2, 1)
+#define POWER_STATE_CLR_MASK    BIT(7)
+
+/* Bits of R_AL_PG_EN (0X004C) */
+#define ISO_EN_MASK            BIT(0)
+#define DV12S_POWEROFF_EN_MASK BIT(1)
+#define RESUME_RST_EN_MASK     BIT(2)
+#define PLL_TIMECNT_EN_MASK    BIT(3)
+#define PLL_SW_ON_EN_MASK      BIT(4)
+#define APHY_HANDLE_EN_MASK    BIT(5)
+#define XDAT_POW_OFF_EN_MASK   BIT(6)
+#define XDAT_POW_OFF_EN2_MASK  BIT(7)
+#define XDAT_POW_OFF_EN3_MASK  BIT(8)
+#define PG_STATE_RST_MASK      BIT(9)
+#define PORB_EN_MASK           BIT(10)
+#define RESUME_RC_RST_EN_MASK  BIT(11)
+
+/* Bits of R_AL_RCOSC_CFG (0X0050) */
+#define RC_OSC_EN_MASK       BIT(0)
+#define RC_DEGLITCH_CFG_MASK BIT(1)
+#define RC_DEGLITCH_EN_MASK  BIT(2)
+
+/* Bits of R_AL_PG_CNT0 (0X0054) */
+#define PG_RESET_T_OFFSET   0
+#define PG_RESET_T_MASK     GENMASK(7, 0)
+#define PG_POW0_ON_T_OFFSET 8
+#define PG_POW0_ON_T_MASK   GENMASK(15, 8)
+#define PG_POW1_ON_T_OFFSET 16
+#define PG_POW1_ON_T_MASK   GENMASK(23, 16)
+#define PG_LC_ON_T_OFFSET   24
+#define PG_LC_ON_T_MASK     GENMASK(31, 24)
+
+/* Bits of R_AL_SIE_STATE (0X005C) */
+#define AL_SIE_DEVADDR_OFFSET               0
+#define AL_SIE_DEVADDR_MASK                 GENMASK(6, 0)
+#define AL_USB_SPEED_MASK                   BIT(7)
+#define AL_CFG_FORCE_FS_JMP_SPD_NEG_FS_MASK BIT(8)
+#define AL_FORCE_FS_MASK                    BIT(9)
+
+/* Bits of R_RC_DEGLITCH_CFG (0X0060) */
+
+#define RC_DEGLITCH_EDGE_GPIO_AL0       BIT(0)
+#define RC_DEGLITCH_EDGE_GPIO_AL1       BIT(1)
+#define RC_DEGLITCH_EDGE_GPIO_AL2       BIT(2)
+#define RC_DEGLITCH_EDGE_GPIO_WAKE1     BIT(3)
+#define RC_DEGLITCH_EDGE_GPIO_WAKE2     BIT(4)
+#define RC_DEGLITCH_EDGE_GPIO_SNRCS     BIT(5)
+#define RC_DEGLITCH_EDGE_GPIO_SSOR      BIT(6)
+#define RC_DEGLITCH_EDGE_GPIO_AL_OFFSET 0
+#define RC_DEGLITCH_EDGE_GPIO_AL_MASK   GENMASK(6, 0)
+#define RC_DEGLITCH_GPIO_AL0_EN         BIT(8)
+#define RC_DEGLITCH_GPIO_AL1_EN         BIT(9)
+#define RC_DEGLITCH_GPIO_AL2_EN         BIT(10)
+#define RC_DEGLITCH_GPIO_WAKE1_EN       BIT(11)
+#define RC_DEGLITCH_GPIO_WAKE2_EN       BIT(12)
+#define RC_DEGLITCH_GPIO_SNRCS_EN       BIT(13)
+#define RC_DEGLITCH_GPIO_SSOR_EN        BIT(14)
+#define RC_DEGLITCH_GPIO_AL_EN_OFFSET   8
+#define RC_DEGLITCH_GPIO_AL_EN_MASK     GENMASK(14, 8)
+#define RC_DEGLITCH_COUNT_OFFSET        16
+#define RC_DEGLITCH_COUNT_MASK          GENMASK(23, 16)
+
+/* Bits of R_AL_DUMMY0 (0X0068) */
+#define SVA_SUSPEND_OCP_FLAG               BIT(24)
+#define SVIO_SUSPEND_OCP_FLAG              BIT(25)
+#define CFG_USB_LDO_EN                     BIT(26)
+#define CFG_USB_LDO_VALUE                  BIT(27)
+#define CFG_PG_STATE_DBG_BUS_EN            BIT(29)
+#define ECO_CACHESPI_HOLD_PUPD_CTRL_SWITCH BIT(30)
+#define ECO_CACHESPI_HOLD_PU_EN            BIT(31)
+
+/* Bits of R_AL_DUMMY1 (0X006C) */
+#define ECO_CACHESPI_HOLD_PD_EN BIT(0)
+#define ECO_BUSCLK_240M_CFG     BIT(1)
+#define ECO_SRAM_PCUT_M1_16KX2  BIT(4)
+#define ECO_SRAM_PCUT_M1_32KX1  BIT(5)
+#define ECO_SRAM_PCUT_M1_64KX3  BIT(6)
+#define SVA_SUSPEND_OCP_EN      BIT(8)
+#define SVIO_SUSPEND_OCP_EN     BIT(9)
+
+/* Bits of R_AL_GPIO_VALUE (0X0070) */
+#define AL_GPIO_O_OFFSET        0
+#define AL_GPIO_O_MASK          GENMASK(2, 0)
+#define ASYNC_AL_GPIO_IN_OFFSET 3
+#define ASYNC_AL_GPIO_IN_MASK   GENMASK(5, 3)
+#define AL_GPIO_I_OFFSET        6
+#define AL_GPIO_I_MASK          GENMASK(8, 6)
+
+/* Bits of R_AL_GPIO_CFG (0X0074) */
+#define AL_GPIO_OE_OFFSET      0
+#define AL_GPIO_OE_MASK        GENMASK(2, 0)
+#define AL_GPIO_OE2_OFFSET     3
+#define AL_GPIO_OE2_MASK       GENMASK(5, 3)
+#define AL_GPIO_OE3_OFFSET     8
+#define AL_GPIO_OE3_MASK       GENMASK(10, 8)
+#define AL_GPIO_SHDN_OFFSET    11
+#define AL_GPIO_SHDN_MASK      GENMASK(13, 11)
+#define AL_GPIO_IEV18_OFFSET   16
+#define AL_GPIO_IEV18_MASK     GENMASK(18, 16)
+#define AL_GPIO_PU_CTRL_OFFSET 19
+#define AL_GPIO_PU_CTRL_MASK   GENMASK(21, 19)
+#define AL_GPIO_PD_CTRL_OFFSET 24
+#define AL_GPIO_PD_CTRL_MASK   GENMASK(26, 24)
+#define AL_GPIO_SEL_OFFSET     27
+#define AL_GPIO_SEL_MASK       GENMASK(29, 27)
+#define CS1_BRIDGE_EN_MASK     BIT(31)
+
+/* Bits of R_AL_GPIO_IRQ_EN (0X0078) */
+#define AL_GPIO_INT_EN_FALL_OFFSET 0
+#define AL_GPIO_INT_EN_FALL_MASK   GENMASK(2, 0)
+#define AL_GPIO_INT_EN_RISE_OFFSET 3
+#define AL_GPIO_INT_EN_RISE_MASK   GENMASK(5, 3)
+
+/* Bits of R_AL_GPIO_IRQ (0X007C) */
+#define AL_GPIO_INT_FALL_OFFSET 0
+#define AL_GPIO_INT_FALL_MASK   GENMASK(2, 0)
+#define AL_GPIO_INT_RISE_OFFSET 3
+#define AL_GPIO_INT_RISE_MASK   GENMASK(5, 3)
+
+/* Bits of R_AL_SENSOR_RST_CTL (0X0080) */
+#define PAD_SENSOR_RSTN_I_MASK            BIT(0)
+#define SENSOR_RSTN_O_MASK                BIT(1)
+#define SENSOR_RSTN_OE0_MASK              BIT(2)
+#define SENSOR_RSTN_OE2_MASK              BIT(3)
+#define SENSOR_RSTN_OE3_MASK              BIT(4)
+#define SENSOR_RSTN_IEV18_MASK            BIT(5)
+#define SENSOR_RSTN_H3L1_MASK             BIT(6)
+#define SENSOR_RSTN_PUE_MASK              BIT(7)
+#define SENSOR_RSTN_PDE_MASK              BIT(8)
+#define SENSOR_RSTN_GPIO_INT_EN_RISE_MASK BIT(10)
+#define SENSOR_RSTN_GPIO_INT_EN_FALL_MASK BIT(11)
+
+/* Bits of R_AL_SENSOR_SCS_N_CTL (0X0084) */
+#define PAD_SENSOR_SCS_N_I_MASK            BIT(0)
+#define SENSOR_SCS_N_O_MASK                BIT(1)
+#define SENSOR_SCS_N_OE0_MASK              BIT(2)
+#define SENSOR_SCS_N_OE2_MASK              BIT(3)
+#define SENSOR_SCS_N_OE3_MASK              BIT(4)
+#define SENSOR_SCS_N_IEV18_MASK            BIT(5)
+#define SENSOR_SCS_N_H3L1_MASK             BIT(6)
+#define SENSOR_SCS_N_PUE_MASK              BIT(7)
+#define SENSOR_SCS_N_PDE_MASK              BIT(8)
+#define SENSOR_SCS_N_SEL_MASK              BIT(9)
+#define SENSOR_SCS_N_GPIO_INT_EN_RISE_MASK BIT(10)
+#define SENSOR_SCS_N_GPIO_INT_EN_FALL_MASK BIT(11)
+
+/* Bits of R_GPIO_SVIO_CFG (0X008C) */
+#define GPIO_SVIO_I_MASK           BIT(0)
+#define GPIO_SVIO_O_MASK           BIT(1)
+#define GPIO_SVIO_OE0_MASK         BIT(2)
+#define GPIO_SVIO_OE2_MASK         BIT(3)
+#define GPIO_SVIO_OE3_MASK         BIT(4)
+#define GPIO_SVIO_H3L1_MASK        BIT(5)
+#define GPIO_SVIO_IEV18_MASK       BIT(6)
+#define GPIO_SVIO_PULLCTL_OFFSET   8
+#define GPIO_SVIO_PULLCTL_MASK     GENMASK(9, 8)
+#define GPIO_SVIO_INT_EN_RISE_MASK BIT(10)
+#define GPIO_SVIO_INT_EN_FALL_MASK BIT(11)
+
+/* Bits of R_RC_TIMER_CFG (0X0094) */
+#define RC_COUNTER_OFFSET         0
+#define RC_COUNTER_MASK           GENMASK(23, 0)
+#define RC_TIMER_CLR_MASK         BIT(24)
+#define RC_TIMER_EN_MASK          BIT(25)
+#define RC_TIMER_WAKEUP_FLAG_MASK BIT(31)
+
+/* Bits of R_CHIP_SRAM_PG (0X0098) */
+#define FW_CFG_SRAM_64KB_0_DS_MASK     BIT(0)
+#define FW_CFG_SRAM_64KB_1_DS_MASK     BIT(1)
+#define FW_CFG_SRAM_64KB_2_DS_MASK     BIT(2)
+#define FW_CFG_SRAM_32KB_DS_MASK       BIT(3)
+#define FW_CFG_SRAM_16KB_0_DS_MASK     BIT(4)
+#define FW_CFG_SRAM_16KB_1_DS_MASK     BIT(5)
+#define FW_CFG_SRAM_64KB_0_SD_MASK     BIT(8)
+#define FW_CFG_SRAM_64KB_1_SD_MASK     BIT(9)
+#define FW_CFG_SRAM_64KB_2_SD_MASK     BIT(10)
+#define FW_CFG_SRAM_32KB_SD_MASK       BIT(11)
+#define FW_CFG_SRAM_16KB_0_SD_MASK     BIT(12)
+#define FW_CFG_SRAM_16KB_1_SD_MASK     BIT(13)
+#define FW_CFG_SUS_SRAM_64KB_0_DS_MASK BIT(16)
+#define FW_CFG_SUS_SRAM_64KB_1_DS_MASK BIT(17)
+#define FW_CFG_SUS_SRAM_64KB_2_DS_MASK BIT(18)
+#define FW_CFG_SUS_SRAM_32KB_DS_MASK   BIT(19)
+#define FW_CFG_SUS_SRAM_16KB_0_DS_MASK BIT(20)
+#define FW_CFG_SUS_SRAM_16KB_1_DS_MASK BIT(21)
+#define FW_CFG_SUS_SRAM_DS_OFFSET      16
+#define FW_CFG_SUS_SRAM_DS_MASK        GENMASK(16, 21)
+#define FW_CFG_SUS_SRAM_64KB_0_SD_MASK BIT(24)
+#define FW_CFG_SUS_SRAM_64KB_1_SD_MASK BIT(25)
+#define FW_CFG_SUS_SRAM_64KB_2_SD_MASK BIT(26)
+#define FW_CFG_SUS_SRAM_32KB_SD_MASK   BIT(27)
+#define FW_CFG_SUS_SRAM_16KB_0_SD_MASK BIT(28)
+#define FW_CFG_SUS_SRAM_16KB_1_SD_MASK BIT(29)
+#define FW_CFG_SUS_SRAM_SD_OFFSET      24
+#define FW_CFG_SUS_SRAM_SD_MASK        GENMASK(29, 24)
+
+/* Bits of R_CHIP_RESET (0X0100) */
+#define CHIP_RESET_FLAG_MASK    BIT(0)
+#define CFG_FW_FORCE_RESET_MASK BIT(1)
+#define BUS_RESET_FLAG_MASK     BIT(8)
+#define FORCE_REMAP_RST_MASK    BIT(9)
+#define FORCE_REMAP1_RST_MASK   BIT(11)
+
+/* Bits of R_CACHE_SPI_COMMAND (0X0108) */
+#define CACHE_SPI_CMD_OFFSET                    0
+#define CACHE_SPI_CMD_MASK                      GENMASK(7, 0)
+#define CACHE_SPI_AUTOMODE_TRANSFER_MODE_OFFSET 8
+#define CACHE_SPI_AUTOMODE_TRANSFER_MODE_MASK   GENMASK(11, 8)
+#define CACHE_A_SPI_DUM_BIT_NUM_OFFSET          16
+#define CACHE_A_SPI_DUM_BIT_NUM_MASK            GENMASK(20, 16)
+
+/* Bits of R_SRAM_PCUT (0X0118) */
+#define PCUT_SRAM16KBX2_MASK   BIT(0)
+#define PCUT_PDSRAM32KB_MASK   BIT(1)
+#define PCUT_PDSRAM64KBX3_MASK BIT(2)
+
+/* Bits of R_RC_DEGLITCH_CFG (0X0060) */
+#define RC_DEGLITCH_EDGE_GPIO_AL0   BIT(0)
+#define RC_DEGLITCH_EDGE_GPIO_AL1   BIT(1)
+#define RC_DEGLITCH_EDGE_GPIO_AL2   BIT(2)
+#define RC_DEGLITCH_EDGE_GPIO_WAKE1 BIT(3)
+#define RC_DEGLITCH_EDGE_GPIO_WAKE2 BIT(4)
+#define RC_DEGLITCH_EDGE_GPIO_SNRCS BIT(5)
+#define RC_DEGLITCH_EDGE_GPIO_SSOR  BIT(6)
+#define RC_DEGLITCH_GPIO_AL0_EN     BIT(8)
+#define RC_DEGLITCH_GPIO_AL1_EN     BIT(9)
+#define RC_DEGLITCH_GPIO_AL2_EN     BIT(10)
+#define RC_DEGLITCH_GPIO_WAKE1_EN   BIT(11)
+#define RC_DEGLITCH_GPIO_WAKE2_EN   BIT(12)
+#define RC_DEGLITCH_GPIO_SNRCS_EN   BIT(13)
+#define RC_DEGLITCH_GPIO_SSOR_EN    BIT(14)
+
+#endif /* ZEPHYR_SOC_ARM_REALTEK_RTS5817_DLINK_SYS_REG_H_ */

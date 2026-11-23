@@ -1,0 +1,595 @@
+.. _conn_mgr_overview:
+
+Overview
+########
+
+Connection Manager is a collection of optional Zephyr features that aim to allow applications to monitor and control connectivity (access to IP-capable networks) with minimal concern for the specifics of underlying network technologies.
+
+Using Connection Manager, applications can use a single abstract API to control network association and monitor Internet access, and avoid excessive use of technology-specific boilerplate.
+
+This allows an application to potentially support several very different connectivity technologies (for example, Wi-Fi and LTE) with a single codebase.
+
+Applications can also use Connection Manager to generically manage and use multiple connectivity technologies simultaneously.
+
+Structure
+=========
+
+Connection Manager is split into the following two subsystems:
+
+* :ref:`Connectivity monitoring <conn_mgr_monitoring>` (header file :file:`include/zephyr/net/conn_mgr_monitoring.h`) monitors all available :ref:`Zephyr network interfaces (ifaces) <net_if_interface>` and triggers :ref:`network management <net_mgmt_interface>` events indicating when IP connectivity is gained or lost.
+
+* :ref:`Connectivity control <conn_mgr_control>` (header file :file:`include/zephyr/net/conn_mgr_connectivity.h`) provides an abstract API for controlling iface network association.
+
+.. _conn_mgr_integration_diagram_simple:
+
+.. figure:: figures/integration_diagram_simplified.svg
+    :alt: A simplified view of how Connection Manager integrates with Zephyr and the application.
+    :figclass: align-center
+
+    A simplified view of how Connection Manager integrates with Zephyr and the application.
+
+    See :ref:`here <conn_mgr_integration_diagram_detailed>` for a more detailed version.
+
+.. _conn_mgr_monitoring:
+
+Connectivity monitoring
+#######################
+
+Connectivity monitoring tracks all available ifaces (whether or not they support :ref:`Connectivity control <conn_mgr_control>`) as they transition through various :ref:`operational states <net_if_interface_state_management>` and acquire or lose assigned IP addresses.
+
+Each available iface is considered ready if it meets the following criteria:
+
+* The iface is admin-up
+
+  * This means the iface has been instructed to become operational-up (ready for use). This is done by a call to :c:func:`net_if_up`.
+
+* The iface is oper-up
+
+  * This means the interface is completely ready for use; It is online, and if applicable, has associated with a network.
+  * See :ref:`net_if_interface_state_management` for details.
+
+* The iface has at least one assigned IP address
+
+  * Both IPv4 and IPv6 addresses are acceptable.
+    This condition is met as soon as one or both of these is assigned.
+  * See :ref:`net_if_interface` for details on iface IP assignment.
+
+* The iface has not been ignored
+
+  * Ignored ifaces are always treated as unready.
+  * See :ref:`conn_mgr_monitoring_ignoring_ifaces` for more details.
+
+.. note::
+
+   Typically, iface state and IP assignment are updated either by the iface's :ref:`L2 implementation <net_l2_interface>` or bound :ref:`connectivity implementation <conn_mgr_impl>`.
+
+   See :ref:`conn_mgr_impl_guidelines_iface_state_reporting` for details.
+
+A ready iface ceases to be ready the moment any of the above conditions is lost.
+
+When at least one iface is ready, the :c:macro:`NET_EVENT_L4_CONNECTED` :ref:`network management <net_mgmt_interface>` event is triggered, and IP connectivity is said to be ready.
+
+Afterwards, ifaces can become ready or unready without firing additional events, so long as there always remains at least one ready iface.
+
+When there are no longer any ready ifaces left, the :c:macro:`NET_EVENT_L4_DISCONNECTED` :ref:`network management <net_mgmt_interface>` event is triggered, and IP connectivity is said to be unready.
+
+.. note::
+
+   Connection Manager also fires the following more specific ``CONNECTED`` / ``DISCONNECTED`` events:
+
+   - :c:macro:`NET_EVENT_L4_IPV4_CONNECTED`
+   - :c:macro:`NET_EVENT_L4_IPV4_DISCONNECTED`
+   - :c:macro:`NET_EVENT_L4_IPV6_CONNECTED`
+   - :c:macro:`NET_EVENT_L4_IPV6_DISCONNECTED`
+
+   These are similar to :c:macro:`NET_EVENT_L4_CONNECTED` and :c:macro:`NET_EVENT_L4_DISCONNECTED`, but specifically track whether IPv4- and IPv6-capable ifaces are ready.
+
+.. _conn_mgr_monitoring_dns:
+
+Name resolution readiness
+=========================
+
+:c:macro:`NET_EVENT_L4_CONNECTED` does not imply that host names can be resolved.
+For example, an iface may obtain an IPv6 address through SLAAC from a router that does not advertise any DNS server.
+
+Connection Manager therefore also emits events :c:macro:`NET_EVENT_L4_DNS_READY` and :c:macro:`NET_EVENT_L4_DNS_LOST` accordingly.
+Name resolution is considered available only when a unicast DNS server is installed for an interface and address family that are ready.
+This means that a server is configured, not that it has been reached or has answered.
+
+These events require either :kconfig:option:`CONFIG_DNS_RESOLVER` or offloaded name resolution (see :c:func:`socket_offload_dns_register`).
+Without either of them, name resolution is never reported as available.
+With offloaded name resolution, the DNS servers are not visible to Connection Manager, so name resolution is considered available as soon as any iface is ready.
+These events are system-wide and are not associated with any iface or address family.
+
+The current DNS readiness state can also be queried with :c:func:`conn_mgr_dns_is_ready`.
+
+.. _conn_mgr_monitoring_usage:
+
+Usage
+=====
+
+Connectivity monitoring is enabled if the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER` Kconfig option is enabled.
+
+To receive connectivity updates, create and register a listener for the :c:macro:`NET_EVENT_L4_CONNECTED` and :c:macro:`NET_EVENT_L4_DISCONNECTED` :ref:`network management <net_mgmt_interface>` events:
+
+.. code-block:: c
+
+   /* Callback struct where the callback will be stored */
+   struct net_mgmt_event_callback l4_callback;
+
+   /* Callback handler */
+   static void l4_event_handler(struct net_mgmt_event_callback *cb,
+                                uint32_t event, struct net_if *iface)
+   {
+           if (event == NET_EVENT_L4_CONNECTED) {
+                   LOG_INF("Network connectivity gained!");
+           } else if (event == NET_EVENT_L4_DISCONNECTED) {
+                   LOG_INF("Network connectivity lost!");
+           }
+
+           /* Otherwise, it's some other event type we didn't register for. */
+   }
+
+   /* Call this before Connection Manager monitoring initializes */
+   static void my_application_setup(void)
+   {
+           /* Configure the callback struct to respond to (at least) the L4_CONNECTED
+            * and L4_DISCONNECTED events.
+            *
+            *
+            * Note that the callback may also be triggered for events other than those specified here!
+            * (See the net_mgmt documentation)
+            */
+           net_mgmt_init_event_callback(
+                   &l4_callback, l4_event_handler,
+                   NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED
+           );
+
+           /* Register the callback */
+           net_mgmt_add_event_callback(&l4_callback);
+   }
+
+You can also use :c:macro:`NET_MGMT_REGISTER_EVENT_HANDLER` to register your callback handler at
+compile time, instead of at runtime. That way, you can ensure your callback is registered before
+Connection Manager monitoring initializes.
+
+.. code-block:: c
+
+   static void l4_event_handler(uint64_t event, struct net_if *iface, void *info,
+                                size_t info_length, void *user_data)
+   {
+           if (event == NET_EVENT_L4_CONNECTED) {
+                   LOG_INF("Network connectivity gained!");
+           } else if (event == NET_EVENT_L4_DISCONNECTED) {
+                   LOG_INF("Network connectivity lost!");
+           }
+
+           /* Otherwise, it's some other event type we didn't register for. */
+   }
+
+   NET_MGMT_REGISTER_EVENT_HANDLER(l4_callback, l4_event_handler,
+                                   NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED, NULL);
+
+See :ref:`net_mgmt_listening` for more details on listening for net_mgmt events.
+
+.. note::
+   To avoid missing initial connectivity events, you should register your listener(s) before Connection Manager monitoring initializes.
+   See :ref:`conn_mgr_monitoring_missing_notifications` for strategies to ensure this.
+
+.. _conn_mgr_monitoring_missing_notifications:
+
+Avoiding missed notifications
+=============================
+
+Connectivity monitoring may trigger events immediately upon initialization.
+
+If your application registers its event listeners after connectivity monitoring initializes, it is possible to miss this first wave of events, and not be informed the first time network connectivity is gained.
+
+If this is a concern, your application should :ref:`register its event listeners <conn_mgr_monitoring_usage>` before connectivity monitoring initializes.
+
+Connectivity monitoring initializes using the :c:macro:`SYS_INIT` ``APPLICATION`` initialization priority specified by the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER_MONITOR_PRIORITY` Kconfig option.
+
+You can register your callbacks before this initialization by using :c:macro:`SYS_INIT` with an earlier initialization priority than this value, for instance priority 0:
+
+.. code-block:: C
+
+   static int my_application_setup(void)
+   {
+	   /* Register callbacks here */
+	   return 0;
+   }
+
+   SYS_INIT(my_application_setup, APPLICATION, 0);
+
+If this is not feasible, you can instead request that connectivity monitoring resend the latest connectivity events at any time by calling :c:func:`conn_mgr_mon_resend_status`:
+
+.. code-block:: C
+
+   static void my_late_application_setup(void)
+   {
+     /* Register callbacks here */
+
+     /* Once done, request that events be re-triggered */
+     conn_mgr_mon_resend_status();
+   }
+
+.. _conn_mgr_monitoring_waiting:
+
+Waiting for readiness
+=====================
+
+Instead of listening for events, a thread can block until the network is ready by calling :c:func:`conn_mgr_wait_ready`.
+All flags in its mask must be set:
+
+* :c:macro:`CONN_MGR_READY_IPV4` or :c:macro:`CONN_MGR_READY_IPV6` for that address family,
+* :c:macro:`CONN_MGR_READY_IP_ANY` for at least one address family,
+* :c:macro:`CONN_MGR_READY_DNS` for name resolution.
+
+.. code-block:: c
+
+   /* Wait until IPv4 and name resolution are available */
+   (void)conn_mgr_wait_ready(CONN_MGR_READY_IPV4 | CONN_MGR_READY_DNS, NULL, K_FOREVER);
+
+.. note::
+   Do not call this function with a non-zero timeout from a :ref:`network management <net_mgmt_interface>` event callback or from the work queue that delivers network management events.
+   When the :kconfig:option:`CONFIG_NET_MGMT_EVENT_SYSTEM_WORKQUEUE` Kconfig option is enabled, the restriction applies to the system work queue, because events are delivered on it.
+
+To retry after a failed connection attempt, pass a ``last_seen`` value to :c:func:`conn_mgr_wait_ready`.
+Set it to 0 before the first call and do not change it afterwards.
+The function returns 0, meaning "try to connect now", when all flags in the mask are ready and one of the following is true:
+
+* Any flag in the mask was gained after ``last_seen``.
+* The timeout expired.
+
+It returns ``-EAGAIN`` if a flag in the mask is not ready when the timeout expires.
+A flag is gained when an iface becomes ready for an address family, also when another iface is already ready for it, or when name resolution becomes available.
+Losing readiness or adding a DNS server while name resolution is already available is not a gain.
+
+.. code-block:: c
+
+   const uint32_t mask = CONN_MGR_READY_IP_ANY | CONN_MGR_READY_DNS;
+   uint32_t last_seen = 0;
+   int err;
+
+   while (true) {
+           /* First call returns once ready, later ones after 60 s or a gain */
+           err = conn_mgr_wait_ready(mask, &last_seen, K_SECONDS(60));
+           if (err == -EAGAIN) {
+                   /* The network is not ready. Keep waiting. */
+                   continue;
+           } else if (err != 0) {
+                   /* -EINVAL or -EDEADLK: wrong use of the API */
+                   return err;
+           }
+
+           /* Resolves with conn_mgr_get_ready_addr_family() on every attempt, as it may change */
+           if (connect_to_server() == 0) {
+                   break;
+           }
+   }
+
+.. _conn_mgr_monitoring_addr_family:
+
+Resolving for a ready address family
+====================================
+
+A hostname can resolve to addresses of an address family that is not ready.
+To get only addresses of a ready address family, set the ``ai_family`` field of the :c:func:`zsock_getaddrinfo` hints using :c:func:`conn_mgr_get_ready_addr_family`.
+It returns ``NET_AF_INET`` or ``NET_AF_INET6`` if only that address family is ready, and ``NET_AF_UNSPEC`` otherwise.
+
+.. code-block:: c
+
+   struct zsock_addrinfo hints = {
+           .ai_family = conn_mgr_get_ready_addr_family(),
+           .ai_socktype = NET_SOCK_STREAM,
+   };
+
+.. _conn_mgr_monitoring_ignoring_ifaces:
+
+Ignoring ifaces
+===============
+
+Applications can request that ifaces be ignored by Connection Manager by calling :c:func:`conn_mgr_ignore_iface` with the iface to be ignored.
+
+Alternatively, an entire :ref:`L2 implementation <net_l2_interface>` can be ignored by calling :c:func:`conn_mgr_ignore_l2`.
+
+This has the effect of individually ignoring all the ifaces using that :ref:`L2 implementation <net_l2_interface>`.
+
+While ignored, the iface is treated by Connection Manager as though it were unready for network traffic, no matter its actual state.
+
+This may be useful, for instance, if your application has configured one or more ifaces that cannot (or for whatever reason should not) be used to contact the wider Internet.
+
+:ref:`Bulk convenience functions <conn_mgr_control_api_bulk>` optionally skip ignored ifaces.
+
+See :c:func:`conn_mgr_ignore_iface` and :c:func:`conn_mgr_watch_iface` for more details.
+
+.. _conn_mgr_monitoring_api:
+
+Connectivity monitoring API
+===========================
+
+Include header file :file:`include/zephyr/net/conn_mgr_monitoring.h` to access these.
+
+.. doxygengroup:: conn_mgr
+
+.. _conn_mgr_control:
+
+Connectivity control
+####################
+
+Many network interfaces require a network association procedure to be completed before being usable.
+
+For such ifaces, connectivity control can provide a generic API to request network association (:c:func:`conn_mgr_if_connect`) and disassociation (:c:func:`conn_mgr_if_disconnect`).
+Network interfaces implement support for this API by :ref:`binding themselves to a connectivity implementation <conn_mgr_impl_binding>`.
+
+Using this API, applications can associate with networks with minimal technology-specific boilerplate.
+
+Connectivity control also provides the following additional features:
+
+* Standardized :ref:`persistence and timeout <conn_mgr_control_persistence_timeouts>` behaviors during association.
+* :ref:`Bulk functions <conn_mgr_control_api_bulk>` for controlling the admin state and network association of all available ifaces simultaneously.
+* Optional :ref:`convenience automations <conn_mgr_control_automations>` for common connectivity actions.
+
+.. _conn_mgr_control_operation:
+
+Basic operation
+===============
+
+The following sections outline the basic operation of Connection Manager's connectivity control.
+
+.. _conn_mgr_control_operation_binding:
+
+Binding
+-------
+
+Before an iface can be commanded to associate or disassociate using Connection Manager, it must first be bound to a :ref:`connectivity implementation <conn_mgr_impl>`.
+Binding is performed by the provider of the iface, not by the application (see :ref:`conn_mgr_impl_binding`), and can be thought of as an extension of the iface declaration.
+
+Once an iface is bound, all connectivity commands passed to it (such as :c:func:`conn_mgr_if_connect` or :c:func:`conn_mgr_if_disconnect`) will be routed to the corresponding implementation function in the connectivity implementation.
+
+.. note::
+
+  To avoid inconsistent behavior, all connectivity implementations must adhere to the :ref:`implementation guidelines <conn_mgr_impl_guidelines>`.
+
+.. _conn_mgr_control_operation_connecting:
+
+Connecting
+----------
+
+Once a bound iface is admin-up (see :ref:`net_if_interface_state_management`), :c:func:`conn_mgr_if_connect` can be called to cause it to associate with a network.
+
+If association succeeds, the connectivity implementation will mark the iface as operational-up (see :ref:`net_if_interface_state_management`).
+
+If association fails unrecoverably, the :ref:`fatal error event <conn_mgr_control_events_fatal_error>` will be triggered.
+
+You can configure an optional :ref:`timeout <conn_mgr_control_timeouts>` for this process.
+
+.. note::
+   The :c:func:`conn_mgr_if_connect` function is intentionally minimalistic, and does not take any kind of configuration.
+   Each connectivity implementation should provide a way to pre-configure or automatically configure any required association settings or credentials.
+   See :ref:`conn_mgr_impl_guidelines_preconfig` for details.
+
+.. _conn_mgr_control_operation_loss:
+
+Connection loss
+---------------
+
+If connectivity is lost due to external factors, the connectivity implementation will mark the iface as operational-down.
+
+Depending on whether :ref:`persistence <conn_mgr_control_persistence>` is set, the iface may then attempt to reconnect.
+
+.. _conn_mgr_control_operation_disconnection:
+
+Manual disconnection
+--------------------
+
+The application can also request that connectivity be intentionally abandoned by calling :c:func:`conn_mgr_if_disconnect`.
+
+In this case, the connectivity implementation will disassociate the iface from its network and mark the iface as operational-down (see :ref:`net_if_interface_state_management`).
+A new connection attempt will not be initiated, regardless of whether persistence is enabled.
+
+.. _conn_mgr_control_persistence_timeouts:
+
+Timeouts and Persistence
+========================
+
+Connection Manager requires that all connectivity implementations support the following standard key features:
+
+* :ref:`Connection timeouts <conn_mgr_control_timeouts>`
+* :ref:`Connection persistence <conn_mgr_control_persistence>`
+
+These features describe how ifaces should behave during connect and disconnect events.
+You can individually set them for each iface.
+
+.. note::
+   It is left to connectivity implementations to successfully and accurately implement these two features as described below.
+   See :ref:`conn_mgr_impl_timeout_persistence` for more details from the connectivity implementation perspective.
+
+The Connection Manager also implements the following optional feature:
+
+* :ref:`Interface idle timeouts <conn_mgr_control_idle_timeout>`
+
+.. note::
+   The only requirement on the connectivity implementation to implement idle timeouts is to call :c:func:`conn_mgr_if_used` each
+   time the interface is used.
+
+.. _conn_mgr_control_timeouts:
+
+Connection Timeouts
+-------------------
+
+When :c:func:`conn_mgr_if_connect` is called on an iface, a connection attempt begins.
+
+The connection attempt continues indefinitely until it succeeds, unless a timeout has been specified for the iface (using :c:func:`conn_mgr_if_set_timeout`).
+
+In that case, the connection attempt will be abandoned if the timeout elapses before it succeeds.
+If this happens, the :ref:`timeout event<conn_mgr_control_events_timeout>` is raised.
+
+.. _conn_mgr_control_idle_timeout:
+
+Interface Idle Timeout
+----------------------
+
+The connection manager enables users to apply an inactivity timeout on an interface (:c:func:`conn_mgr_if_set_idle_timeout`).
+Once connected, if the interface goes for the configured number of seconds without any activity, the interface is automatically disconnected.
+If this happens, the :ref:`idle timeout event<conn_mgr_control_events_idle_timeout>` is raised.
+An idle timeout is considered an unintentional connection loss for the purposes of :ref:`Connection persistence <conn_mgr_control_persistence>`.
+
+.. _conn_mgr_control_persistence:
+
+Connection Persistence
+----------------------
+
+Each iface also has a connection persistence setting that you can enable or disable by setting the :c:enumerator:`CONN_MGR_IF_PERSISTENT` flag with :c:func:`conn_mgr_binding_set_flag`.
+
+This setting specifies how the iface should handle unintentional connection loss.
+
+If persistence is enabled, any unintentional connection loss will initiate a new connection attempt, with a new timeout if applicable.
+
+Otherwise, the iface will not attempt to reconnect.
+
+.. note::
+   Persistence not does affect connection attempt behavior.
+   Only the timeout setting affects this.
+
+   For instance, if a connection attempt on an iface times out, the iface will not attempt to reconnect, even if it is persistent.
+
+   Conversely, if there is not a specified timeout, the iface will try to connect forever until it succeeds, even if it is not persistent.
+
+   See :ref:`conn_mgr_impl_tp_persistence_during_connect` for the equivalent implementation guideline.
+
+.. _conn_mgr_control_events:
+
+Control events
+==============
+
+Connectivity control triggers :ref:`network management <net_mgmt_interface>` events to inform the application of important state changes.
+
+See :ref:`conn_mgr_impl_guidelines_trigger_events` for the corresponding connectivity implementation guideline.
+
+.. _conn_mgr_control_events_fatal_error:
+
+Fatal Error
+-----------
+
+The :c:macro:`NET_EVENT_CONN_IF_FATAL_ERROR` event is raised when an iface encounters an error from which it cannot recover (meaning any subsequent attempts to associate are guaranteed to fail, and all such attempts should be abandoned).
+
+Handlers of this event will be passed a pointer to the iface for which the fatal error occurred.
+Individual connectivity implementations may also pass an application-specific data pointer.
+
+.. _conn_mgr_control_events_timeout:
+
+Timeout
+-------
+
+The :c:macro:`NET_EVENT_CONN_IF_TIMEOUT` event is raised when an :ref:`iface association <conn_mgr_control_operation_connecting>` attempt :ref:`times out <conn_mgr_control_timeouts>`.
+
+Handlers of this event will be passed a pointer to the iface that timed out attempting to associate.
+
+.. _conn_mgr_control_events_idle_timeout:
+
+Idle Timeout
+------------
+
+The :c:macro:`NET_EVENT_CONN_IF_IDLE_TIMEOUT` event is raised when an interface is considered :ref:`inactive <conn_mgr_control_idle_timeout>`.
+
+Handlers of this event will be passed a pointer to the iface that timed out attempting to associate.
+
+.. _conn_mgr_control_events_listening:
+
+Listening for control events
+----------------------------
+
+You can listen for control events as follows:
+
+.. code-block:: c
+
+   /* Declare a net_mgmt callback struct to store the callback */
+   struct net_mgmt_event_callback my_conn_evt_callback;
+
+   /* Declare a handler to receive control events */
+   static void my_conn_evt_handler(struct net_mgmt_event_callback *cb,
+                                   uint32_t event, struct net_if *iface)
+   {
+           if (event == NET_EVENT_CONN_IF_TIMEOUT) {
+                   /* Timeout occurred, handle it */
+           } else if (event == NET_EVENT_CONN_IF_FATAL_ERROR) {
+                   /* Fatal error occurred, handle it */
+           }
+
+           /* Otherwise, it's some other event type we didn't register for. */
+   }
+
+   int main()
+   {
+           /* Configure the callback struct to respond to (at least) the CONN_IF_TIMEOUT
+            * and CONN_IF_FATAL_ERROR events.
+            *
+            * Note that the callback may also be triggered for events other than those specified here!
+            * (See the net_mgmt documentation)
+            */
+
+           net_mgmt_init_event_callback(
+                   &conn_mgr_conn_callback, conn_mgr_conn_handler,
+                       NET_EVENT_CONN_IF_TIMEOUT | NET_EVENT_CONN_IF_FATAL_ERROR
+           );
+
+           /* Register the callback */
+           net_mgmt_add_event_callback(&conn_mgr_conn_callback);
+           return 0;
+   }
+
+See :ref:`net_mgmt_listening` for more details on listening for net_mgmt events.
+
+.. _conn_mgr_control_automations:
+
+Automated behaviors
+===================
+
+There are a few actions related to connectivity that are (by default at least) performed automatically for the user.
+
+.. _conn_mgr_control_automations_auto_up:
+
+.. topic:: Automatic admin-up
+
+   In Zephyr, ifaces are automatically taken admin-up (see :ref:`net_if_interface_state_management` for details on iface states) during initialization.
+
+   Applications can disable this behavior by setting the :c:enumerator:`NET_IF_NO_AUTO_START` interface flag with :c:func:`net_if_flag_set`.
+
+.. _conn_mgr_control_automations_auto_connect:
+
+.. topic:: Automatic connect
+
+   By default, Connection Manager will automatically connect any :ref:`bound <conn_mgr_impl_binding>` iface that becomes admin-up.
+
+   Applications can disable this by setting the :c:enumerator:`CONN_MGR_IF_NO_AUTO_CONNECT` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
+
+.. _conn_mgr_control_automations_auto_down:
+
+.. topic:: Automatic admin-down
+
+   By default, Connection Manager will automatically take any bound iface admin-down if it has given up on associating.
+
+   Applications can disable this for all ifaces by disabling the :kconfig:option:`CONFIG_NET_CONNECTION_MANAGER_AUTO_IF_DOWN` Kconfig option, or for individual ifaces by setting the :c:enumerator:`CONN_MGR_IF_NO_AUTO_DOWN` connectivity flag with :c:func:`conn_mgr_if_set_flag`.
+
+.. _conn_mgr_control_api:
+
+Connectivity control API
+========================
+
+Include header file :file:`include/zephyr/net/conn_mgr_connectivity.h` to access these.
+
+.. doxygengroup:: conn_mgr_connectivity
+
+.. _conn_mgr_control_api_bulk:
+
+Bulk API
+--------
+
+Connectivity control provides several bulk functions allowing all ifaces to be controlled at once.
+
+You can restrict these functions to operate only on non-:ref:`ignored <conn_mgr_monitoring_ignoring_ifaces>` ifaces if desired.
+
+Include header file :file:`include/zephyr/net/conn_mgr_connectivity.h` to access these.
+
+.. doxygengroup:: conn_mgr_connectivity_bulk

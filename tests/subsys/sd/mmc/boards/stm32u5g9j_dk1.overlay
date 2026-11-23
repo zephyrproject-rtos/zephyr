@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 EXALT Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sdhc0 = &sdhc;
+	};
+};
+
+sdhc: &sdmmc1 {
+	compatible = "st,stm32-sdmmc";
+	interrupts = <78 0>;
+	hw-flow-control;
+	bus-width = <8>;
+	min-bus-freq = <DT_FREQ_K(400)>;
+	max-bus-freq = <DT_FREQ_M(208)>;
+	status = "okay";
+
+	mmc {
+		compatible = "zephyr,mmc-disk";
+		disk-name = "MMC";
+		status = "okay";
+	};
+};

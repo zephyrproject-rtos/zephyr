@@ -1,0 +1,114 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+DT_STM32_SPI_HAS_DMA := $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_SPI),dmas)
+
+menuconfig WIFI_ST67W611M1
+	bool "ST67W611M1 Wi-Fi driver"
+	default y
+	depends on DT_HAS_ST_ST67W611M1_ENABLED
+	select EVENTS
+	select MODEM
+	select MODEM_CONTEXT
+	select MODEM_CMD_HANDLER
+	select GPIO
+	select SPI
+	select SPI_STM32_DMA if SOC_FAMILY_STM32 && $(DT_STM32_SPI_HAS_DMA)
+	select NET_L2_ETHERNET # Wifi driver is defined as an Ethernet interface
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING # Set the Wi-Fi driver API as an ethernet_driver_api
+
+if WIFI_ST67W611M1
+
+config ST67W611M1_SCAN_RESULT_MAX_NUMBER
+	int "Max number of scan results"
+	default 12
+
+config ST67W611M1_WIFI_STA_SAP_MODE
+	bool "SoftAP mode on top of STA mode"
+	default y if WIFI_USAGE_MODE_STA_AP
+
+config ST67W611M1_WORKQ_THREAD_PRIORITY
+	int "Priority of the work queue thread"
+	default 7
+
+config ST67W611M1_WORKQ_STACK_SIZE
+	int "Stack size of the driver work queue"
+	default 1024
+
+config ST67W611M1_RX_THREAD_PRIORITY
+	int "Priority of the RX thread"
+	default 7
+
+config ST67W611M1_RX_THREAD_STACK_SIZE
+	int "Stack size of the RX thread"
+	default 1024
+
+config ST67W611M1_SPI_PROCESSOR_THREAD_PRIORITY
+	int "Priority of the thread processing the SPI TX and RX transfers"
+	default 8
+
+config ST67W611M1_SPI_PROCESSOR_THREAD_STACK_SIZE
+	int "Stack size of the SPI TX RX transfer thread"
+	default 1024
+
+config ST67W611M1_TX_AT_CMD_NET_BUF_POOL_COUNT
+	int "Number of buffers in the AT command net buf pool"
+	default 12
+
+config ST67W611M1_TX_AT_CMD_NET_BUF_POOL_SIZE
+	int "Size of buffers in the AT command net buf pool"
+	default 256
+
+config ST67W611M1_TX_AT_CMD_NET_PKT_SLAB_COUNT
+	int "Number of AT command net_pkt that can be allocated at the same time"
+	default 10
+
+config ST67W611M1_RX_AT_CMD_RING_BUF_SIZE
+	int "Size of the RX AT command ring buffer"
+	default 768
+
+config ST67W611M1_SPI_PKT_MEM_SLAB_COUNT
+	int "Max number of SPI pkts"
+	default 12
+
+config ST67W611M1_WIFI_AUTO_CONNECT
+	bool "Auto-connect to a stored access point at boot"
+	help
+	  Controls the module's power-on auto-connect (AT+CWAUTOCONN). When
+	  enabled, the module reconnects to the last provisioned access point
+	  automatically at startup. Disable to leave connection management to
+	  the Wi-Fi management API. The setting is only written when it differs
+	  from the module's current value, as the module persists it to flash.
+
+config ST67W611M1_LOW_POWER
+	bool "Low power support"
+	default y
+	help
+	  Configure DTIM based sleep at init and provide the power save
+	  and TWT Wi-Fi management operations. Disable if the module
+	  firmware does not support low power.
+
+config ST67W611M1_SHELL
+	bool "Shell commands"
+	depends on SHELL
+	help
+	  Add the "st67" shell command. "st67 atcmd <AT command>" sends a
+	  raw AT command to the module and prints the reply, for debugging
+	  and for querying module state the driver does not expose.
+
+	  Reply lines the driver already handles (such as +CWJAP:,
+	  +CWSTATE: or +CWCOUNTRY:) go to the driver and are not printed.
+	  Commands that change the module state (such as connecting) bypass
+	  the driver, so its state can get out of sync with the module.
+
+configdefault NET_MGMT_EVENT_STACK_SIZE
+	default 2048
+
+configdefault NET_IF_MAX_IPV4_COUNT
+	default 2 if ST67W611M1_WIFI_STA_SAP_MODE
+
+configdefault NET_IF_MAX_IPV6_COUNT
+	default 2 if ST67W611M1_WIFI_STA_SAP_MODE
+
+endif # WIFI_ST67W611M1

@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		magn0 = &adafruit_lis2mdl;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_lis2mdl: lis2mdl@1e {
+		compatible = "st,lis2mdl";
+		reg = <0x1e>;
+	};
+};

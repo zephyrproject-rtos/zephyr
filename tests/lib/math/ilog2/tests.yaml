@@ -1,0 +1,7 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  utilities.math.ilog2:
+    integration_platforms:
+      - native_sim

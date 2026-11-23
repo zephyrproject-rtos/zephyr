@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Chris Ruehl
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Bosch BMP390 pressure sensor accessed through I2C bus
+
+compatible: "bosch,bmp390"
+
+include: [i2c-device.yaml, "bosch,bmp390.yaml"]

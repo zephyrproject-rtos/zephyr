@@ -1,0 +1,17 @@
+identifier: efm32tg_stk3300
+name: EFM32 Tiny Gecko Starter Kit (EFM32TG-STK3300, BRD2100)
+type: mcu
+arch: arm
+ram: 4
+flash: 32
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - nvs
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

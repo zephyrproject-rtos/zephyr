@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2019, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include "nsim.dtsi"
+#include "nsim-ccm-mem.dtsi"
+#include "nsim-uart-ns16550.dtsi"
+
+/ {
+	cpus {
+		timebase-frequency = <DT_FREQ_M(5)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "snps,arcem";
+			reg = <0>;
+			device_type = "cpu";
+		};
+	};
+};

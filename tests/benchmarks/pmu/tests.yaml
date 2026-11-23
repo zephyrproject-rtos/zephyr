@@ -1,0 +1,28 @@
+tests:
+  # Unified PMU benchmarks (kernel + cache + branch); former cpu_performance cases merged here.
+  benchmarks.pmu:
+    extra_args:
+      - EXTRA_CONF_FILE="prj_arm64.conf"
+      - platform:fvp_base_revc_2xaem/v8a:ARMFVP_EXTRA_FLAGS=-C;cache_state_modelled=1
+    tags:
+      - benchmark
+      - kernel
+      - pmu
+      - arm64
+    arch_allow:
+      - arm64
+    # QEMU does not emulate PMU counters; benchmarks no-op there when PMU is unavailable.
+    # The QEMU platforms are listed to allow compile-time validation only.
+    # Meaningful results require real hardware with PMU access enabled by the
+    # bootloader/TF-A.
+    platform_allow:
+      - qemu_cortex_a53
+      - versal_apu
+      - versalnet_apu
+      - versalnet_apu/amd_versalnet_apu/smp
+      - versal2_apu
+      - versal2_apu/amd_versal2_apu/smp
+      - fvp_base_revc_2xaem/v8a
+    integration_platforms:
+      - versalnet_apu
+    timeout: 600

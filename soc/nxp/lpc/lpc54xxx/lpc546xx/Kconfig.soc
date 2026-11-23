@@ -1,0 +1,17 @@
+# LPC LPC546XX MCU line
+
+# Copyright (c) 2017, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_LPC54628
+	bool
+	select SOC_SERIES_LPC54XXX
+
+config SOC
+	default "lpc54628" if SOC_LPC54628
+
+config SOC_PART_NUMBER_LPC54628J512ET180
+	bool
+
+config SOC_PART_NUMBER
+	default "LPC54628J512ET180" if SOC_PART_NUMBER_LPC54628J512ET180

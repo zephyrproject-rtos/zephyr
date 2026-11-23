@@ -1,0 +1,12 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_ITE_IT51XXX
+	bool "ITE IT51xxx DAC driver"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_DAC_ENABLED
+	select PINCTRL
+	help
+	  Enable the DAC driver for ITE IT51xxx processors.
+	  The hardware has two channels with fixed 8-bit resolution.
+	  Each channel outputs a voltage between 0 V and AVCC.

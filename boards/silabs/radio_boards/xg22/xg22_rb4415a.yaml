@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: xg22_rb4415a
+name: EFR32xG22E 2.4 GHz 6 dBm Radio Board (xG22-RB4415A, BRD4415A)
+type: mcu
+arch: arm
+ram: 32
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - clock_control
+  - comparator
+  - counter
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - i2c
+  - led
+  - pinctrl
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

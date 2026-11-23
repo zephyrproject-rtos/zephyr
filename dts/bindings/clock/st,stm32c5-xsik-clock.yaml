@@ -1,0 +1,53 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32C5 PSIK and HSIK Clock.
+
+description: |
+  On STM32C5, PSIK and HSIK are two clocks respectively derived from PSI (160,
+  144 or 100 MHz) and HSI (144 MHz) with an additional divider ranging from 1 to
+  8, by 0.5 increment. For example, with a source clock of 144 MHz
+  xSIK = xSI / xSI_DIV
+        enum:
+        - 1   ==> xSIK = 144MHZ
+        - 1.5 ==> xSIK = 96MHZ
+        - 2   ==> xSIK = 72MHZ
+        - 2.5 ==> xSIK = 57.6MHZ
+        - 3   ==> xSIK = 48MHZ
+        - 3.5 ==> xSIK = ~41.14MHz
+        - 4   ==> xSIK = 36MHZ
+        - 4.5 ==> xSIK = 32MHz
+        - 5   ==> xSIK = 28.8MHZ
+        - 5.5 ==> xSIK = ~26.18MHz
+        - 6   ==> xSIK = 24MHZ
+        - 6.5 ==> xSIK = ~22.15MHz
+        - 7   ==> xSIK = ~20.57MHZ
+        - 7.5 ==> xSIK = 19.2MHz
+        - 8   ==> xSIK = 18MHZ
+
+compatible: "st,stm32c5-xsik-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+  xsik-div:
+    type: string
+    required: true
+    description: |
+      xSI clock divider. Configures the xSIK clock frequency.
+    enum:
+      - "1"
+      - "1.5"
+      - "2"
+      - "2.5"
+      - "3"
+      - "3.5"
+      - "4"
+      - "4.5"
+      - "5"
+      - "5.5"
+      - "6"
+      - "6.5"
+      - "7"
+      - "7.5"
+      - "8"

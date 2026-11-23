@@ -1,0 +1,8 @@
+# nRF9160 DK NRF9160 board configuration
+
+# Copyright (c) 2018-2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF9160DK
+	select SOC_NRF9160_SICA if BOARD_NRF9160DK_NRF9160 || BOARD_NRF9160DK_NRF9160_NS
+	select SOC_NRF52840_QIAA if BOARD_NRF9160DK_NRF52840

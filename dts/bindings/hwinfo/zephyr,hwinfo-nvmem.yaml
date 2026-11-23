@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic hwinfo backend reading identifiers from NVMEM cells.
+
+  Pseudo-node, placed at the root of the devicetree, pointing the hwinfo
+  backend at an NVMEM cell holding the device unique identifier
+  ("device-id", required) and optionally a cell holding the device EUI-64
+  ("eui64", exactly 8 bytes, stored in canonical byte order).
+
+  Only one hwinfo device-id backend can be linked into an image; disable the
+  SoC-specific backend (for example CONFIG_HWINFO_STM32) when enabling this
+  node on an SoC that provides one.
+
+compatible: "zephyr,hwinfo-nvmem"
+
+include: [base.yaml, nvmem-consumer.yaml]
+
+properties:
+  nvmem-cells:
+    required: true
+
+  nvmem-cell-names:
+    required: true
+
+examples:
+  - |
+    / {
+        hwinfo {
+            compatible = "zephyr,hwinfo-nvmem";
+            nvmem-cells = <&uid_cell>, <&eui64_cell>;
+            nvmem-cell-names = "device-id", "eui64";
+        };
+    };

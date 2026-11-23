@@ -1,0 +1,19 @@
+tests:
+  bluetooth.host.misc.conn_stress:
+    tags:
+      - bluetooth
+    depends_on: bsim
+    timeout: 600
+    build: false
+    platform_allow:
+      - nrf52_bsim/native
+    harness: bsim
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - scripts
+    required_applications:
+      - application: bluetooth.host.misc.conn_stress.peripheral
+        path: peripheral
+      - application: bluetooth.host.misc.conn_stress.central
+        path: central

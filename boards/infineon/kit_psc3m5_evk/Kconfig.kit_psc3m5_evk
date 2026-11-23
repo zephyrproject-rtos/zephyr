@@ -1,0 +1,7 @@
+# The Infineon PSOC™ Control C3M5 Evaluation Kit (KIT_PSC3M5_EVK)
+
+# Copyright (c) 2025 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KIT_PSC3M5_EVK
+	select SOC_PSC3M5FDS2AFQ1

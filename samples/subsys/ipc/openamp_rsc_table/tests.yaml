@@ -1,0 +1,29 @@
+sample:
+  description: This app provides an example of how to integrate OpenAMP
+    with Zephyr including a resource table.
+  name: OpenAMP with resource table example integration
+tests:
+  sample.ipc.openamp_rs_table:
+    build_only: true
+    platform_allow:
+      - stm32mp157x_dk2/stm32mp157cxx
+      - imx8mp_evk/mimx8ml8/adsp
+      - scobc_v1/versal_rpu
+      - am62x_m4_bl350/am6254/m4
+    integration_platforms:
+      - stm32mp157x_dk2/stm32mp157cxx
+      - imx8mp_evk/mimx8ml8/adsp
+      - scobc_v1/versal_rpu
+    tags:
+      - ipm
+      - openamp
+  sample.ipc.openamp_rs_table.ti_k3_host_reboot:
+    build_only: true
+    platform_allow:
+      - am62x_m4_bl350/am6254/m4
+    extra_configs:
+      - CONFIG_IPM_TI_K3_RPROC_HOST_REBOOT=y
+      - CONFIG_RESET_ON_FATAL_ERROR=y
+    tags:
+      - ipm
+      - openamp

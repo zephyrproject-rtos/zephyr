@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon PSOC4 HVMS on-chip SRAM
+
+compatible: "infineon,psoc4hvms-sram"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  infineon,sram-ecc:
+    type: boolean
+    description: |
+      Keep the SRAM error correction and detection (ECC) enabled. The whole SRAM is
+      written at reset to generate valid ECC, except after a reset that preserves the
+      SRAM (e.g. a watchdog reset).
+
+      When not set, the SRAM ECC is turned off and uninitialized SRAM can be read
+      without a fault.

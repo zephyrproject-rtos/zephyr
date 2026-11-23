@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc1352r7.dtsi>
+#include "beagleconnect_freedom-common.dtsi"
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Allocate 56 KiB for mcuboot */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 DT_SIZE_K(56)>;
+			label = "mcuboot";
+		};
+
+		/* Allocate 640 KiB for application */
+		slot0_partition: partition@e000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0000e000 DT_SIZE_K(640)>;
+			label = "image-0";
+		};
+
+		/* (avoid touching CCFG) */
+	};
+};
+
+&spi_flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Allocate 640 KiB for application */
+		slot1_partition: partition@0 {
+			reg = <0x00000000 DT_SIZE_K(640)>;
+			label = "image-1";
+		};
+
+		/* Allocate 128 KiB scratch for image swap */
+		scratch_partition: partition@a0000 {
+			reg = <0x000a0000 DT_SIZE_K(128)>;
+			label = "image-scratch";
+		};
+
+		storage_partition: partition@c0000 {
+			reg = <0x000c0000 DT_SIZE_K(1280)>;
+			label = "storage";
+		};
+	};
+};

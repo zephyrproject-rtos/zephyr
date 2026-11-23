@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FPB_RX14T
+	select SOC_R5F514T5AMFM

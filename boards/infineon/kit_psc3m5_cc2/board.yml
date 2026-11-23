@@ -1,0 +1,6 @@
+board:
+  name: kit_psc3m5_cc2
+  full_name: PSOC™ Control C3M5 Connectivity Card 2
+  vendor: infineon
+  socs:
+  - name: psc3m5fds2afq1

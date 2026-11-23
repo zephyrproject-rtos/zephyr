@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_TI_TPS6287X
+	bool "TPS6287x regulator driver"
+	default y
+	depends on DT_HAS_TI_TPS6287X_ENABLED
+	select I2C
+	help
+	  Enable support for the TPS6287x regulator.
+
+if REGULATOR_TI_TPS6287X
+
+config REGULATOR_TPS6287X_INIT_PRIORITY
+	int "TPS6287x regulator driver init priority"
+	default I2C_INIT_PRIORITY
+	help
+	  Init priority for the TPS6287x regulator driver. This must be higher
+	  or equal to the parent I2C bus init priority.
+
+endif

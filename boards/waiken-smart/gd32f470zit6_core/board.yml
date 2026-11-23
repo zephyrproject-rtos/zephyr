@@ -1,0 +1,6 @@
+board:
+  name: gd32f470zit6_core
+  full_name: GD32F470ZIT6 Core Board
+  vendor: waiken-smart
+  socs:
+    - name: gd32f470

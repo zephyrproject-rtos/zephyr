@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Calian Advanced Technologies
+# SPDX-License-Identifier: Apache-2.0
+
+description: LM95234 Quad Remote Diode and Local Temperature Sensor with SMBus Interface
+
+compatible: "national,lm95234"
+
+include: [sensor-device.yaml, i2c-device.yaml]

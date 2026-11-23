@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Anuj Deshpande
+# SPDX-License-Identifier: Apache-2.0
+
+config HAPTICS_TM6605
+	bool "TM6605 Haptics Driver"
+	default y
+	depends on DT_HAS_TITANMEC_TM6605_ENABLED
+	select I2C
+	help
+	  Enable I2C-based driver for the Titan Micro Electronics TM6605
+	  Linear Resonant Actuator (LRA) haptic driver.

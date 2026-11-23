@@ -1,0 +1,11 @@
+# Copyright 2025 Palta Tech, S.A
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_BQ25713
+	bool "BQ25713 Battery Charger"
+	default y
+	depends on DT_HAS_TI_BQ25713_ENABLED
+	select I2C
+	help
+	  Enable BQ25713 battery charger driver.

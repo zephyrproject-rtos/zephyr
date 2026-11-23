@@ -1,0 +1,12 @@
+# Copyright (c) 2026 MediaTek Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_MT8188
+	bool "MediaTek MT8188 UART driver"
+	default y
+	depends on DT_HAS_MEDIATEK_MT8188_UART_ENABLED
+	select PINCTRL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the UART driver for MediaTek MT8188.

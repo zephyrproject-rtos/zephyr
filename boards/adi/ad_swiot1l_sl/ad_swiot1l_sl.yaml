@@ -1,0 +1,15 @@
+identifier: ad_swiot1l_sl
+name: ad_swiot1l_sl
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - netif:eth
+  - serial
+  - spi
+ram: 256
+flash: 3072

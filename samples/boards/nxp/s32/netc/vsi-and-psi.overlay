@@ -1,0 +1,23 @@
+/*
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mru0 {
+	rx-channels = <3>;
+	status = "okay";
+};
+
+&enetc_psi0 {
+	mboxes = <&mru0 0>, <&mru0 1>;
+	mbox-names = "rx", "vsi-msg";
+	vsis = <1>;
+};
+
+&enetc_vsi1 {
+	local-mac-address = [00 00 00 01 02 11];
+	mboxes = <&mru0 2>;
+	mbox-names = "rx";
+	status = "okay";
+};

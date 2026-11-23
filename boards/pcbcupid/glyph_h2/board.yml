@@ -1,0 +1,6 @@
+board:
+  name: glyph_h2
+  full_name: Glyph-H2
+  vendor: pcbcupid
+  socs:
+  - name: esp32h2

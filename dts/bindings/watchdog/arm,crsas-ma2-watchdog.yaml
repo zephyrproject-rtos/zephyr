@@ -1,0 +1,22 @@
+description: Arm Corstone Reference Systems Architecture Specification MA2 System Watchdog
+
+compatible: "arm,crsas-ma2-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      CRSAS-MA2 System Watchdog has two 4KB frames. If they
+      are contiguous, then this is the base address for the 8KB window
+      where the control frame is first and the refresh frame is second.
+      If they are not contiguous, then a second set of register
+      address+length should be specified for the refresh frame.
+
+  interrupts:
+    required: true
+    description: |
+      Interrupt for both watchdog status signals:
+        - Index 0: WS0 (First stage/ Warning interrupt)
+        - Index 1: WS1 (Second stage, Reset interrupt) optional

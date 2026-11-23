@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Liu Changjie
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH QingKe V5F RISC-V MCU
+
+compatible: "wch,qingke-v5f"
+
+include: riscv-common.yaml

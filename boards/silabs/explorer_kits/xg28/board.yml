@@ -1,0 +1,6 @@
+boards:
+  - name: xg28_ek2705a
+    full_name: EFR32xG28 Explorer Kit (xG28-EK2705A)
+    vendor: silabs
+    socs:
+      - name: efr32zg28b312f1024im48

@@ -1,0 +1,17 @@
+# Copyright (C) 2026 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_SAMA5D2
+
+configdefault NUM_IRQS
+	default 110
+
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/soc/timer@f8048030,clock-frequency)
+
+configdefault SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+endif # SOC_SERIES_SAMA5D2

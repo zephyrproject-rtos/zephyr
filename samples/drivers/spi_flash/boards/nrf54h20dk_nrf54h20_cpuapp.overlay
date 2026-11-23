@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gpio6 {
+	zephyr,pm-device-runtime-auto;
+	status = "okay";
+};
+
+&exmif {
+	zephyr,pm-device-runtime-auto;
+	status = "okay";
+};
+
+&mx25uw63 {
+	status = "okay";
+};

@@ -1,0 +1,76 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek's GDMA (General Direct Memory Access) peripheral
+
+  General Direct Memory Access (GDMA) device allows
+  peripheral-to-memory, memory-to-peripheral, and memory-to-memory
+  data transfer.
+
+  The GDMA controller in ameba has eight independent channels,
+  each channel can be connected to different peripherals.
+
+  channel: Select channel for data transmitting
+  slot: Handshake interface index, ref to ameba_gdma.h
+  config: A 32bit mask specifying the DMA channel configuration
+    - bit 0-1:     Direction  (see dma.h)
+                 - 0x0: MEMORY to MEMORY
+                 - 0x1: MEMORY to PERIPH
+                 - 0x2: PERIPH to MEMORY
+                 - 0x3: PERIPH to PERIPH(reserved)
+    - bit 2-3:     Source address increase
+                 - 0x0: increment address between transfers
+                 - 0x1: decrement address between transfers
+                 - 0x2: no address increment between transfers
+                 - 0x3: reserved
+    - bit 4-5:     Destination address increase
+                 - 0x0: increment address between transfers
+                 - 0x1: decrement address between transfers(Not support)
+                 - 0x2: no address increment between transfers
+                 - 0x3: reserved
+    - bit 6-8:     Source data width
+                 - 0x1: 1 byte
+                 - 0x2: 2 byte
+                 - 0x4: 4 byte
+    - bit 9-11:    Destination data width
+                 - 0x1: 1 byte
+                 - 0x2: 2 byte
+                 - 0x4: 4 byte
+    - bit 12-16:   Source data msize
+                 - 0x1: msize 1
+                 - 0x4: msize 4
+                 - 0x8: msize 8
+                 - 0x10: msize 16
+    - bit 17-21:   Destination data width
+                 - 0x1: msize 1
+                 - 0x4: msize 4
+                 - 0x8: msize 8
+                 - 0x10: msize 16
+    - bit 22-24:   Priority
+                 - 0 ~ 7 can be configured
+  Example of devicetree configuration
+  &uart2 {
+        dmas = <&dma 2 5 0xa>, <&dma 3 4 0x10021>;
+        dma-names = "rx", "tx";
+  };
+  "uart2" uses dma0 for transmitting and receiving in the example.
+  Each is named "rx" and "tx".
+  The channel cell assigns channel 2 to receive and channel 3 to transmit.
+  The slot cell configs specified handshake for different peripherals.
+  The config cell can take various configs.
+  But the setting used depends on each driver implementation.
+  Set the priority for the transmitting channel as HIGH, LOW(the default) for receive channel.
+
+compatible: "realtek,ameba-gdma"
+
+include: dma-controller.yaml
+
+properties:
+  "#dma-cells":
+    const: 3
+
+dma-cells:
+  - channel
+  - slot
+  - config

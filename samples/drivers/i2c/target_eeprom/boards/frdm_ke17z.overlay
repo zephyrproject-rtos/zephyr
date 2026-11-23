@@ -1,0 +1,16 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lpi2c0 {
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+		status = "okay";
+	};
+};
+
+target_eeprom: &eeprom0 {};

@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		test-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio6 {
+	zephyr,pm-device-runtime-auto;
+	status = "okay";
+};
+
+&exmif {
+	zephyr,pm-device-runtime-auto;
+	status = "okay";
+};
+
+&mx25uw63 {
+	supply-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+	t-reset-recovery = <10000>;
+	status = "okay";
+};

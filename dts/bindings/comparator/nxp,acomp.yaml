@@ -1,0 +1,102 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Analog Comparator (ACOMP)
+
+compatible: "nxp,acomp"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  positive-input:
+    type: string
+    enum:
+      - ch0
+      - ch1
+      - ch2
+      - ch3
+      - ch4
+      - ch5
+      - ch6
+      - ch7
+      - daca
+      - dacb
+    required: true
+    description: |
+      Positive input selection.
+
+  negative-input:
+    type: string
+    enum:
+      - ch0
+      - ch1
+      - ch2
+      - ch3
+      - ch4
+      - ch5
+      - ch6
+      - ch7
+      - daca
+      - dacb
+      - vref1p2
+      - vssa
+      - vio-0p25
+      - vio-0p50
+      - vio-0p75
+      - vio-1p00
+    required: true
+    description: |
+      Negative input selection.
+
+  positive-hysteresis-mv:
+    type: int
+    enum: [0, 10, 20, 30, 40, 50, 60, 70]
+    description: |
+      Positive input hysteresis in millivolts.
+
+  negative-hysteresis-mv:
+    type: int
+    enum: [0, 10, 20, 30, 40, 50, 60, 70]
+    description: |
+      Negative input hysteresis in millivolts.
+
+  warmup-time-us:
+    type: int
+    enum: [1, 2, 4, 8]
+    description: |
+      Warm-up time before the comparator becomes active.
+
+  response-mode:
+    type: string
+    enum: ["fast", "medium", "slow"]
+    description: |
+      Bias/response speed selection.
+
+  inactive-value-high:
+    type: boolean
+    description: |
+      Set comparator output high when disabled.
+
+  enable-pin-out:
+    type: boolean
+    description: |
+      Enable routing comparator output to its GPIO pin.
+
+  invert-output:
+    type: boolean
+    description: |
+      Invert the comparator output routed to GPIO.
+
+  async-output:
+    type: boolean
+    description: |
+      Use asynchronous comparator output for pin routing and interrupts.

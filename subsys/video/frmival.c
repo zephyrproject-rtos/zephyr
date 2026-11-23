@@ -1,0 +1,138 @@
+/*
+ * SPDX-FileCopyrightText: The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/drivers/video.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/video/video.h>
+
+LOG_MODULE_REGISTER(video_frmival, CONFIG_VIDEO_LOG_LEVEL);
+
+int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	if (dev == NULL || frmival == NULL) {
+		return -EINVAL;
+	}
+
+	return video_driver_set_frmival(dev, frmival);
+}
+
+int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
+{
+	if (dev == NULL || frmival == NULL) {
+		return -EINVAL;
+	}
+
+	return video_driver_get_frmival(dev, frmival);
+}
+
+int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
+{
+	if (dev == NULL || fie == NULL) {
+		return -EINVAL;
+	}
+
+	return video_driver_enum_frmival(dev, fie);
+}
+
+int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
+				   const struct video_frmival *desired,
+				   struct video_frmival *match)
+{
+	if (stepwise == NULL || desired == NULL || match == NULL) {
+		return -EINVAL;
+	}
+
+	const uint32_t dens[] = {stepwise->min.denominator, stepwise->max.denominator,
+				 stepwise->step.denominator, desired->denominator};
+	uint32_t den = 1;
+
+	/* Use the least common multiple of all denominators as common denominator */
+	ARRAY_FOR_EACH(dens, i) {
+		uint64_t lcm = sys_lcm(den, dens[i]);
+
+		if (lcm == 0U || lcm > UINT32_MAX) {
+			return -ERANGE;
+		}
+		den = lcm;
+	}
+
+	uint64_t min = (uint64_t)stepwise->min.numerator * (den / stepwise->min.denominator);
+	uint64_t max = (uint64_t)stepwise->max.numerator * (den / stepwise->max.denominator);
+	uint64_t step = (uint64_t)stepwise->step.numerator * (den / stepwise->step.denominator);
+	uint64_t goal = (uint64_t)desired->numerator * (den / desired->denominator);
+	uint64_t num;
+	uint32_t gcd;
+
+	__ASSERT_NO_MSG(step != 0U);
+	/* Prevent division by zero */
+	if (step == 0U) {
+		return -ERANGE;
+	}
+	/* Saturate the desired value to the min/max supported */
+	goal = CLAMP(goal, min, max);
+
+	/* Compute a numerator and denominator, reduced to fit in 32 bits */
+	num = min + DIV_ROUND_CLOSEST(goal - min, step) * step;
+	gcd = sys_gcd(den, (uint32_t)(num % den));
+	num /= gcd;
+	den /= gcd;
+	if (num > UINT32_MAX) {
+		return -ERANGE;
+	}
+
+	match->numerator = num;
+	match->denominator = den;
+
+	return 0;
+}
+
+int video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
+{
+	if (dev == NULL || match == NULL || match->type == VIDEO_FRMIVAL_TYPE_STEPWISE) {
+		return -EINVAL;
+	}
+
+	struct video_frmival desired = match->discrete;
+	struct video_frmival_enum fie = {.format = match->format};
+	uint64_t best_diff_nsec = INT32_MAX;
+	uint64_t goal_nsec = video_frmival_nsec(&desired);
+
+	for (fie.index = 0; video_enum_frmival(dev, &fie) == 0; fie.index++) {
+		struct video_frmival tmp = {0};
+		uint64_t diff_nsec = 0;
+		uint64_t tmp_nsec;
+		int ret;
+
+		switch (fie.type) {
+		case VIDEO_FRMIVAL_TYPE_DISCRETE:
+			tmp = fie.discrete;
+			break;
+		case VIDEO_FRMIVAL_TYPE_STEPWISE:
+			ret = video_closest_frmival_stepwise(&fie.stepwise, &desired, &tmp);
+			if (ret != 0) {
+				continue;
+			}
+			break;
+		default:
+			CODE_UNREACHABLE;
+		}
+
+		tmp_nsec = video_frmival_nsec(&tmp);
+		diff_nsec = tmp_nsec > goal_nsec ? tmp_nsec - goal_nsec : goal_nsec - tmp_nsec;
+
+		if (diff_nsec < best_diff_nsec) {
+			best_diff_nsec = diff_nsec;
+			match->index = fie.index;
+			match->discrete = tmp;
+		}
+
+		if (diff_nsec == 0) {
+			/* Exact match, stop searching a better match */
+			break;
+		}
+	}
+
+	return 0;
+}

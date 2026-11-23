@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef SUBSYS_LORAWAN_NATIVE_MAC_MAC_INTERNAL_H_
+#define SUBSYS_LORAWAN_NATIVE_MAC_MAC_INTERNAL_H_
+
+#include "mac.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define MAX_RX_BUF_SIZE		255
+
+/* RX2 opens this long after RX1 (RECEIVE_DELAY2 - RECEIVE_DELAY1) */
+#define RX2_DELAY_OFFSET_MS	1000
+
+/* LoRaWAN field sizes in bytes */
+#define LWAN_MIC_SIZE		4
+#define MHDR_SIZE		1
+#define DEV_ADDR_SIZE		4
+#define FCTRL_SIZE		1
+#define FCNT_SIZE		2
+#define FPORT_SIZE		1
+#define EUI_SIZE		8
+#define JOIN_NONCE_SIZE		3
+#define NET_ID_SIZE		3
+#define DEV_NONCE_SIZE		2
+
+#define LWAN_FCNT_NONE		UINT32_MAX
+#define LWAN_PENDING_ACK	BIT(0)
+
+#define MHDR_TYPE_MASK		GENMASK(7, 5)
+#define MHDR_MAJOR_MASK		GENMASK(1, 0)
+#define MHDR_MAJOR_R1		0
+
+#define MHDR_JOIN_REQUEST	0x00
+#define MHDR_JOIN_ACCEPT	0x20
+
+struct pkt_join_request {
+	uint8_t mhdr;
+	uint8_t join_eui[EUI_SIZE];
+	uint8_t dev_eui[EUI_SIZE];
+	uint8_t dev_nonce[DEV_NONCE_SIZE];
+	uint8_t mic[LWAN_MIC_SIZE];
+} __packed;
+
+struct pkt_join_accept {
+	uint8_t join_nonce[JOIN_NONCE_SIZE];
+	uint8_t net_id[NET_ID_SIZE];
+	uint8_t dev_addr[DEV_ADDR_SIZE];
+	uint8_t dl_settings;
+	uint8_t rx_delay;
+} __packed;
+
+#define JA_CFLIST_SIZE		16
+
+#define JA_MIN_SIZE (sizeof(struct pkt_join_accept) + LWAN_MIC_SIZE)
+#define JA_MAX_SIZE (sizeof(struct pkt_join_accept) + JA_CFLIST_SIZE + LWAN_MIC_SIZE)
+
+enum mac_rx_result {
+	MAC_RX_DONE,
+	MAC_RX_CONTINUE,
+};
+
+struct mac_tx_params {
+	/* Pre-built uplink frame */
+	uint8_t *frame;
+	size_t frame_len;
+
+	/* TX channel frequency in Hz */
+	uint32_t tx_freq;
+	/* TX datarate index */
+	uint8_t tx_dr_idx;
+
+	/* Delay from TX-done to RX1 open, in ms */
+	uint32_t rx1_delay_ms;
+
+	/* Called after TX, before RX windows (may be NULL) */
+	void (*post_tx)(struct lwan_ctx *ctx, void *user_data);
+
+	/* Called on each RX frame; MAC_RX_DONE to accept, MAC_RX_CONTINUE to keep going */
+	enum mac_rx_result (*rx_handler)(struct lwan_ctx *ctx,
+					  const uint8_t *rx_buf, size_t rx_len,
+					  int16_t rssi, int8_t snr,
+					  void *user_data);
+
+	/* Opaque data passed to rx_handler */
+	void *user_data;
+};
+
+int mac_do_tx_rx(struct lwan_ctx *ctx, const struct mac_tx_params *params);
+
+/*
+ * Listen on a channel where the region asks for it.
+ *
+ * Returns 0 when the channel is clear or the region does not use LBT,
+ * -EBUSY when it is occupied, or a negative errno on failure.
+ */
+int mac_lbt_check(struct lwan_ctx *ctx, uint32_t freq, uint8_t dr_idx);
+void mac_do_join(struct lwan_ctx *ctx, const struct lwan_req *req);
+void mac_do_send(struct lwan_ctx *ctx, const struct lwan_req *req);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* SUBSYS_LORAWAN_NATIVE_MAC_MAC_INTERNAL_H_ */

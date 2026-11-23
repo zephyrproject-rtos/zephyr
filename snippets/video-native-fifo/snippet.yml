@@ -1,0 +1,6 @@
+name: video-native-fifo
+description: |
+  Instantiates a native_sim video source reading raw frames from a host FIFO as
+  the zephyr,camera chosen node.
+append:
+  EXTRA_DTC_OVERLAY_FILE: video-native-fifo.overlay

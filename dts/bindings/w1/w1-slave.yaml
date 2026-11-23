@@ -1,0 +1,6 @@
+# Copyright (c) 2022, Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+# Deprecated. Use w1-peripheral.yaml instead.
+
+include: w1-peripheral.yaml

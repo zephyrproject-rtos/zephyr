@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM2835 / BCM2710 / BCM2837 DMA controller.
+
+  A control-block (linked-list descriptor) DMA engine with up to 16
+  channels. The VideoCore firmware reserves some channels and a few
+  have special hardware functionality; brcm,dma-channel-mask marks the
+  channels this driver may use.
+
+  The single #dma-cells value is the peripheral DREQ number, used to
+  pace memory<->peripheral transfers.
+
+compatible: "brcm,bcm2835-dma"
+
+include: [dma-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+
+  brcm,dma-channel-mask:
+    type: int
+    required: true
+    description: |
+      Bitmask of the channels the driver may use, bit N for channel N.
+      The other channels are reserved by the VideoCore firmware or have
+      special functions.
+
+dma-cells:
+  - dreq

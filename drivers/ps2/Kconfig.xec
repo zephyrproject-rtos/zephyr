@@ -1,0 +1,14 @@
+# Microchip XEC PS2 configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PS2_XEC
+	bool "XEC Microchip PS2 driver"
+	depends on DT_HAS_MICROCHIP_XEC_PS2_ENABLED
+	select PINCTRL
+	default y
+	help
+	  Enable the Microchip XEC PS2 IO driver.
+	  Note, MEC15xx, MEC174x, MEC175x series have two controllers,
+	  MEC172x series has one.

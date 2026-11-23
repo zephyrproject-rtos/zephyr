@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Wires the mux_api test to the real XBAR controller. xbar1 is disabled by
+ * default in the SoC dtsi, so enable it and attach the consumer fixture.
+ * Only SEL registers are programmed, so no external signal wiring is needed.
+ */
+
+&xbar1 {
+	status = "okay";
+};
+
+/ {
+	mux_consumer: mux-consumer {
+		compatible = "vnd,mux-consumer-test";
+		/* control idx0: routing driven at runtime on XBAR output 0.
+		 * state:        XBAR output 1 receives input 7, baked into DT.
+		 */
+		mux-controls = <&xbar1 0>;
+		mux-states = <&xbar1 1 7>;
+		status = "okay";
+	};
+};

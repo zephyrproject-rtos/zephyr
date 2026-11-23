@@ -1,0 +1,11 @@
+# STMicroelectronics STM32F302XC MCU
+
+# Copyright (c) 2022, SECO Spa
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F302XC
+
+config CPU_HAS_ARM_MPU
+	default y
+
+endif # SOC_STM32F302XC

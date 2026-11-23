@@ -1,0 +1,26 @@
+# Copyright (c) 2018, I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields that give the number of endpoints supported by the USB hardware
+
+include: usb-controller.yaml
+
+properties:
+  num-bidir-endpoints:
+    type: int
+    required: true
+    description: |
+      Number of bi-directional endpoints supported by hardware
+      (including EP0)
+
+  num-in-endpoints:
+    type: int
+    description: |
+      Number of IN endpoints supported by hardware
+      (including EP0 IN)
+
+  num-out-endpoints:
+    type: int
+    description: |
+      Number of OUT endpoints supported by hardware
+      (including EP0 OUT)

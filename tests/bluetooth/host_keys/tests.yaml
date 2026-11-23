@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
+
+tests:
+  bluetooth.host_keys:
+    {}
+  bluetooth.host_keys.host_resolving:
+    extra_configs:
+      - CONFIG_TEST_RL_SIZE=0
+  bluetooth.host_keys.overwrite_oldest:
+    extra_configs:
+      - CONFIG_BT_KEYS_OVERWRITE_OLDEST=y
+      - CONFIG_BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING=y
+      - CONFIG_BT_MAX_CONN=2

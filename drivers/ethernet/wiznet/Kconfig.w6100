@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2020 Linumiz
+# SPDX-FileCopyrightText: Copyright (c) 2026 Sayed Naser Moravej
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_W6100
+	bool "W6100 Ethernet Controller"
+	default y
+	depends on DT_HAS_WIZNET_W6100_ENABLED
+	select ETH_WIZNET
+	select ETH_WIZNET_CORE
+	select SPI
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_WIZNET_W6100),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_WIZNET_W6100),int-gpios))
+	help
+	  W6100 Stand-Alone Ethernet Controller
+	  with SPI Interface

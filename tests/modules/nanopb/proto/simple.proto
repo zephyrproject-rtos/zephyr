@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2023 Basalte bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+syntax = "proto3";
+
+message SimpleMessage {
+    bytes buffer = 1;
+};

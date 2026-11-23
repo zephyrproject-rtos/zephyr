@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clk_aupll {
+	/* Increased PLL top output frequency to 480 MHz */
+	top-frequency = <BL61X_TOP_FREQ_OC1>;
+};
+
+&clk_bclk {
+	/* 80MHz BCLK */
+	divider = <6>;
+};

@@ -1,0 +1,797 @@
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
+
+#include <stdlib.h>
+#include <stddef.h>
+#include <zephyr/types.h>
+#include <string.h>
+#include <stdbool.h>
+#include <errno.h>
+
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/hash_function.h>
+
+#include <zephyr/sys/printk.h>
+
+#include <zephyr/net/coap.h>
+#include <zephyr/net/coap_link_format.h>
+
+static inline bool append(struct coap_packet *cpkt, const uint8_t *data, uint16_t len)
+{
+	if (!cpkt || !data) {
+		return false;
+	}
+
+	if (cpkt->max_len - cpkt->offset < len) {
+		return false;
+	}
+
+	memcpy(cpkt->data + cpkt->offset, data, len);
+	cpkt->offset += len;
+
+	return true;
+}
+
+static bool match_path_uri(const char * const *path,
+			   const char *uri, uint16_t len)
+{
+	const char * const *p = NULL;
+	int i, j, k, plen;
+
+	if (!path) {
+		return false;
+	}
+
+	if (len <= 1U || uri[0] != '/') {
+		return false;
+	}
+
+	p = path;
+	plen = *p ? strlen(*p) : 0;
+
+	if (plen == 0) {
+		return false;
+	}
+
+	/* Go through uri and try to find a matching path */
+	for (i = 1; i < len; i++) {
+		while (*p) {
+			plen = strlen(*p);
+
+			k = i;
+
+			for (j = 0; j < plen; j++) {
+				if (k >= len) {
+					goto next;
+				}
+
+				if (uri[k] == '*') {
+					if ((k + 1) == len) {
+						return true;
+					}
+				}
+
+				if (uri[k] != (*p)[j]) {
+					goto next;
+				}
+
+				k++;
+			}
+
+			if (i == (k - 1) && j == plen) {
+				return true;
+			}
+
+			if (k == len && j == plen) {
+				return true;
+			}
+
+next:
+			p++;
+		}
+	}
+
+	/* Did we find the resource or not */
+	if (i == len && !*p) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool match_attributes(const char * const *attributes,
+			     const struct coap_option *query)
+{
+	const char * const *attr;
+
+	/* FIXME: deal with the case when there are multiple options in a
+	 * query, for example: 'rt=lux temperature', if I want to list
+	 * resources with resource type lux or temperature.
+	 */
+	for (attr = attributes; attr && *attr; attr++) {
+		uint16_t attr_len = strlen(*attr);
+
+		if (query->len != attr_len) {
+			continue;
+		}
+
+		if (!strncmp((char *) query->value, *attr, attr_len)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool match_queries_resource(const struct coap_resource *resource,
+				   const struct coap_option *query,
+				   int num_queries)
+{
+	struct coap_core_metadata *meta = resource->metadata;
+	const char * const *attributes = NULL;
+	const int href_len = strlen("href");
+
+	if (num_queries == 0) {
+		return true;
+	}
+
+	if (meta != NULL && meta->attributes != NULL) {
+		attributes = meta->attributes;
+	}
+
+	if (attributes == NULL) {
+		return false;
+	}
+
+	if (query->len > href_len + 1 &&
+	    !strncmp((char *) query->value, "href", href_len)) {
+		/* The stuff after 'href=' */
+		const char *uri = (char *) query->value + href_len + 1;
+		uint16_t uri_len  = query->len - (href_len + 1);
+
+		return match_path_uri(resource->path, uri, uri_len);
+	}
+
+	return match_attributes(attributes, query);
+}
+
+#if defined(CONFIG_COAP_WELL_KNOWN_BLOCK_WISE)
+
+#define MAX_BLOCK_WISE_TRANSFER_SIZE 2048
+
+static uint32_t hash_combine_str(uint32_t seed, const char *str)
+{
+	/* Boost-style hash combine, the constant is the 32-bit golden ratio */
+	return seed ^ (sys_hash32(str, strlen(str)) + 0x9e3779b9U + (seed << 6) + (seed >> 2));
+}
+
+/* The link-format document is regenerated for every block, so derive an ETag
+ * from the inputs that determine its content. It lets clients verify that the
+ * blocks they reassemble belong to the same representation
+ * (RFC 7959, section 2.4).
+ */
+static uint32_t well_known_core_etag(const struct coap_resource *resources, size_t resources_len,
+				     const struct coap_option *query, unsigned int num_queries)
+{
+	uint32_t etag = 0U;
+
+	for (size_t i = 0; i < resources_len; i++) {
+		const struct coap_core_metadata *meta = resources[i].metadata;
+
+		if (!match_queries_resource(&resources[i], query, num_queries)) {
+			continue;
+		}
+
+		for (const char * const *p = resources[i].path; p != NULL && *p != NULL; p++) {
+			etag = hash_combine_str(etag, *p);
+		}
+
+		/* Separate the path segments from the attributes, like ">" does
+		 * in the document, so that a segment moving between the two
+		 * lists, or to the next resource, changes the ETag.
+		 */
+		etag = hash_combine_str(etag, ">");
+
+		if (meta != NULL && meta->attributes != NULL) {
+			for (const char * const *attr = meta->attributes; *attr != NULL; attr++) {
+				etag = hash_combine_str(etag, *attr);
+			}
+		}
+	}
+
+	return etag;
+}
+
+enum coap_block_size default_block_size(void)
+{
+	switch (CONFIG_COAP_WELL_KNOWN_BLOCK_WISE_SIZE) {
+	case 16:
+		return COAP_BLOCK_16;
+	case 32:
+		return COAP_BLOCK_32;
+	case 64:
+		return COAP_BLOCK_64;
+	case 128:
+		return COAP_BLOCK_128;
+	case 256:
+		return COAP_BLOCK_256;
+	case 512:
+		return COAP_BLOCK_512;
+	case 1024:
+		return COAP_BLOCK_1024;
+	}
+
+	return COAP_BLOCK_64;
+}
+
+static bool append_to_coap_pkt(struct coap_packet *response,
+			       const char *str, uint16_t len,
+			       uint16_t *remaining, size_t *offset,
+			       size_t current)
+{
+	uint16_t pos = 0U;
+	bool res;
+
+	if (!*remaining) {
+		return true;
+	}
+
+	if (*offset < current) {
+		pos = current - *offset;
+
+		if (len >= pos) {
+			len -= pos;
+			*offset += pos;
+		} else {
+			*offset += len;
+			return true;
+		}
+	}
+
+	if (len > *remaining) {
+		len = *remaining;
+	}
+
+	res = append(response, str + pos, len);
+
+	*remaining -= len;
+	*offset += len;
+
+	return res;
+}
+
+static int format_uri(const char * const *path,
+		      struct coap_packet *response,
+		      uint16_t *remaining, size_t *offset,
+		      size_t current, bool *more)
+{
+	static const char prefix[] = "</";
+	const char * const *p;
+	bool res;
+
+	if (!path) {
+		return -EINVAL;
+	}
+
+	res = append_to_coap_pkt(response, &prefix[0], sizeof(prefix) - 1,
+				 remaining, offset, current);
+	if (!res) {
+		return -ENOMEM;
+	}
+
+	if (!*remaining) {
+		*more = true;
+		return 0;
+	}
+
+	for (p = path; *p; ) {
+		uint16_t path_len = strlen(*p);
+
+		res = append_to_coap_pkt(response, *p, path_len, remaining,
+					 offset, current);
+		if (!res) {
+			return -ENOMEM;
+		}
+
+		if (!*remaining) {
+			*more = true;
+			return 0;
+		}
+
+		p++;
+		if (!*p) {
+			continue;
+		}
+
+		res = append_to_coap_pkt(response, "/", 1, remaining, offset,
+					 current);
+		if (!res) {
+			return -ENOMEM;
+		}
+
+		if (!*remaining) {
+			*more = true;
+			return 0;
+		}
+
+	}
+
+	res = append_to_coap_pkt(response, ">", 1, remaining, offset, current);
+	if (!res) {
+		return -ENOMEM;
+	}
+
+	if (!*remaining) {
+		*more = true;
+		return 0;
+	}
+
+	*more = false;
+
+	return 0;
+}
+
+static int format_attributes(const char * const *attributes,
+			     struct coap_packet *response,
+			     uint16_t *remaining, size_t *offset,
+			     size_t current, bool *more)
+{
+	const char * const *attr;
+	bool res;
+
+	if (!attributes) {
+		*more = false;
+		return 0;
+	}
+
+	for (attr = attributes; *attr; attr++) {
+		size_t attr_len;
+		size_t attr_offset;
+
+		res = append_to_coap_pkt(response, ";", 1,
+					 remaining, offset, current);
+		if (!res) {
+			return -ENOMEM;
+		}
+
+		if (!*remaining) {
+			*more = true;
+			return 0;
+		}
+
+		attr_len = strlen(*attr);
+		attr_offset = *offset;
+
+		res = append_to_coap_pkt(response, *attr, attr_len,
+					 remaining, offset, current);
+		if (!res) {
+			return -ENOMEM;
+		}
+
+		/* The offset advances by less than the attribute length only
+		 * when the attribute was cut short by the block boundary. The
+		 * remainder belongs in the next block, even when this is the
+		 * last attribute of the last resource.
+		 */
+		if (*offset - attr_offset < attr_len) {
+			*more = true;
+			return 0;
+		}
+
+		if (*(attr + 1) && !*remaining) {
+			*more = true;
+			return 0;
+		}
+	}
+
+	*more = false;
+	return 0;
+}
+
+static int format_resource(const struct coap_resource *resource,
+			   struct coap_packet *response,
+			   uint16_t *remaining, size_t *offset,
+			   size_t current, bool *more)
+{
+	struct coap_core_metadata *meta = resource->metadata;
+	const char * const *attributes = NULL;
+	int r;
+
+	r = format_uri(resource->path, response, remaining,
+		       offset, current, more);
+	if (r < 0) {
+		return r;
+	}
+
+	if (!*remaining) {
+		*more = true;
+		return 0;
+	}
+
+	if (meta != NULL && meta->attributes != NULL) {
+		attributes = meta->attributes;
+	}
+
+	return format_attributes(attributes, response, remaining, offset,
+				 current, more);
+}
+
+/* coap_well_known_core_get() added Option (delta and len) with
+ * out any extended options so this function will not consider Extended
+ * options at the moment.
+ */
+int clear_more_flag(struct coap_packet *cpkt)
+{
+	uint16_t offset;
+	uint8_t opt;
+	uint8_t delta;
+	uint8_t len;
+
+	offset = cpkt->hdr_len;
+	delta = 0U;
+
+	while (1) {
+		opt = cpkt->data[offset++];
+
+		delta += ((opt & 0xF0) >> 4);
+		len = (opt & 0xF);
+
+		if (delta == COAP_OPTION_BLOCK2) {
+			break;
+		}
+
+		offset += len;
+	}
+
+	/* As per RFC 7959 Sec 2.2 : NUM filed can be on 0-3 bytes.
+	 * Skip NUM field to update M bit.
+	 */
+	if (len > 1) {
+		offset = offset + len - 1;
+	}
+
+	cpkt->data[offset] = cpkt->data[offset] & 0xF7;
+
+	return 0;
+}
+
+int coap_well_known_core_get_len(struct coap_resource *resources,
+				 size_t resources_len,
+				 const struct coap_packet *request,
+				 struct coap_packet *response,
+				 uint8_t *data, uint16_t len)
+{
+	struct coap_block_context ctx;
+	struct coap_option query;
+	unsigned int num_queries;
+	size_t offset;
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint16_t remaining;
+	uint16_t id;
+	uint8_t tkl;
+	int r;
+	int block2;
+	bool more = false, first = true;
+
+	if (!resources || !request || !response || !data || !len) {
+		return -EINVAL;
+	}
+
+	/* The response is regenerated for every block and the block context is
+	 * derived from the request alone, so no state is shared between calls
+	 * and concurrent transfers from different clients stay independent.
+	 * The total size is unknown until the last block; the
+	 * MAX_BLOCK_WISE_TRANSFER_SIZE placeholder keeps the more flag set
+	 * until clear_more_flag() corrects the final block.
+	 */
+	coap_block_transfer_init(&ctx, default_block_size(),
+				 MAX_BLOCK_WISE_TRANSFER_SIZE);
+
+	/* Honor a smaller block size negotiated by the client on an earlier
+	 * block, which coap_update_from_block() would otherwise reject as a
+	 * size mismatch.
+	 */
+	block2 = coap_get_option_int(request, COAP_OPTION_BLOCK2);
+	if (block2 >= 0) {
+		ctx.block_size = MIN((enum coap_block_size)GET_BLOCK_SIZE(block2),
+				     ctx.block_size);
+	}
+
+	r = coap_update_from_block(request, &ctx);
+	if (r < 0) {
+		return r;
+	}
+
+	id = coap_header_get_id(request);
+	tkl = coap_header_get_token(request, token);
+
+	/* Per RFC 6690, Section 4.1, only one (or none) query parameter may be
+	 * provided, use the first if multiple.
+	 */
+	r = coap_find_options(request, COAP_OPTION_URI_QUERY, &query, 1);
+	if (r < 0) {
+		return r;
+	}
+
+	num_queries = r;
+
+	r = coap_packet_init(response, data, len, COAP_VERSION_1, COAP_TYPE_ACK,
+			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
+	if (r < 0) {
+		return r;
+	}
+
+	if (IS_ENABLED(CONFIG_SYS_HASH_FUNC32)) {
+		uint32_t etag = well_known_core_etag(resources, resources_len,
+						     &query, num_queries);
+
+		r = coap_packet_append_option(response, COAP_OPTION_ETAG,
+					      (const uint8_t *)&etag, sizeof(etag));
+		if (r < 0) {
+			return r;
+		}
+	}
+
+	r = coap_append_option_int(response, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_APP_LINK_FORMAT);
+	if (r < 0) {
+		return r;
+	}
+
+	r = coap_append_block2_option(response, &ctx);
+	if (r < 0) {
+		return r;
+	}
+
+	r = coap_packet_append_payload_marker(response);
+	if (r < 0) {
+		return r;
+	}
+
+	offset = 0;
+	remaining = coap_block_size_to_bytes(ctx.block_size);
+
+	for (size_t i = 0; i < resources_len; ++i) {
+		if (!remaining) {
+			more = true;
+			break;
+		}
+
+		if (!match_queries_resource(&resources[i], &query, num_queries)) {
+			continue;
+		}
+
+		if (first) {
+			first = false;
+		} else {
+			r = append_to_coap_pkt(response, ",", 1, &remaining,
+					       &offset, ctx.current);
+			if (!r) {
+				return r;
+			}
+		}
+
+		r = format_resource(&resources[i], response, &remaining, &offset,
+				    ctx.current, &more);
+		if (r < 0) {
+			return r;
+		}
+	}
+
+	/* Offset is the total size now, but block2 option is already
+	 * appended. So update only 'more' flag.
+	 */
+	if (!more) {
+		r = clear_more_flag(response);
+	}
+
+	return r;
+}
+
+#else
+
+static inline bool append_u8(struct coap_packet *cpkt, uint8_t data)
+{
+	if (!cpkt) {
+		return false;
+	}
+
+	if (cpkt->max_len - cpkt->offset < 1) {
+		return false;
+	}
+
+	cpkt->data[cpkt->offset++] = data;
+
+	return true;
+}
+
+static int format_uri(const char * const *path, struct coap_packet *response)
+{
+	const char * const *p;
+	char *prefix = "</";
+	bool res;
+
+	if (!path) {
+		return -EINVAL;
+	}
+
+	res = append(response, (uint8_t *) prefix, strlen(prefix));
+	if (!res) {
+		return -ENOMEM;
+	}
+
+	for (p = path; *p; ) {
+		res = append(response, (uint8_t *) *p, strlen(*p));
+		if (!res) {
+			return -ENOMEM;
+		}
+
+		p++;
+		if (*p) {
+			res = append_u8(response, (uint8_t) '/');
+			if (!res) {
+				return -ENOMEM;
+			}
+		}
+	}
+
+	res = append_u8(response, (uint8_t) '>');
+	if (!res) {
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+static int format_attributes(const char * const *attributes,
+			     struct coap_packet *response)
+{
+	const char * const *attr;
+	bool res;
+
+	if (!attributes) {
+		return 0;
+	}
+
+	for (attr = attributes; *attr; attr++) {
+		res = append_u8(response, (uint8_t) ';');
+		if (!res) {
+			return -ENOMEM;
+		}
+
+		res = append(response, (uint8_t *) *attr, strlen(*attr));
+		if (!res) {
+			return -ENOMEM;
+		}
+	}
+
+	return 0;
+}
+
+static int format_resource(const struct coap_resource *resource,
+			   struct coap_packet *response)
+{
+	struct coap_core_metadata *meta = resource->metadata;
+	const char * const *attributes = NULL;
+	int r;
+
+	r = format_uri(resource->path, response);
+	if (r < 0) {
+		return r;
+	}
+
+	if (meta != NULL && meta->attributes != NULL) {
+		attributes = meta->attributes;
+	}
+
+	return format_attributes(attributes, response);
+}
+
+int coap_well_known_core_get_len(struct coap_resource *resources,
+				 size_t resources_len,
+				 const struct coap_packet *request,
+				 struct coap_packet *response,
+				 uint8_t *data, uint16_t data_len)
+{
+	struct coap_option query;
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint16_t id;
+	uint8_t tkl;
+	uint8_t num_queries;
+	int r;
+	bool first = true;
+
+	if (!resources || !request || !response || !data || !data_len) {
+		return -EINVAL;
+	}
+
+	id = coap_header_get_id(request);
+	tkl = coap_header_get_token(request, token);
+
+	/* Per RFC 6690, Section 4.1, only one (or none) query parameter may be
+	 * provided, use the first if multiple.
+	 */
+	r = coap_find_options(request, COAP_OPTION_URI_QUERY, &query, 1);
+	if (r < 0) {
+		return r;
+	}
+
+	num_queries = r;
+
+	r = coap_packet_init(response, data, data_len, COAP_VERSION_1, COAP_TYPE_ACK,
+			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
+	if (r < 0) {
+		return r;
+	}
+
+	r = coap_append_option_int(response, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_APP_LINK_FORMAT);
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	r = coap_packet_append_payload_marker(response);
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < resources_len; ++i) {
+		if (!match_queries_resource(&resources[i], &query, num_queries)) {
+			continue;
+		}
+
+		if (first) {
+			first = false;
+		} else {
+			r = append_u8(response, (uint8_t) ',');
+			if (!r) {
+				return -ENOMEM;
+			}
+		}
+
+		r = format_resource(&resources[i], response);
+		if (r < 0) {
+			return r;
+		}
+	}
+
+	return 0;
+}
+#endif
+
+int coap_well_known_core_get(struct coap_resource *resource,
+			     const struct coap_packet *request,
+			     struct coap_packet *response,
+			     uint8_t *data, uint16_t data_len)
+{
+	struct coap_resource *resources;
+	size_t resources_len = 0;
+
+	if (resource == NULL) {
+		return -EINVAL;
+	}
+
+	resources = resource + 1;
+
+	while (resources[resources_len].path) {
+		resources_len++;
+	}
+
+	return coap_well_known_core_get_len(resources, resources_len, request, response, data,
+					    data_len);
+}
+
+/* Exposing some of the APIs to CoAP unit tests in tests/net/lib/coap */
+#if defined(CONFIG_COAP_TEST_API_ENABLE)
+bool _coap_match_path_uri(const char * const *path,
+			  const char *uri, uint16_t len)
+{
+	return match_path_uri(path, uri, len);
+}
+#endif

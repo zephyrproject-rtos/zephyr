@@ -1,0 +1,17 @@
+identifier: mikroe_quail
+name: MikroE Quail for STM32
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 256
+flash: 2048
+supported:
+  - spi
+  - i2c
+  - uart
+  - adc
+  - gpio
+  - flash
+vendor: mikroe

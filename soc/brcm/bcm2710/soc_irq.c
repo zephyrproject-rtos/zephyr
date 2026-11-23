@@ -1,0 +1,241 @@
+/*
+ * Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * BCM2710 SoC IRQ glue. With CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER
+ * selected the arm64 ISR wrapper calls the z_soc_irq_* hooks below
+ * instead of a GIC driver. Each hook delegates to the BCM283x intc
+ * driver (drivers/interrupt_controller/) responsible for the IRQ
+ * range:
+ *
+ *     0..9     BCM2836 ARM-local intc (per-core timers, mailboxes,
+ *              the GPU cascade hidden at IRQ 8, and the PMU)
+ *     32..127  BCM2835 ARMC peripheral aggregator (basic bank +
+ *              GPU bank 1/2), cascaded under L1 IRQ 8
+ *
+ * IRQ 8 is never registered with an ISR. When it fires, the cascade
+ * is invisible to the rest of Zephyr: z_soc_irq_get_active sees the
+ * GPU bit on the L1 controller and then walks the ARMC pending
+ * registers to return the actual 32..127 peripheral IRQ.
+ *
+ * In SMP builds the scheduler IPI rides each core's mailbox 0 (see
+ * the CONFIG_SMP block below); the intc drivers address per-core
+ * register banks through MPIDR. Peripheral and GPU interrupts stay
+ * routed to core 0.
+ *
+ * The intc drivers map their own MMIO via device_map() inside the
+ * init helpers called below. Both run before any SYS_INIT priority
+ * (z_soc_irq_init is invoked from z_arm64_interrupt_init in
+ * z_prep_c, before z_cstart) -- the MMU is up, but driver model
+ * initialisation has not yet happened, so the init helpers are
+ * called directly rather than registered as SYS_INIT entries.
+ */
+
+#include <zephyr/arch/cpu.h>
+#include <zephyr/drivers/interrupt_controller/intc_bcm283x.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
+
+/*
+ * Sources masked by z_soc_irq_get_active() for the duration of their ISR
+ * (see the comment there). The record lets z_soc_irq_eoi() tell its own
+ * mask apart from a disable the ISR performed itself, so an ISR that
+ * disables its source to defer work to a thread stays disabled.
+ *
+ * A bitmap rather than a single slot because the arm64 wrapper unmasks
+ * IRQs globally around the ISR, so brackets nest.
+ *
+ * Two records, matching the two routing domains:
+ *
+ * The L1 sources live in per-core register banks but share Zephyr IRQ
+ * numbers, so two cores can hold a bracket on the same IRQ number at
+ * the same time. With a shared record both set the one bit, the first
+ * EOI clears it, and the second core's source is left masked for good.
+ * Per-core records keep them apart; set and clear always run on the
+ * same core. Indexed by arch_curr_cpu()->id, which is bounded by
+ * CONFIG_MP_MAX_NUM_CPUS by construction, unlike MPIDR Aff0.
+ *
+ * The ARMC peripheral and GPU sources are globally routed, so their
+ * record stays shared: a thread on another core calling irq_disable()
+ * must clear the same record the dispatching core's EOI consults, or
+ * the EOI re-enables the source underneath the disable.
+ */
+static atomic_t bracketed_l1_irqs[CONFIG_MP_MAX_NUM_CPUS]
+				 [ATOMIC_BITMAP_SIZE(CONFIG_NUM_IRQS)];
+static atomic_t bracketed_armc_irqs[ATOMIC_BITMAP_SIZE(CONFIG_NUM_IRQS)];
+
+static atomic_t *bracket_record(unsigned int irq)
+{
+	if (BCM283X_IRQ_IS_L1(irq)) {
+		return bracketed_l1_irqs[arch_curr_cpu()->id];
+	}
+	return bracketed_armc_irqs;
+}
+
+#ifdef CONFIG_SMP
+/* ----- Scheduler + FPU-flush IPIs over the BCM2836 mailbox 0 ----- */
+
+/*
+ * IPI types are bits within mailbox 0 (Linux keeps its IPIs there
+ * too). One mailbox means one MBOX_INT_CTRL enable covers every IPI
+ * type.
+ */
+#define MBOX0_IPI_SCHED BIT(0)
+#define MBOX0_IPI_FPU   BIT(1)
+
+static void mbox0_ipi_isr(const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	uint32_t bits = bcm2836_l1_intc_mbox0_peek();
+
+	/* Clear only the bits seen: a raise landing now refires after eoi. */
+	bcm2836_l1_intc_mbox0_clear(bits);
+
+	if ((bits & MBOX0_IPI_SCHED) != 0U) {
+		z_arm64_sched_ipi_handler(NULL);
+	}
+#ifdef CONFIG_FPU_SHARING
+	/*
+	 * FPU flush LAST: z_arm64_flush_fpu_ipi_handler() masks IRQs at
+	 * DAIF and deliberately leaves them masked (the exception return
+	 * restores the interrupted context's DAIF). Anything dispatched
+	 * after it would run with IRQs masked inside an isr_wrapper
+	 * that expects them unmasked for nesting.
+	 */
+	if ((bits & MBOX0_IPI_FPU) != 0U) {
+		z_arm64_flush_fpu_ipi_handler(NULL);
+	}
+#endif
+}
+
+/* Scheduler IPI transport for arch/arm64/core/smp.c. */
+void soc_sched_ipi(uint64_t target_mpidr)
+{
+	bcm2836_l1_intc_mbox0_raise((unsigned int)(target_mpidr & 0xffU),
+				    MBOX0_IPI_SCHED);
+}
+
+#ifdef CONFIG_FPU_SHARING
+/* FPU flush IPI transport for arch_flush_fpu_ipi(). */
+void soc_flush_fpu_ipi(uint64_t target_mpidr)
+{
+	bcm2836_l1_intc_mbox0_raise((unsigned int)(target_mpidr & 0xffU),
+				    MBOX0_IPI_FPU);
+}
+#endif
+
+/*
+ * Per-core: start from a masked bank like the boot core, then enable this
+ * core's mailbox-0 IRQ (ISR wired in z_soc_irq_init).
+ */
+void soc_per_core_init_hook(void)
+{
+	bcm2836_l1_intc_mask_core();
+	irq_enable(BCM2836_L1_IRQ_MBOX0_BIT);
+}
+#endif /* CONFIG_SMP */
+
+void z_soc_irq_init(void)
+{
+	bcm2836_l1_intc_init();
+	bcm2835_armctrl_ic_init();
+
+#ifdef CONFIG_SMP
+	/* Register the IPI handler (each core's mailbox 0). */
+	IRQ_CONNECT(BCM2836_L1_IRQ_MBOX0_BIT, 0, mbox0_ipi_isr, NULL, 0);
+#endif
+}
+
+void z_soc_irq_enable(unsigned int irq)
+{
+	if (BCM283X_IRQ_IS_L1(irq)) {
+		bcm2836_l1_intc_irq_enable(irq);
+	} else if (BCM283X_IRQ_IS_ARMC(irq)) {
+		bcm2835_armctrl_ic_irq_enable(irq);
+	}
+}
+
+void z_soc_irq_disable(unsigned int irq)
+{
+	if (irq < CONFIG_NUM_IRQS) {
+		/* Whoever disables the source now owns its masked state. */
+		atomic_clear_bit(bracket_record(irq), irq);
+	}
+
+	if (BCM283X_IRQ_IS_L1(irq)) {
+		bcm2836_l1_intc_irq_disable(irq);
+	} else if (BCM283X_IRQ_IS_ARMC(irq)) {
+		bcm2835_armctrl_ic_irq_disable(irq);
+	}
+}
+
+int z_soc_irq_is_enabled(unsigned int irq)
+{
+	if (BCM283X_IRQ_IS_L1(irq)) {
+		return bcm2836_l1_intc_irq_is_enabled(irq);
+	}
+	if (BCM283X_IRQ_IS_ARMC(irq)) {
+		return bcm2835_armctrl_ic_irq_is_enabled(irq);
+	}
+	return 0;
+}
+
+void z_soc_irq_priority_set(unsigned int irq, unsigned int prio,
+			    unsigned int flags)
+{
+	/* No per-IRQ priority register on either intc -- intentional no-op. */
+	ARG_UNUSED(irq);
+	ARG_UNUSED(prio);
+	ARG_UNUSED(flags);
+}
+
+unsigned int z_soc_irq_get_active(void)
+{
+	unsigned int irq = bcm2836_l1_intc_irq_get_active();
+
+	if (irq == BCM2836_L1_IRQ_GPU_BIT) {
+		/* GPU cascade: walk down into the ARMC. ISRs are never
+		 * registered at index 8, so the cascade is invisible to
+		 * the rest of Zephyr.
+		 */
+		irq = bcm2835_armctrl_ic_irq_get_active();
+	}
+
+	/*
+	 * The arm64 isr_wrapper unmasks IRQs globally (daifclr) around
+	 * the ISR call to support nested handlers. With a GIC that's
+	 * fine -- ack-on-read prevents the same source from re-entering
+	 * the handler. The BCM2835/2836 intc pair has no such ack: a
+	 * level-triggered source stays asserted until the peripheral's
+	 * own state machine clears it, so unmasking globally would
+	 * re-fire the same IRQ before its ISR has had a chance to run.
+	 *
+	 * Workaround: mask the source here, let the ISR run, then
+	 * re-enable in z_soc_irq_eoi. Brackets the ISR with a
+	 * per-source mask the way GIC's running-priority would.
+	 */
+	if (irq < CONFIG_NUM_IRQS) {
+		z_soc_irq_disable(irq);
+		atomic_set_bit(bracket_record(irq), irq);
+	}
+	return irq;
+}
+
+void z_soc_irq_eoi(unsigned int irq)
+{
+	/*
+	 * Re-enable the source masked by z_soc_irq_get_active. By now
+	 * either the ISR cleared the underlying peripheral and the
+	 * source is no longer asserted (normal case), or we're
+	 * returning from a spurious dispatch and there's nothing to
+	 * re-fire. If the ISR disabled the source itself the record is
+	 * gone and the source is left masked, as the ISR intended.
+	 */
+	if (irq < CONFIG_NUM_IRQS &&
+	    atomic_test_and_clear_bit(bracket_record(irq), irq)) {
+		z_soc_irq_enable(irq);
+	}
+}

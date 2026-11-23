@@ -1,0 +1,5 @@
+#Copyright (C) 2026 Savoir-faire Linux, Inc.
+#SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_ACCEL4_CLICK
+	def_bool $(shields_list_contains,mikroe_accel4_click)

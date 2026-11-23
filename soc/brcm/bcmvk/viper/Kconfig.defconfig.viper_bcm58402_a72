@@ -1,0 +1,9 @@
+# Copyright 2020 Broadcom
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_BCM58402_A72
+
+config NUM_IRQS
+	default 260
+
+endif

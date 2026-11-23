@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2025 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: mtch9010 liquid leak detector testbench
+  description: Demonstration of the MTCH9010 liquid leak detector
+tests:
+  sample.sensor.mtch9010.capacitive:
+    tags: sensors
+    build_only: true
+    platform_allow:
+      - saml21_xpro
+    extra_args:
+      - DTC_OVERLAY_FILE="capacitive.overlay"
+  sample.sensor.mtch9010.conductive:
+    tags: sensors
+    build_only: true
+    platform_allow:
+      - saml21_xpro
+    extra_args:
+      - DTC_OVERLAY_FILE="conductive.overlay"

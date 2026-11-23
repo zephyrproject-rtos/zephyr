@@ -1,0 +1,28 @@
+identifier: lyra_24_dvk_p10
+name: Lyra 24 P10 DVK
+type: mcu
+arch: arm
+ram: 256
+flash: 728
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - bluetooth
+  - clock_control
+  - comparator
+  - counter
+  - dac
+  - dma
+  - entropy
+  - gpio
+  - flash
+  - i2c
+  - led
+  - pinctrl
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: ezurio

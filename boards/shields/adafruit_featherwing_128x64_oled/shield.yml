@@ -1,0 +1,7 @@
+shields:
+  - name: adafruit_featherwing_128x64_oled
+    full_name: Adafruit FeatherWing 128x64 OLED
+    vendor: adafruit
+    supported_features:
+      - display
+      - input

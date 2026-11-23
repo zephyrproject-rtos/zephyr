@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2022 Andes Technology Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		cpu1: cpu@1 {
+			compatible = "andestech,a25", "andestech,andescore-v5", "riscv";
+			reg = <1>;
+			device_type = "cpu";
+			mmu-type = "riscv,sv32";
+			clock-frequency = <60000000>;
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "zba", "zbb", "zbc", "zbs", "xandes";
+			status = "okay";
+
+			cpu1_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox 10>, <&mbox 9>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&cpu0 {
+	status = "disabled";
+};
+
+&plic0 {
+	interrupts-extended = <&cpu0_intc 11 &cpu0_intc 9
+			       &cpu1_intc 11 &cpu1_intc 9>;
+};
+
+&mtimer {
+	interrupts-extended = <&cpu0_intc 7 &cpu1_intc 7>;
+};
+
+&plic_sw {
+	interrupts-extended = <&cpu0_intc 3 &cpu1_intc 3>;
+};
+
+&dram {
+	reg = <0x10000000 0x10000000>;
+};

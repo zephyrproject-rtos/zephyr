@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Measure VREFINT on U5 ADC4 without enabling ADC1. vref1 must be disabled
+ * so the st,stm32-vref sensor (DT_INST(0)) does not require ADC1.
+ */
+
+&adc1 {
+	status = "disabled";
+};
+
+&vref1 {
+	status = "disabled";
+};
+
+&adc4 {
+	status = "okay";
+};
+
+&vref4 {
+	status = "okay";
+};

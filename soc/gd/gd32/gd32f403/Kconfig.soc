@@ -1,0 +1,18 @@
+# Copyright (c) 2021, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32F403
+	bool
+	select SOC_FAMILY_GD_GD32
+	help
+	  Enable support for GigaDevice GD32F403 MCU series
+
+config SOC_SERIES
+	default "gd32f403" if SOC_SERIES_GD32F403
+
+config SOC_GD32F403
+	bool
+	select SOC_SERIES_GD32F403
+
+config SOC
+	default "gd32f403" if SOC_GD32F403

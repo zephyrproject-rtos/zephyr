@@ -1,0 +1,34 @@
+sample:
+  description: Live table of tracked kernel objects while a simulated application runs
+  name: object monitor
+common:
+  tags:
+    - kernel
+    - obj_core
+  integration_platforms:
+    - native_sim
+  platform_exclude:
+    - qemu_x86_tiny
+  min_ram: 32
+  extra_configs:
+    - CONFIG_SAMPLE_MONITOR_CLEAR_SCREEN=n
+    - CONFIG_SAMPLE_MONITOR_PERIOD_MS=500
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: false
+    regex:
+      - "type +objects +skipped +dropped"
+      - "thread +[0-9]+ +[0-9]+ +[0-9]+"
+      - "job-[0-9]+ +0x[0-9a-fA-F]+ +(pending|sleeping|ready|running|queued)"
+      - "monitor +0x[0-9a-fA-F]+ +running"
+      - "jobs: [0-9]+ started, [1-9][0-9]* finished"
+tests:
+  sample.kernel.object_monitor: {}
+  sample.kernel.object_monitor.tracking:
+    extra_configs:
+      - CONFIG_SAMPLE_MONITOR_CLEAR_SCREEN=n
+      - CONFIG_SAMPLE_MONITOR_PERIOD_MS=500
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_NONE=y
+      - CONFIG_TRACING_OBJECT_TRACKING=y

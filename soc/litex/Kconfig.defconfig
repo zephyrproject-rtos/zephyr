@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_LITEX
+
+rsource "*/Kconfig.defconfig"
+
+config REBOOT
+	depends on DT_HAS_LITEX_SOC_CONTROLLER_ENABLED
+	default y
+
+endif # SOC_FAMILY_LITEX

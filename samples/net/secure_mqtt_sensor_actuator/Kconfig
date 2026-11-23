@@ -1,0 +1,58 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Secure MQTT Sensor Actuator Sample Application"
+
+config NET_SAMPLE_MQTT_BROKER_HOSTNAME
+	string "Hostname of MQTT broker"
+	default "test.mosquitto.org"
+	help
+	  MQTT broker's hostname or IP address.
+
+config NET_SAMPLE_MQTT_BROKER_PORT
+	string "MQTT Broker Connection Port"
+	default "8883"
+	help
+	  Port through which the application should connect to the MQTT broker.
+	  Secure MQTT uses port 8883.
+
+config NET_SAMPLE_MQTT_PUB_TOPIC
+	string "The MQTT topic the application should publish data to"
+	default "zephyr_sample/sensor"
+
+config NET_SAMPLE_MQTT_SUB_TOPIC_CMD
+	string "The MQTT topic the application will receive commands on"
+	default "zephyr_sample/command"
+
+config NET_SAMPLE_MQTT_PUBLISH_INTERVAL
+	int "Interval between MQTT publishes (in seconds)"
+	default 3
+	help
+	  This config determines the frequency at which MQTT publishes occur.
+
+choice NET_SAMPLE_MQTT_QOS
+	prompt "Quality of Service level used for MQTT publish and subscribe"
+	default NET_SAMPLE_MQTT_QOS_1_AT_LEAST_ONCE
+
+config NET_SAMPLE_MQTT_QOS_0_AT_MOST_ONCE
+	bool "QoS 0 / At most once delivery"
+	help
+	  No acknowledgment needed for published message.
+
+config NET_SAMPLE_MQTT_QOS_1_AT_LEAST_ONCE
+	bool "QoS 1 / At least once delivery"
+	help
+	  If acknowledgment expected for published message, duplicate messages permitted.
+
+config NET_SAMPLE_MQTT_QOS_2_EXACTLY_ONCE
+	bool "QoS 2 / Exactly once delivery"
+	help
+	   Acknowledgment expected and message shall be published only once.
+
+endchoice
+
+config NET_SAMPLE_MQTT_PAYLOAD_SIZE
+	int "Size of MQTT payload in bytes"
+	default 128
+
+source "Kconfig.zephyr"

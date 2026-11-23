@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Sameer Srivastava <l1zard78@proton.me>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas SLG47910 FPGA
+
+compatible: "renesas,slg47910"
+
+include: [spi-device.yaml]
+
+properties:
+  pwr-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the FPGA power enable pin (active high).
+
+  en-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the FPGA EN pin (active high).
+      Must be brought high together with pwr-gpios before configuration.
+
+  ss-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO used as the manual SPI slave-select / configuration-mode pin.
+      This is driven by the driver as a plain GPIO (not by the SPI
+      controller).

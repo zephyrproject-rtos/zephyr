@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u3/stm32u3.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32u3c5", "st,stm32u3", "simple-bus";
+
+		pwr: power@40030800 {
+			wakeup-controller {
+				wkup@8 {
+					/* WKUP8 has PF2 as additional source on STM32U3B5/U3C5 */
+					wkup-gpios = <&gpiof 2 STM32_PWR_WKUP_EVT_SRC_0>,
+						     <&gpioa 7 STM32_PWR_WKUP_EVT_SRC_1>,
+						     <&gpiob 10 STM32_PWR_WKUP_EVT_SRC_2>;
+				};
+			};
+		};
+
+		pinctrl: pin-controller@42020000 {
+			gpiof: gpio@42021400 {
+				compatible = "st,stm32-gpio";
+				reg = <0x42021400 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
+			};
+		};
+
+		aes: crypto@420c0000 {
+			compatible = "st,stm32-aes";
+			reg = <0x420c0000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
+			resets = <&rctl STM32_RESET(AHB2L, 16)>;
+			interrupts = <93 0>;
+			status = "disabled";
+		};
+
+		hash: crypto@420c0400 {
+			compatible = "st,stm32-hash";
+			reg = <0x420c0400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;
+			resets = <&rctl STM32_RESET(AHB2L, 17)>;
+			interrupts = <96 0>;
+			status = "disabled";
+		};
+
+		rng: rng@420c0800 {
+			/* In AN4230 rev 14, no NIST values are listed for STM32U3C5.
+			 * Use Configuration C from RM0487 instead. To be updated if / when
+			 * AN4230 provides values.
+			 */
+			nist-config = <0x8450f00>;
+			health-test-config = <0xaac7>;
+			/delete-property/ noise-source-control;
+		};
+	};
+};

@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: esp32c6_devkitc/esp32c6/hpcore/qemu
+name: ESP32-C6-DevKitC HP Core (Espressif QEMU)
+vendor: espressif
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - uart
+  - watchdog
+  - nvs
+  - counter
+  - retained_mem

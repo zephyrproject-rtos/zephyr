@@ -1,0 +1,19 @@
+# Raspberry Pi RP2040 MCU line
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2021 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES
+	default "rp2040" if SOC_SERIES_RP2040
+
+config SOC_SERIES_RP2040
+	bool
+	select SOC_FAMILY_RPI_PICO
+
+config SOC_RP2040
+	bool
+	select SOC_SERIES_RP2040
+
+config SOC
+	default "rp2040" if SOC_RP2040

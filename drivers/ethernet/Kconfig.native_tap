@@ -1,0 +1,42 @@
+# Native TAP ethernet driver configuration options
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_NATIVE_TAP
+	bool "Native TAP Ethernet driver"
+	default y
+	depends on DT_HAS_ZEPHYR_NATIVE_TAP_ENABLED
+	depends on ARCH_POSIX
+	depends on NET_L2_ETHERNET
+	help
+	  Enable native_sim TAP ethernet driver. Note, this driver is run inside
+	  a process in your host system.
+
+if ETH_NATIVE_TAP
+
+config ETH_NATIVE_TAP_DEV_NAME
+	string "Host ethernet TUN/TAP device name"
+	default "/dev/net/tun"
+	help
+	  This option sets the TUN/TAP device name in your host system.
+
+config ETH_NATIVE_TAP_VLAN_TAG_STRIP
+	bool "Strip VLAN tag from Rx frames"
+	depends on NET_VLAN
+	help
+	  Native TAP ethernet driver will strip of VLAN tag from
+	  Rx Ethernet frames and sets tag information in net packet
+	  metadata.
+
+config ETH_NATIVE_TAP_RX_TIMEOUT
+	int "Ethernet RX timeout"
+	default 1 if NET_GPTP
+	default 50
+	range 1 100
+	help
+	  Native TAP ethernet driver repeatedly checks for new data.
+	  Specify how long the thread sleeps between these checks if no new data
+	  available.
+
+endif # ETH_NATIVE_TAP

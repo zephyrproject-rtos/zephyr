@@ -1,0 +1,7 @@
+identifier: rpi_zero_2w
+name: Raspberry Pi Zero 2 W
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile

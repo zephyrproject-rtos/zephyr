@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	def-lvol-conf-list {
+		compatible = "nuvoton,npcx-lvolctrl-conf";
+	};
+};

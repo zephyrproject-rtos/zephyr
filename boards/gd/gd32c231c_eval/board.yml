@@ -1,0 +1,6 @@
+board:
+  name: gd32c231c_eval
+  full_name: GD32C231C-EVAL
+  vendor: gd
+  socs:
+    - name: gd32c231

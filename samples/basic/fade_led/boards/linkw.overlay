@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Michael Hope <michaelh@juju.nz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		status = "disabled";
+	};
+
+	pwmleds {
+		status = "okay";
+	};
+};
+
+&tim3 {
+	/*
+	 * The sample runs from 1 Hz to 128 Hz, ceil(120 MHz / 65536 / 1 Hz)
+	 * is 1832, and the prescaler property is one less than that.
+	 */
+	prescaler = <1831>;
+	status = "okay";
+};
+
+&pwm3 {
+	pinctrl-0 = <&blue_pwm_led_pinctrl>;
+	pinctrl-names = "default";
+	status = "okay";
+};

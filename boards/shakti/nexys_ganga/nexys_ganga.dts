@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 RISE Lab, IIT Madras
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <shakti/ganga.dtsi>
+
+/ {
+	compatible = "shakti,ganga";
+	model = "Nexys Video Shakti Ganga";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,sram = &sram0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};

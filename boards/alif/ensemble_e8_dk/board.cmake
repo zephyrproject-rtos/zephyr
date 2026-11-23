@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if(CONFIG_SOC_AE822FA0E5597LS0_RTSS_HP)
+  board_runner_args(jlink "--device=AE822FA0E5597LS0_M55_HP" "--speed=4000")
+  board_runner_args(alif_flash "--device=AE822FA0E5597_HP")
+endif()
+
+if(CONFIG_SOC_AE822FA0E5597LS0_RTSS_HE)
+  board_runner_args(jlink "--device=AE822FA0E5597LS0_M55_HE" "--speed=4000")
+  board_runner_args(alif_flash "--device=AE822FA0E5597_HE")
+endif()
+
+if(CONFIG_SOC_AE822FA0E5597LS0_APSS)
+  board_runner_args(jlink "--device=AE822FA0E5597LS0_A32_0" "--speed=4000")
+  board_runner_args(alif_flash "--device=AE822FA0E5597_A320")
+endif()
+
+if(CONFIG_SOC_AE612FA0E5597LS0_RTSS_HP)
+  board_runner_args(jlink "--device=AE612FA0E5597LS0_M55_HP" "--speed=4000")
+endif()
+
+if(CONFIG_SOC_AE612FA0E5597LS0_RTSS_HE)
+  board_runner_args(jlink "--device=AE612FA0E5597LS0_M55_HE" "--speed=4000")
+endif()
+
+if(CONFIG_SOC_AE402FA0E5597LE0_RTSS_HP)
+  board_runner_args(jlink "--device=AE402FA0E5597LS0_M55_HP" "--speed=4000")
+endif()
+
+if(CONFIG_SOC_AE402FA0E5597LE0_RTSS_HE)
+  board_runner_args(jlink "--device=AE402FA0E5597LS0_M55_HE" "--speed=4000")
+endif()
+
+include(${ZEPHYR_BASE}/boards/common/alif_flash.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)

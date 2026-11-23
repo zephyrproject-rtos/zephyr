@@ -1,0 +1,24 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: PWM-driven servo motor.
+
+compatible: "pwm-servo"
+
+include: base.yaml
+
+properties:
+  pwms:
+    required: true
+    type: phandle-array
+    description: PWM specifier driving the servo motor.
+
+  min-pulse:
+    required: true
+    type: int
+    description: Minimum pulse width (nanoseconds).
+
+  max-pulse:
+    required: true
+    type: int
+    description: Maximum pulse width (nanoseconds).

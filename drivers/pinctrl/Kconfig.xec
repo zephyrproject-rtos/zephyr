@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_MCHP_XEC
+	bool "Pin controller driver for MCHP XEC MCUs"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_PINCTRL_ENABLED
+	help
+	  Enable pin controller driver for Microchip XEC MCUs

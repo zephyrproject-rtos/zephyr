@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: TI BQ25896 battery charger
+
+description: |
+  TI BQ25896 I2C controlled 3 A single cell switching battery charger with
+  power path management and USB OTG boost.
+
+  Its functions are described by child nodes.
+
+compatible: "ti,bq25896"
+
+include: i2c-device.yaml
+
+examples:
+  - |
+    bq25896@6b {
+      compatible = "ti,bq25896";
+      reg = <0x6b>;
+
+      charger {
+        compatible = "ti,bq25896-charger";
+        constant-charge-current-max-microamp = <512000>;
+        constant-charge-voltage-max-microvolt = <4208000>;
+      };
+    };

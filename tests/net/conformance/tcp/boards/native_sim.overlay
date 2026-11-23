@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The suite works below the IP layer, so the device is put on an interface of
+ * its own, one with no address on the Linux side, so that nothing but the
+ * suite answers on the link. See net-tools/zeth-l2.conf.
+ */
+
+&zeth0 {
+	host-interface = "zethL2";
+};

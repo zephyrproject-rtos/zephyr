@@ -1,0 +1,74 @@
+# Bluetooth HID Service (HIDS)
+
+# Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_HIDS
+	bool "HID Service (HIDS) [EXPERIMENTAL]"
+	depends on BT_GATT_DYNAMIC_DB
+	select EXPERIMENTAL
+	help
+	  Enable the HID Service server. Provides a HID Service with a
+	  configurable Report Map and Input, Output and Feature reports.
+
+if BT_HIDS
+
+choice BT_HIDS_SECURITY
+	prompt "Security required by the HID Service characteristics"
+	default BT_HIDS_SECURITY_ENCRYPT if BT_SMP
+	help
+	  Security level required to read, write and subscribe to the HID
+	  Service characteristics. The HID Service sets no requirement of its
+	  own. The HID over GATT Profile requires an encrypted link, so a HID
+	  Device role implementation selects BT_HIDS_SECURITY_ENCRYPT or
+	  BT_HIDS_SECURITY_AUTHEN.
+
+config BT_HIDS_SECURITY_NONE
+	bool "No requirements"
+
+config BT_HIDS_SECURITY_ENCRYPT
+	bool "Encryption required"
+	depends on BT_SMP
+
+config BT_HIDS_SECURITY_AUTHEN
+	bool "Encryption and authentication required"
+	depends on BT_SMP
+
+endchoice # BT_HIDS_SECURITY
+
+config BT_HIDS_INPUT_REPORT_COUNT
+	int "Number of Input Report characteristics"
+	default 1
+	range 0 16
+	help
+	  Number of Input Report characteristics in the HID Service. The
+	  application has to register exactly this many Input Reports.
+
+config BT_HIDS_OUTPUT_REPORT_COUNT
+	int "Number of Output Report characteristics"
+	default 0
+	range 0 16
+	help
+	  Number of Output Report characteristics in the HID Service. The
+	  application has to register exactly this many Output Reports.
+
+config BT_HIDS_FEATURE_REPORT_COUNT
+	int "Number of Feature Report characteristics"
+	default 0
+	range 0 16
+	help
+	  Number of Feature Report characteristics in the HID Service. The
+	  application has to register exactly this many Feature Reports.
+
+config BT_HIDS_MAX_REPORT_LEN
+	int "Maximum single report data length (bytes)"
+	default 64
+	range 8 256
+	help
+	  Maximum length of a single HID report data payload, in both
+	  directions. It is the upper bound the service enforces on a Host write
+	  before calling set_report, and on the value the application sets with
+	  bt_hids_report_set(). One buffer of this size is held per Report
+	  characteristic.
+
+endif # BT_HIDS

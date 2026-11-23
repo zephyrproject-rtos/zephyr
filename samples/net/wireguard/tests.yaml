@@ -1,0 +1,16 @@
+common:
+  harness: net
+  tags:
+    - net
+    - socket
+    - vpn
+  depends_on: netif
+  min_flash: 140
+sample:
+  description: Test Wireguard VPN using a client/server sample
+  name: Wireguard VPN
+tests:
+  sample.net.sockets.echo_service.vpn:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

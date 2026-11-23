@@ -1,0 +1,9 @@
+# NXP JPEG decoder driver configuration option
+
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MCUX_JPEGDEC
+	bool "NXP JPEG decoder driver"
+	default y
+	depends on DT_HAS_NXP_JPEGDEC_ENABLED

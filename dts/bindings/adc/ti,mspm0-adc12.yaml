@@ -1,0 +1,84 @@
+# TI MSPM0 Family
+
+# Copyright (c) 2026, Texas Instruments
+# Copyright (c) 2026, Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 ADC12
+
+compatible: "ti,mspm0-adc12"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+  clocks:
+    required: true
+
+  ti,clk-divider:
+    type: int
+    default: 1
+    enum:
+      - 1 # clock is not divided
+      - 2
+      - 4
+      - 8
+      - 16
+      - 24
+      - 32
+      - 48
+    description: |
+      Divider applied to the ADC sample clock source; the effective
+      sampling period scales with this divider. A value of 1 leaves the
+      clock undivided.
+
+  auto-powerdown:
+    type: boolean
+    description: |
+      Enable automatic power-down mode, in which the ADC powers down
+      between conversions to reduce power consumption. When omitted, the
+      ADC uses manual power-down mode and stays powered between conversions.
+
+  vref:
+    type: phandle
+    description: |
+      Phandle to the voltage reference regulator supplying the ADC
+      reference voltage. This may be the on-chip VREF module or an external
+      reference. The driver reads the referenced regulator's configured
+      output voltage to determine the reference voltage in millivolts.
+
+  max-result-reg:
+    type: int
+    required: true
+    description: |
+      Number of conversion result memory registers available on this ADC instance.
+      L-series devices typically have 4 registers (MEMRES0:3), while G-series
+      devices typically have 12 registers (MEMRES0:11). This determines the
+      maximum number of channels that can be converted in a single sequence.
+
+  ti,num-channels:
+    type: int
+    required: true
+    description: |
+      Number of analog input channels wired to this ADC instance on the
+      silicon (i.e. valid CHANSEL values for MEMCTLx), as opposed to
+      max-result-reg which bounds how many of them can be converted in a
+      single sequence. Devices are typically 16 or 32 channels depending on
+      variant.
+
+io-channel-cells:
+  - input

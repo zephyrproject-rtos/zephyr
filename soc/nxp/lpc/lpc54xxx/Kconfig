@@ -1,0 +1,24 @@
+# LPC LPC54XXX MCU line
+
+# Copyright 2017, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_LPC54XXX
+	select ARM
+	select HAS_MCUX
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select SOC_RESET_HOOK
+
+if SOC_SERIES_LPC54XXX
+
+config SOC_SERIES_LPC54XXX_SRAM_CLOCKS
+	bool "Clock LPC54XXX SRAM banks"
+	default y
+	help
+	  SRAM banks are disabled out of reset. By default, CMSIS SystemInit
+	  will enable the clock to these RAM banks. Disable this Kconfig to
+	  leave these ram banks untouched out of reset.
+
+rsource "*/Kconfig"
+
+endif # SOC_SERIES_LPC54XXX

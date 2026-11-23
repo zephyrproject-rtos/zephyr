@@ -1,0 +1,16 @@
+identifier: mikroe_mini_m4_for_stm32
+name: Mikroe MINI-M4 for STM32
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 128
+flash: 1024
+supported:
+  - uart
+  - gpio
+  - i2c
+  - spi
+  - pwm
+vendor: mikroe

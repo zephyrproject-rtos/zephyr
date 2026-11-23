@@ -1,0 +1,22 @@
+#
+# Copyright 2025 Charles Dias
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Himax HX8379C display controller
+
+description: |
+    The Himax HX8379C is a 16.7M colors TFT-LCD controller
+    with a maximum 480RGBx864 resolution.
+
+compatible: "himax,hx8379c"
+
+include: [mipi-dsi-device.yaml, display-controller.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESX pin is asserted to disable the controller, causing a hard
+      reset. The controller receives this as an active-low signal.

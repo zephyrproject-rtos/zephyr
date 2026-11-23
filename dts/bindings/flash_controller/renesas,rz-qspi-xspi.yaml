@@ -1,0 +1,67 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Renesas RZ XSPI NOR FLASH controller supporting the JEDEC CFI interface.
+
+compatible: "renesas,rz-qspi-xspi"
+
+include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
+
+on-bus: qspi
+
+examples:
+  - |
+    ext_flash_ctrl: flash-controller@0 {
+      compatible = "renesas,rz-qspi-xspi";
+      reg = <0>;
+      status = "okay";
+      #address-cells = <1>;
+      #size-cells = <1>;
+      ranges = <0x0 0x60000000 DT_SIZE_M(64)>;
+
+      mx25u51245g: qspi-nor-flash@0 {
+        compatible = "soc-nv-flash";
+        reg = <0x0 DT_SIZE_M(64)>;
+        write-block-size = <1>;
+        erase-block-size = <4096>;
+
+        ranges;
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        partitions {
+          ranges;
+          #address-cells = <1>;
+          #size-cells = <1>;
+
+          loader_param: partition@0 {
+            compatible = "zephyr,mapped-partition";
+            label = "loader-param";
+            reg = <0x00000000 0x4c>;
+            read-only;
+          };
+
+          loader_program: partition@4c {
+            compatible = "zephyr,mapped-partition";
+            label = "loader-program";
+            reg = <0x0000004c (DT_SIZE_K(56) - 0x4C)>;
+            read-only;
+          };
+
+          slot0_partition: partition@e000 {
+            compatible = "zephyr,mapped-partition";
+            label = "image-0";
+            reg = <0x0000e000 DT_SIZE_M(4)>;
+            read-only;
+          };
+
+          storage_partition: partition@40e000 {
+            compatible = "zephyr,mapped-partition";
+            label = "storage";
+            reg = <0x0040e000
+                  (DT_SIZE_M(64) - DT_SIZE_M(4) - DT_SIZE_K(56))>;
+          };
+        };
+      };
+    };

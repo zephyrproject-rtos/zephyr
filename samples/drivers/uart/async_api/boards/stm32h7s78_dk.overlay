@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&uart4 {
+	dmas = <&gpdma1 3 80 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 4 79 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+};

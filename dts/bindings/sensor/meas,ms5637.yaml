@@ -1,0 +1,67 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TE Connectivity MS5637 digital pressure and temperature sensor.
+  Communicates via I2C at fixed address 0x76.
+
+compatible: "meas,ms5637"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  osr-press:
+    type: int
+    default: 2048
+    enum:
+      - 256
+      - 512
+      - 1024
+      - 2048
+      - 4096
+      - 8192
+    description: |
+      Pressure oversampling ratio. Higher values improve measurement
+      resolution at the cost of longer conversion time (datasheet Table 2):
+        256  - 1 ms max
+        512  - 2 ms max
+        1024 - 3 ms max
+        2048 - 5 ms max (default; middle of the range)
+        4096 - 9 ms max
+        8192 - 17 ms max
+      The sensor has no built-in default OSR; 2048 is selected as the
+      driver default as a balance between conversion time and resolution.
+
+  osr-temp:
+    type: int
+    default: 2048
+    enum:
+      - 256
+      - 512
+      - 1024
+      - 2048
+      - 4096
+      - 8192
+    description: |
+      Temperature oversampling ratio. Higher values improve measurement
+      resolution at the cost of longer conversion time (datasheet Table 2):
+        256  - 1 ms max
+        512  - 2 ms max
+        1024 - 3 ms max
+        2048 - 5 ms max (default; middle of the range)
+        4096 - 9 ms max
+        8192 - 17 ms max
+      The sensor has no built-in default OSR; 2048 is selected as the
+      driver default as a balance between conversion time and resolution.
+
+examples:
+  - |
+    i2c {
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      ms5637@76 {
+        compatible = "meas,ms5637";
+        reg = <0x76>;
+      };
+    };

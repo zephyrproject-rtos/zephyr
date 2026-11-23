@@ -1,0 +1,19 @@
+sample:
+  description: Demonstration of nuvoton NPCX ADC comparator driver
+  name: NPCX ADC comparator sample
+common:
+  platform_allow: npcx9m6f_evb
+  integration_platforms:
+    - npcx9m6f_evb
+  tags:
+    - drivers
+    - adc
+tests:
+  sample.sensor.adc_cmp:
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "ADC CMP: Set Upper threshold"
+        - "ADC CMP: Upper threshold detected"

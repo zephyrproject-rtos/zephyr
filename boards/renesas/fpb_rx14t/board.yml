@@ -1,0 +1,6 @@
+board:
+  name: fpb_rx14t
+  full_name: RX14T Fast Prototyping Board
+  vendor: renesas
+  socs:
+  - name: r5f514t5amfm

@@ -1,0 +1,10 @@
+common:
+  platform_allow: qemu_x86_64
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Hello World! (.*)"
+tests:
+  boot.uefi:
+    tags: uefi

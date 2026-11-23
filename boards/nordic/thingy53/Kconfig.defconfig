@@ -1,0 +1,52 @@
+# Thingy53 NRF5340 board configuration
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+configdefault HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+if NORDIC_QSPI_NOR
+
+configdefault NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	default 4096 if MCUBOOT || BOOTLOADER_MCUBOOT
+
+endif # NORDIC_QSPI_NOR
+
+if BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
+
+configdefault BUILD_WITH_TFM
+	default y if BOARD_THINGY53_NRF5340_CPUAPP_NS
+
+if !TRUSTED_EXECUTION_SECURE
+
+configdefault BT_HCI_IPC
+	default y if BT_HCI
+
+configdefault BT_HAS_HCI_VS
+	default BT
+
+configdefault USB_NRFX_ATTACHED_EVENT_DELAY
+	default 700 if USB_DEVICE_DRIVER
+
+configdefault I2C
+	default y
+
+configdefault SPI
+	default y
+
+configdefault REGULATOR
+	default y
+
+endif # !TRUSTED_EXECUTION_SECURE
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
+
+if BOARD_THINGY53_NRF5340_CPUNET
+
+configdefault BT_ECC
+	default BT
+
+endif # BOARD_THINGY53_NRF5340_CPUNET

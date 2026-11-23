@@ -1,0 +1,6 @@
+shield:
+  name: arceli_eth_w5500
+  full_name: Arceli ETH W5500 Shield
+  vendor: wiznet
+  supported_features:
+    - ethernet

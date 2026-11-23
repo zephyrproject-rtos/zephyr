@@ -1,0 +1,25 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32N6 HSE Clock
+
+compatible: "st,stm32n6-hse-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+  hse-bypass:
+    type: boolean
+    description: |
+      HSE crystal oscillator bypass
+      Set to the property to by-pass the oscillator with an external clock.
+
+  hse-div2:
+    type: boolean
+    description: |
+      Enable hse_div2_osc_ck prescaler.
+
+      If this property is present, the div2 prescaler is enabled and
+      hse_div2_osc_ck = hse_osc_ck / 2; otherwise, hse_div2_osc_ck = hse_osc_ck.
+
+      hse_osc_ck is equal to the value of this node's `clock-frequency` property.

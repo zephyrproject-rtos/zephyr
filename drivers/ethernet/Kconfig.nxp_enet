@@ -1,0 +1,195 @@
+# NXP ENET ethernet drivers configuration options
+
+# Copyright (c) 2016-2017 ARM Ltd
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+DT_NXP_UNIQUE_MAC_PROP := nxp,unique-mac
+
+config ETH_NXP_ENET
+	bool "NXP ENET Ethernet driver"
+	default y
+	depends on DT_HAS_NXP_ENET_MAC_ENABLED
+	select ETH_PHY_DRIVER
+	select NOCACHE_MEMORY if CPU_HAS_DCACHE
+	select ARM_MPU if CPU_CORTEX_M7
+	imply NET_POWER_MANAGEMENT
+	select PINCTRL
+	select HWINFO if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_ENET_MAC),$(DT_NXP_UNIQUE_MAC_PROP),True)
+	imply NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_ENET_MAC),nvmem-cells)
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	help
+	  Enable NXP ENET Ethernet driver.
+
+
+if ETH_NXP_ENET
+
+config ETH_NXP_ENET_RX_RECV_ZERO_COPY
+	bool "Hand net buffers straight to the receive DMA"
+	depends on NET_BUF_FIXED_DATA_SIZE
+	help
+	  Give the receive DMA its buffers out of the network buffer pool and
+	  hand them to the stack as they are, instead of copying every frame
+	  into a driver buffer and then into the packet. That takes two copies
+	  of every received frame off the CPU.
+
+	  Every descriptor takes one buffer of NET_BUF_DATA_SIZE, and a frame
+	  larger than that spreads over as many as it needs. The driver checks
+	  the SDK's constraints on size, alignment and pool depth at build
+	  time.
+
+	  Set NET_BUF_DATA_SIZE to hold a whole frame. Splitting one across
+	  several small buffers costs an allocation and a cache invalidation
+	  per buffer, and caps the ring at ETH_NXP_ENET_RX_BUFFERS times that
+	  size, which measures slower than copying.
+
+	  Whole-frame buffers cost RAM, since every one of NET_BUF_RX_COUNT and
+	  NET_BUF_TX_COUNT grows to that size. Cut the counts to make room: on
+	  frdm_k64f running echo_server, NET_BUF_DATA_SIZE=1536 at the default
+	  counts does not fit, while a quarter of them brings RAM back to what
+	  it is with this option off. For each enabled MAC, NET_BUF_RX_COUNT
+	  has to cover ETH_NXP_ENET_RX_BUFFERS, which the DMA holds while the
+	  interface is up, plus two frames' worth, so lower that too when the
+	  counts come down.
+
+	  This is left off by default because turning it on means moving those
+	  three defaults together, which is a board's memory decision rather
+	  than this driver's.
+
+if ETH_NXP_ENET_RX_RECV_ZERO_COPY
+
+# ENET_RX_MIN_BUFFERSIZE and ENET_BUFF_ALIGNMENT in the SDK
+configdefault NET_BUF_DATA_SIZE
+	default 256
+
+configdefault NET_BUF_ALIGNMENT
+	default 64
+
+endif # ETH_NXP_ENET_RX_RECV_ZERO_COPY
+
+config ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
+	bool "Use DTCM for hardware DMA buffers"
+	# ERR050396: ENET writes to TCM require CACHE_ENET to be cleared, while
+	# ENET_1G writes to TCM can still corrupt data on Cortex-M7.
+	default n if CPU_CORTEX_M7
+	default y
+	help
+	  Place the hardware DMA buffers into DTCM for better
+	  networking performance.
+
+config ETH_NXP_ENET_HW_ACCELERATION
+	bool "Hardware acceleration"
+	default y
+	depends on NET_CHECKSUM_OFFLOAD
+	help
+	  Enable hardware acceleration for the following:
+	  - IPv4, UDP and TCP checksum (both Rx and Tx)
+
+config ETH_NXP_ENET_RX_BUFFERS
+	int "Number of RX buffers for ethernet driver"
+	default 16 if ETH_NXP_ENET_RX_RECV_ZERO_COPY
+	default 6
+	range 6 128
+	help
+	  Depth of the receive DMA buffer-descriptor ring.
+
+	  With ETH_NXP_ENET_RX_RECV_ZERO_COPY each one holds NET_BUF_DATA_SIZE
+	  bytes rather than a whole frame, so a frame takes several.
+
+	  Either way, size the ring to hold more bytes than the TCP receive
+	  window: a burst that overruns it costs frames at the MAC, and those
+	  take the sending window down with them.
+
+config ETH_NXP_ENET_TX_BUFFERS
+	int "Number of TX buffers for ethernet driver"
+	default 1
+	range 1 128
+	help
+	  Depth of the transmit DMA buffer-descriptor ring.
+
+config ETH_NXP_ENET_RX_THREAD_STACK_SIZE
+	int "NXP ENET RX thread stack size"
+	default 1600
+	help
+	  ENET RX thread stack size in bytes.
+
+config ETH_NXP_ENET_RX_THREAD_PRIORITY
+	int "NXP ENET driver RX thread priority"
+	default 2
+	help
+	  Priority level of the dedicated ENET RX workqueue thread.
+
+config ETH_NXP_ENET_RX_THREAD_PREEMPTIVE
+	bool "Run the NXP ENET RX drain thread at a preemptible priority"
+	help
+	  Run the RX drain thread at a preemptible priority instead of the
+	  default cooperative one.
+
+config ETH_NXP_ENET_RX_INT_COALESCE
+	bool "ENET hardware RX/TX interrupt coalescing"
+	help
+	  Program the ENET RXIC/TXIC registers so the MAC raises an interrupt
+	  only after a number of frames accumulate or a hardware timer expires,
+	  instead of once per frame.
+
+if ETH_NXP_ENET_RX_INT_COALESCE
+
+config ETH_NXP_ENET_RX_COALESCE_FRAMES
+	int "RX interrupt coalescing frame-count threshold"
+	default 8
+	range 1 255
+	help
+	  Number of received frames the MAC accumulates before raising a
+	  receive interrupt (RXIC ICFT, ring 0). Higher values mean fewer
+	  interrupts but more latency; ensure the ring is deep enough for this
+	  many in-flight frames.
+
+config ETH_NXP_ENET_RX_COALESCE_TICKS
+	int "RX interrupt coalescing timer threshold"
+	default 100
+	range 0 65535
+	help
+	  Maximum time the MAC waits (coalescing timer units, 64 bus-clock
+	  cycles each) before raising a receive interrupt if the frame-count
+	  threshold is not reached. Bounds worst-case latency. 0 disables it.
+
+config ETH_NXP_ENET_TX_COALESCE_FRAMES
+	int "TX interrupt coalescing frame-count threshold"
+	default 1
+	range 1 255
+	help
+	  Number of transmitted frames the MAC accumulates before raising a
+	  transmit interrupt (TXIC ICFT, ring 0). Keep at 1 unless the reclaim
+	  path tolerates batching.
+
+config ETH_NXP_ENET_TX_COALESCE_TICKS
+	int "TX interrupt coalescing timer threshold"
+	default 30 if ETH_NXP_ENET_TX_COALESCE_FRAMES > 1
+	default 0
+	range 1 65535 if ETH_NXP_ENET_TX_COALESCE_FRAMES > 1
+	range 0 65535
+	help
+	  Maximum time the MAC waits (coalescing timer units, 64 bus-clock
+	  cycles each) before raising a transmit interrupt if the TX frame-count
+	  threshold is not reached. 0 disables it.
+
+endif # ETH_NXP_ENET_RX_INT_COALESCE
+
+config ETH_NXP_ENET_RMII_EXT_CLK
+	bool "RMII clock from external sources"
+	help
+	  Setting this option will configure ENET clock block to feed RMII
+	  reference clock from external source (ENET_1588_CLKIN)
+
+config ETH_NXP_ENET_MULTICAST_FILTER
+	bool "Multicast destination address filtering"
+	default y
+	help
+	  Enable support for multicast destination address filtering in the
+	  MAC. The MAC performs imperfect filtering using a group-address hash
+	  table (GAUR/GALR). Only multicast whose computed hash bit is set in
+	  the table is received and all other multicast is dropped by the MAC.
+	  If disabled, the hash table is opened to every multicast address so
+	  that reception does not depend on per-group hash installation.
+
+endif # ETH_NXP_ENET

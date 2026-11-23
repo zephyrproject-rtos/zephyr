@@ -1,0 +1,15 @@
+/ {
+	uart0: uart {
+		compatible = "zephyr,native-tty-uart";
+		current-speed = <115200>;
+		serial-port = "/dev/ttyUSB0";
+		status = "okay";
+	};
+
+	uart2: uart2 {
+		compatible = "zephyr,native-tty-uart";
+		current-speed = <115200>;
+		serial-port = "/dev/ttyUSB1";
+		status = "okay";
+	};
+};

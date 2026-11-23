@@ -1,0 +1,141 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32S3
+	select XTENSA
+	select DYNAMIC_INTERRUPTS
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM
+	select CLOCK_CONTROL
+	select PINCTRL
+	select HAS_ESPRESSIF_HAL
+	select CPU_HAS_FPU
+	select CPU_HAS_DCACHE
+	select HAS_PM
+	select HAS_POWEROFF
+	imply XTENSA_ENABLE_BACKTRACE
+
+if SOC_SERIES_ESP32S3
+
+menu "Cache config"
+
+choice SOC_ESP32S3_INSTRUCTION_CACHE_SIZE
+	prompt "Instruction cache size"
+	default SOC_ESP32S3_INSTRUCTION_CACHE_16KB
+	help
+	  Instruction cache size to be set on application startup.
+	  If you use 16KB instruction cache rather than 32KB instruction cache,
+	  then the other 16KB will be managed by heap allocator.
+
+config SOC_ESP32S3_INSTRUCTION_CACHE_16KB
+	bool "16KB"
+
+config SOC_ESP32S3_INSTRUCTION_CACHE_32KB
+	bool "32KB"
+
+endchoice
+
+config SOC_ESP32S3_INSTRUCTION_CACHE_SIZE
+	hex
+	default 0x4000 if SOC_ESP32S3_INSTRUCTION_CACHE_16KB
+	default 0x8000 if SOC_ESP32S3_INSTRUCTION_CACHE_32KB
+
+choice SOC_ESP32S3_ICACHE_ASSOCIATED_WAYS
+	prompt "Instruction cache associated ways"
+	default SOC_ESP32S3_INSTRUCTION_CACHE_8WAYS
+	help
+	  Instruction cache associated ways to be set on application startup.
+
+config SOC_ESP32S3_INSTRUCTION_CACHE_4WAYS
+	bool "4 ways"
+
+config SOC_ESP32S3_INSTRUCTION_CACHE_8WAYS
+	bool "8 ways"
+
+endchoice
+
+choice SOC_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE
+	prompt "Instruction cache line size"
+	default SOC_ESP32S3_INSTRUCTION_CACHE_LINE_32B
+	help
+	  Instruction cache line size to be set on application startup.
+
+config SOC_ESP32S3_INSTRUCTION_CACHE_LINE_16B
+	bool "16 Bytes"
+	depends on SOC_ESP32S3_INSTRUCTION_CACHE_16KB
+
+config SOC_ESP32S3_INSTRUCTION_CACHE_LINE_32B
+	bool "32 Bytes"
+
+endchoice
+
+choice SOC_ESP32S3_DATA_CACHE_SIZE
+	prompt "Data cache size"
+	default SOC_ESP32S3_DATA_CACHE_32KB
+	help
+	  Data cache size to be set on application startup.
+	  If you use 32KB data cache rather than 64KB data cache,
+	  the other 32KB will be added to the heap.
+
+config SOC_ESP32S3_DATA_CACHE_16KB
+	bool "16KB"
+
+config SOC_ESP32S3_DATA_CACHE_32KB
+	bool "32KB"
+
+config SOC_ESP32S3_DATA_CACHE_64KB
+	bool "64KB"
+
+endchoice
+
+config SOC_ESP32S3_DATA_CACHE_SIZE
+	hex
+	# For 16KB the actual configuration is 32kb cache, but 16kb will be reserved for heap at startup
+	default 0x8000 if SOC_ESP32S3_DATA_CACHE_16KB
+	default 0x8000 if SOC_ESP32S3_DATA_CACHE_32KB
+	default 0x10000 if SOC_ESP32S3_DATA_CACHE_64KB
+
+choice SOC_ESP32S3_DCACHE_ASSOCIATED_WAYS
+	prompt "Data cache associated ways"
+	default SOC_ESP32S3_DATA_CACHE_8WAYS
+	help
+	  Data cache associated ways to be set on application startup.
+
+config SOC_ESP32S3_DATA_CACHE_4WAYS
+	bool "4 ways"
+
+config SOC_ESP32S3_DATA_CACHE_8WAYS
+	bool "8 ways"
+
+endchoice
+
+choice SOC_ESP32S3_DATA_CACHE_LINE_SIZE
+	prompt "Data cache line size"
+	default SOC_ESP32S3_DATA_CACHE_LINE_32B
+	help
+	  Data cache line size to be set on application startup.
+
+config SOC_ESP32S3_DATA_CACHE_LINE_16B
+	bool "16 Bytes"
+	depends on SOC_ESP32S3_DATA_CACHE_16KB || SOC_ESP32S3_DATA_CACHE_32KB
+
+config SOC_ESP32S3_DATA_CACHE_LINE_32B
+	bool "32 Bytes"
+
+config SOC_ESP32S3_DATA_CACHE_LINE_64B
+	bool "64 Bytes"
+
+endchoice
+
+config SOC_ESP32S3_DATA_CACHE_LINE_SIZE
+	int
+	default 16 if SOC_ESP32S3_DATA_CACHE_LINE_16B
+	default 32 if SOC_ESP32S3_DATA_CACHE_LINE_32B
+	default 64 if SOC_ESP32S3_DATA_CACHE_LINE_64B
+
+endmenu  # Cache config
+
+rsource "Kconfig.caps"
+
+endif # SOC_SERIES_ESP32S3

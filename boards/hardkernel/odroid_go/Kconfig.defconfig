@@ -1,0 +1,14 @@
+# ODROID-GO Game Kit configuration
+
+# Copyright (c) 2019 Yannis Damigos
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ODROID_GO_ESP32_PROCPU
+
+config SPI
+	default y if DISK_DRIVER_SDMMC
+
+config SOC_FAMILY_ESPRESSIF_SPIRAM
+	default y if !MCUBOOT && !SOC_ESP32_USE_UNSUPPORTED_REVISION
+
+endif # BOARD_ODROID_GO_ESP32_PROCPU

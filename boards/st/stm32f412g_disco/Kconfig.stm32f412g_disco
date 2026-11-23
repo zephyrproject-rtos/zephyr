@@ -1,0 +1,5 @@
+# Copyright (c) 2017 Powersoft
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32F412G_DISCO
+	select SOC_STM32F412ZX

@@ -1,0 +1,9 @@
+sample:
+  name: Pong game using BBC Micro:bit
+tests:
+  sample.boards.bbc_microbit.pong:
+    platform_allow: bbc_microbit
+    tags:
+      - microbit
+      - mesh
+      - bluetooth

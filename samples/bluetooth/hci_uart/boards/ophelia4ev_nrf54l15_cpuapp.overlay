@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&uart20 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <1000000>;
+	hw-flow-control;
+	status = "okay";
+};

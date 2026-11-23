@@ -1,0 +1,18 @@
+time(microsecond),port,pin,level
+# These lines match the content of all other individual files (gpio_in.*csv) combined
+50000,0,2,1
+55000,0,4,1
+ # a line with a comment
+# this file looks funny on purpose to test the csv file parsing
+60000,0,3,1
+70000,0,0,1
+# comment
+90000,0,0,0
+100000,0,2,0
+105000,0,4,0 # a comment on a line
+110000,0,3,0
+150000,0,0,1
+151000,0,4,1
+ 160000,0,0,0
+# 161000,0,0,1
+165000,0,3,1

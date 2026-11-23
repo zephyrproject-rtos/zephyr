@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Hong Nguyen <hong.nguyen.k54@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_CONSOLE=y
+CONFIG_SERIAL=y
+CONFIG_UART_CONSOLE=y
+CONFIG_GPIO=y
+CONFIG_POWER_DOMAIN=y
+CONFIG_PM_DEVICE=y
+CONFIG_PM_DEVICE_POWER_DOMAIN=y
+
+# STEMMA QT are gated by a GPIO power domain.
+# The GPIO must init before the I2C controller
+# that depends on it.
+CONFIG_POWER_DOMAIN_GPIO_INIT_PRIORITY=45

@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: esp32p4_pc
+  full_name: ESP32-P4-PC
+  vendor: olimex
+  socs:
+  - name: esp32p4

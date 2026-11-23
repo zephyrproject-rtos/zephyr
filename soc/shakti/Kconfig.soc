@@ -1,0 +1,10 @@
+# Copyright (c) 2026 RISE Lab, IIT Madras
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_SHAKTI
+	bool
+
+config SOC_FAMILY
+	default "shakti" if SOC_FAMILY_SHAKTI
+
+rsource "*/Kconfig.soc"

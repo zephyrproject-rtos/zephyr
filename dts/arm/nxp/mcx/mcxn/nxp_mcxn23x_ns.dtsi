@@ -1,0 +1,26 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		sram: sram@4000000 {
+			ranges = <0x4000000 0x4000000 0x20000000>;
+		};
+
+		peripheral: peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
+		};
+
+		fmu: flash-controller@40043000 {
+			reg = <0x40043000 0x1000>;
+			/* flash and UID at their non-secure addresses */
+			ranges = <0x0 0x0 0x100000>,
+				 <0x1100000 0x1100000 0x10>;
+		};
+	};
+};
+
+#include "nxp_mcxn23x_common.dtsi"

@@ -1,0 +1,151 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  One configurable clock root of an NXP i.MX CCM rev3 controller.
+
+  A clock root is the part of the CCM that selects a source and divides it, so
+  it is what determines the frequency a peripheral receives. Declaring roots as
+  devicetree nodes puts the clock tree where a board or application overlay can
+  change it, instead of in a board C file.
+
+  The controller programs every enabled root child at initialization, in
+  devicetree order. Order matters when one root feeds another, and a root whose
+  selected source is not running yet delivers no clock.
+
+      /* CLOCK_ROOT40 */
+      peri3_rootclk: clock-root@280 {
+              compatible = "nxp,imx-ccm-rev3-root";
+              reg = <0x280 0x10>;
+              nxp,root-id = <IMX_CCM_ROOT_CGU_PERI_ROOTCLK3>;
+              clock-mux = <IMX_CCM_MUX_PERI3_MAINPLL_DIVX>;
+              clock-div = <1>;
+      };
+
+  Mux values are per-root: each root has its own source list, so use the
+  IMX_CCM_MUX_<root>_<source> identifier that belongs to this root.
+
+compatible: "nxp,imx-ccm-rev3-root"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      The slice's register block inside its parent CCM instance: offset
+      N * <stride> and size <stride>, for the CLOCK_ROOT<N> the reference manual
+      gives that instance. The stride is SoC-specific -- 0x10 on RT266x, 0x80 on
+      RT1170, 0x40 on RT1180 -- and is the step of that SoC's CLOCK_ROOT
+      register array.
+
+  nxp,root-id:
+    type: int
+    required: true
+    description: |
+      The flat clock-root identifier the HAL dispatches on -- the clock_root_t
+      value CLOCK_SetRootClock() takes -- written with the SoC's IMX_CCM_ROOT_*
+      macro.
+
+      This is stated rather than derived from reg on purpose. The two numbers are
+      two different facts about one slice: reg is the register block the reference
+      manual lays out, nxp,root-id is the number the HAL uses. Recovering one from
+      the other needs a per-SoC rule (the instance's identifier start plus the
+      offset divided by the slice stride), and a rule in a driver shared across
+      SoCs is a rule the next SoC can invalidate -- silently, since every value
+      still looks plausible. It is required rather than defaulted because no value
+      is safe to assume: a wrong identifier programs a different slice.
+
+  clock-mux:
+    type: int
+    required: true
+    description: |
+      Source selector for this root, from the SoC's IMX_CCM_MUX_<root>_<source>
+      definitions. Mux numbering is per-root; a value belonging to a different
+      root selects an unrelated source.
+
+  clock-div:
+    type: int
+    default: 1
+    description: |
+      Divider applied to the selected source, as an actual divide value rather
+      than an encoded field.
+
+  clock-second-div:
+    type: int
+    default: 1
+    description: |
+      Second divider, for roots that have one; ignored on SoCs whose root
+      configuration has only one divider.
+
+      The default is 1 rather than 0 because 1 is the honest way to say
+      "divide by one": these properties carry actual divide values, not encoded
+      register fields, and a divider of 0 is meaningless.
+
+      It also avoids a HAL hazard that is real but version-dependent. The HAL
+      programs the hardware field as (value - 1), so an unguarded implementation
+      turns 0 into an all-ones field, which the rate calculation then reads back
+      as the peripheral's frequency. This bit the RT266x bring-up on silicon.
+      Current RT266x HAL revisions special-case 0 and program divide-by-one, but
+      this binding is SoC-agnostic and cannot assume every HAL it serves does.
+
+  clock-shutdown:
+    type: boolean
+    description: |
+      Leave this root gated off after configuring its mux and dividers, instead
+      of running it.
+
+  nxp,preconfigured:
+    type: boolean
+    description: |
+      This root MUST NOT be programmed by the controller: its value was
+      established before Zephyr ran, and re-applying even an identical value
+      would break something. The mux and dividers are still declared on this
+      node so the value stays devicetree-owned and get_rate can report it, but
+      the controller's initialization loop skips it.
+
+      The property means "must not be touched". It does NOT mean "something else
+      also programs this". A root that the SoC bring-up programs by reading this
+      same node is not marked: when the controller later re-applies the value it
+      writes what is already there, which is idempotent and needs no protection.
+      Marking such a root would drain the property of meaning and hide the ones
+      that genuinely cannot be touched.
+
+      The case that qualifies is a root on the BOOT MEDIUM's clock path:
+
+      - The functional root of the memory this image executes from. The
+        controller's loop runs from XIP flash and calls a HAL function that also
+        lives in XIP flash, so re-programming that root cuts the clock feeding
+        the very fetch in progress. Bringing it up safely requires quiescing and
+        disabling the controller, parking the clock on a free-running source and
+        executing from on-chip RAM -- none of which a PRE_KERNEL_1 device init
+        can do.
+      - A root whose frequency the boot ROM calibrated against, which must be
+        preserved bit-for-bit rather than recomputed. On i.MX RT266x the
+        XSPI1/PSRAM root is anchored to the ROM's dividers because the ROM's DLL
+        calibration point is tied to that frequency; re-programming it, even to
+        an apparently equivalent value, leaves the DDR read strobe the ROM DLL
+        locked to no longer aligned.
+      - Any root that is a SOURCE of one of the above, since changing it moves
+        the derived frequency just the same.
+
+      Whether a root is on the boot-medium path is a BOARD fact, not a SoC fact.
+      An SoC devicetree marks the roots for the usual boot configuration; a board
+      that boots from a different medium removes the marker with
+      /delete-property/ in its own DTS. It cannot be driven from Kconfig:
+      devicetree is processed before Kconfig (cmake/modules/zephyr_default.cmake
+      appends `dts` ahead of `kconfig`, and the devicetree pass generates
+      Kconfig.dts for Kconfig to consume), so no CONFIG_ symbol is visible here.
+
+      One limitation to be aware of: for the XSPI functional roots the SoC
+      programs the hardware by direct register writes from RAM-resident code that
+      runs with flash parked. The node makes the rate reportable and the target
+      mux/div a visible declaration, but editing these properties does not yet
+      change what that code writes, because it cannot read devicetree at run
+      time. Driving it from devicetree would require precomputing the derived
+      register images into on-chip RAM first, which is a separate change.
+
+      A root with none of the above does not get this property: it belongs in the
+      controller's initialization loop, or it is owned by a peripheral that
+      configures it itself through clock_control_configure().

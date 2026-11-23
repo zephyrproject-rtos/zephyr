@@ -1,0 +1,24 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_ALTERA
+	bool "ALTERA UART driver"
+	depends on DT_HAS_ALTR_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the Altera UART driver, that can be built into Intel NiosV CPU designs.
+
+config UART_ALTERA_EOP
+	bool "ALTERA UART end of packet feature"
+	depends on UART_ALTERA && UART_DRV_CMD && UART_INTERRUPT_DRIVEN
+	help
+	  Use driver command CMD_ENABLE_EOP and CMD_DISABLE_EOP to use the feature.
+
+config UART_ALTERA_LINE_CTRL_WORKAROUND
+	bool "ALTERA UART flow control workaround"
+	depends on UART_ALTERA && UART_LINE_CTRL
+	help
+	  Before enabling this, please try to optimise the ISR to fetch the receive data faster.
+	  Enabling this will cause the transmitter to wait for rising edge of CTS before sending.
+	  The receiver will deassert RTS as soon as a byte is received and reassert after the byte is fetched.

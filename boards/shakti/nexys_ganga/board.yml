@@ -1,0 +1,9 @@
+# Copyright (c) 2026 RISE Lab, IIT Madras
+# SPDX-License-Identifier: Apache-2.0
+
+boards:
+  - name: nexys_ganga
+    full_name: Nexys Video (Ganga SoC)
+    vendor: shakti
+    socs:
+      - name: ganga

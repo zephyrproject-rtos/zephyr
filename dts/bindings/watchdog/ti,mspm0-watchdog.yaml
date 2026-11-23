@@ -1,0 +1,38 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: MSPM0 Windowed Watchdog Timer
+
+compatible: "ti,mspm0-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  ti,watchdog-reset-action:
+    type: int
+    required: true
+    description: |
+      Reset type delivered by this WWDT instance on a violation.
+      1 = SYSRST (WDT_FLAG_RESET_SOC), 0 = BOOTRST (WDT_FLAG_RESET_CPU_CORE).
+      Note: the hardware always generates SYSRST regardless of this value;
+      it is used only to validate the flags passed to wdt_install_timeout().
+
+  closed-window:
+    type: int
+    required: true
+    description: Watchdog has two closed windows. 0 is WINDOW0, 1 is WINDOW1
+
+  clocks:
+    required: true
+    description: |
+      Reference to the clock controller providing LFCLK.
+      Typically <&ckm MSPM0_CLOCK_LFCLK>.
+
+  interrupts:
+    description: |
+      INTTIM interrupt line. Only fires in interval-timer mode
+      (WDT_FLAG_RESET_NONE). Not used in window-watchdog mode.

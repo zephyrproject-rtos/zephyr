@@ -1,0 +1,11 @@
+# Fake LED controller configuration options
+
+# SPDX-FileCopyrightText: Copyright (c) 2026 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_FAKE
+	bool "Fake LED controller driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_LEDS_ENABLED
+	help
+	  Enable support for the FFF-based fake LED controller driver.

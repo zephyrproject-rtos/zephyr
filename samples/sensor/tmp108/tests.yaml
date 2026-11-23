@@ -1,0 +1,16 @@
+sample:
+  name: TMP 108 Temperature Sensor Sample
+tests:
+  sample.sensor.tmp108:
+    harness: console
+    tags: sensors
+    depends_on:
+      - i2c
+      - gpio
+    filter: dt_compat_enabled("ti,tmp108") or
+            dt_compat_enabled("ams,as6212") or
+            dt_compat_enabled("ams,as6221")
+    harness_config:
+      type: multi_line
+      regex:
+        - "temperature is *.*C"

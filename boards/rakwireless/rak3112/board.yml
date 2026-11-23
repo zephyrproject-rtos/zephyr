@@ -1,0 +1,6 @@
+board:
+  name: rak3112
+  full_name: RAK3112
+  vendor: rakwireless
+  socs:
+  - name: esp32s3

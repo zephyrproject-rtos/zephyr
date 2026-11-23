@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek RTS5817 SPI wrapper node.
+
+  The RTS5817 SPI block is built on top of a Synopsys DesignWare SSI core
+  with an additional master control block that drives DMA-based transfers.
+  This node represents the master control block; the underlying DW SSI
+  core is described by a separate snps,designware-spi node referenced via
+  the "dw-spi-dev" phandle.
+
+compatible: "realtek,rts5817-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Master control register block.
+
+  dw-spi-dev:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the underlying snps,designware-spi node that provides the
+      DW SSI register block, clock and MMIO mapping for the inner core.
+
+  interrupts:
+    required: true

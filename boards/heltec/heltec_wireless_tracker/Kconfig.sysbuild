@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+choice BOOTLOADER
+	default BOOTLOADER_MCUBOOT
+endchoice

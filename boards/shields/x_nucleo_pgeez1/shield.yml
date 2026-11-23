@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2026 EXALT Technologies
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: x_nucleo_pgeez1
+  full_name: X-NUCLEO-PGEEZ1
+  vendor: st
+  supported_features:
+    - mtd

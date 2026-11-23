@@ -1,0 +1,101 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/infineon/cat1c/traveo/cyt4dn/cyt4dn_m7.dtsi>
+#include "kit_t2g_c2d6m_lite_common.dtsi"
+
+/ {
+	compatible = "infineon,kit_t2g_c2d6m_lite", "infineon,cyt4dn";
+	model = "Infineon Evaluation board for CYT4DNJBZS M7 Core 0";
+
+	aliases {
+		led0 = &user_led2;
+		sw0 = &user_bt1;
+	};
+
+	chosen {
+		zephyr,sram = &sram_m7_0;
+		zephyr,flash = &code_flash0;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
+		zephyr,code-partition = &m7_0_partition;
+		zephyr,console = &uart7;
+		zephyr,shell-uart = &uart7;
+		zephyr,canbus = &can0;
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "can-transceiver-gpio";
+		enable-gpios = <&gpio_prt5 4 GPIO_ACTIVE_LOW>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_bt1: user_btn1 {
+			label = "SW_0";
+			gpios = <&gpio_prt0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&m7_0 {
+	status = "okay";
+};
+
+&uart7 {
+	status = "okay";
+};
+
+&gpio_prt0 {
+	status = "okay";
+};
+
+&gpio_prt5 {
+	status = "okay";
+};
+
+&gpio_prt9 {
+	status = "okay";
+};
+
+&peri0_group1_16bit_0 {
+	status = "okay";
+};
+
+&peri0_group1_16bit_1 {
+	status = "okay";
+};
+
+i2c11: &scb11 {
+	compatible = "infineon,i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&peri0_group1_16bit_0>;
+	clock-frequency = <100000>;
+	pinctrl-0 = <&p0_5_scb11_i2c_scl &p0_4_scb11_i2c_sda>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpio_prt0 5 GPIO_OPEN_DRAIN>;
+	sda-gpios = <&gpio_prt0 4 GPIO_OPEN_DRAIN>;
+	status = "okay";
+};
+
+&canfd0 {
+	status = "okay";
+};
+
+can0: &can0_1 {
+	clocks = <&peri0_group1_16bit_1>;
+	clock-frequency = <40000000>;
+	pinctrl-0 = <&p5_3_can0_1_rx &p5_2_can0_1_tx>;
+	pinctrl-names = "default";
+	phys = <&transceiver0>;
+	status = "okay";
+};

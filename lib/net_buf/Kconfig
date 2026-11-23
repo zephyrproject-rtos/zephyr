@@ -1,0 +1,84 @@
+# Network buffer configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_BUF
+	bool "Network buffer support"
+	help
+	  This option enables support for generic network protocol
+	  buffers.
+
+if NET_BUF
+
+config NET_BUF_LOG
+	bool "Network buffer logging"
+	select LOG
+	help
+	  Enable logs and checks for the generic network buffers.
+
+module = NET_BUF
+module-str = net_buf
+source "subsys/logging/Kconfig.template.log_config"
+
+if NET_BUF_LOG
+
+config NET_BUF_WARN_ALLOC_INTERVAL
+	int "Interval of Network buffer allocation warnings"
+	default 1
+	range 0 60
+	help
+	  Interval in seconds of Network buffer allocation warnings which are
+	  generated when a buffer cannot immediately be allocated with K_FOREVER
+	  which may lead to deadlocks. A warning is printed when the allocation
+	  starts to wait and then at this interval, and the time it was blocked
+	  is printed when it gets a buffer. Setting it to 0 disables the
+	  periodic warnings, leaving the first and the last one.
+
+config NET_BUF_SIMPLE_LOG
+	bool "Network buffer memory debugging"
+	select LOG
+	help
+	  Enable extra debug logs and checks for the generic network buffers.
+
+endif # NET_BUF_LOG
+
+config NET_BUF_POOL_USAGE
+	bool "Network buffer pool usage tracking"
+	help
+	  Enable network buffer pool tracking. This means that:
+	  * amount of free buffers in the pool is remembered
+	  * maximum amount of buffers in use at the same time is remembered
+	  * total size of the pool is calculated
+	  * pool name is stored and can be shown in debugging prints
+
+config NET_BUF_HARDENING
+	bool "Network buffer runtime integrity checks"
+	help
+	  Enable always-on (not assert-gated) integrity checks on the network
+	  buffer length/pointer fields before mutating a buffer. A buffer whose
+	  len/data have been corrupted so that they no longer fit within the
+	  buffer's own storage (e.g. len wrapped to a large value, or data moved
+	  outside __buf..__buf+size) is rejected fail-closed: the mutating
+	  operation returns NULL instead of reading or writing out of bounds.
+	  Operations that return a value return 0 and operations that return
+	  nothing do not write, so the caller cannot always tell that an
+	  operation was rejected.
+
+	  This turns a would-be out-of-bounds access (in particular the
+	  tailroom-underflow -> net_buf_add() overflow) into a controlled
+	  failure. It adds a small runtime cost to net_buf_simple_add()/push()/
+	  pull()/remove() and is intended for security-sensitive builds; leave
+	  disabled to keep the fast path assert-only.
+
+config NET_BUF_ALIGNMENT
+	int "Network buffer alignment restriction"
+	default 0
+	help
+	  Alignment restriction for network buffers. This is useful for
+	  some hardware IP with DMA that requires the buffers to be aligned
+	  to a certain byte boundary, or dealing with cache line restrictions.
+	  Default value of 0 means the alignment will be the size of a void pointer,
+	  any other value will force the alignment of a net buffer in bytes.
+
+endif # NET_BUF

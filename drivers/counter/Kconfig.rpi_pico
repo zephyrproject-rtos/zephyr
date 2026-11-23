@@ -1,0 +1,8 @@
+# Copyright (c) 2023 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_TIMER_RPI_PICO
+	def_bool y
+	select PICOSDK_USE_TIMER
+	select PICOSDK_USE_CLAIM
+	depends on DT_HAS_RASPBERRYPI_PICO_TIMER_ENABLED

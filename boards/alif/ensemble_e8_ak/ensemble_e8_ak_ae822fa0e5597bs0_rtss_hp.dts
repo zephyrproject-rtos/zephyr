@@ -1,0 +1,50 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <alif/ensemble/ae822fa0e5597bs0.dtsi>
+#include <alif/ensemble/ae822fa0e5597bs0_nvic_irq.dtsi>
+#include <alif/ensemble/common/ensemble_rtss_hp.dtsi>
+#include "ensemble_e8_ak-pinctrl.dtsi"
+#include "ensemble_e8_ak_common.dtsi"
+
+/ {
+	compatible = "alif,ensemble-e8-ak-ae822fa0e5597bs0-rtss-hp";
+
+	chosen {
+		zephyr,flash = &mram;
+		zephyr,sram = &dtcm;
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/*
+ * Ethernet DMA to DTCM, which is zephyr,sram here, is not supported. The
+ * sram variant of this board target enables the three nodes below
+ * together with a system SRAM as zephyr,sram.
+ */
+&eth {
+	pinctrl-0 = <&eth_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+};
+
+&mdio {
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		/* A node does not follow the status of its bus */
+		status = "disabled";
+	};
+};

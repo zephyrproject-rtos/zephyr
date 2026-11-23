@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2026 Martin Moya <martin.moya@focus.uy>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		output-high-gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
+		output-low-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+		input-gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpioa {
+	hog1 {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_LOW>;
+		output-high;
+	};
+
+	hog2 {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+
+	hog3 {
+		gpio-hog;
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		input;
+	};
+};

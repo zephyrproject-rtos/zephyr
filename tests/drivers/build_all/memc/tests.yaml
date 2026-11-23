@@ -1,0 +1,15 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - memc
+tests:
+  # NXP AHB SRAM Controller (SRAMC). The driver is SoC specific (uses the
+  # fsl_sramc HAL and the BLK_CTRL_WAKEUPMIX block), and nothing else in tree
+  # enables a &sramc node, so build it on the mimxrt1180_evk to keep it covered.
+  drivers.memc.nxp_sramc.build:
+    platform_allow:
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt1180_evk/mimxrt1189/cm7
+    integration_platforms:
+      - mimxrt1180_evk/mimxrt1189/cm33

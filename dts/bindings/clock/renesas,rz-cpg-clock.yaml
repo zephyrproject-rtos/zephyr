@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ Clock Pulse Generator Clock Output
+
+compatible: "renesas,rz-cpg-clock"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    required: true
+
+  div:
+    type: int
+
+  "#clock-cells":
+    const: 0

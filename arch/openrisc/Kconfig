@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2025 NVIDIA Corporation <jholdsworth@nvidia.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "OpenRISC Options"
+	depends on OPENRISC
+
+config ARCH
+	string
+	default "openrisc"
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config GEN_SW_ISR_TABLE
+	default y
+	depends on GEN_ISR_TABLES
+
+config ARCH_HAS_SINGLE_THREAD_SUPPORT
+	default y if !SMP
+
+config OPENRISC_SOC_IRQ_DISPATCH
+	bool
+	depends on GEN_SW_ISR_TABLE
+	help
+	  Selected by SoCs whose external interrupt controller is not the
+	  core PIC. The external interrupt exception calls
+	  z_soc_irq_dispatch() instead of reading PICSR, and irq_enable(),
+	  irq_disable() and irq_is_enabled() call z_soc_irq_enable(),
+	  z_soc_irq_disable() and z_soc_irq_is_enabled(). PICMR is not used.
+
+config OPENRISC_SOC_NUM_IRQS
+	int "Number of SoC interrupt lines"
+	default 32
+	depends on OPENRISC_SOC_IRQ_DISPATCH
+	help
+	  Number of interrupt lines handled by the SoC dispatcher. This is
+	  the size of the software ISR table.
+
+endmenu

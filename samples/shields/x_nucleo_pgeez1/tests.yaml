@@ -1,0 +1,11 @@
+sample:
+  name: X-NUCLEO-PGEEZ1 M95P32 extended operations
+tests:
+  sample.shields.x_nucleo_pgeez1:
+    harness: shield
+    tags: shield
+    platform_allow:
+      - nucleo_u575zi_q
+    integration_platforms:
+      - nucleo_u575zi_q
+    extra_args: SHIELD=x_nucleo_pgeez1

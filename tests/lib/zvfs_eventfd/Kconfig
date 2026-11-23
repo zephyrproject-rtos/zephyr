@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Two dummy subsystem requirements used to exercise the additive
+# CONFIG_ZVFS_EVENTFD_ADD_SIZE_* sizing mechanism.
+
+config ZVFS_EVENTFD_ADD_SIZE_TEST_A
+	int
+	default 2
+
+config ZVFS_EVENTFD_ADD_SIZE_TEST_B
+	int
+	default 3
+
+source "Kconfig.zephyr"

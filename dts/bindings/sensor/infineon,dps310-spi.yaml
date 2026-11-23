@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon DPS310 temperature and pressure sensor on SPI
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+compatible: "infineon,dps310"

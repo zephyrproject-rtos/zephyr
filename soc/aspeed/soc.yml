@@ -1,0 +1,11 @@
+family:
+  - name: aspeed
+    series:
+      - name: ast10x0
+        socs:
+          - name: ast1030
+      - name: ast27xx
+        socs:
+          - name: ast2700
+            cpuclusters:
+              - name: bootmcu

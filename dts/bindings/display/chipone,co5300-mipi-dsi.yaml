@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: Chipone CO5300 display controller on MIPI DSI bus
+
+compatible: "chipone,co5300"
+
+include: ["mipi-dsi-device.yaml", "chipone,co5300-common.yaml"]

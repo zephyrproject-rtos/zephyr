@@ -1,0 +1,389 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  build_only: true
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags:
+    - drivers
+    - modem
+    - hl78xx
+
+tests:
+  # HL7800 variant tests
+  drivers.modem.hl78xx.compile.hl7800.default:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+
+  drivers.modem.hl78xx.compile.hl7800.at_shell:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_MODEM_HL78XX_AT_SHELL=y
+
+  drivers.modem.hl78xx.compile.hl7800.stay_in_boot_mode_for_roaming:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING=y
+
+  drivers.modem.hl78xx.compile.hl7800.low_power.psm:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_LOW_POWER_MODE=y
+      - CONFIG_MODEM_HL78XX_PSM=y
+
+  drivers.modem.hl78xx.compile.hl7800.gnss.low_power.psm.request_mode:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_HL78XX_GNSS=y
+      - CONFIG_HL78XX_GNSS_SOURCE_NMEA=y
+      - CONFIG_GNSS_SATELLITES=y
+      - CONFIG_MODEM_HL78XX_LOW_POWER_MODE=y
+      - CONFIG_MODEM_HL78XX_PSM=y
+      - CONFIG_HL78XX_GNSS_PROCESS_PRE_PSM=y
+
+  drivers.modem.hl78xx.compile.hl7800.low_power.edrx:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_LOW_POWER_MODE=y
+      - CONFIG_MODEM_HL78XX_EDRX=y
+
+  drivers.modem.hl78xx.compile.hl7800.low_power.power_down.delay:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_LOW_POWER_MODE=y
+      - CONFIG_MODEM_HL78XX_POWER_DOWN=y
+      - CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN=y
+
+  drivers.modem.hl78xx.compile.hl7800.low_power.power_down.active_time:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_LOW_POWER_MODE=y
+      - CONFIG_MODEM_HL78XX_POWER_DOWN=y
+      - CONFIG_MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN=y
+
+  drivers.modem.hl78xx.compile.hl7800.gnss.nmea.advanced:
+    tags:
+      - drivers
+      - modem
+      - hl78xx
+      - gnss
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_HL78XX_GNSS=y
+      - CONFIG_GNSS_SATELLITES=y
+      - CONFIG_HL78XX_GNSS_SOURCE_NMEA=y
+      - CONFIG_HL78XX_GNSS_AUX_DATA_PARSER=y
+      - CONFIG_HL78XX_GNSS_NMEA_VTG=y
+      - CONFIG_HL78XX_GNSS_NMEA_GNS=y
+      - CONFIG_HL78XX_GNSS_NMEA_GLL=y
+      - CONFIG_HL78XX_GNSS_NMEA_ZDA=y
+      - CONFIG_HL78XX_GNSS_NMEA_PIDX=y
+      - CONFIG_HL78XX_GNSS_NMEA_DTM=y
+
+  drivers.modem.hl78xx.compile.hl7800.gnss.startmode:
+    tags:
+      - drivers
+      - modem
+      - hl78xx
+      - gnss
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_HL78XX_GNSS=y
+      - CONFIG_HL78XX_GNSS_SOURCE_LOC=y
+      - CONFIG_HL78XX_GNSS_START_MODE_FACTORY=y
+
+  drivers.modem.hl78xx.compile.hl7800.gnss.loc:
+    tags:
+      - drivers
+      - modem
+      - hl78xx
+      - gnss
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_HL78XX_GNSS=y
+      - CONFIG_HL78XX_GNSS_SOURCE_LOC=y
+
+  drivers.modem.hl78xx.compile.hl7800.autobaud:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_AUTO_BAUDRATE=y
+      - CONFIG_MODEM_HL78XX_TARGET_BAUDRATE_921600=y
+
+  drivers.modem.hl78xx.compile.hl7800.advanced_socket:
+    tags:
+      - drivers
+      - modem
+      - hl78xx
+      - socket
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_ADVANCED_SOCKET_CONFIG=y
+      - CONFIG_MODEM_HL78XX_SOCKET_RESTORE_ON_BOOT=y
+      - CONFIG_MODEM_HL78XX_NUM_SOCKETS=2
+      - CONFIG_MODEM_HL78XX_MAX_PDP_CONTEXTS=2
+
+  drivers.modem.hl78xx.compile.hl7800.apn.kconfig:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_APN_SOURCE_KCONFIG=y
+      - CONFIG_MODEM_HL78XX_APN="internet"
+
+  drivers.modem.hl78xx.compile.hl7800.apn.iccid:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_APN_SOURCE_ICCID=y
+
+  drivers.modem.hl78xx.compile.hl7800.apn.imsi:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_APN_SOURCE_IMSI=y
+
+  drivers.modem.hl78xx.compile.hl7800.rat.nb1:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_AUTORAT=n
+      - CONFIG_MODEM_HL78XX_RAT_NB1=y
+
+  drivers.modem.hl78xx.compile.hl7800.network_reg_reports:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_DISABLE_NETWORK_STATUS_URC_REPORT=y
+
+  drivers.modem.hl78xx.compile.hl7800.airvantage:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7800.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_AIRVANTAGE=y
+      - CONFIG_MODEM_HL78XX_AIRVANTAGE_USER_AGREEMENT=y
+      - CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_CONNECT_AIRVANTAGE=y
+      - CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_DOWNLOAD_FIRMWARE=y
+      - CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_INSTALL_FIRMWARE=y
+  # HL7812 variant tests
+  drivers.modem.hl78xx.compile.hl7812.default:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+
+  drivers.modem.hl78xx.compile.hl7812.stay_in_boot_mode_for_roaming:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING=y
+
+  drivers.modem.hl78xx.compile.hl7812.at_shell:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_MODEM_HL78XX_AT_SHELL=y
+
+  drivers.modem.hl78xx.compile.hl7812.low_power.psm:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_LOW_POWER_MODE=y
+      - CONFIG_MODEM_HL78XX_PSM=y
+
+  drivers.modem.hl78xx.compile.hl7812.low_power.edrx:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_LOW_POWER_MODE=y
+      - CONFIG_MODEM_HL78XX_EDRX=y
+
+  drivers.modem.hl78xx.compile.hl7812.low_power.power_down.delay:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_LOW_POWER_MODE=y
+      - CONFIG_MODEM_HL78XX_POWER_DOWN=y
+      - CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN=y
+
+  drivers.modem.hl78xx.compile.hl7812.low_power.power_down.active_time:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_LOW_POWER_MODE=y
+      - CONFIG_MODEM_HL78XX_POWER_DOWN=y
+      - CONFIG_MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN=y
+
+  drivers.modem.hl78xx.compile.hl7812.gnss.nmea.advanced:
+    tags:
+      - drivers
+      - modem
+      - hl78xx
+      - gnss
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_HL78XX_GNSS=y
+      - CONFIG_GNSS_SATELLITES=y
+      - CONFIG_HL78XX_GNSS_SOURCE_NMEA=y
+      - CONFIG_HL78XX_GNSS_AUX_DATA_PARSER=y
+      - CONFIG_HL78XX_GNSS_NMEA_VTG=y
+      - CONFIG_HL78XX_GNSS_NMEA_GNS=y
+      - CONFIG_HL78XX_GNSS_NMEA_GLL=y
+      - CONFIG_HL78XX_GNSS_NMEA_ZDA=y
+      - CONFIG_HL78XX_GNSS_NMEA_PIDX=y
+      - CONFIG_HL78XX_GNSS_NMEA_DTM=y
+
+  drivers.modem.hl78xx.compile.hl7812.gnss.startmode:
+    tags:
+      - drivers
+      - modem
+      - hl78xx
+      - gnss
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_HL78XX_GNSS=y
+      - CONFIG_HL78XX_GNSS_SOURCE_LOC=y
+      - CONFIG_HL78XX_GNSS_START_MODE_FACTORY=y
+
+  drivers.modem.hl78xx.compile.hl7812.gnss.low_power.psm.request_mode:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_HL78XX_GNSS=y
+      - CONFIG_HL78XX_GNSS_SOURCE_NMEA=y
+      - CONFIG_GNSS_SATELLITES=y
+      - CONFIG_MODEM_HL78XX_LOW_POWER_MODE=y
+      - CONFIG_MODEM_HL78XX_PSM=y
+      - CONFIG_HL78XX_GNSS_PROCESS_PRE_PSM=y
+
+  drivers.modem.hl78xx.compile.hl7812.gnss.loc:
+    tags:
+      - drivers
+      - modem
+      - hl78xx
+      - gnss
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_HL78XX_GNSS=y
+      - CONFIG_HL78XX_GNSS_SOURCE_LOC=y
+
+  drivers.modem.hl78xx.compile.hl7812.gnss.assisted.aux:
+    tags:
+      - drivers
+      - modem
+      - hl78xx
+      - gnss
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_HL78XX_GNSS=y
+      - CONFIG_HL78XX_GNSS_SOURCE_NMEA=y
+      - CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE=y
+      - CONFIG_HL78XX_GNSS_AUX_DATA_PARSER=y
+
+  drivers.modem.hl78xx.compile.hl7812.autobaud:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_AUTO_BAUDRATE=y
+      - CONFIG_MODEM_HL78XX_TARGET_BAUDRATE_3000000=y
+
+  drivers.modem.hl78xx.compile.hl7812.advanced_socket:
+    tags:
+      - drivers
+      - modem
+      - hl78xx
+      - socket
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_ADVANCED_SOCKET_CONFIG=y
+      - CONFIG_MODEM_HL78XX_SOCKET_RESTORE_ON_BOOT=y
+      - CONFIG_MODEM_HL78XX_NUM_SOCKETS=2
+      - CONFIG_MODEM_HL78XX_MAX_PDP_CONTEXTS=2
+
+  drivers.modem.hl78xx.compile.hl7812.apn.kconfig:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_APN_SOURCE_KCONFIG=y
+      - CONFIG_MODEM_HL78XX_APN="internet"
+
+  drivers.modem.hl78xx.compile.hl7812.apn.iccid:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_APN_SOURCE_ICCID=y
+
+  drivers.modem.hl78xx.compile.hl7812.apn.imsi:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_APN_SOURCE_IMSI=y
+
+  drivers.modem.hl78xx.compile.hl7812.rat.nb1:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_AUTORAT=n
+      - CONFIG_MODEM_HL78XX_RAT_NB1=y
+
+  drivers.modem.hl78xx.compile.hl7812.rat.gsm:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_AUTORAT=n
+      - CONFIG_MODEM_HL78XX_RAT_GSM=y
+
+  drivers.modem.hl78xx.compile.hl7812.rat.nbntn:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_12_FW_R6=y
+      - CONFIG_MODEM_HL78XX_AUTORAT=n
+      - CONFIG_MODEM_HL78XX_RAT_NBNTN=y
+
+  drivers.modem.hl78xx.compile.hl7812.rat.nbntn.manual_position:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_12_FW_R6=y
+      - CONFIG_MODEM_HL78XX_AUTORAT=n
+      - CONFIG_MODEM_HL78XX_RAT_NBNTN=y
+      - CONFIG_NTN_POSITION_SOURCE_MANUAL=y
+      - CONFIG_NTN_MANUAL_LATITUDE="52.0"
+      - CONFIG_NTN_MANUAL_LONGITUDE="-9.0"
+      - CONFIG_NTN_MANUAL_ALTITUDE="0.0"
+
+  drivers.modem.hl78xx.compile.hl7812.network_reg_reports:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_ENABLE_NETWORK_STATUS_URC_REPORT_WITH_LOCATION_AND_CAUSE=y
+
+  drivers.modem.hl78xx.compile.hl7812.airvantage:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_hl7812.overlay
+    extra_configs:
+      - CONFIG_MODEM_HL78XX_AIRVANTAGE=y
+      - CONFIG_MODEM_HL78XX_AIRVANTAGE_USER_AGREEMENT=y
+      - CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_CONNECT_AIRVANTAGE=y
+      - CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_DOWNLOAD_FIRMWARE=y
+      - CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_INSTALL_FIRMWARE=y

@@ -1,0 +1,24 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32C3
+	select RISCV
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select DYNAMIC_INTERRUPTS
+	select CLOCK_CONTROL
+	select PINCTRL
+	select HAS_ESPRESSIF_HAL
+	select HAS_PM
+	select HAS_POWEROFF
+
+if SOC_SERIES_ESP32C3
+
+config SOC_ESP32C3_REV_1_1
+	bool "SOC is revision v1.1"
+	help
+	  ESP32-C3 revision v1.1 has updated ROM functions for Wi-Fi and BLE that
+	  can free up to 35kB of RAM.
+
+rsource "Kconfig.caps"
+
+endif # SOC_SERIES_ESP32C3

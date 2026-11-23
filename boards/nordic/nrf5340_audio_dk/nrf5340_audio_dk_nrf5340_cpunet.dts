@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpunet_qkaa.dtsi>
+#include "nrf5340_audio_dk_nrf5340_cpunet-pinctrl.dtsi"
+
+/ {
+	compatible = "nordic,nrf5340-audio-dk-nrf5340-cpunet";
+	model = "Nordic nRF5340 Audio DK NRF5340 Network";
+
+	chosen {
+		watchdog0 = &wdt0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,bt-hci-ipc = &ipc0;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+arduino_spi: &spi0 {
+	compatible = "nordic,nrf-spim";
+	/* Cannot be used together with uart0. */
+	/* status = "okay"; */
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 0xc000>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0000c000 0x12000>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@1e000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0001e000 0x12000>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@3a000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0003a000 0x6000>;
+			label = "storage";
+		};
+	};
+};
+
+/* Include default shared RAM configuration file */
+#include <nordic/nrf5340_shared_sram_partition.dtsi>
+#include "nrf5340_audio_dk_nrf5340_shared.dtsi"

@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	/omit-if-no-ref/ spi0_pins: spi0 {
+		spi0-pinmux {
+			pinmux = <RZT_PINMUX(PORT_13, 3, 10)>, /* CK0 */
+				 <RZT_PINMUX(PORT_22, 1, 7)>, /* MOSI0 */
+				 <RZT_PINMUX(PORT_13, 2, 10)>, /* MISO0 */
+				 <RZT_PINMUX(PORT_07, 3, 3)>; /* SSL0 */
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+};
+
+spibb0: &spi0 {
+	cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};

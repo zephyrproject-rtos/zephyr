@@ -1,0 +1,13 @@
+# Copyright (c) 2022-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_AGILEX5
+
+# must be >= the highest interrupt number used
+# - include the UART interrupts 173 or 274
+config NUM_IRQS
+	default 274
+
+config KERNEL_VM_SIZE
+	default 0x400000
+endif

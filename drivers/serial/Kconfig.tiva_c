@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Linumiz
+# Author: Sri Surya <srisurya@linumiz.com>
+
+config UART_TIVA_C
+	bool "TI Tiva C Series UART driver"
+	default y
+	depends on DT_HAS_TI_TIVA_C_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select USE_TIVAWARE_UART
+	select USE_TIVAWARE_SYSCTL
+	select USE_TIVAWARE_GPIO
+	select PINCTRL
+	help
+	  Enable the UART driver for the TI Tiva C Series
+	  (TM4C123G, TM4C129x) microcontrollers.
+	  Uses TivaWare HAL (driverlib/uart.c) for configuration.

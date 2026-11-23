@@ -1,0 +1,25 @@
+# UART test configuration options
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config DUAL_UART_TEST
+	bool "Enable dual UART test"
+
+config SETUP_MISMATCH_TEST
+	bool "Enable mismatched configuration in dual UART test"
+
+config UART_BAUDRATE_MISMATCH
+	int "UART baudrate for DUT_AUX to test mismatch case"
+	depends on SETUP_MISMATCH_TEST
+	default 9600
+	help
+	  UART baudrate for DUT_AUX that is intentionally different from DUT
+	  to test error detection.
+
+config UART_ELEMENTARY_NO_FLOW_CTRL
+	bool "Skip hardware flow control in elementary UART tests"
+	help
+	  Use UART_CFG_FLOW_CTRL_NONE instead of UART_CFG_FLOW_CTRL_RTS_CTS
+	  for boards whose UART driver does not support hardware flow control.
+
+source "Kconfig.zephyr"

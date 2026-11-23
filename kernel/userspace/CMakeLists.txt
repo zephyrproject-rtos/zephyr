@@ -1,0 +1,18 @@
+# The last 2 files inside the target_sources should be
+# userspace_handler.c and userspace.c. If not the linker would complain.
+# This order has to be maintained. Any new file should be placed
+# above these 2 files.
+target_sources(
+  kernel PRIVATE
+  futex.c
+  mem_domain.c
+  thread_user.c
+  userspace_handler.c
+  userspace.c
+  )
+zephyr_sources(
+  user_work.c
+  sem.c
+)
+zephyr_sources_ifdef(CONFIG_SYS_MUTEX_IMPL_K_MUTEX mutex_kernel.c)
+zephyr_sources_ifdef(CONFIG_SYS_MUTEX_IMPL_FUTEX mutex_futex.c)

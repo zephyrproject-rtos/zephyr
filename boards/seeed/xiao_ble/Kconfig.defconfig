@@ -1,0 +1,10 @@
+# XIAO BLE board configuration
+
+# Copyright (c) 2022 Marcin Niestroj
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_XIAO_BLE
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_XIAO_BLE

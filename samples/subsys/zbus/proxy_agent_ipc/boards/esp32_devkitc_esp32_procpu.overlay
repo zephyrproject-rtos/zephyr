@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2026 Tomislav Milkovic <tomislav.milkovic95@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Delete shm0 memory region to divide it into two parts: shm0_rx and shm0_tx */
+/delete-node/ &shm0;
+
+/ {
+	zephyr,user {
+		zbus-proxy-ipc = <&ipc0>;
+	};
+
+	soc {
+		shm0_tx: memory@3ffe5630 {
+			compatible = "mmio-sram";
+			reg = <0x3ffe5630 0x2000>;
+		};
+
+		shm0_rx: memory@3ffe7630 {
+			compatible = "mmio-sram";
+			reg = <0x3ffe7630 0x2000>;
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icbmsg";
+			dcache-alignment = <32>;
+			tx-region = <&shm0_tx>;
+			rx-region = <&shm0_rx>;
+			tx-blocks = <32>;
+			rx-blocks = <32>;
+			mboxes = <&mbox0 0>, <&mbox0 1>;
+			mbox-names = "tx", "rx";
+			status = "okay";
+		};
+	};
+};
+
+&mbox0 {
+	status = "okay";
+};

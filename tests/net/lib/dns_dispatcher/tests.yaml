@@ -1,0 +1,19 @@
+common:
+  tags:
+    - dns
+    - net
+  depends_on: netif
+  min_ram: 21
+tests:
+  net.dns.dispatch:
+    min_ram: 21
+  net.dns.dispatch.ctx_cleanup:
+    extra_configs:
+      - CONFIG_DNS_RECONFIGURE_CLEANUP=y
+  net.dns.dispatch.ctx_no_cleanup:
+    extra_configs:
+      - CONFIG_DNS_RECONFIGURE_CLEANUP=n
+  net.dns.dispatch.multi_iface:
+    min_ram: 30
+    extra_conf_files:
+      - prj_multi_iface.conf

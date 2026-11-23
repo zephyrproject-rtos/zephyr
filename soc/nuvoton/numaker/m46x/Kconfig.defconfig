@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_M46X
+
+rsource "Kconfig.defconfig.m46*"
+
+endif # SOC_SERIES_M46X

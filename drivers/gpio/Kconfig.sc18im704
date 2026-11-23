@@ -1,0 +1,19 @@
+# Copyright (c) 2023 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_SC18IM704
+	bool "NXP SC18IM704 GPIO controller driver"
+	default y
+	depends on I2C_SC18IM704
+	depends on DT_HAS_NXP_SC18IM704_GPIO_ENABLED
+	help
+	  Enables NXP SC18IM704 GPIO controller driver
+
+config GPIO_SC18IM704_INIT_PRIORITY
+	int "SC18IM704 GPIO init priority"
+	default 52
+	depends on GPIO_SC18IM704
+	help
+	  SC18IM704 GPIO controller initialization priority.
+
+	  Note: Has to be greater than the parent SC18IM704 bridge initialization priority.

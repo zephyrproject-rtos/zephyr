@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
+description: |
+  An identity value strapped on GPIO pins, presented as read-only OTP memory.
+
+  Strap resistors are populated when the board is assembled and cannot change
+  afterwards.
+
+  Bit N of the value comes from the gpios entry at index N, least significant
+  bit first, packed into bytes: byte 0 holds entries 0 to 7, byte 1 entries 8
+  to 15, and so on. A trailing partial byte is zero padded.
+
+  Name the fields with nvmem cells when the application wants them by name.
+
+compatible: "zephyr,gpio-straps"
+
+include: base.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    min-len: 1
+    description: |
+      Strap pins, least significant bit first. Bit N of the identity value is
+      taken from the entry at index N.
+
+examples:
+  - |
+    board_straps: board-straps {
+            compatible = "zephyr,gpio-straps";
+            gpios = <&gpio0 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+                    <&gpio0 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+                    <&gpio0 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+
+            nvmem-layout {
+                    compatible = "fixed-layout";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    board_revision: revision@0 {
+                            reg = <0x0 0x1>;
+                            read-only;
+                            #nvmem-cell-cells = <0>;
+                    };
+            };
+    };

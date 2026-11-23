@@ -1,0 +1,112 @@
+# CoAP OSCORE (RFC 8613) implementation for Zephyr
+
+# Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+config COAP_OSCORE
+	bool "OSCORE support for CoAP (RFC 8613) [EXPERIMENTAL]"
+	depends on UOSCORE
+	depends on PSA_CRYPTO
+	select EXPERIMENTAL
+	help
+	  Enable Object Security for Constrained RESTful Environments (OSCORE)
+	  support for CoAP server. OSCORE provides end-to-end protection of
+	  CoAP messages using COSE (CBOR Object Signing and Encryption).
+
+	  This option requires the uoscore-uedhoc module and PSA Crypto support.
+	  When enabled, CoAP messages can be protected with OSCORE by using a
+	  OSCORE enabled service.
+
+	  See RFC 8613 for details.
+
+if COAP_OSCORE
+
+config COAP_OSCORE_MAX_CONTEXTS
+	int "Maximum number of OSCORE security contexts"
+	default 1
+	range 1 32
+	help
+	  Number of OSCORE security contexts that can be allocated at runtime
+	  through coap_oscore_context_init(). Each context is used to protect
+	  and verify messages for one CoAP client or service. Increase this if
+	  your application uses more than one OSCORE-enabled endpoint at a time.
+
+config COAP_OSCORE_MASTER_SECRET_MAX_LEN
+	int "Maximum OSCORE Master Secret length in bytes"
+	default 16
+	range 16 64
+	help
+	  Size of the per-context buffer that stores the OSCORE Master Secret.
+	  The Master Secret is application-chosen HKDF input keying material of
+	  variable length (RFC 8613 Section 3.1); the common case for the
+	  AES-CCM-16-64-128 profile is 16 bytes. Increase this if your deployment
+	  provisions longer secrets. Each of the CONFIG_COAP_OSCORE_MAX_CONTEXTS
+	  contexts reserves this many bytes.
+
+config COAP_OSCORE_MASTER_SALT_MAX_LEN
+	int "Maximum OSCORE Master Salt length in bytes"
+	default 8
+	range 0 64
+	help
+	  Size of the per-context buffer that stores the OSCORE Master Salt.
+	  The Master Salt is optional (RFC 8613 Section 3.1) and may be empty;
+	  when present it is commonly 8 bytes. Set to 0 to disable Master Salt
+	  storage entirely (contexts may then only be provisioned with an empty
+	  salt). Increase this if your deployment provisions a longer salt. Each
+	  of the CONFIG_COAP_OSCORE_MAX_CONTEXTS contexts reserves this many bytes.
+
+config COAP_OSCORE_EXCHANGE_CACHE_SIZE
+	int "OSCORE exchange cache size per service"
+	default 3
+	range 1 255
+	help
+	  Number of OSCORE exchange entries to cache per service endpoint.
+	  This tracks which ongoing exchanges require OSCORE-protected responses.
+	  Each entry stores client address and token information to match
+	  responses to OSCORE requests per RFC 8613 Section 8.3.
+
+	  Synchronous responses also go through the cache (the entry is added
+	  before the handler runs and removed after the response is sent).
+	  Observe notifications bypass the cache entirely and use the per-observer
+	  OSCORE context instead. Size the cache to the maximum number of
+	  concurrent in-flight requests you expect.
+
+config COAP_OSCORE_EXCHANGE_LIFETIME_MS
+	int "OSCORE exchange lifetime in milliseconds"
+	default 247000
+	help
+	  Lifetime of a tracked OSCORE exchange entry. In practice, expiry only
+	  affects deferred (separate) responses, i.e. responses produced after
+	  the request handler has already returned. Synchronous responses always
+	  find a live entry (it was just created), and Observe notifications
+	  bypass the cache entirely.
+
+	  After this time a deferred exchange entry is considered expired and
+	  removed. A separate response produced later is treated as invalid: on an
+	  OSCORE-required service it is dropped (fail-closed). On a mixed service
+	  that also accepts unprotected clients it can no longer be matched to the
+	  exchange and would be sent unprotected. Keep this value at or above the
+	  CoAP EXCHANGE_LIFETIME if a resource can defer responses that long.
+
+	  The default of 247 seconds matches the CoAP EXCHANGE_LIFETIME
+	  (RFC 7252 Section 4.8.2).
+
+config COAP_OSCORE_CONTEXT_REUSE
+	bool "OSCORE support for context reuse across reboots"
+	select UOSCORE_NVM_SUPPORT
+	help
+	  Enable support for reusing OSCORE security contexts across device
+	  reboots. When a context is reused, the sender sequence number (SSN)
+	  must be persisted to non-volatile memory to prevent AEAD nonce reuse,
+	  which is cryptographically catastrophic.
+
+	  The SSN is persisted automatically through the Zephyr settings
+	  subsystem (selected via UOSCORE_NVM_SUPPORT), so the application
+	  needs a working settings backend, e.g. a storage partition and its
+	  matching backend such as CONFIG_SETTINGS_NVS.
+
+	  Applications that cannot guarantee a fresh context at every boot
+	  (e.g., via EDHOC key derivation) require this option. All other
+	  deployments should leave this disabled.
+
+endif # COAP_OSCORE

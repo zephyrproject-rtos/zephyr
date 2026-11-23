@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+description: Maxim MAX20335
+
+compatible: "maxim,max20335"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true

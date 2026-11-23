@@ -1,0 +1,8 @@
+# Copyright (c) 2024
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_MSGQ_PUT_FRONT
+	bool "Test message queue put front feature"
+
+# Include Zephyr's Kconfig.
+source "Kconfig"

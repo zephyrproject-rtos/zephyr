@@ -1,0 +1,52 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	/*
+	 * ADMUX, 16-bit external async SRAM on CS0:
+	 *   DATA[15:0] = EMC_B1_00..07 + EMC_B1_30..37
+	 *   WE = EMC_B1_26, OE# = EMC_B1_27, ADV = EMC_B1_28, CS0 = EMC_B1_29
+	 */
+	sramc_default: sramc_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_b1_00_sramc_data_00>,
+				 <&iomuxc_gpio_emc_b1_01_sramc_data_01>,
+				 <&iomuxc_gpio_emc_b1_02_sramc_data_02>,
+				 <&iomuxc_gpio_emc_b1_03_sramc_data_03>,
+				 <&iomuxc_gpio_emc_b1_04_sramc_data_04>,
+				 <&iomuxc_gpio_emc_b1_05_sramc_data_05>,
+				 <&iomuxc_gpio_emc_b1_06_sramc_data_06>,
+				 <&iomuxc_gpio_emc_b1_07_sramc_data_07>,
+				 <&iomuxc_gpio_emc_b1_30_sramc_data_08>,
+				 <&iomuxc_gpio_emc_b1_31_sramc_data_09>,
+				 <&iomuxc_gpio_emc_b1_32_sramc_data_10>,
+				 <&iomuxc_gpio_emc_b1_33_sramc_data_11>,
+				 <&iomuxc_gpio_emc_b1_34_sramc_data_12>,
+				 <&iomuxc_gpio_emc_b1_35_sramc_data_13>,
+				 <&iomuxc_gpio_emc_b1_36_sramc_data_14>,
+				 <&iomuxc_gpio_emc_b1_37_sramc_data_15>,
+				 <&iomuxc_gpio_emc_b1_26_sramc_we>,
+				 <&iomuxc_gpio_emc_b1_27_sramc_oeb>,
+				 <&iomuxc_gpio_emc_b1_28_sramc_adv>,
+				 <&iomuxc_gpio_emc_b1_29_sramc_cs0>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+};
+
+&sramc {
+	pinctrl-0 = <&sramc_default>;
+	pinctrl-names = "default";
+	port-size = "16-bit";
+	address-mode = "admux";
+	status = "okay";
+
+	/* CS0 external async SRAM window (up to 128 KB per CS). */
+	ext_sram: sram@43880000 {
+		compatible = "mmio-sram";
+		reg = <0x43880000 DT_SIZE_K(128)>;
+	};
+};

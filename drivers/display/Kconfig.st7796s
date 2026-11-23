@@ -1,0 +1,10 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config ST7796S
+	bool "ST7796S display driver"
+	default y
+	depends on DT_HAS_SITRONIX_ST7796S_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for ST7796S display driver.

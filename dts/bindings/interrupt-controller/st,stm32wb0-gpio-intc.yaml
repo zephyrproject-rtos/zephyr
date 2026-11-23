@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32WB0 GPIO Interrupt Controller
+
+description: |
+  GPIO interrupt controller for STM32WB0/STM32WL3 series
+
+  This interrupt controller is configured via registers in SYSCFG.
+  It supports both edge- and level-triggered interrupts.
+
+compatible: "st,stm32wb0-gpio-intc"
+
+include: "st,stm32-exti.yaml"

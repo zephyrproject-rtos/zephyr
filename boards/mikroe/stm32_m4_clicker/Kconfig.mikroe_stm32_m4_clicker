@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Ian Morris
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIKROE_STM32_M4_CLICKER
+	select SOC_STM32F415XX

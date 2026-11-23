@@ -1,0 +1,16 @@
+# Copyright (c) 2020 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_EOS_S3
+
+config NUM_IRQS
+	default 52
+
+if SERIAL
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # SERIAL
+
+endif # SOC_EOS_S3

@@ -1,0 +1,23 @@
+common:
+  tags:
+    - drivers
+    - pulse_io
+  depends_on: pulse_io
+  harness: ztest
+tests:
+  drivers.pulse_io.hw_loopback:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+  drivers.pulse_io.hw_loopback.nodma:
+    extra_args: FILE_SUFFIX=nodma
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu

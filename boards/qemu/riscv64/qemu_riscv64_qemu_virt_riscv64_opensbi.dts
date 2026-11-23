@@ -1,0 +1,6 @@
+/* Copyright (c) 2026 Alexios Lyrakis */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include "qemu_riscv64_qemu_virt_riscv64_opensbi-common.dtsi"

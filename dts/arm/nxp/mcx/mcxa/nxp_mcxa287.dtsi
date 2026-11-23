@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/mcxa/nxp_mcxa5x.dtsi>
+
+/delete-node/ &enet;
+/delete-node/ &t1s;
+/delete-node/ &tsi0;

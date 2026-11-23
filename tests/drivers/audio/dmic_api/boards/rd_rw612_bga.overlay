@@ -1,0 +1,39 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2023 NXP
+ */
+
+/* Enable PDM channels 0-3,
+ * Gain settings are configured for testing with a PDM generator,
+ * using a -20dbFS sine wave.
+ */
+&dmic0 {
+	dmic-channel@0 {
+		gainshift = <2>;
+		dc-cutoff = "155hz";
+		dc-gain = <1>;
+		status = "okay";
+	};
+
+	dmic-channel@1 {
+		gainshift = <2>;
+		dc-cutoff = "155hz";
+		dc-gain = <1>;
+		status = "okay";
+	};
+
+	dmic-channel@2 {
+		gainshift = <2>;
+		dc-cutoff = "155hz";
+		dc-gain = <1>;
+		status = "okay";
+	};
+
+	dmic-channel@3 {
+		gainshift = <2>;
+		dc-cutoff = "155hz";
+		dc-gain = <1>;
+		status = "okay";
+	};
+};

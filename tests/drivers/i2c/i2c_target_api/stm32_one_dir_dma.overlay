@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Use DMA only in 1 direction */
+
+&i2c_test_0 {
+	dmas = IC2_TEST_0_DMA_RX;
+	dma-names = "rx";
+};
+
+&i2c_test_1 {
+	dmas = IC2_TEST_1_DMA_TX;
+	dma-names = "tx";
+};

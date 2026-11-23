@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+mainmenu "LVGL Sample"
+
+config RESET_COUNTER_SW0
+	bool "Reset counter when sw0 is pressed"
+	depends on $(dt_alias_enabled,sw0)
+	select GPIO
+	default y

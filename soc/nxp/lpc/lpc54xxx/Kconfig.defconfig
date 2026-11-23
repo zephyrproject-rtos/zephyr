@@ -1,0 +1,10 @@
+# NXP LPC54XXX platform configuration options
+
+# Copyright 2017, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_LPC54XXX
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_SERIES_LPC54XXX

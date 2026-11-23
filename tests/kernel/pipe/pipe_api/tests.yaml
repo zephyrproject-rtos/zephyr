@@ -1,0 +1,9 @@
+tests:
+  kernel.pipe.api:
+    tags:
+      - kernel
+  kernel.pipe.api.poll:
+    extra_configs:
+      - CONFIG_POLL=y
+    tags:
+      - kernel

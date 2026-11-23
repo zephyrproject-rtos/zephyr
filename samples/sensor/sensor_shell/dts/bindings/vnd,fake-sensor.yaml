@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fake sensor
+
+include: sensor-device.yaml
+
+compatible: "vnd,fake-sensor"

@@ -1,0 +1,6 @@
+# Copyright (c) 2023 Joel Guittet
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_WIO_TERMINAL
+	select SOC_SAMD51P19A

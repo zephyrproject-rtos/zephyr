@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		light-sensor = &adafruit_tsl2591;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_tsl2591: tsl2591@29 {
+		compatible = "ams,tsl2591";
+		reg = <0x29>;
+	};
+};

@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_RENESAS_RZA2M
+	bool "Renesas RZ/A2M GPIO"
+	default y
+	depends on DT_HAS_RENESAS_RZA2M_GPIO_ENABLED
+	select PINCTRL
+	help
+	  Enable Renesas RZ/A2M GPIO driver.

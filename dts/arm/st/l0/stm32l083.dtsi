@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 HARDWARIO a.s.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l0/stm32l073.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l083", "st,stm32l0", "simple-bus";
+
+		aes: crypto@40026000 {
+			compatible = "st,stm32-aes";
+			reg = <0x40026000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 24)>;
+			resets = <&rctl STM32_RESET(AHB1, 24)>;
+			/* Interrupt is shared with RNG and LPUART1.
+			 * Driver does not yet support it hence we don't define it
+			 * interrupts = <29 0>;
+			 */
+			gcm-ccm-supported;
+			status = "disabled";
+		};
+	};
+};

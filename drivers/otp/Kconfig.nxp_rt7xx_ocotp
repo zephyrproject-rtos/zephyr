@@ -1,0 +1,9 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_NXP_RT7XX_OCOTP
+	bool "NXP RT7xx OCOTP driver"
+	default y
+	depends on DT_HAS_NXP_RT7XX_OCOTP_ENABLED
+	help
+	  Enable the OTP driver for the NXP RT7xx OCOTP controller.

@@ -1,0 +1,32 @@
+# Copyright (c) 2026 Intercreate, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  sysbuild: true
+  timeout: 120
+  tags:
+    - pytest
+    - mcuboot
+  platform_allow:
+    - mps2/an385
+  integration_platforms:
+    - mps2/an385
+  harness: pytest
+tests:
+  # Signed at build time with the first key in the bootloader's list (the
+  # development key) -> key_id 0.
+  bootloader.mcuboot.multiple_keys.key0:
+    harness_config:
+      pytest_root:
+        - "pytest/test_multiple_keys.py"
+      pytest_args:
+        - "--expected-key-id=0"
+  # Re-signed post-build with the production key, as a custodian would -> key_id 1.
+  bootloader.mcuboot.multiple_keys.key1:
+    harness_config:
+      pytest_root:
+        - "pytest/test_multiple_keys.py"
+      pytest_args:
+        - "--expected-key-id=1"
+        - "--resign-key=root-ed25519-2.pem"

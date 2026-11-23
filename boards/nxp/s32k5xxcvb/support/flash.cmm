@@ -1,0 +1,13 @@
+;*******************************************************************************
+;   Copyright 2025 NXP                                                         *
+;   SPDX-License-Identifier: Apache-2.0                                        *
+;                                                                              *
+;   Lauterbach TRACE32 start-up script for flashing s32k5xxcvb                 *
+;                                                                              *
+;*******************************************************************************
+
+ENTRY %LINE &args
+
+DO ~~~~/startup.cmm command=flash &args
+
+ENDDO

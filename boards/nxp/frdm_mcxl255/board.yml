@@ -1,0 +1,9 @@
+board:
+  name: frdm_mcxl255
+  full_name: FRDM-MCXL255
+  vendor: nxp
+  socs:
+  - name: mcxl255
+    variants:
+    - name: ns
+      cpucluster: 'cpu0'

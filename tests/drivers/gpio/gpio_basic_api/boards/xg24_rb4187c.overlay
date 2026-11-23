@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Connect EXP4 (PC1) and EXP7 (PA5) of the Expansion Pin header
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&exp_header 4 0>; /* WPK EXP4 (PC1) */
+		in-gpios = <&exp_header 7 0>; /* WPK EXP7 (PA5) */
+	};
+};

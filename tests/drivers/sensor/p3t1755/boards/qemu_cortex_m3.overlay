@@ -1,0 +1,33 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	aliases {
+		p3t1755 = &p3t1755_continuous;
+		p3t1755-oneshot = &p3t1755_oneshot;
+	};
+
+	fake_i2c_bus: i2c@100 {
+		compatible = "zephyr,i2c-emul-controller";
+		reg = <0x100 4>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		p3t1755_continuous: p3t1755@48 {
+			compatible = "nxp,p3t1755";
+			reg = <0x48>;
+		};
+
+		p3t1755_oneshot: p3t1755@49 {
+			compatible = "nxp,p3t1755";
+			reg = <0x49>;
+			oneshot-mode;
+		};
+	};
+};

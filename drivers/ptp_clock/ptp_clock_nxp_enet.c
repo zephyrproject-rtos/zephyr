@@ -1,0 +1,363 @@
+/*
+ * Copyright 2023-2024 NXP
+ *
+ * Based on a commit to drivers/ethernet/eth_mcux.c which was:
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT nxp_enet_ptp_clock
+
+#include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/ethernet/eth_nxp_enet.h>
+#include <zephyr/logging/log.h>
+
+#include <fsl_enet.h>
+
+#include "ptp_clock_nxp_enet_rate_math.h"
+
+LOG_MODULE_REGISTER(ptp_clock_nxp_enet);
+
+struct ptp_clock_nxp_enet_config {
+	const struct pinctrl_dev_config *pincfg;
+	const struct device *module_dev;
+	const struct device *port;
+	const struct device *clock_dev;
+	struct device *clock_subsys;
+	void (*irq_config_func)(void);
+};
+
+struct ptp_clock_nxp_enet_data {
+	ENET_Type *base;
+	enet_handle_t *enet_handle;
+	struct k_mutex ptp_mutex;
+	/* The timer is only started when its clock rate is usable */
+	bool ptp_running;
+};
+
+/* ATINC.INC holds the tick in whole nanoseconds, in 7 bits */
+static bool ptp_clock_nxp_enet_rate_usable(uint32_t rate)
+{
+	uint32_t inc;
+
+	if (rate == 0U) {
+		return false;
+	}
+
+	inc = NSEC_PER_SEC / rate;
+
+	return (inc >= 1U) && (inc <= (ENET_ATINC_INC_MASK >> ENET_ATINC_INC_SHIFT));
+}
+
+static int ptp_clock_nxp_enet_set(const struct device *dev,
+				struct net_ptp_time *tm)
+{
+	struct ptp_clock_nxp_enet_data *data = dev->data;
+	enet_ptp_time_t enet_time;
+
+	if (!data->ptp_running) {
+		return -ENODEV;
+	}
+
+	enet_time.second = tm->second;
+	enet_time.nanosecond = tm->nanosecond;
+
+	ENET_Ptp1588SetTimer(data->base, data->enet_handle, &enet_time);
+
+	return 0;
+}
+
+static int ptp_clock_nxp_enet_get(const struct device *dev,
+				struct net_ptp_time *tm)
+{
+	struct ptp_clock_nxp_enet_data *data = dev->data;
+	enet_ptp_time_t enet_time;
+
+	if (!data->ptp_running) {
+		tm->second = 0;
+		tm->nanosecond = 0;
+		return -ENODEV;
+	}
+
+	ENET_Ptp1588GetTimer(data->base, data->enet_handle, &enet_time);
+
+	tm->second = enet_time.second;
+	tm->nanosecond = enet_time.nanosecond;
+
+	return 0;
+}
+
+static int ptp_clock_nxp_enet_adjust(const struct device *dev,
+					int increment)
+{
+	struct ptp_clock_nxp_enet_data *data = dev->data;
+	int ret = 0;
+	int key;
+
+	if (!data->ptp_running) {
+		return -ENODEV;
+	}
+
+	if ((increment <= (int32_t)(-NSEC_PER_SEC)) ||
+			(increment >= (int32_t)NSEC_PER_SEC)) {
+		ret = -EINVAL;
+	} else {
+		key = irq_lock();
+		if (data->base->ATPER != NSEC_PER_SEC) {
+			ret = -EBUSY;
+		} else {
+			/* Seconds counter is handled by software. Change the
+			 * period of one software second to adjust the clock.
+			 */
+			data->base->ATPER = NSEC_PER_SEC - increment;
+			ret = 0;
+		}
+		irq_unlock(key);
+	}
+
+	return ret;
+
+}
+
+/*
+ * Largest error of the average tick that the correction search accepts, relative to the tick.
+ * Over a 125 ms PTP sync interval 100 ppb is at most 12.5 ns of phase, which the servo takes
+ * out at the next sync. In exchange the INC_CORR - INC step stays small: on a whole-ns tick it
+ * is 1 or 2 ns in most cases, instead of tens of ns for the best possible rate.
+ */
+#define PTP_CLOCK_NXP_ENET_RATE_TOLERANCE 1.0e-7
+
+/*
+ * ENET_Ptp1588StartTimer() sets ATINC.INC to the tick truncated to whole nanoseconds. Find the
+ * ATINC.INC_CORR and ATCOR values that make the average tick the one of the clock rate times
+ * the ratio, which also absorbs the fractional part of the tick.
+ */
+static int ptp_clock_nxp_enet_correction(uint32_t clock_rate, double ratio, int *inc_corr,
+					 uint32_t *cor)
+{
+	int hw_inc = NSEC_PER_SEC / clock_rate;
+	double tick_ns = (double)NSEC_PER_SEC / (double)clock_rate;
+	/*
+	 * The fractional part of the tick plus the change asked for. Computing it as the
+	 * average tick minus INC would subtract two close values and lose the very small
+	 * changes that a servo asks for once it is locked.
+	 */
+	double frac_ns =
+		(double)(NSEC_PER_SEC % clock_rate) / (double)clock_rate + tick_ns * (ratio - 1.0);
+
+	return ptp_clock_nxp_enet_find_correction(
+		hw_inc, frac_ns, tick_ns * PTP_CLOCK_NXP_ENET_RATE_TOLERANCE,
+		ENET_ATINC_INC_CORR_MASK >> ENET_ATINC_INC_CORR_SHIFT,
+		ENET_ATCOR_COR_MASK >> ENET_ATCOR_COR_SHIFT, inc_corr, cor);
+}
+
+static int ptp_clock_nxp_enet_adjust_rate(const struct device *dev,
+					int64_t scaled_ppm)
+{
+	const struct ptp_clock_nxp_enet_config *config = dev->config;
+	struct ptp_clock_nxp_enet_data *data = dev->data;
+	uint32_t enet_ref_pll_rate;
+	uint32_t cor;
+	uint32_t inc;
+	unsigned int key;
+	double ratio;
+	int inc_corr;
+	int ret;
+
+	if (!data->ptp_running) {
+		return -ENODEV;
+	}
+
+	/* Do not let a servo that went out of control reach the timer. */
+	if ((scaled_ppm > CONFIG_PTP_CLOCK_NXP_ENET_MAX_RATIO_PPM * PTP_CLOCK_SCALED_PPM_ONE) ||
+	    (scaled_ppm < -CONFIG_PTP_CLOCK_NXP_ENET_MAX_RATIO_PPM * PTP_CLOCK_SCALED_PPM_ONE)) {
+		return -EINVAL;
+	}
+
+	/*
+	 * The rate is read on every call rather than kept from the timer start, so that a timer
+	 * clock that is tuned while it runs (for example an audio PLL that follows a media
+	 * clock) is taken into account: the correction is computed for the tick the timer gets
+	 * now. INC does not change while the timer runs, so a rate that cannot be read, is not
+	 * usable or no longer gives the INC programmed at start is refused.
+	 */
+	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &enet_ref_pll_rate);
+	if (ret != 0) {
+		LOG_ERR_RATELIMIT("Cannot read the 1588 timer clock rate (%d)", ret);
+		return -EIO;
+	}
+
+	inc = (data->base->ATINC & ENET_ATINC_INC_MASK) >> ENET_ATINC_INC_SHIFT;
+	if (!ptp_clock_nxp_enet_rate_usable(enet_ref_pll_rate) ||
+	    (NSEC_PER_SEC / enet_ref_pll_rate != inc)) {
+		LOG_ERR_RATELIMIT("1588 timer clock %u Hz unusable with INC %u, rate not adjusted",
+				  enet_ref_pll_rate, inc);
+		return -EIO;
+	}
+
+	ratio = 1.0 + (double)scaled_ppm / (1000000.0 * PTP_CLOCK_SCALED_PPM_ONE);
+
+	/* There is no early return for a ratio of 1.0, the fractional tick still needs a value */
+	if (ptp_clock_nxp_enet_correction(enet_ref_pll_rate, ratio, &inc_corr, &cor) != 0) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->ptp_mutex, K_FOREVER);
+
+	/*
+	 * INC_CORR and COR are written one after the other. Keep an interrupt from running the
+	 * timer on the new INC_CORR with the old period for longer than the two writes take.
+	 */
+	key = irq_lock();
+	ENET_Ptp1588AdjustTimer(data->base, inc_corr, cor);
+	irq_unlock(key);
+
+	k_mutex_unlock(&data->ptp_mutex);
+
+	return 0;
+}
+
+void nxp_enet_ptp_clock_callback(const struct device *dev,
+			enum nxp_enet_callback_reason event,
+			void *cb_data)
+{
+	const struct ptp_clock_nxp_enet_config *config = dev->config;
+	struct ptp_clock_nxp_enet_data *data = dev->data;
+	struct nxp_enet_ptp_data *ptp_data;
+
+	__ASSERT(cb_data != NULL, "ptp data is NULL");
+
+	ptp_data = (struct nxp_enet_ptp_data *)cb_data;
+
+	if (event == NXP_ENET_MODULE_RESET) {
+		enet_ptp_config_t ptp_config;
+		uint32_t enet_ref_pll_rate;
+		uint32_t cor = 0U;
+		int inc_corr = 0;
+		uint8_t ptp_multicast[6] = { 0x01, 0x1B, 0x19, 0x00, 0x00, 0x00 };
+		uint8_t ptp_peer_multicast[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E };
+
+		ENET_AddMulticastGroup(data->base, ptp_multicast);
+		ENET_AddMulticastGroup(data->base, ptp_peer_multicast);
+
+		/* only for ERRATA_2579 */
+		ptp_config.channel = kENET_PtpTimerChannel3;
+
+		/* Share the mutex with mac driver */
+		ptp_data->ptp_mutex = &data->ptp_mutex;
+		/* Get enet handle from mac driver */
+		data->enet_handle = ptp_data->enet;
+
+		if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+					   &enet_ref_pll_rate) < 0) {
+			LOG_ERR("Cannot read the 1588 timer clock rate, timer not started");
+			return;
+		}
+		ptp_config.ptp1588ClockSrc_Hz = enet_ref_pll_rate;
+
+		/* The fractional part of the tick must also be within reach of the correction */
+		if (!ptp_clock_nxp_enet_rate_usable(enet_ref_pll_rate) ||
+		    (ptp_clock_nxp_enet_correction(enet_ref_pll_rate, 1.0, &inc_corr, &cor) != 0)) {
+			LOG_ERR("1588 timer clock of %u Hz is not usable, timer not started",
+				enet_ref_pll_rate);
+			return;
+		}
+
+		ENET_Ptp1588SetChannelMode(data->base, kENET_PtpTimerChannel3,
+				kENET_PtpChannelPulseHighonCompare, true);
+		ENET_Ptp1588StartTimer(data->base, ptp_config.ptp1588ClockSrc_Hz);
+
+		/* Make up for the fractional part of the tick that the start above cut off */
+		ENET_Ptp1588AdjustTimer(data->base, inc_corr, cor);
+
+		data->ptp_running = true;
+		ptp_data->ptp_running = true;
+		ENET_EnableInterrupts(data->base, ENET_TS_INTERRUPT);
+	}
+}
+
+static int ptp_clock_nxp_enet_init(const struct device *port)
+{
+	const struct ptp_clock_nxp_enet_config *config = port->config;
+	struct ptp_clock_nxp_enet_data *data = port->data;
+	int ret;
+
+	data->base = (ENET_Type *)DEVICE_MMIO_GET(config->module_dev);
+
+	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret) {
+		return ret;
+	}
+
+	k_mutex_init(&data->ptp_mutex);
+
+	config->irq_config_func();
+
+	return 0;
+}
+
+static void ptp_clock_nxp_enet_isr(const struct device *dev)
+{
+	struct ptp_clock_nxp_enet_data *data = dev->data;
+	enet_ptp_timer_channel_t channel;
+
+	unsigned int irq_lock_key = irq_lock();
+
+	/* clear channel */
+	for (channel = kENET_PtpTimerChannel1; channel <= kENET_PtpTimerChannel4; channel++) {
+		if (ENET_Ptp1588GetChannelStatus(data->base, channel)) {
+			ENET_Ptp1588ClearChannelStatus(data->base, channel);
+		}
+	}
+
+	ENET_TimeStampIRQHandler(data->base, data->enet_handle);
+
+	irq_unlock(irq_lock_key);
+}
+
+static DEVICE_API(ptp_clock, ptp_clock_nxp_enet_api) = {
+	.set = ptp_clock_nxp_enet_set,
+	.get = ptp_clock_nxp_enet_get,
+	.adjust = ptp_clock_nxp_enet_adjust,
+	.adjust_rate = ptp_clock_nxp_enet_adjust_rate,
+};
+
+#define PTP_CLOCK_NXP_ENET_INIT(n)						\
+	static void nxp_enet_ptp_clock_##n##_irq_config_func(void)		\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 0, irq),			\
+				DT_INST_IRQ_BY_IDX(n, 0, priority),		\
+				ptp_clock_nxp_enet_isr,				\
+				DEVICE_DT_INST_GET(n),				\
+				0);						\
+		irq_enable(DT_INST_IRQ_BY_IDX(n, 0, irq));			\
+	}									\
+										\
+	PINCTRL_DT_INST_DEFINE(n);						\
+										\
+	static const struct ptp_clock_nxp_enet_config				\
+		ptp_clock_nxp_enet_##n##_config = {				\
+			.module_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),		\
+			.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
+			.port = DEVICE_DT_INST_GET(n),				\
+			.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
+			.clock_subsys = (void *)				\
+					DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),	\
+			.irq_config_func =					\
+				nxp_enet_ptp_clock_##n##_irq_config_func,	\
+		};								\
+										\
+	static struct ptp_clock_nxp_enet_data ptp_clock_nxp_enet_##n##_data;	\
+										\
+	DEVICE_DT_INST_DEFINE(n, &ptp_clock_nxp_enet_init, NULL,		\
+				&ptp_clock_nxp_enet_##n##_data,			\
+				&ptp_clock_nxp_enet_##n##_config,		\
+				POST_KERNEL, CONFIG_PTP_CLOCK_INIT_PRIORITY,	\
+				&ptp_clock_nxp_enet_api);
+
+DT_INST_FOREACH_STATUS_OKAY(PTP_CLOCK_NXP_ENET_INIT)

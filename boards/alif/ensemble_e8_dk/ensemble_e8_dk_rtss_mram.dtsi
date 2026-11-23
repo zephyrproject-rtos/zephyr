@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The top 64 KiB of MRAM hold the ATOC written by the Secure Enclave, the
+ * 64 KiB below it are storage. Code runs from the MRAM base.
+ */
+
+/ {
+	chosen {
+		zephyr,flash-controller = &mram_flash;
+	};
+
+	/* Keep the ATOC read-only */
+	mram_atoc: memory@80570000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x80570000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "MRAM_ATOC";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
+	};
+};
+
+&mram {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@560000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x560000 DT_SIZE_K(64)>;
+			label = "storage";
+		};
+	};
+};

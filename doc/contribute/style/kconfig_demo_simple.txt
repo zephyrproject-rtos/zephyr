@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Example of a components Kconfig file with one enabling symbol
+
+# start-after-here
+
+# Symbol to enable/disable the feature ("enabling symbol")
+config ADC_AD405X
+	bool "AD405X ADC driver"
+	depends on DT_HAS_ADI_AD4052_ADC_ENABLED || DT_HAS_ADI_AD4050_ADC_ENABLED
+	select SPI
+	default y
+	help
+	  Enable ADC driver for AD405X.

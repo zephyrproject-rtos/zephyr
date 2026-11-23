@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Andriy Gelman
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DMA Cyclic Test"
+
+source "Kconfig.zephyr"
+
+config DMA_CYCLIC_CHANNEL_NR
+	int "DMA channel to use"
+	default 0
+
+config DMA_CYCLIC_XFER_SIZE
+	int "Number of bytes to transfer"
+	default 4096

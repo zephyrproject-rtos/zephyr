@@ -1,0 +1,65 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
+
+/* Loopback pairs: PWM out P15.6 -> GPIO in P15.5, and PWM out P15.2 -> GPIO in P15.3 */
+/ {
+	zephyr,user {
+		pwms = <&pwm0_5 0 PWM_MSEC(6) (PWM_POLARITY_NORMAL | PWM_IFX_TCPWM_OUTPUT_HIGHZ)>,
+		       <&pwm1_19 1 PWM_MSEC(6) (PWM_POLARITY_NORMAL | PWM_IFX_TCPWM_OUTPUT_HIGHZ)>;
+		gpios = <&gpio_prt15 5 GPIO_ACTIVE_HIGH>,
+			<&gpio_prt15 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&tcpwm0_5 {
+	status = "okay";
+
+	pwm0_5: pwm0_5 {
+		clocks = <&peri0_group1_16bit_1>;
+		pinctrl-0 = <&p15_6_pwm0_5>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&peri0_group1_16bit_1 {
+	clock-div = <9600>;
+	status = "okay";
+};
+
+&tcpwm1_19 {
+	status = "okay";
+
+	pwm1_19: pwm1_19 {
+		clocks = <&peri0_group1_16bit_2>;
+		pinctrl-0 = <&p15_2_pwm1_19>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&peri0_group1_16bit_2 {
+	clock-div = <9600>;
+	status = "okay";
+};
+
+&pinctrl {
+	p15_6_pwm0_5: p15_6_pwm0_5 {
+		drive-push-pull;
+	};
+
+	p15_2_pwm1_19: p15_2_pwm1_19 {
+		drive-push-pull;
+	};
+};
+
+&gpio_prt15 {
+	status = "okay";
+};

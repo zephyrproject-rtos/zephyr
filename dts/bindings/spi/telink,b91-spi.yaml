@@ -1,0 +1,53 @@
+# Copyright (c) 2021, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink B91 SPI
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+compatible: "telink,b91-spi"
+
+properties:
+  reg:
+    required: true
+
+  peripheral-id:
+    type: string
+    required: true
+    enum:
+      - "PSPI_MODULE"
+      - "HSPI_MODULE"
+
+  pinctrl-0:
+    required: true
+
+  cs0-pin:
+    type: string
+    required: true
+    enum:
+      - "0"
+      - "PSPI_CSN_PC4"
+      - "PSPI_CSN_PC0"
+      - "PSPI_CSN_PD0"
+      - "HSPI_CSN_PA1"
+      - "HSPI_CSN_PB6"
+
+  cs1-pin:
+    type: string
+    enum:
+      - "0"
+      - "PSPI_CSN_PC4"
+      - "PSPI_CSN_PC0"
+      - "PSPI_CSN_PD0"
+      - "HSPI_CSN_PA1"
+      - "HSPI_CSN_PB6"
+
+  cs2-pin:
+    type: string
+    enum:
+      - "0"
+      - "PSPI_CSN_PC4"
+      - "PSPI_CSN_PC0"
+      - "PSPI_CSN_PD0"
+      - "HSPI_CSN_PA1"
+      - "HSPI_CSN_PB6"

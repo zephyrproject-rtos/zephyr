@@ -1,0 +1,14 @@
+#Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+#SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_OPENHWGROUP_CVA6
+	bool
+	help
+	  CVA6 RISC-V CPUs, commonly used as soft cores on FPGAs.
+	  There is a 64-bit version with imafdc extensions and sv39 MMU and
+	  several 32-bit configurations, optionally with up to imafdc and sv32 MMU.
+
+config SOC_FAMILY
+	default "openhwgroup_cva6" if SOC_FAMILY_OPENHWGROUP_CVA6
+
+rsource "*/Kconfig.soc"

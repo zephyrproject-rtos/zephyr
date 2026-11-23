@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ek_rx74n
+name: Renesas EK-RX74N
+type: mcu
+arch: rx
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+ram: 1664
+flash: 1024

@@ -1,0 +1,27 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_NXP_S32_XSPI_HYPERRAM
+	bool "NXP S32 XSPI HYPERRAM driver"
+	default y
+	depends on DT_HAS_NXP_S32_XSPI_HYPERRAM_ENABLED
+	select MEMC
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable the Flash driver for a HyperRAM Memory device connected
+	  to an NXP S32 XSPI bus.
+
+if FLASH_NXP_S32_XSPI_HYPERRAM
+
+config FLASH_NXP_S32_XSPI_LAYOUT_PAGE_SIZE
+	int "Page size to use for FLASH_LAYOUT feature"
+	default 4096
+	help
+	  When CONFIG_FLASH_PAGE_LAYOUT is used this driver will support that API.
+	  By default the page size is set to 4096 bytes. HyperRAM is a volatile
+	  memory and does not require erase operations like NOR flash. This page
+	  size is used for memory layout reporting purposes only.
+
+endif # FLASH_NXP_S32_XSPI_HYPERRAM
