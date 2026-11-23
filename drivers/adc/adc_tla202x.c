@@ -355,7 +355,6 @@ static void tla202x_perform_read(const struct device *dev)
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct tla202x_data *data = CONTAINER_OF(ctx, struct tla202x_data, ctx);
-	const struct device *dev = data->dev;
 
 	data->channels = ctx->sequence.channels;
 	data->repeat_buffer = data->buffer;
@@ -363,7 +362,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 #ifdef CONFIG_ADC_ASYNC
 	k_sem_give(&data->acq_lock);
 #else
-	tla202x_perform_read(dev);
+	tla202x_perform_read(data->dev);
 #endif
 }
 
