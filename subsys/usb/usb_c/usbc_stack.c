@@ -265,6 +265,13 @@ void usbc_set_policy_cb_src_en(const struct device *dev, const policy_cb_src_en_
 	data->policy_cb_src_en = policy_cb_src_en;
 }
 
+void usbc_set_policy_cb_vdm_received(const struct device *dev, const policy_cb_vdm_received_t cb)
+{
+	struct usbc_port_data *data = dev->data;
+
+	data->policy_cb_vdm_received = cb;
+}
+
 /**
  * @brief Set the callback for checking if a Sink Request is valid
  */

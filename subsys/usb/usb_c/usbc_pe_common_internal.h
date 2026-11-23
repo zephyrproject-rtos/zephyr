@@ -108,6 +108,8 @@ enum usbc_pe_state {
 	PE_DRS_SEND_SWAP,
 	/** PE_Get_Sink_Cap */
 	PE_GET_SINK_CAP,
+	/** Answers a VDM the DPM took */
+	PE_SEND_VDM_RESPONSE,
 
 	/** PE_Suspend. Not part of the PD specification. */
 	PE_SUSPEND,
@@ -227,6 +229,10 @@ struct policy_engine {
 	 * response from the remote device.
 	 */
 	uint32_t hard_reset_counter;
+	/** Reply to a received VDM, VDM Header first; 7 objects at most */
+	uint32_t vdm_rsp[7];
+	/** Number of objects in vdm_rsp */
+	uint32_t vdm_rsp_cnt;
 
 #ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 	/**
@@ -338,6 +344,11 @@ void pe_send_request_msg(const struct device *dev, const uint32_t rdo);
  * @param dev Pointer to the device structure for the driver instance
  */
 void extended_message_not_supported(const struct device *dev);
+
+/**
+ * @brief Offers a received VDM to the DPM, and replies as it decides.
+ */
+void vdm_received(const struct device *dev);
 
 /**
  * @brief Check if a specific control message was received

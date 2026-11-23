@@ -539,6 +539,36 @@ void pe_send_request_msg(const struct device *dev, const uint32_t rdo)
 }
 
 /**
+ * @brief Offers a received VDM to the DPM, and replies as it decides.
+ */
+void vdm_received(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+	struct policy_engine *pe = data->pe;
+	struct protocol_layer_rx_t *prl_rx = data->prl_rx;
+	uint32_t count = prl_rx->emsg.header.number_of_data_objects;
+	uint32_t vdo[7];
+	int n = -1;
+
+	/* A VDM carries at least its VDM Header; anything else is not one */
+	if (data->policy_cb_vdm_received != NULL && count > 0) {
+		for (uint32_t i = 0; i < count; i++) {
+			vdo[i] = sys_get_le32(&prl_rx->emsg.data[i * 4]);
+		}
+
+		n = data->policy_cb_vdm_received(dev, vdo, count, pe->vdm_rsp);
+	}
+
+	if (n > 0) {
+		pe->vdm_rsp_cnt = MIN(n, ARRAY_SIZE(pe->vdm_rsp));
+		pe_set_state(dev, PE_SEND_VDM_RESPONSE);
+	} else if (n < 0 && prl_get_rev(dev, PD_PACKET_SOP) > PD_REV20) {
+		/* VDM is unsupported. PD2.0 ignores and PD3.0 replies Not_Supported. */
+		pe_set_state(dev, PE_SEND_NOT_SUPPORTED);
+	}
+}
+
+/**
  * @brief Transitions state after receiving an extended message.
  */
 void extended_message_not_supported(const struct device *dev)
@@ -1148,6 +1178,44 @@ static enum smf_state_result pe_send_not_supported_run(void *obj)
 }
 
 /**
+ * @brief Sends the reply the DPM gave to a VDM
+ *
+ * Not one of the specification's states: it stands for the responder half of
+ * each 6.4.4 Structured VDM command, PE_UFP_VDM_Get_Identity and the rest,
+ * with the content decided by the DPM.
+ */
+static void pe_send_vdm_response_entry(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+	struct usbc_port_data *data = dev->data;
+	struct pd_msg *msg = &data->prl_tx->emsg;
+
+	LOG_INF("PE_Send_VDM_Response");
+
+	for (uint32_t i = 0; i < pe->vdm_rsp_cnt; i++) {
+		sys_put_le32(pe->vdm_rsp[i], &msg->data[i * 4]);
+	}
+
+	msg->len = pe->vdm_rsp_cnt * 4;
+	pe_send_data_msg(dev, PD_PACKET_SOP, PD_DATA_VENDOR_DEF);
+}
+
+static enum smf_state_result pe_send_vdm_response_run(void *obj)
+{
+	struct policy_engine *pe = (struct policy_engine *)obj;
+	const struct device *dev = pe->dev;
+
+	if (atomic_test_bit(pe->flags, PE_FLAGS_TX_COMPLETE) ||
+	    atomic_test_bit(pe->flags, PE_FLAGS_MSG_DISCARDED)) {
+		atomic_clear_bit(pe->flags, PE_FLAGS_TX_COMPLETE);
+		atomic_clear_bit(pe->flags, PE_FLAGS_MSG_DISCARDED);
+		pe_set_ready_state(dev);
+	}
+	return SMF_EVENT_PROPAGATE;
+}
+
+/**
  * @brief 8.3.3.6.2.3 PE_SNK_Chunk_Received State
  */
 static void pe_chunk_received_entry(void *obj)
@@ -1440,6 +1508,12 @@ static const struct smf_state pe_states[PE_STATE_COUNT] = {
 		pe_get_sink_cap_run,
 		NULL,
 		&pe_states[PE_SENDER_RESPONSE_PARENT],
+		NULL),
+	[PE_SEND_VDM_RESPONSE] = SMF_CREATE_STATE(
+		pe_send_vdm_response_entry,
+		pe_send_vdm_response_run,
+		NULL,
+		NULL,
 		NULL),
 	[PE_SEND_SOFT_RESET] = SMF_CREATE_STATE(
 		pe_send_soft_reset_entry,

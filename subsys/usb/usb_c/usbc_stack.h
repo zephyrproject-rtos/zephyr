@@ -120,6 +120,12 @@ struct usbc_port_data {
 	 */
 	bool (*policy_cb_check)(const struct device *dev,
 				const enum usbc_policy_check_t policy_check);
+
+	/**
+	 * Callback delivering a received Vendor Defined Message to the DPM
+	 */
+	int (*policy_cb_vdm_received)(const struct device *dev, const uint32_t *vdo,
+				      const uint32_t count, uint32_t *rsp);
 	/**
 	 * Callback used by the Policy Engine to notify the Device Policy
 	 * Manager of a policy change
