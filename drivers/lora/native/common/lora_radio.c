@@ -129,12 +129,13 @@ static int lora_radio_rx_arm(const struct device *dev, uint32_t timeout_ms)
 
 static void lora_radio_rx_restart(const struct device *dev)
 {
-	struct lora_radio_data *data = dev->data;
 	int ret;
 
 	ret = lora_radio_rx_arm(dev, 0);
-	if (ret < 0 && data->op == LORA_RADIO_OP_RX_DUTY_CYCLE) {
-		lora_radio_op_end(dev, ret);
+	if (ret < 0) {
+		LOG_ERR("Failed to restart reception: %d", ret);
+		/* A continuous reception is still running */
+		lora_radio_op_abort(dev, ret);
 	}
 }
 
