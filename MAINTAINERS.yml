@@ -6044,10 +6044,10 @@ STM32 Platforms (Drivers & Bindings):
   status: maintained
   maintainers:
     - erwango
+    - mathieuchopstm
   collaborators:
     - gautierg-st
     - GeorgeCGV
-    - mathieuchopstm
     - djiatsaf-st
     - etienne-lms
     - juickar
