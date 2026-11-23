@@ -25,7 +25,7 @@ configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32768 if MCUX_GPT_TIMER
 
 configdefault ETH_NXP_IMX_MSGINTR
-	default 2
+	default 1
 
 configdefault CACHE_MANAGEMENT
 	default y
