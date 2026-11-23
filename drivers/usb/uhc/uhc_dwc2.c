@@ -2288,6 +2288,14 @@ static void ch_schedule_interrupt(const struct device *dev,
 		 */
 		ch->data->scheduled_frame = (current_frame + (ch->do_split ? 3U : 1U)) &
 					    PERIODIC_FRAME_MASK;
+
+		if (ch->do_split) {
+			/* Align the initial SSPLIT to Y0. */
+			ch->data->scheduled_frame =
+				ROUND_UP(ch->data->scheduled_frame, 8U) &
+				PERIODIC_FRAME_MASK;
+		}
+
 		ch->data->periodic_initialized = true;
 	} else {
 		/*
@@ -2295,10 +2303,10 @@ static void ch_schedule_interrupt(const struct device *dev,
 		 * preserve periodic phase by using the polling interval
 		 * and mark the channel for periodic transfer in the closest SOF
 		 */
-		ch->data->scheduled_frame = (ch->data->scheduled_frame + interval) &
-					     PERIODIC_FRAME_MASK;
+		ch->data->scheduled_frame =
+			(ch->data->scheduled_frame + interval) &
+			PERIODIC_FRAME_MASK;
 		ch->data->periodic_start_pending = true;
-
 	}
 }
 
@@ -2415,7 +2423,13 @@ static void port_sof(const struct device *dev)
 			continue;
 		}
 
-		/* Handle pending split first */
+		/*
+		 * TODO: Schedule periodic CSPLIT transactions in valid microframes (Y2-Y4).
+		 * Currently, CSPLIT may be issued in the same microframe as SSPLIT.
+		 * For Interrupt transfers, schedule the first CSPLIT two microframes
+		 * after SSPLIT, with subsequent retries within the TT response window.
+		 * Use the actual SSPLIT microframe as the scheduling reference.
+		 */
 		if (ch->split_scheduled) {
 			ch->split_scheduled = false;
 			ch_enable(dev, ch);
@@ -2768,7 +2782,13 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 		break;
 	case USB_EP_TYPE_INTERRUPT:
 		ch_schedule_interrupt(dev, ch);
-		ch_start_interrupt(dev, ch);
+		if (ch->do_split) {
+			/* Wait for the scheduled Y0 microframe before starting SSPLIT. */
+			ch->data->periodic_start_pending = true;
+		} else {
+			/* Direct transfers can start immediately. */
+			ch_start_interrupt(dev, ch);
+		}
 		break;
 	default:
 		LOG_ERR("Start channel with type %d isn't supported yet", xfer->type);
