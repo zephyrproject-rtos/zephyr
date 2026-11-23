@@ -488,8 +488,9 @@ void board_early_init_hook(void)
 	ITRC->OUT_SEL[4][0] = 0xAAAAAA0A;
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) || \
-		DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
+/* AUDIO_VDD2 is a compute domain rail; MICFIL0 below is fed from PFD3 directly. */
+#if defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0) && (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) ||    \
+						 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil)))
 	CLOCK_AttachClk(kAUDIO_PLL_PFD3_to_AUDIO_VDD2);
 #endif
 
