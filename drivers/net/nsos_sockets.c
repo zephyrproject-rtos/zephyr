@@ -1047,7 +1047,15 @@ static ssize_t nsos_recvfrom(void *obj, void *buf, size_t len, int flags,
 		goto return_ret;
 	}
 
-	sockaddr_from_nsos_mid(addr, addrlen, addr_mid, addrlen_mid);
+	if (addr != NULL && addrlen != NULL) {
+		if (addrlen_mid == 0) {
+			*addrlen = 0;
+		} else if (sockaddr_from_nsos_mid(addr, addrlen, addr_mid, addrlen_mid) < 0) {
+			*addrlen = 0;
+		} else {
+			/* Peer address converted. */
+		}
+	}
 
 return_ret:
 	if (ret < 0) {
