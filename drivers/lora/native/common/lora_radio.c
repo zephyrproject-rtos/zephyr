@@ -424,8 +424,6 @@ static int lora_radio_rx_stop(const struct device *dev, enum lora_radio_op op)
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	data->rx_cb = NULL;
-	data->rx_cb_user_data = NULL;
 	if (data->op == op) {
 		lora_radio_op_abort(dev, -EAGAIN);
 	}
