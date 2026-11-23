@@ -1,0 +1,75 @@
+# SPDX-FileCopyrightText: 2026 Seunghoon Park
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Rockchip RK3568 (and RK3566) SD/MMC host controller, a Synopsys
+  DesignWare Mobile Storage Host Controller.
+
+  The compatible string is the same as in the Linux binding. A node is
+  expected to also list the generic fallbacks used there, for example:
+
+    compatible = "rockchip,rk3568-dw-mshc", "rockchip,rk3288-dw-mshc";
+
+  The driver programs the controller registers and the card clock source
+  select in the CRU. It does not configure pin muxing, the card power
+  supply, the controller bus clock gate or the card clock phase: those must
+  already have been set up by the boot loader.
+
+  Only SD cards at 3.3 V (default and high speed, up to 50 MHz) on a 1-bit
+  or 4-bit bus are supported.
+
+compatible: "rockchip,rk3568-dw-mshc"
+
+include: [sdhc.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    description: |
+      Controller interrupt. The driver currently polls and does not use it.
+
+  fifo-depth:
+    type: int
+    required: true
+    description: |
+      Depth of the controller data FIFO in 32-bit words, as in the Linux
+      binding. The RK3568 value is 256.
+
+  rockchip,cru:
+    type: phandle
+    required: true
+    description: |
+      Phandle of the CRU node, which must be a "syscon" node. It provides the
+      card clock source select register (CRU_CLKSEL_CON30), as there is no
+      clock controller driver for this SoC yet.
+
+  bus-width:
+    description: |
+      Number of card data lines wired on the board: 1 or 4. The driver
+      assumes 4 when the property is absent. 8 is not supported.
+
+examples:
+  - |
+    cru: syscon@fdd20000 {
+            compatible = "syscon";
+            reg = <0xfdd20000 0x1000>;
+    };
+
+    sdmmc0: mmc@fe2b0000 {
+            compatible = "rockchip,rk3568-dw-mshc", "rockchip,rk3288-dw-mshc";
+            reg = <0xfe2b0000 0x4000>;
+            interrupts = <GIC_SPI 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+            fifo-depth = <256>;
+            rockchip,cru = <&cru>;
+            bus-width = <4>;
+            max-bus-freq = <50000000>;
+            min-bus-freq = <375000>;
+            power-delay-ms = <10>;
+
+            sdmmc {
+                    compatible = "zephyr,sdmmc-disk";
+                    disk-name = "SD";
+            };
+    };
