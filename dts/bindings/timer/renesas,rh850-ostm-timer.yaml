@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RH850 OSTM System Timer
+
+compatible: "renesas,rh850-ostm-timer"
+
+include: base.yaml

@@ -1,0 +1,44 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RH850 GPIO
+
+compatible: "renesas,rh850-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  port:
+    type: int
+    required: true
+
+  port-type:
+    type: string
+    description: Type of port is port/jport/aport
+    required: true
+    enum:
+      - "port"
+      - "jport"
+      - "aport"
+
+  protected-write-mask:
+    type: int
+    description: Bitmask to select which protected registers can be written
+    required: true
+
+  interrupts:
+    description: interrupt node
+
+  irqs:
+    type: phandle-array
+    description: external irq node - pin pairs
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
