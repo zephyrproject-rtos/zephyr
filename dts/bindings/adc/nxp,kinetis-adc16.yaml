@@ -1,4 +1,4 @@
-# Copyright (c) 2017, NXP
+# Copyright 2017, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: Kinetis ADC16
@@ -59,6 +59,12 @@ properties:
       This expresses the hardware capability of this particular ADC
       instance and should be set in SoC dtsi. Board dts files should
       not modify this.
+
+  bandgap-supply:
+    type: phandle
+    description: |
+      Regulator providing the buffered internal bandgap reference. It is
+      enabled when the bandgap channel (27) is set up.
 
 io-channel-cells:
   - input

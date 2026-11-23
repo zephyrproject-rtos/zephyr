@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, 2020, 2025 NXP
+ * Copyright 2017-2018, 2020, 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,8 @@
 #include <errno.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/regulator.h>
+#include <zephyr/sys/atomic.h>
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
 #include <zephyr/drivers/dma.h>
 #endif
@@ -25,6 +27,11 @@ LOG_MODULE_REGISTER(adc_mcux_adc16);
 #include "adc_context.h"
 
 #include "adc_common.h"
+
+#define ADC16_HAS_BANDGAP_SUPPLY DT_ANY_INST_HAS_PROP_STATUS_OKAY(bandgap_supply)
+
+/* Internal bandgap input channel. */
+#define ADC16_BANDGAP_INPUT 27U
 
 struct mcux_adc16_config {
 	ADC_Type *base;
@@ -49,6 +56,9 @@ struct mcux_adc16_config {
 	const struct pinctrl_dev_config *pincfg;
 	/* Whether this instance supports differential mode. */
 	bool supports_diff;
+#if ADC16_HAS_BANDGAP_SUPPLY
+	const struct device *bandgap_supply;
+#endif
 };
 
 #ifdef CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA
@@ -74,6 +84,9 @@ struct mcux_adc16_data {
 	uint8_t channel_id;
 	/* Bitmask of channels requested as differential by user config */
 	uint32_t diff_channels;
+#if ADC16_HAS_BANDGAP_SUPPLY
+	atomic_t bandgap_held;
+#endif
 };
 
 #ifdef CONFIG_ADC_MCUX_ADC16_HW_TRIGGER
@@ -132,6 +145,35 @@ static int mcux_adc16_acquisition_time_setup(const struct device *dev, uint16_t 
 	return 0;
 }
 
+#if ADC16_HAS_BANDGAP_SUPPLY
+/* Bit 0 of mcux_adc16_data.bandgap_held. */
+#define ADC16_BANDGAP_HELD_BIT 0
+
+/*
+ * The bandgap reference is needed once a channel selecting it as its input has
+ * been configured. The driver has no power management path that could release
+ * it, so it is held from then on. The flag is claimed before the regulator
+ * call, so concurrent channel setups enable it at most once.
+ */
+static int mcux_adc16_bandgap_enable(const struct device *dev)
+{
+	const struct mcux_adc16_config *config = dev->config;
+	struct mcux_adc16_data *data = dev->data;
+	int err;
+
+	if (atomic_test_and_set_bit(&data->bandgap_held, ADC16_BANDGAP_HELD_BIT)) {
+		return 0;
+	}
+
+	err = regulator_enable(config->bandgap_supply);
+	if (err < 0) {
+		atomic_clear_bit(&data->bandgap_held, ADC16_BANDGAP_HELD_BIT);
+	}
+
+	return err;
+}
+#endif /* ADC16_HAS_BANDGAP_SUPPLY */
+
 static int mcux_adc16_channel_setup(const struct device *dev,
 				    const struct adc_channel_cfg *channel_cfg)
 {
@@ -186,6 +228,16 @@ static int mcux_adc16_channel_setup(const struct device *dev,
 		LOG_ERR("Invalid channel gain");
 		return -EINVAL;
 	}
+
+#if ADC16_HAS_BANDGAP_SUPPLY
+	if ((config->bandgap_supply != NULL) && (channel_id == ADC16_BANDGAP_INPUT)) {
+		ret = mcux_adc16_bandgap_enable(dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to enable bandgap supply (%d)", ret);
+			return ret;
+		}
+	}
+#endif
 
 #ifdef CONFIG_ADC_MCUX_ADC16_HW_TRIGGER
 	adc_hw_trigger_enable(dev);
@@ -535,6 +587,14 @@ static DEVICE_API(adc, mcux_adc16_driver_api) = {
 	}
 #endif /* CONFIG_ADC_MCUX_ADC16_ENABLE_EDMA */
 
+#if ADC16_HAS_BANDGAP_SUPPLY
+#define ADC16_MCUX_BANDGAP_INIT(n)                                                                 \
+	.bandgap_supply = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, bandgap_supply),                    \
+				      (DEVICE_DT_GET(DT_INST_PHANDLE(n, bandgap_supply))),         \
+				      (NULL)),
+#else
+#define ADC16_MCUX_BANDGAP_INIT(n)
+#endif
 
 #define ACD16_MCUX_INIT(n)					\
 	ADC16_MCUX_IRQ_DECLARE(n)				\
@@ -552,6 +612,7 @@ static DEVICE_API(adc, mcux_adc16_driver_api) = {
 		.continuous_convert =				\
 			DT_INST_PROP(n, continuous_convert),	\
 		.supports_diff = DT_INST_PROP(n, has_differential_mode),\
+		ADC16_MCUX_BANDGAP_INIT(n)			\
 		ADC16_MCUX_EDMA_INIT(n)				\
 	};								\
 									\
