@@ -15,6 +15,7 @@
 #include <zephyr/fatal.h>
 #include <zephyr/debug/coredump.h>
 #include <zephyr/sys/reboot.h>
+#include <zephyr/platform/hooks.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -41,6 +42,7 @@ static FUNC_NORETURN void park(int cpu)
 {
 	(void)arch_irq_lock();
 	atomic_or(&paused_cpus, BIT(cpu));
+	soc_fatal_cpu_park_hook();
 	for (;;) {
 		arch_spin_relax();
 	}

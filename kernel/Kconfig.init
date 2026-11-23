@@ -84,6 +84,19 @@ config SOC_PER_CORE_INIT_HOOK
 	  arch_kernel_init() for the primary core, and at the end of arch_secondary_cpu_init()
 	  for secondary cores.
 
+config SOC_FATAL_CPU_PARK_HOOK
+	bool
+	depends on SMP
+	help
+	  Run an SoC hook on a CPU parked after a fatal error.
+
+	  A custom SoC hook soc_fatal_cpu_park_hook() is executed on each CPU
+	  that is parked because another CPU is halting the system, with
+	  interrupts locked and after the CPU is counted as parked. The hook
+	  must not block, wait for a lock the halting CPU may hold, or hold a
+	  lock when it returns or goes idle. If the hook returns, the CPU
+	  spins in the default park loop.
+
 config BOARD_EARLY_INIT_HOOK
 	bool
 	help

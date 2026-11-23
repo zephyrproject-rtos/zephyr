@@ -93,6 +93,33 @@ void soc_per_core_init_hook(void);
 #define soc_per_core_init_hook() do { } while (0)
 #endif
 
+#if defined(CONFIG_SOC_FATAL_CPU_PARK_HOOK) || defined(__DOXYGEN__)
+/**
+ * @brief SoC hook executed on a CPU parked after a fatal error.
+ *
+ * This hook is implemented by the SoC and can be used to perform any
+ * SoC-specific sequence on a CPU that is parked because another CPU is
+ * halting the system, for example to enter a custom low-power state.
+ *
+ * It is called with interrupts locked, after the CPU has been counted as
+ * parked, from an exception handler, a thread, or the scheduler IPI handler.
+ * It must not assume a particular context and must not leave interrupts
+ * unlocked.
+ *
+ * The CPU halting the system keeps running while this hook does, so the hook
+ * must not:
+ * - perform a blocking operation,
+ * - wait for a lock the halting CPU may hold, for instance after a fault
+ *   inside a critical section,
+ * - hold a lock when it returns or enters a low-power state.
+ *
+ * If it returns, the CPU spins in the default park loop.
+ */
+void soc_fatal_cpu_park_hook(void);
+#else
+#define soc_fatal_cpu_park_hook() do { } while (0)
+#endif
+
 #if defined(CONFIG_BOARD_EARLY_INIT_HOOK) || defined(__DOXYGEN__)
 /**
  * @brief Board hook executed before the kernel starts.
