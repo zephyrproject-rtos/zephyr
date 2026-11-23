@@ -150,6 +150,7 @@ config XSTAT_SHELL_CMDS
 
 config XEN_DOM0LESS_BOOT
 	bool "Xen dom0less boot support [EXPERIMENTAL]"
+	select EXPERIMENTAL
 	help
 	  Enable to support Xen dom0less boot. The domains started by Xen
 	  will be identified and added to xenlib domain management subsystem, for each domain
