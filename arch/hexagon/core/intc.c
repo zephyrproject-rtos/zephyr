@@ -32,10 +32,11 @@ void hexagon_intc_enable(uint32_t irq)
 {
 	if (irq < ARCH_IRQ_COUNT) {
 		/*
-		 * Use globen -- H2's per-cpu interrupts (cpuints 0-15)
-		 * do not support locen (returns -1).  globen works for
-		 * both cpuints and shared interrupts.
+		 * Shared interrupts (16 and up) also need the per-cpu
+		 * enable, or HVM never delivers them. locen fails for
+		 * cpuints (0-15), which is harmless.
 		 */
+		hexagon_vm_intop_locen((int32_t)irq);
 		hexagon_vm_intop_globen((int32_t)irq);
 	}
 }
