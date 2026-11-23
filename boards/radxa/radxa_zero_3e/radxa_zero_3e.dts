@@ -12,6 +12,10 @@
 	compatible = "radxa,zero-3e", "rockchip,rk3566";
 	model = "Radxa ZERO 3E";
 
+	aliases {
+		sdhc0 = &sdmmc0;
+	};
+
 	chosen {
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
@@ -35,4 +39,19 @@
 	clock-frequency = <24000000>;
 	current-speed = <1500000>;
 	status = "okay";
+};
+
+&sdmmc0 {
+	/*
+	 * The pin muxing, card power and clocks of the microSD slot are left
+	 * as the boot loader set them up.
+	 */
+	bus-width = <4>;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };
