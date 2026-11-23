@@ -16,3 +16,4 @@ properties:
   init-seq-name:
     enum:
      - rtkmipilcdb00000be
+     - mw405
