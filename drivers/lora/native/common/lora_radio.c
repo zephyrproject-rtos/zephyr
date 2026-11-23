@@ -622,15 +622,19 @@ uint32_t lora_radio_lora_airtime_ms(uint32_t bw_hz, uint8_t sf, uint8_t cr,
 	uint32_t n_payload;
 	int32_t tmp;
 	int32_t de = ldro ? 1 : 0;
+	/* SF5 and SF6 add two symbols of fine synchronization to the preamble */
+	bool fine_sync = sf < 7;
 
 	/* Symbol time = 2^SF / BW */
 	t_sym_us = ((uint64_t)BIT(sf) * USEC_PER_SEC) / bw_hz;
 
-	/* Preamble time (4.25 extra symbols) */
-	t_preamble_us = (uint64_t)(preamble_len + 4U) * t_sym_us + (t_sym_us / 4U);
+	/* Preamble time (4.25 extra symbols, 6.25 with fine synchronization) */
+	t_preamble_us = (uint64_t)(preamble_len + (fine_sync ? 6U : 4U)) * t_sym_us +
+			(t_sym_us / 4U);
 
 	/* Payload symbol count */
-	tmp = 8 * (int32_t)payload_len - 4 * sf + 8 + (explicit_hdr ? 20 : 0) + (crc ? 16 : 0);
+	tmp = 8 * (int32_t)payload_len - 4 * sf + (fine_sync ? 0 : 8) + (explicit_hdr ? 20 : 0) +
+	      (crc ? 16 : 0);
 	if (tmp < 0) {
 		tmp = 0;
 	}
