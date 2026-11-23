@@ -86,7 +86,7 @@ properties:
     type: int
     default: 2
     description: |
-      Number of cells in portb-special-pins-1 property
+      Number of cells in porta-special-pins-1 property
 
   portb-special-pins-1:
     type: array
@@ -153,6 +153,33 @@ properties:
     default: 2
     description: |
       Number of cells in portd-special-pins-2 property
+
+  secure-lines:
+    type: int
+    description: |
+      Bitmask of EIC lines owned by the Secure world.
+
+      On TrustZone-capable SoCs, bit N set means line N is Secure.
+      Used by the EIC driver to program EIC_NSCHK and to validate
+      ownership of a line before configuring it. Ignored on non-TZ SoCs.
+
+  nonsecure-lines:
+    type: int
+    description: |
+      Bitmask of EIC lines owned by the Non-Secure world.
+
+      On TrustZone-capable SoCs, bit N set means line N is Non-Secure.
+      Used by the EIC driver to program EIC_NONSEC and to route
+      the corresponding NVIC IRQ to the Non-Secure target state.
+      Ignored on non-TZ SoCs.
+
+  nmi-pins:
+    type: array
+    description: |
+      Array of NMI pin mappings.
+
+      Each entry is a [port_id, pin_num] pair that identifies pins connected
+      to EIC NMI instead of regular EXTINT lines.
 
 portb-special-pins-1-cells:
   - pins_val
