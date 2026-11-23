@@ -23,6 +23,8 @@ struct lora_radio_waiter {
 	uint8_t size;
 	int16_t *rssi;
 	int8_t *snr;
+	/* Waiting on a reception without limit, which a packet does not end */
+	bool continuous;
 };
 
 /* Claim the radio for an operation and wake it up */
@@ -180,7 +182,11 @@ static void lora_radio_rx_done(const struct device *dev, uint32_t irq_status)
 			}
 		}
 
-		lora_radio_op_end(dev, len);
+		if (waiter != NULL && waiter->continuous) {
+			lora_radio_op_abort(dev, len);
+		} else {
+			lora_radio_op_end(dev, len);
+		}
 		return;
 	}
 
@@ -470,6 +476,7 @@ int lora_radio_recv(const struct device *dev, uint8_t *data_buf,
 	/* 0 = continuous for K_FOREVER */
 	timeout_ms = K_TIMEOUT_EQ(timeout, K_FOREVER)
 		     ? 0 : k_ticks_to_ms_ceil32(timeout.ticks);
+	waiter.continuous = (timeout_ms == 0);
 	ret = lora_radio_rx_start(dev, LORA_RADIO_OP_RX, timeout_ms, 0, NULL, NULL, &waiter);
 	if (ret < 0) {
 		return ret;
