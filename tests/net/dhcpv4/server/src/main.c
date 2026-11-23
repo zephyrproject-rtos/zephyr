@@ -1125,6 +1125,103 @@ ZTEST(dhcpv4_server_tests, test_stop_with_timer_handler_waiting)
 	zexpect_ok(ret, "Failed to restart server");
 }
 
+static void inject_icmp_echo_reply(void)
+{
+	struct net_icmpv4_echo_req echo = { 0 };
+	struct net_pkt *reply;
+
+	reply = net_pkt_alloc_with_buffer(test_ctx.iface, sizeof(echo),
+					  NET_AF_INET, NET_IPPROTO_ICMP, K_FOREVER);
+	zassert_not_null(reply, "Failed to allocate echo reply");
+
+	zassert_ok(net_ipv4_create(reply, &test_base_addr, &server_addr),
+		   "Failed to create IPv4 header");
+	zassert_ok(net_icmpv4_create(reply, NET_ICMPV4_ECHO_REPLY, 0),
+		   "Failed to create ICMP header");
+	zassert_ok(net_pkt_write(reply, &echo, sizeof(echo)),
+		   "Failed to write echo reply");
+
+	net_pkt_cursor_init(reply);
+	net_ipv4_finalize(reply, NET_IPPROTO_ICMP);
+
+	zassert_ok(net_recv_data(test_ctx.iface, reply), "Failed to receive data");
+}
+
+static void hold_lock_until_echo_handler_blocked_cb(struct net_if *iface,
+						    struct dhcpv4_addr_slot *lease,
+						    void *user_data)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(lease);
+	ARG_UNUSED(user_data);
+
+	/* The RX thread passes the echo reply to the ICMP probe handler, which
+	 * blocks on the server lock held here.
+	 */
+	inject_icmp_echo_reply();
+	k_msleep(100);
+
+	/* The stopper has a higher priority than the RX thread, so it gets the
+	 * lock before the echo reply handler once the lock is released.
+	 */
+	k_sem_give(&stopper_go);
+	k_msleep(100);
+}
+
+/* Verify that stopping the server does not hang when the ICMP probe handler
+ * is waiting for the server lock.
+ */
+ZTEST(dhcpv4_server_tests, test_stop_with_echo_reply_handler_waiting)
+{
+	struct test_lease_count count;
+	int ret;
+
+	if (CONFIG_NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT == 0) {
+		ztest_test_skip();
+	}
+
+	client_get_lease(true);
+
+	k_sem_reset(&stopper_go);
+	k_sem_reset(&stopper_done);
+	stopper_ret = -EINPROGRESS;
+
+	k_thread_create(&stopper_thread, stopper_stack,
+			K_THREAD_STACK_SIZEOF(stopper_stack), stopper_fn,
+			NULL, NULL, NULL, K_PRIO_COOP(0), 0, K_NO_WAIT);
+
+	ret = net_dhcpv4_server_foreach_lease(test_ctx.iface,
+					      hold_lock_until_echo_handler_blocked_cb,
+					      NULL);
+	zassert_ok(ret, "Failed to iterate leases");
+
+	ret = k_sem_take(&stopper_done, K_SECONDS(5));
+	zassert_ok(ret, "Server stop did not complete");
+	zexpect_ok(stopper_ret, "Server stop failed");
+
+	ret = k_thread_join(&stopper_thread, K_SECONDS(1));
+	zexpect_ok(ret, "Stopper thread did not exit");
+
+	ret = net_dhcpv4_server_foreach_lease(test_ctx.iface, lease_count_cb,
+					      &count);
+	zexpect_equal(ret, -ENOENT, "Server still running after stop");
+
+	/* Probing works after a restart. */
+	ret = net_dhcpv4_server_start(test_ctx.iface, &test_base_addr);
+	zassert_ok(ret, "Failed to restart server");
+
+	test_ctx.send_echo_reply = true;
+
+	client_send_discover();
+	verify_offer(false);
+	test_pkt_free();
+
+	verify_lease_count(1, 0, 1);
+	zexpect_not_equal(test_ctx.assigned_ip.s_addr,
+			  test_ctx.declined_ip.s_addr,
+			  "Server offered the conflicting address");
+}
+
 /* Verify that the DHCP server can start and validate input properly. */
 ZTEST(dhcpv4_server_tests_no_init, test_initialization)
 {
