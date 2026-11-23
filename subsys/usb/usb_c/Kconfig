@@ -57,10 +57,11 @@ config GENVIF_INPUT_VIF_XML_PATH
 config USBC_CHUNKING
 	bool "Chunked Extended Message support"
 	help
-	  Reassemble inbound Chunked Extended Messages and emit Chunk Requests,
-	  so Extended Messages longer than MaxExtendedMsgChunkLen (26 bytes) can
-	  be received. Required by anything built on Extended Messages, such as
-	  firmware update over USB PD (PDFU).
+	  Send and receive Extended Messages longer than
+	  MaxExtendedMsgChunkLen (26 bytes) as Chunked Messages, with the
+	  Chunked Rx and Tx Handlers of the USB PD specification. Needed by
+	  features built on Extended Messages, such as firmware update over
+	  USB PD (PDFU).
 
 config USBC_CSM_SUPPORTS_SINK
 	bool

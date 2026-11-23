@@ -55,6 +55,13 @@ enum prl_flags {
 	PRL_FLAGS_SINK_NG = 9,
 	/** Flag to note a message has been received */
 	PRL_FLAGS_RX_COMPLETE = 10,
+	/**
+	 * Flag to note the pending transmission belongs to the chunking
+	 * handlers. Chunks and Chunk Requests are internal to them, so the
+	 * Policy Engine must not be told each one was sent; only the handler
+	 * knows when the whole Extended Message is done.
+	 */
+	PRL_FLAGS_TX_CHUNK = 11,
 };
 
 /**
@@ -119,6 +126,38 @@ enum rch_flags {
 };
 
 /**
+ * @brief Chunked Tx Handler Flags
+ */
+enum tch_flags {
+	/** The Policy Engine staged an Extended Message */
+	TCH_FLAGS_MSG_REQUESTED = 0,
+	/** A Chunk Request arrived from the receiver */
+	TCH_FLAGS_CHUNK_REQUEST = 1,
+};
+
+/**
+ * @brief Chunked Tx Handler States
+ *	  See Figure 6-55 Chunked Tx Handler State Diagram
+ */
+enum usbc_prl_tch_state_t {
+	/** TCH_Wait_For_Message_Request_From_Policy_Engine */
+	TCH_WAIT_FOR_MESSAGE_REQUEST_FROM_PE,
+	/** TCH_Construct_Chunked_Message */
+	TCH_CONSTRUCT_CHUNKED_MESSAGE,
+	/** TCH_Sending_Chunked_Message */
+	TCH_SENDING_CHUNKED_MESSAGE,
+	/** TCH_Wait_Chunk_Request */
+	TCH_WAIT_CHUNK_REQUEST,
+	/** TCH_Message_Sent */
+	TCH_MESSAGE_SENT,
+	/** TCH_Report_Error */
+	TCH_REPORT_ERROR,
+
+	/** Number of TCH States */
+	TCH_STATE_COUNT
+};
+
+/**
  * @brief Chunked Rx Handler States
  *	  See Figure 6-56 Chunked Rx Handler State Diagram
  */
@@ -144,6 +183,8 @@ static const struct smf_state prl_hr_states[PRL_HR_STATE_COUNT];
 #ifdef CONFIG_USBC_CHUNKING
 static const struct smf_state prl_rch_states[RCH_STATE_COUNT];
 static void prl_rch_set_state(const struct device *dev, const enum usbc_prl_rch_state_t state);
+static const struct smf_state prl_tch_states[TCH_STATE_COUNT];
+static void prl_tch_set_state(const struct device *dev, const enum usbc_prl_tch_state_t state);
 #endif
 
 #ifdef CONFIG_USBC_LOG_PD_MSG_NAMES
@@ -262,6 +303,12 @@ void prl_subsys_init(const struct device *dev)
 			PD_T_CHUNK_SENDER_RESPONSE_NOM_MS);
 	smf_set_initial(SMF_CTX(data->prl_rch),
 			&prl_rch_states[RCH_WAIT_FOR_MESSAGE_FROM_PROTOCOL_LAYER]);
+
+	data->prl_tch->dev = dev;
+	usbc_timer_init(&data->prl_tch->pd_t_chunk_sender_request,
+			PD_T_CHUNK_SENDER_REQUEST_NOM_MS);
+	smf_set_initial(SMF_CTX(data->prl_tch),
+			&prl_tch_states[TCH_WAIT_FOR_MESSAGE_REQUEST_FROM_PE]);
 #endif
 }
 
@@ -464,8 +511,9 @@ void prl_run(const struct device *dev)
 			}
 
 #ifdef CONFIG_USBC_CHUNKING
-			/* Run the Chunked Rx Handler */
+			/* Run the chunking handlers */
 			smf_run_state(SMF_CTX(data->prl_rch));
+			smf_run_state(SMF_CTX(data->prl_tch));
 #endif
 
 			/* Run Protocol Layer Message Tx state machine */
@@ -950,7 +998,10 @@ static enum smf_state_result prl_tx_wait_for_phy_response_run(void *obj)
 	if (atomic_test_bit(&prl_tx->flags, PRL_FLAGS_TX_COMPLETE)) {
 		/* NOTE: PRL_TX_Message_Sent State embedded here. */
 		/* Inform Policy Engine Message was sent */
-		pe_message_sent(dev);
+		if (!IS_ENABLED(CONFIG_USBC_CHUNKING) ||
+		    !atomic_test_bit(&prl_tx->flags, PRL_FLAGS_TX_CHUNK)) {
+			pe_message_sent(dev);
+		}
 		/*
 		 * This event reduces the time of informing the policy engine
 		 * of the transmission by one state machine cycle
@@ -1485,6 +1536,20 @@ static void prl_rx_wait_for_phy_message(const struct device *dev)
 	 * sees the same shape however many chunks were involved.
 	 */
 	if (rx_emsg->header.extended) {
+		union pd_ext_header ext_header;
+
+		ext_header.raw_value = sys_get_le16(rx_emsg->data);
+
+		if (ext_header.chunked && ext_header.request_chunk) {
+			/* A Chunk Request for a message we are sending. */
+			data->prl_tch->chunk_number_requested = ext_header.chunk_number;
+			atomic_set_bit(&data->prl_tch->flags, TCH_FLAGS_CHUNK_REQUEST);
+
+			/* As above: this return skips pe_message_received(). */
+			usbc_bypass_next_sleep(dev);
+			return;
+		}
+
 		atomic_set_bit(&data->prl_rch->flags, RCH_FLAGS_MSG_RECEIVED);
 
 		/*
@@ -1516,21 +1581,48 @@ static uint32_t rch_chunk_payload_len(const struct pd_msg *msg)
 }
 
 /**
+ * @brief Queue an Extended Message chunk on the Tx state machine.
+ *
+ * Shared by both chunking handlers so that all chunk traffic is marked with
+ * PRL_FLAGS_TX_CHUNK and stays invisible to the Policy Engine.
+ *
+ * @param ext_header Extended Message Header for this chunk
+ * @param payload Chunk payload, or NULL for a header-only Chunk Request
+ * @param payload_len Number of payload bytes
+ */
+static void prl_chunk_queue_tx(const struct device *dev, enum pd_packet_type pkt_type,
+			       uint8_t msg_type, union pd_ext_header ext_header,
+			       const uint8_t *payload, uint32_t payload_len)
+{
+	struct usbc_port_data *data = dev->data;
+	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
+
+	prl_tx->emsg.type = pkt_type;
+	prl_tx->emsg.header.raw_value = 0;
+	prl_tx->emsg.header.extended = 1;
+	sys_put_le16(ext_header.raw_value, prl_tx->emsg.data);
+
+	if (payload_len > 0) {
+		memcpy(&prl_tx->emsg.data[sizeof(uint16_t)], payload, payload_len);
+	}
+
+	prl_tx->emsg.len = sizeof(uint16_t) + payload_len;
+	prl_tx->msg_type = msg_type;
+
+	atomic_set_bit(&prl_tx->flags, PRL_FLAGS_TX_CHUNK);
+	atomic_set_bit(&prl_tx->flags, PRL_FLAGS_MSG_XMIT);
+}
+
+/**
  * @brief Queue a Chunk Request for the next chunk.
  *
  * A Chunk Request is an Extended Message carrying nothing but its Extended
  * Message Header, with Request Chunk set and Data Size zero.
- *
- * @note The specification routes this through the Chunked Tx Handler. Until
- *	 that exists, the request is queued directly on the Tx state machine,
- *	 which is safe only because reassembly and a chunked transmission
- *	 cannot currently be in flight at the same time.
  */
 static void rch_send_chunk_request(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_rch_t *rch = data->prl_rch;
-	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
 	union pd_ext_header ext_header = {
 		.chunked = 1,
 		.request_chunk = 1,
@@ -1538,14 +1630,7 @@ static void rch_send_chunk_request(const struct device *dev)
 		.data_size = 0,
 	};
 
-	prl_tx->emsg.type = rch->pkt_type;
-	prl_tx->emsg.header.raw_value = 0;
-	prl_tx->emsg.header.extended = 1;
-	prl_tx->emsg.len = sizeof(uint16_t);
-	sys_put_le16(ext_header.raw_value, prl_tx->emsg.data);
-	prl_tx->msg_type = rch->msg_type;
-
-	atomic_set_bit(&prl_tx->flags, PRL_FLAGS_MSG_XMIT);
+	prl_chunk_queue_tx(dev, rch->pkt_type, rch->msg_type, ext_header, NULL, 0);
 }
 
 static void rch_wait_for_message_from_protocol_layer_entry(void *obj)
@@ -1748,6 +1833,217 @@ static void prl_rch_set_state(const struct device *dev, const enum usbc_prl_rch_
 	 * does. Reassembly is a long chain of short states, so a cycle time of
 	 * delay on each one dominates the transfer.
 	 */
+	usbc_bypass_next_sleep(dev);
+}
+
+/**
+ * @brief Stage an Extended Message for chunked transmission.
+ */
+int prl_send_ext_data_msg(const struct device *dev, const enum pd_packet_type type,
+			  const enum pd_ext_msg_type msg, const uint8_t *data, uint32_t len)
+{
+	struct usbc_port_data *port = dev->data;
+	struct protocol_layer_tch_t *tch = port->prl_tch;
+
+	if (len > PD_MAX_EXTENDED_MSG_LEN) {
+		return -EMSGSIZE;
+	}
+
+	if (atomic_test_bit(&tch->flags, TCH_FLAGS_MSG_REQUESTED)) {
+		return -EBUSY;
+	}
+
+	if (len > 0) {
+		memcpy(tch->payload, data, len);
+	}
+
+	tch->data_size = len;
+	tch->pkt_type = type;
+	tch->msg_type = msg;
+
+	atomic_set_bit(&tch->flags, TCH_FLAGS_MSG_REQUESTED);
+
+	return 0;
+}
+
+static void tch_wait_for_message_request_from_pe_entry(void *obj)
+{
+	struct protocol_layer_tch_t *tch = (struct protocol_layer_tch_t *)obj;
+
+	tch->chunk_number_to_send = 0;
+	tch->num_bytes_sent = 0;
+}
+
+static enum smf_state_result tch_wait_for_message_request_from_pe_run(void *obj)
+{
+	struct protocol_layer_tch_t *tch = (struct protocol_layer_tch_t *)obj;
+
+	if (atomic_test_bit(&tch->flags, TCH_FLAGS_MSG_REQUESTED)) {
+		prl_tch_set_state(tch->dev, TCH_CONSTRUCT_CHUNKED_MESSAGE);
+	}
+
+	return SMF_EVENT_PROPAGATE;
+}
+
+/**
+ * @brief Build and queue the chunk identified by chunk_number_to_send.
+ */
+static void tch_construct_chunked_message_entry(void *obj)
+{
+	struct protocol_layer_tch_t *tch = (struct protocol_layer_tch_t *)obj;
+	uint32_t offset = tch->chunk_number_to_send * PD_MAX_EXTENDED_MSG_CHUNK_LEN;
+	uint32_t payload_len;
+	union pd_ext_header ext_header = {
+		.chunked = 1,
+		.request_chunk = 0,
+		.chunk_number = tch->chunk_number_to_send,
+		.data_size = tch->data_size,
+	};
+
+	if (offset > tch->data_size) {
+		LOG_ERR("TCH: chunk %u starts past the end of a %u byte message",
+			tch->chunk_number_to_send, tch->data_size);
+		prl_tch_set_state(tch->dev, TCH_REPORT_ERROR);
+		return;
+	}
+
+	payload_len = MIN(tch->data_size - offset, PD_MAX_EXTENDED_MSG_CHUNK_LEN);
+
+	prl_chunk_queue_tx(tch->dev, tch->pkt_type, tch->msg_type, ext_header,
+			   &tch->payload[offset], payload_len);
+
+	tch->num_bytes_sent = offset + payload_len;
+
+	prl_tch_set_state(tch->dev, TCH_SENDING_CHUNKED_MESSAGE);
+}
+
+static enum smf_state_result tch_sending_chunked_message_run(void *obj)
+{
+	struct protocol_layer_tch_t *tch = (struct protocol_layer_tch_t *)obj;
+	struct usbc_port_data *port = tch->dev->data;
+	struct protocol_layer_tx_t *prl_tx = port->prl_tx;
+
+	if (atomic_test_bit(&prl_tx->flags, PRL_FLAGS_TX_ERROR)) {
+		prl_tch_set_state(tch->dev, TCH_REPORT_ERROR);
+	} else if (atomic_test_bit(&prl_tx->flags, PRL_FLAGS_TX_COMPLETE)) {
+		if (tch->num_bytes_sent >= tch->data_size) {
+			prl_tch_set_state(tch->dev, TCH_MESSAGE_SENT);
+		} else {
+			prl_tch_set_state(tch->dev, TCH_WAIT_CHUNK_REQUEST);
+		}
+	}
+
+	return SMF_EVENT_PROPAGATE;
+}
+
+static void tch_wait_chunk_request_entry(void *obj)
+{
+	struct protocol_layer_tch_t *tch = (struct protocol_layer_tch_t *)obj;
+
+	atomic_clear_bit(&tch->flags, TCH_FLAGS_CHUNK_REQUEST);
+	usbc_timer_start(&tch->pd_t_chunk_sender_request);
+}
+
+static enum smf_state_result tch_wait_chunk_request_run(void *obj)
+{
+	struct protocol_layer_tch_t *tch = (struct protocol_layer_tch_t *)obj;
+
+	if (atomic_test_and_clear_bit(&tch->flags, TCH_FLAGS_CHUNK_REQUEST)) {
+		if (tch->chunk_number_requested != tch->chunk_number_to_send + 1) {
+			LOG_ERR("TCH: chunk %u requested, expected %u", tch->chunk_number_requested,
+				tch->chunk_number_to_send + 1);
+			prl_tch_set_state(tch->dev, TCH_REPORT_ERROR);
+			return SMF_EVENT_PROPAGATE;
+		}
+
+		tch->chunk_number_to_send = tch->chunk_number_requested;
+		prl_tch_set_state(tch->dev, TCH_CONSTRUCT_CHUNKED_MESSAGE);
+	} else if (usbc_timer_expired(&tch->pd_t_chunk_sender_request)) {
+		LOG_ERR("TCH: no request for chunk %u", tch->chunk_number_to_send + 1);
+		prl_tch_set_state(tch->dev, TCH_REPORT_ERROR);
+	}
+
+	return SMF_EVENT_PROPAGATE;
+}
+
+static void tch_wait_chunk_request_exit(void *obj)
+{
+	struct protocol_layer_tch_t *tch = (struct protocol_layer_tch_t *)obj;
+
+	usbc_timer_stop(&tch->pd_t_chunk_sender_request);
+}
+
+static void tch_message_sent_entry(void *obj)
+{
+	struct protocol_layer_tch_t *tch = (struct protocol_layer_tch_t *)obj;
+
+	LOG_DBG("TCH: sent %u bytes in %u chunks", tch->data_size, tch->chunk_number_to_send + 1);
+
+	atomic_clear_bit(&tch->flags, TCH_FLAGS_MSG_REQUESTED);
+	pe_message_sent(tch->dev);
+	prl_tch_set_state(tch->dev, TCH_WAIT_FOR_MESSAGE_REQUEST_FROM_PE);
+}
+
+static void tch_report_error_entry(void *obj)
+{
+	struct protocol_layer_tch_t *tch = (struct protocol_layer_tch_t *)obj;
+
+	atomic_clear_bit(&tch->flags, TCH_FLAGS_MSG_REQUESTED);
+	pe_report_error(tch->dev, ERR_XMIT, tch->pkt_type);
+	prl_tch_set_state(tch->dev, TCH_WAIT_FOR_MESSAGE_REQUEST_FROM_PE);
+}
+
+/* clang-format off */
+/**
+ * @brief Chunked Tx Handler State table
+ */
+static const struct smf_state prl_tch_states[TCH_STATE_COUNT] = {
+	[TCH_WAIT_FOR_MESSAGE_REQUEST_FROM_PE] = SMF_CREATE_STATE(
+		tch_wait_for_message_request_from_pe_entry,
+		tch_wait_for_message_request_from_pe_run,
+		NULL,
+		NULL,
+		NULL),
+	[TCH_CONSTRUCT_CHUNKED_MESSAGE] = SMF_CREATE_STATE(
+		tch_construct_chunked_message_entry,
+		NULL,
+		NULL,
+		NULL,
+		NULL),
+	[TCH_SENDING_CHUNKED_MESSAGE] = SMF_CREATE_STATE(
+		NULL,
+		tch_sending_chunked_message_run,
+		NULL,
+		NULL,
+		NULL),
+	[TCH_WAIT_CHUNK_REQUEST] = SMF_CREATE_STATE(
+		tch_wait_chunk_request_entry,
+		tch_wait_chunk_request_run,
+		tch_wait_chunk_request_exit,
+		NULL,
+		NULL),
+	[TCH_MESSAGE_SENT] = SMF_CREATE_STATE(
+		tch_message_sent_entry,
+		NULL,
+		NULL,
+		NULL,
+		NULL),
+	[TCH_REPORT_ERROR] = SMF_CREATE_STATE(
+		tch_report_error_entry,
+		NULL,
+		NULL,
+		NULL,
+		NULL),
+};
+/* clang-format on */
+
+static void prl_tch_set_state(const struct device *dev, const enum usbc_prl_tch_state_t state)
+{
+	struct usbc_port_data *data = dev->data;
+
+	smf_set_state(SMF_CTX(data->prl_tch), &prl_tch_states[state]);
+
+	/* Run the new state without waiting, as prl_rch_set_state does. */
 	usbc_bypass_next_sleep(dev);
 }
 #endif /* CONFIG_USBC_CHUNKING */

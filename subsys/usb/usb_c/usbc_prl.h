@@ -65,6 +65,42 @@ struct protocol_layer_rch_t {
 	/** tChunkSenderResponse timer */
 	struct usbc_timer_t pd_t_chunk_sender_response;
 };
+
+/**
+ * @brief Chunked Tx Handler State Machine Object
+ *
+ * Splits an Extended Message into chunks of at most
+ * PD_MAX_EXTENDED_MSG_CHUNK_LEN payload bytes and sends one per Chunk Request
+ * from the receiver.
+ * See Chunked Tx Handler, USB PD Specification Revision 3.1, 6.11.2.1.3.
+ */
+struct protocol_layer_tch_t {
+	/** state machine context */
+	struct smf_ctx ctx;
+	/** Port device */
+	const struct device *dev;
+	/** state machine flags */
+	atomic_t flags;
+	/** Chunk Number to place in the next chunk */
+	uint16_t chunk_number_to_send;
+	/** Chunk Number carried by the most recent Chunk Request */
+	uint16_t chunk_number_requested;
+	/** Payload bytes handed to the Protocol Layer so far */
+	uint32_t num_bytes_sent;
+	/** Total payload bytes in the message being sent */
+	uint32_t data_size;
+	/** Message type of the extended message being sent */
+	uint8_t msg_type;
+	/** Packet type of the extended message being sent */
+	enum pd_packet_type pkt_type;
+	/** Staged payload, without the Extended Message Header */
+	uint8_t payload[PD_MAX_EXTENDED_MSG_LEN];
+
+	/* Timers */
+
+	/** tChunkSenderRequest timer */
+	struct usbc_timer_t pd_t_chunk_sender_request;
+};
 #endif /* CONFIG_USBC_CHUNKING */
 
 /**
@@ -208,6 +244,28 @@ void prl_send_ctrl_msg(const struct device *dev, const enum pd_packet_type type,
  */
 void prl_send_data_msg(const struct device *dev, const enum pd_packet_type type,
 		       const enum pd_data_msg_type msg);
+
+#ifdef CONFIG_USBC_CHUNKING
+/**
+ * @brief Instructs the Protocol Layer to send a Power Delivery Extended Message
+ *
+ * The message is chunked as needed and transmitted one chunk per Chunk Request
+ * from the receiver. The Policy Engine is notified once, when the final chunk
+ * has been sent.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param type The port partner to send this message to
+ * @param msg The extended message type to send
+ * @param data Payload, without the Extended Message Header
+ * @param len Number of payload bytes
+ *
+ * @retval 0 on success
+ * @retval -EBUSY if a chunked transmission is already in progress
+ * @retval -EMSGSIZE if the payload exceeds PD_MAX_EXTENDED_MSG_LEN
+ */
+int prl_send_ext_data_msg(const struct device *dev, const enum pd_packet_type type,
+			  const enum pd_ext_msg_type msg, const uint8_t *data, uint32_t len);
+#endif /* CONFIG_USBC_CHUNKING */
 
 /**
  * @brief Instructs the Protocol Layer to execute a hard reset

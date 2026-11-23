@@ -91,6 +91,8 @@ struct usbc_port_data {
 #ifdef CONFIG_USBC_CHUNKING
 	/** Chunked Rx Handler state machine object */
 	struct protocol_layer_rch_t *prl_rch;
+	/** Chunked Tx Handler state machine object */
+	struct protocol_layer_tch_t *prl_tch;
 #endif
 	/** Enables or Disables the Protocol Layer state machine */
 	bool prl_enabled;
