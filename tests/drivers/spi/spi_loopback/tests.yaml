@@ -112,6 +112,18 @@ tests:
       - stm32u083c_dk
     integration_platforms:
       - nucleo_g474re
+  drivers.spi.stm32_spi_dma.timeout_32bit.build:
+    build_only: true
+    extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma.conf"
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
+      - CONFIG_TICKLESS_KERNEL=y
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=10000
+    platform_allow:
+      - b_u585i_iot02a
+      - nucleo_h743zi
+    integration_platforms:
+      - nucleo_h743zi
   drivers.spi.stm32_spi_dma_cached_memory.loopback:
     extra_args: EXTRA_CONF_FILE="stm32-spi-dma-cached-memory.conf"
     platform_allow:
