@@ -74,6 +74,8 @@ static void lora_radio_op_end(const struct device *dev, int status)
 	data->tx_async_signal = NULL;
 	data->rx_cb = NULL;
 	data->rx_cb_user_data = NULL;
+	data->cad_cb = NULL;
+	data->cad_cb_user_data = NULL;
 
 	config->ops->sleep(dev);
 	data->op = LORA_RADIO_OP_NONE;
@@ -124,7 +126,8 @@ static int lora_radio_wait(const struct device *dev, struct lora_radio_waiter *w
 		/* Still registered: the interrupt work has not ended it meanwhile */
 		if (data->waiter == waiter) {
 			lora_radio_op_abort(dev,
-					    data->op == LORA_RADIO_OP_TX ? -ETIMEDOUT : -EAGAIN);
+					    data->op == LORA_RADIO_OP_TX ||
+					    data->op == LORA_RADIO_OP_CAD ? -ETIMEDOUT : -EAGAIN);
 		}
 
 		k_mutex_unlock(&data->lock);
@@ -237,6 +240,20 @@ static void lora_radio_irq_work_handler(struct k_work *work)
 	}
 
 	switch (data->op) {
+	case LORA_RADIO_OP_CAD:
+		if ((irq_status & ops->irq_cad_done) != 0) {
+			lora_cad_cb cb = data->cad_cb;
+			void *user_data = data->cad_cb_user_data;
+			bool detected = (irq_status & ops->irq_cad_detected) != 0;
+
+			lora_radio_op_end(dev, detected ? 1 : 0);
+			if (cb != NULL) {
+				k_mutex_unlock(&data->lock);
+				cb(dev, detected, user_data);
+				k_mutex_lock(&data->lock, K_FOREVER);
+			}
+		}
+		break;
 	case LORA_RADIO_OP_TX:
 		if ((irq_status & ops->irq_tx_done) != 0) {
 			lora_radio_op_end(dev, 0);
@@ -393,6 +410,67 @@ int lora_radio_send(const struct device *dev,
 	}
 
 	return ret;
+}
+
+static int lora_radio_cad_start(const struct device *dev, lora_cad_cb cb,
+				void *user_data, struct lora_radio_waiter *waiter)
+{
+	const struct lora_radio_config *config = dev->config;
+	struct lora_radio_data *data = dev->data;
+	int ret;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+	if (!data->configured) {
+		ret = -EINVAL;
+		goto unlock;
+	}
+	if (config->ops->cad_start == NULL) {
+		ret = -ENOTSUP;
+		goto unlock;
+	}
+	ret = lora_radio_op_begin(dev, LORA_RADIO_OP_CAD);
+	if (ret < 0) {
+		goto unlock;
+	}
+	ret = config->ops->cad_start(dev);
+	if (ret < 0) {
+		lora_radio_op_end(dev, ret);
+		goto unlock;
+	}
+	data->cad_cb = cb;
+	data->cad_cb_user_data = user_data;
+	lora_radio_register_waiter(data, waiter);
+
+unlock:
+	k_mutex_unlock(&data->lock);
+	return ret;
+}
+
+int lora_radio_cad(const struct device *dev, k_timeout_t timeout)
+{
+	struct lora_radio_waiter waiter = {0};
+	int ret = lora_radio_cad_start(dev, NULL, NULL, &waiter);
+
+	if (ret < 0) {
+		return ret;
+	}
+	return lora_radio_wait(dev, &waiter, timeout);
+}
+
+int lora_radio_cad_async(const struct device *dev, lora_cad_cb cb, void *user_data)
+{
+	struct lora_radio_data *data = dev->data;
+
+	if (cb == NULL) {
+		k_mutex_lock(&data->lock, K_FOREVER);
+		if (data->op == LORA_RADIO_OP_CAD && data->cad_cb != NULL) {
+			data->cad_cb = NULL;
+			lora_radio_op_abort(dev, -ECANCELED);
+		}
+		k_mutex_unlock(&data->lock);
+		return 0;
+	}
+	return lora_radio_cad_start(dev, cb, user_data, NULL);
 }
 
 /*

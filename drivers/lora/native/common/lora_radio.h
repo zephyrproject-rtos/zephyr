@@ -25,6 +25,7 @@ enum lora_radio_op {
 	LORA_RADIO_OP_NONE = 0,
 	LORA_RADIO_OP_CONFIG,
 	LORA_RADIO_OP_TX,
+	LORA_RADIO_OP_CAD,
 	LORA_RADIO_OP_CW,
 	LORA_RADIO_OP_RX,
 	LORA_RADIO_OP_RX_DUTY_CYCLE,
@@ -42,6 +43,8 @@ struct lora_radio_ops {
 	uint32_t irq_tx_done;
 	uint32_t irq_rx_done;
 	uint32_t irq_timeout;
+	uint32_t irq_cad_done;
+	uint32_t irq_cad_detected;
 
 	/* The radio sleeps between operations and takes no command then */
 	bool sleeps;
@@ -61,6 +64,9 @@ struct lora_radio_ops {
 	/* Optional. Whether the radio can send len bytes as it is configured. */
 	int (*tx_check)(const struct device *dev, uint32_t len);
 	int (*tx_start)(const struct device *dev, const uint8_t *buf, uint32_t len);
+
+	/* Optional. Listen once for a LoRa preamble. */
+	int (*cad_start)(const struct device *dev);
 
 	/* Set the radio up for the receptions that follow */
 	int (*rx_prepare)(const struct device *dev);
@@ -120,6 +126,10 @@ struct lora_radio_data {
 	/* Async TX signal */
 	struct k_poll_signal *tx_async_signal;
 
+	/* Async CAD callback */
+	lora_cad_cb cad_cb;
+	void *cad_cb_user_data;
+
 	/* Deferred work for interrupt handling */
 	struct k_work irq_work;
 };
@@ -143,6 +153,8 @@ int lora_radio_configure(const struct device *dev, lora_radio_config_fn fn, cons
 int lora_radio_send(const struct device *dev, uint8_t *data_buf, uint32_t data_len);
 int lora_radio_send_async(const struct device *dev, uint8_t *data_buf, uint32_t data_len,
 			  struct k_poll_signal *async);
+int lora_radio_cad(const struct device *dev, k_timeout_t timeout);
+int lora_radio_cad_async(const struct device *dev, lora_cad_cb cb, void *user_data);
 int lora_radio_recv(const struct device *dev, uint8_t *data_buf, uint8_t size,
 		    k_timeout_t timeout, int16_t *rssi, int8_t *snr);
 int lora_radio_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data);
