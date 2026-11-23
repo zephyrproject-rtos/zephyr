@@ -17,6 +17,7 @@
 #define AS923_DEFAULT_CH_COUNT 2
 #define AS923_DR_COUNT         7
 #define AS923_JOIN_DR          2
+#define AS923_MAX_EIRP_DBM     16
 
 #define CH_MASK_CNTL_ALL_ON 6
 #define CH_MASK_CNTL_BANKS  5
@@ -440,6 +441,86 @@ static void open_the_band(void *fixture)
 	ARG_UNUSED(fixture);
 
 	as923->record_tx(AS923_FREQ_CH0, 0);
+}
+
+/*
+ * The band takes a TxParamSetupReq (3.10.3), so it fills in both dwell time
+ * lookups. Table 72 leaves DR0 and DR1 without a payload under
+ * UplinkDwellTime = 1.
+ */
+ZTEST(lorawan_as923_region, test_uplink_dwell_datarates)
+{
+	static const enum lora_datarate sf[] = {SF_10, SF_9, SF_8, SF_7, SF_7};
+	static const enum lora_signal_bandwidth bw[] = {BW_125_KHZ, BW_125_KHZ, BW_125_KHZ,
+							BW_125_KHZ, BW_250_KHZ};
+	static const uint8_t payload[] = {11, 53, 125, 222, 222};
+	struct lwan_dr_params p;
+	int8_t power;
+
+	zassert_not_null(as923->get_dwell_tx_params);
+	zassert_equal(as923->max_eirp_dbm, AS923_MAX_EIRP_DBM);
+
+	for (uint8_t dr = 2; dr < AS923_DR_COUNT; dr++) {
+		zassert_ok(as923->get_dwell_tx_params(dr, 0, &p, &power), "DR%u", dr);
+		zassert_equal(p.sf, sf[dr - 2], "DR%u", dr);
+		zassert_equal(p.bw, bw[dr - 2], "DR%u", dr);
+		zassert_equal(p.max_payload, payload[dr - 2], "DR%u", dr);
+		zassert_equal(power, AS923_MAX_EIRP_DBM, "DR%u", dr);
+	}
+
+	for (uint8_t dr = 0; dr < 2; dr++) {
+		zassert_equal(as923->get_dwell_tx_params(dr, 0, &p, &power), -EINVAL, "DR%u", dr);
+	}
+
+	zassert_equal(as923->get_dwell_tx_params(AS923_DR_COUNT, 0, &p, &power), -EINVAL);
+}
+
+/*
+ * Table 75 is not Table 74 shifted: the limit lifts the floor of every row to
+ * DR2, so a row that walked down to DR0 stops at DR2 instead.
+ */
+ZTEST(lorawan_as923_region, test_downlink_dwell_rx1_mapping)
+{
+	struct lwan_dr_params plain;
+	struct lwan_dr_params dwell;
+	uint32_t freq;
+
+	zassert_not_null(as923->get_dwell_rx1_params);
+
+	/* Uplink DR2 with offset 5: DR0 without the limit, DR2 with it. */
+	zassert_ok(as923->get_rx1_params(AS923_FREQ_CH1, 2, 5, &freq, &plain));
+	zassert_equal(plain.sf, SF_12);
+	zassert_ok(as923->get_dwell_rx1_params(AS923_FREQ_CH1, 2, 5, &freq, &dwell));
+	zassert_equal(dwell.sf, SF_10);
+	zassert_equal(freq, AS923_FREQ_CH1);
+
+	/* Uplink DR0 reaches DR2 at every offset. */
+	for (uint8_t off = 0; off <= 5; off++) {
+		zassert_ok(as923->get_dwell_rx1_params(AS923_FREQ_CH1, 0, off, &freq, &dwell),
+			   "offset %u", off);
+		zassert_equal(dwell.sf, SF_10, "offset %u", off);
+	}
+
+	/* The rows that reach past the plan are refused either way. */
+	zassert_equal(as923->get_dwell_rx1_params(AS923_FREQ_CH1, 6, 7, &freq, &dwell), -EINVAL);
+	zassert_equal(as923->get_dwell_rx1_params(AS923_FREQ_CH1, AS923_DR_COUNT, 0, &freq, &dwell),
+		      -EINVAL);
+	zassert_equal(as923->get_dwell_rx1_params(AS923_FREQ_CH1, 0, 8, &freq, &dwell), -EINVAL);
+}
+
+/*
+ * 3.10.6 holds the downlink payload limit at the DownlinkDwellTime = 0 value
+ * whatever the setting, so only the datarate moves with the limit.
+ */
+ZTEST(lorawan_as923_region, test_downlink_payload_ignores_the_dwell_time)
+{
+	struct lwan_dr_params rx2;
+	struct lwan_dr_params dwell;
+	uint32_t freq;
+
+	zassert_ok(as923->get_dwell_rx1_params(AS923_FREQ_CH1, 4, 0, &freq, &dwell));
+	zassert_ok(as923->get_rx2_params(4, &freq, &rx2));
+	zassert_equal(dwell.max_payload, rx2.max_payload);
 }
 
 ZTEST_SUITE(lorawan_as923_region, NULL, suite_setup, open_the_band, NULL, NULL);
