@@ -214,7 +214,7 @@ static void show_bars(const struct shell *sh, pcie_bdf_t bdf)
 
 static void show_capabilities(const struct shell *sh, pcie_bdf_t bdf)
 {
-	struct pcie_cap_id_to_str *cap_id2str;
+	const struct pcie_cap_id_to_str *cap_id2str;
 	uint32_t base;
 
 	shell_fprintf(sh, SHELL_NORMAL, "    PCI capabilities:\n");
