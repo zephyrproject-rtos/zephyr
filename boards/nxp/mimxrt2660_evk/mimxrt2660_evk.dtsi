@@ -129,3 +129,8 @@
 		ngpios = <24>;
 	};
 };
+
+&lpi2c1 {
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+};
