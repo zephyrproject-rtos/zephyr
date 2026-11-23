@@ -486,6 +486,9 @@ SECTION_FUNC(exceptions, _exceptions)
 SECTION_SUBSEC_FUNC(exceptions, _reset_and__start, __reset)
 SECTION_SUBSEC_FUNC(exceptions, _reset_and__start, __start)
 	l.j _reset
+#ifndef __OR1K_NODELAY__
+	 l.nop
+#endif
 
 /* Reset */
 exception_reset
