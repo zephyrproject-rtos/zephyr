@@ -1048,6 +1048,23 @@ static int dma_stm32_init(const struct device *dev)
 	return 0;
 }
 
+/* Get the number of bytes read from the source that are still held in the channel FIFO */
+static uint32_t dma_stm32_get_fifo_bytes(DMA_TypeDef *dma, uint32_t id)
+{
+#ifdef DMA_CSR_FIFOL
+	uint32_t dest_width = LL_DMA_GetDestDataWidth(STM32_DMA_GET_CHANNEL(dma, id));
+	uint32_t level = LL_DMA_GetFIFOLevel(STM32_DMA_GET_CHANNEL(dma, id));
+
+	/* The FIFO level is expressed in units of the destination data width */
+	return level << (dest_width >> DMA_CTR1_DDW_LOG2_Pos);
+#else
+	ARG_UNUSED(dma);
+	ARG_UNUSED(id);
+
+	return 0;
+#endif
+}
+
 static int dma_stm32_get_status(const struct device *dev,
 				uint32_t id, struct dma_status *stat)
 {
@@ -1061,6 +1078,19 @@ static int dma_stm32_get_status(const struct device *dev,
 
 	stream = &config->streams[id];
 	stat->pending_length = LL_DMA_GetBlkDataLength(STM32_DMA_GET_CHANNEL(dma, id));
+
+	/*
+	 * The block counter is decremented when data is read from the source. On a suspended
+	 * memory to peripheral transfer, data still in the FIFO has not reached the peripheral
+	 * and is lost when the channel is stopped, so it is still pending. The suspended flag
+	 * stays set after a resume, so the suspend request has to be checked as well.
+	 */
+	if ((stream->direction == MEMORY_TO_PERIPHERAL) &&
+	    LL_DMA_IsSuspendedChannel(STM32_DMA_GET_CHANNEL(dma, id)) &&
+	    LL_DMA_IsActiveFlag_SUSP(STM32_DMA_GET_CHANNEL(dma, id))) {
+		stat->pending_length += dma_stm32_get_fifo_bytes(dma, id);
+	}
+
 	stat->dir = stream->direction;
 	stat->busy = stream->busy;
 
