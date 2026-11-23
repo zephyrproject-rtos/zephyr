@@ -363,9 +363,14 @@ static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 		in_offset = 16;
 	}
 
+	if (pkt->in_len < in_offset) {
+		return -EINVAL;
+	}
+
 	k_sem_take(&data->device_sem, K_FOREVER);
 
-	ret = do_aes(ctx, hal_cbc_decrypt_op, pkt->in_buf + in_offset, pkt->in_len, pkt->out_buf);
+	ret = do_aes(ctx, hal_cbc_decrypt_op, pkt->in_buf + in_offset, pkt->in_len - in_offset,
+		     pkt->out_buf);
 
 	k_sem_give(&data->device_sem);
 
