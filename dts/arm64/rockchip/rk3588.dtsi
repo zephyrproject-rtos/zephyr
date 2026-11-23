@@ -114,6 +114,13 @@
 		interrupt-parent = <&gic>;
 	};
 
+	hwinfo: hwinfo {
+		compatible = "zephyr,hwinfo-nvmem";
+		nvmem-cells = <&otp_id>;
+		nvmem-cell-names = "device-id";
+		status = "disabled";
+	};
+
 	sram@10f000 {
 		compatible = "mmio-sram";
 		reg = <0x0010f000 0x100>;
@@ -265,6 +272,24 @@
 		reg-shift = <2>;
 		/* Supply clock-frequency or clocks and current-speed before enabling. */
 		status = "disabled";
+	};
+
+	rk3588_otp: otp@fecc0000 {
+		compatible = "rockchip,rk3588-otp";
+		reg = <0xfecc0000 0x400>;
+		status = "disabled";
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			otp_id: id@7 {
+				reg = <0x07 0x10>;
+				#nvmem-cell-cells = <0>;
+				read-only;
+			};
+		};
 	};
 };
 
