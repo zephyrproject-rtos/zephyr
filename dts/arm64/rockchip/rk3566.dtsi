@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Seunghoon Park
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The RK3566 shares its CPU cluster, interrupt controller, timer and UART
+ * blocks with the RK3568, so only the differences are described here.
+ */
+
+#include <arm64/rockchip/rk3568.dtsi>
+
+/ {
+	compatible = "rockchip,rk3566";
+};
