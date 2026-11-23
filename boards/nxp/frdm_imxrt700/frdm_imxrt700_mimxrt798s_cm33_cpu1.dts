@@ -20,6 +20,11 @@
 	};
 
 	chosen {
+		/*
+		 * CPU0 powers these partitions up before releasing this core, so
+		 * keep zephyr,code-cpu1-partition and zephyr,sram-cpu1-partition in
+		 * the CPU0 devicetree pointed at the same nodes.
+		 */
 		zephyr,flash = &sram_code;
 		zephyr,sram = &sram3;
 		zephyr,console = &flexcomm19_lpuart19;
@@ -70,5 +75,14 @@
 };
 
 &gpio8 {
+	status = "okay";
+};
+
+&mbox1_b {
+	status = "okay";
+};
+
+&sema420 {
+	domain-id = <5>;
 	status = "okay";
 };
