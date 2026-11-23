@@ -790,6 +790,9 @@
 "./tests/bluetooth/classic/gap_s/pytest/test_gap_s.py" = [
     "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
+"./tests/bluetooth/classic/hid_device/pytest/test_hid.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./tests/bluetooth/classic/l2cap_c/pytest/test_l2cap_common.py" = [
     "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
