@@ -268,6 +268,8 @@ SECTIONS
         _interrupt_stack_end = .;
     } GROUP_LINK_IN(RAMABLE_REGION)
 
+    #include <snippets-sections.ld>
+
     #include <zephyr/linker/ram-end.ld>
 
     GROUP_END(RAMABLE_REGION)
@@ -275,8 +277,6 @@ SECTIONS
     #ifdef CONFIG_GEN_ISR_TABLES
     #include <zephyr/linker/intlist.ld>
     #endif
-
-    #include <snippets-sections.ld>
 
     #include <zephyr/linker/debug-sections.ld>
     /DISCARD/ : { *(.hexagon.attributes) }

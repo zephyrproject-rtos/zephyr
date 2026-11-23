@@ -247,18 +247,13 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	}
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-	/* Set up SW ISR table entry atomically with respect to the IRQ */
-	unsigned int key = arch_irq_lock();
-
-	_sw_isr_table[irq].isr = routine;
-	_sw_isr_table[irq].arg = parameter;
-	arch_irq_unlock(key);
+	z_isr_install(irq, routine, parameter);
 #endif
 
 	/* Set interrupt priority */
 	hexagon_irq_priority_set(irq, priority);
 
-	return 0;
+	return irq;
 }
 
 /* Set interrupt priority */

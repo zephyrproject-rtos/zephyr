@@ -12,8 +12,10 @@ if(TOOLCHAIN_HOME)
   list(APPEND QEMU_BINARY_HINTS ${TOOLCHAIN_HOME})
 endif()
 
+# Zephyr is a uniprocessor HVM guest, extra idle threads delay its timer.
 set(QEMU_BOARD_FLAGS
   -machine virt
+  -smp 1
   -m 4G
 )
 
