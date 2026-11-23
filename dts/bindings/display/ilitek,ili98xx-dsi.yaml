@@ -30,3 +30,18 @@ properties:
     description: |
       Set to enable burst mode for the MIPI-DSI interface. If not present,
       burst mode will be disabled.
+
+  init-seq:
+    type: uint8-array
+    required: true
+    description: |
+      Initialization sequence for the display panel. This should be an array of
+      bytes encoded like so:
+      - The first byte is the register address.
+      - The second byte is the length of the command data.
+      - The following bytes are the command data itself.
+      For example, an initialization sequence with two commands might look like:
+      [01 00 11 02 01 22 33]
+      Here, 0x01 is the first register, 0x00 is the length of its command data (none),
+      followed by 0x11 as the next register, 0x02 as the length of its command data,
+      and 0x22, 0x33 as the command data itself.

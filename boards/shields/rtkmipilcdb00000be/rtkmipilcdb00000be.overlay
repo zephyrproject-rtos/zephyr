@@ -34,6 +34,178 @@
 		width = <480>;
 		data-lanes = <2>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+		init-seq = [
+			    /* Change to Page 1 CMD */
+			    ff 05 ff 98 06 04 01
+			    /* Output SDA */
+			    08 01 10
+			    /* DE = 1 Active */
+			    21 01 01
+			    /* Resolution setting 480 X 800 */
+			    30 01 01
+			    /* Inversion setting */
+			    31 01 00
+			    /* BT 15 */
+			    40 01 14
+			    /* avdd +5.2v,avee-5.2v */
+			    41 01 33
+			    /* VGL=DDVDL+VCL-VCIP,VGH=2DDVDH-DDVDL */
+			    42 01 02
+			    /* Set VGH clamp level */
+			    43 01 09
+			    /* Set VGL clamp level */
+			    44 01 06
+			    /* Set VREG1 */
+			    50 01 70
+			    /* Set VREG2 */
+			    51 01 70
+			    /* Flicker MSB */
+			    52 01 00
+			    /* Flicker LSB */
+			    53 01 48
+			    /* Timing Adjust */
+			    60 01 07
+			    61 01 00
+			    62 01 08
+			    63 01 00
+			    /* Positive Gamma Control 1 */
+			    a0 01 00
+			    /* Positive Gamma Control 2 */
+			    a1 01 03
+			    /* Positive Gamma Control 3 */
+			    a2 01 09
+			    /* Positive Gamma Control 4 */
+			    a3 01 0d
+			    /* Positive Gamma Control 5 */
+			    a4 01 06
+			    /* Positive Gamma Control 6 */
+			    a5 01 16
+			    /* Positive Gamma Control 7 */
+			    a6 01 09
+			    /* Positive Gamma Control 8 */
+			    a7 01 08
+			    /* Positive Gamma Control 9 */
+			    a8 01 03
+			    /* Positive Gamma Control 10 */
+			    a9 01 07
+			    /* Positive Gamma Control 11 */
+			    aa 01 06
+			    /* Positive Gamma Control 12 */
+			    ab 01 05
+			    /* Positive Gamma Control 13 */
+			    ac 01 0d
+			    /* Positive Gamma Control 14 */
+			    ad 01 2c
+			    /* Positive Gamma Control 15 */
+			    ae 01 26
+			    /* Positive Gamma Control 16 */
+			    af 01 00
+			    /* Negative Gamma Correction 1 */
+			    c0 01 00
+			    /* Negative Gamma Correction 2 */
+			    c1 01 04
+			    /* Negative Gamma Correction 3 */
+			    c2 01 0b
+			    /* Negative Gamma Correction 4 */
+			    c3 01 0f
+			    /* Negative Gamma Correction 5 */
+			    c4 01 09
+			    /* Negative Gamma Correction 6 */
+			    c5 01 18
+			    /* Negative Gamma Correction 7 */
+			    c6 01 07
+			    /* Negative Gamma Correction 8 */
+			    c7 01 08
+			    /* Negative Gamma Correction 9 */
+			    c8 01 05
+			    /* Negative Gamma Correction 10 */
+			    c9 01 09
+			    /* Negative Gamma Correction 11 */
+			    ca 01 07
+			    /* Negative Gamma Correction 12 */
+			    cb 01 05
+			    /* Negative Gamma Correction 13 */
+			    cc 01 0c
+			    /* Negative Gamma Correction 14 */
+			    cd 01 2d
+			    /* Negative Gamma Correction 15 */
+			    ce 01 28
+			    /* Negative Gamma Correction 16 */
+			    cf 01 00
+
+			    /* Change to Page 6 CMD for GIP timing */
+			    ff 05 ff 98 06 04 06
+			    /* GIP Control 1 */
+			    00 01 21
+			    01 01 09
+			    02 01 00
+			    03 01 00
+			    04 01 01
+			    05 01 01
+			    06 01 80
+			    07 01 05
+			    08 01 02
+			    09 01 80
+			    0a 01 00
+			    0b 01 00
+			    0c 01 0a
+			    0d 01 0a
+			    0e 01 00
+			    0f 01 00
+			    10 01 e0
+			    11 01 e4
+			    12 01 04
+			    13 01 00
+			    14 01 00
+			    15 01 c0
+			    16 01 08
+			    17 01 00
+			    18 01 00
+			    19 01 00
+			    1a 01 00
+			    1b 01 00
+			    1c 01 00
+			    1d 01 00
+			    /* GIP Control 2 */
+			    20 01 01
+			    21 01 23
+			    22 01 45
+			    23 01 67
+			    24 01 01
+			    25 01 23
+			    26 01 45
+			    27 01 67
+			    /* GIP Control 3 */
+			    30 01 01
+			    31 01 11
+			    32 01 00
+			    33 01 ee
+			    34 01 ff
+			    35 01 cb
+			    36 01 da
+			    37 01 ad
+			    38 01 bc
+			    39 01 76
+			    3a 01 67
+			    3b 01 22
+			    3c 01 22
+			    3d 01 22
+			    3e 01 22
+			    3f 01 22
+			    40 01 22
+			    /* GOUT VGLO Control */
+			    53 01 10
+			    54 01 10
+			    /* Change to Page 7 CMD for Normal command */
+			    ff 05 ff 98 06 04 07
+			    /* VREG1/2OUT ENABLE */
+			    18 01 1d
+			    26 01 b2
+			    02 01 77
+			    e1 01 79
+			    17 01 22
+			    /* Change to Page 0 CMD for Normal command */
+			    ff 05 ff 98 06 04 00];
 		status = "okay";
 	};
 };

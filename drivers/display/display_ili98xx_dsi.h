@@ -132,7 +132,7 @@ BUILD_ASSERT(DT_HAS_COMPAT_STATUS_OKAY(zephyr_panel_timing),
 struct ili98xx_dsi_cmd {
 	uint8_t reg;
 	uint8_t cmd_len;
-	uint8_t cmd[ILI98XX_DSI_MAX_CMD_LEN];
+	uint8_t cmd[];
 } __packed;
 
 struct ili98xx_dsi_config {
@@ -145,7 +145,8 @@ struct ili98xx_dsi_config {
 	uint16_t height;
 	uint8_t channel;
 	uint16_t mode_flags;
-	int (*regs_init_fn)(const struct device *dev);
+	const uint8_t *init_seq;
+	uint32_t init_seq_len;
 };
 
 /**
