@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(net_zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #include <zephyr/net/zperf.h>
 
 #include "zperf_internal.h"
+#include "zperf_pacing.h"
 
 #if defined(CONFIG_NET_ZPERF_RAW_TX)
 
@@ -52,11 +53,10 @@ static int raw_upload(const struct zperf_raw_upload_params *param,
 	uint32_t packet_size = param->packet_size;
 	uint32_t rate_in_kbps = param->rate_kbps;
 	uint32_t packet_duration_us;
-	uint32_t packet_duration;
-	uint32_t delay;
+	struct zperf_pacer pacer;
 	uint32_t nb_packets = 0U;
 	int64_t start_time, end_time;
-	int64_t last_loop_time;
+	int64_t loop_time;
 	int raw_sock;
 	struct net_sockaddr_ll raw_addr;
 	ssize_t sent_bytes;
@@ -75,8 +75,6 @@ static int raw_upload(const struct zperf_raw_upload_params *param,
 
 	/* Rate limiting based on total packet size */
 	packet_duration_us = zperf_packet_duration(packet_size, rate_in_kbps);
-	packet_duration = k_us_to_ticks_ceil32(packet_duration_us);
-	delay = packet_duration;
 
 	/* Create raw packet socket (proto=0 for TX only) */
 	raw_sock = zsock_socket(NET_AF_PACKET, NET_SOCK_RAW, 0);
@@ -114,31 +112,18 @@ static int raw_upload(const struct zperf_raw_upload_params *param,
 
 	/* Start the transmission loop */
 	start_time = k_uptime_ticks();
-	last_loop_time = start_time;
+	zperf_pacer_init(&pacer, packet_duration_us, start_time);
 	end_time = start_time + k_ms_to_ticks_ceil64(duration_in_ms);
 
-	do {
-		int64_t loop_time;
-		int32_t adjust;
-
+	while (true) {
 		/* Timestamp */
 		loop_time = k_uptime_ticks();
-
-		/* Algorithm to maintain a given baud rate */
-		if (last_loop_time != loop_time) {
-			adjust = packet_duration;
-			adjust -= (int32_t)(loop_time - last_loop_time);
-		} else {
-			adjust = 0;
+		if (loop_time >= end_time) {
+			break;
 		}
 
-		if ((adjust >= 0) || (-adjust < (int32_t)delay)) {
-			delay += adjust;
-		} else {
-			delay = 0U;
-		}
-
-		last_loop_time = loop_time;
+		/* Pace each send attempt, including attempts that fail. */
+		zperf_pacer_next(&pacer, loop_time);
 
 		/* Send the raw packet */
 		sent_bytes = zsock_sendto(raw_sock, raw_packet_buffer, packet_size, 0,
@@ -151,15 +136,9 @@ static int raw_upload(const struct zperf_raw_upload_params *param,
 			nb_packets++;
 		}
 
-		/* Wait to maintain rate */
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(USEC_PER_MSEC);
-#else
-		if (delay > 0) {
-			k_sleep(K_TICKS(delay));
-		}
-#endif
-	} while (last_loop_time < end_time);
+		/* Wait to maintain rate without sleeping past the test end. */
+		zperf_pacer_wait(&pacer, end_time);
+	}
 
 	end_time = k_uptime_ticks();
 
