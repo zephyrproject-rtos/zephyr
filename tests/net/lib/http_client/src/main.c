@@ -12,6 +12,7 @@
 #define SERVER_IPV6_ADDR "::1"
 #define SERVER_PORT 8080
 #define TEST_BUF_SIZE 1200
+#define HOST_SERVER_PORT 8083
 
 static uint16_t test_http_service_port = SERVER_PORT;
 HTTP_SERVICE_DEFINE(test_http_service, SERVER_IPV6_ADDR,
@@ -146,6 +147,11 @@ static uint8_t recv_buf[64];
 static uint8_t response_buf[TEST_BUF_SIZE];
 static size_t resp_offset;
 static int response_status_code;
+
+static char host_srv_req[256];
+static K_THREAD_STACK_DEFINE(host_srv_stack, 2048 + CONFIG_TEST_EXTRA_STACK_SIZE);
+static struct k_thread host_srv_thread;
+static K_SEM_DEFINE(host_srv_ready, 0, 1);
 
 static void common_request_init(struct http_request *req)
 {
@@ -738,3 +744,118 @@ ZTEST(http_client_chunked_te, test_header_values_split_across_receives)
 
 ZTEST_SUITE(http_client_chunked_te, NULL, NULL,
 	    chunked_tests_before, chunked_tests_after, NULL);
+
+static void host_srv_fn(void *p1, void *p2, void *p3)
+{
+	static const char rsp[] = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
+	struct net_sockaddr_in6 sa = { 0 };
+	int srv, conn, ret;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	srv = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	if (srv < 0) {
+		return;
+	}
+
+	sa.sin6_family = NET_AF_INET6;
+	sa.sin6_port = net_htons(HOST_SERVER_PORT);
+	ret = zsock_inet_pton(NET_AF_INET6, SERVER_IPV6_ADDR, &sa.sin6_addr.s6_addr);
+	if (ret != 1) {
+		zsock_close(srv);
+		return;
+	}
+
+	ret = zsock_bind(srv, (struct net_sockaddr *)&sa, sizeof(sa));
+	if (ret < 0) {
+		zsock_close(srv);
+		return;
+	}
+
+	zsock_listen(srv, 1);
+	k_sem_give(&host_srv_ready);
+
+	conn = zsock_accept(srv, NULL, NULL);
+	if (conn >= 0) {
+		(void)zsock_recv(conn, host_srv_req, sizeof(host_srv_req) - 1, 0);
+		(void)zsock_send(conn, rsp, sizeof(rsp) - 1, 0);
+		zsock_close(conn);
+	}
+
+	zsock_close(srv);
+}
+
+static void host_header_check(const char *host, const char *port, const char *expected)
+{
+	struct net_sockaddr_in6 sa = { 0 };
+	struct http_request req = { 0 };
+	struct test_ctx ctx = { 0 };
+	int fd, ret;
+
+	memset(host_srv_req, 0, sizeof(host_srv_req));
+	k_thread_create(&host_srv_thread, host_srv_stack, K_THREAD_STACK_SIZEOF(host_srv_stack),
+			host_srv_fn, NULL, NULL, NULL, K_PRIO_PREEMPT(7), 0, K_NO_WAIT);
+	ret = k_sem_take(&host_srv_ready, K_SECONDS(5));
+	zassert_equal(ret, 0, "host server did not start in time");
+
+	fd = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_true(fd >= 0, "client socket failed");
+
+	sa.sin6_family = NET_AF_INET6;
+	sa.sin6_port = net_htons(HOST_SERVER_PORT);
+	ret = zsock_inet_pton(NET_AF_INET6, SERVER_IPV6_ADDR, &sa.sin6_addr.s6_addr);
+	zassert_equal(ret, 1, "inet_pton failed");
+	ret = zsock_connect(fd, (struct net_sockaddr *)&sa, sizeof(sa));
+	zassert_equal(ret, 0, "connect failed (%d)", errno);
+
+	common_request_init(&req);
+	req.method = HTTP_GET;
+	req.url = "/";
+	req.host = host;
+	req.port = port;
+
+	ret = http_client_req(fd, &req, 5000, &ctx);
+	zassert_true(ret > 0, "http_client_req() failed (%d)", ret);
+	zassert_equal(ctx.status, 200, "Unexpected HTTP status code");
+
+	(void)zsock_close(fd);
+	ret = k_thread_join(&host_srv_thread, K_SECONDS(5));
+	zassert_equal(ret, 0, "host server did not stop in time");
+
+	zassert_not_null(strstr(host_srv_req, expected),
+			 "host \"%s\" port \"%s\": no \"%s\" in:\n%s", host,
+			 port != NULL ? port : "", expected, host_srv_req);
+}
+
+ZTEST(http_client_host, test_host_header)
+{
+	host_header_check("::1", NULL, "\r\nHost: [::1]\r\n");
+	host_header_check("[::1]", NULL, "\r\nHost: [::1]\r\n");
+	host_header_check("::1", "8080", "\r\nHost: [::1]:8080\r\n");
+	host_header_check("192.0.2.1:8080", NULL, "\r\nHost: 192.0.2.1:8080\r\n");
+	host_header_check("example.com:8080", NULL, "\r\nHost: example.com:8080\r\n");
+}
+
+ZTEST(http_client_host, test_host_null)
+{
+	struct http_request req = { 0 };
+	struct test_ctx ctx = { 0 };
+	int fd, ret;
+
+	fd = zsock_socket(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_true(fd >= 0, "client socket failed");
+
+	common_request_init(&req);
+	req.method = HTTP_GET;
+	req.url = "/";
+	req.host = NULL;
+
+	ret = http_client_req(fd, &req, 5000, &ctx);
+	zassert_equal(ret, -EINVAL, "http_client_req() returned %d", ret);
+
+	(void)zsock_close(fd);
+}
+
+ZTEST_SUITE(http_client_host, NULL, NULL, NULL, NULL, NULL);
