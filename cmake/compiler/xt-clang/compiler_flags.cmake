@@ -2,6 +2,11 @@
 
 include(${ZEPHYR_BASE}/cmake/compiler/clang/compiler_flags.cmake)
 
+if(CONFIG_XTENSA_LIBC)
+  set_property(TARGET compiler-cpp APPEND PROPERTY dialect_cpp11 "-stdlib=libc++")
+  set_property(TARGET compiler-cpp APPEND PROPERTY dialect_cpp17 "-stdlib=libc++")
+endif()
+
 # nostdinc needs to be cleared as it is needed for xtensa/config/core.h.
 # nostdinc_include contains path to llvm headers.
 set_compiler_property(PROPERTY nostdinc)

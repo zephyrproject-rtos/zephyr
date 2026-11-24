@@ -30,31 +30,33 @@ if(NOT DEFINED NOSYSDEF_CFLAG)
   set(NOSYSDEF_CFLAG -undef)
 endif()
 
-foreach(file_name include/stddef.h include-fixed/limits.h)
-  execute_process(
-    COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
-    OUTPUT_VARIABLE _OUTPUT
-    )
-  get_filename_component(_OUTPUT "${_OUTPUT}" DIRECTORY)
-  string(REGEX REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
+if(NOT CONFIG_XTENSA_LIBC)
+  foreach(file_name include/stddef.h include-fixed/limits.h)
+    execute_process(
+      COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
+      OUTPUT_VARIABLE _OUTPUT
+      )
+    get_filename_component(_OUTPUT "${_OUTPUT}" DIRECTORY)
+    string(REGEX REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
 
-  # Need to make sure the path exists before we add it to ${NOSTDINC}.
-  # For example, include-fixed is in xcc but not xt-clang.
-  if(EXISTS "${_OUTPUT}")
-    list(APPEND NOSTDINC ${_OUTPUT})
+    # Need to make sure the path exists before we add it to ${NOSTDINC}.
+    # For example, include-fixed is in xcc but not xt-clang.
+    if(EXISTS "${_OUTPUT}")
+      list(APPEND NOSTDINC ${_OUTPUT})
 
-    if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xt-clang")
-      # This forcibly adds -isystem so that the xt-clang system
-      # include paths are before the xcc include paths.
-      # For some reason, xt-clang places xcc include paths before
-      # xt-clang ones so we need to force it.
-      #
-      # Some modules ignores the compiler property nostdinc_include
-      # so we need to make sure -isystem is used there.
-      add_compile_options(-isystem ${_OUTPUT})
+      if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xt-clang")
+        # This forcibly adds -isystem so that the xt-clang system
+        # include paths are before the xcc include paths.
+        # For some reason, xt-clang places xcc include paths before
+        # xt-clang ones so we need to force it.
+        #
+        # Some modules ignores the compiler property nostdinc_include
+        # so we need to make sure -isystem is used there.
+        add_compile_options(-isystem ${_OUTPUT})
+      endif()
     endif()
-  endif()
-endforeach()
+  endforeach()
+endif()
 
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and
