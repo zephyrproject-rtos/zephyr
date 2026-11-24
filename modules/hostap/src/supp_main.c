@@ -24,11 +24,11 @@ LOG_MODULE_REGISTER(wifi_supplicant, CONFIG_WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL);
 #include <zephyr/net/wifi_nm.h>
 #include <zephyr/net/socket.h>
 
-static K_THREAD_STACK_DEFINE(supplicant_thread_stack,
+static K_KERNEL_STACK_DEFINE(supplicant_thread_stack,
 			     CONFIG_WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE);
 static struct k_thread tid;
 
-static K_THREAD_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_STACK_SIZE);
 
 #define IFACE_NOTIFY_TIMEOUT_MS 1000
 #define IFACE_NOTIFY_RETRY_MS 10
@@ -883,7 +883,7 @@ static void handler(void)
 
 	k_work_queue_init(&ctx->iface_wq);
 	k_work_queue_start(&ctx->iface_wq, iface_wq_stack,
-			   K_THREAD_STACK_SIZEOF(iface_wq_stack),
+			   K_KERNEL_STACK_SIZEOF(iface_wq_stack),
 			   CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_PRIO,
 			   &iface_wq_cfg);
 
@@ -947,7 +947,7 @@ static int init(void)
 
 	/* We create a thread that handles all supplicant connections */
 	id = k_thread_create(&tid, supplicant_thread_stack,
-			     K_THREAD_STACK_SIZEOF(supplicant_thread_stack),
+			     K_KERNEL_STACK_SIZEOF(supplicant_thread_stack),
 			     (k_thread_entry_t)handler, NULL, NULL, NULL,
 			     CONFIG_WIFI_NM_WPA_SUPPLICANT_PRIO, 0, K_NO_WAIT);
 
