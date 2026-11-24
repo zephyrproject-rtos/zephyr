@@ -10,6 +10,7 @@
 #include "usbh_ch9.h"
 #include "usbh_class.h"
 #include "usbh_class_api.h"
+#include "usbh_host.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbh_dev, CONFIG_USBH_LOG_LEVEL);
@@ -30,8 +31,11 @@ struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx)
 
 	memset(udev, 0, sizeof(struct usb_device));
 	udev->ctx = uhs_ctx;
-	sys_dlist_append(&uhs_ctx->udevs, &udev->node);
 	k_mutex_init(&udev->mutex);
+
+	usbh_host_lock(uhs_ctx);
+	sys_dlist_append(&uhs_ctx->udevs, &udev->node);
+	usbh_host_unlock(uhs_ctx);
 
 	return udev;
 }
@@ -40,8 +44,11 @@ void usbh_device_free(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
 
+	usbh_host_lock(uhs_ctx);
 	sys_bitarray_clear_bit(uhs_ctx->addr_ba, udev->addr);
 	sys_dlist_remove(&udev->node);
+	usbh_host_unlock(uhs_ctx);
+
 	if (udev->cfg_desc != NULL) {
 		k_heap_free(&usb_device_heap, udev->cfg_desc);
 		udev->cfg_desc = NULL;
@@ -53,14 +60,20 @@ void usbh_device_free(struct usb_device *const udev)
 struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uint8_t addr)
 {
 	struct usb_device *udev;
+	struct usb_device *found = NULL;
+
+	usbh_host_lock(uhs_ctx);
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&uhs_ctx->udevs, udev, node) {
 		if (addr == udev->addr) {
-			return udev;
+			found = udev;
+			break;
 		}
 	}
 
-	return NULL;
+	usbh_host_unlock(uhs_ctx);
+
+	return found;
 }
 
 static int validate_device_mps0(const struct usb_device *const udev)
