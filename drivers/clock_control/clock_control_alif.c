@@ -20,6 +20,11 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/dt-bindings/clock/alif-clocks-common.h>
+#if defined(CONFIG_SOC_FAMILY_BALLETTO)
+#include <zephyr/dt-bindings/clock/alif-balletto-clocks.h>
+#else
+#include <zephyr/dt-bindings/clock/alif-ensemble-clocks.h>
+#endif
 
 LOG_MODULE_REGISTER(alif_clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -80,6 +85,33 @@ struct alif_clock_control_config {
 #define ALIF_CLOCK_50M_FREQ          MHZ(50)
 /* 100M_CLK, a fixed division of the system PLL output */
 #define ALIF_CLOCK_100M_FREQ         MHZ(100)
+/* 400M_CLK, a fixed division of the system PLL output */
+#define ALIF_CLOCK_400M_FREQ         MHZ(400)
+/* HFOSC clock, Fixed to 38.4 MHz */
+#define ALIF_CLOCK_HFOSC_FREQ        KHZ(38400)
+/* 25M_CLK, a fixed division of the 100M_CLK */
+#define ALIF_CLOCK_25M_FREQ          MHZ(25)
+/* 266M_CLK, the 800 MHz PLL_CLK1 output divided by three */
+#define ALIF_CLOCK_266M_FREQ         (MHZ(800) / 3U)
+/* APSS_CLK, the CPUPLL_CLK output */
+#define ALIF_CLOCK_APSS_FREQ         MHZ(800)
+/* RTSS_HP_CLK, the ES0 PLL mux output */
+#define ALIF_CLOCK_RTSS_HP_FREQ      MHZ(400)
+/* RTSS_HE_CLK and PERIPH_CLK, the ES1 PLL mux output */
+#define ALIF_CLOCK_RTSS_HE_FREQ      MHZ(160)
+/* 76M8_CLK, the HFXO output doubled */
+#define ALIF_CLOCK_76M8_FREQ         KHZ(76800)
+/* USB_CLK, a fixed division of PLL_CLK1 */
+#define ALIF_CLOCK_USB_FREQ          MHZ(20)
+/* 10M_CLK, a fixed division of PLL_CLK1 */
+#define ALIF_CLOCK_10M_FREQ          MHZ(10)
+/*
+ * PLL outputs and the system reference clock, whose rates differ between
+ * SoC families. A family without the clock has no node and yields 0.
+ */
+#define ALIF_CLOCK_PLL_CLK1_FREQ     DT_PROP_OR(DT_NODELABEL(pll_clk1), clock_frequency, 0)
+#define ALIF_CLOCK_PLL_CLK2_FREQ     DT_PROP_OR(DT_NODELABEL(pll_clk2), clock_frequency, 0)
+#define ALIF_CLOCK_SYST_REFCLK_FREQ  DT_PROP_OR(DT_NODELABEL(syst_refclk), clock_frequency, 0)
 
 /*
  * Clock Configuration Field Extraction Macros
@@ -87,8 +119,7 @@ struct alif_clock_control_config {
  * These macros extract specific fields from the 32-bit clock ID encoded
  * using ALIF_CLK_CFG() in the device tree. The encoding layout is:
  *
- *   Bit   31:    Reserved for future use
- *   Bits  30-26: Input clock source identifier (0-31)
+ *   Bits  31-26: Input clock source identifier (0-63)
  *   Bits  25-21: Clock source bit position (0-31)
  *   Bits  20-19: Clock source mask width (0-3, 0=no source select)
  *   Bits  18-17: Clock source value (0-3)
@@ -157,7 +188,7 @@ struct alif_clock_control_config {
 /**
  * @brief Extract parent clock source from encoded clock ID
  * @param id Clock ID from device tree (encoded with ALIF_CLK_CFG)
- * @return Parent clock source identifier (0-31, see ALIF_PARENT_CLK_*)
+ * @return Parent clock source identifier (0-63, see ALIF_PARENT_CLK_*)
  */
 #define ALIF_CLOCK_CFG_PARENT_CLK(id) \
 	(((id) >> ALIF_CLOCK_PARENT_CLK_SHIFT) & ALIF_CLOCK_PARENT_CLK_MASK)
@@ -232,10 +263,44 @@ static uint32_t alif_get_clock_freq(uint32_t clock_id)
 		return ALIF_CLOCK_S32K_FREQ;
 	case ALIF_PARENT_CLK_128K:
 		return ALIF_CLOCK_128K_FREQ;
+	case ALIF_PARENT_CLK_ETH_REFCLK:
+		__fallthrough;
 	case ALIF_PARENT_CLK_50M:
 		return ALIF_CLOCK_50M_FREQ;
 	case ALIF_PARENT_CLK_100M:
 		return ALIF_CLOCK_100M_FREQ;
+	case ALIF_PARENT_CLK_400M:
+		return ALIF_CLOCK_400M_FREQ;
+	case ALIF_PARENT_CLK_HFOSC:
+		return ALIF_CLOCK_HFOSC_FREQ;
+	case ALIF_PARENT_CLK_25M:
+		return ALIF_CLOCK_25M_FREQ;
+	case ALIF_PARENT_CLK_266M:
+		return ALIF_CLOCK_266M_FREQ;
+	case ALIF_PARENT_CLK_APSS:
+		return ALIF_CLOCK_APSS_FREQ;
+	case ALIF_PARENT_CLK_RTSS_HP:
+		return ALIF_CLOCK_RTSS_HP_FREQ;
+	case ALIF_PARENT_CLK_RTSS_HE:
+	case ALIF_PARENT_CLK_PERIPH:
+		return ALIF_CLOCK_RTSS_HE_FREQ;
+	case ALIF_PARENT_CLK_76M8:
+		return ALIF_CLOCK_76M8_FREQ;
+	case ALIF_PARENT_CLK_USB:
+		return ALIF_CLOCK_USB_FREQ;
+	case ALIF_PARENT_CLK_10M:
+		return ALIF_CLOCK_10M_FREQ;
+	case ALIF_PARENT_CLK_PLL_CLK1:
+		return ALIF_CLOCK_PLL_CLK1_FREQ;
+	case ALIF_PARENT_CLK_PLL_CLK2:
+		return ALIF_CLOCK_PLL_CLK2_FREQ;
+	case ALIF_PARENT_CLK_SYST_REFCLK:
+		return ALIF_CLOCK_SYST_REFCLK_FREQ;
+	case ALIF_PARENT_CLK_AUDIO_PLL:
+		/* Programmed at runtime, rate not tracked by this driver */
+		__fallthrough;
+	case ALIF_PARENT_GATE_ONLY:
+		return 0;
 	default:
 		__ASSERT(false, "Invalid parent clock: %u", parent_clk);
 		return 0;

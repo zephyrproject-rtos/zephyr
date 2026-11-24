@@ -55,6 +55,24 @@
 			#clock-cells = <0>;
 		};
 
+		syst_refclk: syst-refclk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(80)>;
+			#clock-cells = <0>;
+		};
+
+		pll_clk1: pll-clk1 {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(160)>;
+			#clock-cells = <0>;
+		};
+
+		pll_clk2: pll-clk2 {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(120)>;
+			#clock-cells = <0>;
+		};
+
 		/*
 		 * Low frequency oscillators in the always-on power domain
 		 * (PD-0). The LFXO needs a 32.768 kHz crystal fitted on the

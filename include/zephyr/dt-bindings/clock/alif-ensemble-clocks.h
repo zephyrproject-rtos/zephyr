@@ -18,6 +18,70 @@
 #include "alif-clocks-common.h"
 
 /**
+ * @name Parent clock source identifiers
+ *
+ * Identifiers 0-31 correspond to bits in the CGU CLK_ENA register
+ * that gates the parent clock. Parent clocks without a CLK_ENA gate use
+ * identifiers 32-63
+ * @{
+ */
+
+/** System AXI clock (SYST_ACLK), gated by CLK_ENA[SYSPLL] */
+#define ALIF_PARENT_CLK_SYST_ACLK   0U
+/** APSS clock (APSS_CLK), gated by CLK_ENA[CPUPLL] */
+#define ALIF_PARENT_CLK_APSS        4U
+/** 25 MHz clock (25M_CLK), sourced from 100M_CLK/4, gated by CLK_ENA[CLK25M] */
+#define ALIF_PARENT_CLK_25M         5U
+/** 50 MHz RMII reference clock from the internal PLL output, gated by CLK_ENA[CLK50M] */
+#define ALIF_PARENT_CLK_50M         6U
+/** 100 MHz clock (100M_CLK), PLL_CLK1 divided by eight, gated by CLK_ENA[CLK100M] */
+#define ALIF_PARENT_CLK_100M        7U
+/** RTSS-HP clock (RTSS_HP_CLK), gated by CLK_ENA[ES0] */
+#define ALIF_PARENT_CLK_RTSS_HP     12U
+/** RTSS-HE clock (RTSS_HE_CLK), gated by CLK_ENA[ES1] */
+#define ALIF_PARENT_CLK_RTSS_HE     13U
+/** 400 MHz clock (400M_CLK), PLL_CLK1 divided by two, gated by CLK_ENA[CLK400M] */
+#define ALIF_PARENT_CLK_400M        15U
+/** Peripheral clock (PERIPH_CLK), gated by CLK_ENA[CLK160M] */
+#define ALIF_PARENT_CLK_PERIPH      20U
+/** 266 MHz clock (266M_CLK), PLL_CLK1 divided by three, gated by CLK_ENA[CLK266M] */
+#define ALIF_PARENT_CLK_266M        21U
+/** 20 MHz USB clock (USB_CLK), PLL_CLK1 divided by 40, gated by CLK_ENA[CLK20M] */
+#define ALIF_PARENT_CLK_USB         22U
+/** HFOSC clock (HFOSC_CLK), gated by CLK_ENA[CLK38P4M] */
+#define ALIF_PARENT_CLK_HFOSC       23U
+/** 76.8 MHz clock (76M8_CLK), the HFXO output doubled, gated by CLK_ENA[CLK76P8M] */
+#define ALIF_PARENT_CLK_76M8        24U
+/** System APB clock (SYST_PCLK), gated by CLK_ENA[PCLK] */
+#define ALIF_PARENT_CLK_SYST_PCLK   25U
+/** System AHB clock (SYST_HCLK), gated by CLK_ENA[HCLK] */
+#define ALIF_PARENT_CLK_SYST_HCLK   26U
+
+/** Always-on 32 kHz clock (S32K_CLK), sourced from the LFXO or LFRC oscillator */
+#define ALIF_PARENT_CLK_S32K        32U
+/** Always-on 128 kHz clock (128K_CLK), derived from the LFRC oscillator */
+#define ALIF_PARENT_CLK_128K        33U
+/** Gate only clock. Doesn't support parent query */
+#define ALIF_PARENT_GATE_ONLY       34U
+/** System reference clock (SYST_REFCLK), selected by PLL_CLK_SEL[SYSREF] */
+#define ALIF_PARENT_CLK_SYST_REFCLK 35U
+/** PLL_CLK1 output */
+#define ALIF_PARENT_CLK_PLL_CLK1    36U
+/** PLL_CLK2 output, not present on Ensemble */
+#define ALIF_PARENT_CLK_PLL_CLK2    37U
+/**
+ * 10 MHz clock (10M_CLK), PLL_CLK1 divided by 80, gated together with USB_CLK
+ * by CLK_ENA[CLK20M]
+ */
+#define ALIF_PARENT_CLK_10M         38U
+/** Audio PLL clock (AUDIO_PLL_CLK) */
+#define ALIF_PARENT_CLK_AUDIO_PLL   39U
+/** Ethernet reference clock, sourced from external RMII clock */
+#define ALIF_PARENT_CLK_ETH_REFCLK  40U
+
+/** @} */
+
+/**
  * @name Register offsets
  * @{
  */
