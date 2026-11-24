@@ -1,0 +1,7 @@
+# wio_rp2040_mini board configuration
+
+# Copyright (c) 2023 Seeed Studio inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_WIO_RP2040_MINI
+	select SOC_RP2040

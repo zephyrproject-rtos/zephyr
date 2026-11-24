@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: wio_rp2040_mini
+name: Wio RP2040 Mini Dev Board
+type: mcu
+arch: arm
+flash: 2048
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+  - adc
+  - i2c
+  - spi
+  - hwinfo
+  - watchdog
+  - pwm
+  - flash
+  - dma
+  - counter
+  - clock
+  - usbd
+vendor: seeed
