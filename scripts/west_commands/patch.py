@@ -523,8 +523,8 @@ class Patch(WestCommand):
         clean_cmd_list = shlex.split(clean_cmd)
         checkout_cmd_list = shlex.split(checkout_cmd)
 
-        for mod in yml.get("patches", []):
-            m = self.get_module_path(mod.get("module"))
+        for mod in dict.fromkeys(p.get("module") for p in yml.get("patches", [])):
+            m = self.get_module_path(mod)
             if m is None:
                 continue
             if dst_mods and m not in dst_mods:
