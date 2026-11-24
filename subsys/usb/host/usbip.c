@@ -29,8 +29,8 @@ NET_BUF_POOL_VAR_DEFINE(usbip_pool,
 
 #define USBIP_SUBMIT_REQ_RETRY_COUNT	10
 
-K_THREAD_STACK_DEFINE(usbip_thread_stack, CONFIG_USBIP_THREAD_STACK_SIZE);
-K_THREAD_STACK_ARRAY_DEFINE(dev_thread_stacks, CONFIG_USBIP_DEVICES_COUNT,
+K_KERNEL_STACK_DEFINE(usbip_thread_stack, CONFIG_USBIP_THREAD_STACK_SIZE);
+K_KERNEL_STACK_ARRAY_DEFINE(dev_thread_stacks, CONFIG_USBIP_DEVICES_COUNT,
 			    CONFIG_USBIP_THREAD_STACK_SIZE);
 
 static struct k_thread usbip_thread;
@@ -752,13 +752,13 @@ static int usbip_init(void)
 		sys_dlist_init(&ctx->dlist);
 		k_event_init(&ctx->event);
 		k_thread_create(&ctx->thread, dev_thread_stacks[i],
-				K_THREAD_STACK_SIZEOF(dev_thread_stacks[i]),
+				K_KERNEL_STACK_SIZEOF(dev_thread_stacks[i]),
 				usbip_thread_cmd, ctx, NULL, NULL,
 				K_PRIO_COOP(3), 0, K_NO_WAIT);
 	}
 
 	k_thread_create(&usbip_thread, usbip_thread_stack,
-			K_THREAD_STACK_SIZEOF(usbip_thread_stack),
+			K_KERNEL_STACK_SIZEOF(usbip_thread_stack),
 			usbip_thread_handler, bus_ctx, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 
