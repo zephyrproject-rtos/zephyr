@@ -1,0 +1,31 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+
+/ {
+	aliases {
+		ambient-temp0 = &max31865_rak12022;
+	};
+};
+
+&wisblock_3v3_s {
+	status = "okay";
+};
+
+&wisblock_spi {
+	status = "okay";
+
+	max31865_rak12022: max31865@0 {
+		compatible = "maxim,max31865";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(5)>;
+		power-domains = <&wisblock_3v3_s>;
+		drdy-gpios = <&wisblock_io WISBLOCK_IO_IO6 GPIO_ACTIVE_LOW>;
+		resistance-at-zero = <100>;
+		resistance-reference = <400>;
+	};
+};

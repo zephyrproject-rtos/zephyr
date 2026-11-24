@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_RAKWIRELESS_RAK12022_2WIRE
+	def_bool $(shields_list_contains,rakwireless_rak12022_2wire)
+
+config SHIELD_RAKWIRELESS_RAK12022_3WIRE
+	def_bool $(shields_list_contains,rakwireless_rak12022_3wire)
+
+config SHIELD_RAKWIRELESS_RAK12022_4WIRE
+	def_bool $(shields_list_contains,rakwireless_rak12022_4wire)
+
+config SHIELD_RAKWIRELESS_RAK12022
+	def_bool SHIELD_RAKWIRELESS_RAK12022_2WIRE || \
+		SHIELD_RAKWIRELESS_RAK12022_3WIRE || \
+		SHIELD_RAKWIRELESS_RAK12022_4WIRE
