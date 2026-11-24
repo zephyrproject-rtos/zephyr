@@ -46,7 +46,7 @@ REPLACEMENTS = {
     "POSIX_MAX_FDS": "ZVFS_OPEN_MAX",
     "POSIX_MAX_OPEN_FILES": "ZVFS_OPEN_MAX",
     "POSIX_MQUEUE": "POSIX_MESSAGE_PASSING",
-    "POSIX_PUTMSG": "XOPEN_STREAMS",
+    "POSIX_PUTMSG": "XSI_STREAMS",
     "POSIX_SIGNAL": "POSIX_SIGNALS",
     "POSIX_SYSCONF": "POSIX_SINGLE_PROCESS",
     "POSIX_SYSLOG": "XSI_SYSTEM_LOGGING",
@@ -77,7 +77,7 @@ MESSAGES = {
 }
 
 
-def process_file(path):
+def process_file(path, dry_run):
     modified = False
     output = []
 
@@ -111,7 +111,7 @@ def process_file(path):
                 lineno += 1
                 output.append(line)
 
-        if modified is False or args.dry_run:
+        if modified is False or dry_run:
             return
 
         with open(path, "w") as f:
@@ -123,12 +123,12 @@ def process_file(path):
         print(f"Failed with exception {e}", e)
 
 
-def process_tree(project):
+def process_tree(project, dry_run):
     for p in project.glob("**/*"):
         for fp in FILE_PATTERNS:
             cfp = re.compile(".+/" + fp + "$")
             if re.match(cfp, str(p)) is not None:
-                process_file(p)
+                process_file(p, dry_run)
 
 
 if __name__ == "__main__":
@@ -146,4 +146,4 @@ if __name__ == "__main__":
         help="log potential changes without modifying files")
     args = parser.parse_args()
 
-    process_tree(args.root)
+    process_tree(args.root, args.dry_run)
