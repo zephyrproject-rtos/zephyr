@@ -16,6 +16,7 @@ supported:
   - counter
   - dac
   - hwinfo
+  - opamp
   - pwm
   - spi
   - vref
