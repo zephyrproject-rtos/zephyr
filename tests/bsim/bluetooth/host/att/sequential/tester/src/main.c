@@ -11,6 +11,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/buf.h>
 
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_raw.h>
@@ -40,11 +41,13 @@ LOG_MODULE_REGISTER(bt_tinyhost, LOG_LEVEL_INF);
 #define BT_ATT_OP_WRITE_CMD 0x52
 #define BT_L2CAP_CID_ATT    0x0004
 
+#define BT_ATT_OP_ERROR_RSP         0x01U
 #define BT_ATT_OP_PREPARE_WRITE_REQ 0x16U
 #define BT_ATT_OP_PREPARE_WRITE_RSP 0x17U
 #define BT_ATT_OP_EXEC_WRITE_REQ    0x18U
 #define BT_ATT_OP_EXEC_WRITE_RSP    0x19U
 #define BT_ATT_FLAG_CANCEL          0x00U
+#define BT_ATT_FLAG_EXEC            0x01U
 
 DEFINE_FLAG_STATIC(is_connected);
 DEFINE_FLAG_STATIC(flag_data_length_updated);
@@ -253,6 +256,235 @@ static void handle_att_exec_write(struct net_buf *buf)
 	(void)atomic_inc(&cancelled_writes);
 }
 
+/* Concurrent long write: echo correctly, but fail if two handles' prepares
+ * interleave. The DUT must finish one long write before starting the other.
+ */
+static atomic_t serialised_executes;
+static uint16_t open_prepare_handle;
+
+static void handle_att_prepare_serialised(struct net_buf *buf)
+{
+	uint16_t handle = net_buf_pull_le16(buf);
+	uint16_t offset = net_buf_pull_le16(buf);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+
+	LOG_INF("Got prepare write for 0x%04x offset %u len %u", handle, offset, buf->len);
+
+	if (open_prepare_handle == 0U) {
+		open_prepare_handle = handle;
+	} else {
+		TEST_ASSERT(handle == open_prepare_handle,
+			    "Prepare for 0x%04x interleaved with 0x%04x", handle,
+			    open_prepare_handle);
+	}
+
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_PREPARE_WRITE_RSP);
+	net_buf_add_le16(rsp, handle);
+	net_buf_add_le16(rsp, offset);
+	(void)net_buf_add_mem(rsp, buf->data, buf->len);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
+static void handle_att_exec_serialised(struct net_buf *buf)
+{
+	uint8_t flags = net_buf_pull_u8(buf);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+
+	LOG_INF("Got execute write flags 0x%02x", flags);
+	TEST_ASSERT(flags == BT_ATT_FLAG_EXEC, "A concurrent long write was cancelled");
+
+	/* The next long write may now be prepared */
+	open_prepare_handle = 0U;
+	(void)atomic_inc(&serialised_executes);
+
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_EXEC_WRITE_RSP);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
+static bool serialised_test;
+
+/* Prepare error: reject one prepare, respond to the rest (issue #117590) */
+static bool prep_error_test;
+static atomic_t prep_error_executes;
+static atomic_val_t prep_error_index = 1;
+
+static void handle_att_prepare_error(struct net_buf *buf)
+{
+	static atomic_t prep_error_prepares;
+	uint16_t handle = net_buf_pull_le16(buf);
+	uint16_t offset = net_buf_pull_le16(buf);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+
+	LOG_INF("Got prepare write for 0x%04x offset %u len %u", handle, offset, buf->len);
+
+	/* Reject one prepare, by default the second so that the first write has
+	 * one value queued: the host must cancel it before the next write. With
+	 * an index of -1 none is rejected.
+	 */
+	if (atomic_inc(&prep_error_prepares) == prep_error_index) {
+		(void)net_buf_add_u8(rsp, BT_ATT_OP_ERROR_RSP);
+		(void)net_buf_add_u8(rsp, BT_ATT_OP_PREPARE_WRITE_REQ);
+		net_buf_add_le16(rsp, handle);
+		(void)net_buf_add_u8(rsp, BT_ATT_ERR_PREPARE_QUEUE_FULL);
+		send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+		return;
+	}
+
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_PREPARE_WRITE_RSP);
+	net_buf_add_le16(rsp, handle);
+	net_buf_add_le16(rsp, offset);
+	(void)net_buf_add_mem(rsp, buf->data, buf->len);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
+static void handle_att_exec_error(struct net_buf *buf)
+{
+	uint8_t flags = net_buf_pull_u8(buf);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+
+	LOG_INF("Got execute write flags 0x%02x", flags);
+	/* The failed write is cancelled, then the next one is written */
+	if (atomic_inc(&prep_error_executes) == 0) {
+		TEST_ASSERT(flags == BT_ATT_FLAG_CANCEL, "The failed long write was not cancelled");
+	} else {
+		TEST_ASSERT(flags == BT_ATT_FLAG_EXEC, "The second long write was not executed");
+	}
+
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_EXEC_WRITE_RSP);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
+/* Reliable write: the DUT prepares two handles, then commits them with one
+ * Execute Write. Verify both are prepared before the commit.
+ */
+static bool reliable_test;
+static atomic_t reliable_prepares;
+static atomic_t reliable_commit;
+
+static void handle_att_prepare_reliable(struct net_buf *buf)
+{
+	uint16_t handle = net_buf_pull_le16(buf);
+	uint16_t offset = net_buf_pull_le16(buf);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+
+	LOG_INF("Got prepare write for 0x%04x offset %u len %u", handle, offset, buf->len);
+	(void)atomic_inc(&reliable_prepares);
+
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_PREPARE_WRITE_RSP);
+	net_buf_add_le16(rsp, handle);
+	net_buf_add_le16(rsp, offset);
+	(void)net_buf_add_mem(rsp, buf->data, buf->len);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
+/* Reliable write that fails: the DUT prepares one value, then cancels it */
+static bool reliable_cancel_test;
+static atomic_t reliable_cancels;
+
+static void handle_att_exec_cancelled(struct net_buf *buf)
+{
+	uint8_t flags = net_buf_pull_u8(buf);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+
+	LOG_INF("Got execute write flags 0x%02x", flags);
+	TEST_ASSERT(flags == BT_ATT_FLAG_CANCEL, "The failed reliable write was not cancelled");
+	TEST_ASSERT(atomic_get(&reliable_prepares) == 1, "Unexpected number of prepares (%u)",
+		    (unsigned int)atomic_get(&reliable_prepares));
+
+	(void)atomic_inc(&reliable_cancels);
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_EXEC_WRITE_RSP);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
+static void handle_att_exec_reliable(struct net_buf *buf)
+{
+	uint8_t flags = net_buf_pull_u8(buf);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+
+	LOG_INF("Got execute write flags 0x%02x", flags);
+	if (atomic_get(&reliable_commit) == 0) {
+		TEST_ASSERT(flags == BT_ATT_FLAG_EXEC, "First reliable write was not committed");
+		TEST_ASSERT(atomic_get(&reliable_prepares) == 2,
+			    "Execute Write before both values were prepared (%u)",
+			    (unsigned int)atomic_get(&reliable_prepares));
+	} else {
+		TEST_ASSERT(flags == BT_ATT_FLAG_CANCEL, "Second reliable write was not cancelled");
+		TEST_ASSERT(atomic_get(&reliable_prepares) == 3,
+			    "Cancel before the value was prepared (%u)",
+			    (unsigned int)atomic_get(&reliable_prepares));
+	}
+
+	(void)atomic_inc(&reliable_commit);
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_EXEC_WRITE_RSP);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
+/* A write cancelled after one Prepare Write Request, then a long write: the
+ * first Execute Write cancels what the server queued, the second one writes.
+ */
+static bool reliable_idle_test;
+static atomic_t reliable_idle_executes;
+
+static void handle_att_exec_idle(struct net_buf *buf)
+{
+	uint8_t flags = net_buf_pull_u8(buf);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+
+	LOG_INF("Got execute write flags 0x%02x", flags);
+	if (atomic_inc(&reliable_idle_executes) == 0) {
+		TEST_ASSERT(flags == BT_ATT_FLAG_CANCEL, "The failed write was not cancelled");
+		TEST_ASSERT(atomic_get(&reliable_prepares) == 1,
+			    "Unexpected number of prepares (%u)",
+			    (unsigned int)atomic_get(&reliable_prepares));
+	} else {
+		TEST_ASSERT(flags == BT_ATT_FLAG_EXEC, "The long write was not executed");
+	}
+
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_EXEC_WRITE_RSP);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
+/* Reliable write echoes that differ from the request: the first one names
+ * another handle, the second one leaves out the last octet. The ones after
+ * them, a long write's, are right.
+ */
+static bool reliable_echo_test;
+static atomic_t reliable_echo_executes;
+
+static void handle_att_prepare_bad_echo(struct net_buf *buf)
+{
+	static atomic_t reliable_echo_prepares;
+	uint16_t handle = net_buf_pull_le16(buf);
+	uint16_t offset = net_buf_pull_le16(buf);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+	atomic_val_t n = atomic_inc(&reliable_echo_prepares);
+
+	LOG_INF("Got prepare write for 0x%04x offset %u len %u", handle, offset, buf->len);
+
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_PREPARE_WRITE_RSP);
+	net_buf_add_le16(rsp, (n == 0) ? (handle + 1U) : handle);
+	net_buf_add_le16(rsp, offset);
+	(void)net_buf_add_mem(rsp, buf->data, (n == 1) ? (buf->len - 1U) : buf->len);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
+static void handle_att_exec_bad_echo(struct net_buf *buf)
+{
+	uint8_t flags = net_buf_pull_u8(buf);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+
+	LOG_INF("Got execute write flags 0x%02x", flags);
+	if (atomic_inc(&reliable_echo_executes) < 2) {
+		TEST_ASSERT(flags == BT_ATT_FLAG_CANCEL,
+			    "A reliable write with a wrong echo was not cancelled");
+	} else {
+		TEST_ASSERT(flags == BT_ATT_FLAG_EXEC, "The long write was not executed");
+	}
+
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_EXEC_WRITE_RSP);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
 static void handle_att(struct net_buf *buf)
 {
 	uint8_t op = net_buf_pull_u8(buf);
@@ -265,10 +497,34 @@ static void handle_att(struct net_buf *buf)
 		handle_att_write(buf);
 		return;
 	case BT_ATT_OP_PREPARE_WRITE_REQ:
-		handle_att_prepare_write(buf);
+		if (serialised_test) {
+			handle_att_prepare_serialised(buf);
+		} else if (prep_error_test) {
+			handle_att_prepare_error(buf);
+		} else if (reliable_echo_test) {
+			handle_att_prepare_bad_echo(buf);
+		} else if (reliable_test) {
+			handle_att_prepare_reliable(buf);
+		} else {
+			handle_att_prepare_write(buf);
+		}
 		return;
 	case BT_ATT_OP_EXEC_WRITE_REQ:
-		handle_att_exec_write(buf);
+		if (serialised_test) {
+			handle_att_exec_serialised(buf);
+		} else if (prep_error_test) {
+			handle_att_exec_error(buf);
+		} else if (reliable_cancel_test) {
+			handle_att_exec_cancelled(buf);
+		} else if (reliable_idle_test) {
+			handle_att_exec_idle(buf);
+		} else if (reliable_echo_test) {
+			handle_att_exec_bad_echo(buf);
+		} else if (reliable_test) {
+			handle_att_exec_reliable(buf);
+		} else {
+			handle_att_exec_write(buf);
+		}
 		return;
 	case BT_ATT_OP_WRITE_RSP:
 		LOG_INF("got ATT write RSP");
@@ -698,6 +954,140 @@ void test_procedure_1(void)
 	TEST_PASS("Tester done");
 }
 
+void test_procedure_2(void)
+{
+	serialised_test = true;
+
+	init_tinyhost();
+
+	start_adv();
+	WAIT_FOR_FLAG(is_connected);
+	LOG_INF("connected");
+
+	/* Two long writes, each ending with its own Execute Write */
+	WAIT_FOR_VAL(serialised_executes, 2);
+
+	TEST_PASS("Tester done");
+}
+
+void test_procedure_3(void)
+{
+	prep_error_test = true;
+
+	init_tinyhost();
+
+	start_adv();
+	WAIT_FOR_FLAG(is_connected);
+	LOG_INF("connected");
+
+	/* The failed write is cancelled (one Execute), then the good one is
+	 * written (a second Execute).
+	 */
+	WAIT_FOR_VAL(prep_error_executes, 2);
+
+	TEST_PASS("Tester done");
+}
+
+void test_procedure_4(void)
+{
+	reliable_test = true;
+
+	init_tinyhost();
+
+	start_adv();
+	WAIT_FOR_FLAG(is_connected);
+	LOG_INF("connected");
+
+	WAIT_FOR_VAL(reliable_commit, 2);
+
+	TEST_PASS("Tester done");
+}
+
+void test_procedure_5(void)
+{
+	reliable_test = true;
+	reliable_cancel_test = true;
+
+	init_tinyhost();
+
+	start_adv();
+	WAIT_FOR_FLAG(is_connected);
+	LOG_INF("connected");
+
+	WAIT_FOR_VAL(reliable_cancels, 1);
+
+	TEST_PASS("Tester done");
+}
+
+void test_procedure_6(void)
+{
+	reliable_test = true;
+	reliable_idle_test = true;
+
+	init_tinyhost();
+
+	start_adv();
+	WAIT_FOR_FLAG(is_connected);
+	LOG_INF("connected");
+
+	/* The reliable write is cancelled, then the long write is written */
+	WAIT_FOR_VAL(reliable_idle_executes, 2);
+
+	TEST_PASS("Tester done");
+}
+
+void test_procedure_7(void)
+{
+	reliable_echo_test = true;
+
+	init_tinyhost();
+
+	start_adv();
+	WAIT_FOR_FLAG(is_connected);
+	LOG_INF("connected");
+
+	/* Two reliable writes are cancelled, then the long write is written */
+	WAIT_FOR_VAL(reliable_echo_executes, 3);
+
+	TEST_PASS("Tester done");
+}
+
+void test_procedure_8(void)
+{
+	prep_error_test = true;
+	prep_error_index = 0;
+
+	init_tinyhost();
+
+	start_adv();
+	WAIT_FOR_FLAG(is_connected);
+	LOG_INF("connected");
+
+	/* The failed write is cancelled, then the next one is written */
+	WAIT_FOR_VAL(prep_error_executes, 2);
+
+	TEST_PASS("Tester done");
+}
+
+void test_procedure_9(void)
+{
+	prep_error_test = true;
+	prep_error_index = -1;
+
+	init_tinyhost();
+
+	start_adv();
+	WAIT_FOR_FLAG(is_connected);
+	LOG_INF("connected");
+
+	/* The write whose Execute Write was cancelled is cancelled on the
+	 * server, then the next one is written
+	 */
+	WAIT_FOR_VAL(prep_error_executes, 2);
+
+	TEST_PASS("Tester done");
+}
+
 static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "tester",
@@ -706,6 +1096,38 @@ static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "tester_long_write_echo",
 		.test_main_f = test_procedure_1,
+	},
+	{
+		.test_id = "tester_long_write_serialised",
+		.test_main_f = test_procedure_2,
+	},
+	{
+		.test_id = "tester_long_write_prep_error",
+		.test_main_f = test_procedure_3,
+	},
+	{
+		.test_id = "tester_reliable_write",
+		.test_main_f = test_procedure_4,
+	},
+	{
+		.test_id = "tester_reliable_write_cancel_waiting",
+		.test_main_f = test_procedure_5,
+	},
+	{
+		.test_id = "tester_reliable_write_cancel_idle",
+		.test_main_f = test_procedure_6,
+	},
+	{
+		.test_id = "tester_reliable_write_bad_echo",
+		.test_main_f = test_procedure_7,
+	},
+	{
+		.test_id = "tester_long_write_cancel_failed",
+		.test_main_f = test_procedure_8,
+	},
+	{
+		.test_id = "tester_execute_cancelled",
+		.test_main_f = test_procedure_9,
 	},
 	BSTEST_END_MARKER,
 };
