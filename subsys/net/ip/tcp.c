@@ -702,7 +702,7 @@ static void tcp_rtt_handshake_ack(struct tcp *conn, uint32_t ack)
 
 /* Implementation according to RFC6582 */
 
-static void tcp_new_reno_log(struct tcp *conn, char *step)
+static void tcp_new_reno_log(struct tcp *conn, const char *step)
 {
 	NET_DBG("[%p] ca %s, cwnd=%u, ssthres=%u, fast_pend=%u",
 		conn, step, conn->ca.cwnd, conn->ca.ssthresh,
