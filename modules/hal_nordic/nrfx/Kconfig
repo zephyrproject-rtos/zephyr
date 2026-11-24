@@ -116,6 +116,13 @@ config NRFX_GPIOTE_NONUNIFORM_INSTANCES
 	def_bool $(dt_nodelabel_enabled,gpiote0)
 	depends on $(dt_nodelabel_bool_prop,gpiote0,fixed-channels-supported)
 
+config NRFX_GPIOTE_EXT_IN_EVENT
+	bool "Second IN event"
+	help
+	  Indicates that the GPIOTE driver supports API for configuring a second IN event for a
+	  given pin. Note that this feature is experimental for targets which do not clearly
+	  states that multiple IN events per pin is supported.
+
 config NRFX_GPIOTE_NUM_OF_EVT_HANDLERS
 	int "Number of event handlers"
 	depends on NRFX_GPIOTE
