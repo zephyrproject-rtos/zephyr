@@ -457,6 +457,18 @@ struct btp_gap_pawr_configure_cmd {
 	uint8_t num_response_slots;
 } __packed;
 
+#define BTP_GAP_SEC_MODE_1			0x01
+#define BTP_GAP_SEC_MODE_3			0x03
+#define BTP_GAP_SEC_MODE_3_LEVEL_1		0x01
+#define BTP_GAP_SEC_MODE_FLAG_SC_ONLY		BIT(0)
+
+#define BTP_GAP_CONFIGURE_SECURITY_MODE		0x35
+struct btp_gap_configure_security_mode_cmd {
+	uint8_t mode;
+	uint8_t level;
+	uint8_t flags;
+} __packed;
+
 /* events */
 #define BTP_GAP_EV_NEW_SETTINGS			0x80
 struct btp_gap_new_settings_ev {

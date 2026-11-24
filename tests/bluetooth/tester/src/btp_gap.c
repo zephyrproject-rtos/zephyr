@@ -3040,6 +3040,41 @@ static uint8_t send_subrate_request(const void *cmd, uint16_t cmd_len, void *rsp
 }
 #endif /* defined(CONFIG_BT_SUBRATING) */
 
+static uint8_t configure_security_mode(const void *cmd, uint16_t cmd_len, void *rsp,
+				       uint16_t *rsp_len)
+{
+	const struct btp_gap_configure_security_mode_cmd *cp = cmd;
+
+	LOG_DBG("mode %u level %u", cp->mode, cp->level);
+
+	switch (cp->mode) {
+	case BTP_GAP_SEC_MODE_1:
+		if (cp->level == BT_SECURITY_L4 && !IS_ENABLED(CONFIG_BT_SMP_SC_ONLY)) {
+			return BTP_STATUS_FAILED;
+		}
+
+		if (cp->level == BT_SECURITY_L3 && !IS_ENABLED(CONFIG_BT_SMP_ENFORCE_MITM)) {
+			return BTP_STATUS_FAILED;
+		}
+
+		if ((cp->flags & BTP_GAP_SEC_MODE_FLAG_SC_ONLY) &&
+		    !IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY)) {
+			return BTP_STATUS_FAILED;
+		}
+
+		return BTP_STATUS_SUCCESS;
+	case BTP_GAP_SEC_MODE_3:
+		/* TODO: Store levels 2 and 3 and check them when creating a BIG */
+		if (cp->level != BTP_GAP_SEC_MODE_3_LEVEL_1) {
+			return BTP_STATUS_FAILED;
+		}
+
+		return BTP_STATUS_SUCCESS;
+	default:
+		return BTP_STATUS_FAILED;
+	}
+}
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -3290,6 +3325,11 @@ static const struct btp_handler handlers[] = {
 		.func = ead_decrypt_data,
 	},
 #endif /* defined(CONFIG_BT_EAD) */
+	{
+		.opcode = BTP_GAP_CONFIGURE_SECURITY_MODE,
+		.expect_len = sizeof(struct btp_gap_configure_security_mode_cmd),
+		.func = configure_security_mode,
+	},
 };
 
 uint8_t tester_init_gap(void)
