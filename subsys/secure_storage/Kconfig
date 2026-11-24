@@ -24,17 +24,41 @@ module = SECURE_STORAGE
 module-str = secure_storage
 source "subsys/logging/Kconfig.template.log_config"
 
-config SECURE_STORAGE_INIT_PRIORITY
-	int "Initialization priority"
-	depends on SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS || \
+config SECURE_STORAGE_INIT
+	def_bool SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS || \
 		SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS || \
 		(SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD && \
 		!SECURE_STORAGE_ITS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING)
+
+if SECURE_STORAGE_INIT
+
+choice SECURE_STORAGE_INIT_LEVEL
+	prompt "Initialization level"
+	default SECURE_STORAGE_INIT_LEVEL_APPLICATION
+	help
+	  SYS_INIT level of the Secure Storage components that are initialized
+	  at boot time. At POST_KERNEL,
+	  SECURE_STORAGE_INIT_PRIORITY must be higher than the priority of the
+	  flash driver of the ITS partition and, with the settings-based store,
+	  of the settings backend's storage.
+
+config SECURE_STORAGE_INIT_LEVEL_POST_KERNEL
+	bool "POST_KERNEL"
+
+config SECURE_STORAGE_INIT_LEVEL_APPLICATION
+	bool "APPLICATION"
+
+endchoice
+
+config SECURE_STORAGE_INIT_PRIORITY
+	int "Initialization priority"
 	default APPLICATION_INIT_PRIORITY
 	range 0 99
 	help
-	  Initialization priority for the secure storage components that are
-	  initialized at boot time with the APPLICATION level.
+	  Initialization priority for the Secure Storage components that are
+	  initialized at boot time, within SECURE_STORAGE_INIT_LEVEL.
+
+endif # SECURE_STORAGE_INIT
 
 config SECURE_STORAGE_64_BIT_UID
 	bool "Make psa_storage_uid_t 64-bit"
