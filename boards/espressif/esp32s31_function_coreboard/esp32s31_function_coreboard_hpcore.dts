@@ -99,6 +99,18 @@
 	status = "okay";
 };
 
+&ana_cmpr0_ch0 {
+	source-pad = <0>;
+};
+
+&ana_cmpr0_ch1 {
+	source-pad = <1>;
+};
+
+&ana_cmpr0_ch2 {
+	source-pad = <2>;
+};
+
 &trng0 {
 	status = "okay";
 };

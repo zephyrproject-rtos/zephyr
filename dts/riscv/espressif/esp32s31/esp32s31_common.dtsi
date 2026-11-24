@@ -88,14 +88,6 @@
 		status = "disabled";
 	};
 
-	ana_cmpr0: ana_cmpr0 {
-		compatible = "espressif,esp32-ana-cmpr";
-		unit = <0>;
-		interrupts = <ZERO_DET_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
-		interrupt-parent = <&intc>;
-		status = "disabled";
-	};
-
 	soc {
 		compatible = "simple-bus";
 		ranges;
@@ -309,6 +301,31 @@
 			interrupts = <SYSTIMER_TARGET0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "okay";
+		};
+
+		ana_cmpr0: comparator@2039a000 {
+			compatible = "espressif,esp32-ana-cmpr-zd";
+			reg = <0x2039a000 0x400>;
+			interrupts = <ZERO_DET_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			ana_cmpr0_ch0: channel@0 {
+				reg = <0>;
+				status = "disabled";
+			};
+
+			ana_cmpr0_ch1: channel@1 {
+				reg = <1>;
+				status = "disabled";
+			};
+
+			ana_cmpr0_ch2: channel@2 {
+				reg = <2>;
+				status = "disabled";
+			};
 		};
 
 		flash: flash-controller@20500000 {
