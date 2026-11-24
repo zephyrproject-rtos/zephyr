@@ -53,6 +53,18 @@ zephyr_code_relocate(
   FILES "$<TARGET_PROPERTY:forwarded_relocation_sources,INTERFACE_SOURCES>" LOCATION SRAM2
 )
 
+# Test relocation of a file that shares its name with a file of another
+# target, requested through a path containing "./". Only src/dup/reloc_dup.c
+# must be relocated, not dup_lib/reloc_dup.c.
+target_sources(app PRIVATE src/dup/reloc_dup.c src/multi/reloc_multi.c)
+add_subdirectory(dup_lib)
+target_link_libraries(app PUBLIC dup_lib)
+zephyr_code_relocate(FILES src/dup/./reloc_dup.c ${SRAM2_PHDR} LOCATION SRAM2)
+
+# Test relocation of a source compiled into two targets (app and dup_lib),
+# requested through a path containing "..". Both objects must be relocated.
+zephyr_code_relocate(FILES src/dup/../multi/reloc_multi.c ${SRAM2_PHDR} LOCATION SRAM2)
+
 zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_LITERAL)
 zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_TEXT)
 zephyr_code_relocate(FILES src/test_file3.c LOCATION RAM_DATA)
