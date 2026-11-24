@@ -761,7 +761,7 @@ static int i2s_mcux_trigger_start(const struct device *dev, enum i2s_dir dir,
 	int ret;
 
 	if (stream->state != I2S_STATE_READY) {
-		LOG_ERR("START trigger: invalid state %d", stream->state);
+		LOG_DBG("START trigger: invalid state %d", stream->state);
 		return -EIO;
 	}
 
@@ -809,7 +809,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 
 	case I2S_TRIGGER_STOP:
 		if (stream->state != I2S_STATE_RUNNING) {
-			LOG_ERR("STOP trigger: invalid state %d", stream->state);
+			LOG_DBG("STOP trigger: invalid state %d", stream->state);
 			ret = -EIO;
 			break;
 		}
@@ -823,7 +823,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 
 	case I2S_TRIGGER_DRAIN:
 		if (stream->state != I2S_STATE_RUNNING) {
-			LOG_ERR("DRAIN trigger: invalid state %d", stream->state);
+			LOG_DBG("DRAIN trigger: invalid state %d", stream->state);
 			ret = -EIO;
 			break;
 		}
@@ -836,7 +836,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 
 	case I2S_TRIGGER_DROP:
 		if (stream->state == I2S_STATE_NOT_READY) {
-			LOG_ERR("DROP trigger: invalid state %d", stream->state);
+			LOG_DBG("DROP trigger: invalid state %d", stream->state);
 			ret = -EIO;
 			break;
 		}
@@ -850,7 +850,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 
 	case I2S_TRIGGER_PREPARE:
 		if (stream->state != I2S_STATE_ERROR) {
-			LOG_ERR("PREPARE trigger: invalid state %d", stream->state);
+			LOG_DBG("PREPARE trigger: invalid state %d", stream->state);
 			ret = -EIO;
 			break;
 		}
