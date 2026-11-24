@@ -9866,12 +9866,12 @@ static void init_quic_service(void)
 	k_tid_t tid;
 	static struct k_thread quic_thread;
 
-	static K_THREAD_STACK_DEFINE(quic_thread_stack,
+	static K_KERNEL_STACK_DEFINE(quic_thread_stack,
 				     CONFIG_QUIC_SERVICE_STACK_SIZE);
 
 	tid = k_thread_create(&quic_thread,
 			      quic_thread_stack,
-			      K_THREAD_STACK_SIZEOF(quic_thread_stack),
+			      K_KERNEL_STACK_SIZEOF(quic_thread_stack),
 			      (k_thread_entry_t)quic_service_thread, NULL, NULL, NULL,
 			      CLAMP(CONFIG_QUIC_SERVICE_THREAD_PRIO,
 				    K_HIGHEST_APPLICATION_THREAD_PRIO,

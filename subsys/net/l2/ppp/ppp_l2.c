@@ -35,9 +35,9 @@ static K_FIFO_DEFINE(tx_queue);
 
 static void tx_handler(void *p1, void *p2, void *p3);
 
-static K_THREAD_DEFINE(tx_handler_thread, CONFIG_NET_L2_PPP_TX_STACK_SIZE,
-		       tx_handler, NULL, NULL, NULL,
-		       THREAD_PRIORITY, 0, 0);
+static K_KERNEL_THREAD_DEFINE(tx_handler_thread, CONFIG_NET_L2_PPP_TX_STACK_SIZE,
+			      tx_handler, NULL, NULL, NULL,
+			      THREAD_PRIORITY, 0, 0);
 
 static const struct ppp_protocol_handler *ppp_lcp;
 

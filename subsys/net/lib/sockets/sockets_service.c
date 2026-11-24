@@ -449,12 +449,12 @@ static int init_socket_service(void)
 	k_tid_t ssm;
 	static struct k_thread service_thread;
 
-	static K_THREAD_STACK_DEFINE(service_thread_stack,
+	static K_KERNEL_STACK_DEFINE(service_thread_stack,
 				     CONFIG_NET_SOCKETS_SERVICE_STACK_SIZE);
 
 	ssm = k_thread_create(&service_thread,
 			      service_thread_stack,
-			      K_THREAD_STACK_SIZEOF(service_thread_stack),
+			      K_KERNEL_STACK_SIZEOF(service_thread_stack),
 			      (k_thread_entry_t)socket_service_thread, NULL, NULL, NULL,
 			      CLAMP(CONFIG_NET_SOCKETS_SERVICE_THREAD_PRIO,
 				    K_HIGHEST_APPLICATION_THREAD_PRIO,

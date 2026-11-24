@@ -145,10 +145,10 @@ struct mcp_server_ctx {
  ******************************************************************************/
 static struct mcp_server_ctx mcp_servers[CONFIG_MCP_SERVER_COUNT];
 
-K_THREAD_STACK_ARRAY_DEFINE(mcp_request_worker_stacks,
+K_KERNEL_STACK_ARRAY_DEFINE(mcp_request_worker_stacks,
 			    CONFIG_MCP_REQUEST_WORKERS * CONFIG_MCP_SERVER_COUNT,
 			    CONFIG_MCP_REQUEST_WORKER_STACK_SIZE);
-K_THREAD_STACK_ARRAY_DEFINE(mcp_health_monitor_stack, CONFIG_MCP_SERVER_COUNT,
+K_KERNEL_STACK_ARRAY_DEFINE(mcp_health_monitor_stack, CONFIG_MCP_SERVER_COUNT,
 			    CONFIG_MCP_HEALTH_MONITOR_STACK_SIZE);
 
 /*******************************************************************************
@@ -1962,7 +1962,7 @@ int mcp_server_start(mcp_server_ctx_t ctx)
 		thread_stack_idx = (server->idx * CONFIG_MCP_REQUEST_WORKERS) + i;
 		tid = k_thread_create(
 			&server->request_workers[i], mcp_request_worker_stacks[thread_stack_idx],
-			K_THREAD_STACK_SIZEOF(mcp_request_worker_stacks[thread_stack_idx]),
+			K_KERNEL_STACK_SIZEOF(mcp_request_worker_stacks[thread_stack_idx]),
 			mcp_request_worker, server, INT_TO_POINTER(i), NULL,
 			K_PRIO_COOP(MCP_WORKER_PRIORITY), 0, K_NO_WAIT);
 		if (tid == NULL) {
@@ -1979,7 +1979,7 @@ int mcp_server_start(mcp_server_ctx_t ctx)
 	}
 
 	tid = k_thread_create(&server->health_monitor_thread, mcp_health_monitor_stack[server->idx],
-			      K_THREAD_STACK_SIZEOF(mcp_health_monitor_stack[server->idx]),
+			      K_KERNEL_STACK_SIZEOF(mcp_health_monitor_stack[server->idx]),
 			      mcp_health_monitor_worker, server, NULL, NULL,
 			      K_PRIO_PREEMPT(MCP_WORKER_PRIORITY - 1), 0, K_NO_WAIT);
 	if (tid == NULL) {

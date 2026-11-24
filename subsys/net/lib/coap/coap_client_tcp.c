@@ -1383,6 +1383,6 @@ void coap_client_tcp_set_event_cb(struct coap_client_tcp *client,
 					      K_HIGHEST_APPLICATION_THREAD_PRIO, \
 					      K_LOWEST_APPLICATION_THREAD_PRIO)
 
-K_THREAD_DEFINE(coap_client_tcp_recv_thread, CONFIG_COAP_CLIENT_STACK_SIZE,
-		coap_client_tcp_recv, NULL, NULL, NULL,
-		COAP_CLIENT_TCP_THREAD_PRIORITY, 0, 0);
+K_KERNEL_THREAD_DEFINE(coap_client_tcp_recv_thread, CONFIG_COAP_CLIENT_STACK_SIZE,
+		       coap_client_tcp_recv, NULL, NULL, NULL,
+		       COAP_CLIENT_TCP_THREAD_PRIORITY, 0, 0);

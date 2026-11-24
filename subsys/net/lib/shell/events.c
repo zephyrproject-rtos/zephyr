@@ -43,7 +43,7 @@ static struct net_mgmt_event_callback l3_ipv4_cb;
 static struct net_mgmt_event_callback l3_ipv6_cb;
 static struct net_mgmt_event_callback l4_cb;
 static struct k_thread event_mon;
-static K_THREAD_STACK_DEFINE(event_mon_stack, CONFIG_NET_MGMT_EVENT_MONITOR_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(event_mon_stack, CONFIG_NET_MGMT_EVENT_MONITOR_STACK_SIZE);
 
 static const char unknown_event_str[] = "<unknown event>";
 
@@ -726,7 +726,7 @@ static int cmd_net_events_on(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	tid = k_thread_create(&event_mon, event_mon_stack,
-			      K_THREAD_STACK_SIZEOF(event_mon_stack),
+			      K_KERNEL_STACK_SIZEOF(event_mon_stack),
 			      (k_thread_entry_t)event_mon_handler,
 			      (void *)sh, NULL, NULL, THREAD_PRIORITY, 0,
 			      K_FOREVER);

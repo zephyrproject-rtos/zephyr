@@ -1637,6 +1637,6 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-K_THREAD_DEFINE(coap_server_id, CONFIG_COAP_SERVER_STACK_SIZE,
-		coap_server_thread, NULL, NULL, NULL,
-		THREAD_PRIORITY, 0, 0);
+K_KERNEL_THREAD_DEFINE(coap_server_id, CONFIG_COAP_SERVER_STACK_SIZE,
+		       coap_server_thread, NULL, NULL, NULL,
+		       THREAD_PRIORITY, 0, 0);
