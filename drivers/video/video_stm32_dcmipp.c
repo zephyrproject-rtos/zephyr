@@ -1394,6 +1394,7 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 	k_mutex_lock(&pipe->lock, K_FOREVER);
 
 	if (pipe->fmt.pitch * pipe->fmt.height > vbuf->size) {
+		k_mutex_unlock(&pipe->lock);
 		return -EINVAL;
 	}
 
