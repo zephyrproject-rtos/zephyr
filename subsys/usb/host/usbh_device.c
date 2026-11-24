@@ -157,11 +157,42 @@ static void assign_control_ep(struct usb_device *const udev)
 	}
 }
 
+/*
+ * The root hub is emulated by the stack, its requests never reach the
+ * controller, so its endpoints are not enabled there. This is the same check
+ * that usbh_req_setup() uses to divert the root hub requests.
+ */
+static bool is_root_hub(const struct usb_device *const udev)
+{
+	return udev->level == 1;
+}
+
+static int device_ep_enable(struct usb_device *const udev, const uint8_t ep)
+{
+	struct usbh_context *const uhs_ctx = udev->ctx;
+
+	if (is_root_hub(udev)) {
+		return 0;
+	}
+
+	return uhc_ep_enable(uhs_ctx->dev, udev, ep);
+}
+
+static int device_ep_disable(struct usb_device *const udev, const uint8_t ep)
+{
+	struct usbh_context *const uhs_ctx = udev->ctx;
+
+	if (is_root_hub(udev)) {
+		return 0;
+	}
+
+	return uhc_ep_disable(uhs_ctx->dev, udev, ep);
+}
+
 static int handle_ep_op(struct usb_device *const udev,
 			const enum ep_op op, const uint8_t ep,
 			struct usb_ep_descriptor *const ep_desc)
 {
-	struct usbh_context *const uhs_ctx = udev->ctx;
 	int err;
 
 	switch (op) {
@@ -174,13 +205,13 @@ static int handle_ep_op(struct usb_device *const udev,
 
 		assign_ep(udev, ep_desc->bEndpointAddress, ep_desc);
 
-		err = uhc_ep_enable(uhs_ctx->dev, udev, ep);
+		err = device_ep_enable(udev, ep);
 		if (err != 0) {
 			return err;
 		}
 		break;
 	case EP_OP_DOWN:
-		err = uhc_ep_disable(uhs_ctx->dev, udev, ep);
+		err = device_ep_disable(udev, ep);
 		if (err != 0) {
 			return err;
 		}
@@ -194,7 +225,6 @@ static int handle_ep_op(struct usb_device *const udev,
 
 static int enable_control_ep(struct usb_device *const udev)
 {
-	struct usbh_context *const uhs_ctx = udev->ctx;
 	int err;
 
 	assign_control_ep(udev);
@@ -204,14 +234,14 @@ static int enable_control_ep(struct usb_device *const udev)
 	 * controller resource between both directions claims it there and
 	 * attaches it to the IN direction as well.
 	 */
-	err = uhc_ep_enable(uhs_ctx->dev, udev, USB_CONTROL_EP_OUT);
+	err = device_ep_enable(udev, USB_CONTROL_EP_OUT);
 	if (err != 0) {
 		return err;
 	}
 
-	err = uhc_ep_enable(uhs_ctx->dev, udev, USB_CONTROL_EP_IN);
+	err = device_ep_enable(udev, USB_CONTROL_EP_IN);
 	if (err != 0) {
-		(void)uhc_ep_disable(uhs_ctx->dev, udev, USB_CONTROL_EP_OUT);
+		(void)device_ep_disable(udev, USB_CONTROL_EP_OUT);
 	}
 
 	return err;
@@ -219,7 +249,6 @@ static int enable_control_ep(struct usb_device *const udev)
 
 static int disable_control_ep(struct usb_device *const udev)
 {
-	struct usbh_context *const uhs_ctx = udev->ctx;
 	int err_in;
 	int err_out;
 
@@ -228,8 +257,8 @@ static int disable_control_ep(struct usb_device *const udev)
 	 * that neither of them accepts a transfer once the controller resource
 	 * they share is released.
 	 */
-	err_in = uhc_ep_disable(uhs_ctx->dev, udev, USB_CONTROL_EP_IN);
-	err_out = uhc_ep_disable(uhs_ctx->dev, udev, USB_CONTROL_EP_OUT);
+	err_in = device_ep_disable(udev, USB_CONTROL_EP_IN);
+	err_out = device_ep_disable(udev, USB_CONTROL_EP_OUT);
 
 	return err_in != 0 ? err_in : err_out;
 }
