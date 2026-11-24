@@ -363,7 +363,7 @@ void thread_analyzer_auto(void *a, void *b, void *c)
 
 #ifdef CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES
 
-static K_THREAD_STACK_ARRAY_DEFINE(analyzer_thread_stacks, CONFIG_MP_MAX_NUM_CPUS,
+static K_KERNEL_STACK_ARRAY_DEFINE(analyzer_thread_stacks, CONFIG_MP_MAX_NUM_CPUS,
 				   CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE);
 static struct k_thread analyzer_thread[CONFIG_MP_MAX_NUM_CPUS];
 
@@ -408,12 +408,12 @@ SYS_INIT(thread_analyzer_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT)
 
 #else
 
-K_THREAD_DEFINE(thread_analyzer,
-		CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE,
-		thread_analyzer_auto,
-		NULL, NULL, NULL,
-		AUTO_THREAD_PRIO,
-		0, 0);
+K_KERNEL_THREAD_DEFINE(thread_analyzer,
+		       CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE,
+		       thread_analyzer_auto,
+		       NULL, NULL, NULL,
+		       AUTO_THREAD_PRIO,
+		       0, 0);
 
 #endif /* CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES */
 
