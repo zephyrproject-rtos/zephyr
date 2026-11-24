@@ -31,6 +31,7 @@
 		accel0 = &mma8652fc;
 		watchdog0 = &wwdt0;
 		rtc = &rtc;
+		eeprom-0 = &eeprom0;
 	};
 
 	/*
@@ -196,5 +197,10 @@ zephyr_udc0: &usbhs {
 };
 
 &enet_ptp_clock {
+	status = "okay";
+};
+
+/* On-chip EEPROM: 16 KB array, of which 16256 bytes are writable. */
+&eeprom0 {
 	status = "okay";
 };
