@@ -106,6 +106,17 @@ struct usbd_dfu_image {
 	int (*write_cb)(void *const priv,
 			const uint32_t block, const uint16_t size,
 			const uint8_t buf[static CONFIG_USBD_DFU_TRANSFER_SIZE]);
+
+	/**
+	 * Optional terminal status, sampled after next_cb while processing
+	 * GETSTATUS. This runs in the USB device stack thread; return the
+	 * current status without waiting for an asynchronous operation.
+	 * ERR_OK leaves next_cb as the readiness authority. A valid non-OK
+	 * status overrides readiness, enters DFU_ERROR and prevents download
+	 * completion notification. Out-of-range values map to ERR_UNKNOWN.
+	 * NULL preserves legacy behavior.
+	 */
+	enum usb_dfu_status (*status_cb)(void *priv);
 };
 
 /**
@@ -154,6 +165,26 @@ struct usbd_dfu_image {
  * @param inext  Notify/confirm next state
  */
 #define USBD_DFU_DEFINE_IMG(id, iname, ipriv, iread, iwrite, inext)			\
+	USBD_DFU_DEFINE_IMG_EXT(id, iname, ipriv, iread, iwrite, inext, NULL)
+
+/**
+ * @brief Define USB DFU image with optional backend status
+ *
+ * Uses the same image ordering and read/write/next callbacks as
+ * USBD_DFU_DEFINE_IMG(). Status is sampled after download readiness and
+ * manifestation callbacks, before state selection or completion publication.
+ * It does not reinterpret read/write return values or change notifications.
+ * Backend errors remain latched until the existing accepted CLRSTATUS.
+ *
+ * @param id      Identifier by which the linker sorts registered images
+ * @param iname   Image name as used in interface descriptor
+ * @param ipriv   Private callback context
+ * @param iread   Image read callback
+ * @param iwrite  Image write callback
+ * @param inext   Notify/confirm next state
+ * @param istatus Optional enum usb_dfu_status status(void *priv) callback
+ */
+#define USBD_DFU_DEFINE_IMG_EXT(id, iname, ipriv, iread, iwrite, inext, istatus) \
 	static __noinit struct usb_if_descriptor usbd_dfu_iface_##id;			\
 											\
 	USBD_DESC_STRING_DEFINE(usbd_dfu_str_##id, iname, USBD_DUT_STRING_INTERFACE);	\
@@ -166,6 +197,7 @@ struct usbd_dfu_image {
 		.next_cb = inext,							\
 		.read_cb = iread,							\
 		.write_cb = iwrite,							\
+		.status_cb = istatus,						\
 	}
 
 /**
