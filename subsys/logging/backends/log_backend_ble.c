@@ -10,6 +10,7 @@
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/services/nus.h>
 #include <zephyr/logging/log_ctrl.h>
 
 #define ATT_NOTIFY_SIZE 3
@@ -34,17 +35,16 @@ static const struct log_backend *log_backend_ble_get(void);
  */
 static void log_notify_changed(const struct bt_gatt_attr *attr, uint16_t value);
 
-/** Bluetooth Logger based on the UUIDs for the NRF Connect SDK NUS service
- *	https://developer.nordicsemi.com/nRF_Connect_SDK/doc/2.3.0/nrf/libraries/bluetooth_services/services/nus.html
- */
-#define NUS_SERVICE_UUID                                                                           \
-	BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x6E400001, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E))
-
-#define LOGGER_TX_SERVICE_UUID                                                                     \
-	BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x6E400003, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E))
-
-#define LOGGER_RX_SERVICE_UUID                                                                     \
-	BT_UUID_DECLARE_128(BT_UUID_128_ENCODE(0x6E400002, 0xB5A3, 0xF393, 0xE0A9, 0xE50E24DCCA9E))
+#if defined(CONFIG_LOG_BACKEND_BLE_SECURITY_AUTHEN)
+#define LOG_BACKEND_BLE_PERM_READ  BT_GATT_PERM_READ_AUTHEN
+#define LOG_BACKEND_BLE_PERM_WRITE BT_GATT_PERM_WRITE_AUTHEN
+#elif defined(CONFIG_LOG_BACKEND_BLE_SECURITY_ENCRYPT)
+#define LOG_BACKEND_BLE_PERM_READ  BT_GATT_PERM_READ_ENCRYPT
+#define LOG_BACKEND_BLE_PERM_WRITE BT_GATT_PERM_WRITE_ENCRYPT
+#else
+#define LOG_BACKEND_BLE_PERM_READ  BT_GATT_PERM_READ
+#define LOG_BACKEND_BLE_PERM_WRITE BT_GATT_PERM_WRITE
+#endif
 
 /**
  * @brief Bluetooth Service that represents this backend
@@ -52,14 +52,13 @@ static void log_notify_changed(const struct bt_gatt_attr *attr, uint16_t value);
  *       is added to make the backend usable with the NRF toolbox app
  *       which expects both characteristics.
  */
-BT_GATT_SERVICE_DEFINE(ble_log_svc, BT_GATT_PRIMARY_SERVICE(NUS_SERVICE_UUID),
-		       BT_GATT_CHARACTERISTIC(LOGGER_TX_SERVICE_UUID, BT_GATT_CHRC_NOTIFY,
-					      BT_GATT_PERM_READ, NULL, NULL, NULL),
-		       BT_GATT_CCC(log_notify_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
-		       BT_GATT_CHARACTERISTIC(LOGGER_RX_SERVICE_UUID, BT_GATT_CHRC_WRITE, 0,
-					      NULL, NULL, NULL),
-
-);
+BT_GATT_SERVICE_DEFINE(
+	ble_log_svc, BT_GATT_PRIMARY_SERVICE(BT_UUID_NUS_SERVICE),
+	BT_GATT_CHARACTERISTIC(BT_UUID_NUS_TX_CHAR, BT_GATT_CHRC_NOTIFY, LOG_BACKEND_BLE_PERM_READ,
+			       NULL, NULL, NULL),
+	BT_GATT_CCC(log_notify_changed, LOG_BACKEND_BLE_PERM_READ | LOG_BACKEND_BLE_PERM_WRITE),
+	BT_GATT_CHARACTERISTIC(BT_UUID_NUS_RX_CHAR, BT_GATT_CHRC_WRITE, BT_GATT_PERM_NONE,
+			       NULL, NULL, NULL));
 
 /* Log characteristic attribute is defined after the first attribute (i.e. the service) */
 const struct bt_gatt_attr *log_characteristic = &ble_log_svc.attrs[1];

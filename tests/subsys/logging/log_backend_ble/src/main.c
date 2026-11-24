@@ -33,6 +33,8 @@
 #include <zephyr/ztest.h>
 
 #include "host/att_internal.h"
+#include "host/conn_internal.h"
+#include "host/gatt_internal.h"
 
 LOG_MODULE_REGISTER(test, LOG_LEVEL_INF);
 
@@ -82,6 +84,7 @@ BUILD_ASSERT(ARRAY_SIZE(peers) <= CONFIG_BT_MAX_CONN, "Each peer needs a connect
 
 static uint16_t value_handle;
 static uint16_t ccc_handle;
+static uint8_t write_rsp_error;
 
 static K_SEM_DEFINE(connected_sem, 0, 1);
 static K_SEM_DEFINE(disconnected_sem, 0, 1);
@@ -275,6 +278,12 @@ static void acl_from_host(struct net_buf *buf)
 
 	op = net_buf_pull_u8(buf);
 	if (op == BT_ATT_OP_WRITE_RSP) {
+		write_rsp_error = BT_ATT_ERR_SUCCESS;
+		k_sem_give(&write_rsp_sem);
+	} else if (op == BT_ATT_OP_ERROR_RSP) {
+		zassert_equal(net_buf_pull_u8(buf), BT_ATT_OP_WRITE_REQ);
+		zassert_equal(net_buf_pull_le16(buf), ccc_handle);
+		write_rsp_error = net_buf_pull_u8(buf);
 		k_sem_give(&write_rsp_sem);
 	} else if (op == BT_ATT_OP_NOTIFY) {
 		zassert_equal(net_buf_pull_le16(buf), value_handle);
@@ -386,8 +395,8 @@ static void connect_peer(struct test_peer *peer)
 	zassert_ok(k_sem_take(&connected_sem, WAIT_TIMEOUT), "No connection");
 }
 
-/* The peer enables notifications of the log characteristic */
-static void subscribe(const struct test_peer *peer)
+/* The peer requests notifications of the log characteristic */
+static void subscribe(const struct test_peer *peer, uint8_t expected_error)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct net_buf *buf;
@@ -402,7 +411,8 @@ static void subscribe(const struct test_peer *peer)
 	net_buf_add_le16(buf, BT_GATT_CCC_NOTIFY);
 	bt_hci_recv(dev, net_buf_take(&buf));
 
-	zassert_ok(k_sem_take(&write_rsp_sem, WAIT_TIMEOUT), "No Write Response");
+	zassert_ok(k_sem_take(&write_rsp_sem, WAIT_TIMEOUT), "No response to CCC write");
+	zassert_equal(write_rsp_error, expected_error);
 }
 
 static void disconnect_peer(struct test_peer *peer)
@@ -501,18 +511,61 @@ static void teardown(void *fixture)
 
 ZTEST_SUITE(log_backend_ble, NULL, setup, NULL, after, teardown);
 
+static ZTEST(log_backend_ble, test_security)
+{
+	const struct bt_gatt_attr *tx = bt_gatt_find_by_uuid(NULL, 0U, BT_UUID_NUS_TX_CHAR);
+	const bt_security_t max_level = IS_ENABLED(CONFIG_BT_SMP) ? BT_SECURITY_L3 : BT_SECURITY_L1;
+	bt_security_t min_level = BT_SECURITY_L1;
+	const struct bt_gatt_attr *ccc;
+	struct bt_conn *conn;
+
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_BLE_SECURITY_AUTHEN)) {
+		min_level = BT_SECURITY_L3;
+	} else if (IS_ENABLED(CONFIG_LOG_BACKEND_BLE_SECURITY_ENCRYPT)) {
+		min_level = BT_SECURITY_L2;
+	}
+
+	zassert_not_null(tx);
+	ccc = bt_gatt_find_by_uuid(tx, 0U, BT_UUID_GATT_CCC);
+	zassert_not_null(ccc);
+	connect_peer(&peers[0]);
+	conn = bt_conn_lookup_handle(peers[0].handle, BT_CONN_TYPE_LE);
+	zassert_not_null(conn);
+
+	for (bt_security_t level = BT_SECURITY_L1; level <= max_level; level++) {
+		const bool allowed = level >= min_level;
+		const uint8_t err = allowed ? BT_ATT_ERR_SUCCESS : BT_ATT_ERR_AUTHENTICATION;
+
+#if defined(CONFIG_BT_SMP)
+		/* Model the link state after pairing. */
+		conn->encrypt = level > BT_SECURITY_L1 ? BT_HCI_ENCRYPTION_ON_LE_AES_CCM
+						       : BT_HCI_ENCRYPTION_OFF;
+		conn->sec_level = level;
+#endif
+		zassert_equal(bt_gatt_check_perm(conn, tx, BT_GATT_PERM_READ_ENCRYPT_MASK), err);
+		zassert_equal(bt_gatt_check_perm(conn, ccc, BT_GATT_PERM_READ_MASK), err);
+		subscribe(&peers[0], err);
+		log_line();
+		zassert_equal(got_line(&peers[0]), allowed);
+	}
+
+	bt_conn_unref(conn);
+}
+
 /* The output goes to each peer that has notifications enabled */
 static ZTEST(log_backend_ble, test_subscribed)
 {
+	Z_TEST_SKIP_IFNDEF(CONFIG_LOG_BACKEND_BLE_SECURITY_NONE);
+
 	connect_peer(&peers[0]);
-	subscribe(&peers[0]);
+	subscribe(&peers[0], BT_ATT_ERR_SUCCESS);
 	connect_peer(&peers[1]);
 
 	log_line();
 	zassert_true(got_line(&peers[0]));
 	zassert_false(got_line(&peers[1]));
 
-	subscribe(&peers[1]);
+	subscribe(&peers[1], BT_ATT_ERR_SUCCESS);
 
 	log_line();
 	zassert_true(got_line(&peers[0]));
@@ -522,10 +575,12 @@ static ZTEST(log_backend_ble, test_subscribed)
 /* A disconnection leaves the output to the other subscribed peer */
 static ZTEST(log_backend_ble, test_disconnect)
 {
+	Z_TEST_SKIP_IFNDEF(CONFIG_LOG_BACKEND_BLE_SECURITY_NONE);
+
 	connect_peer(&peers[0]);
-	subscribe(&peers[0]);
+	subscribe(&peers[0], BT_ATT_ERR_SUCCESS);
 	connect_peer(&peers[1]);
-	subscribe(&peers[1]);
+	subscribe(&peers[1], BT_ATT_ERR_SUCCESS);
 
 	disconnect_peer(&peers[0]);
 
@@ -540,10 +595,12 @@ static ZTEST(log_backend_ble, test_disconnect_last)
 {
 	const struct log_backend *backend = log_backend_get_by_name("log_backend_ble");
 
+	Z_TEST_SKIP_IFNDEF(CONFIG_LOG_BACKEND_BLE_SECURITY_NONE);
+
 	zassert_not_null(backend);
 
 	connect_peer(&peers[0]);
-	subscribe(&peers[0]);
+	subscribe(&peers[0], BT_ATT_ERR_SUCCESS);
 	disconnect_peer(&peers[0]);
 	zassert_false(log_backend_is_active(backend));
 
