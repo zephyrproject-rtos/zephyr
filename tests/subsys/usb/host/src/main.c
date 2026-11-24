@@ -368,6 +368,116 @@ ZTEST(usbh_test, test_device_reconnect_no_leak)
 	}
 }
 
+/*
+ * A device pointer kept across a disconnect must not refer to the device that
+ * connects next. Otherwise a holder, such as the shell or USB/IP, acts on the
+ * wrong device without noticing.
+ */
+ZTEST(usbh_test, test_device_stale_pointer_after_reconnect)
+{
+	struct usb_device *new_udev;
+	struct usb_device *udev;
+
+	udev = wait_device_configured();
+	zassert_not_null(udev, "No configured device");
+
+	zassert_ok(usbd_disable(test_usbd));
+	zassert_true(wait_device_gone(), "Device still in the list");
+
+	zassert_ok(usbd_enable(test_usbd));
+	new_udev = wait_device_configured();
+	zassert_not_null(new_udev, "Device not configured after reconnect");
+
+	zassert_not_equal(new_udev, udev, "Kept pointer refers to the device that connected next");
+
+	usb_device_unref(udev);
+	usb_device_unref(new_udev);
+}
+
+static K_SEM_DEFINE(late_xfer_done, 0, 1);
+static struct usb_device *late_xfer_udev;
+static int late_xfer_err;
+
+static int late_xfer_cb(struct usb_device *const udev, struct uhc_transfer *const xfer)
+{
+	/* Keep the device for the checks, the transfer drops its reference */
+	late_xfer_udev = usb_device_ref(udev);
+	late_xfer_err = xfer->err;
+
+	if (xfer->buf != NULL) {
+		net_buf_unref(xfer->buf);
+	}
+
+	(void)uhc_xfer_unref(xfer);
+	k_sem_give(&late_xfer_done);
+
+	return 0;
+}
+
+/*
+ * A transfer that completes after its device was disconnected must be given
+ * the device it was queued for, not the device that connected next.
+ */
+ZTEST(usbh_test, test_xfer_completion_after_disconnect)
+{
+	const struct usb_setup_packet req = {
+		.bmRequestType = USB_REQTYPE_DIR_TO_HOST << 7,
+		.bRequest = USB_SREQ_GET_DESCRIPTOR,
+		.wValue = sys_cpu_to_le16(USB_DESC_DEVICE << 8),
+		.wLength = sys_cpu_to_le16(sizeof(struct usb_device_descriptor)),
+	};
+	struct usb_device *new_udev;
+	struct uhc_transfer *xfer;
+	struct usb_device *udev;
+	struct net_buf *buf;
+
+	udev = wait_device_configured();
+	zassert_not_null(udev, "No configured device");
+
+	/* Stop the frames, so that the transfer stays queued */
+	zassert_ok(uhc_bus_suspend(uhs_ctx->dev));
+
+	xfer = usbh_xfer_alloc(udev, USB_CONTROL_EP_IN, late_xfer_cb, NULL);
+	zassert_not_null(xfer);
+	memcpy(xfer->setup_pkt, &req, sizeof(req));
+	buf = usbh_xfer_buf_alloc(udev, sizeof(struct usb_device_descriptor));
+	zassert_not_null(buf);
+	zassert_ok(usbh_xfer_buf_add(udev, xfer, buf));
+	zassert_ok(usbh_xfer_enqueue(udev, xfer));
+
+	/* Only the transfer holds the device now, udev is only compared */
+	usb_device_unref(udev);
+
+	/*
+	 * Cancel the transfer, and disconnect the device. The controller
+	 * returns the transfer at the next frame, after the device connects
+	 * again and the bus is resumed.
+	 */
+	zassert_ok(usbh_xfer_dequeue(udev, xfer));
+
+	zassert_ok(usbd_disable(test_usbd));
+	zassert_true(wait_device_gone(), "Device still in the list");
+
+	zassert_ok(usbd_enable(test_usbd));
+
+	/* The first frame returns the cancelled transfer */
+	zassert_ok(uhc_bus_resume(uhs_ctx->dev));
+
+	zassert_ok(k_sem_take(&late_xfer_done, K_SECONDS(1)), "Transfer not returned");
+	zassert_equal(late_xfer_err, -ECONNRESET);
+
+	new_udev = wait_device_configured();
+	zassert_not_null(new_udev, "Device not configured after reconnect");
+
+	zassert_equal(late_xfer_udev, udev, "Completion got another device");
+	zassert_not_equal(late_xfer_udev, new_udev,
+			  "Completion got the device that connected next");
+	zassert_false(usb_device_is_connected(late_xfer_udev));
+
+	usb_device_unref(late_xfer_udev);
+	usb_device_unref(new_udev);
+}
+
 void *usbh_test_enable(void)
 {
 	int ret;
