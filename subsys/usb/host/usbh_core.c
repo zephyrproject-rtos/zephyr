@@ -21,24 +21,12 @@ LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
 static K_KERNEL_STACK_DEFINE(usbh_stack, CONFIG_USBH_STACK_SIZE);
 static struct k_thread usbh_thread_data;
 
-static K_KERNEL_STACK_DEFINE(usbh_bus_stack, CONFIG_USBH_STACK_SIZE);
-static struct k_thread usbh_bus_thread_data;
-
 K_MSGQ_DEFINE_STATIC_TYPE(usbh_msgq, struct uhc_event, CONFIG_USBH_MAX_UHC_MSG);
-K_MSGQ_DEFINE_STATIC_TYPE(usbh_bus_msgq, struct uhc_event, CONFIG_USBH_MAX_UHC_MSG);
 
 static int usbh_event_carrier(const struct device *dev,
 			      const struct uhc_event *const event)
 {
-	int err;
-
-	if (event->type == UHC_EVT_EP_REQUEST) {
-		err = k_msgq_put(&usbh_msgq, event, K_NO_WAIT);
-	} else {
-		err = k_msgq_put(&usbh_bus_msgq, event, K_NO_WAIT);
-	}
-
-	return err;
+	return k_msgq_put(&usbh_msgq, event, K_NO_WAIT);
 }
 
 static int discard_ep_request(struct usbh_context *const ctx,
@@ -56,39 +44,6 @@ static int discard_ep_request(struct usbh_context *const ctx,
 	return 0;
 }
 
-static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
-					    struct uhc_event *const event)
-{
-	int ret = 0;
-
-	switch (event->type) {
-	case UHC_EVT_ERROR:
-		LOG_DBG("Error event %d", event->status);
-		break;
-	default:
-		break;
-	};
-
-	return ret;
-}
-
-static void usbh_bus_thread(void *p1, void *p2, void *p3)
-{
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
-	struct usbh_context *uhs_ctx;
-	struct uhc_event event;
-
-	while (true) {
-		k_msgq_get(&usbh_bus_msgq, &event, K_FOREVER);
-
-		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
-		usbh_event_handler(uhs_ctx, &event);
-	}
-}
-
 static void usbh_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
@@ -102,6 +57,11 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 
 	while (true) {
 		k_msgq_get(&usbh_msgq, &event, K_FOREVER);
+
+		if (event.type == UHC_EVT_ERROR) {
+			LOG_DBG("UHC error event %d", event.status);
+			continue;
+		}
 
 		__ASSERT(event.type == UHC_EVT_EP_REQUEST, "Wrong event type");
 		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
@@ -143,14 +103,6 @@ static int uhs_pre_init(void)
 			K_PRIO_COOP(9), 0, K_NO_WAIT);
 
 	k_thread_name_set(&usbh_thread_data, "usbh");
-
-	k_thread_create(&usbh_bus_thread_data, usbh_bus_stack,
-			K_KERNEL_STACK_SIZEOF(usbh_bus_stack),
-			usbh_bus_thread,
-			NULL, NULL, NULL,
-			K_PRIO_COOP(9), 0, K_NO_WAIT);
-
-	k_thread_name_set(&usbh_bus_thread_data, "usbh_bus");
 
 	usbh_class_init_all();
 
