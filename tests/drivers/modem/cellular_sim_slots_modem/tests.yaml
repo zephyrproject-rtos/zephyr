@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - modem
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.modem.cellular.sim_slots_modem: {}
+  drivers.modem.cellular.sim_slots_modem.mux:
+    extra_args: DTC_OVERLAY_FILE=bg95.overlay
+    extra_configs:
+      - CONFIG_MODEM_CELLULAR_APN="internet"

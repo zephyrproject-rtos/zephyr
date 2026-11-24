@@ -25,6 +25,7 @@ config MODEM_CELLULAR
 	select MODEM_PIPELINK
 	select UART_USE_RUNTIME_CONFIGURE
 	select PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ if PM_DEVICE_RUNTIME
+	select MUX if DT_HAS_MODEM_SIMS_ENABLED
 	select MODEM_CMUX_DEFAULT_MTU_127 if \
 		(DT_HAS_QUECTEL_BG95_ENABLED || DT_HAS_QUECTEL_BG96_ENABLED || \
 		DT_HAS_QUECTEL_EG21_G_ENABLED || DT_HAS_QUECTEL_EG25_G_ENABLED || \
@@ -102,6 +103,15 @@ config MODEM_CELLULAR_PERIODIC_SCRIPT_MS
 	int "Periodic script interval in milliseconds"
 	default 30000 if DT_HAS_NORDIC_NRF93M1_ENABLED
 	default 2000
+
+config MODEM_CELLULAR_DETACH_TIMEOUT
+	int "Packet domain detach timeout in seconds"
+	range 1 60
+	default 10
+	help
+	  Time the modem has to answer AT+CGATT=0, which detaches it from the
+	  packet domain before the SIM slot is switched with the modem running.
+	  The switch goes on when the detach times out.
 
 config MODEM_CELLULAR_UART_BUFFER_SIZES
 	int "The UART receive and transmit buffer sizes in bytes."
