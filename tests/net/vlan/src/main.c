@@ -728,6 +728,10 @@ static void test_vlan_enable(void)
 	ret = net_eth_vlan_enable(iface, NET_VLAN_TAG_UNSPEC);
 	zassert_equal(ret, -EBADF, "Invalid VLAN tag value %d", ret);
 
+	/* The null VLAN ID only marks priority-tagged frames */
+	ret = net_eth_vlan_enable(iface, NET_VLAN_TAG_PRIORITY);
+	zassert_equal(ret, -EBADF, "Null VLAN ID accepted (%d)", ret);
+
 	iface = eth_interfaces[1];
 	ret = net_eth_vlan_enable(iface, VLAN_TAG_1);
 	zassert_equal(ret, -EALREADY, "VLAN tag %d enabled for iface 1 (%d)",
