@@ -990,28 +990,6 @@ const struct bt_mesh_model *bt_mesh_model_get(bool vnd, uint8_t elem_idx, uint8_
 	}
 }
 
-static int bt_mesh_vnd_mod_msg_cid_check(const struct bt_mesh_model *mod)
-{
-	uint16_t cid;
-	const struct bt_mesh_model_op *op;
-
-	for (op = mod->op; op->func; op++) {
-		cid = (uint16_t)(op->opcode & 0xffff);
-
-		if (BT_MESH_MODEL_OP_LEN(op->opcode) == 3 && cid == mod->vnd.company) {
-			continue;
-		}
-
-		LOG_ERR("Invalid vendor model(company:0x%04x"
-		       " id:0x%04x) message opcode 0x%08x",
-		       mod->vnd.company, mod->vnd.id, op->opcode);
-
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static void mod_init(const struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
 		     bool vnd, bool primary, void *user_data)
 {
@@ -1034,14 +1012,6 @@ static void mod_init(const struct bt_mesh_model *mod, const struct bt_mesh_elem 
 	mod->rt->elem_idx = elem - dev_comp->elem;
 	if (vnd) {
 		mod->rt->mod_idx = mod - elem->vnd_models;
-
-		if (IS_ENABLED(CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE)) {
-			*err = bt_mesh_vnd_mod_msg_cid_check(mod);
-			if (*err) {
-				return;
-			}
-		}
-
 	} else {
 		mod->rt->mod_idx = mod - elem->models;
 	}

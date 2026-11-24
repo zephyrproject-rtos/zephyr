@@ -752,6 +752,10 @@ Bluetooth Mesh
   ``pull`` instead of a number, matching ``blob cli tx``. Replace a numeric mode argument with
   ``push`` or ``pull``.
 
+* ``CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE`` has been removed. Remove it from application
+  configurations. Vendor model opcodes are no longer checked against the model's company ID, as was
+  already the case with the option disabled, its default.
+
 Networking
 **********
 
