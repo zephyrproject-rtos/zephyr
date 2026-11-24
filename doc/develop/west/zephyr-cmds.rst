@@ -655,14 +655,14 @@ To install the Zephyr SDK, run:
 
 This command may run in interactive mode and prompt for SDK or
 toolchain selection. When specific toolchains are provided via
-``--toolchains``, the command runs non-interactively, which is
+``--gnu-toolchains``, the command runs non-interactively, which is
 recommended for automation.
 
-To install specific toolchains only, use the ``--toolchains`` option:
+To install specific toolchains only, use the ``--gnu-toolchains`` option:
 
 .. code-block:: console
 
-   west sdk install --toolchains arm-zephyr-eabi riscv64-zephyr-elf
+   west sdk install --gnu-toolchains arm-zephyr-eabi riscv64-zephyr-elf
 
 If you are unsure which toolchains you need, run ``west sdk list`` first
 to see the available options and avoid downloading unnecessary

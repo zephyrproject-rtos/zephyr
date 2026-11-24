@@ -1197,7 +1197,7 @@ __comp_west_sdk()
 {
 	local bool_opts="
 		--interactive -i
-		--no-toolchains -T
+		--no-gnu-toolchains -T
 		--no-hosttools -H
 	"
 
@@ -1208,7 +1208,7 @@ __comp_west_sdk()
 
 	local other_opts="
 		--version
-		--toolchains -t
+		--gnu-toolchains -t
 		--personal-access-token
 		--api-url
 	"

@@ -188,18 +188,6 @@ class Sdk(WestCommand):
             default="https://api.github.com/repos/zephyrproject-rtos/sdk-ng/releases",
             help="GitHub releases API endpoint used to look for Zephyr SDKs.",
         )
-        # Deprecated option --toolchains; replaced with --gnu-toolchains.
-        install_args_parser.add_argument(
-            "--toolchains",
-            nargs="+",
-            help=argparse.SUPPRESS
-        )
-        # Deprecated option --no-toolchains; replaced with --no-gnu-toolchains.
-        install_args_parser.add_argument(
-            "--no-toolchains",
-            action="store_true",
-            help=argparse.SUPPRESS
-        )
 
         return parser
 
@@ -462,14 +450,6 @@ class Sdk(WestCommand):
     def install_sdk(self, args, user_args):
         version = self.detect_version(args)
         (osname, arch) = self.os_arch_name()
-
-        if args.toolchains:
-            self.wrn("--toolchains is deprecated. Use --gnu-toolchains instead.")
-            args.gnu_toolchains = args.toolchains
-
-        if args.no_toolchains:
-            self.wrn("--no-toolchains is deprecated. Use --no-gnu-toolchains instead.")
-            args.no_gnu_toolchains = args.no_toolchains
 
         if args.personal_access_token:
             req_headers = {
