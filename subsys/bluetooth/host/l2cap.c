@@ -845,8 +845,16 @@ static void l2cap_le_encrypt_change(struct bt_l2cap_chan *chan, uint8_t status)
 			}
 		}
 
-		/* Retry ecred connect */
-		(void)l2cap_ecred_conn_req(chan->conn, echan, i);
+		/* Retry ecred connect. A retry that sends nothing leaves the
+		 * channels to the RTX timeout of this one, at once: it tears
+		 * them all down after the walk over conn->channels in
+		 * bt_l2cap_security_changed(), which their teardown here could
+		 * leave on a freed channel.
+		 */
+		if (l2cap_ecred_conn_req(chan->conn, echan, i) < 0) {
+			(void)bt_work_reschedule(&le->rtx_work, K_NO_WAIT);
+		}
+
 		return;
 	}
 #endif /* defined(CONFIG_BT_L2CAP_ECRED) */
