@@ -30,7 +30,7 @@ LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 static struct k_spinlock lock;
 #ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 #ifdef CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
-K_THREAD_STACK_DEFINE(pm_device_runtime_stack, CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(pm_device_runtime_stack, CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE);
 static struct k_work_q pm_device_runtime_wq;
 #endif /* CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ */
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
@@ -732,7 +732,7 @@ static int pm_device_runtime_wq_init(void)
 	k_work_queue_init(&pm_device_runtime_wq);
 
 	k_work_queue_start(&pm_device_runtime_wq, pm_device_runtime_stack,
-			   K_THREAD_STACK_SIZEOF(pm_device_runtime_stack),
+			   K_KERNEL_STACK_SIZEOF(pm_device_runtime_stack),
 			   CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_PRIO, &cfg);
 
 	return 0;
