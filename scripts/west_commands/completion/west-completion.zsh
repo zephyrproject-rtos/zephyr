@@ -465,10 +465,10 @@ _west_sdk() {
   '(-d --install-dir)'{-d,--install-dir}'[installation directory]:dir:_directories'
   '(-b --install-base)'{-b,--install-base}'[installation base]:dir:_directories'
   '(-i --interactive)'{-i,--interactive}'[interactive installation]'
-  '(-T --no-toolchains)'{-T,--no-toolchains}'[skip toolchains]'
+  '(-T --no-gnu-toolchains)'{-T,--no-gnu-toolchains}'[skip GNU toolchains]'
   '(-H --no-hosttools)'{-H,--no-hosttools}'[skip hosttools]'
   '--version[SDK version]:version:'
-  '--toolchains[toolchains]:toolchains:'
+  '--gnu-toolchains[GNU toolchains]:toolchains:'
   '--personal-access-token[Github personal access token (PAT)]:token:'
   '--api-url[Github API URL]:url:'
   )
