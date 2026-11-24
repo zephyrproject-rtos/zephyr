@@ -7,8 +7,6 @@
 
 '''Runner for openocd.'''
 
-import argparse
-import logging
 import re
 import subprocess
 from os import name as os_name
@@ -27,8 +25,6 @@ except ImportError:
     pass
 
 from runners.core import FileType, RunnerCaps, ZephyrBinaryRunner
-
-_logger = logging.getLogger('runners')
 
 DEFAULT_OPENOCD_TCL_PORT = 6333
 DEFAULT_OPENOCD_TELNET_PORT = 4444
@@ -160,16 +156,6 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--serial', dest='dev_id', default="",
                             help='''Deprecated: use -i/--dev-id instead. Selects the
                             debug adapter by its serial number.''')
-        # Deprecated --use-* flags for backward compatibility
-        parser.add_argument('--use-hex', action='store_const',
-                            dest='use_image_type', const='hex',
-                            help=argparse.SUPPRESS)
-        parser.add_argument('--use-elf', action='store_const',
-                            dest='use_image_type', const='elf',
-                            help=argparse.SUPPRESS)
-        parser.add_argument('--use-bin', action='store_const',
-                            dest='use_image_type', const='bin',
-                            help=argparse.SUPPRESS)
         parser.add_argument('--flash-address', default=None,
                             help='flash address to use when flashing BIN file')
         # Options for flashing:
@@ -242,19 +228,6 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_create(cls, cfg, args):
-        # Handle deprecated --use-* flags
-        if args.use_image_type:
-            _logger.warning('--use-hex/--use-elf/--use-bin are deprecated, '
-                            'use --file-type instead')
-            if cfg.file_type == FileType.OTHER or cfg.file_type is None:
-                # Map deprecated string to FileType enum
-                type_map = {'hex': FileType.HEX, 'elf': FileType.ELF, 'bin': FileType.BIN}
-                image_type = type_map.get(args.use_image_type)
-            else:
-                image_type = cfg.file_type
-        else:
-            image_type = cfg.file_type
-
         return OpenOcdBinaryRunner(
             cfg,
             pre_init=args.cmd_pre_init, pre_init_flash=args.cmd_pre_init_flash,
@@ -263,7 +236,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             verify_cmd=args.cmd_verify, post_verify=args.cmd_post_verify,
             do_verify=args.verify, do_verify_only=args.verify_only, do_erase=args.erase,
             tui=args.tui, config=args.config, serial=args.dev_id,
-            image_type=image_type,
+            image_type=cfg.file_type,
             flash_address=args.flash_address, no_halt=args.no_halt, no_init=args.no_init,
             no_targets=args.no_targets, tcl_port=args.tcl_port,
             telnet_port=args.telnet_port, log_file=args.log_file, gdb_port=args.gdb_port,
