@@ -8,6 +8,13 @@
 #include <mem.h>
 #include <ti/mspm0/l/mspm0l.dtsi>
 
+&sysctl {
+	gpamp: gpamp {
+		compatible = "ti,mspm0-gpamp";
+		status = "disabled";
+	};
+};
+
 / {
 	soc {
 		sram0: memory@20000000 {

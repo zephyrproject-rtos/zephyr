@@ -2,6 +2,13 @@
 
 #include <ti/mspm0/g/mspm0g.dtsi>
 
+&sysctl {
+	gpamp: gpamp {
+		compatible = "ti,mspm0-gpamp";
+		status = "disabled";
+	};
+};
+
 / {
 	soc {
 		aes: aes@40442000 {
