@@ -347,21 +347,15 @@ static void i2s_mcux_tx_stream_disable(const struct device *dev, bool drop)
 	I2S_DisableInterrupts(base, (uint32_t)kI2S_TxErrorFlag);
 
 	if (base->CFG1 & I2S_CFG1_MAINENABLE_MASK) {
-		/* Wait until all transmitted data get out of FIFO */
-		while ((base->FIFOSTAT & I2S_FIFOSTAT_TXEMPTY_MASK) == 0U) {
-		}
-		/*
-		 * The last piece of valid data can be still being transmitted from
-		 * I2S at this moment
-		 */
-		/* Write additional data to FIFO */
-		base->FIFOWR = 0U;
-		while ((base->FIFOSTAT & I2S_FIFOSTAT_TXEMPTY_MASK) == 0U) {
+		if (!drop) {
+			/* STOP/DRAIN: wait (with timeout) for the TX FIFO to empty */
+			if (I2S_EmptyTxFifo(base) != kStatus_Success) {
+				LOG_WRN("TX FIFO drain timed out");
+			}
 		}
 
-		/* At this moment the additional data is out of FIFO, we can stop I2S */
+		/* Flush the TX FIFO and disable I2S */
 		base->FIFOCFG |= I2S_FIFOCFG_EMPTYTX_MASK;
-
 		I2S_Disable(base);
 	}
 
