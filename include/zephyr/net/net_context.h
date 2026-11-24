@@ -312,6 +312,11 @@ __net_socket struct net_context {
 		/** Mutex used by condition variable */
 		struct k_mutex *lock;
 	} cond;
+
+#if defined(CONFIG_NET_SOCKETS_PACKET)
+	/** Raised by close() or end of file to end a blocked packet socket receive */
+	struct k_poll_signal recv_signal;
+#endif /* CONFIG_NET_SOCKETS_PACKET */
 #endif /* CONFIG_NET_SOCKETS */
 
 #if defined(CONFIG_NET_OFFLOAD)
