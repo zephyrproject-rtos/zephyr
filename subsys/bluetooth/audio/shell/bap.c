@@ -2297,7 +2297,8 @@ static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_
 
 			arg = argv[argn];
 
-			err = bt_audio_codec_cfg_meta_set_program_info(codec_cfg, arg, strlen(arg));
+			err = bt_audio_codec_cfg_meta_set_program_info(
+				codec_cfg, (const uint8_t *)arg, strlen(arg));
 			if (err != 0) {
 				shell_error(sh, "Failed to set program info with value %s: %d", arg,
 					    err);
@@ -2319,7 +2320,7 @@ static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_
 				return -1;
 			}
 
-			err = bt_audio_codec_cfg_meta_set_lang(codec_cfg, arg);
+			err = bt_audio_codec_cfg_meta_set_lang(codec_cfg, (const uint8_t *)arg);
 			if (err < 0) {
 				shell_error(sh, "Failed to set lang with value %s: %d", arg, err);
 
@@ -2392,8 +2393,8 @@ static ssize_t parse_config_meta_args(const struct shell *sh, size_t argn, size_
 
 			arg = argv[argn];
 
-			err = bt_audio_codec_cfg_meta_set_program_info_uri(codec_cfg, arg,
-									   strlen(arg));
+			err = bt_audio_codec_cfg_meta_set_program_info_uri(
+				codec_cfg, (const uint8_t *)arg, strlen(arg));
 			if (err < 0) {
 				shell_error(sh, "Failed to set program info URI with value %s: %d",
 					    arg, err);

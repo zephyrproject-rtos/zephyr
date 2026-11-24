@@ -610,7 +610,7 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 			return true;
 		}
 
-		utf8_lcpy(sr_info->broadcast_name, data->data, (data->data_len) + 1);
+		utf8_lcpy(sr_info->broadcast_name, (const char *)data->data, (data->data_len) + 1);
 		return true;
 	default:
 		return true;

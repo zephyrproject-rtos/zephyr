@@ -102,13 +102,13 @@ struct mcs_instance_t {
 	 * If OTC is included, the largest is the search control point
 	 */
 #ifdef CONFIG_BT_MCC_OTS
-	char write_buf[BT_MCS_SEARCH_LEN_MAX];
+	uint8_t write_buf[BT_MCS_SEARCH_LEN_MAX];
 #else
 	/* Trick to be able to use sizeof on members of a struct type */
 	/* TODO: Rewrite the bt_mcs_cmd to have the "use_param" parameter */
 	/* separately, and the opcode and param alone as a struct */
-	char write_buf[sizeof(((struct bt_mcs_cmd *)0)->opcode) +
-		       sizeof(((struct bt_mcs_cmd *)0)->param)];
+	uint8_t write_buf[sizeof(((struct bt_mcs_cmd *)0)->opcode) +
+			  sizeof(((struct bt_mcs_cmd *)0)->param)];
 #endif /* CONFIG_BT_MCC_OTS */
 
 	struct bt_gatt_discover_params  discover_params;

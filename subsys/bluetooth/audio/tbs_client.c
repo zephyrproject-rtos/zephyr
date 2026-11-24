@@ -899,7 +899,7 @@ static int handle_string_long_read(struct bt_tbs_instance *inst, uint8_t err, co
 				net_buf_simple_add_mem(&inst->net_buf, data, length);
 
 				/* Ensure that the data is correctly truncated */
-				utf8_trunc(inst->net_buf.data);
+				utf8_trunc((char *)inst->net_buf.data);
 			} else {
 				return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 			}
@@ -1976,7 +1976,7 @@ int bt_tbs_client_originate_call(struct bt_conn *conn, uint8_t inst_index,
 
 	if (conn == NULL) {
 		return -ENOTCONN;
-	} else if (!bt_tbs_valid_uri(uri, strlen(uri))) {
+	} else if (!bt_tbs_valid_uri((const uint8_t *)uri, strlen(uri))) {
 		LOG_DBG("Invalid URI: %s", uri);
 		return -EINVAL;
 	}
