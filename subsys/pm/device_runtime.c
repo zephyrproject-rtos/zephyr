@@ -383,7 +383,13 @@ int pm_device_runtime_get(const struct device *dev)
 	}
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 
-	if (pm->base.usage > 1U) {
+	/*
+	 * Resume based on the device state, not the usage count. Callers that
+	 * waited for an asynchronous suspend to finish have already claimed a
+	 * reference, so the usage count can be above one while the device is
+	 * suspended.
+	 */
+	if (pm->base.state == PM_DEVICE_STATE_ACTIVE) {
 		goto unlock;
 	}
 

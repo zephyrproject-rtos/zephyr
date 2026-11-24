@@ -46,6 +46,19 @@ bool test_driver_pm_ongoing(const struct device *dev);
 size_t test_driver_pm_count(const struct device *dev);
 
 /**
+ * @brief Check if the driver was last suspended by a PM action.
+ *
+ * Tracks the state the driver has actually been put into by its PM actions,
+ * independently of the state recorded by the PM subsystem.
+ *
+ * @param dev Device instance.
+ *
+ * @return true If the last successful PM action suspended the device.
+ * @return false If the last successful PM action resumed the device.
+ */
+bool test_driver_pm_suspended(const struct device *dev);
+
+/**
  * @brief Configure the return value of pm actions.
  *
  * @param dev Device instance.

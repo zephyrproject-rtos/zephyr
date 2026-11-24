@@ -242,6 +242,88 @@ ZTEST(device_runtime_api, test_api)
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 }
 
+#if defined(CONFIG_PM_DEVICE_RUNTIME_ASYNC) && !defined(CONFIG_TEST_PM_DEVICE_ISR_SAFE)
+#define CONCURRENT_GETTERS 2
+
+static struct k_thread concurrent_get_td[CONCURRENT_GETTERS];
+static K_THREAD_STACK_ARRAY_DEFINE(concurrent_get_stack, CONCURRENT_GETTERS, 1024);
+static int concurrent_get_ret[CONCURRENT_GETTERS];
+
+static void concurrent_get_runner(void *arg1, void *arg2, void *arg3)
+{
+	int *ret = arg1;
+
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	*ret = pm_device_runtime_get(test_dev);
+}
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC && !CONFIG_TEST_PM_DEVICE_ISR_SAFE */
+
+/**
+ * @brief Test multiple get calls waiting on an ongoing asynchronous suspend.
+ *
+ * Each get claims a usage reference before waiting for the suspend to
+ * finish, so the usage count is above one once the device has suspended.
+ * The device must still be resumed before any of the calls return.
+ */
+ZTEST(device_runtime_api, test_concurrent_get_during_async_suspend)
+{
+#if defined(CONFIG_PM_DEVICE_RUNTIME_ASYNC) && !defined(CONFIG_TEST_PM_DEVICE_ISR_SAFE)
+	enum pm_device_state state;
+	int ret;
+
+	/* usage: 0, +1, resume: yes */
+	ret = pm_device_runtime_get(test_dev);
+	zassert_equal(ret, 0);
+	zassert_false(test_driver_pm_suspended(test_dev));
+
+	test_driver_pm_async(test_dev);
+
+	/* usage: 1, -1, suspend: yes (queued) */
+	ret = pm_device_runtime_put_async(test_dev, K_NO_WAIT);
+	zassert_equal(ret, 0);
+
+	/* let the suspend start, it blocks until test_driver_pm_done() */
+	k_yield();
+	zassert_true(test_driver_pm_ongoing(test_dev));
+
+	/* Higher priority than the test thread, so both calls run until
+	 * they block waiting for the suspend to finish.
+	 */
+	for (int i = 0; i < CONCURRENT_GETTERS; i++) {
+		concurrent_get_ret[i] = -EINPROGRESS;
+		k_thread_create(&concurrent_get_td[i], concurrent_get_stack[i],
+				K_THREAD_STACK_SIZEOF(concurrent_get_stack[i]),
+				concurrent_get_runner, &concurrent_get_ret[i], NULL, NULL,
+				CONFIG_ZTEST_THREAD_PRIORITY - 1, 0, K_NO_WAIT);
+	}
+	zassert_equal(pm_device_runtime_usage(test_dev), CONCURRENT_GETTERS);
+
+	/* let the suspend finish */
+	test_driver_pm_done(test_dev);
+
+	for (int i = 0; i < CONCURRENT_GETTERS; i++) {
+		k_thread_join(&concurrent_get_td[i], K_FOREVER);
+		zassert_equal(concurrent_get_ret[i], 0);
+	}
+
+	/* Every caller holds a reference, the device must have been resumed */
+	(void)pm_device_state_get(test_dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+	zassert_false(test_driver_pm_suspended(test_dev));
+	zassert_equal(pm_device_runtime_usage(test_dev), CONCURRENT_GETTERS);
+
+	for (int i = 0; i < CONCURRENT_GETTERS; i++) {
+		ret = pm_device_runtime_put(test_dev);
+		zassert_equal(ret, 0);
+	}
+	zassert_true(test_driver_pm_suspended(test_dev));
+#else
+	ztest_test_skip();
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC && !CONFIG_TEST_PM_DEVICE_ISR_SAFE */
+}
+
 DEVICE_DEFINE(pm_unsupported_device, "PM Unsupported", NULL, NULL, NULL, NULL,
 	      POST_KERNEL, 0, NULL);
 

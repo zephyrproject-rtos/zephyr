@@ -13,6 +13,7 @@ struct test_driver_data {
 	size_t count;
 	bool ongoing;
 	bool async;
+	bool suspended;
 	struct k_sem sync;
 	int ret;
 };
@@ -34,6 +35,10 @@ static int test_driver_action(const struct device *dev,
 	}
 
 	data->count++;
+
+	if (data->ret == 0) {
+		data->suspended = (action == PM_DEVICE_ACTION_SUSPEND);
+	}
 
 	return data->ret;
 }
@@ -64,6 +69,13 @@ size_t test_driver_pm_count(const struct device *dev)
 	struct test_driver_data *data = dev->data;
 
 	return data->count;
+}
+
+bool test_driver_pm_suspended(const struct device *dev)
+{
+	struct test_driver_data *data = dev->data;
+
+	return data->suspended;
 }
 
 void test_driver_pm_retval(const struct device *dev, int ret)
