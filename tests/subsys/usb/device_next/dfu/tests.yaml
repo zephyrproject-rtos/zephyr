@@ -1,0 +1,10 @@
+tests:
+  usb.device_next.dfu:
+    platform_allow: native_sim/native/64
+    integration_platforms: [native_sim/native/64]
+    tags: [usb, dfu]
+  usb.device_next.dfu.nontolerant:
+    platform_allow: native_sim/native/64
+    integration_platforms: [native_sim/native/64]
+    extra_configs: [CONFIG_USBD_DFU_MANIFESTATION_TOLERANT=n]
+    tags: [usb, dfu]
