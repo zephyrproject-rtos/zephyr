@@ -757,8 +757,10 @@ static ZTEST(host_l2cap_le_tx, test_disconn_rsp_no_buf)
 	tx_none();
 }
 
-/* Refuse the Credit Based Connection Request for count channels that the Host sent */
-static void ecred_conn_refuse(size_t count)
+/* Answer the Credit Based Connection Request for count channels that the Host
+ * sent with result, connecting none of them
+ */
+static void ecred_conn_answer(size_t count, uint16_t result)
 {
 	struct net_buf *buf;
 	uint8_t ident;
@@ -775,11 +777,17 @@ static void ecred_conn_refuse(size_t count)
 	net_buf_add_le16(buf, 0U);
 	net_buf_add_le16(buf, 0U);
 	net_buf_add_le16(buf, 0U);
-	net_buf_add_le16(buf, BT_L2CAP_LE_ERR_PSM_NOT_SUPP);
+	net_buf_add_le16(buf, result);
 	for (size_t i = 0U; i < count; i++) {
 		net_buf_add_le16(buf, 0U);
 	}
 	recv_sig(buf);
+}
+
+/* Refuse the Credit Based Connection Request for count channels that the Host sent */
+static void ecred_conn_refuse(size_t count)
+{
+	ecred_conn_answer(count, BT_L2CAP_LE_ERR_PSM_NOT_SUPP);
 }
 
 /* A channel whose Credit Based Connection Request cannot be sent is not left on
@@ -1133,6 +1141,69 @@ static ZTEST(host_l2cap_le_tx, test_ecred_connect_disconnected)
 	tx_none();
 	zassert_equal(atomic_get(&lost_released), 2);
 	zassert_is_null(ecred_chans[0].chan.conn);
+}
+
+/* As on Encryption Change, which the Host handles on another thread. Returns
+ * once the Host has taken the event: a tick, which takes no simulated time
+ * otherwise, so that a wait of the Host starts before one of the test.
+ */
+static void encrypt_change(void)
+{
+	struct bt_hci_evt_encrypt_change *ev;
+	struct net_buf *evt;
+
+	evt = bt_buf_get_evt(BT_HCI_EVT_ENCRYPT_CHANGE, false, K_FOREVER);
+	evt_create(evt, BT_HCI_EVT_ENCRYPT_CHANGE, sizeof(*ev));
+	ev = net_buf_add(evt, sizeof(*ev));
+	ev->status = BT_HCI_ERR_SUCCESS;
+	ev->handle = sys_cpu_to_le16(HANDLE);
+	ev->encrypt = 1U;
+
+	bt_hci_recv(DEVICE_DT_GET(DT_DRV_INST(0)), evt);
+	(void)k_sleep(K_MSEC(1));
+}
+
+/* The channels of a Credit Based Connection Request that the peer refused for
+ * want of encryption, and whose request finds no buffer when the Host sends it
+ * again after the Encryption Change, are torn down once
+ */
+static ZTEST(host_l2cap_le_tx, test_ecred_connect_encrypt_retry_no_buf)
+{
+	static struct bt_l2cap_le_chan ecred_chans[2];
+	struct bt_l2cap_chan *chans[] = { &ecred_chans[0].chan, &ecred_chans[1].chan, NULL };
+
+	(void)atomic_clear(&lost_released);
+	ARRAY_FOR_EACH(ecred_chans, i) {
+		ecred_chans[i].chan.ops = &lost_chan_ops;
+	}
+
+	/* A peripheral asks for encryption with a Security Request */
+	conn->role = BT_HCI_ROLE_PERIPHERAL;
+
+	zassert_ok(bt_l2cap_ecred_chan_connect(conn, chans, PSM));
+	ecred_conn_answer(ARRAY_SIZE(ecred_chans), BT_L2CAP_LE_ERR_ENCRYPTION);
+	net_buf_unref(tx(BT_L2CAP_CID_SMP));
+
+	host_pdus_take();
+	encrypt_change();
+
+	/* Until the Host gives up waiting for a buffer for the request */
+	(void)k_sleep(BT_L2CAP_RTX_TIMEOUT);
+	zassert_equal(atomic_get(&lost_released), ARRAY_SIZE(ecred_chans));
+	ARRAY_FOR_EACH(ecred_chans, i) {
+		zassert_is_null(ecred_chans[i].chan.conn);
+	}
+
+	/* The Enhanced ATT bearers that the encryption lets the Host request */
+	host_pdus_give();
+	ecred_conn_refuse(BT_L2CAP_ECRED_CHAN_MAX_PER_REQ);
+	ecred_conn_refuse(CONFIG_BT_EATT_MAX - BT_L2CAP_ECRED_CHAN_MAX_PER_REQ);
+	tx_none();
+
+	/* The tests that follow get a connection without security */
+	conn_lost();
+	bt_conn_drop(&conn);
+	conn_up();
 }
 
 static int eatt_connect(void *arg)
