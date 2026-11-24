@@ -354,6 +354,9 @@ static int quic_endpoint_send_transport_close(struct quic_endpoint *ep,
 					      uint64_t error_code,
 					      uint64_t frame_type,
 					      const char *reason);
+static int quic_endpoint_send_application_close(struct quic_endpoint *ep,
+						uint64_t error_code,
+						const char *reason);
 static void quic_recovery_release_work_handler(struct k_work *work);
 ZTESTABLE_STATIC void quic_recovery_begin_shutdown(struct quic_endpoint *ep);
 static int derive_application_secrets(struct quic_tls_context *ctx);
@@ -3153,7 +3156,11 @@ static int quic_context_unref(struct quic_context *ctx)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->endpoints, ep, tmp, node) {
 		quic_stats_merge_endpoint(ctx, ep);
 		sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
-		quic_endpoint_send_connection_close(ep, 0, NULL);
+		if (atomic_test_bit(&ctx->flags, QUIC_CONTEXT_APP_CLOSE)) {
+			quic_endpoint_send_application_close(ep, ctx->app_close_code, NULL);
+		} else {
+			quic_endpoint_send_connection_close(ep, 0, NULL);
+		}
 
 		/* The list reference is dropped once, by whoever takes it
 		 * first
@@ -3518,7 +3525,7 @@ ZTESTABLE_STATIC void quic_endpoint_notify_streams_closed(struct quic_endpoint *
 			continue;
 		}
 
-		ctx->error_code = -ECONNRESET;
+		ctx->error_code = ECONNRESET;
 		ctx->closed = true;
 
 		/* This will release any accepts waiting on this stream */
@@ -5348,7 +5355,8 @@ static void quic_pto_work_handler(struct k_work *work)
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
-	if (ep->recovery.closing) {
+	/* RFC 9000 ch. 10.2.2: no probe is sent to a peer that closed */
+	if (ep->recovery.closing || ep->draining) {
 		k_mutex_unlock(&ep->recovery.lock);
 		return;
 	}
@@ -6090,6 +6098,9 @@ static struct quic_context *quic_context_init(struct quic_context *ctx)
 	ctx->accept_closed = false;
 	ctx->error_code = 0;
 	ctx->closed = false;
+	atomic_clear(&ctx->flags);
+	memset(&ctx->peer_close, 0, sizeof(ctx->peer_close));
+	ctx->app_close_code = 0;
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 	memset(&ctx->stats, 0, sizeof(ctx->stats));
@@ -6932,6 +6943,73 @@ static int quic_send_new_token(struct quic_endpoint *ep)
 	return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, pos);
 }
 
+/* Build a CONNECTION_CLOSE frame (RFC 9000 ch. 19.19), returns its length */
+ZTESTABLE_STATIC int quic_build_connection_close(uint8_t *frame, size_t frame_len,
+						 uint8_t type, uint64_t error_code,
+						 uint64_t frame_type, const char *reason)
+{
+	size_t pos = 0;
+	size_t reason_len = reason != NULL ? strlen(reason) : 0;
+	int n;
+
+	if (frame_len < 1) {
+		return -EINVAL;
+	}
+
+	frame[pos++] = type;
+
+	/* Error Code */
+	n = quic_put_varint(&frame[pos], frame_len - pos, error_code);
+	if (n <= 0) {
+		return n < 0 ? n : -EINVAL;
+	}
+	pos += n;
+
+	/* Frame Type that triggered a transport error (0 = unknown/not
+	 * applicable), not part of an application close.
+	 */
+	if (type == QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT) {
+		n = quic_put_varint(&frame[pos], frame_len - pos, frame_type);
+		if (n <= 0) {
+			return n < 0 ? n : -EINVAL;
+		}
+		pos += n;
+	}
+
+	/* Reason Phrase Length */
+	n = quic_put_varint(&frame[pos], frame_len - pos, reason_len);
+	if (n <= 0) {
+		return n < 0 ? n : -EINVAL;
+	}
+	pos += n;
+
+	/* Reason Phrase */
+	if (reason_len > 0 && pos + reason_len <= frame_len) {
+		memcpy(&frame[pos], reason, reason_len);
+		pos += reason_len;
+	}
+
+	return pos;
+}
+
+/* RFC 9000 ch. 10.2.3: an application close is not sent in Initial or
+ * Handshake packets, where it would reveal application state. Before the
+ * application keys are in use it becomes a transport close with
+ * APPLICATION_ERROR and no reason phrase.
+ */
+ZTESTABLE_STATIC void quic_close_frame_at_level(enum quic_secret_level level, uint8_t *type,
+						uint64_t *error_code, uint64_t *frame_type,
+						const char **reason)
+{
+	if (*type == QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION &&
+	    level != QUIC_SECRET_LEVEL_APPLICATION) {
+		*type = QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT;
+		*error_code = QUIC_ERROR_APPLICATION_ERROR;
+		*frame_type = 0;
+		*reason = NULL;
+	}
+}
+
 /**
  * Send CONNECTION_CLOSE frame to peer
  *
@@ -6944,49 +7022,23 @@ static int quic_send_new_token(struct quic_endpoint *ep)
  *
  * For TLS alerts, use error code 0x100 + TLS_alert_code (RFC 9001 Section 4.8)
  */
-static int quic_endpoint_send_transport_close(struct quic_endpoint *ep,
-					      uint64_t error_code,
-					      uint64_t frame_type,
-					      const char *reason)
+static int quic_endpoint_send_close(struct quic_endpoint *ep,
+				    uint8_t type,
+				    uint64_t error_code,
+				    uint64_t frame_type,
+				    const char *reason)
 {
 	uint8_t frame[128];
-	size_t pos = 0;
-	size_t reason_len = reason != NULL ? strlen(reason) : 0;
 	enum quic_secret_level level;
-	int n;
+	int len;
 
-	/* Use transport error CONNECTION_CLOSE (0x1c) */
-	frame[pos++] = QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT;
-
-	/* Error Code */
-	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, error_code);
-	if (n <= 0) {
-		return n < 0 ? n : -EINVAL;
+	/* RFC 9000 ch. 10.2.2: a connection the peer closed is draining, and
+	 * a close of ours is not sent to it any more.
+	 */
+	if (ep->draining) {
+		quic_recovery_begin_shutdown(ep);
+		return 0;
 	}
-	pos += n;
-
-	/* Frame Type that triggered the error (0 = unknown/not applicable) */
-	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, frame_type);
-	if (n <= 0) {
-		return n < 0 ? n : -EINVAL;
-	}
-	pos += n;
-
-	/* Reason Phrase Length */
-	n = quic_put_varint(&frame[pos], sizeof(frame) - pos, reason_len);
-	if (n <= 0) {
-		return n < 0 ? n : -EINVAL;
-	}
-	pos += n;
-
-	/* Reason Phrase */
-	if (reason_len > 0 && pos + reason_len <= sizeof(frame)) {
-		memcpy(&frame[pos], reason, reason_len);
-		pos += reason_len;
-	}
-
-	NET_DBG("[EP:%p/%d] Sending CONNECTION_CLOSE: error=0x%" PRIx64 ", reason=%s",
-		ep, quic_get_by_ep(ep), error_code, reason != NULL ? reason : "(none)");
 
 	/* Send at the highest available encryption level */
 	if (ep->crypto.application.initialized) {
@@ -7001,12 +7053,40 @@ static int quic_endpoint_send_transport_close(struct quic_endpoint *ep,
 		return 0;
 	}
 
+	quic_close_frame_at_level(level, &type, &error_code, &frame_type, &reason);
+
+	len = quic_build_connection_close(frame, sizeof(frame), type, error_code, frame_type,
+					  reason);
+	if (len < 0) {
+		return len;
+	}
+
+	NET_DBG("[EP:%p/%d] Sending CONNECTION_CLOSE (0x%02x): error=0x%" PRIx64 ", reason=%s",
+		ep, quic_get_by_ep(ep), type, error_code, reason != NULL ? reason : "(none)");
+
 	/* Cancel any PTO work to avoid unnecessary retransmissions after
 	 * connection close.
 	 */
 	quic_recovery_begin_shutdown(ep);
 
-	return quic_send_packet(ep, level, frame, pos);
+	return quic_send_packet(ep, level, frame, len);
+}
+
+static int quic_endpoint_send_transport_close(struct quic_endpoint *ep,
+					      uint64_t error_code,
+					      uint64_t frame_type,
+					      const char *reason)
+{
+	return quic_endpoint_send_close(ep, QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT,
+					error_code, frame_type, reason);
+}
+
+static int quic_endpoint_send_application_close(struct quic_endpoint *ep,
+						uint64_t error_code,
+						const char *reason)
+{
+	return quic_endpoint_send_close(ep, QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION,
+					error_code, 0, reason);
 }
 
 static int quic_endpoint_send_connection_close(struct quic_endpoint *ep,
@@ -9375,12 +9455,12 @@ static int process_short_header(struct quic_endpoint *ep,
 		goto out;
 	} else if (ret > 0) {
 		QUIC_EP_STAT_INC(target_ep, valid_rx);
-		/* Close the connection */
+		/* The peer closed the connection, which is draining: its
+		 * packet is not acknowledged (RFC 9000 ch. 10.2.2).
+		 */
 		NET_DBG("[EP:%p/%d] Connection closing after short header packet",
 			target_ep, quic_get_by_ep(target_ep));
 
-		quic_send_ack(target_ep, QUIC_SECRET_LEVEL_APPLICATION,
-			      decrypted.packet_number);
 		quic_endpoint_notify_streams_closed(target_ep);
 		ret = 0;
 		goto out;

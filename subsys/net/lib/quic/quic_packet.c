@@ -148,8 +148,12 @@ ZTESTABLE_STATIC int quic_validate_frame_type(uint8_t frame_type,
 	case QUIC_FRAME_TYPE_PADDING:
 	case QUIC_FRAME_TYPE_PING:
 	case QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT:
-	case QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION:
 		return 0;
+
+	/* RFC 9000 ch. 12.5: only in the application data packet number space */
+	case QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION:
+		return level == QUIC_SECRET_LEVEL_APPLICATION ||
+		       level == QUIC_SECRET_LEVEL_EARLY ? 0 : -EPROTO;
 
 	case QUIC_FRAME_TYPE_ACK:
 	case QUIC_FRAME_TYPE_ACK_ECN:
@@ -1915,6 +1919,7 @@ static int handle_connection_close_frame(struct quic_endpoint *ep,
 {
 	size_t pos = 0;
 	uint8_t frame_type = data[pos++];
+	struct quic_context *ctx;
 	uint64_t error_code;
 	uint64_t frame_type_field = 0;
 	uint64_t reason_len;
@@ -1968,6 +1973,24 @@ static int handle_connection_close_frame(struct quic_endpoint *ep,
 	}
 
 	pos += reason_len;
+
+	ep->draining = true;
+
+	/* Keep what the peer said for the application to read. A connection
+	 * that is still on its listening context has no socket to read it
+	 * from. Only the first close is kept: the connection is draining
+	 * after it, and the application may be reading what was stored.
+	 */
+	ctx = quic_find_context(ep);
+	if (ctx != NULL && !ctx->is_listening &&
+	    !atomic_test_bit(&ctx->flags, QUIC_CONTEXT_PEER_CLOSED)) {
+		ctx->peer_close.error_code = error_code;
+		ctx->peer_close.frame_type = frame_type_field;
+		ctx->peer_close.application =
+			frame_type == QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION;
+		atomic_set_bit(&ctx->flags, QUIC_CONTEXT_PEER_CLOSED);
+	}
+
 	*consumed = pos;
 
 	return 0;

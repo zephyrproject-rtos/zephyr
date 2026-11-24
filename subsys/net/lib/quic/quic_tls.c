@@ -5961,6 +5961,11 @@ static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
 	uint8_t *ciphertext = ep->crypto.tx_buffer;
 	size_t ciphertext_size = sizeof(ep->crypto.tx_buffer);
 
+	/* RFC 9000 ch. 10.2.2: nothing is sent to a peer that closed */
+	if (ep->draining) {
+		return -ENOTCONN;
+	}
+
 	/* Track sent packet for RTT measurement.
 	 * Determine if packet is ack-eliciting by checking first frame type.
 	 * ACK frames (0x02, 0x03), PADDING (0x00) and CONNECTION_CLOSE frames

@@ -228,6 +228,22 @@ static int quic_getsockopt_ctx(void *obj, int level, int optname,
 			return 0;
 		}
 
+		case ZSOCK_QUIC_SO_PEER_CLOSE: {
+			if (!atomic_test_bit(&ctx->flags, QUIC_CONTEXT_PEER_CLOSED)) {
+				errno = ENOTCONN;
+				return -1;
+			}
+
+			if (*optlen < sizeof(ctx->peer_close)) {
+				errno = ENOBUFS;
+				return -1;
+			}
+
+			memcpy(optval, &ctx->peer_close, sizeof(ctx->peer_close));
+			*optlen = sizeof(ctx->peer_close);
+			return 0;
+		}
+
 		default:
 			break;
 		}
@@ -426,6 +442,28 @@ static int quic_setsockopt_ctx(void *obj, int level, int optname,
 
 			err = quic_tls_set_session_state(&ep->crypto.tls, optval);
 			break;
+
+		case ZSOCK_QUIC_SO_APPLICATION_CLOSE_CODE: {
+			uint64_t code;
+
+			/* A listening socket has no connection to close */
+			if (ctx->is_listening || optval == NULL || optlen != sizeof(code)) {
+				err = -EINVAL;
+				break;
+			}
+
+			/* The code has to fit a varint (RFC 9000 ch. 16) */
+			memcpy(&code, optval, sizeof(code));
+			if (code > QUIC_VARINT_MAX) {
+				err = -EINVAL;
+				break;
+			}
+
+			ctx->app_close_code = code;
+			atomic_set_bit(&ctx->flags, QUIC_CONTEXT_APP_CLOSE);
+			err = 0;
+			break;
+		}
 
 		case ZSOCK_QUIC_SO_SESSION_TICKET_ENABLE:
 			if (!ep->is_server || optval == NULL || optlen != sizeof(int)) {
@@ -763,7 +801,7 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 				 * POLLHUP handler, with no SO_ERROR probe needed.
 				 */
 				if (ctx->error_code == 0) {
-					ctx->error_code = -ECONNRESET;
+					ctx->error_code = ECONNRESET;
 				}
 
 				pfd->revents |= ZSOCK_POLLHUP;
