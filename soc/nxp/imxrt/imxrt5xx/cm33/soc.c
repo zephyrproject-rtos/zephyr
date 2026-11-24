@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023, NXP
+ * Copyright 2022-2023, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include <fsl_power.h>
 #include <fsl_clock.h>
 #include <fsl_cache.h>
+#include <zephyr/cache.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -562,3 +563,33 @@ void soc_early_init_hook(void)
 #endif
 
 }
+
+#if DT_HAS_COMPAT_STATUS_OKAY(vsi_gpu_gc255)
+static int gpu_init_imxrt5xx(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	SYSCTL0->PDRUNCFG1_CLR = SYSCTL0_PDRUNCFG1_GPU_SRAM_APD_MASK;
+	SYSCTL0->PDRUNCFG1_CLR = SYSCTL0_PDRUNCFG1_GPU_SRAM_PPD_MASK;
+	POWER_ApplyPD();
+
+	CLOCK_AttachClk(kMAIN_CLK_to_GPU_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivGpuClk, 2);
+	CLOCK_EnableClock(kCLOCK_Gpu);
+	CLOCK_EnableClock(kCLOCK_AxiSwitch);
+
+	RESET_ClearPeripheralReset(kGPU_RST_SHIFT_RSTn);
+	RESET_ClearPeripheralReset(kAXI_SWITCH_RST_SHIFT_RSTn);
+
+	return 0;
+}
+
+DEVICE_DT_DEFINE(DT_INST(0, vsi_gpu_gc255), gpu_init_imxrt5xx, NULL,
+		      NULL, NULL, POST_KERNEL,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+void gpu_cache_flush_range(void *addr, size_t size)
+{
+	sys_cache_data_flush_range(addr, size);
+}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(vsi_gpu_gc255) */

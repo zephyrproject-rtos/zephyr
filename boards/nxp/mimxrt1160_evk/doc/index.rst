@@ -324,6 +324,23 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v2.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! mimxrt1160_evk
 
+Building with VG-Lite GPU Acceleration
+=======================================
+
+See :ref:`external_module_gpu_vglite` for instructions on pulling in the
+gpu-vglite module and details on ``VGLITE_OS`` and ``VGLITE_PLATFORM``
+variables.
+
+Example building for :zephyr:board:`mimxrt1160_evk` with VG-Lite GPU acceleration:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: mimxrt1160_evk/mimxrt1166/cm7
+   :shield: rk055hdmipi4ma0
+   :goals: build flash
+   :gen-args: -DVGLITE_OS=zephyr -DVGLITE_PLATFORM=rt1160
+              -DCONFIG_LV_USE_DRAW_VG_LITE=y
+
 .. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1160-EVK Website:

@@ -4,3 +4,6 @@ board:
   vendor: nxp
   socs:
     - name: mimxrt595s
+      variants:
+        - name: sram
+          cpucluster: cm33
