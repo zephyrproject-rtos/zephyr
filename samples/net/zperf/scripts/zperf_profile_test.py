@@ -1752,3 +1752,12 @@ def test_run_one_loads_every_plugin_it_is_given(tmp_path):
     assert "file=/p/libhotblocks.so,inline=on" in argv
     assert "file=/p/libinsn.so" in argv
     assert f"file=/p/libstoptrigger.so,addr=0x1234:{zperf_profile.QEMU_EXIT_STOPPED}" in argv
+
+
+def test_extra_conf_files_are_those_of_the_sample():
+    # The builds are mocked everywhere else, so a renamed file would only show
+    # up as a failing west build in a real run.
+    sample = Path(__file__).resolve().parents[1]
+
+    for name in zperf_profile.EXTRA_CONF_FILES.split(";"):
+        assert (sample / name).is_file(), f"{name} is not in {sample}"

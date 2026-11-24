@@ -100,7 +100,7 @@ BOARD_HELP = (
     "qemu_x86 or qemu_x86_64, the boards whose guest halt ends QEMU through "
     "isa-debug-exit (default: %(default)s)"
 )
-OVERLAYS = "overlay-loopback.conf;overlay-loopback-icount.conf"
+EXTRA_CONF_FILES = "loopback.conf;loopback-icount.conf"
 # Wall-clock limit for one QEMU run, after which it counts as never halting.
 QEMU_TIMEOUT_S = 1800
 # QEMU's exit status once the selftest halts the guest: isa-debug-exit turns the
@@ -1111,7 +1111,7 @@ def build_one(
         build_dir,
         os.path.join(zephyr_base, SAMPLE),
         "--",
-        f"-DEXTRA_CONF_FILE={OVERLAYS}",
+        f"-DEXTRA_CONF_FILE={EXTRA_CONF_FILES}",
         # A Kconfig string fragment carries its own quotes; they belong inside
         # the value, not around the -D argument.
         f'-DCONFIG_ZPERF_LOOPBACK_SELFTEST_ONLY="{only}"',
