@@ -475,7 +475,7 @@ static int enumerate_port_device(struct usbh_hub_data *hub_data,
 	udev->hub_port = port_num;
 	udev->speed = speed;
 	udev->level = hub_data->udev->level + 1;
-	udev->hub = hub_data->udev;
+	udev->hub = usb_device_ref(hub_data->udev);
 
 	ret = usbh_device_connect(hub_data->uhs_ctx, udev);
 	if (ret != 0) {

@@ -124,7 +124,10 @@ struct usb_device {
 	struct usb_host_ep ep_out[16];
 	/** Pointers to device IN endpoints */
 	struct usb_host_ep ep_in[16];
-	/** Pointer to the hub to which this device is connected */
+	/**
+	 * Pointer to the hub to which this device is connected. The device
+	 * holds a reference to it, so it is valid as long as the device is.
+	 */
 	struct usb_device *hub;
 	/** Device's hub Think Time */
 	uint16_t tt;

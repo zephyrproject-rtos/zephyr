@@ -23,6 +23,7 @@ K_HEAP_DEFINE(usb_device_heap, CONFIG_USBH_USB_DEVICE_HEAP);
 static void usbh_device_release(struct sys_ref *const ref)
 {
 	struct usb_device *const udev = CONTAINER_OF(ref, struct usb_device, ref);
+	struct usb_device *const hub = udev->hub;
 
 	if (udev->cfg_desc != NULL) {
 		k_heap_free(&usb_device_heap, udev->cfg_desc);
@@ -30,6 +31,11 @@ static void usbh_device_release(struct sys_ref *const ref)
 	}
 
 	k_mem_slab_free(&usb_device_slab, (void *)udev);
+
+	/* A device holds a reference to the hub it is connected to */
+	if (hub != NULL) {
+		usb_device_unref(hub);
+	}
 }
 
 struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx)
