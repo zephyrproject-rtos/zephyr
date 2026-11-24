@@ -11,7 +11,6 @@ import os
 import shutil
 import sys
 import time
-import warnings
 from collections.abc import Sequence
 
 import colorama
@@ -322,17 +321,6 @@ class Twister:
 
         self.logger.info("Run completed")
         return 0
-
-
-def twister(options: argparse.Namespace, default_options: argparse.Namespace) -> int:
-    """Run twister."""
-    # function for backward compatibility
-    warnings.warn(
-        "Function `twister` is deprecated, use `Twister` class instead",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return Twister(options, default_options).run()
 
 
 def main(argv: Sequence[str] | None = None) -> int:
