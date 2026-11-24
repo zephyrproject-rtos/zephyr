@@ -23,16 +23,6 @@
 				   <&test_gpio 0 0>;
 			status = "okay";
 
-			test_spi_winc1500: winc1500@0 {
-				compatible = "atmel,winc1500";
-				reg = <0>;
-				spi-max-frequency = <5000000>;
-				irq-gpios = <&test_gpio 0 0>;
-				reset-gpios = <&test_gpio 0 0>;
-				enable-gpios = <&test_gpio 0 0>;
-				status = "okay";
-			};
-
 			test_spi_eswifi: eswifi@1 {
 				compatible = "inventek,eswifi";
 				reg = <1>;

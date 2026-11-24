@@ -511,6 +511,10 @@ Wi-Fi
   ``SYS_FOREVER_MS`` retries until the application disconnects. A wrong WPA3-SAE password cannot
   be told apart from such a rejection, so it is retried as well.
 
+* The Atmel WINC1500 Wi-Fi driver has been removed together with ``CONFIG_WIFI_WINC1500``, the
+  ``atmel,winc1500`` devicetree binding and the ``adafruit_winc1500`` shield. It was deprecated
+  in Zephyr 4.4 for lack of a maintainer and has no in-tree replacement.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
