@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(wifi_supplicant, CONFIG_WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL);
 static K_THREAD_STACK_DEFINE(supplicant_thread_stack,
 			     CONFIG_WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE);
 static struct k_thread tid;
+static K_MUTEX_DEFINE(iface_lock);
 
 static K_THREAD_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_STACK_SIZE);
 
@@ -446,6 +447,11 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
+	if (wpa_supplicant_get_iface(ctx->supplicant, ifname) != NULL) {
+		LOG_INF("Interface %s already added", ifname);
+		return 0;
+	}
+
 	LOG_DBG("Adding interface %s [%d] (%p)", ifname, net_if_get_by_iface(iface), iface);
 
 	ret = zephyr_wpa_cli_global_cmd_v("interface_add %s %s %s %s",
@@ -634,21 +640,9 @@ static void submit_iface_work(struct supplicant_context *ctx,
 	k_work_submit_to_queue(&ctx->iface_wq, &ctx->iface_work);
 }
 
-static void interface_handler(struct net_mgmt_event_callback *cb,
-			      uint64_t mgmt_event, struct net_if *iface)
+static void handle_iface_event(struct supplicant_context *ctx,
+			       uint64_t mgmt_event, struct net_if *iface)
 {
-	struct supplicant_context *ctx = get_default_context();
-
-	if ((mgmt_event & INTERFACE_EVENT_MASK) != mgmt_event) {
-		return;
-	}
-
-	if (!is_wanted_interface(iface)) {
-		LOG_DBG("Ignoring event (0x%" PRIx64 ") from interface %d (%p)",
-			mgmt_event, net_if_get_by_iface(iface), iface);
-		return;
-	}
-
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 	if (IS_BIT_SET(get_iface_caps(iface), WIFI_TYPE_SAP)) {
 		if (mgmt_event == NET_EVENT_IF_ADMIN_UP) {
@@ -683,6 +677,26 @@ static void interface_handler(struct net_mgmt_event_callback *cb,
 		del_interface(ctx, iface);
 		return;
 	}
+}
+
+static void interface_handler(struct net_mgmt_event_callback *cb,
+			      uint64_t mgmt_event, struct net_if *iface)
+{
+	struct supplicant_context *ctx = get_default_context();
+
+	if ((mgmt_event & INTERFACE_EVENT_MASK) != mgmt_event) {
+		return;
+	}
+
+	if (!is_wanted_interface(iface)) {
+		LOG_DBG("Ignoring event (0x%" PRIx64 ") from interface %d (%p)",
+			mgmt_event, net_if_get_by_iface(iface), iface);
+		return;
+	}
+
+	k_mutex_lock(&iface_lock, K_FOREVER);
+	handle_iface_event(ctx, mgmt_event, iface);
+	k_mutex_unlock(&iface_lock);
 }
 
 static void iface_cb(struct net_if *iface, void *user_data)
@@ -723,7 +737,9 @@ static int setup_interface_monitoring(struct supplicant_context *ctx, struct net
 				     INTERFACE_EVENT_MASK);
 	net_mgmt_add_event_callback(&ctx->cb);
 
+	k_mutex_lock(&iface_lock, K_FOREVER);
 	net_if_foreach(iface_cb, ctx);
+	k_mutex_unlock(&iface_lock);
 
 	return 0;
 }

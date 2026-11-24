@@ -472,19 +472,24 @@ int zephyr_hostapd_add_iface(struct hapd_interfaces *interfaces, struct net_if *
 		return -1;
 	}
 
-	/* Allocate iface pointer array (count was reset by del_iface) */
-	interfaces->count = 1;
-	interfaces->iface = os_calloc(interfaces->count, sizeof(struct hostapd_iface *));
-	if (!interfaces->iface) {
-		wpa_printf(MSG_ERROR, "hostapd: add_iface malloc failed");
-		return -1;
-	}
-
 	/* Get SAP netif name */
 	ret = net_if_get_name(iface, ifname, sizeof(ifname) - 1);
 	if (ret < 0) {
 		wpa_printf(MSG_ERROR, "hostapd: Cannot get interface %d (%p) name",
 			   net_if_get_by_iface(iface), iface);
+		return -1;
+	}
+
+	if (interfaces->count == 1) {
+		wpa_printf(MSG_INFO, "Interface %s already added", ifname);
+		return 0;
+	}
+
+	/* Allocate iface pointer array (count was reset by del_iface) */
+	interfaces->count = 1;
+	interfaces->iface = os_calloc(interfaces->count, sizeof(struct hostapd_iface *));
+	if (interfaces->iface == NULL) {
+		wpa_printf(MSG_ERROR, "hostapd: add_iface malloc failed");
 		goto err;
 	}
 
@@ -523,9 +528,9 @@ err_nm:
 err_iface:
 	hostapd_interface_deinit_free(interfaces->iface[0]);
 	interfaces->iface[0] = NULL;
-err:
 	os_free(interfaces->iface);
 	interfaces->iface = NULL;
+err:
 	interfaces->count = 0;
 	return -1;
 }
