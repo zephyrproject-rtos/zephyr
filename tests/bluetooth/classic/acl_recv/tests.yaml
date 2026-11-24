@@ -8,9 +8,9 @@ common:
     - bluetooth
     - host
 tests:
-  bluetooth.host_br_acl_recv:
+  bluetooth.classic.acl_recv:
     extra_configs:
       - CONFIG_BT_HCI_ACL_FLOW_CONTROL=y
-  bluetooth.host_br_acl_recv.no_acl_flow_control:
+  bluetooth.classic.acl_recv.no_acl_flow_control:
     extra_configs:
       - CONFIG_BT_HCI_ACL_FLOW_CONTROL=n

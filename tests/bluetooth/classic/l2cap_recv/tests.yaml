@@ -8,7 +8,7 @@ common:
     - bluetooth
     - host
 tests:
-  bluetooth.host_l2cap_br_recv: {}
-  bluetooth.host_l2cap_br_recv.ret_fc:
+  bluetooth.classic.l2cap_recv: {}
+  bluetooth.classic.l2cap_recv.ret_fc:
     extra_configs:
       - CONFIG_BT_L2CAP_STREAM=y

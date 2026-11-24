@@ -14,8 +14,8 @@ common:
     - host
 
 tests:
-  bluetooth.host_l2cap_br_ret_fc:
+  bluetooth.classic.l2cap_ret_fc:
     {}
-  bluetooth.host_l2cap_br_ret_fc.two_links:
+  bluetooth.classic.l2cap_ret_fc.two_links:
     extra_configs:
       - CONFIG_BT_MAX_CONN=2
