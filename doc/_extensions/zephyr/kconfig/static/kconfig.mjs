@@ -324,9 +324,89 @@ function renderKconfigEntry(entry) {
         renderKconfigPropLiteralElement(props, 'Location', locationElement);
     }
 
+    const locationFilter = document.createElement('a');
+    locationFilter.className = 'location-filter';
+    locationFilter.title = 'Show all options from this file';
+    locationFilter.setAttribute('aria-label', locationFilter.title);
+    locationFilter.href = fileFilterLink(entry.filename);
+    locationFilter.appendChild(document.createTextNode('\u{1F517}'));
+    props.lastElementChild.appendChild(locationFilter);
+
     renderKconfigPropLiteral(props, 'Menu path', entry.menupath);
 
     return container;
+}
+
+/**
+ * Escape a string so that it can be used literally in a regular expression.
+ * @param {String} str String to escape.
+ * @returns {String} Escaped string.
+ */
+function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Parse a search query into free-text terms and file filters.
+ *
+ * Supported qualifiers:
+ * - ``file:<regex>``: only include options defined in a matching file.
+ * - ``-file:<regex>``: exclude options defined in a matching file.
+ *
+ * Qualifier values containing whitespace can be quoted, e.g.
+ * ``file:"my modules/foo/"`` (use ``\"`` for a literal quote). All other
+ * tokens are matched against the option name and prompt. Matching is
+ * case-insensitive.
+ *
+ * @param {String} value Raw query string.
+ * @returns {Object} Parsed query with ``terms``, ``fileInclude`` and
+ *          ``fileExclude`` lists of regular expressions.
+ * @throws {SyntaxError} If any of the regular expressions is invalid.
+ */
+function parseQuery(value) {
+    const query = { terms: [], fileInclude: [], fileExclude: [] };
+
+    /* quoted qualifier (-?file:"...") or any whitespace-delimited token */
+    const tokenRegex = /(-?file:)"((?:[^"\\]|\\.)*)"|\S+/g;
+
+    for (const [token, quotedQualifier, quotedPattern] of value.matchAll(tokenRegex)) {
+        let qualifier = quotedQualifier;
+        let pattern = quotedPattern;
+
+        if (!qualifier) {
+            const match = token.match(/^(-?file:)(.*)$/);
+            if (match) {
+                [, qualifier, pattern] = match;
+            } else {
+                pattern = token;
+            }
+        }
+
+        if (!pattern) {
+            continue;
+        }
+
+        let list = query.terms;
+        if (qualifier === 'file:') {
+            list = query.fileInclude;
+        } else if (qualifier === '-file:') {
+            list = query.fileExclude;
+        }
+
+        /* note: \" inside a quoted pattern is a valid identity escape for " */
+        list.push(new RegExp(pattern, 'i'));
+    }
+
+    return query;
+}
+
+/**
+ * Build a search link restricted to a single Kconfig file.
+ * @param {String} filename Kconfig file path.
+ * @returns {String} URL fragment (``#!file:...``).
+ */
+function fileFilterLink(filename) {
+    return '#!' + encodeURI(`file:"^${escapeRegExp(filename)}$"`);
 }
 
 /** Perform a search and display the results. */
@@ -345,16 +425,42 @@ function doSearch() {
         return;
     }
 
-    /* perform search */
-    const regexes = input.value.trim().split(/\s+/).map(
-        element => new RegExp(element.toLowerCase())
-    );
+    /* parse query */
+    let query;
+    try {
+        query = parseQuery(input.value);
+    } catch (error) {
+        showError(`Invalid search expression (${error.message})`);
+        navigation.style.visibility = 'hidden';
+        searchTools.style.visibility = 'hidden';
+        return;
+    }
 
-    const scoredResults = db.map(entry => {
+    const regexes = query.terms;
+    const hasFileFilters = query.fileInclude.length > 0 || query.fileExclude.length > 0;
+
+    if (regexes.length === 0 && !hasFileFilters) {
+        results.replaceChildren();
+        navigation.style.visibility = 'hidden';
+        searchTools.style.visibility = 'hidden';
+        return;
+    }
+
+    /* perform search */
+    const filtered = hasFileFilters ? db.filter(entry => {
+        return query.fileInclude.every(regex => entry.filename.search(regex) >= 0) &&
+               !query.fileExclude.some(regex => entry.filename.search(regex) >= 0);
+    }) : db;
+
+    const scoredResults = filtered.map(entry => {
+        if (regexes.length === 0) {
+            return { entry, score: 0 };
+        }
+
         let nameMatches = 0;
         let promptMatches = 0;
-        const name = entry.name.toLowerCase();
-        const prompt = entry.prompt ? entry.prompt.toLowerCase() : "";
+        const name = entry.name;
+        const prompt = entry.prompt ? entry.prompt : "";
 
         regexes.forEach(regex => {
             if (name.search(regex) >= 0) nameMatches++;
@@ -435,7 +541,8 @@ function setupKconfigSearch() {
     container.appendChild(inputContainer)
 
     input = document.createElement('input');
-    input.placeholder = 'Type a Kconfig option name (RegEx allowed)';
+    input.placeholder = 'Type a Kconfig option name (RegEx allowed), ' +
+                        'use file:<regex> to filter by Kconfig file';
     input.type = 'text';
     inputContainer.appendChild(input);
 
