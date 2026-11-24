@@ -31,6 +31,9 @@ LOG_MODULE_REGISTER(alif_clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define DEV_CFG(dev)  ((const struct alif_clock_control_config *)(dev)->config)
 #define DEV_DATA(dev) ((struct alif_clock_control_data *)(dev)->data)
 
+/* Clock Enable Register */
+#define CGU_CLK_ENA 0x14
+
 /**
  * @brief Alif clock controller data structure
  */
@@ -112,6 +115,10 @@ struct alif_clock_control_config {
 #define ALIF_CLOCK_PLL_CLK1_FREQ     DT_PROP_OR(DT_NODELABEL(pll_clk1), clock_frequency, 0)
 #define ALIF_CLOCK_PLL_CLK2_FREQ     DT_PROP_OR(DT_NODELABEL(pll_clk2), clock_frequency, 0)
 #define ALIF_CLOCK_SYST_REFCLK_FREQ  DT_PROP_OR(DT_NODELABEL(syst_refclk), clock_frequency, 0)
+
+/* CLK_ENA bit gating a parent clock, or 0 for a parent clock without one */
+#define ALIF_CLK_ENA_BIT(parent_clk)                                               \
+	(((parent_clk) < ALIF_PARENT_CLK_UNGATED_BASE) ? BIT(parent_clk) : 0U)
 
 /*
  * Clock Configuration Field Extraction Macros
@@ -308,6 +315,34 @@ static uint32_t alif_get_clock_freq(uint32_t clock_id)
 }
 
 /**
+ * @brief Enable parent clock
+ *
+ * @return 0 on success
+ * @param dev Clock control device
+ * @param clock_id Encoded clock ID from device tree
+ */
+static int alif_enable_parent_clock(const struct device *dev, uint32_t clock_id)
+{
+	mem_addr_t cgu = DEVICE_MMIO_NAMED_GET(dev, cgu);
+	uint32_t parent_clk = ALIF_CLOCK_CFG_PARENT_CLK(clock_id);
+	uint32_t mask = ALIF_CLK_ENA_BIT(parent_clk);
+
+	if (parent_clk == ALIF_PARENT_CLK_25M) {
+		/* Enable 100MHz clock as well, this sources it */
+		mask |= ALIF_CLK_ENA_BIT(ALIF_PARENT_CLK_100M);
+	} else if (parent_clk == ALIF_PARENT_CLK_10M) {
+		/* 10M_CLK shares its gate with USB_CLK where the SoC has one */
+		mask |= ALIF_CLK_ENA_BIT(ALIF_PARENT_CLK_USB);
+	}
+
+	if (mask != 0U) {
+		sys_set_bits(cgu + CGU_CLK_ENA, mask);
+	}
+
+	return 0;
+}
+
+/**
  * @brief Select the clock source and enable a peripheral clock
  *
  * Programs the clock source for peripherals fed by a source mux and enables
@@ -326,6 +361,12 @@ static int alif_clock_control_on(const struct device *dev,
 	uint32_t clk_id = (uint32_t)sub_system;
 	mem_addr_t reg_addr;
 	uint32_t reg_value;
+	int ret;
+
+	ret = alif_enable_parent_clock(dev, clk_id);
+	if (ret) {
+		return ret;
+	}
 
 	if (!ALIF_CLOCK_CFG_EN_MASK(clk_id) && !ALIF_CLOCK_CFG_SRC_FIELD_WIDTH(clk_id)) {
 		/* Always-on clock with a fixed source, nothing to program */
