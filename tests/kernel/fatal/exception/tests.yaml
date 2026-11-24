@@ -52,6 +52,19 @@ tests:
       - userspace
     integration_platforms:
       - mps2/an385
+  kernel.common.arm_system_halt_wfi:
+    extra_args: CONF_FILE=sentinel.conf
+    build_only: true
+    arch_allow: arm
+    filter: CONFIG_CPU_CORTEX
+    extra_configs:
+      - CONFIG_ARM_SYSTEM_HALT_WFI=y
+    tags:
+      - kernel
+      - arm
+    integration_platforms:
+      - mps2/an385
+      - qemu_cortex_r5
   kernel.common.stack_sentinel:
     extra_args: CONF_FILE=sentinel.conf
     tags: kernel
