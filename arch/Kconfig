@@ -1414,17 +1414,6 @@ config CACHE_HAS_MIRRORED_MEMORY_REGIONS
 	  This applies to intra-CPU multiprocessing incoherence and makes only
 	  sense when MP_MAX_NUM_CPUS > 1.
 
-config CACHE_DOUBLEMAP
-	bool "Cache double-mapping support [DEPRECATED]"
-	select CACHE_HAS_MIRRORED_MEMORY_REGIONS
-	select DEPRECATED
-	help
-	  Double-mapping behavior where a pointer can be cheaply converted to
-	  point to the same cached/uncached memory at different locations.
-
-	  This applies to intra-CPU multiprocessing incoherence and makes only
-	  sense when MP_MAX_NUM_CPUS > 1.
-
 config CACHE_MANAGEMENT
 	bool "Cache management features"
 	depends on DCACHE || ICACHE
