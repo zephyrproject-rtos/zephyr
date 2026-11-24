@@ -266,7 +266,7 @@ Provisions Assessment
       - All software components in consumer IoT devices should be securely updatable.
       - R
       - Y
-      - :ref:`Device firwmware upgrade  <dfu>`
+      - :ref:`Device firmware upgrade  <dfu>`
 
         .. _ETSI_Provision_5_3_2:
     * - Provision 5.3-2
@@ -274,7 +274,7 @@ Provisions Assessment
         for the secure installation of updates.
       - M C
       - Y
-      - :ref:`Device firwmware upgrade  <dfu>`
+      - :ref:`Device firmware upgrade  <dfu>`
 
         .. _ETSI_Provision_5_3_3:
     * - Provision 5.3-3
@@ -328,7 +328,7 @@ Provisions Assessment
       - R C
       - Y
       - Functionality provided by `MCUboot <https://github.com/zephyrproject-rtos/mcuboot>`_.
-        Also see :ref:`Device Firwmware Upgrade  <dfu>`.
+        Also see :ref:`Device Firmware Upgrade  <dfu>`.
 
         .. _ETSI_Provision_5_3_10:
     * - Provision 5.3-10
