@@ -93,6 +93,24 @@ void usbh_xfer_anchor_abort(struct uhc_transfer *const xfer)
 	}
 }
 
+int usbh_xfer_anchor_enqueue(struct usbh_xfer_anchor *const anchor,
+			     struct uhc_transfer *const xfer)
+{
+	int ret;
+
+	ret = usbh_xfer_anchor(anchor, xfer);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = usbh_xfer_enqueue(xfer->udev, xfer);
+	if (ret != 0) {
+		usbh_xfer_anchor_abort(xfer);
+	}
+
+	return ret;
+}
+
 int usbh_xfer_anchor_drain(struct usbh_xfer_anchor *const anchor,
 			   k_timeout_t timeout)
 {

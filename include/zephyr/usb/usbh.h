@@ -292,6 +292,21 @@ int usbh_xfer_anchor(struct usbh_xfer_anchor *const anchor,
 void usbh_xfer_anchor_abort(struct uhc_transfer *const xfer);
 
 /**
+ * @brief Anchor a transfer and submit it to the controller.
+ *
+ * Anchors the transfer with usbh_xfer_anchor(), enqueues it, and undoes the
+ * anchoring if the enqueue fails.
+ *
+ * @param[in] anchor Anchor
+ * @param[in] xfer UHC transfer
+ *
+ * @return 0 on success, other values on error
+ * @retval -ESHUTDOWN if the anchor does not accept new transfers
+ */
+int usbh_xfer_anchor_enqueue(struct usbh_xfer_anchor *const anchor,
+			     struct uhc_transfer *const xfer);
+
+/**
  * @brief Remove transfer from the anchor list.
  *
  * Does nothing for a transfer that is not anchored.
