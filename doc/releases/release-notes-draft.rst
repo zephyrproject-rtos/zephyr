@@ -50,6 +50,13 @@ Libraries / Subsystems
     :kconfig:option:`CONFIG_EXTRA_EXCEPTION_INFO` is enabled. The gdbstub
     coredump decoder was updated accordingly.
 
+  * xtensa: :kconfig:option:`CONFIG_HW_STACK_PROTECTION` is supported on cores with a DBREAK
+    data breakpoint register, including cores without an MPU or MMU. Data breakpoint DBREAK0
+    watches a guard (64 bytes by default) below the stack of the running thread. Each stack
+    reserves the guard, and each CPU has a debug stack for the exception
+    (:kconfig:option:`CONFIG_XTENSA_DBREAK_STACK_GUARD_STACK_SIZE`). Userspace and the GDB stub
+    are not supported with it.
+
 * Bluetooth
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service

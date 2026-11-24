@@ -16,6 +16,7 @@
 #include <zephyr/cache.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/zsr.h>
+#include <xtensa/corebits.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,8 +43,30 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 
 void xtensa_switch(void *switch_to, void **switched_from);
 
+#ifdef CONFIG_XTENSA_DBREAK_STACK_GUARD
+/* Point DBREAK0 at the stack guard of the thread, or disarm it for a dummy thread. */
+static ALWAYS_INLINE void xtensa_dbreak_stack_guard_arm(struct k_thread *thread)
+{
+	uint32_t addr = 0U;
+	uint32_t ctrl = 0U;
+
+	if ((thread->base.thread_state & _THREAD_DUMMY) == 0U) {
+		addr = thread->stack_info.start - CONFIG_XTENSA_DBREAK_STACK_GUARD_SIZE;
+		ctrl = DBREAKC_LOADBREAK_MASK | DBREAKC_STOREBREAK_MASK |
+		       (DBREAKC_MASK_MASK & ~(CONFIG_XTENSA_DBREAK_STACK_GUARD_SIZE - 1U));
+	}
+
+	__asm__ volatile("wsr.dbreaka0 %0" : : "r"(addr));
+	__asm__ volatile("wsr.dbreakc0 %0" : : "r"(ctrl));
+	__asm__ volatile("dsync" : : : "memory");
+}
+#endif /* CONFIG_XTENSA_DBREAK_STACK_GUARD */
+
 static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
 {
+#ifdef CONFIG_XTENSA_DBREAK_STACK_GUARD
+	xtensa_dbreak_stack_guard_arm(_current);
+#endif /* CONFIG_XTENSA_DBREAK_STACK_GUARD */
 	xtensa_switch(switch_to, switched_from);
 }
 

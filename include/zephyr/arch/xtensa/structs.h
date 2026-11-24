@@ -9,6 +9,10 @@
 
 /* Per CPU architecture specifics */
 struct _cpu_arch {
+#if defined(CONFIG_XTENSA_DBREAK_STACK_GUARD)
+	/* The debug exception saves the interrupted registers here */
+	uint8_t dbreak_stack[CONFIG_XTENSA_DBREAK_STACK_GUARD_STACK_SIZE] __aligned(16);
+#endif
 #if defined(CONFIG_XTENSA_LAZY_HIFI_SHARING)
 	atomic_ptr_val_t hifi_owner; /* Owner of HiFi */
 #if CONFIG_MP_MAX_NUM_CPUS > 1
