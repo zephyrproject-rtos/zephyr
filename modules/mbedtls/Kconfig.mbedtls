@@ -9,7 +9,6 @@ menu "Mbed TLS configuration"
 
 config MBEDTLS_CONFIG_FILE
 	string "Mbed TLS configuration file"
-	default MBEDTLS_CFG_FILE if MBEDTLS_CFG_FILE != "" # deprecated
 	default "config-mbedtls.h"
 	help
 	  Use a specific Mbed TLS configuration file. The default config file

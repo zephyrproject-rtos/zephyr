@@ -4,21 +4,6 @@
 # Copyright (c) 2025 BayLibre SAS
 # SPDX-License-Identifier: Apache-2.0
 
-config MBEDTLS_CFG_FILE
-	string "mbed TLS configuration file [DEPRECATED]"
-	help
-	  This Kconfig option is deprecated. Use MBEDTLS_CONFIG_FILE instead.
-
-config MBEDTLS_CFG_FILE_DEPRECATED
-	def_bool MBEDTLS_CFG_FILE != ""
-	select DEPRECATED
-
-config MBEDTLS_USER_CONFIG_ENABLE
-	bool "User Mbed TLS config file [DEPRECATED]"
-	select DEPRECATED
-	help
-	  This Kconfig option is deprecated. Define MBEDTLS_USER_CONFIG_FILE directly instead.
-
 config MBEDTLS_SSL_MAX_CONTENT_LEN
 	int "Max payload size for TLS protocol message [DEPRECATED]"
 	default 0
