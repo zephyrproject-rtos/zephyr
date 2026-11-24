@@ -24,7 +24,7 @@ int z_impl_k_condvar_init(struct k_condvar *condvar)
 	k_object_init(condvar);
 
 #ifdef CONFIG_OBJ_CORE_CONDVAR
-	k_obj_core_init_and_link(K_OBJ_CORE(condvar), &obj_type_condvar);
+	z_obj_core_init_unlinked(K_OBJ_CORE(condvar), &obj_type_condvar);
 #endif /* CONFIG_OBJ_CORE_CONDVAR */
 
 	SYS_PORT_TRACING_OBJ_INIT(k_condvar, condvar, 0);
