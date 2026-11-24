@@ -87,6 +87,8 @@ struct pwm_stm32_lptim_data {
 	enum channel_state state[TIMER_MAX_CH];
 	/* Whether the counter of an instance with channels runs. */
 	bool counting;
+	/* Serializes the calls, since a call can sleep while it waits for a register write. */
+	struct k_sem lock;
 };
 
 /* Channel to LL mapping. */
@@ -487,8 +489,10 @@ static int pwm_stm32_lptim_set_cycles(const struct device *dev, uint32_t channel
 				      pwm_flags_t flags)
 {
 	const struct pwm_stm32_lptim_config *cfg = dev->config;
+	struct pwm_stm32_lptim_data *data = dev->data;
 	uint32_t num_channels = IS_LPTIM_CC2_INSTANCE(cfg->timer) ? 2U : 1U;
 	bool inverted = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
+	int ret;
 
 	if ((channel < 1U) || (channel > num_channels)) {
 		LOG_ERR("Invalid channel (%u)", channel);
@@ -504,11 +508,20 @@ static int pwm_stm32_lptim_set_cycles(const struct device *dev, uint32_t channel
 		return -EINVAL;
 	}
 
-	if (has_ccmr1(cfg->timer)) {
-		return set_cycles_channels(dev, channel - 1U, period_cycles, pulse_cycles, inverted);
+	/* A thread waits for a call in progress, an interrupt cannot. */
+	if (k_sem_take(&data->lock, k_is_in_isr() ? K_NO_WAIT : K_FOREVER) != 0) {
+		return -EBUSY;
 	}
 
-	return set_cycles_single_output(dev, period_cycles, pulse_cycles, inverted);
+	if (has_ccmr1(cfg->timer)) {
+		ret = set_cycles_channels(dev, channel - 1U, period_cycles, pulse_cycles, inverted);
+	} else {
+		ret = set_cycles_single_output(dev, period_cycles, pulse_cycles, inverted);
+	}
+
+	k_sem_give(&data->lock);
+
+	return ret;
 }
 
 static int pwm_stm32_lptim_get_cycles_per_sec(const struct device *dev, uint32_t channel,
@@ -536,6 +549,8 @@ static int pwm_stm32_lptim_init(const struct device *dev)
 	struct pwm_stm32_lptim_data *data = dev->data;
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int ret;
+
+	k_sem_init(&data->lock, 1, 1);
 
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
