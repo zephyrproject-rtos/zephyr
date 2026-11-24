@@ -464,6 +464,9 @@ other-macro =/ %s"DT_N_CLASS_" dt-name %s"_NUM_OKAY"
 ; which iterates over each enabled node of a device class.
 other-macro =/ %s"DT_FOREACH_OKAY_CLASS_" dt-name
 other-macro =/ %s"DT_FOREACH_OKAY_VARGS_CLASS_" dt-name
+; This is used internally to iterate over the device classes that the
+; bindings declare, whether or not a node of the class exists.
+other-macro =/ %s"DT_FOREACH_CLASS_VARGS_HELPER"
 ; Currently used to allow mapping a lowercase-and-underscores "label"
 ; property to a fixed-partitions node. See the flash map API docs
 ; for an example.

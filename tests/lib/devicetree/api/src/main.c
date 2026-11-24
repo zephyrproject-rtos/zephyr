@@ -5144,6 +5144,25 @@ ZTEST(devicetree_api, test_device_class)
 #undef ADD_ARG_CLASS_OKAY
 }
 
+ZTEST(devicetree_api, test_device_class_declared)
+{
+#define CLASS_NAME(cls, ...) STRINGIFY(cls),
+	static const char *const classes[] = {DT_FOREACH_CLASS_VARGS_HELPER(CLASS_NAME, 0)};
+#undef CLASS_NAME
+	bool has_class_a = false;
+	bool has_service = false;
+
+	for (size_t i = 0; i < ARRAY_SIZE(classes); i++) {
+		has_class_a = has_class_a || strcmp(classes[i], "vnd_class_a") == 0;
+		has_service = has_service || strcmp(classes[i], "vnd_service") == 0;
+		zassert_true(strcmp(classes[i], "vnd_no_such_class") != 0);
+	}
+
+	zassert_true(has_class_a);
+	/* Class declared in a base binding without a compatible */
+	zassert_true(has_service);
+}
+
 ZTEST(devicetree_api, test_device_class_kconfig)
 {
 	/* $(dt_class_enabled,...) sees classes declared in bindings */
