@@ -1664,6 +1664,77 @@ async def l2cap_client_case_31(hci_port, shell, dut, address, snoop_file) -> Non
         await send_cmd_to_iut(shell, dut, "bt disconnect", "Disconnected:")
 
 
+async def l2cap_client_case_32(hci_port, shell, dut, address, snoop_file) -> None:
+    logger.info('<<< l2cap_client_case_32 ...')
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        device = Device.with_hci(
+            'Bumble',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+        logger.info('bumble l2cap server register.')
+        device.create_l2cap_server(spec=ClassicChannelSpec(psm=L2CAP_SERVER_PSM))
+
+        # Hold the Connection Request without answering it, and record the
+        # Disconnection Requests from the IUT.
+        manager = device.l2cap_channel_manager
+        connection_requests = []
+        disconnection_requests = []
+        on_disconnection_request = manager.on_l2cap_disconnection_request
+
+        def hold_connection_request(connection, cid, request):
+            connection_requests.append(request)
+
+        def record_disconnection_request(connection, cid, request):
+            disconnection_requests.append(request)
+            on_disconnection_request(connection, cid, request)
+
+        manager.on_l2cap_connection_request = hold_connection_request
+        manager.on_l2cap_disconnection_request = record_disconnection_request
+
+        device.host.snooper = BtSnooper(snoop_file)
+        await device_power_on(device)
+        await device.send_command(HCI_Write_Page_Timeout_Command(page_timeout=0xFFFF))
+
+        await send_cmd_to_iut(shell, dut, "br clear all", None)
+
+        target_address = address.split(" ")[0]
+        await bumble_acl_connect(shell, dut, device, target_address)
+        found = False
+        found, _ = await wait_for_shell_response(dut, "Connected:")
+        assert found is not False
+
+        await send_cmd_to_iut(
+            shell,
+            dut,
+            f"l2cap_br connect {format(L2CAP_SERVER_PSM, 'x')}",
+            "L2CAP connection pending",
+        )
+
+        for _ in range(10):
+            if connection_requests:
+                break
+            await asyncio.sleep(1)
+        assert connection_requests, "no L2CAP_CONNECTION_REQ received"
+
+        await send_cmd_to_iut(
+            shell,
+            dut,
+            f"l2cap_br disconnect {L2CAP_CHAN_IUT_ID}",
+            f"Channel {L2CAP_CHAN_IUT_ID} disconnected",
+        )
+
+        # Without a Destination CID there is nothing to disconnect on the peer
+        assert not disconnection_requests, (
+            f"L2CAP_DISCONNECTION_REQ sent for an unanswered connection: {disconnection_requests}"
+        )
+
+        await send_cmd_to_iut(shell, dut, "bt disconnect", "Disconnected:")
+
+
 class TestL2capBRClient:
     def test_l2cap_client_case_1(self, shell: Shell, dut: DeviceAdapter, l2cap_br_dut):
         """Test passive ACL connection,l2cap connect and active l2cap disconnect"""
@@ -1906,3 +1977,11 @@ class TestL2capBRClient:
         hci, iut_address = l2cap_br_dut
         with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
             asyncio.run(l2cap_client_case_31(hci, shell, dut, iut_address, snoop_file))
+
+    def test_l2cap_client_case_32(self, shell: Shell, dut: DeviceAdapter, l2cap_br_dut):
+        """Test l2cap disconnect while the connection request is unanswered.
+        The channel is closed locally, no disconnection request is sent."""
+        logger.info(f'test_l2cap_client_case_32 {l2cap_br_dut}')
+        hci, iut_address = l2cap_br_dut
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            asyncio.run(l2cap_client_case_32(hci, shell, dut, iut_address, snoop_file))
