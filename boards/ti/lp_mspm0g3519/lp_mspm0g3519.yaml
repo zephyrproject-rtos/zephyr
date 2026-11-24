@@ -21,4 +21,5 @@ supported:
   - vref
   - trng
   - watchdog
+  - counter
 vendor: ti
