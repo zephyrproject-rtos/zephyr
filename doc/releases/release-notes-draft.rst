@@ -63,6 +63,14 @@ Libraries / Subsystems
     replaces the removed ``media_proxy_`` API, see the :ref:`migration guide
     <migration_4.6>`.
 
+* Debug
+
+  * A system-wide default assertion level (``CONFIG_ASSERT_DEFAULT_LEVEL_*``) now sets the level
+    of the ``DEFAULT`` assert module and of every module generated from
+    :zephyr_file:`subsys/debug/zassert/Kconfig.template.assert`. Individual modules can still
+    override it, for example to keep assertions terse everywhere except in one module. See
+    :ref:`assert`.
+
 * Display
 
   * Display timings can be read and set at runtime with
