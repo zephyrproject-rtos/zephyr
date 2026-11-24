@@ -25,3 +25,13 @@ tests:
     toolchain_exclude: arcmwdt
     extra_configs:
       - CONFIG_TEST_USERSPACE=y
+  kernel.threads.tls.xtensa_emulated:
+    tags:
+      - kernel
+      - threads
+    platform_allow:
+      - qemu_xtensa/sample_controller32/mpu
+    integration_platforms:
+      - qemu_xtensa/sample_controller32/mpu
+    extra_configs:
+      - CONFIG_XTENSA_EMULATED_TLS=y
