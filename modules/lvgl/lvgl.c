@@ -264,7 +264,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 
 #ifdef CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE
 
-static K_THREAD_STACK_DEFINE(lvgl_workqueue_stack, CONFIG_LV_Z_LVGL_WORKQUEUE_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(lvgl_workqueue_stack, CONFIG_LV_Z_LVGL_WORKQUEUE_STACK_SIZE);
 static struct k_work_q lvgl_workqueue;
 static atomic_t lvgl_paused;
 
@@ -459,7 +459,7 @@ int lvgl_init(void)
 
 	k_work_queue_init(&lvgl_workqueue);
 	k_work_queue_start(&lvgl_workqueue, lvgl_workqueue_stack,
-			   K_THREAD_STACK_SIZEOF(lvgl_workqueue_stack),
+			   K_KERNEL_STACK_SIZEOF(lvgl_workqueue_stack),
 			   CONFIG_LV_Z_LVGL_WORKQUEUE_PRIORITY, &lvgl_workqueue_cfg);
 
 	k_work_submit_to_queue(&lvgl_workqueue, &lvgl_work.work);

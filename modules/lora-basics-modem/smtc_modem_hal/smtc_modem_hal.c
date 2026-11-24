@@ -45,7 +45,7 @@ static bool prv_modem_irq_enabled = true;
 static bool prv_pending_timer_cb;
 static bool prv_pending_dio_cb;
 
-static K_THREAD_STACK_DEFINE(hal_workq_stack, HAL_WORKQ_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(hal_workq_stack, HAL_WORKQ_STACK_SIZE);
 static struct k_work_q hal_workq;
 
 static void hal_timer_callback(struct k_timer *timer);
@@ -94,7 +94,7 @@ void smtc_modem_hal_init(const struct device *transceiver)
 	prv_transceiver_dev = transceiver;
 
 	k_work_queue_start(&hal_workq, hal_workq_stack,
-			   K_THREAD_STACK_SIZEOF(hal_workq_stack),
+			   K_KERNEL_STACK_SIZEOF(hal_workq_stack),
 			   HAL_WORKQ_PRIORITY, NULL);
 	k_thread_name_set(hal_workq.thread_id, "lbm_hal_workq");
 

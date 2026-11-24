@@ -18,19 +18,19 @@
 
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
-K_THREAD_STACK_DEFINE(bh_wq_stack_area, CONFIG_NRF70_BH_WQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(bh_wq_stack_area, CONFIG_NRF70_BH_WQ_STACK_SIZE);
 struct k_work_q zep_wifi_bh_q;
 
-K_THREAD_STACK_DEFINE(irq_wq_stack_area, CONFIG_NRF70_IRQ_WQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(irq_wq_stack_area, CONFIG_NRF70_IRQ_WQ_STACK_SIZE);
 struct k_work_q zep_wifi_intr_q;
 
 #ifdef CONFIG_NRF70_TX_DONE_WQ_ENABLED
-K_THREAD_STACK_DEFINE(tx_done_wq_stack_area, CONFIG_NRF70_TX_DONE_WQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(tx_done_wq_stack_area, CONFIG_NRF70_TX_DONE_WQ_STACK_SIZE);
 struct k_work_q zep_wifi_tx_done_q;
 #endif /* CONFIG_NRF70_TX_DONE_WQ_ENABLED */
 
 #ifdef CONFIG_NRF70_RX_WQ_ENABLED
-K_THREAD_STACK_DEFINE(rx_wq_stack_area, CONFIG_NRF70_RX_WQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(rx_wq_stack_area, CONFIG_NRF70_RX_WQ_STACK_SIZE);
 struct k_work_q zep_wifi_rx_q;
 #endif /* CONFIG_NRF70_RX_WQ_ENABLED */
 
@@ -78,7 +78,7 @@ static int workqueue_init(void)
 
 	k_work_queue_start(&zep_wifi_bh_q,
 			   bh_wq_stack_area,
-			   K_THREAD_STACK_SIZEOF(bh_wq_stack_area),
+			   K_KERNEL_STACK_SIZEOF(bh_wq_stack_area),
 			   CONFIG_NRF70_BH_WQ_PRIORITY,
 			   NULL);
 
@@ -88,7 +88,7 @@ static int workqueue_init(void)
 
 	k_work_queue_start(&zep_wifi_intr_q,
 			   irq_wq_stack_area,
-			   K_THREAD_STACK_SIZEOF(irq_wq_stack_area),
+			   K_KERNEL_STACK_SIZEOF(irq_wq_stack_area),
 			   CONFIG_NRF70_IRQ_WQ_PRIORITY,
 			   NULL);
 
@@ -98,7 +98,7 @@ static int workqueue_init(void)
 
 	k_work_queue_start(&zep_wifi_tx_done_q,
 			   tx_done_wq_stack_area,
-			   K_THREAD_STACK_SIZEOF(tx_done_wq_stack_area),
+			   K_KERNEL_STACK_SIZEOF(tx_done_wq_stack_area),
 			   CONFIG_NRF70_TX_DONE_WQ_PRIORITY,
 			   NULL);
 
@@ -110,7 +110,7 @@ static int workqueue_init(void)
 
 	k_work_queue_start(&zep_wifi_rx_q,
 			   rx_wq_stack_area,
-			   K_THREAD_STACK_SIZEOF(rx_wq_stack_area),
+			   K_KERNEL_STACK_SIZEOF(rx_wq_stack_area),
 			   CONFIG_NRF70_RX_WQ_PRIORITY,
 			   NULL);
 
