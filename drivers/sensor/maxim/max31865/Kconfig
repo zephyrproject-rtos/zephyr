@@ -10,3 +10,14 @@ config MAX31865
 	select SPI
 	help
 	  Enable the driver for Maxim MAX31865 SPI Temperature Sensors.
+
+config MAX31865_DRDY
+	bool "Wait on the DRDY output"
+	default y
+	depends on MAX31865
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX31865),drdy-gpios)
+	help
+	  Wait for the converter to pull DRDY low once a conversion result is
+	  ready, instead of waiting out the conversion time the datasheet gives.
+	  Needs drdy-gpios on the node.

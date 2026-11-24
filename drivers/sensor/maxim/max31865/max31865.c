@@ -139,6 +139,29 @@ static int max31865_set_vbias(const struct device *dev, bool enable)
 	return configure_device(dev);
 }
 
+static int max31865_start_conversion(const struct device *dev)
+{
+	struct max31865_data *data = dev->data;
+	uint8_t cmd[] = {data->config_control_bits | MAX31865_CONFIG_ONE_SHOT};
+
+	return max31865_spi_write(dev, WR(REG_CONFIG), cmd, 1);
+}
+
+#ifdef CONFIG_MAX31865_DRDY
+
+static void max31865_drdy_callback(const struct device *port, struct gpio_callback *cb,
+				   uint32_t pins)
+{
+	struct max31865_data *data = CONTAINER_OF(cb, struct max31865_data, drdy_cb);
+
+	ARG_UNUSED(port);
+	ARG_UNUSED(pins);
+
+	k_sem_give(&data->drdy_sem);
+}
+
+#endif /* CONFIG_MAX31865_DRDY */
+
 static int max31865_set_three_wire(const struct device *dev, bool enable)
 {
 	struct max31865_data *data = dev->data;
@@ -194,6 +217,52 @@ static int max31865_fault_register(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_MAX31865_DRDY
+
+static int max31865_convert_drdy(const struct device *dev)
+{
+	const struct max31865_config *config = dev->config;
+	struct max31865_data *data = dev->data;
+	int err;
+
+	k_sem_reset(&data->drdy_sem);
+	err = gpio_pin_interrupt_configure_dt(&config->drdy, GPIO_INT_EDGE_TO_ACTIVE);
+	if (err < 0) {
+		LOG_ERR("Could not arm DRDY: %d", err);
+		return err;
+	}
+
+	err = max31865_start_conversion(dev);
+	if (err == 0 && k_sem_take(&data->drdy_sem, K_MSEC(MAX31865_DRDY_TIMEOUT_MS)) != 0) {
+		LOG_ERR("DRDY stayed high for %d ms", MAX31865_DRDY_TIMEOUT_MS);
+		err = -EIO;
+	}
+
+	gpio_pin_interrupt_configure_dt(&config->drdy, GPIO_INT_DISABLE);
+	return err;
+}
+
+#endif /* CONFIG_MAX31865_DRDY */
+
+static int max31865_convert(const struct device *dev)
+{
+	int err;
+
+#ifdef CONFIG_MAX31865_DRDY
+	const struct max31865_config *config = dev->config;
+
+	if (config->drdy.port != NULL) {
+		return max31865_convert_drdy(dev);
+	}
+#endif
+
+	err = max31865_start_conversion(dev);
+	if (err == 0) {
+		k_sleep(K_MSEC(MAX31865_CONVERSION_TIME_MS));
+	}
+	return err;
+}
+
 /**
  * @brief Get temperature value in oC for device
  *
@@ -203,17 +272,23 @@ static int max31865_fault_register(const struct device *dev)
  */
 static int max31865_get_temperature(const struct device *dev)
 {
-	max31865_set_vbias(dev, true);
 	union read_reg_u {
 		uint8_t u8[2];
 		uint16_t u16;
 	} read_reg;
+	int err;
+
+	max31865_set_vbias(dev, true);
+
+	err = max31865_convert(dev);
+	if (err < 0) {
+		max31865_set_vbias(dev, false);
+		return err;
+	}
 
 	read_reg.u16 = 0;
-	/* Waiting Time for Temperature Conversion (Page 3 of the datasheet)*/
-	k_sleep(K_MSEC(66));
 	/* Read resistance measured value */
-	int err = max31865_spi_read(dev, (REG_RTD_MSB), read_reg.u8, 2);
+	err = max31865_spi_read(dev, (REG_RTD_MSB), read_reg.u8, 2);
 
 	max31865_set_vbias(dev, false);
 
@@ -241,19 +316,66 @@ static int max31865_get_temperature(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_MAX31865_DRDY
+
+static int max31865_clear_drdy(const struct device *dev)
+{
+	uint8_t rtd[2];
+
+	return max31865_spi_read(dev, REG_RTD_MSB, rtd, sizeof(rtd));
+}
+
+static int max31865_init_drdy(const struct device *dev)
+{
+	const struct max31865_config *config = dev->config;
+	struct max31865_data *data = dev->data;
+	int err;
+
+	k_sem_init(&data->drdy_sem, 0, 1);
+
+	if (config->drdy.port == NULL) {
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(&config->drdy)) {
+		LOG_ERR_DEVICE_NOT_READY(config->drdy.port);
+		return -ENODEV;
+	}
+
+	err = gpio_pin_configure_dt(&config->drdy, GPIO_INPUT);
+	if (err < 0) {
+		return err;
+	}
+
+	gpio_init_callback(&data->drdy_cb, max31865_drdy_callback, BIT(config->drdy.pin));
+
+	return gpio_add_callback_dt(&config->drdy, &data->drdy_cb);
+}
+
+#endif /* CONFIG_MAX31865_DRDY */
+
 static int max31865_init(const struct device *dev)
 {
 	const struct max31865_config *config = dev->config;
 
 	if (!spi_is_ready_dt(&config->spi)) {
+		LOG_ERR_DEVICE_NOT_READY(config->spi.bus);
 		return -ENODEV;
 	}
 	struct max31865_data *data = dev->data;
+
+#ifdef CONFIG_MAX31865_DRDY
+	int err = max31865_init_drdy(dev);
+
+	if (err < 0) {
+		return err;
+	}
+#endif
+
 	/* Set the configuration register */
 	data->config_control_bits = 0;
 
 	WRITE_BIT(data->config_control_bits, 6, config->conversion_mode);
-	WRITE_BIT(data->config_control_bits, 5, config->one_shot);
 	data->config_control_bits |= config->fault_cycle & 0b00001100;
 	WRITE_BIT(data->config_control_bits, 0, config->filter_50hz);
 
@@ -261,7 +383,12 @@ static int max31865_init(const struct device *dev)
 	set_threshold_values(dev);
 	max31865_set_vbias(dev, false);
 	max31865_set_three_wire(dev, config->three_wire);
+
+#ifdef CONFIG_MAX31865_DRDY
+	return max31865_clear_drdy(dev);
+#else
 	return 0;
+#endif
 }
 
 static int max31865_sample_fetch(const struct device *dev, enum sensor_channel chan)
@@ -317,17 +444,17 @@ static DEVICE_API(sensor, max31865_api_funcs) = {
 		.resistance_at_zero = DT_INST_PROP(inst, resistance_at_zero),                      \
 		.resistance_reference = DT_INST_PROP(inst, resistance_reference),                  \
 		.conversion_mode = false,                                                          \
-		.one_shot = true,                                                                  \
 		.three_wire = DT_INST_PROP(inst, maxim_3_wire),                                    \
 		.fault_cycle = MAX31865_FAULT_DETECTION_NONE,                                      \
 		.filter_50hz = DT_INST_PROP(inst, filter_50hz),                                    \
 		.low_threshold = DT_INST_PROP(inst, low_threshold),                                \
 		.high_threshold = DT_INST_PROP(inst, high_threshold),                              \
-	};                                                                                         \
+		IF_ENABLED(CONFIG_MAX31865_DRDY,                                                   \
+			   (.drdy = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, {0}),))};          \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, max31865_init, NULL, &max31865_data_##inst,             \
-			      &max31865_config_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,   \
-			      &max31865_api_funcs);
+				     &max31865_config_##inst, POST_KERNEL,                         \
+				     CONFIG_SENSOR_INIT_PRIORITY, &max31865_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */
 DT_INST_FOREACH_STATUS_OKAY(MAX31865_DEFINE)

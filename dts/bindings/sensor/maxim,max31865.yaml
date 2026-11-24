@@ -35,6 +35,13 @@ properties:
     description: High fault threshold (ADC CODE, 15-bit value, unit-free, default value is the
       maximum value)
 
+  drdy-gpios:
+    type: phandle-array
+    description: |
+      DRDY output of the converter. It goes low once a conversion result is in the
+      RTD registers and returns high when they are read, so the driver waits on it
+      instead of waiting out the conversion time the datasheet gives.
+
   maxim,3-wire:
     type: boolean
     description: 3-wire enabled (@a true) or 2-wire/4-wire (@a false)
