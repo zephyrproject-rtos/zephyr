@@ -78,10 +78,10 @@ static int can_kvaser_pci_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	pcie_set_cmd(kvaser_config->pcie->bdf, PCIE_CONF_CMDSTAT_IO, true);
+	pcie_set_cmd(PCIE_DEV_ENDPOINT(kvaser_config->pcie), PCIE_CONF_CMDSTAT_IO, true);
 
 	/* AMCC S5920 registers */
-	if (!pcie_probe_iobar(kvaser_config->pcie->bdf, 0, &iobar)) {
+	if (!pcie_probe_iobar(PCIE_DEV_ENDPOINT(kvaser_config->pcie), 0, &iobar)) {
 		LOG_ERR("failed to probe AMCC S5920 I/O BAR");
 		return -ENODEV;
 	}
@@ -89,7 +89,7 @@ static int can_kvaser_pci_init(const struct device *dev)
 	amcc_base = iobar.phys_addr;
 
 	/* SJA1000 registers */
-	if (!pcie_probe_iobar(kvaser_config->pcie->bdf, 1, &iobar)) {
+	if (!pcie_probe_iobar(PCIE_DEV_ENDPOINT(kvaser_config->pcie), 1, &iobar)) {
 		LOG_ERR("failed to probe SJA1000 I/O BAR");
 		return -ENODEV;
 	}
@@ -97,7 +97,7 @@ static int can_kvaser_pci_init(const struct device *dev)
 	kvaser_data->sja1000_base = iobar.phys_addr;
 
 	/* Xilinx registers */
-	if (!pcie_probe_iobar(kvaser_config->pcie->bdf, 2, &iobar)) {
+	if (!pcie_probe_iobar(PCIE_DEV_ENDPOINT(kvaser_config->pcie), 2, &iobar)) {
 		LOG_ERR("failed to probe Xilinx I/O BAR");
 		return -ENODEV;
 	}

@@ -29,6 +29,15 @@ config ARM_CUSTOM_INTERRUPT_CONTROLLER
 	  functions are mapped to the SoC interrupt control interface, which is
 	  implemented at the SoC level.
 
+config ARM64_GIC_SOC_IRQ_HOOKS
+	bool
+	depends on !ARM_CUSTOM_INTERRUPT_CONTROLLER
+	help
+	  This option allows an SoC using the ARM Generic Interrupt Controller
+	  (GIC) as its primary controller to wrap irq_enable, irq_disable,
+	  irq_is_enabled, priority_set, and EOI via z_soc_irq_* hooks without
+	  replacing GIC initialization or SMP IPI handling.
+
 rsource "core/Kconfig"
 
 endmenu

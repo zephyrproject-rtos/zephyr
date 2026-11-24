@@ -169,6 +169,14 @@ Libraries / Subsystems
     enabled, so a connection can use send and receive windows above 64 KB. The window size
     options, ``SO_RCVBUF`` and ``SO_SNDBUF`` then accept values up to 65535 << 14.
 
+* PCIe
+
+  * The PCIe host API now supports multiple host controllers concurrently by qualifying
+    endpoints with :c:struct:`pcie_endpoint`, replacing bare BDF routing through the single
+    chosen controller. Devices on a ``pcie`` bus automatically resolve to their bus
+    controller, while other nodes can bind to a specific controller via ``pcie-controller``.
+    Devicetree-backed controllers scan their own ``scan-buses`` during static device discovery.
+
 * PTP Clock
 
   * :c:func:`ptp_clock_adjust_rate` adjusts the clock rate by an offset in scaled parts per

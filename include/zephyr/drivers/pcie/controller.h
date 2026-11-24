@@ -16,6 +16,7 @@
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/pcie/pcie.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef CONFIG_PCIE_MSI
 #include <zephyr/drivers/pcie/msi.h>
@@ -379,6 +380,40 @@ struct pcie_ctrl_config {
 	.host_map_addr = DT_RANGES_PARENT_BUS_ADDRESS_BY_IDX(node_id, idx),		\
 	.map_length = DT_RANGES_LENGTH_BY_IDX(node_id, idx),				\
 },
+
+#if defined(CONFIG_PCIE_CONTROLLER) || defined(__DOXYGEN__)
+/** @cond INTERNAL_HIDDEN */
+struct pcie_scan_buses {
+	const struct device *ctrl;
+	const uint8_t *buses;
+	size_t count;
+};
+
+#define Z_PCIE_SCAN_BUSES_ENTRY(node_id)                                            \
+	static const STRUCT_SECTION_ITERABLE(                                      \
+		pcie_scan_buses, _CONCAT(pcie_scan_buses_, DT_DEP_ORD(node_id))) = { \
+		.ctrl = DEVICE_DT_GET(node_id),                                    \
+		.buses = (const uint8_t[])DT_PROP(node_id, scan_buses),             \
+		.count = DT_PROP_LEN(node_id, scan_buses),                         \
+	};
+
+#define Z_PCIE_SCAN_BUSES_DEFINE(node_id)                                         \
+	IF_ENABLED(DT_NODE_HAS_PROP(node_id, scan_buses),                         \
+		   (Z_PCIE_SCAN_BUSES_ENTRY(node_id)))
+/** @endcond */
+
+/**
+ * @brief Register a PCIe controller's additional devicetree buses for boot-time scanning.
+ *
+ * Use at file scope alongside the controller's device definition. The Host registers
+ * the chosen controller's bus list.
+ *
+ * @param node_id PCIe controller devicetree node identifier
+ */
+#define PCIE_CTRL_SCAN_BUSES_DEFINE(node_id)                                        \
+	IF_DISABLED(DT_SAME_NODE(node_id, DT_CHOSEN(zephyr_pcie_controller)),         \
+		    (Z_PCIE_SCAN_BUSES_DEFINE(node_id)))
+#endif /* CONFIG_PCIE_CONTROLLER */
 
 #ifdef __cplusplus
 }

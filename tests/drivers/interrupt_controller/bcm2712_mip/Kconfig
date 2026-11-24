@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config NUM_IRQS
+	int
+	default 280
+	help
+	  IRQ limit used by the BCM2712 SoC routing code under test.
+
+source "Kconfig.zephyr"

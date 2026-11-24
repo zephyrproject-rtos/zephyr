@@ -283,7 +283,8 @@ static void eth_intel_igc_queue_isr(void *arg)
 	igc_modify(data->base, INTEL_IGC_EIMS, BIT(msix), true);
 }
 
-static int eth_intel_igc_connect_queue_msix_vector(pcie_bdf_t bdf, const struct device *dev)
+static int eth_intel_igc_connect_queue_msix_vector(const struct pcie_endpoint *ep,
+						   const struct device *dev)
 {
 	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 	struct eth_intel_igc_mac_data *data = dev->data;
@@ -293,7 +294,7 @@ static int eth_intel_igc_connect_queue_msix_vector(pcie_bdf_t bdf, const struct 
 
 		info->id = msix;
 		info->mac = dev;
-		if (!pcie_msi_vector_connect(bdf, &data->msi_vec[msix],
+		if (!pcie_msi_vector_connect(ep, &data->msi_vec[msix],
 					     (void *)eth_intel_igc_queue_isr, info, 0)) {
 			LOG_ERR("Failed to connect queue_%d interrupt handler", msix);
 			return -EIO;
@@ -307,28 +308,27 @@ static int eth_intel_igc_pcie_msix_setup(const struct device *dev)
 {
 	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 	struct eth_intel_igc_mac_data *data = dev->data;
-	pcie_bdf_t bdf;
+	const struct pcie_endpoint ep = eth_intel_get_pcie_endpoint(cfg->platform);
 	int ret;
 
-	bdf = eth_intel_get_pcie_bdf(cfg->platform);
-	if (bdf == PCIE_BDF_NONE) {
+	if (ep.bdf == PCIE_BDF_NONE) {
 		LOG_ERR("Failed to get PCIe BDF");
 		return -EINVAL;
 	}
 
-	ret = pcie_msi_vectors_allocate(bdf, CONFIG_ETH_INTEL_IGC_INT_PRIORITY, data->msi_vec,
+	ret = pcie_msi_vectors_allocate(&ep, CONFIG_ETH_INTEL_IGC_INT_PRIORITY, data->msi_vec,
 					cfg->num_msix);
 	if (ret < cfg->num_msix) {
 		LOG_ERR("Failed to allocate MSI-X vectors");
 		return -EIO;
 	}
 
-	ret = eth_intel_igc_connect_queue_msix_vector(bdf, dev);
+	ret = eth_intel_igc_connect_queue_msix_vector(&ep, dev);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (!pcie_msi_enable(bdf, data->msi_vec, cfg->num_msix, 0)) {
+	if (!pcie_msi_enable(&ep, data->msi_vec, cfg->num_msix, 0)) {
 		LOG_ERR("Failed to enable MSI-X vectors");
 		return -EIO;
 	}

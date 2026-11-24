@@ -58,14 +58,14 @@ static void ibecc_write_reg32(const struct device *dev,
 
 static bool ibecc_enabled(const pcie_bdf_t bdf)
 {
-	return !!(pcie_conf_read(bdf, CAPID0_C_REG) & CAPID0_C_IBECC_ENABLED);
+	return !!(pcie_conf_read(PCIE_ENDPOINT_BDF(bdf), CAPID0_C_REG) & CAPID0_C_IBECC_ENABLED);
 }
 
 static void ibecc_errcmd_setup(const pcie_bdf_t bdf, bool enable)
 {
 	uint32_t errcmd;
 
-	errcmd = pcie_conf_read(bdf, ERRCMD_REG);
+	errcmd = pcie_conf_read(PCIE_ENDPOINT_BDF(bdf), ERRCMD_REG);
 
 	if (enable) {
 		errcmd |= (ERRCMD_IBECC_COR | ERRCMD_IBECC_UC) << 16;
@@ -73,20 +73,20 @@ static void ibecc_errcmd_setup(const pcie_bdf_t bdf, bool enable)
 		errcmd &= ~(ERRCMD_IBECC_COR | ERRCMD_IBECC_UC) << 16;
 	}
 
-	pcie_conf_write(bdf, ERRCMD_REG, errcmd);
+	pcie_conf_write(PCIE_ENDPOINT_BDF(bdf), ERRCMD_REG, errcmd);
 }
 
 static void ibecc_errsts_clear(const pcie_bdf_t bdf)
 {
 	uint32_t errsts;
 
-	errsts = pcie_conf_read(bdf, ERRSTS_REG);
+	errsts = pcie_conf_read(PCIE_ENDPOINT_BDF(bdf), ERRSTS_REG);
 
 	if ((errsts & (ERRSTS_IBECC_COR | ERRSTS_IBECC_UC)) == 0) {
 		return;
 	}
 
-	pcie_conf_write(bdf, ERRSTS_REG, errsts);
+	pcie_conf_write(PCIE_ENDPOINT_BDF(bdf), ERRSTS_REG, errsts);
 }
 
 static void parse_ecclog(const struct device *dev, const uint64_t ecclog,
@@ -290,7 +290,7 @@ static int edac_ibecc_init(const struct device *dev)
 	uint64_t mchbar;
 	uint32_t conf_data;
 
-	conf_data = pcie_conf_read(bdf, PCIE_CONF_ID);
+	conf_data = pcie_conf_read(PCIE_ENDPOINT_BDF(bdf), PCIE_CONF_ID);
 	switch (conf_data) {
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU5):
 		__fallthrough;
@@ -324,8 +324,8 @@ static int edac_ibecc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	mchbar = pcie_conf_read(bdf, MCHBAR_REG);
-	mchbar |= (uint64_t)pcie_conf_read(bdf, MCHBAR_REG + 1) << 32;
+	mchbar = pcie_conf_read(PCIE_ENDPOINT_BDF(bdf), MCHBAR_REG);
+	mchbar |= (uint64_t)pcie_conf_read(PCIE_ENDPOINT_BDF(bdf), MCHBAR_REG + 1) << 32;
 
 	/* Check that MCHBAR is enabled */
 	if ((mchbar & MCHBAR_ENABLE) == 0) {

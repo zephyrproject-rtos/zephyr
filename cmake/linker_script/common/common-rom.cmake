@@ -132,6 +132,10 @@ if(CONFIG_BT_MESH_PROXY)
   zephyr_iterable_section(NAME bt_mesh_proxy_cb KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
+if(CONFIG_PCIE_CONTROLLER)
+  zephyr_iterable_section(NAME pcie_scan_buses GROUP RODATA_REGION)
+endif()
+
 if(CONFIG_EC_HOST_CMD)
   zephyr_iterable_section(NAME ec_host_cmd_handler KVMA RAM_REGION GROUP RODATA_REGION)
 endif()

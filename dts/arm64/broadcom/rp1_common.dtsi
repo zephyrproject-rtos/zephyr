@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/interrupt-controller/rp1_irq.h>
+
 &pcie2 {
 	rp1 {
 		#address-cells = <2>;
@@ -18,6 +20,9 @@
 		rp1_uart0: serial@1f00030000 {
 			compatible = "arm,pl011";
 			reg = <0x1f 0x30000 0x100>;
+			interrupt-parent = <&rp1_intc>;
+			interrupts = <RP1_IRQ_UART0 RP1_IRQ_TYPE_LEVEL>;
+			interrupt-names = "uart0";
 			clocks = <&rp1_uartclk>;
 			clock-names = "uartclk";
 			status = "disabled";
@@ -26,6 +31,9 @@
 		rp1_uart1: serial@1f00034000 {
 			compatible = "arm,pl011";
 			reg = <0x1f 0x34000 0x100>;
+			interrupt-parent = <&rp1_intc>;
+			interrupts = <RP1_IRQ_UART1 RP1_IRQ_TYPE_LEVEL>;
+			interrupt-names = "uart1";
 			clocks = <&rp1_uartclk>;
 			clock-names = "uartclk";
 			status = "disabled";
@@ -34,6 +42,9 @@
 		rp1_uart2: serial@1f00038000 {
 			compatible = "arm,pl011";
 			reg = <0x1f 0x38000 0x100>;
+			interrupt-parent = <&rp1_intc>;
+			interrupts = <RP1_IRQ_UART2 RP1_IRQ_TYPE_LEVEL>;
+			interrupt-names = "uart2";
 			clocks = <&rp1_uartclk>;
 			clock-names = "uartclk";
 			status = "disabled";
@@ -42,6 +53,9 @@
 		rp1_uart3: serial@1f0003c000 {
 			compatible = "arm,pl011";
 			reg = <0x1f 0x3c000 0x100>;
+			interrupt-parent = <&rp1_intc>;
+			interrupts = <RP1_IRQ_UART3 RP1_IRQ_TYPE_LEVEL>;
+			interrupt-names = "uart3";
 			clocks = <&rp1_uartclk>;
 			clock-names = "uartclk";
 			status = "disabled";
@@ -50,6 +64,9 @@
 		rp1_uart4: serial@1f00040000 {
 			compatible = "arm,pl011";
 			reg = <0x1f 0x40000 0x100>;
+			interrupt-parent = <&rp1_intc>;
+			interrupts = <RP1_IRQ_UART4 RP1_IRQ_TYPE_LEVEL>;
+			interrupt-names = "uart4";
 			clocks = <&rp1_uartclk>;
 			clock-names = "uartclk";
 			status = "disabled";
@@ -90,6 +107,13 @@
 				ngpios = <20>;
 				status = "disabled";
 			};
+		};
+
+		rp1_intc: interrupt-controller@1f00108000 {
+			compatible = "raspberrypi,rp1-intc";
+			reg = <0x1f 0x108000 0x1000>;
+			#interrupt-cells = <2>;
+			#address-cells = <0>;
 		};
 	};
 };
