@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &lptim3_pwm;
+	};
+};
+
+&lptim3 {
+	clocks = <&rcc STM32_CLOCK(APB3, 12)>,
+		 <&rcc STM32_SRC_LSI LPTIM34_SEL(1)>;
+	status = "okay";
+
+	lptim3_pwm: pwm {
+		pinctrl-0 = <&lptim3_ch1_pc8>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
