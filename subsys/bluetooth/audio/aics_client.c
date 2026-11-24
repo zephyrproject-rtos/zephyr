@@ -679,6 +679,12 @@ static void aics_client_reset(struct bt_aics *inst)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
 	for (size_t i = 0; i < ARRAY_SIZE(aics_insts); i++) {
 		if (aics_insts[i].cli.conn == conn) {
 			aics_client_reset(&aics_insts[i]);

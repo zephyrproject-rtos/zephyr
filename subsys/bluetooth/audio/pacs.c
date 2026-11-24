@@ -928,6 +928,12 @@ static void deferred_nfy_work_handler(struct k_work *work)
 
 static void pacs_auth_pairing_complete(struct bt_conn *conn, bool bonded)
 {
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
 	LOG_DBG("%s paired (%sbonded)", bt_addr_le_str(bt_conn_get_dst(conn)),
 		bonded ? "" : "not ");
 
@@ -975,6 +981,12 @@ static void pacs_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 static void pacs_security_changed(struct bt_conn *conn, bt_security_t level,
 				  enum bt_security_err err)
 {
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
 	LOG_DBG("%s changed security level to %d", bt_addr_le_str(bt_conn_get_dst(conn)), level);
 
 	if (err != 0 || conn->encrypt == 0) {
@@ -1003,6 +1015,11 @@ static void pacs_security_changed(struct bt_conn *conn, bt_security_t level,
 static void pacs_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct pacs_client *client;
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
 
 	client = client_lookup_conn(conn);
 	if (client == NULL) {

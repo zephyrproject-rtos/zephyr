@@ -961,8 +961,14 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+	struct bap_broadcast_assistant_instance *inst;
+	struct bt_conn_info info;
 
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
+	inst = inst_by_conn(conn);
 	if (inst) {
 		(void)broadcast_assistant_reset(inst);
 	}

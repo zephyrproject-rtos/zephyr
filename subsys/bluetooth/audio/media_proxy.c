@@ -682,6 +682,12 @@ int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs)
 #ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
 	if (mprx.remote_player.conn == conn) {
 		bt_conn_unref(mprx.remote_player.conn);
 		mprx.remote_player.conn = NULL;

@@ -207,7 +207,14 @@ bool bt_cap_common_stream_in_active_proc(const struct bt_cap_stream *cap_stream)
 
 void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_cap_common_client *client = bt_cap_common_get_client_by_acl(conn);
+	struct bt_cap_common_client *client;
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
+	client = bt_cap_common_get_client_by_acl(conn);
 
 	if (client->conn != NULL) {
 		bt_conn_unref(client->conn);

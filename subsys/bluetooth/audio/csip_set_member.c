@@ -465,6 +465,12 @@ static void set_lock_timer_handler(struct k_work *work)
 static void csip_security_changed(struct bt_conn *conn, bt_security_t level,
 				  enum bt_security_err err)
 {
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
 	if (err != 0 || conn->encrypt == 0) {
 		return;
 	}
@@ -524,6 +530,12 @@ static void handle_csip_disconnect(struct bt_csip_set_member_svc_inst *svc_inst,
 
 static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
 	LOG_DBG("Disconnected: %s (reason %u)", bt_addr_le_str(bt_conn_get_dst(conn)), reason);
 
 	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
@@ -569,6 +581,12 @@ static void handle_csip_auth_complete(struct bt_csip_set_member_svc_inst *svc_in
 
 static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 {
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
 	/**
 	 * If a pairing is complete for a bonded device, then we
 	 * 1) Store the connection pointer to later validate SIRK encryption

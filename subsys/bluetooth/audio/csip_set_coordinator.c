@@ -1384,8 +1384,14 @@ static void csip_set_coordinator_reset(struct bt_csip_set_coordinator_inst *inst
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_csip_set_coordinator_inst *inst = &client_insts[bt_conn_index(conn)];
+	struct bt_csip_set_coordinator_inst *inst;
+	struct bt_conn_info info;
 
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
+	inst = &client_insts[bt_conn_index(conn)];
 	if (inst->conn == conn) {
 		csip_set_coordinator_reset(inst);
 	}
