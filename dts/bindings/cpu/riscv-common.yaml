@@ -15,11 +15,6 @@ properties:
       - riscv,sv48
       - riscv,none
 
-  riscv,isa:
-    description: RISC-V instruction set architecture
-    type: string
-    deprecated: true
-
   riscv,isa-base:
     description: The base ISA implemented by the hart.
     type: string
