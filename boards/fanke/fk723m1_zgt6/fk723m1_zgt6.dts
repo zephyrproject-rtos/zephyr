@@ -59,8 +59,8 @@
 };
 
 &pll {
-	div-m = <2>;
-	mul-n = <44>;
+	div-m = <5>;
+	mul-n = <104>;
 	div-p = <1>;
 	div-q = <22>;
 	div-r = <2>;
@@ -69,8 +69,8 @@
 };
 
 &pll2 {
-	div-m = <2>;
-	mul-n = <32>;
+	div-m = <5>;
+	mul-n = <104>;
 	div-p = <5>;
 	div-q = <5>;
 	div-r = <5>;
@@ -80,13 +80,13 @@
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(550)>;
+	clock-frequency = <DT_FREQ_M(520)>;
 	d1cpre = <1>;
-	hpre = <2>;    /* HCLK: 275   MHz */
-	d1ppre = <2>;  /* APB1: 137.5 MHz */
-	d2ppre1 = <2>; /* APB2: 137.5 MHz */
-	d2ppre2 = <2>; /* APB3: 137.5 MHz */
-	d3ppre = <2>;  /* APB4: 137.5 MHz */
+	hpre = <2>;    /* HCLK: 260 MHz */
+	d1ppre = <2>;  /* APB1: 130 MHz */
+	d2ppre1 = <2>; /* APB2: 130 MHz */
+	d2ppre2 = <2>; /* APB3: 130 MHz */
+	d3ppre = <2>;  /* APB4: 130 MHz */
 };
 
 &pwr {
