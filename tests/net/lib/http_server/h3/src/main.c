@@ -630,7 +630,8 @@ static size_t build_header_capture_headers_frame(uint8_t *buf, size_t buflen,
 						 enum http_method method,
 						 const char *path,
 						 const char *user_agent,
-						 const char *test_header)
+						 const char *test_header,
+						 bool never_indexed)
 {
 	uint8_t frame_header[4];
 	size_t path_len = strlen(path);
@@ -667,7 +668,10 @@ static size_t build_header_capture_headers_frame(uint8_t *buf, size_t buflen,
 		pos += path_len;
 	}
 
-	ret = qpack_encode_int(buf + pos, buflen - pos, 4, 0x50U,
+	/* N bit: never insert into a dynamic table (RFC 9204 Sections 4.5.4
+	 * and 4.5.6); 01NT for a name reference, 001NH for a literal name.
+	 */
+	ret = qpack_encode_int(buf + pos, buflen - pos, 4, never_indexed ? 0x70U : 0x50U,
 			       QPACK_STATIC_USER_AGENT);
 	zassert_true(ret > 0, "Failed to encode user-agent name index");
 	pos += ret;
@@ -677,7 +681,7 @@ static size_t build_header_capture_headers_frame(uint8_t *buf, size_t buflen,
 	memcpy(buf + pos, user_agent, user_agent_len);
 	pos += user_agent_len;
 
-	ret = qpack_encode_int(buf + pos, buflen - pos, 3, 0x20U,
+	ret = qpack_encode_int(buf + pos, buflen - pos, 3, never_indexed ? 0x30U : 0x20U,
 			       sizeof("test-header") - 1);
 	zassert_true(ret > 0, "Failed to encode header name length");
 	pos += ret;
@@ -1893,7 +1897,7 @@ ZTEST(server_h3_tests, test_h3_get_captures_request_headers)
 							 HTTP_GET,
 							 "/header_capture",
 							 "h3-test-agent/1.0",
-							 "capture-me");
+							 "capture-me", false);
 	send_all(stream_fd, headers, headers_len);
 	expect_headers_only_response(stream_fd);
 
@@ -1909,6 +1913,44 @@ ZTEST(server_h3_tests, test_h3_get_captures_request_headers)
 	zassert_mem_equal(hdrs[1].name, "Test-Header", strlen("Test-Header"),
 			  "Unexpected second captured header name");
 	zassert_mem_equal(hdrs[1].value, "capture-me", strlen("capture-me"),
+			  "Unexpected second captured header value");
+
+	ret = zsock_close(stream_fd);
+	zassert_ok(ret, "Failed to close header capture stream (%d)", errno);
+	untrack_stream_fd(stream_fd);
+}
+
+ZTEST(server_h3_tests, test_h3_get_captures_never_indexed_request_headers)
+{
+	uint8_t headers[128];
+	size_t headers_len;
+	struct http_header *hdrs = request_headers_clone.headers;
+	int stream_fd;
+	int ret;
+
+	start_h3_session(false);
+
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	headers_len = build_header_capture_headers_frame(headers, sizeof(headers),
+							 HTTP_GET,
+							 "/header_capture",
+							 "h3-never-agent/1.0",
+							 "never-capture", true);
+	send_all(stream_fd, headers, headers_len);
+	expect_headers_only_response(stream_fd);
+
+	zassert_equal(request_headers_clone.count, 2,
+		      "Unexpected captured header count");
+	zexpect_equal(request_headers_clone.status, HTTP_HEADER_STATUS_OK,
+		      "Unexpected captured header status");
+	zexpect_mem_equal(hdrs[0].name, "User-Agent", strlen("User-Agent"),
+			  "Unexpected first captured header name");
+	zexpect_mem_equal(hdrs[0].value, "h3-never-agent/1.0",
+			  strlen("h3-never-agent/1.0"),
+			  "Unexpected first captured header value");
+	zexpect_mem_equal(hdrs[1].name, "Test-Header", strlen("Test-Header"),
+			  "Unexpected second captured header name");
+	zexpect_mem_equal(hdrs[1].value, "never-capture", strlen("never-capture"),
 			  "Unexpected second captured header value");
 
 	ret = zsock_close(stream_fd);
@@ -1934,7 +1976,7 @@ ZTEST(server_h3_tests, test_h3_post_captures_request_headers_on_first_data_callb
 							 HTTP_POST,
 							 "/header_capture",
 							 "h3-post-agent/1.0",
-							 "post-capture");
+							 "post-capture", false);
 	send_all(stream_fd, headers, headers_len);
 
 	data_len = build_data_frame(data_frame, payload, sizeof(payload) - 1);
@@ -1980,7 +2022,7 @@ ZTEST(server_h3_tests, test_h3_resumed_early_get_reaches_callback)
 	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
 	headers_len = build_header_capture_headers_frame(headers, sizeof(headers),
 							 HTTP_GET, "/header_capture",
-							 "h3-0rtt", "early-get");
+							 "h3-0rtt", "early-get", false);
 	send_all(stream_fd, headers, headers_len);
 
 	expect_headers_only_status_response(stream_fd, HTTP_200_OK);
