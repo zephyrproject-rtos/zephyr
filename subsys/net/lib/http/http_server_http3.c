@@ -99,8 +99,8 @@ int http_hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 /* QPACK header field representation prefixes (RFC 9204 Section 4.5) */
 #define QPACK_INDEXED_STATIC         0xc0  /* 11xxxxxx: indexed, static table */
 #define QPACK_INDEXED_STATIC_MASK    0xc0
-#define QPACK_LIT_NAME_REF_STATIC    0x50  /* 0101xxxx: literal with name ref, static */
-#define QPACK_LIT_NAME_REF_MASK      0xf0
+#define QPACK_LIT_NAME_REF_STATIC    0x50  /* 01N1xxxx: literal with name ref, static */
+#define QPACK_LIT_NAME_REF_MASK      0xd0
 #define QPACK_LIT_WITHOUT_NAME_REF   0x20  /* 001xxxxx: literal without name ref */
 #define QPACK_LIT_WITHOUT_NAME_MASK  0xe0
 
