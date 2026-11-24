@@ -175,6 +175,18 @@ struct clock_management_data {
 
 /** @cond INTERNAL_HIDDEN */
 
+#ifdef CONFIG_LOG
+/* We log with a spinlock held. Use a mutex in this case instead. */
+extern struct k_mutex clock_mgmt_mutex;
+#define CLOCK_MGMT_LOCK() k_mutex_lock(&clock_mgmt_mutex, K_FOREVER)
+#define CLOCK_MGMT_UNLOCK() k_mutex_unlock(&clock_mgmt_mutex)
+#else
+extern k_spinlock_key_t spinlock_key;
+extern struct k_spinlock clock_mgmt_spinlock;
+#define CLOCK_MGMT_LOCK() spinlock_key = k_spin_lock(&clock_mgmt_spinlock)
+#define CLOCK_MGMT_UNLOCK() k_spin_unlock(&clock_mgmt_spinlock, spinlock_key)
+#endif
+
 /**
  * @brief Clock management callback name
  * @param symname Base symbol name for variables related to this clock output
@@ -628,14 +640,11 @@ static inline int clock_management_set_callback(const struct clock_management_da
 		return -EINVAL;
 	}
 
-	extern k_spinlock_key_t spinlock_key;
-	extern struct k_spinlock clock_mgmt_spinlock;
-
-	spinlock_key = k_spin_lock(&clock_mgmt_spinlock);
+	CLOCK_MGMT_LOCK();
 
 	data->clock_outputs[clk]->cb->clock_callback = callback;
 	data->clock_outputs[clk]->cb->user_data = user_data;
-	k_spin_unlock(&clock_mgmt_spinlock, spinlock_key);
+	CLOCK_MGMT_UNLOCK();
 	return 0;
 #else
 	return -ENOTSUP;

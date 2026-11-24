@@ -29,8 +29,13 @@ LOG_MODULE_REGISTER(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
 #define GET_CLK_CORE(_clk) ((const struct clk *)_clk)
 #endif
 
+#ifdef CONFIG_LOG
+/* We log with a lock held. Use a mutex in this case instead. */
+K_MUTEX_DEFINE(clock_mgmt_mutex);
+#else
 k_spinlock_key_t spinlock_key;
 struct k_spinlock clock_mgmt_spinlock;
+#endif
 
 /*
  * Describes a clock setting. This structure records the
@@ -903,13 +908,13 @@ int clock_management_get_rate(const struct clock_management_data *data, clock_ou
 		return -EINVAL;
 	}
 
-	spinlock_key = k_spin_lock(&clock_mgmt_spinlock);
+	CLOCK_MGMT_LOCK();
 
 	output_data = GET_CLK_CORE(data->clock_outputs[clk])->hw_data;
 	/* Read rate */
 	ret = clock_management_clk_rate(output_data->parent);
 
-	k_spin_unlock(&clock_mgmt_spinlock, spinlock_key);
+	CLOCK_MGMT_UNLOCK();
 	return ret;
 }
 
@@ -988,11 +993,11 @@ int clock_management_on(const struct clock_management_data *data, clock_output_t
 
 	output_data = GET_CLK_CORE(data->clock_outputs[clk])->hw_data;
 
-	spinlock_key = k_spin_lock(&clock_mgmt_spinlock);
+	CLOCK_MGMT_LOCK();
 
 	ret = clock_management_onoff(output_data->parent, true);
 
-	k_spin_unlock(&clock_mgmt_spinlock, spinlock_key);
+	CLOCK_MGMT_UNLOCK();
 	return ret;
 }
 
@@ -1021,11 +1026,11 @@ int clock_management_off(const struct clock_management_data *data, clock_output_
 
 	output_data = GET_CLK_CORE(data->clock_outputs[clk])->hw_data;
 
-	spinlock_key = k_spin_lock(&clock_mgmt_spinlock);
+	CLOCK_MGMT_LOCK();
 
 	ret = clock_management_onoff(output_data->parent, false);
 
-	k_spin_unlock(&clock_mgmt_spinlock, spinlock_key);
+	CLOCK_MGMT_UNLOCK();
 	return ret;
 }
 
@@ -1057,7 +1062,7 @@ int clock_management_req_rate(const struct clock_management_data *data, clock_ou
 		return -EINVAL;
 	}
 
-	spinlock_key = k_spin_lock(&clock_mgmt_spinlock);
+	CLOCK_MGMT_LOCK();
 
 	output_data = GET_CLK_CORE(data->clock_outputs[clk])->hw_data;
 
@@ -1072,7 +1077,7 @@ int clock_management_req_rate(const struct clock_management_data *data, clock_ou
 		ret = clock_management_set_internal(output_data->parent, freq);
 	}
 
-	k_spin_unlock(&clock_mgmt_spinlock, spinlock_key);
+	CLOCK_MGMT_UNLOCK();
 	return ret;
 }
 
@@ -1244,7 +1249,7 @@ int clock_management_request_state(const struct clock_management_data *data,
 		return -EINVAL;
 	}
 
-	spinlock_key = k_spin_lock(&clock_mgmt_spinlock);
+	CLOCK_MGMT_LOCK();
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
 	if (*data->active_request != CLOCK_MANAGEMENT_NO_REQUEST) {
@@ -1277,7 +1282,7 @@ out:
 	/* Just apply new request, no voting occurs */
 	ret = clock_management_best_states(data, data->clock_requests[request], true);
 #endif
-	k_spin_unlock(&clock_mgmt_spinlock, spinlock_key);
+	CLOCK_MGMT_UNLOCK();
 	return ret;
 }
 
