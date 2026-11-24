@@ -239,6 +239,15 @@ Device Drivers and Devicetree
 ..
 .. ...
 
+* Defining a device for a devicetree node, for example with :c:macro:`DEVICE_DT_DEFINE`, now
+  fails to build when the device uses the API of a device class that the node's binding does not
+  declare with ``class:``, since the device would be missing from
+  :c:macro:`DT_FOREACH_CLASS_STATUS_OKAY`. This applies to the classes that devicetree bindings
+  declare. Out-of-tree bindings must include the base binding of the class, such as
+  :zephyr_file:`dts/bindings/sensor/sensor-device.yaml`, or declare the class themselves (see
+  :ref:`dt-bindings-class`). The check can be disabled with
+  :kconfig:option:`CONFIG_DEVICE_DT_CLASS_CHECK`.
+
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
 ADC

@@ -910,6 +910,18 @@ binding including it inherits the class. When a binding and its included
 files declare classes, the values are unioned: a binding that includes
 several class base bindings belongs to all of their classes.
 
+As soon as any binding declares a class, every device that uses the API of
+that class must be defined for a node of the class: defining one for a node
+whose binding does not declare the class, for example with
+:c:macro:`DEVICE_DT_DEFINE`, is a build error. The device would otherwise be
+missing from the nodes of its class. The check can be disabled with
+:kconfig:option:`CONFIG_DEVICE_DT_CLASS_CHECK`. Devices defined in C++ sources
+are not checked.
+
+Declaring a class for the first time can therefore break the build of
+out-of-tree drivers of that class whose bindings do not declare it. A change
+that does so adds an entry to the migration guide.
+
 Class membership can be queried at build time with
 :c:macro:`DT_NODE_HAS_CLASS`, iterated with
 :c:macro:`DT_FOREACH_CLASS_STATUS_OKAY`, counted with
