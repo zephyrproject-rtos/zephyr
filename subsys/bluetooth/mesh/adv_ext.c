@@ -565,8 +565,12 @@ int bt_mesh_adv_disable(void)
 	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
 		atomic_set_bit(advs[i].flags, ADV_FLAG_SUSPENDING);
 
-		if (k_current_get() != k_work_queue_thread_get(MESH_WORKQ) ||
-		    (k_work_busy_get(&advs[i].work) & K_WORK_RUNNING) == 0) {
+		/* The mesh work queue has a single thread. When called from it, the advertiser
+		 * work is either the caller itself or queued behind it, so k_work_flush() would
+		 * wait for work that cannot run until this function returns. Skip the flush: the
+		 * queued work runs after the adv set is deleted and fails the advs with -ENODEV.
+		 */
+		if (k_current_get() != k_work_queue_thread_get(MESH_WORKQ)) {
 			k_work_flush(&advs[i].work, &sync);
 		}
 
