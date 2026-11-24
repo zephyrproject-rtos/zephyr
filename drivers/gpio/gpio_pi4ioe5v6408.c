@@ -30,7 +30,13 @@ LOG_MODULE_REGISTER(pi4ioe5v6408, CONFIG_GPIO_LOG_LEVEL);
 #define REG_INT_MASK         0x11
 #define REG_INT_STATUS       0x13
 
-#define DEVICE_ID_SW_RESET BIT(0)
+#define DEVICE_ID_SW_RESET   BIT(0)
+#define DEVICE_ID_RESET_FLAG BIT(1)
+#define DEVICE_ID_MFR_MASK   GENMASK(7, 5)
+#define DEVICE_ID_MFR        0x5U
+
+#define RESET_ATTEMPTS      5
+#define RESET_RETRY_STEP_MS 5
 
 #define NUM_PINS 8U
 #define ALL_PINS ((uint8_t)BIT_MASK(NUM_PINS))
@@ -347,6 +353,53 @@ static int pi4ioe5v6408_manage_callback(const struct device *dev, struct gpio_ca
 	return gpio_manage_callback(&data->callbacks, cb, set);
 }
 
+/*
+ * Software-reset the chip and confirm the reset took effect.
+ *
+ * The chip is not reset along with the host, so a host reset in the middle of
+ * a transfer can leave it driving SDA low. While SDA is held low, a transfer
+ * can fail, or appear to succeed with nothing reaching the chip, so read the
+ * device ID back: just after a reset it holds the manufacturer ID with the
+ * reset flag set (the flag clears on read). On failure, recover the bus and
+ * try again.
+ */
+static int pi4ioe5v6408_reset(const struct device *dev)
+{
+	const struct pi4ioe5v6408_config *cfg = dev->config;
+	uint8_t id = 0;
+	int rc = 0;
+
+	for (int attempt = 0; attempt < RESET_ATTEMPTS; attempt++) {
+		if (attempt > 0) {
+			LOG_WRN("%s: reset attempt %d failed (%d, id 0x%02x), recovering bus",
+				dev->name, attempt, rc, id);
+			(void)i2c_recover_bus(cfg->i2c.bus);
+			k_msleep(RESET_RETRY_STEP_MS * attempt);
+		}
+
+		id = 0;
+		rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_DEVICE_ID, DEVICE_ID_SW_RESET);
+		if (rc != 0) {
+			continue;
+		}
+
+		rc = i2c_reg_read_byte_dt(&cfg->i2c, REG_DEVICE_ID, &id);
+		if (rc != 0) {
+			continue;
+		}
+
+		if (FIELD_GET(DEVICE_ID_MFR_MASK, id) == DEVICE_ID_MFR &&
+		    (id & DEVICE_ID_RESET_FLAG) != 0U) {
+			return 0;
+		}
+
+		rc = -EIO;
+	}
+
+	LOG_ERR("%s: software reset failed: %d (id 0x%02x)", dev->name, rc, id);
+	return rc;
+}
+
 static int pi4ioe5v6408_init(const struct device *dev)
 {
 	const struct pi4ioe5v6408_config *cfg = dev->config;
@@ -359,9 +412,8 @@ static int pi4ioe5v6408_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_DEVICE_ID, DEVICE_ID_SW_RESET);
+	rc = pi4ioe5v6408_reset(dev);
 	if (rc) {
-		LOG_ERR("%s: software reset failed: %d", dev->name, rc);
 		return rc;
 	}
 
