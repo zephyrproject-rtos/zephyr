@@ -230,6 +230,77 @@
 	48, EMPTY, 50, EMPTY, 52, EMPTY, 54, EMPTY, \
 	56, EMPTY, 58, EMPTY, 60, EMPTY, 62, EMPTY
 
+/* Buffer type used by Z_FIXED_BUF_ON_STACK_ALLOC for a given alignment:
+ * - align < 8: 4 byte aligned buffer,
+ * - align >= 8: 8 byte aligned buffer, 16 byte aligned buffer is used only if requested
+ *   alignment is larger than 8 and long double satisfies it.
+ */
+#define Z_FIXED_BUF_USE_LD(_align) \
+	(((_align) > sizeof(long long)) && (sizeof(long double) >= (_align)))
+#define Z_FIXED_BUF_USE_LL(_align) \
+	(((_align) >= sizeof(long long)) && !Z_FIXED_BUF_USE_LD(_align))
+
+/* Compile time validation of the length passed to Z_FIXED_BUF_ON_STACK_ALLOC. Length must be
+ * resolved to a constant by the compiler. Calls to functions with the "error" attribute are
+ * removed by the optimizer when the checked condition is known to be false, otherwise
+ * compilation fails. It requires optimizations to be enabled (without them the compiler cannot
+ * resolve the length) so the check is skipped when they are disabled.
+ */
+#if defined(CONFIG_TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS) && !defined(CONFIG_MISRA_SANE)
+/* VLA is supported. Although it is declared as a VLA, the length is known at compile time so
+ * there is no run-time stack allocation. Only the array that is selected is kept by the compiler.
+ */
+#define Z_FIXED_BUF_ON_STACK_ALLOC(_ptr, _len, _align) \
+	uint32_t _ptr##_fbuf4[DIV_ROUND_UP(_len, sizeof(uint32_t))]; \
+	long long _ptr##_fbuf8[DIV_ROUND_UP(_len, sizeof(long long))]; \
+	long double _ptr##_fbuf16[DIV_ROUND_UP(_len, sizeof(long double))]; \
+	(_ptr) = Z_FIXED_BUF_USE_LD(_align) ? (__typeof__(_ptr))_ptr##_fbuf16 : \
+		 (Z_FIXED_BUF_USE_LL(_align) ? (__typeof__(_ptr))_ptr##_fbuf8 : \
+					       (__typeof__(_ptr))_ptr##_fbuf4)
+#else
+/* When VLA cannot be used we need to trick compiler a bit and create multiple fixed size arrays
+ * and take the smallest one that will fit the buffer. Compiler will remove unused arrays and stack
+ * usage will be kept similar to the VLA case, rounded to the size of the used buffer.
+ */
+#define Z_FIXED_BUF_ON_STACK_ALLOC(_ptr, _len, _align) \
+	uint32_t _ptr##_fbuf4_32[32 / sizeof(uint32_t)]; \
+	uint32_t _ptr##_fbuf4_48[48 / sizeof(uint32_t)]; \
+	uint32_t _ptr##_fbuf4_64[64 / sizeof(uint32_t)]; \
+	uint32_t _ptr##_fbuf4_128[128 / sizeof(uint32_t)]; \
+	uint32_t _ptr##_fbuf4_256[256 / sizeof(uint32_t)]; \
+	long long _ptr##_fbuf8_32[32 / sizeof(long long)]; \
+	long long _ptr##_fbuf8_48[48 / sizeof(long long)]; \
+	long long _ptr##_fbuf8_64[64 / sizeof(long long)]; \
+	long long _ptr##_fbuf8_128[128 / sizeof(long long)]; \
+	long long _ptr##_fbuf8_256[256 / sizeof(long long)]; \
+	long double _ptr##_fbuf16_32[32 / sizeof(long double)]; \
+	long double _ptr##_fbuf16_48[48 / sizeof(long double)]; \
+	long double _ptr##_fbuf16_64[64 / sizeof(long double)]; \
+	long double _ptr##_fbuf16_128[128 / sizeof(long double)]; \
+	long double _ptr##_fbuf16_256[256 / sizeof(long double)]; \
+	if ((_len) <= 256) { \
+		if (Z_FIXED_BUF_USE_LD(_align)) { \
+			(_ptr) = ((_len) > 128) ? (__typeof__(_ptr))_ptr##_fbuf16_256 : \
+				 (((_len) > 64) ? (__typeof__(_ptr))_ptr##_fbuf16_128 : \
+				 (((_len) > 48) ? (__typeof__(_ptr))_ptr##_fbuf16_64 : \
+				 (((_len) > 32) ? (__typeof__(_ptr))_ptr##_fbuf16_48 : \
+						  (__typeof__(_ptr))_ptr##_fbuf16_32))); \
+		} else if (Z_FIXED_BUF_USE_LL(_align)) { \
+			(_ptr) = ((_len) > 128) ? (__typeof__(_ptr))_ptr##_fbuf8_256 : \
+				 (((_len) > 64) ? (__typeof__(_ptr))_ptr##_fbuf8_128 : \
+				 (((_len) > 48) ? (__typeof__(_ptr))_ptr##_fbuf8_64 : \
+				 (((_len) > 32) ? (__typeof__(_ptr))_ptr##_fbuf8_48 : \
+						  (__typeof__(_ptr))_ptr##_fbuf8_32))); \
+		} else { \
+			(_ptr) = ((_len) > 128) ? (__typeof__(_ptr))_ptr##_fbuf4_256 : \
+				 (((_len) > 64) ? (__typeof__(_ptr))_ptr##_fbuf4_128 : \
+				 (((_len) > 48) ? (__typeof__(_ptr))_ptr##_fbuf4_64 : \
+				 (((_len) > 32) ? (__typeof__(_ptr))_ptr##_fbuf4_48 : \
+						  (__typeof__(_ptr))_ptr##_fbuf4_32))); \
+		} \
+	}
+#endif /* CONFIG_TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS && !CONFIG_MISRA_SANE */
+
 /* Used by UTIL_INC */
 #include "util_internal_util_inc.h"
 

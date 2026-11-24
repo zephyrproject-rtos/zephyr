@@ -1118,6 +1118,26 @@ static ALWAYS_INLINE uint64_t sys_lcm_s(int64_t a, int64_t b)
 #endif
 
 /**
+ * @brief Allocate a buffer on the stack of a size calculated at compile time.
+ *
+ * Macro can be used to allocate a buffer on a stack which has unknown to the user but fixed size
+ * which can be calculated at compile time. It uses VLA if supported, otherwise it uses fixed size
+ * arrays and it means that it can fail in that configuration. %p _ptr is updated only if the buffer
+ * is actually allocated on the stack.
+ *
+ * Macro declares local arrays so it must be used in a declaration/statement context (e.g. inside
+ * a block) and it can be used multiple times in the same scope only for different pointers.
+ * Memory is valid until the end of the enclosing block.
+ *
+ * @param _ptr Identifier of a pointer variable which is filled by the macro. Should be initialized
+ *             to null.
+ * @param _len Length of the buffer in bytes. Must be resolvable at compile time (after
+ *             optimization). Without VLA support, maximum supported length is 256 bytes.
+ * @param _align Alignment of the buffer in bytes. If lower than 8, 4 is used, otherwise 8 is used
+ *               (larger alignment is supported only if @c long double provides it).
+ */
+#define FIXED_BUF_ON_STACK_ALLOC(_ptr, _len, _align) Z_FIXED_BUF_ON_STACK_ALLOC(_ptr, _len, _align)
+/**
  * @}
  */
 
