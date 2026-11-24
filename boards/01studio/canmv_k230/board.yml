@@ -1,0 +1,6 @@
+board:
+  name: canmv_k230_01studio
+  full_name: 01Studio CanMV-K230
+  vendor: 01studio
+  socs:
+    - name: k230

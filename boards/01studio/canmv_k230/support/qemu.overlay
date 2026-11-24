@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Upstream QEMU 11.1 instantiates the K230 ACLINT mtimer at the default
+ * 10 MHz timebase instead of the 27 MHz hardware crystal frequency.
+ */
+
+#include <freq.h>
+
+/ {
+	cpus {
+		timebase-frequency = <DT_FREQ_M(10)>;
+	};
+};

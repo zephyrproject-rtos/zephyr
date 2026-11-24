@@ -15,6 +15,7 @@
 
 # zephyr-keep-sorted-start
 01space	01Space
+01studio	01Studio
 96boards	96Boards
 aaeon	AAEON Technology Inc.
 abb	ABB
