@@ -989,7 +989,7 @@ static const struct udc_api usbfsotg_api = {
 		     DEVICE_DT_INST_GET(n), 0)))
 
 #define USBFSOTG_DEVICE_DEFINE(n)						\
-	K_THREAD_STACK_DEFINE(usbfsotg_stack_##n,				\
+	K_KERNEL_STACK_DEFINE(usbfsotg_stack_##n,				\
 			      CONFIG_UDC_KINETIS_STACK_SIZE);			\
 										\
 	static void usbfsotg_thread_##n(void *dev, void *arg1, void *arg2)	\
@@ -1005,7 +1005,7 @@ static const struct udc_api usbfsotg_api = {
 										\
 		k_thread_create(&priv->thread_data,				\
 				usbfsotg_stack_##n,				\
-				K_THREAD_STACK_SIZEOF(usbfsotg_stack_##n),	\
+				K_KERNEL_STACK_SIZEOF(usbfsotg_stack_##n),	\
 				usbfsotg_thread_##n,				\
 				(void *)dev, NULL, NULL,			\
 				K_PRIO_COOP(CONFIG_UDC_KINETIS_THREAD_PRIORITY),\

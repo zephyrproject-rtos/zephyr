@@ -1698,7 +1698,7 @@ static const struct udc_api udc_sam_usbhs_api = {
 		irq_disable(DT_INST_IRQN(n));					   \
 	}									   \
 										   \
-	K_THREAD_STACK_DEFINE(udc_sam_usbhs_stack_##n,				   \
+	K_KERNEL_STACK_DEFINE(udc_sam_usbhs_stack_##n,				   \
 			      CONFIG_UDC_SAM_USBHS_STACK_SIZE);			   \
 										   \
 	static void udc_sam_usbhs_thread_##n(void *dev, void *arg1, void *arg2)	   \
@@ -1714,7 +1714,7 @@ static const struct udc_api udc_sam_usbhs_api = {
 										   \
 		k_thread_create(&priv->thread_data,				   \
 				udc_sam_usbhs_stack_##n,			   \
-				K_THREAD_STACK_SIZEOF(udc_sam_usbhs_stack_##n),	   \
+				K_KERNEL_STACK_SIZEOF(udc_sam_usbhs_stack_##n),	   \
 				udc_sam_usbhs_thread_##n,			   \
 				(void *)dev, NULL, NULL,			   \
 				K_PRIO_COOP(CONFIG_UDC_SAM_USBHS_THREAD_PRIORITY), \

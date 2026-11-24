@@ -61,7 +61,7 @@ struct flash_esp32_dev_config {
 #ifdef CONFIG_ESP_FLASH_ASYNC
 
 #ifdef CONFIG_ESP_FLASH_ASYNC_WORK
-K_THREAD_STACK_DEFINE(esp_flash_workqueue_stack, CONFIG_ESP_FLASH_ASYNC_WORK_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(esp_flash_workqueue_stack, CONFIG_ESP_FLASH_ASYNC_WORK_STACK_SIZE);
 static struct k_work_q esp_flash_workqueue;
 #endif
 
@@ -736,7 +736,7 @@ static int flash_esp32_init(const struct device *dev)
 #ifdef CONFIG_ESP_FLASH_ASYNC_WORK
 	k_work_queue_init(&esp_flash_workqueue);
 	k_work_queue_start(&esp_flash_workqueue, esp_flash_workqueue_stack,
-			   K_THREAD_STACK_SIZEOF(esp_flash_workqueue_stack),
+			   K_KERNEL_STACK_SIZEOF(esp_flash_workqueue_stack),
 			   CONFIG_ESP_FLASH_ASYNC_WORK_PRIORITY, NULL);
 	k_work_submit_to_queue(&esp_flash_workqueue, &data->work);
 #endif

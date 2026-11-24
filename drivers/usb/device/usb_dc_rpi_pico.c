@@ -63,7 +63,7 @@ const struct pinctrl_dev_config *pcfg = USB_RPI_PICO_PINCTRL_DT_INST_DEV_CONFIG_
 
 #define USBD_THREAD_STACK_SIZE 1024
 
-K_THREAD_STACK_DEFINE(thread_stack, USBD_THREAD_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(thread_stack, USBD_THREAD_STACK_SIZE);
 static struct k_thread thread;
 
 struct udc_rpi_state {

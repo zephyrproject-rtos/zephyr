@@ -2655,7 +2655,7 @@ static DEVICE_API(uhc, uhc_dwc2_api) = {
 /* Multi-instance device definition for DWC2 host controller */
 #define UHC_DWC2_DEVICE_DEFINE(n)						\
 										\
-	K_THREAD_STACK_DEFINE(uhc_dwc2_stack_##n,				\
+	K_KERNEL_STACK_DEFINE(uhc_dwc2_stack_##n,				\
 		CONFIG_UHC_DWC2_STACK_SIZE);					\
 										\
 	UHC_DWC2_IRQ_DT_INST_DEFINE(n)						\
@@ -2679,7 +2679,7 @@ static DEVICE_API(uhc, uhc_dwc2_api) = {
 		.quirk_data = UHC_DWC2_VENDOR_QUIRK_DATA_GET(n),		\
 		.quirk_config = UHC_DWC2_VENDOR_QUIRK_CONFIG_GET(n),		\
 		.stack = uhc_dwc2_stack_##n,					\
-		.stack_size = K_THREAD_STACK_SIZEOF(uhc_dwc2_stack_##n),	\
+		.stack_size = K_KERNEL_STACK_SIZEOF(uhc_dwc2_stack_##n),	\
 		.irq_enable_func = uhc_dwc2_irq_enable_func_##n,		\
 		.irq_disable_func = uhc_dwc2_irq_disable_func_##n,		\
 	};									\

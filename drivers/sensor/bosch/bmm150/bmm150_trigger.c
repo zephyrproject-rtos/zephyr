@@ -27,7 +27,7 @@ static void bmm150_handle_interrupts(const void *arg)
 }
 
 #ifdef CONFIG_BMM150_TRIGGER_OWN_THREAD
-static K_THREAD_STACK_DEFINE(bmm150_thread_stack,
+static K_KERNEL_STACK_DEFINE(bmm150_thread_stack,
 			     CONFIG_BMM150_THREAD_STACK_SIZE);
 static struct k_thread bmm150_thread;
 

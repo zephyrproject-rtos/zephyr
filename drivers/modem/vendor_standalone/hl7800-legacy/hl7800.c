@@ -361,12 +361,12 @@ static K_SEM_DEFINE(hl7800_TX_lock_sem, 1, 1);
 static K_SEM_DEFINE(cb_lock, 1, 1);
 
 /* RX thread structures */
-K_THREAD_STACK_DEFINE(hl7800_rx_stack, CONFIG_MODEM_HL7800_RX_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(hl7800_rx_stack, CONFIG_MODEM_HL7800_RX_STACK_SIZE);
 struct k_thread hl7800_rx_thread;
 #define RX_THREAD_PRIORITY K_PRIO_COOP(7)
 
 /* RX thread work queue */
-K_THREAD_STACK_DEFINE(hl7800_workq_stack,
+K_KERNEL_STACK_DEFINE(hl7800_workq_stack,
 		      CONFIG_MODEM_HL7800_RX_WORKQ_STACK_SIZE);
 static struct k_work_q hl7800_workq;
 #define WORKQ_PRIORITY K_PRIO_COOP(7)
@@ -6435,7 +6435,7 @@ static int hl7800_init(const struct device *dev)
 
 	/* initialize the work queue */
 	k_work_queue_start(&hl7800_workq, hl7800_workq_stack,
-			   K_THREAD_STACK_SIZEOF(hl7800_workq_stack),
+			   K_KERNEL_STACK_SIZEOF(hl7800_workq_stack),
 			   WORKQ_PRIORITY, &cfg);
 
 	/* init work tasks */
@@ -6618,7 +6618,7 @@ static int hl7800_init(const struct device *dev)
 	/* start RX thread */
 	k_thread_name_set(
 		k_thread_create(&hl7800_rx_thread, hl7800_rx_stack,
-				K_THREAD_STACK_SIZEOF(hl7800_rx_stack),
+				K_KERNEL_STACK_SIZEOF(hl7800_rx_stack),
 				hl7800_rx, NULL, NULL, NULL,
 				RX_THREAD_PRIORITY, 0, K_NO_WAIT),
 		"hl7800 rx");

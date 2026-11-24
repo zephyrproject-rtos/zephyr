@@ -959,8 +959,8 @@ static void espi_vw_idx2_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-K_THREAD_DEFINE(vw_idx2_thread_id, 384, espi_vw_idx2_thread, NULL, NULL, NULL,
-		K_PRIO_COOP(5), 0, 0);
+K_KERNEL_THREAD_DEFINE(vw_idx2_thread_id, 384, espi_vw_idx2_thread, NULL, NULL, NULL,
+		       K_PRIO_COOP(5), 0, 0);
 
 static void espi_vw_idx2_isr(const struct device *dev)
 {

@@ -537,7 +537,7 @@ static const struct udc_api udc_vrt_api = {
 #define DT_DRV_COMPAT zephyr_udc_virtual
 
 #define UDC_VRT_DEVICE_DEFINE(n)						\
-	K_THREAD_STACK_DEFINE(udc_vrt_stack_area_##n,				\
+	K_KERNEL_STACK_DEFINE(udc_vrt_stack_area_##n,				\
 			      CONFIG_UDC_VIRTUAL_STACK_SIZE);			\
 										\
 	static void udc_vrt_thread_##n(void *dev, void *unused1, void *unused2)	\
@@ -553,7 +553,7 @@ static const struct udc_api udc_vrt_api = {
 										\
 		k_thread_create(&priv->thread_data,				\
 			    udc_vrt_stack_area_##n,				\
-			    K_THREAD_STACK_SIZEOF(udc_vrt_stack_area_##n),	\
+			    K_KERNEL_STACK_SIZEOF(udc_vrt_stack_area_##n),	\
 			    udc_vrt_thread_##n,					\
 			    (void *)dev, NULL, NULL,				\
 			    K_PRIO_COOP(CONFIG_UDC_VIRTUAL_THREAD_PRIORITY),	\

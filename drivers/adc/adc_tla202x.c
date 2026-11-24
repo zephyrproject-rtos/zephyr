@@ -427,8 +427,9 @@ static DEVICE_API(adc, tla202x_driver_api) = {
 };
 
 #define TLA202X_THREAD_INIT(t, n)                                                                  \
-	K_THREAD_DEFINE(adc_##t##_##n##_thread, ACQ_THREAD_STACK_SIZE, tla202x_acq_thread_fn,      \
-			DEVICE_DT_INST_GET(n), NULL, NULL, ACQ_THREAD_PRIORITY, 0, 0);
+	K_KERNEL_THREAD_DEFINE(adc_##t##_##n##_thread, ACQ_THREAD_STACK_SIZE,                      \
+			       tla202x_acq_thread_fn, DEVICE_DT_INST_GET(n), NULL, NULL,           \
+			       ACQ_THREAD_PRIORITY, 0, 0);
 
 #define TLA202X_INIT(n, t, pga, channels)                                                          \
 	IF_ENABLED(CONFIG_ADC_ASYNC, (TLA202X_THREAD_INIT(t, n)))                                  \

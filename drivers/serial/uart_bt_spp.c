@@ -22,7 +22,7 @@
 #include <zephyr/settings/settings.h>
 LOG_MODULE_REGISTER(uart_bt_spp, CONFIG_UART_LOG_LEVEL);
 
-K_THREAD_STACK_DEFINE(spp_work_queue_stack, CONFIG_UART_BT_SPP_WORKQUEUE_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(spp_work_queue_stack, CONFIG_UART_BT_SPP_WORKQUEUE_STACK_SIZE);
 static struct k_work_q spp_work_queue;
 
 #define SPP_RFCOMM_MTU CONFIG_BT_RFCOMM_L2CAP_MTU
@@ -743,7 +743,7 @@ static int uart_bt_spp_workqueue_init(void)
 {
 	k_work_queue_init(&spp_work_queue);
 	k_work_queue_start(&spp_work_queue, spp_work_queue_stack,
-			   K_THREAD_STACK_SIZEOF(spp_work_queue_stack),
+			   K_KERNEL_STACK_SIZEOF(spp_work_queue_stack),
 			   CONFIG_UART_BT_SPP_WORKQUEUE_PRIORITY, NULL);
 	k_thread_name_set(spp_work_queue.thread_id, "uart_bt_spp");
 	return 0;

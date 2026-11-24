@@ -942,7 +942,7 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 											\
 	PINCTRL_DT_INST_DEFINE(n);							\
 											\
-	K_THREAD_STACK_DEFINE(udc_mcux_stack_##n,					\
+	K_KERNEL_STACK_DEFINE(udc_mcux_stack_##n,					\
 			      CONFIG_UDC_NXP_IP3511_THREAD_STACK_SIZE);			\
 											\
 	static void udc_mcux_thread_##n(void *dev, void *arg1, void *arg2)		\
@@ -955,7 +955,7 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 		struct udc_mcux_data *priv = udc_get_private(dev);			\
 											\
 		k_thread_create(&priv->thread_data, udc_mcux_stack_##n,			\
-				K_THREAD_STACK_SIZEOF(udc_mcux_stack_##n),		\
+				K_KERNEL_STACK_SIZEOF(udc_mcux_stack_##n),		\
 				udc_mcux_thread_##n, (void *)dev, NULL, NULL,		\
 				K_PRIO_COOP(CONFIG_UDC_NXP_IP3511_THREAD_PRIORITY),	\
 				K_ESSENTIAL, K_NO_WAIT);				\

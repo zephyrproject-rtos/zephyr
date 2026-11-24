@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(flash_stm32wba, CONFIG_FLASH_LOG_LEVEL);
 
 static struct k_work_q flash_mngr_work_q;
 static struct k_work fm_work;
-K_THREAD_STACK_DEFINE(flash_mngr_work_area, CONFIG_STM32WBA_FLASH_MNGR_THREAD_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(flash_mngr_work_area, CONFIG_STM32WBA_FLASH_MNGR_THREAD_STACK_SIZE);
 
 static const struct flash_parameters flash_stm32_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
@@ -331,7 +331,7 @@ static int stm32_flash_init(const struct device *dev)
 
 	k_work_queue_init(&flash_mngr_work_q);
 	k_work_queue_start(&flash_mngr_work_q, flash_mngr_work_area,
-				K_THREAD_STACK_SIZEOF(flash_mngr_work_area),
+				K_KERNEL_STACK_SIZEOF(flash_mngr_work_area),
 				K_PRIO_COOP(CONFIG_STM32WBA_FLASH_MNGR_THREAD_PRIO),
 				&flash_mngr_cfg);
 

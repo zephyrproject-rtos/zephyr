@@ -141,7 +141,7 @@ struct airoc_wifi_event_t {
 };
 
 K_MSGQ_DEFINE_STATIC_TYPE(airoc_wifi_msgq, struct airoc_wifi_event_t, 10);
-K_THREAD_STACK_DEFINE(airoc_wifi_event_stack, CONFIG_AIROC_WIFI_EVENT_TASK_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(airoc_wifi_event_stack, CONFIG_AIROC_WIFI_EVENT_TASK_STACK_SIZE);
 static struct k_thread airoc_wifi_event_thread;
 
 /*

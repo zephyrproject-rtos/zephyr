@@ -224,7 +224,7 @@ static void eth_nxp_enet_rx_free(ENET_Type *base, void *buffer, void *user_data,
 }
 #endif /* CONFIG_ETH_NXP_ENET_RX_RECV_ZERO_COPY */
 
-static K_THREAD_STACK_DEFINE(enet_rx_stack, CONFIG_ETH_NXP_ENET_RX_THREAD_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(enet_rx_stack, CONFIG_ETH_NXP_ENET_RX_THREAD_STACK_SIZE);
 static struct k_work_q rx_work_queue;
 
 /* Priority of the dedicated ENET RX drain thread. Cooperative by default;
@@ -245,7 +245,7 @@ static int rx_queue_init(void)
 
 	k_work_queue_init(&rx_work_queue);
 	k_work_queue_start(&rx_work_queue, enet_rx_stack,
-			   K_THREAD_STACK_SIZEOF(enet_rx_stack),
+			   K_KERNEL_STACK_SIZEOF(enet_rx_stack),
 			   ENET_RX_THREAD_PRIO,
 			   &cfg);
 

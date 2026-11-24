@@ -32,7 +32,7 @@ static struct ameba_wifi_runtime ameba_data[2];
 extern void (*p_wifi_join_info_free)(uint8_t iface_type);
 
 K_MSGQ_DEFINE_STATIC_TYPE(ameba_wifi_msgq, struct ameba_system_event, 10);
-K_THREAD_STACK_DEFINE(ameba_wifi_event_stack, CONFIG_AMEBA_WIFI_EVENT_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(ameba_wifi_event_stack, CONFIG_AMEBA_WIFI_EVENT_STACK_SIZE);
 
 static struct k_thread ameba_wifi_event_thread;
 /* for add dhcp callback in mgmt_thread in net_mgmt */

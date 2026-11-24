@@ -1092,7 +1092,7 @@ static void udc_sam0_irq_disable_func_##n(const struct device *dev)		\
 	UDC_SAM0_IRQ_ENABLE_DEFINE(i, n);					\
 	UDC_SAM0_IRQ_DISABLE_DEFINE(i, n);					\
 										\
-	K_THREAD_STACK_DEFINE(udc_sam0_stack_##n, CONFIG_UDC_SAM0_STACK_SIZE);	\
+	K_KERNEL_STACK_DEFINE(udc_sam0_stack_##n, CONFIG_UDC_SAM0_STACK_SIZE);	\
 										\
 	static __aligned(sizeof(void *)) struct sam0_ep_buffer_desc		\
 		sam0_bdt_##n[DT_INST_PROP(n, num_bidir_endpoints)];		\
@@ -1110,7 +1110,7 @@ static void udc_sam0_irq_disable_func_##n(const struct device *dev)		\
 										\
 		k_thread_create(&priv->thread_data,				\
 				udc_sam0_stack_##n,				\
-				K_THREAD_STACK_SIZEOF(udc_sam0_stack_##n),	\
+				K_KERNEL_STACK_SIZEOF(udc_sam0_stack_##n),	\
 				udc_sam0_thread_##n,				\
 				(void *)dev, NULL, NULL,			\
 				K_PRIO_COOP(CONFIG_UDC_SAM0_THREAD_PRIORITY),	\

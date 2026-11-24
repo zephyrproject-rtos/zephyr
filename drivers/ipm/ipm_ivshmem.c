@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ipm_ivshmem, CONFIG_IPM_LOG_LEVEL);
 
-K_THREAD_STACK_DEFINE(ivshmem_ev_loop_stack, CONFIG_IPM_IVSHMEM_EVENT_LOOP_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(ivshmem_ev_loop_stack, CONFIG_IPM_IVSHMEM_EVENT_LOOP_STACK_SIZE);
 static struct k_thread ivshmem_ev_loop_thread;
 
 struct ivshmem_ipm_data {

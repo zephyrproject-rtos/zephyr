@@ -156,7 +156,7 @@ static void ls0xx_vcom_toggle(void *a, void *b, void *c)
 	}
 }
 
-K_THREAD_STACK_DEFINE(vcom_toggle_stack, 512);
+K_KERNEL_STACK_DEFINE(vcom_toggle_stack, 512);
 struct k_thread vcom_toggle_thread;
 #endif /* USE_VCOM_THREAD */
 
@@ -328,7 +328,7 @@ static int ls0xx_init(const struct device *dev)
 #ifdef USE_VCOM_THREAD
 	/* Start thread for toggling VCOM */
 	k_tid_t vcom_toggle_tid = k_thread_create(
-		&vcom_toggle_thread, vcom_toggle_stack, K_THREAD_STACK_SIZEOF(vcom_toggle_stack),
+		&vcom_toggle_thread, vcom_toggle_stack, K_KERNEL_STACK_SIZEOF(vcom_toggle_stack),
 		ls0xx_vcom_toggle, (void *)dev, NULL, NULL, LS0XX_VCOM_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(vcom_toggle_tid, "ls0xx_vcom");
 #endif /* USE_VCOM_THREAD */

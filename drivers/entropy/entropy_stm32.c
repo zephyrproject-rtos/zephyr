@@ -130,7 +130,7 @@ struct entropy_stm32_rng_dev_data {
 #define TRNG_BASE ((RNG_TypeDef *)DT_INST_REG_ADDR(0))
 
 #ifdef CONFIG_ENTROPY_STM32_WORKQUEUE
-static K_THREAD_STACK_DEFINE(entropy_stm32_wq_stack, CONFIG_ENTROPY_STM32_WQ_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(entropy_stm32_wq_stack, CONFIG_ENTROPY_STM32_WQ_STACK_SIZE);
 static struct k_work_q entropy_stm32_wq;
 #endif
 
@@ -979,7 +979,7 @@ static int entropy_stm32_init_wq(void)
 #ifdef CONFIG_ENTROPY_STM32_WORKQUEUE
 	k_work_queue_init(&entropy_stm32_wq);
 	k_work_queue_start(&entropy_stm32_wq, (k_thread_stack_t *)&entropy_stm32_wq_stack,
-			   K_THREAD_STACK_SIZEOF(entropy_stm32_wq_stack),
+			   K_KERNEL_STACK_SIZEOF(entropy_stm32_wq_stack),
 			   CONFIG_ENTROPY_STM32_WQ_PRIO, NULL);
 	k_thread_name_set(entropy_stm32_wq.thread_id, "stm32-rng-pool-filling");
 	dev_data->filling_wq = &entropy_stm32_wq;

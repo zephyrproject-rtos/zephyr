@@ -19,7 +19,7 @@ static struct k_poll_event doorbell_evt =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
 				 K_POLL_MODE_NOTIFY_ONLY,
 				 &doorbell_sig);
-K_THREAD_STACK_DEFINE(doorbell_stack, STACK_SIZE);
+K_KERNEL_STACK_DEFINE(doorbell_stack, STACK_SIZE);
 static bool doorbell_started;
 static struct k_thread doorbell_thread;
 
