@@ -27,8 +27,12 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 8. When the `bt_mesh_send_cb.start` callback is called for the first adv, the tx device submits
 #    a work item which suspends the advertiser by calling `bt_mesh_adv_disable`.
 # 9. Tx device repeats steps 4-6.
-# 10. Tx device resumes the advertiser and repeats steps 1 and 2.
-# 11. Tx device expects that all advs are sent.
+# 10. Tx device resumes the advertiser and submits a work item to the mesh work queue which repeats
+#     steps 1-3. Because the work item runs on the mesh work queue thread, the advertiser work is
+#     queued but not running when the advertiser is suspended, and suspending must not deadlock.
+# 11. Tx device repeats steps 4-6.
+# 12. Tx device resumes the advertiser and repeats steps 1 and 2.
+# 13. Tx device expects that all advs are sent.
 #
 # Rx device procedure:
 # 1. Rx devices listens all the time while tx device sends advs and ensure that no new advs were
