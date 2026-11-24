@@ -185,6 +185,16 @@
 	};
 };
 
+&lptim2 {
+	clocks = <&rcc STM32_CLOCK(APB1_2, 5)>,
+		 <&rcc STM32_SRC_LSE LPTIM2_SEL(3)>;
+
+	lptim2_pwm: pwm {
+		pinctrl-0 = <&lptim2_ch2_pc7>;
+		pinctrl-names = "default";
+	};
+};
+
 &iwdg {
 	status = "okay";
 };
