@@ -164,6 +164,7 @@ struct modem_cmux_dlci {
 	bool flow_control : 1;
 	bool rx_full : 1;
 	bool msc_sent : 1;
+	bool msc_pending : 1;
 };
 
 struct modem_cmux_frame {
@@ -218,6 +219,10 @@ struct modem_cmux {
 	struct k_work_delayable connect_work;
 	struct k_work_delayable disconnect_work;
 	struct k_work_delayable runtime_pm_work;
+	struct k_work bus_closed_work;
+
+	/* Bus pipe closed by us to save power, consumed by the CLOSED event */
+	atomic_t bus_close_expected;
 
 	/* Synchronize actions */
 	struct k_event event;

@@ -41,6 +41,14 @@ struct modem_backend_mock {
 
 	/* Max allowed read/write size */
 	size_t limit;
+	/* Error returned by open instead of opening the pipe, 0 to open */
+	int open_error;
+	/* Error returned by close instead of closing the pipe, 0 to close */
+	int close_error;
+	/* Transmit nothing, without notifying transmit idle */
+	bool transmit_paused;
+	/* Transmit calls accepted before transmit_paused is set, 0 for no limit */
+	size_t transmit_pause_after;
 	/* Mock Bridge pair */
 	struct modem_backend_mock *bridge;
 };
