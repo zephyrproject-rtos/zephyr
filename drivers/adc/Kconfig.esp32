@@ -6,6 +6,7 @@ config ADC_ESP32
 	bool "ESP32 ADC driver"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_ADC_ENABLED
+	select GPIO
 	help
 	  Enable the driver implementation for the ESP32 ADC
 

@@ -6,6 +6,7 @@ config ADC_MCP356XR
 	default y
 	depends on DT_HAS_MICROCHIP_MCP356XR_ENABLED
 	select SPI
+	select GPIO if !ADC_MCP356XR_POLL
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable MCP3561R/2R/4R ADC driver.

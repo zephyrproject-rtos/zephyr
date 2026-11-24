@@ -15,6 +15,10 @@ menuconfig ADC_MAX11102_17
 		|| DT_HAS_MAXIM_MAX11116_ENABLED \
 		|| DT_HAS_MAXIM_MAX11117_ENABLED
 	select SPI
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX11102),chsel-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX11103),chsel-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX11106),chsel-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX11111),chsel-gpios)
 	help
 	  Enable the driver implementation for the MAX11102-MAX11117 family
 
