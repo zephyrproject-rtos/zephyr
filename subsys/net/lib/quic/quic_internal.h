@@ -1709,6 +1709,7 @@ void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr
 struct quic_endpoint *quic_test_endpoint_alloc(void);
 void quic_test_endpoint_unref(struct quic_endpoint *ep);
 void quic_test_check_idle_timeouts(void);
+void quic_test_receive_data(int sock, struct quic_endpoint *ep_hint);
 
 bool stream_seq_was_opened(const struct quic_stream_seq_set *set, uint64_t seq);
 bool stream_seq_gaps_fit(const struct quic_stream_seq_set *set, uint64_t seq);

@@ -9841,6 +9841,14 @@ out:
 	quic_endpoint_unref(ep);
 }
 
+#if defined(CONFIG_NET_TEST)
+/* Let tests run the socket service handler for a socket */
+void quic_test_receive_data(int sock, struct quic_endpoint *ep_hint)
+{
+	receive_data(sock, ep_hint);
+}
+#endif /* CONFIG_NET_TEST */
+
 static void quic_svc_handler(struct net_socket_service_event *pev)
 {
 	struct zsock_pollfd *pfd = &pev->event;
