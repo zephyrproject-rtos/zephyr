@@ -9,3 +9,15 @@ config COMPARATOR_ESP32_ANA_CMPR
 	  Enable the driver for Espressif's analog comparator (ana_cmpr)
 	  peripheral, present on the ESP32-P4, ESP32-C5, ESP32-C61, and ESP32-H2
 	  SoCs.
+
+config COMPARATOR_ESP32_ANA_CMPR_ZD
+	bool "Espressif analog comparator zero detector driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_ANA_CMPR_ZD_ENABLED
+	depends on ESP32_SYS_TIMER
+	depends on SOC_FAMILY_ESPRESSIF_ETM_SUPPORTED
+	select SOC_FAMILY_ESPRESSIF_ETM
+	help
+	  Enable the driver for Espressif's analog comparator zero detector.
+	  Each enabled input is a comparator device. The inputs share one
+	  reference and are sampled by a periodic hardware scan.
