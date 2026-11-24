@@ -46,6 +46,8 @@ static int cmd_wren(const struct device *dev);
 static int cmd_wrsr(const struct device *dev, uint8_t op_code,
 		    uint8_t sr_cnt, uint8_t *sr);
 static int read_jedec_id(const struct device *dev, uint8_t *id);
+static bool in_octal_io(const struct device *dev);
+static bool in_ddr(const struct device *dev);
 
 #include "flash_mspi_nor_quirks.h"
 
