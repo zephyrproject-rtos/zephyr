@@ -777,12 +777,15 @@ unlock_out:
 
 out:
 	/*
-	 * Since move is done in virtual space, need to
-	 * flush the cache to make sure the backing physical
-	 * pages have the new data.
+	 * Since move is done in virtual space, flush the new pages to
+	 * make sure the backing physical pages have the new data. The
+	 * old pages were flushed when they were unmapped, and cache
+	 * operations on them now fault where the MMU no longer maps
+	 * them. On errors the new pages may not be mapped either.
 	 */
-	sys_cache_data_flush_range(virt_new, size);
-	sys_cache_data_flush_and_invd_range(virt_old, size);
+	if (ret == 0) {
+		sys_cache_data_flush_range(virt_new, size);
+	}
 
 	return ret;
 }
