@@ -9,6 +9,7 @@
 #include <nxp/lpc/lpc54xxx/nxp_lpc546xx.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "lpcxpresso54628-pinctrl.dtsi"
 
 / {
@@ -67,6 +68,42 @@
 			label = "User LED3";
 		};
 	};
+
+	/*
+	 * GPIO pins of the parallel-LCD FPC connector, shared across NXP EVKs
+	 * and used by the parallel-display shields.
+	 */
+	nxp_parallel_lcd_connector: parallel-connector {
+		compatible = "nxp,parallel-lcd-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio3 31 0>;	/* Pin 1: LCD backlight enable */
+	};
+
+	/* GPIO pins of the I2C touch-controller FPC connector. */
+	nxp_i2c_touch_fpc: i2c-touch-connector {
+		compatible = "nxp,i2c-tsc-fpc";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <1 0 &gpio2 27 0>,	/* Pin 2: touch reset  */
+			   <2 0 &gpio4 0 0>;	/* Pin 3: touch interrupt */
+	};
+
+	/*
+	 * 16 MB external SDRAM (Micron MT48LC8M16A2) on the EMC dynamic
+	 * chip-select 0, declared as a memory-region so large buffers that do
+	 * not fit in internal SRAM can be linked here. It has no MPU attributes
+	 * of its own, so the default memory map's execute-never device region
+	 * applies: data only, privileged access (unaligned access verified on
+	 * this board).
+	 */
+	sdram0: memory@a0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa0000000 DT_SIZE_M(16)>;
+		zephyr,memory-region = "SDRAM";
+	};
 };
 
 &cpu0 {
@@ -112,7 +149,7 @@ zephyr_udc0: &usbhs {
 	};
 };
 
-&flexcomm2 {
+nxp_touch_i2c: &flexcomm2 {
 	compatible = "nxp,lpc-i2c";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
@@ -196,5 +233,61 @@ zephyr_udc0: &usbhs {
 };
 
 &enet_ptp_clock {
+	status = "okay";
+};
+
+&emc {
+	pinctrl-0 = <&pinmux_emc>;
+	pinctrl-names = "default";
+	/* 220 MHz / 3 = 73.3 MHz, below the 100 MHz EMC clock limit. */
+	nxp,emc-clock-div = <2>;
+	/*
+	 * Read-capture delay. A 16 MB memory test passes with every value at
+	 * 73.3 MHz and with 23-31 at 110 MHz; 26 is inside both windows.
+	 */
+	nxp,emc-feedback-clock-delay = <26>;
+	status = "okay";
+
+	sdram@0 {
+		compatible = "nxp,lpc-emc-sdram";
+		reg = <0>;			/* EMC dynamic chip-select 0 (DYCS0) */
+		refresh-period-ns = <15625>;
+		t-rp-ns = <18>;
+		t-ras-ns = <42>;
+		t-srex-ns = <67>;
+		t-apr-ns = <18>;
+		t-wr-ns = <6>;
+		t-rc-ns = <60>;
+		t-rfc-ns = <60>;
+		t-xsr-ns = <67>;
+		t-rrd-ns = <12>;
+		nxp,address-mapping = <0x09>;	/* 16-bit, 4 banks, 12 rows, 9 cols */
+		nxp,sdram-mode-register = <0x33>;
+		nxp,ras-latency = <2>;
+		nxp,mode-register-delay = <2>;
+	};
+};
+
+/*
+ * Expose the LCDC under the label the parallel-display shields expect. The
+ * panel timings, resolution and pixel format come from the shield; the board
+ * supplies the pin routing, the framebuffer memory and the backlight PWM.
+ */
+zephyr_lcdif: &lcdc {
+	pinctrl-0 = <&pinmux_lcd>;
+	pinctrl-names = "default";
+	memory-region = <&sdram0>;
+	/*
+	 * Backlight brightness via SCTimer PWM on P3_31 (1 kHz). The LCDC driver
+	 * uses this for display_set_brightness() and blanking; it takes
+	 * precedence over the shield's GPIO backlight-enable on the same pin.
+	 */
+	pwms = <&sc_timer 5 PWM_HZ(1000) PWM_POLARITY_NORMAL>;
+};
+
+/* SCTimer0 output 5 drives the LCD backlight PWM (P3_31). */
+&sc_timer {
+	pinctrl-0 = <&pinmux_sctimer0_lcd>;
+	pinctrl-names = "default";
 	status = "okay";
 };

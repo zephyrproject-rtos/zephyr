@@ -18,6 +18,7 @@ supported:
   - crc
   - gpio
   - hwinfo
+  - memc
   - netif:eth
   - ptp_clock
   - pwm

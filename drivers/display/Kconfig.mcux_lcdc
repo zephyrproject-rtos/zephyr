@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_MCUX_LCDC
+	bool "MCUX LPC LCDC driver"
+	default y
+	depends on DT_HAS_NXP_LPC_LCDC_ENABLED
+	select PINCTRL
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPC_LCDC),backlight-gpios)
+	select PWM if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPC_LCDC),pwms)
+	help
+	  Enable support for the NXP LPC LCD controller (LCDC). The driver keeps
+	  two full-screen framebuffers in the devicetree memory-region, copies
+	  each write into the one that is not on screen and swaps them at the
+	  next vertical blank.

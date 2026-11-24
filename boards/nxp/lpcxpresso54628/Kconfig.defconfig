@@ -15,4 +15,8 @@ endchoice
 
 endif # FXOS8700
 
+# The LCDC framebuffers live in the external SDRAM on the EMC.
+config MEMC
+	default y if DISPLAY_MCUX_LCDC
+
 endif # BOARD_LPCXPRESSO54628

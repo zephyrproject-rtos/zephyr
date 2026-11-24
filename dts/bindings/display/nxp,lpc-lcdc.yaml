@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP LPC LCD controller (LCDC).
+
+  The LCDC drives a parallel-RGB TFT panel. Panel timings are described by a
+  "zephyr,panel-timing" child node, matching the convention used by the other
+  NXP LCD controller bindings, so panel shields apply unchanged.
+
+compatible: "nxp,lpc-lcdc"
+
+include: [lcd-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  data-bus-width:
+    type: string
+    default: "16-bit"
+    enum:
+      - "16-bit"
+      - "8-bit"
+      - "18-bit"
+      - "24-bit"
+    description: |
+      LCD data bus width, as set by panel shields shared with other NXP LCD
+      controllers. The LCDC has no bus width setting in TFT mode; the pin
+      routing determines which data lines reach the panel.
+
+  backlight-gpios:
+    type: phandle-array
+    description: |
+      LCD backlight control GPIO. The driver starts with it inactive and drives
+      it on display blanking off and on.
+
+  pwms:
+    type: phandle-array
+    description: |
+      Optional PWM driving the LCD backlight. When present it takes precedence
+      over the backlight-gpios property. The driver implements
+      display_set_brightness() (linear 0-255 to duty cycle) and turns the
+      backlight off on blanking on and back to the set brightness on blanking
+      off. The PWM period sets the backlight frequency.
+
+  memory-region:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the memory region (typically external SDRAM) that holds the
+      two driver-owned framebuffers.
