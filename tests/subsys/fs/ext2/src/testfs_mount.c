@@ -7,7 +7,33 @@
 #include <zephyr/ztest.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/ext2.h>
+#include "test_disk.h"
 #include "utils.h"
+
+#ifdef CONFIG_DISK_DRIVER_RAM
+
+ZTEST(ext2tests, test_unmount_deinitializes_disk)
+{
+	struct fs_mount_t *mp = &testfs_mnt;
+	int ret;
+
+	for (int cycle = 0; cycle < 2; cycle++) {
+		zassert_equal(ext2_test_disk_refcount(), 0U,
+			      "Disk reference remains before mount cycle %d", cycle);
+
+		ret = fs_mount(mp);
+		zassert_equal(ret, 0, "Mount cycle %d failed: %d", cycle, ret);
+		zassert_equal(ext2_test_disk_refcount(), 1U,
+			      "Expected one disk reference after mount cycle %d", cycle);
+
+		ret = fs_unmount(mp);
+		zassert_equal(ret, 0, "Unmount cycle %d failed: %d", cycle, ret);
+		zassert_equal(ext2_test_disk_refcount(), 0U,
+			      "Disk reference remains after unmount cycle %d", cycle);
+	}
+}
+
+#endif /* CONFIG_DISK_DRIVER_RAM */
 
 ZTEST(ext2tests, test_mount_only)
 {
