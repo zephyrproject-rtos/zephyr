@@ -20,6 +20,18 @@ K_MEM_SLAB_DEFINE_STATIC_TYPE(usb_device_slab, struct usb_device,
 
 K_HEAP_DEFINE(usb_device_heap, CONFIG_USBH_USB_DEVICE_HEAP);
 
+static void usbh_device_release(struct sys_ref *const ref)
+{
+	struct usb_device *const udev = CONTAINER_OF(ref, struct usb_device, ref);
+
+	if (udev->cfg_desc != NULL) {
+		k_heap_free(&usb_device_heap, udev->cfg_desc);
+		udev->cfg_desc = NULL;
+	}
+
+	k_mem_slab_free(&usb_device_slab, (void *)udev);
+}
+
 struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx)
 {
 	struct usb_device *udev;
@@ -31,6 +43,9 @@ struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx)
 
 	memset(udev, 0, sizeof(struct usb_device));
 	udev->ctx = uhs_ctx;
+	/* The first reference is the one of the connection */
+	sys_ref_init(&udev->ref);
+	udev->release = usbh_device_release;
 	k_mutex_init(&udev->mutex);
 
 	usbh_host_lock(uhs_ctx);
@@ -40,7 +55,12 @@ struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx)
 	return udev;
 }
 
-void usbh_device_free(struct usb_device *const udev)
+/*
+ * End the connection of a device. Its address can be used by the next device,
+ * as its endpoints are disabled, and the device is released once the last
+ * reference to it is dropped.
+ */
+static void usbh_device_drop(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
 
@@ -49,12 +69,7 @@ void usbh_device_free(struct usb_device *const udev)
 	sys_dlist_remove(&udev->node);
 	usbh_host_unlock(uhs_ctx);
 
-	if (udev->cfg_desc != NULL) {
-		k_heap_free(&usb_device_heap, udev->cfg_desc);
-		udev->cfg_desc = NULL;
-	}
-
-	k_mem_slab_free(&usb_device_slab, (void *)udev);
+	usb_device_unref(udev);
 }
 
 struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uint8_t addr)
@@ -759,8 +774,9 @@ int usbh_device_connect(struct usbh_context *const ctx,
 			ctx->root = NULL;
 		}
 
+		udev->state = USB_STATE_NOTCONNECTED;
 		disable_all_eps(udev);
-		usbh_device_free(udev);
+		usbh_device_drop(udev);
 		return err;
 	}
 
@@ -789,6 +805,9 @@ int usbh_device_connect(struct usbh_context *const ctx,
 
 void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
 {
+	/* Holders of a reference see it, and new transfers are refused */
+	udev->state = USB_STATE_NOTCONNECTED;
+
 	usbh_class_remove_all(udev);
 
 	if (usbh_device_is_root(ctx, udev)) {
@@ -796,7 +815,7 @@ void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
 	}
 
 	disable_all_eps(udev);
-	usbh_device_free(udev);
+	usbh_device_drop(udev);
 
 	LOG_DBG("Device removed");
 }
@@ -806,6 +825,10 @@ int usbh_xfer_enqueue(const struct usb_device *const udev,
 {
 	struct usbh_context *const ctx = udev->ctx;
 	int ret;
+
+	if (!usb_device_is_connected(udev)) {
+		return -ENODEV;
+	}
 
 	/*
 	 * Increase the number of queued transfers before enqueue and decrease

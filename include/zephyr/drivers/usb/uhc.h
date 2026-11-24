@@ -91,12 +91,19 @@ struct usb_host_ep {
 
 /**
  * Host representation of a USB device
+ *
+ * A device is reference counted. It stays valid while a reference to it is
+ * held, also after it was disconnected, which its state tells.
  */
 struct usb_device {
 	/** dlist node */
 	sys_dnode_t node;
 	/** An opaque pointer to the host context to which this device belongs */
 	void *ctx;
+	/** Reference count, see usb_device_ref() and usb_device_unref() */
+	struct sys_ref ref;
+	/** Releases the device once the last reference is dropped */
+	sys_ref_release_t release;
 	/** Device mutex */
 	struct k_mutex mutex;
 	/** USB device descriptor */
@@ -126,6 +133,49 @@ struct usb_device {
 	/** Device's level (root device = 1) */
 	uint8_t level;
 };
+
+/**
+ * @brief Take a reference to a USB device
+ *
+ * The caller must already hold a reference, for example the one of the
+ * connection or of a transfer. The device stays valid until the reference
+ * is dropped with usb_device_unref(), but it can be disconnected meanwhile.
+ *
+ * @param[in] udev Pointer to USB device
+ *
+ * @return @p udev
+ */
+static inline struct usb_device *usb_device_ref(struct usb_device *const udev)
+{
+	sys_ref_get(&udev->ref);
+
+	return udev;
+}
+
+/**
+ * @brief Drop a reference to a USB device
+ *
+ * The device is released when the last reference is dropped. It does not
+ * block and can be called from any context.
+ *
+ * @param[in] udev Pointer to USB device
+ */
+static inline void usb_device_unref(struct usb_device *const udev)
+{
+	(void)sys_ref_put(&udev->ref, udev->release);
+}
+
+/**
+ * @brief Check whether a USB device is connected
+ *
+ * @param[in] udev Pointer to USB device
+ *
+ * @return true if the device is connected, false once it was disconnected
+ */
+static inline bool usb_device_is_connected(const struct usb_device *const udev)
+{
+	return udev->state != USB_STATE_NOTCONNECTED;
+}
 
 /**
  * @brief Get USB device endpoint by endpoint address.

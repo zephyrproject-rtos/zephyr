@@ -19,9 +19,11 @@ typedef int (*usbh_udev_cb_t)(struct usb_device *const udev,
 
 struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uint8_t addr);
 
-/* Allocate/free USB device */
+/*
+ * Allocate a USB device. It holds one reference, the one of its connection,
+ * which usbh_device_disconnect() drops.
+ */
 struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx);
-void usbh_device_free(struct usb_device *const udev);
 
 /* Reset and configure new USB device */
 int usbh_device_init(struct usb_device *const udev);
