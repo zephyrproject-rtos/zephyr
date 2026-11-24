@@ -887,8 +887,9 @@ device classes, use ``class:`` to declare those classes:
    compatible: "manufacturer,adc"
    class: adc
 
-The value is a device class name or a list of names. Names use lowercase
-letters, digits, ``-`` and ``_``; malformed or duplicate names are rejected.
+The value is a device class name or a list of names. Names start with a
+lowercase letter and use lowercase letters, digits, ``-`` and ``_``; malformed
+or duplicate names are rejected.
 Each name should match a device API class registered with
 :c:macro:`DEVICE_API` (like ``adc``); lowercase-and-hyphens names are
 converted to lowercase-and-underscores C tokens the same way compatibles are.

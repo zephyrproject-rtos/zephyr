@@ -540,8 +540,7 @@ class Binding:
                 if not _CLASS_NAME_FULLMATCH(elem):
                     _err(f"malformed device class name '{elem}' in "
                          f"{self.path}, expected lowercase letters, "
-                         "digits, '-' and '_', starting with a letter "
-                         "or digit")
+                         "digits, '-' and '_', starting with a letter")
             if len(set(classes)) != len(classes):
                 _err(f"duplicate device class names in 'class:' in "
                      f"{self.path}")
@@ -4138,7 +4137,7 @@ _LOG = logging.getLogger(__name__)
 _NOT_ALPHANUM_OR_UNDERSCORE = re.compile(r'\W', re.ASCII)
 
 # Matches a valid device class name
-_CLASS_NAME_FULLMATCH = re.compile(r'[a-z0-9][a-z0-9_-]*').fullmatch
+_CLASS_NAME_FULLMATCH = re.compile(r'[a-z][a-z0-9_-]*').fullmatch
 
 # Matches a binding file with a 'class:' key at any nesting level
 _CLASS_KEY_SEARCH = re.compile(r'^\s*class\s*:', re.MULTILINE).search

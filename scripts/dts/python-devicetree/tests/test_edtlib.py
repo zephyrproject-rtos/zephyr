@@ -454,7 +454,8 @@ def test_class_merge():
     assert binding.child_binding.classes == ['class-child-b', 'class-child-a']
 
     # Malformed names and duplicates are rejected.
-    for fname in ('class-bad-name.yaml', 'class-dup.yaml'):
+    for fname in ('class-bad-name.yaml', 'class-bad-start.yaml',
+                  'class-dup.yaml'):
         with from_here():
             with pytest.raises(edtlib.EDTError):
                 edtlib.Binding(f'test-bindings-include/{fname}', {})
