@@ -683,6 +683,74 @@ static int cmd_feature_set_prst(const struct shell *sh,
 	return err;
 }
 
+static int cmd_feature_set_psusp(const struct shell *sh,
+				 size_t argc, char **argv)
+{
+	static struct usb_device *udev;
+	struct usbh_context *uhs_ctx;
+	uint8_t addr;
+	uint8_t port;
+	int err;
+
+	uhs_ctx = get_uhs_ctx_or_error(sh);
+	if (uhs_ctx == NULL) {
+		return -ENODEV;
+	}
+
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	port = strtol(argv[2], NULL, 10);
+
+	err = usbh_req_set_hcfs_port_suspend(udev, port);
+	if (err) {
+		shell_error(sh, "host: Failed to set psusp feature");
+	} else {
+		shell_print(sh, "host: Device 0x%02x, port %d, psusp feature set",
+			    udev->addr, port);
+	}
+
+	return err;
+}
+
+static int cmd_feature_clear_psusp(const struct shell *sh,
+				 size_t argc, char **argv)
+{
+	static struct usb_device *udev;
+	struct usbh_context *uhs_ctx;
+	uint8_t addr;
+	uint8_t port;
+	int err;
+
+	uhs_ctx = get_uhs_ctx_or_error(sh);
+	if (uhs_ctx == NULL) {
+		return -ENODEV;
+	}
+
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	port = strtol(argv[2], NULL, 10);
+
+	err = usbh_req_clear_hcfs_port_suspend(udev, port);
+	if (err) {
+		shell_error(sh, "host: Failed to clear psusp feature");
+	} else {
+		shell_print(sh, "host: Device 0x%02x, port %d, psusp feature cleared",
+			    udev->addr, port);
+	}
+
+	return err;
+}
+
 static int cmd_config_set(const struct shell *sh,
 			  size_t argc, char **argv)
 {
@@ -866,53 +934,6 @@ static int cmd_device_info(const struct shell *sh,
 	}
 
 	return 0;
-}
-
-static int cmd_bus_suspend(const struct shell *sh,
-			   size_t argc, char **argv)
-{
-	struct usbh_context *uhs_ctx;
-	int err;
-
-	uhs_ctx = get_uhs_ctx_or_error(sh);
-	if (uhs_ctx == NULL) {
-		return -ENODEV;
-	}
-
-	err = uhc_bus_suspend(uhs_ctx->dev);
-	if (err) {
-		shell_error(sh, "host: Failed to perform bus suspend %d", err);
-	} else {
-		shell_print(sh, "host: USB bus suspended");
-	}
-
-	return err;
-}
-
-static int cmd_bus_resume(const struct shell *sh,
-			  size_t argc, char **argv)
-{
-	struct usbh_context *uhs_ctx;
-	int err;
-
-	uhs_ctx = get_uhs_ctx_or_error(sh);
-	if (uhs_ctx == NULL) {
-		return -ENODEV;
-	}
-
-	err = uhc_bus_resume(uhs_ctx->dev);
-	if (err) {
-		shell_error(sh, "host: Failed to perform bus resume %d", err);
-	} else {
-		shell_print(sh, "host: USB bus resumed");
-	}
-
-	err = uhc_sof_enable(uhs_ctx->dev);
-	if (err) {
-		shell_error(sh, "host: Failed to start SoF generator %d", err);
-	}
-
-	return err;
 }
 
 static int cmd_bus_reset(const struct shell *sh,
@@ -1099,6 +1120,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(feature_set_cmds,
 			"port: Port number [dec]"
 		),
 		cmd_feature_set_prst, 3, 0),
+	SHELL_CMD_ARG(psusp, NULL,
+		SHELL_HELP(
+			"Set feature - Suspend Port [Hub Class request]",
+			"<addr> <port>\n"
+			"addr: Device bus address [dec], the root hub is 1\n"
+			"port: Port number [dec]"
+		),
+		cmd_feature_set_psusp, 3, 0),
 	SHELL_CMD_ARG(halt, NULL,
 		SHELL_HELP(
 			"Set feature - Halt Endpoint",
@@ -1118,6 +1147,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(feature_clear_cmds,
 			"addr: Device bus address [dec]"
 		),
 		cmd_feature_clear_rwup, 2, 0),
+	SHELL_CMD_ARG(psusp, NULL,
+		SHELL_HELP(
+			"Clear feature - Suspend Port, signals resume [Hub Class request]",
+			"<addr> <port>\n"
+			"addr: Device bus address [dec], the root hub is 1\n"
+			"port: Port number [dec]"
+		),
+		cmd_feature_clear_psusp, 3, 0),
 	SHELL_CMD_ARG(halt, NULL,
 		SHELL_HELP(
 			"Clear feature - Halt Endpoint",
@@ -1216,10 +1253,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(device_cmds,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(bus_cmds,
-	SHELL_CMD_ARG(suspend, NULL, "[none]",
-		      cmd_bus_suspend, 1, 0),
-	SHELL_CMD_ARG(resume, NULL, "[none]",
-		      cmd_bus_resume, 1, 0),
 	SHELL_CMD_ARG(reset, NULL, "[none]",
 		      cmd_bus_reset, 1, 0),
 	SHELL_SUBCMD_SET_END
