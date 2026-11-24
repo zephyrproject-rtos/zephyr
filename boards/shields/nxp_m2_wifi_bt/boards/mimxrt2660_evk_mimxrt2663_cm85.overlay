@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		sdhc1 = &usdhc1;
+		zephyr,sram = &sram0;
+	};
+};
+
+&sram0 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	reg = <0x22000000 0x000c0000>;
+	zephyr,memory-region = "SRAM";
+	status = "okay";
+};
+
+&sram1 {
+	status = "disabled";
+};
+
+&sram2 {
+	status = "disabled";
+};
+
+&m2_wifi_sdio {
+	/* Use dat3 detection method */
+	detect-dat3;
+	pinctrl-4 = <&pinmux_usdhc1_dat3_nopull>;
+	pinctrl-names = "default", "slow", "med", "fast", "nopull";
+
+	nxp_wifi {
+		wakeup-gpios = <&pcal6524 0 GPIO_ACTIVE_LOW>;
+		sd-gpios = <&pcal6524 13 GPIO_ACTIVE_LOW>;
+		pwr-gpios = <&pcal6524 12 GPIO_ACTIVE_HIGH>;
+	};
+};

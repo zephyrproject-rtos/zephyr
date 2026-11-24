@@ -89,6 +89,16 @@
 	};
 };
 
+&usdhc1 {
+	power-delay-ms = <1000>;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
+	status = "okay";
+};
+
 /*
  * W958D6NMYA 32 MB Xccela PSRAM on XSPI1, direct AHB window 0x80000000.
  * Initialized by boot ROM from the external memory configuration data block
@@ -162,3 +172,7 @@
 		status = "okay";
 	};
 };
+
+m2_wifi_sdio: &usdhc1 {};
+
+m2_hci_bt_uart: &lpuart0 {};
