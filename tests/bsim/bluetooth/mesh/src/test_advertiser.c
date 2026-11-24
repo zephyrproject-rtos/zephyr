@@ -22,7 +22,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 enum suspending_ctx {
 	NOT_SUSPENDED,
 	SUSPENDED_IN_CTX,
-	SUSPENDED_IN_CB
+	SUSPENDED_IN_CB,
+	SUSPENDED_IN_WQ
 };
 
 extern const struct bt_mesh_comp comp;
@@ -841,6 +842,12 @@ static void adv_send_start(uint16_t duration, int err, void *cb_data)
 		if (adv_data->instance_idx == 0 && adv_data->suspend == SUSPENDED_IN_CB) {
 			ASSERT_EQUAL(err, 0);
 			adv_suspend();
+		} else if (IS_ENABLED(CONFIG_BT_MESH_ADV_LEGACY) && adv_data->instance_idx == 0 &&
+			   adv_data->suspend == SUSPENDED_IN_WQ) {
+			/* The legacy advertiser thread takes the first adv from the queue before
+			 * the advertiser is suspended.
+			 */
+			ASSERT_EQUAL(err, 0);
 		} else {
 			/* For the advs that were pushed to the mesh advertiser by calling
 			 * `bt_mesh_adv_send` function but not sent to the host, the start callback
@@ -897,9 +904,24 @@ static void check_suspending(void)
 	ASSERT_TRUE_MSG(!extra_adv, "Created adv while suspended");
 }
 
+static struct adv_suspend_ctx wq_adv_data[CONFIG_BT_MESH_ADV_BUF_COUNT];
+static K_SEM_DEFINE(wq_suspended_sem, 0, 1);
+
+static void suspend_in_wq_handler(struct k_work *work)
+{
+	/* Sending from the mesh work queue thread leaves the advertiser work queued behind this
+	 * work item, so disabling the advertiser must not wait for it.
+	 */
+	adv_create_and_send(SUSPENDED_IN_WQ, 0xAA, wq_adv_data);
+	adv_suspend();
+
+	k_sem_give(&wq_suspended_sem);
+}
+
 static void test_tx_disable(void)
 {
 	struct adv_suspend_ctx adv_data[CONFIG_BT_MESH_ADV_BUF_COUNT];
+	struct k_work suspend_work;
 	int err;
 
 	bt_init();
@@ -914,6 +936,15 @@ static void test_tx_disable(void)
 	LOG_INF("Fill up the adv pool and suspend the advertiser in the first start callback "
 		"call.");
 	adv_create_and_send(SUSPENDED_IN_CB, 0xAA, adv_data);
+	check_suspending();
+	adv_resume();
+
+	LOG_INF("Fill up the adv pool and suspend the advertiser right after from the mesh work "
+		"queue.");
+	k_work_init(&suspend_work, suspend_in_wq_handler);
+	ASSERT_TRUE(bt_mesh_wq_submit(&suspend_work) >= 0);
+	err = k_sem_take(&wq_suspended_sem, K_SECONDS(10));
+	ASSERT_OK_MSG(err, "Suspending the advertiser from the mesh work queue deadlocked");
 	check_suspending();
 	adv_resume();
 
