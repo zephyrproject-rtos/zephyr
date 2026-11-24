@@ -18,6 +18,10 @@
 		zephyr,flash = &flash0;
 		zephyr,crc = &crc;
 	};
+
+	aliases {
+		counter = &counterg12_0;
+	};
 };
 
 &cpu0 {
@@ -34,5 +38,13 @@
 };
 
 &syspll {
+	status = "okay";
+};
+
+&timg12_0 {
+	status = "okay";
+};
+
+&counterg12_0 {
 	status = "okay";
 };
