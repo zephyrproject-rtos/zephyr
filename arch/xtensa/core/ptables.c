@@ -853,12 +853,20 @@ static int region_map_update(uint32_t *ptables, uintptr_t start,
 		uint32_t page = start + offset;
 		uint32_t l1_pos = XTENSA_MMU_L1_POS(page);
 		uint32_t l2_pos = XTENSA_MMU_L2_POS(page);
+		bool old_exec;
+
 		/* Make sure we grab a fresh copy of L1 page table */
 		sys_cache_data_invd_range((void *)&ptables[l1_pos], sizeof(ptables[0]));
 
 		l2_table = (uint32_t *)(ptables[l1_pos] & XTENSA_MMU_PTE_PPN_MASK);
 
 		sys_cache_data_invd_range((void *)&l2_table[l2_pos], sizeof(l2_table[0]));
+
+		/* Need to keep track of the old PTE's exec bit.
+		 * So that if we are removing the exec bit, we need to invalidate
+		 * the iTLB to prevent those pages being executable.
+		 */
+		old_exec = (l2_table[l2_pos] & XTENSA_MMU_PERM_X) == XTENSA_MMU_PERM_X;
 
 		pte = XTENSA_MMU_PTE_RING_SET(l2_table[l2_pos], ring);
 		pte = XTENSA_MMU_PTE_ATTR_SET(pte, flags);
@@ -868,6 +876,10 @@ static int region_map_update(uint32_t *ptables, uintptr_t start,
 		sys_cache_data_flush_range((void *)&l2_table[l2_pos], sizeof(l2_table[0]));
 
 		xtensa_dtlb_vaddr_invalidate((void *)page);
+
+		if (old_exec || ((flags & XTENSA_MMU_PERM_X) == XTENSA_MMU_PERM_X)) {
+			xtensa_itlb_vaddr_invalidate((void *)page);
+		}
 	}
 
 	return ret;
@@ -1094,6 +1106,11 @@ static int mem_buffer_validate(const void *addr, size_t size, int write, int rin
 	/* addr/size arbitrary, fix this up into an aligned region */
 	k_mem_region_align((uintptr_t *)&virt, &aligned_size,
 			   (uintptr_t)addr, size, CONFIG_MMU_PAGE_SIZE);
+
+	/* Reject if the buffer end or its page-aligned size wraps */
+	if ((size > (UINTPTR_MAX - (uintptr_t)addr)) || (aligned_size < size)) {
+		return -1;
+	}
 
 	for (size_t offset = 0; offset < aligned_size;
 	     offset += CONFIG_MMU_PAGE_SIZE) {
