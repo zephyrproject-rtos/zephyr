@@ -14,7 +14,10 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - counter
   - gpio
+  - pwm
   - uart
+  - watchdog
   - serial
 vendor: nxp
