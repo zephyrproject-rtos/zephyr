@@ -469,6 +469,10 @@ static inline int uhc_bus_resume(const struct device *dev)
  * Transfer has no buffer after allocation, but can be allocated
  * and added from different pools.
  *
+ * The transfer holds a reference to @p udev until it is released, so
+ * the device is valid in the completion callback, also when it was
+ * disconnected meanwhile.
+ *
  * @param[in] dev     Pointer to device struct of the driver instance
  * @param[in] ep      Endpoint address
  * @param[in] udev    Pointer to USB device

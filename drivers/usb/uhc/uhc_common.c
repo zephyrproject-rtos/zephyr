@@ -124,7 +124,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	sys_ref_init(&xfer->ref);
 	xfer->ep = host_ep;
 	xfer->interval = host_ep->interval;
-	xfer->udev = udev;
+	xfer->udev = usb_device_ref(udev);
 	xfer->cb = cb;
 	xfer->priv = cb_priv;
 
@@ -163,8 +163,10 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 static void uhc_xfer_release(struct sys_ref *const ref)
 {
 	struct uhc_transfer *const xfer = CONTAINER_OF(ref, struct uhc_transfer, ref);
+	struct usb_device *const udev = xfer->udev;
 
 	k_mem_slab_free(&uhc_xfer_pool, (void *)xfer);
+	usb_device_unref(udev);
 }
 
 void uhc_xfer_ref(struct uhc_transfer *const xfer)
