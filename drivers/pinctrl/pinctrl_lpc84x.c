@@ -75,7 +75,7 @@ static int lpc_pinctrl_apply_swm(SWM_Type *base, pinctrl_soc_pin_t pin)
 static int lpc_pinctrl_apply_iocon(IOCON_Type *base, pinctrl_soc_pin_t pin)
 {
 	uint8_t cfg = LPC84X_IOCON_CFG(pin.iocon_cfg);
-	uint8_t iocon_idx = LPC84X_IOCON_INDEX(pin.iocon_cfg);
+	uint8_t iocon_idx = LPC84X_IOCON_IDX(pin.iocon_cfg);
 
 	if (iocon_idx >= IOCON_PIO_COUNT) {
 		return -EINVAL;
