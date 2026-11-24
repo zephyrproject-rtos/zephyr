@@ -2030,7 +2030,7 @@ void set_ad_name_complete(struct bt_data *ad, const char *name)
 {
 	ad->type = BT_DATA_NAME_COMPLETE;
 	ad->data_len = strlen(name);
-	ad->data = name;
+	ad->data = (const uint8_t *)name;
 }
 
 void set_ad_device_name_complete(struct bt_data *ad)
@@ -2457,7 +2457,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 
 			len = strlen(arg);
 			memcpy(&hex_data[hex_data_len], arg, len);
-			name_value = &hex_data[hex_data_len];
+			name_value = (const char *)&hex_data[hex_data_len];
 
 			set_ad_name_complete(&data[*data_len], name_value);
 
