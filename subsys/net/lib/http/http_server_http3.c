@@ -2737,7 +2737,7 @@ static int h3_process_frames(struct http_client_ctx *client, bool stream_fin)
 
 			ret = h3_parse_qpack_headers(client, payload,
 						     (size_t)frame_len);
-			if (ret < 0 && ret != -ENOTSUP) {
+			if (ret < 0) {
 				LOG_DBG("[%p] H3: QPACK parse error (%d)", client, ret);
 				return ret;
 			}
