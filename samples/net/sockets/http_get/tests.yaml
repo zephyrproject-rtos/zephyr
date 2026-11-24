@@ -13,19 +13,8 @@ tests:
   sample.net.sockets.http_get:
     filter: not CONFIG_NET_SOCKETS_OFFLOAD and not CONFIG_NATIVE_LIBC
     harness: net
-    platform_exclude:
-      - cc3220sf_launchxl
-      - cc3235sf_launchxl
     extra_configs:
       - CONFIG_POSIX_API=y
-  sample.net.sockets.http_get.offload.simplelink:
-    platform_allow: cc3220sf_launchxl
-    harness: net
-    tags:
-      - net
-      - socket
-      - offload
-      - simplelink
   sample.net.sockets.http_get.nsos.http:
     harness: console
     harness_config:

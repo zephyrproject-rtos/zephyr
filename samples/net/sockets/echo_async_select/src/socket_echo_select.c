@@ -100,7 +100,6 @@ int main(void)
 {
 	int res;
 	static int counter;
-#if !defined(CONFIG_SOC_SERIES_CC32XX)
 	int serv4;
 	struct sockaddr_in bind_addr4 = {
 		.sin_family = AF_INET,
@@ -109,7 +108,6 @@ int main(void)
 			.s_addr = htonl(INADDR_ANY),
 		},
 	};
-#endif
 	int serv6;
 	struct sockaddr_in6 bind_addr6 = {
 		.sin6_family = AF_INET6,
@@ -118,7 +116,6 @@ int main(void)
 	};
 
 	FD_ZERO(&readfds);
-#if !defined(CONFIG_SOC_SERIES_CC32XX)
 	serv4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (serv4 < 0) {
 		printf("error: socket: %d\n", errno);
@@ -133,7 +130,6 @@ int main(void)
 	setblocking(serv4, false);
 	listen(serv4, 5);
 	pollfds_add(serv4);
-#endif
 	serv6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	if (serv6 < 0) {
 		printf("error: socket(AF_INET6): %d\n", errno);
@@ -182,16 +178,7 @@ int main(void)
 				continue;
 			}
 			int fd = i;
-#if defined(CONFIG_SOC_SERIES_CC32XX)
-			/*
-			 * On TI CC32xx, the same port cannot be bound to two
-			 * different sockets. Instead, the IPv6 socket is used
-			 * to handle both IPv4 and IPv6 connections.
-			 */
-			if (fd == serv6) {
-#else
 			if (fd == serv4 || fd == serv6) {
-#endif
 				/* If server socket */
 				int client = accept(fd, (struct sockaddr *)&client_addr,
 						    &client_addr_len);
