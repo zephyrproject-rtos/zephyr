@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &ana_cmpr0_ch0;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>; /* GPIO37 */
+	};
+};
+
+&ana_cmpr0 {
+	ref-source = "internal";
+	ref-voltage = <50>;
+	hysteresis-mv = <40>;
+	status = "okay";
+};
+
+&ana_cmpr0_ch0 {
+	status = "okay";
+};
