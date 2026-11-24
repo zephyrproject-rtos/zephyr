@@ -1,0 +1,99 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SDRAM chip attached to an NXP LPC EMC dynamic chip-select.
+
+  All timing properties are given in nanoseconds (or, where noted, in EMC clock
+  cycles) and are taken from the SDRAM datasheet.
+
+compatible: "nxp,lpc-emc-sdram"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: EMC dynamic chip-select index this SDRAM is wired to (0 = DYCS0, 0-3).
+
+  nxp,address-mapping:
+    type: int
+    required: true
+    description: |
+      Dynamic device address mapping (the DYNAMICCONFIG AM field). Selects the
+      bus width / bank / row / column organisation of the device per the EMC
+      address-mapping table in the reference manual.
+
+  nxp,sdram-mode-register:
+    type: int
+    required: true
+    description: |
+      Value written to the SDRAM mode register during initialisation. Encodes
+      the CAS latency and burst configuration; the driver derives the CAS
+      latency from it.
+
+  nxp,ras-latency:
+    type: int
+    required: true
+    min: 1
+    max: 3
+    description: Active-to-read/write delay (tRCD), in EMC clock cycles.
+
+  nxp,mode-register-delay:
+    type: int
+    required: true
+    min: 1
+    max: 16
+    description: Load-mode-register to active-command time (tMRD), in EMC clock cycles.
+
+  refresh-period-ns:
+    type: int
+    required: true
+    description: Auto-refresh interval per row, in nanoseconds.
+
+  t-rp-ns:
+    type: int
+    required: true
+    description: Precharge command period (tRP), in nanoseconds.
+
+  t-ras-ns:
+    type: int
+    required: true
+    description: Active-to-precharge command period (tRAS), in nanoseconds.
+
+  t-srex-ns:
+    type: int
+    required: true
+    description: Self-refresh exit time (tSREX), in nanoseconds.
+
+  t-apr-ns:
+    type: int
+    required: true
+    description: Last-data-out to active command time (tAPR), in nanoseconds.
+
+  t-wr-ns:
+    type: int
+    required: true
+    description: |
+      Write recovery time (tWR), in nanoseconds. One EMC clock period is
+      added to it.
+
+  t-rc-ns:
+    type: int
+    required: true
+    description: Active-to-active command period (tRC), in nanoseconds.
+
+  t-rfc-ns:
+    type: int
+    required: true
+    description: Auto-refresh period / refresh-to-active command period (tRFC), in nanoseconds.
+
+  t-xsr-ns:
+    type: int
+    required: true
+    description: Exit self-refresh to active command time (tXSR), in nanoseconds.
+
+  t-rrd-ns:
+    type: int
+    required: true
+    description: Active bank A to active bank B latency (tRRD), in nanoseconds.
