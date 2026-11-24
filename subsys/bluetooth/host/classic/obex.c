@@ -49,15 +49,6 @@ enum {
 	BT_OBEX_REQ_F_BIT,  /* Request Final bit set */
 };
 
-/* SRM disable value */
-#define BT_OBEX_SRM_DISABLE 0
-
-/* SRM enable value */
-#define BT_OBEX_SRM_ENABLE 1
-
-/* SRMP wait value*/
-#define BT_OBEX_SRMP_WAIT 1
-
 static struct net_buf *obex_alloc_buf(struct bt_obex *obex)
 {
 	struct net_buf *buf;

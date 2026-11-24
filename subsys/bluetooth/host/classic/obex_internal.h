@@ -20,6 +20,15 @@
 #define BT_OBEX_OPCODE_SESSION  0x87
 #define BT_OBEX_OPCODE_ABORT    0xff
 
+/* SRM disable value */
+#define BT_OBEX_SRM_DISABLE 0
+
+/* SRM enable value */
+#define BT_OBEX_SRM_ENABLE 1
+
+/* SRMP wait value*/
+#define BT_OBEX_SRMP_WAIT 1
+
 struct bt_obex_comm_hdr {
 	uint8_t code;
 } __packed;
