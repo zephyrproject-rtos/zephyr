@@ -6,7 +6,7 @@
 
 #include <zephyr/sys/crc.h>
 
-uint32_t __weak crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len)
+uint32_t crc32_ieee_sw_update(uint32_t crc, const uint8_t *data, size_t len)
 {
 	/* crc table generated from polynomial 0xedb88320 */
 	static const uint32_t table[16] = {
@@ -27,12 +27,14 @@ uint32_t __weak crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len)
 	return (~crc);
 }
 
+FUNC_ALIAS(crc32_ieee_sw_update, __weak crc32_ieee_update, uint32_t);
+
 uint32_t __weak crc32_ieee(const uint8_t *data, size_t len)
 {
 	return crc32_ieee_update(0x0, data, len);
 }
 
-uint32_t __weak crc32_mpeg2_update(uint32_t crc, const uint8_t *data, size_t len)
+uint32_t crc32_mpeg2_sw_update(uint32_t crc, const uint8_t *data, size_t len)
 {
 	/* crc table generated from polynomial 0x04C11DB7 (MSB-first, no reflection) */
 	static const uint32_t table[16] = {
@@ -50,6 +52,8 @@ uint32_t __weak crc32_mpeg2_update(uint32_t crc, const uint8_t *data, size_t len
 
 	return crc;
 }
+
+FUNC_ALIAS(crc32_mpeg2_sw_update, __weak crc32_mpeg2_update, uint32_t);
 
 uint32_t __weak crc32_mpeg2(const uint8_t *data, size_t len)
 {

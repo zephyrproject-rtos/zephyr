@@ -49,23 +49,27 @@ static int crc_operation(const struct device *const dev, struct crc_ctx *ctx, co
 uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
 	     bool reversed)
 {
+	uint8_t polynomial_final = polynomial;
 	uint8_t flag_reversed = 0;
 	int ret;
 
 	if (reversed) {
 		/* We're reversing 4 bits */
-		polynomial = sys_bit_rev8(polynomial) >> 4;
+		polynomial_final = sys_bit_rev8(polynomial_final) >> 4;
 		flag_reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT;
 	}
 
 	struct crc_ctx ctx = {
 		.type = CRC4,
-		.polynomial = polynomial,
+		.polynomial = polynomial_final,
 		.seed = initial_value,
 		.reversed = flag_reversed,
 	};
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc4_sw(src, len, polynomial, initial_value, reversed);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -88,6 +92,9 @@ uint8_t crc4_ti(uint8_t seed, const uint8_t *src, size_t len)
 	};
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc4_ti_sw(seed, src, len);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -110,6 +117,9 @@ uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len)
 	};
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc7_be_sw(seed, src, len);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -138,6 +148,9 @@ uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
 	}
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc8_sw(src, len, polynomial, initial_value, reversed);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -159,6 +172,9 @@ uint8_t crc8_rohc(uint8_t initial_value, const void *buf, size_t len)
 	};
 
 	ret = crc_operation(crc_dev, &ctx, buf, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc8_rohc_sw(initial_value, buf, len);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -181,6 +197,9 @@ uint8_t crc8_ccitt(uint8_t initial_value, const void *buf, size_t len)
 	};
 
 	ret = crc_operation(crc_dev, &ctx, buf, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc8_ccitt_sw(initial_value, buf, len);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -203,6 +222,9 @@ uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len)
 	};
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc16_sw(poly, seed, src, len);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -225,6 +247,9 @@ uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t 
 	};
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc16_reflect_sw(poly, seed, src, len);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -246,6 +271,9 @@ uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len)
 	};
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc16_ccitt_sw(seed, src, len);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -268,6 +296,9 @@ uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len)
 	};
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc16_itu_t_sw(seed, src, len);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -290,6 +321,9 @@ uint32_t crc24_pgp_update(uint32_t crc, const uint8_t *data, size_t len)
 	};
 
 	ret = crc_operation(crc_dev, &ctx, data, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc24_pgp_sw_update(crc, data, len);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -321,6 +355,9 @@ uint32_t crc32_c(uint32_t crc, const uint8_t *buf, size_t len, bool first_pkt, b
 	};
 
 	ret = crc_operation(crc_dev, &ctx, buf, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc32_c_sw(crc, buf, len, first_pkt, last_pkt);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -334,17 +371,19 @@ uint32_t crc32_c(uint32_t crc, const uint8_t *buf, size_t len, bool first_pkt, b
 uint32_t crc32_ieee_update(uint32_t crc, const uint8_t *buf, size_t len)
 {
 	int ret;
-
-	crc = ~crc;
+	uint32_t crc_n = ~crc;
 
 	struct crc_ctx ctx = {
 		.type = CRC32_IEEE,
 		.polynomial = CRC32_IEEE_POLY,
-		.seed = crc,
+		.seed = crc_n,
 		.reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT,
 	};
 
 	ret = crc_operation(crc_dev, &ctx, buf, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc32_ieee_sw_update(crc, buf, len);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -372,6 +411,9 @@ uint32_t crc32_k_4_2_update(uint32_t crc, const uint8_t *const data, const size_
 	};
 
 	ret = crc_operation(crc_dev, &ctx, data, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc32_k_4_2_sw_update(crc, data, len);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;
@@ -394,6 +436,9 @@ uint32_t crc32_mpeg2_update(uint32_t crc, const uint8_t *data, size_t len)
 	};
 
 	ret = crc_operation(crc_dev, &ctx, data, len);
+	if ((ret == -ENOTSUP) && IS_ENABLED(CONFIG_CRC_DRIVER_INCOMPLETE)) {
+		return crc32_mpeg2_sw_update(crc, data, len);
+	}
 	if (ret != 0) {
 		LOG_ERR("CRC operation failed: %d", ret);
 		return 0;

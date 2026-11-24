@@ -18,7 +18,7 @@ static const uint8_t crc8_rohc_small_table[16] = {
 	0xe0, 0xfc, 0xd8, 0xc4, 0x90, 0x8c, 0xa8, 0xb4,
 };
 
-uint8_t __weak crc8_ccitt(uint8_t val, const void *buf, size_t cnt)
+uint8_t crc8_ccitt_sw(uint8_t val, const void *buf, size_t cnt)
 {
 	size_t i;
 	const uint8_t *p = buf;
@@ -31,7 +31,9 @@ uint8_t __weak crc8_ccitt(uint8_t val, const void *buf, size_t cnt)
 	return val;
 }
 
-uint8_t __weak crc8_rohc(uint8_t val, const void *buf, size_t cnt)
+FUNC_ALIAS(crc8_ccitt_sw, __weak crc8_ccitt, uint8_t);
+
+uint8_t crc8_rohc_sw(uint8_t val, const void *buf, size_t cnt)
 {
 	size_t i;
 	const uint8_t *p = buf;
@@ -44,8 +46,10 @@ uint8_t __weak crc8_rohc(uint8_t val, const void *buf, size_t cnt)
 	return val;
 }
 
-uint8_t __weak crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
-		    bool reversed)
+FUNC_ALIAS(crc8_rohc_sw, __weak crc8_rohc, uint8_t);
+
+uint8_t crc8_sw(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
+		bool reversed)
 {
 	uint8_t crc = initial_value;
 	size_t i, j;
@@ -72,3 +76,5 @@ uint8_t __weak crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t 
 
 	return crc;
 }
+
+FUNC_ALIAS(crc8_sw, __weak crc8, uint8_t);

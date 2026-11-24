@@ -8,6 +8,9 @@ config CRC_STM32F1
 	select CRC_DRIVER_HAS_CRC32_IEEE
 	select CRC_DRIVER_HAS_CRC32_MPEG2
 	select CRC_DRIVER_NEEDS_WORDS
+	select CRC_DRIVER_FIXED_POLYNOM
+	select CRC_DRIVER_FIXED_INIT_VAL
+	select CRC_DRIVER_FIXED_REVERSIONS
 	help
 	  Enables STM32 family CRC driver for the F1, F2, F4 and L1 series.
 

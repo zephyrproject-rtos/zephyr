@@ -6,7 +6,7 @@
 
 #include <zephyr/sys/crc.h>
 
-uint8_t __weak crc7_be(uint8_t seed, const uint8_t *src, size_t len)
+uint8_t crc7_be_sw(uint8_t seed, const uint8_t *src, size_t len)
 {
 	while (len-- != 0UL) {
 		uint8_t e = seed ^ *src++;
@@ -17,3 +17,5 @@ uint8_t __weak crc7_be(uint8_t seed, const uint8_t *src, size_t len)
 
 	return seed;
 }
+
+FUNC_ALIAS(crc7_be_sw, __weak crc7_be, uint8_t);

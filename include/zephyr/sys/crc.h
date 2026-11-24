@@ -38,7 +38,7 @@ extern "C" {
  * The CRC-24 value is stored on a 32-bit value, only the 3 least significant bytes
  * are meaningful. Use the following mask to only keep the CRC-24 value.
  */
-#define CRC24_FINAL_VALUE_MASK 0x00FFFFFFU
+#define CRC24_FINAL_VALUE_MASK  0x00FFFFFFU
 
 /**
  * @defgroup checksum Checksum
@@ -123,7 +123,7 @@ enum crc_type {
 
 /**
  * @brief Generic function for computing a CRC-16 without input or output
- *        reflection.
+ *        reflection using the default implementation.
  *
  * Compute CRC-16 by passing in the address of the input, the input length
  * and polynomial used in addition to the initial value. This is O(n*8) where n
@@ -143,8 +143,24 @@ enum crc_type {
 uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
 
 /**
+ * @brief Generic function for computing a CRC-16 without input or output
+ *        reflection, through software.
+ *
+ * @see crc16
+ *
+ * @param poly The polynomial to use omitting the leading x^16
+ *             coefficient
+ * @param seed Initial value for the CRC computation
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC16 value (without any XOR applied to it)
+ */
+uint16_t crc16_sw(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
+
+/**
  * @brief Generic function for computing a CRC-16 with input and output
- *        reflection.
+ *        reflection using the default implementation.
  *
  * Compute CRC-16 by passing in the address of the input, the input length
  * and polynomial used in addition to the initial value. This is O(n*8) where n
@@ -171,11 +187,30 @@ uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
  * @return The computed CRC16 value (without any XOR applied to it)
  */
 uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
+
+/**
+ * @brief Generic function for computing a CRC-16 with input and output
+ *        reflection through software.
+ *
+ * @see crc16_reflect
+ *
+ * @param poly The polynomial to use omitting the leading x^16
+ *             coefficient. Important: please reflect the poly. For example,
+ *             use 0xA001 instead of 0x8005 for CRC-16-MODBUS.
+ * @param seed Initial value for the CRC computation
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC16 value (without any XOR applied to it)
+ */
+uint16_t crc16_reflect_sw(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
+
 /**
  * @brief Generic function for computing CRC 8
  *
  * Compute CRC 8 by passing in the address of the input, the input length
- * and polynomial used in addition to the initial value.
+ * and polynomial used in addition to the initial value using the default
+ * implementation.
  *
  * @param src Input bytes for the computation
  * @param len Length of the input in bytes
@@ -190,8 +225,25 @@ uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
 	     bool reversed);
 
 /**
+ * @brief Generic function for computing CRC 8 through software
+ *
+ * @see crc8
+ *
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ * @param polynomial The polynomial to use omitting the leading x^8
+ *        coefficient
+ * @param initial_value Initial value for the CRC computation
+ * @param reversed Should we use reflected/reversed values or not
+ *
+ * @return The computed CRC8 value
+ */
+uint8_t crc8_sw(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
+		bool reversed);
+
+/**
  * @brief Compute the checksum of a buffer with polynomial 0x1021, reflecting
- *        input and output.
+ *        input and output, using the default implementation.
  *
  * This function is able to calculate any CRC that uses 0x1021 as it polynomial
  * and requires reflecting both the input and the output. It is a fast variant
@@ -223,8 +275,22 @@ uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
 uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len);
 
 /**
+ * @brief Compute the checksum of a buffer with polynomial 0x1021, reflecting
+ *        input and output, through software.
+ *
+ * @see crc16_ccitt
+ *
+ * @param seed Value to seed the CRC with
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC16 value (without any XOR applied to it)
+ */
+uint16_t crc16_ccitt_sw(uint16_t seed, const uint8_t *src, size_t len);
+
+/**
  * @brief Compute the checksum of a buffer with polynomial 0x1021, no
- *        reflection of input or output.
+ *        reflection of input or output, using the default implementation.
  *
  * This function is able to calculate any CRC that uses 0x1021 as it polynomial
  * and requires no reflection on  both the input and the output. It is a fast
@@ -260,6 +326,20 @@ uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len);
 uint16_t crc16_itu_t(uint16_t seed, const uint8_t *src, size_t len);
 
 /**
+ * @brief Compute the checksum of a buffer with polynomial 0x1021, no
+ *        reflection of input or output, through software.
+ *
+ * @see crc16_itu_t
+ *
+ * @param seed Value to seed the CRC with
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC16 value (without any XOR applied to it)
+ */
+uint16_t crc16_itu_t_sw(uint16_t seed, const uint8_t *src, size_t len);
+
+/**
  * @brief Compute the ANSI (or Modbus) variant of CRC-16
  *
  * The ANSI variant of CRC-16 uses 0x8005 (0xA001 reflected) as its polynomial
@@ -287,7 +367,7 @@ static inline uint16_t crc16_ansi(const uint8_t *src, size_t len)
 uint32_t crc32_ieee(const uint8_t *data, size_t len);
 
 /**
- * @brief Update an IEEE conforming CRC32 checksum.
+ * @brief Update an IEEE conforming CRC32 checksum using the default implementation.
  *
  * @param crc   CRC32 checksum that needs to be updated.
  * @param data  Pointer to data on which the CRC should be calculated.
@@ -299,7 +379,19 @@ uint32_t crc32_ieee(const uint8_t *data, size_t len);
 uint32_t crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len);
 
 /**
- * @brief Calculate CRC32C (Castagnoli) checksum.
+ * @brief Update an IEEE conforming CRC32 checksum, through software.
+ *
+ * @param crc   CRC32 checksum that needs to be updated.
+ * @param data  Pointer to data on which the CRC should be calculated.
+ * @param len   Data length.
+ *
+ * @return CRC32 value.
+ *
+ */
+uint32_t crc32_ieee_sw_update(uint32_t crc, const uint8_t *data, size_t len);
+
+/**
+ * @brief Calculate CRC32C (Castagnoli) checksum using the default implementation.
  *
  * @param crc       CRC32C checksum that needs to be updated.
  * @param data      Pointer to data on which the CRC should be calculated.
@@ -310,12 +402,26 @@ uint32_t crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len);
  * @return CRC32 value.
  *
  */
-uint32_t crc32_c(uint32_t crc, const uint8_t *data,
-		 size_t len, bool first_pkt, bool last_pkt);
+uint32_t crc32_c(uint32_t crc, const uint8_t *data, size_t len, bool first_pkt, bool last_pkt);
 
 /**
- * @brief Update a CRC-32K/4.2 (*op) (Koopman) checksum. This is a good HD=4
- * checksum up to 2,147,483,615 bits and HD=5/6 up to 6,167 bits.
+ * @brief Calculate CRC32C (Castagnoli) checksum through software.
+ *
+ * @param crc       CRC32C checksum that needs to be updated.
+ * @param data      Pointer to data on which the CRC should be calculated.
+ * @param len       Data length.
+ * @param first_pkt Whether this is the first packet in the stream.
+ * @param last_pkt  Whether this is the last packet in the stream.
+ *
+ * @return CRC32 value.
+ *
+ */
+uint32_t crc32_c_sw(uint32_t crc, const uint8_t *data, size_t len, bool first_pkt, bool last_pkt);
+
+/**
+ * @brief Update a CRC-32K/4.2 (*op) (Koopman) checksum using the default
+ * implementation. This is a good HD=4 checksum up to 2,147,483,615 bits and
+ * HD=5/6 up to 6,167 bits.
  *
  * Hamming Distance and properties:
  *
@@ -340,6 +446,19 @@ uint32_t crc32_c(uint32_t crc, const uint8_t *data,
 uint32_t crc32_k_4_2_update(uint32_t crc, const uint8_t *data, size_t len);
 
 /**
+ * @brief Update a CRC-32K/4.2 (*op) (Koopman) checksum through software.
+ *
+ * @see crc32_k_4_2_update
+ *
+ * @param crc       CRC32 checksum that needs to be updated.
+ * @param data      Pointer to data on which the CRC should be calculated.
+ * @param len       Data length.
+ *
+ * @return CRC32 value.
+ */
+uint32_t crc32_k_4_2_sw_update(uint32_t crc, const uint8_t *data, size_t len);
+
+/**
  * @brief Generate CRC-32/MPEG-2 checksum.
  *
  * Uses polynomial 0x04C11DB7 with initial value 0xFFFFFFFF, no input or output
@@ -354,7 +473,7 @@ uint32_t crc32_k_4_2_update(uint32_t crc, const uint8_t *data, size_t len);
 uint32_t crc32_mpeg2(const uint8_t *data, size_t len);
 
 /**
- * @brief Update a CRC-32/MPEG-2 checksum.
+ * @brief Update a CRC-32/MPEG-2 checksum using the default implementation.
  *
  * Computes a CRC-32 using polynomial 0x04C11DB7 in MSB-first form, with no
  * input or output reflection and no final XOR. With @p crc set to 0xFFFFFFFF
@@ -370,7 +489,21 @@ uint32_t crc32_mpeg2(const uint8_t *data, size_t len);
 uint32_t crc32_mpeg2_update(uint32_t crc, const uint8_t *data, size_t len);
 
 /**
- * @brief Compute CCITT variant of CRC 8
+ * @brief Update a CRC-32/MPEG-2 checksum, through software.
+ *
+ * @see crc32_mpeg2_update
+ *
+ * @param crc   CRC-32 checksum that needs to be updated (use 0xFFFFFFFF for
+ *              the first call to match CRC-32/MPEG-2).
+ * @param data  Pointer to data on which the CRC should be calculated.
+ * @param len   Data length.
+ *
+ * @return CRC-32 value.
+ */
+uint32_t crc32_mpeg2_sw_update(uint32_t crc, const uint8_t *data, size_t len);
+
+/**
+ * @brief Compute CCITT variant of CRC 8 using the default implementation
  *
  * Normal CCITT variant of CRC 8 is using 0x07.
  *
@@ -383,7 +516,20 @@ uint32_t crc32_mpeg2_update(uint32_t crc, const uint8_t *data, size_t len);
 uint8_t crc8_ccitt(uint8_t initial_value, const void *buf, size_t len);
 
 /**
- * @brief Compute ROHC variant of CRC 8
+ * @brief Compute CCITT variant of CRC 8 through software
+ *
+ * @see crc8_ccitt
+ *
+ * @param initial_value Initial value for the CRC computation
+ * @param buf Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC8 value
+ */
+uint8_t crc8_ccitt_sw(uint8_t initial_value, const void *buf, size_t len);
+
+/**
+ * @brief Compute ROHC variant of CRC 8 using the default implementation
  *
  * ROHC (Robust Header Compression) variant of CRC 8.
  * Uses 0x07 as the polynomial with reflection.
@@ -397,7 +543,21 @@ uint8_t crc8_ccitt(uint8_t initial_value, const void *buf, size_t len);
 uint8_t crc8_rohc(uint8_t initial_value, const void *buf, size_t len);
 
 /**
- * @brief Compute the CRC-7 checksum of a buffer.
+ * @brief Compute ROHC variant of CRC 8 through software
+ *
+ * @see crc8_rohc
+ *
+ * @param initial_value Initial value for the CRC computation
+ * @param buf Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC8 value
+ */
+uint8_t crc8_rohc_sw(uint8_t initial_value, const void *buf, size_t len);
+
+/**
+ * @brief Compute the CRC-7 checksum of a buffer using the default
+ * implementation.
  *
  * See JESD84-A441.  Used by the MMC protocol.  Uses 0x09 as the
  * polynomial with no reflection.  The CRC is left
@@ -412,7 +572,21 @@ uint8_t crc8_rohc(uint8_t initial_value, const void *buf, size_t len);
 uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len);
 
 /**
- * @brief Compute the CRC-4 checksum of a buffer.
+ * @brief Compute the CRC-7 checksum of a buffer through software.
+ *
+ * @see crc7_be
+ *
+ * @param seed Value to seed the CRC with
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC7 value
+ */
+uint8_t crc7_be_sw(uint8_t seed, const uint8_t *src, size_t len);
+
+/**
+ * @brief Compute the CRC-4 checksum of a buffer using the default
+ * implementation.
  *
  * Used by the TMAG5170 sensor. Uses 0x03 as the
  * polynomial with no reflection. 4 most significant
@@ -427,7 +601,20 @@ uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len);
 uint8_t crc4_ti(uint8_t seed, const uint8_t *src, size_t len);
 
 /**
- * @brief Generic function for computing CRC 4
+ * @brief Compute the CRC-4 checksum of a buffer through software.
+ *
+ * @see crc4_ti
+ *
+ * @param seed Value to seed the CRC with
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC4 value
+ */
+uint8_t crc4_ti_sw(uint8_t seed, const uint8_t *src, size_t len);
+
+/**
+ * @brief Generic function for computing CRC 4 using the default implementation
  *
  * Compute CRC 4 by passing in the address of the input, the input length
  * and polynomial used in addition to the initial value. The input buffer
@@ -447,6 +634,23 @@ uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
 	     bool reversed);
 
 /**
+ * @brief Generic function for computing CRC 4 through software
+ *
+ * @see crc4
+ *
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ * @param polynomial The polynomial to use omitting the leading x^4
+ *        coefficient
+ * @param initial_value Initial value for the CRC computation
+ * @param reversed Should we use reflected/reversed values or not
+ *
+ * @return The computed CRC4 value
+ */
+uint8_t crc4_sw(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
+		bool reversed);
+
+/**
  * @brief Generate an OpenPGP CRC-24 checksum as defined in RFC 4880 section 6.1.
  *
  * @param data A pointer to the data on which the CRC will be calculated.
@@ -457,7 +661,7 @@ uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
 uint32_t crc24_pgp(const uint8_t *data, size_t len);
 
 /**
- * @brief Update an OpenPGP CRC-24 checksum.
+ * @brief Update an OpenPGP CRC-24 checksum using the default implementation.
  *
  * @param crc The CRC-24 checksum that needs to be updated. The full 32-bit value of the CRC needs
  *            to be used between calls, do not mask the value to keep only the last 24 bits.
@@ -468,6 +672,19 @@ uint32_t crc24_pgp(const uint8_t *data, size_t len);
  *         with CRC24_FINAL_VALUE_MASK to keep only the meaningful 24 bits of the CRC result.
  */
 uint32_t crc24_pgp_update(uint32_t crc, const uint8_t *data, size_t len);
+
+/**
+ * @brief Update an OpenPGP CRC-24 checksum through software.
+ *
+ * @param crc The CRC-24 checksum that needs to be updated. The full 32-bit value of the CRC needs
+ *            to be used between calls, do not mask the value to keep only the last 24 bits.
+ * @param data A pointer to the data on which the CRC will be calculated.
+ * @param len  Data length in bytes.
+ *
+ * @return The CRC-24 value. When the last buffer of data has been processed, mask the value
+ *         with CRC24_FINAL_VALUE_MASK to keep only the meaningful 24 bits of the CRC result.
+ */
+uint32_t crc24_pgp_sw_update(uint32_t crc, const uint8_t *data, size_t len);
 
 /**
  * @brief Calculate an RTCM3 CRC24Q frame checksum
