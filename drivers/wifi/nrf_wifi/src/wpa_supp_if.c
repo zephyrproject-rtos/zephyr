@@ -2581,7 +2581,7 @@ static int nrf_wifi_set_bss(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep,
 	}
 
 	if (params->basic_rates) {
-		for (i = 0; params->basic_rates[i] != -1; i++) {
+		for (i = 0; params->basic_rates[i] > 0; i++) {
 			if (i >= ARRAY_SIZE(bss_info.basic_rates)) {
 				LOG_ERR("%s: basic_rates too big: %d (max %d)", __func__, i,
 					ARRAY_SIZE(bss_info.basic_rates));
