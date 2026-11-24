@@ -28,9 +28,6 @@ config BT_DEVICE_NAME_GATT_WRITABLE
 if BT_DEVICE_NAME_GATT_WRITABLE
 choice BT_DEVICE_NAME_GATT_WRITABLE_SECURITY
 	prompt "Security requirements"
-	default BT_DEVICE_NAME_GATT_WRITABLE_NONE if DEVICE_NAME_GATT_WRITABLE_NONE
-	default BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN if DEVICE_NAME_GATT_WRITABLE_AUTHEN
-	default BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT if DEVICE_NAME_GATT_WRITABLE_ENCRYPT
 	default BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT
 	help
 	  Select security requirements for writing device name by remote GATT
@@ -47,25 +44,7 @@ config BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN
 
 endchoice  #BT_DEVICE_NAME_GATT_WRITABLE_SECURITY
 
-config DEVICE_NAME_GATT_WRITABLE_NONE
-	bool "No requirements [DEPRECATED]"
-	select DEPRECATED
-	help
-	  This option is deprecated. Select BT_DEVICE_NAME_GATT_WRITABLE_NONE instead.
-
-config DEVICE_NAME_GATT_WRITABLE_ENCRYPT
-	bool "Encryption required [DEPRECATED]"
-	select DEPRECATED
-	help
-	  This option is deprecated. Select BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT instead.
-
-config DEVICE_NAME_GATT_WRITABLE_AUTHEN
-	bool "Encryption and authentication required [DEPRECATED]"
-	select DEPRECATED
-	help
-	  This option is deprecated. Select BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN instead.
-
-endif #BT_DEVICE_NAME_GATT_WRITABLE
+endif # BT_DEVICE_NAME_GATT_WRITABLE
 
 config BT_DEVICE_APPEARANCE_GATT_WRITABLE
 	bool "Allow to write GAP Appearance by remote GATT clients"
@@ -78,7 +57,6 @@ config BT_DEVICE_APPEARANCE_GATT_WRITABLE
 if BT_DEVICE_APPEARANCE_GATT_WRITABLE
 choice BT_DEVICE_APPEARANCE_GATT_WRITABLE_SECURITY
 	prompt "Security requirements"
-	default BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN if DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
 	default BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
 	help
 	  Select security requirements for writing device appearance by remote
@@ -95,12 +73,6 @@ config BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
 
 endchoice  #BT_DEVICE_APPEARANCE_GATT_WRITABLE_SECURITY
 
-config DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
-	bool "Encryption and authentication required [DEPRECATED]"
-	select DEPRECATED
-	help
-	  This option is deprecated. Select BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN instead.
-
-endif #BT_DEVICE_APPEARANCE_GATT_WRITABLE
+endif # BT_DEVICE_APPEARANCE_GATT_WRITABLE
 
 endif #BT_GAP_SVC
