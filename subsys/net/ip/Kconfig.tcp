@@ -213,6 +213,34 @@ config NET_TCP_PKT_ALLOC_TIMEOUT
 	  This value indicates how long the stack should wait for the packet to
 	  be allocated, before returning an internal error and trying again.
 
+config NET_TCP_TX_SEGMENT_VIEWS
+	bool "Send segments without copying their payload"
+	select NET_PKT_TX_VIEWS
+	help
+	  Build the payload of a sent segment from views into the send queue
+	  instead of copying it into new buffers. This saves one copy of the
+	  data for each segment sent or retransmitted, and the memory of that
+	  copy while the segment waits in the queues below TCP. Code below
+	  TCP must not write into the payload of a segment.
+	  Views are only used on an interface whose driver sends packets of
+	  several buffers at no extra cost, as it says with
+	  net_if_set_tx_sg_frags(), within that count of buffers, and when
+	  each view carries at least CONFIG_NET_TCP_TX_SEGMENT_VIEW_MIN_LEN
+	  bytes on average. Otherwise, or when no view is free, the payload
+	  is copied.
+
+config NET_TCP_TX_SEGMENT_VIEW_MIN_LEN
+	int "Payload bytes for each view"
+	default 256
+	range 1 $(UINT16_MAX)
+	depends on NET_TCP_TX_SEGMENT_VIEWS
+	help
+	  A segment is sent from views only when its payload has at least
+	  this many bytes for each view it needs. A segment with less is
+	  copied, as allocating and releasing a view costs more than copying
+	  a few bytes. With network buffers smaller than this, a segment is
+	  always copied.
+
 config NET_TCP_CHECKSUM
 	bool "Check TCP checksum"
 	default y
