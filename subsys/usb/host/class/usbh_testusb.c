@@ -185,7 +185,7 @@ err:
 static bool testusb_xfer_is_short(const struct uhc_transfer *const xfer,
 				  const uint32_t length)
 {
-	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		return xfer->buf->len != length;
 	}
 
