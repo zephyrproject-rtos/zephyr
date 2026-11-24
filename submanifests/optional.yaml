@@ -10,7 +10,7 @@ manifest:
       groups:
         - optional
     - name: chre
-      revision: 3b32c76efee705af146124fb4190f71be5a4e36e
+      revision: 50c7dc15f17e71ae66aad094f4cf3d5365afe881
       path: modules/lib/chre
       remote: upstream
       groups:
