@@ -1,0 +1,7 @@
+name: video-jpegenc
+description: |
+  Instantiates the JPEGENC software JPEG encoder as the zephyr,videoenc
+  chosen node.
+append:
+  EXTRA_DTC_OVERLAY_FILE: video-jpegenc.overlay
+  EXTRA_CONF_FILE: video-jpegenc.conf

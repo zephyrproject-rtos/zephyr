@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - video
+  harness: ztest
+
+tests:
+  video.encoder.jpeg.jpegenc:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+      - mps2/an521/cpu0
+    integration_platforms:
+      - native_sim/native/64
+    modules:
+      - jpegenc
+    extra_args:
+      - SNIPPET="video-jpegenc"
