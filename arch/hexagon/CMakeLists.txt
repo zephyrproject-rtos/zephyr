@@ -24,6 +24,8 @@ set_compiler_property(PROPERTY no_global_merge "")
 # headers to be searched before Zephyr's minimal libc headers, breaking
 # CONFIG_MINIMAL_LIBC builds (ZRESTRICT undefined, conflicting types).
 zephyr_compile_options(--no-default-config)
+
+zephyr_compile_options_ifdef(CONFIG_HEXAGON_HVX -mhvx -mhvx-length=128b)
 zephyr_link_libraries(
   -nostartfiles
   --no-default-config

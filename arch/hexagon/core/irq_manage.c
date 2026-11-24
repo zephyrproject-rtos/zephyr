@@ -14,6 +14,7 @@
 #include <hexagon_intc.h>
 #include <irq.h>
 #include <event_context.h>
+#include <hexagon_hvx.h>
 #ifdef CONFIG_USERSPACE
 extern void z_hexagon_syscall_handler(struct arch_esf *esf);
 extern void z_hexagon_user_mode_sync(void);
@@ -111,12 +112,22 @@ void z_hexagon_event_exit_user_sync(void)
 
 /* Handle general exceptions */
 #define GSR_CAUSE_MASK 0xFF
+#define HEXAGON_CAUSE_NO_COPROC   0x16U
 #define HEXAGON_CAUSE_STACK_LIMIT 0x27U
 
 static void z_hexagon_exception_handler(struct event_context *ctx)
 {
 	uint32_t cause = ctx->gsr & GSR_CAUSE_MASK;
 	uint32_t pc = ctx->gelr;
+
+	/*
+	 * GELR points at the faulting packet, it runs again on return. If
+	 * HVX can't be used here, fall through to the fatal error below.
+	 */
+	if (IS_ENABLED(CONFIG_HEXAGON_HVX) && (cause == HEXAGON_CAUSE_NO_COPROC) &&
+	    z_hexagon_hvx_trap()) {
+		return;
+	}
 
 	LOG_ERR("exception: cause=0x%x pc=0x%x", cause, pc);
 
@@ -137,6 +148,15 @@ static void z_hexagon_exception_handler(struct event_context *ctx)
  */
 static void z_hexagon_trap0_handler(struct event_context *ctx)
 {
+	/*
+	 * HVM passes us any trap0 the VM's trap mask doesn't cover, with the
+	 * number in GSR.CAUSE. Make hwconfig fail instead of faulting.
+	 */
+	if ((ctx->gsr & GSR_CAUSE_MASK) == HEXAGON_VM_hwconfig) {
+		ctx->r0_r1[0] = (uint32_t)-1;
+		return;
+	}
+
 #ifdef CONFIG_USERSPACE
 	{
 		/* Minimal arch_esf: only args and syscall number matter. */
