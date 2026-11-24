@@ -12,7 +12,7 @@
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/sys/clock.h>
 
-K_THREAD_STACK_DEFINE(bt_lw_stack_area, CONFIG_BT_LONG_WQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(bt_lw_stack_area, CONFIG_BT_LONG_WQ_STACK_SIZE);
 static struct k_work_q bt_long_wq;
 
 int bt_long_wq_schedule(struct k_work_delayable *dwork, k_timeout_t timeout)
@@ -38,7 +38,7 @@ static int long_wq_init(void)
 	k_work_queue_init(&bt_long_wq);
 
 	k_work_queue_start(&bt_long_wq, bt_lw_stack_area,
-			   K_THREAD_STACK_SIZEOF(bt_lw_stack_area),
+			   K_KERNEL_STACK_SIZEOF(bt_lw_stack_area),
 			   CONFIG_BT_LONG_WQ_PRIO, &cfg);
 
 	return 0;
