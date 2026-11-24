@@ -496,8 +496,26 @@ static void i2s_mcux_dma_tx_callback(const struct device *dma_dev, void *arg, ui
 
 	/* Received a STOP trigger, terminate TX immediately */
 	if (stream->last_block) {
+		void *pending[CONFIG_I2S_MCUX_FLEXCOMM_TX_BLOCK_COUNT];
+		size_t n = 0;
+
 		stream->state = I2S_STATE_READY;
 		i2s_mcux_tx_stream_disable(dev, false);
+
+		/* Return the blocks not yet sent to the front of in_queue, in order */
+		while (n < ARRAY_SIZE(pending) &&
+		       k_msgq_get(&stream->out_queue, &pending[n], K_NO_WAIT) == 0) {
+			n++;
+		}
+		while (n > 0) {
+			struct i2s_mcux_q_entry entry = {
+				.mem_block = pending[--n],
+				.size = stream->cfg.block_size,
+			};
+
+			k_msgq_put_front(&stream->in_queue, &entry);
+		}
+
 		LOG_DBG("TX STOPPED");
 		return;
 	}
