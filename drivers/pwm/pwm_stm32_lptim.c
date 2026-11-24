@@ -75,7 +75,7 @@ enum channel_state {
 struct pwm_stm32_lptim_config {
 	LPTIM_TypeDef *timer;
 	uint32_t prescaler;
-	const struct stm32_pclken *pclken;
+	struct stm32_pclken pclken[2];
 	struct reset_dt_spec reset;
 	const struct pinctrl_dev_config *pcfg;
 };
@@ -615,13 +615,10 @@ static int pwm_stm32_lptim_init(const struct device *dev)
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
                                                                                                    \
-	static const struct stm32_pclken pwm_stm32_lptim_pclken_##index[] =                        \
-		STM32_DT_CLOCKS(TIMER(index));                                                     \
-                                                                                                   \
 	static const struct pwm_stm32_lptim_config pwm_stm32_lptim_config_##index = {              \
 		.timer = (LPTIM_TypeDef *)DT_REG_ADDR(TIMER(index)),                               \
 		.prescaler = DT_PROP(TIMER(index), st_prescaler),                                  \
-		.pclken = pwm_stm32_lptim_pclken_##index,                                          \
+		.pclken = STM32_DT_CLOCKS(TIMER(index)),                                           \
 		.reset = RESET_DT_SPEC_GET(TIMER(index)),                                          \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 	};                                                                                         \
