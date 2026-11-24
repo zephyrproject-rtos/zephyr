@@ -41,6 +41,57 @@
 typedef unsigned int (*its_api_alloc_intid_t)(const struct device *dev);
 
 /**
+ * @brief Allocate and map consecutive LPI INTIDs to EventIDs starting at zero.
+ *
+ * Call its_setup_deviceid() before mapping the EventIDs.
+ *
+ * When rollback cannot be confirmed, potentially mapped INTIDs and EventIDs
+ * remain reserved. Retained INTIDs reduce later allocation capacity, and
+ * retrying the same EventIDs returns -EBUSY. If a rollback command fails, the
+ * original mapping error is returned unless releasing unused INTIDs fails.
+ *
+ * @param dev ITS device.
+ * @param device_id DeviceID whose EventIDs are mapped.
+ * @param count Number of INTIDs to allocate and map.
+ * @param[out] intid Where to store the first allocated LPI INTID (at least 8192).
+ *                   Not modified on failure.
+ * @retval 0 On success.
+ * @retval -ENODEV
+ *     - The ITS device is not ready.
+ *     - LPIs are unavailable on the calling CPU.
+ * @retval -ENOTSUP Cache maintenance is unavailable for non-coherent ITS memory.
+ * @retval -EINVAL @p intid is NULL, @p count is zero or exceeds
+ *                 @c CONFIG_GIC_V3_ITS_MAX_VECTORS, the DeviceID has not been set up,
+ *                 or a DeviceID or EventID is out of range.
+ * @retval -ENOSPC Not enough consecutive LPI INTIDs remain.
+ * @retval -EBUSY
+ *     - An EventID is reserved or already mapped.
+ *     - Device setup or Collection mapping is in progress.
+ *     - The ITS command queue is full.
+ * @retval -ETIMEDOUT The ITS did not complete a command.
+ * @retval -EIO The allocated INTIDs could not be released after a failure.
+ *
+ * Other negative values from the ITS command and device setup paths are propagated.
+ */
+typedef int (*its_api_alloc_map_intids_t)(const struct device *dev, uint32_t device_id,
+					  unsigned int count, unsigned int *intid);
+
+/**
+ * @brief Allocate consecutive LPI INTIDs.
+ *
+ * @param dev ITS device.
+ * @param count Number of INTIDs to allocate.
+ * @param[out] intid Where to store the first allocated LPI INTID (at least 8192).
+ *                   Not modified on failure.
+ * @retval 0 On success.
+ * @retval -ENODEV The ITS device is not ready.
+ * @retval -EINVAL @p intid is NULL or @p count is zero.
+ * @retval -ENOSPC Not enough consecutive LPI INTIDs remain.
+ */
+typedef int (*its_api_alloc_intids_t)(const struct device *dev, unsigned int count,
+				      unsigned int *intid);
+
+/**
  * @brief Callback type for setting up a device ID.
  * @copydetails its_setup_deviceid
  */
@@ -49,6 +100,10 @@ typedef int (*its_api_setup_deviceid_t)(const struct device *dev, uint32_t devic
 
 /**
  * @brief Callback type for mapping an EventID to an LPI INTID.
+ *
+ * An EventID can be mapped once for each DeviceID. If cleanup of a failed
+ * mapping cannot be confirmed, the EventID stays reserved and later mapping
+ * requests return -EBUSY.
  *
  * @param dev ITS device.
  * @param device_id DeviceID that raises the EventID.
@@ -62,6 +117,7 @@ typedef int (*its_api_setup_deviceid_t)(const struct device *dev, uint32_t devic
  * @retval -EINVAL The DeviceID has not been set up, or the DeviceID, EventID or INTID
  *                 is out of range.
  * @retval -EBUSY
+ *     - The EventID is reserved or already mapped.
  *     - Device setup or Collection mapping is in progress.
  *     - The ITS command queue is full.
  * @retval -ETIMEDOUT ITS command processing timed out.
@@ -101,6 +157,10 @@ __subsystem struct its_driver_api {
 	its_api_send_int_t send_int;
 	/** @driver_ops_mandatory @copybrief its_get_msi_addr */
 	its_api_get_msi_addr_t get_msi_addr;
+	/** @driver_ops_mandatory @copybrief its_alloc_intids */
+	its_api_alloc_intids_t alloc_intids;
+	/** @driver_ops_mandatory @copybrief its_alloc_map_intids */
+	its_api_alloc_map_intids_t alloc_map_intids;
 };
 
 /** @} */
@@ -116,6 +176,63 @@ __subsystem struct its_driver_api {
 static inline int its_alloc_intid(const struct device *dev)
 {
 	return DEVICE_API_GET(its, dev)->alloc_intid(dev);
+}
+
+/**
+ * @brief Allocate consecutive LPI INTIDs.
+ *
+ * @param dev ITS device.
+ * @param count Number of INTIDs to allocate.
+ * @param[out] intid Where to store the first allocated LPI INTID (at least 8192).
+ *                   Not modified on failure.
+ * @retval 0 On success.
+ * @retval -ENODEV The ITS device is not ready.
+ * @retval -EINVAL @p intid is NULL or @p count is zero.
+ * @retval -ENOSPC Not enough consecutive LPI INTIDs remain.
+ */
+static inline int its_alloc_intids(const struct device *dev, unsigned int count,
+				   unsigned int *intid)
+{
+	return DEVICE_API_GET(its, dev)->alloc_intids(dev, count, intid);
+}
+
+/**
+ * @brief Allocate consecutive LPI INTIDs and map them to EventIDs.
+ *
+ * Call its_setup_deviceid() before mapping the EventIDs.
+ *
+ * When rollback cannot be confirmed, potentially mapped INTIDs and EventIDs
+ * remain reserved. Retained INTIDs reduce later allocation capacity, and
+ * retrying the same EventIDs returns -EBUSY. If a rollback command fails, the
+ * original mapping error is returned unless releasing unused INTIDs fails.
+ *
+ * @param dev ITS device.
+ * @param device_id DeviceID whose EventIDs are mapped.
+ * @param count Number of INTIDs to allocate and map.
+ * @param[out] intid Where to store the first allocated LPI INTID (at least 8192).
+ *                   Not modified on failure.
+ * @retval 0 On success.
+ * @retval -ENODEV
+ *     - The ITS device is not ready.
+ *     - LPIs are unavailable on the calling CPU.
+ * @retval -ENOTSUP Cache maintenance is unavailable for non-coherent ITS memory.
+ * @retval -EINVAL @p intid is NULL, @p count is zero or exceeds
+ *                 @c CONFIG_GIC_V3_ITS_MAX_VECTORS, the DeviceID has not been set up,
+ *                 or a DeviceID or EventID is out of range.
+ * @retval -ENOSPC Not enough consecutive LPI INTIDs remain.
+ * @retval -EBUSY
+ *     - An EventID is reserved or already mapped.
+ *     - Device setup or Collection mapping is in progress.
+ *     - The ITS command queue is full.
+ * @retval -ETIMEDOUT The ITS did not complete a command.
+ * @retval -EIO The allocated INTIDs could not be released after a failure.
+ *
+ * Other negative values from the ITS command and device setup paths are propagated.
+ */
+static inline int its_alloc_map_intids(const struct device *dev, uint32_t device_id,
+				       unsigned int count, unsigned int *intid)
+{
+	return DEVICE_API_GET(its, dev)->alloc_map_intids(dev, device_id, count, intid);
 }
 
 /**
@@ -150,6 +267,10 @@ static inline int its_setup_deviceid(const struct device *dev, uint32_t device_i
 /**
  * @brief Map an EventID to an LPI INTID.
  *
+ * An EventID can be mapped once for each DeviceID. If cleanup of a failed
+ * mapping cannot be confirmed, the EventID stays reserved and later mapping
+ * requests return -EBUSY.
+ *
  * @param dev ITS device.
  * @param device_id DeviceID that raises the EventID.
  * @param event_id EventID to map.
@@ -162,6 +283,7 @@ static inline int its_setup_deviceid(const struct device *dev, uint32_t device_i
  * @retval -EINVAL The DeviceID has not been set up, or the DeviceID, EventID or INTID
  *                 is out of range.
  * @retval -EBUSY
+ *     - The EventID is reserved or already mapped.
  *     - Device setup or Collection mapping is in progress.
  *     - The ITS command queue is full.
  * @retval -ETIMEDOUT ITS command processing timed out.
@@ -187,9 +309,11 @@ static inline int its_map_intid(const struct device *dev, uint32_t device_id,
  * @retval -EINVAL
  *     - The DeviceID or EventID is out of range.
  *     - The DeviceID has not been set up.
+ *     - The EventID is unmapped.
  * @retval -ENOTSUP Cache maintenance is unavailable for non-coherent ITS memory.
  * @retval -EBUSY
  *     - Device setup is in progress.
+ *     - EventID mapping or rollback is unconfirmed.
  *     - The ITS command queue is full.
  * @retval -ETIMEDOUT ITS command processing timed out.
  *

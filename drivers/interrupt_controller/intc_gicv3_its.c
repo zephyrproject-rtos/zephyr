@@ -50,6 +50,7 @@ struct its_cmd_block {
 #define ITS_MAX_DEVICE_ID_BITS          16U
 #define ITS_MAX_BASER_ENTRY_SIZE        32U
 #define ITS_MAX_ITT_ENTRY_SIZE          (GITS_TYPER_ITT_ENTRY_SIZE_MASK + 1U)
+#define ITS_EVENT_BITMAP_BITS_PER_WORD  32U
 /* The level 1 entry size is a 64bit pointer */
 #define GITS_LVL1_ENTRY_SIZE (8UL)
 
@@ -82,12 +83,18 @@ BUILD_ASSERT(CONFIG_NUM_IRQS > GIC_LPI_INT_BASE,
 	((MIN(CONFIG_NUM_IRQS, BIT(ITS_LPI_ID_BITS)) > GIC_LPI_INT_BASE)                           \
 		 ? (MIN(CONFIG_NUM_IRQS, BIT(ITS_LPI_ID_BITS)) - GIC_LPI_INT_BASE)                 \
 		 : 1U)
+#define ITS_EVENT_BITMAP_WORDS                                                                     \
+	DIV_ROUND_UP(CONFIG_GIC_V3_ITS_MAX_VECTORS, ITS_EVENT_BITMAP_BITS_PER_WORD)
 
 SYS_BITARRAY_DEFINE_STATIC(its_lpi_intids, ITS_LPI_BITMAP_BITS);
 
 struct its_device_slot {
 	uint32_t device_id;
 	unsigned int nites;
+	/* Includes mappings in progress to prevent duplicate EventIDs. */
+	uint32_t event_id_bitmap[ITS_EVENT_BITMAP_WORDS];
+	/* Owned until mapping or rollback completes. */
+	uint32_t event_id_busy_bitmap[ITS_EVENT_BITMAP_WORDS];
 	bool used;
 	int status;
 };
@@ -96,6 +103,9 @@ struct gicv3_its_data {
 	mm_reg_t base;
 	struct its_cmd_block *cmd_base;
 	struct its_cmd_block *cmd_write;
+	uint32_t cmd_read;
+	uint64_t cmd_posted;
+	uint64_t cmd_completed;
 	bool tables_need_flush;
 	bool cmd_queue_needs_flush;
 	uint64_t *indirect_dev_l1_table;
@@ -468,14 +478,31 @@ static bool its_queue_full(struct gicv3_its_data *data)
 	return (((widx + 1) % ITS_CMD_QUEUE_NR_ENTRIES) == ridx);
 }
 
+/*
+ * Caller holds data->lock. Each post samples CREADR, so it cannot advance a full
+ * queue turn between samples: at most one queue's worth of commands is pending.
+ */
+static uint32_t its_update_cmd_completed(struct gicv3_its_data *data)
+{
+	uint32_t read = sys_read32(data->base + GITS_CREADR) &
+			(ITS_CMD_QUEUE_SIZE - sizeof(struct its_cmd_block));
+	uint32_t delta = (read + ITS_CMD_QUEUE_SIZE - data->cmd_read) % ITS_CMD_QUEUE_SIZE;
+
+	data->cmd_completed += delta / sizeof(struct its_cmd_block);
+	data->cmd_read = read;
+
+	return read;
+}
+
 #define ITS_CMD_WAIT_ATTEMPTS 1000000U
 
 static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *cmd)
 {
 	struct its_cmd_block *cmd_entry;
-	uint64_t wr_idx, rd_idx, idx;
+	uint64_t wr_idx, rd_idx, idx, ticket;
 	k_spinlock_key_t key;
 	unsigned int count = ITS_CMD_WAIT_ATTEMPTS;
+	bool done;
 
 	if ((data->cmd_base == NULL) || (data->cmd_write == NULL)) {
 		return -ENODEV;
@@ -518,7 +545,9 @@ static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *c
 	}
 
 	wr_idx = (data->cmd_write - data->cmd_base) * sizeof(*cmd_entry);
-	rd_idx = sys_read32(data->base + GITS_CREADR);
+	rd_idx = its_update_cmd_completed(data);
+	data->cmd_posted++;
+	ticket = data->cmd_posted;
 
 	barrier_dsync_fence_full();
 
@@ -529,9 +558,12 @@ static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *c
 	count = ITS_CMD_WAIT_ATTEMPTS;
 
 	while (1) {
-		idx = sys_read32(data->base + GITS_CREADR);
+		key = k_spin_lock(&data->lock);
+		idx = its_update_cmd_completed(data);
+		done = data->cmd_completed >= ticket;
+		k_spin_unlock(&data->lock, key);
 
-		if (idx == wr_idx) {
+		if (done) {
 			break;
 		}
 
@@ -597,6 +629,17 @@ static int its_send_mapti_cmd(struct gicv3_its_data *data, uint32_t device_id,
 	return its_post_command(data, &cmd);
 }
 
+static int its_send_discard_cmd(struct gicv3_its_data *data, uint32_t device_id, uint32_t event_id)
+{
+	struct its_cmd_block cmd = {0};
+
+	cmd.raw_cmd[0] =
+		MASK_SET(GITS_CMD_ID_DISCARD, GITS_CMD_ID) | MASK_SET(device_id, GITS_CMD_DEVICEID);
+	cmd.raw_cmd[1] = MASK_SET(event_id, GITS_CMD_EVENTID);
+
+	return its_post_command(data, &cmd);
+}
+
 static int its_send_int_cmd(struct gicv3_its_data *data, uint32_t device_id,
 			    uint32_t event_id)
 {
@@ -630,9 +673,90 @@ static struct its_device_slot *its_find_device_slot(struct gicv3_its_data *data,
 	return NULL;
 }
 
-static int its_check_event(struct gicv3_its_data *data, uint32_t device_id, uint32_t event_id)
+static int its_reserve_event_range(struct gicv3_its_data *data, uint32_t device_id,
+				   uint32_t first_event, unsigned int count)
 {
 	struct its_device_slot *slot;
+	k_spinlock_key_t key;
+	int ret;
+
+	if ((device_id >= BIT(data->device_id_bits)) || (count == 0U)) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&data->lock);
+	slot = its_find_device_slot(data, device_id);
+
+	if (slot == NULL) {
+		ret = -EINVAL;
+	} else if (slot->status == -EINPROGRESS) {
+		ret = -EBUSY;
+	} else if (slot->status != 0) {
+		ret = slot->status;
+	} else if ((first_event >= slot->nites) || (count > slot->nites - first_event)) {
+		ret = -EINVAL;
+	} else {
+		ret = 0;
+
+		for (unsigned int i = 0U; i < count; i++) {
+			uint32_t event_id = first_event + i;
+			size_t word = event_id / ITS_EVENT_BITMAP_BITS_PER_WORD;
+			uint32_t mask = BIT(event_id % ITS_EVENT_BITMAP_BITS_PER_WORD);
+
+			if ((slot->event_id_bitmap[word] & mask) != 0U) {
+				ret = -EBUSY;
+				break;
+			}
+		}
+
+		if (ret == 0) {
+			for (unsigned int i = 0U; i < count; i++) {
+				uint32_t event_id = first_event + i;
+				size_t word = event_id / ITS_EVENT_BITMAP_BITS_PER_WORD;
+				uint32_t mask = BIT(event_id % ITS_EVENT_BITMAP_BITS_PER_WORD);
+
+				slot->event_id_bitmap[word] |= mask;
+				slot->event_id_busy_bitmap[word] |= mask;
+			}
+		}
+	}
+
+	k_spin_unlock(&data->lock, key);
+
+	return ret;
+}
+
+static void its_finish_event_range(struct gicv3_its_data *data, uint32_t device_id,
+				   uint32_t first_event, unsigned int count, bool release)
+{
+	struct its_device_slot *slot;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->lock);
+	slot = its_find_device_slot(data, device_id);
+
+	if (slot != NULL) {
+		for (unsigned int i = 0U; i < count; i++) {
+			uint32_t event_id = first_event + i;
+			size_t word = event_id / ITS_EVENT_BITMAP_BITS_PER_WORD;
+			uint32_t mask = BIT(event_id % ITS_EVENT_BITMAP_BITS_PER_WORD);
+
+			slot->event_id_busy_bitmap[word] &= ~mask;
+			if (release) {
+				slot->event_id_bitmap[word] &= ~mask;
+			}
+		}
+	}
+
+	k_spin_unlock(&data->lock, key);
+}
+
+static int its_check_mapped_event(struct gicv3_its_data *data, uint32_t device_id,
+				  uint32_t event_id)
+{
+	struct its_device_slot *slot;
+	size_t word = event_id / ITS_EVENT_BITMAP_BITS_PER_WORD;
+	uint32_t mask = BIT(event_id % ITS_EVENT_BITMAP_BITS_PER_WORD);
 	k_spinlock_key_t key;
 	int ret;
 
@@ -649,8 +773,10 @@ static int its_check_event(struct gicv3_its_data *data, uint32_t device_id, uint
 		ret = -EBUSY;
 	} else if (slot->status != 0) {
 		ret = slot->status;
-	} else if (event_id >= slot->nites) {
+	} else if ((event_id >= slot->nites) || ((slot->event_id_bitmap[word] & mask) == 0U)) {
 		ret = -EINVAL;
+	} else if ((slot->event_id_busy_bitmap[word] & mask) != 0U) {
+		ret = -EBUSY;
 	} else {
 		ret = 0;
 	}
@@ -669,7 +795,7 @@ static int gicv3_its_send_int(const struct device *dev, uint32_t device_id, uint
 		return -ENODEV;
 	}
 
-	ret = its_check_event(data, device_id, event_id);
+	ret = its_check_mapped_event(data, device_id, event_id);
 
 	if (ret != 0) {
 		return ret;
@@ -687,6 +813,9 @@ static void its_disable_cmd_queue(struct gicv3_its_data *data)
 
 	data->cmd_base = NULL;
 	data->cmd_write = NULL;
+	data->cmd_read = 0U;
+	data->cmd_posted = 0U;
+	data->cmd_completed = 0U;
 	data->cmd_queue_needs_flush = false;
 }
 
@@ -739,6 +868,9 @@ static int its_setup_cmd_queue(const struct device *dev)
 
 	data->cmd_base = (struct its_cmd_block *)cfg->cmd_queue;
 	data->cmd_write = data->cmd_base;
+	data->cmd_read = 0U;
+	data->cmd_posted = 0U;
+	data->cmd_completed = 0U;
 
 	LOG_INF("Allocated %ld entries for command table", ITS_CMD_QUEUE_NR_ENTRIES);
 
@@ -817,12 +949,18 @@ static int its_ensure_collection(const struct device *dev, unsigned int cpu_id)
 	return ret;
 }
 
+/* Callers validate the INTID and reserve the EventID before submitting MAPTI. */
+static int gicv3_its_map_intid_internal(const struct device *dev, uint32_t device_id,
+					uint32_t event_id, unsigned int intid, unsigned int cpu_id,
+					bool *mapping_may_exist);
+
 static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uint32_t event_id,
 			       unsigned int intid)
 {
 	struct gicv3_its_data *data = dev->data;
+	bool mapping_may_exist;
 	unsigned int cpu_id;
-	int ret;
+	int ret, cleanup_ret;
 
 	if (!device_is_ready(dev)) {
 		return -ENODEV;
@@ -832,12 +970,6 @@ static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uin
 		return -EINVAL;
 	}
 
-	ret = its_check_event(data, device_id, event_id);
-
-	if (ret != 0) {
-		return ret;
-	}
-
 	cpu_id = arch_curr_cpu()->id;
 	ret = its_ensure_collection(dev, cpu_id);
 
@@ -845,13 +977,61 @@ static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uin
 		return ret;
 	}
 
+	ret = its_reserve_event_range(data, device_id, event_id, 1U);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = gicv3_its_map_intid_internal(dev, device_id, event_id, intid, cpu_id,
+					   &mapping_may_exist);
+	if (ret == 0) {
+		its_finish_event_range(data, device_id, event_id, 1U, false);
+		return ret;
+	}
+
+	if (mapping_may_exist) {
+		uintptr_t rd_addr;
+
+		cleanup_ret = its_send_discard_cmd(data, device_id, event_id);
+
+		if (cleanup_ret == 0) {
+			rd_addr = gicv3_rdist_get_rdbase(dev, cpu_id);
+			cleanup_ret = its_send_sync_cmd(data, rd_addr);
+		}
+
+		if (cleanup_ret != 0) {
+			/* Keep the EventID busy while a DISCARD may still be pending. */
+			LOG_ERR("Failed to discard mapped EventID %u for deviceid %x: %d", event_id,
+				device_id, cleanup_ret);
+		} else {
+			its_finish_event_range(data, device_id, event_id, 1U, true);
+		}
+	} else {
+		its_finish_event_range(data, device_id, event_id, 1U, true);
+	}
+
+	return ret;
+}
+
+static int gicv3_its_map_intid_internal(const struct device *dev, uint32_t device_id,
+					uint32_t event_id, unsigned int intid, unsigned int cpu_id,
+					bool *mapping_may_exist)
+{
+	struct gicv3_its_data *data = dev->data;
+	int ret;
+
 	ret = its_send_mapti_cmd(data, device_id, event_id, intid, cpu_id);
 
 	if (ret != 0) {
+		/* A timed-out MAPTI may still have reached the ITS. */
+		*mapping_may_exist = (ret == -ETIMEDOUT);
 		LOG_ERR("Failed to map eventid %d to intid %d for deviceid %x",
 			event_id, intid, device_id);
 		return ret;
 	}
+
+	*mapping_may_exist = true;
 
 	return its_send_sync_cmd(data, gicv3_rdist_get_rdbase(dev, cpu_id));
 }
@@ -1010,18 +1190,137 @@ unlock:
 	return ret;
 }
 
-static unsigned int gicv3_its_alloc_intid(const struct device *dev)
+static int gicv3_its_alloc_intids(const struct device *dev, unsigned int count, unsigned int *intid)
 {
+	struct gicv3_its_data *data = dev->data;
+	unsigned int limit;
 	size_t offset;
 	int ret;
 
 	if (!device_is_ready(dev)) {
-		return 0U;
+		return -ENODEV;
 	}
 
-	ret = sys_bitarray_alloc(&its_lpi_intids, 1U, &offset);
+	if ((intid == NULL) || (count == 0U)) {
+		return -EINVAL;
+	}
 
-	return (ret == 0) ? GIC_LPI_INT_BASE + offset : 0U;
+	limit = data->lpi_intid_limit;
+
+	if ((limit <= GIC_LPI_INT_BASE) || (count > limit - GIC_LPI_INT_BASE)) {
+		return -ENOSPC;
+	}
+
+	ret = sys_bitarray_alloc(&its_lpi_intids, count, &offset);
+
+	if (ret != 0) {
+		return -ENOSPC;
+	}
+
+	*intid = GIC_LPI_INT_BASE + offset;
+
+	return 0;
+}
+
+static int gicv3_its_alloc_map_intids(const struct device *dev, uint32_t device_id,
+				      unsigned int count, unsigned int *intid)
+{
+	struct gicv3_its_data *data = dev->data;
+	size_t offset;
+	unsigned int first_intid, mapped = 0U;
+	unsigned int cleanup_count;
+	unsigned int retained = 0U;
+	unsigned int cpu_id;
+	bool mapping_may_exist = false;
+	int ret, cleanup_ret = 0;
+
+	if (!device_is_ready(dev)) {
+		return -ENODEV;
+	}
+
+	if ((intid == NULL) || (count == 0U) || (count > CONFIG_GIC_V3_ITS_MAX_VECTORS)) {
+		return -EINVAL;
+	}
+
+	cpu_id = arch_curr_cpu()->id;
+	ret = its_ensure_collection(dev, cpu_id);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = its_reserve_event_range(data, device_id, 0U, count);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = gicv3_its_alloc_intids(dev, count, &first_intid);
+
+	if (ret != 0) {
+		its_finish_event_range(data, device_id, 0U, count, true);
+		return ret;
+	}
+
+	offset = first_intid - GIC_LPI_INT_BASE;
+
+	for (unsigned int i = 0U; i < count; i++) {
+		ret = gicv3_its_map_intid_internal(dev, device_id, i, first_intid + i, cpu_id,
+						   &mapping_may_exist);
+
+		if (ret != 0) {
+			break;
+		}
+
+		mapped++;
+	}
+
+	if (mapped == count) {
+		its_finish_event_range(data, device_id, 0U, count, false);
+		*intid = first_intid;
+		return 0;
+	}
+
+	cleanup_count = mapped + (mapping_may_exist ? 1U : 0U);
+
+	for (unsigned int i = 0U; i < cleanup_count; i++) {
+		cleanup_ret = its_send_discard_cmd(data, device_id, i);
+
+		if (cleanup_ret != 0) {
+			break;
+		}
+	}
+
+	if ((cleanup_ret == 0) && (cleanup_count > 0U)) {
+		cleanup_ret = its_send_sync_cmd(data, gicv3_rdist_get_rdbase(dev, cpu_id));
+	}
+
+	if (cleanup_ret != 0) {
+		LOG_ERR("Failed to discard mapped MSI EventIDs for deviceid %x: %d", device_id,
+			cleanup_ret);
+		retained = cleanup_count;
+	}
+
+	if (retained < count) {
+		unsigned int released = count - retained;
+
+		if (sys_bitarray_free(&its_lpi_intids, released, offset + retained) != 0) {
+			LOG_ERR("Failed to release MSI INTIDs for deviceid %x", device_id);
+			return -EIO;
+		}
+
+		its_finish_event_range(data, device_id, retained, released, true);
+	}
+
+	return ret;
+}
+
+static unsigned int gicv3_its_alloc_intid(const struct device *dev)
+{
+	unsigned int intid;
+	int ret = gicv3_its_alloc_intids(dev, 1U, &intid);
+
+	return (ret == 0) ? intid : 0U;
 }
 
 static uint64_t gicv3_its_get_msi_addr(const struct device *dev)
@@ -1036,7 +1335,7 @@ static uint64_t gicv3_its_get_msi_addr(const struct device *dev)
 		const struct device *const dev = DEVICE_DT_INST_GET(n);                            \
                                                                                                    \
 		if (device_is_ready(dev)) {                                                        \
-			int ret = its_ensure_collection(dev, arch_curr_cpu()->id);                    \
+			int ret = its_ensure_collection(dev, arch_curr_cpu()->id);                 \
                                                                                                    \
 			if (ret != 0) {                                                            \
 				LOG_ERR("Failed to map CPU%d redistributor", arch_curr_cpu()->id); \
@@ -1197,6 +1496,8 @@ DEVICE_API(its, gicv3_its_api) = {
 	.map_intid = gicv3_its_map_intid,
 	.send_int = gicv3_its_send_int,
 	.get_msi_addr = gicv3_its_get_msi_addr,
+	.alloc_intids = gicv3_its_alloc_intids,
+	.alloc_map_intids = gicv3_its_alloc_map_intids,
 };
 
 #define GICV3_ITS_INIT(n)                                                                          \
