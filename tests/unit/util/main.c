@@ -1562,4 +1562,73 @@ ZTEST(util, test_sys_lcm)
 	zassert_equal(b, 9, "should be 9");
 }
 
+ZTEST(util, test_fixed_buf_on_stack_alloc_alignment)
+{
+	uint8_t *buf4 = NULL;
+	uint8_t *buf8 = NULL;
+	uint8_t *buf_low = NULL;
+	uint8_t *buf_high = NULL;
+
+	/* 1 byte longer than multiple of the alignment to check rounding. */
+	FIXED_BUF_ON_STACK_ALLOC(buf4, 13, 4);
+	FIXED_BUF_ON_STACK_ALLOC(buf8, 17, 8);
+	/* Alignment lower than 8 results in 4. */
+	FIXED_BUF_ON_STACK_ALLOC(buf_low, 9, 1);
+	/* Alignment higher than 8 gives at least 8 (16 only if long double provides it). */
+	FIXED_BUF_ON_STACK_ALLOC(buf_high, 9, 16);
+
+	zassert_not_null(buf4);
+	zassert_not_null(buf8);
+	zassert_not_null(buf_low);
+	zassert_not_null(buf_high);
+
+	zassert_equal(IS_ALIGNED(buf4, 4), true, "buffer not aligned to 4");
+	zassert_equal(IS_ALIGNED(buf8, 8), true, "buffer not aligned to 8");
+	zassert_equal(IS_ALIGNED(buf_low, 4), true, "buffer not aligned to 4");
+	zassert_equal(IS_ALIGNED(buf_high, 8), true, "buffer not aligned to 8");
+}
+
+ZTEST(util, test_fixed_buf_on_stack_alloc_basic)
+{
+	uint8_t *buf1 = NULL;
+	uint8_t *buf2 = NULL;
+
+	FIXED_BUF_ON_STACK_ALLOC(buf1, 24, 8);
+	FIXED_BUF_ON_STACK_ALLOC(buf2, 40, 8);
+
+	zassert_not_null(buf1);
+	zassert_not_null(buf2);
+	zassert_not_equal(buf1, buf2, "buffers must be distinct");
+
+	memset(buf1, 0x11, 24);
+	memset(buf2, 0x22, 40);
+
+	/* Writing to one buffer must not corrupt the other one. */
+	for (size_t i = 0; i < 24; i++) {
+		zassert_equal(buf1[i], 0x11, "buf1 corrupted at %zu", i);
+	}
+	for (size_t i = 0; i < 40; i++) {
+		zassert_equal(buf2[i], 0x22, "buf2 corrupted at %zu", i);
+	}
+}
+
+ZTEST(util, test_fixed_buf_on_stack_alloc_large)
+{
+	uint8_t *buf = NULL;
+	size_t len = sizeof(uint8_t) * 256; /* Use some expression resolved by the compiler. */
+
+	/* VLA implementation has no limit (like fixed array implementation which is limited). */
+	FIXED_BUF_ON_STACK_ALLOC(buf, len, 8);
+
+	zassert_not_null(buf);
+	zassert_equal((uintptr_t)buf % 8, 0, "buffer not aligned to 8");
+
+	for (size_t i = 0; i < len; i++) {
+		buf[i] = (uint8_t)i;
+	}
+	for (size_t i = 0; i < len; i++) {
+		zassert_equal(buf[i], (uint8_t)i, "unexpected value at %zu", i);
+	}
+}
+
 ZTEST_SUITE(util, NULL, NULL, NULL, NULL, NULL);
