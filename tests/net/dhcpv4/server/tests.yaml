@@ -20,3 +20,6 @@ tests:
     extra_configs:
       - CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL=y
       - CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL_URI="http://prov.example/captive"
+  net.dhcpv4_server.broadcast_off:
+    extra_configs:
+      - CONFIG_NET_INITIAL_SO_BROADCAST=n
