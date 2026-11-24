@@ -380,7 +380,10 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 		return -EPERM;
 	}
 
-	if (tag >= NET_VLAN_TAG_UNSPEC) {
+	/* VID 0 marks a priority-tagged frame and VID 0xFFF is reserved
+	 * (IEEE 802.1Q, Table 9-2), so neither can identify a VLAN.
+	 */
+	if (tag == NET_VLAN_TAG_PRIORITY || tag >= NET_VLAN_TAG_UNSPEC) {
 		return -EBADF;
 	}
 

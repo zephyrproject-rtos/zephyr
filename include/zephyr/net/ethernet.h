@@ -1160,9 +1160,9 @@ int net_eth_get_hw_config(struct net_if *iface, enum ethernet_config_type type,
  * @brief Add VLAN tag to the interface.
  *
  * @param iface Interface to use.
- * @param tag VLAN tag to add
+ * @param tag VLAN tag to add, from 1 to 4094
  *
- * @return 0 if ok, <0 if error
+ * @return 0 if ok, -EBADF if the tag is out of range, <0 if other error
  */
 #if defined(CONFIG_NET_VLAN) && NET_VLAN_MAX_COUNT > 0
 int net_eth_vlan_enable(struct net_if *iface, uint16_t tag);
