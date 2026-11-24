@@ -37,6 +37,16 @@ extern "C" {
 #define NDS_MICM_CFG_ILMSZ           0xF8000
 #define NDS_MDCM_CFG_DLMSZ           0xF8000
 
+/* Fields of the mcache_ctl CSR */
+#define NDS_MCACHE_CTL_IC_EN         0x1
+#define NDS_MCACHE_CTL_DC_EN         0x2
+#define NDS_MCACHE_CTL_IPREF_EN      0x200
+#define NDS_MCACHE_CTL_DPREF_EN      0x400
+#define NDS_MCACHE_CTL_DC_WAROUND    0x6000
+#define NDS_MCACHE_CTL_DC_WAROUND_4  0x2000
+#define NDS_MCACHE_CTL_DC_COHEN      0x80000
+#define NDS_MCACHE_CTL_DC_COHSTA     0x100000
+
 /* Control and Status Registers (CSRs) available for Andes V5 PMA */
 #define NDS_PMACFG0                  0xBC0
 #define NDS_PMACFG1                  0xBC1
