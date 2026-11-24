@@ -47,3 +47,39 @@ tests:
       - EXTRA_CONF_FILE="ot-rcp-host-eth-esp.conf"
     platform_allow:
       - esp_threadbr/esp32s3/procpu/ethernet
+  sample.net.openthread.border_router.rt1060_evkc_iw612_wifi:
+    build_only: true
+    extra_args:
+      - SHIELD="nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154"
+      - EXTRA_CONF_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf
+        boards/mimxrt1060_evk_mimxrt1062_qspi_C/wifi.conf
+        boards/mimxrt1060_evk_mimxrt1062_qspi_C/iw612.conf"
+    platform_allow:
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+  sample.net.openthread.border_router.rt1060_evkc_iw612_eth:
+    build_only: true
+    extra_args:
+      - SHIELD="nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154"
+      - EXTRA_CONF_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf
+        boards/mimxrt1060_evk_mimxrt1062_qspi_C/eth.conf
+        boards/mimxrt1060_evk_mimxrt1062_qspi_C/iw612.conf"
+    platform_allow:
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+  sample.net.openthread.border_router.rt1060_evkc_iw610_wifi:
+    build_only: true
+    extra_args:
+      - SHIELD="nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154"
+      - EXTRA_CONF_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf
+        boards/mimxrt1060_evk_mimxrt1062_qspi_C/wifi.conf
+        boards/mimxrt1060_evk_mimxrt1062_qspi_C/iw610.conf"
+    platform_allow:
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+  sample.net.openthread.border_router.rt1060_evkc_iw610_eth:
+    build_only: true
+    extra_args:
+      - SHIELD="nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154"
+      - EXTRA_CONF_FILE="boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf
+        boards/mimxrt1060_evk_mimxrt1062_qspi_C/eth.conf
+        boards/mimxrt1060_evk_mimxrt1062_qspi_C/iw610.conf"
+    platform_allow:
+      - mimxrt1060_evk@C/mimxrt1062/qspi

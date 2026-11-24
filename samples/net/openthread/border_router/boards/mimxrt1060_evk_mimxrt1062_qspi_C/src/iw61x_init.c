@@ -89,6 +89,47 @@ int iw61x_wait_ready(k_timeout_t timeout)
 	return 0;
 }
 
+#if defined(CONFIG_ETH_NET_IF_NO_AUTO_START)
+/*
+ * With CONFIG_ETH_NET_IF_NO_AUTO_START the Ethernet L2 interfaces (wired
+ * Ethernet and NXP Wi-Fi STA) are not started by net_if_post_init(). The
+ * border router brings the OpenThread interface up on their NET_EVENT_IF_UP,
+ * so they are started here, once the OpenThread L2 is initialized.
+ *
+ * When a wired Ethernet interface exists it is the only backbone: the Wi-Fi
+ * STA interface is left down. Without wired Ethernet (CONFIG_ETH_DRIVER=n),
+ * the Wi-Fi STA interface is brought up as the backbone.
+ */
+static void wired_eth_find_cb(struct net_if *iface, void *user_data)
+{
+	bool *found = user_data;
+
+	if ((net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) && !net_if_is_wifi(iface)) {
+		*found = true;
+	}
+}
+
+static void eth_iface_up_cb(struct net_if *iface, void *user_data)
+{
+	const bool *skip_wifi = user_data;
+	int err;
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		return;
+	}
+
+	if (*skip_wifi && net_if_is_wifi(iface)) {
+		LOG_INF("Wired Ethernet present, Wi-Fi iface %d left down",
+			net_if_get_by_iface(iface));
+		return;
+	}
+
+	err = net_if_up(iface);
+	if ((err != 0) && (err != -EALREADY)) {
+		LOG_ERR("iface %d up failed: %d", net_if_get_by_iface(iface), err);
+	}
+}
+#endif /* CONFIG_ETH_NET_IF_NO_AUTO_START */
 
 static void iw61x_bringup_thread(void *p1, void *p2, void *p3)
 {
@@ -114,6 +155,14 @@ static void iw61x_bringup_thread(void *p1, void *p2, void *p3)
 	}
 
 	net_if_up(iface);
+
+#if defined(CONFIG_ETH_NET_IF_NO_AUTO_START)
+	bool wired_eth = false;
+
+	net_if_foreach(wired_eth_find_cb, &wired_eth);
+	LOG_INF("Bringing Ethernet L2 interfaces up");
+	net_if_foreach(eth_iface_up_cb, &wired_eth);
+#endif /* CONFIG_ETH_NET_IF_NO_AUTO_START */
 }
 
 static int iw61x_init_fn(void)
