@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon M0S8 SCB in I2C mode
+
+  The M0S8 SCB selects 8-bit FIFO elements with CTRL.BYTE_MODE instead of
+  CTRL.MEM_WIDTH. It is used on the PSOC 4 HVMS devices.
+
+compatible: "infineon,m0s8-i2c"
+
+include: "infineon,i2c.yaml"
