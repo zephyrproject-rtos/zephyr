@@ -345,7 +345,9 @@ def section_kinds_from_memory_region(memory_region: str) -> 'tuple[set[SectionKi
 
 def print_linker_sections(list_sections: 'list[OutputSection]'):
     out = ''
-    for section in sorted(list_sections):
+    # A section can be collected more than once, e.g. when a source file is
+    # listed twice in the relocation input or compiled into several objects.
+    for section in sorted(set(list_sections)):
         template = PRINT_TEMPLATE if section.keep else PRINT_TEMPLATE_NOKEEP
         out += template.format(
             obj_file_name=section.obj_file_name, section_name=section.section_name
@@ -588,10 +590,11 @@ def canonicalize(base, path):
 
 
 def build_source_to_obj_map(compile_commands_file):
-    # Build a deterministic source-file -> object-file map from the CMake
-    # compilation database (compile_commands.json).
+    # Build a source-file -> object-files map from the CMake compilation
+    # database (compile_commands.json). A source file compiled by several
+    # targets has one entry per target; all of its objects are kept.
     obj_pattern = re.compile(r'-o\s+(\S+)')
-    mapping = {}
+    mapping = defaultdict(list)
 
     with open(compile_commands_file, encoding='utf-8') as file_desc:
         commands = json.load(file_desc)
@@ -615,22 +618,25 @@ def build_source_to_obj_map(compile_commands_file):
         obj_abs = canonicalize(directory, obj)
         # Make sure the object file exists
         if os.path.exists(obj_abs):
-            mapping[canonicalize(directory, src)] = obj_abs
+            objs = mapping[canonicalize(directory, src)]
+            if obj_abs not in objs:
+                objs.append(obj_abs)
 
     return mapping
 
 
-# return the absolute path for the object file.
-def get_obj_filename(src_to_obj, filename):
-    # Look up the object file deterministically using the source -> object map
-    # derived from the CMake compilation database.
-    # Returns None when the source is not present in the database (e.g. not compiled).
+# return the absolute paths of the object files built from a source file.
+def get_obj_filenames(src_to_obj, filename):
+    # Look up the object files using the source -> objects map derived from
+    # the CMake compilation database.
+    # Returns an empty list when the source is not present in the database
+    # (e.g. not compiled).
     #
     # Assume that the source path is always absolute. We therefore only need to collapse
     # any dot directory ('..'/'.') components so equivalent paths (between object
     # and source files) compare equal
     resolved = os.path.normcase(str(Path(filename).resolve()))
-    return src_to_obj.get(resolved)
+    return src_to_obj.get(resolved, [])
 
 
 # Extracts all possible components for the input string:
@@ -735,15 +741,19 @@ def main():
         full_list_of_sections: dict[SectionKind, list[OutputSection]] = defaultdict(list)
 
         for filename, symbol_filter in files:
-            obj_filename = get_obj_filename(src_to_obj, filename)
+            obj_filenames = get_obj_filenames(src_to_obj, filename)
             # the obj file wasn't found. Probably not compiled.
-            if not obj_filename:
+            if not obj_filenames:
                 continue
 
-            file_sections = find_sections(obj_filename, symbol_filter)
-            # Merge sections from file into collection of sections for all files
-            for category, sections in file_sections.items():
-                full_list_of_sections[category].extend(sections)
+            if args.verbose and len(obj_filenames) > 1:
+                print("Source", filename, "compiled into several objects:", obj_filenames)
+
+            for obj_filename in obj_filenames:
+                file_sections = find_sections(obj_filename, symbol_filter)
+                # Merge sections from file into collection of sections for all files
+                for category, sections in file_sections.items():
+                    full_list_of_sections[category].extend(sections)
 
         # cleanup and attach the sections to the memory type after cleanup.
         sections_by_category = assign_to_correct_mem_region(memory_type, full_list_of_sections)
