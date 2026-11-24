@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		opamp = <&gpamp>;
+	};
+};
+
+&gpamp {
+	functional-mode = "follower";
+	programmable-gain = "OPAMP_GAIN_1";
+	ti,outpin-enable;
+	status = "okay";
+};
