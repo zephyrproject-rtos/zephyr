@@ -33,5 +33,6 @@ supported:
   - usbd
   - sdhc
   - dac
+  - dmic
   - i2s
 vendor: nxp
