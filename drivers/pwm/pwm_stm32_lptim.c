@@ -151,30 +151,42 @@ static void enable_autonomous_mode(const LPTIM_TypeDef *timer)
 #endif
 }
 
+static void pause_between_polls(bool sleep)
+{
+	if (sleep) {
+		(void)k_sleep(K_TICKS(1));
+	} else {
+		k_busy_wait(1);
+	}
+}
+
 /*
- * Wait for a write to ARR or CCRx to complete, which takes about three counter clock cycles, or
- * five right after the timer is enabled. A new write to the same register before that gives
- * unpredictable results. The wait is a busy wait, so with a large prescaler a call keeps the CPU
- * busy for a long time, up to about 40 ms when it starts the counter with a 32 kHz kernel clock
- * and a prescaler of 128.
+ * Wait until a write to ARR or CCRx completes, about 3 counter clock cycles or 5 right after the
+ * timer is enabled, since a new write before that gives unpredictable results. Outside
+ * interrupts, a wait longer than a system tick sleeps one tick per poll.
  */
 static int wait_write(const struct device *dev, uint32_t flag)
 {
 	const struct pwm_stm32_lptim_config *cfg = dev->config;
 	const struct pwm_stm32_lptim_data *data = dev->data;
+	uint32_t tick_us = k_ticks_to_us_floor32(1U);
+	uint32_t write_us = 3U * cfg->prescaler * USEC_PER_SEC / data->tim_clk;
 	uint32_t timeout_us = 10U * cfg->prescaler * USEC_PER_SEC / data->tim_clk + 10U;
+	bool sleep = !k_is_in_isr() && (write_us > tick_us);
+	uint32_t max_polls = sleep ? (timeout_us / tick_us + 1U) : timeout_us;
 
 	/*
-	 * The timeout counts polls of at least 1 us instead of reading the system clock, which
-	 * can step back during a long wait in an interrupt that holds off the system timer.
+	 * The timeout counts polls of at least 1 us or one tick. WAIT_FOR() reads the cycle
+	 * counter of the system timer instead, which can step back during a long wait in an
+	 * interrupt that holds off the system timer.
 	 */
 	for (uint32_t polls = 0U; (cfg->timer->ISR & flag) == 0U; polls++) {
-		if (polls == timeout_us) {
+		if (polls == max_polls) {
 			LOG_ERR("Register write timeout");
 			return -EIO;
 		}
 
-		k_busy_wait(1);
+		pause_between_polls(sleep);
 	}
 
 	return 0;
