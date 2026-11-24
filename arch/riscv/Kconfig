@@ -793,6 +793,10 @@ config PRIVILEGED_STACK_SIZE
 	default 2048 if 64BIT && ASSERT
 
 config IDLE_STACK_SIZE
+	# Trace hooks run from the idle and trap paths and need more than the
+	# default idle stack size, which is only 512 bytes on 32-bit and
+	# single-core 64-bit RISC-V.
+	default 1024 if TRACING
 	default 1024 if 64BIT && SMP
 
 config TEST_EXTRA_STACK_SIZE
