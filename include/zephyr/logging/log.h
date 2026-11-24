@@ -718,7 +718,6 @@ void z_log_vprintk(const char *fmt, va_list ap);
 
 #ifdef __cplusplus
 }
-#define LOG_IN_CPLUSPLUS 1
 #endif
 /* Macro expects that optionally on second argument local log level is provided.
  * If provided it is returned, otherwise default log level is returned or
@@ -741,7 +740,6 @@ void z_log_vprintk(const char *fmt, va_list ap);
 		static const char UTIL_CAT(_name, _str)[]					\
 		     __in_section(_log_strings, static, _CONCAT(_name, _)) __used __noasan =	\
 		     STRINGIFY(_name);))                                               \
-	IF_ENABLED(LOG_IN_CPLUSPLUS, (extern))                                                     \
 	const STRUCT_SECTION_ITERABLE_ALTERNATE(log_const, log_source_const_data,                  \
 						Z_LOG_ITEM_CONST_DATA(_name)) = {                  \
 		.name = COND_CODE_1(CONFIG_LOG_FMT_SECTION,					\
@@ -782,6 +780,10 @@ extern struct k_mem_partition k_log_partition;
 /* Declare the data of the log module. The declarations must precede the
  * definition created by LOG_MODULE_REGISTER(): redeclaring an object after its
  * definition is reported by -Wtentative-definition-compat (Clang 21).
+ *
+ * In C++ the declaration also gives the constant data external linkage. The
+ * definition must not repeat the extern specifier: Clang reports a section
+ * attribute on an extern redeclaration with -Wsection.
  */
 #define Z_LOG_MODULE_DECLARE_EXTERN(...)                                                           \
 	extern const struct log_source_const_data Z_LOG_ITEM_CONST_DATA(                           \
