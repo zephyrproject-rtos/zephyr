@@ -134,7 +134,7 @@ BUILD_ASSERT(offsetof(struct mspm0_gptimer_regs, counterregs) == 0x1800U);
 /* COMMONREGS.CCLKCTL */
 #define GPTIMER_CCLKCTL_CLKEN_ENABLED 0x00000001U
 
-/* CPU_INT interrupt bits (IMASK / RIS / ICLR) */
+/* CPU_INT interrupt bits (IMASK / MIS / ICLR) */
 #define GPTIMER_CPU_INT_IMASK_L_SET 0x00000002U
 
 #endif /* !CONFIG_HAS_MSPM0_SDK */
@@ -408,7 +408,7 @@ static uint32_t counter_mspm0_get_pending_int(const struct device *dev)
 	for (int i = 0; i < config->counter_info.channels; i++) {
 		mask |= GPTIMER_CPU_INT_CCU_MASK(i);
 	}
-	return !!(config->base->cpu_int.ris & mask);
+	return !!(config->base->cpu_int.mis & mask);
 }
 
 static uint32_t counter_mspm0_get_freq(const struct device *dev)
@@ -525,14 +525,14 @@ static void counter_mspm0_isr(void *arg)
 	struct mspm0_gptimer_regs *base = config->base;
 	counter_alarm_callback_t cb;
 	void *user_data;
-	uint32_t ris;
+	uint32_t mis;
 
-	ris = base->cpu_int.ris;
-	base->cpu_int.iclr = ris;
+	mis = base->cpu_int.mis;
+	base->cpu_int.iclr = mis;
 
 	unsigned int key = irq_lock();
 
-	if ((ris & GPTIMER_CPU_INT_IMASK_L_SET) && data->top_cb) {
+	if ((mis & GPTIMER_CPU_INT_IMASK_L_SET) && data->top_cb) {
 		counter_top_callback_t top_cb = data->top_cb;
 		void *top_user = data->top_user_data;
 
@@ -543,7 +543,7 @@ static void counter_mspm0_isr(void *arg)
 	}
 
 	for (int i = 0; i < config->counter_info.channels; i++) {
-		bool hw = !!(ris & GPTIMER_CPU_INT_CCU_MASK(i));
+		bool hw = !!(mis & GPTIMER_CPU_INT_CCU_MASK(i));
 		bool sw = !!(atomic_and(&data->cc_int_pending, ~BIT(i)) & BIT(i));
 
 		if (!hw && !sw) {
