@@ -1195,6 +1195,17 @@ Cache:
   tests:
     - arch.cache
 
+Canaan K230 Platforms:
+  status: maintained
+  maintainers:
+    - zevorn
+  files:
+    - boards/**/*k230*/
+    - dts/riscv/canaan/
+    - soc/canaan/
+  labels:
+    - "area: Boards/SoCs"
+
 Coding Guidelines:
   status: maintained
   maintainers:
