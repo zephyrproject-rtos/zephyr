@@ -198,3 +198,7 @@ zephyr_udc0: &usbhs {
 &enet_ptp_clock {
 	status = "okay";
 };
+
+&rit {
+	status = "okay";
+};
