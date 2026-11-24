@@ -5708,7 +5708,7 @@ exit:
 static K_WORK_DEFINE(tx_work, tx_processor);
 
 #if defined(CONFIG_BT_TX_PROCESSOR_THREAD)
-static K_THREAD_STACK_DEFINE(bt_tx_processor_stack, CONFIG_BT_TX_PROCESSOR_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(bt_tx_processor_stack, CONFIG_BT_TX_PROCESSOR_STACK_SIZE);
 
 /**
  * This work queue shall never be stopped, drained or plugged.
@@ -5724,7 +5724,7 @@ static int bt_tx_processor_init(void)
 	}
 
 	k_work_queue_start(&bt_tx_processor_workq, bt_tx_processor_stack,
-			   K_THREAD_STACK_SIZEOF(bt_tx_processor_stack),
+			   K_KERNEL_STACK_SIZEOF(bt_tx_processor_stack),
 			   CONFIG_BT_TX_PROCESSOR_THREAD_PRIO, &cfg);
 
 	return 0;

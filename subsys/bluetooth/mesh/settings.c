@@ -61,7 +61,7 @@ LOG_MODULE_REGISTER(bt_mesh_settings);
 #define RPL_OWN_TIMEOUT (RPL_STORE_TIMEOUT >= 0)
 
 static struct k_work_q settings_work_q;
-static K_THREAD_STACK_DEFINE(settings_work_stack, SETTINGS_WORKQ_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(settings_work_stack, SETTINGS_WORKQ_STACK_SIZE);
 
 static struct k_work_delayable pending_store;
 static struct k_work_delayable rpl_pending_store;
@@ -261,7 +261,7 @@ void bt_mesh_settings_init(void)
 {
 	if (IS_ENABLED(CONFIG_BT_MESH_SETTINGS_WORKQ)) {
 		k_work_queue_start(&settings_work_q, settings_work_stack,
-				   K_THREAD_STACK_SIZEOF(settings_work_stack),
+				   K_KERNEL_STACK_SIZEOF(settings_work_stack),
 				   K_PRIO_COOP(SETTINGS_WORKQ_PRIO), NULL);
 		k_thread_name_set(settings_work_q.thread_id, "BT Mesh settings workq");
 	}
