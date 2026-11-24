@@ -8828,4 +8828,78 @@ ZTEST(net_socket_quic, test_510_client_retry_rejects_late_retry_without_mutation
 			  "Late Retry must preserve peer CID");
 }
 
+#define RECV_HANDLER_STACK_SIZE 4096
+
+static void recv_handler_thread(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p3);
+
+	quic_test_receive_data(POINTER_TO_INT(p1), p2);
+}
+
+ZTEST(net_socket_quic, test_550_service_handler_does_not_block_without_data)
+{
+	static K_THREAD_STACK_DEFINE(recv_handler_stack, RECV_HANDLER_STACK_SIZE);
+	static struct k_thread recv_handler_data;
+	struct net_sockaddr_in local = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(54395),
+		.sin_addr = { { { 127, 0, 0, 1 } } },
+	};
+	struct quic_endpoint *ep;
+	int sock;
+	int ret;
+
+	ep = quic_test_endpoint_alloc();
+	zassert_not_null(ep, "Cannot allocate an endpoint");
+	ep->is_server = false;
+	ep->handshake.completed = true;
+	ep->remote_addr.ss_family = NET_AF_INET;
+
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "Cannot create a socket (%d)", errno);
+
+	/* The endpoint owns the socket and closes it when it is released */
+	ep->sock = sock;
+
+	ret = zsock_bind(sock, (struct net_sockaddr *)&local, sizeof(local));
+	zassert_equal(ret, 0, "Cannot bind the socket (%d)", -errno);
+
+	/* The socket service can call the handler for a socket that has
+	 * nothing to read, when a poll result of a closed socket is delivered
+	 * for a new socket with the same descriptor. The handler must return,
+	 * as the service thread serves all the other sockets too.
+	 */
+	k_thread_create(&recv_handler_data, recv_handler_stack,
+			K_THREAD_STACK_SIZEOF(recv_handler_stack),
+			recv_handler_thread, INT_TO_POINTER(sock), ep, NULL,
+			K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+
+	ret = k_thread_join(&recv_handler_data, K_MSEC(1000));
+	zexpect_equal(ret, 0, "The handler blocked on a socket with nothing to read");
+
+	if (ret != 0) {
+		/* Let the blocked handler go before the socket is closed */
+		static const uint8_t byte;
+		int tx_sock;
+
+		tx_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+		zassert_true(tx_sock >= 0, "Cannot create a socket (%d)", errno);
+
+		ret = zsock_sendto(tx_sock, &byte, sizeof(byte), 0,
+				   (struct net_sockaddr *)&local, sizeof(local));
+		zexpect_equal(ret, sizeof(byte), "Cannot send to the socket (%d)", -errno);
+
+		ret = k_thread_join(&recv_handler_data, K_MSEC(1000));
+		zassert_equal(ret, 0, "The handler did not return after data arrived");
+
+		ret = zsock_close(tx_sock);
+		zexpect_equal(ret, 0, "Cannot close socket %d (%d)", tx_sock, -errno);
+	}
+
+	zexpect_equal(atomic_get(&ep->refcount), 1, "The handler did not drop its reference");
+
+	quic_test_endpoint_unref(ep);
+}
+
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
