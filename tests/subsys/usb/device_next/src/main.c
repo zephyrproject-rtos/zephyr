@@ -426,7 +426,7 @@ ZTEST(device_next, test_set_configuration_again)
 	uint8_t cfg = 0;
 	int err;
 
-	udev = usbh_device_get_any(&uhs_ctx);
+	udev = usbh_device_get(&uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev, "No USB device available");
 
 	if (udev->state != USB_STATE_CONFIGURED) {
