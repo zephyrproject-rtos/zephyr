@@ -78,16 +78,22 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 	case UART_RX_BUF_REQUEST:
 		if (!atomic_test_and_set_bit(&backend->async.common.state,
 					     MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF0_USED_BIT)) {
-			uart_rx_buf_rsp(backend->uart, backend->async.receive_bufs[0],
-					backend->async.receive_buf_size);
+			if (uart_rx_buf_rsp(backend->uart, backend->async.receive_bufs[0],
+					    backend->async.receive_buf_size) < 0) {
+				atomic_clear_bit(&backend->async.common.state,
+						 MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF0_USED_BIT);
+			}
 
 			break;
 		}
 
 		if (!atomic_test_and_set_bit(&backend->async.common.state,
 					     MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF1_USED_BIT)) {
-			uart_rx_buf_rsp(backend->uart, backend->async.receive_bufs[1],
-					backend->async.receive_buf_size);
+			if (uart_rx_buf_rsp(backend->uart, backend->async.receive_bufs[1],
+					    backend->async.receive_buf_size) < 0) {
+				atomic_clear_bit(&backend->async.common.state,
+						 MODEM_BACKEND_UART_ASYNC_STATE_RX_BUF1_USED_BIT);
+			}
 
 			break;
 		}
