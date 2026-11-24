@@ -15,6 +15,7 @@ supported:
   - dac
   - gpio
   - i2c
+  - pwm
   - spi
   - usart
   - watchdog
