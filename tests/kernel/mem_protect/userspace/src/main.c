@@ -63,13 +63,13 @@ K_APP_BMEM(alt_part) volatile bool alt_bool;
 static struct k_thread test_thread;
 static K_THREAD_STACK_DEFINE(test_stack, STACKSIZE);
 
-static void clear_fault(void)
+void clear_fault(void)
 {
 	expect_fault = false;
 	compiler_barrier();
 }
 
-static void set_fault(unsigned int reason)
+void set_fault(unsigned int reason)
 {
 	expect_fault = true;
 	expected_reason = reason;
