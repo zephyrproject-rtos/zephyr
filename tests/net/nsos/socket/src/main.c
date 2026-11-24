@@ -85,4 +85,59 @@ ZTEST(nsos, test_close_while_polled)
 	zassert_ok(zsock_close(other));
 }
 
+ZTEST(nsos, test_ipv4_multicast_sockopts)
+{
+	struct net_in_addr addr = NET_INADDR_ANY_INIT;
+	struct net_ip_mreq mreq = {0};
+	struct net_ip_mreqn mreqn = {0};
+	int sock;
+	int ret;
+
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "socket() failed (%d)", errno);
+
+	/* IP_MULTICAST_IF must accept in_addr, ip_mreq, and ip_mreqn */
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &addr, sizeof(addr));
+	zexpect_equal(ret, 0, "IP_MULTICAST_IF(in_addr) failed (%d)", errno);
+
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &mreq, sizeof(mreq));
+	zexpect_equal(ret, 0, "IP_MULTICAST_IF(ip_mreq) failed (%d)", errno);
+
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &mreqn, sizeof(mreqn));
+	zexpect_equal(ret, 0, "IP_MULTICAST_IF(ip_mreqn) failed (%d)", errno);
+
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       NULL, sizeof(addr));
+	zexpect_equal(ret, -1, "IP_MULTICAST_IF(NULL) should fail");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_IF,
+			       &addr, sizeof(addr) - 1);
+	zexpect_equal(ret, -1, "IP_MULTICAST_IF(short optlen) should fail");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	/* IP_ADD_MEMBERSHIP must reject NULL / invalid optlen and accept ip_mreq */
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       NULL, sizeof(mreq));
+	zexpect_equal(ret, -1, "IP_ADD_MEMBERSHIP(NULL) should fail");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &addr, sizeof(addr));
+	zexpect_equal(ret, -1, "IP_ADD_MEMBERSHIP(in_addr) should fail");
+	zexpect_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	zassert_equal(zsock_inet_pton(NET_AF_INET, "224.0.1.99", &mreq.imr_multiaddr), 1,
+		      "inet_pton failed");
+	ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &mreq, sizeof(mreq));
+	zexpect_true(ret == 0 || errno != EINVAL,
+		     "IP_ADD_MEMBERSHIP(ip_mreq) rejected with EINVAL");
+
+	zassert_ok(zsock_close(sock));
+}
+
 ZTEST_SUITE(nsos, NULL, NULL, NULL, NULL, NULL);
