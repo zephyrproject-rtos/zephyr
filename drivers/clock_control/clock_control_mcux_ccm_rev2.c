@@ -18,6 +18,22 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_i2s)
+/*
+ * The SAI cases select the clock root with the SAI instance
+ * (kCLOCK_Root_Sai1 + instance). Stop the build if the HAL does not
+ * define the SAI roots in sequence.
+ */
+BUILD_ASSERT(kCLOCK_Root_Sai2 == kCLOCK_Root_Sai1 + 1,
+	     "SAI clock roots are not consecutive in the HAL");
+BUILD_ASSERT(kCLOCK_Root_Sai3 == kCLOCK_Root_Sai1 + 2,
+	     "SAI clock roots are not consecutive in the HAL");
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX) || defined(CONFIG_SOC_SERIES_IMXRT118X)
+BUILD_ASSERT(kCLOCK_Root_Sai4 == kCLOCK_Root_Sai1 + 3,
+	     "SAI clock roots are not consecutive in the HAL");
+#endif
+#endif
+
 #if defined(CONFIG_SOC_SERIES_IMXRT11XX)
 /*
  * The RT11xx MCUX clock table maps MIC root mux slot 6 to Audio PLL output.
@@ -249,25 +265,19 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev, clock_control_subs
 		break;
 #endif
 
-#ifdef CONFIG_I2S_MCUX_SAI
-#if (defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) || defined(CONFIG_SOC_MIMX9111))
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_i2s)
+	/*
+	 * Audio codec drivers read the SAI clock root rate (MCLK), also when
+	 * the I2S driver is not built. Thus an enabled SAI node is sufficient
+	 * for this case.
+	 *
+	 * The switch compares only the peripheral part of the clock name, so
+	 * IMX_CCM_SAI1_CLK to IMX_CCM_SAI4_CLK all come here. The instance
+	 * selects the root: the SAI roots are consecutive in the HAL.
+	 */
 	case IMX_CCM_SAI1_CLK:
 		clock_root = kCLOCK_Root_Sai1 + instance;
 		break;
-#else
-	case IMX_CCM_SAI1_CLK:
-		clock_root = kCLOCK_Root_Sai1;
-		break;
-	case IMX_CCM_SAI2_CLK:
-		clock_root = kCLOCK_Root_Sai2;
-		break;
-	case IMX_CCM_SAI3_CLK:
-		clock_root = kCLOCK_Root_Sai3;
-		break;
-	case IMX_CCM_SAI4_CLK:
-		clock_root = kCLOCK_Root_Sai4;
-		break;
-#endif
 #endif
 #if defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	case IMX_CCM_PDM_CLK:
