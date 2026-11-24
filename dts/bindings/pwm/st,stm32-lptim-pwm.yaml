@@ -1,0 +1,51 @@
+description: |
+  STM32 LPTIM PWM
+
+  PWM output of an STM32 low-power timer. The node is a child of an "st,stm32-lptim" node, which
+  gives the registers, the reset line, the clocks and the counter prescaler (st,prescaler). The
+  second clock of the parent selects the kernel clock. With LSI or LSE the output keeps running
+  in the Stop modes where the timer is functional.
+
+  A constant level, 0 % or 100 % duty cycle, is exact while no channel of the timer generates a
+  waveform, since the counter is then stopped. On an instance with two channels, while the other
+  channel generates a waveform, 0 % becomes one high cycle per period and 100 % one low cycle
+  per period, since an exact level would disturb the other channel.
+
+  Example for STM32U5, LPTIM3 clocked by LSI, channel 1 on PD14:
+
+    &lptim3 {
+      clocks = <&rcc STM32_CLOCK(APB3, 12)>,
+               <&rcc STM32_SRC_LSI LPTIM34_SEL(1)>;
+      status = "okay";
+
+      lptim3_pwm: pwm {
+        compatible = "st,stm32-lptim-pwm";
+        #pwm-cells = <3>;
+        pinctrl-0 = <&lptim3_ch1_pd14>;
+        pinctrl-names = "default";
+      };
+    };
+
+compatible: "st,stm32-lptim-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#pwm-cells":
+    const: 3
+    description: |
+      Number of items to expect in a PWM
+      - channel of the timer used for PWM
+      - period to set in ns
+      - flags : combination of standard flags like PWM_POLARITY_NORMAL
+
+pwm-cells:
+  - channel
+  - period
+  - flags
