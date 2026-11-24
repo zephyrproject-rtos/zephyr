@@ -4670,6 +4670,52 @@ ZTEST(coap_client, test_cancel_match)
 
 }
 
+static K_SEM_DEFINE(callback_entered, 0, 1);
+static K_SEM_DEFINE(callback_release, 0, 1);
+
+static void blocking_coap_callback(const struct coap_client_response_data *data,
+				   void *user_data)
+{
+	last_response_code = data->result_code;
+	k_sem_give(&callback_entered);
+	k_sem_take(&callback_release, K_FOREVER);
+}
+
+ZTEST(coap_client, test_cancel_during_timeout_callback)
+{
+	struct coap_transmission_parameters params = {
+		.ack_timeout = CONFIG_COAP_INIT_ACK_TIMEOUT_MS,
+		.coap_backoff_percent = 200,
+		.max_retransmission = 0
+	};
+	struct coap_client_request req = short_request;
+	int ret;
+
+	req.cb = blocking_coap_callback;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_no_reply;
+	set_socket_events(client.fd, ZSOCK_POLLOUT);
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, &params));
+	ret = k_sem_take(&callback_entered, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
+
+	/* Cancel from another thread while the callback runs, as an application
+	 * does before closing the socket. Release the callback before asserting,
+	 * so that a failure does not leave the recv thread blocked in it.
+	 */
+	coap_client_cancel_requests(&client);
+	k_sem_give(&callback_release);
+
+	zassert_ok(ret);
+	zassert_equal(last_response_code, -ETIMEDOUT, "");
+
+	/* The socket is no longer polled, so data on it is not read */
+	set_socket_events(client.fd, ZSOCK_POLLIN);
+	k_sleep(K_MSEC(100));
+
+	zassert_equal(z_impl_zsock_recvfrom_fake.call_count, 0, "Socket still polled");
+	zassert_false(coap_client_has_ongoing_exchange(&client), "");
+}
+
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
 #define MULTICAST_TIMEOUT_MS 1000
 /* 192.168.1.1, 192.168.1.2, ... */
