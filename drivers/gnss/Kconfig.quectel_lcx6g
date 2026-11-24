@@ -21,7 +21,11 @@ if GNSS_QUECTEL_LCX6G
 
 config GNSS_QUECTEL_LCX6G_UART_RX_BUF_SIZE
 	int "Size of UART backend receive buffer"
-	default 256
+	default 512
+	help
+	  Until the driver has configured it, the module sends every NMEA
+	  sentence each second. A buffer too small for that burst overruns,
+	  and the driver's setup script misses its replies.
 
 config GNSS_QUECTEL_LCX6G_UART_TX_BUF_SIZE
 	int "Size of UART backend transmit buffer"
