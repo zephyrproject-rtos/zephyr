@@ -78,10 +78,18 @@ struct quectel_lcx6g_data {
 };
 
 #ifdef CONFIG_PM_DEVICE
-MODEM_CHAT_MATCH_DEFINE(pair003_success_match, "$PAIR001,003,0*38", "", NULL);
+/*
+ * PAIR003 (GNSS power off) is acknowledged with result 0 (success) or 1 (processing). The LC76G
+ * answers 1, then stops its output, so no final result follows.
+ */
+MODEM_CHAT_MATCHES_DEFINE(pair003_success_matches,
+	MODEM_CHAT_MATCH("$PAIR001,003,0*38", "", NULL),
+	MODEM_CHAT_MATCH("$PAIR001,003,1*39", "", NULL),
+);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	suspend_script_cmds,
-	MODEM_CHAT_SCRIPT_CMD_RESP("$PAIR003*39", pair003_success_match)
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("$PAIR003*39", pair003_success_matches)
 );
 
 MODEM_CHAT_SCRIPT_NO_ABORT_DEFINE(suspend_script, suspend_script_cmds,
