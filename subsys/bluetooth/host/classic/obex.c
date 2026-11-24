@@ -2,6 +2,7 @@
 
 /*
  * Copyright 2024-2026 NXP
+ * Copyright (c) 2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -309,12 +310,11 @@ static int obex_server_disconn(struct bt_obex_server *server, uint16_t len, stru
 		goto failed;
 	}
 
-	if (!atomic_cas(&server->_opcode, 0, BT_OBEX_OPCODE_DISCONN)) {
-		LOG_WRN("Unexpected disconn request");
-		rsp_code = BT_OBEX_RSP_CODE_FORBIDDEN;
-		goto failed;
-	}
-
+	/*
+	 * The request cannot be refused (IrDA Interoperability 2.0, section 2.2.2), so it also
+	 * ends an operation in progress.
+	 */
+	(void)atomic_set(&server->_opcode, BT_OBEX_OPCODE_DISCONN);
 	atomic_set(&server->_state, BT_OBEX_DISCONNECTING);
 	server->ops->disconnect(server, buf);
 	return 0;
@@ -2300,6 +2300,14 @@ failed:
 	return err;
 }
 
+/* A DISCONNECT or an ABORT can have replaced the operation, and it still needs its own response. */
+static void obex_server_op_end(struct bt_obex_server *server, uint8_t opcode)
+{
+	if (atomic_cas(&server->_opcode, opcode, 0)) {
+		(void)atomic_ptr_clear(&server->obex->_active_server);
+	}
+}
+
 int bt_obex_put_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *hdr;
@@ -2330,11 +2338,6 @@ int bt_obex_put_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
 		return -EINVAL;
 	}
 
-	if ((opcode != BT_OBEX_OPCODE_PUT_F) && (rsp_code == BT_OBEX_RSP_CODE_SUCCESS)) {
-		LOG_WRN("Success cannot be responded without final");
-		return -EINVAL;
-	}
-
 	if (buf == NULL) {
 		buf = obex_alloc_buf(server->obex);
 		if (buf == NULL) {
@@ -2342,6 +2345,23 @@ int bt_obex_put_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
 			return -ENOBUFS;
 		}
 		allocated = true;
+	}
+
+	/*
+	 * The allocation can block while the operation ends or goes on to its final request, so
+	 * the response is checked against the operation as it is now.
+	 */
+	opcode = (uint8_t)atomic_get(&server->_opcode);
+	if ((opcode != BT_OBEX_OPCODE_PUT_F) && (opcode != BT_OBEX_OPCODE_PUT)) {
+		LOG_WRN("Operation ended");
+		err = -EINVAL;
+		goto unref;
+	}
+
+	if ((opcode != BT_OBEX_OPCODE_PUT_F) && (rsp_code == BT_OBEX_RSP_CODE_SUCCESS)) {
+		LOG_WRN("Success cannot be responded without final");
+		err = -EINVAL;
+		goto unref;
 	}
 
 	flags = atomic_get(&server->_flags);
@@ -2374,13 +2394,13 @@ int bt_obex_put_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
 	}
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-		atomic_clear(&server->_opcode);
-		atomic_ptr_clear(&server->obex->_active_server);
+		obex_server_op_end(server, opcode);
 	}
 	return 0;
 
 failed:
 	atomic_set(&server->_flags, flags);
+unref:
 	if (allocated) {
 		net_buf_unref(buf);
 	}
@@ -2526,11 +2546,6 @@ int bt_obex_get_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
 		return -EINVAL;
 	}
 
-	if ((opcode != BT_OBEX_OPCODE_GET_F) && (rsp_code == BT_OBEX_RSP_CODE_SUCCESS)) {
-		LOG_WRN("Success cannot be responded without final");
-		return -EINVAL;
-	}
-
 	if (buf == NULL) {
 		buf = obex_alloc_buf(server->obex);
 		if (buf == NULL) {
@@ -2538,6 +2553,23 @@ int bt_obex_get_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
 			return -ENOBUFS;
 		}
 		allocated = true;
+	}
+
+	/*
+	 * The allocation can block while the operation ends or goes on to its final request, so
+	 * the response is checked against the operation as it is now.
+	 */
+	opcode = (uint8_t)atomic_get(&server->_opcode);
+	if ((opcode != BT_OBEX_OPCODE_GET_F) && (opcode != BT_OBEX_OPCODE_GET)) {
+		LOG_WRN("Operation ended");
+		err = -EINVAL;
+		goto unref;
+	}
+
+	if ((opcode != BT_OBEX_OPCODE_GET_F) && (rsp_code == BT_OBEX_RSP_CODE_SUCCESS)) {
+		LOG_WRN("Success cannot be responded without final");
+		err = -EINVAL;
+		goto unref;
 	}
 
 	flags = atomic_get(&server->_flags);
@@ -2570,13 +2602,13 @@ int bt_obex_get_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
 	}
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-		atomic_clear(&server->_opcode);
-		atomic_ptr_clear(&server->obex->_active_server);
+		obex_server_op_end(server, opcode);
 	}
 	return 0;
 
 failed:
 	atomic_set(&server->_flags, flags);
+unref:
 	if (allocated) {
 		net_buf_unref(buf);
 	}
@@ -2694,11 +2726,6 @@ int bt_obex_abort_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct ne
 		return -EINVAL;
 	}
 
-	if (atomic_get(&server->_opcode) != BT_OBEX_OPCODE_ABORT) {
-		LOG_WRN("Invalid response");
-		return -EINVAL;
-	}
-
 	if (buf == NULL) {
 		buf = obex_alloc_buf(server->obex);
 		if (buf == NULL) {
@@ -2708,14 +2735,22 @@ int bt_obex_abort_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct ne
 		allocated = true;
 	}
 
+	/* After the allocation, which can block while the operation ends. */
+	if (atomic_get(&server->_opcode) != BT_OBEX_OPCODE_ABORT) {
+		LOG_WRN("Invalid response");
+		if (allocated) {
+			net_buf_unref(buf);
+		}
+		return -EINVAL;
+	}
+
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = rsp_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
 	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err == 0) {
-		atomic_clear(&server->_opcode);
-		atomic_ptr_clear(&server->obex->_active_server);
+		obex_server_op_end(server, BT_OBEX_OPCODE_ABORT);
 	} else {
 		if (allocated) {
 			net_buf_unref(buf);
@@ -2809,11 +2844,6 @@ int bt_obex_setpath_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct 
 		return -EINVAL;
 	}
 
-	if (atomic_get(&server->_opcode) != BT_OBEX_OPCODE_SETPATH) {
-		LOG_WRN("Invalid response");
-		return -EINVAL;
-	}
-
 	if (buf == NULL) {
 		buf = obex_alloc_buf(server->obex);
 		if (buf == NULL) {
@@ -2823,14 +2853,22 @@ int bt_obex_setpath_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct 
 		allocated = true;
 	}
 
+	/* After the allocation, which can block while the operation ends. */
+	if (atomic_get(&server->_opcode) != BT_OBEX_OPCODE_SETPATH) {
+		LOG_WRN("Invalid response");
+		if (allocated) {
+			net_buf_unref(buf);
+		}
+		return -EINVAL;
+	}
+
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = rsp_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
 	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err == 0) {
-		atomic_clear(&server->_opcode);
-		atomic_ptr_clear(&server->obex->_active_server);
+		obex_server_op_end(server, BT_OBEX_OPCODE_SETPATH);
 	} else {
 		if (allocated) {
 			net_buf_unref(buf);
@@ -2956,12 +2994,14 @@ int bt_obex_action_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct n
 	opcode = atomic_get(&server->_opcode);
 	if ((opcode != BT_OBEX_OPCODE_ACTION_F) && (opcode != BT_OBEX_OPCODE_ACTION)) {
 		LOG_WRN("Invalid response");
-		return -EINVAL;
+		err = -EINVAL;
+		goto failed;
 	}
 
 	if ((opcode != BT_OBEX_OPCODE_ACTION_F) && (rsp_code == BT_OBEX_RSP_CODE_SUCCESS)) {
 		LOG_WRN("Success cannot be responded without final");
-		return -EINVAL;
+		err = -EINVAL;
+		goto failed;
 	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
@@ -2971,13 +3011,14 @@ int bt_obex_action_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct n
 	err = obex_send(server->obex, server->tx.mopl, buf);
 	if (err == 0) {
 		if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-			atomic_clear(&server->_opcode);
-			atomic_ptr_clear(&server->obex->_active_server);
+			obex_server_op_end(server, opcode);
 		}
-	} else {
-		if (allocated) {
-			net_buf_unref(buf);
-		}
+		return 0;
+	}
+
+failed:
+	if (allocated) {
+		net_buf_unref(buf);
 	}
 	return err;
 }
