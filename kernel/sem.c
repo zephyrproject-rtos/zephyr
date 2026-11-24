@@ -217,11 +217,14 @@ static int init_sem_obj_core_list(void)
 	z_obj_type_init(&obj_type_sem, K_OBJ_TYPE_SEM_ID,
 			offsetof(struct k_sem, obj_core));
 
-	/* Initialize and link statically defined semaphores */
+	/* Initialize statically defined semaphores */
 
 	STRUCT_SECTION_FOREACH(k_sem, sem) {
-		k_obj_core_init_and_link(K_OBJ_CORE(sem), &obj_type_sem);
+		k_obj_core_init(K_OBJ_CORE(sem), &obj_type_sem);
 	}
+
+	k_obj_type_init_range(&obj_type_sem, STRUCT_SECTION_START(k_sem),
+			      STRUCT_SECTION_END(k_sem), sizeof(struct k_sem), false);
 
 	return 0;
 }
