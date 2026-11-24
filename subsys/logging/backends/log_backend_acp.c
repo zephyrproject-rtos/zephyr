@@ -156,7 +156,7 @@ static void acp_log_flush_work_handler(struct k_work *work);
 static K_WORK_DEFINE(acp_log_flush_work, acp_log_flush_work_handler);
 #define ACP_LOG_FLUSH_WQ_PRIORITY 5 /* preemptible, lower than IPC (1) */
 #define ACP_LOG_FLUSH_STACK_SIZE  2048
-K_THREAD_STACK_DEFINE(acp_log_flush_stack, ACP_LOG_FLUSH_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(acp_log_flush_stack, ACP_LOG_FLUSH_STACK_SIZE);
 static struct k_work_q acp_log_flush_wq;
 
 static void acp_log_timer_expiry(struct k_timer *timer);
@@ -462,7 +462,7 @@ static void init(const struct log_backend *const backend)
 
 	k_work_queue_init(&acp_log_flush_wq);
 	k_work_queue_start(&acp_log_flush_wq, acp_log_flush_stack,
-			   K_THREAD_STACK_SIZEOF(acp_log_flush_stack), ACP_LOG_FLUSH_WQ_PRIORITY,
+			   K_KERNEL_STACK_SIZEOF(acp_log_flush_stack), ACP_LOG_FLUSH_WQ_PRIORITY,
 			   NULL);
 
 	k_timer_start(&acp_log_flush_timer, K_USEC(LOG_DMA_FLUSH_PERIOD_US),
