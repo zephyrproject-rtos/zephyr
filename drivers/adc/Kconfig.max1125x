@@ -8,6 +8,7 @@ config ADC_MAX1125X
 	default y
 	depends on DT_HAS_MAXIM_MAX11254_ENABLED || DT_HAS_MAXIM_MAX11253_ENABLED
 	select SPI
+	select GPIO
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable the driver implementation for the MAX1125X

@@ -6,6 +6,7 @@ menuconfig ADC_ADS1220
 	default y
 	depends on DT_HAS_TI_ADS1220_ENABLED
 	select SPI
+	select GPIO
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable the driver for Texas Instruments ADS1220 24-bit, 4-channel,

@@ -11,6 +11,14 @@ config ADC_LMP90XXX
 		   DT_HAS_TI_LMP90097_ENABLED || DT_HAS_TI_LMP90098_ENABLED || \
 		   DT_HAS_TI_LMP90099_ENABLED || DT_HAS_TI_LMP90100_ENABLED
 	select SPI
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_TI_LMP90077),drdyb-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_LMP90078),drdyb-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_LMP90079),drdyb-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_LMP90080),drdyb-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_LMP90097),drdyb-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_LMP90098),drdyb-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_LMP90099),drdyb-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_LMP90100),drdyb-gpios)
 	select ADC_CONFIGURABLE_INPUTS
 	select CRC
 	help

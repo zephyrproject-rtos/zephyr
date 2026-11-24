@@ -5,6 +5,7 @@ config ADC_MAX2253X
 	bool "MAX2253x ADC driver"
 	depends on DT_HAS_MAXIM_MAX2253X_ENABLED
 	select SPI
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX2253X),int-gpios)
 	default y
 	help
 	  Enable ADC driver for Maxim MAX2253X.

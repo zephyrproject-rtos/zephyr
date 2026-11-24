@@ -11,6 +11,10 @@ config ADC_ADS1X1X
 		   DT_HAS_TI_ADS1114_ENABLED || DT_HAS_TI_ADS1115_ENABLED
 
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_TI_ADS1014),alert-rdy-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_ADS1015),alert-rdy-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_ADS1114),alert-rdy-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_ADS1115),alert-rdy-gpios)
 	select ADC_CONFIGURABLE_INPUTS if DT_HAS_TI_ADS1015_ENABLED || DT_HAS_TI_ADS1115_ENABLED
 	help
 	  Enable ADS1X1X ADC driver.
