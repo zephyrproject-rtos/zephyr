@@ -48,7 +48,7 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 /* format makes the backslashes exceed 100 lines: */
 /* clang-format off */
 #define USBC_SUBSYS_INIT(inst)                                                                     \
-	K_THREAD_STACK_DEFINE(my_stack_area_##inst, CONFIG_USBC_STACK_SIZE);                       \
+	K_KERNEL_STACK_DEFINE(my_stack_area_##inst, CONFIG_USBC_STACK_SIZE);                       \
                                                                                                    \
 	static struct tc_sm_t tc_##inst;                                                           \
 	static struct policy_engine pe_##inst;                                                     \
@@ -69,7 +69,7 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
                                                                                                    \
 		port->port_thread = k_thread_create(                                               \
 			&port->thread_data, my_stack_area_##inst,                                  \
-			K_THREAD_STACK_SIZEOF(my_stack_area_##inst), run_usbc_##inst, (void *)dev, \
+			K_KERNEL_STACK_SIZEOF(my_stack_area_##inst), run_usbc_##inst, (void *)dev, \
 			0, 0, CONFIG_USBC_THREAD_PRIORITY, K_ESSENTIAL, K_NO_WAIT);                \
 		k_thread_suspend(port->port_thread);                                               \
 	}                                                                                          \
