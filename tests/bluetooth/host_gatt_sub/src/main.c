@@ -76,6 +76,9 @@ static atomic_t peer_mode;
 K_MSGQ_DEFINE_STATIC(write_req_msgq, sizeof(uint16_t), 16, sizeof(uint16_t));
 static atomic_t acl_unexpected;
 
+/* The Security Manager PDUs that the controller got */
+static atomic_t smp_pdus;
+
 /* The controller refuses to disconnect */
 static atomic_t disconnect_refused;
 
@@ -317,6 +320,11 @@ static void acl_handle(struct net_buf *buf)
 
 	len = net_buf_pull_le16(buf);
 	cid = net_buf_pull_le16(buf);
+
+	if (cid == BT_L2CAP_CID_SMP) {
+		(void)atomic_inc(&smp_pdus);
+		return;
+	}
 
 	if (len != buf->len || buf->len == 0U || cid != BT_L2CAP_CID_ATT ||
 	    buf->data[0] != BT_ATT_OP_WRITE_REQ) {
@@ -718,6 +726,7 @@ static void after(void *fixture)
 	ARG_UNUSED(fixture);
 
 	atomic_val_t unexpected;
+	atomic_val_t smp;
 
 	if (test_conn != NULL) {
 		disconnect();
@@ -727,10 +736,12 @@ static void after(void *fixture)
 	zassert_ok(bt_unpair(BT_ID_DEFAULT, &peer_addr), "Unpairing failed");
 
 	unexpected = atomic_clear(&acl_unexpected);
+	smp = atomic_clear(&smp_pdus);
 	(void)atomic_set(&peer_mode, PEER_HOLD);
 	k_msgq_purge(&write_req_msgq);
 
 	zassert_equal(unexpected, 0, "The controller got %ld unexpected packets", unexpected);
+	zassert_equal(smp, 0, "The controller got %ld Security Manager PDUs", smp);
 	pools_full_expect();
 }
 
@@ -1569,6 +1580,57 @@ static ZTEST(host_gatt_sub, test_unpair_during_subscribe)
 	zassert_equal(atomic_get(&sub.unsubscribed_count), 1, "%ld NULL callbacks",
 		      atomic_get(&sub.unsubscribed_count));
 	sub_not_overwritten_expect(&sub);
+}
+
+/* The peer wants the link encrypted for the subscription, and is unpaired while the Host waits for
+ * that. The encryption that still follows does not have the request sent again, which would encode
+ * it from the params that the application got back.
+ */
+static ZTEST(host_gatt_sub, test_unpair_during_subscribe_retry)
+{
+	static struct test_sub sub;
+
+	sub_init(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub.overwrite = true;
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub.params), "The subscription failed");
+	write_req_expect(BT_GATT_CCC_NOTIFY);
+	error_rsp_recv(CCC_HANDLE_A, BT_ATT_ERR_INSUFFICIENT_ENCRYPTION);
+	zassert_equal(atomic_clear(&smp_pdus), 1, "The Host did not ask for security");
+
+	zassert_ok(bt_unpair(BT_ID_DEFAULT, &peer_addr), "Unpairing failed");
+	encrypt_change_send();
+	disconnect();
+
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub.unsubscribed_count));
+	sub_not_overwritten_expect(&sub);
+	zassert_equal(k_msgq_num_used_get(&write_req_msgq), 0U, "The request was sent again");
+}
+
+/* The controller refuses to disconnect for the unpairing, so the connection stays up, and the peer
+ * then wants the link encrypted for the subscription. The Host has dropped the request with the
+ * params, and does not ask for security to send it again.
+ */
+static ZTEST(host_gatt_sub, test_unpair_connected_during_subscribe_retry)
+{
+	static struct test_sub sub;
+
+	sub_init(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub.overwrite = true;
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub.params), "The subscription failed");
+	write_req_expect(BT_GATT_CCC_NOTIFY);
+
+	(void)atomic_set(&disconnect_refused, 1);
+	zassert_ok(bt_unpair(BT_ID_DEFAULT, &peer_addr), "Unpairing failed");
+	(void)atomic_clear(&disconnect_refused);
+
+	error_rsp_recv(CCC_HANDLE_A, BT_ATT_ERR_INSUFFICIENT_ENCRYPTION);
+	encrypt_change_send();
+
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub.unsubscribed_count));
+	sub_not_overwritten_expect(&sub);
+	zassert_equal(k_msgq_num_used_get(&write_req_msgq), 0U, "The request was sent again");
 }
 
 /* The NULL callback of the first subscription subscribes again while the peer is unpaired, which it
