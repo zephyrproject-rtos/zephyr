@@ -254,8 +254,8 @@ static void fuse_top_dispath_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-K_THREAD_DEFINE(fuse_op_handler, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE,
-		fuse_top_dispath_thread, NULL, NULL, NULL, 100, 0, 0);
+K_KERNEL_THREAD_DEFINE(fuse_op_handler, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE,
+		       fuse_top_dispath_thread, NULL, NULL, NULL, 100, 0, 0);
 
 static void fuse_fs_access_init(void)
 {
