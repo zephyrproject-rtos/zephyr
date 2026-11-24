@@ -82,7 +82,6 @@ struct stm32_venc_ewl {
 	uint32_t client_type;
 	uint32_t *chunks[MEM_CHUNKS];
 	uint32_t *aligned_chunks[MEM_CHUNKS];
-	uint32_t total_chunks;
 	const struct stm32_venc_config *config;
 	struct k_sem complete;
 	uint32_t irq_status;
@@ -237,24 +236,38 @@ i32 EWLMallocLinear(const void *instance, uint32_t size, EWLLinearMem_t *info)
 
 	info->size = size_aligned;
 
+	/* The table outlives the encoder sessions: take the first free slot, never append. */
+	uint32_t slot;
+
+	for (slot = 0; slot < MEM_CHUNKS; slot++) {
+		if (inst->chunks[slot] == NULL) {
+			break;
+		}
+	}
+	if (slot == MEM_CHUNKS) {
+		LOG_ERR("no free chunk slot for %8d bytes", size_aligned);
+		return EWL_ERROR;
+	}
+
 	/* allocate */
-	inst->chunks[inst->total_chunks] = (uint32_t *)EWL_HEAP_ALIGNED_ALLOC(size_aligned);
-	if (inst->chunks[inst->total_chunks] == NULL) {
+	inst->chunks[slot] = (uint32_t *)EWL_HEAP_ALIGNED_ALLOC(size_aligned);
+	if (inst->chunks[slot] == NULL) {
 		LOG_DBG("unable to allocate %8d bytes", size_aligned);
 		return EWL_ERROR;
 	}
 
 	/* align given allocated buffer */
-	inst->aligned_chunks[inst->total_chunks] =
-		(uint32_t *)ROUND_UP((uint32_t)inst->chunks[inst->total_chunks], ALIGNMENT_INCR);
+	inst->aligned_chunks[slot] =
+		(uint32_t *)ROUND_UP((uint32_t)inst->chunks[slot], ALIGNMENT_INCR);
 	/* put the aligned pointer in the return structure */
-	info->virtualAddress = inst->aligned_chunks[inst->total_chunks];
+	info->virtualAddress = inst->aligned_chunks[slot];
 	if (info->virtualAddress == NULL) {
 		LOG_DBG("unable to get chunk for %8d bytes", size_aligned);
-		EWL_HEAP_ALIGNED_FREE(inst->chunks[inst->total_chunks]);
+		EWL_HEAP_ALIGNED_FREE(inst->chunks[slot]);
+		inst->chunks[slot] = NULL;
+		inst->aligned_chunks[slot] = NULL;
 		return EWL_ERROR;
 	}
-	inst->total_chunks++;
 
 	/* bus address is the same as virtual address because no MMU */
 	info->busAddress = (ptr_t)info->virtualAddress;
@@ -273,12 +286,12 @@ void EWLFreeLinear(const void *instance, EWLLinearMem_t *info)
 	__ASSERT_NO_MSG(inst != NULL);
 	__ASSERT_NO_MSG(info != NULL);
 
-	/* find the pointer corresponding to the aligned buffer */
-	for (uint32_t i = 0; i < inst->total_chunks; i++) {
-		if (inst->aligned_chunks[i] == info->virtualAddress) {
-			if (inst->chunks[i] != NULL) {
-				EWL_HEAP_ALIGNED_FREE(inst->chunks[i]);
-			}
+	/* find the live slot of the aligned buffer and give the slot back */
+	for (uint32_t i = 0; i < MEM_CHUNKS; i++) {
+		if (inst->chunks[i] != NULL && inst->aligned_chunks[i] == info->virtualAddress) {
+			EWL_HEAP_ALIGNED_FREE(inst->chunks[i]);
+			inst->chunks[i] = NULL;
+			inst->aligned_chunks[i] = NULL;
 			break;
 		}
 	}
