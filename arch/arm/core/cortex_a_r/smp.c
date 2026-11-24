@@ -273,7 +273,8 @@ static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 		}
 
 		aff0 = MPIDR_AFFLVL(target_mpidr, 0);
-		gic_raise_sgi(ipi, (uint64_t)target_mpidr, 1 << aff0);
+		gic_raise_sgi(ipi, (uint64_t)target_mpidr,
+			      1U << (aff0 & GICV3_SGI_AFF0_BLOCK_MASK));
 	}
 }
 

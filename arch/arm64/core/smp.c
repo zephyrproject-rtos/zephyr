@@ -266,7 +266,7 @@ static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 
 		aff0 = MPIDR_AFFLVL(target_mpidr, 0);
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-		gic_raise_sgi(ipi, target_mpidr, 1 << aff0);
+		gic_raise_sgi(ipi, target_mpidr, 1U << (aff0 & GICV3_SGI_AFF0_BLOCK_MASK));
 #else
 		ARG_UNUSED(aff0);
 		/*
@@ -349,7 +349,7 @@ void arch_flush_fpu_ipi(unsigned int cpu)
 	/* Publish before the SGI, including when the target has IRQs masked. */
 	atomic_set(&fpu_flush_requests[cpu].pending, 1);
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << aff0);
+	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1U << (aff0 & GICV3_SGI_AFF0_BLOCK_MASK));
 #else
 	ARG_UNUSED(aff0);
 	soc_flush_fpu_ipi(mpidr);
@@ -560,7 +560,8 @@ void arch_coredump_freeze_other_cpus(void)
 		}
 
 		aff0 = MPIDR_AFFLVL(mpidr, 0);
-		gic_raise_sgi(SGI_COREDUMP_FREEZE_IPI, mpidr, 1 << aff0);
+		gic_raise_sgi(SGI_COREDUMP_FREEZE_IPI, mpidr,
+			      1U << (aff0 & GICV3_SGI_AFF0_BLOCK_MASK));
 	}
 
 	for (unsigned int i = 0; i < num_cpus; i++) {

@@ -363,23 +363,64 @@ void arm_gic_eoi(unsigned int intid)
 	write_sysreg(intid, ICC_EOIR1_EL1);
 }
 
-void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_list)
+bool gicv3_rss_supported(uint32_t gicd_typer, uint32_t icc_ctlr)
 {
-	uint32_t aff3, aff2, aff1;
-	uint64_t sgi_val;
+	return ((gicd_typer & GICD_TYPER_RSS_MASK) != 0U) &&
+	       ((icc_ctlr & ICC_CTLR_EL1_RSS) != 0U);
+}
 
-	__ASSERT_NO_MSG(GIC_IS_SGI(sgi_id));
+bool gicv3_sgi_encode(uint64_t target_aff, uint16_t target_list, unsigned int sgi_id,
+		      bool rss_supported, uint64_t *sgi_val)
+{
+	uint32_t aff0 = MPIDR_AFFLVL(target_aff, 0);
+	uint32_t aff1 = MPIDR_AFFLVL(target_aff, 1);
+	uint32_t aff2 = MPIDR_AFFLVL(target_aff, 2);
+	uint32_t aff3;
+	uint32_t rs;
 
-	/* Extract affinity fields from target */
-	aff1 = MPIDR_AFFLVL(target_aff, 1);
-	aff2 = MPIDR_AFFLVL(target_aff, 2);
 #if defined(CONFIG_ARM)
 	/* There is no Aff3 in AArch32 MPIDR */
-	aff3 = 0;
+	aff3 = 0U;
 #else
 	aff3 = MPIDR_AFFLVL(target_aff, 3);
 #endif
-	sgi_val = GICV3_SGIR_VALUE(aff3, aff2, aff1, sgi_id, SGIR_IRM_TO_AFF, target_list);
+	/*
+	 * Targeting is expressed as Aff0 modulo 16 plus a range selector.
+	 * Aff0 0..15 maps to range 0 and keeps the legacy encoding, while
+	 * Aff0 16..255 selects the matching 16-PE block.
+	 */
+	rs = (aff0 >> GICV3_SGI_AFF0_BLOCK_SHIFT) & GICV3_SGI_AFF0_BLOCK_MASK;
+	if ((rs != 0U) && !rss_supported) {
+		return false;
+	}
+
+	*sgi_val = GICV3_SGIR_VALUE_RS(aff3, aff2, aff1, rs, sgi_id, SGIR_IRM_TO_AFF,
+				       target_list);
+	return true;
+}
+
+void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_list)
+{
+	uint64_t sgi_val;
+	bool rss_supported = false;
+
+	__ASSERT_NO_MSG(GIC_IS_SGI(sgi_id));
+
+	/* Keep the Aff0 < 16 path free of extra register reads. */
+	if (MPIDR_AFFLVL(target_aff, 0) >= 16U) {
+		rss_supported = gicv3_rss_supported(sys_read32(GICD_TYPER),
+						   read_sysreg(ICC_CTLR_EL1));
+	}
+
+	if (!gicv3_sgi_encode(target_aff, target_list, sgi_id, rss_supported, &sgi_val)) {
+		/*
+		 * ICC_SGI1R.RS is RES0 unless both the Distributor and the
+		 * CPU interface implement RSS. Writing it anyway would send
+		 * the SGI to PE (Aff0 % 16) of the wrong 16-PE block.
+		 */
+		__ASSERT(false, "GICv3 RSS support is required for Aff0 >= 16");
+		return;
+	}
 
 	barrier_dsync_fence_full();
 	write_sysreg(sgi_val, ICC_SGI1R);

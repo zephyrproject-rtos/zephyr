@@ -311,6 +311,13 @@
 /* GICD_TYPER.ESPI [8] */
 #define GICD_TYPER_ESPI_MASK BIT(8)
 
+/* GICD_TYPER.RSS [26] (GICv3.1 range-selected SGIs) */
+#define GICD_TYPER_RSS_MASK BIT(26)
+
+/* GICv3 ICC_SGI1R.TargetList addresses 16 PEs per Aff0 block */
+#define GICV3_SGI_AFF0_BLOCK_SHIFT 4U
+#define GICV3_SGI_AFF0_BLOCK_MASK  0xfU
+
 /* GICD_TYPER.IDbits */
 #define GICD_TYPER_IDBITS(typer) ((((typer) >> 19) & 0x1f) + 1)
 
@@ -486,9 +493,11 @@ void arm_gic_secondary_init(void);
  * @brief raise SGI to target cores
  *
  * @param sgi_id      SGI ID 0 to 15
- * @param target_aff  target affinity in mpidr form.
- *                    Aff level 1 2 3 will be extracted by api.
- * @param target_list bitmask of target cores
+ * @param target_aff  target affinity in mpidr form (GICv3 only; ignored on GICv1/v2).
+ *                    Aff levels 1, 2, 3 and Aff0[7:4] (range selector on GICv3.1)
+ *                    are extracted by the API.
+ * @param target_list bitmask of target cores within the 16-PE Aff0 block
+ *                    (indexed by Aff0 & 0xf on GICv3; 8-bit CPU list on GICv1/v2)
  */
 void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_list);
 

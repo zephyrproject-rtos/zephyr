@@ -212,6 +212,7 @@
 #define ICC_SRE_ELx_DFB_BIT	BIT(1)
 #define ICC_SRE_ELx_DIB_BIT	BIT(2)
 #define ICC_SRE_ELx_EN_BIT	BIT(3) /**< ICC SRE Enable */
+#define ICC_CTLR_EL1_RSS	BIT(18)
 
 /* ICC SGI macros */
 #define SGIR_TGT_MASK		(0xffff)
@@ -224,6 +225,8 @@
 #define SGIR_IRM_SHIFT		(40)
 #define SGIR_IRM_MASK		(0x1)
 #define SGIR_IRM_TO_AFF		(0)
+#define SGIR_RS_SHIFT		(44)
+#define SGIR_RS_MASK		(0xf)
 
 #define GICV3_SGIR_VALUE(_aff3, _aff2, _aff1, _intid, _irm, _tgt)	\
 	((((uint64_t) (_aff3) & SGIR_AFF_MASK) << SGIR_AFF3_SHIFT) |	\
@@ -232,6 +235,10 @@
 	 (((_intid) & SGIR_INTID_MASK) << SGIR_INTID_SHIFT) |		\
 	 (((_aff1) & SGIR_AFF_MASK) << SGIR_AFF1_SHIFT) |		\
 	 ((_tgt) & SGIR_TGT_MASK))
+
+#define GICV3_SGIR_VALUE_RS(_aff3, _aff2, _aff1, _rs, _intid, _irm, _tgt)	\
+	(GICV3_SGIR_VALUE(_aff3, _aff2, _aff1, _intid, _irm, _tgt) |	\
+	 (((uint64_t) (_rs) & SGIR_RS_MASK) << SGIR_RS_SHIFT))
 
 /* Implementation defined register definitions */
 #if defined(CONFIG_CPU_CORTEX_A72)
