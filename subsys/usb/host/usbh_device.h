@@ -17,6 +17,10 @@
 typedef int (*usbh_udev_cb_t)(struct usb_device *const udev,
 			      struct uhc_transfer *const xfer);
 
+/*
+ * Look up a connected device by its address. The device is returned with a
+ * reference, which the caller drops with usb_device_unref().
+ */
 struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uint8_t addr);
 
 /*

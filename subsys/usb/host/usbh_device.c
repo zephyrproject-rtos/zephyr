@@ -87,7 +87,8 @@ struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uin
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&uhs_ctx->udevs, udev, node) {
 		if (addr == udev->addr) {
-			found = udev;
+			/* A device in the list holds the reference of its connection */
+			found = usb_device_ref(udev);
 			break;
 		}
 	}

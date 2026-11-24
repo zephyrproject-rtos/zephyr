@@ -158,8 +158,8 @@ ZTEST(usbh_test, test_class_matching)
 
 ZTEST(usbh_test, test_get_next_desc)
 {
-	const struct usb_device *udev;
 	const struct usb_desc_header *desc;
+	struct usb_device *udev;
 
 	udev = usbh_device_get(uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev);
@@ -216,6 +216,8 @@ ZTEST(usbh_test, test_get_next_desc)
 
 	/* #14 nil_desc */
 	zassert_is_null(desc);
+
+	usb_device_unref(udev);
 }
 
 ZTEST(usbh_test, test_get_types)
@@ -246,12 +248,14 @@ ZTEST(usbh_test, test_get_types)
 	host_ep = usbh_desc_get_endpoint(udev, 0x81);
 	zassert_not_null(host_ep);
 	zassert_equal(host_ep->addr, 0x81);
+
+	usb_device_unref(udev);
 }
 
 ZTEST(usbh_test, test_get_next_function)
 {
-	const struct usb_device *udev;
 	const struct usb_desc_header *desc;
+	struct usb_device *udev;
 
 	udev = usbh_device_get(uhs_ctx, TEST_DEV_ADDR);
 	zassert_not_null(udev);
@@ -267,6 +271,8 @@ ZTEST(usbh_test, test_get_next_function)
 	/* end */
 	desc = usbh_desc_get_next_function(desc);
 	zassert_is_null(desc);
+
+	usb_device_unref(udev);
 }
 
 static struct usbd_context *test_usbd;

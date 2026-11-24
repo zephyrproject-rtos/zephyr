@@ -237,6 +237,7 @@ static int run_device_cmd(const struct shell *sh, size_t argc, char **argv,
 	struct usbh_context *uhs_ctx;
 	struct usb_device *udev;
 	uint8_t addr;
+	int ret;
 
 	uhs_ctx = get_uhs_ctx_or_error(sh);
 	if (uhs_ctx == NULL) {
@@ -250,7 +251,11 @@ static int run_device_cmd(const struct shell *sh, size_t argc, char **argv,
 		return -ENOMEM;
 	}
 
-	return cmd(sh, udev, argc, argv);
+	/* The reference keeps the device valid, even if it is disconnected meanwhile */
+	ret = cmd(sh, udev, argc, argv);
+	usb_device_unref(udev);
+
+	return ret;
 }
 
 static int cmd_bulk_dev(const struct shell *sh, struct usb_device *const udev,

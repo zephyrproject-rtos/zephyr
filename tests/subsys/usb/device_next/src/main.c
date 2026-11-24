@@ -114,6 +114,7 @@ ZTEST(device_next, test_get_desc_string)
 
 	k_mutex_unlock(&udev->mutex);
 	usbh_xfer_buf_free(udev, buf);
+	usb_device_unref(udev);
 }
 
 ZTEST(device_next, test_vendor_control_in)
@@ -172,6 +173,7 @@ ZTEST(device_next, test_vendor_control_in)
 
 	k_mutex_unlock(&udev->mutex);
 	usbh_xfer_buf_free(udev, buf);
+	usb_device_unref(udev);
 }
 
 ZTEST(device_next, test_vendor_control_out)
@@ -242,6 +244,7 @@ ZTEST(device_next, test_vendor_control_out)
 
 	k_mutex_unlock(&udev->mutex);
 	usbh_xfer_buf_free(udev, buf);
+	usb_device_unref(udev);
 }
 
 ZTEST(device_next, test_control_nodata)
@@ -292,6 +295,7 @@ ZTEST(device_next, test_control_nodata)
 	}
 
 	k_mutex_unlock(&udev->mutex);
+	usb_device_unref(udev);
 }
 
 /* Get Configuration request test */
@@ -328,6 +332,7 @@ ZTEST(device_next, test_get_configuration)
 	default:
 		break;
 	}
+	usb_device_unref(udev);
 }
 
 /* Set Interface request test */
@@ -358,6 +363,7 @@ ZTEST(device_next, test_set_interface)
 	default:
 		break;
 	}
+	usb_device_unref(udev);
 }
 
 static int test_get_interface(struct usb_device *const udev, const uint8_t iface,
@@ -430,6 +436,7 @@ ZTEST(device_next, test_set_configuration_again)
 	zassert_not_null(udev, "No USB device available");
 
 	if (udev->state != USB_STATE_CONFIGURED) {
+		usb_device_unref(udev);
 		ztest_test_skip();
 	}
 
@@ -478,6 +485,7 @@ ZTEST(device_next, test_set_configuration_again)
 	}
 
 	k_mutex_unlock(&udev->mutex);
+	usb_device_unref(udev);
 }
 
 static void *usb_test_enable(void)
