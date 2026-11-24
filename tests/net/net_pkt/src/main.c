@@ -18,6 +18,11 @@
 
 #include <zephyr/ztest.h>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(net_test, CONFIG_NET_PKT_LOG_LEVEL);
+
+#include "net_private.h"
+
 static uint8_t mac_addr[sizeof(struct net_eth_addr)];
 static struct net_if *eth_if;
 static uint8_t small_buffer[CONFIG_NET_BUF_DATA_SIZE * 2 + 3];
@@ -1729,5 +1734,230 @@ ZTEST(net_pkt_test_suite, test_net_pkt_frag_ref_saturated)
 	net_pkt_frag_unref(frag);
 	zassert_equal(atomic_get(&tx_data->avail_count), avail + 1, "Fragment not freed");
 }
+
+#if defined(CONFIG_NET_PKT_TX_VIEWS)
+#define VIEW_FRAG_LEN 40U
+#define VIEW_FRAGS    3U
+
+static uint8_t view_pattern[VIEW_FRAG_LEN * VIEW_FRAGS];
+
+/* A TX packet with VIEW_FRAGS fragments of VIEW_FRAG_LEN bytes of a pattern */
+static struct net_pkt *view_src_alloc(struct net_buf *frags[VIEW_FRAGS])
+{
+	struct net_pkt *pkt;
+
+	for (size_t i = 0; i < sizeof(view_pattern); i++) {
+		view_pattern[i] = (uint8_t)(i * 7U + 1U);
+	}
+
+	pkt = net_pkt_alloc(K_NO_WAIT);
+	zassert_not_null(pkt, "Failed to get packet");
+
+	for (size_t i = 0; i < VIEW_FRAGS; i++) {
+		frags[i] = net_pkt_get_reserve_tx_data(VIEW_FRAG_LEN, K_NO_WAIT);
+		zassert_not_null(frags[i], "Failed to get fragment");
+		zassert_true(net_buf_tailroom(frags[i]) >= VIEW_FRAG_LEN, "Fragment too small");
+
+		net_buf_add_mem(frags[i], &view_pattern[i * VIEW_FRAG_LEN], VIEW_FRAG_LEN);
+		net_pkt_frag_add(pkt, frags[i]);
+	}
+
+	return pkt;
+}
+
+static size_t view_count(struct net_buf *views)
+{
+	size_t count = 0U;
+
+	for (struct net_buf *buf = views; buf != NULL; buf = buf->frags) {
+		count++;
+	}
+
+	return count;
+}
+
+static void view_expect_data(struct net_buf *views, size_t pos, size_t len)
+{
+	uint8_t data[sizeof(view_pattern)];
+	size_t copied;
+
+	copied = net_buf_linearize(data, sizeof(data), views, 0, len);
+	zexpect_equal(copied, len, "Copied %zu bytes instead of %zu", copied, len);
+	zexpect_mem_equal(data, &view_pattern[pos], len, "View data differs");
+}
+
+ZTEST(net_pkt_test_suite, test_net_pkt_view_data)
+{
+	struct net_buf *frags[VIEW_FRAGS];
+	struct net_pkt *src;
+	struct net_buf *views;
+
+	src = view_src_alloc(frags);
+
+	/* From inside the first fragment to inside the last one */
+	views = net_pkt_get_view(src, VIEW_FRAG_LEN - 10U, VIEW_FRAG_LEN + 20U, VIEW_FRAGS);
+	zassert_not_null(views, "No views");
+
+	zexpect_equal(view_count(views), 3U, "Got %zu views", view_count(views));
+	zexpect_equal(net_buf_frags_len(views), VIEW_FRAG_LEN + 20U, "Views of %zu bytes",
+		      net_buf_frags_len(views));
+	view_expect_data(views, VIEW_FRAG_LEN - 10U, VIEW_FRAG_LEN + 20U);
+
+	for (struct net_buf *view = views; view != NULL; view = view->frags) {
+		zexpect_equal(net_buf_headroom(view), 0U, "View has headroom");
+		zexpect_equal(net_buf_tailroom(view), 0U, "View has tailroom");
+	}
+
+	/* The source is left as it was */
+	zexpect_equal_ptr(src->buffer, frags[0], "Source buffer changed");
+	zexpect_equal(net_pkt_get_len(src), sizeof(view_pattern), "Source length changed");
+	zexpect_equal(frags[1]->len, VIEW_FRAG_LEN, "Source fragment changed");
+
+	net_pkt_frag_unref(views);
+
+	/* Exactly one whole fragment */
+	views = net_pkt_get_view(src, VIEW_FRAG_LEN, VIEW_FRAG_LEN, 1U);
+	zassert_not_null(views, "No view of one fragment");
+	zexpect_equal(view_count(views), 1U, "Got %zu views", view_count(views));
+	view_expect_data(views, VIEW_FRAG_LEN, VIEW_FRAG_LEN);
+	net_pkt_frag_unref(views);
+
+	for (size_t i = 0; i < VIEW_FRAGS; i++) {
+		zexpect_equal(frags[i]->ref, 1U, "Fragment %zu has %u references", i,
+			      frags[i]->ref);
+	}
+
+	net_pkt_unref(src);
+}
+
+ZTEST(net_pkt_test_suite, test_net_pkt_view_outlives_source)
+{
+	struct net_buf *frags[VIEW_FRAGS];
+	struct net_buf_pool *tx_data;
+	struct net_buf_pool *view_pool;
+	atomic_val_t data_avail;
+	atomic_val_t view_avail;
+	struct net_pkt *src;
+	struct net_buf *views;
+	struct net_buf *reused[CONFIG_NET_BUF_TX_COUNT];
+	struct net_buf *last;
+	uint8_t more[VIEW_FRAG_LEN / 2U];
+	size_t count = 0U;
+	size_t fill;
+
+	net_pkt_get_info(NULL, NULL, NULL, &tx_data);
+	data_avail = atomic_get(&tx_data->avail_count);
+
+	src = view_src_alloc(frags);
+
+	views = net_pkt_get_view(src, 0U, sizeof(view_pattern), VIEW_FRAGS);
+	zassert_not_null(views, "No views");
+
+	view_pool = net_buf_pool_get(views->pool_id);
+	view_avail = atomic_get(&view_pool->avail_count);
+
+	/* Drop the data in front of the last fragment, as TCP does when the
+	 * peer acknowledges it, then append to the last fragment.
+	 */
+	net_pkt_cursor_init(src);
+	net_pkt_set_overwrite(src, true);
+	zassert_ok(net_pkt_pull(src, 2U * VIEW_FRAG_LEN + 5U), "Pull failed");
+	net_pkt_trim_buffer(src);
+	zexpect_equal_ptr(src->buffer, frags[2], "Pulled fragments still linked");
+
+	last = net_buf_frag_last(src->buffer);
+	memset(more, 0xaa, sizeof(more));
+	if (net_buf_tailroom(last) >= sizeof(more)) {
+		net_buf_add_mem(last, more, sizeof(more));
+	}
+
+	view_expect_data(views, 0U, sizeof(view_pattern));
+
+	/* The source goes away, the views keep the data. Filling every free
+	 * fragment of the pool must not reach the data the views point into.
+	 */
+	net_pkt_unref(src);
+	zexpect_equal(atomic_get(&tx_data->avail_count), data_avail - VIEW_FRAGS,
+		      "Fragments freed while views point into them");
+
+	while (count < ARRAY_SIZE(reused)) {
+		reused[count] = net_pkt_get_reserve_tx_data(1U, K_NO_WAIT);
+		if (reused[count] == NULL) {
+			break;
+		}
+
+		fill = net_buf_tailroom(reused[count]);
+		memset(net_buf_add(reused[count], fill), 0x55, fill);
+		count++;
+	}
+
+	view_expect_data(views, 0U, sizeof(view_pattern));
+
+	while (count > 0U) {
+		net_pkt_frag_unref(reused[--count]);
+	}
+
+	net_pkt_frag_unref(views);
+	zexpect_equal(atomic_get(&tx_data->avail_count), data_avail, "Fragments not freed");
+	zexpect_equal(atomic_get(&view_pool->avail_count), view_avail + VIEW_FRAGS,
+		      "Views not freed");
+}
+
+ZTEST(net_pkt_test_suite, test_net_pkt_view_refused)
+{
+	struct net_buf *frags[VIEW_FRAGS];
+	struct net_buf_pool *view_pool;
+	struct net_buf *held[CONFIG_NET_BUF_TX_VIEW_COUNT];
+	atomic_val_t view_avail;
+	struct net_pkt *src;
+	struct net_buf *views;
+	size_t count = 0U;
+
+	src = view_src_alloc(frags);
+
+	views = net_pkt_get_view(src, 0U, 1U, 1U);
+	zassert_not_null(views, "No view");
+	view_pool = net_buf_pool_get(views->pool_id);
+	net_pkt_frag_unref(views);
+	view_avail = atomic_get(&view_pool->avail_count);
+
+	zexpect_is_null(net_pkt_get_view(src, 0U, 0U, VIEW_FRAGS), "View of no data");
+	zexpect_is_null(net_pkt_get_view(src, 1U, sizeof(view_pattern), VIEW_FRAGS),
+			"View past the end");
+	zexpect_is_null(net_pkt_get_view(src, sizeof(view_pattern), 1U, VIEW_FRAGS),
+			"View from the end");
+	zexpect_is_null(net_pkt_get_view(src, VIEW_FRAG_LEN - 1U, 2U, 1U),
+			"Two views where one is allowed");
+
+	frags[1]->ref = UINT8_MAX - 1U;
+	zexpect_is_null(net_pkt_get_view(src, VIEW_FRAG_LEN, 1U, 1U),
+			"View of a fragment with a nearly saturated count");
+	frags[1]->ref = 1U;
+
+	zexpect_equal(atomic_get(&view_pool->avail_count), view_avail, "Views leaked");
+
+	/* Leave two views free, then ask for three */
+	while (atomic_get(&view_pool->avail_count) > 2) {
+		held[count] = net_pkt_get_view(src, 0U, 1U, 1U);
+		zassert_not_null(held[count], "No view left after %zu", count);
+		count++;
+	}
+
+	zexpect_is_null(net_pkt_get_view(src, 0U, sizeof(view_pattern), VIEW_FRAGS),
+			"Got three views with two free");
+	zexpect_equal(atomic_get(&view_pool->avail_count), 2, "Views leaked on failure");
+	zexpect_equal(frags[1]->ref, 1U, "Reference leaked on failure");
+	zexpect_equal(frags[2]->ref, 1U, "Reference leaked on failure");
+
+	while (count > 0U) {
+		net_pkt_frag_unref(held[--count]);
+	}
+
+	zexpect_equal(frags[0]->ref, 1U, "Reference leaked");
+	zexpect_equal(atomic_get(&view_pool->avail_count), view_avail, "Views leaked");
+
+	net_pkt_unref(src);
+}
+#endif /* CONFIG_NET_PKT_TX_VIEWS */
 
 ZTEST_SUITE(net_pkt_test_suite, NULL, NULL, NULL, NULL, NULL);

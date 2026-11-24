@@ -789,6 +789,25 @@ config NET_BUF_TX_COUNT
 	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
 	  header (sizeof(struct net_buf)) amount of data.
 
+config NET_PKT_TX_VIEWS
+	bool "Network buffers that share the data of another packet"
+	help
+	  Network buffers without data of their own that point into the data
+	  of another packet, so a part of it can be sent without copying it.
+	  Each view keeps the buffer it points into allocated until the view
+	  is freed. Code that handles a packet built from views must not
+	  write into their data. The users of the views select this option.
+
+config NET_BUF_TX_VIEW_COUNT
+	int "How many view buffers are allocated for sending data"
+	default NET_BUF_TX_COUNT
+	range 1 $(UINT16_MAX)
+	depends on NET_PKT_TX_VIEWS
+	help
+	  Each view occupies a buffer header (sizeof(struct net_buf)), its
+	  user data and one pointer, but no data. When all views are in use,
+	  their users fall back to copying the data.
+
 choice NET_PKT_DATA_ALLOC_TYPE
 	prompt "Network packet data allocator type"
 	default NET_BUF_FIXED_DATA_SIZE
