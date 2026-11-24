@@ -670,12 +670,14 @@ static bool invoke_request_callback(struct coap_client *client,
 /* Release a cancelled request, unless its callback is currently running with
  * client->lock dropped (in_callback). In that case leave the slot reserved and
  * only mark it done; invoke_request_callback()'s owner resets it on return,
- * which keeps the slot from being reused mid-callback.
+ * which keeps the slot from being reused mid-callback. Also end its exchange
+ * lifetime so handle_poll() stops polling the socket.
  */
 static void cancel_internal_request(struct coap_client_internal_request *internal_req)
 {
 	if (atomic_get(&internal_req->in_callback)) {
 		internal_req->request_ongoing = false;
+		internal_req->pending.t0 = 0;
 	} else {
 		reset_internal_request(internal_req);
 	}
