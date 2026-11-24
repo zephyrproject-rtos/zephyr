@@ -21,8 +21,16 @@ const struct pwm_dt_spec pwm_pm_in = PWM_DT_SPEC_GET_BY_IDX(PWM_PM_NODE, 1);
 
 static int capture_one(pwm_flags_t type, uint32_t *period, uint32_t *pulse)
 {
-	return pwm_capture_cycles(pwm_pm_in.dev, pwm_pm_in.channel, pwm_pm_in.flags | type,
-				  period, pulse, CAPTURE_TIMEOUT);
+	int err = pwm_capture_cycles(pwm_pm_in.dev, pwm_pm_in.channel, pwm_pm_in.flags | type,
+				     period, pulse, CAPTURE_TIMEOUT);
+	int stop_err;
+
+	if (err == 0) {
+		stop_err = pwm_disable_capture(pwm_pm_in.dev, pwm_pm_in.channel);
+		zassert_ok(stop_err, "failed to disarm capture observer (err %d)", stop_err);
+	}
+
+	return err;
 }
 
 void pwm_pm_start_output(void)
@@ -30,6 +38,15 @@ void pwm_pm_start_output(void)
 	uint64_t cycles_per_sec;
 	uint32_t period;
 	int err;
+
+#if DT_NODE_HAS_COMPAT(PWM_PM_OUT_CTLR, nxp_sctimer_pwm) && \
+	DT_NODE_HAS_COMPAT(PWM_PM_IN_CTLR, nxp_imx_pwm)
+	/* Establish the observer's counter range on the unrouted B channel.
+	 * Channel A remains capture-only.
+	 */
+	err = pwm_set_cycles(pwm_pm_in.dev, 1U, UINT16_MAX, 0U, PWM_POLARITY_NORMAL);
+	zassert_ok(err, "failed to initialize capture timebase (err %d)", err);
+#endif
 
 	err = pwm_get_cycles_per_sec(pwm_pm_out.dev, pwm_pm_out.channel, &cycles_per_sec);
 	zassert_ok(err, "failed to get the output clock rate (err %d)", err);
