@@ -1084,10 +1084,23 @@ struct client_handler {
 		       struct net_buf *buf);
 };
 
-static void obex_client_save_last_operation(struct bt_obex_client *client, uint8_t opcode)
+/*
+ * Set in bt_obex_client::_opcode from the abort request until the abort response, next to the
+ * opcode of the aborted operation, which is zero once that operation got its final response.
+ */
+#define OBEX_CLIENT_ABORTING    ((atomic_val_t)BIT(8))
+#define OBEX_CLIENT_OPCODE_MASK ((atomic_val_t)BIT_MASK(8))
+
+/* The opcode that requests and responses are checked against: ABORT while one is in flight */
+static uint8_t obex_client_opcode(struct bt_obex_client *client)
 {
-	atomic_set(&client->_pre_opcode, opcode);
-	atomic_ptr_set(&client->obex->_last_client, client);
+	atomic_val_t val = atomic_get(&client->_opcode);
+
+	if ((val & OBEX_CLIENT_ABORTING) != 0) {
+		return BT_OBEX_OPCODE_ABORT;
+	}
+
+	return (uint8_t)val;
 }
 
 static void obex_client_clear_active_state(struct bt_obex_client *client)
@@ -1105,8 +1118,28 @@ static void obex_client_restore_active_state(struct bt_obex_client *client,
 
 static void obex_client_req_complete(struct bt_obex_client *client)
 {
-	obex_client_save_last_operation(client, (uint8_t)atomic_get(&client->_opcode));
-	obex_client_clear_active_state(client);
+	atomic_val_t aborting;
+	atomic_val_t val;
+
+	/* bt_obex_abort() can send or take back an abort request while this runs */
+	do {
+		val = atomic_get(&client->_opcode);
+		aborting = val & OBEX_CLIENT_ABORTING;
+	} while (!atomic_cas(&client->_opcode, val, aborting));
+
+	/* After an abort request the abort response is still due */
+	if (aborting == 0) {
+		(void)atomic_ptr_clear(&client->obex->_active_client);
+	}
+}
+
+/* SRM is in effect and no SRMP wait holds the responses back. */
+static bool obex_client_srm_active(struct bt_obex_client *client)
+{
+	return atomic_test_bit(&client->_flags, BT_OBEX_REQ_SRM) &&
+	       atomic_test_bit(&client->_flags, BT_OBEX_RSP_SRM) &&
+	       !atomic_test_bit(&client->_flags, BT_OBEX_REQ_SRMP) &&
+	       !atomic_test_bit(&client->_flags, BT_OBEX_RSP_SRMP);
 }
 
 static int obex_client_connect(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
@@ -1204,8 +1237,6 @@ static int obex_client_connect(struct bt_obex_client *client, uint8_t rsp_code, 
 		sys_slist_find_and_remove(&client->obex->_clients, &client->_node);
 	}
 
-	obex_client_save_last_operation(client, BT_OBEX_OPCODE_CONNECT);
-
 	if (client->ops->connect) {
 		client->ops->connect(client, rsp_code, version, mopl, buf);
 	}
@@ -1234,8 +1265,6 @@ static int obex_client_disconn(struct bt_obex_client *client, uint8_t rsp_code, 
 	if (atomic_get(&client->_state) == BT_OBEX_DISCONNECTED) {
 		sys_slist_find_and_remove(&client->obex->_clients, &client->_node);
 	}
-
-	obex_client_save_last_operation(client, BT_OBEX_OPCODE_DISCONN);
 
 	if (client->ops->disconnect) {
 		client->ops->disconnect(client, rsp_code, buf);
@@ -1489,6 +1518,8 @@ static int obex_client_action_common(struct bt_obex_client *client, uint8_t rsp_
 		return -ENOTSUP;
 	}
 
+	atomic_set_bit(&client->_flags, BT_OBEX_RSP_RECV);
+
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
 		obex_client_req_complete(client);
 	}
@@ -1520,6 +1551,9 @@ static struct client_handler *obex_client_find_handler(uint8_t opcode);
 static int obex_client_abort(struct bt_obex_client *client, uint8_t rsp_code, uint16_t len,
 			     struct net_buf *buf)
 {
+	struct client_handler *handler;
+	atomic_val_t val;
+
 	LOG_DBG("");
 
 	if (len != buf->len) {
@@ -1532,18 +1566,24 @@ static int obex_client_abort(struct bt_obex_client *client, uint8_t rsp_code, ui
 		return -EINVAL;
 	}
 
-	if (len != 0) {
-		struct client_handler *handler;
-		int err = -EINVAL;
+	val = atomic_get(&client->_opcode);
+	handler = obex_client_find_handler((uint8_t)(val & OBEX_CLIENT_OPCODE_MASK));
 
-		handler = obex_client_find_handler(atomic_get(&client->_pre_opcode));
-		if (handler != NULL) {
-			err = handler->handler(client, rsp_code, len, buf);
-			if (err != 0) {
-				LOG_WRN("Handler err %d", err);
-			}
-			return err;
-		}
+	/* bt_obex_abort() took the abort request back after a failed send */
+	if ((val & OBEX_CLIENT_ABORTING) == 0) {
+		return (handler != NULL) ? handler->handler(client, rsp_code, len, buf) : -EINVAL;
+	}
+
+	/*
+	 * Only with SRM can a response cross the abort request. A final GET response carries a
+	 * Body or End of Body header (GOEP 2.1.1, table 5.11), which the abort response does not.
+	 */
+	if ((handler != NULL) && obex_client_srm_active(client) &&
+	    ((rsp_code == BT_OBEX_RSP_CODE_CONTINUE) ||
+	     ((rsp_code == BT_OBEX_RSP_CODE_SUCCESS) &&
+	      (bt_obex_has_header(buf, BT_OBEX_HEADER_ID_BODY) ||
+	       bt_obex_has_header(buf, BT_OBEX_HEADER_ID_END_BODY))))) {
+		return handler->handler(client, rsp_code, len, buf);
 	}
 
 	if (client->ops->abort == NULL) {
@@ -1551,16 +1591,27 @@ static int obex_client_abort(struct bt_obex_client *client, uint8_t rsp_code, ui
 		return -ENOTSUP;
 	}
 
-	atomic_clear(&client->_pre_opcode);
-	atomic_ptr_clear(&client->obex->_last_client);
-	obex_client_clear_active_state(client);
-
 	if (rsp_code != BT_OBEX_RSP_CODE_SUCCESS) {
+		int err;
+
 		LOG_WRN("Disconnect transport");
 
-		return obex_transport_disconn(client->obex);
+		/*
+		 * Closing can take a while and a response can still arrive, so no new request
+		 * is admitted until bt_obex_transport_disconnected() has cleared the state. The
+		 * aborted operation is over.
+		 */
+		(void)atomic_and(&client->_opcode, OBEX_CLIENT_ABORTING);
+
+		err = obex_transport_disconn(client->obex);
+		if (err != 0) {
+			obex_client_clear_active_state(client);
+		}
+
+		return err;
 	}
 
+	obex_client_clear_active_state(client);
 	client->ops->abort(client, rsp_code, buf);
 	return 0;
 }
@@ -1597,30 +1648,6 @@ static struct client_handler *obex_client_find_handler(uint8_t opcode)
 	return NULL;
 }
 
-static struct bt_obex_client *obex_get_last_client(struct bt_obex *obex)
-{
-	struct bt_obex_client *client;
-
-	client = atomic_ptr_get(&obex->_last_client);
-	if (client == NULL) {
-		LOG_WRN("Last client not found");
-		return NULL;
-	}
-
-	if (!atomic_cas(&client->_opcode, 0, BT_OBEX_OPCODE_ABORT)) {
-		LOG_WRN("opcode cannot be set");
-		return NULL;
-	}
-
-	if (!atomic_cas(&client->_pre_opcode, BT_OBEX_OPCODE_ABORT, 0)) {
-		LOG_WRN("Last opcode is not ABORT");
-		(void)atomic_cas(&client->_opcode, BT_OBEX_OPCODE_ABORT, 0);
-		return NULL;
-	}
-
-	return client;
-}
-
 static int obex_client_recv(struct bt_obex *obex, struct net_buf *buf)
 {
 	struct client_handler *handler;
@@ -1635,18 +1662,13 @@ static int obex_client_recv(struct bt_obex *obex, struct net_buf *buf)
 	}
 
 	if (client == NULL) {
-		LOG_WRN("No active OBEX client.");
-		client = obex_get_last_client(obex);
-	}
-
-	if (client == NULL) {
 		LOG_WRN("No executing OBEX request");
 		return -EINVAL;
 	}
 
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	len = sys_be16_to_cpu(hdr->len);
-	handler = obex_client_find_handler(atomic_get(&client->_opcode));
+	handler = obex_client_find_handler(obex_client_opcode(client));
 	if (handler != NULL) {
 		err = handler->handler(client, hdr->code, len - sizeof(*hdr), buf);
 		if (err != 0) {
@@ -1676,7 +1698,6 @@ int bt_obex_transport_connected(struct bt_obex *obex)
 	}
 
 	atomic_ptr_clear(&obex->_active_client);
-	atomic_ptr_clear(&obex->_last_client);
 
 	return 0;
 }
@@ -1688,11 +1709,9 @@ int bt_obex_transport_disconnected(struct bt_obex *obex)
 
 	obex->_transport_ops = NULL;
 	atomic_ptr_clear(&obex->_active_client);
-	atomic_ptr_clear(&obex->_last_client);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&obex->_clients, client, cnext, _node) {
 		atomic_clear(&client->_opcode);
-		atomic_clear(&client->_pre_opcode);
 		atomic_set(&client->_state, BT_OBEX_DISCONNECTED);
 	}
 
@@ -2226,7 +2245,7 @@ int bt_obex_put(struct bt_obex_client *client, bool final, struct net_buf *buf)
 
 	req_code = final ? BT_OBEX_OPCODE_PUT_F : BT_OBEX_OPCODE_PUT;
 	if (!atomic_cas(&client->_opcode, 0, req_code)) {
-		opcode = atomic_get(&client->_opcode);
+		opcode = obex_client_opcode(client);
 		if ((opcode != BT_OBEX_OPCODE_PUT_F) && (opcode != BT_OBEX_OPCODE_PUT)) {
 			LOG_WRN("Operation inprogress");
 			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
@@ -2442,7 +2461,7 @@ int bt_obex_get(struct bt_obex_client *client, bool final, struct net_buf *buf)
 
 	req_code = final ? BT_OBEX_OPCODE_GET_F : BT_OBEX_OPCODE_GET;
 	if (!atomic_cas(&client->_opcode, 0, req_code)) {
-		opcode = atomic_get(&client->_opcode);
+		opcode = obex_client_opcode(client);
 		if ((opcode != BT_OBEX_OPCODE_GET_F) && (opcode != BT_OBEX_OPCODE_GET)) {
 			LOG_WRN("Operation inprogress");
 			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
@@ -2634,6 +2653,18 @@ static bool obex_op_support_abort(uint8_t opcode)
 	return false;
 }
 
+/* The server still owes a response to the last request. */
+static bool obex_client_rsp_due(struct bt_obex_client *client)
+{
+	if (atomic_test_bit(&client->_flags, BT_OBEX_RSP_RECV)) {
+		return false;
+	}
+
+	/* In SRM the requests before the final one do not get a response each. */
+	return !obex_client_srm_active(client) ||
+	       atomic_test_bit(&client->_flags, BT_OBEX_REQ_F_BIT);
+}
+
 int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf)
 {
 	struct bt_obex_req_hdr *hdr;
@@ -2641,7 +2672,6 @@ int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf)
 	int err;
 	uint8_t opcode;
 	bool allocated = false;
-	atomic_val_t pre_opcode;
 
 	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
@@ -2658,23 +2688,7 @@ int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
-	active_client = atomic_ptr_get(&client->obex->_active_client);
-	if ((active_client != NULL) && (active_client != client)) {
-		LOG_WRN("One OBEX request is executing");
-		return -EBUSY;
-	}
-
-	if (!atomic_get(&client->_opcode)) {
-		LOG_WRN("No operation is inprogress");
-		return -EINVAL;
-	} else if (atomic_get(&client->_opcode) == BT_OBEX_OPCODE_ABORT) {
-		LOG_WRN("Abort is inprogress");
-		return -EINPROGRESS;
-	} else if (!obex_op_support_abort((uint8_t)atomic_get(&client->_opcode))) {
-		LOG_WRN("Opcode %02x cannot be aborted", (uint8_t)atomic_get(&client->_opcode));
-		return -ENOTSUP;
-	}
-
+	/* The allocation can block while the operation goes on, so it comes before the checks */
 	if (buf == NULL) {
 		buf = obex_alloc_buf(client->obex);
 		if (buf == NULL) {
@@ -2684,23 +2698,73 @@ int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf)
 		allocated = true;
 	}
 
-	opcode = atomic_set(&client->_opcode, BT_OBEX_OPCODE_ABORT);
-	pre_opcode = atomic_clear(&client->_pre_opcode);
+	active_client = atomic_ptr_get(&client->obex->_active_client);
+	if ((active_client != NULL) && (active_client != client)) {
+		LOG_WRN("One OBEX request is executing");
+		err = -EBUSY;
+		goto failed;
+	}
+
+	opcode = obex_client_opcode(client);
+	if (opcode == 0U) {
+		LOG_WRN("No operation is inprogress");
+		err = -EINVAL;
+		goto failed;
+	}
+
+	if (opcode == BT_OBEX_OPCODE_ABORT) {
+		LOG_WRN("Abort is inprogress");
+		err = -EINPROGRESS;
+		goto failed;
+	}
+
+	if (!obex_op_support_abort(opcode)) {
+		LOG_WRN("Opcode %02x cannot be aborted", opcode);
+		err = -ENOTSUP;
+		goto failed;
+	}
+
+	/*
+	 * The client can send an abort request after each response (IrDA Interoperability 2.0,
+	 * section 2.2.5). OBEX packets carry no request identifier, so a response crossing the
+	 * abort request could not be told apart from the abort response.
+	 */
+	if (obex_client_rsp_due(client)) {
+		LOG_WRN("Response to the last request is due");
+		err = -EBUSY;
+		goto failed;
+	}
+
+	/* A response or another abort call can have got in since the opcode was read */
+	if (!atomic_cas(&client->_opcode, opcode, opcode | OBEX_CLIENT_ABORTING)) {
+		LOG_WRN("Operation changed");
+		err = (obex_client_opcode(client) == BT_OBEX_OPCODE_ABORT) ? -EINPROGRESS : -EBUSY;
+		goto failed;
+	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = BT_OBEX_OPCODE_ABORT;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
 	err = obex_send(client->obex, client->tx.mopl, buf);
-	if (err != 0) {
-		atomic_set(&client->_pre_opcode, pre_opcode);
-		obex_client_restore_active_state(client, active_client, opcode);
+	if (err == 0) {
+		return 0;
+	}
 
-		if (allocated) {
-			net_buf_unref(buf);
-		}
-	} else {
-		atomic_set(&client->_pre_opcode, opcode);
+	/*
+	 * Take the abort request back. A response can have ended the operation meanwhile: the
+	 * client then lets go of the transport first, so that no request starts in between.
+	 * Nothing is left to do if the transport is gone.
+	 */
+	if (!atomic_cas(&client->_opcode, opcode | OBEX_CLIENT_ABORTING, opcode) &&
+	    (atomic_get(&client->_opcode) == OBEX_CLIENT_ABORTING)) {
+		(void)atomic_ptr_cas(&client->obex->_active_client, client, NULL);
+		(void)atomic_cas(&client->_opcode, OBEX_CLIENT_ABORTING, 0);
+	}
+
+failed:
+	if (allocated) {
+		net_buf_unref(buf);
 	}
 	return err;
 }
@@ -2885,6 +2949,7 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
 	uint8_t req_code;
 	uint8_t opcode = 0;
 	bool allocated = false;
+	atomic_val_t flags;
 
 	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
@@ -2911,7 +2976,7 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
 
 	req_code = final ? BT_OBEX_OPCODE_ACTION_F : BT_OBEX_OPCODE_ACTION;
 	if (!atomic_cas(&client->_opcode, 0, req_code)) {
-		opcode = atomic_get(&client->_opcode);
+		opcode = obex_client_opcode(client);
 		if ((opcode != BT_OBEX_OPCODE_ACTION_F) && (opcode != BT_OBEX_OPCODE_ACTION)) {
 			LOG_WRN("Operation inprogress");
 			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
@@ -2932,6 +2997,8 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
 		}
 	}
 
+	flags = atomic_get(&client->_flags);
+
 	if (buf == NULL) {
 		buf = obex_alloc_buf(client->obex);
 		if (buf == NULL) {
@@ -2946,12 +3013,19 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
 	hdr->code = req_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
+	if (opcode == 0) {
+		(void)atomic_clear(&client->_flags);
+	}
+
+	atomic_clear_bit(&client->_flags, BT_OBEX_RSP_RECV);
+
 	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err == 0) {
 		return 0;
 	}
 
 failed:
+	(void)atomic_set(&client->_flags, flags);
 	obex_client_restore_active_state(client, active_client, opcode);
 
 	if (allocated) {

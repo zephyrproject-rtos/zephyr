@@ -564,11 +564,8 @@ struct bt_obex_client {
 	/** @internal Saves the current state, @ref bt_obex_state */
 	atomic_t _state;
 
-	/** @internal OBEX opcode */
+	/** @internal OBEX opcode and abort state */
 	atomic_t _opcode;
-
-	/** @internal OBEX previous opcode */
-	atomic_t _pre_opcode;
 
 	/** @internal OBEX flags */
 	atomic_t _flags;
@@ -602,9 +599,6 @@ struct bt_obex {
 
 	/** @internal OBEX executing client */
 	atomic_ptr_t _active_client;
-
-	/** @internal OBEX last executed client */
-	atomic_ptr_t _last_client;
 
 	/** @internal OBEX executing client */
 	atomic_ptr_t _active_server;
@@ -856,6 +850,11 @@ int bt_obex_get_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_
  *  bt_obex_add_header_*. Such as header `description` is packed by calling
  *  @ref bt_obex_add_header_description. Or, the `buf` could be NULL if there is not any data
  *  needs to be sent.
+ *
+ *  The abort request follows a response. While the response to the last request is due the
+ *  function fails with -EBUSY. It can be called again from the response callback, in place of
+ *  sending the next request, unless that response ended the operation. With Single Response Mode,
+ *  responses to the aborted operation can still arrive before the abort response.
  *
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
  *  the caller retains the ownership of the buffer.
