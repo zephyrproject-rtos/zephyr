@@ -27,6 +27,8 @@ elseif(CONFIG_SOC_SERIES_AM62AX_R5 OR CONFIG_SOC_SERIES_AM64X_R5 OR CONFIG_SOC_S
     zephyr_sources(cortex_r/boot.S)
     zephyr_code_relocate(FILES ${ZEPHYR_BASE}/soc/ti/k3/common/cortex_r/boot.S LOCATION ATCM NOKEEP)
     zephyr_code_relocate(LIBRARY arch__arm__core__cortex_a_r LOCATION ATCM NOKEEP NOCOPY)
+    zephyr_code_relocate_ifdef(CONFIG_ARM_MPU LIBRARY arch__arm__core__mpu LOCATION ATCM NOKEEP NOCOPY)
+    zephyr_code_relocate_ifdef(CONFIG_ARM_MPU FILES ${ZEPHYR_BASE}/subsys/mem_mgmt/mem_attr.c LOCATION ATCM NOKEEP NOCOPY)
   endif()
 
   zephyr_include_directories(cortex_r)
