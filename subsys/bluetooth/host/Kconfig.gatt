@@ -21,6 +21,8 @@ config BT_ATT_TX_COUNT
 	help
 	  These buffers are only used for sending anything over ATT.
 	  Requests, responses, indications, confirmations, notifications.
+	  BT_GATT_DEFERRED_RSP adds the buffers its deferred responses
+	  need, so this does not have to be raised for it.
 
 config BT_ATT_PREPARE_COUNT
 	int "Number of ATT prepare write buffers"
@@ -51,6 +53,9 @@ config BT_ATT_PREPARE_COUNT_PER_CONN
 	  that a peer which never executes or cancels its queued writes
 	  cannot exhaust the pool for the other connections.
 
+	  The values that a deferred Execute Write Request has left to
+	  write (BT_GATT_DEFERRED_RSP) count as held as well.
+
 	  0 selects BT_ATT_PREPARE_COUNT / BT_MAX_CONN, at least 1, which
 	  gives every connection an equal share of the pool as long as the
 	  pool holds at least one buffer per connection. The remainder of
@@ -67,6 +72,19 @@ config BT_ATT_RETRY_ON_SEC_ERR
 	help
 	  If an ATT request fails due to insufficient security, the host will
 	  try to elevate the security level and retry the ATT request.
+
+config BT_GATT_DEFERRED_RSP
+	bool "Deferred GATT attribute callbacks [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Add deferred read and write callbacks to struct bt_gatt_attr.
+	  An attribute using them does not have to produce the value, or
+	  complete the write, while the callback runs: the response is sent
+	  later with bt_gatt_deferred_rsp() or bt_gatt_deferred_error_rsp().
+
+	  The ATT buffer pool gets one more buffer for each bearer that can
+	  exist at once, so that requests waiting for the application do not
+	  take from the BT_ATT_TX_COUNT buffers.
 
 config BT_EATT
 	bool "Enhanced ATT Bearers support [EXPERIMENTAL]"
