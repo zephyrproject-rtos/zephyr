@@ -655,6 +655,12 @@ static void gptp_md_pdelay_req_state_machine(int port)
 			state->rcvd_pdelay_follow_up_ptr = NULL;
 		}
 
+		/* The buffers were released above; clear their counters too so
+		 * WAIT_RESP / WAIT_FOLLOW_UP do not handle a NULL packet.
+		 */
+		state->rcvd_pdelay_resp = 0U;
+		state->rcvd_pdelay_follow_up = 0U;
+
 		gptp_send_pdelay_req(port);
 
 		k_timer_stop(&state->pdelay_timer);
@@ -674,7 +680,8 @@ static void gptp_md_pdelay_req_state_machine(int port)
 	case GPTP_PDELAY_REQ_WAIT_RESP:
 		if (state->pdelay_timer_expired) {
 			state->state = GPTP_PDELAY_REQ_RESET;
-		} else if (state->rcvd_pdelay_resp != 0U) {
+		} else if (state->rcvd_pdelay_resp != 0U &&
+			   state->rcvd_pdelay_resp_ptr != NULL) {
 			pkt = state->rcvd_pdelay_resp_ptr;
 			if (!gptp_handle_pdelay_resp(port, pkt)) {
 				state->state = GPTP_PDELAY_REQ_WAIT_FOLLOW_UP;
@@ -688,7 +695,8 @@ static void gptp_md_pdelay_req_state_machine(int port)
 	case GPTP_PDELAY_REQ_WAIT_FOLLOW_UP:
 		if (state->pdelay_timer_expired) {
 			state->state = GPTP_PDELAY_REQ_RESET;
-		} else if (state->rcvd_pdelay_follow_up != 0U) {
+		} else if (state->rcvd_pdelay_follow_up != 0U &&
+			   state->rcvd_pdelay_follow_up_ptr != NULL) {
 			pkt = state->rcvd_pdelay_follow_up_ptr;
 			if (!gptp_handle_pdelay_follow_up(port, pkt)) {
 				gptp_md_pdelay_compute(port);
