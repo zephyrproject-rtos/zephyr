@@ -79,7 +79,7 @@ zephyr_code_relocate(FILES src/nxp_wifi_drv.c
       zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_iperf2_client.c
                            FILTER "${NXP_ZPERF_CLIENT_FILTER}"
                            LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
-      zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_udp_pacing.c
+      zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_pacing.c
                            LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
       zephyr_code_relocate(FILES ${ZEPHYR_BASE}/subsys/net/lib/zperf/zperf_iperf2_server.c
                            FILTER "${NXP_ZPERF_SERVER_FILTER}"
