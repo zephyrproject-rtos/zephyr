@@ -33,6 +33,8 @@
 /**
  * @brief Callback type for allocating an LPI INTID.
  *
+ * @deprecated Use its_api_alloc_intids_t instead.
+ *
  * @param dev ITS device instance.
  *
  * @return The allocated LPI INTID (at least 8192).
@@ -168,12 +170,14 @@ __subsystem struct its_driver_api {
 /**
  * @brief Allocate an LPI INTID.
  *
+ * @deprecated Use its_alloc_intids() with a count of 1 instead.
+ *
  * @param dev ITS device.
  *
  * @return The allocated LPI INTID (at least 8192).
  * @retval 0 No LPI INTIDs remain in the provisioned range or the ITS device is not ready.
  */
-static inline int its_alloc_intid(const struct device *dev)
+static inline __deprecated int its_alloc_intid(const struct device *dev)
 {
 	return DEVICE_API_GET(its, dev)->alloc_intid(dev);
 }
