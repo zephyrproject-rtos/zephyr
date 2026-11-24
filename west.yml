@@ -296,6 +296,10 @@ manifest:
     - name: hostap
       path: modules/lib/hostap
       revision: bd0cf9d3a4cd6214829873d835ea6ffef82a91e0
+    - name: jpegenc
+      url: https://github.com/chemag/jpegenc
+      revision: c654a7d456dc3dc0b52d7dd279650a613114b741
+      path: modules/lib/jpegenc
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
