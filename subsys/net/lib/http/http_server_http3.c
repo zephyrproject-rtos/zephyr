@@ -764,7 +764,7 @@ static void h3_process_request_header(struct http_client_ctx *client,
 
 	if (name_len == (sizeof(":authority") - 1) &&
 	    memcmp(name, ":authority", name_len) == 0) {
-		LOG_DBG("[%p] H3: authority=%.*s", client, (int)value_len, value);
+		LOG_HEXDUMP_DBG(value, value_len, "H3: authority");
 	}
 }
 
@@ -1987,8 +1987,7 @@ ZTESTABLE_STATIC int h3_parse_qpack_headers(struct http_client_ctx *client,
 			} else {
 				name_ptr = buf + pos;
 				decoded_name_len = name_len;
-				LOG_DBG("[%p] H3: header name=%.*s", client,
-					(int)name_len, buf + pos);
+				LOG_HEXDUMP_DBG(buf + pos, name_len, "H3: header name");
 			}
 
 			pos += name_len;
@@ -2030,8 +2029,7 @@ ZTESTABLE_STATIC int h3_parse_qpack_headers(struct http_client_ctx *client,
 			} else {
 				value_ptr = buf + pos;
 				decoded_len = val_len;
-				LOG_DBG("[%p] H3: header value=%.*s", client,
-					(int)val_len, buf + pos);
+				LOG_HEXDUMP_DBG(buf + pos, val_len, "H3: header value");
 			}
 
 			h3_process_request_header(client, name_ptr, decoded_name_len,
