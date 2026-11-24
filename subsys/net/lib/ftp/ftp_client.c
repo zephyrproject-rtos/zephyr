@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(ftp_client, CONFIG_FTP_CLIENT_LOG_LEVEL);
 #if CONFIG_FTP_CLIENT_KEEPALIVE_TIME > 0
 #define FTP_STACK_SIZE KB(2)
 #define FTP_PRIORITY K_LOWEST_APPLICATION_THREAD_PRIO
-static K_THREAD_STACK_DEFINE(ftp_stack_area, FTP_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(ftp_stack_area, FTP_STACK_SIZE);
 
 static struct k_work_q ftp_work_q;
 #endif
@@ -1284,7 +1284,7 @@ int ftp_uninit(struct ftp_client *client)
 static int ftp_sys_init(void)
 {
 	k_work_queue_start(&ftp_work_q, ftp_stack_area,
-			   K_THREAD_STACK_SIZEOF(ftp_stack_area),
+			   K_KERNEL_STACK_SIZEOF(ftp_stack_area),
 			   FTP_PRIORITY, NULL);
 
 	return 0;

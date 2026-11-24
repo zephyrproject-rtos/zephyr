@@ -69,7 +69,7 @@ K_MSGQ_DEFINE_STATIC_TYPE(xfer_msgq, struct latmon_data, 10);
 /* Network transfer thread: sends data to Latmus  */
 #define XFER_THREAD_STACK_SIZE CONFIG_NET_LATMON_XFER_THREAD_STACK_SIZE
 #define XFER_THREAD_PRIORITY CONFIG_NET_LATMON_XFER_THREAD_PRIORITY
-K_THREAD_STACK_DEFINE(xfer_thread_stack, XFER_THREAD_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(xfer_thread_stack, XFER_THREAD_STACK_SIZE);
 static struct k_thread xfer_thread;
 
 /* Latmon thread: receives application requests */
@@ -79,7 +79,7 @@ static struct k_thread xfer_thread;
 /* Monitor thread: performs the sampling */
 #define MONITOR_THREAD_PRIORITY CONFIG_NET_LATMON_MONITOR_THREAD_PRIORITY
 #define MONITOR_STACK_SIZE CONFIG_NET_LATMON_MONITOR_THREAD_STACK_SIZE
-static K_THREAD_STACK_DEFINE(monitor_stack, MONITOR_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(monitor_stack, MONITOR_STACK_SIZE);
 
 static struct k_thread monitor_thread;
 static k_tid_t monitor_tid;
@@ -563,6 +563,6 @@ static int latmon_server_thread_func(void *p1, void *p2, void *p3)
 	return 0;
 }
 
-K_THREAD_DEFINE(latmon_server_id, LATMON_STACK_SIZE,
-		latmon_server_thread_func, NULL, NULL, NULL,
-		LATMON_THREAD_PRIORITY, 0, 0);
+K_KERNEL_THREAD_DEFINE(latmon_server_id, LATMON_STACK_SIZE,
+		       latmon_server_thread_func, NULL, NULL, NULL,
+		       LATMON_THREAD_PRIORITY, 0, 0);

@@ -70,7 +70,7 @@ LISTIFY(MAX_SESSION_COUNT, CREATE_WORK_Q, (;), _);
 	[i] = {					 \
 		.queue = &zperf_work_q_##i,	 \
 		.stack = zperf_work_q_stack_##i, \
-		.stack_size = K_THREAD_STACK_SIZEOF(zperf_work_q_stack_##i), \
+		.stack_size = K_KERNEL_STACK_SIZEOF(zperf_work_q_stack_##i), \
 	}
 
 static struct zperf_work zperf_work_q[] = {
@@ -102,7 +102,7 @@ void start_jobs(void)
 }
 #else /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
-K_THREAD_STACK_DEFINE(zperf_work_q_stack, CONFIG_ZPERF_WORK_Q_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(zperf_work_q_stack, CONFIG_ZPERF_WORK_Q_STACK_SIZE);
 static struct k_work_q zperf_work_q;
 
 #endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
@@ -344,7 +344,7 @@ static int zperf_init(void)
 
 	k_work_queue_init(&zperf_work_q);
 	k_work_queue_start(&zperf_work_q, zperf_work_q_stack,
-			   K_THREAD_STACK_SIZEOF(zperf_work_q_stack),
+			   K_KERNEL_STACK_SIZEOF(zperf_work_q_stack),
 			   ZPERF_WORK_Q_THREAD_PRIORITY,
 			   NULL);
 	k_thread_name_set(zperf_work_q.thread_id, "zperf_work_q");

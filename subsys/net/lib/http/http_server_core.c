@@ -2183,5 +2183,5 @@ again:
 	}
 }
 
-K_THREAD_DEFINE(http_server_tid, CONFIG_HTTP_SERVER_STACK_SIZE,
-		http_server_thread, NULL, NULL, NULL, THREAD_PRIORITY, 0, 0);
+K_KERNEL_THREAD_DEFINE(http_server_tid, CONFIG_HTTP_SERVER_STACK_SIZE,
+		       http_server_thread, NULL, NULL, NULL, THREAD_PRIORITY, 0, 0);
