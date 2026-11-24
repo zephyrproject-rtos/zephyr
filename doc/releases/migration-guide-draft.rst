@@ -84,6 +84,17 @@ Boards
   (P2.0 to P2.2) was removed. SCB2 is now ``arduino_spi`` on the Arduino header pins D11 to D13
   (P10.0 to P10.2), disabled by default.
 
+* On :zephyr:board:`mimxrt1170_evk` (CM7), both ENET (100M) and ENET1G (1G) are now enabled by
+  default. ENET1G is network interface 1 and the default interface, so
+  ``CONFIG_NET_CONFIG_MY_IPV4_ADDR``, DHCP, :c:func:`net_if_get_default` and
+  ``net_if_get_by_index(1)`` now refer to the 1G port instead of the 100M port, which is
+  interface 2. To keep the previous behaviour, disable the ENET1G instance in an application
+  overlay, as described in :ref:`mimxrt1170_evk_single_ethernet_port`. The same section shows
+  how to use only ENET1G.
+
+  The ``nxp,enet1g.overlay`` board overlay was removed, as ENET1G no longer needs to be
+  enabled by an overlay. Builds passing it in ``EXTRA_DTC_OVERLAY_FILE`` now fail.
+
 * LiteX: The deprecated ``CONFIG_LITEX_CSR_DATA_WIDTH`` Kconfig option has been removed. Only the
   32 bit CSR data width is supported. Designs that use an 8 bit CSR data width must be rebuilt with
   a 32 bit CSR data width. (:github:`124793`)

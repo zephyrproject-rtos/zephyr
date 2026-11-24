@@ -78,3 +78,24 @@
 	domain-id = <1>;
 	status = "okay";
 };
+
+/* ENET_1G is enabled only on the CM7 core */
+&enet1g {
+	status = "disabled";
+};
+
+&enet1g_mac {
+	status = "disabled";
+};
+
+&enet1g_mdio {
+	status = "disabled";
+};
+
+&enet1g_phy {
+	status = "disabled";
+};
+
+&enet1g_ptp_clock {
+	status = "disabled";
+};

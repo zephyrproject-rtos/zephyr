@@ -101,3 +101,19 @@
 &enet {
 	status = "disabled";
 };
+
+&enet_mac {
+	status = "disabled";
+};
+
+&enet_mdio {
+	status = "disabled";
+};
+
+&phy {
+	status = "disabled";
+};
+
+&enet_ptp_clock {
+	status = "disabled";
+};

@@ -146,9 +146,7 @@ tests:
     depends_on:
       - arduino_spi
       - arduino_gpio
-  sample.net.zperf.nxp_enet1g:
-    extra_args:
-      EXTRA_DTC_OVERLAY_FILE="nxp,enet1g.overlay"
+  sample.net.zperf.nxp_enet_dual_port:
     tags:
       - net
       - zperf
