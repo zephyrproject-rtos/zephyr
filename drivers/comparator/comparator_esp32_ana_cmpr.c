@@ -233,7 +233,7 @@ static int ana_cmpr_esp32_init(const struct device *dev)
 	ret = esp_intr_alloc_intrstatus(
 		config->irq_source,
 		ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INT_FLAGS_CHECK(config->irq_flags) |
-			ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM,
+			ESP_INTR_FLAG_SHARED,
 		(uint32_t)(uintptr_t)analog_cmpr_ll_get_intr_status_reg(config->hw),
 		ANALOG_CMPR_LL_ALL_INTR_MASK(config->unit), ana_cmpr_esp32_isr, (void *)dev,
 		&irq_handle);

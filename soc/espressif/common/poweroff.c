@@ -11,6 +11,10 @@
 #include <hal/pmu_ll.h>
 #endif
 
+#if defined(CONFIG_SMP) && defined(CONFIG_SOC_SERIES_ESP32S3)
+#include <esp_mp_stall.h>
+#endif
+
 #if defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_PM)
 extern esp_err_t sleep_clock_icg_startup_init(void);
 #endif
@@ -41,6 +45,9 @@ void z_sys_poweroff(void)
 	 * no such path, so set it up here before entering deep sleep.
 	 */
 	sleep_clock_icg_startup_init();
+#endif
+#if defined(CONFIG_SMP) && defined(CONFIG_SOC_SERIES_ESP32S3)
+	soc_mp_pause_others();
 #endif
 	esp_deep_sleep_start();
 }

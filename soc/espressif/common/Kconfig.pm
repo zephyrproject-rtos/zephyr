@@ -112,9 +112,6 @@ config SOC_FAMILY_ESPRESSIF_PM_WAKEUP_MARGIN_US
 	  optimization shortens it by keeping the early wake path independent
 	  of the flash cache.
 
-config SOC_FAMILY_ESPRESSIF_TIMER_IN_IRAM
-	bool
-
 config SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT
 	bool "Put light sleep path code in internal RAM"
 	select SOC_FAMILY_ESPRESSIF_TIMER_IN_IRAM

@@ -9,3 +9,12 @@ tests:
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
+  boards.esp32.interrupts.smp:
+    tags:
+      - drivers
+      - smp
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    extra_configs:
+      - CONFIG_SMP=y
+      - CONFIG_SPIN_VALIDATE=y

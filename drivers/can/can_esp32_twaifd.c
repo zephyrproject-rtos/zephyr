@@ -787,7 +787,7 @@ static int can_esp32_twaifd_init(const struct device *dev)
 
 	err = esp_intr_alloc(cfg->irq_source,
 			     ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				     ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM |
+				     ESP_INT_FLAGS_CHECK(cfg->irq_flags) |
 				     ESP_INTR_FLAG_INTRDISABLED,
 			     can_esp32_twaifd_isr, (void *)dev, &data->intr_handle);
 	if (err != 0) {

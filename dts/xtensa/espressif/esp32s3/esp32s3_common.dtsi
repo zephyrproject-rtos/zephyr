@@ -66,6 +66,7 @@
 			clock-frequency = <DT_FREQ_M(240)>;
 			xtal-freq = <DT_FREQ_M(40)>;
 			d-cache-line-size = <16>;
+			zephyr,deferred-start;
 		};
 	};
 
@@ -642,6 +643,35 @@
 			phy-dp-pin = <20>;
 			phy-dm-pin = <19>;
 			status = "disabled";
+		};
+
+		/* Scheduler IPI (ipi0/ipi1) and stall IPI (ipi2/ipi3), both at level 1. */
+		ipi0: ipi@600c0030 {
+			compatible = "espressif,crosscore-interrupt";
+			reg = <0x600c0030 0x4>;
+			interrupts = <FROM_CPU_INTR0_SOURCE 1 0>;
+			interrupt-parent = <&intc>;
+		};
+
+		ipi1: ipi@600c0034 {
+			compatible = "espressif,crosscore-interrupt";
+			reg = <0x600c0034 0x4>;
+			interrupts = <FROM_CPU_INTR1_SOURCE 1 0>;
+			interrupt-parent = <&intc>;
+		};
+
+		ipi2: ipi@600c0038 {
+			compatible = "espressif,crosscore-interrupt";
+			reg = <0x600c0038 0x4>;
+			interrupts = <FROM_CPU_INTR2_SOURCE 1 0>;
+			interrupt-parent = <&intc>;
+		};
+
+		ipi3: ipi@600c003c {
+			compatible = "espressif,crosscore-interrupt";
+			reg = <0x600c003c 0x4>;
+			interrupts = <FROM_CPU_INTR3_SOURCE 1 0>;
+			interrupt-parent = <&intc>;
 		};
 
 		intc: interrupt-controller@600c2000 {

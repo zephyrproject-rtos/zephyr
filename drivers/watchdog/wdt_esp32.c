@@ -36,6 +36,7 @@
 #endif
 
 #include <zephyr/logging/log.h>
+#include <zephyr/spinlock.h>
 LOG_MODULE_REGISTER(wdt_esp32, CONFIG_WDT_LOG_LEVEL);
 
 #define MWDT_TICK_PRESCALER		40000
@@ -46,6 +47,7 @@ struct wdt_esp32_data {
 	uint32_t timeout;
 	wdt_stage_action_t mode;
 	wdt_callback_t callback;
+	struct k_spinlock lock;
 };
 
 struct wdt_esp32_config {
@@ -72,36 +74,46 @@ static inline void wdt_esp32_unseal(const struct device *dev)
 	wdt_hal_write_protect_disable(&data->hal);
 }
 
-static void wdt_esp32_enable(const struct device *dev)
+static void wdt_esp32_enable_locked(const struct device *dev)
 {
 	struct wdt_esp32_data *data = dev->data;
 
 	wdt_esp32_unseal(dev);
 	wdt_hal_enable(&data->hal);
 	wdt_esp32_seal(dev);
-
 }
 
 static int wdt_esp32_disable(const struct device *dev)
 {
 	struct wdt_esp32_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	wdt_esp32_unseal(dev);
 	wdt_hal_disable(&data->hal);
 	wdt_esp32_seal(dev);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
 
 static void wdt_esp32_isr(void *arg);
 
-static int wdt_esp32_feed(const struct device *dev, int channel_id)
+static void wdt_esp32_feed_locked(const struct device *dev)
 {
 	struct wdt_esp32_data *data = dev->data;
 
 	wdt_esp32_unseal(dev);
 	wdt_hal_feed(&data->hal);
 	wdt_esp32_seal(dev);
+}
+
+static int wdt_esp32_feed(const struct device *dev, int channel_id)
+{
+	struct wdt_esp32_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	wdt_esp32_feed_locked(dev);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -109,13 +121,16 @@ static int wdt_esp32_feed(const struct device *dev, int channel_id)
 static int wdt_esp32_set_config(const struct device *dev, uint8_t options)
 {
 	struct wdt_esp32_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	wdt_esp32_unseal(dev);
 	wdt_hal_config_stage(&data->hal, WDT_STAGE0, data->timeout, WDT_STAGE_ACTION_INT);
 	wdt_hal_config_stage(&data->hal, WDT_STAGE1, data->timeout, data->mode);
-	wdt_esp32_enable(dev);
 	wdt_esp32_seal(dev);
-	wdt_esp32_feed(dev, 0);
+
+	wdt_esp32_enable_locked(dev);
+	wdt_esp32_feed_locked(dev);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -209,8 +224,7 @@ static int wdt_esp32_init(const struct device *dev)
 
 	wdt_hal_init(&data->hal, config->wdt_inst, MWDT_TICK_PRESCALER, true);
 
-	flags = ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INT_FLAGS_CHECK(config->irq_flags) |
-		ESP_INTR_FLAG_IRAM;
+	flags = ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INT_FLAGS_CHECK(config->irq_flags);
 	ret = esp_intr_alloc(config->irq_source, flags, (intr_handler_t)wdt_esp32_isr, (void *)dev,
 			     NULL);
 
@@ -261,7 +275,7 @@ static void IRAM_ATTR wdt_esp32_isr(void *arg)
 		data->callback(dev, 0);
 	}
 
-	wdt_hal_handle_intr(&data->hal);
+	mwdt_ll_clear_intr_status(data->hal.mwdt_dev);
 }
 
 

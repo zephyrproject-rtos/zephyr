@@ -73,6 +73,11 @@ struct spi_esp32_data {
 	} target_rx_seg[CONFIG_SPI_ESP32_TARGET_MAX_BUFS];
 	size_t target_rx_seg_cnt;
 #endif
+#ifdef CONFIG_SPI_ESP32_INTERRUPT
+	struct k_spinlock isr_lock;
+	bool isr_armed;
+	atomic_t isr_busy;
+#endif
 	uint8_t dfs;
 	uint32_t clock_source_hz;
 #if CONFIG_PM

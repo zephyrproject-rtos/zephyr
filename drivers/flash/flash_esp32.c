@@ -116,11 +116,11 @@ static const struct flash_parameters flash_esp32_parameters = {
 };
 
 #if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_ESP_FLASH_ASYNC)
-static inline void flash_esp32_sem_take(const struct device *dev)
+static inline int flash_esp32_sem_take(const struct device *dev)
 {
 	struct flash_esp32_dev_data *data = dev->data;
 
-	k_sem_take(&data->sem, FLASH_SEM_TIMEOUT);
+	return k_sem_take(&data->sem, FLASH_SEM_TIMEOUT);
 }
 
 static inline void flash_esp32_sem_give(const struct device *dev)
@@ -131,7 +131,7 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 }
 #else /* CONFIG_MULTITHREADING && !CONFIG_ESP_FLASH_ASYNC */
 
-#define flash_esp32_sem_take(dev) do {} while (0)
+#define flash_esp32_sem_take(dev) 0
 #define flash_esp32_sem_give(dev) do {} while (0)
 
 #endif /* CONFIG_MULTITHREADING && !CONFIG_ESP_FLASH_ASYNC */
@@ -423,7 +423,10 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 		}
 	}
 #else
-	flash_esp32_sem_take(dev);
+	ret = flash_esp32_sem_take(dev);
+	if (ret != 0) {
+		return ret;
+	}
 	ret = flash_esp32_read_check_enc(address, buffer, length);
 	flash_esp32_sem_give(dev);
 #endif /* CONFIG_MCUBOOT */
@@ -451,7 +454,10 @@ static int flash_esp32_write(const struct device *dev, off_t address, const void
 
 	ret = esp_rom_flash_write(address, (void *)buffer, length, encrypt);
 #else
-	flash_esp32_sem_take(dev);
+	ret = flash_esp32_sem_take(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 #ifdef CONFIG_ESP32_FLASH_ENCRYPTION
 	bool erase = false;
@@ -489,7 +495,10 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 #ifdef CONFIG_MCUBOOT
 	ret = esp_rom_flash_erase_range(start, len);
 #else
-	flash_esp32_sem_take(dev);
+	ret = flash_esp32_sem_take(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 #ifdef CONFIG_ESP32_FLASH_ENCRYPTION
 	if (!aligned_flash_erase(start, len)) {

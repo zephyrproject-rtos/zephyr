@@ -154,9 +154,41 @@ struct sdhc_esp32_ctrl_data {
 	const struct device *slot_dev[SOC_SDMMC_NUM_SLOTS];
 	intr_handle_t intr_handle;
 	bool initialized;
+	struct k_spinlock intmask_lock;
+	uint32_t parked_intmask;
+	bool intmask_parked;
 };
 
 static struct sdhc_esp32_ctrl_data sdhc_esp32_ctrl;
+
+/* Caller holds intmask_lock. While the mask is parked, update the parked copy. */
+static void IRAM_ATTR sdhc_esp32_intmask_set(sdmmc_dev_t *sdio_hw, uint32_t bits, bool enable)
+{
+	if (!sdhc_esp32_ctrl.intmask_parked) {
+		sdmmc_ll_enable_interrupt(sdio_hw, bits, enable);
+	} else if (enable) {
+		sdhc_esp32_ctrl.parked_intmask |= bits;
+	} else {
+		sdhc_esp32_ctrl.parked_intmask &= ~bits;
+	}
+}
+
+static void sdhc_esp32_intmask_park(sdmmc_dev_t *sdio_hw)
+{
+	K_SPINLOCK(&sdhc_esp32_ctrl.intmask_lock) {
+		sdhc_esp32_ctrl.parked_intmask = sdio_hw->intmask.val;
+		sdio_hw->intmask.val = 0;
+		sdhc_esp32_ctrl.intmask_parked = true;
+	}
+}
+
+static void sdhc_esp32_intmask_unpark(sdmmc_dev_t *sdio_hw)
+{
+	K_SPINLOCK(&sdhc_esp32_ctrl.intmask_lock) {
+		sdio_hw->intmask.val = sdhc_esp32_ctrl.parked_intmask;
+		sdhc_esp32_ctrl.intmask_parked = false;
+	}
+}
 
 /**********************************************************************
  * ESP32 low level functions
@@ -693,9 +725,7 @@ static int sdmmc_host_do_transaction(const struct device *dev, int slot,
 	 */
 	if (sdhc_esp32_ctrl.owner != dev) {
 		if (sdhc_esp32_ctrl.owner != NULL && data->host_div != 0) {
-			uint32_t saved_intmask = sdio_hw->intmask.val;
-
-			sdio_hw->intmask.val = 0;
+			sdhc_esp32_intmask_park(sdio_hw);
 
 			sdmmc_ll_enable_card_clock(sdio_hw, slot, false);
 			(void)sdmmc_host_clock_update_command(sdio_hw, slot);
@@ -707,7 +737,7 @@ static int sdmmc_host_do_transaction(const struct device *dev, int slot,
 			(void)sdmmc_host_clock_update_command(sdio_hw, slot);
 
 			sdmmc_ll_clear_interrupt(sdio_hw, 0xFFFF);
-			sdio_hw->intmask.val = saved_intmask;
+			sdhc_esp32_intmask_unpark(sdio_hw);
 			k_msgq_purge(data->s_host_ctx.event_queue);
 		}
 		sdhc_esp32_ctrl.owner = dev;
@@ -920,9 +950,7 @@ int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz, i
 	/* Mask interrupts during clock configuration to prevent CMD_DONE
 	 * events from clock update commands filling the event queue.
 	 */
-	uint32_t saved_intmask = sdio_hw->intmask.val;
-
-	sdio_hw->intmask.val = 0;
+	sdhc_esp32_intmask_park(sdio_hw);
 
 	/* Disable clock first */
 	sdmmc_ll_enable_card_clock(sdio_hw, slot, false);
@@ -992,7 +1020,7 @@ restore:
 	 * path would silently disable the other slot's interrupts too, since
 	 * the register is shared by the whole controller.
 	 */
-	sdio_hw->intmask.val = saved_intmask;
+	sdhc_esp32_intmask_unpark(sdio_hw);
 
 	return err;
 }
@@ -1149,13 +1177,13 @@ static void sdhc_esp32_restore_after_reset(const struct device *dev)
 	const struct sdhc_esp32_config *cfg = dev->config;
 	sdmmc_dev_t *sdio_hw = (sdmmc_dev_t *)cfg->sdio_hw;
 	uint32_t keep_io = 0;
-	unsigned int io_key;
+	k_spinlock_key_t key;
 
 	sdmmc_ll_set_data_timeout(sdio_hw, 0xFFFFFFU);
 	sdmmc_ll_set_response_timeout(sdio_hw, 0xFFU);
 	sdmmc_ll_clear_interrupt(sdio_hw, 0xFFFFFFFFU);
 
-	io_key = irq_lock();
+	key = k_spin_lock(&sdhc_esp32_ctrl.intmask_lock);
 
 #ifdef CONFIG_SDHC_ESP32_SDIO
 	for (int s = 0; s < SOC_SDMMC_NUM_SLOTS; s++) {
@@ -1173,15 +1201,14 @@ static void sdhc_esp32_restore_after_reset(const struct device *dev)
 	}
 #endif
 
-	sdmmc_ll_enable_interrupt(sdio_hw,
-				  SDMMC_INTMASK_CD | SDMMC_INTMASK_CMD_DONE |
-					  SDMMC_INTMASK_DATA_OVER | SDMMC_INTMASK_RCRC |
-					  SDMMC_INTMASK_DCRC | SDMMC_INTMASK_RTO |
-					  SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO |
-					  SDMMC_INTMASK_SBE | SDMMC_INTMASK_EBE |
-					  SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE | keep_io,
-				  true);
-	irq_unlock(io_key);
+	sdhc_esp32_intmask_set(sdio_hw,
+			       SDMMC_INTMASK_CD | SDMMC_INTMASK_CMD_DONE | SDMMC_INTMASK_DATA_OVER |
+				       SDMMC_INTMASK_RCRC | SDMMC_INTMASK_DCRC | SDMMC_INTMASK_RTO |
+				       SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO | SDMMC_INTMASK_SBE |
+				       SDMMC_INTMASK_EBE | SDMMC_INTMASK_RESP_ERR |
+				       SDMMC_INTMASK_HLE | keep_io,
+			       true);
+	k_spin_unlock(&sdhc_esp32_ctrl.intmask_lock, key);
 
 	sdmmc_ll_enable_global_interrupt(sdio_hw, true);
 	sdmmc_ll_enable_busy_clear_interrupt(sdio_hw, false);
@@ -1711,6 +1738,8 @@ static void IRAM_ATTR sdio_esp32_isr(void *arg)
 		const struct device *slot_dev = sdhc_esp32_ctrl.slot_dev[slot];
 		uint32_t io_bit = (slot == 0) ? SDMMC_LL_EVENT_IO_SLOT0 : SDMMC_LL_EVENT_IO_SLOT1;
 		struct sdhc_esp32_data *slot_data;
+		sdhc_interrupt_cb_t cb = NULL;
+		void *cb_data = NULL;
 
 		if (slot_dev == NULL || !(raw & io_bit)) {
 			continue;
@@ -1723,12 +1752,16 @@ static void IRAM_ATTR sdio_esp32_isr(void *arg)
 		 * would re-enter this handler as soon as the source is
 		 * unmasked. A card still asserting DAT1 re-latches it at once.
 		 */
-		sdmmc_ll_enable_interrupt(sdio_hw, io_bit, false);
-		sdmmc_ll_clear_interrupt(sdio_hw, io_bit);
-
 		slot_data = slot_dev->data;
-		if (slot_data->sdio_cb) {
-			slot_data->sdio_cb(slot_dev, SDHC_INT_SDIO, slot_data->sdio_cb_user_data);
+		K_SPINLOCK(&sdhc_esp32_ctrl.intmask_lock) {
+			sdhc_esp32_intmask_set(sdio_hw, io_bit, false);
+			sdmmc_ll_clear_interrupt(sdio_hw, io_bit);
+			cb = slot_data->sdio_cb;
+			cb_data = slot_data->sdio_cb_user_data;
+		}
+
+		if (cb != NULL) {
+			cb(slot_dev, SDHC_INT_SDIO, cb_data);
 		}
 	}
 #endif
@@ -1802,7 +1835,7 @@ static int sdhc_esp32_controller_init(const struct device *dev)
 	/* Attach interrupt handler */
 	ret = esp_intr_alloc(cfg->irq_source,
 			     ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				     ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
+				     ESP_INT_FLAGS_CHECK(cfg->irq_flags),
 			     &sdio_esp32_isr, (void *)dev, &sdhc_esp32_ctrl.intr_handle);
 
 	if (ret != 0) {
@@ -1953,11 +1986,11 @@ static int sdhc_esp32_enable_interrupt(const struct device *dev, sdhc_interrupt_
 	/*
 	 * The card interrupt callback runs from the ISR and the consumer
 	 * re-arms from there, so this must stay callable with interrupts
-	 * locked. intmask is shared with the ISR, so an interrupt lock is
+	 * locked. intmask is shared with the ISR, so the controller spinlock is
 	 * what guards the read-modify-write; a mutex would neither help
 	 * against the ISR nor be usable from it.
 	 */
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&sdhc_esp32_ctrl.intmask_lock);
 
 	data->sdio_cb = callback;
 	data->sdio_cb_user_data = user_data;
@@ -1972,12 +2005,12 @@ static int sdhc_esp32_enable_interrupt(const struct device *dev, sdhc_interrupt_
 	 */
 	if (sources & SDHC_INT_SDIO) {
 		sdmmc_ll_clear_interrupt(sdio_hw, io_bit);
-		sdmmc_ll_enable_interrupt(sdio_hw, io_bit, true);
+		sdhc_esp32_intmask_set(sdio_hw, io_bit, true);
 	} else {
-		sdmmc_ll_enable_interrupt(sdio_hw, io_bit, false);
+		sdhc_esp32_intmask_set(sdio_hw, io_bit, false);
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&sdhc_esp32_ctrl.intmask_lock, key);
 
 	return 0;
 }
@@ -1996,9 +2029,9 @@ static int sdhc_esp32_disable_interrupt(const struct device *dev, int sources)
 	io_bit = (cfg->slot == 0) ? SDMMC_LL_EVENT_IO_SLOT0 : SDMMC_LL_EVENT_IO_SLOT1;
 
 	/* Callable from the card interrupt callback, so no mutex here. */
-	unsigned int key = irq_lock();
+	k_spinlock_key_t key = k_spin_lock(&sdhc_esp32_ctrl.intmask_lock);
 
-	sdmmc_ll_enable_interrupt(sdio_hw, io_bit, false);
+	sdhc_esp32_intmask_set(sdio_hw, io_bit, false);
 
 	data->sdio_int_sources &= ~sources;
 	if (data->sdio_int_sources == 0) {
@@ -2006,7 +2039,7 @@ static int sdhc_esp32_disable_interrupt(const struct device *dev, int sources)
 		data->sdio_cb_user_data = NULL;
 	}
 
-	irq_unlock(key);
+	k_spin_unlock(&sdhc_esp32_ctrl.intmask_lock, key);
 
 	return 0;
 }
