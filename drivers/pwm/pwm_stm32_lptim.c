@@ -30,6 +30,9 @@
  *   output (CCxE = 0) is not driven, so the outputs stay enabled.
  * - Instances with a single output and no CCMR1 register (LPTIM4 on STM32U5, for instance) idle
  *   at the level of their waveform polarity while disabled, so the timer is stopped.
+ * - A channel with a GPIO in channel-gpios has its pin driven as GPIO output for 0 % and 100 %,
+ *   which gives exact levels also next to a waveform. The pin goes back to the timer for a
+ *   waveform.
  *
  * A compare change takes effect at the end of the current period. A channel held low that starts
  * a waveform while the counter runs therefore shows a one-cycle pulse at the end of the current
@@ -39,11 +42,13 @@
 #define DT_DRV_COMPAT st_stm32_lptim_pwm
 
 #include <soc.h>
+#include <stm32_gpio_shared.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_lptim.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/reset.h>
@@ -78,6 +83,7 @@ struct pwm_stm32_lptim_config {
 	struct stm32_pclken pclken[2];
 	struct reset_dt_spec reset;
 	const struct pinctrl_dev_config *pcfg;
+	struct gpio_dt_spec gpios[TIMER_MAX_CH];
 };
 
 struct pwm_stm32_lptim_data {
@@ -89,6 +95,10 @@ struct pwm_stm32_lptim_data {
 	bool counting;
 	/* Serializes the calls, since a call can sleep while it waits for a register write. */
 	struct k_sem lock;
+	/* Default pinctrl state of the pin of each channel with a GPIO. */
+	struct pinctrl_state pin_state[TIMER_MAX_CH];
+	/* Whether the pin of each channel is driven as GPIO. */
+	bool pin_on_gpio[TIMER_MAX_CH];
 };
 
 /* Channel to LL mapping. */
@@ -512,6 +522,79 @@ static int set_cycles_single_output(const struct device *dev, uint32_t period_cy
 	return 0;
 }
 
+/* Whether a channel has a GPIO that holds 0 % and 100 %. */
+static inline bool has_gpio(const struct pwm_stm32_lptim_config *cfg, uint32_t ch)
+{
+	/* Without channel-gpios in the devicetree, the GPIO code is left out of the build. */
+	return DT_ANY_INST_HAS_PROP_STATUS_OKAY(channel_gpios) && (cfg->gpios[ch].port != NULL);
+}
+
+/* Drive the pin of a channel as GPIO output at a constant level. */
+static int set_pin_level(const struct device *dev, uint32_t ch, bool high)
+{
+	const struct pwm_stm32_lptim_config *cfg = dev->config;
+	struct pwm_stm32_lptim_data *data = dev->data;
+	int ret;
+
+	ret = gpio_pin_configure_dt(&cfg->gpios[ch], high ? GPIO_OUTPUT_HIGH : GPIO_OUTPUT_LOW);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->pin_on_gpio[ch] = true;
+
+	return 0;
+}
+
+/* Give the pin of a channel back to the timer if it is driven as GPIO. */
+static int release_pin(const struct device *dev, uint32_t ch)
+{
+	const struct pwm_stm32_lptim_config *cfg = dev->config;
+	struct pwm_stm32_lptim_data *data = dev->data;
+	int ret;
+
+	if (!data->pin_on_gpio[ch]) {
+		return 0;
+	}
+
+	ret = pinctrl_apply_state_direct(cfg->pcfg, &data->pin_state[ch]);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->pin_on_gpio[ch] = false;
+
+	return 0;
+}
+
+static int set_cycles(const struct device *dev, uint32_t ch, uint32_t period_cycles,
+		      uint32_t pulse_cycles, bool inverted)
+{
+	const struct pwm_stm32_lptim_config *cfg = dev->config;
+	bool constant = (pulse_cycles == 0U) || (pulse_cycles == period_cycles);
+	int ret;
+
+	if (constant && has_gpio(cfg, ch)) {
+		ret = set_pin_level(dev, ch, (pulse_cycles == period_cycles) != inverted);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (has_ccmr1(cfg->timer)) {
+		ret = set_cycles_channels(dev, ch, period_cycles, pulse_cycles, inverted);
+	} else {
+		ret = set_cycles_single_output(dev, period_cycles, pulse_cycles, inverted);
+	}
+
+	if ((ret < 0) || constant || !has_gpio(cfg, ch)) {
+		return ret;
+	}
+
+	/* The pin goes back to the timer once the timer output generates the waveform. */
+	return release_pin(dev, ch);
+}
+
 static int pwm_stm32_lptim_set_cycles(const struct device *dev, uint32_t channel,
 				      uint32_t period_cycles, uint32_t pulse_cycles,
 				      pwm_flags_t flags)
@@ -541,11 +624,7 @@ static int pwm_stm32_lptim_set_cycles(const struct device *dev, uint32_t channel
 		return -EBUSY;
 	}
 
-	if (has_ccmr1(cfg->timer)) {
-		ret = set_cycles_channels(dev, channel - 1U, period_cycles, pulse_cycles, inverted);
-	} else {
-		ret = set_cycles_single_output(dev, period_cycles, pulse_cycles, inverted);
-	}
+	ret = set_cycles(dev, channel - 1U, period_cycles, pulse_cycles, inverted);
 
 	k_sem_give(&data->lock);
 
@@ -570,6 +649,42 @@ static DEVICE_API(pwm, pwm_stm32_lptim_driver_api) = {
 	.set_cycles = pwm_stm32_lptim_set_cycles,
 	.get_cycles_per_sec = pwm_stm32_lptim_get_cycles_per_sec,
 };
+
+static int init_channel_gpio(const struct device *dev, uint32_t ch)
+{
+	const struct pwm_stm32_lptim_config *cfg = dev->config;
+	struct pwm_stm32_lptim_data *data = dev->data;
+	const struct gpio_dt_spec *gpio = &cfg->gpios[ch];
+	const struct pinctrl_state *state;
+	int ret;
+
+	if (!gpio_is_ready_dt(gpio)) {
+		LOG_ERR("Channel %u GPIO not ready", ch + 1U);
+		return -ENODEV;
+	}
+
+	ret = pinctrl_lookup_state(cfg->pcfg, PINCTRL_STATE_DEFAULT, &state);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Find the pin in the default pinctrl state, so that it alone can go back to the timer. */
+	for (uint8_t i = 0U; i < state->pin_cnt; i++) {
+		if ((stm32_gpioport_get(_FLD2VAL(STM32_PORT, state->pins[i])) == gpio->port) &&
+		    (_FLD2VAL(STM32_PIN, state->pins[i]) == gpio->pin)) {
+			data->pin_state[ch].pins = &state->pins[i];
+			data->pin_state[ch].pin_cnt = 1U;
+			data->pin_state[ch].id = PINCTRL_STATE_DEFAULT;
+
+			/* The output is driven low until the first call. */
+			return set_pin_level(dev, ch, false);
+		}
+	}
+
+	LOG_ERR("Channel %u GPIO is not a pin of the default pinctrl state", ch + 1U);
+
+	return -EINVAL;
+}
 
 static int pwm_stm32_lptim_init(const struct device *dev)
 {
@@ -630,6 +745,15 @@ static int pwm_stm32_lptim_init(const struct device *dev)
 		return ret;
 	}
 
+	for (uint32_t ch = 0U; ch < TIMER_MAX_CH; ch++) {
+		if (has_gpio(cfg, ch)) {
+			ret = init_channel_gpio(dev, ch);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
 	return 0;
 }
 
@@ -640,6 +764,8 @@ static int pwm_stm32_lptim_init(const struct device *dev)
 	BUILD_ASSERT(!DT_HAS_CHOSEN(zephyr_system_timer) ||                                        \
 			     !DT_SAME_NODE(DT_CHOSEN(zephyr_system_timer), TIMER(index)),          \
 		     "The system timer LPTIM cannot generate PWM");                                \
+	BUILD_ASSERT(DT_INST_PROP_LEN_OR(index, channel_gpios, 0) <= TIMER_MAX_CH,                 \
+		     "channel-gpios has more entries than an LPTIM has channels");                 \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
                                                                                                    \
@@ -649,6 +775,8 @@ static int pwm_stm32_lptim_init(const struct device *dev)
 		.pclken = STM32_DT_CLOCKS(TIMER(index)),                                           \
 		.reset = RESET_DT_SPEC_GET(TIMER(index)),                                          \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
+		.gpios = {GPIO_DT_SPEC_INST_GET_BY_IDX_OR(index, channel_gpios, 0, {0}),           \
+			  GPIO_DT_SPEC_INST_GET_BY_IDX_OR(index, channel_gpios, 1, {0})},          \
 	};                                                                                         \
                                                                                                    \
 	static struct pwm_stm32_lptim_data pwm_stm32_lptim_data_##index;                           \
