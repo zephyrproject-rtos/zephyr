@@ -373,4 +373,35 @@ config XTENSA_INSECURE_USERSPACE
 	default y
 	depends on (XTENSA_MMU || XTENSA_MPU) && USERSPACE
 
+config XTENSA_EMULATED_TLS
+	bool "Emulated thread-local storage"
+	depends on !USERSPACE
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select CURRENT_THREAD_USE_NO_TLS
+	help
+	  Thread-local storage for Xtensa cores without a THREADPTR register.
+	  GCC compiles thread-local variables for these cores as calls to
+	  __emutls_get_address(), which keeps them in an area at the top of
+	  each thread's stack.
+
+if XTENSA_EMULATED_TLS && THREAD_LOCAL_STORAGE
+
+config XTENSA_EMULATED_TLS_SIZE
+	int "Size of the emulated thread-local storage area"
+	range 16 512
+	default 128
+	help
+	  Bytes reserved on each thread's stack for thread-local variables.
+	  Must be a multiple of 16. Each thread stack must have room for the
+	  area.
+
+config XTENSA_EMULATED_TLS_VAR_COUNT
+	int "Maximum number of emulated thread-local variables"
+	range 1 512
+	default 32
+	help
+	  Maximum number of distinct thread-local variables in the image.
+
+endif # XTENSA_EMULATED_TLS && THREAD_LOCAL_STORAGE
+
 endmenu
