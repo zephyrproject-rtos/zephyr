@@ -39,11 +39,15 @@
 			reg = <0x40009000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
 			resets = <&rctl STM32_RESET(APB1L, 26)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <19 0>;
 			interrupt-names = "combined";
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		i2c4: i2c@4000a000 {

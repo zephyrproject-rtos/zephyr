@@ -373,11 +373,15 @@
 			reg = <0x40002400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 9)>;
 			resets = <&rctl STM32_RESET(APB1L, 9)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <119 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-lptim-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		wwdg: wwdg1: watchdog@40002c00 {

@@ -19,10 +19,9 @@ description: |
       status = "okay";
 
       lptim3_pwm: pwm {
-        compatible = "st,stm32-lptim-pwm";
-        #pwm-cells = <3>;
         pinctrl-0 = <&lptim3_ch1_pd14>;
         pinctrl-names = "default";
+        status = "okay";
       };
     };
 
