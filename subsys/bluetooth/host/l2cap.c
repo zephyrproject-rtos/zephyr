@@ -2257,6 +2257,23 @@ static int l2cap_change_security(struct bt_l2cap_le_chan *chan, uint16_t err)
 }
 
 #if defined(CONFIG_BT_L2CAP_ECRED)
+/* Every channel of the request waits for the security procedure, so that a failed one releases
+ * each of them
+ */
+static void l2cap_ecred_encrypt_pending(struct bt_conn *conn, uint8_t ident)
+{
+	struct bt_l2cap_chan *chan;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		const struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
+
+		if ((le_chan->ident == ident) &&
+		    (le_chan->pending_req == BT_L2CAP_ECRED_CONN_REQ)) {
+			atomic_set_bit(chan->status, BT_L2CAP_STATUS_ENCRYPT_PENDING);
+		}
+	}
+}
+
 static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 			      struct net_buf *buf)
 {
@@ -2297,6 +2314,7 @@ static void le_ecred_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 
 			/* If security needs changing wait it to be completed */
 			if (!l2cap_change_security(chan, result)) {
+				l2cap_ecred_encrypt_pending(conn, ident);
 				return;
 			}
 			bt_l2cap_chan_remove(conn, &chan->chan);
