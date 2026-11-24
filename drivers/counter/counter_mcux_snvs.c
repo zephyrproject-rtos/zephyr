@@ -271,12 +271,16 @@ int mcux_snvs_rtc_set(const struct device *dev, uint32_t ticks)
 	const struct mcux_snvs_config *config = dev->config;
 
 #ifdef MCUX_SNVS_SRTC
+	bool running = (config->base->LPCR & SNVS_LPCR_SRTC_ENV_MASK) != 0U;
+
 	SNVS_LP_SRTC_StopTimer(config->base);
 
 	config->base->LPSRTCMR = (uint32_t)(ticks >> 17U);
 	config->base->LPSRTCLR = (uint32_t)(ticks << 15U);
 
-	SNVS_LP_SRTC_StartTimer(config->base);
+	if (running) {
+		SNVS_LP_SRTC_StartTimer(config->base);
+	}
 	/* Sync to our high power RTC */
 	SNVS_HP_RTC_TimeSynchronize(config->base);
 #else
