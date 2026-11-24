@@ -2295,6 +2295,32 @@ ZTEST(server_h3_function_tests, test_h3_qpack_truncated_after_name_ref)
 		     ret);
 }
 
+/* Two field lines whose value is an empty string with the Huffman flag, one
+ * with a static and one with a literal name, then the path.
+ */
+static const uint8_t qpack_block_empty_huffman_values[] = {
+	0x00,                      /* Required Insert Count = 0 */
+	0x00,                      /* Delta Base = 0 */
+	0x50, 0x80,                /* :authority, value: H = 1, length 0 */
+	0x23, 'x', '-', 'a', 0x80, /* x-a, value: H = 1, length 0 */
+	0x51, 0x02, '/', 'x',      /* :path /x */
+};
+
+ZTEST(server_h3_function_tests, test_h3_qpack_empty_huffman_value)
+{
+	static struct http_client_ctx client;
+	int ret;
+
+	memset(&client, 0, sizeof(client));
+	client.fd = -1;
+
+	ret = h3_parse_qpack_headers(&client, qpack_block_empty_huffman_values,
+				     sizeof(qpack_block_empty_huffman_values));
+	zassert_ok(ret, "Parser refused an empty Huffman-coded value (ret %d)", ret);
+	zassert_str_equal((const char *)client.url_buffer, "/x",
+			  "Field line after the empty values was not parsed");
+}
+
 ZTEST(server_h3_tests, test_http1_alt_svc_is_service_scoped)
 {
 	expect_http1_alt_svc_response(SERVER_PORT, true, SERVER_PORT,
