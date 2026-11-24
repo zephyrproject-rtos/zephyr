@@ -1925,8 +1925,10 @@ ZTESTABLE_STATIC int h3_parse_qpack_headers(struct http_client_ctx *client,
 				return -EINVAL;
 			}
 
-			/* Decode value (Huffman or literal) */
-			if (huffman) {
+			/* Decode value (Huffman or literal). An empty string
+			 * is the same in either coding.
+			 */
+			if (huffman && val_len > 0) {
 				ret = http_hpack_huffman_decode(buf + pos, val_len,
 							       value_buf,
 							       sizeof(value_buf) - 1);
@@ -1968,7 +1970,7 @@ ZTESTABLE_STATIC int h3_parse_qpack_headers(struct http_client_ctx *client,
 			}
 
 			/* Decode and log name */
-			if (name_huffman) {
+			if (name_huffman && name_len > 0) {
 				ret = http_hpack_huffman_decode(buf + pos, name_len,
 							       name_buf,
 							       sizeof(name_buf) - 1);
@@ -2011,7 +2013,7 @@ ZTESTABLE_STATIC int h3_parse_qpack_headers(struct http_client_ctx *client,
 			}
 
 			/* Decode and log value */
-			if (huffman) {
+			if (huffman && val_len > 0) {
 				ret = http_hpack_huffman_decode(buf + pos, val_len,
 							       value_buf,
 							       sizeof(value_buf) - 1);
