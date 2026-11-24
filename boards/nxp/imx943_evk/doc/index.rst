@@ -65,8 +65,40 @@ CPU's UART1 for Cortex-A55, and UART8 for Cortex-M33.
 Ethernet
 --------
 
-NETC driver supports to manage the Physical Station Interface (PSI), and TSN switch.
-The ENET0, ENETC1, ENETC2 ports could be enabled for M33 by west build option
+The NETC controller MAC resource is as below.
+
+.. code-block:: none
+
+          +----------------+
+          |     ENETC3     |
+          | Support 3 VSIs |
+          +--------+-------+
+                   | Internal
+                   | Connection
+   +-----------+---+---+------------+
+   |           | Port3 |            |
+   |           +-------+            |
+   |                                |
+   |         Switch Core            |
+   |                                |
+   | +-------+ +--------+ +-------+ |  +--------+ +--------+ +--------+
+   | | Port0 | | Port 1 | | Port2 | |  | ENETC0 | | ENETC1 | | ENETC2 |
+   +-+-------+-+--------+-+-------+-+  +--------+ +--------+ +--------+
+
+   Switch External MACs                ENETC External MACs
+   - 2 x 2.5G SGMII/RGMII/MII/RMII     - 3 x 1G RGMII/RMII/MII/RevMII
+   - 1 x 1G   RGMII/RMII/MII/RevMII
+
+   Switch port2 and ENETC0 are multiplexed. Only one of them can be used.
+
+
+NETC driver supports to manage the Physical Station Interface (PSI), Virtual
+Station Interface (VSI) and TSN switch.
+
+ENETC
+~~~~~
+
+For M33 and M7_0, the ENET0, ENETC1, ENETC2 ports could be enabled by west build option
 ``-DEXTRA_DTC_OVERLAY_FILE=enetc.overlay``.
 
 For A55 Core, ENET0, ENETC1, ENETC2 ports are enabled by default, so no overlay is
@@ -74,7 +106,10 @@ needed, but NETC depends on GIC ITS, so need to make sure to allocate heap memor
 be larger than 851968 bytes. Enabling GIC ITS raises the system heap minimum to
 that value, so no manual :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE` is needed.
 
-On the EVK board, switch port0 and port2 are connected to both SGMII port (SGMII-swp0
+Switch
+~~~~~~
+
+On the EVK board, switch port0 and port1 are connected to both SGMII port (SGMII-swp0
 and SGMII-swp1) and 100M port (swp0 and swp1), currently only 100M port (swp0 and swp1)
 is enabled, so could connect to 100M port for verify two switch ports.
 
@@ -94,6 +129,51 @@ Or for M33 Core:
    :host-os: unix
    :board: imx943_evk/mimx94398/m33/ddr
    :goals: build
+
+VSI
+~~~
+
+NXP has a multi-core demo called netc share, released in MCUX SDK and Linux BSP.
+
+- M33 runs netc share demo of MCUX SDK to configure all hardware of ENETC3 PSI and switch.
+  Also it virtualizes PCIe configure space for A core Linux to use VSIs.
+- A core runs NXP Linux BSP to probe ENETC device and create VSIs to use.
+- Both of the two cores can have network interface on ENETC3 to communicate outside through switch.
+
+Based on it, Zephyr can build one more M7_0 VSI sample which can be any Zephyr net sample, to use
+ENETC3 together with A core and M33 core. ENETC3 VSI2 could be enabled by west build option.
+``-DEXTRA_DTC_OVERLAY_FILE=enetc-vsi.overlay``.
+
+Following MCUX SDK doc, make container image flash.bin to include M7_0 image, and boot the board.
+Note, also need updated system manage image to give M7_0 access to resource in mx94evknetc.cfg.
+
+.. code-block:: console
+
+   NETC_ECAM           OWNER
+   NETC3               OWNER
+   NETC_LDID11         OWNER, sid=0x2B
+   NETC_VSI2           OWNER
+
+In Linux kernel, run below commands to bringup VSIs.
+
+.. code-block:: console
+
+   # Keep VF driver off, then create VSI0, VSI1 and VSI2.
+   echo 0 > /sys/bus/pci/devices/0000\:00\:00.0/sriov_drivers_autoprobe
+   echo 3 > /sys/bus/pci/devices/0000\:00\:00.0/sriov_numvfs
+
+   # 3 more devices will be probed under /sys/bus/pci/devices.
+   #   0000:00:08.0  0000:00:10.0  0000:00:18.0
+   #
+   # Enable VSI2 and MSIX interrupt, M7_0 will probe the interface to use.
+   setpci -s 0000:00:18.0 COMMAND=0x0006
+   setpci -s 0000:00:18.0 CAP_MSIX+2.w=0x8000:0x8000
+
+   # To use VSI0 and VSI1 in Linux, bind them to driver
+   echo 1 > /sys/bus/pci/devices/0000\:00\:00.0/sriov_drivers_autoprobe
+   echo 0000:00:08.0 > /sys/bus/pci/drivers/fsl_enetc_vf/bind
+   echo 0000:00:10.0 > /sys/bus/pci/drivers/fsl_enetc_vf/bind
+
 
 Programming and Debugging (A55)
 *******************************
