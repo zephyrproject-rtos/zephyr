@@ -273,6 +273,7 @@ static int pi4ioe5v6408_pin_interrupt_configure(const struct device *dev, gpio_p
 	const struct pi4ioe5v6408_config *cfg = dev->config;
 	struct pi4ioe5v6408_data *data = dev->data;
 	struct pi4ioe5v6408_irq_state *irq = &data->irq_state;
+	uint8_t prev_rising, prev_falling;
 	uint8_t mask;
 	int rc = 0;
 
@@ -281,6 +282,9 @@ static int pi4ioe5v6408_pin_interrupt_configure(const struct device *dev, gpio_p
 	}
 
 	k_sem_take(&data->lock, K_FOREVER);
+
+	prev_rising = irq->rising;
+	prev_falling = irq->falling;
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		irq->rising &= ~BIT(pin);
@@ -305,9 +309,29 @@ static int pi4ioe5v6408_pin_interrupt_configure(const struct device *dev, gpio_p
 		}
 	}
 
+	mask = irq->rising | irq->falling;
+
 	if (cfg->interrupt_enabled) {
-		mask = irq->rising | irq->falling;
 		rc = i2c_reg_write_byte_dt(&cfg->i2c, REG_INT_MASK, (uint8_t)~mask);
+	} else if (mask != 0U && (prev_rising | prev_falling) == 0U) {
+		/*
+		 * First edge enabled while polling: refresh the reference input
+		 * level (the poll handler does not sample it while no edge is
+		 * enabled) and start polling.
+		 */
+		rc = i2c_reg_read_byte_dt(&cfg->i2c, REG_IN_STATE, &irq->last_input);
+		if (rc != 0) {
+			irq->rising = prev_rising;
+			irq->falling = prev_falling;
+			goto out;
+		}
+		k_timer_start(&data->poll_timer, K_MSEC(CONFIG_GPIO_PI4IOE5V6408_POLL_PERIOD_MS),
+			      K_MSEC(CONFIG_GPIO_PI4IOE5V6408_POLL_PERIOD_MS));
+	} else if (mask == 0U && (prev_rising | prev_falling) != 0U) {
+		/* Last edge disabled: stop polling */
+		k_timer_stop(&data->poll_timer);
+	} else {
+		/* Polling state unchanged */
 	}
 
 out:
@@ -393,13 +417,12 @@ static int pi4ioe5v6408_init(const struct device *dev)
 		 * a fixed cadence so input transitions are still detected by
 		 * software diff.  The cost is one I2C transaction per period,
 		 * plus a callback dispatch when something actually changes.
+		 * The timer only runs while at least one pin has an edge
+		 * interrupt enabled, see pi4ioe5v6408_pin_interrupt_configure().
 		 */
 		data->dev = dev;
 		k_work_init(&data->work, pi4ioe5v6408_work_handler);
 		k_timer_init(&data->poll_timer, pi4ioe5v6408_poll_timer, NULL);
-		k_timer_start(&data->poll_timer,
-			      K_MSEC(CONFIG_GPIO_PI4IOE5V6408_POLL_PERIOD_MS),
-			      K_MSEC(CONFIG_GPIO_PI4IOE5V6408_POLL_PERIOD_MS));
 	}
 
 	return 0;
