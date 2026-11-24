@@ -24,7 +24,7 @@ struct service_uplink_msg {
 	bool used;
 };
 
-K_THREAD_STACK_DEFINE(thread_stack_area, CONFIG_LORAWAN_SERVICES_THREAD_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(thread_stack_area, CONFIG_LORAWAN_SERVICES_THREAD_STACK_SIZE);
 
 /*
  * The services need a dedicated work queue, as the LoRaWAN stack uses the system
@@ -236,7 +236,7 @@ static int lorawan_services_init(void)
 
 	k_work_queue_init(&services_workq);
 	k_work_queue_start(&services_workq,
-			   thread_stack_area, K_THREAD_STACK_SIZEOF(thread_stack_area),
+			   thread_stack_area, K_KERNEL_STACK_SIZEOF(thread_stack_area),
 			   CONFIG_LORAWAN_SERVICES_THREAD_PRIORITY, NULL);
 
 	k_work_init_delayable(&uplink_work, uplink_handler);
