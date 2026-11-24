@@ -108,6 +108,12 @@ if(CONFIG_BUILD_WITH_TFM)
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_KEY_${SUFFIX}=${CONFIG_TFM_KEY_FILE_${SUFFIX}})
     endforeach()
 
+    if(CONFIG_TFM_BOARD STREQUAL "stm/b_u585i_iot02a")
+      # Specific build directives for OTP provisioning of authentication keys
+      list(APPEND TFM_CMAKE_ARGS -DBL2_ROT_PRIV_KEY_0=${CONFIG_TFM_KEY_FILE_S})
+      list(APPEND TFM_CMAKE_ARGS -DBL2_ROT_PRIV_KEY_1=${CONFIG_TFM_KEY_FILE_NS})
+    endif()
+
     # Supply path to MCUboot for TF-M build
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_PATH=${ZEPHYR_MCUBOOT_MODULE_DIR})
   else()
