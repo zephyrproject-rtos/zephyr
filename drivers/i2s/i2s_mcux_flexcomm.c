@@ -72,9 +72,19 @@ static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency, enum i2s_dir d
 		I2S_TxGetDefaultConfig(fsl_cfg);
 	}
 
+	if (i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB) {
+		/* The FLEXCOMM I2S peripheral only shifts data MSB first */
+		LOG_ERR("LSB data order not supported");
+		return -EINVAL;
+	}
+
 	fsl_cfg->dataLength = i2s_cfg->word_size;
 	if ((i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) == I2S_FMT_DATA_FORMAT_I2S) {
 		/* Classic I2S. We always use 2 channels */
+		if (i2s_cfg->channels != 2U) {
+			LOG_ERR("Classic I2S format requires 2 channels");
+			return -EINVAL;
+		}
 		fsl_cfg->frameLength = 2 * i2s_cfg->word_size;
 	} else {
 		fsl_cfg->frameLength = i2s_cfg->channels * i2s_cfg->word_size;
