@@ -3399,6 +3399,12 @@ static uint8_t att_req_retry(struct bt_att_chan *att_chan)
 		return BT_ATT_ERR_AUTHENTICATION;
 	}
 
+	/* Nothing can be sent on a connection that is going, and bt_unpair() may have handed
+	 * back what the encoder uses
+	 */
+	if (att_chan_get_conn(att_chan)->state != BT_CONN_CONNECTED) {
+		return BT_ATT_ERR_UNLIKELY;
+	}
 
 	buf = bt_att_chan_create_pdu(att_chan, req->att_op, req->len);
 	if (!buf) {
