@@ -23,8 +23,12 @@ family:
   socs:
   - name: mcxc141
   - name: mcxc142
+  - name: mcxc143
+  - name: mcxc144
   - name: mcxc242
   - name: mcxc243
+  - name: mcxc244
+  - name: mcxc443
   - name: mcxc444
 - name: mcxe
   series:
@@ -138,9 +142,17 @@ runners:
       - qualifiers:
         - mcxc142
       - qualifiers:
+        - mcxc143
+      - qualifiers:
+        - mcxc144
+      - qualifiers:
         - mcxc242
       - qualifiers:
         - mcxc243
+      - qualifiers:
+        - mcxc244
+      - qualifiers:
+        - mcxc443
       - qualifiers:
         - mcxc444
       - qualifiers:
@@ -251,9 +263,17 @@ runners:
       - qualifiers:
         - mcxc142
       - qualifiers:
+        - mcxc143
+      - qualifiers:
+        - mcxc144
+      - qualifiers:
         - mcxc242
       - qualifiers:
         - mcxc243
+      - qualifiers:
+        - mcxc244
+      - qualifiers:
+        - mcxc443
       - qualifiers:
         - mcxc444
       - qualifiers:
