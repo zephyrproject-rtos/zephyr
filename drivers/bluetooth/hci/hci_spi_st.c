@@ -478,6 +478,11 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 		memcpy(&acl_hdr, &msg[1], sizeof(acl_hdr));
 		len = sizeof(acl_hdr) + sys_le16_to_cpu(acl_hdr.len);
+		if (len > size - 1) {
+			LOG_ERR("ACL longer than the SPI transfer: %d > %d", len, size - 1);
+			net_buf_unref(buf);
+			return -EMSGSIZE;
+		}
 		if (len > net_buf_tailroom(buf)) {
 			LOG_ERR("ACL too long: %d", len);
 			net_buf_unref(buf);
@@ -496,6 +501,11 @@ static int bt_spi_rx_buf_construct(uint8_t *msg, struct net_buf **bufp, uint16_t
 		} else {
 			LOG_ERR("No available ISO buffers!");
 			return -ENOMEM;
+		}
+		if (len > size - 1) {
+			LOG_ERR("ISO longer than the SPI transfer: %d > %d", len, size - 1);
+			net_buf_unref(buf);
+			return -EMSGSIZE;
 		}
 		if (len > net_buf_tailroom(buf)) {
 			LOG_ERR("ISO too long: %d", len);
