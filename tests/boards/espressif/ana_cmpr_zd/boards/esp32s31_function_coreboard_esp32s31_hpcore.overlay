@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/*
+ * Three inputs on GPIO37-GPIO39, internal reference. Each pad is driven by
+ * its own digital output; the analog front-end taps the pad directly.
+ */
+/ {
+	zephyr,user {
+		test-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>, /* GPIO37 */
+			     <&gpio1 6 GPIO_ACTIVE_HIGH>, /* GPIO38 */
+			     <&gpio1 7 GPIO_ACTIVE_HIGH>; /* GPIO39 */
+	};
+};
+
+&ana_cmpr0 {
+	ref-source = "internal";
+	ref-voltage = <50>;
+	hysteresis-mv = <40>;
+	status = "okay";
+};
+
+&ana_cmpr0_ch0 {
+	source-pad = <0>;
+	status = "okay";
+};
+
+&ana_cmpr0_ch1 {
+	source-pad = <1>;
+	status = "okay";
+};
+
+&ana_cmpr0_ch2 {
+	source-pad = <2>;
+	status = "okay";
+};
