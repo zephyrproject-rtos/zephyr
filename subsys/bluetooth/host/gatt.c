@@ -2874,6 +2874,7 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct notify_data *data = user_data;
 	struct bt_gatt_ccc_managed_user_data *ccc;
+	bool attempted = false;
 	size_t i;
 
 	if (!is_host_managed_ccc(attr)) {
@@ -2965,10 +2966,14 @@ static uint8_t notify_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 
 		bt_conn_unref(conn);
 
-		data->err = err;
+		/* Keep the first error unless at least one peer accepts the value. */
+		if (!attempted || err == 0) {
+			data->err = err;
+		}
+		attempted = true;
 
 		if (err < 0) {
-			return BT_GATT_ITER_STOP;
+			LOG_DBG("Failed to send to subscriber %zu (%d)", i, err);
 		}
 	}
 

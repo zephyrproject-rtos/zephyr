@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  timeout: 120
+  tags:
+    - bluetooth
+  depends_on: bsim
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.gatt.notify_fanout:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_notify_fanout_prj_conf
+      tests_scripts:
+        - test_scripts/*.sh
+  bluetooth.host.gatt.notify_fanout.eatt:
+    extra_args: EXTRA_CONF_FILE=overlay-eatt.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_notify_fanout_eatt
+      tests_scripts:
+        - test_scripts/eatt/run.sh
+  bluetooth.host.gatt.notify_fanout.audio:
+    extra_args: EXTRA_CONF_FILE=overlay-audio.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_notify_fanout_audio
+      tests_scripts:
+        - test_scripts/audio/run.sh
