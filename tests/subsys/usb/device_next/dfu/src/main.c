@@ -115,13 +115,27 @@ static void begin_manifest(void)
 	expect_state(DFU_MANIFEST_SYNC);
 }
 
-ZTEST(dfu, test_manifest)
+ZTEST(dfu, test_manifest_requests)
 {
 	const bool tolerant = IS_ENABLED(CONFIG_USBD_DFU_MANIFESTATION_TOLERANT);
+	const uint8_t rejected[] = {USB_DFU_REQ_DNLOAD, USB_DFU_REQ_ABORT};
 
 	begin_manifest();
 	backend.ready = false;
 	expect_status(ERR_OK, DFU_MANIFEST);
+
+	for (size_t i = 0; i < ARRAY_SIZE(rejected); i++) {
+		const uint16_t length = rejected[i] == USB_DFU_REQ_DNLOAD ? 1 : 0;
+		const int ret = out_request(rejected[i], length);
+
+		zassert_equal(backend.writes, 2, "rejected request wrote to the image");
+		zassert_equal(backend.next_calls, 2, "rejected request notified the image");
+		zassert_equal(ret, -EPIPE);
+		expect_state(DFU_MANIFEST);
+		zassert_equal(backend.next_calls, 2, "GETSTATE advanced manifestation");
+	}
+	drain_messages();
+	zassert_equal(atomic_get(&completions), 0);
 
 	if (tolerant) {
 		backend.ready = true;

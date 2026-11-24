@@ -399,6 +399,16 @@ static int dfu_manifest_next(struct usbd_class_data *const c_data,
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
 
+	/* Only GETSTATUS advances manifestation; GETSTATE is observational. */
+	switch (setup->bRequest) {
+	case USB_DFU_REQ_GETSTATUS:
+		break;
+	case USB_DFU_REQ_GETSTATE:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+
 	/* Ignore poll timeout, proceed directly to next state. */
 
 	if (dfu_desc.bmAttributes & USB_DFU_ATTR_MANIFESTATION_TOLERANT) {
