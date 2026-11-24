@@ -38,15 +38,6 @@ config UART_MAX32_TX_IRQ_WORKAROUND_POLL_US
 
 endif
 
-config UART_MAX32_TX_AE_WORKAROUND
-	bool
-	select DEPRECATED
-	depends on UART_MAX32 && UART_INTERRUPT_DRIVEN
-	help
-	  This option enables a small workaround for almost-empty interrupts
-	  not firing on TX of small amounts. This option is deprecated, in favor
-	  of more complete interrupt workaround for the necessary platforms.
-
 if UART_MAX32
 
 config UART_TX_CACHE_LEN
