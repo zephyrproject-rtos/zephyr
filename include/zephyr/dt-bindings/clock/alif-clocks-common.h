@@ -52,8 +52,8 @@
 #define ALIF_CLOCK_SRC_FIELD_POS_MASK      0x1FU
 /** Bit shift for clock source selection field position */
 #define ALIF_CLOCK_SRC_FIELD_POS_SHIFT     21U
-/** Bit mask for parent clock identifier field (5 bits) */
-#define ALIF_CLOCK_PARENT_CLK_MASK     0x1FU
+/** Bit mask for parent clock identifier field (6 bits) */
+#define ALIF_CLOCK_PARENT_CLK_MASK     0x3FU
 /** Bit shift for parent clock identifier field */
 #define ALIF_CLOCK_PARENT_CLK_SHIFT    26U
 
@@ -73,8 +73,7 @@
  * - src_val        [ 17 : 18 ] - Clock source selection value to write (0-3)
  * - src_field_width [ 19 : 20 ] - Clock source field width in bits (0-3, 0=no selection)
  * - src_field_pos   [ 21 : 25 ] - Clock source field bit position (0-31)
- * - parent_clk   [ 26 : 30 ] - Parent clock source identifier (0-31)
- * - reserved     [ 31 ]      - Reserved for future use
+ * - parent_clk   [ 26 : 31 ] - Parent clock source identifier (0-63)
  *
  * @param module    Clock module (CGU, CLKCTL_PER_MST, CLKCTL_PER_SLV, etc.)
  * @param reg       Register name (will be expanded to ALIF_<reg>_REG)
@@ -83,7 +82,7 @@
  * @param src_val        Clock source value to write (0-3)
  * @param src_field_width Field width for source selection (0=no selection, 1-3=field width in bits)
  * @param src_field_pos   Clock source selection field bit position (0-31)
- * @param parent_clk Parent clock source identifier (0-31, see ALIF_PARENT_CLK_*)
+ * @param parent_clk Parent clock source identifier (0-63, see ALIF_PARENT_CLK_*)
  */
 #define ALIF_CLK_CFG(module, reg, en_bit, en_mask, src_val,                                        \
 			     src_field_width, src_field_pos, parent_clk)                           \
@@ -98,26 +97,14 @@
 	 (((parent_clk) & ALIF_CLOCK_PARENT_CLK_MASK) << ALIF_CLOCK_PARENT_CLK_SHIFT))
 
 /**
- * @name Parent clock source identifiers
- * @{
+ * @brief First parent clock identifier without a CLK_ENA gate
+ *
+ * The ALIF_PARENT_CLK_* identifiers are defined per SoC family. Identifiers
+ * below this value equal the position of the bit in the CGU CLK_ENA register
+ * that gates the parent clock; parent clocks without a CLK_ENA gate use
+ * identifiers from this value up to 63.
  */
-
-/** System AXI clock (SYST_ACLK) */
-#define ALIF_PARENT_CLK_SYST_ACLK   0x0U
-/** System AHB clock (SYST_HCLK) */
-#define ALIF_PARENT_CLK_SYST_HCLK   0x1U
-/** System APB clock (SYST_PCLK) */
-#define ALIF_PARENT_CLK_SYST_PCLK   0x2U
-/** Always-on 32 kHz clock (S32K_CLK), sourced from the LFXO or LFRC oscillator */
-#define ALIF_PARENT_CLK_S32K        0x3U
-/** Always-on 128 kHz clock (128K_CLK), derived from the LFRC oscillator */
-#define ALIF_PARENT_CLK_128K        0x4U
-/** 50 MHz RMII reference clock, from the internal PLL output or the ETH_REFCLK pin */
-#define ALIF_PARENT_CLK_50M         0x5U
-/** 100 MHz clock (100M_CLK), the system PLL output divided by eight */
-#define ALIF_PARENT_CLK_100M        0x6U
-
-/** @} */
+#define ALIF_PARENT_CLK_UNGATED_BASE 32U
 
 /**
  * @name Clock module identifiers
@@ -146,7 +133,7 @@
  * register access for such a clock hits the invalid-module assertion of the
  * clock driver instead of a real register.
  *
- * @param parent_clk Parent clock source identifier (0-31, see ALIF_PARENT_CLK_*)
+ * @param parent_clk Parent clock source identifier (0-63, see ALIF_PARENT_CLK_*)
  */
 #define ALIF_CLK_CFG_FIXED(parent_clk)                                                             \
 	((ALIF_NONE_MODULE << ALIF_CLOCK_MODULE_SHIFT) |                                           \

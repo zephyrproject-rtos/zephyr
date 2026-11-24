@@ -82,6 +82,18 @@
 			clock-div = <1>;
 			#clock-cells = <0>;
 		};
+
+		pll_clk1: pll-clk1 {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(800)>;
+			#clock-cells = <0>;
+		};
+
+		syst_refclk: syst-refclk {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(100)>;
+			#clock-cells = <0>;
+		};
 	};
 
 	soc: soc {
