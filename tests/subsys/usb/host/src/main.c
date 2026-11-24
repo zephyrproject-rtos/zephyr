@@ -281,6 +281,93 @@ USBH_CONTROLLER_DEFINE(test_uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 
 struct usbh_context *const uhs_ctx = &test_uhs_ctx;
 
+/* Wait until the device is configured, and return it with a reference */
+static struct usb_device *wait_device_configured(void)
+{
+	for (int i = 0; i < 100; i++) {
+		struct usb_device *udev = usbh_device_get(uhs_ctx, TEST_DEV_ADDR);
+
+		if (udev != NULL && udev->state == USB_STATE_CONFIGURED) {
+			return udev;
+		}
+
+		if (udev != NULL) {
+			usb_device_unref(udev);
+		}
+
+		k_msleep(10);
+	}
+
+	return NULL;
+}
+
+/* Wait until the device is gone from the list of devices */
+static bool wait_device_gone(void)
+{
+	for (int i = 0; i < 100; i++) {
+		struct usb_device *udev = usbh_device_get(uhs_ctx, TEST_DEV_ADDR);
+
+		if (udev == NULL) {
+			return true;
+		}
+
+		usb_device_unref(udev);
+		k_msleep(10);
+	}
+
+	return false;
+}
+
+ZTEST(usbh_test, test_device_ref_outlives_disconnect)
+{
+	struct usb_device *new_udev;
+	struct usb_device *udev;
+	uint8_t addr;
+
+	udev = wait_device_configured();
+	zassert_not_null(udev, "No configured device");
+	zassert_true(usb_device_is_connected(udev));
+	addr = udev->addr;
+
+	zassert_ok(usbd_disable(test_usbd));
+	zassert_true(wait_device_gone(), "Device still in the list");
+
+	zassert_false(usb_device_is_connected(udev));
+	zassert_is_null(usbh_device_get(uhs_ctx, addr), "Lookup found a disconnected device");
+
+	/*
+	 * Connect the device again while the reference is held. A device that
+	 * was released despite the reference would be reused for the new one.
+	 */
+	zassert_ok(usbd_enable(test_usbd));
+	new_udev = wait_device_configured();
+	zassert_not_null(new_udev, "Device not configured after reconnect");
+	zassert_not_equal(new_udev, udev, "Referenced device was reused");
+
+	zassert_false(usb_device_is_connected(udev));
+	zassert_equal(udev->dev_desc.idVendor, CONFIG_SAMPLE_USBD_VID);
+	zassert_equal(udev->dev_desc.idProduct, CONFIG_SAMPLE_USBD_PID);
+
+	usb_device_unref(udev);
+	usb_device_unref(new_udev);
+}
+
+ZTEST(usbh_test, test_device_reconnect_no_leak)
+{
+	struct usb_device *udev;
+
+	/* A device that is not released would use up the device slots */
+	for (int i = 0; i < 2 * CONFIG_USBH_USB_DEVICE_MAX; i++) {
+		zassert_ok(usbd_disable(test_usbd));
+		zassert_true(wait_device_gone(), "Device %d still in the list", i);
+
+		zassert_ok(usbd_enable(test_usbd));
+		udev = wait_device_configured();
+		zassert_not_null(udev, "Device %d not configured", i);
+		usb_device_unref(udev);
+	}
+}
+
 void *usbh_test_enable(void)
 {
 	int ret;
