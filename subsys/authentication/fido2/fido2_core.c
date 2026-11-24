@@ -42,7 +42,7 @@ static struct fido2_msg rx_dequeue_msg;
 
 K_MSGQ_DEFINE_STATIC_TYPE(fido2_msgq, struct fido2_msg, 2);
 
-static K_THREAD_STACK_DEFINE(fido2_stack, CONFIG_FIDO2_THREAD_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(fido2_stack, CONFIG_FIDO2_THREAD_STACK_SIZE);
 static struct k_thread fido2_thread;
 
 /* Kept these out to keep thread stack light */
@@ -1093,7 +1093,7 @@ int fido2_start(void)
 
 	atomic_set(&fido2_running, 1);
 
-	k_thread_create(&fido2_thread, fido2_stack, K_THREAD_STACK_SIZEOF(fido2_stack),
+	k_thread_create(&fido2_thread, fido2_stack, K_KERNEL_STACK_SIZEOF(fido2_stack),
 			fido2_thread_fn, NULL, NULL, NULL, CONFIG_FIDO2_THREAD_PRIORITY, 0,
 			K_NO_WAIT);
 	k_thread_name_set(&fido2_thread, "fido2");

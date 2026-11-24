@@ -91,7 +91,7 @@ K_MEM_SLAB_DEFINE(ctapble_tx_slab, sizeof(struct ctapble_tx_frame), CONFIG_FIDO2
 K_FIFO_DEFINE(ctapble_tx_fifo);
 
 static struct k_work_q rx_work_q;
-static K_THREAD_STACK_DEFINE(rx_work_q_stack, CONFIG_FIDO2_BLE_RX_WORKQ_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(rx_work_q_stack, CONFIG_FIDO2_BLE_RX_WORKQ_STACK_SIZE);
 static struct k_work rx_work;
 static struct k_work_delayable rx_timeout_work;
 static struct k_work_delayable tx_work;
@@ -899,7 +899,7 @@ int ctapble_framing_init(const struct ctapble_framing_callbacks *callbacks)
 	k_work_init_delayable(&rx_timeout_work, rx_timeout_handler);
 	k_work_init_delayable(&tx_work, tx_work_handler);
 
-	k_work_queue_start(&rx_work_q, rx_work_q_stack, K_THREAD_STACK_SIZEOF(rx_work_q_stack),
+	k_work_queue_start(&rx_work_q, rx_work_q_stack, K_KERNEL_STACK_SIZEOF(rx_work_q_stack),
 			   K_PRIO_COOP(CONFIG_BT_RX_PRIO + 1), NULL);
 
 	k_thread_name_set(rx_work_q.thread_id, "ctap_bluetooth_le_rx");
