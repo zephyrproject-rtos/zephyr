@@ -16,7 +16,7 @@
 /**
  * @defgroup i2s_interface I2S
  * @since 1.9
- * @version 1.0.0
+ * @version 2.0.0
  * @ingroup io_interfaces
  * @brief Interfaces for Inter-IC Sound (I2S) controllers.
  *
@@ -186,15 +186,6 @@ typedef uint8_t i2s_opt_t;
 #define I2S_OPT_FRAME_CLK_CONTROLLER        (0 << 2)
 /** I2S driver is frame clock target */
 #define I2S_OPT_FRAME_CLK_TARGET            BIT(2)
-
-/** @deprecated @see I2S_OPT_BIT_CLK_CONTROLLER */
-#define I2S_OPT_BIT_CLK_MASTER              I2S_OPT_BIT_CLK_CONTROLLER __DEPRECATED_MACRO
-/** @deprecated @see I2S_OPT_BIT_CLK_TARGET */
-#define I2S_OPT_BIT_CLK_SLAVE               I2S_OPT_BIT_CLK_TARGET __DEPRECATED_MACRO
-/** @deprecated @see I2S_OPT_FRAME_CLK_CONTROLLER */
-#define I2S_OPT_FRAME_CLK_MASTER            I2S_OPT_FRAME_CLK_CONTROLLER __DEPRECATED_MACRO
-/** @deprecated @see I2S_OPT_FRAME_CLK_TARGET */
-#define I2S_OPT_FRAME_CLK_SLAVE             I2S_OPT_FRAME_CLK_TARGET __DEPRECATED_MACRO
 
 /** @brief Loop back mode.
  *
