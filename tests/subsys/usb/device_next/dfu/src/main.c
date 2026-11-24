@@ -13,6 +13,7 @@
 #include "usbh_ch9.h"
 #include "usbh_device.h"
 
+#define LEGACY_ALT 1
 #define MESSAGE_BARRIER_STATUS 0x5342
 
 USBD_CONFIGURATION_DEFINE(test_fs_config, USB_SCD_SELF_POWERED, 100, NULL);
@@ -23,11 +24,14 @@ USBH_CONTROLLER_DEFINE(test_usbh, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 
 static struct {
 	bool ready;
+	enum usb_dfu_status status;
+	enum usb_dfu_status next_status;
 	enum usb_dfu_state state;
 	enum usb_dfu_state next;
 	unsigned int writes;
 	unsigned int next_calls;
-} backend = {.ready = true};
+	unsigned int status_calls;
+} backend;
 
 static atomic_t completions;
 static K_SEM_DEFINE(message_barrier, 0, 1);
@@ -43,12 +47,20 @@ static int image_write(void *priv, uint32_t block, uint16_t size,
 static bool image_next(void *priv, enum usb_dfu_state state, enum usb_dfu_state next)
 {
 	backend.next_calls++;
+	backend.status = backend.next_status;
 	backend.state = state;
 	backend.next = next;
 	return backend.ready;
 }
 
-USBD_DFU_DEFINE_IMG(0, "requests", NULL, NULL, image_write, image_next);
+static enum usb_dfu_status image_status(void *priv)
+{
+	backend.status_calls++;
+	return backend.status;
+}
+
+USBD_DFU_DEFINE_IMG_EXT(0, "status", NULL, NULL, image_write, image_next, image_status);
+USBD_DFU_DEFINE_IMG(1, "legacy", NULL, NULL, image_write, image_next);
 
 static void message_cb(struct usbd_context *ctx, const struct usbd_msg *msg)
 {
@@ -115,6 +127,19 @@ static void begin_manifest(void)
 	expect_state(DFU_MANIFEST_SYNC);
 }
 
+static void expect_sticky_error(enum usb_dfu_status status)
+{
+	expect_status(status, DFU_ERROR);
+	backend.next_status = ERR_OK;
+	backend.status = ERR_OK;
+	expect_state(DFU_ERROR);
+	expect_status(status, DFU_ERROR);
+	drain_messages();
+	zassert_equal(atomic_get(&completions), 0);
+	zassert_ok(out_request(USB_DFU_REQ_CLRSTATUS, 0));
+	expect_status(ERR_OK, DFU_IDLE);
+}
+
 ZTEST(dfu, test_manifest_requests)
 {
 	const bool tolerant = IS_ENABLED(CONFIG_USBD_DFU_MANIFESTATION_TOLERANT);
@@ -130,9 +155,11 @@ ZTEST(dfu, test_manifest_requests)
 
 		zassert_equal(backend.writes, 2, "rejected request wrote to the image");
 		zassert_equal(backend.next_calls, 2, "rejected request notified the image");
+		zassert_equal(backend.status_calls, 2);
 		zassert_equal(ret, -EPIPE);
 		expect_state(DFU_MANIFEST);
 		zassert_equal(backend.next_calls, 2, "GETSTATE advanced manifestation");
+		zassert_equal(backend.status_calls, 2);
 	}
 	drain_messages();
 	zassert_equal(atomic_get(&completions), 0);
@@ -143,14 +170,65 @@ ZTEST(dfu, test_manifest_requests)
 		drain_messages();
 		zassert_equal(atomic_get(&completions), 1);
 	} else {
-		expect_status(ERR_OK, DFU_MANIFEST_WAIT_RST);
-		expect_state(DFU_MANIFEST_WAIT_RST);
-		drain_messages();
-		zassert_equal(atomic_get(&completions), 0);
+		/* Exercise notification of WAIT_RST without leaving the class there. */
+		backend.next_status = ERR_VERIFY;
+		expect_sticky_error(ERR_VERIFY);
 		zassert_equal(backend.state, DFU_MANIFEST);
 		zassert_equal(backend.next, DFU_MANIFEST_WAIT_RST);
 	}
 	zassert_equal(backend.next_calls, 3);
+	zassert_equal(backend.status_calls, 3);
+}
+
+ZTEST(dfu, test_download_error_overrides_busy)
+{
+	zassert_ok(out_request(USB_DFU_REQ_DNLOAD, 1));
+	backend.ready = false;
+	backend.next_status = ERR_WRITE;
+	expect_sticky_error(ERR_WRITE);
+	zassert_equal(backend.next_calls, 1);
+	zassert_equal(backend.status_calls, 1);
+}
+
+ZTEST(dfu, test_manifest_error_overrides_ready)
+{
+	begin_manifest();
+	backend.next_status = ERR_VERIFY;
+	expect_sticky_error(ERR_VERIFY);
+	zassert_equal(backend.next_calls, 2);
+	zassert_equal(backend.status_calls, 2);
+}
+
+ZTEST(dfu, test_invalid_backend_status)
+{
+	zassert_ok(out_request(USB_DFU_REQ_DNLOAD, 1));
+	backend.next_status = ERR_STALLEDPKT + 1;
+	expect_sticky_error(ERR_UNKNOWN);
+}
+
+ZTEST(dfu, test_legacy_image)
+{
+	zassert_ok(usbh_req_set_alt(udev, 0, LEGACY_ALT));
+	backend.ready = false;
+	backend.next_status = ERR_WRITE;
+	zassert_ok(out_request(USB_DFU_REQ_DNLOAD, 1));
+	expect_status(ERR_OK, DFU_DNBUSY);
+	backend.ready = true;
+	expect_status(ERR_OK, DFU_DNLOAD_IDLE);
+	zassert_ok(out_request(USB_DFU_REQ_DNLOAD, 0));
+	expect_status(ERR_OK, DFU_IDLE);
+	drain_messages();
+	zassert_equal(atomic_get(&completions), 1);
+	zassert_equal(backend.status_calls, 0);
+}
+
+static void before(void *fixture)
+{
+	memset(&backend, 0, sizeof(backend));
+	backend.ready = true;
+	atomic_clear(&completions);
+	zassert_ok(usbh_req_set_alt(udev, 0, 0));
+	expect_state(DFU_IDLE);
 }
 
 static void *setup(void)
@@ -177,4 +255,4 @@ static void *setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(dfu, NULL, setup, NULL, NULL, NULL);
+ZTEST_SUITE(dfu, NULL, setup, before, NULL, NULL);
