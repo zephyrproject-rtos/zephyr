@@ -359,6 +359,24 @@ I2S
   :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_PATH`, which also accept ALSA devices. Without the
   ALSA backend the old options still provide their default. (:github:`123474`)
 
+Interrupt Controllers
+=====================
+
+* :c:func:`its_alloc_intid` is deprecated. Its signature and the
+  :c:type:`its_api_alloc_intid_t` driver callback remain unchanged during deprecation.
+  The GICv3 ITS driver now returns ``0`` from this function when it cannot allocate an LPI INTID.
+  Callers that still use it must check for ``0`` before using the returned INTID.
+  Use :c:func:`its_alloc_intids` with a count of 1 to allocate a single INTID:
+
+  .. code-block:: c
+
+     unsigned int intid;
+     int ret = its_alloc_intids(dev, 1U, &intid);
+
+     if (ret != 0) {
+             /* ret is -ENOSPC or another negative error code. */
+     }
+
 MFD
 ===
 
