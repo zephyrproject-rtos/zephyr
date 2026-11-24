@@ -52,7 +52,7 @@ static const uint8_t magic[] = {0x45, 0x6d, 0x31, 0x6c, 0x31, 0x4b,
 
 #ifdef CONFIG_MULTITHREADING
 #if defined(CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE)
-static K_THREAD_STACK_DEFINE(icmsg_stack, CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(icmsg_stack, CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE);
 static struct k_work_q icmsg_workq;
 static struct k_work_q *const workq = &icmsg_workq;
 #else /* defined(CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE) */

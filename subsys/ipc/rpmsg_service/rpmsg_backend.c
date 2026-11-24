@@ -47,7 +47,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_RPMSG_SERVICE_LOG_LEVEL);
 #define IPM_WORK_QUEUE_STACK_SIZE CONFIG_RPMSG_SERVICE_WORK_QUEUE_STACK_SIZE
 #define IPM_WORK_QUEUE_PRIORITY   K_HIGHEST_APPLICATION_THREAD_PRIO
 
-K_THREAD_STACK_DEFINE(ipm_stack_area, IPM_WORK_QUEUE_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(ipm_stack_area, IPM_WORK_QUEUE_STACK_SIZE);
 
 struct k_work_q ipm_work_q;
 
@@ -204,7 +204,7 @@ int rpmsg_backend_init(struct metal_io_region **io, struct virtio_device *vdev)
 
 	/* Start IPM workqueue */
 	k_work_queue_start(&ipm_work_q, ipm_stack_area,
-			   K_THREAD_STACK_SIZEOF(ipm_stack_area),
+			   K_KERNEL_STACK_SIZEOF(ipm_stack_area),
 			   IPM_WORK_QUEUE_PRIORITY, NULL);
 	k_thread_name_set(ipm_work_q.thread_id, "ipm_work_q");
 

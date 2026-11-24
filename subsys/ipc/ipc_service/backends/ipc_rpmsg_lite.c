@@ -43,7 +43,7 @@ enum backend_state {
 
 #define RPMSG_HEADER_SIZE 16U
 
-K_THREAD_STACK_ARRAY_DEFINE(mbox_stack, NUM_INSTANCES, WQ_STACK_SIZE);
+K_KERNEL_STACK_ARRAY_DEFINE(mbox_stack, NUM_INSTANCES, WQ_STACK_SIZE);
 
 struct backend_data_t {
 	/* IPC RPMSG-Lite Instance */
