@@ -385,6 +385,7 @@ int udc_enable(const struct device *dev);
  *
  * Disable enabled USB device controller.
  * The driver should continue to detect power state changes.
+ * The enabled status is cleared only on success.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  *
@@ -398,11 +399,13 @@ int udc_disable(const struct device *dev);
  *
  * Shut down the controller completely to reduce energy consumption
  * or to change the role of the controller.
+ * The initialized status is cleared only on success.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EALREADY controller is not initialized
+ * @retval -EBUSY controller is still enabled
  */
 int udc_shutdown(const struct device *dev);
 
