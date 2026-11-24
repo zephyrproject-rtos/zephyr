@@ -27,7 +27,7 @@ static void bmp388_handle_interrupts(const void *arg)
 }
 
 #ifdef CONFIG_BMP388_TRIGGER_OWN_THREAD
-static K_THREAD_STACK_DEFINE(bmp388_thread_stack,
+static K_KERNEL_STACK_DEFINE(bmp388_thread_stack,
 			     CONFIG_BMP388_THREAD_STACK_SIZE);
 static struct k_thread bmp388_thread;
 

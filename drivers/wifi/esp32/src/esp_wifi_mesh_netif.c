@@ -145,7 +145,7 @@ static void mesh_tx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-K_THREAD_DEFINE(esp_wifi_mesh_tx_id, 4096, mesh_tx_thread, NULL, NULL, NULL, 5, 0, 0);
+K_KERNEL_THREAD_DEFINE(esp_wifi_mesh_tx_id, 4096, mesh_tx_thread, NULL, NULL, NULL, 5, 0, 0);
 
 /*
  * net_if TX: queue an outbound IP frame for the mesh transmit thread. The frame
@@ -223,8 +223,8 @@ static void mesh_netif_rx_task(void *p1, void *p2, void *p3)
 	}
 }
 
-K_THREAD_DEFINE(esp_wifi_mesh_rx_id, MESH_NETIF_RX_STACK, mesh_netif_rx_task, NULL, NULL, NULL, 5,
-		0, 0);
+K_KERNEL_THREAD_DEFINE(esp_wifi_mesh_rx_id, MESH_NETIF_RX_STACK, mesh_netif_rx_task, NULL, NULL,
+		       NULL, 5, 0, 0);
 
 /*
  * Root toDS drain: once the root announces external reachability, the mesh
@@ -275,8 +275,8 @@ static void mesh_tods_rx_task(void *p1, void *p2, void *p3)
 	}
 }
 
-K_THREAD_DEFINE(esp_wifi_mesh_tods_id, MESH_NETIF_RX_STACK, mesh_tods_rx_task, NULL, NULL, NULL, 5,
-		0, 0);
+K_KERNEL_THREAD_DEFINE(esp_wifi_mesh_tods_id, MESH_NETIF_RX_STACK, mesh_tods_rx_task, NULL, NULL,
+		       NULL, 5, 0, 0);
 
 static void mesh_netif_iface_init(struct net_if *iface)
 {

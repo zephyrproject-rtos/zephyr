@@ -42,7 +42,7 @@
 K_MEM_SLAB_DEFINE_IN_SECT_STATIC(i2s_shell_tx_slab, __nocache, I2S_SHELL_BLOCK_BYTES,
 				 I2S_SHELL_BLOCK_COUNT, 4);
 
-K_THREAD_STACK_DEFINE(i2s_shell_stack, CONFIG_I2S_SHELL_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(i2s_shell_stack, CONFIG_I2S_SHELL_STACK_SIZE);
 
 struct i2s_shell_stream {
 	struct k_thread thread;
@@ -264,7 +264,7 @@ static int cmd_tone_start(const struct shell *sh, size_t argc, char *argv[])
 	tone_stream.running = true;
 
 	tone_stream.tid = k_thread_create(&tone_stream.thread, i2s_shell_stack,
-					  K_THREAD_STACK_SIZEOF(i2s_shell_stack), i2s_shell_feeder,
+					  K_KERNEL_STACK_SIZEOF(i2s_shell_stack), i2s_shell_feeder,
 					  NULL, NULL, NULL, CONFIG_I2S_SHELL_THREAD_PRIO, 0,
 					  K_NO_WAIT);
 	k_thread_name_set(tone_stream.tid, "i2s_tone");

@@ -1645,7 +1645,7 @@ static void udc_sam_irq_disable_func_##n(const struct device *dev)	\
 	UDC_SAM_IRQ_ENABLE_DEFINE(i, n);						\
 	UDC_SAM_IRQ_DISABLE_DEFINE(i, n);						\
 											\
-	K_THREAD_STACK_DEFINE(udc_sam_stack_##n,					\
+	K_KERNEL_STACK_DEFINE(udc_sam_stack_##n,					\
 			      CONFIG_UDC_MCHP_UDPHS_G1_STACK_SIZE);			\
 											\
 	static void udc_sam_thread_##n(void *dev, void *arg1, void *arg2)		\
@@ -1661,7 +1661,7 @@ static void udc_sam_irq_disable_func_##n(const struct device *dev)	\
 											\
 		k_thread_create(&priv->thread_data,					\
 				udc_sam_stack_##n,					\
-				K_THREAD_STACK_SIZEOF(udc_sam_stack_##n),		\
+				K_KERNEL_STACK_SIZEOF(udc_sam_stack_##n),		\
 				udc_sam_thread_##n,					\
 				(void *)dev, NULL, NULL,				\
 				K_PRIO_COOP(CONFIG_UDC_MCHP_UDPHS_G1_THREAD_PRI),	\

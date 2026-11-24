@@ -93,7 +93,7 @@ struct uart_emul_data {
  * especially if the thread priorities are the same, or even using the same thread
  * in case the system work queue.
  */
-K_THREAD_STACK_DEFINE(uart_emul_stack_area, CONFIG_UART_EMUL_WORK_Q_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(uart_emul_stack_area, CONFIG_UART_EMUL_WORK_Q_STACK_SIZE);
 struct k_work_q uart_emul_work_q;
 
 int uart_emul_init_work_q(void)
@@ -105,7 +105,7 @@ int uart_emul_init_work_q(void)
 
 	k_work_queue_init(&uart_emul_work_q);
 	k_work_queue_start(&uart_emul_work_q, uart_emul_stack_area,
-			   K_THREAD_STACK_SIZEOF(uart_emul_stack_area),
+			   K_KERNEL_STACK_SIZEOF(uart_emul_stack_area),
 			   CONFIG_UART_EMUL_WORK_Q_PRIORITY, &cfg);
 	return 0;
 }

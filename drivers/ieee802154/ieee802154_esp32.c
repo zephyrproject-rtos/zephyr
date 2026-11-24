@@ -215,9 +215,9 @@ static void ieee802154_esp32_rx_thread_fn(void *p1, void *p2, void *p3)
 	}
 }
 
-K_THREAD_DEFINE(ieee802154_esp32_rx, CONFIG_IEEE802154_ESP32_RX_STACK_SIZE,
-		ieee802154_esp32_rx_thread_fn, NULL, NULL, NULL,
-		K_PRIO_PREEMPT(CONFIG_IEEE802154_ESP32_RX_THREAD_PRIORITY), 0, 0);
+K_KERNEL_THREAD_DEFINE(ieee802154_esp32_rx, CONFIG_IEEE802154_ESP32_RX_STACK_SIZE,
+		       ieee802154_esp32_rx_thread_fn, NULL, NULL, NULL,
+		       K_PRIO_PREEMPT(CONFIG_IEEE802154_ESP32_RX_THREAD_PRIORITY), 0, 0);
 
 /* Override weak function in components/ieee802154/esp_ieee802154.c */
 void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info)

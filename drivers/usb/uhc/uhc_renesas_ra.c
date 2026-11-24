@@ -1017,12 +1017,12 @@ static int uhc_ra_driver_preinit(const struct device *dev)
 
 #define UHC_RENESAS_RA_DEVICE_DEFINE(n)                                                            \
 	PINCTRL_DT_DEFINE(DT_INST_PARENT(n));                                                      \
-	K_THREAD_STACK_DEFINE(uhc_renesas_ra_stack_##n, CONFIG_UHC_RENESAS_RA_STACK_SIZE);         \
+	K_KERNEL_STACK_DEFINE(uhc_renesas_ra_stack_##n, CONFIG_UHC_RENESAS_RA_STACK_SIZE);         \
                                                                                                    \
 	static const struct uhc_renesas_ra_config uhc_config_##n = {                               \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(n)),                              \
 		.drv_stack = uhc_renesas_ra_stack_##n,                                             \
-		.drv_stack_size = K_THREAD_STACK_SIZEOF(uhc_renesas_ra_stack_##n),                 \
+		.drv_stack_size = K_KERNEL_STACK_SIZEOF(uhc_renesas_ra_stack_##n),                 \
 	};                                                                                         \
                                                                                                    \
 	static struct uhc_renesas_ra_data uhc_priv_data_##n = {                                    \

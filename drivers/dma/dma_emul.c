@@ -573,7 +573,7 @@ static int dma_emul_init(const struct device *dev)
                                                                                                    \
 	BUILD_ASSERT(DMA_EMUL_INST_NUM_CHANNELS(_inst) <= 32, "invalid dma-channels property");    \
                                                                                                    \
-	static K_THREAD_STACK_DEFINE(work_q_stack_##_inst, DT_INST_PROP(_inst, stack_size));       \
+	static K_KERNEL_STACK_DEFINE(work_q_stack_##_inst, DT_INST_PROP(_inst, stack_size));       \
                                                                                                    \
 	static struct dma_emul_xfer_desc                                                           \
 		dma_emul_xfer_desc_##_inst[DMA_EMUL_INST_NUM_CHANNELS(_inst)];                     \
@@ -590,7 +590,7 @@ static int dma_emul_init(const struct device *dev)
 		.size_align = DT_INST_PROP_OR(_inst, dma_buf_size_alignment, 1),                   \
 		.copy_align = DT_INST_PROP_OR(_inst, dma_copy_alignment, 1),                       \
 		.work_q_stack = (k_thread_stack_t *)&work_q_stack_##_inst,                         \
-		.work_q_stack_size = K_THREAD_STACK_SIZEOF(work_q_stack_##_inst),                  \
+		.work_q_stack_size = K_KERNEL_STACK_SIZEOF(work_q_stack_##_inst),                  \
 		.work_q_priority = DT_INST_PROP_OR(_inst, priority, 0),                            \
 		.xfer = dma_emul_xfer_desc_##_inst,                                                \
 		.block = dma_emul_block_config_##_inst,                                            \

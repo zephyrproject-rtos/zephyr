@@ -37,7 +37,7 @@ static int bmm350_handle_interrupts(const void *arg)
 }
 
 #ifdef CONFIG_BMM350_TRIGGER_OWN_THREAD
-static K_THREAD_STACK_DEFINE(bmm350_thread_stack, CONFIG_BMM350_THREAD_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(bmm350_thread_stack, CONFIG_BMM350_THREAD_STACK_SIZE);
 static struct k_thread bmm350_thread;
 
 static void bmm350_thread_main(void *arg1, void *unused1, void *unused2)

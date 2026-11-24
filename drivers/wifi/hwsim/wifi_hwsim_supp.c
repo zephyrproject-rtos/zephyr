@@ -39,7 +39,7 @@ LOG_MODULE_DECLARE(wifi_hwsim, CONFIG_WIFI_HWSIM_LOG_LEVEL);
  * (get_scan_results2, etc.) has enough stack; sysworkq is too small.
  */
 #define HWSIM_SUPP_SCAN_WQ_STACK_SIZE 8192
-static K_THREAD_STACK_DEFINE(hwsim_supp_scan_wq_stack, HWSIM_SUPP_SCAN_WQ_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(hwsim_supp_scan_wq_stack, HWSIM_SUPP_SCAN_WQ_STACK_SIZE);
 static struct k_work_q hwsim_supp_scan_wq;
 static atomic_t hwsim_supp_scan_wq_started;
 
@@ -150,7 +150,7 @@ static void *hwsim_supp_init(void *supp_drv_if_ctx, const char *iface_name,
 	if (atomic_cas(&hwsim_supp_scan_wq_started, 0, 1)) {
 		k_work_queue_init(&hwsim_supp_scan_wq);
 		k_work_queue_start(&hwsim_supp_scan_wq, hwsim_supp_scan_wq_stack,
-				   K_THREAD_STACK_SIZEOF(hwsim_supp_scan_wq_stack),
+				   K_KERNEL_STACK_SIZEOF(hwsim_supp_scan_wq_stack),
 				   K_PRIO_PREEMPT(10), NULL);
 	}
 

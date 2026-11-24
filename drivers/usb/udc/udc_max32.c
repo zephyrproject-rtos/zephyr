@@ -798,7 +798,7 @@ static const struct udc_api udc_max32_api = {
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}                                                                                          \
                                                                                                    \
-	K_THREAD_STACK_DEFINE(udc_max32_stack_##n, CONFIG_UDC_MAX32_THREAD_STACK_SIZE);            \
+	K_KERNEL_STACK_DEFINE(udc_max32_stack_##n, CONFIG_UDC_MAX32_THREAD_STACK_SIZE);            \
                                                                                                    \
 	static void udc_max32_thread_##n(void *dev, void *arg1, void *arg2)                        \
 	{                                                                                          \
@@ -812,7 +812,7 @@ static const struct udc_api udc_max32_api = {
 		struct udc_max32_data *priv = udc_get_private(dev);                                \
                                                                                                    \
 		k_thread_create(&priv->thread_data, udc_max32_stack_##n,                           \
-				K_THREAD_STACK_SIZEOF(udc_max32_stack_##n), udc_max32_thread_##n,  \
+				K_KERNEL_STACK_SIZEOF(udc_max32_stack_##n), udc_max32_thread_##n,  \
 				(void *)dev, NULL, NULL,                                           \
 				K_PRIO_COOP(CONFIG_UDC_MAX32_THREAD_PRIORITY), K_ESSENTIAL,        \
 				K_NO_WAIT);                                                        \

@@ -896,7 +896,7 @@ static const struct udc_api udc_ambiq_api = {
  * driver, even if your platform does not require it.
  */
 #define UDC_AMBIQ_DEVICE_DEFINE(n)                                                                 \
-	K_THREAD_STACK_DEFINE(udc_ambiq_stack_##n, CONFIG_UDC_AMBIQ_STACK_SIZE);                   \
+	K_KERNEL_STACK_DEFINE(udc_ambiq_stack_##n, CONFIG_UDC_AMBIQ_STACK_SIZE);                   \
                                                                                                    \
 	static void udc_ambiq_evt_callback_##n(am_hal_usb_dev_event_e dev_state)                   \
 	{                                                                                          \
@@ -937,7 +937,7 @@ static const struct udc_api udc_ambiq_api = {
 		struct udc_ambiq_data *priv = udc_get_private(dev);                                \
                                                                                                    \
 		k_thread_create(&priv->thread_data, udc_ambiq_stack_##n,                           \
-				K_THREAD_STACK_SIZEOF(udc_ambiq_stack_##n), udc_ambiq_thread_##n,  \
+				K_KERNEL_STACK_SIZEOF(udc_ambiq_stack_##n), udc_ambiq_thread_##n,  \
 				(void *)dev, NULL, NULL,                                           \
 				K_PRIO_COOP(CONFIG_UDC_AMBIQ_THREAD_PRIORITY), K_ESSENTIAL,        \
 				K_NO_WAIT);                                                        \

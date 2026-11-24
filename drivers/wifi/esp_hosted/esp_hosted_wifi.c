@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(esp_hosted, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/version.h>
 
 static struct k_thread esp_hosted_event_thread;
-K_THREAD_STACK_DEFINE(esp_hosted_event_stack, CONFIG_WIFI_ESP_HOSTED_EVENT_TASK_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(esp_hosted_event_stack, CONFIG_WIFI_ESP_HOSTED_EVENT_TASK_STACK_SIZE);
 
 static esp_hosted_config_t esp_hosted_config = {
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
@@ -637,7 +637,7 @@ static int esp_hosted_dev_init(const struct device *dev)
 	}
 
 	data->tid = k_thread_create(&esp_hosted_event_thread, esp_hosted_event_stack,
-				    K_THREAD_STACK_SIZEOF(esp_hosted_event_stack),
+				    K_KERNEL_STACK_SIZEOF(esp_hosted_event_stack),
 				    (k_thread_entry_t)esp_hosted_event_task, (void *)dev, NULL,
 				    NULL, CONFIG_WIFI_ESP_HOSTED_EVENT_TASK_PRIORITY,
 				    K_INHERIT_PERMS, K_NO_WAIT);

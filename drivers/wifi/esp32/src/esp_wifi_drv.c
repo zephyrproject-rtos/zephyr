@@ -1775,9 +1775,9 @@ static void esp32_wifi_event_task(void *p1, void *p2, void *p3)
 	}
 }
 
-K_THREAD_DEFINE(esp32_wifi_event_tid, CONFIG_ESP32_WIFI_EVENT_TASK_STACK_SIZE,
-		esp32_wifi_event_task, NULL, NULL, NULL, CONFIG_ESP32_WIFI_EVENT_TASK_PRIORITY, 0,
-		0);
+K_KERNEL_THREAD_DEFINE(esp32_wifi_event_tid, CONFIG_ESP32_WIFI_EVENT_TASK_STACK_SIZE,
+		       esp32_wifi_event_task, NULL, NULL, NULL,
+		       CONFIG_ESP32_WIFI_EVENT_TASK_PRIORITY, 0, 0);
 
 /*
  * Entry point the Wi-Fi and mesh libraries post events through, and the only

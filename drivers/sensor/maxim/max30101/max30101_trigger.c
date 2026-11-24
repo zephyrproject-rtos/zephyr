@@ -11,14 +11,14 @@
 LOG_MODULE_DECLARE(MAX30101, CONFIG_SENSOR_LOG_LEVEL);
 
 #if CONFIG_MAX30101_TRIGGER_OWN_THREAD
-K_THREAD_STACK_DEFINE(max30101_workqueue_stack, CONFIG_MAX30101_THREAD_SIZE);
+K_KERNEL_STACK_DEFINE(max30101_workqueue_stack, CONFIG_MAX30101_THREAD_SIZE);
 static struct k_work_q max30101_workqueue;
 
 static int max30101_workqueue_init(void)
 {
 	k_work_queue_init(&max30101_workqueue);
 	k_work_queue_start(&max30101_workqueue, max30101_workqueue_stack,
-			   K_THREAD_STACK_SIZEOF(max30101_workqueue_stack),
+			   K_KERNEL_STACK_SIZEOF(max30101_workqueue_stack),
 			   CONFIG_MAX30101_THREAD_PRIORITY, NULL);
 
 	return 0;

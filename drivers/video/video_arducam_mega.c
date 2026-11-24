@@ -200,7 +200,7 @@ enum mega_features {
 
 #define ARDUCAM_MEGA_CAPTURE_TRIES 200
 
-K_THREAD_STACK_DEFINE(ac_stack_area, AC_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(ac_stack_area, AC_STACK_SIZE);
 
 struct k_work_q ac_work_q;
 
@@ -1274,7 +1274,7 @@ static int arducam_mega_init(const struct device *dev)
 	k_fifo_init(&drv_data->fifo_in);
 	k_fifo_init(&drv_data->fifo_out);
 	k_work_queue_init(&ac_work_q);
-	k_work_queue_start(&ac_work_q, ac_stack_area, K_THREAD_STACK_SIZEOF(ac_stack_area),
+	k_work_queue_start(&ac_work_q, ac_stack_area, K_KERNEL_STACK_SIZEOF(ac_stack_area),
 			   AC_PRIORITY, NULL);
 
 	k_timer_init(&drv_data->stream_schedule_timer, arducam_mega_stream_schedule, NULL);

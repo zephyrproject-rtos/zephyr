@@ -1143,7 +1143,7 @@ static const struct udc_api udc_rpi_pico_api = {
 
 #define UDC_RPI_PICO_DEVICE_DEFINE(n)							\
 	UDC_RPI_PICO_PINCTRL_DT_INST_DEFINE(n);						\
-	K_THREAD_STACK_DEFINE(udc_rpi_pico_stack_##n, CONFIG_UDC_RPI_PICO_STACK_SIZE);	\
+	K_KERNEL_STACK_DEFINE(udc_rpi_pico_stack_##n, CONFIG_UDC_RPI_PICO_STACK_SIZE);	\
 											\
 	SYS_MEM_BLOCKS_DEFINE_STATIC_WITH_EXT_BUF(rpi_pico_mb_##n,			\
 						  64U, 58U,				\
@@ -1162,7 +1162,7 @@ static const struct udc_api udc_rpi_pico_api = {
 											\
 		k_thread_create(&priv->thread_data,					\
 				udc_rpi_pico_stack_##n,					\
-				K_THREAD_STACK_SIZEOF(udc_rpi_pico_stack_##n),		\
+				K_KERNEL_STACK_SIZEOF(udc_rpi_pico_stack_##n),		\
 				udc_rpi_pico_thread_##n,				\
 				(void *)dev, NULL, NULL,				\
 				K_PRIO_COOP(CONFIG_UDC_RPI_PICO_THREAD_PRIORITY),	\

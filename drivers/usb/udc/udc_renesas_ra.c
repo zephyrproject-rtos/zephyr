@@ -765,7 +765,7 @@ static const struct udc_api udc_renesas_ra_api = {
 
 #define UDC_RENESAS_RA_DEVICE_DEFINE(n)                                                            \
 	PINCTRL_DT_DEFINE(DT_INST_PARENT(n));                                                      \
-	K_THREAD_STACK_DEFINE(udc_renesas_ra_stack_##n, CONFIG_UDC_RENESAS_RA_STACK_SIZE);         \
+	K_KERNEL_STACK_DEFINE(udc_renesas_ra_stack_##n, CONFIG_UDC_RENESAS_RA_STACK_SIZE);         \
                                                                                                    \
 	static const struct device *udc_renesas_ra_clock_dev_##n[] = {                             \
 		LISTIFY(DT_PROP_LEN_OR(DT_INST_PARENT(n), phys_clock, 0),                          \
@@ -782,7 +782,7 @@ static const struct udc_api udc_renesas_ra_api = {
 		struct udc_renesas_ra_data *priv = udc_get_private(dev);                           \
                                                                                                    \
 		k_thread_create(&priv->thread_data, udc_renesas_ra_stack_##n,                      \
-				K_THREAD_STACK_SIZEOF(udc_renesas_ra_stack_##n),                   \
+				K_KERNEL_STACK_SIZEOF(udc_renesas_ra_stack_##n),                   \
 				udc_renesas_ra_thread_##n, (void *)dev, NULL, NULL,                \
 				K_PRIO_COOP(CONFIG_UDC_RENESAS_RA_THREAD_PRIORITY), K_ESSENTIAL,   \
 				K_NO_WAIT);                                                        \

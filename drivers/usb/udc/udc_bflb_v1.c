@@ -1847,7 +1847,7 @@ static void udc_bflb_v1_thread(void *dev, void *arg1, void *arg2)
 #define UDC_BFLB_V1_DEVICE_DEFINE(n)                                            \
 	PINCTRL_DT_INST_DEFINE(n);                                              \
                                                                                 \
-	K_THREAD_STACK_DEFINE(udc_bflb_v1_stack_##n,                            \
+	K_KERNEL_STACK_DEFINE(udc_bflb_v1_stack_##n,                            \
 			      CONFIG_UDC_BFLB_V1_STACK_SIZE);                   \
                                                                                 \
 	static void udc_bflb_v1_make_thread_##n(const struct device *dev)       \
@@ -1856,7 +1856,7 @@ static void udc_bflb_v1_thread(void *dev, void *arg1, void *arg2)
                                                                                 \
 		k_thread_create(                                                \
 			&priv->thread_data, udc_bflb_v1_stack_##n,              \
-			K_THREAD_STACK_SIZEOF(udc_bflb_v1_stack_##n),           \
+			K_KERNEL_STACK_SIZEOF(udc_bflb_v1_stack_##n),           \
 			udc_bflb_v1_thread, (void *)dev, NULL, NULL,            \
 			K_PRIO_COOP(CONFIG_UDC_BFLB_V1_THREAD_PRIORITY),        \
 			K_ESSENTIAL, K_NO_WAIT);                                \

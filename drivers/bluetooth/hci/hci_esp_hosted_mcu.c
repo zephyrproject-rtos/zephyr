@@ -265,7 +265,7 @@ static void hci_esp_hosted_mcu_rx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-K_THREAD_STACK_DEFINE(hci_esp_hosted_mcu_rx_stack, CONFIG_BT_HCI_ESP_HOSTED_MCU_RX_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(hci_esp_hosted_mcu_rx_stack, CONFIG_BT_HCI_ESP_HOSTED_MCU_RX_STACK_SIZE);
 static struct k_thread hci_esp_hosted_mcu_rx_thread_data;
 
 static int hci_esp_hosted_mcu_send(const struct device *dev, struct net_buf *buf)
@@ -355,7 +355,7 @@ static int hci_esp_hosted_mcu_open(const struct device *dev)
 	hci_esp_hosted_mcu_rx_dev = dev;
 	if (!data->rx_started) {
 		k_thread_create(&hci_esp_hosted_mcu_rx_thread_data, hci_esp_hosted_mcu_rx_stack,
-				K_THREAD_STACK_SIZEOF(hci_esp_hosted_mcu_rx_stack),
+				K_KERNEL_STACK_SIZEOF(hci_esp_hosted_mcu_rx_stack),
 				hci_esp_hosted_mcu_rx_thread, NULL, NULL, NULL,
 				K_PRIO_COOP(CONFIG_BT_HCI_ESP_HOSTED_MCU_RX_PRIO), 0, K_NO_WAIT);
 		k_thread_name_set(&hci_esp_hosted_mcu_rx_thread_data, "hci_esp_hosted_mcu_rx");

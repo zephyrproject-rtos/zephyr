@@ -397,7 +397,7 @@ static const struct udc_api udc_skeleton_api = {
  * driver, even if your platform does not require it.
  */
 #define UDC_SKELETON_DEVICE_DEFINE(n)						\
-	K_THREAD_STACK_DEFINE(udc_skeleton_stack_##n,				\
+	K_KERNEL_STACK_DEFINE(udc_skeleton_stack_##n,				\
 			      CONFIG_UDC_SKELETON_STACK_SIZE);			\
 										\
 	static struct udc_ep_config						\
@@ -410,7 +410,7 @@ static const struct udc_api udc_skeleton_api = {
 		.ep_cfg_in = ep_cfg_out_##n,					\
 		.ep_cfg_out = ep_cfg_in_##n,					\
 		.thread_stk = udc_skeleton_stack_##n,				\
-		.thread_stk_sz = K_THREAD_STACK_SIZEOF(udc_skeleton_stack_##n),	\
+		.thread_stk_sz = K_KERNEL_STACK_SIZEOF(udc_skeleton_stack_##n),	\
 		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),	\
 	};									\
 										\

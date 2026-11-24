@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbox_ivshmem, CONFIG_MBOX_LOG_LEVEL);
 
-K_THREAD_STACK_DEFINE(ivshmem_ev_loop_stack, CONFIG_MBOX_IVSHMEM_EVENT_LOOP_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(ivshmem_ev_loop_stack, CONFIG_MBOX_IVSHMEM_EVENT_LOOP_STACK_SIZE);
 static struct k_thread ivshmem_ev_loop_thread;
 
 struct ivshmem_mbox_data {

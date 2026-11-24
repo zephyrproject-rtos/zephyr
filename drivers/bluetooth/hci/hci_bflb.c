@@ -216,7 +216,7 @@ static void rx_thread_func(void *p1, void *p2, void *p3)
 	}
 }
 
-static K_THREAD_STACK_DEFINE(rx_thread_stack, CONFIG_BT_BFLB_RX_THREAD_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_BFLB_RX_THREAD_STACK_SIZE);
 static struct k_thread rx_thread_data;
 
 /*
@@ -317,7 +317,7 @@ static int bt_bflb_close(const struct device *dev)
 
 static int bt_bflb_init(const struct device *dev)
 {
-	k_thread_create(&rx_thread_data, rx_thread_stack, K_THREAD_STACK_SIZEOF(rx_thread_stack),
+	k_thread_create(&rx_thread_data, rx_thread_stack, K_KERNEL_STACK_SIZEOF(rx_thread_stack),
 			rx_thread_func, (void *)dev, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 	k_thread_name_set(&rx_thread_data, "bt_bflb_rx");
 	return 0;

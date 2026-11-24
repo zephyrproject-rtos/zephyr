@@ -1713,7 +1713,7 @@ static const struct udc_api udc_sam_udp_api = {
 #define UDC_SAM_UDP_DEVICE_DEFINE(n)						\
 	PINCTRL_DT_INST_DEFINE(n);						\
 										\
-	K_THREAD_STACK_DEFINE(udc_sam_udp_stack_##n,				\
+	K_KERNEL_STACK_DEFINE(udc_sam_udp_stack_##n,				\
 			      CONFIG_UDC_SAM_UDP_THREAD_STACK_SIZE);		\
 										\
 	static void udc_sam_udp_thread_##n(void *dev, void *arg1, void *arg2)	\
@@ -1731,7 +1731,7 @@ static const struct udc_api udc_sam_udp_api = {
 										\
 		k_thread_create(&priv->thread_data,				\
 				udc_sam_udp_stack_##n,				\
-				K_THREAD_STACK_SIZEOF(udc_sam_udp_stack_##n),	\
+				K_KERNEL_STACK_SIZEOF(udc_sam_udp_stack_##n),	\
 				udc_sam_udp_thread_##n,				\
 				(void *)dev, NULL, NULL,			\
 				K_PRIO_COOP(CONFIG_UDC_SAM_UDP_THREAD_PRIORITY),\

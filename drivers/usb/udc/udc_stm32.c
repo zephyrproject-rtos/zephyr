@@ -1753,7 +1753,7 @@ static int udc_stm32_driver_preinit(const struct device *dev)
  * look similar to instance numbers so they fit nice as replacement.
  */
 #define UDC_STM32_DEFINE(node_id, phy_node, ord, _irq_name)					\
-	K_THREAD_STACK_DEFINE(CONCAT(udc, ord, _thr_stk), CONFIG_UDC_STM32_STACK_SIZE);		\
+	K_KERNEL_STACK_DEFINE(CONCAT(udc, ord, _thr_stk), CONFIG_UDC_STM32_STACK_SIZE);		\
 												\
 	static struct udc_ep_config CONCAT(udc, ord, _in_ep_cfg)				\
 		[DT_PROP(node_id, num_bidir_endpoints)];					\
@@ -1799,7 +1799,7 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 		.selected_phy = UDC_STM32_NODE_PHY_ITFACE(node_id),				\
 		.selected_speed = UDC_STM32_NODE_SPEED(node_id),				\
 		.thread_stack = CONCAT(udc, ord, _thr_stk),					\
-		.thread_stack_size = K_THREAD_STACK_SIZEOF(CONCAT(udc, ord, _thr_stk)),		\
+		.thread_stack_size = K_KERNEL_STACK_SIZEOF(CONCAT(udc, ord, _thr_stk)),		\
 		.disconnect_gpio = GPIO_DT_SPEC_GET_OR(node_id, disconnect_gpios, {0}),		\
 		.ulpi_reset_gpio = GPIO_DT_SPEC_GET_OR(phy_node, reset_gpios, {0}),		\
 	};											\

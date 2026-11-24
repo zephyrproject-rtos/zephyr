@@ -222,7 +222,7 @@ struct usb_dc_stm32_state {
 #endif /* USB */
 };
 
-K_THREAD_STACK_DEFINE(usb_dc_stm32_thr_stk, USB_ISR_LOWER_HALF_THREAD_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(usb_dc_stm32_thr_stk, USB_ISR_LOWER_HALF_THREAD_STACK_SIZE);
 
 static struct usb_dc_stm32_state usb_dc_stm32_state;
 
@@ -715,7 +715,7 @@ static int usb_dc_stm32_init(void)
 
 	k_thread_create(&usb_dc_stm32_state.isr_lower_half_thread,
 			usb_dc_stm32_thr_stk,
-			K_THREAD_STACK_SIZEOF(usb_dc_stm32_thr_stk),
+			K_KERNEL_STACK_SIZEOF(usb_dc_stm32_thr_stk),
 			usb_dc_stm32_isr_lower_half,
 			NULL, NULL, NULL,
 			USB_ISR_LOWER_HALF_THREAD_PRIO,

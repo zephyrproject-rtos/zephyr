@@ -3186,7 +3186,7 @@ static const struct udc_api udc_numaker_api = {
 		irq_disable(DT_INST_IRQN(inst));                                                   \
 	}                                                                                          \
                                                                                                    \
-	K_THREAD_STACK_DEFINE(udc_numaker_stack_##inst, CONFIG_UDC_NUMAKER_THREAD_STACK_SIZE);     \
+	K_KERNEL_STACK_DEFINE(udc_numaker_stack_##inst, CONFIG_UDC_NUMAKER_THREAD_STACK_SIZE);     \
                                                                                                    \
 	static void udc_numaker_thread_##inst(void *dev, void *arg1, void *arg2)                   \
 	{                                                                                          \
@@ -3200,7 +3200,7 @@ static const struct udc_api udc_numaker_api = {
 		struct udc_numaker_data *priv = udc_get_private(dev);                              \
                                                                                                    \
 		k_thread_create(&priv->thread_data, udc_numaker_stack_##inst,                      \
-				K_THREAD_STACK_SIZEOF(udc_numaker_stack_##inst),                   \
+				K_KERNEL_STACK_SIZEOF(udc_numaker_stack_##inst),                   \
 				udc_numaker_thread_##inst, (void *)dev, NULL, NULL,                \
 				K_PRIO_COOP(CONFIG_UDC_NUMAKER_THREAD_PRIORITY), K_ESSENTIAL,      \
 				K_NO_WAIT);                                                        \

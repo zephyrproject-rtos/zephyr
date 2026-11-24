@@ -35,8 +35,8 @@ static void sensor_shell_processing_entry_point(void *a, void *b, void *c)
 						sensor_shell_processing_callback);
 	}
 }
-K_THREAD_DEFINE(sensor_shell_processing_tid, CONFIG_SENSOR_SHELL_THREAD_STACK_SIZE,
-		sensor_shell_processing_entry_point, NULL, NULL, NULL, 0, 0, 0);
+K_KERNEL_THREAD_DEFINE(sensor_shell_processing_tid, CONFIG_SENSOR_SHELL_THREAD_STACK_SIZE,
+		       sensor_shell_processing_entry_point, NULL, NULL, NULL, 0, 0, 0);
 
 int cmd_sensor_stream(const struct shell *sh, size_t argc, char *argv[])
 {

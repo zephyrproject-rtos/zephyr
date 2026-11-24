@@ -357,7 +357,7 @@ struct dmic_vu_ctx {
 	atomic_t stop;
 };
 
-static K_THREAD_STACK_DEFINE(dmic_vu_stack, DMIC_SHELL_VU_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(dmic_vu_stack, DMIC_SHELL_VU_STACK_SIZE);
 static struct dmic_vu_ctx dmic_vu_ctx_data;
 
 /*
@@ -561,7 +561,7 @@ static int cmd_vu(const struct shell *sh, size_t argc, char *argv[])
 	/* Bypass first so a keypress can stop the meter even during start-up. */
 	shell_set_bypass(sh, dmic_vu_bypass, NULL);
 	k_thread_create(&dmic_vu_ctx_data.thread, dmic_vu_stack,
-			K_THREAD_STACK_SIZEOF(dmic_vu_stack), dmic_vu_thread, NULL, NULL, NULL,
+			K_KERNEL_STACK_SIZEOF(dmic_vu_stack), dmic_vu_thread, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
 	k_thread_name_set(&dmic_vu_ctx_data.thread, "dmic_vu");
 	dmic_vu_ctx_data.thread_started = true;

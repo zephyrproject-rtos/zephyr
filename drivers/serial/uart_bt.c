@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_nus, CONFIG_UART_LOG_LEVEL);
 
-K_THREAD_STACK_DEFINE(nus_work_queue_stack, CONFIG_UART_BT_WORKQUEUE_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(nus_work_queue_stack, CONFIG_UART_BT_WORKQUEUE_STACK_SIZE);
 static struct k_work_q nus_work_queue;
 
 #define UART_BT_MTU_INVALID 0xFFFF
@@ -346,7 +346,7 @@ static int uart_bt_workqueue_init(void)
 {
 	k_work_queue_init(&nus_work_queue);
 	k_work_queue_start(&nus_work_queue, nus_work_queue_stack,
-			   K_THREAD_STACK_SIZEOF(nus_work_queue_stack),
+			   K_KERNEL_STACK_SIZEOF(nus_work_queue_stack),
 			   CONFIG_UART_BT_WORKQUEUE_PRIORITY, NULL);
 	k_thread_name_set(nus_work_queue.thread_id, "uart_bt");
 

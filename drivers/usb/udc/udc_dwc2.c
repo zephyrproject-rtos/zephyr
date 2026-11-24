@@ -3220,7 +3220,7 @@ static const struct udc_api udc_dwc2_api = {
 #define UDC_DWC2_DEVICE_DEFINE(n)						\
 	UDC_DWC2_PINCTRL_DT_INST_DEFINE(n);					\
 										\
-	K_THREAD_STACK_DEFINE(udc_dwc2_stack_##n, CONFIG_UDC_DWC2_STACK_SIZE);	\
+	K_KERNEL_STACK_DEFINE(udc_dwc2_stack_##n, CONFIG_UDC_DWC2_STACK_SIZE);	\
 										\
 	static void udc_dwc2_thread_##n(void *dev, void *arg1, void *arg2)	\
 	{									\
@@ -3235,7 +3235,7 @@ static const struct udc_api udc_dwc2_api = {
 										\
 		k_thread_create(&priv->thread_data,				\
 				udc_dwc2_stack_##n,				\
-				K_THREAD_STACK_SIZEOF(udc_dwc2_stack_##n),	\
+				K_KERNEL_STACK_SIZEOF(udc_dwc2_stack_##n),	\
 				udc_dwc2_thread_##n,				\
 				(void *)dev, NULL, NULL,			\
 				K_PRIO_COOP(CONFIG_UDC_DWC2_THREAD_PRIORITY),	\

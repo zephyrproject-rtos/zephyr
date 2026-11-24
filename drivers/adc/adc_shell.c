@@ -313,7 +313,7 @@ static struct {
 	atomic_t running;
 } adc_periodic;
 
-static K_THREAD_STACK_DEFINE(adc_periodic_stack, CONFIG_ADC_SHELL_PERIODIC_READ_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(adc_periodic_stack, CONFIG_ADC_SHELL_PERIODIC_READ_STACK_SIZE);
 static K_SEM_DEFINE(adc_periodic_stop, 0, 1);
 
 static void adc_periodic_read_thread(void *p1, void *p2, void *p3)
@@ -422,7 +422,7 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 	/* The shell thread only invokes the bypass callback once this command returns. */
 	shell_set_bypass(sh, adc_shell_read_bypass_cb, NULL);
 	k_thread_create(&adc_periodic.thread, adc_periodic_stack,
-			K_THREAD_STACK_SIZEOF(adc_periodic_stack), adc_periodic_read_thread, NULL,
+			K_KERNEL_STACK_SIZEOF(adc_periodic_stack), adc_periodic_read_thread, NULL,
 			NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 	(void)k_thread_name_set(&adc_periodic.thread, "adc_shell_read");
 	adc_periodic.thread_started = true;
