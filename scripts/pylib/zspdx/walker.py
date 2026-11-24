@@ -552,7 +552,7 @@ class Walker:
         cross-document reference ID; ``title`` is the human-readable SPDX
         ``DocumentName`` and defaults to ``name`` when not given.
         """
-        doc = SBOMDocument(name=name, title=title, namespace=f"{self.cfg.namespace_prefix}/{name}")
+        doc = SBOMDocument(name=name, title=title)
         self.sbom_graph.add_document(doc)
         return doc
 

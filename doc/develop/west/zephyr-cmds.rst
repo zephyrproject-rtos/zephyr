@@ -272,6 +272,28 @@ Each intermediate target, such as a static library, also gets its own sub-build 
 sources, tools and compile flags that produced its artifact, so any output can be traced back to how
 it was built.
 
+.. _west-spdx-reproducible:
+
+Reproducible output
+-------------------
+
+``west spdx`` honors the `SOURCE_DATE_EPOCH`_ environment variable defined by the Reproducible
+Builds project. When it is set:
+
+- the documents record that time as their creation time instead of the current time;
+- the default namespace prefix is derived from a hash of the documents instead of being random.
+
+Running ``west spdx`` again on the same build then gives identical documents. Two separate builds
+give identical documents only if they use the same paths and tools and produce identical outputs.
+
+An empty value is ignored. Any other value must be a whole number of seconds since the Unix epoch.
+
+For example, to date the documents with the last commit of the application:
+
+.. code-block:: console
+
+   SOURCE_DATE_EPOCH=$(git -C <app> log -1 --format=%ct) west spdx -d build
+
 Command-line options
 --------------------
 
@@ -284,7 +306,9 @@ Command-line options
 - ``-n PREFIX``: a prefix for the Document Namespaces that will be included in
   the generated SPDX documents. See `SPDX specification clause 6`_ for
   details. If ``-n`` is omitted, a default namespace will be generated
-  according to the default format described in section 2.5 using a random UUID.
+  according to the default format described in section 2.5 using a random UUID,
+  or a UUID derived from the documents when ``SOURCE_DATE_EPOCH`` is set (see
+  :ref:`west-spdx-reproducible`).
 
 - ``-s SPDX_DIR``: specifies an alternate directory where the SPDX documents
   should be written instead of :file:`BUILD_DIR/spdx/`.
@@ -318,6 +342,8 @@ Command-line options
 
 .. _SPDX specification clause 6:
    https://spdx.github.io/spdx-spec/v2.2.2/document-creation-information/
+
+.. _SOURCE_DATE_EPOCH: https://reproducible-builds.org/specs/source-date-epoch/
 
 .. _west-blobs:
 
