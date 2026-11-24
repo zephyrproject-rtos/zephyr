@@ -42,6 +42,10 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 
 #include "net_private.h"
 
+static const char IPV4_PTR_SUFFIX[] = "in-addr.arpa";
+static const char IPV6_PTR_SUFFIX[] = "ip6.arpa";
+#define PTRV6_LENGTH 73
+
 /*
  * GCC complains about struct net_sockaddr accesses due to the various
  * address-family-specific variants being of differing sizes. Let's not
@@ -515,8 +519,7 @@ struct answer_ctx {
 	bool legacy;
 };
 
-static void add_a_aaaa_answer(struct answer_ctx *ctx, uint32_t ttl,
-			      uint16_t addr_len, const uint8_t *addr,
+static bool add_answer_common(struct answer_ctx *ctx, uint32_t ttl, size_t addr_len,
 			      bool include_name_ptr)
 {
 	uint16_t name_len = 0;
@@ -528,7 +531,7 @@ static void add_a_aaaa_answer(struct answer_ctx *ctx, uint32_t ttl,
 	if (net_buf_tailroom(ctx->query) < (DNS_QTYPE_LEN + DNS_QCLASS_LEN +
 					    DNS_TTL_LEN + DNS_RDLENGTH_LEN +
 					    addr_len + name_len)) {
-		return;
+		return false;
 	}
 
 	if (include_name_ptr) {
@@ -549,9 +552,37 @@ static void add_a_aaaa_answer(struct answer_ctx *ctx, uint32_t ttl,
 				     : (DNS_CLASS_IN | DNS_CLASS_FLUSH));
 	net_buf_add_be32(ctx->query, ttl);
 	net_buf_add_be16(ctx->query, addr_len);
-	net_buf_add_mem(ctx->query, addr, addr_len);
 
 	ctx->answer_count++;
+	return true;
+}
+
+static void add_hostname_answer(struct answer_ctx *ctx, uint32_t ttl,
+			      bool include_name_ptr)
+{
+	const char *hostname = net_hostname_get();
+	uint8_t hostname_len = strlen(hostname);
+	int record_len = hostname_len + 8;
+
+	if (!add_answer_common(ctx, ttl, record_len, include_name_ptr)) {
+		return;
+	}
+
+	net_buf_add_u8(ctx->query, hostname_len);
+	net_buf_add_mem(ctx->query, hostname, hostname_len);
+	net_buf_add_u8(ctx->query, 5);
+	net_buf_add_mem(ctx->query, "local", 6);
+}
+
+static void add_a_aaaa_answer(struct answer_ctx *ctx, uint32_t ttl,
+			      uint16_t addr_len, const uint8_t *addr,
+			      bool include_name_ptr)
+{
+	if (!add_answer_common(ctx, ttl, addr_len, include_name_ptr)) {
+		return;
+	}
+
+	net_buf_add_mem(ctx->query, addr, addr_len);
 }
 
 static void answer_addr_cb(struct net_if *iface, struct net_if_addr *ifaddr,
@@ -621,6 +652,8 @@ static int create_answer(struct net_buf *query, enum dns_rr_type qtype,
 		net_if_ipv4_addr_foreach(iface, answer_addr_cb, &ctx);
 	} else if ((qtype == DNS_RR_TYPE_AAAA) && IS_ENABLED(CONFIG_NET_IPV6)) {
 		net_if_ipv6_addr_foreach(iface, answer_addr_cb, &ctx);
+	} else if (qtype == DNS_RR_TYPE_PTR) {
+		add_hostname_answer(&ctx, legacy ? MDNS_LEGACY_TTL : MDNS_TTL, legacy);
 	} else {
 		return -EINVAL;
 	}
@@ -894,6 +927,74 @@ static void send_sd_response(int sock,
 	k_mutex_unlock(&external_records_lock);
 }
 
+static bool parse_ptrv4(char *ptrv4, size_t rem, struct net_in_addr *out)
+{
+	for (int i = 0; i < 4; i++) {
+		uint16_t number = 0;
+
+		for (int d = 0; d < 3; d++) {
+			if (!rem--) {
+				return false;
+			}
+
+			if (*ptrv4 == '.') {
+				break;
+			}
+
+			if (*ptrv4 < '0' || *ptrv4 > '9') {
+				return false;
+			}
+
+			number = number*10 + (*ptrv4++-'0');
+		}
+
+		if (*ptrv4++ != '.') {
+			return false;
+		}
+
+		if (number >= UINT8_MAX) {
+			return false;
+		}
+
+		out->s4_addr[3-i] = number;
+	}
+
+	return rem == sizeof(IPV4_PTR_SUFFIX) &&
+			memcmp(ptrv4, IPV4_PTR_SUFFIX, sizeof(IPV4_PTR_SUFFIX)) == 0;
+}
+
+static bool parse_ptrv6(char *ptrv6, size_t rem, struct net_in6_addr *out)
+{
+	uint32_t digit_char;
+	uint8_t digit_byte;
+
+	if (rem == PTRV6_LENGTH) {
+		return false;
+	}
+
+	memset(out->s6_addr16, 0, sizeof(out->s6_addr16));
+
+	for (int i = 0; i < 32; i++) {
+		digit_char = ptrv6[i*2];
+
+		if (ptrv6[i*2+1] != '.') {
+			return false;
+		}
+
+		if (digit_char >= '0' && digit_char <= '9') {
+			digit_byte = digit_char-'0';
+		} else if (digit_char >= 'a' && digit_char <= 'f') {
+			digit_byte = digit_char-'a'+10;
+		} else {
+			return false;
+		}
+
+		out->s6_addr[15-i/2] |= (digit_byte)<<(i%2)*4;
+	}
+
+	return memcmp(ptrv6+(16*4), IPV6_PTR_SUFFIX, sizeof(IPV6_PTR_SUFFIX)) == 0;
+}
+
 static int dns_read(int sock,
 		    struct net_buf *dns_data,
 		    size_t len,
@@ -904,6 +1005,8 @@ static int dns_read(int sock,
 	/* Helper struct to track the dns msg received from the server */
 	const char *hostname = net_hostname_get();
 	int hostname_len = strlen(hostname);
+	struct net_in6_addr parsed_addrv6;
+	struct net_in_addr parsed_addrv4;
 	int family = src_addr->sa_family;
 	struct net_buf *result;
 	struct dns_msg_t dns_msg;
@@ -956,34 +1059,46 @@ static int dns_read(int sock,
 			goto quit;
 		}
 
-		/* Handle only .local queries */
-		lquery = strrchr(result->data, '.');
-		if (!lquery || memcmp(lquery, (const void *){ ".local" }, 7)) {
-			continue;
-		}
-
 		NET_DBG("[%d] query %s/%s label %s (%d bytes)", queries,
 			dns_qtype_to_str(qtype), "IN",
 			result->data, ret);
 
-		/* If the query matches to our hostname, then send reply.
-		 * We skip the first dot, and make sure there is dot after
-		 * matching hostname.
-		 */
-		if (!strncasecmp(hostname, result->data, hostname_len) &&
-		    (result->len) >= hostname_len &&
-		    &result->data[hostname_len] == lquery) {
-			NET_DBG("%s %s %s to our hostname %s%s", "mDNS",
-				family == NET_AF_INET ? "IPv4" : "IPv6", "query",
-				hostname, ".local");
-			send_response(sock, family, src_addr, addrlen,
-				      result, qtype, recv_if, dns_id);
-		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD) &&
-			   (qtype == DNS_RR_TYPE_PTR || qtype == DNS_RR_TYPE_SRV ||
-			    qtype == DNS_RR_TYPE_TXT)) {
-			send_sd_response(sock, family, src_addr, addrlen, result, recv_if,
-					 qtype);
+		/* Handle only .local queries */
+		lquery = strrchr(result->data, '.');
+		if (lquery && memcmp(lquery, (const void *){ ".local" }, 7) == 0) {
+			/* If the query matches to our hostname, then send reply.
+			 * We skip the first dot, and make sure there is dot after
+			 * matching hostname.
+			 */
+			if (!strncasecmp(hostname, result->data, hostname_len) &&
+			(result->len) >= hostname_len &&
+			&result->data[hostname_len] == lquery) {
+				NET_DBG("%s %s %s to our hostname %s%s", "mDNS",
+					family == NET_AF_INET ? "IPv4" : "IPv6", "query",
+					hostname, ".local");
+				send_response(sock, family, src_addr, addrlen,
+					result, qtype, recv_if, dns_id);
+			} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD) &&
+				(qtype == DNS_RR_TYPE_PTR || qtype == DNS_RR_TYPE_SRV ||
+				qtype == DNS_RR_TYPE_TXT)) {
+				send_sd_response(sock, family, src_addr, addrlen, result, recv_if,
+						qtype);
+			}
 		}
+#ifdef CONFIG_NET_IPV4
+		else if (parse_ptrv4(result->data, result->len, &parsed_addrv4) &&
+				net_if_ipv4_addr_lookup_by_iface(recv_if, &parsed_addrv4)) {
+			send_response(sock, family, src_addr, addrlen,
+					result, qtype, recv_if, dns_id);
+		}
+#endif /*CONFIG_NET_IPV4*/
+#ifdef CONFIG_NET_IPV6
+		else if (parse_ptrv6(result->data, result->len, &parsed_addrv6) &&
+				net_if_ipv6_addr_lookup_by_iface(recv_if, &parsed_addrv6)) {
+			send_response(sock, family, src_addr, addrlen,
+					result, qtype, recv_if, dns_id);
+		}
+#endif /*CONFIG_NET_IPV6*/
 
 	} while (--queries);
 
