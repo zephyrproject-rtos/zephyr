@@ -568,6 +568,7 @@ class Binding:
                         "enum", "const", "default", "deprecated",
                         "specifier-space", "min", "max", "min-len", "max-len",
                         "dependency-mode"}
+        dependency_modes = {"normal", "reverse", "ignore", "child-ignore"}
 
         for prop_name, options in raw["properties"].items():
             for key in options:
@@ -578,6 +579,14 @@ class Binding:
 
             _check_prop_by_type(prop_name, options, self.path,
                                 self._local_props.props.get(prop_name) or {})
+
+            if "dependency-mode" in options:
+                dependency_mode = options["dependency-mode"]
+                if (not isinstance(dependency_mode, str)
+                    or dependency_mode not in dependency_modes):
+                    _err(f"malformed 'dependency-mode:' setting '{dependency_mode}' for "
+                         f"'{prop_name}' in 'properties' in {self.path}, expected one of "
+                         f"{', '.join(dependency_modes)}")
 
             for true_false_opt in ["required", "deprecated"]:
                 if true_false_opt in options:

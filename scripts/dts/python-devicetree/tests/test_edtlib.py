@@ -1892,6 +1892,10 @@ def test_wrong_props():
         assert value_str.endswith("; this property's default behavior is "
                                   "defined in DT Specification §2.3.5 and a default in a binding is invalid")
 
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding("test-wrong-bindings/wrong-dependency-mode.yaml", None)
+        value_str = str(e.value)
+        assert value_str.startswith("malformed 'dependency-mode:' setting 'invalid'")
 
 def test_deepcopy():
     with from_here():
