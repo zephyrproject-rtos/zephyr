@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 tests:
-  bluetooth.host_sco:
+  bluetooth.classic.sco:
     platform_allow:
       - native_sim
       - qemu_x86

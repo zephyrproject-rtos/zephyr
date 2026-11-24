@@ -8,4 +8,4 @@ common:
     - bluetooth
     - host
 tests:
-  bluetooth.host_l2cap_br_echo: {}
+  bluetooth.classic.l2cap_echo: {}
