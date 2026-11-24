@@ -9,7 +9,7 @@
 
 #include <zephyr/sys/zassert.h>
 
-#if CONFIG_ASSERT_MODULE_DEFAULT_LEVEL > ZASSERT_LEVEL_OFF
+#if CONFIG_ASSERT_MODULE_UNNAMED_LEVEL > ZASSERT_LEVEL_OFF
 
 
 /* @cond INTERNAL_HIDDEN */
@@ -19,27 +19,27 @@
  * @brief Legacy assertion with an optional message.
  *
  * Compatibility shim for the historical __ASSERT() macro. It forwards to the
- * private ZASSERT_M() macro using the DEFAULT module, whose level is
- * CONFIG_ASSERT_MODULE_DEFAULT_LEVEL. New code should use ZASSERT() instead.
+ * private ZASSERT_M() macro using the UNNAMED module, whose level is
+ * CONFIG_ASSERT_MODULE_UNNAMED_LEVEL. New code should use ZASSERT() instead.
  *
  * @param test Condition to check. A fatal error is raised if it is false.
  * @param ...  Optional message format string followed by its arguments.
  */
-#define __ASSERT(test, ...)   ZASSERT_IMPL_M(DEFAULT, test, ##__VA_ARGS__)
+#define __ASSERT(test, ...)   ZASSERT_IMPL_M(UNNAMED, test, ##__VA_ARGS__)
 
 /**
  * @brief Legacy assertion with no message.
  *
- * Equivalent to __ASSERT() without a user message; uses the DEFAULT module.
+ * Equivalent to __ASSERT() without a user message; uses the UNNAMED module.
  *
  * @param test Condition to check. A fatal error is raised if it is false.
  */
-#define __ASSERT_NO_MSG(test) ZASSERT_IMPL_M(DEFAULT, test)
+#define __ASSERT_NO_MSG(test) ZASSERT_IMPL_M(UNNAMED, test)
 
 /**
  * @brief Print a formatted assertion message when verbose.
  *
- * Emits @p fmt through zassert_print() only when the DEFAULT module level is at
+ * Emits @p fmt through zassert_print() only when the UNNAMED module level is at
  * least ZASSERT_LEVEL_VERBOSE; otherwise it expands to nothing.
  *
  * @param fmt Message format string.
@@ -47,7 +47,7 @@
  */
 #define __ASSERT_PRINT(fmt, ...)                                       \
 	do {                                                           \
-		if (CONFIG_ASSERT_MODULE_DEFAULT_LEVEL >= ZASSERT_LEVEL_VERBOSE) { \
+		if (CONFIG_ASSERT_MODULE_UNNAMED_LEVEL >= ZASSERT_LEVEL_VERBOSE) { \
 			zassert_print(fmt, ##__VA_ARGS__);             \
 		}                                                      \
 	} while (false)
@@ -100,7 +100,7 @@
 		__ASSERT(test, fmt, ##__VA_ARGS__); \
 	} while (false)
 
-#else /* CONFIG_ASSERT_MODULE_DEFAULT_LEVEL > ZASSERT_LEVEL_OFF */
+#else /* CONFIG_ASSERT_MODULE_UNNAMED_LEVEL > ZASSERT_LEVEL_OFF */
 
 #define __ASSERT(test, ...)   ((void)0)
 #define __ASSERT_NO_MSG(test) ((void)0)
@@ -110,6 +110,6 @@
 #define __ASSERT_POST_ACTION() ((void)0)
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...) expr1
 
-#endif /* CONFIG_ASSERT_MODULE_DEFAULT_LEVEL >= 1 */
+#endif /* CONFIG_ASSERT_MODULE_UNNAMED_LEVEL >= 1 */
 /* @endcond */
 #endif /* ZEPHYR_INCLUDE_SYS___ASSERT_H_ */

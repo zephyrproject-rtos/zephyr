@@ -253,28 +253,28 @@ Legacy __ASSERT()
 
 The ``__ASSERT()`` family, declared in
 :zephyr_file:`include/zephyr/sys/__assert.h`, predates ``ZASSERT()`` and is now
-a compatibility shim using the built-in ``DEFAULT`` assertion module. New code
+a compatibility shim using the built-in ``UNNAMED`` assertion module. New code
 should prefer ``ZASSERT()`` with a dedicated module.
 
 .. note::
 
    ``__ASSERT()`` and the ``CONFIG_ASSERT*`` Kconfig options are deprecated.
-   They continue to work through the ``DEFAULT`` module, but the underlying
+   They continue to work through the ``UNNAMED`` module, but the underlying
    assert API may change in future releases.
 
-The ``DEFAULT`` module is enabled by :kconfig:option:`CONFIG_ASSERT`.
-Its level is controlled by :kconfig:option:`CONFIG_ASSERT_MODULE_DEFAULT_LEVEL`, configured through
+The ``UNNAMED`` module is enabled by :kconfig:option:`CONFIG_ASSERT`.
+Its level is controlled by :kconfig:option:`CONFIG_ASSERT_MODULE_UNNAMED_LEVEL`, configured through
 the ``Off`` / ``Terse`` / ``Normal`` / ``Verbose`` choice
-(:kconfig:option:`CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_OFF` /
-``CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_TERSE`` /
-``CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_NORMAL`` /
-:kconfig:option:`CONFIG_ASSERT_MODULE_DEFAULT_LEVEL_VERBOSE`), which defaults to the
+(:kconfig:option:`CONFIG_ASSERT_MODULE_UNNAMED_LEVEL_OFF` /
+``CONFIG_ASSERT_MODULE_UNNAMED_LEVEL_TERSE`` /
+``CONFIG_ASSERT_MODULE_UNNAMED_LEVEL_NORMAL`` /
+:kconfig:option:`CONFIG_ASSERT_MODULE_UNNAMED_LEVEL_VERBOSE`), which defaults to the
 system-wide ``CONFIG_ASSERT_DEFAULT_LEVEL_*`` level like any other module. Assertions are enabled
 by default when running Zephyr test cases, as configured by the
 :kconfig:option:`CONFIG_TEST` option.
 
 The deprecated legacy symbols are still honored and derive the system-wide default
-level, and through it the level of the ``DEFAULT`` module and of every module that does not
+level, and through it the level of the ``UNNAMED`` module and of every module that does not
 override its own level: :kconfig:option:`CONFIG_ASSERT_VERBOSE` maps to ``Verbose``,
 :kconfig:option:`CONFIG_ASSERT_NO_COND_INFO`,
 :kconfig:option:`CONFIG_ASSERT_NO_MSG_INFO` and

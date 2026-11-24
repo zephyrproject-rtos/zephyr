@@ -124,8 +124,8 @@ config ASSERT_DEFAULT_LEVEL_VERBOSE
 
 endchoice
 
-module = DEFAULT
-module-str = the DEFAULT assert module
+module = UNNAMED
+module-str = the UNNAMED assert module
 source "subsys/debug/zassert/Kconfig.template.assert"
 
 config ASSERT_TEST
