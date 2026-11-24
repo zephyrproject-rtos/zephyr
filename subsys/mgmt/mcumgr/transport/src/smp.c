@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
 #define WEAK
 #endif
 
-K_THREAD_STACK_DEFINE(smp_work_queue_stack, CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(smp_work_queue_stack, CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_STACK_SIZE);
 
 static struct k_work_q smp_work_queue;
 
@@ -317,7 +317,7 @@ static int smp_init(void)
 	k_work_queue_init(&smp_work_queue);
 
 	k_work_queue_start(&smp_work_queue, smp_work_queue_stack,
-			   K_THREAD_STACK_SIZEOF(smp_work_queue_stack),
+			   K_KERNEL_STACK_SIZEOF(smp_work_queue_stack),
 			   CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_THREAD_PRIO, &smp_work_queue_config);
 
 	return 0;
