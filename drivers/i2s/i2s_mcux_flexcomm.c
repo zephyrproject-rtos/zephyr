@@ -19,6 +19,9 @@
 
 LOG_MODULE_REGISTER(i2s_mcux_flexcomm);
 
+/* Max wait for a second TX block before sending a lone one */
+#define I2S_MCUX_TX_START_TIMEOUT_MS 10
+
 /* Device constant configuration parameters */
 struct i2s_mcux_config {
 	I2S_Type *base;
@@ -61,6 +64,9 @@ struct i2s_mcux_data {
 	void *tx_out_msgs[CONFIG_I2S_MCUX_FLEXCOMM_TX_BLOCK_COUNT];
 	struct dma_block_config tx_dma_blocks[CONFIG_I2S_MCUX_FLEXCOMM_DMA_TX_BLOCKS];
 	bool waiting_txdata;
+	/* Delayed start of a lone TX block */
+	struct k_work_delayable tx_start_work;
+	const struct device *dev;
 };
 
 static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency, enum i2s_dir dir,
@@ -348,6 +354,9 @@ static void i2s_mcux_tx_stream_disable(const struct device *dev, bool drop)
 	 * transfer from a buffer that is about to be released.
 	 */
 	base->FIFOCFG &= (~I2S_FIFOCFG_DMATX_MASK);
+
+	/* Cancel a pending delayed start */
+	(void)k_work_cancel_delayable(&dev_data->tx_start_work);
 
 	LOG_DBG("Stopping DMA channel %u for TX stream", stream->channel);
 	dma_stop(stream->dev_dma, stream->channel);
@@ -638,7 +647,7 @@ static void i2s_mcux_dma_rx_callback(const struct device *dma_dev, void *arg, ui
 	}
 }
 
-static int i2s_mcux_tx_stream_start(const struct device *dev)
+static int i2s_mcux_tx_stream_start(const struct device *dev, bool force)
 {
 	int ret = 0;
 	const struct i2s_mcux_config *cfg = dev->config;
@@ -650,15 +659,19 @@ static int i2s_mcux_tx_stream_start(const struct device *dev)
 	/* Wait for 2 buffer writes before transmitting as the DMA channel will fail after
 	 * transferring one block if the next block is NULL.
 	 * However if the stream is in STOPPING state then send data immediately.
+	 * A lone block is sent by tx_start_work after a timeout (force).
 	 */
-	if ((k_msgq_num_used_get(&stream->in_queue) == 1) &&
-		(stream->state != I2S_STATE_STOPPING)) {
+	if (!force && (k_msgq_num_used_get(&stream->in_queue) == 1) &&
+	    (stream->state != I2S_STATE_STOPPING)) {
 		dev_data->waiting_txdata = true;
+		(void)k_work_reschedule(&dev_data->tx_start_work,
+					K_MSEC(I2S_MCUX_TX_START_TIMEOUT_MS));
 		return ret;
 	}
 
 	/* Clear as we have at least 2 blocks of data to write or stream is in STOPPING state */
 	dev_data->waiting_txdata = false;
+	(void)k_work_cancel_delayable(&dev_data->tx_start_work);
 
 	for (int i = 0;
 	     i < CONFIG_I2S_MCUX_FLEXCOMM_DMA_TX_BLOCKS && k_msgq_num_used_get(&stream->in_queue);
@@ -698,6 +711,23 @@ static int i2s_mcux_tx_stream_start(const struct device *dev)
 	I2S_EnableInterrupts(base, (uint32_t)kI2S_TxErrorFlag);
 
 	return 0;
+}
+
+/* No second block arrived in time: send the lone block */
+static void i2s_mcux_tx_start_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct i2s_mcux_data *dev_data = CONTAINER_OF(dwork, struct i2s_mcux_data, tx_start_work);
+	unsigned int key = irq_lock();
+
+	if (dev_data->waiting_txdata && dev_data->tx.state == I2S_STATE_RUNNING) {
+		if (i2s_mcux_tx_stream_start(dev_data->dev, true) < 0) {
+			LOG_ERR("delayed TX start failed");
+			dev_data->tx.state = I2S_STATE_ERROR;
+		}
+	}
+
+	irq_unlock(key);
 }
 
 static int i2s_mcux_rx_stream_start(const struct device *dev)
@@ -766,7 +796,7 @@ static int i2s_mcux_trigger_start(const struct device *dev, enum i2s_dir dir,
 	}
 
 	if (dir == I2S_DIR_TX) {
-		ret = i2s_mcux_tx_stream_start(dev);
+		ret = i2s_mcux_tx_stream_start(dev, false);
 	} else {
 		ret = i2s_mcux_rx_stream_start(dev);
 	}
@@ -817,7 +847,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 		stream->last_block = true;
 		/* Start TX if waiting for a second block to be written. */
 		if (dev_data->waiting_txdata) {
-			ret = i2s_mcux_tx_stream_start(dev);
+			ret = i2s_mcux_tx_stream_start(dev, false);
 		}
 		break;
 
@@ -830,7 +860,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 		stream->state = I2S_STATE_STOPPING;
 		/* Start TX if waiting for a second block to be written. */
 		if (dev_data->waiting_txdata) {
-			ret = i2s_mcux_tx_stream_start(dev);
+			ret = i2s_mcux_tx_stream_start(dev, false);
 		}
 		break;
 
@@ -923,7 +953,7 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block, size_t size
 
 	/* Start the stream if it was waiting for more data to be written */
 	if (dev_data->waiting_txdata) {
-		ret = i2s_mcux_tx_stream_start(dev);
+		ret = i2s_mcux_tx_stream_start(dev, false);
 	} else if (stream->state == I2S_STATE_RUNNING &&
 		   k_msgq_num_used_get(&stream->out_queue) <
 			   CONFIG_I2S_MCUX_FLEXCOMM_DMA_TX_BLOCKS) {
@@ -995,6 +1025,9 @@ static int i2s_mcux_init_common(const struct device *dev)
 	}
 
 	cfg->irq_config(dev);
+
+	data->dev = dev;
+	k_work_init_delayable(&data->tx_start_work, i2s_mcux_tx_start_work_handler);
 
 	/* Initialize the buffer queues */
 	k_msgq_init(&data->tx.in_queue, (char *)data->tx_in_msgs, sizeof(struct i2s_mcux_q_entry),
