@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/ztest.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/usbh.h>
@@ -16,6 +17,8 @@ LOG_MODULE_REGISTER(usb_test, LOG_LEVEL_INF);
 
 #define TEST_DEFAULT_INTERFACE		0
 #define TEST_DEFAULT_ALTERNATE		1
+#define TEST_BULK_OUT			0x01
+#define TEST_BULK_IN			0x81
 
 USBD_CONFIGURATION_DEFINE(test_fs_config,
 			  USB_SCD_SELF_POWERED | USB_SCD_REMOTE_WAKEUP,
@@ -327,6 +330,108 @@ ZTEST(device_next, test_get_configuration)
 	}
 }
 
+static void check_loopback_configuration(const struct net_buf *buf, uint8_t type, uint16_t mps)
+{
+	static const struct {
+		uint8_t addr;
+		uint8_t type;
+	} endpoints[] = {
+		{TEST_BULK_OUT, USB_EP_TYPE_BULK},
+		{TEST_BULK_IN, USB_EP_TYPE_BULK},
+		{0x02, USB_EP_TYPE_INTERRUPT},
+		{0x82, USB_EP_TYPE_INTERRUPT},
+		{0x03, USB_EP_TYPE_ISO},
+		{0x83, USB_EP_TYPE_ISO},
+	};
+	const size_t active_count = IS_ENABLED(CONFIG_USBD_LOOPBACK_BULK_ONLY) ? 2 :
+				    IS_ENABLED(CONFIG_USBD_LOOPBACK_ENABLE_ISO) ? 6 : 4;
+	const struct usb_cfg_descriptor *cfg;
+	unsigned int alt = 0;
+	uint32_t seen = 0;
+
+	zassert_true(buf->len >= sizeof(*cfg));
+	cfg = (const struct usb_cfg_descriptor *)buf->data;
+	zassert_equal(cfg->bLength, sizeof(*cfg));
+	zassert_equal(cfg->bDescriptorType, type);
+	zassert_equal(sys_le16_to_cpu(cfg->wTotalLength), buf->len);
+	zassert_equal(cfg->bNumInterfaces, 1);
+
+	for (size_t offset = cfg->bLength; offset < buf->len;) {
+		const struct usb_desc_header *desc = (const void *)(buf->data + offset);
+
+		zassert_true(buf->len - offset >= sizeof(*desc));
+		zassert_true(desc->bLength >= sizeof(*desc));
+		zassert_true(desc->bLength <= buf->len - offset);
+		zassert_not_equal(desc->bDescriptorType, USB_DESC_INTERFACE_ASSOC);
+		if (desc->bDescriptorType == USB_DESC_INTERFACE) {
+			const struct usb_if_descriptor *iface = (const void *)desc;
+
+			zassert_equal(desc->bLength, sizeof(*iface));
+			zassert_true(alt <= TEST_DEFAULT_ALTERNATE, "Unexpected interface");
+			zassert_equal(iface->bInterfaceNumber, TEST_DEFAULT_INTERFACE);
+			zassert_equal(iface->bAlternateSetting, alt);
+			zassert_equal(iface->bNumEndpoints, alt == 0 ? 0 : active_count);
+			alt++;
+		} else if (desc->bDescriptorType == USB_DESC_ENDPOINT) {
+			const struct usb_ep_descriptor *ep = (const void *)desc;
+			size_t i;
+
+			zassert_equal(alt, TEST_DEFAULT_ALTERNATE + 1,
+				      "Endpoint outside the active alternate setting");
+			zassert_equal(desc->bLength, sizeof(*ep));
+			for (i = 0; i < active_count; i++) {
+				if (ep->bEndpointAddress == endpoints[i].addr) {
+					break;
+				}
+			}
+			zassert_true(i < active_count, "Unexpected endpoint 0x%02x",
+				     ep->bEndpointAddress);
+			zassert_false(seen & BIT(i), "Duplicate endpoint 0x%02x",
+				      ep->bEndpointAddress);
+			seen |= BIT(i);
+			zassert_equal(ep->bmAttributes & USB_EP_TRANSFER_TYPE_MASK,
+				      endpoints[i].type);
+			if (endpoints[i].type == USB_EP_TYPE_BULK) {
+				zassert_equal(ep->bmAttributes, USB_EP_TYPE_BULK);
+				zassert_equal(sys_le16_to_cpu(ep->wMaxPacketSize), mps);
+				zassert_equal(ep->bInterval, 0);
+			}
+		}
+		offset += desc->bLength;
+	}
+
+	zassert_equal(alt, TEST_DEFAULT_ALTERNATE + 1);
+	zassert_equal(seen, BIT_MASK(active_count), "Missing endpoints in active alternate");
+}
+
+ZTEST(device_next, test_loopback_configuration_descriptor)
+{
+	struct usb_device *udev = usbh_device_get_any(&uhs_ctx);
+	struct net_buf *buf;
+	bool high_speed;
+	int err;
+
+	zassert_not_null(udev);
+	high_speed = udev->speed == USB_SPEED_SPEED_HS;
+	buf = usbh_xfer_buf_alloc(udev, UINT8_MAX);
+	zassert_not_null(buf);
+	zassert_ok(k_mutex_lock(&udev->mutex, K_MSEC(200)));
+	err = usbh_req_desc(udev, USB_DESC_CONFIGURATION, 0, 0, UINT8_MAX, buf);
+	k_mutex_unlock(&udev->mutex);
+	zassert_ok(err);
+	check_loopback_configuration(buf, USB_DESC_CONFIGURATION, high_speed ? 512 : 64);
+
+	if (USBD_SUPPORTS_HIGH_SPEED && usbd_caps_speed(&test_usbd) == USBD_SPEED_HS) {
+		net_buf_reset(buf);
+		zassert_ok(k_mutex_lock(&udev->mutex, K_MSEC(200)));
+		err = usbh_req_desc(udev, USB_DESC_OTHER_SPEED, 0, 0, UINT8_MAX, buf);
+		k_mutex_unlock(&udev->mutex);
+		zassert_ok(err);
+		check_loopback_configuration(buf, USB_DESC_OTHER_SPEED, high_speed ? 64 : 512);
+	}
+	usbh_xfer_buf_free(udev, buf);
+}
+
 /* Set Interface request test */
 ZTEST(device_next, test_set_interface)
 {
@@ -383,6 +488,91 @@ static int test_get_interface(struct usb_device *const udev, const uint8_t iface
 	usbh_xfer_buf_free(udev, buf);
 
 	return err;
+}
+
+static int bulk_complete(struct usb_device *udev, struct uhc_transfer *xfer)
+{
+	struct k_sem *done = xfer->priv;
+
+	ARG_UNUSED(udev);
+	k_sem_give(done);
+	return 0;
+}
+
+static int bulk_transfer(struct usb_device *udev, uint8_t ep, struct net_buf *buf)
+{
+	struct uhc_transfer *xfer;
+	struct k_sem done;
+	int err;
+
+	k_sem_init(&done, 0, 1);
+	xfer = usbh_xfer_alloc(udev, ep, bulk_complete, &done);
+	if (xfer == NULL) {
+		return -ENOMEM;
+	}
+
+	err = usbh_xfer_buf_add(udev, xfer, buf);
+	if (err == 0) {
+		err = usbh_xfer_enqueue(udev, xfer);
+	}
+	if (err == 0) {
+		if (k_sem_take(&done, K_SECONDS(1)) == 0) {
+			err = xfer->err;
+		} else {
+			usbh_xfer_dequeue(udev, xfer);
+			/* The virtual host returns the transfer asynchronously after dequeue. */
+			k_sem_take(&done, K_FOREVER);
+			err = -ETIMEDOUT;
+		}
+	}
+	(void)uhc_xfer_unref(xfer);
+
+	return err;
+}
+
+ZTEST(device_next, test_loopback_bulk_only_transfer)
+{
+	static const uint8_t payload[] = {0xa5, 0x39, 0x00, 0xc7, 0x5a};
+	struct usb_device *udev;
+	struct net_buf *buf;
+	uint8_t alt = UINT8_MAX;
+	int err;
+
+	if (!IS_ENABLED(CONFIG_USBD_LOOPBACK_BULK_ONLY) || !IS_ENABLED(CONFIG_UHC_VIRTUAL)) {
+		ztest_test_skip();
+	}
+
+	udev = usbh_device_get_any(&uhs_ctx);
+	zassert_not_null(udev);
+	zassert_equal(udev->state, USB_STATE_CONFIGURED);
+	/* SET_INTERFACE alone does not populate the host's endpoint table. */
+	zassert_ok(usbh_device_interface_set(udev, TEST_DEFAULT_INTERFACE, 0, false));
+	zassert_ok(usbh_device_interface_set(udev, TEST_DEFAULT_INTERFACE,
+					    TEST_DEFAULT_ALTERNATE, false));
+	zassert_ok(k_mutex_lock(&udev->mutex, K_MSEC(200)));
+	err = test_get_interface(udev, TEST_DEFAULT_INTERFACE, &alt);
+	k_mutex_unlock(&udev->mutex);
+	zassert_ok(err);
+	zassert_equal(alt, TEST_DEFAULT_ALTERNATE);
+
+	buf = usbh_xfer_buf_alloc(udev, sizeof(payload));
+	zassert_not_null(buf);
+	net_buf_add_mem(buf, payload, sizeof(payload));
+	err = bulk_transfer(udev, TEST_BULK_OUT, buf);
+	zassert_ok(err, "Bulk OUT failed");
+	zassert_equal(buf->len, 0, "Bulk OUT was not consumed");
+
+	/* The first IN buffer was queued on alt selection, before the OUT payload. */
+	for (size_t i = 0; i < 2; i++) {
+		net_buf_reset(buf);
+		err = bulk_transfer(udev, TEST_BULK_IN, buf);
+		zassert_ok(err, "Bulk IN failed");
+		zassert_equal(buf->len, sizeof(payload), "Unexpected bulk IN length");
+	}
+	zassert_mem_equal(buf->data, payload, sizeof(payload), "Bulk loopback payload mismatch");
+	usbh_xfer_buf_free(udev, buf);
+
+	zassert_ok(usbh_device_interface_set(udev, TEST_DEFAULT_INTERFACE, 0, false));
 }
 
 static int test_get_endpoint_status(struct usb_device *const udev, const uint8_t ep,

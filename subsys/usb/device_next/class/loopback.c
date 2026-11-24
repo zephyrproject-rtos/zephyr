@@ -395,14 +395,14 @@ static int lb_request_handler(struct usbd_class_data *const c_data,
 		atomic_clear_bit(&data->state, LB_FUNCTION_IN_ENGAGED);
 	}
 
-	if (bi->ep == lb_get_int_out(c_data)) {
+	if (!IS_ENABLED(CONFIG_USBD_LOOPBACK_BULK_ONLY) && bi->ep == lb_get_int_out(c_data)) {
 		atomic_clear_bit(&data->state, LB_FUNCTION_INT_OUT_ENGAGED);
 		if (err == 0) {
 			memcpy(lb_buf, buf->data, MIN(sizeof(lb_buf), buf->len));
 		}
 	}
 
-	if (bi->ep == lb_get_int_in(c_data)) {
+	if (!IS_ENABLED(CONFIG_USBD_LOOPBACK_BULK_ONLY) && bi->ep == lb_get_int_in(c_data)) {
 		atomic_clear_bit(&data->state, LB_FUNCTION_INT_IN_ENGAGED);
 	}
 
@@ -441,11 +441,11 @@ static int lb_request_handler(struct usbd_class_data *const c_data,
 		}
 	}
 
-	if (ep == lb_get_int_out(c_data)) {
+	if (!IS_ENABLED(CONFIG_USBD_LOOPBACK_BULK_ONLY) && ep == lb_get_int_out(c_data)) {
 		lb_submit_int_out(c_data);
 	}
 
-	if (ep == lb_get_int_in(c_data)) {
+	if (!IS_ENABLED(CONFIG_USBD_LOOPBACK_BULK_ONLY) && ep == lb_get_int_in(c_data)) {
 		lb_submit_int_in(c_data);
 	}
 
@@ -484,8 +484,10 @@ static void lb_update(struct usbd_class_data *c_data,
 			lb_submit_bulk_in(c_data);
 		}
 
-		lb_submit_int_out(c_data);
-		lb_submit_int_in(c_data);
+		if (!IS_ENABLED(CONFIG_USBD_LOOPBACK_BULK_ONLY)) {
+			lb_submit_int_out(c_data);
+			lb_submit_int_in(c_data);
+		}
 	} else {
 		atomic_clear_bit(&data->state, LB_FUNCTION_ENABLED);
 	}
@@ -613,8 +615,8 @@ static struct loopback_desc lb_desc_##x = {					\
 		.bDescriptorType = USB_DESC_INTERFACE,				\
 		.bInterfaceNumber = 0,						\
 		.bAlternateSetting = 1,						\
-		.bNumEndpoints =						\
-		COND_CODE_1(CONFIG_USBD_LOOPBACK_ENABLE_ISO, (6,), (4,))	\
+		.bNumEndpoints = IS_ENABLED(CONFIG_USBD_LOOPBACK_BULK_ONLY) ? 2 : \
+			(IS_ENABLED(CONFIG_USBD_LOOPBACK_ENABLE_ISO) ? 6 : 4),	\
 		.bInterfaceClass = USB_BCC_VENDOR,				\
 		.bInterfaceSubClass = 0,					\
 		.bInterfaceProtocol = 0,					\
@@ -749,8 +751,9 @@ const static struct usb_desc_header *const lb_fs_desc_##x[] = {			\
 	(struct usb_desc_header *) &lb_desc_##x.if0_1,				\
 	(struct usb_desc_header *) &lb_desc_##x.if0_1_in_ep,			\
 	(struct usb_desc_header *) &lb_desc_##x.if0_1_out_ep,			\
-	(struct usb_desc_header *) &lb_desc_##x.if0_1_int_in_ep,		\
-	(struct usb_desc_header *) &lb_desc_##x.if0_1_int_out_ep,		\
+IF_DISABLED(CONFIG_USBD_LOOPBACK_BULK_ONLY,				\
+	((struct usb_desc_header *) &lb_desc_##x.if0_1_int_in_ep,		\
+	 (struct usb_desc_header *) &lb_desc_##x.if0_1_int_out_ep,))	\
 COND_CODE_1(CONFIG_USBD_LOOPBACK_ENABLE_ISO,					\
 	((struct usb_desc_header *) &lb_desc_##x.if0_1_iso_in_ep,		\
 	 (struct usb_desc_header *) &lb_desc_##x.if0_1_iso_out_ep,),		\
@@ -763,8 +766,9 @@ const static struct usb_desc_header *const lb_hs_desc_##x[] = {			\
 	(struct usb_desc_header *) &lb_desc_##x.if0_1,				\
 	(struct usb_desc_header *) &lb_desc_##x.if0_1_hs_in_ep,			\
 	(struct usb_desc_header *) &lb_desc_##x.if0_1_hs_out_ep,		\
-	(struct usb_desc_header *) &lb_desc_##x.if0_1_hs_int_in_ep,		\
-	(struct usb_desc_header *) &lb_desc_##x.if0_1_hs_int_out_ep,		\
+IF_DISABLED(CONFIG_USBD_LOOPBACK_BULK_ONLY,				\
+	((struct usb_desc_header *) &lb_desc_##x.if0_1_hs_int_in_ep,	\
+	 (struct usb_desc_header *) &lb_desc_##x.if0_1_hs_int_out_ep,))	\
 COND_CODE_1(CONFIG_USBD_LOOPBACK_ENABLE_ISO,					\
 	((struct usb_desc_header *) &lb_desc_##x.if0_1_hs_iso_in_ep,		\
 	 (struct usb_desc_header *) &lb_desc_##x.if0_1_hs_iso_out_ep,),		\

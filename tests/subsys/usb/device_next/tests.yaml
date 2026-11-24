@@ -18,3 +18,11 @@ tests:
       - CONF_FILE="build_all.conf"
       - EXTRA_DTC_OVERLAY_FILE="build_all.overlay"
     build_only: true
+  usb.device_next.bulk_only:
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    tags: usb
+    extra_configs:
+      - CONFIG_USBD_LOOPBACK_BULK_ONLY=y

@@ -10,6 +10,11 @@ config USBD_LOOPBACK_CLASS
 
 if USBD_LOOPBACK_CLASS
 
+config USBD_LOOPBACK_BULK_ONLY
+	bool "Expose only bulk endpoints"
+	help
+	  Omit the interrupt and isochronous endpoints from the loopback interface.
+
 config USBD_LOOPBACK_HS_INT_IN_EP_TPL
 	int "High speed interrupt IN TPL" if USBD_MAX_SPEED_HIGH
 	range 64 3072
@@ -32,6 +37,7 @@ config USBD_LOOPBACK_ENABLE_ISO
 	bool "Isochronous transfer handling"
 	default y
 	depends on UDC_ENABLE_SOF
+	depends on !USBD_LOOPBACK_BULK_ONLY
 	help
 	  Include isochronous endpoint descriptors in the interface, and enable
 	  isochronous transfer handling.
