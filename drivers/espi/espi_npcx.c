@@ -846,8 +846,8 @@ static bool espi_npcx_channel_ready(const struct device *dev,
 	return sts;
 }
 
-static int espi_npcx_send_vwire(const struct device *dev,
-			enum espi_vwire_signal signal, uint8_t level)
+static int espi_npcx_vw_send(const struct device *dev, enum espi_vwire_signal signal,
+			     uint8_t level, uint32_t timeout_us)
 {
 	uint8_t reg_idx, bitmask, sig_idx, val = 0, vw_tbl_size;
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
@@ -902,9 +902,9 @@ static int espi_npcx_send_vwire(const struct device *dev,
 		SET_FIELD(inst->VWGPSM[reg_idx], NPCX_VWEVSM_WIRE, val);
 		reg_val = inst->VWGPSM[reg_idx];
 
-		if (IS_ENABLED(CONFIG_ESPI_NPCX_VWIRE_ENABLE_SEND_CHECK)) {
+		if (timeout_us > 0U) {
 			if (!WAIT_FOR(!IS_BIT_SET(inst->VWGPSM[reg_idx], NPCX_VWEVSM_DIRTY),
-				      CONFIG_ESPI_NPCX_WIRE_SEND_TIMEOUT_US, NULL)) {
+				      timeout_us, NULL)) {
 				LOG_ERR("%s signal %d timeout", __func__, signal);
 				return -ETIMEDOUT;
 			}
@@ -913,9 +913,9 @@ static int espi_npcx_send_vwire(const struct device *dev,
 		SET_FIELD(inst->VWEVSM[reg_idx], NPCX_VWEVSM_WIRE, val);
 		reg_val = inst->VWEVSM[reg_idx];
 
-		if (IS_ENABLED(CONFIG_ESPI_NPCX_VWIRE_ENABLE_SEND_CHECK)) {
+		if (timeout_us > 0U) {
 			if (!WAIT_FOR(!IS_BIT_SET(inst->VWEVSM[reg_idx], NPCX_VWEVSM_DIRTY),
-				      CONFIG_ESPI_NPCX_WIRE_SEND_TIMEOUT_US, NULL)) {
+				      timeout_us, NULL)) {
 				LOG_ERR("%s signal %d timeout", __func__, signal);
 				return -ETIMEDOUT;
 			}
@@ -925,6 +925,24 @@ static int espi_npcx_send_vwire(const struct device *dev,
 	LOG_DBG("Send VW: %s%d 0x%08X", reg_name, reg_idx, reg_val);
 
 	return 0;
+}
+
+static int espi_npcx_send_vwire(const struct device *dev,
+			enum espi_vwire_signal signal, uint8_t level)
+{
+	uint32_t timeout_us = 0U;
+
+	if (IS_ENABLED(CONFIG_ESPI_NPCX_VWIRE_ENABLE_SEND_CHECK)) {
+		timeout_us = CONFIG_ESPI_NPCX_WIRE_SEND_TIMEOUT_US;
+	}
+
+	return espi_npcx_vw_send(dev, signal, level, timeout_us);
+}
+
+static int espi_npcx_send_vwire_timeout(const struct device *dev, enum espi_vwire_signal signal,
+					uint8_t level, k_timeout_t timeout)
+{
+	return espi_npcx_vw_send(dev, signal, level, espi_timeout_to_us(timeout));
 }
 
 static int espi_npcx_receive_vwire(const struct device *dev,
@@ -1435,6 +1453,7 @@ static DEVICE_API(espi, espi_npcx_driver_api) = {
 	.config = espi_npcx_configure,
 	.get_channel_status = espi_npcx_channel_ready,
 	.send_vwire = espi_npcx_send_vwire,
+	.send_vwire_timeout = espi_npcx_send_vwire_timeout,
 	.receive_vwire = espi_npcx_receive_vwire,
 	.manage_callback = espi_npcx_manage_callback,
 	.read_lpc_request = espi_npcx_read_lpc_request,
