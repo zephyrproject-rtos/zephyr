@@ -256,6 +256,9 @@ static int cmd_net_udp_send(const struct shell *sh, size_t argc, char *argv[])
 
 	net_context_set_iface(udp_ctx, iface);
 
+	/* The host may be a broadcast address */
+	(void)net_context_set_option(udp_ctx, NET_OPT_BROADCAST, &(int){ 1 }, sizeof(int));
+
 	ret = net_context_recv(udp_ctx, udp_rcvd, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		PR_WARNING("Setting rcv callback failed (%d)\n", ret);
