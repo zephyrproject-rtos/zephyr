@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(lorawan_native_engine, CONFIG_LORAWAN_LOG_LEVEL);
 
 K_MSGQ_DEFINE_STATIC_TYPE(engine_msgq, struct lwan_req, ENGINE_MSGQ_DEPTH);
 
-static K_THREAD_STACK_DEFINE(engine_stack,
+static K_KERNEL_STACK_DEFINE(engine_stack,
 			     CONFIG_LORAWAN_NATIVE_ENGINE_STACK_SIZE);
 static struct k_thread engine_thread;
 
@@ -90,7 +90,7 @@ static void engine_thread_fn(void *p1, void *p2, void *p3)
 void engine_init(struct lwan_ctx *ctx)
 {
 	k_thread_create(&engine_thread, engine_stack,
-			K_THREAD_STACK_SIZEOF(engine_stack),
+			K_KERNEL_STACK_SIZEOF(engine_stack),
 			engine_thread_fn, ctx, NULL, NULL,
 			CONFIG_LORAWAN_NATIVE_ENGINE_PRIORITY,
 			0, K_NO_WAIT);
