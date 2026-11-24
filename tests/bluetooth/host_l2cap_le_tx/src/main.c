@@ -26,6 +26,7 @@
 
 #include "host/conn_internal.h"
 #include "host/l2cap_internal.h"
+#include "host/smp.h"
 
 #define DT_DRV_COMPAT zephyr_bt_hci_test
 
@@ -410,6 +411,7 @@ static void *setup(void)
 	conn = bt_conn_add_le(BT_ID_DEFAULT, &addr);
 	zassert_not_null(conn);
 	conn->handle = HANDLE;
+	conn->role = BT_HCI_ROLE_PERIPHERAL;
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 	bt_l2cap_connected(conn);
 
@@ -582,6 +584,110 @@ static ZTEST(host_l2cap_le_tx, test_disconnect_two)
 	ARRAY_FOR_EACH(chans, i) {
 		zassert_equal(disconn_accept(), peer_cid + i);
 		zassert_equal(chans[i].state, BT_L2CAP_DISCONNECTED);
+	}
+
+	tx_none();
+}
+
+/* A channel that waits for a security procedure, and what its callbacks saw */
+struct sec_chan {
+	struct bt_l2cap_le_chan le;
+	bool released;
+	/* A callback came after the released callback */
+	bool used_after_release;
+};
+
+static void sec_chan_encrypt_change(struct bt_l2cap_chan *ch, uint8_t hci_status)
+{
+	struct sec_chan *sec = CONTAINER_OF(ch, struct sec_chan, le.chan);
+
+	ARG_UNUSED(hci_status);
+
+	sec->used_after_release = sec->released;
+}
+
+static void sec_chan_released(struct bt_l2cap_chan *ch)
+{
+	struct sec_chan *sec = CONTAINER_OF(ch, struct sec_chan, le.chan);
+
+	sec->released = true;
+}
+
+static const struct bt_l2cap_chan_ops sec_chan_ops = {
+	.recv = chan_recv,
+	.encrypt_change = sec_chan_encrypt_change,
+	.released = sec_chan_released,
+};
+
+/* The next PDU must be a Security Request, which the peer answers with Pairing Failed */
+static void pairing_refuse(void)
+{
+	struct net_buf *buf;
+
+	buf = tx(BT_L2CAP_CID_SMP);
+	zassert_equal(net_buf_pull_u8(buf), BT_SMP_CMD_SECURITY_REQUEST);
+	net_buf_drop(&buf);
+
+	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+	(void)net_buf_add(buf, sizeof(struct bt_hci_acl_hdr) + sizeof(struct bt_l2cap_hdr));
+	(void)net_buf_add_u8(buf, BT_SMP_CMD_PAIRING_FAIL);
+	(void)net_buf_add_u8(buf, BT_SMP_ERR_PAIRING_NOTSUPP);
+	recv_pdu(buf, BT_L2CAP_CID_SMP);
+}
+
+/* A channel that needs a higher security level is released when the pairing
+ * fails, and gets no callback after that
+ */
+static ZTEST(host_l2cap_le_tx, test_security_fail)
+{
+	static struct sec_chan sec;
+
+	sec.le.chan.ops = &sec_chan_ops;
+	sec.le.rx.mtu = LE_MIN_MTU;
+	sec.le.required_sec_level = BT_SECURITY_L2;
+	zassert_ok(bt_l2cap_chan_connect(conn, &sec.le.chan, PSM));
+
+	pairing_refuse();
+
+	zassert_true(sec.released);
+	zassert_false(sec.used_after_release);
+
+	tx_none();
+}
+
+/* Every channel of an enhanced credit based connection request, which the peer
+ * refused for insufficient authentication, is released when the pairing fails
+ */
+static ZTEST(host_l2cap_le_tx, test_security_fail_ecred)
+{
+	static struct sec_chan secs[2];
+	struct bt_l2cap_chan *chans[ARRAY_SIZE(secs) + 1] = {NULL};
+	struct net_buf *buf;
+	uint8_t ident;
+
+	ARRAY_FOR_EACH(secs, i) {
+		secs[i].le.chan.ops = &sec_chan_ops;
+		chans[i] = &secs[i].le.chan;
+	}
+
+	zassert_ok(bt_l2cap_ecred_chan_connect(conn, chans, PSM));
+	ident = tx_sig(BT_L2CAP_ECRED_CONN_REQ);
+
+	buf = sig_cmd(BT_L2CAP_ECRED_CONN_RSP, ident);
+	net_buf_add_le16(buf, BT_L2CAP_ECRED_MIN_MTU);
+	net_buf_add_le16(buf, BT_L2CAP_ECRED_MIN_MPS);
+	net_buf_add_le16(buf, 0U);
+	net_buf_add_le16(buf, BT_L2CAP_LE_ERR_AUTHENTICATION);
+	ARRAY_FOR_EACH(secs, i) {
+		net_buf_add_le16(buf, 0U);
+	}
+	recv_sig(buf);
+
+	pairing_refuse();
+
+	ARRAY_FOR_EACH(secs, i) {
+		zassert_true(secs[i].released, "Channel %zu", i);
+		zassert_false(secs[i].used_after_release, "Channel %zu", i);
 	}
 
 	tx_none();
