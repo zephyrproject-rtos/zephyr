@@ -7,4 +7,7 @@ if SOC_APOLLO510
 config NUM_IRQS
 	default 134
 
+config HAS_CPU_FREQ
+	def_bool y
+
 endif # SOC_APOLLO510

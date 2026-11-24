@@ -11,6 +11,12 @@
 
 bool buf_in_nocache(uintptr_t buf, size_t len_bytes);
 
+/*
+ * Switch the MCU performance mode. @p mode is one of the AMBIQ_POWER_MODE_*
+ * values from dt-bindings/power/ambiq_power.h.
+ */
+int apollo5x_set_performance_mode(uint32_t mode);
+
 /* Return true if the buffer intersects the DTCM address range. */
 static inline bool ambiq_buf_in_dtcm(uintptr_t buf, size_t len_bytes)
 {

@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_POWER_AMBIQ_POWER_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_POWER_AMBIQ_POWER_H_
+
+/* Values for ambiq,perf-mode property */
+#define AMBIQ_POWER_MODE_LOW_POWER           0
+#define AMBIQ_POWER_MODE_HIGH_PERFORMANCE    1
+#define AMBIQ_POWER_MODE_HIGH_PERFORMANCE_1  1
+#define AMBIQ_POWER_MODE_HIGH_PERFORMANCE_2  2
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_POWER_AMBIQ_POWER_H_ */
