@@ -2328,8 +2328,8 @@ ZTEST(server_h3_tests, test_http1_alt_svc_is_service_scoped)
 	expect_http1_alt_svc_response(ALT_SVC_DISABLED_PORT, false, 0U, 0U);
 }
 
-/* Send a frame that is not allowed on a request stream and check that the
- * server answers with a connection error and keeps running.
+/* Send a frame that is a connection error on a request stream and check that
+ * the server closes the connection and keeps running.
  */
 static void expect_request_stream_frame_closes_connection(const uint8_t *frame,
 							  size_t frame_len)
@@ -2411,6 +2411,36 @@ ZTEST(server_h3_tests, test_h3_max_push_id_on_request_stream_is_connection_error
 ZTEST(server_h3_tests, test_h3_push_promise_on_request_stream_is_connection_error)
 {
 	static const uint8_t frame[] = { H3_FRAME_PUSH_PROMISE, 0x01, 0x00 };
+
+	expect_request_stream_frame_closes_connection(frame, sizeof(frame));
+}
+
+/* The server offers no dynamic table, so a field section must not refer to it
+ * (RFC 9204 Sections 2.2.3 and 4.5.1.1).
+ */
+ZTEST(server_h3_tests, test_h3_dynamic_table_reference_is_connection_error)
+{
+	static const uint8_t frame[] = {
+		H3_FRAME_HEADERS, 0x05,
+		0x00,                            /* Required Insert Count = 0 */
+		0x00,                            /* Delta Base = 0 */
+		0xc0U | QPACK_STATIC_METHOD_GET,
+		0xc0U | QPACK_STATIC_PATH_SLASH,
+		0x80,                            /* indexed, dynamic table, index 0 */
+	};
+
+	expect_request_stream_frame_closes_connection(frame, sizeof(frame));
+}
+
+ZTEST(server_h3_tests, test_h3_required_insert_count_is_connection_error)
+{
+	static const uint8_t frame[] = {
+		H3_FRAME_HEADERS, 0x04,
+		0x01,                            /* Required Insert Count = 1 */
+		0x00,                            /* Delta Base = 0 */
+		0xc0U | QPACK_STATIC_METHOD_GET,
+		0xc0U | QPACK_STATIC_PATH_SLASH,
+	};
 
 	expect_request_stream_frame_closes_connection(frame, sizeof(frame));
 }
