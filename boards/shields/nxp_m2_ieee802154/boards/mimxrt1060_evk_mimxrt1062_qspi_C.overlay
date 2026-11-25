@@ -13,6 +13,7 @@
 &m2_bt_module {
 	/delete-property/ sdio-reset-gpios;
 	/delete-property/ w-disable-gpios;
+	spi-enable-gpios = <&m2_gpio_expander 0 GPIO_ACTIVE_HIGH>;
 };
 
 &pinctrl {
@@ -44,6 +45,23 @@
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
 		};
+	};
+};
+
+/*
+ * PCAL6408A I/O expander on the M.2 module. Bit 0 (SPI_ENABLE) routes the
+ * IEEE 802.15.4 SPI lines of the IW61x to the M.2 connector. It is driven
+ * by the NXP HCI driver through spi-enable-gpios once the firmware runs.
+ */
+&lpi2c1 {
+	status = "okay";
+
+	m2_gpio_expander: pcal6408a@20 {
+		compatible = "nxp,pcal6408a";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
 	};
 };
 
