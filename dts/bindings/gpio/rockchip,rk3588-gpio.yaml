@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+title: Rockchip RK3588 GPIO controller
+
+description: |
+  Rockchip RK3588 GPIO bank controller (GPIO v2 register layout).
+
+  Each bank provides up to 32 pins with upper-16-bit write-enable masks
+  for data, direction, and interrupt control registers.
+
+compatible: "rockchip,rk3588-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    description: Shared bank interrupt line routed to the GIC.
+
+  clocks:
+    description: Peripheral bus clock and debounce clock for the GPIO bank.
+
+  clock-names:
+    description: Clock names corresponding to the clocks property ("bus", "dbclk").
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

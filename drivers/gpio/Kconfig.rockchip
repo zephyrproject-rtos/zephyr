@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_ROCKCHIP
+	bool "Rockchip RK3588 GPIO driver"
+	default y
+	depends on DT_HAS_ROCKCHIP_RK3588_GPIO_ENABLED
+	help
+	  Enable the Rockchip RK3588 GPIO controller driver.
