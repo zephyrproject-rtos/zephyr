@@ -4280,7 +4280,7 @@ Microchip PIC32 Platforms:
   collaborators:
     - fabin-mchp
     - Farsin-Nasar-Microchip
-    - mchp-asif
+    - muhammed-azf
     - sunil-abraham
     - AzharMCHP
     - nandojve
@@ -4331,7 +4331,7 @@ Microchip SAM MCU Platforms:
     - ArunMCHP
     - fabin-mchp
     - Farsin-Nasar-Microchip
-    - mchp-asif
+    - muhammed-azf
     - sunil-abraham
     - stephanosio
   files:
