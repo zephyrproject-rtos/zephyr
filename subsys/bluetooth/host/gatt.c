@@ -1110,6 +1110,14 @@ static void bt_gatt_identity_resolved(struct bt_conn *conn, const bt_addr_le_t *
 
 static void bt_gatt_pairing_complete(struct bt_conn *conn, bool bonded)
 {
+	/* SSP reports BR/EDR pairings too. GATT has no state for a BR/EDR
+	 * peer, and the address below is in the LE part of the connection
+	 * object.
+	 */
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
 	if (bonded) {
 		/* Store the ccc and cf data */
 		gatt_store_ccc(conn->id, gatt_conn_dst(conn));
