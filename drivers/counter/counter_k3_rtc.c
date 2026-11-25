@@ -503,21 +503,47 @@ static void k3_rtc_isr(const struct device *dev)
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
 	struct k3_rtc_counter_data *data = DEV_DATA(dev);
 	uint32_t status;
-	int ret;
 #ifdef CONFIG_COUNTER_64BITS_TICKS
 	uint64_t now;
 #else
 	uint32_t now;
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
 
-	status = rtc_regs->IRQSTATUS_SYS;
+	status = rtc_regs->IRQSTATUS_SYS & RTC_IRQ_STATUS_MASK;
 	if (status == 0) {
 		return;
 	}
 
 	rtc_regs->IRQSTATUS_SYS = status;
 
-	if ((status & RTC_IRQ_ALARM1_MASK) != 0 && data->alarm_cfg[0].callback != NULL) {
+	for (uint8_t chan_id = 0; chan_id < 2; chan_id++) {
+		uint32_t mask = k3_rtc_alarm_mask(chan_id);
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+		counter_alarm_callback_64_t cb;
+#else
+		counter_alarm_callback_t cb;
+#endif
+		void *user_data;
+		int key;
+		int ret;
+
+		if ((status & mask) == 0) {
+			continue;
+		}
+
+		key = irq_lock();
+		cb = data->alarm_cfg[chan_id].callback;
+		user_data = data->alarm_cfg[chan_id].user_data;
+		data->alarm_cfg[chan_id].callback = NULL;
+		data->alarm_cfg[chan_id].user_data = NULL;
+		data->alarm_cfg[chan_id].flags = 0;
+		rtc_regs->IRQENABLE_CLR_SYS = mask;
+		irq_unlock(key);
+
+		if (cb == NULL) {
+			continue;
+		}
+
 #ifdef CONFIG_COUNTER_64BITS_TICKS
 		ret = k3_counter_get_value_64(dev, &now);
 #else
@@ -525,18 +551,10 @@ static void k3_rtc_isr(const struct device *dev)
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
 		if (ret != 0) {
 			LOG_ERR("Invalid ticks: %d", ret);
-			return;
+			continue;
 		}
-		data->alarm_cfg[0].callback(dev, 0, now, data->alarm_cfg[0].user_data);
-	}
 
-	if ((status & RTC_IRQ_ALARM2_MASK) != 0 && data->alarm_cfg[1].callback != NULL) {
-#ifdef CONFIG_COUNTER_64BITS_TICKS
-		k3_counter_get_value_64(dev, &now);
-#else
-		k3_counter_get_value(dev, &now);
-#endif /* CONFIG_COUNTER_64BITS_TICKS */
-		data->alarm_cfg[1].callback(dev, 1, now, data->alarm_cfg[1].user_data);
+		cb(dev, chan_id, now, user_data);
 	}
 }
 
