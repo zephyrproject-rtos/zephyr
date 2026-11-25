@@ -136,6 +136,10 @@ Libraries / Subsystems
     :rfc:`8489` with the attributes of ICE (:rfc:`8445`): parsing, building,
     MESSAGE-INTEGRITY, FINGERPRINT and the address attributes. A device finds out
     its public address with the Binding transaction or the blocking socket client.
+  * Added the :ref:`ICE-lite <ice_lite_interface>` agent (:rfc:`8445`), built on
+    the STUN library: a device the peer can reach directly answers the
+    connectivity checks of a full ICE agent and learns which address the peer
+    nominates for the data.
 
   * OCPP: the charge point can authenticate to the central system with HTTP Basic
     authentication (:kconfig:option:`CONFIG_OCPP_BASIC_AUTH`), with the credentials set in the

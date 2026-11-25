@@ -31,6 +31,7 @@ add_subdirectory_ifdef(CONFIG_SSH                    ssh)
 add_subdirectory_ifdef(CONFIG_WIREGUARD              wireguard)
 add_subdirectory_ifdef(CONFIG_QUIC                   quic)
 add_subdirectory_ifdef(CONFIG_STUN                   stun)
+add_subdirectory_ifdef(CONFIG_ICE_LITE               ice)
 
 if(CONFIG_NET_DHCPV4 OR CONFIG_NET_DHCPV4_SERVER)
   add_subdirectory(dhcpv4)
