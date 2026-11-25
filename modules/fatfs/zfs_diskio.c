@@ -28,10 +28,13 @@ DSTATUS disk_status(BYTE pdrv)
 {
 	__ASSERT(pdrv < ARRAY_SIZE(PDRV_STR_ARRAY), "pdrv out-of-range\n");
 
-	if (disk_access_status(PDRV_STR_ARRAY[pdrv]) != 0) {
-		return STA_NOINIT;
-	} else {
+	switch (disk_access_status(PDRV_STR_ARRAY[pdrv])) {
+	case DISK_STATUS_OK:
 		return RES_OK;
+	case DISK_STATUS_WR_PROTECT:
+		return STA_PROTECT;
+	default:
+		return STA_NOINIT;
 	}
 }
 
