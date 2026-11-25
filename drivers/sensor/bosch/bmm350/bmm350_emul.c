@@ -61,6 +61,20 @@ void bmm350_emul_set_temp_raw(const struct emul *target, int32_t temp)
 	bmm350_emul_set_reg24(data, BMM350_REG_TEMP_XLSB, temp);
 }
 
+void bmm350_emul_set_drdy_int_status(const struct emul *target, bool ready)
+{
+	struct bmm350_emul_data *data = target->data;
+
+	WRITE_BIT(data->reg[BMM350_REG_INT_STATUS], BMM350_INT_STATUS_DRDY_DATA_REG_POS, ready);
+}
+
+bool bmm350_emul_get_drdy_int_status(const struct emul *target)
+{
+	struct bmm350_emul_data *data = target->data;
+
+	return (data->reg[BMM350_REG_INT_STATUS] & BMM350_INT_STATUS_DRDY_DATA_REG_MSK) != 0;
+}
+
 static void bmm350_emul_handle_write(const struct emul *target, uint8_t reg, uint8_t val)
 {
 	struct bmm350_emul_data *data = target->data;
@@ -168,6 +182,10 @@ static int bmm350_emul_transfer_i2c(const struct emul *target, struct i2c_msg *m
 		uint8_t a = reg + (i - BMM350_EMUL_READ_DUMMY_BYTES);
 
 		rd->buf[i] = (a < BMM350_EMUL_NUM_REGS) ? data->reg[a] : 0;
+
+		if (a == BMM350_REG_INT_STATUS) {
+			data->reg[BMM350_REG_INT_STATUS] = 0;
+		}
 	}
 
 	return 0;

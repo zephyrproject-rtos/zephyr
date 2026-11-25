@@ -8,6 +8,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/bmm350.h>
 #include <zephyr/ztest.h>
+#include <zephyr/drivers/gpio/gpio_emul.h>
 
 #include "bmm350.h"
 #include "bmm350_emul.h"
@@ -36,6 +37,7 @@ static void bmm350_before(void *f)
 	/* Start each test from a clean register file. */
 	bmm350_emul_set_mag_raw(fixture->target, 0, 0, 0);
 	bmm350_emul_set_temp_raw(fixture->target, 0);
+	bmm350_emul_set_drdy_int_status(fixture->target, false);
 }
 
 ZTEST_SUITE(bmm350, NULL, bmm350_setup, bmm350_before, NULL, NULL);
@@ -126,4 +128,37 @@ ZTEST_F(bmm350, test_self_test)
 	zassert_ok(bmm350_self_test(fixture->dev, &result));
 	zassert_true(result.x_delta >= 260, "x_delta=%d too small", result.x_delta);
 	zassert_true(result.y_delta >= 260, "y_delta=%d too small", result.y_delta);
+}
+
+static K_SEM_DEFINE(drdy_sem, 0, 1);
+
+static void test_drdy_handler(const struct device *dev, const struct sensor_trigger *trig)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(trig);
+
+	k_sem_give(&drdy_sem);
+}
+
+ZTEST_F(bmm350, test_drdy_trigger_clears_int_status)
+{
+	const struct gpio_dt_spec drdy = GPIO_DT_SPEC_GET(DT_NODELABEL(bmm350), drdy_gpios);
+	static const struct sensor_trigger trig = {
+		.type = SENSOR_TRIG_DATA_READY,
+		.chan = SENSOR_CHAN_ALL,
+	};
+
+	k_sem_reset(&drdy_sem);
+	zassert_ok(sensor_trigger_set(fixture->dev, &trig, test_drdy_handler));
+
+	bmm350_emul_set_drdy_int_status(fixture->target, true);
+	zassert_ok(gpio_emul_input_set(drdy.port, drdy.pin, 0));
+	zassert_ok(gpio_emul_input_set(drdy.port, drdy.pin, 1));
+
+	zassert_ok(k_sem_take(&drdy_sem, K_MSEC(100)), "DRDY handler did not run");
+	zassert_false(bmm350_emul_get_drdy_int_status(fixture->target),
+		      "INT_STATUS.drdy_data_reg was not cleared on read");
+
+	zassert_ok(gpio_emul_input_set(drdy.port, drdy.pin, 0));
+	zassert_ok(sensor_trigger_set(fixture->dev, &trig, NULL));
 }

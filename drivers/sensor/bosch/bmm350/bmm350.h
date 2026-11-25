@@ -232,6 +232,8 @@ enum bmm350_signed_bit {
 #define BMM350_INT_CTRL_INT_OUTPUT_EN_POS    UINT8_C(0x03)
 #define BMM350_INT_CTRL_DRDY_DATA_REG_EN_MSK UINT8_C(0x80)
 #define BMM350_INT_CTRL_DRDY_DATA_REG_EN_POS UINT8_C(0x07)
+#define BMM350_INT_STATUS_DRDY_DATA_REG_MSK  UINT8_C(0x04)
+#define BMM350_INT_STATUS_DRDY_DATA_REG_POS  UINT8_C(0x02)
 
 /**************************** Self-test macros **********************/
 #define BMM350_SELF_TEST_DISABLE UINT8_C(0x00)

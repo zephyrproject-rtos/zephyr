@@ -19,11 +19,11 @@ static int bmm350_handle_interrupts(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct bmm350_data *data = dev->data;
-	uint8_t intr_status;
+	uint8_t intr_status[3];
 	int ret;
 
-	/* Read interrupt status to clear interrupt */
-	ret = bmm350_reg_read(dev, BMM350_REG_INT_STATUS, &intr_status, sizeof(intr_status));
+	/* Read interrupt status to clear interrupt (2 leading dummy bytes + status byte) */
+	ret = bmm350_reg_read(dev, BMM350_REG_INT_STATUS, intr_status, sizeof(intr_status));
 	if (ret < 0) {
 		LOG_ERR("%s: failed to read interrupt status", dev->name);
 		return ret;
