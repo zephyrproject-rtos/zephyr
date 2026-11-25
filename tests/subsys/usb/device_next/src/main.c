@@ -545,8 +545,11 @@ static void *usb_test_enable(void)
 
 	LOG_INF("Device support enabled");
 
-	/* Allow the host time to reset the device. */
-	k_msleep(200);
+	/*
+	 * Allow the host time to see the device on the root hub, which it polls,
+	 * and to reset it.
+	 */
+	k_msleep(CONFIG_USBH_HUB_ROOT_POLL_INTERVAL_MS + 200);
 
 	return NULL;
 }
