@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# A driver would select this, the test drivers cannot as they are not in
+# Kconfig, and a promptless symbol cannot be set in prj.conf.
+configdefault NET_CHECKSUM_OFFLOAD_SUPPORTED
+	default y
+
+source "Kconfig.zephyr"
