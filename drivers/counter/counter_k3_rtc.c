@@ -342,6 +342,7 @@ static int k3_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
 	struct k3_rtc_counter_data *data = DEV_DATA(dev);
+	uint32_t mask;
 	int ret, key;
 
 	if (chan_id > 1) {
@@ -349,26 +350,21 @@ static int k3_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
 		return -EINVAL;
 	}
 
-	key = irq_lock();
-	if (chan_id == 0) {
-		rtc_regs->IRQENABLE_CLR_SYS = RTC_IRQ_ALARM1_MASK;
-		rtc_regs->IRQSTATUS_SYS = RTC_IRQ_ALARM1_MASK;
-	} else {
-		rtc_regs->IRQENABLE_CLR_SYS = RTC_IRQ_ALARM2_MASK;
-		rtc_regs->IRQSTATUS_SYS = RTC_IRQ_ALARM2_MASK;
-	}
-	ret = k3_rtc_fence(dev);
-	if (ret != 0) {
-		LOG_ERR("Failed to sync after alarm cancel: %d", ret);
-		irq_unlock(key);
-		return ret;
-	}
+	mask = k3_rtc_alarm_mask(chan_id);
 
+	key = irq_lock();
 	data->alarm_cfg[chan_id].callback = NULL;
 	data->alarm_cfg[chan_id].user_data = NULL;
 	data->alarm_cfg[chan_id].flags = 0;
-
+	rtc_regs->IRQENABLE_CLR_SYS = mask;
+	rtc_regs->IRQSTATUS_SYS = mask;
 	irq_unlock(key);
+
+	ret = k3_rtc_fence(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to sync after alarm cancel: %d", ret);
+		return ret;
+	}
 
 	return 0;
 }
