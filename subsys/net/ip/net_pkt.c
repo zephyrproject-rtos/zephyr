@@ -2295,6 +2295,13 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	clone_pkt_cb(pkt, clone_pkt);
 }
 
+#if defined(CONFIG_NET_GSO)
+void net_pkt_copy_attributes(struct net_pkt *pkt, struct net_pkt *dst)
+{
+	clone_pkt_attributes(pkt, dst);
+}
+#endif /* CONFIG_NET_GSO */
+
 /* Clone pkt on slab for iface. With l2_reserve the buffer is allocated as
  * for a new packet on iface, so the L2 of a TX packet can reserve its header
  * space. Without it the buffer is a plain copy.
