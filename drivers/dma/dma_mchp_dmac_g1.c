@@ -766,9 +766,6 @@ static int dma_mchp_init(const struct device *dev)
 	dmac_desc_init(dev);
 	desc_pool_init(dev_data);
 
-	DMAC_REG->DMAC_PRICTRL0 = DMAC_PRICTRL0_LVLPRI0(0) | DMAC_PRICTRL0_LVLPRI1(1) |
-				  DMAC_PRICTRL0_LVLPRI2(2) | DMAC_PRICTRL0_LVLPRI3(3);
-
 	DMAC_REG->DMAC_CTRL = DMAC_CTRL_DMAENABLE(1) | DMAC_CTRL_LVLEN(0x0F);
 
 	dev_cfg->irq_config();
