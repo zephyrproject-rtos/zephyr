@@ -8,8 +8,10 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
+#include <zephyr/init.h>
 #include <zephyr/posix/fcntl.h>
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/zvfs/eventfd.h>
 #include <zephyr/ztest_assert.h>
 
 #include <zephyr/net/socket_service.h>
@@ -1191,4 +1193,106 @@ ZTEST(net_socket_service, test_register_single_fd_reuses_freed_slot)
 
 	ret = close(c_sock);
 	zassert_equal(ret, 0, "close failed");
+}
+
+/* A registration made before the socket service thread has run, from a
+ * thread that outranks it, must signal the eventfd of the service thread and
+ * no other descriptor. Descriptor 0, the value of a zeroed descriptor field,
+ * is watched here.
+ */
+struct early_register_result {
+	int fd;
+	bool waited_for_start;
+	int register_ret;
+	int read_ret;
+	int read_errno;
+	int unregister_ret;
+};
+
+static struct early_register_result early_result;
+
+static void early_register_handler(struct net_socket_service_event *pev)
+{
+	ARG_UNUSED(pev);
+}
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(early_register_service, early_register_handler, 1);
+
+static int lowest_free_fd(void)
+{
+	int fd = zvfs_reserve_fd();
+
+	if (fd >= 0) {
+		zvfs_free_fd(fd);
+	}
+
+	return fd;
+}
+
+/* Runs in the init thread after the network stack has created the socket
+ * service thread, which is of lower priority and normally has not been
+ * scheduled yet. The test is skipped when it has.
+ */
+static int early_register_init(void)
+{
+	struct early_register_result *res = &early_result;
+	struct zsock_pollfd pfd = { .events = ZSOCK_POLLIN };
+	zvfs_eventfd_t value;
+	int next_fd;
+
+	if (IS_ENABLED(CONFIG_POSIX_DEVICE_IO)) {
+		/* Descriptor 0 is the standard input, free it for the eventfd. */
+		(void)zvfs_close(0);
+	}
+
+	/* Left open, descriptor 0 stays taken for the rest of the tests. */
+	res->fd = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
+	if (res->fd != 0) {
+		if (res->fd > 0) {
+			(void)zvfs_close(res->fd);
+		}
+
+		return 0;
+	}
+
+	pfd.fd = res->fd;
+	next_fd = lowest_free_fd();
+	res->register_ret = net_socket_service_register(&early_register_service, &pfd, 1, NULL);
+
+	/* The socket service thread takes the lowest free descriptor for its
+	 * eventfd when it starts.
+	 */
+	res->waited_for_start = lowest_free_fd() != next_fd;
+
+	res->read_ret = zvfs_eventfd_read(res->fd, &value);
+	res->read_errno = errno;
+
+	res->unregister_ret = net_socket_service_unregister(&early_register_service);
+
+	return 0;
+}
+
+SYS_INIT(early_register_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+
+ZTEST(net_socket_service, test_register_before_thread_start)
+{
+	struct early_register_result *res = &early_result;
+
+	zassert_true(res->fd >= 0, "Cannot create eventfd");
+
+	if (res->fd != 0) {
+		TC_PRINT("Descriptor 0 was taken, eventfd got %d\n", res->fd);
+		ztest_test_skip();
+	}
+
+	zassert_ok(res->register_ret, "Cannot register service (%d)", res->register_ret);
+
+	if (!res->waited_for_start) {
+		TC_PRINT("Socket service thread was already running\n");
+		ztest_test_skip();
+	}
+
+	zassert_equal(res->read_ret, -1, "Registration signalled descriptor 0");
+	zassert_equal(res->read_errno, EAGAIN, "Unexpected read error (%d)", res->read_errno);
+	zassert_ok(res->unregister_ret, "Cannot unregister service (%d)", res->unregister_ret);
 }

@@ -355,11 +355,12 @@ static void socket_service_thread(void *p1, void *p2, void *p3)
 		goto out;
 	}
 
-	thread_status = SOCKET_SERVICE_THREAD_RUNNING;
-	k_condvar_broadcast(&wait_start);
-
 	svc_ctx.events[0].fd = fd;
 	svc_ctx.events[0].events = ZSOCK_POLLIN;
+
+	/* A woken up registrant may run at once and write to the eventfd. */
+	thread_status = SOCKET_SERVICE_THREAD_RUNNING;
+	k_condvar_broadcast(&wait_start);
 
 restart:
 	i = 1;
