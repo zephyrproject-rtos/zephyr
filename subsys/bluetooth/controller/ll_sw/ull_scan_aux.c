@@ -2663,7 +2663,7 @@ static void scan_aux_stop_all_chains_for_parent(void *parent)
 
 				/* Call lll_disable */
 				disabling = true;
-				mfy.param = &curr->lll;
+				mfy.param = &chain->lll;
 				ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0,
 				     &mfy);
 				LL_ASSERT_ERR(!ret);
