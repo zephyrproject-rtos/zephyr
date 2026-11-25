@@ -72,6 +72,7 @@ typedef int32_t clock_freq_t;
 struct clk_subsys_data {
 	clock_freq_t rate; /**< Current clock rate in Hz */
 	uint8_t usage_cnt; /**< Number of users of this clock */
+	bool locked; /**< Indicates if the clock is locked */
 };
 
 /**

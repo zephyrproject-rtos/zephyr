@@ -791,9 +791,9 @@ def write_clocks(node: edtlib.Node) -> None:
             )
             out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_{request_idx}_FOREACH(fn)", fn_string)
             out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_{request_idx}_LEN", len(clock_requests))
-    if "clock-output" in node.compats:
-        # Generate a macro with the clock-output states presorted by their
-        # rank. Remove clock-output states are not referenced by any
+    if "clock-domain" in node.compats:
+        # Generate a macro with the clock-domain states presorted by their
+        # rank. Remove clock-domain states that are not referenced by any
         # clock-request-n property. This saves the clock framework
         # from runtime sorting of these states by rank.
         sorted_outputs = ranked_states(node)

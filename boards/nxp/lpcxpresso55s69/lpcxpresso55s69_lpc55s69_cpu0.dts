@@ -79,6 +79,39 @@
 			status = "okay";
 		};
 	};
+
+	clock_domains: clock-domains {
+		sys_clk_domain: sys-clk-domain {
+			compatible = "clock-domain";
+			/* 144 MHz setpoint for CPU core clock */
+			sys_clk_144mhz: sys_clk_144mhz {
+				compatible = "clock-state";
+				clocks = <&ahbclkdiv 1 &fro_12m 1 &mainclkselb 0 &mainclksela 0
+					  &xtal32m 1 &clk_in_en 1 &pll1clksel 1
+					  &pll1_pdec 2 &pll1 8 144 0 55 31
+					  &pll1_directo 0 &pll1_bypass 0
+					  &mainclkselb 2>;
+			};
+		};
+
+		fc0_domain: fc0-domain {
+			compatible = "clock-domain";
+			/* 96 MHz setpoint for Flexcomm0 clock using FROHF */
+			fxcom0_96mhz: fxcom0_96mhz {
+				compatible = "clock-state";
+				clocks = <&fcclksel0 3 &frohfdiv 1>;
+			};
+		};
+
+		fc2_domain: fc2-domain {
+			compatible = "clock-domain";
+			/* 96 MHz setpoint for Flexcomm0 clock using FROHF */
+			fxcom2_96mhz: fxcom0_96mhz {
+				compatible = "clock-state";
+				clocks = <&fcclksel2 3 &frohfdiv 1>;
+			};
+		};
+	};
 };
 
 /*
@@ -122,34 +155,6 @@
 &cpu0 {
 	clock-request-0 = <&sys_clk_144mhz>;
 	clock-request-names = "default";
-};
-
-&fxcom0_clock {
-	/* 96 MHz setpoint for Flexcomm0 clock using FROHF */
-	fxcom0_96mhz: fxcom0_96mhz {
-		compatible = "clock-state";
-		clocks = <&fcclksel0 3 &frohfdiv 1>;
-	};
-};
-
-&system_clock {
-	/* 144 MHz setpoint for CPU core clock */
-	sys_clk_144mhz: sys_clk_144mhz {
-		compatible = "clock-state";
-		clocks = <&ahbclkdiv 1 &fro_12m 1 &mainclkselb 0 &mainclksela 0
-			  &xtal32m 1 &clk_in_en 1 &pll1clksel 1
-			  &pll1_pdec 2 &pll1 8 144 0 55 31
-			  &pll1_directo 0 &pll1_bypass 0
-			  &mainclkselb 2>;
-	};
-};
-
-&fxcom2_clock {
-	/* 96 MHz setpoint for Flexcomm2 clock using FROHF */
-	fxcom2_96mhz: fxcom2_96mhz {
-		compatible = "clock-state";
-		clocks = <&fcclksel2 3 &frohfdiv 1 &fro_hf 1>;
-	};
 };
 
 &flexcomm2 {

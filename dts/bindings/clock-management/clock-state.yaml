@@ -4,17 +4,17 @@
 compatible: "clock-state"
 
 description: |
-  Statically defined clock configurations for this clock output. Each
-  configuration should define a frequency and settings for parent nodes of
-  this clock to produce that frequency.
+  Statically defined clock configuration within a clock domain. Each
+  configuration should define settings for the clock nodes in the clock tree
+  that this clock domain configures. Clock states must be defined as children
+  of a clock-domain node.
 
 properties:
   clocks:
     type: phandle-array
     required: true
     description: |
-      Settings for parent nodes of this clock output to apply when this state
-      is selected.
+      Settings for clock nodes to apply when this state is selected.
   rank:
     type: int
     default: 0

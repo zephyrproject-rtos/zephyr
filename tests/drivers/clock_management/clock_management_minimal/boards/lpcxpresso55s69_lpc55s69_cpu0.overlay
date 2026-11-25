@@ -7,13 +7,76 @@
 
 #include <freq.h>
 
-/* Clock CPU from FROHF, since we will use the PLLs within our testcases */
-&system_clock {
-	/delete-node/ sys_clk_144mhz;
+&clock_domains {
+	sys_clk_domain: sys-clk-domain {
+		/delete-node/ sys_clk_144mhz;
+		compatible = "clock-domain";
+		/* Clock CPU from FROHF, since we will use the PLLs within our testcases */
+		sys_clk_96mhz: sys-clk-96mhz {
+			compatible = "clock-state";
+			clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;
+		};
+	};
 
-	sys_clk_96mhz: sys-clk-96mhz {
-		compatible = "clock-state";
-		clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;
+	/* Define clock states for clockout clock */
+	clkout_domain: clkout-domain {
+		compatible = "clock-domain";
+		clkout_16mhz: clkout-16mhz {
+			compatible = "clock-state";
+			/* Expect a clock frequency of 16 MHz */
+			clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
+				  &pll0_pdec 4 &pll0_directo 0
+				  &pll0 8 256 0 31 31 0 0 0
+				  &pll1_bypass 0 &clkoutsel 1
+				  &clkoutdiv 8>;
+		};
+
+		clkout_1mhz: clkout-1mhz {
+			compatible = "clock-state";
+			/* Expect a clock frequency of 1MHz */
+			clocks = <&fro_1m 1 &clkoutsel 4 &clkoutdiv 1>;
+		};
+
+		clkout_500mhz: clkout-500mhz {
+			compatible = "clock-state";
+			/* Expect a clock frequency of 500 KHz */
+			clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
+				  &pll0_pdec 4 &pll0_directo 0
+				  &pll0 8 256 0 31 31 0 0 0
+				  &pll1_bypass 0 &clkoutsel 1
+				  &clkoutdiv 256>;
+		};
+	};
+
+	/* Define clock states for SDIO clock */
+	sdioclk_domain: sdioclk-domain {
+		compatible = "clock-domain";
+		sdioclk_48mhz: sdioclk-48mhz {
+			compatible = "clock-state";
+			/* Expect a clock frequency of 48 MHz */
+			clocks = <&fro_12m 1 &pll1clksel 0
+				  &pll1_pdec 4 &pll1_directo 0
+				  &pll1 4 128 0 62 31
+				  &pll1_bypass 0 &sdioclksel 5
+				  &sdioclkdiv 2>;
+		};
+
+		sdioclk_24mhz: sdioclk-24mhz {
+			compatible = "clock-state";
+			/* Expect a clock frequency of 24 MHz */
+			clocks = <&fro_12m 1 &pll1clksel 0
+				  &pll1_pdec 4 &pll1_directo 0
+				  &pll1 4 128 0 62 31
+				  &pll1_bypass 0 &sdioclksel 5
+				  &sdioclkdiv 4>;
+		};
+
+		sdioclk_12mhz: sdioclk-12mhz {
+			compatible = "clock-state";
+			/* Expect a clock frequency of 12 MHz */
+			clocks = <&fro_hf 1 &sdioclksel 3
+				  &sdioclkdiv 8>;
+		};
 	};
 };
 
@@ -25,65 +88,6 @@
 /* Disable the SD controller- we are using its clock for this test */
 &sdif {
 	status = "disabled";
-};
-
-/* Define clock states for clockout clock */
-&clkout_clock {
-	clkout_16mhz: clkout-16mhz {
-		compatible = "clock-state";
-		/* Expect a clock frequency of 16 MHz */
-		clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
-			  &pll0_pdec 4 &pll0_directo 0
-			  &pll0 8 256 0 31 31 0 0 0
-			  &pll1_bypass 0 &clkoutsel 1
-			  &clkoutdiv 8>;
-	};
-
-	clkout_1mhz: clkout-1mhz {
-		compatible = "clock-state";
-		/* Expect a clock frequency of 1MHz */
-		clocks = <&fro_1m 1 &clkoutsel 4 &clkoutdiv 1>;
-	};
-
-	clkout_500mhz: clkout-500mhz {
-		compatible = "clock-state";
-		/* Expect a clock frequency of 500 KHz */
-		clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
-			  &pll0_pdec 4 &pll0_directo 0
-			  &pll0 8 256 0 31 31 0 0 0
-			  &pll1_bypass 0 &clkoutsel 1
-			  &clkoutdiv 256>;
-	};
-};
-
-/* Define clock states for SDIO clock */
-&sdio_clock {
-	sdioclk_48mhz: sdioclk-48mhz {
-		compatible = "clock-state";
-		/* Expect a clock frequency of 48 MHz */
-		clocks = <&fro_12m 1 &pll1clksel 0
-			  &pll1_pdec 4 &pll1_directo 0
-			  &pll1 4 128 0 62 31
-			  &pll1_bypass 0 &sdioclksel 5
-			  &sdioclkdiv 2>;
-	};
-
-	sdioclk_24mhz: sdioclk-24mhz {
-		compatible = "clock-state";
-		/* Expect a clock frequency of 24 MHz */
-		clocks = <&fro_12m 1 &pll1clksel 0
-			  &pll1_pdec 4 &pll1_directo 0
-			  &pll1 4 128 0 62 31
-			  &pll1_bypass 0 &sdioclksel 5
-			  &sdioclkdiv 4>;
-	};
-
-	sdioclk_12mhz: sdioclk-12mhz {
-		compatible = "clock-state";
-		/* Expect a clock frequency of 12 MHz */
-		clocks = <&fro_hf 1 &sdioclksel 3
-			  &sdioclkdiv 8>;
-	};
 };
 
 / {

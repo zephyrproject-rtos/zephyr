@@ -1,0 +1,9 @@
+# Copyright 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Clock domain node. This node describes a clock domain. Clock domains define
+  a set of static clock states as children of these nodes, and can be requested
+  by consumers.
+
+compatible: "clock-domain"

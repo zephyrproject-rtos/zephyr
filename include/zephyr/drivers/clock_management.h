@@ -82,13 +82,13 @@ typedef int (*clock_management_callback_handler_t)(const struct clock_management
 					     const void *user_data);
 
 /**
- * @brief Request for a clock node
+ * @brief Request for a clock domain
  *
- * Request for a specific clock node. Defines the clock node, and
+ * Request for a specific clock domain. Defines the clock domain node, and
  * the allowed states from the request
  */
-struct clk_request {
-	/** Clock node to request */
+struct domain_request {
+	/** Clock domain node to request */
 	const struct clk *clk;
 	/** Bitmask of acceptable state indices */
 	uint32_t allowed_states;
@@ -104,10 +104,10 @@ struct clk_request {
 struct clock_management_request {
 	/** Does this request lock the clocks it affects? */
 	bool locking;
-	/** Number of clocks in the request */
-	uint8_t num_clks;
-	/** Array of requests for clocks */
-	const struct clk_request clk_reqs[];
+	/** Number of domains in the request */
+	uint8_t num_domains;
+	/** Array of requests for domains */
+	const struct domain_request clk_reqs[];
 };
 
 /**
@@ -267,7 +267,7 @@ extern struct k_spinlock clock_mgmt_spinlock;
 				DT_CLOCK_REQUEST_NAME_IDX(node_id, \
 				DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)), \
 				_locking)), \
-		.num_clks = DT_CLOCK_REQUEST_LEN_BY_NAME(node_id, \
+		.num_domains = DT_CLOCK_REQUEST_LEN_BY_NAME(node_id, \
 			DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)), \
 		.clk_reqs = { DT_CLOCK_REQUEST_FOREACH_BY_NAME(node_id, \
 			DT_STRING_TOKEN_BY_IDX(node_id, prop, idx), \
@@ -477,7 +477,7 @@ extern struct k_spinlock clock_mgmt_spinlock;
  * @brief Get a clock output for a device described in devicetree by @p dev_node
  *
  * Gets a clock output for device described in devicetree. The output will be
- * retrievd from the first phandle in the node's "clock-outputs" property.
+ * retrieved from the first phandle in the node's "clock-outputs" property.
  * Note this is equivalent to
  * CLOCK_MANAGEMENT_DT_GET_OUTPUT_BY_IDX(dev_node, 0)
  * @param dev_node Device node with a clock-outputs property.
@@ -489,7 +489,7 @@ extern struct k_spinlock clock_mgmt_spinlock;
  * @brief Get clock output for instance @p inst of a DT_DRV_COMPAT
  *
  * Gets a clock output for device described in devicetree. The output will be
- * retrievd from the first phandle in the node's "clock-outputs" property.
+ * retrieved from the first phandle in the node's "clock-outputs" property.
  * Note this is equivalent to
  * CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT_BY_IDX(inst, 0)
  * @param inst DT_DRV_COMPAT instance number
@@ -505,39 +505,40 @@ extern struct k_spinlock clock_mgmt_spinlock;
  *
  * For example, for the following devicetree definition:
  * @code{.dts}
- * &hs_clock {
- *      hsclk_state0: state0 {
- *              compatible = "clock-state";
- *              clocks = <...>;
- *              clock-frequency = <...>;
+ * clock-domains {
+ *      hs_clock_domain: hs-clock-domain {
+ *              compatible = "clock-domain";
+ *              hsclk_state0: state0 {
+ *                      compatible = "clock-state";
+ *                      clocks = <...>;
+ *              };
+ *              hsclk_state1: state1 {
+ *                      compatible = "clock-state";
+ *                      clocks = <...>;
+ *              };
  *      };
- *      hsclk_state1: state1 {
- *              compatible = "clock-state";
- *              clocks = <...>;
- *              clock-frequency = <...>;
+ *
+ *      lp_clock_domain: lp-clock-domain {
+ *              compatible = "clock-domain";
+ *              lpclk_state0: state0 {
+ *                      compatible = "clock-state";
+ *                      clocks = <...>;
+ *              };
+ *              lpclk_state1: state1 {
+ *                      compatible = "clock-state";
+ *                      clocks = <...>;
+ *              };
  *      };
  * };
  *
- * &lp_clock {
- *      lpclk_state0: state0 {
- *              compatible = "clock-state";
- *              clocks = <...>;
- *              clock-frequency = <...>;
- *      };
- *      lpclk_state1: state1 {
- *              compatible = "clock-state";
- *              clocks = <...>;
- *              clock-frequency = <...>;
- *      };
- * };
  * my_dev: mydev@0 {
  *         compatible = "vnd,device";
  *         reg = <0>;
- *         clock-outputs = <&hs_clock> <&lp_clock>;
- *         clock-output-names = "highspeed", "low-power"
+ *         clock-outputs = <&hs_clock &lp_clock>;
+ *         clock-output-names = "highspeed", "low-power";
  *         clock-request-0 = <&hsclk_state0 &lpclk_state0>;
- *         clock-request-1  = <&hsclk_state1 &lpclk_state1>;
- *         clock-state-names = "active", "sleep";
+ *         clock-request-1 = <&hsclk_state1 &lpclk_state1>;
+ *         clock-request-names = "active", "sleep";
  * };
  * @endcode
  * The clock state identifiers could be accessed like so:
@@ -600,12 +601,13 @@ int clock_management_req_rate(const struct clock_management_data *data,
 /**
  * @brief Request a clock state
  *
- * Request a clock state. This request may apply to multiple clock outputs,
+ * Request a clock state. This request may apply to multiple clock domains,
  * and is defined in devicetree using the "clock-request-n" property.
  * @param data Clock management data structure for the device
  * @param request Clock management request to apply
  * @return -EIO if configuration of a clock failed
  * @return -EINVAL if parameters are invalid
+ * @return -ENOENT if no state satisfies all active requests for a clock domain
  * @return -EPERM if clock is not configurable
  * @return 0 on success
  */
@@ -693,11 +695,16 @@ int clock_management_off(const struct clock_management_data *data, clock_output_
 /**
  * @brief Lock a clock output to block further reconfiguration
  *
- * Locks a clock output, preventing any reconfiguration from occurring to the
- * clock until @ref clock_management_unlock is called by the same clock consumer.
+ * Locks a clock output, preventing any reconfiguration of the output or its
+ * parent clocks until @ref clock_management_unlock is called by the same clock
+ * consumer. The lock applies to all consumers, including the consumer holding
+ * it: any request that would reconfigure the output or its parents will fail
+ * with -EBUSY. Requests that do not reconfigure the output or its parents are
+ * unaffected.
  * @param data Clock management data structure for the device
  * @param clk clock output to lock
  * @return 0 on success
+ * @return -EINVAL if parameters are invalid
  * @return -EBUSY if the clock is already locked by another consumer
  */
 int clock_management_lock(const struct clock_management_data *data, clock_output_t clk);
@@ -710,8 +717,9 @@ int clock_management_lock(const struct clock_management_data *data, clock_output
  * clock using @ref clock_management_lock.
  * @param data Clock management data structure for the device
  * @param clk clock output to unlock
- * @return 0 on success
- * @return -EPERM if the clock is not locked by the calling consumer
+ * @return 0 on success, or if the clock output is not locked
+ * @return -EINVAL if parameters are invalid
+ * @return -EPERM if the clock output is locked by another consumer
  */
 int clock_management_unlock(const struct clock_management_data *data, clock_output_t clk);
 

@@ -7,11 +7,11 @@ description: |
   controller requests. The maximum number of requests currently defined is 5
   (clock-request-0...clock-request-4) but can be incremented if required.
   Clock requests are defined as a set of suitable clock states. Clock
-  states will apply to the clock node they are defined as a child of.
-  If multiple clock states are defined as suitable for a given clock node,
+  states will apply to the clock domain they are defined as a child of.
+  If multiple clock states are defined as suitable for a given clock domain,
   the lowest rank state will be selected. If other clock consumers
-  have outstanding requests on a given clock node, these requests
-  will be considered when selecting the best clock state for a given clock node.
+  have outstanding requests on a given clock domain, these requests
+  will be considered when selecting the best clock state for that domain.
 properties:
   clock-outputs:
     type: phandles
@@ -27,15 +27,17 @@ properties:
     type: phandles
     description: |
       Clock request/s for the first state. Each clock request should define a
-      set of suitable clock states. These states will apply to the clock node
-      they are defined as a child of.
+      set of suitable clock states. These states will apply to the clock
+      domain they are defined as a child of.
 
   clock-request-0-locking:
     type: boolean
     description: |
-       Set if the clock request for the first state should "lock" any of the
-       outputs the state affects. If set, the clock outputs this state affects
-       will deny any future reconfiguration attempts.
+       Set if the clock request for the first state should "lock" the clocks
+       it affects. If set, the clock domains referenced by this request, and
+       the clock nodes configured by the states selected within those domains,
+       will deny reconfiguration attempts from other consumers until this
+       consumer switches to a different request.
 
   clock-request-1:
     type: phandles
@@ -75,7 +77,7 @@ properties:
   clock-request-4-locking:
     type: boolean
     description: |
-      Clock lock setting for the fifth state. See clock-request-5-locking.
+      Clock lock setting for the fifth state. See clock-request-0-locking.
 
   clock-request-names:
     type: string-array

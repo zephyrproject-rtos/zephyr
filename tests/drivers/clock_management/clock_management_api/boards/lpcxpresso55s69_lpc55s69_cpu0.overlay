@@ -1,17 +1,80 @@
 /*
  * Copyright 2024 NXP
  * Copyright (c) 2025, Tenstorrent AI ULC
+ * Copyright (c) 2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Clock CPU from FROHF, since we will use the PLLs within our testcases */
-&system_clock {
-	/delete-node/ sys_clk_144mhz;
 
-	sys_clk_96mhz: sys-clk-96mhz {
-		compatible = "clock-state";
-		clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;
+&clock_domains {
+	sys_clk_domain: sys-clk-domain {
+		/delete-node/ sys_clk_144mhz;
+		compatible = "clock-domain";
+		/* Clock CPU from FROHF, since we will use the PLLs within our testcases */
+		sys_clk_96mhz: sys-clk-96mhz {
+			compatible = "clock-state";
+			clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;
+		};
+	};
+
+	clkout_domain: clkout-domain {
+		compatible = "clock-domain";
+		clkout_500mhz: clkout-500mhz {
+			compatible = "clock-state";
+			/* Expect a clock frequency of 500 KHz */
+			clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
+				  &pll0_pdec 4 &pll0_directo 0
+				  &pll0 8 256 0 31 31 0 0 0
+				  &pll0_bypass 0 &clkoutsel 1
+				  &clkoutdiv 256>;
+			rank = <0>;
+		};
+
+		clkout_invalid: clkout-invalid {
+			compatible = "clock-state";
+			/* Expect error when applying this invalid state */
+			clocks = <&clkoutsel 10>;
+			rank = <2>;
+		};
+
+		clkout_shared: clkout-shared {
+			compatible = "clock-state";
+			/* This state configures the clock to produce 25.0625 MHz */
+			clocks = <&pll0_pdec 8 &pll0 4 0
+				  0 4 3 1 3363831808 0 &clkoutdiv 2>;
+			rank = <1>;
+		};
+	};
+
+	sdioclk_domain: sdioclk-domain {
+		compatible = "clock-domain";
+		sdioclk_48mhz: sdioclk-48mhz {
+			compatible = "clock-state";
+			/* Expect a clock frequency of 48 MHz */
+			clocks = <&fro_12m 1 &pll1clksel 0
+				  &pll1_pdec 4 &pll1_directo 0
+				  &pll1 4 128 0 62 31
+				  &pll1_bypass 0 &sdioclksel 5
+				  &sdioclkdiv 2>;
+			rank = <2>;
+		};
+
+		sdioclk_invalid: sdioclk-invalid {
+			compatible = "clock-state";
+			/* Expect error when applying this invalid state */
+			clocks = <&sdioclksel 8>;
+			rank = <1>;
+		};
+
+		sdioclk_shared: sdioclk-shared {
+			compatible = "clock-state";
+			/* Expect notification on both devices with this state.
+			 * frequency should be 25.0625 MHz for each
+			 */
+			clocks = <&sdioclkdiv 2 &sdioclksel 1>;
+			rank = <0>;
+		};
 	};
 };
 
@@ -23,65 +86,6 @@
 /* Disable the SD controller- we are using its clock for this test */
 &sdif {
 	status = "disabled";
-};
-
-/* Define clock states for clockout clock */
-&clkout_clock {
-	clkout_500mhz: clkout-500mhz {
-		compatible = "clock-state";
-		/* Expect a clock frequency of 500 KHz */
-		clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
-			  &pll0_pdec 4 &pll0_directo 0
-			  &pll0 8 256 0 31 31 0 0 0
-			  &pll0_bypass 0 &clkoutsel 1
-			  &clkoutdiv 256>;
-		rank = <0>;
-	};
-
-	clkout_invalid: clkout-invalid {
-		compatible = "clock-state";
-		/* Expect error when applying this invalid state */
-		clocks = <&clkoutsel 10>;
-		rank = <2>;
-	};
-
-	clkout_shared: clkout-shared {
-		compatible = "clock-state";
-		/* This state configures the clock to produce 25.0625 MHz */
-		clocks = <&pll0_pdec 8 &pll0 4 0
-			  0 4 3 1 3363831808 0 &clkoutdiv 2>;
-		rank = <1>;
-	};
-};
-
-/* Define clock states for SDIO clock */
-&sdio_clock {
-	sdioclk_48mhz: sdioclk-48mhz {
-		compatible = "clock-state";
-		/* Expect a clock frequency of 48 MHz */
-		clocks = <&fro_12m 1 &pll1clksel 0
-			  &pll1_pdec 4 &pll1_directo 0
-			  &pll1 4 128 0 62 31
-			  &pll1_bypass 0 &sdioclksel 5
-			  &sdioclkdiv 2>;
-		rank = <2>;
-	};
-
-	sdioclk_invalid: sdioclk-invalid {
-		compatible = "clock-state";
-		/* Expect error when applying this invalid state */
-		clocks = <&sdioclksel 8>;
-		rank = <1>;
-	};
-
-	sdioclk_shared: sdioclk-shared {
-		compatible = "clock-state";
-		/* Expect notification on both devices with this state.
-		 * frequency should be 25.0625 MHz for each
-		 */
-		clocks = <&sdioclkdiv 2 &sdioclksel 1>;
-		rank = <0>;
-	};
 };
 
 /*

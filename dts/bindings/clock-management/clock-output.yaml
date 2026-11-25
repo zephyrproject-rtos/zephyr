@@ -3,9 +3,7 @@
 
 description: |
   Clock output node. This node describes a clock output. Clock outputs may be
-  used by consumers to query rate, or request a new rate. Static clock states
-  may also be defined as children of these nodes, and can be applied directly
-  by consumers.
+  used by consumers to query rate, or request a new rate.
 
 compatible: "clock-output"
 

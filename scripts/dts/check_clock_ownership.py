@@ -4,13 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Checks that no two clock output nodes have conflicting settings for the
-same clock.
+Checks that no two clock domain nodes configure the same clock.
 
-A clock output "owns" a clock node if any of its clock-state children
-reference that clock node via their "clocks" phandle-array property. Multiple
-clock outputs are allowed to own a clock node if and only if all states they
-define have identical settings for that clock node.
+A clock domain "owns" a clock node if any of its clock-state children
+reference that clock node via their "clocks" phandle-array property. Each
+clock node may be owned by at most one clock domain, even if the settings
+the domains would apply to it are identical.
 """
 
 import argparse
@@ -27,15 +26,15 @@ sys.path.insert(
 logger = logging.getLogger(__name__)
 
 
-def get_clock_outputs(edt):
+def get_clock_domains(edt):
     """
-    Return a dict mapping each clock output node to a dict of
+    Return a dict mapping each clock domain node to a dict of
     clock nodes it owns (referenced by its clock-state children).
     Each dict maps clock nodes to the set of specifiers associated with them
-    for that clock output node.
+    for that clock domain node.
     """
 
-    clock_outputs = {}
+    clock_domains = {}
     clock_state_nodes = edt.compat2nodes.get("clock-state", [])
     logger.debug(f"Found {len(clock_state_nodes)} clock-state nodes")
 
@@ -51,39 +50,39 @@ def get_clock_outputs(edt):
 
         logger.debug(f"Processing clock-state node {node.path} under {parent.path}")
 
-        if parent not in clock_outputs:
-            clock_outputs[parent] = {}
+        if parent not in clock_domains:
+            clock_domains[parent] = {}
 
         for entry in node.props["clocks"].val:
             if entry is None:
                 logger.debug(f"  Skipping unspecified phandle-array element in {node.path}")
                 continue
             logger.debug(f"  Adding clock {entry.controller.path} with specifiers {entry.data}")
-            if entry.controller not in clock_outputs[parent]:
-                clock_outputs[parent][entry.controller] = set(entry.data.values())
+            if entry.controller not in clock_domains[parent]:
+                clock_domains[parent][entry.controller] = set(entry.data.values())
             else:
-                clock_outputs[parent][entry.controller].update(entry.data.values())
+                clock_domains[parent][entry.controller].update(entry.data.values())
 
-    return clock_outputs
+    return clock_domains
 
 
-def check_overlaps(clock_outputs):
+def check_overlaps(clock_domains):
     """
-    Checks for conflicting configuration between clock-output nodes.
+    Checks for conflicting configuration between clock-domain nodes.
     Returns a list of (clock_node, (output_a, specifier_a), (output_b, specifier_b))
     tuples for each conflict.
     """
     conflicts = []
-    outputs = list(clock_outputs.items())
-    logger.debug(f"Checking overlaps between {len(outputs)} clock outputs")
+    domains = list(clock_domains.items())
+    logger.debug(f"Checking overlaps between {len(domains)} clock domains")
 
-    for i, (output_a, clocks_a) in enumerate(outputs):
-        for output_b, clocks_b in outputs[i + 1 :]:
+    for i, (domain_a, clocks_a) in enumerate(domains):
+        for domain_b, clocks_b in domains[i + 1 :]:
             overlap = set(clocks_a.keys()) & set(clocks_b.keys())
             if overlap:
                 logger.debug(
                     f"Found {len(overlap)} overlapping clocks between "
-                    f"{output_a.path} and {output_b.path}"
+                    f"{domain_a.path} and {domain_b.path}"
                 )
             for clock_node in sorted(overlap, key=lambda n: n.path):
                 setting_a = clocks_a[clock_node]
@@ -93,14 +92,14 @@ def check_overlaps(clock_outputs):
                 if setting_a != setting_b or len(setting_a) > 1:
                     logger.debug(
                         f"Conflicting settings for {clock_node.path}: "
-                        f"{output_a.path} sets {setting_a}, "
-                        f"{output_b.path} sets {setting_b}"
+                        f"{domain_a.path} sets {setting_a}, "
+                        f"{domain_b.path} sets {setting_b}"
                     )
-                    conflicts.append((clock_node, (output_a, setting_a), (output_b, setting_b)))
+                    conflicts.append((clock_node, (domain_a, setting_a), (domain_b, setting_b)))
                 else:
                     logger.debug(
                         f"Shared clock {clock_node.path} with matching settings "
-                        f"between {output_a.path} and {output_b.path}"
+                        f"between {domain_a.path} and {domain_b.path}"
                     )
 
     return conflicts
@@ -108,7 +107,7 @@ def check_overlaps(clock_outputs):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Check that clock outputs do not have overlapping clock ownership.",
+        description="Check that clock domains do not have overlapping clock ownership.",
         allow_abbrev=False,
     )
     parser.add_argument(
@@ -130,31 +129,31 @@ def main():
         edt = pickle.load(f)
 
     logger.info(f"Loaded EDT with {len(edt.nodes)} nodes")
-    clock_outputs = get_clock_outputs(edt)
+    clock_domains = get_clock_domains(edt)
 
-    if not clock_outputs:
-        logger.info("No clock outputs with clock-state children found")
+    if not clock_domains:
+        logger.info("No clock domains with clock-state children found")
         return 0
 
-    logger.info(f"Found {len(clock_outputs)} clock outputs")
-    logger.info("\nClock output ownership:")
-    for output, clocks in sorted(clock_outputs.items(), key=lambda x: x[0].path):
-        logger.info(f"  {output.path}:")
+    logger.info(f"Found {len(clock_domains)} clock domains")
+    logger.info("\nClock domain ownership:")
+    for domain, clocks in sorted(clock_domains.items(), key=lambda x: x[0].path):
+        logger.info(f"  {domain.path}:")
         for clk in sorted(clocks, key=lambda n: n.path):
             specifiers = clocks[clk]
             logger.info(f"    - {clk.path} (specifiers: {specifiers})")
 
-    conflicts = check_overlaps(clock_outputs)
+    conflicts = check_overlaps(clock_domains)
 
     if conflicts:
         logger.error(
             f"{len(conflicts)} conflicting clock setting{'s' if len(conflicts) != 1 else ''} found"
         )
-        for clock_node, (output_a, setting_a), (output_b, setting_b) in conflicts:
+        for clock_node, (domain_a, setting_a), (domain_b, setting_b) in conflicts:
             logger.error(
                 f"  {clock_node.path} is configured by both "
-                f"{output_a.path} (specifiers: {setting_a}) and "
-                f"{output_b.path} (specifiers: {setting_b})"
+                f"{domain_a.path} (specifiers: {setting_a}) and "
+                f"{domain_b.path} (specifiers: {setting_b})"
             )
         return 1
 

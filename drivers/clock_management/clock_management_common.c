@@ -8,14 +8,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_management.h>
 #include <zephyr/drivers/clock_management/clock_helpers.h>
-#include <string.h>
 #include <stdlib.h>
 #include <zephyr/logging/log.h>
 #include "clock_management_common.h"
 LOG_MODULE_REGISTER(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
-
-#define DT_DRV_COMPAT clock_output
-
 
 /*
  * If runtime clocking is disabled, we have no need to store clock output
@@ -59,10 +55,8 @@ struct clock_output_state {
 	const struct clock_setting clock_settings[];
 };
 
-/* Clock output node private data */
-struct clock_output_data {
-	/* Parent clock of this output node */
-	const struct clk *parent;
+/* Clock domain private data */
+struct clock_domain_data {
 	/* Statically defined clock output states */
 	const struct clock_output_state *const *output_states;
 	/* Number of output states */
@@ -74,6 +68,16 @@ struct clock_output_data {
 	 * idx i + 1: number of requests that have marked state i as allowed
 	 */
 	uint8_t *request_states;
+	/* Token for the consumer which has locked the clock */
+	struct clock_management_data **consumer;
+#endif
+};
+
+/* Clock output node private data */
+struct clock_output_data {
+	/* Parent clock of this output node */
+	const struct clk *parent;
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
 	/* Token for the consumer which has locked the clock */
 	struct clock_management_data **consumer;
 	/* Start of the consumer array (defined by the linker) */
@@ -254,16 +258,19 @@ static int clock_notify_children(const struct clk *clk_hw,
 
 	old_freq = ctx->event.old_rate;
 	new_freq = ctx->event.new_rate;
+
+	if (clk_hw->subsys_data->locked) {
+		/* Clock is locked, cannot reconfigure */
+		return -EPERM;
+	}
+
 	if (clock_get_type(clk_hw) == CLK_TYPE_LEAF) {
 		/* Base case- clock leaf (output node) */
 		data = clk_hw->hw_data;
-		/* Check if the clock is locked. If so reject reconfiguration */
 		if (*(data->consumer) != NULL) {
-			IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (
-				LOG_DBG("Clock %s is locked",
-					clk_hw->clk_name);
-			))
-			return -EPERM;
+			/* Clock is locked */
+			LOG_DBG("Clock is locked, cannot reconfigure");
+			return -EBUSY;
 		}
 		/* Notify consumers */
 		for (consumer = data->consumer_start;
@@ -502,14 +509,16 @@ int clock_children_check_rate(const struct clk *clk_hw, clock_freq_t new_rate)
 /**
  * @brief Lock a clock output to block further reconfiguration
  *
- * Locks a clock output, preventing any reconfiguration from occurring to the
- * clock until @ref clock_management_unlock is called by the same clock consumer.
- * This does not prevent other consumers from issuing requests to the clock, but
- * they will be denied unless the request can be satisfied within changing the
- * state the clock has selected.
+ * Locks a clock output, preventing any reconfiguration of the output or its
+ * parent clocks until @ref clock_management_unlock is called by the same clock
+ * consumer. The lock applies to all consumers, including the consumer holding
+ * it: any request that would reconfigure the output or its parents will fail
+ * with -EBUSY. Requests that do not reconfigure the output or its parents are
+ * unaffected.
  * @param data Clock management data structure for the device
  * @param clk clock output to lock
  * @return 0 on success
+ * @return -EINVAL if parameters are invalid
  * @return -EBUSY if the clock is already locked by another consumer
  */
 int clock_management_lock(const struct clock_management_data *data, clock_output_t clk)
@@ -541,8 +550,9 @@ int clock_management_lock(const struct clock_management_data *data, clock_output
  * clock using @ref clock_management_lock.
  * @param data Clock management data structure for the device
  * @param clk clock output to unlock
- * @return 0 on success
- * @return -EPERM if the clock is not locked by the calling consumer
+ * @return 0 on success, or if the clock output is not locked
+ * @return -EINVAL if parameters are invalid
+ * @return -EPERM if the clock output is locked by another consumer
  */
 int clock_management_unlock(const struct clock_management_data *data, clock_output_t clk)
 {
@@ -1096,19 +1106,19 @@ int clock_management_req_rate(const struct clock_management_data *data, clock_ou
 void clock_management_eval_request(const struct clock_management_request *request, bool apply)
 {
 	const struct clk *clk_hw;
-	const struct clock_output_data *output_data;
+	const struct clock_domain_data *domain_data;
 	uint8_t num_states;
 	uint8_t *active_request_count;
 	uint8_t *allowed_state_count;
 
 
-	for (uint8_t i = 0; i < request->num_clks; i++) {
+	for (uint8_t i = 0; i < request->num_domains; i++) {
 		clk_hw = request->clk_reqs[i].clk;
-		output_data = clk_hw->hw_data;
-		num_states = output_data->num_output_states;
-		active_request_count = output_data->request_states +
+		domain_data = clk_hw->hw_data;
+		num_states = domain_data->num_output_states;
+		active_request_count = domain_data->request_states +
 			CLOCK_OUTPUT_ACTIVE_REQUEST_COUNT_IDX;
-		allowed_state_count = output_data->request_states +
+		allowed_state_count = domain_data->request_states +
 			CLOCK_OUTPUT_REQUEST_COUNT_IDX;
 		if (apply) {
 			*active_request_count += 1;
@@ -1147,39 +1157,39 @@ int clock_management_best_states(const struct clock_management_data *data,
 			const struct clock_management_request *request, bool apply)
 {
 	const struct clk *clk_hw;
-	const struct clock_output_data *output_data;
+	const struct clock_domain_data *domain_data;
 	int ret = 0;
 	uint8_t num_states;
 	uint8_t *active_request_count;
 	uint8_t *allowed_state_count;
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	/* Make sure all clocks affected by this request are unlocked */
-	for (uint8_t i = 0; i < request->num_clks; i++) {
+	/* Make sure all domains affected by this request are unlocked */
+	for (uint8_t i = 0; i < request->num_domains; i++) {
 		clk_hw = request->clk_reqs[i].clk;
-		output_data = clk_hw->hw_data;
-		if ((*(output_data->consumer) != NULL) &&
-			(*(output_data->consumer) != data)) {
-			/* Clock is locked by another consumer */
+		domain_data = clk_hw->hw_data;
+		if ((*(domain_data->consumer) != NULL) &&
+			(*(domain_data->consumer) != data)) {
+			/* domain is locked by another consumer */
 			return -EPERM;
 		}
 	}
-	for (uint8_t i = 0; i < request->num_clks; i++) {
+	for (uint8_t i = 0; i < request->num_domains; i++) {
 		clk_hw = request->clk_reqs[i].clk;
-		output_data = clk_hw->hw_data;
-		/* Unlock the clock */
-		*(output_data->consumer) = NULL;
+		domain_data = clk_hw->hw_data;
+		/* Unlock the domain */
+		*(domain_data->consumer) = NULL;
 	}
 #endif
 
-	for (uint8_t i = 0; i < request->num_clks; i++) {
+	for (uint8_t i = 0; i < request->num_domains; i++) {
 		clk_hw = request->clk_reqs[i].clk;
-		output_data = clk_hw->hw_data;
-		num_states = output_data->num_output_states;
+		domain_data = clk_hw->hw_data;
+		num_states = domain_data->num_output_states;
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-		active_request_count = output_data->request_states +
+		active_request_count = domain_data->request_states +
 			CLOCK_OUTPUT_ACTIVE_REQUEST_COUNT_IDX;
-		allowed_state_count = output_data->request_states +
+		allowed_state_count = domain_data->request_states +
 			CLOCK_OUTPUT_REQUEST_COUNT_IDX;
 		if (*active_request_count == 0) {
 			/* No active requests, no need to apply a state */
@@ -1190,7 +1200,9 @@ int clock_management_best_states(const struct clock_management_data *data,
 		 * States are already sorted by rank, so the first
 		 * state we find that satisfies all active requests is the best one
 		 */
-		for (uint8_t j = 0; j < num_states; j++) {
+		uint8_t j;
+
+		for (j = 0; j < num_states; j++) {
 			if (IS_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME) &&
 				(allowed_state_count[j] < *active_request_count)) {
 				/* Not all requests have voted for this state, skip it */
@@ -1204,7 +1216,7 @@ int clock_management_best_states(const struct clock_management_data *data,
 				LOG_DBG("Applying state %d for clock %s",
 					j, clk_hw->clk_name);
 			))
-			ret = clock_apply_state(clk_hw, output_data->output_states[j]);
+			ret = clock_apply_state(clk_hw, domain_data->output_states[j]);
 			if (ret < 0) {
 				/* Failed to apply state, exit */
 				return ret;
@@ -1212,31 +1224,97 @@ int clock_management_best_states(const struct clock_management_data *data,
 			/* No need to search further states */
 			break;
 		}
+		if (j == num_states) {
+			/* No state satisfies all active requests for this domain */
+			IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (
+				LOG_DBG("No state satisfies all requests for domain %s",
+					clk_hw->clk_name);
+			))
+			return -ENOENT;
+		}
 	}
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
 	if (request->locking && apply) {
-		for (uint8_t i = 0; i < request->num_clks; i++) {
+		for (uint8_t i = 0; i < request->num_domains; i++) {
 			clk_hw = request->clk_reqs[i].clk;
-			output_data = clk_hw->hw_data;
-			/* Lock the clock */
-			*(output_data->consumer) = (struct clock_management_data *)data;
+			domain_data = clk_hw->hw_data;
+			/* Lock the domain */
+			*(domain_data->consumer) = (struct clock_management_data *)data;
 		}
 	}
 #endif
 	return ret;
 }
 
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+/**
+ * @brief Helper to change locks for a clock request
+ *
+ * Applies or removes lock bit for all clocks affected by a request
+ * @param request Clock management request to modify locks for
+ * @param lock true to apply locks, false to release them
+ */
+void clock_management_mod_locks(const struct clock_management_request *request, bool lock)
+{
+	const struct clk *clk_hw;
+	const struct clock_domain_data *domain_data;
+	uint8_t num_states;
+	uint8_t *active_request_count;
+	uint8_t *allowed_state_count;
+
+	for (uint8_t i = 0; i < request->num_domains; i++) {
+		clk_hw = request->clk_reqs[i].clk;
+		domain_data = clk_hw->hw_data;
+		num_states = domain_data->num_output_states;
+		active_request_count = domain_data->request_states +
+			CLOCK_OUTPUT_ACTIVE_REQUEST_COUNT_IDX;
+		allowed_state_count = domain_data->request_states +
+			CLOCK_OUTPUT_REQUEST_COUNT_IDX;
+		/*
+		 * States are already sorted by rank, so the first
+		 * state we find that satisfies all active requests is the best one
+		 */
+		for (uint8_t j = 0; j < num_states; j++) {
+			if (allowed_state_count[j] < *active_request_count) {
+				/* Not all requests have voted for this state, skip it */
+				continue;
+			} else if ((BIT(j) & request->clk_reqs[i].allowed_states) == 0) {
+				/* This state is not allowed for this clock, skip it */
+				continue;
+			}
+			/* If both checks pass, found a valid state. Modify locks */
+			for (uint8_t k = 0; k < domain_data->output_states[j]->num_clocks; k++) {
+				const struct clk *cfg_clk;
+
+				cfg_clk = domain_data->output_states[j]->clock_settings[k].clock;
+				if (lock) {
+					/* Apply lock */
+					cfg_clk->subsys_data->locked = true;
+				} else {
+					/* Release lock */
+					cfg_clk->subsys_data->locked = false;
+				}
+			}
+
+			/* No need to search further states */
+			break;
+		}
+	}
+}
+#endif /* CONFIG_CLOCK_MANAGEMENT_RUNTIME */
+
 /**
  * @brief Request a clock state
  *
- * Request a clock state. This request may apply to multiple clock outputs,
+ * Request a clock state. This request may apply to multiple clock domains,
  * and is defined in devicetree using the "clock-request-n" property.
  * The request can be retrieved using the @ref CLOCK_MANAGEMENT_DT_GET_REQUEST macro
  * @param data Clock management data structure for the device
  * @param request Clock management request to apply
  * @return -EIO if configuration of a clock failed
  * @return -EINVAL if parameters are invalid
+ * @return -ENOENT if no state satisfies all active requests for a clock domain
  * @return -EPERM if clock is not configurable
  * @return 0 on success
  */
@@ -1253,6 +1331,10 @@ int clock_management_request_state(const struct clock_management_data *data,
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
 	if (*data->active_request != CLOCK_MANAGEMENT_NO_REQUEST) {
+		if (data->clock_requests[*data->active_request]->locking) {
+			clock_management_mod_locks(
+				data->clock_requests[*data->active_request], false);
+		}
 		/* A request is already active, remove it first */
 		clock_management_eval_request(data->clock_requests[*data->active_request], false);
 		/* Apply new best state */
@@ -1274,6 +1356,9 @@ int clock_management_request_state(const struct clock_management_data *data,
 		/* Request failed, remove its votes */
 		clock_management_eval_request(data->clock_requests[request], false);
 		goto out;
+	}
+	if (data->clock_requests[request]->locking) {
+		clock_management_mod_locks(data->clock_requests[request], true);
 	}
 	/* Record new request */
 	*data->active_request = request;
@@ -1320,13 +1405,12 @@ out:
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
 #define CLOCK_OUTPUT_RUNTIME_DEFINE(inst)                                      \
-	static struct clock_management_data *CONCAT(output_consumer, inst); \
-	static uint8_t request_states_##inst[DT_INST_CHILD_NUM(inst) + 1]; \
+	static struct clock_management_data *CONCAT(output_consumer, inst);    \
 	extern struct clock_output CLOCK_OUTPUT_LIST_START_NAME(inst);         \
 	extern struct clock_output CLOCK_OUTPUT_LIST_END_NAME(inst);
+
 #define CLOCK_OUTPUT_RUNTIME_INIT(inst)                                        \
 	.consumer = &CONCAT(output_consumer, inst),                            \
-	.request_states = request_states_##inst,                               \
 	.consumer_start = &CLOCK_OUTPUT_LIST_START_NAME(inst),                 \
 	.consumer_end = &CLOCK_OUTPUT_LIST_END_NAME(inst),
 #else
@@ -1336,19 +1420,47 @@ out:
 
 #define CLOCK_OUTPUT_DEFINE(inst)                                              \
 	CLOCK_OUTPUT_RUNTIME_DEFINE(inst)                                      \
-	DT_INST_CLOCK_STATE_SORTED_FOREACH(inst, CLOCK_STATE_DEFINE)           \
-	static const struct clock_output_state *const                          \
-	output_states_##inst[] = {                                             \
-		DT_INST_CLOCK_STATE_SORTED_FOREACH(inst, CLOCK_STATE_GET)          \
-	};                                                                     \
 	static const struct clock_output_data                                  \
 	CONCAT(clock_output_, DT_INST_DEP_ORD(inst)) = {                       \
 		.parent = CLOCK_DT_GET(DT_INST_PARENT(inst)),                  \
-		.output_states = output_states_##inst,                         \
-		.num_output_states = ARRAY_SIZE(output_states_##inst),       \
 		CLOCK_OUTPUT_RUNTIME_INIT(inst)                                \
 	};                                                                     \
 	LEAF_CLOCK_DT_INST_DEFINE(inst,                                        \
 			     &CONCAT(clock_output_, DT_INST_DEP_ORD(inst)));
 
+#define DT_DRV_COMPAT clock_output
 DT_INST_FOREACH_STATUS_OKAY(CLOCK_OUTPUT_DEFINE)
+
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+#define CLOCK_DOMAIN_RUNTIME_DEFINE(inst)                                      \
+	static struct clock_management_data *CONCAT(domain_consumer, inst); \
+	static uint8_t request_states_##inst[DT_INST_CHILD_NUM(inst) + 1];
+
+#define CLOCK_DOMAIN_RUNTIME_INIT(inst)                                        \
+	.consumer = &CONCAT(domain_consumer, inst),                            \
+	.request_states = request_states_##inst,
+#else
+#define CLOCK_DOMAIN_RUNTIME_DEFINE(inst)
+#define CLOCK_DOMAIN_RUNTIME_INIT(inst)
+#endif
+
+
+#define CLOCK_DOMAIN_DEFINE(inst)                                              \
+	CLOCK_DOMAIN_RUNTIME_DEFINE(inst)                                      \
+	DT_INST_CLOCK_STATE_SORTED_FOREACH(inst, CLOCK_STATE_DEFINE);          \
+	static const struct clock_output_state *const                          \
+	output_states_##inst[] = {                                             \
+		DT_INST_CLOCK_STATE_SORTED_FOREACH(inst, CLOCK_STATE_GET)          \
+	};                                                                     \
+	static const struct clock_domain_data                                  \
+	CONCAT(clock_output_, DT_INST_DEP_ORD(inst)) = {                       \
+		.output_states = output_states_##inst,                         \
+		.num_output_states = ARRAY_SIZE(output_states_##inst),       \
+		CLOCK_DOMAIN_RUNTIME_INIT(inst)                                \
+	};                                                                     \
+	LEAF_CLOCK_DT_INST_DEFINE(inst,                                        \
+			     &CONCAT(clock_output_, DT_INST_DEP_ORD(inst)));
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT clock_domain
+DT_INST_FOREACH_STATUS_OKAY(CLOCK_DOMAIN_DEFINE)
