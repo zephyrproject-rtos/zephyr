@@ -58,6 +58,12 @@ class bt_sim_controller(Controller):
         | hci.LmpFeatureMask.SECURE_SIMPLE_PAIRING_CONTROLLER_SUPPORT
     )
 
+    # The Host sends Read Encryption Key Size only when Read Local Supported
+    # Commands lists it, and otherwise disconnects an encrypted BR/EDR link.
+    supported_commands: set[int] = Controller.supported_commands | {
+        hci.HCI_READ_ENCRYPTION_KEY_SIZE_COMMAND,
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.inquiry_task = None
