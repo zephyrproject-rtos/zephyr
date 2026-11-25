@@ -1,5 +1,5 @@
 name: Feature
-description: Suggest a new idea, or new functionality
+description: New capability that Zephyr does not have (not a new board, SoC or driver)
 type: Feature
 assignees: []
 body:
