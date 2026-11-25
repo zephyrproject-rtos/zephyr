@@ -15,6 +15,12 @@
 
 LOG_MODULE_REGISTER(pmu, CONFIG_ARM64_PMUV3_LOG_LEVEL);
 
+static inline bool pmu_logging_allowed(void)
+{
+	/* Immediate backends may block, breaking CPU ownership in atomic PMU operations. */
+	return IS_ENABLED(CONFIG_LOG) && !k_is_in_isr() && arch_cpu_irqs_are_enabled();
+}
+
 /*
  * PMU logical state is per CPU: each core has its own PMU bank, and
  * initialization or calibration on one CPU must not short-circuit another.
@@ -174,8 +180,10 @@ static void pmu_calibrate_cpu_freq(void)
 	do {
 		cnt_now = read_cntvct_el0();
 		if (--max_spins == 0) {
-			LOG_ERR("CPU frequency calibration timed out "
-				"(virtual counter stalled)");
+			if (pmu_logging_allowed()) {
+				LOG_ERR("CPU frequency calibration timed out "
+					"(virtual counter stalled)");
+			}
 			pmu_curr_state()->cpu_freq_mhz = 0;
 			write_pmcr_el0(pmcr_save);
 			barrier_isync_fence_full();
@@ -198,14 +206,18 @@ static void pmu_calibrate_cpu_freq(void)
 	if (cnt_delta > 0 && cntfrq > 0) {
 		pmu_curr_state()->cpu_freq_mhz =
 			(uint32_t)((pmu_delta * cntfrq) / (cnt_delta * 1000000ULL));
-		LOG_INF("CPU frequency calibrated: %u MHz "
-			"(pmu_delta=%llu, cnt_delta=%llu, cntfrq=%llu)",
-			pmu_curr_state()->cpu_freq_mhz, pmu_delta, cnt_delta, cntfrq);
+		if (pmu_logging_allowed()) {
+			LOG_INF("CPU frequency calibrated: %u MHz "
+				"(pmu_delta=%llu, cnt_delta=%llu, cntfrq=%llu)",
+				pmu_curr_state()->cpu_freq_mhz, pmu_delta, cnt_delta, cntfrq);
+		}
 	} else {
 		pmu_curr_state()->cpu_freq_mhz = 0;
-		LOG_WRN("CPU frequency calibration failed "
-			"(cnt_delta=%llu, cntfrq=%llu)",
-			cnt_delta, cntfrq);
+		if (pmu_logging_allowed()) {
+			LOG_WRN("CPU frequency calibration failed "
+				"(cnt_delta=%llu, cntfrq=%llu)",
+				cnt_delta, cntfrq);
+		}
 	}
 }
 
@@ -225,16 +237,20 @@ int arch_perf_counter_init(void)
 	pmu_ver = (id_aa64dfr0 >> 8) & 0xF;
 
 	if (pmu_ver == 0 || pmu_ver == 0xF) {
-		LOG_ERR("PMU not available: ID_AA64DFR0_EL1.PMUver=0x%x "
-			"(not implemented or not visible at this exception level; "
-			"models may omit PMU, or EL2/firmware may trap accesses)",
-			pmu_ver);
+		if (pmu_logging_allowed()) {
+			LOG_ERR("PMU not available: ID_AA64DFR0_EL1.PMUver=0x%x "
+				"(not implemented or not visible at this exception level; "
+				"models may omit PMU, or EL2/firmware may trap accesses)",
+				pmu_ver);
+		}
 		st->num_counters = 0;
 		atomic_set(&st->initialized, 1);
 		return -ENOTSUP;
 	}
 
-	LOG_DBG("PMU version: 0x%x (PMUv3)", pmu_ver);
+	if (pmu_logging_allowed()) {
+		LOG_DBG("PMU version: 0x%x (PMUv3)", pmu_ver);
+	}
 
 	pmcr = read_pmcr_el0();
 
@@ -243,9 +259,11 @@ int arch_perf_counter_init(void)
 	st->idcode = (pmcr >> PMCR_IDCODE_SHIFT) & PMCR_IDCODE_MASK;
 
 	if (st->num_counters == 0) {
-		LOG_ERR("PMU reports zero event counters (PMCR_EL0=0x%llx); "
-			"may be disabled by firmware/hypervisor",
-			pmcr);
+		if (pmu_logging_allowed()) {
+			LOG_ERR("PMU reports zero event counters (PMCR_EL0=0x%llx); "
+				"may be disabled by firmware/hypervisor",
+				pmcr);
+		}
 		atomic_set(&st->initialized, 1);
 		return -ENOTSUP;
 	}
@@ -279,8 +297,10 @@ int arch_perf_counter_init(void)
 	 */
 	atomic_set(&st->initialized, 1);
 
-	LOG_INF("PMU initialized: %u counters, implementer=0x%02x, id=0x%02x", st->num_counters,
-		st->implementer, st->idcode);
+	if (pmu_logging_allowed()) {
+		LOG_INF("PMU initialized: %u counters, implementer=0x%02x, id=0x%02x",
+			st->num_counters, st->implementer, st->idcode);
+	}
 
 	return 0;
 }
@@ -331,8 +351,10 @@ int arch_perf_counter_config(uint32_t counter, perf_counter_evt_t event)
 	barrier_isync_fence_full();
 	arch_irq_unlock(key);
 
-	LOG_DBG("Counter %u configured for event 0x%02x (%s)", counter, event,
-		arch_perf_counter_event_name(event));
+	if (pmu_logging_allowed()) {
+		LOG_DBG("Counter %u configured for event 0x%02x (%s)", counter, event,
+			arch_perf_counter_event_name(event));
+	}
 
 	return 0;
 }
