@@ -11,8 +11,6 @@ if(CONFIG_RISCV_HAS_CUSTOM_CHECK_RESCHEDULE)
   zephyr_library_include_directories(${ZEPHYR_BASE}/arch/${ARCH}/include)
 endif()
 
-zephyr_compile_options(-msmall-data-limit=0)
-
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld CACHE INTERNAL "")
 
 if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT AND NOT CONFIG_OMIT_FRAME_POINTER)
