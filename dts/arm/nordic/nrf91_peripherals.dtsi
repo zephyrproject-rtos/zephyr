@@ -347,8 +347,9 @@ clock: clock@5000 {
 };
 
 power: power@5000 {
-	compatible = "nordic,nrf-power";
+	compatible = "nordic,nrf-power", "nordic,nrf-reset-reason";
 	reg = <0x5000 0x1000>;
+	reset-reason-available;
 	ranges = <0x0 0x5000 0x1000>;
 	interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
 	#address-cells = <1>;

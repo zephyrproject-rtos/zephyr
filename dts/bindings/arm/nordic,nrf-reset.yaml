@@ -5,7 +5,7 @@ description: Nordic nRF family RESET (Reset Control)
 
 compatible: "nordic,nrf-reset"
 
-include: base.yaml
+include: ["base.yaml", "nordic,nrf-reset-reason.yaml"]
 
 properties:
   reg:
