@@ -7293,8 +7293,10 @@ ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
 	 * None has been opened on this connection.
 	 */
 	ep->is_server = true;
-	zassert_equal(ctx->stream_id_counter[0], 0, "Unexpected streams on a new context");
-	zassert_equal(ctx->stream_id_counter[1], 0, "Unexpected streams on a new context");
+	zassert_equal(ctx->stream_id_counter[QUIC_STREAM_ID_COUNTER_BIDI], 0,
+		      "Unexpected streams on a new context");
+	zassert_equal(ctx->stream_id_counter[QUIC_STREAM_ID_COUNTER_UNI], 0,
+		      "Unexpected streams on a new context");
 
 	ret = stop_sending_for_stream(ep, ctx, 1);
 	zassert_equal(ret, -EPROTO,
@@ -7314,10 +7316,10 @@ ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
 	 */
 	ep = reset_test_ep(&test_ep_a);
 	ep->is_server = true;
-	ctx->stream_id_counter[0] = 1;
+	ctx->stream_id_counter[QUIC_STREAM_ID_COUNTER_BIDI] = 1;
 	ret = stop_sending_for_stream(ep, ctx, 1);
 	zassert_true(ret >= 0, "STOP_SENDING for a closed stream must be ignored (%d)", ret);
-	ctx->stream_id_counter[0] = 0;
+	ctx->stream_id_counter[QUIC_STREAM_ID_COUNTER_BIDI] = 0;
 
 	/* A stream of the peer that we do not know is not ours to judge
 	 * here either.
@@ -8466,7 +8468,7 @@ ZTEST(net_socket_quic, test_502_late_frame_does_not_reopen_a_closed_stream)
 	opened_0 = take_opened_stream(ctx, 0);
 
 	/* A stream of our own that was opened and closed, stream 1 */
-	ctx->stream_id_counter[0] = 1;
+	ctx->stream_id_counter[QUIC_STREAM_ID_COUNTER_BIDI] = 1;
 	ret = stream_fin_for_stream(ep, ctx, 1);
 	zexpect_true(ret >= 0, "Late frame for our stream 1 failed (%d)", ret);
 	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
@@ -8481,7 +8483,7 @@ ZTEST(net_socket_quic, test_502_late_frame_does_not_reopen_a_closed_stream)
 		      "close the connection (%d)", ret);
 	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
 		     "A stream of our own that was never opened was opened as a peer stream");
-	ctx->stream_id_counter[0] = 0;
+	ctx->stream_id_counter[QUIC_STREAM_ID_COUNTER_BIDI] = 0;
 
 	return_opened_stream(ctx, opened_0);
 	return_opened_stream(ctx, closed_4);
