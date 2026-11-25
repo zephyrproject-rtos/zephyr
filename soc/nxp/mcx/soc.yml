@@ -5,7 +5,31 @@ family:
     cpuclusters:
     - name: cpu0
     - name: cpu1
+  - name: mcxn947t
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
   - name: mcxn946
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn946t
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn557s
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn557t
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn556s
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn556t
     cpuclusters:
     - name: cpu0
     - name: cpu1
@@ -13,10 +37,54 @@ family:
     cpuclusters:
     - name: cpu0
     - name: cpu1
+  - name: mcxn547t
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
   - name: mcxn546
     cpuclusters:
     - name: cpu0
     - name: cpu1
+  - name: mcxn546t
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn537
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn537t
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn536
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn536t
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn527
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn527t
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn526
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn526t
+    cpuclusters:
+    - name: cpu0
+    - name: cpu1
+  - name: mcxn247
+  - name: mcxn247t
+  - name: mcxn246
+  - name: mcxn246t
   - name: mcxn236
   - name: mcxn235
 - name: mcxc
@@ -121,14 +189,70 @@ runners:
         - mcxn947/cpu0
         - mcxn947/cpu1
       - qualifiers:
+        - mcxn947t/cpu0
+        - mcxn947t/cpu1
+      - qualifiers:
         - mcxn946/cpu0
         - mcxn946/cpu1
+      - qualifiers:
+        - mcxn946t/cpu0
+        - mcxn946t/cpu1
+      - qualifiers:
+        - mcxn557s/cpu0
+        - mcxn557s/cpu1
+      - qualifiers:
+        - mcxn557t/cpu0
+        - mcxn557t/cpu1
+      - qualifiers:
+        - mcxn556s/cpu0
+        - mcxn556s/cpu1
+      - qualifiers:
+        - mcxn556t/cpu0
+        - mcxn556t/cpu1
       - qualifiers:
         - mcxn547/cpu0
         - mcxn547/cpu1
       - qualifiers:
+        - mcxn547t/cpu0
+        - mcxn547t/cpu1
+      - qualifiers:
         - mcxn546/cpu0
         - mcxn546/cpu1
+      - qualifiers:
+        - mcxn546t/cpu0
+        - mcxn546t/cpu1
+      - qualifiers:
+        - mcxn537/cpu0
+        - mcxn537/cpu1
+      - qualifiers:
+        - mcxn537t/cpu0
+        - mcxn537t/cpu1
+      - qualifiers:
+        - mcxn536/cpu0
+        - mcxn536/cpu1
+      - qualifiers:
+        - mcxn536t/cpu0
+        - mcxn536t/cpu1
+      - qualifiers:
+        - mcxn527/cpu0
+        - mcxn527/cpu1
+      - qualifiers:
+        - mcxn527t/cpu0
+        - mcxn527t/cpu1
+      - qualifiers:
+        - mcxn526/cpu0
+        - mcxn526/cpu1
+      - qualifiers:
+        - mcxn526t/cpu0
+        - mcxn526t/cpu1
+      - qualifiers:
+        - mcxn247
+      - qualifiers:
+        - mcxn247t
+      - qualifiers:
+        - mcxn246
+      - qualifiers:
+        - mcxn246t
       - qualifiers:
         - mcxn236
       - qualifiers:
@@ -234,14 +358,70 @@ runners:
         - mcxn947/cpu0
         - mcxn947/cpu1
       - qualifiers:
+        - mcxn947t/cpu0
+        - mcxn947t/cpu1
+      - qualifiers:
         - mcxn946/cpu0
         - mcxn946/cpu1
+      - qualifiers:
+        - mcxn946t/cpu0
+        - mcxn946t/cpu1
+      - qualifiers:
+        - mcxn557s/cpu0
+        - mcxn557s/cpu1
+      - qualifiers:
+        - mcxn557t/cpu0
+        - mcxn557t/cpu1
+      - qualifiers:
+        - mcxn556s/cpu0
+        - mcxn556s/cpu1
+      - qualifiers:
+        - mcxn556t/cpu0
+        - mcxn556t/cpu1
       - qualifiers:
         - mcxn547/cpu0
         - mcxn547/cpu1
       - qualifiers:
+        - mcxn547t/cpu0
+        - mcxn547t/cpu1
+      - qualifiers:
         - mcxn546/cpu0
         - mcxn546/cpu1
+      - qualifiers:
+        - mcxn546t/cpu0
+        - mcxn546t/cpu1
+      - qualifiers:
+        - mcxn537/cpu0
+        - mcxn537/cpu1
+      - qualifiers:
+        - mcxn537t/cpu0
+        - mcxn537t/cpu1
+      - qualifiers:
+        - mcxn536/cpu0
+        - mcxn536/cpu1
+      - qualifiers:
+        - mcxn536t/cpu0
+        - mcxn536t/cpu1
+      - qualifiers:
+        - mcxn527/cpu0
+        - mcxn527/cpu1
+      - qualifiers:
+        - mcxn527t/cpu0
+        - mcxn527t/cpu1
+      - qualifiers:
+        - mcxn526/cpu0
+        - mcxn526/cpu1
+      - qualifiers:
+        - mcxn526t/cpu0
+        - mcxn526t/cpu1
+      - qualifiers:
+        - mcxn247
+      - qualifiers:
+        - mcxn247t
+      - qualifiers:
+        - mcxn246
+      - qualifiers:
+        - mcxn246t
       - qualifiers:
         - mcxn236
       - qualifiers:
