@@ -491,6 +491,7 @@ static DEVICE_API(counter, k3_counter_api) = {
 };
 
 #define TI_K3_COUNTER_INIT(i)								\
+	BUILD_ASSERT(DT_INST_PROP(i, clock_frequency) != 0, "nonzero clock-frequency");            \
 	static void ti_k3_counter_irq_config_##i(void)					\
 	{										\
 		IRQ_CONNECT(DT_INST_IRQN(i),						\
