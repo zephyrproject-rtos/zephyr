@@ -373,13 +373,14 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		return -EINVAL;
 	}
 
-	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, lpspi_data->word_size_bytes);
 	lpspi_data->lpspi_op_mode = op_mode;
 
 	ret = lpspi_configure(dev, spi_cfg);
 	if (ret) {
 		goto error;
 	}
+
+	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, lpspi_data->word_size_bytes);
 
 	base->CR |= LPSPI_CR_RRF_MASK;
 	base->IER = 0;
