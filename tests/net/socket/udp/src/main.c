@@ -3422,6 +3422,153 @@ ZTEST(net_socket_udp, test_v4_mcast_loop)
 	zassert_ok(ret, "Cannot close socket (%d)", -errno);
 }
 
+static void udp_opt_mcast_check_listener(int sock, const char *name, uint16_t mds_tx)
+{
+	struct net_sockaddr_in addr;
+	struct net_msghdr msg = { 0 };
+	struct net_iovec io_vector[1];
+	struct net_cmsghdr *cmsg, *prevcmsg;
+	union {
+		struct net_cmsghdr hdr;
+		unsigned char buf[NET_CMSG_SPACE(sizeof(uint16_t))];
+	} cmsgbuf;
+	uint16_t mds_rx = 0U;
+	bool found = false;
+	ssize_t recved;
+
+	io_vector[0].iov_base = rx_buf;
+	io_vector[0].iov_len = sizeof(rx_buf);
+	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+	msg.msg_name = &addr;
+	msg.msg_namelen = sizeof(addr);
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_control = &cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+
+	clear_buf(rx_buf);
+	recved = zsock_recvmsg(sock, &msg, ZSOCK_MSG_DONTWAIT);
+	zexpect_equal(recved, STRLEN(TEST_STR_SMALL), "%s: wrong length %zd (%d)", name,
+		      recved, errno);
+	zexpect_mem_equal(rx_buf, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL), "%s: wrong payload",
+			  name);
+
+	for (prevcmsg = NULL, cmsg = NET_CMSG_FIRSTHDR(&msg);
+	     cmsg != NULL && prevcmsg != cmsg;
+	     prevcmsg = cmsg, cmsg = NET_CMSG_NXTHDR(&msg, cmsg)) {
+		if (cmsg->cmsg_level == NET_IPPROTO_UDP &&
+		    cmsg->cmsg_type == ZSOCK_UDP_OPT_CMSG_MDS) {
+			memcpy(&mds_rx, NET_CMSG_DATA(cmsg), sizeof(mds_rx));
+			found = true;
+			break;
+		}
+	}
+
+	zexpect_true(found, "%s: missing UDP MDS control message", name);
+	zexpect_equal(mds_rx, mds_tx, "%s: UDP MDS value mismatch", name);
+}
+
+/* Every listener of a multicast datagram gets its own clone of the packet.
+ * Each clone must keep the UDP options surplus area out of the user data and
+ * still report the options.
+ */
+ZTEST(net_socket_udp, test_udp_options_mcast_each_listener)
+{
+	struct net_sockaddr_in bind_addr = { 0 };
+	struct net_sockaddr_in mcast_addr = { 0 };
+	struct net_ip_mreqn mreqn = { 0 };
+	struct net_msghdr msg = { 0 };
+	struct net_iovec io_vector[1];
+	struct net_cmsghdr *cmsg;
+	union {
+		struct net_cmsghdr hdr;
+		unsigned char buf[NET_CMSG_SPACE(sizeof(uint16_t))];
+	} cmsgbuf;
+	uint16_t mds_tx = 1200U;
+	int recv_sock[2];
+	int send_sock;
+	int loop = 1;
+	int one = 1;
+	ssize_t sent;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_UDP_OPTIONS);
+
+	memcpy(&mreqn.imr_multiaddr, &my_mcast_addr2, sizeof(mreqn.imr_multiaddr));
+	mreqn.imr_ifindex = net_if_get_by_iface(eth_iface);
+
+	mcast_addr.sin_family = NET_AF_INET;
+	mcast_addr.sin_port = net_htons(SERVER_PORT);
+	memcpy(&mcast_addr.sin_addr, &my_mcast_addr2, sizeof(mcast_addr.sin_addr));
+
+	bind_addr.sin_family = NET_AF_INET;
+	bind_addr.sin_port = net_htons(SERVER_PORT);
+	bind_addr.sin_addr.s_addr = net_htonl(NET_INADDR_ANY);
+
+	ARRAY_FOR_EACH(recv_sock, i) {
+		recv_sock[i] = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+		zassert_true(recv_sock[i] >= 0, "Cannot create socket (%d)", -errno);
+
+		ret = zsock_setsockopt(recv_sock[i], ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEPORT,
+				       &one, sizeof(one));
+		zassert_ok(ret, "Cannot set SO_REUSEPORT (%d)", -errno);
+
+		ret = zsock_bind(recv_sock[i], (struct net_sockaddr *)&bind_addr,
+				 sizeof(bind_addr));
+		zassert_ok(ret, "Cannot bind socket (%d)", -errno);
+	}
+
+	/* Group membership is per interface, so one join covers both sockets. */
+	ret = zsock_setsockopt(recv_sock[0], NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &mreqn, sizeof(mreqn));
+	zassert_ok(ret, "Cannot join multicast group (%d)", -errno);
+
+	send_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(send_sock >= 0, "Cannot create socket (%d)", -errno);
+
+	bind_addr.sin_port = net_htons(CLIENT_PORT);
+	memcpy(&bind_addr.sin_addr, &my_addr2, sizeof(bind_addr.sin_addr));
+	ret = zsock_bind(send_sock, (struct net_sockaddr *)&bind_addr, sizeof(bind_addr));
+	zassert_ok(ret, "Cannot bind socket (%d)", -errno);
+
+	ret = zsock_setsockopt(send_sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_LOOP,
+			       &loop, sizeof(loop));
+	zassert_ok(ret, "Cannot enable multicast loop (%d)", -errno);
+
+	io_vector[0].iov_base = TEST_STR_SMALL;
+	io_vector[0].iov_len = STRLEN(TEST_STR_SMALL);
+
+	memset(&cmsgbuf, 0, sizeof(cmsgbuf));
+	msg.msg_name = &mcast_addr;
+	msg.msg_namelen = sizeof(mcast_addr);
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+	msg.msg_control = &cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+
+	cmsg = NET_CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = NET_CMSG_LEN(sizeof(mds_tx));
+	cmsg->cmsg_level = NET_IPPROTO_UDP;
+	cmsg->cmsg_type = ZSOCK_UDP_OPT_CMSG_MDS;
+	memcpy(NET_CMSG_DATA(cmsg), &mds_tx, sizeof(mds_tx));
+
+	sent = zsock_sendmsg(send_sock, &msg, 0);
+	zassert_equal(sent, STRLEN(TEST_STR_SMALL), "sendmsg failed (%d)", errno);
+
+	k_msleep(10);
+
+	udp_opt_mcast_check_listener(recv_sock[0], "listener 0", mds_tx);
+	udp_opt_mcast_check_listener(recv_sock[1], "listener 1", mds_tx);
+
+	ret = zsock_close(send_sock);
+	zassert_ok(ret, "Cannot close socket (%d)", -errno);
+
+	ARRAY_FOR_EACH(recv_sock, i) {
+		ret = zsock_close(recv_sock[i]);
+		zassert_ok(ret, "Cannot close socket (%d)", -errno);
+	}
+}
+
 ZTEST(net_socket_udp, test_v4_mcast_ttl)
 {
 	int ret;
