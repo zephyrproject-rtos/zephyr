@@ -154,6 +154,7 @@ struct uart_esp32_async_data {
 	uint32_t rx_generation;
 	uint32_t rx_stop_delay_us;
 	bool rx_stopping;
+	bool tx_dma_configured;
 	uart_callback_t cb;
 	void *user_data;
 };
@@ -1335,8 +1336,6 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 {
 	const struct uart_esp32_config *config = dev->config;
 	struct uart_esp32_data *data = dev->data;
-	struct dma_config dma_cfg = {0};
-	struct dma_block_config dma_blk = {0};
 	struct dma_status dma_status = {0};
 	uart_hw_flowcontrol_t hw_flow;
 	int err = 0;
@@ -1345,6 +1344,16 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 	if (config->tx_dma_channel == 0xFF) {
 		LOG_ERR("Tx DMA channel is not configured");
 		err = -ENOTSUP;
+		goto unlock;
+	}
+
+	if (len == 0U) {
+		err = -EINVAL;
+		goto unlock;
+	}
+
+	if (data->async.tx_len != 0U) {
+		err = -EBUSY;
 		goto unlock;
 	}
 
@@ -1360,33 +1369,38 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 		goto unlock;
 	}
 
-	if (dma_status.busy || data->async.tx_len != 0U) {
+	if (dma_status.busy) {
 		LOG_ERR("Tx DMA Channel is busy");
 		err = -EBUSY;
 		goto unlock;
 	}
 
-	data->async.tx_buf = buf;
-	data->async.tx_len = len;
+	if (data->async.tx_dma_configured) {
+		err = dma_reload(config->dma_dev, config->tx_dma_channel, (uint32_t)buf, 0, len);
+	} else {
+		struct dma_block_config dma_blk = {
+			.block_size = len,
+			.source_address = (uint32_t)buf,
+		};
+		struct dma_config dma_cfg = {
+			.channel_direction = MEMORY_TO_PERIPHERAL,
+			.dma_callback = uart_esp32_dma_tx_done,
+			.user_data = (void *)dev,
+			.dma_slot = ESP_GDMA_TRIG_PERIPH_UHCI0,
+			.block_count = 1,
+			.head_block = &dma_blk,
+		};
 
-	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
-	dma_cfg.dma_callback = uart_esp32_dma_tx_done;
-	dma_cfg.user_data = (void *)dev;
-	dma_cfg.dma_slot = ESP_GDMA_TRIG_PERIPH_UHCI0;
-	dma_cfg.block_count = 1;
-	dma_cfg.head_block = &dma_blk;
-	dma_blk.block_size = len;
-	dma_blk.source_address = (uint32_t)buf;
-
-	sys_cache_data_flush_range((void *)buf, len);
-
-	err = dma_config(config->dma_dev, config->tx_dma_channel, &dma_cfg);
-	if (err) {
-		LOG_ERR("Error configuring Tx DMA (%d)", err);
-		data->async.tx_buf = NULL;
-		data->async.tx_len = 0U;
+		err = dma_config(config->dma_dev, config->tx_dma_channel, &dma_cfg);
+		data->async.tx_dma_configured = (err == 0);
+	}
+	if (err != 0) {
+		LOG_ERR("Error preparing Tx DMA (%d)", err);
 		goto unlock;
 	}
+
+	data->async.tx_buf = buf;
+	data->async.tx_len = len;
 
 	uart_hal_get_hw_flow_ctrl(&data->hal, &hw_flow);
 	if (hw_flow == UART_HW_FLOWCTRL_CTS_RTS) {
@@ -1672,6 +1686,9 @@ static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action 
 		 * power domain is powered down. Re-apply configuration on wake.
 		 */
 		if (config->dma_dev != NULL) {
+			struct uart_esp32_data *data = dev->data;
+
+			data->async.tx_dma_configured = false;
 			uart_esp32_uhci_hw_init(dev);
 		}
 #endif
