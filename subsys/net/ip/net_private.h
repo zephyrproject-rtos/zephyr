@@ -114,6 +114,13 @@ extern void net_pkt_init(void);
 static inline void net_pkt_init(void) { }
 #endif
 
+/* Length of the largest segment of a UDP block, IP header included */
+static inline size_t net_gso_max_segment_len(struct net_pkt *pkt)
+{
+	return net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) + NET_UDPH_LEN +
+	       net_pkt_gso_size(pkt);
+}
+
 /* How long a segment allocation may wait, as for an IP fragment */
 #define NET_GSO_BUF_TIMEOUT K_MSEC(100)
 
