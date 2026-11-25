@@ -5,7 +5,7 @@ config RISCV_IMSIC
 	bool "RISC-V IMSIC (Incoming Message-Signaled Interrupt Controller)"
 	default y if DT_HAS_RISCV_IMSIC_ENABLED
 	depends on RISCV
-	depends on (!RISCV_S_MODE && RISCV_ISA_EXT_SMCSRIND) || \
+	depends on (!RISCV_S_MODE && (RISCV_ISA_EXT_SMCSRIND || RISCV_ISA_EXT_SMAIA)) || \
 			(RISCV_S_MODE && (RISCV_ISA_EXT_SSCSRIND || RISCV_ISA_EXT_SSAIA))
 	select RISCV_HAS_NESTED_INTERRUPTS if !RISCV_S_MODE
 	help

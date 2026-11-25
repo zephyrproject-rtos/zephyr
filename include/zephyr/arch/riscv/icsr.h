@@ -14,7 +14,8 @@
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/irq.h>
 
-#ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
+/* miselect and mireg are provided by Smcsrind and also by Smaia on its own */
+#if defined(CONFIG_RISCV_ISA_EXT_SMCSRIND) || defined(CONFIG_RISCV_ISA_EXT_SMAIA)
 
 /**
  * @brief Read an indirect CSR register atomically
@@ -110,6 +111,10 @@ static inline unsigned long micsr_read_clear(unsigned int index, unsigned long m
 	arch_irq_unlock(key);
 	return val;
 }
+
+#endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND || CONFIG_RISCV_ISA_EXT_SMAIA */
+
+#ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
 
 /**
  * @brief Read an indirect CSR register via MIREG2 atomically
