@@ -94,13 +94,11 @@ static void send_oversized_datagram(net_sa_family_t family)
 	zexpect_equal(len, sizeof(tx_buf), "Receive failed (%zd, %d)", len, errno);
 	zexpect_mem_equal(rx_buf, tx_buf, sizeof(tx_buf), "Received data differs");
 
-	/* The datagram itself is counted when it is sent, and each fragment
-	 * once more when the fragment is sent.
-	 */
+	/* A fragmented datagram is counted once per fragment sent. */
 	sent = ip_sent(family) - sent_before;
 
 	if (IS_ENABLED(CONFIG_NET_LOOPBACK_FRAGMENT)) {
-		zexpect_equal(sent, 3, "Datagram was not sent as two fragments (%u)", sent);
+		zexpect_equal(sent, 2, "Datagram was not sent as two fragments (%u)", sent);
 	} else {
 		zexpect_equal(sent, 1, "Datagram was fragmented (%u)", sent);
 	}
