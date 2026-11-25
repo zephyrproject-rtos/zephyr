@@ -798,7 +798,8 @@ static void adc_stm32_calibration_start(const struct device *dev, __maybe_unused
 	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32H7RSX) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32G5X)
 	LL_ADC_StartCalibration(adc, calib_type);
 #elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
