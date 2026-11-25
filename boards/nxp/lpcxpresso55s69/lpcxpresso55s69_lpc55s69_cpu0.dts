@@ -94,21 +94,30 @@
 			};
 		};
 
+		frohfdiv_domain: frohfdiv-domain {
+			compatible = "clock-domain";
+			/* FROHF clock domain */
+			frohfdiv_96m: frohfdiv_96m {
+				compatible = "clock-state";
+				clocks = <&frohfdiv 1>;
+			};
+		};
+
 		fc0_domain: fc0-domain {
 			compatible = "clock-domain";
 			/* 96 MHz setpoint for Flexcomm0 clock using FROHF */
 			fxcom0_96mhz: fxcom0_96mhz {
 				compatible = "clock-state";
-				clocks = <&fcclksel0 3 &frohfdiv 1>;
+				clocks = <&fcclksel0 3>;
 			};
 		};
 
 		fc2_domain: fc2-domain {
 			compatible = "clock-domain";
 			/* 96 MHz setpoint for Flexcomm0 clock using FROHF */
-			fxcom2_96mhz: fxcom0_96mhz {
+			fxcom2_96mhz: fxcom2_96mhz {
 				compatible = "clock-state";
-				clocks = <&fcclksel2 3 &frohfdiv 1>;
+				clocks = <&fcclksel2 3>;
 			};
 		};
 	};
@@ -148,7 +157,7 @@
 
 &flexcomm0 {
 	status = "okay";
-	clock-request-0 = <&fxcom0_96mhz>;
+	clock-request-0 = <&fxcom0_96mhz &frohfdiv_96m>;
 	clock-request-names = "default";
 };
 
@@ -158,7 +167,7 @@
 };
 
 &flexcomm2 {
-	clock-request-0 = <&fxcom2_96mhz>;
+	clock-request-0 = <&fxcom2_96mhz &frohfdiv_96m>;
 	clock-request-names = "default";
 };
 

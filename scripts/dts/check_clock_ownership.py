@@ -68,8 +68,8 @@ def get_clock_domains(edt):
 
 def check_overlaps(clock_domains):
     """
-    Checks for conflicting configuration between clock-domain nodes.
-    Returns a list of (clock_node, (output_a, specifier_a), (output_b, specifier_b))
+    Checks for conflicting ownership between clock-domain nodes.
+    Returns a list of (clock_node, (domain_a, specifier_a), (domain_b, specifier_b))
     tuples for each conflict.
     """
     conflicts = []
@@ -87,20 +87,7 @@ def check_overlaps(clock_domains):
             for clock_node in sorted(overlap, key=lambda n: n.path):
                 setting_a = clocks_a[clock_node]
                 setting_b = clocks_b[clock_node]
-                # Settings can only be considered non-conflicting if they
-                # are identical, and only use one specifier
-                if setting_a != setting_b or len(setting_a) > 1:
-                    logger.debug(
-                        f"Conflicting settings for {clock_node.path}: "
-                        f"{domain_a.path} sets {setting_a}, "
-                        f"{domain_b.path} sets {setting_b}"
-                    )
-                    conflicts.append((clock_node, (domain_a, setting_a), (domain_b, setting_b)))
-                else:
-                    logger.debug(
-                        f"Shared clock {clock_node.path} with matching settings "
-                        f"between {domain_a.path} and {domain_b.path}"
-                    )
+                conflicts.append((clock_node, (domain_a, setting_a), (domain_b, setting_b)))
 
     return conflicts
 

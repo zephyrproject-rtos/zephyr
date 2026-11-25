@@ -8,13 +8,22 @@
 #include <freq.h>
 
 &clock_domains {
+	frohf_domain: frohfdiv-domain {
+		compatible = "clock-domain";
+		/* FROHF clock domain */
+		frohf_en: frohfdiv_96m {
+			compatible = "clock-state";
+			clocks = <&fro_hf 1>;
+		};
+	};
+
 	sys_clk_domain: sys-clk-domain {
 		/delete-node/ sys_clk_144mhz;
 		compatible = "clock-domain";
 		/* Clock CPU from FROHF, since we will use the PLLs within our testcases */
 		sys_clk_96mhz: sys-clk-96mhz {
 			compatible = "clock-state";
-			clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;
+			clocks = <&ahbclkdiv 1 &mainclksela 3 &mainclkselb 0>;
 		};
 	};
 
@@ -27,7 +36,7 @@
 			clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
 				  &pll0_pdec 4 &pll0_directo 0
 				  &pll0 8 256 0 31 31 0 0 0
-				  &pll1_bypass 0 &clkoutsel 1
+				  &pll0_bypass 0 &clkoutsel 1
 				  &clkoutdiv 8>;
 		};
 
@@ -43,7 +52,7 @@
 			clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
 				  &pll0_pdec 4 &pll0_directo 0
 				  &pll0 8 256 0 31 31 0 0 0
-				  &pll1_bypass 0 &clkoutsel 1
+				  &pll0_bypass 0 &clkoutsel 1
 				  &clkoutdiv 256>;
 		};
 	};
@@ -74,14 +83,14 @@
 		sdioclk_12mhz: sdioclk-12mhz {
 			compatible = "clock-state";
 			/* Expect a clock frequency of 12 MHz */
-			clocks = <&fro_hf 1 &sdioclksel 3
+			clocks = <&sdioclksel 3
 				  &sdioclkdiv 8>;
 		};
 	};
 };
 
 &cpu0 {
-	clock-request-0 = <&sys_clk_96mhz>;
+	clock-request-0 = <&sys_clk_96mhz &frohf_en>;
 	clock-request-0-locking;
 };
 
@@ -102,7 +111,7 @@
 			fast-default-freq = <DT_FREQ_M(48)>;
 			slow-sleep-freq = <DT_FREQ_M(1)>;
 			fast-sleep-freq = <DT_FREQ_M(12)>;
-			clock-request-1 = <&clkout_1mhz &sdioclk_12mhz>;
+			clock-request-1 = <&clkout_1mhz &sdioclk_12mhz &frohf_en>;
 			clock-request-names = "default", "sleep";
 		};
 	};
