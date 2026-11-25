@@ -515,7 +515,8 @@ static int sdio_set_bus_speed(struct sd_card *card)
 	case SD_TIMING_HIGH_SPEED:
 		bus_clock = MIN(card->host_props.f_max, card->switch_caps.hs_max_dtr);
 		target_speed = SDIO_CCCR_SPEED_SDR25;
-		timing = SDHC_TIMING_HS;
+		timing = (card->bus_io.signal_voltage == SD_VOL_1_8_V) ?
+			SDHC_TIMING_SDR25 : SDHC_TIMING_HS;
 		break;
 	case SD_TIMING_DEFAULT:
 		bus_clock = MIN(card->host_props.f_max, MHZ(25));
