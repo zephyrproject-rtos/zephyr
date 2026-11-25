@@ -147,7 +147,7 @@ properties:
       - ITR15
       - TI1F_ED
       - TI1FP1
-      - TI1FP2
+      - TI2FP2
       - ETRF
     description: |
       Selects the input trigger (TRGI) source for slave mode operation.
