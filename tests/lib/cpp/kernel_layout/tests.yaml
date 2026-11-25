@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - cpp
+    - kernel
+  toolchain_exclude: xcc
+  integration_platforms:
+    - mps2/an385
+    - qemu_cortex_a53
+    - qemu_x86
+    - qemu_xtensa/dc233c
+    - native_sim
+
+tests:
+  cpp.kernel_layout: {}
