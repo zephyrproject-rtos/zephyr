@@ -23,6 +23,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/ref.h>
 #include <zephyr/shell/shell.h>
 
 #define XENLIB_OSAL_MAYBE_UNUSED __maybe_unused
@@ -180,6 +181,34 @@ typedef k_timeout_t xenlib_osal_timeout_t;
 
 typedef atomic_t xenlib_osal_atomic_t;
 typedef atomic_val_t xenlib_osal_atomic_val_t;
+
+typedef struct sys_refcount xenlib_osal_refcount_t;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+static ALWAYS_INLINE void
+xenlib_osal_refcount_init(xenlib_osal_refcount_t *ref)
+{
+	sys_refcount_init(ref);
+}
+
+static ALWAYS_INLINE void
+xenlib_osal_refcount_get(xenlib_osal_refcount_t *ref)
+{
+	sys_refcount_inc(ref);
+}
+
+static ALWAYS_INLINE bool
+xenlib_osal_refcount_put(xenlib_osal_refcount_t *ref)
+{
+	return sys_refcount_dec(ref);
+}
+
+#ifdef __cplusplus
+}
+#endif
 
 typedef sys_dlist_t xenlib_osal_dlist_t;
 typedef sys_dnode_t xenlib_osal_dnode_t;
