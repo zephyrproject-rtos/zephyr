@@ -55,6 +55,27 @@
 			reg-names = "pmc", "cdcg";
 		};
 
+		miwu0: miwu@400bb000 {
+			compatible = "nuvoton,npcm-miwu";
+			reg = <0x400bb000 0x2000>;
+			index = <0>;
+			#miwu-cells = <2>;
+		};
+
+		miwu1: miwu@400bd000 {
+			compatible = "nuvoton,npcm-miwu";
+			reg = <0x400bd000 0x2000>;
+			index = <1>;
+			#miwu-cells = <2>;
+		};
+
+		miwu2: miwu@400bf000 {
+			compatible = "nuvoton,npcm-miwu";
+			reg = <0x400bf000 0x2000>;
+			index = <2>;
+			#miwu-cells = <2>;
+		};
+
 		scfg: syscon@400c3000 {
 			compatible = "nuvoton,npcm-scfg", "syscon";
 			/* System Configuration (SCFG) */
