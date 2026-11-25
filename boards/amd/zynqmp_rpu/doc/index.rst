@@ -59,6 +59,12 @@ Hardware (XSDB)
    :board: zynqmp_rpu
    :goals: build
 
+Running in QEMU
+===============
+
+This board can be emulated with QEMU using the optional ``qemu-devicetrees``
+module; see :ref:`amd-qemu-emulation` for setup and usage.
+
 References
 **********
 
