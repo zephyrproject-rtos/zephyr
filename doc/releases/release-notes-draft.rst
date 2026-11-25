@@ -66,6 +66,12 @@ Libraries / Subsystems
     replaces the removed ``media_proxy_`` API, see the :ref:`migration guide
     <migration_4.6>`.
 
+* Crypto
+
+  * :ref:`PSA Crypto <psa_crypto>` calls can be offloaded to a shared worker thread pool with
+    :kconfig:option:`CONFIG_CALL_OFFLOADER_PSA`, so calling threads do not each need to size
+    their stack for the deepest cryptographic operation they perform.
+
 * Display
 
   * Display timings can be read and set at runtime with
@@ -81,6 +87,13 @@ Libraries / Subsystems
   * The requested tCAS (clock after START) is configurable through
     :c:member:`i3c_config_controller.tcas_ps` and the ``tcas-ps`` controller
     Devicetree property.
+
+* Kernel
+
+  * Added the :ref:`call offloader <call_offloading>` (:kconfig:option:`CONFIG_CALL_OFFLOADER`),
+    a synchronous, priority-inheriting worker pool that runs stack-hungry functions on dedicated
+    worker stacks via :c:func:`call_offloader_dispatch` and :c:macro:`CALL_OFFLOADER_WRAP` so
+    calling threads do not each have to reserve the worst-case stack depth.
 
 * LoRaWAN
 

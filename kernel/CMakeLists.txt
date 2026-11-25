@@ -177,6 +177,7 @@ else()
     zephyr_compile_definitions(K_HEAP_MEM_POOL_SIZE=${final_heap_size})
   endif()
 
+  add_subdirectory_ifdef(CONFIG_CALL_OFFLOADER call_offloader)
   add_subdirectory_ifdef(CONFIG_USERSPACE userspace)
   add_subdirectory(sys)
 

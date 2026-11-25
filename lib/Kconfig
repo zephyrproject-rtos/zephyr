@@ -9,6 +9,8 @@ source "lib/cpp/Kconfig"
 
 menu "Additional libraries"
 
+source "lib/call_offloader/Kconfig"
+
 source "lib/hash/Kconfig"
 
 source "lib/heap/Kconfig"
