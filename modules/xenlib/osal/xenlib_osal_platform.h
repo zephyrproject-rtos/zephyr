@@ -24,6 +24,8 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/shell/shell.h>
 
+#define XENLIB_OSAL_MAYBE_UNUSED __maybe_unused
+
 /**
  * Shell text color constants.
  */
