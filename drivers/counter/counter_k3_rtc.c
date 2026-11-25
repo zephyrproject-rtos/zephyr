@@ -123,6 +123,29 @@ static int k3_rtc_unlock(const struct device *dev)
 	return 0;
 }
 
+
+static int k3_rtc_read_48(const struct device *dev, uint64_t *ticks)
+{
+	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
+	uint32_t seconds_low;
+	uint32_t seconds_high;
+
+	seconds_low = rtc_regs->S_CNT_LSW;
+	seconds_high = rtc_regs->S_CNT_MSW;
+	*ticks = ((uint64_t)(seconds_high & BIT_MASK(16)) << 32) | seconds_low;
+
+	return 0;
+}
+
+static void k3_rtc_write_48(const struct device *dev, uint64_t ticks)
+{
+	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
+	uint64_t ticks_masked = ticks & BIT64_MASK(48);
+
+	rtc_regs->S_CNT_LSW = (uint32_t)(ticks_masked >> 0);
+	rtc_regs->S_CNT_MSW = (uint32_t)(ticks_masked >> 32);
+}
+
 static int k3_counter_start(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -139,24 +162,44 @@ static int k3_counter_stop(const struct device *dev)
 
 static int k3_counter_get_value(const struct device *dev, uint32_t *ticks)
 {
-	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
+	uint64_t now_48;
+	int ret;
 
 	if (ticks == NULL) {
 		return -EINVAL;
 	}
 
-	*ticks = rtc_regs->S_CNT_LSW;
+	/*
+	 * CNT_FMODE=10 freezes MSW on LSW read until MSW is read. Always go
+	 * through the 48-bit helper so a 32-bit consumer cannot leave freeze
+	 * latched (matches Linux rtc-ti-k3 read_time).
+	 */
+	ret = k3_rtc_read_48(dev, &now_48);
+	if (ret != 0) {
+		return ret;
+	}
+
+	*ticks = (uint32_t)now_48;
 
 	return 0;
 }
 
 static int k3_counter_set_value(const struct device *dev, uint32_t ticks)
 {
-	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
+	uint64_t now_48;
 	int ret;
 
-	rtc_regs->S_CNT_LSW = ticks;
-	rtc_regs->S_CNT_MSW = 0;
+	/*
+	 * 32-bit set_value updates LSW only. Read MSW (via 48-bit helper so
+	 * freeze mode is released) and keep it so we do not truncate a live
+	 * 48-bit epoch back to the first 136 years.
+	 */
+	ret = k3_rtc_read_48(dev, &now_48);
+	if (ret != 0) {
+		return ret;
+	}
+
+	k3_rtc_write_48(dev, (now_48 & ~((uint64_t)UINT32_MAX)) | ticks);
 
 	ret = k3_rtc_fence(dev);
 	if (ret != 0) {
@@ -171,7 +214,10 @@ static int k3_counter_reset(const struct device *dev)
 {
 	int ret;
 
-	ret = k3_counter_set_value(dev, 0);
+	/* Full 48-bit clear. Do not use set_value() which preserves MSW. */
+	k3_rtc_write_48(dev, 0);
+
+	ret = k3_rtc_fence(dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to sync after reset");
 		return ret;
@@ -295,27 +341,22 @@ static uint32_t k3_counter_get_frequency(const struct device *dev)
 #ifdef CONFIG_COUNTER_64BITS_TICKS
 static int k3_counter_get_value_64(const struct device *dev, uint64_t *ticks)
 {
-	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
-
 	if (ticks == NULL) {
 		return -EINVAL;
 	}
 
-	uint32_t seconds_low = rtc_regs->S_CNT_LSW;
-	uint32_t seconds_high = rtc_regs->S_CNT_MSW;
-
-	*ticks = ((uint64_t)seconds_high << 32) | (uint64_t)seconds_low;
-
-	return 0;
+	return k3_rtc_read_48(dev, ticks);
 }
 
 static int k3_counter_set_value_64(const struct device *dev, uint64_t ticks)
 {
-	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
 	int ret;
 
-	rtc_regs->S_CNT_LSW = ticks;
-	rtc_regs->S_CNT_MSW = (uint32_t)(ticks >> 32);
+	if (ticks > RTC_MAX_TOP_VALUE_64) {
+		return -EINVAL;
+	}
+
+	k3_rtc_write_48(dev, ticks);
 
 	ret = k3_rtc_fence(dev);
 	if (ret != 0) {
