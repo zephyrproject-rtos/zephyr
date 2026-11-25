@@ -7,6 +7,7 @@
  */
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/sensor/ade9000.h>
 #include <zephyr/dt-bindings/sensor/iis3dwb.h>
 
 /****************************************
@@ -612,4 +613,16 @@ test_spi_dps310: dps310@48 {
 	compatible = "infineon,dps310";
 	reg = <0x48>;
 	spi-max-frequency = <0>;
+};
+
+test_spi_ade9000: ade9000@49 {
+	compatible = "adi,ade9000";
+	reg = <0x49>;
+	spi-max-frequency = <0>;
+	irq0-gpios = <&test_gpio 0 0>;
+	irq1-gpios = <&test_gpio 0 0>;
+	reset-gpios = <&test_gpio 0 0>;
+	multi-point-compensation;
+	voltage-full-scale-microvolt = <ADE9000_DT_FULL_SCALE_FROM_RMS_WEIGHT(314594511)>;
+	current-full-scale-microampere = <ADE9000_DT_FULL_SCALE_FROM_RMS_WEIGHT(5057092569)>;
 };
