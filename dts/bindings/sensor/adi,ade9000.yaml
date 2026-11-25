@@ -1,0 +1,431 @@
+# Copyright (c) 2026 A-Eberle <Daniel.Kampert@a-eberle.de>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices ADE9000 polyphase energy metering IC on SPI.
+
+  Example:
+
+    #include <zephyr/dt-bindings/sensor/ade9000.h>
+
+    &spi0 {
+        ade9000: ade9000@0 {
+            compatible = "adi,ade9000";
+            reg = <0>;
+            spi-max-frequency = <DT_FREQ_M(20)>;
+            irq0-gpios = <&pioa 15 GPIO_ACTIVE_LOW>;
+            irq1-gpios = <&pioa 22 GPIO_ACTIVE_LOW>;
+            voltage-full-scale-microvolt = <707106781>;
+            current-full-scale-microampere = <70710678>;
+            vconsel = <ADE9000_DT_VCONSEL_4W_WYE>;
+        };
+    };
+
+compatible: "adi,ade9000"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  irq0-gpios:
+    type: phandle-array
+    description: IRQ0 output, signals the events enabled in MASK0.
+
+  irq1-gpios:
+    type: phandle-array
+    description: IRQ1 output, signals the events enabled in MASK1.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Hardware reset input. Leave out if the reset line is shared with other
+      parts and driven by the application.
+
+  line-frequency:
+    type: int
+    default: 50
+    enum: [50, 60]
+    description: |
+      Nominal line frequency in Hz, sets ACCMODE.SELFREQ at init. Can be
+      changed at run time with SENSOR_ATTR_ADE9000_LINE_FREQUENCY.
+
+  multi-point-compensation:
+    type: boolean
+    description: Enable multipoint compensation (CONFIG0.MTEN).
+
+  external-reference:
+    type: boolean
+    description: |
+      The hardware supplies an external voltage reference on REFIN, sets
+      CONFIG1.EXT_REF. Without it the internal reference is used.
+
+  iconsel:
+    type: boolean
+    description: |
+      Calculate the phase B current as IB = -IA - IC instead of measuring it
+      (ACCMODE.ICONSEL). For three wire systems with current transformers on
+      phase A and C only. The IB input is then ignored.
+      Sets the value at init, SENSOR_ATTR_ADE9000_ICONSEL changes it at run time.
+
+  vconsel:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4]
+    description: |
+      Network configuration (ACCMODE.VCONSEL), selects the voltage channels
+      the IC computes instead of measuring them. Use the
+      ADE9000_DT_VCONSEL_* values of <zephyr/dt-bindings/sensor/ade9000.h>:
+      - ADE9000_DT_VCONSEL_4W_WYE: 4 wire wye, all voltages measured
+      - ADE9000_DT_VCONSEL_3W_DELTA: 3 wire delta, VB = VA - VC
+      - ADE9000_DT_VCONSEL_4W_WYE_NON_BLONDEL: VB = -VA - VC
+      - ADE9000_DT_VCONSEL_4W_DELTA_NON_BLONDEL: VB = -VA
+      - ADE9000_DT_VCONSEL_3W_DELTA_LL: 3 wire delta, line to line voltages
+      Sets the value at init, SENSOR_ATTR_ADE9000_VCONSEL changes it at run time.
+        VA = VA - VB, VB = VA - VC, VC = VC - VB
+      The non Blondel modes are only accurate with balanced voltages.
+
+  irq0-on-irq1:
+    type: boolean
+    description: |
+      Signal the STATUS0 events on IRQ1 as well (CONFIG1.IRQ0_ON_IRQ1), for
+      boards that only route IRQ1. The driver then services STATUS0 on IRQ1
+      and calls the IRQ0 trigger.
+
+  current-pga-gain:
+    type: int
+    default: 1
+    enum: [1, 2, 4]
+    description: |
+      PGA gain of the phase current ADCs IA, IB and IC (PGA_GAIN). Reduce
+      current-full-scale-microampere by the same factor.
+
+  neutral-pga-gain:
+    type: int
+    default: 1
+    enum: [1, 2, 4]
+    description: PGA gain of the neutral current ADC IN (PGA_GAIN).
+
+  voltage-pga-gain:
+    type: int
+    default: 1
+    enum: [1, 2, 4]
+    description: |
+      PGA gain of the voltage ADCs VA, VB and VC (PGA_GAIN). Reduce
+      voltage-full-scale-microvolt by the same factor.
+
+  disabled-adcs:
+    type: int
+    default: 0
+    description: |
+      ADCs to turn off to save power (CHNL_DIS), an OR of the
+      ADE9000_DT_ADC_* values of <zephyr/dt-bindings/sensor/ade9000.h>, e.g.
+      for phase A only:
+        disabled-adcs = <(ADE9000_DT_ADC_IB | ADE9000_DT_ADC_IC |
+                          ADE9000_DT_ADC_VB | ADE9000_DT_ADC_VC)>;
+
+  integrator:
+    type: boolean
+    description: |
+      Enable the digital integrator of the phase currents for Rogowski coils
+      (CONFIG0.INTEN). DICOEFF is set to 0xFFFFE000.
+
+  neutral-integrator:
+    type: boolean
+    description: |
+      Enable the digital integrator of the neutral current (CONFIG0.ININTEN).
+      DICOEFF is set to 0xFFFFE000.
+
+  hpf-disable:
+    type: boolean
+    description: Disable the high pass filter of all channels (CONFIG0.HPFDIS).
+
+  hpf-corner-millihertz:
+    type: int
+    default: 1250
+    enum: [77390, 39275, 19790, 9935, 4980, 2495, 1250, 625]
+    description: Corner frequency of the high pass filter (CONFIG2.HPF_CRN).
+
+  disable-active-power-lpf:
+    type: boolean
+    description: Disable the low pass filter of the total active power (CONFIG0.DISAPLPF).
+
+  disable-reactive-power-lpf:
+    type: boolean
+    description: Disable the low pass filter of the total reactive power (CONFIG0.DISRPLPF).
+
+  zx-src-sel:
+    type: boolean
+    description: Set CONFIG0.ZX_SRC_SEL, the data sheet describes the zero crossing source.
+
+  rms-src-sel:
+    type: boolean
+    description: Set CONFIG0.RMS_SRC_SEL, the data sheet describes the rms source.
+
+  isum-cfg:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3]
+    description: |
+      Calculation of ISUMRMS (CONFIG0.ISUM_CFG): 0 and 3 approximate the
+      neutral current from the phase currents, 1 and 2 compare the sum with
+      the neutral current for the MISMTCH event.
+
+  vnom:
+    type: int
+    default: 0
+    description: |
+      Nominal voltage as xVRMS code (VNOM), used instead of the measured
+      voltage for the apparent power of the phases in vnom-phases.
+
+  vnom-phases:
+    type: int
+    default: 0
+    description: |
+      Phases whose apparent power uses vnom (CONFIG0.VNOMx_EN), bit 0 to 2 for
+      phase A to C.
+
+  use-user-period:
+    type: boolean
+    description: |
+      Use the line period from SENSOR_ATTR_ADE9000_USER_PERIOD instead of the
+      measured one (CONFIG2.UPERIOD_SEL).
+
+  var-disable:
+    type: boolean
+    description: Turn off the total reactive power calculation (VAR_DIS).
+
+  active-accumulation:
+    type: string
+    default: "signed"
+    enum: ["signed", "absolute", "positive", "negative"]
+    description: |
+      How the active power is accumulated into the energy registers and CF
+      pulses (ACCMODE.WATTACC).
+
+  reactive-accumulation:
+    type: string
+    default: "signed"
+    enum: ["signed", "absolute", "positive", "negative"]
+    description: |
+      How the reactive power is accumulated into the energy registers and CF
+      pulses (ACCMODE.VARACC).
+
+  energy-time:
+    type: int
+    default: 7999
+    description: |
+      The energy registers are updated and EGYRDY is raised every
+      energy-time + 1 samples at 8 kSPS (EGY_TIME), 7999 is one second.
+
+  no-load-samples:
+    type: int
+    default: 64
+    enum: [64, 128, 256, 512, 1024, 2048, 4096, 0]
+    description: |
+      Samples at 8 kSPS over which the no load condition is evaluated
+      (EP_CFG.NOLOAD_TMR), 0 turns the no load detection off.
+
+  cf3-zero-crossing:
+    type: boolean
+    description: |
+      Output the zero crossing selected with SENSOR_ATTR_ADE9000_ZX_LP_SEL on
+      the CF3/ZX pin instead of CF3 pulses (CONFIG1.CF3_CFG).
+
+  cf4-function:
+    type: string
+    default: "cf"
+    enum: ["cf", "event", "data-ready"]
+    description: |
+      Function of the CF4/EVENT/DREADY pin (CONFIG1.CF4_CFG): CF4 pulses, the
+      events enabled with SENSOR_ATTR_ADE9000_EVENT_MASK, or data ready.
+
+  dip-swell-irq-mode:
+    type: boolean
+    description: |
+      Set CONFIG1.DIP_SWELL_IRQ_MODE, the data sheet describes when the dip
+      and swell interrupts are raised.
+
+  mtthr-low:
+    type: array
+    default: [0, 0, 0, 0, 0]
+    description: |
+      Lower thresholds MTTHR_L0 to MTTHR_L4 of the multipoint ranges, as raw
+      xIRMS codes (I / I_fs * 52702092). Only used with
+      multi-point-compensation. ade9000_multipoint_set() changes them at run
+      time, in A.
+
+  mtthr-high:
+    type: array
+    default: [0, 0, 0, 0, 0]
+    description: |
+      Upper thresholds MTTHR_H0 to MTTHR_H4, see mtthr-low. Region n spans
+      MTTHR_Ln to MTTHR_Hn, MTTHR_L(n+1) to MTTHR_Hn is the hysteresis between
+      region n and n + 1 (data sheet figure 59).
+
+  voltage-full-scale-microvolt:
+    type: int
+    required: true
+    description: |
+      Rms voltage at the measurement input that drives the voltage ADCs to full
+      scale (707 mV rms / PGA gain at the pins), i.e. 707 mV times the ratio
+      of the voltage divider.
+
+  current-full-scale-microampere:
+    type: int
+    required: true
+    description: |
+      Rms current at the measurement input that drives the current ADCs to
+      full scale (707 mV rms / PGA gain at the pins), set by the current
+      transformer ratio and the burden resistor. Also used for the neutral.
+
+  a-igains:
+    type: array
+    default: [0, 0, 0, 0, 0, 0]
+    description: |
+      Current gains of phase A in the order AIGAIN, AIGAIN0 to AIGAIN4. Each
+      is (gain - 1) * 2^27 as a signed 32 bit number, so 0 is a gain of 1 and
+      134217728 a gain of 2. Negative values are written as (-x).
+      ADE9000_DT_GAIN() from dt-bindings/sensor/ade9000.h computes the value,
+      e.g. ADE9000_DT_GAIN(2000000) for a gain of 2. AIGAIN0 to
+      AIGAIN4 only take effect with multipoint compensation (CONFIG0.MTEN),
+      ade9000_multipoint_set() changes them at run time.
+
+  b-igains:
+    type: array
+    default: [0, 0, 0, 0, 0, 0]
+    description: Current gains of phase B, BIGAIN, BIGAIN0 to BIGAIN4, see a-igains.
+
+  c-igains:
+    type: array
+    default: [0, 0, 0, 0, 0, 0]
+    description: Current gains of phase C, CIGAIN, CIGAIN0 to CIGAIN4, see a-igains.
+
+  vgains:
+    type: array
+    default: [0, 0, 0]
+    description: |
+      Voltage gains AVGAIN, BVGAIN, CVGAIN, same format as a-igains. Written at
+      init, SENSOR_ATTR_GAIN on the VRMS channel changes them at run time.
+
+  pgains:
+    type: array
+    default: [0, 0, 0]
+    description: Power gains APGAIN, BPGAIN, CPGAIN, same format as a-igains.
+
+  nigain:
+    type: int
+    default: 0
+    description: Neutral current gain NIGAIN, same format as a-igains.
+
+  a-phcals:
+    type: array
+    default: [0, 0, 0, 0, 0]
+    description: |
+      Phase compensation of phase A in the order APHCAL0 to APHCAL4, as signed
+      32 bit register values from equation 4 of the data sheet (page 31).
+      Negative values are written as (-x). Without multipoint compensation
+      (CONFIG0.MTEN) only APHCAL0 takes effect. SENSOR_ATTR_ADE9000_PHCAL on
+      the IRMS channel changes APHCAL0 to CPHCAL0 at run time, in degrees,
+      ade9000_multipoint_set() all five.
+
+  b-phcals:
+    type: array
+    default: [0, 0, 0, 0, 0]
+    description: Phase compensation of phase B, BPHCAL0 to BPHCAL4, see a-phcals.
+
+  c-phcals:
+    type: array
+    default: [0, 0, 0, 0, 0]
+    description: Phase compensation of phase C, CPHCAL0 to CPHCAL4, see a-phcals.
+
+  nphcal:
+    type: int
+    default: 0
+    description: |
+      Neutral current phase compensation NPHCAL, see a-phcals.
+      SENSOR_ATTR_ADE9000_PHCAL on the NIRMS channel changes it at run time.
+
+  irmsos:
+    type: array
+    default: [0, 0, 0]
+    description: |
+      Current rms offsets AIRMSOS, BIRMSOS, CIRMSOS as signed raw register
+      values (data sheet page 32). Negative values are written as (-x). All
+      offsets are written at init and can be changed at run time with
+      SENSOR_ATTR_OFFSET, SENSOR_ATTR_ADE9000_OFFSET_ONE and
+      SENSOR_ATTR_ADE9000_OFFSET_1012.
+
+  vrmsos:
+    type: array
+    default: [0, 0, 0]
+    description: Voltage rms offsets AVRMSOS, BVRMSOS, CVRMSOS, see irmsos.
+
+  ifrmsos:
+    type: array
+    default: [0, 0, 0]
+    description: Fundamental current rms offsets AIFRMSOS, BIFRMSOS, CIFRMSOS, see irmsos.
+
+  vfrmsos:
+    type: array
+    default: [0, 0, 0]
+    description: Fundamental voltage rms offsets AVFRMSOS, BVFRMSOS, CVFRMSOS, see irmsos.
+
+  irmsoneos:
+    type: array
+    default: [0, 0, 0]
+    description: One cycle current rms offsets AIRMSONEOS, BIRMSONEOS, CIRMSONEOS, see irmsos.
+
+  vrmsoneos:
+    type: array
+    default: [0, 0, 0]
+    description: One cycle voltage rms offsets AVRMSONEOS, BVRMSONEOS, CVRMSONEOS, see irmsos.
+
+  irms1012os:
+    type: array
+    default: [0, 0, 0]
+    description: 10/12 cycle current rms offsets AIRMS1012OS, BIRMS1012OS, CIRMS1012OS, see irmsos.
+
+  vrms1012os:
+    type: array
+    default: [0, 0, 0]
+    description: 10/12 cycle voltage rms offsets AVRMS1012OS, BVRMS1012OS, CVRMS1012OS, see irmsos.
+
+  wattos:
+    type: array
+    default: [0, 0, 0]
+    description: Active power offsets AWATTOS, BWATTOS, CWATTOS, see irmsos.
+
+  varos:
+    type: array
+    default: [0, 0, 0]
+    description: Reactive power offsets AVAROS, BVAROS, CVAROS, see irmsos.
+
+  fwattos:
+    type: array
+    default: [0, 0, 0]
+    description: Fundamental active power offsets AFWATTOS, BFWATTOS, CFWATTOS, see irmsos.
+
+  fvaros:
+    type: array
+    default: [0, 0, 0]
+    description: Fundamental reactive power offsets AFVAROS, BFVAROS, CFVAROS, see irmsos.
+
+  nirmsos:
+    type: int
+    default: 0
+    description: Neutral current rms offset NIRMSOS, see irmsos.
+
+  nirmsoneos:
+    type: int
+    default: 0
+    description: One cycle neutral current rms offset NIRMSONEOS, see irmsos.
+
+  nirms1012os:
+    type: int
+    default: 0
+    description: 10/12 cycle neutral current rms offset NIRMS1012OS, see irmsos.
+
+  isumrmsos:
+    type: int
+    default: 0
+    description: Offset ISUMRMSOS of the rms of the phase current sum, see irmsos.
