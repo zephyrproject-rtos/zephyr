@@ -1881,6 +1881,7 @@ static int stm32_dcmipp_pipe_init(const struct device *dev)
 	}
 #endif
 	pipe->fmt.pixelformat = dcmipp->source_fmt.pixelformat;
+	stm32_dcmipp_compute_fmt_pitch(pipe->id, &pipe->fmt);
 	pipe->crop.top = 0;
 	pipe->crop.left = 0;
 	pipe->crop.width = pipe->fmt.width;
