@@ -191,6 +191,18 @@ static struct uhc_dwc2_channel_data *ch_data_get(struct uhc_dwc2_data *priv,
 	return ch_data;
 }
 
+static void ch_data_reset_toggle(struct uhc_dwc2_data *priv, struct usb_device *udev, uint8_t ep)
+{
+	for (uint8_t idx = 0; idx < ARRAY_SIZE(priv->ch_data); idx++) {
+		struct uhc_dwc2_channel_data *data = &priv->ch_data[idx];
+
+		if (data->udev == udev && data->ep == ep) {
+			data->next_pid = USB_DWC2_HCTSIZ_PID_DATA0;
+			return;
+		}
+	}
+}
+
 static inline uint32_t calc_packet_count(const uint32_t size, const uint16_t mps)
 {
 	if (size == 0) {
@@ -1350,6 +1362,15 @@ static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *const
 		setup = (const struct usb_setup_packet *)xfer->setup_pkt;
 		if (setup->bRequest == USB_SREQ_SET_ADDRESS) {
 			k_msleep(SET_ADDR_DELAY_MS);
+		}
+
+		/* Clearing an endpoint halt returns the endpoint to DATA0 */
+		if (setup->RequestType.type == USB_REQTYPE_TYPE_STANDARD &&
+		    setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_ENDPOINT &&
+		    setup->bRequest == USB_SREQ_CLEAR_FEATURE &&
+		    sys_le16_to_cpu(setup->wValue) == USB_SFS_ENDPOINT_HALT) {
+			ch_data_reset_toggle(uhc_get_private(dev), xfer->udev,
+					     (uint8_t)sys_le16_to_cpu(setup->wIndex));
 		}
 		break;
 	case USB_EP_TYPE_BULK:
