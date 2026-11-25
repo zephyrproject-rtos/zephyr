@@ -26,6 +26,19 @@ K_MSGQ_DEFINE_STATIC_TYPE(usbh_msgq, struct uhc_event, CONFIG_USBH_MAX_UHC_MSG);
 static int usbh_event_carrier(const struct device *dev,
 			      const struct uhc_event *const event)
 {
+	struct usbh_context *const uhs_ctx = (void *)uhc_get_event_ctx(dev);
+	k_spinlock_key_t key;
+
+	if (event->type == UHC_EVT_EP_REQUEST) {
+		/*
+		 * Always add completed transfer requests to the list, so they
+		 * do not get lost.
+		 */
+		key = k_spin_lock(&uhs_ctx->xfer_event_lock);
+		sys_dlist_append(&uhs_ctx->xfer_events, &event->xfer->node);
+		k_spin_unlock(&uhs_ctx->xfer_event_lock, key);
+	}
+
 	return k_msgq_put(&usbh_msgq, event, K_NO_WAIT);
 }
 
@@ -44,6 +57,38 @@ static int discard_ep_request(struct usbh_context *const ctx,
 	return 0;
 }
 
+static void event_handler_xfer_request(struct usbh_context *const uhs_ctx)
+{
+	struct uhc_transfer *xfer;
+	k_spinlock_key_t key;
+	usbh_udev_cb_t cb;
+	sys_dnode_t *node;
+	int ret;
+
+	while (true) {
+		key = k_spin_lock(&uhs_ctx->xfer_event_lock);
+		node = sys_dlist_get(&uhs_ctx->xfer_events);
+		k_spin_unlock(&uhs_ctx->xfer_event_lock, key);
+
+		if (node == NULL) {
+			break;
+		}
+
+		xfer = SYS_DLIST_CONTAINER(node, xfer, node);
+
+		if (xfer->cb != NULL) {
+			cb = xfer->cb;
+			ret = cb(xfer->udev, xfer);
+		} else {
+			ret = discard_ep_request(uhs_ctx, xfer);
+		}
+
+		if (ret) {
+			LOG_ERR("Failed to handle request completion callback");
+		}
+	}
+}
+
 static void usbh_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
@@ -52,30 +97,16 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 
 	struct usbh_context *uhs_ctx;
 	struct uhc_event event;
-	usbh_udev_cb_t cb;
-	int ret;
 
 	while (true) {
 		k_msgq_get(&usbh_msgq, &event, K_FOREVER);
 
 		if (event.type == UHC_EVT_ERROR) {
 			LOG_DBG("UHC error event %d", event.status);
-			continue;
 		}
 
-		__ASSERT(event.type == UHC_EVT_EP_REQUEST, "Wrong event type");
 		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
-		cb = event.xfer->cb;
-
-		if (event.xfer->cb) {
-			ret = cb(event.xfer->udev, event.xfer);
-		} else {
-			ret = discard_ep_request(uhs_ctx, event.xfer);
-		}
-
-		if (ret) {
-			LOG_ERR("Failed to handle request completion callback");
-		}
+		event_handler_xfer_request(uhs_ctx);
 	}
 }
 
