@@ -547,15 +547,19 @@ ZTEST(net_buf_tests, test_net_buf_fixed_pool)
 	buf = net_buf_alloc_len(&fixed_pool, 20, K_NO_WAIT);
 	zassert_not_null(buf, "Failed to get buffer");
 
-	/* Verify buffer's size and len - even though we requested less bytes we
-	 * should get a buffer with the fixed size.
-	 */
-	zassert_equal(buf->size, FIXED_BUFFER_SIZE, "Invalid fixed buffer size");
+	/* The requested size is reported, not the capacity of the fixed pool. */
+	zassert_equal(buf->size, 20, "Invalid buffer size");
 	zassert_equal(buf->len, 0, "Invalid fixed buffer length");
 
 	net_buf_unref(buf);
 
-	zassert_equal(destroy_called, 1, "Incorrect destroy callback count");
+	buf = net_buf_alloc_fixed(&fixed_pool, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+	zassert_equal(buf->size, FIXED_BUFFER_SIZE, "Invalid fixed buffer size");
+
+	net_buf_unref(buf);
+
+	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
 }
 
 ZTEST(net_buf_tests, test_net_buf_var_pool)
