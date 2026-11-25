@@ -65,6 +65,16 @@ config CLOCK_CONTROL_NXP_MC_CGM
 	help
 	  Enable support for NXP MC_CGM clock driver.
 
+config CLOCK_CONTROL_NXP_MC_CGM_INIT
+	bool "Initialize the MC_CGM clock tree"
+	default y
+	depends on CLOCK_CONTROL_NXP_MC_CGM
+	help
+	  Program the oscillators, the PLL and the MC_CGM dividers at boot.
+	  Disable this on a core that shares the clock tree with another
+	  core that already set it up. The driver then only gates
+	  peripheral clocks and reports their rates.
+
 config CLOCK_CONTROL_NXP_MCG_LITE
 	bool "NXP MCG-Lite driver"
 	default y

@@ -509,6 +509,12 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 
 static int mc_cgm_init(const struct device *dev)
 {
+	if (!IS_ENABLED(CONFIG_CLOCK_CONTROL_NXP_MC_CGM_INIT)) {
+		/* Another core owns the clock tree and has set it up. */
+		SystemCoreClockUpdate();
+		return 0;
+	}
+
 #if defined(FSL_FEATURE_PMC_HAS_LAST_MILE_REGULATOR) && (FSL_FEATURE_PMC_HAS_LAST_MILE_REGULATOR)
 	/* Enables PMC last mile regulator before enable PLL.  */
 	if ((PMC->LVSC & PMC_LVSC_LVD15S_MASK) != 0U) {
