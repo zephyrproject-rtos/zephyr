@@ -6,6 +6,8 @@
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/ipc/rpmsg_service.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/ring_buffer.h>
 
 #define DT_DRV_COMPAT rpmsg_uart
 
@@ -35,14 +37,14 @@ static int uart_rpmsg_poll_in(const struct device *dev, unsigned char *p_char)
 	read = ring_buf_get(&data->rx_rb, p_char, 1);
 	k_spin_unlock(&data->rx_lock, key);
 
-	return (read > 0) ? 0 : 1;
+	return (read > 0) ? 0 : -1;
 }
 
 static void uart_rpmsg_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_rpmsg_data *data = dev->data;
 
-	rpmsg_service_send(data->rpmsg_endpoint, &c, sizeof(c));
+	(void)rpmsg_service_send(data->rpmsg_endpoint, &c, sizeof(c));
 }
 
 static DEVICE_API(uart, uart_rpmsg_driver_api) = {
