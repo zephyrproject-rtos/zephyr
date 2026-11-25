@@ -17,26 +17,26 @@
   data-vendor="{{ board.vendor }}"
   data-socs="{{ board.socs | join(" ") }}"
   data-supported-features="
-    {%- set feature_types = [] -%}
-    {%- for target in board.supported_features.values() -%}
-      {%- for feature_type in target.features.keys() -%}
-        {%- if feature_type not in feature_types -%}
-          {%- set _ = feature_types.append(feature_type) -%}
+    {%- set enabled_feature_types = [] -%}
+    {%- for target_feature_types in board.supported_features_enabled.values() -%}
+      {%- for feature_type in target_feature_types -%}
+        {%- if feature_type not in enabled_feature_types -%}
+          {%- set _ = enabled_feature_types.append(feature_type) -%}
         {%- endif -%}
       {%- endfor -%}
     {%- endfor -%}
-    {{- feature_types|join(' ') -}}
+    {{- enabled_feature_types|join(' ') -}}
   "
   data-compatibles="
-    {%- set all_compatibles = [] -%}
+    {%- set enabled_compatibles = [] -%}
     {%- for target_compatibles in board.compatibles.values() -%}
       {%- for compatible in target_compatibles -%}
-        {%- if compatible not in all_compatibles -%}
-          {%- set _ = all_compatibles.append(compatible) -%}
+        {%- if compatible not in enabled_compatibles -%}
+          {%- set _ = enabled_compatibles.append(compatible) -%}
         {%- endif -%}
       {%- endfor -%}
     {%- endfor -%}
-    {{- all_compatibles|join(' ') -}}
+    {{- enabled_compatibles|join(' ') -}}
   "
   data-maintained="{{ board.maintained | tojson }}"
   tabindex="0">
