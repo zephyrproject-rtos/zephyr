@@ -90,6 +90,8 @@ struct spi_nxp_dma_data {
 	const struct spi_buf_set *rx_bufs;
 	/* receive masked in TCR, so no RX DMA and no RX callback */
 	bool rx_masked;
+	/* bytes per SPI word, also the DMA data size: one word per TDR/RDR access */
+	uint8_t word_size_bytes;
 };
 
 /*
@@ -126,17 +128,23 @@ static void spi_mcux_issue_TCR(const struct device *dev)
 	}
 }
 
+/* len is in SPI words */
 static struct dma_block_config *lpspi_dma_common_load(struct spi_dma_stream *stream,
 						      const struct device *dev, const uint8_t *buf,
 						      size_t len)
 {
+	struct spi_nxp_dma_data *dma_data = DEV_DATA(dev)->driver_data;
+	uint8_t word_size_bytes = dma_data->word_size_bytes;
 	struct dma_block_config *blk_cfg = &stream->dma_blk_cfg;
 
 	memset(blk_cfg, 0, sizeof(struct dma_block_config));
 
-	blk_cfg->block_size = len;
+	blk_cfg->block_size = len * word_size_bytes;
 
-	stream->dma_cfg.source_burst_length = 1;
+	/* Each access to TDR or RDR is one frame, so move a whole word per access */
+	stream->dma_cfg.source_data_size = word_size_bytes;
+	stream->dma_cfg.dest_data_size = word_size_bytes;
+	stream->dma_cfg.source_burst_length = word_size_bytes;
 	stream->dma_cfg.user_data = (void *)dev;
 	stream->dma_cfg.head_block = blk_cfg;
 
@@ -287,6 +295,7 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	struct spi_dma_stream *rx = &dma_data->dma_rx;
 	struct spi_dma_stream *tx = &dma_data->dma_tx;
 	struct spi_context *ctx = &data->ctx;
+	uint8_t dfs = dma_data->word_size_bytes;
 	char debug_char = (channel == dma_data->dma_tx.channel) ? 'T' : 'R';
 	int ret = 0;
 
@@ -302,13 +311,13 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 
 	switch (dma_data->state) {
 	case LPSPI_TRANSFER_STATE_ONGOING:
-		spi_context_update_tx(ctx, 1, tx->dma_blk_cfg.block_size);
+		spi_context_update_tx(ctx, dfs, tx->dma_blk_cfg.block_size / dfs);
 		/* With RX masked no RX block is loaded, but any NULL RX buffers
 		 * still have to be consumed in step with TX
 		 */
-		spi_context_update_rx(ctx, 1,
-				      dma_data->rx_masked ? tx->dma_blk_cfg.block_size
-							  : rx->dma_blk_cfg.block_size);
+		spi_context_update_rx(ctx, dfs,
+				      dma_data->rx_masked ? tx->dma_blk_cfg.block_size / dfs
+							  : rx->dma_blk_cfg.block_size / dfs);
 		/* Calculate next DMA transfer size */
 		dma_data->synchronize_dma_size = spi_context_max_continuous_chunk(ctx);
 		LOG_DBG("tx len:%d rx len:%d next dma size:%d",	ctx->tx_len, ctx->rx_len,
@@ -458,6 +467,17 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 		goto out;
 	}
 
+	dma_data->word_size_bytes =
+		DIV_ROUND_UP(SPI_WORD_SIZE_GET(spi_cfg->operation), BITS_PER_BYTE);
+	/* The DMA data size is the word size, and the eDMA takes only these */
+	if (dma_data->word_size_bytes != 1 && dma_data->word_size_bytes != 2 &&
+	    dma_data->word_size_bytes != 4) {
+		LOG_ERR("Word size %u not supported with DMA",
+			SPI_WORD_SIZE_GET(spi_cfg->operation));
+		ret = -ENOTSUP;
+		goto out;
+	}
+
 	/* Always use continuous mode to satisfy SPI API requirements. */
 	{
 		uint32_t tcr = (lpspi_read_tcr(base) & ~LPSPI_TCR_RXMSK_MASK) |
@@ -482,7 +502,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	 * mode, a none-zero TX watermark may break this.
 	 */
 	base->FCR = LPSPI_FCR_TXWATER(0) | LPSPI_FCR_RXWATER(0);
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, dma_data->word_size_bytes);
 
 	/* The source does not change in flight, so one clean covers every chunk */
 	lpspi_dma_cache_clean_tx(tx_bufs);
