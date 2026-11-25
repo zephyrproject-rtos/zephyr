@@ -597,6 +597,22 @@ static int encoder_end(struct stm32_venc_data *data)
 	return 0;
 }
 
+/* Create the encoder and start a stream, its header in @output; on failure leave no encoder */
+static int encoder_open(struct stm32_venc_data *data, struct video_buffer *output)
+{
+	int ret;
+
+	ret = encoder_prepare(data);
+	if (ret == 0) {
+		ret = encoder_start(data, output);
+	}
+	if (ret) {
+		encoder_end(data);
+	}
+
+	return ret;
+}
+
 static int encode_frame(struct stm32_venc_data *data)
 {
 	int ret = 0;
@@ -616,12 +632,7 @@ static int encode_frame(struct stm32_venc_data *data)
 	output = k_fifo_get(&data->out_fifo_in, K_NO_WAIT);
 
 	if (data->encoder == NULL) {
-		ret = encoder_prepare(data);
-		if (ret) {
-			goto out;
-		}
-
-		ret = encoder_start(data, output);
+		ret = encoder_open(data, output);
 
 		/*
 		 * Output buffer is now filled with SPS/PPS header, return it to application.
@@ -692,23 +703,15 @@ static int encode_frame(struct stm32_venc_data *data)
 		LOG_ERR("DCMIPP and VENC desync at frame %d, restart the video", data->frame_nb);
 		encoder_end(data);
 
-		ret = encoder_start(data, output);
-		if (ret) {
-			goto out;
-		}
-		break;
+		ret = encoder_open(data, output);
+		goto out;
 	default:
 		LOG_ERR("H264EncStrmEncode error=%d", h264ret);
 		LOG_ERR("error encoding frame %d", data->frame_nb);
 
 		encoder_end(data);
 
-		ret = encoder_start(data, output);
-		if (ret) {
-			goto out;
-		}
-
-		data->resync = true;
+		(void)encoder_open(data, output);
 
 		ret = -EIO;
 		goto out;
