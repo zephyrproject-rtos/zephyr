@@ -870,6 +870,15 @@ config NET_PKT_CONTROL_BLOCK_SIZE
 	  net_pkt_cb_ieee802154, the actual pkt control block size will be the
 	  maximum of them.
 
+config NET_GSO
+	bool
+	depends on NET_NATIVE_IP
+	help
+	  Generic segmentation offload: a network packet can carry a block
+	  of transport payload that is split into several packets just
+	  before the network driver, in software unless the network
+	  interface reports that it can do it.
+
 config NET_HEADERS_ALWAYS_CONTIGUOUS
 	bool
 	help

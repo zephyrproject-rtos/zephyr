@@ -111,6 +111,22 @@ struct net_pkt_cursor {
 /** @endcond */
 
 /**
+ * @brief Generic segmentation offload (GSO) type of a network packet.
+ *
+ * A packet with a type other than NET_GSO_NONE is a block: its headers are
+ * those of the first segment and its payload is split into segments of
+ * net_pkt_gso_size() bytes, the last one possibly shorter, before it reaches
+ * the network device. A device that has declared the type with
+ * net_if_set_gso_limits() gets the block itself and must do the split.
+ */
+enum net_gso_type {
+	/** Not a block, sent as it is */
+	NET_GSO_NONE = 0,
+	/** UDP block, every segment is a complete UDP datagram */
+	NET_GSO_UDP_L4 = 1,
+};
+
+/**
  * @brief Network packet.
  *
  * Note that if you add new fields into net_pkt, remember to update
@@ -143,19 +159,30 @@ struct net_pkt {
 
 	/** @cond ignore */
 
-#if defined(CONFIG_NET_TCP) || defined(CONFIG_NET_UDP_OPTIONS)
+#if defined(CONFIG_NET_TCP) || defined(CONFIG_NET_UDP_OPTIONS) || defined(CONFIG_NET_GSO)
 	/* TCP or UDP are mutually exclusive so they can share the same memory */
 	union {
 #if defined(CONFIG_NET_TCP)
 		/** Allow placing the packet into sys_slist_t */
 		sys_snode_t next;
 #endif
+#if defined(CONFIG_NET_UDP_OPTIONS) || defined(CONFIG_NET_GSO)
+		struct {
 #if defined(CONFIG_NET_UDP_OPTIONS)
-		/** Length of the UDP options surplus area (bytes after UDP user data) */
-		uint16_t udp_opt_surplus_len;
+			/** Length of the UDP options surplus area (bytes after UDP user data) */
+			uint16_t udp_opt_surplus_len;
+#endif
+#if defined(CONFIG_NET_GSO)
+			/* Payload bytes per segment. Valid only when gso_type is
+			 * not NET_GSO_NONE: a TCP packet taken off a list keeps
+			 * a stale next pointer here.
+			 */
+			uint16_t gso_size;
+#endif
+		};
 #endif
 	};
-#endif /* CONFIG_NET_TCP || CONFIG_NET_UDP_OPTIONS */
+#endif /* CONFIG_NET_TCP || CONFIG_NET_UDP_OPTIONS || CONFIG_NET_GSO */
 
 #if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	struct net_if *orig_iface; /* Original network interface */
@@ -409,6 +436,11 @@ struct net_pkt {
 	/* Disable local IP fragmentation for this packet. */
 	uint8_t dont_fragment : 1;
 
+#if defined(CONFIG_NET_GSO)
+	/* Segmentation type, see enum net_gso_type */
+	uint8_t gso_type : 2;
+#endif /* CONFIG_NET_GSO */
+
 	/* @endcond */
 };
 
@@ -539,6 +571,54 @@ static inline uint16_t net_pkt_udp_opt_surplus_len(struct net_pkt *pkt)
 
 #define net_pkt_set_udp_opt_surplus_len(...)
 #endif /* CONFIG_NET_UDP_OPTIONS */
+
+#if defined(CONFIG_NET_GSO)
+static inline enum net_gso_type net_pkt_gso_type(struct net_pkt *pkt)
+{
+	return (enum net_gso_type)pkt->gso_type;
+}
+
+static inline uint16_t net_pkt_gso_size(struct net_pkt *pkt)
+{
+	return pkt->gso_type != NET_GSO_NONE ? pkt->gso_size : 0U;
+}
+
+/* Mark the packet as a block of segments of gso_size payload bytes, or clear
+ * the marking with NET_GSO_NONE. Clearing leaves gso_size alone, as it shares
+ * memory with the TCP list node.
+ */
+static inline void net_pkt_set_gso(struct net_pkt *pkt, enum net_gso_type type,
+				   uint16_t gso_size)
+{
+	pkt->gso_type = type;
+
+	if (type != NET_GSO_NONE) {
+		pkt->gso_size = gso_size;
+	}
+}
+#else
+static inline enum net_gso_type net_pkt_gso_type(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return NET_GSO_NONE;
+}
+
+static inline uint16_t net_pkt_gso_size(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0U;
+}
+
+static inline void net_pkt_set_gso(struct net_pkt *pkt, enum net_gso_type type,
+				   uint16_t gso_size)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(type);
+	ARG_UNUSED(gso_size);
+}
+#endif /* CONFIG_NET_GSO */
 
 static inline uint8_t net_pkt_family(struct net_pkt *pkt)
 {
