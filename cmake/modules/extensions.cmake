@@ -483,6 +483,15 @@ function(zephyr_get_compile_options_for_lang lang i)
   zephyr_get_parse_args(args ${ARGN})
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
 
+  # The coverage flags depend on the ZEPHYR_NO_COVERAGE property of the target
+  # being built, which these flags are not evaluated for. Hand out the plain
+  # coverage flags instead.
+  get_property(coverage_compile_options GLOBAL PROPERTY ZEPHYR_COVERAGE_COMPILE_OPTIONS)
+  if(coverage_compile_options)
+    string(REPLACE "${coverage_compile_options}" "$<TARGET_PROPERTY:compiler,coverage>"
+      flags "${flags}")
+  endif()
+
   process_flags(${lang} flags output_list)
   string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
 
@@ -7294,6 +7303,10 @@ function(add_llext_target target_name)
     )
 
   endif()
+
+  # Extensions are loaded at runtime and cannot link against the coverage
+  # runtime of the base image, so build them without coverage.
+  set_property(TARGET ${llext_lib_target} PROPERTY ZEPHYR_NO_COVERAGE TRUE)
 
   target_compile_definitions(${llext_lib_target} PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>

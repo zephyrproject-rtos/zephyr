@@ -1217,8 +1217,13 @@ if(CONFIG_USERSPACE)
   # (e.g. for IAR toolchains the lists were joined with "gnu" postfixed on a
   # bunch of entries).
   get_property(compiler_flags_priv TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
-  string(REPLACE "$<TARGET_PROPERTY:compiler,coverage>" ""
-    KOBJECT_HASH_COMPILE_OPTIONS "${compiler_flags_priv}")
+  get_property(coverage_compile_options GLOBAL PROPERTY ZEPHYR_COVERAGE_COMPILE_OPTIONS)
+  if(coverage_compile_options)
+    string(REPLACE "${coverage_compile_options}" ""
+      KOBJECT_HASH_COMPILE_OPTIONS "${compiler_flags_priv}")
+  else()
+    set(KOBJECT_HASH_COMPILE_OPTIONS "${compiler_flags_priv}")
+  endif()
 
   list(APPEND KOBJECT_HASH_COMPILE_OPTIONS
                   $<TARGET_PROPERTY:compiler,no_function_sections>
@@ -1463,6 +1468,7 @@ if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
     )
 
   add_executable(${ZEPHYR_LINK_STAGE_EXECUTABLE} misc/empty_file.c)
+  set_property(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE} PROPERTY ZEPHYR_NO_COVERAGE TRUE)
   toolchain_ld_link_elf(
     TARGET_ELF            ${ZEPHYR_LINK_STAGE_EXECUTABLE}
     OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map
@@ -1683,6 +1689,7 @@ get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
 # FIXME: Is there any way to get rid of empty_file.c?
 add_executable(       ${ZEPHYR_LINK_STAGE_EXECUTABLE} misc/empty_file.c ${GASF})
+set_property(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE} PROPERTY ZEPHYR_NO_COVERAGE TRUE)
 toolchain_ld_link_elf(
   TARGET_ELF            ${ZEPHYR_LINK_STAGE_EXECUTABLE}
   OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map
@@ -1736,6 +1743,7 @@ else()
   )
 
   add_executable(       ${ZEPHYR_FINAL_EXECUTABLE} misc/empty_file.c ${GASF} ${GKSF})
+  set_property(TARGET ${ZEPHYR_FINAL_EXECUTABLE} PROPERTY ZEPHYR_NO_COVERAGE TRUE)
   toolchain_ld_link_elf(
     TARGET_ELF            ${ZEPHYR_FINAL_EXECUTABLE}
     OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_FINAL_EXECUTABLE}.map
