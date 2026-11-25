@@ -240,9 +240,11 @@ struct coap_client {
 	struct k_mutex lock;
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
+#if CONFIG_COAP_CLIENT_DEDUP_CACHE_SIZE > 0
 	struct coap_client_dedup_entry dedup_cache[CONFIG_COAP_CLIENT_DEDUP_CACHE_SIZE];
 	/* Entry of dedup_cache the next response replaces */
 	uint8_t dedup_next;
+#endif
 	struct coap_option echo_option;
 	bool send_echo;
 	/** @endcond */

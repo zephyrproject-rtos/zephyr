@@ -143,8 +143,12 @@ static bool sent_to_group(const struct coap_client_internal_request *internal_re
  */
 static void dedup_cache_clear(struct coap_client *client)
 {
+#if CONFIG_COAP_CLIENT_DEDUP_CACHE_SIZE > 0
 	(void)memset(client->dedup_cache, 0, sizeof(client->dedup_cache));
 	client->dedup_next = 0U;
+#else
+	ARG_UNUSED(client);
+#endif
 }
 
 static void coap_client_schedule_poll(struct coap_client *client, int sock,
