@@ -1,0 +1,10 @@
+# Copyright (c) 2026 BeagleBoard.org Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_MONITOR_TI_K3_DCC
+	bool "TI K3 Dual Clock Comparator (DCC) driver"
+	default y
+	depends on DT_HAS_TI_K3_DCC_ENABLED
+	help
+	  Zephyr clock_monitor back-end for the TI K3 Dual Clock Comparator.
+	  Supports MEASURE (DONE IRQ) and WINDOW (ERR status poll) modes.

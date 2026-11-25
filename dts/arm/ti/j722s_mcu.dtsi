@@ -7,6 +7,7 @@
 
 #include <mem.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/clock-monitor/ti-k3-dcc.h>
 #include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
 
 / {
@@ -74,5 +75,38 @@
 		ti,spi-num-cs = <4>;
 		ti,d1-miso-d0-mosi;
 		status = "disabled";
+	};
+
+	mcu_dcc0: clock-monitor@4c00000 {
+		compatible = "ti,k3-dcc";
+		reg = <0x04c00000 0x40>;
+		interrupts = <0 108 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		interrupt-names = "done";
+		status = "disabled";
+
+		reference-sources {
+			hfosc {
+				ti,dcc-clk-src = <K3_DCC_CLK0_HFOSC0>;
+				clock-frequency = <DT_FREQ_M(25)>;
+				default-source;
+			};
+		};
+
+		target-sources {
+			/*
+			 * MCU_SYSCLK0/2 is a reliable always-on secondary for
+			 * MEASURE self-test. HFOSC0 is also available on mux 7
+			 * but shares that input with other oscillators.
+			 */
+			mcu_sysclk0_div2 {
+				ti,dcc-clk-src = <K3_DCC_CLK1_MCU_SYSCLK0_2>;
+				default-source;
+			};
+			hfosc {
+				ti,dcc-clk-src = <K3_DCC_CLK1_HFOSC0>;
+				clock-frequency = <DT_FREQ_M(25)>;
+			};
+		};
 	};
 };

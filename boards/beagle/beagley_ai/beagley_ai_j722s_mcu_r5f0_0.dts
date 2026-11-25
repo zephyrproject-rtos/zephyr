@@ -25,6 +25,7 @@
 
 	aliases {
 		watchdog0 = &mcu_rti0;
+		clock-meter = &mcu_dcc0;
 	};
 
 	cpus {
@@ -65,6 +66,10 @@
 };
 
 &mcu_rti0 {
+	status = "okay";
+};
+
+&mcu_dcc0 {
 	status = "okay";
 };
 

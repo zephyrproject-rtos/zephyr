@@ -1,0 +1,84 @@
+# Copyright (c) 2026 BeagleBoard.org Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments K3 Dual Clock Comparator (DCC).
+
+  Compares a target clock against a reference clock using dual down-counters.
+  Exposed through the Zephyr clock_monitor API:
+
+    - MEASURE: one-shot frequency measurement completed by the DONE interrupt
+    - WINDOW:  continuous ratio check; out-of-window conditions raise
+      FREQ_HIGH / FREQ_LOW (ERR flag; typically also routed to an ESM)
+
+  Selectable clock sources are declared with two container child nodes,
+  "reference-sources" and "target-sources". Each child pairs a CLKSRC mux
+  cookie (ti,dcc-clk-src) with a frequency provider. The child marked
+  "default-source" is the power-on selection. clock_monitor_set_source()
+  switches between the declared sources at runtime.
+
+  A source's frequency is either "clock-frequency" (fixed Hz) or "clocks"
+  (queried through clock_control_get_rate()). When both are present
+  "clock-frequency" wins. Reference sources must resolve to a nonzero rate;
+  target sources only need one for WINDOW auto-derive (expected_hz == 0).
+
+  The driver does not enable the selected source clocks. ERR interrupts are
+  typically wired to an ESM rather than the CPU VIM; WINDOW mode therefore
+  polls the ERR status flag. DONE is a CPU interrupt and drives MEASURE.
+
+  Use the K3_DCC_CLK0_* / K3_DCC_CLK1_* macros from
+  <zephyr/dt-bindings/clock-monitor/ti-k3-dcc.h>.
+
+compatible: "ti,k3-dcc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+    description: |
+      VIM (or other CPU) interrupt for the DCC DONE signal.
+
+  interrupt-names:
+    type: string-array
+    description: |
+      Optional names. When present, the DONE line should be named "done".
+
+child-binding:
+  description: |
+    Container for selectable DCC clock sources. Instantiated twice per DCC
+    node, as "reference-sources" (CLKSRC0) and "target-sources" (CLKSRC1).
+
+  child-binding:
+    description: |
+      One selectable DCC clock source: a CLKSRC mux value paired with a
+      frequency provider.
+
+    properties:
+      ti,dcc-clk-src:
+        type: int
+        required: true
+        description: |
+          CLKSRC mux cookie from
+          <zephyr/dt-bindings/clock-monitor/ti-k3-dcc.h>. Also the runtime
+          clock_monitor_set_source() selector for this source.
+
+      clocks:
+        type: phandle-array
+        description: |
+          Frequency provider queried through clock_control_get_rate().
+          Ignored when clock-frequency is present.
+
+      clock-frequency:
+        type: int
+        description: |
+          Fixed frequency provider in Hz. Takes precedence over clocks.
+
+      default-source:
+        type: boolean
+        description: |
+          Marks this source as the power-on selection for its container.
+          Exactly one child of each container must set it.
