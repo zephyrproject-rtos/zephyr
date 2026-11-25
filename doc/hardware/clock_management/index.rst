@@ -49,15 +49,23 @@ Clock Management Usage
 In order to interact with the clock tree, clock consumers must define and
 initialize a clock management data structure. Consumers define data structures
 used by the clock management subsystem using
-:c:macro:`CLOCK_MANAGEMENT_DT_DEFINE`, and initialize the data structure using
-:c:macro:`CLOCK_MANAGEMENT_DT_GET`.
+:c:macro:`CLOCK_MANAGEMENT_DT_DEFINE`, and get a reference to the data structure
+using :c:macro:`CLOCK_MANAGEMENT_DT_GET`. This reference is passed as the first
+argument to all clock management API functions.
 
-Clock consumers may then access their clock outputs using
-:c:macro:`CLOCK_MANAGEMENT_DT_GET_OUTPUT`, which will return a reference to the
-:c:type:`clock_output_t` for the clock output.
+Clock consumers may then reference their clock outputs using
+:c:macro:`CLOCK_MANAGEMENT_DT_GET_OUTPUT`, which will return a
+:c:type:`clock_output_t` identifier for the clock output.
 
-Clock output devices can then be used with the clock management API to
+Clock output identifiers can then be used with the clock management API to
 interface with the clock tree, as described below.
+
+.. note::
+
+   When :kconfig:option:`CONFIG_LOG` is enabled, the clock management subsystem
+   serializes access to the clock tree with a mutex rather than a spinlock, as
+   logging may sleep. In this configuration, the clock management API must not
+   be called from interrupt context.
 
 Reading Clocks
 ==============
@@ -80,26 +88,35 @@ applied. See :c:struct:`clock_management_event` for more details.
 Requesting Clock States
 =======================
 
-Each clock output defines a set of states. Clock consumers can set a range of
-acceptable clock states using :c:func:`clock_management_request_state`. The clock
-management subsystem will then select the best state that satisfies the request,
-and apply it. If no states satisfy the request, a negative error value will be
-returned. States are described in devicetree, and are opaque to the
+Clock states are statically defined configurations for a portion of the clock
+tree. States are grouped into clock domains, where each clock domain defines a
+set of states that configure a specific subset of the clock producers in the
+system. Clock consumers can set a range of acceptable clock states using
+:c:func:`clock_management_request_state`. The clock management subsystem will
+then select the best state that satisfies the request within each affected clock
+domain, and apply it. If no states satisfy the request, ``-ENOENT``
+will be returned. States are described in devicetree, and are opaque to the
 driver/application code consuming the clock.
 
 Each clock consumer described in devicetree can set named clock requests using
 the ``clock-request-n`` properties, where ``n`` is the index of the request. The
-:c:macro:`CLOCK_MANAGEMENT_DT_GET_REQUEST` macro can be used to get a reference
-to a named request, which can then be used with
-:c:func:`clock_management_request_state` to set the request.
+:c:macro:`CLOCK_MANAGEMENT_DT_GET_REQUEST` macro can be used to get an
+identifier for a named request, which can then be used with
+:c:func:`clock_management_request_state` to apply the request. Each consumer has
+at most one active request at a time: applying a new request replaces the
+consumer's previous request.
 
 ``clock-request-n`` properties describe an array of allowed states for *any*
-clock output within the system. This allows a consumer to set a request that may
-affect multiple clock outputs.
+clock domain within the system. This allows a consumer to set a request that may
+affect multiple clock domains, and therefore multiple clock outputs. Clock
+domains are independent of the clock outputs listed in a consumer's
+``clock-outputs`` property: a consumer may request states from a domain that
+configures a producer it does not directly consume, such as a shared parent
+divider.
 
-Once a set of allowed states is set for a clock output, the clock management
+Once a set of allowed states is set for a clock domain, the clock management
 framework will select the lowest "ranked" clock state that satisfies the
-intersection of all allowed state requests for that clock output.
+intersection of all allowed state requests for that clock domain.
 
 Clock state rank is a parameter set by the user. If two clock states share
 a rank, the first state defined in devicetree will be preferred.
@@ -137,32 +154,39 @@ but may look similar to the following:
         compatible = "vnd,clock-div";
         input = <&clock_source>;
         #clock-cells = <1>;
-        reg = <0x5000000>;
+        reg = <0x50000000>;
 
         clock_output: clock-output {
             compatible = "clock-output";
-            #clock-cells = <1>;
+            #clock-cells = <0>;
         };
     };
 
-Clock outputs will then have clock states defined, which directly configure
-producer clock nodes to realize a frequency. Clock states include a ``rank``
-property, which is used to determine which state is "best" when multiple states
-satisfy a request. Lower ranks are preferred.
+Clock states are then defined within clock domain nodes, which use the
+:dtcompatible:`clock-domain` compatible. Each state directly configures producer
+clock nodes to realize a frequency. Clock states include a ``rank`` property,
+which is used to determine which state is "best" when multiple states satisfy a
+request. Lower ranks are preferred.
 
 .. code-block:: devicetree
 
-    &clock_output {
-        clock_output_state_default: clock-output-state-default {
-            compatible = "clock-state";
-            clocks = <&clock_div 1>;
-            rank = <1>;
-        };
-        clock_output_state_sleep: clock-output-state-sleep {
-            compatible = "clock-state";
-            clocks = <&clock_div 5>;
-            /* Lowest rank- this is the preferred state when multiple states satisfy a request */
-            rank = <0>;
+    / {
+        clock-domains {
+            clock_div_domain: clock-div-domain {
+                compatible = "clock-domain";
+
+                clock_div_default: clock-div-default {
+                    compatible = "clock-state";
+                    clocks = <&clock_div 1>;
+                    rank = <1>;
+                };
+                clock_div_sleep: clock-div-sleep {
+                    compatible = "clock-state";
+                    clocks = <&clock_div 5>;
+                    /* Lowest rank: preferred when multiple states satisfy a request */
+                    rank = <0>;
+                };
+            };
         };
     };
 
@@ -170,23 +194,34 @@ Note that the specifier cells for each clock producer within a state are device
 specific. These specifiers allow configuration of the clock producer, such as
 setting a divider's division factor or selecting an output for a multiplexer.
 
-Clock consumers will then reference the clock output nodes and their states in
-order to query and request clock rates, and apply states. A peripheral clock
+Each clock producer may only be configured by the states of a single clock
+domain. This is checked at build time, and the build will fail if states in two
+different clock domains configure the same clock producer. If a producer needs
+to be configured on behalf of several consumers (for example a parent divider
+shared by multiple peripherals), place it in its own clock domain, and have each
+consumer include a state from that domain in its requests.
+
+Clock consumers will then reference the clock output nodes to query and request
+clock rates, and reference clock states to apply them. A peripheral clock
 consumer's devicetree might look like so:
 
 .. code-block:: devicetree
 
     periph0: periph@0 {
         compatible = "vnd,mydev";
+        reg = <0>;
         /* Clock outputs */
         clock-outputs = <&clock_output>;
         clock-output-names = "default";
         /* Default clock state */
-        clock-request-0 = <&clock_output_state_default>;
+        clock-request-0 = <&clock_div_default>;
         /* This request allows either the default or sleep state to be applied */
-        clock-request-1 = <&clock_output_state_default &clock_output_state_sleep>;
+        clock-request-1 = <&clock_div_default &clock_div_sleep>;
         clock-request-names = "default", "sleep";
     };
+
+Only clock states referenced by at least one ``clock-request-n`` property are
+included in the build.
 
 Enabling and Disabling Clocks
 =============================
@@ -204,7 +239,7 @@ with a call to :c:func:`clock_management_off`.
    When :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_RUNTIME` is disabled,
    :c:func:`clock_management_off` will gate all parent producers unconditionally.
    This can be a dangerous operation, as no check is made to validate other
-   consumers are not using the producer
+   consumers are not using the producer.
 
 Gating Unused Clocks
 ====================
@@ -217,23 +252,33 @@ reference count set via :c:func:`clock_management_on` will be gated.
 Locking Clock States and Requests
 =================================
 
-When :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_RUNTIME` is enabled, clocks may
-"lock" a clock by calling :c:func:`clock_management_lock`. This will prevent any
-other clock requests from modifying the clock or its parent settings until the
-lock is released with :c:func:`clock_management_unlock`. This can be useful for
-critical clock consumers, such as the core clock, which should not be modified by other
-consumers. Note that when a clock is locked, clock requests to it from the
-consumer that locked the clock will still be supported.
+When :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_RUNTIME` is enabled, consumers
+may "lock" one of their clock outputs by calling :c:func:`clock_management_lock`.
+This will cause any reconfiguration that would affect the clock output (including
+reconfiguration of its parent producers) to be rejected with ``-EBUSY`` until
+the lock is released with :c:func:`clock_management_unlock`. This can be useful
+for critical clock consumers, such as the core clock, which should not be
+modified by other consumers.
 
-Clocks can also be locked by adding ``clock-request-n-locking`` to the devicetree
-for the consumer making the request. This will make request ``n`` lock all
-clocks affected by it on behalf of the consumer making the request. Locks will
-be cleared when the consumer switches to a new request.
+Clock requests can also lock clocks, by adding ``clock-request-n-locking`` to
+the devicetree for the consumer making the request. When request ``n`` is
+applied, the following will be locked on behalf of the consumer making the
+request (provided :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_RUNTIME` is enabled):
+
+* Each clock domain referenced by the request. Requests from other consumers
+  that reference a locked clock domain will fail with ``-EPERM``.
+* Each clock producer configured by the state selected within those clock
+  domains. Any attempt to reconfigure a locked producer, or to reconfigure one
+  of its parents, will be rejected with ``-EPERM``.
+
+The consumer that made a locking request may still issue new requests. Locks
+are released when the consumer switches to a new request, and are reapplied if
+the new request is also a locking request.
 
 When :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_RUNTIME` is enabled, clock state
 requests will be additive. This means that if multiple consumers set a list of
-allowed states, the clock output will be set to the best state that satisfies
-all requests.
+allowed states for a clock domain, the clock domain will be set to the best
+state that satisfies all requests.
 
 Generally when multiple clocks are expected to be reconfigured at runtime,
 :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_RUNTIME` should be enabled to avoid
@@ -252,9 +297,9 @@ using :c:macro:`CLOCK_MANAGEMENT_DT_DEFINE` and initialized using
 management API functions to access the clock tree.
 
 Clock outputs can be accessed with the macro
-:c:macro:`CLOCK_MANAGEMENT_DT_GET_OUTPUT`, which will return a reference to the
-:c:type:`clock_output_t` for the clock output. This reference can then be used
-with the clock management subsystem. Note that this macro also has
+:c:macro:`CLOCK_MANAGEMENT_DT_GET_OUTPUT`, which will return a
+:c:type:`clock_output_t` identifier for the clock output. This identifier can
+then be used with the clock management subsystem. Note that this macro also has
 versions that allow the driver to access an output by name or index, if
 multiple clocks are present within the ``clock-outputs`` property for the
 device.
@@ -267,30 +312,37 @@ application to customize the clock properties that are set using devicetree.
 :c:func:`clock_management_req_rate` should only be used in cases where the
 driver knows the frequency it should use.
 
-Drivers can define requests of type :c:type:`clock_management_request_t` using
-:c:macro:`CLOCK_MANAGEMENT_DT_GET_REQUEST`, or the name/index based versions of this
-macro.
+Drivers can get :c:type:`clock_request_t` identifiers for their requests using
+:c:macro:`CLOCK_MANAGEMENT_DT_GET_REQUEST`, or the instance based version of
+this macro, :c:macro:`CLOCK_MANAGEMENT_DT_INST_GET_REQUEST`.
 
-For example, if a peripheral devicetree was defined like so:
+For example, consider a peripheral with a high-speed and a low-power clock
+output. The ``periph_hs_clock_state_*`` states are defined in a clock domain
+that configures the high-speed clock, and the ``periph_lp_clock_state_*`` states
+are defined in a clock domain that configures the low-power clock. The
+peripheral devicetree could be defined like so:
 
 .. code-block:: devicetree
 
     periph0: periph@0 {
         compatible = "vnd,mydev";
+        reg = <0>;
         /* Clock outputs */
         clock-outputs = <&periph_hs_clock &periph_lp_clock>;
         clock-output-names = "high-speed", "low-power";
-        /* Moves HS_CLOCK to default state. LP_CLOCK can be in either state */
+        /* Moves HS clock domain to default state. LP clock domain can be in either state */
         clock-request-0 = <&periph_hs_clock_state_default
                            &periph_lp_clock_state_default
                            &periph_lp_clock_state_sleep>;
-        /* Moves LP_CLOCK to sleep state */
-        clock-request-1 = <&periph_lp_clock_state_sleep>;
+        /* Moves both HS and LP clock domains to sleep state */
+        clock-request-1 = <&periph_hs_clock_state_sleep
+                           &periph_lp_clock_state_sleep>;
         clock-request-names = "default", "sleep";
     };
 
-The following C code could be used to apply the default state for the
-``high-speed`` clocks, and sleep state for the ``low-power`` clock:
+The following C code could be used to apply the ``default`` request at init,
+and switch between the ``default`` and ``sleep`` requests as the device is
+resumed and suspended:
 
 .. code-block:: c
 
@@ -299,26 +351,29 @@ The following C code could be used to apply the default state for the
 
     ...
     #include <zephyr/drivers/clock_management.h>
+    #include <zephyr/pm/device.h>
     ...
 
     struct mydev_config {
         ...
-        /* Reference to high-speed clock */
-        const struct clock_output *hs_clk;
-        /* Reference to low-power clock */
-        const struct clock_output *lp_clk;
-        /* high-speed clock default request */
-        const clock_management_request_t default_request;
-        /* low-power sleep request */
-        const clock_management_request_t sleep_request;
+        /* Clock management data for this device */
+        const struct clock_management_data *clk_mgmt;
+        /* Identifier for high-speed clock output */
+        clock_output_t hs_clk;
+        /* Identifier for low-power clock output */
+        clock_output_t lp_clk;
+        /* Identifier for default request */
+        clock_request_t default_request;
+        /* Identifier for sleep request */
+        clock_request_t sleep_request;
         ...
     };
 
     ...
 
-    int hs_clock_cb(const struct clock_management_event *ev, const void *data)
+    static int hs_clock_cb(const struct clock_management_event *ev, const void *user_data)
     {
-        const struct device *dev = (const struct device *)data;
+        const struct device *dev = user_data;
 
         if (ev->new_rate > HS_MAX_CLK_RATE) {
             /* Can't support this new rate */
@@ -331,51 +386,70 @@ The following C code could be used to apply the default state for the
         return 0;
     }
 
+    static int mydev_pm_action(const struct device *dev, enum pm_device_action action)
+    {
+        const struct mydev_config *config = dev->config;
+
+        switch (action) {
+        case PM_DEVICE_ACTION_SUSPEND:
+            /* Replace the default request with the sleep request */
+            return clock_management_request_state(config->clk_mgmt,
+                                                  config->sleep_request);
+        case PM_DEVICE_ACTION_RESUME:
+            /* Restore the default request */
+            return clock_management_request_state(config->clk_mgmt,
+                                                  config->default_request);
+        default:
+            return -ENOTSUP;
+        }
+    }
+
     static int mydev_init(const struct device *dev)
     {
         const struct mydev_config *config = dev->config;
         int ret;
-        int hs_clk_rate, lp_clk_rate;
+        clock_freq_t hs_clk_rate, lp_clk_rate;
         ...
-        /* Set high-speed clock to default state */
-        ret = clock_management_request_state(config->default_request);
+        /* Apply the default request */
+        ret = clock_management_request_state(config->clk_mgmt,
+                                             config->default_request);
         if (ret < 0) {
             return ret;
         }
-        hs_clk_rate = clock_management_get_rate(config->hs_clk);
+        hs_clk_rate = clock_management_get_rate(config->clk_mgmt, config->hs_clk);
+        lp_clk_rate = clock_management_get_rate(config->clk_mgmt, config->lp_clk);
         /* Register for a callback if high-speed clock changes rate */
-        ret = clock_management_set_callback(config->hs_clk, hs_clock_cb, dev);
-        if (ret < 0) {
+        ret = clock_management_set_callback(config->clk_mgmt, config->hs_clk,
+                                            hs_clock_cb, dev);
+        if ((ret < 0) && (ret != -ENOTSUP)) {
+            /* -ENOTSUP is returned if CONFIG_CLOCK_MANAGEMENT_RUNTIME is disabled */
             return ret;
         }
-        /* Set low-power clock to sleep state */
-        ret = clock_management_request_state(config->sleep_request);
-        if (ret < 0) {
-            return ret;
-        }
-        lp_clk_rate = clock_management_get_rate(config->lp_clk);
+        ...
+        return 0;
     }
 
     #define MYDEV_DEFINE(i)                                                    \
-        /* Define clock management data structure */                           \
+        /* Define clock management data structures */                          \
         CLOCK_MANAGEMENT_DT_INST_DEFINE(i);                                    \
         ...                                                                    \
         static const struct mydev_config mydev_config_##i = {                  \
             ...                                                                \
-            /* Initialize clock outputs */                                     \
             .clk_mgmt = CLOCK_MANAGEMENT_DT_INST_GET(i),                       \
+            /* Get identifiers for clock outputs */                            \
             .hs_clk = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT_BY_NAME(i, high_speed),\
             .lp_clk = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT_BY_NAME(i, low_power),\
-            /* Read states for high-speed and low-power */                     \
+            /* Get identifiers for clock requests */                           \
             .default_request = CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(i, default), \
-            .sleep_request = CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(i, sleep), \
+            .sleep_request = CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(i, sleep),   \
             ...                                                                \
         };                                                                     \
-        static struct mydev_data mydev_data##i;                                \
+        static struct mydev_data mydev_data_##i;                               \
         ...                                                                    \
+        PM_DEVICE_DT_INST_DEFINE(i, mydev_pm_action);                          \
                                                                                \
-        DEVICE_DT_INST_DEFINE(i, mydev_init, NULL, &mydev_data##i,             \
-                              &mydev_config##i, ...);
+        DEVICE_DT_INST_DEFINE(i, mydev_init, PM_DEVICE_DT_INST_GET(i),         \
+                              &mydev_data_##i, &mydev_config_##i, ...);
 
     DT_INST_FOREACH_STATUS_OKAY(MYDEV_DEFINE)
 
@@ -407,7 +481,7 @@ Introduction
 Consumers interact with the clock management subsystem via the
 :ref:`clock_management_api`, which leverages the :ref:`clock_driver_api` to
 interface with clock producers, which configure SOC-specific clock tree
-settings. Each clock producer must implmenent the clock driver API.
+settings. Each clock producer must implement the clock driver API.
 
 Clock Driver Implementation
 ===========================
@@ -427,7 +501,7 @@ accessing these structures, see :ref:`clock_model_api`.
 Clock producers are split into three API classes, depending on their
 functionality. This implementation was chosen in order to reduce flash
 utilization, as the set of APIs needed by different clock producer types is
-mostly orthagonal. The following API classes are available:
+mostly orthogonal. The following API classes are available:
 
 * Standard clocks, which implement :c:struct:`clock_management_standard_api`.
   Standard clocks take one clock source as an input, scale it, and produce
@@ -469,8 +543,8 @@ when runtime features are disabled. Clock drivers should implement API functions
 associated with :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_SET_RATE` whenever
 possible, but it is not required.
 
-Clock drivers will **must** hold a reference to their parent clock device, if
-one exists. And **must** not reference their child clock devices directly.
+Clock drivers **must** hold a reference to their parent clock device, if
+one exists, and **must not** reference their child clock devices directly.
 
 These constraints are required because the clock subsystem determines which clock
 devices can be discarded from the build at link time based on which clock devices
@@ -481,8 +555,10 @@ using it.
 
 Clock consumers hold references to the clock output nodes they are using, which
 then reference their parent clock producers, which in turn reference their
-parents. These reference chains allow the clock management subsystem to only
-link in the clocks that the application actually needs.
+parents. Similarly, clock states referenced by a consumer's ``clock-request-n``
+properties reference the clock producers they configure. These reference chains
+allow the clock management subsystem to only link in the clocks that the
+application actually needs.
 
 Shared Clock Data
 -----------------
@@ -591,7 +667,7 @@ As an example, for the following devicetree:
         compatible = "vnd,clock-div";
         #clock-cells = <1>;
         input = <&clock_source>;
-        reg = <0x5000000>;
+        reg = <0x50000000>;
 
         clock_output: clock-output {
             compatible = "clock-output";
@@ -601,22 +677,26 @@ As an example, for the following devicetree:
 
     ....
 
-    &clock_output {
-        clock_output_state_default: clock-output-state-default {
-            compatible = "clock-state";
-            clocks = <&clock_div 1>;
-            rank = <0>;
+    clock-domains {
+        clock_div_domain: clock-div-domain {
+            compatible = "clock-domain";
+
+            clock_div_default: clock-div-default {
+                compatible = "clock-state";
+                clocks = <&clock_div 1>;
+                rank = <0>;
+            };
         };
-    }
+    };
 
     ....
 
     periph0: periph@0 {
         /* Clock outputs */
-        clock-outputs= <&clock_output>;
+        clock-outputs = <&clock_output>;
         clock-output-names = "default";
         /* Default clock state */
-        clock-request-0 = <&clock_output_state_default>;
+        clock-request-0 = <&clock_div_default>;
         clock-request-names = "default";
     };
 
@@ -634,8 +714,28 @@ Output Clock Nodes
 
 Clock trees should define output clock nodes as leaf nodes within their
 devicetree. These nodes must have the compatible :dtcompatible:`clock-output`,
-and are the nodes which clock consumers will reference. The clock management
-framework will handle defining clock drivers for each of these nodes.
+and are the nodes which clock consumers will reference to read or request
+clock rates. The clock management framework will handle defining clock
+structures for each of these nodes.
+
+Clock Domain Nodes
+------------------
+
+Clock states are grouped within clock domain nodes, which must have the
+compatible :dtcompatible:`clock-domain`. Each child of a clock domain with the
+compatible :dtcompatible:`clock-state` defines one state for that domain. Clock
+domains are not part of the clock tree, so they may be defined anywhere in the
+devicetree. They are typically defined by the SOC or board devicetree under a
+common ``clock-domains`` container node. The clock management framework will
+handle defining clock structures for each of these nodes.
+
+Clock domains should be split so that each domain configures a set of clock
+producers which can be reconfigured independently of other domains. Each clock
+producer may only be configured by the states of a single clock domain. This is
+enforced at build time by ``scripts/dts/check_clock_ownership.py``, which
+reports an error if states in two clock domains configure the same producer.
+Producers that are shared between multiple consumers should be placed in their
+own domain, so that each consumer can request a state from that domain.
 
 Common Clock Drivers
 --------------------
@@ -686,14 +786,14 @@ general guidance on implementing each API is provided below:
   * Generic drivers can generally be used, unless a device-specific method is
     needed to power down the source clock.
   * Drivers can return ``-ENOTCONN`` if their hardware is not setup, which the
-    clock framework will intepret as a rate of zero.
+    clock framework will interpret as a rate of zero.
 
 * :c:func:`clock_recalc_rate` (standard clocks only)
 
   * Read device specific registers to recalculate the clock frequency versus
     the provided parent frequency
   * Drivers can return ``-ENOTCONN`` if their hardware is not setup, which the
-    clock framework will intepret as a rate of zero.
+    clock framework will interpret as a rate of zero.
   * Any other error value indicates that the clock has rejected the parent
     rate, and will cause the clock framework to mark this clock as not usable
     for the current clock request being serviced.
@@ -768,7 +868,7 @@ clock tree management code won't suffice.
 .. note::
 
    Clock drivers should **never** directly call clock driver APIs, they should
-   always pass through clock helper APIs. This insures that clock consumers are
+   always pass through clock helper APIs. This ensures that clock consumers are
    properly notified of rate changes, and that these rate changes are validated
    appropriately.
 
@@ -808,8 +908,9 @@ be described in devicetree like so:
     fixed_source: fixed-source {
         compatible = "fixed-clock";
         clock-frequency = <DT_FREQ_M(10)>;
+        #clock-cells = <0>;
 
-        fixed-output: fixed-output {
+        fixed_output: fixed-output {
             compatible = "clock-output";
             #clock-cells = <0>;
         };
@@ -820,11 +921,12 @@ be described in devicetree like so:
         /* User's board can override this
          * based on oscillator they use */
         clock-frequency = <0>;
+        #clock-cells = <0>;
     };
 
     uart_mux: uart-mux@40001000 {
         compatible = "vnd,clock-mux";
-        reg = <0x40001000>
+        reg = <0x40001000>;
         #clock-cells = <1>;
         input-sources = <&fixed_source &external_osc>;
     };
@@ -847,24 +949,31 @@ be described in devicetree like so:
         clock-output-names = "default";
     };
 
-    uart_dev2: uart-dev {
+    uart_dev2: uart-dev2 {
         compatible = "vnd,uart-dev";
         clock-outputs = <&uart_output>;
         clock-output-names = "default";
     };
 
 At the board level, a frequency will be defined for the external clock.
-Furthermore, states for the UART clock output will be defined, and assigned
-to the first UART device:
+Furthermore, a clock domain containing states for the UART portion of the clock
+tree will be defined, and its default state will be requested by the first UART
+device:
 
 .. code-block:: devicetree
 
-    &uart_output {
-        uart_default: uart-default {
-            compatible = "clock-state";
-            /* Select external source, divide by 4 */
-            clocks = <&uart_mux 1 &uart_div 4>;
-            rank = <0>;
+    / {
+        clock-domains {
+            uart_domain: uart-domain {
+                compatible = "clock-domain";
+
+                uart_default: uart-default {
+                    compatible = "clock-state";
+                    /* Select external source, divide by 4 */
+                    clocks = <&uart_mux 1 &uart_div 4>;
+                    rank = <0>;
+                };
+            };
         };
     };
 
@@ -940,20 +1049,27 @@ Requesting Clock States
 =======================
 
 When a consumer issues a request for clock states, the clock management
-subsystem will examine the bitmask of allowed states for the clock output, and
-take the intersection of all requests for that clock output. From the set of
-states that satisfy all requests, the clock management subsystem will select the
-state with the lowest rank, and apply that state to the clock output. The rank
-of a state is set by the user in devicetree.
+subsystem will first verify that none of the clock domains referenced by the
+request are locked by another consumer. Then, for each clock domain referenced
+by the request, it will examine the bitmask of allowed states for the clock
+domain, and take the intersection of all requests for that clock domain. From
+the set of states that satisfy all requests, the clock management subsystem
+will select the state with the lowest rank, and apply that state to the clock
+domain. The rank of a state is set by the user in devicetree.
+
+In this example, when ``uart_dev`` requests its ``default`` state, the
+``uart-default`` state will be applied to ``uart_domain``, which configures
+``uart_mux`` and ``uart_div``. Since ``uart_dev2`` shares ``uart_output``, it
+will receive rate change notifications when this state is applied.
 
 When a clock state is applied, the following will happen for each
-clock node specified by the states ``clocks`` property:
+clock node specified by the state's ``clocks`` property:
 
 * :c:func:`clock_configure_recalc` (or the multiplexer/root clock specific
   variant) will be called on the target clock to determine the rate the clock
   will produce.
-* ``clock_notify_children`` will be called to validate that all children
-  can accept the new rate.
+* ``clock_notify_children`` will be called to validate that the target clock
+  is not locked, and that all children can accept the new rate.
 * If either of these checks fail, the state application will fail and an error
   will be returned to the consumer.
 * Otherwise, :c:func:`clock_configure` will be called on the clock node with the
@@ -1025,7 +1141,7 @@ parent rate to its child clock when calling :c:func:`clock_best_rate` (with
 ``commit=false``). Multiplexers have this support implemented generically, via a
 function that selects the best rate offered by all of the multiplexer parents.
 Proposed parent rates are validated with clock children via
-:c:func:`clock_recalc_rate`, or multipexers via
+:c:func:`clock_recalc_rate`, or multiplexers via
 :c:func:`clock_mux_validate_parent`.
 
 In the application phase, the clock subsystem will once again walk up the clock
@@ -1034,15 +1150,15 @@ tree, but now clock settings will be applied using
 :c:func:`clock_best_rate` (with ``commit=true``), and
 :c:func:`clock_set_parent`.
 
-Clock ranking is performed within the muliplexer query phase. Clocks may either
+Clock ranking is performed within the multiplexer query phase. Clocks may either
 be ranked based on their ability to satisfy a frequency request (best accuracy
 clock returned) or their rank factor (input with lowest calculated rank factor
 that fits within frequency constraints selected).
 
 Note that if no clocks fit within the provided constraint set, a "best effort"
 clock will be returned, IE the clock that was closest to the maximum frequency
-in the constaint set.  This is done so that clocks higher in the clock tree will
-still be selected optimimally, even if dividers or multipliers which source them
+in the constraint set. This is done so that clocks higher in the clock tree will
+still be selected optimally, even if dividers or multipliers which source them
 are needed to satisfy the clock constraints.
 
 The call chain of a runtime rate request might look like so (note that in
@@ -1117,12 +1233,18 @@ Clock notifications are a critical part of the clock management subsystem. They
 allow clocks to validate and notify their consumers of rate changes. There are
 three types of notifications: query, pre-change, and post-change. Query
 notifications are used to validate that a clock can accept a proposed rate.
-These notifications are sent before a clock is reconfigured, and are not
-passed to clock callbacks. Instead the framework will automatically reject
-the rate change if it violates constraints set by consumers. Pre-change
+These notifications are sent before a clock is reconfigured, and consumer
+callbacks may reject the proposed rate by returning ``-ENOTSUP`` (rate not
+supported) or ``-EBUSY`` (rate change not permitted at this time). Pre-change
 notifications are sent to consumers before a clock is reconfigured, and allow
 consumers to prepare for the rate change. Post-change notifications are sent
 after a clock is reconfigured.
+
+Notifications also enforce clock locks. If a notification reaches a clock
+producer that was locked by a locking clock request, the notification fails
+with ``-EPERM``. If it reaches a clock output that was locked with
+:c:func:`clock_management_lock`, the notification fails with ``-EBUSY``.
+Either failure will cause the reconfiguration to be rejected.
 
 A call chain for clock notifications on ``fixed_source`` might look like so.
 Note that the event type in use only changes how the consumer nodes at the leaf
