@@ -164,6 +164,7 @@ static void run_uhs_initialization(uint8_t bss, uint8_t uhs, uint32_t accept_on,
 	speed_card.bus_io.timing = SDHC_TIMING_SDR12;
 	speed_card.host_props.f_max = 208000000U;
 	speed_card.host_props.host_caps.vol_180_support = true;
+	speed_card.host_props.host_caps.high_spd_support = true;
 	speed_card.host_props.host_caps.sdr50_support = true;
 	speed_card.host_props.host_caps.sdr104_support = true;
 	speed_card.host_props.bus_4_bit_support = true;
@@ -212,6 +213,18 @@ ZTEST(sdio_emul_speed, test_sdr104_accepted_on_last_attempt)
 {
 	run_uhs_initialization(SDIO_CCCR_SPEED_SDR104, SDIO_CCCR_UHS_SDR104,
 			       CONFIG_SD_RETRY_COUNT + 1U, SD_CLOCK_208MHZ, SDHC_TIMING_SDR104);
+}
+
+ZTEST(sdio_emul_speed, test_accepted_sdr25_initialization)
+{
+	run_uhs_initialization(SDIO_CCCR_SPEED_SDR25, 0U, 1U,
+			       SD_CLOCK_50MHZ, SDHC_TIMING_SDR25);
+}
+
+ZTEST(sdio_emul_speed, test_rejected_sdr25_initialization)
+{
+	run_uhs_initialization(SDIO_CCCR_SPEED_SDR25, 0U, 0U,
+			       SD_CLOCK_25MHZ, SDHC_TIMING_SDR12);
 }
 
 static void speed_after(void *fixture)
