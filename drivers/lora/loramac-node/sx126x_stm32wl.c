@@ -16,6 +16,10 @@
 #include <zephyr/irq.h>
 LOG_MODULE_DECLARE(sx126x, CONFIG_LORA_LOG_LEVEL);
 
+/* Sub-GHz radio SMPS control 0 (SUBGHZ_SMPSC0R) */
+#define REG_SMPSC0R       0x0916
+#define REG_SMPSC0R_CLKDE BIT(6)
+
 static const enum {
 	RFO_LP,
 	RFO_HP,
@@ -27,6 +31,19 @@ void sx126x_reset(struct sx126x_data *dev_data)
 	k_sleep(K_MSEC(20));
 	LL_RCC_RF_DisableReset();
 	k_sleep(K_MSEC(10));
+}
+
+/*
+ * Enable the SMPS clock detection (SUBGHZ_SMPSC0R.CLKDE). It is off after a
+ * radio reset and must be on before the SMPS is enabled, either by the radio
+ * (SetRegulatorMode, which RadioInit() sends with USE_DCDC) or by the CPU
+ * (PWR_CR5.SMPSEN): if the SMPS clock stops while the SMPS runs, the detection
+ * switches back to the LDO, without it the device may be damaged. The other
+ * bits are kept at their reset value.
+ */
+void sx126x_chip_setup(void)
+{
+	SX126xWriteRegister(REG_SMPSC0R, SX126xReadRegister(REG_SMPSC0R) | REG_SMPSC0R_CLKDE);
 }
 
 bool sx126x_is_busy(struct sx126x_data *dev_data)
