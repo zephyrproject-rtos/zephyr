@@ -6,3 +6,7 @@ config IPM_CONSOLE_STACK_SIZE
 
 configdefault MAIN_STACK_SIZE
 	default 2048
+
+choice LIBC_IMPLEMENTATION
+	default XTENSA_LIBC
+endchoice
