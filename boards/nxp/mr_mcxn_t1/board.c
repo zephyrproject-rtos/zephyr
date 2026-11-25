@@ -352,11 +352,6 @@ void board_early_init_hook(void)
 #endif
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vref))
-	CLOCK_EnableClock(kCLOCK_Vref);
-	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlVref);
-#endif
-
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
 	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 1U);
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);

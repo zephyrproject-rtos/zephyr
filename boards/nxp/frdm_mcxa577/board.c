@@ -225,10 +225,6 @@ void board_early_init_hook(void)
 	RESET_ReleasePeripheralReset(kLPSPI5_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vref))
-	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlVref);
-#endif
-
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc1))
 	CLOCK_SetClockDiv(kCLOCK_DivADC, 1u);
 	CLOCK_AttachClk(kFRO_LF_DIV_to_ADC);
