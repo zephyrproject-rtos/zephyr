@@ -25,6 +25,14 @@ properties:
       sequence on this line (e.g. when the reset is owned by another
       driver such as Wi-Fi, or the line is used by another function).
 
+  spi-enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO that routes the IEEE 802.15.4 SPI lines of a combo controller
+      (e.g. IW61x) to the host. It is driven active by the driver once
+      Bluetooth is ready, after the controller firmware has been uploaded,
+      right before the HDLC RCP interface is started. Optional.
+
   hci-operation-speed:
     type: int
     description: |
