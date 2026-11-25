@@ -158,6 +158,10 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateAonUART);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpacmp))
+	CLOCK_EnableClock(kCLOCK_GateAonLPACMP);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_kpp0))
 	CLOCK_AttachClk(kFRO16K_to_AON_KPP);
 	CLOCK_EnableClock(kCLOCK_GateAonKPP);
