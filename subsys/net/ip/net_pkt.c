@@ -2228,8 +2228,8 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	net_pkt_set_rx_timestamping(clone_pkt, net_pkt_is_rx_timestamping(pkt));
 	net_pkt_set_forwarding(clone_pkt, net_pkt_forwarding(pkt));
 	net_pkt_set_chksum_done(clone_pkt, net_pkt_is_chksum_done(pkt));
-	net_pkt_set_loopback(pkt, net_pkt_is_loopback(pkt));
-	net_pkt_set_ip_reassembled(pkt, net_pkt_is_ip_reassembled(pkt));
+	net_pkt_set_loopback(clone_pkt, net_pkt_is_loopback(pkt));
+	net_pkt_set_ip_reassembled(clone_pkt, net_pkt_is_ip_reassembled(pkt));
 	net_pkt_set_cooked_mode(clone_pkt, net_pkt_is_cooked_mode(pkt));
 	net_pkt_set_ipv4_pmtu(clone_pkt, net_pkt_ipv4_pmtu(pkt));
 	net_pkt_set_ipv4_ll_resolve_addr(clone_pkt,
