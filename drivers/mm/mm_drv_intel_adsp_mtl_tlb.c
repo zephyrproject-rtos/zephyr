@@ -294,6 +294,17 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 
 	entry_idx = get_tlb_entry_idx(va);
 
+	/* Do not replace an existing mapping, its physical page would leak */
+	if (tlb_entries[entry_idx] & TLB_ENABLE_BIT) {
+		k_spin_unlock(&tlb_lock, key);
+		if (UINT_TO_POINTER(phys) == NULL) {
+			sys_mem_blocks_free_contiguous(&L2_PHYS_SRAM_REGION,
+						       UINT_TO_POINTER(pa), 1);
+		}
+		ret = -EFAULT;
+		goto out;
+	}
+
 #ifdef CONFIG_SOC_INTEL_COMM_WIDGET
 	used_pages++;
 	sys_mm_drv_report_page_usage();
