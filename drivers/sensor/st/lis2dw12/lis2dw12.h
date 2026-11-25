@@ -122,6 +122,11 @@ struct lis2dw12_data {
 	uint16_t gain;
 	 /* output data rate */
 	uint16_t odr;
+#ifdef CONFIG_SENSOR_ASYNC_API
+	struct rtio *rtio_ctx;
+	struct rtio_iodev *iodev;
+#endif
+
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	const struct device *dev;

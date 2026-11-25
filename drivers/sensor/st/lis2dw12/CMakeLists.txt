@@ -7,6 +7,7 @@
 zephyr_library()
 
 zephyr_library_sources(lis2dw12.c)
-zephyr_library_sources_ifdef(CONFIG_LIS2DW12_TRIGGER    lis2dw12_trigger.c)
+zephyr_library_sources_ifdef(CONFIG_LIS2DW12_TRIGGER lis2dw12_trigger.c)
+zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API lis2dw12_async.c lis2dw12_decoder.c)
 
 zephyr_library_include_directories(../stmemsc)
