@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config DRV505X
+	bool "TI DRV505x Hall-effect sensors"
+	default y
+	depends on DT_HAS_TI_DRV505X_ENABLED
+	select ADC
+	help
+	  Enable the driver for the Texas Instruments DRV5053, DRV5055 and
+	  DRV5056 Hall-effect sensors read through an ADC.
