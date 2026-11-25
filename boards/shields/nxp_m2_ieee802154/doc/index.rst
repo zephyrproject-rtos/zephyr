@@ -68,56 +68,126 @@ Use the following shield name with ``--shield <option>`` when you invoke
 - ``nxp_m2_2el_2ll_ieee802154``: For IEEE 802.15.4 SPI RCP with NXP IW612
   (Murata 2EL) or IW610 (Murata 2LL) M.2 modules.
 
-This single shield supports both M.2 modules:
+This single shield supports both IW612 (Murata 2EL) and IW610 (Murata 2LL) M.2
+modules. The shield overlay and pin assignments are identical for both modules.
 
-- IW612 (Murata 2EL) module
-- IW610 (Murata 2LL) module
+The OpenThread Border Router combines the Wi-Fi/Bluetooth M.2 shield
+(``nxp_m2_2ll_wifi_bt``) with this 802.15.4 RCP shield
+(``nxp_m2_2el_2ll_ieee802154``). The ``nxp_m2_2ll_wifi_bt`` shield and the NXP
+Wi-Fi driver (``CONFIG_WIFI_NXP``) are required in every configuration, even when
+Wi-Fi is not used as the backbone: the IW612/IW610 firmware is loaded through
+the NXP Wi-Fi driver, and the M.2 module does not start without it.
 
-The choice of module is made through the module-specific configuration fragment
-passed on the command line (``mimxrt1060_evkc_iw612.conf`` for IW612 or
-``mimxrt1060_evkc_iw610.conf`` for IW610). The shield overlay and pin
-assignments are identical for both modules.
+Build Configurations
+====================
 
-The OpenThread Border Router is a Wi-Fi + Thread application. It combines the
-Wi-Fi/Bluetooth M.2 shield (``nxp_m2_2ll_wifi_bt``) with this 802.15.4 RCP
-shield (``nxp_m2_2el_2ll_ieee802154``), and requires the RCP host extra config file plus
-the board-specific and module-specific configuration fragments.
+The application is configured by three fragments passed through
+``EXTRA_CONF_FILE``, all located in
+``samples/net/openthread/border_router/boards/mimxrt1060_evk_mimxrt1062_qspi_C/``:
 
-To build for the MIMXRT1060-EVK Rev-C with an IW612 (Murata 2EL) module:
+.. list-table::
+   :header-rows: 1
+   :widths: 35 65
+
+   * - Fragment
+     - Purpose
+   * - ``mimxrt1060_evk_mimxrt1062_qspi_C.conf``
+     - Common RT1060 EVKC settings: NXP Wi-Fi driver, HDLC RCP host interface,
+       heap and network buffer sizing, shell and logging. Always required.
+   * - ``wifi.conf`` or ``eth.conf``
+     - Backbone selection. ``wifi.conf`` uses the Wi-Fi STA interface as the
+       infrastructure link (``CONFIG_ETH_DRIVER=n``). ``eth.conf`` uses the
+       wired Ethernet port.
+   * - ``iw612.conf`` or ``iw610.conf``
+     - M.2 module selection: IW612 (Murata 2EL) or IW610 (Murata 2LL).
+
+This gives four supported combinations:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 20 60
+
+   * - Module
+     - Backbone
+     - Fragments
+   * - IW612
+     - Wi-Fi
+     - ``mimxrt1060_evk_mimxrt1062_qspi_C.conf wifi.conf iw612.conf``
+   * - IW612
+     - Ethernet
+     - ``mimxrt1060_evk_mimxrt1062_qspi_C.conf eth.conf iw612.conf``
+   * - IW610
+     - Wi-Fi
+     - ``mimxrt1060_evk_mimxrt1062_qspi_C.conf wifi.conf iw610.conf``
+   * - IW610
+     - Ethernet
+     - ``mimxrt1060_evk_mimxrt1062_qspi_C.conf eth.conf iw610.conf``
+
+Wi-Fi Backbone
+==============
+
+To build for the MIMXRT1060-EVK Rev-C with an IW612 (Murata 2EL) module and a
+Wi-Fi backbone:
 
 .. code-block:: console
 
    west build -p -b mimxrt1060_evk@C/mimxrt1062/qspi \
-       -d build_mimxrt1060_evk/border_router_iw612 \
+       -d build_mimxrt1060_evk/border_router_iw612_wifi \
        --shield "nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154" \
        zephyr/samples/net/openthread/border_router \
-       -- -DEXTRA_CONF_FILE="ot-rcp-host-wifi-nxp.conf \
+       -- -DEXTRA_CONF_FILE=" \
        boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf \
-       boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evkc_iw612.conf"
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/wifi.conf \
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/iw612.conf"
 
-To build for the MIMXRT1060-EVK Rev-C with an IW610 (Murata 2LL) module, use the
-IW610 module fragment instead:
+For an IW610 (Murata 2LL) module, use ``iw610.conf`` instead:
 
 .. code-block:: console
 
    west build -p -b mimxrt1060_evk@C/mimxrt1062/qspi \
-       -d build_mimxrt1060_evk/border_router_iw610 \
+       -d build_mimxrt1060_evk/border_router_iw610_wifi \
        --shield "nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154" \
        zephyr/samples/net/openthread/border_router \
-       -- -DEXTRA_CONF_FILE="ot-rcp-host-wifi-nxp.conf \
+       -- -DEXTRA_CONF_FILE=" \
        boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf \
-       boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evkc_iw610.conf"
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/wifi.conf \
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/iw610.conf"
 
-The configuration fragments passed via ``EXTRA_CONF_FILE`` are applied in order:
+Connect the Wi-Fi STA interface to the access point from the shell
+(``wifi connect ...``) to bring the backbone link up.
 
-- ``ot-rcp-host-wifi-nxp.conf``: base OpenThread RCP host + NXP Wi-Fi
-  configuration (originally tuned for RW610).
-- ``boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf``:
-  RT1060 EVKC overrides for the M.2 IW612/IW610 RCP setup (disables RW610
-  specific options, sizes heap and network buffers, sets logging).
-- ``boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evkc_iw612.conf`` (or
-  ``mimxrt1060_evkc_iw610.conf``): module-specific settings selecting the IW612
-  or IW610 module respectively.
+Ethernet Backbone
+=================
+
+To build for the MIMXRT1060-EVK Rev-C with an IW612 (Murata 2EL) module and a
+wired Ethernet backbone:
+
+.. code-block:: console
+
+   west build -p -b mimxrt1060_evk@C/mimxrt1062/qspi \
+       -d build_mimxrt1060_evk/border_router_iw612_eth \
+       --shield "nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154" \
+       zephyr/samples/net/openthread/border_router \
+       -- -DEXTRA_CONF_FILE=" \
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf \
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/eth.conf \
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/iw612.conf"
+
+For an IW610 (Murata 2LL) module, use ``iw610.conf`` instead:
+
+.. code-block:: console
+
+   west build -p -b mimxrt1060_evk@C/mimxrt1062/qspi \
+       -d build_mimxrt1060_evk/border_router_iw610_eth \
+       --shield "nxp_m2_2ll_wifi_bt nxp_m2_2el_2ll_ieee802154" \
+       zephyr/samples/net/openthread/border_router \
+       -- -DEXTRA_CONF_FILE=" \
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/mimxrt1060_evk_mimxrt1062_qspi_C.conf \
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/eth.conf \
+       boards/mimxrt1060_evk_mimxrt1062_qspi_C/iw610.conf"
+
+Because the Wi-Fi driver must stay enabled to load the M.2 firmware, a Wi-Fi
+network interface is still present with ``eth.conf``.
 
 .. note::
    The shield selects the HDLC RCP SPI interface and enables OpenThread L2 by
