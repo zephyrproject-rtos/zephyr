@@ -974,25 +974,34 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
-	LOG_DBG("Counting exported symbols...");
-	ret = llext_count_export_syms(ldr, ext);
-	if (ret != 0) {
-		LOG_ERR("Failed to count exported ELF symbols, ret %d", ret);
-		goto out;
-	}
+	/*
+	 * The table of global symbols is only read by the Xtensa linking code
+	 * and, with CONFIG_LLEXT_IMPORT_ALL_GLOBALS, to build the export table;
+	 * debug builds keep it for inspection. Skip it otherwise, as it can be
+	 * large and is allocated when the heap is at its fullest.
+	 */
+	if (IS_ENABLED(CONFIG_XTENSA) || IS_ENABLED(CONFIG_LLEXT_IMPORT_ALL_GLOBALS) ||
+	    IS_ENABLED(CONFIG_LLEXT_LOG_LEVEL_DBG)) {
+		LOG_DBG("Counting exported symbols...");
+		ret = llext_count_export_syms(ldr, ext);
+		if (ret != 0) {
+			LOG_ERR("Failed to count exported ELF symbols, ret %d", ret);
+			goto out;
+		}
 
-	LOG_DBG("Allocating memory for symbol table...");
-	ret = llext_allocate_symtab(ldr, ext);
-	if (ret != 0) {
-		LOG_ERR("Failed to allocate extension symbol table, ret %d", ret);
-		goto out;
-	}
+		LOG_DBG("Allocating memory for symbol table...");
+		ret = llext_allocate_symtab(ldr, ext);
+		if (ret != 0) {
+			LOG_ERR("Failed to allocate extension symbol table, ret %d", ret);
+			goto out;
+		}
 
-	LOG_DBG("Copying symbols...");
-	ret = llext_copy_symbols(ldr, ext, ldr_parm);
-	if (ret != 0) {
-		LOG_ERR("Failed to copy symbols, ret %d", ret);
-		goto out;
+		LOG_DBG("Copying symbols...");
+		ret = llext_copy_symbols(ldr, ext, ldr_parm);
+		if (ret != 0) {
+			LOG_ERR("Failed to copy symbols, ret %d", ret);
+			goto out;
+		}
 	}
 
 	if (ldr_parm->relocate_local) {
@@ -1024,8 +1033,8 @@ out:
 		llext_free_inspection_data(ldr, ext);
 	}
 
-	/* Until proper inter-llext linking is implemented, the symbol table is
-	 * not useful outside of the loading process; keep it only if debugging
+	/* The symbol table is not useful outside of the loading process (links
+	 * between extensions use the export table); keep it only if debugging
 	 * is enabled and no error is detected.
 	 */
 	if (!(IS_ENABLED(CONFIG_LLEXT_LOG_LEVEL_DBG) && ret == 0)) {

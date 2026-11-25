@@ -140,9 +140,9 @@ struct llext {
 
 	/**
 	 * Table of all global symbols in the extension; used internally as
-	 * part of the linking process. E.g. if the extension is built out of
-	 * several files, if any symbols are referenced between files, this
-	 * table will be used to link them.
+	 * part of the linking process on Xtensa, and as the source of the
+	 * export table with @kconfig{CONFIG_LLEXT_IMPORT_ALL_GLOBALS}. It is
+	 * only built when needed and only kept after loading in debug builds.
 	 */
 	struct llext_symtable sym_tab;
 
