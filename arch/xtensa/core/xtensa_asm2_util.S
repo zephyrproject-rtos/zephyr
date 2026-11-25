@@ -432,44 +432,48 @@ DEF_EXCINT 1, _handle_excint, xtensa_excint1_c
 #define MAX_INTR_LEVEL 0
 #endif
 
+/* Scratch register of the vector of an interrupt level above EXCM */
+#define HPINT_ZSR(l) HPINT_ZSR_(l)
+#define HPINT_ZSR_(l) ZSR_HPINT##l
+
 #if MAX_INTR_LEVEL >= 2 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 2)
 #if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 2))
-DEF_EXCINT 2, _handle_excint, xtensa_int2_c
+DEF_EXCINT 2, _handle_excint, xtensa_int2_c, HPINT_ZSR(2)
 #endif
 #endif
 
 #if MAX_INTR_LEVEL >= 3 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 3)
 #if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 3))
-DEF_EXCINT 3, _handle_excint, xtensa_int3_c
+DEF_EXCINT 3, _handle_excint, xtensa_int3_c, HPINT_ZSR(3)
 #endif
 #endif
 
 #if MAX_INTR_LEVEL >= 4 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 4)
 #if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 4))
-DEF_EXCINT 4, _handle_excint, xtensa_int4_c
+DEF_EXCINT 4, _handle_excint, xtensa_int4_c, HPINT_ZSR(4)
 #endif
 #endif
 
 #if MAX_INTR_LEVEL >= 5 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 5)
 #if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 5))
-DEF_EXCINT 5, _handle_excint, xtensa_int5_c
+DEF_EXCINT 5, _handle_excint, xtensa_int5_c, HPINT_ZSR(5)
 #endif
 #endif
 
 #if MAX_INTR_LEVEL >= 6 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 6)
 #if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 6))
-DEF_EXCINT 6, _handle_excint, xtensa_int6_c
+DEF_EXCINT 6, _handle_excint, xtensa_int6_c, HPINT_ZSR(6)
 #endif
 #endif
 
 #if MAX_INTR_LEVEL >= 7 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 7)
 #if !(defined(CONFIG_GDBSTUB) && (XCHAL_DEBUGLEVEL == 7))
-DEF_EXCINT 7, _handle_excint, xtensa_int7_c
+DEF_EXCINT 7, _handle_excint, xtensa_int7_c, HPINT_ZSR(7)
 #endif
 #endif
 
 #if XCHAL_HAVE_NMI
-DEF_EXCINT XCHAL_NMILEVEL, _handle_excint, xtensa_nmi_c
+DEF_EXCINT XCHAL_NMILEVEL, _handle_excint, xtensa_nmi_c, HPINT_ZSR(XCHAL_NMILEVEL)
 #endif
 
 #if defined(CONFIG_GDBSTUB)

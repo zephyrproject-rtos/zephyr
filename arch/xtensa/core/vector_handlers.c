@@ -599,45 +599,89 @@ __unused static void xtensa_handle_irq_lvl(int irq_lvl)
 		return return_to(interrupted_stack);                                               \
 	}
 
+/**
+ * @brief Define the C handler xtensa_int\<l\>_c() of a level @p l above XCHAL_EXCM_LEVEL.
+ *
+ * It only dispatches the ISRs of the level. irq_lock() does not mask these
+ * levels, so their ISRs must not call kernel APIs.
+ *
+ * @param l Interrupt level.
+ */
+#define DEF_HPINT_C_HANDLER(l)                                                                     \
+	__unused void xtensa_int##l##_c(void)                                                      \
+	{                                                                                          \
+		xtensa_handle_irq_lvl(l);                                                          \
+	}
+
 #if MAX_INTR_LEVEL >= 2 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 2)
+#if XTENSA_HPINT_LEVEL(2)
+DEF_HPINT_C_HANDLER(2)
+#else
 DEF_INT_C_HANDLER(2)
+#endif
 #endif
 
 #if MAX_INTR_LEVEL >= 3 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 3)
+#if XTENSA_HPINT_LEVEL(3)
+DEF_HPINT_C_HANDLER(3)
+#else
 DEF_INT_C_HANDLER(3)
+#endif
 #endif
 
 #if MAX_INTR_LEVEL >= 4 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 4)
+#if XTENSA_HPINT_LEVEL(4)
+DEF_HPINT_C_HANDLER(4)
+#else
 DEF_INT_C_HANDLER(4)
+#endif
 #endif
 
 #if MAX_INTR_LEVEL >= 5 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 5)
+#if XTENSA_HPINT_LEVEL(5)
+DEF_HPINT_C_HANDLER(5)
+#else
 DEF_INT_C_HANDLER(5)
+#endif
 #endif
 
 #if MAX_INTR_LEVEL >= 6 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 6)
+#if XTENSA_HPINT_LEVEL(6)
+DEF_HPINT_C_HANDLER(6)
+#else
 DEF_INT_C_HANDLER(6)
+#endif
 #endif
 
 #if MAX_INTR_LEVEL >= 7 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 7)
+#if XTENSA_HPINT_LEVEL(7)
+DEF_HPINT_C_HANDLER(7)
+#else
 DEF_INT_C_HANDLER(7)
+#endif
 #endif
 
 #if XCHAL_HAVE_NMI
 /**
  * @brief C handler for the non-maskable interrupt.
  *
- * @param interrupted_stack Interrupt stack frame of the interrupted context.
- *
- * @return Switch handle of the context to return to.
+ * The NMI cannot be masked, so its ISR must not call kernel APIs.
  */
-__unused void *xtensa_nmi_c(void *interrupted_stack)
+__unused void xtensa_nmi_c(void)
 {
-	usage_stop();
 	_sw_isr_table[XCHAL_NMI_INTERRUPT].isr(
 		_sw_isr_table[XCHAL_NMI_INTERRUPT].arg);
-	return return_to(interrupted_stack);
 }
+#endif
+
+#if XTENSA_HPINT_LEVELS > 0
+/* Stack the C handler of a level above EXCM needs below the saved frame */
+#define HPINT_C_STACK_MIN 128
+
+BUILD_ASSERT((CONFIG_XTENSA_HPINT_STACK_SIZE % 16) == 0,
+	     "CONFIG_XTENSA_HPINT_STACK_SIZE must be a multiple of 16");
+BUILD_ASSERT(CONFIG_XTENSA_HPINT_STACK_SIZE >= (sizeof(_xtensa_hpint_frame_t) + HPINT_C_STACK_MIN),
+	     "CONFIG_XTENSA_HPINT_STACK_SIZE too small for the saved registers");
 #endif
 
 static inline DEF_INT_C_HANDLER(1)

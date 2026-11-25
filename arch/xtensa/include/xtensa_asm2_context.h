@@ -233,6 +233,18 @@ struct xtensa_irq_base_save_area {
 
 typedef struct xtensa_irq_base_save_area _xtensa_irq_bsa_t;
 
+/* Special registers the handler of an interrupt level above XCHAL_EXCM_LEVEL
+ * saves (HPINT_SRS in xtensa_asm2.inc.S), rounded up to keep 16-byte alignment.
+ */
+#define XTENSA_HPINT_SR_COUNT 16
+
+/* Frame that handler saves at the top of its stack, the BSA at its A1 */
+typedef struct {
+	_xtensa_irq_bsa_t bsa;
+	uintptr_t sr[XTENSA_HPINT_SR_COUNT];
+	uintptr_t ar[XCHAL_NUM_AREGS];
+} _xtensa_hpint_frame_t;
+
 #undef _BSA_PADDING_NEEDED
 #undef _BSA_PADDING_PADDED_SIZE
 #undef _BSA_PADDING_BASE_SIZE

@@ -99,4 +99,11 @@ GEN_OFFSET_SYM(_thread_arch_t, mpu_map);
 GEN_OFFSET_SYM(_thread_arch_t, reent);
 #endif
 
+#if XTENSA_HPINT_LEVELS > 0
+GEN_ABSOLUTE_SYM(___cpu_t_hpint_stacks_OFFSET, offsetof(_cpu_t, arch.hpint_stacks));
+GEN_ABSOLUTE_SYM(___xtensa_hpint_frame_t_SIZEOF, sizeof(_xtensa_hpint_frame_t));
+GEN_OFFSET_SYM(_xtensa_hpint_frame_t, sr);
+GEN_OFFSET_SYM(_xtensa_hpint_frame_t, ar);
+#endif
+
 GEN_ABS_SYM_END

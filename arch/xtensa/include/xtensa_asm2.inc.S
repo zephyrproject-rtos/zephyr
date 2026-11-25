@@ -638,6 +638,203 @@ _restore_\@:
 	j _restore_context
 .endm
 
+/* Special registers HPINT_HANDLER saves, with their offsets in the sr[] area
+ * of _xtensa_hpint_frame_t (XTENSA_HPINT_SR_COUNT words)
+ */
+.macro HPINT_SRS OP
+	\OP epc1, 0
+	\OP excvaddr, 4
+#if XCHAL_HAVE_EXCEPTIONS
+	\OP depc, 8
+#endif
+	\OP windowstart, 12
+	\OP ZSR_EPC, 16
+	\OP ZSR_EPS, 20
+	\OP ZSR_A0SAVE, 24
+#ifdef CONFIG_XTENSA_MMU
+	\OP ZSR_DBLEXC, 28
+	\OP ZSR_DEPC_SAVE, 32
+	\OP ZSR_EXCCAUSE_SAVE, 36
+#endif
+#ifdef CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE
+	\OP ZSR_LSE_SAVE0, 40
+	\OP ZSR_LSE_SAVE1, 44
+	\OP ZSR_LSE_SAVE2, 48
+#endif
+.endm
+
+.macro HPINT_SR_SAVE SR, OFF
+	rsr a2, \SR
+	s32i a2, a3, \OFF
+.endm
+
+.macro HPINT_SR_RESTORE SR, OFF
+	l32i a2, a3, \OFF
+	wsr a2, \SR
+.endm
+
+
+/*
+ * HPINT_HANDLER
+ *
+ * Handler for an interrupt level above XCHAL_EXCM_LEVEL, entered from its
+ * vector with the interrupted A0 in HPINT_ZSR.  These interrupts also
+ * arrive inside window overflow/underflow and exception handlers, where
+ * A1 is not free stack and the windows and exception registers are in
+ * use.  So the handler saves all of them at the top of this level's
+ * per-CPU stack, runs the ISRs there with only its own frame live in
+ * WINDOWSTART, restores everything and returns to the interrupted code.
+ */
+.macro HPINT_HANDLER LVL, C_HANDLER_SYM, HPINT_ZSR
+.if \LVL > XCHAL_DEBUGLEVEL
+.set _hpint_top\LVL, ___cpu_t_hpint_stacks_OFFSET + \
+	(\LVL - XCHAL_EXCM_LEVEL - 1) * CONFIG_XTENSA_HPINT_STACK_SIZE
+.else
+.set _hpint_top\LVL, ___cpu_t_hpint_stacks_OFFSET + \
+	(\LVL - XCHAL_EXCM_LEVEL) * CONFIG_XTENSA_HPINT_STACK_SIZE
+.endif
+.set _hpint_ar\LVL, _hpint_top\LVL - ___xtensa_hpint_frame_t_SIZEOF + \
+	___xtensa_hpint_frame_t_ar_OFFSET
+/* Split into a multiple of 256 for ADDMI and a remainder in -128..127 for ADDI */
+.set _hpint_ar_hi\LVL, (_hpint_ar\LVL + 128) & ~0xff
+#ifdef CONFIG_XTENSA_INTERRUPT_NONPREEMPTABLE
+.set _hpint_c_level\LVL, ZSR_RFI_LEVEL
+.if \LVL > ZSR_RFI_LEVEL
+.set _hpint_c_level\LVL, \LVL
+.endif
+#else
+.set _hpint_c_level\LVL, \LVL
+#endif
+
+.align 4
+_handle_hpint\LVL:
+	/* A0 = ar[] of the frame at the top of this level's stack.  The
+	 * assembler rejects an offset ADDMI/ADDI cannot reach.
+	 */
+	rsr.ZSR_CPU a0
+	addmi a0, a0, _hpint_ar_hi\LVL
+	addi a0, a0, _hpint_ar\LVL - _hpint_ar_hi\LVL
+
+	/* Save each 4-register group, rotating the window by one group per
+	 * step and carrying the save pointer into the next window's A0.
+	 */
+	s32i a1, a0, 4
+	s32i a2, a0, 8
+	s32i a3, a0, 12
+	rsr a2, \HPINT_ZSR
+	s32i a2, a0, 0
+	.rept XCHAL_NUM_AREGS / 4 - 1
+	s32i a4, a0, 16
+	s32i a5, a0, 20
+	s32i a6, a0, 24
+	s32i a7, a0, 28
+	addi a4, a0, 16
+	rotw 1
+	.endr
+	rotw 1
+
+	/* A1 = the frame (its BSA), A3 = its sr[] area */
+	movi a1, ___xtensa_hpint_frame_t_ar_OFFSET
+	sub a1, a0, a1
+	movi a3, ___xtensa_hpint_frame_t_sr_OFFSET
+	add a3, a3, a1
+
+	/* Save PC/PS of this level, the special registers and the BSA state */
+	rsr.eps\LVL a2
+	s32i a2, a1, ___xtensa_irq_bsa_t_ps_OFFSET
+	rsr.epc\LVL a2
+	s32i a2, a1, ___xtensa_irq_bsa_t_pc_OFFSET
+	HPINT_SRS HPINT_SR_SAVE
+	ODD_REG_SAVE a2, a1
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	FPU_REG_SAVE
+#endif
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
+	call0 _xtensa_hifi_save
+#endif
+#if XCHAL_HAVE_THREADPTR && defined(CONFIG_USERSPACE)
+	movi a2, 0
+	wur.THREADPTR a2
+#endif
+
+	/* Mark only this window live, so the C code never spills into the
+	 * interrupted frames
+	 */
+	rsr.windowbase a2
+	ssl a2
+	movi a3, 1
+	sll a3, a3
+	wsr.windowstart a3
+
+	/* Count this handler as an ISR (arch_is_in_isr()) */
+	rsr.ZSR_CPU a3
+	l32i a2, a3, ___cpu_t_nested_OFFSET
+	addi a2, a2, 1
+	s32i a2, a3, ___cpu_t_nested_OFFSET
+
+	/* Call the C handler with EXCM clear, at this level */
+	movi a0, 0
+	j _hpint_call\LVL
+.align 4
+_hpint_c_imm\LVL:
+	.word \C_HANDLER_SYM
+	.word PS_WOE | PS_UM | PS_INTLEVEL(_hpint_c_level\LVL)
+_hpint_call\LVL:
+	l32r a3, _hpint_c_imm\LVL
+	l32r a2, _hpint_c_imm\LVL + 4
+	wsr.ps a2
+	rsync
+	callx4 a3
+
+	/* Back to EXCM at this level, and out of ISR context */
+	movi a2, PS_EXCM | PS_UM | PS_INTLEVEL(\LVL)
+	wsr.ps a2
+	rsync
+	rsr.ZSR_CPU a3
+	l32i a2, a3, ___cpu_t_nested_OFFSET
+	addi a2, a2, -1
+	s32i a2, a3, ___cpu_t_nested_OFFSET
+
+	/* Restore the special registers and the BSA state */
+	movi a3, ___xtensa_hpint_frame_t_sr_OFFSET
+	add a3, a3, a1
+	HPINT_SRS HPINT_SR_RESTORE
+#if XCHAL_HAVE_FP && defined(CONFIG_CPU_HAS_FPU) && defined(CONFIG_FPU_SHARING)
+	FPU_REG_RESTORE
+#endif
+#if defined(CONFIG_XTENSA_EAGER_HIFI_SHARING)
+	call0 _xtensa_hifi_load
+#endif
+	ODD_REG_RESTORE a2, a1
+
+	/* Restore PC/PS of this level for RFI */
+	l32i a2, a1, ___xtensa_irq_bsa_t_pc_OFFSET
+	wsr.epc\LVL a2
+	l32i a2, a1, ___xtensa_irq_bsa_t_ps_OFFSET
+	wsr.eps\LVL a2
+	rsync
+
+	/* Restore the other groups the same way, then this window's own. */
+	movi a4, ___xtensa_hpint_frame_t_ar_OFFSET + 16
+	add a4, a4, a1
+	.rept XCHAL_NUM_AREGS / 4 - 1
+	l32i a5, a4, 4
+	l32i a6, a4, 8
+	l32i a7, a4, 12
+	addi a8, a4, 16
+	l32i a4, a4, 0
+	rotw 1
+	.endr
+	rotw 1
+	movi a0, ___xtensa_hpint_frame_t_ar_OFFSET
+	add a1, a1, a0
+	l32i a0, a1, 0
+	l32i a2, a1, 8
+	l32i a3, a1, 12
+	l32i a1, a1, 4
+	rfi \LVL
+.endm
+
 /* Defines an exception/interrupt vector for a specified level.  Saves
  * off the interrupted A0-A3 registers and the per-level PS/PC
  * registers to the stack before jumping to a handler (defined with
@@ -655,7 +852,7 @@ _restore_\@:
  * stub can be loaded into the vector area instead and reach this code
  * with a simple jump instruction.
  */
-.macro DEF_EXCINT LVL, ENTRY_SYM, C_HANDLER_SYM
+.macro DEF_EXCINT LVL, ENTRY_SYM, C_HANDLER_SYM, HPINT_ZSR
 #if defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
 .pushsection .iram.text, "ax"
 .global _Level\LVL\()VectorHelper
@@ -673,6 +870,17 @@ _Level\LVL\()VectorHelper :
 .global _Level\LVL\()Vector
 _Level\LVL\()Vector:
 #endif
+
+.if (\LVL > XCHAL_EXCM_LEVEL) && (\LVL != XCHAL_DEBUGLEVEL)
+	wsr a0, \HPINT_ZSR
+	j _hpint_after_imm\LVL
+.align 4
+_hpint_imm\LVL:
+	.word _handle_hpint\LVL
+_hpint_after_imm\LVL:
+	l32r a0, _hpint_imm\LVL
+	jx a0
+.else
 
 #ifdef CONFIG_XTENSA_MMU
 .if \LVL == 1
@@ -823,6 +1031,7 @@ _after_imms\LVL:
 	l32r a2, _c_handler_imm\LVL
 	l32r a0, _handle_excint_imm\LVL
 	jx a0
+.endif
 .popsection
 
 #if defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
@@ -841,6 +1050,9 @@ j _Level\LVL\()VectorHelper
 .popsection
 #endif
 
+.if (\LVL > XCHAL_EXCM_LEVEL) && (\LVL != XCHAL_DEBUGLEVEL)
+	HPINT_HANDLER \LVL, \C_HANDLER_SYM, \HPINT_ZSR
+.endif
 .endm
 
 #endif	/* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_S_H */
