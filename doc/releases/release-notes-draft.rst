@@ -269,6 +269,11 @@ Other notable changes
 
   * NXP RW61x hwinfo reports PM4 wakeup resets as :c:macro:`RESET_LOW_POWER_WAKE`.
 
+* Espressif SoCs configure the VDD brown-out detector from devicetree. The detector is
+  enabled at the ESP-IDF default threshold and resets the chip in hardware. Flash suspend
+  and RF power-down are enabled by default and can be turned off in the node. See the
+  :ref:`migration guide <migration_4.6>`.
+
 * Interrupt controllers
 
   * GIC v3 LPI and ITS tables use bounded static storage, making their memory requirements
