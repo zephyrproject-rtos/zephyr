@@ -854,19 +854,6 @@ static int get_next_timeout(void)
 	return (int)min_timeout;
 }
 
-/* The socket is of no more use. One opened in its place is taken for another
- * endpoint, also when it gets the same descriptor, so the responses of this
- * one are forgotten along with its requests.
- */
-static void cancel_requests_on_socket_error(struct coap_client *client)
-{
-	k_mutex_lock(&client->lock, K_FOREVER);
-	dedup_cache_clear(client);
-	k_mutex_unlock(&client->lock);
-
-	cancel_requests_with(client, -EIO);
-}
-
 static int handle_poll(void)
 {
 	int ret = 0;
@@ -956,7 +943,7 @@ static int handle_poll(void)
 					continue;
 				}
 				LOG_ERR("Error receiving response");
-				cancel_requests_on_socket_error(client);
+				cancel_requests_with(client, -EIO);
 				continue;
 			}
 
@@ -971,15 +958,15 @@ static int handle_poll(void)
 		}
 		if (fds[i].revents & ZSOCK_POLLERR) {
 			LOG_ERR("Error in poll for socket %d", fds[i].fd);
-			cancel_requests_on_socket_error(client);
+			cancel_requests_with(client, -EIO);
 		}
 		if (fds[i].revents & ZSOCK_POLLHUP) {
 			LOG_ERR("Error in poll: POLLHUP for socket %d", fds[i].fd);
-			cancel_requests_on_socket_error(client);
+			cancel_requests_with(client, -EIO);
 		}
 		if (fds[i].revents & ZSOCK_POLLNVAL) {
 			LOG_ERR("Error in poll: POLLNVAL - fd %d not open", fds[i].fd);
-			cancel_requests_on_socket_error(client);
+			cancel_requests_with(client, -EIO);
 		}
 	}
 
@@ -1804,6 +1791,13 @@ static void cancel_requests_with(struct coap_client *client, int error)
 		 */
 		cancel_internal_request(&client->requests[i]);
 	}
+
+	/* The socket failed, or is given up and may be closed. One opened in
+	 * its place is taken for another endpoint, also when it gets the same
+	 * descriptor, so the responses of this one are forgotten along with
+	 * its requests.
+	 */
+	dedup_cache_clear(client);
 	k_mutex_unlock(&client->lock);
 
 }
