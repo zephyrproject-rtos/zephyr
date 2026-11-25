@@ -2316,9 +2316,12 @@ static ssize_t z_impl_zsock_sendto_custom_fake_same_mid_once(int sock, void *buf
 		same_mid_ack_cnt++;
 	} else if (type == COAP_TYPE_RESET) {
 		rst_sent_cnt++;
-	} else if (same_mid_req_cnt++ == 0) {
+	} else if (same_mid_req_cnt == 0) {
+		same_mid_req_cnt++;
 		return z_impl_zsock_sendto_custom_fake_same_mid(sock, buf, len, flags, dest_addr,
 								addrlen);
+	} else {
+		/* A later request gets no answer */
 	}
 
 	return 1;
@@ -3742,6 +3745,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_multicast_again(int sock, void 
 		set_socket_events(sock, ZSOCK_POLLIN);
 	} else if (index == 2) {
 		net_sin(src_addr)->sin_addr.s_addr = net_htonl(MULTICAST_SERVER_START_IP);
+	} else {
+		/* The other responses come as they are */
 	}
 
 	return ret;
