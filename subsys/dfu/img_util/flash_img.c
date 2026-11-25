@@ -69,7 +69,8 @@ static int scramble_mcuboot_trailer(struct flash_img_context *ctx)
 	int rc = 0;
 
 #ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
-	if (stream_flash_bytes_written(&ctx->stream) == 0) {
+	if (stream_flash_bytes_written(&ctx->stream) == 0 &&
+	    stream_flash_bytes_buffered(&ctx->stream) == 0) {
 		off_t toff = boot_get_trailer_status_offset(ctx->flash_area->fa_size);
 		off_t offset;
 		size_t size;
