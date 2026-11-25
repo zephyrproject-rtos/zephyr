@@ -1,0 +1,14 @@
+/*
+ * BeagleY-AI MCU R5: measure HFOSC via MCU_DCC0 (self-test, both inputs HFOSC).
+ * The board DTS already aliases clock-meter to &mcu_dcc0 and enables the node.
+ */
+
+/ {
+	aliases {
+		clock-meter = &mcu_dcc0;
+	};
+};
+
+&mcu_dcc0 {
+	status = "okay";
+};
