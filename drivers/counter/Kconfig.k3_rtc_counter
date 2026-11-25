@@ -5,5 +5,8 @@ config COUNTER_TI_K3_RTC
 	bool "RTC Counter Driver for TI K3 SoCs"
 	default y
 	depends on DT_HAS_TI_K3_RTC_COUNTER_ENABLED
+	select COUNTER_SUPPORTS_64BITS_TICKS
 	help
-	  Enable the RTC driver for TI K3 SoCs.
+	  Enable the RTC driver for TI K3 SoCs. The hardware second
+	  counter is 48 bits, so enable COUNTER_64BITS_TICKS to use the
+	  64-bit counter APIs.
