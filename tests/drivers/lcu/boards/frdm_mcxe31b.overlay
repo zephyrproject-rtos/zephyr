@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lcu_0 {
+	status = "okay";
+};
+
+&lcu_1 {
+	status = "okay";
+};
