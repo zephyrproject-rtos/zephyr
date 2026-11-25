@@ -72,6 +72,7 @@ zephyr_iterable_section(NAME k_fifo GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_IN
 zephyr_iterable_section(NAME k_lifo GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
 zephyr_iterable_section(NAME k_condvar GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
 zephyr_iterable_section(NAME sys_mem_blocks_ptr GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
+zephyr_iterable_section(NAME k_obj_type GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
 
 zephyr_iterable_section(NAME net_buf_pool GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
 
