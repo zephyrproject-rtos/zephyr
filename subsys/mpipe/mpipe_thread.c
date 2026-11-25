@@ -9,7 +9,7 @@
 
 #include <zephyr/mpipe/mpipe_thread.h>
 
-static K_THREAD_STACK_ARRAY_DEFINE(mpipe_thread_stacks, CONFIG_MPIPE_THREADS_NUM,
+static K_KERNEL_STACK_ARRAY_DEFINE(mpipe_thread_stacks, CONFIG_MPIPE_THREADS_NUM,
 				   CONFIG_MPIPE_THREAD_STACK_SIZE);
 
 static ATOMIC_DEFINE(mpipe_thread_stack_pool, CONFIG_MPIPE_THREADS_NUM);
@@ -40,7 +40,7 @@ k_tid_t mpipe_thread_create(struct mpipe_thread *thread, k_thread_entry_t func, 
 	k_sem_init(&thread->sem, 0, 1);
 
 	(void)k_thread_create(&thread->thread, mpipe_thread_stacks[thread->stack_id],
-			      K_THREAD_STACK_SIZEOF(mpipe_thread_stacks[thread->stack_id]), func,
+			      K_KERNEL_STACK_SIZEOF(mpipe_thread_stacks[thread->stack_id]), func,
 			      p1, p2, p3, priority, 0, delay);
 
 #ifdef CONFIG_THREAD_NAME
