@@ -343,6 +343,7 @@ static int emul_imager_init_controls(const struct device *dev)
 int emul_imager_init(const struct device *dev)
 {
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = fmts[0].pixelformat,
 		.width = fmts[0].width_min,
 		.height = fmts[0].height_min,

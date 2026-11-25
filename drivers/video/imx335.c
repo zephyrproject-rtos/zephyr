@@ -820,6 +820,7 @@ static int imx335_init(const struct device *dev)
 #define IMX335_INIT(n)										\
 	static struct imx335_data imx335_data_##n = {						\
 		.fmt = {									\
+			.type = VIDEO_BUF_TYPE_OUTPUT,						\
 			.pixelformat = VIDEO_PIX_FMT_SRGGB10P,					\
 			.width = IMX335_NATIVE_WIDTH,						\
 			.height = IMX335_NATIVE_HEIGHT,						\

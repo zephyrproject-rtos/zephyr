@@ -445,7 +445,12 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_video_dev, complete_video_dev);
 static int video_shell_print_frmival(const struct shell *sh, const struct device *dev,
 				     uint32_t pixfmt, uint32_t width, uint32_t height)
 {
-	struct video_format fmt = {.pixelformat = pixfmt, .width = width, .height = height};
+	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+		.pixelformat = pixfmt,
+		.width = width,
+		.height = height,
+	};
 	struct video_frmival_enum fie = {.format = &fmt};
 
 	for (fie.index = 0; video_enum_frmival(dev, &fie) == 0; fie.index++) {

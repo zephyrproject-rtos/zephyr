@@ -1003,6 +1003,7 @@ static int sc2336_init(const struct device *dev)
 {
 	const struct sc2336_config *cfg = dev->config;
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = sc2336_fmts[SC2336_MODE_1024X600_RAW8].pixelformat,
 		.width = sc2336_fmts[SC2336_MODE_1024X600_RAW8].width_min,
 		.height = sc2336_fmts[SC2336_MODE_1024X600_RAW8].height_min,
