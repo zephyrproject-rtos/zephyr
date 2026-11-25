@@ -65,6 +65,28 @@
 			compatible = "ti,mspm0-crcp";
 			reg = <0x401b2000 0x2000>;
 		};
+
+		dac0: dac@40462000 {
+			compatible = "ti,am13-cmpss-dac";
+			reg = <0x40462000 0x1000>;
+			ti,sysctl = <&sysctl>;
+			ti,ldacouten-bit = <0>;
+			ti,pwren-bit = <12>;
+			ti,reset-bit = <12>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		dac1: dac@40463000 {
+			compatible = "ti,am13-cmpss-dac";
+			reg = <0x40463000 0x1000>;
+			ti,sysctl = <&sysctl>;
+			ti,ldacouten-bit = <1>;
+			ti,pwren-bit = <13>;
+			ti,reset-bit = <13>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 
