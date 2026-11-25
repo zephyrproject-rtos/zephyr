@@ -21,10 +21,12 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,ipc = &ipc0;
 		zephyr,ipc_shm = &ddr0;
+		zephyr,rtc = &counter_rtc0;
 	};
 
 	aliases {
 		watchdog0 = &mcu_rti0;
+		rtc = &counter_rtc0;
 	};
 
 	cpus {
@@ -65,6 +67,14 @@
 };
 
 &mcu_rti0 {
+	status = "okay";
+};
+
+&wkup_rtc0 {
+	status = "okay";
+};
+
+&counter_rtc0 {
 	status = "okay";
 };
 

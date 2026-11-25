@@ -68,6 +68,7 @@ struct k3_rtc_counter_cfg {
 
 	void (*irq_config_func)(void);
 	uint32_t osc_freq;
+	unsigned int irq_num;
 };
 
 struct k3_rtc_counter_data {
@@ -233,12 +234,14 @@ static int k3_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 	data->alarm_cfg[chan_id].user_data = alarm_cfg->user_data;
 
 	irq_unlock(key);
+	irq_enable(DEV_CFG(dev)->irq_num);
 
 	return 0;
 }
 
 static int k3_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
+	const struct k3_rtc_counter_cfg *config = DEV_CFG(dev);
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
 	struct k3_rtc_counter_data *data = DEV_DATA(dev);
 	int ret, key;
@@ -266,6 +269,10 @@ static int k3_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	data->alarm_cfg[chan_id].callback = NULL;
 	data->alarm_cfg[chan_id].user_data = NULL;
 	data->alarm_cfg[chan_id].flags = 0;
+
+	if (data->alarm_cfg[0].callback == NULL && data->alarm_cfg[1].callback == NULL) {
+		irq_disable(config->irq_num);
+	}
 
 	irq_unlock(key);
 
@@ -386,6 +393,7 @@ static int k3_counter_set_alarm_64(const struct device *dev, uint8_t chan_id,
 	data->alarm_cfg[chan_id].flags = alarm_cfg->flags;
 
 	irq_unlock(key);
+	irq_enable(DEV_CFG(dev)->irq_num);
 
 	return 0;
 }
@@ -405,6 +413,12 @@ static void k3_rtc_isr(const struct device *dev)
 
 	status = rtc_regs->IRQSTATUS_SYS;
 	if (status == 0) {
+		/*
+		 * Shared RTC_EVENT line can assert without a latched SYS status
+		 * (e.g. while Linux also owns the IP). Disable to avoid a
+		 * level-triggered interrupt storm.
+		 */
+		irq_disable(DEV_CFG(dev)->irq_num);
 		return;
 	}
 
@@ -441,14 +455,18 @@ static int k3_counter_init(const struct device *dev)
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
 	int ret;
 
+	/* Must be set before unlock: kick writes fence with this timeout. */
+	data->sync_timeout_us = (USEC_PER_SEC / config->osc_freq) * 4U;
+	/* Fence polls can need more than 4 nominal 32k cycles in practice. */
+	if (data->sync_timeout_us < 1000U) {
+		data->sync_timeout_us = 1000U;
+	}
+
 	ret = k3_rtc_unlock(dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to unlock RTC");
 		return ret;
 	}
-
-	/* 4 clock cycles for sync */
-	data->sync_timeout_us = (USEC_PER_SEC / config->osc_freq) * 4;
 
 	/* Enable 32k oscillator dependency */
 	rtc_regs->GENRAL_CTL |= RTC_O32K_OSC_MASK;
@@ -497,7 +515,9 @@ static DEVICE_API(counter, k3_counter_api) = {
 			DT_INST_IRQ(i, priority),					\
 			k3_rtc_isr,							\
 			DEVICE_DT_INST_GET(i), DT_INST_IRQ(i, flags));			\
-		irq_enable(DT_INST_IRQN(i));						\
+		/* Defer irq_enable until an alarm is armed; the shared		\
+		 * WKUP_RTCSS event line may already be asserted by the host.	\
+		 */								\
 	}										\
 	static struct k3_rtc_counter_data k3_counter_data_##i = {};			\
 	static struct k3_rtc_counter_cfg k3_counter_cfg_##i = {				\
@@ -512,7 +532,8 @@ static DEVICE_API(counter, k3_counter_api) = {
 			},								\
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(i)),			\
 		.irq_config_func = ti_k3_counter_irq_config_##i,			\
-		.osc_freq = DT_INST_PROP(i, clock_frequency)				\
+		.osc_freq = DT_INST_PROP(i, clock_frequency),				\
+		.irq_num = DT_INST_IRQN(i),						\
 	};										\
 	DEVICE_DT_INST_DEFINE(i,							\
 		k3_counter_init,							\
