@@ -934,3 +934,9 @@ Architectures
   power-management units (the ``pmu`` name is used by both). The header
   :file:`include/zephyr/arch/pmu.h` is now :file:`include/zephyr/arch/perf_counter.h`, and its
   ``pmu_*`` functions and types gained a ``perf_counter_`` prefix. (:github:`125939`)
+
+* On Xtensa, the HiFi register sharing code was generalized to any coprocessor, and the fields
+  it adds to the architecture structures were renamed: ``hifi_regs`` in ``struct _thread_arch``
+  is now ``cp_regs``, and ``hifi_owner`` and ``save_hifi`` in ``struct _cpu_arch`` are now
+  ``cp_owner`` and ``save_cp``. Code accessing these fields must use the new names. The
+  :kconfig:option:`CONFIG_XTENSA_HIFI_SHARING` options are unchanged. (:github:`120790`)
