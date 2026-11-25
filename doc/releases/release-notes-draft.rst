@@ -206,6 +206,18 @@ Libraries / Subsystems
   * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
     (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
 
+* Sensors
+
+  * The NXP eMIOS quadrature decoder (:dtcompatible:`nxp,emios-qdec`,
+    :kconfig:option:`CONFIG_QDEC_NXP_EMIOS`) pairs a logic control unit (LCU) cell with two
+    externally clocked eMIOS counters, so quadrature edge detection runs in hardware and
+    software only accumulates directional counts. It provides x4 decoding, signed encoder
+    counts, mechanical angle, revolution counts and direction reversal, and latches
+    accounting errors instead of reporting unreliable position data. The
+    :zephyr:code-sample:`qdec` sample supports the FRDM-MCXE31B board with GPIO loopback, so
+    it runs without an external encoder. The underlying LCU driver (:dtcompatible:`nxp,lcu`)
+    can also be used on its own by other MCXE consumers.
+
 * USB Type-C
 
   * Dual-role ports can prefer the Sink role through the Try.SNK and TryWait.SRC states
