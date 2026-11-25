@@ -192,3 +192,32 @@
 	interrupt-parent = <&nvic>;
 	interrupts = <61 0>;
 };
+
+&mipi_dsi {
+	interrupt-parent = <&nvic>;
+	interrupts = <343 0>;
+};
+
+&cdc200 {
+	interrupt-parent = <&nvic>;
+	interrupts = <333 0>,
+		     <334 0>,
+		     <335 0>,
+		     <336 0>,
+		     <337 0>,
+		     <338 0>,
+		     <339 0>,
+		     <340 0>,
+		     <341 0>,
+		     <342 0>;
+	interrupt-names = "scanline_0",
+			  "scanline_1",
+			  "fifo_warning_0",
+			  "fifo_warning_1",
+			  "fifo_underrun_0",
+			  "fifo_underrun_1",
+			  "bus_error_0",
+			  "bus_error_1",
+			  "reg_reload_0",
+			  "reg_reload_1";
+};

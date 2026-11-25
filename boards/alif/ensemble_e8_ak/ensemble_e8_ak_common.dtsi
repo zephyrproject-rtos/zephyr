@@ -11,6 +11,7 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
 	aliases {
@@ -18,6 +19,11 @@
 		led1 = &led_blue;
 		led2 = &led_green;
 		sw0 = &joy_center;
+	};
+
+	chosen {
+		zephyr,display = &cdc200;
+		zephyr,touch = &gt911;
 	};
 
 	leds {
@@ -80,6 +86,12 @@
 	};
 };
 
+&gpio6 {
+	pinctrl-0 = <&gpio6_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &gpio7 {
 	pinctrl-0 = <&gpio7_default>;
 	pinctrl-names = "default";
@@ -111,5 +123,90 @@
 };
 
 &lptimer3 {
+	status = "okay";
+};
+
+&cdc200 {
+	width = <480>;
+	height = <800>;
+	enable-l1;
+	pixel-fmt-l1 = "rgb-888";
+	panel-dev = <&mw405>;
+	status = "okay";
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hfront-porch = <5>;
+		hback-porch = <5>;
+		hsync-len = <4>;
+		vfront-porch = <10>;
+		vback-porch = <10>;
+		vsync-len = <2>;
+		clock-frequency = <24364080>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		de-active = <1>;
+		pixelclk-active = <0>;
+	};
+};
+
+&mipi_dsi {
+	dpi-shutdn-active = <1>;
+	dpi-colorm-active = <1>;
+	vid-pkt-size = <480>;
+	ecc-recv-en;
+	crc-recv-en;
+	frame-ack-en;
+	ldo-phy = <&ldo_phy_reg>;
+	tx-dphy = <&mipi_tx_dphy_reg>;
+	pll-dphy = <&mipi_pll_dphy_reg>;
+	// HACK! this is the clock setting for the E7, not E8!
+	clocks = <&clockctrl ALIF_DSI_CLK>, <&clockctrl ALIF_CDC200_PIX_SYST_ACLK>,
+		 <&clockctrl ALIF_CLK_CFG(CLKCTL_PER_MST, MIPI_CKEN, 0U, 1U, 0U, 0U, 0U, 21)>,
+		 <&clockctrl ALIF_MIPI_PLLREF_CLK>,
+		 <&clockctrl ALIF_MIPI_BYPASS_CLK>;
+	status = "okay";
+
+	mw405: mw405@0 {
+		compatible = "ilitek,ili9806e";
+		reg = <0>;
+		reset-gpios = <&lpgpio 5 GPIO_ACTIVE_HIGH>;
+		bl-gpios = <&gpio6 1 GPIO_ACTIVE_HIGH>;
+		data-lanes = <2>;
+		width = <480>;
+		height = <800>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+		hp-mode;
+		burst-mode;
+		init-seq-name = "mw405";
+		status = "okay";
+	};
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio9 {
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	// Hack- this is for E7
+	clocks = <&clockctrl ALIF_CLK_CFG(CLKCTL_PER_SLV, I2C1_CTRL, 0U, 0U,
+					  0U, 0U, 0U, ALIF_PARENT_CLK_SYST_PCLK)>;
+	status = "okay";
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpio9 4 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio4 0 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&phy_pwr {
 	status = "okay";
 };

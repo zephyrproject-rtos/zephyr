@@ -11,6 +11,7 @@
  * This driver provides clock control for Alif Semiconductor SoC families.
  */
 
+#include "zephyr/arch/common/sys_bitops.h"
 #define DT_DRV_COMPAT alif_clockctrl
 
 #include <zephyr/device.h>
@@ -20,11 +21,15 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/dt-bindings/clock/alif-clocks-common.h>
+#include <zephyr/dt-bindings/clock/alif-ensemble-clocks.h>
 
 LOG_MODULE_REGISTER(alif_clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #define DEV_CFG(dev)  ((const struct alif_clock_control_config *)(dev)->config)
 #define DEV_DATA(dev) ((struct alif_clock_control_data *)(dev)->data)
+
+/* Clock Enable Register */
+#define CGU_CLK_ENA 0x14
 
 /**
  * @brief Alif clock controller data structure
@@ -80,6 +85,13 @@ struct alif_clock_control_config {
 #define ALIF_CLOCK_50M_FREQ          MHZ(50)
 /* 100M_CLK, a fixed division of the system PLL output */
 #define ALIF_CLOCK_100M_FREQ         MHZ(100)
+/* 400M_CLK, a fixed division of the system PLL output */
+#define ALIF_CLOCK_400M_FREQ         MHZ(400)
+/** HFOSC clock, gated by CLK_ENA[CLK38P4M] */
+#define ALIF_CLOCK_HFOSC_FREQ        KHZ(38400)
+/** 25 MHz clock (25M_CLK), sourced from 100M_CLK/4, gated by CLK_ENA[CLK25M] */
+#define ALIF_CLOCK_25M_FREQ          MHZ(25)
+
 
 /*
  * Clock Configuration Field Extraction Macros
@@ -217,7 +229,7 @@ static mem_addr_t alif_get_clk_reg_addr(const struct device *dev, uint32_t clk_i
  * @param clock_id Encoded clock ID from device tree
  * @return Clock frequency in Hz, or 0 if unknown
  */
-static uint32_t alif_get_clock_freq(uint32_t clock_id)
+static int alif_get_input_clock_freq(uint32_t clock_id)
 {
 	uint32_t parent_clk = ALIF_CLOCK_CFG_PARENT_CLK(clock_id);
 
@@ -236,10 +248,46 @@ static uint32_t alif_get_clock_freq(uint32_t clock_id)
 		return ALIF_CLOCK_50M_FREQ;
 	case ALIF_PARENT_CLK_100M:
 		return ALIF_CLOCK_100M_FREQ;
+	case ALIF_PARENT_CLK_400M:
+		return ALIF_CLOCK_400M_FREQ;
+	case ALIF_PARENT_CLK_HFOSC:
+		return ALIF_CLOCK_HFOSC_FREQ;
+	case ALIF_PARENT_CLK_25M:
+		return ALIF_CLOCK_25M_FREQ;
+	case ALIF_PARENT_GATE_ONLY:
+		return 0;
 	default:
 		__ASSERT(false, "Invalid parent clock: %u", parent_clk);
 		return 0;
 	}
+}
+
+/**
+ * @brief Enable parent clock
+ *
+ * @return 0 on success
+ * @param dev Clock control device
+ * @param clock_id Encoded clock ID from device tree
+ */
+static int alif_enable_parent_clock(const struct device *dev, uint32_t clock_id)
+{
+	mem_addr_t cgu = DEVICE_MMIO_NAMED_GET(dev, cgu);
+	uint32_t parent_clk = ALIF_CLOCK_CFG_PARENT_CLK(clock_id);
+	uint32_t mask = BIT(parent_clk);
+
+	if (parent_clk > ALIF_PARENT_CLK_SYST_ACLK && parent_clk < ALIF_PARENT_CLK_APSS) {
+		/* These parent clocks lack an enable bit */
+		return 0;
+	}
+
+	if (parent_clk == ALIF_PARENT_CLK_25M || parent_clk == ALIF_PARENT_CLK_50M) {
+		/* Enable 100MHz clock as well, these source it */
+		mask |= BIT(ALIF_PARENT_CLK_100M);
+	}
+
+	sys_set_bits(cgu + CGU_CLK_ENA, mask);
+
+	return 0;
 }
 
 /**
@@ -261,6 +309,12 @@ static int alif_clock_control_on(const struct device *dev,
 	uint32_t clk_id = (uint32_t)sub_system;
 	mem_addr_t reg_addr;
 	uint32_t reg_value;
+	int ret;
+
+	ret = alif_enable_parent_clock(dev, clk_id);
+	if (ret) {
+		return ret;
+	}
 
 	if (!ALIF_CLOCK_CFG_EN_MASK(clk_id) && !ALIF_CLOCK_CFG_SRC_FIELD_WIDTH(clk_id)) {
 		/* Always-on clock with a fixed source, nothing to program */
@@ -321,6 +375,30 @@ static int alif_clock_control_off(const struct device *dev,
 	return 0;
 }
 
+/*
+ * Get a clock subsystem's divider mask and offset.
+ *
+ * @param clk_id Encoded clock ID from device tree
+ * @param div_mask Pointer to store the divider mask
+ * @param div_off Pointer to store the divider offset
+ * @return true if clock has divider, false otherwise
+ */
+static bool alif_clock_control_get_div_info(uint32_t clk_id,
+					    uint32_t *div_mask,
+					    uint32_t *div_off)
+{
+	switch (clk_id) {
+	case ALIF_CDC200_PIX_SYST_ACLK:
+	case ALIF_CDC200_PIX_400M_CLK:
+		*div_mask = GENMASK(24, 16);
+		*div_off = 16;
+		return true;
+	/* Add cases for specific clock IDs if needed */
+	default:
+		return false;
+	}
+}
+
 /**
  * @brief Get the clock rate for a peripheral clock
  *
@@ -336,11 +414,21 @@ static int alif_clock_control_get_rate(const struct device *dev,
 				uint32_t *rate)
 {
 	uint32_t clk_id = (uint32_t)sub_system;
+	int ret, clk_div = 1;
+	uint32_t div_mask, div_off;
 
-	ARG_UNUSED(dev);
+	ret = alif_get_input_clock_freq(clk_id);
+	if (ret < 0) {
+		return ret;
+	}
 
-	*rate = alif_get_clock_freq(clk_id);
-
+	if (alif_clock_control_get_div_info(clk_id, &div_mask, &div_off)) {
+		clk_div = (sys_read32(alif_get_clk_reg_addr(dev, clk_id)) & div_mask) >> div_off;
+	}
+	if (clk_div == 0) {
+		return -EINVAL;
+	}
+	*rate = ret / clk_div;
 	return 0;
 }
 
@@ -375,11 +463,39 @@ static enum clock_control_status
 	return CLOCK_CONTROL_STATUS_OFF;
 }
 
+static int alif_clock_set_rate(const struct device *dev,
+			       clock_control_subsys_t sub_system,
+			       clock_control_subsys_rate_t rate)
+{
+	uint32_t clk_id = (uint32_t)sub_system;
+	uint32_t req_rate = (uint32_t)rate;
+	mem_addr_t reg_addr;
+	uint32_t input_clk, div_mask, div_off, clk_div, reg;
+
+	if (!alif_clock_control_get_div_info(clk_id, &div_mask, &div_off)) {
+		/* Clock does not have divider */
+		return -ENOTSUP;
+	}
+
+	reg_addr = alif_get_clk_reg_addr(dev, clk_id);
+	input_clk = alif_get_input_clock_freq(clk_id);
+
+	clk_div = DIV_ROUND_CLOSEST(input_clk, req_rate);
+	reg = sys_read32(reg_addr);
+	reg &= ~div_mask;
+	reg |= (clk_div << div_off) & div_mask;
+	sys_write32(reg, reg_addr);
+
+	return 0;
+}
+
+
 static DEVICE_API(clock_control, alif_clock_control_driver_api) = {
 	.on = alif_clock_control_on,
 	.off = alif_clock_control_off,
 	.get_rate = alif_clock_control_get_rate,
 	.get_status = alif_clock_control_get_status,
+	.set_rate = alif_clock_set_rate,
 };
 
 /**

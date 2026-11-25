@@ -745,6 +745,7 @@ telink	Telink Semiconductor
 telit	Telit Cinterion
 tempo	Tempo Semiconductor
 terasic	Terasic Inc.
+tes	TES Electronic Solutions
 tfc	Three Five Corp
 thine	THine Electronics, Inc.
 thingyjp	thingy.jp

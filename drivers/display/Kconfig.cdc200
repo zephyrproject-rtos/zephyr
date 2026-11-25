@@ -1,0 +1,31 @@
+# Alif CDC200 display driver configuration options
+
+# Copyright (C) 2024 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config CDC200
+	bool "CDC200 driver"
+	default y
+	depends on DT_HAS_TES_CDC_2_1_ENABLED
+	help
+	  Enable support for CDC200 driver controller.
+
+if CDC200
+
+config CDC200_INIT_PRIORITY
+	int "CDC200 initialization priority"
+	default 95
+	help
+	  Set the initialization priority for the CDC200 driver. Should be
+	  later than the display init priority, since the panel needs to
+	  initialize first.
+
+config CDC200_DRIVER_FRAMEBUFFER
+	bool "CDC200 driver framebuffer"
+	default y
+	help
+	  Allocate dual framebuffers within the driver. Required to support
+	  partial writes, but can be disabled in the case of application
+	  managed framebuffers
+
+endif # CDC200
