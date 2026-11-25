@@ -164,7 +164,8 @@ static const struct mc_cgm_gate_entry mc_cgm_gate_map[] = {
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_ADC_COUNT),
 		MC_CGM_GATE_ENTRY, (,), ADC, Adc),
 #endif
-#if defined(CONFIG_PWM_NXP_EMIOS) && defined(FSL_FEATURE_SOC_EMIOS_COUNT)
+#if (defined(CONFIG_PWM_NXP_EMIOS) || defined(CONFIG_QDEC_NXP_EMIOS)) && \
+	defined(FSL_FEATURE_SOC_EMIOS_COUNT)
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_EMIOS_COUNT),
 		MC_CGM_GATE_ENTRY, (,), EMIOS, Emios),
 #endif
@@ -478,7 +479,7 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 #if defined(CONFIG_MCUX_FLEXIO)
 	case MCUX_FLEXIO_CLK:
 #endif
-#if defined(CONFIG_PWM_NXP_EMIOS)
+#if defined(CONFIG_PWM_NXP_EMIOS) || defined(CONFIG_QDEC_NXP_EMIOS)
 	case MCUX_EMIOS0_CLK:
 	case MCUX_EMIOS1_CLK:
 	case MCUX_EMIOS2_CLK:
