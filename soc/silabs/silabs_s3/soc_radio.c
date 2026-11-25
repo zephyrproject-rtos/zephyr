@@ -30,6 +30,8 @@ void rail_isr_installer(void)
 	IRQ_CONNECT(RADIO_IRQN(rac_rsm), RADIO_IRQ_PRIO(rac_rsm), RAC_RSM_IRQHandler, NULL, 0);
 	IRQ_CONNECT(RADIO_IRQN(rac_seq), RADIO_IRQ_PRIO(rac_seq), RAC_SEQ_IRQHandler, NULL, 0);
 	IRQ_CONNECT(RADIO_IRQN(synth), RADIO_IRQ_PRIO(synth), SYNTH_IRQHandler, NULL, 0);
+	IRQ_CONNECT(RADIO_IRQN(rfeca0), RADIO_IRQ_PRIO(rfeca0), RFECA0_IRQHandler, NULL, 0);
+	IRQ_CONNECT(RADIO_IRQN(rfeca1), RADIO_IRQ_PRIO(rfeca1), RFECA1_IRQHandler, NULL, 0);
 	IRQ_CONNECT(RADIO_IRQN(sysmblpw0cpu), RADIO_IRQ_PRIO(sysmblpw0cpu), SYSMBLPW0CPU_IRQHandler,
 		    NULL, 0);
 }

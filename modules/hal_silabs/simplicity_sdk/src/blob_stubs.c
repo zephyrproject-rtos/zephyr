@@ -288,6 +288,14 @@ void RDMAILBOX_IRQHandler(void)
 {
 }
 
+void RFECA0_IRQHandler(void)
+{
+}
+
+void RFECA1_IRQHandler(void)
+{
+}
+
 void SYSMBLPW0CPU_IRQHandler(void)
 {
 }

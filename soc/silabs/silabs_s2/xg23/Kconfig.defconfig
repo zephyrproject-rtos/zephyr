@@ -5,7 +5,7 @@ if SOC_FAMILY_SILABS_S2_XG23
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
-	default 75
+	default 76
 
 config PM
 	select UART_INTERRUPT_DRIVEN if SERIAL_SUPPORT_INTERRUPT
