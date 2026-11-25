@@ -107,6 +107,7 @@ struct stm32_venc_data {
 	H264EncInst encoder;
 	uint32_t frame_nb;
 	bool resync;
+	uint32_t dropped_frames;
 };
 
 static H264EncPictureType to_h264pixfmt(uint32_t pixelformat)
@@ -569,11 +570,22 @@ static int encoder_start(struct stm32_venc_data *data, struct video_buffer *outp
 	return 0;
 }
 
+/* Log the frames dropped on output buffer overflows since the last coded one */
+static void encoder_report_drops(struct stm32_venc_data *data)
+{
+	if (data->dropped_frames != 0) {
+		LOG_WRN("%u frames dropped", data->dropped_frames);
+		data->dropped_frames = 0;
+	}
+}
+
 static int encoder_end(struct stm32_venc_data *data)
 {
 	struct stm32_venc_ewl *inst = &ewl_instance;
 	H264EncIn enc_in = {0};
 	H264EncOut enc_out = {0};
+
+	encoder_report_drops(data);
 
 	if (data->encoder != NULL) {
 		H264EncStrmEnd(data->encoder, &enc_in, &enc_out);
@@ -656,8 +668,24 @@ static int encode_frame(struct stm32_venc_data *data)
 			data->resync = true;
 			goto out;
 		}
+		encoder_report_drops(data);
 		output->bytesused = enc_out.streamSize;
 		break;
+	case H264ENC_OUTPUT_BUFFER_OVERFLOW:
+		/*
+		 * The coded frame did not fit in the output buffer and the library discarded it;
+		 * with its single reference buffer it codes the next frame intra. Ask for that too
+		 * and hand the output buffer back empty, as when nothing was coded, so the caller
+		 * still gets one output per input.
+		 */
+		if (data->dropped_frames == 0) {
+			LOG_WRN("frame %u exceeds the %u-byte output buffer: dropping frames",
+				data->frame_nb, output->size);
+		}
+		data->dropped_frames++;
+		data->resync = true;
+		output->bytesused = 0;
+		goto out;
 	case H264ENC_FUSE_ERROR:
 		LOG_ERR("H264EncStrmEncode error=%d", h264ret);
 
