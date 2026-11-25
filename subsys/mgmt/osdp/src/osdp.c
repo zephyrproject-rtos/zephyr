@@ -44,7 +44,7 @@ static struct osdp osdp_ctx;
 static struct osdp_pd osdp_pd_ctx[CONFIG_OSDP_NUM_CONNECTED_PD];
 static struct osdp_device osdp_device;
 static struct k_thread osdp_refresh_thread;
-static K_THREAD_STACK_DEFINE(osdp_thread_stack, CONFIG_OSDP_THREAD_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(osdp_thread_stack, CONFIG_OSDP_THREAD_STACK_SIZE);
 
 static void osdp_handle_in_byte(struct osdp_device *p, uint8_t *buf, int len)
 {
