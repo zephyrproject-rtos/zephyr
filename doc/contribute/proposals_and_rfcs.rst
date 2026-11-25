@@ -16,8 +16,8 @@ Contributors and project stakeholders should consider using this process if
 they intend to make "substantial" changes to Zephyr or its documentation. Some
 examples that would benefit from an RFC are:
 
-- A new feature that creates new API surface area, and would require a feature
-  flag if introduced.
+- A new :ref:`feature <feature_vs_enhancement>` that creates new API surface
+  area, and would require a feature flag if introduced.
 - The modification of an existing stable API.
 - The removal of features that already shipped as part of Zephyr.
 - The introduction of new idiomatic usage or conventions, even if they do not
@@ -54,8 +54,11 @@ of the changes should however be part of the pull-request:
 - Addition of new boards, SoCs or drivers to existing subsystems
 - ...
 
-The process in itself consists in creating a GitHub issue with the :ref:`RFC
-label <gh_labels>` that documents the proposal thoroughly. You are encouraged
+:ref:`feature_vs_enhancement` defines what the project considers a feature and
+what it considers an enhancement.
+
+The process in itself consists in creating a GitHub issue of the :ref:`RFC type
+<issue_types>` that documents the proposal thoroughly. You are encouraged
 to use the `RFC form`_ to make sure the proposal follows a template which
 project participants are already familiar with.
 

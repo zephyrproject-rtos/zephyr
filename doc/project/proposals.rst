@@ -10,10 +10,74 @@ To propose something new to the Zephyr Project:
    is prior work on the area.
 #. If not, feel free to create a `new issue
    <https://github.com/zephyrproject-rtos/zephyr/issues/new/choose>`_ of
-   the appropriate type (Enhancement, RFC/Proposal, etc.)
+   the appropriate :ref:`type <issue_types>`.
 
 You should contact an assigned owner if you'd like to discuss or contribute to
 an existing issue's implementation.
+
+.. _issue_types:
+
+Issue Types
+***********
+
+Every issue has exactly one GitHub issue type, selected by the template used to
+create it:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Type
+     - Use for
+
+   * - Bug
+     - An unexpected problem or behavior in something that exists. See
+       :ref:`bug_reporting`.
+
+   * - Feature
+     - A new capability that Zephyr does not have.
+
+   * - Enhancement
+     - An addition or improvement to something Zephyr already has.
+
+   * - RFC
+     - A proposal that needs design discussion and consensus before it is
+       implemented. See :ref:`rfcs`.
+
+   * - Task
+     - Work that does not change what Zephyr provides, such as process,
+       infrastructure or maintenance work.
+
+.. _feature_vs_enhancement:
+
+Feature or Enhancement
+======================
+
+What separates the two types is whether the capability is new to Zephyr, not the
+size of the change or whether it is new to one platform.
+
+A **Feature** adds a capability that has no counterpart in the tree. It usually
+introduces new API surface, new concepts or new conventions for users, and is
+therefore often preceded by an :ref:`RFC <rfcs>`. Examples:
+
+- Support for a new CPU architecture.
+- A new subsystem, kernel service, library or protocol stack.
+- A new device driver class, that is, a new driver API.
+- A new tool or build system capability.
+
+An **Enhancement** extends, completes or improves a capability that is already
+part of Zephyr, within its existing APIs and design. Examples:
+
+- A new option, mode or function in an existing subsystem or API.
+- Better performance, footprint, diagnostics, test coverage or documentation.
+- Support for new hardware within an existing architecture and driver class.
+
+Adding hardware support is not a Feature. A new board, SoC, SoC series, shield
+or device driver, including a sensor, a peripheral controller or the
+implementation of an existing driver class for one more SoC, plugs into APIs
+and infrastructure that Zephyr already provides. Such work is an Enhancement
+when it is tracked in an issue, and it does not need an issue to be submitted as
+a pull request.
 
 .. note::
 

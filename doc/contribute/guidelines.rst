@@ -381,7 +381,7 @@ mailing list`_ to introduce and discuss your idea with the development
 community.
 
 It's always a good practice to search for existing or related issues before
-submitting your own. When you submit an issue (bug or feature request), the
+submitting your own. When you submit an issue of any :ref:`type <issue_types>`, the
 triage team will review and comment on the submission, typically within a few
 business days.
 
