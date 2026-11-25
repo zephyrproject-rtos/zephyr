@@ -342,11 +342,181 @@ static void test_main(void)
 	TEST_PASS("Test passed");
 }
 
+/* Above the priority of the threads of the Bluetooth stack, so that the caller resumes from
+ * bt_iso_big_terminate() before the events that follow the response to the command are handled
+ */
+#define TERM_CALLER_PRIO K_PRIO_COOP(0)
+/* Time for the events that follow the response to LE BIG Terminate Sync to be handled */
+#define TERM_EVT_WAIT    K_MSEC(50)
+#define RESYNC_WAIT_MS   2000U
+
+static atomic_t big_stopped_cnt;
+static struct bt_le_per_adv_sync *resync_pa_sync;
+static struct bt_iso_big *resync_big;
+static int resync_err;
+
+static void big_sync_param_init(struct bt_iso_big_sync_param *param,
+				struct bt_iso_chan **bis_channels)
+{
+	*param = (struct bt_iso_big_sync_param){
+		.sync_timeout = interval_to_sync_timeout(broadcaster_info.interval),
+		.bis_bitfield = BIT(0),
+		.bis_channels = bis_channels,
+		.mse = BT_ISO_SYNC_MSE_MIN,
+		.encryption = false,
+		.num_bis = 1U,
+	};
+}
+
+static void term_iso_connected(struct bt_iso_chan *chan)
+{
+	LOG_INF("ISO Channel %p connected", chan);
+
+	SET_FLAG(flag_iso_connected);
+}
+
+static void term_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
+{
+	LOG_INF("ISO Channel %p disconnected (reason 0x%02x)", chan, reason);
+}
+
+static void big_stopped_cb(struct bt_iso_big *big, uint8_t reason)
+{
+	struct bt_le_per_adv_sync *sync = resync_pa_sync;
+
+	LOG_INF("BIG %p stopped (reason 0x%02x)", big, reason);
+
+	atomic_inc(&big_stopped_cnt);
+
+	if (sync != NULL) {
+		static struct bt_iso_chan *bis_channels[] = {&iso_chans[0]};
+		struct bt_iso_big_sync_param param;
+
+		/* Reuse the BIG from the callback, once */
+		resync_pa_sync = NULL;
+		big_sync_param_init(&param, bis_channels);
+		LOG_INF("Creating BIG sync from the stopped callback");
+		resync_err = bt_iso_big_sync(sync, &param, &resync_big);
+	}
+}
+
+/* Create a BIG sync of one BIS and terminate it before it is established, so that the Controller
+ * cancels the pending BIG sync with an LE BIG Sync Established event. With @p coop_caller the
+ * caller of bt_iso_big_terminate() resumes before that event is handled, else after.
+ */
+static void sync_big_and_terminate_pending(struct bt_le_per_adv_sync *sync,
+					   struct bt_iso_chan *chan, bool coop_caller)
+{
+	struct bt_iso_chan *bis_channels[] = {chan};
+	struct bt_iso_big_sync_param param;
+	struct bt_iso_big *big;
+	int prio;
+	int err;
+
+	big_sync_param_init(&param, bis_channels);
+	atomic_set(&big_stopped_cnt, 0);
+
+	LOG_INF("Creating BIG sync");
+	err = bt_iso_big_sync(sync, &param, &big);
+	TEST_ASSERT(err == 0, "Failed to create BIG sync: %d", err);
+
+	LOG_INF("Terminating pending BIG sync %p (%s caller)", big,
+		coop_caller ? "cooperative" : "preemptible");
+	prio = k_thread_priority_get(k_current_get());
+	if (coop_caller) {
+		k_thread_priority_set(k_current_get(), TERM_CALLER_PRIO);
+	}
+	err = bt_iso_big_terminate(big);
+	k_thread_priority_set(k_current_get(), prio);
+	TEST_ASSERT(err == 0, "Failed to terminate pending BIG sync %p: %d", big, err);
+
+	k_sleep(TERM_EVT_WAIT);
+	TEST_ASSERT(atomic_get(&big_stopped_cnt) == 1, "BIG %p stopped %ld times for one terminate",
+		    big, (long)atomic_get(&big_stopped_cnt));
+}
+
+/* As sync_big_and_terminate_pending(), with a new BIG sync created from the stopped callback,
+ * which must not be affected by the end of the BIG sync that was terminated
+ */
+static void sync_big_and_terminate_pending_resync(struct bt_le_per_adv_sync *sync, bool coop_caller,
+						  struct bt_iso_big **out_big)
+{
+	UNSET_FLAG(flag_iso_connected);
+	resync_big = NULL;
+	resync_err = -EINPROGRESS;
+	resync_pa_sync = sync;
+
+	sync_big_and_terminate_pending(sync, &iso_chans[0], coop_caller);
+	TEST_ASSERT(resync_err == 0, "Failed to create BIG sync from the stopped callback: %d",
+		    resync_err);
+
+	for (uint32_t ms = 0U; !IS_FLAG_SET(flag_iso_connected) && ms < RESYNC_WAIT_MS; ms++) {
+		k_sleep(K_MSEC(1));
+	}
+	TEST_ASSERT(IS_FLAG_SET(flag_iso_connected),
+		    "BIG sync created from the stopped callback not established");
+	TEST_ASSERT(atomic_get(&big_stopped_cnt) == 1, "BIG stopped %ld times for one terminate",
+		    (long)atomic_get(&big_stopped_cnt));
+
+	*out_big = resync_big;
+}
+
+static void test_main_big_sync_term(void)
+{
+	static struct bt_iso_big_cb big_cbs = {
+		.stopped = big_stopped_cb,
+	};
+	/* No data path: the BIG syncs of this test do not receive data */
+	static struct bt_iso_chan_ops term_iso_ops = {
+		.connected = term_iso_connected,
+		.disconnected = term_iso_disconnected,
+	};
+	struct bt_le_per_adv_sync *sync;
+	struct bt_iso_big *big;
+	int err;
+
+	init();
+	for (size_t i = 0U; i < ARRAY_SIZE(iso_chans); i++) {
+		iso_chans[i].ops = &term_iso_ops;
+	}
+	err = bt_iso_big_register_cb(&big_cbs);
+	TEST_ASSERT(err == 0, "Failed to register BIG callbacks: %d", err);
+
+	scan_and_sync_pa(&sync);
+	WAIT_FOR_FLAG(flag_biginfo);
+
+	/* The BIG syncs take the first BIG handle */
+	sync_big_and_terminate_pending(sync, &iso_chans[0], false);
+	sync_big_and_terminate_pending(sync, &iso_chans[0], true);
+	sync_big_and_terminate_pending_resync(sync, false, &big);
+
+	err = bt_iso_big_terminate(big);
+	TEST_ASSERT(err == 0, "Failed to terminate BIG sync %p: %d", big, err);
+	k_sleep(TERM_EVT_WAIT);
+
+	/* Keep the first BIG handle in use, so that the next BIG syncs take another one */
+	sync_big_and_terminate_pending_resync(sync, true, &big);
+	sync_big_and_terminate_pending(sync, &iso_chans[1], false);
+	sync_big_and_terminate_pending(sync, &iso_chans[1], true);
+
+	bk_sync_send();
+
+	LOG_INF("Waiting for sync lost");
+	WAIT_FOR_FLAG_UNSET(flag_pa_synced);
+
+	TEST_PASS("Test passed");
+}
+
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "receiver",
 		.test_descr = "receiver",
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "receiver_big_sync_term",
+		.test_descr = "Terminate pending BIG syncs with BIG handles 0 and 1",
+		.test_main_f = test_main_big_sync_term,
 	},
 	BSTEST_END_MARKER,
 };
