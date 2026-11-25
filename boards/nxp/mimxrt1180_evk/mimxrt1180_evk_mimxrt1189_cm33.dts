@@ -101,6 +101,10 @@
 	status = "okay";
 };
 
+&lpi2c2 {
+	status = "okay";
+};
+
 &lpspi3 {
 	status = "okay";
 };
