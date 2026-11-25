@@ -38,3 +38,4 @@ tests:
       - pic32cz_ca90_cult
       - kit_psc3m6_eval/psc3m6ges3ahq1
       - it51xxx_evb/it51526aw
+      - pic32ck_gc01_cult

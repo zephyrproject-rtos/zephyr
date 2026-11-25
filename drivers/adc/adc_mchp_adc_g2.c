@@ -15,7 +15,9 @@
 #include <stdbool.h>
 #if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA)
 #include <zephyr/dt-bindings/adc/mchp_pic32cz_ca_adc.h>
-#endif /* SOC_FAMILY_MICROCHIP_PIC32CZ_CA */
+#elif defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC)
+#include <zephyr/dt-bindings/adc/mchp_pic32ck_sg_gc_adc.h>
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC */
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -157,7 +159,7 @@ static void adc_start_channel(const struct device *dev, struct adc_context *ctx)
 	adc_reg->CONFIG[core_id].ADC_CHNCFG3 = reg_val;
 
 	/* Select the channel(s) to be used in this conversion */
-	if ((cfg->differential == true) && !(BIT(core_id) & ADC_CORES_NO_DIFF_SUPPORT)) {
+	if ((cfg->differential == true) && ((BIT(core_id) & ADC_CORES_NO_DIFF_SUPPORT) == 0U)) {
 		/* Differential mode: output data is two's complementary signed */
 		adc_reg->CONFIG[core_id].ADC_CHNCFG3 = reg_val |
 						       ADC_CHNCFG3_DIFF(BIT(cfg->channel_id)) |
@@ -272,7 +274,7 @@ static int adc_set_oversampling(adc_registers_t *adc_reg, uint8_t oversampling, 
 	 * Valid range: 0 to 8 (inclusive)
 	 */
 	if (oversampling > ADC_MAX_OVERSAMPLING_VAL) {
-		LOG_ERR("Invalid oversampling: %d\n", oversampling);
+		LOG_ERR("Invalid oversampling: %d", oversampling);
 		return -EINVAL;
 	}
 
@@ -293,7 +295,7 @@ static int adc_set_oversampling(adc_registers_t *adc_reg, uint8_t oversampling, 
 
 		adc_reg->ADC_FLTCTRL = reg_val;
 
-#elif defined(CONFIG_ADC_MCHP_G2_MULTI_CORE)
+#else /* CONFIG_ADC_MCHP_G2_MULTI_CORE */
 
 		reg_val = adc_reg->ADC_FLTCTRL[core_id] &
 			  ~(ADC_FLTCTRL_OVRSAM_Msk | ADC_FLTCTRL_FLTCHNID_Msk);
@@ -329,7 +331,7 @@ static int adc_set_resolution(adc_registers_t *adc_reg, uint8_t resolution, uint
 		resolution_val = ADC_CORCTRL_SELRES_12_BITS_Val;
 		break;
 	default:
-		LOG_ERR("Invalid resolution: %d\n", resolution);
+		LOG_ERR("Invalid resolution: %d", resolution);
 		return -EINVAL;
 	}
 	adc_reg->CONFIG[core_id].ADC_CORCTRL = reg_val | ADC_CORCTRL_SELRES(resolution_val);
@@ -347,14 +349,14 @@ static int adc_start_read(const struct device *dev, const struct adc_sequence *s
 	uint32_t channels, channel_count, index;
 
 	if (sequence->channels == 0) {
-		LOG_ERR("No channels selected!\n");
+		LOG_ERR("No channels selected!");
 		return -EINVAL;
 	}
 
 	/* Set Resolution */
 	ret = adc_set_resolution(adc_reg, sequence->resolution, core_id);
 	if (ret != 0) {
-		LOG_ERR("Invalid resolution : %d\n", sequence->resolution);
+		LOG_ERR("Invalid resolution : %d", sequence->resolution);
 		return ret;
 	}
 
@@ -377,7 +379,7 @@ static int adc_start_read(const struct device *dev, const struct adc_sequence *s
 		/* Set oversampling */
 		ret = adc_set_oversampling(adc_reg, sequence->oversampling, core_id, index);
 		if (ret != 0) {
-			LOG_ERR("Invalid oversampling : %d\n", sequence->oversampling);
+			LOG_ERR("Invalid oversampling : %d", sequence->oversampling);
 			return ret;
 		}
 
@@ -388,7 +390,7 @@ static int adc_start_read(const struct device *dev, const struct adc_sequence *s
 	/* Check buffer */
 	ret = adc_check_buffer_size(sequence, channel_count);
 	if (ret != 0) {
-		LOG_ERR("Check buffer size invalid\n");
+		LOG_ERR("Check buffer size invalid");
 		return ret;
 	}
 
@@ -505,7 +507,7 @@ static int adc_mchp_channel_setup(const struct device *dev,
 	uint8_t core_id = dev_cfg->core_id;
 
 	if (channel_id >= dev_cfg->num_channels) {
-		LOG_ERR("Invalid Channel id : %d\n", channel_id);
+		LOG_ERR("Invalid Channel id : %d", channel_id);
 		return -EINVAL;
 	}
 
@@ -521,23 +523,19 @@ static int adc_mchp_channel_setup(const struct device *dev,
 	/* Validate reference */
 	if ((channel_cfg->reference != ADC_REF_VDD_1) &&
 	    (channel_cfg->reference != ADC_REF_EXTERNAL0)) {
-		LOG_ERR("Invalid reference : %d\n", channel_cfg->reference);
+		LOG_ERR("Invalid reference : %d", channel_cfg->reference);
 		return -EINVAL;
 	}
 
-/* Validate differential configurations */
-#if defined(CONFIG_ADC_MCHP_G2_MULTI_CORE)
-
-	if ((channel_cfg->differential == true) && (BIT(core_id) & ADC_CORES_NO_DIFF_SUPPORT)) {
-		LOG_ERR("Invalid differential core\n");
+	if ((channel_cfg->differential == true) &&
+	    ((BIT(core_id) & ADC_CORES_NO_DIFF_SUPPORT) != 0U)) {
+		LOG_ERR("Invalid differential core");
 		return -EINVAL;
 	}
-
-#endif /* End of CONFIG_ADC_MCHP_G2_MULTI_CORE */
 
 	if ((channel_cfg->differential == true) && (channel_id != MCHP_ADC_AIN0) &&
 	    (channel_id != MCHP_ADC_AIN2) && (channel_id != MCHP_ADC_AIN4)) {
-		LOG_ERR("Invalid differential inputs\n");
+		LOG_ERR("Invalid differential inputs");
 		return -EINVAL;
 	}
 
@@ -613,7 +611,7 @@ static int adc_mchp_init(const struct device *dev)
 	dev_data->dev = dev;
 
 	if (core_id >= dev_cfg->global_cfg->num_cores) {
-		LOG_ERR("Invalid Core id : %d\n", core_id);
+		LOG_ERR("Invalid Core id : %d", core_id);
 		return -EINVAL;
 	}
 

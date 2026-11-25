@@ -43,6 +43,8 @@ tests:
       - pic32cz_ca80_cult
       - pic32cz_ca90_cult
       - kit_psc3m6_eval/psc3m6ges3ahq1
+      - pic32ck_sg01_cult
+      - pic32ck_gc01_cult
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.drivers.adc.adc_sequence.8bit:
