@@ -33,4 +33,13 @@ config ETH_RENESAS_RA_USE_HW_WRITEBACK
 	  that the TX frame is written successfully. Note that enabling this option
 	  may cause ethernet write operations to take slightly longer.
 
+config ETH_RENESAS_RA_PTP
+	bool
+	default y
+	depends on PTP_CLOCK_RENESAS_RA_GPTP
+	depends on NET_L2_PTP_TIMESTAMPING
+	help
+	  Timestamp frames with the ESWM gPTP timer selected by the ptp-clock
+	  property of the Ethernet port.
+
 endif
