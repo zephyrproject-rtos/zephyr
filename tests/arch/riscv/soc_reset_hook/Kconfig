@@ -1,0 +1,12 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_RISCV_SOC_RESET_HOOK
+	bool
+	default y
+	select SOC_RESET_HOOK
+	help
+	  Enable the soc_reset_hook() call in the RISC-V startup code. The hook
+	  is provided by the test.
+
+source "Kconfig.zephyr"
