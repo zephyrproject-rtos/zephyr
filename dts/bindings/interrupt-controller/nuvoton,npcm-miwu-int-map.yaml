@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NPCM-MIWU group-interrupt mapping child node
+
+compatible: "nuvoton,npcm-miwu-int-map"
+
+properties:
+  parent:
+    type: phandle
+    required: true
+    description: parent device node of miwu groups
+
+child-binding:
+  description: Child node to present the mapping between MIWU group and interrupt
+  properties:
+    irq:
+      type: int
+      required: true
+      description: irq for miwu group
+    irq-prio:
+      type: int
+      required: true
+      description: irq's priority for miwu group. The valid number is from 0 to 7.
+    group-mask:
+      type: int
+      required: true
+      description: group bit-mask for miwu interrupts
+    wui-mask:
+      type: int
+      default: 0xff
+      description: |
+        Bit mask of the inputs of the groups in group-mask that are routed to
+        this interrupt. The default covers all eight inputs. Use a subset when
+        the inputs of a group are routed to different interrupts. No callback
+        can be registered on an input that no child routes to an interrupt.
+    groups:
+      type: array
+      description: groups shared the same interrupt
