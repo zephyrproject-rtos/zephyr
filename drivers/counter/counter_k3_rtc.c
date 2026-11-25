@@ -12,6 +12,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/math_extras.h>
 
 LOG_MODULE_REGISTER(counter_ti_k3_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -123,6 +124,24 @@ static int k3_rtc_unlock(const struct device *dev)
 	return 0;
 }
 
+static void k3_rtc_prog_alarm_compare(k3_rtc_regs_t *rtc_regs, uint8_t chan_id, uint64_t ticks)
+{
+	uint32_t lsw = (uint32_t)ticks;
+	uint32_t msw = (uint32_t)(ticks >> 32) & BIT_MASK(16);
+
+	if (chan_id == 0) {
+		rtc_regs->ON_OFF_S_CNT_LSW = lsw;
+		rtc_regs->ON_OFF_S_CNT_MSW = msw;
+	} else {
+		rtc_regs->OFF_ON_S_CNT_LSW = lsw;
+		rtc_regs->OFF_ON_S_CNT_MSW = msw;
+	}
+}
+
+static uint32_t k3_rtc_alarm_mask(uint8_t chan_id)
+{
+	return (chan_id == 0) ? RTC_IRQ_ALARM1_MASK : RTC_IRQ_ALARM2_MASK;
+}
 
 static int k3_rtc_read_48(const struct device *dev, uint64_t *ticks)
 {
@@ -226,11 +245,25 @@ static int k3_counter_reset(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+static int k3_counter_set_alarm(const struct device *dev, uint8_t chan_id,
+				const struct counter_alarm_cfg *alarm_cfg)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(chan_id);
+	ARG_UNUSED(alarm_cfg);
+
+	return -ENOTSUP;
+}
+#else
 static int k3_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 				const struct counter_alarm_cfg *alarm_cfg)
 {
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
 	struct k3_rtc_counter_data *data = DEV_DATA(dev);
+	uint64_t now_48;
+	uint64_t target;
+	uint32_t mask;
 	int ret, key;
 
 	if (chan_id > 1) {
@@ -238,50 +271,72 @@ static int k3_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 		return -EINVAL;
 	}
 
-	if (alarm_cfg == NULL) {
+	if (alarm_cfg == NULL || alarm_cfg->callback == NULL) {
 		LOG_ERR("NULL alarm config");
 		return -EINVAL;
 	}
 
-	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0) {
-		data->alarm_cfg[chan_id].ticks = alarm_cfg->ticks;
-	} else {
-		uint32_t now;
-
-		ret = k3_counter_get_value(dev, &now);
-		if (ret != 0) {
-			return ret;
-		}
-		data->alarm_cfg[chan_id].ticks = now + alarm_cfg->ticks;
-	}
-
-	key = irq_lock();
-
-	if (chan_id == 0) {
-		rtc_regs->ON_OFF_S_CNT_LSW = (uint32_t)data->alarm_cfg[chan_id].ticks;
-		rtc_regs->ON_OFF_S_CNT_MSW = 0;
-		rtc_regs->IRQSTATUS_SYS = RTC_IRQ_ALARM1_MASK;
-		rtc_regs->IRQENABLE_SET_SYS = RTC_IRQ_ALARM1_MASK;
-	} else {
-		rtc_regs->OFF_ON_S_CNT_LSW = (uint32_t)data->alarm_cfg[chan_id].ticks;
-		rtc_regs->OFF_ON_S_CNT_MSW = 0;
-		rtc_regs->IRQSTATUS_SYS = RTC_IRQ_ALARM2_MASK;
-		rtc_regs->IRQENABLE_SET_SYS = RTC_IRQ_ALARM2_MASK;
-	}
-	ret = k3_rtc_fence(dev);
+	ret = k3_rtc_read_48(dev, &now_48);
 	if (ret != 0) {
-		LOG_ERR("Failed to sync after alarm set: %d", ret);
-		irq_unlock(key);
 		return ret;
 	}
 
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0) {
+		bool expire_late = (alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE) != 0;
+
+		target = (now_48 & ~((uint64_t)UINT32_MAX)) | alarm_cfg->ticks;
+		if (target <= now_48) {
+			if (expire_late) {
+				/*
+				 * Match 64-bit path / counter API: late absolute with
+				 * EXPIRE_WHEN_LATE returns -ETIME. Caller may treat as
+				 * immediate expiry.
+				 */
+				return -ETIME;
+			}
+			if (u64_add_overflow(target, (uint64_t)UINT32_MAX + 1U, &target)) {
+				return -EINVAL;
+			}
+		}
+	} else if (u64_add_overflow(now_48, alarm_cfg->ticks, &target)) {
+		return -EINVAL;
+	}
+
+	if (target > RTC_MAX_TOP_VALUE_64) {
+		return -EINVAL;
+	}
+
+	mask = k3_rtc_alarm_mask(chan_id);
+
+	key = irq_lock();
+	data->alarm_cfg[chan_id].ticks = (uint32_t)target;
 	data->alarm_cfg[chan_id].callback = alarm_cfg->callback;
 	data->alarm_cfg[chan_id].user_data = alarm_cfg->user_data;
+	data->alarm_cfg[chan_id].flags = alarm_cfg->flags;
+	k3_rtc_prog_alarm_compare(rtc_regs, chan_id, target);
+	rtc_regs->IRQSTATUS_SYS = mask;
+	irq_unlock(key);
 
+	ret = k3_rtc_fence(dev);
+	if (ret != 0) {
+		key = irq_lock();
+		data->alarm_cfg[chan_id].callback = NULL;
+		data->alarm_cfg[chan_id].user_data = NULL;
+		data->alarm_cfg[chan_id].flags = 0;
+		rtc_regs->IRQENABLE_CLR_SYS = mask;
+		rtc_regs->IRQSTATUS_SYS = mask;
+		irq_unlock(key);
+		LOG_ERR("Failed to sync after alarm set: %d", ret);
+		return ret;
+	}
+
+	key = irq_lock();
+	rtc_regs->IRQENABLE_SET_SYS = mask;
 	irq_unlock(key);
 
 	return 0;
 }
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 
 static int k3_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
@@ -378,6 +433,9 @@ static int k3_counter_set_alarm_64(const struct device *dev, uint8_t chan_id,
 {
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
 	struct k3_rtc_counter_data *data = DEV_DATA(dev);
+	uint64_t now;
+	uint64_t target;
+	uint32_t mask;
 	int ret, key;
 
 	if (chan_id > 1) {
@@ -385,47 +443,59 @@ static int k3_counter_set_alarm_64(const struct device *dev, uint8_t chan_id,
 		return -EINVAL;
 	}
 
-	if (alarm_cfg == NULL) {
+	if (alarm_cfg == NULL || alarm_cfg->callback == NULL) {
 		LOG_ERR("NULL alarm config");
 		return -EINVAL;
 	}
 
-	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0) {
-		data->alarm_cfg[chan_id].ticks = alarm_cfg->ticks;
-	} else {
-		uint64_t now;
-
-		ret = k3_counter_get_value_64(dev, &now);
-		if (ret != 0) {
-			return ret;
-		}
-		data->alarm_cfg[chan_id].ticks = now + alarm_cfg->ticks;
-	}
-
-	key = irq_lock();
-
-	if (chan_id == 0) {
-		rtc_regs->ON_OFF_S_CNT_LSW = (uint32_t)data->alarm_cfg[chan_id].ticks;
-		rtc_regs->ON_OFF_S_CNT_MSW = (uint32_t)(data->alarm_cfg[chan_id].ticks >> 32);
-		rtc_regs->IRQSTATUS_SYS = RTC_IRQ_ALARM1_MASK;
-		rtc_regs->IRQENABLE_SET_SYS = RTC_IRQ_ALARM1_MASK;
-	} else {
-		rtc_regs->OFF_ON_S_CNT_LSW = (uint32_t)data->alarm_cfg[chan_id].ticks;
-		rtc_regs->OFF_ON_S_CNT_MSW = (uint32_t)(data->alarm_cfg[chan_id].ticks >> 32);
-		rtc_regs->IRQSTATUS_SYS = RTC_IRQ_ALARM2_MASK;
-		rtc_regs->IRQENABLE_SET_SYS = RTC_IRQ_ALARM2_MASK;
-	}
-	ret = k3_rtc_fence(dev);
+	ret = k3_counter_get_value_64(dev, &now);
 	if (ret != 0) {
-		LOG_ERR("Failed to sync after alarm set: %d", ret);
-		irq_unlock(key);
 		return ret;
 	}
 
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0) {
+		target = alarm_cfg->ticks;
+		if (target <= now) {
+			/*
+			 * Late absolute: return -ETIME. With EXPIRE_WHEN_LATE,
+			 * rtc_counter treats this as immediate expiry.
+			 */
+			return -ETIME;
+		}
+	} else if (u64_add_overflow(now, alarm_cfg->ticks, &target)) {
+		return -EINVAL;
+	}
+
+	if (target > RTC_MAX_TOP_VALUE_64) {
+		return -EINVAL;
+	}
+
+	mask = k3_rtc_alarm_mask(chan_id);
+
+	key = irq_lock();
+	data->alarm_cfg[chan_id].ticks = target;
 	data->alarm_cfg[chan_id].callback = alarm_cfg->callback;
 	data->alarm_cfg[chan_id].user_data = alarm_cfg->user_data;
 	data->alarm_cfg[chan_id].flags = alarm_cfg->flags;
+	k3_rtc_prog_alarm_compare(rtc_regs, chan_id, target);
+	rtc_regs->IRQSTATUS_SYS = mask;
+	irq_unlock(key);
 
+	ret = k3_rtc_fence(dev);
+	if (ret != 0) {
+		key = irq_lock();
+		data->alarm_cfg[chan_id].callback = NULL;
+		data->alarm_cfg[chan_id].user_data = NULL;
+		data->alarm_cfg[chan_id].flags = 0;
+		rtc_regs->IRQENABLE_CLR_SYS = mask;
+		rtc_regs->IRQSTATUS_SYS = mask;
+		irq_unlock(key);
+		LOG_ERR("Failed to sync after alarm set: %d", ret);
+		return ret;
+	}
+
+	key = irq_lock();
+	rtc_regs->IRQENABLE_SET_SYS = mask;
 	irq_unlock(key);
 
 	return 0;
