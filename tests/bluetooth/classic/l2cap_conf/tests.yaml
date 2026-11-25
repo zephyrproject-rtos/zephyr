@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
+
+tests:
+  bluetooth.classic.l2cap_conf:
+    {}
+  bluetooth.classic.l2cap_conf.tx_notify_wq:
+    extra_configs:
+      - CONFIG_BT_CONN_TX_NOTIFY_WQ=y
