@@ -66,6 +66,12 @@ You should see the following message on the console:
    Hello World! versal2_rpu/amd_versal2_rpu
 
 
+Running in QEMU
+===============
+
+This board can be emulated with QEMU using the optional ``qemu-devicetrees``
+module; see :ref:`amd-qemu-emulation` for setup and usage.
+
 References
 **********
 
