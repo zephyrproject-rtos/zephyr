@@ -925,6 +925,7 @@ ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 	net_pkt_set_tx_timestamping(pkt, true);
 	net_pkt_set_rx_timestamping(pkt, true);
 	net_pkt_set_forwarding(pkt, true);
+	net_pkt_set_loopback(pkt, true);
 
 	net_pkt_set_l2_bridged(pkt, true);
 	net_pkt_set_l2_processed(pkt, true);
@@ -968,6 +969,9 @@ ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 
 	zassert_true(net_pkt_forwarding(cloned_pkt),
 		     "Cloned pkt forwarding flag mismatch");
+
+	zexpect_true(net_pkt_is_loopback(cloned_pkt),
+		     "Cloned pkt loopback flag mismatch");
 
 	zassert_true(net_pkt_is_l2_bridged(cloned_pkt),
 		     "Cloned pkt l2_bridged flag mismatch");
