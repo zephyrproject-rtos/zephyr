@@ -75,4 +75,24 @@
 		ti,d1-miso-d0-mosi;
 		status = "disabled";
 	};
+
+	wkup_rtc0: rtc@2b1f0000 {
+		compatible = "ti,k3-rtc-counter";
+		reg = <0x2b1f0000 0x80>;
+		/*
+		 * MCU VIM input for WKUP_RTCSS0 event. Linux A53 DT uses
+		 * GIC_SPI 100 for the same IP (k3-am62p-j722s-common-wakeup.dtsi).
+		 * the R5 VIM cell is 97 (distinct numbering space).
+		 */
+		interrupts = <0 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		clock-frequency = <32768>;
+		status = "disabled";
+
+		counter_rtc0: counter_rtc {
+			compatible = "zephyr,rtc-counter";
+			alarms-count = <2>;
+			status = "disabled";
+		};
+	};
 };
