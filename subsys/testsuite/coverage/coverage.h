@@ -63,6 +63,8 @@ typedef uint64_t gcov_type;
 #define GCOV_DATA_MAGIC   (0x67636461)
 #define GCOV_TAG_FUNCTION (0x01000000)
 #define GCOV_TAG_COUNTER_BASE (0x01a10000)
+#define GCOV_TAG_OBJECT_SUMMARY  (0xa1000000U)
+#define GCOV_TAG_PROGRAM_SUMMARY (0xa3000000U)
 #define GCOV_TAG_FOR_COUNTER(count)         \
 (GCOV_TAG_COUNTER_BASE + ((uint32_t) (count) << 17))
 

@@ -21,6 +21,7 @@ SECTION_DATA_PROLOGUE(_GCOV_BSS_SECTION_NAME,(NOLOAD),)
 
 	__gcov_bss_start = .;
 	KEEP(*(".bss.__gcov0.*"));
+	KEEP(*(".bss.__llvm_gcov_ctr*"));
 
 #if defined(CONFIG_USERSPACE) && !defined(CONFIG_ARM64)
 	MPU_ALIGN(__gcov_bss_end - __gcov_bss_start );
@@ -38,6 +39,7 @@ SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD), ALIGN(16))
 	MMU_PAGE_ALIGN
 	__gcov_bss_start = .;
 	*(".bss.__gcov0.*");
+	*(".bss.__llvm_gcov_ctr*");
 	. = ALIGN(8);
 	MMU_PAGE_ALIGN
 	__gcov_bss_end = .;
@@ -49,6 +51,7 @@ SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD),)
 	MMU_PAGE_ALIGN
 	__gcov_bss_start = .;
 	*(".bss.__gcov0.*");
+	*(".bss.__llvm_gcov_ctr*");
 	. = ALIGN(4);
 	MMU_PAGE_ALIGN
 	__gcov_bss_end = .;
@@ -61,6 +64,7 @@ SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD),)
 	MPU_MIN_SIZE_ALIGN
 	__gcov_bss_start = .;
 	*(".bss.__gcov0.*");
+	*(".bss.__llvm_gcov_ctr*");
 #ifdef CONFIG_USERSPACE
 	. = ALIGN(1 << LOG2CEIL(. - __gcov_bss_start));
 #else
@@ -76,6 +80,7 @@ SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD),)
 	MPU_MIN_SIZE_ALIGN
 	__gcov_bss_start = .;
 	*(".bss.__gcov0.*");
+	*(".bss.__llvm_gcov_ctr*");
 	. = ALIGN(4);
 	MPU_MIN_SIZE_ALIGN
 	__gcov_bss_end = .;
@@ -94,6 +99,7 @@ SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD),)
 #endif
 	__gcov_bss_start = .;
 	*(".bss.__gcov0$*");
+	*(".bss.__llvm_gcov_ctr*");
 #ifdef CONFIG_MMU
 	. = ALIGN(CONFIG_MMU_PAGE_SIZE);
 #elif defined(CONFIG_MPU)

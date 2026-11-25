@@ -65,6 +65,8 @@ void gcov_coverage_semihost(void);
  *
  * Invoke the gcov constructors so that each instrumented object registers its
  * @c gcov_info with the runtime. Must run before any coverage data is dumped.
+ * With clang (CONFIG_COVERAGE_GCOV_LLVM) this does nothing: the objects
+ * register themselves from the GNU-style constructors run by the kernel.
  */
 void gcov_static_init(void);
 

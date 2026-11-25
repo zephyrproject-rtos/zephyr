@@ -260,3 +260,15 @@ default for the Twister ``--gcov-tool`` argument default:
 +-----------+-----------------------+
 | zephyr    | ``gcov``              |
 +-----------+-----------------------+
+
+Code built with Clang, for example with the ``llvm`` toolchain or with
+``xt-clang`` on Xtensa, calls the LLVM ``llvm_gcda_*()`` profiling hooks
+instead of the GCC gcov interface. On embedded targets
+:kconfig:option:`CONFIG_COVERAGE_GCOV` provides these hooks and dumps the data
+in the same format as for GCC, so the steps above apply unchanged. Use
+``llvm-cov gcov`` as the gcov tool.
+
+Clang registers every object built with ``--coverage``, so large applications
+may need a higher :kconfig:option:`CONFIG_COVERAGE_GCOV_LLVM_MAX_OBJECTS`. A
+warning is printed at the start of the dump when objects were left out.
+Coverage with link time optimization is not supported with Clang.
