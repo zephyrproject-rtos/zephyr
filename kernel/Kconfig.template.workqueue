@@ -29,4 +29,11 @@ config $(module)_DEDICATED_WORKQUEUE_NO_YIELD
 	  By default, the dedicated $(module-str) workqueue yields between each work item, to
 	  prevent other threads from being starved. Selecting this removes this yield.
 
+config $(module)_DEDICATED_WORKQUEUE_WORK_TIMEOUT_MS
+	int "Dedicated workqueue work timeout in milliseconds for $(module-str)"
+	default SYSTEM_WORKQUEUE_WORK_TIMEOUT_MS
+	help
+	  Set to 0 to disable work timeout for the dedicated $(module-str) workqueue. Option has no
+	  effect if CONFIG_WORKQUEUE_WORK_TIMEOUT is not enabled.
+
 endif # $(module)_DEDICATED_WORKQUEUE
