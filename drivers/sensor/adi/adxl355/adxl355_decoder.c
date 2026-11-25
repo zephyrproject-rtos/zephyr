@@ -52,7 +52,8 @@ static int adxl355_decoder_get_frame_count(const uint8_t *buffer, struct sensor_
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
-		*frame_count = data->fifo_samples;
+		*frame_count = data->fifo_byte_count /
+					(ADXL355_ACCEL_CHAN_BYTE_SIZE * ADXL355_ACCEL_CHAN_COUNT);
 		return 0;
 	default:
 		return -ENOTSUP;
