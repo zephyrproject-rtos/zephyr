@@ -8,9 +8,19 @@ description: |
   (clock-request-0...clock-request-4) but can be incremented if required.
   Request indices must be contiguous and start from zero, and the
   clock-request-names property must provide one name per request.
-  Clock requests are defined as a set of suitable clock states. Clock
-  states will apply to the clock domain they are defined as a child of.
-  If multiple clock states are defined as suitable for a given clock domain,
+  Each clock request is a list of clock domain phandles, each followed by a
+  bitmask of the clock states within that domain that are suitable for the
+  request. Bit n of the mask selects the nth clock-state child of the domain,
+  counted in the order the children are declared in devicetree (the rank
+  property does not affect this numbering). The CLK_STATE_n macros from
+  zephyr/dt-bindings/clock-management/clock-management.h can be used to
+  build the mask, for example:
+
+    clock-request-0 = <&uart_domain CLK_STATE_0>;
+    clock-request-1 = <&uart_domain (CLK_STATE_0 | CLK_STATE_2)
+                       &pll_domain CLK_STATE_1>;
+
+  If multiple clock states are allowed for a given clock domain,
   the lowest rank state will be selected. If other clock consumers
   have outstanding requests on a given clock domain, these requests
   will be considered when selecting the best clock state for that domain.
@@ -26,11 +36,12 @@ properties:
       of output clock sources.
 
   clock-request-0:
-    type: phandles
+    type: phandle-array
+    specifier-space: clock-state
     description: |
-      Clock request/s for the first state. Each clock request should define a
-      set of suitable clock states. These states will apply to the clock
-      domain they are defined as a child of.
+      Clock request/s for the first state. Each entry is a clock domain
+      phandle followed by a bitmask of the clock states within that domain
+      that are suitable for this request.
 
   clock-request-0-locking:
     type: boolean
@@ -42,7 +53,8 @@ properties:
        consumer switches to a different request.
 
   clock-request-1:
-    type: phandles
+    type: phandle-array
+    specifier-space: clock-state
     description: |
       Clock configuration/s for the second state. See clock-request-0.
 
@@ -52,7 +64,8 @@ properties:
       Clock lock setting for the second state. See clock-request-0-locking.
 
   clock-request-2:
-    type: phandles
+    type: phandle-array
+    specifier-space: clock-state
     description: |
       Clock configuration/s for the third state. See clock-request-0.
 
@@ -62,7 +75,8 @@ properties:
       Clock lock setting for the third state. See clock-request-0-locking.
 
   clock-request-3:
-    type: phandles
+    type: phandle-array
+    specifier-space: clock-state
     description: |
       Clock configuration/s for the fourth state. See clock-request-0.
 
@@ -72,7 +86,8 @@ properties:
       Clock lock setting for the fourth state. See clock-request-0-locking.
 
   clock-request-4:
-    type: phandles
+    type: phandle-array
+    specifier-space: clock-state
     description: |
       Clock configuration/s for the fifth state. See clock-request-0.
 

@@ -6,4 +6,21 @@ description: |
   a set of static clock states as children of these nodes, and can be requested
   by consumers.
 
+  Consumers reference a clock domain in their clock-request-<n> properties,
+  followed by a bitmask selecting the allowed clock states of the domain. Bit
+  n of the mask refers to the nth clock-state child of the domain, counted in
+  declaration order.
+
 compatible: "clock-domain"
+
+properties:
+  "#clock-state-cells":
+    type: int
+    const: 1
+    required: true
+    description: |
+      Number of cells following a clock domain phandle in a clock-request-<n>
+      property. Always 1: the bitmask of allowed clock states.
+
+clock-state-cells:
+  - mask

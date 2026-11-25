@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/clock-management/clock-management.h>
 
 / {
 	model = "NXP LPCXpresso55S69 board";
@@ -83,6 +84,7 @@
 	clock_domains: clock-domains {
 		sys_clk_domain: sys-clk-domain {
 			compatible = "clock-domain";
+			#clock-state-cells = <1>;
 			/* 144 MHz setpoint for CPU core clock */
 			sys_clk_144mhz: sys_clk_144mhz {
 				compatible = "clock-state";
@@ -96,6 +98,7 @@
 
 		frohfdiv_domain: frohfdiv-domain {
 			compatible = "clock-domain";
+			#clock-state-cells = <1>;
 			/* FROHF clock domain */
 			frohfdiv_96m: frohfdiv_96m {
 				compatible = "clock-state";
@@ -105,6 +108,7 @@
 
 		fc0_domain: fc0-domain {
 			compatible = "clock-domain";
+			#clock-state-cells = <1>;
 			/* 96 MHz setpoint for Flexcomm0 clock using FROHF */
 			fxcom0_96mhz: fxcom0_96mhz {
 				compatible = "clock-state";
@@ -114,6 +118,7 @@
 
 		fc2_domain: fc2-domain {
 			compatible = "clock-domain";
+			#clock-state-cells = <1>;
 			/* 96 MHz setpoint for Flexcomm0 clock using FROHF */
 			fxcom2_96mhz: fxcom2_96mhz {
 				compatible = "clock-state";
@@ -157,17 +162,17 @@
 
 &flexcomm0 {
 	status = "okay";
-	clock-request-0 = <&fxcom0_96mhz &frohfdiv_96m>;
+	clock-request-0 = <&fc0_domain CLK_STATE_0 &frohfdiv_domain CLK_STATE_0>;
 	clock-request-names = "default";
 };
 
 &cpu0 {
-	clock-request-0 = <&sys_clk_144mhz>;
+	clock-request-0 = <&sys_clk_domain CLK_STATE_0>;
 	clock-request-names = "default";
 };
 
 &flexcomm2 {
-	clock-request-0 = <&fxcom2_96mhz &frohfdiv_96m>;
+	clock-request-0 = <&fc2_domain CLK_STATE_0 &frohfdiv_domain CLK_STATE_0>;
 	clock-request-names = "default";
 };
 

@@ -168,13 +168,18 @@ option defaults to enabled when :kconfig:option:`CONFIG_PM` or
 Note that clock states referenced only by a skipped request are still compiled
 into their clock domain.
 
-``clock-request-n`` properties describe an array of allowed states for *any*
-clock domain within the system. This allows a consumer to set a request that may
-affect multiple clock domains, and therefore multiple clock outputs. Clock
-domains are independent of the clock outputs listed in a consumer's
-``clock-outputs`` property: a consumer may request states from a domain that
-configures a producer it does not directly consume, such as a shared parent
-divider.
+``clock-request-n`` properties describe the allowed states for *any* clock
+domain within the system. Each entry in a request is a clock domain phandle
+followed by a bitmask of the states of that domain which are acceptable for the
+request. Bit ``n`` of the mask selects the ``n``-th ``clock-state`` child of the
+domain, counted in the order the children are declared in devicetree. The
+``CLK_STATE_n`` macros from
+:zephyr_file:`include/zephyr/dt-bindings/clock-management/clock-management.h`
+can be combined to build the mask. A request may list several clock domains, and
+therefore affect multiple clock outputs. Clock domains are independent of the
+clock outputs listed in a consumer's ``clock-outputs`` property: a consumer may
+request states from a domain that configures a producer it does not directly
+consume, such as a shared parent divider.
 
 Once a set of allowed states is set for a clock domain, the clock management
 framework will select the lowest "ranked" clock state that satisfies the
@@ -228,7 +233,9 @@ Clock states are then defined within clock domain nodes, which use the
 :dtcompatible:`clock-domain` compatible. Each state directly configures producer
 clock nodes to realize a frequency. Clock states include a ``rank`` property,
 which is used to determine which state is "best" when multiple states satisfy a
-request. Lower ranks are preferred.
+request. Lower ranks are preferred. Clock domains must set
+``#clock-state-cells = <1>``, as consumers reference them with a phandle
+followed by a state mask.
 
 .. code-block:: devicetree
 
@@ -236,12 +243,15 @@ request. Lower ranks are preferred.
         clock-domains {
             clock_div_domain: clock-div-domain {
                 compatible = "clock-domain";
+                #clock-state-cells = <1>;
 
+                /* CLK_STATE_0: first state declared in this domain */
                 clock_div_default: clock-div-default {
                     compatible = "clock-state";
                     clocks = <&clock_div 1>;
                     rank = <1>;
                 };
+                /* CLK_STATE_1: second state declared in this domain */
                 clock_div_sleep: clock-div-sleep {
                     compatible = "clock-state";
                     clocks = <&clock_div 5>;
@@ -264,10 +274,12 @@ shared by multiple peripherals), place it in its own clock domain, and have each
 consumer include a state from that domain in its requests.
 
 Clock consumers will then reference the clock output nodes to query and request
-clock rates, and reference clock states to apply them. A peripheral clock
-consumer's devicetree might look like so:
+clock rates, and reference clock domains, along with a mask of allowed states,
+to apply them. A peripheral clock consumer's devicetree might look like so:
 
 .. code-block:: devicetree
+
+    #include <zephyr/dt-bindings/clock-management/clock-management.h>
 
     periph0: periph@0 {
         compatible = "vnd,mydev";
@@ -275,14 +287,14 @@ consumer's devicetree might look like so:
         /* Clock outputs */
         clock-outputs = <&clock_output>;
         clock-output-names = "default";
-        /* Default clock state */
-        clock-request-0 = <&clock_div_default>;
+        /* Default clock state (first state declared in clock_div_domain) */
+        clock-request-0 = <&clock_div_domain CLK_STATE_0>;
         /* This request allows either the default or sleep state to be applied */
-        clock-request-1 = <&clock_div_default &clock_div_sleep>;
+        clock-request-1 = <&clock_div_domain (CLK_STATE_0 | CLK_STATE_1)>;
         clock-request-names = "default", "sleep";
     };
 
-Only clock states referenced by at least one ``clock-request-n`` property are
+Only clock states selected by at least one ``clock-request-n`` property are
 included in the build.
 
 Enabling and Disabling Clocks
@@ -381,10 +393,10 @@ derived from the consumer's ``clock-request-names`` property, as described in
 configuration is needed.
 
 For example, consider a peripheral with a high-speed and a low-power clock
-output. The ``periph_hs_clock_state_*`` states are defined in a clock domain
-that configures the high-speed clock, and the ``periph_lp_clock_state_*`` states
-are defined in a clock domain that configures the low-power clock. The
-peripheral devicetree could be defined like so:
+output. The ``periph_hs_clock_domain`` clock domain configures the high-speed
+clock, and the ``periph_lp_clock_domain`` clock domain configures the low-power
+clock. Each domain declares a default state first, followed by a sleep state.
+The peripheral devicetree could be defined like so:
 
 .. code-block:: devicetree
 
@@ -395,12 +407,11 @@ peripheral devicetree could be defined like so:
         clock-outputs = <&periph_hs_clock &periph_lp_clock>;
         clock-output-names = "high-speed", "low-power";
         /* Moves HS clock domain to default state. LP clock domain can be in either state */
-        clock-request-0 = <&periph_hs_clock_state_default
-                           &periph_lp_clock_state_default
-                           &periph_lp_clock_state_sleep>;
+        clock-request-0 = <&periph_hs_clock_domain CLK_STATE_0
+                           &periph_lp_clock_domain (CLK_STATE_0 | CLK_STATE_1)>;
         /* Moves both HS and LP clock domains to sleep state */
-        clock-request-1 = <&periph_hs_clock_state_sleep
-                           &periph_lp_clock_state_sleep>;
+        clock-request-1 = <&periph_hs_clock_domain CLK_STATE_1
+                           &periph_lp_clock_domain CLK_STATE_1>;
         clock-request-names = "default", "sleep";
     };
 
@@ -612,8 +623,8 @@ using it.
 
 Clock consumers hold references to the clock output nodes they are using, which
 then reference their parent clock producers, which in turn reference their
-parents. Similarly, clock states referenced by a consumer's ``clock-request-n``
-properties reference the clock producers they configure. These reference chains
+parents. Similarly, a consumer's ``clock-request-n`` properties reference clock domains,
+whose selected clock states reference the clock producers they configure. These reference chains
 allow the clock management subsystem to only link in the clocks that the
 application actually needs.
 
@@ -753,7 +764,7 @@ As an example, for the following devicetree:
         clock-outputs = <&clock_output>;
         clock-output-names = "default";
         /* Default clock state */
-        clock-request-0 = <&clock_div_default>;
+        clock-request-0 = <&clock_div_domain CLK_STATE_0>;
         clock-request-names = "default";
     };
 
@@ -779,9 +790,12 @@ Clock Domain Nodes
 ------------------
 
 Clock states are grouped within clock domain nodes, which must have the
-compatible :dtcompatible:`clock-domain`. Each child of a clock domain with the
-compatible :dtcompatible:`clock-state` defines one state for that domain. Clock
-domains are not part of the clock tree, so they may be defined anywhere in the
+compatible :dtcompatible:`clock-domain` and set ``#clock-state-cells = <1>``.
+Each child of a clock domain with the compatible :dtcompatible:`clock-state`
+defines one state for that domain. Consumers select states with a bitmask in
+their ``clock-request-n`` properties, where bit ``n`` refers to the ``n``-th
+``clock-state`` child in declaration order. Clock domains are not part of the
+clock tree, so they may be defined anywhere in the
 devicetree. They are typically defined by the SOC or board devicetree under a
 common ``clock-domains`` container node. The clock management framework will
 handle defining clock structures for each of these nodes.
@@ -1023,6 +1037,7 @@ device:
         clock-domains {
             uart_domain: uart-domain {
                 compatible = "clock-domain";
+                #clock-state-cells = <1>;
 
                 uart_default: uart-default {
                     compatible = "clock-state";
@@ -1039,7 +1054,7 @@ device:
     };
 
     &uart_dev {
-        clock-request-0 = <&uart_default>;
+        clock-request-0 = <&uart_domain CLK_STATE_0>;
         clock-request-names = "default";
     };
 

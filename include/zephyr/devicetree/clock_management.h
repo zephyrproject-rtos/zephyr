@@ -106,10 +106,14 @@ extern "C" {
  *
  * Calls @p fn for every clock domain affected by a clock-request-<idx>
  * property, with the arguments being the clock domain node identifier and
- * the allowed states for that domain. The phandles in the clock-request-<idx>
- * property that reference states of the same clock domain are grouped
- * together to form one "allowed_states" bitmask for that domain. The @p fn
- * macro should take two arguments:
+ * the allowed states for that domain. Each entry in the clock-request-<idx>
+ * property is a clock domain phandle followed by a bitmask selecting the
+ * domain's clock-state children in declaration order. Entries that reference
+ * the same clock domain are merged into one bitmask. The bitmask passed to
+ * @p fn is translated so that bit n refers to the n-th entry of
+ * DT_CLOCK_STATE_SORTED_FOREACH() for that domain, i.e. the n-th used state
+ * in rank order, which is the indexing the clock framework uses at runtime.
+ * The @p fn macro should take two arguments:
  * 1. The clock domain node identifier
  * 2. The bitmask of allowed states for that clock domain
  * @param node_id Node identifier with the clock-request-<idx> property
@@ -123,8 +127,8 @@ extern "C" {
  * @brief Get the number of clock domains in a clock-request-<idx> property
  *
  * Gets the number of clock domains affected by a clock-request-<idx>
- * property. Since the phandles are grouped by the clock domain they affect,
- * this may not match the number of phandles in the property.
+ * property. Since entries referencing the same clock domain are merged,
+ * this may not match the number of entries in the property.
  * @param node_id Node identifier with the clock-request-<idx> property
  * @param idx Clock request index
  */
@@ -172,9 +176,10 @@ extern "C" {
 /**
  * @brief Call @p fn for every clock state of a node that is in use
  *
- * Call @p fn for every clock state of a clock-output node that is referenced
+ * Call @p fn for every clock state of a clock-domain node that is selected
  * by a clock-request-n property. This macro will call @p fn in the order
- * that clock states are ranked, with the lowest ranked state first.
+ * that clock states are ranked, with the lowest ranked state first. States
+ * with equal rank keep their declaration order.
  */
 #define DT_CLOCK_STATE_SORTED_FOREACH(node_id, fn) \
 	CONCAT(node_id, _CLOCK_STATE_SORTED_FOREACH)(fn)
@@ -182,7 +187,7 @@ extern "C" {
 /**
  * @brief Call @p fn for every clock state of an instance that is in use
  *
- * Call @p fn for every clock state of a clock-output instance that is referenced
+ * Call @p fn for every clock state of a clock-domain instance that is selected
  * by a clock-request-n property. This macro will call @p fn in the order
  * that clock states are ranked, with the lowest ranked state first.
  * It is equivalent to DT_CLOCK_STATE_SORTED_FOREACH(DT_DRV_INST(inst), fn).

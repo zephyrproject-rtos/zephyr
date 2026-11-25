@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/clock-management/clock-management.h>
+
 /*
  * Define clock tree with emulated clock nodes.
  * These node labels are chosen so that they won't conflict with SOC clock
@@ -104,8 +106,9 @@
 	};
 
 	clock-domains {
-		dev1-domain {
+		dev1_domain: dev1-domain {
 			compatible = "clock-domain";
+			#clock-state-cells = <1>;
 			/* Expect a clock frequency of 3.333333 MHz */
 			dev1_3mhz: dev1-3mhz {
 				compatible = "clock-state";
@@ -133,8 +136,9 @@
 			};
 		};
 
-		dev2-domain {
+		dev2_domain: dev2-domain {
 			compatible = "clock-domain";
+			#clock-state-cells = <1>;
 			/* Expect a clock frequency of 200 MHz */
 			dev2_200mhz: dev2-200mhz {
 				compatible = "clock-state";
@@ -163,10 +167,10 @@
 			compatible = "vnd,emul-clock-consumer";
 			clock-outputs = <&emul_dev1_out>;
 			clock-output-names = "default";
-			clock-request-0 = <&dev1_3mhz>;
+			clock-request-0 = <&dev1_domain CLK_STATE_0>;
 			default-freq = <3333333>;
-			clock-request-1 = <&invalid_dev1>;
-			clock-request-2 = <&dev1_3mhz &ranked_dev1 &shared_dev1>;
+			clock-request-1 = <&dev1_domain CLK_STATE_1>;
+			clock-request-2 = <&dev1_domain (CLK_STATE_0 | CLK_STATE_2 | CLK_STATE_3)>;
 			ranked-freq = <25000000>;
 			shared-freq = <50000000>;
 			clock-request-names = "default", "invalid", "ranked";
@@ -178,17 +182,17 @@
 			compatible = "vnd,emul-clock-consumer";
 			clock-outputs = <&emul_dev2_out>;
 			clock-output-names = "default";
-			clock-request-0 = <&dev2_200mhz>;
+			clock-request-0 = <&dev2_domain CLK_STATE_0>;
 			default-freq = <200000000>;
-			clock-request-1 = <&invalid_dev2>;
-			clock-request-2 = <&shared_dev2 &shared_dev1>;
+			clock-request-1 = <&dev2_domain CLK_STATE_1>;
+			clock-request-2 = <&dev2_domain CLK_STATE_2 &dev1_domain CLK_STATE_2>;
 			shared-freq = <100000000>;
 			ranked-freq = <200000000>;
-			clock-request-3 = <&dev2_200mhz>;
+			clock-request-3 = <&dev2_domain CLK_STATE_0>;
 			/* This state will fail to apply when the first consumer has
 			 * locked clocks
 			 */
-			clock-request-4 = <&shared_dev2 &dev1_3mhz>;
+			clock-request-4 = <&dev2_domain CLK_STATE_2 &dev1_domain CLK_STATE_0>;
 			freq-req-1 = <750000>;
 			req-freq-1 = <746268>;
 			clock-request-names = "default", "invalid", "shared",

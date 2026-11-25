@@ -100,6 +100,7 @@ typedef int (*clock_management_callback_handler_t)(const struct clock_management
  * clock-domains {
  *      hs_clock_domain: hs-clock-domain {
  *              compatible = "clock-domain";
+ *              #clock-state-cells = <1>;
  *              hsclk_state0: state0 {
  *                      compatible = "clock-state";
  *                      clocks = <...>;
@@ -120,9 +121,9 @@ typedef int (*clock_management_callback_handler_t)(const struct clock_management
  *         reg = <0>;
  *         clock-outputs = <&hs_clock>;
  *         clock-output-names = "highspeed";
- *         clock-request-0 = <&hsclk_state0>;
- *         clock-request-1 = <&hsclk_state1>;
- *         clock-request-2 = <&hsclk_state2>;
+ *         clock-request-0 = <&hs_clock_domain CLK_STATE_0>;
+ *         clock-request-1 = <&hs_clock_domain CLK_STATE_1>;
+ *         clock-request-2 = <&hs_clock_domain CLK_STATE_2>;
  *         clock-request-names = "default", "sleep", "bypass";
  * };
  * @endcode

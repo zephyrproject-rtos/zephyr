@@ -10,6 +10,8 @@
  * (and be extended to test) real hardware.
  */
 
+#include <zephyr/dt-bindings/clock-management/clock-management.h>
+
 / {
 	aliases {
 		test-alias = &test_nodelabel;
@@ -429,8 +431,10 @@
 			mbox-names = "tx", "rx", "zero";
 			clock-outputs = <&test_clk_output &test_fixed_clk_output>;
 			clock-output-names = "clk-output", "fixed-clk-output";
-			clock-request-0 = <&test_clk_default &test_fixed_clk_default>;
-			clock-request-1 = <&test_clk_sleep &test_fixed_clk_sleep>;
+			clock-request-0 = <&test_clk_domain CLK_STATE_0
+					   &test_fixed_clk_domain CLK_STATE_0>;
+			clock-request-1 = <&test_clk_domain CLK_STATE_1
+					   &test_fixed_clk_domain (CLK_STATE_0 | CLK_STATE_1)>;
 			clock-request-names = "default", "sleep";
 		};
 
@@ -539,6 +543,23 @@
 			test_fixed_clk_output: test-fixed-clock-output {
 				compatible = "clock-output";
 				#clock-cells = <0>;
+			};
+		};
+
+		test_clk: test-clock {
+			compatible = "vnd,clock";
+			#clock-cells = <2>;
+
+			test_clk_output: test-clock-output {
+				compatible = "clock-output";
+				#clock-cells = <0>;
+			};
+		};
+
+		test_clock_domains: test-clock-domains {
+			test_fixed_clk_domain: test-fixed-clock-domain {
+				compatible = "clock-domain";
+				#clock-state-cells = <1>;
 
 				test_fixed_clk_default: test-fixed-clock-default-state {
 					clocks = <&test_fixed_clk 0>;
@@ -550,23 +571,18 @@
 					compatible = "clock-state";
 				};
 			};
-		};
 
-		test_clk: test-clock {
-			compatible = "vnd,clock";
-			#clock-cells = <2>;
-
-			test_clk_output: test-clock-output {
-				compatible = "clock-output";
-				#clock-cells = <0>;
+			test_clk_domain: test-clock-domain {
+				compatible = "clock-domain";
+				#clock-state-cells = <1>;
 
 				test_clk_default: test-clock-default-state {
-					clocks = <&test_fixed_clk 0>;
+					clocks = <&test_clk 1 2>;
 					compatible = "clock-state";
 				};
 
 				test_clk_sleep: test-clock-sleep-state {
-					clocks = <&test_fixed_clk 0>;
+					clocks = <&test_clk 3 4>;
 					compatible = "clock-state";
 				};
 			};

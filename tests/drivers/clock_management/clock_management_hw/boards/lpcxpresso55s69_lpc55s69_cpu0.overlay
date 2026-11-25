@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/clock-management/clock-management.h>
+
 &clock_domains {
 	sys_clk_domain: sys-clk-domain {
 		/delete-node/ sys_clk_144mhz;
@@ -19,6 +21,7 @@
 	/* Define clock states for clockout clock */
 	clkout_domain: clkout-domain {
 		compatible = "clock-domain";
+		#clock-state-cells = <1>;
 		clkout_default: clkout-default {
 			compatible = "clock-state";
 			/* Enable PLL1 and switch clkout to use it */
@@ -53,7 +56,7 @@
 };
 
 &cpu0 {
-	clock-request-0 = <&sys_clk_96mhz>;
+	clock-request-0 = <&sys_clk_domain CLK_STATE_0>;
 	clock-request-0-locking;
 };
 
@@ -62,15 +65,15 @@
 		compatible = "vnd,emul-clock-consumer";
 		clock-outputs = <&clkout_clock>;
 		clock-output-names = "default";
-		clock-request-0 = <&clkout_default>;
+		clock-request-0 = <&clkout_domain CLK_STATE_0>;
 		default-freq = <75000000>;
-		clock-request-1 = <&clkout_sleep>;
+		clock-request-1 = <&clkout_domain CLK_STATE_1>;
 		sleep-freq = <1000000>;
-		clock-request-2 = <&clkout_test1>;
+		clock-request-2 = <&clkout_domain CLK_STATE_2>;
 		test1-freq = <37875000>;
-		clock-request-3 = <&clkout_test1 &clkout_sleep>;
+		clock-request-3 = <&clkout_domain (CLK_STATE_1 | CLK_STATE_2)>;
 		test2-freq = <1000000>;
-		clock-request-4 = <&clkout_test2>;
+		clock-request-4 = <&clkout_domain CLK_STATE_3>;
 		test3-freq = <32768>;
 		freq-req-1 = <75000000>;
 		freq-req-2 = <43252000>;

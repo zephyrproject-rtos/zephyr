@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/clock-management/clock-management.h>
 
 &clock_domains {
 	sys_clk_domain: sys-clk-domain {
@@ -20,6 +21,7 @@
 
 	clkout_domain: clkout-domain {
 		compatible = "clock-domain";
+		#clock-state-cells = <1>;
 		clkout_500mhz: clkout-500mhz {
 			compatible = "clock-state";
 			/* Expect a clock frequency of 500 KHz */
@@ -49,6 +51,7 @@
 
 	sdioclk_domain: sdioclk-domain {
 		compatible = "clock-domain";
+		#clock-state-cells = <1>;
 		sdioclk_48mhz: sdioclk-48mhz {
 			compatible = "clock-state";
 			/* Expect a clock frequency of 48 MHz */
@@ -79,7 +82,7 @@
 };
 
 &cpu0 {
-	clock-request-0 = <&sys_clk_96mhz>;
+	clock-request-0 = <&sys_clk_domain CLK_STATE_0>;
 	clock-request-0-locking;
 };
 
@@ -109,10 +112,10 @@
 			compatible = "vnd,emul-clock-consumer";
 			clock-outputs = <&clkout_clock>;
 			clock-output-names = "default";
-			clock-request-0 = <&clkout_500mhz>;
-			clock-request-1 = <&clkout_invalid>;
+			clock-request-0 = <&clkout_domain CLK_STATE_0>;
+			clock-request-1 = <&clkout_domain CLK_STATE_1>;
 			default-freq = <500000>;
-			clock-request-2 = <&clkout_500mhz &clkout_shared>;
+			clock-request-2 = <&clkout_domain (CLK_STATE_0 | CLK_STATE_2)>;
 			ranked-freq = <500000>;
 			shared-freq = <25062500>;
 			clock-request-names = "default", "invalid", "ranked";
@@ -125,13 +128,14 @@
 			compatible = "vnd,emul-clock-consumer";
 			clock-outputs = <&sdio_clock>;
 			clock-output-names = "default";
-			clock-request-0 = <&sdioclk_48mhz>;
+			clock-request-0 = <&sdioclk_domain CLK_STATE_0>;
 			default-freq = <48000000>;
-			clock-request-1 = <&sdioclk_invalid>;
-			clock-request-2 = <&clkout_shared &sdioclk_48mhz &sdioclk_shared>;
-			clock-request-3 = <&sdioclk_48mhz>;
+			clock-request-1 = <&sdioclk_domain CLK_STATE_1>;
+			clock-request-2 = <&clkout_domain CLK_STATE_2
+					   &sdioclk_domain (CLK_STATE_0 | CLK_STATE_2)>;
+			clock-request-3 = <&sdioclk_domain CLK_STATE_0>;
 			/* This request will be rejected, since the clkout output is locked */
-			clock-request-4 = <&sdioclk_shared &clkout_500mhz>;
+			clock-request-4 = <&sdioclk_domain CLK_STATE_2 &clkout_domain CLK_STATE_0>;
 			shared-freq = <25062500>;
 			ranked-freq = <48000000>;
 			clock-request-names = "default", "invalid", "shared", "ranked", "locked";

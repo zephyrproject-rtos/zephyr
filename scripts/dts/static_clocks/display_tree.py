@@ -148,7 +148,9 @@ def main():
 
     # Calculate votes for each clock state based on each consumer's "default"
     # request. This is the request named "default" in clock-request-names,
-    # falling back to clock-request-0 if no request has that name.
+    # falling back to clock-request-0 if no request has that name. Each
+    # request entry is a clock domain phandle plus a bitmask selecting the
+    # domain's clock-state children in declaration order.
     for node in edt.nodes:
         if node.status != "okay":
             continue
@@ -156,9 +158,15 @@ def main():
         req_idx = names.index("default") if "default" in names else 0
         prop_name = f"clock-request-{req_idx}"
         if prop_name in node.props:
-            for state in node.props[prop_name].val:
-                output = state.parent
-                clock_requests[output][state] += 1
+            for entry in node.props[prop_name].val:
+                if entry is None:
+                    continue
+                domain = entry.controller
+                states = [c for c in domain.children.values() if "clock-state" in c.compats]
+                mask = entry.data["mask"]
+                for bit, state in enumerate(states):
+                    if mask & (1 << bit):
+                        clock_requests[domain][state] += 1
 
     # Find the winning state for each clock output
     for _, states in clock_requests.items():

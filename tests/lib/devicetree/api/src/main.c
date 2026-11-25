@@ -5096,6 +5096,38 @@ ZTEST(devicetree_api, test_clock_management)
 	zassert_equal(DT_CLOCK_REQUEST_LEN_BY_IDX(TEST_TEMP, 0), 2, "");
 	zassert_equal(DT_CLOCK_REQUEST_LEN_BY_IDX(TEST_TEMP, 1), 2, "");
 
+	/* DT_CLOCK_REQUEST_FOREACH_BY_IDX: masks index the domain's used states */
+#undef CLK_REQ_ENTRY
+#define CLK_REQ_ENTRY(domain, mask) { DT_DEP_ORD(domain), mask },
+	unsigned int req0_entries[][2] = {
+		DT_CLOCK_REQUEST_FOREACH_BY_IDX(TEST_TEMP, 0, CLK_REQ_ENTRY)
+	};
+	unsigned int req1_entries[][2] = {
+		DT_CLOCK_REQUEST_FOREACH_BY_IDX(TEST_TEMP, 1, CLK_REQ_ENTRY)
+	};
+	zassert_equal(ARRAY_SIZE(req0_entries), 2, "");
+	zassert_equal(req0_entries[0][0], DT_DEP_ORD(DT_NODELABEL(test_clk_domain)), "");
+	zassert_equal(req0_entries[0][1], BIT(0), "");
+	zassert_equal(req0_entries[1][0], DT_DEP_ORD(DT_NODELABEL(test_fixed_clk_domain)), "");
+	zassert_equal(req0_entries[1][1], BIT(0), "");
+	zassert_equal(ARRAY_SIZE(req1_entries), 2, "");
+	zassert_equal(req1_entries[0][0], DT_DEP_ORD(DT_NODELABEL(test_clk_domain)), "");
+	zassert_equal(req1_entries[0][1], BIT(1), "");
+	zassert_equal(req1_entries[1][0], DT_DEP_ORD(DT_NODELABEL(test_fixed_clk_domain)), "");
+	zassert_equal(req1_entries[1][1], BIT(0) | BIT(1), "");
+#undef CLK_REQ_ENTRY
+
+	/* DT_CLOCK_STATE_SORTED_FOREACH: states in declaration order (equal ranks) */
+#undef CLK_STATE_ORD
+#define CLK_STATE_ORD(state) DT_DEP_ORD(state),
+	unsigned int clk_states[] = {
+		DT_CLOCK_STATE_SORTED_FOREACH(DT_NODELABEL(test_clk_domain), CLK_STATE_ORD)
+	};
+	zassert_equal(ARRAY_SIZE(clk_states), 2, "");
+	zassert_equal(clk_states[0], DT_DEP_ORD(DT_NODELABEL(test_clk_default)), "");
+	zassert_equal(clk_states[1], DT_DEP_ORD(DT_NODELABEL(test_clk_sleep)), "");
+#undef CLK_STATE_ORD
+
 	/* DT_CLOCK_REQUEST_IDX_TO_NAME_TOKEN, DT_CLOCK_REQUEST_IDX_TO_NAME_UPPER_TOKEN */
 #undef MAKE_TOKEN
 #define MAKE_TOKEN(idx)							\

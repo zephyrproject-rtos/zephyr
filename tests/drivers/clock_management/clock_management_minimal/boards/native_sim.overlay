@@ -13,6 +13,7 @@
  */
 
 #include <freq.h>
+#include <zephyr/dt-bindings/clock-management/clock-management.h>
 
 / {
 	emul_clock_root {
@@ -82,8 +83,9 @@
 	};
 
 	clock-domains {
-		dev1-slow-domain {
+		dev1_slow_domain: dev1-slow-domain {
 			compatible = "clock-domain";
+			#clock-state-cells = <1>;
 			/* Expect a clock frequency of 10 MHz */
 			dev1_10mhz: dev1-10mhz {
 				compatible = "clock-state";
@@ -103,8 +105,9 @@
 			};
 		};
 
-		dev1-fast-domain {
+		dev1_fast_domain: dev1-fast-domain {
 			compatible = "clock-domain";
+			#clock-state-cells = <1>;
 			/* Expect a clock frequency of 200 MHz */
 			dev1_200mhz: dev1-200mhz {
 				compatible = "clock-state";
@@ -126,12 +129,14 @@
 			compatible = "vnd,emul-clock-consumer";
 			clock-outputs = <&dev1_out_slow &dev1_out_fast>;
 			clock-output-names = "slow", "fast";
-			clock-request-0 = <&dev1_10mhz &dev1_200mhz>;
+			clock-request-0 = <&dev1_slow_domain CLK_STATE_0
+					   &dev1_fast_domain CLK_STATE_0>;
 			slow-default-freq = <DT_FREQ_M(10)>;
 			fast-default-freq = <DT_FREQ_M(200)>;
 			slow-sleep-freq = <3333333>;
 			fast-sleep-freq = <DT_FREQ_M(25)>;
-			clock-request-1 = <&dev1_3mhz &dev1_25mhz>;
+			clock-request-1 = <&dev1_slow_domain CLK_STATE_2
+					   &dev1_fast_domain CLK_STATE_1>;
 			clock-request-names = "default", "sleep";
 		};
 	};

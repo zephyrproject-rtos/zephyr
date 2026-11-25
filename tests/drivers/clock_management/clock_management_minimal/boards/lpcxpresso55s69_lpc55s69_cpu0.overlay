@@ -6,10 +6,12 @@
  */
 
 #include <freq.h>
+#include <zephyr/dt-bindings/clock-management/clock-management.h>
 
 &clock_domains {
 	frohf_domain: frohfdiv-domain {
 		compatible = "clock-domain";
+		#clock-state-cells = <1>;
 		/* FROHF clock domain */
 		frohf_en: frohfdiv_96m {
 			compatible = "clock-state";
@@ -30,6 +32,7 @@
 	/* Define clock states for clockout clock */
 	clkout_domain: clkout-domain {
 		compatible = "clock-domain";
+		#clock-state-cells = <1>;
 		clkout_16mhz: clkout-16mhz {
 			compatible = "clock-state";
 			/* Expect a clock frequency of 16 MHz */
@@ -60,6 +63,7 @@
 	/* Define clock states for SDIO clock */
 	sdioclk_domain: sdioclk-domain {
 		compatible = "clock-domain";
+		#clock-state-cells = <1>;
 		sdioclk_48mhz: sdioclk-48mhz {
 			compatible = "clock-state";
 			/* Expect a clock frequency of 48 MHz */
@@ -90,7 +94,7 @@
 };
 
 &cpu0 {
-	clock-request-0 = <&sys_clk_96mhz &frohf_en>;
+	clock-request-0 = <&sys_clk_domain CLK_STATE_0 &frohf_domain CLK_STATE_0>;
 	clock-request-0-locking;
 };
 
@@ -106,12 +110,13 @@
 			compatible = "vnd,emul-clock-consumer";
 			clock-outputs = <&clkout_clock &sdio_clock>;
 			clock-output-names = "slow", "fast";
-			clock-request-0 = <&clkout_16mhz &sdioclk_48mhz>;
+			clock-request-0 = <&clkout_domain CLK_STATE_0 &sdioclk_domain CLK_STATE_0>;
 			slow-default-freq = <DT_FREQ_M(16)>;
 			fast-default-freq = <DT_FREQ_M(48)>;
 			slow-sleep-freq = <DT_FREQ_M(1)>;
 			fast-sleep-freq = <DT_FREQ_M(12)>;
-			clock-request-1 = <&clkout_1mhz &sdioclk_12mhz &frohf_en>;
+			clock-request-1 = <&clkout_domain CLK_STATE_1 &sdioclk_domain CLK_STATE_2
+					   &frohf_domain CLK_STATE_0>;
 			clock-request-names = "default", "sleep";
 		};
 	};

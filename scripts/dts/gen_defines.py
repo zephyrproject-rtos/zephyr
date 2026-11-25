@@ -745,12 +745,75 @@ def write_gpio_hogs(node: edtlib.Node) -> None:
             out_dt_define(macro, val)
 
 
+def clock_states(domain: edtlib.Node) -> list[edtlib.Node]:
+    # Returns the clock-state children of a clock domain, in the order they
+    # are declared in devicetree. Bit n of a clock-request-<i> mask refers to
+    # element n of this list.
+    return [child for child in domain.children.values() if "clock-state" in child.compats]
+
+
+# Maps each clock domain node to the set of its clock-state children that are
+# referenced by at least one clock-request-<i> property. Built lazily by
+# referenced_clock_states().
+_referenced_clock_states: dict[edtlib.Node, set[edtlib.Node]] | None = None
+
+
+def referenced_clock_states(edt: edtlib.EDT) -> dict[edtlib.Node, set[edtlib.Node]]:
+    # Walks every clock-request-<i> property in the devicetree and records
+    # which clock states each one selects. Also validates the request entries.
+    global _referenced_clock_states
+
+    if _referenced_clock_states is not None:
+        return _referenced_clock_states
+
+    clock_request_re = re.compile(r"^clock-request-(\d+)$")
+    referenced: dict[edtlib.Node, set[edtlib.Node]] = {}
+    for node in edt.nodes:
+        for prop_name, prop in node.props.items():
+            if not clock_request_re.match(prop_name):
+                continue
+            for domain, mask in clock_request_entries(prop):
+                states = clock_states(domain)
+                for bit in range(mask.bit_length()):
+                    if mask & (1 << bit):
+                        referenced.setdefault(domain, set()).add(states[bit])
+
+    _referenced_clock_states = referenced
+    return referenced
+
+
+def clock_request_entries(prop: edtlib.Property) -> list[tuple[edtlib.Node, int]]:
+    # Returns the (clock domain, allowed state mask) pairs of a
+    # clock-request-<i> property, validating each entry.
+    entries = []
+    for entry in prop.val:
+        if entry is None:
+            err(f"'{prop.name}' in {prop.node.path} contains an empty entry")
+        domain = entry.controller
+        if "clock-domain" not in domain.compats:
+            err(
+                f"'{prop.name}' in {prop.node.path} references {domain.path}, "
+                "which is not a clock-domain node"
+            )
+        mask = entry.data["mask"]
+        num_states = len(clock_states(domain))
+        if mask == 0:
+            err(f"'{prop.name}' in {prop.node.path} selects no states of {domain.path}")
+        if mask >= (1 << num_states):
+            err(
+                f"'{prop.name}' in {prop.node.path} selects state mask {hex(mask)} of "
+                f"{domain.path}, which only has {num_states} clock-state children"
+            )
+        entries.append((domain, mask))
+    return entries
+
+
 def ranked_states(node: edtlib.Node) -> list[edtlib.Node]:
     # Returns a list of the node's clock-state children, sorted by rank.
     # If a clock-state child is not referenced by any clock-request-n
     # property, it is not included in the returned list.
-    referenced_outputs = [child for child in node.children.values() if len(child.required_by) > 0]
-    compat_outputs = [child for child in referenced_outputs if "clock-state" in child.compats]
+    referenced = referenced_clock_states(node.edt).get(node, set())
+    compat_outputs = [child for child in clock_states(node) if child in referenced]
     return sorted(compat_outputs, key=lambda x: x.props["rank"].val)
 
 
@@ -819,14 +882,20 @@ def write_clocks(node: edtlib.Node) -> None:
         out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_NAME_{tok}_EXISTS", 1)
         out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_NAME_{tok}_IDX", i)
 
-        # Group the states in this request by the clock domain they belong
-        # to, building a bitmask of allowed state indices for each domain
+        # Each entry in the request selects states of a clock domain with a
+        # bitmask over the domain's clock-state children in declaration
+        # order. Translate each mask into a bitmask over the domain's
+        # rank-sorted list of used states (which is what the clock framework
+        # indexes at runtime), merging entries that name the same domain.
         clock_requests: dict[edtlib.Node, int] = {}
-        for state in prop.val:
-            clock_node = state.parent
+        for clock_node, mask in clock_request_entries(prop):
+            states = clock_states(clock_node)
             sorted_outputs = ranked_states(clock_node)
-            idx = sorted_outputs.index(state)
-            clock_requests[clock_node] = clock_requests.get(clock_node, 0) | (1 << idx)
+            sorted_mask = 0
+            for bit in range(mask.bit_length()):
+                if mask & (1 << bit):
+                    sorted_mask |= 1 << sorted_outputs.index(states[bit])
+            clock_requests[clock_node] = clock_requests.get(clock_node, 0) | sorted_mask
         fn_string = "".join(
             f"fn(DT_{clock_node.z_path_id}, {clock_requests[clock_node]}) "
             for clock_node in clock_requests
