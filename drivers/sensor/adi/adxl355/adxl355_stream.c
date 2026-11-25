@@ -154,7 +154,8 @@ static void adxl355_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	struct adxl355_data *data = (struct adxl355_data *)dev->data;
 	struct rtio_iodev_sqe *current_sqe = data->sqe;
 	uint16_t fifo_samples = ((data->fifo_samples) & ADXL355_FIFO_ENTRIES_MSK);
-	size_t sample_set_size = 3;
+	size_t sample_set_size = ADXL355_ACCEL_CHAN_BYTE_SIZE;
+	size_t frame_size = sample_set_size * ADXL355_ACCEL_CHAN_COUNT;
 	uint16_t fifo_bytes = fifo_samples * sample_set_size;
 
 	data->sqe = NULL;
@@ -165,7 +166,7 @@ static void adxl355_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 		return;
 	}
 
-	const size_t min_read_size = sizeof(struct adxl355_fifo_data) + sample_set_size;
+	const size_t min_read_size = sizeof(struct adxl355_fifo_data) + frame_size;
 	const size_t ideal_read_size = sizeof(struct adxl355_fifo_data) + fifo_bytes;
 
 	uint8_t *buf;
@@ -198,8 +199,11 @@ static void adxl355_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	uint8_t *read_buf = buf + sizeof(*hdr);
 	uint32_t read_len = MIN(fifo_bytes, buf_avail);
 
+	/* Read whole XYZ frames only; remaining samples are read in the next batch */
+	read_len -= read_len % frame_size;
+
 	((struct adxl355_fifo_data *)buf)->fifo_byte_count = read_len;
-	__ASSERT_NO_MSG(read_len % sample_set_size == 0);
+	__ASSERT_NO_MSG(read_len > 0 && read_len % frame_size == 0);
 
 	/* Flush completions */
 	struct rtio_cqe *cqe;

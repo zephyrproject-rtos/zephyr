@@ -178,6 +178,10 @@
 
 #define ADXL355_SELF_TEST_MIN_Z    (SENSOR_G * 0.5) /* in micro m/s^2 */
 #define ADXL355_SELF_TEST_MAX_Z    (SENSOR_G * 3.0) /* in micro m/s^2 */
+
+#define ADXL355_ACCEL_CHAN_BYTE_SIZE	3
+#define ADXL355_ACCEL_CHAN_COUNT	3
+
 /**
  * @brief ADXL355 read command macro
  *
