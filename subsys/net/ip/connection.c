@@ -1068,6 +1068,14 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 				goto drop;
 			}
 
+			/* The clone does not carry the UDP options surplus length,
+			 * as it shares storage with a TCP field, so copy it here.
+			 */
+			if (IS_ENABLED(CONFIG_NET_UDP_OPTIONS) && proto == NET_IPPROTO_UDP) {
+				net_pkt_set_udp_opt_surplus_len(mcast_pkt,
+								net_pkt_udp_opt_surplus_len(pkt));
+			}
+
 			if (mcast_cb(conn, mcast_pkt, ip_hdr, proto_hdr, mcast_user_data) ==
 			    NET_DROP) {
 				net_stats_update_per_proto_drop(pkt_iface, proto);
