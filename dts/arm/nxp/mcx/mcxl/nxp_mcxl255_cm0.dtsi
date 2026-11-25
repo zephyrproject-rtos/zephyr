@@ -47,3 +47,8 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+&lpacmp {
+	interrupts = <12 0>;
+	clocks = <&root_clock1>;
+};
