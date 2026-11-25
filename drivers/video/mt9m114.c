@@ -504,6 +504,12 @@ static int mt9m114_init(const struct device *dev)
 	uint16_t val;
 	int ret;
 
+	ret = mt9m114_init_controls(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize controls: %d", ret);
+		return ret;
+	}
+
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
@@ -542,8 +548,7 @@ static int mt9m114_init(const struct device *dev)
 	/* Suspend any stream */
 	mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_SUSPEND);
 
-	/* Initialize controls */
-	return mt9m114_init_controls(dev);
+	return 0;
 }
 
 #define MT9M114_INIT(n)                                                                            \

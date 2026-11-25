@@ -837,6 +837,12 @@ static int ov5642_init(const struct device *dev)
 	uint16_t chip_id;
 	int ret;
 
+	ret = ov5642_init_controls(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize controls: %d", ret);
+		return ret;
+	}
+
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
@@ -901,8 +907,7 @@ static int ov5642_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	/* Initialize controls */
-	return ov5642_init_controls(dev);
+	return 0;
 }
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(powerdown_gpios)

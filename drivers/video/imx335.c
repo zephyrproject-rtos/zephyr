@@ -712,6 +712,12 @@ static int imx335_init(const struct device *dev)
 	struct imx335_data *drv_data = dev->data;
 	int ret;
 
+	ret = imx335_init_controls(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialized video controls: %d", ret);
+		return ret;
+	}
+
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("Bus device is not ready");
 		return -ENODEV;
@@ -735,10 +741,9 @@ static int imx335_init(const struct device *dev)
 
 		gpio_pin_set_dt(&cfg->reset_gpio, 0);
 
-		k_sleep(K_USEC(600)); /* T4 */
+		k_sleep(K_USEC(1000)); /* T4 + 400 */
 	}
 #endif
-
 	/* Initialize register values */
 	ret = video_write_cci_multiregs(&cfg->i2c, imx335_init_params,
 					ARRAY_SIZE(imx335_init_params));
@@ -754,6 +759,10 @@ static int imx335_init(const struct device *dev)
 		LOG_ERR("Unable to initialize the sensor");
 		return ret;
 	}
+
+	/* The frame interval is updated by imx335_set_fmt() */
+	drv_data->vdev.frmival.numerator = 1;
+	drv_data->vdev.frmival.denominator = 30;
 
 	ret = video_set_format(dev, &fmt);
 	if (ret < 0) {
@@ -775,15 +784,7 @@ static int imx335_init(const struct device *dev)
 		return ret;
 	}
 
-	drv_data->vdev.frmival.numerator = 1;
-	drv_data->vdev.frmival.denominator = 30;
-	ret = video_set_frmival(dev, &drv_data->vdev.frmival);
-	if (ret < 0) {
-		LOG_ERR("Failed to set %s default frame interval", dev->name);
-		return ret;
-	}
-
-	return imx335_init_controls(dev);
+	return 0;
 }
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)

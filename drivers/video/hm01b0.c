@@ -512,6 +512,12 @@ static int hm01b0_init(const struct device *dev)
 	const struct hm01b0_config *config = dev->config;
 	int ret;
 
+	ret = hm01b0_init_controls(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize controls: %d", ret);
+		return ret;
+	}
+
 	if (!hm01b0_check_connection(dev)) {
 		LOG_ERR("%s is not ready", dev->name);
 		return -ENODEV;
@@ -544,8 +550,7 @@ static int hm01b0_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Initialize controls */
-	return hm01b0_init_controls(dev);
+	return 0;
 }
 
 

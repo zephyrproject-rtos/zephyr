@@ -1100,6 +1100,12 @@ static int ov2640_init(const struct device *dev)
 		.height = SVGA_HEIGHT,
 	};
 
+	ret = ov2640_init_controls(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize controls: %d", ret);
+		return ret;
+	}
+
 #if DT_INST_NODE_HAS_PROP(0, pwdn_gpios)
 	ret = gpio_pin_configure_dt(&cfg->pwdn_gpio, GPIO_OUTPUT_INACTIVE);
 	if (ret < 0) {
@@ -1144,8 +1150,7 @@ static int ov2640_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Initialize controls */
-	return ov2640_init_controls(dev);
+	return 0;
 }
 
 /* Unique Instance */

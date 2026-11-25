@@ -475,6 +475,12 @@ static int imx219_init(const struct device *dev)
 	uint32_t reg;
 	int ret;
 
+	ret = imx219_init_ctrls(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize controls: %d", ret);
+		return ret;
+	}
+
 	if (!device_is_ready(cfg->i2c.bus)) {
 		LOG_ERR("I2C device %s is not ready", cfg->i2c.bus->name);
 		return -ENODEV;
@@ -557,7 +563,7 @@ static int imx219_init(const struct device *dev)
 		return ret;
 	}
 
-	return imx219_init_ctrls(dev);
+	return 0;
 }
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
