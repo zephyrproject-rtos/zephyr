@@ -128,6 +128,9 @@ static inline size_t net_gso_max_segment_len(struct net_pkt *pkt)
 /* Copy the attributes a clone gets, but not the data, from pkt to dst */
 extern void net_pkt_copy_attributes(struct net_pkt *pkt, struct net_pkt *dst);
 
+/* Append buffers for size bytes, which take exactly size bytes of writes */
+extern int net_pkt_alloc_buffer_exact(struct net_pkt *pkt, size_t size, k_timeout_t timeout);
+
 /* Called for every segment made from a block. The callback owns the
  * segment.
  */

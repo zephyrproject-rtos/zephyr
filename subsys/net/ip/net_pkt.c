@@ -2300,6 +2300,31 @@ void net_pkt_copy_attributes(struct net_pkt *pkt, struct net_pkt *dst)
 {
 	clone_pkt_attributes(pkt, dst);
 }
+
+int net_pkt_alloc_buffer_exact(struct net_pkt *pkt, size_t size, k_timeout_t timeout)
+{
+	struct net_buf *prev = pkt->buffer != NULL ? net_buf_frag_last(pkt->buffer) : NULL;
+	struct net_buf *buf;
+	int ret;
+
+	ret = net_pkt_alloc_buffer_raw(pkt, size, timeout);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* The raw allocation leaves the last buffer at its full size, so
+	 * that more can be written to it. Shrink it back to what was asked.
+	 */
+	for (buf = prev != NULL ? prev->frags : pkt->buffer; buf != NULL; buf = buf->frags) {
+		if (buf->frags == NULL) {
+			buf->size = MIN(buf->size, size);
+		} else {
+			size -= MIN(buf->size, size);
+		}
+	}
+
+	return 0;
+}
 #endif /* CONFIG_NET_GSO */
 
 /* Clone pkt on slab for iface. With l2_reserve the buffer is allocated as
