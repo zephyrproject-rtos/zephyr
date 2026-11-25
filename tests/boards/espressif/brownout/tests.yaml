@@ -1,0 +1,17 @@
+tests:
+  boards.espressif.brownout:
+    build_only: true
+    tags:
+      - brownout
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32s31_function_coreboard/esp32s31/hpcore
+      - esp8684_devkitm
+      - esp32c3_devkitm
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32c61_devkitc
+      - esp32h2_devkitm
+      - esp32p4x_function_ev_board/esp32p4/hpcore
