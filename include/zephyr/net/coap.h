@@ -218,15 +218,15 @@ enum coap_response_code {
 	COAP_SIGNAL_CODE_ABORT = COAP_MAKE_RESPONSE_CODE(7, 5)
 };
 
+/** Maximum length of the ETag option value (@rfc{7252,section-5.10.6}) */
+#define COAP_ETAG_MAX_LEN 8UL
+
 /** @cond INTERNAL_HIDDEN */
 
 #define COAP_CODE_EMPTY (0)
 
 #define COAP_TOKEN_MAX_LEN 8UL
 #define COAP_FIXED_HEADER_SIZE 4UL
-
-/** Maximum length of the ETag option value (@rfc{7252,section-5.10.6}) */
-#define COAP_ETAG_MAX_LEN 8UL
 
 /* CoAP TCP header constants (RFC 8323) */
 /* Len/TKL + Code */
