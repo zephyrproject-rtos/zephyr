@@ -33,7 +33,7 @@ SKIP_TAGS = \
 .PHONY: configure clean html html-fast html-minimal html-live html-live-fast html-live-minimal latex pdf doxygen doxygen-xml doxygen-coverage doxygen-coverage-json
 
 html-fast:
-	${MAKE} html DT_TURBO_MODE=1 HW_FEATURES_TURBO_MODE=1
+	${MAKE} html DT_TURBO_MODE=1 HW_FEATURES_TURBO_MODE=0
 
 # Minimal preview build: html-fast with every SKIP_* switch enabled. The
 # fastest way to preview narrative .rst changes; not suitable for publishing
