@@ -93,6 +93,15 @@
 		status = "okay";
 	};
 
+	brownout: brownout {
+		compatible = "espressif,esp32-brownout";
+		interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+		interrupt-parent = <&intc>;
+		brownout-threshold-microvolt = <2440000>;
+		espressif,brownout-action = "reset";
+		status = "okay";
+	};
+
 	soc {
 		compatible = "simple-bus";
 		ranges;

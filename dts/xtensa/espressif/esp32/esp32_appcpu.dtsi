@@ -10,3 +10,7 @@
 &gpio0 {
 	gpio-reserved-ranges = <20 1>, <24 1>, <28 4>; // NC
 };
+
+&brownout {
+	status = "disabled";
+};

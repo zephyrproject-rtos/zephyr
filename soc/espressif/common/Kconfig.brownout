@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_ESPRESSIF_BROWNOUT
+	bool "Espressif brown-out detector"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_BROWNOUT_ENABLED
+	help
+	  Enable the Espressif VDD brown-out detector. The threshold and the
+	  reset or interrupt action come from the devicetree node.

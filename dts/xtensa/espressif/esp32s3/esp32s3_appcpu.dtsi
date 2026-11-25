@@ -10,3 +10,7 @@
 	reg = <0x3fc88000 DT_SIZE_K(416)>;
 	status = "okay";
 };
+
+&brownout {
+	status = "disabled";
+};
