@@ -189,6 +189,35 @@ static void stm32_dcmipp_set_next_buffer_addr(struct stm32_dcmipp_pipe_data *pip
 #endif
 }
 
+/* Give the pipe a buffer: restart a capture that paused for want of one, or queue it */
+static void stm32_dcmipp_queue_buffer(struct stm32_dcmipp_pipe_data *pipe,
+				      struct video_buffer *vbuf)
+{
+	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
+
+	if (pipe->state == STM32_DCMIPP_WAIT_FOR_BUFFER) {
+		LOG_DBG("Restart CPTREQ after wait for buffer");
+		pipe->next = vbuf;
+		stm32_dcmipp_set_next_buffer_addr(pipe);
+		if (pipe->id == DCMIPP_PIPE0) {
+			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P0FCTCR,
+					   DCMIPP_P0FCTCR_CPTREQ);
+		}
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+		else if (pipe->id == DCMIPP_PIPE1) {
+			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P1FCTCR,
+					   DCMIPP_P1FCTCR_CPTREQ);
+		} else if (pipe->id == DCMIPP_PIPE2) {
+			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P2FCTCR,
+					   DCMIPP_P2FCTCR_CPTREQ);
+		}
+#endif
+		pipe->state = STM32_DCMIPP_RUNNING;
+	} else {
+		k_fifo_put(&pipe->fifo_in, vbuf);
+	}
+}
+
 /* Callback getting called for each frame written into memory */
 void HAL_DCMIPP_PIPE_FrameEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t Pipe)
 {
@@ -1389,7 +1418,6 @@ static int stm32_dcmipp_set_stream(const struct device *dev, bool enable, enum v
 static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *vbuf)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
-	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
 
@@ -1397,27 +1425,7 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 		return -EINVAL;
 	}
 
-	if (pipe->state == STM32_DCMIPP_WAIT_FOR_BUFFER) {
-		LOG_DBG("Restart CPTREQ after wait for buffer");
-		pipe->next = vbuf;
-		stm32_dcmipp_set_next_buffer_addr(pipe);
-		if (pipe->id == DCMIPP_PIPE0) {
-			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P0FCTCR,
-					   DCMIPP_P0FCTCR_CPTREQ);
-		}
-#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
-		else if (pipe->id == DCMIPP_PIPE1) {
-			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P1FCTCR,
-					   DCMIPP_P1FCTCR_CPTREQ);
-		} else if (pipe->id == DCMIPP_PIPE2) {
-			stm32_reg_set_bits(&dcmipp->hdcmipp.Instance->P2FCTCR,
-					   DCMIPP_P2FCTCR_CPTREQ);
-		}
-#endif
-		pipe->state = STM32_DCMIPP_RUNNING;
-	} else {
-		k_fifo_put(&pipe->fifo_in, vbuf);
-	}
+	stm32_dcmipp_queue_buffer(pipe, vbuf);
 
 	k_mutex_unlock(&pipe->lock);
 
