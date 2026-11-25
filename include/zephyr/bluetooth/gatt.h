@@ -1447,6 +1447,12 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 
 /** @brief Notification complete result callback.
  *
+ *  Called once the notification or the Write Without Response has been sent.
+ *  It is not called for one that is dropped before that, which is what happens
+ *  to all that are still waiting to be sent when the connection is lost. A
+ *  resource that this callback releases must therefore also be released from
+ *  @ref bt_conn_cb.disconnected if the callback has not been called by then.
+ *
  *  @param conn Connection object.
  *  @param user_data Data passed in by the user.
  */
@@ -1487,7 +1493,8 @@ struct bt_gatt_notify_params {
  *
  *  This function works in the same way as @ref bt_gatt_notify.
  *  With the addition that after sending the notification the
- *  callback function will be called.
+ *  callback function will be called. The callback is not called if the
+ *  connection is lost first, see @ref bt_gatt_complete_func_t.
  *
  *  The callback runs in a thread context, never in an ISR; see
  *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
@@ -2200,7 +2207,8 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *
  *  This function works in the same way as @ref bt_gatt_write_without_response.
  *  With the addition that after sending the write the callback function will be
- *  called.
+ *  called. The callback is not called if the connection is lost first, see
+ *  @ref bt_gatt_complete_func_t.
  *
  *  The callback runs in a thread context, never in an ISR; see
  *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
