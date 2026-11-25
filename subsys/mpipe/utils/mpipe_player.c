@@ -43,7 +43,7 @@ enum mpipe_player_cmd {
 	MPIPE_PLAYER_CMD_RUN_ERROR,
 };
 
-static K_THREAD_STACK_ARRAY_DEFINE(mpipe_player_stacks, CONFIG_MPIPE_PLAYER_NUM,
+static K_KERNEL_STACK_ARRAY_DEFINE(mpipe_player_stacks, CONFIG_MPIPE_PLAYER_NUM,
 				   CONFIG_MPIPE_PLAYER_WORKER_STACK_SIZE);
 static atomic_ptr_t mpipe_players[CONFIG_MPIPE_PLAYER_NUM];
 /* Held while claiming a slot, so a pipeline cannot get two players at once */
@@ -367,7 +367,7 @@ int mpipe_player_init(struct mpipe_player *player, struct mpipe *pipeline)
 	}
 
 	tid = k_thread_create(&player->worker, mpipe_player_stacks[slot],
-			      K_THREAD_STACK_SIZEOF(mpipe_player_stacks[slot]), mpipe_player_worker,
+			      K_KERNEL_STACK_SIZEOF(mpipe_player_stacks[slot]), mpipe_player_worker,
 			      player, NULL, NULL, CONFIG_MPIPE_PLAYER_WORKER_PRIORITY, 0,
 			      K_NO_WAIT);
 	k_thread_name_set(tid, "mpipe_player");
