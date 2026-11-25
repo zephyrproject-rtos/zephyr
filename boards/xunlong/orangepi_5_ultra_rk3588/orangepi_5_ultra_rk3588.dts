@@ -18,9 +18,9 @@
 		zephyr,shell-uart = &uart2;
 	};
 
-	sram0: memory@0 {
+	sram0: memory@10000000 {
 		compatible = "mmio-sram";
-		reg = <0x0 DT_SIZE_G(1)>;
+		reg = <0x10000000 DT_SIZE_M(768)>;
 		device_type = "memory";
 	};
 };
