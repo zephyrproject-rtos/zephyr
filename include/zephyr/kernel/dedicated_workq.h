@@ -27,7 +27,9 @@ extern "C" {
 #define Z_DEDICATED_WORK_QUEUE_DECLARE_DEDICATED(_prefix)                                          \
 	int _prefix##_work_submit(struct k_work *work);                                            \
 	int _prefix##_work_schedule(struct k_work_delayable *dwork, k_timeout_t delay);            \
-	int _prefix##_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
+	int _prefix##_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay);          \
+	int _prefix##_work_poll_submit(struct k_work_poll *work, struct k_poll_event *events,      \
+				       int num_events, k_timeout_t timeout)
 
 #define Z_DEDICATED_WORK_QUEUE_DECLARE_SYSTEM(_prefix)                                             \
 	static inline int _prefix##_work_submit(struct k_work *work)                               \
@@ -43,6 +45,12 @@ extern "C" {
 						    k_timeout_t delay)                             \
 	{                                                                                          \
 		return k_work_reschedule(dwork, delay);                                            \
+	}                                                                                          \
+	static inline int _prefix##_work_poll_submit(struct k_work_poll *work,                     \
+						     struct k_poll_event *events, int num_events,  \
+						     k_timeout_t timeout)                          \
+	{                                                                                          \
+		return k_work_poll_submit(work, events, num_events, timeout);                      \
 	}
 
 #define Z_DEDICATED_WORK_QUEUE_DEFINE(_prefix, _module)                                            \
@@ -63,6 +71,13 @@ extern "C" {
 	int _prefix##_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)           \
 	{                                                                                          \
 		return k_work_reschedule_for_queue(&_prefix##_work_q, dwork, delay);               \
+	}                                                                                          \
+                                                                                                   \
+	int _prefix##_work_poll_submit(struct k_work_poll *work, struct k_poll_event *events,      \
+				       int num_events, k_timeout_t timeout)                        \
+	{                                                                                          \
+		return k_work_poll_submit_to_queue(&_prefix##_work_q, work, events, num_events,    \
+						   timeout);                                       \
 	}                                                                                          \
                                                                                                    \
 	static int _prefix##_work_q_init(void)                                                     \
