@@ -226,6 +226,17 @@ Boards
   (e.g. use :zephyr_file:`boards/nxp/mimxrt1180_evk/dts/cm7_flash_boot.overlay`
   instead of :file:`boards/nxp/mimxrt1180_evk/cm7_flash_boot.overlay`).
 
+* The following board name aliases, deprecated in v4.4, have been removed. Build for the board
+  target the alias used to redirect to instead:
+
+  * ``esp32s3_devkitm/esp32s3/procpu`` → ``esp32s3_devkitc/esp32s3/procpu``
+  * ``esp32s3_devkitm/esp32s3/appcpu`` → ``esp32s3_devkitc/esp32s3/appcpu``
+  * ``fvp_base_revc_2xaemv8a`` → ``fvp_base_revc_2xaem/v8a``
+  * ``fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp`` → ``fvp_base_revc_2xaem/v8a/smp``
+  * ``fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns`` → ``fvp_base_revc_2xaem/v8a/smp/ns``
+  * ``ubx_evk_iris_w1_fidelex/rw612`` → ``ubx_evk_iris_w1@fidelix/rw612``
+  * ``weact_stm32h5_core`` → ``weact_stm32h562_core``
+
 Device Drivers and Devicetree
 *****************************
 

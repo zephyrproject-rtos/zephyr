@@ -13,35 +13,8 @@
 # https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated,
 # so these aliases are eventually removed
 
-set(fvp_base_revc_2xaemv8a_DEPRECATED
-    fvp_base_revc_2xaem/v8a
-)
-set(fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp_DEPRECATED
-    fvp_base_revc_2xaem/v8a/smp
-)
-set(fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns_DEPRECATED
-    fvp_base_revc_2xaem/v8a/smp/ns
-)
-set(esp32s3_devkitm/esp32s3/procpu_DEPRECATED
-    esp32s3_devkitc/esp32s3/procpu
-)
-set(esp32s3_devkitm/esp32s3/appcpu_DEPRECATED
-    esp32s3_devkitc/esp32s3/appcpu
-)
-set(ubx_evk_iris_w1_fidelex/rw612_DEPRECATED
-    ubx_evk_iris_w1@fidelix/rw612
-)
 set(it515xx_evb_DEPRECATED
     it51xxx_evb/it51526aw
-)
-set(weact_stm32h5_core_DEPRECATED
-    weact_stm32h562_core
-)
-set(ai_m62_12f_DEPRECATED
-    ai_m62_12f_kit
-)
-set(ai_wb2_12f_DEPRECATED
-    ai_wb2_12f_kit
 )
 set(bl54l15u_dvk/nrf54l15/cpuapp_DEPRECATED
     bl54l15_dvk/nrf54l15/cpuapp
