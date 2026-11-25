@@ -282,7 +282,14 @@ static int sirk_decrypt(struct bt_conn *conn,
 
 		k = test_k;
 	} else {
-		k = conn->le.keys->ltk.val;
+		const struct bt_keys *keys = conn->le.keys;
+
+		/* The keys can be gone, for example after bt_unpair() */
+		if (keys == NULL) {
+			return -ENOENT;
+		}
+
+		k = keys->ltk.val;
 	}
 
 	err = bt_csip_sdf(k, enc_sirk, out_sirk);
