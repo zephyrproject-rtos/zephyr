@@ -692,6 +692,12 @@ static int hm0360_init(const struct device *dev)
 		.height = fmts[0].height_min,
 	};
 
+	ret = hm0360_init_controls(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize controls: %d", ret);
+		return ret;
+	}
+
 	if (!i2c_is_ready_dt(&config->bus)) {
 		/* I2C device is not ready, return */
 		return -ENODEV;
@@ -775,8 +781,7 @@ static int hm0360_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Initialize controls */
-	return hm0360_init_controls(dev);
+	return 0;
 }
 
 static int hm0360_set_stream(const struct device *dev, bool enable, enum video_buf_type type)

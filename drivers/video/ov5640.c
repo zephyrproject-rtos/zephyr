@@ -1170,6 +1170,7 @@ static int ov5640_init_controls(const struct device *dev)
 	ret = video_init_ctrl(&ctrls->auto_gain, dev, VIDEO_CID_AUTOGAIN,
 			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 1});
 	if (ret) {
+		LOG_ERR("Failed to initialize controls: %d", ret);
 		return ret;
 	}
 
