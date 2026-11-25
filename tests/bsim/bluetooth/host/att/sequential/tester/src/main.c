@@ -11,6 +11,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/buf.h>
 
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_raw.h>
@@ -40,11 +41,13 @@ LOG_MODULE_REGISTER(bt_tinyhost, LOG_LEVEL_INF);
 #define BT_ATT_OP_WRITE_CMD 0x52
 #define BT_L2CAP_CID_ATT    0x0004
 
+#define BT_ATT_OP_ERROR_RSP         0x01U
 #define BT_ATT_OP_PREPARE_WRITE_REQ 0x16U
 #define BT_ATT_OP_PREPARE_WRITE_RSP 0x17U
 #define BT_ATT_OP_EXEC_WRITE_REQ    0x18U
 #define BT_ATT_OP_EXEC_WRITE_RSP    0x19U
 #define BT_ATT_FLAG_CANCEL          0x00U
+#define BT_ATT_FLAG_EXEC            0x01U
 
 DEFINE_FLAG_STATIC(is_connected);
 DEFINE_FLAG_STATIC(flag_data_length_updated);
@@ -253,6 +256,82 @@ static void handle_att_exec_write(struct net_buf *buf)
 	(void)atomic_inc(&cancelled_writes);
 }
 
+/* What the tester does with the Prepare and Execute Write Requests of a test */
+struct queued_write_handlers {
+	void (*prepare)(struct net_buf *buf);
+	void (*exec)(struct net_buf *buf);
+};
+
+static const struct queued_write_handlers echo_handlers = {
+	.prepare = handle_att_prepare_write,
+	.exec = handle_att_exec_write,
+};
+
+static const struct queued_write_handlers *queued_writes = &echo_handlers;
+
+/* Long writes of the DUT, given one at a time */
+struct long_write_test {
+	/* Index of the Prepare Write Request to reject, or -1 */
+	atomic_val_t reject;
+	/* Flags of each Execute Write Request */
+	const uint8_t *flags;
+	/* Values queued when each Execute Write Request comes */
+	const uint8_t *queued;
+	/* Number of Execute Write Requests */
+	size_t count;
+};
+
+static const struct long_write_test *lw;
+static atomic_t lw_executes;
+static uint8_t lw_queued;
+
+static void handle_att_prepare_long_write(struct net_buf *buf)
+{
+	static atomic_t lw_prepares;
+	uint16_t handle = net_buf_pull_le16(buf);
+	uint16_t offset = net_buf_pull_le16(buf);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+
+	LOG_INF("Got prepare write for 0x%04x offset %u len %u", handle, offset, buf->len);
+
+	if (atomic_inc(&lw_prepares) == lw->reject) {
+		(void)net_buf_add_u8(rsp, BT_ATT_OP_ERROR_RSP);
+		(void)net_buf_add_u8(rsp, BT_ATT_OP_PREPARE_WRITE_REQ);
+		net_buf_add_le16(rsp, handle);
+		(void)net_buf_add_u8(rsp, BT_ATT_ERR_PREPARE_QUEUE_FULL);
+		send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+		return;
+	}
+
+	lw_queued++;
+
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_PREPARE_WRITE_RSP);
+	net_buf_add_le16(rsp, handle);
+	net_buf_add_le16(rsp, offset);
+	(void)net_buf_add_mem(rsp, buf->data, buf->len);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
+static void handle_att_exec_long_write(struct net_buf *buf)
+{
+	uint8_t flags = net_buf_pull_u8(buf);
+	atomic_val_t i = atomic_get(&lw_executes);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+
+	LOG_INF("Got execute write flags 0x%02x", flags);
+	TEST_ASSERT((size_t)i < lw->count, "Unexpected Execute Write Request");
+	TEST_ASSERT(flags == lw->flags[i], "Execute Write %ld with flags 0x%02x, want 0x%02x",
+		    (long)i, flags, lw->flags[i]);
+	TEST_ASSERT(lw_queued == lw->queued[i], "Execute Write %ld with %u values, want %u",
+		    (long)i, lw_queued, lw->queued[i]);
+
+	lw_queued = 0U;
+	(void)atomic_inc(&lw_executes);
+
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_EXEC_WRITE_RSP);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
 static void handle_att(struct net_buf *buf)
 {
 	uint8_t op = net_buf_pull_u8(buf);
@@ -265,10 +344,10 @@ static void handle_att(struct net_buf *buf)
 		handle_att_write(buf);
 		return;
 	case BT_ATT_OP_PREPARE_WRITE_REQ:
-		handle_att_prepare_write(buf);
+		queued_writes->prepare(buf);
 		return;
 	case BT_ATT_OP_EXEC_WRITE_REQ:
-		handle_att_exec_write(buf);
+		queued_writes->exec(buf);
 		return;
 	case BT_ATT_OP_WRITE_RSP:
 		LOG_INF("got ATT write RSP");
@@ -697,6 +776,60 @@ void test_procedure_1(void)
 	TEST_PASS("Tester done");
 }
 
+static void long_write(const struct long_write_test *test)
+{
+	static const struct queued_write_handlers long_write_handlers = {
+		.prepare = handle_att_prepare_long_write,
+		.exec = handle_att_exec_long_write,
+	};
+
+	lw = test;
+	queued_writes = &long_write_handlers;
+
+	init_tinyhost();
+
+	start_adv();
+	WAIT_FOR_FLAG(is_connected);
+	LOG_INF("connected");
+
+	WAIT_FOR_VAL(lw_executes, test->count);
+
+	TEST_PASS("Tester done");
+}
+
+/* The second Prepare Write Request is rejected: the value before it is cancelled */
+static void test_long_write_rejected(void)
+{
+	static const uint8_t flags[] = {BT_ATT_FLAG_CANCEL, BT_ATT_FLAG_EXEC};
+	static const uint8_t queued[] = {1, 3};
+	static const struct long_write_test test = {
+		.reject = 1, .flags = flags, .queued = queued, .count = ARRAY_SIZE(flags)};
+
+	long_write(&test);
+}
+
+/* The first Prepare Write Request is rejected: nothing is queued to cancel */
+static void test_long_write_first_rejected(void)
+{
+	static const uint8_t flags[] = {BT_ATT_FLAG_EXEC};
+	static const uint8_t queued[] = {3};
+	static const struct long_write_test test = {
+		.reject = 0, .flags = flags, .queued = queued, .count = ARRAY_SIZE(flags)};
+
+	long_write(&test);
+}
+
+/* The first value is queued, then the write fails: it is cancelled before the next write */
+static void test_long_write_cancel_deferred(void)
+{
+	static const uint8_t flags[] = {BT_ATT_FLAG_CANCEL, BT_ATT_FLAG_EXEC};
+	static const uint8_t queued[] = {1, 3};
+	static const struct long_write_test test = {
+		.reject = -1, .flags = flags, .queued = queued, .count = ARRAY_SIZE(flags)};
+
+	long_write(&test);
+}
+
 static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "tester",
@@ -705,6 +838,18 @@ static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "tester_long_write_echo",
 		.test_main_f = test_procedure_1,
+	},
+	{
+		.test_id = "tester_long_write_rejected",
+		.test_main_f = test_long_write_rejected,
+	},
+	{
+		.test_id = "tester_long_write_first_rejected",
+		.test_main_f = test_long_write_first_rejected,
+	},
+	{
+		.test_id = "tester_long_write_cancel_deferred",
+		.test_main_f = test_long_write_cancel_deferred,
 	},
 	BSTEST_END_MARKER,
 };
