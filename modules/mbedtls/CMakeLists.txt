@@ -77,10 +77,6 @@ if(CONFIG_MBEDTLS)
       target_compile_definitions(tfpsacrypto PRIVATE BUILDING_PSA_CRYPTO)
     endif()
 
-    # Add Mbed TLS libraries ("tfpsacrypto" and "mbedx509" are linked to "mbedtls")
-    # to ZEPHYR_LIBS list.
-    zephyr_append_cmake_library(mbedtls)
-
     # Add Mbed TLS public include directories to the "mbedtls_iface" interface library.
     target_include_directories(mbedtls_iface INTERFACE
       $<TARGET_PROPERTY:mbedtls,INTERFACE_INCLUDE_DIRECTORIES>
