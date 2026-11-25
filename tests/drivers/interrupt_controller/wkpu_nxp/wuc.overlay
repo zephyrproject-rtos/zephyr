@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&wkpu {
+	wkpu_wuc: wakeup-controller {
+		compatible = "nxp,s32-wkpu-wuc";
+		#wakeup-ctrl-cells = <1>;
+	};
+};

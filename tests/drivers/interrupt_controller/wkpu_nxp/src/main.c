@@ -26,6 +26,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/interrupt_controller/intc_wkpu_nxp_s32.h>
+#include <zephyr/drivers/wuc.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_s32_wkpu.h>
+#include <zephyr/irq.h>
 
 /* RM: WKPU wake-up source 1 == RTC timeout. */
 #define WKPU_RTC_TIMEOUT_SOURCE 1U
@@ -70,8 +73,8 @@ ZTEST(wkpu_nxp, test_rtc_timeout_triggers_wkpu)
 					WKPU_RTC_TIMEOUT_SOURCE, wkpu_callback, NULL);
 	zassert_ok(err, "wkpu_nxp_s32_set_callback() failed: %d", err);
 
-	wkpu_nxp_s32_enable_interrupt(wkpu, WKPU_RTC_TIMEOUT_SOURCE,
-				      WKPU_NXP_S32_RISING_EDGE);
+	zassert_ok(wkpu_nxp_s32_enable_interrupt(wkpu, WKPU_RTC_TIMEOUT_SOURCE,
+						WKPU_NXP_S32_RISING_EDGE));
 
 	/* Program an RTC compare a few seconds out on the RTCVAL channel. The
 	 * counter is free-running from driver init.
@@ -100,4 +103,79 @@ ZTEST(wkpu_nxp, test_rtc_timeout_triggers_wkpu)
 		      fired_source, WKPU_RTC_TIMEOUT_SOURCE);
 }
 
-ZTEST_SUITE(wkpu_nxp, NULL, NULL, NULL, NULL, NULL);
+#if defined(CONFIG_WUC_NXP_S32_WKPU)
+static const struct wuc_dt_spec rtc_wuc = {
+	.dev = DEVICE_DT_GET(DT_NODELABEL(wkpu_wuc)),
+	.id = NXP_S32_WKPU_SOURCE(WKPU_RTC_TIMEOUT_SOURCE, NXP_S32_WKPU_EDGE_RISING),
+};
+
+static void arm_rtc_alarm(void)
+{
+	struct counter_alarm_cfg alarm = {
+		.callback = rtc_alarm_callback,
+		.ticks = counter_us_to_ticks(rtc, 3000000U),
+	};
+
+	zassert_ok(counter_set_channel_alarm(rtc, RTC_ALARM_CHANNEL, &alarm));
+}
+
+ZTEST(wkpu_nxp, test_wuc_retains_status_after_irq)
+{
+	zassert_true(device_is_ready(rtc_wuc.dev));
+	zassert_ok(wkpu_nxp_s32_set_callback(wkpu, WKPU_RTC_TIMEOUT_SOURCE,
+					   WKPU_RTC_TIMEOUT_SOURCE, wkpu_callback, NULL));
+	zassert_ok(wuc_enable_wakeup_source_dt(&rtc_wuc));
+	zassert_ok(wkpu_nxp_s32_enable_interrupt(wkpu, WKPU_RTC_TIMEOUT_SOURCE,
+						WKPU_NXP_S32_RISING_EDGE));
+	arm_rtc_alarm();
+	zassert_ok(k_sem_take(&wkpu_sem, K_SECONDS(10)));
+	zassert_equal(fired_source, WKPU_RTC_TIMEOUT_SOURCE);
+	zassert_equal(wuc_check_wakeup_source_triggered_dt(&rtc_wuc), 1);
+	zassert_ok(wuc_clear_wakeup_source_triggered_dt(&rtc_wuc));
+	zassert_equal(wuc_check_wakeup_source_triggered_dt(&rtc_wuc), 0);
+}
+
+ZTEST(wkpu_nxp, test_wuc_without_active_irq)
+{
+	bool triggered;
+
+	zassert_true(device_is_ready(rtc_wuc.dev));
+	zassert_ok(wuc_enable_wakeup_source_dt(&rtc_wuc));
+	arm_rtc_alarm();
+	/* Keep the originating peripheral's status until WUC has sampled it. */
+	irq_disable(DT_IRQN(DT_NODELABEL(rtc)));
+	triggered = WAIT_FOR(wuc_check_wakeup_source_triggered_dt(&rtc_wuc) == 1,
+			     5000000U, k_usleep(1000));
+	irq_enable(DT_IRQN(DT_NODELABEL(rtc)));
+
+	zassert_true(triggered, "RTC event was not visible with the WKPU IRQ disabled");
+	zassert_equal(wkpu_nxp_s32_get_pending(wkpu), 0U);
+	zassert_equal(wuc_check_wakeup_source_triggered_dt(&rtc_wuc), 1);
+	zassert_ok(wuc_clear_wakeup_source_triggered_dt(&rtc_wuc));
+	zassert_equal(wuc_check_wakeup_source_triggered_dt(&rtc_wuc), 0);
+}
+#endif
+
+static void before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+	zassert_true(device_is_ready(wkpu));
+	zassert_true(device_is_ready(rtc));
+	k_sem_reset(&wkpu_sem);
+	fired_source = 0xffU;
+}
+
+static void after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+	irq_enable(DT_IRQN(DT_NODELABEL(rtc)));
+	wkpu_nxp_s32_disable_interrupt(wkpu, WKPU_RTC_TIMEOUT_SOURCE);
+	wkpu_nxp_s32_unset_callback(wkpu, WKPU_RTC_TIMEOUT_SOURCE);
+	zassert_ok(counter_cancel_channel_alarm(rtc, RTC_ALARM_CHANNEL));
+#if defined(CONFIG_WUC_NXP_S32_WKPU)
+	zassert_ok(wuc_disable_wakeup_source_dt(&rtc_wuc));
+	zassert_ok(wuc_clear_wakeup_source_triggered_dt(&rtc_wuc));
+#endif
+}
+
+ZTEST_SUITE(wkpu_nxp, NULL, NULL, before, after, NULL);

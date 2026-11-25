@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/wuc/wuc_nxp_s32_wkpu.h>
+
+/ {
+	zephyr,user {
+		wakeup-ctrls = <&wkpu_wuc NXP_S32_WKPU_SOURCE(0, NXP_S32_WKPU_EDGE_RISING)>,
+			       <&wkpu_wuc NXP_S32_WKPU_SOURCE(31, NXP_S32_WKPU_EDGE_FALLING)>,
+			       <&wkpu_wuc NXP_S32_WKPU_SOURCE(32, NXP_S32_WKPU_EDGE_BOTH)>,
+			       <&wkpu_wuc NXP_S32_WKPU_SOURCE(63, NXP_S32_WKPU_EDGE_RISING)>;
+	};
+};
+
+&wkpu {
+	status = "okay";
+
+	wkpu_wuc: wakeup-controller {
+		compatible = "nxp,s32-wkpu-wuc";
+		#wakeup-ctrl-cells = <1>;
+	};
+};
