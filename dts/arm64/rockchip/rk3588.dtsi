@@ -157,6 +157,18 @@
 		};
 	};
 
+	gpio0: gpio@fd8a0000 {
+		compatible = "rockchip,rk3588-gpio";
+		reg = <0xfd8a0000 0x100>;
+		interrupts = <GIC_SPI 277 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&cru_clk PCLK_GPIO0>, <&cru_clk DBCLK_GPIO0>;
+		clock-names = "bus", "dbclk";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
 	gmac0: ethernet@fe1b0000 {
 		compatible = "rockchip,rk3588-gmac", "snps,dwmac";
 		reg = <0xfe1b0000 0x10000>;
@@ -264,6 +276,54 @@
 		interrupts = <GIC_SPI 338 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		reg-shift = <2>;
 		/* Supply clock-frequency or clocks and current-speed before enabling. */
+		status = "disabled";
+	};
+
+	gpio1: gpio@fec20000 {
+		compatible = "rockchip,rk3588-gpio";
+		reg = <0xfec20000 0x100>;
+		interrupts = <GIC_SPI 278 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&cru_clk PCLK_GPIO1>, <&cru_clk DBCLK_GPIO1>;
+		clock-names = "bus", "dbclk";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	gpio2: gpio@fec30000 {
+		compatible = "rockchip,rk3588-gpio";
+		reg = <0xfec30000 0x100>;
+		interrupts = <GIC_SPI 279 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&cru_clk PCLK_GPIO2>, <&cru_clk DBCLK_GPIO2>;
+		clock-names = "bus", "dbclk";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	gpio3: gpio@fec40000 {
+		compatible = "rockchip,rk3588-gpio";
+		reg = <0xfec40000 0x100>;
+		interrupts = <GIC_SPI 280 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&cru_clk PCLK_GPIO3>, <&cru_clk DBCLK_GPIO3>;
+		clock-names = "bus", "dbclk";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "disabled";
+	};
+
+	gpio4: gpio@fec50000 {
+		compatible = "rockchip,rk3588-gpio";
+		reg = <0xfec50000 0x100>;
+		interrupts = <GIC_SPI 281 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&cru_clk PCLK_GPIO4>, <&cru_clk DBCLK_GPIO4>;
+		clock-names = "bus", "dbclk";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
 		status = "disabled";
 	};
 };
