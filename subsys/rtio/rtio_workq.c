@@ -11,7 +11,7 @@
 K_MEM_SLAB_DEFINE_STATIC_TYPE(rtio_work_items_slab,
 			      struct rtio_work_req,
 			      CONFIG_RTIO_WORKQ_POOL_ITEMS);
-static K_THREAD_STACK_ARRAY_DEFINE(rtio_workq_threads_stack,
+static K_KERNEL_STACK_ARRAY_DEFINE(rtio_workq_threads_stack,
 				   CONFIG_RTIO_WORKQ_THREADS_POOL,
 				   CONFIG_RTIO_WORKQ_THREADS_POOL_STACK_SIZE);
 static struct k_thread rtio_work_threads[CONFIG_RTIO_WORKQ_THREADS_POOL];
