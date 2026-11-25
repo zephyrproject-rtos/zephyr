@@ -44,6 +44,7 @@ tests:
       - nucleo_f746zg
       - nucleo_g071rb
       - nucleo_g474re
+      - nucleo_g564re
       - nucleo_h743zi
       - nucleo_h753zi
       - nucleo_l073rz
