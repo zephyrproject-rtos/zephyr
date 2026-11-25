@@ -35,6 +35,14 @@
 		};
 	};
 
+	pinmux_lpcmp0: pinmux_lpcmp0 {
+		group0 {
+			pinmux = <ACMP0_IN3_P2_15>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_aon_lpuart0: pinmux_aon_lpuart0 {
 		group0 {
 			pinmux = <AON_LPUART0_TX_P0_6>,
@@ -122,6 +130,14 @@
 			slew-rate = "fast";
 			drive-open-drain;
 			input-enable;
+		};
+	};
+
+	pinmux_aon_lpcmp0: pinmux_aon_lpcmp0 {
+		group0 {
+			pinmux = <AON_ACMP0_IN3_P0_4>;
+			drive-strength = "low";
+			slew-rate = "fast";
 		};
 	};
 
