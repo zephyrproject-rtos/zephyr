@@ -26,7 +26,7 @@ static enum SOCKET_SERVICE_THREAD_STATUS thread_status;
 #define SOCKET_SERVICE_CLOSE INT16_MIN
 
 static K_MUTEX_DEFINE(lock);
-static K_CONDVAR_DEFINE(wait_start);
+static K_CONDVAR_DEFINE(status_changed);
 
 STRUCT_SECTION_START_EXTERN(net_socket_service_desc);
 STRUCT_SECTION_END_EXTERN(net_socket_service_desc);
@@ -69,8 +69,8 @@ static void register_svc_close_events(const struct net_socket_service_desc *svc)
  */
 static int validate_svc(const struct net_socket_service_desc *svc)
 {
-	if (thread_status == SOCKET_SERVICE_THREAD_UNINITIALIZED) {
-		(void)k_condvar_wait(&wait_start, &lock, K_FOREVER);
+	while (thread_status == SOCKET_SERVICE_THREAD_UNINITIALIZED) {
+		(void)k_condvar_wait(&status_changed, &lock, K_FOREVER);
 	}
 
 	if (thread_status != SOCKET_SERVICE_THREAD_RUNNING) {
@@ -308,6 +308,17 @@ static int trigger_work(struct zsock_pollfd *pev)
 	return call_work(pev, event);
 }
 
+/* The lock keeps a thread that has checked the status, but does not wait for
+ * the start yet, from missing the wake-up.
+ */
+static void set_thread_status(enum SOCKET_SERVICE_THREAD_STATUS status)
+{
+	k_mutex_lock(&lock, K_FOREVER);
+	thread_status = status;
+	k_condvar_broadcast(&status_changed);
+	k_mutex_unlock(&lock);
+}
+
 static void socket_service_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
@@ -358,9 +369,8 @@ static void socket_service_thread(void *p1, void *p2, void *p3)
 	svc_ctx.events[0].fd = fd;
 	svc_ctx.events[0].events = ZSOCK_POLLIN;
 
-	/* A woken up registrant may run at once and write to the eventfd. */
-	thread_status = SOCKET_SERVICE_THREAD_RUNNING;
-	k_condvar_broadcast(&wait_start);
+	/* A registrant writes to the eventfd once it sees the thread running. */
+	set_thread_status(SOCKET_SERVICE_THREAD_RUNNING);
 
 restart:
 	i = 1;
@@ -436,13 +446,12 @@ restart:
 
 out:
 	NET_DBG("Socket service thread stopped");
-	thread_status = SOCKET_SERVICE_THREAD_STOPPED;
+	set_thread_status(SOCKET_SERVICE_THREAD_STOPPED);
 
 	return;
 
 fail:
-	thread_status = SOCKET_SERVICE_THREAD_FAILED;
-	k_condvar_broadcast(&wait_start);
+	set_thread_status(SOCKET_SERVICE_THREAD_FAILED);
 }
 
 static int init_socket_service(void)
