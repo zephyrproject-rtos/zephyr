@@ -401,8 +401,8 @@ int coap_client_reregister_observe(struct coap_client *client, struct coap_clien
  *            coap_client_reregister_observe().
  * @param etag ETag of the representation the application holds; may be NULL
  *             when @p etag_len is 0.
- * @param etag_len Length of @p etag, at most @ref COAP_ETAG_MAX_LEN. With 0
- *                 the refresh carries no ETag Option, not those of the
+ * @param etag_len Length of @p etag, at most 8 bytes (@rfc{7252,section-5.10.6}).
+ *                 With 0 the refresh carries no ETag Option, not those of the
  *                 registration either.
  *
  * @retval 0 Success.
