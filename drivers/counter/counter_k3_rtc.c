@@ -134,7 +134,7 @@ static int k3_counter_stop(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	/* RTC counter can only be reset, not stopped */
-	return 0;
+	return -ENOTSUP;
 }
 
 static int k3_counter_get_value(const struct device *dev, uint32_t *ticks)
