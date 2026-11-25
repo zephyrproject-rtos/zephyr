@@ -18,3 +18,26 @@ if(CONFIG_BUILD_WITH_TFA)
 endif()
 
 include(${ZEPHYR_BASE}/boards/common/xsdb.board.cmake)
+
+# QEMU emulation uses the Xilinx arm-generic-fdt machine and a hardware device
+# tree ("hw-dtb") built by CMakeLists.txt from the optional Xilinx/qemu-devicetrees
+# west module (group "optional"). It is enabled only when that module is present.
+# The Xilinx QEMU is shipped by the Zephyr SDK as qemu-system-xilinx-aarch64.
+if(EXISTS "${WEST_TOPDIR}/modules/hal/qemu_devicetrees/Makefile")
+  set(SUPPORTED_EMU_PLATFORMS qemu)
+  set(QEMU_BINARY_SUFFIX xilinx-aarch64)
+  set(QEMU_CPU_TYPE cortex-a53)
+
+  set(QEMU_BOARD_FLAGS
+    -machine arm-generic-fdt
+    -hw-dtb ${PROJECT_BINARY_DIR}/${BOARD}-qemu.dtb
+    # CRF_APB RST_FPD_APU (0xfd1a0104): release A53 core 0 from reset
+    -device loader,addr=0xfd1a0104,data=0x8000000e,data-len=4
+    -nographic
+    -m 4g
+  )
+
+  set(QEMU_KERNEL_OPTION
+    -device loader,cpu-num=0,file=\$<TARGET_FILE:\${logical_target_for_zephyr_elf}>
+  )
+endif()
