@@ -336,6 +336,11 @@ config LINKER_USE_RELAX
 	  Disabling it can reduce performance, as the linker is no longer able to substiture long /
 	  in-effective jump calls to shorter / more effective instructions.
 
+config LINKER_LLD
+	bool
+	help
+	  Hidden symbol selected by toolchains when the LLVM lld or a LLVM lld based linker is used.
+
 endmenu # "Linker Sections"
 
 config LINKER_ITERABLE_SUBALIGN
