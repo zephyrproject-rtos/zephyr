@@ -21,6 +21,7 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		rtc = &counter_rtc;
 	};
 
 	chosen {
@@ -216,5 +217,14 @@
 };
 
 &crc {
+	status = "okay";
+};
+
+&rtc {
+	run-in-debug;
+	status = "okay";
+};
+
+&counter_rtc {
 	status = "okay";
 };
