@@ -12,6 +12,7 @@
 #define XENLIB_OSAL_PLATFORM_H
 
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
@@ -25,6 +26,14 @@
 #include <zephyr/shell/shell.h>
 
 #define XENLIB_OSAL_MAYBE_UNUSED __maybe_unused
+
+/** Memory mapping cache attributes. */
+#define XENLIB_OSAL_MEM_CACHE_NC K_MEM_CACHE_NONE
+#define XENLIB_OSAL_MEM_CACHE_WB K_MEM_CACHE_WB
+
+/** Memory mapping access attributes. */
+#define XENLIB_OSAL_MEM_PERM_RO 0U
+#define XENLIB_OSAL_MEM_PERM_RW K_MEM_PERM_RW
 
 /**
  * Shell text color constants.
