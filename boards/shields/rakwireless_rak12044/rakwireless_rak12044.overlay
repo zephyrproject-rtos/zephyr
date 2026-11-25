@@ -1,0 +1,45 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	aliases {
+		magn-sensor = &drv5056_rak12044;
+	};
+
+	drv5056_rak12044: drv5056 {
+		compatible = "ti,drv505x";
+		io-channels = <&adc121c021_rak12044 0>;
+		sensitivity-microvolts-per-millitesla = <15000>;
+		quiescent-microvolts = <600000>;
+	};
+};
+
+&wisblock_3v3_s {
+	status = "okay";
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	adc121c021_rak12044: adc@56 {
+		compatible = "ti,adc121c021";
+		reg = <0x56>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#io-channel-cells = <1>;
+		power-domains = <&wisblock_3v3_s>;
+
+		channel@0 {
+			reg = <0>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_VDD_1";
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,resolution = <12>;
+			zephyr,vref-mv = <3300>;
+		};
+	};
+};
