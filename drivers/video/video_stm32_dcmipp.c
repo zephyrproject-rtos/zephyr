@@ -101,6 +101,7 @@ struct stm32_dcmipp_pipe_data {
 	bool overrun;
 	/* Frames dropped after an overrun since the stream started */
 	uint32_t overruns;
+	struct k_poll_signal *sig;
 };
 
 /* Overrun flag of each pipe */
@@ -242,6 +243,15 @@ static void stm32_dcmipp_queue_buffer(struct stm32_dcmipp_pipe_data *pipe,
 	}
 }
 
+/* Tell the application what became of a buffer */
+static void stm32_dcmipp_raise_signal(struct stm32_dcmipp_pipe_data *pipe,
+				      enum video_signal_result result)
+{
+	if (IS_ENABLED(CONFIG_POLL) && pipe->sig != NULL) {
+		k_poll_signal_raise(pipe->sig, result);
+	}
+}
+
 /* The frame in the active buffer lost data in an overrun: capture into the buffer again */
 static void stm32_dcmipp_drop_active(DCMIPP_HandleTypeDef *hdcmipp,
 				     struct stm32_dcmipp_pipe_data *pipe)
@@ -255,6 +265,7 @@ static void stm32_dcmipp_drop_active(DCMIPP_HandleTypeDef *hdcmipp,
 	if (vbuf != NULL) {
 		pipe->overruns++;
 		stm32_dcmipp_queue_buffer(pipe, vbuf);
+		stm32_dcmipp_raise_signal(pipe, VIDEO_BUF_ERROR);
 	}
 }
 
@@ -310,6 +321,8 @@ void HAL_DCMIPP_PIPE_FrameEventCallback(DCMIPP_HandleTypeDef *hdcmipp, uint32_t 
 
 	k_fifo_put(&pipe->fifo_out, pipe->active);
 	pipe->active = NULL;
+
+	stm32_dcmipp_raise_signal(pipe, VIDEO_BUF_DONE);
 }
 
 /* Callback getting called for each vsync */
@@ -1470,6 +1483,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	while ((vbuf = k_fifo_get(&pipe->fifo_in, K_NO_WAIT)) != NULL) {
 		vbuf->bytesused = 0;
 		k_fifo_put(&pipe->fifo_out, vbuf);
+		stm32_dcmipp_raise_signal(pipe, VIDEO_BUF_ABORTED);
 	}
 
 	pipe->state = STM32_DCMIPP_STOPPED;
@@ -1504,6 +1518,21 @@ static int stm32_dcmipp_enqueue(const struct device *dev, struct video_buffer *v
 
 	return 0;
 }
+
+#ifdef CONFIG_POLL
+static int stm32_dcmipp_set_signal(const struct device *dev, struct k_poll_signal *sig)
+{
+	struct stm32_dcmipp_pipe_data *pipe = dev->data;
+
+	if (pipe->sig != NULL && sig != NULL) {
+		return -EALREADY;
+	}
+
+	pipe->sig = sig;
+
+	return 0;
+}
+#endif
 
 static int stm32_dcmipp_dequeue(const struct device *dev, struct video_buffer **vbuf,
 				k_timeout_t timeout)
@@ -1808,6 +1837,9 @@ static DEVICE_API(video, stm32_dcmipp_driver_api) = {
 	.set_stream = stm32_dcmipp_set_stream,
 	.enqueue = stm32_dcmipp_enqueue,
 	.dequeue = stm32_dcmipp_dequeue,
+#ifdef CONFIG_POLL
+	.set_signal = stm32_dcmipp_set_signal,
+#endif
 	.get_caps = stm32_dcmipp_get_caps,
 	.get_frmival = stm32_dcmipp_get_frmival,
 	.set_frmival = stm32_dcmipp_set_frmival,
