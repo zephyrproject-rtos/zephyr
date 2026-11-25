@@ -4,7 +4,7 @@
 
 if(DEFINED TOOLCHAIN_HOME)
   set(find_program_clang_args PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-  set(find_program_binutils_args PATHS ${TOOLCHAIN_HOME})
+  set(find_program_binutils_args HINTS ${TOOLCHAIN_HOME})
 endif()
 
 # Extract the clang version.  Debian (maybe other distros?) will
@@ -32,7 +32,7 @@ find_program(CMAKE_READELF NAMES
                            readelf
                            ${find_program_binutils_args})
 
-find_program(CMAKE_GDB     gdb  PATHS ${find_program_binutils_args})
+find_program(CMAKE_GDB     gdb  ${find_program_binutils_args})
 
 # Use the gnu binutil abstraction
 include(${ZEPHYR_BASE}/cmake/bintools/llvm/target_bintools.cmake)
