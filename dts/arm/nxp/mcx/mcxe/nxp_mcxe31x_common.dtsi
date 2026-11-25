@@ -198,6 +198,7 @@
 		compatible = "nxp,lcu";
 		reg = <0x98000 0x2c8>;
 		interrupts = <92 0>;
+		clocks = <&mc_cgm MCUX_LCU0_CLK>;
 		status = "disabled";
 	};
 
@@ -205,6 +206,7 @@
 		compatible = "nxp,lcu";
 		reg = <0x9c000 0x2c8>;
 		interrupts = <93 0>;
+		clocks = <&mc_cgm MCUX_LCU1_CLK>;
 		status = "disabled";
 	};
 
