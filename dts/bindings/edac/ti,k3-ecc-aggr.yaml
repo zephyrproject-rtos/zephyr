@@ -1,0 +1,22 @@
+# Copyright (c) 2026 BeagleBoard.org Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments K3 ECC Aggregator.
+
+  Collects single-error-correctable (SEC) and double-error-detectable (DED)
+  events from one or more ECC-protected memories. Exposed through the Zephyr
+  EDAC API for status polling, clear, and optional interrupt notification.
+
+compatible: "ti,k3-ecc-aggr"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    description: |
+      Optional aggregator interrupt (SEC and/or DED). When omitted the driver
+      operates in poll-only mode.

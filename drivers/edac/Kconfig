@@ -47,6 +47,7 @@ config EDAC_NXP_MECC
 	  standard EDAC interface.
 
 source "drivers/edac/Kconfig.mcux_erm"
+source "drivers/edac/Kconfig.ti_k3_ecc_aggr"
 module = EDAC
 module-str = edac
 source "subsys/logging/Kconfig.template.log_config"
