@@ -53,6 +53,24 @@
 	status = "okay";
 };
 
+/*
+ * CPU0 sets up the clock tree; CPU1 only gates peripheral clocks and
+ * reads their rates, see CONFIG_CLOCK_CONTROL_NXP_MC_CGM_INIT.
+ */
+&mc_cgm {
+	max-ido-change = <50>;
+	step-duration = <1>;
+	clk-src-freq = <160000000>;
+	mux-0-dc-0-div = <1>;
+	mux-0-dc-1-div = <2>;
+	mux-0-dc-2-div = <4>;
+	mux-0-dc-3-div = <2>;
+	mux-0-dc-4-div = <4>;
+	mux-0-dc-5-div = <4>;
+	mux-0-dc-6-div = <1>;
+	status = "okay";
+};
+
 &firc {
 	firc-div = "UnDiv";
 	status = "okay";
