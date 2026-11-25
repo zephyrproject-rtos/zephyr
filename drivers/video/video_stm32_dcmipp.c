@@ -604,13 +604,27 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 		return -EINVAL;
 	}
 
-	if (fmt->width != pipe->compose.width || fmt->height != pipe->compose.height) {
-		LOG_ERR("Format width/height (%d x %d) do not match compose width/height (%d x %d)",
-			fmt->width, fmt->height, pipe->compose.width, pipe->compose.height);
-		return -EINVAL;
+	stm32_dcmipp_compute_fmt_pitch(pipe->id, fmt);
+
+	/* Setting the format resets the cropping */
+	ret = video_set_selection(dev, &(struct video_selection){
+		.type = VIDEO_BUF_TYPE_OUTPUT, .target = VIDEO_SEL_TGT_CROP,
+		.rect.width = fmt->width, .rect.height = fmt->height,
+	});
+	if (ret < 0) {
+		LOG_ERR("Failed to reset %s crop configuration: %d", dev->name, ret);
+		return ret;
 	}
 
-	stm32_dcmipp_compute_fmt_pitch(pipe->id, fmt);
+	/* Setting the format resets the composing */
+	ret = video_set_selection(dev, &(struct video_selection){
+		.type = VIDEO_BUF_TYPE_OUTPUT, .target = VIDEO_SEL_TGT_COMPOSE,
+		.rect.width = fmt->width, .rect.height = fmt->height,
+	});
+	if (ret < 0) {
+		LOG_ERR("Failed to reset %s compose configuration: %d", dev->name, ret);
+		return ret;
+	}
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
 
