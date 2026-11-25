@@ -34,6 +34,28 @@ static inline struct sx126x_hal_data *get_hal_data(const struct device *dev)
 	return &data->hal;
 }
 
+/*
+ * Enable the SMPS clock detection (SUBGHZ_SMPSC0R.CLKDE). It is off after a
+ * radio reset and must be on before the SMPS is enabled, either by the radio
+ * (SetRegulatorMode) or by the CPU (PWR_CR5.SMPSEN): if the SMPS clock stops
+ * while the SMPS runs, the detection switches back to the LDO, without it the
+ * device may be damaged. The other bits are kept at their reset value.
+ */
+static int sx126x_hal_enable_smps_clock_detection(const struct device *dev)
+{
+	uint8_t val;
+	int ret;
+
+	ret = sx126x_hal_read_regs(dev, SX126X_REG_STM32WL_SMPSC0R, &val, 1);
+	if (ret < 0) {
+		return ret;
+	}
+
+	val |= SX126X_STM32WL_SMPSC0R_CLKDE;
+
+	return sx126x_hal_write_regs(dev, SX126X_REG_STM32WL_SMPSC0R, &val, 1);
+}
+
 int sx126x_hal_reset(const struct device *dev)
 {
 	int ret;
@@ -52,6 +74,13 @@ int sx126x_hal_reset(const struct device *dev)
 	ret = sx126x_hal_wakeup(dev);
 	if (ret < 0) {
 		LOG_ERR("Wakeup failed: %d", ret);
+		return ret;
+	}
+
+	/* The reset cleared CLKDE; set it before anything can select the SMPS. */
+	ret = sx126x_hal_enable_smps_clock_detection(dev);
+	if (ret < 0) {
+		LOG_ERR("SMPS clock detection enable failed: %d", ret);
 		return ret;
 	}
 
