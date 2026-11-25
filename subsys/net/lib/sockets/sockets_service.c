@@ -352,7 +352,7 @@ static void socket_service_thread(void *p1, void *p2, void *p3)
 	if (fd < 0) {
 		fd = -errno;
 		NET_ERR("zvfs_eventfd failed (%d)", fd);
-		goto out;
+		goto fail;
 	}
 
 	svc_ctx.events[0].fd = fd;
