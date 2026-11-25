@@ -207,7 +207,7 @@ ZTEST(test_hci_codecs_info, test_read_codec_capabilities)
 		      "Reading codec capabilities count failed");
 	ptr = &rp->capabilities[0];
 	zassert_mem_equal(ptr, codec_capabilities, sizeof(codec_capabilities),
-			  0, "Reading codec capabilities content failed");
+			  "Reading codec capabilities content failed");
 
 	net_buf_unref(rsp);
 }
