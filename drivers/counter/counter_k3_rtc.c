@@ -526,6 +526,21 @@ static void k3_rtc_isr(const struct device *dev)
 
 	status = rtc_regs->IRQSTATUS_SYS & RTC_IRQ_STATUS_MASK;
 	if (status == 0) {
+		uint32_t raw = rtc_regs->IRQSTATUS_RAW_SYS & RTC_IRQ_STATUS_MASK;
+
+		if (raw != 0U) {
+			/*
+			 * Raw latched but enable-gated SYS is clear: ack raw/sys so
+			 * a level line can deassert (Linux clears IRQSTATUS_SYS).
+			 */
+			rtc_regs->IRQSTATUS_SYS = raw;
+		}
+		/*
+		 * Shared RTC_EVENT line can still assert without our enables
+		 * (e.g. while Linux also owns the IP). Disable VIM to avoid a
+		 * level-triggered interrupt storm until the next set_alarm.
+		 */
+		irq_disable(config->irq_num);
 		return;
 	}
 
