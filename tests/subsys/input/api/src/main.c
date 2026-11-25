@@ -29,7 +29,7 @@ static void input_cb_filtered(struct input_event *evt, void *user_data)
 
 	k_sem_give(&cb_start);
 }
-INPUT_CALLBACK_DEFINE(&fake_dev, input_cb_filtered, NULL);
+struct input_callback input_callback_filtered;
 
 static void input_cb_unfiltered(struct input_event *evt, void *user_data)
 {
@@ -37,7 +37,7 @@ static void input_cb_unfiltered(struct input_event *evt, void *user_data)
 
 	message_count_unfiltered++;
 
-	if (message_count_unfiltered == CONFIG_INPUT_QUEUE_MAX_MSGS + 1) {
+	if (message_count_unfiltered >= CONFIG_INPUT_QUEUE_MAX_MSGS + 1) {
 		TC_PRINT("cb: done\n");
 		k_sem_give(&cb_done);
 	}
@@ -49,6 +49,8 @@ ZTEST(input_api, test_sequence_thread)
 {
 	int i;
 	int ret;
+
+	input_add_callback(&input_callback_filtered, &fake_dev, input_cb_filtered, NULL);
 
 	message_count_filtered = 0;
 	message_count_unfiltered = 0;
@@ -82,6 +84,16 @@ ZTEST(input_api, test_sequence_thread)
 
 	zassert_equal(message_count_filtered, CONFIG_INPUT_QUEUE_MAX_MSGS);
 	zassert_equal(message_count_unfiltered, CONFIG_INPUT_QUEUE_MAX_MSGS + 1);
+
+	input_remove_callback(&input_callback_filtered);
+
+	ret = input_report_key(&fake_dev, 0, 1, false, K_FOREVER);
+	zassert_equal(ret, 0, "ret: %d", ret);
+
+	k_sem_take(&cb_done, K_FOREVER);
+
+	zassert_equal(message_count_filtered, CONFIG_INPUT_QUEUE_MAX_MSGS);
+	zassert_equal(message_count_unfiltered, CONFIG_INPUT_QUEUE_MAX_MSGS + 2);
 }
 
 #else /* CONFIG_INPUT_MODE_THREAD */
@@ -92,7 +104,7 @@ static void input_cb_filtered(struct input_event *evt, void *user_data)
 		message_count_filtered++;
 	}
 }
-INPUT_CALLBACK_DEFINE(&fake_dev, input_cb_filtered, NULL);
+struct input_callback input_callback_filtered;
 
 static void input_cb_unfiltered(struct input_event *evt, void *user_data)
 {
@@ -103,6 +115,8 @@ INPUT_CALLBACK_DEFINE(NULL, input_cb_unfiltered, NULL);
 ZTEST(input_api, test_synchronous)
 {
 	int ret;
+
+	input_add_callback(&input_callback_filtered, &fake_dev, input_cb_filtered, NULL);
 
 	message_count_filtered = 0;
 	message_count_unfiltered = 0;
@@ -115,6 +129,14 @@ ZTEST(input_api, test_synchronous)
 
 	zassert_equal(message_count_filtered, 1);
 	zassert_equal(message_count_unfiltered, 2);
+
+	input_remove_callback(&input_callback_filtered);
+
+	ret = input_report_key(&fake_dev, 0, 1, false, K_FOREVER);
+	zassert_equal(ret, 0, "ret: %d", ret);
+
+	zassert_equal(message_count_filtered, 1);
+	zassert_equal(message_count_unfiltered, 3);
 }
 
 static struct input_event last_event;

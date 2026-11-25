@@ -18,10 +18,50 @@ K_MSGQ_DEFINE_STATIC_TYPE(input_msgq, struct input_event, CONFIG_INPUT_QUEUE_MAX
 
 #endif
 
+static sys_slist_t callbacks;
+
+void input_add_callback(struct input_callback *callback, const struct device *dev,
+			input_callback_handler_t handler, void *user_data)
+{
+	__ASSERT(callback, "Callback pointer should not be NULL");
+	__ASSERT(handler, "Callback handler pointer should not be NULL");
+
+	callback->dev = dev;
+	callback->callback = handler;
+	callback->user_data = user_data;
+
+	sys_slist_prepend(&callbacks, &callback->node);
+}
+
+int input_remove_callback(struct input_callback *callback)
+{
+	__ASSERT(callback, "No callback!");
+
+	if (sys_slist_is_empty(&callbacks)) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&callbacks, &callback->node)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static void input_process(struct input_event *evt)
 {
 	STRUCT_SECTION_FOREACH(input_callback, callback) {
 		if (callback->dev == NULL || callback->dev == evt->dev) {
+			callback->callback(evt, callback->user_data);
+		}
+	}
+
+	struct input_callback *callback, *tmp;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&callbacks, callback, tmp, node) {
+		if (callback->dev == NULL || callback->dev == evt->dev) {
+			__ASSERT(callback->callback, "No callback handler!");
+
 			callback->callback(evt, callback->user_data);
 		}
 	}
