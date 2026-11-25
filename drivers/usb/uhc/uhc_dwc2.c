@@ -203,6 +203,30 @@ static void ch_data_reset_toggle(struct uhc_dwc2_data *priv, struct usb_device *
 	}
 }
 
+/* Free the state of all non-control endpoints of a device not used by a channel */
+static void ch_data_release(struct uhc_dwc2_data *priv, struct usb_device *udev)
+{
+	for (uint8_t idx = 0; idx < ARRAY_SIZE(priv->ch_data); idx++) {
+		struct uhc_dwc2_channel_data *data = &priv->ch_data[idx];
+		bool in_use = false;
+
+		if (data->udev != udev || USB_EP_GET_IDX(data->ep) == 0U) {
+			continue;
+		}
+
+		for (uint32_t ch_idx = 0; ch_idx < priv->numhstchnl; ch_idx++) {
+			if (priv->ch[ch_idx].data == data) {
+				in_use = true;
+				break;
+			}
+		}
+
+		if (!in_use) {
+			data->udev = NULL;
+		}
+	}
+}
+
 static inline uint32_t calc_packet_count(const uint32_t size, const uint16_t mps)
 {
 	if (size == 0) {
@@ -1371,6 +1395,13 @@ static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *const
 		    sys_le16_to_cpu(setup->wValue) == USB_SFS_ENDPOINT_HALT) {
 			ch_data_reset_toggle(uhc_get_private(dev), xfer->udev,
 					     (uint8_t)sys_le16_to_cpu(setup->wIndex));
+		}
+
+		/* Setting a configuration returns all endpoints of the device to DATA0 */
+		if (setup->RequestType.type == USB_REQTYPE_TYPE_STANDARD &&
+		    setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_DEVICE &&
+		    setup->bRequest == USB_SREQ_SET_CONFIGURATION) {
+			ch_data_release(uhc_get_private(dev), xfer->udev);
 		}
 		break;
 	case USB_EP_TYPE_BULK:
