@@ -81,8 +81,10 @@ config SOC_VENDOR_SILABS_HAS_RADIO_CTE_RX
 		SOC_VENDOR_SILABS_HAS_RADIO_CTE_TX
 
 # Bluetooth 6.0
+# RAIL has Channel Sounding PHYs only for a 40 MHz HFXO crystal.
 config SOC_VENDOR_SILABS_HAS_RADIO_CS
-	def_bool $(dt_nodelabel_bool_prop,radio,ble-cs-supported)
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-cs-supported) && \
+		"$(dt_nodelabel_int_prop,hfxo,clock-frequency)" = "40000000"
 
 # Vendor-specific
 config SOC_VENDOR_SILABS_HAS_RADIO_TX_HIGH_POWER
