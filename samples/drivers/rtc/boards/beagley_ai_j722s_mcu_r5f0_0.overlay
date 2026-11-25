@@ -1,0 +1,21 @@
+/*
+ * BeagleY-AI MCU R5: SoC WKUP RTC via ti,k3-rtc-counter + zephyr,rtc-counter.
+ */
+
+/ {
+	aliases {
+		rtc = &counter_rtc0;
+	};
+
+	chosen {
+		zephyr,rtc = &counter_rtc0;
+	};
+};
+
+&wkup_rtc0 {
+	status = "okay";
+};
+
+&counter_rtc0 {
+	status = "okay";
+};
