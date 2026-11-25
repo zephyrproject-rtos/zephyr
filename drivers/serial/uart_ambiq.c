@@ -402,10 +402,18 @@ static int uart_ambiq_configure(const struct device *dev, const struct uart_conf
 
 	switch (config->clk_src) {
 	case 0:
+#if defined(CONFIG_SOC_APOLLO330P)
+		data->hal_cfg.eClockSrc = AM_HAL_UART_HFCLK_SRC_HFRC_96M;
+#else
 		data->hal_cfg.eClockSrc = AM_HAL_UART_CLOCK_SRC_HFRC;
+#endif
 		break;
 	case 1:
+#if defined(CONFIG_SOC_APOLLO330P)
+		data->hal_cfg.eClockSrc = AM_HAL_UART_HFCLK_SRC_PLLPOSTDIV;
+#else
 		data->hal_cfg.eClockSrc = AM_HAL_UART_CLOCK_SRC_SYSPLL;
+#endif
 		break;
 	default:
 		return -EINVAL;
