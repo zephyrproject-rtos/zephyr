@@ -205,3 +205,7 @@
 &adc_0 {
 	status = "okay";
 };
+
+&wkpu {
+	status = "okay";
+};
