@@ -833,6 +833,20 @@ static void smp_br_keys_clear(struct bt_keys *keys)
 	bt_conn_foreach(BT_CONN_TYPE_LE, le_conn_keys_drop, keys);
 }
 
+struct le_conn_keys_ref {
+	const struct bt_keys *keys;
+	bool found;
+};
+
+static void le_conn_keys_ref_find(struct bt_conn *conn, void *data)
+{
+	struct le_conn_keys_ref *ref = data;
+
+	if (conn->le.keys == ref->keys) {
+		ref->found = true;
+	}
+}
+
 static bool ltk_derive_link_key_allowed(struct bt_smp *smp)
 {
 	struct bt_conn *conn;
@@ -1130,6 +1144,25 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 	} else {
 		bool bond_flag = !atomic_test_bit(conn->flags, BT_CONN_BR_NOBOND);
 		struct bt_conn_auth_info_cb *listener, *next;
+
+		/* An entry without keys has nothing to register or store:
+		 * nothing was distributed and no LTK was derived, also when
+		 * the derivation failed after smp_br_derive_ltk_prepare()
+		 * dropped the keys of an earlier bond. An entry that an LE
+		 * connection references stays, since a pairing over LE can be
+		 * using it: bt_smp_disconnected() frees it if it is still
+		 * empty then.
+		 */
+		if ((keys != NULL) && (keys->keys == 0U)) {
+			struct le_conn_keys_ref ref = {.keys = keys};
+
+			bt_conn_foreach(BT_CONN_TYPE_LE, le_conn_keys_ref_find, &ref);
+			if (!ref.found) {
+				smp_br_keys_clear(keys);
+			}
+
+			keys = NULL;
+		}
 
 		if (keys) {
 			smp_br_id_add_replace(keys);
