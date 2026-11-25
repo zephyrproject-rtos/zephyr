@@ -9,6 +9,7 @@ set(WKPU_TEST_SOURCES 64 CACHE STRING "Number of WKPU sources")
 
 target_compile_definitions(app PRIVATE
   CONFIG_NXP_S32_WKPU_SOURCES_MAX=${WKPU_TEST_SOURCES}
+  CONFIG_WUC_NXP_S32_WKPU=1
 )
 target_sources(app PRIVATE
   src/main.c

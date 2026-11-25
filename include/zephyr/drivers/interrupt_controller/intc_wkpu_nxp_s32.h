@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,9 +55,13 @@ int wkpu_nxp_s32_set_callback(const struct device *dev, uint8_t irq, uint8_t pin
  * @param dev  WKPU device
  * @param irq  WKPU interrupt number
  * @param trigger pin activation trigger
+ *
+ * @retval 0 on success
+ * @retval -EINVAL for an invalid source or trigger
+ * @retval -EBUSY if an armed wake request uses a different edge
  */
-void wkpu_nxp_s32_enable_interrupt(const struct device *dev, uint8_t irq,
-				   enum wkpu_nxp_s32_trigger trigger);
+int wkpu_nxp_s32_enable_interrupt(const struct device *dev, uint8_t irq,
+				  enum wkpu_nxp_s32_trigger trigger);
 
 /**
  * @brief Disable interrupt for WKPU line
