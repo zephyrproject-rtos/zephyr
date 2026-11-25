@@ -6,6 +6,8 @@ description: |
   This file needs to be included by devices that need to specify clock
   controller requests. The maximum number of requests currently defined is 5
   (clock-request-0...clock-request-4) but can be incremented if required.
+  Request indices must be contiguous and start from zero, and the
+  clock-request-names property must provide one name per request.
   Clock requests are defined as a set of suitable clock states. Clock
   states will apply to the clock domain they are defined as a child of.
   If multiple clock states are defined as suitable for a given clock domain,
@@ -82,5 +84,12 @@ properties:
   clock-request-names:
     type: string-array
     description: |
-      Names for the provided states. The number of names needs to match the
-      number of states.
+      Names for the clock requests, one per clock-request-<i> property, in
+      index order. Each name is converted to a C identifier named
+      CLOCK_MANAGEMENT_STATE_<NAME>, where <NAME> is the uppercased name with
+      non-alphanumeric characters replaced by underscores. Drivers pass this
+      identifier to clock_management_request_state(). The names "default"
+      and "sleep" map to the standard identifiers
+      CLOCK_MANAGEMENT_STATE_DEFAULT and CLOCK_MANAGEMENT_STATE_SLEEP; any
+      other name requires the driver to define the matching identifier,
+      starting from CLOCK_MANAGEMENT_STATE_PRIV_START.

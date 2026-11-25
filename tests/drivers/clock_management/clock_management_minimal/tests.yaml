@@ -6,3 +6,15 @@ tests:
     integration_platforms:
       - native_sim
     filter: dt_compat_enabled("vnd,emul-clock-consumer")
+  drivers.clock_management.minimal.skip_sleep:
+    tags:
+      - drivers
+      - clock_management
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    filter: dt_compat_enabled("vnd,emul-clock-consumer")
+    extra_configs:
+      - CONFIG_CLOCK_MANAGEMENT_KEEP_SLEEP_STATE=n

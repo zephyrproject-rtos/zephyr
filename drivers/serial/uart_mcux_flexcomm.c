@@ -50,7 +50,6 @@ struct mcux_flexcomm_config {
 #ifdef CONFIG_CLOCK_MANAGEMENT
 	const struct clock_management_data *clock_data;
 	clock_output_t clock_output;
-	clock_request_t clock_req_default;
 #else
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
@@ -1174,7 +1173,7 @@ static int mcux_flexcomm_init_common(const struct device *dev)
 	}
 
 #ifdef CONFIG_CLOCK_MANAGEMENT
-	clock_management_request_state(config->clock_data, config->clock_req_default);
+	clock_management_request_state(config->clock_data, CLOCK_MANAGEMENT_STATE_DEFAULT);
 	clock_freq = clock_management_get_rate(config->clock_data, config->clock_output);
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
 	clock_management_set_callback(config->clock_data, config->clock_output,
@@ -1500,8 +1499,7 @@ static void serial_mcux_flexcomm_##n##_pm_exit(enum pm_state state, uint8_t subs
 	CLOCK_MANAGEMENT_DT_INST_DEFINE(n)
 #define UART_MCUX_FLEXCOMM_CLK_INIT(n)						\
 	.clock_data = CLOCK_MANAGEMENT_DT_INST_GET(n), \
-	.clock_output = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT(n), \
-	.clock_req_default = CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(n, default),
+	.clock_output = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT(n),
 #else
 #define UART_MCUX_FLEXCOMM_CLK_DEFINE(n)
 #define UART_MCUX_FLEXCOMM_CLK_INIT(n)						\

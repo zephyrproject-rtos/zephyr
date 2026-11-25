@@ -755,42 +755,84 @@ def ranked_states(node: edtlib.Node) -> list[edtlib.Node]:
 
 
 def write_clocks(node: edtlib.Node) -> None:
-    # Write special macros for clock-output-names, clock-request, and
+    # Write special macros for clock-output-names, clock-request-<i>, and
     # clock-request-names properties.
 
-    out_comment("Clock management (clock-output-names, clock-request-names) properties:")
+    out_comment(
+        "Clock management (clock-output-names, clock-request-<i>, "
+        "clock-request-names) properties:"
+    )
     clock_request_re = re.compile(r"^clock-request-(\d+)$")
 
+    if "clock-output-names" in node.props:
+        for i, clock_name in enumerate(node.props["clock-output-names"].val):
+            tok = edtlib.str_as_token(clock_name)
+            out_dt_define(f"{node.z_path_id}_CLOCK_OUTPUT_NAME_{tok}_IDX", i)
+
+    # Collect clock-request-<i> properties, keyed by index
+    request_props: dict[int, edtlib.Property] = {}
     for prop_name, prop in node.props.items():
-        if prop_name == "clock-output-names":
-            for i, clock_name in enumerate(prop.val):
-                prop_name = clock_name.replace("-", "_")
-                out_dt_define(f"{node.z_path_id}_CLOCK_OUTPUT_NAME_{prop_name}_IDX", i)
-        if prop_name == "clock-request-names":
-            for i, clock_state in enumerate(prop.val):
-                prop_name = clock_state.replace("-", "_")
-                out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_NAME_{prop_name}_IDX", i)
         match = clock_request_re.match(prop_name)
-        if match:  # clock-request-n property
-            clock_requests = {}
-            for state in prop.val:
-                # Find the clock node that the state is defined for
-                clock_node = state.parent
-                sorted_outputs = ranked_states(clock_node)
-                idx = sorted_outputs.index(state)
-                if clock_node not in clock_requests:
-                    # Add the index of this state as the first acceptable
-                    # state for this clock node, using a bitmask
-                    clock_requests[clock_node] = 1 << idx
-                else:
-                    clock_requests[clock_node] |= 1 << idx
-            request_idx = match.group(1)
-            fn_string = "".join(
-                f"fn(DT_{clock_node.z_path_id}, {clock_requests[clock_node]}) "
-                for clock_node in clock_requests
+        if match:
+            request_props[int(match.group(1))] = prop
+
+    num_requests = len(request_props)
+    for i in range(num_requests):
+        if i not in request_props:
+            err(
+                f"missing 'clock-request-{i}' property on {node.path} "
+                "- indices should be contiguous and start from zero"
             )
-            out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_{request_idx}_FOREACH(fn)", fn_string)
-            out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_{request_idx}_LEN", len(clock_requests))
+
+    if "clock-request-names" in node.props:
+        names = node.props["clock-request-names"].val
+    else:
+        names = []
+    if num_requests and len(names) != num_requests:
+        err(
+            f"clock-request-names property in {node.path} has {len(names)} "
+            f"strings, expected {num_requests} (one per clock-request-<i> property)"
+        )
+
+    # Always emitted, so DT_NUM_CLOCK_REQUESTS() works on any node
+    out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_NUM", num_requests)
+
+    # Uppercased tokens become CLOCK_MANAGEMENT_STATE_<TOKEN> identifiers,
+    # so two names must not uppercase to the same token
+    seen_tokens: dict[str, int] = {}
+    for i in range(num_requests):
+        prop = request_props[i]
+        tok = edtlib.str_as_token(names[i])
+        upper_tok = tok.upper()
+        if upper_tok in seen_tokens:
+            other = seen_tokens[upper_tok]
+            err(
+                f"clock-request-names '{names[i]}' (index {i}) and "
+                f"'{names[other]}' (index {other}) in {node.path} both map "
+                f"to the identifier CLOCK_MANAGEMENT_STATE_{upper_tok}"
+            )
+        seen_tokens[upper_tok] = i
+
+        out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_IDX_{i}_EXISTS", 1)
+        out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_IDX_{i}_TOKEN", tok)
+        out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_IDX_{i}_UPPER_TOKEN", upper_tok)
+        out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_NAME_{tok}_EXISTS", 1)
+        out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_NAME_{tok}_IDX", i)
+
+        # Group the states in this request by the clock domain they belong
+        # to, building a bitmask of allowed state indices for each domain
+        clock_requests: dict[edtlib.Node, int] = {}
+        for state in prop.val:
+            clock_node = state.parent
+            sorted_outputs = ranked_states(clock_node)
+            idx = sorted_outputs.index(state)
+            clock_requests[clock_node] = clock_requests.get(clock_node, 0) | (1 << idx)
+        fn_string = "".join(
+            f"fn(DT_{clock_node.z_path_id}, {clock_requests[clock_node]}) "
+            for clock_node in clock_requests
+        )
+        out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_{i}_FOREACH(fn)", fn_string)
+        out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_{i}_LEN", len(clock_requests))
     if "clock-domain" in node.compats:
         # Generate a macro with the clock-domain states presorted by their
         # rank. Remove clock-domain states that are not referenced by any

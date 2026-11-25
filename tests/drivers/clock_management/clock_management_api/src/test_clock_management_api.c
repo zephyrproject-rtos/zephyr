@@ -10,6 +10,15 @@
 
 LOG_MODULE_REGISTER(test);
 
+/*
+ * Custom request identifiers for the names used in clock-request-names.
+ * These must be defined before CLOCK_MANAGEMENT_DT_DEFINE is expanded.
+ */
+#define CLOCK_MANAGEMENT_STATE_INVALID (CLOCK_MANAGEMENT_STATE_PRIV_START)
+#define CLOCK_MANAGEMENT_STATE_RANKED  (CLOCK_MANAGEMENT_STATE_PRIV_START + 1)
+#define CLOCK_MANAGEMENT_STATE_SHARED  (CLOCK_MANAGEMENT_STATE_PRIV_START + 2)
+#define CLOCK_MANAGEMENT_STATE_LOCKED  (CLOCK_MANAGEMENT_STATE_PRIV_START + 3)
+
 /* Define clock management states for both clock consumers */
 CLOCK_MANAGEMENT_DT_DEFINE(DT_NODELABEL(emul_dev1));
 CLOCK_MANAGEMENT_DT_DEFINE(DT_NODELABEL(emul_dev2));
@@ -21,25 +30,17 @@ const struct clock_management_data *dev2_data =
 /* Get references to each clock management state and output */
 clock_output_t dev1_out =
 	CLOCK_MANAGEMENT_DT_GET_OUTPUT_BY_NAME(DT_NODELABEL(emul_dev1), default);
-clock_request_t dev1_default =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(DT_NODELABEL(emul_dev1), default);
-clock_request_t dev1_invalid =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(DT_NODELABEL(emul_dev1), invalid);
-clock_request_t dev1_ranked =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(DT_NODELABEL(emul_dev1), ranked);
+clock_request_t dev1_default = CLOCK_MANAGEMENT_STATE_DEFAULT;
+clock_request_t dev1_invalid = CLOCK_MANAGEMENT_STATE_INVALID;
+clock_request_t dev1_ranked = CLOCK_MANAGEMENT_STATE_RANKED;
 
 clock_output_t dev2_out =
 	CLOCK_MANAGEMENT_DT_GET_OUTPUT_BY_NAME(DT_NODELABEL(emul_dev2), default);
-clock_request_t dev2_default =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(DT_NODELABEL(emul_dev2), default);
-clock_request_t dev2_invalid =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(DT_NODELABEL(emul_dev2), invalid);
-clock_request_t dev2_ranked =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(DT_NODELABEL(emul_dev2), ranked);
-clock_request_t dev2_shared =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(DT_NODELABEL(emul_dev2), shared);
-clock_request_t dev2_locked =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(DT_NODELABEL(emul_dev2), locked);
+clock_request_t dev2_default = CLOCK_MANAGEMENT_STATE_DEFAULT;
+clock_request_t dev2_invalid = CLOCK_MANAGEMENT_STATE_INVALID;
+clock_request_t dev2_ranked = CLOCK_MANAGEMENT_STATE_RANKED;
+clock_request_t dev2_shared = CLOCK_MANAGEMENT_STATE_SHARED;
+clock_request_t dev2_locked = CLOCK_MANAGEMENT_STATE_LOCKED;
 
 
 struct consumer_cb_data {

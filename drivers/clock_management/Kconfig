@@ -36,6 +36,17 @@ config CLOCK_MANAGEMENT_RUNTIME
 	  conflicting requests. This Kconfig also enables registering
 	  for clock rate change notifications
 
+config CLOCK_MANAGEMENT_KEEP_SLEEP_STATE
+	bool "Keep sleep clock requests"
+	default y if PM || PM_DEVICE
+	help
+	  Keep clock requests named "sleep" (in the clock-request-names
+	  devicetree property) in the build. When disabled, these requests are
+	  dropped from every consumer's clock management data to save ROM, and
+	  clock_management_request_state() returns -ENOENT for
+	  CLOCK_MANAGEMENT_STATE_SLEEP. Enable this if sleep requests are used
+	  without device power management.
+
 config CLOCK_MANAGEMENT_CLK_NAME
 	bool "Store names of each clock"
 	help

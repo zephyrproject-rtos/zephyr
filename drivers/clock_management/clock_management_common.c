@@ -1308,23 +1308,41 @@ void clock_management_mod_locks(const struct clock_management_request *request, 
  * @brief Request a clock state
  *
  * Request a clock state. This request may apply to multiple clock domains,
- * and is defined in devicetree using the "clock-request-n" property.
- * The request can be retrieved using the @ref CLOCK_MANAGEMENT_DT_GET_REQUEST macro
+ * and is defined in devicetree using the "clock-request-n" property. The
+ * request is identified by its CLOCK_MANAGEMENT_STATE_<NAME> identifier,
+ * derived from the "clock-request-names" property.
  * @param data Clock management data structure for the device
- * @param request Clock management request to apply
+ * @param request Clock request identifier to apply
  * @return -EIO if configuration of a clock failed
  * @return -EINVAL if parameters are invalid
- * @return -ENOENT if no state satisfies all active requests for a clock domain
+ * @return -ENOENT if @p request does not match any request defined for this
+ *         consumer, or if no state satisfies all active requests for a
+ *         clock domain
  * @return -EPERM if clock is not configurable
  * @return 0 on success
  */
 int clock_management_request_state(const struct clock_management_data *data,
 				   clock_request_t request)
 {
+	const struct clock_management_request *req = NULL;
+	int8_t req_idx = CLOCK_MANAGEMENT_NO_REQUEST;
 	int ret;
 
-	if (!data || request >= data->num_requests) {
+	if (!data) {
 		return -EINVAL;
+	}
+
+	/* Find the request with this identifier */
+	for (uint8_t i = 0; i < data->num_requests; i++) {
+		if (data->clock_requests[i]->id == request) {
+			req = data->clock_requests[i];
+			req_idx = (int8_t)i;
+			break;
+		}
+	}
+	if (req == NULL) {
+		/* No such request (it may have been skipped at build time) */
+		return -ENOENT;
 	}
 
 	CLOCK_MGMT_LOCK();
@@ -1350,22 +1368,22 @@ int clock_management_request_state(const struct clock_management_data *data,
 		}
 	}
 	/* Apply new request votes */
-	clock_management_eval_request(data->clock_requests[request], true);
-	ret = clock_management_best_states(data, data->clock_requests[request], true);
+	clock_management_eval_request(req, true);
+	ret = clock_management_best_states(data, req, true);
 	if (ret < 0) {
 		/* Request failed, remove its votes */
-		clock_management_eval_request(data->clock_requests[request], false);
+		clock_management_eval_request(req, false);
 		goto out;
 	}
-	if (data->clock_requests[request]->locking) {
-		clock_management_mod_locks(data->clock_requests[request], true);
+	if (req->locking) {
+		clock_management_mod_locks(req, true);
 	}
 	/* Record new request */
-	*data->active_request = request;
+	*data->active_request = req_idx;
 out:
 #else
 	/* Just apply new request, no voting occurs */
-	ret = clock_management_best_states(data, data->clock_requests[request], true);
+	ret = clock_management_best_states(data, req, true);
 #endif
 	CLOCK_MGMT_UNLOCK();
 	return ret;

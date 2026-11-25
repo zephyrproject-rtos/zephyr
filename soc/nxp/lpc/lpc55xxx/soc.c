@@ -127,8 +127,6 @@ static int core_clock_change_cb(const struct clock_management_event *ev, const v
 static void core_clock_init(void)
 {
 	clock_output_t cpu_clock = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT(0);
-	clock_request_t default_state =
-		CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(0, default);
 	int new_rate;
 	/* Enable Analog Control module */
 	SYSCON->PRESETCTRLCLR[2] = (1UL << SYSCON_PRESETCTRL2_ANALOG_CTRL_RST_SHIFT);
@@ -140,7 +138,7 @@ static void core_clock_init(void)
 #else
 	change_core_clock(SDK_DEVICE_MAXIMUM_CPU_CLOCK_FREQUENCY);
 #endif
-	clock_management_request_state(core_clock_data, default_state);
+	clock_management_request_state(core_clock_data, CLOCK_MANAGEMENT_STATE_DEFAULT);
 	new_rate = clock_management_get_rate(core_clock_data, cpu_clock);
 	change_core_clock(new_rate);
 	clock_management_disable_unused();

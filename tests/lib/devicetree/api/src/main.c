@@ -5073,9 +5073,50 @@ ZTEST(devicetree_api, test_clock_management)
 	zassert_equal(DT_CLOCK_OUTPUT_NAME_IDX(TEST_TEMP, clk_output), 0, "");
 	zassert_equal(DT_CLOCK_OUTPUT_NAME_IDX(TEST_TEMP, fixed_clk_output), 1, "");
 
-	/* DT_CLOCK_STATE_NAME_IDX */
+	/* DT_CLOCK_REQUEST_NAME_IDX */
 	zassert_equal(DT_CLOCK_REQUEST_NAME_IDX(TEST_TEMP, default), 0, "");
 	zassert_equal(DT_CLOCK_REQUEST_NAME_IDX(TEST_TEMP, sleep), 1, "");
+
+	/* DT_NUM_CLOCK_REQUESTS */
+	zassert_equal(DT_NUM_CLOCK_REQUESTS(TEST_TEMP), 2, "");
+	zassert_equal(DT_NUM_CLOCK_REQUESTS(TEST_REG), 0, "");
+
+	/* DT_CLOCK_REQUEST_HAS_IDX */
+	zassert_equal(DT_CLOCK_REQUEST_HAS_IDX(TEST_TEMP, 0), 1, "");
+	zassert_equal(DT_CLOCK_REQUEST_HAS_IDX(TEST_TEMP, 1), 1, "");
+	zassert_equal(DT_CLOCK_REQUEST_HAS_IDX(TEST_TEMP, 2), 0, "");
+	zassert_equal(DT_CLOCK_REQUEST_HAS_IDX(TEST_REG, 0), 0, "");
+
+	/* DT_CLOCK_REQUEST_HAS_NAME */
+	zassert_equal(DT_CLOCK_REQUEST_HAS_NAME(TEST_TEMP, default), 1, "");
+	zassert_equal(DT_CLOCK_REQUEST_HAS_NAME(TEST_TEMP, sleep), 1, "");
+	zassert_equal(DT_CLOCK_REQUEST_HAS_NAME(TEST_TEMP, foo), 0, "");
+
+	/* DT_CLOCK_REQUEST_LEN_BY_IDX */
+	zassert_equal(DT_CLOCK_REQUEST_LEN_BY_IDX(TEST_TEMP, 0), 2, "");
+	zassert_equal(DT_CLOCK_REQUEST_LEN_BY_IDX(TEST_TEMP, 1), 2, "");
+
+	/* DT_CLOCK_REQUEST_IDX_TO_NAME_TOKEN, DT_CLOCK_REQUEST_IDX_TO_NAME_UPPER_TOKEN */
+#undef MAKE_TOKEN
+#define MAKE_TOKEN(idx)							\
+	_CONCAT(CLK_REQ_ENUM_,						\
+		DT_CLOCK_REQUEST_IDX_TO_NAME_TOKEN(TEST_TEMP, idx))
+#undef MAKE_UPPER_TOKEN
+#define MAKE_UPPER_TOKEN(idx)						\
+	_CONCAT(CLK_REQ_ENUM_,						\
+		DT_CLOCK_REQUEST_IDX_TO_NAME_UPPER_TOKEN(TEST_TEMP, idx))
+	enum {
+		MAKE_TOKEN(0) = 10,
+		MAKE_TOKEN(1) = 11,
+		MAKE_UPPER_TOKEN(0) = 20,
+		MAKE_UPPER_TOKEN(1) = 21,
+	};
+	zassert_equal(CLK_REQ_ENUM_default, 10, "");
+	zassert_equal(CLK_REQ_ENUM_sleep, 11, "");
+	zassert_equal(CLK_REQ_ENUM_DEFAULT, 20, "");
+	zassert_equal(CLK_REQ_ENUM_SLEEP, 21, "");
+#undef MAKE_TOKEN
+#undef MAKE_UPPER_TOKEN
 
 	/* DT_SUPPORTS_CLK_ORDS */
 	zassert_true(ORD_IN_ARRAY(DT_DEP_ORD(TEST_TEMP), test_clk_supports), "");

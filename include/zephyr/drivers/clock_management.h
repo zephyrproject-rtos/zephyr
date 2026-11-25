@@ -82,6 +82,77 @@ typedef int (*clock_management_callback_handler_t)(const struct clock_management
 					     const void *user_data);
 
 /**
+ * @name Clock management request identifiers
+ * @anchor CLOCK_MANAGEMENT_STATES
+ *
+ * Each entry in a consumer's "clock-request-names" devicetree property is
+ * converted to an identifier named CLOCK_MANAGEMENT_STATE_<NAME>, where
+ * <NAME> is the uppercased name with non-alphanumeric characters replaced
+ * by underscores. Consumers pass these identifiers to
+ * clock_management_request_state(). The "default" and "sleep" names map to
+ * the standard identifiers below. Any other name requires the consumer to
+ * define the matching identifier, starting from
+ * CLOCK_MANAGEMENT_STATE_PRIV_START, before CLOCK_MANAGEMENT_DT_DEFINE() is
+ * expanded.
+ *
+ * For example, for the following devicetree definition:
+ * @code{.dts}
+ * clock-domains {
+ *      hs_clock_domain: hs-clock-domain {
+ *              compatible = "clock-domain";
+ *              hsclk_state0: state0 {
+ *                      compatible = "clock-state";
+ *                      clocks = <...>;
+ *              };
+ *              hsclk_state1: state1 {
+ *                      compatible = "clock-state";
+ *                      clocks = <...>;
+ *              };
+ *              hsclk_state2: state2 {
+ *                      compatible = "clock-state";
+ *                      clocks = <...>;
+ *              };
+ *      };
+ * };
+ *
+ * my_dev: mydev@0 {
+ *         compatible = "vnd,device";
+ *         reg = <0>;
+ *         clock-outputs = <&hs_clock>;
+ *         clock-output-names = "highspeed";
+ *         clock-request-0 = <&hsclk_state0>;
+ *         clock-request-1 = <&hsclk_state1>;
+ *         clock-request-2 = <&hsclk_state2>;
+ *         clock-request-names = "default", "sleep", "bypass";
+ * };
+ * @endcode
+ * The driver would define the custom identifier and apply requests like so:
+ * @code{.c}
+ *     // Custom request identifier, must be in scope before
+ *     // CLOCK_MANAGEMENT_DT_DEFINE() is expanded
+ *     #define CLOCK_MANAGEMENT_STATE_BYPASS (CLOCK_MANAGEMENT_STATE_PRIV_START)
+ *
+ *     CLOCK_MANAGEMENT_DT_DEFINE(DT_NODELABEL(my_dev));
+ *     ...
+ *     clock_management_request_state(data, CLOCK_MANAGEMENT_STATE_DEFAULT);
+ *     clock_management_request_state(data, CLOCK_MANAGEMENT_STATE_BYPASS);
+ *     clock_management_request_state(data, CLOCK_MANAGEMENT_STATE_SLEEP);
+ * @endcode
+ * @{
+ */
+
+/** Default request, applied when the device is operational */
+#define CLOCK_MANAGEMENT_STATE_DEFAULT 0U
+
+/** Sleep request, applied when the device is in a low power state */
+#define CLOCK_MANAGEMENT_STATE_SLEEP 1U
+
+/** This and higher values refer to custom private requests */
+#define CLOCK_MANAGEMENT_STATE_PRIV_START 2U
+
+/** @} */
+
+/**
  * @brief Request for a clock domain
  *
  * Request for a specific clock domain. Defines the clock domain node, and
@@ -104,6 +175,8 @@ struct domain_request {
 struct clock_management_request {
 	/** Does this request lock the clocks it affects? */
 	bool locking;
+	/** Request identifier, see @ref CLOCK_MANAGEMENT_STATES */
+	uint8_t id;
 	/** Number of domains in the request */
 	uint8_t num_domains;
 	/** Array of requests for domains */
@@ -146,6 +219,9 @@ typedef uint8_t clock_output_t;
 
 /**
  * @brief Clock request identifier
+ *
+ * Holds a CLOCK_MANAGEMENT_STATE_<NAME> value, see
+ * @ref CLOCK_MANAGEMENT_STATES
  */
 typedef uint8_t clock_request_t;
 
@@ -185,6 +261,11 @@ extern k_spinlock_key_t spinlock_key;
 extern struct k_spinlock clock_mgmt_spinlock;
 #define CLOCK_MGMT_LOCK() spinlock_key = k_spin_lock(&clock_mgmt_spinlock)
 #define CLOCK_MGMT_UNLOCK() k_spin_unlock(&clock_mgmt_spinlock, spinlock_key)
+#endif
+
+#if !defined(CONFIG_CLOCK_MANAGEMENT_KEEP_SLEEP_STATE)
+/** Out of power management configurations, ignore the "sleep" request. */
+#define CLOCK_MANAGEMENT_SKIP_SLEEP 1
 #endif
 
 /**
@@ -244,46 +325,71 @@ extern struct k_spinlock clock_mgmt_spinlock;
 	};))
 
 /**
- * @brief Clock management request name
+ * @brief Clock management request symbol name
  *
- * @param node_id identifier of the node that defines the clock-request-n property
- * @param request_name Name of the clock request property
+ * @param node_id Identifier of the node that defines the clock-request-<idx> property
+ * @param idx Index of the clock request
  */
-#define Z_CLOCK_MANAGEMENT_REQ_NAME(node_id, request_name) \
-	CONCAT(clk_req_, DT_DEP_ORD(node_id), _, request_name)
+#define Z_CLOCK_MANAGEMENT_REQ_NAME(node_id, idx) \
+	CONCAT(clk_req_, DT_DEP_ORD(node_id), _, idx)
 
 /**
- * @brief Define a clock request structure from a "clock-request-n" property
+ * @brief Obtain the request identifier for a clock-request-<idx> property
  *
- * Defines the C structures associated with a "clock-request-n" property
- * @param node_id Node identifier for the device defining the clock request
- * @param prop Name of the clock request property
- * @param idx Index of the clock request name in the clock-request-names property
+ * Expands to CLOCK_MANAGEMENT_STATE_<NAME>, where <NAME> is the uppercased
+ * token of the matching entry in the clock-request-names property.
+ * @param idx Index of the clock request
+ * @param node_id Identifier of the node that defines the clock-request-<idx> property
  */
-#define Z_CLOCK_MANAGEMENT_DT_DEFINE_REQUEST(node_id, prop, idx) \
+#define Z_CLOCK_MANAGEMENT_STATE_ID(idx, node_id) \
+	_CONCAT(CLOCK_MANAGEMENT_STATE_, \
+		DT_CLOCK_REQUEST_IDX_TO_NAME_UPPER_TOKEN(node_id, idx))
+
+/**
+ * @brief Check whether a clock request has to be skipped
+ *
+ * Expands to CLOCK_MANAGEMENT_SKIP_<NAME>. If that macro is defined to 1,
+ * the request is left out of the build.
+ * @param idx Index of the clock request
+ * @param node_id Identifier of the node that defines the clock-request-<idx> property
+ */
+#define Z_CLOCK_MANAGEMENT_SKIP_REQUEST(idx, node_id) \
+	_CONCAT(CLOCK_MANAGEMENT_SKIP_, \
+		DT_CLOCK_REQUEST_IDX_TO_NAME_UPPER_TOKEN(node_id, idx))
+
+/**
+ * @brief Define a clock request structure from a clock-request-<idx> property
+ *
+ * Defines the C structure for a clock-request-<idx> property, unless the
+ * request is skipped. The trailing semicolon is part of the expansion so
+ * that this macro can be used with LISTIFY and an empty separator: a skipped
+ * request expands to nothing.
+ * @param idx Index of the clock request
+ * @param node_id Identifier of the node that defines the clock-request-<idx> property
+ */
+#define Z_CLOCK_MANAGEMENT_DT_DEFINE_REQUEST(idx, node_id) \
+	COND_CODE_1(Z_CLOCK_MANAGEMENT_SKIP_REQUEST(idx, node_id), (), ( \
 	const struct clock_management_request \
-	Z_CLOCK_MANAGEMENT_REQ_NAME(node_id, DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)) = { \
-		.locking = DT_PROP(node_id, CONCAT(clock_request_, \
-				DT_CLOCK_REQUEST_NAME_IDX(node_id, \
-				DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)), \
-				_locking)), \
-		.num_domains = DT_CLOCK_REQUEST_LEN_BY_NAME(node_id, \
-			DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)), \
-		.clk_reqs = { DT_CLOCK_REQUEST_FOREACH_BY_NAME(node_id, \
-			DT_STRING_TOKEN_BY_IDX(node_id, prop, idx), \
-			DT_GET_CLOCK_REQUEST) }, \
-	}
+	Z_CLOCK_MANAGEMENT_REQ_NAME(node_id, idx) = { \
+		.locking = DT_PROP(node_id, CONCAT(clock_request_, idx, _locking)), \
+		.id = Z_CLOCK_MANAGEMENT_STATE_ID(idx, node_id), \
+		.num_domains = DT_CLOCK_REQUEST_LEN_BY_IDX(node_id, idx), \
+		.clk_reqs = { DT_CLOCK_REQUEST_FOREACH_BY_IDX(node_id, idx, \
+						       DT_GET_CLOCK_REQUEST) }, \
+	};))
 
 /**
- * @brief Get a clock request structure from a "clock-request-n" property
+ * @brief Array initializer entry for a clock-request-<idx> property
  *
- * Gets the C structures associated with a "clock-request-n" property
- * @param node_id Node identifier for the device defining the clock request
- * @param prop Name of the clock request property
- * @param idx Index of the clock request name in the clock-request-names property
+ * Expands to a pointer to the structure defined by
+ * Z_CLOCK_MANAGEMENT_DT_DEFINE_REQUEST, followed by a comma, unless the
+ * request is skipped (in which case it expands to nothing).
+ * @param idx Index of the clock request
+ * @param node_id Identifier of the node that defines the clock-request-<idx> property
  */
-#define Z_CLOCK_MANAGEMENT_DT_GET_REQUEST(node_id, prop, idx) \
-	&Z_CLOCK_MANAGEMENT_REQ_NAME(node_id, DT_STRING_TOKEN_BY_IDX(node_id, prop, idx))
+#define Z_CLOCK_MANAGEMENT_DT_GET_REQUEST(idx, node_id) \
+	COND_CODE_1(Z_CLOCK_MANAGEMENT_SKIP_REQUEST(idx, node_id), (), \
+		    (&Z_CLOCK_MANAGEMENT_REQ_NAME(node_id, idx),))
 
 /**
  * @brief Gets the phandle for a clock-output given the clock output name
@@ -358,7 +464,9 @@ extern struct k_spinlock clock_mgmt_spinlock;
  *
  * This macro should be called by any device consumer before utilizing the
  * clock management subsystem, in order to define the data structures required
- * to use it
+ * to use it. Any custom CLOCK_MANAGEMENT_STATE_<NAME> identifiers used by the
+ * consumer's clock-request-names must be defined before this macro is
+ * expanded, see @ref CLOCK_MANAGEMENT_STATES.
  *
  * @param dev_node Node identifier for the device consumer
  */
@@ -366,9 +474,8 @@ extern struct k_spinlock clock_mgmt_spinlock;
 		IF_ENABLED(DT_NODE_HAS_PROP(dev_node, clock_output_names), \
 		(DT_FOREACH_PROP_ELEM_SEP(dev_node, clock_output_names, \
 			Z_CLOCK_MANAGEMENT_DT_DEFINE_OUTPUT, (;)))); \
-		IF_ENABLED(DT_NODE_HAS_PROP(dev_node, clock_request_names), \
-		(DT_FOREACH_PROP_ELEM_SEP(dev_node, clock_request_names, \
-			Z_CLOCK_MANAGEMENT_DT_DEFINE_REQUEST, (;)))); \
+		LISTIFY(DT_NUM_CLOCK_REQUESTS(dev_node), \
+			Z_CLOCK_MANAGEMENT_DT_DEFINE_REQUEST, (), dev_node) \
 		const struct clock_output *const \
 		CONCAT(clock_outputs_, DT_DEP_ORD(dev_node))[] = { \
 			IF_ENABLED(DT_NODE_HAS_PROP(dev_node, clock_output_names), \
@@ -377,9 +484,8 @@ extern struct k_spinlock clock_mgmt_spinlock;
 		}; \
 		const struct clock_management_request *const \
 		CONCAT(clock_requests_, DT_DEP_ORD(dev_node))[] = { \
-			IF_ENABLED(DT_NODE_HAS_PROP(dev_node, clock_request_names), \
-			(DT_FOREACH_PROP_ELEM_SEP(dev_node, clock_request_names, \
-				Z_CLOCK_MANAGEMENT_DT_GET_REQUEST, (,)))) \
+			LISTIFY(DT_NUM_CLOCK_REQUESTS(dev_node), \
+				Z_CLOCK_MANAGEMENT_DT_GET_REQUEST, (), dev_node) \
 		}; \
 		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME, ( \
 			static int8_t CONCAT(active_request_, DT_DEP_ORD(dev_node)) = \
@@ -390,7 +496,7 @@ extern struct k_spinlock clock_mgmt_spinlock;
 			.clock_outputs = CONCAT(clock_outputs_, DT_DEP_ORD(dev_node)), \
 			.clock_requests = CONCAT(clock_requests_, DT_DEP_ORD(dev_node)), \
 			.num_outputs = DT_PROP_LEN_OR(dev_node, clock_output_names, 0), \
-			.num_requests = DT_PROP_LEN_OR(dev_node, clock_request_names, 0), \
+			.num_requests = ARRAY_SIZE(CONCAT(clock_requests_, DT_DEP_ORD(dev_node))), \
 			IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME, ( \
 				.active_request = &CONCAT(active_request_, DT_DEP_ORD(dev_node)), \
 			)) \
@@ -498,75 +604,6 @@ extern struct k_spinlock clock_mgmt_spinlock;
 	CLOCK_MANAGEMENT_DT_GET_OUTPUT(DT_DRV_INST(inst))
 
 /**
- * @brief Get a clock request from a "clock-request-n" property
- *
- * Gets a clock request from a "clock-request-n" property, given
- * the name of the state.
- *
- * For example, for the following devicetree definition:
- * @code{.dts}
- * clock-domains {
- *      hs_clock_domain: hs-clock-domain {
- *              compatible = "clock-domain";
- *              hsclk_state0: state0 {
- *                      compatible = "clock-state";
- *                      clocks = <...>;
- *              };
- *              hsclk_state1: state1 {
- *                      compatible = "clock-state";
- *                      clocks = <...>;
- *              };
- *      };
- *
- *      lp_clock_domain: lp-clock-domain {
- *              compatible = "clock-domain";
- *              lpclk_state0: state0 {
- *                      compatible = "clock-state";
- *                      clocks = <...>;
- *              };
- *              lpclk_state1: state1 {
- *                      compatible = "clock-state";
- *                      clocks = <...>;
- *              };
- *      };
- * };
- *
- * my_dev: mydev@0 {
- *         compatible = "vnd,device";
- *         reg = <0>;
- *         clock-outputs = <&hs_clock &lp_clock>;
- *         clock-output-names = "highspeed", "low-power";
- *         clock-request-0 = <&hsclk_state0 &lpclk_state0>;
- *         clock-request-1 = <&hsclk_state1 &lpclk_state1>;
- *         clock-request-names = "active", "sleep";
- * };
- * @endcode
- * The clock state identifiers could be accessed like so:
- * @code{.c}
- *     // Get identifier to apply sleep request
- *     CLOCK_MANAGEMENT_DT_GET_REQUEST(DT_NODELABEL(my_dev), sleep)
- *     // Get identifier to apply active request
- *     CLOCK_MANAGEMENT_DT_GET_REQUEST(DT_NODELABEL(my_dev), active)
- * @endcode
- * @param dev_id Node identifier for device with "clock-outputs" property
- * @param request_name Name of clock request to get for this clock output
- */
-#define CLOCK_MANAGEMENT_DT_GET_REQUEST(dev_id, request_name) \
-	DT_CLOCK_REQUEST_NAME_IDX(dev_id, request_name)
-
-/**
- * @brief Get a clock request from a "clock-request-n" property
- *
- * Gets a clock request from a "clock-request-n" property, given the name
- * of the request. Note this is equivalent
- * to CLOCK_MANAGEMENT_DT_GET_REQUEST(DT_DRV_INST(inst), request_name)
- * @param inst DT_DRV_COMPAT instance number
- * @param request_name Name of clock request to get for this clock output
- */
-#define CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(inst, request_name)                     \
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(DT_DRV_INST(inst), request_name)
-
-/**
  * @brief Get clock rate for given output
  *
  * Gets output clock rate in Hz for provided clock output.
@@ -602,12 +639,18 @@ int clock_management_req_rate(const struct clock_management_data *data,
  * @brief Request a clock state
  *
  * Request a clock state. This request may apply to multiple clock domains,
- * and is defined in devicetree using the "clock-request-n" property.
+ * and is defined in devicetree using the "clock-request-n" property. The
+ * request is identified by its CLOCK_MANAGEMENT_STATE_<NAME> identifier,
+ * derived from the "clock-request-names" property (see
+ * @ref CLOCK_MANAGEMENT_STATES).
  * @param data Clock management data structure for the device
- * @param request Clock management request to apply
+ * @param request Clock request identifier to apply
  * @return -EIO if configuration of a clock failed
  * @return -EINVAL if parameters are invalid
- * @return -ENOENT if no state satisfies all active requests for a clock domain
+ * @return -ENOENT if @p request does not match any request defined for this
+ *         consumer (for example a "sleep" request that was skipped because
+ *         CONFIG_CLOCK_MANAGEMENT_KEEP_SLEEP_STATE is disabled), or if no
+ *         state satisfies all active requests for a clock domain
  * @return -EPERM if clock is not configurable
  * @return 0 on success
  */

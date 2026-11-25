@@ -10,6 +10,14 @@ LOG_MODULE_REGISTER(test);
 
 #define CONSUMER_NODE DT_NODELABEL(emul_dev)
 
+/*
+ * Custom request identifiers for the names used in clock-request-names.
+ * These must be defined before CLOCK_MANAGEMENT_DT_DEFINE is expanded.
+ */
+#define CLOCK_MANAGEMENT_STATE_TEST1 (CLOCK_MANAGEMENT_STATE_PRIV_START)
+#define CLOCK_MANAGEMENT_STATE_TEST2 (CLOCK_MANAGEMENT_STATE_PRIV_START + 1)
+#define CLOCK_MANAGEMENT_STATE_TEST3 (CLOCK_MANAGEMENT_STATE_PRIV_START + 2)
+
 CLOCK_MANAGEMENT_DT_DEFINE(CONSUMER_NODE);
 
 /* Get references to each clock management state and output */
@@ -18,16 +26,11 @@ static const struct clock_management_data *data =
 static clock_output_t consumer_out =
 	CLOCK_MANAGEMENT_DT_GET_OUTPUT(CONSUMER_NODE);
 
-static clock_request_t default_request =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(CONSUMER_NODE, default);
-static clock_request_t sleep_request =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(CONSUMER_NODE, sleep);
-static clock_request_t test1_request =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(CONSUMER_NODE, test1);
-static clock_request_t test2_request =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(CONSUMER_NODE, test2);
-static clock_request_t test3_request =
-	CLOCK_MANAGEMENT_DT_GET_REQUEST(CONSUMER_NODE, test3);
+static clock_request_t default_request = CLOCK_MANAGEMENT_STATE_DEFAULT;
+static clock_request_t sleep_request = CLOCK_MANAGEMENT_STATE_SLEEP;
+static clock_request_t test1_request = CLOCK_MANAGEMENT_STATE_TEST1;
+static clock_request_t test2_request = CLOCK_MANAGEMENT_STATE_TEST2;
+static clock_request_t test3_request = CLOCK_MANAGEMENT_STATE_TEST3;
 
 void request_clock_state(clock_request_t request, const char *req_name,
 		       int expected_rate)

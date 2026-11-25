@@ -31,7 +31,7 @@ extern "C" {
  * @brief Defines a clock request from devicetree
  *
  * Defines a clock request from devicetree. Intended to be used with
- * @ref DT_CLOCK_REQUEST_FOREACH_BY_NAME to generate clock request structures
+ * @ref DT_CLOCK_REQUEST_FOREACH_BY_IDX to generate clock request structures
  * @param node_id Node identifier with the clock-request-n property
  * @param _allowed_states Allowed states for this clock request
  */
@@ -44,36 +44,92 @@ extern "C" {
 /** @endcond */
 
 /**
- * @brief Calls @p fn for every clock request in a clock-request-n array
+ * @brief Get the number of clock-request-<i> properties on a node
  *
- * Calls @p fn for every clock request in a clock-request-n array, with the
- * arguments being the clock node identifier and the allowed states for that
- * clock request. The clock-request-n array is defined from the clock-request-n
- * property, but phandles that affect the same clock output are grouped together
- * to form one "allowed_state" bitmask for that clock. The @p fn macro
- * should take two arguments:
- * 1. The clock node identifier
- * 2. The allowed states for that clock request
- * @param node_id Node identifier with the clock-request-n property
- * @param request_name Name of the clock request to get for this clock output
- * @param fn Macro to call for each clock request
+ * @param node_id Node identifier; may or may not have any clock-request-<i>
+ *                properties
+ * @return Number of clock-request-<i> properties (0 if there are none)
  */
-#define DT_CLOCK_REQUEST_FOREACH_BY_NAME(node_id, request_name, fn) \
-	CONCAT(node_id, _CLOCK_REQUEST_, \
-		DT_CLOCK_REQUEST_NAME_IDX(node_id, request_name), _FOREACH)(fn)
+#define DT_NUM_CLOCK_REQUESTS(node_id) DT_CAT(node_id, _CLOCK_REQUEST_NUM)
 
 /**
- * @brief Get the length of a clock-request-n array by the name
+ * @brief Test if a node has a clock-request-<idx> property
  *
- * Gets the length of a given clock-request-n array by the name, set by
- * clock-request-names property. Note that since the clock-request-n
- * phandles are grouped by clock output they affect, the length may not
- * match the number of phandles in the clock-request-n property.
- * @param node_id Node identifier with the clock-request-n property
- * @param name Name of the clock request to get the length of
+ * @param node_id Node identifier
+ * @param idx Clock request index
+ * @return 1 if the property exists, 0 otherwise
  */
-#define DT_CLOCK_REQUEST_LEN_BY_NAME(node_id, name) \
-	CONCAT(node_id, _CLOCK_REQUEST_, DT_CLOCK_REQUEST_NAME_IDX(node_id, name), _LEN)
+#define DT_CLOCK_REQUEST_HAS_IDX(node_id, idx) \
+	IS_ENABLED(DT_CAT4(node_id, _CLOCK_REQUEST_IDX_, idx, _EXISTS))
+
+/**
+ * @brief Test if a node has a clock request with a given name
+ *
+ * @param node_id Node identifier
+ * @param name Lowercase-and-underscores clock request name, from the
+ *             clock-request-names property
+ * @return 1 if the node has a clock request with that name, 0 otherwise
+ */
+#define DT_CLOCK_REQUEST_HAS_NAME(node_id, name) \
+	IS_ENABLED(DT_CAT4(node_id, _CLOCK_REQUEST_NAME_, name, _EXISTS))
+
+/**
+ * @brief Convert a clock request index to its name as a token
+ *
+ * Converts the index of a clock-request-<idx> property to the corresponding
+ * entry in the clock-request-names property, as a token. The same caveats
+ * that apply to DT_STRING_TOKEN() apply here.
+ *
+ * @param node_id Node identifier
+ * @param idx Clock request index
+ * @return Clock request name as a token
+ */
+#define DT_CLOCK_REQUEST_IDX_TO_NAME_TOKEN(node_id, idx) \
+	DT_CAT4(node_id, _CLOCK_REQUEST_IDX_, idx, _TOKEN)
+
+/**
+ * @brief Convert a clock request index to its name as an uppercased token
+ *
+ * Like DT_CLOCK_REQUEST_IDX_TO_NAME_TOKEN(), but the token is uppercased.
+ * This is used by the clock management subsystem to build the
+ * CLOCK_MANAGEMENT_STATE_<NAME> identifier for the request.
+ *
+ * @param node_id Node identifier
+ * @param idx Clock request index
+ * @return Clock request name as an uppercased token
+ */
+#define DT_CLOCK_REQUEST_IDX_TO_NAME_UPPER_TOKEN(node_id, idx) \
+	DT_CAT4(node_id, _CLOCK_REQUEST_IDX_, idx, _UPPER_TOKEN)
+
+/**
+ * @brief Calls @p fn for every clock domain in a clock-request-<idx> property
+ *
+ * Calls @p fn for every clock domain affected by a clock-request-<idx>
+ * property, with the arguments being the clock domain node identifier and
+ * the allowed states for that domain. The phandles in the clock-request-<idx>
+ * property that reference states of the same clock domain are grouped
+ * together to form one "allowed_states" bitmask for that domain. The @p fn
+ * macro should take two arguments:
+ * 1. The clock domain node identifier
+ * 2. The bitmask of allowed states for that clock domain
+ * @param node_id Node identifier with the clock-request-<idx> property
+ * @param idx Clock request index
+ * @param fn Macro to call for each clock domain
+ */
+#define DT_CLOCK_REQUEST_FOREACH_BY_IDX(node_id, idx, fn) \
+	DT_CAT4(node_id, _CLOCK_REQUEST_, idx, _FOREACH)(fn)
+
+/**
+ * @brief Get the number of clock domains in a clock-request-<idx> property
+ *
+ * Gets the number of clock domains affected by a clock-request-<idx>
+ * property. Since the phandles are grouped by the clock domain they affect,
+ * this may not match the number of phandles in the property.
+ * @param node_id Node identifier with the clock-request-<idx> property
+ * @param idx Clock request index
+ */
+#define DT_CLOCK_REQUEST_LEN_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _CLOCK_REQUEST_, idx, _LEN)
 
 /**
  * @brief Get index of clock output name
@@ -84,9 +140,10 @@ extern "C" {
 	DT_CAT4(node_id, _CLOCK_OUTPUT_NAME_, name, _IDX)
 
 /**
- * @brief Get index of clock request
+ * @brief Get index of clock request by name
  * @param node_id Node ID with clock-request-names property
- * @param name Name in the clock-request-names property to get the index of
+ * @param name Lowercase-and-underscores name in the clock-request-names
+ *             property to get the index of
  */
 #define DT_CLOCK_REQUEST_NAME_IDX(node_id, name) \
 	DT_CAT4(node_id, _CLOCK_REQUEST_NAME_, name, _IDX)

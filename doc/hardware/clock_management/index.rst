@@ -98,13 +98,75 @@ domain, and apply it. If no states satisfy the request, ``-ENOENT``
 will be returned. States are described in devicetree, and are opaque to the
 driver/application code consuming the clock.
 
-Each clock consumer described in devicetree can set named clock requests using
-the ``clock-request-n`` properties, where ``n`` is the index of the request. The
-:c:macro:`CLOCK_MANAGEMENT_DT_GET_REQUEST` macro can be used to get an
-identifier for a named request, which can then be used with
+Each clock consumer described in devicetree defines its clock requests using
+the ``clock-request-n`` properties, where ``n`` is the index of the request, and
+names each request with the ``clock-request-names`` property. Each name is
+converted to a C identifier of the form ``CLOCK_MANAGEMENT_STATE_{NAME}``, where
+``{NAME}`` is the capitalized request name. Consumers pass this identifier to
 :c:func:`clock_management_request_state` to apply the request. Each consumer has
 at most one active request at a time: applying a new request replaces the
 consumer's previous request.
+
+Standard requests
+-----------------
+
+The names assigned to clock requests, and the number of them, are up to the
+device driver. To keep drivers consistent, a naming convention is established
+for the most common use cases:
+
+.. table:: Standardized request names
+    :align: center
+
+    +-------------+------------------------------------------+---------------------------+
+    | Request     | Identifier                               | Purpose                   |
+    +-------------+------------------------------------------+---------------------------+
+    | ``default`` | :c:macro:`CLOCK_MANAGEMENT_STATE_DEFAULT`| Clock configuration when  |
+    |             |                                          | the device is operational |
+    +-------------+------------------------------------------+---------------------------+
+    | ``sleep``   | :c:macro:`CLOCK_MANAGEMENT_STATE_SLEEP`  | Clock configuration when  |
+    |             |                                          | the device is in a low    |
+    |             |                                          | power or sleep mode       |
+    +-------------+------------------------------------------+---------------------------+
+
+Custom requests
+---------------
+
+Some drivers need requests beyond the standard ones. The driver must have in
+scope a definition for each custom identifier, named
+``CLOCK_MANAGEMENT_STATE_{NAME}``, *before* :c:macro:`CLOCK_MANAGEMENT_DT_DEFINE`
+is expanded. For example, a request named ``bypass`` in ``clock-request-names``
+requires:
+
+.. code-block:: c
+
+    #define CLOCK_MANAGEMENT_STATE_BYPASS (CLOCK_MANAGEMENT_STATE_PRIV_START)
+
+.. note::
+
+   Custom identifiers must start from :c:macro:`CLOCK_MANAGEMENT_STATE_PRIV_START`,
+   and each identifier used by a consumer must have a distinct value. The
+   framework looks requests up by identifier, so two names that share a value
+   would resolve to whichever is listed first in devicetree.
+
+If custom requests need to be applied from outside the driver, the identifiers
+should be placed in a publicly accessible header.
+
+Skipping requests
+-----------------
+
+Some requests are only used when a particular feature is enabled. A typical
+case is the ``sleep`` request, which is only used if the device supports power
+management. A request is left out of the build if a definition named
+``CLOCK_MANAGEMENT_SKIP_{NAME}`` expanding to ``1`` is in scope when
+:c:macro:`CLOCK_MANAGEMENT_DT_DEFINE` is expanded. For the ``sleep`` request,
+the framework provides this definition unless
+:kconfig:option:`CONFIG_CLOCK_MANAGEMENT_KEEP_SLEEP_STATE` is enabled; that
+option defaults to enabled when :kconfig:option:`CONFIG_PM` or
+:kconfig:option:`CONFIG_PM_DEVICE` is set. Requesting a skipped request returns
+``-ENOENT``.
+
+Note that clock states referenced only by a skipped request are still compiled
+into their clock domain.
 
 ``clock-request-n`` properties describe an array of allowed states for *any*
 clock domain within the system. This allows a consumer to set a request that may
@@ -312,9 +374,11 @@ application to customize the clock properties that are set using devicetree.
 :c:func:`clock_management_req_rate` should only be used in cases where the
 driver knows the frequency it should use.
 
-Drivers can get :c:type:`clock_request_t` identifiers for their requests using
-:c:macro:`CLOCK_MANAGEMENT_DT_GET_REQUEST`, or the instance based version of
-this macro, :c:macro:`CLOCK_MANAGEMENT_DT_INST_GET_REQUEST`.
+Requests are identified by the ``CLOCK_MANAGEMENT_STATE_{NAME}`` identifiers
+derived from the consumer's ``clock-request-names`` property, as described in
+:ref:`clock-management-guide`. Drivers pass these identifiers directly to
+:c:func:`clock_management_request_state`; no per-request field in the device
+configuration is needed.
 
 For example, consider a peripheral with a high-speed and a low-power clock
 output. The ``periph_hs_clock_state_*`` states are defined in a clock domain
@@ -362,10 +426,6 @@ resumed and suspended:
         clock_output_t hs_clk;
         /* Identifier for low-power clock output */
         clock_output_t lp_clk;
-        /* Identifier for default request */
-        clock_request_t default_request;
-        /* Identifier for sleep request */
-        clock_request_t sleep_request;
         ...
     };
 
@@ -394,11 +454,11 @@ resumed and suspended:
         case PM_DEVICE_ACTION_SUSPEND:
             /* Replace the default request with the sleep request */
             return clock_management_request_state(config->clk_mgmt,
-                                                  config->sleep_request);
+                                                  CLOCK_MANAGEMENT_STATE_SLEEP);
         case PM_DEVICE_ACTION_RESUME:
             /* Restore the default request */
             return clock_management_request_state(config->clk_mgmt,
-                                                  config->default_request);
+                                                  CLOCK_MANAGEMENT_STATE_DEFAULT);
         default:
             return -ENOTSUP;
         }
@@ -412,7 +472,7 @@ resumed and suspended:
         ...
         /* Apply the default request */
         ret = clock_management_request_state(config->clk_mgmt,
-                                             config->default_request);
+                                             CLOCK_MANAGEMENT_STATE_DEFAULT);
         if (ret < 0) {
             return ret;
         }
@@ -439,9 +499,6 @@ resumed and suspended:
             /* Get identifiers for clock outputs */                            \
             .hs_clk = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT_BY_NAME(i, high_speed),\
             .lp_clk = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT_BY_NAME(i, low_power),\
-            /* Get identifiers for clock requests */                           \
-            .default_request = CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(i, default), \
-            .sleep_request = CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(i, sleep),   \
             ...                                                                \
         };                                                                     \
         static struct mydev_data mydev_data_##i;                               \

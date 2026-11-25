@@ -146,11 +146,17 @@ def main():
                 driver_class = compat_map[compat]
                 producer_nodes[node] = {'node': driver_class(node)}
 
-    # Calculate votes for each clock state based on clock-request-0 properties
+    # Calculate votes for each clock state based on each consumer's "default"
+    # request. This is the request named "default" in clock-request-names,
+    # falling back to clock-request-0 if no request has that name.
     for node in edt.nodes:
-        if "clock-request-0" in node.props and node.status == "okay":
-            request = node.props['clock-request-0'].val
-            for state in request:
+        if node.status != "okay":
+            continue
+        names = node.props["clock-request-names"].val if "clock-request-names" in node.props else []
+        req_idx = names.index("default") if "default" in names else 0
+        prop_name = f"clock-request-{req_idx}"
+        if prop_name in node.props:
+            for state in node.props[prop_name].val:
                 output = state.parent
                 clock_requests[output][state] += 1
 
