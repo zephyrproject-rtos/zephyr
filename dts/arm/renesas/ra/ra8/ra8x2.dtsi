@@ -1456,6 +1456,7 @@
 				compatible = "renesas,ra-ethernet-rmac";
 				reg = <0x403cb000 0x530>;
 				channel = <0>;
+				ptp-clock = <&gptp_timer0>;
 				status = "disabled";
 			};
 
@@ -1473,6 +1474,7 @@
 				compatible = "renesas,ra-ethernet-rmac";
 				reg = <0x403cd000 0x530>;
 				channel = <1>;
+				ptp-clock = <&gptp_timer0>;
 				status = "disabled";
 			};
 
