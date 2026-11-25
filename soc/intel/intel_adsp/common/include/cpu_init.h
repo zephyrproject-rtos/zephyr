@@ -165,6 +165,8 @@ static ALWAYS_INLINE void cpu_early_init(void)
 	 */
 	reg = VECBASE_RESET_PADDR_SRAM;
 	XTENSA_WSR("VECBASE", reg);
+
+	xtensa_cp_sharing_cpu_init();
 }
 
 #endif /* __INTEL_ADSP_CPU_INIT_H */
