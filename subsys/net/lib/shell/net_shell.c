@@ -47,6 +47,27 @@ int get_iface_idx(const struct shell *sh, char *index_str)
 	return idx;
 }
 
+#if defined(CONFIG_NET_L2_ETHERNET)
+struct net_if *get_iface_from_shell(const struct shell *sh, size_t argc, char **argv)
+{
+	struct net_if *iface;
+	int idx;
+
+	idx = get_iface_idx(sh, argv[1]);
+	if (idx < 0) {
+		return NULL;
+	}
+
+	iface = net_if_get_by_index(idx);
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		PR_WARNING("Interface %d is not an Ethernet interface\n", idx);
+		return NULL;
+	}
+
+	return iface;
+}
+#endif
+
 const char *addrtype2str(enum net_addr_type addr_type)
 {
 	switch (addr_type) {

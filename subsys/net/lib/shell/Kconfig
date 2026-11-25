@@ -218,6 +218,14 @@ config NET_SHELL_QBV_SUPPORTED
 	  Enable Qbv Shell.
 	  The Qbv shell currently supports set/enable operations.
 
+config NET_SHELL_QBU_SUPPORTED
+	bool "Qbu/Qbr (frame preemption) shell commands"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_QBU
+	help
+	  Enable Qbu shell commands for configuring and reading IEEE
+	  802.1Qbu frame preemption and IEEE 802.3br parameters.
+
 config NET_SHELL_WIREGUARD_SUPPORTED
 	bool "Wireguard VPN config and status"
 	default y
