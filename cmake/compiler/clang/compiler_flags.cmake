@@ -157,7 +157,7 @@ set_compiler_property(PROPERTY security_fortify_run_time)
 check_set_compiler_property(PROPERTY hosted)
 
 # clang flag to save temporary object files
-set_compiler_property(PROPERTY save_temps -save-temps)
+set_compiler_property(PROPERTY save_temps -save-temps=obj)
 
 # clang doesn't handle the -T flag
 set_compiler_property(PROPERTY linker_script -Wl,-T)
