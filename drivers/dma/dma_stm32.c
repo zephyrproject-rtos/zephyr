@@ -980,10 +980,6 @@ static int dma_stm32_stop(const struct device *dev, uint32_t id)
 	LL_DMA_DisableIT_TC(dma, dma_stm32_id_to_stream(id));
 #endif /* CONFIG_DMAMUX_STM32 */
 
-#if defined(CONFIG_DMA_STM32_V1)
-	stm32_dma_disable_fifo_irq(dma, id);
-#endif
-
 	dma_stm32_clear_stream_irq(dev, id);
 	dma_stm32_disable_stream(dma, id);
 
