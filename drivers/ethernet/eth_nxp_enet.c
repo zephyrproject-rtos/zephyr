@@ -813,6 +813,9 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
 
+	/* Each packet is copied into the TX frame buffer before it is sent */
+	net_if_set_tx_sg_frags(iface, NET_IF_TX_SG_FRAGS_UNLIMITED);
+
 	phy_link_callback_set(config->phy_dev, nxp_enet_phy_cb, (void *)dev);
 
 	config->irq_config_func();
