@@ -7,7 +7,7 @@
 #include "nxp_mcxnx4x_common.dtsi"
 
 / {
-	soc {
+	soc: soc {
 		compatible = "nxp,mcxn94x", "nxp,mcx", "simple-bus";
 	};
 };

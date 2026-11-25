@@ -1,0 +1,25 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nxp_mcxn947.dtsi"
+
+&soc {
+	compatible = "nxp,mcx", "simple-bus";
+};
+
+/*
+ * MCXN527 omits these peripheral instances from the MCXN947 superset.
+ */
+/delete-node/ &flexcan0;
+/delete-node/ &flexcan1;
+/delete-node/ &micfil;
+/delete-node/ &flexpwm0;
+/delete-node/ &flexpwm1;
+/delete-node/ &qdc0;
+/delete-node/ &qdc1;
+/delete-node/ &sai0;
+/delete-node/ &sai1;
+/delete-node/ &tsi0;

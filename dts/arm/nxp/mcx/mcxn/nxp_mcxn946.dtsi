@@ -9,9 +9,7 @@
 /*
  * MCXN946 has 1 MiB of flash vs MCXN947's 2 MiB
  * (FSL_FEATURE_SYSCON_FLASH_SIZE_BYTES: 1048576 vs 2097152 in the vendor
- * feature headers). MCXN946 also lacks EMVSIM, PDM, TSI and USDHC on real
- * silicon, but none of those peripherals are modeled in this devicetree for
- * either part, so flash size is the only devicetree-visible delta.
+ * feature headers).
  */
 &flash {
 	reg = <0 DT_SIZE_M(1)>;
@@ -25,3 +23,8 @@
 &sram0 {
 	reg = <0x20000000 DT_SIZE_K(256)>;
 };
+
+/* MCXN946 does not implement these peripherals. */
+/delete-node/ &micfil;
+/delete-node/ &tsi0;
+/delete-node/ &usdhc0;
