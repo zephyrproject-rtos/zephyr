@@ -1056,11 +1056,27 @@ out:
 
 static int littlefs_unmount(struct fs_mount_t *mountp)
 {
+	int ret;
 	struct fs_littlefs *fs = mountp->fs_data;
 
 	fs_lock(fs);
 
-	lfs_unmount(&fs->lfs);
+	ret = lfs_unmount(&fs->lfs);
+	if (ret < 0) {
+		LOG_ERR("unmount failed (LFS %d)", ret);
+		ret = lfs_to_errno(ret);
+		goto out;
+	}
+
+#ifdef CONFIG_FS_LITTLEFS_BLK_DEV
+	if (littlefs_on_blkdev(mountp->flags)) {
+		ret = disk_access_ioctl((char *)fs->backend, DISK_IOCTL_CTRL_DEINIT, NULL);
+		if (ret < 0) {
+			LOG_ERR("Storage deinit ERROR: %d", ret);
+			goto out;
+		}
+	}
+#endif /* CONFIG_FS_LITTLEFS_BLK_DEV */
 
 #ifdef CONFIG_FS_LITTLEFS_FMP_DEV
 	if (!littlefs_on_blkdev(mountp->flags)) {
@@ -1069,11 +1085,12 @@ static int littlefs_unmount(struct fs_mount_t *mountp)
 #endif /* CONFIG_FS_LITTLEFS_FMP_DEV */
 
 	fs->backend = NULL;
-	fs_unlock(fs);
 
 	LOG_INF("%s unmounted", mountp->mnt_point);
 
-	return 0;
+out:
+	fs_unlock(fs);
+	return ret;
 }
 
 /* File system interface */
