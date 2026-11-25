@@ -55,6 +55,10 @@ struct periodic_report {
 };
 
 static uint8_t sample_packet[PACKET_SIZE_MAX];
+#if defined(CONFIG_NET_UDP_GSO)
+/* The datagrams of one send call with UDP segmentation */
+static uint8_t udp_gso_block[CONFIG_NET_ZPERF_UDP_GSO_BUF_SIZE];
+#endif
 static uint8_t json_buf[JSON_BUF_SIZE];
 
 /* One upload at a time: the buffers above are shared */
@@ -267,16 +271,29 @@ static int send_udp(int sock, const struct zperf_upload_params *param, uint32_t 
 		zperf_packet_duration(packet_size, param->rate_kbps) : 0U;
 	struct zperf_pacer pacer;
 	uint64_t data_offset = 0U;
+	uint8_t *buf = sample_packet;
 	int64_t start_time;
 	int64_t end_time;
 	int64_t loop_time;
+	int segments;
 	int ret;
+
+	segments = zperf_udp_gso_setup(sock, param, packet_size);
+	if (segments < 0) {
+		return segments;
+	}
+
+#if defined(CONFIG_NET_UDP_GSO)
+	if (segments > 1) {
+		buf = udp_gso_block;
+	}
+#endif
 
 	start_time = k_uptime_ticks();
 	end_time = start_time + k_ms_to_ticks_ceil64(param->duration_ms);
 	zperf_pacer_init(&pacer, packet_duration_us, start_time);
 
-	(void)memset(sample_packet, 'z', sizeof(sample_packet));
+	(void)memset(buf, 'z', (size_t)segments * packet_size);
 
 	while (true) {
 		loop_time = k_uptime_ticks();
@@ -284,26 +301,30 @@ static int send_udp(int sock, const struct zperf_upload_params *param, uint32_t 
 			break;
 		}
 
-		zperf_pacer_next(&pacer, loop_time);
+		for (int i = 0; i < segments; i++) {
+			uint8_t *pkt = buf + i * packet_size;
 
-		zperf_iperf3_udp_hdr_put(sample_packet,
-					 param->unix_offset_us +
-					 k_ticks_to_us_floor64(loop_time - start_time),
-					 stats->packets + 1U, false);
+			zperf_pacer_next(&pacer, loop_time);
 
-		ret = load_payload(param, &data_offset, sample_packet + ZPERF_IPERF3_UDP_HDR_SIZE,
-				   packet_size - ZPERF_IPERF3_UDP_HDR_SIZE);
-		if (ret < 0) {
-			return ret;
+			zperf_iperf3_udp_hdr_put(pkt,
+						 param->unix_offset_us +
+						 k_ticks_to_us_floor64(loop_time - start_time),
+						 stats->packets + i + 1U, false);
+
+			ret = load_payload(param, &data_offset, pkt + ZPERF_IPERF3_UDP_HDR_SIZE,
+					   packet_size - ZPERF_IPERF3_UDP_HDR_SIZE);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 
-		if (zsock_send(sock, sample_packet, packet_size, 0) < 0) {
+		if (zsock_send(sock, buf, segments * packet_size, 0) < 0) {
 			NET_ERR("Failed to send the packet (%d)", errno);
 			return -errno;
 		}
 
-		stats->packets++;
-		stats->bytes += packet_size;
+		stats->packets += segments;
+		stats->bytes += (uint64_t)segments * packet_size;
 
 		zperf_pacer_wait(&pacer, end_time);
 	}

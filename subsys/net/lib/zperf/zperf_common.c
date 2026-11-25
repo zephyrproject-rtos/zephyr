@@ -296,6 +296,51 @@ uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps)
 			  ((uint64_t)rate_in_kbps * 1024U));
 }
 
+int zperf_udp_gso_setup(int sock, const struct zperf_upload_params *param,
+			uint32_t packet_size)
+{
+	uint32_t segments = param->options.udp_segments;
+#if defined(CONFIG_NET_UDP_GSO)
+	uint32_t max_segments;
+	int segment_size;
+#endif
+
+	if (segments <= 1U) {
+		return 1;
+	}
+
+#if defined(CONFIG_NET_UDP_GSO)
+	max_segments = MIN(CONFIG_NET_ZPERF_UDP_GSO_BUF_SIZE / packet_size,
+			   CONFIG_NET_UDP_GSO_MAX_SEGMENTS);
+	if (segments > max_segments) {
+		NET_WARN("%u datagrams per send do not fit, using %u", segments,
+			 max_segments);
+		segments = max_segments;
+	}
+
+	if (segments <= 1U) {
+		return 1;
+	}
+
+	segment_size = (int)packet_size;
+
+	if (zsock_setsockopt(sock, NET_IPPROTO_UDP, ZSOCK_UDP_SEGMENT, &segment_size,
+			     sizeof(segment_size)) < 0) {
+		NET_ERR("Cannot set UDP_SEGMENT (%d)", errno);
+		return -errno;
+	}
+
+	return (int)segments;
+#else
+	ARG_UNUSED(sock);
+	ARG_UNUSED(packet_size);
+
+	NET_ERR("UDP segmentation is not supported");
+
+	return -ENOTSUP;
+#endif
+}
+
 void zperf_async_work_submit(enum session_proto proto, int session_id, struct k_work *work)
 {
 #if defined(CONFIG_ZPERF_SESSION_PER_THREAD)

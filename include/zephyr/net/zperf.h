@@ -75,6 +75,8 @@ struct zperf_upload_params {
 		bool wait_for_start;
 #endif
 		uint32_t report_interval_ms;
+		/* UDP datagrams per send call with UDP_SEGMENT, 0 or 1 for one */
+		uint16_t udp_segments;
 	} options;
 };
 

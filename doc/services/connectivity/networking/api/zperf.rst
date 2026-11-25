@@ -292,6 +292,26 @@ The ``-w`` option can be used like this to delay the startup of the jobs.
    Session id:             0
    Total 2 sessions done
 
+UDP Segmentation
+****************
+
+With :kconfig:option:`CONFIG_NET_UDP_GSO`, a UDP upload can send several datagrams with one send
+call, using the ``UDP_SEGMENT`` socket option. The ``-g`` option of ``zperf udp upload`` and
+``zperf udp upload2``, or ``options.udp_segments`` in the upload parameters, sets the number of
+datagrams per call:
+
+.. code-block:: console
+
+   zperf udp upload -g 8 2001:db8::2 5001 10 1K 0
+
+Each datagram has the packet size and its own sequence number, so the server sees the same
+datagrams as without ``-g``. The stack handles each call once and splits it into datagrams just
+before the network driver, so a run with and without ``-g`` shows how much of the cost is per
+packet. The datagrams of one call must fit in
+:kconfig:option:`CONFIG_NET_ZPERF_UDP_GSO_BUF_SIZE` and be no more than
+:kconfig:option:`CONFIG_NET_UDP_GSO_MAX_SEGMENTS`, otherwise zperf sends fewer per call. A
+datagram with its UDP and IP headers must fit the path MTU, or the upload fails.
+
 Custom Data Upload
 ******************
 

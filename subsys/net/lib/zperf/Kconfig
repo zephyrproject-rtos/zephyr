@@ -110,6 +110,17 @@ config NET_ZPERF_MAX_PACKET_SIZE
 	  Upper size limit for packets sent by zperf. Default allows for a 1kB
 	  payload with the 40 byte iperf UDP client header.
 
+config NET_ZPERF_UDP_GSO_BUF_SIZE
+	int "UDP segmentation send buffer size"
+	depends on NET_UDP_GSO
+	default 16384
+	range 2 65507
+	help
+	  Size of the buffer that holds the datagrams of one send call when a
+	  UDP upload sends several datagrams per call with the UDP_SEGMENT
+	  socket option. The number of datagrams per call is limited to this
+	  size divided by the packet size.
+
 config NET_ZPERF_SERVER
 	bool "zperf server support"
 	select NET_SOCKETS_SERVICE
