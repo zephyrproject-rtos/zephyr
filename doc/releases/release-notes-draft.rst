@@ -82,6 +82,13 @@ Libraries / Subsystems
     :c:member:`i3c_config_controller.tcas_ps` and the ``tcas-ps`` controller
     Devicetree property.
 
+* I2S
+
+  * The STM32 I2S driver can run the receiver and the transmitter of an H7 series instance at the
+    same time, independently of each other, on the instances that carry ``st,full-duplex``, see
+    :dtcompatible:`st,stm32h7-i2s`. Full duplex is used when both directions are configured with
+    the same rate, format and role.
+
 * LoRaWAN
 
   * The native backend now supports the KR920, AS923 and US915 regions
