@@ -102,6 +102,18 @@
 	};
 };
 
+&adc12_common {
+	clocks = <&rcc STM32_CLOCK(AHB2, 16)>,
+		 <&rcc (STM32_SRC_HCLK4 | STM32_CLOCK_DIV(2)) ADC_SEL(0)>,
+		 <&rcc (STM32_SRC_HCLK4 | STM32_CLOCK_DIV(2)) ADCDIV_SEL(1)>;
+	clock-names = "adcx", "adc_ker", "adc_pre";
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+};
+
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3>;
 	pinctrl-names = "default";
