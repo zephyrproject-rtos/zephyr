@@ -493,6 +493,7 @@ static int sdio_set_bus_speed(struct sd_card *card)
 	int ret, timing, retries = CONFIG_SD_RETRY_COUNT;
 	uint32_t bus_clock;
 	uint8_t speed_reg, target_speed;
+	bool accepted = false;
 
 	switch (card->card_speed) {
 	/* Set bus clock speed */
@@ -541,20 +542,23 @@ static int sdio_set_bus_speed(struct sd_card *card)
 		if (ret) {
 			return ret;
 		}
-	} while (((speed_reg & target_speed) != target_speed) && retries-- > 0);
-	if (retries == 0) {
-		/* Don't error out, as card can still work */
-		LOG_WRN("Could not set target SDIO speed");
-	} else {
-		/* Set card bus clock and timing */
-		card->bus_io.timing = timing;
-		card->bus_io.clock = bus_clock;
-		LOG_DBG("Setting bus clock to: %d", card->bus_io.clock);
-		ret = sdhc_set_io(card->sdhc, &card->bus_io);
-		if (ret) {
-			LOG_ERR("Failed to change host bus speed");
-			return ret;
-		}
+		accepted = ((speed_reg & SDIO_CCCR_SPEED_MASK) >>
+			    SDIO_CCCR_SPEED_SHIFT) == target_speed;
+	} while (!accepted && retries-- > 0);
+	if (!accepted) {
+		LOG_WRN("Could not set target SDIO speed, using default speed");
+		bus_clock = MIN(card->host_props.f_max, SD_CLOCK_25MHZ);
+		timing = card->bus_io.signal_voltage == SD_VOL_1_8_V ?
+			 SDHC_TIMING_SDR12 : SDHC_TIMING_LEGACY;
+	}
+	/* Apply the accepted speed or the default-speed fallback. */
+	card->bus_io.timing = timing;
+	card->bus_io.clock = bus_clock;
+	LOG_DBG("Setting bus clock to: %d", card->bus_io.clock);
+	ret = sdhc_set_io(card->sdhc, &card->bus_io);
+	if (ret) {
+		LOG_ERR("Failed to change host bus speed");
+		return ret;
 	}
 	return ret;
 }
@@ -684,9 +688,9 @@ int sdio_card_init(struct sd_card *card)
 	if (ret) {
 		return ret;
 	}
-	if (card->card_speed == SD_TIMING_SDR50 ||
-		card->card_speed == SD_TIMING_SDR104) {
-		/* SDR104, SDR50, and DDR50 mode need tuning */
+	if (card->bus_io.timing == SDHC_TIMING_SDR50 ||
+		card->bus_io.timing == SDHC_TIMING_SDR104) {
+		/* Tune only the active SDR50 and SDR104 modes. */
 		ret = sdhc_execute_tuning(card->sdhc);
 		if (ret) {
 			LOG_ERR("SD tuning failed: %d", ret);
