@@ -479,6 +479,8 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	if ((uint32_t)sub_system == MCUX_LPCMP0_CLK) {
 #if defined(CONFIG_SOC_FAMILY_MCXA)
 		CLOCK_EnableClock(kCLOCK_GateCMP0);
+#elif defined(CONFIG_SOC_FAMILY_MCXL)
+		CLOCK_EnableClock(kCLOCK_GateACMP0);
 #elif defined(CONFIG_SOC_FAMILY_MCXN)
 #else
 		CLOCK_EnableClock(kCLOCK_Lpcmp0);
