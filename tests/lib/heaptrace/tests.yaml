@@ -1,0 +1,46 @@
+common:
+  tags: heaptrace
+
+tests:
+  libraries.heaptrace:
+    integration_platforms:
+      - qemu_x86
+  libraries.heaptrace.backtrace:
+    # Requires arch_stack_walk() for the current thread with a NULL esf.
+    # Only RISC-V implements that today; x86 returns immediately when esf
+    # is NULL, so keep this scenario RISC-V only.
+    platform_allow:
+      - qemu_riscv32
+    integration_platforms:
+      - qemu_riscv32
+    extra_configs:
+      - CONFIG_HEAPTRACE_BACKTRACE=y
+      - CONFIG_HEAPTRACE_BACKTRACE_SKIP=0
+      - CONFIG_FRAME_POINTER=y
+      - CONFIG_ARCH_STACKWALK_MAX_FRAMES=32
+  libraries.heaptrace.add_size:
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_ZBUS=y
+      - CONFIG_HEAP_MEM_POOL_SIZE=0
+      - CONFIG_HEAP_MEM_POOL_ADD_SIZE_ZBUS=4096
+  libraries.heaptrace.no_sys_heap:
+    # Regression: with SYS_HEAP_LISTENER=y and K_HEAP_MEM_POOL_SIZE == 0
+    # the system heap does not exist; heaptrace.c must still link.
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_HEAP_MEM_POOL_SIZE=0
+  libraries.heaptrace.libc_resize:
+    # Build-only coverage for the libc heap resize listener path compiled
+    # under CONFIG_NEWLIB_LIBC_HEAP_LISTENER. Runtime resize assertions are
+    # not used here because real sbrk events would mix with the synthetic
+    # events injected by the test.
+    build_only: true
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_NEWLIB_LIBC_HEAP_LISTENER=y
