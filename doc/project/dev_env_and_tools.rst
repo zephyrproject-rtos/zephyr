@@ -15,8 +15,8 @@ patches, which are then reviewed by the project members before being applied to
 the code base.
 
 Pull requests should be appropriately :ref:`labeled<gh_labels>`,
-and linked to any relevant :ref:`bug or feature tracking issues<bug_reporting>`
-.
+and linked to any relevant :ref:`bug <bug_reporting>` or
+:ref:`feature tracking <feature-tracking>` issues.
 
 The Zephyr project uses GitHub for code reviews and Git tree management. When
 submitting a change or an enhancement to any Zephyr component, a developer
@@ -241,6 +241,9 @@ The project uses GitHub issues and pull requests (PRs) to track and manage
 daily and long-term work and contributions to the Zephyr project. We use
 GitHub **labels** to classify and organize these issues and PRs by area, type,
 priority, and more, making it easier to find and report on relevant items.
+
+Whether an issue is a bug, a feature, an enhancement or an RFC is recorded in
+its :ref:`issue type <issue_types>`, not in a label.
 
 All GitHub issues or pull requests must be appropriately labeled.
 Issues and PRs often have multiple labels assigned,
