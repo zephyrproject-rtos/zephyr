@@ -1,0 +1,6 @@
+board:
+  name: apollo330mP_evb
+  full_name: Apollo330mP SOC Evaluation Board
+  vendor: ambiq
+  socs:
+  - name: apollo330P

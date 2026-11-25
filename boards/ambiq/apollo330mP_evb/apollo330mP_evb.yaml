@@ -1,0 +1,35 @@
+identifier: apollo330mP_evb
+name: Apollo330mP EVB
+type: mcu
+arch: arm
+ram: 1792
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - adc
+  - watchdog
+  - counter
+  - gpio
+  - spi
+  - i2c
+  - rtc
+  - hwinfo
+  - clock_control
+  - usbd
+  - flash
+  - nvs
+  - zms
+  - mbox
+  - sdhc
+  - pdm
+  - pm
+  - mspi
+  - trng
+  - crc
+testing:
+  ignore_tags:
+    - net
+vendor: ambiq
