@@ -68,6 +68,7 @@ extern "C" {
 	static int _prefix##_work_q_init(void)                                                     \
 	{                                                                                          \
 		static const struct k_work_queue_config cfg = {                                    \
+			.essential = true,                                                         \
 			.name = STRINGIFY(_prefix) "_workq",                                       \
 			.no_yield = IS_ENABLED(CONFIG_##_module##_DEDICATED_WORKQUEUE_NO_YIELD),   \
 			.work_timeout_ms = CONFIG_##_module##_DEDICATED_WORKQUEUE_WORK_TIMEOUT_MS, \
