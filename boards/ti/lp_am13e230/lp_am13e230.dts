@@ -22,6 +22,12 @@
 		zephyr,flash = &flash0;
 		zephyr,crc = &crc;
 	};
+
+	zephyr,user {
+		dac = <&dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
 };
 
 &cpu0 {
@@ -42,5 +48,13 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&dac0 {
+	status = "okay";
+};
+
+&dac1 {
 	status = "okay";
 };
