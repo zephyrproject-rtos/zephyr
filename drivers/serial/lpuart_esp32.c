@@ -102,28 +102,26 @@ static void lp_uart_esp32_poll_out(const struct device *dev, unsigned char c)
 static int lp_uart_esp32_err_check(const struct device *dev)
 {
 	struct lp_uart_esp32_data *data = dev->data;
-	uint32_t mask;
+	unsigned int key = irq_lock();
+	uint32_t raw_mask = uart_hal_get_intraw_mask(&data->hal) &
+			    LP_UART_ESP32_ERR_INTR_MASK;
+	uint32_t mask = raw_mask;
 	int errors = 0;
 
 	/*
-	 * In interrupt-driven mode the ISR saves error flags before clearing
-	 * hardware, so consume the saved copy and also poll for any errors
-	 * that arrived since the last ISR invocation. In pure polling mode
-	 * read the hardware directly.
+	 * The ISR clears enabled errors from hardware after saving them in
+	 * isr_error_flags, while disabled error interrupts remain latched only
+	 * in INT_RAW. Consume both under the lock and clear only the raw bits
+	 * sampled from hardware so a newly arriving error is not lost.
 	 */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	unsigned int key = irq_lock();
-
-	mask = data->isr_error_flags;
+	mask |= data->isr_error_flags;
 	data->isr_error_flags = 0;
-	mask |= uart_hal_get_intsts_mask(&data->hal) & LP_UART_ESP32_ERR_INTR_MASK;
-	uart_hal_clr_intsts_mask(&data->hal, mask & LP_UART_ESP32_ERR_INTR_MASK);
-
-	irq_unlock(key);
-#else
-	mask = uart_hal_get_intsts_mask(&data->hal) & LP_UART_ESP32_ERR_INTR_MASK;
-	uart_hal_clr_intsts_mask(&data->hal, mask);
 #endif
+	if (raw_mask != 0U) {
+		uart_hal_clr_intsts_mask(&data->hal, raw_mask);
+	}
+	irq_unlock(key);
 
 	if (mask & UART_INTR_PARITY_ERR) {
 		errors |= UART_ERROR_PARITY;
@@ -431,12 +429,14 @@ static int lp_uart_esp32_init(const struct device *dev)
 
 	/*
 	 * Routing the pads can latch a spurious byte into the RX FIFO; let the
-	 * line settle, then discard it so the first received byte is real data.
+	 * line settle, then discard it and clear any latched error flags so
+	 * the first received byte and uart_err_check() reflect real traffic.
 	 */
 	struct lp_uart_esp32_data *data = dev->data;
 
 	esp_rom_delay_us(1000);
 	uart_hal_rxfifo_rst(&data->hal);
+	uart_hal_clr_intsts_mask(&data->hal, LP_UART_ESP32_ERR_INTR_MASK);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	const struct lp_uart_esp32_config *const cfg = dev->config;
