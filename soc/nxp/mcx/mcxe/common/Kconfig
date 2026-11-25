@@ -1,0 +1,25 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_LCU
+	bool "NXP LCU controller"
+	default y
+	depends on DT_HAS_NXP_LCU_ENABLED
+	depends on CLOCK_CONTROL
+	help
+	  Enable the NXP logic control unit controller with exclusive ownership
+	  of each logic cell, LUT configuration, filtering and output gating.
+
+if NXP_LCU
+
+config NXP_LCU_INIT_PRIORITY
+	int "LCU initialization priority"
+	default 45
+	help
+	  Must be later than clock initialization and earlier than LCU consumers.
+
+module = NXP_LCU
+module-str = nxp_lcu
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # NXP_LCU

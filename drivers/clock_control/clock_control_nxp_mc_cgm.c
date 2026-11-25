@@ -168,6 +168,10 @@ static const struct mc_cgm_gate_entry mc_cgm_gate_map[] = {
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_EMIOS_COUNT),
 		MC_CGM_GATE_ENTRY, (,), EMIOS, Emios),
 #endif
+#if defined(CONFIG_NXP_LCU)
+	MC_CGM_GATE_ENTRY(0, LCU, Lcu),
+	MC_CGM_GATE_ENTRY(1, LCU, Lcu),
+#endif
 #if defined(CONFIG_I2S_MCUX_SAI) && defined(FSL_FEATURE_SOC_I2S_COUNT)
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_I2S_COUNT),
 		MC_CGM_GATE_ENTRY, (,), SAI, Sai),
@@ -478,6 +482,10 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 	case MCUX_EMIOS0_CLK:
 	case MCUX_EMIOS1_CLK:
 	case MCUX_EMIOS2_CLK:
+#endif
+#if defined(CONFIG_NXP_LCU)
+	case MCUX_LCU0_CLK:
+	case MCUX_LCU1_CLK:
 #endif
 		*rate = CLOCK_GetCoreClkFreq();
 		return 0;
