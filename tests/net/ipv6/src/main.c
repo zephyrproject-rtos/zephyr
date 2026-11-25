@@ -1050,6 +1050,8 @@ ZTEST(net_ipv6, test_send_neighbor_discovery)
 		.fn = expect_nd_ns,
 		.user_data = &ctx
 	};
+	struct net_stats_ip ipv6_stats_before = { 0 };
+	struct net_stats_ip ipv6_stats_after = { 0 };
 	enum net_verdict verdict;
 	struct net_nbr *nbr;
 	struct k_mem_slab *tx;
@@ -1070,6 +1072,10 @@ ZTEST(net_ipv6, test_send_neighbor_discovery)
 
 	avail_buf_count = atomic_get(&tx_data->avail_count);
 	avail_pkt_count = k_mem_slab_num_free_get(tx);
+
+	zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6, NULL, &ipv6_stats_before,
+			    sizeof(ipv6_stats_before)),
+		   "Failed to retrieve stats");
 
 	verdict = send_msg(&my_addr, &test_router_addr);
 	zassert_equal(verdict, NET_OK, "Packet was dropped (%d)", verdict);
@@ -1107,6 +1113,16 @@ ZTEST(net_ipv6, test_send_neighbor_discovery)
 	/* Packet count should be 4 as we sent one more packet. */
 	zassert_equal(atomic_get(&pkt_num), 4, "Unexpected number of packets sent (%ld)",
 		      atomic_get(&pkt_num));
+
+	/* A packet that waited for the neighbor is counted once, when it is
+	 * sent, so the counter matches the packets the driver got.
+	 */
+	zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6, NULL, &ipv6_stats_after,
+			    sizeof(ipv6_stats_after)),
+		   "Failed to retrieve stats");
+	zexpect_equal(ipv6_stats_after.sent - ipv6_stats_before.sent, atomic_get(&pkt_num),
+		      "IPv6 sent count %u differs from packets sent %ld",
+		      ipv6_stats_after.sent - ipv6_stats_before.sent, atomic_get(&pkt_num));
 
 	/* If there are anything pending by the NS reply timer, then
 	 * 1 is returned. A pending timer does not imply that a TX packet or
