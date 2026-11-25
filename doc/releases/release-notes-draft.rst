@@ -81,6 +81,11 @@ Libraries / Subsystems
   * Added a PSA Protected Storage backend, enabled with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`.
 
+* I2S
+
+  * Added :c:func:`i2s_get_state`, which reports the current state of an I2S stream.
+    Drivers that do not implement it return :c:enumerator:`I2S_STATE_UNKNOWN`.
+
 * I3C
 
   * The requested tCAS (clock after START) is configurable through
