@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+int InitTarget(void) {
+  // Base address where DMI registers can be found in the APB address space
+  JLINK_ExecCommand("CORESIGHT_SetCoreBaseAddr = 0x5004C400");
+
+  // Use AP[1] (AUX-AP) to communicate with the FLPR core
+  JLINK_ExecCommand("CORESIGHT_SetIndexAHBAPToUse = 1");
+  return 0;
+}
