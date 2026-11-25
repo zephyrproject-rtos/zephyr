@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/* To test this case, connect J4-2 (P2_17) to J6-2 (ACMP0_IN3/P2_15). */
+/ {
+	aliases {
+		test-comp = &lpcmp0;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio2 17 GPIO_ACTIVE_HIGH>; /* FRDM-MCXL255 J4-2 */
+	};
+};
+
+&lpcmp0 {
+	positive-mux-input = "IN3"; /* FRDM-MCXL255 J6-2 */
+	negative-mux-input = "DAC";
+	dac-value = <127>;
+	dac-vref-source = "VREFH0";
+	status = "okay";
+};
