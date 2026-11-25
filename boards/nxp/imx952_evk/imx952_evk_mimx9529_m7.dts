@@ -14,6 +14,10 @@
 	compatible = "nxp,imx952_evk";
 	model = "NXP i.MX952 EVK board";
 
+	aliases {
+		watchdog0 = &wdog5;
+	};
+
 	chosen {
 		/* TCM */
 		zephyr,flash = &itcm;
@@ -48,5 +52,9 @@
 };
 
 &edma2 {
+	status = "okay";
+};
+
+&wdog5 {
 	status = "okay";
 };

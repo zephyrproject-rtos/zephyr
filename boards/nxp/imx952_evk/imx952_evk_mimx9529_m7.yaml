@@ -18,6 +18,7 @@ supported:
   - dma
   - gpio
   - uart
+  - watchdog
 testing:
   binaries:
     - flash.bin
