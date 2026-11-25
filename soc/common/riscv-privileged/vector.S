@@ -28,7 +28,20 @@ SECTION_FUNC(vectors, __start)
 	.option norvc;
 
 #if defined(CONFIG_SOC_RESET_HOOK)
+#ifdef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
+	/*
+	 * The SBI passes the hart id in a0 and the DTB address in a1, and the
+	 * hook is a C function that may use them as scratch registers. Keep
+	 * them in callee-saved registers across the call.
+	 */
+	mv s0, a0
+	mv s1, a1
+#endif
 	call soc_reset_hook
+#ifdef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
+	mv a0, s0
+	mv a1, s1
+#endif
 #endif
 
 #if defined(CONFIG_RISCV_VECTORED_MODE)
