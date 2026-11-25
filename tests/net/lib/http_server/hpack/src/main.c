@@ -562,6 +562,61 @@ ZTEST(http2_hpack, test_http2_hpack_empty_value_encode_decode)
 	zassert_equal(dec.value_len, 0, "Decoded a %zu byte value", dec.value_len);
 }
 
+ZTEST(http2_hpack, test_http2_hpack_field_len)
+{
+	static const struct {
+		const char *name;
+		const char *value;
+	} fields[] = {
+		/* Indexed. */
+		{ ":method", "GET" },
+		/* Name from the static table, at the first and at the last index. */
+		{ ":authority", "example.com" },
+		{ "www-authenticate", "Basic realm=\"test\"" },
+		/* Literal name, Huffman encoded and not: control characters take
+		 * the longest codes.
+		 */
+		{ "x-custom-field", "some-value" },
+		{ "x-binary", "\x01\x02\x03\x04\x05\x06\x07\x08" },
+		{ "x-empty", "" },
+		/* String lengths on either side of the one octet limit. */
+		{ "x-126",
+		  "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+		  "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" },
+		{ "x-127",
+		  "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+		  "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" },
+		/* Too long for the Huffman encoding buffer. */
+		{ "content-type", test_long_value },
+	};
+	struct http_hpack_header_buf hdr = { 0 };
+	int len, ret;
+
+	memset(test_long_value, 'a', TEST_LONG_VALUE_LEN);
+
+	ARRAY_FOR_EACH(fields, i) {
+		len = http_hpack_field_len(&hdr, fields[i].name, fields[i].value);
+		zassert_true(len > 0, "No length for field %zu (%d)", i, len);
+
+		ret = http_hpack_encode_field(test_long_buf, sizeof(test_long_buf), &hdr,
+					      fields[i].name, fields[i].value);
+		zassert_equal(ret, len, "Field %zu encoded to %d bytes, %d announced", i, ret,
+			      len);
+
+		/* The length is the room the field needs, to the byte. */
+		ret = http_hpack_encode_field(test_long_buf, len, &hdr, fields[i].name,
+					      fields[i].value);
+		zassert_equal(ret, len, "Field %zu does not fit its length (%d)", i, ret);
+
+		ret = http_hpack_encode_field(test_long_buf, len - 1, &hdr, fields[i].name,
+					      fields[i].value);
+		zassert_equal(ret, -ENOBUFS, "Field %zu fits %d bytes (%d)", i, len - 1, ret);
+	}
+
+	ret = http_hpack_field_len(&hdr, "", "value");
+	zassert_equal(ret, -EINVAL, "Length for a field without a name (%d)", ret);
+}
+
 ZTEST(http2_hpack, test_http2_hpack_dynamic_table_size_update)
 {
 	static const uint8_t update_zero[] = { 0x20 };

@@ -213,6 +213,9 @@ int http_hpack_encode_header(uint8_t *buf, size_t buflen,
 			     struct http_hpack_header_buf *header);
 int http_hpack_encode_field(uint8_t *buf, size_t buflen, struct http_hpack_header_buf *header,
 			    const char *name, const char *value);
+/* Number of bytes http_hpack_encode_field() encodes the field to. */
+int http_hpack_field_len(struct http_hpack_header_buf *header, const char *name,
+			 const char *value);
 
 /** @endcond */
 
