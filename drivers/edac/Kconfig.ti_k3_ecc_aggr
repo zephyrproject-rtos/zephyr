@@ -1,0 +1,10 @@
+# Copyright (c) 2026 BeagleBoard.org Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config EDAC_TI_K3_ECC_AGGR
+	bool "TI K3 ECC Aggregator EDAC driver"
+	default y
+	depends on DT_HAS_TI_K3_ECC_AGGR_ENABLED
+	help
+	  EDAC back-end for the TI K3 ECC Aggregator (SEC/DED status, counts,
+	  and optional interrupt notification).

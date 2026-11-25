@@ -25,6 +25,7 @@
 
 	aliases {
 		watchdog0 = &mcu_rti0;
+		edac0 = &mcu_r5fss0_core0_ecc_aggr;
 	};
 
 	cpus {
@@ -65,6 +66,10 @@
 };
 
 &mcu_rti0 {
+	status = "okay";
+};
+
+&mcu_r5fss0_core0_ecc_aggr {
 	status = "okay";
 };
 

@@ -75,4 +75,10 @@
 		ti,d1-miso-d0-mosi;
 		status = "disabled";
 	};
+
+	mcu_r5fss0_core0_ecc_aggr: edac@4707000 {
+		compatible = "ti,k3-ecc-aggr";
+		reg = <0x04707000 0x400>;
+		status = "disabled";
+	};
 };
