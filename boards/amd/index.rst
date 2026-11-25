@@ -7,4 +7,5 @@ Advanced Micro Devices (AMD), Inc.
    :maxdepth: 1
    :glob:
 
+   qemu_emulation
    **/*
