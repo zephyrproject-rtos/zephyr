@@ -74,6 +74,7 @@ struct k3_rtc_counter_cfg {
 
 	void (*irq_config_func)(void);
 	uint32_t osc_freq;
+	unsigned int irq_num;
 };
 
 struct k3_rtc_counter_data {
@@ -339,12 +340,15 @@ static int k3_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 	rtc_regs->IRQENABLE_SET_SYS = mask;
 	irq_unlock(key);
 
+	irq_enable(DEV_CFG(dev)->irq_num);
+
 	return 0;
 }
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
 
 static int k3_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
+	const struct k3_rtc_counter_cfg *config = DEV_CFG(dev);
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
 	struct k3_rtc_counter_data *data = DEV_DATA(dev);
 	uint32_t mask;
@@ -363,6 +367,9 @@ static int k3_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	data->alarm_cfg[chan_id].flags = 0;
 	rtc_regs->IRQENABLE_CLR_SYS = mask;
 	rtc_regs->IRQSTATUS_SYS = mask;
+	if (data->alarm_cfg[0].callback == NULL && data->alarm_cfg[1].callback == NULL) {
+		irq_disable(config->irq_num);
+	}
 	irq_unlock(key);
 
 	ret = k3_rtc_fence(dev);
@@ -499,12 +506,15 @@ static int k3_counter_set_alarm_64(const struct device *dev, uint8_t chan_id,
 	rtc_regs->IRQENABLE_SET_SYS = mask;
 	irq_unlock(key);
 
+	irq_enable(DEV_CFG(dev)->irq_num);
+
 	return 0;
 }
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
 
 static void k3_rtc_isr(const struct device *dev)
 {
+	const struct k3_rtc_counter_cfg *config = DEV_CFG(dev);
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
 	struct k3_rtc_counter_data *data = DEV_DATA(dev);
 	uint32_t status;
@@ -560,6 +570,10 @@ static void k3_rtc_isr(const struct device *dev)
 		}
 
 		cb(dev, chan_id, now, user_data);
+	}
+
+	if (data->alarm_cfg[0].callback == NULL && data->alarm_cfg[1].callback == NULL) {
+		irq_disable(config->irq_num);
 	}
 }
 
@@ -634,39 +648,32 @@ static DEVICE_API(counter, k3_counter_api) = {
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
 };
 
-#define TI_K3_COUNTER_INIT(i)								\
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+#define K3_RTC_COUNTER_INFO                                                                        \
+	.freq = 1, .max_top_value_64 = RTC_MAX_TOP_VALUE_64,                                       \
+	.flags = COUNTER_CONFIG_INFO_COUNT_UP, .channels = 2,
+#else
+#define K3_RTC_COUNTER_INFO                                                                        \
+	.freq = 1, .max_top_value = RTC_MAX_TOP_VALUE, .flags = COUNTER_CONFIG_INFO_COUNT_UP,      \
+	.channels = 2,
+#endif
+
+#define TI_K3_COUNTER_INIT(i)                                                                      \
 	BUILD_ASSERT(DT_INST_PROP(i, clock_frequency) != 0, "nonzero clock-frequency");            \
-	static void ti_k3_counter_irq_config_##i(void)					\
-	{										\
-		IRQ_CONNECT(DT_INST_IRQN(i),						\
-			DT_INST_IRQ(i, priority),					\
-			k3_rtc_isr,							\
-			DEVICE_DT_INST_GET(i), DT_INST_IRQ(i, flags));			\
-		irq_enable(DT_INST_IRQN(i));						\
-	}										\
-	static struct k3_rtc_counter_data k3_counter_data_##i = {};			\
-	static struct k3_rtc_counter_cfg k3_counter_cfg_##i = {				\
-		.counter_info =								\
-			{								\
-				.freq = 1,						\
-				COND_CODE_1(CONFIG_COUNTER_64BITS_TICKS,		\
-					(.max_top_value_64 = RTC_MAX_TOP_VALUE_64,),	\
-					(.max_top_value = RTC_MAX_TOP_VALUE,))		\
-				.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
-				.channels = 2,						\
-			},								\
-		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(i)),			\
-		.irq_config_func = ti_k3_counter_irq_config_##i,			\
-		.osc_freq = DT_INST_PROP(i, clock_frequency)				\
-	};										\
-	DEVICE_DT_INST_DEFINE(i,							\
-		k3_counter_init,							\
-		NULL,									\
-		&k3_counter_data_##i,							\
-		&k3_counter_cfg_##i,							\
-		POST_KERNEL,								\
-		CONFIG_COUNTER_INIT_PRIORITY,						\
-		&k3_counter_api								\
-	);
+	static void ti_k3_counter_irq_config_##i(void)                                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(i), DT_INST_IRQ(i, priority), k3_rtc_isr,                 \
+			    DEVICE_DT_INST_GET(i), DT_INST_IRQ(i, flags));                         \
+	}                                                                                          \
+	static struct k3_rtc_counter_data k3_counter_data_##i = {};                                \
+	static struct k3_rtc_counter_cfg k3_counter_cfg_##i = {                                    \
+		.counter_info = {K3_RTC_COUNTER_INFO},                                             \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(i)),                              \
+		.irq_config_func = ti_k3_counter_irq_config_##i,                                   \
+		.osc_freq = DT_INST_PROP(i, clock_frequency),                                      \
+		.irq_num = DT_INST_IRQN(i),                                                        \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(i, k3_counter_init, NULL, &k3_counter_data_##i, &k3_counter_cfg_##i, \
+			      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY, &k3_counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TI_K3_COUNTER_INIT)
