@@ -14,6 +14,7 @@
 #include <zephyr/net/dplpmtud.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/quic.h>
 
 #if !defined(MBEDTLS_ALLOW_PRIVATE_ACCESS)
 #define MBEDTLS_ALLOW_PRIVATE_ACCESS
@@ -1251,6 +1252,13 @@ enum quic_context_flag {
 	QUIC_CONTEXT_APP_CLOSE,
 };
 
+/** Index of the counter of our own streams of one direction */
+enum quic_stream_id_counter_index {
+	QUIC_STREAM_ID_COUNTER_BIDI, /**< Bidirectional streams */
+	QUIC_STREAM_ID_COUNTER_UNI,  /**< Unidirectional streams */
+	QUIC_STREAM_ID_COUNTER_COUNT,
+};
+
 /**
  * QUIC connection information
  */
@@ -1308,13 +1316,13 @@ __net_socket struct quic_context {
 	bool stats_metadata_valid;
 #endif /* CONFIG_NET_STATISTICS_QUIC */
 
-	/** Sequence number of the next stream of our own, per direction:
-	 * index 0 for bidirectional and 1 for unidirectional streams. The
-	 * IDs of each stream type are used in order (RFC 9000 ch. 2.1), so
-	 * the two directions need their own count. Use
-	 * quic_stream_id_counter() to pick one.
+	/** Sequence number of the next stream of our own, per direction,
+	 * indexed by enum quic_stream_id_counter_index. The IDs of each
+	 * stream type are used in order (RFC 9000 ch. 2.1), so the two
+	 * directions need their own count. Use quic_stream_id_counter() to
+	 * pick one.
 	 */
-	uint64_t stream_id_counter[2];
+	uint64_t stream_id_counter[QUIC_STREAM_ID_COUNTER_COUNT];
 
 	/** Error code to be passed to application when connection is closed. */
 	int error_code;
@@ -1359,11 +1367,16 @@ __net_socket struct quic_context {
 
 /**
  * The counter of our own streams of the direction of a stream ID or a
- * stream type: bit 1 of either is set for a unidirectional stream.
+ * stream type. Both carry the direction in the same bit, so
+ * QUIC_STREAM_UNIDIRECTIONAL tests either.
  */
 static inline uint64_t *quic_stream_id_counter(struct quic_context *ctx, uint64_t id_or_type)
 {
-	return &ctx->stream_id_counter[(id_or_type & 2U) != 0U ? 1 : 0];
+	enum quic_stream_id_counter_index idx =
+		(id_or_type & QUIC_STREAM_UNIDIRECTIONAL) != 0U ? QUIC_STREAM_ID_COUNTER_UNI
+							       : QUIC_STREAM_ID_COUNTER_BIDI;
+
+	return &ctx->stream_id_counter[idx];
 }
 
 #if defined(CONFIG_QUIC_STATS_HISTORY)
