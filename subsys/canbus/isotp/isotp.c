@@ -801,17 +801,37 @@ static void send_timeout_handler(struct k_timer *timer)
 
 static void send_process_fc(struct isotp_send_ctx *sctx, struct can_frame *frame)
 {
-	uint8_t *data = frame->data;
+	uint8_t can_dl = can_dlc_to_bytes(frame->dlc);
+	uint8_t index = 0U;
 
 	if ((sctx->rx_addr.flags & ISOTP_MSG_EXT_ADDR) != 0) {
-		if (sctx->rx_addr.ext_addr != *data++) {
+		if (can_dl <= index) {
+			LOG_ERR("FC DL invalid. Ignore");
+			send_report_error(sctx, ISOTP_N_ERROR);
+			return;
+		}
+
+		if (sctx->rx_addr.ext_addr != frame->data[index++]) {
 			return;
 		}
 	}
 
-	if ((*data & ISOTP_PCI_TYPE_MASK) != ISOTP_PCI_TYPE_FC) {
+	if (can_dl <= index) {
+		LOG_ERR("FC DL invalid. Ignore");
+		send_report_error(sctx, ISOTP_N_ERROR);
+		return;
+	}
+
+	if ((frame->data[index] & ISOTP_PCI_TYPE_MASK) != ISOTP_PCI_TYPE_FC) {
 		LOG_ERR("Got unexpected PDU expected FC");
 		send_report_error(sctx, ISOTP_N_UNEXP_PDU);
+		return;
+	}
+
+	/* An FC frame carries the PCI byte, block size and STmin. */
+	if (can_dl < index + 3U) {
+		LOG_ERR("FC DL invalid. Ignore");
+		send_report_error(sctx, ISOTP_N_ERROR);
 		return;
 	}
 
@@ -824,14 +844,14 @@ static void send_process_fc(struct isotp_send_ctx *sctx, struct can_frame *frame
 	}
 #endif
 
-	switch (*data++ & ISOTP_PCI_FS_MASK) {
+	switch (frame->data[index++] & ISOTP_PCI_FS_MASK) {
 	case ISOTP_PCI_FS_CTS:
 		sctx->state = ISOTP_TX_SEND_CF;
 		sctx->wft = 0;
 		sctx->tx_backlog = 0;
 		k_sem_reset(&sctx->tx_sem);
-		sctx->opts.bs = *data++;
-		sctx->opts.stmin = *data++;
+		sctx->opts.bs = frame->data[index++];
+		sctx->opts.stmin = frame->data[index++];
 		sctx->bs = sctx->opts.bs;
 		LOG_DBG("Got CTS. BS: %d, STmin: %d", sctx->opts.bs,
 			sctx->opts.stmin);
