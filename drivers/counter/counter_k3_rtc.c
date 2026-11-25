@@ -15,20 +15,20 @@
 
 LOG_MODULE_REGISTER(counter_ti_k3_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
-#define RTC_MAX_TOP_VALUE		UINT32_MAX
-#define RTC_MAX_TOP_VALUE_64		BIT_MASK(48)
+#define RTC_MAX_TOP_VALUE    UINT32_MAX
+#define RTC_MAX_TOP_VALUE_64 BIT_MASK(48)
 
-#define K3_RTC_KICK0_UNLOCK		0x83e70b13
-#define K3_RTC_KICK1_UNLOCK		0x95a4f1e0
+#define K3_RTC_KICK0_UNLOCK 0x83e70b13
+#define K3_RTC_KICK1_UNLOCK 0x95a4f1e0
 
-#define RTC_CNT_FMODE_MASK		BIT(25)
-#define RTC_UNLOCK_MASK			BIT(23)
-#define RTC_O32K_OSC_MASK		BIT(21)
-#define RTC_SYNCPEND_STATUS_MASK	BIT_MASK(2)
+#define RTC_CNT_FMODE_MASK       GENMASK(25, 24)
+#define RTC_UNLOCK_MASK          BIT(23)
+#define RTC_O32K_OSC_MASK        BIT(21)
+#define RTC_SYNCPEND_STATUS_MASK BIT_MASK(2)
 
-#define RTC_IRQ_ALARM1_MASK		BIT(0)
-#define RTC_IRQ_ALARM2_MASK		BIT(1)
-#define RTC_IRQ_STATUS_MASK		BIT_MASK(2)
+#define RTC_IRQ_ALARM1_MASK BIT(0)
+#define RTC_IRQ_ALARM2_MASK BIT(1)
+#define RTC_IRQ_STATUS_MASK BIT_MASK(2)
 
 #define DEV_CFG(dev)  ((const struct k3_rtc_counter_cfg *)(dev)->config)
 #define DEV_DATA(dev) ((struct k3_rtc_counter_data *)(dev)->data)
@@ -454,7 +454,7 @@ static int k3_counter_init(const struct device *dev)
 	rtc_regs->GENRAL_CTL |= RTC_O32K_OSC_MASK;
 
 	/* Enable freeze mode for atomic 48-bit reads */
-	rtc_regs->GENRAL_CTL |= RTC_CNT_FMODE_MASK;
+	rtc_regs->GENRAL_CTL |= FIELD_PREP(RTC_CNT_FMODE_MASK, 2);
 
 	/* Clear and disable all interrupts */
 	rtc_regs->IRQSTATUS_SYS = RTC_IRQ_STATUS_MASK;
