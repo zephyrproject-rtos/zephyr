@@ -31,6 +31,11 @@ LOG_MODULE_REGISTER(counter_ti_k3_rtc, CONFIG_COUNTER_LOG_LEVEL);
 #define RTC_IRQ_ALARM2_MASK BIT(1)
 #define RTC_IRQ_STATUS_MASK BIT_MASK(2)
 
+/* Nominal ON-domain sync window after a register write (Linux rtc-ti-k3). */
+#define RTC_SYNC_CYCLES 4U
+/* Floor for SYNCPEND poll/busy-wait. 4x 32k cycles can be <1 ms. */
+#define RTC_SYNC_TIMEOUT_MIN_US 1000U
+
 #define DEV_CFG(dev)  ((const struct k3_rtc_counter_cfg *)(dev)->config)
 #define DEV_DATA(dev) ((struct k3_rtc_counter_data *)(dev)->data)
 #define DEV_REGS(dev) ((k3_rtc_regs_t *)DEVICE_MMIO_NAMED_GET(dev, reg_base))
@@ -566,17 +571,31 @@ static int k3_counter_init(const struct device *dev)
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
 	int ret;
 
+	/* Must be set before unlock: kick writes fence with this timeout. */
+	data->sync_timeout_us = (USEC_PER_SEC / config->osc_freq) * RTC_SYNC_CYCLES;
+	if (data->sync_timeout_us < RTC_SYNC_TIMEOUT_MIN_US) {
+		data->sync_timeout_us = RTC_SYNC_TIMEOUT_MIN_US;
+	}
+
 	ret = k3_rtc_unlock(dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to unlock RTC");
 		return ret;
 	}
 
-	/* 4 clock cycles for sync */
-	data->sync_timeout_us = (USEC_PER_SEC / config->osc_freq) * 4;
-
-	/* Enable 32k oscillator dependency */
+	/* Enable 32k oscillator dependency (Linux rtc-ti-k3). */
 	rtc_regs->GENRAL_CTL |= RTC_O32K_OSC_MASK;
+
+	/*
+	 * Fence after O32K enable so ON-domain sync is active before further
+	 * programming (matches Linux usleep after O32K_OSC_DEP_EN). Fence
+	 * already busy-waits then polls SYNCPEND.
+	 */
+	ret = k3_rtc_fence(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed sync after osc enable");
+		return ret;
+	}
 
 	/* Enable freeze mode for atomic 48-bit reads */
 	rtc_regs->GENRAL_CTL |= FIELD_PREP(RTC_CNT_FMODE_MASK, 2);
