@@ -151,6 +151,8 @@ enum {
 	L2CAP_FLAG_CONN_ACCEPTOR,         /* getting incoming connection req */
 	L2CAP_FLAG_CONN_PENDING,          /* remote sent pending result in rsp */
 	L2CAP_FLAG_CONN_CONF_RSP_SENDING, /* waiting for config response sent */
+	L2CAP_FLAG_CONN_CONF_RSP_SENT,    /* config response sent, complete it */
+	L2CAP_FLAG_CONN_CONF_RSP_FAILED,  /* config response failed, disconnect */
 	L2CAP_FLAG_CONN_RSP_SEC_BLOCK,    /* retry conn rsp with sec block err */
 	L2CAP_FLAG_CONN_RSP_SUCCESS,      /* retry conn rsp without err */
 	L2CAP_FLAG_CONN_CONF_REQ,         /* retry config req */
@@ -4887,18 +4889,40 @@ static void l2cap_br_config_rsp_sent_cb(struct bt_conn *conn, void *user_data, i
 	uint16_t scid = POINTER_TO_UINT(user_data);
 	struct bt_l2cap_chan *chan;
 
+	/* This runs on the TX notification context, while the channel is
+	 * handled and closed on the Bluetooth workqueue. Use the channel under
+	 * the host lock, which removals hold, and complete the configuration
+	 * on the Bluetooth workqueue, as when data from the peer completes it,
+	 * so that connected() is called there.
+	 */
+	bt_dev_lock();
+
 	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
 	if (chan == NULL) {
+		bt_dev_unlock();
 		return;
 	}
 
 	if (err != 0) {
+		/* If data from the peer has completed the configuration, the
+		 * peer has the response. Otherwise, clear the flag so that data
+		 * from the peer cannot complete it meanwhile.
+		 */
+		if (!atomic_test_and_clear_bit(BR_CHAN(chan)->flags,
+					       L2CAP_FLAG_CONN_CONF_RSP_SENDING)) {
+			bt_dev_unlock();
+			return;
+		}
+
 		LOG_ERR("Config response of chan %p failed to send (%d)", BR_CHAN(chan), err);
-		l2cap_br_chan_disconn(chan);
-		return;
+		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_CONF_RSP_FAILED);
+	} else {
+		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_CONF_RSP_SENT);
 	}
 
-	l2cap_br_config_rsp_complete(chan);
+	(void)bt_work_reschedule(&BR_CHAN(chan)->retry_work, K_NO_WAIT);
+
+	bt_dev_unlock();
 }
 
 static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t len,
@@ -5898,6 +5922,25 @@ static void l2cap_br_retry_handler(struct k_work *work)
 		 * left for the timeout to act on.
 		 */
 		return;
+	}
+
+	/* Sending the configuration response completed, see
+	 * l2cap_br_config_rsp_sent_cb()
+	 */
+	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_CONN_CONF_RSP_FAILED)) {
+		/* A channel that is already disconnecting is cleaned up by its
+		 * rtx_work or with the ACL. Cleaning it up here would cancel
+		 * this work item from its own handler.
+		 */
+		if (chan->state == BT_L2CAP_CONFIG) {
+			(void)bt_l2cap_br_chan_disconnect(&chan->chan);
+		}
+
+		return;
+	}
+
+	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_CONN_CONF_RSP_SENT)) {
+		l2cap_br_config_rsp_complete(&chan->chan);
 	}
 
 	if (l2cap == NULL) {
