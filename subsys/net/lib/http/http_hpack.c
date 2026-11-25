@@ -861,3 +861,70 @@ int http_hpack_encode_field(uint8_t *buf, size_t buflen, struct http_hpack_heade
 
 	return http_hpack_encode_header(buf, buflen, header);
 }
+
+/* Length of an integer as hpack_integer_encode() writes it. */
+static size_t hpack_integer_len(size_t value, uint8_t n)
+{
+	size_t limit = (1U << n) - 1U;
+	size_t len = 2;
+
+	if (value < limit) {
+		return 1;
+	}
+
+	value -= limit;
+
+	while (value >= 128U) {
+		len++;
+		value /= 128U;
+	}
+
+	return len;
+}
+
+/* Length of a string as hpack_string_encode() writes it. */
+static size_t hpack_string_len(enum hpack_string_type type, struct http_hpack_header_buf *header)
+{
+	const char *str = (type == HPACK_HEADER_NAME) ? header->name : header->value;
+	size_t str_len = (type == HPACK_HEADER_NAME) ? header->name_len : header->value_len;
+	int ret;
+
+	/* The shorter of the Huffman encoded string and the string itself. */
+	ret = http_hpack_huffman_encode(str, str_len, header->buf, sizeof(header->buf));
+	if (ret > 0 && (size_t)ret < str_len) {
+		str_len = (size_t)ret;
+	}
+
+	return hpack_integer_len(str_len, HPACK_STRING_PREFIX_LEN) + str_len;
+}
+
+int http_hpack_field_len(struct http_hpack_header_buf *header, const char *name,
+			 const char *value)
+{
+	bool name_only;
+	int index;
+
+	header->name = name;
+	header->name_len = strlen(name);
+	header->value = value;
+	header->value_len = strlen(value);
+
+	if (header->name_len == 0) {
+		return -EINVAL;
+	}
+
+	index = http_hpack_find_index(header, &name_only);
+	if (index < 0) {
+		return (int)(hpack_integer_len(0, HPACK_PREFIX_LEN_LITERAL_NEVER_INDEXED) +
+			     hpack_string_len(HPACK_HEADER_NAME, header) +
+			     hpack_string_len(HPACK_HEADER_VALUE, header));
+	}
+
+	if (name_only) {
+		return (int)(hpack_integer_len((size_t)index,
+					       HPACK_PREFIX_LEN_LITERAL_NEVER_INDEXED) +
+			     hpack_string_len(HPACK_HEADER_VALUE, header));
+	}
+
+	return (int)hpack_integer_len((size_t)index, HPACK_PREFIX_LEN_INDEXED);
+}
