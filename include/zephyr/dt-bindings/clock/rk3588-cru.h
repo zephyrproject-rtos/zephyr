@@ -12,7 +12,16 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RK3588_CRU_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RK3588_CRU_H_
 
+#define PCLK_GPIO1        115
+#define DBCLK_GPIO1       116
+#define PCLK_GPIO2        117
+#define DBCLK_GPIO2       118
+#define PCLK_GPIO3        119
+#define DBCLK_GPIO3       120
+#define PCLK_GPIO4        121
+#define DBCLK_GPIO4       122
 #define MCLK_GMAC0_OUT    248
+#define PCLK_TOP_ROOT     257
 #define CLK_GMAC0_PTP_REF 308
 #define CLK_GMAC1_PTP_REF 309
 #define CLK_GMAC_125M     310
@@ -21,6 +30,9 @@
 #define PCLK_GMAC1        345
 #define ACLK_GMAC0        349
 #define ACLK_GMAC1        350
+#define PCLK_GPIO0        625
+#define DBCLK_GPIO0       626
+#define PCLK_PMU0_ROOT    646
 
 /**
  * @defgroup rk3588_clock RK3588 SCMI clock identifiers
