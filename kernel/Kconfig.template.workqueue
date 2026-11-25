@@ -22,4 +22,11 @@ config $(module)_DEDICATED_WORKQUEUE_PRIORITY
 	help
 	  Thread priority for the dedicated $(module-str) workqueue thread.
 
+config $(module)_DEDICATED_WORKQUEUE_NO_YIELD
+	bool "Dedicated workqueue no yield for $(module-str)"
+	default SYSTEM_WORKQUEUE_NO_YIELD
+	help
+	  By default, the dedicated $(module-str) workqueue yields between each work item, to
+	  prevent other threads from being starved. Selecting this removes this yield.
+
 endif # $(module)_DEDICATED_WORKQUEUE
