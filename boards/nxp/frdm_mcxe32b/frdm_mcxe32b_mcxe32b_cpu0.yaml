@@ -15,5 +15,6 @@ supported:
   - adc
   - arduino_gpio
   - can
+  - crc
   - gpio
 vendor: nxp

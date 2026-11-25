@@ -31,6 +31,7 @@
 		zephyr,code-partition = &code_partition;
 		zephyr,console = &lpuart_5;
 		zephyr,canbus = &flexcan_0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -211,5 +212,9 @@
 };
 
 &trgmux {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
