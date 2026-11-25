@@ -423,6 +423,7 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt);
 
 int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 {
+	enum net_verdict verdict;
 	struct net_if *iface;
 	int family;
 	int status;
@@ -519,12 +520,18 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		family = net_pkt_family(pkt);
 	}
 
-	if (net_if_try_send_data(net_pkt_iface(pkt), pkt, timeout) == NET_DROP) {
+	verdict = net_if_try_send_data(net_pkt_iface(pkt), pkt, timeout);
+	if (verdict == NET_DROP) {
 		ret = -EIO;
 		goto err;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
+	/* NET_CONTINUE means the packet was fragmented or is waiting for
+	 * neighbor discovery. Each fragment, or the packet itself once the
+	 * neighbor is known, comes back through this function and is counted
+	 * then.
+	 */
+	if (IS_ENABLED(CONFIG_NET_STATISTICS) && verdict == NET_OK) {
 		switch (family) {
 		case NET_AF_INET:
 			net_stats_update_ipv4_sent(iface);
