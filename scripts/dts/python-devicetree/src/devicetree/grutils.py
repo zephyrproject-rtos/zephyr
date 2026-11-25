@@ -24,6 +24,8 @@ class Graph:
             self.__roots = {root}
         self.__edge_map = collections.defaultdict(set)
         self.__reverse_map = collections.defaultdict(set)
+        self.__deferred_edges_map = collections.defaultdict(set)
+        self.__normal_edges_map = collections.defaultdict(set)
         self.__nodes = set()
 
     def add_node(self, node):
@@ -32,17 +34,28 @@ class Graph:
         """
         self.__nodes.add(node)
 
-    def add_edge(self, source, target):
+    def add_edge(self, source, target, *, deferred=False):
         """
         Add a directed edge from the C{source} to the C{target}.
 
         The nodes are added to the graph if necessary.
         """
         self.__edge_map[source].add(target)
+        if deferred:
+            self.__deferred_edges_map[source].add(target)
+        else:
+            self.__normal_edges_map[source].add(target)
         if source != target:
             self.__reverse_map[target].add(source)
         self.__nodes.add(source)
         self.__nodes.add(target)
+
+    def is_deferred_edge(self, source, target):
+        """Return True if there exists an edge from source to target
+        and all edges from source to target are deferred edges
+        (i.e., there also does not exist any normal edge from source to target)."""
+        return (target in self.__deferred_edges_map.get(source, ())
+                and target not in self.__normal_edges_map.get(source, ()))
 
     def roots(self):
         """

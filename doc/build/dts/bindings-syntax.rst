@@ -251,7 +251,7 @@ Property entries in ``properties:`` are written in this syntax:
      min-len: <int>
      max-len: <int>
      specifier-space: <space-name>
-     dependency-mode: <normal | reverse | ignore | child-ignore>
+     dependency-mode: <normal | deferred | reverse | ignore | child-ignore>
 
 .. _dt-bindings-example-properties:
 
@@ -619,6 +619,50 @@ The ``dependency-mode`` setting accepts the following values:
 ``normal`` or unspecified
   The default behavior. The referencing node depends on the referenced node
   (the node pointed to by the phandle).
+
+``deferred``
+  Identical to ``normal``, except the referenced node must be a deferred device:
+  that is, it must have the ``zephyr,deferred-init`` property set to true. This
+  dependency mode allows a non-deferred device to reference deferred devices
+  using a :ref:`phandle property <phandle-properties>`, which is forbidden by
+  default but can be useful in some situations.
+
+  .. warning::
+    When this dependency mode is used, the build system does not verify that the
+    referencing node's initialization function will execute *after* that of all
+    nodes on which the referenced node depends. If the referencing node's device
+    driver intends to perform, from its initialization function, an action which
+    requires the referenced device's dependencies to already be initialized
+    (such as calling :c:func:`device_init` to initialize the referenced device),
+    you **must** review the image's device initialization order (as displayed by
+    the ``initlevels`` :ref:`build target <west-setting-build-target>`) to ensure
+    that those dependencies are indeed initialized before the referencing device
+    itself, as usage of the *"deferred"* dependency mode prevents the build system
+    from performing this verification on your behalf. In the following example:
+
+    .. code-block:: devicetree
+
+      /* Compatible/unnecessary details omitted for brevity */
+      / {
+        devA {
+          /* Assume that this property has "dependency-mode: deferred" */
+          link = <&{/deferred-dev}>;
+        };
+
+        devB {
+          deferred-dev {
+            zephyr,deferred-init;
+          };
+        };
+      };
+
+    No error will be reported if ``devA``'s initialization function is ordered to
+    run before ``devB``'s, even though ``devA`` depends on ``deferred-dev`` which
+    itself depends on ``devB``. *If the "normal" dependency mode was used (and
+    ``deferred-dev`` was not deferred), this would result in an error being
+    reported by the build system.* (If ``deferred-dev`` was deferred, a different
+    error would be reported, indicating that a non-deferred device cannot depend
+    on a deferred device without using the *"deferred"* dependency mode.)
 
 ``reverse``
   Reverses the dependency direction. Instead of the referencing node depending

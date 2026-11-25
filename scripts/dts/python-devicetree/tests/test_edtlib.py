@@ -1760,6 +1760,9 @@ def test_dependency_mode():
     ignore = edt.get_node("/dependency-mode-ignore")
     child_ignore = edt.get_node("/dependency-mode-child-ignore")
     local_child = edt.get_node("/dependency-mode-child-ignore/local-child")
+    deferred_target = edt.get_node("/dependency-mode-deferred-target")
+    deferred = edt.get_node("/dependency-mode-deferred")
+    deferred_and_normal = edt.get_node("/dependency-mode-deferred-and-normal")
 
     assert target in normal.depends_on
     assert normal in target.required_by
@@ -1774,6 +1777,34 @@ def test_dependency_mode():
     assert child_ignore not in local_child.required_by
     assert target in child_ignore.depends_on
     assert child_ignore in target.required_by
+
+    assert deferred_target in deferred.depends_on
+    assert deferred.has_deferred_dependency_on(deferred_target)
+    assert deferred_target in deferred_and_normal.depends_on
+    assert not deferred_and_normal.has_deferred_dependency_on(deferred_target)
+
+def test_deferred_dependency_mode_requires_deferred_target(tmp_path):
+    dts_file = tmp_path / "deferred.dts"
+    dts_file.write_text("""
+/dts-v1/;
+
+/ {
+	target: target {
+		compatible = "dependency-mode-test";
+	};
+
+	source {
+		compatible = "dependency-mode-test";
+		deferred-ref = <&target>;
+	};
+};
+""")
+
+    with from_here():
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.EDT(str(dts_file), ["test-bindings"])
+
+    assert "does not have 'zephyr,deferred-init' set to true" in str(e.value)
 
 def test_slice_errs(tmp_path):
     '''Test error messages from the internal _slice() helper'''

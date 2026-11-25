@@ -139,6 +139,8 @@ With the above, running ``west build -b reel_board samples/hello_world`` will
 use build directory :file:`build/reel_board/hello_world`.  See
 :ref:`west-building-config` for more details on this option.
 
+.. _west-setting-build-target:
+
 Setting the Build System Target
 -------------------------------
 

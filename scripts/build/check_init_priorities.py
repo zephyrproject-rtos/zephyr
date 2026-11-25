@@ -53,7 +53,6 @@ _IGNORE_COMPATIBLES = frozenset(
 
 # Deferred initialization property name.
 # When present, the device is not initialized during boot.
-# (it is evaluated as if initializing "after everything else")
 _DEFERRED_INIT_PROP_NAME = "zephyr,deferred-init"
 
 # The offset of the init pointer in "struct device", in number of pointers.
@@ -71,6 +70,17 @@ _MAP_SECTION_RE = re.compile(
 # Matches the address/size/object line following a section-name-only line in
 # a GNU ld map file, for example "0x0000000c        0x8 app/libapp.a(main.c.obj)".
 _MAP_OBJECT_RE = re.compile(r"^\s*(?P<addr>0x[0-9a-fA-F]+)\s+0x[0-9a-fA-F]+\s+\S+\s*$")
+
+
+def _is_deferred(node):
+    """Returns True if the node is a deferred device, False otherwise."""
+    # Even though the property is boolean, it is sometimes present
+    # in node.props despite having value false: check for both
+    # presence *and* value.
+    if (p := node.props.get(_DEFERRED_INIT_PROP_NAME)) is None:
+        return False
+    assert isinstance(p.val, bool)
+    return p.val
 
 
 class Priority:
@@ -449,25 +459,30 @@ class Validator:
                 self.log.info(f"Ignoring priority: {dev_node._binding.compatible}")
                 return
 
-        def _deferred(node):
-            # Even though the property is boolean, it is sometimes present
-            # in node.props despite having value false: check for both
-            # presence *and* value.
-            if (p := node.props.get(_DEFERRED_INIT_PROP_NAME)) is None:
-                return False
-            assert isinstance(p.val, bool)
-            return p.val
+        dev_deferred = _is_deferred(dev_node)
+        dep_deferred = _is_deferred(dep_node)
 
-        dev_deferred = _deferred(dev_node)
-        dep_deferred = _deferred(dep_node)
-
-        # Deferred devices can depend on any device...
+        # If this device is deferred, it can depend on any device (deferred/non-deferred).
+        #
+        # Note that this creates a pitfall for user of "dependency-mode: deferred"
+        #  A (normal init) ==deferred==> B (deferred-init) --normal--> C (normal init)
+        #
+        # Under the usual rules, the current call would assert that "prio(B) < prio(C)"
+        # and an earlier (or later) call to self._check_dep(A, B) would assert that
+        # "prio(A) < prio(B)", which guarantees that "prio(A) < prio(C)" when combined.
+        # However, since B is a deferred device, we must allow "prio(B) > prio(C)" and
+        # this breaks the guarantee. For now, users of the "deferred" dependency mode
+        # must be aware of this limitation (which we document) and may have to manually
+        # tweak and validate the initialization order themselves depending on what they
+        # intend to do with B from A's initialization function.
         if dev_deferred:
             self.log.info(f"Ignoring deferred device {dev_node.path}")
             return
 
-        # ...but non-deferred devices cannot depend on them!
-        if dep_deferred:  # we already know dev_deferred==False
+        # This device is not a deferred device: it cannot depend on a deferred device,
+        # unless all references to that deferred device are made via phandle properties
+        # which use the "deferred" dependency mode.
+        if dep_deferred and not dev_node.has_deferred_dependency_on(dep_node):
             self._flag_error(
                 f"Non-deferred device {dev_node.path} depends on deferred device {dep_node.path}"
             )
