@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DMA Restart Test"
+
+source "Kconfig.zephyr"
+
+config DMA_RESTART_CHANNEL
+	int "DMA channel to use"
+	default 0
+
+config DMA_RESTART_IDLE_SLOT
+	int "DMA request of a peripheral that never requests a transfer"
+	default 0
+	help
+	  Used to keep a peripheral-to-memory transfer pending, so that it can be
+	  stopped before it has transferred anything. The peripheral must stay
+	  disabled in the test configuration.
+
+config DMA_RESTART_RELOCATE_SECTION
+	string "Memory region to place the test buffers in"
+	depends on CODE_DATA_RELOCATION
+	default "RAM"

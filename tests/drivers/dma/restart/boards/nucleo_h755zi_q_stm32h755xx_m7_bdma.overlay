@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The BDMA driver expects the SRAM4 region to be non-cachable. */
+&sram4 {
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+};
+
+&bdma1 {
+	status = "okay";
+};
+
+tst_dma0: &dmamux2 {
+	status = "okay";
+};

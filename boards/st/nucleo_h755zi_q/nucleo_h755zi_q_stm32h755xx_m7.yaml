@@ -13,9 +13,11 @@ supported:
   - arduino_serial
   - arduino_spi
   - ptp_clock
+  - spi
   - uart
   - gpio
   - counter
+  - dma
   - i2c
   - pwm
   - netif:eth
