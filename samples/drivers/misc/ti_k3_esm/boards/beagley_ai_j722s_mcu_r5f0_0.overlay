@@ -1,0 +1,11 @@
+#include <zephyr/dt-bindings/misc/ti-k3-esm.h>
+
+/ {
+	aliases {
+		esm0 = &wkup_esm0;
+	};
+};
+
+&wkup_esm0 {
+	status = "okay";
+};

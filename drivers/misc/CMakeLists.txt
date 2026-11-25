@@ -19,6 +19,7 @@ add_subdirectory_ifdef(CONFIG_RENESAS_DRW renesas_drw)
 add_subdirectory_ifdef(CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT renesas_ra_external_interrupt)
 add_subdirectory_ifdef(CONFIG_RENESAS_RX_DTC renesas_rx_dtc)
 add_subdirectory_ifdef(CONFIG_RENESAS_RX_EXTERNAL_INTERRUPT renesas_rx_external_interrupt)
+add_subdirectory_ifdef(CONFIG_TI_K3_ESM ti_k3_esm)
 add_subdirectory_ifdef(CONFIG_TI_TDP2004 ti_tdp2004)
 add_subdirectory_ifdef(CONFIG_TMC6460 tmc6460)
 # zephyr-keep-sorted-stop

@@ -8,10 +8,22 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
+#include <zephyr/dt-bindings/misc/ti-k3-esm.h>
 
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	wkup_esm0: esm@4100000 {
+		compatible = "ti,k3-esm";
+		reg = <0x04100000 0x1000>;
+		/*
+		 * Optional VIM lines (cfg/hi/low = 140/141/142). Left unset by
+		 * default so bring-up can poll event status without claiming
+		 * IRQs that may already be watched by system firmware.
+		 */
+		status = "disabled";
+	};
 
 	mcu_padcfg0: syscon@4080000 {
 		compatible = "ti,control-module";

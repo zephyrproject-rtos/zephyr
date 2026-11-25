@@ -1,0 +1,22 @@
+# Copyright (c) 2026 BeagleBoard.org Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+config TI_K3_ESM
+	bool "TI K3 Error Signaling Module (ESM)"
+	default y
+	depends on DT_HAS_TI_K3_ESM_ENABLED
+	help
+	  Driver for the TI K3 Error Signaling Module. Aggregates SoC error
+	  events (e.g. DCC ERR) and delivers high/low priority CPU interrupts.
+
+if TI_K3_ESM
+
+module = TI_K3_ESM
+module-str = TI K3 ESM
+source "subsys/logging/Kconfig.template.log_config"
+
+config TI_K3_ESM_INIT_PRIORITY
+	int "TI K3 ESM init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+
+endif # TI_K3_ESM
