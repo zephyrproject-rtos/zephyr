@@ -209,3 +209,7 @@
 &wkpu {
 	status = "okay";
 };
+
+&trgmux {
+	status = "okay";
+};
