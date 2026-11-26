@@ -49,24 +49,39 @@ struct mspi_cadence_data {
 	const struct mspi_dev_id *current_peripheral;
 };
 
+static int mspi_cadence_poll(mem_addr_t reg, uint32_t mask, bool set, int64_t timeout_ms)
+{
+	const k_timepoint_t end = sys_timepoint_calc(K_MSEC(MAX(timeout_ms, 0)));
+
+	if (WAIT_FOR(((sys_read32(reg) & mask) != 0) == set, k_ticks_to_us_ceil32(1), NULL)) {
+		return 0;
+	}
+
+	while (((sys_read32(reg) & mask) != 0) != set) {
+		if (sys_timepoint_expired(end)) {
+			return -ETIMEDOUT;
+		}
+		k_sleep(K_TICKS(1));
+	}
+
+	return 0;
+}
+
+static int64_t mspi_cadence_ms_left(int64_t start_time, uint32_t timeout_ms)
+{
+	return start_time + timeout_ms - k_uptime_get();
+}
+
 /**
  * Wait for the MSPI controller to enter idle with the default timeout
  */
 static int mspi_cadence_wait_for_idle(const struct device *controller)
 {
 	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
-	uint32_t config_reg = sys_read32(base_addr + CADENCE_MSPI_CONFIG_OFFSET);
-	uint32_t idle = config_reg & CADENCE_MSPI_CONFIG_REG_IDLE_BIT;
-	uint32_t retries = CADENCE_MSPI_GET_NUM_RETRIES(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE);
 
-	while (idle == 0 && retries > 0) {
-		k_sleep(CADENCE_MSPI_TIME_BETWEEN_RETRIES);
-		config_reg = sys_read32(base_addr + CADENCE_MSPI_CONFIG_OFFSET);
-		idle = config_reg & CADENCE_MSPI_CONFIG_REG_IDLE_BIT;
-		--retries;
-	}
-
-	if (retries == 0 && idle == 0) {
+	if (mspi_cadence_poll(base_addr + CADENCE_MSPI_CONFIG_OFFSET,
+			      CADENCE_MSPI_CONFIG_REG_IDLE_BIT, true,
+			      CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE) != 0) {
 		LOG_ERR("Timeout while waiting for MSPI to enter idle");
 		return -EIO;
 	}
@@ -452,14 +467,9 @@ static int mspi_cadence_stig(const struct device *controller, const struct mspi_
 	flash_cmd_ctrl |= CADENCE_MSPI_FLASH_CMD_CTRL_REG_CMD_EXEC_BIT;
 	sys_write32(flash_cmd_ctrl, base_address + CADENCE_MSPI_FLASH_CMD_CTRL_OFFSET);
 
-	uint32_t exec_status = sys_read32(base_address + CADENCE_MSPI_FLASH_CMD_CTRL_OFFSET) &
-			       CADENCE_MSPI_FLASH_CMD_CTRL_REG_CMD_EXEC_STATUS_BIT;
-	while (exec_status != 0 && k_uptime_get() - start_time < req->timeout) {
-		k_sleep(CADENCE_MSPI_TIME_BETWEEN_RETRIES);
-		exec_status = sys_read32(base_address + CADENCE_MSPI_FLASH_CMD_CTRL_OFFSET) &
-			      CADENCE_MSPI_FLASH_CMD_CTRL_REG_CMD_EXEC_STATUS_BIT;
-	}
-	if (exec_status != 0) {
+	if (mspi_cadence_poll(base_address + CADENCE_MSPI_FLASH_CMD_CTRL_OFFSET,
+			      CADENCE_MSPI_FLASH_CMD_CTRL_REG_CMD_EXEC_STATUS_BIT, false,
+			      mspi_cadence_ms_left(start_time, req->timeout)) != 0) {
 		LOG_ERR("Timeout while waiting for dedicated command to finish");
 		return -EIO;
 	}
@@ -567,16 +577,9 @@ static int mspi_cadence_indirect_read(const struct device *controller, const str
 	}
 
 	/* Wait until official indirect read completion */
-	uint32_t done_status =
-		sys_read32(base_address + CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_OFFSET) &
-		CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT;
-	while (done_status == 0 && k_uptime_get() - start_time < req->timeout) {
-		k_sleep(CADENCE_MSPI_TIME_BETWEEN_RETRIES);
-		done_status =
-			sys_read32(base_address + CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_OFFSET) &
-			CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT;
-	}
-	if (done_status == 0) {
+	if (mspi_cadence_poll(base_address + CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_OFFSET,
+			      CADENCE_MSPI_INDIRECT_READ_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT,
+			      true, mspi_cadence_ms_left(start_time, req->timeout)) != 0) {
 		LOG_ERR("Timeout waiting for official indirect read done confirmation");
 		goto timeout;
 	}
@@ -681,16 +684,9 @@ static int mspi_cadence_indirect_write(const struct device *controller, const st
 	}
 
 	/* Wait for official finish */
-	uint32_t done_status =
-		sys_read32(base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_OFFSET) &
-		CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT;
-	while (done_status == 0 && k_uptime_get() - start_time < req->timeout) {
-		k_sleep(CADENCE_MSPI_TIME_BETWEEN_RETRIES);
-		done_status =
-			sys_read32(base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_OFFSET) &
-			CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT;
-	}
-	if (done_status == 0) {
+	if (mspi_cadence_poll(base_address + CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_OFFSET,
+			      CADENCE_MSPI_INDIRECT_WRITE_XFER_CTRL_REG_IND_OPS_DONE_STATUS_BIT,
+			      true, mspi_cadence_ms_left(start_time, req->timeout)) != 0) {
 		LOG_ERR("Timeout while waiting for official write done confirmation");
 		goto timeout;
 	}
