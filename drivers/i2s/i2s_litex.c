@@ -8,7 +8,7 @@
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
-#include <soc.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include "i2s_litex.h"
@@ -24,9 +24,9 @@ LOG_MODULE_REGISTER(i2s_litex);
  */
 static void i2s_enable(uintptr_t reg)
 {
-	uint8_t reg_data = litex_read8(reg + I2S_CONTROL_OFFSET);
+	uint8_t reg_data = sys_read8(reg + I2S_CONTROL_OFFSET);
 
-	litex_write8(reg_data | I2S_ENABLE, reg + I2S_CONTROL_OFFSET);
+	sys_write8(reg_data | I2S_ENABLE, reg + I2S_CONTROL_OFFSET);
 }
 
 /**
@@ -36,9 +36,9 @@ static void i2s_enable(uintptr_t reg)
  */
 static void i2s_disable(uintptr_t reg)
 {
-	uint8_t reg_data = litex_read8(reg + I2S_CONTROL_OFFSET);
+	uint8_t reg_data = sys_read8(reg + I2S_CONTROL_OFFSET);
 
-	litex_write8(reg_data & ~(I2S_ENABLE), reg + I2S_CONTROL_OFFSET);
+	sys_write8(reg_data & ~(I2S_ENABLE), reg + I2S_CONTROL_OFFSET);
 }
 
 /**
@@ -48,9 +48,9 @@ static void i2s_disable(uintptr_t reg)
  */
 static void i2s_reset_fifo(uintptr_t reg)
 {
-	uint8_t reg_data = litex_read8(reg + I2S_CONTROL_OFFSET);
+	uint8_t reg_data = sys_read8(reg + I2S_CONTROL_OFFSET);
 
-	litex_write8(reg_data | I2S_FIFO_RESET, reg + I2S_CONTROL_OFFSET);
+	sys_write8(reg_data | I2S_FIFO_RESET, reg + I2S_CONTROL_OFFSET);
 }
 
 /**
@@ -63,7 +63,7 @@ static void i2s_reset_fifo(uintptr_t reg)
  */
 static i2s_fmt_t i2s_get_foramt(uintptr_t reg)
 {
-	uint8_t reg_data = litex_read32(reg + I2S_CONFIG_OFFSET);
+	uint8_t reg_data = sys_read32(reg + I2S_CONFIG_OFFSET);
 
 	reg_data &= I2S_CONF_FORMAT_MASK;
 	if (reg_data == LITEX_I2S_STANDARD) {
@@ -83,7 +83,7 @@ static i2s_fmt_t i2s_get_foramt(uintptr_t reg)
  */
 static uint32_t i2s_get_sample_width(uintptr_t reg)
 {
-	uint32_t reg_data = litex_read32(reg + I2S_CONFIG_OFFSET);
+	uint32_t reg_data = sys_read32(reg + I2S_CONFIG_OFFSET);
 
 	reg_data &= I2S_CONF_SAMPLE_WIDTH_MASK;
 	return reg_data >> I2S_CONF_SAMPLE_WIDTH_OFFSET;
@@ -98,7 +98,7 @@ static uint32_t i2s_get_sample_width(uintptr_t reg)
  */
 static uint32_t i2s_get_audio_freq(uintptr_t reg)
 {
-	uint32_t reg_data = litex_read32(reg + I2S_CONFIG_OFFSET);
+	uint32_t reg_data = sys_read32(reg + I2S_CONFIG_OFFSET);
 
 	reg_data &= I2S_CONF_LRCK_MASK;
 	return reg_data >> I2S_CONF_LRCK_FREQ_OFFSET;
@@ -114,9 +114,9 @@ static void i2s_irq_enable(uintptr_t reg, int irq_type)
 {
 	__ASSERT_NO_MSG(irq_type == I2S_EV_READY || irq_type == I2S_EV_ERROR);
 
-	uint8_t reg_data = litex_read8(reg + I2S_EV_ENABLE_OFFSET);
+	uint8_t reg_data = sys_read8(reg + I2S_EV_ENABLE_OFFSET);
 
-	litex_write8(reg_data | irq_type, reg + I2S_EV_ENABLE_OFFSET);
+	sys_write8(reg_data | irq_type, reg + I2S_EV_ENABLE_OFFSET);
 }
 
 /**
@@ -129,9 +129,9 @@ static void i2s_irq_disable(uintptr_t reg, int irq_type)
 {
 	__ASSERT_NO_MSG(irq_type == I2S_EV_READY || irq_type == I2S_EV_ERROR);
 
-	uint8_t reg_data = litex_read8(reg + I2S_EV_ENABLE_OFFSET);
+	uint8_t reg_data = sys_read8(reg + I2S_EV_ENABLE_OFFSET);
 
-	litex_write8(reg_data & ~(irq_type), reg + I2S_EV_ENABLE_OFFSET);
+	sys_write8(reg_data & ~(irq_type), reg + I2S_EV_ENABLE_OFFSET);
 }
 
 /**
@@ -141,9 +141,9 @@ static void i2s_irq_disable(uintptr_t reg, int irq_type)
  */
 static void i2s_clear_pending_irq(uintptr_t reg)
 {
-	uint8_t reg_data = litex_read8(reg + I2S_EV_PENDING_OFFSET);
+	uint8_t reg_data = sys_read8(reg + I2S_EV_PENDING_OFFSET);
 
-	litex_write8(reg_data, reg + I2S_EV_PENDING_OFFSET);
+	sys_write8(reg_data, reg + I2S_EV_PENDING_OFFSET);
 }
 
 /**
@@ -308,7 +308,7 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 	struct i2s_litex_data *const dev_data = dev->data;
 	const struct i2s_litex_cfg *const cfg = dev->config;
 	struct stream *stream;
-	int channels_concatenated = litex_read8(cfg->base + I2S_STATUS_OFFSET);
+	int channels_concatenated = sys_read8(cfg->base + I2S_STATUS_OFFSET);
 	int dev_audio_freq = i2s_get_audio_freq(cfg->base);
 	int channel_div;
 
