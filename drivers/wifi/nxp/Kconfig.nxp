@@ -453,6 +453,7 @@ config NXP_WIFI_POWERSAVE_TASK_STACK_SIZE
 
 config NXP_WIFI_TX_TASK_STACK_SIZE
 	int "Wifi driver TX task stack size"
+	default 4096 if !NXP_RW610
 	default 2048
 	depends on NXP_WIFI_WMM
 	help
@@ -1504,11 +1505,12 @@ config TXPD_RXPD_V3
 	bool
 	default y
 
-if NXP_WIFI_TX_RX_ZERO_COPY && !NXP_RW610
-
-# For SDHC zero copy, net buf size should be multiples of SDHC block size
+# SDHC zero-copy needs net buf multiple of SDHC block size
 configdefault NET_BUF_DATA_SIZE
-	default 2048
+	default 1744 if NXP_WIFI_TX_RX_ZERO_COPY && NXP_RW610
+	default 2048 if NXP_WIFI_TX_RX_ZERO_COPY && !NXP_RW610
+
+if NXP_WIFI_TX_RX_ZERO_COPY && !NXP_RW610
 
 # For SDHC zero copy, net buf should be aligned by cache line size.
 # On platforms without DCACHE, align to SDHC DMA transfer requirement.
@@ -1517,5 +1519,17 @@ configdefault NET_BUF_ALIGNMENT
 	default SDHC_BUFFER_ALIGNMENT
 
 endif # NXP_WIFI_TX_RX_ZERO_COPY && !NXP_RW610
+
+config NXP_WIFI_PRESET
+	bool "NXP Wi-Fi configuration preset"
+	help
+	  Apply shared NXP Wi-Fi defaults and SoC- or shield-specific packet
+	  pool sizes and TCP windows. Shared defaults cover network stack
+	  sizes, thread priorities, connection limits, IP fragmentation,
+	  socket and zperf resources, code relocation, Wi-Fi driver options,
+	  and wpa_supplicant/mbedTLS resources.
+	  Applications may override these defaults in prj.conf or overlays.
+	  Defaults defined independently of this preset remain in effect
+	  when it is disabled.
 
 endif # WIFI_NXP
