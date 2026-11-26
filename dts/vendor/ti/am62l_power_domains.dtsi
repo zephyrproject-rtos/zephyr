@@ -104,6 +104,24 @@
 			#power-domain-cells = <0>;
 		};
 
+		main_mcasp0_pd: power-domain@32 {
+			compatible = "arm,scmi-power-domain";
+			reg = <50>;
+			#power-domain-cells = <0>;
+		};
+
+		main_mcasp1_pd: power-domain@33 {
+			compatible = "arm,scmi-power-domain";
+			reg = <51>;
+			#power-domain-cells = <0>;
+		};
+
+		main_mcasp2_pd: power-domain@34 {
+			compatible = "arm,scmi-power-domain";
+			reg = <52>;
+			#power-domain-cells = <0>;
+		};
+
 		main_i2c0_pd: power-domain@35 {
 			compatible = "arm,scmi-power-domain";
 			reg = <53>;
