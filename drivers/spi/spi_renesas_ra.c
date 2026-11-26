@@ -139,7 +139,7 @@ static int ra_spi_configure(const struct device *dev, const struct spi_config *c
 	}
 
 	if (!(config->operation & SPI_OP_MODE_PERIPHERAL)) {
-		LOG_INF("frequency: %d", config->frequency);
+		LOG_DBG("frequency: %d", config->frequency);
 		fsp_err = R_SPI_CalculateBitrate(config->frequency,
 						 &data->fsp_config_extend.spck_div);
 		if (fsp_err != FSP_SUCCESS) {
