@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: TI TPS65214/TPS65215 PMIC regulators
+
+description: |
+  TI TPS65214/TPS65215 PMIC regulators
+
+  The node is a child of a "ti,tps65214" or "ti,tps65215" node, which
+  selects the register map. The regulators are child nodes named BUCK1,
+  BUCK2, BUCK3, LDO1 and LDO2.
+
+  Voltage ranges:
+    - BUCK1-3: 0.6 V to 3.4 V
+    - LDO1, LDO2 (TPS65214): 0.6 V to 3.3 V
+    - LDO1 (TPS65215): 0.6 V to 3.4 V
+    - LDO2 (TPS65215): 1.2 V to 3.3 V
+
+  An LDO the PMIC NVM configures as a load switch has no voltage control.
+
+compatible: "ti,tps6521x-regulator"
+
+include: base.yaml
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-init-microvolt
+
+examples:
+  - |
+    pmic@30 {
+      compatible = "ti,tps65214";
+      reg = <0x30>;
+
+      regulators {
+        compatible = "ti,tps6521x-regulator";
+
+        BUCK1 {
+          regulator-always-on;
+        };
+      };
+    };
