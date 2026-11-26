@@ -1007,6 +1007,30 @@ def test_devicehandler_create_command(
     assert command == expected
 
 
+@pytest.mark.parametrize(
+    'failures, elapsed, expect_raise',
+    [(0, 0, False), (3, 0, False), (1, 100, True)],
+    ids=['first try', 'retried', 'timeout']
+)
+def test_devicehandler_open_serial_with_retry(failures, elapsed, expect_raise):
+    attempts = []
+
+    def mock_open():
+        attempts.append(1)
+        if len(attempts) <= failures:
+            raise SerialException('busy')
+
+    ser = mock.Mock(open=mock.Mock(side_effect=mock_open))
+
+    with mock.patch('time.sleep'), \
+         mock.patch('time.time', return_value=elapsed), \
+         pytest.raises(SerialException) if expect_raise else nullcontext():
+        DeviceHandler._open_serial_with_retry(ser, 0, 10)
+
+    if not expect_raise:
+        assert len(attempts) == failures + 1
+
+
 TESTDATA_14 = [
     ('success', False, Handler.FailureType.NONE, 'success', None, False),
     (TwisterStatus.FAIL, False, Handler.FailureType.NONE, TwisterStatus.FAIL,
