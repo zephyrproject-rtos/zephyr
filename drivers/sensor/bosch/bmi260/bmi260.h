@@ -8,9 +8,11 @@
 #define ZEPHYR_DRIVERS_SENSOR_BOSCH_BMI260_BMI260_H_
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/kernel.h>
 
 /*
  * The device answers on either I2C or SPI, and which one is settled per
@@ -49,6 +51,10 @@ struct bmi260_config {
 	uint16_t gyr_odr_hz;
 	uint8_t acc_range_g;
 	uint16_t gyr_range_dps;
+#if defined(CONFIG_BMI260_TRIGGER)
+	/* Left zeroed when the node describes no interrupt line. */
+	struct gpio_dt_spec int1;
+#endif
 };
 
 /*
@@ -67,7 +73,37 @@ struct bmi260_data {
 	 */
 	uint8_t acc_range_g;
 	uint16_t gyr_range_dps;
+
+#if defined(CONFIG_BMI260_TRIGGER)
+	/*
+	 * Per instance, not file scope: two BMI260s in one image each need
+	 * their own thread, callback and handler.
+	 */
+	const struct device *dev;
+	struct gpio_callback int1_cb;
+	sensor_trigger_handler_t drdy_handler;
+	const struct sensor_trigger *drdy_trigger;
+
+#if defined(CONFIG_BMI260_TRIGGER_OWN_THREAD)
+	struct k_sem trig_sem;
+	struct k_thread thread;
+
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_BMI260_THREAD_STACK_SIZE);
+#elif defined(CONFIG_BMI260_TRIGGER_GLOBAL_THREAD)
+	struct k_work trig_work;
+#endif
+#endif /* CONFIG_BMI260_TRIGGER */
 };
+
+/*
+ * Declared whether or not the trigger is built, so that the IS_ENABLED() guard
+ * at the call site has something to compile against in both configurations.
+ * The definitions live in bmi260_trigger.c, which is only compiled when the
+ * trigger is enabled; with it disabled the call is dead code and drops out.
+ */
+int bmi260_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+		       sensor_trigger_handler_t handler);
+int bmi260_trigger_mode_init(const struct device *dev);
 
 #if defined(CONFIG_BMI260_BUS_SPI)
 #define BMI260_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB)

@@ -689,7 +689,16 @@ static int bmi260_init(const struct device *dev)
 		return ret;
 	}
 
-	LOG_DBG("Ready: %u g, %u dps", cfg->acc_range_g, cfg->gyr_range_dps);
+	if (IS_ENABLED(CONFIG_BMI260_TRIGGER)) {
+		ret = bmi260_trigger_mode_init(dev);
+		if (ret != 0) {
+			LOG_ERR("Could not set up the interrupt line (%d)", ret);
+			return ret;
+		}
+	}
+
+	LOG_DBG("Ready: %u g, %u dps, trigger %s", cfg->acc_range_g, cfg->gyr_range_dps,
+		IS_ENABLED(CONFIG_BMI260_TRIGGER) ? "available" : "not built");
 
 	if (IS_ENABLED(CONFIG_BMI260_LOG_CONFIG)) {
 		uint8_t conf[4];
@@ -715,7 +724,20 @@ static DEVICE_API(sensor, bmi260_driver_api) = {
 	.sample_fetch = bmi260_sample_fetch,
 	.channel_get = bmi260_channel_get,
 	.attr_set = bmi260_attr_set,
+#if defined(CONFIG_BMI260_TRIGGER)
+	.trigger_set = bmi260_trigger_set,
+#endif
 };
+
+/*
+ * A node that describes no interrupt line leaves the spec zeroed, which is
+ * what bmi260_trigger_set() checks to report -ENOTSUP.
+ */
+#if defined(CONFIG_BMI260_TRIGGER)
+#define BMI260_CONFIG_INT(inst) .int1 = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, {0}),
+#else
+#define BMI260_CONFIG_INT(inst)
+#endif
 
 /* Fills in a struct bmi260_config for an instance on an I2C bus. */
 #define BMI260_CONFIG_I2C(inst)                                                                    \
@@ -735,6 +757,7 @@ static DEVICE_API(sensor, bmi260_driver_api) = {
 		.gyr_odr_hz = DT_INST_PROP(inst, gyro_odr),                                \
 		.acc_range_g = DT_INST_PROP(inst, accel_range),                            \
 		.gyr_range_dps = DT_INST_PROP(inst, gyro_range),                           \
+		BMI260_CONFIG_INT(inst)                                                    \
 	};                                                                                 \
                                                                                            \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi260_init, NULL, &bmi260_data_##inst,          \
