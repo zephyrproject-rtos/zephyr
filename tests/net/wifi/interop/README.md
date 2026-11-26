@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # native_sim Wi-Fi interop test
 
-This test exercises the `native_sim` Wi-Fi driver (`drivers/wifi/native_sim/`)
+This test exercises the `native_sim` Wi-Fi driver (`drivers/net/wifi/native_sim/`)
 end to end. It builds a small Wi-Fi shell application, brings up a simulated
 Linux `mac80211_hwsim` radio with two hostapd access points, and uses the
 [pytest twister harness](https://docs.zephyrproject.org/latest/develop/test/pytest.html)

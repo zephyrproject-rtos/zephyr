@@ -19,7 +19,7 @@ endif()
 if(CONFIG_WIFI_BFLB)
   zephyr_include_directories(
     ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/common/wifi4
-    ${ZEPHYR_BASE}/drivers/wifi/bflb/wifi4
+    ${ZEPHYR_BASE}/drivers/net/wifi/bflb/wifi4
   )
   zephyr_sources(
     wifi/bflb_wifi_platform.c

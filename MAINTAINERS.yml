@@ -3222,7 +3222,7 @@ Documentation Infrastructure:
     - MaochenWang1
     - maass-hamburg
   files:
-    - drivers/wifi/
+    - drivers/net/wifi/
     - dts/bindings/wifi/
     - tests/drivers/build_all/wifi/
     - include/zephyr/drivers/wifi/
@@ -3241,7 +3241,7 @@ Documentation Infrastructure:
   collaborators:
     - sachinthegreen
   files:
-    - drivers/wifi/nrf_wifi/
+    - drivers/net/wifi/nrf_wifi/
     - dts/bindings/wifi/nordic,nrf70.yaml
     - dts/bindings/wifi/nordic,nrf70-qspi.yaml
     - dts/bindings/wifi/nordic,nrf70-spi.yaml
@@ -3262,7 +3262,7 @@ Documentation Infrastructure:
   collaborators:
     - loicpoulain
   files:
-    - drivers/wifi/eswifi/
+    - drivers/net/wifi/eswifi/
   description: >-
     Inventek es-WiFi
   labels:
@@ -3383,23 +3383,23 @@ Espressif Platforms:
     - samples/boards/espressif/
     - tests/boards/espressif/
     - drivers/*/*esp32*/
-    - drivers/wifi/esp_hosted/
-    - drivers/wifi/esp_hosted_mcu/
-    - drivers/wifi/esp_at/
+    - drivers/net/wifi/esp_hosted/
+    - drivers/net/wifi/esp_hosted_mcu/
+    - drivers/net/wifi/esp_at/
     - drivers/misc/esp_hosted_mcu/
     - drivers/bluetooth/hci/hci_esp_hosted_mcu.c
   file-groups:
     - name: Espressif hosted Wi-Fi driver
       files:
-        - drivers/wifi/esp_hosted
+        - drivers/net/wifi/esp_hosted
     - name: Espressif esp-hosted transport core
       files:
         - drivers/misc/esp_hosted_mcu
-        - drivers/wifi/esp_hosted_mcu
+        - drivers/net/wifi/esp_hosted_mcu
         - drivers/bluetooth/hci/hci_esp_hosted_mcu.c
     - name: Espressif ESP-AT Wi-Fi driver
       files:
-        - drivers/wifi/esp_at
+        - drivers/net/wifi/esp_at
   labels:
     - "platform: ESP32"
 
@@ -3686,7 +3686,7 @@ Infineon Platforms:
     - drivers/*/*xmc*
     - drivers/*/*/*xmc*
     - drivers/sensor/infineon/
-    - drivers/wifi/infineon/
+    - drivers/net/wifi/infineon/
     - dts/arm/infineon/
     - dts/bindings/*/*infineon*
     - soc/infineon/
@@ -4533,7 +4533,7 @@ NXP Platform Drivers:
     - arch/arm/core/mpu/nxp_mpu.c
     - dts/bindings/*/nxp*
   files-exclude:
-    - drivers/wifi/
+    - drivers/net/wifi/
     - drivers/bluetooth/
   files-regex-exclude:
     - .*s32.*
@@ -4558,7 +4558,7 @@ NXP Platform Wireless:
     - drivers/bluetooth/hci/*nxp*
     - drivers/hdlc_rcp_if/*nxp*
     - drivers/ieee802154/ieee802154_kw41z.c
-    - drivers/wifi/nxp/
+    - drivers/net/wifi/nxp/
     - samples/bluetooth/**/*rw*
     - samples/net/**/*mcxw*
     - samples/net/**/*nxp*
@@ -4577,7 +4577,7 @@ NXP Platform Wireless:
         - MaochenWang1
       files:
         - boards/shields/nxp_m2_wifi_bt/
-        - drivers/wifi/
+        - drivers/net/wifi/
         - samples/net/
     - name: NXP IEEE802.15.4
       collaborators:
@@ -4884,6 +4884,7 @@ Networking:
     - drivers/net/ethernet/
     - drivers/net/mdio/
     - drivers/net/phy/
+    - drivers/net/wifi/
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
     - include/zephyr/net/mcp/
@@ -8277,7 +8278,7 @@ nRF Platforms:
     - snippets/nordic*/
     - tests/boards/nrf/
   files-exclude:
-    - drivers/wifi/nrf_wifi/
+    - drivers/net/wifi/nrf_wifi/
     - dts/bindings/wifi/
   file-groups:
     - name: nRF boards

@@ -128,7 +128,7 @@ struct airoc_wifi_config {
 /**
  * \brief This function returns pointer type to handle instance
  *        of whd interface (whd_interface_t) which allocated in
- *        Zephyr AIROC driver (drivers/wifi/infineon/airoc_wifi.c)
+ *        Zephyr AIROC driver (drivers/net/wifi/infineon/airoc_wifi.c)
  */
 
 whd_interface_t airoc_wifi_get_whd_interface(void);
