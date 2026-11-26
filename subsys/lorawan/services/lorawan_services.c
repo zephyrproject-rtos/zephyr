@@ -96,25 +96,18 @@ out:
 
 static inline void insert_uplink(struct service_uplink_msg *msg_new)
 {
-	struct service_uplink_msg *msg_prev;
+	struct service_uplink_msg *msg;
+	sys_snode_t *prev = NULL;
 
-	if (sys_slist_is_empty(&msg_list)) {
-		sys_slist_append(&msg_list, &msg_new->node);
-	} else {
-		int count = 0;
-
-		SYS_SLIST_FOR_EACH_CONTAINER(&msg_list, msg_prev, node) {
-			count++;
-			if (msg_prev->ticks <= msg_new->ticks) {
-				break;
-			}
+	/* Keep earliest deadlines first and preserve arrival order for equal deadlines. */
+	SYS_SLIST_FOR_EACH_CONTAINER(&msg_list, msg, node) {
+		if (msg->ticks > msg_new->ticks) {
+			break;
 		}
-		if (msg_prev != NULL) {
-			sys_slist_insert(&msg_list, &msg_prev->node, &msg_new->node);
-		} else {
-			sys_slist_append(&msg_list, &msg_new->node);
-		}
+		prev = &msg->node;
 	}
+
+	sys_slist_insert(&msg_list, prev, &msg_new->node);
 }
 
 int lorawan_services_schedule_uplink(uint8_t port, uint8_t *data, uint8_t len, uint32_t timeout)
