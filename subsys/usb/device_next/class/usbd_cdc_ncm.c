@@ -330,6 +330,7 @@ static int cdc_ncm_out_start(struct usbd_class_data *const c_data)
 	ep = cdc_ncm_get_bulk_out(c_data);
 	buf = cdc_ncm_buf_alloc(ep);
 	if (buf == NULL) {
+		atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
 		return -ENOMEM;
 	}
 
@@ -337,6 +338,7 @@ static int cdc_ncm_out_start(struct usbd_class_data *const c_data)
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
 		net_buf_unref(buf);
+		atomic_clear_bit(&data->state, CDC_NCM_OUT_ENGAGED);
 	} else {
 		LOG_DBG("enqueue out %u", buf->size);
 	}
