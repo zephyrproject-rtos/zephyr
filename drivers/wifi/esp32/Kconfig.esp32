@@ -97,9 +97,9 @@ config ESP32_WIFI_STATIC_RX_BUFFER_NUM
 	  until esp_wifi_deinit is called. They are always taken from the system heap, also
 	  when ESP_WIFI_HEAP_SPIRAM is selected.
 
-	  WiFi hardware use these buffers to receive all 802.11 frames.
-	  A higher number may allow higher throughput but increases memory use. If ESP32_WIFI_AMPDU_RX_ENABLED
-	  is enabled, this value is recommended to set equal or bigger than ESP32_WIFI_RX_BA_WIN in order to
+	  WiFi hardware use these buffers to receive all 802.11 frames. A higher number may allow
+	  higher throughput but increases memory use. If ESP32_WIFI_AMPDU_RX_ENABLED is enabled,
+	  this value is recommended to set equal or bigger than ESP32_WIFI_RX_BA_WIN in order to
 	  achieve better throughput and compatibility with both stations and APs.
 
 config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
@@ -216,11 +216,13 @@ choice ESP32_WIFI_MGMT_RX_BUFFER
 	help
 	  Select type of WiFi RX MGMT buffers:
 
-	  If "Static" is selected, WiFi RX MGMT buffers are allocated when WiFi is initialized and released
-	  when WiFi is de-initialized. The size of each static RX MGMT buffer is fixed to about 500 Bytes.
+	  If "Static" is selected, WiFi RX MGMT buffers are allocated when WiFi is initialized and
+	  released when WiFi is de-initialized. The size of each static RX MGMT buffer is fixed to
+	  about 500 Bytes.
 
-	  If "Dynamic" is selected, each WiFi RX MGMT buffer is allocated as needed when a MGMT data frame is
-	  received. The MGMT buffer is freed after the MGMT data frame has been processed by the WiFi driver.
+	  If "Dynamic" is selected, each WiFi RX MGMT buffer is allocated as needed when a MGMT data
+	  frame is received. The MGMT buffer is freed after the MGMT data frame has been processed
+	  by the WiFi driver.
 
 config ESP32_WIFI_STATIC_RX_MGMT_BUFFER
 	bool "Static"
@@ -243,7 +245,8 @@ config ESP32_WIFI_RX_MGMT_BUF_NUM_DEF
 	  Set the number of WiFi RX_MGMT buffers.
 
 	  For Management buffers, the number of dynamic and static management buffers is the same.
-	  In order to prevent memory fragmentation, the management buffer type should be set to static first.
+	  In order to prevent memory fragmentation, the management buffer type should be set to
+	  static first.
 
 config ESP32_WIFI_CSI_ENABLED
 	bool "WiFi CSI(Channel State Information)"
@@ -453,10 +456,11 @@ config ESP32_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
 	range 8 60
 	default 50
 	help
-	  Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. When the station enters the active state,
-	  it will work for at least ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME. If a data packet is received or sent
-	  during this period, the time will be refreshed. If the time is up, but the station still has packets
-	  to receive or send, the time will also be refreshed. unit: milliseconds.
+	  Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. When the station enters the
+	  active state, it will work for at least ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME. If a data
+	  packet is received or sent during this period, the time will be refreshed. If the time is
+	  up, but the station still has packets to receive or send, the time will also be refreshed.
+	  unit: milliseconds.
 
 config ESP32_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME
 	int "Maximum keep alive time"
@@ -472,10 +476,11 @@ config ESP32_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
 	range 10 30
 	default 15
 	help
-	  Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. When the station knows through the beacon
-	  that AP will send broadcast packet, it will wait for ESP_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
-	  before entering the sleep process. If a broadcast packet is received with more data bits, the time
-	  will refreshed. unit: milliseconds.
+	  Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. When the station knows through
+	  the beacon that AP will send broadcast packet, it will wait for
+	  ESP_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME before entering the sleep process. If a
+	  broadcast packet is received with more data bits, the time will refreshed. unit:
+	  milliseconds.
 
 config ESP32_WIFI_FTM_ENABLE
 	bool "WiFi FTM"

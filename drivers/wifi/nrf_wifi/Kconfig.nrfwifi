@@ -35,7 +35,6 @@ config WIFI_NRF7000
 	bool
 	default y if DT_HAS_NORDIC_NRF7000_SPI_ENABLED || DT_HAS_NORDIC_NRF7000_QSPI_ENABLED
 
-
 choice WIFI_USAGE_MODE
 	default WIFI_USAGE_MODE_SCAN_ONLY if WIFI_NRF7000
 endchoice
@@ -252,9 +251,10 @@ config NRF70_SR_COEX_RF_SWITCH
 	bool "GPIO configuration to control SR side RF switch position"
 	depends on $(dt_nodelabel_has_prop,nrf70,srrf-switch-gpios)
 	help
-	  Select this option to enable GPIO configuration to control SR side RF switch position.
-	  If this GPIO is asserted (1), the SR side RF switch is connected to the Wi-Fi side (shared antenna).
-	  If this GPIO is de-asserted (0), the SR side RF switch is connected to the SR side (separate antenna).
+	  Select this option to enable GPIO configuration to control SR side RF switch position. If
+	  this GPIO is asserted (1), the SR side RF switch is connected to the Wi-Fi side (shared
+	  antenna). If this GPIO is de-asserted (0), the SR side RF switch is connected to the SR
+	  side (separate antenna).
 
 config NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL
 	bool "Configuration of GPIO control for coexistence"
@@ -590,7 +590,8 @@ endif # NRF_WIFI_LOW_POWER
 config WIFI_FIXED_MAC_ADDRESS
 	string "Wi-Fi Fixed MAC address in format XX:XX:XX:XX:XX:XX"
 	help
-	  This option overrides the MAC address read from OTP. It is strictly for testing purposes only.
+	  This option overrides the MAC address read from OTP. It is strictly for testing purposes
+	  only.
 
 choice WIFI_MAC_ADDRESS
 	prompt "Wi-Fi MAC address type"
@@ -692,8 +693,8 @@ config NRF_WIFI_USE_VARIABLE_NET_BUFS
 
 if NRF_WIFI_USE_VARIABLE_NET_BUFS
 
-# nRF70 now uses variable buffers as default to optimize RAM usage. Default pool sizes are used, samples/apps can override
-# for higher performance.
+# nRF70 now uses variable buffers as default to optimize RAM usage. Default pool sizes are used,
+# samples/apps can override for higher performance.
 choice NET_PKT_DATA_ALLOC_TYPE
 	default NET_BUF_VARIABLE_DATA_SIZE
 endchoice

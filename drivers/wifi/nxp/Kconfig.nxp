@@ -73,41 +73,30 @@ config NXP_88W8987
 	bool "NXP 88W8987 [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
-	  Enable NXP 88W8987 Wi-Fi connectivity,
-	  More information about 88W8987 device you can find on
-	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-5-ghz-dual-band-1x1-wi-fi-5-802-11ac-plus-bluetooth-5-2-solution:88W8987
+	  Enable NXP 88W8987 Wi-Fi connectivity.
 
 config NXP_IW416
 	bool "NXP IW416 [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
-	  Enable NXP IW416 Wi-Fi connectivity,
-	  More information about IW416 device you can find on
-	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-5-ghz-dual-band-1x1-wi-fi-4-802-11n-plus-bluetooth-5-2-solution:IW416
+	  Enable NXP IW416 Wi-Fi connectivity.
 
 config NXP_IW61X
 	bool "NXP IW61X [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
-	  Enable NXP IW61X Wi-Fi connectivity,
-	  More information about IW61X device you can find on
-	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-5ghz-dual-band-1x1-wi-fi-6-802-11ax-plus-bluetooth-5-2-solution:IW611
-	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-5-ghz-dual-band-1x1-wi-fi-6-802-11ax-plus-bluetooth-5-2-plus-802-15-4-tri-radio-solution:IW612
+	  Enable NXP IW61X Wi-Fi connectivity.
 
 config NXP_88W8801
 	bool "NXP 88W8801 [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
-	  Enable NXP 88W8801 Wi-Fi connectivity,
-	  More information about 88W8801 device you can find on
-	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-ghz-single-band-1x1-wi-fi-4-802-11n-solution:88W8801
+	  Enable NXP 88W8801 Wi-Fi connectivity.
 
 config NXP_IW610
 	bool "NXP IW610"
 	help
-	  Enable NXP IW610 Wi-Fi connectivity,
-	  More information about IW610 device you can find on
-	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/2-4-5ghz-dual-band-1x1-wi-fi-6-plus-bluetooth-low-energy-5-4-plus-802-15-4-tri-radio-solution:IW610
+	  Enable NXP IW610 Wi-Fi connectivity.
 
 endchoice
 
@@ -145,10 +134,6 @@ config NXP_88W8987_MURATA_1ZM_USD
 	  Bluetooth® 5.1 BR/EDR/LE up to 433Mbps PHY data rate on Wi-Fi® and
 	  3Mbps PHY data rate on Bluetooth®.
 
-	  Detailed information about Murata Type 1ZM module you can find on
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type1zm
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/usd-m2-adapter
-
 config NXP_88W8987_MURATA_1ZM_M2
 	bool "NXP MURATA-1ZM-M2"
 	help
@@ -156,9 +141,6 @@ config NXP_88W8987_MURATA_1ZM_M2
 	  NXP 88W8987 combo chipset which supports Wi-Fi® 802.11a/b/g/n/ac +
 	  Bluetooth® 5.1 BR/EDR/LE up to 433Mbps PHY data rate on Wi-Fi® and
 	  3Mbps PHY data rate on Bluetooth®.
-
-	  Detailed information about Murata Type 1ZM module you can find on
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type1zm
 
 endchoice
 
@@ -218,10 +200,6 @@ config NXP_IW416_MURATA_1XK_USD
 	  Bluetooth® 5.2 BR/EDR/LE up to 150 Mbps PHY data rate on Wi-Fi® and
 	  3Mbps PHY data rate on Bluetooth®.
 
-	  Detailed information about Type 1XK module you can find on
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type1xk
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/usd-m2-adapter
-
 config NXP_IW416_MURATA_1XK_M2
 	bool "NXP IW416-MURATA-1XK-M2"
 	help
@@ -229,9 +207,6 @@ config NXP_IW416_MURATA_1XK_M2
 	  NXP IW416 combo chipset which supports Wi-Fi® 802.11a/b/g/n +
 	  Bluetooth® 5.2 BR/EDR/LE up to 150 Mbps PHY data rate on Wi-Fi® and
 	  3Mbps PHY data rate on Bluetooth®.
-
-	  Detailed information about Type 1XK module you can find on
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type1xk
 
 config NXP_IW416_UBX_MAYA_W1_USD
 	bool "NXP IW416-UBX-MAYA-W1-USD"
@@ -258,10 +233,6 @@ config NXP_IW612_MURATA_2EL_USD
 	  Bluetooth® 5.3 BR/EDR/LE + 802.15.4 up to 601Mbps PHY data rate on Wi-fi®
 	  and 2Mbps PHY data rate on Bluetooth®.
 
-	  Detailed information about Type 2EL module you can find on
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2el
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/usd-m2-adapter
-
 config NXP_IW612_MURATA_2EL_M2
 	bool "NXP IW612-MURATA-2EL-M2"
 	help
@@ -269,9 +240,6 @@ config NXP_IW612_MURATA_2EL_M2
 	  NXP IW612 combo chipset which supports Wi-Fi® 802.11a/b/g/n/ac/ax +
 	  Bluetooth® 5.3 BR/EDR/LE + 802.15.4 up to 601Mbps PHY data rate on Wi-fi®
 	  and 2Mbps PHY data rate on Bluetooth®.
-
-	  Detailed information about Type 2EL module you can find on
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2el
 
 config NXP_IW611_MURATA_2DL_USD
 	bool "NXP IW611-MURATA-2DL-USD"
@@ -281,10 +249,6 @@ config NXP_IW611_MURATA_2DL_USD
 	  Bluetooth® 5.3 BR/EDR/LE up to 601Mbps PHY data rate on Wi-fi® and
 	  2Mbps PHY data rate on Bluetooth®.
 
-	  Detailed information about Type 2DL module you can find on
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2dl
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/usd-m2-adapter
-
 config NXP_IW611_MURATA_2DL_M2
 	bool "NXP IW611-MURATA-2DL-M2"
 	help
@@ -292,9 +256,6 @@ config NXP_IW611_MURATA_2DL_M2
 	  NXP IW611 combo chipset which supports Wi-Fi® 802.11a/b/g/n/ac/ax +
 	  Bluetooth® 5.3 BR/EDR/LE up to 601Mbps PHY data rate on Wi-fi® and
 	  2Mbps PHY data rate on Bluetooth®.
-
-	  Detailed information about Type 2DL module you can find on
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2dl
 
 config NXP_IW611_EZURIO_NX611
 	bool "NXP IW611-EZURIO-NX611"
@@ -377,19 +338,12 @@ config NXP_88W8801_MURATA_2DS_USD
 	  based on NXP 88W8801 chipset which supports Wi-Fi® 802.11b/g/n
 	  up to 72.2 Mbps PHY data rate.
 
-	  Detailed information about Murata Type 2DS module you can find on
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2ds
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/usd-m2-adapter
-
 config NXP_88W8801_MURATA_2DS_M2
 	bool "NXP MURATA-2DS-M2"
 	help
 	  Murata Type 2DS is a small high-performance module (integrated PCB antenna)
 	  based on NXP 88W8801 chipset which supports Wi-Fi® 802.11b/g/n
 	  up to 72.2 Mbps PHY data rate.
-
-	  Detailed information about Murata Type 2DS module you can find on
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2ds
 
 endchoice
 
@@ -404,9 +358,6 @@ config NXP_IW610_MURATA_2LL_M2
 	  combo chipset which supports Wi-Fi™ 802.11a/b/g/n/ac/ax HE20 + Bluetooth®. 5.4
 	  Low Energy + 802.15.4 up to 114.7Mbps PHY data rate on Wi-Fi™ and 2Mbps PHY data
 	  rate on Bluetooth® Low Energy.
-
-	  Detailed information about Type 2LL module you can find on
-	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2ll
 
 config NXP_IW610_RD_USD
 	bool "NXP IW610-RD-USD [EXPERIMENTAL]"
@@ -705,7 +656,8 @@ config NXP_WIFI_SOFTAP_SUPPORT
 	bool "Wi-Fi SoftAP Support"
 	select WIFI_NM_HOSTAPD_AP if WIFI_NM_WPA_SUPPLICANT
 	imply WIFI_NM_HOSTAPD_WPS if WIFI_NM_HOSTAPD_AP && WIFI_NM_WPA_SUPPLICANT_WPS
-	imply WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE if WIFI_NM_HOSTAPD_AP && WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	imply WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE if WIFI_NM_HOSTAPD_AP && \
+		WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	default y if WIFI_USAGE_MODE_AP || WIFI_USAGE_MODE_STA_AP
 	help
 	  Option to enable Wi-Fi SoftAP functions in the Wi-Fi driver.
@@ -897,7 +849,8 @@ config NXP_WIFI_CSI_AMI
 	select NXP_LIBCSI_CM7_20M if NXP_IW610
 	depends on NXP_WIFI_CSI
 	help
-	  This option enable/disable channel state information to calculate ambient motion index feature.
+	  This option enable/disable channel state information to calculate ambient motion index
+	  feature.
 
 config NXP_WIFI_WLS
 	bool "Wireless Location Service"
@@ -919,7 +872,8 @@ config NXP_WIFI_RESET
 	default y
 	imply NXP_WIFI_IND_DNLD if (NXP_IW610 || NXP_IW61X || NXP_IW416)
 	imply NXP_WIFI_IND_RESET if (NXP_IW610 || NXP_IW61X || NXP_IW416)
-	imply NXP_WIFI_IND_OOB_RESET if (NXP_IW610 || NXP_IW61X || NXP_IW416) && !NXP_WIFI_CUSTOM_HOST
+	imply NXP_WIFI_IND_OOB_RESET if (NXP_IW610 || NXP_IW61X || NXP_IW416) && \
+		!NXP_WIFI_CUSTOM_HOST
 	help
 	  This option is used to enable/disable/reset Wi-Fi.
 
@@ -1226,6 +1180,7 @@ config NXP_WIFI_IND_OOB_RESET
 	depends on NXP_WIFI_IND_RESET && NXP_WIFI_IND_DNLD
 	help
 	  Add another Wi-Fi independent reset option by external GPIO.
+
 endif
 
 config NXP_WIFI_SLIM
