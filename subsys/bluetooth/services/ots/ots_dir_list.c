@@ -57,7 +57,10 @@ static size_t dir_list_object_record_size(const struct bt_gatt_ots_object *obj)
 
 	/* Name */
 	obj_name_len = strlen(obj->metadata.name);
-	__ASSERT(obj_name_len > 0 && obj_name_len <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
+	/* The name is empty for an object created through OACP Create until the client writes one,
+	 * and a client may write an empty name. The record then carries a zero name length.
+	 */
+	__ASSERT(obj_name_len <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
 		 "Dir list object len is incorrect %zu", obj_name_len);
 	len += obj_name_len;
 
@@ -107,7 +110,7 @@ static void dir_list_object_encode(const struct bt_gatt_ots_object *obj,
 
 	/* Name length */
 	obj_name_len = strlen(obj->metadata.name);
-	__ASSERT(obj_name_len > 0 && obj_name_len <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
+	__ASSERT(obj_name_len <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
 		 "Dir list object len is incorrect %zu", obj_name_len);
 	net_buf_simple_add_u8(net_buf, obj_name_len);
 
