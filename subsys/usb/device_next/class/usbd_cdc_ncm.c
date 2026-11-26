@@ -6,6 +6,8 @@
 
 #define DT_DRV_COMPAT zephyr_cdc_ncm_ethernet
 
+#include <ctype.h>
+
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/ethernet.h>
 
@@ -14,6 +16,7 @@
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/usb/class/usb_cdc.h>
+#include <zephyr/usb/class/usbd_cdc_eth.h>
 #include <zephyr/drivers/usb/udc.h>
 
 #include <zephyr/logging/log.h>
@@ -217,7 +220,8 @@ enum iface_state {
 
 struct cdc_ncm_eth_data {
 	struct usbd_class_data *c_data;
-	struct usbd_desc_node *const mac_desc_data;
+	struct usbd_desc_node mac_desc_data;
+	char remote_mac[NET_ETH_ADDR_LEN * 2 + 1];
 	struct usbd_cdc_ncm_desc *const desc;
 	const struct usb_desc_header *const *const fs_desc;
 	const struct usb_desc_header *const *const hs_desc;
@@ -1009,10 +1013,10 @@ static int usbd_cdc_ncm_init(struct usbd_class_data *const c_data)
 	LOG_DBG("CDC NCM class initialized");
 
 	if (desc->if0_ecm.iMACAddress == 0) {
-		if (usbd_add_descriptor(uds_ctx, data->mac_desc_data)) {
+		if (usbd_add_descriptor(uds_ctx, &data->mac_desc_data)) {
 			LOG_ERR("Failed to add iMACAddress string descriptor");
 		} else {
-			desc->if0_ecm.iMACAddress = usbd_str_desc_get_idx(data->mac_desc_data);
+			desc->if0_ecm.iMACAddress = usbd_str_desc_get_idx(&data->mac_desc_data);
 		}
 	}
 
@@ -1026,7 +1030,7 @@ static void usbd_cdc_ncm_shutdown(struct usbd_class_data *const c_data)
 	struct usbd_cdc_ncm_desc *desc = data->desc;
 
 	desc->if0_ecm.iMACAddress = 0;
-	sys_dlist_remove(&data->mac_desc_data->node);
+	sys_dlist_remove(&data->mac_desc_data.node);
 }
 
 static const void *usbd_cdc_ncm_get_desc(struct usbd_class_data *const c_data,
@@ -1210,6 +1214,28 @@ static int usbd_cdc_ncm_preinit(const struct device *dev)
 	}
 
 	LOG_DBG("CDC NCM device initialized");
+
+	return 0;
+}
+
+int usbd_cdc_ncm_set_remote_mac(const struct device *dev, const uint8_t mac[NET_ETH_ADDR_LEN])
+{
+	struct cdc_ncm_eth_data *data = dev->data;
+	struct net_eth_addr addr;
+
+	memcpy(addr.addr, mac, sizeof(addr.addr));
+	if (!net_eth_is_addr_valid(&addr)) {
+		return -EINVAL;
+	}
+
+	if (sys_dnode_is_linked(&data->mac_desc_data.node)) {
+		return -EBUSY;
+	}
+
+	bin2hex(mac, NET_ETH_ADDR_LEN, data->remote_mac, sizeof(data->remote_mac));
+	for (size_t i = 0; i < NET_ETH_ADDR_LEN * 2; i++) {
+		data->remote_mac[i] = toupper((unsigned char)data->remote_mac[i]);
+	}
 
 	return 0;
 }
@@ -1412,10 +1438,9 @@ const static struct usb_desc_header *const cdc_ncm_hs_desc_##n[] = {		\
 
 #define USBD_CDC_NCM_DT_DEVICE_DEFINE(n)					\
 	CDC_NCM_DEFINE_DESCRIPTOR(n);						\
-	USBD_DESC_STRING_DEFINE(mac_desc_data_##n,				\
-				DT_INST_PROP(n, remote_mac_address),		\
-				USBD_DUT_STRING_INTERFACE);			\
-										\
+	BUILD_ASSERT(sizeof(DT_INST_PROP(n, remote_mac_address)) ==		\
+		     NET_ETH_ADDR_LEN * 2 + 1,					\
+		     "remote-mac-address must be 12 hexadecimal digits");	\
 	USBD_DEFINE_CLASS(cdc_ncm_##n,						\
 			  &usbd_cdc_ncm_api,					\
 			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
@@ -1424,7 +1449,17 @@ const static struct usb_desc_header *const cdc_ncm_hs_desc_##n[] = {		\
 		.c_data = &cdc_ncm_##n,						\
 		.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),		\
 		.sync_sem = Z_SEM_INITIALIZER(eth_data_##n.sync_sem, 1, 1),	\
-		.mac_desc_data = &mac_desc_data_##n,				\
+		.mac_desc_data = {						\
+			.str = {						\
+				.utype = USBD_DUT_STRING_INTERFACE,		\
+				.ascii7 = true,					\
+			},							\
+			.ptr = eth_data_##n.remote_mac,			\
+			.bLength = USB_STRING_DESCRIPTOR_LENGTH(		\
+				DT_INST_PROP(n, remote_mac_address)),		\
+			.bDescriptorType = USB_DESC_STRING,			\
+		},								\
+		.remote_mac = DT_INST_PROP(n, remote_mac_address),		\
 		.desc = &cdc_ncm_desc_##n,					\
 		.fs_desc = cdc_ncm_fs_desc_##n,					\
 		.hs_desc = cdc_ncm_hs_desc_##n,					\

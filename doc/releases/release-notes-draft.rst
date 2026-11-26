@@ -206,6 +206,13 @@ Libraries / Subsystems
   * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
     (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
 
+* USB
+
+  * The remote MAC address that CDC ECM and CDC NCM report to the host in the iMACAddress
+    string descriptor can be set at runtime, before :c:func:`usbd_init`, with
+    :c:func:`usbd_cdc_ecm_set_remote_mac` and :c:func:`usbd_cdc_ncm_set_remote_mac`, so devices
+    running the same image can report distinct addresses.
+
 * USB Type-C
 
   * Dual-role ports can prefer the Sink role through the Try.SNK and TryWait.SRC states
