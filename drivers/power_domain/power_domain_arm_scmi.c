@@ -25,7 +25,7 @@ static int scmi_pd_pm_action(const struct device *dev,
 	struct scmi_power_state_config pwr_cfg;
 	int ret;
 
-	LOG_INF("attempting PM action %d on domain %d", action, cfg->domain_id);
+	LOG_DBG("attempting PM action %d on domain %d", action, cfg->domain_id);
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
