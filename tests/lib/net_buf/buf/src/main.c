@@ -559,6 +559,9 @@ ZTEST(net_buf_tests, test_net_buf_fixed_pool)
 
 	net_buf_unref(buf);
 
+	buf = net_buf_alloc_len(&fixed_pool, FIXED_BUFFER_SIZE + 1, K_NO_WAIT);
+	zassert_is_null(buf, "Allocated a buffer larger than the fixed size");
+
 	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
 }
 

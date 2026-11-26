@@ -363,16 +363,12 @@ success:
 
 		timeout = sys_timepoint_timeout(end);
 		buf->__buf = data_alloc(buf, &alloc_size, timeout);
-		if (!buf->__buf) {
+		if (!buf->__buf || alloc_size < size) {
 			NET_BUF_ERR("%s():%d: Failed to allocate data",
 				    func, line);
 			net_buf_destroy(buf);
 			return NULL;
 		}
-
-		__ASSERT_NO_MSG(size <= alloc_size);
-
-		size = MIN(size, alloc_size);
 	} else {
 		buf->__buf = NULL;
 	}
