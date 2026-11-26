@@ -875,6 +875,22 @@ ZTEST(prf, test_fp_value)
 	PRF_CHECK("8.98846567431158e+307", rc);
 }
 
+ZTEST(prf, test_fp_hex_zero)
+{
+	int rc;
+
+	if (!IS_ENABLED(CONFIG_CBPRINTF_FP_A_SUPPORT)) {
+		ztest_test_skip();
+		return;
+	}
+
+	TEST_PRF(&rc, "/%a/%a/", 0.0, -0.0);
+	PRF_CHECK("/0x0p+0/-0x0p+0/", rc);
+
+	TEST_PRF(&rc, "/%.0a/%.3a/%#a/", 0.0, -0.0, 0.0);
+	PRF_CHECK("/0x0p+0/-0x0.000p+0/0x0.p+0/", rc);
+}
+
 ZTEST(prf, test_fp_length)
 {
 	if (IS_ENABLED(CONFIG_CBPRINTF_NANO)) {

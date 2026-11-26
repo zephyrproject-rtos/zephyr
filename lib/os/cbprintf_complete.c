@@ -951,19 +951,15 @@ static char *encode_float(double value,
 		buf[1] = 'x';
 		buf += 2;
 
-		/* Remove the offset from the exponent, and store the
-		 * non-fractional value.  Subnormals require increasing the
-		 * exponent as first bit isn't the implicit bit.
-		 */
-		expo -= 1023;
-		if (is_subnormal) {
+		/* Zero and subnormals have no implicit leading bit. */
+		if (expo == 0) {
 			*buf = '0';
-			++buf;
-			++expo;
+			expo = is_subnormal ? -1022 : 0;
 		} else {
 			*buf = '1';
-			++buf;
+			expo -= 1023;
 		}
+		++buf;
 
 		/* If we didn't get precision from a %a specification then we
 		 * treat it as from a %a specification with no precision: full
