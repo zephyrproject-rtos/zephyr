@@ -118,6 +118,13 @@ SECTION_FUNC(TEXT, z_hexagon_arch_switch)
 	}
 #endif
 
+#ifdef CONFIG_HEXAGON_HVX
+	/* Point HVX at the new thread's context, r31 gets restored below */
+	{
+		call ##z_hexagon_hvx_switch
+	}
+#endif
+
 	/* Restore callee-saved registers from new thread's stack */
 	{
 		r17:16 = memd(r29+#SWITCH_R1716)

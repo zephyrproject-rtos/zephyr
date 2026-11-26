@@ -10,6 +10,7 @@
 #include <zephyr/arch/hexagon/thread.h>
 #include <kernel_internal.h>
 #include <switch_frame.h>
+#include <hexagon_hvx.h>
 
 extern void z_hexagon_thread_start(void);
 
@@ -106,6 +107,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 #ifdef CONFIG_HW_STACK_PROTECTION
 	z_arch_stack_protection_setup(thread);
 #endif
+
+#ifdef CONFIG_HEXAGON_HVX
+	thread->arch.hvx_ctx = -1;
+	thread->arch.hvx_saved = false;
+#endif
 }
 
 char *arch_k_thread_stack_buffer(k_thread_stack_t *stack)
@@ -115,6 +121,15 @@ char *arch_k_thread_stack_buffer(k_thread_stack_t *stack)
 
 int arch_coprocessors_disable(struct k_thread *thread)
 {
+#ifdef CONFIG_HEXAGON_HVX
+	unsigned int key = arch_irq_lock();
+
+	z_hexagon_hvx_thread_release(thread);
+	arch_irq_unlock(key);
+
+	return 0;
+#else
 	ARG_UNUSED(thread);
 	return -ENOTSUP;
+#endif
 }

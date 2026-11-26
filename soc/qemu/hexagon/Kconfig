@@ -4,3 +4,4 @@
 config SOC_QEMU_HEXAGON_VIRT
 	select HEXAGON
 	select GEN_ISR_TABLES
+	select CPU_HAS_HEXAGON_HVX

@@ -26,6 +26,7 @@
 #endif
 
 #ifndef _ASMLANGUAGE
+#include <stdbool.h>
 #include <zephyr/types.h>
 #include <zephyr/arch/arch_interface.h>
 #include <hexagon_vm.h>
@@ -86,6 +87,18 @@ typedef struct _callee_saved _callee_saved_t;
 /* Thread flags */
 #define HEXAGON_THREAD_FLAG_STACK_PROT 0x04
 
+#ifdef CONFIG_HEXAGON_HVX
+/**
+ * @brief HVX registers of a thread that lost its hardware context.
+ */
+struct _hvx_context {
+	/** V0-V31 */
+	uint8_t v[32][128];
+	/** Q0-Q3, Q<n> in bit n of each byte */
+	uint8_t q[128];
+};
+#endif
+
 /**
  * @brief Architecture-specific thread data.
  */
@@ -107,6 +120,14 @@ struct _thread_arch {
 	/* FRAMELIMIT while this thread runs in user mode */
 	uint32_t user_framelimit;
 #endif
+#endif
+
+#ifdef CONFIG_HEXAGON_HVX
+	/* HVX context (SSR.XA) this thread owns, -1 if none */
+	int8_t hvx_ctx;
+	/* saved_hvx_context holds the registers to restore on next use */
+	bool hvx_saved;
+	struct _hvx_context saved_hvx_context;
 #endif
 
 #ifdef CONFIG_USERSPACE
