@@ -1373,7 +1373,8 @@ static bool awaits_response(const struct coap_client_internal_request *internal_
  * earlier challenge is replaced; a payload stays behind the options.
  */
 static int resend_with_echo(struct coap_client *client,
-			    struct coap_client_internal_request *internal_req)
+			    struct coap_client_internal_request *internal_req,
+			    const struct coap_option *echo)
 {
 	uint16_t mid = coap_next_id();
 	int ret;
@@ -1397,7 +1398,7 @@ static int resend_with_echo(struct coap_client *client,
 	}
 
 	ret = coap_packet_append_option(&internal_req->request, COAP_OPTION_ECHO,
-					client->echo_option.value, client->echo_option.len);
+					echo->value, echo->len);
 	if (ret < 0) {
 		LOG_ERR("Failed to append echo option");
 		return ret;
@@ -1566,10 +1567,16 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		dedup_cache_add(client, addr, addrlen, response_type, response_id);
 	}
 
-	/* Received echo option */
-	if (find_echo_option(response, &client->echo_option)) {
+	/* Received echo option. It is looked up apart from the value kept for
+	 * the next request: the lookup writes the options it passes, so that a
+	 * response without Echo option would replace that value by another.
+	 */
+	struct coap_option echo;
+
+	if (find_echo_option(response, &echo)) {
 		if (response_code != COAP_RESPONSE_CODE_UNAUTHORIZED) {
 			/* Send echo in next request */
+			client->echo_option = echo;
 			client->send_echo = true;
 		} else if (response_type != COAP_TYPE_ACK &&
 			   internal_req->echo_challenge_id == (int32_t)response_id) {
@@ -1586,7 +1593,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		} else {
 			internal_req->echo_challenge_id =
 				(response_type != COAP_TYPE_ACK) ? (int32_t)response_id : -1;
-			ret = resend_with_echo(client, internal_req);
+			ret = resend_with_echo(client, internal_req, &echo);
 			if (ret < 0) {
 				goto fail;
 			}
