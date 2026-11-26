@@ -41,3 +41,9 @@ properties:
       - 16384
     description: |
       Divider for the RTC clock source. Supported divide values are 1, 32, 512, or 16384.
+
+  run-in-debug:
+    type: boolean
+    description: |
+      Keep the RTC counter running while the core is halted or held in debug
+      mode. By default the counter is frozen in debug mode.
