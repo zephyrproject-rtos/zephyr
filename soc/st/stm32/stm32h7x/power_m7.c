@@ -19,6 +19,7 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
+#if defined(SYSCFG_PWRCR_ODEN)
 static void switch_sysclk_to_hsi(void)
 {
 	/* Enable HSI if not enabled */
@@ -35,6 +36,7 @@ static void switch_sysclk_to_hsi(void)
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
 	}
 }
+#endif
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
