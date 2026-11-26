@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include <zephyr/cache.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
@@ -19,8 +20,8 @@
 #if defined(CONFIG_VIDEO_STM32_VENC_SMH_ALLOC)
 #include <zephyr/multi_heap/shared_multi_heap.h>
 
-#define EWL_HEAP_ALIGNED_ALLOC(size)\
-	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, ALIGNMENT_INCR, (size))
+#define EWL_HEAP_ALIGNED_ALLOC(align, size)\
+	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, (align), (size))
 #define EWL_HEAP_ALIGNED_FREE(block) shared_multi_heap_free(block)
 #endif
 
@@ -40,6 +41,13 @@ LOG_MODULE_REGISTER(stm32_venc, CONFIG_VIDEO_LOG_LEVEL);
 #define VENC_ESTIMATED_COMPRESSION_RATIO 10
 
 #define ALIGNMENT_INCR 8UL
+
+/* A buffer the hardware writes must not share a data cache line with other data */
+#if defined(CONFIG_DCACHE)
+#define CHUNK_ALIGN MAX(ALIGNMENT_INCR, CONFIG_DCACHE_LINE_SIZE)
+#else
+#define CHUNK_ALIGN ALIGNMENT_INCR
+#endif
 
 #define EWL_TIMEOUT 100UL
 
@@ -64,8 +72,8 @@ static char VENC_HEAP_REGION_NAME __aligned(8)
 	venc_pool_mem[MAX(CONFIG_VIDEO_STM32_VENC_HEAP_SIZE, Z_HEAP_MIN_SIZE)];
 static struct k_heap venc_pool;
 
-#define EWL_HEAP_ALIGNED_ALLOC(size)	\
-	k_heap_aligned_alloc(&venc_pool, ALIGNMENT_INCR, size, K_NO_WAIT)
+#define EWL_HEAP_ALIGNED_ALLOC(align, size)	\
+	k_heap_aligned_alloc(&venc_pool, (align), (size), K_NO_WAIT)
 #define EWL_HEAP_ALIGNED_FREE(block) k_heap_free(&venc_pool, block)
 #endif
 
@@ -82,6 +90,11 @@ struct stm32_venc_ewl {
 	uint32_t client_type;
 	uint32_t *chunks[MEM_CHUNKS];
 	uint32_t *aligned_chunks[MEM_CHUNKS];
+	/* Bytes of each chunk the CPU uses too, 0 when only the hardware uses it */
+	uint32_t chunk_cpu_sizes[MEM_CHUNKS];
+	/* Output buffer of the frame being encoded */
+	uint8_t *out_buf;
+	uint32_t out_size;
 	const struct stm32_venc_config *config;
 	struct k_sem complete;
 	uint32_t irq_status;
@@ -196,6 +209,21 @@ void EWLEnableHW(const void *instance, uint32_t offset, uint32_t val)
 	struct stm32_venc_ewl *inst = (struct stm32_venc_ewl *)instance;
 	const struct stm32_venc_config *config = inst->config;
 
+	/*
+	 * The library writes with the CPU into the output buffer and into its own buffers,
+	 * which the hardware then reads and writes: write these out of the data cache before
+	 * the hardware starts, and keep nothing of the output buffer in it.
+	 */
+	if (inst->out_buf != NULL) {
+		sys_cache_data_flush_and_invd_range(inst->out_buf, inst->out_size);
+	}
+	for (uint32_t i = 0; i < MEM_CHUNKS; i++) {
+		if (inst->chunks[i] != NULL) {
+			sys_cache_data_flush_range(inst->aligned_chunks[i],
+						   inst->chunk_cpu_sizes[i]);
+		}
+	}
+
 	sys_write32(val, config->reg + offset);
 }
 
@@ -215,17 +243,13 @@ uint32_t EWLReadReg(const void *instance, uint32_t offset)
 	return sys_read32(config->reg + offset);
 }
 
-i32 EWLMallocRefFrm(const void *instance, uint32_t size, EWLLinearMem_t *info)
-{
-	return EWLMallocLinear(instance, size, info);
-}
-
 void EWLFreeRefFrm(const void *instance, EWLLinearMem_t *info)
 {
 	EWLFreeLinear(instance, info);
 }
 
-i32 EWLMallocLinear(const void *instance, uint32_t size, EWLLinearMem_t *info)
+static i32 stm32_venc_ewl_malloc(const void *instance, uint32_t size, EWLLinearMem_t *info,
+				 bool cpu_uses)
 {
 	struct stm32_venc_ewl *inst = (struct stm32_venc_ewl *)instance;
 
@@ -233,7 +257,7 @@ i32 EWLMallocLinear(const void *instance, uint32_t size, EWLLinearMem_t *info)
 	__ASSERT_NO_MSG(info != NULL);
 
 	/* align size */
-	uint32_t size_aligned = ROUND_UP(size, ALIGNMENT_INCR);
+	uint32_t size_aligned = ROUND_UP(size, CHUNK_ALIGN);
 
 	info->size = size_aligned;
 
@@ -251,7 +275,7 @@ i32 EWLMallocLinear(const void *instance, uint32_t size, EWLLinearMem_t *info)
 	}
 
 	/* allocate */
-	inst->chunks[slot] = (uint32_t *)EWL_HEAP_ALIGNED_ALLOC(size_aligned);
+	inst->chunks[slot] = (uint32_t *)EWL_HEAP_ALIGNED_ALLOC(CHUNK_ALIGN, size_aligned);
 	if (inst->chunks[slot] == NULL) {
 		LOG_DBG("unable to allocate %8d bytes", size_aligned);
 		return EWL_ERROR;
@@ -270,6 +294,13 @@ i32 EWLMallocLinear(const void *instance, uint32_t size, EWLLinearMem_t *info)
 		return EWL_ERROR;
 	}
 
+	/*
+	 * Nothing the last user of this memory left in the data cache may be written back
+	 * once the hardware uses it. A buffer the CPU never uses needs nothing more.
+	 */
+	sys_cache_data_flush_and_invd_range(inst->aligned_chunks[slot], size_aligned);
+	inst->chunk_cpu_sizes[slot] = cpu_uses ? size_aligned : 0;
+
 	/* bus address is the same as virtual address because no MMU */
 	info->busAddress = (ptr_t)info->virtualAddress;
 
@@ -278,6 +309,16 @@ i32 EWLMallocLinear(const void *instance, uint32_t size, EWLLinearMem_t *info)
 		(void *)info->virtualAddress, info->busAddress, inst->mem_cnt);
 
 	return EWL_OK;
+}
+
+i32 EWLMallocLinear(const void *instance, uint32_t size, EWLLinearMem_t *info)
+{
+	return stm32_venc_ewl_malloc(instance, size, info, true);
+}
+
+i32 EWLMallocRefFrm(const void *instance, uint32_t size, EWLLinearMem_t *info)
+{
+	return stm32_venc_ewl_malloc(instance, size, info, false);
 }
 
 void EWLFreeLinear(const void *instance, EWLLinearMem_t *info)
@@ -318,7 +359,7 @@ void *EWLmalloc(uint32_t n)
 	struct stm32_venc_ewl *inst = &ewl_instance;
 	void *p = NULL;
 
-	p = EWL_HEAP_ALIGNED_ALLOC(n);
+	p = EWL_HEAP_ALIGNED_ALLOC(ALIGNMENT_INCR, n);
 	if (p == NULL) {
 		LOG_ERR("alloc failed for size=%d", n);
 		return NULL;
@@ -379,6 +420,14 @@ i32 EWLWaitHwRdy(const void *instance, uint32_t *slices_ready)
 	}
 
 	LOG_DBG("encoding = %d ms", k_ticks_to_ms_ceil32(sys_clock_tick_get_32() - start));
+
+	/* The hardware wrote the library's buffers: drop what the data cache holds of them */
+	for (uint32_t i = 0; i < MEM_CHUNKS; i++) {
+		if (inst->chunks[i] != NULL) {
+			sys_cache_data_invd_range(inst->aligned_chunks[i],
+						  inst->chunk_cpu_sizes[i]);
+		}
+	}
 
 	/* get the number of completed slices from ASIC registers. */
 	if (slices_ready != NULL) {
@@ -667,8 +716,22 @@ static int encode_frame(struct stm32_venc_data *data)
 	enc_in.outBufSize = output->size;
 	enc_out.streamSize = 0;
 
+	/* The hardware reads the frame: write out what the application left in the data cache */
+	sys_cache_data_flush_range(input->buffer, input->bytesused);
+
+	ewl_instance.out_buf = output->buffer;
+	ewl_instance.out_size = output->size;
 	h264ret = H264EncStrmEncode(data->encoder, &enc_in, &enc_out, NULL, NULL, NULL);
+	ewl_instance.out_buf = NULL;
 	output->bytesused = enc_out.streamSize;
+
+	/*
+	 * The hardware wrote the coded frame: drop what the data cache holds of it, after
+	 * writing out what the library appended with the CPU.
+	 */
+	if (enc_out.streamSize != 0) {
+		sys_cache_data_flush_and_invd_range(output->buffer, enc_out.streamSize);
+	}
 	LOG_DBG("output=%p, enc_out.streamSize=%d", output, enc_out.streamSize);
 
 	switch (h264ret) {
