@@ -444,21 +444,16 @@ def run_doxygen(base: Path, outdir: Path, doxyfile_in: Path) -> Path:
             "",
         ]
     )
-    # Doxygen occasionally overflows the stack of a parser thread on macOS,
-    # depending on address space layout; retry a few times, the last ones
-    # single-threaded, before giving up.
-    for extra in ("", "NUM_PROC_THREADS = 1\n", "NUM_PROC_THREADS = 1\n", "NUM_PROC_THREADS = 1\n"):
-        result = subprocess.run(
-            ["doxygen", "-"],
-            input=doxyfile + extra,
-            text=True,
-            cwd=base,
-            stdout=subprocess.DEVNULL,
-        )
-        if result.returncode == 0 and (outdir / "xml" / "index.xml").exists():
-            return outdir / "xml"
-        log(f"doxygen failed with status {result.returncode}, retrying")
-    sys.exit("doxygen failed")
+    result = subprocess.run(
+        ["doxygen", "-"],
+        input=doxyfile,
+        text=True,
+        cwd=base,
+        stdout=subprocess.DEVNULL,
+    )
+    if result.returncode != 0 or not (outdir / "xml" / "index.xml").exists():
+        sys.exit(f"doxygen failed with status {result.returncode}")
+    return outdir / "xml"
 
 
 def find_deprecated_declarations(base: Path, names: set[str]) -> set[str]:
