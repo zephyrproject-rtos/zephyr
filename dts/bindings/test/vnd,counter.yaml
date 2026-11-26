@@ -11,9 +11,16 @@ properties:
   reg:
     required: true
 
+  "#counter-alarm-cells":
+    type: int
+    const: 1
+
   "#counter-capture-cells":
     type: int
     const: 2
+
+counter-alarm-cells:
+  - channel
 
 counter-capture-cells:
   - channel

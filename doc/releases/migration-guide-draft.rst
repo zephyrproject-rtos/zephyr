@@ -332,6 +332,26 @@ Comparator
   :zephyr_file:`tests/drivers/comparator/gpio_loopback` test provides an example of the comparator
   API. (:github:`124232`).
 
+DALI
+====
+
+* :dtcompatible:`zephyr,dali-pwm` takes its two counter alarms from a ``counter-alarms`` property
+  with the names ``rx`` and ``tx`` in ``counter-alarm-names``. The ``counter``, ``chan-id-rx`` and
+  ``chan-id-tx`` properties are deprecated. Replace them, and set ``#counter-alarm-cells`` on the
+  counter node:
+
+  .. code-block:: devicetree
+
+     &timer2 {
+         #counter-alarm-cells = <1>;
+     };
+
+     &dali {
+         /* was: counter = <&timer2>; chan-id-rx = <0>; chan-id-tx = <1>; */
+         counter-alarms = <&timer2 0>, <&timer2 1>;
+         counter-alarm-names = "rx", "tx";
+     };
+
 Ethernet
 ========
 

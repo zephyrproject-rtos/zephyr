@@ -7,6 +7,15 @@ compatible: "st,stm32-counter"
 
 include: [base.yaml, pinctrl-device.yaml]
 
+properties:
+  "#counter-alarm-cells":
+    type: int
+    const: 1
+    description: Number of items to expect in a counter alarm specifier
+
+counter-alarm-cells:
+  - channel
+
 counter-capture-cells:
   - channel
   - flags

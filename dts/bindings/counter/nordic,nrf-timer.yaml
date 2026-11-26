@@ -32,3 +32,11 @@ properties:
   zli:
     type: boolean
     description: Enable event handler in the ZLI (Zero latency interrupt) context
+
+  "#counter-alarm-cells":
+    type: int
+    const: 1
+    description: Number of items to expect in a counter alarm specifier
+
+counter-alarm-cells:
+  - channel

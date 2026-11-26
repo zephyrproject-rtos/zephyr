@@ -20,9 +20,8 @@
 		rx-flank-shift-us = <(-68)>;
 
 		/* override the following based on your board */
-		counter = <&timer2>;
-		chan-id-rx = <0>;
-		chan-id-tx = <1>;
+		counter-alarms = <&timer2 0>, <&timer2 1>;
+		counter-alarm-names = "rx", "tx";
 		pwms = <&pwm0 0 PWM_USEC(41) PWM_POLARITY_NORMAL>;
 		status = "okay";
 	};

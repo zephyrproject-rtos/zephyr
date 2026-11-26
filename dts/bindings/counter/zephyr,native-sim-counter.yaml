@@ -16,6 +16,14 @@ properties:
     type: boolean
     description: Emulated counter supports falling-edge capture detection
 
+  "#counter-alarm-cells":
+    type: int
+    const: 1
+    description: Number of items to expect in a counter alarm specifier
+
+counter-alarm-cells:
+  - channel
+
 counter-capture-cells:
   - channel
   - flags
