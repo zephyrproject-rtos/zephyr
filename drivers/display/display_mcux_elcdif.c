@@ -33,6 +33,12 @@ K_HEAP_DEFINE(display_heap, CONFIG_MCUX_ELCDIF_FB_NUM * CONFIG_MCUX_ELCDIF_FB_SI
 
 static const uint32_t supported_fmts =
 	PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_XRGB_8888 | PIXEL_FORMAT_RGB_888;
+static const pixel_format_t mcux_elcdif_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_XRGB_8888,
+	PIXEL_FORMAT_RGB_888,
+	0,
+};
 
 struct mcux_elcdif_config {
 	LCDIF_Type *base;
@@ -57,7 +63,7 @@ struct mcux_elcdif_data {
 	const uint8_t *active_fb;
 	/* Pointers to driver allocated framebuffers */
 	uint8_t *fb[CONFIG_MCUX_ELCDIF_FB_NUM];
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	size_t pixel_bytes;
 	size_t fb_bytes;
 	elcdif_rgb_mode_config_t rgb_mode;
@@ -283,7 +289,7 @@ static int mcux_elcdif_display_blanking_on(const struct device *dev)
 }
 
 static int mcux_elcdif_set_pixel_format(const struct device *dev,
-					const enum display_pixel_format pixel_format)
+					const pixel_format_t pixel_format)
 {
 	struct mcux_elcdif_data *dev_data = dev->data;
 	const struct mcux_elcdif_config *config = dev->config;
@@ -340,7 +346,7 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->rgb_mode.panelWidth;
 	capabilities->y_resolution = config->rgb_mode.panelHeight;
-	capabilities->supported_pixel_formats = supported_fmts;
+	capabilities->supported_pixel_formats = mcux_elcdif_supported_pixel_formats;
 	capabilities->current_pixel_format = ((struct mcux_elcdif_data *)dev->data)->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 	capabilities->supported_events =
@@ -556,7 +562,7 @@ static DEVICE_API(display, mcux_elcdif_api) = {
 			   (.pxp = DEVICE_DT_GET(DT_INST_PHANDLE(id, nxp_pxp)),))};                \
 	static struct mcux_elcdif_data mcux_elcdif_data_##id = {                                   \
 		.next_idx = 0,                                                                     \
-		.pixel_format = DT_INST_PROP(id, pixel_format),                                    \
+		.pixel_format = PIX_FMT_DT_INST(id),                                               \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(id, &mcux_elcdif_init, NULL, &mcux_elcdif_data_##id,                 \
 			      &mcux_elcdif_config_##id, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, \

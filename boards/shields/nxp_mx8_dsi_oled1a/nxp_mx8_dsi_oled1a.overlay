@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	chosen {
@@ -30,7 +29,7 @@
 &zephyr_lcdif {
 	width = <1080>;
 	height = <1920>;
-	pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
+	pixel-format = "bgra32";
 	media-axi-clk-rate = <400000000>;
 	media-apb-clk-rate = <133333334>;
 	status = "okay";

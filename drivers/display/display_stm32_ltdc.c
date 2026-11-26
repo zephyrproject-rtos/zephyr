@@ -50,6 +50,17 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #define STM32_LTDC_HAS_YUV 1
 #endif
 
+static const pixel_format_t stm32_ltdc_supported_pixel_formats[] = {
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_L_8,
+#if defined(STM32_LTDC_HAS_YUV)
+	PIXEL_FORMAT_YUYV,
+#endif
+	0,
+};
+
 #define STM32_LTDC_INIT_PIXEL_SIZE	DISPLAY_BITS_PER_PIXEL(DISPLAY_INIT_PIXEL_FORMAT) \
 					/ BITS_PER_BYTE
 
@@ -68,7 +79,7 @@ struct display_stm32_ltdc_data {
 	struct display_timing timing;
 	bool started;
 	bool blanked;
-	enum display_pixel_format current_pixel_format;
+	pixel_format_t current_pixel_format;
 	uint8_t current_pixel_size;
 	uint8_t *frame_buffer;
 	uint32_t frame_buffer_len;
@@ -228,7 +239,7 @@ static int stm32_ltdc_set_yuv(const struct device *dev)
 }
 
 static int stm32_ltdc_set_pixel_format(const struct device *dev,
-				const enum display_pixel_format format)
+				const pixel_format_t format)
 {
 	struct display_stm32_ltdc_data *data = dev->data;
 	HAL_StatusTypeDef hal_ret;
@@ -304,11 +315,7 @@ static void stm32_ltdc_get_capabilities(const struct device *dev,
 				     data->hltdc.LayerCfg[0].WindowX0;
 	capabilities->y_resolution = data->hltdc.LayerCfg[0].WindowY1 -
 				     data->hltdc.LayerCfg[0].WindowY0;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
-					PIXEL_FORMAT_RGB_888 |
-					PIXEL_FORMAT_RGB_565 |
-					PIXEL_FORMAT_L_8 |
-					(IS_ENABLED(STM32_LTDC_HAS_YUV) ? PIXEL_FORMAT_YUYV : 0);
+	capabilities->supported_pixel_formats = stm32_ltdc_supported_pixel_formats;
 	capabilities->screen_info = 0;
 
 	capabilities->current_pixel_format = data->current_pixel_format;
@@ -984,7 +991,7 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 #endif
 
 /* LTDC supports RGB888 and RGB666 for output however only RGB_888 is supported for now */
-#if DT_INST_PROP(0, pixel_format) != PANEL_PIXEL_FORMAT_RGB_888
+#if PIX_FMT_DT_INST(0) != PIXEL_FORMAT_RGB_888
 #error "Only RGB_888 is supported as a LTDC output (aka panel or mipi-dsi input format)"
 #endif
 

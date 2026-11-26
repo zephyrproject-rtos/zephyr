@@ -34,7 +34,7 @@ struct display_ra_data {
 	const uint8_t *pend_buf;
 	const uint8_t *front_buf;
 	uint8_t pixel_size;
-	enum display_pixel_format current_pixel_format;
+	pixel_format_t current_pixel_format;
 	uint8_t *frame_buffer;
 	uint32_t frame_buffer_len;
 	struct k_sem frame_buf_sem;
@@ -197,6 +197,13 @@ static int ra_display_blanking_off(const struct device *dev)
 	return ret;
 }
 
+static const pixel_format_t ra_display_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_RGB_565,
+	0,
+};
+
 static void ra_display_get_capabilities(const struct device *dev,
 					struct display_capabilities *capabilities)
 {
@@ -207,18 +214,18 @@ static void ra_display_get_capabilities(const struct device *dev,
 	capabilities->y_resolution = config->height;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 	capabilities->supported_pixel_formats =
-		PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_565;
+		ra_display_supported_pixel_formats;
 	capabilities->current_pixel_format = data->current_pixel_format;
 	capabilities->screen_info = 0U;
 }
 
 static int ra_display_set_pixel_format(const struct device *dev,
-				       const enum display_pixel_format pixel_format)
+				       const pixel_format_t pixel_format)
 {
 	const struct display_ra_config *config = dev->config;
 	struct display_ra_data *data = dev->data;
 	display_runtime_cfg_t layer_cfg;
-	enum display_pixel_format set_pixel_format;
+	pixel_format_t set_pixel_format;
 	display_in_format_t hardware_pixel_format;
 	uint32_t buf_len;
 	fsp_err_t err;

@@ -9,7 +9,6 @@
 #include <st/mp13/stm32mp135f.dtsi>
 #include <st/mp13/stm32mp135faex-pinctrl.dtsi>
 #include "raspberrypi_40pins_connector.dtsi"
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
@@ -351,7 +350,7 @@ csi_interface: &dcmipp {
 
 	width = <480>;
 	height = <272>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	pixel-format = "bgr24";
 
 	def-back-color-red = <0xff>;
 	def-back-color-green = <0xff>;

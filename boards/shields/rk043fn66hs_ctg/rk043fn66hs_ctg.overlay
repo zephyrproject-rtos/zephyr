@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	chosen {
@@ -28,7 +27,7 @@
 	width = <480>;
 	height = <272>;
 
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	pixel-format = "rgb565";
 	data-bus-width = "16-bit";
 	backlight-gpios = <&nxp_parallel_lcd_connector 0 GPIO_ACTIVE_HIGH>;
 	status = "okay";

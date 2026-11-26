@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/display/panel.h>
-
 / {
 	chosen {
 		zephyr,display = &zephyr_lcdif;
@@ -30,8 +28,8 @@
 &zephyr_lcdif {
 	width = <480>;
 	height = <272>;
-	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
-	output-pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	input-pixel-format = "rgb565";
+	output-pixel-format = "bgr24";
 
 	backlight-gpios = <&lcd_expansion_rtk7eka6m3b00001bu 39 GPIO_ACTIVE_HIGH>;
 	status = "okay";

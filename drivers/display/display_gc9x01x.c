@@ -8,7 +8,6 @@
 
 #include "display_gc9x01x.h"
 
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/pm/device.h>
@@ -24,7 +23,7 @@ LOG_MODULE_REGISTER(display_gc9x01x, CONFIG_DISPLAY_LOG_LEVEL);
 /* Display data struct */
 struct gc9x01x_data {
 	uint8_t bytes_per_pixel;
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	enum display_orientation orientation;
 };
 
@@ -32,7 +31,7 @@ struct gc9x01x_data {
 struct gc9x01x_config {
 	const struct device *mipi_dev;
 	struct mipi_dbi_config dbi_config;
-	uint8_t pixel_format;
+	pixel_format_t pixel_format;
 	uint16_t orientation;
 	uint16_t x_resolution;
 	uint16_t y_resolution;
@@ -365,7 +364,7 @@ static int gc9x01x_display_blanking_on(const struct device *dev)
 }
 
 static int gc9x01x_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const pixel_format_t pixel_format)
 {
 	struct gc9x01x_data *data = dev->data;
 	int ret;
@@ -564,13 +563,19 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 	return 0;
 }
 
+static const pixel_format_t gc9x01x_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_RGB_888,
+	0,
+};
+
 static void gc9x01x_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
 	struct gc9x01x_data *data = dev->data;
 	const struct gc9x01x_config *config = dev->config;
 
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = gc9x01x_supported_pixel_formats;
 	capabilities->current_pixel_format = data->pixel_format;
 
 	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
@@ -626,7 +631,7 @@ static DEVICE_API(display, gc9x01x_api) = {
 							      SPI_OP_MODE_CONTROLLER |             \
 							      SPI_WORD_SET(8), 0),                 \
 		},                                                                                 \
-		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
+		.pixel_format = PIX_FMT_DT_INST(inst),                                             \
 		.orientation = DT_INST_ENUM_IDX(inst, orientation),                                \
 		.x_resolution = DT_INST_PROP(inst, width),                                         \
 		.y_resolution = DT_INST_PROP(inst, height),                                        \

@@ -311,6 +311,12 @@ static int ed2208_gca_blanking_off(const struct device *dev)
 	return 0;
 }
 
+static const pixel_format_t ed2208_gca_supported_pixel_formats[] = {
+	PIXEL_FORMAT_I_4,
+	COLOR_DITHER_SUPPORTED_FORMATS,
+	0,
+};
+
 static void ed2208_gca_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct ed2208_gca_config *config = dev->config;
@@ -319,13 +325,13 @@ static void ed2208_gca_get_capabilities(const struct device *dev, struct display
 	memcpy(caps->color_palette, config->color_palette, sizeof(config->color_palette));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_I_4;
+	caps->supported_pixel_formats = ed2208_gca_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_I_4;
 	caps->screen_info = SCREEN_INFO_EPD;
 	display_color_dither_patch_caps(&data->color_dither, caps);
 }
 
-static int ed2208_gca_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int ed2208_gca_set_pixel_format(const struct device *dev, const pixel_format_t pf)
 {
 	struct ed2208_gca_data *data = dev->data;
 

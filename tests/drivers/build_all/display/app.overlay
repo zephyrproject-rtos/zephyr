@@ -34,7 +34,7 @@
 				compatible = "ilitek,ili9342c";
 				reg = <0x0>;
 				mipi-max-frequency = <25000000>;
-				pixel-format = <0>;
+				pixel-format = "rgb565";
 				rotation = <270>;
 				width = <320>;
 				height = <240>;
@@ -83,7 +83,7 @@
 				vdvs = <0x20>;
 				mdac = <0x00>;
 				gamma = <0x01>;
-				pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+				pixel-format = "rgb565";
 				lcm = <0x0c>;
 				porch-param = [0c 0c 00 33 33];
 				cmd2en-param = [5a 69 02 00];
@@ -127,7 +127,7 @@
 				compatible = "galaxycore,gc9x01x";
 				reg = <0x6>;
 				mipi-max-frequency = <100000000>;
-				pixel-format = <16>;
+				pixel-format = "rgb565";
 
 				width = <240>;
 				height = <240>;
@@ -414,7 +414,7 @@
 				compatible = "ilitek,ili9163c";
 				reg = <0x17>;
 				mipi-max-frequency = <25000000>;
-				pixel-format = <0>;
+				pixel-format = "rgb565";
 				rotation = <270>;
 				width = <128>;
 				height = <160>;
@@ -553,7 +553,7 @@
 				width = <240>;
 				height = <536>;
 				rotation = <90>;
-				pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
+				pixel-format = "rgb565x";
 				te-mode = "MIPI_DBI_TE_RISING_EDGE";
 			};
 		};
@@ -573,7 +573,7 @@
 				reg = <0x0>;
 				mipi-max-frequency = <25000000>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
-				pixel-format = <0>;
+				pixel-format = "rgb565";
 				rotation = <270>;
 				width = <320>;
 				height = <240>;
@@ -584,7 +584,7 @@
 				reg = <0x1>;
 				mipi-max-frequency = <25000000>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
-				pixel-format = <0>;
+				pixel-format = "rgb565";
 				rotation = <270>;
 				width = <128>;
 				height = <160>;
@@ -955,7 +955,7 @@
 				compatible = "chipone,co5300";
 				reg = <0>;
 				mspi-max-frequency = <30000000>;
-				pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+				pixel-format = "rgb565";
 				width = <466>;
 				height = <466>;
 				status = "okay";

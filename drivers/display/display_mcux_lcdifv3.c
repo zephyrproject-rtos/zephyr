@@ -13,7 +13,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/cache.h>
-#include <zephyr/dt-bindings/display/panel.h>
 
 LOG_MODULE_REGISTER(display_mcux_lcdifv3, CONFIG_DISPLAY_LOG_LEVEL);
 
@@ -21,6 +20,13 @@ LOG_MODULE_REGISTER(display_mcux_lcdifv3, CONFIG_DISPLAY_LOG_LEVEL);
 
 static const uint32_t mcux_lcdifv3_supported_fmts = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888 |
 						    PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_ABGR_8888;
+static const pixel_format_t mcux_lcdifv3_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_ABGR_8888,
+	0,
+};
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
 #define DEV_CFG(_dev)  ((const struct mcux_lcdifv3_config *)(_dev)->config)
@@ -48,10 +54,8 @@ struct mcux_lcdifv3_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
 	/* Pointer to active framebuffer */
 	const uint8_t *active_fb;
-	/* DT value: PANEL_PIXEL_FORMAT_* */
-	uint32_t panel_pixel_format;
 	/* Runtime/Zephyr value: PIXEL_FORMAT_* */
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	lcdifv3_buffer_config_t buffer_config;
 	uint8_t *fb[CONFIG_MCUX_LCDIFV3_FB_NUM];
 	uint8_t pixel_bytes;
@@ -168,13 +172,13 @@ static void mcux_lcdifv3_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->display_config.panelWidth;
 	capabilities->y_resolution = config->display_config.panelHeight;
-	capabilities->supported_pixel_formats = mcux_lcdifv3_supported_fmts;
+	capabilities->supported_pixel_formats = mcux_lcdifv3_supported_pixel_formats;
 	capabilities->current_pixel_format = dev_data->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
 static int mcux_lcdifv3_set_pixel_format(const struct device *dev,
-					 const enum display_pixel_format pixel_format)
+					 const pixel_format_t pixel_format)
 {
 	const struct mcux_lcdifv3_config *config = dev->config;
 	struct mcux_lcdifv3_data *dev_data = dev->data;
@@ -286,25 +290,6 @@ static int mcux_lcdifv3_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-	/* Set default pixel format obtained from device tree */
-	switch (data->panel_pixel_format) {
-	case PANEL_PIXEL_FORMAT_RGB_565:
-		data->pixel_format = PIXEL_FORMAT_RGB_565;
-		break;
-	case PANEL_PIXEL_FORMAT_RGB_888:
-		data->pixel_format = PIXEL_FORMAT_RGB_888;
-		break;
-	case PANEL_PIXEL_FORMAT_ARGB_8888:
-		data->pixel_format = PIXEL_FORMAT_ARGB_8888;
-		break;
-	case PANEL_PIXEL_FORMAT_ABGR_8888:
-		data->pixel_format = PIXEL_FORMAT_ABGR_8888;
-		break;
-	default:
-		LOG_ERR("Pixel format not supported");
-		return -ENOTSUP;
-	}
-
 	ret = mcux_lcdifv3_set_pixel_format(dev, data->pixel_format);
 	if (ret) {
 		return ret;
@@ -385,7 +370,7 @@ static DEVICE_API(display, mcux_lcdifv3_api) = {
 	MCUX_LCDIFV3_FRAMEBUFFER_DECL(id);                                                         \
 	static struct mcux_lcdifv3_data mcux_lcdifv3_data_##id = {                                 \
 		.next_idx = 0,                                                                     \
-		.panel_pixel_format = DT_INST_PROP(id, pixel_format),                              \
+		.pixel_format = PIX_FMT_DT_INST(id),                                         \
 	};                                                                                         \
 	static const struct mcux_lcdifv3_config mcux_lcdifv3_config_##id = {                       \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(id)),                             \

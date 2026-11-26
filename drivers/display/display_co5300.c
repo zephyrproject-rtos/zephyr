@@ -22,16 +22,10 @@ LOG_MODULE_REGISTER(co5300, CONFIG_DISPLAY_LOG_LEVEL);
 #include <zephyr/drivers/mipi_dsi/mipi_dsi_mcux_2l.h>
 #include <fsl_lcdif.h>
 #include <fsl_mipi_dsi.h>
-
-#define CO5300_PIXFMT_RGB565 MIPI_DSI_PIXFMT_RGB565
-#define CO5300_PIXFMT_RGB888 MIPI_DSI_PIXFMT_RGB888
 #endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi) || \
 	DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#define CO5300_PIXFMT_RGB565 PIXEL_FORMAT_RGB_565
-#define CO5300_PIXFMT_RGB888 PIXEL_FORMAT_RGB_888
-
 #define CO5300_SPI_MODE          0xC4
 #define CO5300_SPI_CMD           0x02
 #define CO5300_SPI_WRITE_QUAD    0x32
@@ -89,7 +83,7 @@ struct co5300_data {
 	struct mspi_dev_cfg mspi_dev_config;
 	struct k_sem lock;
 #endif
-	uint8_t pixel_format;
+	pixel_format_t pixel_format;
 	uint8_t bytes_per_pixel;
 	struct gpio_callback tear_effect_gpio_cb;
 	struct k_sem tear_effect_sem;
@@ -422,6 +416,12 @@ static int co5300_set_brightness(const struct device *dev, const uint8_t contras
 	return config->cmd_write(dev, MIPI_DCS_SET_DISPLAY_BRIGHTNESS, &contrast, 1);
 }
 
+static const pixel_format_t co5300_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_RGB_888,
+	0,
+};
+
 static void co5300_get_capabilities(const struct device *dev,
 		struct display_capabilities *capabilities)
 {
@@ -430,41 +430,28 @@ static void co5300_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = co5300_supported_pixel_formats;
 
-	switch (data->pixel_format) {
-	case CO5300_PIXFMT_RGB565:
-		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
-		break;
-	case CO5300_PIXFMT_RGB888:
-		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
-		break;
-	default:
-		LOG_ERR("Unsupported display format");
-		/* Other display formats not implemented */
-		break;
-	}
+	capabilities->current_pixel_format = data->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
 static int co5300_set_pixel_format(const struct device *dev,
-		const enum display_pixel_format pixel_format)
+		const pixel_format_t pixel_format)
 {
 	const struct co5300_config *config = dev->config;
 	struct co5300_data *data = dev->data;
 	uint8_t cmd_params[2];
 	int ret;
-	uint8_t mipi_pixel_format, bytes_per_pixel;
+	uint8_t bytes_per_pixel;
 
 	switch (pixel_format) {
 	case PIXEL_FORMAT_RGB_565:
-		mipi_pixel_format = CO5300_PIXFMT_RGB565;
 		bytes_per_pixel = 2U;
 		cmd_params[0] = config->red_blue_swap ? 0 : MIPI_DCS_ADDRESS_MODE_BGR;
 		cmd_params[1] = MIPI_DCS_PIXEL_FORMAT_16BIT;
 		break;
 	case PIXEL_FORMAT_RGB_888:
-		mipi_pixel_format = CO5300_PIXFMT_RGB888;
 		bytes_per_pixel = 3U;
 		cmd_params[0] = config->red_blue_swap ? MIPI_DCS_ADDRESS_MODE_BGR : 0;
 		cmd_params[1] = MIPI_DCS_PIXEL_FORMAT_24BIT;
@@ -486,7 +473,7 @@ static int co5300_set_pixel_format(const struct device *dev,
 
 	/* Update the format in the device data after DCS command succeeds. */
 	data->bytes_per_pixel = bytes_per_pixel;
-	data->pixel_format = mipi_pixel_format;
+	data->pixel_format = pixel_format;
 
 	return 0;
 }
@@ -632,17 +619,7 @@ static int co5300_configure_panel(const struct device *dev)
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi) */
 
 	/* Set pixel format */
-	switch (data->pixel_format) {
-	case CO5300_PIXFMT_RGB888:
-		ret = co5300_set_pixel_format(dev, PIXEL_FORMAT_RGB_888);
-		break;
-	case CO5300_PIXFMT_RGB565:
-		ret = co5300_set_pixel_format(dev, PIXEL_FORMAT_RGB_565);
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
+	ret = co5300_set_pixel_format(dev, data->pixel_format);
 	if (ret < 0) {
 		return ret;
 	}
@@ -686,7 +663,13 @@ static int co5300_init(const struct device *dev)
 
 	/* Attach to MIPI DSI host */
 	mdev.data_lanes = config->num_of_lanes;
-	mdev.pixfmt = data->pixel_format;
+	if (data->pixel_format == PIXEL_FORMAT_RGB_565) {
+		mdev.pixfmt = MIPI_DSI_PIXFMT_RGB565;
+	} else if (data->pixel_format == PIXEL_FORMAT_RGB_888) {
+		mdev.pixfmt = MIPI_DSI_PIXFMT_RGB888;
+	} else {
+		return -ENOTSUP;
+	}
 	ret = mipi_dsi_attach(config->mipi_dev, config->channel, &mdev);
 	if (ret < 0) {
 		LOG_ERR("Could not attach to MIPI-DSI host");
@@ -796,7 +779,12 @@ static DEVICE_API(display, co5300_api) = {
 		    DT_INST_ON_BUS(node_id, spi), (CO5300_CONFIG_SPI(node_id)), ());		\
 												\
 	static struct co5300_data co5300_data_##node_id = {					\
-		.pixel_format = DT_INST_PROP(node_id, pixel_format),				\
+		.pixel_format = COND_CODE_1(DT_INST_ON_BUS(node_id, mipi_dsi),			\
+			(DT_INST_PROP(node_id, pixel_format) == MIPI_DSI_PIXFMT_RGB565 ?	\
+			 PIXEL_FORMAT_RGB_565 :							\
+			 DT_INST_PROP(node_id, pixel_format) == MIPI_DSI_PIXFMT_RGB888 ?	\
+			 PIXEL_FORMAT_RGB_888 : 0),						\
+			(PIX_FMT_DT_INST(node_id))),					\
 		COND_CODE_1(DT_INST_ON_BUS(node_id, mspi), (CO5300_DATA_MSPI(node_id)),	())	\
 	};											\
 												\

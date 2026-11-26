@@ -332,6 +332,82 @@ Comparator
   :zephyr_file:`tests/drivers/comparator/gpio_loopback` test provides an example of the comparator
   API. (:github:`124232`).
 
+Display
+=======
+
+* The ``enum display_pixel_format`` type has been removed and display pixel formats are now typed
+  as ``pixel_format_t``.
+
+* Display pixel formats are now the FourCC pixel format identifiers shared with the video
+  subsystem, defined in :zephyr_file:`include/zephyr/dt-bindings/media/pixel_format.h`. The
+  ``PIXEL_FORMAT_*`` names and ``DISPLAY_BITS_PER_PIXEL()`` are kept for compatibility and
+  now expand to ``PIX_FMT_*`` values and to ``PIX_FMT_BITS_PER_PIXEL()``; new code should use the
+  ``PIX_FMT_*`` names directly. The values are no longer single bits, so code combining or
+  testing formats with bitwise operators, or iterating over bit positions, must be rewritten.
+  Note that the display names describe the components from the most significant bit while the
+  ``PIX_FMT_*`` names describe them in memory order, so for instance ``PIXEL_FORMAT_RGB_888`` is
+  ``PIX_FMT_BGR24`` and ``PIXEL_FORMAT_ARGB_8888`` is ``PIX_FMT_BGRA32``.
+
+* :c:member:`display_capabilities.supported_pixel_formats` is no longer a bitmask but a pointer
+  to a zero-terminated, constant table of ``pixel_format_t`` with static storage duration.
+  Applications can use :c:func:`display_is_pixel_format_supported` to test for a format
+  support.
+
+* :c:func:`display_color_dither_patch_caps` no longer adds the RGB input formats enabled by
+  :kconfig:option:`CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB565` and
+  :kconfig:option:`CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB888` to the supported pixel formats; it
+  only updates the current pixel format while the helper is converting. Drivers using the color
+  dithering helper must add ``COLOR_DITHER_SUPPORTED_FORMATS`` to their supported pixel format
+  table, before the terminating ``0``.
+
+* The ``PANEL_PIXEL_FORMAT_*`` macros have been removed from
+  :zephyr_file:`include/zephyr/dt-bindings/display/panel.h`, and the ``pixel-format``,
+  ``input-pixel-format`` and ``output-pixel-format`` devicetree properties of display bindings
+  changed from ``int`` to ``string``.
+  The value is the lowercase suffix of the matching ``PIX_FMT_*`` definition.
+  Below gives the mapping between the previous PANEL_PIXEL_FORMAT_ macro and new string based
+  pixel-format value:
+
+  .. list-table::
+     :header-rows: 1
+
+     * - Removed macro
+       - Devicetree string
+     * - ``PANEL_PIXEL_FORMAT_RGB_888``
+       - ``"bgr24"``
+     * - ``PANEL_PIXEL_FORMAT_MONO01``
+       - ``"mono01"``
+     * - ``PANEL_PIXEL_FORMAT_MONO10``
+       - ``"mono10"``
+     * - ``PANEL_PIXEL_FORMAT_ARGB_8888``
+       - ``"bgra32"``
+     * - ``PANEL_PIXEL_FORMAT_RGB_565``
+       - ``"rgb565"``
+     * - ``PANEL_PIXEL_FORMAT_RGB_565X``
+       - ``"rgb565x"``
+     * - ``PANEL_PIXEL_FORMAT_L_8``
+       - ``"grey"``
+     * - ``PANEL_PIXEL_FORMAT_AL_88``
+       - ``"al88"``
+     * - ``PANEL_PIXEL_FORMAT_XRGB_8888``
+       - ``"bgrx32"``
+     * - ``PANEL_PIXEL_FORMAT_BGR_888``
+       - ``"rgb24"``
+     * - ``PANEL_PIXEL_FORMAT_ABGR_8888``
+       - ``"rgba32"``
+     * - ``PANEL_PIXEL_FORMAT_RGBA_8888``
+       - ``"abgr32"``
+     * - ``PANEL_PIXEL_FORMAT_BGRA_8888``
+       - ``"argb32"``
+     * - ``PANEL_PIXEL_FORMAT_I_4``
+       - ``"i4"``
+     * - ``PANEL_PIXEL_FORMAT_L_4``
+       - ``"l4"``
+     * - ``PANEL_PIXEL_FORMAT_YUYV``
+       - ``"yuyv"``
+     * - ``PANEL_PIXEL_FORMAT_NV12``
+       - ``"nv12"``
+
 Ethernet
 ========
 
@@ -576,6 +652,17 @@ Timers
 * The ``CONFIG_MCUX_OS_TIMER_MIN_DELAY`` Kconfig option has been removed. The NXP OS Timer driver
   now uses the generic system timer core, which keeps the match value at least 16 timer cycles
   ahead of the counter. Remove the option from application and board configurations.
+
+Video
+=====
+
+* The video pixel formats have moved to the shared pixel format headers
+  :zephyr_file:`include/zephyr/dt-bindings/media/pixel_format.h` and
+  :zephyr_file:`include/zephyr/media/pixel_format_misc.h`, also used by the display API. The
+  ``VIDEO_PIX_FMT_*``, ``VIDEO_FOURCC*()`` and ``VIDEO_FMT_IS_*()`` macros and
+  :c:func:`video_bits_per_pixel` in :zephyr_file:`include/zephyr/video/formats.h` are deprecated
+  and map to their ``PIX_FMT_*``, ``PIX_FMT_FOURCC*()``, ``PIX_FMT_IS_*()`` and
+  ``pix_fmt_bpp()`` replacements.
 
 W1
 ==

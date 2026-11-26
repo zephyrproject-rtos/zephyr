@@ -3,8 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/dt-bindings/display/panel.h>
 
 &sdl_dc {
-	pixel-format = <PANEL_PIXEL_FORMAT_MONO01>;
+	pixel-format = "mono01";
 };

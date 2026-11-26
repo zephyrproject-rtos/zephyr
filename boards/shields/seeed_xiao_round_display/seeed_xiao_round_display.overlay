@@ -5,7 +5,6 @@
  */
 
 #include <freq.h>
-#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	chosen {
@@ -36,7 +35,7 @@
 			compatible = "galaxycore,gc9x01x";
 			reg = <0>;
 			mipi-max-frequency = <DT_FREQ_M(100)>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			pixel-format = "rgb565";
 			width = <240>;
 			height = <240>;
 			display-inversion;

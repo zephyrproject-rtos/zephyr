@@ -71,7 +71,7 @@
 
 	width = <390>;
 	height = <390>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	pixel-format = "bgr24";
 
 	def-back-color-red = <0x0>;
 	def-back-color-green = <0x0>;

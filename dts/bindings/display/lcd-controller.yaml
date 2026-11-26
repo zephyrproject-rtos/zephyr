@@ -7,9 +7,10 @@ include: display-controller.yaml
 
 properties:
   pixel-format:
-    type: int
+    type: string
     required: true
     description: |
       Initial Pixel format of this controller's output data, which is sent
       to a panel directly or to an adapter.
-      See dt-bindings/display/panel.h for a list of pixel format.
+      Use the lowercase suffix of a PIX_FMT_* definition from
+      zephyr/dt-bindings/media/pixel_format.h, for example "bgr24".

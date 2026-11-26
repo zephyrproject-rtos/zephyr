@@ -253,18 +253,23 @@ static int hub12_set_contrast(const struct device *dev, const uint8_t contrast)
 	return -ENOTSUP;
 }
 
+static const pixel_format_t hub12_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO01,
+	0,
+};
+
 static void hub12_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct hub12_config *config = dev->config;
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
+	caps->supported_pixel_formats = hub12_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
 	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST;
 }
 
-static int hub12_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int hub12_set_pixel_format(const struct device *dev, const pixel_format_t pf)
 {
 	if (pf == PIXEL_FORMAT_MONO01) {
 		return 0;

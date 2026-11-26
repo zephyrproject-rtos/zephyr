@@ -41,7 +41,7 @@ struct display_rz_data {
 	const uint8_t *pend_buf;
 	const uint8_t *front_buf;
 	uint8_t pixel_size;
-	enum display_pixel_format current_pixel_format;
+	pixel_format_t current_pixel_format;
 	uint8_t *frame_buffer;
 	uint32_t frame_buffer_len;
 	struct k_sem frame_buf_sem;
@@ -193,6 +193,13 @@ static int rz_display_blanking_off(const struct device *dev)
 	return ret;
 }
 
+static const pixel_format_t rz_display_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_RGB_565,
+	0,
+};
+
 static void rz_display_get_capabilities(const struct device *dev,
 					struct display_capabilities *capabilities)
 {
@@ -203,18 +210,18 @@ static void rz_display_get_capabilities(const struct device *dev,
 	capabilities->y_resolution = config->height;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 	capabilities->supported_pixel_formats =
-		PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_565;
+		rz_display_supported_pixel_formats;
 	capabilities->current_pixel_format = data->current_pixel_format;
 	capabilities->screen_info = 0U;
 }
 
 static int rz_display_set_pixel_format(const struct device *dev,
-				       const enum display_pixel_format pixel_format)
+				       const pixel_format_t pixel_format)
 {
 	const struct display_rz_config *config = dev->config;
 	struct display_rz_data *data = dev->data;
 	display_runtime_cfg_t layer_cfg;
-	enum display_pixel_format set_pixel_format;
+	pixel_format_t set_pixel_format;
 	display_in_format_t hardware_pixel_format;
 	uint32_t buf_len;
 	fsp_err_t err;
@@ -347,29 +354,26 @@ static int display_init(const struct device *dev)
 
 #define IRQ_CONFIGURE_DEFINE(id) .irq_configure = lcdc_renesas_rz_configure_func_##id
 
-#define INPUT_FORMAT_PIXEL(n)  DT_INST_PROP(n, input_pixel_format)
-#define OUTPUT_FORMAT_PIXEL(n) DT_INST_PROP(n, pixel_format)
-
-#define RENESAS_RZ_LCDC_IN_PIXEL_FORMAT_1  (DISPLAY_IN_FORMAT_32BITS_RGB888)
-#define RENESAS_RZ_LCDC_IN_PIXEL_FORMAT_8  (DISPLAY_IN_FORMAT_32BITS_ARGB8888)
-#define RENESAS_RZ_LCDC_IN_PIXEL_FORMAT_16 (DISPLAY_IN_FORMAT_16BITS_RGB565)
-
-#define RENESAS_RZ_LCDC_OUT_PIXEL_FORMAT_1  (DISPLAY_OUT_FORMAT_24BITS_RGB888)
-#define RENESAS_RZ_LCDC_OUT_PIXEL_FORMAT_16 (DISPLAY_OUT_FORMAT_16BITS_RGB565)
+#define INPUT_FORMAT_PIXEL(n)  UTIL_CAT(PIX_FMT_, DT_INST_STRING_UPPER_TOKEN(n, input_pixel_format))
+#define OUTPUT_FORMAT_PIXEL(n) PIX_FMT_DT_INST(n)
 
 #define RENESAS_RZ_DISPLAY_GET_PIXEL_FORMAT(n)                                                     \
-	(DT_INST_PROP(n, input_pixel_format) == PANEL_PIXEL_FORMAT_RGB_888                         \
-		 ? PANEL_PIXEL_FORMAT_ARGB_8888                                                    \
-		 : DT_INST_PROP(n, input_pixel_format))
+	(INPUT_FORMAT_PIXEL(n) == PIXEL_FORMAT_RGB_888                                             \
+		 ? PIXEL_FORMAT_ARGB_8888                                                          \
+		 : INPUT_FORMAT_PIXEL(n))
 
 #define DISPLAY_HSIZE(n) (DT_INST_PROP(n, width))
 #define DISPLAY_VSIZE(n) (DT_INST_PROP(n, height))
 
 #define RENESAS_RZ_LCDC_IN_PIXEL_FORMAT(n)                                                         \
-	UTIL_CAT(RENESAS_RZ_LCDC_IN_PIXEL_FORMAT_, INPUT_FORMAT_PIXEL(n))
+	(INPUT_FORMAT_PIXEL(n) == PIXEL_FORMAT_RGB_888 ? DISPLAY_IN_FORMAT_32BITS_RGB888           \
+						       :                                           \
+	 (INPUT_FORMAT_PIXEL(n) == PIXEL_FORMAT_ARGB_8888 ? DISPLAY_IN_FORMAT_32BITS_ARGB8888      \
+	                                                  : DISPLAY_IN_FORMAT_16BITS_RGB565))
 
 #define RENESAS_RZ_LCDC_OUT_PIXEL_FORMAT(n)                                                        \
-	UTIL_CAT(RENESAS_RZ_LCDC_OUT_PIXEL_FORMAT_, OUTPUT_FORMAT_PIXEL(n))
+	(OUTPUT_FORMAT_PIXEL(n) == PIXEL_FORMAT_RGB_888 ? DISPLAY_OUT_FORMAT_24BITS_RGB888         \
+							: DISPLAY_OUT_FORMAT_16BITS_RGB565)
 
 #define RENESAS_RZ_LCDC_PIXEL_BYTE_SIZE(n)                                                         \
 	(DISPLAY_BITS_PER_PIXEL(RENESAS_RZ_DISPLAY_GET_PIXEL_FORMAT(n)) >> 3)

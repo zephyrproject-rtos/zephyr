@@ -12,7 +12,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <fsl_dpu.h>
-#include <zephyr/dt-bindings/display/panel.h>
 
 #define APP_DPU_DC ((DISPLAY_SEERIS_Type *)0x4B780000U)
 
@@ -22,6 +21,12 @@ LOG_MODULE_REGISTER(display_socionext_dpu, CONFIG_DISPLAY_LOG_LEVEL);
 
 static const uint32_t dpu_supported_fmts =
 	PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_ARGB_8888;
+static const pixel_format_t dpu_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_ARGB_8888,
+	0,
+};
 
 struct dpu_config {
 	DISPLAY_SEERIS_Type *base;
@@ -40,10 +45,8 @@ struct dpu_data {
 	/* Pointer to active framebuffer */
 	const uint8_t *active_fb;
 	uint8_t *fb[CONFIG_DPU_FB_NUM];
-	/* DT value: PANEL_PIXEL_FORMAT_* */
-	uint32_t panel_pixel_format;
 	/* Runtime/Zephyr value: PIXEL_FORMAT_* */
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	dpu_pixel_format_t rgb_format;
 	uint8_t pixel_bytes;
 	struct k_sem sem;
@@ -144,7 +147,7 @@ static void dpu_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->display_timing.width;
 	capabilities->y_resolution = config->display_timing.height;
-	capabilities->supported_pixel_formats = dpu_supported_fmts;
+	capabilities->supported_pixel_formats = dpu_supported_pixel_formats;
 	capabilities->current_pixel_format = data->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
@@ -157,7 +160,7 @@ static void *dpu_get_framebuffer(const struct device *dev)
 }
 
 static int dpu_set_pixel_format(const struct device *dev,
-				const enum display_pixel_format pixel_format)
+				const pixel_format_t pixel_format)
 {
 	const struct dpu_config *config = dev->config;
 	struct dpu_data *data = dev->data;
@@ -214,21 +217,6 @@ static int dpu_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 	data->started = false;
-
-	switch (data->panel_pixel_format) {
-	case PANEL_PIXEL_FORMAT_RGB_565:
-		data->pixel_format = PIXEL_FORMAT_RGB_565;
-		break;
-	case PANEL_PIXEL_FORMAT_RGB_888:
-		data->pixel_format = PIXEL_FORMAT_RGB_888;
-		break;
-	case PANEL_PIXEL_FORMAT_ARGB_8888:
-		data->pixel_format = PIXEL_FORMAT_ARGB_8888;
-		break;
-	default:
-		LOG_ERR("Pixel format not supported");
-		return -ENOTSUP;
-	}
 
 	ret = dpu_set_pixel_format(dev, data->pixel_format);
 	if (ret) {
@@ -354,7 +342,7 @@ static DEVICE_API(display, dpu_api) = {
 	DPU_FRAMEBUFFER_DECL(id);                                                                  \
 	struct dpu_data dpu_data_##id = {                                                          \
 		.next_idx = 0,                                                                     \
-		.panel_pixel_format = DT_INST_PROP(id, pixel_format),                              \
+		.pixel_format = PIX_FMT_DT_INST(id),                                               \
 	};                                                                                         \
 	struct dpu_config dpu_config_##id = {                                                      \
 		.base = (DISPLAY_SEERIS_Type *)DT_INST_REG_ADDR(id),                               \

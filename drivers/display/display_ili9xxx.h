@@ -60,7 +60,7 @@
 struct ili9xxx_config {
 	const struct device *mipi_dev;
 	struct mipi_dbi_config dbi_config;
-	uint8_t pixel_format;
+	pixel_format_t pixel_format;
 	uint16_t rotation;
 	uint16_t x_resolution;
 	uint16_t y_resolution;
@@ -77,7 +77,7 @@ struct ili9xxx_config {
 
 struct ili9xxx_data {
 	uint8_t bytes_per_pixel;
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	enum display_orientation orientation;
 	uint8_t madctl; /* Cached value for quick access and runtime config */
 };

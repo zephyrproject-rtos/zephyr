@@ -26,13 +26,14 @@ struct otm8009a_config {
 	uint16_t height;
 	uint8_t channel;
 	uint16_t rotation;
+	const pixel_format_t *supported_pixel_formats;
 };
 
 struct otm8009a_data {
 	uint16_t xres;
 	uint16_t yres;
 	uint8_t dsi_pixel_format;
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	enum display_orientation orientation;
 };
 
@@ -599,7 +600,7 @@ static void otm8009a_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
-	capabilities->supported_pixel_formats = data->pixel_format;
+	capabilities->supported_pixel_formats = cfg->supported_pixel_formats;
 	capabilities->current_pixel_format = data->pixel_format;
 	capabilities->current_orientation = data->orientation;
 }
@@ -699,6 +700,9 @@ static int otm8009a_init(const struct device *dev)
 }
 
 #define OTM8009A_DEVICE(inst)									\
+	static const pixel_format_t otm8009a_formats_##inst[] = {				\
+		(DT_INST_PROP(inst, pixel_format) == MIPI_DSI_PIXFMT_RGB565)			\
+			? PIXEL_FORMAT_RGB_565 : PIXEL_FORMAT_RGB_888, 0};			\
 	static const struct otm8009a_config otm8009a_config_##inst = {				\
 		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(inst)),					\
 		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),			\
@@ -708,6 +712,7 @@ static int otm8009a_init(const struct device *dev)
 		.height = DT_INST_PROP(inst, height),						\
 		.channel = DT_INST_REG_ADDR(inst),						\
 		.rotation = DT_INST_PROP(inst, rotation),					\
+		.supported_pixel_formats = otm8009a_formats_##inst,				\
 	};											\
 	static struct otm8009a_data otm8009a_data_##inst = {					\
 		.dsi_pixel_format = DT_INST_PROP(inst, pixel_format),				\

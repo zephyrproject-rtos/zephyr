@@ -393,6 +393,11 @@ static int hx8353e_write(const struct device *dev, const uint16_t x, const uint1
 				      buf, &mipi_desc, PIXEL_FORMAT_RGB_565X);
 }
 
+static const pixel_format_t hx8353e_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565X,
+	0,
+};
+
 static void hx8353e_get_capabilities(const struct device *dev,
 				     struct display_capabilities *caps)
 {
@@ -407,13 +412,13 @@ static void hx8353e_get_capabilities(const struct device *dev,
 	 * on the wire). RGB_565X signals this byte order to callers so they
 	 * store pixels with the high byte at the lower address.
 	 */
-	caps->supported_pixel_formats = PIXEL_FORMAT_RGB_565X;
+	caps->supported_pixel_formats = hx8353e_supported_pixel_formats;
 	caps->current_pixel_format    = PIXEL_FORMAT_RGB_565X;
 	caps->current_orientation     = data->orientation;
 }
 
 static int hx8353e_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pf)
+				    const pixel_format_t pf)
 {
 	ARG_UNUSED(dev);
 

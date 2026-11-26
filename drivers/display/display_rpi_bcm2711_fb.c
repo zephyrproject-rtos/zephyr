@@ -38,12 +38,18 @@ struct rpi_bcm2711_fb_descriptor {
 
 struct rpi_bcm2711_fb_config {
 	struct display_fb_common_config common;
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	bool red_blue_swap;
 };
 
 struct rpi_bcm2711_fb_data {
 	struct display_fb_common_data common;
+};
+
+static const pixel_format_t rpi_bcm2711_fb_supported_pixel_formats[] = {
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_ABGR_8888,
+	0,
 };
 
 static void rpi_bcm2711_fb_get_capabilities(const struct device *dev,
@@ -53,13 +59,13 @@ static void rpi_bcm2711_fb_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->common.width;
 	capabilities->y_resolution = config->common.height;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_ABGR_8888;
+	capabilities->supported_pixel_formats = rpi_bcm2711_fb_supported_pixel_formats;
 	capabilities->current_pixel_format = config->pixel_format;
 	capabilities->screen_info = 0;
 }
 
 static int rpi_bcm2711_fb_set_pixel_format(const struct device *dev,
-					   const enum display_pixel_format pixel_format)
+					   const pixel_format_t pixel_format)
 {
 	const struct rpi_bcm2711_fb_config *config = dev->config;
 
@@ -169,7 +175,7 @@ static DEVICE_API(display, rpi_bcm2711_fb_api) = {
 #define RPI_BCM2711_FB_DEFINE(n)                                                                   \
 	static const struct rpi_bcm2711_fb_config rpi_bcm2711_fb_config_##n = {                    \
 		.common = DISPLAY_FB_COMMON_CFG_FROM_DT_INST(n),                                   \
-		.pixel_format = DT_INST_PROP(n, pixel_format),                                     \
+		.pixel_format = PIX_FMT_DT_INST(n),                                                \
 		.red_blue_swap = DT_INST_PROP(n, red_blue_swap),                                   \
 	};                                                                                         \
                                                                                                    \

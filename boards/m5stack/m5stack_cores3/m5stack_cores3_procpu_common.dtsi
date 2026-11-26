@@ -6,7 +6,6 @@
 
 #include <espressif/esp32s3/esp32s3.dtsi>
 #include <espressif/partitions_0x0_amp.dtsi>
-#include <zephyr/dt-bindings/display/panel.h>
 #include "m5stack_cores3-pinctrl.dtsi"
 #include "m5stack_mbus_connectors.dtsi"
 #include "grove_connectors.dtsi"
@@ -51,7 +50,7 @@
 			reg = <0>;
 			mipi-max-frequency = <30000000>;
 			vin-supply = <&vcc_bl>;
-			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			pixel-format = "rgb565";
 			display-inversion;
 			width = <320>;
 			height = <240>;

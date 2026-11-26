@@ -7,7 +7,6 @@
 /dts-v1/;
 #include <st/u5/stm32u5g9Xj.dtsi>
 #include <st/u5/stm32u5g9zjtxq-pinctrl.dtsi>
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -82,7 +81,7 @@
 
 	width = <800>;
 	height = <480>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	pixel-format = "bgr24";
 
 	def-back-color-red = <0x00>;
 	def-back-color-green = <0x00>;

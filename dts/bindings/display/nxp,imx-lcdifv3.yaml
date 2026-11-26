@@ -21,3 +21,12 @@ properties:
   media-apb-clk-rate:
     type: int
     required: true
+
+  pixel-format:
+    type: string
+    required: true
+    enum:
+      - "rgb565"
+      - "bgr24"
+      - "bgra32"
+      - "rgba32"

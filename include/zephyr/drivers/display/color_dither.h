@@ -60,16 +60,22 @@
  *           // ...existing I_4-only body, unchanged...
  *   }
  *
+ *   static const pixel_format_t foo_supported_pixel_formats[] = {
+ *           // ... existing population of supported formats
+ *           COLOR_DITHER_SUPPORTED_FORMATS,
+ *           0
+ *   };
  *   static void foo_get_capabilities(const struct device *dev, struct display_capabilities *caps)
  *   {
  *           struct foo_data *data = dev->data;
  *
+ *           caps->supported_pixel_formats = foo_supported_pixel_formats;
  *           // ... existing population of caps (advertising I_4, plus maybe other formats) ...
  *           display_color_dither_patch_caps(&data->color_dither, caps);
  *   }
  *
  *   static int foo_set_pixel_format(const struct device *dev,
- *                                   enum display_pixel_format pf)
+ *                                   pixel_format_t pf)
  *   {
  *           struct foo_data *data = dev->data;
  *
@@ -155,8 +161,19 @@ struct display_color_dither_rgb_error {
 #define COLOR_DITHER_ERRDIFF_R1(tag) NULL
 #define COLOR_DITHER_ERRDIFF_R2(tag) NULL
 #endif
-
 /** @endcond */
+
+/**
+ * @brief Helper macro adding COLOR_DITHER supported format in list of supported pixel format
+ *
+ * Drivers relying on display COLOR_DITHER helper should add this macro at the end of their
+ * supported pixel format table to in order to have the formats automatically added whenever
+ * support is enabled.
+ */
+#define COLOR_DITHER_SUPPORTED_FORMATS                                                           \
+	IF_ENABLED(CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB565, (PIXEL_FORMAT_RGB_565,))            \
+	IF_ENABLED(CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB888, (PIXEL_FORMAT_RGB_888,))		 \
+	0
 
 /**
  * @brief Runtime state owned by the color dithering helper for one display device instance.
@@ -177,7 +194,7 @@ struct display_color_dither_state {
 	 * I_4 and is consumed directly with no conversion. An RGB format instructs the helper to
 	 * convert that source format down to the native I_4 target before write() runs.
 	 */
-	enum display_pixel_format input_format;
+	pixel_format_t input_format;
 	/** Scratch buffer for the converted I_4 frame. */
 	uint8_t *converted_buf;
 	/** Size of @c converted_buf in bytes. */
@@ -277,10 +294,7 @@ int display_color_dither_prepare(const struct device *dev, struct display_color_
  * Call at the end of the driver's display_driver_api.get_capabilities() operation, after the driver
  * has filled its native capabilities and color palette.
  *
- * This adds the RGB formats enabled by Kconfig to the list of supported pixel formats in
- * display_capabilities::supported_pixel_formats.
- *
- * When the helper is actively converting, it also reports the helper-managed input format in
+ * When the helper is actively converting, it reports the helper-managed input format in
  * display_capabilities::current_pixel_format.
  *
  * @kconfig_dep{CONFIG_DISPLAY_COLOR_DITHER}
@@ -312,7 +326,7 @@ void display_color_dither_patch_caps(struct display_color_dither_state *state,
  *                  unsupported for RGB-to-I_4 conversion.
  */
 int display_color_dither_set_input_format(struct display_color_dither_state *state,
-					  enum display_pixel_format pf);
+					  pixel_format_t pf);
 
 /**
  * @brief Report whether the helper is actively converting input to native I_4.
@@ -326,7 +340,7 @@ int display_color_dither_set_input_format(struct display_color_dither_state *sta
  * @retval false The native I_4 write path is in effect (no helper conversion).
  */
 bool display_color_dither_is_active(const struct display_color_dither_state *state,
-				    enum display_pixel_format current_pixel_format);
+				    pixel_format_t current_pixel_format);
 
 #else /* !CONFIG_DISPLAY_COLOR_DITHER */
 
@@ -360,7 +374,7 @@ static inline void display_color_dither_patch_caps(struct display_color_dither_s
 }
 
 static inline int display_color_dither_set_input_format(struct display_color_dither_state *state,
-							enum display_pixel_format pf)
+							pixel_format_t pf)
 {
 	(void)state;
 
@@ -368,7 +382,7 @@ static inline int display_color_dither_set_input_format(struct display_color_dit
 }
 
 static inline bool display_color_dither_is_active(const struct display_color_dither_state *state,
-						  enum display_pixel_format current_pixel_format)
+						  pixel_format_t current_pixel_format)
 {
 	(void)state;
 	(void)current_pixel_format;

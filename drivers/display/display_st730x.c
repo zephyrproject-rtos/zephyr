@@ -151,7 +151,7 @@ struct st730x_config {
 };
 
 struct st730x_data {
-	enum display_pixel_format current_pixel_format;
+	pixel_format_t current_pixel_format;
 };
 
 static int st730x_resume(const struct device *dev)
@@ -584,6 +584,17 @@ static int st730x_write(const struct device *dev, const uint16_t x, const uint16
 	return mipi_dbi_release(config->mipi_dev, &config->dbi_config);
 }
 
+static const pixel_format_t st730x_alternative_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO01,
+	0,
+};
+
+static const pixel_format_t st730x_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO01,
+	PIXEL_FORMAT_I_4,
+	0,
+};
+
 static void st730x_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct st730x_config *config = dev->config;
@@ -592,18 +603,18 @@ static void st730x_get_capabilities(const struct device *dev, struct display_cap
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	if (config->bppx > 1 || config->bppy > 1) {
-		caps->supported_pixel_formats = PIXEL_FORMAT_MONO01 | PIXEL_FORMAT_I_4;
+		caps->supported_pixel_formats = st730x_supported_pixel_formats;
 #if defined(CONFIG_DISPLAY_COLOR_PALETTE)
 		memcpy(caps->color_palette, config->color_palette, sizeof(config->color_palette));
 #endif
 	} else {
-		caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
+		caps->supported_pixel_formats = st730x_alternative_supported_pixel_formats;
 	}
 	caps->current_pixel_format = data->current_pixel_format;
 	caps->screen_info = 0;
 }
 
-static int st730x_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
+static int st730x_set_pixel_format(const struct device *dev, const pixel_format_t pf)
 {
 	const struct st730x_config *config = dev->config;
 	struct st730x_data *data = dev->data;

@@ -59,38 +59,18 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 	display_get_capabilities(display_dev, &capabilities);
 
 	LOG_INF("- Capabilities:");
-	LOG_INF("  x_resolution = %u, y_resolution = %u, supported_pixel_formats = %u"
+	LOG_INF("  x_resolution = %u, y_resolution = %u"
 		"  current_pixel_format = %u, current_orientation = %u",
 		capabilities.x_resolution, capabilities.y_resolution,
-		capabilities.supported_pixel_formats, capabilities.current_pixel_format,
-		capabilities.current_orientation);
+		capabilities.current_pixel_format, capabilities.current_orientation);
 
 	/* Set display pixel format to match the one in use by the camera */
-	switch (pixfmt) {
-	case VIDEO_PIX_FMT_RGB565:
-		if (capabilities.current_pixel_format != PIXEL_FORMAT_RGB_565) {
-			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_RGB_565);
+	if (capabilities.current_pixel_format != pixfmt) {
+		ret = display_set_pixel_format(display_dev, pixfmt);
+		if (ret < 0 && pixfmt == VIDEO_PIX_FMT_BGRX32) {
+			/* If failed with BGRX32, BGRA32 is still applicable */
+			ret = display_set_pixel_format(display_dev, VIDEO_PIX_FMT_BGRA32);
 		}
-		break;
-	case VIDEO_PIX_FMT_BGRX32:
-		if (capabilities.current_pixel_format != PIXEL_FORMAT_XRGB_8888) {
-			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_XRGB_8888);
-			if (ret < 0) {
-				/* If failed with PIXEL_FORMAT_XRGB_8888, PIXEL_FORMAT_ARGB_8888 is
-				 * still applicable
-				 */
-				ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
-			}
-		}
-		break;
-	case VIDEO_PIX_FMT_RGBA32:
-		if (capabilities.current_pixel_format != PIXEL_FORMAT_ABGR_8888) {
-			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ABGR_8888);
-		}
-		break;
-	default:
-		LOG_ERR("Display pixel format not supported by this sample");
-		return -ENOTSUP;
 	}
 	if (ret < 0) {
 		LOG_ERR("Unable to set display format");

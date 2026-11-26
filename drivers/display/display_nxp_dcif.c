@@ -39,7 +39,7 @@ struct nxp_dcif_config {
 	dcif_output_config_t output_config;
 	dcif_layer_panic_config_t panic_config;
 	/* Initial pixel format from devicetree */
-	enum display_pixel_format init_pixel_format;
+	pixel_format_t init_pixel_format;
 	/* Pointer to first framebuffer */
 	uint8_t *fb_ptr;
 };
@@ -155,6 +155,16 @@ static int nxp_dcif_write(const struct device *dev, const uint16_t x, const uint
 	return 0;
 }
 
+static const pixel_format_t nxp_dcif_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_BGR_888,
+	PIXEL_FORMAT_ABGR_8888,
+	PIXEL_FORMAT_NV12,
+	0,
+};
+
 static void nxp_dcif_get_capabilities(const struct device *dev,
 				       struct display_capabilities *capabilities)
 {
@@ -165,9 +175,7 @@ static void nxp_dcif_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->output_config.width;
 	capabilities->y_resolution = config->output_config.height;
-	capabilities->supported_pixel_formats =
-		(PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_888 |
-		 PIXEL_FORMAT_BGR_888 | PIXEL_FORMAT_ABGR_8888 | PIXEL_FORMAT_NV12);
+	capabilities->supported_pixel_formats = nxp_dcif_supported_pixel_formats;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 
 	switch (data->format) {
@@ -221,7 +229,7 @@ static int nxp_dcif_display_blanking_on(const struct device *dev)
 }
 
 static int nxp_dcif_set_pixel_format(const struct device *dev,
-				      const enum display_pixel_format pixel_format)
+				      const pixel_format_t pixel_format)
 {
 	struct nxp_dcif_data *data = dev->data;
 	const struct nxp_dcif_config *config = dev->config;
@@ -460,7 +468,7 @@ static DEVICE_API(display, nxp_dcif_api) = {
 		.irq_config_func = nxp_dcif_config_func_##n,					\
 		.pincfg = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pinctrl_0),			\
 			(PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL)),				\
-		.init_pixel_format = DT_INST_PROP(n, pixel_format),				\
+		.init_pixel_format = PIX_FMT_DT_INST(n),				\
 		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),			\
 					 (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),	\
 		.clock_subsys = COND_CODE_1(							\

@@ -274,19 +274,24 @@ static int nv3031b_set_orientation(const struct device *dev, enum display_orient
 	return ret;
 }
 
+static const pixel_format_t nv3031b_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565X,
+	0,
+};
+
 static void nv3031b_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	struct nv3031b_data *data = dev->data;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 	nv3031b_resolution(dev, &caps->x_resolution, &caps->y_resolution);
-	caps->supported_pixel_formats = PIXEL_FORMAT_RGB_565X;
+	caps->supported_pixel_formats = nv3031b_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_RGB_565X;
 	caps->current_orientation = data->orientation;
 	k_mutex_unlock(&data->lock);
 }
 
-static int nv3031b_set_pixel_format(const struct device *dev, enum display_pixel_format format)
+static int nv3031b_set_pixel_format(const struct device *dev, pixel_format_t format)
 {
 	ARG_UNUSED(dev);
 

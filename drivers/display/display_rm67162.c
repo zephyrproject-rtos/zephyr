@@ -57,7 +57,7 @@ struct rm67162_bus {
 			    const void *buf);
 	int (*blanking_on)(const struct device *dev);
 	int (*blanking_off)(const struct device *dev);
-	uint32_t supported_pixel_formats;
+	const pixel_format_t *supported_pixel_formats;
 	/* Address mode bits for the color order of PIXEL_FORMAT_RGB_888 */
 	uint8_t rgb888_address_mode;
 	/* Reported orientation with the address mode at its reset value */
@@ -100,7 +100,7 @@ struct rm67162_config {
 	const struct rm67162_init_seq *init_seq;
 	uint16_t panel_width;
 	uint16_t panel_height;
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	/* Index of the rotation property: 0, 90, 180 or 270 degrees */
 	uint8_t rotation;
 	union {
@@ -114,7 +114,7 @@ struct rm67162_config {
 };
 
 struct rm67162_data {
-	enum display_pixel_format pixel_format;
+	pixel_format_t pixel_format;
 	enum display_orientation orientation;
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(mipi_dsi)
 	struct rm67162_dsi_data dsi;
@@ -379,7 +379,7 @@ static int rm67162_set_window(const struct device *dev, uint16_t x, uint16_t y, 
 }
 
 static int rm67162_set_address_mode(const struct device *dev, enum display_orientation orientation,
-				    enum display_pixel_format pixel_format)
+				    pixel_format_t pixel_format)
 {
 	static const uint8_t rotations[] = {
 		0U,
@@ -471,14 +471,15 @@ static void rm67162_get_capabilities(const struct device *dev,
 }
 
 static int rm67162_set_pixel_format(const struct device *dev,
-				    const enum display_pixel_format pixel_format)
+				    const pixel_format_t pixel_format)
 {
-	const struct rm67162_config *config = dev->config;
 	struct rm67162_data *data = dev->data;
 	uint8_t param;
 	int ret;
+	struct display_capabilities capabilities;
 
-	if ((config->ops->supported_pixel_formats & pixel_format) == 0U) {
+	rm67162_get_capabilities(dev, &capabilities);
+	if (!display_is_pixel_format_supported(&capabilities, pixel_format)) {
 		return -ENOTSUP;
 	}
 
@@ -531,7 +532,7 @@ static void rm67162_init_state(const struct device *dev)
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(mipi_dsi)
 
-static uint8_t rm67162_dsi_pixfmt(enum display_pixel_format pixel_format)
+static uint8_t rm67162_dsi_pixfmt(pixel_format_t pixel_format)
 {
 	if (pixel_format == PIXEL_FORMAT_RGB_888) {
 		return MIPI_DSI_PIXFMT_RGB888;
@@ -821,12 +822,18 @@ static int rm67162_dsi_pm_action(const struct device *dev, enum pm_device_action
 }
 #endif /* CONFIG_PM_DEVICE */
 
+static const pixel_format_t rm67162_dsi_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_RGB_888,
+	0,
+};
+
 static const struct rm67162_bus rm67162_dsi_bus = {
 	.cmd_write = rm67162_dsi_cmd_write,
 	.write_memory = rm67162_dsi_write_memory,
 	.blanking_on = rm67162_dsi_blanking_on,
 	.blanking_off = rm67162_dsi_blanking_off,
-	.supported_pixel_formats = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888,
+	.supported_pixel_formats = rm67162_dsi_supported_pixel_formats,
 	.rgb888_address_mode = 0U,
 	/* Boards with MIPI DSI panels map their touch input to a panel rotated by 90 degrees */
 	.native_orientation = DISPLAY_ORIENTATION_ROTATED_90,
@@ -1013,13 +1020,19 @@ static int rm67162_dbi_init(const struct device *dev)
 	return 0;
 }
 
+static const pixel_format_t rm67162_dbi_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565X,
+	PIXEL_FORMAT_RGB_888,
+	0,
+};
+
 static const struct rm67162_bus rm67162_dbi_bus = {
 	.cmd_write = rm67162_dbi_cmd_write,
 	.write_memory = rm67162_dbi_write_memory,
 	.blanking_on = rm67162_dbi_blanking_on,
 	.blanking_off = rm67162_dbi_blanking_off,
 	/* The SPI interfaces receive 16-bit pixels most significant byte first */
-	.supported_pixel_formats = PIXEL_FORMAT_RGB_565X | PIXEL_FORMAT_RGB_888,
+	.supported_pixel_formats = rm67162_dbi_supported_pixel_formats,
 	/*
 	 * RGB_888 pixels are stored blue first and sent in memory order, while
 	 * the controller expects red first.
@@ -1091,7 +1104,7 @@ static DEVICE_API(display, rm67162_api) = {
 		.init_seq = &rm67162_init_seqs[DT_INST_ENUM_IDX(id, init_sequence)],               \
 		.panel_width = DT_INST_PROP(id, width),                                            \
 		.panel_height = DT_INST_PROP(id, height),                                          \
-		.pixel_format = DT_INST_PROP(id, pixel_format),                                    \
+		.pixel_format = PIX_FMT_DT_INST(id),                                               \
 		.rotation = DT_INST_ENUM_IDX(id, rotation),                                        \
 		.bus.dbi.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(id)),                             \
 		.bus.dbi.dbi_config = MIPI_DBI_CONFIG_DT_INST(                                     \
