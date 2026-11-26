@@ -243,29 +243,6 @@ Key configuration options available:
 - :kconfig:option:`CONFIG_LOG_BACKEND_MQTT_RETAIN`: Whether to retain log messages (default: disabled)
 - :kconfig:option:`CONFIG_LOG_BACKEND_MQTT_MAX_MSG_SIZE`: Maximum log message size (default: 256 bytes)
 
-Running on cc3220sf_launchxl
-============================
-
-Offloading on cc3220sf_launchxl also provides DHCP services, so the sample
-uses dynamic IP addresses on this board.
-
-By default, the sample is set up to connect to the broker at the address
-specified by SERVER_ADDR in config.h. If the broker is secured using TLS, users
-should enable TLS offloading, upload the server's certificate
-authority file in DER format to the device filesystem using TI Uniflash,
-and name it "ca_cert.der".
-
-In addition, TLS_SNI_HOSTNAME in main.c should be defined to match the
-Common Name (CN) in the certificate file in order for the TLS domain
-name verification to succeed.
-
-See the note on Provisioning and Fast Connect in :zephyr:board:`cc3220sf_launchxl`.
-
-The Secure Socket Offload section has information on programming the
-certificate to flash.
-
-Proceed to test as above.
-
 Sample output
 =============
 

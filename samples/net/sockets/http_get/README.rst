@@ -57,8 +57,8 @@ Enable TLS support in the sample by building the project with the
 An alternative way is to specify ``-DEXTRA_CONF_FILE=tls.conf`` when
 running ``west build`` or ``cmake``.
 
-For boards that support TLS offloading (e.g. TI's cc3220sf_launchxl), use
-``tls-offload.conf`` instead of ``tls.conf``.
+For boards that support TLS offloading, use ``tls-offload.conf`` instead of
+``tls.conf``.
 
 The certificate used by the sample can be found in the sample's ``src``
 directory. The certificate was selected to enable access to the default website

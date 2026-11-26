@@ -613,6 +613,11 @@ Wi-Fi
   ``SYS_FOREVER_MS`` retries until the application disconnects. A wrong WPA3-SAE password cannot
   be told apart from such a rejection, so it is retried as well.
 
+* The deprecated TI SimpleLink Wi-Fi offload driver (``CONFIG_WIFI_SIMPLELINK``) has been removed,
+  together with the ``CONFIG_SIMPLELINK_HOST_DRIVER`` option that built the SimpleLink host driver
+  from the TI HAL. There is no replacement. The :zephyr:board:`cc3220sf_launchxl` and
+  :zephyr:board:`cc3235sf_launchxl` boards remain supported, without Wi-Fi.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth

@@ -36,5 +36,5 @@ functionality at the socket API level. With this approach, vendors who provide a
 alternate implementation of the networking stack, exposing socket API for their
 networking devices, can easily integrate it with Zephyr.
 
-See :zephyr_file:`drivers/wifi/simplelink/simplelink_sockets.c` for a sample
+See :zephyr_file:`drivers/wifi/eswifi/eswifi_socket_offload.c` for a sample
 implementation on how to integrate network offloading at socket level.

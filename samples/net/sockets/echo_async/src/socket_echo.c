@@ -118,7 +118,6 @@ int main(void)
 	int res;
 	static int counter;
 	int num_servs = 0;
-#if !defined(USE_IPV6) || !(CONFIG_SOC_SERIES_CC32XX)
 	int serv4;
 	struct sockaddr_in bind_addr4 = {
 		.sin_family = AF_INET,
@@ -127,7 +126,6 @@ int main(void)
 			.s_addr = htonl(INADDR_ANY),
 		},
 	};
-#endif
 #ifdef USE_IPV6
 	int serv6;
 	struct sockaddr_in6 bind_addr6 = {
@@ -143,7 +141,6 @@ int main(void)
 	printf("Network ready\n");
 #endif
 
-#if !defined(USE_IPV6) || !(CONFIG_SOC_SERIES_CC32XX)
 	serv4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (serv4 < 0) {
 		printf("error: socket: %d\n", errno);
@@ -159,7 +156,6 @@ int main(void)
 	setblocking(serv4, false);
 	listen(serv4, 5);
 	pollfds_add(serv4);
-#endif
 
 #ifdef USE_IPV6
 	serv6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);

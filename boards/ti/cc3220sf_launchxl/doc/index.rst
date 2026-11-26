@@ -52,8 +52,8 @@ Supported Features
    the I2C driver defaults to I2C_BITRATE_FAST mode (400 kHz) bus speed
    on bootup.
 
-The accelerometer, temperature sensors, or other peripherals
-accessible through the BoosterPack, are not currently supported.
+The network coprocessor (Wi-Fi), the accelerometer, temperature sensors, or other
+peripherals accessible through the BoosterPack, are not currently supported.
 
 Programming and Debugging
 *************************
@@ -172,12 +172,6 @@ To see program output from UART0, connect a separate terminal window:
 
 Then press the reset button (SW1) on the board to run the program.
 
-When using OpenOCD from Zephyr SDK to flash the device, you may notice
-the program hangs when starting the network processor on the device, if the
-program uses it. There is a known issue with how that version of OpenOCD
-resets the network processor. You would need to manually hit the reset button
-on the board to properly reset the device after flashing.
-
 Debugging
 =========
 
@@ -189,65 +183,6 @@ build target:
    :board: cc3220sf_launchxl
    :maybe-skip-config:
    :goals: debug
-
-
-Wi-Fi Support
-*************
-
-The SimpleLink Host Driver, imported from the SimpleLink SDK, has been ported
-to Zephyr, and communicates over a dedicated SPI to the network co-processor.
-It is available as a Zephyr Wi-Fi device driver in
-:zephyr_file:`drivers/wifi/simplelink`.
-
-Usage:
-======
-
-Set :kconfig:option:`CONFIG_WIFI_SIMPLELINK` and :kconfig:option:`CONFIG_WIFI` to ``y``
-to enable Wi-Fi.
-See :zephyr_file:`samples/net/wifi/shell/boards/cc3220sf_launchxl.conf`.
-
-Provisioning:
-=============
-
-SimpleLink provides a few rather sophisticated Wi-Fi provisioning methods.
-To keep it simple for Zephyr development and demos, the SimpleLink
-"Fast Connect" policy is enabled, with one-shot scanning.
-This enables the cc3220sf_launchxl to automatically reconnect to the last
-good known access point (AP), without having to restart a scan, and
-re-specify the SSID and password.
-
-To connect to an AP, first run the Zephyr Wi-Fi shell sample application,
-and connect to a known AP with SSID and password.
-
-See :zephyr:code-sample:`wifi-shell`
-
-Once the connection succeeds, the network co-processor keeps the AP identity in
-its persistent memory.  Newly loaded Wi-Fi applications then need not explicitly
-execute any Wi-Fi scan or connect operations, until the need to change to a new AP.
-
-Secure Socket Offload
-*********************
-
-The SimpleLink Wi-Fi driver provides socket operations to the Zephyr socket
-offload point, enabling Zephyr BSD socket API calls to be directed to the
-SimpleLink Wi-Fi driver, by setting :kconfig:option:`CONFIG_NET_SOCKETS_OFFLOAD`
-to ``y``.
-
-Secure socket (TLS) communication is handled as part of the socket APIs,
-and enabled by:
-
-- setting both :kconfig:option:`CONFIG_NET_SOCKETS_SOCKOPT_TLS`
-  and :kconfig:option:`CONFIG_TLS_CREDENTIAL_FILENAMES` to ``y``,
-- using the TI Uniflash tool to program the required certificates and
-  keys to the secure flash filesystem, and enabling the TI Trusted
-  Root-Certificate Catalog.
-
-See :zephyr:code-sample:`sockets-http-get` and
-:zephyr_file:`samples/net/sockets/http_get/boards/cc3220sf_launchxl.conf` for an
-example.
-
-See the document `Simplelink Wi-Fi Certificates Handling`_ for details on
-using the TI UniFlash tool for certificate programming.
 
 References
 **********
@@ -278,6 +213,3 @@ CC32xx Wiki:
 
 ..  _XDS-110 emulation package:
    http://processors.wiki.ti.com/index.php/XDS_Emulation_Software_Package#XDS_Emulation_Software_.28emupack.29_Download
-
-..  _Simplelink Wi-Fi Certificates Handling:
-   http://www.ti.com/lit/pdf/swpu332

@@ -10,10 +10,3 @@ tests:
     tags:
       - net
       - socket
-  sample.net.sockets.echo.offload.simplelink:
-    platform_allow: cc3220sf_launchxl
-    tags:
-      - net
-      - socket
-      - offload
-      - simplelink
