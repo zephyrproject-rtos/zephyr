@@ -1,0 +1,11 @@
+# MIMXRT266x-EVK board
+
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT2660_EVK
+
+configdefault NXP_FW_DUMP_FLASH_START_ADDR
+	default 0x60500000
+
+endif # BOARD_MIMXRT266x_EVK

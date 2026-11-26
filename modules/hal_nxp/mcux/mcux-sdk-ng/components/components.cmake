@@ -8,7 +8,11 @@ endif()
 
 if(CONFIG_NXP_WIFI_FW_DEBUG)
   set(CONFIG_MCUX_COMPONENT_component.mflash_offchip ON)
-  set(CONFIG_MCUX_COMPONENT_driver.flexspi ON)
+  if(CONFIG_SOC_SERIES_IMXRT266X)
+    set(CONFIG_MCUX_COMPONENT_driver.xspi ON)
+  else()
+    set(CONFIG_MCUX_COMPONENT_driver.flexspi ON)
+  endif()
 endif()
 
 if(CONFIG_NXP_FW_LOADER AND NOT CONFIG_BUILD_WITH_TFM)
@@ -108,4 +112,11 @@ if(${MCUX_DEVICE} MATCHES "MIMXRT1062")
   add_subdirectory(${MCUX_SDK_NG_DIR}/components/flash/mflash/evkcmimxrt1060
     ${CMAKE_CURRENT_BINARY_DIR}/flash/mflash
     )
+endif()
+
+if(${MCUX_DEVICE} MATCHES "MIMXRT266")
+  add_subdirectory(
+    ${MCUX_SDK_NG_DIR}/components/flash/mflash/mimxrt2660evk
+    ${CMAKE_CURRENT_BINARY_DIR}/flash/mflash
+  )
 endif()

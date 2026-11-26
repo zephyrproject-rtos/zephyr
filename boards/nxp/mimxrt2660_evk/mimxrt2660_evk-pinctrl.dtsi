@@ -245,4 +245,127 @@
 			bias-pull-up;
 		};
 	};
+
+	pinmux_usdhc1: pinmux_usdhc1 {
+		group0 {
+			pinmux = <&main__iomuxc_pio7_5_comm_usdhc1_clk>;
+			drive-strength = "50-ohm";
+			slew-rate = "medium";
+			input-enable;
+			bias-disable;
+		};
+
+		group1 {
+			pinmux = <&main__iomuxc_pio7_4_comm_usdhc1_cmd>,
+				 <&main__iomuxc_pio7_0_comm_usdhc1_dat0>,
+				 <&main__iomuxc_pio7_1_comm_usdhc1_dat1>,
+				 <&main__iomuxc_pio7_2_comm_usdhc1_dat2>,
+				 <&main__iomuxc_pio7_3_comm_usdhc1_dat3>;
+			drive-strength = "50-ohm";
+			slew-rate = "medium";
+			input-enable;
+			bias-pull-up;
+		};
+	};
+
+	/* 25 MHz: SDR12 / SDR25 */
+	pinmux_usdhc1_slow: pinmux_usdhc1_slow {
+		group0 {
+			pinmux = <&main__iomuxc_pio7_5_comm_usdhc1_clk>;
+			drive-strength = "100-ohm";
+			slew-rate = "low";
+			input-enable;
+			bias-disable;
+		};
+
+		group1 {
+			pinmux = <&main__iomuxc_pio7_4_comm_usdhc1_cmd>,
+				 <&main__iomuxc_pio7_0_comm_usdhc1_dat0>,
+				 <&main__iomuxc_pio7_1_comm_usdhc1_dat1>,
+				 <&main__iomuxc_pio7_2_comm_usdhc1_dat2>,
+				 <&main__iomuxc_pio7_3_comm_usdhc1_dat3>;
+			drive-strength = "100-ohm";
+			slew-rate = "low";
+			input-enable;
+			bias-pull-up;
+		};
+	};
+
+	/* 50 MHz: SDR50 */
+	pinmux_usdhc1_med: pinmux_usdhc1_med {
+		group0 {
+			pinmux = <&main__iomuxc_pio7_5_comm_usdhc1_clk>;
+			drive-strength = "50-ohm";
+			slew-rate = "fast";
+			input-enable;
+			bias-disable;
+		};
+
+		group1 {
+			pinmux = <&main__iomuxc_pio7_4_comm_usdhc1_cmd>,
+				 <&main__iomuxc_pio7_0_comm_usdhc1_dat0>,
+				 <&main__iomuxc_pio7_1_comm_usdhc1_dat1>,
+				 <&main__iomuxc_pio7_2_comm_usdhc1_dat2>,
+				 <&main__iomuxc_pio7_3_comm_usdhc1_dat3>;
+			drive-strength = "50-ohm";
+			slew-rate = "fast";
+			input-enable;
+			bias-pull-up;
+		};
+	};
+
+	/* Over 100 MHz: SDR104 / HS200 */
+	pinmux_usdhc1_fast: pinmux_usdhc1_fast {
+		group0 {
+			pinmux = <&main__iomuxc_pio7_5_comm_usdhc1_clk>;
+			drive-strength = "33-ohm";
+			slew-rate = "high";
+			input-enable;
+			bias-disable;
+		};
+
+		group1 {
+			pinmux = <&main__iomuxc_pio7_4_comm_usdhc1_cmd>,
+				 <&main__iomuxc_pio7_0_comm_usdhc1_dat0>,
+				 <&main__iomuxc_pio7_1_comm_usdhc1_dat1>,
+				 <&main__iomuxc_pio7_2_comm_usdhc1_dat2>,
+				 <&main__iomuxc_pio7_3_comm_usdhc1_dat3>;
+			drive-strength = "33-ohm";
+			slew-rate = "high";
+			input-enable;
+			bias-pull-up;
+		};
+	};
+
+	pinmux_usdhc1_dat3_nopull: pinmux_usdhc1_dat3_nopull {
+		group0 {
+			pinmux = <&main__iomuxc_pio7_5_comm_usdhc1_clk>;
+
+			drive-strength = "33-ohm";
+			slew-rate = "high";
+			input-enable;
+			bias-disable;
+		};
+
+		group1 {
+			pinmux = <&main__iomuxc_pio7_4_comm_usdhc1_cmd>,
+				 <&main__iomuxc_pio7_0_comm_usdhc1_dat0>,
+				 <&main__iomuxc_pio7_1_comm_usdhc1_dat1>,
+				 <&main__iomuxc_pio7_2_comm_usdhc1_dat2>;
+
+			drive-strength = "33-ohm";
+			slew-rate = "high";
+			input-enable;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <&main__iomuxc_pio7_3_comm_usdhc1_dat3>;
+
+			drive-strength = "33-ohm";
+			slew-rate = "high";
+			input-enable;
+			bias-disable;
+		};
+	};
 };
