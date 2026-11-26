@@ -282,6 +282,31 @@ All arguments can also for better maintainability and overview be put in a yaml 
     :gen-args: -DCONFIG_STACK_USAGE=y -DCONFIG_CALLGRAPH_INFO=y -DEXTRA_PUNCOVER_ARGS="-c puncover_config.yaml"
 
 
+Build Target: syscall_stack_report
+==================================
+
+When both :kconfig:option:`CONFIG_USERSPACE` and :kconfig:option:`CONFIG_STACK_USAGE`
+are enabled, the ``syscall_stack_report`` target computes a static upper-bound
+privilege elevation stack usage report for every active system call in the image.
+
+The analyzer combines compiler ``.su`` stack-usage files with the call graph
+extracted from the compiled binary starting at each ``z_mrsh_<syscall>``
+marshalling entry point, adds :kconfig:option:`CONFIG_SYSCALL_TRAP_STACK_OVERHEAD`,
+and flags any system call whose worst-case stack consumption exceeds
+:kconfig:option:`CONFIG_PRIVILEGED_STACK_SIZE`.
+
+.. zephyr-app-commands::
+    :tool: all
+    :zephyr-app: samples/userspace/hello_world
+    :board: qemu_cortex_m3
+    :goals: syscall_stack_report
+    :gen-args: -DCONFIG_STACK_USAGE=y
+
+In addition to printing a summary table to the console, the target writes a
+detailed JSON breakdown (including deepest call paths and analysis notes) to
+``build/syscall_stack.json``.
+
+
 .. _data_structure_tools:
 
 Data Structures
