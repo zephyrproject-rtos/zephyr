@@ -13,6 +13,11 @@
 #include <zephyr/offsets.h>
 #include <offsets_short.h>
 
+#ifdef CONFIG_XTENSA_DBREAK_STACK_GUARD
+/* Split the offset into a multiple of 256 for ADDMI and a remainder in -128..127 for ADDI */
+#define DBREAK_STACK_TOP_HI ((___cpu_t_dbreak_stack_top_OFFSET + 128) & ~0xff)
+#endif
+
 /* Assembler header!  This file contains macros designed to be included
  * only by the assembler.
  */
@@ -721,6 +726,17 @@ _Level\LVL\()Vector:
 	j _TripleFault
 
 _not_triple_fault:
+.endif
+#endif
+
+#ifdef CONFIG_XTENSA_DBREAK_STACK_GUARD
+.if \LVL == XCHAL_DEBUGLEVEL
+	/* Switch SP to this CPU's debug stack: the interrupted stack may be
+	 * overflowed, and the interrupted context is never resumed.
+	 */
+	rsr.ZSR_CPU a1
+	addmi a1, a1, DBREAK_STACK_TOP_HI
+	addi a1, a1, (___cpu_t_dbreak_stack_top_OFFSET - DBREAK_STACK_TOP_HI)
 .endif
 #endif
 

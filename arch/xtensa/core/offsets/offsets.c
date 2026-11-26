@@ -70,6 +70,11 @@ GEN_OFFSET_SYM(_xtensa_irq_bsa_t, fpu15);
 GEN_OFFSET_SYM(_xtensa_irq_bsa_t, hifi);
 #endif
 
+#ifdef CONFIG_XTENSA_DBREAK_STACK_GUARD
+GEN_ABSOLUTE_SYM(___cpu_t_dbreak_stack_top_OFFSET,
+		 offsetof(_cpu_t, arch.dbreak_stack) + CONFIG_XTENSA_DBREAK_STACK_GUARD_STACK_SIZE);
+#endif
+
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(_thread_arch_t, psp);
 GEN_OFFSET_SYM(_thread_arch_t, return_ps);

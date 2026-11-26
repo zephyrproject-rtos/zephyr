@@ -57,6 +57,15 @@ bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
 	 */
 	ARG_UNUSED(ps);
 
+#ifdef CONFIG_XTENSA_DBREAK_STACK_GUARD
+	/* The debug exception saves its frame on the debug stack */
+	start = (uintptr_t)arch_curr_cpu()->arch.dbreak_stack;
+	end = start + sizeof(arch_curr_cpu()->arch.dbreak_stack);
+	if ((addr >= start) && ((addr + sz) <= end)) {
+		return false;
+	}
+#endif
+
 	/* Since both level 1 interrupts and exceptions go through
 	 * the same interrupt vector, both of them increase the nested
 	 * counter in the CPU struct. The architecture vector handler
@@ -350,6 +359,12 @@ static inline void *return_to(void *interrupted)
 		__asm__ volatile("wsr.cpenable %0" :: "r"(cp));
 	}
 #endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
+
+#ifdef CONFIG_XTENSA_DBREAK_STACK_GUARD
+	if (next != interrupted) {
+		xtensa_dbreak_stack_guard_arm(_current);
+	}
+#endif /* CONFIG_XTENSA_DBREAK_STACK_GUARD */
 
 	return next;
 #else
@@ -918,6 +933,51 @@ void *xtensa_debugint_c(int *interrupted_stack)
 	extern void z_gdb_isr(struct arch_esf *esf);
 
 	z_gdb_isr((void *)interrupted_stack);
+
+	return return_to(interrupted_stack);
+}
+#elif defined(CONFIG_XTENSA_DBREAK_STACK_GUARD)
+BUILD_ASSERT(XCHAL_NUM_DBREAK >= 1, "XTENSA_DBREAK_STACK_GUARD needs a DBREAK register");
+BUILD_ASSERT(IS_POWER_OF_TWO(CONFIG_XTENSA_DBREAK_STACK_GUARD_SIZE),
+	     "CONFIG_XTENSA_DBREAK_STACK_GUARD_SIZE must be 16, 32 or 64");
+
+/* The debug stack holds at least a BSA and the registers saved by xtensa_save_high_regs */
+BUILD_ASSERT(((CONFIG_XTENSA_DBREAK_STACK_GUARD_STACK_SIZE % 16) == 0) &&
+		     (sizeof(_xtensa_irq_bsa_t) + (3U * 16U) + 4U <=
+		      CONFIG_XTENSA_DBREAK_STACK_GUARD_STACK_SIZE),
+	     "CONFIG_XTENSA_DBREAK_STACK_GUARD_STACK_SIZE is too small or not a multiple of 16");
+
+/* DEBUGCAUSE.DBNUM: the DBREAK register that matched */
+#define DEBUGCAUSE_DBNUM_MASK GENMASK(11, 8)
+
+/**
+ * @brief C handler for the debug exception, reporting a stack guard hit.
+ *
+ * A DBREAK0 match is an access to the stack guard of the current thread.
+ * Any other debug exception is reported as a CPU exception.
+ *
+ * @param interrupted_stack Interrupt stack frame of the interrupted context.
+ *
+ * @return Switch handle of the context to return to.
+ */
+void *xtensa_debugint_c(int *interrupted_stack)
+{
+	uint32_t debugcause;
+	unsigned int reason = K_ERR_CPU_EXCEPTION;
+
+	__asm__ volatile("rsr.debugcause %0" : "=r"(debugcause));
+
+	if (((debugcause & DEBUGCAUSE_DBREAK_MASK) != 0U) &&
+	    ((debugcause & DEBUGCAUSE_DBNUM_MASK) == 0U)) {
+		reason = K_ERR_STACK_CHK_FAIL;
+	} else {
+		EXCEPTION_DUMP(" ** FATAL DEBUG EXCEPTION, DEBUGCAUSE 0x%x", debugcause);
+	}
+
+	xtensa_fatal_error(reason, (void *)interrupted_stack);
+
+	/* The current thread is terminated, see xtensa_excint1_c() */
+	_current_cpu->nested = 1;
 
 	return return_to(interrupted_stack);
 }

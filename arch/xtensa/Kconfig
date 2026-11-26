@@ -97,6 +97,48 @@ config XTENSA_FATAL_BREADCRUMB
 	  provides the actual storage and reporting mechanism; enabling this
 	  option only opts a fatal exception into calling it.
 
+config XTENSA_CPU_HAS_DBREAK
+	bool
+	help
+	  The core has at least one DBREAK data breakpoint register.
+
+config XTENSA_DBREAK_STACK_GUARD
+	bool
+	default y
+	depends on HW_STACK_PROTECTION && XTENSA_CPU_HAS_DBREAK
+	select THREAD_STACK_INFO
+	help
+	  Watch a guard below the stack of the running thread with data
+	  breakpoint DBREAK0 and report an access to it as a stack overflow.
+	  Each stack reserves the guard. The debug exception saves its frame
+	  on a per-CPU stack, not on the overflowed stack. A stack frame
+	  larger than the guard can skip over it. DBREAK0 is not available to
+	  a debugger while this is enabled.
+
+	  Not available with USERSPACE: user threads also run on user stacks,
+	  which the guard does not watch. Not available with GDBSTUB: it uses
+	  the DBREAK registers and the debug exception for its own breakpoints
+	  and watchpoints.
+
+config XTENSA_DBREAK_STACK_GUARD_SIZE
+	int "DBREAK stack guard size"
+	default 64
+	range 16 64
+	depends on XTENSA_DBREAK_STACK_GUARD
+	help
+	  Size of the stack guard in bytes: 16, 32 or 64, the sizes a DBREAKC
+	  mask can watch.
+
+config XTENSA_DBREAK_STACK_GUARD_STACK_SIZE
+	int "Per-CPU stack size for the DBREAK stack guard"
+	default 1536 if LOG_MODE_IMMEDIATE
+	default 1024
+	depends on XTENSA_DBREAK_STACK_GUARD
+	help
+	  Size of the per-CPU stack on which the debug exception saves the
+	  interrupted registers. When the exception is taken in interrupt
+	  context, the fatal error handling also runs on this stack.
+
 menu "Xtensa HiFi Options"
 
 config XTENSA_CPU_HAS_HIFI
