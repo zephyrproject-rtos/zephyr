@@ -5379,6 +5379,82 @@ static int gatt_cancel_all_writes(struct bt_conn *conn,
 			     BT_ATT_CHAN_OPT(params));
 }
 
+/* Connections whose server holds values of a failed long write that are not cancelled yet */
+static atomic_t gatt_cancel_pending[CONFIG_BT_MAX_CONN];
+
+static void gatt_cancel_prepared_rsp(struct bt_conn *conn, int err, const void *pdu,
+				     uint16_t length, void *user_data)
+{
+	LOG_DBG("err %d", err);
+}
+
+static int gatt_cancel_prepared(struct bt_conn *conn, enum bt_att_chan_opt chan_opt)
+{
+	return gatt_req_send(conn, gatt_cancel_prepared_rsp, NULL, gatt_cancel_encode,
+			     BT_ATT_OP_EXEC_WRITE_REQ, sizeof(struct bt_att_exec_write_req),
+			     chan_opt);
+}
+
+/* The server keeps the values of a long write that failed (Core v7.0 Vol 3 Part F 3.4.6.1),
+ * and the Execute Write Request of the next long write would write them. If the cancel
+ * cannot be allocated, as on the RX thread when every ATT request is in use, the next long
+ * write on the connection sends it first.
+ */
+static void gatt_long_write_failed(struct bt_conn *conn, struct bt_gatt_write_params *params)
+{
+	if (conn->state != BT_CONN_CONNECTED) {
+		return;
+	}
+
+	if (gatt_cancel_prepared(conn, BT_ATT_CHAN_OPT(params)) != 0) {
+		(void)atomic_set(&gatt_cancel_pending[bt_conn_index(conn)], 1);
+	}
+}
+
+static int gatt_prepare_write_encode(struct net_buf *buf, size_t len,
+				     void *user_data)
+{
+	struct bt_gatt_write_params *params = user_data;
+	struct bt_att_prepare_write_req *req;
+	size_t write;
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->handle = sys_cpu_to_le16(params->handle);
+	req->offset = sys_cpu_to_le16(params->offset);
+
+	write = net_buf_append_bytes(buf, len - sizeof(*req),
+				     (uint8_t *)params->data, K_NO_WAIT, NULL,
+				     NULL);
+	if (write != (len - sizeof(*req))) {
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+static int gatt_prepare_write(struct bt_conn *conn, struct bt_gatt_write_params *params,
+			      bt_att_func_t func)
+{
+	uint16_t len, req_len;
+	uint16_t mtu = bt_att_get_mtu(conn);
+
+	req_len = sizeof(struct bt_att_prepare_write_req);
+
+	/** MTU size is bigger than the ATT_PREPARE_WRITE_REQ header (5 bytes),
+	 * unless there's no connection.
+	 */
+	if (mtu == 0) {
+		return -ENOTCONN;
+	}
+
+	len = mtu - req_len - 1;
+	len = MIN(params->length, len);
+	len += req_len;
+
+	return gatt_req_send(conn, func, params, gatt_prepare_write_encode,
+			     BT_ATT_OP_PREPARE_WRITE_REQ, len, BT_ATT_CHAN_OPT(params));
+}
+
 static void gatt_prepare_write_rsp(struct bt_conn *conn, int err,
 				   const void *pdu, uint16_t length,
 				   void *user_data)
@@ -5392,6 +5468,7 @@ static void gatt_prepare_write_rsp(struct bt_conn *conn, int err,
 
 	/* Don't continue in case of error */
 	if (err) {
+		gatt_long_write_failed(conn, params);
 		params->func(conn, att_err_from_int(err), params);
 		return;
 	}
@@ -5438,60 +5515,48 @@ static void gatt_prepare_write_rsp(struct bt_conn *conn, int err,
 	}
 
 	/* Write next chunk */
-	if (!bt_gatt_write(conn, params)) {
+	if (gatt_prepare_write(conn, params, gatt_prepare_write_rsp) == 0) {
 		/* Success */
 		return;
 	}
 
 fail:
+	gatt_long_write_failed(conn, params);
+
 	/* Notify application that the write operation has failed */
 	params->func(conn, BT_ATT_ERR_UNLIKELY, params);
 }
 
-static int gatt_prepare_write_encode(struct net_buf *buf, size_t len,
-				     void *user_data)
+/* An Error Response to the first Prepare Write Request leaves nothing of the write queued
+ * on the server
+ */
+static void gatt_prepare_write_first_rsp(struct bt_conn *conn, int err, const void *pdu,
+					 uint16_t length, void *user_data)
 {
 	struct bt_gatt_write_params *params = user_data;
-	struct bt_att_prepare_write_req *req;
-	size_t write;
 
-	req = net_buf_add(buf, sizeof(*req));
-	req->handle = sys_cpu_to_le16(params->handle);
-	req->offset = sys_cpu_to_le16(params->offset);
-
-	write = net_buf_append_bytes(buf, len - sizeof(*req),
-				     (uint8_t *)params->data, K_NO_WAIT, NULL,
-				     NULL);
-	if (write != (len - sizeof(*req))) {
-		return -ENOMEM;
+	if (err > 0) {
+		params->func(conn, att_err_from_int(err), params);
+		return;
 	}
 
-	return 0;
+	gatt_prepare_write_rsp(conn, err, pdu, length, user_data);
 }
 
-static int gatt_prepare_write(struct bt_conn *conn,
-			      struct bt_gatt_write_params *params)
+static int gatt_long_write_start(struct bt_conn *conn, struct bt_gatt_write_params *params)
 {
-	uint16_t len, req_len;
-	uint16_t mtu = bt_att_get_mtu(conn);
+	uint8_t index = bt_conn_index(conn);
+	int err;
 
-	req_len = sizeof(struct bt_att_prepare_write_req);
-
-	/** MTU size is bigger than the ATT_PREPARE_WRITE_REQ header (5 bytes),
-	 * unless there's no connection.
-	 */
-	if (mtu == 0) {
-		return -ENOTCONN;
+	if (atomic_clear(&gatt_cancel_pending[index]) != 0) {
+		err = gatt_cancel_prepared(conn, BT_ATT_CHAN_OPT(params));
+		if (err != 0) {
+			(void)atomic_set(&gatt_cancel_pending[index], 1);
+			return err;
+		}
 	}
 
-	len = mtu - req_len - 1;
-	len = MIN(params->length, len);
-	len += req_len;
-
-	return gatt_req_send(conn, gatt_prepare_write_rsp, params,
-			     gatt_prepare_write_encode,
-			     BT_ATT_OP_PREPARE_WRITE_REQ, len,
-			     BT_ATT_CHAN_OPT(params));
+	return gatt_prepare_write(conn, params, gatt_prepare_write_first_rsp);
 }
 
 static int gatt_write_encode(struct net_buf *buf, size_t len, void *user_data)
@@ -5528,7 +5593,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 
 	/* Use Prepare Write if offset is set or Long Write is required */
 	if (params->offset || len > (bt_att_get_mtu(conn) - 1)) {
-		return gatt_prepare_write(conn, params);
+		return gatt_long_write_start(conn, params);
 	}
 
 	LOG_DBG("handle 0x%04x length %u", params->handle, params->length);
@@ -6892,6 +6957,7 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 
 #if defined(CONFIG_BT_GATT_CLIENT)
 	remove_subscriptions(conn);
+	(void)atomic_clear(&gatt_cancel_pending[bt_conn_index(conn)]);
 #endif /* CONFIG_BT_GATT_CLIENT */
 
 #if defined(CONFIG_BT_GATT_CACHING)
