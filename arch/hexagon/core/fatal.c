@@ -193,8 +193,18 @@ static FUNC_NORETURN void z_hexagon_fatal_error_return(unsigned int reason)
 FUNC_NORETURN void z_hexagon_fatal_error(unsigned int reason)
 {
 	struct arch_esf esf = {0};
+	/* Our allocframe holds the caller's fp and lr, with its sp just above. */
+	const uint32_t *frame = __builtin_frame_address(0);
 
 	z_hexagon_get_current_esf(&esf);
+	esf.r31_lr = (uint32_t)(uintptr_t)__builtin_return_address(0);
+	/*
+	 * The call to us is noreturn, so lr can point past the end of the
+	 * caller. Step back into the call so the pc maps to the right line.
+	 */
+	esf.pc = esf.r31_lr - 4;
+	esf.r30_fp = frame[0];
+	esf.r29_sp = (uint32_t)(uintptr_t)&frame[2];
 	z_fatal_error(reason, &esf);
 
 	z_hexagon_fatal_error_return(reason);
