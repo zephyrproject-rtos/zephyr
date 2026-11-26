@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2026 Shreyas Acharya
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/* native_sim already provides emulated i2c0, spi0 and gpio0 controllers. */
+
+&i2c0 {
+	bmi260_i2c: bmi260@68 {
+		compatible = "bosch,bmi260";
+		reg = <0x68>;
+		irq-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+	};
+
+	/*
+	 * Stands in for a part that answers with the wrong chip identifier.
+	 * Initialization is deferred so a test can set the identifier before
+	 * the driver reads it.
+	 */
+	bmi260_wrong: bmi260@69 {
+		compatible = "bosch,bmi260";
+		reg = <0x69>;
+		zephyr,deferred-init;
+	};
+
+	/*
+	 * Stands in for a part whose feature engine never reports that it
+	 * started. Initialization is deferred so a test can arrange that
+	 * before the driver polls for it.
+	 */
+	bmi260_stuck: bmi260@6a {
+		compatible = "bosch,bmi260";
+		reg = <0x6a>;
+		zephyr,deferred-init;
+	};
+};
+
+&spi0 {
+	bmi260_spi: bmi260@0 {
+		compatible = "bosch,bmi260";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		irq-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+	};
+};

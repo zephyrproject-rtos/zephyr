@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Shreyas Acharya
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - sensor
+  platform_allow:
+    - native_sim
+    - qemu_cortex_m3
+  integration_platforms:
+    - native_sim
+
+tests:
+  # The two interrupt dispatch paths are separate builds, so that the work
+  # queue one is run rather than only compiled.
+  drivers.sensor.bmi260:
+    extra_configs:
+      - CONFIG_BMI260_TRIGGER_OWN_THREAD=y
+
+  drivers.sensor.bmi260.global_thread:
+    extra_configs:
+      - CONFIG_BMI260_TRIGGER_GLOBAL_THREAD=y
