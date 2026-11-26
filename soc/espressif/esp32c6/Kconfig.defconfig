@@ -9,12 +9,12 @@ config NUM_IRQS
 config PMP_SLOTS
 	default 16
 
-# ESP32-C6 uses MMU to map flash to virtual addresses for code execution.
-# The PMP init code runs from IRAM while the main rom region is in flash.
-# Locked PMP entries would block IRAM execution before proper coverage is set.
-# Use unlocked entries with MPRV-based enforcement instead.
-config PMP_NO_LOCK_GLOBAL
-	default y
+# The core does not implement mstatus.MPRV, so unlocked PMP entries never
+# apply to machine mode. The global entries stay locked to protect the
+# kernel's text and rodata. The whole-address-space NAPOT entry used for
+# data execution prevention does not match on this core, so it is off.
+config PMP_DATA_EXECUTION_PREVENTION
+	default n
 
 config MAIN_STACK_SIZE
 	default 2048
