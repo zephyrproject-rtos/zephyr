@@ -225,6 +225,29 @@ def test_maps():
     assert "interrupt" in empty.maps
     assert len(empty.maps["interrupt"]) == 0
 
+    # Only nexus maps are parsed. Without a binding, the '#<space>-cells'
+    # property is required.
+    assert edt.get_node("/map-exclusions/no-cells").maps == {}
+    assert edt.get_node("/map-exclusions/msi").maps == {}
+    assert edt.get_node("/map-exclusions/no-map-node").maps == {}
+
+    # With a binding, the binding must set 'nexus-map: true' for the map.
+    binding_nexus = edt.get_node("/map-exclusions/binding-nexus")
+    assert binding_nexus.maps == {
+        "gpio": [
+            edtlib.MapEntry(
+                node=binding_nexus,
+                child_addresses=[],
+                child_specifiers=[1, 2],
+                parent=edt.get_node("/map-exclusions/destination"),
+                parent_addresses=[],
+                parent_specifiers=[5],
+                basename="gpio",
+            )
+        ]
+    }
+    assert edt.get_node("/map-exclusions/binding-no-nexus").maps == {}
+
 def test_ranges():
     '''Tests for the ranges property'''
     with from_here():
@@ -1891,6 +1914,13 @@ def test_wrong_props():
         assert "test-wrong-bindings/wrong-size-cells-default.yaml" in value_str
         assert value_str.endswith("; this property's default behavior is "
                                   "defined in DT Specification §2.3.5 and a default in a binding is invalid")
+
+        for name, prop in (("name", "gpio-mapping"), ("type", "gpio-map")):
+            with pytest.raises(edtlib.EDTError) as e:
+                edtlib.Binding(f"test-wrong-bindings/wrong-nexus-map-{name}.yaml", None)
+            value_str = str(e.value)
+            assert f"'nexus-map' set for '{prop}' in 'properties'" in value_str
+            assert "expected a '<space>-map' property with 'type: compound'" in value_str
 
 
 def test_deepcopy():

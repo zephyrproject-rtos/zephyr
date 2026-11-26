@@ -484,6 +484,52 @@
 	};
 
 	//
+	// Test that only nexus maps are parsed into Node.maps
+	//
+
+	map-exclusions {
+		// '*-map' without '#*-cells'
+		no-cells {
+			foo-map = <1 2 3>;
+		};
+
+		// PCI requester-ID layout, not a nexus map. '#msi-cells' is on the
+		// MSI controller, not on the node with 'msi-map'.
+		msi-controller {
+			#msi-cells = <1>;
+		};
+
+		msi {
+			msi-map = <0 &{/map-exclusions/msi-controller} 0 1>;
+		};
+
+		// Boolean property on reserved-memory nodes
+		no-map-node {
+			no-map;
+		};
+
+		destination {
+			compatible = "gpio-dst";
+			gpio-controller;
+			#gpio-cells = <1>;
+		};
+
+		// Binding sets 'nexus-map: true' for 'gpio-map'
+		binding-nexus {
+			compatible = "map-nexus";
+			#gpio-cells = <2>;
+			gpio-map = <1 2 &{/map-exclusions/destination} 5>;
+		};
+
+		// Binding declares 'gpio-map' and '#gpio-cells' without 'nexus-map'
+		binding-no-nexus {
+			compatible = "map-no-nexus";
+			#gpio-cells = <2>;
+			gpio-map = <1 2 &{/map-exclusions/destination} 5>;
+		};
+	};
+
+	//
 	// For testing Node.props with 'default:' values in binding
 	//
 

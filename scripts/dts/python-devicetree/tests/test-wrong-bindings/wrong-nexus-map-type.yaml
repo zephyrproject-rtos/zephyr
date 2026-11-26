@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: nexus-map set on a map that is not of type compound
+
+compatible: "wrong_nexus_map_type"
+
+properties:
+  gpio-map:
+    type: array
+    nexus-map: true
