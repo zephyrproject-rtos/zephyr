@@ -14,6 +14,12 @@
 			#power-domain-cells = <0>;
 		};
 
+		main_bcdma_pd: power-domain@a {
+			compatible = "arm,scmi-power-domain";
+			reg = <10>;
+			#power-domain-cells = <0>;
+		};
+
 		main_timer0_pd: power-domain@f {
 			compatible = "arm,scmi-power-domain";
 			reg = <15>;
