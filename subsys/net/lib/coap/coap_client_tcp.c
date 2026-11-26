@@ -1224,6 +1224,11 @@ int coap_client_tcp_connect(struct coap_client_tcp *client,
 		}
 	}
 
+	/* RFC 9175, section 2.3: an Echo option value kept from an earlier
+	 * connection is not for the endpoint of this one.
+	 */
+	client->send_echo = false;
+
 	ret = zsock_socket(addr->sa_family, NET_SOCK_STREAM, proto);
 	if (ret < 0) {
 		return -errno;
