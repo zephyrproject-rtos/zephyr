@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(net_trickle, CONFIG_NET_TRICKLE_LOG_LEVEL);
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/trickle.h>
 
+#include "net_private.h"
+
 #define TICK_MAX ~0
 
 static void trickle_timeout(struct k_work *work);
@@ -80,7 +82,7 @@ static void double_interval_timeout(struct net_trickle *trickle)
 	trickle->Istart = k_uptime_get_32() + rand_time;
 	trickle->double_to = false;
 
-	k_work_reschedule(&trickle->timer, K_MSEC(rand_time));
+	net_work_reschedule(&trickle->timer, K_MSEC(rand_time));
 
 	NET_DBG("last end %u new end %u for %u I %u",
 		last_end, get_end(trickle), trickle->Istart, trickle->I);
@@ -101,7 +103,7 @@ static inline void reschedule(struct net_trickle *trickle)
 
 	trickle->double_to = true;
 
-	k_work_reschedule(&trickle->timer, K_MSEC(diff));
+	net_work_reschedule(&trickle->timer, K_MSEC(diff));
 }
 
 static void interval_timeout(struct net_trickle *trickle)
@@ -145,7 +147,7 @@ static void setup_new_interval(struct net_trickle *trickle)
 
 	trickle->Istart = k_uptime_get_32();
 
-	k_work_reschedule(&trickle->timer, K_MSEC(t));
+	net_work_reschedule(&trickle->timer, K_MSEC(t));
 
 	NET_DBG("new interval at %d ends %d t %d I %d",
 		trickle->Istart,

@@ -476,4 +476,60 @@ ZTEST(mgmt_fn_test_suite, test_mgmt_duplicate_handler)
 	net_mgmt_del_event_callback(&cb);
 }
 
+#if defined(CONFIG_NET_MGMT_EVENT_QUEUE)
+/* More events than the queue holds, so that some find it full */
+#define NOTIFY_BURST (CONFIG_NET_MGMT_EVENT_QUEUE_SIZE + 2)
+
+static K_SEM_DEFINE(burst_done, 0, 1);
+static int64_t burst_elapsed;
+
+static void burst_handler(struct net_mgmt_event_callback *cb,
+			  uint64_t mgmt_event, struct net_if *iface)
+{
+	int64_t start;
+
+	ARG_UNUSED(cb);
+	ARG_UNUSED(iface);
+
+	if (mgmt_event != NET_EVENT_IPV6_ADDR_ADD) {
+		return;
+	}
+
+	start = k_uptime_get();
+
+	for (int i = 0; i < NOTIFY_BURST; i++) {
+		net_mgmt_event_notify(NET_EVENT_IPV6_ADDR_DEL, NULL);
+	}
+
+	burst_elapsed = k_uptime_get() - start;
+	k_sem_give(&burst_done);
+}
+
+/* Only the thread that delivers the events empties the queue, so an event
+ * notified from a callback must not wait for room in a full queue.
+ */
+ZTEST(mgmt_fn_test_suite, test_mgmt_notify_from_callback_does_not_wait)
+{
+	struct net_mgmt_event_callback cb;
+	int ret;
+
+	net_mgmt_init_event_callback(&cb, burst_handler,
+				     NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL);
+	net_mgmt_add_event_callback(&cb);
+
+	net_mgmt_event_notify(NET_EVENT_IPV6_ADDR_ADD, NULL);
+
+	ret = k_sem_take(&burst_done, K_SECONDS(1));
+	zassert_equal(ret, 0, "Event is not processed");
+
+	/* Let the queued events go before the callback goes away */
+	k_msleep(THREAD_SLEEP);
+	net_mgmt_del_event_callback(&cb);
+
+	zexpect_true(burst_elapsed < CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT,
+		     "Notifying %d events from a callback took %lld ms",
+		     NOTIFY_BURST, (long long)burst_elapsed);
+}
+#endif /* CONFIG_NET_MGMT_EVENT_QUEUE */
+
 ZTEST_SUITE(mgmt_fn_test_suite, NULL, NULL, NULL, NULL, NULL);

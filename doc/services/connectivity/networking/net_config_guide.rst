@@ -284,6 +284,9 @@ enabled, which it is by default for the native network stack. The work sends pac
 :kconfig:option:`CONFIG_NET_MGMT_EVENT_DIRECT` is enabled, runs the network management event
 callbacks for the events it raises, so :kconfig:option:`CONFIG_NET_DEDICATED_WORKQUEUE_STACK_SIZE`
 must allow for both. If the option is disabled, the system work queue runs this work instead.
+With :kconfig:option:`CONFIG_NET_MGMT_EVENT_NET_WORKQUEUE`, the network management event callbacks
+run on the same work queue instead of the net_mgmt thread, and the stack size must allow for them
+too.
 
 The network thread stack utilization can be monitored from kernel shell by
 the **kernel threads** command.

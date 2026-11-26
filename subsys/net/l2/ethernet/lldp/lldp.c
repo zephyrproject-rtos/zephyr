@@ -20,6 +20,8 @@ LOG_MODULE_REGISTER(net_lldp, CONFIG_NET_LLDP_LOG_LEVEL);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/lldp.h>
 
+#include "net_private.h"
+
 static void iface_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info,
 				size_t info_length, void *user_data);
 
@@ -37,7 +39,7 @@ static sys_slist_t lldp_ifaces;
 
 static void lldp_submit_work(k_timeout_t timeout)
 {
-	k_work_reschedule(&lldp_tx_timer, timeout);
+	net_work_reschedule(&lldp_tx_timer, timeout);
 
 	NET_DBG("Next wakeup in %d ms",
 		k_ticks_to_ms_ceil32(

@@ -101,7 +101,7 @@ static void fsm_send_configure_req(struct ppp_fsm *fsm, bool retransmit)
 
 	fsm->retransmits--;
 
-	(void)k_work_reschedule(&fsm->timer, FSM_TIMEOUT);
+	(void)net_work_reschedule(&fsm->timer, FSM_TIMEOUT);
 }
 
 static void ppp_fsm_timeout(struct k_work *work)
@@ -160,7 +160,7 @@ static void ppp_fsm_timeout(struct k_work *work)
 
 			fsm->retransmits--;
 
-			(void)k_work_reschedule(&fsm->timer, FSM_TIMEOUT);
+			(void)net_work_reschedule(&fsm->timer, FSM_TIMEOUT);
 		}
 
 		break;
@@ -219,7 +219,7 @@ static void terminate(struct ppp_fsm *fsm, enum ppp_state next_state)
 		return;
 	}
 
-	(void)k_work_reschedule(&fsm->timer, FSM_TIMEOUT);
+	(void)net_work_reschedule(&fsm->timer, FSM_TIMEOUT);
 
 	fsm->retransmits--;
 
@@ -259,7 +259,7 @@ void ppp_fsm_close(struct ppp_fsm *fsm, const uint8_t *reason)
 		ppp_change_state(fsm, PPP_CLOSING);
 		if (ppp_fsm_is_dead(fsm)) {
 			fsm->retransmits = 0;
-			k_work_reschedule(&fsm->timer, K_NO_WAIT);
+			net_work_reschedule(&fsm->timer, K_NO_WAIT);
 		}
 		break;
 
@@ -899,7 +899,7 @@ static enum net_verdict fsm_recv_terminate_req(struct ppp_fsm *fsm, uint8_t id,
 
 		fsm_down(fsm);
 
-		(void)k_work_reschedule(&fsm->timer, FSM_TIMEOUT);
+		(void)net_work_reschedule(&fsm->timer, FSM_TIMEOUT);
 		break;
 
 	default:

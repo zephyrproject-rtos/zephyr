@@ -64,8 +64,17 @@ static K_MUTEX_DEFINE(net_mgmt_event_lock);
 static struct mgmt_event_entry new_event;
 K_MSGQ_DEFINE_STATIC_TYPE(event_msgq, struct mgmt_event_entry, CONFIG_NET_MGMT_EVENT_QUEUE_SIZE);
 
-static struct k_work_q *mgmt_work_q = COND_CODE_1(CONFIG_NET_MGMT_EVENT_SYSTEM_WORKQUEUE,
-	(&k_sys_work_q), (&mgmt_work_q_obj));
+/* The work queue that delivers the events */
+static struct k_work_q *mgmt_work_q_get(void)
+{
+#if defined(CONFIG_NET_MGMT_EVENT_NET_WORKQUEUE)
+	return net_work_queue_get();
+#elif defined(CONFIG_NET_MGMT_EVENT_SYSTEM_WORKQUEUE)
+	return &k_sys_work_q;
+#else
+	return &mgmt_work_q_obj;
+#endif
+}
 
 static void mgmt_event_work_handler(struct k_work *work);
 static K_WORK_DEFINE(mgmt_work, mgmt_event_work_handler);
@@ -77,6 +86,8 @@ static uint64_t mgmt_current_event;
 static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
 				   const void *info, size_t length)
 {
+	k_timeout_t timeout = K_MSEC(CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT);
+
 #ifndef CONFIG_NET_MGMT_EVENT_INFO
 	ARG_UNUSED(info);
 	ARG_UNUSED(length);
@@ -104,8 +115,14 @@ static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
 	new_event.event = mgmt_event;
 	new_event.iface = iface;
 
-	if (k_msgq_put(&event_msgq, &new_event,
-		K_MSEC(CONFIG_NET_MGMT_EVENT_QUEUE_TIMEOUT)) != 0) {
+	/* Only the thread of the work queue that delivers the events makes
+	 * room in the queue, so it does not wait for room itself.
+	 */
+	if (k_work_queue_thread_get(mgmt_work_q_get()) == k_current_get()) {
+		timeout = K_NO_WAIT;
+	}
+
+	if (k_msgq_put(&event_msgq, &new_event, timeout) != 0) {
 		NET_WARN("Failure to push event (0x%" PRIx64 "), "
 			 "handling (0x%" PRIx64 ", %s), "
 			 "try increasing the 'CONFIG_NET_MGMT_EVENT_QUEUE_SIZE' "
@@ -117,7 +134,7 @@ static inline void mgmt_push_event(uint64_t mgmt_event, struct net_if *iface,
 
 	(void)k_mutex_unlock(&net_mgmt_event_lock);
 
-	k_work_submit_to_queue(mgmt_work_q, &mgmt_work);
+	k_work_submit_to_queue(mgmt_work_q_get(), &mgmt_work);
 }
 
 static void mgmt_event_work_handler(struct k_work *work)
@@ -256,7 +273,7 @@ static inline void mgmt_run_slist_callbacks(const struct mgmt_event_entry * cons
 	}
 
 #ifdef CONFIG_NET_DEBUG_MGMT_EVENT_STACK
-	log_stack_usage(mgmt_work_q->thread_id);
+	log_stack_usage(mgmt_work_q_get()->thread_id);
 #endif
 }
 
@@ -312,7 +329,7 @@ bool net_mgmt_is_event_context(void)
 
 #if defined(CONFIG_NET_MGMT_EVENT_QUEUE)
 	/* Any work item on the queue that delivers events, also outside callbacks */
-	if (k_work_queue_thread_get(mgmt_work_q) == self) {
+	if (k_work_queue_thread_get(mgmt_work_q_get()) == self) {
 		return true;
 	}
 #endif

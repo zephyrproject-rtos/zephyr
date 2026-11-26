@@ -38,7 +38,9 @@ struct net_trickle;
  * @typedef net_trickle_cb_t
  * @brief Trickle timer callback.
  *
- * @details The callback is called after Trickle timeout expires.
+ * @details The callback is called after Trickle timeout expires, from the
+ * networking work queue, or from the system work queue if
+ * CONFIG_NET_DEDICATED_WORKQUEUE is disabled.
  *
  * @param trickle The trickle context to use.
  * @param do_suppress Is TX allowed (true) or not (false).

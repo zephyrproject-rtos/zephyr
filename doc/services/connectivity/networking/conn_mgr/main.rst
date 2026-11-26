@@ -237,6 +237,7 @@ All flags in its mask must be set:
 .. note::
    Do not call this function with a non-zero timeout from a :ref:`network management <net_mgmt_interface>` event callback or from the work queue that delivers network management events.
    When the :kconfig:option:`CONFIG_NET_MGMT_EVENT_SYSTEM_WORKQUEUE` Kconfig option is enabled, the restriction applies to the system work queue, because events are delivered on it.
+   When the :kconfig:option:`CONFIG_NET_MGMT_EVENT_NET_WORKQUEUE` Kconfig option is enabled, it applies to the networking work queue.
 
 To retry after a failed connection attempt, pass a ``last_seen`` value to :c:func:`conn_mgr_wait_ready`.
 Set it to 0 before the first call and do not change it afterwards.

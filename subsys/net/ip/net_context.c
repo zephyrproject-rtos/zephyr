@@ -3909,7 +3909,7 @@ static void udp_dplpmtud_kick(struct net_context *context)
 		/* Another transport is probing the shared per-destination entry
 		 * (RFC 9869 coexistence); back off and re-check later.
 		 */
-		(void)k_work_reschedule(timer,
+		(void)net_work_reschedule(timer,
 			K_MSEC(CONFIG_NET_UDP_OPTIONS_DPLPMTUD_PROBE_TIMEOUT_MS));
 		return;
 	}
@@ -3919,19 +3919,19 @@ static void udp_dplpmtud_kick(struct net_context *context)
 		/* Search complete (or nothing to do): schedule a periodic raise
 		 * probe to detect a later PMTU increase.
 		 */
-		(void)k_work_reschedule(timer,
+		(void)net_work_reschedule(timer,
 			K_MSEC(CONFIG_NET_UDP_OPTIONS_DPLPMTUD_RAISE_TIMEOUT_MS));
 		return;
 	}
 
 	ret = net_dplpmtud_on_path_probe_sent(path, (uint16_t)size);
 	if (ret == -EALREADY) {
-		(void)k_work_reschedule(timer,
+		(void)net_work_reschedule(timer,
 			K_MSEC(CONFIG_NET_UDP_OPTIONS_DPLPMTUD_PROBE_TIMEOUT_MS));
 		return;
 	} else if (ret == -EMSGSIZE) {
 		net_dplpmtud_set_path_max_plpmtu(path, (uint16_t)(size - 1));
-		(void)k_work_reschedule(timer, K_NO_WAIT);
+		(void)net_work_reschedule(timer, K_NO_WAIT);
 		return;
 	} else if (ret < 0) {
 		return;
@@ -3960,7 +3960,7 @@ static void udp_dplpmtud_kick(struct net_context *context)
 			net_dplpmtud_set_path_max_plpmtu(path, (uint16_t)(size - 1));
 		}
 
-		(void)k_work_reschedule(timer,
+		(void)net_work_reschedule(timer,
 			K_MSEC(CONFIG_NET_UDP_OPTIONS_DPLPMTUD_PROBE_TIMEOUT_MS));
 		return;
 	}
@@ -3968,7 +3968,7 @@ static void udp_dplpmtud_kick(struct net_context *context)
 	context->options.udp_opt.dplpmtud.token = token;
 	context->options.udp_opt.dplpmtud.probe_size = (uint16_t)size;
 
-	(void)k_work_reschedule(timer,
+	(void)net_work_reschedule(timer,
 		K_MSEC(CONFIG_NET_UDP_OPTIONS_DPLPMTUD_PROBE_TIMEOUT_MS));
 }
 
@@ -4159,8 +4159,8 @@ static void context_udp_dplpmtud_rx(struct net_context *context,
 		/* Launch the next probe from the timer work rather than
 		 * transmitting synchronously in the RX path.
 		 */
-		(void)k_work_reschedule(&context->options.udp_opt.dplpmtud.timer,
-					K_NO_WAIT);
+		(void)net_work_reschedule(&context->options.udp_opt.dplpmtud.timer,
+					  K_NO_WAIT);
 	}
 
 	/* Responder: echo a received REQ token back as RES, unless the
@@ -4172,7 +4172,7 @@ static void context_udp_dplpmtud_rx(struct net_context *context,
 	    udp_dplpmtud_echo_allowed(context)) {
 		if (udp_dplpmtud_stash_echo(context, ip_hdr, proto_hdr,
 					    info.req_token) == 0) {
-			(void)k_work_submit(
+			(void)net_work_submit(
 				&context->options.udp_opt.dplpmtud.echo_work);
 		}
 	}

@@ -38,6 +38,18 @@ config NET_MGMT_EVENT_SYSTEM_WORKQUEUE
 	  If NET_MGMT_EVENT_INFO is enabled the data will be copied to
 	  a message queue.
 
+config NET_MGMT_EVENT_NET_WORKQUEUE
+	bool "Networking work queue"
+	depends on NET_DEDICATED_WORKQUEUE
+	help
+	  Submit work to the dedicated networking work queue to schedule
+	  calling network event callback handlers. This saves the thread of
+	  NET_MGMT_EVENT_THREAD. The callbacks run serialized with the timers
+	  and deferred work of the network stack, so they must not block, and
+	  NET_DEDICATED_WORKQUEUE_STACK_SIZE must allow for them.
+	  If NET_MGMT_EVENT_INFO is enabled the data will be copied to
+	  a message queue.
+
 config NET_MGMT_EVENT_DIRECT
 	bool "Trigger callback on event emit"
 	help
@@ -50,7 +62,8 @@ endchoice
 config NET_MGMT_EVENT_QUEUE
 	bool
 	default y
-	depends on NET_MGMT_EVENT_THREAD || NET_MGMT_EVENT_SYSTEM_WORKQUEUE
+	depends on NET_MGMT_EVENT_THREAD || NET_MGMT_EVENT_SYSTEM_WORKQUEUE || \
+		   NET_MGMT_EVENT_NET_WORKQUEUE
 	help
 	  Hidden option to enable the network event's queue if asynchronous
 	  callbacks are done.

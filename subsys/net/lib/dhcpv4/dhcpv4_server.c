@@ -121,7 +121,7 @@ static void dhcpv4_server_timeout_recalc(struct dhcpv4_server_ctx *ctx)
 		LOG_DBG("No more addresses, canceling timer");
 		k_work_cancel_delayable(&ctx->timeout_work);
 	} else {
-		k_work_reschedule(&ctx->timeout_work, timeout);
+		net_work_reschedule(&ctx->timeout_work, timeout);
 	}
 }
 

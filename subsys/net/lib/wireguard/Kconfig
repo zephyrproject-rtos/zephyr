@@ -111,10 +111,11 @@ config WIREGUARD_WORKQ_STACK_SIZE
 	default 0
 	help
 	  The periodic timer of the peers (handshake initiation, keepalive,
-	  rekey) runs on a work queue. With 0 it is the system work queue.
-	  A positive value starts a work queue of its own with this stack
-	  size, so that the X25519 computation of a handshake initiation does
-	  not set the stack size of the system work queue. The first
+	  rekey) runs on a work queue. With 0 it is the networking work queue
+	  (NET_DEDICATED_WORKQUEUE), or the system work queue if that is
+	  disabled. A positive value starts a work queue of its own with this
+	  stack size, so that the X25519 computation of a handshake initiation
+	  does not set the stack size of the shared work queue. The first
 	  initiation to a peer, started by the first packet sent to it or by
 	  wireguard_peer_keepalive(), then runs there too instead of in the
 	  calling thread. The handshake messages received from a peer are

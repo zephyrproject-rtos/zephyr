@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_eth_bridge_stp, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #include <zephyr/net/virtual.h>
 
 #include "bridge_internal.h"
+#include "net_private.h"
 #include "stp/rstp_internal.h"
 
 /* Bridge Group Address (IEEE Std 802.1Q-2014 Table 8-1) */
@@ -313,12 +314,12 @@ static void report_handler(struct k_work *work)
 	}
 
 	net_mgmt_event_notify_with_info(event, iface, &info, len);
-	(void)k_work_submit(&stp->report);
+	(void)net_work_submit(&stp->report);
 }
 
 static void updated(struct eth_rstp_bridge *br)
 {
-	(void)k_work_submit(&CONTAINER_OF(br, struct stp_bridge, rstp)->report);
+	(void)net_work_submit(&CONTAINER_OF(br, struct stp_bridge, rstp)->report);
 }
 
 static const struct eth_rstp_ops stp_ops = {
@@ -431,7 +432,7 @@ static void tick_handler(struct k_work *work)
 		}
 
 		eth_rstp_tick(&stp->rstp);
-		(void)k_work_reschedule(&stp->tick, K_SECONDS(1));
+		(void)net_work_reschedule(&stp->tick, K_SECONDS(1));
 	}
 
 	k_mutex_unlock(&stp->ctx->lock);
@@ -592,7 +593,7 @@ int eth_bridge_stp_enable(struct net_if *br, bool enable)
 			refresh_port(&stp->port[i]);
 		}
 
-		(void)k_work_reschedule(&stp->tick, K_SECONDS(1));
+		(void)net_work_reschedule(&stp->tick, K_SECONDS(1));
 	} else {
 		eth_rstp_stop(&stp->rstp);
 
@@ -607,7 +608,7 @@ int eth_bridge_stp_enable(struct net_if *br, bool enable)
 		}
 
 		eth_bridge_fdb_flush(br, NULL, true);
-		(void)k_work_submit(&stp->report);
+		(void)net_work_submit(&stp->report);
 	}
 
 	k_mutex_unlock(&ctx->lock);
