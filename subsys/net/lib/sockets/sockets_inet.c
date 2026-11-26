@@ -147,8 +147,14 @@ static void zsock_flush_recv_q(struct net_context *ctx)
 /* Release a connection that accept() has not returned */
 static void zsock_discard_conn(struct net_context *ctx)
 {
-	/* So that nothing is queued behind the flush */
+	struct k_mutex *lock;
+
 	(void)net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
+
+	/* A receive callback that is already on its way drops its packet */
+	lock = zsock_recv_lock(ctx);
+	sock_set_eof(ctx);
+	(void)k_mutex_unlock(lock);
 
 	zsock_flush_recv_q(ctx);
 	(void)net_context_put(ctx);
@@ -262,6 +268,13 @@ int zsock_close_ctx(struct net_context *ctx, int sock)
 
 	sock_set_error(ctx, EINTR);
 
+	if (net_context_get_state(ctx) != NET_CONTEXT_LISTENING) {
+		/* A receive callback that is already on its way drops its
+		 * packet, as nothing reads or flushes the queue any more.
+		 */
+		sock_set_eof(ctx);
+	}
+
 	zsock_flush_queue(ctx);
 
 	ret = net_context_put(ctx);
@@ -337,9 +350,9 @@ static void zsock_received_cb(struct net_context *ctx,
 
 	lock = zsock_recv_lock(ctx);
 
-	if (!net_context_is_used(ctx)) {
-		/* close() released the context while this waited for the
-		 * descriptor lock, after it flushed the queue.
+	if (!net_context_is_used(ctx) || (pkt != NULL && sock_is_eof(ctx))) {
+		/* The socket was closed or shut down for reading while this
+		 * waited for the lock, after the queue was flushed.
 		 */
 		NET_DBG("%sctx=%p, pkt=%p, st=%d, user_data=%p",
 			"DROP: ", ctx, pkt, status, user_data);
