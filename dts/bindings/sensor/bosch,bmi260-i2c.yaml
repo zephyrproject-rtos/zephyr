@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Shreyas Acharya
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The BMI260 on an I2C bus. The SDO pin selects the address: tied low the
+    device answers on 0x68, tied high on 0x69.
+
+compatible: "bosch,bmi260"
+
+include: [i2c-device.yaml, "bosch,bmi260.yaml"]
